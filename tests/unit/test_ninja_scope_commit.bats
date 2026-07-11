@@ -64,3 +64,36 @@ teardown() {
     [ "$status" -eq 0 ]
     [ "$(cat "$REPO/.git/hook-marker")" = hook-ran ]
 }
+
+@test "GA-222: 正本が無いrepoではsync_git_hooks呼び出しが無害にno-opする" {
+    printf 'own change\n' >> "$REPO/own.txt"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m no-sync-source -- own.txt"
+    [ "$status" -eq 0 ]
+}
+
+@test "GA-222: commit前にstale/未配備の.git/hooks/pre-commitを正本と同期する" {
+    SYNC_SCRIPT="$BATS_TEST_DIRNAME/../../scripts/sync_git_hooks.sh"
+    mkdir -p "$REPO/scripts" "$REPO/scripts/hooks" "$REPO/.git/hooks"
+    cp "$SYNC_SCRIPT" "$REPO/scripts/sync_git_hooks.sh"
+    chmod +x "$REPO/scripts/sync_git_hooks.sh"
+
+    printf '#!/usr/bin/env bash\nprintf hook-ran-fixed > .git/hook-marker\n' \
+        > "$REPO/scripts/hooks/git-pre-commit.sh"
+    chmod +x "$REPO/scripts/hooks/git-pre-commit.sh"
+    printf '#!/usr/bin/env bash\nprintf hook-ran-stale > .git/hook-marker\n' \
+        > "$REPO/.git/hooks/pre-commit"
+    chmod +x "$REPO/.git/hooks/pre-commit"
+    (
+        cd "$REPO"
+        git add scripts/sync_git_hooks.sh scripts/hooks/git-pre-commit.sh
+        git commit -qm "add tracked hook source + sync helper"
+    )
+
+    printf 'own change\n' >> "$REPO/own.txt"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m sync-then-commit -- own.txt"
+    [ "$status" -eq 0 ]
+    cmp -s "$REPO/scripts/hooks/git-pre-commit.sh" "$REPO/.git/hooks/pre-commit"
+    [ "$(cat "$REPO/.git/hook-marker")" = hook-ran-fixed ]
+}

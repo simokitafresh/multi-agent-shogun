@@ -4,10 +4,15 @@
 # Non-zero exitで logs/hook_failures.yaml に自動記録。
 # 記録部分は || true で防御（記録エラーでhookの動作を阻害しない）。
 
-_git_pre_commit_self="${BASH_SOURCE[0]:-$0}"
-[[ "$_git_pre_commit_self" != /* ]] && _git_pre_commit_self="$PWD/$_git_pre_commit_self"
-REPO_ROOT="${_git_pre_commit_self%/scripts/hooks/git-pre-commit.sh}"
-unset _git_pre_commit_self
+# GA-222: git rev-parseを第一手段にする。.git/hooks/直接配置(symlinkでない)場合でも
+# BASH_SOURCEパターン除去に頼らず常にREPO_ROOTを正しく解決する(L519の意図をより堅牢に踏襲)。
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ -z "$REPO_ROOT" ]]; then
+    _git_pre_commit_self="${BASH_SOURCE[0]:-$0}"
+    [[ "$_git_pre_commit_self" != /* ]] && _git_pre_commit_self="$PWD/$_git_pre_commit_self"
+    REPO_ROOT="${_git_pre_commit_self%/scripts/hooks/git-pre-commit.sh}"
+    unset _git_pre_commit_self
+fi
 _STDERR_FILE="/tmp/_hook_stderr_precommit_$$"
 declare -a _STAGED_FILES=()
 declare -a _ADDED_TEST_FILES=()
