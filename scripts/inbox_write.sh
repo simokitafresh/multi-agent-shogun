@@ -1975,25 +1975,20 @@ while [ $attempt -lt $max_attempts ]; do
             fi
         fi
 
-        # GP-133: report_review_result from gunshi → review_gate.done placeholder上書き
-        # 軍師のLGTM verdict受信時にplaceholderを正式版に上書きし、archive_completed.shが報告をアーカイブ可能にする
+        # Two-phase review: gunshi LGTM is provisional. Karo ACCEPT for the
+        # identical report fingerprint is required before cmd_complete_gate.
         if [ "$INBOX_COMPLETED_DUPLICATE" -eq 0 ] && [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ]; then
             # メッセージからcmd_idとverdictを抽出
             _rr_cmd_id=$(echo "$CONTENT" | grep -oP 'cmd_[A-Za-z0-9_]+' | head -1 || true)
             _rr_verdict=$(echo "$CONTENT" | grep -oP 'verdict: \K(LGTM|FAIL)' | head -1 || true)
             if [ -n "$_rr_cmd_id" ] && [ "$_rr_verdict" = "LGTM" ]; then
-                _rr_gate_dir="$SCRIPT_DIR/queue/gates/${_rr_cmd_id}"
-                _rr_gate_file="${_rr_gate_dir}/review_gate.done"
-                # GP-227: mkdir -pで不在時も生成。preflight未実行でもLGTMで解放
-                mkdir -p "$_rr_gate_dir"
-                    cat > "$_rr_gate_file" <<REVIEWEOF
-timestamp: $(date '+%Y-%m-%dT%H:%M:%S')
-source: gunshi_review
-result: LGTM
-note: 軍師レビュー完了。LGTM受信でgate再起動(GP-220)。
-REVIEWEOF
-                    echo "[inbox_write] review_gate.done created/updated: ${_rr_cmd_id} (→gunshi_review LGTM, gate re-trigger)" >&2
-                    trigger_cmd_complete_gate_background "$_rr_cmd_id"
+                _rr_report=$(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -type f -name "*_report_${_rr_cmd_id}.yaml" -print -quit 2>/dev/null || true)
+                if [ -n "$_rr_report" ]; then
+                    bash "$SCRIPT_DIR/scripts/review_approval.sh" "$_rr_cmd_id" gunshi LGTM "$_rr_report" >&2
+                    echo "[inbox_write] provisional gunshi LGTM recorded; awaiting karo ACCEPT: ${_rr_cmd_id}" >&2
+                else
+                    echo "[inbox_write] WARN: report for review approval not found: ${_rr_cmd_id}" >&2
+                fi
             fi
         fi
 

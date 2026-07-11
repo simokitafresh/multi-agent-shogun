@@ -5453,6 +5453,23 @@ if [ "$HAS_IMPLEMENT" = "true" ]; then
     CONDITIONAL+=("review_gate")
 fi
 
+# A review_gate.done marker alone is insufficient: gunshi LGTM and karo ACCEPT
+# must bind to the exact same report content+commit fingerprint.
+if [ "$HAS_IMPLEMENT" = "true" ]; then
+    source "$SCRIPT_DIR/scripts/lib/review_approval.sh"
+    _two_phase_report=""
+    for _tf in "${MATCHING_TASK_FILES[@]}"; do
+        _ninja=$(basename "$_tf" .yaml)
+        _candidate=$(resolve_report_file "$_ninja")
+        [ -f "$_candidate" ] && { _two_phase_report="$_candidate"; break; }
+    done
+    if [ -z "$_two_phase_report" ] || ! review_two_phase_ready "$CMD_ID" "$_two_phase_report"; then
+        echo "GATE BLOCK: review_two_phase_pending (matching gunshi LGTM + karo ACCEPT required)"
+        append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\treview_two_phase_pending"
+        exit 1
+    fi
+fi
+
 ALL_GATES=("${ALWAYS_REQUIRED[@]}" "${CONDITIONAL[@]}")
 
 # cmd_407: gate_metrics拡張用のtask_type/model/bloom_level収集

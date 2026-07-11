@@ -1142,10 +1142,12 @@ EOF
     [[ "$output" == *"WARN: codex delivery remained unverified for testninja after 0 retries"* ]]
 }
 
-@test "report_review_result: LGTM updates placeholder and starts cmd_complete_gate in background" {
+@test "report_review_result: LGTM is provisional and does not start cmd_complete_gate" {
     setup_git_test_env
-    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate"
+    mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate" "$TEST_TMPDIR/queue/reports"
     ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+    ln -sf "$PROJECT_ROOT/scripts/review_approval.sh" "$TEST_TMPDIR/scripts/review_approval.sh"
+    ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
 
     cat > "$TEST_TMPDIR/scripts/cmd_complete_gate.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -1153,6 +1155,7 @@ printf '%s\n' "$1" > "$INBOX_WRITE_BG_LOG"
 EOF
     chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
     export INBOX_WRITE_BG_LOG="$TEST_TMPDIR/cmd_complete_gate.log"
+    printf 'commit_hash: abc123\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
 
     cat > "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done" <<'EOF'
 timestamp: 2026-04-21T13:00:00
@@ -1162,13 +1165,10 @@ EOF
 
     run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: LGTM。" report_review_result gunshi
     [ "$status" -eq 0 ]
-    [[ "$output" == *"review_gate.done created/updated: cmd_karo_auto_review_gate"* ]]
-    [[ "$output" == *"cmd_complete_gate.sh started in background for cmd_karo_auto_review_gate"* ]]
-
-    _wait_for_file "$INBOX_WRITE_BG_LOG"
-    grep -q '^cmd_karo_auto_review_gate$' "$INBOX_WRITE_BG_LOG"
-    grep -q '^source: gunshi_review$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done"
-    grep -q '^result: LGTM$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done"
+    [[ "$output" == *"provisional gunshi LGTM recorded; awaiting karo ACCEPT"* ]]
+    [ ! -e "$INBOX_WRITE_BG_LOG" ]
+    grep -q '^source: deploy_preflight$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done"
+    grep -q '^result: LGTM$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_approvals/gunshi.yaml"
 }
 
 @test "report_review_result: FAIL does not update placeholder or run cmd_complete_gate" {
