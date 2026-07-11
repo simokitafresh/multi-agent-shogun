@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-11 cmd_3844 -->
+<!-- last_updated: 2026-07-11 cmd_3845 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1153,3 +1153,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - `logical_date`はrun開始時1値に固定してprice/economic load・日次処理・FoF終端へ伝播。run IDはDB String(20)制約に合わせUTC14桁+base32 6桁、衝突時再生成。
 - P1b(manifest/immutable snapshot/ledger preload/caller全被覆)は未実装。詳細・実測・復元点: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3844_p1a_source_identity.md`
 - 因果リンク: [[cmd_3840偵察=ループ内git238回+日跨ぎparity割れ]] -> [[source identity単回+logical_date固定+一意run_id]] -> [[cmd_3844_P1a実装]]
+
+## §69 TradePerformanceメモ化の全PFパリティFAILと反映中止 (cmd_3845, 2026-07-11)
+
+- 旧/新コードを同一frozen PostgreSQL template由来の隔離cloneで全102PF・全期間再生成。7回すべて102PF/11,040行/SHA 6c20e4e... で相互完全一致したが、変更前本番baseline SHA 4dea1761... とは24PF・554行不一致。差はbenchmark/excess returnの浮動小数末尾(約1e-16)のみだが、許容誤差ゼロ原則によりFAIL。
+- 本番push/deploy/fullrecalculateは実行せず、メモ化系列3 commitをrevert。実測もold median 113.379s→new median 124.623sで9.917%退行のため、fixtureの91.70%改善は補助証拠に限定。詳細: /mnt/c/Python_app/DM-signal/docs/research/cmd_3845_memoize_parity.md
+- 因果リンク: [[cmd_3843_fixture一致+全量未検証]] -> [[cmd_3845本番baseline554行不一致]] -> [[本番反映中止+メモ化revert]]
