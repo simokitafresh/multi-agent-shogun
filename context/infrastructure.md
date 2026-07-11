@@ -727,7 +727,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1054 -->
+<!-- last_synced_lesson: L1060 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1488,6 +1488,12 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1052: 異種gate全量計測ではtimeoutとcaller契約を分離する（cmd_karo_hotfix_infra_gate_awaken_202607120130）
 - L1053: 隔離indexで部分commitした後は共有indexの対象pathを新HEADへ同期せよ（cmd_karo_hotfix_scope_hunk_commit_202607120214）
 - L1054: 解消判定は厳密な因果順序と単一SSOTで行う（cmd_karo_hotfix_skill_auto_improve_stale_202607120225）
+- L1055: 設計索引は関連語リンクではなく実行契約の正本へ直接接続する（cmd_training_L4_r1_hanzo）
+- L1056: source freshnessは件数閾値でなくcontext記録境界から1件で発火させる（cmd_karo_hotfix_ga226_context_freshness_revert_stale_202607120335）
+- L1057: context freshness reflow: P2a/P2a2の実diff読解でcore不変量非該当を確定する必要がある（cmd_karo_hotfix_dm_signal_core_freshness_202607120345）
+- L1058: SSOT不在経路のメタデータ解決は優先順位付き一意fallbackにせよ（cmd_karo_hotfix_cmd_quality_direct_ac_count_202607120401）
+- L1059: semantic SSOTを検証するテストとconsumer契約テストのfixtureを分離する（cmd_karo_hotfix_ga227_prepush_semantic_concepts_202607120410）
+- L1060: pane無出力と計算停止を同一視しない（cmd_karo_hotfix_background_compute_stall_fp_202607120427）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

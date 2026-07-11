@@ -1,6 +1,6 @@
 # Saxo Trade Engine — システムトレード基盤設計
 <!-- created: 2026-05-24 -->
-<!-- last_updated: 2026-06-22 cmd_3490 -->
+<!-- last_updated: 2026-07-12 cmd_training_L4_r1_hanzo -->
 <!-- status: 設計段階 -->
 
 ## §1 目的
