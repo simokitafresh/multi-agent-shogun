@@ -2,6 +2,17 @@
 # ninja_scope_commit.sh — shared index上で指定pathだけを安全にcommitする
 set -euo pipefail
 
+# GA-222: このscript自身が置かれているdirectory(=multi-agent-shogunの
+# scripts/)を動的に求める。ninja_scope_commit.shはDM-Signal等、別repoを
+# cwdにして呼ばれることがあるため($repo_rootはそちらのrepo rootになる)、
+# 後段でsourceするSSOT(scripts/lib/scope_path.sh)は「操作対象repo」ではなく
+# 「このscript自身の設置場所」基準で解決する。cd実行より前に計算すること
+# (BASH_SOURCEが相対pathの場合、後のcdでPWD基準の解決が狂うため)。
+_ninja_scope_commit_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_ninja_scope_commit_self" = /* ]] || _ninja_scope_commit_self="$PWD/$_ninja_scope_commit_self"
+NINJA_SCOPE_COMMIT_SCRIPT_DIR="$(cd "$(dirname "$_ninja_scope_commit_self")" && pwd)"
+unset _ninja_scope_commit_self
+
 usage() {
     echo "Usage: bash scripts/ninja_scope_commit.sh -m <message> -- <path> [path ...]" >&2
 }
@@ -33,34 +44,21 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
     || { echo "BLOCK: not inside a git repository" >&2; exit 2; }
 cd "$repo_root"
 
-# GA-222 final edge RC: scope pathの表現ゆれ(末尾"/."、内部"/./"、先頭"./")を
-# lexicalに正規化してからチェック・保存する。これにより`scripts/hooks/.`と
-# `scripts/hooks`のようなpathspec同値表現がpostcondition/sync_git_hooks双方で
-# 同一視される(片方だけ正規化すると別表現で同種の穴が再発するため)。
-normalize_rel_path() {
-    local p="$1"
-    while [[ "$p" == */./* ]]; do
-        p="${p/\/.\//\/}"
-    done
-    p="${p%/.}"
-    p="${p%/}"
-    p="${p#./}"
-    printf '%s' "$p"
-}
+# GA-222: scope path正規化はscripts/lib/scope_path.sh(SSOT)に集約する。
+# ここ(commit scopeのバリデーション)とsync_git_hooks.sh(is_in_scope判定)で
+# 別々に正規化ロジックを持つと、片方だけ直して片方が取り残される形で
+# 同じ穴が別のpath表現で繰り返し再発したため、両scriptとも同一helperのみを使う。
+# shellcheck source=scripts/lib/scope_path.sh
+source "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/scope_path.sh"
 
 paths=()
 for path in "$@"; do
     [[ -n "$path" && "$path" != -* ]] \
         || { echo "BLOCK: invalid scope path: ${path:-<empty>}" >&2; exit 2; }
-    normalized="$(normalize_rel_path "$path")"
-    [[ "$normalized" != /* && "$normalized" != ../* && "$normalized" != */../* ]] \
-        || { echo "BLOCK: scope path must stay inside repository: $path" >&2; exit 2; }
-    # GA-222 final edge RC: root scope("."等repo全体を指す表現)は他agentの
-    # 無関係な変更まで丸ごとgit addしうるため、共有worktreeでは明示的にBLOCKする。
-    # このBLOCKはgit add呼出より前(バリデーションループ内)で発生するため、
-    # commit scopeにこの表現が含まれる限りindex/working treeは一切変更されない。
-    [[ "$normalized" != "." && "$normalized" != "" ]] \
-        || { echo "BLOCK: root scope '.' is not allowed — commit scope must stay inside a specific file/subdirectory to avoid staging unrelated shared-worktree changes: $path" >&2; exit 2; }
+    # scope_path_normalizeは絶対path・".."を含むpath(出現位置を問わず)・
+    # root相当に解決されるpath(空/"."/".."単体等)を全てfail-closedし、
+    # 理由をstderrへ書く(このtry/exitはその理由をそのまま伝播させる)。
+    normalized="$(scope_path_normalize "$path")" || exit 2
     [[ -e "$normalized" || -L "$normalized" ]] \
         || { echo "BLOCK: scope path does not exist: $normalized" >&2; exit 2; }
     [[ -n "$(git status --porcelain -- "$normalized")" ]] \
@@ -91,16 +89,10 @@ fi
 git commit --only -m "$message" -- "${paths[@]}"
 
 # 二値postcondition: commit treeは指定scopeのみ、他者stageはそのまま残る。
+# scope_path_is_in_scope(SSOT)で判定することで、正規化ロジックの重複を避ける。
 mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
 for committed_path in "${committed[@]}"; do
-    allowed=false
-    for scope_path in "${paths[@]}"; do
-        if [[ "$committed_path" == "$scope_path" || "$committed_path" == "$scope_path"/* ]]; then
-            allowed=true
-            break
-        fi
-    done
-    [[ "$allowed" == true ]] \
+    scope_path_is_in_scope "$committed_path" "${paths[@]}" \
         || { echo "FATAL: out-of-scope path entered commit: $committed_path" >&2; exit 1; }
 done
 

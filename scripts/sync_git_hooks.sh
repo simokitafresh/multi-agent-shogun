@@ -35,13 +35,32 @@
 #  (6) scope pathの表現ゆれ(末尾"/."、内部"/./"、先頭"./")を正規化してから
 #      比較しないと、`-- scripts/hooks/.`のようにgitのpathspec上は
 #      `scripts/hooks`と等価な表現でも文字列比較では別物とみなされ、
-#      (5)と同じ再drift問題が別表現で再発する。normalize_rel_pathで
-#      lexicalに正規化してからis_in_scope判定する。root scope"."自体は
+#      (5)と同じ再drift問題が別表現で再発する。root scope"."自体は
 #      ninja_scope_commit.sh側の入口で明示BLOCKする(sync側の責務ではない)。
+#
+# GA-222 4回目REQUEST_CHANGES(2026-07-11 karo)への対応:
+#  (7) (6)のnormalize_rel_pathはこのファイル固有の実装で、ninja_scope_commit.sh
+#      側にも別実装があり重複していた。さらに"subdir/.."や単独".."、
+#      "scripts//hooks"(連続slash)等、文字列パターンの積み重ねでは閉じきれない
+#      表現が残っていた。正規化・in-scope判定はscripts/lib/scope_path.sh
+#      (SSOT、component単位で分解し".."を出現位置問わずfail-close)へ集約し、
+#      このファイルは重複実装を持たずSSOTのみを使う。
 set -euo pipefail
+
+# このscript自身が置かれているdirectory(=multi-agent-shogunのscripts/)を
+# 動的に求める。sync_git_hooks.shはDM-Signal等、別repoを対象に呼ばれる
+# ことがあるため($repo_rootはそちらのrepo rootになる)、SSOT(scope_path.sh)
+# は「操作対象repo」ではなく「このscript自身の設置場所」基準で解決する。
+_sync_git_hooks_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_sync_git_hooks_self" = /* ]] || _sync_git_hooks_self="$PWD/$_sync_git_hooks_self"
+SYNC_GIT_HOOKS_SCRIPT_DIR="$(cd "$(dirname "$_sync_git_hooks_self")" && pwd)"
+unset _sync_git_hooks_self
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
     || { echo "BLOCK: not inside a git repository" >&2; exit 1; }
+
+# shellcheck source=scripts/lib/scope_path.sh
+source "$SYNC_GIT_HOOKS_SCRIPT_DIR/lib/scope_path.sh"
 
 # "<hook名>:<正本の repo-root 相対path>" のペア。
 HOOK_MANIFEST=(
@@ -63,34 +82,13 @@ while (($#)); do
     esac
 done
 
-normalize_rel_path() {
-    # repo相対pathのlexical正規化: 内部"/./"を収束するまで畳み込み、
-    # 末尾"/."と末尾"/"を除去し、先頭"./"を除去する。".."は正規化せず
-    # そのまま残す(traversalはninja_scope_commit.sh側で既にBLOCK対象)。
-    local p="$1"
-    while [[ "$p" == */./* ]]; do
-        p="${p/\/.\//\/}"
-    done
-    p="${p%/.}"
-    p="${p%/}"
-    p="${p#./}"
-    printf '%s' "$p"
-}
-
 is_in_scope() {
     # ninja_scope_commit.shはdirectory scope(例: -- scripts/hooks、
-    # -- scripts/hooks/.)を許容し、その配下の全ファイルがcommit対象になる。
-    # scope_pathがdirectoryの場合、その配下のtarget(例:
-    # scripts/hooks/git-pre-commit.sh)もin-scope扱いする。両者をlexical正規化
-    # してから比較し、"scripts/hook"のような類似prefixを誤マッチしないよう
-    # 境界に"/"を要求する(scripts/hooks/*でscripts/hooks2/*等は非マッチ)。
-    local target="$1" p norm target_norm
-    target_norm="$(normalize_rel_path "$target")"
-    for p in ${scope_paths[@]+"${scope_paths[@]}"}; do
-        norm="$(normalize_rel_path "$p")"
-        [[ "$norm" == "$target_norm" || "$target_norm" == "$norm"/* ]] && return 0
-    done
-    return 1
+    # -- scripts/hooks/.、-- scripts//hooks)を許容し、その配下の全ファイルが
+    # commit対象になる。scope_path_is_in_scope(SSOT)がcomponent単位で正規化
+    # してから判定するため、pathの表現ゆれ(末尾"/."・内部"/./"・連続slash等)を
+    # 気にせず判定できる。
+    scope_path_is_in_scope "$1" ${scope_paths[@]+"${scope_paths[@]}"}
 }
 
 uses_hook_source_convention() {

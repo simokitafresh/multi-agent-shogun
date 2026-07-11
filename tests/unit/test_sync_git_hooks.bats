@@ -32,6 +32,12 @@ setup() {
         git add own.txt
         git commit -qm init
     )
+    # sync_git_hooks.sh unconditionally sources scripts/lib/scope_path.sh
+    # (SSOT for scope path normalization); every sandbox repo needs a copy.
+    # This is intentionally NOT under scripts/hooks/, so it does not affect
+    # the "no-ops when scripts/hooks/ convention is unused" test below.
+    mkdir -p "$TEST_ROOT/scripts/lib"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/scope_path.sh" "$TEST_ROOT/scripts/lib/scope_path.sh"
 }
 
 teardown() {
@@ -301,6 +307,11 @@ OLDSCRIPT
         cd "$TEST_ROOT"
         git worktree add -q -b sync-git-hooks-wt-branch "$WORKTREE" "$current_branch"
     )
+    # scripts/lib/scope_path.sh was copied into TEST_ROOT's working tree but
+    # never committed, so `git worktree add` (which checks out a commit) does
+    # not carry it over. Mirror the same uncommitted-fixture copy here.
+    mkdir -p "$WORKTREE/scripts/lib"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/scope_path.sh" "$WORKTREE/scripts/lib/scope_path.sh"
 
     run bash -c "cd '$WORKTREE' && bash '$HELPER'"
 

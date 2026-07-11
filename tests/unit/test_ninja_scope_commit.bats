@@ -10,6 +10,10 @@ setup() {
     git -C "$REPO" add own.txt other.txt
     git -C "$REPO" commit -qm initial
     HELPER="$BATS_TEST_DIRNAME/../../scripts/ninja_scope_commit.sh"
+    # ninja_scope_commit.sh unconditionally sources scripts/lib/scope_path.sh
+    # (SSOT for scope path normalization); every sandbox repo needs a copy.
+    mkdir -p "$REPO/scripts/lib"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/scope_path.sh" "$REPO/scripts/lib/scope_path.sh"
 }
 
 teardown() {
@@ -66,11 +70,46 @@ teardown() {
     run bash -c "cd '$REPO' && bash '$HELPER' -m root-scope -- ."
 
     [ "$status" -eq 2 ]
-    [[ "$output" == *"root scope"* ]]
+    [[ "$output" == *"repository root"* ]]
     [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$other_index_before" ]
     [ "$(cat "$REPO/other.txt")" = "$other_worktree_before" ]
     [ "$(cat "$REPO/own.txt")" = "$own_worktree_before" ]
     [ "$(git -C "$REPO" status --porcelain -- own.txt)" = " M own.txt" ]
+    [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
+}
+
+@test "GA-222 4回目RC: root scope別名'subdir/..'はBLOCKされindex/working treeが不変のまま" {
+    mkdir -p "$REPO/subdir"
+    printf 'other change\n' >> "$REPO/other.txt"
+    git -C "$REPO" add other.txt
+    other_index_before="$(git -C "$REPO" ls-files -s -- other.txt)"
+    printf 'own change\n' >> "$REPO/own.txt"
+    own_worktree_before="$(cat "$REPO/own.txt")"
+    head_before="$(git -C "$REPO" rev-parse HEAD)"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m subdir-dotdot -- subdir/.."
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"'..'"* ]]
+    [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$other_index_before" ]
+    [ "$(cat "$REPO/own.txt")" = "$own_worktree_before" ]
+    [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
+}
+
+@test "GA-222 4回目RC: 単独'..'はBLOCKされindex/working treeが不変のまま" {
+    printf 'other change\n' >> "$REPO/other.txt"
+    git -C "$REPO" add other.txt
+    other_index_before="$(git -C "$REPO" ls-files -s -- other.txt)"
+    printf 'own change\n' >> "$REPO/own.txt"
+    own_worktree_before="$(cat "$REPO/own.txt")"
+    head_before="$(git -C "$REPO" rev-parse HEAD)"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m bare-dotdot -- .."
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"'..'"* ]]
+    [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$other_index_before" ]
+    [ "$(cat "$REPO/own.txt")" = "$own_worktree_before" ]
     [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
 }
 
@@ -218,4 +257,27 @@ teardown() {
     [ "$status" -eq 0 ]
     run cat "$REPO/.git/hooks/pre-commit"
     [[ "$output" == *"NEW_VERSION_VIA_TRAILING_DOT"* ]]
+}
+
+@test "GA-222 4回目RC: 'scripts//hooks' (double slash) scope path installs the newly staged content" {
+    mkdir -p "$REPO/scripts/hooks"
+    cp "$BATS_TEST_DIRNAME/../../scripts/sync_git_hooks.sh" "$REPO/scripts/sync_git_hooks.sh"
+    chmod +x "$REPO/scripts/sync_git_hooks.sh"
+    printf '#!/usr/bin/env bash\nprintf OLD_VERSION > .git/hook-marker\n' \
+        > "$REPO/scripts/hooks/git-pre-commit.sh"
+    chmod +x "$REPO/scripts/hooks/git-pre-commit.sh"
+    (
+        cd "$REPO"
+        git add scripts/sync_git_hooks.sh scripts/hooks/git-pre-commit.sh
+        git commit -qm "add tracked hook source + sync helper"
+    )
+
+    # "scripts//hooks" is pathspec-equivalent to "scripts/hooks" for git add.
+    printf '#!/usr/bin/env bash\nprintf NEW_VERSION_VIA_DOUBLE_SLASH > .git/hook-marker\n' \
+        > "$REPO/scripts/hooks/git-pre-commit.sh"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m update-hook-source-double-slash -- scripts//hooks"
+    [ "$status" -eq 0 ]
+    run cat "$REPO/.git/hooks/pre-commit"
+    [[ "$output" == *"NEW_VERSION_VIA_DOUBLE_SLASH"* ]]
 }
