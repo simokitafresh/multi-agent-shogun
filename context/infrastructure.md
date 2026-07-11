@@ -727,7 +727,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1046 -->
+<!-- last_synced_lesson: L1054 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1480,6 +1480,14 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1044: pre-bash-combined.shガードはコマンド文字列内のリテラル部分一致で発火する。無関係な一時ディレクトリ配下のパスでも'queue/tasks/'を含むとBLOCKされる（cmd_karo_hotfix_deploy_task_atomic_publish_202607111645）
 - L1045: 契約強化時は利用fixture全体を同一commitで横断更新する（cmd_karo_hotfix_ga223_review_fixture_contract_202607111840）
 - L1046: 将軍Q6回答はidle待ちせず即時に第三者検証せよ（session_20260712）
+- L1047: 同一概念の分岐経路は境界入力を対称適用する（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124）
+- L1048: Bash caseの*はslashを跨ぐためnested代替はdead branchになる（cmd_karo_hotfix_infra_hook_awaken_202607120130）
+- L1049: 複数行commit commandのguard判定は実行時tokenizationと一致させよ（cmd_3853）
+- L1050: atomic renameでも候補名共有なら並行安全ではない（cmd_karo_hotfix_dashboard_tmp_race_202607120209）
+- L1051: pre-push静的検査は同一入力への同種走査を単一収集へ統合せよ（cmd_karo_hotfix_infra_gate_awaken_202607120130）
+- L1052: 異種gate全量計測ではtimeoutとcaller契約を分離する（cmd_karo_hotfix_infra_gate_awaken_202607120130）
+- L1053: 隔離indexで部分commitした後は共有indexの対象pathを新HEADへ同期せよ（cmd_karo_hotfix_scope_hunk_commit_202607120214）
+- L1054: 解消判定は厳密な因果順序と単一SSOTで行う（cmd_karo_hotfix_skill_auto_improve_stale_202607120225）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

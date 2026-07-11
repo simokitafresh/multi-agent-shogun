@@ -324,7 +324,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 - L798: 重いページはPAGE_APIS prefetchを空にしてページ本体fetchをSSOTにする（cmd_3650）
 - L801: Next App Router共通chunkはapp module分割だけではhash/サイズが変わらない — 初期レンダー計算量削減が正道（cmd_3659）
 - L804: FoF調査では構成定義(component_portfolios)と当月選択結果(signals/fof_component_weights/monthly_trade)を分けて証拠化する（cmd_3676_recon2）
-<!-- last_synced_lesson: L873 -->
+<!-- last_synced_lesson: L878 -->
 - L850: 本番への非同期長時間処理(fullrecalculate等)をトリガー後に設計変更指示が届いた場合、走行中処理は中断せず完了を待ち、変更は次回反復から適用する（cmd_3804）
 - L858: パリティ残存乖離の原因は推測せず3点突合(本番/ライブ実行/GS)で必ず切り分けよ（cmd_3816）
 - L861: 非決定性偵察はDB再クエリの前に既存分析成果物(outputs/analysis/*.json)を横断確認せよ（cmd_karo_recon2_cmd3824_mechanism_202607101223）
@@ -332,6 +332,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 - L867: 『無改造コードだからスコープ外』は自分自身のテスト手順の欠陥を見逃す言い訳になり得る。全行完全一致の不変条件下では、まず自分の検証手順そのものを疑え（cmd_karo_hotfix_cmd3825_bulk_parity_zero_202607101725）
 - L868: CI修正前に失敗テストの仕様正当性をgit履歴で確認する（cmd_3834）
 - L873: db.info artifact判定は存在だけでなく由来と実型を検証する（cmd_karo_hotfix_dm_main_seiryu_202607111202）
+- L878: adapterを跨ぐ純粋関数統合ではdate-like入力の型正規化(pd.Timestamp化)を移植先で再実装せよ（cmd_3856）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 
