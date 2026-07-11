@@ -169,24 +169,3 @@ SH
   ! find "$TMPROOT/queue/gates/cmd_test/review_approvals" -maxdepth 1 -name '.gate_triggered.*' | grep -q .
   ! review_two_phase_ready cmd_test "$REPORT"
 }
-
-@test "cmd_complete normalize integration blocks when approved bytes mutate" {
-  mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts" "$TMPROOT/logs"
-  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
-  cp "$ROOT/scripts/lib/field_get.sh" "$ROOT/scripts/lib/yaml_field_set.sh" "$ROOT/scripts/lib/lock_path.sh" "$TMPROOT/scripts/lib/"
-  cp "$ROOT/scripts/cmd_complete_gate.sh" "$TMPROOT/scripts/"
-  approve gunshi LGTM "$REPORT"; approve karo ACCEPT "$REPORT"
-  cat > "$TMPROOT/scripts/lib/normalize_report.sh" <<'SH'
-#!/usr/bin/env bash
-printf 'normalized: true\n' >> "$1"
-SH
-  chmod +x "$TMPROOT/scripts/lib/normalize_report.sh"
-  : > "$TMPROOT/notify.log"
-  run env CMD_COMPLETE_TEST_NORMALIZE_REPORT="$REPORT" GATE_METRICS_LOG="$TMPROOT/logs/gate_metrics.log" REVIEW_APPROVAL_ROOT="$TMPROOT" \
-    bash "$TMPROOT/scripts/cmd_complete_gate.sh" cmd_test
-  [ "$status" -eq 1 ]
-  [[ "$output" == *"review_fingerprint_changed_after_normalize"* ]]
-  [ "$(grep -c $'\tcmd_test\tCLEAR\t' "$TMPROOT/logs/gate_metrics.log" || true)" -eq 0 ]
-  [ ! -e "$TMPROOT/queue/gates/cmd_test/archive.done" ]
-  [ ! -s "$TMPROOT/notify.log" ]
-}

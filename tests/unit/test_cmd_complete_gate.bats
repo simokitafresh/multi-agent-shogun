@@ -1704,6 +1704,62 @@ PY
     ! grep -Fq "cmd_nonexistent_benchmark" "$TEST_PROJECT/logs/gate_metrics.log"
 }
 
+@test "cmd_complete real process blocks after normalize mutates approved report" {
+    local report="$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml"
+    local metrics="$TEST_PROJECT/logs/gate_metrics.log"
+
+    cp "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_PROJECT/scripts/lib/review_approval.sh"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_type: implement
+  status: done
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+  ac_version: 2
+  related_lessons: []
+EOF
+    cat > "$report" <<EOF
+worker_id: sasuke
+task_id: fixture
+parent_cmd: $TEST_CMD_ID
+status: completed
+ac_version_read: 2
+commit_hash: deadbeef
+verdict: PASS
+result:
+  summary: approved before normalization
+purpose_validation: {fit: true}
+files_modified: [{path: scripts/fixture.sh}]
+lesson_candidate: {found: false, no_lesson_reason: fixture}
+lessons_useful: [{id: L625, useful: true, reason: fixture}]
+binary_checks:
+  AC1: [{check: fixture, result: yes}]
+EOF
+    cat > "$TEST_PROJECT/scripts/lib/normalize_report.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'normalized_by_fixture: true\n' >> "$1"
+exit 0
+EOF
+    chmod +x "$TEST_PROJECT/scripts/lib/normalize_report.sh"
+    rm -f "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/archive.done"
+    : > "$metrics"
+    : > "$TEST_PROJECT/notify.log"
+
+    REVIEW_APPROVAL_ROOT="$TEST_PROJECT" REVIEW_APPROVAL_NO_TRIGGER=1 \
+        bash "$PROJECT_ROOT/scripts/review_approval.sh" "$TEST_CMD_ID" gunshi LGTM "$report"
+    REVIEW_APPROVAL_ROOT="$TEST_PROJECT" REVIEW_APPROVAL_NO_TRIGGER=1 \
+        bash "$PROJECT_ROOT/scripts/review_approval.sh" "$TEST_CMD_ID" karo ACCEPT "$report"
+
+    run env GATE_METRICS_LOG="$metrics" REVIEW_APPROVAL_ROOT="$TEST_PROJECT" \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"review_fingerprint_changed_after_normalize"* ]]
+    [ "$(grep -c $'\tcmd_999\tCLEAR\t' "$metrics" || true)" -eq 0 ]
+    [ ! -e "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/archive.done" ]
+    [ ! -s "$TEST_PROJECT/notify.log" ]
+}
+
 @test "update_karo_workaround_resolutions fills unresolved matching categories only" {
     export GATE_METRICS_LOG="$TEST_PROJECT/logs/gate_metrics.log"
     export KARO_WORKAROUNDS_FILE="$TEST_PROJECT/logs/karo_workarounds.yaml"

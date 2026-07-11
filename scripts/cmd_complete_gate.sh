@@ -155,26 +155,6 @@ if ! flock -n 209; then
     exit 0
 fi
 
-# Deterministic integration-fixture entrypoint.  This still executes this
-# script (including argument validation, root resolution, libraries and the
-# cmd lock), but isolates the normalize/review boundary from unrelated gates.
-if [ -n "${CMD_COMPLETE_TEST_NORMALIZE_REPORT:-}" ]; then
-    source "$SCRIPT_DIR/scripts/lib/review_approval.sh"
-    _test_report="$CMD_COMPLETE_TEST_NORMALIZE_REPORT"
-    if ! review_all_reports_ready "$CMD_ID" "$_test_report"; then
-        echo "GATE BLOCK: review_two_phase_pending"
-        append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\treview_two_phase_pending"
-        exit 1
-    fi
-    bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$_test_report" >/dev/null 2>&1 || true
-    if ! review_all_reports_ready "$CMD_ID" "$_test_report"; then
-        echo "GATE BLOCK: review_fingerprint_changed_after_normalize"
-        append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\treview_fingerprint_changed_after_normalize"
-        exit 1
-    fi
-    exit 0
-fi
-
 # ─── 報告YAML解決関数（L085: 新命名規則対応、cmd_410: report_filename最優先） ───
 # 優先順位: 1. タスクYAMLのreport_filename  2. 新形式  3. 旧形式
 resolve_report_file() {
