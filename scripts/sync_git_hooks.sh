@@ -30,6 +30,14 @@
 #      配備してしまい、commit直後に再driftする。scope_pathがdirectoryの場合
 #      その配下も含めてin-scope判定するよう修正(末尾slash正規化+"/"境界要求で
 #      scripts/hook等の類似prefix誤マッチを回避)。
+#
+# GA-222 final edge RC(2026-07-11 karo 3回目REQUEST_CHANGES)への対応:
+#  (6) scope pathの表現ゆれ(末尾"/."、内部"/./"、先頭"./")を正規化してから
+#      比較しないと、`-- scripts/hooks/.`のようにgitのpathspec上は
+#      `scripts/hooks`と等価な表現でも文字列比較では別物とみなされ、
+#      (5)と同じ再drift問題が別表現で再発する。normalize_rel_pathで
+#      lexicalに正規化してからis_in_scope判定する。root scope"."自体は
+#      ninja_scope_commit.sh側の入口で明示BLOCKする(sync側の責務ではない)。
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
@@ -55,16 +63,32 @@ while (($#)); do
     esac
 done
 
+normalize_rel_path() {
+    # repo相対pathのlexical正規化: 内部"/./"を収束するまで畳み込み、
+    # 末尾"/."と末尾"/"を除去し、先頭"./"を除去する。".."は正規化せず
+    # そのまま残す(traversalはninja_scope_commit.sh側で既にBLOCK対象)。
+    local p="$1"
+    while [[ "$p" == */./* ]]; do
+        p="${p/\/.\//\/}"
+    done
+    p="${p%/.}"
+    p="${p%/}"
+    p="${p#./}"
+    printf '%s' "$p"
+}
+
 is_in_scope() {
-    # ninja_scope_commit.shはdirectory scope(例: -- scripts/hooks)を許容し、
-    # その配下の全ファイルがcommit対象になる。scope_pathがdirectoryの場合、
-    # その配下のtarget(例: scripts/hooks/git-pre-commit.sh)もin-scope扱いする。
-    # 末尾slash除去で正規化し、"scripts/hook"のような類似prefixを誤マッチしないよう
+    # ninja_scope_commit.shはdirectory scope(例: -- scripts/hooks、
+    # -- scripts/hooks/.)を許容し、その配下の全ファイルがcommit対象になる。
+    # scope_pathがdirectoryの場合、その配下のtarget(例:
+    # scripts/hooks/git-pre-commit.sh)もin-scope扱いする。両者をlexical正規化
+    # してから比較し、"scripts/hook"のような類似prefixを誤マッチしないよう
     # 境界に"/"を要求する(scripts/hooks/*でscripts/hooks2/*等は非マッチ)。
-    local target="$1" p norm
+    local target="$1" p norm target_norm
+    target_norm="$(normalize_rel_path "$target")"
     for p in ${scope_paths[@]+"${scope_paths[@]}"}; do
-        norm="${p%/}"
-        [[ "$norm" == "$target" || "$target" == "$norm"/* ]] && return 0
+        norm="$(normalize_rel_path "$p")"
+        [[ "$norm" == "$target_norm" || "$target_norm" == "$norm"/* ]] && return 0
     done
     return 1
 }

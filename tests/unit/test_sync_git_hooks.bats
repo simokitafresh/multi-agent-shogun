@@ -222,6 +222,22 @@ OLDSCRIPT
     [[ "$output" == *"STAGED_VIA_DIRECTORY_SCOPE"* ]]
 }
 
+@test "GA-222 final edge RC: staged content IS used when scope path has a trailing '/.' (pathspec-equivalent to the directory)" {
+    # "scripts/hooks/." is pathspec-equivalent to "scripts/hooks" for git add,
+    # but is a different string. is_in_scope must lexically normalize before
+    # comparing, or this re-introduces the same re-drift bug via another
+    # path spelling.
+    commit_hook_source "echo COMMITTED_V1"
+    printf '#!/usr/bin/env bash\necho STAGED_VIA_TRAILING_DOT\n' > "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
+    (cd "$TEST_ROOT" && git add scripts/hooks/git-pre-commit.sh)
+
+    run bash -c "cd '$TEST_ROOT' && bash '$HELPER' --scope-path scripts/hooks/."
+
+    [ "$status" -eq 0 ]
+    run cat "$TEST_ROOT/.git/hooks/pre-commit"
+    [[ "$output" == *"STAGED_VIA_TRAILING_DOT"* ]]
+}
+
 @test "GA-222 followup: a similarly-prefixed scope path is not treated as in-scope" {
     # "scripts/hook" (no trailing s) must not match "scripts/hooks/..." — the
     # boundary must require an actual "/" separator, not just a string prefix.

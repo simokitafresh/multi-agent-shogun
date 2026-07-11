@@ -33,13 +33,34 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
     || { echo "BLOCK: not inside a git repository" >&2; exit 2; }
 cd "$repo_root"
 
+# GA-222 final edge RC: scope pathの表現ゆれ(末尾"/."、内部"/./"、先頭"./")を
+# lexicalに正規化してからチェック・保存する。これにより`scripts/hooks/.`と
+# `scripts/hooks`のようなpathspec同値表現がpostcondition/sync_git_hooks双方で
+# 同一視される(片方だけ正規化すると別表現で同種の穴が再発するため)。
+normalize_rel_path() {
+    local p="$1"
+    while [[ "$p" == */./* ]]; do
+        p="${p/\/.\//\/}"
+    done
+    p="${p%/.}"
+    p="${p%/}"
+    p="${p#./}"
+    printf '%s' "$p"
+}
+
 paths=()
 for path in "$@"; do
     [[ -n "$path" && "$path" != -* ]] \
         || { echo "BLOCK: invalid scope path: ${path:-<empty>}" >&2; exit 2; }
-    normalized="${path#./}"
+    normalized="$(normalize_rel_path "$path")"
     [[ "$normalized" != /* && "$normalized" != ../* && "$normalized" != */../* ]] \
         || { echo "BLOCK: scope path must stay inside repository: $path" >&2; exit 2; }
+    # GA-222 final edge RC: root scope("."等repo全体を指す表現)は他agentの
+    # 無関係な変更まで丸ごとgit addしうるため、共有worktreeでは明示的にBLOCKする。
+    # このBLOCKはgit add呼出より前(バリデーションループ内)で発生するため、
+    # commit scopeにこの表現が含まれる限りindex/working treeは一切変更されない。
+    [[ "$normalized" != "." && "$normalized" != "" ]] \
+        || { echo "BLOCK: root scope '.' is not allowed — commit scope must stay inside a specific file/subdirectory to avoid staging unrelated shared-worktree changes: $path" >&2; exit 2; }
     [[ -e "$normalized" || -L "$normalized" ]] \
         || { echo "BLOCK: scope path does not exist: $normalized" >&2; exit 2; }
     [[ -n "$(git status --porcelain -- "$normalized")" ]] \

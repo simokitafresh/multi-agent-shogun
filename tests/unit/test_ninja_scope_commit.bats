@@ -54,6 +54,26 @@ teardown() {
     [[ "$output" == *"scope path does not exist"* ]]
 }
 
+@test "GA-222 final edge RC: root scope '.' はBLOCKされindex/working treeが不変のまま" {
+    printf 'other change\n' >> "$REPO/other.txt"
+    git -C "$REPO" add other.txt
+    other_index_before="$(git -C "$REPO" ls-files -s -- other.txt)"
+    other_worktree_before="$(cat "$REPO/other.txt")"
+    printf 'own change\n' >> "$REPO/own.txt"
+    own_worktree_before="$(cat "$REPO/own.txt")"
+    head_before="$(git -C "$REPO" rev-parse HEAD)"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m root-scope -- ."
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"root scope"* ]]
+    [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$other_index_before" ]
+    [ "$(cat "$REPO/other.txt")" = "$other_worktree_before" ]
+    [ "$(cat "$REPO/own.txt")" = "$own_worktree_before" ]
+    [ "$(git -C "$REPO" status --porcelain -- own.txt)" = " M own.txt" ]
+    [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
+}
+
 @test "pre-commit hookを実行する" {
     mkdir -p "$REPO/.git/hooks"
     printf '#!/usr/bin/env bash\nprintf hook-ran > .git/hook-marker\n' > "$REPO/.git/hooks/pre-commit"
@@ -174,4 +194,28 @@ teardown() {
     [ "$(git -C "$REPO" show HEAD:scripts/hooks/git-pre-commit.sh)" = "$(cat "$REPO/scripts/hooks/git-pre-commit.sh")" ]
     run cat "$REPO/.git/hooks/pre-commit"
     [[ "$output" == *"NEW_VERSION_VIA_DIR_SCOPE"* ]]
+}
+
+@test "GA-222 final edge RC: 'scripts/hooks/.' (trailing /.) scope path installs the newly staged content" {
+    mkdir -p "$REPO/scripts/hooks"
+    cp "$BATS_TEST_DIRNAME/../../scripts/sync_git_hooks.sh" "$REPO/scripts/sync_git_hooks.sh"
+    chmod +x "$REPO/scripts/sync_git_hooks.sh"
+    printf '#!/usr/bin/env bash\nprintf OLD_VERSION > .git/hook-marker\n' \
+        > "$REPO/scripts/hooks/git-pre-commit.sh"
+    chmod +x "$REPO/scripts/hooks/git-pre-commit.sh"
+    (
+        cd "$REPO"
+        git add scripts/sync_git_hooks.sh scripts/hooks/git-pre-commit.sh
+        git commit -qm "add tracked hook source + sync helper"
+    )
+
+    # "scripts/hooks/." is pathspec-equivalent to "scripts/hooks" for git add,
+    # but is a distinct string — is_in_scope must normalize before comparing.
+    printf '#!/usr/bin/env bash\nprintf NEW_VERSION_VIA_TRAILING_DOT > .git/hook-marker\n' \
+        > "$REPO/scripts/hooks/git-pre-commit.sh"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m update-hook-source-trailing-dot -- scripts/hooks/."
+    [ "$status" -eq 0 ]
+    run cat "$REPO/.git/hooks/pre-commit"
+    [[ "$output" == *"NEW_VERSION_VIA_TRAILING_DOT"* ]]
 }
