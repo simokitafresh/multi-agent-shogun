@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-12 cmd_3852 -->
-<!-- dm_signal_research_reflux: fingerprint=30e99fe555cf943b210326d9b7a918eaabceb817441de7cc68058d30de6d077c; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtb3BzLm1kIMKnNjnjgbhjbWRfMzg0Nee1kOirluODu+aVsOWApOODu+ips+e0sOODkeOCueODu+WboOaenOODquODs+OCr+OCkuWQjOacn+a4iOOBvw== -->
+<!-- dm_signal_research_reflux: fingerprint=7a3254c8577871a7245f548b56b092f825803f45ddd6f25b248b4d71bba322ff; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgY21kXzM4NTFfUDJhX1JFROOCknYxLjQuMTHntZDoq5bjgbjlkIzmnJ8= -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -735,3 +735,4 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - → [[test_select_after_20260506]] テスト選択スクリプト(吸収リファクタ後: 2026-05-06)
 - → [[uwp_three_metrics_design]] UWP3指標設計(Upward Pull: 3指標の定義と実装方針)
 - → [[cmd_3849_P1b_input_manifest]] P1bはcanonical manifest+price/economic/ledger immutable snapshot+snapshot後source SELECT 0+RSS fail-closed+6 caller共通入口+accepted run_id/manifest bind/parent lineageを実装。検証139 PASS/FAIL0/SKIP0、成果物=`outputs/analysis/cmd_3849_p1b_tests.xml`、commits=`cdd9b60e23e75984c0f03509b50d8021acb2eaa9`,`49bc81b6676fc50f6bb72dce798ce05df29c3fe3` (2026-07-11)
+- → [[cmd_3851_P2a_RED]] P2a母集団は標準24PF(adapter経路)×valid_start filter後日付。初回REDの97,687 mismatchはoracleのweights抽出契約バグ、4,982 missingはwarm-up日付誤混入で、signal/exceptionは全数一致=実装ロジック不一致0。FoF78は`recalculate_fof.py`単一実装のためEngine-vs-adapter対立が成立せず、P2a2の新manifest下golden-baseline exact回帰で被覆する。成果物=`outputs/analysis/cmd_3851/cmd_3851_p2a_exact.json`、正本=`docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.11 (2026-07-12)
