@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-11 cmd_3842 -->
+<!-- last_updated: 2026-07-11 cmd_3849 -->
 <!-- dm_signal_research_reflux: fingerprint=30e99fe555cf943b210326d9b7a918eaabceb817441de7cc68058d30de6d077c; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtb3BzLm1kIMKnNjnjgbhjbWRfMzg0Nee1kOirluODu+aVsOWApOODu+ips+e0sOODkeOCueODu+WboOaenOODquODs+OCr+OCkuWQjOacn+a4iOOBvw== -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
@@ -732,3 +732,4 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - → [[spa-overfitting-analysis]] SPA過適合分析(Statistical Performance Analysis: 過適合リスク評価)
 - → [[test_select_after_20260506]] テスト選択スクリプト(吸収リファクタ後: 2026-05-06)
 - → [[uwp_three_metrics_design]] UWP3指標設計(Upward Pull: 3指標の定義と実装方針)
+- → [[cmd_3849_P1b_input_manifest]] P1bはcanonical manifest+ledger immutable snapshot+snapshot後ledger SELECT 0+RSS fail-closed+6 caller共通入口+accepted run_id/manifest bind/parent lineageを実装。検証97 PASS/FAIL0/SKIP0、成果物=`outputs/analysis/cmd_3849_p1b_tests.xml`、commit=`cdd9b60e23e75984c0f03509b50d8021acb2eaa9` (2026-07-11)
