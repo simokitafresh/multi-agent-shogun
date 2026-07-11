@@ -18,6 +18,8 @@ read -ra commander_arr <<< "$COMMANDER_NAMES"
 # Build grep pattern: any line with 3+ ninja names
 # Use rg for speed (>10x faster than python3 on WSL2 NTFS)
 _pattern="$(IFS='|'; echo "${names_arr[*]}")"
+_commander_pattern="$(IFS='|'; echo "${commander_arr[*]}")"
+_scan_pattern="${_pattern}|queue/inbox/(${_commander_pattern})\\.yaml|shogun\\|karo\\|gunshi|shogun[[:space:]]+karo[[:space:]]+gunshi"
 
 violations=""
 commander_warnings=""
@@ -32,49 +34,28 @@ while IFS= read -r match; do
     stripped="${line#"${line%%[![:space:]]*}"}"
     [[ "$stripped" == "#"* ]] && continue
 
-    # Skip correct usage patterns
-    [[ "$line" == *get_ninja_names* ]] && continue
-    [[ "$line" == *get_all_agents* ]] && continue
-    [[ "$line" == *os.environ.get* ]] && continue
-    [[ "$line" == *'${'*':-'* ]] && continue
-
     # Self-exclusion
     [[ "$file" == *gate_no_hardcoded_ninja_list* ]] && continue
-    [[ "$file" == *pre-write-edit-combined* && "$line" == *"Guard 16"* ]] && continue
 
-    # Count names on this line
-    count=0
-    for n in "${names_arr[@]}"; do
-        [[ "$line" == *"$n"* ]] && ((count++)) || true
-    done
-    [ "$count" -ge 3 ] && violations="${violations}${file}:${lineno}: ${stripped}
+    if [[ "$line" != *get_ninja_names* && "$line" != *get_all_agents* \
+        && "$line" != *os.environ.get* && "$line" != *'${'*':-'* \
+        && !( "$file" == *pre-write-edit-combined* && "$line" == *"Guard 16"* ) ]]; then
+        count=0
+        for n in "${names_arr[@]}"; do
+            [[ "$line" == *"$n"* ]] && ((count++)) || true
+        done
+        [ "$count" -ge 3 ] && violations="${violations}${file}:${lineno}: ${stripped}
 "
-done < <(rg -n "$_pattern" \
-    --glob '*.sh' --glob '*.py' \
-    "$ROOT_DIR/scripts/gates" "$ROOT_DIR/.claude/hooks" \
-    "$ROOT_DIR/scripts/"*.sh "$ROOT_DIR/scripts/"*.py 2>/dev/null || true)
+    fi
 
-_commander_pattern="$(IFS='|'; echo "${commander_arr[*]}")"
-while IFS= read -r match; do
-    [ -z "$match" ] && continue
-    file="${match%%:*}"
-    rest="${match#*:}"
-    lineno="${rest%%:*}"
-    line="${rest#*:}"
-
-    stripped="${line#"${line%%[![:space:]]*}"}"
-    [[ "$stripped" == "#"* ]] && continue
-    [[ "$file" == *gate_no_hardcoded_ninja_list* ]] && continue
-    [[ "$line" == *get_commander_names* ]] && continue
-    [[ "$line" == *is_commander_role* ]] && continue
-    [[ "$line" == *get_commander_inbox_path* ]] && continue
-
-    if [[ "$line" =~ queue/inbox/(${_commander_pattern})\.yaml ]] \
-        || [[ "$line" =~ (shogun\|karo\|gunshi|shogun[[:space:]]+karo[[:space:]]+gunshi) ]]; then
+    if [[ "$line" != *get_commander_names* && "$line" != *is_commander_role* \
+        && "$line" != *get_commander_inbox_path* ]] \
+        && { [[ "$line" =~ queue/inbox/(${_commander_pattern})\.yaml ]] \
+        || [[ "$line" =~ (shogun\|karo\|gunshi|shogun[[:space:]]+karo[[:space:]]+gunshi) ]]; }; then
         commander_warnings="${commander_warnings}${file}:${lineno}: ${stripped}
 "
     fi
-done < <(rg -n "queue/inbox/(${_commander_pattern})\\.yaml|shogun\\|karo\\|gunshi|shogun[[:space:]]+karo[[:space:]]+gunshi" \
+done < <(rg -n "$_scan_pattern" \
     --glob '*.sh' --glob '*.py' \
     "$ROOT_DIR/scripts/gates" "$ROOT_DIR/.claude/hooks" \
     "$ROOT_DIR/scripts/"*.sh "$ROOT_DIR/scripts/"*.py 2>/dev/null || true)
