@@ -42,8 +42,42 @@ if review_all_reports_ready "$cmd_id" "${reports[@]}"; then
   mv -f "$marker_tmp" "$marker"
   if (set -o noclobber; : > "$base/.gate_triggered.$manifest") 2>/dev/null; then
     if [ "${REVIEW_APPROVAL_NO_TRIGGER:-0}" != 1 ]; then
-      nohup bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >/dev/null 2>&1 &
+      trigger_log="$ROOT/queue/gates/$cmd_id/cmd_complete_gate.trigger.log"
+      : > "$trigger_log" 2>/dev/null || true
+      nohup bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$trigger_log" 2>&1 &
+      trigger_pid=$!
+      # 起動直後の即死(exec失敗/構文エラー・未捕捉例外等)だけを検知する短時間ポーリング。
+      # フルGATE実行の完了は待たない(非同期起動の意図を維持)。
+      # kill -0 はreap前のzombieにも成功してしまうため使わず、/proc/<pid>/statの
+      # 状態文字(Z=zombie以外なら稼働中)で実行中かどうかを判定する。
+      trigger_proc_running() {
+        local stat_file="/proc/$1/stat" state
+        [ -r "$stat_file" ] || return 1
+        state=$(awk '{print $3}' "$stat_file" 2>/dev/null)
+        [ -n "$state" ] && [ "$state" != "Z" ]
+      }
+      trigger_alive=0
+      for _ in 1 2 3 4 5; do
+        sleep 0.03
+        if trigger_proc_running "$trigger_pid"; then
+          trigger_alive=1
+          break
+        fi
+      done
+      if [ "$trigger_alive" = 1 ]; then
+        echo "review gate formalized and cmd_complete_gate triggered: $cmd_id (pid=$trigger_pid log=${trigger_log#"$ROOT"/})"
+      else
+        trigger_rc=0
+        wait "$trigger_pid" 2>/dev/null || trigger_rc=$?
+        if [ "$trigger_rc" -eq 0 ]; then
+          echo "review gate formalized and cmd_complete_gate triggered: $cmd_id (pid=$trigger_pid rc=0 completed immediately, log=${trigger_log#"$ROOT"/})"
+        else
+          echo "review gate formalized but cmd_complete_gate exited immediately (rc=$trigger_rc); see ${trigger_log#"$ROOT"/}" >&2
+          echo "review gate formalized; cmd_complete_gate trigger FAILED (rc=$trigger_rc): $cmd_id"
+        fi
+      fi
+    else
+      echo "review gate formalized and cmd_complete_gate triggered: $cmd_id"
     fi
-    echo "review gate formalized and cmd_complete_gate triggered: $cmd_id"
   fi
 fi

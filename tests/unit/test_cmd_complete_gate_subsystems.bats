@@ -526,6 +526,19 @@ EOF
     [[ "$output" == *"STATUS ALREADY COMPLETED"* ]]
 }
 
+@test "update_status returns non-blocking status-not-found for karo-direct cmd absent from shogun_to_karo.yaml (AC2)" {
+    _setup_stk_status
+    # karo-direct cmds are never written to shogun_to_karo.yaml, so the cmd_id
+    # is simply absent. update_status must surface this as a specified,
+    # non-crashing rc=1 result (caller treats it as non-blocking) rather than
+    # raising an exception that would abort cmd_complete_gate.sh under `set -e`.
+    printf 'commands: {}\n' > "$YAML_FILE"
+
+    run update_status "cmd_999"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"ERROR: status not found for cmd_999"* ]]
+}
+
 # ═══════════════════════════════════════════════════════
 # Section 4: AC Version (from test_cmd_complete_gate_ac_version.bats)
 # ═══════════════════════════════════════════════════════

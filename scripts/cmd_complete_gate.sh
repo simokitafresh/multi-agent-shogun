@@ -635,16 +635,19 @@ if not start_raw or not end_raw:
 
 def parse_iso(raw: str):
     raw = str(raw).strip().strip("'").strip('"')
-    return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    # task file(naive)とreport file(`date -Iseconds`でtz付き)が混在するため、
+    # tz-awareはnaiveへ正規化してから比較する(offset-naive/aware TypeError防止)。
+    return dt.replace(tzinfo=None)
 
 try:
     start_dt = parse_iso(start_raw)
     end_dt = parse_iso(end_raw)
+    delta = int((end_dt - start_dt).total_seconds())
 except Exception:
     print("")
     raise SystemExit(0)
 
-delta = int((end_dt - start_dt).total_seconds())
 if delta < 0:
     print("")
 else:

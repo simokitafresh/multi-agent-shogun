@@ -143,6 +143,39 @@ SH
   [ "$(wc -l < "$REVIEW_TRIGGER_LOG")" -eq 1 ]
 }
 
+@test "silent trigger fixture: crashing cmd_complete_gate reports FAILED instead of a false triggered success (AC1)" {
+  mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
+  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  cat > "$TMPROOT/scripts/cmd_complete_gate.sh" <<'SH'
+#!/usr/bin/env bash
+echo "Traceback (most recent call last): simulated offset-naive/aware TypeError" >&2
+exit 1
+SH
+  chmod +x "$TMPROOT/scripts/cmd_complete_gate.sh"
+  REVIEW_APPROVAL_ROOT="$TMPROOT" bash "$ROOT/scripts/review_approval.sh" cmd_test gunshi LGTM "$REPORT"
+  run env REVIEW_APPROVAL_ROOT="$TMPROOT" bash "$ROOT/scripts/review_approval.sh" cmd_test karo ACCEPT "$REPORT"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"cmd_complete_gate triggered: cmd_test"* ]]
+  [[ "$output" == *"cmd_complete_gate trigger FAILED"* ]]
+  local trigger_log="$TMPROOT/queue/gates/cmd_test/cmd_complete_gate.trigger.log"
+  [ -f "$trigger_log" ]
+  grep -q "simulated offset-naive/aware TypeError" "$trigger_log"
+}
+
+@test "trigger success is only shown once launch is confirmed alive or exits cleanly (AC1)" {
+  mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
+  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  cat > "$TMPROOT/scripts/cmd_complete_gate.sh" <<'SH'
+#!/usr/bin/env bash
+sleep 0.5
+SH
+  chmod +x "$TMPROOT/scripts/cmd_complete_gate.sh"
+  REVIEW_APPROVAL_ROOT="$TMPROOT" bash "$ROOT/scripts/review_approval.sh" cmd_test gunshi LGTM "$REPORT"
+  run env REVIEW_APPROVAL_ROOT="$TMPROOT" bash "$ROOT/scripts/review_approval.sh" cmd_test karo ACCEPT "$REPORT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"cmd_complete_gate triggered: cmd_test (pid="* ]]
+}
+
 @test "canonical and dot report paths share one approval key" {
   mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"

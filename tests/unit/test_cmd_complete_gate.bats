@@ -303,6 +303,44 @@ EOF
     [ "$output" = "duration_sec=300" ]
 }
 
+@test "build_clear_duration_metric does not crash on offset-naive/aware mismatch (karo-direct cmd absent from shogun_to_karo.yaml) AC2" {
+    source "$GATE_HELPERS_FILE"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    MATCHING_TASK_FILES_PROCESSED_COUNT=0
+    MATCHING_TASK_FILES_SKIPPED_COUNT=0
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/dispatch_ntfy_started" "$TEST_PROJECT/queue/reports"
+
+    # Karo-direct hotfix cmds rotate task files fast enough that the task no
+    # longer matches this cmd by the time GATE CLEAR runs, forcing the
+    # fallback path: dispatch marker timestamp (naive, `date "+%Y-%m-%dT%H:%M:%S"`)
+    # vs. report top-level timestamp (offset-aware, `date -Iseconds`). Mixing
+    # naive and aware datetimes previously raised an uncaught TypeError that
+    # killed the whole cmd_complete_gate.sh process under `set -e`.
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_1000
+  acknowledged_at: ''
+  done_at: ''
+  deployed_at: '2026-07-08T09:10:00'
+  completed_at: ''
+EOF
+    cat > "$TEST_PROJECT/queue/dispatch_ntfy_started/${TEST_CMD_ID}.started" <<'EOF'
+timestamp: 2026-07-08T09:00:00
+cmd_id: cmd_999
+ninja: sasuke
+title: test
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_999
+timestamp: '2026-07-08T09:05:00+09:00'
+EOF
+
+    run build_clear_duration_metric
+    [ "$status" -eq 0 ]
+    [ "$output" = "duration_sec=300" ]
+}
+
 @test "canceled cmd excludes matching task files from completion tracking" {
     export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
     export TASKS_DIR="$TEST_PROJECT/queue/tasks"
