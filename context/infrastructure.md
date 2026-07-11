@@ -20,6 +20,8 @@ context freshnessのinfra root fallbackはinfra実装だけをsource扱いし、
 
 変更系 PreToolUse は `scripts/hooks/three_layer_preflight.sh` の現prompt・agent/pane単位 atomic 証跡を必須とする。`prompt_state_inject.sh` が UserPromptSubmit ごとに記憶DB・semantic・Obsidian因果索引を検索し、`.claude/hooks/pre-write-edit-combined.sh` と `.claude/hooks/pre-bash-combined.sh` が証跡なし/失敗/別promptを exit 2 でBLOCKする。Read・read-only検索・preflight自身は許可する。→ `tests/unit/test_three_layer_preflight.bats`（cmd_karo_hotfix_three_layer_preaction_enforcement_202607101452）
 
+GA-228: `queue/tasks/*.yaml` と実装/context/docs/tests の混在を、GA-408のpre-commit到達前に共通PreToolUse Guard 3.7が一時indexで判定してBLOCKする。task単独・運用YAML同士・実装のみは許可する。→ `docs/research/cmd_ga228_task_yaml_mixed_stage_20260712.md` / `scripts/hooks/git-stage-guard.py` / `tests/unit/test_pre_bash_queue_tasks_guard.bats`
+
 掲示板通知は `scripts/bulletin_write.sh` が通知先ごとに最大3回再送する。一時失敗は成功まで継続し、最終失敗は `logs/bulletin_notify_failures.yaml` に永続記録して投稿者へ非ゼロ終了コードで可視化する（cmd_3829）。詳細は `docs/research/cmd_3829_bulletin_notify_failclose.md`。
 
 inbox nudge配達保証: `scripts/inbox_watcher.sh` はINPUT-GUARD保留時に `deferred_nudge` 状態を記録し、送信済みfingerprint/debounceをrollbackする。未読が残る限り次回 `DEFERRED-RETRY` で再注入する。Codex active+busyはqueued messageとして即時送達し、idle promptのANSI dim候補文は未送信入力ではないため安全に送達する。通常色の実入力とClaude/非Codexは従来通り保護する（cmd_3830）。詳細は `docs/research/cmd_3830_nudge_delivery_guarantee.md`。

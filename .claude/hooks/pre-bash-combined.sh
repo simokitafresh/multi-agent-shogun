@@ -516,6 +516,16 @@ if [[ "$payload" == *'queue/tasks/'* ]]; then
     fi
 fi
 
+# === Guard 3.7: GA-228 task-YAML mixed-stage prevention ===
+# GA-408 detects this only during git commit, after a mixed index has already
+# been created and the failure recorder has fired.  Simulate git add against a
+# temporary index here, so the wrong stage is never created in the first place.
+if [[ -n "${command:-}" && "$command" == *git* && "$command" == *add* ]]; then
+    if ! _ga228_stage_guard_output="$(python3 "$SCRIPT_DIR/scripts/hooks/git-stage-guard.py" "$command" 2>&1)"; then
+        emit_deny "${_ga228_stage_guard_output}"
+    fi
+fi
+
 # === Guard 4: shogun_to_karo.yaml status manipulation block ===
 # cmd_2134事故: 将軍がsed/python regexでstatusをdraft→pending→delegatedに強制変更し
 # cmd_delegate.shのgate迂回路を開けた。statusの変更はEdit tool(手動確認付き)のみ許可。
