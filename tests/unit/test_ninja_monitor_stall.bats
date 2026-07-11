@@ -36,6 +36,37 @@ EOF
     export PATH="$TEST_BIN:$PATH"
 }
 
+@test "active background compute is fail-closed to the pane process tree" {
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+STALL_CPU_SAMPLE_SEC=0
+tmux() { case "$*" in *"#{pane_pid}"*) echo 100;; *"#{pane_tty}"*) echo /dev/pts/9;; *capture-pane*) echo "Waited for background terminal";; esac; }
+sleep() { :; }
+PS_CALL_FILE=$(mktemp)
+ps() {
+  local n=0; [ -s "$PS_CALL_FILE" ] && n=$(cat "$PS_CALL_FILE")
+  if [ "$n" -eq 0 ]; then printf "%s\n" "$PS_FIXTURE"; else printf "%s\n" "$PS_FIXTURE_NEXT"; fi
+  echo $((n + 1)) > "$PS_CALL_FILE"
+}
+check_case() {
+  : > "$PS_CALL_FILE"
+  PS_FIXTURE="$1" PS_FIXTURE_NEXT="$2"
+  if _pane_has_active_background_compute pane; then echo active; else echo stall; fi
+}
+check_case $'"'"'100 1 pts/9 S 00:00:00\n200 100 ? R 00:00:01'"'"' $'"'"'100 1 pts/9 S 00:00:00\n200 100 ? R 00:00:02'"'"'
+check_case $'"'"'100 1 pts/9 S 00:00:00\n201 100 ? D 00:00:01'"'"' $'"'"'100 1 pts/9 S 00:00:00\n201 100 ? D 00:00:01'"'"'
+check_case $'"'"'100 1 pts/9 S 00:00:00\n202 100 ? S 00:00:01'"'"' $'"'"'100 1 pts/9 S 00:00:00\n202 100 ? S 00:00:01'"'"'
+check_case $'"'"'100 1 pts/9 S 00:00:00\n203 100 ? Z 00:00:01'"'"' $'"'"'100 1 pts/9 S 00:00:00\n203 100 ? Z 00:00:02'"'"'
+check_case $'"'"'100 1 pts/9 S 00:00:00\n204 100 ? R 00:00:01'"'"' $'"'"'100 1 pts/9 S 00:00:00'"'"'
+check_case $'"'"'100 1 pts/9 S 00:00:00\n300 1 pts/8 R 00:00:01'"'"' $'"'"'100 1 pts/9 S 00:00:00\n300 1 pts/8 R 00:00:02'"'"'
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = $'active\nactive\nstall\nstall\nstall\nstall' ]
+}
+
 @test "check_undeployed_cmds: pending+delegated_at 10分超でntfy送信し重複通知しない" {
     DELEGATED_AT=$(date -d "11 minutes ago" "+%Y-%m-%dT%H:%M:%S")
     run bash -lc '

@@ -3579,6 +3579,51 @@ _cleanup_stale_keys() {
     done
 }
 
+# Codex background terminalの実子孫processが進行中かをfail-closedで判定。
+_pane_has_active_background_compute() {
+    local target="$1" pane_pid pane_tty capture snapshot_a snapshot_b
+    pane_pid=$(tmux display-message -t "$target" -p '#{pane_pid}' 2>/dev/null) || return 1
+    pane_tty=$(tmux display-message -t "$target" -p '#{pane_tty}' 2>/dev/null) || return 1
+    [[ "$pane_pid" =~ ^[0-9]+$ ]] && [ -n "$pane_tty" ] || return 1
+    capture=$(tmux capture-pane -p -t "$target" -S -80 2>/dev/null) || return 1
+    printf '%s\n' "$capture" | grep -Eqi 'Wait(ed|ing) for background terminal' || return 1
+    snapshot_a=$(ps -eo pid=,ppid=,tty=,stat=,time= 2>/dev/null) || return 1
+    sleep "${STALL_CPU_SAMPLE_SEC:-1}"
+    snapshot_b=$(ps -eo pid=,ppid=,tty=,stat=,time= 2>/dev/null) || return 1
+    PANE_BG_ROOT_PID="$pane_pid" PANE_BG_TTY="${pane_tty#/dev/}" python3 - "$snapshot_a" "$snapshot_b" <<'PY'
+import os, sys
+root = int(os.environ["PANE_BG_ROOT_PID"])
+pane_tty = os.environ["PANE_BG_TTY"]
+def parse(text):
+    rows = {}
+    for line in text.splitlines():
+        parts = line.split(None, 4)
+        if len(parts) == 5:
+            rows[int(parts[0])] = (int(parts[1]), parts[2], parts[3], parts[4])
+    return rows
+def cpu_seconds(value):
+    fields = [int(v) for v in value.split(":")]
+    return fields[-1] + fields[-2] * 60 + (fields[-3] * 3600 if len(fields) == 3 else 0)
+a, b = parse(sys.argv[1]), parse(sys.argv[2])
+descendants = {root}
+changed = True
+while changed:
+    changed = False
+    for pid, row in b.items():
+        if row[0] in descendants and pid not in descendants:
+            descendants.add(pid); changed = True
+for pid in descendants - {root}:
+    if pid not in a or pid not in b:
+        continue
+    _ppid, tty, state, cpu_b = b[pid]
+    if tty not in ("?", pane_tty) or state.startswith(("Z", "X")):
+        continue
+    if state.startswith(("R", "D")) or cpu_seconds(cpu_b) > cpu_seconds(a[pid][3]):
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
 # ─── 停滞検知（assigned/acknowledged/in_progress+idle） ───
 # 忍者がタスク受領後にペインがidle状態のまま放置された場合、家老に通知
 # 閾値: assigned=15分, acknowledged=10分, in_progress=20分(progress未更新時)
@@ -3689,6 +3734,12 @@ check_stall() {
     if ! check_idle "$target" "$name"; then
         # busy状態 → 停滞追跡リセット
         unset "STALL_FIRST_SEEN[$name]"
+        return
+    fi
+
+    if _pane_has_active_background_compute "$target"; then
+        unset "STALL_FIRST_SEEN[$name]"
+        log "STALL-ACTIVE-COMPUTE: $name pane=$target has progressing background process"
         return
     fi
 
