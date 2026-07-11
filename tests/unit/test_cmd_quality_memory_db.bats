@@ -452,8 +452,26 @@ PY
 
 @test "memory_db_live_insert attaches semantic concepts for report lesson gate workaround and cmd_quality" {
     init_memory_db
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/docs/semantic-index"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
+    cat > "$TEST_TMPDIR/docs/semantic-index/index.md" <<'EOF'
+## report_quality_protocol — Report quality protocol
+| aliases | report_field_set |
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+## lesson_lifecycle — Lesson lifecycle
+| aliases | lesson lifecycle |
+
+## gate_quality_framework — Gate quality framework
+| aliases | quality_gate framework |
+
+## yaml_safe_write — YAML safe write
+| aliases | yaml_field_set, report_field_set protected YAML safe write |
+
+## semantic_dictionary_design — Semantic dictionary design
+| aliases | セマンティック辞書構想 |
+EOF
+
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
         --db-path "$TEST_TMPDIR/data/memory.db" \
         report \
         --report-path "queue/reports/hayate_report_cmd_3116.yaml" \
@@ -464,7 +482,7 @@ PY
         --source-file "queue/reports/hayate_report_cmd_3116.yaml"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
         --db-path "$TEST_TMPDIR/data/memory.db" \
         lesson \
         --lesson-id "L999" \
@@ -476,7 +494,7 @@ PY
         --source-file "projects/infra/lessons_karo.yaml"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
         --db-path "$TEST_TMPDIR/data/memory.db" \
         gate \
         --gate-name "gate_report_format" \
@@ -487,7 +505,7 @@ PY
         --source-file "scripts/gates/gate_report_format.sh"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
         --db-path "$TEST_TMPDIR/data/memory.db" \
         workaround \
         --cmd-id "cmd_3116" \
@@ -499,7 +517,7 @@ PY
         --source-file "logs/karo_workarounds.yaml"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+    run python3 "$TEST_TMPDIR/scripts/memory_db_live_insert.py" \
         --db-path "$TEST_TMPDIR/data/memory.db" \
         cmd_quality \
         --cmd-id "cmd_3116" \
