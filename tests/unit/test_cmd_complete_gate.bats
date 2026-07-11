@@ -1914,6 +1914,7 @@ PY
     local metrics="$TEST_PROJECT/logs/gate_metrics.log"
 
     cp "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_PROJECT/scripts/lib/review_approval.sh"
+    cp "$PROJECT_ROOT/scripts/bulletin_write.sh" "$TEST_PROJECT/scripts/bulletin_write.sh"
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
 task:
   parent_cmd: $TEST_CMD_ID

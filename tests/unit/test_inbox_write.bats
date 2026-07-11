@@ -1148,6 +1148,7 @@ EOF
     ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
     ln -sf "$PROJECT_ROOT/scripts/review_approval.sh" "$TEST_TMPDIR/scripts/review_approval.sh"
     ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
+    ln -sf "$PROJECT_ROOT/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_write.sh"
 
     cat > "$TEST_TMPDIR/scripts/cmd_complete_gate.sh" <<'EOF'
 #!/usr/bin/env bash
