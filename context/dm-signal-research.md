@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-12 cmd_karo_hotfix_sync_nondeterminism_v1_4_11_202607120100 -->
+<!-- last_updated: 2026-07-12 cmd_3853 -->
 <!-- dm_signal_research_reflux: fingerprint=7a3254c8577871a7245f548b56b092f825803f45ddd6f25b248b4d71bba322ff; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgY21kXzM4NTFfUDJhX1JFROOCknYxLjQuMTHntZDoq5bjgbjlkIzmnJ8= -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
@@ -121,6 +121,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 | L145 | FoF差分はholding_signal文字列ではなく、展開後ticker×weightで比較する | cmd_495 |
 | L186 | 日次比較偵察は対象日N点固定に加えMAX(date)確認を同時実施すると欠落原因を誤診しにくい | recon |
 | L830 | pf_L0規模(N=12程度)の小標本ランキング分析では両軸quantile交差分類が機能せず、tie処理は平均順位化が必須 | cmd_3768_gap_method |
+| L874 | exact差分オラクルは比較対象フィールドの機能的意味(downstream消費有無)を先に検証してから比較契約を作る | cmd_karo_recon_cmd3851_A |
 
 ### GS結果/パラメータ
 
@@ -737,3 +738,4 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - → [[cmd_3849_P1b_input_manifest]] P1bはcanonical manifest+price/economic/ledger immutable snapshot+snapshot後source SELECT 0+RSS fail-closed+6 caller共通入口+accepted run_id/manifest bind/parent lineageを実装。検証139 PASS/FAIL0/SKIP0、成果物=`outputs/analysis/cmd_3849_p1b_tests.xml`、commits=`cdd9b60e23e75984c0f03509b50d8021acb2eaa9`,`49bc81b6676fc50f6bb72dce798ce05df29c3fe3` (2026-07-11)
 - → [[cmd_3851_P2a_RED]] P2a母集団は標準24PF(adapter経路)×valid_start filter後日付。初回REDの97,687 mismatchはoracleのweights抽出契約バグ、4,982 missingはwarm-up日付誤混入で、signal/exceptionは全数一致=実装ロジック不一致0。FoF78は`recalculate_fof.py`単一実装のためEngine-vs-adapter対立が成立せず、P2a2の新manifest下golden-baseline exact回帰で被覆する。成果物=`outputs/analysis/cmd_3851/cmd_3851_p2a_exact.json`、正本=`docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.11 (2026-07-12)
 - → [[cmd_3853_P2a_GREEN]] cmd_3851のオラクル契約バグ2点を修正しP2a GREEN化: _adapter_weightsをEngine正準式(execute_pipeline_with_blocks等分ウェイト式)へ差し替え、被覆母集団にportfolio_valid_start_dates filterを適用、coverage assertを102→24標準PFへ訂正。隔離clone(`cmd3850_rc10_clone`)で2007-01-01〜2026-07-11全量再実行し、expected=actual=97,687、missing 0、mismatch 0(前回97,687/4,982から解消)。成果物=`outputs/analysis/cmd_3853/cmd_3853_p2a_exact.json`、commit=`fdffeb9af07a70dc2b25b0362555f77388422cfc`(branch `ninja/kotaro-cmd-3853`) (2026-07-12)
+- → [[cmd_3854_P2a2_golden_baseline]] FoF78体はrecalculate_fof.py単一実装でEngine-vs-adapter差分契約が構造的に不成立のため、新manifest下(baseline snapshot `cmd3819_baseline_20260711T034534Z_b1bb8ab7`)で全78/78 FoF PF・243,293行(signal/holding_signal/display_ticker_weights)をgolden-baseline固定(canonical_sha256=`57d8c569ca54adda4eb1f4bafb61bb98e0956764bad6e9f415a8bbe6402bc7ca`)。隔離clone(`cmd3854_fof_regression_check`、production非接触)で`_recalculate_fof_history`を再実行した回帰exact比較はmissing 0/extra 0/mismatch 0(243,293/243,293完全一致)でP2a2契約をGREEN化。成果物=`outputs/analysis/cmd_3854/cmd_3854_p2a2_full_test_run.log`(pytest 5 passed/FAIL0/SKIP0)、正本=`docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.11、DM-Signal側commit予定=`ninja/tobisaru-cmd-3854` (2026-07-12)

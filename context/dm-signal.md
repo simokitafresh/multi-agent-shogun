@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-10 cmd_karo_recon2_cmd3824_mechanism_202607101223 -->
-<!-- last_synced_lesson: L874 -->
+<!-- last_synced_lesson: L876 -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 
@@ -330,11 +330,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - （L818-L825は振り分け済 2026-07-08 → ops§6-7(L818:DB確認スクリプト経由), ops§32(L819:PF別設定参照/L822:Mockテスト横展開), ops§38(L820:pre-commit誤検知根本修正), ops教訓索引(L821:push状態先確認), research§24(L823:yotsume bak構造), gs-speedup§4(L824:GS CSVリーディングNaN), research§27(L825:相関全量安定性)。不変量候補なし）
 - （L826-L830は振り分け済 2026-07-08 → research§27(L826:選出ツールの粒度差明示), ops§6-7(L827:FK依存復元のdb.flush), research§48(L828:GS-本番DTB3暦解像度差[PI-028]), infra教訓索引(L829:絶対パス直書きGuard16 BLOCK), research教訓索引(L830:小標本quantile交差分類不能)。不変量: PI-028追加）
 - （L831-L843は振り分け済 2026-07-10 /lesson-sort → ops§33(L831/L835/L842/L843), ops§12(L832), ops§6-7(L833/L836), ops§39(L841), research§48(L834/L837/L838/L839)。L840はops教訓索引に既存。新規PIなし(DTB3系はPI-028既存でカバー)）
-- L851: matched_weightは固定1.0ではなくsum(weights)と比較する（cmd_3808）
-- L852: monthly_tradeのmatched_weightは表示展開後weightsと同じ基準で検証せよ（cmd_3809 → ops§60）
-- L857: 同一手法再利用スクリプトはexec文字列置換ではなく環境変数overrideで差し替える（cmd_3815）
-- L870: run不変値を日次ループで外部process再取得するな（cmd_3840）
-- L874: exact差分オラクルは比較対象フィールドの機能的意味(downstream消費有無)を先に検証してから比較契約を作る（cmd_karo_recon_cmd3851_adapter_coverage_a_202607120024）
+- （L851-L876は振り分け済 2026-07-12 /lesson-sort → ops§12(L851:matched_weight=sum比較), ops§9(L870:run不変値subprocess再取得禁止), ops§32(L857:env override差替え), research教訓索引(L874:オラクル機能的意味先検証)。L852はPI候補節に既存。L876はL1049と根重複+heredoc断定未検証のため非活性化を家老へ依頼済み。新規PIなし）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 
