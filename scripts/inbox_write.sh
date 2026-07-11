@@ -1380,6 +1380,26 @@ TARGET="$1"
 CONTENT="$2"
 TYPE="${3:-wake_up}"
 FROM="${4:-unknown}"
+
+# A LGTM notification may only describe an approval already bound at review
+# time. The report path must be explicit; delayed delivery never hashes anew.
+if [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ] && printf '%s' "$CONTENT" | grep -q 'verdict: LGTM'; then
+    _guard_report=$(printf '%s' "$CONTENT" | grep -oE 'queue/reports/[A-Za-z0-9_.-]+\.yaml' | head -1 || true)
+    _guard_cmd=$(printf '%s' "$CONTENT" | grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 || true)
+    [ -n "$_guard_report" ] && [ -n "$_guard_cmd" ] || { echo "BLOCK: LGTM notification requires explicit queue/reports path and cmd_id" >&2; exit 2; }
+    # shellcheck source=/dev/null
+    source "$SCRIPT_DIR/scripts/lib/review_approval.sh"
+    review_two_phase_ready_gunshi() {
+        local cmd="$1" report="$2" root="$SCRIPT_DIR" key dir fp stored result
+        fp=$(review_report_fingerprint "$report") || return 1
+        key=$(review_report_key "${report#"$root"/}")
+        dir="$root/queue/gates/$cmd/review_approvals/reports/$key"
+        stored=$(review_approval_value "$dir/gunshi.yaml" fingerprint || true)
+        result=$(review_approval_value "$dir/gunshi.yaml" result || true)
+        [ "$result" = LGTM ] && [ "$stored" = "$fp" ]
+    }
+    review_two_phase_ready_gunshi "$_guard_cmd" "$SCRIPT_DIR/$_guard_report" || { echo "BLOCK: LGTM approval marker missing or stale for $_guard_report" >&2; exit 2; }
+fi
 ACTION="${5:-}"
 
 # Fast path: profiling/usage queries should not pay the agent-config cost.

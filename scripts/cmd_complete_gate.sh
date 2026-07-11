@@ -5507,6 +5507,14 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
 done
 echo ""
 
+# Normalization must not mutate an already-approved artifact. Recheck the
+# exact final bytes before any later gate can CLEAR.
+if [ "$HAS_IMPLEMENT" = "true" ] && ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}"; then
+    echo "GATE BLOCK: review_fingerprint_changed_after_normalize"
+    append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\treview_fingerprint_changed_after_normalize"
+    exit 1
+fi
+
 # ─── 忍者報告からlesson_candidate自動draft登録 ───
 # 循環防止: 前回BLOCKがdraft_lessons起因なら自動draft生成をスキップ
 _prev_block_reason=""

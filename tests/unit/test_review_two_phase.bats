@@ -67,7 +67,18 @@ approve() {
   [ ! -e "$TMPROOT/queue/gates/cmd_test/review_gate.done" ]
   approve gunshi LGTM "$r"
   [ -e "$TMPROOT/queue/gates/cmd_test/review_gate.done" ]
-  [ -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered" ]
+  find "$TMPROOT/queue/gates/cmd_test/review_approvals" -maxdepth 1 -name '.gate_triggered.*' | grep -q .
+}
+
+@test "changed manifest gets its own single trigger generation" {
+  mkdir -p "$TMPROOT/queue/reports" "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
+  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  cp "$REPORT" "$TMPROOT/queue/reports/ninja_report_cmd_test.yaml"
+  local r="$TMPROOT/queue/reports/ninja_report_cmd_test.yaml"
+  approve gunshi LGTM "$r"; approve karo ACCEPT "$r"
+  printf 'generation: 2\n' >> "$r"
+  approve gunshi LGTM "$r"; approve karo ACCEPT "$r"
+  [ "$(find "$TMPROOT/queue/gates/cmd_test/review_approvals" -maxdepth 1 -name '.gate_triggered.*' | wc -l)" -eq 2 ]
 }
 
 @test "two reports require approvals for both before formal marker" {

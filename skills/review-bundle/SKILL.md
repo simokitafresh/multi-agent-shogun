@@ -133,7 +133,7 @@ bash scripts/review_approval.sh "$CMD_ID" gunshi LGTM "$REPORT_PATH"
 ```bash
 CMD_ID="<cmd_id>"
 VERDICT="<verdict>"
-MESSAGE="${CMD_ID}レビュー完了。verdict=${VERDICT}。"
+MESSAGE="${CMD_ID}レビュー完了。verdict: ${VERDICT}。report: ${REPORT_PATH}"
 MAX_ATTEMPTS=3
 attempt=1
 

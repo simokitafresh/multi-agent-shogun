@@ -7,17 +7,18 @@ source "$ROOT/scripts/lib/review_approval.sh"
 cmd_id=$1; role=$2; result=$3; report=$4
 case "$role:$result" in gunshi:LGTM|karo:ACCEPT|karo:RC) ;; *) echo "BLOCK: invalid role/result" >&2; exit 2;; esac
 [[ "$report" = /* ]] || report="$ROOT/$report"
+base="$ROOT/queue/gates/$cmd_id/review_approvals"
+mkdir -p "$base"
+exec 200>"$base/.lock"; flock -w 10 200
 fingerprint=$(review_report_fingerprint "$report") || { echo "BLOCK: report missing or commit_hash absent: $report" >&2; exit 1; }
 report_rel=${report#"$ROOT"/}; report_key=$(review_report_key "$report_rel")
-base="$ROOT/queue/gates/$cmd_id/review_approvals"
 dir="$base/reports/$report_key"; mkdir -p "$dir"
-lock="$dir/.lock"; exec 200>"$lock"; flock -w 5 200
 tmp=$(mktemp "$dir/.${role}.XXXXXX")
 trap 'rm -f "$tmp"' EXIT
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 if [ "$role" = karo ] && [ "$result" = RC ]; then
-  rm -f "$dir/gunshi.yaml" "$base/.gate_triggered" "$ROOT/queue/gates/$cmd_id/review_gate.done"
+  rm -f "$dir/gunshi.yaml" "$ROOT/queue/gates/$cmd_id/review_gate.done"
   echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
   exit 0
 fi
@@ -25,11 +26,12 @@ echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
 
 mapfile -t reports < <(find "$ROOT/queue/reports" -maxdepth 1 -type f -name "*_report_${cmd_id}.yaml" -print | LC_ALL=C sort)
 if review_all_reports_ready "$cmd_id" "${reports[@]}"; then
+  manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${reports[@]}")
   marker="$ROOT/queue/gates/$cmd_id/review_gate.done"
   marker_tmp=$(mktemp "$ROOT/queue/gates/$cmd_id/.review_gate.XXXXXX")
   printf 'timestamp: %s\nsource: two_phase_review\nresult: LGTM\nreports: %s\n' "$(date -Iseconds)" "${#reports[@]}" > "$marker_tmp"
   mv -f "$marker_tmp" "$marker"
-  if (set -o noclobber; : > "$base/.gate_triggered") 2>/dev/null; then
+  if (set -o noclobber; : > "$base/.gate_triggered.$manifest") 2>/dev/null; then
     if [ "${REVIEW_APPROVAL_NO_TRIGGER:-0}" != 1 ]; then
       nohup bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >/dev/null 2>&1 &
     fi

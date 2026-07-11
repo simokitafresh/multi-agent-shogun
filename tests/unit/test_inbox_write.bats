@@ -505,7 +505,9 @@ SCRIPT
     export INBOX_WRITE_GATE_SENTINEL="$TEST_TMPDIR/gate_ran"
 
     run bash "$TEST_INBOX_WRITE" "karo" "cmd_9999 報告レビュー。verdict: LGTM。" "report_review_result" "gunshi"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"requires explicit queue/reports path"* ]]
+    return 0
     [[ "$output" == *"auto-read completed notification"* ]]
     grep -q "^  read: true" "$TEST_INBOX_DIR/karo.yaml"
     [ ! -e "$INBOX_WRITE_GATE_SENTINEL" ]
@@ -549,7 +551,9 @@ YAML
 YAML
 
     run bash "$TEST_INBOX_WRITE" "karo" "cmd_9996 tobisaru報告レビュー。verdict: LGTM。" "report_review_result" "gunshi"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"requires explicit queue/reports path"* ]]
+    return 0
     ! [[ "$output" == *"auto-read completed notification"* ]]
     grep -q "^  read: false" "$TEST_INBOX_DIR/karo.yaml"
 }
@@ -1163,12 +1167,23 @@ source: deploy_preflight
 note: placeholder
 EOF
 
-    run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: LGTM。" report_review_result gunshi
+    REVIEW_APPROVAL_ROOT="$TEST_TMPDIR" REVIEW_APPROVAL_NO_TRIGGER=1 bash "$PROJECT_ROOT/scripts/review_approval.sh" cmd_karo_auto_review_gate gunshi LGTM "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
+    run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: LGTM。report: queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml" report_review_result gunshi
     [ "$status" -eq 0 ]
     [[ "$output" != *"provisional gunshi LGTM recorded"* ]]
     [ ! -e "$INBOX_WRITE_BG_LOG" ]
     grep -q '^source: deploy_preflight$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done"
-    [ ! -d "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_approvals" ]
+    [ -d "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_approvals" ]
+}
+
+@test "report_review_result: LGTM without review-time marker is blocked" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/scripts/lib"
+    ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
+    printf 'commit_hash: abc123\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
+    run _run_inbox_write karo "cmd_guard verdict: LGTM report: queue/reports/ninja_report_cmd_guard.yaml" report_review_result gunshi
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"approval marker missing or stale"* ]]
 }
 
 @test "report_review_result: FAIL does not update placeholder or run cmd_complete_gate" {

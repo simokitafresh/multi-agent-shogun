@@ -51,3 +51,12 @@ review_all_reports_ready() {
     local report
     for report in "$@"; do review_two_phase_ready "$cmd_id" "$report" || return 1; done
 }
+
+review_manifest_fingerprint() {
+    local root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}" report fp
+    [ "$#" -gt 0 ] || return 1
+    for report in "$@"; do
+        fp=$(review_report_fingerprint "$report") || return 1
+        printf '%s:%s\n' "${report#"$root"/}" "$fp"
+    done | LC_ALL=C sort | sha256sum | awk '{print $1}'
+}
