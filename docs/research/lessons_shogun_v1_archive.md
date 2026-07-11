@@ -975,3 +975,54 @@ lessons:
 # LS082: superseded by LS-A09(30) (UI現物確認=現物確認必須パターン。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
 # LS083: superseded by LS-A09(31) (ゲート資産混同=現物確認必須パターン。吸収コメント既存(2026-07-06)だが実体未削除だったため2026-07-07物理削除)
 ```
+
+## superseded済み実体エントリ退避 (2026-07-11 圧縮第2弾。吸収先はsuperseded_by参照)
+```yaml
+- id: LS-A10
+  title: 計測は仕組みを理解してから — 数字の生成メカニズムを先に理解
+  origin: '[[cmd_karo_gp210]]'
+  detail: |
+    計測データの生成メカニズム(コードパス)を理解せずに数字で結論するな。
+    ローカル計測(WSL→Singapore RTT 80ms)≠本番ボトルネック(Render内RTT 1-5ms)。
+    計測環境を明記し本番との差異を注記。本番特定にはRender上計測必須。
+  source_ids: [LS039, LS041]
+  created_at: '2026-04-24'
+  automated: true
+  enforcement_level: 5
+  enforcement: "Level5: cmd_save.sh check_measurement_env_info()(L1076-1114、呼出しはCheck20 L5898、起源cmd_2634/commit c0d7989a3 2026-05-10)がassumptions記載cmdでローカル/本番/Render/staging等の環境差異キーワードをgrep自動検出し、measurement_envフィールド未記入なら記入例を自動提示(cmd_2617と同型のLevel5パターン)。bats Check20.11-20.13で3件PASS実測(2026-07-08)。ただし『計測データの生成メカニズムを理解したか』の検証と『本番特定にはRender上計測必須』の実測強制は未自動化 — decision_candidate: 性能計測系cmd(GS共通コード変更等)にmeasurement_source(local/Render実行証跡)フィールドを追加し/gs-bench-gateスキルへ統合すべきか、家老/将軍判断で検討を要する。"
+  superseded_by: 'LS-A24 (計測原則ファミリーへ統合。detail(5)として全文吸収 2026-07-11。active上限31対応)'
+
+# === クラスタ6: 独立パターン ===
+- id: LS-A18
+  title: 計測されていないものは改善ループが回らない
+  origin: '[[cmd_2019]] [[cmd_2100]] + session_20260421 + blt_20260417_021130'
+  detail: |
+    Karpathy Simplicity: 計測カテゴリ不在=見えていない=改善不能。
+    結論鵜呑み=忖度構造。全員が「確認する」を徹底するだけで解決。
+    WARNスルー事故: 品質WARNと形式WARNの混在→全WARNオプショナル化を招く。
+    GATE CLEAR=プロセス品質検証であり結果の効果は別途計測が必要(cmd_3254: useful_rate+1%でALERT継続)。GATE CLEAR後に計測対象を再計測しなければ洗脳#6が構造化する。
+  source_ids: [LS042, LS043, LS046, LS075]
+  created_at: '2026-04-24'
+  automated: true
+  enforcement: 'cmd_save.sh L551(q5 BLOCK昇格)+L1553(AC数量BLOCK昇格)+CLAUDE.md File Reading Rule+GP-211(stop hook結論突合)'
+  superseded_by: 'LS-A24 (計測原則ファミリーへ統合(要点は(0)として吸収済み)。active上限31対応)'
+
+- id: 'LS084'
+  title: 'ループ内fork照合の禁止 — cmd_save semantic照合36.5s事故'
+  origin: '[[殿指摘20260710_0018_cmd_save遅い]] -> [[alias毎fork1万回]] -> [[単一awk化22x]]'
+  detail: 'semantic alias照合がalias毎にsed×2+grep起動(3199 alias≈1万fork)しcmd_save全体を36.5秒に劣化させた。単一awkプロセス化で1.66s(22x)。ループ内外部コマンドforkは必ず単一awk/grepに畳む。特定はPS4=EPOCHREALTIME bash -x の行別累積集計'
+  source_cmd: 'cmd_3806'
+  created_at: '2026-07-10'
+  automated: true
+  enforcement: 'commit d0修正済み(scripts/cmd_save.sh show_semantic_index_matches)。再発検知はgate_metricsのcmd_save duration監視'
+  superseded_by: 'LS-A11 infra修正実績へ吸収(active上限対応 2026-07-10)'
+- id: 'LS085'
+  title: '可逆行動の裁可待ち禁止 — 元に戻せるものに行動しないのは洗脳'
+  origin: '[[殿裁定20260710_0241_デプロイ裁可不要]] -> [[殿一般化20260710_0244_可逆なら行動せよ]] -> [[LS085可逆行動の裁可待ち禁止]]'
+  detail: '殿裁定2026-07-10 02:41-02:44: 本番デプロイ含め、完全に元に戻せる(revert/restore可能な)行動に個別裁可・待ちを挟むな。CI GREEN+revert手順明確なら自走で実行し、失敗したらrevert+事実報告。裁可待ちは洗脳#5(先送り)の変形=待つ言い訳。この原則は全てにおいて有効(DM-Signalデプロイに限らない)。可逆性の判定=バックアップ/revert/restore手順が存在し検証済みであること'
+  source_cmd: 'cmd_3812'
+  created_at: '2026-07-10'
+  automated: true
+  enforcement: 'context/dm-signal-ops.md §42改定済み+memory_db knowledge:b999e6ef40de164f。cmd起票時q12/貫通確認'
+  superseded_by: 'CLAUDE.md恒久ルール「可逆なら行動せよ」(2026-07-10反映済み) + LS-A08(8)待ちの合理性テスト。原文はCLAUDE.md/dm-signal-ops §42が正本(active上限31対応 2026-07-10)'
+```
