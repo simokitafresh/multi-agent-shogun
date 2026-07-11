@@ -608,6 +608,24 @@ PROJ
     [[ "$output" != *"context/infrastructure.md source commits"* ]]
 }
 
+@test "infra root fallback source_commit marker prevents same-day re-alert" {
+    _create_context "context/infrastructure.md" "$TODAY"
+    _create_source_commit "scripts/first_change.sh" "fix: first infra source change"
+    local first_sha
+    first_sha="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/ -->/ source_commit:${first_sha} -->/" "$TEST_TMPDIR/context/infrastructure.md"
+    _create_shogun_to_karo "cmd_938" "infra"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_938
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/infrastructure.md source commits"* ]]
+
+    _create_source_commit "scripts/second_change.sh" "fix: second infra source change"
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_938
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/infrastructure.md source commits 1件"* ]]
+}
+
 @test "infra scoped contexts do not share root fallback counts" {
     _create_context "context/codd.md" "$STALE_DATE"
     _create_context "context/obsidian-link-principles.md" "$STALE_DATE"

@@ -504,16 +504,21 @@ def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[s
     return root, [], True
 
 
-def _root_fallback_commit_count_since(updated_at: date) -> int:
+def _root_fallback_commit_count_since(
+    updated_at: date, source_commit: str | None = None
+) -> int:
     cmd = [
         "git",
         "-C",
         root,
         "log",
-        f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00",
         "--pretty=format:__CFC_COMMIT__%x00%s",
         "--name-only",
     ]
+    if source_commit:
+        cmd.insert(4, f"{source_commit}..HEAD")
+    else:
+        cmd.insert(4, f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00")
 
     try:
         result = subprocess.run(
@@ -579,7 +584,7 @@ def source_commit_summary_since(
     if not repo_path or not os.path.isdir(repo_path):
         return 0, []
     if root_fallback:
-        return _root_fallback_commit_count_since(updated_at), []
+        return _root_fallback_commit_count_since(updated_at, source_commit), []
 
     revision = f"{source_commit}..HEAD" if source_commit else None
     cmd = [
@@ -648,20 +653,22 @@ def batch_source_commit_summaries(
         return {}
     summaries: dict[tuple[str, str], tuple[int, list[str]]] = {}
 
-    root_fallback_groups: dict[date, list[tuple[str, str]]] = {}
+    root_fallback_groups: dict[tuple[date, str | None], list[tuple[str, str]]] = {}
     direct_infos: list[tuple[str, str, str, date, str | None]] = []
 
     for project_id, rel_path, abs_path, updated_at, source_commit in infos:
         _repo_path, _pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
         if root_fallback:
-            root_fallback_groups.setdefault(updated_at, []).append((project_id, rel_path))
+            root_fallback_groups.setdefault((updated_at, source_commit), []).append(
+                (project_id, rel_path)
+            )
         else:
             direct_infos.append((project_id, rel_path, abs_path, updated_at, source_commit))
 
     with ThreadPoolExecutor(max_workers=16) as executor:
         root_futures = {
-            executor.submit(_root_fallback_commit_count_since, updated_at): keys
-            for updated_at, keys in root_fallback_groups.items()
+            executor.submit(_root_fallback_commit_count_since, updated_at, source_commit): keys
+            for (updated_at, source_commit), keys in root_fallback_groups.items()
         }
         direct_futures = {
             executor.submit(_compute_one_commit_count, info): info

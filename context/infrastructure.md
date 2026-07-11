@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-11 cmd_karo_hotfix_ga219_context_freshness_202607110107 -->
+<!-- last_updated: 2026-07-12 cmd_karo_hotfix_ga225_context_freshness_infra_202607120124 source_commit:5a786c069 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -9,6 +9,10 @@
 > deploy_task --yaml高速化 + recon guard: `docs/research/deploy_task_yaml_speed_recon_guard_spec_20260702.md`
 
 ## コンテキスト管理
+
+context freshnessの`source_commit`境界はinfra root fallbackにも適用し、同日のcontext更新より前のsource commitを再ALERTしない。境界後のsource commitだけを検出する。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124）
+
+非対話shellの`rg` PATH解決は`$HOME/.local/bin/rg`までフォールバックし、causal backlinks・Vercel phase gate・lesson harvestのsilent false-negativeを防ぐ。また`cmd_save.sh`はnew-file WARN抽出0件を正常系とし、`pipefail`によるsilent exit 1を防ぐ。→ `scripts/causal_backlinks.sh` / `scripts/gates/gate_vercel_phase.sh` / `scripts/lesson_harvest.sh` / `scripts/cmd_save.sh`
 
 pre-commit Ruff ratchet: `scripts/run_precommit_checks.sh` は変更PythonファイルのRuff診断をHEAD baselineと比較し、新規診断だけをBLOCKする。既存負債は増加させず段階解消する。→ `tests/test_run_precommit_ruff_ratchet.sh`（cmd_karo_hotfix_precommit_ruff_ratchet_202607110002）
 
@@ -723,7 +727,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1045 -->
+<!-- last_synced_lesson: L1046 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1475,6 +1479,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1043: 副作用を持つテストは全外部sinkを共通setupで隔離する（cmd_3846）
 - L1044: pre-bash-combined.shガードはコマンド文字列内のリテラル部分一致で発火する。無関係な一時ディレクトリ配下のパスでも'queue/tasks/'を含むとBLOCKされる（cmd_karo_hotfix_deploy_task_atomic_publish_202607111645）
 - L1045: 契約強化時は利用fixture全体を同一commitで横断更新する（cmd_karo_hotfix_ga223_review_fixture_contract_202607111840）
+- L1046: 将軍Q6回答はidle待ちせず即時に第三者検証せよ（session_20260712）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
