@@ -84,12 +84,13 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L872 -->
+<!-- last_synced_lesson: L875 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
 - L866: recalculate-sync全PF実行のcleanupはmodeに関わらずTickerMonthlyReturnを削除するが再生成はmode=full/tickerのみ。既定mode="portfolio"のため全PF再計算のたびにticker_monthly_returnsが空になっていた。削除ゲートと再生成ゲートは常に対称にせよ（cmd_3832、docs/research/cmd_3832_sync_tickers_recon.md）
 - L869: PF可視性検証はfolder優先を含むAPI実効件数で完了判定する（cmd_3837）
+- L875: 差分テストの母集団定義は隣接AC/設計行からの数値継承を疑い、機構(adapter有無)ごとに独立検証せよ（cmd_karo_recon_cmd3851_adapter_coverage_b_202607120024）
 
 ## §36 API認証
 

@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-12 cmd_3852 -->
+<!-- last_updated: 2026-07-12 cmd_karo_hotfix_sync_nondeterminism_v1_4_11_202607120100 -->
 <!-- dm_signal_research_reflux: fingerprint=7a3254c8577871a7245f548b56b092f825803f45ddd6f25b248b4d71bba322ff; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgY21kXzM4NTFfUDJhX1JFROOCknYxLjQuMTHntZDoq5bjgbjlkIzmnJ8= -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
