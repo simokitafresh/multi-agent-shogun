@@ -14,6 +14,8 @@ setup() {
     export LOG_FILE="/tmp/claude_read_log_${MOCK_AGENT_ID}.txt"
     export PRE_BASH_LORD_CONVERSATION_FILE="$BATS_TEST_TMPDIR/lord_conversation.jsonl"
     : > "$PRE_BASH_LORD_CONVERSATION_FILE"
+    export GUARD_0D_INBOX_OVERRIDE="$BATS_TEST_TMPDIR/shogun_inbox.yaml"
+    printf 'messages: []\n' > "$GUARD_0D_INBOX_OVERRIDE"
     rm -f "$LOG_FILE"
     export EXISTING_FILE="$BATS_TEST_TMPDIR/existing.txt"
     printf 'existing\n' > "$EXISTING_FILE"
@@ -27,6 +29,7 @@ _run_pre() {
     local payload="$1"
     run env MOCK_AGENT_ID="$MOCK_AGENT_ID" \
         PRE_BASH_LORD_CONVERSATION_FILE="$PRE_BASH_LORD_CONVERSATION_FILE" \
+        GUARD_0D_INBOX_OVERRIDE="$GUARD_0D_INBOX_OVERRIDE" \
         TMUX_PANE="" bash -c 'printf "%s" "$1" | "$2"' _ "$payload" "$PRE_DISPATCH"
 }
 
