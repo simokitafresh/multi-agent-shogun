@@ -1327,6 +1327,39 @@ if [[ ! -f "$DASHBOARD" ]]; then
     exit 1
 fi
 
+# Each invocation owns exactly one candidate at a time.  A fixed
+# dashboard.md.tmp lets concurrent updaters move another process' candidate.
+_dashboard_candidate=""
+cleanup_dashboard_candidate() {
+    if [[ -n "$_dashboard_candidate" ]]; then
+        rm -f -- "$_dashboard_candidate"
+    fi
+}
+trap cleanup_dashboard_candidate EXIT HUP INT TERM
+
+new_dashboard_candidate() {
+    _dashboard_candidate=$(mktemp "${DASHBOARD}.tmp.XXXXXX") || {
+        echo "ERROR: cannot create dashboard candidate beside $DASHBOARD" >&2
+        exit 1
+    }
+}
+
+publish_dashboard_candidate() {
+    local required_marker
+    [[ -s "$_dashboard_candidate" ]] || {
+        echo "ERROR: generated dashboard candidate is empty" >&2
+        exit 1
+    }
+    for required_marker in "$MARKER_START" "$MARKER_END" '<!-- KARO_SECTION_START -->'; do
+        grep -qF "$required_marker" "$_dashboard_candidate" || {
+            echo "ERROR: generated dashboard candidate missing marker: $required_marker" >&2
+            exit 1
+        }
+    done
+    mv -f -- "$_dashboard_candidate" "$DASHBOARD"
+    _dashboard_candidate=""
+}
+
 if ! grep -qF "$MARKER_START" "$DASHBOARD" || ! grep -qF "$MARKER_END" "$DASHBOARD"; then
     if [[ -f "$PROJECT_DIR/config/dashboard_template.md" ]] && [[ ! -s "$DASHBOARD" ]]; then
         cp "$PROJECT_DIR/config/dashboard_template.md" "$DASHBOARD"
@@ -1341,14 +1374,15 @@ fi
 
 if ! grep -qF "$MARKER_END" "$DASHBOARD"; then
     if grep -qF "<!-- KARO_SECTION_START -->" "$DASHBOARD"; then
+        new_dashboard_candidate
         awk -v end="$MARKER_END" '
             $0 == "<!-- KARO_SECTION_START -->" && !inserted {
                 print end
                 inserted = 1
             }
             { print }
-        ' "$DASHBOARD" > "${DASHBOARD}.tmp.repair"
-        mv "${DASHBOARD}.tmp.repair" "$DASHBOARD"
+        ' "$DASHBOARD" > "$_dashboard_candidate"
+        publish_dashboard_candidate
         echo "WARN: DATA_QUALITY $MARKER_END missing; repaired before KARO_SECTION_START" >&2
     else
         echo "ERROR: DATA_QUALITY $MARKER_END not found in dashboard.md; refusing to overwrite non-empty dashboard without auto markers" >&2
@@ -1357,6 +1391,7 @@ if ! grep -qF "$MARKER_END" "$DASHBOARD"; then
 fi
 
 # Replace content between markers (inclusive)
+new_dashboard_candidate
 {
     # Lines before start marker
     awk -v m="$MARKER_START" '$0==m{exit} {print}' "$DASHBOARD"
@@ -1364,9 +1399,9 @@ fi
     cat "$TMPFILE"
     # Lines after end marker
     awk -v m="$MARKER_END" 'f{print} $0==m{f=1}' "$DASHBOARD"
-} > "${DASHBOARD}.tmp"
+} > "$_dashboard_candidate"
 
-mv "${DASHBOARD}.tmp" "$DASHBOARD"
+publish_dashboard_candidate
 echo "OK: dashboard.md auto section updated (${NOW})"
 
 # ─── ntfy notification (cmd_1359) ───

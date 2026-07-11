@@ -97,3 +97,31 @@ EOF
     ' "$TEST_PROJECT/dashboard.md"
     grep -q '| 稼働忍者 | 0/2 (—) |' "$TEST_PROJECT/dashboard.md"
 }
+
+@test "concurrent auto section updates use private candidates and preserve markers" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  status: idle
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<'EOF'
+task:
+  status: idle
+EOF
+
+    failures=0
+    for round in $(seq 1 20); do
+        bash "$TEST_PROJECT/scripts/dashboard_auto_section.sh" >"$BATS_TEST_TMPDIR/a.$round.log" 2>&1 &
+        first=$!
+        bash "$TEST_PROJECT/scripts/dashboard_auto_section.sh" >"$BATS_TEST_TMPDIR/b.$round.log" 2>&1 &
+        second=$!
+        wait "$first" || failures=$((failures + 1))
+        wait "$second" || failures=$((failures + 1))
+    done
+
+    [ "$failures" -eq 0 ]
+    [ "$(grep -c '^<!-- DASHBOARD_AUTO_START -->$' "$TEST_PROJECT/dashboard.md")" -eq 1 ]
+    [ "$(grep -c '^<!-- DASHBOARD_AUTO_END -->$' "$TEST_PROJECT/dashboard.md")" -eq 1 ]
+    [ "$(grep -c '^<!-- KARO_SECTION_START -->$' "$TEST_PROJECT/dashboard.md")" -eq 1 ]
+    ! grep -Rqs 'No such file or directory' "$BATS_TEST_TMPDIR"/*.log
+    [ "$(find "$TEST_PROJECT" -maxdepth 1 -name 'dashboard.md.tmp.*' | wc -l)" -eq 0 ]
+}
