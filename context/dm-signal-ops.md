@@ -1167,3 +1167,11 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 旧/新コードを同一frozen PostgreSQL template由来の隔離cloneで全102PF・全期間再生成。7回すべて102PF/11,040行/SHA 6c20e4e... で相互完全一致したが、変更前本番baseline SHA 4dea1761... とは24PF・554行不一致。差はbenchmark/excess returnの浮動小数末尾(約1e-16)のみだが、許容誤差ゼロ原則によりFAIL。
 - 本番push/deploy/fullrecalculateは実行せず、メモ化系列3 commitをrevert。実測もold median 113.379s→new median 124.623sで9.917%退行のため、fixtureの91.70%改善は補助証拠に限定。詳細: /mnt/c/Python_app/DM-signal/docs/research/cmd_3845_memoize_parity.md
 - 因果リンク: [[cmd_3843_fixture一致+全量未検証]] -> [[cmd_3845本番baseline554行不一致]] -> [[本番反映中止+メモ化revert]]
+
+## §70 origin/main統合は完了・push/deployは重大発見により見送り (cmd_3860, 2026-07-12)
+
+- cmd_3859 AC2安全停止(本番live=178add2a、origin 9 vs local 79分岐)の解消作業。`git merge origin/main`(force/rebase不使用)でマージコミット`38ec9b8b`を作成し、両系列コミットが祖先に含まれることを確認(AC1完了)。マージ後`backend/`の内容はlocal main旧tip(0e079ac5)と**0差分**(originの9 commitは全て家老が個別移植済みでlocal側の真部分集合だったため)。コンフリクト2件(`monthly_trade_impl.py`, `run_precommit_checks.sh`)もこの前提でHEAD側採用にて解決。
+- **重大発見**: 検証用ブランチでlocal main(79 commit統合状態)を初めてGitHub Actions実CI(全1790テスト)に通したところ**24件失敗**(origin/main単体は1件のみ=pre-existingの日付mock問題)。backend/の0差分により、この24件はマージ由来ではなくlocal 79 commit統合状態に既に内在していたと確定。うち6件は`RECALC_RSS_CAP_MB`未設定というCI環境要因(fail-closed設計は意図通り。`.github/workflows/pytest.yml`へ既存の慣例値8192を追加するcommit`b46170ab`で解消、本番非影響)で24→21件に減少。残21件のうち約半数以上は`db.info`を使うprecompute検知コード(cmd_3835/cmd_3849/cmd_3850由来)に対し古いテストが`MagicMock().info`未設定のまま(=Noneでなく別Mockを返し誤判定)である疑いが強く、production regressionではない可能性が高い。**しかし`test_nested_fof_signal.py::test_signal_cache_no_forward_fill`はcmd_1481の実過去障害(Cashシグナル月またぎ伝播)の回帰テストであり、誤判定の確証が得られるまで看過できない。**
+- **運用上の確認**: DM-SignalはRender Auto-Deploy: On Commit。mainへのpush(`[skip render]`無し)は即本番デプロイに直結するため、push(AC2)とdeploy(AC3)は事実上不可分。21件の未триaж failureが残る状態でのpushはリスクを許容できないと判断し、**本cmdの範囲ではpush/deployを意図的に見送った**。local mainには`38ec9b8b`+`b46170ab`の2 commitが未push状態で保持されており、次のtriage cmdがそのまま土台にできる。
+- 詳細・再現ログ・失敗一覧全件・推奨アクション: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3860_integration_and_ci_findings.md`
+- 因果リンク: [[cmd_3859_AC2安全停止]] -> [[origin9_vs_local79分岐]] -> [[cmd_3860マージ完了+CI初回全量実行で21件pre-existing_failure発覚]] -> [[push即deploy運用によりtriage_cmd待ちで意図的停止]]
