@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-11 cmd_3841 -->
+<!-- last_updated: 2026-07-11 cmd_3842 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -84,7 +84,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L871 -->
+<!-- last_synced_lesson: L872 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -235,6 +235,8 @@ OPT一覧(1-15):
 軍師詳細分析: `context/gunshi-fullrecalc-speed-analysis.md` (3サイクル比較・ボトルネック構造・予測精度検証)
 
 **cmd_3831偵察(2026-07-10, PF数103体時点の再実測)**: trade_perf **272.35s(L2内86.3%)に肥大化**(旧126.46s比+115%、PF数増加+ネスト階層化が要因)。主犯は月次whileループではなく`_extract_trades_unified()`が全営業日1件ずつ`expand_portfolio_to_tickers()`を再帰呼出しする箇所(`trade_performance.py:575-587`)。ネスト2-3階層(秘奥義/奥義系)は1PFあたり5-21秒、単層(シン四神/GS忍法)は2秒未満(実測ログ確認済み、cmd_1503のwhileループNumPy化仮説は本実測で棄却=while_iters側は既に軽量)。**TIMING SUMMARYがL2を誤BOTTLENECK表示するバグも同時特定**: Layer 5 raw precompute(`precompute_raw_for_portfolios`)が`LayerTimer`(`utils/timing.py:74 LAYER_ORDER`)に未登録のため、実際は66.5%(1659.78s/2497s)を占めるL5が表から消え、22.7%のL2がBOTTLENECKマーカーを得る。詳細・実装候補3案(New Fund of Funds_copy系要否確認/メモ化/ベクトル化)・precompute-fullspeed-goal-design(Layer 5)との非衝突確認 → `docs/research/cmd_3831_trade_perf_recon.md`
+
+**cmd_3843実装(2026-07-11)**: preload済み全PFの同日時点payload（holding/signal/custom weights）を状態キー化し、全階層不変日の`expand_portfolio_to_tickers()`結果を再利用。Cash/循環深度/再帰先weights変化の既存防御を維持。2,500日fixtureで展開2,500→1回、0.729043→0.060513秒（91.70%減）、関連69 PASS / SKIP 0。変更前本番TradePerformance 11,040行/102PFを退避。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3843_trade_perf_memoize.md`
 - L503: DM-SignalリポジトリにGitHub Actionsワークフロー未設定(.github/workflows/不在)（cmd_1448）
 - L504: 性能異常値はリソース競合を先に疑え。pipeline_exec 626sは同時実行run起因のanomaly（cmd_1456）
 - L136: 改善候補調査前に既存最適化履歴を照合する（cmd_474）
@@ -814,6 +816,7 @@ import metrics_research_engine as MRE
 - L860: PostgreSQL binary COPYは列名タグを持たない位置ベース形式。source/target間の列順不一致がUTF8デコードエラー等の破損を生む（cmd_3819）
 - L863: LayerTimerは新規Layer追加時にLAYER_ORDER+layer()登録を怠ると壁時計TOTALだけ正しく内訳が誤解を招く（cmd_3831）
 - L871: backend/app/api/metrics.pyはモジュールローカルget_db()を独自定義しておりFastAPI test dependency_overrides[db.database.get_db]では横取りできない（cmd_3839）
+- L872: 新規Layer/Phase追加時はLayerTimer登録(layer_timer.layers[name]+LAYER_ORDER)を同時に行え。忘れるとTIMING SUMMARYがボトルネックを誤表示する（cmd_3842）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
