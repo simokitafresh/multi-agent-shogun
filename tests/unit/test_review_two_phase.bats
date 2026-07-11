@@ -162,6 +162,47 @@ SH
   grep -q "simulated offset-naive/aware TypeError" "$trigger_log"
 }
 
+@test "durable dispatch survives caller process-group teardown (AC1/AC2 durable_cli)" {
+  mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
+  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  cp "$ROOT/scripts/review_approval.sh" "$TMPROOT/scripts/review_approval.sh"
+  cat > "$TMPROOT/scripts/cmd_complete_gate.sh" <<'SH'
+#!/usr/bin/env bash
+sleep 0.3
+echo "gate ran pid=$$ at $(date -Iseconds)"
+SH
+  chmod +x "$TMPROOT/scripts/cmd_complete_gate.sh"
+
+  REVIEW_APPROVAL_ROOT="$TMPROOT" bash "$TMPROOT/scripts/review_approval.sh" cmd_test gunshi LGTM "$REPORT" >/dev/null
+
+  # 短命caller shellを、tool呼出しごとの隔離セッションに見立てて別セッションで起動する。
+  cat > "$TMPROOT/caller.sh" <<EOF
+#!/usr/bin/env bash
+REVIEW_APPROVAL_ROOT="$TMPROOT" bash "$TMPROOT/scripts/review_approval.sh" cmd_test karo ACCEPT "$REPORT"
+EOF
+  chmod +x "$TMPROOT/caller.sh"
+
+  setsid bash "$TMPROOT/caller.sh" > "$TMPROOT/caller.out" 2>&1 &
+  caller_pid=$!
+  wait "$caller_pid"
+
+  # caller終了直後、harnessが行うようなプロセスグループ単位のクリーンアップを模す。
+  # durable dispatch(setsid)が効いていればcallerのpgidは既に空でNo such processになる。
+  kill -TERM -- -"$caller_pid" 2>/dev/null || true
+  sleep 0.05
+  kill -KILL -- -"$caller_pid" 2>/dev/null || true
+
+  local trigger_log="$TMPROOT/queue/gates/cmd_test/cmd_complete_gate.trigger.log"
+  for _ in {1..20}; do
+    [ -s "$trigger_log" ] && break
+    sleep 0.05
+  done
+
+  [[ "$(cat "$TMPROOT/caller.out")" == *"cmd_complete_gate triggered: cmd_test (pid="* ]]
+  [ -s "$trigger_log" ]
+  grep -q "^gate ran pid=" "$trigger_log"
+}
+
 @test "trigger success is only shown once launch is confirmed alive or exits cleanly (AC1)" {
   mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"

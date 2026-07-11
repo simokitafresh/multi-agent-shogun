@@ -44,22 +44,31 @@ if review_all_reports_ready "$cmd_id" "${reports[@]}"; then
     if [ "${REVIEW_APPROVAL_NO_TRIGGER:-0}" != 1 ]; then
       trigger_log="$ROOT/queue/gates/$cmd_id/cmd_complete_gate.trigger.log"
       : > "$trigger_log" 2>/dev/null || true
-      nohup bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$trigger_log" 2>&1 &
+      # setsidで呼び出し元(caller shell)とは別のセッション/プロセスグループに切り離す。
+      # nohup単体はSIGHUPしか無視せず、呼び出し元プロセスグループへのkill(短命CLI/tool
+      # 呼出し終了後にharnessが行うグループ単位のクリーンアップ等)には巻き込まれて死ぬ。
+      setsid nohup bash "$ROOT/scripts/cmd_complete_gate.sh" "$cmd_id" >>"$trigger_log" 2>&1 </dev/null &
       trigger_pid=$!
       # 起動直後の即死(exec失敗/構文エラー・未捕捉例外等)だけを検知する短時間ポーリング。
       # フルGATE実行の完了は待たない(非同期起動の意図を維持)。
       # kill -0 はreap前のzombieにも成功してしまうため使わず、/proc/<pid>/statの
       # 状態文字(Z=zombie以外なら稼働中)で実行中かどうかを判定する。
-      trigger_proc_running() {
-        local stat_file="/proc/$1/stat" state
+      # 単なる生存確認だけでは不十分: setsidでの新セッション分離前に呼び出し元
+      # (CLI/tool呼出しの短命shell)が終了すると、そのプロセスグループごと
+      # 刈り取られてtrigger_pidも巻き添えで消える(cmd_karo_hotfix_review_trigger_durable_cli_202607111336実測)。
+      # pgrp(/proc/<pid>/statの第5field)が自身のpidと一致していることまで確認し、
+      # 呼び出し元のプロセスグループから分離済み(durable dispatch受付)であることを検証する。
+      trigger_proc_dispatched() {
+        local stat_file="/proc/$1/stat" state pgrp
         [ -r "$stat_file" ] || return 1
         state=$(awk '{print $3}' "$stat_file" 2>/dev/null)
-        [ -n "$state" ] && [ "$state" != "Z" ]
+        pgrp=$(awk '{print $5}' "$stat_file" 2>/dev/null)
+        [ -n "$state" ] && [ "$state" != "Z" ] && [ -n "$pgrp" ] && [ "$pgrp" = "$1" ]
       }
       trigger_alive=0
       for _ in 1 2 3 4 5; do
         sleep 0.03
-        if trigger_proc_running "$trigger_pid"; then
+        if trigger_proc_dispatched "$trigger_pid"; then
           trigger_alive=1
           break
         fi
