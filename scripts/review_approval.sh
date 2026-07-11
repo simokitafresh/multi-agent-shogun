@@ -46,6 +46,10 @@ PY
   current_manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${current_reports[@]}" 2>/dev/null || true)
   rm -f "$dir/gunshi.yaml" "$ROOT/queue/gates/$cmd_id/review_gate.done"
   [ -z "$current_manifest" ] || rm -f "$base/.gate_triggered.$current_manifest"
+  # A completed report makes ninja_monitor auto-promote the task back to done.
+  # Move the report out of the terminal set before reopening the task so RC
+  # cannot race with AUTO-DONE and silently stop the worker again.
+  bash "$ROOT/scripts/report_field_set.sh" "$report" status revision_requested
   bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task status assigned
   bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task completed_at ""
   bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task done_at ""

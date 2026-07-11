@@ -19,6 +19,7 @@ setup_rc_task() {
   mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/queue/inbox"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
   cp "$ROOT/scripts/lib/yaml_field_set.sh" "$TMPROOT/scripts/lib/"
+  cp "$ROOT/scripts/report_field_set.sh" "$TMPROOT/scripts/report_field_set.sh"
   cp "$ROOT/scripts/inbox_write.sh" "$TMPROOT/scripts/inbox_write.sh"
   cat > "$TMPROOT/queue/tasks/ninja.yaml" <<'YAML'
 task:
@@ -192,6 +193,12 @@ assert t.get('completed_at') in ('', None)
 assert t.get('done_at') in ('', None)
 PY
   [ "$status" -eq 0 ]
+  run python3 - "$REPORT" <<'PY'
+import sys, yaml
+r = yaml.safe_load(open(sys.argv[1]))
+assert r['status'] == 'revision_requested', r
+PY
+  [ "$status" -eq 0 ]
   run python3 - "$TMPROOT/queue/inbox/ninja.yaml" <<'PY'
 import sys, yaml
 messages = (yaml.safe_load(open(sys.argv[1])) or {}).get('messages') or []
@@ -220,9 +227,11 @@ PY
   [ -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered.$manifest" ]
   approve karo RC "$REPORT"
   [ ! -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered.$manifest" ]
+  revised_manifest=$(review_manifest_fingerprint "$REPORT")
+  [ "$revised_manifest" != "$manifest" ]
   approve gunshi LGTM "$REPORT"; approve karo ACCEPT "$REPORT"
-  [ -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered.$manifest" ]
-  grep -q "^manifest: $manifest$" "$TMPROOT/queue/gates/cmd_test/review_gate.done"
+  [ -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered.$revised_manifest" ]
+  grep -q "^manifest: $revised_manifest$" "$TMPROOT/queue/gates/cmd_test/review_gate.done"
 }
 
 @test "cmd id, report boundary, and parent_cmd mismatch fail closed" {
