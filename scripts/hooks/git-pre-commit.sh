@@ -52,7 +52,9 @@ is_semantic_propagation_file() {
     [[ -n "$file" ]] || return 1
     case "$file" in
         context/*) return 0 ;;
-        projects/*.yaml|projects/*.yml|projects/*/*.yaml|projects/*/*.yml) return 0 ;;
+        # In a case pattern, `*` also spans `/`; these two patterns cover both
+        # top-level and nested project YAML without unreachable alternatives.
+        projects/*.yaml|projects/*.yml) return 0 ;;
         *) return 1 ;;
     esac
 }
