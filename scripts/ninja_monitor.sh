@@ -6255,14 +6255,20 @@ while true; do
                         PREV_STATE[$name]="idle"
                         continue
                     fi
-                    # cmd_1156 AC2: STAGE1-SKIP timeout safety valve
+                    # An in-progress task has no wall-clock expiry. Long production
+                    # runs routinely exceed 30 minutes; stall detection below owns
+                    # liveness decisions and must not be bypassed by an automatic
+                    # task reset + /clear here.
+                    if [ "$_s1_task_status" = "in_progress" ]; then
+                        log "STAGE1-IN-PROGRESS: $name idle observation while task is active, /clear禁止"
+                        PREV_STATE[$name]="busy"
+                        continue
+                    fi
+                    # cmd_1156 AC2: pre-start task timeout safety valve
                     _s1_task_mtime=$(stat -c %Y "$_s1_task_file" 2>/dev/null || echo 0)
                     _s1_now=$EPOCHSECONDS
                     _s1_age=$(( _s1_now - _s1_task_mtime ))
                     _s1_threshold=900  # 15 minutes default
-                    if [ "$_s1_task_status" = "in_progress" ]; then
-                        _s1_threshold=1800  # 30 minutes for in_progress
-                    fi
                     if [ "$_s1_age" -ge "$_s1_threshold" ]; then
                         # cmd_1292 AC1: report存在チェック — active taskでreport未提出なら/clear禁止
                         _s1_report_file=$(resolve_expected_report_file "$name")

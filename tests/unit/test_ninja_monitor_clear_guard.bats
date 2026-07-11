@@ -324,6 +324,16 @@ fi
     [[ "$output" == *"PASS: acknowledged task filtered by Stage 1"* ]]
 }
 
+@test "stage1: in_progress has no wall-clock timeout or automatic clear" {
+    run bash -lc '
+set -eo pipefail
+monitor="'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+grep -Fq "STAGE1-IN-PROGRESS:" "$monitor"
+! grep -Fq "_s1_threshold=1800" "$monitor"
+'
+    [ "$status" -eq 0 ]
+}
+
 # Stage 1: done → maybe_idleに入る（Phase 2→/clearされる）
 @test "handle_confirmed_idle: done task allows /clear" {
     run bash -lc '
