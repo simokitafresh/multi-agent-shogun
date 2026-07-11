@@ -504,7 +504,7 @@ if [[ "$payload" == *'queue/tasks/'* ]]; then
         task_python_pattern='python3?.*open.*queue/tasks/[^ ]*\.yaml'
         if [[ "$command" =~ $task_redirect_pattern ]] || [[ "$command" =~ $task_tee_pattern ]] \
             || [[ "$command" =~ $task_sed_pattern ]] || [[ "$command" =~ $task_python_pattern ]]; then
-            emit_deny "BLOCKED: queue/tasks/へのBash直接書換え(sed -i/リダイレクト/tee/python3 open())は禁止。bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value> 経由で書き込みせよ(非atomicな公開は破損の実因: 2026-07-11 kagemaru.yaml破損)。"
+            emit_deny "BLOCKED: queue/tasks/へのBash直接書換え(sed -i/リダイレクト/tee/python3 open())は禁止。bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value> 経由で書き込みせよ。非atomicな公開は共有readerの破損原因となる。"
         fi
     fi
 fi
