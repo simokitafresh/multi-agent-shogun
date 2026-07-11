@@ -153,10 +153,30 @@ YAML
 }
 
 @test "SG-PRE9c allows the originating report detector-design wording" {
-    local origin_report="$PROJECT_ROOT/queue/reports/kagemaru_report_cmd_karo_hotfix_sg_pre9c_todo_context_202607111318.yaml"
-    [ -f "$origin_report" ]
+    # 発端実report(cmd_karo_hotfix_sg_pre9c_todo_context_202607111318, kagemaru)は
+    # queue/reports/配下のgitignore対象・cmd完了後archive済みで実行時に存在しない。
+    # 運用reportへの実行時依存を断ち、当該reportで矛盾誤検出を起こしていた
+    # task_clarity.discretion_fills(「未完了マーカー」)とpurpose_validation.cmd_purpose
+    # (「TODO文脈偽陽性」「真の未完了検出」)の文言を自己完結fixtureとして再現する。
+    cat > "$TEST_TMPDIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+task_id: cmd_karo_hotfix_sg_pre9c_todo_context_202607111318_normal
+status: completed
+task_clarity:
+  score: 100
+  unclear_points: なし
+  discretion_fills: 局所文脈窓を前後32文字とし、既存の委譲・未完了マーカーを優先した
+purpose_validation:
+  cmd_purpose: SG-PRE9cのTODO文脈偽陽性を根治し真の未完了検出を維持する
+  fit: true
+  purpose_gap: なし
+binary_checks:
+  AC1:
+    - check: task_clarity内の機能名run_todo_fixme_residual_checkや検出器説明・引用としてのTODOはBC_YES_CLARITY_CONTRADICTION=0になるfixtureを追加する
+      result: 'yes'
+YAML
 
-    run python3 "$ENGINE" --report "$origin_report" --tasks-dir "$PROJECT_ROOT/queue/tasks"
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
     [ "$status" -eq 0 ]
     [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
     [[ "$output" == *"BC_YES_CLARITY_TERMS=''"* ]]

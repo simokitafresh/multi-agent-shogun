@@ -702,7 +702,7 @@ task:
   status: in_progress
   task_id: cmd_test_redeploy
   parent_cmd: cmd_test_redeploy
-  deployed_at: "2026-07-10T19:11:35"
+  deployed_at: "2026-07-10T19:11:35+09:00"
   report_filename: kagemaru_report_cmd_test_redeploy.yaml
 INNEREOF
 
@@ -774,7 +774,7 @@ task:
   status: in_progress
   task_id: cmd_test_redeploy_real
   parent_cmd: cmd_test_redeploy_real
-  deployed_at: "2026-07-10T19:11:35"
+  deployed_at: "2026-07-10T19:11:35+09:00"
   report_filename: kagemaru_report_cmd_test_redeploy_real.yaml
 INNEREOF
 

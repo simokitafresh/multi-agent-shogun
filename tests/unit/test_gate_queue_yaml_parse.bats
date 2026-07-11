@@ -17,6 +17,11 @@ setup_file() {
 
 setup() {
     export TEST_ROOT
+    # CI clean checkoutではtmp/(.gitignore対象)が存在しない。WSL2 drvfs越しの
+    # rename(2)挙動を再現するため$BATS_TMPDIR(別filesystemのことがある)ではなく
+    # 本番queue/と同一filesystem上の$PROJECT_ROOT/tmpを使う必要があり、
+    # mktemp -dの前に親dirの存在を保証する。
+    mkdir -p "$PROJECT_ROOT/tmp"
     TEST_ROOT="$(mktemp -d "$PROJECT_ROOT/tmp/gate_qyp_test.XXXXXX")"
     mkdir -p "$TEST_ROOT/queue/tasks" "$TEST_ROOT/queue/reports" "$TEST_ROOT/queue/inbox"
     cat > "$TEST_ROOT/queue/shogun_to_karo.yaml" <<'EOF'

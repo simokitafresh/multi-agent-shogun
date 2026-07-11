@@ -58,12 +58,6 @@ while IFS= read -r match; do
 
     scanned_calls=$((scanned_calls + 1))
 
-    # 既にsafe_load_retry経由(同一行でラップ呼出し、またはこの行自体がsafe_load_retry定義側)
-    if [[ "$line" == *safe_load_retry* ]]; then
-        migrated_calls=$((migrated_calls + 1))
-        continue
-    fi
-
     # 対象ファイルがat-riskパターンに一切触れていなければ対象外(汎用YAMLユーティリティ等)
     if ! grep -Eq "$AT_RISK_RE" "$file" 2>/dev/null; then
         continue

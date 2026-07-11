@@ -81,10 +81,14 @@ if [[ -f "$repo_root/scripts/sync_git_hooks.sh" ]]; then
     bash "$repo_root/scripts/sync_git_hooks.sh" "${sync_args[@]}" \
         || { echo "BLOCK(GA-222): git hook sync failed — commit aborted" >&2; exit 1; }
 fi
-if [[ -f "$repo_root/../multi-agent-shogun/scripts/dm_signal_research_reflux_guard.sh" ]]; then
-    bash "$repo_root/../multi-agent-shogun/scripts/dm_signal_research_reflux_guard.sh" check --repo "$repo_root"
-elif [[ -f "/mnt/c/tools/multi-agent-shogun/scripts/dm_signal_research_reflux_guard.sh" ]]; then
-    bash "/mnt/c/tools/multi-agent-shogun/scripts/dm_signal_research_reflux_guard.sh" check --repo "$repo_root"
+# GA-222と同じ理由(script冒頭コメント参照): 呼び出し時のcwdは対象repo
+# ($repo_root、DM-Signal等)になり得るため、"$repo_root/../multi-agent-shogun"の
+# 相対推測や"/mnt/c/tools/multi-agent-shogun"のWSL2固定パスはCI runner等の
+# 別環境で解決に失敗しguardが無言でno-opになる。このscript自身の設置場所
+# (NINJA_SCOPE_COMMIT_SCRIPT_DIR)は常にmulti-agent-shogun/scripts/を指すため
+# それを基準にguardを解決する。
+if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" ]]; then
+    bash "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" check --repo "$repo_root"
 fi
 git commit --only -m "$message" -- "${paths[@]}"
 

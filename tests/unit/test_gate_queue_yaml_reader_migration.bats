@@ -19,6 +19,9 @@ setup_file() {
 
 setup() {
     export TEST_ROOT
+    # CI clean checkoutではtmp/(.gitignore対象)が存在しない。mktemp -dの前に
+    # 親dirの存在を保証する。
+    mkdir -p "$PROJECT_ROOT/tmp"
     TEST_ROOT="$(mktemp -d "$PROJECT_ROOT/tmp/gate_qyrm_test.XXXXXX")"
     mkdir -p "$TEST_ROOT/scripts/gates" "$TEST_ROOT/.claude/hooks"
     cp "$GATE_SRC" "$TEST_ROOT/scripts/gates/gate_queue_yaml_reader_migration.sh"
@@ -89,13 +92,14 @@ EOF
     [[ "$output" == *"OK: at-riskなqueue YAML readerは全てsafe_load_retry経由"* ]]
 }
 
-@test "同一行にsafe_load_retry文字列を含むyaml.safe_load呼出しはmigrated扱いでBLOCKされない" {
+@test "同一行にsafe_load_retryがあっても実行可能なbare yaml.safe_loadはBLOCK" {
     cat > "$TEST_ROOT/scripts/inline_flag_reader.py" <<'EOF'
 import yaml
 TASK_PATH = "queue/tasks/foo.yaml"
 data = safe_load_retry(TASK_PATH) if USE_RETRY else yaml.safe_load(open(TASK_PATH))
 EOF
     run bash "$GATE_SCRIPT"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"scanned_bare_calls=1, migrated=1"* ]]
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"inline_flag_reader.py"* ]]
+    [[ "$output" == *"scanned_bare_calls=1 migrated=0 unmigrated=1"* ]]
 }
