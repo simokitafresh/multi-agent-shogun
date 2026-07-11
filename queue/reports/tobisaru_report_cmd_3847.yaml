@@ -1,0 +1,179 @@
+worker_id: tobisaru
+task_id: cmd_3847_scout
+parent_cmd: cmd_3847
+timestamp: '2026-07-11T16:24:39'
+status: completed
+ac_version_read: 11add1b2
+result:
+  summary: task YAML書込み経路を全列挙した結果、標準経路(yaml_field_set.sh)は同一fs mktemp+yaml.safe_load検証+mv(atomic/fail-closed)で保護済みだが、scripts/deploy_task.shの自前インジェクタ11箇所(inject_causal_verification_template等)がyaml_field_set.shを経由せずcp発行しており未検証・非atomicだった。原因は各所のtmp_file=$(mktemp)が/tmp(tmpfs)に作られ、queue/tasks/配下(/mnt/c
+    drvfs)とは別fsのためmvできずcpを使わざるを得なかったこと。line 9186のdirect_mode上書きはさらに検証前にcp(fail-open)で、karo_direct再配備の混入経路として最有力。git履歴にkagemaru.yaml破損時点のcommitは存在せず(直前commitは07-10
+    01:06、以降07-11中commitなし)、現物引用はgit経由では不可能と判明(task assumptionsの「痕跡はgit履歴のみ」は誤り)。
+  details: 'AC1: git log -- queue/tasks/kagemaru.yaml の最新commitは7a3d9b5ec(2026-07-10
+    01:06:10)で07-11 01:xxのcommitは皆無。混入内容はgit未追跡のため現物引用不可(evidence gap)。唯一の記録はcommit
+    1fba5654986b2bac6d0037fbb78f6eaf1988cbfc(2026-07-11 01:49:25 cmd_karo_hotfix_queue_yaml_atomicity_202607110113)のscripts/lib/yaml_field_set.sh:815-819コメントで『旧実装はtmpfs(/tmp)にtemp作成しflock内cat>yaml_fileで公開.truncate-write間に一瞬0byte/不完全な状態が生じ、flockを取らない読み手(gate_queue_yaml_parse.sh等)がその瞬間を読むとYAMLError/UnicodeDecodeErrorで破損を観測する(2026-07-11
+    01:09 kagemaru.yaml破損の実因)』と明記。deploy_task.logは01:07(ga219)/01:13(atomicityの hotfixそのものをkotaroへ配備)の活動を記録するが生ファイル内容は残らない。
+    AC2: 標準経路=scripts/lib/yaml_field_set.sh(yaml_field_set/yaml_field_set_batch)。mktemp
+    "${yaml_file}.XXXXXX"(同一dir)→_yaml_field_set_validate_parseable(yaml.safe_load)→mv(atomic)。fail-closed。他21scriptから利用。加えて.claude/hooks/pre-bash-combined.sh→pre_bash_combined_guard.shがqueue/tasks/*.yamlへのsed
+    -i/リダイレクト/tee/python3 open()を''yaml_field_set''文字列がなければBLOCK(L555-569)。 一方、scripts/deploy_task.sh自身は11箇所で標準経路を経由しない直接cp書込みを行っている:
+    L1121(direct_yaml repair, contentはyaml.safe_load検証済だがpublishはcp), L2526(inject_causal_verification_template),
+    L3917(inject_semantic_concepts), L4104(inject_causal_links), L4149(inject_standard_skills),
+    L4217(inject_model_injection_profile), L4298(inject_dm_signal_pf_operation_guardrails),
+    L4363(inject_context_hints), L4415(inject_production_invariants), L7096(inject_execution_controls),
+    L9186(direct_mode/karo_direct再配備の生cp、YAML_FILEは典型的に/tmp/karo_direct_*.yaml=deploy_task.log実例で確認)。上記11箇所中10箇所はcp直前にyaml構文検証を一切行わない。L9186は書込み後にdeploy_task_validate_or_repair_direct_yamlで検証するがfail-open(既に本番ファイルへ上書き済のあとに検証。修復失敗時は壊れた内容がそのまま残り次回配備まで居座る)。cpが使われる理由はtmp_file=$(mktemp)が引数なしのため/tmp(tmpfs)に作られ、queue/tasks(/mnt/c
+    drvfs)とは別filesystemでありmv(rename)がEXDEVで使えないため。対照的にdeploy_task.sh内の別4箇所(L1373 normalize_task_yaml,
+    L1515 ac_assigned注入, L4023 inject_memory_db_context, L8961 stale field clear)は既にmktemp
+    "${task_file}.XXXXXX"(同一dir)+mvパターンを使っており、安全な書き方は同一ファイル内に既存。またpre-bash-combined.shのガードは
+    agent が発行する単一Bashコマンド文字列のみを検査するため、deploy_task.sh内部からのcp呼出し(子プロセス)はそもそもフックの可視範囲外であり、guard側でcpを禁止パターンに追加しても届かない構造。
+    AC3: 修正対象はscripts/deploy_task.shの上記11箇所。deploy_task.shはL73で既にscripts/lib/yaml_field_set.shをsource済みのため_yaml_field_set_validate_parseableはそのまま呼び出せる。10箇所(L1121,2526,3917,4104,4149,4217,4298,4363,4415,7096)はtmp_file=$(mktemp)→tmp_file=$(mktemp
+    "${task_file}.XXXXXX")に変更し、''cp "$tmp_file" "$task_file"; rm -f "$tmp_file"''を''_yaml_field_set_validate_parseable
+    "$tmp_file" || { rm -f "$tmp_file"; log FATAL...; return 1; }; mv "$tmp_file"
+    "$task_file"''に置換するだけの機械的差分(cp+rmの直後にmvなので最終状態は不変、atomicity+fail-closed検証のみ追加)。L9186は$YAML_FILEがdeploy_task_direct_yaml_is_preinjectedとcheck_yaml_freshnessで再利用されるため移動不可、同一dirにtmpを作りcp→validate→mvへ変更しYAML_FILE自体は温存する。波及先:
+    全11関数のcaller(deploy_task.sh本体の配備フロー)のみ、他スクリプトからの呼出しなし。関連テスト: tests/unit/test_deploy_task*.batsはinjector各関数の注入内容の正しさは検証しているが、publish
+    atomicity/fail-closed検証を検証するテストは皆無(対照: tests/unit/test_yaml_field_set.bats:579が同種シナリオを既にカバー済み)。新規テスト追加が必要。エッジケース:
+    (1)L9186のYAML_FILEは温存必須 (2)各mktemp失敗時のtmp_fileクリーンアップ漏れ防止 (3).gitignoreがqueue/tasks/*.XXXXXX相当のmktempサフィックスパターンを除外しているか要確認。依存関係制約:
+    11箇所は互いに独立、修正順序制約なし。'
+purpose_validation:
+  cmd_purpose: task YAML末尾裸テキスト混入事故の書込み経路特定と修正対象確定
+  fit: true
+  purpose_gap: ''
+simplicity_check: 既存のyaml_field_set.shの検証+mvパターンをdeploy_task.sh内の11箇所に機械的に適用するだけで足りる。新しい抽象化や仕組みは不要(deploy_task.shは既にsource済みで関数を再利用可能)。
+assumption_check: taskの前提'混入の痕跡はgit履歴のみ'はgit log実査で否定された(該当commit皆無)。ただしtaskの前提'標準書込み経路にはparse検証が実在する'は正しく、追加調査でその標準経路を経由しないdeploy_task.sh自前の11書込み箇所を発見できた。前提の一部誤りをresult.detailsに明記した。
+task_clarity:
+  score: 85
+  unclear_points: AC1の「混入行の現物引用」は現存する一次証跡が無くgit経由では達成不能だった。証跡不在という事実自体を報告することで代替した。
+  discretion_fills: deploy_task.sh内の11箇所すべてを横断的に洗い出す範囲までAC2/AC3を拡張した(taskはyaml_field_set.sh以外の経路の有無としか書いていなかったため)。
+status_detail: DONE
+test_triage: pre_existing
+causal_verification:
+  cause_checked: 1) commit 1fba5654986b2bac6d0037fbb78f6eaf1988cbfc(cmd_karo_hotfix_queue_yaml_atomicity_202607110113,
+    2026-07-11 01:49:25)のdiffとscripts/lib/yaml_field_set.shのコメントを読み、01:09 kagemaru.yaml破損の実因が『tmpfsにmktemp→flock内cat>による
+    truncate-write race』と根治済みであることを確認。2) 同修正はscripts/lib/yaml_field_set.shとpre-bash-combined.shガードのみを対象にしており、scripts/deploy_task.shの内部実装には触れていないことをgit
+    show --statで確認。3) deploy_task.sh grep で『cp .*task_file』『cp .*task_yaml』を全数(11件)洗い出し、各tmp_file生成元がbare
+    mktemp(/tmp)かmktemp "${task_file}.XXXXXX"(同一dir)かを個別に特定した。
+  design_intent_checked: yaml_field_set.shの設計意図はfail-closed(検証NGなら旧ファイル不変)+atomic
+    publish(mv)。deploy_task.shの11箇所はこの設計思想の外側にあり、意図的にcpを選んだというより『tmp_fileが別filesystemだからmvできない』という実装都合でcpに落ち着いたと考えられる(同ファイル内の別4箇所は既に同一dir
+    mktemp+mvを使っており、選択的にcpのみ使われた形跡はない=単なる不統一)。既存の防御(pre-bash-combined.shのsed -i/redirect/tee/python3
+    open()ブロック)はBashツール呼び出しの文字列検査であり、deploy_task.sh内部のcp子プロセスは構造的に検査対象外。
+  evidence: git log --oneline -- queue/tasks/kagemaru.yaml(直近commit 7a3d9b5ec 07-10
+    01:06、07-11分なし)。git show 1fba56549 -- scripts/lib/yaml_field_set.sh(fix diffとコメント全文確認)。grep
+    -rn 'cp .*queue/tasks|cp "$.*task_yaml|cp "$.*task_file' scripts/(11件ヒット、全てdeploy_task.sh)。各cp箇所の直前10行をRead/sedで個別確認しtmp_file生成元を特定。logs/deploy_task.log(現行ファイル07-10
+    14:43〜)を01:05-01:13の範囲でgrepしkagemaru関連活動とatomicity hotfix自体の配備ログ(01:13 kotaroへ配備)を確認。
+  origin: '[[cmd_karo_hotfix_queue_yaml_atomicity_202607110113]] -> [[deploy_task.shの11箇所が同種cpパターンで未修正のまま残存]]
+    -> [[queue/tasks/*.yaml末尾裸テキスト混入の再発余地]]'
+files_modified:
+- path: 偵察のみ
+  change: modified
+lesson_candidate:
+  found: true
+  no_lesson_reason: このタスクでは新規教訓候補なし
+  title: インシデント修正は『最初に見つかった書込み経路』だけでなく類似パターン全数を横断検索してから完了とせよ
+  detail: cmd_karo_hotfix_queue_yaml_atomicity_202607110113はscripts/lib/yaml_field_set.sh(cat>非atomic公開)を根治しBashフックでsed
+    -i/redirect/tee/python3 open()もブロックしたが、同じqueue/tasks/*.yamlへ書き込むscripts/deploy_task.sh自身の内部インジェクタ11箇所(bare
+    mktemp=/tmp tmpfs→queue/tasks=/mnt/c drvfsという別filesystemのためcpで発行、検証なし)は未修正のまま残った。原因ファイル1つを直した後、grep
+    -rn 'cp .*queue/tasks|cp "$.*task_yaml'のような同種パターン全数検索を修正directiveの一部として必須化すべき。Bashレベルのフックガードは呼び出し元のBashコマンド文字列しか見えず、既に許可されたスクリプト内部のcp/python3子プロセスを構造的に検査できないため、フック追加だけでは『同種の書込み口』を閉じきれない(スクリプト内部の実装自体を直す必要がある)。
+  project: infra
+  origin: '[[cmd_karo_hotfix_queue_yaml_atomicity_202607110113]] → [[deploy_task.sh内11箇所の同種cp未修正]]
+    → [[運用task YAML群での裸テキスト混入再発余地]]'
+lessons_useful:
+- id: L311
+  useful: false
+  reason: 本タスクは既存task YAMLへの新規write操作を行っていないためreport_yaml_format WAパターンは非該当
+- id: L278
+  useful: false
+  reason: commitを伴う成果物なし(偵察のみ)のためcommit_missingパターンは非該当
+- id: L342
+  useful: true
+  reason: '実際に有用だった: 本報告YAML自体が.gitignore(先頭*のホワイトリスト方式)で未追跡のため、commit時にgit add -fが必要と判明し、L342の指摘通りだった'
+memory_references:
+- id: MEM001
+  source: semantic_search
+  query: task YAML裸テキスト混入 書込み経路
+  summary: gate_report_format.sh関連ファイル
+  used: false
+  useful: false
+  reason: 報告フォーマット系ファイルで本調査(書込み経路の特定)とは無関係
+- id: MEM002
+  source: semantic_search
+  query: task YAML裸テキスト混入 書込み経路
+  summary: gate_report_format_main.py
+  used: false
+  useful: false
+  reason: 報告フォーマット系ファイルで本調査とは無関係
+- id: MEM003
+  source: semantic_search
+  query: task YAML裸テキスト混入 書込み経路
+  summary: report_field_set.sh
+  used: true
+  useful: true
+  reason: 本報告YAML自体の記入に使用した(調査対象ではなく報告作成ツールとして)
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+knowledge_candidate:
+  found: true
+  items:
+  - fact: scripts/deploy_task.shはscripts/lib/yaml_field_set.sh:73で既にsource済みのため_yaml_field_set_validate_parseableを追加source無しでそのまま呼び出せる
+    source: scripts/deploy_task.sh:73
+  - fact: queue/tasks/*.yamlは/mnt/c配下(WSL2 drvfs/NTFS mount)にあり、bare mktemp()の既定先/tmpはtmpfsで別filesystemのためmv(rename)がEXDEVで失敗する。同一dirでのmktempが必須
+    source: scripts/deploy_task.sh (11箇所のcp使用箇所と、対照的にmv使用済みのL1373/1515/4023/8961)
+assumption_invalidation:
+  found: true
+  affected_cmds:
+  - cmd_karo_hotfix_queue_yaml_atomicity_202607110113
+  detail: 同cmdはscripts/lib/yaml_field_set.shの非atomic cat>公開を根治し『queue/tasks/*.yamlの安全書込みは完了した』という前提で運用されているが、実際にはscripts/deploy_task.sh自身が持つ11箇所の内部cp書込み(同種の非atomic+無検証)が未修正のまま残っており、同クラスの混入は依然として再発しうる。同cmdの『解決済み』という前提は部分的にのみ正しい。
+hook_failures:
+  count: 0
+  details: ''
+post_deploy_evidence:
+  required: false
+  deploy_live_at: ''
+  evidence_run_start_at: ''
+  evidence_run_completed_at: ''
+  run_completed: false
+  source: ''
+binary_checks:
+  AC1:
+  - check: git履歴から混入発生時のファイル内容と直前直後のコミット・書込み主体を特定し、混入行の現物引用を報告YAMLのgrepで確認する
+    result: 'no'
+  AC2:
+  - check: task YAMLへ書き込む全経路(スクリプトとツール種別)を列挙し、各経路の書込み後parse検証の有無を分類して、検証を経ない経路の有無を報告YAML現物で確認する
+    result: 'yes'
+  AC3:
+  - check: 検証を経ない経路が実在する場合、修正対象ファイルと行番号・波及先・関連テストの有無と修正要否・エッジケース・依存関係を特定し、報告YAMLの記載をgrepで確認する
+    result: 'yes'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: FAIL
+implementation_readiness:
+  files_to_modify:
+  - scripts/deploy_task.sh:1121 (deploy_task_validate_or_repair_direct_yaml)
+  - scripts/deploy_task.sh:2526 (inject_causal_verification_template)
+  - scripts/deploy_task.sh:3917 (inject_semantic_concepts)
+  - scripts/deploy_task.sh:4104 (inject_causal_links)
+  - scripts/deploy_task.sh:4149 (inject_standard_skills)
+  - scripts/deploy_task.sh:4217 (inject_model_injection_profile)
+  - scripts/deploy_task.sh:4298 (inject_dm_signal_pf_operation_guardrails)
+  - scripts/deploy_task.sh:4363 (inject_context_hints)
+  - scripts/deploy_task.sh:4415 (inject_production_invariants)
+  - scripts/deploy_task.sh:7096 (inject_execution_controls)
+  - scripts/deploy_task.sh:9186 (direct_mode/karo_direct raw overwrite)
+  affected_files:
+  - queue/tasks/*.yaml (全忍者task YAML。deploy_task.sh実行の都度、上記11箇所どれかが publish される)
+  related_tests:
+  - tests/unit/test_deploy_task.bats — atomicity/fail-closed検証テストなし。追加要
+  - tests/unit/test_deploy_task_lifecycle.bats — 同上、追加要
+  - tests/unit/test_yaml_field_set.bats:579 — 同種シナリオの既存テストが手本になる(不正YAML注入時に旧ファイル不変+FATAL)
+  edge_cases:
+  - L9186のYAML_FILE(karo_direct draft、例:/tmp/karo_direct_*.yaml)はdeploy_task_direct_yaml_is_preinjectedとcheck_yaml_freshnessで再利用されるため移動(mv)不可。cpで温存しつつ発行先だけ同一dir
+    tmp経由にする必要
+  - mktemp失敗時/検証失敗時のtmp_fileクリーンアップ漏れ(rm -f漏れ)によるqueue/tasks/配下への*.XXXXXXゴミファイル残留
+  - queue/tasks/*.XXXXXX相当のパターンが.gitignoreで除外されているか要確認(commit時の誤追跡防止)
+  - 10箇所は現状cp直後にrm -f "$tmp_file"をしているため、mvへの置換は最終状態を変えない機械的差分だが、置換漏れが1箇所でもあれば未修正のまま検証未通過になる
+  dependency_constraints:
+  - 11箇所は相互に独立関数のため修正順序制約なし
+  - deploy_task.shはL73で既にscripts/lib/yaml_field_set.shをsource済みのため_yaml_field_set_validate_parseable呼出しに追加source不要
+verified_existing_dependency: []
