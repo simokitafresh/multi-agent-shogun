@@ -9,6 +9,15 @@ setup() {
     export MEMORY_DB_LIVE_INSERT="$TEST_TMPDIR/missing_memory_db_live_insert.py"
 }
 
+setup_ac_fixtures() {
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    export CMD_QUALITY_COMMAND_FILE="$TEST_TMPDIR/queue/shogun_to_karo.yaml"
+    export CMD_QUALITY_TASKS_DIR="$TEST_TMPDIR/queue/tasks"
+    export CMD_QUALITY_REPORTS_DIR="$TEST_TMPDIR/queue/reports"
+    unset CMD_QUALITY_FAST_METADATA
+    printf 'commands: {}\n' > "$CMD_QUALITY_COMMAND_FILE"
+}
+
 teardown() {
     rm -rf "$TEST_TMPDIR"
 }
@@ -66,4 +75,51 @@ EOF
     [[ "$output" == *"ALERT logs/cmd_design_quality.yaml"* ]]
     [ "$(grep -c '^- cmd_id:' "$TEST_TMPDIR/logs/cmd_design_quality.yaml")" -eq 3 ]
     [ ! -e "$TEST_TMPDIR/logs/archive/cmd_design_quality.yaml" ]
+}
+
+@test "direct task AC count falls back to unique parent_cmd task" {
+    setup_ac_fixtures
+    cat > "$CMD_QUALITY_TASKS_DIR/saizo.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_karo_hotfix_dm_signal_core_freshness_202607120345
+  acceptance_criteria: {AC1: {}, AC2: {}, AC3: {}, AC4: {}, AC5: {}, AC6: {}}
+EOF
+    run bash "$PROJECT_ROOT/scripts/cmd_quality_log.sh" cmd_karo_hotfix_dm_signal_core_freshness_202607120345 PASS no 0
+    [ "$status" -eq 0 ]
+    grep -q 'ac_count: 6' "$CMD_QUALITY_LOG_FILE"
+}
+
+@test "normal command authoritative AC count remains three" {
+    setup_ac_fixtures
+    cat > "$CMD_QUALITY_COMMAND_FILE" <<'EOF'
+cmd_3857:
+  acceptance_criteria: [one, two, three]
+EOF
+    run bash "$PROJECT_ROOT/scripts/cmd_quality_log.sh" cmd_3857 PASS no 0
+    [ "$status" -eq 0 ]
+    grep -q 'ac_count: 3' "$CMD_QUALITY_LOG_FILE"
+}
+
+@test "ambiguous tasks fail closed with diagnostic" {
+    setup_ac_fixtures
+    for name in a b; do
+      printf 'task:\n  parent_cmd: cmd_direct\n  acceptance_criteria: {AC1: {}}\n' > "$CMD_QUALITY_TASKS_DIR/$name.yaml"
+    done
+    run bash "$PROJECT_ROOT/scripts/cmd_quality_log.sh" cmd_direct PASS no 0
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ambiguous tasks"* ]]
+    grep -q 'ac_count: 0' "$CMD_QUALITY_LOG_FILE"
+}
+
+@test "malformed task is diagnosed and unique report fallback excludes commit" {
+    setup_ac_fixtures
+    printf 'task: [broken\n' > "$CMD_QUALITY_TASKS_DIR/broken.yaml"
+    cat > "$CMD_QUALITY_REPORTS_DIR/worker.yaml" <<'EOF'
+parent_cmd: cmd_report_only
+binary_checks: {AC1: {}, AC2: {}, commit: {}}
+EOF
+    run bash "$PROJECT_ROOT/scripts/cmd_quality_log.sh" cmd_report_only PASS no 0
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"unreadable YAML"* ]]
+    grep -q 'ac_count: 2' "$CMD_QUALITY_LOG_FILE"
 }

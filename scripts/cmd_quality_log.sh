@@ -6,7 +6,7 @@
 # 自動取得フィールド:
 #   gunshi_verdict: queue/inbox/karo.yamlからcmd_idに該当する軍師verdict (APPROVE/REQUEST_CHANGES/unknown)
 #   ninja_blockers: queue/reports/配下のparent_cmd=cmd_idかつstatus=blockedの件数
-#   ac_count: shogun_to_karo.yamlの該当cmdのAC数(acceptance_criteria配下の'ACN:'リスト項目をカウント)
+#   ac_count: shogun_to_karo正本→parent_cmd一致task→対応reportの順で解決
 
 set -euo pipefail
 
@@ -182,20 +182,63 @@ fetch_ninja_blockers() {
 # --- Auto-fetch: ac_count ---
 # Count acceptance_criteria items (- 'ACN: ...') in shogun_to_karo.yaml for this cmd
 fetch_ac_count() {
-    local stk="$REPO_ROOT/queue/shogun_to_karo.yaml"
-    if [[ ! -f "$stk" ]]; then
-        echo 0
-        return
-    fi
-    # Find cmd block, then acceptance_criteria section, count "- 'ACN:" list items
-    awk -v cid="$CMD_ID" '
-        $0 ~ "^  " cid ":" { found=1; next }
-        found && /^  cmd_/ { exit }
-        found && /^    acceptance_criteria:/ { in_ac=1; next }
-        found && in_ac && /^    [a-zA-Z_]/ { in_ac=0 }
-        found && in_ac && /^    - .AC[0-9]/ { count++ }
-        END { print count+0 }
-    ' "$stk"
+    local stk="${CMD_QUALITY_COMMAND_FILE:-$REPO_ROOT/queue/shogun_to_karo.yaml}"
+    local tasks_dir="${CMD_QUALITY_TASKS_DIR:-$REPO_ROOT/queue/tasks}"
+    local reports_dir="${CMD_QUALITY_REPORTS_DIR:-$REPO_ROOT/queue/reports}"
+    python3 - "$CMD_ID" "$stk" "$tasks_dir" "$reports_dir" <<'PY'
+import glob, os, sys, yaml
+
+cid, command_file, tasks_dir, reports_dir = sys.argv[1:]
+
+def load(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return yaml.safe_load(fh) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        print(f"[cmd_quality_log] ac_count diagnostic: unreadable YAML {path}: {exc}", file=sys.stderr)
+        return None
+
+def ac_len(value):
+    return len(value) if isinstance(value, (dict, list)) else 0
+
+# Normal commands retain their authoritative shogun_to_karo definition.
+commands = load(command_file) if os.path.isfile(command_file) else {}
+if isinstance(commands, dict):
+    candidate = commands.get(cid)
+    if isinstance(candidate, dict) and ac_len(candidate.get("acceptance_criteria")):
+        print(ac_len(candidate["acceptance_criteria"]))
+        raise SystemExit
+
+task_matches = []
+for path in sorted(glob.glob(os.path.join(tasks_dir, "*.yaml"))):
+    data = load(path)
+    task = data.get("task", data) if isinstance(data, dict) else None
+    if isinstance(task, dict) and task.get("parent_cmd") == cid:
+        task_matches.append((path, ac_len(task.get("acceptance_criteria"))))
+if len(task_matches) == 1 and task_matches[0][1] > 0:
+    print(task_matches[0][1])
+    raise SystemExit
+if len(task_matches) > 1:
+    print(f"[cmd_quality_log] ac_count diagnostic: ambiguous tasks for {cid}: {len(task_matches)}", file=sys.stderr)
+    print(0)
+    raise SystemExit
+
+report_matches = []
+for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
+    data = load(path)
+    if isinstance(data, dict) and data.get("parent_cmd") == cid:
+        checks = data.get("binary_checks")
+        count = sum(1 for key in checks if str(key).upper().startswith("AC")) if isinstance(checks, dict) else 0
+        report_matches.append((path, count))
+if len(report_matches) == 1 and report_matches[0][1] > 0:
+    print(report_matches[0][1])
+elif len(report_matches) > 1:
+    print(f"[cmd_quality_log] ac_count diagnostic: ambiguous reports for {cid}: {len(report_matches)}", file=sys.stderr)
+    print(0)
+else:
+    print(f"[cmd_quality_log] ac_count diagnostic: no authoritative AC source for {cid}", file=sys.stderr)
+    print(0)
+PY
 }
 
 if [[ "$FAST_METADATA" == "1" ]]; then
