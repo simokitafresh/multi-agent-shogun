@@ -688,6 +688,7 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - v1.2追記(家老運用レビュー blt_20260711_014245反映): P1をP1a(source identity+logical_date+run_id、単独deploy可)/P1b(snapshot+manifest+guard+cron対応)に分割。書込み順序を「read-session全materialize→manifest確定→初めてbusiness write」に確定(現コードは入力load前にconfig snapshot INSERT=write0が偽だった)。standalone L5にmanifest_kind=l5新設。cronはHTTP accepted≠job成功のためterminal poll+失敗nonzero化、L5 fallbackはL3当日成功を実行条件に追加。追加AC7本(業務write0/5caller伝播/manifest消失0/L2失敗遮断/L5被覆/guard0件/全shard網羅)。→ 正本§8
 - cmd_3848(P1a追補): local source identityはtracked dirtyに加え、設計§7.1の4 source root内のuntracked path+content SHA fingerprintもdirtyとしてfail-closedする。
 - cmd_3850(P1c): production-image/isolated-clone各102PFを同一`input_snapshot_id`・`execution_fingerprint`でcontrolled runし、pre/post 4 artifact各12,385行を比較。4経路すべてexact=true、mismatch/missing=0、snapshot後source SELECT=0、本番business write=0。float差分はruntime/driver/DB/end-to-endのいずれにも再現せず、旧baseline差分は回帰fixtureとして固定。→ `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3850/rc25_compare/cmd_3850_float_localization.json` (2026-07-11)
+- cmd_3852(P2b RED): §9.7の18表(A10/B1/C3/D2/E2)・全exact fieldを同一新manifest下だけで比較する契約を固定。IEEE754 bit exact、canonical JSON、NULL exact、ledger UTCDateTime 6桁microsecondsを被覆し、全18表の注入RED差分を検出。23 PASS/FAIL0/SKIP0。→ `/mnt/c/Python_app/DM-signal/backend/tests/test_cmd_3852_persisted_inventory_exact.py`, commit `3925242ba285a98d1048069b9c94a63e95c42e4f` (2026-07-11)
 
 ---
 
