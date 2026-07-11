@@ -128,36 +128,48 @@ output_json  = os.environ.get('REWORK_JSON', 'false').lower() == 'true'
 def load_archive_cmds_cached(archive_dir):
     """
     archive cmdをJSONキャッシュ経由で取得。
-    archive/cmds/*.yamlは不変(archived後は更新なし)のでファイル数をキャッシュキーに使う。
+    archive/cmds/*.yamlは不変(archived後は更新なし)なのでファイルパス単位でキャッシュする。
+    ファイル数(count)を丸ごとのキーにすると、cmdが1件archiveされるだけで
+    キャッシュ全体が無効化されフルスキャンに戻ってしまう(継続的にarchiveが
+    増え続ける運用ではキャッシュが実質機能しなくなるバグ)ため、
+    パスごとの差分ロードに変更し、新規追加分だけを読み直す。
     cold: 通常通りyaml.safe_load(初回のみ遅い)
-    warm: .rework_rate_cache.jsonをjson.loadで読む(~0.5s)
+    warm: 既存キャッシュ分はjson.loadのみ、新規分だけ差分ロード
     """
     archive_paths = sorted(glob.glob(os.path.join(archive_dir, '*.yaml')))
-    archive_count = len(archive_paths)
     cache_file = os.path.join(archive_dir, '.rework_rate_cache.json')
 
-    # キャッシュ試行
+    cached_by_path = {}
     if os.path.exists(cache_file):
         try:
             with open(cache_file, encoding='utf-8') as f:
                 cached = json.load(f)
-            if cached.get('count') == archive_count:
-                return cached['cmds']
+            if isinstance(cached.get('by_path'), dict):
+                cached_by_path = cached['by_path']
         except (json.JSONDecodeError, KeyError, IOError):
-            pass
+            cached_by_path = {}
 
-    # キャッシュなし or 無効 → 全yamlロード
     cmds = []
+    changed = set(cached_by_path) - set(archive_paths)  # 削除済みファイル
     for p in archive_paths:
-        cmds.extend(load_cmds(p))
+        if p in cached_by_path:
+            cmds.extend(cached_by_path[p])
+        else:
+            entry = load_cmds(p)
+            cached_by_path[p] = entry
+            cmds.extend(entry)
+            changed.add(p)
 
-    # キャッシュ保存(失敗は非致命的)
-    try:
-        with open(cache_file, 'w', encoding='utf-8') as f:
-            json.dump({'count': archive_count, 'cmds': cmds}, f,
-                      default=str, ensure_ascii=False)
-    except IOError:
-        pass
+    if changed:
+        for stale in set(cached_by_path) - set(archive_paths):
+            del cached_by_path[stale]
+        # キャッシュ保存(失敗は非致命的)
+        try:
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump({'by_path': cached_by_path}, f,
+                          default=str, ensure_ascii=False)
+        except IOError:
+            pass
 
     return cmds
 

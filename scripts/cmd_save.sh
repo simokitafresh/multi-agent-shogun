@@ -261,6 +261,8 @@ import re
 import sys
 import yaml
 
+_CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 bulletin_file, cmd_id = sys.argv[1:3]
 block_text = os.environ.get("CMD_BLOCK_TEXT", "")
 referenced_ids = set(re.findall(r"\bblt_[0-9A-Za-z_]+\b", block_text))
@@ -269,7 +271,7 @@ if not referenced_ids:
     raise SystemExit(0)
 
 with open(bulletin_file, encoding="utf-8") as fh:
-    data = yaml.safe_load(fh) or {}
+    data = yaml.load(fh, Loader=_CSAFE) or {}
 
 entries = data.get("entries")
 if not isinstance(entries, list):
@@ -2153,10 +2155,12 @@ make_quality_log_scan_file() {
         | awk 'BEGIN{in_entry=0} /^entries:[[:space:]]*$/{next} /^[[:space:]]*-[[:space:]]+cmd_id:/{in_entry=1} in_entry{print}' \
         >> "$CMD_SAVE_SCAN_FILE_CACHE"
     # JSON版生成: Python関数がjson.loadを使えるよう変換（yaml.safe_load 175ms→json.load 24ms）
+    # perf: CSafeLoader(libyaml)使用でこの変換自体もPure Python比で高速化(実測0.25s級→大幅短縮)
     python3 -c "
 import yaml, json, sys
+_loader = getattr(yaml, 'CSafeLoader', yaml.SafeLoader)
 with open(sys.argv[1], encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
+    data = yaml.load(f, Loader=_loader) or {}
 with open(sys.argv[2], 'w', encoding='utf-8') as f:
     json.dump(data, f)
 " "$CMD_SAVE_SCAN_FILE_CACHE" "$CMD_SAVE_SCAN_JSON_CACHE" 2>/dev/null || true
@@ -2191,6 +2195,8 @@ import os
 import json
 import yaml
 
+_CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 cmd_id = os.environ.get("CMD_SAVE_CMD_ID", "")
 log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
 
@@ -2204,7 +2210,7 @@ if _json_path and os.path.exists(_json_path):
         data = json.load(fh) or {}
 else:
     with open(log_path, encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
+        data = yaml.load(fh, Loader=_CSAFE) or {}
 
 entries = (data.get("entries") or []) if isinstance(data, dict) else []
 filtered = []
@@ -2272,6 +2278,8 @@ import os
 import json
 import yaml
 
+_CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 cmd_id = os.environ.get("CMD_SAVE_CMD_ID", "")
 log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
 current_reason = os.environ.get("CMD_SAVE_BLOCK_REASON", "").strip()
@@ -2286,7 +2294,7 @@ if _json_path and os.path.exists(_json_path):
         data = json.load(fh) or {}
 else:
     with open(log_path, encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
+        data = yaml.load(fh, Loader=_CSAFE) or {}
 
 entries = (data.get("entries") or []) if isinstance(data, dict) else []
 filtered = [
@@ -2322,6 +2330,8 @@ import re
 import yaml
 from collections import OrderedDict
 
+_CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
 if not log_path or not os.path.exists(log_path):
     raise SystemExit(0)
@@ -2333,7 +2343,7 @@ try:
             data = json.load(fh) or {}
     else:
         with open(log_path, encoding="utf-8") as fh:
-            data = yaml.safe_load(fh) or {}
+            data = yaml.load(fh, Loader=_CSAFE) or {}
 except Exception:
     raise SystemExit(0)
 
@@ -2386,6 +2396,8 @@ import os
 import json
 import yaml
 
+_CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 cmd_id = os.environ.get("CMD_SAVE_CMD_ID", "")
 log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
 target_check = os.environ.get("CMD_SAVE_CHECK_NAME", "").strip()
@@ -2400,7 +2412,7 @@ if _json_path and os.path.exists(_json_path):
         data = json.load(fh) or {}
 else:
     with open(log_path, encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
+        data = yaml.load(fh, Loader=_CSAFE) or {}
 
 entries = (data.get("entries") or []) if isinstance(data, dict) else []
 count = 0
@@ -2587,6 +2599,8 @@ import json
 import re
 import yaml
 
+_CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 cmd_id = os.environ.get("CMD_SAVE_CMD_ID", "")
 log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
 warn_pattern = os.environ.get("CMD_SAVE_WARN_PATTERN", "").strip()
@@ -2614,7 +2628,7 @@ if _json_path and os.path.exists(_json_path):
         data = json.load(fh) or {}
 else:
     with open(log_path, encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
+        data = yaml.load(fh, Loader=_CSAFE) or {}
 
 project_cache = {}
 
@@ -2636,7 +2650,7 @@ def extract_project(payload, target_cmd):
 def read_project_from_yaml(path, target_cmd):
     try:
         with open(path, encoding="utf-8") as fh:
-            return extract_project(yaml.safe_load(fh) or {}, target_cmd)
+            return extract_project(yaml.load(fh, Loader=_CSAFE) or {}, target_cmd)
     except Exception:
         return ""
 
@@ -2652,7 +2666,7 @@ def is_cmd_canceled(target_cmd):
     for path in ([queue_path] if queue_path and os.path.exists(queue_path) else []):
         try:
             with open(path, encoding="utf-8") as fh:
-                payload = yaml.safe_load(fh) or {}
+                payload = yaml.load(fh, Loader=_CSAFE) or {}
             commands = payload.get("commands", payload)
             if isinstance(commands, dict):
                 cmd_data = commands.get(target_cmd)
@@ -2767,6 +2781,8 @@ import os
 import json
 import yaml
 
+_CSAFE = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
+
 cmd_id = os.environ.get("CMD_SAVE_TARGET_CMD_ID", "")
 log_path = os.environ.get("CMD_SAVE_QUALITY_LOG", "")
 
@@ -2780,7 +2796,7 @@ if _json_path and os.path.exists(_json_path):
         data = json.load(fh) or {}
 else:
     with open(log_path, encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
+        data = yaml.load(fh, Loader=_CSAFE) or {}
 
 entries = (data.get("entries") or []) if isinstance(data, dict) else []
 count = sum(
@@ -3599,7 +3615,9 @@ if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
 fi
 
 # --- Check 0.9: YAML構文検証 ---
-if [[ -f "$QUEUE_FILE" ]] && ! python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1]))" "$QUEUE_FILE" 2>/dev/null; then
+# perf: CSafeLoader(libyaml)がPure Python SafeLoader比で約8倍速い(実測0.28s→0.03s級)。
+# 構文検証のみで結果は使わないため、Loaderの違いによる出力差は発生しない。
+if [[ -f "$QUEUE_FILE" ]] && ! python3 -c "import yaml,sys; yaml.load(open(sys.argv[1]), Loader=getattr(yaml, 'CSafeLoader', yaml.SafeLoader))" "$QUEUE_FILE" 2>/dev/null; then
     echo "BLOCK: $QUEUE_FILE にYAML構文エラーがあります。ダブルクォート内の特殊文字(|等)をエスケープするか、ブロックスカラー(|)を使用してください" >&2
     BLOCK_REASONS+=("yaml_syntax_error")
 fi
