@@ -6,6 +6,71 @@ setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 }
 
+@test "completion_notify_gap: later RC report and active task suppress reopened commands" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+TMP_ROOT="$(mktemp -d)"; trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUB
+#!/bin/bash
+echo "INBOX_CALLED:\$@"
+STUB
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"; touch "$LOG"
+old_ts="$(date -d "-600 seconds" +%Y-%m-%dT%H:%M:%S)"; new_ts="$(date -d "-500 seconds" +%Y-%m-%dT%H:%M:%S)"
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<EOF
+messages:
+- {content: "cmd_gap_rc verdict: LGTM", timestamp: "$old_ts", type: review_feedback}
+- {content: "cmd_gap_rc verdict: RC", timestamp: "$new_ts", type: review_feedback}
+- {content: "cmd_gap_report verdict: LGTM", timestamp: "$old_ts", type: review_feedback}
+- {content: "cmd_gap_task verdict: LGTM", timestamp: "$old_ts", type: review_feedback}
+EOF
+printf "entries: []\n" > "$SCRIPT_DIR/queue/bulletin_board.yaml"; printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/shogun.yaml"
+cat > "$SCRIPT_DIR/queue/reports/x.yaml" <<EOF
+parent_cmd: cmd_gap_report
+status: revision_requested
+timestamp: "$new_ts"
+EOF
+cat > "$SCRIPT_DIR/queue/tasks/x.yaml" <<EOF
+task: {parent_cmd: cmd_gap_task, status: in_progress, deployed_at: "$new_ts"}
+EOF
+log() { echo "$1" >> "$LOG"; }; check_karo_completion_notify_gap
+! grep -q INBOX_CALLED "$LOG"
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "completion_notify_gap: old RC does not suppress later LGTM and equal timestamp does" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+TMP_ROOT="$(mktemp -d)"; trap "rm -rf \"$TMP_ROOT\"" EXIT; SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUB
+#!/bin/bash
+echo "INBOX_CALLED:\$@"
+STUB
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"; touch "$LOG"
+rc_ts="$(date -d "-700 seconds" +%Y-%m-%dT%H:%M:%S)"; lgtm_ts="$(date -d "-600 seconds" +%Y-%m-%dT%H:%M:%S)"
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<EOF
+messages:
+- {content: "cmd_gap_again verdict: RC", timestamp: "$rc_ts", type: review_feedback}
+- {content: "cmd_gap_again verdict: LGTM", timestamp: "$lgtm_ts", type: review_feedback}
+- {content: "cmd_gap_equal verdict: LGTM", timestamp: "$lgtm_ts", type: review_feedback}
+- {content: "cmd_gap_equal verdict: RC", timestamp: "$lgtm_ts", type: review_feedback}
+EOF
+printf "entries: []\n" > "$SCRIPT_DIR/queue/bulletin_board.yaml"; printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/shogun.yaml"
+log() { echo "$1" >> "$LOG"; }; check_karo_completion_notify_gap
+grep -q "INBOX_CALLED:karo .*cmd_gap_again.*completion_notify_gap" "$LOG"
+! grep -q "INBOX_CALLED:karo .*cmd_gap_equal.*completion_notify_gap" "$LOG"
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "auto_commit: regular commit excludes context markdown and batches context separately" {
     run bash -lc '
 set -eo pipefail

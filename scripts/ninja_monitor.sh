@@ -1556,19 +1556,23 @@ check_karo_completion_notify_gap() {
     local inbox_karo="$SCRIPT_DIR/queue/inbox/karo.yaml"
     local bulletin_file="$SCRIPT_DIR/queue/bulletin_board.yaml"
     local inbox_shogun="$SCRIPT_DIR/queue/inbox/shogun.yaml"
+    local reports_dir="$SCRIPT_DIR/queue/reports"
+    local tasks_dir="$SCRIPT_DIR/queue/tasks"
     local grace="${NINJA_MONITOR_LGTM_NOTIFY_GRACE:-300}"
 
     [ -f "$inbox_karo" ] || return 0
 
     local pending
-    pending=$(python3 - "$inbox_karo" "$bulletin_file" "$inbox_shogun" "$grace" "$EPOCHSECONDS" <<'PY'
+    pending=$(python3 - "$inbox_karo" "$bulletin_file" "$inbox_shogun" "$reports_dir" "$tasks_dir" "$grace" "$EPOCHSECONDS" <<'PY'
 import datetime as dt
+import glob
+import os
 import re
 import sys
 
 import yaml
 
-karo_inbox, bulletin_file, shogun_inbox, grace_s, now_s = sys.argv[1:6]
+karo_inbox, bulletin_file, shogun_inbox, reports_dir, tasks_dir, grace_s, now_s = sys.argv[1:8]
 grace = int(grace_s)
 now = int(now_s)
 
@@ -1610,6 +1614,7 @@ if not isinstance(messages, list):
     sys.exit(0)
 
 lgtm_events = []
+reopen_events = []
 for msg in messages:
     if not isinstance(msg, dict):
         continue
@@ -1618,15 +1623,16 @@ for msg in messages:
     content = str(msg.get("content", ""))
     if "draft review" in content.lower():
         continue
-    if not re.search(r'verdict[:=]\s*(LGTM|APPROVE|PASS)', content, re.I):
-        continue
     m = re.match(r'^(cmd_[A-Za-z0-9_]+)', content)
     if not m:
         continue
     ts = epoch(msg.get("timestamp"))
     if ts is None:
         continue
-    lgtm_events.append((m.group(1), ts))
+    if re.search(r'verdict[:=]\s*(LGTM|APPROVE|PASS)', content, re.I):
+        lgtm_events.append((m.group(1), ts))
+    elif re.search(r'verdict[:=]\s*(RC|REJECT|REVISION_REQUESTED)', content, re.I):
+        reopen_events.append((dedup_key(m.group(1)), ts))
 
 if not lgtm_events:
     sys.exit(0)
@@ -1656,8 +1662,32 @@ for msg in (shogun_messages or []):
     for m in re.finditer(r'(cmd_[A-Za-z0-9_]+)', content):
         notifications.append((dedup_key(m.group(1)), notice_ts))
 
+# LGTM後に家老RC、report差戻し、task再開が起きたcmdは「完了待ち」ではない。
+# 各状態の時刻を比較し、古いRCが後続LGTMを抑制しないようにする。
+for path in glob.glob(os.path.join(reports_dir, "*.yaml")):
+    report = load_yaml(path)
+    if not isinstance(report, dict) or str(report.get("status", "")) != "revision_requested":
+        continue
+    cmd_id = str(report.get("parent_cmd") or report.get("task_id") or "")
+    ts = epoch(report.get("timestamp") or report.get("updated_at"))
+    if cmd_id and ts is not None:
+        reopen_events.append((dedup_key(cmd_id), ts))
+
+active_states = {"assigned", "acknowledged", "in_progress"}
+for path in glob.glob(os.path.join(tasks_dir, "*.yaml")):
+    data = load_yaml(path)
+    task = data.get("task") if isinstance(data, dict) else None
+    if not isinstance(task, dict) or str(task.get("status", "")) not in active_states:
+        continue
+    cmd_id = str(task.get("parent_cmd") or task.get("task_id") or "")
+    ts = epoch(task.get("deployed_at") or task.get("updated_at") or task.get("timestamp"))
+    if cmd_id and ts is not None:
+        reopen_events.append((dedup_key(cmd_id), ts))
+
 for cmd_id, ts in lgtm_events:
     event_key = dedup_key(cmd_id)
+    if any(key == event_key and reopen_ts >= ts for key, reopen_ts in reopen_events):
+        continue
     if any(key == event_key and notice_ts >= ts for key, notice_ts in notifications):
         continue
     if now - ts < grace:
