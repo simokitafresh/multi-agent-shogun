@@ -7,12 +7,26 @@ setup() {
   mkdir -p "$TMPROOT/queue/reports"
   mkdir -p "$TMPROOT/queue/tasks"
   REPORT="$TMPROOT/queue/reports/ninja_report_cmd_test.yaml"
-  printf 'parent_cmd: cmd_test\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nresult:\n  summary: ok\n' > "$REPORT"
+  printf 'worker_id: ninja\nparent_cmd: cmd_test\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nresult:\n  summary: ok\n' > "$REPORT"
   PROJECT_ROOT="$TMPROOT"
   source "$ROOT/scripts/lib/review_approval.sh"
   KEY=$(review_report_key "${REPORT#"$TMPROOT"/}")
   APPROVALS="$TMPROOT/queue/gates/cmd_test/review_approvals/reports/$KEY"
   mkdir -p "$APPROVALS"
+}
+
+setup_rc_task() {
+  mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/queue/inbox"
+  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  cp "$ROOT/scripts/lib/yaml_field_set.sh" "$TMPROOT/scripts/lib/"
+  cp "$ROOT/scripts/inbox_write.sh" "$TMPROOT/scripts/inbox_write.sh"
+  cat > "$TMPROOT/queue/tasks/ninja.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_test
+  status: done
+  completed_at: "2026-07-11T10:00:00+09:00"
+  done_at: "2026-07-11T10:01:00+09:00"
+YAML
 }
 teardown() { rm -rf "$TMPROOT"; }
 
@@ -158,7 +172,7 @@ YAML
 
 @test "RC invalidates report approval and formal marker" {
   mkdir -p "$TMPROOT/queue/reports" "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
-  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  setup_rc_task
   local r="$TMPROOT/queue/reports/ninja_report_cmd_test.yaml"
   approve gunshi LGTM "$r"; approve karo ACCEPT "$r"
   [ -e "$TMPROOT/queue/gates/cmd_test/review_gate.done" ]
@@ -167,9 +181,40 @@ YAML
   ! review_two_phase_ready cmd_test "$r"
 }
 
+@test "RC reopens done worker task, clears completion times, and persists task_start" {
+  setup_rc_task
+  approve karo RC "$REPORT"
+  run python3 - "$TMPROOT/queue/tasks/ninja.yaml" <<'PY'
+import sys, yaml
+t = yaml.safe_load(open(sys.argv[1]))['task']
+assert t['status'] == 'assigned'
+assert t.get('completed_at') in ('', None)
+assert t.get('done_at') in ('', None)
+PY
+  [ "$status" -eq 0 ]
+  run python3 - "$TMPROOT/queue/inbox/ninja.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1])) or {}).get('messages') or []
+assert any(m.get('action') == 'task_start' and m.get('type') == 'task_assigned' for m in messages)
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "RC fails closed for missing worker task or parent mismatch" {
+  setup_rc_task
+  sed -i 's/parent_cmd: cmd_test/parent_cmd: cmd_other/' "$TMPROOT/queue/tasks/ninja.yaml"
+  run approve karo RC "$REPORT"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"parent_cmd mismatch"* ]]
+  rm "$TMPROOT/queue/tasks/ninja.yaml"
+  run approve karo RC "$REPORT"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"task not found"* ]]
+}
+
 @test "RC permits the same manifest to trigger once again" {
   mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
-  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  setup_rc_task
   approve gunshi LGTM "$REPORT"; approve karo ACCEPT "$REPORT"
   manifest=$(review_manifest_fingerprint "$REPORT")
   [ -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered.$manifest" ]
@@ -292,7 +337,7 @@ SH
 
 @test "global lock serializes late approval and RC; RC leaves no formal state" {
   mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
-  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  setup_rc_task
   approve gunshi LGTM "$REPORT"
   ready="$TMPROOT/ready" release="$TMPROOT/release"
   REVIEW_APPROVAL_ROOT="$TMPROOT" REVIEW_APPROVAL_NO_TRIGGER=1 REVIEW_APPROVAL_TEST_READY_FILE="$ready" REVIEW_APPROVAL_TEST_RELEASE_FILE="$release" \

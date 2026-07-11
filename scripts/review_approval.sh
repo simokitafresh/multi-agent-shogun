@@ -20,10 +20,41 @@ trap 'rm -f "$tmp"' EXIT
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 if [ "$role" = karo ] && [ "$result" = RC ]; then
+  worker_id=$(python3 - "$report" <<'PY'
+import re, sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+worker = str(data.get("worker_id") or "")
+if not re.fullmatch(r"[a-z][a-z0-9_-]*", worker):
+    raise SystemExit(1)
+print(worker)
+PY
+  ) || { echo "BLOCK: RC report worker_id missing or invalid: $report_rel" >&2; exit 1; }
+  task_file="$ROOT/queue/tasks/$worker_id.yaml"
+  [ -f "$task_file" ] || { echo "BLOCK: RC worker task not found: $worker_id" >&2; exit 1; }
+  task_parent=$(python3 - "$task_file" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str((data.get("task") or {}).get("parent_cmd") or ""))
+PY
+  ) || { echo "BLOCK: RC worker task unreadable: $worker_id" >&2; exit 1; }
+  [ "$task_parent" = "$cmd_id" ] || {
+    echo "BLOCK: RC worker task parent_cmd mismatch: worker=$worker_id expected=$cmd_id actual=${task_parent:-missing}" >&2
+    exit 1
+  }
+
   mapfile -t current_reports < <(find "$ROOT/queue/reports" -maxdepth 1 -type f -name "*_report_${cmd_id}.yaml" -print | LC_ALL=C sort)
   current_manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${current_reports[@]}" 2>/dev/null || true)
   rm -f "$dir/gunshi.yaml" "$ROOT/queue/gates/$cmd_id/review_gate.done"
   [ -z "$current_manifest" ] || rm -f "$base/.gate_triggered.$current_manifest"
+  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task status assigned
+  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task completed_at ""
+  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task done_at ""
+  bash "$ROOT/scripts/inbox_write.sh" "$worker_id" \
+    "前taskの情報は無効。タスクYAMLを最初から読み直して作業開始せよ。 — タスクYAML: $task_file を読んで作業開始せよ" \
+    task_assigned karo task_start || {
+      echo "BLOCK: RC task reopened but task_start notification persistence failed: worker=$worker_id" >&2
+      exit 1
+    }
   echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
   exit 0
 fi
