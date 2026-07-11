@@ -46,6 +46,100 @@ teardown() {
     [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$other_index_before" ]
 }
 
+make_shared_fixture() {
+    : > "$REPO/shared.txt"
+    for i in $(seq 1 36); do printf 'base-%02d\n' "$i" >> "$REPO/shared.txt"; done
+    git -C "$REPO" add shared.txt
+    git -C "$REPO" commit -qm shared-base
+}
+
+make_own_patch() {
+    cp "$REPO/shared.txt" "$REPO/shared.working"
+    for i in 2 9 16 23 30; do sed -i "${i}s/$/-own/" "$REPO/shared.txt"; done
+    git -C "$REPO" diff -- shared.txt > "$REPO/own.patch"
+    mv "$REPO/shared.working" "$REPO/shared.txt"
+}
+
+@test "patch modeは同一fileの自分5 hunkだけcommitし他者13 hunkと共有indexを完全保全する" {
+    make_shared_fixture
+    make_own_patch
+    for i in 1 4 7 10 13 18 21 24 27 31 33 35 36; do sed -i "${i}s/$/-other/" "$REPO/shared.txt"; done
+    printf 'other staged\n' >> "$REPO/other.txt"
+    git -C "$REPO" add other.txt
+    other_index_before="$(git -C "$REPO" ls-files -s -- other.txt)"
+    worktree_before="$(cat "$REPO/shared.txt")"
+    base_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m own-five --patch '$REPO/own.patch' --base-blob '$base_blob' -- shared.txt"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" show --format= --numstat HEAD -- shared.txt | awk '{print $1+$2}')" -eq 10 ]
+    [ "$(git -C "$REPO" show HEAD:shared.txt | grep -c -- '-own')" -eq 5 ]
+    [ "$(cat "$REPO/shared.txt")" = "$worktree_before" ]
+    [ "$(grep -c -- '-other' "$REPO/shared.txt")" -eq 13 ]
+    [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$other_index_before" ]
+    [ "$(git -C "$REPO" diff --cached --name-only)" = other.txt ]
+}
+
+@test "patch modeはbase blob不一致をcommit前にBLOCKする" {
+    make_shared_fixture; make_own_patch
+    run bash -c "cd '$REPO' && bash '$HELPER' -m stale --patch '$REPO/own.patch' --base-blob 0000000000000000000000000000000000000000 -- shared.txt"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"base blob mismatch"* ]]
+}
+
+@test "patch modeはscope外path混入をcommit前にBLOCKする" {
+    make_shared_fixture; make_own_patch
+    printf 'other change\n' >> "$REPO/other.txt"
+    git -C "$REPO" diff -- shared.txt other.txt > "$REPO/mixed.patch"
+    base_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+    run bash -c "cd '$REPO' && bash '$HELPER' -m mixed --patch '$REPO/mixed.patch' --base-blob '$base_blob' -- shared.txt"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"out-of-scope path"* ]]
+}
+
+@test "patch modeは空patchと適用不能patchをcommit前にBLOCKする" {
+    make_shared_fixture
+    : > "$REPO/empty.patch"
+    base_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+    run bash -c "cd '$REPO' && bash '$HELPER' -m empty-patch --patch '$REPO/empty.patch' --base-blob '$base_blob' -- shared.txt"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"missing or empty"* ]]
+
+    printf '%s\n' 'diff --git a/shared.txt b/shared.txt' '--- a/shared.txt' '+++ b/shared.txt' '@@ -1 +1 @@' '-not-the-base' '+changed' > "$REPO/bad.patch"
+    run bash -c "cd '$REPO' && bash '$HELPER' -m bad-patch --patch '$REPO/bad.patch' --base-blob '$base_blob' -- shared.txt"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"does not apply cleanly"* ]]
+}
+
+@test "patch modeは削除・新規file・改行境界のpatchを扱う" {
+    make_shared_fixture
+    printf 'tail-no-newline' >> "$REPO/shared.txt"
+    git -C "$REPO" add shared.txt && git -C "$REPO" commit -qm newline-base
+    printf '\nchanged-tail\n' >> "$REPO/shared.txt"
+    git -C "$REPO" diff -- shared.txt > "$REPO/newline.patch"
+    git -C "$REPO" checkout -q -- shared.txt
+    base_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+    run bash -c "cd '$REPO' && bash '$HELPER' -m newline --patch '$REPO/newline.patch' --base-blob '$base_blob' -- shared.txt"
+    [ "$status" -eq 0 ]
+
+    printf 'new file\n' > "$REPO/new.txt"
+    git -C "$REPO" diff --no-index /dev/null new.txt > "$REPO/new.patch" || true
+    run bash -c "cd '$REPO' && bash '$HELPER' -m new --patch '$REPO/new.patch' --base-blob 0000000000000000000000000000000000000000 -- new.txt"
+    [ "$status" -eq 0 ]
+
+    # patch modeはworking treeを意図的に不変に保つ。次の独立edge fixture前に
+    # sandbox内だけHEADへ同期する（本番helperは他者差分へ触れない）。
+    git -C "$REPO" checkout -q -- shared.txt
+    base_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+    git -C "$REPO" rm -q shared.txt
+    git -C "$REPO" diff --cached -- shared.txt > "$REPO/delete.patch"
+    git -C "$REPO" reset -q HEAD -- shared.txt
+    git -C "$REPO" checkout -q -- shared.txt
+    run bash -c "cd '$REPO' && bash '$HELPER' -m delete --patch '$REPO/delete.patch' --base-blob '$base_blob' -- shared.txt"
+    [ "$status" -eq 0 ]
+    ! git -C "$REPO" cat-file -e HEAD:shared.txt
+}
+
 @test "空scopeはBLOCKする" {
     run bash -c "cd '$REPO' && bash '$HELPER' -m empty --"
     [ "$status" -eq 2 ]

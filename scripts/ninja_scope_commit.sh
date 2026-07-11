@@ -14,15 +14,27 @@ NINJA_SCOPE_COMMIT_SCRIPT_DIR="$(cd "$(dirname "$_ninja_scope_commit_self")" && 
 unset _ninja_scope_commit_self
 
 usage() {
-    echo "Usage: bash scripts/ninja_scope_commit.sh -m <message> -- <path> [path ...]" >&2
+    echo "Usage: bash scripts/ninja_scope_commit.sh -m <message> [--patch <file> --base-blob <hash>] -- <path> [path ...]" >&2
 }
 
 message=""
+patch_file=""
+base_blob=""
 while (($#)); do
     case "$1" in
         -m|--message)
             (($# >= 2)) || { usage; exit 2; }
             message="$2"
+            shift 2
+            ;;
+        --patch)
+            (($# >= 2)) || { usage; exit 2; }
+            patch_file="$2"
+            shift 2
+            ;;
+        --base-blob)
+            (($# >= 2)) || { usage; exit 2; }
+            base_blob="$2"
             shift 2
             ;;
         --)
@@ -39,6 +51,14 @@ done
 
 [[ -n "$message" ]] || { echo "BLOCK: commit message is required" >&2; exit 2; }
 (($# > 0)) || { echo "BLOCK: commit scope is empty" >&2; exit 2; }
+if [[ -n "$patch_file" || -n "$base_blob" ]]; then
+    [[ -n "$patch_file" && -n "$base_blob" ]] \
+        || { echo "BLOCK: --patch and --base-blob must be used together" >&2; exit 2; }
+    (($# == 1)) \
+        || { echo "BLOCK: patch mode requires exactly one scope path" >&2; exit 2; }
+    [[ "$base_blob" =~ ^[0-9a-f]{40}$ ]] \
+        || { echo "BLOCK: --base-blob must be a full 40-hex object id" >&2; exit 2; }
+fi
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
     || { echo "BLOCK: not inside a git repository" >&2; exit 2; }
@@ -59,12 +79,69 @@ for path in "$@"; do
     # root相当に解決されるpath(空/"."/".."単体等)を全てfail-closedし、
     # 理由をstderrへ書く(このtry/exitはその理由をそのまま伝播させる)。
     normalized="$(scope_path_normalize "$path")" || exit 2
-    [[ -e "$normalized" || -L "$normalized" ]] \
-        || { echo "BLOCK: scope path does not exist: $normalized" >&2; exit 2; }
-    [[ -n "$(git status --porcelain -- "$normalized")" ]] \
-        || { echo "BLOCK: scope path has no changes: $normalized" >&2; exit 2; }
+    if [[ -z "$patch_file" ]]; then
+        [[ -e "$normalized" || -L "$normalized" ]] \
+            || { echo "BLOCK: scope path does not exist: $normalized" >&2; exit 2; }
+        [[ -n "$(git status --porcelain -- "$normalized")" ]] \
+            || { echo "BLOCK: scope path has no changes: $normalized" >&2; exit 2; }
+    fi
     paths+=("$normalized")
 done
+
+# 同一pathに複数agentのhunkが混在する場合の非対話入口。共有index/working treeを
+# sourceにせず、HEADから作った専用indexへ明示patchだけを適用してcommitする。
+# --base-blobはpatch作成時の基準を固定し、古いpatchの誤適用を事前BLOCKする。
+if [[ -n "$patch_file" ]]; then
+    [[ -f "$patch_file" && -s "$patch_file" ]] \
+        || { echo "BLOCK: patch is missing or empty: $patch_file" >&2; exit 2; }
+    patch_file="$(cd "$(dirname "$patch_file")" && pwd)/$(basename "$patch_file")"
+    scope_path="${paths[0]}"
+    if git cat-file -e "HEAD:$scope_path" 2>/dev/null; then
+        head_blob="$(git rev-parse "HEAD:$scope_path")"
+    else
+        head_blob="0000000000000000000000000000000000000000"
+    fi
+    [[ "$head_blob" == "$base_blob" ]] \
+        || { echo "BLOCK: base blob mismatch for $scope_path (expected $base_blob, HEAD has $head_blob)" >&2; exit 2; }
+    shared_index_blob="$(git ls-files -s -- "$scope_path" | awk 'NR==1 {print $2}')"
+    [[ "${shared_index_blob:-0000000000000000000000000000000000000000}" == "$head_blob" ]] \
+        || { echo "BLOCK: scope path already has staged content in shared index: $scope_path" >&2; exit 2; }
+
+    mapfile -t patch_paths < <(git apply --numstat -- "$patch_file" 2>/dev/null | awk '{print $3}')
+    ((${#patch_paths[@]} > 0)) \
+        || { echo "BLOCK: patch has no applicable file changes" >&2; exit 2; }
+    for patch_path in "${patch_paths[@]}"; do
+        [[ "$patch_path" == "$scope_path" ]] \
+            || { echo "BLOCK: patch contains out-of-scope path: $patch_path" >&2; exit 2; }
+    done
+
+    temp_index="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-index.XXXXXX")"
+    rm -f "$temp_index"
+    cleanup_patch_index() { rm -f "$temp_index" "$temp_index.lock"; }
+    trap cleanup_patch_index EXIT
+    export GIT_INDEX_FILE="$temp_index"
+    git read-tree HEAD
+    git apply --cached --check -- "$patch_file" \
+        || { echo "BLOCK: patch does not apply cleanly to the declared base" >&2; exit 2; }
+    git apply --cached -- "$patch_file"
+    [[ -n "$(git diff --cached --name-only)" ]] \
+        || { echo "BLOCK: patch produced an empty index diff" >&2; exit 2; }
+    [[ "$(git diff --cached --name-only)" == "$scope_path" ]] \
+        || { echo "BLOCK: patch polluted temporary index scope" >&2; exit 2; }
+    git commit -m "$message"
+    # HEAD更新後、共有indexの対象pathだけを新HEADへ追随させる。他pathのstageは
+    # 一切変更せず、対象pathが旧HEAD由来の逆差分として残るindex汚染を防ぐ。
+    unset GIT_INDEX_FILE
+    if git cat-file -e "HEAD:$scope_path" 2>/dev/null; then
+        new_blob="$(git rev-parse "HEAD:$scope_path")"
+        new_mode="$(git ls-tree HEAD -- "$scope_path" | awk 'NR==1 {print $1}')"
+        git update-index --add --cacheinfo "$new_mode,$new_blob,$scope_path"
+    else
+        git update-index --force-remove -- "$scope_path"
+    fi
+    git rev-parse HEAD
+    exit 0
+fi
 
 # Path限定addは他者の既存stageを変更しない。--onlyは共有indexの他pathをcommitしない。
 git add -- "${paths[@]}"

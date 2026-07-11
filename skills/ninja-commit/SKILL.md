@@ -57,6 +57,14 @@ bash scripts/ninja_scope_commit.sh \
 
 helperは指定pathだけをaddし、`git commit --only -- <paths>`でcommitする。共有indexにある他者stageは変更もcommitもしない。空scope・存在しないpathはBLOCKし、pre-commit hookは通常どおり実行する。
 
+同一ファイル内に他者hunkが混在する場合は、HEAD基準で自分のhunkだけを表すpatchを用意し、非対話patch入口を使う。手動`git add -p`や他者差分のstashは不要。`--base-blob`不一致、空patch、適用不能、scope外pathはcommit前にBLOCKされる。
+
+```bash
+BASE_BLOB=$(git rev-parse HEAD:path/to/shared-file)
+bash scripts/ninja_scope_commit.sh -m "<message>" \
+  --patch /tmp/own.patch --base-blob "$BASE_BLOB" -- path/to/shared-file
+```
+
 **通常の `git commit` 直書きは禁止** — commit前から他者stageが存在すると、後から自分のpathだけ`git add`しても両方がcommitされる。
 
 ### Step 5: commit後確認
