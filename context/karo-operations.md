@@ -41,6 +41,7 @@
 | 11 | **三層記憶を検索したか？(殿厳命2026-06-10: 使用しないのはバグ)** 行動前に(1)`memory_db_query.sh`でキーワード検索 (2)`semantic_search.sh`で概念検索。回答に`[MEM: memory_db ts=YYYY-MM-DD]`タグで引用。検索せずに結論するな | 将軍バージョン更新時に三層記憶検索を省略→洗脳#2(2026-06-10)。三層記憶→一次情報→行動の順序 |
 | 12 | **教訓修正時にcross-project全コピーを確認したか？** `grep -rn "id: LXXX" projects/`で全コピーのタグを同期。片方だけ修正は不完全(cmd_3396: L633/L577/L544二重登録でinfra版誤タグ経由の無関係注入継続) | dm-signal版タグ修正→LGTM→軍師RC: infra版コピーが残存→再修正が必要だった |
 | 13 | **inbox未読を意志で処理しようとしていないか？** `cmd_new`未読は配備漏れ直結なので `gate_karo_startup.sh` がALERT化する。nudge/Stop hook/tmuxに依存せず、通常作業前に未読0または明示処理済みにせよ | cmd_3457: `cmd_new`が未読のまま infra調査へ進み、配備漏れを二次情報で後追い発見した。真因は通知失敗ではなく未読処理の意志依存 |
+| 14 | **変更対象は実行経路に配線されているか？** gate/hook/dispatcher関数の承認前に、定義・テストを除くcaller数を一次計測せよ。非test caller=0ならテストPASSでもdead codeであり、耐久化をACCEPTせず削除または正本経路へ統合する | `trigger_cmd_complete_gate_background`は専用fixture 53/53 PASSだったが非test caller 0。未使用関数を強化してLGTMした後、家老RCで88行削除へ転換した(cmd_karo_hotfix_inbox_gate_trigger_durable_202607111406) |
 
 ## §1 配備
 

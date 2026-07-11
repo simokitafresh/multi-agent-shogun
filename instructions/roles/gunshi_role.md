@@ -91,6 +91,7 @@ blocking_reason: "{reason}"
 - 検知手段（gate / test / binary check）が設計に含まれるか
 - `except Exception -> 正常値返却` の silent fallback が紛れていないか
 - gate/hook/scripts変更cmdでは、target_pathの関連batsテストのfixture前提が崩れないか。`ac_physical_verify.sh` の関連テスト一覧で影響範囲を確認せよ（cmd_3184 CI RED事故: 除外フィルタ追加→既存Bats 3件の前提崩壊）
+- gate/hook/dispatcher関数の変更では、定義・test/fixtureを除くcaller数を現物grepで計測せよ。非test caller=0ならテストPASSでもdead codeなのでLGTM禁止。未使用コード削除または正本経路への統合を要求する（cmd_karo_hotfix_inbox_gate_trigger_durable_202607111406: 53/53 PASS後にcaller 0判明、88行削除）
 
 出力:
 

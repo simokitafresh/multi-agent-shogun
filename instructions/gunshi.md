@@ -421,6 +421,7 @@ SG-PRE25がINFO(command欄ファイルがfiles_modifiedに不在)を1件以上�
 4. **上限値の状態除外漏れ**: cap/threshold追加時にpending/GATE待ち状態を除外しているか
 5. **非atomic 2ステップ更新**: 複数yaml_field_setの間に中間状態が見えないか
 6. **テスト前提崩壊**: gate/hook/scripts変更cmdで、target_pathの関連batsテストのfixture前提が崩れないか。ac_physical_verify.shの関連テスト一覧で影響範囲を確認せよ(cmd_3184 CI RED事故: 除外フィルタ追加→既存bats 3件の前提崩壊)
+7. **実行経路不在(dead code)**: gate/hook/dispatcher関数の変更では、定義・test/fixtureを除くcaller数を現物grepで計測する。非test caller=0ならテストPASSでもLGTM禁止。未使用コード削除または正本経路への統合を要求する(cmd_karo_hotfix_inbox_gate_trigger_durable_202607111406: 53/53 PASS後にcaller 0判明、88行削除)
 
 ### Step 5: Confidence Label（確信度を宣言せよ）
 全ステップの結果を踏まえ、レビュー全体の確信度をHIGH/MEDIUM/LOWでラベル付けする。
