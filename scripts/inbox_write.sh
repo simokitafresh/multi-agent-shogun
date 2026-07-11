@@ -889,6 +889,8 @@ forward_gunshi_review_result_to_active_ninjas() {
 trigger_cmd_complete_gate_background() {
     local cmd_id="$1"
     local gate_script="$SCRIPT_DIR/scripts/cmd_complete_gate.sh"
+    local trigger_log="$SCRIPT_DIR/queue/gates/${cmd_id}/cmd_complete_gate.trigger.log"
+    local trigger_pid trigger_alive=0 stat_file state pgrp
 
     [ -n "$cmd_id" ] || return 0
     [ -f "$gate_script" ] || {
@@ -896,9 +898,38 @@ trigger_cmd_complete_gate_background() {
         return 0
     }
 
-    nohup bash "$gate_script" "$cmd_id" >/dev/null 2>&1 &
-    disown
-    echo "[inbox_write] cmd_complete_gate.sh started in background for ${cmd_id} (nohup+disown)" >&2
+    mkdir -p "$(dirname "$trigger_log")"
+    : > "$trigger_log" || {
+        echo "[inbox_write] ERROR: cannot create cmd_complete_gate trigger log for ${cmd_id}: ${trigger_log}" >&2
+        return 1
+    }
+
+    # nohup/disownだけではcallerのprocess groupを継承する。短命CLI/tool callerの
+    # group teardownに巻き込まれないよう、新session/process groupへ分離する。
+    setsid nohup bash "$gate_script" "$cmd_id" >>"$trigger_log" 2>&1 </dev/null &
+    trigger_pid=$!
+
+    # 生存だけでなくsetsid完了(pgrp == pid)まで確認する。exec失敗や分離失敗を
+    # 「background started」と誤報せず、callerへ同期的に可視化する。
+    for _ in 1 2 3 4 5; do
+        sleep 0.03
+        stat_file="/proc/${trigger_pid}/stat"
+        if [ -r "$stat_file" ]; then
+            state=$(awk '{print $3}' "$stat_file" 2>/dev/null)
+            pgrp=$(awk '{print $5}' "$stat_file" 2>/dev/null)
+            if [ -n "$state" ] && [ "$state" != "Z" ] && [ "$pgrp" = "$trigger_pid" ]; then
+                trigger_alive=1
+                break
+            fi
+        fi
+    done
+    if [ "$trigger_alive" -ne 1 ]; then
+        wait "$trigger_pid" 2>/dev/null || true
+        echo "[inbox_write] ERROR: cmd_complete_gate.sh durable dispatch failed for ${cmd_id}; log=${trigger_log}" >&2
+        return 1
+    fi
+
+    echo "[inbox_write] cmd_complete_gate.sh started in detached process group for ${cmd_id}; pid=${trigger_pid} log=${trigger_log}" >&2
 }
 
 record_inbox_event_to_memory_db() {

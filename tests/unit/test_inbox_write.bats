@@ -795,6 +795,48 @@ _wait_for_file() {
     return 1
 }
 
+@test "trigger_cmd_complete_gate_background survives short-lived caller process-group teardown" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/gates"
+    cat > "$TEST_TMPDIR/scripts/cmd_complete_gate.sh" <<'EOF'
+#!/usr/bin/env bash
+sleep 0.25
+printf 'gate-complete:%s\n' "$1"
+printf '%s\n' "$1" > "$INBOX_WRITE_GATE_OUTCOME"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
+    export INBOX_WRITE_GATE_OUTCOME="$TEST_TMPDIR/gate.outcome"
+
+    # 対象関数だけを現物から抽出し、短命setsid caller内で起動する。callerの
+    # process groupを終了しても、gateは別pgidで完遂しなければならない。
+    function_source=$(awk '
+        /^trigger_cmd_complete_gate_background\(\)/ { capture=1 }
+        capture { print; if ($0 == "}") exit }
+    ' "$PROJECT_ROOT/scripts/inbox_write.sh")
+    cat > "$TEST_TMPDIR/short_caller.sh" <<EOF
+#!/usr/bin/env bash
+SCRIPT_DIR='$TEST_TMPDIR'
+$function_source
+trigger_cmd_complete_gate_background cmd_durable_fixture
+EOF
+    chmod +x "$TEST_TMPDIR/short_caller.sh"
+
+    setsid bash "$TEST_TMPDIR/short_caller.sh" >"$TEST_TMPDIR/caller.stdout" 2>"$TEST_TMPDIR/caller.stderr" &
+    caller_pid=$!
+    for _ in {1..100}; do
+        ! kill -0 "$caller_pid" 2>/dev/null && break
+        sleep 0.01
+    done
+    kill -- "-$caller_pid" 2>/dev/null || true
+
+    run _wait_for_file "$INBOX_WRITE_GATE_OUTCOME"
+    [ "$status" -eq 0 ]
+    trigger_log="$TEST_TMPDIR/queue/gates/cmd_durable_fixture/cmd_complete_gate.trigger.log"
+    [ -s "$trigger_log" ]
+    [ "$(grep -c '^cmd_durable_fixture$' "$INBOX_WRITE_GATE_OUTCOME")" -eq 1 ]
+    grep -q '^gate-complete:cmd_durable_fixture$' "$trigger_log"
+}
+
 @test "report_received: uncommitted changes in files_modified → BLOCKED" {
     setup_git_test_env
 
