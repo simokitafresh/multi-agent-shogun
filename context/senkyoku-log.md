@@ -1398,6 +1398,7 @@
 - 2026-07-08 cmd_reflux_insight_202607080614_hayate完了: 疾風がINS-618cをPD-056構造対策完了済みの残存insightとしてresolve。pending 2→1、report gate PASS、task idle差分もcommitしてGATE CLEAR。
 - 2026-07-08 cmd_reflux_promotion_202607080617_tobisaru完了: 飛猿がLS-A10 enforcementをcmd_save `check_measurement_env_info`(cmd_2634)実装へ接続してLevel5明示化。promotions 76→75、未カバーのRender実測強制/生成機構理解チェックはdecision_candidateへ分離。
 - 2026-07-08 cmd_reflux_promotion_202607080632_hanzo完了: 半蔵がLS-A11へ`enforcement_level: 4`と既存hook/gate/script防御の一次証跡を追記。L4未満候補75→74、report gate PASS、GATE CLEAR。
+- 2026-07-12 cmd_karo_hotfix_ga228_task_yaml_mixed_stage_202607120650完了: 疾風が飛猿のGA-408発火1件/321を一次解析し、task YAML+context混在はpre-commit時点で正しくBLOCKされるがstage後であると特定。共通PreToolUse Guard 3.7へtemporary-indexの`git_stage_guard`を接続し、混在遮断1/1・正常系3/3、Bats 24/24+構文2/2 PASSで前段化。
 - 2026-07-08 cmd_3779完了+α6検証段起動: 半蔵がpf_L3全量GS(3,484,075パターン)から21体選出、現行対比21/21入替(gist=1e073ccf)。殿指示(22:09-22:19)でバンド有り新チャンピオン75体のα6×4視点+レジーム検証へ — 計画書=[[plan_alpha6_band_champions_verification_20260708]](gist=4fa5c2c9)、実行=cmd_3780委任済み。最大リスク点=robustness再計算経路のバンド対応未確認(LS083同格性)。
 - 2026-07-08 軍師idle分析: WA率50%上昇をLG014到達で分析([[gunshi_idle_wa_stall_pattern_20260708]])。deploy_task fallback template品質の道具穴は家老hotfix(e191bcf88)で即日修正済み。
 - 2026-07-08 スループット設計書v1.2+S4棚卸し: 実測1日目検証でS1-S3稼働+穴6点(H1計器代表性・H2 scan空転・H3帰属形骸・H4 recall欠如・H5 duration欠損)を特定、fix_known4本還流投入+cmd_3781(SG-PRE31拡張)委任。殿裁可(23:31)を受けS4置換対象の棚卸し表=[[s4-question-pruning-inventory_20260708]](gist=ec836cab)を作成し殿裁定へ。核心=洗脳8問の毎プロンプト全文注入(形骸化80%実測)を1問+startup集約+検出型へ縮約する案。
