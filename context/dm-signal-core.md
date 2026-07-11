@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-11 cmd_karo_hotfix_ga221_context_freshness_202607110323 -->
+<!-- last_updated: 2026-07-12 cmd_karo_hotfix_dm_signal_core_freshness_202607120345 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -278,6 +278,7 @@ GS修正経緯(cmd_215→217): cmd_215でtop_n同点パリティ差分検知→c
 
 `PipelineEngine.execute_pipeline(pipeline_config, target_date, initial_tickers, price_data_cache, momentum_cache)` → `{signal, momentum_data, block_results, weights}`
 PipelineContext(黒板): `current_tickers`(絞込) / `momentum_data`(各BB結果) / `final_weights`(Terminal配分)
+- **2026-07-12 cmd_3856(P3a共通executor統合)**: 標準PF(非FoF)のselection→terminal決定は`backend/app/services/pipeline/executor.py`の純粋関数`execute_pipeline_semantics()`が新SSOT。Engine adapter(`execute_pipeline_with_blocks`)とvectorized batch adapter(`recalculate_fast.py`)が同一実装を共有し、旧独立実装`_compute_pipeline_signals`はbackend全域で参照0件(全廃)。**射程外**: FoF専用ブロック(ComponentPrice/MultiView/SingleView/TrendReversal/WardTwoStageEW)は`recalculate_fof.py`が呼ぶ上記`PipelineEngine.execute_pipeline`を無変更のまま使用(統合対象外)。P1a〜P2b(source identity/manifest/RSS cap/oracle契約修正)はrecalculate_fast.py内の検証ハーネス・運用robustness改修でありcore不変量への影響なし。詳細 → `context/dm-signal-research.md` §54 + 因果リンク`[[cmd_3856_P3a_common_executor]]`、DM-Signal `docs/research/cmd_3856_p3a_common_executor.md`、設計書`docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.11 §7.5
 **signal**: パイプライン生出力 | **holding_signal**: リバランス月でなければ前月維持。MonthlyReturnはholding_signalで計算せよ
 - L419: fof_component_weightsフラッシュ未配線(全FoF影響)。flush関数実装済みでもrecalculate_fof.pyのimport+呼出がなければ永久に空（cmd_1096）
 - L421: flush関数の実装+exportだけでは不十分。呼出元のimport+呼出コードが存在するか二値チェック必須（cmd_1101）
