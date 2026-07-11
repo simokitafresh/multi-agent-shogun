@@ -686,6 +686,7 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - GA-220 bounded分類: `last_updated=2026-07-10`以後のgate対象commitは3件。研究索引反映対象は`a00e1253` 1件、`44f29418`/`85553199` 2件はcmd_3841の可視性設定孤児清掃・証跡来歴修正であり運用ドメインのため非対象。
 → 正本: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` §7
 - v1.2追記(家老運用レビュー blt_20260711_014245反映): P1をP1a(source identity+logical_date+run_id、単独deploy可)/P1b(snapshot+manifest+guard+cron対応)に分割。書込み順序を「read-session全materialize→manifest確定→初めてbusiness write」に確定(現コードは入力load前にconfig snapshot INSERT=write0が偽だった)。standalone L5にmanifest_kind=l5新設。cronはHTTP accepted≠job成功のためterminal poll+失敗nonzero化、L5 fallbackはL3当日成功を実行条件に追加。追加AC7本(業務write0/5caller伝播/manifest消失0/L2失敗遮断/L5被覆/guard0件/全shard網羅)。→ 正本§8
+- cmd_3848(P1a追補): local source identityはtracked dirtyに加え、設計§7.1の4 source root内のuntracked path+content SHA fingerprintもdirtyとしてfail-closedする。
 
 ---
 
