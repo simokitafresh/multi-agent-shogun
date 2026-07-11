@@ -1146,3 +1146,10 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 再発防止: `LayerTimer.get_unaccounted_ratio()`を新設(`status=completed`のLayer合計が全体経過時間をカバーしない割合)。`UNACCOUNTED_TIME_WARN_THRESHOLD=0.3`(30%)超で`print_summary()`が`logger.warning()`を出す。今回規模(66.5%欠落)は閾値を大きく超え、同種の登録漏れは次回からWARNログで即検知できる。
 - 検証: `test_timing.py`へ決定的テスト8件追加(`time.sleep()`不使用、`timer.layers`直接注入+`total_start`オフセットでフレーキーさ排除)。関連7ファイル合計78 tests / 0 failed / 0 skipped(`test_timing.py`28、`test_timing_db.py`10、`test_layer_timing_integration.py`6、`test_sync_layers_timing.py`7、`test_recalculate_modes.py`18、`test_recalculate_precompute_savepoint.py`1、`test_signal_integrity.py`8)。詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3842_timing_l5_fix.md`
 - 因果リンク: [[cmd_3831偵察でL5未登録発覚]] -> [[cmd_3842_LAYER_ORDER+layer登録修正]] -> [[get_unaccounted_ratio再発防止]]
+
+## §68 recalculate P1a run identity固定 (cmd_3844, 2026-07-11)
+
+- `recalculate_history_fast`はbusiness write前にsource identityを1回だけ解決する。Renderは40hex `RENDER_GIT_COMMIT`必須、local write-enabledはfull git hash+tracked clean必須。unknown/dirtyはfail-closed。月初snapshotループ内git callは0。
+- `logical_date`はrun開始時1値に固定してprice/economic load・日次処理・FoF終端へ伝播。run IDはDB String(20)制約に合わせUTC14桁+base32 6桁、衝突時再生成。
+- P1b(manifest/immutable snapshot/ledger preload/caller全被覆)は未実装。詳細・実測・復元点: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3844_p1a_source_identity.md`
+- 因果リンク: [[cmd_3840偵察=ループ内git238回+日跨ぎparity割れ]] -> [[source identity単回+logical_date固定+一意run_id]] -> [[cmd_3844_P1a実装]]
