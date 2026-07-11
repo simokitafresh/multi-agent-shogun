@@ -501,9 +501,16 @@ if [[ "$payload" == *'queue/tasks/'* ]]; then
         task_redirect_pattern='>+[[:space:]]*[^ ]*queue/tasks/[^ ]*\.yaml'
         task_tee_pattern='tee[[:space:]].*queue/tasks/[^ ]*\.yaml'
         task_sed_pattern='(^|[;&|])[[:space:]]*sed[[:space:]].*(-i|--in-place).*queue/tasks/[^ ]*\.yaml'
-        task_python_pattern='python3?.*open.*queue/tasks/[^ ]*\.yaml'
+        # Read-only open()/yaml.safe_load() is a normal inspection path.  Deny
+        # Python only when the command explicitly requests write capability.
+        # Keep this fail-closed for every mutating open mode (w/a/x/+), plus
+        # pathlib's direct write helpers.
+        task_python_open_write_pattern='python3?.*open[[:space:]]*\([^)]*queue/tasks/[^)]*\.yaml[^)]*,[^)]*[wax+]'
+        task_python_path_write_pattern='python3?.*(Path[[:space:]]*\([^)]*queue/tasks/[^)]*\.yaml[^)]*\)|[^[:space:];]+)[[:space:]]*\.(write_text|write_bytes)[[:space:]]*\('
         if [[ "$command" =~ $task_redirect_pattern ]] || [[ "$command" =~ $task_tee_pattern ]] \
-            || [[ "$command" =~ $task_sed_pattern ]] || [[ "$command" =~ $task_python_pattern ]]; then
+            || [[ "$command" =~ $task_sed_pattern ]] \
+            || [[ "$command" =~ $task_python_open_write_pattern ]] \
+            || [[ "$command" =~ $task_python_path_write_pattern ]]; then
             emit_deny "BLOCKED: queue/tasks/へのBash直接書換え(sed -i/リダイレクト/tee/python3 open())は禁止。bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value> 経由で書き込みせよ。非atomicな公開は共有readerの破損原因となる。"
         fi
     fi
