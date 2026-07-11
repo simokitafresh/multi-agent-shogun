@@ -10603,3 +10603,218 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: checking incoming backlinks with causal_backlinks.sh
 - **how**: run rg per existing search path, not all paths in one rg invocation
 - cmd_reflux_backlink_202607091355_saizoで、causal_backlinks.shの-l相当検索がWSL2 /mnt/c上で複数パス(AGENTS.md instructions context projects skills scripts docs tasks)を一括rgすると非決定的に0件を返す現象を観測した。context単体のrg直接検索では安定してヒットしたため、全パス一括検索結果を一次情報として信じるとbacklinkなしを誤判定する。対策としてscripts/causal_backlinks.shは検索パスごとにrgを実行しsort -uで統合する。
+
+### L1020: 日本語隣接ASCII語はgrep単語境界で検出漏れする
+- **日付**: 2026-07-10
+- **出典**: cmd_karo_hotfix_startup_alerts_202607101046
+- **記録者**: karo
+- **tags**: [grep, locale, deploy]
+- **target_files**: [scripts/deploy_task.sh,scripts/cmd_save.sh,tests/unit/test_deploy_task_push_allowed.bats]
+- **origin**: [[cmd_3820]] -> [[G2_push_allowed欠落]] -> [[日本語隣接grep境界修正]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- C.UTF-8の素のGNU grepでは、pushして・push完了のような日本語に直接隣接するASCII語は\bpush\bで検出できない。(^|[^A-Za-z])push($|[^A-Za-z])を使い、検証はcommand grepまたはbatsの素のgrepで行う。
+
+### L1021: 共有リポジトリでgit add後commit前に他エージェントの一括commitへ吸収されることがある
+- **日付**: 2026-07-10
+- **出典**: cmd_karo_hotfix_skill_ref_freshness_202607101154
+- **記録者**: tobisaru
+- **tags**: [infra,skill,bash,git,cache]
+- **subdomain**: infra
+- **target_files**: [skills/codd-fix/SKILL.md,skills/karo-direct/SKILL.md,skills/recon-dual/SKILL.md,skills/shogun-cli-switch/SKILL.md]
+- **origin**: [[cmd_karo_hotfix_skill_ref_freshness_202607101154]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- skills/配下4ファイルをgit addでステージ後、次のBashコマンド実行までの間に別エージェント(将軍のstartup ALERT消化バッチ)がgit add -A相当+commitを実行し、自分がステージした変更がそのcommitに吸収された。commit --stagedのみを狙っても、複数エージェントが同一リポジトリで並行してgit操作するタイムウィンドウでは意図した単独commitにならない場合がある。対処: commit実行後は必ずgit log --oneline -1とgit show <hash> --statで自分の変更ファイルが実際にそのcommitに含まれているか確認する(git commitコマンドの成否だけでなく、diff --cached emptyや別hashへの混入を検知する)
+
+### L1022: 原則contextのsource監視から生成索引の通常成長を分離せよ
+- **日付**: 2026-07-10
+- **出典**: cmd_karo_hotfix_ga215_context_freshness_202607101205
+- **記録者**: kagemaru
+- **tags**: [infra,context,monitor]
+- **subdomain**: infra
+- **target_files**: [context/obsidian-link-principles.md,scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats]
+- **origin**: [[cmd_karo_hotfix_ga215_context_freshness_202607101205]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- IF 原則contextのsource pathspecに自動成長する生成索引ディレクトリを含める THEN 内容上の原則変更0件でも閾値到達ごとに偽陽性ALERTが再発する。原則を変える実装sourceだけを監視し、生成物の非発火回帰テストを置く。次回追加チェック: source候補ごとに原則変更を起こし得るかyes/no分類する。
+
+### L1023: gate/checkがconfig単一値のみを見て、書込み側の多先ルーティングを知らないと偽陽性ALERTが構造的に発生する
+- **日付**: 2026-07-10
+- **出典**: cmd_karo_hotfix_ga216_lesson_context_reflux_202607101555
+- **記録者**: kagemaru
+- **tags**: [infra,gate,frontend,testing,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/lesson_context_routes.sh,scripts/lesson_write.sh,scripts/gates/gate_lesson_health.sh,tests/unit/test_gate_lesson_health.bats,tests/unit/test_lesson_write.bats]
+- **origin**: [[cmd_karo_hotfix_ga216_lesson_context_reflux_202607101555]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- lesson_write.shはlessonのsubdomainに応じてcontext/dm-signal.md以外の複数ファイル(dm-signal-frontend.md/dm-signal-ops.md)へ実際にsyncしていたが、gate_lesson_health.shはconfig/projects.yamlの単一context_fieldしか見ておらず、正しく合流済みのlessonを繰り返しALERT(GA-216→GA-217)していた。書込み側が『複数の宛先へ分岐する』設計を持つ場合、チェック側(gate/検証)にも同じ分岐ロジックを反映しないと、チェック側は常に一つの宛先しか見ない前提のまま固定化し偽陽性を出し続ける。対策として分岐ロジックを共有ファイル(SSOT)へ抽出し両側からsourceする構成にした。同型のパターン(書込み側が動的に宛先を分岐するが、対応するgate/検証が固定の単一宛先しか見ない)が他のgate/検証にも潜んでいないか横展開確認の価値がある
+
+### L1024: 複数行1組の論理イベントを行単位で処理すると、片方の行だけdedup漏れして幽霊イベントが生まれる
+- **日付**: 2026-07-10
+- **出典**: cmd_karo_hotfix_ga_pair_dedup_202607101643
+- **記録者**: kagemaru
+- **tags**: [infra,testing,gate,lesson]
+- **subdomain**: infra
+- **target_files**: [scripts/gate_improvement_trigger.sh,tests/unit/test_gate_improvement_trigger.bats]
+- **origin**: [[cmd_karo_hotfix_ga_pair_dedup_202607101643]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- emit_actionable()はALERT/WARN行+action行を『1つの通知』として2行1組で出力するが、それを消費するdedup_alert_lines_24h()はwhile read -r lineで1行ずつ独立に判定していた。ALERT行はdedupキーにマッチしてskipされても、ペアのaction行は正規表現不一致でdedup判定自体をスキップされ無条件に生き残り、本来存在しないはずの『ALERT行を欠いた新規イベント』として後続処理(新規GA-ID発行)に渡ってしまった。教訓: ヘッダ行+継続行のような複数行1組の論理単位を扱うコードでは、行単位の独立処理(while read line)を素朴に書くと、片方の行だけ状態(skip/keepなど)がずれてイベントの完全性が壊れる。dedup/フィルタ処理を書く際は『この行は単独で意味を持つか、直前の行に従属するか』を明示的に区別し、従属行には親行の判定結果を伝播させる状態変数(本cmdではskip_current_block)を持たせるべき。同型のバグは、ログのマルチライン警告ブロックや、ヘッダ+詳細行形式の任意の出力パーサに潜在する可能性がある
+
+### L1025: cmd_complete_gateへ新規scripts/lib/*.sh依存を追加する時はtests/helpers/cmd_gate_scaffold.bashのsymlinkリスト同時更新が必須
+- **日付**: 2026-07-10
+- **出典**: cmd_karo_hotfix_shared_dirty_commit_gate_202607101643
+- **記録者**: kotaro
+- **tags**: [infra,inbox,testing,process,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_write.sh,scripts/cmd_complete_gate.sh,scripts/lib/report_commit_nonoverlap_filter.sh,tests/unit/test_inbox_write.bats,tests/helpers/cmd_gate_scaffold.bash]
+- **origin**: [[cmd_karo_hotfix_shared_dirty_commit_gate_202607101643]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_complete_gate.shにsource "$SCRIPT_DIR/scripts/lib/report_commit_nonoverlap_filter.sh"を無条件追加したところ、test_cmd_complete_gate_task_idle.batsの2テスト(実際にbash cmd_complete_gate.shをフル実行するテスト)が回帰した。原因はtests/helpers/cmd_gate_scaffold.bashが4つの既知libファイル(field_get.sh等)のみをTEST_PROJECT/scripts/lib/へsymlinkしており、新libが無いためset -e下でsource失敗→スクリプト全体が即abortしていたため。cmd_complete_gate.shは複数のtest_cmd_complete_gate_*.batsから共有されるscaffold(tests/helpers/cmd_gate_scaffold.bash)経由でフル実行テストされるため、新しいsourceを追加する際はSRC_*変数宣言・ファイル存在チェック・symlink作成の3箇所を同時に追加しないとテストのみ静かに壊れる(実運用のSCRIPT_DIRには実ファイルがあるため気づきにくい)。git stashで自分の変更だけを分離して切り分けたことで発見できた
+
+### L1026: AUTO-DONE系の自動状態遷移はreportとtaskの時間的前後関係(再配備タイミング)を確認しないと誤爆する
+- **日付**: 2026-07-10
+- **出典**: cmd_karo_hotfix_report_notify_inprogress_guard_202607101913
+- **記録者**: tobisaru
+- **tags**: [infra,ninja-monitor,deploy,communication,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_clear_guard.bats]
+- **origin**: [[cmd_karo_hotfix_report_notify_inprogress_guard_202607101913]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- check_and_update_done_task(scripts/ninja_monitor.sh)はreportのstatus:completedとtask.parent_cmd/task_idの一致だけを見てtask statusをdoneへ自動更新していた。家老がタスクを再配備(in_progress再開)しても、旧いreportファイルが残っていれば『いつ作られたreportか』を見ないため、旧reportをもって誤ってdoneへ書き換え、後段のcan_send_clear_with_report_gateがreport_notification_missingを偽陽性検知する連鎖が発生した(実例: hayate cmd_3834, 2026-07-10 19:08:14 AUTO-DONE誤爆→19:08:34 REPORT-NOTIFY-MISSING-BLOCK)。教訓: reportファイルの内容一致(parent_cmd/task_id)だけでは『今回の完了』と『前回試行の残骸』を区別できない。deploy_task.shが記録するdeployed_at等の再配備タイムスタンプと比較し、report側のtimestampがそれより前なら『古いデータ』として自動遷移をスキップする設計が必要。同種のAUTO-*系ロジック(auto_void_if_parent_cmd_completed等)にも同じ穴がないか横展開点検の価値がある。
+
+### L1027: 通知済みフラグではなく永続成果物をdedup正本にする
+- **日付**: 2026-07-10
+- **出典**: cmd_karo_hotfix_training_generation_dedup_202607102016
+- **記録者**: hayate
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/skill_auto_improve.sh,scripts/training_task_generator.sh,tests/test_training_task_generator_dedup.sh]
+- **origin**: [[cmd_karo_hotfix_training_generation_dedup_202607102016]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- session内stateはresetされるため永続重複防止にならない。generator入口でstable keyを作り、training/task/reportのactive状態とPASS完了時刻を新FAIL時刻へ比較するチェックを次回から必須にする
+
+### L1028: commit前に既存indexを対象scopeと分離確認する
+- **日付**: 2026-07-10
+- **出典**: cmd_karo_hotfix_deploy_assumptions_injection_202607102044
+- **記録者**: hayate
+- **tags**: [infra,deploy-task,git,cache]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,tests/unit/test_deploy_task_lifecycle.bats]
+- **origin**: [[cmd_karo_hotfix_deploy_assumptions_injection_202607102044]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- git addを対象2件に限定しても、開始前からindexに他者6件があるとcommitへ混入する。git diff --cached --name-onlyを対象scopeと突合し、不一致ならcommitを停止すべき。今回は原子逆差分commitとworktree再適用で他者WIPを保全した。
+
+### L1029: 新規PreToolUseチェックはbats/CI無テスト環境を必ず考慮せよ、共有worktreeのgit index/lintは全agent横断的である
+- **日付**: 2026-07-10
+- **出典**: cmd_karo_ci_fix_ga218_hook_suite_202607101912
+- **記録者**: kotaro
+- **tags**: [infra,semantic,api,frontend,testing]
+- **subdomain**: infra
+- **target_files**: [.claude/hooks/pre-bash-combined.sh,.claude/hooks/pre-write-edit-combined.sh,scripts/hooks/three_layer_preflight.sh,scripts/memory_db_import.py,scripts/semantic_index.py]
+- **origin**: [[cmd_karo_ci_fix_ga218_hook_suite_202607101912]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- (1)pre-bash-combined.sh/pre-write-edit-combined.shへ新規evidence check(三層preflight)を追加した際、bats subprocessがUserPromptSubmitを経ないためevidence未発行になるケースが考慮されず、GA-218で80件のCI失敗を招いた。新規PreToolUseガード追加時はBATS_TEST_FILENAME等の実行文脈判定でテスト環境からの除外を必ず設計に含めよ。(2)本タスク中、staged fileが他agent(kagemaru)のcontext/dm-signal-ops.mdと混在する事故が2回発生した。この環境は複数忍者が同一git working tree/indexを共有しており、git add/git commitが他agentの未commit変更へ影響しうる。commit時は必ずpathspec限定(git commit -- <files>)+git commit --dry-run事前確認を用いよ。git resetやgit restore --stagedによる汎用的な後始末は他agentのWIPを破壊しうるため厳禁。stop-lint-gate.sh等の共有workspace lintも同様の理由でchanged-line限定+agent task target_pathスコープが必要だった
+
+### L1030: root fallback鮮度は他project文書をsource扱いするな
+- **日付**: 2026-07-11
+- **出典**: cmd_karo_hotfix_ga219_context_freshness_202607110107
+- **記録者**: hayate
+- **tags**: [infra,testing,git]
+- **subdomain**: infra
+- **target_files**: [scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats,context/infrastructure.md]
+- **origin**: [[cmd_karo_hotfix_ga219_context_freshness_202607110107]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 次回追加すべき二値チェック: infra root fallbackのcommit集合にproject固有docs/researchのみのcommitが含まれる場合、infrastructure.md source ALERT件数=0であることをfixtureで強制する
+
+### L1031: 外部research正本と本陣contextはstaged blob fingerprintでcommit前に結合せよ
+- **日付**: 2026-07-11
+- **出典**: cmd_karo_hotfix_ga220_dm_signal_research_freshness_202607110139
+- **記録者**: kagemaru
+- **tags**: [infra,testing,testing,gate,git]
+- **subdomain**: infra
+- **target_files**: [.claude/hooks/pre-bash-combined.sh,scripts/dm_signal_research_reflux_guard.sh,scripts/ninja_scope_commit.sh,tests/unit/test_dm_signal_research_reflux_guard.bats,context/dm-signal-research.md]
+- **origin**: [[cmd_karo_hotfix_ga220_dm_signal_research_freshness_202607110139]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 日付や既存リンク確認では同日再変更を見逃す。commit対象path/status/blob hashのcanonical fingerprintをprepare証跡へ保存し、direct commitとscope commit両入口で一致を強制する。next_check: 外部repo正本commit gateには同日再変更negative testを必須化する
+
+### L1032: 日付freshness markerでは同日内の因果順序を保存できない
+- **日付**: 2026-07-11
+- **出典**: cmd_karo_hotfix_ga221_context_freshness_202607110323
+- **記録者**: hayate
+- **tags**: [infra,context,db,testing,git]
+- **subdomain**: infra
+- **target_files**: [context/dm-signal-core.md,scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats]
+- **origin**: [[cmd_karo_hotfix_ga221_context_freshness_202607110323]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 次回追加すべき二値チェック: context markerがsource_commitを持つ場合、marker以前の同日commit=ALERT 0かつmarker後の同日commit=ALERT 1を必ず検証する。origin=[[GA-221]] -> [[日付粒度順序喪失]] -> [[source_commit境界検査]]。三層還流候補: semantic alias=context source boundary、Obsidian因果リンク、記憶DBは報告経由。
+
+### L1033: Hook・gate変更は稼働ペインrespawn完了まで反映済みとみなさない
+- **日付**: 2026-07-11
+- **出典**: saizo_stop_lint_BLOCK
+- **記録者**: gunshi
+- **tags**: [hook, gate, respawn]
+- **subdomain**: infra
+- **origin**: [[saizo_stop_lint_BLOCK]] -> [[古いhook起動]] -> [[respawn必須]]
+- **enforcement**: 未自動化
+- **when**: 稼働中CLIが読み込むhookまたはgateコードを変更した時
+- **how**: 対象agentを列挙し、task状態を確認して安全にrespawnし、全ペインで新hookの実動作を再検証する
+- **if**: hook/gateコードを変更した
+- **then**: 全対象agentのhook世代更新と再現テストを完了する
+- **because**: 正本更新だけでは既起動プロセスのhookは差し替わらない
+- hook/gateの正本コードを修正しても既起動CLIは旧hookを保持し続け、修正済みのはずのBLOCKを反復する。変更後は対象全agentの実行hook世代を確認し、安全なrespawn後に同じ再現手順でBLOCK 1→0を検証する。
+
+### L1034: 設計レビューは回帰・裁定・通知の運用接続3点まで検死する
+- **日付**: 2026-07-11
+- **出典**: cmd_3835
+- **記録者**: gunshi
+- **tags**: [review, design, gate, notification]
+- **subdomain**: infra
+- **target_files**: [backend/app/jobs/precompute_raw.py,backend/app/services/annual_returns_calculator.py,backend/app/services/drawdowns_calculator.py,backend/app/services/monthly_returns_calculator.py,backend/app/services/monthly_trade_impl.py]
+- **origin**: [[将軍M1M4M5]] -> [[運用接続盲点]] -> [[事前検死拡張]]
+- **enforcement**: 未自動化
+- **when**: 実装前の設計書またはdraft taskをレビューする時
+- **how**: 回帰gate、裁定checkpointと裁定者、通知先と失敗時経路を各yes/noで確認する
+- **if**: 設計書をAPPROVEしようとする
+- **then**: 運用接続3点が全て確定していることを確認する
+- **because**: コード構造だけのレビューでは運用時の穴を検出できない
+- アルゴリズムとACが正しくても、回帰をどのgateで止めるか、誰がいつ裁定するか、結果を誰へ通知するかが未接続なら実装後に停止・見逃し・二重判断が起きる。draft reviewで3点を二値確認する。
+
+### L1035: 入力依存matrixは一次コードの全フィールドと全builderを照合して作る
+- **日付**: 2026-07-11
+- **出典**: cmd_3835
+- **記録者**: gunshi
+- **tags**: [design, input-matrix, code-review]
+- **subdomain**: infra
+- **target_files**: [backend/app/jobs/precompute_raw.py,backend/app/services/annual_returns_calculator.py,backend/app/services/drawdowns_calculator.py,backend/app/services/monthly_returns_calculator.py,backend/app/services/monthly_trade_impl.py]
+- **origin**: [[v1.2欠陥]] -> [[context5入力欠落]] -> [[一次コード全フィールド照合]]
+- **enforcement**: 未自動化
+- **when**: 複数入力・cache・builderの依存matrixを設計する時
+- **how**: 型定義→生成callsite→consumer全builder→global経路をrgで列挙し、全フィールドの対応と未注入数を二値記録する
+- **if**: 入力依存matrixを作成または承認する
+- **then**: 一次コード全フィールドのN/N照合証跡を要求する
+- **because**: 設計上の入力一覧とproduction実注入は一致するとは限らない
+- 入力matrixを設計書の推測から作ると、PrecomputeRawContext 14入力中5入力未注入のような欠落を正しい前提として固定してしまう。dataclass全フィールド、生成元、全consumer builder、global経路を一次コードで全数照合し、母数N中N件を記録する。

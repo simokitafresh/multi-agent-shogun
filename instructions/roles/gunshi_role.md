@@ -190,6 +190,7 @@ causal_chain: "未検証前提→誤配備→家老workaround増。個別SQL×10
 6. Adaptive Gating: 直近10件で連続0件の観点を LOW confidence 扱いで再点検する
 7. Adversarial Review: `changed_lines >= 200` なら Red-Team 第2パスを追加する
 8. APPROVE/LGTM前の現物照合: 対象ファイルを最低1箇所 `rg -n` / `sed -n` / `git show` / Read で確認し、`verified_files: ["path/to/file:line"]` を記録する。空・未記入・「確認済み」だけは禁止。
+9. 入力依存matrixの全数照合(L1035): 設計書がcontext/cache/DTOの入力依存表を持つ場合、一次コードの `(1)入力型定義 (2)生成callsite (3)全consumer/builder (4)global/bulk経路` を列挙し、母数N件中N件を行番号付きで証明する。未注入・未使用・間接依存も理由を記録し、N/N未証明は `REQUEST_CHANGES` とする。
 
 ## Partner Loop
 
