@@ -1,16 +1,27 @@
 #!/usr/bin/env bash
-# sync_git_hooks.sh — .git/hooks/配下の実行フックが正本(scripts/hooks/*.sh)と
-# 常に一致するよう保証する。
+# sync_git_hooks.sh — 実際にgitが発火するhook(git rev-parse --git-path hooks/<name>)を
+# 常にtracked正本(scripts/hooks/*.sh)のcommit済み内容と一致させる。
 #
 # GA-222: scripts/hooks/git-pre-commit.sh は正本としてgit管理下にあるが、
-# 実際にgitが発火する .git/hooks/pre-commit はgit管理外(直接配置)であり、
-# 正本を修正しても自動反映されない。放置すると正本側の修正(例: GA-190の
-# BLOCK→AUTO-FIX化)が何日も実際の挙動に反映されず、古い挙動のままBLOCKし
-# 続ける(2026-06-20設置のまま2026-07-11まで21日・3コミット分drift)。
+# 実際にgitが発火するhookファイルはgit管理外(直接配置)であり、正本を修正しても
+# 自動反映されない。放置すると正本側の修正が何日も実際の挙動に反映されない
+# (2026-06-20設置のまま2026-07-11まで21日・3コミット分drift、BLOCK15件蓄積)。
 #
-# 対象repoにこのスクリプトが存在しない(=本リポジトリの規約を使わない別repo/
-# テストサンドボックス)場合は何もせずexit 0で抜ける。正本ファイルが存在するのに
-# コピーに失敗した場合のみfail-closed(exit 1)し、.git/hooks/側は変更しない。
+# GA-222レビュー指摘(2026-07-11 karo REQUEST_CHANGES)への対応:
+#  (1) 配備元をworking treeの直接catから「git blob」へ変更。--scope-pathで明示された
+#      path(=呼び出し元がまさに今からcommitしようとしているpath)だけindex(staged)の
+#      blobを使い、それ以外はHEAD(直近commit済み)のblobを使う。これにより他agentの
+#      working-tree-onlyの未commit編集や、未staged/staged問わず「今回のcommit scope外」
+#      の変更が絶対にlive hookへ混入しない。
+#  (2) 配備先pathをrepo_root/.git/hooks固定でなく `git rev-parse --git-path hooks/<name>`
+#      で解決し、git worktree配下でも正しい共有hooksディレクトリを指す。
+#  (3) 書込みはtmpファイルへ書く→chmod +x成功を確認→atomic mvの順で行い、
+#      途中失敗でlive hookが不完全な状態(truncate)になることを防ぐ。chmod失敗は
+#      握りつぶさずfail-closedする。
+#  (4) 正本(source_rel)がHEADに存在しない場合、「scripts/hooks/」というtracked
+#      ディレクトリ自体がHEADに存在するなら、このrepoは本方式の管理対象であり
+#      個別ファイルの消失は異常事態としてfail-closedする。scripts/hooks/自体が
+#      HEADに存在しない場合のみ「本方式を使わないrepo」としてno-opする。
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
@@ -21,24 +32,88 @@ HOOK_MANIFEST=(
     "pre-commit:scripts/hooks/git-pre-commit.sh"
 )
 
+scope_paths=()
+while (($#)); do
+    case "$1" in
+        --scope-path)
+            (($# >= 2)) || { echo "BLOCK: --scope-path requires a value" >&2; exit 1; }
+            scope_paths+=("$2")
+            shift 2
+            ;;
+        *)
+            echo "BLOCK: unknown argument: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
+is_in_scope() {
+    local target="$1" p
+    for p in ${scope_paths[@]+"${scope_paths[@]}"}; do
+        [[ "$p" == "$target" ]] && return 0
+    done
+    return 1
+}
+
+uses_hook_source_convention() {
+    git -C "$repo_root" cat-file -e "HEAD:scripts/hooks" 2>/dev/null
+}
+
+resolve_installed_path() {
+    local hook_name="$1" rel
+    rel="$(git -C "$repo_root" rev-parse --git-path "hooks/$hook_name" 2>/dev/null)" || return 1
+    [[ "$rel" = /* ]] && printf '%s' "$rel" || printf '%s/%s' "$repo_root" "$rel"
+}
+
 sync_one_hook() {
     local hook_name="$1" source_rel="$2"
-    local source_full="$repo_root/$source_rel"
-    local installed="$repo_root/.git/hooks/$hook_name"
+    local installed ref tmp
 
-    # 正本が存在しない = このrepoでは当該hookを本方式で管理していない。対象外としてスキップ。
-    [[ -f "$source_full" ]] || return 0
+    if ! git -C "$repo_root" cat-file -e "HEAD:$source_rel" 2>/dev/null; then
+        if uses_hook_source_convention; then
+            echo "BLOCK(GA-222): tracked hook source missing at HEAD: $source_rel (scripts/hooks/ convention is in use — this looks like an anomaly, not an unmanaged repo)" >&2
+            return 1
+        fi
+        return 0   # scripts/hooks/自体が無い = 本方式を使わないrepo。対象外としてno-op。
+    fi
 
-    if [[ -f "$installed" ]] && cmp -s "$source_full" "$installed"; then
+    installed="$(resolve_installed_path "$hook_name")" \
+        || { echo "BLOCK(GA-222): failed to resolve git hooks path for $hook_name" >&2; return 1; }
+
+    if is_in_scope "$source_rel"; then
+        ref=":$source_rel"       # 今回のcommitで確定させる、まさに今stageされた内容
+    else
+        ref="HEAD:$source_rel"   # 他者のworking tree/staged編集を信用せず、直近commit済みの内容のみ使う
+    fi
+
+    mkdir -p "$(dirname "$installed")" 2>/dev/null || true
+    tmp="$(mktemp "${installed}.tmp.XXXXXX" 2>/dev/null)" \
+        || { echo "BLOCK(GA-222): mktemp failed for $hook_name" >&2; return 1; }
+
+    if ! git -C "$repo_root" show "$ref" > "$tmp" 2>/dev/null; then
+        rm -f "$tmp"
+        echo "BLOCK(GA-222): failed to read $ref for $hook_name" >&2
+        return 1
+    fi
+
+    if [[ -f "$installed" ]] && cmp -s "$tmp" "$installed"; then
+        rm -f "$tmp"
         return 0
     fi
 
-    if ! cp "$source_full" "$installed" 2>/dev/null; then
-        echo "BLOCK(GA-222): failed to sync .git/hooks/$hook_name from $source_rel" >&2
+    if ! chmod +x "$tmp"; then
+        rm -f "$tmp"
+        echo "BLOCK(GA-222): chmod +x failed for $hook_name — installed hook left untouched" >&2
         return 1
     fi
-    chmod +x "$installed" 2>/dev/null || true
-    echo "SYNCED(GA-222): .git/hooks/$hook_name <- $source_rel" >&2
+
+    if ! mv -f "$tmp" "$installed"; then
+        rm -f "$tmp"
+        echo "BLOCK(GA-222): atomic install failed for $hook_name — installed hook left untouched" >&2
+        return 1
+    fi
+
+    echo "SYNCED(GA-222): $installed <- $ref" >&2
     return 0
 }
 

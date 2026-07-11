@@ -97,3 +97,52 @@ teardown() {
     cmp -s "$REPO/scripts/hooks/git-pre-commit.sh" "$REPO/.git/hooks/pre-commit"
     [ "$(cat "$REPO/.git/hook-marker")" = hook-ran-fixed ]
 }
+
+@test "GA-222 REQUEST_CHANGES: another agent's uncommitted hook-source edit does not leak in via an unrelated ninja commit" {
+    mkdir -p "$REPO/scripts/hooks"
+    cp "$BATS_TEST_DIRNAME/../../scripts/sync_git_hooks.sh" "$REPO/scripts/sync_git_hooks.sh"
+    chmod +x "$REPO/scripts/sync_git_hooks.sh"
+    printf '#!/usr/bin/env bash\nprintf hook-ran-committed > .git/hook-marker\n' \
+        > "$REPO/scripts/hooks/git-pre-commit.sh"
+    chmod +x "$REPO/scripts/hooks/git-pre-commit.sh"
+    (
+        cd "$REPO"
+        git add scripts/sync_git_hooks.sh scripts/hooks/git-pre-commit.sh
+        git commit -qm "add tracked hook source + sync helper"
+    )
+
+    # Another agent is mid-edit: unstaged, uncommitted change to the hook
+    # source, unrelated to this ninja's own.txt-only commit scope.
+    printf '#!/usr/bin/env bash\nprintf OTHER_AGENT_WIP > .git/hook-marker\n' \
+        > "$REPO/scripts/hooks/git-pre-commit.sh"
+    printf 'own change\n' >> "$REPO/own.txt"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m unrelated-commit -- own.txt"
+    [ "$status" -eq 0 ]
+    run cat "$REPO/.git/hooks/pre-commit"
+    [[ "$output" == *"hook-ran-committed"* ]]
+    [[ "$output" != *"OTHER_AGENT_WIP"* ]]
+}
+
+@test "GA-222 REQUEST_CHANGES: committing the hook source itself installs the newly staged content" {
+    mkdir -p "$REPO/scripts/hooks"
+    cp "$BATS_TEST_DIRNAME/../../scripts/sync_git_hooks.sh" "$REPO/scripts/sync_git_hooks.sh"
+    chmod +x "$REPO/scripts/sync_git_hooks.sh"
+    printf '#!/usr/bin/env bash\nprintf OLD_VERSION > .git/hook-marker\n' \
+        > "$REPO/scripts/hooks/git-pre-commit.sh"
+    chmod +x "$REPO/scripts/hooks/git-pre-commit.sh"
+    (
+        cd "$REPO"
+        git add scripts/sync_git_hooks.sh scripts/hooks/git-pre-commit.sh
+        git commit -qm "add tracked hook source + sync helper"
+    )
+
+    # This ninja's own commit scope IS the hook source itself.
+    printf '#!/usr/bin/env bash\nprintf NEW_VERSION > .git/hook-marker\n' \
+        > "$REPO/scripts/hooks/git-pre-commit.sh"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m update-hook-source -- scripts/hooks/git-pre-commit.sh"
+    [ "$status" -eq 0 ]
+    run cat "$REPO/.git/hooks/pre-commit"
+    [[ "$output" == *"NEW_VERSION"* ]]
+}

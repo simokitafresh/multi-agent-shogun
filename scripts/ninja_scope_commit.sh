@@ -47,15 +47,21 @@ for path in "$@"; do
     paths+=("$normalized")
 done
 
-# GA-222: commit前に.git/hooks/pre-commitが正本(scripts/hooks/git-pre-commit.sh)と
-# 同期していることを強制する。正本が存在しないrepo(このrepoの規約非対象)では無害にno-op。
-if [[ -f "$repo_root/scripts/sync_git_hooks.sh" ]]; then
-    bash "$repo_root/scripts/sync_git_hooks.sh" \
-        || { echo "BLOCK(GA-222): git hook sync failed — commit aborted" >&2; exit 1; }
-fi
-
 # Path限定addは他者の既存stageを変更しない。--onlyは共有indexの他pathをcommitしない。
 git add -- "${paths[@]}"
+
+# GA-222: commit前にgitが実際に発火するhookを正本(scripts/hooks/*.sh)と同期する。
+# git add後に呼ぶことで、対象正本がこのcommitのscope内ならstaged(index)版、
+# scope外(他agentの作業中/未確定分含む)ならHEAD(直近commit済み)版を使い分けられる。
+# 正本が存在しないrepo(このrepoの規約非対象)では無害にno-op。
+if [[ -f "$repo_root/scripts/sync_git_hooks.sh" ]]; then
+    sync_args=()
+    for scope_path in "${paths[@]}"; do
+        sync_args+=(--scope-path "$scope_path")
+    done
+    bash "$repo_root/scripts/sync_git_hooks.sh" "${sync_args[@]}" \
+        || { echo "BLOCK(GA-222): git hook sync failed — commit aborted" >&2; exit 1; }
+fi
 if [[ -f "$repo_root/../multi-agent-shogun/scripts/dm_signal_research_reflux_guard.sh" ]]; then
     bash "$repo_root/../multi-agent-shogun/scripts/dm_signal_research_reflux_guard.sh" check --repo "$repo_root"
 elif [[ -f "/mnt/c/tools/multi-agent-shogun/scripts/dm_signal_research_reflux_guard.sh" ]]; then
