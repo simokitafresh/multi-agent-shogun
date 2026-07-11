@@ -258,6 +258,127 @@ EOF
     [ -s "$TEST_TMPDIR/cache/memory.db" ]
 }
 
+@test "memory_db_query atomically regenerates malformed cache and retries once" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (summary TEXT)")
+conn.execute("INSERT INTO events VALUES ('recovered cache')")
+conn.commit()
+conn.close()
+PY
+    mkdir -p "$TEST_TMPDIR/cache"
+    printf 'not-a-sqlite-database' > "$TEST_TMPDIR/cache/memory.db"
+    export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        "SELECT summary FROM events"
+    [ "$status" -eq 0 ]
+    [ "$output" = "recovered cache" ]
+    [ "$(python3 - "$TEST_TMPDIR/cache/memory.db" <<'PY'
+import sqlite3, sys
+print(sqlite3.connect(sys.argv[1]).execute('PRAGMA quick_check').fetchone()[0])
+PY
+)" = "ok" ]
+    run find "$TEST_TMPDIR/cache" -maxdepth 1 -name '.memory.db.*.tmp'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "memory_db_query search retries once after atomic malformed-cache recovery" {
+    cat > "$TEST_TMPDIR/archive/search.jsonl" <<'EOF'
+{"ts":"2026-07-11T13:00:00+09:00","agent":"lord","target":"hanzo","direction":"inbound","summary":"search recovered","detail":"malformedrecoveryneedle"}
+EOF
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+    mkdir -p "$TEST_TMPDIR/cache"
+    printf 'not-a-sqlite-database' > "$TEST_TMPDIR/cache/memory.db"
+    export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
+
+    AGENT_ID=hanzo run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --search "malformedrecoveryneedle"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"search recovered"* ]]
+}
+
+@test "memory_db_query fails closed when canonical DB is malformed" {
+    mkdir -p "$TEST_TMPDIR/cache"
+    printf 'broken canonical' > "$TEST_TMPDIR/data/memory.db"
+    printf 'broken cache' > "$TEST_TMPDIR/cache/memory.db"
+    export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        "SELECT name FROM sqlite_master"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"cache recovery failed"* ]]
+}
+
+@test "memory_db_query fails closed when the single retry still fails" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE unrelated (value TEXT)")
+conn.commit()
+conn.close()
+PY
+    mkdir -p "$TEST_TMPDIR/cache"
+    printf 'broken cache' > "$TEST_TMPDIR/cache/memory.db"
+    export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
+
+    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        "SELECT summary FROM events"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"cache recovery failed"* ]]
+    [[ "$output" == *"no such table"* ]]
+}
+
+@test "memory_db_query concurrent recovery never publishes a partial cache" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (summary TEXT)")
+conn.execute("INSERT INTO events VALUES ('parallel safe')")
+conn.commit()
+conn.close()
+PY
+    mkdir -p "$TEST_TMPDIR/cache" "$TEST_TMPDIR/results"
+    printf 'broken cache' > "$TEST_TMPDIR/cache/memory.db"
+
+    for worker in 1 2 3 4 5; do
+        SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1 \
+        SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db" \
+            bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+            --db "$TEST_TMPDIR/data/memory.db" \
+            "SELECT summary FROM events" \
+            > "$TEST_TMPDIR/results/$worker.out" \
+            2> "$TEST_TMPDIR/results/$worker.err" &
+    done
+    wait
+
+    for worker in 1 2 3 4 5; do
+        run cat "$TEST_TMPDIR/results/$worker.out"
+        [ "$status" -eq 0 ]
+        [ "$output" = "parallel safe" ]
+        [ ! -s "$TEST_TMPDIR/results/$worker.err" ]
+    done
+    run find "$TEST_TMPDIR/cache" -maxdepth 1 -name '.memory.db.*.tmp'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
 @test "three-layer tmp cleanup dry-run reports stale candidates without deleting" {
     mkdir -p "$TEST_TMPDIR/cache"
     touch "$TEST_TMPDIR/cache/.memory.db.old.tmp"

@@ -170,6 +170,7 @@ if [ -z "$target" ] && [ -n "${TMUX_PANE:-}" ]; then
     target="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
 fi
 
+source_db_path="$db_path"
 db_path="$(prepare_memory_db_for_read "$db_path")"
 
 if [ -n "$search_query" ]; then
@@ -181,9 +182,45 @@ if [ -n "$search_query" ]; then
     if [ -n "$target" ] && [ "$target" != "unknown" ]; then
         search_args+=(--target "$target")
     fi
+    search_stdout="$(mktemp "${TMPDIR:-/tmp}/memory_db_query.search.XXXXXX")"
+    search_stderr="$(mktemp "${TMPDIR:-/tmp}/memory_db_query.search_err.XXXXXX")"
+    search_rc=0
     python3 "$script_dir/scripts/memory_db_import.py" \
-        "${search_args[@]}"
-    exit $?
+        "${search_args[@]}" >"$search_stdout" 2>"$search_stderr" || search_rc=$?
+    if [ "$search_rc" -eq 0 ]; then
+        cat "$search_stdout"
+        cat "$search_stderr" >&2
+        rm -f "$search_stdout" "$search_stderr"
+        exit 0
+    fi
+
+    cache_is_corrupt=1
+    if [ "$db_path" != "$source_db_path" ]; then
+        python3 - "$db_path" <<'PY' >/dev/null 2>&1 && cache_is_corrupt=0 || cache_is_corrupt=$?
+import sqlite3
+import sys
+
+try:
+    with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True) as conn:
+        result = conn.execute("PRAGMA quick_check").fetchone()
+    raise SystemExit(1 if result and result[0] == "ok" else 0)
+except sqlite3.DatabaseError as exc:
+    message = str(exc).lower()
+    raise SystemExit(0 if "malformed" in message or "not a database" in message else 1)
+PY
+    fi
+    if [ "$cache_is_corrupt" -eq 0 ]; then
+        # Reuse SQL mode's atomic recovery, then retry this search exactly once.
+        if bash "$0" --db "$source_db_path" "SELECT name FROM sqlite_master LIMIT 1" >/dev/null 2>&1; then
+            rm -f "$search_stdout" "$search_stderr"
+            python3 "$script_dir/scripts/memory_db_import.py" "${search_args[@]}"
+            exit $?
+        fi
+    fi
+    cat "$search_stdout"
+    cat "$search_stderr" >&2
+    rm -f "$search_stdout" "$search_stderr"
+    exit "$search_rc"
 fi
 
 if [ "$#" -ne 1 ]; then
@@ -193,12 +230,14 @@ fi
 
 sql="$1"
 
-python3 - "$db_path" "$sql" <<'PY'
+python3 - "$db_path" "$source_db_path" "$script_dir" "$sql" <<'PY'
 from __future__ import annotations
 
+import fcntl
+import os
 import sqlite3
 import sys
-import os
+import tempfile
 from pathlib import Path
 
 
@@ -264,9 +303,81 @@ def format_value(value: object) -> str:
     return str(value)
 
 
+def execute_read(db_path: Path, statements: list[str]) -> list[str]:
+    """Execute all statements without publishing partial output."""
+    output: list[str] = []
+    db_uri = f"{db_path.resolve().as_uri()}?mode=ro"
+    with sqlite3.connect(db_uri, uri=True) as conn:
+        conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+        for statement in statements:
+            cursor = conn.execute(statement)
+            if cursor.description is None:
+                continue
+            col_names = [d[0] for d in cursor.description]
+            if (
+                os.environ.get("MEMORY_DB_QUERY_WARN_AGENT_MIX", "0") == "1"
+                and "agent" not in col_names
+                and "events" in statement.lower()
+            ):
+                print(
+                    "★ WARN: eventsテーブル検索にagentカラムなし。他エージェントの記録と混同する危険。"
+                    "SELECT agent,... またはWHERE agent='自分'を追加せよ",
+                    file=sys.stderr,
+                )
+            output.extend("|".join(format_value(value) for value in row) for row in cursor)
+    return output
+
+
+def is_corrupt_database_error(exc: sqlite3.DatabaseError) -> bool:
+    message = str(exc).lower()
+    return "database disk image is malformed" in message or "file is not a database" in message
+
+
+def require_healthy_database(db_path: Path) -> None:
+    db_uri = f"{db_path.resolve().as_uri()}?mode=ro"
+    with sqlite3.connect(db_uri, uri=True) as conn:
+        result = conn.execute("PRAGMA quick_check").fetchone()
+    if result is None or result[0] != "ok":
+        detail = result[0] if result else "no result"
+        raise sqlite3.DatabaseError(f"database disk image is malformed ({detail})")
+
+
+def regenerate_cache_atomically(source_path: Path, cache_path: Path) -> None:
+    """Build a verified replacement beside cache_path, then publish atomically."""
+    require_healthy_database(source_path)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = Path(f"{cache_path}.lock")
+    with lock_path.open("a", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        # Another process may have repaired the cache while this process waited.
+        try:
+            require_healthy_database(cache_path)
+            return
+        except (OSError, sqlite3.DatabaseError):
+            pass
+
+        fd, temp_name = tempfile.mkstemp(
+            prefix=f".{cache_path.name}.", suffix=".tmp", dir=cache_path.parent
+        )
+        os.close(fd)
+        temp_path = Path(temp_name)
+        try:
+            with sqlite3.connect(source_path) as source, sqlite3.connect(temp_path) as destination:
+                source.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+                destination.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+                source.backup(destination)
+            require_healthy_database(temp_path)
+            os.replace(temp_path, cache_path)
+            for suffix in ("-wal", "-shm", "-journal"):
+                Path(f"{cache_path}{suffix}").unlink(missing_ok=True)
+        finally:
+            temp_path.unlink(missing_ok=True)
+
+
 def main() -> int:
     db_path = Path(sys.argv[1])
-    sql = sys.argv[2]
+    source_db_path = Path(sys.argv[2])
+    sql = sys.argv[4]
     if not db_path.exists():
         print(f"memory_db_query: database not found: {db_path}", file=sys.stderr)
         return 1
@@ -281,27 +392,22 @@ def main() -> int:
         print(f"memory_db_query: BLOCKED: {exc}", file=sys.stderr)
         return 2
 
-    db_uri = f"{db_path.resolve().as_uri()}?mode=ro"
-    with sqlite3.connect(db_uri, uri=True) as conn:
-        conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
-        try:
-            for statement in statements:
-                cursor = conn.execute(statement)
-                if cursor.description is None:
-                    continue
-                # agent混同防止: eventsテーブルSELECTでagentカラムなし→WARN
-                col_names = [d[0] for d in cursor.description]
-                if (
-                    os.environ.get("MEMORY_DB_QUERY_WARN_AGENT_MIX", "0") == "1"
-                    and "agent" not in col_names
-                    and "events" in statement.lower()
-                ):
-                    print("★ WARN: eventsテーブル検索にagentカラムなし。他エージェントの記録と混同する危険。SELECT agent,... またはWHERE agent='自分'を追加せよ", file=sys.stderr)
-                for row in cursor:
-                    print("|".join(format_value(value) for value in row))
-        except sqlite3.DatabaseError as exc:
+    try:
+        output = execute_read(db_path, statements)
+    except sqlite3.DatabaseError as exc:
+        is_cache = db_path.resolve() != source_db_path.resolve()
+        if not (is_cache and is_corrupt_database_error(exc)):
             print(f"memory_db_query: BLOCKED: only SELECT statements are allowed ({exc})", file=sys.stderr)
             return 2
+        try:
+            regenerate_cache_atomically(source_db_path, db_path)
+            # Exactly one retry. A second failure is returned fail-closed.
+            output = execute_read(db_path, statements)
+        except (OSError, sqlite3.DatabaseError) as retry_exc:
+            print(f"memory_db_query: BLOCKED: cache recovery failed ({retry_exc})", file=sys.stderr)
+            return 2
+    for line in output:
+        print(line)
     return 0
 
 
