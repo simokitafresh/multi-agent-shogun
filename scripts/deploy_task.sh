@@ -5276,7 +5276,15 @@ try:
     #   1. lessons.yamlに教訓を登録(lesson_write.sh経由)
     #   2. このRECON_LESSON_IDSセットにIDを追加
     #   3. リスト外の教訓は偵察タスクではスキップされる(CTX浪費防止)
-    RECON_LESSON_IDS = {'L219', 'L211', 'L213', 'L159', 'L104', 'L129', 'L128'}
+    RECON_LESSON_IDS = {'L219', 'L211', 'L213', 'L104', 'L129', 'L128'}
+    # L159 is useful only for large, independently splittable reconnaissance.
+    # Keeping it in the blanket recon allowlist injected it into every small
+    # recon task, where recent feedback was 0/3 useful.  Admit it only when the
+    # task text states the lesson's actual trigger.
+    _l159_trigger_terms = ('5軸', '5つ以上', '大規模偵察', '並列agent', '独立した偵察')
+    _l159_trigger_text = ' '.join(str(task.get(key, '') or '') for key in ('title', 'description', 'purpose', 'command'))
+    if any(term.casefold() in _l159_trigger_text.casefold() for term in _l159_trigger_terms):
+        RECON_LESSON_IDS.add('L159')
 
     recon_mode = task_type in ('recon', 'scout', 'research')
 

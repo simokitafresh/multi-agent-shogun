@@ -6,6 +6,17 @@ setup_file() {
     python3 -c "import yaml" 2>/dev/null || return 1
 }
 
+@test "cmd_3855: L159 is not blanket-injected into every recon task" {
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+
+script = open(sys.argv[1], encoding="utf-8").read()
+assert "RECON_LESSON_IDS = {'L219', 'L211', 'L213', 'L104', 'L129', 'L128'}" in script
+assert "RECON_LESSON_IDS.add('L159')" in script
+assert "_l159_trigger_terms" in script
+PY
+}
+
 @test "cmd_2801: _sv multiline scalar indent follows nesting depth" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import sys
