@@ -25,6 +25,8 @@ setup_rc_task() {
 task:
   parent_cmd: cmd_test
   status: done
+  deployed_at: "2026-01-01T00:00:00+09:00"
+  acknowledged_at: "2026-07-11T09:59:00+09:00"
   completed_at: "2026-07-11T10:00:00+09:00"
   done_at: "2026-07-11T10:01:00+09:00"
 YAML
@@ -189,6 +191,8 @@ YAML
 import sys, yaml
 t = yaml.safe_load(open(sys.argv[1]))['task']
 assert t['status'] == 'assigned'
+assert t.get('deployed_at') and t['deployed_at'] != '2026-01-01T00:00:00+09:00'
+assert t.get('acknowledged_at') in ('', None)
 assert t.get('completed_at') in ('', None)
 assert t.get('done_at') in ('', None)
 PY

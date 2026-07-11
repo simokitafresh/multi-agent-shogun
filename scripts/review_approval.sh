@@ -50,7 +50,12 @@ PY
   # Move the report out of the terminal set before reopening the task so RC
   # cannot race with AUTO-DONE and silently stop the worker again.
   bash "$ROOT/scripts/report_field_set.sh" "$report" status revision_requested
+  # RC is a real redeployment. Refresh the deployment clock before reopening;
+  # otherwise ninja_monitor's Stage-1 timeout measures from the original
+  # deployment and can immediately reset the revived task to idle.
+  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task deployed_at "$(date -Iseconds)"
   bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task status assigned
+  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task acknowledged_at ""
   bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task completed_at ""
   bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task done_at ""
   bash "$ROOT/scripts/inbox_write.sh" "$worker_id" \
