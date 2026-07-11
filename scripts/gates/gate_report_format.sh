@@ -213,7 +213,11 @@ print("\n".join(kept))
 PY
 }
 
-if [[ "$REPORT_PATH" != /tmp/* ]] && [[ "$REPORT_PATH" != *"/tmp/"* ]]; then
+# Skip truly external scratch reports, but keep checks active when the whole
+# repository itself is a detached worktree under /tmp (the CI isolation path).
+_REPORT_REAL="$(realpath -m -- "$REPORT_PATH")"
+_REPO_REAL="$(realpath -m -- "$REPO_ROOT")"
+if [[ "$_REPORT_REAL" == "$_REPO_REAL"/* ]]; then
     _CC_WORKER="$_REPORT_EXECUTOR"
     _CC_TASK_DIR="${GATE_SESSION_STATE_TASK_DIR:-$REPO_ROOT/queue/tasks}"
     _CC_TASK_FILE="$_CC_TASK_DIR/${_CC_WORKER}.yaml"
