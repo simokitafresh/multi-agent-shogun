@@ -1425,3 +1425,4 @@
 - 2026-07-12 scope-hunk commit hotfix完了: `ninja_scope_commit.sh`へ非対話・fail-closed patch入口を追加し、同一SSOTの自分5 hunkのみcommit、他者13 hunk保全、共有index汚染0を実証。patch回帰0/4→4/4、全55/55 PASS・SKIP 0、commit `42d06b1d5`、教訓L1053、GATE CLEAR。
 - 2026-07-12 skill_auto_improve stale escalation hotfix完了: 2026-05-02の解決済みFAILが再escalateした二重SSOTを除去し、時刻正規化＋厳密`PASS > FAIL`判定を`skill_auto_improve.sh`へ集約。関連Bats 122/122 PASS・SKIP 0、commits `3b76db105`+`d3092cbcd`、GATE CLEAR。
 - 2026-07-12 completion_notify_gap RC偽陽性hotfix完了: 軍師LGTM後の家老RC・report差戻し・task再開を因果順序で除外し、後続LGTMは抑制しない判定へ修正。8 fixture＋関連Bats 44/44 PASS・SKIP 0、commit `7d2262b05`、GATE CLEAR。
+- 2026-07-12 cmd_3859(P4 shadow反復exact)完了: 新鮮production snapshot起点でshadow_a/b並列controlled run、§9.7全18表・567,751行missing0/mismatch0/exact=trueでAC1 GREEN。AC2(本番1run照合)は3系統独立証跡(git分岐/recalculation_timings実測/Render Deploy API実測)で本番live deployがP1a以前のcommit`178add2a`と確定したため意図的未実行、本番デプロイ実行判断を家老へエスカレーション。verdict=FAIL(AC2 noの正当な導出)。
