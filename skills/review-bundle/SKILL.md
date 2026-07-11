@@ -10,7 +10,8 @@ description: |
   DO NOT TRIGGER: レビュー判定そのもの（→手動）、gate_sync（→/gate-sync）、idle分析永続化（→/idle-persist）
 ---
 
-<!-- script_refs_checked_at: 2026-07-10T19:55:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 <!-- 検分: bulletin_write.sh 61ad778f4で通知失敗が3回retry+failure log+exit 1のfail-closedへ変更。FAIL掲示板投稿の終了コードを確認し、失敗時はバンドル完了扱いにしない。inbox_write.sh e89307c7cはreport/task_done時の非重複dirty hunk除外をSSOT化した内部gate変更で、review_feedbackの位置引数契約は不変 -->
 
 Script refs verified: 2026-07-07 cmd_3743. `inbox_write.sh` checked_at以降の変更(b8285b3c9/e949b27b5/71ab22b6d)をgit logで確認。review context添付、memory references追加、model-aware injection profileの内部メタデータ追加で、Step 3の `bash scripts/inbox_write.sh karo "$MESSAGE" review_feedback gunshi` 契約、永続化確認、retry手順は変更なし。
@@ -202,4 +203,5 @@ Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は�
 
 Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は引数順序ミス検出ガード追加(contentがagent名ならERROR)。本SKILL.mdのinbox送信・掲示板投稿手順は正しい引数順のため契約に変更なし。
 
-<!-- script_refs_checked_at: 2026-07-07T15:46:38+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->

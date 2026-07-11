@@ -10,11 +10,13 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-10T20:00:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 Script refs verified: 2026-07-10 cmd_karo_hotfix_skill_refs_202607101945 follow-up. `parse_deploy_task_args`と`tests/unit/test_deploy_task_yaml_injection.bats`を実検分し、`--direct --yaml <yaml_file> <ninja_name>`が正式対応済みで、source YAMLのACをcmd sourceで上書きせず保持する契約を確認。trainingは手製の不完全YAMLを禁止する一方、`queue/training`のauto-generated完全AC YAMLはこの複合経路を正本として配備する。
 Script refs verified: 2026-07-10 cmd_karo_hotfix_skill_ref_freshness_202607101154_normal. `deploy_task.sh` checked_at以降の変更(b458129d1)をgit showで確認。ACに'push'語を含むtask YAMLへ配備時`push_allowed:true`を自動付与する`inject_push_allowed()`を追加(cmd_3820 G2ガードBLOCK再発防止、Level5知識注入)。`deploy_task_apply_task_mutations`内の内部注入チェーン追加のみで、`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の呼び出し契約、通知、report template生成、stale field resetは変更なし。karo-direct手順の書き換えは不要。
 
-<!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `deploy_task.sh` checked_at以降の変更(edb26ea1/0c73c7d1/f5f7600d)をgit showで確認。edb26ea1はrecon/scoutタイプreport templateへ`verified_existing_dependency: []`雛形とコメント例を追加(LG037除外宣言用)。0c73c7d1はtask YAML配備時のbatch flock書込みに`deployed_at`/`acknowledged_at`/`done_at`/`completed_at`初期化を追加(throughput計測用)。f5f7600dはinject_related_lessons等4関数のmemory-db参照をmemory_db_query.sh経由のext4キャッシュへ寄せ、注入処理を約140秒→約3秒へ高速化した内部性能改善のみ。いずれも`bash scripts/deploy_task.sh --yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>` の呼び出し契約、通知、stale field resetは変更なし。karo-direct手順の書き換えは不要。
 
@@ -167,10 +169,13 @@ Script refs verified: 2026-06-28 b1922e36b+0226e0db5. `deploy_task.sh` 直近変
 
 Script refs verified: 2026-07-07T18:19:00+09:00 (shogun復帰時WARN解消). `deploy_task.sh` 直近変更(88dae4ee5)をgit showで確認。`deploy_task_guard_direct_yaml_prewrite_collision`追加 — direct/--yamlモードでtask YAML書換え前に既存`deploy_task_guard_target_path_collision`を先行実行し、衝突時はtask未変更のままBLOCKする発火位置の前倒し。判定基準・呼び出し契約(`--yaml <yaml_file> <ninja_name>` / `--direct <ninja_name> <cmd_id>`)・通知・report template生成は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-07T18:19:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
-<!-- script_refs_checked_at: 2026-07-08T22:35:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 Script refs verified: 2026-07-08 将軍検分. 前回checked_at以降の deploy_task.sh 差分は f5f7600d6(注入cache化)+0c73c7d1c(完了timing/通知)+e191bcf88(EXIT trap fallback報告メタデータ修復)=いずれも内部処理で、配備呼出し契約(引数・重複ガード・karo_direct経路)は不変。
 
-<!-- script_refs_checked_at: 2026-07-09T14:56:35+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 Script refs verified: 2026-07-09 cmd_karo_hotfix_skill_refs_update_202607091452_saizo. `deploy_task.sh` 前回checked_at以降の変更(bddf2a457/0cb0954e3/14b74c865)をgit showで確認。bddf2a457はproject=dm-signal かつ PF削除/復元/rollback関連purposeの時のみ発火する`inject_dm_signal_pf_operation_guardrails`追加(Level5知識注入の対象追加)。0cb0954e3はgate_report_format_learning.yamlのJSON形式prefill_active判定grepバグ修正(内部AUTO-PREFILL発火条件の修正)。14b74c865は`--direct` training(cmd_training_*)専用のtemplate内容検証(AC1-AC5必須文言チェック)を`inject_direct_training_template`後に追加し、不備時はFATALでreturn 1する安全強化。ci_fix/recon2/hotfix用の`--yaml <yaml_file> <ninja_name>`引数契約・重複ガード・通知・report template生成には影響なし。karo-direct手順の書き換えは不要。

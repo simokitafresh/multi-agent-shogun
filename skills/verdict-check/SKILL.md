@@ -115,6 +115,9 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+- 2026-07-10: gate=cmd_complete_gate result=FAIL executor=tobisaru reason=tobisaru:binary_checks_fail|tobisaru:post_deploy_evidence_missing:deploy_live_at,evidence_run_start_at,evidence_run_completed_at,run_completed
+
+- 2026-07-10: gate=gate_report_format result=FAIL executor=tobisaru reason=binary_checks.AC2[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or ...
 - 2026-07-08: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.AC2[2].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")
 
 - 2026-07-08: gate=gate_report_format result=FAIL executor=hayate reason=binary_checks: item count 3/14 (<50% of task template)

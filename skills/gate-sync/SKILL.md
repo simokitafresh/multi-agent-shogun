@@ -10,7 +10,8 @@ description: |
 quality_metric: "当該スキル同期後の軍師review精度（logs/gunshi_review_log.yamlでgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-10T19:55:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 <!-- 検分: bulletin_write.sh 61ad778f4。位置引数契約は不変だが、通知失敗時は3回retry後にfailure logへ記録してexit 1するfail-closed契約へ変更。投稿成功を終了コードで確認し、失敗時は処理完了扱いにしない -->
 
 Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `yaml_field_set.sh` checked_at以降の変更(d1b841e/f8137de/2fb50f6)をgit showで確認。3件とも`gunshi_review_log.yaml`が`- cmd_id: xxx`形式のYAMLリストである点への対応強化: d1b841eはbegin_target 3箇所に`- cmd_id:`パターンを追加(review_logのgate_result更新自体ができないインフラバグの修正)、f8137deはis_boundary正規表現を`/- id:/`→`/- (id|cmd_id):/`へ拡張(次エントリを境界と誤認せず対象ブロック内に混入させない修正)、2fb50f6はflush_blockのblock_len=1条件にi>1を追加(1行だけのcmd_idブロックでfieldが正しい位置に入らない不具合の修正)。本SKILL.mdのStep1が実行する`bash scripts/lib/yaml_field_set.sh logs/gunshi_review_log.yaml "<cmd_id>" gate_result/gate_synced_at "<value>"`はこの`- cmd_id:`形式を直接対象にしており、3件はいずれもこの呼び出しの正しさ・安全性を修正・強化するもの。呼び出し引数の形式(`<file> <cmd_id> <field> <value>`)自体は変更なく、gate-sync手順の書き換えは不要。ただし従来はこのバグにより対象外エントリを誤って汚染する/更新が反映されないリスクがあった点は認識しておくべき（現在は解消済み）。
@@ -83,4 +84,5 @@ Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は�
 
 Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は引数順序ミス検出ガード追加(contentがagent名ならERROR)。本SKILL.mdの呼び出し例は正しい`<posted_by> <content>`順のため投稿契約に変更なし。
 
-<!-- script_refs_checked_at: 2026-07-02T13:47:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->

@@ -9,16 +9,20 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-10T19:55:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 <!-- 検分: cmd_complete_gate.sh e89307c7c(報告commitと他忍者dirty hunkの非重複判定を共有libraryへSSOT化)。`bash scripts/cmd_complete_gate.sh <cmd_id>`の引数・CLEAR/BLOCK出口・codd-fix本文手順は不変 -->
 <!-- 検分: cmd_complete_gate.sh a76572f27(GATE CLEAR時のauto lesson_write.sh呼出しへsubdomain/target_files/origin/when/how自動推定フィールドを追加=lesson_candidate登録内容の内部強化)。`bash scripts/cmd_complete_gate.sh <cmd_id>`の呼び出し契約・GATE CLEAR/BLOCK出口・codd-fix本文手順は不変 -->
 
-<!-- script_refs_checked_at: 2026-07-09T14:56:35+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 <!-- 検分: cmd_complete_gate.sh b5b751536(reflux/hotfix高速回転でtask YAML上書き時のduration_secフォールバックにper-cmd不変マーカー追加=計測内部強化)+218aa852a(GATE CLEAR時cmd_quality_log呼出しをBLOCK側と同じ同期実行へ統一=品質記録漏れ防止の内部処理変更)。`bash scripts/cmd_complete_gate.sh <cmd_id>`の呼び出し契約・GATE CLEAR/BLOCK出口・codd-fix本文手順は不変 -->
 
-<!-- script_refs_checked_at: 2026-07-08T18:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 <!-- 検分: cmd_complete_gate.sh d387255f0(gate metrics benchmarks分離=計測内部変更)+bc8c87bc5(report gateの非重複post-commit dirty hunk許容=FAIL条件緩和)。`bash scripts/cmd_complete_gate.sh <cmd_id>`の呼び出し契約・GATE CLEAR/BLOCK出口・codd-fix本文手順は不変 -->
-<!-- script_refs_checked_at: 2026-07-08T10:26:09+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `cmd_complete_gate.sh` checked_at以降の変更(c4373d06/0c73c7d1)をgit showで確認。c4373d06はGATE CLEAR時のthroughput段階別duration計測(deploy/work/finalize/e2e秒数)をGATE_METRICS_LOGへ追加列として記録する計測強化。0c73c7d1はntfy/将軍/家老通知を`send_clear_notifications_once`へ集約し多重送信を防止した上で、lesson_merge/archive/gunshi_gate_reflux等の後処理をasync化(非同期queued)した内部高速化。いずれも`bash scripts/cmd_complete_gate.sh <cmd_id>`の呼び出し契約、GATE CLEAR/BLOCK出口の標準出力文言、codd-fix本文手順は変更なし。
 
@@ -38,13 +42,15 @@ Script refs verified: 2026-06-28 cmd_karo_hotfix_skill_script_refs_202606280133.
 
 Script refs verified: 2026-06-26 cmd_3550. `cmd_complete_gate.sh` 直近変更はself-grade commit/files coverageのWARN表示追加。`bash scripts/cmd_complete_gate.sh <cmd_id>` と `bash scripts/test_select.sh <changed-file>` の呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 Script refs verified: 2026-06-20 677d0c7f9+26f565ebc. `cmd_complete_gate.sh` 直近変更はCodd/nodeのhome直書き除去、`test_select.sh` 直近変更はcausal index系テスト対応。`bash scripts/cmd_complete_gate.sh <cmd_id>` と `bash scripts/test_select.sh <changed-file>` の呼び出し契約は変更なし。
 
 Script refs verified: 2026-06-21 0f202bd9c. `cmd_complete_gate.sh` 直近変更は`related_lessons: []`のempty_lessons_useful偽陽性修正。`bash scripts/cmd_complete_gate.sh <cmd_id>` と `bash scripts/test_select.sh <changed-file>` の呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 Script refs verified: 2026-06-16 cmd_3408. `cmd_complete_gate.sh` 直近変更(6eb86ef61)はcommand_files_modified_mismatch FP解消。(1)`read_markers`に11語追加("同構造","と同一","と同じ","同等","踏襲","に基づ","を参考","突合","比較","一覧","解析","分析","取得","検索","出力","表示","呼び出","呼出")。(2)`exec_prefix`検出: bash/python3等がパス直前の場合は実行のみ参照として除外。(3)`clause_boundary`検出: 読点「、」区切りでread_markerとwrite_markerが別節の場合は除外。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 Script refs verified: 2026-06-14 cmd_3379. `cmd_complete_gate.sh` 直近変更(23edb564f)はGATE CLEAR後にgunshi_gate_reflux.shを2回実行する修正（通常パス+emergency overrideパス両方）。1回目はGATE CLEAR通知前、2回目はGATE CLEAR通知後の軍師report追記分のgate_result null残存を防止（cmd_3370）。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
@@ -138,4 +144,5 @@ Script refs verified: 2026-06-26 e658e3c37. `cmd_complete_gate.sh` 直近変更�
 
 Script refs verified: 2026-06-28 8c53fdf4d. `cmd_complete_gate.sh` 直近変更は分割/phase reportを完了ゲートで統合参照する内部集約追加。`bash scripts/cmd_complete_gate.sh <cmd_id>` の呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-07T15:46:04+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T09:35:00+09:00 -->
+<!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
