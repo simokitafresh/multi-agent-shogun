@@ -2,12 +2,15 @@
 # Fingerprint-bound two-phase review approval storage.
 
 review_report_fingerprint() {
-    local report="$1" content_hash commit_identity
+    local report="$1" content_hash commit_identity root
     [ -f "$report" ] || return 1
+    root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
     content_hash=$(sha256sum "$report" | awk '{print $1}') || return 1
-    commit_identity=$(python3 - "$report" <<'PY'
-import sys, yaml
+    commit_identity=$(python3 - "$report" "$root" <<'PY'
+import pathlib, sys, yaml
 d = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+report_path = pathlib.Path(sys.argv[1]).resolve()
+root = pathlib.Path(sys.argv[2]).resolve()
 commit_hash = ""
 for key in ("commit_hash", "commit", "git_commit"):
     value = d.get(key)
@@ -23,6 +26,18 @@ if isinstance(commit_hash, str) and len(commit_hash) == 40 and all(c in "0123456
     raise SystemExit(0)
 
 task_type = str(d.get("task_type", "")).strip().lower()
+if task_type not in ("scout", "recon"):
+    parent_cmd = str(d.get("parent_cmd", "")).strip()
+    for task_path in (root / "queue" / "tasks").glob("*.yaml"):
+        try:
+            task_doc = yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}
+            task = task_doc.get("task", task_doc)
+        except (OSError, yaml.YAMLError):
+            continue
+        if isinstance(task, dict) and str(task.get("parent_cmd", "")).strip() == parent_cmd:
+            task_type = str(task.get("task_type", task.get("type", task.get("scope_mode", "")))).strip().lower()
+            if task_type in ("scout", "recon"):
+                break
 files_modified = d.get("files_modified")
 checks = d.get("binary_checks") or {}
 commit_claimed = False
@@ -37,7 +52,19 @@ if isinstance(checks, dict):
 
 # No-code reports have no commit to bind.  Their explicit structural contract is
 # part of content_hash, while every report outside this narrow case stays fail-closed.
-if task_type in ("scout", "recon") and files_modified == [] and not commit_claimed and not commit_hash:
+def reported_path(item):
+    value = item.get("path", "") if isinstance(item, dict) else item
+    if not isinstance(value, str) or not value.strip():
+        return None
+    path = pathlib.Path(value)
+    return (root / path).resolve() if not path.is_absolute() else path.resolve()
+
+no_code_files = files_modified == [] or (
+    isinstance(files_modified, list)
+    and bool(files_modified)
+    and all(reported_path(item) == report_path for item in files_modified)
+)
+if task_type in ("scout", "recon") and no_code_files and not commit_claimed and not commit_hash:
     print("no-code-change")
     raise SystemExit(0)
 

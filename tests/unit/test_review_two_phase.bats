@@ -5,6 +5,7 @@ setup() {
   TMPROOT=$(mktemp -d)
   mkdir -p "$TMPROOT/queue/gates/cmd_test/review_approvals/reports"
   mkdir -p "$TMPROOT/queue/reports"
+  mkdir -p "$TMPROOT/queue/tasks"
   REPORT="$TMPROOT/queue/reports/ninja_report_cmd_test.yaml"
   printf 'parent_cmd: cmd_test\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nresult:\n  summary: ok\n' > "$REPORT"
   PROJECT_ROOT="$TMPROOT"
@@ -61,6 +62,32 @@ approve() {
 @test "no-code RECON without commit_hash fingerprints" {
   printf 'parent_cmd: cmd_test\ntask_type: recon\nfiles_modified: []\nbinary_checks: {}\n' > "$REPORT"
   review_report_fingerprint "$REPORT"
+}
+
+@test "deployed SCOUT report resolves task_type from parent task and allows report artifact only" {
+  mkdir -p "$TMPROOT/scripts/lib"
+  cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
+  cat > "$TMPROOT/queue/tasks/ninja.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_test
+  task_type: scout
+YAML
+  cat > "$REPORT" <<YAML
+parent_cmd: cmd_test
+files_modified:
+  - path: queue/reports/ninja_report_cmd_test.yaml
+    change: report artifact
+binary_checks:
+  AC1:
+    - {check: inspected, result: yes}
+result:
+  summary: scout complete
+YAML
+  fp=$(review_report_fingerprint "$REPORT")
+  [[ "$fp" == *":no-code-change" ]]
+  approve gunshi LGTM "$REPORT"
+  approve karo ACCEPT "$REPORT"
+  review_two_phase_ready cmd_test "$REPORT"
 }
 
 @test "SCOUT with modified files cannot omit commit_hash" {
