@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-11 cmd_3845 -->
+<!-- last_updated: 2026-07-12 cmd_3845 source_commit:f19f24d3 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -240,7 +240,7 @@ OPT一覧(1-15):
 
 **cmd_3831偵察(2026-07-10, PF数103体時点の再実測)**: trade_perf **272.35s(L2内86.3%)に肥大化**(旧126.46s比+115%、PF数増加+ネスト階層化が要因)。主犯は月次whileループではなく`_extract_trades_unified()`が全営業日1件ずつ`expand_portfolio_to_tickers()`を再帰呼出しする箇所(`trade_performance.py:575-587`)。ネスト2-3階層(秘奥義/奥義系)は1PFあたり5-21秒、単層(シン四神/GS忍法)は2秒未満(実測ログ確認済み、cmd_1503のwhileループNumPy化仮説は本実測で棄却=while_iters側は既に軽量)。**TIMING SUMMARYがL2を誤BOTTLENECK表示するバグも同時特定**: Layer 5 raw precompute(`precompute_raw_for_portfolios`)が`LayerTimer`(`utils/timing.py:74 LAYER_ORDER`)に未登録のため、実際は66.5%(1659.78s/2497s)を占めるL5が表から消え、22.7%のL2がBOTTLENECKマーカーを得る。詳細・実装候補3案(New Fund of Funds_copy系要否確認/メモ化/ベクトル化)・precompute-fullspeed-goal-design(Layer 5)との非衝突確認 → `docs/research/cmd_3831_trade_perf_recon.md`
 
-**cmd_3843実装(2026-07-11)**: preload済み全PFの同日時点payload（holding/signal/custom weights）を状態キー化し、全階層不変日の`expand_portfolio_to_tickers()`結果を再利用。Cash/循環深度/再帰先weights変化の既存防御を維持。2,500日fixtureで展開2,500→1回、0.729043→0.060513秒（91.70%減）、関連69 PASS / SKIP 0。変更前本番TradePerformance 11,040行/102PFを退避。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3843_trade_perf_memoize.md`
+**cmd_3843試行→cmd_3845でrevert済み(2026-07-11)**: 2,500日fixtureでは展開2,500→1回・91.70%減だったが、全102PF照合は旧/新とも本番baselineに554行/24PF（浮動小数末尾約1e-16）不一致、実測も113.379s→124.623s（9.917%退行）。許容誤差ゼロによりFAILし、メモ化3 commitをrevert。本番push/deploy/fullrecalculate未実行。詳細 → `docs/research/cmd_3845_memoize_parity.md`
 - L503: DM-SignalリポジトリにGitHub Actionsワークフロー未設定(.github/workflows/不在)（cmd_1448）
 - L504: 性能異常値はリソース競合を先に疑え。pipeline_exec 626sは同時実行run起因のanomaly（cmd_1456）
 - L136: 改善候補調査前に既存最適化履歴を照合する（cmd_474）

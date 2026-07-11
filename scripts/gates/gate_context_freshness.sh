@@ -206,7 +206,11 @@ warnings_output() {
         fi
     fi
 
-    local _min_sc="${CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS:-3}"
+    # One source commit after the context's recorded source_commit is enough to
+    # make the context stale.  A threshold greater than one lets an ALERT
+    # disappear when commits are later merged/squashed even though the context
+    # itself was never refreshed (GA-226).
+    local _min_sc="${CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS:-1}"
     if [[ -n "$cache_file" ]]; then
         local tmp_cache="${cache_file}.$$"
         CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" bash "$CHECK_SCRIPT" --dashboard-warnings > "$tmp_cache" 2>/dev/null

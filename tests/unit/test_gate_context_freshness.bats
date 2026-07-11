@@ -202,3 +202,44 @@ SH
     [ "$status" -eq 0 ]
     [[ "$output" == *"--- 総合判定: OK ---"* ]]
 }
+
+@test "a single source commit remains ALERT until context records the new source boundary" {
+    cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
+#!/usr/bin/env bash
+if grep -q 'source_commit:newhead' "$CONTEXT_FRESHNESS_ROOT/context/source-boundary.md"; then
+  echo "--- 総合判定: OK ---"
+else
+  echo "ALERT: context/source-boundary.md source commits 1件 since last_updated=2026-05-10。更新要否を確認せよ"
+fi
+SH
+    chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
+    write_context_file context/source-boundary.md 2026-05-10
+
+    CONTEXT_FRESHNESS_ROOT="$TEST_TMPDIR" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$TEST_TMPDIR/scripts/context_freshness_check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT="$TEST_TMPDIR/scripts/ntfy.sh" \
+    CONTEXT_FRESHNESS_TODAY="2026-05-11" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$TEST_TMPDIR/alert_state" \
+    run bash "$PROJECT_ROOT/scripts/gates/gate_context_freshness.sh"
+    [ "$status" -eq 1 ]
+
+    # Time/merge topology changes do not edit the context boundary: still ALERT.
+    CONTEXT_FRESHNESS_TODAY="2026-06-11" \
+    CONTEXT_FRESHNESS_ROOT="$TEST_TMPDIR" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$TEST_TMPDIR/scripts/context_freshness_check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT="$TEST_TMPDIR/scripts/ntfy.sh" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$TEST_TMPDIR/alert_state" \
+    run bash "$PROJECT_ROOT/scripts/gates/gate_context_freshness.sh"
+    [ "$status" -eq 1 ]
+
+    sed -i '1s/ -->/ source_commit:newhead -->/' "$TEST_TMPDIR/context/source-boundary.md"
+    CONTEXT_FRESHNESS_ROOT="$TEST_TMPDIR" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$TEST_TMPDIR/scripts/context_freshness_check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT="$TEST_TMPDIR/scripts/ntfy.sh" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$TEST_TMPDIR/alert_state" \
+    run bash "$PROJECT_ROOT/scripts/gates/gate_context_freshness.sh"
+    [ "$status" -eq 0 ]
+}
