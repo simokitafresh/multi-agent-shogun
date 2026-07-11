@@ -1929,7 +1929,7 @@ task_id: fixture
 parent_cmd: $TEST_CMD_ID
 status: completed
 ac_version_read: 2
-commit_hash: deadbeef
+commit_hash: deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
 verdict: PASS
 result:
   summary: approved before normalization

@@ -1155,7 +1155,7 @@ printf '%s\n' "$1" > "$INBOX_WRITE_BG_LOG"
 EOF
     chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
     export INBOX_WRITE_BG_LOG="$TEST_TMPDIR/cmd_complete_gate.log"
-    printf 'parent_cmd: cmd_karo_auto_review_gate\ncommit_hash: abc123\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
+    printf 'parent_cmd: cmd_karo_auto_review_gate\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
 
     cat > "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done" <<'EOF'
 timestamp: 2026-04-21T13:00:00
@@ -1176,7 +1176,7 @@ EOF
     setup_git_test_env
     mkdir -p "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/scripts/lib"
     ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
-    printf 'parent_cmd: cmd_guard\ncommit_hash: abc123\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
+    printf 'parent_cmd: cmd_guard\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
     run _run_inbox_write karo "cmd_guard verdict: LGTM report: queue/reports/ninja_report_cmd_guard.yaml" report_review_result gunshi
     [ "$status" -eq 2 ]
     [[ "$output" == *"approval marker missing, stale, or mismatched"* ]]
