@@ -1975,22 +1975,8 @@ while [ $attempt -lt $max_attempts ]; do
             fi
         fi
 
-        # Two-phase review: gunshi LGTM is provisional. Karo ACCEPT for the
-        # identical report fingerprint is required before cmd_complete_gate.
-        if [ "$INBOX_COMPLETED_DUPLICATE" -eq 0 ] && [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ]; then
-            # メッセージからcmd_idとverdictを抽出
-            _rr_cmd_id=$(echo "$CONTENT" | grep -oP 'cmd_[A-Za-z0-9_]+' | head -1 || true)
-            _rr_verdict=$(echo "$CONTENT" | grep -oP 'verdict: \K(LGTM|FAIL)' | head -1 || true)
-            if [ -n "$_rr_cmd_id" ] && [ "$_rr_verdict" = "LGTM" ]; then
-                _rr_report=$(find "$SCRIPT_DIR/queue/reports" -maxdepth 1 -type f -name "*_report_${_rr_cmd_id}.yaml" -print -quit 2>/dev/null || true)
-                if [ -n "$_rr_report" ]; then
-                    bash "$SCRIPT_DIR/scripts/review_approval.sh" "$_rr_cmd_id" gunshi LGTM "$_rr_report" >&2
-                    echo "[inbox_write] provisional gunshi LGTM recorded; awaiting karo ACCEPT: ${_rr_cmd_id}" >&2
-                else
-                    echo "[inbox_write] WARN: report for review approval not found: ${_rr_cmd_id}" >&2
-                fi
-            fi
-        fi
+        # Review notifications are persistence-only. Fingerprints are bound at
+        # review time by scripts/review_approval.sh, never on delayed delivery.
 
         # 重複report_review防止: type=report_review to=gunshi 時にgunshi_notify.shと同じフラグを書く
         # gunshi_notify.sh(cmd_complete_gate.sh経由)が後から発火しても重複送信しない

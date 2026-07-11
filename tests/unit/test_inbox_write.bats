@@ -1165,10 +1165,10 @@ EOF
 
     run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: LGTM。" report_review_result gunshi
     [ "$status" -eq 0 ]
-    [[ "$output" == *"provisional gunshi LGTM recorded; awaiting karo ACCEPT"* ]]
+    [[ "$output" != *"provisional gunshi LGTM recorded"* ]]
     [ ! -e "$INBOX_WRITE_BG_LOG" ]
     grep -q '^source: deploy_preflight$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done"
-    grep -q '^result: LGTM$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_approvals/gunshi.yaml"
+    [ ! -d "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_approvals" ]
 }
 
 @test "report_review_result: FAIL does not update placeholder or run cmd_complete_gate" {
