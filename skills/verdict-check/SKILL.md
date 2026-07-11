@@ -10,11 +10,13 @@ description: |
   DO NOT TRIGGER: 報告YAML全体作成（→/report-write）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-07-08T18:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+
+Script refs verified: 2026-07-11 shogun起動時gate WARN解消。checked_at以降の変更(review two-phase race fix系/inbox gate trigger detach/report discovery偽BLOCK根治/rg grepフォールバック/memory DB cache atomic recovery)をgit logで確認。いずれも内部強化であり呼び出し契約・出口文言・本文手順に変更なし。
 <!-- 検分: gate_report_format.sh bc8c87bc5 非重複post-commit dirty hunk許容(FAIL条件緩和)。binary_checksからのverdict自動導出(全yes→PASS/1つでもno→FAIL/空・FILL_THIS→BLOCK)と呼び出し契約は不変 -->
-<!-- script_refs_checked_at: 2026-07-08T08:36:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
 <!-- 検分: gate_report_format.sh 460db6e2b session_state-only task diff除外。binary_checksからのverdict自動導出、未記入/FILL_THIS BLOCK、呼び出し契約は不変 -->
-<!-- script_refs_checked_at: 2026-07-04T20:13:35+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
 
 Script refs verified: 2026-07-04 cmd_training_skill_refs_verdict_check_202607042005. checked_at 2026-07-03T02:15:00+09:00 以降の `gate_report_format.sh` 差分は 83fc58fd (`cmd_karo_hotfix_commit_missing_structural_202607032250`) のみ。bc:commit=yes時の未commit検査対象を`target_path`だけでなく報告YAMLの`files_modified`申告ファイルにも拡張する変更で、`binary_checks`からのverdict自動導出（全yes→PASS/1つでもno→FAIL/空・FILL_THIS→BLOCK）ロジックは`gate_report_format_combined.py`側にあり無変更。verdict-checkの手順・判定ルールへの影響なし。
 
@@ -22,7 +24,7 @@ Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234.
 
 Script refs verified: 2026-06-26 cmd_3550. `gate_report_format.sh` 直近変更後も `bash scripts/gates/gate_report_format.sh <report_yaml_path>` の呼び出し契約、binary_checksからのverdict自動導出、未記入/FILL_THIS/不正値BLOCKの契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
 
 Script refs verified: 2026-06-11. `gate_report_format.sh` の契約は `bash scripts/gates/gate_report_format.sh <report_yaml_path>` のまま。binary_checksが全てyes/noならverdictをPASS/FAILへ自動導出し、空/FILL_THIS/不正値はBLOCKする仕様に変更なし。
 
@@ -191,9 +193,9 @@ Script refs verified: 2026-06-10 6bf403d2c. `gate_report_format.sh` はauto-comm
 
 Script refs verified: 2026-06-20 48204a464. `gate_report_format.sh` 直近変更は操作的オントロジー/targetフィルタ/スキル強制の内部検査強化。binary_checksからverdictを自動導出する契約と、未記入/FILL_THIS/不正値BLOCKは変更なし。
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
 
-<!-- script_refs_checked_at: 2026-07-03T02:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
 
-<!-- script_refs_checked_at: 2026-07-08T22:35:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
 Script refs verified: 2026-07-08 将軍検分. 前回checked_at以降の gate_report_format.sh 差分は c1f2b38d8 のみ(gate_loop_health集計向けログパス正規化=内部ログ記録のみの変更。報告YAMLパス引数・PASS/FAIL判定・verdict自動導出の契約は不変)。
