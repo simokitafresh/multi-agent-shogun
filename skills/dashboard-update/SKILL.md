@@ -19,13 +19,13 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
 Script refs verified: 2026-07-11 shogun起動時gate WARN解消。checked_at以降の変更(review two-phase race fix系/inbox gate trigger detach/report discovery偽BLOCK根治/rg grepフォールバック/memory DB cache atomic recovery)をgit logで確認。いずれも内部強化であり呼び出し契約・出口文言・本文手順に変更なし。
 <!-- 検分: gate_report_format.sh bc8c87bc5 非重複post-commit dirty hunk許容(commit後に他エージェントが積んだ無関係hunkでFAILしない緩和)。報告gate契約 `bash scripts/gates/gate_report_format.sh <report_yaml>` とverdict自動導出は不変 -->
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 <!-- 検分: dashboard_update.sh 9a4627f23 hyphenated training cmd id許可、gate_report_format.sh 460db6e2b session_state-only task diff除外。dashboard生成契約 `bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` と報告gate契約は不変 -->
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
 Script refs verified: 2026-07-04 cmd_training_skill_refs_dashboard_update_202607042005. checked_at 2026-07-03T02:15:00+09:00 以降の `dashboard_update.sh` 差分は bb140170d (`cmd_karo_hotfix_dashboard_snapshot_stale_status_202607041407`) のみ。AUTO域再生成直前に `ninja_monitor.sh` の `refresh_karo_snapshot_fast_path` をtimeout 20で呼び、snapshot stale status/model/idleを減らす内部更新で、呼び出し契約 `bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` とpre-flightのcmd_id必須契約は変更なし。
 
@@ -33,19 +33,19 @@ Script refs verified: 2026-07-04 cmd_training_skill_refs_dashboard_update_202607
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
 
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
 Script refs verified: 2026-06-26 cmd_3550. `gate_report_format.sh` 直近変更後も `bash scripts/gates/gate_report_format.sh <report_yaml_path>` の報告YAML検証契約は変更なし。dashboard生成契約 `bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` も変更なし。
 
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
 Script refs verified: 2026-06-20 a16c93387+48204a464. `dashboard_update.sh` 直近変更はLS071統合/Guard18運用データ反映、`gate_report_format.sh` 直近変更は操作的オントロジー/targetフィルタ/スキル強制の内部検査強化。dashboard生成コマンドと報告YAML検証契約は変更なし。
 
 Script refs verified: 2026-06-21 729635be5. `dashboard_update.sh` 直近変更はmodel family literalのSSOT化。`bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` の生成契約、報告YAML検証契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
 Script refs verified: 2026-06-11. `dashboard_update.sh` の契約は `<cmd_id> [--dry-run]` のまま。`gate_report_format.sh` は `bash scripts/gates/gate_report_format.sh <report_yaml_path>` で報告YAMLを検証し、binary_checks由来verdict自動導出・未記入BLOCK・PASS cache・auto-commit contamination WARNの契約変更なし。
 
@@ -206,9 +206,12 @@ bash scripts/ntfy.sh "📊 Dashboard: {直近cmd結果} | idle:{N}名 | pipeline
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `gate_report_format.sh` の現行契約を再確認。dashboard更新前の報告YAML検証は、binary_checks由来verdict自動導出・lessons_useful空リストBLOCK・中間FAILログ抑止を含む現在のgate出力を正本にする。
 
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 Script refs verified: 2026-07-08 将軍検分. 前回checked_at以降の gate_report_format.sh 差分は c1f2b38d8 のみ(gate_loop_health集計向けログパス正規化=内部ログ記録のみの変更。報告YAMLパス引数・PASS/FAIL判定・verdict自動導出の契約は不変)。
+
+<!-- 検分: 2026-07-12 shogun起動時gate WARN解消。checked_at以降の差分をgit logで確認 — gate_report_format.sh 8c576d849(AC3 hunk provenance判定=内部判定強化)/memory_db_query.sh 8ce7c5c26(ext4キャッシュ経由=内部速度)/deploy_task.sh 2ecaf21ba+0cc6175e6+5dc9e8423(chunk境界regex誤検知根治+lesson注入絞込+atomic mv=内部)/ninja_scope_commit.sh 42d06b1d5+13f46a918(fail-closed patch commit mode追加+CI fixture=内部)/ninja_monitor.sh b40e13d2c系(dedupe通知+stall FP抑制=内部)。いずれも呼び出し契約・手順・出口文言に変更なし -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->

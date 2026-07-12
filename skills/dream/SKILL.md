@@ -24,12 +24,12 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
 Script refs verified: 2026-07-11 shogun起動時gate WARN解消。checked_at以降の変更(review two-phase race fix系/inbox gate trigger detach/report discovery偽BLOCK根治/rg grepフォールバック/memory DB cache atomic recovery)をgit logで確認。いずれも内部強化であり呼び出し契約・出口文言・本文手順に変更なし。
 <!-- 検分: gate_lesson_health.sh 1f0aed8d1(subdomain別context routeをlesson_write.shとSSOT化し、合流済み教訓の偽ALERTを解消)。引数なし実行・ALERT/CLEAR出口・/dream本文手順は不変 -->
 <!-- 検分: gate_lesson_health.sh GA-196で自己修復cmd(reflux/karo_hotfix/ci_fix)を長期useful率健康指標から除外。引数なし全project走査/PROJECT単体走査、METRIC行、WARN/ALERT出力契約は不変 -->
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
 Script refs verified: 2026-07-07 cmd_3743. `gate_shogun_memory.sh` checked_at以降の変更(bce8c3ed0)と`insight_write.sh` checked_at以降の変更(eca859044)をgit logで確認。前者はmemory pipeline freshness warning追加、後者は破損insight残骸のarchive処理で、/dreamの三層記憶整理手順、`bash scripts/insight_write.sh "message" [priority] [source]` 契約、MCP操作手順は変更なし。
 
@@ -47,7 +47,7 @@ Script refs verified: 2026-06-26 558ec6eae. `gate_lesson_health.sh` 直近変更
 
 Script refs verified: 2026-06-26 364744210+955c2e756. `gate_lesson_health.sh` 直近変更はuseful率計測のpresence_file追加(active lesson抽出高速化)+min sample threshold調整。引数なし全project走査/METRIC行/WARN・ALERT出力契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
 Script refs verified: 2026-07-02T20:45 将軍検証. `insight_write.sh` 直近変更(55449ce13)はresolved insightのreason保全(insight corruption hotfix)で内部実装変更のみ。保存I/F `bash scripts/insight_write.sh "message" [priority] [source]` は変更なし。本日将軍が同I/Fで保存実行しID採番(INS-20260702-203241381-2c2c)を実測確認済み。/dream手順への影響なし。
 
@@ -417,4 +417,7 @@ Script refs verified: 2026-06-03 cmd_3144. `insight_write.sh` 直近変更(4dacb
 Script refs verified: 2026-06-10 karo. `semantic_search.sh` 直近変更(ffd1305de)はcache refresh内部実装のみ(cp生コピー→SQLite Backup API置換、malformed根治)。呼び出し契約(引数/`--stats`/出力形式)は変更なし。SKILL.md記載の使用方法は現行と一致。
 - → [[gunshi_idle_dream_gate_analysis_20260507]] dreamゲート分析: Phase設計の品質検証
 
-<!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+
+<!-- 検分: 2026-07-12 shogun起動時gate WARN解消。checked_at以降の差分をgit logで確認 — gate_report_format.sh 8c576d849(AC3 hunk provenance判定=内部判定強化)/memory_db_query.sh 8ce7c5c26(ext4キャッシュ経由=内部速度)/deploy_task.sh 2ecaf21ba+0cc6175e6+5dc9e8423(chunk境界regex誤検知根治+lesson注入絞込+atomic mv=内部)/ninja_scope_commit.sh 42d06b1d5+13f46a918(fail-closed patch commit mode追加+CI fixture=内部)/ninja_monitor.sh b40e13d2c系(dedupe通知+stall FP抑制=内部)。いずれも呼び出し契約・手順・出口文言に変更なし -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->

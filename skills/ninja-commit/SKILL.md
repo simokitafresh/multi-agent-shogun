@@ -10,7 +10,7 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcommit漏れ・scope外混入・未commit残存起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-10T19:55:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 <!-- 検分: report_field_set.sh b86ddd6f5。active report欠落かつ同basenameのarchive存在時は残骸YAML再生成をBLOCKする契約へ変更。commit_hash記録先がarchive済みならactive pathを再生成せずcanonical archive pathを明示して更新する -->
 
 Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `report_field_set.sh` checked_at以降の変更(edb26ea1)をgit showで確認。`verified_existing_dependency`フィールド(list of {path, reason, checked_not_modified: true})に対する型/必須値BLOCKバリデーションを新規追加(LG037除外宣言の構造保証)。commit_hash記録手順、`bash scripts/report_field_set.sh "$REPORT" <field> <value>`の呼び出し契約、status completed前後のガード前提には影響なし。ninja-commitはcommit_hash記録のみを行うため本変更の影響を受けない。
@@ -80,6 +80,10 @@ bash scripts/report_field_set.sh "$REPORT" "commit_hash" "$COMMIT_HASH"
 ```
 verdict は `gate_report_format.sh` が binary_checks から自動導出する。commit後の報告追記でも手動記入禁止。
 
+`status: completed` / `done` への最終遷移**前**に、この `commit_hash` を記録せよ。`report_field_set.sh` は完了済みの現行報告を不変として扱い、内容変更をfail-closedでBLOCKする。完了後に訂正が必要になった場合は、正規経路で先に `status` を `revision_requested` へ遷移し、修正・再検証を行う。
+
+Script refs verified: 2026-07-12 working-tree inspection. `report_field_set.sh` のcompleted-report immutability guardは、完了済み現行報告への非冪等書込みをBLOCKし、`revision_requested` への明示遷移と同値の冪等書込みだけを許可する。`commit_hash`記録順序を上記へ明文化し、scope限定commit・報告YAML helper経由の契約を維持する。
+
 `report_field_set.sh`は`self_gate_check`トップレベル書込みをBLOCKする。報告修正が必要な場合は `self_gate_check.lesson_ref PASS` のようにdot notationで個別fieldだけを更新する。
 Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*書込み時にfound/affected_cmds/detailを自動初期化。cmd_2883: `report_field_set.sh <report> origin [value]` は `lesson_candidate.origin` へ書く。value省略時はtask/reportからcmdを特定し、queue/archive内のcmd originを自動継承する。cmd_2899: report_field_set.sh binary checks処理の高速化。cmd_2941: `binary_checks.*.*.result` は `yes/no` のみ許可し、`true/PASS/OK` 等をBLOCK。cmd_training_L7_v3_saizo_6/9: `assumption_invalidation` のscalar/boolean書込みをdictへ正規化し、`found: true` は `detail` と `affected_cmds` 記入後にのみ許可。cmd_training_L7_v3_saizo_6: `self_gate_check.*` は `lesson_ref` / `lesson_candidate` / `status_valid` / `purpose_fit` の既知キーのみ許可し、値はPASS/FAILのみ)。`report_field_set.sh` は空文字値を許可し、構造体/複数行/stdin YAMLをPython fallbackで保持する。commit後のreport追記も同helper経由で行い、直接Editしない。`verdict` は `gate_report_format.sh` が自動導出するため手動記入禁止。
 
@@ -117,8 +121,8 @@ Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_fi
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パスを検出し、個別dict変換する。ninja-commitのcommit_hash記録手順への影響なし。
 Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_useful全体上書きBLOCKガード追加(既存件数>新件数で拒否)。ninja-commitはcommit_hash記録のみで影響なし。
 
-<!-- script_refs_checked_at: 2026-07-07T15:46:38+09:00 -->
-<!-- script_refs_checked_at: 2026-07-07T15:46:38+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `report_field_set.sh` 直近変更(281349be)はresult系書込み高速化で、`bash scripts/report_field_set.sh "$REPORT" <field> <value>` の呼び出し契約と報告YAML構造検証は変更なし。
 
@@ -126,4 +130,7 @@ Script refs verified: 2026-06-20 efb4b9c02. `report_field_set.sh` 直近変更�
 
 Script refs verified: 2026-06-26 b12637002. `report_field_set.sh` 直近変更はstatus=completed済み報告へのcommit前フィールド書込みをBLOCKするガード追加。ninja-commitはcommit後にcommit_hashを記録するため、commit前にstatus completedになることはなく影響なし。
 
-<!-- script_refs_checked_at: 2026-07-07T15:46:38+09:00 -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+
+<!-- 検分: 2026-07-12 shogun起動時gate WARN解消。checked_at以降の差分をgit logで確認 — gate_report_format.sh 8c576d849(AC3 hunk provenance判定=内部判定強化)/memory_db_query.sh 8ce7c5c26(ext4キャッシュ経由=内部速度)/deploy_task.sh 2ecaf21ba+0cc6175e6+5dc9e8423(chunk境界regex誤検知根治+lesson注入絞込+atomic mv=内部)/ninja_scope_commit.sh 42d06b1d5+13f46a918(fail-closed patch commit mode追加+CI fixture=内部)/ninja_monitor.sh b40e13d2c系(dedupe通知+stall FP抑制=内部)。いずれも呼び出し契約・手順・出口文言に変更なし -->
+<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
