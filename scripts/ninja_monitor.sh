@@ -1667,15 +1667,81 @@ _failed_task_needs_karo_notice() {
     return 0
 }
 
+# ─── failed respawn通知のdurable dedupe (karo実運転RC 2026-07-12 09:04) ───
+# 同一failed世代(=task_id+parent_cmd+deployed_atが不変の間)がidle+failedのまま繰り返し
+# respawnされ続けると、修正直後は同一通知が毎サイクル複数回karoへ届いていた(exactly-once不変量違反)。
+# 世代fingerprint+outcome種別(success/failure)単位でmarker fileに記録し、同一世代・同一outcomeの
+# 再通知を抑制する。再配備で世代(deployed_at等)が変われば新規通知として扱う。
+_failed_respawn_notice_marker_file() {
+    local agent_name="$1"
+    mkdir -p "$STATE_DIR" 2>/dev/null || true
+    printf '%s/failed_respawn_notice_%s.tsv\n' "$STATE_DIR" "$agent_name"
+}
+
+_failed_respawn_generation_fingerprint() {
+    local agent_name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
+    local task_id parent_cmd deployed_at
+    task_id=$(yaml_field_get "$task_file" "task_id")
+    parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+    deployed_at=$(yaml_field_get "$task_file" "deployed_at")
+    printf '%s|%s|%s' "$task_id" "$parent_cmd" "$deployed_at" | md5sum | cut -d' ' -f1
+}
+
+# 既に同一世代+同一outcomeで通知済みならtrue(0)。未通知なら記録してfalse(1)を返す
+# (呼び出し側はfalse時のみ通知処理を続ける)。
+_failed_respawn_already_notified() {
+    local agent_name="$1"
+    local outcome="$2"
+    local marker_file current_fp stored_fp stored_outcomes
+
+    marker_file=$(_failed_respawn_notice_marker_file "$agent_name")
+    current_fp=$(_failed_respawn_generation_fingerprint "$agent_name")
+
+    stored_fp=""
+    stored_outcomes=""
+    if [ -f "$marker_file" ]; then
+        IFS=$'\t' read -r stored_fp stored_outcomes < "$marker_file" || true
+    fi
+
+    if [ "$stored_fp" = "$current_fp" ]; then
+        case ",${stored_outcomes}," in
+            *",${outcome},"*)
+                return 0
+                ;;
+        esac
+        stored_outcomes="${stored_outcomes:+${stored_outcomes},}${outcome}"
+    else
+        stored_fp="$current_fp"
+        stored_outcomes="$outcome"
+    fi
+
+    printf '%s\t%s\n' "$stored_fp" "$stored_outcomes" > "$marker_file"
+    return 1
+}
+
 # failed taskのrespawn結果をkaroへdurable通知する。notice_pending=0(対象外)なら何もしない。
 # respawnは既にsafe_send_clear側で実行済み/実行放棄済みであり、この関数は結果通知のみを行う。
 _notify_failed_respawn_result() {
     local agent_name="$1"
     local notice_pending="$2"
     local respawn_ok="$3"
+    local outcome
 
     [ "$notice_pending" -eq 1 ] || return 0
+
     if [ "$respawn_ok" -eq 1 ]; then
+        outcome="success"
+    else
+        outcome="failure"
+    fi
+
+    if _failed_respawn_already_notified "$agent_name" "$outcome"; then
+        log "FAILED-RESPAWN-NOTICE-DEDUPE: $agent_name outcome=$outcome already notified for this generation, skipping"
+        return 0
+    fi
+
+    if [ "$outcome" = "success" ]; then
         notify_karo_durable failed_task_respawned "$agent_name" \
             "【自動検知】${agent_name}のfailedタスクをrespawn(clear)した。報告は未完了/未レビューの可能性あり。queue/tasks/${agent_name}.yamlと対応reportを確認し、レビュー/完了処理を判断せよ。"
     else

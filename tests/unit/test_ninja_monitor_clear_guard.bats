@@ -1631,6 +1631,88 @@ echo "PASS: outbox retry delivers queued notification"
     [[ "$output" == *"PASS: outbox retry delivers queued notification"* ]]
 }
 
+# karo実運転RC(2026-07-12 09:04): 08:53/09:03に同一kagemaru/hanzo failed taskが繰り返しrespawnされ
+# 同一通知が各2回発生(exactly-once不変量違反)。同一世代(task_id+parent_cmd+deployed_at不変)の
+# 繰り返しrespawnは通知1件に抑制し、世代が変わったら(再配備等)再度通知することを検証する。
+@test "safe_send_clear dedupes repeated failed-respawn notifications for the same generation and re-notifies on a new one" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@" >> "$TMP_ROOT/inbox_calls.log"
+exit 0
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  status: failed
+  parent_cmd: cmd_dedupe_test
+  task_id: cmd_dedupe_test_full
+  deployed_at: "2026-07-12T06:57:01"
+YAML
+
+check_idle() { return 0; }
+cli_type() { echo "codex"; }
+cli_profile_get() {
+    case "$2" in
+        clear_cmd) echo "/new" ;;
+        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        *) echo "" ;;
+    esac
+}
+safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
+tmux() {
+    if [ "$1" = "respawn-pane" ]; then
+        echo "RESPAWN:$*" >> "$LOG"
+        return 0
+    fi
+    echo ""
+}
+export -f tmux
+
+# 同一世代(deployed_at不変)で3回respawnされても通知は1件のみ
+safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR"
+safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR"
+safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR"
+
+test "$(grep -c "CODEX-RESPAWN: kagemaru respawn-pane" "$LOG")" -eq 3
+test "$(grep -c "failed_task_respawned" "$TMP_ROOT/inbox_calls.log")" -eq 1
+test "$(grep -c "FAILED-RESPAWN-NOTICE-DEDUPE: kagemaru outcome=success" "$LOG")" -eq 2
+
+# 再配備で世代(deployed_at)が変わったら新規通知が1件増える
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  status: failed
+  parent_cmd: cmd_dedupe_test
+  task_id: cmd_dedupe_test_full
+  deployed_at: "2026-07-12T09:30:00"
+YAML
+safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR"
+
+cat "$LOG"
+cat "$TMP_ROOT/inbox_calls.log"
+
+test "$(grep -c "failed_task_respawned" "$TMP_ROOT/inbox_calls.log")" -eq 2
+echo "PASS: dedupe holds within generation, resets on new generation"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: dedupe holds within generation, resets on new generation"* ]]
+}
+
 @test "safe_send_clear codex in_progress uses respawn-pane" {
     run bash -lc '
 set -eo pipefail
