@@ -123,16 +123,16 @@ teardown() {
 @test "codd-fix skill documents phenomenon fix and dag verify chain" {
   skill_file="$PROJECT_ROOT/skills/codd-fix/SKILL.md"
 
-  run rg -n 'codd fix "\$PHENOMENON" --path \. --non-interactive --on-ambiguity abort --no-push' "$skill_file"
+  run grep -Fn 'codd fix "$PHENOMENON" --path . --non-interactive --on-ambiguity abort --no-push' "$skill_file"
   [ "$status" -eq 0 ]
 
-  run rg -n 'codd dag build --path \.' "$skill_file"
+  run grep -Fn 'codd dag build --path .' "$skill_file"
   [ "$status" -eq 0 ]
 
-  run rg -n 'codd dag verify --all --path \.' "$skill_file"
+  run grep -Fn 'codd dag verify --all --path .' "$skill_file"
   [ "$status" -eq 0 ]
 
-  run rg -n 'codd dag verify --path \.' "$skill_file"
+  run grep -Fn 'codd dag verify --path .' "$skill_file"
   [ "$status" -eq 0 ]
 }
 
