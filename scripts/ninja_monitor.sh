@@ -1773,17 +1773,22 @@ _karo_pending_work_notice_marker_file() {
     printf '%s/karo_pending_work_notice.tsv\n' "$STATE_DIR"
 }
 
+# 空集合になるまでの通知済み世代を最大64件保持する。単一の「直前世代」だけでは
+# A→A+B→Aの振動でAを忘れ、同じAを再通知するため、行単位のbounded setにする。
+KARO_PENDING_WORK_SEEN_MAX=64
+
 # 判定のみ(副作用なし)。同一世代で通知確定済みならtrue(0)、未確定ならfalse(1)。
 _karo_pending_work_already_notified() {
     local current_fp="$1"
     local marker_file stored_fp
 
     marker_file=$(_karo_pending_work_notice_marker_file)
-    stored_fp=""
     # 速度RC(2026-07-12): cat(外部プロセス)ではなくbuiltin readでmarker内容を読む
-    [ -f "$marker_file" ] && IFS= read -r stored_fp < "$marker_file" 2>/dev/null
-
-    [ "$stored_fp" = "$current_fp" ]
+    [ -f "$marker_file" ] || return 1
+    while IFS= read -r stored_fp; do
+        [ "$stored_fp" = "$current_fp" ] && return 0
+    done < "$marker_file"
+    return 1
 }
 
 # notify_karo_durableがreturn 0(direct成功またはoutbox永続化成功)した後にのみ呼ぶこと。
@@ -1791,12 +1796,21 @@ _karo_pending_work_already_notified() {
 # 最終RC(2026-07-12): mkdir副作用はwrite系のここだけに限定し、_already_notifiedを純比較にする。
 _karo_pending_work_mark_notified() {
     local current_fp="$1"
-    local marker_file tmp_file
+    local marker_file tmp_file stored_fp
+    local -a seen_fps=()
 
     [ -d "$STATE_DIR" ] || mkdir -p "$STATE_DIR" 2>/dev/null || true
     marker_file=$(_karo_pending_work_notice_marker_file)
     tmp_file="${marker_file}.tmp.$$"
-    printf '%s\n' "$current_fp" > "$tmp_file" && mv -f "$tmp_file" "$marker_file"
+    if [ -f "$marker_file" ]; then
+        while IFS= read -r stored_fp; do
+            [ -n "$stored_fp" ] && seen_fps+=("$stored_fp")
+        done < "$marker_file"
+    fi
+    seen_fps+=("$current_fp")
+    local start=0
+    [ "${#seen_fps[@]}" -gt "$KARO_PENDING_WORK_SEEN_MAX" ] && start=$((${#seen_fps[@]} - KARO_PENDING_WORK_SEEN_MAX))
+    printf '%s\n' "${seen_fps[@]:start}" > "$tmp_file" && mv -f "$tmp_file" "$marker_file"
 }
 
 # 集合世代RC(cmd_karo_hotfix_pending_work_generation_dedupe_202607121023): pending集合が

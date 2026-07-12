@@ -2024,6 +2024,70 @@ echo "MSG_COUNT=$MSG_COUNT"
     [[ "$(echo "$output" | grep -c "KARO-PENDING-DEDUPE:")" -eq 2 ]]
 }
 
+@test "check_inbox_renudge: a previously notified generation stays deduped across A to A+B to A vibration" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+mkdir -p "$TMP_ROOT/queue/tasks" "$TMP_ROOT/queue/inbox" "$TMP_ROOT/queue/archive/cmds" "$TMP_ROOT/queue/reports" "$TMP_ROOT/scripts" "$SHOGUN_STATE_DIR"
+printf "messages: []\n" > "$TMP_ROOT/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$TMP_ROOT/queue/inbox/gunshi.yaml"
+cat > "$TMP_ROOT/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo CALLED >> "$TMP_ROOT/inbox_calls.log"
+exit 0
+STUBEOF
+chmod +x "$TMP_ROOT/scripts/inbox_write.sh"
+
+run_one_cycle() {
+    export NINJA_MONITOR_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+    unset NINJA_MONITOR_LIB_ONLY
+    SCRIPT_DIR="$TMP_ROOT"
+    LOG="$TMP_ROOT/monitor.log"
+    NINJA_NAMES=()
+    KARO_PANE="shogun:agents.1"
+    declare -A RENUDGE_FINGERPRINT RENUDGE_COUNT RENUDGE_LAST_SEND
+    log() { echo "$1" >> "$LOG"; }
+    check_idle() { return 0; }
+    safe_send_keys_atomic() { return 0; }
+    check_inbox_renudge
+}
+
+# A: kotaro pending
+cat > "$TMP_ROOT/queue/tasks/kotaro.yaml" <<EOF
+task:
+  status: failed
+  parent_cmd: cmd_vibration_a
+  task_id: cmd_vibration_a_full
+EOF
+( run_one_cycle )
+
+# A+B: kagemaru pending追加
+cat > "$TMP_ROOT/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  status: done
+  parent_cmd: cmd_vibration_b
+  task_id: cmd_vibration_b_full
+EOF
+( run_one_cycle )
+
+# Aへ復帰: kagemaru review完了
+rm -f "$TMP_ROOT/queue/tasks/kagemaru.yaml"
+( run_one_cycle )
+
+MSG_COUNT=$(wc -l < "$TMP_ROOT/inbox_calls.log")
+MARKER_LINES=$(wc -l < "$SHOGUN_STATE_DIR/karo_pending_work_notice.tsv")
+echo "MSG_COUNT=$MSG_COUNT"
+echo "MARKER_LINES=$MARKER_LINES"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MSG_COUNT=2"* ]]
+    [[ "$output" == *"MARKER_LINES=2"* ]]
+}
+
 # cmd_karo_hotfix_pending_work_generation_dedupe_202607121023 AC4: pending集合が変化(新規failed
 # taskの追加)すれば新世代として即時再通知する。2種の新世代でそれぞれ1件、合計2件。
 @test "check_inbox_renudge: a new pending generation (changed set) sends a fresh notification" {
