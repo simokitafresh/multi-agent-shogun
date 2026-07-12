@@ -57,6 +57,32 @@ def load_yaml_safe(path):
         return {}
 
 
+def normalize_acceptance_criteria(value):
+    """Return the canonical list form without discarding mapping-form AC bodies.
+
+    karo-direct source YAMLs legitimately use ``AC1: {description: ...}``.
+    Treating that mapping with ``list(value)`` keeps only the keys and silently
+    destroys the acceptance criteria before later modifiers append their ACs.
+    """
+    if value in (None, ''):
+        return []
+    if isinstance(value, list):
+        return list(value)
+    if isinstance(value, dict):
+        normalized = []
+        for ac_id, body in value.items():
+            if isinstance(body, dict):
+                item = dict(body)
+                item.setdefault('id', str(ac_id))
+                if 'description' not in item and 'criteria' in item:
+                    item['description'] = item['criteria']
+            else:
+                item = {'id': str(ac_id), 'description': str(body or '')}
+            normalized.append(item)
+        return normalized
+    return [{'id': 'AC1', 'description': str(value)}]
+
+
 def parent_cmd_entry(task, script_dir):
     parent_cmd = str(task.get('parent_cmd', '') or '').strip()
     if not parent_cmd or not script_dir:
@@ -530,7 +556,8 @@ def inject_execution_controls(task):
         task['never_stop_for'] = NEVER_STOP_DEFAULTS
         changed = True
 
-    ac_list = task.get('acceptance_criteria', [])
+    ac_list = normalize_acceptance_criteria(
+        task.get('acceptance_criteria', []))
     ac_ids = extract_ac_ids(ac_list)
     num_acs = ac_count(ac_list)
 
@@ -626,7 +653,8 @@ def inject_lsa16_production_parity_controls(task, script_dir):
         task['description'] = LSA16_INSTRUCTION + '\n  ────────────────────────────────────────\n' + desc
         changed = True
 
-    ac_list = task.get('acceptance_criteria') or []
+    ac_list = normalize_acceptance_criteria(
+        task.get('acceptance_criteria'))
     existing_text = '\n'.join(
         str(ac.get('description', '') if isinstance(ac, dict) else ac)
         for ac in ac_list
@@ -784,7 +812,8 @@ def inject_parity_target_date_ac(task, script_dir):
         return False
 
     # 3. 既にtarget_dateACが存在すればスキップ
-    ac_list = task.get('acceptance_criteria') or []
+    ac_list = normalize_acceptance_criteria(
+        task.get('acceptance_criteria'))
     for ac in ac_list:
         text = (str(ac.get('description', '') or '')
                 if isinstance(ac, dict) else str(ac or ''))
@@ -819,6 +848,12 @@ def main():
 
     task = data['task']
     changed = False
+
+    original_acs = task.get('acceptance_criteria')
+    normalized_acs = normalize_acceptance_criteria(original_acs)
+    if original_acs not in (None, '') and normalized_acs != original_acs:
+        task['acceptance_criteria'] = normalized_acs
+        changed = True
 
     operations = [
         ('engineering_preferences',

@@ -519,6 +519,46 @@ assert 'savepoint(begin_nested)' in ac_text, ac_text
 PY
 }
 
+@test "LS-A16 controls: mapping-form ACs retain ids and descriptions before appended controls" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_recalc_mapping
+  project: dm-signal
+  task_id: cmd_recalc_mapping_impl
+  status: assigned
+  purpose: "本番fullrecalculateを厳密1run実行する"
+  acceptance_criteria:
+    AC1:
+      description: "直前snapshotと復元経路を確認する"
+    AC2:
+      description: "本番runをexpected artifactへexact照合する"
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands: {}
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" INJECT_TASK_MODIFIERS_ONLY="lsa16_production_parity_controls" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+acs = task['acceptance_criteria']
+assert [ac['id'] for ac in acs[:2]] == ['AC1', 'AC2'], acs
+assert acs[0]['description'] == '直前snapshotと復元経路を確認する', acs
+assert acs[1]['description'] == '本番runをexpected artifactへexact照合する', acs
+assert len(acs) == 5, acs
+assert all(isinstance(ac, dict) and ac.get('description') for ac in acs), acs
+PY
+}
+
 @test "LS-A16 controls: non DM-Signal recalculate mention does not inject" {
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
