@@ -235,6 +235,7 @@ deploy_task_fast() {
 
         inject_task_modifiers "$task_file" || true
         inject_standard_skills "$task_file" || true
+        inject_direct_training_template "$task_file" "$CMD_ID" || return 1
         yaml_field_set "$task_file" "task" "report_filename" ""
         yaml_field_set "$task_file" "task" "report_path" ""
         inject_report_filename "$task_file" || true

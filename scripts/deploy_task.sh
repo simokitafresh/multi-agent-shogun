@@ -1941,7 +1941,10 @@ for line in lines:
     stripped = line.lstrip(" ")
     indent = len(line) - len(stripped)
     if skip_indent is not None:
-        if stripped == "" or indent > skip_indent:
+        # A legacy acceptance_criteria list has its "- id" items at the
+        # same indentation as the mapping key.  They remain part of the
+        # replaced block, not the next task field.
+        if stripped == "" or indent > skip_indent or (indent == skip_indent and stripped.startswith("-")):
             continue
         skip_indent = None
 
@@ -5248,6 +5251,14 @@ try:
     MIN_KEYWORD_SCORE = MIN_KEYWORD_SCORE_BY_TASK_TYPE.get(task_type, MIN_KEYWORD_SCORE_BY_TASK_TYPE['default'])
     parent_cmd = str(task.get('parent_cmd', '') or '').strip()
 
+    # L4 direct-training ACs are injected as a dict schema before this
+    # function runs.  Rewriting the task for related lessons can normalize it
+    # into a list and silently break that training contract; template context
+    # therefore wins over optional lesson injection.
+    if parent_cmd.startswith('cmd_training_L4_'):
+        print('[INJECT] L4 training template: preserving acceptance_criteria schema; related lesson rewrite skipped', file=sys.stderr)
+        sys.exit(0)
+
     def extract_keywords(text, min_len=4):
         words = re.split(r'[^a-zA-Z0-9_\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+', str(text or ''))
         seen = set()
@@ -5466,6 +5477,11 @@ try:
     else:
         ac_text = str(ac_list or '')
     task_text = f'{title} {description} {purpose} {command_text} {target_path} {context_files} {ac_text}'
+    # Training task templates own their AC schema.  Lesson selection may add
+    # context but must not gain extra relevance from procedural when/how text
+    # and replace that schema through the training injection path.
+    _training_identity = str(task.get('parent_cmd') or task.get('task_id') or '')
+    use_condition_semantics = not _training_identity.startswith('cmd_training_')
 
     # Extract keywords: split by non-word chars, then ASCII↔CJK boundary split, dedup
     # GP-225: ASCII↔CJK境界分割で"CDP計測"→["CDP","計測"]に分離+アクロニム(>=2,全大文字)はmin_len免除
@@ -6096,7 +6112,8 @@ try:
         # AC文の語は要約だけでなく、教訓が適用される条件(when)と
         # 実行手順(how)にも現れる。ここを除外すると表層語の一致だけで
         # 注入され、意味的に適合する教訓が低スコアで落ちる。
-        other_text = f'{l_summary} {l_content} {l_source} {l_when} {l_how}'.lower()
+        condition_text = f'{l_when} {l_how}' if use_condition_semantics else ''
+        other_text = f'{l_summary} {l_content} {l_source} {condition_text}'.lower()
 
         keyword_score = 0
         for kw in keywords:
@@ -9035,6 +9052,13 @@ deploy_task_apply_task_mutations() {
         inject_readonly_refs "$task_file" || true           # Level5: command必読/参照専用ファイルをreadonly_refへ源流注入
         inject_ac_version "$task_file" || true
         verify_ac_consistency "$task_file" || true
+
+        # Some optional injectors normalize YAML through Python and can change
+        # an AC mapping into a list.  Reassert the direct L4 template after
+        # all optional mutations so its fixed dict schema is the final SSOT.
+        local final_parent_cmd
+        final_parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+        inject_direct_training_template "$task_file" "$final_parent_cmd" || true
     fi
 
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
