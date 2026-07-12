@@ -68,6 +68,8 @@ echo "$RESULT"
 
 # --- cmd_3264: auto-commit contamination check (AC2/AC3) ---
 # bc:commit=yes時にtarget_path配下の未commit変更・auto-commit巻込みを検出
+# Post-CLEAR dashboard reflux may skip only this inspection after independently
+# proving that both review approvals still bind to the current report.
 CONTAMINATION_BLOCK=0
 
 filter_session_state_only_task_diffs() {
@@ -324,7 +326,7 @@ PY
 # repository itself is a detached worktree under /tmp (the CI isolation path).
 _REPORT_REAL="$(realpath -m -- "$REPORT_PATH")"
 _REPO_REAL="$(realpath -m -- "$REPO_ROOT")"
-if [[ "$_REPORT_REAL" == "$_REPO_REAL"/* ]]; then
+if [[ "$_REPORT_REAL" == "$_REPO_REAL"/* ]] && [ "${GATE_SKIP_COMMIT_MISSING_CHECK:-0}" != "1" ]; then
     _CC_WORKER="$_REPORT_EXECUTOR"
     _CC_TASK_DIR="${GATE_SESSION_STATE_TASK_DIR:-$REPO_ROOT/queue/tasks}"
     _CC_TASK_FILE="$_CC_TASK_DIR/${_CC_WORKER}.yaml"

@@ -110,6 +110,40 @@ TEMPLATE="$PROJECT_DIR/config/dashboard_template.md"
 export DASHBOARD REPORTS_DIR STK_FILE CMD_ID DRY_RUN TEMPLATE
 export ARCHIVE_REPORTS_DIR
 
+# Revalidate reports before dashboard generation.  After GATE CLEAR, lesson
+# merge may legitimately dirty a reported lesson file.  Suppress only the
+# commit-state inspection, and only while exact CLEAR + two-phase fingerprint
+# approval still hold; schema/binary_checks/verdict always run.
+validate_reports_before_dashboard() {
+    local latest_status report skip_commit
+    [ -d "$REPORTS_DIR" ] || return 0
+    latest_status=$(awk -F '\t' -v cmd="$CMD_ID" '$2 == cmd { status=$3 } END { print status }' \
+        "$PROJECT_DIR/logs/gate_metrics.log" 2>/dev/null || true)
+    # shellcheck source=scripts/lib/review_approval.sh
+    source "$PROJECT_DIR/scripts/lib/review_approval.sh"
+
+    while IFS= read -r report; do
+        skip_commit=0
+        if [ "$latest_status" = "CLEAR" ] && review_two_phase_ready "$CMD_ID" "$report"; then
+            skip_commit=1
+        fi
+        GATE_NO_LOG=1 GATE_SKIP_COMMIT_MISSING_CHECK="$skip_commit" \
+            bash "$PROJECT_DIR/scripts/gates/gate_report_format.sh" "$report" || return 1
+    done < <(python3 - "$REPORTS_DIR" "$CMD_ID" <<'PY'
+import pathlib, sys, yaml
+for path in sorted(pathlib.Path(sys.argv[1]).glob('*.yaml')):
+    try:
+        data = yaml.safe_load(path.read_text(encoding='utf-8')) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    if str(data.get('parent_cmd', '')).strip() == sys.argv[2]:
+        print(path)
+PY
+    )
+}
+
+validate_reports_before_dashboard
+
 # ─── Main processing (flock for concurrency safety) ───
 LOCK_FILE="${DASHBOARD}.lock"
 (
