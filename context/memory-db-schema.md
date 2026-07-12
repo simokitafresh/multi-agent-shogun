@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-07-08 -->
+<!-- last_updated: 2026-07-13 -->
 
 # Memory DB Schema
 
@@ -9,13 +9,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 186097 | event_id, concept_name, relevance_score |
-| table | event_links | 15600 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 3066 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 121296 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 121296 | summary, detail |
-| table | search_logs | 17661 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 47882 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 230188 | event_id, concept_name, relevance_score |
+| table | event_links | 18952 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 3916 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 151186 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 151186 | summary, detail |
+| table | search_logs | 27087 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 51939 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -34,21 +34,21 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 47882 |
-| report | 19815 |
-| inbox | 16095 |
+| conversation | 51939 |
+| report | 34630 |
+| inbox | 21757 |
+| insight | 10834 |
 | cmd_archive | 9513 |
-| insight | 9463 |
-| bulletin | 6612 |
-| cmd_quality | 3725 |
+| bulletin | 7259 |
+| cmd_quality | 4638 |
+| gate | 4314 |
 | skill_execution | 2961 |
-| gate | 2587 |
-| cmd_save | 1527 |
-| cmd_delegate | 530 |
-| lesson | 302 |
-| knowledge | 215 |
+| cmd_save | 1918 |
+| cmd_delegate | 628 |
+| lesson | 421 |
+| knowledge | 298 |
 | pending_decision | 49 |
-| workaround | 17 |
+| workaround | 24 |
 | project | 2 |
 | infrastructure_state | 1 |
 

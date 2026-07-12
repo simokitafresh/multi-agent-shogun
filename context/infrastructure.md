@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_guard14_db_capability_launcher_202607122350 -->
+<!-- last_updated: 2026-07-13 cmd_3869 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -737,7 +737,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1080 -->
+<!-- last_synced_lesson: L1090 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1524,6 +1524,16 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1078: yaml_field_set post-write検証をparse比較へ移行する際はYAML1.1暗黙型変換とawk -vエスケープ自動デコードに注意（cmd_karo_hotfix_yaml_field_set_multiline_verify_202607122228）
 - L1079: read-only shell allowlistはcmd0一致だけでなくoption/script能力を検証せよ（cmd_karo_hotfix_guard14_env_db_intent_rc5_202607122241）
 - L1080: 能力launcherは文字列分類でなく実行環境そのものを制約する（cmd_karo_hotfix_guard14_db_capability_launcher_202607122350）
+- L1081: fixture入力隔離時は未明示外部副作用も同じ境界へ隔離せよ（cmd_karo_hotfix_report_write_stale_escalation_root_202607130052）
+- L1082: Git --since fixtureはepoch境界を避け有効履歴窓で二値確認する（cmd_karo_ci_fix_ga235_main_parallel_red_202607130031）
+- L1083: cache/一時ファイル生成はos.replaceのatomic publishを全経路で徹底せよ。一箇所だけ直しても横展開漏れで再発する（cmd_karo_hotfix_memory_cache_malformed_recurrence_202607130054）
+- L1084: PreToolUseのindex検査は同一command内git add/commitのTOCTOUを評価せよ（cmd_karo_hotfix_ga236_dm_signal_research_freshness_202607130218）
+- L1085: context鮮度の入口側guard(reflux_guard)はstaged index評価に依存するため、git add+git commitが同一command/-a系flagで連結されるとTOCTOUで無音通過する（cmd_karo_hotfix_ga236_dm_signal_research_freshness_202607130218）
+- L1086: 同一source commitが複数contextをALERTしたら源流単位で一括配備する（cmd_karo_hotfix_ga237_dm_signal_ops_freshness_202607130237）
+- L1087: 自動削除はfixture GREEN後も実データblast radius確認までデフォルト無効にする（cmd_karo_hotfix_cmd3869_backup_rotation_202607130223）
+- L1088: 自動削除/ローテーション機能は実データ規模を確認するまでデフォルト無効にせよ。fixtureテストのGREENは本番安全性の証明にならない（cmd_karo_hotfix_cmd3869_backup_rotation_202607130223）
+- L1089: 同一DM-Signal source commitがpathspec重複により複数context file(ops.md/research.md等)を同時ALERTさせる場合がある。1cmd/1忍者ずつ逐次処理すると同じcommitを2回調査するコストが重複する（cmd_karo_hotfix_ga237_dm_signal_ops_freshness_202607130237）
+- L1090: 一時的default-off防御は危険条件解消後に恒久要件を再評価する（cmd_3869）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
