@@ -213,6 +213,113 @@ print("\n".join(kept))
 PY
 }
 
+# cmd_karo_hotfix_gate_ac3_hunk_provenance: AC3 hunk/commit provenance filter.
+# AC2は commit_hash のhunkと未commit差分のhunkを比較して非重複なら黙らせる(上のfilter_report_commit_nonoverlap_diffs)。
+# AC3の巻込みWARNは同じ判定原理(commit_hash基準のhunk比較)がなく、file名一致だけで発火していた
+# (cmd_karo_hotfix_gate_ac3_hunk_provenance_202607121205 AC1: 元コードはcmd_3264-AC3導入コミット
+#  6bf403d2c=auto-commit自体に巻き込まれて追加されたまま、AC2だけがbc8c87bc5でhunk化され判定原理が乖離)。
+# entries_raw: "<auto_commit_sha> <path>" 一覧（対象target_pathに一致した候補のみで良い）。
+# hits_raw: WARN候補としてfile名一致したpath一覧（重複可）。
+# 戻り値: 報告commit_hashのhunkと、その pathを触った全auto-commitのhunkが
+#         ひとつも重ならないと証明できたpathのみ抑制し、残りをそのまま返す。
+filter_autocommit_nonoverlap_hits() {
+    local repo="$1"
+    local report_path="$2"
+    local entries_raw="$3"
+    local hits_raw="$4"
+    REPO_ROOT="$repo" REPORT_PATH="$report_path" CC_AC_ENTRIES_RAW="$entries_raw" CC_AC_HITS_RAW="$hits_raw" python3 - <<'PY'
+import os
+import re
+import subprocess
+import sys
+import yaml
+
+repo = os.environ.get("REPO_ROOT", "")
+report_path = os.environ.get("REPORT_PATH", "")
+entries_raw = [l for l in os.environ.get("CC_AC_ENTRIES_RAW", "").splitlines() if l.strip()]
+hits_raw = [l for l in os.environ.get("CC_AC_HITS_RAW", "").splitlines() if l.strip()]
+
+def run_git(args):
+    try:
+        return subprocess.check_output(["git", "-C", repo, *args], text=True, stderr=subprocess.DEVNULL)
+    except Exception:
+        return ""
+
+def hunk_ranges(diff_text):
+    ranges = []
+    for match in re.finditer(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", diff_text, re.M):
+        start = int(match.group(1))
+        count = int(match.group(2) or "1")
+        if count <= 0:
+            continue
+        ranges.append((start, start + count - 1))
+    return ranges
+
+def overlaps(left, right):
+    return any(a <= d and c <= b for a, b in left for c, d in right)
+
+try:
+    with open(report_path, encoding="utf-8") as f:
+        report = yaml.safe_load(f) or {}
+except Exception:
+    report = {}
+
+commit_hash = str(report.get("commit_hash") or "").strip()
+report_valid = bool(re.fullmatch(r"[0-9a-f]{40}", commit_hash))
+
+# path -> auto-commit SHAs that touched it (only among the passed candidate entries)
+path_shas = {}
+for line in entries_raw:
+    parts = line.split(" ", 1)
+    if len(parts) != 2:
+        continue
+    sha, path = parts
+    path_shas.setdefault(path, []).append(sha)
+
+reporter_cache = {}
+def reporter_ranges_for(path):
+    if path not in reporter_cache:
+        reporter_cache[path] = hunk_ranges(run_git(["diff", "--unified=0", f"{commit_hash}^", commit_hash, "--", path]))
+    return reporter_cache[path]
+
+seen = set()
+kept = []
+suppressed = []
+for path in hits_raw:
+    if path in seen:
+        continue
+    seen.add(path)
+    if not report_valid:
+        kept.append(path)
+        continue
+    r_ranges = reporter_ranges_for(path)
+    shas = path_shas.get(path, [])
+    if not r_ranges or not shas:
+        # commit_hashがこのpathを触っていない、または対応するauto-commit shaが
+        # 不明 -> 重複の有無を証明できないため保守的にWARNを維持する。
+        kept.append(path)
+        continue
+    any_overlap = False
+    all_known = True
+    for sha in shas:
+        a_ranges = hunk_ranges(run_git(["diff", "--unified=0", f"{sha}^", sha, "--", path]))
+        if not a_ranges:
+            all_known = False
+            continue
+        if overlaps(r_ranges, a_ranges):
+            any_overlap = True
+            break
+    if any_overlap or not all_known:
+        kept.append(path)
+    else:
+        suppressed.append(path)
+
+for path in suppressed:
+    print(f"WARN(cmd_3264-AC3-suppressed): {path} auto-commit hunk does not overlap report commit {commit_hash[:8]}; treating as non-contaminating", file=sys.stderr)
+print("\n".join(kept))
+PY
+}
+
 # Skip truly external scratch reports, but keep checks active when the whole
 # repository itself is a detached worktree under /tmp (the CI isolation path).
 _REPORT_REAL="$(realpath -m -- "$REPORT_PATH")"
@@ -306,32 +413,41 @@ except Exception:
                 CONTAMINATION_BLOCK=1
                 RESULT="${RESULT}"$'\n'"FAIL: cmd_3264-AC2 target_path配下に未commit変更あり"
             fi
-            # AC3: auto-commit contamination detection
+            # AC3: auto-commit contamination detection (hunk/commit provenance)
             # perf: git log --grep --name-only は7800+コミット履歴走査でNTFS上~500ms(cmd_training実測)。
             # 結果はHEAD不変なら同一のため、HEAD SHAキーでmemo化(GP-073 PASS cacheと同型パターン)。
-            _CC_AC_CACHE="${GATE_AUTOCOMMIT_CACHE_FILE:-$REPO_ROOT/logs/.gate_autocommit_files_cache}"
+            # cmd_karo_hotfix_gate_ac3_hunk_provenance_202607121205: file名一致だけではAC2
+            # (filter_report_commit_nonoverlap_diffs)と判定原理が乖離し、共有fileの非重複hunkを
+            # 誤ってWARNしていた。sha付きで巻込み候補を保持し、報告commit_hashのhunkと重複する
+            # ものだけWARNへ残す(filter_autocommit_nonoverlap_hits)。
+            # cache format v2: 1行目=HEAD, 2行目以降="<auto_commit_sha> <path>"（report非依存＝HEADのみでキー可）。
+            _CC_AC_CACHE="${GATE_AUTOCOMMIT_CACHE_FILE:-$REPO_ROOT/logs/.gate_autocommit_hunk_cache}"
             _CC_CUR_HEAD=$(cd "$REPO_ROOT" && git rev-parse HEAD 2>/dev/null) || _CC_CUR_HEAD=""
-            _CC_AUTO_FILES=""
+            _CC_AUTO_ENTRIES=""
             _CC_AC_HIT=0
             if [ -n "$_CC_CUR_HEAD" ] && [ -f "$_CC_AC_CACHE" ]; then
                 _CC_AC_CACHED_HEAD=$(head -n 1 "$_CC_AC_CACHE" 2>/dev/null)
                 if [ "$_CC_AC_CACHED_HEAD" = "$_CC_CUR_HEAD" ]; then
-                    _CC_AUTO_FILES=$(tail -n +2 "$_CC_AC_CACHE" 2>/dev/null)
+                    _CC_AUTO_ENTRIES=$(tail -n +2 "$_CC_AC_CACHE" 2>/dev/null)
                     _CC_AC_HIT=1
                 fi
             fi
             if [ "$_CC_AC_HIT" -eq 0 ]; then
-                _CC_AUTO_FILES=$(cd "$REPO_ROOT" && git log --grep="auto-commit" -10 --format="" --name-only 2>/dev/null | sort -u || true)
+                _CC_AUTO_ENTRIES=$(cd "$REPO_ROOT" && git log --grep="auto-commit" -10 --format='@@AC_SHA@@%H' --name-only 2>/dev/null | awk '
+                    /^@@AC_SHA@@/ { sha=$0; sub(/^@@AC_SHA@@/, "", sha); next }
+                    NF { print sha" "$0 }
+                ' | sort -u || true)
                 if [ -n "$_CC_CUR_HEAD" ]; then
                     _CC_AC_TMP=$(mktemp "${_CC_AC_CACHE}.XXXXXX" 2>/dev/null) || _CC_AC_TMP=""
                     if [ -n "$_CC_AC_TMP" ]; then
-                        { printf '%s\n' "$_CC_CUR_HEAD"; printf '%s\n' "$_CC_AUTO_FILES"; } > "$_CC_AC_TMP" 2>/dev/null \
+                        { printf '%s\n' "$_CC_CUR_HEAD"; printf '%s\n' "$_CC_AUTO_ENTRIES"; } > "$_CC_AC_TMP" 2>/dev/null \
                             && mv -f "$_CC_AC_TMP" "$_CC_AC_CACHE" 2>/dev/null \
                             || rm -f "$_CC_AC_TMP" 2>/dev/null
                     fi
                 fi
             fi
-            if [ -n "$_CC_AUTO_FILES" ]; then
+            if [ -n "$_CC_AUTO_ENTRIES" ]; then
+                _CC_AUTO_FILES=$(printf '%s\n' "$_CC_AUTO_ENTRIES" | cut -d' ' -f2- | sort -u)
                 _CC_HITS=""
                 while IFS= read -r _tp; do
                     [ -n "$_tp" ] || continue
@@ -339,6 +455,14 @@ except Exception:
                     [ -n "$_CC_M" ] && _CC_HITS="${_CC_HITS}${_CC_M}"$'\n'
                 done <<< "$_CC_CHECK"
                 _CC_HITS="${_CC_HITS%$'\n'}"
+                _CC_HITS=$(printf '%s\n' "$_CC_HITS" | sort -u)
+                if [ -n "${_CC_HITS//[[:space:]]/}" ]; then
+                    _CC_HIT_ENTRIES=$(printf '%s\n' "$_CC_AUTO_ENTRIES" | awk -v hits="$_CC_HITS" '
+                        BEGIN { n = split(hits, h, "\n"); for (i = 1; i <= n; i++) want[h[i]] = 1 }
+                        { path = $0; sub(/^[^ ]+ /, "", path); if (path in want) print }
+                    ')
+                    _CC_HITS=$(filter_autocommit_nonoverlap_hits "$REPO_ROOT" "$REPORT_PATH" "$_CC_HIT_ENTRIES" "$_CC_HITS" 2>>"$REPO_ROOT/logs/gate_report_format_stderr.log" || printf '%s\n' "$_CC_HITS")
+                fi
                 if [ -n "${_CC_HITS//[[:space:]]/}" ]; then
                     echo ""
                     echo "★ WARN(cmd_3264-AC3): ${_CC_WORKER} target_path配下ファイルがauto-commitに巻き込まれた可能性:"

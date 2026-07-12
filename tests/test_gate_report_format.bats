@@ -763,3 +763,110 @@ YAML
     [[ "$output" == *"BLOCK(cmd_3264-AC2)"* ]]
     [[ "$output" == *"M queue/tasks/testninja.yaml"* ]]
 }
+
+# --- cmd_karo_hotfix_gate_ac3_hunk_provenance_202607121205: AC3 hunk/commit provenance ---
+# AC3のfile名一致だけの旧判定は、共有fileの非重複hunkにも誤ってWARNしていた(AC2はhunk比較済み)。
+# 判定原理をAC2同様のcommit/hunk provenanceへ統一し、真の重複だけWARNする。
+
+_setup_ac3_hunk_repo() {
+    # $1=repo dir を作り、shared.txtへreporterのcommit→auto-commit(別行変更)の2commit履歴を積む。
+    # 戻り値: reporter commitのフルhash(stdout)
+    local repo="$1"
+    local autocommit_line_edit="$2"
+    mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs"
+    git -C "$repo" init -q
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    cat > "$repo/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: in_progress
+  target_path: shared.txt
+YAML
+    printf 'line01\nline02\nline03\nline04\nline05\nline06\nline07\nline08\nline09\nline10\n' > "$repo/shared.txt"
+    git -C "$repo" add queue/tasks/testninja.yaml shared.txt
+    git -C "$repo" commit -q -m "init"
+
+    sed -i 's/^line02$/line02 reporter-change/' "$repo/shared.txt"
+    git -C "$repo" add shared.txt
+    git -C "$repo" commit -q -m "feat: reporter change"
+    local commit_hash
+    commit_hash=$(git -C "$repo" rev-parse HEAD)
+
+    sed -i "$autocommit_line_edit" "$repo/shared.txt"
+    git -C "$repo" add shared.txt
+    git -C "$repo" commit -q -m "chore: auto-commit before /clear (other) — 運用ファイル"
+
+    echo "$commit_hash"
+}
+
+_write_ac3_report() {
+    local report="$1"
+    local commit_hash="$2"
+    cat > "$report" <<YAML
+worker_id: testninja
+parent_cmd: cmd_test
+ac_version_read: abc12345
+timestamp: '2026-07-12T00:00:00'
+status: completed
+commit_hash: ${commit_hash}
+result:
+  summary: "test summary"
+purpose_validation:
+  cmd_purpose: "test"
+  fit: true
+  purpose_gap: ""
+binary_checks:
+  AC1:
+  - check: "test check"
+    result: "yes"
+  commit:
+  - check: "git commitが完了したか"
+    result: "yes"
+files_modified:
+- path: shared.txt
+lesson_candidate:
+  found: false
+  no_lesson_reason: "test"
+lessons_useful: []
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: PASS
+YAML
+}
+
+@test "T-AC3-1: non-overlapping auto-commit hunk on shared file does not WARN" {
+    local repo="$REPO_TMPDIR_BATS/ac3_nonoverlap_repo"
+    local report="$repo/reports/testninja_report_cmd_test.yaml"
+    local commit_hash
+    # auto-commitはline09（reporterが触ったline02とは非重複）を変更
+    commit_hash=$(_setup_ac3_hunk_repo "$repo" 's/^line09$/line09 auto-commit-change/')
+    _write_ac3_report "$report" "$commit_hash"
+
+    run env GATE_REPO_ROOT_OVERRIDE="$repo" GATE_SESSION_STATE_TASK_DIR="$repo/queue/tasks" GATE_AUTOCOMMIT_CACHE_FILE="$repo/logs/.gate_autocommit_hunk_cache" bash "$GATE" "$report"
+    echo "$output"
+    [[ "$output" != *"Traceback"* ]]
+    [[ "$output" != *"WARN(cmd_3264-AC3)"* ]]
+    [[ "$output" != *"BLOCK(cmd_3264-AC2)"* ]]
+}
+
+@test "T-AC3-2: overlapping auto-commit hunk on shared file still WARNs" {
+    local repo="$REPO_TMPDIR_BATS/ac3_overlap_repo"
+    local report="$repo/reports/testninja_report_cmd_test.yaml"
+    local commit_hash
+    # auto-commitはreporterと同じline02を変更 → 真の巻込み
+    commit_hash=$(_setup_ac3_hunk_repo "$repo" 's/^line02 reporter-change$/line02 auto-commit-change/')
+    _write_ac3_report "$report" "$commit_hash"
+
+    run env GATE_REPO_ROOT_OVERRIDE="$repo" GATE_SESSION_STATE_TASK_DIR="$repo/queue/tasks" GATE_AUTOCOMMIT_CACHE_FILE="$repo/logs/.gate_autocommit_hunk_cache" bash "$GATE" "$report"
+    echo "$output"
+    [[ "$output" != *"Traceback"* ]]
+    [[ "$output" == *"WARN(cmd_3264-AC3)"* ]]
+    [[ "$output" == *"shared.txt"* ]]
+}
