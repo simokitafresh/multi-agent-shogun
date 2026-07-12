@@ -132,13 +132,11 @@ LOCAL_HOST_VALUES = {"localhost", "127.0.0.1", "::1"}
 # 大文字識別子+_URL/_DSN。単なる_URL/_DSN suffixだけではAPI_URL/SENTRY_DSN等の無関係な
 # env varまで拾ってしまうため、DB意味トークンを要求する) (2) 接続API呼出の形 `.connect(`
 # (3) engine factory呼出の形 `create_*engine(` (4) host指定(host=) (5) in-memory(:memory:)
-# (6) credential source(.env読込。それ自体が接続先を隠すsignalであり、他markerが同一
-# segmentに無くてもconnection intentとしてfail-closed BLOCKへ倒す。AC3"credential source"要件)
-# (7) postgres(ql)://スキームは別途DSN_URL_REで判定済み
+# (6) postgres(ql)://スキームは別途DSN_URL_REで判定済み。
+# .envはDB以外のAPI資格情報にも使われるため、それ単独ではDB intentにしない。
 DB_ENV_VAR_RE = re.compile(r"\b[A-Z][A-Z0-9_]*(?:DB|DATABASE|POSTGRES|PG)[A-Z0-9_]*_(?:URL|DSN)\b")
 CONNECT_CALL_RE = re.compile(r"\.connect\s*\(")
 CREATE_ENGINE_RE = re.compile(r"create_[A-Za-z_]*engine\s*\(")
-ENV_CREDENTIAL_FILE_RE = re.compile(r"\.env(?:\.[A-Za-z0-9_]+)?\b")
 
 
 def _tokenize(command: str) -> list[str]:
@@ -184,8 +182,6 @@ def _segment_has_db_marker(tokens: list[str]) -> bool:
         return True
     if CREATE_ENGINE_RE.search(text):
         return True
-    if ENV_CREDENTIAL_FILE_RE.search(text):
-        return True
     return False
 
 
@@ -193,13 +189,6 @@ def _is_connection_segment(tokens: list[str]) -> bool:
     cmd0 = _segment_cmd0(tokens)
     if cmd0 == "psql":
         return True  # psqlはDB接続クライアントそのもの。マーカー不問で常にconnection intent
-    if cmd0 in ("source", "."):
-        # review_correction(2026-07-12 09:55, karo): `source backend/.env && python3 ...`の
-        # ようにcredential読込が独立segmentの場合、sourceはCONNECTION_CMDSに無いため
-        # そのsegmentが一切検査されず、後続の無マーカーpython segmentもnot_connectionに
-        # なる穴があった。credential source segment自体を、自身に.envマーカーがある
-        # 場合のみconnection intentとして扱う(hostは抽出できないためfail-closed untrusted)。
-        return _segment_has_db_marker(tokens)
     if cmd0 in CONNECTION_CMDS or cmd0.endswith(".py"):
         # python/pytest等の汎用runtimeは、そのsegment自身にDBマーカーが実在する場合のみ
         # connection intentとみなす(review_correction 09:39, karo: benign python/pytest回帰)

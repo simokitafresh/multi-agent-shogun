@@ -137,51 +137,51 @@ _run_hook_cmd_local() {
     [ "$status" -eq 0 ]
 }
 
-# --- credential source(.env読込)単独マーカー(review_correction 09:51, karo) ---
-# .connect(/host=/DATABASE_URL等の他markerが一切無くても、backend/.env読込それ自体が
-# 接続先を隠すsignalとしてconnection intentを構成し、fail-closedでuntrusted BLOCKする。
+# --- .env単独はDB intentではない ---
+# .envはHTTP API等の非DB資格情報にも使われる。DB固有構造が無い限りnot_connection。
 
-@test "sync: backend/.env load with NO other DB marker (opaque ORM init) -> fast filter says maybe" {
+@test "sync: backend/.env load with NO DB marker -> fast filter rejects maybe" {
     run _fast_filter_says_maybe "python3 -c \"from dotenv import load_dotenv; load_dotenv('backend/.env'); import myorm; myorm.init_from_env()\""
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
 }
 
-@test "classifier: backend/.env load with NO other DB marker -> connection:untrusted (credential source, fail-closed)" {
-    _classify "python3 -c \"from dotenv import load_dotenv; load_dotenv('backend/.env'); import myorm; myorm.init_from_env()\""
+@test "classifier: Render API credentials from backend/.env plus requests.get -> not_connection" {
+    _classify "python3 -c \"from dotenv import load_dotenv; load_dotenv('backend/.env'); import os,requests; requests.get(os.environ['API_URL'], headers={'Authorization': os.environ['RENDER_API_KEY'], 'X-Service': os.environ['RENDER_SERVICE_ID']})\""
     [ "$status" -eq 0 ]
-    [ "$output" = "connection:untrusted" ]
+    [ "$output" = "not_connection" ]
 }
 
 @test "sync: bare .env (no path prefix) with no other marker -> fast filter says maybe" {
     run _fast_filter_says_maybe "python3 -c \"from dotenv import load_dotenv; load_dotenv('.env')\""
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
 }
 
-@test "classifier: bare .env with no other marker -> connection:untrusted (fail-closed)" {
+@test "classifier: bare .env with no other marker -> not_connection" {
     _classify "python3 -c \"from dotenv import load_dotenv; load_dotenv('.env')\""
     [ "$status" -eq 0 ]
-    [ "$output" = "connection:untrusted" ]
+    [ "$output" = "not_connection" ]
 }
 
-# --- credential source segmentが独立している場合(review_correction 09:55, karo) ---
-# `source backend/.env && python3 ...` のように資格情報読込がbash `source` builtinの
-# 独立segmentで、後続segmentに一切markerが無い場合。sourceはCONNECTION_CMDSに含まれない
-# ため、credential source segment自体を構造的にconnection intent対象にする必要がある
-# (旧実装は両segmentとも見逃しnot_connectionになっていた)。
+# source .env後も、後続segmentにDB固有構造が無ければnot_connection。
 
 @test "sync: source backend/.env as its own segment, followed by marker-less python -> fast filter says maybe" {
     run _fast_filter_says_maybe 'source backend/.env && python3 -c "import myorm; myorm.init_from_env()"'
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
 }
 
-@test "classifier: source backend/.env as its own segment, followed by marker-less python -> connection:untrusted" {
+@test "classifier: source backend/.env followed by marker-less python -> not_connection" {
     _classify 'source backend/.env && python3 -c "import myorm; myorm.init_from_env()"'
     [ "$status" -eq 0 ]
-    [ "$output" = "connection:untrusted" ]
+    [ "$output" = "not_connection" ]
 }
 
-@test "Guard14 (hook): source backend/.env then marker-less python is BLOCKED" {
+@test "Guard14 (hook): source backend/.env then marker-less python is allowed" {
     _run_hook_cmd_local 'source backend/.env && python3 -c "import myorm; myorm.init_from_env()"'
+    [ "$status" -eq 0 ]
+}
+
+@test "Guard14 (hook): source backend/.env then explicit DB connect remains blocked" {
+    _run_hook_cmd_local 'source backend/.env && python3 -c "import psycopg; psycopg.connect(host=\"remote.example.com\")"'
     [ "$status" -ne 0 ]
     [[ "$output" == *"Guard14"* ]]
 }

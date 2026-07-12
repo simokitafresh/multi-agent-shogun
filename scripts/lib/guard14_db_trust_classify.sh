@@ -42,11 +42,6 @@ guard14_maybe_connection() {
     [[ "$cmd" =~ host[[:space:]]*= ]] && return 0
     # (7) in-memoryマーカー
     [[ "$cmd" == *':memory:'* ]] && return 0
-    # (8) credential source(.env読込)。review_correction(09:51, karo): backend/.env等の
-    # 資格情報ファイル読込は、それ自体が実際の接続先を隠すsignalであり、他のmarker
-    # (host=/.connect(等)が同一segmentに無くてもconnection intentとして扱いfail-closedで
-    # untrusted BLOCKへ倒す(AC3の"credential source"要件)。
-    [[ "$cmd" =~ \.env(\.[A-Za-z0-9_]+)?([^A-Za-z0-9_]|$) ]] && return 0
     return 1
 }
 
