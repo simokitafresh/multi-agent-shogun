@@ -8658,6 +8658,75 @@ deploy_task_direct_quality_contract_precheck() {
     esac
 }
 
+# Every dispatched task must be realistically completable within ten minutes.
+# Longer work is allowed only when the task records both a concrete reason and
+# a positive measured runtime.  Keep this check read-only and before publish /
+# task mutation so a rejected deployment cannot leak a partially assigned task.
+deploy_task_ten_min_contract_precheck() {
+    local task_file="$1"
+    local result rc
+
+    result="$(python3 - "$task_file" <<'PY'
+import math
+import sys
+import yaml
+
+path = sys.argv[1]
+try:
+    with open(path, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+except Exception as exc:
+    print(f"invalid task YAML: {exc}")
+    raise SystemExit(2)
+
+task = data.get("task", data)
+if not isinstance(task, dict):
+    print("task must be a mapping")
+    raise SystemExit(2)
+
+estimated = task.get("estimated_minutes")
+if isinstance(estimated, bool):
+    estimated = None
+try:
+    estimated = float(estimated)
+except (TypeError, ValueError):
+    estimated = None
+if estimated is None or not math.isfinite(estimated) or estimated <= 0:
+    print("task.estimated_minutes must be a positive number")
+    raise SystemExit(2)
+if estimated <= 10:
+    print(f"PASS estimated_minutes={estimated:g}")
+    raise SystemExit(0)
+
+env = task.get("execution_env")
+env = env if isinstance(env, dict) else {}
+reason = str(env.get("long_runtime_reason") or "").strip()
+runtime = env.get("measured_runtime_sec")
+if isinstance(runtime, bool):
+    runtime = None
+try:
+    runtime = float(runtime)
+except (TypeError, ValueError):
+    runtime = None
+nullish_reasons = {"none", "n/a", "na", "null", "unknown", "tbd", "fill_this"}
+if (not reason or reason.lower() in nullish_reasons or runtime is None
+        or not math.isfinite(runtime) or runtime <= 0):
+    print("estimated_minutes exceeds 10; concrete execution_env.long_runtime_reason "
+          "and positive measured_runtime_sec are required")
+    raise SystemExit(2)
+print(f"PASS long-runtime exception estimated_minutes={estimated:g} measured_runtime_sec={runtime:g}")
+PY
+)" || rc=$?
+    rc="${rc:-0}"
+    if [ "$rc" -ne 0 ]; then
+        log "BLOCK(TEN_MIN_CONTRACT): ${result}"
+        echo "BLOCK: ten-minute task contract failed: ${result}" >&2
+        return 2
+    fi
+    log "ten_min_contract: ${result}"
+    return 0
+}
+
 capture_done_redeploy_context() {
     local task_file="$1"
     local requested_cmd="${2:-}"
@@ -9405,6 +9474,10 @@ except Exception:
             reset_stale_fields "$NINJA_NAME"
             if [ "$DIRECT_MODE" = true ]; then
             if [ -n "$YAML_FILE" ]; then
+                [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_ten_min_contract_precheck "$YAML_FILE" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 2
+                }
                 deploy_task_direct_yaml_publish "$task_yaml" "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
@@ -9657,6 +9730,11 @@ except Exception:
     fi
 
     DEPLOY_TASK_EXIT_NUDGE_ARMED=1
+    [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_ten_min_contract_precheck "$task_yaml" || {
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 2
+    }
+
     deploy_task_apply_task_mutations "$NINJA_NAME" || {
         DEPLOY_TASK_EXIT_NUDGE_ARMED=0
         DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
