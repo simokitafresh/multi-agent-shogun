@@ -72,7 +72,7 @@ cat <<SKELETON
         description: "FILL_THIS: AC数はcommandステップ数以上にせよ(不足はBLOCK)。不要なら行ごと削除"
         binary_check: "FILL_THIS"
     command: |
-      1. FILL_THIS: ステップ数はAC数以下。目視確認/セルフレビュー/自問の語は禁止(BLOCK)。
+      1. FILL_THIS: ステップ数はAC数以下。目視確認/セルフレビュー/自問の語は禁止(BLOCK)。テスト/CI修正ではACに全量実行コマンド+FAIL0/SKIP0+中断再開成果物引継ぎ、本番DB書込みではrestore手順+実行identity+破壊時復元証跡を固定。
       2. FILL_THIS: 日付・数値はq8_why_whatのWHATにも同一表記で書け(片側のみだと数値緩和WARN)
     assumptions:
       claim: "FILL_THIS: 前提とその確認方法+確認日(${TODAY})。未確認の前提を書くな"
@@ -117,5 +117,6 @@ cat >&2 <<'GUIDE'
 12. 同一BLOCKが3回以上続いたら: quality_gate.nazenaze_root_cause になぜなぜ7回分析を記載せよ(VALID_QG_FIELDSに登録済み)
 13. ACフェーズ混在禁止(ac_phase_mixing): 同一AC内に実装キーワード(実装/追加/修正/fix等)と計測/deploy(計測/benchmark/push/deploy等)を共起させるな。分割せよ: AC-impl=「実装+テストPASS+commit」、AC-verify=「計測/CDP確認/deploy」。snake_case変数名・ファイルパスは自動除外されるがAC本文の自然言語キーワードは発火する。他責(FP扱い)で放置するな=洗脳(殿指摘2026-06-26)
 14. AC4本以上のcmdはBLOCK率75%(score_matrix実測2026-06-26)。AC4+は分割を最初に検討せよ。1CMD1道具(殿裁定cmd_2316)×AC2-3本が最適帯
-15. check関数のoriginと防御対象を逆引きするには: docs/research/cmd_save_gate_catalog.md を参照せよ(82check関数の発火origin・防御対象・severity・教訓逆引き一覧。中間レイヤー: 教訓→設計思想カタログ→個別check関数)
+15. テスト/CI修正cmdはACに全量実行コマンド・FAIL0・SKIP0・中断再開時の成果物引継ぎを、本番DB書込みcmdはrestore手順・実行identity・破壊時復元証跡を固定せよ。cmd_save.shが不足をBLOCKしgate_fire_logへ記録する。
+16. check関数のoriginと防御対象を逆引きするには: docs/research/cmd_save_gate_catalog.md を参照せよ(82check関数の発火origin・防御対象・severity・教訓逆引き一覧。中間レイヤー: 教訓→設計思想カタログ→個別check関数)
 GUIDE

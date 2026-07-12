@@ -6263,6 +6263,39 @@ ${ac_text}"
     record_warn_reason "変更前バックアップ実行済みであること" "check=db_backup_required"
 }
 
+# --- Check 21.3: 種別連動の実行・復元契約（BLOCK） ---
+# 起源: cmd_3861のテスト修正リレーとcmd_3859の本番DB安全停止。
+check_execution_contract_requirements_block() {
+    local command_text ac_text signal_text missing=()
+    command_text="$(extract_command_text_block)"
+    ac_text="$(extract_acceptance_criteria_block)"
+    signal_text="${command_text}
+$(cmd_block_get_field "title")
+$(cmd_block_get_field "purpose")"
+    [[ -n "${signal_text//[[:space:]]/}" ]] || return 0
+
+    if printf '%s\n' "$signal_text" | grep -qiE 'テスト.*(修正|fix|回帰|regression)|CI.*(修正|fix|failure|fail)|continuous[[:space:]]+integration|test.*(fix|regression|failure)|ci.*(fix|failure)'; then
+        if ! printf '%s\n' "$ac_text" | grep -qiE '全量.*(実行|run)|full.*(run|suite)|全.*(suite|テスト).*(実行|run)'; then missing+=("全量実行コマンド"); fi
+        if ! printf '%s\n' "$ac_text" | grep -qiE 'FAIL[[:space:]]*0|0[[:space:]]*(failures?|fails?|失敗)|no[[:space:]]*(failures?|fails?)'; then missing+=("FAIL0"); fi
+        if ! printf '%s\n' "$ac_text" | grep -qiE 'SKIP[[:space:]]*0|0[[:space:]]*(skips?|skip|スキップ)|no[[:space:]]*skips?'; then missing+=("SKIP0"); fi
+        if ! printf '%s\n' "$ac_text" | grep -qiE '中断.*(再開|resume)|再開.*(成果物|artifact|引継|handoff)|成果物.*(引継|handoff)'; then missing+=("中断再開時の成果物引継ぎ"); fi
+        if (( ${#missing[@]} > 0 )); then
+            record_block_reason "test_ci_execution_contract_missing: ${missing[*]}。ACに全量実行コマンド・FAIL0/SKIP0・中断再開時の成果物引継ぎ契約を固定せよ"
+            abort_if_block_immediate || exit 1
+        fi
+    fi
+
+    is_db_operation_command_text "$command_text" || return 0
+    missing=()
+    if ! printf '%s\n' "$ac_text" | grep -qiE 'restore|復元'; then missing+=("restore手順"); fi
+    if ! printf '%s\n' "$ac_text" | grep -qiE 'identity|実行[[:space:]]*(identity|ID|者)|service[[:space:]-]?account'; then missing+=("実行identity"); fi
+    if ! printf '%s\n' "$ac_text" | grep -qiE '破壊.*(復元|証跡|evidence)|復元.*(証跡|evidence)|restore.*(証跡|evidence)'; then missing+=("破壊時復元証跡"); fi
+    if (( ${#missing[@]} > 0 )); then
+        record_block_reason "production_db_restore_contract_missing: ${missing[*]}。ACにrestore手順・実行identity・破壊時復元証跡を固定せよ"
+        abort_if_block_immediate || exit 1
+    fi
+}
+
 collect_numeric_derivation_source_evidence() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
@@ -6441,6 +6474,10 @@ check_numeric_literal_derivation_source_info
 # 起源: 殿厳命 — コードは書き直せる、データは書き直せない。
 # 目的: DB変更を含むcmd保存時に変更前バックアップACを必ず可視化する
 check_db_backup_ac_warn
+
+# --- Check 21.3: テスト/CI実行・本番DB復元契約（BLOCK） ---
+# BLOCKはhandle_cmd_save_exit→log_cmd_save_fire_eventを通り、detector_fp_rate計測へ接続される。
+check_execution_contract_requirements_block
 
 # --- Check 21.5: ACフェーズ混在検出（WARN） ---
 # 起源: cmd_2300事故 — 実装ACとCDP計測ACが1cmdに同居し、実装完了後に計測不能でFAIL

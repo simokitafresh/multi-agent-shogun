@@ -81,6 +81,7 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
     eval "$(sed -n '/^check_cmd_text_pipe_danger()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^is_db_operation_command_text()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_db_backup_ac_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_execution_contract_requirements_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^build_warn_note()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_note_key()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^warn_note_message()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -483,6 +484,69 @@ YAML
     [[ "$output" == *"変更前バックアップ実行済みであること"* ]]
 }
 
+@test "Check21.3: テスト修正cmdで全量・FAIL0・SKIP0・引継ぎが不足ならBLOCK" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_test:
+    title: "CI修正"
+    command: "tests/unit/test_cmd_save.bats の回帰を修正する"
+    acceptance_criteria:
+      AC1:
+        description: "関連テストを実行する"
+YAML
+
+    load_cmd_block
+    run check_execution_contract_requirements_block
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"test_ci_execution_contract_missing"* ]]
+    [[ "$output" == *"全量実行コマンド"* ]]
+    [[ "$output" == *"FAIL0"* ]]
+    [[ "$output" == *"SKIP0"* ]]
+    [[ "$output" == *"中断再開時の成果物引継ぎ"* ]]
+}
+
+@test "Check21.3: 本番DB書込みcmdでrestore・identity・復元証跡が不足ならBLOCK" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_test:
+    title: "本番DB schema修正"
+    command: "ALTER TABLE users ADD COLUMN role TEXT を実行する"
+    acceptance_criteria:
+      AC1:
+        description: "migrationを適用する"
+YAML
+
+    load_cmd_block
+    run check_execution_contract_requirements_block
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"production_db_restore_contract_missing"* ]]
+    [[ "$output" == *"restore手順"* ]]
+    [[ "$output" == *"実行identity"* ]]
+    [[ "$output" == *"破壊時復元証跡"* ]]
+}
+
+@test "Check21.3: 両契約を固定した合成cmdはBLOCKしない" {
+    create_queue_file << 'YAML'
+commands:
+  cmd_test:
+    title: "CI修正と本番DB migration"
+    command: |
+      tests/unit/test_cmd_save.bats のCI failureを修正し、ALTER TABLE users ADD COLUMN role TEXT を実行する
+    acceptance_criteria:
+      AC1:
+        description: "全量実行コマンド bash tests/unit/test_cmd_save.bats を実行し、FAIL0/SKIP0を確認する"
+      AC2:
+        description: "中断再開時の成果物引継ぎartifactを queue/reports に保存する"
+      AC3:
+        description: "restore手順を実行し、実行identity service account を記録し、破壊時復元証跡を保存する"
+YAML
+
+    load_cmd_block
+    run check_execution_contract_requirements_block
+    [ "$status" -eq 0 ]
+    [ "$output" = "" ]
+}
+
 @test "AC1: 引用記号なしのWHYでもq8_WHY引用WARNを出さない" {
     local q8_tmpdir q8_queue q8_archive q8_quality q8_lock q8_last q8_lessons q8_autolearn q8_lord q8_chronicle
     q8_tmpdir="$(mktemp -d "$BATS_TMPDIR/cmd_save_q8relax.XXXXXX")"
@@ -557,6 +621,73 @@ YAML
     [[ "$output" == *"保存確認OK"* ]]
     [[ "$output" != *"q8 WHYに殿の指示引用がありません"* ]]
     [[ "$output" != *"q8_WHY引用"* ]]
+}
+
+@test "Check21.3: 合成CI修正cmdのBLOCKがgate_fire_logへ記録される" {
+    local tmpdir queue_file fire_log
+    tmpdir="$(mktemp -d "$BATS_TMPDIR/cmd_save_contract_fire.XXXXXX")"
+    queue_file="$tmpdir/shogun_to_karo.yaml"
+    fire_log="$tmpdir/gate_fire_log.yaml"
+    mkdir -p "$tmpdir/archive" "$tmpdir/docs/research"
+    printf 'entries:\n' > "$tmpdir/cmd_design_quality.yaml"
+    printf 'lessons:\n' > "$tmpdir/lessons_shogun.yaml"
+    cat > "$queue_file" <<'YAML'
+commands:
+  cmd_contract_fire:
+    id: cmd_contract_fire
+    title: "infra CI修正"
+    purpose: "CI failureを修正し、契約不足の検出を確認する"
+    project: infra
+    depends_on: none
+    task_type: impl
+    target_path: scripts/cmd_save.sh
+    origin: "[[cmd_3861]] -> [[実行契約漏れ]] -> [[gate_fire_log接続]]"
+    command: "tests/unit/test_cmd_save.bats のCI failureを修正する"
+    acceptance_criteria:
+      - "AC1: 関連テストを実行する"
+    status: pending
+    quality_gate:
+      q1_firefighting: "no — 契約不足を保存前に検出する"
+      q2_learning: "奪わない — ACへ成果物契約を明記する"
+      q3_next_quality: "上がる — 中断時のリレーを防ぐ"
+      q4_depth: "shallow"
+      q5_verified_source: "structure_verified + isolated_test"
+      q6_not_hiding: "no — 不足契約をBLOCKして記録する"
+      q7_definition_verified: "yes — CI修正はテスト修正として扱う"
+      q8_why_what: "WHY: 実行契約漏れを防ぐ / WHAT: CI修正cmdを合成してBLOCKを確認 / WHEN: cmd保存時 / WHERE: scripts/cmd_save.sh / WHO: 将軍 / HOW: AC不足をBLOCKしfire logへ記録する。複利: 正の複利"
+      q9_firefighting_root_cause: "no — 保存前契約検出"
+      q10_knowledge_boundary: "tests/unit/test_cmd_save.bats fixture範囲"
+      q11_not_already_done: "未達成。実行契約のgate_fire_log記録は未検証"
+      q_ambiguity: "none"
+      q12_lord_30min_cost: "no — 保存時に自動検出する"
+    assumptions:
+      - claim: "2026-07-12時点でcmd_save BLOCKはgate_fire_logへ記録される"
+        source: "scripts/cmd_save.sh"
+        trust: verified
+YAML
+
+    run env \
+        CMD_SAVE_QUEUE_FILE="$queue_file" \
+        CMD_SAVE_ARCHIVE_CMD_DIR="$tmpdir/archive" \
+        CMD_QUALITY_LOG_FILE="$tmpdir/cmd_design_quality.yaml" \
+        GATE_FIRE_LOG_FILE="$fire_log" \
+        CMD_SAVE_LOCK_FILE="$tmpdir/shogun_to_karo.lock" \
+        CMD_SAVE_LAST_CMD_FILE="$tmpdir/cmd_save_last_cmd.txt" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$tmpdir/lessons_shogun.yaml" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$tmpdir/preflight_autolearn.txt" \
+        CMD_SAVE_LORD_CONVERSATION_FILE="$tmpdir/lord_conversation.jsonl" \
+        CMD_SAVE_CMD_CHRONICLE_FILE="$tmpdir/cmd-chronicle.md" \
+        CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$tmpdir/no_semantic_search.sh" \
+        CMD_SAVE_Q11_RESEARCH_DIR="$tmpdir/docs/research" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        CMD_SAVE_SYNC_QUALITY_LOG=1 \
+        bash "$SRC_SAVE_SCRIPT" cmd_contract_fire
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"test_ci_execution_contract_missing"* ]]
+    grep -q 'gate: "cmd_save"' "$fire_log"
+    grep -q 'test_ci_execution_contract_missing' "$fire_log"
+    rm -rf "$tmpdir"
 }
 
 @test "cmd_save --preflight matches save pass without quality log history or YAML writes" {
