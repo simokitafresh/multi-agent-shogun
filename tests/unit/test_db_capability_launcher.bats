@@ -21,7 +21,21 @@ setup() {
 }
 
 @test "restore requires current expected commit" {
-  run python3 "$LAUNCHER" --capability transactional_restore --mode transactional_restore --confirm TRANSACTIONAL_RESTORE_ROLLBACK_READY --nonce "$BATS_TEST_NAME" --credential-file "$CREDS" --expected-commit deadbeef -- dry-run --artifact /tmp/a
+  fixture="$BATS_TEST_TMPDIR/restore-repo"
+  mkdir -p "$fixture/scripts/lib" "$fixture/scripts/oneshot" "$fixture/config"
+  cp "$LAUNCHER" "$fixture/scripts/db_capability_launcher.py"
+  cp "$ROOT/scripts/lib/db_capability_tool.py" "$fixture/scripts/lib/db_capability_tool.py"
+  cp "$ROOT/config/db_capabilities.json" "$fixture/config/db_capabilities.json"
+  printf '#!/usr/bin/env python3\n' > "$fixture/scripts/oneshot/cmd_p4_prod_restore_contract.py"
+  printf 'projects:\n  - id: dm-signal\n    path: %s\n' "$fixture" > "$fixture/config/projects.yaml"
+  git -C "$fixture" init -q
+  git -C "$fixture" config user.email fixture@example.invalid
+  git -C "$fixture" config user.name fixture
+  git -C "$fixture" add scripts/db_capability_launcher.py scripts/lib/db_capability_tool.py \
+    scripts/oneshot/cmd_p4_prod_restore_contract.py config/db_capabilities.json config/projects.yaml
+  git -C "$fixture" commit -qm fixture
+
+  run python3 "$fixture/scripts/db_capability_launcher.py" --capability transactional_restore --mode transactional_restore --confirm TRANSACTIONAL_RESTORE_ROLLBACK_READY --nonce "$BATS_TEST_NAME" --credential-file "$CREDS" --expected-commit deadbeef -- dry-run --artifact /tmp/a
   [ "$status" -ne 0 ]
   [[ "$output" == *"expected commit mismatch"* ]]
 }

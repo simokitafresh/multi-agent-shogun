@@ -31,6 +31,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-yaml parallel ripgrep
 
+      - name: Install tracked git hooks
+        run: |
+          git config core.hooksPath "$PWD/.git/hooks"
+          bash scripts/sync_git_hooks.sh
+          test "$(git config --get core.hooksPath)" = "$PWD/.git/hooks"
+          cmp -s scripts/hooks/git-pre-commit.sh .git/hooks/pre-commit
+
       - name: Run root-level tests (inbox_write.sh etc.)
         run: |
           set -o pipefail
