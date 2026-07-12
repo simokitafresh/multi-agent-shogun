@@ -12,15 +12,31 @@ usage() {
     echo "       $0 check-command COMMAND" >&2
 }
 
-repo_root() {
-    git -C "$1" rev-parse --show-toplevel 2>/dev/null
+# GA-220: repo identityはgit-common-dir(絶対正規化)で比較する。show-toplevelは
+# linked worktreeごとに別pathを返すため、main/linked worktreeを誤って別repoと
+# 判定してしまう(worktreeはtoplevelが異なってもcommon-dirは共有する)。
+repo_common_dir() {
+    local repo="$1" common resolved
+    common="$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || common=""
+    if [[ -z "$common" ]]; then
+        # 旧git(--path-format未対応)向けfallback: common-dirは-C適用後のcwd基準の相対pathで返る
+        common="$(git -C "$repo" rev-parse --git-common-dir 2>/dev/null)" || return 1
+        [[ -n "$common" ]] || return 1
+        if [[ "$common" != /* ]]; then
+            common="$(cd "$repo" 2>/dev/null && cd "$common" 2>/dev/null && pwd -P)" || return 1
+        fi
+    fi
+    resolved="$(realpath "$common" 2>/dev/null)" && [[ -n "$resolved" ]] && common="$resolved"
+    [[ -n "$common" ]] || return 1
+    printf '%s\n' "$common"
 }
 
+# 戻り値: 0=同一repo, 1=別repo(安全にスキップ), 2=DM_SIGNAL_REPO側が解決不能(設定不正。fail-closed)
 is_dm_signal_repo() {
     local actual expected
-    actual="$(repo_root "$1")" || return 1
-    expected="$(repo_root "$DM_SIGNAL_REPO")" || return 1
-    [[ "$(realpath "$actual")" == "$(realpath "$expected")" ]]
+    expected="$(repo_common_dir "$DM_SIGNAL_REPO")" || return 2
+    actual="$(repo_common_dir "$1")" || return 1
+    [[ "$actual" == "$expected" ]]
 }
 
 staged_fingerprint() {
@@ -60,8 +76,13 @@ has_staged_research() {
 }
 
 check_repo() {
-    local repo="$1" fingerprint recorded
-    is_dm_signal_repo "$repo" || return 0
+    local repo="$1" fingerprint recorded rc
+    rc=0; is_dm_signal_repo "$repo" || rc=$?
+    if ((rc == 2)); then
+        echo "BLOCK(GA-220): DM_SIGNAL_REPO repo identityを解決できない(設定不正の疑い): $DM_SIGNAL_REPO" >&2
+        return 2
+    fi
+    ((rc == 0)) || return 0
     has_staged_research "$repo" || return 0
     fingerprint="$(staged_fingerprint "$repo")" || {
         echo "BLOCK(GA-220): staged docs/research fingerprintを生成できない" >&2
@@ -83,7 +104,7 @@ check_repo() {
 }
 
 prepare() {
-    local repo="" mode="" evidence="" fingerprint encoded marker tmp
+    local repo="" mode="" evidence="" fingerprint encoded marker tmp rc
     while (($#)); do
         case "$1" in
             --repo) repo="${2:-}"; shift 2 ;;
@@ -93,7 +114,12 @@ prepare() {
         esac
     done
     [[ -n "$repo" && "$mode" =~ ^(synced|non-target)$ && -n "$evidence" ]] || { usage; return 2; }
-    is_dm_signal_repo "$repo" || { echo "BLOCK(GA-220): prepare対象はDM-Signal repoのみ" >&2; return 2; }
+    rc=0; is_dm_signal_repo "$repo" || rc=$?
+    if ((rc == 2)); then
+        echo "BLOCK(GA-220): DM_SIGNAL_REPO repo identityを解決できない(設定不正の疑い): $DM_SIGNAL_REPO" >&2
+        return 2
+    fi
+    ((rc == 0)) || { echo "BLOCK(GA-220): prepare対象はDM-Signal repoのみ" >&2; return 2; }
     has_staged_research "$repo" || { echo "BLOCK(GA-220): staged docs/research変更がない" >&2; return 2; }
     fingerprint="$(staged_fingerprint "$repo")"
     encoded="$(printf '%s' "$evidence" | base64 -w0)"

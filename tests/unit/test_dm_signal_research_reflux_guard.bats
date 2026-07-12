@@ -108,3 +108,55 @@ teardown() {
     run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
     [ "$status" -eq 0 ]
 }
+
+# --- GA-220: linked worktree identity回帰テスト (git-common-dir正規化) ---
+
+@test "GA-220: linked worktreeはmainと同一DM-Signal repoと判定され証跡なしresearch変更をBLOCKする" {
+    git -C "$DM" worktree add -q "$TMP/dm-linked" -b wt-branch
+    mkdir -p "$TMP/dm-linked/docs/research"
+    printf 'design\n' > "$TMP/dm-linked/docs/research/design.md"
+    git -C "$TMP/dm-linked" add docs/research/design.md
+    run bash "$GUARD" check --repo "$TMP/dm-linked"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-220)"* ]]
+}
+
+@test "GA-220: linked worktreeでもprepare済みfingerprintはPASSする" {
+    git -C "$DM" worktree add -q "$TMP/dm-linked2" -b wt-branch2
+    mkdir -p "$TMP/dm-linked2/docs/research"
+    printf 'v1\n' > "$TMP/dm-linked2/docs/research/design.md"
+    git -C "$TMP/dm-linked2" add docs/research/design.md
+    run bash "$GUARD" prepare --repo "$TMP/dm-linked2" --mode synced --evidence 'context §54 synced (worktree)'
+    [ "$status" -eq 0 ]
+    run bash "$GUARD" check --repo "$TMP/dm-linked2"
+    [ "$status" -eq 0 ]
+}
+
+@test "GA-220: 他repoのlinked worktreeはDM-Signalと誤判定されず非発火のまま" {
+    git -C "$OTHER" worktree add -q "$TMP/other-linked" -b other-wt
+    mkdir -p "$TMP/other-linked/docs/research"
+    printf 'x\n' > "$TMP/other-linked/docs/research/other.md"
+    git -C "$TMP/other-linked" add docs/research/other.md
+    run bash "$GUARD" check --repo "$TMP/other-linked"
+    [ "$status" -eq 0 ]
+}
+
+@test "GA-220: 存在しないrepo pathはクラッシュせず非対象として安全にスキップされる" {
+    run bash "$GUARD" check --repo "$TMP/does-not-exist"
+    [ "$status" -eq 0 ]
+}
+
+@test "GA-220: DM_SIGNAL_REPO自体が無効pathならfail-closedでBLOCKする(設定不正を無音でスキップしない)" {
+    printf 'design\n' > "$DM/docs/research/design.md"
+    git -C "$DM" add docs/research/design.md
+    run env DM_SIGNAL_REPO="$TMP/does-not-exist" DM_SIGNAL_REFLUX_CONTEXT_FILE="$CTX" bash "$GUARD" check --repo "$DM"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-220)"* ]]
+    [[ "$output" == *"repo identityを解決できない"* ]]
+}
+
+@test "GA-220: bare repoを--repoに渡してもクラッシュせず安全に扱う" {
+    git init -q --bare "$TMP/bare.git"
+    run bash "$GUARD" check --repo "$TMP/bare.git"
+    [ "$status" -eq 0 ]
+}
