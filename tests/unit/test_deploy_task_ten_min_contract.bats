@@ -68,6 +68,28 @@ run_precheck() {
     [[ "$output" == *"BLOCK: natural-boundary task contract failed"* ]]
 }
 
+@test "ten_min_contract: split_decision_reasonが単文字xならexit 2でBLOCK" {
+    local f
+    f="$(write_fixture one_char_reason_task 'task:
+  task_id: cmd_test_one_char_reason
+  estimated_minutes: 11
+  split_decision_reason: x')"
+    run_precheck "$f"
+    [ "$status" -eq 2 ]
+}
+
+@test "ten_min_contract: split_decision_reasonが複数行ならexit 2でBLOCK" {
+    local f
+    f="$(write_fixture multiline_reason_task 'task:
+  task_id: cmd_test_multiline_reason
+  estimated_minutes: 11
+  split_decision_reason: |-
+    単一validatorとcorpusが不可分
+    分割するとreview往復が増える')"
+    run_precheck "$f"
+    [ "$status" -eq 2 ]
+}
+
 @test "ten_min_contract: estimated_minutes=11かつ一体作業の具体的理由ありはPASS" {
     local f
     f="$(write_fixture natural_boundary_task 'task:

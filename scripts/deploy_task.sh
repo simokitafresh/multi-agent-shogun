@@ -8723,9 +8723,17 @@ if estimated <= 10:
 nullish_reasons = {"none", "n/a", "na", "null", "unknown", "tbd", "fill_this"}
 split_reason = str(task.get("split_decision_reason") or "").strip()
 if estimated <= 15:
-    if not split_reason or split_reason.lower() in nullish_reasons:
+    abstract_reasons = {
+        "一体の方が速い", "分割しない", "分割不要", "必要だから",
+        "理由あり", "具体的理由", "same task", "faster", "required",
+    }
+    reason_lower = split_reason.lower()
+    if (not split_reason or reason_lower in nullish_reasons
+            or reason_lower in abstract_reasons or len(split_reason) < 15
+            or "\n" in split_reason or "\r" in split_reason):
         print("estimated_minutes exceeds the 10-minute target; task.split_decision_reason "
-              "must state why keeping this natural binary verification boundary intact is faster")
+              "must be one concrete line (15+ characters) stating why keeping this natural "
+              "binary verification boundary intact is faster")
         raise SystemExit(2)
     print(f"PASS natural-boundary exception estimated_minutes={estimated:g} "
           f"split_decision_reason={split_reason}")
