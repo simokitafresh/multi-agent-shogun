@@ -84,7 +84,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L879 -->
+<!-- last_synced_lesson: L881 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -825,6 +825,7 @@ import metrics_research_engine as MRE
 - L863: LayerTimerは新規Layer追加時にLAYER_ORDER+layer()登録を怠ると壁時計TOTALだけ正しく内訳が誤解を招く（cmd_3831）
 - L871: backend/app/api/metrics.pyはモジュールローカルget_db()を独自定義しておりFastAPI test dependency_overrides[db.database.get_db]では横取りできない（cmd_3839）
 - L872: 新規Layer/Phase追加時はLayerTimer登録(layer_timer.layers[name]+LAYER_ORDER)を同時に行え。忘れるとTIMING SUMMARYがボトルネックを誤表示する（cmd_3842）
+- L881: 対象縮小した部分実行のGREENはFAIL0/SKIP0を保証しない。全量実行して初めて可視化される回帰がある（cmd_karo_ci_fix_cmd3861_resume_v2_202607121200）
 
 ## §32 GSシン忍法21体hide登録 (cmd_2392, 2026-04-29)
 - フォルダ「GSシン忍法」(UUID: 92087b49)に21体登録。hide_portfolio=true/hide_signal=true
@@ -1175,3 +1176,12 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - **運用上の確認**: DM-SignalはRender Auto-Deploy: On Commit。mainへのpush(`[skip render]`無し)は即本番デプロイに直結するため、push(AC2)とdeploy(AC3)は事実上不可分。21件の未триaж failureが残る状態でのpushはリスクを許容できないと判断し、**本cmdの範囲ではpush/deployを意図的に見送った**。local mainには`38ec9b8b`+`b46170ab`の2 commitが未push状態で保持されており、次のtriage cmdがそのまま土台にできる。
 - 詳細・再現ログ・失敗一覧全件・推奨アクション: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3860_integration_and_ci_findings.md`
 - 因果リンク: [[cmd_3859_AC2安全停止]] -> [[origin9_vs_local79分岐]] -> [[cmd_3860マージ完了+CI初回全量実行で21件pre-existing_failure発覚]] -> [[push即deploy運用によりtriage_cmd待ちで意図的停止]]
+
+## §71 cmd_3860残21件FAILの全件triage完了・全量FAIL0/SKIP0達成(commit未push) (cmd_3861, 2026-07-12)
+
+- §70の残21件FAILを影丸(kagemaru)が21/21 **fixture artifact**(実装regression 0/21)と二値判定し、fixture修正commit `32542328`(+style commit `af11db75`)を確定。ただし対象unit 91件のみ再実行し、2 integration testsと全量pytest/CIは未実行のままAC2/AC3 noで報告(verdict FAIL)。hayateのresume試行も報告未完成のままfailed。
+- kotaro(`cmd_karo_ci_fix_cmd3861_resume_v2`)が隔離worktree(`ninja/kotaro-cmd-3861-resume-v2`, base=32542328, main作業treeのdirty差分は無変更)で全量`backend/tests`を実行し**3 FAIL**を発見: (1)(2) `test_portfolio_restore_e2e_parity.py`の2件はfixtureは正しかったが別の実装バグ(`recalculate_history_fast`が`SourceSelectGuard`(input_manifest.py, cmd_3849 P1b)を`activate()`後`uninstall_all()`を一度も呼ばず、L5precompute_raw等の正当な後続reading をブロック。本番はrequest毎新規sessionのため無症状だが、同一sessionを跨ぐ呼出で顕在化する潜在バグ)。(3) `test_cmd_3854_fof_golden_regression.py`はローカル環境アーティファクト(gitignore対象の243,293行golden archive)がworktreeに存在しないための`FileNotFoundError`で、コードバグではない。
+- 実装修正(`recalculate_fast.py`へ`SourceSelectGuard.uninstall_all(db)`追加, commit `5fde6265`)+golden archive復元(既存worktreeから同一sha256原本を複製)後、**全量1776 passed / 8 xfailed / 6 xpassed / FAIL 0 / SKIP 0**(`python3 -m pytest -c backend/pytest.ini backend/tests`, 455.55s, 隔離pgserver環境`~/dm-signal-cmd3819-localpg`)を実測確認。golden regression自体もPASS(78/78 PF一致、P3a/cmd_3856以降のFoF計算に回帰なし)。
+- pushは家老の統合CI判断まで未実施(local branch `ninja/kotaro-cmd-3861-resume-v2`に保持)。origin main統合(§70で示した本番push/deploy一体運用)は次工程の判断事項。
+- 詳細・21+2件全件分類・数値根拠: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3861_ci_failure_triage.md`
+- 因果リンク: [[cmd_3860マージ完了+CI初回全量実行で21件pre-existing_failure発覚]] -> [[kagemaruが21件fixture修正も全量未実行のまま報告]] -> [[kotaroが隔離worktreeで全量実行しSourceSelectGuard未解除バグ+golden_archive欠落の2件を追加発見]] -> [[uninstall_all追加+archive復元でFAIL0/SKIP0達成]]

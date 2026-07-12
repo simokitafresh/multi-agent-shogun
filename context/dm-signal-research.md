@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-12 cmd_karo_verify_p3b_nocode_closure_202607120339 -->
-<!-- dm_signal_research_reflux: fingerprint=015ded2e6a13d43e67011c486b70d00bf6acd5c66e66d39e2ccfe635cd6783fb; mode=synced; evidence_b64=Y21kXzM4NjA6IGNvbnRleHQvZG0tc2lnbmFsLXJlc2VhcmNoLm1kIMKnNTYgKyBkbS1zaWduYWwtb3BzLm1kIMKnNzDjgbjntbHlkIjlrozkuoYrMjHku7ZwcmUtZXhpc3RpbmcgZmFpbHVyZStwdXNo6KaL6YCB44KK44KS6YKE5rWB5riI44G/ -->
+<!-- dm_signal_research_reflux: fingerprint=e26d016fb5063c7b8bf71c471700a2dcbdce6a37ce9a10d7778b3c03b80d1a35; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgwqc1NTogY21kXzM4NTkgUDQgQUMxIGV4YWN044CBY21kXzM4NjEgQ0kgR1JFRU7jgIFBQzLjga9saXZlIDQw5qGBY29tbWl0K+W+qeWFg+e1jOi3r+eiuuiqjeW+heOBoeOBuOWQjOacnw== -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -691,12 +691,12 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - cmd_3850(P1c): production-image/isolated-clone各102PFを同一`input_snapshot_id`・`execution_fingerprint`でcontrolled runし、pre/post 4 artifact各12,385行を比較。4経路すべてexact=true、mismatch/missing=0、snapshot後source SELECT=0、本番business write=0。float差分はruntime/driver/DB/end-to-endのいずれにも再現せず、旧baseline差分は回帰fixtureとして固定。→ `/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3850/rc25_compare/cmd_3850_float_localization.json` (2026-07-11)
 - cmd_3852(P2b RED): §9.7の18表(A10/B1/C3/D2/E2)・全exact fieldを同一新manifest下だけで比較する契約を固定。IEEE754 bit exact、canonical JSON、NULL exact、ledger UTCDateTime 6桁microsecondsを被覆し、全18表の注入RED差分を検出。23 PASS/FAIL0/SKIP0。→ `/mnt/c/Python_app/DM-signal/backend/tests/test_cmd_3852_persisted_inventory_exact.py`, commit `3925242ba285a98d1048069b9c94a63e95c42e4f` (2026-07-11)
 
-## §55. P4 shadow反復exact GREEN、本番デプロイ未反映でAC2 BLOCKED (cmd_3859, 2026-07-12)
+## §55. P4 shadow反復exact GREEN、CI GREEN後のAC2再開はlive確認待ち (cmd_3859/cmd_3861, 2026-07-12)
 
 - 結論: 設計書§9.1 P4のAC1(shadow反復exact)はGREEN確定。新鮮production snapshot(`cmd3819_baseline_20260711T204325Z_0e079ac5`)から`cmd3859_shadow_a`/`cmd3859_shadow_b`を新規cloneし並列controlled run、§9.7全18表・133 exact fields・567,751行でmissing 0/mismatch 0/exact=true、manifest_id/input_snapshot_id/execution_fingerprint/effective_source_identity全4識別子が独立プロセス間で完全一致。
-- **AC2(本番1run照合)は意図的未実行**: 本番Renderへの現在live deployがcommit`178add2a`(2026-07-10T17:50:11Z、P1a以前)であることを、(1)git分岐(local main 79 commit=P1a〜P3b全実装未push)(2)本番recalculation_timings実測(直近run `_run`manifest不在)(3)Render Deploy API実測(`GET /v1/services/{id}/deploys`)の3系統独立証跡で確定。P4の「同一manifest」前提(shadowと本番が同一コードを実行)が成立しないため、本番fullrecalculateを強行せず家老へエスカレーション。本番デプロイ(79コミットの大規模統合含む)実行の是非・タイミングはninjaタスク権限外。
-- 次アクション: origin/main側9コミット(cmd_3835/cmd_3839系)との統合方針決定→デプロイ→Deploy API/recalculation_timings実測でlive反映確認→AC2再実行→P5(cmd_3827回帰)。
-→ 正本: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.14、成果物`/mnt/c/Python_app/DM-signal/docs/research/cmd_3859_p4_shadow_exact_deploy_blocker.md`
+- **統合/CI前提は成立、live反映は未確認**: cmd_3860で系列統合を完了し、cmd_3861で全量`1776 passed/8 xfailed/6 xpassed/FAIL 0/SKIP 0`、Pytest CI GREEN(run `29179774396`)を確認。だが2026-07-12 13:54 JSTの`git ls-remote origin refs/heads/main`は`7946aa449f04230af1b260d20d38c3bca4cee333`であり、P4 AC2用隔離branchの非force統合・Render Deploy APIでのlive 40桁commit確認は未完。
+- **AC2(本番1run照合)は未実行のまま再開中**: single REPEATABLE READ直前snapshotと復元経路を一次確認し、同一commit・同一target_dateのfresh shadow expected artifactを生成した後に限り、本番`POST /admin/recalculate-sync`を厳密1回実施する。live 40桁commit確認または復元経路が未成立なら、DB/API write前に安全停止する。
+→ 正本: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.14、成果物`/mnt/c/Python_app/DM-signal/docs/research/cmd_3859_p4_shadow_exact_deploy_blocker.md`、P4 AC2再開=`cmd_karo_hotfix_cmd3859_p4_ac2_resume_202607121337`
 
 ## §56. origin統合完了・実CI初回全量実行で21件pre-existing failure発覚、push/deploy意図的見送り (cmd_3860, 2026-07-12)
 
