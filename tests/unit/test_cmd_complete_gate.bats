@@ -2074,7 +2074,7 @@ CASES
 }
 
 @test "normal CLEAR captures synchronously before sending its CLEAR notification" {
-    run SRC_GATE_SCRIPT="$SRC_GATE_SCRIPT" python3 - <<'PY'
+    run env SRC_GATE_SCRIPT="$SRC_GATE_SCRIPT" python3 - <<'PY'
 from pathlib import Path
 import os
 

@@ -9,6 +9,10 @@ setup() {
     HOOK="$ROOT/.claude/hooks/pre-bash-combined.sh"
     TMP="$(mktemp -d "$BATS_TMPDIR/heavy_job_admission.XXXXXX")"
     export SHOGUN_HEAVY_JOB_LOCK_FILE="$TMP/admission.lock"
+    # The suite itself may be launched through heavy_job_admission.sh. Its
+    # re-entrancy marker must not leak into wrapper unit tests, which exercise
+    # independent top-level contenders rather than a nested child job.
+    unset SHOGUN_HEAVY_JOB_LOCK_HELD
     OUT="$TMP/timeline.log"
 }
 
@@ -21,7 +25,7 @@ _hook_payload() {
 }
 
 _run_hook() {
-    _hook_payload "$1" | bash "$HOOK"
+    _hook_payload "$1" | TMUX_AGENT_ID=shogun bash "$HOOK"
 }
 
 # --- 分類器(SSOT) — argv位置ベース、部分文字列誤検出禁止 ---
@@ -276,4 +280,3 @@ FAKEEOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS:"* ]]
 }
-

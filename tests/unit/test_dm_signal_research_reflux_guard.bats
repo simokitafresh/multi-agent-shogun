@@ -86,7 +86,7 @@ teardown() {
     printf 'design\n' > "$DM/docs/research/design.md"
     git -C "$DM" add docs/research/design.md
     payload="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git -C '$DM' commit -m test\"}}"
-    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
+    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=shogun DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
     [ "$status" -eq 2 ]
     [[ "$output" == *"GA-220"* ]]
     [ "$(git -C "$DM" rev-list --count HEAD)" -eq 1 ]
@@ -96,7 +96,7 @@ teardown() {
     printf 'change\n' >> "$DM/README.md"
     git -C "$DM" add README.md
     payload="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git -C '$DM' commit -m test\"}}"
-    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
+    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=shogun DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
     [ "$status" -eq 0 ]
 }
 
@@ -105,7 +105,7 @@ teardown() {
     git -C "$DM" add docs/research/design.md
     bash "$GUARD" prepare --repo "$DM" --mode synced --evidence 'context §54 synced'
     payload="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git -C '$DM' commit -m test\"}}"
-    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
+    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=shogun DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
     [ "$status" -eq 0 ]
 }
 

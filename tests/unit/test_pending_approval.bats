@@ -34,6 +34,7 @@ _run_hook_commit() {
     run env \
         PENDING_APPROVAL_FILE="$PA_FILE" \
         GUARD12_STAGED_FILES_OVERRIDE="$staged_files" \
+        TMUX_AGENT_ID=shogun \
         bash "$HOOK_SCRIPT" <<< "$payload" 2>/dev/null
 }
 
