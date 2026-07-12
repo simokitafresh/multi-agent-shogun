@@ -378,6 +378,104 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+# =============================================
+# AC2/AC3 (cmd_karo_hotfix_wa_root_signature_202607121225):
+# root_signature auto-attach + N>=3 per-signature alerting
+# =============================================
+
+@test "AC2: workaround entry auto-attaches root_signature field" {
+    run bash "$TEST_SCRIPT" cmd_test hayate "binary_checksが欠落しquote parseも壊れた" "report_field_set.shで補完" report_yaml_format
+    [ "$status" -eq 0 ]
+    run grep -n "root_signature: 'report_yaml_format::schema_shape'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "AC3: 同一categoryでも異なるroot_signature 3件ではALERT/PDを発火しない" {
+    run bash "$TEST_SCRIPT" cmd_1 hayate "report_path/ac_version欠落でYAML構文が壊れた" "task template修復" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ALERT"* ]]
+
+    run bash "$TEST_SCRIPT" cmd_2 hayate "報告YAML未完了のままidle化して停滞した" "report_field_setで補完" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ALERT"* ]]
+
+    run bash "$TEST_SCRIPT" cmd_3 hayate "command_files_modified_mismatchでcommit未完了のままBLOCK" "commit証跡を補正" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ALERT"* ]]
+    [ ! -f "$TEST_DIR/scripts/pending_decision_write.log" ]
+}
+
+@test "AC3: 同一root_signatureが3件でのみALERT/PDを発火する" {
+    run bash "$TEST_SCRIPT" cmd_1 hayate "binary_checksが欠落しquote parseも壊れた" "root_cause1" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ALERT"* ]]
+
+    run bash "$TEST_SCRIPT" cmd_2 hayate "lessons_usefulが欠落しdict→list変換も壊れた" "root_cause2" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 同一カテゴリ「report_yaml_format」が2件(root_signature=report_yaml_format::schema_shape)"* ]]
+
+    run bash "$TEST_SCRIPT" cmd_3 hayate "knowledge_candidateが欠落しquote parseも壊れた" "root_cause3" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: カテゴリ「report_yaml_format」が3件(root_signature=report_yaml_format::schema_shape)"* ]]
+    run grep -n "PD:" "$TEST_DIR/scripts/pending_decision_write.log"
+    [ "$status" -eq 0 ]
+}
+
+@test "AC3: root_signature欠落のlegacy entryは新規の特定root_signatureカウントに混入しない" {
+    cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_legacy_1
+  timestamp: '2026-04-25T00:00:00Z'
+  ninja: hayate
+  workaround: true
+  category: report_yaml_format
+  detail: 'legacy issue without root_signature'
+  root_cause: 'legacy root cause'
+  resolved_by_cmd: ''
+- cmd_id: cmd_legacy_2
+  timestamp: '2026-04-25T00:01:00Z'
+  ninja: hanzo
+  workaround: true
+  category: report_yaml_format
+  detail: 'another legacy issue'
+  root_cause: 'legacy root cause 2'
+  resolved_by_cmd: ''
+YAML
+
+    run bash "$TEST_SCRIPT" cmd_new_1 hayate "binary_checksが欠落しquote parseも壊れた" "root_cause1" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ALERT"* ]]
+    [[ "$output" != *"WARN: 同一カテゴリ"* ]]
+
+    run bash "$TEST_SCRIPT" cmd_new_2 hayate "lessons_usefulが欠落しdict→list変換も壊れた" "root_cause2" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 同一カテゴリ「report_yaml_format」が2件"* ]]
+}
+
+@test "AC3: root_signature欠落のlegacy entryはgeneral bucketでは従来通り3件目でALERT" {
+    cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_legacy_1
+  timestamp: '2026-04-25T00:00:00Z'
+  ninja: hayate
+  workaround: true
+  category: report_yaml_format
+  detail: 'legacy issue without root_signature'
+  root_cause: 'legacy root cause'
+  resolved_by_cmd: ''
+- cmd_id: cmd_legacy_2
+  timestamp: '2026-04-25T00:01:00Z'
+  ninja: hanzo
+  workaround: true
+  category: report_yaml_format
+  detail: 'another legacy issue'
+  root_cause: 'legacy root cause 2'
+  resolved_by_cmd: ''
+YAML
+
+    run bash "$TEST_SCRIPT" cmd_new hayate "third generic issue" "third root cause" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: カテゴリ「report_yaml_format」が3件(root_signature=report_yaml_format::general)"* ]]
+}
+
 @test "memory DB: workaround record also inserts event_type=workaround when DB exists" {
     db="$TEST_DIR/data/memory.db"
     mkdir -p "$TEST_DIR/data"

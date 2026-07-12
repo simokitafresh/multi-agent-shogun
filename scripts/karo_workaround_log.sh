@@ -8,6 +8,9 @@
 # AC1(cmd_1211): カテゴリ別件数カウント。2件目WARN、3件目以上ALERT(ntfy+insight_write)
 # AC2(cmd_1211): classify_category改善(report_yaml_format/file_disappearance/uncategorized)
 # AC3(cmd_1211): resolved_by_cmdフィールド追加。resolved済みはALERTカウント除外
+# AC(cmd_karo_hotfix_wa_root_signature_202607121225): categoryに加えroot_signature(発生段階×破れた
+#   不変量)でN>=3を判定。異根WAの混入によるPD誤発火を防止。root_signature欠落の既存entryは
+#   「${category}::general」fallbackへ非破壊的に集約する(新規entryの既定bucketと同一。挙動非破壊)
 
 set -euo pipefail
 
@@ -299,6 +302,32 @@ classify_category() {
     fi
 }
 
+# --- Root-signature classification (AC2: cmd_karo_hotfix_wa_root_signature_202607121225) ---
+# category familyは維持しつつ、発生段階×破れた不変量で下位分類する。
+# 1カテゴリに異根(schema欠落/agent stall/commit provenance/deploy fallback破損)が
+# 混入しN>=3を偽発火させる問題(2026-07-08分析: report_yaml_format 3件=deploy fallback1+stall2)への対策。
+# 自由文の個別cmd/file allowlistではなく、構造的な文言パターンのみで判定する。
+classify_root_signature() {
+    local category="$1"
+    local issue="$2"
+    local pattern_deploy_template='report_path.*欠落|ac_version.*欠落|標準スキル.*欠落|未引用.*コロン|deploy_task.*(fail|失敗)|最小task YAML'
+    local pattern_lifecycle_stall='停滞|idle化|verdict_empty|Codex停止|未完了.*(commit未実施|status)'
+    local pattern_commit_provenance='command_files_modified_mismatch|verified_existing_dependency|files_modified全件|commit未完了|後続commit.*確認'
+    local pattern_schema_shape='binary_checks|lessons_useful|knowledge_candidate|quote parse|(dict|list|string).*(→|変換|形式)|(commit_hash|status|items).*補正|補正.*(commit_hash|status)|欠落'
+
+    if [[ "$issue" =~ $pattern_deploy_template ]]; then
+        echo "${category}::deploy_template_integrity"
+    elif [[ "$issue" =~ $pattern_lifecycle_stall ]]; then
+        echo "${category}::report_lifecycle_stall"
+    elif [[ "$issue" =~ $pattern_commit_provenance ]]; then
+        echo "${category}::commit_provenance"
+    elif [[ "$issue" =~ $pattern_schema_shape ]]; then
+        echo "${category}::schema_shape"
+    else
+        echo "${category}::general"
+    fi
+}
+
 if [[ "$CLEAN_MODE" = true ]]; then
     CATEGORY="clean"
 elif [[ -n "$EXPLICIT_CATEGORY" ]]; then
@@ -336,14 +365,20 @@ if [[ "$CLEAN_MODE" != true ]]; then
     validate_brainwash_check "$BRAINWASH_CHECK"
 fi
 
-# --- Count category entries excluding resolved (AC1+AC3: cmd_1211, GP-084: Python→awk) ---
-count_category_entries() {
-    local category="$1"
+# --- Count root_signature entries excluding resolved (AC3: cmd_karo_hotfix_wa_root_signature_202607121225) ---
+# category単独ではなくcategory×root_signatureの対で集計する。root_signature欠落の既存entry(legacy)は
+# classify_root_signatureの既定fallbackと同じ「${category}::general」へ集約する(非構造化テキストの
+# 新規entryも同じgeneralへ落ちるため、旧来の「同一category蓄積」挙動を破壊しない安全なfallback)。
+# schema_shape/report_lifecycle_stall/commit_provenance/deploy_template_integrityの特定文言に
+# 一致する新規entryだけが、legacyの雑多な蓄積から切り離されて独立集計される。
+count_root_signature_entries() {
+    local target_category="$1"
+    local target_signature="$2"
     if [[ ! -f "$LOG_FILE" ]]; then
         echo 0
         return
     fi
-    awk -v target="$category" '
+    awk -v target_cat="$target_category" -v target_sig="$target_signature" -v legacy_sig="${target_category}::general" '
     function trim_scalar(value) {
         gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
         if (value ~ /^'\''.*'\''$/ || value ~ /^".*"$/) {
@@ -351,9 +386,13 @@ count_category_entries() {
         }
         return value
     }
-    function flush_entry() {
-        if (entry_started && cat == target && is_wa && !resolved) count++
+    function flush_entry(    sig) {
+        if (entry_started && cat == target_cat && is_wa && !resolved) {
+            sig = (rootsig != "") ? rootsig : legacy_sig
+            if (sig == target_sig) count++
+        }
         cat = ""
+        rootsig = ""
         resolved = 0
         is_wa = 0
         entry_started = 0
@@ -362,6 +401,7 @@ count_category_entries() {
         value = trim_scalar(value)
         if (key == "workaround" && value == "true") is_wa = 1
         else if (key == "category") cat = value
+        else if (key == "root_signature") rootsig = value
         else if (key == "resolved_by_cmd" && value != "") resolved = 1
     }
     match($0, /^- ([A-Za-z0-9_]+):[[:space:]]*(.*)$/, m) {
@@ -404,13 +444,15 @@ count_category_entries() {
 EOF
         echo "[karo_workaround_log] Clean: $CMD_ID/$NINJA_NAME [clean]"
     else
-        CAT_COUNT=$(count_category_entries "$CATEGORY")
-        OCCURRENCE=$((CAT_COUNT + 1))
+        ROOT_SIGNATURE=$(classify_root_signature "$CATEGORY" "$ISSUE")
+        SIG_COUNT=$(count_root_signature_entries "$CATEGORY" "$ROOT_SIGNATURE")
+        OCCURRENCE=$((SIG_COUNT + 1))
 
         # GP-086: Append entry in standard flat-list format (matches manual karo entries)
         # Old format used nested "entries:" + 2-space indent → YAML structure conflict with manual entries
         SAFE_ISSUE=$(yaml_escape_sq "$ISSUE")
         SAFE_FIX=$(yaml_escape_sq "$FIX")
+        SAFE_ROOT_SIGNATURE=$(yaml_escape_sq "$ROOT_SIGNATURE")
         SAFE_MISSED_SG=$(yaml_escape_sq "$MISSED_SG")
         SAFE_ENVIRONMENT_CHANGE=$(yaml_escape_sq "$ENVIRONMENT_CHANGE")
         SAFE_BRAINWASH_CHECK=$(yaml_escape_sq "$BRAINWASH_CHECK")
@@ -421,6 +463,7 @@ EOF
   ninja: $NINJA_NAME
   workaround: true
   category: $CATEGORY
+  root_signature: '$SAFE_ROOT_SIGNATURE'
   detail: '$SAFE_ISSUE'
   root_cause: '$SAFE_FIX'
 EOF
@@ -459,19 +502,21 @@ EOF
             fi
         fi
 
-        # --- Alert mechanism (AC1: cmd_1211) ---
+        # --- Alert mechanism (AC1: cmd_1211, AC3: cmd_karo_hotfix_wa_root_signature_202607121225) ---
+        # N>=3判定はcategory単独ではなくcategory×root_signature(発生段階×破れた不変量)で行う。
+        # 異根(root_signatureが異なる)WAが同一categoryに混在してもALERT/PDは発火しない。
         if [[ "$CATEGORY" != "clean" && $OCCURRENCE -ge 3 ]]; then
-            echo "[karo_workaround_log] ALERT: カテゴリ「${CATEGORY}」が${OCCURRENCE}件。構造対策cmdを起票せよ"
+            echo "[karo_workaround_log] ALERT: カテゴリ「${CATEGORY}」が${OCCURRENCE}件(root_signature=${ROOT_SIGNATURE})。構造対策cmdを起票せよ"
             if [[ "$DISABLE_ALERTS" != "true" ]]; then
-                bash "$SCRIPT_DIR/ntfy.sh" "【家老ALERT】workaround同一カテゴリ「${CATEGORY}」が${OCCURRENCE}件。構造対策cmd起票を強制" 2>/dev/null || true
-                bash "$SCRIPT_DIR/insight_write.sh" "workaround同一カテゴリ「${CATEGORY}」が${OCCURRENCE}件蓄積。構造対策cmdの起票が必要" "high" "karo_workaround_log" 2>/dev/null || true
+                bash "$SCRIPT_DIR/ntfy.sh" "【家老ALERT】workaround同一カテゴリ「${CATEGORY}」根本原因「${ROOT_SIGNATURE}」が${OCCURRENCE}件。構造対策cmd起票を強制" 2>/dev/null || true
+                bash "$SCRIPT_DIR/insight_write.sh" "workaround同一カテゴリ「${CATEGORY}」根本原因「${ROOT_SIGNATURE}」が${OCCURRENCE}件蓄積。構造対策cmdの起票が必要" "high" "karo_workaround_log" 2>/dev/null || true
                 # なぜなぜ7回到達: ALERTを行動に接続（表示→PD自動起票→将軍startup gate検知）
-                bash "$SCRIPT_DIR/pending_decision_write.sh" create "workaround同一カテゴリ「${CATEGORY}」が${OCCURRENCE}件蓄積。構造対策cmdの起票・裁定が必要" "${CMD_ID}" escalation karo 2>/dev/null || true
+                bash "$SCRIPT_DIR/pending_decision_write.sh" create "workaround同一カテゴリ「${CATEGORY}」根本原因「${ROOT_SIGNATURE}」が${OCCURRENCE}件蓄積。構造対策cmdの起票・裁定が必要" "${CMD_ID}" escalation karo 2>/dev/null || true
             fi
         elif [[ "$CATEGORY" != "clean" && $OCCURRENCE -eq 2 ]]; then
-            echo "[karo_workaround_log] WARN: 同一カテゴリ「${CATEGORY}」が2件。構造対策cmdの起票を検討せよ"
+            echo "[karo_workaround_log] WARN: 同一カテゴリ「${CATEGORY}」が2件(root_signature=${ROOT_SIGNATURE})。構造対策cmdの起票を検討せよ"
         else
-            echo "[karo_workaround_log] Logged: $CMD_ID/$NINJA_NAME [$CATEGORY]"
+            echo "[karo_workaround_log] Logged: $CMD_ID/$NINJA_NAME [$CATEGORY/$ROOT_SIGNATURE]"
         fi
     fi
 
