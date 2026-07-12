@@ -40,6 +40,11 @@ _pre_bash_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_pre_bash_self%/.claude/hooks/pre-bash-combined.sh}"
 unset _pre_bash_self
 
+# Agent roles are operational ontology: roster changes in settings.yaml must
+# propagate to guards without editing this hook.
+# shellcheck source=scripts/lib/agent_config.sh
+source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+
 # All state-changing Bash commands in this repository consume the same
 # per-prompt three-layer evidence as Write/Edit. The verifier has a narrow
 # read-only allowlist so the preflight search itself cannot deadlock.
@@ -505,8 +510,8 @@ PY
         if [[ -z "$_guard1_agent_id" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
             _guard1_agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
         fi
-        case "$_guard1_agent_id" in
-            hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)
+        case " $(get_ninja_names) " in
+            *" $_guard1_agent_id "*)
                 emit_deny "BLOCK(GA-231): 忍者のgit commit直書きは禁止。/ninja-commit または bash scripts/ninja_scope_commit.sh を使い、共有indexの他者stageをcommitから分離せよ"
                 ;;
         esac

@@ -98,6 +98,43 @@ print(json.dumps({"tool_name":"Bash","tool_input":{"command": os.environ["COMMAN
     [ "$status" -eq 0 ]
 }
 
+@test "GA-231 ontology: settings.yamlに追加したninjaもhook編集なしでBLOCKED" {
+    local payload config_root
+    config_root="$BATS_TEST_TMPDIR/dynamic-roster"
+    mkdir -p "$config_root/config"
+    cat > "$config_root/config/settings.yaml" <<'YAML'
+  agents:
+    shadow:
+      role: ninja
+      japanese_name: 影
+    advisor:
+      role: gunshi
+      japanese_name: 軍師
+YAML
+    payload='{"tool_name":"Bash","tool_input":{"command":"git commit -m direct"}}'
+    run bash -c 'printf "%s" "$1" | BATS_TEST_FILENAME=fixture _AGENT_CONFIG_SCRIPT_DIR="$2" TMUX_AGENT_ID=shadow bash "$3"' _ "$payload" "$config_root" "$HOOK_SCRIPT"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-231)"* ]]
+}
+
+@test "GA-231 ontology: settings.yamlの非ninja roleはdirect commit guard対象外" {
+    local payload config_root
+    config_root="$BATS_TEST_TMPDIR/dynamic-roster-role"
+    mkdir -p "$config_root/config"
+    cat > "$config_root/config/settings.yaml" <<'YAML'
+  agents:
+    shadow:
+      role: ninja
+      japanese_name: 影
+    advisor:
+      role: gunshi
+      japanese_name: 軍師
+YAML
+    payload='{"tool_name":"Bash","tool_input":{"command":"git commit -m direct"}}'
+    run bash -c 'printf "%s" "$1" | BATS_TEST_FILENAME=fixture _AGENT_CONFIG_SCRIPT_DIR="$2" TMUX_AGENT_ID=advisor bash "$3"' _ "$payload" "$config_root" "$HOOK_SCRIPT"
+    [ "$status" -eq 0 ]
+}
+
 # --- non-Bash payload passthrough ---
 
 @test "non-Bash tool payload is ALLOWED" {
