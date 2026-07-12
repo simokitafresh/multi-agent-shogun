@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # workaround_pattern_check.sh — ワークアラウンド反復パターン検出+追跡 (cmd_1153 AC1 + cmd_1159 AC1)
-# logs/karo_workarounds.yaml を読み、同一issue/categoryが閾値(3回)以上のパターンを検出。
+# logs/karo_workarounds.yaml を読み、同一issue/root_signatureが閾値(3回)以上の
+# 未解決パターンを検出。category単独集計は異根のworkaroundを混ぜるため禁止。
 # 検出時: 家老inboxにworkaround_patternで通知。冪等性: 通知済みフラグで重複通知防止。
 # cmd_1159: パターンをworkaround_patterns.yamlに記録し、resolved後のREGRESSION/EFFECTIVE判定。
 
@@ -42,29 +43,53 @@ fi
     # issue別の出現回数を集計
     # awk 1パスで抽出・集計（bash while+regex の代替: 大幅高速化）
     declare -A issue_counts
-    declare -A category_counts
+    declare -A signature_counts
 
     while IFS=$'\t' read -r _wpc_type _wpc_key _wpc_cnt; do
         case "$_wpc_type" in
             i) issue_counts["$_wpc_key"]=$_wpc_cnt ;;
-            c) category_counts["$_wpc_key"]=$_wpc_cnt ;;
+            s) signature_counts["$_wpc_key"]=$_wpc_cnt ;;
         esac
     done < <(awk '
-        {
-            for (i=1; i<=NF; i++) {
-                if ($i == "issue:") {
-                    v = $(i+1); gsub(/["'"'"']/, "", v)
-                    if (v != "") issue[v]++
-                }
-                if ($i == "category:") {
-                    v = $(i+1); gsub(/["'"'"']/, "", v)
-                    if (v != "") cat[v]++
-                }
+        function scalar(line,    value) {
+            sub(/^[^:]*:[[:space:]]*/, "", line)
+            value = line
+            sub(/[[:space:]]+$/, "", value)
+            if ((value ~ /^'"'"'.*'"'"'$/) || (value ~ /^".*"$/)) {
+                value = substr(value, 2, length(value) - 2)
             }
+            return value
         }
+        function reset_entry() {
+            workaround = ""
+            issue_name = ""
+            category = ""
+            root_signature = ""
+            resolved_by_cmd = ""
+        }
+        function flush_entry(    signature) {
+            if (workaround != "true" || resolved_by_cmd != "") return
+            if (issue_name != "") issue[issue_name]++
+            if (category == "") return
+            signature = root_signature
+            if (signature == "") signature = category "::general"
+            sig[signature]++
+        }
+        BEGIN { reset_entry() }
+        /^- cmd_id:[[:space:]]*/ {
+            flush_entry()
+            reset_entry()
+            next
+        }
+        /^  workaround:[[:space:]]*/ { workaround = scalar($0); next }
+        /^  issue:[[:space:]]*/ { issue_name = scalar($0); next }
+        /^  category:[[:space:]]*/ { category = scalar($0); next }
+        /^  root_signature:[[:space:]]*/ { root_signature = scalar($0); next }
+        /^  resolved_by_cmd:[[:space:]]*/ { resolved_by_cmd = scalar($0); next }
         END {
+            flush_entry()
             for (k in issue) print "i\t" k "\t" issue[k]
-            for (k in cat)   print "c\t" k "\t" cat[k]
+            for (k in sig)   print "s\t" k "\t" sig[k]
         }
     ' "$LOG_FILE")
 
@@ -124,9 +149,13 @@ fi
                 if [[ "$_crp_pid" == issue:* ]]; then
                     local _crp_issue_name="${_crp_pid#issue:}"
                     _crp_current_count="${issue_counts["$_crp_issue_name"]:-0}"
+                elif [[ "$_crp_pid" == root_signature:* ]]; then
+                    local _crp_signature="${_crp_pid#root_signature:}"
+                    _crp_current_count="${signature_counts["$_crp_signature"]:-0}"
                 elif [[ "$_crp_pid" == category:* ]]; then
-                    local _crp_cat_name="${_crp_pid#category:}"
-                    _crp_current_count="${category_counts["$_crp_cat_name"]:-0}"
+                    # category-only patterns predate root_signature. They cannot be
+                    # compared safely because heterogeneous causes were aggregated.
+                    _crp_current_count=0
                 fi
 
                 if [[ $_crp_current_count -ge $THRESHOLD ]]; then
@@ -169,20 +198,21 @@ fi
         fi
     done
 
-    # --- category別パターン検出 ---
-    for _wpc_cat in "${!category_counts[@]}"; do
-        count=${category_counts["$_wpc_cat"]}
+    # --- root_signature別パターン検出 ---
+    for _wpc_sig in "${!signature_counts[@]}"; do
+        count=${signature_counts["$_wpc_sig"]}
         if [[ $count -ge $THRESHOLD ]]; then
-            pattern_key="category:${_wpc_cat}"
+            _wpc_cat="${_wpc_sig%%::*}"
+            pattern_key="root_signature:${_wpc_sig}"
             if [[ "$_wpc_notified_cache" == *"$pattern_key"* ]]; then
                 # 既に通知済み→countだけ更新（追跡用）
                 record_pattern "$pattern_key" "$_wpc_cat" "$count"
                 continue
             fi
 
-            echo "[workaround_pattern_check] PATTERN: category=\"${_wpc_cat}\" ${count}回"
+            echo "[workaround_pattern_check] PATTERN: root_signature=\"${_wpc_sig}\" ${count}回 (category=\"${_wpc_cat}\")"
             bash "$SCRIPT_DIR/inbox_write.sh" karo \
-                "パターン検出: category=\"${_wpc_cat}\" ${count}回" \
+                "パターン検出: root_signature=\"${_wpc_sig}\" ${count}回 (category=\"${_wpc_cat}\")" \
                 workaround_pattern workaround_check >> /dev/null 2>&1
             echo "  - \"$pattern_key\"" >> "$NOTIFIED_FILE"
             record_pattern "$pattern_key" "$_wpc_cat" "$count"
