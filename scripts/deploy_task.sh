@@ -24,6 +24,26 @@ SCRIPT_DIR="${_dt_self%/scripts/deploy_task.sh}"
 unset _dt_self
 LOG="$SCRIPT_DIR/logs/deploy_task.log"
 
+# --yaml is an option prefix, never a trailing modifier.  Without this guard,
+# `deploy_task.sh ninja --yaml file` is parsed as a legacy message and may
+# redeploy the ninja's previous command.  Keep the established training form
+# `--direct --yaml file ninja` as well as canonical `--yaml file ninja`.
+deploy_task_guard_yaml_arg_order() {
+    local index=0 arg
+    local first="${1:-}"
+    for arg in "$@"; do
+        index=$((index + 1))
+        if [[ "$arg" == "--yaml" ]]; then
+            if [[ "$index" -eq 1 ]] || { [[ "$index" -eq 2 ]] && [[ "$first" == "--direct" ]]; }; then
+                return 0
+            fi
+            echo "BLOCK: --yaml must precede ninja_name (use: deploy_task.sh --yaml <file> <ninja> or --direct --yaml <file> <ninja>)" >&2
+            return 2
+        fi
+    done
+    return 0
+}
+
 deploy_task_early_target_from_args() {
     local first="${1:-}"
     shift || true
@@ -50,6 +70,7 @@ deploy_task_early_target_known() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
+    deploy_task_guard_yaml_arg_order "$@" || exit $?
     _dt_early_target="$(deploy_task_early_target_from_args "$@")"
     if [ -z "$_dt_early_target" ] || [ "${_dt_early_target,,}" = "none" ] || [[ "$_dt_early_target" == cmd_* ]]; then
         echo "ERROR: ninja_name is required and must be a configured agent, not '${_dt_early_target:-empty}'." >&2
@@ -665,6 +686,7 @@ cleanup_none_task_files() {
 }
 
 parse_deploy_task_args() {
+    deploy_task_guard_yaml_arg_order "$@" || exit $?
     DIRECT_MODE=false
     NINJA_NAME=""
     CMD_ID=""
