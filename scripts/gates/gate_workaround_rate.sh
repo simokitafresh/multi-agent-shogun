@@ -17,6 +17,7 @@ WA_FILE="${KARO_WORKAROUNDS_FILE:-$SCRIPT_DIR/logs/karo_workarounds.yaml}"
 GATE_LOG="${GATE_METRICS_LOG:-$SCRIPT_DIR/logs/gate_metrics.log}"
 REWORK_CAPTURE_GIT_DIR="${REWORK_CAPTURE_GIT_DIR:-$SCRIPT_DIR}"
 REWORK_CAPTURE_SINCE="${REWORK_CAPTURE_SINCE:-today 00:00}"
+REWORK_CAPTURE_SINCE_ISO="$(date -u -d "$REWORK_CAPTURE_SINCE" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"
 LAST_N=10
 
 # 引数パース
@@ -169,12 +170,13 @@ function flush_item() {
 IFS='|' read -r LEVEL RATE WA_COUNT TOTAL CATS SOURCE <<< "$result"
 
 echo "  WA率: ${RATE}% (${WA_COUNT}/${TOTAL}件) — ${LEVEL}"
-capture_result=$(LC_ALL=C "$_AWK_BIN" '
+capture_result=$(LC_ALL=C "$_AWK_BIN" -v since="$REWORK_CAPTURE_SINCE_ISO" '
 function flush() {
-    if (cmd != "" && kind ~ /^(hotfix|rc|karo_direct)$/ && captured == "true" && !seen[cmd SUBSEP kind]++) count++
-    cmd = ""; kind = ""; captured = ""
+    if (cmd != "" && timestamp >= since && kind ~ /^(hotfix|rc|karo_direct)$/ && captured == "true" && !seen[cmd SUBSEP kind]++) count++
+    cmd = ""; timestamp = ""; kind = ""; captured = ""
 }
 /^- cmd_id:/ { flush(); cmd=$0; sub(/^- cmd_id:[[:space:]]*/, "", cmd); gsub(/[^[:alnum:]_:-]/, "", cmd); next }
+/^  timestamp:/ { timestamp=$0; sub(/^[[:space:]]*timestamp:[[:space:]]*/, "", timestamp); gsub(/[^[:alnum:]_:+-TZ]/, "", timestamp); next }
 /^  event_kind:/ { kind=$0; sub(/^[[:space:]]*event_kind:[[:space:]]*/, "", kind); gsub(/[^[:alnum:]_:-]/, "", kind); next }
 /^  auto_captured:/ { captured=$0; sub(/^[[:space:]]*auto_captured:[[:space:]]*/, "", captured); gsub(/[^[:alnum:]_:-]/, "", captured); next }
 END { flush(); print count+0 }
@@ -186,7 +188,9 @@ eligible_result=$(git -C "$REWORK_CAPTURE_GIT_DIR" log --format='%s' --since="$R
 }
 END { print count+0 }
 ')
-if [ -n "$eligible_result" ] && [ "$eligible_result" -gt 0 ] 2>/dev/null; then
+if [ -z "$REWORK_CAPTURE_SINCE_ISO" ]; then
+    echo "  手戻り捕捉率: N/A (invalid REWORK_CAPTURE_SINCE=$REWORK_CAPTURE_SINCE)"
+elif [ -n "$eligible_result" ] && [ "$eligible_result" -gt 0 ] 2>/dev/null; then
     capture_rate=$(( capture_result * 100 / eligible_result ))
     echo "  手戻り捕捉率: ${capture_rate}% (${capture_result}/${eligible_result}件; auto_captured/eligible_rework_commits)"
 else

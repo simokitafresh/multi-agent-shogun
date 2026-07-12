@@ -55,6 +55,7 @@ YAML
 @test "gate_workaround_rate: reports rework capture separately from manual WA rate" {
     cat > "$TEST_TMP/logs/karo_workarounds.yaml" <<'YAML'
 - cmd_id: cmd_karo_hotfix_a
+  timestamp: '2026-07-12T00:01:00Z'
   category: rework_auto_capture
   workaround: false
   event_kind: hotfix
@@ -78,4 +79,34 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" == *"WA率: 50% (1/2件)"* ]]
     [[ "$output" == *"手戻り捕捉率: 100% (1/1件; auto_captured/eligible_rework_commits)"* ]]
+}
+
+@test "gate_workaround_rate: capture numerator uses the same since window as eligible commits" {
+    cat > "$TEST_TMP/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_karo_hotfix_previous_day
+  timestamp: '2026-07-11T23:59:59Z'
+  category: rework_auto_capture
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+- cmd_id: cmd_karo_hotfix_today
+  timestamp: '2026-07-12T00:01:00Z'
+  category: rework_auto_capture
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+YAML
+    git -C "$TEST_TMP" init -q
+    git -C "$TEST_TMP" config user.email test@example.com
+    git -C "$TEST_TMP" config user.name test
+    touch "$TEST_TMP/fixture"
+    git -C "$TEST_TMP" add fixture
+    git -C "$TEST_TMP" commit -qm "cmd_karo_hotfix_today"
+
+    run env REWORK_CAPTURE_GIT_DIR="$TEST_TMP" REWORK_CAPTURE_SINCE="2026-07-12T00:00:00Z" \
+        bash "$TEST_TMP/scripts/gates/gate_workaround_rate.sh" --last 2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"手戻り捕捉率: 100% (1/1件; auto_captured/eligible_rework_commits)"* ]]
+    [[ "$output" != *"200%"* ]]
 }

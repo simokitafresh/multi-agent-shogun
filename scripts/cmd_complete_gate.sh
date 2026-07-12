@@ -1647,8 +1647,8 @@ capture_completed_rework_event() {
     local wa_file="${KARO_WORKAROUNDS_FILE:-$LOG_DIR/karo_workarounds.yaml}"
     local wa_lock="${KARO_WORKAROUNDS_LOCK_FILE:-$(lock_path "$wa_file")}"
     local result
-    result=$( (
-        flock -w 10 200 || { echo "WARN: lock timeout"; exit 0; }
+    if ! result=$( (
+        flock -w 10 200 || { echo "ERROR: lock timeout"; exit 1; }
         python3 - "$wa_file" "$cmd_id" "$event_kind" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" <<'PY'
 import os
 import re
@@ -1696,7 +1696,10 @@ finally:
         os.unlink(temporary)
 print(f"captured=1 event_kind={event_kind}")
 PY
-    ) 200>"$wa_lock" ) || result="WARN: capture failed"
+    ) 200>"$wa_lock" ); then
+        echo "  [ERROR] rework event capture failed: ${result:-unknown error}" >&2
+        return 1
+    fi
     echo "  ${result}"
 }
 
@@ -7687,6 +7690,13 @@ if [ "$ALL_CLEAR" = true ]; then
         append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcdp_production_check_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
         exit 1
     fi
+    # cmd_3862 RC: 観測イベントはCLEAR通知・完了後処理より先に同期永続化する。
+    # 非同期失敗を握り潰すと観測経路バイパスが再発するため、失敗時は通知せずBLOCKする。
+    if ! capture_completed_rework_event "$CMD_ID"; then
+        echo "GATE BLOCK: ${CMD_ID}:rework_event_capture_failed"
+        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\trework_event_capture_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
+        exit 1
+    fi
     echo "GATE CLEAR: cmd完了許可"
     append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
@@ -7706,8 +7716,6 @@ if [ "$ALL_CLEAR" = true ]; then
     send_clear_notifications_once "$CMD_ID" "GATE CLEAR immediate"
     (update_karo_workaround_resolutions "$CMD_ID" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [WARN] karo workaround resolution update failed (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
     echo "Karo workaround resolution update: queued (async)"
-    (capture_completed_rework_event "$CMD_ID" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [WARN] rework event capture failed (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
-    echo "Rework event capture: queued (async)"
     (append_changelog "$CMD_ID" >/dev/null 2>&1 || true) &
     echo "CHANGELOG: queued (async)"
 

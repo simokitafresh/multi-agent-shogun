@@ -75,6 +75,7 @@ source "$SCRIPT_DIR/scripts/lib/ctx_utils.sh"
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/scripts/lib/firefighting_keywords.sh"
+source "$SCRIPT_DIR/scripts/lib/gate_hook_quality_contract.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 
 # WSL2 NTFS最適化: field_getの依存ログ(flock+stat+write)を抑制。65回×20ms=1.3s削減
@@ -8474,7 +8475,7 @@ maybe_notify_draft_review() {
     local cmd_id="$2"
     local ninja_name="$3"
     local deploy_type="${4:-task_assigned}"
-    local title ac_count message
+    local title ac_count message quality_contract
 
     if [ "$deploy_type" != "task_assigned" ]; then
         log "draft_review: SKIP (type=${deploy_type})"
@@ -8502,6 +8503,9 @@ maybe_notify_draft_review() {
         return 0
     fi
 
+    quality_contract="$(deploy_task_quality_contract_result "$task_file")"
+    log "draft_review quality_contract: ${quality_contract}"
+
     if ! ac_count=$(count_task_acceptance_criteria "$task_file" "$cmd_id"); then
         log "draft_review: WARN (ac_count unavailable; sending review)"
         ac_count=2
@@ -8520,6 +8524,54 @@ maybe_notify_draft_review() {
     else
         log "draft_review: WARN (inbox_write failed)"
     fi
+}
+
+# Direct/karo_direct tasks do not traverse cmd_save. Normalize task YAML to a
+# standalone block, then apply the same detector-quality evaluator as draft review.
+deploy_task_quality_contract_result() {
+    local task_file="$1"
+    local task_block applicable action fp
+    [[ -f "$task_file" ]] || { printf 'UNAVAILABLE'; return 0; }
+    task_block="$(python3 - "$task_file" <<'PY' 2>/dev/null
+import sys, yaml
+try:
+    data = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+    task = data.get('task', data)
+    if isinstance(task, dict):
+        # The shared evaluator only needs the detector-relevant text.  Emit a
+        # stable, read-only projection instead of serializing operational YAML.
+        for key in ('project', 'title', 'purpose', 'command', 'acceptance_criteria', 'quality_gate'):
+            value = task.get(key)
+            if value not in (None, '', [], {}):
+                print(f'{key}: {value}')
+except Exception:
+    pass
+PY
+)"
+    IFS=$'\t' read -r applicable action fp < <(gate_hook_quality_contract_evaluate "$task_block")
+    [[ "$applicable" == "yes" ]] || { printf 'NOT_APPLICABLE'; return 0; }
+    if [[ "$action" == "pass" && "$fp" == "pass" ]]; then
+        printf 'PASS'
+    else
+        printf 'WARN(action=%s,fp=%s)' "$action" "$fp"
+    fi
+}
+
+deploy_task_direct_quality_contract_precheck() {
+    local task_file="$1"
+    local result
+    result="$(deploy_task_quality_contract_result "$task_file")"
+    case "$result" in
+        WARN*)
+            log "BLOCK(QUALITY_CONTRACT): ${result}"
+            echo "BLOCK: direct deployment detector quality contract failed: ${result}" >&2
+            return 1
+            ;;
+        *)
+            log "quality_contract: ${result}"
+            return 0
+            ;;
+    esac
 }
 
 capture_done_redeploy_context() {
@@ -9280,6 +9332,10 @@ except Exception:
                 fi
                 check_yaml_freshness "$YAML_FILE" "$SCRIPT_DIR"
             fi
+            deploy_task_direct_quality_contract_precheck "$task_yaml" || {
+                deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                return 1
+            }
             log "direct_mode: skipping resolve_cmd_to_task for ${CMD_ID} (shogun_to_karo.yaml not required)"
             # cmd_2481事故修正: --directでもparent_cmd/task_id/statusを更新する
             # resolve_cmd_to_taskスキップ時に旧cmd文脈で後続inject処理が動作するバグを防止

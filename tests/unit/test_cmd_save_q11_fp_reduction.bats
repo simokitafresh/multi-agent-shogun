@@ -6,6 +6,7 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SRC_SAVE_SCRIPT" ] || return 1
+    source "$PROJECT_ROOT/scripts/lib/gate_hook_quality_contract.sh"
 
     eval "$(sed -n '/^cmd_text_matches_pattern()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^trim_inline_yaml_scalar()/,/^}/p' "$SRC_SAVE_SCRIPT")"
@@ -21,7 +22,8 @@ setup_file() {
     eval "$(sed -n '/^collect_q11_guard_list()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_gate_hook_action_conversion()/,/^}/p' "$SRC_SAVE_SCRIPT")"
     eval "$(sed -n '/^check_gate_hook_fp_measurement_connection()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    export -f cmd_text_matches_pattern trim_inline_yaml_scalar load_cmd_block_cache cmd_block_has_field cmd_block_get_field \
+    export -f gate_hook_quality_contract_action_text gate_hook_quality_contract_measurement_text gate_hook_quality_contract_evaluate gate_hook_quality_contract_default_candidate \
+        cmd_text_matches_pattern trim_inline_yaml_scalar load_cmd_block_cache cmd_block_has_field cmd_block_get_field \
         is_gate_or_hook_addition_cmd _is_gate_or_hook_addition_cmd_uncached q11_has_existing_alternative_verification \
         collect_assumption_source_files extract_guard_list_from_files q11_has_guard_duplicate_check \
         collect_q11_guard_list check_gate_hook_action_conversion check_gate_hook_fp_measurement_connection
@@ -62,6 +64,15 @@ setup_file() {
     run check_gate_hook_fp_measurement_connection "$CMD_BLOCK_NC"
     [ "$status" -eq 0 ]
     [[ "$output" != *"FP計測への接続記載がありません"* ]]
+}
+
+@test "shared detector contract reports action and FP requirements independently" {
+    always_candidate() { return 0; }
+    export -f always_candidate
+
+    run gate_hook_quality_contract_evaluate $'command: |\n  add a new gate\nacceptance_criteria:\n  - print a warning' always_candidate
+    [ "$status" -eq 0 ]
+    [ "$output" = $'yes\tmissing\tmissing' ]
 }
 
 setup() {

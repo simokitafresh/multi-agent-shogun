@@ -2062,6 +2062,34 @@ CASES
     [ "$output" -eq 3 ]
 }
 
+@test "rework capture fails closed when its ledger lock cannot be opened" {
+    export KARO_WORKAROUNDS_FILE="$TEST_PROJECT/logs/karo_workarounds.yaml"
+    export KARO_WORKAROUNDS_LOCK_FILE="$TEST_PROJECT/missing/ledger.lock"
+    source "$GATE_HELPERS_FILE"
+
+    run capture_completed_rework_event "cmd_karo_hotfix_capture_failure"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"rework event capture failed"* ]]
+    [ ! -f "$KARO_WORKAROUNDS_FILE" ]
+}
+
+@test "normal CLEAR captures synchronously before sending its CLEAR notification" {
+    run SRC_GATE_SCRIPT="$SRC_GATE_SCRIPT" python3 - <<'PY'
+from pathlib import Path
+import os
+
+text = Path(os.environ['SRC_GATE_SCRIPT']).read_text(encoding='utf-8')
+start = text.index('if [ "$ALL_CLEAR" = true ]; then')
+end = text.index('    (append_changelog', start)
+branch = text[start:end]
+capture = branch.index('if ! capture_completed_rework_event "$CMD_ID"; then')
+notify = branch.index('send_clear_notifications_once "$CMD_ID" "GATE CLEAR immediate"')
+assert capture < notify, branch
+assert 'capture_completed_rework_event "$CMD_ID" >>' not in branch, branch
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "cmd_complete_gate wires rework event capture in normal and emergency CLEAR sections" {
     run bash -lc "grep -c 'capture_completed_rework_event \"\\\$CMD_ID\"' '$SRC_GATE_SCRIPT'"
     [ "$status" -eq 0 ]

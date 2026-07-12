@@ -88,6 +88,8 @@ fi
 
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
+# shellcheck source=scripts/lib/gate_hook_quality_contract.sh
+source "$SCRIPT_DIR/lib/gate_hook_quality_contract.sh"
 
 EXTRACT_COMMAND_FILES_SCRIPT="${CMD_SAVE_EXTRACT_COMMAND_FILES_SCRIPT:-$SCRIPT_DIR/lib/extract_command_files.sh}"
 
@@ -773,10 +775,11 @@ collect_q11_guard_list() {
 
 check_gate_hook_action_conversion() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
-    local action_text=""
+    local applicable action fp
 
     [[ -n "$block_text" ]] || return 0
-    is_gate_or_hook_addition_cmd "$block_text" || return 0
+    IFS=$'\t' read -r applicable action fp < <(gate_hook_quality_contract_evaluate "$block_text" is_gate_or_hook_addition_cmd)
+    [[ "$applicable" == "yes" ]] || return 0
 
     echo "INFO: gate/hook追加cmdです。既存強制フロー候補を先に検討してください:" >&2
     echo "  - cmd_save.sh: 将軍起票時の品質gateへ接続する" >&2
@@ -785,30 +788,7 @@ check_gate_hook_action_conversion() {
     echo "  - inbox_write.sh: 通信時の強制・遮断へ接続する" >&2
     echo "  - gate_report_format.sh: 報告提出時の構造検査へ接続する" >&2
 
-    action_text="$(printf '%s\n' "$block_text" | awk '
-        /^[[:space:]]{4}command:[[:space:]]*\|/ { in_command=1; print; next }
-        /^[[:space:]]{4}command:[[:space:]]*[^|]/ {
-            sub(/^[[:space:]]{4}command:[[:space:]]*/, "")
-            print
-            next
-        }
-        /^[[:space:]]{4}acceptance_criteria:[[:space:]]*$/ { in_ac=1; print; next }
-        /^[[:space:]]{4}acceptance_criteria:[[:space:]]*\[/ {
-            sub(/^[[:space:]]{4}acceptance_criteria:[[:space:]]*/, "")
-            print
-            next
-        }
-        (in_command || in_ac) && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ {
-            in_command=0
-            in_ac=0
-            next
-        }
-        in_command && /^[[:space:]]{4,}/ { print; next }
-        in_ac && /^[[:space:]]{6,}/ { print; next }
-    ')"
-
-    [[ -n "${action_text:-}" ]] || return 0
-    if printf '%s\n' "$action_text" | grep -qiE 'BLOCK|exit[[:space:]]+1|強制|自動実行|自動化|遮断|停止|失敗させ|必須化|止める'; then
+    if [[ "$action" != "missing" ]]; then
         return 0
     fi
 
@@ -819,24 +799,12 @@ check_gate_hook_action_conversion() {
 
 check_gate_hook_fp_measurement_connection() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
-    local measurement_text=""
+    local applicable action fp
 
     [[ -n "$block_text" ]] || return 0
-    is_gate_or_hook_addition_cmd "$block_text" || return 0
-
-    measurement_text="$(printf '%s\n' "$block_text" | awk '
-        /^[[:space:]]{4}command:[[:space:]]*\|/ { in_command=1; print; next }
-        /^[[:space:]]{4}command:[[:space:]]*[^|]/ { sub(/^[[:space:]]{4}command:[[:space:]]*/, ""); print; next }
-        /^[[:space:]]{4}acceptance_criteria:[[:space:]]*$/ { in_ac=1; print; next }
-        /^[[:space:]]{4}acceptance_criteria:[[:space:]]*\[/ { sub(/^[[:space:]]{4}acceptance_criteria:[[:space:]]*/, ""); print; next }
-        /^[[:space:]]{4}quality_gate:[[:space:]]*$/ { in_qg=1; print; next }
-        (in_command || in_ac || in_qg) && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0; in_ac=0; in_qg=0; next }
-        in_command && /^[[:space:]]{4,}/ { print; next }
-        in_ac && /^[[:space:]]{6,}/ { print; next }
-        in_qg && /^[[:space:]]{6,}/ { print; next }
-    ')"
-
-    if printf '%s\n' "$measurement_text" | grep -qiE 'FP[率計測]|false[ _-]?positive|偽陽性|誤発報|detector_fp_rate|gate_fire_log|loop_ledger|cmd_design_quality'; then
+    IFS=$'\t' read -r applicable action fp < <(gate_hook_quality_contract_evaluate "$block_text" is_gate_or_hook_addition_cmd)
+    [[ "$applicable" == "yes" ]] || return 0
+    if [[ "$fp" != "missing" ]]; then
         return 0
     fi
 

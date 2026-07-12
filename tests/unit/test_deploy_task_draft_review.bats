@@ -303,3 +303,41 @@ YAML
     [[ "$output" == *"draft_review: SKIP (env)"* ]]
     [ ! -f "$TEST_PROJECT/logs/inbox_write_calls.log" ]
 }
+
+@test "direct detector deployment fails closed without action conversion and FP measurement" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  project: infra
+  command: "新規gateを追加して警告を出す"
+YAML
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"
+        log() { printf "%s\\n" "$1"; }
+        deploy_task_direct_quality_contract_precheck "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"
+    '
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: direct deployment detector quality contract failed"* ]]
+}
+
+@test "direct detector deployment accepts action conversion and FP measurement" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  project: infra
+  command: "新規gateを追加し、BLOCKしてdetector_fp_rateでFP率計測する"
+YAML
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"
+        log() { printf "%s\\n" "$1"; }
+        deploy_task_direct_quality_contract_precheck "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"
+    '
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"quality_contract: PASS"* ]]
+}
