@@ -20,6 +20,7 @@ def main() -> int:
         import psycopg2
         conn = psycopg2.connect(os.environ["DATABASE_URL"])
         try:
+            conn.set_session(readonly=True, autocommit=False)
             with conn.cursor() as cur:
                 cur.execute(sql)
                 for row in cur.fetchall() if cur.description else ():
@@ -31,7 +32,7 @@ def main() -> int:
     if capability != "transactional_restore" or mode != "transactional_restore":
         raise SystemExit("unknown capability or mode")
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=("dry-run", "restore"))
+    parser.add_argument("action", choices=("backup", "dry-run", "restore"))
     parser.add_argument("--artifact", required=True)
     parser.add_argument("--service", default="dm-signal-backend")
     args = parser.parse_args()
@@ -41,12 +42,18 @@ def main() -> int:
         raise SystemExit("cannot load restore dependency")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    module.restore(
-        os.environ["DATABASE_URL"], args.artifact,
-        os.environ["DB_CAPABILITY_EXPECTED_COMMIT"], True,
-        "P4_RESTORE", os.environ["DB_CAPABILITY_EXPECTED_COMMIT"], False,
-        dry_run=args.action == "dry-run",
-    )
+    if args.action == "backup":
+        module.backup(
+            os.environ["DATABASE_URL"], args.artifact, args.service,
+            os.environ["DB_CAPABILITY_EXPECTED_COMMIT"],
+        )
+    else:
+        module.restore(
+            os.environ["DATABASE_URL"], args.artifact,
+            os.environ["DB_CAPABILITY_EXPECTED_COMMIT"], True,
+            "P4_RESTORE", os.environ["DB_CAPABILITY_EXPECTED_COMMIT"], False,
+            dry_run=args.action == "dry-run",
+        )
     return 0
 
 

@@ -5,6 +5,7 @@
       "tool": "scripts/lib/db_capability_tool.py",
       "modes": ["readonly"],
       "confirm": "READONLY_DB_CHECK",
+      "required_credential_keys": ["DATABASE_URL"],
       "requires_expected_commit": false
     },
     "transactional_restore": {
@@ -13,6 +14,9 @@
       "dependency_tool": "scripts/oneshot/cmd_p4_prod_restore_contract.py",
       "modes": ["transactional_restore"],
       "confirm": "TRANSACTIONAL_RESTORE_ROLLBACK_READY",
+      "actions": ["backup", "dry-run", "restore"],
+      "allowed_child_flags": ["--artifact", "--service"],
+      "required_credential_keys": ["DATABASE_URL"],
       "requires_expected_commit": true
     }
   }
