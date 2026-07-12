@@ -8721,41 +8721,66 @@ if estimated <= 10:
     raise SystemExit(0)
 
 nullish_reasons = {"none", "n/a", "na", "null", "unknown", "tbd", "fill_this"}
-split_reason = str(task.get("split_decision_reason") or "").strip()
 if estimated <= 15:
     fail_msg = (
-        "estimated_minutes exceeds the 10-minute target; task.split_decision_reason "
-        "must be exactly one line 'boundary=<reason>; split_cost=<reason>' with both "
-        "values non-empty and non-placeholder, boundary before split_cost, no duplicate "
-        "or extra keys, and no line breaks"
+        "estimated_minutes exceeds the 10-minute target; task.split_decision must be a "
+        "mapping with exactly boundary_ac_ids (non-empty list of unique ids that exist in "
+        "this task's own acceptance_criteria), integration_tasks and review_round_trips "
+        "(non-negative integers, not booleans, summing to at least 1); free-form "
+        "split_decision_reason text is not accepted as a substitute"
     )
-    if not split_reason or "\n" in split_reason or "\r" in split_reason:
+
+    ac_list = task.get("acceptance_criteria")
+    known_ac_ids = set()
+    if isinstance(ac_list, list):
+        for item in ac_list:
+            if isinstance(item, dict):
+                ac_id = item.get("id")
+                if isinstance(ac_id, str) and ac_id.strip():
+                    known_ac_ids.add(ac_id.strip())
+
+    split_decision = task.get("split_decision")
+    if not isinstance(split_decision, dict):
         print(fail_msg)
         raise SystemExit(2)
-    expected_keys = ["boundary", "split_cost"]
-    segments = split_reason.split(";")
-    parsed = {}
-    structure_ok = len(segments) == len(expected_keys)
-    if structure_ok:
-        for expected_key, segment in zip(expected_keys, segments):
-            if "=" not in segment:
-                structure_ok = False
-                break
-            key, _, value = segment.partition("=")
-            key = key.strip()
-            value = value.strip()
-            if key != expected_key or key in parsed:
-                structure_ok = False
-                break
-            if not value or value.lower() in nullish_reasons:
-                structure_ok = False
-                break
-            parsed[key] = value
-    if not structure_ok or set(parsed) != set(expected_keys):
+
+    allowed_keys = {"boundary_ac_ids", "integration_tasks", "review_round_trips"}
+    if set(split_decision.keys()) != allowed_keys:
         print(fail_msg)
         raise SystemExit(2)
+
+    boundary_ac_ids = split_decision.get("boundary_ac_ids")
+    if (not isinstance(boundary_ac_ids, list) or not boundary_ac_ids
+            or any(not isinstance(x, str) or not x.strip() for x in boundary_ac_ids)):
+        print(fail_msg)
+        raise SystemExit(2)
+    normalized_ids = [x.strip() for x in boundary_ac_ids]
+    if len(set(normalized_ids)) != len(normalized_ids):
+        print(fail_msg)
+        raise SystemExit(2)
+    if not known_ac_ids or any(x not in known_ac_ids for x in normalized_ids):
+        print(fail_msg)
+        raise SystemExit(2)
+
+    def _nonneg_int(value):
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, int):
+            return value if value >= 0 else None
+        return None
+
+    integration_tasks = _nonneg_int(split_decision.get("integration_tasks"))
+    review_round_trips = _nonneg_int(split_decision.get("review_round_trips"))
+    if integration_tasks is None or review_round_trips is None:
+        print(fail_msg)
+        raise SystemExit(2)
+    if integration_tasks + review_round_trips < 1:
+        print(fail_msg)
+        raise SystemExit(2)
+
     print(f"PASS natural-boundary exception estimated_minutes={estimated:g} "
-          f"split_decision_reason={split_reason}")
+          f"boundary_ac_ids={normalized_ids} integration_tasks={integration_tasks} "
+          f"review_round_trips={review_round_trips}")
     raise SystemExit(0)
 
 env = task.get("execution_env")

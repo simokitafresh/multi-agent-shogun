@@ -1,7 +1,10 @@
 #!/usr/bin/env bats
-# test_deploy_task_ten_min_contract.bats — cmd_karo_hotfix_ten_min_task_contract_tests_202607122006
+# test_deploy_task_ten_min_contract.bats — cmd_karo_hotfix_task_natural_boundary_contract_rc4_202607122210
 # 配備前の自然境界契約をvalid/invalid corpusで固定する（10分目安、15分hard境界）。
 # 発端: 殿指摘(2026-07-12 19:57)「10分程度のタスクを回す仕組みなら途中でエラーが出たときに対処しやすい」
+# RC4: split_decision_reasonの自由文構造(boundary=x; split_cost=x)はrc=0を通す抜け道だった。
+#      split_decisionを構造化mappingへ変更し、boundary_ac_idsは同一taskのacceptance_criteria実在ID参照、
+#      integration_tasks/review_round_tripsはboolでない非負整数かつ合計1以上をcross-field検証する。
 # scope: deploy_task.shは無編集・無commit。実配備/inbox/tmux環境には触れない隔離テスト。
 
 load '../helpers/deploy_task_scaffold'
@@ -56,9 +59,9 @@ run_precheck() {
     [ "$status" -eq 0 ]
 }
 
-# --- 分岐2: 10分超15分以下は boundary=<reason>; split_cost=<reason> の一行構造が必須 ---
+# --- 分岐2: 10分超15分以下は split_decision 構造化mappingが必須 ---
 
-@test "ten_min_contract: estimated_minutes=11かつsplit理由なしはexit 2でBLOCK" {
+@test "ten_min_contract: estimated_minutes=11かつsplit_decisionなしはexit 2でBLOCK" {
     local f
     f="$(write_fixture no_evidence_task 'task:
   task_id: cmd_test_no_evidence
@@ -68,156 +71,249 @@ run_precheck() {
     [[ "$output" == *"BLOCK: natural-boundary task contract failed"* ]]
 }
 
-@test "ten_min_contract: split_decision_reasonが単文字xならexit 2でBLOCK" {
+@test "ten_min_contract: 旧自由文split_decision_reason(boundary=/split_cost=)のみは移行抜け道にせずexit 2でBLOCK" {
+    local f
+    f="$(write_fixture legacy_free_text_task 'task:
+  task_id: cmd_test_legacy_free_text
+  estimated_minutes: 11
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  - id: AC2
+    description: "second"
+  split_decision_reason: "boundary=単一validator変更と同じcorpus検証が不可分; split_cost=分割すると統合taskとreview往復が増える"')"
+    run_precheck "$f"
+    [ "$status" -eq 2 ]
+}
+
+@test "ten_min_contract: split_decision_reason=単一文字xでも移行抜け道にせずexit 2でBLOCK" {
     local f
     f="$(write_fixture one_char_reason_task 'task:
   task_id: cmd_test_one_char_reason
   estimated_minutes: 11
-  split_decision_reason: x')"
+  split_decision_reason: "boundary=x; split_cost=x"')"
     run_precheck "$f"
     [ "$status" -eq 2 ]
 }
 
-@test "ten_min_contract: 15文字無意味列ならexit 2でBLOCK" {
+@test "ten_min_contract: split_decisionが未知ACを参照すればexit 2でBLOCK" {
     local f
-    f="$(write_fixture meaningless_reason_task 'task:
-  task_id: cmd_test_meaningless_reason
+    f="$(write_fixture unknown_ac_task 'task:
+  task_id: cmd_test_unknown_ac
   estimated_minutes: 11
-  split_decision_reason: xxxxxxxxxxxxxxx')"
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  split_decision:
+    boundary_ac_ids: ["AC9"]
+    integration_tasks: 1
+    review_round_trips: 0')"
     run_precheck "$f"
     [ "$status" -eq 2 ]
 }
 
-@test "ten_min_contract: 構造なしの抽象的長文理由ならexit 2でBLOCK" {
+@test "ten_min_contract: boundary_ac_idsが空配列ならexit 2でBLOCK" {
     local f
-    f="$(write_fixture abstract_reason_task 'task:
-  task_id: cmd_test_abstract_reason
+    f="$(write_fixture empty_ac_ids_task 'task:
+  task_id: cmd_test_empty_ac_ids
   estimated_minutes: 11
-  split_decision_reason: "これは具体的な理由で必要だからです"')"
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  split_decision:
+    boundary_ac_ids: []
+    integration_tasks: 1
+    review_round_trips: 0')"
     run_precheck "$f"
     [ "$status" -eq 2 ]
 }
 
-@test "ten_min_contract: キーワードを並べただけで構造(boundary=/split_cost=)なしならexit 2でBLOCK" {
+@test "ten_min_contract: boundary_ac_idsに重複があればexit 2でBLOCK" {
     local f
-    f="$(write_fixture keyword_only_task 'task:
-  task_id: cmd_test_keyword_only
+    f="$(write_fixture duplicate_ac_ids_task 'task:
+  task_id: cmd_test_duplicate_ac_ids
   estimated_minutes: 11
-  split_decision_reason: "不可分 同一の二値検証境界 統合task review往復"')"
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  - id: AC2
+    description: "second"
+  split_decision:
+    boundary_ac_ids: ["AC1", "AC1"]
+    integration_tasks: 1
+    review_round_trips: 0')"
     run_precheck "$f"
     [ "$status" -eq 2 ]
 }
 
-@test "ten_min_contract: boundary欠落(split_costのみ)ならexit 2でBLOCK" {
+@test "ten_min_contract: integration_tasksが負数ならexit 2でBLOCK" {
     local f
-    f="$(write_fixture boundary_missing_task 'task:
-  task_id: cmd_test_boundary_missing
+    f="$(write_fixture negative_integration_task 'task:
+  task_id: cmd_test_negative_integration
   estimated_minutes: 11
-  split_decision_reason: "split_cost=分割すると統合taskとreview往復が増える"')"
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  split_decision:
+    boundary_ac_ids: ["AC1"]
+    integration_tasks: -1
+    review_round_trips: 0')"
     run_precheck "$f"
     [ "$status" -eq 2 ]
 }
 
-@test "ten_min_contract: split_cost欠落(boundaryのみ)ならexit 2でBLOCK" {
+@test "ten_min_contract: review_round_tripsが負数ならexit 2でBLOCK" {
     local f
-    f="$(write_fixture split_cost_missing_task 'task:
-  task_id: cmd_test_split_cost_missing
+    f="$(write_fixture negative_review_task 'task:
+  task_id: cmd_test_negative_review
   estimated_minutes: 11
-  split_decision_reason: "boundary=単一validator変更と同じcorpus検証が不可分"')"
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  split_decision:
+    boundary_ac_ids: ["AC1"]
+    integration_tasks: 0
+    review_round_trips: -1')"
     run_precheck "$f"
     [ "$status" -eq 2 ]
 }
 
-@test "ten_min_contract: 両値がplaceholder(none/tbd)ならexit 2でBLOCK" {
+@test "ten_min_contract: integration_tasksが文字列数値('1')ならexit 2でBLOCK" {
     local f
-    f="$(write_fixture placeholder_values_task 'task:
-  task_id: cmd_test_placeholder_values
+    f="$(write_fixture string_numeric_task 'task:
+  task_id: cmd_test_string_numeric
   estimated_minutes: 11
-  split_decision_reason: "boundary=none; split_cost=tbd"')"
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  split_decision:
+    boundary_ac_ids: ["AC1"]
+    integration_tasks: "1"
+    review_round_trips: 0')"
     run_precheck "$f"
     [ "$status" -eq 2 ]
 }
 
-@test "ten_min_contract: split_decision_reasonが構造なしの複数行ならexit 2でBLOCK" {
+@test "ten_min_contract: review_round_tripsがboolならexit 2でBLOCK" {
     local f
-    f="$(write_fixture multiline_reason_task 'task:
-  task_id: cmd_test_multiline_reason
+    f="$(write_fixture bool_review_task 'task:
+  task_id: cmd_test_bool_review
   estimated_minutes: 11
-  split_decision_reason: |-
-    単一validatorとcorpusが不可分
-    分割するとreview往復が増える')"
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  split_decision:
+    boundary_ac_ids: ["AC1"]
+    integration_tasks: 0
+    review_round_trips: true')"
     run_precheck "$f"
     [ "$status" -eq 2 ]
 }
 
-@test "ten_min_contract: 構造ありでも複数行ならexit 2でBLOCK" {
+@test "ten_min_contract: integration_tasksとreview_round_tripsが両方0(合計0)ならexit 2でBLOCK" {
     local f
-    f="$(write_fixture multiline_structured_task 'task:
-  task_id: cmd_test_multiline_structured
+    f="$(write_fixture both_zero_cost_task 'task:
+  task_id: cmd_test_both_zero_cost
   estimated_minutes: 11
-  split_decision_reason: |-
-    boundary=単一validatorとcorpus検証が不可分
-    split_cost=分割すると統合taskとreview往復が増える')"
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  split_decision:
+    boundary_ac_ids: ["AC1"]
+    integration_tasks: 0
+    review_round_trips: 0')"
     run_precheck "$f"
     [ "$status" -eq 2 ]
 }
 
-@test "ten_min_contract: 順序入れ替え(split_costが先)ならexit 2でBLOCK" {
-    local f
-    f="$(write_fixture reversed_order_task 'task:
-  task_id: cmd_test_reversed_order
-  estimated_minutes: 11
-  split_decision_reason: "split_cost=分割すると統合taskとreview往復が増える; boundary=単一validator変更と同じcorpus検証が不可分"')"
-    run_precheck "$f"
-    [ "$status" -eq 2 ]
-}
-
-@test "ten_min_contract: boundaryキー重複ならexit 2でBLOCK" {
-    local f
-    f="$(write_fixture duplicate_key_task 'task:
-  task_id: cmd_test_duplicate_key
-  estimated_minutes: 11
-  split_decision_reason: "boundary=単一validator変更と同じcorpus検証が不可分; boundary=分割すると統合taskとreview往復が増える"')"
-    run_precheck "$f"
-    [ "$status" -eq 2 ]
-}
-
-@test "ten_min_contract: 余剰keyが混在すればexit 2でBLOCK" {
+@test "ten_min_contract: split_decisionに余剰keyが混在すればexit 2でBLOCK" {
     local f
     f="$(write_fixture extra_key_task 'task:
   task_id: cmd_test_extra_key
   estimated_minutes: 11
-  split_decision_reason: "boundary=単一validator変更と同じcorpus検証が不可分; split_cost=分割すると統合taskとreview往復が増える; extra=x"')"
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  split_decision:
+    boundary_ac_ids: ["AC1"]
+    integration_tasks: 1
+    review_round_trips: 0
+    extra: "x"')"
     run_precheck "$f"
     [ "$status" -eq 2 ]
 }
 
-@test "ten_min_contract: セミコロンでなくカンマ区切りならexit 2でBLOCK" {
+@test "ten_min_contract: split_decisionでintegration_tasksキーが欠落すればexit 2でBLOCK" {
     local f
-    f="$(write_fixture wrong_delimiter_task 'task:
-  task_id: cmd_test_wrong_delimiter
+    f="$(write_fixture missing_key_task 'task:
+  task_id: cmd_test_missing_key
   estimated_minutes: 11
-  split_decision_reason: "boundary=単一validator変更と同じcorpus検証が不可分, split_cost=分割すると統合taskとreview往復が増える"')"
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  split_decision:
+    boundary_ac_ids: ["AC1"]
+    review_round_trips: 1')"
     run_precheck "$f"
     [ "$status" -eq 2 ]
 }
 
-@test "ten_min_contract: 日本語の自由な説明文でもboundary=/split_cost=構造が揃えばPASS" {
+@test "ten_min_contract: taskにacceptance_criteria自体がなければsplit_decisionがあってもexit 2でBLOCK" {
     local f
-    f="$(write_fixture natural_boundary_task 'task:
-  task_id: cmd_test_natural_boundary
+    f="$(write_fixture no_ac_at_all_task 'task:
+  task_id: cmd_test_no_ac_at_all
   estimated_minutes: 11
-  split_decision_reason: "boundary=単一validator変更と同じcorpus検証が不可分; split_cost=分割すると統合taskとreview往復が増える"')"
+  split_decision:
+    boundary_ac_ids: ["AC1"]
+    integration_tasks: 1
+    review_round_trips: 0')"
+    run_precheck "$f"
+    [ "$status" -eq 2 ]
+}
+
+@test "ten_min_contract: split_decisionがmapping以外(文字列)ならexit 2でBLOCK" {
+    local f
+    f="$(write_fixture non_mapping_task 'task:
+  task_id: cmd_test_non_mapping
+  estimated_minutes: 11
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  split_decision: "boundary_ac_ids=AC1"')"
+    run_precheck "$f"
+    [ "$status" -eq 2 ]
+}
+
+@test "ten_min_contract: 実在AC参照+integration_tasks正の整数+review_round_trips0(言語非依存)ならPASS" {
+    local f
+    f="$(write_fixture valid_integration_task 'task:
+  task_id: cmd_test_valid_integration
+  estimated_minutes: 11
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  - id: AC2
+    description: "second"
+  split_decision:
+    boundary_ac_ids: ["AC1", "AC2"]
+    integration_tasks: 1
+    review_round_trips: 0')"
     run_precheck "$f"
     [ "$status" -eq 0 ]
 }
 
-@test "ten_min_contract: 英語の自由な説明文でもboundary=/split_cost=構造が揃えばPASS" {
+@test "ten_min_contract: 実在AC単一参照+integration_tasks0+review_round_trips正の整数ならPASS" {
     local f
-    f="$(write_fixture english_natural_boundary_task 'task:
-  task_id: cmd_test_english_natural_boundary
-  estimated_minutes: 11
-  split_decision_reason: "boundary=the validator and corpus form an indivisible binary boundary; split_cost=splitting adds an integration task and review round trip"')"
+    f="$(write_fixture valid_review_task 'task:
+  task_id: cmd_test_valid_review
+  estimated_minutes: 14
+  acceptance_criteria:
+  - id: AC1
+    description: "first"
+  split_decision:
+    boundary_ac_ids: ["AC1"]
+    integration_tasks: 0
+    review_round_trips: 2')"
     run_precheck "$f"
     [ "$status" -eq 0 ]
 }

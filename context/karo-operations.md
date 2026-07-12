@@ -79,7 +79,7 @@
 
 - 10分は目安、15分はhard境界。分割線は時間そのものではなく、独立してyes/no検証できる自然な境界に置く。
 - 分割するのは `分割利得（並列度向上 + エラー爆発半径縮小） > 統合コスト（統合task + review往復）` の場合だけ。
-- 11分の一体作業は割らず、`task.split_decision_reason` に `boundary=<不可分な理由>; split_cost=<統合taskまたはreview往復のコスト>` の一行構造で残す(順序固定・重複や余剰keyはBLOCK)。
+- 11分の一体作業は割らず、`task.split_decision` に構造化mappingで根拠を残す: `boundary_ac_ids`(同一taskのacceptance_criteria実在IDを重複なく列挙)、`integration_tasks`/`review_round_trips`(bool不可の非負整数、合計1以上)。自由文の`split_decision_reason`は移行抜け道にせずBLOCKする。例: `split_decision: {boundary_ac_ids: [AC1, AC2], integration_tasks: 1, review_round_trips: 0}`。
 - 独立した3分作業×3は10分へ寄せて束ねず、3本を並列配備する。
 - 15分超は既存long runtimeの具体的理由と正の実測秒数が揃う場合だけ例外とする。
 
