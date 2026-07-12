@@ -6089,9 +6089,14 @@ try:
         l_summary = str(lesson.get('summary', ''))
         l_content = str(lesson.get('content', ''))
         l_source = str(lesson.get('source', ''))
+        l_when = str(lesson.get('when', '') or '').strip()
+        l_how = str(lesson.get('how', '') or '').strip()
 
         title_text = l_title.lower()
-        other_text = f'{l_summary} {l_content} {l_source}'.lower()
+        # AC文の語は要約だけでなく、教訓が適用される条件(when)と
+        # 実行手順(how)にも現れる。ここを除外すると表層語の一致だけで
+        # 注入され、意味的に適合する教訓が低スコアで落ちる。
+        other_text = f'{l_summary} {l_content} {l_source} {l_when} {l_how}'.lower()
 
         keyword_score = 0
         for kw in keywords:
@@ -6103,7 +6108,6 @@ try:
 
         # D0: when未設定教訓のスコア降格 — when条件なしはキーワードのみで注入され
         # NOT_USEFUL率が高い(199/828=24%がwhen未設定, useful_rate 19%)
-        l_when = str(lesson.get('when', '') or '').strip()
         if not l_when or l_when == '未設定':
             score -= NO_WHEN_PENALTY
 

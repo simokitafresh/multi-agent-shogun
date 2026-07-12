@@ -403,7 +403,7 @@ EOF
 # ============================================================
 
 # --- Test 10: 既存insightのresolve → status確認 ---
-@test "resolve: sets status=resolved and resolved_reason" {
+@test "resolve: requires and records status, reason, artifact, and resolution time" {
     cat > "$TEST_TMPDIR/queue/insights.yaml" <<'EOF'
 insights:
 - id: INS-TEST-001
@@ -414,7 +414,7 @@ insights:
   status: pending
 EOF
 
-    run bash "$TEST_RESOLVE" INS-TEST-001 "fixed by cmd_1502"
+    run bash "$TEST_RESOLVE" INS-TEST-001 "fixed by cmd_1502" "commit deadbeef; test PASS"
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 
@@ -422,6 +422,12 @@ EOF
     [ "$status" -eq 0 ]
 
     run grep "resolved_reason" "$TEST_TMPDIR/queue/insights.yaml"
+    [ "$status" -eq 0 ]
+
+    run grep "action_artifact" "$TEST_TMPDIR/queue/insights.yaml"
+    [ "$status" -eq 0 ]
+
+    run grep "resolved_at" "$TEST_TMPDIR/queue/insights.yaml"
     [ "$status" -eq 0 ]
 }
 
@@ -433,7 +439,7 @@ insights:
   status: pending
 EOF
 
-    run bash "$TEST_RESOLVE" INS-NONEXISTENT "some reason"
+    run bash "$TEST_RESOLVE" INS-NONEXISTENT "some reason" "commit deadbeef"
     [ "$status" -ne 0 ]
     [[ "$output" == *"not found"* ]]
 }

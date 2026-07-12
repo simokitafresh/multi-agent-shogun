@@ -52,9 +52,11 @@ for lesson in lessons:
     l_title = str(lesson.get('title', ''))
     l_summary = str(lesson.get('summary', ''))
     l_content = str(lesson.get('content', ''))
+    l_when = str(lesson.get('when', ''))
+    l_how = str(lesson.get('how', ''))
 
     title_text = l_title.lower()
-    other_text = f'{l_summary} {l_content}'.lower()
+    other_text = f'{l_summary} {l_content} {l_when} {l_how}'.lower()
 
     score = 0
     for kw in keywords:
@@ -80,8 +82,24 @@ for score, lid in scored:
 PY
 }
 
+@test "when/how semantic context contributes to task keyword relevance" {
+    run run_scoring "infra" \
+        '["semantic", "injection"]' \
+        '[
+          {"id": "L_WHEN_HOW", "title": "generic", "summary": "", "content": "", "when": "semantic injection score is low", "how": "improve semantic injection relevance", "_source_project": "infra"},
+          {"id": "L_UNRELATED", "title": "generic", "summary": "", "content": "", "_source_project": "infra"}
+        ]' \
+        "exact"
+    [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+    [[ "$output" == *"L_WHEN_HOW:6"* ]]
+    [[ "$output" != *"L_UNRELATED"* ]]
+}
+
 @test "cmd_2931 AC1: semantic index has related_lessons on at least 10 concepts" {
-    count=$(grep -c '^| related_lessons |' "$PROJECT_ROOT/docs/semantic-index/index.md")
+    # semantic_map_generate tests can regenerate the working artifact in a
+    # parallel Bats worker.  Validate the committed CI input instead of that
+    # mutable working file; a commit that removes these relations still fails.
+    count=$(git -C "$PROJECT_ROOT" show HEAD:docs/semantic-index/index.md | grep -c '^| related_lessons |' || true)
     [ "$count" -ge 10 ]
 }
 
