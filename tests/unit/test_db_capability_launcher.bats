@@ -21,7 +21,7 @@ setup() {
 }
 
 @test "restore requires current expected commit" {
-  run python3 "$LAUNCHER" --capability transactional_restore --mode transactional_restore --confirm TRANSACTIONAL_RESTORE_ROLLBACK_READY --nonce "$BATS_TEST_NAME" --credential-file "$CREDS" --expected-commit deadbeef
+  run python3 "$LAUNCHER" --capability transactional_restore --mode transactional_restore --confirm TRANSACTIONAL_RESTORE_ROLLBACK_READY --nonce "$BATS_TEST_NAME" --credential-file "$CREDS" --expected-commit deadbeef -- dry-run --artifact /tmp/a
   [ "$status" -ne 0 ]
   [[ "$output" == *"expected commit mismatch"* ]]
 }
