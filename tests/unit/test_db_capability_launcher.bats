@@ -36,11 +36,19 @@ setup() {
 }
 
 @test "registry working-tree alteration fails closed against HEAD" {
-  registry="$ROOT/config/db_capabilities.json"
-  cp "$registry" "$BATS_TEST_TMPDIR/registry.save"
+  fixture="$BATS_TEST_TMPDIR/repo"
+  mkdir -p "$fixture/scripts/lib" "$fixture/config"
+  cp "$LAUNCHER" "$fixture/scripts/db_capability_launcher.py"
+  cp "$ROOT/scripts/lib/db_capability_tool.py" "$fixture/scripts/lib/db_capability_tool.py"
+  cp "$ROOT/config/db_capabilities.json" "$fixture/config/db_capabilities.json"
+  git -C "$fixture" init -q
+  git -C "$fixture" config user.email fixture@example.invalid
+  git -C "$fixture" config user.name fixture
+  git -C "$fixture" add scripts/db_capability_launcher.py scripts/lib/db_capability_tool.py config/db_capabilities.json
+  git -C "$fixture" commit -qm fixture
+  registry="$fixture/config/db_capabilities.json"
   printf '\n ' >> "$registry"
-  run python3 "$LAUNCHER" --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce "$BATS_TEST_NAME" --credential-file "$CREDS"
-  mv "$BATS_TEST_TMPDIR/registry.save" "$registry"
+  run python3 "$fixture/scripts/db_capability_launcher.py" --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce "$BATS_TEST_NAME" --credential-file "$CREDS"
   [ "$status" -ne 0 ]
   [[ "$output" == *"registry is untracked or altered"* ]]
 }
