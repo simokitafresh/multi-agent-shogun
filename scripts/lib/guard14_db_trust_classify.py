@@ -143,6 +143,13 @@ HTTP_CLIENT_CALL_RE = re.compile(
     r"\b(?:requests|httpx)\.(?:get|post|put|patch|delete|request)\s*\("
     r"|\burllib\.request\.urlopen\s*\("
 )
+CURL_CMD_RE = re.compile(r"^(?:curl|curl\.exe)$")
+CALL_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_.]*)\s*\(")
+SAFE_CREDENTIAL_CALLS = {
+    "getenv", "os.getenv", "environ.get", "os.environ.get",
+    "load_dotenv", "dotenv_values",
+    "strip", "lstrip", "rstrip", "encode", "decode", "format",
+}
 
 
 def _tokenize(command: str) -> list[str]:
@@ -207,7 +214,24 @@ def _segment_has_env_credential_source(tokens: list[str]) -> bool:
 
 
 def _segment_has_explicit_http_call(tokens: list[str]) -> bool:
-    return HTTP_CLIENT_CALL_RE.search(" ".join(tokens)) is not None
+    return (
+        HTTP_CLIENT_CALL_RE.search(" ".join(tokens)) is not None
+        or CURL_CMD_RE.match(_segment_cmd0(tokens)) is not None
+    )
+
+
+def _segment_has_opaque_call(tokens: list[str]) -> bool:
+    """Return true when an env-bearing command contains execution we cannot prove HTTP-only."""
+    text = " ".join(tokens)
+    http_spans = [m.span() for m in HTTP_CLIENT_CALL_RE.finditer(text)]
+    for match in CALL_RE.finditer(text):
+        if any(start <= match.start() < end for start, end in http_spans):
+            continue
+        name = match.group(1)
+        if name in SAFE_CREDENTIAL_CALLS or name.rsplit(".", 1)[-1] in SAFE_CREDENTIAL_CALLS:
+            continue
+        return True
+    return False
 
 
 def _split_into_segments(all_tokens: list[str]) -> list[list[str]]:
@@ -327,7 +351,10 @@ def classify(command: str) -> str:
     if credential_segments and not connection_segments:
         # Render等の固有語では免除しない。HTTP clientの構造がcommand内に明示された場合のみ
         # credential-onlyと証明できる。opaque ORM/init_from_envはfail-closedを維持する。
-        if any(_segment_has_explicit_http_call(seg) for seg in segments):
+        if (
+            any(_segment_has_explicit_http_call(seg) for seg in segments)
+            and not any(_segment_has_opaque_call(seg) for seg in segments)
+        ):
             return "not_connection"
         return "connection:untrusted"
 

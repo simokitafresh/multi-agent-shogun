@@ -168,6 +168,26 @@ _classify() {
     [[ "$output" == *"Guard14"* ]]
 }
 
+@test "Guard14 classifier: env plus explicit HTTP-only clients are allowed" {
+    _classify "source .env && python3 -c \"requests.get('https://example.com', headers={'x': os.getenv('TOKEN').strip()})\""
+    [ "$output" = "not_connection" ]
+    _classify "curl -H \"Authorization: Bearer $TOKEN\" https://example.com && source .env"
+    [ "$output" = "not_connection" ]
+    _classify "source .env && python3 -c \"httpx.post('https://example.com')\""
+    [ "$output" = "not_connection" ]
+    _classify "source .env && python3 -c \"urllib.request.urlopen('https://example.com')\""
+    [ "$output" = "not_connection" ]
+}
+
+@test "Guard14 classifier: env plus opaque initializer stays fail-closed despite HTTP call" {
+    _classify "source .env && python3 -c \"myorm.init_from_env(); requests.get('https://example.com')\""
+    [ "$output" = "connection:untrusted" ]
+    _classify "python3 -c \"requests.get('https://example.com'); myorm.init_from_env()\" && source .env"
+    [ "$output" = "connection:untrusted" ]
+    _classify "source .env && python3 -c 'myorm.init_from_env(); requests.get(\"https://example.com\")'"
+    [ "$output" = "connection:untrusted" ]
+}
+
 @test "Guard14 classifier: skill-example full connect (quoted semicolon inside -c) -> connection:untrusted" {
     _classify "python3 -c \"import psycopg2; conn = psycopg2.connect(host='dpg-d542chchg0os73979vg0-a.singapore-postgres.render.com', port=5432, dbname='dm_signal', user='dm_signal_user', password='x', sslmode='require')\""
     [ "$status" -eq 0 ]
