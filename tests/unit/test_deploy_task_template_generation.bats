@@ -765,7 +765,7 @@ YAML
     )
 
     local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_fill_this_literal.yaml"
-    run rg -n "FILL_THIS" "$report_path"
+    run grep -n "FILL_THIS" "$report_path"
     [ "$status" -eq 1 ]
     grep -Fq "FILL-THIS" "$report_path"
 
@@ -1240,7 +1240,7 @@ PY
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
 task:
   status: assigned
-  task_type: skill_training
+  task_type: normal
   parent_cmd: cmd_training_L4_post_mutation_schema
   task_id: cmd_training_L4_post_mutation_schema_normal
   project: infra

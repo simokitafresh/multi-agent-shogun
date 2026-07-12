@@ -34,6 +34,7 @@ _write_env_report() {
 worker_id: hayate
 parent_cmd: cmd_3630
 ac_version_read: abc12345
+timestamp: 2026-07-13T00:00:00+09:00
 status: completed
 verdict: PASS
 result:

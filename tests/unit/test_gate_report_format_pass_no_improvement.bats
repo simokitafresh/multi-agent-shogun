@@ -38,6 +38,7 @@ _write_base_pni_report() {
 worker_id: tobisaru
 parent_cmd: cmd_2072
 ac_version_read: test_hash_abc
+timestamp: 2026-07-13T00:00:00+09:00
 status: completed
 result:
   summary: "テスト用報告"
@@ -216,6 +217,7 @@ EOF
 worker_id: ${worker}
 parent_cmd: cmd_3264
 ac_version_read: test_hash_abc
+timestamp: 2026-07-13T00:00:00+09:00
 status: completed
 result:
   summary: "テスト用報告"
@@ -299,6 +301,7 @@ EOF
 worker_id: ${worker}
 parent_cmd: cmd_3264_readonly
 ac_version_read: test_hash_abc
+timestamp: 2026-07-13T00:00:00+09:00
 status: completed
 result:
   summary: "read-only triage"
@@ -375,6 +378,7 @@ EOF
 worker_id: ${worker}
 parent_cmd: cmd_3264
 ac_version_read: test_hash_abc
+timestamp: 2026-07-13T00:00:00+09:00
 status: completed
 result:
   summary: "テスト用報告"
@@ -454,6 +458,7 @@ EOF
 worker_id: ${worker}
 parent_cmd: cmd_3264
 ac_version_read: test_hash_abc
+timestamp: 2026-07-13T00:00:00+09:00
 status: completed
 result:
   summary: "テスト用報告"
@@ -529,6 +534,7 @@ EOF
 worker_id: ${worker}
 parent_cmd: cmd_3264
 ac_version_read: test_hash_abc
+timestamp: 2026-07-13T00:00:00+09:00
 status: completed
 result:
   summary: "テスト用報告"
@@ -614,6 +620,7 @@ EOF
 worker_id: ${worker}
 parent_cmd: cmd_3264
 ac_version_read: test_hash_abc
+timestamp: 2026-07-13T00:00:00+09:00
 status: completed
 commit_hash: ${commit_hash}
 result:
@@ -685,6 +692,7 @@ EOF
 worker_id: tobisaru
 parent_cmd: cmd_2072
 ac_version_read: test_hash_abc
+timestamp: 2026-07-13T00:00:00+09:00
 status: completed
 result:
   summary: "テスト用報告"

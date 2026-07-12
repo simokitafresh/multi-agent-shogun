@@ -2024,12 +2024,18 @@ EOF
 }
 
 @test "waiting-permission labels are absent from shogun startup gate" {
-    run bash -c "rg -n 'idle時に確認推奨|低優先/後で扱い|低優先=|後で扱い' '$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh'"
+    local rg_bin
+    rg_bin="$(command -v rg 2>/dev/null || true)"
+    [ -n "$rg_bin" ] || rg_bin="$ORIG_HOME/.local/bin/rg"
+    run bash -c "'$rg_bin' -n 'idle時に確認推奨|低優先/後で扱い|低優先=|後で扱い' '$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh'"
     [ "$status" -eq 1 ]
 }
 
 @test "waiting-permission labels are absent from stop_check_inbox hook" {
-    run bash -c "rg -n 'idle時に確認推奨|低優先/後で扱い|低優先=|後で扱い' '$PROJECT_ROOT/scripts/hooks/stop_check_inbox.sh'"
+    local rg_bin
+    rg_bin="$(command -v rg 2>/dev/null || true)"
+    [ -n "$rg_bin" ] || rg_bin="$ORIG_HOME/.local/bin/rg"
+    run bash -c "'$rg_bin' -n 'idle時に確認推奨|低優先/後で扱い|低優先=|後で扱い' '$PROJECT_ROOT/scripts/hooks/stop_check_inbox.sh'"
     [ "$status" -eq 1 ]
 }
 

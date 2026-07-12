@@ -73,7 +73,7 @@ YAML
     git -C "$TEST_TMP" add fixture
     git -C "$TEST_TMP" commit -qm "cmd_karo_hotfix_a"
 
-    run env REWORK_CAPTURE_GIT_DIR="$TEST_TMP" REWORK_CAPTURE_SINCE="1970-01-01" \
+    run env REWORK_CAPTURE_GIT_DIR="$TEST_TMP" REWORK_CAPTURE_SINCE="2000-01-01" \
         bash "$TEST_TMP/scripts/gates/gate_workaround_rate.sh" --last 2
 
     [ "$status" -eq 0 ]

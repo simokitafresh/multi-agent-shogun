@@ -39,7 +39,7 @@ while IFS= read -r match; do
 
     if [[ "$line" != *get_ninja_names* && "$line" != *get_all_agents* \
         && "$line" != *os.environ.get* && "$line" != *'${'*':-'* \
-        && !( "$file" == *pre-write-edit-combined* && "$line" == *"Guard 16"* ) ]]; then
+        && ! ( "$file" == *pre-write-edit-combined* && "$line" == *"Guard 16"* ) ]]; then
         count=0
         for n in "${names_arr[@]}"; do
             [[ "$line" == *"$n"* ]] && ((count++)) || true
