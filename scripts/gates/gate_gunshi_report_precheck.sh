@@ -29,7 +29,7 @@ ERRORS=0
 #       BINARY_CHECKS_MSG / SAME_CMD_NINJAS / TASK_FILE
 eval "$(python3 "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py" \
     --report "$REPORT_PATH" \
-    --tasks-dir "$REPO_ROOT/queue/tasks" 2>/dev/null)"
+    --tasks-dir "${GUNSHI_PRECHECK_TASKS_DIR:-$REPO_ROOT/queue/tasks}" 2>/dev/null)"
 
 # Project directory (commit検証用)
 PROJECT_DIR=""
@@ -218,6 +218,14 @@ if [ -f "${TASK_FILE:-}" ]; then
     echo "${BINARY_CHECKS_MSG:-  SKIP}"
 else
     echo "  SKIP: task YAML not found: ${TASK_FILE:-}"
+fi
+
+# ─── SG-PRE33: enforcement層の変形検査契約 ───
+echo ""
+echo "■ SG-PRE33: enforcement層の変形検査契約"
+echo "${VARIATION_CHECKS_MSG:-  SKIP: 変形検査契約の対象外}"
+if [[ "${VARIATION_CHECKS_MSG:-}" == *"ERROR:"* ]]; then
+    ERRORS=$((ERRORS + 1))
 fi
 
 # ─── SG-PRE6: ファイル行数確認 ───

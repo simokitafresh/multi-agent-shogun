@@ -37,6 +37,8 @@ def main():
         'BC_YES_CLARITY_TERMS': '',
         'TEST_TRIAGE': '',
         'HAS_LESSON_CANDIDATE': '0',
+        'VARIATION_CHECKS_REQUIRED': '0',
+        'VARIATION_CHECKS_MSG': '  SKIP: 変形検査契約の対象外',
     }
 
     # ── 1. REPORT_PATH を1回読込 ──────────────────────────────────────────
@@ -96,6 +98,47 @@ def main():
 
             task_bc = task.get('binary_checks') or {}
             report_bc = report.get('binary_checks') or {}
+
+            variation_required_raw = task.get('variation_checks_required', False)
+            variation_required = str(variation_required_raw).strip().lower() in (
+                '1', 'true', 'yes', 'on'
+            )
+            if variation_required:
+                result['VARIATION_CHECKS_REQUIRED'] = '1'
+                expected_variations = (
+                    'normal_pass',
+                    'quoted_or_heredoc',
+                    'linked_worktree',
+                    'parallel_or_respawn',
+                    'abnormal_exit',
+                )
+                variations = report.get('variation_checks') or {}
+                missing_variations = []
+                if not isinstance(variations, dict):
+                    missing_variations = list(expected_variations)
+                else:
+                    for name in expected_variations:
+                        item = variations.get(name)
+                        raw_result = item.get('result', '') if isinstance(item, dict) else ''
+                        if isinstance(raw_result, bool):
+                            normalized_result = 'yes' if raw_result else 'no'
+                        else:
+                            normalized_result = str(raw_result).strip().lower()
+                        if normalized_result not in ('yes', 'no'):
+                            missing_variations.append(name)
+                if len(missing_variations) == len(expected_variations):
+                    result['VARIATION_CHECKS_MSG'] = (
+                        '  ERROR: 変形検査が全セル未実施。'
+                        '正常系PASS・引用符/heredoc・linked worktree・併走/respawn・異常exitを記入せよ'
+                    )
+                elif missing_variations:
+                    result['VARIATION_CHECKS_MSG'] = (
+                        '  ERROR: 変形検査欄の未記入: ' + ', '.join(missing_variations)
+                    )
+                else:
+                    result['VARIATION_CHECKS_MSG'] = (
+                        '  PASS: 変形検査5セルがyes/noで記入済み'
+                    )
 
             if not isinstance(task_bc, dict) or not task_bc:
                 result['BINARY_CHECKS_MSG'] = (
@@ -518,6 +561,9 @@ def main():
     if result.get('HAS_RELATED_LESSONS_EMPTY_USEFUL') == '1':
         gate_pred = 'BLOCK'
         gate_pred_reasons.append('related_lessons有+useful空→empty_lessons_useful BLOCK')
+    if result.get('VARIATION_CHECKS_REQUIRED') == '1' and 'ERROR:' in result.get('VARIATION_CHECKS_MSG', ''):
+        gate_pred = 'BLOCK'
+        gate_pred_reasons.append('変形検査契約の未記入')
     result['GATE_PREDICTION'] = gate_pred
     result['GATE_PREDICTION_REASON'] = '; '.join(gate_pred_reasons) if gate_pred_reasons else 'all checks passed'
 

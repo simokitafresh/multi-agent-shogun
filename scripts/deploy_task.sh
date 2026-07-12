@@ -2543,6 +2543,59 @@ deploy_task_needs_causal_verification() {
     printf '%s\n' "$task_text" | grep -qiE 'hook|gate|daemon|semantic|search|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report[_ -]?format|cmd_save|inbox_watcher|ninja_monitor'
 }
 
+# enforcement層の変更だけに、実運用の変形検査を報告契約として要求する。
+# docs/教訓/fixture/索引のみの仕事へ広げると、実装のない報告に無意味な検査を
+# 強いるため、明示的なコード変更と enforcement 語の両方を必須にする。
+is_enforcement_variation_contract_task() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 1
+
+    TASK_FILE_ENV="$task_file" python3 - <<'PY_ENFORCEMENT_VARIATION'
+import os
+import re
+from pathlib import Path
+
+import yaml
+
+try:
+    raw = yaml.safe_load(Path(os.environ['TASK_FILE_ENV']).read_text(encoding='utf-8')) or {}
+except Exception:
+    raise SystemExit(1)
+
+task = raw.get('task', raw) if isinstance(raw, dict) else {}
+
+def flatten(value):
+    if isinstance(value, dict):
+        return ' '.join(flatten(item) for item in value.values())
+    if isinstance(value, (list, tuple, set)):
+        return ' '.join(flatten(item) for item in value)
+    return str(value or '')
+
+text = flatten({
+    key: task.get(key)
+    for key in (
+        'title', 'purpose', 'command', 'description', 'target_path',
+        'files_to_modify', 'files_modified', 'acceptance_criteria',
+    )
+}).lower()
+
+enforcement = bool(re.search(
+    r'(?:enforcement|gate|hook|detector|guard|watcher|state[ _-]?machine|ゲート|フック|検知器|ガード|監視)',
+    text,
+))
+code_change = bool(re.search(
+    r'(?:scripts/|\.sh\b|\.py\b|コード変更|コード修正|実装|修正|implement|fix\b)',
+    text,
+))
+non_code_only = bool(re.search(
+    r'(?:docs?[ _-]?only|documentation[ _-]?only|教訓のみ|fixtureのみ|索引のみ|docsのみ)',
+    text,
+))
+
+raise SystemExit(0 if enforcement and code_change and not non_code_only else 1)
+PY_ENFORCEMENT_VARIATION
+}
+
 inject_causal_verification_template() {
     local task_file="$1"
     [ -f "$task_file" ] || return 0
@@ -2604,6 +2657,14 @@ generate_report_template() {
         report_filename assigned_to subtask_id task_id _ac_task_id \
         parent_cmd cmd_id ac_version title task_type target_path scout_exempt \
         type scope_mode command constraints not_in_scope 2>/dev/null)" || true
+
+    local _variation_checks_required=false
+    if is_enforcement_variation_contract_task "$task_file"; then
+        _variation_checks_required=true
+        yaml_field_set "$task_file" "task" "variation_checks_required" "true"
+    else
+        yaml_field_set "$task_file" "task" "variation_checks_required" "false"
+    fi
 
     # report_filenameフィールドを優先参照（cmd_412: 命名ミスマッチ根治）
     local _effective_parent_cmd="${_p_parent_cmd:-${parent_cmd:-$cmd_id}}"
@@ -2762,6 +2823,28 @@ causal_verification:
 EOF
 )
     fi
+    local _variation_checks_block=""
+    if [ "$_variation_checks_required" = true ]; then
+        _variation_checks_block=$(cat <<'EOF'
+variation_checks:
+  normal_pass:
+    check: "正常系PASSを実行して期待どおり通過することを確認"
+    result: ""  # yes or no
+  quoted_or_heredoc:
+    check: "引用符付き入力またはheredoc入力で同じ契約を確認"
+    result: ""  # yes or no
+  linked_worktree:
+    check: "linked worktree環境で対象処理を確認"
+    result: ""  # yes or no
+  parallel_or_respawn:
+    check: "併走またはrespawnを伴う状態遷移を確認"
+    result: ""  # yes or no
+  abnormal_exit:
+    check: "異常exit時にfail-closedで安全停止することを確認"
+    result: ""  # yes or no
+EOF
+)
+    fi
 
     cat > "$report_file" <<EOF
 # !! トップレベル構造を維持せよ。report: で包むな !!
@@ -2865,6 +2948,7 @@ post_deploy_evidence:
   evidence_run_completed_at: ""  # UTC推奨。例: 2026-06-12T02:10:00Z
   run_completed: false
   source: ""  # timing-history id / Render log timestamp / DB queryなど一次証跡
+${_variation_checks_block}
 binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
 # ⚠ result値は "yes" or "no" のみ。true/false/PASS/FAIL/OK等はBLOCKされる
 # 例: echo '[{check: "コメント追加済みか", result: "yes"}]' | \$RFS binary_checks.AC1 -
