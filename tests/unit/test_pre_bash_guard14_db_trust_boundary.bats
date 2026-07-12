@@ -188,6 +188,38 @@ _classify() {
     [ "$output" = "connection:untrusted" ]
 }
 
+@test "Guard14 classifier: env filenames in read-only commands have no connection capability" {
+    _classify "rg TOKEN backend/.env"
+    [ "$output" = "not_connection" ]
+    _classify "grep TOKEN .env.production"
+    [ "$output" = "not_connection" ]
+    _classify "sed -n 1,3p backend/.env"
+    [ "$output" = "not_connection" ]
+    _classify "cat backend/.env"
+    [ "$output" = "not_connection" ]
+}
+
+@test "Guard14 classifier: AST proves ordinary data processing plus HTTP only" {
+    _classify "python3 -c \"from pathlib import Path; import requests, json; token=Path('backend/.env').read_text().strip(); requests.get('https://example.com', headers={'x': token})\""
+    [ "$output" = "not_connection" ]
+    _classify "source .env && python3 -c \"import myorm, requests; myorm.init_from_env(); requests.get('https://example.com')\""
+    [ "$output" = "connection:untrusted" ]
+    for escape in \
+        "import socket, requests; requests.get('https://example.com')" \
+        "import subprocess, requests; requests.get('https://example.com')" \
+        "import ctypes, requests; requests.get('https://example.com')" \
+        "import importlib, requests; importlib.import_module('x'); requests.get('https://example.com')" \
+        "import requests; eval('1'); requests.get('https://example.com')"; do
+        _classify "source .env && python3 -c \"$escape\""
+        [ "$output" = "connection:untrusted" ]
+    done
+}
+
+@test "Guard14 hook: Render Path.read_text plus requests GET is allowed" {
+    _run_hook_cmd "python3 -c \"from pathlib import Path; import requests; token=Path('backend/.env').read_text(); requests.get('https://api.render.com', headers={'Authorization': token})\""
+    [ "$status" -eq 0 ]
+}
+
 @test "Guard14 classifier: skill-example full connect (quoted semicolon inside -c) -> connection:untrusted" {
     _classify "python3 -c \"import psycopg2; conn = psycopg2.connect(host='dpg-d542chchg0os73979vg0-a.singapore-postgres.render.com', port=5432, dbname='dm_signal', user='dm_signal_user', password='x', sslmode='require')\""
     [ "$status" -eq 0 ]

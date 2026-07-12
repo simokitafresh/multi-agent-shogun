@@ -61,6 +61,7 @@ import json
 import os
 import re
 import shlex
+import ast
 
 # review_correction(2026-07-12 09:36, karo): yamlはcheck_pf_config.py免除判定時にしか
 # 不要なのに、module冒頭でimportすると全Bash呼び出し(not_connection経路含む)がyaml
@@ -144,12 +145,14 @@ HTTP_CLIENT_CALL_RE = re.compile(
     r"|\burllib\.request\.urlopen\s*\("
 )
 CURL_CMD_RE = re.compile(r"^(?:curl|curl\.exe)$")
-CALL_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_.]*)\s*\(")
-SAFE_CREDENTIAL_CALLS = {
-    "getenv", "os.getenv", "environ.get", "os.environ.get",
-    "load_dotenv", "dotenv_values",
-    "strip", "lstrip", "rstrip", "encode", "decode", "format",
+HTTP_MODULES = {"requests", "httpx", "urllib", "urllib.request"}
+SAFE_STDLIB_MODULES = {
+    "json", "os", "pathlib", "re", "time", "datetime", "base64", "hashlib",
+    "typing", "collections", "urllib.parse",
 }
+SAFE_CREDENTIAL_MODULES = {"dotenv"}
+ESCAPE_MODULES = {"socket", "subprocess", "ctypes", "importlib"}
+ESCAPE_CALLS = {"eval", "exec", "compile", "__import__"}
 
 
 def _tokenize(command: str) -> list[str]:
@@ -220,18 +223,69 @@ def _segment_has_explicit_http_call(tokens: list[str]) -> bool:
     )
 
 
-def _segment_has_opaque_call(tokens: list[str]) -> bool:
-    """Return true when an env-bearing command contains execution we cannot prove HTTP-only."""
-    text = " ".join(tokens)
-    http_spans = [m.span() for m in HTTP_CLIENT_CALL_RE.finditer(text)]
-    for match in CALL_RE.finditer(text):
-        if any(start <= match.start() < end for start, end in http_spans):
-            continue
-        name = match.group(1)
-        if name in SAFE_CREDENTIAL_CALLS or name.rsplit(".", 1)[-1] in SAFE_CREDENTIAL_CALLS:
-            continue
-        return True
-    return False
+def _python_inline_code(tokens: list[str]) -> str | None:
+    stripped = _strip_env_prefix(tokens)
+    if not stripped or os.path.basename(stripped[0]) not in {"python", "python3", "python.exe"}:
+        return None
+    try:
+        index = stripped.index("-c")
+    except ValueError:
+        return None
+    return stripped[index + 1] if index + 1 < len(stripped) else ""
+
+
+def _python_http_only_capability(tokens: list[str]) -> bool:
+    """Prove Python -c has only ordinary data processing plus explicit HTTP capability."""
+    code = _python_inline_code(tokens)
+    if code is None:
+        return False
+    try:
+        tree = ast.parse(code)
+    except (SyntaxError, ValueError):
+        return False
+    saw_http = False
+    # REPL-style snippets often reference already-available standard/HTTP modules without
+    # an import in the same -c string; these roots still have known bounded capability.
+    trusted_roots = {"Path", "os", "json", "requests", "httpx", "urllib"}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                name = alias.name
+                if name in ESCAPE_MODULES or name.split(".", 1)[0] in ESCAPE_MODULES:
+                    return False
+                if name not in HTTP_MODULES and name not in SAFE_STDLIB_MODULES and name not in SAFE_CREDENTIAL_MODULES:
+                    return False
+                trusted_roots.add(alias.asname or name.split(".", 1)[0])
+                saw_http |= name in HTTP_MODULES
+        elif isinstance(node, ast.ImportFrom):
+            name = node.module or ""
+            if name in ESCAPE_MODULES or name.split(".", 1)[0] in ESCAPE_MODULES:
+                return False
+            if name not in HTTP_MODULES and name not in SAFE_STDLIB_MODULES and name not in SAFE_CREDENTIAL_MODULES:
+                return False
+            trusted_roots.update(alias.asname or alias.name for alias in node.names)
+            saw_http |= name in HTTP_MODULES
+        elif isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name) and node.func.id in ESCAPE_CALLS:
+                return False
+            if isinstance(node.func, ast.Attribute):
+                chain: list[str] = []
+                cur = node.func
+                while isinstance(cur, ast.Attribute):
+                    chain.append(cur.attr)
+                    cur = cur.value
+                if isinstance(cur, ast.Name):
+                    chain.append(cur.id)
+                    dotted = ".".join(reversed(chain))
+                    if dotted.startswith(("requests.", "httpx.", "urllib.request.")):
+                        saw_http = True
+                    elif cur.id not in trusted_roots:
+                        return False
+            elif isinstance(node.func, ast.Name) and node.func.id not in trusted_roots:
+                # Builtins are ordinary data processing; imported/assigned opaque executors are not.
+                if node.func.id not in {"open", "print", "len", "str", "bytes", "dict", "list", "set", "tuple", "int", "float", "bool"}:
+                    return False
+    return saw_http
 
 
 def _split_into_segments(all_tokens: list[str]) -> list[list[str]]:
@@ -349,12 +403,13 @@ def classify(command: str) -> str:
 
     credential_segments = [seg for seg in segments if _segment_has_env_credential_source(seg)]
     if credential_segments and not connection_segments:
+        # rg/grep/sed/cat等はファイル名を読むだけで接続能力を持たない。
+        if all(_python_inline_code(seg) is None for seg in segments):
+            return "not_connection"
         # Render等の固有語では免除しない。HTTP clientの構造がcommand内に明示された場合のみ
-        # credential-onlyと証明できる。opaque ORM/init_from_envはfail-closedを維持する。
-        if (
-            any(_segment_has_explicit_http_call(seg) for seg in segments)
-            and not any(_segment_has_opaque_call(seg) for seg in segments)
-        ):
+        # ASTからimport/call能力を検査し、未知module/escape capabilityはfail-closedにする。
+        python_segments = [seg for seg in segments if _python_inline_code(seg) is not None]
+        if python_segments and all(_python_http_only_capability(seg) for seg in python_segments):
             return "not_connection"
         return "connection:untrusted"
 
