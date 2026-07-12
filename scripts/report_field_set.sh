@@ -841,6 +841,105 @@ if issues:
     return 0
 }
 
+# --- Completed report immutability guard (cmd_karo_hotfix_report_completed_immutability) ---
+# fingerprint = 報告ファイル全体のsha256 (scripts/lib/review_approval.sh
+# review_report_fingerprint)。status completed/done後にどのフィールドを
+# 書き換えても、軍師LGTM/家老ACCEPTが束縛したfingerprintと無言で乖離する。
+# 個別フィールドのallowlistではなく、書込み入口そのものをfail-closedで塞ぐ。
+# 抜け道は2つのみ:
+#   (1) status → revision_requested への明示遷移
+#       (scripts/review_approval.sh のRCパスが使う既存の正規ルート)
+#   (2) 既存値と完全一致する冪等write
+#       (verdict→completed自動遷移の再入・重複呼び出しを壊さないため)
+_report_field_set_completed_guard() {
+    local dot_key="$1"
+    local val="$2"
+
+    [ -f "$REPORT_PATH" ] || return 0
+
+    # fingerprint/review approval (scripts/lib/review_approval.sh review_validate_report)
+    # only ever binds to reports living under queue/reports/ — archived reports
+    # (moved to archive/reports/ after GATE CLEAR) have no live approval to
+    # invalidate, and existing tooling legitimately rewrites them post-archive
+    # (see test_report_field_set_archive_guard.bats). Scope the guard to the
+    # canonical active directory so archived-report edits stay unaffected.
+    case "$REPORT_PATH" in
+        "$SCRIPT_DIR/queue/reports/"*) ;;
+        *) return 0 ;;
+    esac
+
+    REPORT_PATH="$REPORT_PATH" DOT_KEY="$dot_key" NEW_VALUE="$val" python3 -c "
+import os, re, sys, yaml
+
+rp = os.environ.get('REPORT_PATH', '')
+dot_key = os.environ.get('DOT_KEY', '')
+new_raw = os.environ.get('NEW_VALUE', '')
+
+try:
+    with open(rp, encoding='utf-8') as f:
+        data = yaml.safe_load(f) or {}
+except Exception:
+    sys.exit(0)  # unreadable/corrupt report: not this guard's concern
+
+if not isinstance(data, dict):
+    sys.exit(0)
+
+cur_status = str(data.get('status', '') or '').strip()
+if cur_status not in ('completed', 'done'):
+    sys.exit(0)  # guard only applies once a report has reached a terminal state
+
+try:
+    new_parsed = yaml.safe_load(new_raw)
+except yaml.YAMLError:
+    new_parsed = new_raw
+
+# (1) explicit unlock: status -> revision_requested is always allowed
+if dot_key == 'status' and new_parsed == 'revision_requested':
+    sys.exit(0)
+
+# (2) idempotent same-value write (any field) must not be blocked
+def split_path(key):
+    parts = []
+    for seg in key.split('.'):
+        m = re.match(r'^(.+)\[(\d+)\]\$', seg)
+        if m:
+            parts.append(m.group(1))
+            parts.append(m.group(2))
+        else:
+            parts.append(seg)
+    return parts
+
+def get_nested(d, keys):
+    cur = d
+    for k in keys:
+        if isinstance(cur, dict):
+            if k not in cur:
+                return None, False
+            cur = cur[k]
+        elif isinstance(cur, list):
+            try:
+                idx = int(k)
+            except ValueError:
+                return None, False
+            if not (0 <= idx < len(cur)):
+                return None, False
+            cur = cur[idx]
+        else:
+            return None, False
+    return cur, True
+
+existing, found = get_nested(data, split_path(dot_key))
+if found and existing == new_parsed:
+    sys.exit(0)
+
+print(f'BLOCK: report status={cur_status} は内容変更禁止(fingerprint不変性。review_report_fingerprintを参照)。', file=sys.stderr)
+print(f'  対象キー: {dot_key}', file=sys.stderr)
+print('  修正するには先に revision_requested へ明示遷移せよ:', file=sys.stderr)
+print(f'  bash scripts/report_field_set.sh {rp} status revision_requested', file=sys.stderr)
+sys.exit(1)
+"
+}
+
 # --- Pre-validation autofix: 機械的フォーマットエラーを自動正規化 ---
 # Phase 4原理: 忍者は/clearで記憶を失う。BLOCKでCTX浪費するより構文正規化で通す。
 # 意味的エラー(空フィールド等)はBLOCK維持。構文エラー(true→yes, list→dict)のみautofix。
@@ -1047,6 +1146,11 @@ if isinstance(bc, dict):
         VALUE="FAIL"
         if [ -n "$STDIN_VALUE" ]; then STDIN_VALUE="FAIL"; fi
     fi
+fi
+# Completed report immutability guard: status completed/done後の内容変更をfail-closed BLOCK
+if ! _report_field_set_completed_guard "$DOT_KEY" "$_val_input"; then
+    echo "[report_field_set] BLOCKED: completed/done報告は不変。上記メッセージに従い revision_requested へ遷移せよ。" >&2
+    exit 1
 fi
 # Validate: 意味的エラーはBLOCK
 if ! _validate_field_value "$DOT_KEY" "$_val_input"; then
