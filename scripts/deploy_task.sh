@@ -8723,23 +8723,36 @@ if estimated <= 10:
 nullish_reasons = {"none", "n/a", "na", "null", "unknown", "tbd", "fill_this"}
 split_reason = str(task.get("split_decision_reason") or "").strip()
 if estimated <= 15:
-    reason_lower = split_reason.lower()
-    boundary_terms = (
-        "不可分", "同一の二値検証境界", "一体の検証境界",
-        "indivisible", "same binary verification boundary", "atomic verification boundary",
+    fail_msg = (
+        "estimated_minutes exceeds the 10-minute target; task.split_decision_reason "
+        "must be exactly one line 'boundary=<reason>; split_cost=<reason>' with both "
+        "values non-empty and non-placeholder, boundary before split_cost, no duplicate "
+        "or extra keys, and no line breaks"
     )
-    integration_cost_terms = (
-        "統合task", "統合タスク", "review往復", "レビュー往復",
-        "integration task", "review round trip", "review round-trip",
-    )
-    explains_boundary = any(term in reason_lower for term in boundary_terms)
-    explains_integration_cost = any(term in reason_lower for term in integration_cost_terms)
-    if (not split_reason or reason_lower in nullish_reasons
-            or not explains_boundary or not explains_integration_cost
-            or "\n" in split_reason or "\r" in split_reason):
-        print("estimated_minutes exceeds the 10-minute target; task.split_decision_reason "
-              "must be one concrete line explaining both why the binary verification boundary "
-              "is indivisible and which integration-task or review-round-trip cost splitting adds")
+    if not split_reason or "\n" in split_reason or "\r" in split_reason:
+        print(fail_msg)
+        raise SystemExit(2)
+    expected_keys = ["boundary", "split_cost"]
+    segments = split_reason.split(";")
+    parsed = {}
+    structure_ok = len(segments) == len(expected_keys)
+    if structure_ok:
+        for expected_key, segment in zip(expected_keys, segments):
+            if "=" not in segment:
+                structure_ok = False
+                break
+            key, _, value = segment.partition("=")
+            key = key.strip()
+            value = value.strip()
+            if key != expected_key or key in parsed:
+                structure_ok = False
+                break
+            if not value or value.lower() in nullish_reasons:
+                structure_ok = False
+                break
+            parsed[key] = value
+    if not structure_ok or set(parsed) != set(expected_keys):
+        print(fail_msg)
         raise SystemExit(2)
     print(f"PASS natural-boundary exception estimated_minutes={estimated:g} "
           f"split_decision_reason={split_reason}")
