@@ -737,7 +737,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1072 -->
+<!-- last_synced_lesson: L1079 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1516,6 +1516,13 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1070: awk抽出の未unescapeはGuard横断の構造バグ源。json.loads+shlex.shlex(punctuation_chars)がSSOTパターン（cmd_karo_hotfix_guard1_git_commit_tokenizer_202607121350）
 - L1071: GA-230: 新規テストは既存対象スイートへ統合する（cmd_3863）
 - L1072: bats @testブロック内から実bats-coreをnested実行すると内部通信FDが外側batsのTAP集計と衝突しテスト未実行のままexit0化する（cmd_karo_hotfix_heavy_job_admission_202607121348）
+- L1073: bashのset -eu下でx="$(func)"(非local代入)がfuncの非0 returnをそのまま呼出元スクリプトのerrexitへ伝播させ、スクリプト全体を即終了させる（cmd_3866）
+- L1074: CLEAR後refluxはreview fingerprintを再利用せよ（cmd_karo_hotfix_dashboard_postclear_reflux_202607121620）
+- L1075: 振動する状態のdedupeは直前値でなく解消までの既通知集合を保持する（cmd_karo_hotfix_pending_work_seen_generations_202607121710）
+- L1076: 複数bats rootの共通スケジューラはbats-core私有transportを起動境界で消毒せよ（cmd_karo_hotfix_bats_parallel_transport_202607121902）
+- L1077: 10-15分例外の自由文検証は非空・非placeholderチェックだけでは意味論を担保できず'x'等の無意味値がPASSする（cmd_karo_hotfix_task_natural_boundary_contract_rc4_202607122210）
+- L1078: yaml_field_set post-write検証をparse比較へ移行する際はYAML1.1暗黙型変換とawk -vエスケープ自動デコードに注意（cmd_karo_hotfix_yaml_field_set_multiline_verify_202607122228）
+- L1079: read-only shell allowlistはcmd0一致だけでなくoption/script能力を検証せよ（cmd_karo_hotfix_guard14_env_db_intent_rc5_202607122241）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

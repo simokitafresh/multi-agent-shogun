@@ -1,5 +1,5 @@
 # 家老運用索引
-<!-- last_updated: 2026-06-18 cmd_3442 -->
+<!-- last_updated: 2026-07-12 cmd_karo_hotfix_task_natural_boundary_contract_rc4_202607122210 -->
 
 > 索引層。詳細手順・テンプレート・判断材料は `docs/research/karo-operations-detail.md` を参照。
 > 原則: 普段は本ファイルの結論だけで判断し、深掘りが必要な時だけ詳細へ進め。
