@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-12 cmd_karo_hotfix_failed_report_clear_notify_gap_202607120842 -->
+<!-- last_updated: 2026-07-12 cmd_karo_hotfix_guard14_db_trust_boundary_202607120854 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -737,7 +737,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1062 -->
+<!-- last_synced_lesson: L1063 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1506,6 +1506,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1060: pane無出力と計算停止を同一視しない（cmd_karo_hotfix_background_compute_stall_fp_202607120427）
 - L1061: commit時BLOCKだけでは共有index汚染を防げない（cmd_karo_hotfix_ga228_task_yaml_mixed_stage_202607120650）
 - L1062: failed task通知ギャップは『respawnをBLOCK』ではなく『実行結果起点のdurable通知+outbox retry』で塞ぐ（cmd_karo_hotfix_failed_report_clear_notify_gap_202607120842）
+- L1063: セキュリティguardは語彙一致ではなく操作意図×信頼境界の構造判定にせよ。fast-path最適化は必ず全構造マーカーをミラーし乖離検出testで固定する（cmd_karo_hotfix_guard14_db_trust_boundary_202607120854）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
