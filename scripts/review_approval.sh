@@ -97,6 +97,10 @@ if [ -n "${REVIEW_APPROVAL_TEST_READY_FILE:-}" ]; then
   while [ ! -e "${REVIEW_APPROVAL_TEST_RELEASE_FILE:?}" ]; do sleep 0.01; done
 fi
 if review_all_reports_ready "$cmd_id" "${reports[@]}"; then
+  if [[ "$cmd_id" =~ ^cmd_[0-9]+$ ]] && ! python3 "$ROOT/scripts/lib/parent_cmd_contract.py" "$cmd_id" --root "$ROOT"; then
+    echo "BLOCK: parent cmd SSOT/purpose/AC contract incomplete; formalization withheld" >&2
+    exit 1
+  fi
   manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${reports[@]}")
   marker="$ROOT/queue/gates/$cmd_id/review_gate.done"
   marker_tmp=$(mktemp "$ROOT/queue/gates/$cmd_id/.review_gate.XXXXXX")

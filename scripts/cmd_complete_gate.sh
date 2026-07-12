@@ -5535,6 +5535,14 @@ run_cdp_production_check() {
 # ─── 必須フラグ構築 ───
 ALWAYS_REQUIRED=("archive" "lesson")
 
+# Numbered Shogun commands must bind completion to their parent SSOT, purpose,
+# and complete AC coverage. Direct cmd_karo_* hotfixes retain their contract.
+if ! python3 "$SCRIPT_DIR/scripts/lib/parent_cmd_contract.py" "$CMD_ID" --root "$SCRIPT_DIR"; then
+    echo "GATE BLOCK: parent_cmd_contract"
+    append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\tparent_cmd_contract"
+    exit 1
+fi
+
 # task_type検出
 read -r HAS_RECON HAS_IMPLEMENT <<< "$(detect_task_types "$CMD_ID")"
 
