@@ -1070,6 +1070,14 @@ safe_send_clear() {
         return 1
     fi
 
+    # AC3(cmd_karo_hotfix_failed_report_clear_notify_gap): failed taskのrespawnは止めないが、
+    # 家老がまだ把握していない可能性がある報告なら、respawn結果を起点にdurable通知する。
+    # 殿裁定(2026-07-12 08:43): 通知失敗でrespawnをBLOCKするな。BLOCKは別形態の放置を生む。
+    local _fsc_notice_pending=0
+    if _failed_task_needs_karo_notice "$agent_name"; then
+        _fsc_notice_pending=1
+    fi
+
     # cmd_1296: /clear前のgit uncommittedチェック
     # cmd_1303: 運用ファイル除外フィルタ（自動更新される運用ファイルで/clearをブロックしない）
     # 改善: BLOCKせず自動commit → /clearを続行（忍者を起こさない）
@@ -1109,9 +1117,12 @@ safe_send_clear() {
                 [[ "$_CODEX_CFG_CHANGED" == true ]] && \
                 log "CODEX-CFG-SWITCH: $agent_name applied"
             log "CODEX-RESPAWN: $agent_name respawn-pane (codex reset)"
+            local _fsc_respawn_ok=1
             tmux respawn-pane -k -t "$pane" "export PATH=\"${_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
+                _fsc_respawn_ok=0
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
             }
+            _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
             # config.toml復元(SSOT: cli_lookup.sh codex_config_restore)
             codex_config_restore
             # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。Androidアプリが前セッション残像を表示するためクリア(殿実測2026-07-08)
@@ -1135,10 +1146,13 @@ safe_send_clear() {
         _launch_cmd="$HOME/bin/claude --effort high"
     fi
     log "RESPAWN-PANE: $agent_name respawn-pane -k (CTX確実0%復帰), reason=$reason"
+    local _fsc_respawn_ok=1
     tmux respawn-pane -k -t "$pane" "cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
+        _fsc_respawn_ok=0
         log "RESPAWN-FALLBACK: $agent_name respawn failed, trying /clear"
         safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
     }
+    _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
     # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。Androidアプリが前セッション残像を表示するためクリア(殿実測2026-07-08)
     tmux clear-history -t "$pane" 2>/dev/null || true
     tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
@@ -1543,6 +1557,131 @@ notify_karo_throttled() {
         return 0
     fi
     write_auto_commit_timestamp "$stamp_file"
+}
+
+# ─── karo通知の永続retry outbox (cmd_karo_hotfix_failed_report_clear_notify_gap AC3) ───
+# 殿裁定(2026-07-12 08:43): 通知失敗でrespawnをBLOCKするな。BLOCKは別形態の放置を生む。
+# 正しい不変量: auto-respawn実行結果を起点に必ずdurable通知を生成し、配送(inbox_write)自体が
+# 失敗した場合のみoutboxへ永続化して次サイクルでretryする。paneを止めて代替放置を作らない。
+_karo_notify_outbox_file() {
+    mkdir -p "$STATE_DIR" 2>/dev/null || true
+    printf '%s/karo_notify_outbox.tsv\n' "$STATE_DIR"
+}
+
+# karoへdurable通知を試行する。inbox_write成功なら即完了、失敗ならoutboxへ永続化して次サイクルで再送する。
+# 呼び出し元(safe_send_clear等)はこの関数の戻り値でrespawn等の処理を止めてはならない。
+notify_karo_durable() {
+    local notify_type="$1"
+    local name="$2"
+    local message="$3"
+
+    if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" "$notify_type" ninja_monitor >> "$LOG" 2>&1; then
+        return 0
+    fi
+    log "NOTIFY-OUTBOX-ENQUEUE: $notify_type for $name (inbox_write failed, queued for retry)"
+    local outbox_file encoded
+    outbox_file=$(_karo_notify_outbox_file)
+    encoded=$(printf '%s' "$message" | base64 | tr -d '\n')
+    printf '%s\t%s\t%s\t%s\n' "$EPOCHSECONDS" "$notify_type" "$name" "$encoded" >> "$outbox_file"
+    return 1
+}
+
+# outbox flushをmain loop各サイクルで呼ぶ。送達成功分は除去し、失敗分だけ次サイクルへ持ち越す。
+flush_karo_notify_outbox() {
+    local outbox_file
+    outbox_file=$(_karo_notify_outbox_file)
+    [ -s "$outbox_file" ] || return 0
+
+    local tmp_remaining
+    tmp_remaining="${outbox_file}.retry.$$"
+    : > "$tmp_remaining"
+    local pending=0
+    while IFS=$'\t' read -r ts notify_type name encoded; do
+        [ -n "$notify_type" ] || continue
+        local message
+        message=$(printf '%s' "$encoded" | base64 -d 2>/dev/null)
+        if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" "$notify_type" ninja_monitor >> "$LOG" 2>&1; then
+            log "NOTIFY-OUTBOX-FLUSHED: $notify_type for $name (queued at ${ts})"
+        else
+            printf '%s\t%s\t%s\t%s\n' "$ts" "$notify_type" "$name" "$encoded" >> "$tmp_remaining"
+            pending=$((pending + 1))
+        fi
+    done < "$outbox_file"
+    mv "$tmp_remaining" "$outbox_file"
+    [ "$pending" -gt 0 ] && log "NOTIFY-OUTBOX-PENDING: ${pending} message(s) still queued for retry"
+    return 0
+}
+
+# ─── failed task respawn前後のkaro通知要否判定 (cmd_karo_hotfix_failed_report_clear_notify_gap AC3) ───
+# task status=failedのninjaについて、家老がまだ把握していない可能性がある報告かを判定する。
+# check_inbox_renudgeのKARO-PENDING抑止基準(GATE CLEAR済み/軍師review済み/parent_cmdなし)と
+# 同じ基準を、respawn単発呼び出し向けに単独判定できる形で複製する(バッチ最適化とは別経路)。
+_failed_task_needs_karo_notice() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    [ -f "$task_file" ] || return 1
+
+    local task_status parent_cmd
+    task_status=$(yaml_field_get "$task_file" "status")
+    [ "$task_status" = "failed" ] || return 1
+
+    parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
+    if [ -z "$parent_cmd" ] || [ "$parent_cmd" = "none" ]; then
+        return 1
+    fi
+
+    # GATE CLEAR済み(archived)なら通知不要
+    if compgen -G "$SCRIPT_DIR/queue/archive/cmds/${parent_cmd}_completed_"* > /dev/null 2>&1; then
+        return 1
+    fi
+    # GATE CLEAR済み(gate_metrics.log)なら通知不要
+    if awk -F '\t' -v cmd="$parent_cmd" '$2 == cmd && $3 == "CLEAR" { found=1; exit } END { exit(found ? 0 : 1) }' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null; then
+        return 1
+    fi
+    # 軍師review済みなら通知不要
+    if [ -f "$SCRIPT_DIR/logs/gunshi_review_log.yaml" ]; then
+        local reviewed
+        reviewed=$(awk '
+            function emit() {
+                if (cmd != "" && review_type == "report" && verdict != "") print cmd
+            }
+            /^[[:space:]]*-[[:space:]]*cmd_id:/ {
+                emit()
+                cmd=$0; sub(/^[^:]*:[[:space:]]*/, "", cmd); gsub(/["'\''[:space:]]/, "", cmd)
+                review_type=""; verdict=""
+                next
+            }
+            /^[[:space:]]*review_type:/ {
+                review_type=$0; sub(/^[^:]*:[[:space:]]*/, "", review_type); gsub(/["'\''[:space:]]/, "", review_type)
+                next
+            }
+            /^[[:space:]]*verdict:/ {
+                verdict=$0; sub(/^[^:]*:[[:space:]]*/, "", verdict); gsub(/["'\''[:space:]]/, "", verdict)
+                next
+            }
+            END { emit() }
+        ' "$SCRIPT_DIR/logs/gunshi_review_log.yaml" 2>/dev/null | grep -qxF "$parent_cmd" && echo yes)
+        [ "$reviewed" = "yes" ] && return 1
+    fi
+
+    return 0
+}
+
+# failed taskのrespawn結果をkaroへdurable通知する。notice_pending=0(対象外)なら何もしない。
+# respawnは既にsafe_send_clear側で実行済み/実行放棄済みであり、この関数は結果通知のみを行う。
+_notify_failed_respawn_result() {
+    local agent_name="$1"
+    local notice_pending="$2"
+    local respawn_ok="$3"
+
+    [ "$notice_pending" -eq 1 ] || return 0
+    if [ "$respawn_ok" -eq 1 ]; then
+        notify_karo_durable failed_task_respawned "$agent_name" \
+            "【自動検知】${agent_name}のfailedタスクをrespawn(clear)した。報告は未完了/未レビューの可能性あり。queue/tasks/${agent_name}.yamlと対応reportを確認し、レビュー/完了処理を判断せよ。"
+    else
+        notify_karo_durable failed_task_respawn_failed "$agent_name" \
+            "【自動検知】${agent_name}のrespawnが失敗した。pane状態を確認し手動対応せよ。"
+    fi
 }
 
 # ─── 軍師LGTM後の将軍未通知検知 (cmd_karo_hotfix_completion_notify_gap) ───
@@ -4367,7 +4506,9 @@ check_inbox_renudge() {
                 # L4最適化: for+awk×N(最大6プロセス) → awk×1の全ファイル一括スキャン(WSL2プロセス起動コスト削減 L511)
                 # FNR==1で新ファイル開始を検出し前ファイルの結果を出力。ls→compgen -Gに変更(エラー出力防止)
                 while IFS='|' read -r _kts _kpcmd; do
-                    [ "$_kts" = "done" ] || continue
+                    # AC2(cmd_karo_hotfix_failed_report_clear_notify_gap): done専用の判定だと
+                    # failed報告(cmd_3861実例)がpending work検知から永久に漏れる。done/failed両対象化。
+                    [[ "$_kts" = "done" || "$_kts" = "failed" ]] || continue
                     if [ -z "$_kpcmd" ] || [ "$_kpcmd" = "none" ]; then
                         log "KARO-PENDING-SKIP-NO-PARENT-CMD: done task has no parent_cmd"
                         continue
@@ -6517,6 +6658,9 @@ while true; do
 
     # ═══ 未読放置検知+再nudge (cmd_188) ═══
     check_inbox_renudge
+
+    # ═══ karo通知outbox flush (cmd_karo_hotfix_failed_report_clear_notify_gap AC3) ═══
+    flush_karo_notify_outbox
 
     # ═══ Stale cmd検知チェック ═══
     check_stale_cmds

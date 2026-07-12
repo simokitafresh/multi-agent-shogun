@@ -1370,6 +1370,267 @@ echo "PASS: done report gate and empty respawn"
     [[ "$output" == *"PASS: done report gate and empty respawn"* ]]
 }
 
+# AC3/AC4(cmd_karo_hotfix_failed_report_clear_notify_gap): 殿裁定(2026-07-12 08:43)により
+# 通知失敗でrespawnをBLOCKする設計は撤回された。正しい不変量はrespawn実行結果を起点にした
+# durable通知であり、respawn自体は止めない。cmd_3861実例(report完成→task failed→無通知respawn)の回帰防止。
+@test "safe_send_clear failed task auto-respawn success sends durable karo notification exactly once" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@" >> "$TMP_ROOT/inbox_calls.log"
+exit 0
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  status: failed
+  parent_cmd: cmd_notify_success
+YAML
+
+check_idle() { return 0; }
+cli_type() { echo "codex"; }
+cli_profile_get() {
+    case "$2" in
+        clear_cmd) echo "/new" ;;
+        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        *) echo "" ;;
+    esac
+}
+safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
+tmux() {
+    if [ "$1" = "respawn-pane" ]; then
+        echo "RESPAWN:$*" >> "$LOG"
+        return 0
+    fi
+    echo ""
+}
+export -f tmux
+
+safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR"
+
+cat "$LOG"
+if [ -f "$TMP_ROOT/inbox_calls.log" ]; then
+    cat "$TMP_ROOT/inbox_calls.log"
+fi
+
+test "$(grep -c "CODEX-RESPAWN: kagemaru respawn-pane" "$LOG")" -eq 1
+test "$(grep -c "failed_task_respawned" "$TMP_ROOT/inbox_calls.log")" -eq 1
+echo "PASS: failed respawn success notifies once"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: failed respawn success notifies once"* ]]
+}
+
+@test "safe_send_clear failed task auto-respawn failure sends durable failure notification without blocking the attempt" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@" >> "$TMP_ROOT/inbox_calls.log"
+exit 0
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  status: failed
+  parent_cmd: cmd_notify_failure
+YAML
+
+check_idle() { return 0; }
+cli_type() { echo "codex"; }
+cli_profile_get() {
+    case "$2" in
+        clear_cmd) echo "/new" ;;
+        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        *) echo "" ;;
+    esac
+}
+safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
+tmux() {
+    if [ "$1" = "respawn-pane" ]; then
+        echo "RESPAWN-ATTEMPTED:$*" >> "$LOG"
+        return 1
+    fi
+    echo ""
+}
+export -f tmux
+
+safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR"
+
+cat "$LOG"
+if [ -f "$TMP_ROOT/inbox_calls.log" ]; then
+    cat "$TMP_ROOT/inbox_calls.log"
+fi
+
+test "$(grep -c "RESPAWN-ATTEMPTED:respawn-pane" "$LOG")" -eq 1
+test "$(grep -c "CODEX-RESPAWN-FALLBACK: kagemaru respawn failed" "$LOG")" -eq 1
+test "$(grep -c "failed_task_respawn_failed" "$TMP_ROOT/inbox_calls.log")" -eq 1
+if grep -q "CLEAR-BLOCKED" "$LOG"; then
+    cat "$LOG"
+    exit 1
+fi
+echo "PASS: failed respawn attempted and failure notified, not blocked"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: failed respawn attempted and failure notified, not blocked"* ]]
+}
+
+@test "safe_send_clear failed task already gate-cleared sends no duplicate notification" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+touch "$SCRIPT_DIR/queue/archive/cmds/cmd_already_clear_completed_20260712.yaml"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@" >> "$TMP_ROOT/inbox_calls.log"
+exit 0
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  status: failed
+  parent_cmd: cmd_already_clear
+YAML
+
+check_idle() { return 0; }
+cli_type() { echo "codex"; }
+cli_profile_get() {
+    case "$2" in
+        clear_cmd) echo "/new" ;;
+        launch_cmd) echo "/home/test/.nvm/versions/node/v22/bin/codex" ;;
+        *) echo "" ;;
+    esac
+}
+safe_send_keys_atomic() { echo "SEND:$2" >> "$LOG"; return 0; }
+tmux() {
+    if [ "$1" = "respawn-pane" ]; then
+        echo "RESPAWN:$*" >> "$LOG"
+        return 0
+    fi
+    echo ""
+}
+export -f tmux
+
+safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR"
+
+cat "$LOG"
+if [ -f "$TMP_ROOT/inbox_calls.log" ]; then
+    cat "$TMP_ROOT/inbox_calls.log"
+fi
+
+test "$(grep -c "CODEX-RESPAWN: kagemaru respawn-pane" "$LOG")" -eq 1
+if [ -f "$TMP_ROOT/inbox_calls.log" ]; then
+    if grep -qE "failed_task_respawned|failed_task_respawn_failed" "$TMP_ROOT/inbox_calls.log"; then
+        cat "$TMP_ROOT/inbox_calls.log"
+        exit 1
+    fi
+fi
+echo "PASS: gate-cleared failed task suppresses notification"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: gate-cleared failed task suppresses notification"* ]]
+}
+
+@test "notify_karo_durable queues to outbox on delivery failure and flush_karo_notify_outbox retries" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$STATE_DIR"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "INBOX_CALLED:\$@" >> "$TMP_ROOT/inbox_calls.log"
+if [ -f "$TMP_ROOT/fail_flag" ]; then
+    exit 1
+fi
+exit 0
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+touch "$TMP_ROOT/fail_flag"
+
+RESULT=0
+notify_karo_durable failed_task_respawned testninja "queued message" || RESULT=$?
+
+OUTBOX_FILE="$STATE_DIR/karo_notify_outbox.tsv"
+test "$RESULT" -eq 1
+test -f "$OUTBOX_FILE"
+test "$(wc -l < "$OUTBOX_FILE")" -eq 1
+
+rm -f "$TMP_ROOT/fail_flag"
+rm -f "$TMP_ROOT/inbox_calls.log"
+
+flush_karo_notify_outbox
+
+cat "$LOG"
+if [ -f "$TMP_ROOT/inbox_calls.log" ]; then
+    cat "$TMP_ROOT/inbox_calls.log"
+fi
+
+grep -q "NOTIFY-OUTBOX-FLUSHED: failed_task_respawned" "$LOG"
+test "$(grep -c "failed_task_respawned" "$TMP_ROOT/inbox_calls.log")" -eq 1
+if [ -s "$OUTBOX_FILE" ]; then
+    cat "$OUTBOX_FILE"
+    exit 1
+fi
+echo "PASS: outbox retry delivers queued notification"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: outbox retry delivers queued notification"* ]]
+}
+
 @test "safe_send_clear codex in_progress uses respawn-pane" {
     run bash -lc '
 set -eo pipefail

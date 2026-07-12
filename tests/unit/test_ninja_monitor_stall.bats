@@ -1893,6 +1893,63 @@ fi
     [[ "$output" != *"pending_work"* ]]
 }
 
+# AC2/AC4(cmd_karo_hotfix_failed_report_clear_notify_gap): 修正前はstatus=doneのみ許可し
+# failed報告はpending work検知から漏れていた(cmd_3861実例: report完成後にtask failedとなり
+# 家老inboxが07:06以降更新されないままCodex respawnが発生)。修正後は1件のKARO-PENDING-INBOXを送る。
+@test "check_inbox_renudge: failed report creates karo pending inbox (cmd_3861 regression)" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/scripts"
+
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/inbox/gunshi.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: failed
+  parent_cmd: cmd_3861
+EOF
+
+NINJA_NAMES=()
+KARO_PANE="shogun:agents.1"
+declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+safe_send_keys_atomic() {
+    echo "DIRECT_NUDGE:$2" >> "$TMP_ROOT/direct_nudge.log"
+    return 0
+}
+send_inbox_message() {
+    printf "%s|%s|%s|%s\n" "$1" "$3" "$2" "${4:-ninja_monitor}" >> "$TMP_ROOT/inbox_messages.log"
+    return 0
+}
+
+check_inbox_renudge
+
+cat "$LOG"
+cat "$TMP_ROOT/inbox_messages.log"
+
+MSG_COUNT=$(wc -l < "$TMP_ROOT/inbox_messages.log")
+echo "MSG_COUNT=$MSG_COUNT"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"KARO-PENDING-INBOX"* ]]
+    [[ "$output" == *"karo|pending_work|未処理の忍者done/failed報告"* ]]
+    [[ "$output" == *"MSG_COUNT=1"* ]]
+}
+
 @test "check_stall: repeated same-task stalls trigger stall_escalate with mandatory replacement" {
     run bash -lc '
 set -euo pipefail

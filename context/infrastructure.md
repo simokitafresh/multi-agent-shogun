@@ -396,7 +396,10 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 | clear制御 | `safe_send_clear` | CLI種別とreport gateを考慮して安全に/newまたは/clearを送る中核。 |
 | clear制御 | `send_karo_clear` | 家老paneへ復帰用clearを送信し、陣形図付き復帰を成立させる。 |
 | clear制御 | `check_karo_clear` | 家老clearの必要性を判定し、pending状態との競合を避ける。 |
-| clear制御 | `can_send_clear_with_report_gate` | report未完了・未処理状態を見てclear送信可否を判定する防御層。 |
+| clear制御 | `can_send_clear_with_report_gate` | report未完了・未処理状態を見てclear送信可否を判定する防御層。**status=done専用**(failedは対象外でrespawnを止めない、意図的)。 |
+| clear制御 | `_failed_task_needs_karo_notice` | task status=failedのninjaについて、GATE CLEAR済み/軍師review済み/parent_cmdなしを除外し家老通知が必要かを判定する(cmd_karo_hotfix_failed_report_clear_notify_gap)。 |
+| clear制御 | `_notify_failed_respawn_result` | failed taskのrespawn実行結果(成功/失敗)を起点に`notify_karo_durable`でkaroへdurable通知する。**respawn自体はBLOCKしない**(殿裁定2026-07-12)。 |
+| clear制御 | `notify_karo_durable` / `flush_karo_notify_outbox` | karo通知をinbox_write経由で試行し、配送失敗時はoutbox(`$STATE_DIR/karo_notify_outbox.tsv`)へ永続化して次サイクルでretryする。paneを止めて代替放置を作らない設計。 |
 | pending/cmd監視 | `check_karo_pending_cmd` | 家老が処理すべきcmdの滞留を検出し、再nudge判断に使う。 |
 | pending/cmd監視 | `check_karo_pending` | 家老pending全般を確認し、idle家老への復帰・再通知を制御する。 |
 | pending/cmd監視 | `check_undeployed_cmds` | 未配備cmdを検出し、配備漏れを家老へ通知する。 |
@@ -415,6 +418,8 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 | 健全性監視 | `check_inbox_renudge` | 未読inboxが放置されたpaneへ再nudgeする。 |
 | 健全性監視 | `check_inbox_watcher_health` | inbox_watcherの稼働を確認し、通知経路の断絶を検出する。 |
 | 健全性監視 | `check_ntfy_listener_health` | ntfy_listenerの稼働を確認し、殿通知経路の断絶を検出する。 |
+
+**通知→clear順序不変量(cmd_karo_hotfix_failed_report_clear_notify_gap, 2026-07-12)**: `check_inbox_renudge`のKARO-PENDING検出は`status=done`専用だと`failed`報告(cmd_3861実例: report完成→task failed→無通知でCodex respawn)がpending work検知から漏れる。修正: done/failed両対象化(既存のGATE CLEAR済み/軍師review済み/parent_cmdなし抑止は維持)。一方`can_send_clear_with_report_gate`はstatus=done専用のまま変更せず、failed taskのrespawnは意図的に止めない(殿裁定2026-07-12 08:43: 「通知失敗でrespawnをBLOCKするな。BLOCKは別形態の放置を作る」)。正しい不変量は**auto-respawn実行結果を起点にしたdurable通知**(成功→clear済み+未完了report通知、失敗→respawn失敗通知)であり、配送失敗はoutbox(`notify_karo_durable`/`flush_karo_notify_outbox`)へ永続化してretryする。詳細→`docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md`(関連事故の先行分析)。
 
 ### deploy_task.sh: 注入・ゲート・配備制御（20件）
 
