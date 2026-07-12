@@ -11,6 +11,7 @@ import math
 import os
 import re
 import sqlite3
+import time
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,6 +39,47 @@ def parse_related_concepts_cell(value: str) -> list[dict[str, str]]:
 
 
 AMBIGUOUS_SINGLE_TERM_QUERIES = {"記憶"}
+SQLITE_READ_BUSY_TIMEOUT_MS = int(os.environ.get("SEMANTIC_SQLITE_BUSY_TIMEOUT_MS", "200"))
+SQLITE_READ_RETRY_DEADLINE_MS = int(os.environ.get("SEMANTIC_SQLITE_RETRY_DEADLINE_MS", "1200"))
+
+
+class BoundedReadConnection(sqlite3.Connection):
+    def execute(self, sql: str, parameters=(), /):
+        deadline = time.monotonic() + (SQLITE_READ_RETRY_DEADLINE_MS / 1000.0)
+        while True:
+            try:
+                return super().execute(sql, parameters)
+            except sqlite3.OperationalError as exc:
+                if "locked" not in str(exc).lower() or time.monotonic() >= deadline:
+                    raise RuntimeError(
+                        "memory DB read lock deadline exceeded after "
+                        f"{SQLITE_READ_RETRY_DEADLINE_MS}ms while executing read query: {exc}"
+                    ) from exc
+                time.sleep(min(0.05, max(0.0, deadline - time.monotonic())))
+
+
+def memory_db_read_connection(db_path: Path) -> BoundedReadConnection:
+    """Open the shared memory DB read-only with one bounded lock policy."""
+    uri = f"file:{db_path}?mode=ro"
+    deadline = time.monotonic() + (SQLITE_READ_RETRY_DEADLINE_MS / 1000.0)
+    while True:
+        try:
+            conn = sqlite3.connect(
+                uri,
+                uri=True,
+                timeout=SQLITE_READ_BUSY_TIMEOUT_MS / 1000.0,
+                factory=BoundedReadConnection,
+            )
+            conn.execute(f"PRAGMA busy_timeout={SQLITE_READ_BUSY_TIMEOUT_MS}")
+            conn.row_factory = sqlite3.Row
+            return conn
+        except sqlite3.OperationalError as exc:
+            if "locked" not in str(exc).lower() or time.monotonic() >= deadline:
+                raise RuntimeError(
+                    f"memory DB read lock deadline exceeded after "
+                    f"{SQLITE_READ_RETRY_DEADLINE_MS}ms: {db_path}: {exc}"
+                ) from exc
+            time.sleep(min(0.05, max(0.0, deadline - time.monotonic())))
 
 
 def related_concept_ids(concept: dict) -> list[str]:
@@ -398,10 +440,7 @@ def memory_db_concept_rows(
     if not seed_concepts or not db_path.is_file():
         return [], []
 
-    uri = f"file:{db_path}?mode=ro"
-    with sqlite3.connect(uri, uri=True) as conn:
-        conn.execute("PRAGMA busy_timeout=1000")
-        conn.row_factory = sqlite3.Row
+    with memory_db_read_connection(db_path) as conn:
         seed_params = seed_concepts[:]
         seed_sql = placeholders(seed_params)
         expanded = [
@@ -522,10 +561,7 @@ def _memory_db_fts_concept_rank_rows_impl(
         params.append(target)
     params.append(max(result_limit, 1))
 
-    uri = f"file:{db_path}?mode=ro"
-    with sqlite3.connect(uri, uri=True) as conn:
-        conn.execute("PRAGMA busy_timeout=1000")
-        conn.row_factory = sqlite3.Row
+    with memory_db_read_connection(db_path) as conn:
         total_events = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0] or 0)
         rows = list(
             conn.execute(
