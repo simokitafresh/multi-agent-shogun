@@ -1879,6 +1879,13 @@ inject_direct_training_template() {
     fi
     local task_type
     task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    # The fixed five-AC template belongs only to direct L4 implementation
+    # tasks.  A task already typed `training` owns its lesson-scoring ACs;
+    # overwriting those after mutation suppresses related_lessons injection.
+    if [[ "$cmd_id" =~ ^cmd_training_L4_ ]] && [ -n "$task_type" ] && [ "$task_type" != "normal" ]; then
+        log "direct_mode: preserve typed training ACs for ${cmd_id} (task_type=${task_type})"
+        return 0
+    fi
     # L1/L2 custom training keeps its authored ACs, while every L4 task has
     # one canonical five-AC mapping contract regardless of prior task_type.
     # Otherwise a late YAML-normalizing injector can leave a L4 task with a
@@ -5266,7 +5273,7 @@ try:
     # function runs.  Rewriting the task for related lessons can normalize it
     # into a list and silently break that training contract; template context
     # therefore wins over optional lesson injection.
-    if parent_cmd.startswith('cmd_training_L4_'):
+    if parent_cmd.startswith('cmd_training_L4_') and task_type == 'normal':
         print('[INJECT] L4 training template: preserving acceptance_criteria schema; related lesson rewrite skipped', file=sys.stderr)
         sys.exit(0)
 
@@ -9124,7 +9131,8 @@ deploy_task_apply_task_mutations() {
     # deployable until its final on-disk AC schema is the canonical mapping.
     local canonical_training_parent_cmd
     canonical_training_parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
-    if [[ "$canonical_training_parent_cmd" =~ ^cmd_training_L4_ ]]; then
+    if [[ "$canonical_training_parent_cmd" =~ ^cmd_training_L4_ ]] \
+        && [ "$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "normal" 2>/dev/null || true)" = "normal" ]; then
         inject_direct_training_template "$task_file" "$canonical_training_parent_cmd" || return 1
     fi
 
