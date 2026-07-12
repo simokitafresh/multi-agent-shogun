@@ -5,6 +5,10 @@ setup() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/memory_db.XXXXXX")"
     mkdir -p "$TEST_TMPDIR/archive" "$TEST_TMPDIR/data"
+    # create_sqlite_backup()'s routine-backup rotation logs to GATE_FIRE_LOG_FILE
+    # (defaults to the real repo's logs/gate_fire_log.yaml); redirect it here so
+    # test runs never write rotation-fire noise into the production log.
+    export GATE_FIRE_LOG_FILE="$TEST_TMPDIR/gate_fire_log.yaml"
 }
 
 teardown() {
@@ -2143,4 +2147,145 @@ PY
     [ "${result[1]}" = "True" ]
     [ "${result[2]}" = "True" ]
     [ "${result[3]}" = "True" ]
+}
+
+@test "rotate_routine_backups keeps everything when within retention limits" {
+    mkdir -p "$TEST_TMPDIR/backups"
+    python3 - "$TEST_TMPDIR/backups" <<'PY'
+import datetime
+import os
+import sys
+
+backup_dir = sys.argv[1]
+now = datetime.datetime(2026, 7, 13, 10, 0, 0)
+for i in range(3):
+    dt = now - datetime.timedelta(hours=i)
+    stamp = dt.strftime("%Y%m%dT%H%M%S")
+    path = os.path.join(backup_dir, f"memory.db.bak_obsidian_candidate_{stamp}")
+    open(path, "w").close()
+    ts = dt.timestamp()
+    os.utime(path, (ts, ts))
+PY
+
+    readarray -t result < <(python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/backups" <<'PY'
+import datetime
+import importlib.util
+import sys
+
+module_path, backup_dir = sys.argv[1:3]
+spec = importlib.util.spec_from_file_location("memory_db_live_insert", module_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+result = module.rotate_routine_backups(backup_dir, "memory.db", now=datetime.datetime(2026, 7, 13, 10, 0, 0))
+print(result["deleted_count"])
+print(result["kept_count"])
+PY
+)
+    [ "${result[0]}" = "0" ]
+    [ "${result[1]}" = "3" ]
+}
+
+@test "rotate_routine_backups deletes only old routine generations and preserves milestones" {
+    mkdir -p "$TEST_TMPDIR/backups"
+    python3 - "$TEST_TMPDIR/backups" <<'PY'
+import datetime
+import os
+import sys
+
+backup_dir = sys.argv[1]
+now = datetime.datetime(2026, 7, 13, 10, 0, 0)
+
+
+def touch(name, dt):
+    path = os.path.join(backup_dir, name)
+    open(path, "w").close()
+    ts = dt.timestamp()
+    os.utime(path, (ts, ts))
+
+
+# 10 daily obsidian_candidate generations, one per day for the last 10 days.
+for i in range(10):
+    dt = now - datetime.timedelta(days=i, hours=1)
+    stamp = dt.strftime("%Y%m%dT%H%M%S")
+    touch(f"memory.db.bak_obsidian_candidate_{stamp}", dt)
+
+# Named milestone with a superficially similar shape (must never be deleted).
+touch("memory.db.bak_cmd3153_20260603T174448", now - datetime.timedelta(days=40))
+# Unrelated pre-existing named backup (must never be deleted).
+touch("memory.db.bak", now - datetime.timedelta(days=100))
+PY
+
+    readarray -t result < <(python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/backups" <<'PY'
+import datetime
+import importlib.util
+import sys
+
+module_path, backup_dir = sys.argv[1:3]
+spec = importlib.util.spec_from_file_location("memory_db_live_insert", module_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+result = module.rotate_routine_backups(backup_dir, "memory.db", now=datetime.datetime(2026, 7, 13, 10, 0, 0))
+print(result["deleted_count"])
+print(result["kept_count"])
+print(result["deleted_bytes"] >= 0)
+PY
+)
+    [ "${result[0]}" = "3" ]
+    [ "${result[1]}" = "7" ]
+    [ "${result[2]}" = "True" ]
+
+    readarray -t remaining < <(ls "$TEST_TMPDIR/backups")
+    [[ " ${remaining[*]} " == *" memory.db.bak_cmd3153_20260603T174448 "* ]]
+    [[ " ${remaining[*]} " == *" memory.db.bak "* ]]
+    [ "$(ls "$TEST_TMPDIR/backups" | grep -c '^memory\.db\.bak_obsidian_candidate_')" = "7" ]
+}
+
+@test "rotate_routine_backups enforces retention safely under parallel generation" {
+    mkdir -p "$TEST_TMPDIR/backups"
+    python3 - "$TEST_TMPDIR/backups" <<'PY'
+import datetime
+import os
+import sys
+
+backup_dir = sys.argv[1]
+now = datetime.datetime(2026, 7, 13, 10, 0, 0)
+
+
+def touch(name, dt):
+    path = os.path.join(backup_dir, name)
+    open(path, "w").close()
+    ts = dt.timestamp()
+    os.utime(path, (ts, ts))
+
+
+for i in range(20):
+    dt = now - datetime.timedelta(hours=i * 3)
+    touch(f"memory.db.bak_obsidian_candidate_{dt.strftime('%Y%m%dT%H%M%S')}", dt)
+for i in range(10):
+    dt = now - datetime.timedelta(hours=i * 5 + 1)
+    touch(f"memory.db.bak_recall_control_{dt.strftime('%Y%m%dT%H%M%S')}", dt)
+PY
+
+    for _ in 1 2 3 4 5 6 7 8; do
+        python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/backups" <<'PY' &
+import datetime
+import importlib.util
+import sys
+
+module_path, backup_dir = sys.argv[1:3]
+spec = importlib.util.spec_from_file_location("memory_db_live_insert", module_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+module.rotate_routine_backups(backup_dir, "memory.db", now=datetime.datetime(2026, 7, 13, 10, 0, 0))
+PY
+    done
+    wait
+
+    remaining_count="$(find "$TEST_TMPDIR/backups" -maxdepth 1 -type f -name 'memory.db.bak_*' | wc -l)"
+    # Contract: never fewer than the global top-5 survive, and no runaway growth/corruption.
+    [ "$remaining_count" -ge 5 ]
+    [ "$remaining_count" -le 12 ]
 }

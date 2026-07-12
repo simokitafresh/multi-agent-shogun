@@ -10,6 +10,7 @@ import re
 import tempfile
 import shutil
 import sqlite3
+import fcntl
 
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -122,7 +123,162 @@ def create_sqlite_backup(
         src.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
         dst.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
         src.backup(dst)
+    if output_path is None and is_routine_backup_suffix(suffix):
+        try:
+            rotation_result = rotate_routine_backups(backup_root, os.path.basename(source_path))
+            log_backup_rotation_fire(rotation_result)
+        except Exception as exc:
+            print(f"create_sqlite_backup: rotation skipped (non-fatal): {exc}", file=sys.stderr)
     return backup_path
+
+
+# Suffixes produced by the current routine (auto-named) callers of create_sqlite_backup().
+# A file only enters the rotation's DELETE_CANDIDATE pool when its suffix matches one of
+# these; anything else (manually-created milestones like ".bak_cmd3153_...") is left
+# untouched even though its name can superficially resemble the routine naming shape
+# (cmd_3869 902件棚卸し: 名前付き節目は対象外).
+ROUTINE_BACKUP_FIXED_SUFFIXES = {"obsidian_candidate", "obsidian_promote_finalize", "recall_control"}
+ROUTINE_BACKUP_DYNAMIC_PREFIXES = ("candidate_resolve_",)
+ROUTINE_BACKUP_KEEP_RECENT = 5
+ROUTINE_BACKUP_KEEP_DAILY_DAYS = 7
+ROUTINE_BACKUP_NAME_RE = re.compile(
+    r"^(?P<base>.+)\.bak_(?P<suffix>.+)_(?P<stamp>\d{8}T\d{6})(?P<sidecar>-journal|-wal|-shm)?$"
+)
+
+
+def is_routine_backup_suffix(suffix: str) -> bool:
+    if suffix in ROUTINE_BACKUP_FIXED_SUFFIXES:
+        return True
+    return any(suffix.startswith(prefix) for prefix in ROUTINE_BACKUP_DYNAMIC_PREFIXES)
+
+
+def _scan_routine_backup_generations(backup_dir: str, db_basename: str) -> dict:
+    """Group routine backup files in backup_dir by (suffix, stamp) generation key.
+
+    Only files matching create_sqlite_backup()'s exact auto-naming scheme AND a known
+    routine suffix are included; anything else (named milestones, health-check backups,
+    unrelated files) is ignored so rotation never touches them.
+    """
+    generations: dict[tuple[str, str], dict] = {}
+    try:
+        entries = os.listdir(backup_dir)
+    except OSError:
+        return generations
+    for name in entries:
+        match = ROUTINE_BACKUP_NAME_RE.match(name)
+        if not match or match.group("base") != db_basename:
+            continue
+        suffix = match.group("suffix")
+        if not is_routine_backup_suffix(suffix):
+            continue
+        full_path = os.path.join(backup_dir, name)
+        try:
+            file_stat = os.stat(full_path)
+        except OSError:
+            continue
+        key = (suffix, match.group("stamp"))
+        generation = generations.setdefault(key, {"files": [], "mtime": 0.0, "bytes": 0})
+        generation["files"].append(full_path)
+        generation["bytes"] += file_stat.st_size
+        if match.group("sidecar") is None:
+            generation["mtime"] = file_stat.st_mtime
+        elif generation["mtime"] == 0.0:
+            generation["mtime"] = file_stat.st_mtime
+    return generations
+
+
+def rotate_routine_backups(
+    backup_dir: str,
+    db_basename: str,
+    keep_recent: int = ROUTINE_BACKUP_KEEP_RECENT,
+    keep_daily_days: int = ROUTINE_BACKUP_KEEP_DAILY_DAYS,
+    now=None,
+) -> dict:
+    """Enforce retention on routine backup generations under backup_dir.
+
+    Retention (global across all routine suffixes combined, matching cmd_3869's
+    manual classification): the keep_recent most-recent generations by mtime, plus
+    the single latest-mtime generation for each of the past keep_daily_days calendar
+    days. Everything else matching the routine naming scheme is deleted. Named
+    milestones and any file outside the routine naming scheme are never scanned/touched.
+    Serialized via flock so concurrent callers never double-decide inconsistently.
+    """
+    from datetime import datetime, timedelta
+
+    os.makedirs(backup_dir, exist_ok=True)
+    result = {"deleted_count": 0, "deleted_bytes": 0, "kept_count": 0, "suffixes": {}, "deleted_files": []}
+    lock_path = os.path.join(backup_dir, ".routine_backup_rotation.lock")
+    with open(lock_path, "a", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        try:
+            generations = _scan_routine_backup_generations(backup_dir, db_basename)
+            if not generations:
+                return result
+            now_dt = now or datetime.now()
+            ranked = sorted(generations.items(), key=lambda kv: kv[1]["mtime"], reverse=True)
+            keep_keys = {key for key, _ in ranked[:keep_recent]}
+
+            valid_dates = {(now_dt.date() - timedelta(days=offset)) for offset in range(keep_daily_days)}
+            best_per_date: dict = {}
+            for key, generation in ranked:
+                gen_date = datetime.fromtimestamp(generation["mtime"]).date()
+                if gen_date not in valid_dates:
+                    continue
+                current_key = best_per_date.get(gen_date)
+                if current_key is None or generation["mtime"] > generations[current_key]["mtime"]:
+                    best_per_date[gen_date] = key
+            keep_keys.update(best_per_date.values())
+
+            for key, generation in ranked:
+                suffix = key[0]
+                bucket = result["suffixes"].setdefault(suffix, {"kept": 0, "deleted": 0})
+                if key in keep_keys:
+                    result["kept_count"] += 1
+                    bucket["kept"] += 1
+                    continue
+                bucket["deleted"] += 1
+                for file_path in generation["files"]:
+                    try:
+                        size = os.path.getsize(file_path)
+                        os.remove(file_path)
+                    except FileNotFoundError:
+                        continue
+                    result["deleted_count"] += 1
+                    result["deleted_bytes"] += size
+                    result["deleted_files"].append(file_path)
+        finally:
+            fcntl.flock(lock_handle, fcntl.LOCK_UN)
+    return result
+
+
+def log_backup_rotation_fire(result: dict) -> None:
+    """Append a rotation-fire event to logs/gate_fire_log.yaml (existing shared
+    gate-firing log, one of detector_fp_rate.sh's measurement inputs) so backup
+    rotation activity is observable through the same infrastructure."""
+    from datetime import datetime
+
+    log_path = os.environ.get("GATE_FIRE_LOG_FILE") or os.path.join(REPO_ROOT, "logs", "gate_fire_log.yaml")
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+    ts = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    deleted = result.get("deleted_count", 0)
+    kept = result.get("kept_count", 0)
+    freed = result.get("deleted_bytes", 0)
+    suffixes = ",".join(sorted(result.get("suffixes", {}).keys())) or "none"
+    outcome = "ROTATED" if deleted else "NOOP"
+    checks = f"deleted={deleted} kept={kept}".replace("\\", "\\\\").replace('"', '\\"')
+    reasons = f"bytes_freed={freed} suffixes={suffixes}".replace("\\", "\\\\").replace('"', '\\"')
+    line = (
+        f'- ts: "{ts}", file: "memory_db_backup_rotation", gate: "memory_db_backup_rotation", '
+        f'result: {outcome}, checks: "{checks}", reasons: "{reasons}"\n'
+    )
+    lock_path = f"{log_path}.lock"
+    with open(lock_path, "a", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        try:
+            with open(log_path, "a", encoding="utf-8") as log_handle:
+                log_handle.write(line)
+        finally:
+            fcntl.flock(lock_handle, fcntl.LOCK_UN)
 
 
 def ensure_event_state_transition_log(conn) -> None:

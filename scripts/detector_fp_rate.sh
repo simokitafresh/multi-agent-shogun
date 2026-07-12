@@ -147,6 +147,43 @@ def today_history_events():
     return events
 
 
+def backup_rotation_summary():
+    """Aggregate memory_db_backup_rotation fires (scripts/memory_db_live_insert.py's
+    rotate_routine_backups) into their own measurement section. These fires are
+    routine maintenance, not WARN/BLOCK/ALERT-style detector judgements, so they are
+    summarized separately rather than forced through the true/false-positive outcome
+    logic used for cmd_save/escalation detectors."""
+    fires = 0
+    rotated = 0
+    noop = 0
+    deleted_total = 0
+    bytes_freed_total = 0
+    for e in parse_fire_log(gate_fire_path):
+        if e.get("gate") != "memory_db_backup_rotation":
+            continue
+        fires += 1
+        result = e.get("result") or ""
+        if result == "ROTATED":
+            rotated += 1
+        elif result == "NOOP":
+            noop += 1
+        checks = e.get("checks") or ""
+        m = re.search(r"deleted=(\d+)", checks)
+        if m:
+            deleted_total += int(m.group(1))
+        reasons = e.get("reasons") or ""
+        m = re.search(r"bytes_freed=(\d+)", reasons)
+        if m:
+            bytes_freed_total += int(m.group(1))
+    return {
+        "fires": fires,
+        "rotated": rotated,
+        "noop": noop,
+        "deleted_total": deleted_total,
+        "bytes_freed_total": bytes_freed_total,
+    }
+
+
 def escalation_events():
     data = load_yaml(alerts_path) or {}
     events = []
@@ -303,6 +340,7 @@ out = {
     },
     "detectors": detectors,
     "events": rows[-200:],
+    "backup_rotation": backup_rotation_summary(),
 }
 
 def yaml_scalar(value):

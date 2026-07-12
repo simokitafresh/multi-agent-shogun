@@ -75,6 +75,28 @@ EOF
     grep -q 'outcome: "unknown"' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
 }
 
+@test "detector_fp_rate connects memory_db_backup_rotation fires as a backup_rotation summary" {
+    cat > "$TEST_TMPDIR/logs/gate_fire_log.yaml" <<'EOF'
+- ts: "2026-07-13T02:39:58", file: "memory_db_backup_rotation", gate: "memory_db_backup_rotation", result: NOOP, checks: "deleted=0 kept=1", reasons: "bytes_freed=0 suffixes=obsidian_candidate"
+- ts: "2026-07-13T03:00:00", file: "memory_db_backup_rotation", gate: "memory_db_backup_rotation", result: ROTATED, checks: "deleted=3 kept=7", reasons: "bytes_freed=1024 suffixes=obsidian_candidate"
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries: []
+EOF
+    cat > "$TEST_TMPDIR/logs/gate_alerts.yaml" <<'EOF'
+alerts: []
+EOF
+
+    run env DETECTOR_FP_ROOT="$TEST_TMPDIR" bash "$PROJECT_ROOT/scripts/detector_fp_rate.sh"
+    [ "$status" -eq 0 ]
+    grep -q 'backup_rotation:' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+    grep -q 'fires: 2' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+    grep -q 'rotated: 1' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+    grep -q 'noop: 1' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+    grep -q 'deleted_total: 3' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+    grep -q 'bytes_freed_total: 1024' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+}
+
 @test "detector_fp_rate does not reintroduce direct yaml dump writes" {
     run python3 - "$PROJECT_ROOT/scripts/detector_fp_rate.sh" <<'PY'
 import re
