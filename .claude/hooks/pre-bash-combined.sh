@@ -682,8 +682,54 @@ fi
 # === Guard 14: DB direct connection BLOCK (LS064+LS-A17: /db-check skill強制) ===
 # WARN→BLOCK升格(2026-07-01): WARNでは試行錯誤を防げない実証(将軍がpsycopg2で6回試行錯誤)
 # /db-checkスキルにスキーマ・接続方式・クエリテンプレート完備。直接接続は不要
-if [[ "$command" == *psycopg2* || "$command" == *"DATABASE_URL"* || "$command" == *create_db_engine* ]] && [[ "$command" != *"db-check"* && "$command" != *"check_pf_config"* ]]; then
-    echo "BLOCK [Guard14]: DB直接接続禁止。/db-checkスキルを使え(skills/db-check/SKILL.md)。スキーマ・接続方式・クエリテンプレート全て完備。試行錯誤ゼロで到達できる。" >&2
+# cmd_karo_hotfix_guard14_db_trust_boundary_202607120854: 語彙一律BLOCK→操作意図×信頼境界の構造判定へ置換。
+# 旧実装は"psycopg2"等の文字列が command 中に現れるだけでBLOCKし、grep等の参照や
+# localhost/sqlite:///:memory:等のローカルCI接続まで誤検知した(hayate blocked report 2026-07-12T08:49:15)。
+# 分類器は scripts/lib/guard14_db_trust_classify.py の1箇所に集約(テストからも直接呼べる)。
+# DB操作意図(not_connection/connection)と接続先信頼境界(local_ephemeral/untrusted)を
+# 接続runtimeを含むsegment自身のトークンだけから構造判定し、Guard14は分類結果だけで判断する。
+# 各論allowlist(コマンド名の列挙によるパッチ)は追加しない。
+# review_correction(2026-07-12 09:17, karo): 旧"db-check"自由文字列免除はcommand全文への
+# 部分文字列一致だったため、production接続の後ろに `; echo db-check` を足すだけで
+# 全Guardを迂回できた。免除はclassify側でcheck_pf_config.py(実在スクリプト)を含む
+# segmentのみを対象に構造判定するため、ここでは免除チェックを行わない。
+# review_correction(2026-07-12 09:30, karo): ファイル先頭のawk抽出はJSON \"エスケープの
+# 早期break回避はするが実際のunescapeはしないため、$commandにはPython -c引数の
+# バックスラッシュ+quoteがそのまま残り、classifierのshlex token化がquote境界を誤認識する。
+# classifier側でregexパッチせず、生のHOOK payload(JSON)をそのまま渡し、
+# classifier自身がjson.loadsでtool_input.commandを正規復元してから分類する。
+# review_correction(2026-07-12 09:33/09:36, karo): 旧3語(psycopg2/DATABASE_URL/create_db_engine)
+# だけの入口ではpsql "postgresql://remote-host/proddb"のようなpsql CLI直接接続が
+# classifierへ一切到達せず素通りする。語彙を拡張して条件付きのまま残す代替案は、
+# psql以外の未列挙clientを再び漏らす各論パッチそのものであり禁止された。
+# review_correction(2026-07-12 09:42/09:45, karo): 全command無条件classifier呼出しは
+# WSL2でpython3 -S+lazy import後も実測+29ms/呼び出し(48ms→77ms, N=20 median)で許容不能。
+# 外側ifへの回帰ではなく、共通classifier自体を二段化する。fast filter/slow pathの実装は
+# 本ファイルへ直書きしない(hook側語彙gate+Python側intentの二重SSOT化を防ぐ)。
+# scripts/lib/guard14_db_trust_classify.sh の guard14_classify() が唯一の入口(SSOT)。
+# Guard14はその返り値だけを見る。
+# review_correction(2026-07-12 09:55, karo): 共有.sh自体が欠落すると`source`失敗が
+# set -euoによりexit 1(hookエラー扱い。Codex CLIはこれでクラッシュしうる)で終わり、
+# Guard14表記の無い一般的なbashエラーになる。fail-closedの意図(exit 2+明示BLOCK)を
+# 保つため、source前に実在確認して専用のGuard14 BLOCKへ倒す。
+if [[ ! -f "$SCRIPT_DIR/scripts/lib/guard14_db_trust_classify.sh" ]]; then
+    echo "BLOCK [Guard14]: DB接続分類器(scripts/lib/guard14_db_trust_classify.sh)が見つからない。fail-closedのため全DB関連コマンドをBLOCKする。" >&2
+    exit 2
+fi
+# shellcheck source=scripts/lib/guard14_db_trust_classify.sh
+source "$SCRIPT_DIR/scripts/lib/guard14_db_trust_classify.sh"
+# review_correction(2026-07-12 10:03, karo): 単純代入 `_g14_classification="$(guard14_classify ...)"`
+# はset -euo下で、guard14_classify内部のpython3が失敗した場合その非zero終了statusをそのまま
+# 引き継ぎ、if判定に到達する前にset -eでhookが即終了する。この経路ではpython3のstderrを
+# 2>/dev/nullで握り潰しているためGuard14表記の無い、失敗理由不明のexitになる(実際の失敗modeに
+# よってexit codeも不定)。`if !`形式(set -eの対象外)で明示的に捕捉し、専用Guard14 BLOCK+exit 2へ
+# 正規化する。
+if ! _g14_classification="$(guard14_classify "$payload" "$command")"; then
+    echo "BLOCK [Guard14]: DB接続分類器(guard14_classify)の実行に失敗した。fail-closedのためBLOCKする。" >&2
+    exit 2
+fi
+if [[ "$_g14_classification" != "not_connection" && "$_g14_classification" != "connection:local_ephemeral" ]]; then
+    echo "BLOCK [Guard14]: DB直接接続禁止(判定=${_g14_classification:-classification_error})。/db-checkスキルを使え(skills/db-check/SKILL.md)。スキーマ・接続方式・クエリテンプレート全て完備。試行錯誤ゼロで到達できる。localhost/127.0.0.1/::1/Unix socket/sqlite:///:memory: を使うローカルCI接続は自動許可対象。" >&2
     exit 2
 fi
 

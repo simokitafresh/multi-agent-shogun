@@ -1605,6 +1605,53 @@ done | sort -u
 
 ---
 
+## DB guard = 語彙一致ではなく操作意図×信頼境界で判定せよ（cmd_karo_hotfix_guard14_db_trust_boundary_202607120854）
+
+**結論**: DB直接接続を防ぐguard/hookは、特定文字列(ライブラリ名・関数名)の部分一致でBLOCKするな。
+「(1)DB操作意図があるか(not_connection/connection)」×「(2)接続先信頼境界(local_ephemeral/untrusted)」
+の2軸構造判定にせよ。語彙一致は必ず(a)grep/rg等の参照まで誤BLOCKする、(b)未列挙のclient/CLIを
+素通りさせる、の両方が起きる。
+
+**設計**:
+- 判定は1箇所の共通分類器(`scripts/lib/guard14_db_trust_classify.py`)に集約。呼び出し元hookは
+  分類結果(`not_connection`/`connection:local_ephemeral`/`connection:untrusted`)だけを見る
+- connection intentの判定は特定client名(psycopg2/create_db_engine等)の列挙ではなく、構造的signal
+  カテゴリで行う: DSN URLスキーム(postgres(ql)://)、DB意味を含むenv/DSN変数名(DB/DATABASE/POSTGRES/PG
+  +_URL/_DSN。単なる_URL/_DSN suffixだけだとAPI_URL等まで拾う)、接続API呼出の形(`.connect(`)、
+  engine factory呼出の形(`create_*engine(`)、host指定(host=)、in-memory(:memory:)、
+  credential source(.env読込。それ自体が接続先を隠すsignal)
+- 接続先の値はcommand全文への裸文字列一致("localhost"が無関係な別引数/別segmentにあるだけ)ではなく、
+  接続runtimeを含むsegment自身のトークンからのみ構造抽出する。他segmentの文字列は一切参照しない
+- セグメント分割は`shlex.shlex(posix=True, punctuation_chars=";&|")`で空白の有無に関わらず
+  演算子境界(&&/||/;/|/単独&)を検出する。素朴な正規表現pre-splitはquote内の演算子文字を誤分割する
+- host候補の空文字列(host=空値、URL authority欠落かつquery override無し)は「未解決」としてfail-closed
+  でuntrusted扱いする。credential source segment(source builtin等)自体も接続先不明のためuntrusted
+- 免除(db-check等)は自由文字列一致ではなく、実行operandのrealpathをconfig/projects.yaml(SSOT)由来の
+  正規パスとsamefile同一性確認まで行う。basename一致だけでは同名の別ファイルでなりすませる
+
+**性能**: 全Bash commandを無条件でPython classifierへ渡すとWSL2実測+29-33ms/呼び出し(baseline比
+約60-77%増)で許容不能。解決策は「外側if(語彙gate)を復活させる」ではなく「共通classifier自体の
+二段化」: `scripts/lib/guard14_db_trust_classify.sh`の`guard14_classify()`が唯一の入口(SSOT)。
+内部でbash-nativeの保守的negative filter(`guard14_maybe_connection()`。Python側のconnection intent
+判定に必要な構造的signalを1対1でミラー)を先に通し、1つも一致しなければpython3を起動せず
+`not_connection`を直接返す。一致した場合のみ`python3 -S`(site初期化skip)でPython構造判定へ委譲。
+fast filter/slow pathを呼び出し元hook本体へ直書きすると「hook側語彙gate+Python側intent」の
+二重SSOTになるため、両方とも共有ファイル側に閉じ込める。fast filterとPython側markerの乖離
+(false negative)は`tests/unit/test_pre_bash_guard14_fast_filter_sync.bats`で全connection fixtureが
+slow-pathへ到達することを回帰検証する。実測: benign command E2E 48ms(元baseline)→77ms(unconditional
+classify)→48-53ms(二段化後、実質回帰なし)。
+
+**helper欠落時のfail-closed**: Python/bash両ヘルパーの欠落・実行失敗は空判定→hookのif条件が
+`not_connection`/`connection:local_ephemeral`いずれとも一致しないため自動的にBLOCK側へ倒れるが、
+`set -euo pipefail`下で`source`自体が失敗するとexit 1(hookエラー扱い。Codex CLIクラッシュ要因)に
+なり得るため、source前に明示的な実在確認+専用BLOCKメッセージ(exit 2)を置く。
+
+→ `scripts/lib/guard14_db_trust_classify.py` / `scripts/lib/guard14_db_trust_classify.sh` /
+`.claude/hooks/pre-bash-combined.sh` Guard14 / `tests/unit/test_pre_bash_guard14_db_trust_boundary.bats` /
+`tests/unit/test_pre_bash_guard14_fast_filter_sync.bats`
+
+---
+
 ## 因果リンク
 
 - ← [[deepdive_why_chain_20260321]] Phase 6-7: gate/hook=知性の外部化の実装先
