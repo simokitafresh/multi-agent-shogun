@@ -51,6 +51,37 @@ teardown() {
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
+install_dashboard_update_dependencies() {
+    local test_repo="$1"
+    mkdir -p "$test_repo/scripts/gates"
+    cp "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$test_repo/scripts/lib/review_approval.sh"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$test_repo/scripts/gates/gate_report_format.sh"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$test_repo/scripts/gates/gate_report_format_combined.py"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$test_repo/scripts/gates/gate_report_autofix_main.py"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" "$test_repo/scripts/gates/gate_report_format_main.py"
+}
+
+complete_dashboard_report_fixture() {
+    local report="$1"
+    python3 - "$report" <<'PY'
+import pathlib, sys, yaml
+p = pathlib.Path(sys.argv[1])
+d = yaml.safe_load(p.read_text()) or {}
+d.update({
+    "task_id": d["parent_cmd"], "task_type": "hotfix", "timestamp": "2026-07-12T00:00:00+09:00",
+    "status": "completed", "ac_version_read": "fixture-v1",
+    "purpose_validation": {"cmd_purpose": "dashboard fixture", "fit": True, "purpose_gap": ""},
+    "files_modified": ["tests/unit/test_skill_feedback_loop.bats"],
+    "lesson_candidate": {"found": False, "no_lesson_reason": "既存fixture依存の追随確認"},
+    "lessons_useful": [{"id": "L659", "useful": True, "reason": "fixture依存追随の既知教訓"}],
+    "binary_checks": {"AC1": [{"check": "dashboard fixture report validates with production gate", "result": "yes"}]},
+    "assumption_invalidation": {"found": False, "affected_cmds": [], "detail": ""},
+    "verdict": "PASS",
+})
+p.write_text(yaml.safe_dump(d, sort_keys=False, allow_unicode=True))
+PY
+}
+
 @test "skill_metrics calculates quality scores from SKILL.md quality_metric and execution log" {
     mkdir -p "$TEST_TMPDIR/skills/dashboard-update"
     cat > "$TEST_TMPDIR/skills/dashboard-update/SKILL.md" <<'EOF'
@@ -579,6 +610,7 @@ EOF
              "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
     cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
     cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    install_dashboard_update_dependencies "$TEST_REPO"
     chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
     cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -604,6 +636,7 @@ status: completed
 result:
   summary: dashboard update test
 EOF
+    complete_dashboard_report_fixture "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml"
     cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
 # dashboard-update
 EOF
@@ -631,6 +664,7 @@ EOF
              "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
     cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
     cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    install_dashboard_update_dependencies "$TEST_REPO"
     chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
     cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -656,6 +690,7 @@ timestamp: '2026-05-03T03:33:34'
 result:
   summary: fallback report found
 EOF
+    complete_dashboard_report_fixture "$TEST_REPO/queue/archive/reports/hanzo_report_task_slug_20260503.yaml"
     cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
 # dashboard-update
 EOF
@@ -673,6 +708,7 @@ EOF
              "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
     cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
     cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    install_dashboard_update_dependencies "$TEST_REPO"
     chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
     cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -696,6 +732,7 @@ timestamp: '2026-07-08T02:20:09'
 result:
   summary: hyphenated skill training completed
 EOF
+    complete_dashboard_report_fixture "$TEST_REPO/queue/reports/hanzo_report_cmd_training_L1_report-write_20260708020332.yaml"
     cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
 # dashboard-update
 EOF
@@ -712,6 +749,7 @@ EOF
              "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
     cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
     cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    install_dashboard_update_dependencies "$TEST_REPO"
     chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
     cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -735,6 +773,7 @@ timestamp: '2026-07-07T14:00:28'
 result:
   summary: generated instructions hook fixed
 EOF
+    complete_dashboard_report_fixture "$TEST_REPO/queue/reports/saizo_report_cmd_karo_hotfix_ga190_generated_instructions_hook_20260707.yaml"
     cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
 # dashboard-update
 EOF
@@ -750,6 +789,7 @@ EOF
     mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/skills/dashboard-update"
     cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
     cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    install_dashboard_update_dependencies "$TEST_REPO"
     chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
     cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -798,6 +838,7 @@ EOF
              "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
     cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
     cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    install_dashboard_update_dependencies "$TEST_REPO"
     chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
     cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -825,6 +866,7 @@ status: completed
 result:
   summary: recovered report
 EOF
+    complete_dashboard_report_fixture "$TEST_REPO/queue/reports/saizo_report_cmd_4000.yaml"
     cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
 # dashboard-update
 EOF
@@ -844,6 +886,7 @@ EOF
              "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
     cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
     cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    install_dashboard_update_dependencies "$TEST_REPO"
     chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
     cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -879,6 +922,7 @@ status: completed
 result:
   summary: recovered partial report
 EOF
+    complete_dashboard_report_fixture "$TEST_REPO/queue/reports/saizo_report_cmd_4002.yaml"
     cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
 # dashboard-update
 EOF
@@ -899,6 +943,7 @@ EOF
              "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
     cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
     cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    install_dashboard_update_dependencies "$TEST_REPO"
     chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
     cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -923,6 +968,7 @@ status: completed
 result:
   summary: blocked report
 EOF
+    complete_dashboard_report_fixture "$TEST_REPO/queue/reports/saizo_report_cmd_4001.yaml"
     cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
 # dashboard-update
 EOF
