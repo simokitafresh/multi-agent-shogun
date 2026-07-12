@@ -1879,12 +1879,18 @@ inject_direct_training_template() {
     fi
     local task_type
     task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
-    case "$task_type" in
-        speed_training|skill_training)
-            log "direct_mode: skip L4 training template for ${cmd_id} (task_type=${task_type:-unset}, custom training ACs preserved)"
-            return 0
-            ;;
-    esac
+    # L1/L2 custom training keeps its authored ACs, while every L4 task has
+    # one canonical five-AC mapping contract regardless of prior task_type.
+    # Otherwise a late YAML-normalizing injector can leave a L4 task with a
+    # list-shaped acceptance_criteria that passes content-only validation.
+    if [[ ! "$cmd_id" =~ ^cmd_training_L4_ ]]; then
+        case "$task_type" in
+            speed_training|skill_training)
+                log "direct_mode: skip non-L4 training template for ${cmd_id} (task_type=${task_type:-unset}, custom training ACs preserved)"
+                return 0
+                ;;
+        esac
+    fi
 
     TASK_FILE_ENV="$task_file" python3 - <<'TRAINING_TEMPLATE_PY'
 import os
@@ -2031,14 +2037,19 @@ required = {
     "AC5": "causal_backlink_counts.sh --zero --limit 20",
 }
 
-found = {}
-if isinstance(acs, dict):
-    for key, value in acs.items():
-        found[str(key)] = value
-elif isinstance(acs, list):
-    for item in acs:
-        if isinstance(item, dict) and item.get("id"):
-            found[str(item.get("id"))] = item
+if not isinstance(acs, dict):
+    print("training_template_validation: acceptance_criteria must be a mapping", file=sys.stderr)
+    sys.exit(1)
+
+if set(acs) != set(required):
+    print(
+        "training_template_validation: acceptance_criteria keys must be AC1..AC5 "
+        f"(got={sorted(str(key) for key in acs)})",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+found = {str(key): value for key, value in acs.items()}
 
 missing = []
 for ac_id, needle in required.items():
@@ -9106,6 +9117,15 @@ deploy_task_apply_task_mutations() {
         inject_execution_controls "$task_file" || true
         inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points" "$task_file" "$ninja_name"
         check_context_freshness "$task_file" || true
+    fi
+
+    # This is deliberately after every mutation path, including preinjected
+    # YAML and report/context injectors.  A L4 direct-training task is not
+    # deployable until its final on-disk AC schema is the canonical mapping.
+    local canonical_training_parent_cmd
+    canonical_training_parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    if [[ "$canonical_training_parent_cmd" =~ ^cmd_training_L4_ ]]; then
+        inject_direct_training_template "$task_file" "$canonical_training_parent_cmd" || return 1
     fi
 
     local task_id parent_cmd project _ac_task_id
