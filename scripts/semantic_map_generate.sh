@@ -55,6 +55,16 @@ repo_root = Path(sys.argv[4]) if len(sys.argv) > 4 else index_path.parent.parent
 def atomic_write_text(path, text):
     """Publish complete text only; readers must never observe a prefix."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path == index_path and path.exists():
+        current = path.read_text(encoding="utf-8")
+        current_ids = re.findall(r"(?m)^\|\s*id\s*\|\s*([^|]+?)\s*\|$", current)
+        candidate_ids = re.findall(r"(?m)^\|\s*id\s*\|\s*([^|]+?)\s*\|$", text)
+        if not candidate_ids or len(candidate_ids) < len(current_ids):
+            raise RuntimeError(
+                f"semantic index monotonicity violation: concepts {len(current_ids)} -> {len(candidate_ids)}"
+            )
+        if len(candidate_ids) != len(set(candidate_ids)):
+            raise RuntimeError("semantic index invalid: duplicate concept ids")
     fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:

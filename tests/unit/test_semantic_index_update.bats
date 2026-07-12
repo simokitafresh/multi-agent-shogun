@@ -90,6 +90,34 @@ teardown() {
     [ ! -f "$TEST_TMPDIR/queue/insights.log" ]
 }
 
+@test "concurrent semantic writers serialize and preserve both updates without concept loss" {
+    export SEMANTIC_MAP_GENERATE=/bin/true
+    before="$(grep -c '^| id |' "$SEMANTIC_INDEX_PATH")"
+
+    bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete \
+        '{"id":"cmd_concurrent_a","title":"セマンティクスインデックス","purpose":"並行A","files":[]}' \
+        >"$TEST_TMPDIR/a.log" 2>&1 &
+    pid_a=$!
+    bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete \
+        '{"id":"cmd_concurrent_b","title":"セマンティクスインデックス","purpose":"並行B","files":[]}' \
+        >"$TEST_TMPDIR/b.log" 2>&1 &
+    pid_b=$!
+
+    wait "$pid_a"
+    wait "$pid_b"
+    grep -q 'cmd_concurrent_a' "$SEMANTIC_INDEX_PATH"
+    grep -q 'cmd_concurrent_b' "$SEMANTIC_INDEX_PATH"
+    [ "$(grep -c '^| id |' "$SEMANTIC_INDEX_PATH")" -eq "$before" ]
+    [ "$(find "$(dirname "$SEMANTIC_INDEX_PATH")" -maxdepth 1 -name '.index.md.*.tmp' | wc -l)" -eq 0 ]
+}
+
+@test "both semantic index writers enforce monotonic concept and duplicate-id invariants" {
+    grep -q 'semantic index monotonicity violation' "$PROJECT_ROOT/scripts/semantic_index_update.sh"
+    grep -q 'semantic index monotonicity violation' "$PROJECT_ROOT/scripts/semantic_map_generate.sh"
+    grep -q 'duplicate concept ids' "$PROJECT_ROOT/scripts/semantic_index_update.sh"
+    grep -q 'duplicate concept ids' "$PROJECT_ROOT/scripts/semantic_map_generate.sh"
+}
+
 @test "related_concepts relation_type format is preserved during index update" {
     python3 - "$SEMANTIC_INDEX_PATH" <<'PY'
 from pathlib import Path
