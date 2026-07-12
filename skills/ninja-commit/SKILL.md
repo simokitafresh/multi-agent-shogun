@@ -57,6 +57,8 @@ bash scripts/ninja_scope_commit.sh \
 
 helperは指定pathだけをaddし、`git commit --only -- <paths>`でcommitする。共有indexにある他者stageは変更もcommitもしない。空scope・存在しないpathはBLOCKし、pre-commit hookは通常どおり実行する。
 
+忍者の直接`git commit`はGuard GA-231がfail-closedでBLOCKする。commitは必ずこのhelper経由にする。これにより別忍者が先にstageしたファイルを同じcommitへ吸収する経路を入口で閉じる。
+
 同一ファイル内に他者hunkが混在する場合は、HEAD基準で自分のhunkだけを表すpatchを用意し、非対話patch入口を使う。手動`git add -p`や他者差分のstashは不要。`--base-blob`不一致、空patch、適用不能、scope外pathはcommit前にBLOCKされる。
 
 ```bash

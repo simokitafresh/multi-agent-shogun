@@ -501,11 +501,20 @@ else:
 PY
 )"
     if [[ "$_guard1_is_git_commit" == "yes" ]]; then
+        _guard1_agent_id="${TMUX_AGENT_ID:-}"
+        if [[ -z "$_guard1_agent_id" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
+            _guard1_agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+        fi
+        case "$_guard1_agent_id" in
+            hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)
+                emit_deny "BLOCK(GA-231): 忍者のgit commit直書きは禁止。/ninja-commit または bash scripts/ninja_scope_commit.sh を使い、共有indexの他者stageをcommitから分離せよ"
+                ;;
+        esac
         if ! bash "$SCRIPT_DIR/scripts/dm_signal_research_reflux_guard.sh" check-command "$command"; then
             emit_deny "BLOCK(GA-220): DM-Signal research commit requires matching context reflux fingerprint"
         fi
     fi
-    unset _guard1_is_git_commit
+    unset _guard1_is_git_commit _guard1_agent_id
 fi
 
 # Outer fast-check: --no-verify, HUSKY=0, or potential git commit -n

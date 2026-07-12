@@ -82,6 +82,22 @@ print(json.dumps({"tool_name":"Bash","tool_input":{"command": os.environ["COMMAN
     [ "$status" -eq 0 ]
 }
 
+@test "GA-231: ninja direct git commit is BLOCKED before shared index contamination" {
+    local payload
+    payload='{"tool_name":"Bash","tool_input":{"command":"git commit -m direct"}}'
+    run bash -c 'printf "%s" "$1" | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=hanzo bash "$2"' _ "$payload" "$HOOK_SCRIPT"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-231)"* ]]
+    [[ "$output" == *"ninja_scope_commit.sh"* ]]
+}
+
+@test "GA-231: ninja scoped commit helper command is ALLOWED" {
+    local payload
+    payload='{"tool_name":"Bash","tool_input":{"command":"bash scripts/ninja_scope_commit.sh -m scoped -- scripts/foo.sh"}}'
+    run bash -c 'printf "%s" "$1" | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=hanzo bash "$2"' _ "$payload" "$HOOK_SCRIPT"
+    [ "$status" -eq 0 ]
+}
+
 # --- non-Bash payload passthrough ---
 
 @test "non-Bash tool payload is ALLOWED" {
