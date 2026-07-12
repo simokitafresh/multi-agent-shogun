@@ -60,6 +60,55 @@ make_own_patch() {
     mv "$REPO/shared.working" "$REPO/shared.txt"
 }
 
+@test "patch modeは同内容hunkが別位置へ適用されたらcommit前にBLOCKする" {
+    printf 'start\nrepeat\nend\nstart\nrepeat\nend\n' > "$REPO/ambiguous.txt"
+    git -C "$REPO" add ambiguous.txt && git -C "$REPO" commit -qm ambiguous-base
+    printf '%s\n' \
+        'diff --git a/ambiguous.txt b/ambiguous.txt' \
+        '--- a/ambiguous.txt' '+++ b/ambiguous.txt' \
+        '@@ -4,3 +4,3 @@' ' start' '-repeat' '+changed' ' end' > "$REPO/ambiguous.patch"
+    # Remove the intended bottom block only in the working fixture used to
+    # demonstrate that git apply can relocate identical context to the top.
+    sed -i '4,6d' "$REPO/ambiguous.txt"
+    git -C "$REPO" add ambiguous.txt && git -C "$REPO" commit -qm split-delete
+    base_blob="$(git -C "$REPO" rev-parse HEAD:ambiguous.txt)"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m must-block --patch '$REPO/ambiguous.patch' --base-blob '$base_blob' -- ambiguous.txt"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"does not exactly match requested patch position/content"* ]]
+    [ "$(git -C "$REPO" log --format=%s -1)" = split-delete ]
+}
+
+@test "patch modeはlinked worktreeでも意図位置をcommitしforeign hunkを保全する" {
+    make_shared_fixture; make_own_patch
+    linked="$BATS_TMPDIR/linked-$BATS_TEST_NUMBER"
+    git -C "$REPO" worktree add -q -b linked-branch "$linked"
+    for i in 1 4 7; do sed -i "${i}s/$/-foreign/" "$linked/shared.txt"; done
+    before="$(cat "$linked/shared.txt")"
+    base_blob="$(git -C "$linked" rev-parse HEAD:shared.txt)"
+
+    run bash -c "cd '$linked' && bash '$HELPER' -m linked-own --patch '$REPO/own.patch' --base-blob '$base_blob' -- shared.txt"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$linked" show HEAD:shared.txt | grep -c -- '-own')" -eq 5 ]
+    [ "$(cat "$linked/shared.txt")" = "$before" ]
+    [ "$(grep -c -- '-foreign' "$linked/shared.txt")" -eq 3 ]
+    git -C "$REPO" worktree remove -f "$linked"
+}
+
+@test "patch modeはpostverify異常時にcommitせずforeign stageを保全する" {
+    make_shared_fixture; make_own_patch
+    printf 'foreign staged\n' >> "$REPO/other.txt"
+    git -C "$REPO" add other.txt
+    foreign_before="$(git -C "$REPO" ls-files -s -- other.txt)"
+    base_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+    printf 'not a patch\n' > "$REPO/own.patch"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m invalid --patch '$REPO/own.patch' --base-blob '$base_blob' -- shared.txt"
+    [ "$status" -eq 2 ]
+    [ "$(git -C "$REPO" log --format=%s -1)" = shared-base ]
+    [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$foreign_before" ]
+}
+
 @test "patch modeは同一fileの自分5 hunkだけcommitし他者13 hunkと共有indexを完全保全する" {
     make_shared_fixture
     make_own_patch

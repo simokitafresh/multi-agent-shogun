@@ -128,6 +128,49 @@ if [[ -n "$patch_file" ]]; then
         || { echo "BLOCK: patch produced an empty index diff" >&2; exit 2; }
     [[ "$(git diff --cached --name-only)" == "$scope_path" ]] \
         || { echo "BLOCK: patch polluted temporary index scope" >&2; exit 2; }
+    # git apply may relocate a hunk when identical context exists elsewhere.  A
+    # clean exit alone therefore does not prove that the requested line range
+    # entered the index.  Compare the patch's exact +/- line coordinates and
+    # content with a zero-context diff generated from the temporary index.
+    staged_patch="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-staged.XXXXXX")"
+    cleanup_patch_index() { rm -f "$temp_index" "$temp_index.lock" "$staged_patch"; }
+    git diff --cached --no-ext-diff --no-color --unified=0 -- "$scope_path" > "$staged_patch"
+    python3 - "$patch_file" "$staged_patch" <<'PY' \
+        || { echo "BLOCK: staged diff does not exactly match requested patch position/content" >&2; exit 2; }
+import re
+import sys
+
+HUNK = re.compile(r'^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@')
+
+def changes(path):
+    result = []
+    old_line = new_line = None
+    with open(path, encoding='utf-8', errors='surrogateescape') as stream:
+        for raw in stream:
+            line = raw.rstrip('\n')
+            match = HUNK.match(line)
+            if match:
+                old_line, new_line = int(match.group(1)), int(match.group(3))
+                continue
+            if old_line is None or line.startswith(('--- ', '+++ ', '\\')):
+                continue
+            if line.startswith('-'):
+                result.append(('-', old_line, line[1:]))
+                old_line += 1
+            elif line.startswith('+'):
+                result.append(('+', new_line, line[1:]))
+                new_line += 1
+            elif line.startswith(' '):
+                old_line += 1
+                new_line += 1
+    return result
+
+expected, actual = changes(sys.argv[1]), changes(sys.argv[2])
+if not expected or expected != actual:
+    print(f'expected changes={expected!r}', file=sys.stderr)
+    print(f'actual changes={actual!r}', file=sys.stderr)
+    raise SystemExit(1)
+PY
     git commit -m "$message"
     # HEAD更新後、共有indexの対象pathだけを新HEADへ追随させる。他pathのstageは
     # 一切変更せず、対象pathが旧HEAD由来の逆差分として残るindex汚染を防ぐ。
