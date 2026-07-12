@@ -8680,10 +8680,10 @@ deploy_task_direct_quality_contract_precheck() {
     esac
 }
 
-# Every dispatched task must be realistically completable within ten minutes.
-# Longer work is allowed only when the task records both a concrete reason and
-# a positive measured runtime.  Keep this check read-only and before publish /
-# task mutation so a rejected deployment cannot leak a partially assigned task.
+# Ten minutes is a planning target, while fifteen minutes is the hard boundary.
+# Between them, keep naturally atomic work together only with an explicit split
+# decision.  Beyond fifteen minutes, require measured long-runtime evidence.
+# Keep this read-only and before publish/task mutation so rejection has no side effects.
 deploy_task_ten_min_contract_precheck() {
     local task_file="$1"
     local result rc
@@ -8720,6 +8720,17 @@ if estimated <= 10:
     print(f"PASS estimated_minutes={estimated:g}")
     raise SystemExit(0)
 
+nullish_reasons = {"none", "n/a", "na", "null", "unknown", "tbd", "fill_this"}
+split_reason = str(task.get("split_decision_reason") or "").strip()
+if estimated <= 15:
+    if not split_reason or split_reason.lower() in nullish_reasons:
+        print("estimated_minutes exceeds the 10-minute target; task.split_decision_reason "
+              "must state why keeping this natural binary verification boundary intact is faster")
+        raise SystemExit(2)
+    print(f"PASS natural-boundary exception estimated_minutes={estimated:g} "
+          f"split_decision_reason={split_reason}")
+    raise SystemExit(0)
+
 env = task.get("execution_env")
 env = env if isinstance(env, dict) else {}
 reason = str(env.get("long_runtime_reason") or "").strip()
@@ -8730,10 +8741,9 @@ try:
     runtime = float(runtime)
 except (TypeError, ValueError):
     runtime = None
-nullish_reasons = {"none", "n/a", "na", "null", "unknown", "tbd", "fill_this"}
 if (not reason or reason.lower() in nullish_reasons or runtime is None
         or not math.isfinite(runtime) or runtime <= 0):
-    print("estimated_minutes exceeds 10; concrete execution_env.long_runtime_reason "
+    print("estimated_minutes exceeds the 15-minute hard boundary; concrete execution_env.long_runtime_reason "
           "and positive measured_runtime_sec are required")
     raise SystemExit(2)
 print(f"PASS long-runtime exception estimated_minutes={estimated:g} measured_runtime_sec={runtime:g}")
@@ -8742,7 +8752,7 @@ PY
     rc="${rc:-0}"
     if [ "$rc" -ne 0 ]; then
         log "BLOCK(TEN_MIN_CONTRACT): ${result}"
-        echo "BLOCK: ten-minute task contract failed: ${result}" >&2
+        echo "BLOCK: natural-boundary task contract failed: ${result}" >&2
         return 2
     fi
     log "ten_min_contract: ${result}"
