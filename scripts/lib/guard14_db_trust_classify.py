@@ -153,6 +153,9 @@ SAFE_STDLIB_MODULES = {
 SAFE_CREDENTIAL_MODULES = {"dotenv"}
 ESCAPE_MODULES = {"socket", "subprocess", "ctypes", "importlib"}
 ESCAPE_CALLS = {"eval", "exec", "compile", "__import__"}
+READ_ONLY_SHELL_CMDS = {"rg", "grep", "sed", "cat", "head", "tail", "cut", "wc", "find"}
+ENV_SETUP_SHELL_CMDS = {"source", ".", "export"}
+SAFE_OS_CALLS = {"getenv"}
 
 
 def _tokenize(command: str) -> list[str]:
@@ -248,6 +251,11 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
     # an import in the same -c string; these roots still have known bounded capability.
     trusted_roots = {"Path", "os", "json", "requests", "httpx", "urllib"}
     for node in ast.walk(tree):
+        if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.NamedExpr)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            for target in targets:
+                if isinstance(target, ast.Name) and target.id in trusted_roots:
+                    return False
         if isinstance(node, ast.Import):
             for alias in node.names:
                 name = alias.name
@@ -279,6 +287,10 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
                     dotted = ".".join(reversed(chain))
                     if dotted.startswith(("requests.", "httpx.", "urllib.request.")):
                         saw_http = True
+                    elif dotted == "os.getenv" or dotted.startswith("os.environ.get"):
+                        pass
+                    elif cur.id == "os":
+                        return False
                     elif cur.id not in trusted_roots:
                         return False
             elif isinstance(node.func, ast.Name) and node.func.id not in trusted_roots:
@@ -286,6 +298,20 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
                 if node.func.id not in {"open", "print", "len", "str", "bytes", "dict", "list", "set", "tuple", "int", "float", "bool"}:
                     return False
     return saw_http
+
+
+def _shell_segments_are_bounded(command: str, tokens: list[str], segments: list[list[str]]) -> bool:
+    """Allow only explicit env setup, read-only inspection, curl, or verified Python."""
+    if "$(" in command or "`" in command or "|" in tokens:
+        return False
+    for segment in segments:
+        cmd0 = _segment_cmd0(segment)
+        if cmd0 in ENV_SETUP_SHELL_CMDS or cmd0 in READ_ONLY_SHELL_CMDS or CURL_CMD_RE.match(cmd0):
+            continue
+        if _python_inline_code(segment) is not None and _python_http_only_capability(segment):
+            continue
+        return False
+    return bool(segments)
 
 
 def _split_into_segments(all_tokens: list[str]) -> list[list[str]]:
@@ -403,13 +429,8 @@ def classify(command: str) -> str:
 
     credential_segments = [seg for seg in segments if _segment_has_env_credential_source(seg)]
     if credential_segments and not connection_segments:
-        # rg/grep/sed/cat等はファイル名を読むだけで接続能力を持たない。
-        if all(_python_inline_code(seg) is None for seg in segments):
-            return "not_connection"
-        # Render等の固有語では免除しない。HTTP clientの構造がcommand内に明示された場合のみ
-        # ASTからimport/call能力を検査し、未知module/escape capabilityはfail-closedにする。
-        python_segments = [seg for seg in segments if _python_inline_code(seg) is not None]
-        if python_segments and all(_python_http_only_capability(seg) for seg in python_segments):
+        # 全segmentを能力分類し、未知shell/Python実行が1つでもあればfail-closed。
+        if _shell_segments_are_bounded(command, all_tokens, segments):
             return "not_connection"
         return "connection:untrusted"
 
