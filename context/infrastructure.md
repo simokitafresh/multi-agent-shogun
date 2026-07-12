@@ -737,7 +737,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1065 -->
+<!-- last_synced_lesson: L1069 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1509,6 +1509,10 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1063: セキュリティguardは語彙一致ではなく操作意図×信頼境界の構造判定にせよ。fast-path最適化は必ず全構造マーカーをミラーし乖離検出testで固定する（cmd_karo_hotfix_guard14_db_trust_boundary_202607120854）
 - L1064: ninja_monitor.shをsourceするscratch/benchmarkスクリプトは必ずsource前にexport SHOGUN_STATE_DIRせよ。source後のplain STATE_DIR代入は次のsource実行でデフォルト値へ上書きされ実運用の/tmpを汚染する（cmd_karo_hotfix_pending_work_generation_dedupe_202607121023）
 - L1065: task_id等の自然言語混在識別子から命名規約を自動推論するregexは、境界文字種だけでなく規約固有の固定トークン列全体をパターンに含めよ（cmd_karo_hotfix_chunk_marker_boundary_202607121210）
+- L1066: gate判定ロジックの対(AC2/AC3)を強化する時は片方だけでなく同一原理を共有する全ロジックへ横展開を確認せよ（cmd_karo_hotfix_gate_ac3_hunk_provenance_202607121205）
+- L1067: 既存ログ非破壊fallbackは新規entryの既定bucketと同一値にせよ（cmd_karo_hotfix_wa_root_signature_202607121225）
+- L1068: 共有git working treeでのgit stash pushは意図しない別ファイルを巻き込むリスクがある（cmd_karo_hotfix_ga220_multiline_commit_parser_202607121306）
+- L1069: Gitのstash pushはWSL2の共有repoでBus errorクラッシュしindex.lockを残置し他エージェントのコミットを止め得る。旧版比較には読取専用の参照方法を使え（cmd_karo_hotfix_report_completed_immutability_202607121305）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
@@ -1655,6 +1659,48 @@ classify)→48-53ms(二段化後、実質回帰なし)。
 → `scripts/lib/guard14_db_trust_classify.py` / `scripts/lib/guard14_db_trust_classify.sh` /
 `.claude/hooks/pre-bash-combined.sh` Guard14 / `tests/unit/test_pre_bash_guard14_db_trust_boundary.bats` /
 `tests/unit/test_pre_bash_guard14_fast_filter_sync.bats`
+
+## 重量テストジョブのhost-wide admission契約（cmd_karo_hotfix_heavy_job_admission_202607121348）
+
+**結論**: 同一8コアWSL2ホスト上でbats全量/pytest全量/DM-Signal golden regressionが無調停で並走すると、
+OSスケジューラの強制プリエンプション(CPUオーバーサブスクリプション)でwall時間が大幅に増幅する
+(実測baseline: golden単独550.82s wall/337.84s CPU、involuntary context switch 306,138件、
+load average最大40.05/8コア。全量backend/tests(206ファイル)合計455.55sより単独実行の方が遅い逆転現象)。
+`scripts/heavy_job_admission.sh`(flock host-wide semaphore、最大同時1実行、異常終了は自動lock解放)
+経由を、`.claude/hooks/pre-bash-combined.sh` Guard17がargv位置分類器
+(`scripts/lib/heavy_job_classify.{sh,py}`)で強制する。
+
+**設計**:
+- 重量判定(SSOT)はargv位置ベース: `bats`複数ファイル/全量ディレクトリ、`pytest`複数対象/ディレクトリ、
+  `python(3) <golden|regression_check|fullrecalculate系スクリプト>`、`bash run_tests.sh`。単一.batsファイル
+  1つ・単一`::`テスト関数指定は軽量として対象外
+- heredoc本文中の"bats"/"pytest"という単語(commit message等のprose)は、GA-220と同じheredoc本文/
+  terminator行除去の前処理で誤検出しない
+- `scripts/run_tests.sh`は自分自身をwrapper経由でself-reexecするため、既存の`bash scripts/run_tests.sh`
+  呼び出しはそのまま動作する(runner自身がadmissionを内包。Guard17はrun_tests.sh経由コマンドを除外)。
+  `run_tests.sh`は`_run_tests_main()`+`"BASH_SOURCE==0"`ガードへリファクタ済みで、sourceしても
+  副作用ゼロ(テストがrun_bats_files_parallel()単体を直接呼べる)
+- nested呼出し(wrapper経由コマンドの内部からさらにwrapperを呼ぶ)はself-deadlockしない
+  (`SHOGUN_HEAVY_JOB_LOCK_HELD=1`環境変数で二重ロック取得をスキップ)
+- 実測(AC5): wrapper経由でgolden regression再計測しwall 550.82s→293.31s(-46.7%)、
+  involuntary context switch 306,138→44,230(-85.6%)、verdict PASS(78/78 exact, 243,293行)維持
+  (計測時host負荷が相対的に低かった交絡因子あり、純粋なadmission効果とは限らない)
+
+**既知の限界**:
+- bats-coreは`@test`ブロック内からのnested bats実行で内部通信FDが外側batsのTAP集計と衝突し、
+  内側テストを実行せずexit0化することがある(env -i完全隔離+FD明示closeでも解消せず)。
+  `run_bats_files_parallel()`自体の終了コード集約検証はfake bats(PATH差し替えスタブ)で
+  実bats-core実行を経由せず行う(`tests/unit/test_heavy_job_admission.bats`)
+- `heavy_job_classify.py`のtokenizerは`shlex.split()`ベースのため、bashの`'"'"'`クォート結合
+  パターン(シングルクォート文字列内でアポストロフィを使う際の標準イディオム。Bashツールが
+  コマンド文字列を再構成する過程で生成されることがある)を解釈できずfail-closedでheavyと
+  誤判定することがある(GA-220のheredoc問題と同根のshlex限界)。実害はwrapper経由への誘導のみ
+  (機能破損なし)。再発したらwrapper経由で回避可能
+
+→ `scripts/heavy_job_admission.sh` / `scripts/lib/heavy_job_classify.py` / `scripts/lib/heavy_job_classify.sh` /
+`scripts/run_tests.sh` / `.claude/hooks/pre-bash-combined.sh` Guard17 /
+`tests/unit/test_heavy_job_admission.bats` /
+`docs/research/cmd_karo_hotfix_dm_golden_standalone_timeout_20260712_findings.md`(DM-Signal repo, baseline実測)
 
 ---
 

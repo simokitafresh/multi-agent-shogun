@@ -9,7 +9,9 @@
 #   bash scripts/run_tests.sh file <path>  # 特定ファイル
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# REPO_ROOT: テスト容易性のため既存環境変数があれば優先する(test_heavy_job_admission.bats
+# がFAIL fixtureをtests/unit/相当のディレクトリに用意しexit code集約を検証する用途)。
+REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 JOBS="${BATS_JOBS:-8}"
 FILE_JOBS="${BATS_FILE_JOBS:-32}"
 INNER_JOBS="${BATS_INNER_JOBS:-4}"
@@ -184,36 +186,58 @@ run_bats_files_parallel() {
     printf 'PASS: %s bats file(s) (%s run, %s cached)\n' "$total" "$launched_count" "$cached_count"
 }
 
-sweep_stale_embedded_test_tmp
+# _run_tests_main(): sourceされても副作用ゼロ(関数定義+変数初期化のみ)にするため、
+# self-reexec判定・sweep呼び出し・case分岐(=実行を伴う処理)を全てこの関数にまとめる。
+# ファイル末尾の "BASH_SOURCE[0]==$0" ガードが直接実行時のみこれを呼ぶ。
+# test_heavy_job_admission.batsがrun_bats_files_parallel()単体をsourceして直接検証
+# する際、nested bats実行(bats-core内部通信FDの継承)がbats-core自体のTAP出力集計と
+# 衝突し"unknown test name"でスイート全体を破壊する問題を、nested batsを起動しない
+# 経路(関数直接呼出し)で回避するために必要な構造。
+_run_tests_main() {
+    # cmd_karo_hotfix_heavy_job_admission_202607121348: 全量/unit/affectedモードは
+    # host-wide flock semaphore(scripts/heavy_job_admission.sh)経由で自分自身を
+    # self-reexecし、同時に1本だけが動くようhost全体で強制する(内部の並列bats実行も
+    # 同一ロックの傘下に入る)。file <path>単発実行は軽量とみなしadmission対象外。
+    if [[ "${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}" != "1" && "${1:-}" != "file" ]]; then
+        local _self="${BASH_SOURCE[0]:-$0}"
+        exec bash "$(dirname "$_self")/heavy_job_admission.sh" -- bash "$_self" "$@"
+    fi
 
-case "${1:-all}" in
-    all)
-        mapfile -t test_files < <(
-            find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print
-            find "$REPO_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print
-        )
-        run_bats_files_parallel "${test_files[@]}"
-        ;;
-    unit)
-        mapfile -t test_files < <(find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
-        run_bats_files_parallel "${test_files[@]}"
-        ;;
-    file)
-        shift
-        bats "$@" --jobs "$JOBS" --timing
-        ;;
-    affected)
-        shift || true
-        mapfile -t selected < <(bash "$REPO_ROOT/scripts/test_select.sh" "$@")
-        if [ "${#selected[@]}" -eq 0 ]; then
-            echo "No affected tests selected."
-            exit 0
-        fi
-        printf 'Selected %s affected test file(s).\n' "${#selected[@]}"
-        bats "${selected[@]}" --jobs "$JOBS" --timing
-        ;;
-    *)
-        echo "Usage: bash scripts/run_tests.sh [all|unit|affected|file <path>]" >&2
-        exit 1
-        ;;
-esac
+    sweep_stale_embedded_test_tmp
+
+    case "${1:-all}" in
+        all)
+            mapfile -t test_files < <(
+                find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print
+                find "$REPO_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print
+            )
+            run_bats_files_parallel "${test_files[@]}"
+            ;;
+        unit)
+            mapfile -t test_files < <(find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
+            run_bats_files_parallel "${test_files[@]}"
+            ;;
+        file)
+            shift
+            bats "$@" --jobs "$JOBS" --timing
+            ;;
+        affected)
+            shift || true
+            mapfile -t selected < <(bash "$REPO_ROOT/scripts/test_select.sh" "$@")
+            if [ "${#selected[@]}" -eq 0 ]; then
+                echo "No affected tests selected."
+                exit 0
+            fi
+            printf 'Selected %s affected test file(s).\n' "${#selected[@]}"
+            bats "${selected[@]}" --jobs "$JOBS" --timing
+            ;;
+        *)
+            echo "Usage: bash scripts/run_tests.sh [all|unit|affected|file <path>]" >&2
+            exit 1
+            ;;
+    esac
+}
+
+if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
+    _run_tests_main "$@"
+fi
