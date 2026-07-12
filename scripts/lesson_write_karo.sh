@@ -1,8 +1,8 @@
 #!/bin/bash
 # semantic-links: [[教訓ライフサイクル管理]]
 # lesson_write_karo.sh — 家老専用教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write_karo.sh "タイトル" "詳細" cmd_XXX ["発動条件"] ["実行手順"] [--origin "[[cmd_XXX]]"]
-# → projects/infra/lessons_karo.yaml に追記
+# Usage: bash scripts/lesson_write_karo.sh "タイトル" "詳細" cmd_XXX ["発動条件"] ["実行手順"] [--origin "[[cmd_XXX]]"] [--role karo|gunshi]
+# → projects/infra/lessons_{role}.yaml に追記（default: karo）
 
 set -e
 
@@ -23,6 +23,7 @@ shift 3 || true
 WHEN_COND="同種の状況が再発した時"
 HOW_ACTION="$DETAIL"
 ORIGIN=""
+LESSON_ROLE="karo"
 _positional=0
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -38,6 +39,10 @@ while [ $# -gt 0 ]; do
             HOW_ACTION="${2:-}"
             shift 2
             ;;
+        --role)
+            LESSON_ROLE="${2:-}"
+            shift 2
+            ;;
         *)
             _positional=$((_positional + 1))
             if [ "$_positional" -eq 1 ]; then
@@ -50,6 +55,14 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+case "$LESSON_ROLE" in
+    karo|gunshi) ;;
+    *)
+        echo "ERROR: --role は karo または gunshi を指定せよ: $LESSON_ROLE" >&2
+        exit 1
+        ;;
+esac
+
 if [ -z "$ORIGIN" ]; then
     if [[ "$SOURCE_CMD" =~ ^cmd_ ]]; then
         ORIGIN="[[${SOURCE_CMD}]]"
@@ -60,7 +73,7 @@ fi
 
 # Validate arguments
 if [ -z "$TITLE" ] || [ -z "$DETAIL" ]; then
-    echo "Usage: lesson_write_karo.sh \"タイトル\" \"詳細\" cmd_XXX [\"発動条件\"] [\"実行手順\"] [--origin \"[[cmd_XXX]]\"]" >&2
+    echo "Usage: lesson_write_karo.sh \"タイトル\" \"詳細\" cmd_XXX [\"発動条件\"] [\"実行手順\"] [--origin \"[[cmd_XXX]]\"] [--role karo|gunshi]" >&2
     exit 1
 fi
 
@@ -71,7 +84,7 @@ if [ "$DETAIL_LEN" -lt 10 ]; then
     exit 1
 fi
 
-LESSONS_FILE="$SCRIPT_DIR/projects/infra/lessons_karo.yaml"
+LESSONS_FILE="$SCRIPT_DIR/projects/infra/lessons_${LESSON_ROLE}.yaml"
 LOCKFILE="$(lock_path "$LESSONS_FILE")"
 
 # Verify lessons file exists
@@ -82,9 +95,9 @@ fi
 
 TIMESTAMP=$(date "+%Y-%m-%d")
 
-# Entry count gate — 肥大化防止 (v2統合後: 22件→上限35件)
+# Entry count gate — 家老台帳のみ肥大化防止 (v2統合後: 22件→上限35件)
 ENTRY_COUNT=$(grep -c '^- id:' "$LESSONS_FILE" 2>/dev/null || echo 0)
-if [ "$ENTRY_COUNT" -ge 35 ]; then
+if [ "$LESSON_ROLE" = "karo" ] && [ "$ENTRY_COUNT" -ge 35 ]; then
     echo "BLOCK: lessons_karo.yaml が ${ENTRY_COUNT}件に到達(上限35件)。" >&2
     echo "  新規追加の前に既存教訓を統合・パターン昇格せよ。" >&2
     echo "  個別事故→パターンに昇格し件数を減らしてから再実行。" >&2
@@ -100,7 +113,7 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 10 200 || exit 1
 
-        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD ORIGIN
+        export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD ORIGIN LESSON_ROLE
         export WHEN_COND HOW_ACTION
         python3 << 'PYEOF'
 import yaml, os, sys
@@ -114,6 +127,7 @@ title = os.environ["TITLE"]
 detail = os.environ["DETAIL"]
 source_cmd = os.environ.get("SOURCE_CMD", "")
 origin = os.environ.get("ORIGIN", "未指定")
+lesson_role = os.environ.get("LESSON_ROLE", "karo")
 when_cond = os.environ.get("WHEN_COND", "")
 how_action = os.environ.get("HOW_ACTION", "")
 
@@ -125,27 +139,28 @@ if data is None:
 lessons = data.get('lessons', [])
 
 # Entry count gate (flock内正確チェック: race condition防止)
-if len(lessons) >= 35:
+if lesson_role == "karo" and len(lessons) >= 35:
     print(f'BLOCK: lessons_karo.yaml が {len(lessons)}件に到達(上限35件)。', file=sys.stderr)
     print('  新規追加の前に既存教訓を統合・パターン昇格せよ。', file=sys.stderr)
     print('  個別事故→パターンに昇格し件数を減らしてから再実行。', file=sys.stderr)
     print('  参考: docs/research/lessons_karo_v1_archive.md (92件→22件の統合実績)', file=sys.stderr)
     sys.exit(1)
 
-# Find max numeric ID (LK format)
+# Find max numeric ID (LK/LG format)
+id_prefix = "LG" if lesson_role == "gunshi" else "LK"
 max_id = 0
 for lesson in lessons:
     lid = lesson.get('id', '')
-    if lid.startswith('LK'):
+    if lid.startswith(id_prefix):
         try:
-            num = int(lid[2:])
+            num = int(lid[len(id_prefix):])
             if num > max_id:
                 max_id = num
         except ValueError:
             pass
 
 new_id = max_id + 1
-new_id_str = f'LK{new_id:03d}'
+new_id_str = f'{id_prefix}{new_id:03d}'
 
 # Duplicate title check
 for lesson in lessons:
@@ -197,7 +212,7 @@ PYEOF
                 --title "$TITLE" \
                 --detail "$DETAIL" \
                 --source-cmd "${SOURCE_CMD:-}" \
-                --agent "karo" \
+                --agent "$LESSON_ROLE" \
                 --ts "$(date -Is)" \
                 --project "infra" \
                 --source-file "$LESSONS_FILE" >/dev/null 2>&1 &

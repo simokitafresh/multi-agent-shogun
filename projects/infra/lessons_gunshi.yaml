@@ -668,3 +668,19 @@ lessons:
   enforcement: instructions/roles/gunshi_role.mdの事前検死へ非test caller数の必須計測を追加し、build_instructions.shでClaude/Codex軍師instructions 2/2へ生成。caller=0ならLGTM禁止
   when: scripts/hooks/gates/dispatcher関数の追加・変更・耐久化を含むdraft/report review時
   how: 定義行とtest/fixtureを除外して全repoのcaller数をrgで数値化する。0なら専用テストPASSでもdead codeとして削除または正本経路統合を要求し、強化を承認しない
+- id: 'LG052'
+  title: 'レビュー数値は分子・分母・期間・同期時点を再計算せよ'
+  origin: '[[cmd_3862]] -> [[レビュー数値4要素未確認]] -> [[品質見落とし]]'
+  detail: 'cmd_3862でレビュー指標の数値だけを受け入れ、分子・分母・集計期間・一次データとの同期時点を分解確認しなかったため見落としが生じた。数値レビューでは表示値一致で止めず、4要素を一次データから再計算して判定する。'
+  source_cmd: 'cmd_3862'
+  when: 'レビュー報告・設計書・ダッシュボードが件数、率、期間集計を根拠にする時'
+  how: '分子、分母、対象期間、同期時点を列挙し、同じ一次データから各値を再計算する。4要素の1つでも証跡がなければLGTMしない'
+  created_at: '2026-07-13'
+- id: 'LG053'
+  title: '新規gate・guardは実例由来の敵対的FP変形を3件以上通せ'
+  origin: '[[GA-220]] -> [[敵対的FP変形不足]] -> [[追いhotfix3件]]'
+  detail: 'GA-220で新規gate/guardの正常系テストだけを承認した結果、実運用文脈の偽陽性に対して3回の追いhotfixが必要になった。draft review時に実際の誤検知族から作った3件以上の敵対的変形を通し、既知語の単純置換だけでなく境界・引用・否定・複数ブロックを含めて偽陽性を検証する。'
+  source_cmd: 'GA-220'
+  when: '新しいhook、gate、guard、dispatcher検知ロジックを含むdraft review時'
+  how: '過去の実運用FPを3件以上選び、各々を境界・引用・否定・複数ブロックの少なくとも1種へ変形したfixtureを作る。全件で非BLOCKを実測できなければ承認しない'
+  created_at: '2026-07-13'
