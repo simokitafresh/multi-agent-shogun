@@ -78,6 +78,26 @@ run_precheck() {
     [ "$status" -eq 2 ]
 }
 
+@test "ten_min_contract: 15文字無意味列ならexit 2でBLOCK" {
+    local f
+    f="$(write_fixture meaningless_reason_task 'task:
+  task_id: cmd_test_meaningless_reason
+  estimated_minutes: 11
+  split_decision_reason: xxxxxxxxxxxxxxx')"
+    run_precheck "$f"
+    [ "$status" -eq 2 ]
+}
+
+@test "ten_min_contract: 抽象的長文理由ならexit 2でBLOCK" {
+    local f
+    f="$(write_fixture abstract_reason_task 'task:
+  task_id: cmd_test_abstract_reason
+  estimated_minutes: 11
+  split_decision_reason: "これは具体的な理由で必要だからです"')"
+    run_precheck "$f"
+    [ "$status" -eq 2 ]
+}
+
 @test "ten_min_contract: split_decision_reasonが複数行ならexit 2でBLOCK" {
     local f
     f="$(write_fixture multiline_reason_task 'task:
@@ -96,6 +116,16 @@ run_precheck() {
   task_id: cmd_test_natural_boundary
   estimated_minutes: 11
   split_decision_reason: "単一validator変更と同じcorpus検証が不可分で、分割すると統合taskとreview往復が増えるため"')"
+    run_precheck "$f"
+    [ "$status" -eq 0 ]
+}
+
+@test "ten_min_contract: 英語で不可分境界とreviewコストを説明すればPASS" {
+    local f
+    f="$(write_fixture english_natural_boundary_task 'task:
+  task_id: cmd_test_english_natural_boundary
+  estimated_minutes: 11
+  split_decision_reason: "The validator and corpus form an indivisible binary boundary; splitting adds an integration task and review round trip."')"
     run_precheck "$f"
     [ "$status" -eq 0 ]
 }
