@@ -3885,6 +3885,14 @@ echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原�
 
 mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
 _startup_run_id="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+# flock排他: check(重複判定)→append を同一クリティカルセクション化。
+# 無lockだと並行起動時にTOCTOU(両プロセスとも「重複なし」と判定→二重追記)が発生し
+# 先送り穴一覧/streak判定の入力データが汚染される(2026-07-13偵察実測: 全12057行中1905行=15.8%が
+# 同一run_id+key完全重複。既存のescalation lock(本ファイル内 flock -x 9 パターン)に倣う)
+mkdir -p "$SCRIPT_DIR/queue/locks"
+_startup_history_lock="$SCRIPT_DIR/queue/locks/shogun_startup_alert_history.lock"
+(
+flock -x 9
 if [ ${#alerts[@]} -gt 0 ]; then
     for a in "${alerts[@]}"; do
         _history_recent_duplicate=$(python3 - "$STARTUP_ALERT_HISTORY" "$_startup_run_id" "$a" "${STARTUP_WARN_HISTORY_DUP_WINDOW_SEC:-600}" <<'PY' 2>/dev/null || true
@@ -3930,6 +3938,8 @@ PY
 else
     printf '%s\t__OK__\n' "$_startup_run_id" >> "$STARTUP_ALERT_HISTORY"
 fi
+) 9>"$_startup_history_lock"
+unset _startup_history_lock
 
 # --- session_alerts.txt: 起動時初期生成（覚醒設計書v3 cmd_3401） ---
 # 目的: stop hookで毎応答リアルタイム表示するためのALERT台帳を初期化する
