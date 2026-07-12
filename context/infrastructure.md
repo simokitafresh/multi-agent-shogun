@@ -737,7 +737,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1069 -->
+<!-- last_synced_lesson: L1071 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1513,6 +1513,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1067: 既存ログ非破壊fallbackは新規entryの既定bucketと同一値にせよ（cmd_karo_hotfix_wa_root_signature_202607121225）
 - L1068: 共有git working treeでのgit stash pushは意図しない別ファイルを巻き込むリスクがある（cmd_karo_hotfix_ga220_multiline_commit_parser_202607121306）
 - L1069: Gitのstash pushはWSL2の共有repoでBus errorクラッシュしindex.lockを残置し他エージェントのコミットを止め得る。旧版比較には読取専用の参照方法を使え（cmd_karo_hotfix_report_completed_immutability_202607121305）
+- L1070: awk抽出の未unescapeはGuard横断の構造バグ源。json.loads+shlex.shlex(punctuation_chars)がSSOTパターン（cmd_karo_hotfix_guard1_git_commit_tokenizer_202607121350）
+- L1071: GA-230: 新規テストは既存対象スイートへ統合する（cmd_3863）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
@@ -1700,7 +1702,7 @@ load average最大40.05/8コア。全量backend/tests(206ファイル)合計455.
 → `scripts/heavy_job_admission.sh` / `scripts/lib/heavy_job_classify.py` / `scripts/lib/heavy_job_classify.sh` /
 `scripts/run_tests.sh` / `.claude/hooks/pre-bash-combined.sh` Guard17 /
 `tests/unit/test_heavy_job_admission.bats` /
-`docs/research/cmd_karo_hotfix_dm_golden_standalone_timeout_20260712_findings.md`(DM-Signal repo, baseline実測)
+`docs/research/cmd_karo_hotfix_dm_golden_standalone_timeout_20260712_findings.md`(baseline実測+host-wide admission契約による解決、multi-agent-shogun repo正本)
 
 ---
 
