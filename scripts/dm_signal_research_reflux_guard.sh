@@ -75,6 +75,20 @@ has_staged_research() {
     return 1
 }
 
+# GA-236: check-commandはPreToolUseフックとして「commandがまだ実行される前」に
+# 呼ばれる。`git add ... && git commit ...`のようにaddとcommitが同一command文字列
+# に連結されている場合、この時点ではindexへのadd未実行のためhas_staged_research()
+# は常にfalseを返し、docs/research変更が無検証のままcommitされてしまう(TOCTOU)。
+# staged/未staged tracked/untrackedのいずれかにdocs/research変更が実在するかを
+# working tree全体で判定し、chained-add検出時のBLOCK要否判断に使う。
+has_worktree_research_changes() {
+    local repo="$1"
+    git -C "$repo" diff --cached --quiet -- docs/research || return 0
+    git -C "$repo" diff --quiet -- docs/research || return 0
+    [[ -n "$(git -C "$repo" ls-files --others --exclude-standard -- docs/research 2>/dev/null)" ]] && return 0
+    return 1
+}
+
 check_repo() {
     local repo="$1" fingerprint recorded rc
     rc=0; is_dm_signal_repo "$repo" || rc=$?
@@ -189,8 +203,50 @@ except ValueError as exc:
     print(f"PARSE_ERROR: {exc}", file=sys.stderr)
     sys.exit(3)
 
+OPERATORS = {";", "&&", "||", "&", "|"}
+
+
+def segment_args(tokens, start):
+    """start以降、次のshell演算子または末尾までのtoken列を返す(startは含まない)"""
+    args = []
+    k = start
+    n = len(tokens)
+    while k < n and tokens[k] not in OPERATORS:
+        args.append(tokens[k])
+        k += 1
+    return args, k
+
+
+def add_targets_research(args):
+    """`git add <args>`がdocs/research配下を巻き込み得るpathspecかを判定する。
+    fail-closed: 引数なし/`-A`/`--all`/`-u`/`.`等の広域指定は無条件で対象とみなす。
+    """
+    if not args:
+        return True
+    for a in args:
+        if a in (".", "-A", "--all", "-u", "--update", ":/"):
+            return True
+        if not a.startswith("-"):
+            norm = a.lstrip("./")
+            if norm == "docs" or norm == "docs/research" or norm.startswith("docs/research/"):
+                return True
+    return False
+
+
+def commit_stages_tracked(args):
+    """`git commit -a/--all/-am`等、commit自身がtracked変更をstageするかを判定する"""
+    for a in args:
+        if a == "--all":
+            return True
+        if a.startswith("-") and not a.startswith("--") and "a" in a[1:]:
+            return True
+    return False
+
+
 i = 0
 n = len(tokens)
+add_repos_broad = set()
+results = []
 while i < n:
     tok = tokens[i]
     if tok == "cd" and i + 1 < n:
@@ -205,9 +261,22 @@ while i < n:
             target = os.path.expanduser(tokens[j + 1])
             repo = os.path.realpath(target if os.path.isabs(target) else os.path.join(cwd, target))
             j += 2
+        if j < n and tokens[j] == "add":
+            args, k = segment_args(tokens, j + 1)
+            if add_targets_research(args):
+                add_repos_broad.add(repo)
+            i = k
+            continue
         if j < n and tokens[j] == "commit":
-            print(repo)
+            args, k = segment_args(tokens, j + 1)
+            chained = repo in add_repos_broad or commit_stages_tracked(args)
+            results.append((repo, chained))
+            i = k
+            continue
     i += 1
+
+for repo, chained in results:
+    print(f"{repo}\t{'CHAINED_ADD' if chained else 'PLAIN'}")
 PY
 )" || py_status=$?
     if ((py_status == 3)); then
@@ -218,9 +287,17 @@ PY
         return 2
     fi
     [[ -n "$py_output" ]] || return 0
-    local repo
-    while IFS= read -r repo; do
+    local repo tag
+    while IFS=$'\t' read -r repo tag; do
         [[ -n "$repo" ]] || continue
+        if [[ "$tag" == "CHAINED_ADD" ]]; then
+            local _rag_rc=0
+            is_dm_signal_repo "$repo" || _rag_rc=$?
+            if ((_rag_rc == 0)) && has_worktree_research_changes "$repo"; then
+                echo "BLOCK(GA-220/GA-236): git addとgit commitが同一command文字列に連結されており、docs/research変更が未staged状態でreflux検証をすり抜けます(TOCTOU)。git add(別のtool call)を先に完了させてからgit commitを実行してください" >&2
+                return 2
+            fi
+        fi
         check_repo "$repo" || return $?
     done <<< "$py_output"
 }

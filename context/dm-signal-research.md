@@ -1,5 +1,6 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-12 cmd_karo_verify_p3b_nocode_closure_202607120339 -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga236_dm_signal_research_freshness_202607130218 -->
+<!-- source_commit:bd1a1b10322d97fa59cba62dd72550e9102c784f (DM-Signal docs/research配下の最終同期commit。次回鮮度チェックはこのcommit以降のdiffのみ照合対象=GA-236入口側改善の一部) -->
 <!-- dm_signal_research_reflux: fingerprint=0c4d410e2a7153e932b6d6f86c1ac58c05340451db62fe1cded91e32ee00fe4a; mode=non-target; evidence_b64=b3JpZ2luL21haW7ml6LlrZhjb21taXTjga7pnZ5mb3JjZee1seWQiOOAguS4iua1geaXouWtmHJlc2VhcmNo5aSJ5pu044KS5YaF5a655aSJ5pu044Gb44Ga5L+d5oyB44GZ44KL44Gf44KB5pysdGFza+OBp2NvbnRleHTpgoTmtYHlr77osaHlpJY= -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
@@ -697,6 +698,7 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - **統合/CI前提は成立、live反映は未確認**: cmd_3860で系列統合を完了し、cmd_3861で全量`1776 passed/8 xfailed/6 xpassed/FAIL 0/SKIP 0`、Pytest CI GREEN(run `29179774396`)を確認。だが2026-07-12 13:54 JSTの`git ls-remote origin refs/heads/main`は`7946aa449f04230af1b260d20d38c3bca4cee333`であり、P4 AC2用隔離branchの非force統合・Render Deploy APIでのlive 40桁commit確認は未完。
 - **AC2(本番1run照合)は未実行のまま再開中**: single REPEATABLE READ直前snapshotと復元経路を一次確認し、同一commit・同一target_dateのfresh shadow expected artifactを生成した後に限り、本番`POST /admin/recalculate-sync`を厳密1回実施する。live 40桁commit確認または復元経路が未成立なら、DB/API write前に安全停止する。
 → 正本: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.14、成果物`/mnt/c/Python_app/DM-signal/docs/research/cmd_3859_p4_shadow_exact_deploy_blocker.md`、P4 AC2再開=`cmd_karo_hotfix_cmd3859_p4_ac2_resume_202607121337`
+→ **続報: §57(2026-07-13)で「live反映は未確認」は解消(live=`34747ad1`確定・deploy済み)、AC2は未実行のまま残と判明**
 
 ## §56. origin統合完了・実CI初回全量実行で21件pre-existing failure発覚、push/deploy意図的見送り (cmd_3860, 2026-07-12)
 
@@ -706,6 +708,14 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - **運用上の確認**: DM-SignalはRender Auto-Deploy: On Commit。`[skip render]`無しのmain push=即本番デプロイ。よってpush(AC2)とdeploy(AC3)は事実上不可分であり、21件の未триaж failureが残る状態でのpushは「未検証コードの即時本番投入」と同義。**本cmdの範囲ではpush/deployを意図的に見送った**。local mainには`38ec9b8b`(統合)+`b46170ab`(CI env fix)の2 commitが未push保持。
 - 次アクション: 残21件(特に forward-fill regression 2件)を個別triageするcmdを新規起票→原因確定(test-mock artifactか実装regressionか)→CI真にGREEN確認→push(=deploy)→P4 AC2再実行→P5(cmd_3827回帰)。
 → 成果物: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3860_integration_and_ci_findings.md`、運用系サマリ: `context/dm-signal-ops.md` §70、正本: `docs/research/cmd_3840_nondeterminism_redesign.md`(P4系列、v1.4.14のまま)
+
+## §57. P4統合+live deploy完了(commit=34747ad1)・restore契約完成・速度実測-8.80% (v1.4.15, 2026-07-13)
+
+- **結論**: §55/§56記載の「live反映は未確認」「push/deploy見送り」は解消済み。P4統合branch(親`732dfef3`+`8241f41c`)はRender backend(`srv-d4ja7q15pdvs739a4q1g`)へdeploy済み(deploy=`dep-d99oaseq1p3s73d2keb0`、status=live、finishedAt=2026-07-12T12:18:36Z)。live commit=`34747ad118aebd42a05e00a358f2c709542f3ec9`。同commit上のGitHub Actions Pytest run(`29192313574`)もsuccess。**local HEAD(`9252af73`)/origin main(`f17c93cd`)/live(`34747ad1`)の3値は意図的に異なり、P4 AC2のexpected_commitはlive `34747ad1`を用いる**(origin/mainとの混同禁止)。
+- **restore契約完成**: negative A(artifact改竄/schema不一致/source commit不一致/DB identity不一致)4/4 PASS、negative B(confirm欠落/lock競合/実行中recalc/途中例外)4/4 PASS、全ケースbusiness write 0・必要時rollback 1。core統合commit=`732dfef3`(5 files/634行、restore core+negative A/B+runbook)。対象42→統合後43 PASS/FAIL0/SKIP0。実行側fail-closed境界としてtracked capability launcher(infra commits `4da46f0e2`→`7ba136462`→`b65d32fc5`)+runbookのexecution-rootをlive commitへpinする契約(`9252af73`)を追補(liveへ新規deployするコードではなくAC2実行側の境界)。
+- **速度実測**: shadow run(`run_id=202607112047232OVP4O`)のrecalculation_timings実測total_elapsed_sec=**497.02秒**(before本番545秒比**-8.80%**、bottleneck=L3_fof)。P1c instrumentationは`P1C_ARTIFACT_DIR`未設定の通常経路でhex書出し条件falseのため**本番inert**(production DB同run_id 0件で確認)。
+- **P4 AC2の現在地**: 前提不成立blockは全て解消(shadow 2run exact+CI GREEN+restore契約+live hash確定+revert/restore経路)。**残る実行項目**=live `34747ad1`固定worktree/expected_commit確定→credential+one-use nonce→no active recalculation/advisory lock確認→18表pre-snapshot+manifest→fullrecalculate 1回のみ実行→同expected artifactへcanonical exact照合。**AC2本番1run自体は未実行**。GREEN後はP5(cmd_3827事故条件回帰)で決定性最終宣言。
+→ 正本: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.15、家老一次照合=掲示板`blt_20260713_021355`、commit=`bd1a1b10322d97fa59cba62dd72550e9102c784f` (2026-07-13)
 
 ---
 

@@ -247,3 +247,37 @@ EOF
     [ "$status" -eq 2 ]
     [[ "$output" == *"BLOCK(GA-220)"* ]]
 }
+
+@test "GA-236 TOCTOU: 未staged状態でgit add+git commitが同一command連結された場合BLOCKする" {
+    printf 'design\n' > "$DM/docs/research/design.md"
+    run bash "$GUARD" check-command "cd '$DM' && git add docs/research/design.md && git commit -m test"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-220/GA-236)"* ]]
+    [[ "$output" == *"TOCTOU"* ]]
+    [ "$(git -C "$DM" rev-list --count HEAD)" -eq 1 ]
+}
+
+@test "GA-236 TOCTOU: docs/research対象外のgit add+git commit連結は誤BLOCKしない" {
+    printf 'change\n' >> "$DM/README.md"
+    run bash "$GUARD" check-command "cd '$DM' && git add README.md && git commit -m test"
+    [ "$status" -eq 0 ]
+}
+
+@test "GA-236 TOCTOU: git commit -am連結もtracked docs/research変更をBLOCKする" {
+    printf 'v1\n' > "$DM/docs/research/design.md"
+    git -C "$DM" add docs/research/design.md
+    git -C "$DM" commit -qm baseline2
+    printf 'v2\n' > "$DM/docs/research/design.md"
+    run bash "$GUARD" check-command "cd '$DM' && git commit -am test"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"TOCTOU"* ]]
+}
+
+@test "GA-236 TOCTOU: 実pre-bash hookでも同一command連結BLOCKが発火する" {
+    printf 'design\n' > "$DM/docs/research/design.md"
+    payload="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"cd '$DM' && git add docs/research/design.md && git commit -m test\"}}"
+    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=shogun DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"GA-220"* ]]
+    [ "$(git -C "$DM" rev-list --count HEAD)" -eq 1 ]
+}
