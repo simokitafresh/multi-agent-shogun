@@ -71,6 +71,54 @@ run_precheck() {
     [[ "$output" == *"BLOCK: natural-boundary task contract failed"* ]]
 }
 
+@test "ten_min_contract: mapping形式acceptance_criteriaの実在AC参照はPASS" {
+    local f
+    f="$(write_fixture mapping_ac_task 'task:
+  task_id: cmd_test_mapping_ac
+  estimated_minutes: 11
+  acceptance_criteria:
+    AC1: "first"
+    AC2: "second"
+  split_decision:
+    boundary_ac_ids: ["AC1", "AC2"]
+    integration_tasks: 1
+    review_round_trips: 0')"
+    run_precheck "$f"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"boundary_ac_ids=['AC1', 'AC2']"* ]]
+}
+
+@test "ten_min_contract: mapping形式acceptance_criteriaでも未知AC参照はexit 2でBLOCK" {
+    local f
+    f="$(write_fixture mapping_unknown_ac_task 'task:
+  task_id: cmd_test_mapping_unknown_ac
+  estimated_minutes: 11
+  acceptance_criteria:
+    AC1: "first"
+    AC2: "second"
+  split_decision:
+    boundary_ac_ids: ["AC3"]
+    integration_tasks: 1
+    review_round_trips: 0')"
+    run_precheck "$f"
+    [ "$status" -eq 2 ]
+}
+
+@test "ten_min_contract: mapping形式acceptance_criteriaの空IDは既知ACとして扱わずBLOCK" {
+    local f
+    f="$(write_fixture mapping_empty_ac_task 'task:
+  task_id: cmd_test_mapping_empty_ac
+  estimated_minutes: 11
+  acceptance_criteria:
+    "": "invalid"
+  split_decision:
+    boundary_ac_ids: ["AC1"]
+    integration_tasks: 1
+    review_round_trips: 0')"
+    run_precheck "$f"
+    [ "$status" -eq 2 ]
+}
+
 @test "ten_min_contract: 旧自由文split_decision_reason(boundary=/split_cost=)のみは移行抜け道にせずexit 2でBLOCK" {
     local f
     f="$(write_fixture legacy_free_text_task 'task:

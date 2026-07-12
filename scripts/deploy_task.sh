@@ -8730,14 +8730,18 @@ if estimated <= 15:
         "split_decision_reason text is not accepted as a substitute"
     )
 
-    ac_list = task.get("acceptance_criteria")
+    acceptance_criteria = task.get("acceptance_criteria")
     known_ac_ids = set()
-    if isinstance(ac_list, list):
-        for item in ac_list:
+    if isinstance(acceptance_criteria, list):
+        for item in acceptance_criteria:
             if isinstance(item, dict):
                 ac_id = item.get("id")
                 if isinstance(ac_id, str) and ac_id.strip():
                     known_ac_ids.add(ac_id.strip())
+    elif isinstance(acceptance_criteria, dict):
+        for ac_id in acceptance_criteria:
+            if isinstance(ac_id, str) and ac_id.strip():
+                known_ac_ids.add(ac_id.strip())
 
     split_decision = task.get("split_decision")
     if not isinstance(split_decision, dict):
