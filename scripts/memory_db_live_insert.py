@@ -126,7 +126,11 @@ def create_sqlite_backup(
     if (
         output_path is None
         and is_routine_backup_suffix(suffix)
-        and os.environ.get("SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED") == "1"
+        # Rotation is enabled in normal operation now that cmd_3869's legacy
+        # backlog has been classified and removed.  Keep an explicit kill
+        # switch for incident response without allowing an unset variable to
+        # silently restore unbounded backup growth.
+        and os.environ.get("SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED", "1") != "0"
     ):
         try:
             rotation_result = rotate_routine_backups(backup_root, os.path.basename(source_path))

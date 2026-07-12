@@ -2186,6 +2186,38 @@ PY
     [ "${result[1]}" = "3" ]
 }
 
+@test "create_sqlite_backup enables routine rotation by default and supports an explicit kill switch" {
+    mkdir -p "$TEST_TMPDIR/default-enabled" "$TEST_TMPDIR/disabled"
+    python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR" <<'PY'
+import importlib.util
+import os
+import sqlite3
+import sys
+
+module_path, root = sys.argv[1:3]
+spec = importlib.util.spec_from_file_location("memory_db_live_insert", module_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+source = os.path.join(root, "memory.db")
+with sqlite3.connect(source) as conn:
+    conn.execute("CREATE TABLE evidence (id INTEGER PRIMARY KEY)")
+
+calls = []
+module.rotate_routine_backups = lambda backup_dir, basename: calls.append((backup_dir, basename)) or {
+    "deleted_count": 0, "deleted_bytes": 0, "kept_count": 1, "suffixes": {}, "deleted_files": []
+}
+module.log_backup_rotation_fire = lambda result: None
+
+os.environ.pop("SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED", None)
+module.create_sqlite_backup(source, os.path.join(root, "default-enabled"), "obsidian_candidate")
+assert len(calls) == 1, calls
+
+os.environ["SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED"] = "0"
+module.create_sqlite_backup(source, os.path.join(root, "disabled"), "obsidian_candidate")
+assert len(calls) == 1, calls
+PY
+}
+
 @test "rotate_routine_backups deletes only old routine generations and preserves milestones" {
     mkdir -p "$TEST_TMPDIR/backups"
     python3 - "$TEST_TMPDIR/backups" <<'PY'
