@@ -2,7 +2,7 @@
 """Fail-closed parent SSOT/purpose/AC coverage validation for numbered cmds."""
 from __future__ import annotations
 
-import argparse, glob, os, re, sys
+import argparse, glob, hashlib, json, os, re, sys
 from pathlib import Path
 import yaml
 
@@ -25,7 +25,7 @@ def command_from(data, cmd_id):
 
 
 def find_parent(root: Path, cmd_id: str):
-    paths = [root / "queue/shogun_to_karo.yaml"]
+    paths = [root / "queue/shogun_to_karo.yaml", root / f"queue/reopened_cmds/{cmd_id}.yaml"]
     paths += [Path(p) for p in sorted(glob.glob(str(root / f"queue/archive/cmds/{cmd_id}_*.yaml")), reverse=True)]
     for path in paths:
         if path.is_file():
@@ -45,6 +45,11 @@ def ac_ids(value):
     return result
 
 
+def contract_fingerprint(cmd_id, purpose, acs):
+    raw = json.dumps({"cmd": cmd_id, "purpose": purpose, "acs": acs}, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
 def validate(root: Path, cmd_id: str):
     if not re.fullmatch(r"cmd_\d+", cmd_id):
         return True, "direct/non-numbered cmd exempt"
@@ -62,20 +67,38 @@ def validate(root: Path, cmd_id: str):
             tasks.append((path, task))
     if not tasks:
         return False, "parent_tasks_missing"
-    if not any(str(t.get("purpose") or "").strip() == purpose for _, t in tasks):
-        return False, "parent_purpose_unmatched"
+    fingerprint = contract_fingerprint(cmd_id, purpose, sorted(expected))
     covered = set()
+    task_contracts = {}
+    for path, task in tasks:
+        mapping = task.get("parent_ac_coverage") or task.get("covers_parent_acs")
+        if not isinstance(mapping, list) or not mapping:
+            continue
+        mapping = {str(x) for x in mapping}
+        if not mapping <= expected or str(task.get("parent_contract_fingerprint") or "") != fingerprint:
+            continue
+        task_contracts[path.stem] = mapping
+    if not task_contracts:
+        return False, "parent_mapping_missing_or_stale"
     for path in list((root / "queue/reports").glob("*.yaml")) + list((root / "queue/archive/reports").glob("*.yaml")):
         report = load(path)
         if str(report.get("parent_cmd") or "").strip() != cmd_id:
             continue
+        worker = str(report.get("worker_id") or "")
+        mapping = task_contracts.get(worker)
+        if not mapping or str(report.get("parent_contract_fingerprint") or "") != fingerprint:
+            continue
+        declared = report.get("parent_ac_coverage") or report.get("covers_parent_acs")
+        if not isinstance(declared, list) or {str(x) for x in declared} != mapping:
+            continue
         checks = report.get("binary_checks") or {}
         if isinstance(checks, dict):
-            for key, entries in checks.items():
-                if key in expected and isinstance(entries, list) and entries and all(
+            # Child AC names are a separate namespace.  Coverage is granted only
+            # when every child check passes and the immutable mapping is bound.
+            if checks and all(isinstance(entries, list) and entries and all(
                     isinstance(x, dict) and (x.get("result") is True or str(x.get("result", "")).lower() == "yes") for x in entries
-                ):
-                    covered.add(key)
+                ) for entries in checks.values()):
+                covered.update(mapping)
     missing = sorted(expected - covered)
     if missing:
         return False, "parent_ac_uncovered:" + ",".join(missing)
