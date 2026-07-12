@@ -1828,3 +1828,7 @@ load average最大40.05/8コア。全量backend/tests(206ファイル)合計455.
 - → [[switch-project]] プロジェクト切替スキル（current_project変更）
 - → [[hensei-mixed]] 混成編成切替スキル（GPT+Sonnet+Opus混成）
 - → [[hensei-opus]] Opus統一編成スキル（決戦モード全忍者Opus化）
+
+## 記憶DBバックアップ棚卸し（cmd_3869）
+
+`data/`配下の記憶DBバックアップ903件/246,244,670,464 bytesを完全二分し、保持22件/5,701,424,128 bytes、削除候補881件/240,543,246,336 bytes（未削除・殿確認待ち）。完全一覧と各行の根拠 → `docs/research/cmd_3869_memory_db_backup_inventory.md`
