@@ -1,5 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-12 cmd_karo_hotfix_ga226_context_freshness_revert_stale_202607120335 -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga237_dm_signal_ops_freshness_202607130237 -->
+<!-- source_commit:bd1a1b10322d97fa59cba62dd72550e9102c784f (DM-Signal ops対象pathspec(backend/app/api,backend/app/jobs,backend/app/services,backend/tests,docs/rule,docs/research,render.yaml,tasks/lessons.md)の最終同期commit。次回鮮度チェックはこのcommit以降のdiffのみ照合対象=GA-237入口側改善) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1185,3 +1186,12 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - pushは家老の統合CI判断まで未実施(local branch `ninja/kotaro-cmd-3861-resume-v2`に保持)。origin main統合(§70で示した本番push/deploy一体運用)は次工程の判断事項。
 - 詳細・21+2件全件分類・数値根拠: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3861_ci_failure_triage.md`
 - 因果リンク: [[cmd_3860マージ完了+CI初回全量実行で21件pre-existing_failure発覚]] -> [[kagemaruが21件fixture修正も全量未実行のまま報告]] -> [[kotaroが隔離worktreeで全量実行しSourceSelectGuard未解除バグ+golden_archive欠落の2件を追加発見]] -> [[uninstall_all追加+archive復元でFAIL0/SKIP0達成]]
+
+## §72 P4統合+live deploy完了(commit=34747ad1)・restore契約完成・速度実測-8.80% (v1.4.15, 2026-07-13)
+
+- **結論**: §70/§71時点で「push/deploy意図的見送り」だった状態は解消済み。P4統合branch(親`732dfef3`+`8241f41c`)がRender backend(`srv-d4ja7q15pdvs739a4q1g`)へdeploy済み(deploy=`dep-d99oaseq1p3s73d2keb0`、status=live、finishedAt=2026-07-12T12:18:36Z)。**live commit=`34747ad118aebd42a05e00a358f2c709542f3ec9`**。local HEAD(`9252af73`)/origin main(`f17c93cd`)/live(`34747ad1`)の3値は意図的に異なり、以後の本番照合はlive `34747ad1`を用いる(origin/mainとの混同禁止)。
+- **restore契約完成(運用フェイルセーフ)**: negative A(artifact改竄/schema不一致/source commit不一致/DB identity不一致)4/4 PASS、negative B(confirm欠落/lock競合/実行中recalc/途中例外)4/4 PASS、全ケースbusiness write 0・必要時rollback 1。core統合commit=`732dfef3`(restore core+negative A/B+runbook)、対象42→統合後43 PASS/FAIL0/SKIP0。実行側fail-closed境界としてtracked capability launcher(infra commit `4da46f0e2`→`7ba136462`→`b65d32fc5`)+runbookのexecution-rootをlive commitへpinする契約(`9252af73`)を追補。
+- **速度実測(recalculate_fast.py系列)**: shadow run(`run_id=202607112047232OVP4O`)のtotal_elapsed_sec=**497.02秒**(§6-7記載の本番545秒比**-8.80%**、bottleneck=L3_fof)。P1c instrumentationは`P1C_ARTIFACT_DIR`未設定の通常経路でhex書出し条件falseのため本番inert(production DB同run_id 0件で確認済み)。
+- **AC2(本番fullrecalculate 1run照合)の現在地**: 前提不成立blockは全て解消(shadow 2run exact+CI GREEN+restore契約+live hash確定+revert/restore経路)。**残る実行項目**=live `34747ad1`固定worktree/expected_commit確定→credential+one-use nonce→no active recalculation/advisory lock確認→18表pre-snapshot+manifest→fullrecalculate 1回のみ実行→同expected artifactへcanonical exact照合。本番1run自体は未実行。GREEN後はP5(cmd_3827事故条件回帰)で決定性最終宣言。
+- 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.15(§9.1 Phase表)、研究文脈の対応記述: `context/dm-signal-research.md` §57、家老一次照合: 掲示板`blt_20260713_021355`
+- 因果リンク: [[cmd_3861全量FAIL0/SKIP0達成]] -> [[cmd_karo_hotfix_p4_restore_core_integrator_202607121954でrestore契約統合]] -> [[origin main統合push+Render_Auto_Deployでlive=34747ad1確定]] -> [[AC2本番fullrecalculate_1run実行待ち]]
