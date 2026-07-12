@@ -745,6 +745,37 @@ fi
     [[ "$output" == *"PASS: archived report_received → return 0 (allowed)"* ]]
 }
 
+@test "report_gate: legacy timestamp fallback uses deployed_at, not mutable report mtime" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$(mktemp -d)"; trap "rm -rf \"$SCRIPT_DIR\"" EXIT
+LOG="$SCRIPT_DIR/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/archive/inbox" "$SCRIPT_DIR/scripts"
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  deployed_at: "2026-07-12T22:40:00+09:00"
+YAML
+cat > "$SCRIPT_DIR/queue/reports/legacy.yaml" <<YAML
+worker_id: kagemaru
+verdict: PASS
+YAML
+touch -d "2026-07-12T22:54:00+09:00" "$SCRIPT_DIR/queue/reports/legacy.yaml"
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<YAML
+messages:
+- from: kagemaru
+  type: report_received
+  timestamp: "2026-07-12T22:41:00+09:00"
+YAML
+log() { echo "$1" >> "$LOG"; }
+report_notification_completed kagemaru "$SCRIPT_DIR/queue/reports/legacy.yaml" test
+'
+    [ "$status" -eq 0 ]
+}
+
 # cmd_karo_hotfix_report_notify_inprogress_guard AC1: 再配備(in_progress)後に
 # まだ新しいreportが作られていない場合、旧い(前回試行の)completed reportを見て
 # AUTO-DONEがtask statusを誤ってdoneへ書き換えてはならない。

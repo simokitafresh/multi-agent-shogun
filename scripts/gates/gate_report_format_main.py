@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # semantic-links: [[gate迂回防止]], [[忍者報告品質プロトコル]]
+import datetime as dt
 import json
 import os
 import re
@@ -524,6 +525,15 @@ def main() -> int:
     if isinstance(status_val, str) and status_val.strip().lower() == "pending":
         errors.append('status: "pending" はテンプレート初期値。完了後に "completed" に更新せよ')
         hints.append("FIX (status): bash scripts/report_field_set.sh <report> status completed")
+
+    if isinstance(status_val, str) and status_val.strip().lower() in ("completed", "revision_requested"):
+        timestamp_val = data.get("timestamp")
+        timestamp_text = str(timestamp_val).strip() if timestamp_val is not None else ""
+        try:
+            dt.datetime.fromisoformat(timestamp_text.replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            errors.append("timestamp: completed/revision_requested report requires a parseable ISO timestamp")
+            hints.append("FIX (timestamp): bash scripts/report_field_set.sh <report> timestamp \"$(date -Iseconds)\"")
 
     result = data.get("result", {})
     if isinstance(result, dict):

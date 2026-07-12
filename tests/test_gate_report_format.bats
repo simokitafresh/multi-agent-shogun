@@ -31,6 +31,7 @@ create_valid_report() {
 worker_id: testninja
 parent_cmd: cmd_test
 ac_version_read: abc12345
+timestamp: '2026-07-12T00:00:00+09:00'
 status: completed
 binary_checks:
   AC1:
@@ -376,6 +377,7 @@ EOF
 worker_id: testninja
 parent_cmd: cmd_test
 ac_version_read: abc12345
+timestamp: '2026-07-12T00:00:00+09:00'
 status: completed
 binary_checks:
   AC1: "テスト対象の確認項目を詳細に記載"
@@ -839,6 +841,25 @@ self_gate_check:
   purpose_fit: PASS
 verdict: PASS
 YAML
+}
+
+@test "completed report blocks empty or invalid timestamp and accepts ISO timestamp" {
+    local report="$TMPDIR_BATS/report.yaml"
+    create_valid_report "$report"
+
+    sed -i "s/^timestamp:.*/timestamp: ''/" "$report"
+    run env GATE_NO_LOG=1 bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"requires a parseable ISO timestamp"* ]]
+
+    sed -i "s/^timestamp:.*/timestamp: 'not-a-date'/" "$report"
+    run env GATE_NO_LOG=1 bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"requires a parseable ISO timestamp"* ]]
+
+    sed -i "s/^timestamp:.*/timestamp: '2026-07-12T23:40:00+09:00'/" "$report"
+    run env GATE_NO_LOG=1 bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
 }
 
 @test "T-AC3-1: non-overlapping auto-commit hunk on shared file does not WARN" {

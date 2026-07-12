@@ -1461,7 +1461,14 @@ PY
         report_epoch=""
     fi
     if ! [[ "$report_epoch" =~ ^[0-9]+$ ]]; then
-        report_epoch=$(stat -c %Y "$report_file" 2>/dev/null || echo 0)
+        # Legacy reports may lack a timestamp. Their mutable mtime is not a
+        # completion boundary because report_field_set/gate updates it later.
+        # Use the current deployment boundary instead, preserving old archives
+        # without allowing notifications from a prior deployment to match.
+        local task_deployed_at
+        task_deployed_at=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "deployed_at" "" 2>/dev/null || true)
+        report_epoch=$(_ninja_monitor_timestamp_epoch "$task_deployed_at") || report_epoch=""
+        [[ "$report_epoch" =~ ^[0-9]+$ ]] || report_epoch=0
     fi
     inbox_sources=("$SCRIPT_DIR/queue/inbox/karo.yaml")
 
