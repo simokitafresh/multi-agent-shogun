@@ -1199,6 +1199,7 @@ EOF
             SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
             SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
             SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+            SKILL_AUTO_IMPROVE_FAIL_TTL_DAYS=99999 \
             SKILL_AUTO_IMPROVE_BULLETIN_SCRIPT="$TEST_TMPDIR/scripts/bulletin_write.sh" \
             SKILL_AUTO_IMPROVE_POSTED_BY="hayate" \
             BULLETIN_CAPTURE="$BULLETIN_CAPTURE" \
@@ -1304,6 +1305,7 @@ EOF
         SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
         SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
         SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+        SKILL_AUTO_IMPROVE_FAIL_TTL_DAYS=99999 \
         bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 3 --apply --unchanged-threshold 1
     [ "$status" -eq 0 ]
     [[ "$output" == *"CLEARED_CODE_FIX: report-write gate=gate_report_format pass=2026-05-02T10:05:00+0900 last_fail=2026-05-02T10:00:00+0900"* ]]
@@ -1381,6 +1383,7 @@ EOF
         SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
         SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
         SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
+        SKILL_AUTO_IMPROVE_FAIL_TTL_DAYS=99999 \
         SKILL_AUTO_IMPROVE_BULLETIN_SCRIPT="$TEST_TMPDIR/scripts/bulletin_write.sh" \
         SKILL_AUTO_IMPROVE_POSTED_BY="hayate" \
         BULLETIN_CAPTURE="$BULLETIN_CAPTURE" \
@@ -1457,6 +1460,7 @@ EOF
         SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
         SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
         SKILL_AUTO_IMPROVE_TRAINING_GENERATOR="$TEST_TMPDIR/scripts/training_task_generator.sh" \
+        SKILL_AUTO_IMPROVE_FAIL_TTL_DAYS=99999 \
         TRAINING_CAPTURE="$TRAINING_CAPTURE" \
         bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
     [ "$status" -eq 0 ]
@@ -1467,6 +1471,7 @@ EOF
         SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
         SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
         SKILL_AUTO_IMPROVE_TRAINING_GENERATOR="$TEST_TMPDIR/scripts/training_task_generator.sh" \
+        SKILL_AUTO_IMPROVE_FAIL_TTL_DAYS=99999 \
         TRAINING_CAPTURE="$TRAINING_CAPTURE" \
         bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
     [ "$status" -eq 0 ]
@@ -1494,6 +1499,7 @@ EOF
         SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
         SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
         SKILL_AUTO_IMPROVE_TRAINING_GENERATOR="$TEST_TMPDIR/scripts/training_task_generator.sh" \
+        SKILL_AUTO_IMPROVE_FAIL_TTL_DAYS=99999 \
         TRAINING_CAPTURE="$TRAINING_CAPTURE" \
         bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
     [ "$status" -eq 0 ]
@@ -1513,6 +1519,7 @@ EOF
         SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
         SKILL_AUTO_IMPROVE_STATE_JSON="$STATE_JSON" \
         SKILL_AUTO_IMPROVE_TRAINING_GENERATOR="$TEST_TMPDIR/scripts/training_task_generator.sh" \
+        SKILL_AUTO_IMPROVE_FAIL_TTL_DAYS=99999 \
         TRAINING_CAPTURE="$TRAINING_CAPTURE" \
         bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
     [ "$status" -eq 0 ]

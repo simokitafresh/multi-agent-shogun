@@ -81,14 +81,14 @@ compute_first_fire_rate() {
         }
     ' "$GATE_FIRE_LOG"
 }
-KM_JSON_CACHE="/tmp/dashboard_km_json_cache.txt"
-KM_MODEL_CACHE="/tmp/dashboard_km_model_cache.txt"
-KM_CACHE_LINES="/tmp/dashboard_km_cache_lines.txt"
 # GP-XXX: TTL caches for slow subprocesses (CTX: 120s, CI: 60s)
 # Project-scoped via cksum so test environments don't share cache with production
 # GP-cmd_1981: awk subprocess排除 — ${...%% *}でスペース以降を剥ぎ取る(~2ms削減)
 _proj_hash_raw=$(printf '%s' "$PROJECT_DIR" | cksum)
 _proj_hash=${_proj_hash_raw%% *}
+KM_JSON_CACHE="/tmp/dashboard_km_json_cache_${_proj_hash}.txt"
+KM_MODEL_CACHE="/tmp/dashboard_km_model_cache_${_proj_hash}.txt"
+KM_CACHE_LINES="/tmp/dashboard_km_cache_lines_${_proj_hash}.txt"
 CTX_WARN_CACHE="/tmp/dashboard_ctx_warn_${_proj_hash}.txt"
 CTX_WARN_CACHE_TS="/tmp/dashboard_ctx_warn_${_proj_hash}.ts"
 CI_STATUS_CACHE="/tmp/dashboard_ci_status_${_proj_hash}.txt"
@@ -581,7 +581,13 @@ if [[ -f "$GATE_LOG" ]]; then
     _gate_signature=$(stat -c '%n:%y:%s' "$GATE_LOG" 2>/dev/null || echo "missing")
 fi
 _cached_signature=""
-[[ -f "$KM_CACHE_LINES" ]] && IFS= read -r _cached_signature < "$KM_CACHE_LINES"
+if [[ -f "$KM_CACHE_LINES" ]]; then
+    # 並行更新下ではconcurrent writer(下記$_PID_MA分岐)がこのファイルを再作成する
+    # 瞬間に読みに来ると空ファイルを掴みread(builtin)がEOF失敗(exit 1)する。
+    # `&&`チェーン末尾でこれをset -eに晒すとスクリプト全体が無出力のまま異常終了する
+    # (cmd_karo_ci_fix_run_29179024557 AC1で実測)。読み失敗はキャッシュmiss相当として無害化する。
+    IFS= read -r _cached_signature < "$KM_CACHE_LINES" || _cached_signature=""
+fi
 
 # L4-R?: knowledge_metrics専用キャッシュキー（lesson系ファイルmtimeベース）
 # 変更前: gate_log mtime変化(毎cycle)→毎回knowledge_metrics.sh実行(1537ms/回)
@@ -616,7 +622,14 @@ if [[ "$_gate_signature" != "$_cached_signature" ]] || [[ ! -s "$KM_MODEL_CACHE"
     _PID_MA=$!
 fi
 [[ -n "$_PID_KM" ]] && { wait "$_PID_KM" 2>/dev/null || true; touch "$_km_lesson_cache_key"; }
-[[ -n "$_PID_MA" ]] && { wait "$_PID_MA" 2>/dev/null || true; echo "$_gate_signature" > "$KM_CACHE_LINES"; }
+if [[ -n "$_PID_MA" ]]; then
+    wait "$_PID_MA" 2>/dev/null || true
+    # atomic書込み: 直接>で上書きすると並行readerが空ファイルを掴む窓が生まれる(root cause)。
+    # mktemp+mv -fで、writer完了までreaderには旧内容 or 新内容のどちらかのみ見せる。
+    _km_cache_lines_tmp=$(mktemp "${KM_CACHE_LINES}.tmp.XXXXXX" 2>/dev/null) && {
+        echo "$_gate_signature" > "$_km_cache_lines_tmp" && mv -f -- "$_km_cache_lines_tmp" "$KM_CACHE_LINES"
+    } || true
+fi
 
 if [[ -n "$_PID_CTX" ]]; then
     wait "$_PID_CTX" 2>/dev/null || true
