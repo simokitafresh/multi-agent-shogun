@@ -71,6 +71,32 @@ grep -q "INBOX_CALLED:karo .*cmd_gap_again.*completion_notify_gap" "$LOG"
     [ "$status" -eq 0 ]
 }
 
+@test "completion_notify_gap: stale formal approval fingerprint is ignored" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T=$(mktemp -d); trap "rm -rf \"$T\"" EXIT
+SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
+mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_formal/review_approvals/reports" "$T/scripts" "$STATE_DIR"
+printf "messages: []\n" > "$T/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$T/queue/inbox/shogun.yaml"
+printf "entries: []\n" > "$T/queue/bulletin_board.yaml"
+printf "#!/bin/bash\necho INBOX_CALLED:\\$@ >> \"$LOG\"\n" > "$T/scripts/inbox_write.sh"; chmod +x "$T/scripts/inbox_write.sh"
+report="$T/queue/reports/n_report_cmd_formal.yaml"; commit=$(printf a%.0s {1..40})
+printf "parent_cmd: cmd_formal\ncommit_hash: %s\n" "$commit" > "$report"
+key=$(printf %s queue/reports/n_report_cmd_formal.yaml | sha256sum | awk "{print \$1}")
+mkdir -p "$T/queue/gates/cmd_formal/review_approvals/reports/$key"
+fp=$(sha256sum "$report" | awk "{print \$1}"):$commit; old=$(date -d "-600 seconds" -Iseconds)
+printf "timestamp: %s\nresult: LGTM\nfingerprint: %s\n" "$old" "$fp" > "$T/queue/gates/cmd_formal/review_approvals/reports/$key/gunshi.yaml"
+log() { echo "$1" >> "$LOG"; }; NINJA_MONITOR_LGTM_NOTIFY_GRACE=1 check_karo_completion_notify_gap
+grep -q cmd_formal "$LOG"
+: > "$LOG"; printf "changed: true\n" >> "$report"; check_karo_completion_notify_gap
+! grep -q cmd_formal "$LOG"
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "auto_commit: regular commit excludes context markdown and batches context separately" {
     run bash -lc '
 set -eo pipefail

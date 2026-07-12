@@ -1845,21 +1845,23 @@ check_karo_completion_notify_gap() {
     local inbox_shogun="$SCRIPT_DIR/queue/inbox/shogun.yaml"
     local reports_dir="$SCRIPT_DIR/queue/reports"
     local tasks_dir="$SCRIPT_DIR/queue/tasks"
+    local gates_dir="$SCRIPT_DIR/queue/gates"
     local grace="${NINJA_MONITOR_LGTM_NOTIFY_GRACE:-300}"
 
     [ -f "$inbox_karo" ] || return 0
 
     local pending
-    pending=$(python3 - "$inbox_karo" "$bulletin_file" "$inbox_shogun" "$reports_dir" "$tasks_dir" "$grace" "$EPOCHSECONDS" <<'PY'
+    pending=$(python3 - "$inbox_karo" "$bulletin_file" "$inbox_shogun" "$reports_dir" "$tasks_dir" "$gates_dir" "$grace" "$EPOCHSECONDS" <<'PY'
 import datetime as dt
 import glob
+import hashlib
 import os
 import re
 import sys
 
 import yaml
 
-karo_inbox, bulletin_file, shogun_inbox, reports_dir, tasks_dir, grace_s, now_s = sys.argv[1:8]
+karo_inbox, bulletin_file, shogun_inbox, reports_dir, tasks_dir, gates_dir, grace_s, now_s = sys.argv[1:9]
 grace = int(grace_s)
 now = int(now_s)
 
@@ -1902,6 +1904,22 @@ if not isinstance(messages, list):
 
 lgtm_events = []
 reopen_events = []
+# Formal approvals count only while bound to the current report generation.
+for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
+    report = load_yaml(report_path)
+    cmd_id = str(report.get("parent_cmd") or "") if isinstance(report, dict) else ""
+    commit_id = str(report.get("commit_hash") or report.get("commit") or report.get("git_commit") or "") if isinstance(report, dict) else ""
+    if not cmd_id or len(commit_id) != 40:
+        continue
+    root = os.path.dirname(os.path.dirname(reports_dir))
+    rel = os.path.relpath(report_path, root)
+    key = hashlib.sha256(rel.encode()).hexdigest()
+    approval = load_yaml(os.path.join(gates_dir, cmd_id, "review_approvals", "reports", key, "gunshi.yaml"))
+    current_fp = hashlib.sha256(open(report_path, "rb").read()).hexdigest() + ":" + commit_id
+    if approval.get("result") == "LGTM" and str(approval.get("fingerprint") or "") == current_fp:
+        ts = epoch(approval.get("timestamp"))
+        if ts is not None:
+            lgtm_events.append((cmd_id, ts))
 for msg in messages:
     if not isinstance(msg, dict):
         continue
