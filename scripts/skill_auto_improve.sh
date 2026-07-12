@@ -21,6 +21,20 @@ bulletin_script="${SKILL_AUTO_IMPROVE_BULLETIN_SCRIPT:-$REPO_ROOT/scripts/bullet
 bulletin_posted_by="${SKILL_AUTO_IMPROVE_POSTED_BY:-karo}"
 training_task_generator="${SKILL_AUTO_IMPROVE_TRAINING_GENERATOR:-$REPO_ROOT/scripts/training_task_generator.sh}"
 
+# An invocation that replaces production inputs/state is an isolated run (tests,
+# fixtures, diagnostics).  Default production side effects must not escape that
+# boundary.  Callers may still inject explicit capture scripts for verification.
+if [ -n "${SKILL_EXECUTION_LOG_FILE+x}" ] || \
+   [ -n "${SKILL_AUTO_IMPROVE_SKILLS_DIRS+x}" ] || \
+   [ -n "${SKILL_AUTO_IMPROVE_STATE_JSON+x}" ]; then
+    if [ -z "${SKILL_AUTO_IMPROVE_BULLETIN_SCRIPT+x}" ]; then
+        bulletin_script=""
+    fi
+    if [ -z "${SKILL_AUTO_IMPROVE_TRAINING_GENERATOR+x}" ]; then
+        training_task_generator=""
+    fi
+fi
+
 usage() {
     sed -n '1,7p' "$0" >&2
 }

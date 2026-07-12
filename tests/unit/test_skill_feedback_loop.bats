@@ -1579,3 +1579,34 @@ assert entry["training_notified_streak"] == 1, entry
 assert "code_fix_cleared_at" not in entry, entry
 PY
 }
+
+@test "skill_auto_improve isolated inputs cannot use production side effects by default" {
+    mkdir -p "$TEST_TMPDIR/skills/report-write"
+    printf '# report-write\n' > "$TEST_TMPDIR/skills/report-write/SKILL.md"
+    cat > "$TEST_SKILL_LOG" <<EOF
+executions:
+- ts: "2026-05-02T10:00:00+0900"
+  skill: "report-write"
+  result: "FAIL"
+  stumbling_points: "verdict missing"
+  gate: "gate_report_format"
+EOF
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        SKILL_AUTO_IMPROVE_STATE_JSON="$TEST_TMPDIR/state.json" \
+        SKILL_AUTO_IMPROVE_FAIL_TTL_DAYS=99999 \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
+    [ "$status" -eq 0 ]
+
+    run env \
+        SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" \
+        SKILL_AUTO_IMPROVE_SKILLS_DIRS="$TEST_TMPDIR/skills" \
+        SKILL_AUTO_IMPROVE_STATE_JSON="$TEST_TMPDIR/state.json" \
+        SKILL_AUTO_IMPROVE_FAIL_TTL_DAYS=99999 \
+        bash "$SKILL_AUTO_IMPROVE_SCRIPT" --top 1 --apply --unchanged-threshold 1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ESCALATION_SKIPPED_NO_BULLETIN"* ]]
+    [[ "$output" == *"TRAINING_SKIPPED_NO_GENERATOR"* ]]
+}
