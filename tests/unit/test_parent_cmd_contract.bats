@@ -33,6 +33,16 @@ report() { local coverage=${1:-AC1}; printf 'worker_id: ninja\nparent_cmd: cmd_3
 @test "complete aggregate mapping covers parent despite child purpose namespace" { parent; task 'AC1, AC2, AC3'; report 'AC1, AC2, AC3'; run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_3869 --root "$T"; [ "$status" -eq 0 ]; }
 @test "direct hotfix is exempt" { run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_karo_hotfix_x --root "$T"; [ "$status" -eq 0 ]; }
 
+@test "reopened parent is an authoritative contract source" {
+  parent
+  mkdir -p "$T/queue/reopened_cmds"
+  mv "$T/queue/shogun_to_karo.yaml" "$T/queue/reopened_cmds/cmd_3869.yaml"
+  task 'AC1, AC2, AC3'; report 'AC1, AC2, AC3'
+  run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_3869 --root "$T"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'queue/reopened_cmds/cmd_3869.yaml'* ]]
+}
+
 @test "deployment producer binds identical task and report contracts" {
   parent
   mkdir -p "$T/queue/reports"

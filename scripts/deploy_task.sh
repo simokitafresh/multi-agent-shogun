@@ -2288,9 +2288,18 @@ task_doc = yaml.safe_load(open(task_path, encoding="utf-8")) or {}
 task = task_doc.get("task") or {}
 cmd = str(task.get("parent_cmd") or "")
 if not (cmd.startswith("cmd_") and cmd[4:].isdigit()): raise SystemExit(0)
-source = yaml.safe_load(open(os.path.join(root, "queue", "shogun_to_karo.yaml"), encoding="utf-8")) or {}
-commands = source.get("commands", source)
-parent = commands.get(cmd) if isinstance(commands, dict) else next((x for x in commands if isinstance(x,dict) and x.get("id")==cmd), None)
+def command_from(path):
+    if not os.path.isfile(path): return None
+    source = yaml.safe_load(open(path, encoding="utf-8")) or {}
+    commands = source.get("commands", source)
+    return commands.get(cmd) if isinstance(commands, dict) else next((x for x in commands if isinstance(x,dict) and x.get("id")==cmd), None)
+
+# Keep the producer's resolution order identical to parent_cmd_contract.py:
+# active queue first, then the authoritative reopened state.  Archive is not
+# deployable until cmd_reopen has explicitly restored it.
+parent = command_from(os.path.join(root, "queue", "shogun_to_karo.yaml"))
+if not isinstance(parent, dict):
+    parent = command_from(os.path.join(root, "queue", "reopened_cmds", cmd + ".yaml"))
 if not isinstance(parent, dict): raise SystemExit("BLOCK: parent SSOT missing during deployment")
 def ids(items): return [str(x.get("id") or f"AC{i}") for i,x in enumerate(items or [],1) if isinstance(x,dict)]
 parent_ids = ids(parent.get("acceptance_criteria")); purpose = str(parent.get("purpose") or parent.get("title") or "").strip()
