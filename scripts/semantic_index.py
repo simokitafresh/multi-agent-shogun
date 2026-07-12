@@ -50,7 +50,9 @@ class BoundedReadConnection(sqlite3.Connection):
             try:
                 return super().execute(sql, parameters)
             except sqlite3.OperationalError as exc:
-                if "locked" not in str(exc).lower() or time.monotonic() >= deadline:
+                if "locked" not in str(exc).lower():
+                    raise
+                if time.monotonic() >= deadline:
                     raise RuntimeError(
                         "memory DB read lock deadline exceeded after "
                         f"{SQLITE_READ_RETRY_DEADLINE_MS}ms while executing read query: {exc}"
@@ -74,7 +76,9 @@ def memory_db_read_connection(db_path: Path) -> BoundedReadConnection:
             conn.row_factory = sqlite3.Row
             return conn
         except sqlite3.OperationalError as exc:
-            if "locked" not in str(exc).lower() or time.monotonic() >= deadline:
+            if "locked" not in str(exc).lower():
+                raise
+            if time.monotonic() >= deadline:
                 raise RuntimeError(
                     f"memory DB read lock deadline exceeded after "
                     f"{SQLITE_READ_RETRY_DEADLINE_MS}ms: {db_path}: {exc}"
