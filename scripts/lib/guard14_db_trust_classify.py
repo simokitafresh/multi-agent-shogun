@@ -133,10 +133,16 @@ LOCAL_HOST_VALUES = {"localhost", "127.0.0.1", "::1"}
 # env varまで拾ってしまうため、DB意味トークンを要求する) (2) 接続API呼出の形 `.connect(`
 # (3) engine factory呼出の形 `create_*engine(` (4) host指定(host=) (5) in-memory(:memory:)
 # (6) postgres(ql)://スキームは別途DSN_URL_REで判定済み。
-# .envはDB以外のAPI資格情報にも使われるため、それ単独ではDB intentにしない。
+# .env credential sourceは接続先を隠すため原則fail-closed。ただしcommand全体にDB固有
+# markerが0件で、明示HTTP client callがある場合だけ非DB資格情報として除外する。
 DB_ENV_VAR_RE = re.compile(r"\b[A-Z][A-Z0-9_]*(?:DB|DATABASE|POSTGRES|PG)[A-Z0-9_]*_(?:URL|DSN)\b")
 CONNECT_CALL_RE = re.compile(r"\.connect\s*\(")
 CREATE_ENGINE_RE = re.compile(r"create_[A-Za-z_]*engine\s*\(")
+ENV_CREDENTIAL_FILE_RE = re.compile(r"(?:^|[^A-Za-z0-9_])\.env(?:\.[A-Za-z0-9_]+)?\b")
+HTTP_CLIENT_CALL_RE = re.compile(
+    r"\b(?:requests|httpx)\.(?:get|post|put|patch|delete|request)\s*\("
+    r"|\burllib\.request\.urlopen\s*\("
+)
 
 
 def _tokenize(command: str) -> list[str]:
@@ -194,6 +200,14 @@ def _is_connection_segment(tokens: list[str]) -> bool:
         # connection intentとみなす(review_correction 09:39, karo: benign python/pytest回帰)
         return _segment_has_db_marker(tokens)
     return False
+
+
+def _segment_has_env_credential_source(tokens: list[str]) -> bool:
+    return ENV_CREDENTIAL_FILE_RE.search(" ".join(tokens)) is not None
+
+
+def _segment_has_explicit_http_call(tokens: list[str]) -> bool:
+    return HTTP_CLIENT_CALL_RE.search(" ".join(tokens)) is not None
 
 
 def _split_into_segments(all_tokens: list[str]) -> list[list[str]]:
@@ -308,6 +322,14 @@ def classify(command: str) -> str:
 
     segments = _split_into_segments(all_tokens)
     connection_segments = [seg for seg in segments if _is_connection_segment(seg)]
+
+    credential_segments = [seg for seg in segments if _segment_has_env_credential_source(seg)]
+    if credential_segments and not connection_segments:
+        # Render等の固有語では免除しない。HTTP clientの構造がcommand内に明示された場合のみ
+        # credential-onlyと証明できる。opaque ORM/init_from_envはfail-closedを維持する。
+        if any(_segment_has_explicit_http_call(seg) for seg in segments):
+            return "not_connection"
+        return "connection:untrusted"
 
     if not connection_segments:
         return "not_connection"

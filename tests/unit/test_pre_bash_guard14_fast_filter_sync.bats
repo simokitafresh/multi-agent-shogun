@@ -137,12 +137,11 @@ _run_hook_cmd_local() {
     [ "$status" -eq 0 ]
 }
 
-# --- .env単独はDB intentではない ---
-# .envはHTTP API等の非DB資格情報にも使われる。DB固有構造が無い限りnot_connection。
+# --- .env credential source: 明示HTTP callだけ限定免除 ---
 
 @test "sync: backend/.env load with NO DB marker -> fast filter rejects maybe" {
     run _fast_filter_says_maybe "python3 -c \"from dotenv import load_dotenv; load_dotenv('backend/.env'); import myorm; myorm.init_from_env()\""
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
 @test "classifier: Render API credentials from backend/.env plus requests.get -> not_connection" {
@@ -153,31 +152,56 @@ _run_hook_cmd_local() {
 
 @test "sync: bare .env (no path prefix) with no other marker -> fast filter says maybe" {
     run _fast_filter_says_maybe "python3 -c \"from dotenv import load_dotenv; load_dotenv('.env')\""
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
-@test "classifier: bare .env with no other marker -> not_connection" {
+@test "classifier: bare .env with no other marker -> connection:untrusted" {
     _classify "python3 -c \"from dotenv import load_dotenv; load_dotenv('.env')\""
     [ "$status" -eq 0 ]
-    [ "$output" = "not_connection" ]
+    [ "$output" = "connection:untrusted" ]
 }
 
-# source .env後も、後続segmentにDB固有構造が無ければnot_connection。
+# source .env後も、明示HTTP callが無ければfail-closed。
 
 @test "sync: source backend/.env as its own segment, followed by marker-less python -> fast filter says maybe" {
     run _fast_filter_says_maybe 'source backend/.env && python3 -c "import myorm; myorm.init_from_env()"'
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
-@test "classifier: source backend/.env followed by marker-less python -> not_connection" {
+@test "classifier: source backend/.env followed by marker-less python -> connection:untrusted" {
     _classify 'source backend/.env && python3 -c "import myorm; myorm.init_from_env()"'
+    [ "$status" -eq 0 ]
+    [ "$output" = "connection:untrusted" ]
+}
+
+@test "Guard14 (hook): source backend/.env then marker-less opaque ORM is blocked" {
+    _run_hook_cmd_local 'source backend/.env && python3 -c "import myorm; myorm.init_from_env()"'
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Guard14"* ]]
+}
+
+@test "classifier: source .env followed by explicit httpx GET -> not_connection" {
+    _classify 'source .env && python3 -c "import httpx; httpx.get(\"https://api.example.com/v1\")"'
     [ "$status" -eq 0 ]
     [ "$output" = "not_connection" ]
 }
 
-@test "Guard14 (hook): source backend/.env then marker-less python is allowed" {
-    _run_hook_cmd_local 'source backend/.env && python3 -c "import myorm; myorm.init_from_env()"'
+@test "classifier adversarial: requests GET and DB connect in same command -> connection:untrusted" {
+    _classify 'source .env && python3 -c "import requests,psycopg; requests.get(\"https://api.example.com\"); psycopg.connect(host=\"remote.example.com\")"'
     [ "$status" -eq 0 ]
+    [ "$output" = "connection:untrusted" ]
+}
+
+@test "Guard14 adversarial: requests GET and DB connect in same command is blocked" {
+    _run_hook_cmd_local 'source .env && python3 -c "import requests,psycopg; requests.get(\"https://api.example.com\"); psycopg.connect(host=\"remote.example.com\")"'
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Guard14"* ]]
+}
+
+@test "classifier: direct dotenv_values parse plus urllib GET -> not_connection" {
+    _classify 'python3 -c "from dotenv import dotenv_values; import urllib.request; c=dotenv_values(\".env.production\"); urllib.request.urlopen(\"https://api.example.com\")"'
+    [ "$status" -eq 0 ]
+    [ "$output" = "not_connection" ]
 }
 
 @test "Guard14 (hook): source backend/.env then explicit DB connect remains blocked" {

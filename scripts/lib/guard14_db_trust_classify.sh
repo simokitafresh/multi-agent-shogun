@@ -42,6 +42,9 @@ guard14_maybe_connection() {
     [[ "$cmd" =~ host[[:space:]]*= ]] && return 0
     # (7) in-memoryマーカー
     [[ "$cmd" == *':memory:'* ]] && return 0
+    # (8) credential source。Python側が明示HTTP callとの組合せだけnot_connectionへ落とす。
+    # fast filterは保守的negative filterなので.envを必ずslow-pathへ渡す。
+    [[ "$cmd" =~ (^|[^A-Za-z0-9_])\.env(\.[A-Za-z0-9_]+)?([^A-Za-z0-9_]|$) ]] && return 0
     return 1
 }
 
