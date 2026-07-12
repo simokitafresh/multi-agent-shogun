@@ -379,6 +379,240 @@ PY
     [ -z "$output" ]
 }
 
+@test "memory_db_query search succeeds for 20 parallel workers against a cache broken from the start" {
+    cat > "$TEST_TMPDIR/archive/search20.jsonl" <<'EOF'
+{"ts":"2026-07-13T01:00:00+09:00","agent":"lord","target":"hanzo","direction":"inbound","summary":"parallel search fixture","detail":"needleparallel20fixture"}
+EOF
+    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+    mkdir -p "$TEST_TMPDIR/cache" "$TEST_TMPDIR/results20"
+    printf 'not-a-sqlite-database' > "$TEST_TMPDIR/cache/memory.db"
+    export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
+
+    for worker in $(seq 1 20); do
+        AGENT_ID=hanzo bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+            --db "$TEST_TMPDIR/data/memory.db" \
+            --search "needleparallel20fixture" \
+            > "$TEST_TMPDIR/results20/$worker.out" \
+            2> "$TEST_TMPDIR/results20/$worker.err" &
+    done
+    wait
+
+    success_count=0
+    for worker in $(seq 1 20); do
+        run cat "$TEST_TMPDIR/results20/$worker.out"
+        [[ "$output" == *"parallel search fixture"* ]] || continue
+        success_count=$((success_count + 1))
+        run grep -c "malformed" "$TEST_TMPDIR/results20/$worker.err"
+        [ "$output" = "0" ]
+    done
+    [ "$success_count" -eq 20 ]
+    run find "$TEST_TMPDIR/cache" -maxdepth 1 -name '.memory.db.*.tmp'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "memory_db_live_insert cache generation stays healthy under concurrent readers hammering the same path" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("PRAGMA journal_mode=WAL")
+conn.execute(
+    "CREATE TABLE events (summary TEXT, detail TEXT)"
+)
+conn.execute(
+    "CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid', tokenize='trigram')"
+)
+rows = [(f"row {i}", "x" * 400) for i in range(4000)]
+conn.executemany("INSERT INTO events VALUES (?, ?)", rows)
+conn.execute("INSERT INTO events_fts(events_fts) VALUES ('rebuild')")
+conn.commit()
+PY
+    mkdir -p "$TEST_TMPDIR/cache_live"
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache_live/memory.db"
+
+    python3 -c "
+import sys
+sys.path.insert(0, '$PROJECT_ROOT/scripts')
+import memory_db_live_insert as li
+li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
+"
+
+    for worker in $(seq 1 20); do
+        (
+            end=$((SECONDS + 2))
+            while [ "$SECONDS" -lt "$end" ]; do
+                python3 - "$TEST_TMPDIR/cache_live/memory.db" "$TEST_TMPDIR/results20/reader_$worker.err" <<'PY'
+import sqlite3
+import sys
+
+cache_path, err_path = sys.argv[1], sys.argv[2]
+try:
+    with sqlite3.connect(f"file:{cache_path}?mode=ro", uri=True) as conn:
+        conn.execute("SELECT count(*) FROM events").fetchone()
+except sqlite3.DatabaseError as exc:
+    with open(err_path, "a", encoding="utf-8") as handle:
+        handle.write(str(exc) + "\n")
+PY
+            done
+        ) &
+    done
+    mkdir -p "$TEST_TMPDIR/results20"
+
+    for i in $(seq 1 5); do
+        python3 -c "
+import sys
+sys.path.insert(0, '$PROJECT_ROOT/scripts')
+import memory_db_live_insert as li
+li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
+"
+    done
+    wait
+
+    run bash -c "cat '$TEST_TMPDIR'/results20/reader_*.err 2>/dev/null"
+    [ -z "$output" ]
+    python3 - "$TEST_TMPDIR/cache_live/memory.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True)
+result = conn.execute("PRAGMA quick_check").fetchone()[0]
+assert result == "ok", result
+count = conn.execute("SELECT count(*) FROM events").fetchone()[0]
+assert count == 4000, count
+PY
+    run find "$TEST_TMPDIR/cache_live" -maxdepth 1 \( -name '.*.tmp' -o -name '.*.tmp-wal' -o -name '.*.tmp-shm' -o -name '.*.tmp-journal' \)
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "memory_db_live_insert cache generation cleans up its own temp file WAL sidecars" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("PRAGMA journal_mode=WAL")
+conn.execute("CREATE TABLE events (summary TEXT)")
+conn.execute("INSERT INTO events VALUES ('wal sidecar fixture')")
+conn.commit()
+PY
+    mkdir -p "$TEST_TMPDIR/cache_wal"
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache_wal/memory.db"
+
+    python3 -c "
+import sys
+sys.path.insert(0, '$PROJECT_ROOT/scripts')
+import memory_db_live_insert as li
+li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
+"
+
+    run find "$TEST_TMPDIR/cache_wal" -maxdepth 1 -type f
+    non_lock_extra=""
+    for f in $output; do
+        base="$(basename "$f")"
+        [ "$base" = "memory.db" ] && continue
+        [ "$base" = "memory.db.lock" ] && continue
+        non_lock_extra="$non_lock_extra $base"
+    done
+    [ -z "$non_lock_extra" ]
+    [ -s "$TEST_TMPDIR/cache_wal/memory.db" ]
+}
+
+@test "memory_db_live_insert never publishes a torn cache when the writer is killed mid-backup" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (summary TEXT)")
+conn.executemany("INSERT INTO events VALUES (?)", [(f"row {i}",) for i in range(2000)])
+conn.commit()
+PY
+    mkdir -p "$TEST_TMPDIR/cache_kill"
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache_kill/memory.db"
+
+    # First build: a healthy published cache with the original row count.
+    python3 -c "
+import sys
+sys.path.insert(0, '$PROJECT_ROOT/scripts')
+import memory_db_live_insert as li
+li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
+"
+    [ -s "$TEST_TMPDIR/cache_kill/memory.db" ]
+
+    # Grow the source so a completed regeneration would visibly change the cache.
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(sys.argv[1])
+conn.executemany("INSERT INTO events VALUES (?)", [(f"extra {i}",) for i in range(2000, 6000)])
+conn.commit()
+PY
+
+    # Kill the writer almost immediately — well before backup+verify can finish —
+    # to prove os.replace() means an interrupted write can never touch cache_path.
+    python3 - "$PROJECT_ROOT/scripts" "$TEST_TMPDIR/data/memory.db" <<'PY'
+import os
+import signal
+import subprocess
+import sys
+import time
+
+scripts_dir, source = sys.argv[1], sys.argv[2]
+env = dict(os.environ)
+code = (
+    f"import sys; sys.path.insert(0, {scripts_dir!r});"
+    "import memory_db_live_insert as li;"
+    f"li.create_memory_db_ext4_cache({source!r})"
+)
+proc = subprocess.Popen([sys.executable, "-c", code], env=env)
+time.sleep(0.01)
+if proc.poll() is None:
+    proc.send_signal(signal.SIGKILL)
+proc.wait()
+PY
+
+    # The published cache must still be exactly the pre-kill snapshot: healthy
+    # and unaffected by the interrupted regeneration attempt.
+    python3 - "$TEST_TMPDIR/cache_kill/memory.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True)
+result = conn.execute("PRAGMA quick_check").fetchone()[0]
+assert result == "ok", result
+count = conn.execute("SELECT count(*) FROM events").fetchone()[0]
+assert count == 2000, count
+PY
+
+    # A subsequent successful regeneration sweeps the orphaned temp file and
+    # picks up the grown source.
+    python3 -c "
+import sys
+sys.path.insert(0, '$PROJECT_ROOT/scripts')
+import memory_db_live_insert as li
+li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
+"
+    python3 - "$TEST_TMPDIR/cache_kill/memory.db" <<'PY'
+import sqlite3
+import sys
+
+conn = sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True)
+count = conn.execute("SELECT count(*) FROM events").fetchone()[0]
+assert count == 6000, count
+PY
+    run find "$TEST_TMPDIR/cache_kill" -maxdepth 1 -name '.*.tmp*'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
 @test "three-layer tmp cleanup dry-run reports stale candidates without deleting" {
     mkdir -p "$TEST_TMPDIR/cache"
     touch "$TEST_TMPDIR/cache/.memory.db.old.tmp"

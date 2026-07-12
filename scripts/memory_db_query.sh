@@ -96,23 +96,18 @@ if [ -n "$search_query" ]; then
         exit 0
     fi
 
-    cache_is_corrupt=1
+    # A failed search against the cache can be a transient torn-read (the
+    # cache self-heals as soon as any in-flight write finishes) or genuine
+    # corruption. Re-checking cache health with a second, separate PRAGMA
+    # quick_check before deciding whether to recover races the self-heal
+    # case: by the time that second check runs, the cache can already be
+    # healthy again, so the old gate concluded "nothing to recover" and
+    # returned the stale original failure instead of just retrying.
+    # Always attempt recovery-and-retry once instead of gating on a fresh
+    # health probe. The recursive call below reuses SQL mode's own recovery
+    # (regenerate_cache_atomically), which no-ops when the cache is already
+    # healthy, so this is safe and cheap whichever case actually happened.
     if [ "$db_path" != "$source_db_path" ]; then
-        python3 - "$db_path" <<'PY' >/dev/null 2>&1 && cache_is_corrupt=0 || cache_is_corrupt=$?
-import sqlite3
-import sys
-
-try:
-    with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True) as conn:
-        result = conn.execute("PRAGMA quick_check").fetchone()
-    raise SystemExit(1 if result and result[0] == "ok" else 0)
-except sqlite3.DatabaseError as exc:
-    message = str(exc).lower()
-    raise SystemExit(0 if "malformed" in message or "not a database" in message else 1)
-PY
-    fi
-    if [ "$cache_is_corrupt" -eq 0 ]; then
-        # Reuse SQL mode's atomic recovery, then retry this search exactly once.
         if bash "$0" --db "$source_db_path" "SELECT name FROM sqlite_master LIMIT 1" >/dev/null 2>&1; then
             rm -f "$search_stdout" "$search_stderr"
             python3 "$script_dir/scripts/memory_db_import.py" "${search_args[@]}"
@@ -244,6 +239,26 @@ def require_healthy_database(db_path: Path) -> None:
         raise sqlite3.DatabaseError(f"database disk image is malformed ({detail})")
 
 
+def require_cache_backup_healthy(db_path: Path) -> None:
+    """Verify a freshly-built cache copy before it is published.
+
+    PRAGMA quick_check validates ordinary b-tree structure but does not
+    exercise FTS5's own index-vs-content consistency, so a page-level "ok"
+    can still hide a search-time failure. Run FTS5's dedicated
+    'integrity-check' command too when the table exists. Only call this
+    against a private, not-yet-published temp copy — never the live
+    primary DB — since the FTS check needs a writable connection.
+    """
+    require_healthy_database(db_path)
+    with sqlite3.connect(db_path.resolve().as_uri() + "?mode=ro", uri=True) as conn:
+        has_fts = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'events_fts'"
+        ).fetchone() is not None
+    if has_fts:
+        with sqlite3.connect(db_path) as conn:
+            conn.execute("INSERT INTO events_fts(events_fts) VALUES ('integrity-check')")
+
+
 def regenerate_cache_atomically(source_path: Path, cache_path: Path) -> None:
     """Build a verified replacement beside cache_path, then publish atomically."""
     require_healthy_database(source_path)
@@ -268,11 +283,15 @@ def regenerate_cache_atomically(source_path: Path, cache_path: Path) -> None:
                 source.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
                 destination.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
                 source.backup(destination)
-            require_healthy_database(temp_path)
+            require_cache_backup_healthy(temp_path)
             os.replace(temp_path, cache_path)
             for suffix in ("-wal", "-shm", "-journal"):
                 Path(f"{cache_path}{suffix}").unlink(missing_ok=True)
         finally:
+            # os.replace() only renames temp_path itself; a WAL-mode backup
+            # leaves -wal/-shm sidecars named after the temp path behind.
+            for suffix in ("-wal", "-shm", "-journal"):
+                Path(f"{temp_path}{suffix}").unlink(missing_ok=True)
             temp_path.unlink(missing_ok=True)
 
 

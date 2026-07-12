@@ -202,6 +202,30 @@ def remove_memory_db_cache_sidecars(cache_path: str) -> None:
             os.unlink(cache_sidecar)
 
 
+def require_cache_backup_healthy(db_path: str) -> None:
+    """Verify a freshly-built cache copy before it is published.
+
+    PRAGMA quick_check validates ordinary b-tree structure but does not
+    exercise FTS5's own index-vs-content consistency, so a page-level "ok"
+    can still hide a search-time failure. Run FTS5's dedicated
+    'integrity-check' command too when the table exists. Only call this
+    against a private, not-yet-published temp copy — never the live
+    primary DB — since the FTS check needs a writable connection.
+    """
+    db_uri = f"file:{os.path.abspath(db_path)}?mode=ro"
+    with sqlite3.connect(db_uri, uri=True) as conn:
+        result = conn.execute("PRAGMA quick_check").fetchone()
+        if result is None or result[0] != "ok":
+            detail = result[0] if result else "no result"
+            raise sqlite3.DatabaseError(f"database disk image is malformed ({detail})")
+        has_fts = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'events_fts'"
+        ).fetchone() is not None
+    if has_fts:
+        with sqlite3.connect(db_path) as conn:
+            conn.execute("INSERT INTO events_fts(events_fts) VALUES ('integrity-check')")
+
+
 def create_memory_db_ext4_cache(db_path: str) -> str:
     if os.environ.get("SHOGUN_DISABLE_MEMORY_DB_CACHE", "0") == "1":
         return db_path
@@ -230,13 +254,38 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
                 os.unlink(stale)
             except OSError:
                 pass
-        # Write backup directly to cache_path — no intermediate tmp file.
-        # SIGKILL safety: if the process is killed during backup, cache_path
-        # may be left incomplete, but it is a read-only cache; the canonical
-        # DB (db_path) is never modified.  The next invocation recreates
-        # cache_path cleanly under the exclusive lock.
-        create_sqlite_backup(db_path, output_path=cache_path, suffix="ext4_cache")
-        remove_memory_db_cache_sidecars(cache_path)
+        # Build a verified replacement beside cache_path, then publish it with
+        # os.replace(). Readers open cache_path via brand-new connections at
+        # any time, without taking this lock; writing the backup directly
+        # into cache_path (the pre-fix behavior) let a reader observe a torn,
+        # mid-copy file — the direct cause of intermittent "database disk
+        # image is malformed" errors and stale row counts. os.replace() is a
+        # single atomic directory-entry swap: a reader with an fd already
+        # open keeps seeing the fully-old file; a reader that opens after the
+        # swap sees the fully-new one. Never a partial file either way, and a
+        # SIGKILL mid-backup only leaves an orphaned temp file (swept above),
+        # never a corrupted cache_path.
+        fd, temp_name = tempfile.mkstemp(
+            prefix=f".{_cache_base}.", suffix=".tmp", dir=cache_dir
+        )
+        os.close(fd)
+        temp_path = temp_name
+        try:
+            create_sqlite_backup(db_path, output_path=temp_path, suffix="ext4_cache")
+            require_cache_backup_healthy(temp_path)
+            os.replace(temp_path, cache_path)
+            remove_memory_db_cache_sidecars(cache_path)
+        finally:
+            # os.replace() only renames temp_path itself; a WAL-mode backup
+            # (inherited from db_path's own journal_mode) leaves -wal/-shm
+            # sidecars named after the temp path, which os.replace() does not
+            # follow. Sweep those immediately rather than leaving them for
+            # the next invocation's orphan sweep to find.
+            remove_memory_db_cache_sidecars(temp_path)
+            try:
+                os.unlink(temp_path)
+            except OSError:
+                pass
     return cache_path
 
 
