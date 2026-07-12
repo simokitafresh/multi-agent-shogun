@@ -106,6 +106,60 @@ if [[ "${1:-}" == "--normalize" ]]; then
     exit 0
 fi
 
+# --- Event schema migration (cmd_3862 AC1) ---
+# The workaround ledger now stores manual interventions and automatically
+# captured rework events together.  Preserve every legacy record and make the
+# historical default explicit: it was a manually written ledger entry, never
+# an automatically captured completion event.
+if [[ "${1:-}" == "--backfill-event-fields" ]]; then
+    (
+        flock -w 10 200 || { echo "[backfill-event-fields] Error: lock" >&2; exit 1; }
+        python3 - "$LOG_FILE" <<'PY'
+import os
+import re
+import sys
+import tempfile
+from pathlib import Path
+
+path = Path(sys.argv[1])
+if not path.exists():
+    print("entries=0 backfilled=0")
+    raise SystemExit(0)
+
+lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+starts = [i for i, line in enumerate(lines) if re.match(r"^-\s+[A-Za-z0-9_]+:\s*", line)]
+starts.append(len(lines))
+output = []
+backfilled = 0
+for index in range(len(starts) - 1):
+    block = lines[starts[index]:starts[index + 1]]
+    fields = {match.group(1) for line in block if (match := re.match(r"^\s+([A-Za-z_][A-Za-z0-9_]*):", line))}
+    additions = []
+    if "event_kind" not in fields:
+        additions.append("  event_kind: manual_wa\n")
+    if "auto_captured" not in fields:
+        additions.append("  auto_captured: false\n")
+    if additions:
+        backfilled += 1
+        insert_at = next((i for i, line in enumerate(block) if re.match(r"^\s+detail:", line)), len(block))
+        block[insert_at:insert_at] = additions
+    output.extend(block)
+
+if backfilled:
+    fd, temporary = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
+    os.close(fd)
+    try:
+        Path(temporary).write_text("".join(output), encoding="utf-8")
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+print(f"entries={len(starts) - 1} backfilled={backfilled}")
+PY
+    ) 200>"$LOCK_FILE"
+    exit 0
+fi
+
 # --- Argument validation ---
 CLEAN_MODE=false
 WA_MODE=false
@@ -434,6 +488,8 @@ count_root_signature_entries() {
   timestamp: '$TIMESTAMP'
   ninja: $NINJA_NAME
   workaround: false
+  event_kind: manual_wa
+  auto_captured: false
   category: clean
   detail: ''
   root_cause: ''
@@ -459,6 +515,8 @@ EOF
   timestamp: '$TIMESTAMP'
   ninja: $NINJA_NAME
   workaround: true
+  event_kind: manual_wa
+  auto_captured: false
   category: $CATEGORY
   root_signature: '$SAFE_ROOT_SIGNATURE'
   detail: '$SAFE_ISSUE'

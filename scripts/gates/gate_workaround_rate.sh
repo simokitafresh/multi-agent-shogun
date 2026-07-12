@@ -2,7 +2,7 @@
 # gate_workaround_rate.sh — 直近N件のGATE CLEARedcmdsに対するworkaround率を計算
 # Usage: bash scripts/gates/gate_workaround_rate.sh [--last N]
 # 分母: gate_metrics.logのユニークCLEAR cmd数（直近N件）
-# 分子: そのcmd群のうちkaro_workarounds.yamlにworkaround:trueがあるcmd数
+# 分子: そのcmd群のうちmanual_waかつworkaround:trueがあるcmd数
 # フォールバック: gate_metrics.log不在時はkaro_workarounds.yamlのエントリ数を分母に使用
 # Output: OK/WARN/ALERT + WA率 + カテゴリ内訳
 # 閾値: OK=<15%, WARN=15-30%, ALERT=>30%
@@ -13,8 +13,10 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-WA_FILE="$SCRIPT_DIR/logs/karo_workarounds.yaml"
-GATE_LOG="$SCRIPT_DIR/logs/gate_metrics.log"
+WA_FILE="${KARO_WORKAROUNDS_FILE:-$SCRIPT_DIR/logs/karo_workarounds.yaml}"
+GATE_LOG="${GATE_METRICS_LOG:-$SCRIPT_DIR/logs/gate_metrics.log}"
+REWORK_CAPTURE_GIT_DIR="${REWORK_CAPTURE_GIT_DIR:-$SCRIPT_DIR}"
+REWORK_CAPTURE_SINCE="${REWORK_CAPTURE_SINCE:-today 00:00}"
 LAST_N=10
 
 # 引数パース
@@ -59,7 +61,7 @@ fi
 
 result=$(LC_ALL=C "$_AWK_BIN" -v has_gate="$_HAS_GATE" -v gate_log="$GATE_LOG" -v last_n="$LAST_N" '
 BEGIN {
-    cur_cmd = ""; has_wa_field = 0; cur_wa = 0; cur_cat = "uncategorized"
+    cur_cmd = ""; has_wa_field = 0; cur_wa = 0; cur_cat = "uncategorized"; cur_kind = ""
     item_count = 0; clear_count = 0
 
     # gate_pathの場合: tacでgate_logを末尾から読みlast_n件ユニークCLEARを取得
@@ -83,7 +85,7 @@ BEGIN {
     cur_cmd = $0
     sub(/^- cmd_id:[[:space:]]*/, "", cur_cmd)
     gsub(/["'"'"'[:space:]]/, "", cur_cmd)
-    cur_wa = 0; cur_cat = "uncategorized"; has_wa_field = 0
+    cur_wa = 0; cur_cat = "uncategorized"; cur_kind = ""; has_wa_field = 0
 }
 
 /^  workaround:/ {
@@ -102,6 +104,12 @@ BEGIN {
     if (cur_cat == "") cur_cat = "uncategorized"
 }
 
+/^  event_kind:/ {
+    cur_kind = $0
+    sub(/^[[:space:]]*event_kind:[[:space:]]*/, "", cur_kind)
+    gsub(/[^[:alnum:]_:-]/, "", cur_kind)
+}
+
 END {
     flush_item()
 
@@ -111,7 +119,7 @@ END {
         total = clear_count; wa_count = 0
         for (i = 0; i < item_count; i++) {
             cmd = item_cmd[i]
-            if (cmd in clear_set && item_wa[i] && !(cmd in wa_seen_true)) {
+            if (cmd in clear_set && item_wa[i] && (item_kind[i] == "" || item_kind[i] == "manual_wa") && !(cmd in wa_seen_true)) {
                 wa_seen_true[cmd] = 1
                 wa_count++
                 cats[item_cat[i]]++
@@ -124,7 +132,7 @@ END {
         start_i = (item_count > last_n) ? item_count - last_n : 0
         total = item_count - start_i; wa_count = 0
         for (i = start_i; i < item_count; i++) {
-            if (item_wa[i]) {
+            if (item_wa[i] && (item_kind[i] == "" || item_kind[i] == "manual_wa")) {
                 wa_count++
                 cats[item_cat[i]]++
             }
@@ -151,6 +159,7 @@ function flush_item() {
         item_cmd[item_count] = cur_cmd
         item_wa[item_count]  = cur_wa
         item_cat[item_count] = cur_cat
+        item_kind[item_count] = cur_kind
         item_count++
     }
     cur_cmd = ""; has_wa_field = 0
@@ -160,6 +169,29 @@ function flush_item() {
 IFS='|' read -r LEVEL RATE WA_COUNT TOTAL CATS SOURCE <<< "$result"
 
 echo "  WA率: ${RATE}% (${WA_COUNT}/${TOTAL}件) — ${LEVEL}"
+capture_result=$(LC_ALL=C "$_AWK_BIN" '
+function flush() {
+    if (cmd != "" && kind ~ /^(hotfix|rc|karo_direct)$/ && captured == "true" && !seen[cmd SUBSEP kind]++) count++
+    cmd = ""; kind = ""; captured = ""
+}
+/^- cmd_id:/ { flush(); cmd=$0; sub(/^- cmd_id:[[:space:]]*/, "", cmd); gsub(/[^[:alnum:]_:-]/, "", cmd); next }
+/^  event_kind:/ { kind=$0; sub(/^[[:space:]]*event_kind:[[:space:]]*/, "", kind); gsub(/[^[:alnum:]_:-]/, "", kind); next }
+/^  auto_captured:/ { captured=$0; sub(/^[[:space:]]*auto_captured:[[:space:]]*/, "", captured); gsub(/[^[:alnum:]_:-]/, "", captured); next }
+END { flush(); print count+0 }
+' "$WA_FILE" 2>/dev/null || echo 0)
+eligible_result=$(git -C "$REWORK_CAPTURE_GIT_DIR" log --format='%s' --since="$REWORK_CAPTURE_SINCE" 2>/dev/null | "$_AWK_BIN" '
+{
+    line=tolower($0)
+    if (line ~ /hotfix/ || line ~ /karo_direct/ || line ~ /(^|[_:-])rc([_:-]|$)/) count++
+}
+END { print count+0 }
+')
+if [ -n "$eligible_result" ] && [ "$eligible_result" -gt 0 ] 2>/dev/null; then
+    capture_rate=$(( capture_result * 100 / eligible_result ))
+    echo "  手戻り捕捉率: ${capture_rate}% (${capture_result}/${eligible_result}件; auto_captured/eligible_rework_commits)"
+else
+    echo "  手戻り捕捉率: N/A (${capture_result}/0件; eligible_rework_commitsなし)"
+fi
 if [ -n "$SOURCE" ] && [ "$SOURCE" = "fallback" ]; then
     echo "  (gate_metrics.log不在のためkaro_workaroundsエントリ数をフォールバック分母に使用)"
 fi

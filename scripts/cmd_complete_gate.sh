@@ -1625,6 +1625,81 @@ PY
     return 0
 }
 
+# ─── 改修修正完了の自動観測（cmd_3862 AC2） ───
+# 手動WA(workaround:true)とは別イベントとして記録する。これにより既存の
+# manual WA率/root_signature閾値を変えず、hotfix/RC/karo_directの完了を漏れなく観測する。
+classify_completed_rework_event_kind() {
+    local cmd_id="${1:-}"
+    local lowered="${cmd_id,,}"
+    case "$lowered" in
+        *karo_direct*) printf '%s\n' 'karo_direct' ;;
+        *hotfix*) printf '%s\n' 'hotfix' ;;
+        *_rc_*|*_rc|rc_*) printf '%s\n' 'rc' ;;
+    esac
+}
+
+capture_completed_rework_event() {
+    local cmd_id="${1:-}"
+    local event_kind
+    event_kind="$(classify_completed_rework_event_kind "$cmd_id")"
+    [ -n "$event_kind" ] || return 0
+
+    local wa_file="${KARO_WORKAROUNDS_FILE:-$LOG_DIR/karo_workarounds.yaml}"
+    local wa_lock="${KARO_WORKAROUNDS_LOCK_FILE:-$(lock_path "$wa_file")}"
+    local result
+    result=$( (
+        flock -w 10 200 || { echo "WARN: lock timeout"; exit 0; }
+        python3 - "$wa_file" "$cmd_id" "$event_kind" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" <<'PY'
+import os
+import re
+import sys
+import tempfile
+from pathlib import Path
+
+path = Path(sys.argv[1])
+cmd_id, event_kind, timestamp = sys.argv[2:]
+path.parent.mkdir(parents=True, exist_ok=True)
+lines = path.read_text(encoding="utf-8").splitlines(keepends=True) if path.exists() else []
+starts = [i for i, line in enumerate(lines) if re.match(r"^-\s+[A-Za-z0-9_]+:\s*", line)]
+starts.append(len(lines))
+for start, end in zip(starts, starts[1:]):
+    fields = {}
+    for offset, line in enumerate(lines[start:end]):
+        candidate = re.sub(r"^-\s+", "  ", line, count=1) if offset == 0 else line
+        match = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\s*$", candidate)
+        if match:
+            fields[match.group(1)] = match.group(2).strip("'\"")
+    if (fields.get("cmd_id") == cmd_id and fields.get("event_kind") == event_kind
+            and fields.get("auto_captured") == "true"):
+        print(f"duplicate=1 event_kind={event_kind}")
+        raise SystemExit(0)
+
+entry = (
+    f"- cmd_id: {cmd_id}\n"
+    f"  timestamp: '{timestamp}'\n"
+    "  ninja: system\n"
+    "  workaround: false\n"
+    f"  event_kind: {event_kind}\n"
+    "  auto_captured: true\n"
+    "  category: rework_auto_capture\n"
+    "  detail: 'cmd_complete_gate completed rework event'\n"
+    "  root_cause: 'automatic completion observation'\n"
+    "  resolved_by_cmd: ''\n"
+)
+fd, temporary = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
+os.close(fd)
+try:
+    Path(temporary).write_text("".join(lines) + entry, encoding="utf-8")
+    os.replace(temporary, path)
+finally:
+    if os.path.exists(temporary):
+        os.unlink(temporary)
+print(f"captured=1 event_kind={event_kind}")
+PY
+    ) 200>"$wa_lock" ) || result="WARN: capture failed"
+    echo "  ${result}"
+}
+
 # ─── L6横展開候補自動保存（cmd_2653） ───
 # Level5化に成功したcmdの語彙から、同種でLevel5未満の仕組みを探し、
 # 次の改善候補としてinsightに保存する。CLEAR後のみ実行し、失敗は非ブロッキング。
@@ -5596,6 +5671,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     append_changelog "$CMD_ID"
     append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tOVERRIDE\temergency_override\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC")"
     update_karo_workaround_resolutions "$CMD_ID" || echo "  [WARN] karo workaround resolution update failed (non-blocking)"
+    capture_completed_rework_event "$CMD_ID" || echo "  [WARN] rework event capture failed (non-blocking)"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     if append_lesson_tracking "$CMD_ID" "OVERRIDE" 2>&1; then
         true
@@ -7630,6 +7706,8 @@ if [ "$ALL_CLEAR" = true ]; then
     send_clear_notifications_once "$CMD_ID" "GATE CLEAR immediate"
     (update_karo_workaround_resolutions "$CMD_ID" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [WARN] karo workaround resolution update failed (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
     echo "Karo workaround resolution update: queued (async)"
+    (capture_completed_rework_event "$CMD_ID" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [WARN] rework event capture failed (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
+    echo "Rework event capture: queued (async)"
     (append_changelog "$CMD_ID" >/dev/null 2>&1 || true) &
     echo "CHANGELOG: queued (async)"
 

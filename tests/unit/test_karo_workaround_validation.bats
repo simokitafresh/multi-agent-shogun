@@ -95,6 +95,26 @@ teardown() {
     [ "$status" -ne 0 ]
 }
 
+@test "event schema backfill adds manual defaults to every legacy entry" {
+    cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_legacy_1
+  workaround: true
+  category: report_yaml_format
+- cmd_id: cmd_legacy_2
+  workaround: false
+  category: clean
+YAML
+    run bash "$TEST_SCRIPT" --backfill-event-fields
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"entries=2 backfilled=2"* ]]
+    run grep -c '^  event_kind: manual_wa$' "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 2 ]
+    run grep -c '^  auto_captured: false$' "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 2 ]
+}
+
 @test "AC1: valid ninja_id (unknown) — no error" {
     run bash "$TEST_SCRIPT" cmd_test unknown "test issue" "test fix description"
     [ "$status" -eq 0 ]

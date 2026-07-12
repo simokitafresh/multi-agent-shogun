@@ -51,3 +51,31 @@ YAML
     [[ "$output" == *"■ Workaround率 (WAログ直近2件)"* ]]
     [[ "$output" == *"gate_metrics.log不在のためkaro_workaroundsエントリ数をフォールバック分母に使用"* ]]
 }
+
+@test "gate_workaround_rate: reports rework capture separately from manual WA rate" {
+    cat > "$TEST_TMP/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_karo_hotfix_a
+  category: rework_auto_capture
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+- cmd_id: cmd_manual
+  category: report_yaml_format
+  workaround: true
+  event_kind: manual_wa
+  auto_captured: false
+YAML
+    git -C "$TEST_TMP" init -q
+    git -C "$TEST_TMP" config user.email test@example.com
+    git -C "$TEST_TMP" config user.name test
+    touch "$TEST_TMP/fixture"
+    git -C "$TEST_TMP" add fixture
+    git -C "$TEST_TMP" commit -qm "cmd_karo_hotfix_a"
+
+    run env REWORK_CAPTURE_GIT_DIR="$TEST_TMP" REWORK_CAPTURE_SINCE="1970-01-01" \
+        bash "$TEST_TMP/scripts/gates/gate_workaround_rate.sh" --last 2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WA率: 50% (1/2件)"* ]]
+    [[ "$output" == *"手戻り捕捉率: 100% (1/1件; auto_captured/eligible_rework_commits)"* ]]
+}

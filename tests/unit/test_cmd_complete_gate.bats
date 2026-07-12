@@ -86,6 +86,10 @@ setup_file() {
         printf '\n'
         sed -n '/^update_karo_workaround_resolutions()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^classify_completed_rework_event_kind()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^capture_completed_rework_event()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         SRC_GATE_SCRIPT="$SRC_GATE_SCRIPT" python3 - <<'PY'
 import os
 from pathlib import Path
@@ -2023,6 +2027,43 @@ EOF
 
 @test "cmd_complete_gate wires workaround resolution update in normal and emergency CLEAR sections" {
     run bash -lc "grep -c 'update_karo_workaround_resolutions \"\\\$CMD_ID\"' '$SRC_GATE_SCRIPT'"
+    [ "$status" -eq 0 ]
+    [ "$output" -ge 2 ]
+}
+
+@test "completed rework kinds are auto-captured once without becoming manual workarounds" {
+    export KARO_WORKAROUNDS_FILE="$TEST_PROJECT/logs/karo_workarounds.yaml"
+    export KARO_WORKAROUNDS_LOCK_FILE="$TEST_PROJECT/logs/karo_workarounds.lock"
+    source "$GATE_HELPERS_FILE"
+
+    local cmd_id event_kind
+    while IFS='|' read -r cmd_id event_kind; do
+        run capture_completed_rework_event "$cmd_id"
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"captured=1 event_kind=${event_kind}"* ]]
+    done <<'CASES'
+cmd_karo_hotfix_capture_test|hotfix
+cmd_karo_rc_capture_test|rc
+cmd_karo_direct_capture_test|karo_direct
+CASES
+
+    run capture_completed_rework_event "cmd_karo_hotfix_capture_test"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"duplicate=1 event_kind=hotfix"* ]]
+    run grep -c "event_kind: hotfix" "$KARO_WORKAROUNDS_FILE"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+    run grep -A6 "cmd_id: cmd_karo_hotfix_capture_test" "$KARO_WORKAROUNDS_FILE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"workaround: false"* ]]
+    [[ "$output" == *"auto_captured: true"* ]]
+    run grep -c '^  auto_captured: true$' "$KARO_WORKAROUNDS_FILE"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 3 ]
+}
+
+@test "cmd_complete_gate wires rework event capture in normal and emergency CLEAR sections" {
+    run bash -lc "grep -c 'capture_completed_rework_event \"\\\$CMD_ID\"' '$SRC_GATE_SCRIPT'"
     [ "$status" -eq 0 ]
     [ "$output" -ge 2 ]
 }
