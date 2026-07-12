@@ -160,3 +160,90 @@ teardown() {
     run bash "$GUARD" check --repo "$TMP/bare.git"
     [ "$status" -eq 0 ]
 }
+
+# --- GA-220 multiline: heredoc/shell構文耐性のrepo抽出器 (cmd_karo_hotfix_ga220_multiline_commit_parser_202607121306) ---
+# 根因: shlex.split()はheredocを理解せず、raw commandを一枚岩のshell引用テキストとして
+# 走査するため、heredoc本文(commit messageのデータ)中の引用符がshlexの引用状態を狂わせる。
+# 奇数個の埋込み"はValueError crashを誘発し、set -euo pipefailの終了コード伝播で
+# check-command全体がresearch非対象の変更まで誤BLOCKしていた(修正前相当の再現はコメントで残す)。
+
+@test "GA-220 multiline: heredoc commit本文に奇数個の埋込みダブルクォートがあっても非research変更を誤BLOCKしない" {
+    printf 'change\n' >> "$DM/README.md"
+    git -C "$DM" add README.md
+    local body='fix(guard): handle "unbalanced quote case
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>'
+    local cmd="cd '$DM' && git -C '$DM' commit -m \"\$(cat <<'EOF'
+$body
+EOF
+)\""
+    run bash "$GUARD" check-command "$cmd"
+    [ "$status" -eq 0 ]
+}
+
+@test "GA-220 multiline: heredoc commit本文中のgit/commitという単語(prose)は個別repoとして誤検出しない" {
+    printf 'change2\n' >> "$DM/README.md"
+    git -C "$DM" add README.md
+    local body='fix(docs): explain how to use git commit -m message in this repo
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>'
+    local cmd="cd '$DM' && git -C '$DM' commit -m \"\$(cat <<'EOF'
+$body
+EOF
+)\""
+    run bash "$GUARD" check-command "$cmd"
+    [ "$status" -eq 0 ]
+}
+
+@test "GA-220 multiline: heredoc commit(証跡なし)は複数git commandの区切り文字(&&,;)を挟んでもBLOCKする" {
+    printf 'design\n' > "$DM/docs/research/design.md"
+    git -C "$DM" add docs/research/design.md
+    run bash "$GUARD" check-command "echo start && cd '$DM' ; git status ; git -C '$DM' commit -m test"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-220)"* ]]
+}
+
+@test "GA-220 multiline: 相対cdと相対git commitでも正しいrepoを抽出しBLOCKする" {
+    printf 'design\n' > "$DM/docs/research/design.md"
+    git -C "$DM" add docs/research/design.md
+    local parent base
+    parent="$(dirname "$DM")"
+    base="$(basename "$DM")"
+    cd "$parent"
+    run bash "$GUARD" check-command "cd '$base' && git commit -m test"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-220)"* ]]
+}
+
+@test "GA-220 multiline: heredoc外の無効なshell引用符はクラッシュせずfail-closedでBLOCKする(allowlist禁止)" {
+    run bash "$GUARD" check-command "git commit -m 'unterminated"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-220)"* ]]
+    [[ "$output" != *"Traceback"* ]]
+    [[ "$output" != *"ValueError"* ]]
+}
+
+@test "GA-220 multiline: prepared linked worktreeのheredoc commitはPASSし同一commandでの再変更は再BLOCKする" {
+    git -C "$DM" worktree add -q "$TMP/dm-linked3" -b wt-branch3
+    mkdir -p "$TMP/dm-linked3/docs/research"
+    printf 'v1\n' > "$TMP/dm-linked3/docs/research/design.md"
+    git -C "$TMP/dm-linked3" add docs/research/design.md
+    run bash "$GUARD" prepare --repo "$TMP/dm-linked3" --mode synced --evidence 'context sync (worktree heredoc)'
+    [ "$status" -eq 0 ]
+
+    local body='fix(research): sync design doc
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>'
+    local cmd="cd '$TMP/dm-linked3' && git commit -m \"\$(cat <<'EOF'
+$body
+EOF
+)\""
+    run bash "$GUARD" check-command "$cmd"
+    [ "$status" -eq 0 ]
+
+    printf 'v2\n' > "$TMP/dm-linked3/docs/research/design.md"
+    git -C "$TMP/dm-linked3" add docs/research/design.md
+    run bash "$GUARD" check-command "$cmd"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-220)"* ]]
+}

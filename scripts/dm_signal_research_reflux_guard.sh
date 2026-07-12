@@ -137,32 +137,92 @@ prepare() {
 
 check_command() {
     local command="$1"
-    COMMAND="$command" START_DIR="$PWD" python3 - <<'PY' | while IFS= read -r repo; do
+    local py_output py_status
+    py_status=0
+    # GA-220 multiline: shlex.split() has no concept of heredocs. Quote characters
+    # inside a heredoc BODY are commit-message data, not shell quoting, but shlex
+    # treats the raw multi-line command as flat shell text and desyncs its quote
+    # state on them (crash on odd embedded-quote count, silent mis-tokenization on
+    # even count). The embedded python strips heredoc body+terminator lines before
+    # tokenizing so commit-message content can never affect repo detection.
+    # `|| py_status=$?` (not a bare assignment) is required: under set -e, a plain
+    # `py_output="$(...)"` aborts the function immediately on non-zero exit before
+    # this line's own status can be inspected.
+    py_output="$(COMMAND="$command" START_DIR="$PWD" python3 - <<'PY'
 import os
+import re
 import shlex
+import sys
 
-tokens = shlex.split(os.environ["COMMAND"])
+command = os.environ["COMMAND"]
 cwd = os.environ["START_DIR"]
-seps = {"&&", ";", "||", "|"}
+
+HEREDOC_RE = re.compile(r"<<(-)?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
+
+
+def strip_heredocs(text):
+    lines = text.split("\n")
+    out = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i]
+        out.append(line)
+        i += 1
+        m = HEREDOC_RE.search(line)
+        if not m:
+            continue
+        strip_tabs = m.group(1) == "-"
+        delim = m.group(3)
+        while i < n:
+            body_line = lines[i]
+            probe = body_line.lstrip("\t") if strip_tabs else body_line
+            i += 1
+            if probe == delim:
+                break
+    return "\n".join(out)
+
+
+try:
+    tokens = shlex.split(strip_heredocs(command))
+except ValueError as exc:
+    print(f"PARSE_ERROR: {exc}", file=sys.stderr)
+    sys.exit(3)
+
 i = 0
-while i < len(tokens):
-    if tokens[i] == "cd" and i + 1 < len(tokens):
-        cwd = os.path.realpath(os.path.join(cwd, os.path.expanduser(tokens[i + 1]))) if not os.path.isabs(os.path.expanduser(tokens[i + 1])) else os.path.realpath(os.path.expanduser(tokens[i + 1]))
+n = len(tokens)
+while i < n:
+    tok = tokens[i]
+    if tok == "cd" and i + 1 < n:
+        target = os.path.expanduser(tokens[i + 1])
+        cwd = os.path.realpath(target if os.path.isabs(target) else os.path.join(cwd, target))
         i += 2
         continue
-    if os.path.basename(tokens[i]) == "git":
+    if os.path.basename(tok) == "git":
         repo = cwd
         j = i + 1
-        if j + 1 < len(tokens) and tokens[j] == "-C":
+        if j + 1 < n and tokens[j] == "-C":
             target = os.path.expanduser(tokens[j + 1])
-            repo = os.path.realpath(os.path.join(cwd, target)) if not os.path.isabs(target) else os.path.realpath(target)
+            repo = os.path.realpath(target if os.path.isabs(target) else os.path.join(cwd, target))
             j += 2
-        if j < len(tokens) and tokens[j] == "commit":
+        if j < n and tokens[j] == "commit":
             print(repo)
     i += 1
 PY
-        check_repo "$repo" || exit $?
-    done
+)" || py_status=$?
+    if ((py_status == 3)); then
+        echo "BLOCK(GA-220): commit commandのshell構文を解析できない(heredoc除去後も無効。fail-closed)" >&2
+        return 2
+    elif ((py_status != 0)); then
+        echo "BLOCK(GA-220): commit commandパーサが予期しないエラーで終了した(exit=$py_status)" >&2
+        return 2
+    fi
+    [[ -n "$py_output" ]] || return 0
+    local repo
+    while IFS= read -r repo; do
+        [[ -n "$repo" ]] || continue
+        check_repo "$repo" || return $?
+    done <<< "$py_output"
 }
 
 case "${1:-}" in
