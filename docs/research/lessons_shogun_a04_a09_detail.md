@@ -187,3 +187,9 @@
 ```
 一次情報再検証(2026-07-09, /mnt/c/Python_app/DM-signal/scripts/mobile_lighthouse_round.py実読): (1)条件代表性(LS074)=lighthouse_mobile_config.jsonをCONFIG_PATH固定参照(L24)でformFactor=mobile+cpuSlowdownMultiplier=4を強制、CLI引数に desktop切替オプション無しで回避不可(cmd_3653)。(2)有効性証拠(LS076)+環境分離のprod側(LS077前半)=validate_target_urls() L398-414がFRONTEND_ORIGIN以外のURLと portfolio_id 誤クエリキーをraise SystemExitでBLOCK(cmd_3654、フロー内BLOCK=L4相当)。(3)データ到達証拠(cmd_3670/3671由来)=extract_api_evidence() L493-526+collect_dom_evidence() L529-577がresourceSize>0/DOM描画有無を全ラウンドmanifest.jsonへ無条件自動記録(cmd_3672)。限界: (a)本チェックはmobile_lighthouse_round.py単体スコープで横断gate/hook不在(他PJ・他計測手段は未カバー、grep確認)。(b)LS077後半のlocal計測と本番計測をcmd/AC単位で分離する強制は本スクリプト範囲外(prod URL限定のみ)。cmd_save.shのcheck_ac_phase_mixing(起源cmd_2300、別教訓)がAC混在を汎用WARNするがLS-A24特有パターンでの検証は未実施。(c)evidence関数はmanifest記録のみでresourceSize=0等の証拠不足時にscript自体はraiseせず後続レビュー依存。(a)(b)(c)の恒久化・横展開要否はdecision_candidateへ整理(cmd_reflux_promotion_202607090343_kotaro)。
 ```
+
+## LS083 全文 (2026-07-13 圧縮で移設)
+
+```
+cmd_3763 C3事故(殿指摘2026-07-08 12:10): 旧新基準チャンピオン各3体の静的等ウェイト合成を『合成FoF比較』として将軍が裁定材料の中心に置き、『白虎で新基準が合成劣化』とntfy/MEMORY.mdまで流したが、本番pf_L1は『L0チャンピオンをBB1つで選別→EW』の動的FoF(context/dm-signal-core.md L13)であり、(1)選別層の欠如(2)本番に無い組合せ(3)構成差と基準差の交絡、の3点で比較不能だった。忍者が確認したterminal_block=EqualWeightは選別後の終端に過ぎず、configサンプル3件も分身系(terminal=EW)に偏っていた=部分configの確認で全体再現の妥当性を錯覚。原因: 比較設計のAC(cmd_3763 AC3)に『比較対象は同一生成パイプラインの同格生成物か』の検証を要求しなかった将軍の設計漏れ+検分時も見抜けず(洗脳#2)。修正: C3所見を全面取り下げ、正本/gist/MEMORY.md訂正。基準の階層効果はL1同士(同一L1パイプラインに旧/新チャンピオン群を供給)の比較=Phase B設計で評価する。横展開: 合成・集計・代理実験を含む比較cmdのACには『同一パイプライン同格性の確認』を必須で入れる
+```
