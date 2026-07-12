@@ -177,6 +177,36 @@ EOF
     [[ "$output" == *"ninja=\"sasuke\" not in known list"* ]]
 }
 
+@test "gate_wa_data_quality: valid auto-captured system event is accepted but spoofed system is rejected" {
+    cat > "$TEST_TMPDIR/wa.yaml" <<'EOF'
+- cmd_id: cmd_karo_hotfix_valid
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: cmd_complete_gate completed rework event
+EOF
+
+    run env WA_FILE="$TEST_TMPDIR/wa.yaml" bash "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: no data quality issues"* ]]
+
+    cat >> "$TEST_TMPDIR/wa.yaml" <<'EOF'
+- cmd_id: cmd_spoofed_system
+  ninja: system
+  workaround: true
+  event_kind: manual_wa
+  auto_captured: false
+  category: report_yaml_format
+  detail: 十分な長さの不正systemイベント
+EOF
+    run env WA_FILE="$TEST_TMPDIR/wa.yaml" bash "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"NINJA_CORRUPT"* ]]
+    [[ "$output" == *"cmd_spoofed_system"* ]]
+}
+
 @test "gate_wa_data_quality: wrapper dict を保ったまま修復する" {
     cat > "$TEST_TMPDIR/wa.yaml" <<'EOF'
 version: 1

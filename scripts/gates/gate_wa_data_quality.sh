@@ -66,6 +66,10 @@ run_check_mode_scan() {
             category[n] = value
         } else if (key == "detail") {
             detail[n] = value
+        } else if (key == "auto_captured") {
+            auto_captured[n] = value
+        } else if (key == "event_kind") {
+            event_kind[n] = value
         }
     }
     function add_issue(text) {
@@ -144,7 +148,8 @@ run_check_mode_scan() {
         }
 
         for (i = 1; i <= n; i++) {
-            if (ninja[i] != "" && !(ninja[i] in known)) {
+            valid_system_event = (ninja[i] == "system" && auto_captured[i] == "true" && event_kind[i] ~ /^(hotfix|rc|karo_direct)$/)
+            if (ninja[i] != "" && !(ninja[i] in known) && !valid_system_event) {
                 add_issue_pattern("NINJA_CORRUPT", sprintf("NINJA_CORRUPT[%d]: %s — ninja=\"%s\" not in known list", i - 1, cmd[i], ninja[i]))
             }
         }
@@ -192,7 +197,10 @@ maybe_cache_check_mode() {
 
     cache_scope="${WA_FILE//[\/: .#*?!]/_}"
     cache_base="$cache_dir/check_v1_${cache_scope: -48}"
-    current_sig="$(stat -c '%n:%y:%s' "$WA_FILE" 2>/dev/null):$KNOWN_NINJAS_CSV"
+    # A detector code change must invalidate prior verdicts even when the
+    # ledger itself is unchanged (GA-232: valid system event fix stayed ALERT
+    # because the cache key covered only WA_FILE).
+    current_sig="$(stat -c '%n:%y:%s' "$WA_FILE" "$0" 2>/dev/null | tr '\n' ';'):$KNOWN_NINJAS_CSV"
 
     if [[ -f "$cache_base.out" && -f "$cache_base.exit" && -f "$cache_base.sig" ]] \
         && [[ "$(cat "$cache_base.sig" 2>/dev/null)" == "$current_sig" ]]; then
@@ -345,7 +353,12 @@ for i, entry in enumerate(entries):
         continue
     ninja = str(entry.get("ninja", ""))
     cmd_id = str(entry.get("cmd_id", ""))
-    if ninja and ninja not in known_ninjas:
+    valid_system_event = (
+        ninja == "system"
+        and entry.get("auto_captured") is True
+        and str(entry.get("event_kind", "")) in {"hotfix", "rc", "karo_direct"}
+    )
+    if ninja and ninja not in known_ninjas and not valid_system_event:
         add_issue("NINJA_CORRUPT", f'NINJA_CORRUPT[{i}]: {cmd_id} — ninja="{ninja}" not in known list')
 
 if not issues:
