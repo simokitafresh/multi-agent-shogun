@@ -913,6 +913,9 @@ archive_reports() {
 
     gate_metrics_has_clear() {
         local _cmd="$1"
+        # A reopened parent is active again; historical CLEAR must not recreate
+        # review/archive markers until a new completion removes the reopen SSOT.
+        [ ! -f "$PROJECT_DIR/queue/reopened_cmds/${_cmd}.yaml" ] || return 1
         load_gate_metrics_clear_cache
         [ "${_gate_metrics_clear[$_cmd]+x}" = "x" ]
     }

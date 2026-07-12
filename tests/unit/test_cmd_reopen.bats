@@ -16,4 +16,7 @@ teardown() { rm -rf "$T"; }
   run env CMD_REOPEN_ROOT="$T" bash "$ROOT/scripts/cmd_reopen.sh" cmd_3869; [ "$status" -eq 0 ]
   [ -f "$T/queue/reopened_cmds/cmd_3869.yaml" ]; [ ! -e "$T/queue/gates/cmd_3869/archive.done" ]; [ ! -e "$T/queue/gates/cmd_3869/completion_notified.done" ]; [ ! -d "$T/queue/gates/cmd_3869/review_approvals" ]
   run tail -1 "$T/logs/gate_metrics.log"; [[ "$output" == *$'cmd_3869\tREOPEN'* ]]
+  # Historical CLEAR must not short-circuit a reopened cmd's next completion.
+  run env GATE_METRICS_LOG="$T/logs/gate_metrics.log" bash -c 'CMD_ID=cmd_3869; SCRIPT_DIR="$1"; if [ -f "$GATE_METRICS_LOG" ] && [ ! -f "$SCRIPT_DIR/queue/reopened_cmds/${CMD_ID}.yaml" ] && grep -Fq $'"'"'\t'"'"'"${CMD_ID}"$'"'"'\tCLEAR\t'"'"' "$GATE_METRICS_LOG"; then exit 1; fi' _ "$T"
+  [ "$status" -eq 0 ]
 }
