@@ -2094,7 +2094,22 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
         case "$_rfs_tmp_status" in
             completed|done)
                 if [ -f "$SCRIPT_DIR/scripts/lib/normalize_report.sh" ]; then
-                    bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$tmp_file" >/dev/null 2>&1 || true
+                    # normalize_report.sh contract: 0=modified, 1=no-op (already
+                    # normalized) — both are safe to publish. Any other exit
+                    # (2=usage/parse/not-a-dict error, crash, etc.) means we do
+                    # NOT know the true state of $tmp_file and must not publish
+                    # it as completed. Discard the attempt and leave the
+                    # original REPORT_PATH byte-unchanged (fail-closed) instead
+                    # of silently completing a possibly-unnormalized report,
+                    # which would reopen the exact fingerprint stall path this
+                    # hook exists to close.
+                    _rfs_normalize_rc=0
+                    bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$tmp_file" >/dev/null 2>&1 || _rfs_normalize_rc=$?
+                    if [ "$_rfs_normalize_rc" -gt 1 ]; then
+                        rm -f "$tmp_file"
+                        echo "FATAL: report_field_set: normalize_report.sh failed (rc=$_rfs_normalize_rc) while completing $REPORT_PATH; original report left untouched" >&2
+                        exit 1
+                    fi
                 fi
                 ;;
         esac

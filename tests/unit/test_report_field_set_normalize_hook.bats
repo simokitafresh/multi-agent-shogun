@@ -208,3 +208,89 @@ p.write_text(yaml.dump(d, sort_keys=False, allow_unicode=True))
     fp_after="$(review_report_fingerprint "$REPORT")"
     [ "$fp_before" != "$fp_after" ]
 }
+
+# --- AC(3): normalize_report.sh abnormal termination must fail-closed, not silently publish ---
+# karo RC 202607121408: the first cut of this hook swallowed every non-zero exit
+# with `|| true`. Only rc=0 (modified) and rc=1 (no-op) are a known-safe state
+# for $tmp_file; rc=2 (usage/parse/not-a-dict error per normalize_report.sh's own
+# contract) or a crash leave $tmp_file's true state unknown. Publishing it anyway
+# would risk completing an unnormalized/corrupt report — reopening exactly the
+# fingerprint stall path this whole hook exists to close.
+
+install_broken_normalize() {
+    local exit_code="$1"
+    cat > "$NORMALIZE" <<SH
+#!/usr/bin/env bash
+echo "simulated abnormal termination (rc=$exit_code)" >&2
+exit $exit_code
+SH
+    chmod +x "$NORMALIZE"
+}
+
+@test "normalize_report.sh exit 2 (parse/usage error) aborts the write: report_field_set.sh fails" {
+    write_pending_report_with_legacy_candidates "$REPORT"
+    install_broken_normalize 2
+
+    run bash "$RFS" "$REPORT" verdict PASS
+
+    [ "$status" -ne 0 ]
+}
+
+@test "normalize_report.sh exit 2 leaves the original report byte-identical (fail-closed, no silent publish)" {
+    write_pending_report_with_legacy_candidates "$REPORT"
+    local before_hash
+    before_hash="$(sha256sum "$REPORT" | awk '{print $1}')"
+    install_broken_normalize 2
+
+    run bash "$RFS" "$REPORT" verdict PASS
+    [ "$status" -ne 0 ]
+
+    local after_hash
+    after_hash="$(sha256sum "$REPORT" | awk '{print $1}')"
+    [ "$before_hash" = "$after_hash" ]
+    grep -q '^status: pending' "$REPORT"
+}
+
+@test "normalize_report.sh crash (exit 127, command not found style) also aborts and leaves report untouched" {
+    write_pending_report_with_legacy_candidates "$REPORT"
+    local before_hash
+    before_hash="$(sha256sum "$REPORT" | awk '{print $1}')"
+    install_broken_normalize 127
+
+    run bash "$RFS" "$REPORT" verdict PASS
+
+    [ "$status" -ne 0 ]
+    local after_hash
+    after_hash="$(sha256sum "$REPORT" | awk '{print $1}')"
+    [ "$before_hash" = "$after_hash" ]
+}
+
+@test "normalize_report.sh exit 1 (legitimate no-op) still completes normally" {
+    cat > "$REPORT" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_normhook
+ac_version_read: abc12345
+status: pending
+commit_hash: '3333333333333333333333333333333333333333'
+result:
+  summary: wip
+lesson_candidate:
+  found: false
+  no_lesson_reason: covered
+binary_checks:
+  AC1:
+    - check: behavior verified
+      result: yes
+  commit:
+    - check: git commit done
+      result: yes
+verdict: ""
+YAML
+    # NORMALIZE is the real (copied) normalize_report.sh here — already
+    # normalized content genuinely triggers its own rc=1 no-op path.
+
+    run bash "$RFS" "$REPORT" verdict PASS
+
+    [ "$status" -eq 0 ]
+    grep -q '^status: completed' "$REPORT"
+}
