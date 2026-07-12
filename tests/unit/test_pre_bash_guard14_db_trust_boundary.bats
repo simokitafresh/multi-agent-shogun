@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# semantic-links: [[ゲート迂回防止]]
 # test_pre_bash_guard14_db_trust_boundary.bats - Guard 14: DB操作意図×接続先信頼境界の構造判定
 # (cmd_karo_hotfix_guard14_db_trust_boundary_202607120854)
 #
@@ -29,10 +30,18 @@ setup_file() {
     export CLASSIFY_SCRIPT="$PROJECT_ROOT/scripts/lib/guard14_db_trust_classify.py"
     [ -f "$HOOK_SCRIPT" ] || return 1
     [ -f "$CLASSIFY_SCRIPT" ] || return 1
-    # shellcheck source=scripts/lib/project_path.sh
-    source "$PROJECT_ROOT/scripts/lib/project_path.sh"
+    # CI has no external DM-Signal checkout.  Build a minimal SSOT fixture so
+    # the samefile exemption is tested without relying on /mnt/c developer state.
+    export GUARD14_PROJECTS_YAML="$BATS_FILE_TMPDIR/projects.yaml"
     export DMS_CHECK_PF_CONFIG
-    DMS_CHECK_PF_CONFIG="$(get_project_path dm-signal)/scripts/check_pf_config.py"
+    DMS_CHECK_PF_CONFIG="$BATS_FILE_TMPDIR/dm-signal/scripts/check_pf_config.py"
+    mkdir -p "$(dirname "$DMS_CHECK_PF_CONFIG")"
+    printf '# test fixture\n' > "$DMS_CHECK_PF_CONFIG"
+    cat > "$GUARD14_PROJECTS_YAML" <<EOF
+projects:
+  - id: dm-signal
+    path: "$BATS_FILE_TMPDIR/dm-signal"
+EOF
     [ -f "$DMS_CHECK_PF_CONFIG" ] || return 1
 }
 

@@ -333,9 +333,29 @@ def reset_escalation_counters(state_entry):
     state_entry["training_notified_streak"] = 0
 
 
+FAIL_TTL_DAYS = int(os.environ.get("SKILL_AUTO_IMPROVE_FAIL_TTL_DAYS", "14"))
+
+
+def fail_is_stale(last_fail):
+    """A FAIL older than the TTL no longer justifies escalation.
+
+    Without this filter, a months-old resolved FAIL (e.g. last_fail=2026-05-02
+    for report-write 'verdict missing', structurally fixed by verdict
+    auto-derivation cmd_2871) re-escalates on every run and each ruling only
+    silences a single occurrence (2026-07-12 duplicate escalation incident).
+    """
+    parsed = parse_event_ts(str(last_fail or ""))
+    if parsed is None:
+        return False  # fail open: unknown timestamps still escalate
+    now = datetime.now(parsed.tzinfo) if parsed.tzinfo else datetime.now()
+    return (now - parsed).days > FAIL_TTL_DAYS
+
+
 def classify_fail_cause(row, skill_changed, unchanged_streak, state_entry=None):
     if is_code_fix_cleared(state_entry):
         return "code_fix_cleared", "code fix already cleared; skip reclassification"
+    if fail_is_stale(row.get("last_fail")):
+        return "stale_fail", f"last_fail={row.get('last_fail')} exceeds TTL {FAIL_TTL_DAYS}d; no recent recurrence"
     reason = row["reason"].lower()
     code_markers = [
         "traceback",

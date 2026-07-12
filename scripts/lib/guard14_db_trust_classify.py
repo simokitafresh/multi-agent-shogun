@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# semantic-links: [[ゲート迂回防止]]
 """Guard14 DB direct connection trust classifier.
 
 cmd_karo_hotfix_guard14_db_trust_boundary_202607120854: 語彙一律BLOCK(旧Guard14)を
@@ -93,7 +94,17 @@ def _canonical_exempt_script_path() -> str | None:
             import yaml
         except ImportError:  # pragma: no cover - PyYAML欠如環境ではfail-closed
             return None
-    projects_yaml = os.path.join(_REPO_ROOT, "config", "projects.yaml")
+    # Unit tests supply a private projects fixture so this structural samefile
+    # check never depends on a developer's external DM-Signal checkout.  The
+    # override is deliberately unavailable outside Bats: production must use
+    # this repository's config/projects.yaml SSOT, not a caller-controlled
+    # environment variable.
+    if os.environ.get("BATS_TEST_FILENAME"):
+        projects_yaml = os.environ.get(
+            "GUARD14_PROJECTS_YAML", os.path.join(_REPO_ROOT, "config", "projects.yaml")
+        )
+    else:
+        projects_yaml = os.path.join(_REPO_ROOT, "config", "projects.yaml")
     try:
         with open(projects_yaml, encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}

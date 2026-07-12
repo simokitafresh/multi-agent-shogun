@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# semantic-links: [[ローカル記憶DB]]
 # scripts/lib/memory_db_cache.sh — data/multi_agent_shogun_memory.db 読取用ext4キャッシュ解決の共通実装
 #
 # WSL2 /mnt/c(9pファイルシステム)上でのSQLite random row I/O(行本体を読むSELECT)は
