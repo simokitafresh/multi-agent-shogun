@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # pre-push hook with failure recording (cmd_1117)
+# semantic-links: [[忍者報告品質プロトコル]]
 #
 # Non-zero exitで logs/hook_failures.yaml に自動記録。
 # 記録部分は || true で防御（記録エラーでhookの動作を阻害しない）。

@@ -57,6 +57,15 @@ approve() {
   grep -q '^gunshi cmd_test 完了レビュー LGTM .*家老ACCEPT/GATE判定待ち。 false info$' "$TMPROOT/bulletin_calls.log"
 }
 
+@test "regenerated report does not duplicate the gunshi LGTM notice before RC" {
+  approve gunshi LGTM "$REPORT"
+  printf 'result:\n  summary: regenerated\n' > "$REPORT"
+  printf 'worker_id: ninja\nparent_cmd: cmd_test\ncommit_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n' >> "$REPORT"
+  approve gunshi LGTM "$REPORT"
+  [ "$(wc -l < "$TMPROOT/bulletin_calls.log")" -eq 1 ]
+  [ -f "$APPROVALS/gunshi_notice.sent" ]
+}
+
 @test "formal gunshi LGTM fails closed when Shogun notice cannot persist" {
   cat > "$TMPROOT/scripts/bulletin_write.sh" <<'SH'
 #!/usr/bin/env bash
@@ -260,6 +269,14 @@ PY
   approve gunshi LGTM "$REPORT"; approve karo ACCEPT "$REPORT"
   [ -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered.$revised_manifest" ]
   grep -q "^manifest: $revised_manifest$" "$TMPROOT/queue/gates/cmd_test/review_gate.done"
+}
+
+@test "RC clears the LGTM notice lifecycle marker" {
+  setup_rc_task
+  approve gunshi LGTM "$REPORT"
+  [ -f "$APPROVALS/gunshi_notice.sent" ]
+  approve karo RC "$REPORT"
+  [ ! -e "$APPROVALS/gunshi_notice.sent" ]
 }
 
 @test "cmd id, report boundary, and parent_cmd mismatch fail closed" {

@@ -44,7 +44,7 @@ PY
 
   mapfile -t current_reports < <(find "$ROOT/queue/reports" -maxdepth 1 -type f -name "*_report_${cmd_id}.yaml" -print | LC_ALL=C sort)
   current_manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${current_reports[@]}" 2>/dev/null || true)
-  rm -f "$dir/gunshi.yaml" "$ROOT/queue/gates/$cmd_id/review_gate.done"
+  rm -f "$dir/gunshi.yaml" "$dir/gunshi_notice.sent" "$ROOT/queue/gates/$cmd_id/review_gate.done"
   [ -z "$current_manifest" ] || rm -f "$base/.gate_triggered.$current_manifest"
   # A completed report makes ninja_monitor auto-promote the task back to done.
   # Move the report out of the terminal set before reopening the task so RC
@@ -71,13 +71,23 @@ fi
 # A formal report LGTM is operationally relevant to Shogun even before Karo's
 # ACCEPT/GATE result. Persist it at the approval boundary instead of relying on
 # a second manual send. bulletin_write.sh is fail-closed for inbox persistence;
-# retry is safe because identical bulletin content is deduplicated.
+# A regenerated report can change its fingerprint without representing a new
+# review lifecycle.  Keep a durable marker per report path and make the
+# bulletin body fingerprint-independent, so retries remain exactly-once.
 if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_NO_NOTIFY:-0}" != 1 ]; then
-  review_notice="$cmd_id 完了レビュー LGTM — report=$report_rel fingerprint=$fingerprint。家老ACCEPT/GATE判定待ち。"
-  BULLETIN_NOTIFY=shogun bash "$ROOT/scripts/bulletin_write.sh" gunshi "$review_notice" false info || {
-    echo "BLOCK: LGTM recorded but Shogun notification persistence failed: cmd=$cmd_id report=$report_rel" >&2
-    exit 1
-  }
+  notice_marker="$dir/gunshi_notice.sent"
+  if [ ! -f "$notice_marker" ]; then
+    review_notice="$cmd_id 完了レビュー LGTM — report=$report_rel。家老ACCEPT/GATE判定待ち。"
+    BULLETIN_NOTIFY=shogun bash "$ROOT/scripts/bulletin_write.sh" gunshi "$review_notice" false info || {
+      echo "BLOCK: LGTM recorded but Shogun notification persistence failed: cmd=$cmd_id report=$report_rel" >&2
+      exit 1
+    }
+    notice_tmp=$(mktemp "$dir/.gunshi_notice.XXXXXX")
+    printf '%s\n' "$fingerprint" > "$notice_tmp"
+    mv -f "$notice_tmp" "$notice_marker"
+  else
+    echo "gunshi LGTM notice: SKIP (already notified for report lifecycle)"
+  fi
 fi
 echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
 
