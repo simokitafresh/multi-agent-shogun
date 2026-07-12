@@ -2078,6 +2078,27 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
             mv "$status_tmp" "$tmp_file"
         fi
 
+        # cmd_karo_hotfix_report_completed_immutability RC: normalize a report
+        # INSIDE the same atomic write that transitions it to completed/done —
+        # i.e. before it is ever visible for review approval, and therefore
+        # before any fingerprint (scripts/lib/review_approval.sh
+        # review_report_fingerprint = sha256 of the whole file) is ever
+        # computed on it. scripts/lib/normalize_report.sh previously only ran
+        # post-approval (cmd_complete_gate.sh B層), where finding something to
+        # fix silently invalidated an already-captured 軍師LGTM/家老ACCEPT
+        # fingerprint (review_fingerprint_changed_after_normalize GATE BLOCK).
+        # Normalizing here means that stall path can no longer fire: by the
+        # time B層 runs post-approval, the report is already normalized and
+        # normalize_report.sh is a byte-identical no-op (idempotent by design).
+        _rfs_tmp_status="$(grep -m1 '^status:' "$tmp_file" 2>/dev/null | sed 's/^status:[[:space:]]*//' | tr -d '\r"'"'"'')"
+        case "$_rfs_tmp_status" in
+            completed|done)
+                if [ -f "$SCRIPT_DIR/scripts/lib/normalize_report.sh" ]; then
+                    bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$tmp_file" >/dev/null 2>&1 || true
+                fi
+                ;;
+        esac
+
         if ! mv "$tmp_file" "$REPORT_PATH"; then
             rm -f "$tmp_file"
             echo "FATAL: report_field_set: atomic replace failed" >&2
