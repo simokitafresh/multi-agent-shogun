@@ -2274,6 +2274,44 @@ inject_ac_version() {
     fi
 }
 
+# Bind a numbered parent command's immutable AC contract at deployment time.
+# assigned_acs is authoritative for split deployments; otherwise the task ACs
+# must be a subset of the parent AC namespace.  Direct hotfixes are exempt.
+inject_parent_contract() {
+    local task_file="$1" report_file="${2:-}"
+    local contract coverage fingerprint tool_root
+    tool_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+    contract=$(python3 - "$task_file" "$SCRIPT_DIR" <<'PARENT_CONTRACT_PY'
+import hashlib, json, os, sys, yaml
+task_path, root = sys.argv[1:]
+task_doc = yaml.safe_load(open(task_path, encoding="utf-8")) or {}
+task = task_doc.get("task") or {}
+cmd = str(task.get("parent_cmd") or "")
+if not (cmd.startswith("cmd_") and cmd[4:].isdigit()): raise SystemExit(0)
+source = yaml.safe_load(open(os.path.join(root, "queue", "shogun_to_karo.yaml"), encoding="utf-8")) or {}
+commands = source.get("commands", source)
+parent = commands.get(cmd) if isinstance(commands, dict) else next((x for x in commands if isinstance(x,dict) and x.get("id")==cmd), None)
+if not isinstance(parent, dict): raise SystemExit("BLOCK: parent SSOT missing during deployment")
+def ids(items): return [str(x.get("id") or f"AC{i}") for i,x in enumerate(items or [],1) if isinstance(x,dict)]
+parent_ids = ids(parent.get("acceptance_criteria")); purpose = str(parent.get("purpose") or parent.get("title") or "").strip()
+assigned = task.get("assigned_acs")
+coverage = [str(x) for x in assigned] if isinstance(assigned,list) and assigned else ids(task.get("acceptance_criteria"))
+if not purpose or not parent_ids or not coverage or not set(coverage) <= set(parent_ids): raise SystemExit("BLOCK: invalid parent AC mapping during deployment")
+raw=json.dumps({"cmd":cmd,"purpose":purpose,"acs":sorted(parent_ids)},ensure_ascii=False,sort_keys=True)
+fp=hashlib.sha256(raw.encode()).hexdigest()[:16]
+print("["+", ".join(coverage)+"]\t"+fp)
+PARENT_CONTRACT_PY
+    ) || return 1
+    IFS=$'\t' read -r coverage fingerprint <<< "$contract"
+    printf '%s\n' "$coverage" | bash "$tool_root/scripts/report_field_set.sh" "$task_file" task.parent_ac_coverage - || return 1
+    bash "$tool_root/scripts/report_field_set.sh" "$task_file" task.parent_contract_fingerprint "$fingerprint" || return 1
+    if [ -n "$report_file" ] && [ -f "$report_file" ]; then
+        printf '%s\n' "$coverage" | bash "$tool_root/scripts/report_field_set.sh" "$report_file" parent_ac_coverage - || return 1
+        bash "$tool_root/scripts/report_field_set.sh" "$report_file" parent_contract_fingerprint "$fingerprint" || return 1
+    fi
+    log "[PARENT_CONTRACT] coverage=${coverage} fingerprint=${fingerprint}"
+}
+
 # ─── verify_ac_consistency: task YAML vs cmdソースのAC件数・ID突合（cmd_1619） ───
 # inject_ac_version後に実行。不一致時はWARNING。BLOCKではない（配備続行）。
 verify_ac_consistency() {
@@ -9440,6 +9478,8 @@ deploy_task_apply_task_mutations() {
         task_id="${_ac_task_id:-}"
     fi
     generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project"
+    inject_parent_contract "$task_file" "$SCRIPT_DIR/queue/reports/$(FIELD_GET_NO_LOG=1 field_get "$task_file" report_filename "" 2>/dev/null)" \
+        || { log "FATAL: parent contract injection failed"; return 1; }
     inject_done_redeploy_hints "$task_file" || true
 }
 

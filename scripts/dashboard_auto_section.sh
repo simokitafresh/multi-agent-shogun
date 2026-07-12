@@ -979,7 +979,7 @@ fi
 
 # ─── Get last 5 CLEAR cmds for battle results ───
 if [[ -s "$TMP_METRICS" ]]; then
-    awk -F'\t' '$3=="CLEAR"' "$TMP_METRICS" | tail -5 > "$TMP_RESULTS"
+    awk -F'\t' '{last[$2]=$3; line[$2]=$0; seq[$2]=NR} END {for(c in last) if(last[c]=="CLEAR") print seq[c]"\t"line[c]}' "$TMP_METRICS" | sort -n | cut -f2- | tail -5 > "$TMP_RESULTS"
 fi
 
 # ─── Deduplicate needed titles only: keep last occurrence per cmd_id ───

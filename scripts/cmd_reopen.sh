@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Reopen an archived/false-CLEAR cmd without deleting evidence.
 set -euo pipefail
-ROOT=${CMD_REOPEN_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
+TOOL_ROOT=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=${CMD_REOPEN_ROOT:-$TOOL_ROOT}
 DRY_RUN=0
 [ "${1:-}" = --dry-run ] && { DRY_RUN=1; shift; }
 [ "$#" -eq 1 ] || { echo "Usage: $0 [--dry-run] cmd_id" >&2; exit 2; }
@@ -21,14 +22,19 @@ cp -a "$ROOT/queue/gates/$cmd_id" "$state/gates.before" 2>/dev/null || true
 mkdir -p "$ROOT/queue/reopened_cmds"
 cp -a "${archives[0]}" "$ROOT/queue/reopened_cmds/$cmd_id.yaml.tmp"
 mv -f "$ROOT/queue/reopened_cmds/$cmd_id.yaml.tmp" "$ROOT/queue/reopened_cmds/$cmd_id.yaml"
-bash "$ROOT/scripts/lib/yaml_field_set.sh" "$ROOT/queue/reopened_cmds/$cmd_id.yaml" "$cmd_id" status in_progress
+bash "$TOOL_ROOT/scripts/lib/yaml_field_set.sh" "$ROOT/queue/reopened_cmds/$cmd_id.yaml" "$cmd_id" status in_progress
 for task in "${tasks[@]}"; do
   worker=$(basename "$task" .yaml)
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task" task status assigned
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task" task completed_at ""
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task" task done_at ""
-  report=$(find "$ROOT/queue/reports" "$ROOT/queue/archive/reports" -maxdepth 1 -type f -name "${worker}_report_${cmd_id}.yaml" -print | head -1)
-  [ -z "$report" ] || bash "$ROOT/scripts/report_field_set.sh" "$report" status revision_requested
+  bash "$TOOL_ROOT/scripts/lib/yaml_field_set.sh" "$task" task status assigned
+  bash "$TOOL_ROOT/scripts/lib/yaml_field_set.sh" "$task" task completed_at ""
+  bash "$TOOL_ROOT/scripts/lib/yaml_field_set.sh" "$task" task done_at ""
+  report=""
+  for report_dir in "$ROOT/queue/reports" "$ROOT/queue/archive/reports"; do
+    [ -d "$report_dir" ] || continue
+    report=$(find "$report_dir" -maxdepth 1 -type f -name "${worker}_report_${cmd_id}.yaml" -print | head -1)
+    [ -z "$report" ] || break
+  done
+  [ -z "$report" ] || bash "$TOOL_ROOT/scripts/report_field_set.sh" "$report" status revision_requested
 done
 mkdir -p "$ROOT/queue/gates/$cmd_id"
 for marker in archive.done lesson.done review_gate.done completion_notified.done; do

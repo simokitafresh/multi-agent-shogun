@@ -70,6 +70,8 @@ if [[ -d "queue/archive/cmds" ]]; then
             *) continue ;;
         esac
         [[ -n "$local_cmd_id" ]] || continue
+        # A later REOPEN invalidates the archived CLEAR inference.
+        [[ -f "queue/reopened_cmds/${local_cmd_id}.yaml" ]] && { GATE_MAP["$local_cmd_id"]="BLOCK"; continue; }
         [[ -n "${GATE_MAP[$local_cmd_id]:-}" ]] && continue
         GATE_MAP["$local_cmd_id"]="$result"
     done < <(find queue/archive/cmds/ -maxdepth 1 \( -name '*_done_*.yaml' -o -name '*_completed_*.yaml' -o -name '*_delegated_*.yaml' -o -name '*_cancelled_*.yaml' -o -name '*_halted_*.yaml' -o -name '*_superseded_*.yaml' -o -name '*_absorbed_*.yaml' -o -name '*_shelved_*.yaml' \) 2>/dev/null)
