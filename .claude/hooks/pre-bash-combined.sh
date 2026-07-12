@@ -392,10 +392,120 @@ fi
 # === Guard 1: no-verify + hook bypass detection (G3: extended beyond commit-only) ===
 # GA-220: DM-Signal docs/research commitは、staged blob fingerprintと本陣context reflux証跡が
 # 一致しなければ直接git commit経路でも公開前にBLOCKする。read-only commandには非発火。
+# cmd_karo_hotfix_guard1_git_commit_tokenizer_202607121350: 旧実装は"$command"全文への
+# *git*/*commit*部分文字列andだった。report_field_set.shのlesson_candidate/result本文に
+# "git"と"committed"という単語がプレーンテキストで含まれるだけの無関係commandでも発火し、
+# BLOCKする事故が実測で発生した(3/3再現)。根因の一端はGuard14と同根: ファイル冒頭のawk抽出は
+# JSON \"エスケープの早期break回避はするが実際のunescapeはしないため、$commandにはbash quote
+# -splicing(例: 'foo'"'"'s')のバックスラッシュが混入し、shlex token化がquote境界を誤認識する。
+# Guard14と同じ方針で、判定本体は生payload($payload)をjson.loadsしてtool_input.commandを
+# 正規復元してから使う(classifier側でregexパッチしない)。
+# Guard0(行頭/区切り文字直後の実行位置のみマッチ。引数内の文字列は無視)と同じ設計原則を踏襲し、
+# Guard14と同じ shlex.shlex(posix=True, punctuation_chars=";&|") でquote-awareにtoken化した上で
+# 演算子token(&&/||/;/|/単独&)でsegmentへ分割し、各segmentの先頭が実行位置の"git"(+ 任意の
+# -C <path>)+ "commit" subcommandであるかのみを見る。全体解析が失敗した場合のみ、Guard0と同じ
+# 行頭/区切り文字直後の"git"出現有無でfail-closed可否を判定する(個別message allowlist禁止)。
 if [[ -n "${command:-}" && "$command" == *git* && "$command" == *commit* ]]; then
-    if ! bash "$SCRIPT_DIR/scripts/dm_signal_research_reflux_guard.sh" check-command "$command"; then
-        emit_deny "BLOCK(GA-220): DM-Signal research commit requires matching context reflux fingerprint"
+    _guard1_is_git_commit="$(HOOK_PAYLOAD_JSON="$payload" python3 - <<'PY'
+import json
+import os
+import re
+import shlex
+
+HEREDOC_RE = re.compile(r"<<(-)?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
+OPERATORS = {";", "&", "|", "&&", "||"}
+
+
+def strip_heredocs(text):
+    lines = text.split("\n")
+    out = []
+    i = 0
+    n = len(lines)
+    while i < n:
+        line = lines[i]
+        out.append(line)
+        i += 1
+        m = HEREDOC_RE.search(line)
+        if not m:
+            continue
+        strip_tabs = m.group(1) == "-"
+        delim = m.group(3)
+        while i < n:
+            body_line = lines[i]
+            probe = body_line.lstrip("\t") if strip_tabs else body_line
+            i += 1
+            if probe == delim:
+                break
+    return "\n".join(out)
+
+
+def tokenize(cmd):
+    lexer = shlex.shlex(cmd, posix=True, punctuation_chars=";&|")
+    lexer.whitespace_split = True
+    return list(lexer)
+
+
+def split_into_segments(tokens):
+    segments = []
+    current = []
+    for tok in tokens:
+        if tok in OPERATORS:
+            if current:
+                segments.append(current)
+            current = []
+            continue
+        current.append(tok)
+    if current:
+        segments.append(current)
+    return segments
+
+
+def is_git_commit(cmd):
+    stripped = strip_heredocs(cmd)
+    try:
+        tokens = tokenize(stripped)
+    except ValueError:
+        # 構造判定: 行頭 or 区切り文字直後がgitで始まる場合のみ疑わしいとみなしfail-closed。
+        # それ以外(report/message本文の引用符崩れ等)は無関係commandとして安全にskipする。
+        return bool(re.search(r"(^|[;&|])\s*git(\s|$)", stripped))
+    for seg in split_into_segments(tokens):
+        if not seg or os.path.basename(seg[0]) != "git":
+            continue
+        idx = 1
+        if len(seg) > 2 and seg[1] == "-C":
+            idx = 3
+        if idx < len(seg) and seg[idx] == "commit":
+            return True
+    return False
+
+
+def recover_command():
+    payload = os.environ.get("HOOK_PAYLOAD_JSON", "")
+    try:
+        data = json.loads(payload)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    tool_input = data.get("tool_input")
+    if not isinstance(tool_input, dict):
+        return None
+    cmd = tool_input.get("command")
+    return cmd if isinstance(cmd, str) else None
+
+
+_recovered = recover_command()
+if _recovered is None:
+    # payload復元不能はfail-closed(判定不能な状態を安全側に倒す)
+    print("yes")
+else:
+    print("yes" if is_git_commit(_recovered) else "no")
+PY
+)"
+    if [[ "$_guard1_is_git_commit" == "yes" ]]; then
+        if ! bash "$SCRIPT_DIR/scripts/dm_signal_research_reflux_guard.sh" check-command "$command"; then
+            emit_deny "BLOCK(GA-220): DM-Signal research commit requires matching context reflux fingerprint"
+        fi
     fi
+    unset _guard1_is_git_commit
 fi
 
 # Outer fast-check: --no-verify, HUSKY=0, or potential git commit -n
@@ -539,7 +649,11 @@ if [[ -n "${command:-}" ]]; then
 fi
 
 # === Guard 5: bats full-run block (test_optimization_journal) ===
-if [[ "$payload" == *'bats '* && "$payload" == *'tests/unit'* ]]; then
+# cmd_karo_hotfix_heavy_job_admission_202607121348: heavy_job_admission.sh経由の
+# コマンドは、元コマンド(bats tests/unit/等)がcommand文字列の末尾に含まれるため
+# 誤って本Guardにも一致してしまう。wrapper経由なら本Guardより下のGuard17が
+# admission契約を強制するため、本Guardはスキップしてよい。
+if [[ "$payload" == *'bats '* && "$payload" == *'tests/unit'* && "$command" != *'heavy_job_admission.sh'* ]]; then
     if [[ "$command" =~ bats[[:space:]]+tests/unit/?[[:space:]]*$ ]] || \
        [[ "$command" =~ bats[[:space:]]+tests/unit/\* ]]; then
         emit_deny "BLOCK: bats tests/unit/ 全量実行は禁止。変更対象のテストファイルのみ指定せよ(見込み12分超)。"
@@ -801,6 +915,26 @@ PY
         emit_deny "$_codd_block_reason"
     fi
     unset _codd_block_reason
+fi
+
+# === Guard 17: heavy job admission (host-wide single semaphore) ===
+# cmd_karo_hotfix_heavy_job_admission_202607121348: 同一8コアWSL2ホスト上でbats全量/
+# pytest全量/DM-Signal golden regressionが無調停で並走し、CPUオーバーサブスクリプション
+# (OSスケジューラの強制プリエンプション)でwall時間を増幅する構造バグを根治する
+# (実測: golden単独550.82s wall/337.84s CPU, involuntary context switch 306,138件,
+# load average最大40.05/8コア。docs/research/cmd_karo_hotfix_dm_golden_standalone_timeout_20260712_findings.md)。
+# heavy_job_classify.shが"heavy"と判定したcommandは scripts/heavy_job_admission.sh 経由
+# (host-wide flock semaphore、最大同時1)を強制する。
+# 除外(BLOCKしない): (a) 既にwrapper経由(command内にheavy_job_admission.shを含む)、
+# (b) run_tests.sh経由(runner自身がself-reexecでadmissionを内包する。run_tests.sh参照)。
+if [[ -n "${command:-}" && "$command" != *'heavy_job_admission.sh'* && "$command" != *'run_tests.sh'* ]]; then
+    if [[ "$command" == *'bats'* || "$command" == *'pytest'* || "$command" =~ python3?([[:space:]]|$) ]]; then
+        # shellcheck disable=SC1091
+        source "$SCRIPT_DIR/scripts/lib/heavy_job_classify.sh"
+        if [[ "$(heavy_job_classify "$command")" == "heavy" ]]; then
+            emit_deny "BLOCK(heavy-job-admission): 重量テストジョブ(bats複数ファイル/全量、pytest全量、golden regression等)はhost-wide排他制御が必要。'bash scripts/heavy_job_admission.sh -- <元のコマンド全体>' の形で実行せよ。単一の.batsファイル1つや単一の::テスト関数指定は軽量とみなされ対象外。"
+        fi
+    fi
 fi
 
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
