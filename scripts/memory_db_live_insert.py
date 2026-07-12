@@ -123,7 +123,11 @@ def create_sqlite_backup(
         src.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
         dst.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
         src.backup(dst)
-    if output_path is None and is_routine_backup_suffix(suffix):
+    if (
+        output_path is None
+        and is_routine_backup_suffix(suffix)
+        and os.environ.get("SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED") == "1"
+    ):
         try:
             rotation_result = rotate_routine_backups(backup_root, os.path.basename(source_path))
             log_backup_rotation_fire(rotation_result)

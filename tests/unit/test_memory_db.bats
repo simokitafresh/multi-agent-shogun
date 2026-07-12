@@ -2289,3 +2289,87 @@ PY
     [ "$remaining_count" -ge 5 ]
     [ "$remaining_count" -le 12 ]
 }
+
+@test "obsidian_promote_candidate leaves a pre-existing backup backlog untouched unless rotation is explicitly enabled" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, summary TEXT, event_type TEXT, importance TEXT, state TEXT DEFAULT 'raw', updated_at TEXT)")
+conn.execute("CREATE TABLE event_concepts (event_id TEXT, concept_name TEXT)")
+conn.execute("CREATE TABLE event_links (source_event_id TEXT, target_concept TEXT, link_type TEXT)")
+conn.executemany(
+    "INSERT INTO events VALUES (?, ?, ?, ?, ?, ?)",
+    [
+        ("event:promote", "昇格対象", "conversation", "high", "raw", None),
+        ("event:freq", "頻度供給", "conversation", "high", "raw", None),
+    ],
+)
+conn.executemany("INSERT INTO event_concepts VALUES (?, '三層記憶')", [("event:promote",), ("event:freq",)])
+conn.executemany("INSERT INTO event_links VALUES (?, ?, 'obsidian')", [("event:promote", "リンクA"), ("event:promote", "リンクB")])
+conn.commit()
+PY
+
+    mkdir -p "$TEST_TMPDIR/backups"
+    # Simulate a pre-existing accumulated backlog (like the real repo's data/ directory
+    # before this feature existed): 8 old routine generations, none deleted yet.
+    python3 - "$TEST_TMPDIR/backups" <<'PY'
+import datetime
+import os
+import sys
+
+backup_dir = sys.argv[1]
+now = datetime.datetime.now()
+for i in range(8):
+    dt = now - datetime.timedelta(days=i * 3 + 1)
+    stamp = dt.strftime("%Y%m%dT%H%M%S")
+    path = os.path.join(backup_dir, f"memory.db.bak_obsidian_candidate_{stamp}")
+    open(path, "w").close()
+    ts = dt.timestamp()
+    os.utime(path, (ts, ts))
+PY
+
+    # Default (flag unset): the real automated caller must NOT touch the pre-existing backlog.
+    unset SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED
+    run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --backup-dir "$TEST_TMPDIR/backups" \
+        --min-concept-frequency 2 \
+        --min-links 2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"updated=1"* ]]
+    backlog_count="$(find "$TEST_TMPDIR/backups" -maxdepth 1 -type f -name 'memory.db.bak_obsidian_candidate_*' | wc -l)"
+    # 8 pre-existing + 1 just created by this call = 9; none deleted while disabled.
+    [ "$backlog_count" -eq 9 ]
+
+    # Fresh candidates so the second call also has something to promote (and thus
+    # actually creates another backup, exercising the rotation-enabled code path).
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3
+import sys
+conn = sqlite3.connect(sys.argv[1])
+conn.executemany(
+    "INSERT INTO events (id, summary, event_type, importance, state, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+    [
+        ("event:promote2", "昇格対象2", "conversation", "high", "raw", None),
+        ("event:freq2", "頻度供給2", "conversation", "high", "raw", None),
+    ],
+)
+conn.executemany("INSERT INTO event_concepts VALUES (?, '三層記憶2')", [("event:promote2",), ("event:freq2",)])
+conn.executemany("INSERT INTO event_links VALUES (?, ?, 'obsidian')", [("event:promote2", "リンクC"), ("event:promote2", "リンクD")])
+conn.commit()
+PY
+
+    # Now explicitly enable rotation and confirm it starts enforcing retention going forward.
+    export SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED=1
+    run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" \
+        --backup-dir "$TEST_TMPDIR/backups" \
+        --min-concept-frequency 2 \
+        --min-links 2
+    unset SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"updated=1"* ]]
+    after_count="$(find "$TEST_TMPDIR/backups" -maxdepth 1 -type f -name 'memory.db.bak_obsidian_candidate_*' | wc -l)"
+    [ "$after_count" -lt "$backlog_count" ]
+}
