@@ -28,8 +28,13 @@ echo context freshness
 EOF
     cat > "$TEST_TMPDIR/tests/unit/test_context_freshness_check.bats" <<'EOF'
 #!/usr/bin/env bats
-@test "mentions context_freshness_check" { true; }
 EOF
+    # Written via string concatenation, not a literal heredoc line: bats-core's
+    # test-plan preprocessor naively regex-scans raw file text for `@test "..." {`
+    # with no heredoc-quoting awareness, so a literal fixture line here would be
+    # miscounted as a phantom 3rd top-level test in THIS file (plan inflates to
+    # "1..3", then "bats: unknown test name" when it tries to run the phantom).
+    printf '%s\n' '@'"test \"mentions context_freshness_check\" { true; }" >> "$TEST_TMPDIR/tests/unit/test_context_freshness_check.bats"
     cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
 commands: {}
 EOF

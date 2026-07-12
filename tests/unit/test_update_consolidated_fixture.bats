@@ -34,10 +34,13 @@ PY
     cat > "$TEST_TMP/source.bats" <<'EOF'
 #!/usr/bin/env bats
 
-@test "new fixture" {
-    [ 1 -eq 1 ]
-}
 EOF
+    # Written via string concatenation, not a literal heredoc line: bats-core's
+    # test-plan preprocessor naively regex-scans raw file text for `@test "..." {`
+    # with no heredoc-quoting awareness, so a literal fixture line here would be
+    # miscounted as a phantom top-level test in THIS file (inflated plan count,
+    # then "bats: unknown test name" when it tries to run the phantom).
+    printf '%s\n' '@'"test \"new fixture\" {" '    [ 1 -eq 1 ]' '}' >> "$TEST_TMP/source.bats"
 
     old_b64="$(printf 'old fixture\n' | base64)"
     cat > "$TEST_TMP/consolidated.bats" <<EOF_OUTER
@@ -77,10 +80,10 @@ EOF
     cat > "$TEST_TMP/source.bats" <<'EOF'
 #!/usr/bin/env bats
 
-@test "matched fixture" {
-    [ 2 -eq 2 ]
-}
 EOF
+    # See the first test in this file for why this can't be a literal heredoc
+    # @test line (bats-core preprocessor miscounts it as a phantom test here).
+    printf '%s\n' '@'"test \"matched fixture\" {" '    [ 2 -eq 2 ]' '}' >> "$TEST_TMP/source.bats"
     source_b64="$(base64 "$TEST_TMP/source.bats")"
     cat > "$TEST_TMP/consolidated.bats" <<EOF_OUTER
 content_example() {

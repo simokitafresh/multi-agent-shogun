@@ -148,7 +148,7 @@ run_bats_files_parallel() {
                 ;;
         esac
         case "$(basename "$file")" in
-            test_cmd_complete_gate_small_consolidated.bats|test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_insight_write.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats)
+            test_cmd_complete_gate_small_consolidated.bats|test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_insight_write.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats)
                 file_inner_jobs="${BATS_ISOLATED_INNER_JOBS:-8}"
                 file_weight="$MAX_TEST_JOBS"
                 ;;

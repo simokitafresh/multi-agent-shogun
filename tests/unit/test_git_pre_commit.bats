@@ -56,10 +56,13 @@ lessons: []
 EOF
     cat > "$TEST_ROOT/tests/unit/test_cmd_save.bats" <<'EOF'
 #!/usr/bin/env bats
-@test "existing cmd_save coverage" {
-    [ 1 -eq 1 ]
-}
 EOF
+    # Written via string concatenation, not a literal heredoc line: bats-core's
+    # test-plan preprocessor naively regex-scans raw file text for `@test "..." {`
+    # with no heredoc-quoting awareness, so a literal fixture line here would be
+    # miscounted as a phantom top-level test in THIS file (inflated plan count,
+    # then "bats: unknown test name" when it tries to run the phantom).
+    printf '%s\n' '@'"test \"existing cmd_save coverage\" {" '    [ 1 -eq 1 ]' '}' >> "$TEST_ROOT/tests/unit/test_cmd_save.bats"
     cat > "$TEST_ROOT/queue/tasks/kagemaru.yaml" <<'EOF'
 task:
   status: idle
@@ -374,10 +377,11 @@ EOF
 @test "warns when added bats file has existing script-level candidates" {
     cat > "$TEST_ROOT/tests/unit/test_cmd_save_new_rule.bats" <<'EOF'
 #!/usr/bin/env bats
-@test "new cmd_save rule" {
-    bash scripts/cmd_save.sh --help >/dev/null 2>&1 || true
-}
 EOF
+    # See setup()'s test_cmd_save.bats fixture for why this can't be a literal
+    # heredoc @test line (bats-core preprocessor miscounts it as a phantom test
+    # in THIS file).
+    printf '%s\n' '@'"test \"new cmd_save rule\" {" '    bash scripts/cmd_save.sh --help >/dev/null 2>&1 || true' '}' >> "$TEST_ROOT/tests/unit/test_cmd_save_new_rule.bats"
     (
         cd "$TEST_ROOT"
         git add tests/unit/test_cmd_save_new_rule.bats
