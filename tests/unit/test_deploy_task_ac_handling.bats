@@ -2083,6 +2083,161 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "cmd_karo_hotfix_chunk_marker_boundary AC1: incident task_id gate_ac3_hunk_provenance does not falsely infer AC3" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "hunk provenance gate task (false positive repro)"
+  task_type: hotfix
+  parent_cmd: cmd_karo_hotfix_gate_ac3_hunk_provenance_202607121205
+  task_id: cmd_karo_hotfix_gate_ac3_hunk_provenance_202607121205_normal
+  project: infra
+  acceptance_criteria:
+  - id: AC1
+    description: "AC1の確認"
+  - id: AC2
+    description: "AC2の確認"
+  - id: AC3
+    description: "AC3の確認"
+  - id: AC4
+    description: "AC4の確認"
+  - id: AC5
+    description: "AC5の確認"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run grep -Eq '^  ac_assigned:' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
+    run grep -Eq '^  assigned_acs:' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run python3 - <<EOF
+import yaml
+from pathlib import Path
+
+data = yaml.safe_load(Path("$report_path").read_text(encoding="utf-8"))
+bc = data["binary_checks"]
+keys = list(bc.keys())
+for ac in ["AC1", "AC2", "AC3", "AC4", "AC5"]:
+    assert ac in keys, f"{ac} missing: {keys}"
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "cmd_karo_hotfix_chunk_marker_boundary AC2: ordinary description word phase_ac2_fix does not infer ac_assigned" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "ordinary description word test (phase_ac2_fix)"
+  task_type: hotfix
+  parent_cmd: cmd_9001
+  task_id: cmd_9001_phase_ac2_fix
+  project: infra
+  acceptance_criteria:
+  - id: AC1
+    description: "AC1の確認"
+  - id: AC2
+    description: "AC2の確認"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run grep -Eq '^  ac_assigned:' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
+}
+
+@test "cmd_karo_hotfix_chunk_marker_boundary AC2: ordinary description word docs_ac4_note does not infer ac_assigned" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "ordinary description word test (docs_ac4_note)"
+  task_type: hotfix
+  parent_cmd: cmd_9002
+  task_id: cmd_9002_docs_ac4_note
+  project: infra
+  acceptance_criteria:
+  - id: AC1
+    description: "AC1の確認"
+  - id: AC4
+    description: "AC4の確認"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run grep -Eq '^  ac_assigned:' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 1 ]
+}
+
+@test "cmd_karo_hotfix_chunk_marker_boundary AC2: explicit ac_assigned field wins over chunk-looking task_id" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "explicit field priority test"
+  task_type: hotfix
+  parent_cmd: cmd_9005
+  task_id: cmd_9005_ac1_chunk1
+  project: infra
+  ac_assigned: AC2
+  acceptance_criteria:
+  - id: AC1
+    description: "AC1の確認"
+  - id: AC2
+    description: "AC2の確認"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run grep -Eq '^  ac_assigned:[[:space:]]*"?AC2"?$' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_karo_hotfix_chunk_marker_boundary AC3: multi-digit AC + uppercase CHUNK marker infers correctly" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "multi-digit AC uppercase chunk test"
+  task_type: impl
+  parent_cmd: cmd_9010
+  task_id: cmd_9010_AC12_CHUNK3
+  project: infra
+  acceptance_criteria:
+  - id: AC12
+    description: "AC12の確認"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run grep -Eq '^  ac_assigned:[[:space:]]*"?AC12"?$' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_karo_hotfix_chunk_marker_boundary AC3: trailing chunk marker without digit at end of task_id infers correctly" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "trailing chunk marker without digit test"
+  task_type: impl
+  parent_cmd: cmd_9011
+  task_id: cmd_9011_ac1_chunk
+  project: infra
+  acceptance_criteria:
+  - id: AC1
+    description: "AC1の確認"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run grep -Eq '^  ac_assigned:[[:space:]]*"?AC1"?$' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+}
+
 @test "GP-194 AC2: ac_assigned=[AC1] with explicit checks → only AC1 checks in binary_checks" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:

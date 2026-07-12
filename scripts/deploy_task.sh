@@ -1460,7 +1460,10 @@ infer_ac_assigned_from_chunk_task_id() {
         task_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "_ac_task_id" "" 2>/dev/null || true)
     fi
 
-    ac_id=$(printf '%s\n' "$task_id" | sed -nE 's/.*(^|[^[:alnum:]])[aA][cC]([0-9]+)([^[:alnum:]]|$).*/AC\2/p' | head -n1)
+    # cmd_karo_hotfix_chunk_marker_boundary_202607121210: 旧regexはunderscoreを非alnum境界として
+    # 任意のac+数字(gate_ac3_hunk等の通常説明語)を拾い誤検知した。明示chunk命名規約
+    # (cmd_2483_ac3_chunk2等の acN_chunkM 形式)のみに限定する。
+    ac_id=$(printf '%s\n' "$task_id" | sed -nE 's/.*(^|[^[:alnum:]])[aA][cC]([0-9]+)_[cC][hH][uU][nN][kK]([0-9]+)?([^[:alnum:]]|$).*/AC\2/p' | head -n1)
     if [ -z "$ac_id" ]; then
         log "infer_ac_assigned: no AC marker in task_id (${task_id:-empty}), skipping"
         return 0
