@@ -27,6 +27,15 @@ if [ ! -f "$index_path" ]; then
     exit 1
 fi
 
+# Share semantic_index_update.sh's lock: map generation also mutates the
+# index during intake/backlink injection, so a separate writer lock permits
+# a reader to persist a partially written prefix.
+lock_path="${SEMANTIC_INDEX_LOCK:-${index_path}.lock}"
+if [ "${SEMANTIC_INDEX_LOCK_HELD:-0}" != "1" ]; then
+    exec 9>"$lock_path"
+    flock -w 10 9 || { echo "ERROR: lock timeout: $lock_path" >&2; exit 1; }
+fi
+
 python3 - "$index_path" "$map_path" "$body_only" "$repo_root" <<'PY'
 import glob
 import json
@@ -34,6 +43,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -41,6 +51,22 @@ index_path = Path(sys.argv[1])
 map_path = Path(sys.argv[2])
 body_only = sys.argv[3] == "true"
 repo_root = Path(sys.argv[4]) if len(sys.argv) > 4 else index_path.parent.parent.parent
+
+def atomic_write_text(path, text):
+    """Publish complete text only; readers must never observe a prefix."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_name, path)
+    finally:
+        try:
+            os.unlink(tmp_name)
+        except FileNotFoundError:
+            pass
 
 def norm(value):
     return re.sub(r"\s+", " ", str(value).casefold()).strip()
@@ -503,7 +529,7 @@ def auto_intake_semantic_index():
     text, backfill_count = backfill_zero_cmd_concepts(text)
     text, bidirectional_count = ensure_bidirectional_related_concepts(text)
     if text != original_text:
-        index_path.write_text(text, encoding="utf-8")
+        atomic_write_text(index_path, text)
     insight_count = queue_new_file_insights(text)
     if project_count:
         print(f"project concepts auto-created: {project_count}")
@@ -647,7 +673,7 @@ def inject_causal_chains(index_path, origins):
         new_parts.append(part)
     new_text = "".join(new_parts)
     if new_text != text:
-        index_path.write_text(new_text, encoding="utf-8")
+        atomic_write_text(index_path, new_text)
     return injected
 
 def parse_concepts(text):
@@ -734,7 +760,7 @@ codd:
 
 """
     map_path.parent.mkdir(parents=True, exist_ok=True)
-    map_path.write_text(frontmatter + body, encoding="utf-8")
+    atomic_write_text(map_path, frontmatter + body)
     print(f"generated: {map_path}")
     origins = load_lesson_origins(repo_root)
     injected = inject_causal_chains(index_path, origins)

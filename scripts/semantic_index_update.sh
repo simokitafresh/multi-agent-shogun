@@ -109,6 +109,7 @@ import re
 import sqlite3
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -134,6 +135,22 @@ tag_source_limit = int(os.environ.get("SEMANTIC_TAG_PROPAGATION_SOURCE_LIMIT", "
 insight_recent_dedup_limit = int(os.environ.get("SEMANTIC_INSIGHT_RECENT_DEDUP_LIMIT", "50"))
 no_match_threshold = int(os.environ.get("SEMANTIC_NO_MATCH_THRESHOLD", "3"))
 no_match_filepath_log = Path(os.environ.get("SEMANTIC_NO_MATCH_FILEPATH_LOG", str(semantic_root / "logs" / "no_match_filepaths.yaml")))
+
+def atomic_write_text(path, text):
+    """Replace a complete same-directory file so concurrent readers see old or new."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(text)
+            fh.flush()
+            os.fsync(fh.fileno())
+        os.replace(tmp_name, path)
+    finally:
+        try:
+            os.unlink(tmp_name)
+        except FileNotFoundError:
+            pass
 
 try:
     payload = json.loads(payload_raw)
@@ -1560,7 +1577,7 @@ text, concepts, pending_changed, pending_messages = absorb_pending_semantic_insi
 for msg in pending_messages:
     print(msg)
 if pending_changed:
-    index_path.write_text(text, encoding="utf-8")
+    atomic_write_text(index_path, text)
     print("__SEMANTIC_INDEX_CHANGED__")
     print("__SEMANTIC_ALIASES_CHANGED__")
 if source_type == "absorb_pending":
@@ -1603,14 +1620,14 @@ if source_type == "cmd_complete":
         if _fi_written:
             text = _fi_updated
             concepts = parse_concepts(text)
-            index_path.write_text(text, encoding="utf-8")
+            atomic_write_text(index_path, text)
             print(f"FILES_MODIFIED_CAUSAL: {_cmd_id} -> {', '.join(_fi_written)}")
             print("__SEMANTIC_INDEX_CHANGED__")
 
         # NO_MATCH累積カウンタ更新 + 仮concept生成
         text, concepts, _nm_changed = handle_no_match_files(_no_match_files, _cmd_id, text, concepts)
         if _nm_changed:
-            index_path.write_text(text, encoding="utf-8")
+            atomic_write_text(index_path, text)
             print("__SEMANTIC_INDEX_CHANGED__")
 # ── /files_modified 因果辺自動生成 ─────────────────────────────────────────
 
@@ -1648,7 +1665,7 @@ if confidence == "HIGH":
         changed = changed or row_changed
     if changed:
         updated = text[: best["start"]] + new_block + text[best["end"] :]
-        index_path.write_text(updated, encoding="utf-8")
+        atomic_write_text(index_path, updated)
         print(f"HIGH: {best['id']} updated from {source_type}:{payload_label} matched={matched}")
         print("__SEMANTIC_INDEX_CHANGED__")
     else:
@@ -1673,7 +1690,7 @@ if confidence == "LOW":
         row_changed = row_changed or changed_one
     if alias_changed or row_changed:
         updated = text[: best["start"]] + new_block + text[best["end"] :]
-        index_path.write_text(updated, encoding="utf-8")
+        atomic_write_text(index_path, updated)
         added = ", ".join(aliases_to_add) if alias_changed else "none"
         print(f"LOW: {best['id']} updated from {source_type}:{payload_label} matched={matched} aliases_added={added}")
         print("__SEMANTIC_INDEX_CHANGED__")
@@ -1727,7 +1744,7 @@ PY
         if [ -f "$map_generate" ]; then
             # バックグラウンド実行: semantic-mapはeventual consistencyで問題なし。
             # 同期実行(586ms)→非同期化により呼び出し元の待ち時間を削減。
-            bash "$map_generate" >/dev/null &
+            SEMANTIC_INDEX_LOCK_HELD=1 bash "$map_generate" >/dev/null &
             echo "semantic-map regenerated (background)"
         else
             echo "WARN: semantic map generator not found: $map_generate" >&2
