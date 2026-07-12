@@ -69,6 +69,31 @@ run_bats_files_parallel() {
     local -A pid_weight=()
     local -A pid_cache_path=()
 
+    # Each file is a separate bats-core root process.  Never let it inherit a
+    # caller/previous bats root's transport namespace: bats uses BATS_* state
+    # plus fd 3 for formatter communication, and inherited transport state can
+    # make concurrently-started roots consume one another's test events
+    # ("unknown test name" / executed-count mismatch).  Keep ordinary test
+    # environment variables intact; scrub only bats-core's private runtime
+    # state and close its reserved formatter fd at the process boundary.
+    run_bats_file_isolated() {
+        local test_file="$1"
+        local test_jobs="$2"
+        env \
+            -u BATS_ROOT_PID \
+            -u BATS_RUN_TMPDIR \
+            -u BATS_SUITE_TMPDIR \
+            -u BATS_FILE_TMPDIR \
+            -u BATS_TEST_TMPDIR \
+            -u BATS_TEST_FILENAME \
+            -u BATS_TEST_NAME \
+            -u BATS_TEST_NUMBER \
+            -u BATS_SUITE_TEST_NUMBER \
+            -u BATS_TEST_FILE_NUMBER \
+            -u BATS_OUT \
+            bats "$test_file" --jobs "$test_jobs" --timing 3>&-
+    }
+
     if [ "$total" -eq 0 ]; then
         echo "No test files selected."
         return 0
@@ -142,7 +167,7 @@ run_bats_files_parallel() {
         fi
         wait_for_capacity "$file_weight"
         (
-            bats "$file" --jobs "$file_inner_jobs" --timing
+            run_bats_file_isolated "$file" "$file_inner_jobs"
         ) >"$out_dir/$(basename "$file").$$.out" 2>&1 &
         pid=$!
         launched_count=$((launched_count + 1))
