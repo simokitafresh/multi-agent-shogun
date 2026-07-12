@@ -1184,6 +1184,29 @@ deploy_task_direct_yaml_publish() {
     log "direct_mode: task YAML overwritten from $yaml_file"
 }
 
+# Resolve the single deployable SSOT for a command.  An archived command is
+# deliberately not deployable until cmd_reopen.sh has published its reopened
+# state; every deployment producer must use this boundary instead of assuming
+# the shared active queue is the only source.
+resolve_cmd_source_path() {
+    local cmd_id="$1"
+    local active="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+    local reopened="$SCRIPT_DIR/queue/reopened_cmds/${cmd_id}.yaml"
+
+    if [ -f "$active" ] && awk -v cmd="$cmd_id" '
+        /^  [^ ]/ { key=$0; sub(/^  /,"",key); sub(/:.*/,"",key); if (key==cmd) found=1 }
+        END { exit(found ? 0 : 1) }
+    ' "$active"; then
+        printf '%s\n' "$active"
+        return 0
+    fi
+    if [ -f "$reopened" ]; then
+        printf '%s\n' "$reopened"
+        return 0
+    fi
+    return 1
+}
+
 # ─── cmd_id→task YAML自動解決（なぜなぜL5根因対策: 家老の手動ステップ排除） ───
 # cmd_id指定時、shogun_to_karo.yamlからメタデータを取得しtask YAMLの中核フィールドを自動設定。
 # これにより「task YAML更新 → deploy_task.sh」の2ステップが原子的操作になる。
@@ -1191,10 +1214,9 @@ resolve_cmd_to_task() {
     local cmd_id="$1"
     local ninja_name="$2"
     local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
-    local stk="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
-
-    if [ ! -f "$stk" ]; then
-        log "resolve_cmd: ERROR shogun_to_karo.yaml not found"
+    local stk
+    if ! stk=$(resolve_cmd_source_path "$cmd_id"); then
+        log "resolve_cmd: ERROR deployable cmd SSOT not found for ${cmd_id}"
         return 1
     fi
 
@@ -1241,7 +1263,7 @@ resolve_cmd_to_task() {
             print "scout_exempt="  scout_exempt
         }
     ' "$stk") || {
-        log "resolve_cmd: ${cmd_id} not found in shogun_to_karo.yaml"
+        log "resolve_cmd: ${cmd_id} not found in deployable SSOT ${stk}"
         return 1
     }
 
@@ -1294,7 +1316,9 @@ resolve_cmd_to_task() {
 inject_cmd_assumptions() {
     local task_file="$1"
     local cmd_id="$2"
-    python3 - "$task_file" "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$cmd_id" <<'ASSUMPTIONS_INJECT_PY'
+    local source_path
+    source_path=$(resolve_cmd_source_path "$cmd_id") || return 0
+    python3 - "$task_file" "$source_path" "$cmd_id" <<'ASSUMPTIONS_INJECT_PY'
 import os
 import sys
 import tempfile
@@ -1512,9 +1536,6 @@ inject_ac_assigned_from_stk() {
         return 0
     fi
 
-    local stk="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
-    [ ! -f "$stk" ] && return 0
-
     # 既にac_assignedが設定済みならスキップ（infer_ac_assigned_from_chunk_task_idと同じガード）
     local existing
     existing=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "ac_assigned" "" 2>/dev/null || true)
@@ -1527,6 +1548,8 @@ inject_ac_assigned_from_stk() {
     local cmd_id
     cmd_id=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
     [ -z "$cmd_id" ] && return 0
+    local stk
+    stk=$(resolve_cmd_source_path "$cmd_id") || return 0
 
     # STKからcmd定義のac_assignedを読む（inline scalar/list形式対応）
     local ac_val
@@ -2301,7 +2324,10 @@ parent = command_from(os.path.join(root, "queue", "shogun_to_karo.yaml"))
 if not isinstance(parent, dict):
     parent = command_from(os.path.join(root, "queue", "reopened_cmds", cmd + ".yaml"))
 if not isinstance(parent, dict): raise SystemExit("BLOCK: parent SSOT missing during deployment")
-def ids(items): return [str(x.get("id") or f"AC{i}") for i,x in enumerate(items or [],1) if isinstance(x,dict)]
+def ids(items):
+    if isinstance(items, dict):
+        return [str(key) for key in items]
+    return [str(x.get("id") or f"AC{i}") for i,x in enumerate(items or [],1) if isinstance(x,dict)]
 parent_ids = ids(parent.get("acceptance_criteria")); purpose = str(parent.get("purpose") or parent.get("title") or "").strip()
 assigned = task.get("assigned_acs")
 coverage = [str(x) for x in assigned] if isinstance(assigned,list) and assigned else ids(task.get("acceptance_criteria"))

@@ -1904,10 +1904,13 @@ if not isinstance(messages, list):
 
 lgtm_events = []
 reopen_events = []
+current_report_cmds = set()
 # Formal approvals count only while bound to the current report generation.
 for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
     report = load_yaml(report_path)
     cmd_id = str(report.get("parent_cmd") or "") if isinstance(report, dict) else ""
+    if cmd_id:
+        current_report_cmds.add(dedup_key(cmd_id))
     commit_id = str(report.get("commit_hash") or report.get("commit") or report.get("git_commit") or "") if isinstance(report, dict) else ""
     if not cmd_id or len(commit_id) != 40:
         continue
@@ -1934,7 +1937,7 @@ for msg in messages:
     ts = epoch(msg.get("timestamp"))
     if ts is None:
         continue
-    if re.search(r'verdict[:=]\s*(LGTM|APPROVE|PASS)', content, re.I):
+    if re.search(r'verdict[:=]\s*(LGTM|APPROVE|PASS)', content, re.I) and dedup_key(m.group(1)) not in current_report_cmds:
         lgtm_events.append((m.group(1), ts))
     elif re.search(r'verdict[:=]\s*(RC|REJECT|REVISION_REQUESTED)', content, re.I):
         reopen_events.append((dedup_key(m.group(1)), ts))

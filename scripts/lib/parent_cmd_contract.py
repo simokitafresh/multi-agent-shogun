@@ -36,6 +36,8 @@ def find_parent(root: Path, cmd_id: str):
 
 
 def ac_ids(value):
+    if isinstance(value, dict):
+        return [str(key) for key in value]
     result = []
     for i, item in enumerate(value or [], 1):
         if isinstance(item, dict):
@@ -48,6 +50,21 @@ def ac_ids(value):
 def contract_fingerprint(cmd_id, purpose, acs):
     raw = json.dumps({"cmd": cmd_id, "purpose": purpose, "acs": acs}, ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
+def report_paths(root: Path, cmd_id: str):
+    """Return only reports whose canonical filename belongs to cmd_id."""
+    patterns = (
+        f"*_report_{cmd_id}.yaml",
+        f"*_report_{cmd_id}_*.yaml",
+    )
+    seen = set()
+    for directory in (root / "queue/reports", root / "queue/archive/reports"):
+        for pattern in patterns:
+            for path in sorted(directory.glob(pattern)):
+                if path not in seen:
+                    seen.add(path)
+                    yield path
 
 
 def validate(root: Path, cmd_id: str):
@@ -80,7 +97,7 @@ def validate(root: Path, cmd_id: str):
         task_contracts[path.stem] = mapping
     if not task_contracts:
         return False, "parent_mapping_missing_or_stale"
-    for path in list((root / "queue/reports").glob("*.yaml")) + list((root / "queue/archive/reports").glob("*.yaml")):
+    for path in report_paths(root, cmd_id):
         report = load(path)
         if str(report.get("parent_cmd") or "").strip() != cmd_id:
             continue
