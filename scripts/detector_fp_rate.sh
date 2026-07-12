@@ -131,6 +131,22 @@ def cmd_save_events():
     return events
 
 
+def today_history_events():
+    events = []
+    for e in parse_fire_log(gate_fire_path):
+        if e.get("gate") != "scripts_same_day_history":
+            continue
+        events.append({
+            "ts": e.get("ts"),
+            "detector": "scripts_same_day_history",
+            "cmd_id": e.get("file") or "unknown",
+            "result": e.get("result"),
+            "reason": e.get("reasons") or "",
+            "source": "gate_fire_log",
+        })
+    return events
+
+
 def escalation_events():
     data = load_yaml(alerts_path) or {}
     events = []
@@ -228,7 +244,7 @@ def cmd_save_currently_emits_detector(cmd_id, detector):
     return f"check={check_name}" in proc.stdout or f'checks: "{check_name}"' in proc.stdout
 
 
-events = cmd_save_events() + escalation_events()
+events = cmd_save_events() + escalation_events() + today_history_events()
 events.sort(key=lambda x: parse_ts(x.get("ts")) or dt.datetime.min.replace(tzinfo=dt.timezone.utc))
 
 by_cmd = collections.defaultdict(list)

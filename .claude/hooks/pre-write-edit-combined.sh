@@ -862,4 +862,116 @@ fi
 unset _g18_backlinks
 unset -f guard18_causal_backlinks
 
+# === Guard 19: scripts配下 当日コミット履歴+未コミット差分表示 (informational only) ===
+# cmd_3866: 将軍TTL D0(13:27)が同日02:31の家老hotfix(3b76db105)と同ファイル・同目的で
+# 重複した(車輪の再発明)。着手前のgit log 1回で防げた事故を踏まえ、scripts配下ファイルへの
+# Write/Edit時に同日中の既存コミット(題名+時刻)と未コミット差分の有無を自動表示する。
+# BLOCKしない。両方とも空(当日コミットなし・未コミット差分なし)なら何も表示せず、
+# gate_fire_log.yamlへの記録もスキップする(ノイズ最小化)。
+guard19_scripts_today_history() {
+    local target="$1" rel git_root today_date today_start log_lines diff_stat body
+    local cache_dir cache_file current_header cache_header head_sha touched_today oldest
+
+    # NOTE: すべての早期リターンは0固定(set -euのcaller側 `x="$(fn)"` は非local代入なので、
+    # fnが非0を返すとcallerスクリプト自体がerrexitで即終了する。実測で確認済みのbash仕様)。
+    [[ -n "$target" ]] || return 0
+    git_root="${GUARD19_GIT_ROOT_OVERRIDE:-$SCRIPT_DIR}"
+    rel="$target"
+    [[ "$rel" == "$git_root/"* ]] && rel="${rel#"$git_root/"}"
+    [[ "$rel" == scripts/* ]] || return 0
+    [[ -d "$git_root/.git" ]] || return 0
+
+    today_date="${GUARD19_TODAY_OVERRIDE:-$(date '+%Y-%m-%d')}"
+    today_start="${today_date}T00:00:00"
+
+    # 高速化(実測): git log --since=<今日> -- <path> は単独で0.9秒前後かかる
+    # (9000+コミット規模のリポジトリでWSL2/9pの都度I/Oが乗るため)。大半のscripts配下
+    # ファイルは当日未変更であり、毎回この重いクエリを踏むとWrite/Edit全体が劣化する。
+    # そこで「本日変更された全ファイル一覧」を単一のtree-diff(diff --name-only)で1回だけ
+    # 構築してキャッシュし(HEAD変化/日付変化で無効化)、対象外ファイルは軽量grepで
+    # 即座にスキップする。実際に当日変更ありと判明したファイルのみ、詳細な
+    # コミット題名+時刻取得のためgit logを1回実行する(対象を絞るため許容範囲)。
+    cache_dir="${GUARD19_CACHE_DIR:-$git_root/.cache}"
+    cache_file="$cache_dir/guard19_today_changed_files.txt"
+    head_sha="$(timeout 2s git -C "$git_root" rev-parse HEAD 2>/dev/null)" || head_sha=""
+    current_header="# date=${today_date} head=${head_sha}"
+
+    cache_header=""
+    [[ -f "$cache_file" ]] && cache_header="$(head -1 "$cache_file" 2>/dev/null)"
+
+    if [[ "$cache_header" != "$current_header" ]]; then
+        mkdir -p "$cache_dir" 2>/dev/null || true
+        (
+            flock -w 2 202 2>/dev/null || exit 0
+            {
+                printf '%s\n' "$current_header"
+                oldest="$(timeout 3s git -C "$git_root" log --since="$today_start" --format=%H --reverse 2>/dev/null | head -1)"
+                if [[ -n "$oldest" ]]; then
+                    timeout 3s git -C "$git_root" diff --name-only "${oldest}^" HEAD 2>/dev/null || true
+                fi
+            } > "$cache_file.tmp.$$" 2>/dev/null && mv -f "$cache_file.tmp.$$" "$cache_file" 2>/dev/null
+            rm -f "$cache_file.tmp.$$" 2>/dev/null
+        ) 202>"$cache_file.lock" 2>/dev/null || true
+    fi
+
+    touched_today=0
+    [[ -f "$cache_file" ]] && grep -qFx "$rel" "$cache_file" 2>/dev/null && touched_today=1
+
+    if [[ "$touched_today" == "1" ]]; then
+        log_lines="$(timeout 3s git -C "$git_root" log --since="$today_start" --pretty=format:'%h %ad %s' --date=format:'%H:%M' -- "$rel" 2>/dev/null)" || log_lines=""
+    else
+        log_lines=""
+    fi
+    # 実測: git status --porcelain -- <path> は0.18秒/回(index全体スキャンのコストが乗る)。
+    # git diff --name-only(追跡済み変更, 0.03秒)+ 差分なし時のみ ls-files --others(未追跡, 0.04秒)
+    # の組合せで同じ情報を1/3以下のコストで得る。
+    diff_stat="$(timeout 3s git -C "$git_root" diff --name-only -- "$rel" 2>/dev/null)" || diff_stat=""
+    if [[ -z "$diff_stat" ]]; then
+        diff_stat="$(timeout 3s git -C "$git_root" ls-files --others --exclude-standard -- "$rel" 2>/dev/null)" || diff_stat=""
+    fi
+
+    [[ -n "$log_lines" || -n "$diff_stat" ]] || return 0
+
+    body="Guard19: 当日変更履歴(情報表示・車輪の再発明防止)
+対象: $rel"
+    if [[ -n "$log_lines" ]]; then
+        body="$body
+当日コミット:
+$(printf '%s\n' "$log_lines" | awk '{print "  - " $0}')"
+    else
+        body="$body
+当日コミット: なし"
+    fi
+    if [[ -n "$diff_stat" ]]; then
+        body="$body
+未コミット差分: あり ($(printf '%s\n' "$diff_stat" | grep -c '.' || true) file(s))"
+    else
+        body="$body
+未コミット差分: なし"
+    fi
+
+    printf '%s' "$body"
+}
+
+_g19_output="$(guard19_scripts_today_history "$file_path" || true)"
+if [[ -n "$_g19_output" ]]; then
+    emit_context "$_g19_output"
+
+    _g19_rel="${file_path#"${GUARD19_GIT_ROOT_OVERRIDE:-$SCRIPT_DIR}/"}"
+    _g19_commit_count="$(printf '%s\n' "$_g19_output" | grep -c '^  - ' || true)"
+    _g19_has_diff="no"
+    [[ "$_g19_output" == *'未コミット差分: あり'* ]] && _g19_has_diff="yes"
+    _g19_reason="commits_today=${_g19_commit_count:-0}; uncommitted=${_g19_has_diff}"
+    _g19_fire_log="${GATE_FIRE_LOG_FILE:-$SCRIPT_DIR/logs/gate_fire_log.yaml}"
+    (
+        flock -w 5 200 2>/dev/null || exit 0
+        mkdir -p "$(dirname "$_g19_fire_log")" 2>/dev/null || true
+        printf -- '- ts: "%s", file: "%s", gate: "scripts_same_day_history", result: WARN, reasons: "%s"\n' \
+            "$(date '+%Y-%m-%dT%H:%M:%S')" "$_g19_rel" "$_g19_reason" >> "$_g19_fire_log"
+    ) 200>"${_g19_fire_log}.lock" 2>/dev/null || true
+    unset _g19_rel _g19_commit_count _g19_has_diff _g19_reason _g19_fire_log
+fi
+unset _g19_output
+unset -f guard19_scripts_today_history
+
 exit 0

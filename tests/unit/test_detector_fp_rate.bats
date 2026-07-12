@@ -55,6 +55,26 @@ EOF
     grep -q 'outcome: "unknown"' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
 }
 
+@test "detector_fp_rate connects Guard19 scripts_same_day_history fires as an unknown-outcome detector" {
+    cat > "$TEST_TMPDIR/logs/gate_fire_log.yaml" <<'EOF'
+- ts: "2026-07-12T15:46:44", file: "scripts/foo.sh", gate: "scripts_same_day_history", result: WARN, reasons: "commits_today=1; uncommitted=no"
+- ts: "2026-07-12T15:50:00", file: "scripts/bar.sh", gate: "scripts_same_day_history", result: WARN, reasons: "commits_today=0; uncommitted=yes"
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries: []
+EOF
+    cat > "$TEST_TMPDIR/logs/gate_alerts.yaml" <<'EOF'
+alerts: []
+EOF
+
+    run env DETECTOR_FP_ROOT="$TEST_TMPDIR" bash "$PROJECT_ROOT/scripts/detector_fp_rate.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"scripts_same_day_history: fp_rate=0.0% fp=0/2"* ]]
+    grep -q 'detector: "scripts_same_day_history"' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+    grep -q 'fires: 2' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+    grep -q 'outcome: "unknown"' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+}
+
 @test "detector_fp_rate does not reintroduce direct yaml dump writes" {
     run python3 - "$PROJECT_ROOT/scripts/detector_fp_rate.sh" <<'PY'
 import re

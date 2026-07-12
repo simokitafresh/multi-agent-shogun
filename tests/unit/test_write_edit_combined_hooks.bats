@@ -501,3 +501,128 @@ _mark_read_for_current_agent() {
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
+
+# === Guard 19: scripts配下 当日コミット履歴+未コミット差分表示 ===
+
+_setup_guard19_repo() {
+    local repo="$TMP_DIR/guard19_repo"
+    mkdir -p "$repo/scripts"
+    git -C "$repo" init -q
+    git -C "$repo" config user.email "test@example.com"
+    git -C "$repo" config user.name "Test"
+    printf '#!/bin/bash\necho v1\n' > "$repo/scripts/target.sh"
+    git -C "$repo" add scripts/target.sh
+    GIT_AUTHOR_DATE="2026-01-01T09:00:00" GIT_COMMITTER_DATE="2026-01-01T09:00:00" \
+        git -C "$repo" commit -q -m "old baseline commit" >/dev/null
+    printf '%s' "$repo"
+}
+
+@test "Guard 19: shows same-day commit title+time for a scripts file committed today" {
+    local repo gfl
+    repo="$(_setup_guard19_repo)"
+    gfl="$TMP_DIR/gate_fire_log.yaml"
+    printf '#!/bin/bash\necho v2\n' > "$repo/scripts/target.sh"
+    git -C "$repo" add scripts/target.sh
+    GIT_AUTHOR_DATE="2026-03-05T02:31:00" GIT_COMMITTER_DATE="2026-03-05T02:31:00" \
+        git -C "$repo" commit -q -m "same day duplicate fix" >/dev/null
+    _mark_read_for_current_agent "$repo/scripts/target.sh"
+
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" GUARD19_GIT_ROOT_OVERRIDE="$3" GUARD19_TODAY_OVERRIDE="$4" GATE_FIRE_LOG_FILE="$5" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$repo"'/scripts/target.sh","old_string":"v2","new_string":"v3"}}' \
+        "$PRE_HOOK" "$repo" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"additionalContext"'* ]]
+    [[ "$output" == *'Guard19: 当日変更履歴'* ]]
+    [[ "$output" == *'当日コミット:'* ]]
+    [[ "$output" == *'same day duplicate fix'* ]]
+    [[ "$output" == *'02:31'* ]]
+    [[ "$output" == *'未コミット差分: なし'* ]]
+    grep -q 'gate: "scripts_same_day_history"' "$gfl"
+    grep -q 'result: WARN' "$gfl"
+    grep -q 'commits_today=1' "$gfl"
+}
+
+@test "Guard 19: shows uncommitted diff warning with no same-day commit" {
+    local repo gfl
+    repo="$(_setup_guard19_repo)"
+    gfl="$TMP_DIR/gate_fire_log_b.yaml"
+    printf '#!/bin/bash\necho dirty\n' > "$repo/scripts/target.sh"
+    _mark_read_for_current_agent "$repo/scripts/target.sh"
+
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" GUARD19_GIT_ROOT_OVERRIDE="$3" GUARD19_TODAY_OVERRIDE="$4" GATE_FIRE_LOG_FILE="$5" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$repo"'/scripts/target.sh","old_string":"v1","new_string":"v2"}}' \
+        "$PRE_HOOK" "$repo" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'当日コミット: なし'* ]]
+    [[ "$output" == *'未コミット差分: あり'* ]]
+    grep -q 'commits_today=0; uncommitted=yes' "$gfl"
+}
+
+@test "Guard 19: stays silent (no crash) when no same-day commit and no uncommitted diff" {
+    local repo gfl
+    repo="$(_setup_guard19_repo)"
+    gfl="$TMP_DIR/gate_fire_log_c.yaml"
+    _mark_read_for_current_agent "$repo/scripts/target.sh"
+
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" GUARD19_GIT_ROOT_OVERRIDE="$3" GUARD19_TODAY_OVERRIDE="$4" GATE_FIRE_LOG_FILE="$5" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$repo"'/scripts/target.sh","old_string":"v1","new_string":"v1"}}' \
+        "$PRE_HOOK" "$repo" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
+
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+    [ ! -f "$gfl" ]
+}
+
+@test "Guard 19: non scripts path is ignored entirely" {
+    local repo gfl
+    repo="$(_setup_guard19_repo)"
+    gfl="$TMP_DIR/gate_fire_log_d.yaml"
+    mkdir -p "$repo/docs"
+    printf 'note\n' > "$repo/docs/note.md"
+    _mark_read_for_current_agent "$repo/docs/note.md"
+
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" GUARD19_GIT_ROOT_OVERRIDE="$3" GUARD19_TODAY_OVERRIDE="$4" GATE_FIRE_LOG_FILE="$5" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$repo"'/docs/note.md","old_string":"note","new_string":"note2"}}' \
+        "$PRE_HOOK" "$repo" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
+
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "Guard 19: brand-new (untracked, not-yet-written) scripts file via Write does not crash" {
+    local repo gfl
+    repo="$(_setup_guard19_repo)"
+    gfl="$TMP_DIR/gate_fire_log_e.yaml"
+
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$5" GUARD19_GIT_ROOT_OVERRIDE="$3" GUARD19_TODAY_OVERRIDE="2026-03-05" GATE_FIRE_LOG_FILE="$4" bash "$2"' _ \
+        '{"tool_name":"Write","tool_input":{"file_path":"'"$repo"'/scripts/brand_new.sh","content":"#!/bin/bash\necho new\n"}}' \
+        "$PRE_HOOK" "$repo" "$gfl" "$TEST_AGENT_ID"
+
+    [ "$status" -eq 0 ]
+}
+
+@test "Guard 19: repeated edits on the same day reuse the changed-files cache" {
+    local repo gfl
+    repo="$(_setup_guard19_repo)"
+    gfl="$TMP_DIR/gate_fire_log_f.yaml"
+    printf '#!/bin/bash\necho v2\n' > "$repo/scripts/target.sh"
+    git -C "$repo" add scripts/target.sh
+    GIT_AUTHOR_DATE="2026-03-05T02:31:00" GIT_COMMITTER_DATE="2026-03-05T02:31:00" \
+        git -C "$repo" commit -q -m "same day duplicate fix" >/dev/null
+    _mark_read_for_current_agent "$repo/scripts/target.sh"
+
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" GUARD19_GIT_ROOT_OVERRIDE="$3" GUARD19_TODAY_OVERRIDE="$4" GATE_FIRE_LOG_FILE="$5" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$repo"'/scripts/target.sh","old_string":"v2","new_string":"v3"}}' \
+        "$PRE_HOOK" "$repo" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'same day duplicate fix'* ]]
+    [ -f "$repo/.cache/guard19_today_changed_files.txt" ]
+
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" GUARD19_GIT_ROOT_OVERRIDE="$3" GUARD19_TODAY_OVERRIDE="$4" GATE_FIRE_LOG_FILE="$5" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$repo"'/scripts/target.sh","old_string":"v2","new_string":"v4"}}' \
+        "$PRE_HOOK" "$repo" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'same day duplicate fix'* ]]
+}
