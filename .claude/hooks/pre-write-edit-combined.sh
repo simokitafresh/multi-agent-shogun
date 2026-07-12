@@ -412,7 +412,7 @@ print(len(non_gc))
 3. cmd_save.sh関連チェック名を確認したか？
 4. project=dm-signalでcommandにgrid_search/walk_forwardを含む場合、ACにrun_077またはl1_alm_wf_engineのフルパスを含めたか？
 5. titleにパリティ/新規作成/new_fileを含まないか？diagnosisにもトリガーワードが残っていないか？
-6. command欄のステップ数≦AC数か？各ステップの成果物がACに対応しているか？(command_steps_over_ac 10回累計BLOCK)
+6. command欄のステップ数≦AC数か？各ステップの成果物がACに対応しているか？テスト/CI修正はACに全量実行コマンド・FAIL0/SKIP0・中断再開成果物引継ぎを、本番DB書込みはrestore手順・実行identity・破壊時復元証跡を固定したか？(command_steps_over_ac 10回累計BLOCK)
 7. CMD全文に目視確認/セルフレビュー/自問を含まないか？「現物確認」「grep確認」等の客観表現に置換せよ(self_reread 4回累計BLOCK)
 8. q11にgrep/rg結果(コマンド+件数)を含めたか？特にスクリプト変更cmdはgate/hook追加と判定される(q11_existing_alternative_verification 17回累計BLOCK)
 9. environment_changeのpatternを対象fileでgrep確認したか？例: rg -nF \"pattern文字列\" \"対象ファイル\" → 1件以上(environment_change未実装pattern累計BLOCK)
