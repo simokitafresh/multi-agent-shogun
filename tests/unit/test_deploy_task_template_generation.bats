@@ -1172,6 +1172,43 @@ PY
     _fixture_project_end
 }
 
+@test "L4 post-mutation contract restores dict acceptance_criteria from a list" {
+    _fixture_project_start
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  status: assigned
+  task_type: skill_training
+  parent_cmd: cmd_training_L4_post_mutation_schema
+  task_id: cmd_training_L4_post_mutation_schema_normal
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      description: "late injector normalized this into a list"
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_DIRECT_YAML_PREINJECTED=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        deploy_task_apply_task_mutations sasuke
+    )
+
+    python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+acs = task["acceptance_criteria"]
+assert isinstance(acs, dict), type(acs)
+assert set(acs) == {"AC1", "AC2", "AC3", "AC4", "AC5"}, acs
+PY
+
+    _fixture_project_end
+}
+
 @test "scout_gate AWK returns empty when scout_exempt is false" {
     local stk_yaml
     stk_yaml=$(cat <<'YAML'
