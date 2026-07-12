@@ -10,7 +10,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcommit漏れ・scope外混入・未commit残存起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+
+Script refs verified: 2026-07-13 将軍検分. `report_field_set.sh` checked_at以降の変更(08f9440fb/69ace96dc/5dfec6b28)をgit showで確認。completed/done報告のfail-closed BLOCK+normalize異常終了時byte不変中断=内部堅牢化で、ninja-commit手順の呼出し契約不変。書き換え不要。
 <!-- 検分: report_field_set.sh b86ddd6f5。active report欠落かつ同basenameのarchive存在時は残骸YAML再生成をBLOCKする契約へ変更。commit_hash記録先がarchive済みならactive pathを再生成せずcanonical archive pathを明示して更新する -->
 
 Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `report_field_set.sh` checked_at以降の変更(edb26ea1)をgit showで確認。`verified_existing_dependency`フィールド(list of {path, reason, checked_not_modified: true})に対する型/必須値BLOCKバリデーションを新規追加(LG037除外宣言の構造保証)。commit_hash記録手順、`bash scripts/report_field_set.sh "$REPORT" <field> <value>`の呼び出し契約、status completed前後のガード前提には影響なし。ninja-commitはcommit_hash記録のみを行うため本変更の影響を受けない。
@@ -123,8 +125,8 @@ Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_fi
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パスを検出し、個別dict変換する。ninja-commitのcommit_hash記録手順への影響なし。
 Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_useful全体上書きBLOCKガード追加(既存件数>新件数で拒否)。ninja-commitはcommit_hash記録のみで影響なし。
 
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `report_field_set.sh` 直近変更(281349be)はresult系書込み高速化で、`bash scripts/report_field_set.sh "$REPORT" <field> <value>` の呼び出し契約と報告YAML構造検証は変更なし。
 
@@ -132,7 +134,7 @@ Script refs verified: 2026-06-20 efb4b9c02. `report_field_set.sh` 直近変更�
 
 Script refs verified: 2026-06-26 b12637002. `report_field_set.sh` 直近変更はstatus=completed済み報告へのcommit前フィールド書込みをBLOCKするガード追加。ninja-commitはcommit後にcommit_hashを記録するため、commit前にstatus completedになることはなく影響なし。
 
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 
 <!-- 検分: 2026-07-12 shogun起動時gate WARN解消。checked_at以降の差分をgit logで確認 — gate_report_format.sh 8c576d849(AC3 hunk provenance判定=内部判定強化)/memory_db_query.sh 8ce7c5c26(ext4キャッシュ経由=内部速度)/deploy_task.sh 2ecaf21ba+0cc6175e6+5dc9e8423(chunk境界regex誤検知根治+lesson注入絞込+atomic mv=内部)/ninja_scope_commit.sh 42d06b1d5+13f46a918(fail-closed patch commit mode追加+CI fixture=内部)/ninja_monitor.sh b40e13d2c系(dedupe通知+stall FP抑制=内部)。いずれも呼び出し契約・手順・出口文言に変更なし -->
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->

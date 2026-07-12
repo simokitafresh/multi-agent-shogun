@@ -11,6 +11,9 @@ quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_wor
 allowed_projects: [dm-signal]
 ---
 
+<!-- script_refs_checked_at: 2026-07-13T07:39:17+09:00 -->
+<!-- 検分: db_capability_launcher.py 4da46f0e2(cmd_karo_hotfix_guard14_db_capability_launcher: 追跡済みlauncher新規追加)+7ba136462(contract RC強化: git index一致判定をHEAD blob一致判定へ変更/credential env keysをregistry required_credential_keysと完全一致検証/child引数をcontractのallowed_child_flagsで検証/`--execution-root`任意フラグ追加)。本SKILL.mdが例示する`--capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce <nonce> --credential-file <path>`はreadonly_query契約(dependency_toolなし・actionsなし・required_credential_keys=[DATABASE_URL]のみ)のため影響を受けない。SQLはstdin渡しでtool_argsは空のまま。呼び出し契約は不変 -->
+
 # /db-check — DM-Signal DB確認スキル
 
 本番DB接続+クエリを標準化。試行錯誤ゼロで目的のデータに到達する。

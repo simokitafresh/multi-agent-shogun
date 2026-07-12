@@ -10,7 +10,9 @@ description: |
   DO NOT TRIGGER: レビュー判定そのもの（→手動）、gate_sync（→/gate-sync）、idle分析永続化（→/idle-persist）
 ---
 
-<!-- script_refs_checked_at: 2026-07-12T01:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+
+Script refs verified: 2026-07-13 将軍検分. `yaml_field_set.sh` checked_at以降の変更(692b6c8d8)をgit showで確認。post-write検証のyaml.safe_load scalar比較統一+複数行/引用符混在値の安全エスケープ=内部改善。`<file> <block_id> <field> <value>`契約不変。手順書き換え不要。
 
 Script refs verified: 2026-07-11 shogun起動時gate WARN解消。checked_at以降の変更(review two-phase race fix系/inbox gate trigger detach/report discovery偽BLOCK根治/rg grepフォールバック/memory DB cache atomic recovery)をgit logで確認。いずれも内部強化であり呼び出し契約・出口文言・本文手順に変更なし。
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
@@ -211,7 +213,7 @@ Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は�
 
 Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は引数順序ミス検出ガード追加(contentがagent名ならERROR)。本SKILL.mdのinbox送信・掲示板投稿手順は正しい引数順のため契約に変更なし。
 
-<!-- script_refs_checked_at: 2026-07-12T01:45:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 <!-- origin: [[報告未送信]] -> [[手動後処理依存]] -> [[review_approval_fail_closed通知]] -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 

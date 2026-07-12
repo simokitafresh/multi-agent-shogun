@@ -9,6 +9,9 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
 ---
 
+<!-- script_refs_checked_at: 2026-07-13T07:39:17+09:00 -->
+<!-- 検分: cmd_complete_gate.sh f52805569+dc1a8f6ae(cmd_karo_hotfix_parent_ac_false_clear: reopened状態の優先確定+parent AC完了契約の強制=GATE BLOCK: parent_cmd_contract追加)+03982a8a6(detector品質チェックの入口統一)+f8ea59233(rework event ledger記録の同期化)。CMD_ID引数パース(`CMD_ID="${1:-}"`)・Usage文言・GATE CLEAR/BLOCK exit契約は不変(新規BLOCK理由文字列の追加のみ)。`bash scripts/cmd_complete_gate.sh <cmd_id>`の呼び出し契約・codd-fix本文手順は不変 -->
+
 <!-- script_refs_checked_at: 2026-07-11T15:40:00+09:00 -->
 
 Script refs verified: 2026-07-11 shogun起動時gate WARN解消。checked_at以降の変更(review two-phase race fix系/inbox gate trigger detach/report discovery偽BLOCK根治/rg grepフォールバック/memory DB cache atomic recovery)をgit logで確認。いずれも内部強化であり呼び出し契約・出口文言・本文手順に変更なし。

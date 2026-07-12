@@ -10,7 +10,9 @@ description: |
   DO NOT TRIGGER: 報告YAMLの読み取り（→Read tool直接）、verdict判定（→/verdict-check）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-07-12T13:22:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+
+Script refs verified: 2026-07-13 将軍検分. `report_field_set.sh` checked_at以降の変更(08f9440fb/69ace96dc/5dfec6b28)をgit showで確認。completed/done報告の内容変更fail-closed BLOCK+normalize_report異常終了時のbyte不変中断=内部堅牢化。`bash scripts/report_field_set.sh "$REPORT" <field> <value>`契約・stdin YAML・verdict自動導出は不変。手順書き換え不要。
 <!-- 検分: report_field_set.sh b86ddd6f5。active report欠落かつ同basenameのarchive存在時は残骸YAML再生成をBLOCKする契約へ変更。通常はtask YAMLの現行report_pathを使い、archive済み報告を更新する場合だけcanonical archive pathを明示する -->
 
 Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `report_field_set.sh` checked_at以降の変更(edb26ea1)をgit showで確認。`verified_existing_dependency`フィールド(list of {path, reason, checked_not_modified: true}、既存依存を参照のみで確認しLG037照合から除外する宣言)に型/必須値BLOCKバリデーションを新規追加。書込み例: `echo '- {path: scripts/foo.sh, reason: "既存依存として参照のみ", checked_not_modified: true}' | bash scripts/report_field_set.sh "$REPORT" verified_existing_dependency -`。既存の`bash scripts/report_field_set.sh "$REPORT" <field> <value>`契約、stdin YAML、lessons_useful保護、binary_checks yes/no、verdict自動導出前提には影響なし。Step 2の必須フィールド手順自体の書き換えは不要(このフィールドは該当時のみ任意記入)。
@@ -169,6 +171,11 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-07-12: gate=gate_report_format result=FAIL executor=hayate reason=timestamp: completed/revision_requested report requires a parseable ISO timestamp
+- 2026-07-12: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[2].result: 空文字。\"yes\" または \"no\" を記入せよ; ...
+
+- 2026-07-12: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.AC1[0].check: \"AC1\" が短すぎる(確認内容を具体的に書け); binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].check: \"AC2\" が短すぎる(確認内容を具体的に書け); binary...
 - 2026-07-12: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せ...
 
 - 2026-07-11: gate=gate_report_format result=FAIL executor=hayate reason=binary_checks: empty dict (must have at least one AC entry); status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: MISSING or empty; verdict: \"\" is not vali...
@@ -426,13 +433,13 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。lessons_useful空リスト、binary_checks空欄、status pending、summary空欄はgate_report_format.shでBLOCKされるため提出前に必ずgateを通す。
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パス（拡張子or/を含む2+トークン）を検出し個別dict変換する。files_modifiedをスペース区切り文字列で渡しても正しくlist of dict化される。推奨形式（YAML list）への影響なし。
 Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_useful全体上書きBLOCKガード追加。テンプレート注入済み件数より少ないリストで全体上書きすると拒否される。個別per-item書込み(`lessons_useful.0.useful true`等)を推奨。Step 2のコメントに制約注記済み。
-<!-- script_refs_checked_at: 2026-07-12T13:22:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 
 Script refs verified: 2026-06-20 efb4b9c02. `report_field_set.sh` 直近変更はSC2221/SC2222/SC2154 shellcheck警告のdisableコメント追加のみ。report YAML各フィールド設定、stdin YAML、lessons_useful保護、binary_checks yes/no契約は変更なし。
 
 Script refs verified: 2026-06-26 b12637002. `report_field_set.sh` 直近変更はstatus=completed済み報告へのcommit前フィールド書込みをBLOCKするガード追加。report-writeはstatus completedにする前に全フィールドを記入するため、通常フローでは影響なし。completedマーク後に修正が必要な場合はstatusをin_progressに戻してから再記入する。
 
-<!-- script_refs_checked_at: 2026-07-12T13:22:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 
 <!-- 検分: 2026-07-12 shogun起動時gate WARN解消。report_field_set.shの差分=進行中hotfix(cmd_karo_hotfix_report_completed_immutability: completed/done後の報告書換えをfail-closedで封鎖、revision_requested遷移と冪等writeのみ許可)。通常タスク中の報告記入フロー・フィールド指定契約は不変 -->
-<!-- script_refs_checked_at: 2026-07-12T13:22:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->

@@ -10,25 +10,27 @@ description: |
   DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+
+Script refs verified: 2026-07-13 将軍検分. checked_at以降の変更: `yaml_field_set.sh` 692b6c8d8(post-write検証統一+安全エスケープ、契約不変)、`ninja_monitor.sh` dafb63d60等(通知timestamp durable化+完了gap formal approval連動=内部監視ロジック。親AC偽CLEAR hotfix RC継続中のため次回commit時に再検分される)。切替手順の書き換え不要。
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 <!-- 検分: ninja_monitor.sh 3de92b6b/11047811/35d42cac。Codex respawn時のagent別config適用、明示pauseのSTALL除外、再配備前reportのAUTO-DONE除外はいずれもmonitor内部防御。switch scriptの引数・CLI切替・idle pane respawn契約は不変 -->
 <!-- 検分: cli_lookup.sh/ninja_monitor.sh 未commit差分(2026-07-10時点ワーキングツリー、要再検証)を確認。(1)cli_lookup.shに`codex_config_apply_agent()`/`codex_config_restore()`を追加。settings.yamlのper-agent`model_name`が`gpt-*`の場合、末尾suffix(low/medium/high/xhigh)を`model_reasoning_effort`、`service_tier`を`~/.codex/config.toml`へ一時適用しrespawn後に復元する。(2)`cli_model_display()`に`gpt-5.6-sol/terra/luna`等の表示ラベルを追加。(3)ninja_monitor.shの`safe_send_clear()`(idle /clear等の自動respawn経路)と`check_ninja_cli_dead()`(死亡pane自動復旧経路)がrespawn-pane直前直後に上記2関数を呼ぶよう変更。`shogun_cli_switch.sh`本体(`switch_cli_mode.sh`のrespawn-pane呼出し=Step2手動切替経路)には未接続で、Options/Step2/Step4記載の呼び出し契約・idle判定・respawn-pane -k実行手順は変更なし。下記「per-agent effort回避策」の揮発性注記のみ影響あり(該当箇所に追記) -->
 
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 <!-- 検分: ninja_monitor.sh edc86c525(reflux promotion候補除外の教訓ID正規表現をLS限定からLS/LK/LG/L全prefix対応へ拡張)+2734ed518(check_karo_completion_notify_gap追加=軍師LGTM後に家老がbulletin/将軍inboxへ通知しない場合を検知する新規チェック)。いずれもreflux/completion通知検知系の内部追加で、idle判定(check_idle)、respawn-pane -k実行手順、cli_launch_cmd()/cli_lookup.sh経由の起動契約、CLI/version切替契約には無関係 -->
 
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 <!-- 検分: ninja_monitor.sh 82291e12a(reflux deploy rollback修正)+ed73c6e60(fix_known reflux insight優先ディスパッチ)+4c07cb037(修行doc参照リンク)。いずれもreflux/修行系の内部変更。idle判定、respawn-pane -k、cli_launch_cmd()/cli_lookup.sh経由の起動契約は不変 -->
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 <!-- 検分: ninja_monitor.sh 0c73c7d1(cmd_3761) check_and_update_done_task()にtask done_at自動記録(既存なら上書きしない)を追加。throughput計測用の内部フィールド追加のみ。idle判定、respawn-pane -k、cli_launch_cmd()/cli_lookup.sh経由の起動契約は不変 -->
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 <!-- 検分: ninja_monitor.sh 5b84066d8 lesson backlog warning通知文調整。idle判定、respawn-pane -k、cli_launch_cmd()/cli_lookup.sh経由の起動契約は不変 -->
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234. 対象scriptの2026-07-02T01:12以降差分をgit log/showで確認。直近変更は速度改善・内部検査強化・テンプレート修復・files_modified path guardで、各SKILL本文の呼び出し契約は維持。
@@ -306,7 +308,7 @@ tmux respawn-pane -k -t <pane> "cd /mnt/c/tools/multi-agent-shogun && /home/simo
 Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は既存ブロックへ新規fieldを追加する際の挿入位置修正。settings.yaml更新・tmux変数同期・respawn手順の契約は変更なし。
 
 Script refs verified: 2026-07-01T04:10:00+09:00. `cli_lookup.sh` に `_CLI_LAUNCH_CMD_OVERRIDE` 追加(per-agent launch_cmd対応)。`settings.yaml` per-agent `launch_cmd:` フィールドが `cli_profiles.yaml` デフォルトより優先される。ninja_monitor respawn時に自動反映。検証: `source scripts/lib/cli_lookup.sh && cli_launch_cmd <agent>` で確認。
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `cli_lookup.sh`/`switch_cli_mode.sh`/`ninja_monitor.sh` 直近変更(58c729dc/23b16810/c9ba1ff9/befd7ca4/9fa6e089/8e26308/7f3b9ca/897470d/6c6bd607)はsettings-only許可、launch_cmd overrideの追加/解除、runtime model検出、monitor hot-reloadとclear loop抑制の内部制御で、`shogun_cli_switch.sh status|pin-2.1.87|unpin-latest|to-claude|to-codex`、`--agent`、`--scope`、`--dry-run`、`--settings-only` の契約は変更なし。
@@ -316,10 +318,10 @@ Script refs verified: 2026-07-02 cmd_3642 / commit ba8b94d0e. `cli_lookup.sh` �
 Script refs verified: 2026-07-04T20:11:54+09:00 cmd_training_skill_refs_shogun_cli_switch_202607042005。`ninja_monitor.sh` の2026-07-02T13:21:30以降の差分(a85cbf481/bb140170d/842dd276c/d3f1938e5/33d39ffce)をgit showで確認: (1)未使用`count_unread_messages()`削除(死コード、呼び出し元ゼロ) (2)`write_karo_snapshot()`/`refresh_karo_snapshot_fast_path()`にNINJA_NAMES/PREV_STATE/REDISCOVER_EVERYの未設定フォールバックガード追加(karo_snapshot生成のlib-only呼び出し耐性強化) (3)`write_state_file()`/`check_model_names()`にKARO_PANE/PANE_TARGETSの未設定フォールバックガード追加(pane_lookup経由でkaroペイン解決) (4)(5)将軍`idle_analysis_trigger`クールダウンを`/tmp/.shogun_idle_trigger_last`へ永続化し、ninja_monitor再起動(respawn)を跨いでcooldownを維持。いずれも`check_idle()`のidle判定ロジック、`respawn-pane -k`実行手順、`cli_launch_cmd()`/`cli_lookup.sh`経由の起動コマンド解決には変更なし。shogun-cli-switchのidle pane判定・respawn契約・monitor連携は現行記載のまま有効。
 
 Script refs verified: 2026-07-07T18:19:00+09:00 (shogun復帰時WARN解消). `ninja_monitor.sh` 直近変更(1d800fd96)をgit showで確認。還流insight自動配備(`_handle_reflux_auto_deploy`)にtarget_path active衝突スキップを追加する内部制御のみで、`check_idle()`のidle判定、`respawn-pane -k`実行手順、`cli_launch_cmd()`/`cli_lookup.sh`経由の起動コマンド解決、CLI切替契約には変更なし。
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 <!-- script参照互換確認 2026-07-12: 参照先(yaml_field_set.sh/deploy_task.sh/ninja_monitor.sh)の直近変更はatomic mv/validate/fail-closed等の内部堅牢化のみでCLI引数・呼出手順の変更なし。本書の手順は現行スクリプトと互換(将軍git log現物確認) -->
 
 <!-- 検分: 2026-07-12 shogun起動時gate WARN解消。checked_at以降の差分をgit logで確認 — gate_report_format.sh 8c576d849(AC3 hunk provenance判定=内部判定強化)/memory_db_query.sh 8ce7c5c26(ext4キャッシュ経由=内部速度)/deploy_task.sh 2ecaf21ba+0cc6175e6+5dc9e8423(chunk境界regex誤検知根治+lesson注入絞込+atomic mv=内部)/ninja_scope_commit.sh 42d06b1d5+13f46a918(fail-closed patch commit mode追加+CI fixture=内部)/ninja_monitor.sh b40e13d2c系(dedupe通知+stall FP抑制=内部)。いずれも呼び出し契約・手順・出口文言に変更なし -->
-<!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
