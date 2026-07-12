@@ -1570,6 +1570,10 @@ _karo_notify_outbox_file() {
 
 # karoへdurable通知を試行する。inbox_write成功なら即完了、失敗ならoutboxへ永続化して次サイクルで再送する。
 # 呼び出し元(safe_send_clear等)はこの関数の戻り値でrespawn等の処理を止めてはならない。
+# 契約(cmd_karo_hotfix_pending_work_generation_dedupe_202607121023で明確化): direct送達成功
+# またはoutboxへの永続化成功のいずれかならreturn 0(=通知は将来必ず届く見込みが確定した状態)。
+# outbox永続化自体(printf >> outbox_file)が失敗した場合のみreturn 1とし、呼び出し元が
+# 世代markerを確定させず次サイクルでretryできるようにする。
 notify_karo_durable() {
     local notify_type="$1"
     local name="$2"
@@ -1582,7 +1586,10 @@ notify_karo_durable() {
     local outbox_file encoded
     outbox_file=$(_karo_notify_outbox_file)
     encoded=$(printf '%s' "$message" | base64 | tr -d '\n')
-    printf '%s\t%s\t%s\t%s\n' "$EPOCHSECONDS" "$notify_type" "$name" "$encoded" >> "$outbox_file"
+    if printf '%s\t%s\t%s\t%s\n' "$EPOCHSECONDS" "$notify_type" "$name" "$encoded" >> "$outbox_file" 2>/dev/null; then
+        return 0
+    fi
+    log "NOTIFY-OUTBOX-ENQUEUE-FAILED: $notify_type for $name (outbox永続化自体が失敗。呼び出し元は世代を確定せず次サイクルでretryせよ)"
     return 1
 }
 
@@ -1748,6 +1755,60 @@ _notify_failed_respawn_result() {
         notify_karo_durable failed_task_respawn_failed "$agent_name" \
             "【自動検知】${agent_name}のrespawnが失敗した。pane状態を確認し手動対応せよ。"
     fi
+}
+
+# ─── pending_work通知のdurable世代dedupe (cmd_karo_hotfix_pending_work_generation_dedupe_202607121023) ───
+# 実運転RC: 家老inbox未読0でも忍者done/failed報告が残っている間、旧実装は120秒スロットルのみで
+# 抑止しており、同一pending集合(worker+task_id+parent_cmd+status+report内容が全て不変)が続く限り
+# 2分周期で同一通知が再送され続けていた(通知世代の非永続・集合fingerprint未使用が根因)。
+# 上のfailed respawn通知dedupeと同構造で、pending集合全体のcanonical世代fingerprintをdurable
+# markerに記録し、fingerprint不変の間は再通知しない。集合変化・report内容変化で新世代になれば
+# 即時再通知する。
+# AC3順序(判定関数は副作用なしの比較のみ。確定は呼び出し元がnotify_karo_durableの成功
+# (=direct成功またはoutbox永続化成功、戻り値0)を確認した後にのみ行う。呼び出し元が
+# notify_karo_durable呼び出し前にmarkerを書くと、direct失敗+outbox永続化失敗(プロセス
+# クラッシュ等)の場合に通知が永久に失われたまま抑止され続けるため、この順序を厳守する。
+# pathの組立のみ(副作用なし)。mkdir等の副作用は各write系関数(mark_notified)が個別に持つ。
+_karo_pending_work_notice_marker_file() {
+    printf '%s/karo_pending_work_notice.tsv\n' "$STATE_DIR"
+}
+
+# 判定のみ(副作用なし)。同一世代で通知確定済みならtrue(0)、未確定ならfalse(1)。
+_karo_pending_work_already_notified() {
+    local current_fp="$1"
+    local marker_file stored_fp
+
+    marker_file=$(_karo_pending_work_notice_marker_file)
+    stored_fp=""
+    # 速度RC(2026-07-12): cat(外部プロセス)ではなくbuiltin readでmarker内容を読む
+    [ -f "$marker_file" ] && IFS= read -r stored_fp < "$marker_file" 2>/dev/null
+
+    [ "$stored_fp" = "$current_fp" ]
+}
+
+# notify_karo_durableがreturn 0(direct成功またはoutbox永続化成功)した後にのみ呼ぶこと。
+# atomic tmp+mvでmarkerを確定する(生リダイレクトによる部分書込み・クラッシュ時破損を避ける)。
+# 最終RC(2026-07-12): mkdir副作用はwrite系のここだけに限定し、_already_notifiedを純比較にする。
+_karo_pending_work_mark_notified() {
+    local current_fp="$1"
+    local marker_file tmp_file
+
+    [ -d "$STATE_DIR" ] || mkdir -p "$STATE_DIR" 2>/dev/null || true
+    marker_file=$(_karo_pending_work_notice_marker_file)
+    tmp_file="${marker_file}.tmp.$$"
+    printf '%s\n' "$current_fp" > "$tmp_file" && mv -f "$tmp_file" "$marker_file"
+}
+
+# 集合世代RC(cmd_karo_hotfix_pending_work_generation_dedupe_202607121023): pending集合が
+# 0件になった時にmarkerを残すと、後で同一fingerprintの集合が再出現(軍師review/GATE CLEARで
+# 一度解消した後にRC/reopenする実運用)しても旧世代扱いされ通知が漏れる。0件も「集合変化」
+# として扱い、pending entriesが空になった時点でmarkerをatomicに消去する。
+# 最終RC(2026-07-12): STATE_DIR不存在ならclear対象自体が存在し得ないためmkdirせず即return。
+_karo_pending_work_clear_marker() {
+    [ -d "$STATE_DIR" ] || return 0
+    local marker_file
+    marker_file=$(_karo_pending_work_notice_marker_file)
+    rm -f "$marker_file" 2>/dev/null || true
 }
 
 # ─── 軍師LGTM後の将軍未通知検知 (cmd_karo_hotfix_completion_notify_gap) ───
@@ -4545,7 +4606,6 @@ check_inbox_renudge() {
         if [ "$unread_count" -eq 0 ]; then
             # 家老専用: inbox未読0でもpending work(忍者done/delegated未配備)があればnudge
             if [ "$name" = "karo" ]; then
-                local _karo_pending=false
                 local _reviewed_report_cmds=""
                 if [ -f "$SCRIPT_DIR/logs/gunshi_review_log.yaml" ]; then
                     _reviewed_report_cmds="|$(awk '
@@ -4569,9 +4629,22 @@ check_inbox_renudge() {
                         END { emit() }
                     ' "$SCRIPT_DIR/logs/gunshi_review_log.yaml" 2>/dev/null | paste -sd'|' -)|"
                 fi
+                # cmd_karo_hotfix_pending_work_generation_dedupe_202607121023 AC2:
+                # 世代fingerprintを求めるため、pending判定を「最初の1件で打ち切り」から
+                # 「全pending対象を収集」へ変更する(通知要否のtrue/falseだけでなく、
+                # worker+task_id+parent_cmd+status+report内容を全件集めてhash化する)。
+                # 速度RC(2026-07-12 11:08 家老指摘、殿定義: 速度もバグ判定対象):
+                # report_filename解決にresolve_expected_report_file(=yaml_field_get再走査)を
+                # pending件数分呼ぶとprocess数が線形増加しBEFORE比3.9倍まで悪化した。
+                # report_filenameはtask_id等と同じ単一awk一括スキャンで抽出し(yaml_field_get
+                # 再走査ゼロ化)、report内容hashはpendingのentry収集後にまとめて1回のmd5sum
+                # 呼出し(複数path一括)で計算してprocess数を最小化する。
                 # L4最適化: for+awk×N(最大6プロセス) → awk×1の全ファイル一括スキャン(WSL2プロセス起動コスト削減 L511)
                 # FNR==1で新ファイル開始を検出し前ファイルの結果を出力。ls→compgen -Gに変更(エラー出力防止)
-                while IFS='|' read -r _kts _kpcmd; do
+                local -a _kentry_lines=()
+                local -a _kreport_paths_needed=()
+                while IFS=$'\t' read -r _kworker _kts _kpcmd _ktid _kreportfn; do
+                    [ -n "$_kworker" ] || continue
                     # AC2(cmd_karo_hotfix_failed_report_clear_notify_gap): done専用の判定だと
                     # failed報告(cmd_3861実例)がpending work検知から永久に漏れる。done/failed両対象化。
                     [[ "$_kts" = "done" || "$_kts" = "failed" ]] || continue
@@ -4580,39 +4653,107 @@ check_inbox_renudge() {
                         continue
                     fi
                     # GATE CLEAR済みならpending workではない
-                    if [ -n "$_kpcmd" ] && compgen -G "$SCRIPT_DIR/queue/archive/cmds/${_kpcmd}_completed_"* > /dev/null 2>&1; then
+                    if compgen -G "$SCRIPT_DIR/queue/archive/cmds/${_kpcmd}_completed_"* > /dev/null 2>&1; then
                         continue  # archived=GATE CLEAR済み
                     fi
-                    if [ -n "$_kpcmd" ] && awk -F '\t' -v cmd="$_kpcmd" '$2 == cmd && $3 == "CLEAR" { found=1; exit } END { exit(found ? 0 : 1) }' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null; then
+                    if awk -F '\t' -v cmd="$_kpcmd" '$2 == cmd && $3 == "CLEAR" { found=1; exit } END { exit(found ? 0 : 1) }' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null; then
                         log "KARO-PENDING-SKIP-GATE-CLEAR: $_kpcmd already has gate CLEAR"
                         continue
                     fi
                     # 軍師review済みの報告は「家老未処理」ではない。通知を繰り返すと空振りinboxになる。
-                    if [ -n "$_kpcmd" ] && [[ "$_reviewed_report_cmds" == *"|$_kpcmd|"* ]]; then
+                    if [[ "$_reviewed_report_cmds" == *"|$_kpcmd|"* ]]; then
                         log "KARO-PENDING-SKIP-REVIEWED: $_kpcmd already has gunshi report review"
                         continue
                     fi
-                    _karo_pending=true
-                    break
+                    # report_filenameはresolve_expected_report_file相当のfallbackを
+                    # サブプロセスなし(pure bash)で再現する(_kpcmdは既に非空・none以外を確認済み)
+                    local _kreport_filename _kreport_path
+                    if [ -n "$_kreportfn" ]; then
+                        _kreport_filename="$_kreportfn"
+                    else
+                        _kreport_filename="${_kworker}_report_${_kpcmd}.yaml"
+                    fi
+                    _kreport_path="$SCRIPT_DIR/queue/reports/${_kreport_filename}"
+                    _kentry_lines+=("${_kworker}|${_ktid}|${_kpcmd}|${_kts}|${_kreport_path}")
+                    [ -f "$_kreport_path" ] && _kreport_paths_needed+=("$_kreport_path")
                 done < <(awk '
-                    FNR == 1 { if (NR > 1) print s "|" p; s=""; p="" }
+                    function emit() {
+                        if (fname != "") {
+                            w = fname
+                            sub(/^.*\//, "", w)
+                            sub(/\.yaml$/, "", w)
+                            print w "\t" s "\t" p "\t" t "\t" rf
+                        }
+                    }
+                    FNR == 1 { emit(); fname = FILENAME; s=""; p=""; t=""; rf="" }
                     /^[[:space:]]*status:/ && s=="" { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'\''[:space:]]/, "", v); s=v }
                     /^[[:space:]]*parent_cmd:/ && p=="" { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'\''[:space:]]/, "", v); p=v }
-                    END { print s "|" p }
+                    /^[[:space:]]*task_id:/ && t=="" { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'\''[:space:]]/, "", v); t=v }
+                    /^[[:space:]]*report_filename:/ && rf=="" { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'\''[:space:]]/, "", v); rf=v }
+                    END { emit() }
                 ' "$SCRIPT_DIR"/queue/tasks/*.yaml 2>/dev/null)
-                if [ "$_karo_pending" = true ]; then
+
+                # 存在するreport全件を1回のmd5sum呼出しでまとめてhash化(pending件数分のprocess増加を回避)
+                local -A _kreport_hash_map=()
+                if [ ${#_kreport_paths_needed[@]} -gt 0 ]; then
+                    while IFS= read -r _khashline; do
+                        [ -n "$_khashline" ] || continue
+                        _kreport_hash_map["${_khashline:34}"]="${_khashline:0:32}"
+                    done < <(md5sum "${_kreport_paths_needed[@]}" 2>/dev/null)
+                fi
+
+                # 正確性RC(2026-07-12 11:11 家老指摘): 集合fingerprintの元となる並びが
+                # queue/tasks/*.yamlのglob順(locale=LC_COLLATE依存)に左右されると、同一の
+                # 実pending集合でもlocale差でfpが変わりcanonical不変量が壊れる。忍者は高々
+                # 6名でありO(N^2)は無視できるコストのため、追加サブプロセスなしの純bash
+                # insertion sortで収集順を固定し、外部sort呼出しを増やさず正確性を確保する。
+                local -a _kentry_sorted=()
+                local _kcandidate _kinserted _kj
+                for _kcandidate in "${_kentry_lines[@]+"${_kentry_lines[@]}"}"; do
+                    _kinserted=0
+                    for ((_kj=0; _kj<${#_kentry_sorted[@]}; _kj++)); do
+                        if [[ "$_kcandidate" < "${_kentry_sorted[_kj]}" ]]; then
+                            _kentry_sorted=("${_kentry_sorted[@]:0:_kj}" "$_kcandidate" "${_kentry_sorted[@]:_kj}")
+                            _kinserted=1
+                            break
+                        fi
+                    done
+                    [ "$_kinserted" -eq 0 ] && _kentry_sorted+=("$_kcandidate")
+                done
+
+                local _karo_pending_entries=""
+                local _kline _ew _etid _epcmd _ets _erpath _erfp
+                for _kline in "${_kentry_sorted[@]+"${_kentry_sorted[@]}"}"; do
+                    IFS='|' read -r _ew _etid _epcmd _ets _erpath <<< "$_kline"
+                    _erfp="${_kreport_hash_map[$_erpath]:-missing}"
+                    _karo_pending_entries="${_karo_pending_entries}${_ew}|${_etid}|${_epcmd}|${_ets}|${_erfp}
+"
+                done
+                if [ -n "$_karo_pending_entries" ]; then
                     local _karo_target="$KARO_PANE"
                     if [ -n "$_karo_target" ] && check_idle "$_karo_target" "karo"; then
-                        local _last="${RENUDGE_LAST_SEND[$name]:-0}"
-                        if [ $((now - _last)) -ge 120 ]; then
-                            log "KARO-PENDING-INBOX: karo idle with pending work (ninja done), sending inbox message"
-                            if send_inbox_message karo "未処理の忍者done/failed報告が残っている。queue/tasks と queue/reports を確認し、レビュー/完了処理/次配備を判断せよ。" pending_work ninja_monitor; then
-                                RENUDGE_LAST_SEND[$name]=$now
+                        local _karo_pending_fp
+                        _karo_pending_fp=$(printf '%s' "$_karo_pending_entries" | md5sum)
+                        _karo_pending_fp="${_karo_pending_fp:0:32}"
+                        if _karo_pending_work_already_notified "$_karo_pending_fp"; then
+                            log "KARO-PENDING-DEDUPE: generation ${_karo_pending_fp} already notified for this pending set, skipping"
+                        else
+                            log "KARO-PENDING-INBOX: karo idle with pending work (new generation ${_karo_pending_fp}), sending inbox message"
+                            # notify_karo_durableがreturn 0(direct成功またはoutbox永続化成功)の
+                            # 場合のみ世代を確定する。return 1(outbox永続化自体が失敗)ならmarkerを
+                            # 書かず、次サイクルで同一fpのまま再試行させる(AC3)。
+                            if notify_karo_durable pending_work karo "未処理の忍者done/failed報告が残っている。queue/tasks と queue/reports を確認し、レビュー/完了処理/次配備を判断せよ。"; then
+                                _karo_pending_work_mark_notified "$_karo_pending_fp"
                             else
-                                log "ERROR: KARO-PENDING-INBOX inbox_write failed"
+                                log "KARO-PENDING-INBOX-RETRY: notify_karo_durable failed to persist (outbox append failed), generation not marked, will retry next cycle"
                             fi
                         fi
                     fi
+                else
+                    # 集合世代RC: pending集合が0件になった時点でmarkerを消去する。
+                    # 消去しないと、後で同一fingerprintの集合が再出現した際に旧世代扱いされ
+                    # 通知が漏れる(軍師review/GATE CLEARで一度解消→RC/reopenする実運用を想定)。
+                    _karo_pending_work_clear_marker
                 fi
             fi
             if [ -n "${RENUDGE_FINGERPRINT[$name]:-}" ] || [ "${RENUDGE_COUNT[$name]:-0}" -gt 0 ]; then

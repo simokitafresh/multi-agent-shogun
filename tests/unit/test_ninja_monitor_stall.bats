@@ -1673,8 +1673,9 @@ unset NINJA_MONITOR_LIB_ONLY
 TMP_ROOT="$(mktemp -d)"
 trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/scripts"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$STATE_DIR"
 
 cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
 messages: []
@@ -1688,6 +1689,13 @@ task:
   parent_cmd: cmd_pending_review
 EOF
 
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+printf "INBOX-WRITE-CALLED: to=%s type=%s from=%s msg=%s\n" "\$1" "\$3" "\$4" "\$2"
+exit 0
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
 NINJA_NAMES=()
 KARO_PANE="shogun:agents.1"
 declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
@@ -1697,22 +1705,18 @@ safe_send_keys_atomic() {
     echo "DIRECT_NUDGE:$2" >> "$TMP_ROOT/direct_nudge.log"
     return 0
 }
-send_inbox_message() {
-    printf "%s|%s|%s|%s\n" "$1" "$3" "$2" "${4:-ninja_monitor}" >> "$TMP_ROOT/inbox_messages.log"
-    return 0
-}
 
 check_inbox_renudge
 
 cat "$LOG"
-cat "$TMP_ROOT/inbox_messages.log"
 if [ -f "$TMP_ROOT/direct_nudge.log" ]; then
     cat "$TMP_ROOT/direct_nudge.log"
 fi
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"KARO-PENDING-INBOX"* ]]
-    [[ "$output" == *"karo|pending_work|未処理の忍者done/failed報告"* ]]
+    [[ "$output" == *"INBOX-WRITE-CALLED: to=karo type=pending_work"* ]]
+    [[ "$output" == *"未処理の忍者done/failed報告"* ]]
     [[ "$output" != *"DIRECT_NUDGE:inbox0"* ]]
 }
 
@@ -1727,8 +1731,9 @@ unset NINJA_MONITOR_LIB_ONLY
 TMP_ROOT="$(mktemp -d)"
 trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
 
 cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
 messages: []
@@ -1749,6 +1754,13 @@ cat > "$SCRIPT_DIR/logs/gunshi_review_log.yaml" <<'"'"'EOF'"'"'
   report_task_id: cmd_reviewed_done_focused
 EOF
 
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+printf "INBOX-WRITE-CALLED: to=%s type=%s from=%s msg=%s\n" "\$1" "\$3" "\$4" "\$2"
+exit 0
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
 NINJA_NAMES=()
 KARO_PANE="shogun:agents.1"
 declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
@@ -1758,17 +1770,10 @@ safe_send_keys_atomic() {
     echo "DIRECT_NUDGE:$2" >> "$TMP_ROOT/direct_nudge.log"
     return 0
 }
-send_inbox_message() {
-    printf "%s|%s|%s|%s\n" "$1" "$3" "$2" "${4:-ninja_monitor}" >> "$TMP_ROOT/inbox_messages.log"
-    return 0
-}
 
 check_inbox_renudge
 
 cat "$LOG"
-if [ -f "$TMP_ROOT/inbox_messages.log" ]; then
-    cat "$TMP_ROOT/inbox_messages.log"
-fi
 if [ -f "$TMP_ROOT/direct_nudge.log" ]; then
     cat "$TMP_ROOT/direct_nudge.log"
 fi
@@ -1791,8 +1796,9 @@ unset NINJA_MONITOR_LIB_ONLY
 TMP_ROOT="$(mktemp -d)"
 trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
 
 cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
 messages: []
@@ -1809,6 +1815,13 @@ cat > "$SCRIPT_DIR/logs/gate_metrics.log" <<'"'"'EOF'"'"'
 2026-06-20T01:00:00	cmd_gate_clear_done	CLEAR	all_gates_passed	impl	unknown	unknown	none
 EOF
 
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+printf "INBOX-WRITE-CALLED: to=%s type=%s from=%s msg=%s\n" "\$1" "\$3" "\$4" "\$2"
+exit 0
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
 NINJA_NAMES=()
 KARO_PANE="shogun:agents.1"
 declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
@@ -1818,17 +1831,10 @@ safe_send_keys_atomic() {
     echo "DIRECT_NUDGE:$2" >> "$TMP_ROOT/direct_nudge.log"
     return 0
 }
-send_inbox_message() {
-    printf "%s|%s|%s|%s\n" "$1" "$3" "$2" "${4:-ninja_monitor}" >> "$TMP_ROOT/inbox_messages.log"
-    return 0
-}
 
 check_inbox_renudge
 
 cat "$LOG"
-if [ -f "$TMP_ROOT/inbox_messages.log" ]; then
-    cat "$TMP_ROOT/inbox_messages.log"
-fi
 if [ -f "$TMP_ROOT/direct_nudge.log" ]; then
     cat "$TMP_ROOT/direct_nudge.log"
 fi
@@ -1851,8 +1857,9 @@ unset NINJA_MONITOR_LIB_ONLY
 TMP_ROOT="$(mktemp -d)"
 trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
 
 cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
 messages: []
@@ -1866,6 +1873,13 @@ task:
   parent_cmd: none
 EOF
 
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+printf "INBOX-WRITE-CALLED: to=%s type=%s from=%s msg=%s\n" "\$1" "\$3" "\$4" "\$2"
+exit 0
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
 NINJA_NAMES=()
 KARO_PANE="shogun:agents.1"
 declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
@@ -1875,17 +1889,10 @@ safe_send_keys_atomic() {
     echo "DIRECT_NUDGE:$2" >> "$TMP_ROOT/direct_nudge.log"
     return 0
 }
-send_inbox_message() {
-    printf "%s|%s|%s|%s\n" "$1" "$3" "$2" "${4:-ninja_monitor}" >> "$TMP_ROOT/inbox_messages.log"
-    return 0
-}
 
 check_inbox_renudge
 
 cat "$LOG"
-if [ -f "$TMP_ROOT/inbox_messages.log" ]; then
-    cat "$TMP_ROOT/inbox_messages.log"
-fi
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"KARO-PENDING-SKIP-NO-PARENT-CMD"* ]]
@@ -1907,8 +1914,9 @@ unset NINJA_MONITOR_LIB_ONLY
 TMP_ROOT="$(mktemp -d)"
 trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/scripts"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$STATE_DIR"
 
 cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
 messages: []
@@ -1922,6 +1930,13 @@ task:
   parent_cmd: cmd_3861
 EOF
 
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+printf "INBOX-WRITE-CALLED: to=%s type=%s from=%s msg=%s\n" "\$1" "\$3" "\$4" "\$2" >> "$TMP_ROOT/inbox_calls.log"
+exit 0
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
 NINJA_NAMES=()
 KARO_PANE="shogun:agents.1"
 declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
@@ -1931,23 +1946,517 @@ safe_send_keys_atomic() {
     echo "DIRECT_NUDGE:$2" >> "$TMP_ROOT/direct_nudge.log"
     return 0
 }
-send_inbox_message() {
-    printf "%s|%s|%s|%s\n" "$1" "$3" "$2" "${4:-ninja_monitor}" >> "$TMP_ROOT/inbox_messages.log"
-    return 0
-}
 
 check_inbox_renudge
 
 cat "$LOG"
-cat "$TMP_ROOT/inbox_messages.log"
+cat "$TMP_ROOT/inbox_calls.log"
 
-MSG_COUNT=$(wc -l < "$TMP_ROOT/inbox_messages.log")
+MSG_COUNT=$(wc -l < "$TMP_ROOT/inbox_calls.log")
 echo "MSG_COUNT=$MSG_COUNT"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"KARO-PENDING-INBOX"* ]]
-    [[ "$output" == *"karo|pending_work|未処理の忍者done/failed報告"* ]]
+    [[ "$output" == *"INBOX-WRITE-CALLED: to=karo type=pending_work"* ]]
     [[ "$output" == *"MSG_COUNT=1"* ]]
+}
+
+# cmd_karo_hotfix_pending_work_generation_dedupe_202607121023 AC4: 同一pending集合(worker+
+# task_id+parent_cmd+status+report内容が全て不変)が3サイクル続いても通知は1件のみ。
+# monitor state再生成(=同一TMP_ROOT/STATE_DIRを保った再sourcing)を跨いでも1件のまま。
+@test "check_inbox_renudge: same pending generation across 3 cycles and monitor state regeneration sends exactly 1 notification" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+mkdir -p "$TMP_ROOT/queue/tasks" "$TMP_ROOT/queue/inbox" "$TMP_ROOT/queue/archive/cmds" "$TMP_ROOT/queue/reports" "$TMP_ROOT/scripts" "$SHOGUN_STATE_DIR"
+
+cat > "$TMP_ROOT/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$TMP_ROOT/queue/inbox/gunshi.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$TMP_ROOT/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: failed
+  parent_cmd: cmd_gen_stable
+  task_id: cmd_gen_stable_full
+EOF
+
+cat > "$TMP_ROOT/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+printf "INBOX-WRITE-CALLED: to=%s type=%s from=%s msg=%s\n" "\$1" "\$3" "\$4" "\$2" >> "$TMP_ROOT/inbox_calls.log"
+exit 0
+STUBEOF
+chmod +x "$TMP_ROOT/scripts/inbox_write.sh"
+
+run_one_cycle() {
+    export NINJA_MONITOR_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+    unset NINJA_MONITOR_LIB_ONLY
+    SCRIPT_DIR="$TMP_ROOT"
+    LOG="$TMP_ROOT/monitor.log"
+    NINJA_NAMES=()
+    KARO_PANE="shogun:agents.1"
+    declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
+    log() { echo "$1" >> "$LOG"; }
+    check_idle() { return 0; }
+    safe_send_keys_atomic() { return 0; }
+    check_inbox_renudge
+}
+
+# サイクル1-3: 同一pending集合。各呼出しをサブシェルで独立実行し、in-memory連想配列を
+# 都度使い捨てることで「monitor再起動」相当(durable markerファイルのみが記憶を持つ)を再現する
+for i in 1 2 3; do
+    ( run_one_cycle )
+done
+
+cat "$TMP_ROOT/monitor.log"
+cat "$TMP_ROOT/inbox_calls.log"
+MSG_COUNT=$(wc -l < "$TMP_ROOT/inbox_calls.log")
+echo "MSG_COUNT=$MSG_COUNT"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MSG_COUNT=1"* ]]
+    [[ "$(echo "$output" | grep -c "KARO-PENDING-DEDUPE:")" -eq 2 ]]
+}
+
+# cmd_karo_hotfix_pending_work_generation_dedupe_202607121023 AC4: pending集合が変化(新規failed
+# taskの追加)すれば新世代として即時再通知する。2種の新世代でそれぞれ1件、合計2件。
+@test "check_inbox_renudge: a new pending generation (changed set) sends a fresh notification" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+mkdir -p "$TMP_ROOT/queue/tasks" "$TMP_ROOT/queue/inbox" "$TMP_ROOT/queue/archive/cmds" "$TMP_ROOT/queue/reports" "$TMP_ROOT/scripts" "$SHOGUN_STATE_DIR"
+
+cat > "$TMP_ROOT/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$TMP_ROOT/queue/inbox/gunshi.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$TMP_ROOT/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: failed
+  parent_cmd: cmd_gen_a
+  task_id: cmd_gen_a_full
+EOF
+
+cat > "$TMP_ROOT/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+printf "INBOX-WRITE-CALLED: to=%s type=%s from=%s msg=%s\n" "\$1" "\$3" "\$4" "\$2" >> "$TMP_ROOT/inbox_calls.log"
+exit 0
+STUBEOF
+chmod +x "$TMP_ROOT/scripts/inbox_write.sh"
+
+run_one_cycle() {
+    export NINJA_MONITOR_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+    unset NINJA_MONITOR_LIB_ONLY
+    SCRIPT_DIR="$TMP_ROOT"
+    LOG="$TMP_ROOT/monitor.log"
+    NINJA_NAMES=()
+    KARO_PANE="shogun:agents.1"
+    declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
+    log() { echo "$1" >> "$LOG"; }
+    check_idle() { return 0; }
+    safe_send_keys_atomic() { return 0; }
+    check_inbox_renudge
+}
+
+# 世代A(kagemaru failedのみ)
+( run_one_cycle )
+
+# 世代B: hanzoのfailedも追加(集合変化=新世代その1)
+cat > "$TMP_ROOT/queue/tasks/hanzo.yaml" <<'"'"'EOF'"'"'
+task:
+  status: failed
+  parent_cmd: cmd_gen_b
+  task_id: cmd_gen_b_full
+EOF
+echo "initial report" > "$TMP_ROOT/queue/reports/hanzo_report_cmd_gen_b.yaml"
+( run_one_cycle )
+
+# 世代C: 集合(worker/task_id/parent_cmd/status)は不変のままreport内容だけ変化(新世代その2)
+echo "updated report after further investigation" > "$TMP_ROOT/queue/reports/hanzo_report_cmd_gen_b.yaml"
+( run_one_cycle )
+
+cat "$TMP_ROOT/monitor.log"
+cat "$TMP_ROOT/inbox_calls.log"
+MSG_COUNT=$(wc -l < "$TMP_ROOT/inbox_calls.log")
+echo "MSG_COUNT=$MSG_COUNT"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MSG_COUNT=3"* ]]
+}
+
+# 集合世代RC(2026-07-12 10:46家老指摘): pending集合が一度0件になった時にmarkerを残すと、
+# 後で同一fingerprintの集合が再出現しても旧世代扱いされ通知が漏れる。0件も集合変化として扱い、
+# markerをatomicにclearすることで、A通知→集合0→同じA再出現→2回目通知となることを検証する。
+# 軍師review/GATE CLEARで一度解消した後にRC/reopenする実運用を守る。
+@test "check_inbox_renudge: same fingerprint reappearing after the pending set goes empty notifies again" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+mkdir -p "$TMP_ROOT/queue/tasks" "$TMP_ROOT/queue/inbox" "$TMP_ROOT/queue/archive/cmds" "$TMP_ROOT/queue/reports" "$TMP_ROOT/scripts" "$SHOGUN_STATE_DIR"
+
+cat > "$TMP_ROOT/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$TMP_ROOT/queue/inbox/gunshi.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+
+cat > "$TMP_ROOT/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+echo "CALLED" >> "$TMP_ROOT/inbox_calls.log"
+exit 0
+STUBEOF
+chmod +x "$TMP_ROOT/scripts/inbox_write.sh"
+
+run_one_cycle() {
+    export NINJA_MONITOR_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+    unset NINJA_MONITOR_LIB_ONLY
+    SCRIPT_DIR="$TMP_ROOT"
+    LOG="$TMP_ROOT/monitor.log"
+    NINJA_NAMES=()
+    KARO_PANE="shogun:agents.1"
+    declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
+    log() { echo "$1" >> "$LOG"; }
+    check_idle() { return 0; }
+    safe_send_keys_atomic() { return 0; }
+    check_inbox_renudge
+}
+
+TASK_CONTENT=$(cat <<'"'"'EOF'"'"'
+task:
+  status: failed
+  parent_cmd: cmd_reopen_a
+  task_id: cmd_reopen_a_full
+EOF
+)
+
+# 世代A登場 → 通知1件目
+echo "$TASK_CONTENT" > "$TMP_ROOT/queue/tasks/kagemaru.yaml"
+( run_one_cycle )
+
+# 集合が0件になる(解消=軍師review/GATE CLEAR相当)
+rm -f "$TMP_ROOT/queue/tasks/kagemaru.yaml"
+( run_one_cycle )
+
+# 同一世代Aが再出現(RC/reopen相当)→ markerがclearされていれば2回目の通知が飛ぶはず
+echo "$TASK_CONTENT" > "$TMP_ROOT/queue/tasks/kagemaru.yaml"
+( run_one_cycle )
+
+cat "$TMP_ROOT/monitor.log"
+cat "$TMP_ROOT/inbox_calls.log"
+MSG_COUNT=$(wc -l < "$TMP_ROOT/inbox_calls.log")
+echo "MSG_COUNT=$MSG_COUNT"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MSG_COUNT=2"* ]]
+}
+
+# cmd_karo_hotfix_pending_work_generation_dedupe_202607121023 AC3/AC4: 通知(inbox_write直接呼出)が
+# 失敗してもoutbox永続化には成功する場合、世代markerは確定し重複enqueueは起きない。
+# outbox自体は既存のflush_karo_notify_outboxが後続サイクルでretryする(exactly-once)。
+@test "check_inbox_renudge: direct send failure with successful outbox enqueue marks the generation once" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/inbox/gunshi.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: failed
+  parent_cmd: cmd_direct_fail
+  task_id: cmd_direct_fail_full
+EOF
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+exit 1
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+NINJA_NAMES=()
+KARO_PANE="shogun:agents.1"
+declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+safe_send_keys_atomic() { return 0; }
+
+check_inbox_renudge
+check_inbox_renudge
+check_inbox_renudge
+
+cat "$LOG"
+OUTBOX_FILE="$STATE_DIR/karo_notify_outbox.tsv"
+test -f "$OUTBOX_FILE"
+OUTBOX_LINES=$(wc -l < "$OUTBOX_FILE")
+echo "OUTBOX_LINES=$OUTBOX_LINES"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"KARO-PENDING-INBOX"* ]]
+    [[ "$output" == *"OUTBOX_LINES=1"* ]]
+    [[ "$(echo "$output" | grep -c "KARO-PENDING-DEDUPE:")" -eq 2 ]]
+    [[ "$output" != *"KARO-PENDING-INBOX-RETRY"* ]]
+}
+
+# cmd_karo_hotfix_pending_work_generation_dedupe_202607121023 AC3: direct送達失敗かつoutbox
+# 永続化自体も失敗(STATE_DIRがディレクトリでない等)する異常系では世代markerを確定せず、
+# 次サイクルで同一fpのまま再試行することを検証する。
+@test "check_inbox_renudge: total notify failure (direct and outbox both fail) does not mark the generation and retries next cycle" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts"
+
+# STATE_DIRをディレクトリではなくファイルにし、outbox永続化自体を失敗させる
+touch "$TMP_ROOT/not_a_dir"
+STATE_DIR="$TMP_ROOT/not_a_dir"
+
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/inbox/gunshi.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: failed
+  parent_cmd: cmd_total_fail
+  task_id: cmd_total_fail_full
+EOF
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+exit 1
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+NINJA_NAMES=()
+KARO_PANE="shogun:agents.1"
+declare -A RENUDGE_FINGERPRINT RENDUDGE_COUNT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+safe_send_keys_atomic() { return 0; }
+
+check_inbox_renudge
+check_inbox_renudge
+
+cat "$LOG"
+MARKER_FILE="$TMP_ROOT/not_a_dir/karo_pending_work_notice.tsv"
+if [ -f "$MARKER_FILE" ]; then
+    echo "MARKER_EXISTS"
+else
+    echo "MARKER_ABSENT"
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"KARO-PENDING-INBOX-RETRY"* ]]
+    [[ "$(echo "$output" | grep -c "KARO-PENDING-INBOX:")" -eq 2 ]]
+    [[ "$output" != *"KARO-PENDING-DEDUPE:"* ]]
+    [[ "$output" == *"MARKER_ABSENT"* ]]
+}
+
+# karo実運転RC(2026-07-12 10:55): benchmark/repro scriptがSTATE_DIRをsource前に設定しており、
+# ninja_monitor.sh L38のSTATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"がsource時に上書きして本物の
+# /tmp/karo_pending_work_notice.tsv(稼働中monitorの実運用ファイル)を書換え/clearしてしまい、
+# 実運転karoへ同一世代の重複通知を発生させた。STATE_DIRの上書きは「source前にexport
+# SHOGUN_STATE_DIR、source後に反映確認」でのみ安全に隔離できることを恒久的にgateする。
+@test "check_inbox_renudge: pending_work marker isolation never touches the real default STATE_DIR" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+LIVE_MARKER="/tmp/karo_pending_work_notice.tsv"
+LIVE_BEFORE=$(md5sum "$LIVE_MARKER" 2>/dev/null || echo "ABSENT")
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+mkdir -p "$TMP_ROOT/queue/tasks" "$TMP_ROOT/queue/inbox" "$TMP_ROOT/queue/archive/cmds" "$TMP_ROOT/queue/reports" "$TMP_ROOT/scripts" "$SHOGUN_STATE_DIR"
+
+cat > "$TMP_ROOT/queue/inbox/karo.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$TMP_ROOT/queue/inbox/gunshi.yaml" <<'"'"'EOF'"'"'
+messages: []
+EOF
+cat > "$TMP_ROOT/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
+task:
+  status: failed
+  parent_cmd: cmd_isolation_guard
+  task_id: cmd_isolation_guard_full
+EOF
+
+cat > "$TMP_ROOT/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+exit 0
+STUBEOF
+chmod +x "$TMP_ROOT/scripts/inbox_write.sh"
+
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+# source後、実際に隔離先へ反映されていることをassert(本テストの存在意義)
+test "$STATE_DIR" = "$SHOGUN_STATE_DIR"
+
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+NINJA_NAMES=()
+KARO_PANE="shogun:agents.1"
+declare -A RENUDGE_FINGERPRINT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }
+check_idle() { return 0; }
+safe_send_keys_atomic() { return 0; }
+
+check_inbox_renudge
+check_inbox_renudge
+
+# 集合0件化 → markerクリア相当のcode pathも隔離下で実行
+rm -f "$TMP_ROOT/queue/tasks/kagemaru.yaml"
+check_inbox_renudge
+
+cat "$LOG"
+test -f "$SHOGUN_STATE_DIR/karo_pending_work_notice.tsv" && echo "ISOLATED_MARKER_TOUCHED" || echo "ISOLATED_MARKER_ABSENT_OR_CLEARED"
+
+LIVE_AFTER=$(md5sum "$LIVE_MARKER" 2>/dev/null || echo "ABSENT")
+if [ "$LIVE_BEFORE" = "$LIVE_AFTER" ]; then
+    echo "LIVE_MARKER_UNCHANGED"
+else
+    echo "LIVE_MARKER_CHANGED: before=$LIVE_BEFORE after=$LIVE_AFTER"
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"LIVE_MARKER_UNCHANGED"* ]]
+    [[ "$output" != *"LIVE_MARKER_CHANGED"* ]]
+}
+
+# 正確性RC(2026-07-12 11:11家老指摘): 世代fingerprintの並びがqueue/tasks/*.yamlのglob順
+# (localeのLC_COLLATE依存)に左右されると、同一の実pending集合でもtask作成順やlocale差で
+# fpが変わりcanonical不変量が壊れる。同一の2件pending集合をtask作成順を入れ替えた2回の
+# 独立run(各々別STATE_DIR)で比較し、fpが完全一致し通知が各回1件ずつ(重複判定にならない)
+# ことを検証する。
+@test "check_inbox_renudge: same pending set with reversed task-file creation order yields the identical canonical fingerprint" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+
+run_with_creation_order() {
+    local create_kagemaru_first="$1" out_var="$2"
+    local TMP_ROOT
+    TMP_ROOT="$(mktemp -d)"
+    export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+    mkdir -p "$TMP_ROOT/queue/tasks" "$TMP_ROOT/queue/inbox" "$TMP_ROOT/queue/archive/cmds" "$TMP_ROOT/queue/reports" "$TMP_ROOT/scripts" "$SHOGUN_STATE_DIR"
+
+    cat > "$TMP_ROOT/queue/inbox/karo.yaml" <<EOF
+messages: []
+EOF
+    cat > "$TMP_ROOT/queue/inbox/gunshi.yaml" <<EOF
+messages: []
+EOF
+    cat > "$TMP_ROOT/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+exit 0
+STUBEOF
+    chmod +x "$TMP_ROOT/scripts/inbox_write.sh"
+
+    # worker→内容の対応は固定(kagemaru=failed/cmd_order_stable、tobisaru=done/cmd_order_stable_2)。
+    # 呼出し順だけを入れ替えて「task作成順」の影響有無を検証する(同一集合を保証するため)。
+    write_kagemaru() {
+        cat > "$TMP_ROOT/queue/tasks/kagemaru.yaml" <<EOF
+task:
+  status: failed
+  parent_cmd: cmd_order_stable
+  task_id: cmd_order_stable_full
+EOF
+    }
+    write_tobisaru() {
+        cat > "$TMP_ROOT/queue/tasks/tobisaru.yaml" <<EOF
+task:
+  status: done
+  parent_cmd: cmd_order_stable_2
+  task_id: cmd_order_stable_2_full
+EOF
+    }
+    if [ "$create_kagemaru_first" = "1" ]; then
+        write_kagemaru
+        write_tobisaru
+    else
+        write_tobisaru
+        write_kagemaru
+    fi
+
+    (
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        SCRIPT_DIR="$TMP_ROOT"
+        LOG="$TMP_ROOT/monitor.log"
+        NINJA_NAMES=()
+        KARO_PANE="shogun:agents.1"
+        declare -A RENUDGE_FINGERPRINT RENUDGE_COUNT RENUDGE_LAST_SEND
+        log() { :; }
+        check_idle() { return 0; }
+        safe_send_keys_atomic() { return 0; }
+        check_inbox_renudge
+    )
+
+    printf -v "$out_var" "%s" "$(cat "$SHOGUN_STATE_DIR/karo_pending_work_notice.tsv" 2>/dev/null || echo MISSING)"
+    rm -rf "$TMP_ROOT"
+}
+
+FP_A=""
+FP_B=""
+run_with_creation_order 1 FP_A
+run_with_creation_order 0 FP_B
+
+echo "FP_A=$FP_A"
+echo "FP_B=$FP_B"
+if [ "$FP_A" = "$FP_B" ] && [ "$FP_A" != "MISSING" ]; then
+    echo "CANONICAL_FP_MATCH"
+else
+    echo "CANONICAL_FP_MISMATCH"
+fi
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CANONICAL_FP_MATCH"* ]]
+    [[ "$output" != *"CANONICAL_FP_MISMATCH"* ]]
 }
 
 @test "check_stall: repeated same-task stalls trigger stall_escalate with mandatory replacement" {

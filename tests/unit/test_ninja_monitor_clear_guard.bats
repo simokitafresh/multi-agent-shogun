@@ -1605,7 +1605,10 @@ RESULT=0
 notify_karo_durable failed_task_respawned testninja "queued message" || RESULT=$?
 
 OUTBOX_FILE="$STATE_DIR/karo_notify_outbox.tsv"
-test "$RESULT" -eq 1
+# cmd_karo_hotfix_pending_work_generation_dedupe_202607121023で契約明確化:
+# direct失敗でもoutbox永続化(printf append)自体が成功していればreturn 0
+# (=将来必ず届く見込みが確定)。outbox append自体の失敗のみreturn 1。
+test "$RESULT" -eq 0
 test -f "$OUTBOX_FILE"
 test "$(wc -l < "$OUTBOX_FILE")" -eq 1
 
@@ -1629,6 +1632,47 @@ echo "PASS: outbox retry delivers queued notification"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: outbox retry delivers queued notification"* ]]
+}
+
+# cmd_karo_hotfix_pending_work_generation_dedupe_202607121023 AC3: outbox永続化自体
+# (printf >> outbox_file)が失敗する異常系(STATE_DIRがディレクトリでない等)でのみ
+# notify_karo_durableがreturn 1することを検証する。呼び出し元はこの場合のみ世代markerを
+# 確定せず次サイクルでretryしてよい。
+@test "notify_karo_durable returns 1 only when outbox persistence itself fails" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/scripts"
+touch "$LOG"
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUBEOF
+#!/bin/bash
+exit 1
+STUBEOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+# STATE_DIRをディレクトリではなくファイルにし、outbox永続化(printf >> outbox_file)自体を失敗させる
+touch "$TMP_ROOT/not_a_dir"
+STATE_DIR="$TMP_ROOT/not_a_dir"
+
+RESULT=0
+notify_karo_durable pending_work testninja "unreachable message" || RESULT=$?
+
+cat "$LOG"
+test "$RESULT" -eq 1
+grep -q "NOTIFY-OUTBOX-ENQUEUE-FAILED: pending_work" "$LOG"
+echo "PASS: outbox persistence failure itself returns 1"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: outbox persistence failure itself returns 1"* ]]
 }
 
 # karo実運転RC(2026-07-12 09:04): 08:53/09:03に同一kagemaru/hanzo failed taskが繰り返しrespawnされ

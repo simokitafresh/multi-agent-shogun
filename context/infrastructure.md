@@ -399,7 +399,8 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 | clear制御 | `can_send_clear_with_report_gate` | report未完了・未処理状態を見てclear送信可否を判定する防御層。**status=done専用**(failedは対象外でrespawnを止めない、意図的)。 |
 | clear制御 | `_failed_task_needs_karo_notice` | task status=failedのninjaについて、GATE CLEAR済み/軍師review済み/parent_cmdなしを除外し家老通知が必要かを判定する(cmd_karo_hotfix_failed_report_clear_notify_gap)。 |
 | clear制御 | `_notify_failed_respawn_result` | failed taskのrespawn実行結果(成功/失敗)を起点に`notify_karo_durable`でkaroへdurable通知する。**respawn自体はBLOCKしない**(殿裁定2026-07-12)。 |
-| clear制御 | `notify_karo_durable` / `flush_karo_notify_outbox` | karo通知をinbox_write経由で試行し、配送失敗時はoutbox(`$STATE_DIR/karo_notify_outbox.tsv`)へ永続化して次サイクルでretryする。paneを止めて代替放置を作らない設計。 |
+| clear制御 | `notify_karo_durable` / `flush_karo_notify_outbox` | karo通知をinbox_write経由で試行し、配送失敗時はoutbox(`$STATE_DIR/karo_notify_outbox.tsv`)へ永続化して次サイクルでretryする。paneを止めて代替放置を作らない設計。**契約(2026-07-12明確化)**: direct成功またはoutbox永続化成功はreturn 0、outbox append自体の失敗のみreturn 1。 |
+| clear制御 | `_karo_pending_work_already_notified` / `_karo_pending_work_mark_notified` / `_karo_pending_work_clear_marker` | `check_inbox_renudge`のpending_work通知(karo inbox未読0時のdone/failed未処理検出)を世代fingerprint(worker+task_id+parent_cmd+status+report内容md5)単位で`$STATE_DIR/karo_pending_work_notice.tsv`へdurable dedupeする。判定は副作用なし比較のみ、確定は`notify_karo_durable`成功後のみ、pending集合0件化時はmarkerをclearする(cmd_karo_hotfix_pending_work_generation_dedupe_202607121023)。 |
 | pending/cmd監視 | `check_karo_pending_cmd` | 家老が処理すべきcmdの滞留を検出し、再nudge判断に使う。 |
 | pending/cmd監視 | `check_karo_pending` | 家老pending全般を確認し、idle家老への復帰・再通知を制御する。 |
 | pending/cmd監視 | `check_undeployed_cmds` | 未配備cmdを検出し、配備漏れを家老へ通知する。 |
@@ -420,6 +421,8 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 | 健全性監視 | `check_ntfy_listener_health` | ntfy_listenerの稼働を確認し、殿通知経路の断絶を検出する。 |
 
 **通知→clear順序不変量(cmd_karo_hotfix_failed_report_clear_notify_gap, 2026-07-12)**: `check_inbox_renudge`のKARO-PENDING検出は`status=done`専用だと`failed`報告(cmd_3861実例: report完成→task failed→無通知でCodex respawn)がpending work検知から漏れる。修正: done/failed両対象化(既存のGATE CLEAR済み/軍師review済み/parent_cmdなし抑止は維持)。一方`can_send_clear_with_report_gate`はstatus=done専用のまま変更せず、failed taskのrespawnは意図的に止めない(殿裁定2026-07-12 08:43: 「通知失敗でrespawnをBLOCKするな。BLOCKは別形態の放置を作る」)。正しい不変量は**auto-respawn実行結果を起点にしたdurable通知**(成功→clear済み+未完了report通知、失敗→respawn失敗通知)であり、配送失敗はoutbox(`notify_karo_durable`/`flush_karo_notify_outbox`)へ永続化してretryする。詳細→`docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md`(関連事故の先行分析)。
+
+**pending_work通知の世代dedupe不変量(cmd_karo_hotfix_pending_work_generation_dedupe, 2026-07-12)**: 上記のdone/failed両対象化後、`check_inbox_renudge`のKARO-PENDING通知は`RENUDGE_LAST_SEND[karo]`の120秒in-memoryスロットルのみで抑止しており、同一pending集合(worker+task_id+parent_cmd+status+report内容が全て不変)が続く限り2分周期で同一通知が再送され続けた(実運転RC、fixture再現で修正前10/10cycle通知)。修正: pending集合全体のcanonical世代fingerprintを`$STATE_DIR/karo_pending_work_notice.tsv`へ永続化し、同一世代はmonitor cycle・inbox既読化・monitor再起動を跨いで通知1回に抑える(修正後1/10cycle)。集合変化・report内容変化・0件化後の同一世代再出現(軍師review/GATE CLEARで一度解消→RC/reopen)はいずれも新世代として即時再通知する。判定(`_karo_pending_work_already_notified`)は副作用なしの比較のみとし、確定(`_karo_pending_work_mark_notified`)は`notify_karo_durable`が成功(direct成功またはoutbox永続化成功、戻り値0)を返した後にのみatomic tmp+mvで行う。先書きするとdirect失敗+outbox永続化失敗の場合に通知が永久に失われたまま抑止され続けるため、この順序を厳守する。
 
 ### deploy_task.sh: 注入・ゲート・配備制御（20件）
 
