@@ -1000,12 +1000,12 @@ for _agg_file in \
   "$SCRIPT_DIR/logs/gate_metrics.log" \
   "$SCRIPT_DIR/logs/cmd_design_quality.yaml" \
   "$SCRIPT_DIR/logs/archive/cmd_design_quality.yaml" \
+  "$SCRIPT_DIR/queue/shogun_to_karo.yaml" \
   "$SCRIPT_DIR/queue/inbox/karo.yaml" \
   "$SCRIPT_DIR/queue/insights.yaml" \
   "$SCRIPT_DIR/logs/gunshi_review_log.yaml" \
   "$SCRIPT_DIR/queue/pending_decisions.yaml" \
-  "$SCRIPT_DIR/logs/karo_workarounds.yaml" \
-  "$SCRIPT_DIR/queue/shogun_to_karo.yaml"; do
+  "$SCRIPT_DIR/logs/karo_workarounds.yaml"; do
     [[ -f "$_agg_file" ]] && _AGG_FILES+=("$_agg_file")
 done
 _AGG_SIG="$(stat -c '%n:%y:%s' "$SCRIPT_DIR/scripts/gates/gate_karo_startup.sh" "${_AGG_FILES[@]}" 2>/dev/null | tr '\n' ';' || true)"
@@ -1059,11 +1059,22 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         if (cmd_id in quality_logged) return 1
         return 0
     }
+    function dependency_clear_recorded(cmd_id) {
+        if (cmd_id == "") return 0
+        # cmd_design_quality also contains cmd_save PASS/WARN entries before
+        # execution.  Only completion evidence may release a dependency.
+        if (gate_archive_done(cmd_id)) return 1
+        return (cmd_id in gate_clear)
+    }
     function should_count_read_actionable(msg_type, msg_content, cmd_id) {
         if (msg_content == "") return 0
         if (msg_type == "cmd_new") {
             cmd_id = extract_cmd_id(msg_content)
             if (cmd_id != "" && (cmd_id in deployed_parent_cmd)) return 0
+            # Explicit dependencies are work sequencing, not postponement.  Keep the
+            # read cmd_new quiet only while its dependency is unresolved; once the
+            # dependency records CLEAR the same inbox item becomes actionable again.
+            if (cmd_id != "" && (cmd_id in unresolved_dependency)) return 0
         }
         if (msg_type == "skill_hint" && msg_content ~ /GATE CLEAR/) {
             cmd_id = extract_cmd_token(msg_content)
@@ -1071,6 +1082,17 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         }
         return (msg_type == "skill_hint" ||
                 msg_content ~ /(実行せよ|配備せよ|future fix|変更対象|即修正候補|対応せよ)/)
+    }
+    function finalize_cmd_entry() {
+        if (cmd == "" || (cmd in finalized_cmd)) return
+        finalized_cmd[cmd] = 1
+        if (cmd_status == "pending" && has_da) {
+            orphan_found++
+            orphan_cmds = orphan_cmds (orphan_cmds != "" ? ", " : "") cmd
+        }
+        if (cmd_dep != "" && cmd_dep != "none" && !dependency_clear_recorded(cmd_dep)) {
+            unresolved_dependency[cmd] = cmd_dep
+        }
     }
     function trim_brainwash_value(v) {
         sub(/^.*brainwash_check:[[:space:]]*/, "", v)
@@ -1106,6 +1128,12 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
         next
     }
     FILENAME ~ /queue\/inbox\/karo\.yaml$/ {
+        # shogun_to_karo precedes inbox in _AGG_FILES.  Finalize its last cmd
+        # before classifying the first inbox entry (AWK END would be too late).
+        if (!inbox_cmds_finalized) {
+            finalize_cmd_entry()
+            inbox_cmds_finalized = 1
+        }
         if (/^[[:space:]]*-[[:space:]]/) {
             if (inbox_entry && inbox_read_false && inbox_type == "cmd_new") {
                 unread_cmd_new++
@@ -1328,14 +1356,12 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
     }
     FILENAME ~ /queue\/shogun_to_karo\.yaml$/ {
         if (/^  [^ ][^ ]*:[[:space:]]*$/) {
-            if (cmd != "" && cmd_status == "pending" && has_da) {
-                orphan_found++
-                orphan_cmds = orphan_cmds (orphan_cmds != "" ? ", " : "") cmd
-            }
+            finalize_cmd_entry()
             cmd = $0
             sub(/^  /, "", cmd)
             sub(/:.*/, "", cmd)
             cmd_status = ""
+            cmd_dep = ""
             has_da = 0
             next
         }
@@ -1345,6 +1371,14 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
             gsub(/["'"'"']/, "", s)
             gsub(/ /, "", s)
             cmd_status = s
+            next
+        }
+        if (/^    depends_on:/) {
+            cmd_dep = $0
+            sub(/.*depends_on:[[:space:]]*/, "", cmd_dep)
+            gsub(/["'"'"']/, "", cmd_dep)
+            if (match(cmd_dep, /cmd_[0-9]+/)) cmd_dep = substr(cmd_dep, RSTART, RLENGTH)
+            else gsub(/[[:space:]]+/, "", cmd_dep)
             next
         }
         if (/^    delegated_at:/) { has_da = 1; next }
@@ -1391,10 +1425,7 @@ awk -v root="$SCRIPT_DIR" -v quality_cutoff="$_QUALITY_MISSING_CUTOFF" '
             pending_insight_priority[pending_insights] = ins_priority
             pending_insight_text[pending_insights] = ins_text
         }
-        if (cmd != "" && cmd_status == "pending" && has_da) {
-            orphan_found++
-            orphan_cmds = orphan_cmds (orphan_cmds != "" ? ", " : "") cmd
-        }
+        finalize_cmd_entry()
         print "UNREAD|" unread+0
         print "UNREAD_CMD_NEW|" unread_cmd_new+0 "|" unread_cmd_new_items
         print "UNREAD_CMD_NEW_OLDEST_TS|" oldest_cmd_new_ts

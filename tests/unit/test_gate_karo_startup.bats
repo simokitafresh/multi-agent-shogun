@@ -401,7 +401,10 @@ EOF
 }
 
 @test "waiting-permission labels are absent from karo startup gate" {
-    run bash -c "rg -n 'idle時に確認推奨|低優先/後で扱い|低優先=|後で扱い' '$TEST_GATE'"
+    local rg_bin
+    rg_bin="$(command -v rg 2>/dev/null || true)"
+    [ -n "$rg_bin" ] || rg_bin="$HOME/.local/bin/rg"
+    run bash -c "'$rg_bin' -n 'idle時に確認推奨|低優先/後で扱い|低優先=|後で扱い' '$TEST_GATE'"
     [ "$status" -eq 1 ]
 }
 
@@ -450,6 +453,46 @@ EOF
     [[ "$output" == *"未読: 0件"* ]]
     [[ "$output" != *"既読actionable候補"* ]]
     [[ "$output" != *"msg_skill"* ]]
+}
+
+@test "read cmd_new with unresolved explicit dependency is quiet until dependency clears" {
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_700:
+    status: delegated
+    depends_on: none
+  cmd_701:
+    status: delegated
+    depends_on: cmd_700
+EOF
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'EOF'
+messages:
+- content: 'cmd_701を書いた(depends cmd_700)。配備せよ。'
+  from: 'shogun'
+  id: 'msg_dependency_wait'
+  read: true
+  timestamp: '2026-07-12T15:19:00'
+  type: 'cmd_new'
+EOF
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"既読actionable候補"* ]]
+
+    local now_time
+    now_time=$(date '+%Y-%m-%dT%H:%M:%S')
+    cat > "$TEST_TMPDIR/logs/gate_metrics.log" <<EOF
+$now_time	cmd_700	CLEAR	all_gates_passed	full	unknown	unknown	none
+EOF
+    cat > "$TEST_TMPDIR/logs/cmd_design_quality.yaml" <<'EOF'
+entries:
+- cmd_id: "cmd_700"
+  gate_result: "CLEAR"
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"既読actionable候補 1件"* ]]
+    [[ "$output" == *"msg_dependency_wait"* ]]
 }
 
 @test "gunshi action_required bulletin without actioned_by warns at karo startup" {
