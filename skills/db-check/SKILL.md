@@ -17,42 +17,22 @@ allowed_projects: [dm-signal]
 
 ---
 
-## 接続方法（2方式。環境に応じて選択）
+## 接続方法（共通capability launcherのみ）
 
-### 方式A: psycopg2直接接続（推奨。WSL python3で即実行可能）
+直接の `psycopg2.connect`、SQLAlchemy接続、接続文字列をargvへ載せる実行は禁止。
+追跡済み `config/db_capabilities.json` を正本とする共通launcherだけを使う。
 
-```python
-import psycopg2
-conn = psycopg2.connect(
-    host='dpg-d542chchg0os73979vg0-a.singapore-postgres.render.com',
-    port=5432,
-    dbname='dm_signal',
-    user='dm_signal_user',
-    password='dWrxHnOl78RmGpuK9Y5r8gXIaRo4L9qS',
-    sslmode='require'
-)
-cur = conn.cursor()
-cur.execute("SELECT ...")
-rows = cur.fetchall()
-conn.close()
+```bash
+printf 'SELECT ...' | python3 scripts/db_capability_launcher.py \
+  --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK \
+  --nonce "$(date +%s)-readonly" --credential-file /protected/path/dm-signal-db.env
 ```
 
 **重要**: DATABASE_URLをそのままpsycopg2.connect()に渡すとunix socket fallbackでエラーになる。必ず上記のように個別パラメータで接続せよ。
 
-### 方式B: SQLAlchemy経由（Windows python.exe使用時）
-
-```python
-import sys
-sys.path.insert(0, '/mnt/c/Python_app/DM-signal/backend')
-from app.db.database import create_db_engine
-from sqlalchemy import text
-
-engine = create_db_engine()
-with engine.connect() as conn:
-    rows = conn.execute(text("SELECT ..."), {'param': value}).fetchall()
-```
-
-**注意**: WSL側python3ではsqlalchemy circular importが発生する。方式Bは`.venv/Scripts/python.exe`（Windows Python）専用。
+transactional restoreは `--capability transactional_restore --mode transactional_restore
+--confirm TRANSACTIONAL_RESTORE_ROLLBACK_READY --expected-commit "$(git rev-parse HEAD)"` を使う。
+credential fileは0600、SQLはstdin、nonceは再利用不可。launcher外接続は禁止。
 
 ### 方式選択ガイド
 

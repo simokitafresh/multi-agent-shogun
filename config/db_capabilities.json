@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "capabilities": {
+    "readonly_query": {
+      "tool": "scripts/lib/db_capability_tool.py",
+      "modes": ["readonly"],
+      "confirm": "READONLY_DB_CHECK",
+      "requires_expected_commit": false
+    },
+    "transactional_restore": {
+      "tool": "scripts/lib/db_capability_tool.py",
+      "project": "dm-signal",
+      "dependency_tool": "scripts/oneshot/cmd_p4_prod_restore_contract.py",
+      "modes": ["transactional_restore"],
+      "confirm": "TRANSACTIONAL_RESTORE_ROLLBACK_READY",
+      "requires_expected_commit": true
+    }
+  }
+}
