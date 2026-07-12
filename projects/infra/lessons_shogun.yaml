@@ -142,6 +142,7 @@ lessons:
     (18)TZ付き時刻は暗算禁止。UTC/JST併記+date検算。(19)リモート状態の報告前にgit fetch必須
     (26)集計値は「どのイベントの前か後か」を確認。(32)UPSERT運用テーブルのupdated_atは最終上書き時刻。値の変化履歴+過去裁定の両方確認
     (13)実行順バグは設計意図カタログ([[infra_design_intent]])を先に照合。(22)自分の試行錯誤は隠れインフラバグのサイン。仮説は一次データで検証してからcmd化
+    (33)GATE CLEAR通知も未検証の主張(2026-07-13 cmd_3869偽CLEAR事故): report単体承認をcmd_complete_gateが親cmd完了と誤判定しCLEAR通知が飛んだ。将軍実測(bak残899個・df不変=削除0)との突合で検出。GATE CLEAR受信時はcmdの主要成果物(削除ならdf/件数、実装ならcommit/テスト)を一次データで突合してから完了と扱え。(17)のGATE CLEAR通知への拡張。構造根治=parent_ac_coverage mapping+fingerprint×正式承認SSOT(cmd_karo_hotfix_parent_ac_false_clear)
     (旧detail残りは移設先参照)
   source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063, LS062_commit, LS063_alpha, LS067, LS069, LS061, LS076]
   created_at: '2026-04-25'
