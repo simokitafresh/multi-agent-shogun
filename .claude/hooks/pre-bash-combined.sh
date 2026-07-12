@@ -40,11 +40,6 @@ _pre_bash_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_pre_bash_self%/.claude/hooks/pre-bash-combined.sh}"
 unset _pre_bash_self
 
-# Agent roles are operational ontology: roster changes in settings.yaml must
-# propagate to guards without editing this hook.
-# shellcheck source=scripts/lib/agent_config.sh
-source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
-
 # All state-changing Bash commands in this repository consume the same
 # per-prompt three-layer evidence as Write/Edit. The verifier has a narrow
 # read-only allowlist so the preflight search itself cannot deadlock.
@@ -506,6 +501,16 @@ else:
 PY
 )"
     if [[ "$_guard1_is_git_commit" == "yes" ]]; then
+        # Agent roles are operational ontology, but only GA-231 needs them.
+        # Loading this dependency earlier makes unrelated guards crash when an
+        # isolated hook copy intentionally omits agent_config.sh.
+        if [[ ! -r "$SCRIPT_DIR/scripts/lib/agent_config.sh" ]]; then
+            emit_deny "BLOCK(GA-231): agent role config(scripts/lib/agent_config.sh)が欠落。direct git commitをfail-closedで停止"
+        fi
+        # shellcheck source=scripts/lib/agent_config.sh
+        if ! source "$SCRIPT_DIR/scripts/lib/agent_config.sh"; then
+            emit_deny "BLOCK(GA-231): agent role config(scripts/lib/agent_config.sh)の読込に失敗。direct git commitをfail-closedで停止"
+        fi
         _guard1_agent_id="${TMUX_AGENT_ID:-}"
         if [[ -z "$_guard1_agent_id" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
             _guard1_agent_id="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"

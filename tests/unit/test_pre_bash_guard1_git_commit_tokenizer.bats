@@ -23,7 +23,7 @@ _run_hook() {
 import json, os
 print(json.dumps({"tool_name":"Bash","tool_input":{"command": os.environ["COMMAND"]}}))
 ')"
-    run bash -c 'printf "%s" "$1" | BATS_TEST_FILENAME=fixture bash "$2"' _ "$payload" "$HOOK_SCRIPT"
+    run bash -c 'printf "%s" "$1" | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=shogun bash "$2"' _ "$payload" "$HOOK_SCRIPT"
 }
 
 # --- 修正前の実測誤BLOCK再現(修正後はALLOWになること) ---
@@ -133,6 +133,32 @@ YAML
     payload='{"tool_name":"Bash","tool_input":{"command":"git commit -m direct"}}'
     run bash -c 'printf "%s" "$1" | BATS_TEST_FILENAME=fixture _AGENT_CONFIG_SCRIPT_DIR="$2" TMUX_AGENT_ID=advisor bash "$3"' _ "$payload" "$config_root" "$HOOK_SCRIPT"
     [ "$status" -eq 0 ]
+}
+
+@test "GA-232: isolated hook without agent_config blocks direct git commit explicitly with exit 2" {
+    local iso payload
+    iso="$BATS_TEST_TMPDIR/isolated-no-agent-config"
+    mkdir -p "$iso/.claude/hooks" "$iso/scripts/hooks"
+    cp "$HOOK_SCRIPT" "$iso/.claude/hooks/pre-bash-combined.sh"
+    cp "$PROJECT_ROOT/scripts/hooks/three_layer_preflight.sh" "$iso/scripts/hooks/three_layer_preflight.sh"
+    payload='{"tool_name":"Bash","tool_input":{"command":"git commit -m direct"}}'
+    run bash -c 'printf "%s" "$1" | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=hanzo bash "$2"' _ "$payload" "$iso/.claude/hooks/pre-bash-combined.sh"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-231)"* ]]
+    [[ "$output" == *"agent role config"* ]]
+}
+
+@test "GA-232: isolated hook without agent_config lets normal commands reach their own guard" {
+    local iso payload
+    iso="$BATS_TEST_TMPDIR/isolated-normal-command"
+    mkdir -p "$iso/.claude/hooks" "$iso/scripts/hooks"
+    cp "$HOOK_SCRIPT" "$iso/.claude/hooks/pre-bash-combined.sh"
+    cp "$PROJECT_ROOT/scripts/hooks/three_layer_preflight.sh" "$iso/scripts/hooks/three_layer_preflight.sh"
+    payload='{"tool_name":"Bash","tool_input":{"command":"ls -la /tmp"}}'
+    run bash -c 'printf "%s" "$1" | BATS_TEST_FILENAME=fixture bash "$2"' _ "$payload" "$iso/.claude/hooks/pre-bash-combined.sh"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"Guard14"* ]]
+    [[ "$output" != *"agent role config"* ]]
 }
 
 # --- non-Bash payload passthrough ---
