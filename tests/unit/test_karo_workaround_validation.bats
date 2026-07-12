@@ -308,7 +308,7 @@ teardown() {
     [ "$status" -ne 0 ]
 }
 
-@test "legacy key order: category-first entryも件数集計に含めて3件目でALERT" {
+@test "category-first entryもexplicit root_signatureがあれば3件目でALERT" {
     cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
 - category: report_yaml_format
   cmd_id: cmd_legacy_1
@@ -317,12 +317,14 @@ teardown() {
   root_cause: 'legacy root cause'
   timestamp: '2026-04-25T00:00:00Z'
   workaround: true
+  root_signature: 'report_yaml_format::general'
   resolved_by_cmd: ''
 - cmd_id: cmd_modern_2
   timestamp: '2026-04-25T00:01:00Z'
   ninja: hanzo
   workaround: true
   category: report_yaml_format
+  root_signature: 'report_yaml_format::general'
   detail: 'modern'
   root_cause: 'modern root cause'
   resolved_by_cmd: ''
@@ -340,6 +342,7 @@ YAML
   ninja: hayate
   workaround: true
   category: report_yaml_format
+  root_signature: 'report_yaml_format::general'
   detail: 'modern'
   root_cause: 'modern root cause'
   resolved_by_cmd: ''
@@ -348,6 +351,7 @@ YAML
   ninja: hanzo
   workaround: true
   category: report_yaml_format
+  root_signature: 'report_yaml_format::general'
   detail: 'modern'
   root_cause: 'modern root cause'
   resolved_by_cmd: ''
@@ -451,7 +455,7 @@ YAML
     [[ "$output" == *"WARN: 同一カテゴリ「report_yaml_format」が2件"* ]]
 }
 
-@test "AC3: root_signature欠落のlegacy entryはgeneral bucketでは従来通り3件目でALERT" {
+@test "AC3: root_signature欠落のlegacy entryは同根証拠がないためgeneral bucketへ混入しない" {
     cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
 - cmd_id: cmd_legacy_1
   timestamp: '2026-04-25T00:00:00Z'
@@ -473,7 +477,8 @@ YAML
 
     run bash "$TEST_SCRIPT" cmd_new hayate "third generic issue" "third root cause" report_yaml_format
     [ "$status" -eq 0 ]
-    [[ "$output" == *"ALERT: カテゴリ「report_yaml_format」が3件(root_signature=report_yaml_format::general)"* ]]
+    [[ "$output" != *"ALERT"* ]]
+    [[ "$output" != *"WARN: 同一カテゴリ"* ]]
 }
 
 @test "memory DB: workaround record also inserts event_type=workaround when DB exists" {

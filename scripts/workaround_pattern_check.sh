@@ -71,8 +71,10 @@ fi
             if (workaround != "true" || resolved_by_cmd != "") return
             if (issue_name != "") issue[issue_name]++
             if (category == "") return
+            # Legacy entries without a root signature are unknown, not equal.
+            # Do not invent a shared "general" cause and create false patterns.
+            if (root_signature == "") return
             signature = root_signature
-            if (signature == "") signature = category "::general"
             sig[signature]++
         }
         BEGIN { reset_entry() }

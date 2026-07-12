@@ -366,11 +366,9 @@ if [[ "$CLEAN_MODE" != true ]]; then
 fi
 
 # --- Count root_signature entries excluding resolved (AC3: cmd_karo_hotfix_wa_root_signature_202607121225) ---
-# category単独ではなくcategory×root_signatureの対で集計する。root_signature欠落の既存entry(legacy)は
-# classify_root_signatureの既定fallbackと同じ「${category}::general」へ集約する(非構造化テキストの
-# 新規entryも同じgeneralへ落ちるため、旧来の「同一category蓄積」挙動を破壊しない安全なfallback)。
-# schema_shape/report_lifecycle_stall/commit_provenance/deploy_template_integrityの特定文言に
-# 一致する新規entryだけが、legacyの雑多な蓄積から切り離されて独立集計される。
+# category単独ではなくcategory×root_signatureの対で集計する。root_signature欠落の
+# legacy entryは根因不明であり、同根という証拠がないためパターン母数から除外する。
+# 「unknown」をcategory::generalへ集約すると、異根を再び同一パターンとして偽発火させる。
 count_root_signature_entries() {
     local target_category="$1"
     local target_signature="$2"
@@ -378,7 +376,7 @@ count_root_signature_entries() {
         echo 0
         return
     fi
-    awk -v target_cat="$target_category" -v target_sig="$target_signature" -v legacy_sig="${target_category}::general" '
+    awk -v target_cat="$target_category" -v target_sig="$target_signature" '
     function trim_scalar(value) {
         gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
         if (value ~ /^'\''.*'\''$/ || value ~ /^".*"$/) {
@@ -386,10 +384,9 @@ count_root_signature_entries() {
         }
         return value
     }
-    function flush_entry(    sig) {
-        if (entry_started && cat == target_cat && is_wa && !resolved) {
-            sig = (rootsig != "") ? rootsig : legacy_sig
-            if (sig == target_sig) count++
+    function flush_entry() {
+        if (entry_started && cat == target_cat && is_wa && !resolved && rootsig != "") {
+            if (rootsig == target_sig) count++
         }
         cat = ""
         rootsig = ""

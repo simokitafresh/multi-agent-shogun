@@ -83,7 +83,7 @@ YAML
     grep -q 'root_signature:gate_logic_gap::publish_state' "$TEST_ROOT/logs/workaround_notified.yaml"
 }
 
-@test "legacy entries without root_signature use category general bucket" {
+@test "legacy entries without root_signature are excluded instead of inventing a shared cause" {
     cat > "$TEST_ROOT/logs/karo_workarounds.yaml" <<'YAML'
 - cmd_id: a
   workaround: true
@@ -97,5 +97,6 @@ YAML
 YAML
     run_check
     [ "$status" -eq 0 ]
-    [[ "$output" == *'root_signature="report_yaml_format::general" 3回'* ]]
+    [[ "$output" == *"No new patterns detected"* ]]
+    [ ! -e "$TEST_ROOT/logs/notices.txt" ]
 }
