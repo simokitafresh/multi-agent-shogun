@@ -125,6 +125,8 @@ EOF
     cat > "$SEMANTIC_STRESS_LORD_LOG" <<'EOF'
 {"content":"【INFOバッチ】 2026-05-21 04:14:16|CI緑: run 26183925378","direction":"inbound"}
 {"content":"【家老】復帰済み。全忍者idle。cmd待ち。","direction":"inbound"}
+{"content":"b40gj8fid Monitor event: \"Wait for another agent's in-progress git commit to release index.\"","direction":"inbound"}
+{"content":"b8orlbaci Monitor event: \"golden回帰チェックスクリプト単独実行の完了待ち(EXIT_CODE検出)\"","direction":"inbound"}
 {"content":"意味検索改善","direction":"inbound"}
 EOF
     cat > "$SEMANTIC_STRESS_CMD_QUEUE" <<'EOF'
@@ -151,6 +153,8 @@ EOF
     grep -q '\[\[意味検索改善\]\]' "$TEST_TMPDIR/queue/insights.yaml"
     ! grep -q 'INFOバッチ' "$TEST_TMPDIR/queue/insights.yaml"
     ! grep -q '復帰済み' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q 'Monitor event' "$TEST_TMPDIR/queue/insights.yaml"
+    ! grep -q 'golden回帰チェックスクリプト' "$TEST_TMPDIR/queue/insights.yaml"
     ! grep -q 'ダミーcmd' "$TEST_TMPDIR/queue/insights.yaml"
     ! grep -q 'title: セマンティクスマップ' "$TEST_TMPDIR/queue/insights.yaml"
     ! grep -q 'modules' "$TEST_TMPDIR/queue/insights.yaml"

@@ -413,6 +413,7 @@ OPERATIONAL_NOISE_RE = re.compile(
     r"|context鮮度alert"
     r"|cli再起動"
     r"|infoバッチ"
+    r"|\bmonitor\s+event\b"
     r"|共有して"
     r"|サボり"
 )
