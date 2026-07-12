@@ -91,6 +91,102 @@ except Exception as exc:
 ' "$candidate_file"
 }
 
+# cmd_karo_hotfix_yaml_field_set_multiline_verify_202607122228: post-write検証を
+# awk単一物理行の生テキスト比較(_yaml_field_get_in_block等)からyaml.safe_load後の
+# scalar比較へ統一する。複数行/引用符混在値は書込み時にYAML上1物理行のquoted scalarへ
+# 正しくエスケープされるが、旧検証はその物理行を跨いだ継続テキストを誤抽出し
+# (先頭引用符だけ残る等)偽FAILを起こしていた(LK-A13.detail実測)。
+# expectedは環境変数経由で渡す(改行/引用符を含んでもshell引数展開の再解釈を受けない)。
+# actualがbool/int/float/NoneにYAML実装解決された場合はexpected(常にbash文字列)を
+# 同じ型規則で比較する(YAML1.1のtrue/false/null表記ゆれの偽FAILを防ぐ)。
+_yaml_field_set_verify_parsed() {
+    local yaml_file="$1"
+    local block_id="$2"
+    local field="$3"
+    local expected="$4"
+    local use_root="$5"
+
+    YFS_EXPECTED="$expected" python3 -c '
+import os
+import sys
+
+import yaml
+
+yaml_file, block_id, field, use_root_flag = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+use_root = use_root_flag == "1"
+expected = os.environ.get("YFS_EXPECTED", "")
+
+try:
+    with open(yaml_file, encoding="utf-8") as fh:
+        data = yaml.safe_load(fh)
+except Exception as exc:
+    sys.stderr.write(f"parse_error: {exc}\n")
+    sys.exit(1)
+
+
+def find_blocks(node, target_id, out):
+    if isinstance(node, dict):
+        val = node.get(target_id)
+        if isinstance(val, dict):
+            out.append(val)
+        for v in node.values():
+            find_blocks(v, target_id, out)
+    elif isinstance(node, list):
+        for item in node:
+            if isinstance(item, dict):
+                for key in ("id", "cmd_id", "check"):
+                    if key in item and str(item[key]) == target_id:
+                        out.append(item)
+                        break
+            find_blocks(item, target_id, out)
+
+
+if use_root:
+    if not isinstance(data, dict) or field not in data:
+        sys.stderr.write("field_not_found\n")
+        sys.exit(2)
+    actual = data[field]
+else:
+    blocks = []
+    find_blocks(data, block_id, blocks)
+    if not blocks:
+        sys.stderr.write("block_not_found\n")
+        sys.exit(2)
+    matches = [b[field] for b in blocks if field in b]
+    if not matches:
+        sys.stderr.write("field_not_found\n")
+        sys.exit(3)
+    actual = matches[0]
+
+YAML_TRUE = {"y", "Y", "yes", "Yes", "YES", "true", "True", "TRUE", "on", "On", "ON"}
+YAML_FALSE = {"n", "N", "no", "No", "NO", "false", "False", "FALSE", "off", "Off", "OFF"}
+YAML_NULL = {"null", "Null", "NULL", "~", ""}
+
+if isinstance(actual, bool):
+    matched = (expected in YAML_TRUE) if actual else (expected in YAML_FALSE)
+elif actual is None:
+    matched = expected in YAML_NULL
+elif isinstance(actual, int):
+    try:
+        matched = int(expected, 0) == actual
+    except (ValueError, TypeError):
+        matched = False
+elif isinstance(actual, float):
+    try:
+        matched = float(expected) == actual
+    except (ValueError, TypeError):
+        matched = False
+else:
+    matched = actual == expected
+
+if not matched:
+    sys.stderr.write(f"mismatch expected={expected!r} actual={actual!r}\n")
+    sys.exit(4)
+
+sys.stdout.write("MATCH\n")
+' "$yaml_file" "$block_id" "$field" "$use_root"
+}
+
 # cmd_karo_hotfix_deploy_task_atomic_publish_202607111645: awk/python生成のtmp_fileを
 # 共有運用YAML(target_file)へ発行する共通口。tmp_fileは呼び出し側がtarget_fileと同一
 # ディレクトリ(同一filesystem)でmktempしていることが前提(別filesystemだとmvがEXDEVで失敗する)。
@@ -132,7 +228,7 @@ function regex_escape(str,    out,i,c) {
     }
     return out
 }
-function yaml_safe(v,    out,i,c,needs_quote,sq) {
+function yaml_safe(v,    out,i,c,needs_quote) {
     needs_quote = 0
     if (index(v, ":") > 0) needs_quote = 1
     if (index(v, "#") > 0) needs_quote = 1
@@ -142,15 +238,22 @@ function yaml_safe(v,    out,i,c,needs_quote,sq) {
     if (index(v, "}") > 0) needs_quote = 1
     if (index(v, "|") > 0) needs_quote = 1
     if (index(v, ">") > 0) needs_quote = 1
+    if (index(v, "\"") > 0) needs_quote = 1
+    if (index(v, "\n") > 0) needs_quote = 1
+    if (index(v, "\t") > 0) needs_quote = 1
+    if (index(v, "\r") > 0) needs_quote = 1
     if (needs_quote) {
-        sq = sprintf("%c", 39)
         out = ""
         for (i = 1; i <= length(v); i++) {
             c = substr(v, i, 1)
-            if (c == sq) { out = out sq sq }
-            else { out = out c }
+            if (c == "\\") out = out "\\\\"
+            else if (c == "\"") out = out "\\\""
+            else if (c == "\n") out = out "\\n"
+            else if (c == "\t") out = out "\\t"
+            else if (c == "\r") out = out "\\r"
+            else out = out c
         }
-        return sq out sq
+        return "\"" out "\""
     }
     return v
 }
@@ -246,14 +349,23 @@ function yaml_safe(v,    out,i,c,needs_quote) {
     if (index(v, "]") > 0) needs_quote = 1
     if (index(v, "{") > 0) needs_quote = 1
     if (index(v, "}") > 0) needs_quote = 1
+    if (index(v, "|") > 0) needs_quote = 1
+    if (index(v, ">") > 0) needs_quote = 1
+    if (index(v, "\"") > 0) needs_quote = 1
+    if (index(v, "\n") > 0) needs_quote = 1
+    if (index(v, "\t") > 0) needs_quote = 1
+    if (index(v, "\r") > 0) needs_quote = 1
     if (needs_quote) {
-	        out = ""
-	        for (i = 1; i <= length(v); i++) {
-	            c = substr(v, i, 1)
-	            if (c == "\\") out = out "\\\\"
-	            else if (c == "\"") out = out "\\" c
-	            else out = out c
-	        }
+        out = ""
+        for (i = 1; i <= length(v); i++) {
+            c = substr(v, i, 1)
+            if (c == "\\") out = out "\\\\"
+            else if (c == "\"") out = out "\\\""
+            else if (c == "\n") out = out "\\n"
+            else if (c == "\t") out = out "\\t"
+            else if (c == "\r") out = out "\\r"
+            else out = out c
+        }
         return "\"" out "\""
     }
     return v
@@ -524,12 +636,22 @@ function yaml_safe(v,    out,i,c,needs_quote) {
     if (index(v, "]") > 0) needs_quote = 1
     if (index(v, "{") > 0) needs_quote = 1
     if (index(v, "}") > 0) needs_quote = 1
+    if (index(v, "|") > 0) needs_quote = 1
+    if (index(v, ">") > 0) needs_quote = 1
+    if (index(v, "\"") > 0) needs_quote = 1
+    if (index(v, "\n") > 0) needs_quote = 1
+    if (index(v, "\t") > 0) needs_quote = 1
+    if (index(v, "\r") > 0) needs_quote = 1
     if (needs_quote) {
         out = ""
         for (i = 1; i <= length(v); i++) {
             c = substr(v, i, 1)
-            if (c == "\"") { out = out "\\" c }
-            else { out = out c }
+            if (c == "\\") out = out "\\\\"
+            else if (c == "\"") out = out "\\\""
+            else if (c == "\n") out = out "\\n"
+            else if (c == "\t") out = out "\\t"
+            else if (c == "\r") out = out "\\r"
+            else out = out c
         }
         return "\"" out "\""
     }
@@ -843,6 +965,13 @@ yaml_field_set() {
         return 1
     }
 
+    # cmd_karo_hotfix_yaml_field_set_multiline_verify_202607122228: awkの-v代入は
+    # \n/\t/\\等のバックスラッシュエスケープ列を独自にデコードする(gawk実測確認済み)ため、
+    # new_valueに生のバックスラッシュ(正規表現\s、Windowsパス等)が含まれると意図せぬ
+    # 制御文字へ化ける。事前に二重化してdecodeを相殺する(yaml_field_set_batchの
+    # 既存対策と同一データモデルへ統一)。post-write比較には元のnew_valueを使う。
+    local yfs_safe_value="${new_value//\\/\\\\}"
+
     {
         flock -w 10 200 || {
             rm -f "$tmp_file"
@@ -854,20 +983,20 @@ yaml_field_set() {
         local rc=2
 
         if [ "$block_id" = "root" ]; then
-            rc=0; _yaml_field_set_apply_root "$yaml_file" "$tmp_file" "$field" "$new_value" || rc=$?
+            rc=0; _yaml_field_set_apply_root "$yaml_file" "$tmp_file" "$field" "$yfs_safe_value" || rc=$?
             if [ "$rc" -eq 0 ]; then
                 use_root=1
             fi
         else
-            rc=0; _yaml_field_set_apply_map_scalar "$yaml_file" "$tmp_file" "$block_id" "$field" "$new_value" || rc=$?
+            rc=0; _yaml_field_set_apply_map_scalar "$yaml_file" "$tmp_file" "$block_id" "$field" "$yfs_safe_value" || rc=$?
             if [ "$rc" -eq 2 ]; then
-                rc=0; _yaml_field_set_apply "$yaml_file" "$tmp_file" "$block_id" "$field" "$new_value" || rc=$?
+                rc=0; _yaml_field_set_apply "$yaml_file" "$tmp_file" "$block_id" "$field" "$yfs_safe_value" || rc=$?
             fi
         fi
 
         if [ "$rc" -eq 2 ]; then
             # Fallback: block_id not found → try root-level field update (flat YAML support)
-            rc=0; _yaml_field_set_apply_root "$yaml_file" "$tmp_file" "$field" "$new_value" || rc=$?
+            rc=0; _yaml_field_set_apply_root "$yaml_file" "$tmp_file" "$field" "$yfs_safe_value" || rc=$?
             if [ "$rc" -eq 0 ]; then
                 use_root=1
             fi
@@ -903,22 +1032,11 @@ yaml_field_set() {
             return 1
         fi
 
-        local actual
-        if [ "$use_root" -eq 1 ]; then
-            if ! actual="$(_yaml_field_get_root "$yaml_file" "$field")"; then
-                echo "FATAL: yaml_field_set: post-write readback failed for root.${field} in $yaml_file" >&2
-                return 1
-            fi
-        elif ! actual="$(_yaml_field_get_in_block "$yaml_file" "$block_id" "$field")"; then
-            echo "FATAL: yaml_field_set: post-write readback failed for ${block_id}.${field} in $yaml_file" >&2
-            return 1
-        fi
-
-        # WSL2最適化: _normalize_v でsubshellキャプチャを排除
-        _yaml_field_set_normalize_v "$actual";   local normalized_actual="$_YFS_NORM"
-        _yaml_field_set_normalize_v "$new_value"; local normalized_expected="$_YFS_NORM"
-        if [ "$normalized_actual" != "$normalized_expected" ]; then
-            echo "FATAL: yaml_field_set: post-write verification mismatch for ${block_id}.${field} in $yaml_file (expected='$normalized_expected', actual='$normalized_actual')" >&2
+        # post-write比較はYAML表現文字列(awk単一物理行の生テキスト)ではなく
+        # yaml.safe_load後のscalar同士で行う(_yaml_field_set_verify_parsed)。
+        local _verify_err
+        if ! _verify_err="$(_yaml_field_set_verify_parsed "$yaml_file" "$block_id" "$field" "$new_value" "$use_root" 2>&1 1>/dev/null)"; then
+            echo "FATAL: yaml_field_set: post-write verification mismatch for ${block_id}.${field} in $yaml_file ($_verify_err)" >&2
             return 1
         fi
     } 200>"$lock_file"
@@ -1030,25 +1148,32 @@ function is_inline_scalar_field(line,    rhs) {
     if (rhs ~ /^[|>][+-]?[0-9]*$/) return 0
     return 1
 }
-function yaml_safe(v,    out,i,c,nq,sq) {
-    nq = 0
-    if (index(v, ":") > 0) nq = 1
-    if (index(v, "#") > 0) nq = 1
-	    if (index(v, "[") > 0) nq = 1
-	    if (index(v, "]") > 0) nq = 1
-	    if (index(v, "{") > 0) nq = 1
-	    if (index(v, "}") > 0) nq = 1
-	    if (index(v, "|") > 0) nq = 1
-	    if (index(v, ">") > 0) nq = 1
-    if (nq) {
-        sq = sprintf("%c", 39)
+function yaml_safe(v,    out,i,c,needs_quote) {
+    needs_quote = 0
+    if (index(v, ":") > 0) needs_quote = 1
+    if (index(v, "#") > 0) needs_quote = 1
+    if (index(v, "[") > 0) needs_quote = 1
+    if (index(v, "]") > 0) needs_quote = 1
+    if (index(v, "{") > 0) needs_quote = 1
+    if (index(v, "}") > 0) needs_quote = 1
+    if (index(v, "|") > 0) needs_quote = 1
+    if (index(v, ">") > 0) needs_quote = 1
+    if (index(v, "\"") > 0) needs_quote = 1
+    if (index(v, "\n") > 0) needs_quote = 1
+    if (index(v, "\t") > 0) needs_quote = 1
+    if (index(v, "\r") > 0) needs_quote = 1
+    if (needs_quote) {
         out = ""
         for (i = 1; i <= length(v); i++) {
             c = substr(v, i, 1)
-            if (c == sq) out = out sq sq
+            if (c == "\\") out = out "\\\\"
+            else if (c == "\"") out = out "\\\""
+            else if (c == "\n") out = out "\\n"
+            else if (c == "\t") out = out "\\t"
+            else if (c == "\r") out = out "\\r"
             else out = out c
         }
-        return sq out sq
+        return "\"" out "\""
     }
     return v
 }
@@ -1180,22 +1305,15 @@ END {
             return 1
         fi
 
-        # Post-write verification for all fields
-        local _vf _va _norm_a _norm_e _idx=0
+        # Post-write verification for all fields: YAML表現文字列ではなく
+        # yaml.safe_load後のscalar同士で比較する(_yaml_field_set_verify_parsed)。
+        local _vf _va _verify_err
         for _arg in "$@"; do
             _vf="${_arg%%=*}"
             _va="${_arg#*=}"
             if [ -z "$_vf" ]; then continue; fi
-            local actual
-            if ! actual="$(_yaml_field_get_in_block "$yaml_file" "$block_id" "$_vf")"; then
-                echo "FATAL: yaml_field_set_batch: verify failed for ${block_id}.${_vf}" >&2
-                return 1
-            fi
-            # WSL2最適化: _normalize_v でsubshellキャプチャを排除
-            _yaml_field_set_normalize_v "$actual"; _norm_a="$_YFS_NORM"
-            _yaml_field_set_normalize_v "$_va";    _norm_e="$_YFS_NORM"
-            if [ "$_norm_a" != "$_norm_e" ]; then
-                echo "FATAL: yaml_field_set_batch: mismatch ${block_id}.${_vf} (expected='$_norm_e', actual='$_norm_a')" >&2
+            if ! _verify_err="$(_yaml_field_set_verify_parsed "$yaml_file" "$block_id" "$_vf" "$_va" "0" 2>&1 1>/dev/null)"; then
+                echo "FATAL: yaml_field_set_batch: mismatch ${block_id}.${_vf} ($_verify_err)" >&2
                 return 1
             fi
         done

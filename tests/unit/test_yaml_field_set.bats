@@ -575,9 +575,16 @@ print('CMD_ID_SINGLE_LINE_OK')
 #   ガードがなく、値に生の改行が混入すると裸テキストが行頭に漏れ不正YAMLを公開していた。
 # 修正: 公開前にpython3 yaml.safe_loadで検証しfail-closed、公開は同一ディレクトリ
 #   mktemp+mv(atomic rename)に統一。
+#
+# cmd_karo_hotfix_yaml_field_set_multiline_verify_202607122228 で挙動変更:
+#   値に生の改行が混入するケースは「不正注入」ではなく「複数行値の正当な書込み」
+#   として扱う。yaml_safe()がnewline/tab/CRをdouble-quote scalarへエスケープし
+#   1物理行に収めるため、公開前検証(yaml.safe_load)を安全に通過しexit0で成功する。
+#   旧テストが検証していた「fail-closedで旧ファイルを保つ」経路は
+#   publish_atomic単体テスト(下記2件)で別途カバー済み。
 
-@test "不正YAML注入: 値に生の改行が混入しても公開前に検証で拒否し旧ファイルを変更しない" {
-    local yaml="$TEST_TMPDIR/corrupt_injection.yaml"
+@test "複数行値の書込み: 生の改行を含む値でも1物理行のquoted scalarへ安全にエスケープされ成功する" {
+    local yaml="$TEST_TMPDIR/multiline_injection.yaml"
     cat > "$yaml" <<'EOF'
 - id: AC1
   status: pending
@@ -585,18 +592,183 @@ print('CMD_ID_SINGLE_LINE_OK')
 - id: AC2
   status: pending
 EOF
-    cp "$yaml" "$yaml.orig"
 
     run bash "$YFS" "$yaml" AC1 status $'line1\nline2 malformed'
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"FATAL"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"FATAL"* ]]
 
-    # 旧ファイルはバイト単位で不変であること(公開前に検証がブロックした証跡)
+    run python3 -c '
+import sys
+import yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+ac1 = [d for d in data if d["id"] == "AC1"][0]
+ac2 = [d for d in data if d["id"] == "AC2"][0]
+assert ac1["status"] == "line1\nline2 malformed", ac1["status"]
+assert ac1["description"] == "test", ac1["description"]
+assert ac2["status"] == "pending", ac2["status"]
+print("MULTILINE_INJECTION_OK")
+' "$yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MULTILINE_INJECTION_OK"* ]]
+
+    # 値は1物理行に収まっている(裸テキストが行頭に漏れていないこと)
+    run grep -c "^line2 malformed$" "$yaml"
+    [ "$output" = "0" ]
+}
+
+# ── cmd_karo_hotfix_yaml_field_set_multiline_verify_202607122228 回帰テスト ──
+# Origin: 家老実測でLK-A13.detailへ複数行値を書込んだ際、値自体はYAML-validかつ
+# 内容も反映されていたのに、post-write検証がawk単一物理行の生テキストを誤抽出し
+# (先頭引用符だけ残る等)偽FATALした。書込側(yaml_safe)と検証側
+# (_yaml_field_set_verify_parsed)を「yaml.safe_load後のscalar比較」という
+# 同一データモデルへ統一して解消する。
+
+@test "AC1専用corpus: 複数行+両クォート+コロン+日本語+Obsidianリンクを含む値がexact round-tripする" {
+    local yaml="$TEST_TMPDIR/ac1_corpus.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  acceptance_criteria:
+  - id: LK-A13
+    detail: pending
+EOF
+    local value=$'第1行: これは "テスト" と \'確認\' です\n第2行: [[some-obsidian-link]] を含む複数行値'
+
+    run bash "$YFS" "$yaml" LK-A13 detail "$value"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"FATAL"* ]]
+
+    export EXPECT="$value"
+    run python3 -c '
+import os
+import sys
+
+import yaml
+
+expect = os.environ["EXPECT"]
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+ac = [d for d in data["task"]["acceptance_criteria"] if d["id"] == "LK-A13"][0]
+assert ac["detail"] == expect, (ac["detail"], expect)
+print("AC1_CORPUS_OK")
+' "$yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"AC1_CORPUS_OK"* ]]
+}
+
+@test "AC1専用corpus: 代表値バッテリーが誤FAILなくexact round-tripする(正当系)" {
+    local yaml="$TEST_TMPDIR/ac1_battery.yaml"
+    local labels=(single_line japanese colon both_quotes obsidian_link multiline tab crlf pipe bool_true bool_false numeric backslash)
+    local values=(
+        "simple value"
+        "日本語のテスト値です"
+        "key: value pair"
+        'he said "hi" and it'"'"'s fine'
+        "See [[some-link]] for details"
+        "$(printf 'line1\nline2 continuation')"
+        "$(printf 'col1\tcol2')"
+        "$(printf 'line1\r\nline2')"
+        "alpha | beta || gamma"
+        "true"
+        "false"
+        "5"
+        'C:\new_folder\end'
+    )
+
+    local i label value yaml_case
+    for i in "${!labels[@]}"; do
+        label="${labels[$i]}"
+        value="${values[$i]}"
+        yaml_case="$TEST_TMPDIR/ac1_battery_${label}.yaml"
+        printf 'task:\n  detail: pending\n' > "$yaml_case"
+
+        run bash "$YFS" "$yaml_case" task detail "$value"
+        [ "$status" -eq 0 ]
+        [[ "$output" != *"FATAL"* ]]
+
+        export EXPECT="$value"
+        run python3 -c '
+import os
+import sys
+
+import yaml
+
+expect = os.environ["EXPECT"]
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+actual = data["task"]["detail"]
+
+YAML_TRUE = {"y", "Y", "yes", "Yes", "YES", "true", "True", "TRUE", "on", "On", "ON"}
+YAML_FALSE = {"n", "N", "no", "No", "NO", "false", "False", "FALSE", "off", "Off", "OFF"}
+
+if isinstance(actual, bool):
+    ok = (expect in YAML_TRUE) if actual else (expect in YAML_FALSE)
+elif isinstance(actual, int):
+    ok = str(actual) == expect
+else:
+    ok = actual == expect
+assert ok, (repr(actual), repr(expect))
+print("BATTERY_OK")
+' "$yaml_case"
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"BATTERY_OK"* ]]
+    done
+}
+
+@test "yaml_field_set_batch: 複数行値もbatch経由で1回のflockでexact round-tripする" {
+    local yaml="$TEST_TMPDIR/batch_multiline.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: pending
+  detail: old
+EOF
+    local value=$'batch line1: colon付き\nbatch line2 continuation'
+
+    run bash -lc "source \"$YFS\" && yaml_field_set_batch \"$yaml\" task \"detail=$value\" \"status=done\""
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"FATAL"* ]]
+
+    export EXPECT="$value"
+    run python3 -c '
+import os
+import sys
+
+import yaml
+
+expect = os.environ["EXPECT"]
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+assert data["task"]["detail"] == expect, data["task"]["detail"]
+assert data["task"]["status"] == "done"
+print("BATCH_MULTILINE_OK")
+' "$yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BATCH_MULTILINE_OK"* ]]
+}
+
+@test "AC2: _yaml_field_set_verify_parsedは実値不一致をfail-closedでexit非0にし、ファイルを書き換えない" {
+    local yaml="$TEST_TMPDIR/verify_mismatch.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: pending
+EOF
+    cp "$yaml" "$yaml.orig"
+    source "$YFS"
+    run _yaml_field_set_verify_parsed "$yaml" task status "completed" "0"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"mismatch"* ]]
+
+    # 検証のみでファイル内容は変化しないこと(全体dumpしていない証跡)
     run diff "$yaml.orig" "$yaml"
     [ "$status" -eq 0 ]
+}
 
-    run python3 -c 'import sys, yaml; yaml.safe_load(open(sys.argv[1], encoding="utf-8"))' "$yaml"
-    [ "$status" -eq 0 ]
+@test "AC2: _yaml_field_set_verify_parsedはblock不在をexit非0にする" {
+    local yaml="$TEST_TMPDIR/verify_noblock.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: pending
+EOF
+    source "$YFS"
+    run _yaml_field_set_verify_parsed "$yaml" nonexistent_block field "value" "0"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"block_not_found"* ]]
 }
 
 # cmd_karo_hotfix_queue_yaml_atomicity_202607110113 follow-up (家老GATE BLOCK 01:56):
