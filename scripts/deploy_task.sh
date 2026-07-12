@@ -1664,7 +1664,9 @@ def _convert_nested_ac(ac_dict):
         if isinstance(criteria, list) and criteria:
             entry['checks'] = [{'check': str(c)} for c in criteria]
         elif isinstance(ac_body.get('description'), str):
-            entry['checks'] = [{'check': ac_body['description']}]
+            description = ac_body['description']
+            entry['description'] = description
+            entry['checks'] = [{'check': description}]
         result.append(entry)
     return result if result else None
 
@@ -1676,7 +1678,7 @@ def _convert_flat_ac_dict(ac_dict):
     result = []
     for ac_id, ac_text in ac_dict.items():
         if isinstance(ac_text, str):
-            result.append({'id': ac_id, 'checks': [{'check': ac_text}]})
+            result.append({'id': ac_id, 'description': ac_text, 'checks': [{'check': ac_text}]})
         elif isinstance(ac_text, dict):
             # ac: {AC1: {title, criteria}} がacceptance_criteriaキーで書かれたケース
             converted = _convert_nested_ac({ac_id: ac_text})

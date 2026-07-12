@@ -1045,6 +1045,44 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "mapping-form acceptance_criteria preserves non-empty description while generating checks" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_mapping_description:
+    project: testproj
+    purpose: preserve AC descriptions
+    acceptance_criteria:
+      AC1:
+        description: "台帳全エントリにevent_kindを付与する"
+      AC2:
+        description: "完了イベントを自動計上する"
+EOF
+    mkdir -p "$TEST_PROJECT/queue/gates/cmd_mapping_description"
+    echo "source: test" > "$TEST_PROJECT/queue/gates/cmd_mapping_description/report_merge.done"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  task_type: full
+  parent_cmd: cmd_mapping_description
+  task_id: cmd_mapping_description_full
+  worker_id: sasuke
+  status: assigned
+  acceptance_criteria: []
+  _ac_task_id: stale_task
+  _ac_worker_id: sasuke
+EOF
+
+    run deploy_task_ac_only sasuke
+    [ "$status" -eq 0 ]
+    TASK_FILE="$TEST_PROJECT/queue/tasks/sasuke.yaml" python3 - <<'PY'
+import os, yaml
+task = yaml.safe_load(open(os.environ["TASK_FILE"], encoding="utf-8"))["task"]
+acs = task["acceptance_criteria"]
+assert [a["id"] for a in acs] == ["AC1", "AC2"]
+assert all(a.get("description") for a in acs), acs
+assert all(a["checks"][0]["check"] == a["description"] for a in acs), acs
+PY
+}
+
 @test "LK021: nested ac format via resolve_cmd_to_task (cmd_id arg)" {
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
