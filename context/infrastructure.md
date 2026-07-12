@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-12 cmd_karo_hotfix_heavy_job_admission_202607121348 -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_guard14_db_capability_launcher_202607122350 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -737,7 +737,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1079 -->
+<!-- last_synced_lesson: L1080 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1523,6 +1523,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1077: 10-15分例外の自由文検証は非空・非placeholderチェックだけでは意味論を担保できず'x'等の無意味値がPASSする（cmd_karo_hotfix_task_natural_boundary_contract_rc4_202607122210）
 - L1078: yaml_field_set post-write検証をparse比較へ移行する際はYAML1.1暗黙型変換とawk -vエスケープ自動デコードに注意（cmd_karo_hotfix_yaml_field_set_multiline_verify_202607122228）
 - L1079: read-only shell allowlistはcmd0一致だけでなくoption/script能力を検証せよ（cmd_karo_hotfix_guard14_env_db_intent_rc5_202607122241）
+- L1080: 能力launcherは文字列分類でなく実行環境そのものを制約する（cmd_karo_hotfix_guard14_db_capability_launcher_202607122350）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
