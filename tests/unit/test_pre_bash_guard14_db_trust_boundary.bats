@@ -199,6 +199,115 @@ _classify() {
     [ "$output" = "not_connection" ]
 }
 
+# --- RC5: cmd0一致だけのALLOWを廃し、option/script能力で判定する(karo反例3危険系) ---
+# (cmd_karo_hotfix_guard14_env_db_intent_rc5_202607122241)
+# RC4はfind -exec / rg --pre / sed e/w を「command名がREAD_ONLY_SHELL_CMDSにある」という
+# 理由だけでnot_connectionへ誤ALLOWし、逆にcat .env | grep等の安全なpipelineは"|"の一律拒否で
+# 誤BLOCKしていた。両方を1つの共通segment関数(_segment_is_readonly_safe)で解消する。
+
+@test "Guard14 classifier RC5: find -exec on an .env-referencing command -> connection:untrusted (BLOCK)" {
+    _classify 'find . -name .env -exec cat {} \;'
+    [ "$status" -eq 0 ]
+    [ "$output" = "connection:untrusted" ]
+}
+
+@test "Guard14 RC5: find -exec on an .env-referencing command is BLOCKED" {
+    _run_hook_cmd 'find . -name .env -exec cat {} \;'
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Guard14"* ]]
+}
+
+@test "Guard14 classifier RC5: find -execdir/-ok/-okdir on .env are all BLOCKED" {
+    for cmd in \
+        'find . -name .env -execdir cat {} \;' \
+        'find . -name .env -ok rm {} \;' \
+        'find . -name .env -okdir rm {} \;'; do
+        _classify "$cmd"
+        [ "$output" = "connection:untrusted" ]
+    done
+}
+
+@test "Guard14 classifier RC5: rg --pre / --pre-glob on an .env-referencing command -> connection:untrusted (BLOCK)" {
+    _classify "rg --pre ./evil.sh SECRET .env"
+    [ "$output" = "connection:untrusted" ]
+    _classify "rg --pre-glob '*.sh' SECRET .env"
+    [ "$output" = "connection:untrusted" ]
+    _classify "rg --pre=./evil.sh SECRET .env"
+    [ "$output" = "connection:untrusted" ]
+}
+
+@test "Guard14 RC5: rg --pre on an .env-referencing command is BLOCKED" {
+    _run_hook_cmd "rg --pre ./evil.sh SECRET .env"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Guard14"* ]]
+}
+
+@test "Guard14 classifier RC5: sed shell-execute 'e' command on .env is BLOCKED" {
+    _classify "sed '1e cat .env' file.txt"
+    [ "$output" = "connection:untrusted" ]
+    _classify "sed -e 's/x/y/e' .env"
+    [ "$output" = "connection:untrusted" ]
+}
+
+@test "Guard14 RC5: sed 'e' command on .env is BLOCKED (hook)" {
+    _run_hook_cmd "sed '1e cat .env' file.txt"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Guard14"* ]]
+}
+
+@test "Guard14 classifier RC5: sed write 'w' command/flag on .env is BLOCKED" {
+    _classify "sed -n '3w /tmp/leak' .env"
+    [ "$output" = "connection:untrusted" ]
+    _classify "sed 's/x/y/w /tmp/leak' .env"
+    [ "$output" = "connection:untrusted" ]
+}
+
+@test "Guard14 classifier RC5: sed -i (in-place write) on .env is BLOCKED regardless of script content" {
+    _classify "sed -i 's/x/y/' .env"
+    [ "$output" = "connection:untrusted" ]
+}
+
+@test "Guard14 classifier RC5: sed -f (external script file, content unverifiable) on .env is BLOCKED (fail-closed)" {
+    _classify "sed -f evil.sed .env"
+    [ "$output" = "connection:untrusted" ]
+}
+
+@test "Guard14 classifier RC5: safe read-only pipeline touching .env is ALLOWED (pipe is a segment boundary, not a blanket BLOCK)" {
+    _classify 'cat .env | grep SECRET'
+    [ "$output" = "not_connection" ]
+    _classify 'grep SECRET .env | head -n 5'
+    [ "$output" = "not_connection" ]
+    _classify 'cat .env | grep SECRET | wc -l'
+    [ "$output" = "not_connection" ]
+}
+
+@test "Guard14 RC5: safe read-only pipeline touching .env is ALLOWED (hook)" {
+    _run_hook_cmd 'cat .env | grep SECRET'
+    [ "$status" -eq 0 ]
+}
+
+@test "Guard14 classifier RC5: pipeline with an opaque/executor segment (xargs/sh) mixed in is BLOCKED" {
+    _classify 'cat .env | xargs echo'
+    [ "$output" = "connection:untrusted" ]
+    _classify 'grep SECRET .env | sh'
+    [ "$output" = "connection:untrusted" ]
+}
+
+@test "Guard14 RC5: pipeline with xargs mixed in is BLOCKED (hook)" {
+    _run_hook_cmd 'cat .env | xargs echo'
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Guard14"* ]]
+}
+
+@test "Guard14 classifier RC5: benign sed range-print and grep/rg without dangerous options remain ALLOWED (no false positive)" {
+    _classify 'sed -n 1,3p backend/.env'
+    [ "$output" = "not_connection" ]
+    _classify "rg TOKEN backend/.env"
+    [ "$output" = "not_connection" ]
+    _classify "sed 's/hello/eello/' backend/.env"
+    [ "$output" = "not_connection" ]
+}
+
 @test "Guard14 classifier: AST proves ordinary data processing plus HTTP only" {
     _classify "python3 -c \"from pathlib import Path; import requests, json; token=Path('backend/.env').read_text().strip(); requests.get('https://example.com', headers={'x': token})\""
     [ "$output" = "not_connection" ]

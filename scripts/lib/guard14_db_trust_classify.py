@@ -54,6 +54,18 @@ review_correction 2026-07-12 09:05/09:12/09:17/09:22 (karo) 対応:
   (review_correction 09:45, karo): DSN URLスキーム(postgres(ql)://)、DB系env/DSN変数名
   (大文字+_URL/_DSNパターン)、接続API呼出の形(`.connect(` / `create_*engine(`)、host指定
   (host=)、in-memoryマーカー(:memory:)。個別client名を追加して育てる設計にしない。
+
+cmd_karo_hotfix_guard14_env_db_intent_rc5_202607122241 (karo反例) 対応:
+- .envクレデンシャル併存判定(_shell_segments_are_bounded)がREAD_ONLY_SHELL_CMDSを
+  「command名一致だけ」でALLOWしていたため、find -exec/-execdir/-ok/-okdir、
+  rg --pre/--pre-glob、sedのe(shell実行)/w(ファイル書込)/-i(in-place書込)/-f(内容不明の
+  外部script)という「read-onlyに見えて実行・書込能力を持つoption」がそのまま素通り
+  していた。command0だけでなくoption/script内容の実行・書込能力を検証する
+  _segment_is_readonly_safe() へ置換し、未知の能力(-f等)はfail-closedでBLOCKする。
+- 同時に、pipe(|)を一律拒否していたため cat .env | grep SECRET のような安全な
+  read-onlyパイプラインまで誤BLOCKしていた。pipeはsegment境界(既存の_split_into_segments
+  が処理済み)として扱い、全segmentがsafeならALLOWする。command substitution($()/
+  backtick)とprocess substitution(<(...)/>(...))は引き続き生コマンド文字列で無条件BLOCK。
 """
 from __future__ import annotations
 
@@ -156,6 +168,99 @@ ESCAPE_CALLS = {"eval", "exec", "compile", "__import__"}
 READ_ONLY_SHELL_CMDS = {"rg", "grep", "sed", "cat", "head", "tail", "cut", "wc", "find"}
 ENV_SETUP_SHELL_CMDS = {"source", ".", "export"}
 SAFE_OS_CALLS = {"getenv"}
+
+# review_correction(2026-07-12 22:xx, karo RC5): READ_ONLY_SHELL_CMDS が cmd0 の一致だけで
+# 全option/scriptをALLOWしていたため、find -exec系・rg --pre系・sedのe/w系という「read-only
+# に見えて実際は外部コマンド実行・任意ファイル書込を行えるoption」がそのまま素通りしていた
+# (karo反例)。command名一致だけのALLOWを禁止し、cmd0+引数(option/script内容)の実行・書込
+# 能力を個別に検証してから安全と判定する。未知の能力を持ち得る場合(sedの-f外部scriptファイル
+# 等、内容を検証できないもの)はfail-closedでBLOCKする。
+FIND_EXEC_FLAGS = {"-exec", "-execdir", "-ok", "-okdir"}
+RG_PRE_FLAG_RE = re.compile(r"^--pre(?:-glob)?(?:=.*)?$")
+SED_FILE_FLAG_RE = re.compile(r"^(?:-f|--file)(?:=.*)?$")
+SED_INPLACE_FLAG_RE = re.compile(r"^(?:-i|--in-place)(?:=.*|[^A-Za-z0-9_].*)?$")
+
+# sedのe(shell実行)/w(ファイル書込)commandは、standalone command('[addr]e'/'[addr]w file')
+# とs///置換の末尾flag('s/re/repl/e'や's/re/repl/w file')の2形態で現れる。delimiterは'/'に
+# 限らず任意の非英数字1文字が使えるため、s(.)...\1...\1(flags) の後方参照でdelimiterを揃えて
+# 抽出する。addressはlineno/$/ステップ(~)/正規表現(/pattern/)/範囲(addr1,addr2)を許容する。
+_SED_ADDR_ATOM = r"(?:\$|[0-9]+|/(?:\\.|[^/\\])*/)"
+_SED_ADDR = (
+    r"!?\s*" + _SED_ADDR_ATOM + r"(?:\s*~\s*[0-9]+|\s*,\s*!?" + _SED_ADDR_ATOM + r")?" + r"\s*!?"
+)
+SED_STANDALONE_EXEC_RE = re.compile(r"(?:^|[;\n}])\s*(?:" + _SED_ADDR + r")?\s*[ew](?:\s|;|$)")
+SED_SUBST_FLAG_RE = re.compile(r"s(.)(?:\\.|[^\\\n])*?\1(?:\\.|[^\\\n])*?\1([a-zA-Z0-9]*)")
+
+
+def _sed_script_is_dangerous(script: str) -> bool:
+    if SED_STANDALONE_EXEC_RE.search(script):
+        return True
+    for m in SED_SUBST_FLAG_RE.finditer(script):
+        flags = m.group(2)
+        if "e" in flags or "w" in flags:
+            return True
+    return False
+
+
+def _find_segment_is_dangerous(tokens: list[str]) -> bool:
+    return any(tok in FIND_EXEC_FLAGS for tok in tokens[1:])
+
+
+def _rg_segment_is_dangerous(tokens: list[str]) -> bool:
+    return any(RG_PRE_FLAG_RE.match(tok) for tok in tokens[1:])
+
+
+def _sed_segment_is_dangerous(tokens: list[str]) -> bool:
+    rest = tokens[1:]
+    scripts: list[str] = []
+    has_unknown_capability = False
+    positional_script_claimed = False
+    i = 0
+    while i < len(rest):
+        tok = rest[i]
+        if tok in ("-e", "--expression"):
+            if i + 1 < len(rest):
+                scripts.append(rest[i + 1])
+                i += 2
+            else:
+                i += 1
+            continue
+        if tok.startswith("--expression="):
+            scripts.append(tok.split("=", 1)[1])
+            i += 1
+            continue
+        if SED_FILE_FLAG_RE.match(tok):
+            # -f/--file は外部scriptファイルの内容をこのcommand行から検証できないため
+            # fail-closedでdangerous扱いする。
+            has_unknown_capability = True
+            i += 1
+            continue
+        if SED_INPLACE_FLAG_RE.match(tok):
+            # -i/--in-place はそれ自体が「読み取り専用」の逆(直接書込)なので常にdangerous。
+            has_unknown_capability = True
+            i += 1
+            continue
+        if tok.startswith("-"):
+            i += 1
+            continue
+        if not scripts and not positional_script_claimed:
+            # 最初の非flag引数のみがscript本体。以降の非flag引数は入力ファイル名。
+            scripts.append(tok)
+            positional_script_claimed = True
+        i += 1
+    if has_unknown_capability:
+        return True
+    return any(_sed_script_is_dangerous(s) for s in scripts)
+
+
+def _segment_is_readonly_safe(cmd0: str, tokens: list[str]) -> bool:
+    if cmd0 == "find":
+        return not _find_segment_is_dangerous(tokens)
+    if cmd0 == "rg":
+        return not _rg_segment_is_dangerous(tokens)
+    if cmd0 == "sed":
+        return not _sed_segment_is_dangerous(tokens)
+    return True
 
 
 def _tokenize(command: str) -> list[str]:
@@ -300,13 +405,26 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
     return saw_http
 
 
-def _shell_segments_are_bounded(command: str, tokens: list[str], segments: list[list[str]]) -> bool:
-    """Allow only explicit env setup, read-only inspection, curl, or verified Python."""
-    if "$(" in command or "`" in command or "|" in tokens:
+def _shell_segments_are_bounded(command: str, segments: list[list[str]]) -> bool:
+    """Allow only explicit env setup, capability-checked read-only inspection, curl, or verified Python.
+
+    review_correction(2026-07-12 RC5, karo): pipe(|)はsegment境界(_split_into_segments済み)
+    として扱い、一律拒否しない。各segmentがcmd0+option能力で個別にsafeと判定された場合のみ
+    ALLOWする。xargs/sh/評価不能なopaque commandが1つでも混じれば最終的に return False へ
+    落ちる。command substitution($()/backtick)とprocess substitution(<(...)/>(...))は
+    segment分割を経由しても迂回できる実行経路のため、引き続き生コマンド文字列で無条件BLOCK。
+    """
+    if "$(" in command or "`" in command or "<(" in command or ">(" in command:
         return False
     for segment in segments:
         cmd0 = _segment_cmd0(segment)
-        if cmd0 in ENV_SETUP_SHELL_CMDS or cmd0 in READ_ONLY_SHELL_CMDS or CURL_CMD_RE.match(cmd0):
+        if cmd0 in ENV_SETUP_SHELL_CMDS:
+            continue
+        if cmd0 in READ_ONLY_SHELL_CMDS:
+            if _segment_is_readonly_safe(cmd0, segment):
+                continue
+            return False
+        if CURL_CMD_RE.match(cmd0):
             continue
         if _python_inline_code(segment) is not None and _python_http_only_capability(segment):
             continue
@@ -430,7 +548,7 @@ def classify(command: str) -> str:
     credential_segments = [seg for seg in segments if _segment_has_env_credential_source(seg)]
     if credential_segments and not connection_segments:
         # 全segmentを能力分類し、未知shell/Python実行が1つでもあればfail-closed。
-        if _shell_segments_are_bounded(command, all_tokens, segments):
+        if _shell_segments_are_bounded(command, segments):
             return "not_connection"
         return "connection:untrusted"
 
