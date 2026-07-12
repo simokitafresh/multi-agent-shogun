@@ -943,11 +943,6 @@ EOF
 
     archive_overflow_reports_to_cap() {
         local cap=10
-        # GP-OPT2: find+wc を外側スコープの report_files/archived カウンタで代替（WSL2プロセス起動削減）
-        local remaining=$(( ${#report_files[@]} - archived ))
-        [ "$remaining" -lt 0 ] && remaining=0
-        [ "$remaining" -le "$cap" ] && return 0
-
         local overflow_list="$TMP/report_overflow_candidates.tsv"
         python3 - "$PROJECT_DIR" "$REPORTS_DIR" <<'PY' > "$overflow_list"
 import glob
@@ -974,7 +969,6 @@ for task_path in glob.glob(os.path.join(project_dir, "queue", "tasks", "*.yaml")
 
 eligible_statuses = {"done", "completed", "complete", "success", "failed", "pass", "fail", "blocked", "waived", "stop_for"}
 candidates = []
-gate_incomplete_candidates = []
 skipped_pending = 0
 skipped_ineligible = 0
 skipped_active_parent = 0
@@ -1027,7 +1021,6 @@ for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
         continue
     if not gate_complete(parent):
         skipped_gate_incomplete += 1
-        gate_incomplete_candidates.append((os.path.getmtime(report_path), report_path))
         continue
     candidates.append((os.path.getmtime(report_path), report_path))
 
@@ -1035,16 +1028,18 @@ print(
     "[archive] overflow candidates: "
     f"eligible={len(candidates)} skipped_pending={skipped_pending} "
     f"skipped_ineligible={skipped_ineligible} skipped_active_parent={skipped_active_parent} "
-    f"skipped_gate_incomplete={skipped_gate_incomplete} "
-    f"fallback_gate_incomplete={len(gate_incomplete_candidates)}",
+    f"skipped_gate_incomplete={skipped_gate_incomplete}",
     file=sys.stderr,
 )
 
 for _mtime, path in sorted(candidates):
     print(path)
-for _mtime, path in sorted(gate_incomplete_candidates):
-    print(path)
 PY
+
+        # capの分母はCLEAR済み候補のみ。pending/active/GATE未完了は数えない。
+        local remaining
+        remaining="$(wc -l < "$overflow_list")"
+        [ "$remaining" -le "$cap" ] && return 0
 
         local overflow_archived=0
         local overflow_path overflow_base overflow_dest

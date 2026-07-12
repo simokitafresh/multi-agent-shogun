@@ -633,9 +633,9 @@ YAML
 
     run bash "$TEST_PROJECT/scripts/archive_completed.sh"
     [ "$status" -eq 0 ]
-    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name '*.yaml' | wc -l)" -eq 10 ]
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name '*.yaml' | wc -l)" -eq 11 ]
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2529cap_pending.yaml" ]
-    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type f -name '*cmd_2529cap_[0-9]*.yaml' | wc -l)" -eq 9 ]
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -type f -name '*cmd_2529cap_[0-9]*.yaml' | wc -l)" -eq 10 ]
 }
 
 @test "cmd_2827: sweep caps completed report backlog even when cmd_id is specified" {
@@ -660,11 +660,11 @@ YAML
 
     run bash "$TEST_PROJECT/scripts/archive_completed.sh" cmd_2827
     [ "$status" -eq 0 ]
-    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name '*.yaml' | wc -l)" -eq 10 ]
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name '*.yaml' | wc -l)" -eq 13 ]
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2827cap_pending.yaml" ]
     [ -f "$TEST_PROJECT/queue/gates/cmd_2827/archive.done" ]
-    [[ "$output" == *"fallback_gate_incomplete=12"* ]]
-    [[ "$output" == *"overflow-cap:"* ]]
+    [[ "$output" == *"skipped_gate_incomplete=12"* ]]
+    [[ "$output" != *"overflow-cap:"* ]]
 }
 
 @test "cmd_2545: overflow cap excludes pending active parent and gate-incomplete reports with log counts" {
@@ -713,7 +713,7 @@ YAML
 
     run bash "$TEST_PROJECT/scripts/archive_completed.sh"
     [ "$status" -eq 0 ]
-    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name '*.yaml' | wc -l)" -eq 10 ]
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name '*.yaml' | wc -l)" -eq 13 ]
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_active.yaml" ]
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_gate_wait.yaml" ]
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_2545_pending.yaml" ]
@@ -721,6 +721,7 @@ YAML
     [[ "$output" == *"skipped_pending=1"* ]]
     [[ "$output" == *"skipped_active_parent=1"* ]]
     [[ "$output" == *"skipped_gate_incomplete=1"* ]]
+    [[ "$(find "$TEST_PROJECT/queue/archive/reports" -maxdepth 1 -type f -name '*cmd_2545_ok_*' | wc -l)" -eq 1 ]]
 }
 
 @test "GP-133: report archive proceeds when review_gate.done is gunshi_review" {
