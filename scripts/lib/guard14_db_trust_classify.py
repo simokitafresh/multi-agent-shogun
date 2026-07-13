@@ -493,12 +493,15 @@ def _segment_is_exempt(tokens: list[str]) -> bool:
 
 def _url_host_candidate(url: str) -> str:
     # postgresql://が実際に現れた時だけurllib.parseをimportする(実測-4ms/呼び出しの節約)
-    from urllib.parse import parse_qs, urlsplit
+    from urllib.parse import parse_qs, unquote, urlsplit
 
     parts = urlsplit(url)
     if parts.hostname:
         return parts.hostname
-    query_host = parse_qs(parts.query).get("host", [""])[0]
+    # libpq accepts both a literal absolute socket directory and its
+    # percent-encoded URL representation.  Decode exactly the structured
+    # query value; never unquote/free-scan the surrounding command text.
+    query_host = unquote(parse_qs(parts.query).get("host", [""])[0])
     if query_host.startswith("/"):
         return query_host  # Unix socket指定 (?host=/var/run/postgresql)
     return ""  # authority空かつquery override無し = 未解決(fail-closed)
@@ -525,9 +528,15 @@ def _extract_candidates(tokens: list[str]) -> list[str]:
     found: list[str] = []
     if ":memory:" in text:
         found.append(":memory:")
-    for m in HOST_KV_RE.finditer(text):
+    # URL query parameters are parsed by urllib below.  Feeding their host=
+    # fragment through HOST_KV_RE as well creates a second, truncated candidate
+    # for percent-encoded socket paths ("%2F..." -> empty), incorrectly making
+    # an otherwise valid structured URL fail closed.
+    urls = list(DSN_URL_RE.finditer(text))
+    non_url_text = DSN_URL_RE.sub(" ", text)
+    for m in HOST_KV_RE.finditer(non_url_text):
         found.append(m.group(1))
-    for m in DSN_URL_RE.finditer(text):
+    for m in urls:
         found.append(_url_host_candidate(m.group(0)))
     found.extend(_flag_host_candidates(tokens))
     return found
@@ -539,7 +548,10 @@ def _is_local_candidate(value: str) -> bool:
     if value == ":memory:" or value in LOCAL_HOST_VALUES:
         return True
     if value.startswith("/"):
-        return True  # Unix socketパス (host=/var/run/postgresql 等)
+        # An arbitrary absolute-looking string is not a local capability.
+        # libpq's host value is a socket *directory*, so require the directory
+        # to exist at classification time and reject files/nonexistent paths.
+        return os.path.isdir(value)
     return False
 
 

@@ -35,6 +35,8 @@ setup_file() {
     # そのまま抽出してsourceする。複製・再実装ではなく、実行対象そのものをテストする。
     # BATS_TEST_TMPDIRはsetup_fileスコープでは未設定のためBATS_FILE_TMPDIRを使う。
     export FAST_FILTER_SRC="$BATS_FILE_TMPDIR/g14_fast_filter_extracted.sh"
+    export GUARD14_SOCKET_DIR="$BATS_FILE_TMPDIR/golden-pg-socket"
+    mkdir -p "$GUARD14_SOCKET_DIR"
     sed -n '/^guard14_maybe_connection() {/,/^}/p' "$CLASSIFY_SH" > "$FAST_FILTER_SRC"
     [ -s "$FAST_FILTER_SRC" ] || return 1
 }
@@ -84,6 +86,12 @@ _run_hook_cmd_local() {
 
 @test "sync: libpq Unix socket via query -> fast filter says maybe" {
     run _fast_filter_says_maybe 'DATABASE_URL=postgresql://postgres@/testdb?host=/var/run/postgresql python -m pytest backend/tests'
+    [ "$status" -eq 0 ]
+}
+
+@test "sync: cmd_3854 golden capture empty authority encoded Unix socket -> fast filter says maybe" {
+    encoded="${GUARD14_SOCKET_DIR//\//%2F}"
+    run _fast_filter_says_maybe "DATABASE_URL='postgresql:///?user=postgres&host=$encoded' python3 scripts/cmd_3854_fof_golden_capture.py"
     [ "$status" -eq 0 ]
 }
 

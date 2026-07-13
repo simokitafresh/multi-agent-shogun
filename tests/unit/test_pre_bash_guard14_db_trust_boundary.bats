@@ -43,6 +43,8 @@ projects:
     path: "$BATS_FILE_TMPDIR/dm-signal"
 EOF
     [ -f "$DMS_CHECK_PF_CONFIG" ] || return 1
+    export GUARD14_SOCKET_DIR="$BATS_FILE_TMPDIR/golden-pg-socket"
+    mkdir -p "$GUARD14_SOCKET_DIR"
 }
 
 _run_hook_cmd() {
@@ -70,21 +72,42 @@ _classify() {
     [ "$status" -eq 0 ]
 }
 
-@test "Guard14 classifier: libpq Unix socket (host=/var/run/postgresql) -> connection:local_ephemeral" {
-    _classify 'DATABASE_URL=postgresql://postgres@/testdb?host=/var/run/postgresql python -m pytest backend/tests'
+@test "Guard14 classifier: libpq Unix socket query host -> connection:local_ephemeral" {
+    _classify "DATABASE_URL=postgresql://postgres@/testdb?host=$GUARD14_SOCKET_DIR python -m pytest backend/tests"
     [ "$status" -eq 0 ]
     [ "$output" = "connection:local_ephemeral" ]
 }
 
-@test "Guard14: pytest with libpq Unix socket (host=/var/run/postgresql) is ALLOWED" {
-    _run_hook_cmd 'DATABASE_URL=postgresql://postgres@/testdb?host=/var/run/postgresql python -m pytest backend/tests'
+@test "Guard14: pytest with existing libpq Unix socket directory is ALLOWED" {
+    _run_hook_cmd "DATABASE_URL=postgresql://postgres@/testdb?host=$GUARD14_SOCKET_DIR python -m pytest backend/tests"
     [ "$status" -eq 0 ]
 }
 
 @test "Guard14 classifier: Unix socket URL via query is resolved through urllib.parse -> connection:local_ephemeral" {
-    _classify "python3 -c \"import psycopg2; psycopg2.connect('postgresql://postgres@/testdb?host=/var/run/postgresql')\""
+    _classify "python3 -c \"import psycopg2; psycopg2.connect('postgresql://postgres@/testdb?host=$GUARD14_SOCKET_DIR')\""
     [ "$status" -eq 0 ]
     [ "$output" = "connection:local_ephemeral" ]
+}
+
+@test "Guard14 classifier: cmd_3854 golden capture empty authority with query user and literal socket is local" {
+    _classify "DATABASE_URL='postgresql:///?user=postgres&host=$GUARD14_SOCKET_DIR' python3 scripts/cmd_3854_fof_golden_capture.py --output /tmp/golden.json"
+    [ "$status" -eq 0 ]
+    [ "$output" = "connection:local_ephemeral" ]
+}
+
+@test "Guard14 hook: cmd_3854 golden capture empty authority with encoded socket is ALLOWED" {
+    encoded="${GUARD14_SOCKET_DIR//\//%2F}"
+    _classify "DATABASE_URL='postgresql:///?user=postgres&host=$encoded' python3 scripts/cmd_3854_fof_golden_capture.py --output /tmp/golden.json"
+    [ "$status" -eq 0 ]
+    [ "$output" = "connection:local_ephemeral" ]
+    _run_hook_cmd "DATABASE_URL='postgresql:///?user=postgres&host=$encoded' python3 scripts/cmd_3854_fof_golden_capture.py --output /tmp/golden.json"
+    [ "$status" -eq 0 ]
+}
+
+@test "Guard14 classifier ADVERSARIAL: nonexistent absolute socket directory is untrusted" {
+    _classify "DATABASE_URL='postgresql:///?user=postgres&host=$BATS_TEST_TMPDIR/missing-socket' python3 scripts/cmd_3854_fof_golden_capture.py"
+    [ "$status" -eq 0 ]
+    [ "$output" = "connection:untrusted" ]
 }
 
 @test "Guard14: create_db_engine with sqlite in-memory is ALLOWED" {
