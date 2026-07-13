@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
-<!-- source_commit:68fc3d953fe28c48d5228ad333d6a598d7e2a0c2 (DM-Signal ops対象pathspecの最終同期commit。GA-238で68fc3d95[v1.4.17 P4 AC2再挑戦方式]を§73へ反映。cmd_3873(0568b016/e4f8ef68/75ca73b4)は2026-07-13時点in_progressのため意図的に未反映のまま境界の手前に据え置く — 完了後に別cmdで反映しGA-238の新BLOCK機構がその反映漏れを検知する設計。根本原因分析・境界更新の経緯は docs/research/ga237_context_freshness_root_cause.md / docs/research/ga238_context_freshness_root_cause.md 参照) -->
+<!-- last_updated: 2026-07-13 cmd_3868 -->
+<!-- source_commit:9daba5d5 (DM-Signal ops対象pathspecの最終同期commit。cmd_3868の台帳3世代25fc1774→24e81519→9daba5d5を§74へ反映し、削除候補9件・921174016 bytesの確定、実削除、df差分、保持正本16/16 SHA一致まで同期済み。GA-238の境界契約を継承) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
