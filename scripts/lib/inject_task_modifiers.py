@@ -83,6 +83,23 @@ def normalize_acceptance_criteria(value):
     return [{'id': 'AC1', 'description': str(value)}]
 
 
+def has_assigned_acs_scope(task):
+    """True if task carries an explicit assigned_acs contract (split deployment).
+
+    assigned_acs is authoritative for split subtasks (deploy_task.sh
+    inject_parent_contract). Appending generic safety ACs to
+    acceptance_criteria after assigned_acs is set makes the AC id set
+    exceed the parent cmd's own AC namespace, which falsely BLOCKs
+    parent contract validation (cmd_3873).
+    """
+    value = task.get('assigned_acs')
+    if isinstance(value, list):
+        return bool(value)
+    if isinstance(value, str):
+        return bool(value.strip())
+    return False
+
+
 def parent_cmd_entry(task, script_dir):
     parent_cmd = str(task.get('parent_cmd', '') or '').strip()
     if not parent_cmd or not script_dir:
@@ -653,6 +670,15 @@ def inject_lsa16_production_parity_controls(task, script_dir):
         task['description'] = LSA16_INSTRUCTION + '\n  ────────────────────────────────────────\n' + desc
         changed = True
 
+    # 分割task(assigned_acs指定あり)は親cmd AC契約が権威。安全ACを
+    # acceptance_criteriaへ混入させず、stop_for/description注記のみ維持する
+    # (cmd_3873: AC3-AC5混入でparent contract偽BLOCK)。
+    if has_assigned_acs_scope(task):
+        if changed:
+            print('[LSA16_PARITY] Injected production parity stop_for only '
+                  '(assigned_acs scope, AC injection skipped)', file=sys.stderr)
+        return changed
+
     ac_list = normalize_acceptance_criteria(
         task.get('acceptance_criteria'))
     existing_text = '\n'.join(
@@ -809,6 +835,11 @@ def inject_parity_target_date_ac(task, script_dir):
     #       パリティACが必要なのは scope_mode=PARITY/VERIFY/未設定のcmdのみ
     scope_mode = str(task.get('scope_mode', '') or '').strip().upper()
     if scope_mode == 'NORMAL':
+        return False
+
+    # 2.6. 分割task(assigned_acs指定あり)は親cmd AC契約が権威。target_date AC
+    #       追加も親AC集合外となり parent contract を偽BLOCKする (cmd_3873)。
+    if has_assigned_acs_scope(task):
         return False
 
     # 3. 既にtarget_dateACが存在すればスキップ

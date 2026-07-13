@@ -591,6 +591,104 @@ assert len(task['acceptance_criteria']) == 1, task['acceptance_criteria']
 PY
 }
 
+# ── cmd_karo_hotfix_split_ac_modifier_scope_202607131307 回帰テスト ──
+# Origin: cmd_3873実配備で、assigned_acs=[AC1,AC2]の分割taskへ
+# inject_lsa16_production_parity_controls/inject_parity_target_date_acが
+# 汎用AC(AC3-AC6)を無条件追加し、task AC idsが親cmd AC集合を超えて
+# inject_parent_contractのparent mapping検証を偽BLOCKした。
+@test "cmd_3873: split task with assigned_acs does not receive generic parity/target_date ACs" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_3873_test
+  project: dm-signal
+  task_id: cmd_3873_test_impl
+  status: assigned
+  purpose: "P4 AC2再挑戦の前提としてfullrecalculate入力のbundle consumerを実装しparityを確認する"
+  description: "本番DB fullrecalculate系cmdの分割task"
+  assigned_acs:
+  - AC1
+  - AC2
+  acceptance_criteria:
+  - id: AC1
+    description: "bundle exportを実装する"
+  - id: AC2
+    description: "manifest payloadを保存する"
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_3873_test:
+    project: dm-signal
+    title: "parity検証cmd"
+    command: |
+      本番DB fullrecalculateとparity確認を行う
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" INJECT_TASK_MODIFIERS_ONLY="lsa16_production_parity_controls,parity_target_date_ac" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+# 安全ACは分割task境界を超えて混入させない: AC数は変更前と同じ2のまま
+assert [ac['id'] for ac in task['acceptance_criteria']] == ['AC1', 'AC2'], task['acceptance_criteria']
+# stop_for/description注記は分割taskでも維持する(安全情報自体は削らない)
+assert '本番パリティ未確認' in task['stop_for'], task
+assert '【LS-A16 本番パリティ必須】' in task['description'], task['description']
+PY
+}
+
+@test "cmd_3873: non-split DM-Signal parity cmd still receives full safety AC set" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_3873_test_normal
+  project: dm-signal
+  task_id: cmd_3873_test_normal_impl
+  status: assigned
+  purpose: "本番DB fullrecalculateのparity確認を行う"
+  description: "本番DB fullrecalculate系cmd"
+  acceptance_criteria:
+  - id: AC1
+    description: "bundle exportを実装する"
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_3873_test_normal:
+    project: dm-signal
+    title: "parity検証cmd"
+    command: |
+      本番DB fullrecalculateとparity確認を行う
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" INJECT_TASK_MODIFIERS_ONLY="lsa16_production_parity_controls,parity_target_date_ac" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+# assigned_acsが無い(非分割)通常taskでは既存の安全AC注入(3レイヤー確認/fullrecalculate/savepoint/target_date)を維持する
+ac_text = '\n'.join(ac['description'] for ac in task['acceptance_criteria'])
+assert 'DB/API/FEの3レイヤー貫通確認結果' in ac_text, ac_text
+assert 'fullrecalculateまたは差分確認' in ac_text, ac_text
+assert 'savepoint(begin_nested)' in ac_text, ac_text
+assert 'target_dateがproduction fullrecalculateと同一であること' in ac_text, ac_text
+assert len(task['acceptance_criteria']) == 5, task['acceptance_criteria']
+PY
+}
+
 # ── cmd_karo_hotfix_deploy_task_atomic_publish_202607111645 回帰テスト ──
 # Origin: cmd_3847偵察で、旧direct_modeは$YAML_FILEを検証前に$task_yamlへ直接cpし
 # (fail-open)、repair失敗時は壊れた内容がtask_yamlに居座っていた。
