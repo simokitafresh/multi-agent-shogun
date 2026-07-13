@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-14 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-14T06:22:21+09:00 -->
+<!-- generated_at: 2026-07-14T07:20:33+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-14T06:22:20+09:00 | terminal | response | 既読処理完了、未読0にござる。 CI赤はrc4根本隔離のGATE CLEARで収束見込みが立った。未pushの正確な滞留数とCI GREEN復帰の実証は、リモート状態のfetch確認が必要ゆえ(LS-A09(19))、4分後の脈(06:2…
-- 2026-07-14T06:22:09+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働2名 CLEAR率99% 連勝137
-- 2026-07-14T06:20:41+09:00 | terminal | response | commit実在 ✓。3836/3836 PASS・FAIL0・SKIP0。根因=fc32dae2bの背景計算probeが実tmux状態を読む共有汚染。test側のprobe stubで隔離。production不変。 verdict: …
-- 2026-07-14T06:20:25+09:00 | terminal | response | 軍師LGTM中間報告1件(才蔵のCI赤rc4=順序依存汚染の根本隔離、家老GATE判定待ち)。既読化する。 [meta] stop_reason=tool_use
-- 2026-07-14T06:00:03+09:00 | terminal | response | /loop周回(06:00の脈)。inbox未読0。半蔵RC2実測と掲示板を確認する。 [meta] stop_reason=tool_use
-- 2026-07-14T05:58:35+09:00 | terminal | response | inbox未読0件。inbox1通知はタイミングのずれ。待機。 [meta] stop_reason=end_turn
-- 2026-07-14T05:58:05+09:00 | terminal | response | 既読処理完了、未読0にござる。 CI赤の現況: 表面の5 FAILは修正済みだが、全量実行だけで出るtest_ninja_monitor_stallの順序依存汚染が真因として残り、才蔵がrc4で根本隔離に着手(isolated workt…
-- 2026-07-14T05:57:59+09:00 | terminal | response | rc4。RC3の5 FAILは解消済み、新たにtest_ninja_monitor_stall.batsの順序依存7 FAILが発生。共有状態汚染の根本修正。AC7個、60分。新規isolated worktreeで作業。 - assum…
-- 2026-07-14T05:54:50+09:00 | ntfy | outbound | CI赤: run 29283318000 Unit Tests (bats)
-- 2026-07-14T05:53:37+09:00 | ntfy | outbound | 【INFOバッチ】 2026-07-14 05:39:47|cmd_karo_hotfix_insight_resolver_ssot_rc2_202607140530
+- 2026-07-14T07:20:33+09:00 | terminal | response | /loop周回(07:20の脈)。小太郎RC2実測・CI RC6・掲示板を確認する。 [meta] stop_reason=tool_use
+- 2026-07-14T07:20:01+09:00 | terminal | response | draft APPROVE完了。inbox未読0件。待機。 [meta] stop_reason=end_turn
+- 2026-07-14T07:19:30+09:00 | terminal | response | 既読処理完了、未読0にござる。 preview capability実測はRC2で仕切り直し(安全停止は契約どおりの挙動、本番接触ゼロ)。fail-closedの規律が末端まで浸透しており、方式検証の信頼性はむしろ高まっておりまする。/l…
+- 2026-07-14T07:18:56+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_cmd3885_preview_capability_min_rc2_202607140717 初回配備開始 (title=(untitled), ninja=kotaro)
+- 2026-07-14T07:17:05+09:00 | terminal | response | draft APPROVE完了。inbox未読0件。待機。 [meta] stop_reason=end_turn
+- 2026-07-14T07:14:03+09:00 | terminal | response | inbox未読0件。待機。
+- 2026-07-14T07:13:29+09:00 | terminal | response | cmd_3885 preview capability最小構築。AC11個(多いがDM-Signal PJ ACは標準的に多い)。将軍裁定準拠。preview+isolated clone限定。production self-NOLOGI…
+- 2026-07-14T07:13:06+09:00 | terminal | response | 既読処理完了、未読0にござる。 将軍裁定(preview最小前倒し)が起案から15分で配備まで到達した。現在の関門連鎖: 1. **小太郎**: preview DB上でのrole capability実測中(07:12配備、15分枠→0…
+- 2026-07-14T07:12:12+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_cmd3885_preview_capability_min_202607140711 初回配備開始 (title=(untitled), ninja=kotaro)
+- 2026-07-14T07:10:05+09:00 | terminal | response | gate_prediction BLOCK→gate_result BLOCK=正解。(1)の再送report reviewは既にLGTM済みのため追加対応不要。inbox未読0件。待機。
 
 ## 未解決確認事項
-- 既読処理完了、未読0にござる。 CI赤はrc4根本隔離のGATE CLEARで収束見込みが立った。未pushの正確な滞留数とCI GREEN復帰の実証は、リモート状態のfetch確認が必要ゆえ(LS-A09(19))、4分後の脈(06:26)で半蔵RC2実測の結果検分と合わせて…
-- /loop周回(06:00の脈)。inbox未読0。半蔵RC2実測と掲示板を確認する。 [meta] stop_reason=tool_use
-- /loop周回(05:34の脈)。inbox未読0。半蔵の実測進行と掲示板を確認する。 [meta] stop_reason=tool_use
-- rc2は前回cmdの副作用(repair_trailing_partial_entryがaction_artifactを知らず完全resolvedを切断)を修正するcmd。 **SGプロトコル簡略実行**: - purpose: insightの完全証跡resolutionが次…
-- 既読処理完了、未読0にござる。家老laneの中間報告(情報のみ)ゆえ将軍アクションは不要。 本筋の状況: 陣形図で半蔵が`cmd_karo_hotfix_cmd3881_v1425_harness`実行中を確認済み。v1.4.25実測(3状態×4クラス×各30 paired、i…
-- 突合完了。矛盾なし。inbox1の新着を確認:
-- /loop周回開始(05:08の脈)。inbox未読0。掲示板と家老の動きを確認する。 [meta] stop_reason=tool_use
-- 家老の起案は掲示板でなく正本直接更新の可能性。DM-signal正本のgit logを確認する。 [meta] stop_reason=tool_use
+- /loop周回(07:20の脈)。小太郎RC2実測・CI RC6・掲示板を確認する。 [meta] stop_reason=tool_use
+- cmd_3885 preview capability最小構築。AC11個(多いがDM-Signal PJ ACは標準的に多い)。将軍裁定準拠。preview+isolated clone限定。production self-NOLOGIN絶対禁止。 **SGプロトコル**: …
+- 将軍裁定を受領・確認。矛盾なし。供給path裁定(preview前倒し+probe代替+本番NOLOGIN禁止)を今後のレビューに織り込む。inbox未読0件。待機。
+- v1.4.27 NOLOGIN方式rc3。AC8個、90分。軍師Q1回答の3懸念(Render権限/pool race/誤terminate)が全てACに組み込まれている。 **SGプロトコル**: - purpose: NOLOGIN方式で接続レベル物理排除。RC2三重FAI…
+- /loop周回(06:53の脈)。CI run結果・v1.4.27改訂進捗・掲示板を確認する。 [meta] stop_reason=tool_use
+- 将軍裁定を家老へ送信済み。今回の判断を報告いたす: ## 裁定: 第4案「NOLOGIN+接続terminate」で前進(v1.4.27へ) 軍師の3案横断認定 — **trigger=micro FAIL/full PASS、GUC=micro PASS/安全FAIL、NOL…
+- review_logが2500行超でアーカイブされた。 report LGTM完了(FAIL報告の妥当性確認)。inbox未読0件。待機。 [meta] stop_reason=end_turn
+- /loop周回(06:26の脈)。半蔵RC2実測・push/CI状態(fetch込み)・掲示板を確認する。 [meta] stop_reason=tool_use
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
