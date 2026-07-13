@@ -42,7 +42,7 @@ alerts=()
 # read-only startup check detects a stopped writer without launching tests.
 echo "■ テスト時間台帳鮮度"
 if [ -f "$SCRIPT_DIR/logs/test_timing_ledger.tsv" ]; then
-    _timing_health_out="$(bash "$GATE_DIR/gate_test_health.sh" --ledger-health 2>&1)"
+    _timing_health_out="$(bash "$GATE_DIR/gate_test_health.sh" --ledger-health 2>&1 || true)"
     printf '%s\n' "$_timing_health_out" | grep -E '^(OK:|WARN:|INFO:|総合判定:)' | sed 's/^/  /' || true
     if ! printf '%s\n' "$_timing_health_out" | grep -q '^総合判定: OK'; then
         [ "$overall" = "OK" ] && overall="WARN"
