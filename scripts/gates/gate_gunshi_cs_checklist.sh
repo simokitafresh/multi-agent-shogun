@@ -685,11 +685,13 @@ END { check_and_emit() }
 # review_type=draftのbrainwash_checkに品質三問キーワードを重複要求するのは冗長→draft除外。
 # report/self_study/consultationのbrainwash_checkのみ検査対象。
 _bw_no_qc=$(tail -400 "$LOG_FILE" 2>/dev/null | awk '
+    /^- (cmd_id|id):/ { rt=""; remediation=($0 ~ /remediation_/) }
     /review_type:/ { rt=$0 }
+    /^[[:space:]]*remediation:/ { remediation=1 }
     /brainwash_check:/ {
         # draft reviewはquality_gate q1/q2/q3で品質三問回答済み→除外
         # report reviewは成果物品質確認(4観点)であり品質三問はdraft時に回答済み→除外
-        if (rt ~ /review_type:[[:space:]]*(draft|report)/) { next }
+        if (rt ~ /review_type:[[:space:]]*(draft|report)/ || remediation) { next }
         line=$0
         has_any = (line ~ /品質向上|Q1:|Q2:|Q3:|学習機会|次品質向上|quality_improvement|learning_opportunity|next_quality/)
         if (!has_any) no_qc++
@@ -763,6 +765,47 @@ verified_files_missing=$(awk '
     in_verified && !/^[[:space:]]{4,}/ { in_verified = 0 }
     END { flush() }
 ' "$LOG_FILE" 2>/dev/null | tail -20 || true)
+
+# Exact, append-only retroactive remediation coverage. Invalid remediation is
+# itself a BLOCK; same-name entries and empty evidence cannot waive a finding.
+_remediation_tmp="$(mktemp)"
+python3 - "$LOG_FILE" >"$_remediation_tmp" <<'PY'
+import re, sys, yaml
+allowed = {"operational_simulation", "verified_files", "adversarial", "step3_5_verified", "d0_applied"}
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or []
+known = {str(x.get("cmd_id") or x.get("id") or "").strip() for x in data if isinstance(x, dict) and "remediation" not in x}
+bad = []
+for n, item in enumerate(data, 1):
+    if not isinstance(item, dict) or "remediation" not in item: continue
+    rem = item.get("remediation"); target = str(rem.get("target_cmd_id") or "").strip() if isinstance(rem, dict) else ""
+    fields = rem.get("fields") if isinstance(rem, dict) else None; evidence = rem.get("evidence") if isinstance(rem, dict) else None
+    ok = item.get("review_type") == "self_study" and target in known and isinstance(fields, dict) and bool(fields)
+    ok = ok and isinstance(evidence, list) and bool(evidence) and all(isinstance(v, str) and v.strip() and re.search(r"(?:[^:]+:[A-Za-z0-9_.-]+|\b[0-9a-f]{7,40}\b)", v) for v in evidence)
+    ok = ok and all(k in allowed and v is not None and v is not False and str(v).strip().lower() not in {"", "null", "none", "n/a", "[]", "{}"} for k, v in (fields or {}).items())
+    if not ok: bad.append(f"entry#{n}:{target or '<empty>'}"); continue
+    for field in fields: print(f"{field}\t{target}")
+if bad: print("INVALID\t" + ",".join(bad))
+PY
+_remediation_invalid=$(awk -F '\t' '$1=="INVALID"{print $2}' "$_remediation_tmp")
+remediation_block=""
+if [ -n "$_remediation_invalid" ]; then
+    echo "BLOCK(remediation): invalid structured remediation: $_remediation_invalid"
+    remediation_block=1; warn=1
+fi
+_remediation_has() { awk -F '\t' -v f="$1" -v id="$2" '$1==f && $2==id{ok=1} END{exit ok?0:1}' "$_remediation_tmp"; }
+_filter_remediated_csv() {
+    local field="$1" csv="$2" out="" id
+    IFS=',' read -ra _ids <<< "$csv"
+    for id in "${_ids[@]}"; do [ -z "$id" ] || _remediation_has "$field" "$id" || out="${out}${out:+,}${id}"; done
+    printf '%s' "$out"
+}
+_filter_remediated_lines() {
+    local field="$1" lines="$2" out="" id
+    while IFS= read -r id; do [ -z "$id" ] || _remediation_has "$field" "$id" || out="${out}${out:+$'\n'}${id}"; done <<< "$lines"
+    printf '%s' "$out"
+}
+ops_sim_missing=$(_filter_remediated_csv operational_simulation "$ops_sim_missing")
+verified_files_missing=$(_filter_remediated_lines verified_files "$verified_files_missing")
 
 if (( all_pass > 0 )); then
     echo "PASS: 直近self_study/consultationエントリ全てにcs_checklist+causal_chain確認"
@@ -971,6 +1014,7 @@ _automation_no_adv=$(awk '
 ' "$LOG_FILE" 2>/dev/null | while read -r _cid; do
     echo "$_adv_covered_ids" | grep -qxF "$_cid" || echo "$_cid"
 done | tail -10)
+_automation_no_adv=$(_filter_remediated_lines adversarial "$_automation_no_adv")
 if [ -n "$_automation_no_adv" ]; then
     echo "WARN(§5.6): 自動化系cmd(scripts/対象)でadversarial未検討:"
     printf '%s\n' "$_automation_no_adv" | while read -r _id; do
@@ -1175,6 +1219,7 @@ _step35_missing=$(awk '
     /step3_5_verified:/ { has_s35=1 }
     /timestamp:/ && rt=="report" && !has_s35 && id != "" { print id }
 ' "$LOG_FILE" 2>/dev/null | tail -10 || true)
+_step35_missing=$(_filter_remediated_lines step3_5_verified "$_step35_missing")
 if [ -n "$_step35_missing" ]; then
     _s35_count=$(echo "$_step35_missing" | wc -l)
     echo "BLOCK(L4-LG036): ${_s35_count}件のreportレビューにstep3_5_verified未記入:"
@@ -1247,6 +1292,7 @@ _d0_missing=$(awk '
     in_obs && !/^[[:space:]]{4,}/ { in_obs = 0 }
     END { check_flush() }
 ' "$LOG_FILE" 2>/dev/null | tail -5 || true)
+_d0_missing=$(_filter_remediated_lines d0_applied "$_d0_missing")
 
 # --- AC2 cmd_3374: 利他還流not_needed理由なし検出 → BLOCK ---
 _altruism_no_reason=$(awk '
@@ -1286,8 +1332,16 @@ if [ -n "$_altruism_no_reason" ]; then
     warn=1
 fi
 
-if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ] || [ -n "$cs_empty_block" ] || [ -n "$bw_quality_block" ] || [ -n "$altruism_no_reason_block" ]; then
-    exit 2
+rm -f "$_remediation_tmp"
+_gate_result=PASS; _gate_rc=$warn
+if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ] || [ -n "$cs_empty_block" ] || [ -n "$bw_quality_block" ] || [ -n "$altruism_no_reason_block" ] || [ -n "$remediation_block" ]; then
+    _gate_result=FAIL; _gate_rc=2
+elif [ "$warn" -ne 0 ]; then
+    _gate_result=WARN
 fi
-
-exit $warn
+_fire_log="${GATE_FIRE_LOG_FILE:-$REPO_ROOT/logs/gate_fire_log.yaml}"
+(
+    flock -w 5 200 || exit 0
+    printf -- '- ts: "%s", file: "gunshi_cs_checklist", gate: "gunshi_cs_checklist", result: %s, checks: "structured_remediation", reasons: "rc=%s"\n' "$(date -Iseconds)" "$_gate_result" "$_gate_rc" >> "$_fire_log"
+) 200>"${_fire_log}.lock" 2>/dev/null || true
+exit "$_gate_rc"

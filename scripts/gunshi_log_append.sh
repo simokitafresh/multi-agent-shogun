@@ -102,6 +102,31 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(self_study|consultation) ]]; then
     fi
 fi
 
+# Historical reviews are immutable. Retroactive evidence is accepted only as
+# a structured self_study remediation for an exact existing cmd_id.
+if [[ "$ENTRY" == *"remediation:"* ]]; then
+    python3 - "$LOG_FILE" "$ENTRY" <<'PY'
+import re, sys, yaml
+allowed = {"operational_simulation", "verified_files", "adversarial", "step3_5_verified", "d0_applied"}
+try:
+    old = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or []
+    parsed = yaml.safe_load(sys.argv[2])
+except Exception as exc:
+    print(f"BLOCK: remediation YAML parse error: {exc}", file=sys.stderr); raise SystemExit(2)
+if not isinstance(parsed, list) or len(parsed) != 1 or not isinstance(parsed[0], dict):
+    print("BLOCK: remediation entry must be one YAML list item", file=sys.stderr); raise SystemExit(2)
+item = parsed[0]; rem = item.get("remediation")
+target = str(rem.get("target_cmd_id") or "").strip() if isinstance(rem, dict) else ""
+known = {str(x.get("cmd_id") or x.get("id") or "").strip() for x in old if isinstance(x, dict) and "remediation" not in x}
+fields = rem.get("fields") if isinstance(rem, dict) else None
+evidence = rem.get("evidence") if isinstance(rem, dict) else None
+bad_fields = not isinstance(fields, dict) or not fields or any(k not in allowed or v is None or v is False or str(v).strip().lower() in {"", "null", "none", "n/a", "[]", "{}"} for k, v in (fields or {}).items())
+bad_evidence = not isinstance(evidence, list) or not evidence or any(not isinstance(v, str) or not v.strip() or not re.search(r"(?:[^:]+:[A-Za-z0-9_.-]+|\b[0-9a-f]{7,40}\b)", v) for v in (evidence or []))
+if item.get("review_type") != "self_study" or target not in known or bad_fields or bad_evidence:
+    print(f"BLOCK: invalid remediation target/fields/evidence: {target or '<empty>'}", file=sys.stderr); raise SystemExit(2)
+PY
+fi
+
 # Append to log file (flock for safety)
 (
     flock -w 5 200 || { echo "ERROR: flock timeout" >&2; exit 1; }

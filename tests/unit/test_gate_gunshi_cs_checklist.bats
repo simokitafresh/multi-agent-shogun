@@ -1483,3 +1483,55 @@ YAML
     [[ "$output" == *"WARN(cmd_3573-verified_files)"* ]]
     [[ "$output" == *"cmd_3573_missing"* ]]
 }
+
+@test "structured remediation covers only the exact historical target" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_exact
+  review_type: report
+  verdict: LGTM
+  findings_summary: "typo修正"
+  observations:
+    - "scriptを実行して確認"
+  timestamp: "2026-07-14T00:00:00"
+- cmd_id: remediation_exact
+  review_type: self_study
+  observations:
+    - "元reviewと対象commitを照合"
+  causal_chain: "欠落→一次証跡照合→遡及充足"
+  operational_simulation: "次回gateでexact targetだけ免除される"
+  cs_checklist: {CS1: PASS}
+  brainwash_check: "5項目中5項目を照合"
+  remediation:
+    target_cmd_id: cmd_exact
+    fields:
+      verified_files: "scripts/example.sh:10"
+      adversarial: "異常exitを確認"
+      step3_5_verified: "SG-PRE25 CLEAR"
+      d0_applied: "yes"
+    evidence: ["scripts/example.sh:10", "abcdef1234567"]
+YAML
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"cmd_exact: verified_files"* ]]
+    [[ "$output" != *"cmd_exact: SG-PRE25"* ]]
+    [[ "$output" != *"cmd_exact: 軽微修正"* ]]
+}
+
+@test "unknown and empty remediation fails closed" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_known
+  review_type: draft
+  verdict: APPROVE
+  observations: ["事実1", "事実2"]
+  timestamp: "2026-07-14T00:00:00"
+- cmd_id: remediation_bad
+  review_type: self_study
+  remediation:
+    target_cmd_id: cmd_unknown
+    fields: {verified_files: ""}
+    evidence: []
+YAML
+    run bash "$TEST_GATE"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(remediation)"* ]]
+}

@@ -772,17 +772,15 @@ cs_result=$(cat "$_TMP_D/cs" 2>/dev/null)
 if [ "$cs_exit" -eq 127 ]; then
     echo "  SKIP: gate_gunshi_cs_checklist.sh不在"
 else
-    cs_relevant_warn=$(printf '%s\n' "$cs_result" | grep -m1 -E '^(WARN|ALERT).*([cC][sS]_checklist|causal_chain|operational_simulation|冷え観点|finding_categories)' || true)
-    cs_summary="$cs_relevant_warn"
+    cs_first_issue=$(printf '%s\n' "$cs_result" | grep -m1 -E '^(BLOCK|ERROR|WARN|ALERT)' || true)
+    cs_summary="$cs_first_issue"
     [ -n "$cs_summary" ] || cs_summary=$(printf '%s\n' "$cs_result" | grep -m1 '^PASS:' || true)
     [ -n "$cs_summary" ] || cs_summary=$(printf '%s\n' "$cs_result" | head -1)
     echo "  $cs_summary"
-    if [ "$cs_exit" -ne 0 ] && [ -n "$cs_relevant_warn" ]; then
-        if [ "$overall" != "ALERT" ]; then
-            overall="WARN"
-        fi
-        alerts+=("CS観点チェックリスト/冷え観点WARNあり")
-        echo "  → consultation/self_study品質または冷え観点のfinding_categories反映を確認せよ"
+    if [ "$cs_exit" -ne 0 ]; then
+        overall="ALERT"
+        alerts+=("CS観点チェックリスト BLOCK/WARN: ${cs_first_issue:-child gate exit=$cs_exit}")
+        echo "  → 子gate非0(exit=$cs_exit)。最初のBLOCK/WARNを解消するまでstartup停止"
     fi
 fi
 
@@ -1301,5 +1299,9 @@ PY
 fi
 
 # Startup gate is diagnostic: ALERT/WARN is reported in output and side-effect
-# files, but must not prevent the agent from recovering.
+# files. A child CS gate non-zero is different: it is an explicit L4 stop and
+# must survive the startup aggregation boundary.
+if [ "${cs_exit:-0}" -ne 0 ] && [ "${cs_exit:-0}" -ne 127 ]; then
+    exit 2
+fi
 exit 0
