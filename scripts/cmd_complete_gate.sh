@@ -1977,8 +1977,10 @@ PY
 
 auto_resolve_cmd_related_insights() {
     local cmd_id="$1"
-    local insight_script="$SCRIPT_DIR/scripts/insight_write.sh"
+    local insight_script="$SCRIPT_DIR/scripts/insight_resolve.sh"
     local insights_file="${INSIGHTS_FILE:-$SCRIPT_DIR/queue/insights.yaml}"
+    local tasks_dir="${INSIGHT_TASKS_DIR:-$SCRIPT_DIR/queue/tasks}"
+    local reports_dir="${INSIGHT_REPORTS_DIR:-$SCRIPT_DIR/queue/reports}"
 
     [ -n "$cmd_id" ] || return 0
     [ -x "$insight_script" ] || return 0
@@ -1987,60 +1989,100 @@ auto_resolve_cmd_related_insights() {
     local ids
     local stderr_tmp
     stderr_tmp="$(mktemp)"
-    ids=$(INSIGHTS_FILE_ENV="$insights_file" CMD_ID_ENV="$cmd_id" python3 - <<'PY' 2>"$stderr_tmp" || true
-import json
+    local select_rc=0
+    if ! ids=$(INSIGHTS_FILE_ENV="$insights_file" CMD_ID_ENV="$cmd_id" TASKS_DIR_ENV="$tasks_dir" REPORTS_DIR_ENV="$reports_dir" python3 - <<'PY' 2>"$stderr_tmp"
 import os
+import pathlib
+import re
+import sys
+import yaml
 
 path = os.environ["INSIGHTS_FILE_ENV"]
 cmd_id = os.environ["CMD_ID_ENV"]
+roots = (os.environ["TASKS_DIR_ENV"], os.environ["REPORTS_DIR_ENV"])
+ins_id_re = re.compile(r"\bINS-[A-Za-z0-9][A-Za-z0-9._:-]*\b")
 
-def parse_scalar(raw):
-    value = raw.strip()
-    if value.startswith('"'):
+def belongs_to_cmd(obj):
+    if not isinstance(obj, dict):
+        return False
+    task = obj.get("task") if isinstance(obj.get("task"), dict) else obj
+    return any(str(task.get(k) or "") == cmd_id for k in ("parent_cmd", "cmd_id", "id"))
+
+def collect_refs(value, refs):
+    if isinstance(value, dict):
+        explicit = value.get("origin_insight_ids")
+        if isinstance(explicit, list):
+            refs.update(str(v) for v in explicit if str(v).startswith("INS-"))
+        for child in value.values():
+            collect_refs(child, refs)
+    elif isinstance(value, list):
+        for child in value:
+            collect_refs(child, refs)
+    elif isinstance(value, str):
+        refs.update(ins_id_re.findall(value))
+
+declared = set()
+for root in roots:
+    directory = pathlib.Path(root)
+    if not directory.is_dir():
+        continue
+    for candidate in directory.glob("*.yaml"):
         try:
-            return json.loads(value)
-        except Exception:
-            return value.strip('"')
-    if value.startswith("'") and value.endswith("'"):
-        return value[1:-1].replace("''", "'")
-    return value
+            doc = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
+        except Exception as exc:
+            print(f"ERROR: cannot parse declaration source {candidate}: {exc}", file=sys.stderr)
+            sys.exit(2)
+        if belongs_to_cmd(doc):
+            collect_refs(doc, declared)
 
-entries = []
-current = None
-with open(path, encoding="utf-8") as f:
-    for line in f:
-        if line.startswith("- id: "):
-            if current:
-                entries.append(current)
-            current = {"id": line[len("- id: "):].strip()}
-            continue
-        if current is None or not line.startswith("  ") or ":" not in line:
-            continue
-        key, raw = line.strip().split(":", 1)
-        current[key] = parse_scalar(raw)
-if current:
-    entries.append(current)
+try:
+    entries = (yaml.safe_load(pathlib.Path(path).read_text(encoding="utf-8")) or {}).get("insights") or []
+except Exception as exc:
+    print(f"ERROR: cannot parse insights: {exc}", file=sys.stderr)
+    sys.exit(2)
 
 for entry in entries:
+    if not isinstance(entry, dict):
+        continue
     if entry.get("status") != "pending":
         continue
-    haystack = "\n".join(str(entry.get(k, "")) for k in ("source", "source_cmd", "insight"))
-    if cmd_id in haystack:
-        print(entry["id"])
+    entry_id = str(entry.get("id") or "")
+    exact_action = any(str(entry.get(k) or "") == cmd_id for k in ("action_cmd", "resolved_by_cmd"))
+    if entry_id in declared or exact_action:
+        print(entry_id)
+
+known = {str(entry.get("id") or "") for entry in entries if isinstance(entry, dict)}
+missing = sorted(declared - known)
+if missing:
+    print("ERROR: declared origin insight id(s) not found: " + ",".join(missing), file=sys.stderr)
+    sys.exit(3)
 PY
-    )
+    ); then
+        select_rc=$?
+        # `!` normalizes $? to zero; selection failure is represented explicitly.
+        select_rc=1
+    fi
     log_gate_stderr_file "auto_resolve_cmd_related_insights parse" "$stderr_tmp"
     rm -f "$stderr_tmp"
+    if [ "$select_rc" -ne 0 ]; then
+        echo "  [BLOCK] insight declaration selection failed"
+        return 1
+    fi
 
-    local count=0 id
+    local count=0 failures=0 id
     while IFS= read -r id; do
         [ -n "$id" ] || continue
-        if bash "$insight_script" --resolve "$id" >/dev/null 2>&1; then
+        if INSIGHTS_FILE="$insights_file" bash "$insight_script" "$id" \
+            "GATE CLEAR: ${cmd_id} completed declared remediation" \
+            "cmd=${cmd_id};gate=cmd_complete_gate;result=CLEAR" >/dev/null 2>&1; then
             count=$((count + 1))
         else
-            echo "  [WARN] insight auto-resolve failed: $id"
+            echo "  [BLOCK] insight resolve failed: $id"
+            failures=$((failures + 1))
         fi
     done <<< "$ids"
+
+    [ "$failures" -eq 0 ] || return 1
 
     if [ "$count" -gt 0 ]; then
         echo "  resolved: ${count} cmd-related insight(s)"
@@ -5796,7 +5838,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     write_l6_horizontal_level5_insights "$CMD_ID"
     echo ""
     echo "Insight auto-triage (cmd-related):"
-    auto_resolve_cmd_related_insights "$CMD_ID" || echo "  [INFO] cmd-related insight auto-resolve failed (non-blocking)"
+    auto_resolve_cmd_related_insights "$CMD_ID" || exit 1
 
     # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
     echo ""
@@ -8056,7 +8098,7 @@ print('\n'.join(scripts))
     write_l6_horizontal_level5_insights "$CMD_ID"
     echo ""
     echo "Insight auto-triage (cmd-related):"
-    auto_resolve_cmd_related_insights "$CMD_ID" || echo "  [INFO] cmd-related insight auto-resolve failed (non-blocking)"
+    auto_resolve_cmd_related_insights "$CMD_ID" || exit 1
 
     # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
     echo ""
