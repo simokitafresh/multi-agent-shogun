@@ -2361,8 +2361,10 @@ for i in range(8):
     os.utime(path, (ts, ts))
 PY
 
-    # Default (flag unset): the real automated caller must NOT touch the pre-existing backlog.
-    unset SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED
+    # Explicitly disabled: the real automated caller must NOT touch the pre-existing backlog.
+    # (cmd_3869 flipped the flag-unset default to enabled; this test's intent — verifying the
+    # disabled path leaves the backlog untouched — now requires an explicit "0".)
+    export SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED=0
     run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --backup-dir "$TEST_TMPDIR/backups" \
