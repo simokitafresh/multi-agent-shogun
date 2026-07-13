@@ -366,10 +366,34 @@ classify_root_signature() {
     local issue="$2"
     local pattern_deploy_template='report_path.*欠落|ac_version.*欠落|標準スキル.*欠落|未引用.*コロン|deploy_task.*(fail|失敗)|最小task YAML'
     local pattern_lifecycle_stall='停滞|idle化|verdict_empty|Codex停止|未完了.*(commit未実施|status)'
-    local pattern_commit_provenance='command_files_modified_mismatch|verified_existing_dependency|files_modified全件|commit未完了|後続commit.*確認'
+    local pattern_commit_provenance='command_files_modified_mismatch|verified_existing_dependency|files_modified全件|commit未完了|uncommitted.*(gate|BLOCK)|report_received.*uncommitted|後続(integrator[[:space:]]*)?commit.*確認'
     local pattern_schema_shape='binary_checks|lessons_useful|knowledge_candidate|quote parse|(dict|list|string).*(→|変換|形式)|(commit_hash|status|items).*補正|補正.*(commit_hash|status)|欠落'
 
-    if [[ "$issue" =~ $pattern_deploy_template ]]; then
+    # gate_logic_gap/deploy_contractに共通する破損不変量。個別cmd名ではなく、
+    # 「どの実行段階で、何の契約が破れたか」を表す構造語だけで分類する。
+    local pattern_error_handling='(exit[[:space:]]*2|異常exit).*(握り潰|許|続行)|握り潰.*(exit|異常)|異常終了.*伝播'
+    local pattern_contract_projection='(quality[_ -]?contract|品質契約|QUALITY_CONTRACT).*(投影|射影|評価|action/fp|missing)|(flow-style|辞書型|複数行).*(投影|射影|評価)|(command以外|command第1行).*(評価|投影|射影|BLOCK|detector_fp_rate)'
+    local pattern_merge_hook='merge.*(ninja_scope_commit|partial commit|hook)|ninja_scope_commit.*(merge|partial commit)|AUTO_MERGE'
+    local pattern_exception_taxonomy='OperationalError|非lock.*(例外|error)|lock deadline|例外.*原義'
+    local pattern_safety_boundary='readonly.*(credential|restore|allowlist)|credential.*(allowlist|縮小env)|backup.*dry-run.*restore|trust boundary'
+    local pattern_operator_orchestration='completed.*(追記|helper)|helper BLOCK.*(複合shell|続行)|時期尚早.*(レビュー|通知)|再レビュー依頼'
+    local pattern_natural_boundary='自然境界|estimated_minutes|長時間契約|split_decision'
+
+    if [[ "$issue" =~ $pattern_error_handling ]]; then
+        echo "${category}::error_handling"
+    elif [[ "$issue" =~ $pattern_contract_projection ]]; then
+        echo "${category}::contract_projection"
+    elif [[ "$issue" =~ $pattern_merge_hook ]]; then
+        echo "${category}::merge_hook"
+    elif [[ "$issue" =~ $pattern_exception_taxonomy ]]; then
+        echo "${category}::exception_taxonomy"
+    elif [[ "$issue" =~ $pattern_safety_boundary ]]; then
+        echo "${category}::safety_boundary"
+    elif [[ "$issue" =~ $pattern_operator_orchestration ]]; then
+        echo "${category}::operator_orchestration"
+    elif [[ "$issue" =~ $pattern_natural_boundary ]]; then
+        echo "${category}::natural_boundary"
+    elif [[ "$issue" =~ $pattern_deploy_template ]]; then
         echo "${category}::deploy_template_integrity"
     elif [[ "$issue" =~ $pattern_lifecycle_stall ]]; then
         echo "${category}::report_lifecycle_stall"

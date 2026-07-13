@@ -445,6 +445,58 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+@test "AC2: 現存general履歴11件を構造signatureへ全量分離する" {
+    local -a categories=(
+        gate_logic_gap gate_logic_gap gate_logic_gap gate_logic_gap
+        gate_logic_gap gate_logic_gap gate_logic_gap gate_logic_gap
+        deploy_contract deploy_contract deploy_contract
+    )
+    local -a issues=(
+        "normalize_report.shのexit2を握り潰し未正規化completed公開を許した"
+        "quality contractがflow-style投影を評価せずaction/fp missing"
+        "report_receivedがuncommitted gateでBLOCKし後続integrator commit確認が必要"
+        "merge中にninja_scope_commitがpartial commit不可で停止"
+        "非lock OperationalErrorもlock deadlineへ誤変換した"
+        "SQL readonly・credential allowlist・backup dry-run restore境界を拒否"
+        "direct taskの辞書型ACを品質契約射影がcommand以外で評価しない"
+        "completed報告への追記helper BLOCK後も複合shellが続行し時期尚早な再レビュー依頼"
+        "karo_direct配備YAMLの自然境界契約とestimated_minutesが不足"
+        "cmdにestimated_minutesと長時間契約構造がない"
+        "QUALITY_CONTRACT投影が複数行commandのaction/fpを評価しない"
+    )
+    local -a expected=(
+        error_handling contract_projection commit_provenance merge_hook
+        exception_taxonomy safety_boundary contract_projection operator_orchestration
+        natural_boundary natural_boundary contract_projection
+    )
+
+    local i
+    for i in "${!issues[@]}"; do
+        run bash "$TEST_SCRIPT" "cmd_fixture_$i" hayate "${issues[$i]}" "fixture root cause" "${categories[$i]}"
+        [ "$status" -eq 0 ]
+        run grep -F "root_signature: '${categories[$i]}::${expected[$i]}'" "$TEST_DIR/logs/karo_workarounds.yaml"
+        [ "$status" -eq 0 ]
+    done
+
+    run grep -c "root_signature: '.*::general'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 1 ]
+    [ "$output" -eq 0 ]
+}
+
+@test "AC2: 構造的に同根のcontract projection 3件はWARNからALERTへ到達する" {
+    run bash "$TEST_SCRIPT" cmd_projection_1 hayate "quality contractのflow-style投影でaction/fp missing" "root cause 1" gate_logic_gap
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"ALERT"* ]]
+
+    run bash "$TEST_SCRIPT" cmd_projection_2 hayate "辞書型ACを品質契約射影がcommand以外で評価しない" "root cause 2" gate_logic_gap
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 同一カテゴリ「gate_logic_gap」が2件(root_signature=gate_logic_gap::contract_projection)"* ]]
+
+    run bash "$TEST_SCRIPT" cmd_projection_3 hayate "QUALITY_CONTRACT投影が複数行commandのaction/fpを評価しない" "root cause 3" gate_logic_gap
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: カテゴリ「gate_logic_gap」が3件(root_signature=gate_logic_gap::contract_projection)"* ]]
+}
+
 @test "AC3: root_signature欠落のlegacy entryは新規の特定root_signatureカウントに混入しない" {
     cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
 - cmd_id: cmd_legacy_1
