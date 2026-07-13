@@ -64,7 +64,14 @@ PY
 
   mapfile -t current_reports < <(find "$ROOT/queue/reports" -maxdepth 1 -type f -name "*_report_${cmd_id}.yaml" -print | LC_ALL=C sort)
   current_manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${current_reports[@]}" 2>/dev/null || true)
-  rm -f "$dir/gunshi.yaml" "$dir/gunshi_notice.sent" "$ROOT/queue/gates/$cmd_id/review_gate.done"
+  # RC starts a fresh report-review lifecycle.  Clear both the formal approval
+  # markers and inbox_write's completion-notify marker; otherwise a revised
+  # report can be resubmitted successfully while Gunshi receives no new review
+  # request because the previous completion is still treated as notified.
+  rm -f "$dir/gunshi.yaml" \
+    "$dir/gunshi_notice.sent" \
+    "$ROOT/queue/gates/$cmd_id/review_gate.done" \
+    "$ROOT/queue/gates/$cmd_id/gunshi_report_review_notify_${worker_id}.done"
   [ -z "$current_manifest" ] || rm -f "$base/.gate_triggered.$current_manifest"
   # A completed report makes ninja_monitor auto-promote the task back to done.
   # Move the report out of the terminal set before reopening the task so RC

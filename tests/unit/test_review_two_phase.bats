@@ -287,8 +287,11 @@ PY
   setup_rc_task
   approve gunshi LGTM "$REPORT"
   [ -f "$APPROVALS/gunshi_notice.sent" ]
+  local completion_notify="$TMPROOT/queue/gates/cmd_test/gunshi_report_review_notify_ninja.done"
+  touch "$completion_notify"
   approve karo RC "$REPORT"
   [ ! -e "$APPROVALS/gunshi_notice.sent" ]
+  [ ! -e "$completion_notify" ]
 }
 
 @test "cmd id, report boundary, and parent_cmd mismatch fail closed" {
