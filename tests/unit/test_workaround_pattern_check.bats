@@ -100,3 +100,59 @@ YAML
     [[ "$output" == *"No new patterns detected"* ]]
     [ ! -e "$TEST_ROOT/logs/notices.txt" ]
 }
+
+@test "legacy deploy general entries are canonically split by structural cause" {
+    cat > "$TEST_ROOT/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: old_a
+  workaround: true
+  category: deploy_contract
+  root_signature: 'deploy_contract::general'
+  detail: 'karo_direct配備YAMLの自然境界契約不足で初回BLOCK'
+  root_cause: 'estimated_minutes=15と構造化split_decisionを追加'
+- cmd_id: old_b
+  workaround: true
+  category: deploy_contract
+  root_signature: 'deploy_contract::general'
+  detail: 'cmdにestimated_minutesと長時間契約構造がなく配備ゲートが3回BLOCK'
+  root_cause: 'estimated_minutesを10分の自然境界へ補完'
+- cmd_id: old_c
+  workaround: true
+  category: deploy_contract
+  root_signature: 'deploy_contract::general'
+  detail: 'karo_direct commandのBLOCK/FP文言が複数行にあり品質契約投影でaction/fp missing'
+  root_cause: 'command第1行へQUALITY_CONTRACTを移した'
+YAML
+    run_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"No new patterns detected"* ]]
+    [ ! -e "$TEST_ROOT/logs/notices.txt" ]
+    ! grep -q 'root_signature:deploy_contract::general' "$TEST_ROOT/logs/workaround_notified.yaml"
+}
+
+@test "three legacy general entries with one structural cause still emit one pattern deterministically" {
+    cat > "$TEST_ROOT/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: x1
+  workaround: true
+  category: deploy_contract
+  root_signature: 'deploy_contract::general'
+  detail: '自然境界がなくestimated_minutes不足'
+- cmd_id: x2
+  workaround: true
+  category: deploy_contract
+  root_signature: 'deploy_contract::general'
+  detail: '長時間契約に自然境界がない'
+- cmd_id: x3
+  workaround: true
+  category: deploy_contract
+  root_signature: 'deploy_contract::general'
+  root_cause: 'split_decisionとestimated_minutesを補完'
+YAML
+    run_check
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'root_signature="deploy_contract::natural_boundary" 3回'* ]]
+    [ "$(wc -l < "$TEST_ROOT/logs/notices.txt")" -eq 1 ]
+
+    run_check
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$TEST_ROOT/logs/notices.txt")" -eq 1 ]
+}

@@ -60,11 +60,28 @@ fi
             }
             return value
         }
+        function canonical_signature(category, signature, detail, root_cause,    text) {
+            if (signature != category "::general") return signature
+            text = detail " " root_cause
+            # Saved legacy signatures are canonicalized from structural cause
+            # words.  Never key migration on cmd_id: history stays immutable and
+            # the same input is classified identically on every read.
+            if (text ~ /(自然境界|estimated_minutes|長時間契約|split_decision)/) {
+                return category "::natural_boundary"
+            }
+            if (text ~ /(quality[_ -]?contract|品質契約|QUALITY_CONTRACT|action\/fp)/ &&
+                text ~ /(投影|射影|評価|missing|command第1行|複数行)/) {
+                return category "::contract_projection"
+            }
+            return signature
+        }
         function reset_entry() {
             workaround = ""
             issue_name = ""
             category = ""
             root_signature = ""
+            detail = ""
+            root_cause = ""
             resolved_by_cmd = ""
         }
         function flush_entry(    signature) {
@@ -74,7 +91,7 @@ fi
             # Legacy entries without a root signature are unknown, not equal.
             # Do not invent a shared "general" cause and create false patterns.
             if (root_signature == "") return
-            signature = root_signature
+            signature = canonical_signature(category, root_signature, detail, root_cause)
             sig[signature]++
         }
         BEGIN { reset_entry() }
@@ -87,6 +104,8 @@ fi
         /^  issue:[[:space:]]*/ { issue_name = scalar($0); next }
         /^  category:[[:space:]]*/ { category = scalar($0); next }
         /^  root_signature:[[:space:]]*/ { root_signature = scalar($0); next }
+        /^  detail:[[:space:]]*/ { detail = scalar($0); next }
+        /^  root_cause:[[:space:]]*/ { root_cause = scalar($0); next }
         /^  resolved_by_cmd:[[:space:]]*/ { resolved_by_cmd = scalar($0); next }
         END {
             flush_entry()
