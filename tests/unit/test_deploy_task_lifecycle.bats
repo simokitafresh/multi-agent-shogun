@@ -1007,6 +1007,62 @@ EOF
     [ "$output" = "idle" ]
 }
 
+@test "explicit natural-boundary continuation may follow an exact completed peer report" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_2681
+  subtask_id: cmd_2681_ac3_chunk1
+  assigned_acs: [AC3]
+  continuation_of_report: queue/reports/hayate_report_cmd_2681.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_2681.yaml" <<'EOF'
+worker_id: hayate
+task_id: cmd_2681_recon
+parent_cmd: cmd_2681
+status: completed
+verdict: PASS
+EOF
+
+    run bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        log() { echo "$*"; }
+        if deploy_task_has_completed_peer_report cmd_2681 sasuke "$1/queue/tasks/sasuke.yaml"; then
+            exit 9
+        fi
+    ' _ "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"continuation_deploy:"* ]]
+}
+
+@test "continuation contract with a non-matching report remains blocked" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_2681
+  subtask_id: cmd_2681_ac3_chunk1
+  assigned_acs: [AC3]
+  continuation_of_report: queue/reports/other_report_cmd_2681.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_2681.yaml" <<'EOF'
+worker_id: hayate
+task_id: cmd_2681_recon
+parent_cmd: cmd_2681
+status: completed
+verdict: PASS
+EOF
+
+    run bash -c '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        log() { :; }
+        deploy_task_has_completed_peer_report cmd_2681 sasuke "$1/queue/tasks/sasuke.yaml"
+    ' _ "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK: cmd_2681 already has completed report from hayate"* ]]
+}
+
 @test "cmd_2951: pending own report with verdict blocks redeploy before stale reset" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:

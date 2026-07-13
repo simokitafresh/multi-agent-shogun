@@ -285,6 +285,7 @@ deploy_task_check_deadline() {
 deploy_task_has_completed_peer_report() {
     local parent_cmd="$1"
     local ninja_name="$2"
+    local task_file="${3:-}"
     local report_file report_base report_ninja report_status report_verdict
 
     [ -n "$parent_cmd" ] || return 1
@@ -298,6 +299,36 @@ deploy_task_has_completed_peer_report() {
         report_status=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "status" "" 2>/dev/null || true)
         report_verdict=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "verdict" "" 2>/dev/null || true)
         if [ "$report_status" = "completed" ] || [[ "$report_verdict" =~ ^(PASS|FAIL|PASS_NO_IMPROVEMENT)$ ]]; then
+            # Natural-boundary commands legitimately continue after a reviewed
+            # reconnaissance/report stage.  Require an explicit, machine-bound
+            # continuation contract so ordinary duplicate deployments remain
+            # fail-closed: distinct subtask_id, explicit parent AC mapping, and
+            # the exact completed peer report being continued.
+            if [ -f "$task_file" ] && python3 - "$task_file" "$report_file" "$parent_cmd" <<'PY'
+import os, sys, yaml
+task_path, report_path, parent = sys.argv[1:]
+task = (yaml.safe_load(open(task_path, encoding="utf-8")) or {}).get("task") or {}
+report = yaml.safe_load(open(report_path, encoding="utf-8")) or {}
+continuation = str(task.get("continuation_of_report") or "").strip()
+expected = f"queue/reports/{os.path.basename(report_path)}"
+assigned = task.get("assigned_acs")
+subtask = str(task.get("subtask_id") or "").strip()
+prior_task = str(report.get("task_id") or "").strip()
+valid = (
+    str(task.get("parent_cmd") or "").strip() == parent
+    and continuation in {expected, os.path.basename(report_path)}
+    and isinstance(assigned, list) and bool(assigned)
+    and bool(subtask) and subtask != prior_task
+    and str(report.get("parent_cmd") or "").strip() == parent
+    and str(report.get("status") or "").strip() == "completed"
+    and str(report.get("verdict") or "").strip() in {"PASS", "PASS_NO_IMPROVEMENT"}
+)
+raise SystemExit(0 if valid else 1)
+PY
+            then
+                log "continuation_deploy: ${parent_cmd} continues ${report_base} with explicit AC mapping — allowing"
+                continue
+            fi
             log "BLOCK: ${parent_cmd} already has completed peer report ${report_base} (status=${report_status:-empty}, verdict=${report_verdict:-empty})"
             echo "BLOCK: ${parent_cmd} already has completed report from ${report_ninja}: ${report_base}" >&2
             return 0
@@ -9826,7 +9857,7 @@ except Exception:
     fi
 
     if [ -n "$deploy_parent_cmd" ]; then
-        if deploy_task_has_completed_peer_report "$deploy_parent_cmd" "$NINJA_NAME"; then
+        if deploy_task_has_completed_peer_report "$deploy_parent_cmd" "$NINJA_NAME" "$task_yaml"; then
             yaml_field_set "$task_yaml" "task" "status" "idle" 2>/dev/null || true
             yaml_field_set "$task_yaml" "task" "parent_cmd" "" 2>/dev/null || true
             yaml_field_set "$task_yaml" "task" "_ac_task_id" "" 2>/dev/null || true
