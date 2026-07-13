@@ -25,6 +25,9 @@ SCRIPT_DIR="${_cmd_complete_dir%/scripts}"
 unset _cmd_complete_dir
 unset _cmd_complete_script
 
+# shellcheck source=scripts/lib/task_cmd_match.sh
+source "$SCRIPT_DIR/scripts/lib/task_cmd_match.sh"
+
 # --force フラグ検出
 FORCE_MODE=false
 for arg in "$@"; do
@@ -4237,7 +4240,7 @@ check_how_it_works_status() {
 cmd_task_matches() {
     local task_file="$1"
     local cmd_id="${2:-$CMD_ID}"
-    grep -q "parent_cmd: ${cmd_id}" "$task_file" 2>/dev/null
+    task_file_matches_cmd "$task_file" "$cmd_id"
 }
 
 evaluate_review_report_status() {
@@ -4840,7 +4843,7 @@ while IFS= read -r _cache_tf; do
     [ -f "$_cache_tf" ] || continue
     _CMD_TASK_MAP["$_cache_tf"]=1
     MATCHING_TASK_FILES+=("$_cache_tf")
-done < <({ grep -l "parent_cmd: ${CMD_ID}" "$TASKS_DIR"/*.yaml 2>/dev/null; grep -l "cmd_id: ${CMD_ID}" "$TASKS_DIR"/*.yaml 2>/dev/null; } | sort -u || true)
+done < <(list_task_files_for_cmd "$TASKS_DIR" "$CMD_ID" | sort -u || true)
 if cmd_status_is_canceled "$CMD_ID"; then
     MATCHING_TASK_FILES=()
     _CMD_TASK_MAP=()

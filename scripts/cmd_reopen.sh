@@ -3,6 +3,8 @@
 set -euo pipefail
 TOOL_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 ROOT=${CMD_REOPEN_ROOT:-$TOOL_ROOT}
+# shellcheck source=scripts/lib/task_cmd_match.sh
+source "$TOOL_ROOT/scripts/lib/task_cmd_match.sh"
 DRY_RUN=0
 [ "${1:-}" = --dry-run ] && { DRY_RUN=1; shift; }
 [ "$#" -eq 1 ] || { echo "Usage: $0 [--dry-run] cmd_id" >&2; exit 2; }
@@ -10,7 +12,7 @@ cmd_id=$1
 [[ "$cmd_id" =~ ^cmd_[0-9]+$ ]] || { echo "BLOCK: numbered cmd_id required" >&2; exit 2; }
 mapfile -t archives < <(find "$ROOT/queue/archive/cmds" -maxdepth 1 -type f -name "${cmd_id}_*.yaml" -print | sort)
 [ "${#archives[@]}" -gt 0 ] || { echo "BLOCK: archived parent SSOT missing" >&2; exit 1; }
-mapfile -t tasks < <(grep -l "parent_cmd: ${cmd_id}" "$ROOT"/queue/tasks/*.yaml 2>/dev/null | sort || true)
+mapfile -t tasks < <(list_task_files_for_cmd "$ROOT/queue/tasks" "$cmd_id" | sort || true)
 [ "${#tasks[@]}" -gt 0 ] || { echo "BLOCK: matching task missing" >&2; exit 1; }
 echo "reopen plan: cmd=$cmd_id archives=${#archives[@]} tasks=${#tasks[@]} dry_run=$DRY_RUN"
 [ "$DRY_RUN" -eq 1 ] && exit 0

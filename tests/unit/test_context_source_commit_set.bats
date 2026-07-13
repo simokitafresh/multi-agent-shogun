@@ -3,8 +3,9 @@
 setup() {
   ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
   TMP="$(mktemp -d "$BATS_TMPDIR/source-marker.XXXXXX")"
-  mkdir -p "$TMP/scripts/config" "$TMP/context" "$TMP/config"
+  mkdir -p "$TMP/scripts/config" "$TMP/scripts/lib" "$TMP/context" "$TMP/config"
   cp "$ROOT/scripts/context_source_commit_set.sh" "$TMP/scripts/"
+  cp "$ROOT/scripts/lib/project_path.sh" "$ROOT/scripts/lib/repo_root.sh" "$TMP/scripts/lib/"
   printf 'context/test.md\tinfra\n' > "$TMP/scripts/config/context_source_commits.tsv"
   git -C "$TMP" init -q
   git -C "$TMP" config user.email test@example.invalid
@@ -21,7 +22,7 @@ setup() {
   git -C "$TMP/dm" config user.name Test
   echo source > "$TMP/dm/source"; git -C "$TMP/dm" add .; git -C "$TMP/dm" commit -qm source
   dm_sha="$(git -C "$TMP/dm" rev-parse HEAD)"
-  printf '  dm-signal:\n    path: "%s"\n' "$TMP/dm" > "$TMP/config/projects.yaml"
+  printf 'projects:\n  - id: dm-signal\n    path: "%s"\n' "$TMP/dm" > "$TMP/config/projects.yaml"
   printf 'context/test.md\tdm-signal\n' > "$TMP/scripts/config/context_source_commits.tsv"
   run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "$dm_sha" audit exact-pathspec
   [ "$status" -eq 0 ]

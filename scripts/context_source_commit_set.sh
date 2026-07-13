@@ -2,6 +2,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/lib/project_path.sh
+source "$ROOT/scripts/lib/project_path.sh"
 REGISTRY="$ROOT/scripts/config/context_source_commits.tsv"
 context_path="${1:-}"
 commit="${2:-}"
@@ -16,7 +18,7 @@ project="$(awk -F '\t' -v p="$context_path" '$1==p {if (++n==1) v=$2} END {if (n
 }
 case "$project" in
   infra) repo="$ROOT" ;;
-  dm-signal) repo="$(awk '$1=="dm-signal:" {seen=1; next} seen && $1=="path:" {gsub(/["'\'' ]/, "", $2); print $2; exit}' "$ROOT/config/projects.yaml")" ;;
+  dm-signal) repo="$(cd "$ROOT" && get_project_path "$project")" ;;
   *) echo "BLOCK: unknown registry project: $project" >&2; exit 1 ;;
 esac
 [[ -d "$repo/.git" ]] || { echo "BLOCK: source repo missing: $repo" >&2; exit 1; }
