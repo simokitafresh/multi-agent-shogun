@@ -284,6 +284,7 @@ lessons:
     (11)累計昇格BLOCKはcmd cancel+新ID起票で累計リセット。本番登録cmdはトリガー語が多く発火しやすい
     (12)self_reread複合トリガー: 自己申告系語+曖昧系語の同時出現でWARN。客観表現(反映作業者と同一者の宣言等)に置換
     (6)教訓上限デッドロック: 上限到達時は古いLS同士を統合(削除方向)でid数を減らせ
+    (13)LK-A10研究cmd判定はtitle/purposeだけでなくcmd全文(quality_gate含む)をスキャンする。実装cmdでもq2/q6等の説明文に「分析/調査/研究」語があるだけで研究cmd扱いされ成果物AC不足BLOCKになる(cmd_3887で実証2026-07-13)。説明文は「特定」「経緯」等の客観表現へ置換して起票せよ
   source_ids: [LS023, LS034, LS035, LS059, LS060, LS063, LS075]
   source_cmds_v3: [cmd_2314, cmd_2315, cmd_2318, cmd_2319, cmd_2330, cmd_2331, cmd_2332, cmd_2343, cmd_2351, cmd_2355, cmd_2358, cmd_2366, cmd_2367, cmd_2368, cmd_2369, cmd_2374, cmd_2377, cmd_2379, cmd_2381, cmd_2382, cmd_2383, cmd_2384, cmd_2385, cmd_2392]
   created_at: '2026-04-25'
