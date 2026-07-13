@@ -136,6 +136,47 @@ PY
   rm -f "$destination"
 }
 
+@test "prepare-only provisions owner-only credential without executing DB capability or consuming nonce" {
+  fixture="$BATS_TEST_TMPDIR/prepare-repo"
+  mkdir -p "$fixture/scripts/lib" "$fixture/config" "$fixture/backend"
+  cp "$LAUNCHER" "$fixture/scripts/db_capability_launcher.py"
+  cp "$ROOT/scripts/lib/db_capability_tool.py" "$fixture/scripts/lib/db_capability_tool.py"
+  cp "$ROOT/config/db_capabilities.json" "$fixture/config/db_capabilities.json"
+  printf 'projects:\n  - id: dm-signal\n    path: %s\n' "$fixture" > "$fixture/config/projects.yaml"
+  printf 'DATABASE_URL=postgresql://secret\nUNRELATED=must-not-copy\n' > "$fixture/backend/.env"
+  git -C "$fixture" init -q
+  git -C "$fixture" config user.email fixture@example.invalid
+  git -C "$fixture" config user.name fixture
+  git -C "$fixture" add scripts/db_capability_launcher.py scripts/lib/db_capability_tool.py \
+    config/db_capabilities.json config/projects.yaml
+  git -C "$fixture" commit -qm fixture
+  destination="/tmp/dm-signal-db-prepare-${BATS_TEST_NUMBER}-${RANDOM}.env"
+
+  run python3 "$fixture/scripts/db_capability_launcher.py" \
+    --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK \
+    --credential-file "$destination" --credential-source-file "$fixture/backend/.env" \
+    --prepare-only
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"prepared credential file"* ]]
+  [ "$(stat -c %a "$destination")" = 600 ]
+  [ "$(cat "$destination")" = 'DATABASE_URL=postgresql://secret' ]
+  [ ! -d "$fixture/.runtime/db-capability-nonces" ]
+  rm -f "$destination"
+}
+
+@test "prepare-only fails closed without canonical source and normal execution still requires nonce" {
+  run python3 "$LAUNCHER" --capability readonly_query --mode readonly \
+    --confirm READONLY_DB_CHECK --credential-file "$CREDS" --prepare-only
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"requires --credential-source-file"* ]]
+
+  run python3 "$LAUNCHER" --capability readonly_query --mode readonly \
+    --confirm READONLY_DB_CHECK --credential-file "$CREDS"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"nonce is required"* ]]
+}
+
 @test "transactional capability accepts backup dry-run restore and rejects unknown flags" {
   run python3 - "$LAUNCHER" <<'PY'
 import importlib.util, sys

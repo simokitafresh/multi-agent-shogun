@@ -3,6 +3,7 @@
   "capabilities": {
     "readonly_query": {
       "tool": "scripts/lib/db_capability_tool.py",
+      "project": "dm-signal",
       "modes": ["readonly"],
       "confirm": "READONLY_DB_CHECK",
       "required_credential_keys": ["DATABASE_URL"],

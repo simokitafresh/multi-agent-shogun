@@ -143,9 +143,10 @@ def main() -> int:
     parser.add_argument("--capability", required=True)
     parser.add_argument("--mode", required=True)
     parser.add_argument("--confirm", required=True)
-    parser.add_argument("--nonce", required=True)
+    parser.add_argument("--nonce")
     parser.add_argument("--credential-file", required=True)
     parser.add_argument("--credential-source-file")
+    parser.add_argument("--prepare-only", action="store_true")
     parser.add_argument("--expected-commit")
     parser.add_argument("--execution-root")
     parser.add_argument("tool_args", nargs=argparse.REMAINDER)
@@ -164,11 +165,19 @@ def main() -> int:
         raise SystemExit("BLOCK: mode is not permitted")
     if args.confirm != contract.get("confirm"):
         raise SystemExit("BLOCK: confirmation mismatch")
-    child_args = _validate_child_args(contract, args.tool_args)
+    if args.prepare_only:
+        if args.tool_args:
+            raise SystemExit("BLOCK: credential preparation does not accept child arguments")
+        child_args: list[str] = []
+    else:
+        child_args = _validate_child_args(contract, args.tool_args)
     target_root = ROOT
     dependency = contract.get("dependency_tool")
+    project_id = contract.get("project", "")
+    project_root = _project_root(project_id) if project_id else None
     if dependency:
-        project_root = _project_root(contract.get("project", ""))
+        if project_root is None:
+            raise SystemExit("BLOCK: project capability is missing a registered project")
         target_root = Path(args.execution_root).resolve() if args.execution_root else project_root
         if args.execution_root:
             common = subprocess.run(
@@ -182,18 +191,25 @@ def main() -> int:
         if not _repo_tracked_unchanged(target_root, dependency_path):
             raise SystemExit("BLOCK: dependency tool is absent, untracked, or altered")
     head = subprocess.check_output(["git", "-C", str(target_root), "rev-parse", "HEAD"], text=True).strip()
-    if contract.get("requires_expected_commit") and args.expected_commit != head:
+    if not args.prepare_only and contract.get("requires_expected_commit") and args.expected_commit != head:
         raise SystemExit("BLOCK: expected commit mismatch")
     credential_file = Path(args.credential_file).resolve()
     required_keys = set(contract.get("required_credential_keys", []))
     if args.credential_source_file:
-        if not dependency:
-            raise SystemExit("BLOCK: credential preparation requires a project capability")
+        if project_root is None:
+            raise SystemExit("BLOCK: credential preparation requires a registered project")
         _prepare_credential_file(
             Path(args.credential_source_file), credential_file, project_root, required_keys
         )
+    elif args.prepare_only:
+        raise SystemExit("BLOCK: --prepare-only requires --credential-source-file")
     if not credential_file.is_file() or credential_file.stat().st_mode & 0o077:
         raise SystemExit("BLOCK: credential file must exist with mode 0600")
+    if args.prepare_only:
+        print(f"prepared credential file: {credential_file} mode=0600")
+        return 0
+    if not args.nonce:
+        raise SystemExit("BLOCK: nonce is required for capability execution")
     NONCE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
     nonce_key = hashlib.sha256(args.nonce.encode()).hexdigest()
     nonce_path = NONCE_DIR / nonce_key
