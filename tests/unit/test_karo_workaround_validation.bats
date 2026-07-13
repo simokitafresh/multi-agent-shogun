@@ -438,6 +438,59 @@ YAML
     [ "$output" -eq 0 ]
 }
 
+@test "--reclassify can set an evidence-based root_signature explicitly" {
+    cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_variation
+  ninja: hayate
+  workaround: true
+  category: uncategorized
+  root_signature: 'uncategorized::general'
+  detail: 'variation_checksが空で報告証跡なし'
+  root_cause: '5セルをexact yesへ正規化'
+  resolved_by_cmd: ''
+YAML
+
+    run bash "$TEST_SCRIPT" --reclassify '^cmd_variation$' report_yaml_format report_yaml_format::verification_evidence
+    [ "$status" -eq 0 ]
+    run grep -n "root_signature: 'report_yaml_format::verification_evidence'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "--reclassify detail filter updates only the matching same-cmd entry and inserts missing signature" {
+    cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_same
+  category: uncategorized
+  detail: 'staging広域差分が混入'
+  root_cause: 'scope限定commitへ修正'
+- cmd_id: cmd_same
+  category: report_yaml_format
+  root_signature: 'report_yaml_format::schema_shape'
+  detail: 'commit_hash欠落'
+  root_cause: 'commit証跡を補正'
+YAML
+
+    run bash "$TEST_SCRIPT" --reclassify '^cmd_same$' commit_scope_contamination \
+        commit_scope_contamination::commit_provenance 'staging広域差分'
+    [ "$status" -eq 0 ]
+    run grep -c "root_signature: 'commit_scope_contamination::commit_provenance'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+    run grep -c "root_signature: 'report_yaml_format::schema_shape'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+}
+
+@test "variation_checks and report evidence classify canonically" {
+    run bash "$TEST_SCRIPT" cmd_variation hayate \
+        "FAIL報告variation_checksが空、報告証跡も未実施扱い" \
+        "5セルをexact yesへ正規化"
+    [ "$status" -eq 0 ]
+    run grep -n '^  category: report_yaml_format$' "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+    run grep -n "root_signature: 'report_yaml_format::verification_evidence'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+}
+
 # =============================================
 # AC2/AC3 (cmd_karo_hotfix_wa_root_signature_202607121225):
 # root_signature auto-attach + N>=3 per-signature alerting

@@ -31,15 +31,17 @@ source "$REPO_ROOT/scripts/lib/known_ninjas.sh"
 if [[ "${1:-}" == "--reclassify" ]]; then
     shift
     if [[ $# -lt 2 ]]; then
-        echo "Usage: bash scripts/karo_workaround_log.sh --reclassify <cmd_id_pattern> <new_category>" >&2
+        echo "Usage: bash scripts/karo_workaround_log.sh --reclassify <cmd_id_pattern> <new_category> [new_root_signature] [detail_pattern]" >&2
         exit 1
     fi
     PATTERN="$1"
     NEW_CAT="$2"
+    NEW_ROOT_SIGNATURE="${3:-}"
+    DETAIL_PATTERN="${4:-}"
     (
         flock -w 10 200 || { echo "[reclassify] Error: lock" >&2; exit 1; }
         TMPFILE="/tmp/.kwl_reclassify_$$"
-        awk -v pat="$PATTERN" -v newcat="$NEW_CAT" '
+        awk -v pat="$PATTERN" -v newcat="$NEW_CAT" -v newrootsig="$NEW_ROOT_SIGNATURE" -v detailpat="$DETAIL_PATTERN" '
         function trim_scalar(value) {
             gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
             if (value ~ /^'\''.*'\''$/ || value ~ /^".*"$/) {
@@ -52,20 +54,27 @@ if [[ "${1:-}" == "--reclassify" ]]; then
             entry_len = 0
             entry_cmd = ""
         }
-        function flush_entry(    idx, line, matches, replaced, oldcat, value, suffix) {
+        function flush_entry(    idx, line, matches, replaced, oldcat, value, suffix, entrydetail, hasrootsig) {
             if (entry_len == 0) return
-            matches = (entry_cmd != "" && entry_cmd ~ pat)
             replaced = 0
             oldcat = ""
+            entrydetail = ""
+            hasrootsig = 0
             for (idx = 1; idx <= entry_len; idx++) {
                 line = entry_lines[idx]
                 if (line ~ /^(-|  )category:[[:space:]]*/) {
                     value = line
                     sub(/^(-|  )category:[[:space:]]*/, "", value)
                     oldcat = trim_scalar(value)
-                    break
                 }
+                if (line ~ /^  detail:[[:space:]]*/) {
+                    value = line
+                    sub(/^  detail:[[:space:]]*/, "", value)
+                    entrydetail = trim_scalar(value)
+                }
+                if (line ~ /^  root_signature:[[:space:]]*/) hasrootsig = 1
             }
+            matches = (entry_cmd != "" && entry_cmd ~ pat && (detailpat == "" || entrydetail ~ detailpat))
             for (idx = 1; idx <= entry_len; idx++) {
                 line = entry_lines[idx]
                 if (matches && !replaced && line ~ /^- category:[[:space:]]*/) {
@@ -75,6 +84,9 @@ if [[ "${1:-}" == "--reclassify" ]]; then
                 }
                 if (matches && !replaced && line ~ /^  category:[[:space:]]*/) {
                     print "  category: " newcat
+                    if (newrootsig != "" && !hasrootsig) {
+                        print "  root_signature: '\''" newrootsig "'\''"
+                    }
                     replaced = 1
                     continue
                 }
@@ -83,6 +95,10 @@ if [[ "${1:-}" == "--reclassify" ]]; then
                 # 旧familyに属する署名だけprefixを原子的に追従させ、suffixは
                 # 発生段階×破れた不変量として保持する。
                 if (matches && oldcat != "" && line ~ /^  root_signature:[[:space:]]*/) {
+                    if (newrootsig != "") {
+                        print "  root_signature: '\''" newrootsig "'\''"
+                        continue
+                    }
                     value = line
                     sub(/^  root_signature:[[:space:]]*/, "", value)
                     value = trim_scalar(value)
@@ -352,7 +368,7 @@ yaml_escape_sq() {
 # --- Category auto-classification (AC2: cmd_1211) ---
 classify_category() {
     local issue="$1"
-    local pattern_report="lessons_useful|binary_checks|lesson_candidate|report_field_set|verdict|ac_version|report.*フォーマット|フォーマット|(dict|list|string).*(→|変換|形式)"
+    local pattern_report="lessons_useful|binary_checks|lesson_candidate|report_field_set|verdict|ac_version|variation_checks|variation.*(証跡|未実施|空)|報告証跡|report.*evidence|report.*フォーマット|フォーマット|(dict|list|string).*(→|変換|形式)"
     local pattern_disappear="消失|missing|not found|消失|不在"
     local pattern_report_commit_meta="commit_hash|files_modified|command_files_modified_mismatch|偵察commit不要|commit不要|binary_checks\\.commit|報告YAML.*commit|report.*commit"
     local pattern_commit_missing="commit.*漏れ|commit.*なし|commit.*missing|コミット.*漏れ|コミット.*なし|未commit|未コミット|untracked|modified"
@@ -403,8 +419,11 @@ classify_root_signature() {
     local pattern_safety_boundary='readonly.*(credential|restore|allowlist)|credential.*(allowlist|縮小env)|backup.*dry-run.*restore|trust boundary'
     local pattern_operator_orchestration='completed.*(追記|helper)|helper BLOCK.*(複合shell|続行)|時期尚早.*(レビュー|通知)|再レビュー依頼'
     local pattern_natural_boundary='自然境界|estimated_minutes|長時間契約|split_decision'
+    local pattern_verification_evidence='variation_checks|variation.*(証跡|未実施|空)|報告証跡|report.*evidence|test_results.*details'
 
-    if [[ "$issue" =~ $pattern_error_handling ]]; then
+    if [[ "$issue" =~ $pattern_verification_evidence ]]; then
+        echo "${category}::verification_evidence"
+    elif [[ "$issue" =~ $pattern_error_handling ]]; then
         echo "${category}::error_handling"
     elif [[ "$issue" =~ $pattern_contract_projection ]]; then
         echo "${category}::contract_projection"
