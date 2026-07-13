@@ -10,11 +10,12 @@ setup_file() {
 
 setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/throughput_scan.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/queue" "$TEST_TMPDIR/scripts"
+    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/queue" "$TEST_TMPDIR/scripts/lib"
     echo "insights: []" > "$TEST_TMPDIR/queue/insights.yaml"
     cp "$SRC_SCRIPT" "$TEST_TMPDIR/scripts/throughput_scan.sh"
     chmod +x "$TEST_TMPDIR/scripts/throughput_scan.sh"
     cp "$PROJECT_ROOT/scripts/insight_write.sh" "$TEST_TMPDIR/scripts/insight_write.sh"
+    cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$TEST_TMPDIR/scripts/lib/yaml_field_set.sh"
     chmod +x "$TEST_TMPDIR/scripts/insight_write.sh"
     export THROUGHPUT_SCAN_ROOT="$TEST_TMPDIR"
 }
@@ -182,7 +183,7 @@ EOF
     [[ "$output" == *"THROUGHPUT_SCAN_DRY_RUN"* ]]
     [[ "$output" == *"target=scripts/throughput_scan.sh"* ]]
     [[ "$output" == *"stage_medians=deploy:70.0s,work:120.0s,finalize:60.0s,e2e:250.0s,overhead:30.0%"* ]]
-    [[ "$output" == *"yaml.safe_load(open('logs/loop_ledger.yaml'))"* ]]
+    [[ "$output" == *"yaml.safe_load(open('$TEST_TMPDIR/logs/loop_ledger.yaml'))"* ]]
     [[ "$output" != *"target=scripts/cmd_complete_gate.sh"* ]]
     [[ "$output" != *"test -f logs/loop_ledger.yaml && test -f scripts/cmd_complete_gate.sh"* ]]
 }

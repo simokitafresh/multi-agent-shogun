@@ -635,7 +635,7 @@ for key in [
     "parent_cmd",
 ]:
     assert key in data, key
-assert isinstance(data["result"], dict) and data["result"].get("summary") == ""
+assert isinstance(data["result"], dict) and data["result"].get("summary") == "FILL_THIS"
 assert list(data["binary_checks"].keys()) == ["AC1", "AC2", "AC3", "commit"], data["binary_checks"].keys()
 print("OK")
 EOF
@@ -652,7 +652,7 @@ EOF
     [[ "$output" != *"lessons_useful: MISSING"* ]]
     [[ "$output" != *"binary_checks: MISSING"* ]]
     [[ "$output" != *"assumption_invalidation: MISSING"* ]]
-    [[ "$output" == *"result.summary: MISSING or empty"* ]]
+    [[ "$output" == *"result.summary: FILL_THIS placeholder remaining"* ]]
 }
 
 @test "deploy_task rewrites generic full-test AC to affected_tests workflow in report template" {

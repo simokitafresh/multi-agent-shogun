@@ -1914,6 +1914,7 @@ PY
 }
 
 @test "cmd_complete real process blocks after normalize mutates approved report" {
+    TEST_CMD_ID="cmd_fixture"
     local report="$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml"
     local metrics="$TEST_PROJECT/logs/gate_metrics.log"
 
@@ -1965,7 +1966,7 @@ EOF
 
     [ "$status" -ne 0 ]
     [[ "$output" == *"review_fingerprint_changed_after_normalize"* ]]
-    [ "$(grep -c $'\tcmd_999\tCLEAR\t' "$metrics" || true)" -eq 0 ]
+    [ "$(grep -c $'\t'"$TEST_CMD_ID"$'\tCLEAR\t' "$metrics" || true)" -eq 0 ]
     [ ! -e "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/archive.done" ]
     [ ! -s "$TEST_PROJECT/notify.log" ]
 }
@@ -2839,6 +2840,14 @@ EOF
     write_cmd_yaml "without_context"
     write_context_file "2026-03-01"
     write_report
+    cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
+projects:
+  - id: infra
+    status: active
+    path: $TEST_PROJECT
+    context_files:
+      - context/infrastructure.md
+EOF
     git -C "$TEST_PROJECT" init -q
     git -C "$TEST_PROJECT" config user.email "test@example.invalid"
     git -C "$TEST_PROJECT" config user.name "Test User"

@@ -14,12 +14,10 @@ setup() {
     mkdir -p "$TEST_TMP/scripts/gates" "$TEST_TMP/logs" "$TEST_TMP/queue/reports/archive"
     cp "$PROJECT_ROOT/scripts/gates/gate_ninja_workaround_rate.sh" "$TEST_TMP/scripts/gates/"
     chmod +x "$TEST_TMP/scripts/gates/gate_ninja_workaround_rate.sh"
-    rm -f /tmp/shogun_wa_rate_cache_* /tmp/shogun_wa_report_index_*
 }
 
 teardown() {
     rm -rf "$TEST_TMP"
-    rm -f /tmp/shogun_wa_rate_cache_* /tmp/shogun_wa_report_index_*
 }
 
 mk_report() {

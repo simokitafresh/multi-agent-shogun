@@ -48,7 +48,8 @@ if [ ! -f "$WA_FILE" ]; then
 fi
 
 # WSL2 NTFS最適化: python3起動(150ms)をmtimeキャッシュで回避
-_WA_CACHE="/tmp/shogun_wa_rate_cache_${NINJA_FILTER:-all}_${LAST_N}_${RECENT_N}_${ACTIVE_DAYS}_${NOW_EPOCH:-now}.txt"
+_WA_ROOT_KEY="$(printf '%s' "$SCRIPT_DIR" | cksum | awk '{print $1}')"
+_WA_CACHE="/tmp/shogun_wa_rate_cache_${_WA_ROOT_KEY}_${NINJA_FILTER:-all}_${LAST_N}_${RECENT_N}_${ACTIVE_DAYS}_${NOW_EPOCH:-now}.txt"
 _WA_MTIME=$(stat -c%Y "$WA_FILE" 2>/dev/null || echo 0)
 _GATE_MTIME=$(stat -c%Y "$GATE_LOG" 2>/dev/null || echo 0)
 _WA_SELF_MTIME=$(stat -c%Y "${BASH_SOURCE[0]}" 2>/dev/null || echo 0)

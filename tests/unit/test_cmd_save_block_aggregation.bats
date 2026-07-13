@@ -300,6 +300,7 @@ commands:
       q8_why_what: "WHY: 家老宛発言が将軍cmd設計に混入する → WHAT: targetフィルタをcmd_saveの殿発言検索へ追加する → WHEN: cmd_save実行時 → WHERE: scripts/cmd_save.sh → WHO: 将軍cmd保存ゲート → HOW: target=karoのJSONL fixtureをフル実行で除外検証する。複利: 正の複利"
       q10_knowledge_boundary: "空間内。根拠: scripts/cmd_save.sh と tests/unit/test_cmd_save_block_aggregation.bats のみ"
       q11_not_already_done: "未達成。cmd_3008/3009の同構造をcmd_save.shへ横展開する"
+      q12_lord_30min_cost: "no — 自動回帰テストで宛先混入を防ぎ、殿の確認コストを増やさない"
       q_ambiguity: "none"
     assumptions:
       - claim: "2026-05-23 cmd_save.sh のshow_lord_conversation_matchesはdirection=inboundを検索対象にする"

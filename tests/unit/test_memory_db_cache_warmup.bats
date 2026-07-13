@@ -48,20 +48,24 @@ PY
 @test "concurrent warm-up is single-flight and read falls back without waiting" {
     create_memory_db_cache() {
         printf 'create\n' >> "$TEST_TMPDIR/create.calls"
-        sleep 0.5
+        while [ ! -e "$TEST_TMPDIR/release.create" ]; do
+            sleep 0.02
+        done
         cp "$2" "$SHOGUN_MEMORY_DB_CACHE_PATH"
     }
 
     warm_memory_db_cache_async "$PROJECT_ROOT" "$TEST_TMPDIR/source.db"
     warm_memory_db_cache_async "$PROJECT_ROOT" "$TEST_TMPDIR/source.db"
-    sleep 0.1
+    for _ in $(seq 1 100); do
+        [ -s "$TEST_TMPDIR/create.calls" ] && break
+        sleep 0.02
+    done
+    [ -s "$TEST_TMPDIR/create.calls" ]
 
-    start_ms="$(date +%s%3N)"
     read_path="$(prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db")"
-    elapsed_ms=$(( $(date +%s%3N) - start_ms ))
+    touch "$TEST_TMPDIR/release.create"
 
     [ "$read_path" = "$TEST_TMPDIR/source.db" ]
-    [ "$elapsed_ms" -lt 400 ]
     wait_for_file "$SHOGUN_MEMORY_DB_CACHE_PATH"
     [ "$(wc -l < "$TEST_TMPDIR/create.calls")" -eq 1 ]
 }

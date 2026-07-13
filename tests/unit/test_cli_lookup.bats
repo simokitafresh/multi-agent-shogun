@@ -49,7 +49,7 @@ teardown_file() {
 }
 
 @test "cli_lookup: 不正typeはclaudeへフォールバックする" {
-    run env CLI_ADAPTER_SETTINGS="${TEST_TMPDIR_CLI}/settings.yaml" CLI_LOOKUP_PROFILES="${TEST_TMPDIR_CLI}/cli_profiles.yaml" \
+    run env -u TMUX CLI_ADAPTER_SETTINGS="${TEST_TMPDIR_CLI}/settings.yaml" CLI_LOOKUP_PROFILES="${TEST_TMPDIR_CLI}/cli_profiles.yaml" \
         bash -lc "source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'; cli_type saizo"
     [ "$status" -eq 0 ]
     [ "$output" = "claude" ]

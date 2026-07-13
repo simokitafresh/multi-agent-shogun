@@ -54,6 +54,7 @@ refresh_memory_db_cache_async() {
     local source_path="$2"
     local cache_path="$3"
     local timeout_sec="${SHOGUN_MEMORY_DB_CACHE_REFRESH_TIMEOUT:-60}"
+    mkdir -p "$(dirname "$cache_path")" 2>/dev/null || return 0
     export -f create_memory_db_cache
     (
         flock -n 8 2>/dev/null || exit 0
@@ -113,6 +114,10 @@ prepare_memory_db_for_read() {
         printf '%s\n' "$source_path"
         return 0
     fi
+    mkdir -p "$(dirname "$cache_path")" 2>/dev/null || {
+        printf '%s\n' "$source_path"
+        return 0
+    }
     if [ -s "$cache_path" ]; then
         if [ "$source_path" -nt "$cache_path" ] \
             || { [ -f "${source_path}-wal" ] && [ "${source_path}-wal" -nt "$cache_path" ]; } \

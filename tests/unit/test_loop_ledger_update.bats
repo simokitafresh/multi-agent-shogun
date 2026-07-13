@@ -13,7 +13,9 @@ setup() {
     # assertions hold on both JST dev machines and UTC CI
     export TZ=UTC
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/loop_ledger.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/queue/archive/reports" "$TEST_TMPDIR/data"
+    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/queue/archive/reports" "$TEST_TMPDIR/data" "$TEST_TMPDIR/scripts/lib"
+    cp "$PROJECT_ROOT/scripts/lib/memory_db_cache.sh" "$TEST_TMPDIR/scripts/lib/memory_db_cache.sh"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
     export LOOP_LEDGER_ROOT="$TEST_TMPDIR"
     export LOOP_LEDGER_LESSON_IMPACT="$TEST_TMPDIR/logs/lesson_impact.tsv"
     export LOOP_LEDGER_INSIGHTS_FILE="$TEST_TMPDIR/queue/insights.yaml"

@@ -108,6 +108,7 @@ source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
 T=$(mktemp -d); trap "rm -rf \"$T\"" EXIT
 SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
 mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_terminal_fail/review_approvals/reports" "$T/scripts" "$STATE_DIR"
+: > "$LOG"
 old=$(date -d "-600 seconds" -Iseconds)
 printf "messages: []\n" > "$T/queue/inbox/karo.yaml"; printf "messages: []\n" > "$T/queue/inbox/shogun.yaml"; printf "entries: []\n" > "$T/queue/bulletin_board.yaml"
 printf "#!/bin/bash\necho INBOX_CALLED:\\$@ >> \"$LOG\"\n" > "$T/scripts/inbox_write.sh"; chmod +x "$T/scripts/inbox_write.sh"

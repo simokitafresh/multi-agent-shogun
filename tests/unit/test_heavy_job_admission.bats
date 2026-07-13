@@ -272,7 +272,7 @@ FAKEEOF
 @test "run_tests.sh: FAILファイルを含む集合はrun_bats_files_parallel経由で最終exit非0" {
     local fake_dir="$TMP/fake_bats"
     _make_fake_bats "$fake_dir"
-    run env REPO_ROOT=/tmp BATS_CACHE=0 BATS_SOURCE_FINGERPRINT=fake-fail PATH="$fake_dir:$PATH" \
+    run env REPO_ROOT="$ROOT" TEST_TIMING_LEDGER="$TMP/timing-fail.tsv" BATS_CACHE=0 BATS_SOURCE_FINGERPRINT=fake-fail PATH="$fake_dir:$PATH" \
         bash -c '
             set -euo pipefail
             source "$1/scripts/run_tests.sh"
@@ -285,7 +285,7 @@ FAKEEOF
 @test "run_tests.sh: 全PASSの集合はrun_bats_files_parallel経由で最終exit0" {
     local fake_dir="$TMP/fake_bats"
     _make_fake_bats "$fake_dir"
-    run env REPO_ROOT=/tmp BATS_CACHE=0 BATS_SOURCE_FINGERPRINT=fake-pass PATH="$fake_dir:$PATH" \
+    run env REPO_ROOT="$ROOT" TEST_TIMING_LEDGER="$TMP/timing-pass.tsv" BATS_CACHE=0 BATS_SOURCE_FINGERPRINT=fake-pass PATH="$fake_dir:$PATH" \
         bash -c '
             set -euo pipefail
             source "$1/scripts/run_tests.sh"

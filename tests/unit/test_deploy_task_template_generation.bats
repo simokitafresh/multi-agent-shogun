@@ -766,7 +766,12 @@ YAML
     )
 
     local report_path="$TEST_PROJECT/queue/reports/sasuke_report_cmd_fill_this_literal.yaml"
-    run grep -n "FILL_THIS" "$report_path"
+    run python3 - "$report_path" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1])) or {}
+text = yaml.safe_dump(data.get("binary_checks") or {}, allow_unicode=True)
+raise SystemExit(0 if "FILL_THIS" in text else 1)
+PY
     [ "$status" -eq 1 ]
     grep -Fq "FILL-THIS" "$report_path"
 

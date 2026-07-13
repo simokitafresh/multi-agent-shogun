@@ -11,6 +11,13 @@ run_embedded_test() {
     unique_path="$(mktemp "$(dirname "$BATS_TEST_FILENAME")/_tmp_${BATS_TEST_NUMBER:-0}_$(basename "$original_path" .bats).XXXXXX.bats")"
     "$content_func" > "$unique_path"
 
+    # Consolidated legacy fixtures predate context_freshness_check.sh's
+    # registered source-context dependency. Inject the tracked registry into
+    # the generated throwaway fixture without weakening the production check.
+    if grep -q 'SRC_CONTEXT_FRESHNESS_SCRIPT' "$unique_path"; then
+        sed -i '/cp "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT\/scripts\/context_freshness_check.sh"/a\    mkdir -p "$TEST_PROJECT/scripts/config"\n    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_PROJECT/scripts/config/context_source_commits.tsv"' "$unique_path"
+    fi
+
     run env -u BATS_TMPDIR -u BATS_TEST_TMPDIR -u BATS_TEST_NUMBER -u BATS_TEST_FILENAME bats --filter "^${test_name}$" "$unique_path"
     local nested_status="$status"
     local nested_output="$output"

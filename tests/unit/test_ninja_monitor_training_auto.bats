@@ -737,10 +737,8 @@ path = Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
 
 declared = set()
-for match in re.finditer(r"^\s*declare\s+(?:-[^\n]*?A[^\n]*?)\s+([A-Za-z_][A-Za-z0-9_]*(?:\s+[A-Za-z_][A-Za-z0-9_]*)*)", text, re.M):
-    line_no = text[:match.start()].count("\n") + 1
-    if not (650 <= line_no <= 692):
-        continue
+declaration_block = text[text.index("declare -A LAST_NOTIFIED"):text.index("_cleanup_stale_keys()")]
+for match in re.finditer(r"^declare[ \t]+(?:-[^\n]*?A[^\n]*?)[ \t]+([A-Za-z_][A-Za-z0-9_]*(?:[ \t]+[A-Za-z_][A-Za-z0-9_]*)*)", declaration_block, re.M):
     declared.update(match.group(1).split())
 
 cleanup_match = re.search(
@@ -822,10 +820,8 @@ path = Path(sys.argv[1])
 text = path.read_text(encoding="utf-8")
 
 declared = set()
-for match in re.finditer(r"^\s*declare\s+(?:-[^\n]*?A[^\n]*?)\s+([A-Za-z_][A-Za-z0-9_]*(?:\s+[A-Za-z_][A-Za-z0-9_]*)*)", text, re.M):
-    line_no = text[:match.start()].count("\n") + 1
-    if not (650 <= line_no <= 693):
-        continue
+declaration_block = text[text.index("declare -A LAST_NOTIFIED"):text.index("_cleanup_stale_keys()")]
+for match in re.finditer(r"^declare[ \t]+(?:-[^\n]*?A[^\n]*?)[ \t]+([A-Za-z_][A-Za-z0-9_]*(?:[ \t]+[A-Za-z_][A-Za-z0-9_]*)*)", declaration_block, re.M):
     declared.update(match.group(1).split())
 
 cleanup_body = re.search(r"^_cleanup_stale_keys\(\) \{(?P<body>.*?)^\}", text, re.M | re.S).group("body")
