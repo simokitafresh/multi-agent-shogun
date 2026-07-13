@@ -919,6 +919,52 @@ print('CMD_ID_INSERT_OK')
     [[ "$output" == *"CMD_ID_INSERT_OK"* ]]
 }
 
+@test "map scalar: 別field更新時に折返しscalar継続行を保持する" {
+    yaml="$BATS_TMPDIR/wrapped_scalar.yaml"
+    printf '%s\n' \
+        'task:' \
+        "  purpose: 'first line" \
+        "    second line'" \
+        '  status: assigned' \
+        '  variation_checks_required: false' > "$yaml"
+
+    run bash "$YFS" "$yaml" task status acknowledged
+    [ "$status" -eq 0 ]
+    run python3 -c "
+import yaml
+data = yaml.safe_load(open('$yaml', encoding='utf-8'))
+assert data['task']['status'] == 'acknowledged', data
+assert data['task']['purpose'] == 'first line second line', data
+assert data['task']['variation_checks_required'] is False, data
+print('WRAPPED_SCALAR_OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WRAPPED_SCALAR_OK"* ]]
+}
+
+@test "batch: 別field一括更新時に折返しscalar継続行を保持する" {
+    yaml="$BATS_TMPDIR/wrapped_scalar_batch.yaml"
+    printf '%s\n' \
+        'task:' \
+        "  purpose: 'first line" \
+        "    second line'" \
+        '  status: assigned' \
+        '  progress: pending' > "$yaml"
+
+    run bash -c "source '$YFS'; yaml_field_set_batch '$yaml' task status=acknowledged progress=started"
+    [ "$status" -eq 0 ]
+    run python3 -c "
+import yaml
+data = yaml.safe_load(open('$yaml', encoding='utf-8'))
+assert data['task']['status'] == 'acknowledged', data
+assert data['task']['progress'] == 'started', data
+assert data['task']['purpose'] == 'first line second line', data
+print('WRAPPED_BATCH_OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WRAPPED_BATCH_OK"* ]]
+}
+
 # ── cmd_karo_hotfix_deploy_task_atomic_publish_202607111645 回帰テスト ──
 # Origin: cmd_3847偵察でscripts/deploy_task.sh内11箇所がyaml_field_set.shを経由せず
 # 非atomic cp+無検証で公開していたと判明(tmp_fileが/tmp、queue/tasksは/mnt/cで別

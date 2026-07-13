@@ -332,6 +332,21 @@ function is_inline_scalar_field(line,    rhs) {
     if (rhs ~ /^[|>][+-]?[0-9]*$/) return 0
     return 1
 }
+function is_closed_quoted_inline_scalar(line,    rhs,first,last,prev) {
+    if (line !~ ("^" make_indent(field_indent) "[A-Za-z0-9_.-]+:[[:space:]]*")) return 0
+    rhs = line
+    sub("^" make_indent(field_indent) "[A-Za-z0-9_.-]+:[[:space:]]*", "", rhs)
+    rhs = trim(rhs)
+    if (length(rhs) < 2) return 0
+    first = substr(rhs, 1, 1)
+    last = substr(rhs, length(rhs), 1)
+    if (first == "\047" && last == "\047") return 1
+    if (first == "\"" && last == "\"") {
+        prev = substr(rhs, length(rhs) - 1, 1)
+        if (prev != "\\") return 1
+    }
+    return 0
+}
 function regex_escape(str,    out,i,c) {
     out = ""
     for (i = 1; i <= length(str); i++) {
@@ -375,10 +390,9 @@ BEGIN {
     in_block = 0
     replaced = 0
     skip_replaced_continuation = 0
-    prev_inline_scalar = 0
+    prev_closed_quoted_scalar = 0
     block_indent = -1
     field_indent = -1
-    flow_cont = 0
 }
 {
     if (!in_block) {
@@ -411,10 +425,11 @@ BEGIN {
         skip_replaced_continuation = 0
     }
 
-    if (prev_inline_scalar && indent > field_indent && trimmed != "" && trimmed !~ /^#/ && trimmed !~ /^-/) {
-        if (!flow_cont) { next }
-        # YAML double-quoted flow scalar continuation — detect closing quote
-        if (trimmed ~ /[^\\]"$/ || trimmed == "\"") flow_cont = 0
+    # Historical malformed task YAML may contain a stray indented line after a
+    # scalar whose quote already closed on the field line.  Drop only that
+    # impossible continuation; preserve valid wrapped plain/open-quoted scalars.
+    if (prev_closed_quoted_scalar && indent > field_indent && trimmed != "" && trimmed !~ /^#/ && trimmed !~ /^-/) {
+        next
     }
 
     field_re = "^" make_indent(field_indent) regex_escape(field) ":[[:space:]]*"
@@ -422,17 +437,10 @@ BEGIN {
         print make_indent(field_indent) field ": " yaml_safe(new_value)
         replaced = 1
         skip_replaced_continuation = 1
-        prev_inline_scalar = 1
         next
     }
-
     if (indent == field_indent) {
-        prev_inline_scalar = is_inline_scalar_field($0)
-        if (prev_inline_scalar && $0 ~ /\\$/) {
-            flow_cont = 1
-        } else {
-            flow_cont = 0
-        }
+        prev_closed_quoted_scalar = is_closed_quoted_inline_scalar($0)
     }
     print
 }
@@ -1148,6 +1156,21 @@ function is_inline_scalar_field(line,    rhs) {
     if (rhs ~ /^[|>][+-]?[0-9]*$/) return 0
     return 1
 }
+function is_closed_quoted_inline_scalar(line,    rhs,first,last,prev) {
+    if (line !~ ("^" make_indent(field_indent) "[A-Za-z0-9_.-]+:[[:space:]]*")) return 0
+    rhs = line
+    sub("^" make_indent(field_indent) "[A-Za-z0-9_.-]+:[[:space:]]*", "", rhs)
+    rhs = trim(rhs)
+    if (length(rhs) < 2) return 0
+    first = substr(rhs, 1, 1)
+    last = substr(rhs, length(rhs), 1)
+    if (first == "\047" && last == "\047") return 1
+    if (first == "\"" && last == "\"") {
+        prev = substr(rhs, length(rhs) - 1, 1)
+        if (prev != "\\") return 1
+    }
+    return 0
+}
 function yaml_safe(v,    out,i,c,needs_quote) {
     needs_quote = 0
     if (index(v, ":") > 0) needs_quote = 1
@@ -1214,7 +1237,7 @@ function flush_block(    i,line,indent_str,j,fre,replaced_count) {
     indent_str = make_indent(field_indent)
     replaced_count = 0
     skip_replaced_continuation = 0
-    prev_inline_scalar = 0
+    prev_closed_quoted_scalar = 0
     for (i = 1; i <= block_len; i++) {
         line = block_lines[i]
         line_indent = leading_spaces(line)
@@ -1228,7 +1251,7 @@ function flush_block(    i,line,indent_str,j,fre,replaced_count) {
             }
             skip_replaced_continuation = 0
         }
-        if (prev_inline_scalar && line_indent > field_indent && line_trimmed != "" && line_trimmed !~ /^#/ && line_trimmed !~ /^-/) {
+        if (prev_closed_quoted_scalar && line_indent > field_indent && line_trimmed != "" && line_trimmed !~ /^#/ && line_trimmed !~ /^-/) {
             continue
         }
         if (i > 1) {
@@ -1240,7 +1263,6 @@ function flush_block(    i,line,indent_str,j,fre,replaced_count) {
                         replaced[j] = 1
                         replaced_count++
                         skip_replaced_continuation = 1
-                        prev_inline_scalar = 1
                         line = ""
                         break
                     }
@@ -1250,7 +1272,7 @@ function flush_block(    i,line,indent_str,j,fre,replaced_count) {
         if (line != "") {
             print line
             if (line_indent == field_indent) {
-                prev_inline_scalar = is_inline_scalar_field(line)
+                prev_closed_quoted_scalar = is_closed_quoted_inline_scalar(line)
             }
         }
     }
