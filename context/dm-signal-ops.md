@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga237_dm_signal_ops_freshness_202607130237 -->
-<!-- source_commit:bd1a1b10322d97fa59cba62dd72550e9102c784f (DM-Signal ops対象pathspec(backend/app/api,backend/app/jobs,backend/app/services,backend/tests,docs/rule,docs/research,render.yaml,tasks/lessons.md)の最終同期commit。次回鮮度チェックはこのcommit以降のdiffのみ照合対象=GA-237入口側改善) -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga237_context_freshness_202607131156 -->
+<!-- source_commit:c84bcd93654c17b344698694257d912bf3847683 (DM-Signal ops対象pathspecの最終同期commit。c84bcd93はP4 AC2実行/FAIL/restore状況の進捗更新のみでops.md記載のOPT-E/deploy/crash-safety/DB SSOTと直接の内容重複なしと確認済み=境界更新のみで解消。根本原因分析は docs/research/ga237_context_freshness_root_cause.md 参照) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 

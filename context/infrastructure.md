@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-13 cmd_3869 -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga237_context_freshness_202607131156 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -23,6 +23,8 @@ context freshnessのinfra root fallbackはinfra実装だけをsource扱いし、
 GA-228: `queue/tasks/*.yaml` と実装/context/docs/tests の混在を、GA-408のpre-commit到達前に共通PreToolUse Guard 3.7が一時indexで判定してBLOCKする。task単独・運用YAML同士・実装のみは許可する。→ `docs/research/cmd_ga228_task_yaml_mixed_stage_20260712.md` / `scripts/hooks/git-stage-guard.py` / `tests/unit/test_pre_bash_queue_tasks_guard.bats`
 
 掲示板通知は `scripts/bulletin_write.sh` が通知先ごとに最大3回再送する。一時失敗は成功まで継続し、最終失敗は `logs/bulletin_notify_failures.yaml` に永続記録して投稿者へ非ゼロ終了コードで可視化する（cmd_3829）。詳細は `docs/research/cmd_3829_bulletin_notify_failclose.md`。
+
+context freshnessは複数context fileが同一source commitで同時ALERTした場合、`GROUP: <path1>,<path2> share source commit <hash>`行を追加出力し、家老が重複調査cmdを別々に起票することを防ぐ。設計意図: `min_source_commits`の既定閾値1件はGA-226(L1056)がmerge/squash後のALERT自然消滅を防ぐため意図的に固定した下限であり本機構では変更しない — GROUPはALERT発火条件・タイミングに一切影響しない可視化のみの非破壊追加。発火条件: ALERT確定済み(WARN/check-failedは対象外)の2ファイル以上が`git log`の`details`(直近3件のcommit hash)に同一hashを含む場合のみ出力。誤検知境界: (1)root-fallback経路(`INFRA_CONTEXT_PATHS`等)はcommit hash明細を返さないためGROUP対象外(既知のギャップ、例: `memory-db-queries.md`と`memory-db-schema.md`は同一pathspecだが両者ともGROUP検出不可)、(2)ALERT非成立(WARN/timeout)のペアはGROUP化しない、(3)出力は既存の`sorted(dict.fromkeys(...))`のまま追加行として混在するため既存WARN/ALERT行の内容・順序は不変。実例: GA-237/GA-236(commit`c84bcd93`)で`context/dm-signal-ops.md`と`context/dm-signal-research.md`が同時ALERTすることをGROUP行で検出・再現確認済み。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats` / `docs/research/ga237_context_freshness_root_cause.md`（cmd_karo_hotfix_ga237_context_freshness_202607131156）
 
 inbox nudge配達保証: `scripts/inbox_watcher.sh` はINPUT-GUARD保留時に `deferred_nudge` 状態を記録し、送信済みfingerprint/debounceをrollbackする。未読が残る限り次回 `DEFERRED-RETRY` で再注入する。Codex active+busyはqueued messageとして即時送達し、idle promptのANSI dim候補文は未送信入力ではないため安全に送達する。通常色の実入力とClaude/非Codexは従来通り保護する（cmd_3830）。詳細は `docs/research/cmd_3830_nudge_delivery_guarantee.md`。
 
