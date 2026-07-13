@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-14 cmd_3880 -->
+<!-- last_updated: 2026-07-14 cmd_karo_hotfix_ga249_context_reflux_last_updated_202607140250 -->
 <!-- source_commit:ba4c0cee reason:cmd_3880_main_integration evidence:cmd_3880_content_present -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
