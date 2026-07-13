@@ -193,3 +193,35 @@
 ```
 cmd_3763 C3事故(殿指摘2026-07-08 12:10): 旧新基準チャンピオン各3体の静的等ウェイト合成を『合成FoF比較』として将軍が裁定材料の中心に置き、『白虎で新基準が合成劣化』とntfy/MEMORY.mdまで流したが、本番pf_L1は『L0チャンピオンをBB1つで選別→EW』の動的FoF(context/dm-signal-core.md L13)であり、(1)選別層の欠如(2)本番に無い組合せ(3)構成差と基準差の交絡、の3点で比較不能だった。忍者が確認したterminal_block=EqualWeightは選別後の終端に過ぎず、configサンプル3件も分身系(terminal=EW)に偏っていた=部分configの確認で全体再現の妥当性を錯覚。原因: 比較設計のAC(cmd_3763 AC3)に『比較対象は同一生成パイプラインの同格生成物か』の検証を要求しなかった将軍の設計漏れ+検分時も見抜けず(洗脳#2)。修正: C3所見を全面取り下げ、正本/gist/MEMORY.md訂正。基準の階層効果はL1同士(同一L1パイプラインに旧/新チャンピオン群を供給)の比較=Phase B設計で評価する。横展開: 合成・集計・代理実験を含む比較cmdのACには『同一パイプライン同格性の確認』を必須で入れる
 ```
+
+## LS036/LS040/LS048/LS078/LS080/LS081 enforcement一次情報再検証全文 (2026-07-14 v5圧縮で移設)
+
+### LS036 (CoDD brownfield限定 Guard15)
+```
+Level4(フロー内BLOCK): .claude/hooks/pre-bash-combined.sh Guard15(cmd_reflux_promotion_202607081642_saizo実装、tests/unit/test_pre_bash_codd_greenfield_guard.bats 9件PASS+既存回帰41件PASS)。一次情報再検証(2026-07-08, codd v2.19.0 --help)でLevel3記述の誤りを訂正: `codd require`は実際にはbrownfield専用ツール(--help「Run codd extract first」と明記、要件推定はextract後の下流ステップ)であり禁止対象ではない。`codd spec`はCLI非存在(Error: No such command)で言及自体が無意味。真の時間浪費源はgreenfield限定の`codd generate --wave`ループ(wave1-5直列で実測30分超, cmd_2891)。Guard15はcodd generate --waveの実コマンド呼出しをshlexトークン解析で検出し、対象パスに.codd/extract/が無くかつ既存ソース(.py/.sh/.ts/.js/.go/.java、maxdepth3)がある場合のみBLOCKして`codd extract`先行を強制する(新規空プロジェクトへのgenerateは誤検知なく許可)。旧Level3(context/codd.md §4.5+training-cycle.md §28テンプレート強制)は維持しつつ、テンプレートを経由しないBash直接呼出しも今回のGuardで捕捉する。context/training-cycle.md §28の「禁止操作: codd require/codd spec」表記は上記の理由で不正確なため修正が必要(lesson_candidateで別途報告、本cmdのtarget_path外のため直接修正はしない)。
+```
+
+### LS040 (バックアップファースト)
+```
+type=gate; file=/mnt/c/Python_app/kj-role-count/backend/database.py; pattern=run_backup。一次情報再検証(2026-07-09, backend/database.py L94-98実読): init_database内でDB既存時に無条件run_backup()を実行しdb変更フローへ自動介入するコード実装済み(フロー内強制、忍者が取り忘れる余地なし=L4以上相当)。ただし適用範囲はkj-role-count1PJ1箇所のみ。dm-signal本番マイグレーション(backend/run_migration.py, backend/app/db/migrations.py)にbackup呼出し0件(grep確認)、.claude/hooks/および scripts/gates/にもDB破壊操作前バックアップを強制する横断gate/hook不在(grep確認)。他PJ・システム全体への横展開はcmd_reflux_promotion_202607090317_saizoでdecision_candidateへ整理(汎用hook化はDB破壊操作の検知パターンがPJごとに異なり誤検知リスク大のため、PJ単位の個別実装cmdを推奨)。
+```
+
+### LS048 (洗脳監査サイクル)
+```
+Level5: type=hook; file=scripts/hooks/prompt_state_inject.sh+stop_check_inbox.sh; pattern=因果+detect_f009。一次情報再検証(2026-07-09): stop_check_inbox.shはF009殿操作依頼をdecision=blockで停止し、Q6洗脳検出時にstate flagを作る。prompt_state_inject.shは通常時に将軍へ洗脳自問を事前注入し、Q6 flag検出時は8パターン全文+gate_fire_log/detector台帳記録へ接続する。検出→環境強制→実戦検証→バグ修正のLS048サイクルはcmd_3251/cmd_3252/cmd_3409/cmd_3522/cmd_3782でhook+testsへ実装済み。分類器のテキストヒューリスティックではL1誤判定になるため、構造化enforcement_levelを明示する。
+```
+
+### LS078 (真実の在処不一致クラス)
+```
+Level4(フロー内BLOCK/現在状態突合): gate_skill_script_refs.sh max採用+判定根拠出力(commit 07a0cfd83/68c5f0cf7)+再現bats test_gate_skill_script_refs_marker.bats(3テスト)+prompt_state_inject.sh session_alerts突合+キー本文表示(commit 1ac6eb794)+test_prompt_state_defer_reconcile.bats(3テスト)。一次情報再検証(2026-07-09): scripts/hooks/prompt_state_inject.sh は追記専用historyで未解消件数を算出後、queue/session_alerts_${agent_id}.txt に[TODO]が残っていなければ _defer_count=0 に補正し、解消済み履歴の再注入をフロー内で防ぐ。scripts/clear_prep_check.sh はinsights.yaml pendingをsemantic_search現物で再照合し、alias昇格済みなら自動resolveする。scripts/gates/gate_karo_startup.sh は__OK__行をクリーンセッションとしてstreakを切り、解消信号無視による連続WARN誤昇格を防ぐ。LS078本文の対処(2)(3)は実装済みで、既存gate_lesson_enforcement_level.shが本文語彙ではなく構造化enforcement_levelを読むため、L1002同型の誤判定を避ける目的で明示する。
+```
+
+### LS080 (cmd_save PASS前のキューEditレース)
+```
+Level4(フロー内BLOCK、二重防御): (1)書込み側=cmd_save.sh L6601-6612がキューをstatus:draftのまま保存し、BLOCK_COUNT=0のPASS経路でのみdraft→pendingへ自動昇格(commit ba2a83b1c)。(2)配備側=deploy_task.sh L953-983 deploy_task_cmd_status_is_draft()がshogun_to_karo.yamlの現在status(配備直前の一次情報)を読み、L8886-8889でDIRECT_MODE/CMD_FORCED以外の通常配備をstatus=draft中は即BLOCKして先に進めない(commit 6103c3d43)。一次情報再検証(2026-07-09 cmd_reflux_promotion_202607090400_tobisaru): 両commit・両ファイルの該当行を現物grep確認、かつ回帰テスト実在確認 — tests/unit/test_cmd_save.bats(draft関連3テストPASS: L607/616/623)+tests/unit/test_deploy_task_lifecycle.bats『cmd_3701: draft cmd is blocked before deployment』(L859、deploy_task_main実行によるE2E統合テスト、PASS確認済み)。enforcement_levelフィールドを本文に明示追加(旧版は本文語彙がgate_lesson_enforcement_level.shのキーワード規則に一致せずLevel1誤分類→還流在庫の昇格候補に誤って残存していた。LS078のL1002誤判定と同型構造)
+```
+
+### LS081 (async timeout短縮のsilent-death)
+```
+Level4(フロー内WARN/BLOCK接続): scripts/gates/gate_shogun_startup.sh check_ci_red_autodeploy() は timeout既定8sを復元し、未完了時はasync回収設計で直列待ちを増やさず、ci_json空応答はsilent deathを避けるためDIGESTのci=unknown/ci=failure表示で毎起動可視化する。CI failure時は同gate内でWARN化し、scripts/inbox_write.sh経由でkaroへci_red_fix配備を通知する。一次情報再検証(2026-07-09 cmd_reflux_promotion_202607090413_kagemaru): git blameで修復commit d5ed06f9bがgate_shogun_startup.sh L122-L125の8s timeout復元+silent-skip禁止コメントを導入済みと確認。tests/unit/test_gate_shogun_startup.bats「CI RED failure sends ci_red_fix to karo and shows WARN」はSHOGUN_STARTUP_GH_TIMEOUT=5でci=failure/WARN/inbox送信をassertし、「CI GREEN passes silently without WARN or inbox notification」はci=successをassert。旧enforcementはtype=gate/pattern=ci=のみでgate_lesson_enforcement_level.shがL1誤分類したため、構造化enforcement_levelを明示する。
+```
