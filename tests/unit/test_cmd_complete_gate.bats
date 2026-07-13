@@ -402,8 +402,15 @@ insights:
   source: "manual"
   status: pending
 EOF
+    cat > "$TEST_PROJECT/queue/tasks/insight-owner.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  origin_insight_ids: [INS-CMD-MATCH]
+EOF
     cp "$PROJECT_ROOT/scripts/insight_write.sh" "$TEST_PROJECT/scripts/insight_write.sh"
+    cp "$PROJECT_ROOT/scripts/insight_resolve.sh" "$TEST_PROJECT/scripts/insight_resolve.sh"
     chmod +x "$TEST_PROJECT/scripts/insight_write.sh"
+    chmod +x "$TEST_PROJECT/scripts/insight_resolve.sh"
 
     run auto_resolve_cmd_related_insights "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
@@ -413,7 +420,9 @@ EOF
 import yaml
 data = yaml.safe_load(open("$INSIGHTS_FILE"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-CMD-MATCH"]["status"] == "done"
+assert rows["INS-CMD-MATCH"]["status"] == "resolved"
+assert rows["INS-CMD-MATCH"]["resolved_reason"]
+assert rows["INS-CMD-MATCH"]["action_artifact"]
 assert rows["INS-OTHER"]["status"] == "pending"
 PY
 }
@@ -422,11 +431,13 @@ PY
     export INSIGHTS_FILE="$TEST_PROJECT/queue/insights_as_dir.yaml"
     mkdir -p "$INSIGHTS_FILE"
     cp "$PROJECT_ROOT/scripts/insight_write.sh" "$TEST_PROJECT/scripts/insight_write.sh"
+    cp "$PROJECT_ROOT/scripts/insight_resolve.sh" "$TEST_PROJECT/scripts/insight_resolve.sh"
     chmod +x "$TEST_PROJECT/scripts/insight_write.sh"
+    chmod +x "$TEST_PROJECT/scripts/insight_resolve.sh"
 
     run auto_resolve_cmd_related_insights "$TEST_CMD_ID"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"resolved: 0 cmd-related insight(s)"* ]]
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"[BLOCK] insight declaration selection failed"* ]]
     grep -F "auto_resolve_cmd_related_insights parse:" "$TEST_PROJECT/logs/cmd_complete_gate_stderr.log"
 }
 

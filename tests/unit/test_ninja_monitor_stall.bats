@@ -325,6 +325,7 @@ EOF
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
 check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
 yaml_field_get() {
     case "$2" in
         status) echo "assigned" ;;
@@ -383,6 +384,7 @@ EOF
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
 check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
 yaml_field_get() {
     case "$2" in
         status) echo "assigned" ;;
@@ -438,6 +440,7 @@ EOF
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
 check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
 cli_profile_get() { echo ""; }
 
 PANE_TARGETS[kagemaru]="shogun:2.5"
@@ -481,6 +484,7 @@ EOF
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
 check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
 yaml_field_get() {
     case "$2" in
         status) echo "in_progress" ;;
@@ -541,6 +545,7 @@ EOF
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2" >> "$TEST_MESSAGES"; }
 check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
 PANE_TARGETS[saizo]="shogun:2.6"
 now=$(date +%s)
 STALL_FIRST_SEEN[saizo]=$((now - 60 * 60))
@@ -590,6 +595,7 @@ EOF
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2" >> "$TEST_MESSAGES"; }
 check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
 cli_profile_get() { echo "1"; }
 PANE_TARGETS[saizo]="shogun:2.6"
 now=$(date +%s)
@@ -649,6 +655,7 @@ chmod +x "$SCRIPT_DIR/scripts/gates/gate_report_format.sh"
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
 check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
 cli_profile_get() {
     case "$2" in
         in_progress_stall_min) echo "1" ;;
@@ -716,6 +723,7 @@ chmod +x "$SCRIPT_DIR/scripts/gates/gate_report_format.sh"
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
 check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
 cli_profile_get() { echo ""; }
 
 PANE_TARGETS[kagemaru]="shogun:2.5"
@@ -2668,6 +2676,7 @@ EOF
 log() { echo "$1" >> "$TEST_LOG"; }
 send_inbox_message() { echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"; }
 check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
 yaml_field_get() {
     case "$2" in
         status) echo "in_progress" ;;
@@ -2727,6 +2736,7 @@ send_inbox_message() {
     echo "$1|$3|$flattened|${4:-ninja_monitor}" >> "$TEST_MESSAGES"
 }
 check_idle() { return 0; }
+_pane_has_active_background_compute() { return 1; }
 yaml_field_get() {
     case "$2" in
         status) echo "assigned" ;;
