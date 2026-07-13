@@ -85,7 +85,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L893 -->
+<!-- last_synced_lesson: L895 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -98,6 +98,8 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L889: 重量golden回帰のthrowaway DB名は実行単位で隔離しcleanupも接続poolを強制解放せよ（cmd_karo_ci_fix_dm_cmd3882_golden_restore_fullsuite_rc2_202607140015）
 - L892: 破壊的full計測は安全hash cloneから分離する（cmd_karo_hotfix_cmd3881_v1426_harness_rc2_202607140538）
 - L893: managed DB capabilityはactual環境identity付き往復を入口必須にする（cmd_karo_fence_v1427_nologin_rc3_202607140653）
+- L894 (retired): 「Render managed roleはCREATEROLEなし」はpreview限定の実測を本番へ過剰一般化するため廃止。L895を参照
+- L895: Render preview isolated role capabilityは本番roleのproxyではない（cmd_karo_hotfix_cmd3881_v1428_probe_contract_202607140732）
 
 ## §36 API認証
 
@@ -1227,6 +1229,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - arm DDLはFのcanonical table名辞書順でlockし、SQLSTATE 40P01/55P03/57014は自動retry 0回で原子rollbackする。別read-only catalog sessionでtrigger 0/17・run role 0・ARMING不在を証明できない限りadvisory/fenceを解放しない。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.23、source commit=`611f715bfbe4875e9e8d92c267818ee52324faa0`。
 - v1.4.27 RC3候補(commit=`a5b7be5dc7682293e24472ff9f941d43ee1553eb`、未統合)は接続レベル物理排除をNOLOGIN+非keeper session terminateへ転換したが、Render actual capability artifactが0件のため後続5群をfail-closed BLOCK。production live mutation 0・automatic retry 0・SKIP 0を維持し、read/writeは同一`dm_signal_user`のためP4窓約10分のAPI全断境界も未解消。3882-3885 freezeを維持する。
 - **managed DB capability入口runbook**: 一般PostgreSQL仕様/local clone成功をRender能力証明に使わない。後段実装・pool/session敵対試験・全数性能試験より先に、actual preview/isolated環境で`environment_identity/service_id/database_host/role_name`、role属性before→NOLOGIN→LOGIN restore、各SQLSTATE、`production_live_mutations=0`を1 artifactへ保存する。artifact 0件または必須field欠落なら後段を実行せず数値付きBLOCKする。教訓=L893、報告=`queue/reports/hanzo_report_cmd_karo_fence_v1427_nologin_rc3_202607140653.yaml`。
+- **preview≠production proxy補正(v1.4.28入口)**: preview isolatedは`rolcreaterole=false`・最初のrecovery role操作SQLSTATE=`42501`だった一方、本番readonlyでは`dm_signal_user.rolcreaterole=true`。したがってpreview結果はpreview環境上の不成立だけを証明し、本番実行可能性は未証明。旧L894の広い表現はretireし、L895へ置換した。本番能力は業務role無接触の専用prefix probe roleだけを`CREATE NOLOGIN→ALTER LOGIN→ALTER NOLOGIN→DROP`の4 mutation step・30秒timeout・retry 0・finally DROP・catalog before/after hash exactで測る。`dm_signal_user`自己ALTERは禁止、軍師敵対レビュー→将軍承認前の実probeも禁止、3882-3885 freezeとpreview resource保持を継続する。origin=`[[preview属性齟齬]] -> [[proxy無効可能性]] -> [[本番能力未証明]]`。
 
 ## §76 safe bundle v2運用契約 (cmd_3879, 2026-07-14)
 

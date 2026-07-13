@@ -553,14 +553,8 @@ def auto_intake_semantic_index():
 if not body_only:
     auto_intake_semantic_index()
 
-def load_task_lesson_origins(repo_root):
-    """tasks/lessons.md（SSOT）からlesson_id→originマップを作成"""
+def parse_markdown_lesson_origins(text, scope):
     origins = {}
-    lessons_md = repo_root / "tasks" / "lessons.md"
-    try:
-        text = lessons_md.read_text(encoding="utf-8")
-    except Exception:
-        return origins
     current_id = None
     source_cmd = None
     for raw_line in text.splitlines():
@@ -568,7 +562,7 @@ def load_task_lesson_origins(repo_root):
         heading = re.match(r"^###\s+(L\w+):", line)
         if heading:
             if current_id and source_cmd:
-                origins.setdefault(current_id, f"[[{source_cmd}]]")
+                origins.setdefault(f"{scope}:{current_id}", f"[[{source_cmd}]]")
             current_id = heading.group(1)
             source_cmd = None
             continue
@@ -578,7 +572,7 @@ def load_task_lesson_origins(repo_root):
         if origin:
             val = origin.group(1).strip().strip("'\"")
             if "[[" in val:
-                origins[current_id] = val
+                origins[f"{scope}:{current_id}"] = val
             current_id = None
             source_cmd = None
             continue
@@ -586,7 +580,29 @@ def load_task_lesson_origins(repo_root):
         if source:
             source_cmd = source.group(1).strip().strip("'\"")
     if current_id and source_cmd:
-        origins.setdefault(current_id, f"[[{source_cmd}]]")
+        origins.setdefault(f"{scope}:{current_id}", f"[[{source_cmd}]]")
+    return origins
+
+def load_task_lesson_origins(repo_root):
+    """Local infra and configured external project lesson SSOTs, qualified by source."""
+    origins = {}
+    lessons_md = repo_root / "tasks" / "lessons.md"
+    try:
+        origins.update(parse_markdown_lesson_origins(lessons_md.read_text(encoding="utf-8"), "infra"))
+    except Exception:
+        pass
+    config_path = repo_root / "config" / "projects.yaml"
+    try:
+        config_text = config_path.read_text(encoding="utf-8")
+    except Exception:
+        config_text = ""
+    for match in re.finditer(r"(?ms)^\s*- id:\s*([^\s#]+).*?^\s+path:\s*[\"']?([^\n\"']+)", config_text):
+        scope, project_path = match.group(1).strip(), Path(match.group(2).strip())
+        external_lessons = project_path / "tasks" / "lessons.md"
+        try:
+            origins.update(parse_markdown_lesson_origins(external_lessons.read_text(encoding="utf-8"), scope))
+        except Exception:
+            continue
     return origins
 
 def git_head_text(path):
@@ -631,6 +647,7 @@ def load_project_lesson_origins(repo_root):
                 except Exception:
                     continue
         current_id = None
+        scope = yaml_path.parent.name
         for raw_line in text.splitlines():
             line = raw_line.strip()
             if line.startswith("- id:"):
@@ -638,7 +655,7 @@ def load_project_lesson_origins(repo_root):
             elif line.startswith("origin:") and current_id:
                 val = line[len("origin:"):].strip().strip("'\"")
                 if "[[" in val:
-                    origins[current_id] = val
+                    origins[f"{scope}:{current_id}"] = val
                 current_id = None
     return origins
 
@@ -647,6 +664,14 @@ def load_lesson_origins(repo_root):
     for lid, origin in load_project_lesson_origins(repo_root).items():
         origins.setdefault(lid, origin)
     return origins
+
+def resolve_lesson_origin(lesson_ref, origins):
+    if ":" in lesson_ref:
+        return origins.get(lesson_ref), False
+    matches = [origin for ref, origin in origins.items() if ref.rsplit(":", 1)[-1] == lesson_ref]
+    if len(matches) == 1:
+        return matches[0], False
+    return None, len(matches) > 1
 
 def inject_causal_chains(index_path, origins):
     """index.mdの各概念のlesson参照からoriginを取得しcausal_chainを注入（冪等）"""
@@ -663,11 +688,17 @@ def inject_causal_chains(index_path, origins):
         # 既存causal_chainを削除（冪等）
         part = re.sub(r"\| causal_chain \|[^\n]*\n?", "", part)
         # lesson idを抽出（`Lxxx` 形式）
-        lesson_ids = re.findall(r"\|\s*lesson\s*\|\s*`(L\w+)`", part)
+        lesson_ids = re.findall(r"\|\s*lesson\s*\|\s*`([a-z0-9._-]+:L\w+|L\w+)`", part, re.I)
         chains = []
+        ambiguous = 0
         for lid in lesson_ids:
-            if lid in origins:
-                chains.append(f"| causal_chain | `{origins[lid]}` ({lid}) |")
+            origin, is_ambiguous = resolve_lesson_origin(lid, origins)
+            if origin:
+                chains.append(f"| causal_chain | `{origin}` ({lid}) |")
+            elif is_ambiguous:
+                ambiguous += 1
+        if ambiguous:
+            print(f"AMBIGUOUS lesson refs skipped: {ambiguous} ({', '.join(lesson_ids)})")
         if chains:
             lines = part.splitlines(keepends=True)
             last_pipe_idx = -1

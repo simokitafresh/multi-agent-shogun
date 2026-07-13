@@ -729,6 +729,16 @@ PY
     ! grep -q '\[\[cmd_2867\]\]' "$TEST_TMPDIR/queue/insights.log"
 }
 
+@test "lesson resource row preserves project-qualified or explicit stable ref" {
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" lesson '{"id":"L893","project":"dm-signal","title":"学習ループ managed DB capability"}'
+    [ "$status" -eq 0 ]
+    grep -q '| lesson | `dm-signal:L893` 学習ループ managed DB capability |' "$SEMANTIC_INDEX_PATH"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" lesson '{"id":"L893","lesson_ref":"infra:L893","title":"学習ループ CLEAR best effort"}'
+    [ "$status" -eq 0 ]
+    grep -q '| lesson | `infra:L893` 学習ループ CLEAR best effort |' "$SEMANTIC_INDEX_PATH"
+}
+
 @test "wiki link target: similar aliases are recommended and exact aliases are skipped" {
     run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" lesson '{"id":"L997","title":"二値計測の確認","origin":"[[自動成長ループ改善]] -> [[成長ループ]]"}'
     [ "$status" -eq 0 ]

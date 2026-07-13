@@ -1208,6 +1208,18 @@ def handle_no_match_files(no_match_files, cmd_id, text, concepts):
 def shell_quote_backtick(value):
     return "`" + str(value).replace("`", "'") + "`"
 
+def lesson_resource_ref(payload):
+    """Return an explicit or source-qualified lesson ref when scope is known."""
+    explicit = str(payload.get("lesson_ref") or "").strip()
+    if explicit:
+        return explicit
+    lesson_id = str(payload.get("id") or payload.get("lesson_id") or "").strip()
+    scope = str(
+        payload.get("project") or payload.get("source_scope") or payload.get("source") or ""
+    ).strip().lower()
+    scope = re.sub(r"[^a-z0-9._-]+", "-", scope).strip("-")
+    return f"{scope}:{lesson_id}" if scope and lesson_id else lesson_id
+
 def resource_row(source_type, payload):
     if source_type == "cmd_complete":
         cmd_id = str(payload.get("id") or payload.get("cmd_id") or "").strip()
@@ -1225,7 +1237,8 @@ def resource_row(source_type, payload):
     if source_type == "lesson":
         lesson_id = str(payload.get("id") or payload.get("lesson_id") or "").strip()
         title = str(payload.get("title") or payload.get("enforcement") or "").strip()
-        ref = shell_quote_backtick(lesson_id) if lesson_id else "`lesson`"
+        stable_ref = lesson_resource_ref(payload)
+        ref = shell_quote_backtick(stable_ref) if stable_ref else "`lesson`"
         if title:
             ref += f" {title}"
         return f"| lesson | {ref} |"
