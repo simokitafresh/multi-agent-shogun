@@ -632,13 +632,30 @@ auto_commit_before_clear() {
     (
         cd "$SCRIPT_DIR" || exit
 
-        local preexisting_staged_paths
+        local preexisting_staged_paths auto_commit_candidate_paths
         preexisting_staged_paths="$(git diff --cached --name-only 2>/dev/null || true)"
+        auto_commit_candidate_paths="$(printf '%s\n%s\n' "$regular_paths" "$context_paths" | sed '/^[[:space:]]*$/d' | sort -u)"
         if [ -n "${preexisting_staged_paths//[[:space:]]/}" ]; then
-            local preexisting_staged_list
-            preexisting_staged_list="$(printf '%s\n' "$preexisting_staged_paths" | tr '\n' ' ')"
-            log "AUTO-COMMIT-WARN-SKIP: $agent_name pre-existing staged files detected before auto-commit: $preexisting_staged_list"
-            return 2
+            local staged_path candidate_path overlaps
+            while IFS= read -r staged_path || [ -n "$staged_path" ]; do
+                [ -n "$staged_path" ] || continue
+                overlaps=false
+                while IFS= read -r candidate_path || [ -n "$candidate_path" ]; do
+                    [ -n "$candidate_path" ] || continue
+                    if [ "$staged_path" = "$candidate_path" ] \
+                        || [[ "$staged_path" == "$candidate_path/"* ]] \
+                        || [[ "$candidate_path" == "$staged_path/"* ]]; then
+                        overlaps=true
+                        break
+                    fi
+                done <<< "$auto_commit_candidate_paths"
+
+                if [ "$overlaps" = "true" ]; then
+                    log "AUTO-COMMIT-WARN-SKIP: $agent_name pre-existing staged file overlaps auto-commit scope: $staged_path"
+                    return 2
+                fi
+                log "AUTO-COMMIT-STAGED-PRESERVE: $agent_name preserving scope-out staged file: $staged_path"
+            done <<< "$preexisting_staged_paths"
         fi
 
         if [ -n "${regular_paths//[[:space:]]/}" ]; then

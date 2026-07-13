@@ -322,7 +322,7 @@ grep -q "AUTO-COMMIT-SKIP: hayate last auto-commit within 30min" "$LOG"
     [[ "$output" == *"AUTO-COMMIT-SKIP"* ]]
 }
 
-@test "auto_commit: skips when pre-staged unrelated files exist" {
+@test "auto_commit: preserves pre-staged unrelated files and commits scoped change" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -335,7 +335,7 @@ trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
-mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/config" "$STATE_DIR"
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/config" "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
 cd "$SCRIPT_DIR"
 git init -q
 git config user.email test@example.com
@@ -344,6 +344,11 @@ printf "base\n" > scripts/a.sh
 printf "base\n" > config/other.yaml
 git add scripts/a.sh config/other.yaml
 git commit -qm initial
+cat > queue/tasks/hayate.yaml <<INNEREOF
+task:
+  status: done
+  target_path: scripts/a.sh
+INNEREOF
 
 printf "staged\n" >> config/other.yaml
 git add config/other.yaml
@@ -364,18 +369,78 @@ echo "count=$count"
 echo "staged=$staged_files"
 echo "worktree=$worktree_files"
 cat "$LOG"
+test "$rc" = "0"
+test "$count" = "2"
+test "$staged_files" = "config/other.yaml "
+test -z "$worktree_files"
+grep -q "AUTO-COMMIT-STAGED-PRESERVE: hayate preserving scope-out staged file: config/other.yaml" "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"rc=0"* ]]
+    [[ "$output" == *"count=2"* ]]
+    [[ "$output" == *"staged=config/other.yaml"* ]]
+    [[ "$output" == *"worktree="* ]]
+    [[ "$output" == *"AUTO-COMMIT-STAGED-PRESERVE"* ]]
+}
+
+@test "auto_commit: blocks when pre-staged file overlaps scoped change" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT/repo"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+cd "$SCRIPT_DIR"
+git init -q
+git config user.email test@example.com
+git config user.name test
+printf "base\n" > scripts/a.sh
+git add scripts/a.sh
+git commit -qm initial
+cat > queue/tasks/hayate.yaml <<INNEREOF
+task:
+  status: done
+  target_path: scripts/a.sh
+INNEREOF
+
+printf "staged\n" >> scripts/a.sh
+git add scripts/a.sh
+printf "worktree\n" >> scripts/a.sh
+NINJA_MONITOR_NOW=10000
+export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
+_uncommitted=$(git status --porcelain -uno -- scripts/)
+set +e
+auto_commit_before_clear hayate "$_uncommitted"
+rc=$?
+set -e
+
+count=$(git rev-list --count HEAD)
+staged_files=$(git diff --cached --name-only | sort | tr "\n" " ")
+worktree_files=$(git diff --name-only | sort | tr "\n" " ")
+echo "rc=$rc"
+echo "count=$count"
+echo "staged=$staged_files"
+echo "worktree=$worktree_files"
+cat "$LOG"
 test "$rc" = "2"
 test "$count" = "1"
-test "$staged_files" = "config/other.yaml "
+test "$staged_files" = "scripts/a.sh "
 test "$worktree_files" = "scripts/a.sh "
-grep -q "AUTO-COMMIT-WARN-SKIP: hayate pre-existing staged files detected before auto-commit: config/other.yaml" "$LOG"
+grep -q "AUTO-COMMIT-WARN-SKIP: hayate pre-existing staged file overlaps auto-commit scope: scripts/a.sh" "$LOG"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"rc=2"* ]]
     [[ "$output" == *"count=1"* ]]
-    [[ "$output" == *"staged=config/other.yaml"* ]]
+    [[ "$output" == *"staged=scripts/a.sh"* ]]
     [[ "$output" == *"worktree=scripts/a.sh"* ]]
-    [[ "$output" == *"AUTO-COMMIT-WARN-SKIP"* ]]
+    [[ "$output" == *"overlaps auto-commit scope"* ]]
 }
 
 @test "auto_commit: context batch skips within one hour" {
