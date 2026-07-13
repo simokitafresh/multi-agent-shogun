@@ -13,6 +13,7 @@ setup() {
         -e "s|SCRIPT_DIR=\"\$(cd \"\$(dirname \"\${BASH_SOURCE\[0\]}\")\/\.\.\" && pwd)\"|SCRIPT_DIR=\"${TEST_TMP}\"|" \
         "$PROJECT_ROOT/scripts/insight_write.sh" > "${TEST_TMP}/scripts/insight_write.sh"
     cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "${TEST_TMP}/scripts/memory_db_live_insert.py"
+    cp "$PROJECT_ROOT/scripts/insight_resolve.sh" "${TEST_TMP}/scripts/insight_resolve.sh"
     cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "${TEST_TMP}/scripts/lib/yaml_field_set.sh"
     chmod +x "${TEST_TMP}/scripts/insight_write.sh"
 }
@@ -377,15 +378,15 @@ print('NO_REPEAT_POST pending=1')
 
 # --- 7. --resolve モード ---
 
-@test "resolve: pendingのinsightをdoneに変更できる" {
+@test "resolve: pendingのinsightを完全証跡付きresolvedに変更できる" {
     # insightを追加してIDを取得
     local ins_id
     ins_id="$(bash "${TEST_TMP}/scripts/insight_write.sh" "解決テスト")"
 
     # resolve
-    run bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$ins_id"
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$ins_id" "unit test resolution" "test=test_insight_write"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"RESOLVED: $ins_id"* ]]
+    [[ "$output" == *"OK: $ins_id → resolved"* ]]
 
     # statusがdoneに変わっている
     run python3 -c "
@@ -393,8 +394,10 @@ import yaml
 with open('${TEST_TMP}/queue/insights.yaml') as f:
     data = yaml.safe_load(f)
 entry = data['insights'][0]
-assert entry['status'] == 'done', f'status={entry[\"status\"]}'
+assert entry['status'] == 'resolved', f'status={entry[\"status\"]}'
 assert 'resolved_at' in entry, 'resolved_at missing'
+assert entry['resolved_reason'] == 'unit test resolution'
+assert entry['action_artifact'] == 'test=test_insight_write'
 print('RESOLVE OK')
 "
     [ "$status" -eq 0 ]
@@ -405,7 +408,7 @@ print('RESOLVE OK')
     ins_id="$(bash "${TEST_TMP}/scripts/insight_write.sh" "resolve blocked by corrupt")"
     printf 'partial\n' > "${TEST_TMP}/queue/insights.yaml.corrupt.leftover"
 
-    run bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$ins_id"
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$ins_id" "blocked corrupt test" "test=corrupt"
     [ "$status" -ne 0 ]
     [[ "$output" == *"unresolved corrupt insight quarantine remains in queue root"* ]]
 
@@ -418,16 +421,16 @@ print('RESOLVE OK')
     local ins_id
     ins_id="$(INSIGHTS_FILE="$custom_file" bash "${TEST_TMP}/scripts/insight_write.sh" "custom resolve target")"
 
-    run env INSIGHTS_FILE="$custom_file" bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$ins_id"
+    run env INSIGHTS_FILE="$custom_file" bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$ins_id" "custom target test" "test=custom"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"RESOLVED: $ins_id"* ]]
+    [[ "$output" == *"OK: $ins_id → resolved"* ]]
 
     run python3 -c "
 import yaml
 with open('${custom_file}') as f:
     data = yaml.safe_load(f)
 entry = data['insights'][0]
-assert entry['status'] == 'done'
+assert entry['status'] == 'resolved'
 print('CUSTOM RESOLVE OK')
 "
     [ "$status" -eq 0 ]
@@ -448,7 +451,7 @@ tmp = os.environ["TEST_TMP_ENV"]
 ins_id = os.environ["INS_ID_ENV"]
 env = os.environ.copy()
 env["INSIGHT_TEST_SLEEP_BEFORE_REPLACE"] = "5"
-proc = subprocess.Popen(["bash", f"{tmp}/scripts/insight_write.sh", "--resolve", ins_id], env=env)
+proc = subprocess.Popen(["bash", f"{tmp}/scripts/insight_write.sh", "--resolve", ins_id, "interrupt test", "test=atomic"], env=env)
 time.sleep(1)
 proc.terminate()
 try:
@@ -521,7 +524,7 @@ print('REPAIR INTERRUPT PRESERVED')
 
 @test "resolve: 存在しないIDでエラー終了する" {
     echo "insights: []" > "${TEST_TMP}/queue/insights.yaml"
-    run bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "INS-NONEXISTENT"
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "INS-NONEXISTENT" "missing test" "test=missing"
     [ "$status" -ne 0 ]
 }
 
@@ -544,7 +547,7 @@ print('DEFAULT OK')
     [[ "$output" == *"DEFAULT OK"* ]]
 }
 
-@test "自動完了: 修正済みメッセージはdoneで保存される" {
+@test "自動完了禁止: 修正済み文言だけではpendingのまま保存される" {
     run bash "${TEST_TMP}/scripts/insight_write.sh" "foo修正済みのため記録のみ" "medium" "unit_test"
     [ "$status" -eq 0 ]
     [[ "$output" =~ ^INS- ]]
@@ -554,12 +557,19 @@ import yaml
 with open('${TEST_TMP}/queue/insights.yaml') as f:
     data = yaml.safe_load(f)
 entry = data['insights'][0]
-assert entry['status'] == 'done', f'status={entry[\"status\"]}'
-assert 'resolved_at' in entry, 'resolved_at missing'
-print('AUTO DONE OK')
+assert entry['status'] == 'pending', f'status={entry[\"status\"]}'
+assert not entry.get('resolved_at'), entry
+print('AUTO RESOLVE BLOCKED OK')
 "
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO DONE OK"* ]]
+    [[ "$output" == *"AUTO RESOLVE BLOCKED OK"* ]]
+}
+
+@test "resolve: evidence引数欠落はfail-closedでpendingを維持する" {
+    ins_id="$(bash "${TEST_TMP}/scripts/insight_write.sh" "missing evidence")"
+    run bash "${TEST_TMP}/scripts/insight_write.sh" --resolve "$ins_id"
+    [ "$status" -ne 0 ]
+    grep -q 'status: pending' "${TEST_TMP}/queue/insights.yaml"
 }
 
 @test "スキップ: test_pattern/test_fix含むメッセージは保存しない" {

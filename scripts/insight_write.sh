@@ -2,7 +2,7 @@
 # semantic-links: [[セマンティック辞書構想]]
 # insight_write.sh — 学習ループの「次の気づき」を即座に保存
 # Usage: bash scripts/insight_write.sh "気づきの内容" [priority] [source]
-#        bash scripts/insight_write.sh --resolve <id>
+#        bash scripts/insight_write.sh --resolve <id> <reason> <action_artifact>
 #   priority: high/medium/low (default: medium)
 #   source: 気づきの出所 (default: manual)
 #   optional env: INSIGHT_FIX_KNOWN=1 INSIGHT_TARGET_FILE=<path> INSIGHT_VERIFY_COMMAND=<cmd>
@@ -30,7 +30,7 @@ SOURCE_REPEAT_THRESHOLD="${INSIGHT_SOURCE_REPEAT_THRESHOLD:-3}"
 usage() {
   cat <<'EOF'
 Usage: bash scripts/insight_write.sh "気づきの内容" [priority] [source]
-       bash scripts/insight_write.sh --resolve <id>
+       bash scripts/insight_write.sh --resolve <id> <reason> <action_artifact>
 
 priority: high/medium/low (default: medium)
 source: 気づきの出所 (default: manual)
@@ -42,104 +42,11 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   exit 0
 fi
 
-# --resolve mode: mark insight as done
+# Compatibility entry point. Resolution itself has exactly one writer/contract.
 if [ "${1:-}" = "--resolve" ]; then
-  resolve_id="${2:?Usage: insight_write.sh --resolve <id>}"
-  ts="$(date -Iseconds)"
-
-  (
-    flock -w 5 200 || { echo "ERROR: lock timeout"; exit 1; }
-
-    if [ ! -f "$INSIGHTS_FILE" ] || [ ! -s "$INSIGHTS_FILE" ]; then
-      echo "ERROR: insights file not found or empty" >&2
-      exit 1
-    fi
-
-    if [ "${INSIGHT_ALLOW_RESOLVE_WITH_CORRUPT:-0}" != "1" ]; then
-      _insights_dir="$(dirname "$INSIGHTS_FILE")"
-      shopt -s nullglob
-      _insight_corrupt_leftovers=("${_insights_dir}/$(basename "$INSIGHTS_FILE").corrupt."*)
-      shopt -u nullglob
-      if [ "${#_insight_corrupt_leftovers[@]}" -gt 0 ]; then
-        echo "ERROR: unresolved corrupt insight quarantine remains in queue root: ${#_insight_corrupt_leftovers[@]} file(s). Run startup corrupt TTL cleanup or move them to queue/archive/insights_corrupt before resolve." >&2
-        exit 1
-      fi
-    fi
-
-    # Line-by-line edit: avoids full-file YAML rewrite data loss
-    INSIGHTS_FILE_ENV="$INSIGHTS_FILE" RESOLVE_ID_ENV="$resolve_id" TS_ENV="$ts" \
-    python3 - <<'PYEOF'
-import os
-import sys
-import tempfile
-import time
-
-insights_file = os.environ['INSIGHTS_FILE_ENV']
-resolve_id = os.environ['RESOLVE_ID_ENV']
-ts = os.environ['TS_ENV']
-
-def atomic_replace_lines(path, lines):
-    directory = os.path.dirname(os.path.abspath(path)) or '.'
-    fd, tmp_path = tempfile.mkstemp(prefix='.insights.', suffix='.tmp', dir=directory)
-    try:
-        with os.fdopen(fd, 'w', encoding='utf-8') as f:
-            f.writelines(lines)
-            f.flush()
-            os.fsync(f.fileno())
-        sleep_sec = float(os.environ.get('INSIGHT_TEST_SLEEP_BEFORE_REPLACE', '0') or '0')
-        if sleep_sec > 0:
-            time.sleep(sleep_sec)
-        os.replace(tmp_path, path)
-    finally:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-
-with open(insights_file, 'r', encoding='utf-8') as f:
-    lines = f.readlines()
-
-found = False
-modified = []
-in_target = False
-resolved_at_written = False
-
-for line in lines:
-    if line.startswith('- id: '):
-        if in_target and not resolved_at_written:
-            modified.append(f'  resolved_at: "{ts}"\n')
-        current_id = line[len('- id: '):].strip()
-        in_target = current_id == resolve_id
-        if in_target:
-            found = True
-            resolved_at_written = False
-        modified.append(line)
-        continue
-
-    if in_target and line.startswith('  status:'):
-        modified.append('  status: done\n')
-        if not resolved_at_written:
-            modified.append(f'  resolved_at: "{ts}"\n')
-            resolved_at_written = True
-        continue
-
-    if in_target and line.startswith('  resolved_at:'):
-        modified.append(f'  resolved_at: "{ts}"\n')
-        resolved_at_written = True
-        continue
-
-    modified.append(line)
-
-if in_target and not resolved_at_written:
-    modified.append(f'  resolved_at: "{ts}"\n')
-
-if not found:
-    print(f'ERROR: id not found: {resolve_id}', file=sys.stderr)
-    sys.exit(1)
-
-atomic_replace_lines(insights_file, modified)
-print(f'RESOLVED: {resolve_id}')
-PYEOF
-  ) 200>"$(lock_path "$INSIGHTS_FILE")"
-  exit 0
+  [ "$#" -eq 4 ] || { echo "ERROR: --resolve requires <id> <reason> <action_artifact>" >&2; exit 2; }
+  INSIGHTS_FILE="$INSIGHTS_FILE" bash "$SCRIPT_DIR/scripts/insight_resolve.sh" "$2" "$3" "$4"
+  exit $?
 fi
 
 msg="${1:?Usage: insight_write.sh \"message\" [priority] [source]}"
@@ -200,12 +107,10 @@ _insight_now="$(date '+%Y%m%d-%H%M%S%3N %Y-%m-%dT%H:%M:%S%:z')"
 id="INS-${_insight_now%% *}-${_insight_uuid:0:4}"
 ts="${_insight_now#* }"
 
+# Insight creation never implies resolution. Evidence must be supplied later to
+# insight_resolve.sh; wording alone cannot prove an action happened.
 status="pending"
 resolved_at=""
-if [[ "$msg" == *"修正済み"* || "$msg" == *"解消"* || "$msg" == *"登録済み"* || "$msg" == *"対処済み"* ]]; then
-  status="done"
-  resolved_at="$ts"
-fi
 
 # flock for concurrent safety
 (

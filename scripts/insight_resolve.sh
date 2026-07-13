@@ -26,6 +26,18 @@ if [ ! -f "$INSIGHTS_FILE" ]; then
     exit 1
 fi
 
+if [ "${INSIGHT_ALLOW_RESOLVE_WITH_CORRUPT:-0}" != "1" ]; then
+    corrupt_dir="$(dirname "$INSIGHTS_FILE")"
+    corrupt_base="$(basename "$INSIGHTS_FILE")"
+    shopt -s nullglob
+    corrupt_leftovers=("${corrupt_dir}/${corrupt_base}.corrupt."*)
+    shopt -u nullglob
+    if [ "${#corrupt_leftovers[@]}" -gt 0 ]; then
+        echo "ERROR: unresolved corrupt insight quarantine remains in queue root: ${#corrupt_leftovers[@]} file(s)" >&2
+        exit 1
+    fi
+fi
+
 if ! grep -q "id: ${INSIGHT_ID}" "$INSIGHTS_FILE"; then
     echo "ERROR: insight not found: $INSIGHT_ID" >&2
     exit 1
@@ -47,6 +59,7 @@ import json
 import os
 import pathlib
 import tempfile
+import time
 
 path = pathlib.Path(os.environ["INSIGHTS_FILE_ENV"])
 lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
@@ -77,6 +90,9 @@ try:
         stream.writelines(lines)
         stream.flush()
         os.fsync(stream.fileno())
+    sleep_sec = float(os.environ.get("INSIGHT_TEST_SLEEP_BEFORE_REPLACE", "0") or "0")
+    if sleep_sec > 0:
+        time.sleep(sleep_sec)
     os.replace(tmp, path)
 finally:
     if os.path.exists(tmp):

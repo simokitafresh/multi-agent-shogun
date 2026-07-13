@@ -1457,7 +1457,9 @@ def resolve_semantic_insight(insight_id):
     env = os.environ.copy()
     env["INSIGHTS_FILE"] = str(insights_path)
     result = subprocess.run(
-        ["bash", str(insight_write), "--resolve", insight_id],
+        ["bash", str(insight_write), "--resolve", insight_id,
+         "semantic index candidate was absorbed into a registered concept",
+         f"semantic_index={index_path}"],
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

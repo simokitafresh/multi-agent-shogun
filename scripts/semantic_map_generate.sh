@@ -860,7 +860,9 @@ PY
     local count=0 id
     while IFS= read -r id; do
         [ -n "$id" ] || continue
-        if bash "$insight_script" --resolve "$id" >/dev/null 2>&1; then
+        if INSIGHTS_FILE="$insights_file" bash "$insight_script" --resolve "$id" \
+            "semantic map generation verified the candidate is represented or intentionally ignored" \
+            "semantic_map=$map_path;semantic_index=$index_path" >/dev/null 2>&1; then
             count=$((count + 1))
         else
             echo "WARN: semantic insight auto-resolve failed: $id" >&2

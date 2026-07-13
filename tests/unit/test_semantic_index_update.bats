@@ -51,9 +51,10 @@ EOF
     cat > "$SEMANTIC_INSIGHT_WRITE" <<'EOF'
 #!/usr/bin/env bash
 if [ "${1:-}" = "--resolve" ]; then
-    python3 - "$2" "${SEMANTIC_INSIGHTS_PATH:-$TEST_TMPDIR/queue/insights.yaml}" <<'PY'
+    [ "$#" -eq 4 ] || exit 2
+    python3 - "$2" "${SEMANTIC_INSIGHTS_PATH:-$TEST_TMPDIR/queue/insights.yaml}" "$3" "$4" <<'PY'
 import sys
-target, path = sys.argv[1:3]
+target, path, reason, artifact = sys.argv[1:5]
 lines = open(path, encoding="utf-8").read().splitlines()
 out = []
 in_target = False
@@ -61,7 +62,7 @@ for line in lines:
     if line.startswith("- id: "):
         in_target = line[len("- id: "):].strip() == target
     if in_target and line.startswith("  status:"):
-        out.append("  status: done")
+        out.extend(["  status: resolved", f'  resolved_reason: "{reason}"', f'  action_artifact: "{artifact}"', '  resolved_at: "2026-07-14T00:00:00+09:00"'])
     else:
         out.append(line)
 open(path, "w", encoding="utf-8").write("\n".join(out) + "\n")
@@ -390,7 +391,7 @@ EOF
 import yaml
 data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-SIMILAR"]["status"] == "done"
+assert rows["INS-SIMILAR"]["status"] == "resolved"
 assert rows["INS-DISTANT"]["status"] == "pending"
 PY
 }
@@ -430,9 +431,11 @@ EOF
 import yaml
 data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-INFO"]["status"] == "done"
-assert rows["INS-RETURN"]["status"] == "done"
-assert rows["INS-SEMANTIC"]["status"] == "done"
+assert rows["INS-INFO"]["status"] == "resolved"
+assert rows["INS-RETURN"]["status"] == "resolved"
+assert rows["INS-SEMANTIC"]["status"] == "resolved"
+assert rows["INS-SEMANTIC"]["resolved_reason"]
+assert rows["INS-SEMANTIC"]["action_artifact"]
 PY
 }
 
@@ -474,7 +477,7 @@ EOF
 import yaml
 data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-RECHECK-HIT"]["status"] == "done"
+assert rows["INS-RECHECK-HIT"]["status"] == "resolved"
 assert rows["INS-RECHECK-MISS"]["status"] == "pending"
 PY
 }
@@ -554,7 +557,7 @@ PY
 import yaml
 data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-STRESS-AUTO"]["status"] == "done"
+assert rows["INS-STRESS-AUTO"]["status"] == "resolved"
 PY
 }
 
@@ -581,7 +584,7 @@ EOF
 import yaml
 data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-AC5"]["status"] == "done"
+assert rows["INS-AC5"]["status"] == "resolved"
 PY
 }
 
@@ -606,7 +609,7 @@ EOF
 import yaml
 data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-AC5-TRAINING"]["status"] == "done"
+assert rows["INS-AC5-TRAINING"]["status"] == "resolved"
 PY
 }
 
@@ -631,7 +634,7 @@ EOF
 import yaml
 data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-AC5-MANUAL"]["status"] == "done"
+assert rows["INS-AC5-MANUAL"]["status"] == "resolved"
 PY
 }
 
@@ -656,7 +659,7 @@ EOF
 import yaml
 data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-AC5-L7R"]["status"] == "done"
+assert rows["INS-AC5-L7R"]["status"] == "resolved"
 PY
 }
 
@@ -682,7 +685,7 @@ EOF
 import yaml
 data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-AC5-L7R-SIMILAR"]["status"] == "done"
+assert rows["INS-AC5-L7R-SIMILAR"]["status"] == "resolved"
 PY
 }
 
@@ -711,7 +714,7 @@ data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = data["insights"]
 similar = [e for e in rows if "[[意味検索改善]]" in e["insight"]][0]
 distant = [e for e in rows if "[[完全別物]]" in e["insight"]][0]
-assert similar["status"] == "done"
+assert similar["status"] == "resolved"
 assert distant["status"] == "pending"
 PY
 }
@@ -908,7 +911,7 @@ EOF
 import yaml
 data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-SEMANTIC"]["status"] == "done"
+assert rows["INS-SEMANTIC"]["status"] == "resolved"
 assert rows["INS-MANUAL"]["status"] == "pending"
 PY
 }
@@ -952,8 +955,8 @@ EOF
 import yaml
 data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
-assert rows["INS-HANDLED"]["status"] == "done"
-assert rows["INS-TMP"]["status"] == "done"
+assert rows["INS-HANDLED"]["status"] == "resolved"
+assert rows["INS-TMP"]["status"] == "resolved"
 assert rows["INS-UNHANDLED"]["status"] == "pending"
 PY
 }

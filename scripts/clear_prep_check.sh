@@ -323,7 +323,9 @@ PY
     while IFS=$'\t' read -r pending_id pending_query; do
       [ -n "$pending_id" ] && [ -n "$pending_query" ] || continue
       if SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_CAUSAL=1 "$semantic_search" "$pending_query" >/dev/null 2>&1; then
-        if "$insight_write" --resolve "$pending_id" >/dev/null 2>&1; then
+        if "$insight_write" --resolve "$pending_id" \
+            "clear preparation confirmed the indexed memory gap is handled" \
+            "clear_prep_check=memory_index_validation" >/dev/null 2>&1; then
           resolved=$((resolved + 1))
         fi
       fi

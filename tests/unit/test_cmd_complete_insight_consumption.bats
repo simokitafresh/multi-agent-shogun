@@ -60,9 +60,10 @@ PY
   [[ "$output" == *"produced=1 consumed=1 invalid=0 false_positive=0"* ]]
 }
 
-@test "legacy done-only resolution reproduces invalid ledger input" {
-  INSIGHTS_FILE="$FIXTURE/queue/insights.yaml" \
+@test "legacy resolve entry point fails closed without evidence" {
+  run env INSIGHTS_FILE="$FIXTURE/queue/insights.yaml" \
     bash "$REPO_ROOT/scripts/insight_write.sh" --resolve INS-ROOT
+  [ "$status" -ne 0 ]
   run python3 - "$FIXTURE/queue/insights.yaml" <<'PY'
 import sys, yaml
 item = yaml.safe_load(open(sys.argv[1]))["insights"][0]
@@ -71,7 +72,7 @@ invalid = int(item.get("status") == "done" and not consumed)
 print(f"produced=1 consumed={consumed} invalid={invalid}")
 PY
   [ "$status" -eq 0 ]
-  [[ "$output" == *"produced=1 consumed=0 invalid=1"* ]]
+  [[ "$output" == *"produced=1 consumed=0 invalid=0"* ]]
 }
 
 @test "declared missing insight fails closed" {
