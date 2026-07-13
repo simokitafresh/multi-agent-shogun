@@ -47,6 +47,21 @@ insight_write="${SEMANTIC_INSIGHT_WRITE:-$script_dir/scripts/insight_write.sh}"
 stress_test="${SEMANTIC_STRESS_CMD:-$script_dir/scripts/semantic_stress_test.sh}"
 lock_path="${SEMANTIC_INDEX_LOCK:-${index_path}.lock}"
 
+# WSL2 /mnt/c上のSQLite正本をtag propagationが直接走査すると、events×conceptsの
+# random row I/OがP9待ちになり数分化する。読取先の解決は共通SSOTへ委譲し、
+# 明示的なテストDBはdefault_path不一致により従来どおりそのまま使用する。
+memory_db_default="$script_dir/data/multi_agent_shogun_memory.db"
+memory_db_source="${SEMANTIC_MEMORY_DB_PATH:-$memory_db_default}"
+memory_db_cache_helper="${SEMANTIC_MEMORY_DB_CACHE_HELPER:-$script_dir/scripts/lib/memory_db_cache.sh}"
+if [ -f "$memory_db_cache_helper" ]; then
+    # shellcheck source=scripts/lib/memory_db_cache.sh
+    source "$memory_db_cache_helper"
+    if type prepare_memory_db_for_read >/dev/null 2>&1; then
+        SEMANTIC_MEMORY_DB_PATH="$(prepare_memory_db_for_read "$script_dir" "$memory_db_source" "$memory_db_default")"
+        export SEMANTIC_MEMORY_DB_PATH
+    fi
+fi
+
 if [ ! -f "$index_path" ]; then
     echo "ERROR: semantic index not found: $index_path" >&2
     exit 1

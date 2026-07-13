@@ -75,6 +75,25 @@ EOF
     chmod +x "$SEMANTIC_INSIGHT_WRITE"
 }
 
+@test "memory DB read path is resolved through shared ext4 cache helper" {
+    local marker="$TEST_TMPDIR/cache-helper.args"
+    local helper="$TEST_TMPDIR/mock-memory-db-cache.sh"
+    cat > "$helper" <<'EOF'
+prepare_memory_db_for_read() {
+    printf '%s|%s|%s\n' "$1" "$2" "$3" > "$SEMANTIC_TEST_CACHE_MARKER"
+    printf '%s\n' "$2"
+}
+EOF
+
+    SEMANTIC_TEST_CACHE_MARKER="$marker" \
+    SEMANTIC_MEMORY_DB_CACHE_HELPER="$helper" \
+    run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" discussion '{"timestamp":"2026-07-13T17:00:00+09:00","summary":"cache resolver test"}'
+
+    [ "$status" -eq 0 ]
+    [ -s "$marker" ]
+    grep -q "$PROJECT_ROOT|$SEMANTIC_MEMORY_DB_PATH|$PROJECT_ROOT/data/multi_agent_shogun_memory.db" "$marker"
+}
+
 teardown() {
     rm -rf "$TEST_TMPDIR"
 }
