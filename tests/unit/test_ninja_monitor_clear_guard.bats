@@ -100,6 +100,48 @@ grep -q cmd_formal "$LOG"
     [ "$status" -eq 0 ]
 }
 
+@test "completion_notify_gap: terminal GATE CLEAR after LGTM suppresses cmd_3869-type false positive" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T=$(mktemp -d); trap "rm -rf \"$T\"" EXIT
+SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
+mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_terminal" "$T/scripts" "$STATE_DIR"
+touch "$LOG"
+lgtm=$(date -d "-600 seconds" -Iseconds)
+printf "messages:\n- content: \"cmd_terminal verdict: LGTM\"\n  timestamp: \"%s\"\n  type: review_feedback\n" "$lgtm" > "$T/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$T/queue/inbox/shogun.yaml"; printf "entries: []\n" > "$T/queue/bulletin_board.yaml"
+printf "#!/bin/bash\necho INBOX_CALLED:\\$@ >> \"$LOG\"\n" > "$T/scripts/inbox_write.sh"; chmod +x "$T/scripts/inbox_write.sh"
+printf "GATE CLEAR: cmd完了許可\n" > "$T/queue/gates/cmd_terminal/cmd_complete_gate.trigger.log"
+touch -d "-500 seconds" "$T/queue/gates/cmd_terminal/cmd_complete_gate.trigger.log"
+log() { echo "$1" >> "$LOG"; }; NINJA_MONITOR_LGTM_NOTIFY_GRACE=1 check_karo_completion_notify_gap
+test "$(grep -c INBOX_CALLED "$LOG" 2>/dev/null || true)" -eq 0
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "completion_notify_gap: CLEAR then REOPEN then new LGTM remains a true positive and dedupes second cycle" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T=$(mktemp -d); trap "rm -rf \"$T\"" EXIT
+SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
+mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_reopened" "$T/scripts" "$STATE_DIR"
+clear=$(date -d "-700 seconds" -Iseconds); reopen=$(date -d "-600 seconds" -Iseconds); lgtm=$(date -d "-500 seconds" -Iseconds)
+printf "messages:\n- content: \"cmd_reopened verdict: RC\"\n  timestamp: \"%s\"\n  type: review_feedback\n- content: \"cmd_reopened verdict: LGTM\"\n  timestamp: \"%s\"\n  type: review_feedback\n" "$reopen" "$lgtm" > "$T/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$T/queue/inbox/shogun.yaml"; printf "entries: []\n" > "$T/queue/bulletin_board.yaml"
+printf "#!/bin/bash\necho INBOX_CALLED:\\$@ >> \"$LOG\"\n" > "$T/scripts/inbox_write.sh"; chmod +x "$T/scripts/inbox_write.sh"
+printf "GATE CLEAR: cmd完了許可\n" > "$T/queue/gates/cmd_reopened/cmd_complete_gate.trigger.log"
+touch -d "$clear" "$T/queue/gates/cmd_reopened/cmd_complete_gate.trigger.log"
+log() { echo "$1" >> "$LOG"; }; NINJA_MONITOR_LGTM_NOTIFY_GRACE=1 check_karo_completion_notify_gap
+check_karo_completion_notify_gap
+test "$(grep -c INBOX_CALLED "$LOG")" -eq 1
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "auto_commit: regular commit excludes context markdown and batches context separately" {
     run bash -lc '
 set -eo pipefail

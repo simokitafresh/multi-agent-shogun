@@ -1904,7 +1904,24 @@ if not isinstance(messages, list):
 
 lgtm_events = []
 reopen_events = []
+terminal_events = []
 current_report_cmds = set()
+# cmd_complete_gate.trigger.log is the canonical evidence that the completion
+# gate reached its terminal CLEAR branch.  Marker files such as archive.done
+# can predate a later RC/review cycle, so only the successful gate log and its
+# generation timestamp participate in the event ordering.
+for gate_dir in glob.glob(os.path.join(gates_dir, "cmd_*")):
+    trigger_log = os.path.join(gate_dir, "cmd_complete_gate.trigger.log")
+    try:
+        with open(trigger_log, "r", encoding="utf-8", errors="replace") as fh:
+            terminal_clear = any(
+                re.match(r'^GATE CLEAR(?: \(緊急override\))?:', line)
+                for line in fh
+            )
+        if terminal_clear:
+            terminal_events.append((dedup_key(os.path.basename(gate_dir)), int(os.path.getmtime(trigger_log))))
+    except OSError:
+        pass
 # Formal approvals count only while bound to the current report generation.
 for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
     report = load_yaml(report_path)
@@ -1994,6 +2011,8 @@ for path in glob.glob(os.path.join(tasks_dir, "*.yaml")):
 
 for cmd_id, ts in lgtm_events:
     event_key = dedup_key(cmd_id)
+    if any(key == event_key and clear_ts >= ts for key, clear_ts in terminal_events):
+        continue
     if any(key == event_key and reopen_ts >= ts for key, reopen_ts in reopen_events):
         continue
     if any(key == event_key and notice_ts >= ts for key, notice_ts in notifications):
