@@ -154,6 +154,25 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "transactional tool passes artifact as Path for every registered action" {
+  dependency="$BATS_TEST_TMPDIR/dependency.py"
+  cat > "$dependency" <<'PY'
+from pathlib import Path
+def backup(dsn, artifact, service, expected_commit):
+    assert isinstance(artifact, Path)
+def restore(dsn, artifact, expected_commit, production, confirm_a, confirm_b,
+            allow_local_clone_identity, *, dry_run=False):
+    assert isinstance(artifact, Path)
+PY
+  for action in backup dry-run restore; do
+    run env DB_CAPABILITY=transactional_restore DB_CAPABILITY_MODE=transactional_restore \
+      DB_CAPABILITY_DEPENDENCY_TOOL="$dependency" DB_CAPABILITY_EXPECTED_COMMIT=deadbeef \
+      DATABASE_URL=unused python3 "$ROOT/scripts/lib/db_capability_tool.py" \
+      "$action" --artifact "$BATS_TEST_TMPDIR/artifact"
+    [ "$status" -eq 0 ]
+  done
+}
+
 @test "readonly tool forces database transaction readonly before executing attack corpus" {
   cat > "$BATS_TEST_TMPDIR/psycopg2.py" <<'PY'
 import os

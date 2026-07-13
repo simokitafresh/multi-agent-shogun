@@ -6,6 +6,7 @@ import os
 import sys
 import argparse
 import importlib.util
+from pathlib import Path
 
 
 def main() -> int:
@@ -44,12 +45,12 @@ def main() -> int:
     spec.loader.exec_module(module)
     if args.action == "backup":
         module.backup(
-            os.environ["DATABASE_URL"], args.artifact, args.service,
+            os.environ["DATABASE_URL"], Path(args.artifact), args.service,
             os.environ["DB_CAPABILITY_EXPECTED_COMMIT"],
         )
     else:
         module.restore(
-            os.environ["DATABASE_URL"], args.artifact,
+            os.environ["DATABASE_URL"], Path(args.artifact),
             os.environ["DB_CAPABILITY_EXPECTED_COMMIT"], True,
             "P4_RESTORE", os.environ["DB_CAPABILITY_EXPECTED_COMMIT"], False,
             dry_run=args.action == "dry-run",
