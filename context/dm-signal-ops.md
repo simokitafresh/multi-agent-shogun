@@ -1206,3 +1206,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - **前提実装**: bundle export/import consumer機構+manifest payload保存契約(sha256/row_count/min_max date/PF set/logical_dateを完全保存、schema migration不要)。この実装GREENまでAC2再挑戦は禁止。実装第1段(bundle export/import consumer)は`cmd_3873`が担当中(2026-07-13時点in_progress、完了時に本セクションの追補が必要)。
 - 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.17、入力差分偵察: `context/dm-signal-research.md`(cmd_3872_input_snapshot_diff)
 - 因果リンク: [[AC2本番fullrecalculate_1run実行(cmd_3870)]] -> [[input_snapshot_id不一致でFAIL]] -> [[cmd_3872入力差分偵察でlogical_date日跨ぎ+manifest payload未保存が十分条件と特定]] -> [[single-source_immutable_input_bundle方式確定]] -> [[cmd_3873でbundle実装着手(in_progress)]]
+
+## §74 GS DB世代重複削除候補9件を実削除(cmd_3868, 2026-07-13)
+
+- **結論**: grid_search配下146DB台帳(`docs/research/cmd_3868_gs_db_generation_inventory.md`)の削除候補は9件・921174016 bytesで確定(文書冒頭メタデータの「削除候補0件/0bytes」は旧版残骸で誤り、本文の削除候補一覧テーブル・重複グループ詳細が正)。saizoが実行直前に9件全件をrealpath scope内・非symlink・通常ファイル・bytes一致・git管理外・コード参照0(自己参照文書除く一括grep)・同一SHA保持正本現存の6項目で独立再検証し全件PASSを確認後、個別`rm --`で削除実行。
+- 詳細・削除前後df/SHA突合証跡: `docs/research/cmd_3868_gs_db_generation_inventory.md`, 報告: `queue/reports/saizo_report_cmd_3868.yaml`
+- 因果リンク: [[C_drive満杯20260712_2307]] -> [[gs_db世代重複40.8GB残存]] -> [[kagemaruが146DB台帳作成・9件候補確定]] -> [[saizoが実行直前再検証+個別rm削除]]
