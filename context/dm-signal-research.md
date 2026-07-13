@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga236_dm_signal_research_freshness_202607130218 -->
+<!-- dm_signal_research_reflux: fingerprint=299b6115fa20daf0b953f54e4c6bbe2169294cecc0a3a642a65db4777b457e79; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgwqc1NiBjbWRfMzg3Mui/veijnOOBuOWQjOacn+a4iOOBvw== -->
 <!-- source_commit:bd1a1b10322d97fa59cba62dd72550e9102c784f (DM-Signal docs/research配下の最終同期commit。次回鮮度チェックはこのcommit以降のdiffのみ照合対象=GA-236入口側改善の一部) -->
-<!-- dm_signal_research_reflux: fingerprint=0c4d410e2a7153e932b6d6f86c1ac58c05340451db62fe1cded91e32ee00fe4a; mode=non-target; evidence_b64=b3JpZ2luL21haW7ml6LlrZhjb21taXTjga7pnZ5mb3JjZee1seWQiOOAguS4iua1geaXouWtmHJlc2VhcmNo5aSJ5pu044KS5YaF5a655aSJ5pu044Gb44Ga5L+d5oyB44GZ44KL44Gf44KB5pysdGFza+OBp2NvbnRleHTpgoTmtYHlr77osaHlpJY= -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -701,6 +701,8 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 → **続報: §57(2026-07-13)で「live反映は未確認」は解消(live=`34747ad1`確定・deploy済み)、AC2は未実行のまま残と判明**
 
 ## §56. origin統合完了・実CI初回全量実行で21件pre-existing failure発覚、push/deploy意図的見送り (cmd_3860, 2026-07-12)
+
+- **cmd_3872追補 (2026-07-13)**: P4 AC2のinput snapshot不一致は、現物上`logical_date`の日跨ぎだけで発生するため日次ETL価格更新の証明ではない。expected成果物はmanifest payload、manifestは入力row_count/end_dateを保存せず、過去入力差分を事後説明不能。再挑戦は同一`logical_date`+PF exact set+4 artifactを固定し完全payloadを先に保存する。→ `docs/research/cmd_3872_input_snapshot_diff.md`
 
 - **AC1完了**: cmd_3859がエスカレーションしたorigin/main(9 commit) vs local main(79 commit)分岐を`git merge origin/main`(force/rebase不使用)で統合、マージコミット`38ec9b8b`。両系列コミットが祖先に含まれることを確認。マージ後`backend/`はlocal main旧tip(`0e079ac5`)と**0差分**(origin側9 commitは家老による個別移植でlocal側の真部分集合と判明。証拠: `git diff d942982b 5430b59b -- backend/app/services/monthly_trade_impl.py`が空)。コンフリクト2件もこの前提でHEAD側採用。
 - **実CI初回全量実行で重大発見**: 検証用ブランチをGitHub Actions実CI(全1790テスト、実PostgreSQL)へpushしたところ**24件失敗**(origin/main単体は1件のみ=pre-existingの日付mock問題)。backend/の0差分により、この24件はマージ由来ではなくlocal 79 commit統合状態に既に内在していたと確定。**§cmd_3856(1つ前のP3a作業)が既に「full backend suite参考計測: baseline 38 failed/1734 passed→post-refactor 33 failed/1740 passed(環境起因)」と記録していた既知傾向と整合する**が、cmd_3856時点はローカル参考計測で非blocking扱いだったのに対し、本cmdは実GitHub Actions CIでの計測かつ**実際にpushする(=後述のRender auto-deployにより即本番反映される)最初のcmd**であるため、同じ傾向でもリスク評価を変えた。
