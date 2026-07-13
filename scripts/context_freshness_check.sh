@@ -491,10 +491,12 @@ INFRA_CONTEXT_PATHS: dict[str, list[str]] = {
         "scripts/semantic_",
     ],
 }
-# WSL2 NTFS上でgit logが7秒以上かかるため並列実行と組み合わせてこの値で打ち切る。
-# テスト用小さいrepoでは瞬時完了するため精度に影響しない。
+# WSL2/9pマウント上でgit logが数秒〜十数秒かかるため並列実行と組み合わせてこの値で
+# 打ち切る。GA-245実測: 集約後の呼び出しは6秒以下では不安定(5回中2回timeout)、
+# 8秒で安定、安全マージンを見て10秒を既定とする(旧既定3秒は実測を大幅に下回り
+# ほぼ全件timeoutしていた)。テスト用小さいrepoでは瞬時完了するため精度に影響しない。
 # 環境変数 CFC_GIT_TIMEOUT で上書き可能（テスト/開発用）。
-_GIT_TIMEOUT: int = int(os.environ.get("CFC_GIT_TIMEOUT", "3"))
+_GIT_TIMEOUT: int = int(os.environ.get("CFC_GIT_TIMEOUT", "10"))
 
 
 def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[str], bool]:
@@ -511,6 +513,17 @@ def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[s
             return project_path, [], False
 
     return root, [], True
+
+
+def is_root_fallback_source_path(path: str) -> bool:
+    normalized = path.strip().lstrip("./")
+    if not normalized:
+        return False
+    if normalized in ROOT_FALLBACK_IGNORED_PATHS:
+        return False
+    if any(normalized.startswith(prefix) for prefix in ROOT_FALLBACK_IGNORED_PREFIXES):
+        return False
+    return True
 
 
 def _root_fallback_commit_count_since(
@@ -549,16 +562,6 @@ def _root_fallback_commit_count_since(
     count = 0
     current_subject = ""
     changed_paths: list[str] = []
-
-    def is_root_fallback_source_path(path: str) -> bool:
-        normalized = path.strip().lstrip("./")
-        if not normalized:
-            return False
-        if normalized in ROOT_FALLBACK_IGNORED_PATHS:
-            return False
-        if any(normalized.startswith(prefix) for prefix in ROOT_FALLBACK_IGNORED_PREFIXES):
-            return False
-        return True
 
     def flush_commit() -> None:
         nonlocal count, current_subject, changed_paths
@@ -716,36 +719,150 @@ def source_commit_summary_since(
     return count, details
 
 
-def _compute_one_commit_count(
-    args: tuple[str, str, str, date, str | None],
-) -> tuple[tuple[str, str], int, list[str]]:
-    """ThreadPoolExecutor worker: source_commit_count_since を呼んで結果を返す"""
-    project_id, rel_path, abs_path, updated_at, source_commit = args
-    count, details = source_commit_summary_since(
-        project_id, rel_path, abs_path, updated_at, source_commit
+def _run_grouped_git_log(
+    repo_path: str,
+    revision: str | None,
+    since_date: date | None,
+    pathspecs: list[str],
+) -> list[tuple[str, str, list[str]]] | None:
+    """1回のgit logで(short_hash, subject, changed_paths)のコミット列を返す。
+    timeout/エラー時はNone(呼び出し元でfail-closed判定させる)。"""
+    cmd = [
+        "git",
+        "-C",
+        repo_path,
+        "log",
+        "--pretty=format:__CFC_G__%x00%h%x00%s",
+        "--name-only",
+    ]
+    if revision:
+        cmd.append(revision)
+    elif since_date is not None:
+        cmd.append(f"--since={(since_date + timedelta(days=1)).isoformat()} 00:00:00")
+    if pathspecs:
+        cmd.extend(["--", *pathspecs])
+
+    try:
+        result = subprocess.run(
+            cmd,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=_GIT_TIMEOUT,
+        )
+    except Exception as e:
+        print(f"WARN: grouped git log failed: {repo_path} — {e}", file=sys.stderr)
+        return None
+
+    if result.returncode != 0:
+        print(f"WARN: grouped git log returncode={result.returncode}: {repo_path}", file=sys.stderr)
+        return None
+
+    commits: list[tuple[str, str, list[str]]] = []
+    current_hash = ""
+    current_subject = ""
+    changed_paths: list[str] = []
+
+    def flush() -> None:
+        subject = current_subject.strip()
+        if subject and not AUTO_COMMIT_SUBJECT_RE.match(subject):
+            commits.append((current_hash, subject, list(changed_paths)))
+
+    for line in result.stdout.splitlines():
+        if line.startswith("__CFC_G__\x00"):
+            flush()
+            _marker, current_hash, current_subject = line.split("\x00", 2)
+            changed_paths = []
+            continue
+        if line.strip():
+            changed_paths.append(line.strip())
+    flush()
+    return commits
+
+
+def _compute_direct_group(
+    key: tuple[str, str | None, date | None],
+    members: list[tuple[str, str, list[str], list[str], set[str]]],
+) -> dict[tuple[str, str], tuple[int, list[str]]]:
+    """(repo_path, source_commit/updated_at)を共有するcontext file群を
+    git log 1回に集約し(GA-245: 9pマウント環境ではgit呼び出し回数がレイテンシに
+    直結するため個別呼び出しをまとめる)、結果を各context fileのpathspec条件で
+    Python側にて個別に絞り込む。member = (project_id, rel_path, plain_pathspecs,
+    cited_dirs, cited_files)。plain/cited双方が空のmember(pathspec指定のない
+    project直下context)は元のsource_commit_summary_sinceと同じくフィルタ無しで
+    全コミットを対象にする。"""
+    repo_path, source_commit, since_date = key
+    revision = f"{source_commit}..HEAD" if source_commit else None
+    has_unfiltered_member = any(
+        not plain_pathspecs and not cited_dirs
+        for _pid, _rp, plain_pathspecs, cited_dirs, _cf in members
     )
-    return (project_id, rel_path), count, details
+    if has_unfiltered_member:
+        union_pathspecs: list[str] = []
+    else:
+        union_pathspecs = sorted(
+            {p for _pid, _rp, plain, cited, _cf in members for p in (*plain, *cited)}
+        )
+
+    commits = _run_grouped_git_log(repo_path, revision, since_date, union_pathspecs)
+    if commits is None:
+        return {(project_id, rel_path): (-1, []) for project_id, rel_path, *_ in members}
+
+    results: dict[tuple[str, str], tuple[int, list[str]]] = {}
+    for project_id, rel_path, plain_pathspecs, cited_dirs, cited_files in members:
+        no_filter = not plain_pathspecs and not cited_dirs
+        count = 0
+        details: list[str] = []
+        for commit_hash, subject, changed_paths in commits:
+            if not no_filter and not _commit_touches_relevant_path(
+                changed_paths, plain_pathspecs, cited_dirs, cited_files
+            ):
+                continue
+            count += 1
+            if len(details) < 3:
+                details.append(f"{commit_hash} {subject}".strip())
+        results[(project_id, rel_path)] = (count, details)
+    return results
 
 
 def batch_source_commit_summaries(
     infos: list[tuple[str, str, str, date, str | None]],
 ) -> dict[tuple[str, str], tuple[int, list[str]]]:
-    """(project_id, rel_path) → commit_count を並列計算（ThreadPoolExecutor）"""
+    """(project_id, rel_path) → commit_count を並列計算（ThreadPoolExecutor）。
+    GA-245: 同一リポジトリ×同一revision範囲(source_commit有無/updated_at)を
+    共有するcontext fileはgit log 1回に集約する。集約しない場合、9pマウント上
+    ではcontext file数だけ個別git呼び出しが発生し、各呼び出しが数秒〜十数秒
+    かかるため1秒既定timeoutでほぼ全滅する(cmd_karo_hotfix_ga245実測)。"""
     if not infos:
         return {}
     summaries: dict[tuple[str, str], tuple[int, list[str]]] = {}
 
     root_fallback_groups: dict[tuple[date, str | None], list[tuple[str, str]]] = {}
-    direct_infos: list[tuple[str, str, str, date, str | None]] = []
+    direct_groups: dict[
+        tuple[str, str | None, date | None],
+        list[tuple[str, str, list[str], list[str], set[str]]],
+    ] = {}
 
     for project_id, rel_path, abs_path, updated_at, source_commit in infos:
-        _repo_path, _pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
+        repo_path, pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
         if root_fallback:
             root_fallback_groups.setdefault((updated_at, source_commit), []).append(
                 (project_id, rel_path)
             )
-        else:
-            direct_infos.append((project_id, rel_path, abs_path, updated_at, source_commit))
+            continue
+        if not repo_path or not os.path.isdir(repo_path):
+            summaries[(project_id, rel_path)] = (0, [])
+            continue
+        cited_dirs = [
+            p[len(CITED_PATHSPEC_PREFIX):] for p in pathspecs if p.startswith(CITED_PATHSPEC_PREFIX)
+        ]
+        plain_pathspecs = [p for p in pathspecs if not p.startswith(CITED_PATHSPEC_PREFIX)]
+        cited_files = load_cited_paths(abs_path, cited_dirs) if cited_dirs else set()
+        key = (repo_path, source_commit, None if source_commit else updated_at)
+        direct_groups.setdefault(key, []).append(
+            (project_id, rel_path, plain_pathspecs, cited_dirs, cited_files)
+        )
 
     with ThreadPoolExecutor(max_workers=16) as executor:
         root_futures = {
@@ -753,8 +870,8 @@ def batch_source_commit_summaries(
             for (updated_at, source_commit), keys in root_fallback_groups.items()
         }
         direct_futures = {
-            executor.submit(_compute_one_commit_count, info): info
-            for info in direct_infos
+            executor.submit(_compute_direct_group, key, members): key
+            for key, members in direct_groups.items()
         }
 
         for future in as_completed([*root_futures, *direct_futures]):
@@ -763,8 +880,7 @@ def batch_source_commit_summaries(
                 for key in root_futures[future]:
                     summaries[key] = (count, [])
             else:
-                key, count, details = future.result()
-                summaries[key] = (count, details)
+                summaries.update(future.result())
     return summaries
 
 

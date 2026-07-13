@@ -31,7 +31,13 @@ TODAY_OVERRIDE="${CONTEXT_FRESHNESS_TODAY:-}"
 CACHE_TTL="${CONTEXT_FRESHNESS_GATE_CACHE_TTL:-300}"
 ALERT_DEBOUNCE_SECONDS="${CONTEXT_FRESHNESS_ALERT_DEBOUNCE_SECONDS:-86400}"
 ALERT_STATE_DIR="${CONTEXT_FRESHNESS_ALERT_STATE_DIR:-/tmp/gate_context_freshness_alerts}"
-GIT_TIMEOUT="${CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT:-1}"
+# GA-245: 旧既定1秒は、このリポジトリの実行環境(9pマウント/mnt/c)でのgit log
+# 実測所要時間(集約後でも1回あたり3〜8秒、不安定域は6秒以下で実証)を大幅に
+# 下回っており、対象のほぼ全件がtimeoutする根本原因だった。context_freshness_check.sh
+# 側のgit呼出し集約(GA-245)と組み合わせ、実測に安全マージンを載せた値へ適正化する。
+# 単純延長ではなく、それでも取得失敗した場合はfail-closedでALERT(exit 1)遮断する
+# (check_failed_paths分岐、GA-245で WARN→ALERT に格上げ済み)。
+GIT_TIMEOUT="${CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT:-10}"
 
 HAS_ALERT=0
 HAS_WARN=0
@@ -298,12 +304,16 @@ for rel_path in "${target_rel_paths[@]}"; do
         HAS_ALERT=1
         ALERT_LIST+=("${basename_file}(source更新)")
     elif [[ -n "${check_failed_paths[$rel_path]:-}" ]]; then
-        # GA-238 fail-closed: source commit確認自体が失敗(git timeout/returncode異常)した
-        # ファイルはALERT有無が未確定。days_agoベースのOK分類へ落とさず必ずWARNで可視化する。
+        # GA-245 fail-closed強化: GA-238はWARNで可視化するに留めていたが、取得失敗
+        # (git timeout/returncode異常)はALERT見逃しの可能性を否定できない未確認状態
+        # であり、days_agoベースのOK/WARN分類へ落とさず遮断(ALERT/exit 1)する。
+        # timeout自体の削減はcontext_freshness_check.sh側のgit呼出し集約で対応済み
+        # (GA-245)であり、それでも取得失敗する場合は真に異常(disk/git破損等)とみなす。
         emit_actionable \
-            "WARN: ${basename_file} (source commit確認失敗: timeout/returncode。last_updated=${last_updated}, ${days_ago}日前、ALERT見逃しの可能性あり)" \
+            "ALERT: ${basename_file} (source commit確認失敗: timeout/returncode。last_updated=${last_updated}, ${days_ago}日前、ALERT見逃しの可能性あり)" \
             "${basename_file} のsource commit確認がgit timeout/returncode異常で失敗した。CONTEXT_FRESHNESS_GATE_GIT_TIMEOUTを一時的に緩めて再実行するか、一次情報(git log)で手動確認せよ。"
-        HAS_WARN=1
+        HAS_ALERT=1
+        ALERT_LIST+=("${basename_file}(確認失敗)")
     elif [[ "$days_ago" -gt 14 ]]; then
         emit_actionable \
             "WARN: ${basename_file} (${days_ago}日前更新、ソース変更なし)" \

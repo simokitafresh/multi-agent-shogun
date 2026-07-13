@@ -203,7 +203,7 @@ SH
     [[ "$output" == *"--- 総合判定: OK ---"* ]]
 }
 
-@test "GA-238: source commit check failure (git timeout) is surfaced as WARN, not silently OK" {
+@test "GA-245: source commit check failure (git timeout) is surfaced as ALERT, not silently OK" {
     # Adversarial fixture: context_freshness_check.sh reports a check failure
     # (git log timed out / returned non-zero) for a file updated within the
     # last 7 days. Before the GA-238 fix, gate_context_freshness.sh only
@@ -213,6 +213,11 @@ SH
     # real pending ALERT (e.g. dashboard_update's context_freshness_check.sh
     # call, run with a looser timeout, showed 4 source commits for the same
     # file) can be hidden behind a stale git-timeout WARN.
+    # GA-245: GA-238 stopped at WARN (visible but non-blocking). Since a
+    # check failure leaves ALERT status genuinely undetermined, it is now
+    # fail-closed all the way to ALERT/exit 1 -- paired with the git call
+    # batching in context_freshness_check.sh that removed the root cause
+    # (near-100% timeout rate under the old 1s default on a 9p-mounted repo).
     cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
 #!/usr/bin/env bash
 cat <<'OUT'
@@ -224,11 +229,11 @@ SH
 
     run_gate
 
-    [ "$status" -eq 2 ]
-    [[ "$output" == *"WARN: uncertain.md (source commit確認失敗"* ]]
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"ALERT: uncertain.md (source commit確認失敗"* ]]
     [[ "$output" == *"ALERT見逃しの可能性あり"* ]]
     [[ "$output" != *"OK: uncertain.md"* ]]
-    [[ "$output" == *"--- 総合判定: WARN ---"* ]]
+    [[ "$output" == *"--- 総合判定: ALERT ---"* ]]
 }
 
 @test "GA-238: a real ALERT for the same path still wins over a check-failed WARN line" {
