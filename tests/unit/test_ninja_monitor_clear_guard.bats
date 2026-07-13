@@ -113,9 +113,9 @@ printf "messages: []\n" > "$T/queue/inbox/karo.yaml"; printf "messages: []\n" > 
 printf "#!/bin/bash\necho INBOX_CALLED:\\$@ >> \"$LOG\"\n" > "$T/scripts/inbox_write.sh"; chmod +x "$T/scripts/inbox_write.sh"
 report="$T/queue/reports/n_report_cmd_terminal_fail.yaml"; commit=$(printf a%.0s {1..40})
 printf "parent_cmd: cmd_terminal_fail\ncommit_hash: %s\nverdict: FAIL\n" "$commit" > "$report"
-key=$(printf %s queue/reports/n_report_cmd_terminal_fail.yaml | sha256sum | awk "{print \\$1}")
+key=$(printf %s queue/reports/n_report_cmd_terminal_fail.yaml | sha256sum | cut -d " " -f1)
 approval_dir="$T/queue/gates/cmd_terminal_fail/review_approvals/reports/$key"; mkdir -p "$approval_dir"
-fp=$(sha256sum "$report" | awk "{print \\$1}"):$commit
+fp=$(sha256sum "$report" | cut -d " " -f1):$commit
 printf "timestamp: %s\nresult: LGTM\nfingerprint: %s\n" "$old" "$fp" > "$approval_dir/gunshi.yaml"
 touch -d "-500 seconds" "$approval_dir/gunshi_notice.sent"
 log() { echo "$1" >> "$LOG"; }; NINJA_MONITOR_LGTM_NOTIFY_GRACE=1 check_karo_completion_notify_gap
