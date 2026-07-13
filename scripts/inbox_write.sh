@@ -11,7 +11,8 @@
 #   task_supplement      — タスク補足通知（家老/軍師→忍者）
 #   task_cancel          — タスク取消通知（家老→忍者）
 #   cmd_new              — 新cmd通知（将軍→家老）
-#   report_received      — 忍者報告完了通知（忍者→家老）※報告YAML検証+auto-done hookあり
+#   report_received/report_submitted/task_done/report_completed/report_done/report_ready
+#                        — 忍者報告完了通知（忍者→家老）※報告YAML検証+auto-done hookあり
 #   uncommitted_block    — 未commitブロック通知
 #   review_draft         — draft cmdレビュー依頼（家老→軍師）
 #   review_result        — レビュー結果（軍師→家老）
@@ -631,13 +632,18 @@ inbox_review_log_has_lgtm() {
     ' "$review_log"
 }
 
-inbox_type_is_ninja_report_notification() {
+inbox_type_triggers_report_completion() {
     case "$1" in
-        report_received|report_completed|report_done|report_ready|report_notification_missing)
+        report_received|report_submitted|task_done|report_completed|report_done|report_ready)
             return 0
             ;;
     esac
     return 1
+}
+
+inbox_type_is_ninja_report_notification() {
+    inbox_type_triggers_report_completion "$1" && return 0
+    [ "$1" = "report_notification_missing" ]
 }
 
 inbox_should_auto_read_completed_notification() {
@@ -1591,10 +1597,10 @@ if [ "$TYPE" = "cmd_new" ]; then
     fi
 fi
 
-# Report format gate: type=report_received/task_done → 報告YAMLのフォーマット検証
+# Report format gate: 忍者の報告完了type → 報告YAMLのフォーマット検証
 # 目的: 家老の手動修正作業を根絶（karo_workarounds 5件連続同一問題を自動化×強制で解消）
 # LK013: Codex忍者がtask_done typeで報告→gunshi_notify不発を防止
-if [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ] || [ "$TYPE" = "report_completed" ] || [ "$TYPE" = "report_done" ]; then
+if inbox_type_triggers_report_completion "$TYPE"; then
     # Find report YAML path from task YAML
     ensure_agent_config_loaded
     is_ninja_reporter=0
@@ -1895,8 +1901,8 @@ while [ $attempt -lt $max_attempts ]; do
             record_inbox_event_to_memory_db >/dev/null 2>&1 &
         fi
 
-        # Hook: report_received/task_done/report_completed/report_done from ninja → auto-update task YAML to done
-        if [ "$INBOX_COMPLETED_DUPLICATE" -eq 0 ] && { [ "$TYPE" = "report_received" ] || [ "$TYPE" = "task_done" ] || [ "$TYPE" = "report_completed" ] || [ "$TYPE" = "report_done" ]; }; then
+        # Hook: canonical report-completion types from ninja → auto-update task YAML to done
+        if [ "$INBOX_COMPLETED_DUPLICATE" -eq 0 ] && inbox_type_triggers_report_completion "$TYPE"; then
             ensure_agent_config_loaded
             is_ninja=0
             for ninja in $NINJA_NAMES; do

@@ -32,7 +32,7 @@ setup_file() {
 
     mkdir -p "$GIT_TEMPLATE_DIR/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
     # 選択的コピー: inbox_write.shが使うファイルのみ (NTFS→tmpfs コスト削減)
-    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh; do
+    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh; do
         cp "$PROJECT_ROOT/scripts/lib/$_lib_f" "$GIT_TEMPLATE_DIR/scripts/lib/$_lib_f"
     done
 
@@ -961,6 +961,20 @@ YAML
     [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ]
 }
 
+@test "report_submitted alias: validates report, auto-sends gunshi review, and marks task done" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/scripts"
+    ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+    echo 'status: completed' >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+
+    run _run_inbox_write karo "cmd_test_001 完了" report_submitted testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"gunshi_notify: SENT"* ]]
+    grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    grep -q "^  status: done" "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ]
+}
+
 @test "task_assigned: codex ninja delivery verification retries up to 2 times" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
@@ -1156,7 +1170,7 @@ printf '%s\n' "$1" > "$INBOX_WRITE_BG_LOG"
 EOF
     chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
     export INBOX_WRITE_BG_LOG="$TEST_TMPDIR/cmd_complete_gate.log"
-    printf 'parent_cmd: cmd_karo_auto_review_gate\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
+    printf 'parent_cmd: cmd_karo_auto_review_gate\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
 
     cat > "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done" <<'EOF'
 timestamp: 2026-04-21T13:00:00
