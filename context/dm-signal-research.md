@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-13 cmd_3868 -->
-<!-- dm_signal_research_reflux: fingerprint=4a5a32a3401cd63856343aecdb96bc67d1093fe084e55cadb422cc917f09b61e; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgW1tBU1TmgZLluLjjgrnjgq3jg6Pjg7NDSV1d44G4Y21kXzM4ODLoqK3oqIjjg7vmpJzoqLzmiYvpoIbjgpLlkIzmnJ/muIjjgb8= -->
-<!-- source_commit:9daba5d5 (DM-Signal docs/research配下の最終同期commit。cmd_3868台帳の初版25fc1774、候補表RC 24e81519、削除証跡9daba5d5を研究索引へ反映済み。次回鮮度チェックはこのcommit以降のdiffのみ照合対象) -->
+<!-- dm_signal_research_reflux: fingerprint=f481a8935ef9f00243f9753ba37f88e1cf381a74bc1912939125ad1168968e39; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQ6Nzg2IGNtZF8zODgxX0RCX2ZlbmNlX21pZ3JhdGlvbl9GQUlM5ZCM5pyf5riI44G/ -->
+<!-- source_commit:63929aa8 reason:cmd_3878_cmd_3882_current_main_reflux_verified evidence:context_lines_784_786_and_docs_exist -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -783,3 +783,4 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - → [[cmd_3868_gs_db_generation_cleanup]] 146/146 DB台帳から同一SHA旧世代9件・921174016 bytesを確定。実行直前にrealpath/非symlink/通常file/bytes/git管理外/コード参照0/保持正本SHAを9/9再検証し、個別`rm --`で削除。候補残存0/9、保持正本16/16 SHA一致、df available 304794128384→305715171328(+921042944 bytes)。台帳正本=`docs/research/cmd_3868_gs_db_generation_inventory.md`、commit `9daba5d5` (2026-07-13)
 - → [[cmd_3878_container_selection]] safe archive v2は**長さprefix付き単一framed typed stream**を勧告。pickle 0、raw SHA-256→entry検査→artifact hash→schema/row_count→typed decode、3候補×敵対6種=18/18 reject・FAIL0/SKIP0、raw deterministic、streaming可、RSS増分0 KiB(<64 MiB)。SQLiteはstreaming不可、ZIP_STOREDは全基準PASSだがparser/central-directory攻撃面のため次点。成果物=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3878_container_selection.md` (2026-07-13)
 - → [[cmd_3878_recon3_track_b]] 基準commit `434c146f`の隔離worktreeで独立実測し、**`framed-json+typed-binary`**を勧告。基準充足=`pickle_free=yes, raw_hash_before_decode=yes, adversarial_reject=6/6, deterministic_raw=yes, rss_cap=yes, streaming_read=yes, streaming_write=yes`。SQLiteはstreaming write不可、ZIP STOREはsize bomb reject 5/6で不採用。Track B成果物=`docs/research/cmd_3878_container_selection.md`、検証コード=`scripts/research/cmd_3878_container_probe.py` (2026-07-13)
+- → [[cmd_3881_DB_fence_migration_FAIL]] v1.4.21 §9.10.5の18表statement-trigger+coordinator+fence functionを単一往復migrationで試作。isolated production snapshot cloneでupgrade 18/18→downgrade 0/18→re-upgrade 18/18、18表canonical row/hash不変、未参加writer明示reject、exact token経路成立、silent skip 0はPASS。しかし4 write class×30 batchはsingle ORM median比1.1834、bulk upsert 1.1639で閾値1.05超過、full recalculationも892.013s→947.861s=比1.062609(>1.01)のため**採用FAIL・本番適用禁止**。閾値緩和ではなくDB fail-closedを保った低overhead方式の再設計が必要。詳細=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3881_db_fence_migration.md` (2026-07-13)
