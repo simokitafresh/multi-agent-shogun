@@ -4775,11 +4775,6 @@ check_inbox_renudge() {
                         log "KARO-PENDING-SKIP-GATE-CLEAR: $_kpcmd already has gate CLEAR"
                         continue
                     fi
-                    # 軍師review済みの報告は「家老未処理」ではない。通知を繰り返すと空振りinboxになる。
-                    if [[ "$_reviewed_report_cmds" == *"|$_kpcmd|"* ]]; then
-                        log "KARO-PENDING-SKIP-REVIEWED: $_kpcmd already has gunshi report review"
-                        continue
-                    fi
                     # report_filenameはresolve_expected_report_file相当のfallbackを
                     # サブプロセスなし(pure bash)で再現する(_kpcmdは既に非空・none以外を確認済み)
                     local _kreport_filename _kreport_path
@@ -4789,6 +4784,25 @@ check_inbox_renudge() {
                         _kreport_filename="${_kworker}_report_${_kpcmd}.yaml"
                     fi
                     _kreport_path="$SCRIPT_DIR/queue/reports/${_kreport_filename}"
+                    # canonical terminal FAILは軍師reviewの有無にかかわらず未処理workではない。
+                    # report不在・未完成・非FAILは終端証拠がないため従来どおりpendingに保つ。
+                    if [ "$_kts" = "failed" ] && [ -f "$_kreport_path" ]; then
+                        local _kreport_status _kreport_verdict
+                        read -r _kreport_status _kreport_verdict < <(awk '
+                            /^status:/ && status=="" { status=$0; sub(/^[^:]*:[[:space:]]*/, "", status); gsub(/["'\''[:space:]]/, "", status) }
+                            /^verdict:/ && verdict=="" { verdict=$0; sub(/^[^:]*:[[:space:]]*/, "", verdict); gsub(/["'\''[:space:]]/, "", verdict) }
+                            END { print status, verdict }
+                        ' "$_kreport_path" 2>/dev/null)
+                        if [ "$_kreport_status" = "completed" ] && [ "$_kreport_verdict" = "FAIL" ]; then
+                            log "KARO-PENDING-SKIP-CLOSED-FAIL: $_kpcmd task=failed report=completed verdict=FAIL"
+                            continue
+                        fi
+                    fi
+                    # 軍師review済みの報告は「家老未処理」ではない。通知を繰り返すと空振りinboxになる。
+                    if [[ "$_reviewed_report_cmds" == *"|$_kpcmd|"* ]]; then
+                        log "KARO-PENDING-SKIP-REVIEWED: $_kpcmd already has gunshi report review"
+                        continue
+                    fi
                     _kentry_lines+=("${_kworker}|${_ktid}|${_kpcmd}|${_kts}|${_kreport_path}")
                     [ -f "$_kreport_path" ] && _kreport_paths_needed+=("$_kreport_path")
                 done < <(awk '

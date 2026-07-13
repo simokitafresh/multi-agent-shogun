@@ -2027,6 +2027,59 @@ echo "MSG_COUNT=$MSG_COUNT"
     [[ "$output" == *"MSG_COUNT=1"* ]]
 }
 
+@test "check_inbox_renudge: canonical terminal FAIL is closed without gunshi review" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+TMP_ROOT="$(mktemp -d)"; trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/gunshi.yaml"
+printf "task:\n  status: failed\n  parent_cmd: cmd_terminal_fail\n  report_filename: kagemaru_report_cmd_terminal_fail.yaml\n" > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
+printf "status: completed\nverdict: FAIL\n" > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_terminal_fail.yaml"
+printf "#!/bin/bash\necho CALLED >> %q\n" "$TMP_ROOT/inbox_calls.log" > "$SCRIPT_DIR/scripts/inbox_write.sh"
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+NINJA_NAMES=(); KARO_PANE="karo"; declare -A RENUDGE_FINGERPRINT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }; check_idle() { return 0; }; safe_send_keys_atomic() { return 0; }
+check_inbox_renudge
+cat "$LOG"
+test ! -e "$TMP_ROOT/inbox_calls.log"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"KARO-PENDING-SKIP-CLOSED-FAIL: cmd_terminal_fail"* ]]
+    [[ "$output" != *"KARO-PENDING-INBOX"* ]]
+}
+
+@test "check_inbox_renudge: failed completed report with non-FAIL verdict remains pending" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+TMP_ROOT="$(mktemp -d)"; trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/gunshi.yaml"
+printf "task:\n  status: failed\n  parent_cmd: cmd_failed_nonfail\n  report_filename: kagemaru_report_cmd_failed_nonfail.yaml\n" > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml"
+printf "status: completed\nverdict: PASS\n" > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_failed_nonfail.yaml"
+printf "#!/bin/bash\necho CALLED >> %q\n" "$TMP_ROOT/inbox_calls.log" > "$SCRIPT_DIR/scripts/inbox_write.sh"
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+NINJA_NAMES=(); KARO_PANE="karo"; declare -A RENUDGE_FINGERPRINT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }; check_idle() { return 0; }; safe_send_keys_atomic() { return 0; }
+check_inbox_renudge
+cat "$LOG"
+test "$(wc -l < "$TMP_ROOT/inbox_calls.log")" -eq 1
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"KARO-PENDING-INBOX"* ]]
+}
+
 # cmd_karo_hotfix_pending_work_generation_dedupe_202607121023 AC4: 同一pending集合(worker+
 # task_id+parent_cmd+status+report内容が全て不変)が3サイクル続いても通知は1件のみ。
 # monitor state再生成(=同一TMP_ROOT/STATE_DIRを保った再sourcing)を跨いでも1件のまま。
