@@ -1,6 +1,7 @@
 # DM-signal コンテキスト（索引）
-<!-- last_updated: 2026-07-10 cmd_karo_recon2_cmd3824_mechanism_202607101223 -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
 <!-- last_synced_lesson: L876 -->
+<!-- source_commit:5e9ea355d0ad6d6856b0e03f08993f2ca1c744fa (DM-Signal terminology/disambiguation/db-operations-runbook対象pathspecの最終同期commit。GA-238で導入。当該pathspecは2026-07-13時点で未反映commitなし=同型穴の解消のみ、新規本文反映は不要) -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
 

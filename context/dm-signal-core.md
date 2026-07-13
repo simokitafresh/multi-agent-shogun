@@ -1,5 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-12 cmd_karo_hotfix_dm_signal_core_freshness_202607120345 -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
+<!-- source_commit:34747ad118aebd42a05e00a358f2c709542f3ec9 (DM-Signal core対象pathspecの最終同期commit=P4統合branchのlive deploy commit。GA-238調査で判明: 旧last_updated(2026-07-12)は日付境界方式のため、cmd_3856(P3a)反映後に同日中着地した732dfef3[P4 restore core integrator]/cmd_3861 CI fix群/0e079ac5[cmd_3858 momentum_data非決定性修正]が未検知のまま隠れていた(GA-236/237と同型の同日複数commit blind spot、GA-238でexact commit境界へ移行し解消)。上記backlogは全てcontext/dm-signal-ops.md §71-72 / context/dm-signal-research.mdのcmd_3858/cmd_3860エントリへ既に反映済みのため重複記載せず本行下部の§参照に統合。cmd_3873(0568b016/e4f8ef68/75ca73b4)は2026-07-13時点in_progressのため意図的に未反映のまま境界の手前に据え置く) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -602,6 +603,12 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - `.github/workflows/pytest.yml` を追加。PyYAML/pytest依存をCIへ導入し、PostgreSQL service付きpytestへ拡張済み
 - `backend/tests/test_pipeline_cache_optimization.py` はCI対象。テスト関数ゼロの空振りを避ける教訓L721を併用する
 - CI失敗調査ではworkflow依存不足とDB service起動を先に確認する
+
+## §23 P4統合期のbackend変更 (cmd_karo_hotfix_p4_restore_core_integrator/cmd_3858/cmd_3861, 2026-07-12、GA-238で反映)
+
+結論: cmd_3856(P3a共通executor、§21以前で反映済み)以降、同日中(2026-07-12)に3件のbackend変更が着地: (1) `732dfef3` P4 restore契約統合(negative A/B fail-closed、business write 0)、(2) `0e079ac5` cmd_3858でmomentum_data配列順の非決定性根治(`sorted()`欠落)+recalculation_timings等のtelemetry境界分類、(3) cmd_3861 CI fixture整合(P3a契約とのalign)。いずれも旧last_updated(日付境界方式)が同日着地を検知できず未反映のまま残っていた同型穴(GA-238で発見)。詳細は重複記載を避け参照のみとする。
+
+→ 詳細: `context/dm-signal-ops.md` §71/§72、`context/dm-signal-research.md`(cmd_3858_P3b_GREEN / cmd_3860_origin統合+push見送り エントリ)
 
 ---
 

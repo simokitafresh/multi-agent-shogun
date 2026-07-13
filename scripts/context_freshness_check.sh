@@ -29,13 +29,14 @@ usage() {
 Usage:
   bash scripts/context_freshness_check.sh --dashboard-warnings
   bash scripts/context_freshness_check.sh --cmd-warnings <cmd_id>
+  bash scripts/context_freshness_check.sh --cmd-commit-list <cmd_id>
 EOF
 }
 
 case "$MODE" in
     --dashboard-warnings)
         ;;
-    --cmd-warnings)
+    --cmd-warnings|--cmd-commit-list)
         if [[ -z "$ARG" ]]; then
             usage >&2
             exit 1
@@ -636,6 +637,7 @@ def source_commit_summary_since(
     abs_path: str,
     updated_at: date,
     source_commit: str | None = None,
+    max_details: int = 3,
 ) -> tuple[int, list[str]]:
     repo_path, pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
     if not repo_path or not os.path.isdir(repo_path):
@@ -699,7 +701,7 @@ def source_commit_summary_since(
         ):
             return
         count += 1
-        if len(details) < 3:
+        if len(details) < max_details:
             details.append(f"{current_hash} {subject}".strip())
 
     for line in result.stdout.splitlines():
@@ -1135,6 +1137,38 @@ elif mode == "--cmd-warnings":
                 warnings.append(build_source_warning(rel_path, cc, updated_at, details))
                 alerted_for_group.append((rel_path, details))
         warnings.extend(build_group_warnings(alerted_for_group))
+elif mode == "--cmd-commit-list":
+    # GA-238 AC3: cmd_complete_gate.shが「このcmd自身のcommitが、未反映のsplit
+    # context候補に含まれるか」を判定するための機械可読出力。--cmd-warningsと違い
+    # detailsを3件に丸めず全件出す(相関対象を見逃さないため)。
+    # project解決はfind_cmd_project(chronicle/archive依存、未archiveのcmdでは
+    # 失敗しうる)ではなく、呼び出し元(cmd_complete_gate.sh)がMATCHING_TASK_FILESの
+    # project:から直接渡すCFC_PROJECT_OVERRIDEを優先する。
+    project_override = os.environ.get("CFC_PROJECT_OVERRIDE", "").strip()
+    project_id = project_override or find_cmd_project(cmd_id)
+    if project_id:
+        for current_project, rel_path, abs_path in iter_context_files():
+            if current_project != project_id:
+                continue
+            if is_excluded_context_file(rel_path):
+                continue
+            updated_at = last_updated_date(abs_path)
+            if updated_at is None:
+                continue
+            cc, details = source_commit_summary_since(
+                current_project,
+                rel_path,
+                abs_path,
+                updated_at,
+                source_commit_marker(abs_path),
+                max_details=1000,
+            )
+            if cc < 0:
+                print(f"CHECK_FAILED\t{rel_path}")
+                continue
+            for detail in details:
+                commit_hash, _, subject = detail.partition(" ")
+                print(f"{rel_path}\t{commit_hash}\t{subject}")
 
 for line in sorted(dict.fromkeys(warnings)):
     print(line)

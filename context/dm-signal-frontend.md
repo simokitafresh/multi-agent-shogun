@@ -1,5 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-06 cmd_3710 -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
+<!-- source_commit:d80a8b03b102bbc9ff9f57570ae31069835483ed (GA-238で導入。cmd_3787[bbd546b8]/cmd_3839[d80a8b03]のFE側変更を§15へ反映済み。次回鮮度チェックはこのcommit以降のdiffのみ照合対象=同型穴の解消) -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -346,3 +347,9 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 結論: `/api/signals` に monthly向け月替わりpending投影（`signal_pending`含む）を追加し、frontend Current Signalへ`Pending Rebalance`表示を反映。non-monthly挙動は維持。
 
 → 詳細: `docs/research/cmd_494_signal-pending-display-fix.md`
+
+## 15. cmd_3839/cmd_3787 FE側変更 (2026-07-09〜10、GA-238で反映)
+
+結論: (1) cmd_3839 admin visibility folder非表示(L1.5)の全閲覧EP適用に伴い、`frontend/app/admin/visibility/page.tsx`へ楽観ロック+FE tier切替時の未保存編集ガードを追加(`frontend/lib/types/tiers.ts`型更新含む)。(2) cmd_3787 monthly trade fail-closed化に伴い、`frontend/lib/types/api.ts`へ`missing_tickers`フィールドを追加。両方ともbackend側の主変更は`context/dm-signal-ops.md` §63.1/§63.2 と `context/dm-signal-core.md`(cmd_3787行)に既に反映済みであり、本節はFE側の変更箇所のみを索引する(重複記載を避ける)。
+
+→ 詳細: `context/dm-signal-ops.md` §63.1/§63.2、`/mnt/c/Python_app/DM-signal/docs/research/cmd_3839_folder_hide_rollout.md`、`/mnt/c/Python_app/DM-signal/docs/research/cmd_3787_monthly_trade_missing_ticker_fail_closed.md`

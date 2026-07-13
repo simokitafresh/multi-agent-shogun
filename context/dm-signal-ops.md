@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga237_context_freshness_202607131156 -->
-<!-- source_commit:c84bcd93654c17b344698694257d912bf3847683 (DM-Signal ops対象pathspecの最終同期commit。c84bcd93はP4 AC2本番1run実行結果=FAIL+restore-locked原状回復という運用上重要な内容を含み、§72へ実質反映済み(v1.4.16)。根本原因分析・境界更新の経緯は docs/research/ga237_context_freshness_root_cause.md 参照) -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
+<!-- source_commit:68fc3d953fe28c48d5228ad333d6a598d7e2a0c2 (DM-Signal ops対象pathspecの最終同期commit。GA-238で68fc3d95[v1.4.17 P4 AC2再挑戦方式]を§73へ反映。cmd_3873(0568b016/e4f8ef68/75ca73b4)は2026-07-13時点in_progressのため意図的に未反映のまま境界の手前に据え置く — 完了後に別cmdで反映しGA-238の新BLOCK機構がその反映漏れを検知する設計。根本原因分析・境界更新の経緯は docs/research/ga237_context_freshness_root_cause.md / docs/research/ga238_context_freshness_root_cause.md 参照) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1197,5 +1197,12 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - **AC2(本番fullrecalculate 1run照合)実行結果(v1.4.16, 2026-07-13 12:00更新, cmd_3870)**: 本番1run実行済み(strict、run id 213、01:26:17〜01:37:44Z=**687.35秒**、error NULL)。**結果はFAIL**: canonical comparatorがexpected input_snapshot_id=`75886e9f`(cmd_3859 shadow由来)とactual=`c2b66a69`(run213実測)の不一致でfail-closed停止(missing/mismatch比較未到達=決定性の反証ではなく照合契約の入力固定不備が主仮説)。P5進行は禁止のまま継続。
   - **原状回復**: 初回restoreはtrade_performance COPY中のPK duplicateで全rollback(部分復元0)。根因=advisory lockがfullrecalc同士のみ排他し通常writer(`etl_trigger` Background precompute-raw)を止めないため、DELETE→COPY間の隙間で待機writerが再insertしていた。**restore-locked**(18表SHARE ROW EXCLUSIVE一括lock+DELETE後0件assert+COPY後row/sha256二重検証、commit`bc1092695`)を新設し2回目実行で**18/18表・565,756行exact=true**の原状回復を確認(manifest sha=`d9ec7e4f`)。business write時のcrash-safety運用資産としてrestore-lockedをcapability launcherへ追加済み。
   - **次工程**: `cmd_3872`(input_snapshot_id採番経路の実差分偵察)→照合契約の入力固定方式確定→AC2再挑戦→GREEN後P5(cmd_3827事故条件回帰)。
-- 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.16(§9.1 Phase表)、AC2実行証跡: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3870_p4_ac2_evidence.md`、研究文脈の対応記述: `context/dm-signal-research.md` §57(2026-07-13時点でv1.4.15のまま未反映 — 別途GA相当cmdでの反映対象)、家老一次照合: 掲示板`blt_20260713_021355`
+- 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.16(§9.1 Phase表)、AC2実行証跡: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3870_p4_ac2_evidence.md`、研究文脈の対応記述: `context/dm-signal-research.md`(cmd_3870/cmd_3872/P4_AC2再挑戦方式確定エントリへGA-238で反映済み)、家老一次照合: 掲示板`blt_20260713_021355`
 - 因果リンク: [[cmd_3861全量FAIL0/SKIP0達成]] -> [[cmd_karo_hotfix_p4_restore_core_integrator_202607121954でrestore契約統合]] -> [[origin main統合push+Render_Auto_Deployでlive=34747ad1確定]] -> [[AC2本番fullrecalculate_1run実行(cmd_3870)]] -> [[input_snapshot_id不一致でFAIL・restore-lockedで原状回復]] -> [[cmd_3872入力差分偵察待ち]]
+
+## §73 P4 AC2再挑戦方式確定: single-source immutable input bundle (v1.4.17, 2026-07-13, GA-238で反映)
+
+- **結論**: cmd_3872の偵察で、AC2 FAIL(§72)は決定性の反証ではなく**比較前提FAIL**(`logical_date`日跨ぎ+manifest payloadが行本体/行数/終端日を保存せずhashのみ永続化)と確定。将軍・家老検討合意(殿指示2026-07-13 12:33)で再挑戦方式を**single-source immutable input bundle**に確定: T0でread-only materialize→shadow A/B 2run+production 1runの全てが同一bundleをconsume→18表exact比較→mismatch時はrestore-locked(§72)で復旧。直前検討したclone expected生成のみ案は家老実測反証(実行窓19分44秒〜28分01秒でwriter混入を排除できない)で不採用。
+- **前提実装**: bundle export/import consumer機構+manifest payload保存契約(sha256/row_count/min_max date/PF set/logical_dateを完全保存、schema migration不要)。この実装GREENまでAC2再挑戦は禁止。実装第1段(bundle export/import consumer)は`cmd_3873`が担当中(2026-07-13時点in_progress、完了時に本セクションの追補が必要)。
+- 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.17、入力差分偵察: `context/dm-signal-research.md`(cmd_3872_input_snapshot_diff)
+- 因果リンク: [[AC2本番fullrecalculate_1run実行(cmd_3870)]] -> [[input_snapshot_id不一致でFAIL]] -> [[cmd_3872入力差分偵察でlogical_date日跨ぎ+manifest payload未保存が十分条件と特定]] -> [[single-source_immutable_input_bundle方式確定]] -> [[cmd_3873でbundle実装着手(in_progress)]]

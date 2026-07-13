@@ -5617,6 +5617,84 @@ if [ "$HAS_IMPLEMENT" = "true" ] && ! review_all_reports_ready "$CMD_ID" "${_two
     exit 1
 fi
 
+# ─── GA-238/239/241/242: context freshness own-commit block ───
+# 既存の「Context freshness nudge」(後段、非同期・出力破棄)は可視性のみで
+# CLEARを止めない設計だった。完了しようとしているcmd自身のcommitが、
+# 未反映のsplit context候補(context/*.mdのsource commit ALERT)として
+# 残っている場合はCLEARさせない — last_updated/source_commitの手動更新だけで
+# 閉じることを防ぐ「cmd完了前の強制提示」導線。
+#
+# 無関係cmd誤BLOCK0の設計: (1) project定義(DM_SIGNAL_CONTEXT_PATHS/
+# INFRA_CONTEXT_PATHS)を持つinfra/dm-signalのみ対象、他projectは無条件通過。
+# (2) 相関判定はcommit subjectが"${CMD_ID}:"で厳密に始まる場合のみ一致とし、
+# 部分文字列衝突を避ける。(3) 自分自身の変更が既存contextに未反映の場合のみ
+# BLOCKし、他cmd由来の残存ALERTでは無関係cmdを止めない。
+# check自体がtimeout/エラーで未確定の場合はBLOCKせずWARNに留める
+# (システム全体のスループットをinfra flakinessで止めない。個別timeout緩和は
+# しない=check-failedは可視化するがBLOCK判定には使わないという意図的な設計)。
+check_context_freshness_own_commit() {
+    local cmd_id="$1"
+    local check_script="$SCRIPT_DIR/scripts/context_freshness_check.sh"
+    [ -f "$check_script" ] || return 0
+
+    local -A _cfoc_projects=()
+    local _tf _proj
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        for _tf in "${MATCHING_TASK_FILES[@]}"; do
+            [ -f "$_tf" ] || continue
+            _proj=$(awk '
+                /^  [a-zA-Z_].*:$/ { next }
+                /^  project:/ { sub(/^  project:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }
+            ' "$_tf" 2>/dev/null)
+            [ -n "$_proj" ] && _cfoc_projects["$_proj"]=1
+        done
+    fi
+
+    local _any_block=0
+    local _proj_id
+    for _proj_id in "${!_cfoc_projects[@]}"; do
+        # GA-242: project名をハードコードで絞らない。context_freshness_check.shの
+        # --cmd-commit-listはconfig/projects.yamlのcontext_file/context_files定義
+        # がない project では自然に0行を返す(iter_context_filesがcurrent_project一致
+        # なしでスキップ)ため、infra/dm-signal以外を明示的に除外する必要はない。
+        # database等split外projectも同一機構で汎用的にカバーする。
+
+        local commit_list check_status
+        commit_list=$(CFC_PROJECT_OVERRIDE="$_proj_id" timeout 20 bash "$check_script" --cmd-commit-list "$cmd_id" 2>/dev/null)
+        check_status=$?
+
+        if [ "$check_status" -ne 0 ]; then
+            echo "  [WARN] context_freshness own-commit check timeout/error (project=${_proj_id}). BLOCK skipped — 一次情報で確認: CFC_PROJECT_OVERRIDE=${_proj_id} bash scripts/context_freshness_check.sh --cmd-commit-list ${cmd_id}"
+            continue
+        fi
+
+        if echo "$commit_list" | grep -q '^CHECK_FAILED'; then
+            local failed_paths
+            failed_paths=$(echo "$commit_list" | awk -F'\t' '/^CHECK_FAILED/{print $2}' | tr '\n' ' ')
+            echo "  [WARN] context freshness check未確定(timeout/returncode): ${failed_paths}(project=${_proj_id})。BLOCK判定には使用しない"
+        fi
+
+        local own_hits
+        own_hits=$(echo "$commit_list" | awk -F'\t' -v cmd="${cmd_id}:" 'index($3, cmd) == 1 {print}')
+        if [ -n "$own_hits" ]; then
+            echo "  own commit found in unreflected split context backlog (project=${_proj_id}):"
+            while IFS=$'\t' read -r _rel_path _hash _subject; do
+                [ -n "$_rel_path" ] || continue
+                echo "    - ${_rel_path} (${_hash}: ${_subject})"
+            done <<< "$own_hits"
+            _any_block=1
+        fi
+    done
+
+    return "$_any_block"
+}
+
+if ! check_context_freshness_own_commit "$CMD_ID"; then
+    echo "GATE BLOCK: context_freshness_own_commit_unreflected"
+    append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\tcontext_freshness_own_commit_unreflected"
+    exit 1
+fi
+
 # ─── 忍者報告からlesson_candidate自動draft登録 ───
 # 循環防止: 前回BLOCKがdraft_lessons起因なら自動draft生成をスキップ
 _prev_block_reason=""

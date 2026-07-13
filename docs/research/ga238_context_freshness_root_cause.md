@@ -4,6 +4,72 @@
 - 記録者: tobisaru
 - 日付: 2026-07-13
 
+## 家老formal RC(RC3)追記: AC3を検知メカニズムからCLEARブロック機構へ
+
+初回提出(commit `81853e32b`)は`gate_context_freshness.sh`のfail-openバグ修正(check-failed
+WARNをOK扱いしていた誤りをfail-closed化)のみで、家老から「部分PASSだが親AC3未達」と
+formal RCを受けた。AC3が要求する「last_updated手動更新だけで閉じず、外部repo source変更
+から正しいsplit context候補をcmd完了前に強制提示する既存導線」は、検知の正確性
+(fail-open修正)だけでは満たされない — 既存の「Context freshness nudge」
+(`cmd_complete_gate.sh`内、非同期・出力`/dev/null`破棄)は可視性すらなく、CLEARを
+一切止めない設計だったことが根本原因だと判明した。
+
+### 追加実装: `check_context_freshness_own_commit()` (cmd_complete_gate.sh pre-CLEARブロック)
+
+- **仕組み**: `context_freshness_check.sh`に新モード`--cmd-commit-list <cmd_id>`を追加
+  (detailsを3件に丸めない全件出力、`CFC_PROJECT_OVERRIDE`でproject解決をfind_cmd_project
+  のchronicle/archive依存から独立させる)。`cmd_complete_gate.sh`はMATCHING_TASK_FILESの
+  `project:`から対象projectを求め、この新モードを**同期的**(timeout 20s)に呼び出し、
+  出力中のcommit subjectが`"${CMD_ID}:"`で厳密に始まる行があれば
+  `GATE BLOCK: context_freshness_own_commit_unreflected`でCLEARを止める。
+- **無関係cmd誤BLOCK0の設計**(家老要求(2)): (a) 相関判定は「completeしようとしているcmd
+  自身のcommitが未反映backlogに含まれるか」のみを見る。他cmd由来の残存ALERTでは無関係cmdを
+  止めない。(b) 判定はcommit subjectの厳密prefix一致(`index($3, cmd_id+":")==1`)のみで、
+  部分文字列衝突を排除。(c) project名のハードコード除外はしない(GA-242対応、後述)。
+  (d) check自体がtimeout/エラーの場合はBLOCKせずWARNに留める(インフラのflakinessで
+  スループット全体を止めない、個別timeout緩和とは異なる意図的な設計判断)。
+- **実fixture検証(家老GA-241指摘)**: 修正前後で`dm-signal-core.md`/`dm-signal-ops.md`が
+  現に抱えるcmd_3873(in_progress)の3commit backlogをそのまま使い、
+  `CFC_PROJECT_OVERRIDE=dm-signal bash scripts/context_freshness_check.sh --cmd-commit-list cmd_3873`
+  が該当2ファイルへの一致行を返すこと(=もしcmd_3873が今CLEARを試みれば新機構が
+  `GATE BLOCK: context_freshness_own_commit_unreflected`で止めることを実データで確認)。
+- **GA-242統合(database.md等split外projectも同一機構でカバー)**: 初版は
+  `case "$_proj_id" in infra|dm-signal) ;; *) continue ;; esac`でproject名を
+  ハードコード制限していたが、これは不要な過剰制約であり`context/database.md`
+  (config/projects.yamlの`id: database`、DM-Signalと独立の株式DB PJ)のような
+  split外projectを機構から漏らしていた。ホワイトリストを撤廃し、
+  `context_freshness_check.sh --cmd-commit-list`がconfig/projects.yamlの
+  `context_file`/`context_files`定義を持たないprojectでは自然に0行を返す
+  (iter_context_filesが一致なしでスキップ)という既存の安全な設計にそのまま委譲する形へ
+  変更。個別project追加パッチは不要で、新規projectが追加されても自動的にカバーされる。
+- **回帰**: 新規`tests/unit/test_cmd_complete_gate_context_freshness_block.bats`(10件、
+  brace-balance抽出で`check_context_freshness_own_commit()`を単体検証)全PASS。
+  既存`test_cmd_complete_gate*.bats`(7ファイル、計264テスト)を実行し260 PASS・4 FAILは
+  いずれも本cmdと無関係の先行バグ(後述)と確認。
+
+### 先行バグの切り分け: `scripts/lib/parent_cmd_contract.py`欠如によるテスト基盤の陳腐化
+
+`test_cmd_complete_gate.bats`の2件(`cmd_complete_gate honors GATE_METRICS_LOG override
+for no-task benchmark fast path`/`cmd_complete real process blocks after normalize
+mutates approved report`)と`test_cmd_complete_gate_task_idle.bats`の2件(`no-task/no-report
+benchmark fast path still clears`/`no-task parent report with FAIL verdict blocks`)、
+計4件が本cmd着手前から失敗していた。原因は`cmd_complete_gate.sh`が要求する
+`scripts/lib/parent_cmd_contract.py`(別ninjaの並行作業
+`cmd_karo_hotfix_parent_ac_false_clear_202607130306`が本日追加)を
+`tests/helpers/cmd_gate_scaffold.bash`がまだsymlinkしておらず、
+`run bash cmd_complete_gate.sh`を実行する統合テストが必ず
+`GATE BLOCK: parent_cmd_contract`で早期停止する構造的ギャップ。**未修正のgit HEAD
+(私の変更前)へ同一シナリオを`/tmp`で再現し、同一エラーで同一箇所BLOCKすることを確認済み
+=本cmdの変更が原因ではない**。本cmdのスコープ外(他ninja作業領域、テスト基盤側の追随漏れ)
+のためscaffoldへの修正は行わず、decision_candidateとして記録する。
+
+### GA-239/242統合: codd.md/dm-signal-frontend.md/database.mdの再現計測
+
+家老追加指摘の3ファイルは全て同一根因(gate/dashboard間のgit subprocess timeout差 + 旧
+fail-openバグ)であり、個別パッチは不要と確認済み(詳細は後述セクション参照)。GA-242の
+database.mdはconfig/projects.yamlの`id: database`projectとして初めて認識され、
+BLOCK機構のホワイトリスト撤廃により自動的にカバー対象となった。
+
 ## 結論(3問回答)
 
 ### Q1: なぜ発火したか(直接原因・根本原因)
