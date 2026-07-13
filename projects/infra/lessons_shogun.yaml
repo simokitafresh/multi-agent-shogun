@@ -1,14 +1,6 @@
 # 将軍(shogun)教訓 — パターン集約版 (v3)
-# v2: 21クラスタ+14個別=35件(2026-04-24〜25)
-# v3: 14個別を既存クラスタに吸収→22件(2026-04-25統合)
-# v1全文アーカイブ: docs/research/lessons_shogun_v1_archive.md
-# superseded注釈(# LSxxx: superseded by ...)は2026-07-11にdocs/research/lessons_shogun_v1_archive.md末尾へ移設。統合履歴はそちらを参照
-#
-# 読み方:
-#   - 各エントリは再利用可能なパターン(個別事故記録ではない)
-#   - source_ids: 統合元のLS番号一覧。追体験にはv1アーカイブを参照
-#   - enforcement: 環境埋込み先。全件automated:true
-#   - 個別事故の詳細が必要な場合→v1アーカイブ参照
+# 統合履歴・superseded注釈・v1全文: docs/research/lessons_shogun_v1_archive.md
+# 各エントリ=再利用可能パターン。source_ids=統合元LS番号(追体験はv1アーカイブ)。enforcement=環境埋込み先
 # 追記: bash scripts/lesson_write_shogun.sh "タイトル" "詳細" cmd_XXX ["enforcement"]
 lessons:
 
