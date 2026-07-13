@@ -223,6 +223,12 @@ warnings_output() {
 
 declare -A seen_paths=()
 declare -A source_alerts=()
+# GA-238: git log呼出しがtimeout/returncode異常でsource commit数を確定できなかった
+# ("source commit check failed", context_freshness_check.shのbuild_source_check_warning)
+# rel_pathを記録する。source_alertsが空のままdays_ago<=7だと従来はOK扱いへ落ちて
+# 未確認状態を隠蔽していた(fail-open) — check_failed_pathsに載ったrel_pathは
+# 後段の分類で必ずWARNへ倒す(fail-closed)。
+declare -A check_failed_paths=()
 target_rel_paths=()
 while IFS= read -r warning_line; do
     [[ -n "$warning_line" ]] || continue
@@ -233,6 +239,8 @@ while IFS= read -r warning_line; do
     [[ -n "$rel_path" ]] || continue
     if [[ "$warning_line" == ALERT:*"source commits"* ]]; then
         source_alerts["$rel_path"]="$warning_line"
+    elif [[ "$warning_line" == WARN:*"source commit check failed"* ]]; then
+        check_failed_paths["$rel_path"]=1
     fi
     if [[ -n "${seen_paths[$rel_path]:-}" ]]; then
         continue
@@ -289,6 +297,13 @@ for rel_path in "${target_rel_paths[@]}"; do
             "${basename_file} をソースPJの最新commitと照合し、必要なら内容とlast_updatedを更新せよ。"
         HAS_ALERT=1
         ALERT_LIST+=("${basename_file}(source更新)")
+    elif [[ -n "${check_failed_paths[$rel_path]:-}" ]]; then
+        # GA-238 fail-closed: source commit確認自体が失敗(git timeout/returncode異常)した
+        # ファイルはALERT有無が未確定。days_agoベースのOK分類へ落とさず必ずWARNで可視化する。
+        emit_actionable \
+            "WARN: ${basename_file} (source commit確認失敗: timeout/returncode。last_updated=${last_updated}, ${days_ago}日前、ALERT見逃しの可能性あり)" \
+            "${basename_file} のsource commit確認がgit timeout/returncode異常で失敗した。CONTEXT_FRESHNESS_GATE_GIT_TIMEOUTを一時的に緩めて再実行するか、一次情報(git log)で手動確認せよ。"
+        HAS_WARN=1
     elif [[ "$days_ago" -gt 14 ]]; then
         emit_actionable \
             "WARN: ${basename_file} (${days_ago}日前更新、ソース変更なし)" \

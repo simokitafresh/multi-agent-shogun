@@ -203,6 +203,55 @@ SH
     [[ "$output" == *"--- 総合判定: OK ---"* ]]
 }
 
+@test "GA-238: source commit check failure (git timeout) is surfaced as WARN, not silently OK" {
+    # Adversarial fixture: context_freshness_check.sh reports a check failure
+    # (git log timed out / returned non-zero) for a file updated within the
+    # last 7 days. Before the GA-238 fix, gate_context_freshness.sh only
+    # tracked source_alerts (real ALERT lines) and fell through to the
+    # days-based OK branch for anything else -- silently treating "we could
+    # not verify" the same as "verified clean". That is a fail-open bug: a
+    # real pending ALERT (e.g. dashboard_update's context_freshness_check.sh
+    # call, run with a looser timeout, showed 4 source commits for the same
+    # file) can be hidden behind a stale git-timeout WARN.
+    cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
+#!/usr/bin/env bash
+cat <<'OUT'
+WARN: context/uncertain.md source commit check failed since last_updated=2026-05-10。timeout/returncodeを確認せよ
+OUT
+SH
+    chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
+    write_context_file context/uncertain.md 2026-05-10
+
+    run_gate
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"WARN: uncertain.md (source commit確認失敗"* ]]
+    [[ "$output" == *"ALERT見逃しの可能性あり"* ]]
+    [[ "$output" != *"OK: uncertain.md"* ]]
+    [[ "$output" == *"--- 総合判定: WARN ---"* ]]
+}
+
+@test "GA-238: a real ALERT for the same path still wins over a check-failed WARN line" {
+    # Guards against a naive fix that would make check_failed_paths override
+    # a genuine ALERT line for the same rel_path (e.g. duplicate/out-of-order
+    # output from the underlying check). ALERT must still take priority.
+    cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
+#!/usr/bin/env bash
+cat <<'OUT'
+ALERT: context/mixed.md source commits 1件 since last_updated=2026-05-10。更新要否を確認せよ
+WARN: context/mixed.md source commit check failed since last_updated=2026-05-10。timeout/returncodeを確認せよ
+OUT
+SH
+    chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
+    write_context_file context/mixed.md 2026-05-10
+
+    run_gate
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"ALERT: mixed.md (source commits since last_updated=2026-05-10)"* ]]
+    [[ "$output" != *"source commit確認失敗"* ]]
+}
+
 @test "a single source commit remains ALERT until context records the new source boundary" {
     cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
 #!/usr/bin/env bash
