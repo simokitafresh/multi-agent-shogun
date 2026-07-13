@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-13 cmd_3878 -->
-<!-- dm_signal_research_reflux: fingerprint=f481a8935ef9f00243f9753ba37f88e1cf381a74bc1912939125ad1168968e39; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQ6Nzg2IGNtZF8zODgxX0RCX2ZlbmNlX21pZ3JhdGlvbl9GQUlM5ZCM5pyf5riI44G/ -->
-<!-- source_commit:a0793f81 reason:cmd_3878_cmd_3881_cmd_3882_reflux_verified evidence:research_lines_781_786_and_docs_exist -->
+<!-- last_updated: 2026-07-13 cmd_3881 v1.4.22 -->
+<!-- dm_signal_research_reflux: fingerprint=7aa34cf85d36b650cdaffe1aa3bf53dbc2ecf18bf95b902524b63d4368fb430f; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgY21kXzM4Nzkgc2FmZSBidW5kbGUgdjLlrp/oo4XntZDoq5Y= -->
+<!-- source_commit:88cc5bd74d5a8926f7bdc65c1bec6d6834feff60 reason:cmd_3881_v1.4.22_window_fence_reflux evidence:context_line_787_and_source_doc_commit -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -784,3 +784,4 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - → [[cmd_3878_container_selection]] safe archive v2は**長さprefix付き単一framed typed stream**を勧告。pickle 0、raw SHA-256→entry検査→artifact hash→schema/row_count→typed decode、3候補×敵対6種=18/18 reject・FAIL0/SKIP0、raw deterministic、streaming可、RSS増分0 KiB(<64 MiB)。SQLiteはstreaming不可、ZIP_STOREDは全基準PASSだがparser/central-directory攻撃面のため次点。成果物=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3878_container_selection.md` (2026-07-13)
 - → [[cmd_3878_recon3_track_b]] 基準commit `434c146f`の隔離worktreeで独立実測し、**`framed-json+typed-binary`**を勧告。基準充足=`pickle_free=yes, raw_hash_before_decode=yes, adversarial_reject=6/6, deterministic_raw=yes, rss_cap=yes, streaming_read=yes, streaming_write=yes`。SQLiteはstreaming write不可、ZIP STOREはsize bomb reject 5/6で不採用。Track B成果物=`docs/research/cmd_3878_container_selection.md`、検証コード=`scripts/research/cmd_3878_container_probe.py` (2026-07-13)
 - → [[cmd_3881_DB_fence_migration_FAIL]] v1.4.21 §9.10.5の18表statement-trigger+coordinator+fence functionを単一往復migrationで試作。isolated production snapshot cloneでupgrade 18/18→downgrade 0/18→re-upgrade 18/18、18表canonical row/hash不変、未参加writer明示reject、exact token経路成立、silent skip 0はPASS。しかし4 write class×30 batchはsingle ORM median比1.1834、bulk upsert 1.1639で閾値1.05超過、full recalculationも892.013s→947.861s=比1.062609(>1.01)のため**採用FAIL・本番適用禁止**。閾値緩和ではなくDB fail-closedを保った低overhead方式の再設計が必要。詳細=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3881_db_fence_migration.md` (2026-07-13)
+- → [[P4_writer_fence_v1.4.22]] `[[cmd_3881性能FAIL]] -> [[常設trigger通常時課税]] -> [[P4窓限定role trigger]]`。平時はtrigger 0/17、keeperのrecalc advisory取得後だけ単一DDL transactionでrun固有NOLOGIN role+17 statement triggersを原子装着し、通常writerをDB拒否、P4 transactionの`SET LOCAL ROLE`だけ`WHEN=false`でblocker function呼出し0とする。disarm失敗は17/17維持+RECOVERY_REQUIRED、部分drop/expiry fail-open禁止。owner credentialの意図的DDL/SET ROLE悪用は別login分離が必要な脅威境界と明記し、性能閾値(median≤1.05/p95≤1.10/full≤1.01)は緩和0。旧commit `f94513b0`は反例のみでcherry-pick禁止。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.22、commit=`88cc5bd74d5a8926f7bdc65c1bec6d6834feff60` (2026-07-13)

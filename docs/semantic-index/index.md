@@ -848,7 +848,7 @@ codd:
 |------|---|
 | id | recalculate_pipeline |
 | label | 再計算パイプライン |
-| aliases | fullrecalculate, recalc, 再計算フロー, recalculate_fast, ネストFoF, nested FoF, FoF of FoF, トポロジカルソート, signal_cache, holding_signal_raw, deferred flush, recalculate_fof, FoF再計算, 2段目FoF, 奥義GS, 秘奥義, つまり秘奥義もnew FoFもL3だな, 呼出し元でFoF構成PF 1段目・2段目 を事前一括取得, recalculation_status, recalculate速度, psycopg2直接接続, WSL DB接続方式A, 本番のFoFの設定はこうなっている, 本番のfull recalculateしてくれ, cronと競合していないか？, cron競合, fullrecalculateとcronの重複実行, pg_advisory_lock, recalculate排他制御, 手動recalculateとcronの同時実行, layer2_lock_timeout |
+| aliases | fullrecalculate, recalc, 再計算フロー, recalculate_fast, ネストFoF, nested FoF, FoF of FoF, トポロジカルソート, signal_cache, holding_signal_raw, deferred flush, recalculate_fof, FoF再計算, 2段目FoF, 奥義GS, 秘奥義, つまり秘奥義もnew FoFもL3だな, 呼出し元でFoF構成PF 1段目・2段目 を事前一括取得, recalculation_status, recalculate速度, psycopg2直接接続, WSL DB接続方式A, 本番のFoFの設定はこうなっている, 本番のfull recalculateしてくれ, cronと競合していないか？, cron競合, fullrecalculateとcronの重複実行, pg_advisory_lock, recalculate排他制御, 手動recalculateとcronの同時実行, layer2_lock_timeout, P4 writer fence, P4窓限定role trigger, 常設trigger通常時課税, run固有NOLOGIN role, RECOVERY_REQUIRED writer fence |
 | skills | db-check |
 | related_concepts | production_parity, dmsignal_operations, alm_research, gs_ninpo_research, dm_signal_pf_restore_guardrails |
 
@@ -859,6 +859,8 @@ codd:
 | file | `docs/research/gunshi_precompute_fingerprint_skip_design_v1.2_20260711.md` |
 | file | `context/dm-signal-core.md` §19.2 |
 | file | `docs/research/fullrecalculate-architecture-2026-03-28.md` |
+| file | `context/dm-signal-research.md` §因果リンク `P4_writer_fence_v1.4.22` |
+| causal | `cmd_3881` origin: [[cmd_3881性能FAIL]] -> [[常設trigger通常時課税]] -> [[P4窓限定role trigger]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T15:11 fullrecalculate 3566s→480s |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T14:29:03+09:00 正しいfullrecalculateの仕方は知識もない？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-05T15:02 fullrecalculate deploy後トリガー+完了確認 |
