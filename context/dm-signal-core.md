@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-13 cmd_3882 -->
-<!-- source_commit:a0793f81 reason:cmd_3873_cmd_3882_backlog_reflux_verified evidence:core_section23_cross_split_links -->
+<!-- last_updated: 2026-07-14 cmd_3879 -->
+<!-- source_commit:29ea37a9 reason:cmd_3879_safe_bundle_v2_main_integration evidence:core_section23_safe_bundle_contract -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -611,6 +611,7 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 → 詳細: `context/dm-signal-ops.md` §71/§72、`context/dm-signal-research.md`(cmd_3858_P3b_GREEN / cmd_3860_origin統合+push見送り エントリ)
 
 - cmd_3873: immutable input bundleのsource-select/schema identity/consumer契約を実装完了。詳細は`context/dm-signal-research.md`の`cmd_3873`系列へ集約。
+- cmd_3879: framed typed streamのsafe bundle v2、raw/artifact/schema/canonical hash多段検証、再計算関数非依存read-only materializerをproduction consumerへ統合。旧export経路0・valid bundle時source fallback 0を固定。詳細は`context/dm-signal-research.md`の`cmd_3879_safe_bundle_v2`へ集約。
 - cmd_3882: 18対象表writerをAST/literal SQLから検出し、AST↔registry↔DB enforcement三集合をfail-closed照合するCIを実装。詳細は`context/dm-signal-research.md`の`AST恒常スキャンCI`へ集約。
 
 ---

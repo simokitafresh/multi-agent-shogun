@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_context_freshness_ops_research_202607132325 -->
-<!-- source_commit:611f715bfbe4875e9e8d92c267818ee52324faa0 reason:p4_writer_fence_v1.4.23_operational_contract evidence:ops_section75_and_source_doc_commit -->
+<!-- last_updated: 2026-07-14 cmd_3879 -->
+<!-- source_commit:29ea37a9 reason:cmd_3879_safe_bundle_v2_main_integration evidence:ops_section76_safe_bundle_operations -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1221,3 +1221,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - cmd_3882は18表writerのAST検出↔registry↔DB enforcement三集合exact CIを実装し、動的SQL/集合不一致をfail-closed BLOCKする。詳細=`context/dm-signal-research.md`の`cmd_3873`系列・`AST恒常スキャンCI`・`cmd_3881_DB_fence_migration_FAIL`。
 - v1.4.23では比較対象18表をF=output/fence/restore対象17表とG=`signal_decision_ledger` immutable guard 1表へ分離。restoreのDELETE/COPYはFのみ、Gはmutation 0とpre/post canonical hash不変を確認し、差分時は通常restoreで上書きせず`RECOVERY_REQUIRED`へ止める。
 - arm DDLはFのcanonical table名辞書順でlockし、SQLSTATE 40P01/55P03/57014は自動retry 0回で原子rollbackする。別read-only catalog sessionでtrigger 0/17・run role 0・ARMING不在を証明できない限りadvisory/fenceを解放しない。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.23、source commit=`611f715bfbe4875e9e8d92c267818ee52324faa0`。
+
+## §76 safe bundle v2運用契約 (cmd_3879, 2026-07-14)
+
+- input bundleは`safe_bundle_v2.load_bundle`のみで読み、raw SHA-256→entry allowlist/size/path→artifact hash→schema/row count→typed decodeの順にfail-closed検証する。pickleと旧`export_input_bundle`経路は使用禁止。
+- materializeは`REPEATABLE READ READ ONLY`をtransaction先頭で設定し、`SHOW transaction_read_only=on`確認後に実行する。valid bundle consumer時のsource SELECT fallbackは0でなければ失敗扱い。
+- 全量前preflightはgolden存在+canonical SHA、pytest-asyncio導入済み`/usr/bin/python3`、`RECALC_RSS_CAP_MB=8192`を二値確認する。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3879_safe_bundle_impl.md`、main統合=`97c13040→b5716329→29ea37a9`。
