@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
+<!-- last_updated: 2026-07-13 cmd_3873 -->
 <!-- dm_signal_research_reflux: fingerprint=6af75672106a53f047ffa75b0f3db45da5e46dafe1f3be25792c44801f8447bd; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgwqc1NuOBuGNtZF8zODczIEFDM+i/veijnDHooYzjgpLov73oqJjmuIjjgb8oY29tbWl05LqI5a6aKeOAgmRvY3MvcmVzZWFyY2gvY21kXzM4NzNfYnVuZGxlX2ltcGxfbm90ZXMubWTjga7miJDmnpznianjgpLopoHntITpgoTmtYE= -->
 <!-- source_commit:4a57a81f9f1bcb5a760258aae40e8190188579e1 (DM-Signal docs/research配下の最終同期commit。GA-238で反映: c84bcd93[v1.4.16]/1ac02744[cmd_3872]/68fc3d95[v1.4.17]/4a57a81f[cmd_3868]の4件を§末尾へ反映済み。次回鮮度チェックはこのcommit以降のdiffのみ照合対象) -->
 
