@@ -360,6 +360,27 @@ teardown() {
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+@test "ledger-health sub-gate exit 1 does not kill startup gate under set -e (62b8cc346)" {
+    # A sub-gate returning non-zero must degrade to WARN, not abort the whole
+    # startup gate: every downstream check would silently never run.
+    printf 'suite\tstarted_at\tduration_sec\texit_code\n' > "$TEST_TMPDIR/logs/test_timing_ledger.tsv"
+    cat > "$TEST_TMPDIR/scripts/gates/gate_test_health.sh" <<'EOF'
+#!/bin/bash
+echo "WARN: legacy timing ledger schema (fixture)"
+echo "総合判定: ALERT — timing ledger health"
+exit 1
+EOF
+    export SHOGUN_RECOVERY_MARKER="$TEST_TMPDIR/logs/shogun_recovery_complete"
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run bash "$SRC_GATE_SCRIPT"
+    unset SHOGUN_RECOVERY_MARKER
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ テスト時間台帳鮮度"* ]]
+    # Sections after the ledger check must still have run
+    [[ "$output" == *"■ 週次品質指標トレンド"* ]]
+    [[ "$output" == *"総合判定:"* ]]
+    [[ "$output" == *"テスト時間台帳: stale/writer停止を確認せよ"* ]]
+}
+
 @test "weekly metrics three-week worsening is surfaced as startup ALERT" {
     cat > "$TEST_TMPDIR/logs/weekly_metrics_trend.yaml" <<'EOF'
 snapshots:
