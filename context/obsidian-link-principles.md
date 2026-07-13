@@ -1,4 +1,5 @@
 <!-- last_updated: 2026-07-10 cmd_karo_hotfix_ga215_context_freshness_202607101205 -->
+<!-- source_commit:6126dbcf824e62a0e522c02760a7c5f0e4151806 reason:audited-pathspec evidence:no-unreflected-commits -->
 # Obsidianリンク×セマンティクスインデックス 分離原則
 
 <!-- created: 2026-05-22 | origin: 殿×将軍×軍師 対話で確立 -->

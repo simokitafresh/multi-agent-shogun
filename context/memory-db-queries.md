@@ -1,4 +1,5 @@
 <!-- last_updated: 2026-07-09 cmd_karo_hotfix_context_freshness_ga203_202607090005 -->
+<!-- source_commit:07065f99af6dbbca7824e2fc55c6101062825283 reason:audited-pathspec evidence:no-unreflected-commits -->
 # Memory DB Query Templates
 
 DB: `data/multi_agent_shogun_memory.db`

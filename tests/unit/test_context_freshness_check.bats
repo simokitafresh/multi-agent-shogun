@@ -12,7 +12,7 @@ setup_file() {
 
 setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/cfc.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/scripts" \
+    mkdir -p "$TEST_TMPDIR/scripts/config" \
              "$TEST_TMPDIR/config" \
              "$TEST_TMPDIR/context" \
              "$TEST_TMPDIR/queue/archive/cmds" \
@@ -20,6 +20,7 @@ setup() {
 
     # Copy the script under test
     cp "$SRC_SCRIPT" "$TEST_TMPDIR/scripts/context_freshness_check.sh"
+    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
     chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
 
     # Default: one active project with context_file mapping
@@ -46,6 +47,7 @@ PROJYAML
     export CFC_ARCHIVE_CACHE="$TEST_TMPDIR/context_freshness_cache.txt"
     export CONTEXT_FRESHNESS_EXCLUDE_LIST="$TEST_TMPDIR/config/context_freshness_excludes.txt"
     export CFC_OUTPUT_CACHE_TTL=0
+    export CFC_REQUIRE_SOURCE_COMMIT=0
 
     cat > "$CONTEXT_FRESHNESS_EXCLUDE_LIST" <<'EOF'
 context/README.md
@@ -486,7 +488,7 @@ EOF
 
 @test "GA-245 registered context without source_commit fails fast before git log" {
     mkdir -p "$TEST_TMPDIR/scripts/config"
-    printf 'context/dm-signal.md\tdm-signal\n' > "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
+    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
     _create_context "context/dm-signal.md" "$TODAY"
     _create_archive_cmd "cmd_ga245_fixture" "dm-signal"
     mkdir -p "$TEST_TMPDIR/bin"
@@ -497,7 +499,7 @@ exec /usr/bin/git "$@"
 EOF
     chmod +x "$TEST_TMPDIR/bin/git"
     rm -f "$TEST_TMPDIR/git-calls.log"
-    PATH="$TEST_TMPDIR/bin:$PATH" CFC_OUTPUT_CACHE_TTL=0 run bash "$TEST_SCRIPT" --dashboard-warnings
+    PATH="$TEST_TMPDIR/bin:$PATH" CFC_OUTPUT_CACHE_TTL=0 CFC_REQUIRE_SOURCE_COMMIT=1 run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
     [[ "$output" == *"MISSING_SOURCE_COMMIT"* ]]
     [ ! -e "$TEST_TMPDIR/git-calls.log" ]
@@ -505,17 +507,26 @@ EOF
 
 @test "GA-245 registered and enforced context sets are exact" {
     run python3 - "$SRC_SCRIPT" "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" <<'PY'
-import re, sys
+import ast, re, sys
 text=open(sys.argv[1], encoding='utf-8').read()
-registered={line.split('\t',1)[0] for line in open(sys.argv[2], encoding='utf-8') if line.strip() and not line.startswith('#')}
-expected={'context/dm-signal.md','context/dm-signal-core.md','context/dm-signal-frontend.md','context/dm-signal-ops.md','context/dm-signal-research.md','context/codd.md','context/memory-db-queries.md','context/memory-db-schema.md','context/obsidian-link-principles.md'}
+registered=dict(line.rstrip().split('\t') for line in open(sys.argv[2], encoding='utf-8') if line.strip() and not line.startswith('#'))
+def mapping(name):
+    match=re.search(rf'{name}: dict\[str, list\[str\]\] = (\{{.*?\n\}})', text, re.S)
+    return ast.literal_eval(match.group(1))
+expected={**{p:'dm-signal' for p in mapping('DM_SIGNAL_CONTEXT_PATHS')},
+          **{p:'infra' for p in mapping('INFRA_CONTEXT_PATHS')}}
 assert registered == expected, (registered, expected)
-for path in expected:
-    assert f'"{path}": [' in text, path
 print(f'registered={len(registered)} enforced={len(expected)}')
 PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"registered=9 enforced=9"* ]]
+}
+
+@test "GA-245 new pathspec map key without registry row blocks before git" {
+    sed -i '/DM_SIGNAL_CONTEXT_PATHS: dict/a\    "context/new-map-key.md": ["src"],' "$TEST_SCRIPT"
+    CFC_OUTPUT_CACHE_TTL=0 run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"registry/map mismatch"* ]]
 }
 
 @test "duplicate context_file mapping keeps dm-signal.md attached to dm-signal project" {

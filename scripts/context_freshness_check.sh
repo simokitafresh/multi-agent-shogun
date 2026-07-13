@@ -494,19 +494,36 @@ INFRA_CONTEXT_PATHS: dict[str, list[str]] = {
 SOURCE_CONTEXT_REGISTRY = os.path.join(root, "scripts", "config", "context_source_commits.tsv")
 
 
+def expected_source_contexts() -> dict[str, str]:
+    return ({path: "dm-signal" for path in DM_SIGNAL_CONTEXT_PATHS}
+            | {path: "infra" for path in INFRA_CONTEXT_PATHS})
+
+
 def load_registered_source_contexts() -> frozenset[str]:
     try:
         with open(SOURCE_CONTEXT_REGISTRY, encoding="utf-8") as f:
-            return frozenset(
-                line.split("\t", 1)[0].strip()
-                for line in f
-                if line.strip() and not line.lstrip().startswith("#")
-            )
+            rows = [line.rstrip("\n").split("\t") for line in f
+                    if line.strip() and not line.lstrip().startswith("#")]
     except FileNotFoundError:
-        return frozenset()
+        raise SystemExit("BLOCK: source context registry missing")
+    if any(len(row) != 2 or not row[0] or not row[1] for row in rows):
+        raise SystemExit("BLOCK: malformed source context registry row")
+    actual = {row[0]: row[1] for row in rows}
+    if len(actual) != len(rows):
+        raise SystemExit("BLOCK: duplicate source context registry path")
+    unknown = set(actual.values()) - {"infra", "dm-signal"}
+    if unknown:
+        raise SystemExit(f"BLOCK: unknown source context project: {sorted(unknown)}")
+    expected = expected_source_contexts()
+    if actual != expected:
+        missing = sorted(set(expected.items()) - set(actual.items()))
+        extra = sorted(set(actual.items()) - set(expected.items()))
+        raise SystemExit(f"BLOCK: source context registry/map mismatch missing={missing} extra={extra}")
+    return frozenset(actual)
 
 
 REGISTERED_SOURCE_CONTEXTS = load_registered_source_contexts()
+REQUIRE_SOURCE_COMMIT = os.environ.get("CFC_REQUIRE_SOURCE_COMMIT", "1") != "0"
 
 
 def is_registered_source_context(rel_path: str) -> bool:
@@ -1245,7 +1262,7 @@ if mode == "--dashboard-warnings":
             warnings.append(build_warning(rel_path, None))
             continue
         source_commit = source_commit_marker(abs_path)
-        if is_registered_source_context(rel_path) and not source_commit:
+        if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and not source_commit:
             warnings.append(build_missing_source_commit_warning(rel_path))
             continue
         files_for_git.append((project_id, rel_path, abs_path, updated_at, source_commit))
@@ -1274,7 +1291,7 @@ elif mode == "--cmd-warnings":
                 warnings.append(build_warning(rel_path, None))
                 continue
             source_commit = source_commit_marker(abs_path)
-            if is_registered_source_context(rel_path) and not source_commit:
+            if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and not source_commit:
                 warnings.append(build_missing_source_commit_warning(rel_path))
                 continue
             files_for_git.append((current_project, rel_path, abs_path, updated_at, source_commit))
@@ -1307,7 +1324,7 @@ elif mode == "--cmd-commit-list":
             if updated_at is None:
                 continue
             source_commit = source_commit_marker(abs_path)
-            if is_registered_source_context(rel_path) and not source_commit:
+            if REQUIRE_SOURCE_COMMIT and is_registered_source_context(rel_path) and not source_commit:
                 print(f"MISSING_SOURCE_COMMIT\t{rel_path}")
                 continue
             cc, details = source_commit_summary_since(

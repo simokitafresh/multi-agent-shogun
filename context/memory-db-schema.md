@@ -1,4 +1,5 @@
 <!-- last_updated: 2026-07-13 -->
+<!-- source_commit:07065f99af6dbbca7824e2fc55c6101062825283 reason:audited-pathspec evidence:no-unreflected-commits -->
 
 # Memory DB Schema
 
