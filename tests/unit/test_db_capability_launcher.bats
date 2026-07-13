@@ -83,6 +83,59 @@ PY
   [[ "$output" == *"exactly match"* ]]
 }
 
+@test "credential preparation extracts only registered keys into owner-only tmp file" {
+  project="$BATS_TEST_TMPDIR/project"
+  mkdir -p "$project/backend"
+  source="$project/backend/.env"
+  destination="/tmp/dm-signal-db-test-${BATS_TEST_NUMBER}-${RANDOM}.env"
+  printf 'DATABASE_URL=postgresql://secret\nUNRELATED=must-not-copy\n' > "$source"
+  run python3 - "$LAUNCHER" "$source" "$destination" "$project" <<'PY'
+import importlib.util, pathlib, stat, sys
+spec = importlib.util.spec_from_file_location("launcher", sys.argv[1])
+module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+destination = pathlib.Path(sys.argv[3])
+module._prepare_credential_file(
+    pathlib.Path(sys.argv[2]), destination, pathlib.Path(sys.argv[4]), {"DATABASE_URL"}
+)
+assert destination.read_text() == "DATABASE_URL=postgresql://secret\n"
+assert stat.S_IMODE(destination.stat().st_mode) == 0o600
+PY
+  [ "$status" -eq 0 ]
+  rm -f "$destination"
+}
+
+@test "credential preparation rejects arbitrary source and overwrite" {
+  project="$BATS_TEST_TMPDIR/project"
+  mkdir -p "$project/backend"
+  printf 'DATABASE_URL=postgresql://canonical\n' > "$project/backend/.env"
+  arbitrary="$BATS_TEST_TMPDIR/arbitrary.env"
+  destination="/tmp/dm-signal-db-test-${BATS_TEST_NUMBER}-${RANDOM}.env"
+  printf 'DATABASE_URL=postgresql://attack\n' > "$arbitrary"
+  run python3 - "$LAUNCHER" "$arbitrary" "$destination" "$project" <<'PY'
+import importlib.util, pathlib, sys
+spec = importlib.util.spec_from_file_location("launcher", sys.argv[1])
+module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+module._prepare_credential_file(
+    pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3]), pathlib.Path(sys.argv[4]), {"DATABASE_URL"}
+)
+PY
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"project backend/.env"* ]]
+  printf 'sentinel\n' > "$destination"
+  run python3 - "$LAUNCHER" "$project/backend/.env" "$destination" "$project" <<'PY'
+import importlib.util, pathlib, sys
+spec = importlib.util.spec_from_file_location("launcher", sys.argv[1])
+module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+module._prepare_credential_file(
+    pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3]), pathlib.Path(sys.argv[4]), {"DATABASE_URL"}
+)
+PY
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"refusing to overwrite"* ]]
+  [ "$(cat "$destination")" = sentinel ]
+  rm -f "$destination"
+}
+
 @test "transactional capability accepts backup dry-run restore and rejects unknown flags" {
   run python3 - "$LAUNCHER" <<'PY'
 import importlib.util, sys

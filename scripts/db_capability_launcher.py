@@ -53,6 +53,51 @@ def _load_env(path: Path, required_keys: set[str]) -> dict[str, str]:
     return values
 
 
+def _prepare_credential_file(
+    source: Path, destination: Path, project_root: Path, required_keys: set[str]
+) -> None:
+    """Extract only registered keys from the project's canonical env into /tmp.
+
+    This keeps secret material out of argv/stdout while producing the exact-key,
+    owner-only file consumed by the launcher.  The source is deliberately fixed
+    to the project's backend/.env; arbitrary secret-file reads are not allowed.
+    """
+    expected_source = (project_root / "backend/.env").resolve()
+    source = source.resolve()
+    destination = destination.resolve()
+    if source != expected_source or not source.is_file():
+        raise SystemExit("BLOCK: credential source must be the project backend/.env")
+    if destination.parent != Path("/tmp"):
+        raise SystemExit("BLOCK: prepared credential destination must be directly under /tmp")
+    if not destination.name.startswith("dm-signal-db-") or destination.suffix != ".env":
+        raise SystemExit("BLOCK: prepared credential filename must match dm-signal-db-*.env")
+    if destination.exists():
+        raise SystemExit("BLOCK: refusing to overwrite prepared credential file")
+
+    source_values: dict[str, str] = {}
+    for raw in source.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        if key in required_keys:
+            if key in source_values:
+                raise SystemExit(f"BLOCK: duplicate required credential key: {key}")
+            source_values[key] = value.strip().strip("'\"")
+    if set(source_values) != required_keys:
+        raise SystemExit("BLOCK: credential source is missing registered required keys")
+
+    destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    fd = os.open(destination, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    try:
+        payload = "".join(f"{key}={source_values[key]}\n" for key in sorted(required_keys))
+        os.write(fd, payload.encode("utf-8"))
+    finally:
+        os.close(fd)
+
+
 def _project_root(project_id: str) -> Path:
     try:
         import yaml
@@ -100,6 +145,7 @@ def main() -> int:
     parser.add_argument("--confirm", required=True)
     parser.add_argument("--nonce", required=True)
     parser.add_argument("--credential-file", required=True)
+    parser.add_argument("--credential-source-file")
     parser.add_argument("--expected-commit")
     parser.add_argument("--execution-root")
     parser.add_argument("tool_args", nargs=argparse.REMAINDER)
@@ -139,6 +185,13 @@ def main() -> int:
     if contract.get("requires_expected_commit") and args.expected_commit != head:
         raise SystemExit("BLOCK: expected commit mismatch")
     credential_file = Path(args.credential_file).resolve()
+    required_keys = set(contract.get("required_credential_keys", []))
+    if args.credential_source_file:
+        if not dependency:
+            raise SystemExit("BLOCK: credential preparation requires a project capability")
+        _prepare_credential_file(
+            Path(args.credential_source_file), credential_file, project_root, required_keys
+        )
     if not credential_file.is_file() or credential_file.stat().st_mode & 0o077:
         raise SystemExit("BLOCK: credential file must exist with mode 0600")
     NONCE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -150,7 +203,7 @@ def main() -> int:
     except FileExistsError:
         raise SystemExit("BLOCK: nonce already used")
     try:
-        credentials = _load_env(credential_file, set(contract.get("required_credential_keys", [])))
+        credentials = _load_env(credential_file, required_keys)
     except ValueError as exc:
         raise SystemExit(f"BLOCK: {exc}")
     env = {key: os.environ[key] for key in ("PATH", "LANG", "LC_ALL", "TZ") if key in os.environ}
