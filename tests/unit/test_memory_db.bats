@@ -1635,7 +1635,7 @@ EOF
     [[ "$output" == *"invalid contradiction_type"* ]]
 }
 
-@test "obsidian_promote_candidate backs up DB and marks high-value events as candidates" {
+@test "obsidian_promote_candidate journals transitions without routine backup" {
     python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
 import sqlite3
 import sys
@@ -1683,7 +1683,7 @@ PY
         --min-concept-frequency 3 \
         --min-links 2
     [ "$status" -eq 0 ]
-    [[ "$output" == *"backup=$TEST_TMPDIR/backups/memory.db.bak_obsidian_candidate_"* ]]
+    [[ "$output" == *"backup=none"* ]]
     [[ "$output" == *"updated=1"* ]]
     [[ "$output" == *"event:promote|high|links=2|concept_frequency=5|昇格対象"* ]]
 
@@ -1698,17 +1698,16 @@ print(conn.execute("SELECT state FROM events WHERE id='event:promote'").fetchone
 print(conn.execute("SELECT state FROM events WHERE id='event:low'").fetchone()[0])
 print(conn.execute("SELECT state FROM events WHERE id='event:onelink'").fetchone()[0])
 print(conn.execute("SELECT state FROM events WHERE id='event:existing'").fetchone()[0])
-backup_conn = sqlite3.connect(backup_paths[0])
-print(backup_conn.execute("SELECT state FROM events WHERE id='event:promote'").fetchone()[0])
+print(conn.execute("SELECT COUNT(*) FROM event_state_transitions WHERE event_id='event:promote' AND from_state='verified' AND to_state='obsidian_candidate'").fetchone()[0])
 print(conn.execute("SELECT updated_at IS NOT NULL FROM events WHERE id='event:promote'").fetchone()[0])
 PY
 )
-    [ "${result[0]}" = "1" ]
+    [ "${result[0]}" = "0" ]
     [ "${result[1]}" = "obsidian_candidate" ]
     [ "${result[2]}" = "verified" ]
     [ "${result[3]}" = "verified" ]
     [ "${result[4]}" = "obsidian_candidate" ]
-    [ "${result[5]}" = "verified" ]
+    [ "${result[5]}" = "1" ]
     [ "${result[6]}" = "1" ]
 }
 
@@ -1754,6 +1753,34 @@ PY
 )
     [ "${result[0]}" = "raw" ]
     [ "${result[1]}" = "0" ]
+}
+
+@test "obsidian_promote_candidate rolls back events and transition history atomically" {
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+conn.execute("CREATE TABLE events (id TEXT PRIMARY KEY, summary TEXT, event_type TEXT, importance TEXT, state TEXT DEFAULT 'raw', updated_at TEXT)")
+conn.execute("CREATE TABLE event_concepts (event_id TEXT, concept_name TEXT)")
+conn.execute("CREATE TABLE event_links (source_event_id TEXT, target_concept TEXT, link_type TEXT)")
+conn.executemany("INSERT INTO events VALUES (?, ?, 'conversation', 'high', 'raw', NULL)", [("event:a", "a"), ("event:b", "b"), ("event:c", "c")])
+conn.executemany("INSERT INTO event_concepts VALUES (?, 'atomic')", [("event:a",), ("event:b",), ("event:c",)])
+conn.executemany("INSERT INTO event_links VALUES (?, ?, 'obsidian')", [("event:a", "L1"), ("event:a", "L2")])
+# update_event_state creates the journal table before the trigger is installed.
+conn.execute("CREATE TABLE event_state_transitions (id INTEGER PRIMARY KEY AUTOINCREMENT, event_id TEXT NOT NULL, from_state TEXT, to_state TEXT NOT NULL, reason TEXT NOT NULL, actor TEXT NOT NULL, transitioned_at TEXT NOT NULL)")
+conn.execute("CREATE TRIGGER reject_transition BEFORE INSERT ON event_state_transitions BEGIN SELECT RAISE(ABORT, 'fixture failure'); END")
+conn.commit()
+PY
+    run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -ne 0 ]
+    readarray -t counts < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+print(conn.execute("SELECT COUNT(*) FROM events WHERE state != 'raw'").fetchone()[0])
+print(conn.execute("SELECT COUNT(*) FROM event_state_transitions").fetchone()[0])
+PY
+)
+    [ "${counts[0]}" = 0 ]
+    [ "${counts[1]}" = 0 ]
 }
 
 @test "obsidian_promote_finalize finalizes reviewed event-id-file in one backup" {
@@ -2322,7 +2349,7 @@ PY
     [ "$remaining_count" -le 12 ]
 }
 
-@test "obsidian_promote_candidate leaves a pre-existing backup backlog untouched unless rotation is explicitly enabled" {
+@test "obsidian_promote_candidate never creates or rotates routine backups" {
     python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
 import sqlite3
 import sys
@@ -2373,11 +2400,10 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"updated=1"* ]]
     backlog_count="$(find "$TEST_TMPDIR/backups" -maxdepth 1 -type f -name 'memory.db.bak_obsidian_candidate_*' | wc -l)"
-    # 8 pre-existing + 1 just created by this call = 9; none deleted while disabled.
-    [ "$backlog_count" -eq 9 ]
+    # Journal-backed promotion neither creates nor deletes full database backups.
+    [ "$backlog_count" -eq 8 ]
 
-    # Fresh candidates so the second call also has something to promote (and thus
-    # actually creates another backup, exercising the rotation-enabled code path).
+    # Fresh candidates ensure the second call performs another real transition.
     python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
 import sqlite3
 import sys
@@ -2394,7 +2420,7 @@ conn.executemany("INSERT INTO event_links VALUES (?, ?, 'obsidian')", [("event:p
 conn.commit()
 PY
 
-    # Now explicitly enable rotation and confirm it starts enforcing retention going forward.
+    # Even the legacy rotation flag cannot re-enable routine full backup creation here.
     export SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED=1
     run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
@@ -2405,5 +2431,5 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"updated=1"* ]]
     after_count="$(find "$TEST_TMPDIR/backups" -maxdepth 1 -type f -name 'memory.db.bak_obsidian_candidate_*' | wc -l)"
-    [ "$after_count" -lt "$backlog_count" ]
+    [ "$after_count" -eq "$backlog_count" ]
 }

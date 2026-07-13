@@ -23,7 +23,8 @@ Usage: obsidian_promote_candidate.sh [--db PATH] [--backup-dir DIR] [--limit N]
                                      [--importance VALUE] [--dry-run]
 
 Marks high-value events as state=obsidian_candidate.
-State-changing runs always create a SQLite backup before UPDATE.
+State-changing runs use the event_state_transitions journal for rollback.
+--backup-dir is retained for CLI compatibility but no routine backup is created.
 EOF
 }
 
@@ -189,9 +190,6 @@ def main() -> int:
             return 0
 
         state_module = load_state_module(repo_root)
-        backup_path = state_module.create_sqlite_backup(
-            str(db_path), backup_dir or None, "obsidian_candidate"
-        )
         with conn:
             updated = state_module.update_event_state(
                 conn,
@@ -200,7 +198,7 @@ def main() -> int:
                 "high-value event selected for Obsidian promotion review",
                 "obsidian_promote_candidate",
             )
-        print(f"backup={backup_path}")
+        print("backup=none")
         print(f"updated={updated}")
         for row in rows:
             print(

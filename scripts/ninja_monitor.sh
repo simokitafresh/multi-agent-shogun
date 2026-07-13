@@ -6045,7 +6045,7 @@ check_lesson_deprecation_candidates() {
 }
 
 check_three_layer_maintenance() {
-    local now last elapsed cleanup_script recall_script promote_script maintenance_timeout
+    local now last elapsed lock_dir maintenance_timeout
     now=$EPOCHSECONDS
     maintenance_timeout="${THREE_LAYER_MAINTENANCE_TIMEOUT:-120}"
     last=0
@@ -6057,44 +6057,39 @@ check_three_layer_maintenance() {
     [ "$elapsed" -lt "$THREE_LAYER_MAINTENANCE_INTERVAL" ] && return
 
     mkdir -p "$(dirname "$THREE_LAYER_MAINTENANCE_LOG")"
-
-    cleanup_script="$SCRIPT_DIR/scripts/cleanup_three_layer_tmp.sh"
-    if [ -f "$cleanup_script" ]; then
-        log "THREE-LAYER-MAINTENANCE: tmp cleanup start"
-        if timeout "$maintenance_timeout" bash "$cleanup_script" --apply --ttl-hours "${THREE_LAYER_MAINTENANCE_TMP_TTL_HOURS:-4}" >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
-            log "THREE-LAYER-MAINTENANCE: tmp cleanup done"
-        else
-            log "THREE-LAYER-MAINTENANCE: tmp cleanup failed (non-blocking)"
-        fi
-    else
-        log "THREE-LAYER-MAINTENANCE: cleanup_three_layer_tmp.sh not found, skip"
+    lock_dir="${THREE_LAYER_MAINTENANCE_LOCK_DIR:-$STATE_DIR/shogun_three_layer_maintenance.lock}"
+    if ! mkdir "$lock_dir" 2>/dev/null; then
+        log "THREE-LAYER-MAINTENANCE: already running, skip"
+        return
     fi
-
-    recall_script="$SCRIPT_DIR/scripts/memory_recall_control.sh"
-    if [ -f "$recall_script" ]; then
-        log "THREE-LAYER-MAINTENANCE: recall_control apply start"
-        if timeout "$maintenance_timeout" bash "$recall_script" >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
-            log "THREE-LAYER-MAINTENANCE: recall_control apply done"
-        else
-            log "THREE-LAYER-MAINTENANCE: recall_control apply failed (non-blocking)"
-        fi
-    else
-        log "THREE-LAYER-MAINTENANCE: memory_recall_control.sh not found, skip"
-    fi
-
-    promote_script="$SCRIPT_DIR/scripts/obsidian_promote_candidate.sh"
-    if [ -f "$promote_script" ]; then
-        log "THREE-LAYER-MAINTENANCE: obsidian_promote apply start"
-        if timeout "$maintenance_timeout" bash "$promote_script" >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1; then
-            log "THREE-LAYER-MAINTENANCE: obsidian_promote apply done"
-        else
-            log "THREE-LAYER-MAINTENANCE: obsidian_promote apply failed (non-blocking)"
-        fi
-    else
-        log "THREE-LAYER-MAINTENANCE: obsidian_promote_candidate.sh not found, skip"
-    fi
-
+    # Claim the interval before detaching. The mkdir lock supplies single-flight;
+    # the monitor loop never waits for maintenance or its timeout.
     printf '%s\n' "$now" > "$THREE_LAYER_MAINTENANCE_STATE_FILE" 2>/dev/null || true
+    (
+        trap 'rmdir "$lock_dir" 2>/dev/null || true' EXIT
+        local cleanup_script recall_script promote_script
+        cleanup_script="$SCRIPT_DIR/scripts/cleanup_three_layer_tmp.sh"
+        if [ -f "$cleanup_script" ]; then
+            log "THREE-LAYER-MAINTENANCE: tmp cleanup start"
+            timeout "$maintenance_timeout" bash "$cleanup_script" --apply --ttl-hours "${THREE_LAYER_MAINTENANCE_TMP_TTL_HOURS:-4}" >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1 \
+                && log "THREE-LAYER-MAINTENANCE: tmp cleanup done" \
+                || log "THREE-LAYER-MAINTENANCE: tmp cleanup failed (non-blocking)"
+        fi
+        recall_script="$SCRIPT_DIR/scripts/memory_recall_control.sh"
+        if [ -f "$recall_script" ]; then
+            log "THREE-LAYER-MAINTENANCE: recall_control apply start"
+            timeout "$maintenance_timeout" bash "$recall_script" >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1 \
+                && log "THREE-LAYER-MAINTENANCE: recall_control apply done" \
+                || log "THREE-LAYER-MAINTENANCE: recall_control apply failed (non-blocking)"
+        fi
+        promote_script="$SCRIPT_DIR/scripts/obsidian_promote_candidate.sh"
+        if [ -f "$promote_script" ]; then
+            log "THREE-LAYER-MAINTENANCE: obsidian_promote apply start"
+            timeout "$maintenance_timeout" bash "$promote_script" >> "$THREE_LAYER_MAINTENANCE_LOG" 2>&1 \
+                && log "THREE-LAYER-MAINTENANCE: obsidian_promote apply done" \
+                || log "THREE-LAYER-MAINTENANCE: obsidian_promote apply failed (non-blocking)"
+        fi
+    ) &
 }
 
 # ─── obsidian candidate自動昇格 (cmd_3240) ───
