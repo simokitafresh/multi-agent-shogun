@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-07-09 cmd_karo_hotfix_context_freshness_ga203_202607090005 -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga245_source_commit_lifecycle_202607131954 -->
 <!-- source_commit:abe55194e2c2d9e5f2fa8c16b04a6b806b419ba0 reason:full-audit-boundary evidence:migration-commit-70-tests -->
 # Memory DB Query Templates
 
