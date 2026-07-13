@@ -40,10 +40,15 @@ while [[ $# -gt 0 ]]; do
 done
 
 _DASHBOARD_UPDATE_LOGGED=0
+_DASHBOARD_UPDATE_RESULT_OVERRIDE=""
+_DASHBOARD_UPDATE_USED="true"
 log_dashboard_update_skill_result() {
     local rc="${1:-0}"
-    local result="PASS"
-    [ "$rc" -eq 0 ] || result="FAIL"
+    local result="${_DASHBOARD_UPDATE_RESULT_OVERRIDE:-}"
+    if [[ -z "$result" ]]; then
+        result="PASS"
+        [ "$rc" -eq 0 ] || result="FAIL"
+    fi
     [ "$_DASHBOARD_UPDATE_LOGGED" -eq 0 ] || return 0
     _DASHBOARD_UPDATE_LOGGED=1
     [ "${SKILL_EXECUTION_LOG_DISABLE:-0}" != "1" ] || return 0
@@ -56,7 +61,8 @@ log_dashboard_update_skill_result() {
         "dashboard_update.sh exit=${rc} cmd=${CMD_ID:-<empty>} dry_run=${DRY_RUN}" \
         "dashboard_update" \
         "scripts/dashboard_update.sh ${CMD_ID:-}" \
-        "$PROJECT_DIR/skills/dashboard-update/SKILL.md" >/dev/null 2>&1 || true
+        "$PROJECT_DIR/skills/dashboard-update/SKILL.md" \
+        "$_DASHBOARD_UPDATE_USED" >/dev/null 2>&1 || true
 }
 trap 'rc=$?; log_dashboard_update_skill_result "$rc"; exit "$rc"' EXIT
 
@@ -87,6 +93,40 @@ STK_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 if [[ ! -f "$DASHBOARD" ]]; then
     echo "ERROR: dashboard.md not found: $DASHBOARD" >&2
     exit 1
+fi
+
+# /dashboard-update is a post-completion skill.  A matching report that is
+# still pending means the invocation happened before GATE CLEAR; treating that
+# operator-timing mistake as a skill implementation FAIL reactivates all
+# historical FAILs in the startup metric.  Make the contract executable:
+# no dashboard mutation, SKIP result, used=false.
+if [[ "$DRY_RUN" != true && -d "$REPORTS_DIR" ]]; then
+    read -r _matching_reports _completed_reports < <(python3 - "$REPORTS_DIR" "$CMD_ID" <<'PY'
+import pathlib
+import sys
+import yaml
+
+matching = 0
+completed = 0
+for path in pathlib.Path(sys.argv[1]).glob("*.yaml"):
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    if str(data.get("parent_cmd", "")).strip() != sys.argv[2]:
+        continue
+    matching += 1
+    if str(data.get("status", "")).strip().lower() in {"completed", "done"}:
+        completed += 1
+print(matching, completed)
+PY
+    )
+    if [[ "${_matching_reports:-0}" -gt 0 && "${_completed_reports:-0}" -eq 0 ]]; then
+        _DASHBOARD_UPDATE_RESULT_OVERRIDE="SKIP"
+        _DASHBOARD_UPDATE_USED="false"
+        echo "SKIP: dashboard-update is post-completion only; ${CMD_ID} has no completed report"
+        exit 0
+    fi
 fi
 
 refresh_snapshot_before_auto_section() {
@@ -131,13 +171,25 @@ validate_reports_before_dashboard() {
             bash "$PROJECT_DIR/scripts/gates/gate_report_format.sh" "$report" || return 1
     done < <(python3 - "$REPORTS_DIR" "$CMD_ID" <<'PY'
 import pathlib, sys, yaml
+matches = []
 for path in sorted(pathlib.Path(sys.argv[1]).glob('*.yaml')):
     try:
         data = yaml.safe_load(path.read_text(encoding='utf-8')) or {}
     except (OSError, yaml.YAMLError):
         continue
-    if str(data.get('parent_cmd', '')).strip() == sys.argv[2]:
-        print(path)
+    if str(data.get('parent_cmd', '')).strip() != sys.argv[2]:
+        continue
+    status = str(data.get('status', '')).strip().lower()
+    matches.append((path, status))
+
+# Generic report templates can retain an old parent_cmd after another ninja
+# completed the command.  Once a completed report exists, validate only the
+# terminal evidence and ignore stale pending siblings.  With no completed
+# report, preserve the fail-closed behaviour by validating every match.
+completed = [path for path, status in matches if status in {'completed', 'done'}]
+selected = completed if completed else [path for path, _ in matches]
+for path in selected:
+    print(path)
 PY
     )
 }

@@ -19,6 +19,9 @@ allowed-tools:
   - Grep
 ---
 
+<!-- script_refs_checked_at: 2026-07-14T01:34:00+09:00 -->
+<!-- 検分: dashboard_update.sh は非dry-run時、対象cmdにmatching reportがあるのにcompleted/doneが0件ならdashboardを変更せずSKIP・used=falseを記録する。completed報告が存在する場合は同一parent_cmdの古いpending siblingを報告gate対象から除外し、正規terminal evidenceだけを検証する。呼出し形 `<cmd_id> [--dry-run]` は不変。 -->
+
 <!-- script_refs_checked_at: 2026-07-13T07:39:17+09:00 -->
 <!-- 検分: dashboard_update.sh 97170f617(cmd_karo_hotfix_dashboard_postclear_reflux: GATE CLEAR後dashboard reflux実行前にvalidate_reports_before_dashboard()を追加し、review二段承認fingerprintが現行reportに束縛済みの場合のみcommit-state検査をGATE_SKIP_COMMIT_MISSING_CHECK=1でスキップ)。同commitでgate_report_format.shへ`GATE_SKIP_COMMIT_MISSING_CHECK`optionalフラグ追加(既定0=従来通り検査、opt-in時のみ緩和)。`bash scripts/dashboard_update.sh <cmd_id> [--dry-run]`のUsage・Exit 0/1契約、`bash scripts/gates/gate_report_format.sh <report_yaml_path>`の呼び出し契約・verdict自動導出は不変 -->
 
@@ -90,6 +93,11 @@ if [ -z "$cmd_id" ] || [ "$cmd_id" = "--dry-run" ] || ! [[ "$cmd_id" =~ ^cmd_[A-
 fi
 bash scripts/dashboard_update.sh "$cmd_id" --dry-run
 ```
+
+非dry-runの実更新はcmd完了後/GATE CLEAR後だけに実行する。対象cmdのmatching reportが全て
+`pending`等の非terminal状態なら、スクリプトはdashboardを変更せず`SKIP`・`used=false`を
+記録する。同一`parent_cmd`に正規`completed`報告と古いpendingテンプレートが共存する場合は、
+completed報告のみを検証対象とする。
 
 実行例:
 

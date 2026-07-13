@@ -658,6 +658,111 @@ EOF
     [[ "$output" == *"OK"* ]]
 }
 
+@test "dashboard_update.sh skips pre-completion invocation and logs used=false" {
+    TEST_REPO="$TEST_TMPDIR/repo"
+    mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \
+             "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
+    cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
+    cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    install_dashboard_update_dependencies "$TEST_REPO"
+    chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
+    cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
+#!/usr/bin/env bash
+EOF
+    cat > "$TEST_REPO/config/settings.yaml" <<'EOF'
+cli:
+  agents: {}
+EOF
+    cat > "$TEST_REPO/dashboard.md" <<'EOF'
+# Dashboard
+unchanged sentinel
+EOF
+    cat > "$TEST_REPO/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_5000:
+    purpose: in progress fixture
+EOF
+    cat > "$TEST_REPO/queue/reports/kotaro_report_cmd_5000.yaml" <<'EOF'
+worker_id: kotaro
+parent_cmd: cmd_5000
+status: pending
+result:
+  summary: FILL_THIS
+EOF
+    cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
+# dashboard-update
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 \
+        bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_5000
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SKIP: dashboard-update is post-completion only"* ]]
+    run grep -F "unchanged sentinel" "$TEST_REPO/dashboard.md"
+    [ "$status" -eq 0 ]
+
+    run python3 - <<EOF
+import yaml
+data = yaml.safe_load(open("$TEST_SKILL_LOG", encoding="utf-8"))
+entry = data["executions"][-1]
+assert entry["skill"] == "dashboard-update"
+assert entry["result"] == "SKIP"
+assert entry["used"] == "false"
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
+@test "dashboard_update.sh validates completed report and ignores stale pending sibling" {
+    TEST_REPO="$TEST_TMPDIR/repo"
+    mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \
+             "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
+    cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
+    cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    install_dashboard_update_dependencies "$TEST_REPO"
+    chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
+    cat > "$TEST_REPO/scripts/lib/agent_config.sh" <<'EOF'
+#!/usr/bin/env bash
+EOF
+    cat > "$TEST_REPO/config/settings.yaml" <<'EOF'
+cli:
+  agents: {}
+EOF
+    cat > "$TEST_REPO/dashboard.md" <<'EOF'
+# Dashboard
+## 最新更新
+EOF
+    cat > "$TEST_REPO/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_5001:
+    purpose: completed fixture
+EOF
+    cat > "$TEST_REPO/queue/reports/hanzo_report_cmd_5001.yaml" <<'EOF'
+worker_id: hanzo
+parent_cmd: cmd_5001
+status: completed
+result:
+  summary: completed evidence wins
+EOF
+    complete_dashboard_report_fixture "$TEST_REPO/queue/reports/hanzo_report_cmd_5001.yaml"
+    cat > "$TEST_REPO/queue/reports/tobisaru_report.yaml" <<'EOF'
+worker_id: tobisaru
+parent_cmd: cmd_5001
+status: pending
+result:
+  summary: FILL_THIS
+EOF
+    cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
+# dashboard-update
+EOF
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 \
+        bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_5001 --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"completed evidence wins"* ]]
+    [[ "$output" != *"FILL_THIS placeholder remaining"* ]]
+}
+
 @test "dashboard_update.sh finds report by parent_cmd when filename lacks cmd_id" {
     TEST_REPO="$TEST_TMPDIR/repo"
     mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \
