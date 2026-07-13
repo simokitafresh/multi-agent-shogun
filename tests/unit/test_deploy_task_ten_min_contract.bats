@@ -39,6 +39,52 @@ run_precheck() {
     '
 }
 
+run_source_precheck() {
+    local task_file="$1" cmd_id="${2:-}"
+    run bash -lc '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
+        deploy_task_source_contract_precheck "'"$task_file"'" "'"$cmd_id"'"
+    '
+}
+
+@test "source precheck: invalid direct YAML BLOCK keeps existing task sha256 exact" {
+    local source="$FIXTURE_DIR/invalid.yaml" task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    printf 'task:\n  estimated_minutes: [\n' > "$source"
+    local before after
+    before="$(sha256sum "$task" | awk '{print $1}')"
+    run_source_precheck "$source"
+    [ "$status" -eq 2 ]
+    after="$(sha256sum "$task" | awk '{print $1}')"
+    [ "$before" = "$after" ]
+}
+
+@test "source precheck: normal CMD natural-boundary BLOCK keeps existing task sha256 exact" {
+    local source="$FIXTURE_DIR/commands.yaml" task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    printf 'commands:\n  cmd_bad:\n    estimated_minutes: 11\n' > "$source"
+    local before after
+    before="$(sha256sum "$task" | awk '{print $1}')"
+    run_source_precheck "$source" cmd_bad
+    [ "$status" -eq 2 ]
+    after="$(sha256sum "$task" | awk '{print $1}')"
+    [ "$before" = "$after" ]
+}
+
+@test "source precheck: PASS fixture permits stale reset and preserves _STALE_RESET_DONE contract" {
+    local source="$FIXTURE_DIR/pass.yaml" task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    printf 'task:\n  estimated_minutes: 10\n' > "$source"
+    mkdir -p "$(dirname "$task")"
+    printf 'task:\n  status: idle\n  stale_marker: old\n' > "$task"
+    run bash -lc '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
+        deploy_task_source_contract_precheck "'"$source"'" || exit
+        reset_stale_fields sasuke
+        [ "${_STALE_RESET_DONE:-0}" = 1 ]
+    '
+    [ "$status" -eq 0 ]
+}
+
 # --- 分岐1: estimated_minutes<=10 → PASS ---
 
 @test "ten_min_contract: estimated_minutes=5(10以下)はPASS(exit 0)" {

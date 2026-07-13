@@ -8877,14 +8877,16 @@ deploy_task_direct_quality_contract_precheck() {
 # Keep this read-only and before publish/task mutation so rejection has no side effects.
 deploy_task_ten_min_contract_precheck() {
     local task_file="$1"
+    local cmd_id="${2:-}"
     local result rc
 
-    result="$(python3 - "$task_file" <<'PY'
+    result="$(python3 - "$task_file" "$cmd_id" <<'PY'
 import math
 import sys
 import yaml
 
 path = sys.argv[1]
+cmd_id = sys.argv[2]
 try:
     with open(path, encoding="utf-8") as fh:
         data = yaml.safe_load(fh) or {}
@@ -8892,7 +8894,14 @@ except Exception as exc:
     print(f"invalid task YAML: {exc}")
     raise SystemExit(2)
 
-task = data.get("task", data)
+if cmd_id:
+    commands = data.get("commands", data) if isinstance(data, dict) else {}
+    task = commands.get(cmd_id) if isinstance(commands, dict) else None
+    if not isinstance(task, dict):
+        print(f"command {cmd_id!r} not found or not a mapping")
+        raise SystemExit(2)
+else:
+    task = data.get("task", data)
 if not isinstance(task, dict):
     print("task must be a mapping")
     raise SystemExit(2)
@@ -9004,6 +9013,20 @@ PY
     fi
     log "ten_min_contract: ${result}"
     return 0
+}
+
+# Validate the immutable deployment source before reset_stale_fields or publish.
+# A rejected deployment must leave the worker's existing task byte-identical.
+deploy_task_source_contract_precheck() {
+    local source_file="$1"
+    local cmd_id="${2:-}"
+
+    [ -f "$source_file" ] || {
+        log "BLOCK(SOURCE_CONTRACT): source not found: ${source_file}"
+        echo "BLOCK: deployment source not found: ${source_file}" >&2
+        return 2
+    }
+    deploy_task_ten_min_contract_precheck "$source_file" "$cmd_id"
 }
 
 capture_done_redeploy_context() {
@@ -9757,13 +9780,31 @@ except Exception:
                 deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                 return 1
             fi
-            reset_stale_fields "$NINJA_NAME"
-            if [ "$DIRECT_MODE" = true ]; then
-            if [ -n "$YAML_FILE" ]; then
-                [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_ten_min_contract_precheck "$YAML_FILE" || {
+            # Validation-before-mutation: syntax, natural-boundary and required
+            # source contracts must all pass while the current task is untouched.
+            if [ "$DIRECT_MODE" = true ] && [ -n "$YAML_FILE" ]; then
+                [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_source_contract_precheck "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 2
                 }
+                deploy_task_direct_quality_contract_precheck "$YAML_FILE" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 1
+                }
+            elif [ "$DIRECT_MODE" != true ]; then
+                local cmd_source_file
+                cmd_source_file=$(resolve_cmd_source_path "$CMD_ID") || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 2
+                }
+                [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_source_contract_precheck "$cmd_source_file" "$CMD_ID" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 2
+                }
+            fi
+            reset_stale_fields "$NINJA_NAME"
+            if [ "$DIRECT_MODE" = true ]; then
+            if [ -n "$YAML_FILE" ]; then
                 deploy_task_direct_yaml_publish "$task_yaml" "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
