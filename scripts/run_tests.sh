@@ -187,6 +187,16 @@ run_bats_files_parallel() {
         fi
     done
 
+    # Preserve one CI artifact without sharing bats-core's live TAP transport.
+    # Concatenation happens only after every isolated child has exited.
+    if [ -n "${BATS_TAP_OUTPUT:-}" ]; then
+        : > "$BATS_TAP_OUTPUT"
+        for pid in "${all_pids[@]}"; do
+            [ -f "${pid_out[$pid]}" ] || continue
+            cat "${pid_out[$pid]}" >> "$BATS_TAP_OUTPUT"
+        done
+    fi
+
     if [ "$failed" -ne 0 ]; then
         echo "One or more bats files failed:" >&2
         for pid in "${all_pids[@]}"; do

@@ -56,7 +56,10 @@ jobs:
             echo "::warning::tests/unit directory not found. Skipping unit tests."
             exit 0
           fi
-          bats tests/unit/ --formatter tap --timing --jobs 8 | tee test-results/unit.tap || {
+          BATS_CACHE=0 \
+          BATS_INNER_JOBS=8 \
+          BATS_TAP_OUTPUT=test-results/unit.tap \
+            bash scripts/run_tests.sh unit || {
             echo "::error::Unit tests failed"
             exit 1
           }

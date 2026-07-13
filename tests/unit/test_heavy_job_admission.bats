@@ -192,6 +192,14 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "CI unit lane uses file-isolated runner with jobs 8 and TAP artifact" {
+    workflow="$ROOT/.github/workflows/test.yml"
+    grep -q 'BATS_INNER_JOBS=8' "$workflow"
+    grep -q 'BATS_TAP_OUTPUT=test-results/unit.tap' "$workflow"
+    grep -q 'bash scripts/run_tests.sh unit' "$workflow"
+    ! grep -q 'bats tests/unit/ .*--jobs 8' "$workflow"
+}
+
 @test "hook: 単一.batsファイル/単一pytest::関数は軽量でBLOCKされない" {
     run _run_hook "bats tests/unit/test_foo.bats"
     [ "$status" -eq 0 ]
