@@ -1,4 +1,14 @@
-# precompute全量最速化 — /goal自律ループ設計書 v2.2
+# precompute全量最速化 — /goal自律ループ設計書 v2.3【クローズ済み — 役割終了・実装正本へ移行】
+
+> **状態(2026-07-13 将軍棚卸し): 本設計書はクローズ**。/goal自律ループとしての役割はv2.2の正本分離をもって終了し、実装はDM-Signal `docs/design/precompute-zero-recompute-implementation-design.md` v1.2が正本。本gistは経緯アーカイブとして保存する。
+>
+> **到達点(実測)**:
+> - fullrecalculate総時間: 3566s→**545秒(id212、2026-07-11本番実測)**→非決定性P4統合後497.02秒(shadow実測、before比-8.8%)。North Star「約30秒」へは**未達**
+> - cmd_3819(P1評価器2道具+immutable baseline)=完了。cmd_3825(P2: 1180.64→649.78s、44.96%短縮)=完了
+> - cmd_3835(Phase 0-4実行)=**failedクローズ**: fixture 45/45 PASS+3PF 29.3→13.55s(53.7%短縮)+SELECT 316→131まで到達したが、T_floor gate(0.296s)未達のままPhase 3拡大禁止を厳守して終了(正常な失敗クローズ、gate_karo_startupのverdict-aware化の契機)
+> - 副産物: TIMING SUMMARY L5欠落バグ根治(cmd_3842)、Matched weight WARN自動監視(cmd_3820)
+>
+> **未消化の後継(凍結中、非決定性根治が優先)**: L5並列化設計v1.3.1(`docs/research/gunshi_precompute_L5_parallel_design_v1.3_20260711.md`)+fingerprint skip設計v1.2(同`gunshi_precompute_fingerprint_skip_design_v1.2_20260711.md`)は2026-07-11から未進行。trade_perf(L2の272s)実装cmdも未起票(LS086)。**再開条件=非決定性根治P4 AC2再挑戦→P5決定性最終宣言の完了後**(L5の出力等価判定は決定性契約の上でのみ安全に検証できるため)。
 
 - v2.2: 家老が探索を停止してコード一次調査を実施。実装正本をDM-Signal `docs/design/precompute-zero-recompute-implementation-design.md`へ分離した。本番id=206正本はL5 1659.78s/1548行/RSS2075.2MB。18.42s/2699一致はselected 33/45のstale混入で無効。実装順を「完全fixtureでlegacy 45/45→warm render SELECT/price/signal/ledger load 0→atomic 1548 UPSERT→3PF飽和→段階拡大」に固定し、current performance pure-sliceの月途中cutoff境界差も修正対象へ追加
 - v2.1: 殿North Star「本番100PFを約30秒」を反映。L5を再計算層からL2成果物のpure formatting+chunked一括UPSERT層へ変えるZero-Recompute Architectureを最優先化。100PF×15行で0.3秒/PFを目安とし、L5内のprice/signal/ledger/momentum/MTD再計算を原則ゼロ、parameter variantsは1回のfull結果からslice、評価は本番total/p50/p95/max/RSS+完全parity
