@@ -259,3 +259,34 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"INFO: cmd_100由来の教訓残存なし (project=infra)"* ]]
 }
+
+@test "cmd_absorb updates current commands mapping layout atomically" {
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'CMDYAML'
+commands:
+  cmd_100:
+    status: delegated
+    purpose: "mapping cmd"
+    project: infra
+  cmd_200:
+    status: pending
+    purpose: "absorber"
+    project: infra
+CMDYAML
+    cp "$SRC_ABSORB_SCRIPT" "$TEST_PROJECT/scripts/cmd_absorb.sh"
+    chmod +x "$TEST_PROJECT/scripts/cmd_absorb.sh"
+
+    run bash "$TEST_PROJECT/scripts/cmd_absorb.sh" cmd_100 cmd_200 "後続系列へ統合"
+    [ "$status" -eq 0 ]
+
+    run python3 - "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+old = data["commands"]["cmd_100"]
+new = data["commands"]["cmd_200"]
+assert old["status"] == "absorbed", old
+assert old["absorbed_by"] == "cmd_200", old
+assert old["absorbed_reason"] == "後続系列へ統合", old
+assert new["status"] == "pending", new
+PY
+    [ "$status" -eq 0 ]
+}

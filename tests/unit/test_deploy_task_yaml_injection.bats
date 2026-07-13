@@ -238,6 +238,58 @@ assert 'postcondition_lesson_inject "$task_file" || true\n    fi\n\n    if [ "${
 PY
 }
 
+@test "direct --yaml caller role_reminder survives post-publication field clear" {
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import re
+import sys
+
+script = open(sys.argv[1], encoding="utf-8").read()
+main = script[script.index("deploy_task_apply_task_mutations() {"):]
+clear = re.search(r'clear_fields="([^"]+)"', main)
+assert clear, "post-publication clear_fields not found"
+assert "role_reminder" not in clear.group(1).split("|"), clear.group(1)
+
+# The old destination task is still sanitized before --yaml publication, so
+# preserving the new source value cannot leak the previous task's reminder.
+stale = re.search(r"STALE_FIELDS = \[(.*?)\n\]", script, re.S)
+assert stale and "'role_reminder'" in stale.group(1)
+PY
+}
+
+@test "independent recon injects fixed base and shared-context embargo before nudge" {
+    tmpdir="$(mktemp -d)"
+    task_file="$tmpdir/task.yaml"
+    cat > "$task_file" <<YAML
+task:
+  parent_cmd: cmd_dual_recon2
+  title: independent recon Track B
+  purpose: 独立2系統で方式を比較する
+  project: infra
+  target_path: $PROJECT_ROOT
+YAML
+
+    run bash -lc "
+        set -e
+        export DEPLOY_TASK_LIB_ONLY=1
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        inject_independent_recon_contract '$task_file' kotaro
+    "
+    [ "$status" -eq 0 ]
+
+    run python3 - "$task_file" "$PROJECT_ROOT" <<'PY'
+import subprocess, sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+head = subprocess.check_output(["git", "-C", sys.argv[2], "rev-parse", "HEAD"], text=True).strip()
+assert task["independence_group"] == "cmd_dual", task
+assert task["independence_track"] == "B2", task
+assert task["independence_base_commit"] == head, task
+assert task["independence_worktree_required"] is True, task
+assert task["shared_context_embargo"] == "karo_release_required", task
+assert "共有context" in task["role_reminder"], task
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "parallel recon duplicate guard allows different peer task_id before active duplicate BLOCK" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import sys

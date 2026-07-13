@@ -51,15 +51,18 @@ Script refs verified: 2026-06-07 cmd_3206. `deploy_task.sh` の直近速度修�
 
 ### Step 1: idle忍者2名確認
 ```bash
-grep "idle" queue/karo_snapshot.txt
+tmux capture-pane -p -t <ninja1_pane> -S -30
+tmux capture-pane -p -t <ninja2_pane> -S -30
 ```
-指定2名がともにidleでなければ停止。
+snapshotだけで判断せず、指定2名がともにidleであることを実ペインで確認する。対象repoの固定base commitを `git -C <repo> rev-parse HEAD` で1回だけ取得し、両Trackのtask YAMLへ同じ `independence_base_commit` として記録する。
+cmdのtitle/purpose/commandに `独立2系統`・`相互参照禁止`・`independent recon` のいずれかがない場合は配備を停止し、将軍cmdへ独立性契約を追加してから再開する。`deploy_task.sh`はこの語を検出し、nudge前にfixed-base/worktree/共有context embargoをtaskへ自動注入する。
 
 ### Step 2: 1人目配備（deploy_task.sh）
 ```bash
-bash scripts/deploy_task.sh <cmd_id> <ninja1> scout
+bash scripts/deploy_task.sh <ninja1> <cmd_id> "独立Track A。固定base以外の兄弟Track成果を参照せず、共有contextへの還流は家老releaseまで禁止" task_assigned karo
 ```
 deploy_task.shが正規のタスクYAML生成+教訓注入+inbox_writeを実行。
+配備ログに `[INDEPENDENT_RECON] group=<cmd_id> track=A base=<固定base> embargo=karo_release_required` が出たことを確認する。出なければ配備済み扱いにせず停止する。兄弟Trackのtask/report/branch/worktree/commitと、配備後に更新された共有contextを参照してはならない。
 
 ### Step 3: 2人目配備（karo_direct方式）
 deploy_task.shの重複ガードを回避するため、/tmp YAMLを作って `--yaml` 経由で配備:
@@ -68,6 +71,11 @@ deploy_task.shの重複ガードを回避するため、/tmp YAMLを作って `-
 cp queue/tasks/<ninja1>.yaml /tmp/recon2_<ninja2>.yaml
 bash scripts/lib/yaml_field_set.sh /tmp/recon2_<ninja2>.yaml "task" "parent_cmd" "<cmd_id>_recon2"
 bash scripts/lib/yaml_field_set.sh /tmp/recon2_<ninja2>.yaml "task" "cmd_id" "<cmd_id>_recon2"
+bash scripts/lib/yaml_field_set.sh /tmp/recon2_<ninja2>.yaml "task" "independence_group" "<cmd_id>"
+bash scripts/lib/yaml_field_set.sh /tmp/recon2_<ninja2>.yaml "task" "independence_track" "B"
+bash scripts/lib/yaml_field_set.sh /tmp/recon2_<ninja2>.yaml "task" "independence_base_commit" "<固定base>"
+bash scripts/lib/yaml_field_set.sh /tmp/recon2_<ninja2>.yaml "task" "shared_context_embargo" "karo_release_required"
+bash scripts/lib/yaml_field_set.sh /tmp/recon2_<ninja2>.yaml "task" "role_reminder" "独立Track B。固定baseと自作probeのみ使用。兄弟Trackのtask/report/branch/worktree/commit・配備後の共有context参照禁止。共有context還流は家老releaseまで禁止"
 bash scripts/deploy_task.sh --yaml /tmp/recon2_<ninja2>.yaml <ninja2>
 ```
 `deploy_task.sh --yaml` が stale field reset、注入チェーン、report template生成、safe_inbox_write通知を実行する。手動 `cp` で `queue/tasks/<ninja2>.yaml` を上書きしたり、手動 `inbox_write` で通知したりしない。
@@ -81,6 +89,9 @@ bash scripts/deploy_task.sh --yaml /tmp/recon2_<ninja2>.yaml <ninja2>
 ## 制約
 - 1人目=deploy_task.sh正規フロー、2人目=`deploy_task.sh --yaml` のkaro_direct方式。この順序を崩すな
 - 2人目のcmd_idは `<cmd_id>_recon2` サフィックス
+- 両Trackは同一の固定base commitから開始する。片方の成果commitをもう片方のbaseにしてはならない
+- 両Track完了前の共有context/semantic-map/記憶DBへの結論還流は禁止。家老が2報告を受領・独立性検証後に統合還流する
+- 片方が兄弟Track由来の結論を見た場合、その報告は補助証拠へ降格し、未汚染の代替Trackを固定baseから再配備する
 - 偵察結果の突合は家老が手動で実施（報告YAML受領後）
 - Script refs verified: 2026-06-02 cmd_3119/3121/3126. `deploy_task.sh` は関連教訓注入時に semantic-map に加えて memory DB `event_concepts` 由来のlesson boostを使い、`task_type=impl` のkeyword閾値を6へ引き上げ、memory DB boostの概念数・lesson数・event数をログ出力する。注入精度/可観測性の変更であり、偵察2名配備の手順変更は不要。2026-05-29 cmd_3107/a4a64068. `deploy_task.sh` の `inbox_write.sh` 呼び出しは draft_review に `review_request`、status_update に `status_update` の第5引数を渡す。偵察2名配備の手順変更は不要。2026-05-29 cmd_3091. `deploy_task.sh` はreport templateのbinary_checks注入ログでAC数をawk集計する。ログ精度の変更であり、偵察2名配備の手順変更は不要。2026-05-27 cmd_3062: `deploy_task.sh` は `target_path` / `files_modified` と教訓 `target_files` が一致した場合に `TARGET_PATH_MATCH_BOOST` で関連教訓の注入順位を上げる。注入精度の変更であり、偵察2名配備の手順変更は不要。`deploy_task.sh` は旧task由来の `scope`、`context_hints`、`context` をreset_stale_fieldsで清掃する。cmd_3019のq11_not_already_done再確認WARNとcmd_3020のuniversal lessons target_path関連フィルタは共通配備経路の自動処理で、偵察2名配備の手順変更は不要。`inbox_write.sh` は `from=shogun type=task_new` をBLOCKするため、将軍直送の作業指示経路をこのスキルへ追加しない。cmd_2899: deploy_task.sh target_path存在チェックのproject_path 2段解決追加+yaml_field_set.sh WSL2最適化。cmd_2939: report filename生成でparent_cmd未設定時にcmd_idをフォールバックとして使用。cmd_2944: `_compute_ac_hash` は `description:` なしACでも `check:` / `checks[].check` をフォールバックに使い、偵察/直接配備テンプレート由来ACのハッシュを空にしない。cmd_2951: 配備前pending own report / completed peer reportをBLOCKし、報告YAML消失を防止。cmd_2956: cmd_training_* のparent_cmd nullishをcmd_idから修復。cmd_2957: trainingテンプレートは関連ファイルへの直接[[ファイル名]]リンクとリンク先特定行引用を要求。cmd_2953: training target_pathは `markdown_link_counts.sh --select-file` 優先、未取得時のみ `semantic_alias_quality.sh` へフォールバックする。cmd_2968: report templateのverdictは空値のみを出力し、gate_report_format.shがbinary_checksから自動導出する。
 

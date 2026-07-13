@@ -35,10 +35,11 @@ yaml_escape_double_quoted() {
 }
 
 get_cmd_fields_multi() {
-    # Single awk pass to extract purpose and project from CMD_FILE
-    awk -v id="  - id: ${ABSORBED_CMD}" '
-        $0 == id { found=1; next }
-        found && /^  - id:/ { exit }
+    # Single awk pass supporting both the legacy list layout and the current
+    # commands.<cmd_id> mapping layout.
+    awk -v list_id="  - id: ${ABSORBED_CMD}" -v map_id="  ${ABSORBED_CMD}:" '
+        $0 == list_id || $0 == map_id { found=1; next }
+        found && (/^  - id:/ || /^  [A-Za-z0-9_-]+:$/) { exit }
         found && /^    purpose:/ {
             line = $0
             sub(/^    purpose: *"?/, "", line)
@@ -65,7 +66,7 @@ update_cmd_yaml() {
     (
         flock -w 10 200 || { echo "ERROR: flock取得失敗: $CMD_FILE" >&2; rm -f "$tmp_file"; exit 1; }
 
-        if ! grep -q "^  - id: ${ABSORBED_CMD}$" "$CMD_FILE"; then
+        if ! grep -qE "^  (- id: ${ABSORBED_CMD}|${ABSORBED_CMD}:)$" "$CMD_FILE"; then
             echo "ERROR: cmd not found: ${ABSORBED_CMD}" >&2
             rm -f "$tmp_file"
             exit 1
@@ -82,9 +83,9 @@ update_cmd_yaml() {
             }
 
             {
-                if ($0 ~ "^  - id: " target "$") {
+                if ($0 == "  - id: " target || $0 == "  " target ":") {
                     in_target = 1
-                } else if (in_target && $0 ~ /^  - id: /) {
+                } else if (in_target && ($0 ~ /^  - id: / || $0 ~ /^  [A-Za-z0-9_-]+:$/)) {
                     in_target = 0
                 }
 

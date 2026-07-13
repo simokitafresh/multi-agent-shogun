@@ -908,6 +908,10 @@ STALE_FIELDS = [
     # 第15層: cmd固有メタ(karo_direct手動注入/resolve_cmd_to_task転写。前cmdの値が次cmdに残留する)
     'expected_model_effort', 'pre_deploy_banner_evidence',
     'not_in_scope', 'recommended_skills',
+    # 第17層: 独立偵察契約。前taskのtrack/base/embargoを次cmdへ漏らさず、
+    # --yaml sourceに明示された新契約だけをpublish後に保持する。
+    'independence_group', 'independence_track', 'independence_base_commit',
+    'independence_worktree_required', 'shared_context_embargo',
     # 第16層: cmdで検証済みの前提とstatus固有メタ。新cmdだけを正本にする
     'assumptions', 'cancel_reason', 'cancellation_reason', 'superseded_by',
 ]
@@ -7300,6 +7304,69 @@ inject_task_modifiers() {
 # inject_context_update: cmd_1393で inject_task_modifiers.py に統合（stub）
 inject_context_update() { log "inject_context_update: merged into inject_task_modifiers (no-op)"; }
 
+# ─── 独立2系統偵察の相互汚染防止契約 ───
+# Track Aの共有context還流がTrack Bの起動時contextへ混入したcmd_3878事故を、
+# 注意喚起ではなくtask正本のfixed-base + embargo契約で遮断する。
+inject_independent_recon_contract() {
+    local task_file="$1"
+    local ninja_name="$2"
+    local title purpose command_text contract_text parent_cmd group track
+    local base_commit target_path repo_path project existing_reminder
+
+    [ -f "$task_file" ] || return 0
+    title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "")
+    purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "")
+    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "")
+    contract_text="${title} ${purpose} ${command_text}"
+    if ! grep -Eiq '独立2系統|相互参照禁止|independent[ _-]*(track|recon)|dual[ _-]*recon' <<< "$contract_text"; then
+        return 0
+    fi
+
+    parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "")
+    group=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "independence_group" "")
+    if [ -z "$group" ]; then
+        group=$(printf '%s' "$parent_cmd" | sed -E 's/_recon[0-9]+$//')
+    fi
+    track=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "independence_track" "")
+    if [ -z "$track" ]; then
+        if [[ "$parent_cmd" =~ _recon([0-9]+)$ ]]; then
+            track="B${BASH_REMATCH[1]}"
+        else
+            track="A"
+        fi
+    fi
+
+    base_commit=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "independence_base_commit" "")
+    target_path=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "")
+    repo_path="$target_path"
+    [ -f "$repo_path" ] && repo_path=${repo_path%/*}
+    if [ -z "$repo_path" ] || ! git -C "$repo_path" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "")
+        repo_path=$(get_project_path "$project" 2>/dev/null || true)
+    fi
+    if [ -z "$base_commit" ]; then
+        base_commit=$(git -C "$repo_path" rev-parse HEAD 2>/dev/null || true)
+    fi
+    if [ -z "$base_commit" ] || ! git -C "$repo_path" cat-file -e "${base_commit}^{commit}" 2>/dev/null; then
+        log "BLOCK: independent recon base commit is unavailable/invalid (ninja=${ninja_name}, repo=${repo_path:-missing}, base=${base_commit:-missing})"
+        return 1
+    fi
+
+    yaml_field_set_batch "$task_file" "task" \
+        "independence_group=${group}" \
+        "independence_track=${track}" \
+        "independence_base_commit=${base_commit}" \
+        "independence_worktree_required=true" \
+        "shared_context_embargo=karo_release_required"
+
+    existing_reminder=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "role_reminder" "")
+    if [ -z "$existing_reminder" ]; then
+        yaml_field_set "$task_file" "task" "role_reminder" \
+            "独立Track ${track}。固定base ${base_commit}から隔離worktreeを作り、自作probeのみ使用。兄弟Trackのtask/report/branch/worktree/commit・配備後の共有context参照禁止。共有context/semantic-map/記憶DBへの結論還流は家老releaseまで禁止"
+    fi
+    log "[INDEPENDENT_RECON] group=${group} track=${track} base=${base_commit:0:12} embargo=karo_release_required"
+}
+
 # ─── role_reminder自動注入（cmd_384: 忍者スコープ制限リマインダ） ───
 # cmd_1393: Python→bash変換（field_get+yaml_field_set）
 inject_role_reminder() {
@@ -9430,7 +9497,11 @@ deploy_task_apply_task_mutations() {
 
     local clear_fields clear_tmp
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
-        clear_fields="engineering_preferences|skill_hint|reports_to_read|context_files|context_hints|role_reminder|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
+        # role_reminder is intentionally absent. reset_stale_fields already
+        # removes the previous task's value before normal/direct publication;
+        # clearing it again here erased a caller-supplied --yaml isolation
+        # contract and replaced it with the generic reminder.
+        clear_fields="engineering_preferences|skill_hint|reports_to_read|context_files|context_hints|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
         clear_tmp=$(mktemp)
         if awk -v fields="$clear_fields" '
         BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0; cleared=0 }
@@ -9526,6 +9597,7 @@ deploy_task_apply_task_mutations() {
         inject_target_path_check "$task_file" || true
         inject_context_update "$task_file" || true
         inject_push_allowed "$task_file" || true  # Level5: AC内push検出でpush_allowed自動付与(cmd_3820)
+        inject_independent_recon_contract "$task_file" "$ninja_name" || return 1
         inject_role_reminder "$task_file" "$ninja_name" || true
         inject_report_template "$task_file" || true
     fi
