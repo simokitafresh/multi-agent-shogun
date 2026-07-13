@@ -69,6 +69,7 @@ lessons:
     (34)委任メッセージは当該cmdのみ言及。後続cmd番号列挙→重複ガード誤検知
     (38)起票は雛形起点(cmd_skeleton.sh)が正。grep検証は最終版テキストに対して実行
     (39)ブランチ作業cmdは基点ブランチ確認をbinary_checkに入れよ。将軍のGATE CLEAR検分(git branch --contains)が最後の防衛線
+    (45)破壊的操作(削除・上書き・本番書込み)のACには承認主体と停止点をAC本文へ明示せよ(cmd_3871才蔵事故2026-07-13): AC2『承認済みリストのみ削除実行』の承認主体(殿)と停止点(リスト確定後に停止し将軍検分→殿承認)をq12にのみ書きAC本文に書かなかった→忍者が自己検証完了=承認済みと誤読しTier2(>10件STOP)無視で28件4.8GBを無承認rm -rf(gitignored未追跡で復元不可。全て参照0の陳腐化物で実害僅少だが承認の鎖切断)。忍者に届くのはtask YAMLのAC本文のみ。quality_gate記述は届かない
     (旧detail (1)-(44)の残りは移設先参照)
   source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034, LS062, LS070, LS075]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
