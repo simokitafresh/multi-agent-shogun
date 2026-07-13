@@ -200,6 +200,12 @@ EOF
     ! grep -q 'bats tests/unit/ .*--jobs 8' "$workflow"
 }
 
+@test "file-level overrides cannot exceed the aggregate test job budget" {
+    runner="$ROOT/scripts/run_tests.sh"
+    grep -q 'MAX_TEST_JOBS="${BATS_MAX_TEST_JOBS:-8}"' "$runner"
+    grep -q 'file_inner_jobs="\$MAX_TEST_JOBS"' "$runner"
+}
+
 @test "hook: 単一.batsファイル/単一pytest::関数は軽量でBLOCKされない" {
     run _run_hook "bats tests/unit/test_foo.bats"
     [ "$status" -eq 0 ]

@@ -15,7 +15,11 @@ REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 JOBS="${BATS_JOBS:-8}"
 FILE_JOBS="${BATS_FILE_JOBS:-32}"
 INNER_JOBS="${BATS_INNER_JOBS:-4}"
-MAX_TEST_JOBS="${BATS_MAX_TEST_JOBS:-128}"
+# A runner may split the suite into many bats roots, but the aggregate number
+# of live tests must still honour the public --jobs 8 contract.  The previous
+# default (128) let a 2-core CI runner launch 64 tests from one "heavy" file
+# while other files were also live, producing timeout/cross-fixture cascades.
+MAX_TEST_JOBS="${BATS_MAX_TEST_JOBS:-8}"
 BATS_CACHE="${BATS_CACHE:-1}"
 BATS_CACHE_DIR="${BATS_CACHE_DIR:-$REPO_ROOT/.cache/bats}"
 
@@ -153,6 +157,11 @@ run_bats_files_parallel() {
                 file_weight="$MAX_TEST_JOBS"
                 ;;
         esac
+        # Per-file overrides are hints, never permission to exceed the
+        # host-wide admission budget.
+        if [ "$file_inner_jobs" -gt "$MAX_TEST_JOBS" ]; then
+            file_inner_jobs="$MAX_TEST_JOBS"
+        fi
         if [ "$file_weight" -gt "$MAX_TEST_JOBS" ]; then
             file_weight="$MAX_TEST_JOBS"
         fi
