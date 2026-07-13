@@ -10,7 +10,8 @@ description: |
   DO NOT TRIGGER: レビュー判定そのもの（→手動）、gate_sync（→/gate-sync）、idle分析永続化（→/idle-persist）
 ---
 
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-13T14:15:58+09:00 -->
+<!-- Script refs verified 2026-07-13 shogun復帰時: checked_at以降の変更(yaml_field_set wrapped scalar保持fix de3df4b83, deploy_task parent AC contract dbcb20aa2, ninja_monitor journal+flock 93f8c898e/16f16e699, db_capability_launcher scoped credential 84231a01c)をgit logで確認。全て内部強化で呼出し契約・出口文言不変 -->
 
 Script refs verified: 2026-07-13 将軍検分. `yaml_field_set.sh` checked_at以降の変更(692b6c8d8)をgit showで確認。post-write検証のyaml.safe_load scalar比較統一+複数行/引用符混在値の安全エスケープ=内部改善。`<file> <block_id> <field> <value>`契約不変。手順書き換え不要。
 

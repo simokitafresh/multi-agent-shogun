@@ -151,7 +151,8 @@ def throughput_verify(kind):
     return (
         "python3 - <<'PY'\n"
         "import sys, yaml\n"
-        "d=yaml.safe_load(open('logs/loop_ledger.yaml')) or {}\n"
+        # verify_commandは任意cwdで実行されるため台帳パスは絶対パスで埋め込む(INS-c929: 相対パスでFileNotFoundError)
+        f"d=yaml.safe_load(open('{os.path.abspath(loop_path)}')) or {{}}\n"
         "s=(d.get('snapshots') or [{}])[-1]\n"
         "tp=((s.get('loops') or {}).get('throughput') or {})\n"
         f"v=tp.get('{metric}')\n"

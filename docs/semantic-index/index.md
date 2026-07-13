@@ -855,6 +855,8 @@ codd:
 | 種別 | パス/参照 |
 |------|----------|
 | file | `/mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py` |
+| file | `docs/research/gunshi_precompute_L5_parallel_design_v1.3_20260711.md` |
+| file | `docs/research/gunshi_precompute_fingerprint_skip_design_v1.2_20260711.md` |
 | file | `context/dm-signal-core.md` §19.2 |
 | file | `docs/research/fullrecalculate-architecture-2026-03-28.md` |
 | discussion | `queue/lord_conversation.jsonl` 2026-05-04T15:11 fullrecalculate 3566s→480s |
@@ -991,7 +993,6 @@ codd:
 | causal_chain | `[[cmd_karo_recon_hook_failure_ga138_202606261303]]` (L861) |
 | causal_chain | `[[LG039]] -> [[precheck FP 3件]] -> [[陰性テスト必須化]]` (L863) |
 | causal_chain | `[[cmd_karo_recon_ga142_context_freshness_infrastructure_202606270309]]` (L866) |
-| causal_chain | `[[cmd_karo_hotfix_dm_signal_core_freshness_202607120345]]` (L1057) |
 | causal_chain | `[[cmd_karo_hotfix_ga152_context_freshness_infrastructure_202606301214]]` (L881) |
 
 ## semantic_dictionary_design — セマンティック辞書構想
@@ -1000,7 +1001,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな, 同一の偽陽性insightで登場した, source, gate checkがconfig単一値のみを見て, 強化をACCEPTせず削除または正本経路へ統合する, pipeline signalではない, 辞書の正当な削除・改名が無関係な回帰FAILになる, Guard14 DB直接接続BLOCK は当初, source shogun d0 |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな, 同一の偽陽性insightで登場した, source, gate checkがconfig単一値のみを見て, 強化をACCEPTせず削除または正本経路へ統合する, pipeline signalではない, 辞書の正当な削除・改名が無関係な回帰FAILになる, Guard14 DB直接接続BLOCK は当初, source shogun d0, 要件 ①実行と承認の分離 実行者の自己承認禁止, cmd完了品質へ単調保持する履歴である |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system, unread_cmd_new_deployment_guard, pf_remote_restore |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -1376,6 +1377,10 @@ codd:
 | lesson | `L1063` セキュリティguardは語彙一致ではなく操作意図×信頼境界の構造判定にせよ。fast-path最適化は必ず全構造マーカーをミラーし乖離検出testで固定する |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-12T12:11:27+09:00 非決定性根治セッション確定(2026-07-12 12:10永続化): P2a(97,687 mismatch0)+P2a2(FoF78 golden 243,293 exact)+P3a(pure executor SSOT・旧関数全廃) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-12T13:29:00+09:00 skill_auto_improve escalationは2026-07-12にlast_fail鮮度フィルタ(TTL14日)を獲得。2ヶ月前の解決済みFAIL(report-write verdict missing等)はstale_f |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-13T14:00:53+09:00 トップ2体制の型(2026-07-13実証、殿発案): 本番1run等の文脈断絶が致命的な工程は、家老が/goal相当で連続実行し将軍が独立監査するトップ2で詰める。要件=①実行と承認の分離(実行者の自己承認禁止、formal LGTM/C |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-13T14:17:53+09:00 [[formal Karo RC]]は後続[[ACCEPT]]で上書きされる可変approvalとは別に単調markerへ永続化せよ。cmd完了品質のkaro_reworkはno→yesのみ許す単調事実であり、重複CLEAR時も既存entr |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-13T14:19:33+09:00 semantic index重複concept id修復(2026-07-13): multi_cli_event_commonizationが2ブロック重複しindex invalid化、layer2連鎖(shogun_top2_patt |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-13T14:35:55+09:00 [[formal_karo_RC]]はreport再提出後に上書きされる決定値ではなく、cmd完了品質へ単調保持する履歴である。[[delayed_gunshi_LGTM]]はreport status=completedでなければ受理しな |
 | causal_chain | `[[cmd_training_L7_v3_saizo_4_20260521192535]]` (L653) |
 | causal_chain | `[[cmd_training_L7_v3_kagemaru_5_20260521202900]]` (L659) |
 | causal_chain | `[[cmd_training_L7_v3_tobisaru_5_20260521202900]]` (L661) |
@@ -1490,9 +1495,6 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ga216_lesson_context_reflux_202607101555]]` (L1023) |
 | causal_chain | `[[cmd_karo_hotfix_shared_dirty_commit_gate_202607101643]]` (L1025) |
 | causal_chain | `[[cmd_karo_hotfix_ga221_context_freshness_202607110323]]` (L1032) |
-| causal_chain | `[[cmd_karo_hotfix_ga226_context_freshness_revert_stale_202607120335]]` (L1056) |
-| causal_chain | `[[cmd_karo_hotfix_ga227_prepush_semantic_concepts_202607120410]]` (L1059) |
-| causal_chain | `[[cmd_karo_hotfix_guard14_db_trust_boundary_202607120854]]` (L1063) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -1692,7 +1694,6 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_shogun_retry_20260703]]` (L946) |
 | causal_chain | `[[cmd_3720]]` (L958) |
 | causal_chain | `[[cmd_3724]] -> [[忍者教訓のenforcement field欠落初可視化]] -> [[lesson_lock_path_divergence]]` (L967) |
-| causal_chain | `[[cmd_karo_hotfix_dashboard_tmp_race_202607120209]]` (L1050) |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -2003,7 +2004,6 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ga129_context_freshness_dm_signal_ops_20260625]]` (L849) |
 | causal_chain | `[[cmd_karo_hotfix_wa_resolved_gate_20260625170121]]` (L853) |
 | causal_chain | `[[cmd_karo_hotfix_ga132_context_freshness_dm_signal_research_20260625]]` (L854) |
-| causal_chain | `[[cmd_training_L4_r1_hanzo]]` (L1055) |
 
 ## deepdive_principles — deepdive原理
 
@@ -2407,6 +2407,7 @@ codd:
 | lesson | `L871` backend/app/api/metrics.pyはモジュールローカルget_db()を独自定義しておりFastAPI test dependency_overrides[db.database.get_db]では横取りできない |
 | lesson | `L1062` failed task通知ギャップは『respawnをBLOCK』ではなく『実行結果起点のdurable通知+outbox retry』で塞ぐ |
 | lesson | `L1065` task_id等の自然言語混在識別子から命名規約を自動推論するregexは、境界文字種だけでなく規約固有の固定トークン列全体をパターンに含めよ |
+| lesson | `L1037` 共有tracked運用ファイルが存在するリポジトリでgit stashは禁止 |
 | causal_chain | `[[cmd_training_L4_r14_hanzo]]` (L597) |
 | causal_chain | `[[cmd_3413]]` (L815) |
 | causal_chain | `[[cmd_147]]` (L012) |
@@ -2424,8 +2425,7 @@ codd:
 | causal_chain | `[[saizo_stop_lint_BLOCK]] -> [[古いhook起動]] -> [[respawn必須]]` (L1033) |
 | causal_chain | `[[cmd_karo_hotfix_ga_pair_dedup_202607101643]]` (L1024) |
 | causal_chain | `[[cmd_karo_hotfix_ga146_context_freshness_dm_signal_core_20260627]]` (L871) |
-| causal_chain | `[[cmd_karo_hotfix_failed_report_clear_notify_gap_202607120842]]` (L1062) |
-| causal_chain | `[[cmd_karo_hotfix_chunk_marker_boundary_202607121210]]` (L1065) |
+| causal_chain | `[[cmd_karo_hotfix_split_ac_modifier_scope_202607131307]]` (L1037) |
 
 ## chain_principle — 鎖の原理
 
@@ -2782,11 +2782,7 @@ codd:
 | causal_chain | `[[cmd_3563]]` (L868) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_assumptions_injection_202607102044]]` (L1028) |
 | causal_chain | `[[cmd_karo_hotfix_ga145_context_freshness_dm_signal_frontend_20260627]]` (L870) |
-| causal_chain | `[[cmd_karo_hotfix_review_trigger_durable_cli_202607111336]]` (L1041) |
-| causal_chain | `[[cmd_karo_hotfix_ga223_review_fixture_contract_202607111840]]` (L1045) |
 | causal_chain | `[[cmd_3608_recon2]]` (L879) |
-| causal_chain | `[[cmd_karo_hotfix_ga220_multiline_commit_parser_202607121306]]` (L1068) |
-| causal_chain | `[[cmd_karo_hotfix_report_completed_immutability_202607121305]]` (L1069) |
 
 ## no_auto_extinguish — 自動消火禁止
 
@@ -3329,8 +3325,6 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_skill_script_refs_202607022043]]` (L940) |
 | causal_chain | `[[gate_skill_script_refs.sh_WARN]] -> [[checked_at_re_matches_last]] -> [[先頭タグ追加だけでは不十分]]` (L770) |
 | causal_chain | `[[cmd_karo_recon_ga126_obsidian_link_principles_20260625]]` (L847) |
-| causal_chain | `[[cmd_3846]]` (L1043) |
-| causal_chain | `[[cmd_karo_hotfix_skill_auto_improve_stale_202607120225]]` (L1054) |
 
 ## dm_signal_refactor_mission — DM-Signalリファクタ任務
 
@@ -4134,10 +4128,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]` (L944) |
 | causal_chain | `[[cmd_3726]]` (L956) |
 | causal_chain | `[[cmd_3765]]` (L985) |
-| causal_chain | `[[cmd_karo_hotfix_ga222_shared_worktree_followup_202607110947]]` (L1037) |
-| causal_chain | `[[cmd_karo_hotfix_gate_report_discovery_after_redeploy_202607111321]]` (L1040) |
-| causal_chain | `[[cmd_karo_hotfix_deploy_task_atomic_publish_202607111645]]` (L1044) |
-| causal_chain | `[[cmd_karo_hotfix_pending_work_generation_dedupe_202607121023]]` (L1064) |
+| causal_chain | `[[cmd_karo_hotfix_split_ac_modifier_scope_202607131307]]` (L1037) |
 
 ## visibility_tier_masking — Visibility Tier制マスク
 
@@ -4894,7 +4885,6 @@ codd:
 | causal_chain | `[[cmd_2888]]` (L638) |
 | causal_chain | `[[cmd_3531_completion]] -> [[stale_skill_path]] -> [[cmd_complete_skill_static_test]]` (L852) |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (L893) |
-| causal_chain | `[[cmd_karo_hotfix_cmd_quality_direct_ac_count_202607120401]]` (L1058) |
 
 ## task_modifier_injection — タスク修飾子注入
 
@@ -4902,7 +4892,7 @@ codd:
 |------|---|
 | id | task_modifier_injection |
 | label | タスク修飾子注入 |
-| aliases | inject_task_modifiers, タスク修飾子, engineering_preferences注入, reports_to_read注入, context注入, credential注入, report_template注入, execution_controls注入, DB変更検出, task context injection, バックアップ, DB変更前バックアップ指示, まずは現在のものをバックアップしよう |
+| aliases | inject_task_modifiers, タスク修飾子, engineering_preferences注入, reports_to_read注入, context注入, credential注入, report_template注入, execution_controls注入, DB変更検出, task context injection, バックアップ, DB変更前バックアップ指示, まずは現在のものをバックアップしよう, 汎用AC modifier汚染, yaml分割taskのassigned acs契約, AC modifierスコープ限定, split ac modifier scope |
 | skills | なし |
 | related_concepts | agent_formation_management, semantic_dictionary_design, scope_integrity_lifecycle |
 
@@ -5161,7 +5151,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
-| causal_chain | `[[cmd_karo_hotfix_ga222_instruction_sync_202607110913]]` (L1036) |
+| causal_chain | `[[cmd_karo_hotfix_report_commit_contract_202607131320]]` (L1036) |
 
 ## ac_merit_review_integrity — AC本旨レビュー整合性
 
@@ -5838,7 +5828,7 @@ codd:
 |------|---|
 | id | multi_cli_event_commonization |
 | label | multi-CLI hook/event共通化 |
-| aliases | multi CLI hook, multi-CLI hook, CLI共通イベント層, 共通イベント層, CLI event layer, hook共通化, hook event commonization, Codex hook差分, Claude Codex hook差分, Codex Stop hook, Codex Stop block, Codex Stop hook無限ループ, Codex UserPromptSubmit, Codex SessionStart, Codex hooks parallel, CLI capability adapter, CLI能力adapter, cli_events.yaml, `.claude/settings.json` と `.codex/hooks.json` 差分, gate_multi_cli_switch, gate_multi_cli_event_coverage, generate_cli_hooks, CLI切替後のhook coverage, 誰がどのCLIでも同じように動く仕組み, Claude Code CLIとCodex CLIでは使えるhookなども異なる, 異なるCLIを1つのやり方で動かすのは雑, CLIの仕組みに合わせて環境に埋め込む |
+| aliases | multi CLI hook, multi-CLI hook, CLI共通イベント層, 共通イベント層, CLI event layer, hook共通化, hook event commonization, Codex hook差分, Claude Codex hook差分, Codex Stop hook, Codex Stop block, Codex Stop hook無限ループ, Codex UserPromptSubmit, Codex SessionStart, Codex hooks parallel, CLI capability adapter, CLI能力adapter, cli_events.yaml, `.claude/settings.json` と `.codex/hooks.json` 差分, gate_multi_cli_switch, gate_multi_cli_event_coverage, generate_cli_hooks, CLI切替後のhook coverage, 誰がどのCLIでも同じように動く仕組み, Claude Code CLIとCodex CLIでは使えるhookなども異なる, 異なるCLIを1つのやり方で動かすのは雑, CLIの仕組みに合わせて環境に埋め込む, multi-CLI, multi-cli, CLI共通化, event commonization, Claude/Codex共通, Codex Stop禁止, Stop等価処理, hook coverage差分, CLI非依存原則, Cross-CLI Enforcement, switch_all_codex, switch_cli_mode, CLI切替安全網, karoはcodexなのにpaneのステータスバーがずっと異なっている |
 | related_concepts | agent_formation_management, hook_automation_framework, daemon_monitoring, local_memory_db, daemon_supervision, gate_quality_framework, causal_verification_l0_l7, semantic_causal_automation, codex_goal_mode |
 
 | 種別 | パス/参照 |
@@ -5856,6 +5846,11 @@ codd:
 | file | `scripts/shutsujin_departure.sh` |
 | file | `~/.codex/skills/shogun-all-codex-switch/scripts/switch_all_codex.sh` |
 | research | `docs/research/gunshi_idle_codex_hook_analysis_20260511.md` — Codex Stop hook blockはreason再実行で無限ループするためdaemon/gate補完へ逃がす |
+| file | `docs/research/causal-verification-l0-l7-design_20260602.md` |
+| principle | CLI能力adapter原則: 同一hook実装を押し付けず、軍規イベント正本を各CLIの実行モデルへ落とす。Codex同一event hookは並行実行のため順序依存処理は単一adapterへ合成 |
+| principle | Codex Stop block禁止: re-prompt→無限ループリスク(殿裁定2026-05-20)。等価処理はninja_monitor.sh(将軍裁定2026-06-02) |
+| principle | yaml.safe_dump排除: yaml_field_set.sh/部分JSON更新で代替(cmd_1399事故教訓) |
+| causal | [[hook差分]] -> [[CLI間安全網Gap]] -> [[共通event層正本化]] -> [[全CLI同一軍規]] |
 | causal | [[multi_cli_hook_gap]] -> [[codex_stop_block_loop]] -> [[cli_capability_adapter_required]] |
 | discussion | 2026-06-24 殿裁定: 異なるCLIを1つのやり方で動かすのは雑。CLIの仕組みに合わせて仕組みを環境に埋め込み、スムーズに切り替える |
 | discussion | 2026-06-02 殿裁定: Claude Code CLIとCodex CLIでは使えるhookが異なる。multi CLI運用では誰がどのCLIでも同じように動く仕組みが必要。daemon/gate/scriptでClaude Code依存の安全網を共通化する |
@@ -6321,10 +6316,10 @@ codd:
 |------|---|
 | id | yaml_safe_write |
 | label | YAML安全書込み |
-| aliases | yaml_field_set, yaml_field_set_batch, yaml_safe_read, yaml_safe_read.py, gate_queue_yaml_reader_migration, queue YAML reader migration, yaml.dump禁止, direct yaml dump gate, gate_no_direct_yaml_dump, flock, 運用YAML書込み, yaml_field_get, lock_path, YAML構文破壊, yaml safe write, yaml_atomic.py, atomic_yaml_write, atomic YAML rewrite, report_field_set, inbox_mark_read, shogun_to_karo parse error, 報告YAML安全更新, flock付き報告更新, stk safe archive, task yaml atomic handoff, inbox_mark_read hook FP, inbox_mark_read誤判定, inbox read flag Edit禁止, 既読化hook誤判定, flock維持変数経由, script_path inbox_mark_read |
+| aliases | yaml_field_set, yaml_field_set_batch, yaml_safe_read, yaml_safe_read.py, gate_queue_yaml_reader_migration, queue YAML reader migration, yaml.dump禁止, direct yaml dump gate, gate_no_direct_yaml_dump, flock, 運用YAML書込み, yaml_field_get, lock_path, YAML構文破壊, yaml safe write, yaml_atomic.py, atomic_yaml_write, atomic YAML rewrite, report_field_set, inbox_mark_read, shogun_to_karo parse error, 報告YAML安全更新, flock付き報告更新, stk safe archive, task yaml atomic handoff, inbox_mark_read hook FP, inbox_mark_read誤判定, inbox read flag Edit禁止, 既読化hook誤判定, flock維持変数経由, script_path inbox_mark_read, 共有worktree git stash禁止, task世代巻き戻り, report蘇生, GA-239 stash guard |
 | skills | |
 | related_concepts | destructive_operations, scope_integrity_lifecycle, inbox_processing_discipline, report_quality_protocol, infrastructure_ops |
-| related_lessons | `L548`, `L550`, `L625` |
+| related_lessons | `L548`, `L550`, `L625`, `LK-A13` |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -6334,8 +6329,11 @@ codd:
 | file | `scripts/inbox_write.sh` |
 | file | `scripts/lib/yaml_atomic.py` |
 | file | `scripts/gates/gate_no_direct_yaml_dump.sh` |
+| file | `scripts/lib/pre_bash_combined_guard.sh` |
 | file | `tests/unit/test_gate_no_direct_yaml_dump.bats` |
+| file | `scripts/hooks/test_hooks.sh` |
 | cmd | `cmd_1399` yaml.dumpデータ消失事故 |
+| cmd | `cmd_karo_hotfix_shared_worktree_stash_guard_202607131335` — git stashでtask 5件巻き戻り+report 3件蘇生をGA-239で0件化 |
 | lesson | `L548` 運用YAMLのyaml.dump禁止 |
 | lesson | `L351` insight_write.shのyaml.dump事故 |
 | lesson | `LK013` inbox_mark_read hook誤判定時もEditで既読化せず正規scriptを変数経由で使う |
@@ -6544,30 +6542,6 @@ codd:
 | cmd | `cmd_karo_ci_fix_dtb3_exact_numeric_parity_202607101829` |
 | causal_chain | `[[cmd_3289-3293 5連続BLOCK]] -> [[readonly_ref判定乖離]] -> [[改善提案]]` (L781) |
 | causal_chain | `[[cmd_3382]]` (L808) |
-
-## multi_cli_event_commonization — Multi-CLI Event共通化
-
-| 属性 | 値 |
-|------|---|
-| id | multi_cli_event_commonization |
-| label | Multi-CLI Event共通化 |
-| aliases | multi-CLI, multi-cli, CLI共通化, hook共通化, cli_events.yaml, event commonization, Claude/Codex共通, generate_cli_hooks, gate_multi_cli_switch, gate_multi_cli_event_coverage, Codex Stop禁止, Stop等価処理, Codex UserPromptSubmit, Codex SessionStart, Codex hooks parallel, CLI capability adapter, CLI能力adapter, hook coverage差分, CLI非依存原則, Cross-CLI Enforcement, switch_all_codex, switch_cli_mode, CLI切替安全網, 異なるCLIを1つのやり方で動かすのは雑, CLIの仕組みに合わせて環境に埋め込む, karoはcodexなのにpaneのステータスバーがずっと異なっている |
-| related_concepts | agent_formation_management, hook_automation_framework, daemon_monitoring, local_memory_db, daemon_supervision, gate_quality_framework, causal_verification_l0_l7, semantic_causal_automation, codex_goal_mode |
-
-| 種別 | パス/参照 |
-|------|----------|
-| file | `docs/research/multi-cli-hook-event-commonization-design_20260602.md` |
-| file | `docs/research/causal-verification-l0-l7-design_20260602.md` |
-| file | `docs/research/gunshi_idle_codex_hook_analysis_20260511.md` |
-| file | `config/cli_events.yaml` |
-| file | `.claude/settings.json` |
-| file | `.codex/hooks.json` |
-| principle | CLI能力adapter原則: 同一hook実装を押し付けず、軍規イベント正本を各CLIの実行モデルへ落とす。Codex同一event hookは並行実行のため順序依存処理は単一adapterへ合成 |
-| principle | Codex Stop block禁止: re-prompt→無限ループリスク(殿裁定2026-05-20)。等価処理はninja_monitor.sh(将軍裁定2026-06-02) |
-| principle | yaml.safe_dump排除: yaml_field_set.sh/部分JSON更新で代替(cmd_1399事故教訓) |
-| cmd | 家老karo_direct: 才蔵Codex切替調査で穴発見→設計書作成 |
-| discussion | 2026-06-02 軍師レビューPASS+穴3点→将軍修正→家老レビュー確認 |
-| causal | [[hook差分]] -> [[CLI間安全網Gap]] -> [[共通event層正本化]] -> [[全CLI同一軍規]] |
 
 ## command_files_modified_verification — Command×Files Modified照合
 
@@ -6780,7 +6754,7 @@ codd:
 | causal_chain | `[[cmd_karo_ci_fix_cmd_3747_startup_threshold_ci_202607080122]]` (L975) |
 | causal_chain | `[[cmd_karo_hotfix_ga135_lesson_health_dm_signal_unclassified_20260626]]` (L857) |
 | causal_chain | `[[cmd_karo_recon_lesson_health_useful_20260626082714]]` (L860) |
-| causal_chain | `[[cmd_karo_hotfix_ga222_instruction_sync_202607110913]]` (L1036) |
+| causal_chain | `[[cmd_karo_hotfix_report_commit_contract_202607131320]]` (L1036) |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
 
@@ -6922,4 +6896,3 @@ codd:
 | causal | `cmd_reflux_insight_202607081337_hayate` files_modified: [[cmd_save_gate_catalog]] |
 | causal | `cmd_reflux_promotion_202607090418_saizo` files_modified: [[cmd_save_gate_catalog]] |
 | causal | `cmd_karo_hotfix_startup_alerts_202607101046` files_modified: [[cmd_save_gate_catalog]] |
-
