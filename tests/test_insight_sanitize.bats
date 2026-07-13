@@ -16,6 +16,7 @@ setup() {
     echo "insights: []" > "$TEST_TMPDIR/queue/insights.yaml"
     mkdir -p "$TEST_TMPDIR/scripts/lib"
     cp "$INSIGHT_SCRIPT" "$TEST_TMPDIR/scripts/insight_write.sh"
+    cp "$PROJECT_ROOT/scripts/insight_resolve.sh" "$TEST_TMPDIR/scripts/insight_resolve.sh"
     cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$TEST_TMPDIR/scripts/lib/yaml_field_set.sh"
 }
 
@@ -142,16 +143,19 @@ assert 'import os' in data['insights'][0]['insight']
     [ "$status" -eq 0 ]
     local id="$output"
 
-    run bash "$TEST_TMPDIR/scripts/insight_write.sh" --resolve "$id"
+    run bash "$TEST_TMPDIR/scripts/insight_write.sh" --resolve "$id" \
+        "verified by fixture" "tests/test_insight_sanitize.bats:T-008"
     [ "$status" -eq 0 ]
-    [[ "$output" == RESOLVED:* ]]
+    [[ "$output" == "OK: $id → resolved" ]]
 
     python3 -c "
 import yaml
 with open('$TEST_TMPDIR/queue/insights.yaml') as f:
     data = yaml.safe_load(f)
-assert data['insights'][0]['status'] == 'done'
-assert 'resolved_at' in data['insights'][0]
+assert data['insights'][0]['status'] == 'resolved'
+assert data['insights'][0]['resolved_reason'] == 'verified by fixture'
+assert data['insights'][0]['action_artifact'] == 'tests/test_insight_sanitize.bats:T-008'
+assert data['insights'][0]['resolved_at']
 "
 }
 
