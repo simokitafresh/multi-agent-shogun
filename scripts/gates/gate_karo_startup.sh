@@ -1897,82 +1897,39 @@ if [ -f "$wa_file" ]; then
     echo "  直近${WA_TOTAL}件: workaround=${WA_COUNT}件"
     echo "  連続clean: ${WA_CLEAN_STREAK}件 (総記録${WA_ENTRY_TOTAL}件)"
     if [ "${WA_REGRESSION:-0}" -eq 1 ]; then
-        _wa_latest_resolved=0
-        # resolved_by_cmd check: karo_workarounds.yamlのresolved_by_cmdが非空なら解消済み
-        if [ -n "${WA_LATEST_CMD:-}" ]; then
-            _wa_rbc="$(awk -v target="$WA_LATEST_CMD" '
-                /^[[:space:]]*-[[:space:]]*cmd_id:/ {
-                    c=$0; sub(/^.*cmd_id:[[:space:]]*/, "", c); gsub(/["'"'"']/, "", c); gsub(/[[:space:]]+$/, "", c)
-                    active=(c == target); next
-                }
-                active && /^[[:space:]]*resolved_by_cmd:/ {
-                    v=$0; sub(/^.*resolved_by_cmd:[[:space:]]*/, "", v); gsub(/["'"'"']/, "", v); gsub(/[[:space:]]+$/, "", v)
-                    if (v != "") { print v; exit }
-                }
-            ' "$wa_file")"
-            if [ -n "$_wa_rbc" ]; then
-                _wa_latest_resolved=1
-                echo "  OK: 最新WA resolved_by_cmd確認済み (${WA_LATEST_CMD} → ${_wa_rbc})"
-            fi
-        fi
-        if [ "${WA_LATEST_CAT:-}" = "commit_missing" ]; then
-            _wa_latest_commit="$(
-                awk -v target="$WA_LATEST_CMD" '
-                    function scan_hash(s) {
-                        while (match(s, /[0-9a-f]{40}/)) {
-                            print substr(s, RSTART, RLENGTH)
-                            s = substr(s, RSTART + RLENGTH)
-                        }
-                    }
-                    /^[[:space:]]*-[[:space:]]*cmd_id:/ {
-                        active = 0
-                        c = $0
-                        sub(/^.*cmd_id:[[:space:]]*/, "", c)
-                        gsub(/["'"'"']/, "", c)
-                        gsub(/[[:space:]]+$/, "", c)
-                        if (c == target) active = 1
-                        next
-                    }
-                    active && /^[[:space:]]*(detail|root_cause):/ { scan_hash($0) }
-                ' "$wa_file" | tail -1
-            )"
-            if [ -n "$_wa_latest_commit" ] && git -C "$SCRIPT_DIR" cat-file -e "${_wa_latest_commit}^{commit}" 2>/dev/null; then
-                _wa_latest_resolved=1
-                echo "  OK: 最新commit_missing WAはcommit実在確認済み (${WA_LATEST_CMD} ${_wa_latest_commit:0:8})"
-            fi
-        fi
-        # フォールバック: cmd_design_qualityにgate_result=CLEARが記録されていれば処理済みとみなす
-        # commit_missing以外のカテゴリ(report_yaml_format等)やhash不在偵察reportが対象
-        if [ "$_wa_latest_resolved" -eq 0 ] && [ -n "${WA_LATEST_CMD:-}" ]; then
-            _dq_file="$SCRIPT_DIR/logs/cmd_design_quality.yaml"
-            if [ -f "$_dq_file" ]; then
-                _dq_clear="$(awk -v cmd="$WA_LATEST_CMD" '
-                    /^- cmd_id:/ {
-                        current=$0
-                        sub(/^[[:space:]]*-[[:space:]]*cmd_id:[[:space:]]*"?/, "", current)
-                        sub(/"[[:space:]]*$/, "", current)
-                        sub(/[[:space:]]*$/, "", current)
-                        found=(current == cmd)
-                        next
-                    }
-                    found && /gate_result:/ {
-                        val=$0
-                        sub(/.*gate_result:[[:space:]]*"?/, "", val)
-                        sub(/"[[:space:]]*$/, "", val)
-                        sub(/[[:space:]]*$/, "", val)
-                        if (val == "CLEAR") { print "1"; exit }
-                    }
-                ' "$_dq_file")"
-                if [ "${_dq_clear:-}" = "1" ]; then
-                    _wa_latest_resolved=1
-                    echo "  OK: 最新WA cmd_design_qualityでGATE CLEAR確認済み (${WA_LATEST_CMD}, category=${WA_LATEST_CAT})"
-                fi
-            fi
-        fi
-        if [ "$_wa_latest_resolved" -eq 0 ]; then
-            echo "  ALERT: WA復活 — 最新cmd ${WA_LATEST_CMD} が workaround=true (category=${WA_LATEST_CAT})"
+        # 「復活」は、最新の未解消WAと同じroot_signatureが過去に一度解消済みだった場合だけ。
+        # 初回未解消や別署名を、単に最新がworkaround=trueという理由で復活扱いしない。
+        _wa_revival="$(awk '
+            function clean(v) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", v); gsub(/["'"'"']/, "", v); return v }
+            function finish() {
+                if (!seen) return
+                count++
+                cmd[count]=cur_cmd; sig[count]=cur_sig; resolved[count]=cur_resolved
+            }
+            /^[[:space:]]*-[[:space:]]*cmd_id:/ {
+                finish(); seen=1; cur_sig=""; cur_resolved=""
+                cur_cmd=$0; sub(/^.*cmd_id:[[:space:]]*/, "", cur_cmd); cur_cmd=clean(cur_cmd)
+                next
+            }
+            seen && /^[[:space:]]*root_signature:/ {
+                cur_sig=$0; sub(/^.*root_signature:[[:space:]]*/, "", cur_sig); cur_sig=clean(cur_sig); next
+            }
+            seen && /^[[:space:]]*resolved_by_cmd:/ {
+                cur_resolved=$0; sub(/^.*resolved_by_cmd:[[:space:]]*/, "", cur_resolved); cur_resolved=clean(cur_resolved); next
+            }
+            END {
+                finish()
+                if (count < 1 || sig[count] == "" || resolved[count] != "") { print "0||"; exit }
+                prior=0
+                for (i=1; i<count; i++) if (sig[i] == sig[count] && resolved[i] != "") prior=1
+                print prior "|" sig[count] "|" cmd[count]
+            }
+        ' "$wa_file")"
+        IFS='|' read -r _wa_is_revival _wa_latest_sig _wa_latest_record_cmd <<< "${_wa_revival:-0||}"
+        if [ "${_wa_is_revival:-0}" -eq 1 ]; then
+            echo "  ALERT: WA再出現を検出 — 最新cmd ${_wa_latest_record_cmd} の root_signature=${_wa_latest_sig} は過去に解消済み。既存対策の再確認・強化候補"
             overall="ALERT"
-            alerts+=("WA復活: ${WA_LATEST_CMD} (${WA_LATEST_CAT})")
+            alerts+=("WA再出現: ${_wa_latest_record_cmd} (${_wa_latest_sig})")
         fi
     fi
     if [ "$WA_COUNT" -gt 0 ]; then

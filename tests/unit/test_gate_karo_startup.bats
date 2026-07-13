@@ -978,7 +978,7 @@ MOCK
     grep -F "WA_RATE_SCRIPT: wa rate injected failure" "$TEST_TMPDIR/logs/gate_karo_startup_stderr.log"
 }
 
-@test "latest workaround true → WA regression ALERT" {
+@test "first unresolved workaround is not a WA revival" {
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
 - cmd_id: cmd_200
   workaround: false
@@ -991,34 +991,71 @@ MOCK
 - cmd_id: cmd_202
   workaround: true
   category: report_yaml_format
+  root_signature: report_yaml_format::schema_shape
   root_cause: "field missing"
+  resolved_by_cmd: ''
 EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"連続clean: 0件 (総記録3件)"* ]]
-    [[ "$output" == *"ALERT: WA復活 — 最新cmd cmd_202 が workaround=true (category=report_yaml_format)"* ]]
-    [[ "$output" == *"総合判定: ALERT"* ]]
+    [[ "$output" != *"WA再出現を検出"* ]]
 }
 
-@test "latest workaround true with resolved_by_cmd → no WA regression ALERT" {
+@test "same root signature reappearing after resolution triggers WA revival" {
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
 - cmd_id: cmd_200
-  workaround: false
-  category: clean
-  root_cause: ""
+  workaround: true
+  category: gate_logic_gap
+  root_signature: gate_logic_gap::status_transition
+  resolved_by_cmd: cmd_fix_200
 - cmd_id: cmd_202
   workaround: true
   category: gate_logic_gap
-  root_cause: "gate threshold fixed"
-  resolved_by_cmd: "commit_364744210_min_sample_threshold"
+  root_signature: gate_logic_gap::status_transition
+  resolved_by_cmd: ''
 EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"連続clean: 2件 (総記録2件)"* ]]
-    [[ "$output" != *"ALERT: WA復活 — 最新cmd cmd_202"* ]]
+    [[ "$output" == *"ALERT: WA再出現を検出 — 最新cmd cmd_202 の root_signature=gate_logic_gap::status_transition は過去に解消済み。既存対策の再確認・強化候補"* ]]
 }
 
-@test "latest commit_missing workaround with existing commit → no WA regression ALERT" {
+@test "different root signature is not a WA revival" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_200
+  workaround: true
+  category: gate_logic_gap
+  root_signature: gate_logic_gap::schema_shape
+  resolved_by_cmd: cmd_fix_200
+- cmd_id: cmd_202
+  workaround: true
+  category: gate_logic_gap
+  root_signature: gate_logic_gap::status_transition
+  resolved_by_cmd: ''
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WA再出現を検出"* ]]
+}
+
+@test "latest resolved workaround is not a WA revival" {
+    cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
+- cmd_id: cmd_200
+  workaround: true
+  category: gate_logic_gap
+  root_signature: gate_logic_gap::status_transition
+  resolved_by_cmd: cmd_fix_200
+- cmd_id: cmd_202
+  workaround: true
+  category: gate_logic_gap
+  root_signature: gate_logic_gap::status_transition
+  resolved_by_cmd: cmd_fix_202
+EOF
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WA再出現を検出"* ]]
+}
+
+@test "latest commit_missing workaround without resolved signature history → no WA revival ALERT" {
     cat > "$TEST_TMPDIR/bin/git" <<'MOCK'
 #!/usr/bin/env bash
 if [[ "$*" == *"cat-file -e"* ]]; then
@@ -1040,8 +1077,7 @@ MOCK
 EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"OK: 最新commit_missing WAはcommit実在確認済み (cmd_memory_health 4aec408c)"* ]]
-    [[ "$output" != *"ALERT: WA復活 — 最新cmd cmd_memory_health"* ]]
+    [[ "$output" != *"WA再出現を検出"* ]]
 }
 
 @test "false commit_missing metadata issues are excluded from category aggregate WARN" {
