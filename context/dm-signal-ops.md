@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-13 cmd_3882 -->
-<!-- source_commit:a0793f81 reason:p4_writer_fence_operational_state_reflux_verified evidence:ops_section75 -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_context_freshness_ops_research_202607132325 -->
+<!-- source_commit:611f715bfbe4875e9e8d92c267818ee52324faa0 reason:p4_writer_fence_v1.4.23_operational_contract evidence:ops_section75_and_source_doc_commit -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1219,3 +1219,5 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 
 - immutable bundle consumerはcmd_3873で実装済み。writer fence初案(cmd_3881)は安全性PASSだがsingle median 1.1834・bulk 1.1639・full wall 1.062609で性能閾値FAIL、本番適用禁止。
 - cmd_3882は18表writerのAST検出↔registry↔DB enforcement三集合exact CIを実装し、動的SQL/集合不一致をfail-closed BLOCKする。詳細=`context/dm-signal-research.md`の`cmd_3873`系列・`AST恒常スキャンCI`・`cmd_3881_DB_fence_migration_FAIL`。
+- v1.4.23では比較対象18表をF=output/fence/restore対象17表とG=`signal_decision_ledger` immutable guard 1表へ分離。restoreのDELETE/COPYはFのみ、Gはmutation 0とpre/post canonical hash不変を確認し、差分時は通常restoreで上書きせず`RECOVERY_REQUIRED`へ止める。
+- arm DDLはFのcanonical table名辞書順でlockし、SQLSTATE 40P01/55P03/57014は自動retry 0回で原子rollbackする。別read-only catalog sessionでtrigger 0/17・run role 0・ARMING不在を証明できない限りadvisory/fenceを解放しない。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.23、source commit=`611f715bfbe4875e9e8d92c267818ee52324faa0`。
