@@ -1,5 +1,5 @@
 <!-- last_updated: 2026-07-13 -->
-<!-- source_commit:07065f99af6dbbca7824e2fc55c6101062825283 reason:audited-pathspec evidence:no-unreflected-commits -->
+<!-- source_commit:abe55194e2c2d9e5f2fa8c16b04a6b806b419ba0 reason:full-audit-boundary evidence:migration-commit-70-tests -->
 
 # Memory DB Schema
 

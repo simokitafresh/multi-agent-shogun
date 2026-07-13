@@ -1,7 +1,7 @@
 # CoDD (Coherence-Driven Development) 索引
 
 <!-- last_updated: 2026-07-09 cmd_karo_hotfix_context_freshness_ga203_202607090005 -->
-<!-- source_commit:fac42b672ac22139eee640f69f47c342695772cc reason:audited-pathspec evidence:no-unreflected-commits -->
+<!-- source_commit:abe55194e2c2d9e5f2fa8c16b04a6b806b419ba0 reason:full-audit-boundary evidence:migration-commit-70-tests -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
