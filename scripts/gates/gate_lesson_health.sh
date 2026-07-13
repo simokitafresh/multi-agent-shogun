@@ -663,6 +663,47 @@ for _pid in "${_target_pids[@]}"; do
     [ -z "$_cf" ] && _cf="context/${_pid}.md"
     _context_path="$SCRIPT_DIR/$_cf"
 
+    # GA-244: infra lesson本文が全件contextへ合流済みなのにmarkerだけ古い場合は、
+    # 高水位を原子的に自己修復する。部分合流時は1件でも欠ければ更新しない。
+    # infra:* は全subdomainがcontext/infrastructure.mdへrouteされるため、この
+    # fail-closed検証を適用できる。他projectはsubdomain別marker処理を維持する。
+    if [ "$_pid" = "infra" ] && [ -f "$_context_path" ]; then
+        _marker_repair=$(python3 - "$_lessons_file" "$_context_path" <<'PY'
+import os, re, sys, tempfile
+lessons_path, context_path = sys.argv[1:]
+lessons = open(lessons_path, encoding="utf-8").read()
+context = open(context_path, encoding="utf-8").read()
+m = re.search(r'<!--\s*last_synced_lesson:\s*L(\d+)\s*-->', context)
+current = int(m.group(1)) if m else 0
+active = []
+for block in re.split(r'(?=^- id:\s*L\d+\s*$)', lessons, flags=re.M):
+    im = re.match(r'^- id:\s*L(\d+)\s*$', block, re.M)
+    if im and not re.search(r'^\s*status:\s*deprecated\s*$', block, re.M):
+        active.append(int(im.group(1)))
+pending = [n for n in active if n > current]
+missing = [n for n in pending if not re.search(rf'(?m)^- L0*{n}:', context)]
+if pending and not missing:
+    target = max(pending)
+    replacement = f'<!-- last_synced_lesson: L{target} -->'
+    updated = re.sub(r'<!--\s*last_synced_lesson:\s*L\d+\s*-->', replacement, context, count=1)
+    if updated == context:
+        updated = replacement + "\n" + context
+    fd, tmp = tempfile.mkstemp(prefix='.lesson-marker.', dir=os.path.dirname(context_path) or '.')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(updated)
+            f.flush(); os.fsync(f.fileno())
+        os.replace(tmp, context_path)
+    finally:
+        if os.path.exists(tmp): os.unlink(tmp)
+    print(f"AUTO-FIX: infra last_synced_lesson L{current}->L{target} (合流済み{len(pending)}/{len(pending)})")
+elif missing:
+    print(f"NO-FIX: infra marker L{current} (本文欠落{len(missing)}/{len(pending)})")
+PY
+)
+        [ -n "$_marker_repair" ] && echo "$_marker_repair"
+    fi
+
     # 高速化: context fileを1回のawk passでsynced_num+unsorted_count+unsorted_idsを取得
     _synced_num=0
     _unsorted=0

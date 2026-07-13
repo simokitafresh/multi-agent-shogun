@@ -81,6 +81,38 @@ teardown() {
     [[ "$output" == *"OK: infraのlesson統合状況は健全"* ]]
 }
 
+@test "GA-244 repairs stale infra marker only when every pending lesson body exists" {
+    cat > "$TEST_TMPDIR/projects/infra/lessons.yaml" <<EOF
+ssot_path: $TEST_TMPDIR/tasks/lessons.md
+lessons:
+- id: L001
+  title: one
+  summary: one
+- id: L002
+  title: two
+  summary: two
+- id: L003
+  title: three
+  summary: three
+EOF
+    cat > "$TEST_TMPDIR/context/infrastructure.md" <<'EOF'
+<!-- last_synced_lesson: L001 -->
+## Infra教訓索引
+- L001: one
+- L002: two
+- L003: three
+EOF
+    run bash "$TEST_GATE" infra
+    [ "$status" -eq 0 ]
+    grep -q 'last_synced_lesson: L3' "$TEST_TMPDIR/context/infrastructure.md"
+
+    sed -i 's/L3/L1/' "$TEST_TMPDIR/context/infrastructure.md"
+    sed -i '/^- L002:/d' "$TEST_TMPDIR/context/infrastructure.md"
+    run bash "$TEST_GATE" infra
+    [[ "$output" == *"NO-FIX: infra marker L1 (本文欠落1/2)"* ]]
+    grep -q 'last_synced_lesson: L1' "$TEST_TMPDIR/context/infrastructure.md"
+}
+
 @test "gate_lesson_health ignores missing ssot_path when lessons cache has zero lessons" {
     : > "$TEST_TMPDIR/projects/infra/lessons.yaml"
 
