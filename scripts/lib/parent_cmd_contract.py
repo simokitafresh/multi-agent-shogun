@@ -52,6 +52,34 @@ def contract_fingerprint(cmd_id, purpose, acs):
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
+def historical_contracts(root: Path, cmd_id: str, expected: set, fingerprint: str):
+    """Durable per-(worker, cmd) AC-coverage bindings captured at deployment
+    time (deploy_task.sh:inject_parent_contract).  A worker's live
+    queue/tasks/{worker}.yaml is overwritten on redeployment to a later,
+    unrelated cmd; this archive is keyed by (worker, cmd) so it survives
+    that overwrite and keeps the original binding verifiable."""
+    result = {}
+    directory = root / "queue/archive/parent_contracts"
+    if not directory.is_dir():
+        return result
+    for path in sorted(directory.glob(f"*__{cmd_id}.yaml")):
+        record = load(path)
+        if str(record.get("parent_cmd") or "").strip() != cmd_id:
+            continue
+        if str(record.get("parent_contract_fingerprint") or "") != fingerprint:
+            continue
+        mapping = record.get("parent_ac_coverage")
+        if not isinstance(mapping, list) or not mapping:
+            continue
+        mapping = {str(x) for x in mapping}
+        if not mapping <= expected:
+            continue
+        worker = str(record.get("worker_id") or "").strip()
+        if worker:
+            result[worker] = mapping
+    return result
+
+
 def report_paths(root: Path, cmd_id: str):
     """Return only reports whose canonical filename belongs to cmd_id."""
     patterns = (
@@ -77,17 +105,13 @@ def validate(root: Path, cmd_id: str):
     expected = set(ac_ids(parent.get("acceptance_criteria")))
     if not purpose or not expected:
         return False, "parent_contract_incomplete"
-    tasks = []
-    for path in sorted((root / "queue/tasks").glob("*.yaml")):
-        task = load(path).get("task") or {}
-        if str(task.get("parent_cmd") or "").strip() == cmd_id:
-            tasks.append((path, task))
-    if not tasks:
-        return False, "parent_tasks_missing"
     fingerprint = contract_fingerprint(cmd_id, purpose, sorted(expected))
     covered = set()
     task_contracts = {}
-    for path, task in tasks:
+    for path in sorted((root / "queue/tasks").glob("*.yaml")):
+        task = load(path).get("task") or {}
+        if str(task.get("parent_cmd") or "").strip() != cmd_id:
+            continue
         mapping = task.get("parent_ac_coverage") or task.get("covers_parent_acs")
         if not isinstance(mapping, list) or not mapping:
             continue
@@ -95,6 +119,11 @@ def validate(root: Path, cmd_id: str):
         if not mapping <= expected or str(task.get("parent_contract_fingerprint") or "") != fingerprint:
             continue
         task_contracts[path.stem] = mapping
+    # A worker redeployed to a later, unrelated cmd overwrites its live task
+    # file above, silently dropping historical coverage.  The durable
+    # archive keyed by (worker, cmd) is unaffected by that overwrite.
+    for worker, mapping in historical_contracts(root, cmd_id, expected, fingerprint).items():
+        task_contracts.setdefault(worker, mapping)
     if not task_contracts:
         return False, "parent_mapping_missing_or_stale"
     for path in report_paths(root, cmd_id):

@@ -2301,8 +2301,8 @@ inject_ac_version() {
 # assigned_acs is authoritative for split deployments; otherwise the task ACs
 # must be a subset of the parent AC namespace.  Direct hotfixes are exempt.
 inject_parent_contract() {
-    local task_file="$1" report_file="${2:-}"
-    local contract coverage fingerprint tool_root
+    local task_file="$1" report_file="${2:-}" worker_id="${3:-}"
+    local contract coverage fingerprint cmd_bound tool_root
     tool_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
     contract=$(python3 - "$task_file" "$SCRIPT_DIR" <<'PARENT_CONTRACT_PY'
 import hashlib, json, os, sys, yaml
@@ -2334,15 +2334,34 @@ coverage = [str(x) for x in assigned] if isinstance(assigned,list) and assigned 
 if not purpose or not parent_ids or not coverage or not set(coverage) <= set(parent_ids): raise SystemExit("BLOCK: invalid parent AC mapping during deployment")
 raw=json.dumps({"cmd":cmd,"purpose":purpose,"acs":sorted(parent_ids)},ensure_ascii=False,sort_keys=True)
 fp=hashlib.sha256(raw.encode()).hexdigest()[:16]
-print("["+", ".join(coverage)+"]\t"+fp)
+print("["+", ".join(coverage)+"]\t"+fp+"\t"+cmd)
 PARENT_CONTRACT_PY
     ) || return 1
-    IFS=$'\t' read -r coverage fingerprint <<< "$contract"
+    IFS=$'\t' read -r coverage fingerprint cmd_bound <<< "$contract"
     printf '%s\n' "$coverage" | bash "$tool_root/scripts/report_field_set.sh" "$task_file" task.parent_ac_coverage - || return 1
     bash "$tool_root/scripts/report_field_set.sh" "$task_file" task.parent_contract_fingerprint "$fingerprint" || return 1
     if [ -n "$report_file" ] && [ -f "$report_file" ]; then
         printf '%s\n' "$coverage" | bash "$tool_root/scripts/report_field_set.sh" "$report_file" parent_ac_coverage - || return 1
         bash "$tool_root/scripts/report_field_set.sh" "$report_file" parent_contract_fingerprint "$fingerprint" || return 1
+    fi
+    # Durable per-(worker, cmd) evidence: a later redeployment overwrites
+    # task_file with an unrelated parent_cmd, but this archive stays keyed
+    # to the cmd bound *right now* and survives that overwrite (root cause
+    # of parent_ac_uncovered false-BLOCK after worker reassignment).
+    if [ -n "$coverage" ] && [ -n "$fingerprint" ] && [[ "$cmd_bound" =~ ^cmd_[0-9]+$ ]]; then
+        local archive_worker="${worker_id:-$(basename "$task_file" .yaml)}"
+        local archive_dir="$SCRIPT_DIR/queue/archive/parent_contracts"
+        mkdir -p "$archive_dir"
+        local archive_tmp
+        archive_tmp=$(mktemp "$archive_dir/.tmp.XXXXXX")
+        {
+            printf 'worker_id: %s\n' "$archive_worker"
+            printf 'parent_cmd: %s\n' "$cmd_bound"
+            printf 'parent_ac_coverage: %s\n' "$coverage"
+            printf 'parent_contract_fingerprint: %s\n' "$fingerprint"
+            printf 'bound_at: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        } > "$archive_tmp"
+        mv -f "$archive_tmp" "$archive_dir/${archive_worker}__${cmd_bound}.yaml"
     fi
     log "[PARENT_CONTRACT] coverage=${coverage} fingerprint=${fingerprint}"
 }
@@ -9514,7 +9533,7 @@ deploy_task_apply_task_mutations() {
         task_id="${_ac_task_id:-}"
     fi
     generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project"
-    inject_parent_contract "$task_file" "$SCRIPT_DIR/queue/reports/$(FIELD_GET_NO_LOG=1 field_get "$task_file" report_filename "" 2>/dev/null)" \
+    inject_parent_contract "$task_file" "$SCRIPT_DIR/queue/reports/$(FIELD_GET_NO_LOG=1 field_get "$task_file" report_filename "" 2>/dev/null)" "$ninja_name" \
         || { log "FATAL: parent contract injection failed"; return 1; }
     inject_done_redeploy_hints "$task_file" || true
 }

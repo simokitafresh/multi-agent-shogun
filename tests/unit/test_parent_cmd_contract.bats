@@ -137,3 +137,111 @@ PY
   [ "$status" -eq 0 ]
   [[ "$output" == *parent_contract_ok* ]]
 }
+
+archive_record() { local coverage=${1:-AC1} fp_value=${2:-$(fp)}; mkdir -p "$T/queue/archive/parent_contracts"; cat > "$T/queue/archive/parent_contracts/ninja__cmd_3869.yaml" <<YAML
+worker_id: ninja
+parent_cmd: cmd_3869
+parent_ac_coverage: [$coverage]
+parent_contract_fingerprint: $fp_value
+YAML
+}
+
+@test "redeployment to a different cmd does not erase historical parent AC coverage (cmd_3873-class repro)" {
+  parent
+  task 'AC1, AC2, AC3'; report 'AC1, AC2, AC3'
+  run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_3869 --root "$T"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *parent_contract_ok* ]]
+
+  # Deployment-time durable evidence capture (mirrors deploy_task.sh's
+  # inject_parent_contract archive write) happens before the worker moves on.
+  archive_record 'AC1, AC2, AC3'
+
+  # Worker is redeployed: the live task file is overwritten by an unrelated cmd,
+  # exactly as queue/tasks/hayate.yaml was overwritten cmd_3873 -> cmd_3876.
+  cat > "$T/queue/tasks/ninja.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_9999
+  purpose: unrelated later task
+YAML
+
+  run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_3869 --root "$T"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *parent_contract_ok* ]]
+}
+
+@test "adversarial: archived mapping with report whose checks did not pass still blocks" {
+  parent
+  archive_record 'AC1, AC2, AC3'
+  printf 'worker_id: ninja\nparent_cmd: cmd_3869\nparent_ac_coverage: [AC1, AC2, AC3]\nparent_contract_fingerprint: %s\nbinary_checks:\n  CHILD1: [{check: child evidence, result: no}]\n' "$(fp)" > "$T/queue/reports/ninja_report_cmd_3869.yaml"
+  run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_3869 --root "$T"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *'parent_ac_uncovered:AC1,AC2,AC3'* ]]
+}
+
+@test "adversarial: archived mapping with stale fingerprint blocks even without a live task" {
+  parent
+  archive_record 'AC1, AC2, AC3' 'stale_value'
+  report 'AC1, AC2, AC3'
+  run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_3869 --root "$T"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *parent_mapping_missing_or_stale* ]]
+}
+
+@test "adversarial: archived mapping outside the parent AC namespace blocks" {
+  parent
+  archive_record 'AC1, AC2, AC3, AC99'
+  report 'AC1, AC2, AC3'
+  run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_3869 --root "$T"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *parent_mapping_missing_or_stale* ]]
+}
+
+@test "adversarial: report self-declared coverage without any durable task or archive evidence blocks" {
+  parent
+  # No live task file, no archive record: only a self-authored report exists.
+  printf 'worker_id: ninja\nparent_cmd: cmd_3869\nparent_ac_coverage: [AC1, AC2, AC3]\nparent_contract_fingerprint: %s\nbinary_checks:\n  CHILD1: [{check: child evidence, result: yes}]\n' "$(fp)" > "$T/queue/reports/ninja_report_cmd_3869.yaml"
+  run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_3869 --root "$T"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *parent_mapping_missing_or_stale* ]]
+}
+
+@test "deployment producer writes a durable per-worker parent contract archive record" {
+  parent
+  cat > "$T/queue/tasks/ninja.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_3869
+  assigned_acs: [AC1]
+  acceptance_criteria: [{id: CHILD1, description: inventory child}]
+  report_filename: ninja_report_cmd_3869.yaml
+YAML
+  printf 'parent_cmd: cmd_3869\nworker_id: ninja\n' > "$T/queue/reports/ninja_report_cmd_3869.yaml"
+  run bash -c "source '$ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$T'; inject_parent_contract '$T/queue/tasks/ninja.yaml' '$T/queue/reports/ninja_report_cmd_3869.yaml' ninja"
+  [ "$status" -eq 0 ]
+  archive="$T/queue/archive/parent_contracts/ninja__cmd_3869.yaml"
+  [ -f "$archive" ]
+  run python3 - "$archive" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1]))
+assert d['worker_id'] == 'ninja'
+assert d['parent_cmd'] == 'cmd_3869'
+assert d['parent_ac_coverage'] == ['AC1']
+assert d['parent_contract_fingerprint']
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "deployment producer derives archive worker id from task filename when unspecified" {
+  parent
+  cat > "$T/queue/tasks/ninja.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_3869
+  assigned_acs: [AC1]
+  acceptance_criteria: [{id: CHILD1, description: inventory child}]
+  report_filename: ninja_report_cmd_3869.yaml
+YAML
+  printf 'parent_cmd: cmd_3869\nworker_id: ninja\n' > "$T/queue/reports/ninja_report_cmd_3869.yaml"
+  run bash -c "source '$ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$T'; inject_parent_contract '$T/queue/tasks/ninja.yaml' '$T/queue/reports/ninja_report_cmd_3869.yaml'"
+  [ "$status" -eq 0 ]
+  [ -f "$T/queue/archive/parent_contracts/ninja__cmd_3869.yaml" ]
+}
