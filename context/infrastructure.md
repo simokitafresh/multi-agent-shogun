@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-13 cmd_3874 -->
+<!-- last_updated: 2026-07-14 cmd_karo_hotfix_wa_duplicate_identity_data_restore_202607140312 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -323,6 +323,7 @@ cmd_1173偵察で特定した高優先gate未実装項目の構造的実装。
 - L970: dm-signal分割context5ファイルは独立last_updated+閾値3跨ぎで時間差連鎖ALERTする(バグではない)（cmd_karo_hotfix_ga181_context_freshness_202607060242）
 - L971: lesson_health同型ALERTの重複recon配備はGA-166(L934)の未実装で根治しない（cmd_karo_hotfix_lesson_health_ga183_202607060939）
 - L972: GA再発連鎖はLevel5実装で初めて閉じた（cmd_karo_hotfix_ga184_lesson_health_early_route_202607061018）
+- WA重複判定は`cmd_id+ninja`だけで同一視しない。check/fix双方をcanonical原因単位（`root_signature`、legacyは`category/detail/root_cause` fingerprint）へ揃え、異根共存・同根後勝ち・clean優先をfixtureで固定する。→ `scripts/gates/gate_wa_data_quality.sh` / `tests/unit/test_gate_meta_quality.bats`（cmd_karo_hotfix_wa_duplicate_identity_data_restore_202607140312）
 → `scripts/cmd_complete_gate.sh` / `scripts/gates/gate_dc_duplicate.sh`
 
 ## 知識サイクル現状（cmd_531/533/541/1111/1113/1117 反映）
