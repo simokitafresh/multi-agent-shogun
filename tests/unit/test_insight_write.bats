@@ -257,6 +257,40 @@ print('RESOLVED_REASON PRESERVED')
     [[ "$output" == *"RESOLVED_REASON PRESERVED"* ]]
 }
 
+@test "repair: 完全証跡resolved entryと後続entryを保持する" {
+    cat > "${TEST_TMP}/queue/insights.yaml" <<'YAML'
+insights:
+- id: INS-COMPLETE
+  ts: "2026-07-14T05:00:00+09:00"
+  insight: "complete resolution"
+  priority: "high"
+  source: "unit"
+  status: resolved
+  resolved_reason: "implemented"
+  action_artifact: "commit=abc"
+  resolved_at: "2026-07-14T05:01:00+09:00"
+- id: INS-AFTER
+  ts: "2026-07-14T05:02:00+09:00"
+  insight: "after complete"
+  priority: "low"
+  source: "unit"
+  status: pending
+YAML
+    before_corrupt="$(find "${TEST_TMP}/queue/archive/insights_corrupt" -type f 2>/dev/null | wc -l)"
+    run bash "${TEST_TMP}/scripts/insight_write.sh" "new append after complete" "low" "unit"
+    [ "$status" -eq 0 ]
+    python3 - "${TEST_TMP}/queue/insights.yaml" "$before_corrupt" <<'PY'
+import glob, sys, yaml
+rows=yaml.safe_load(open(sys.argv[1]))['insights']
+by_id={x['id']:x for x in rows}
+assert {'INS-COMPLETE','INS-AFTER'} <= set(by_id)
+complete=by_id['INS-COMPLETE']
+assert all(complete.get(k) for k in ('resolved_reason','action_artifact','resolved_at'))
+after=len(glob.glob(sys.argv[1].replace('/insights.yaml','/archive/insights_corrupt/*')))
+assert after == int(sys.argv[2]), (after, sys.argv[2])
+PY
+}
+
 # --- 3. ID自動生成の形式確認 ---
 
 @test "ID形式: INS-YYYYMMDD-HHMMSSmmm-{4hex}に一致する" {

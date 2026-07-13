@@ -170,7 +170,7 @@ def repair_trailing_partial_entry(path):
     current_has_status = False
     known_fields = (
         '  ts:', '  insight:', '  priority:', '  source:', '  status:',
-        '  resolved_at:', '  resolved_reason:', '  fix_known:',
+        '  resolved_at:', '  resolved_reason:', '  action_artifact:', '  fix_known:',
         '  target_file:', '  verify_command:', '  verification:',
         '    status:', '    exit_code:', '    output:',
     )

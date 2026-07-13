@@ -18,6 +18,15 @@ insights:
   resolved_reason: "implemented"
   action_artifact: "commit=abc"
   resolved_at: "2026-01-04T00:00:00+09:00"
+- id: INS-INCOMPLETE-RESOLVED
+  ts: "2026-01-05T00:00:00+09:00"
+  insight: "resolved missing artifact"
+  created_at: "2026-01-05T00:00:00+09:00"
+  priority: high
+  source: unit
+  status: resolved
+  resolved_reason: "implemented"
+  resolved_at: "2026-01-06T00:00:00+09:00"
 YAML
 }
 
@@ -31,7 +40,7 @@ PY
 )"
   run bash "$ROOT/scripts/migrate_legacy_insight_resolutions.sh"
   [ "$status" -eq 0 ]
-  [[ "$output" == "migrated=1" ]]
+  [[ "$output" == "migrated=2" ]]
   python3 - "$INSIGHTS_FILE" "$before_hash" <<'PY'
 import hashlib, sys, yaml
 rows={x['id']:x for x in yaml.safe_load(open(sys.argv[1]))['insights']}
@@ -42,5 +51,10 @@ assert after == sys.argv[2]
 assert legacy['status'] == 'pending'
 assert not any(k in legacy for k in ('resolved_at','resolved_reason','action_artifact'))
 assert valid['status'] == 'resolved' and valid['action_artifact'] == 'commit=abc'
+incomplete=rows['INS-INCOMPLETE-RESOLVED']
+assert incomplete['status'] == 'pending'
+assert not any(k in incomplete for k in ('resolved_at','resolved_reason','action_artifact'))
+assert incomplete['created_at'] == '2026-01-05T00:00:00+09:00'
+assert incomplete['priority'] == 'high' and incomplete['source'] == 'unit'
 PY
 }

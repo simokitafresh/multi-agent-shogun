@@ -26,7 +26,7 @@ for n, start in reversed(list(enumerate(starts))):
         if line.startswith("  ") and ":" in line:
             key, value = line.strip().split(":", 1)
             fields[key] = value.strip().strip('"\'')
-    if fields.get("status") != "done":
+    if fields.get("status") not in ("done", "resolved"):
         continue
     if fields.get("resolved_reason") and fields.get("action_artifact") and fields.get("resolved_at"):
         continue
