@@ -402,6 +402,42 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+@test "--reclassify updates root_signature family atomically and preserves suffix" {
+    cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_target
+  ninja: hayate
+  workaround: true
+  category: report_yaml_format
+  root_signature: 'report_yaml_format::schema_shape'
+  detail: 'first distinct issue'
+  root_cause: 'first root cause'
+  resolved_by_cmd: ''
+- cmd_id: cmd_target
+  ninja: hayate
+  workaround: true
+  category: uncategorized
+  root_signature: 'uncategorized::general'
+  detail: 'second distinct issue'
+  root_cause: 'second root cause'
+  resolved_by_cmd: ''
+YAML
+
+    run bash "$TEST_SCRIPT" --reclassify '^cmd_target$' report_yaml_format
+    [ "$status" -eq 0 ]
+    run grep -c '^  category: report_yaml_format$' "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 2 ]
+    run grep -c "root_signature: 'report_yaml_format::schema_shape'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+    run grep -c "root_signature: 'report_yaml_format::general'" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+    run grep -c "root_signature: 'uncategorized::" "$TEST_DIR/logs/karo_workarounds.yaml"
+    [ "$status" -eq 1 ]
+    [ "$output" -eq 0 ]
+}
+
 # =============================================
 # AC2/AC3 (cmd_karo_hotfix_wa_root_signature_202607121225):
 # root_signature auto-attach + N>=3 per-signature alerting

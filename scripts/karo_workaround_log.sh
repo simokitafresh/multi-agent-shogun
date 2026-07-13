@@ -52,10 +52,20 @@ if [[ "${1:-}" == "--reclassify" ]]; then
             entry_len = 0
             entry_cmd = ""
         }
-        function flush_entry(    idx, line, matches, replaced) {
+        function flush_entry(    idx, line, matches, replaced, oldcat, value, suffix) {
             if (entry_len == 0) return
             matches = (entry_cmd != "" && entry_cmd ~ pat)
             replaced = 0
+            oldcat = ""
+            for (idx = 1; idx <= entry_len; idx++) {
+                line = entry_lines[idx]
+                if (line ~ /^(-|  )category:[[:space:]]*/) {
+                    value = line
+                    sub(/^(-|  )category:[[:space:]]*/, "", value)
+                    oldcat = trim_scalar(value)
+                    break
+                }
+            }
             for (idx = 1; idx <= entry_len; idx++) {
                 line = entry_lines[idx]
                 if (matches && !replaced && line ~ /^- category:[[:space:]]*/) {
@@ -68,6 +78,20 @@ if [[ "${1:-}" == "--reclassify" ]]; then
                     replaced = 1
                     continue
                 }
+                # categoryだけを再分類してroot_signatureのfamilyを旧値のまま
+                # 残すと、集計単位(category×root_signature)が矛盾する。
+                # 旧familyに属する署名だけprefixを原子的に追従させ、suffixは
+                # 発生段階×破れた不変量として保持する。
+                if (matches && oldcat != "" && line ~ /^  root_signature:[[:space:]]*/) {
+                    value = line
+                    sub(/^  root_signature:[[:space:]]*/, "", value)
+                    value = trim_scalar(value)
+                    if (index(value, oldcat "::") == 1) {
+                        suffix = substr(value, length(oldcat) + 1)
+                        print "  root_signature: '\''" newcat suffix "'\''"
+                        continue
+                    }
+                }
                 print line
             }
             reset_entry()
@@ -77,9 +101,10 @@ if [[ "${1:-}" == "--reclassify" ]]; then
         }
         {
             entry_lines[++entry_len] = $0
-            if ($0 ~ /^(-|  )cmd(_id)?:[[:space:]]*/) {
+            if ($0 ~ /^-[[:space:]]+cmd(_id)?:[[:space:]]*/ || $0 ~ /^  cmd(_id)?:[[:space:]]*/) {
                 value = $0
-                sub(/^(-|  )cmd(_id)?:[[:space:]]*/, "", value)
+                sub(/^-[[:space:]]+cmd(_id)?:[[:space:]]*/, "", value)
+                sub(/^  cmd(_id)?:[[:space:]]*/, "", value)
                 entry_cmd = trim_scalar(value)
             }
         }
