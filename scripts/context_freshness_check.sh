@@ -970,6 +970,38 @@ def is_excluded_context_file(rel_path: str) -> bool:
     return normalized in exclude_entries or os.path.basename(normalized) in exclude_entries
 
 
+def build_group_warnings(alerted: list[tuple[str, list[str]]]) -> list[str]:
+    """GA-237/L1089: 複数context fileが同一source commitで同時ALERTした場合、
+    家老が1cmdで一括反映できるよう共有commitを明示する。ALERT自体の発火条件
+    (件数閾値1、GA-226で固定)は一切変更しない — 可視性を追加するだけの
+    非破壊的な共通防御層。"""
+    hash_to_paths: dict[str, list[str]] = {}
+    hash_to_subject: dict[str, str] = {}
+    for rel_path, details in alerted:
+        for detail in details:
+            short_hash, _, subject = detail.partition(" ")
+            short_hash = short_hash.strip()
+            if not short_hash:
+                continue
+            paths = hash_to_paths.setdefault(short_hash, [])
+            if rel_path not in paths:
+                paths.append(rel_path)
+            hash_to_subject.setdefault(short_hash, subject.strip())
+
+    lines: list[str] = []
+    for short_hash, paths in hash_to_paths.items():
+        if len(paths) < 2:
+            continue
+        subject = hash_to_subject.get(short_hash, "")
+        joined = ",".join(sorted(paths))
+        message = f"GROUP: {joined} share source commit {short_hash}"
+        if subject:
+            message += f" {subject}"
+        message += " — 家老は1cmdで一括反映を検討せよ(重複調査防止, L1089)"
+        lines.append(message)
+    return lines
+
+
 warnings: list[str] = []
 
 if mode == "--dashboard-warnings":
@@ -990,12 +1022,15 @@ if mode == "--dashboard-warnings":
         files_for_git.append((project_id, rel_path, abs_path, updated_at, source_commit_marker(abs_path)))
     commit_summaries = batch_source_commit_summaries(files_for_git)
     min_source_commits = int(os.environ.get("CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS", "1"))
+    alerted_for_group: list[tuple[str, list[str]]] = []
     for project_id, rel_path, abs_path, updated_at, _source_commit in files_for_git:
         cc, details = commit_summaries.get((project_id, rel_path), (0, []))
         if cc < 0:
             warnings.append(build_source_check_warning(rel_path, updated_at))
         elif cc >= min_source_commits:
             warnings.append(build_source_warning(rel_path, cc, updated_at, details))
+            alerted_for_group.append((rel_path, details))
+    warnings.extend(build_group_warnings(alerted_for_group))
 elif mode == "--cmd-warnings":
     project_id = find_cmd_project(cmd_id)
     if project_id:
@@ -1011,12 +1046,15 @@ elif mode == "--cmd-warnings":
                 continue
             files_for_git.append((current_project, rel_path, abs_path, updated_at, source_commit_marker(abs_path)))
         commit_summaries = batch_source_commit_summaries(files_for_git)
+        alerted_for_group = []
         for current_project, rel_path, abs_path, updated_at, _source_commit in files_for_git:
             cc, details = commit_summaries.get((current_project, rel_path), (0, []))
             if cc < 0:
                 warnings.append(build_source_check_warning(rel_path, updated_at))
             elif cc > 0:
                 warnings.append(build_source_warning(rel_path, cc, updated_at, details))
+                alerted_for_group.append((rel_path, details))
+        warnings.extend(build_group_warnings(alerted_for_group))
 
 for line in sorted(dict.fromkeys(warnings)):
     print(line)

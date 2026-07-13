@@ -657,3 +657,137 @@ PROJ
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
 }
+
+# ── GA-237/L1089: 共通防御層(GROUP検出) ──
+# 根本原因: 高頻度共有pathspec(docs/research等)を持つ複数context fileが
+# 同一source commitで同時ALERTし、家老が同じcommitを重複調査するcmdを
+# 別々に起票していた。GROUP行は既存のALERT発火条件(件数閾値1、GA-226で
+# 固定)を一切変更せず、可視性のみを追加する非破壊的な防御層。
+
+@test "shared source commit across sibling contexts emits GROUP hint" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$TEST_TMPDIR/projects" "$source_repo/docs/research"
+    cat > "$TEST_TMPDIR/projects/dm-signal.yaml" <<PROJ
+project:
+  id: dm-signal
+path: $source_repo
+PROJ
+
+    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
+    _create_context "context/dm-signal-research.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'shared research note\n' > "$source_repo/docs/research/shared_note.md"
+    git -C "$source_repo" add docs/research/shared_note.md
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$source_repo" commit -q -m "docs: shared research note touches both ops and research contexts"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/dm-signal-ops.md source commits"* ]]
+    [[ "$output" == *"ALERT: context/dm-signal-research.md source commits"* ]]
+    [[ "$output" == *"GROUP: context/dm-signal-ops.md,context/dm-signal-research.md share source commit"* ]]
+    [[ "$output" == *"L1089"* ]]
+}
+
+@test "different source commits across sibling contexts do not emit GROUP hint" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$TEST_TMPDIR/projects" "$source_repo/backend/app/jobs" "$source_repo/frontend"
+    cat > "$TEST_TMPDIR/projects/dm-signal.yaml" <<PROJ
+project:
+  id: dm-signal
+path: $source_repo
+PROJ
+
+    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
+    _create_context "context/dm-signal-frontend.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'ops backend update\n' > "$source_repo/backend/app/jobs/recalculate_fast.py"
+    git -C "$source_repo" add backend/app/jobs/recalculate_fast.py
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$source_repo" commit -q -m "fix: ops-only backend change"
+
+    printf 'frontend update\n' > "$source_repo/frontend/app.tsx"
+    git -C "$source_repo" add frontend/app.tsx
+    GIT_AUTHOR_DATE="${TODAY}T00:01:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:01:00+09:00" \
+        git -C "$source_repo" commit -q -m "feature: frontend-only change"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/dm-signal-ops.md source commits"* ]]
+    [[ "$output" == *"ALERT: context/dm-signal-frontend.md source commits"* ]]
+    [[ "$output" != *"GROUP:"* ]]
+}
+
+@test "dashboard-warnings tolerates a linked worktree in the source repo" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$TEST_TMPDIR/projects" "$source_repo/backend/app/jobs"
+    cat > "$TEST_TMPDIR/projects/dm-signal.yaml" <<PROJ
+project:
+  id: dm-signal
+path: $source_repo
+PROJ
+
+    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'ops backend update\n' > "$source_repo/backend/app/jobs/recalculate_fast.py"
+    git -C "$source_repo" add backend/app/jobs/recalculate_fast.py
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$source_repo" commit -q -m "fix: ops-only backend change"
+
+    # 忍者worktreeが並行稼働している状況を模す(linked worktree)
+    git -C "$source_repo" worktree add -q "$TEST_TMPDIR/source/dm-signal-worktree" -b cmd_worker_branch >/dev/null 2>&1
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/dm-signal-ops.md source commits 1件"* ]]
+    [[ "$output" != *"GROUP:"* ]]
+}
+
+@test "concurrent dashboard-warnings invocations do not corrupt cache output" {
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_source_commit "src/dm_signal.py"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
+    CFC_OUTPUT_CACHE_TTL=5 bash "$TEST_SCRIPT" --dashboard-warnings > "$TEST_TMPDIR/out1.txt" 2>"$TEST_TMPDIR/err1.txt" &
+    local pid1=$!
+    CFC_OUTPUT_CACHE_TTL=5 bash "$TEST_SCRIPT" --dashboard-warnings > "$TEST_TMPDIR/out2.txt" 2>"$TEST_TMPDIR/err2.txt" &
+    local pid2=$!
+
+    wait "$pid1"
+    local status1=$?
+    wait "$pid2"
+    local status2=$?
+
+    [ "$status1" -eq 0 ]
+    [ "$status2" -eq 0 ]
+    grep -q "ALERT: context/dm-signal.md source commits" "$TEST_TMPDIR/out1.txt"
+    grep -q "ALERT: context/dm-signal.md source commits" "$TEST_TMPDIR/out2.txt"
+}
+
+@test "git timeout does not produce a spurious GROUP line" {
+    _create_context "context/codd.md" "$STALE_DATE"
+    _create_context "context/obsidian-link-principles.md" "$STALE_DATE"
+    _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
+    _create_shogun_to_karo "cmd_934" "infra"
+
+    CFC_GIT_TIMEOUT=0 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
+    [[ "$output" != *"GROUP:"* ]]
+}
