@@ -1,5 +1,5 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-13 cmd_3872 -->
+<!-- last_updated: 2026-07-13 cmd_karo_hotfix_cmd3868_inventory_perf_202607131225 -->
 <!-- dm_signal_research_reflux: fingerprint=e1ab45c23cb3f10b3540d2a6d2ff397589233929edceb050fdb47f32a399a7f1; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQg5pyr5bC+44GrY21kXzM4NjhfaW52ZW50b3J5X3BlcmZfcm9vdF9jYXVzZeOBruODquODs+OCr+ihjOOCkui/veiomOa4iOOBvyg5cCByZWFkIGFtcGxpZmljYXRpb27moLnlm6ArMTI25YCN6auY6YCf5YyW5a6f5risK+aWsOeJiHNjcmlwdHMvb25lc2hvdC9jbWRfMzg2OF9pbnZlbnRvcnkucHnlrp/oo4UrcHl0ZXN0MTNQQVNT44Gu6KaB57SE44GoZG9jcy9yZXNlYXJjaC9jbWRfMzg2OF9pbnZlbnRvcnlfcGVyZl9yb290X2NhdXNlLm1k44G444Gu5q2j5pys44Od44Kk44Oz44K/KQ== -->
 <!-- source_commit:bd1a1b10322d97fa59cba62dd72550e9102c784f (DM-Signal docs/research配下の最終同期commit。次回鮮度チェックはこのcommit以降のdiffのみ照合対象=GA-236入口側改善の一部) -->
 
