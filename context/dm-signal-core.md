@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
-<!-- source_commit:34747ad118aebd42a05e00a358f2c709542f3ec9 (DM-Signal core対象pathspecの最終同期commit=P4統合branchのlive deploy commit。GA-238調査で判明: 旧last_updated(2026-07-12)は日付境界方式のため、cmd_3856(P3a)反映後に同日中着地した732dfef3[P4 restore core integrator]/cmd_3861 CI fix群/0e079ac5[cmd_3858 momentum_data非決定性修正]が未検知のまま隠れていた(GA-236/237と同型の同日複数commit blind spot、GA-238でexact commit境界へ移行し解消)。上記backlogは全てcontext/dm-signal-ops.md §71-72 / context/dm-signal-research.mdのcmd_3858/cmd_3860エントリへ既に反映済みのため重複記載せず本行下部の§参照に統合。cmd_3873(0568b016/e4f8ef68/75ca73b4)は2026-07-13時点in_progressのため意図的に未反映のまま境界の手前に据え置く) -->
+<!-- last_updated: 2026-07-13 cmd_3882 -->
+<!-- source_commit:a0793f81 reason:cmd_3873_cmd_3882_backlog_reflux_verified evidence:core_section23_cross_split_links -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -609,6 +609,9 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 結論: cmd_3856(P3a共通executor、§21以前で反映済み)以降、同日中(2026-07-12)に3件のbackend変更が着地: (1) `732dfef3` P4 restore契約統合(negative A/B fail-closed、business write 0)、(2) `0e079ac5` cmd_3858でmomentum_data配列順の非決定性根治(`sorted()`欠落)+recalculation_timings等のtelemetry境界分類、(3) cmd_3861 CI fixture整合(P3a契約とのalign)。いずれも旧last_updated(日付境界方式)が同日着地を検知できず未反映のまま残っていた同型穴(GA-238で発見)。詳細は重複記載を避け参照のみとする。
 
 → 詳細: `context/dm-signal-ops.md` §71/§72、`context/dm-signal-research.md`(cmd_3858_P3b_GREEN / cmd_3860_origin統合+push見送り エントリ)
+
+- cmd_3873: immutable input bundleのsource-select/schema identity/consumer契約を実装完了。詳細は`context/dm-signal-research.md`の`cmd_3873`系列へ集約。
+- cmd_3882: 18対象表writerをAST/literal SQLから検出し、AST↔registry↔DB enforcement三集合をfail-closed照合するCIを実装。詳細は`context/dm-signal-research.md`の`AST恒常スキャンCI`へ集約。
 
 ---
 

@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-13 cmd_3878 -->
 <!-- dm_signal_research_reflux: fingerprint=f481a8935ef9f00243f9753ba37f88e1cf381a74bc1912939125ad1168968e39; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQ6Nzg2IGNtZF8zODgxX0RCX2ZlbmNlX21pZ3JhdGlvbl9GQUlM5ZCM5pyf5riI44G/ -->
-<!-- source_commit:63929aa8 reason:cmd_3878_cmd_3882_current_main_reflux_verified evidence:context_lines_784_786_and_docs_exist -->
+<!-- source_commit:a0793f81 reason:cmd_3878_cmd_3881_cmd_3882_reflux_verified evidence:research_lines_781_786_and_docs_exist -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 

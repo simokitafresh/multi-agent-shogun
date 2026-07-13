@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-13 cmd_3868 -->
-<!-- source_commit:9daba5d5 (DM-Signal ops対象pathspecの最終同期commit。cmd_3868の台帳3世代25fc1774→24e81519→9daba5d5を§74へ反映し、削除候補9件・921174016 bytesの確定、実削除、df差分、保持正本16/16 SHA一致まで同期済み。GA-238の境界契約を継承) -->
+<!-- last_updated: 2026-07-13 cmd_3882 -->
+<!-- source_commit:a0793f81 reason:p4_writer_fence_operational_state_reflux_verified evidence:ops_section75 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1214,3 +1214,8 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - **結論**: grid_search配下146DB台帳(`docs/research/cmd_3868_gs_db_generation_inventory.md`)の削除候補は9件・921174016 bytesで確定(文書冒頭メタデータの「削除候補0件/0bytes」は旧版残骸で誤り、本文の削除候補一覧テーブル・重複グループ詳細が正)。saizoが実行直前に9件全件をrealpath scope内・非symlink・通常ファイル・bytes一致・git管理外・コード参照0(自己参照文書除く一括grep)・同一SHA保持正本現存の6項目で独立再検証し全件PASSを確認後、個別`rm --`で削除実行。
 - 詳細・削除前後df/SHA突合証跡: `docs/research/cmd_3868_gs_db_generation_inventory.md`, 報告: `queue/reports/saizo_report_cmd_3868.yaml`
 - 因果リンク: [[C_drive満杯20260712_2307]] -> [[gs_db世代重複40.8GB残存]] -> [[kagemaruが146DB台帳作成・9件候補確定]] -> [[saizoが実行直前再検証+個別rm削除]]
+
+## §75 P4 writer fence運用契約の現状(cmd_3873/cmd_3881/cmd_3882, 2026-07-13)
+
+- immutable bundle consumerはcmd_3873で実装済み。writer fence初案(cmd_3881)は安全性PASSだがsingle median 1.1834・bulk 1.1639・full wall 1.062609で性能閾値FAIL、本番適用禁止。
+- cmd_3882は18表writerのAST検出↔registry↔DB enforcement三集合exact CIを実装し、動的SQL/集合不一致をfail-closed BLOCKする。詳細=`context/dm-signal-research.md`の`cmd_3873`系列・`AST恒常スキャンCI`・`cmd_3881_DB_fence_migration_FAIL`。
