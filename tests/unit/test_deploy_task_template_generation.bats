@@ -669,6 +669,7 @@ YAML
         | bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" binary_checks.AC1 -
     printf '[{check: "git commit check waived in template compatibility test", result: "yes"}]\n' \
         | bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" binary_checks.commit -
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" commit_hash "$(cd "$PROJECT_ROOT" && git rev-parse HEAD)"
     bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" verdict PASS
 
     run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report_path"

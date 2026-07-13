@@ -136,6 +136,7 @@ resolve_fixture_task() {
     source "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
 
     eval "$(extract_function reset_stale_fields)"
+    eval "$(extract_function resolve_cmd_source_path)"
     eval "$(extract_function resolve_cmd_to_task)"
     eval "$(extract_function inject_cmd_assumptions)"
     reset_stale_fields "$ninja_name"

@@ -115,6 +115,27 @@ def parent_cmd_entry(task, script_dir):
     return entry if isinstance(entry, dict) else {}
 
 
+def is_dm_signal_scope(task, parent_entry):
+    """True only when project/target_path (structural fields) name DM-Signal.
+
+    Free-text fields (description/purpose/command/title) can legitimately
+    reference "DM-Signal" while describing or fixing an unrelated infra task
+    (e.g. this very module's own task discusses a DM-Signal reproduction
+    fixture). Matching those fields false-positives non-DM-Signal tasks into
+    DM-Signal-only safety AC injection (cmd_karo_hotfix_split_ac_modifier_scope
+    _202607131307: an infra/deploy_task.sh task got LSA16+target_date ACs
+    solely because its own description mentioned cmd_3873). project/
+    target_path are the authoritative scope boundary; only those are checked.
+    """
+    def _matches(entry):
+        if not isinstance(entry, dict):
+            return False
+        project = str(entry.get('project', '') or '').strip().lower()
+        target_path = str(entry.get('target_path', '') or '').lower()
+        return project == 'dm-signal' or 'dm-signal' in target_path
+    return _matches(task) or _matches(parent_entry)
+
+
 def atomic_write(data, task_file):
     tmp_fd, tmp_path = tempfile.mkstemp(
         dir=os.path.dirname(task_file), suffix='.tmp')
@@ -638,23 +659,18 @@ def inject_db_backup_controls(task, script_dir):
 
 def inject_lsa16_production_parity_controls(task, script_dir):
     """LS-A16: DM-Signal本番DB/recalculate系cmdへ確認ACを事前注入する。"""
-    fields = ['project', 'target_path', 'command', 'description', 'purpose']
-    texts = [str(task.get(field, '') or '') for field in fields]
     parent_entry = parent_cmd_entry(task, script_dir)
+    if not is_dm_signal_scope(task, parent_entry):
+        return False
+
+    fields = ['command', 'description', 'purpose']
+    texts = [str(task.get(field, '') or '') for field in fields]
     if parent_entry:
         texts.extend(str(parent_entry.get(field, '') or '')
-                     for field in ['project', 'target_path', 'command',
-                                   'description', 'purpose', 'title'])
+                     for field in ['command', 'description', 'purpose', 'title'])
 
     haystack = '\n'.join(texts)
-    is_dm_signal = (
-        str(task.get('project', '') or '') == 'dm-signal'
-        or 'DM-signal' in haystack
-        or 'DM-Signal' in haystack
-        or '/DM-signal' in haystack
-        or '/DM-Signal' in haystack
-    )
-    if not is_dm_signal or not LSA16_RE.search(haystack):
+    if not LSA16_RE.search(haystack):
         return False
 
     changed = False
@@ -803,7 +819,13 @@ def inject_parity_target_date_ac(task, script_dir):
     タスクYAMLのtitle/command/description、または親cmdのtitle/commandに
     「パリティ」「parity」が含まれる場合に、acceptance_criteriaへ
     target_date確認ACを追記する。既にtarget_dateが含まれていれば何もしない。
+    target_dateはDM-Signal production fullrecalculateの概念であり、project/
+    target_path がDM-Signalを指す場合のみ対象とする(is_dm_signal_scope)。
     """
+    parent_entry = parent_cmd_entry(task, script_dir)
+    if not is_dm_signal_scope(task, parent_entry):
+        return False
+
     # 1. タスクYAML自体を確認
     task_texts = [
         str(task.get('title', '') or ''),
@@ -812,21 +834,12 @@ def inject_parity_target_date_ac(task, script_dir):
     ]
     is_parity = any(_PARITY_RE.search(t) for t in task_texts)
 
-    # 2. タスク自体になければ親cmdをshogun_to_karo.yamlから確認
-    if not is_parity:
-        parent_cmd = str(task.get('parent_cmd', '') or '').strip()
-        if parent_cmd:
-            stk = os.path.join(script_dir, 'queue', 'shogun_to_karo.yaml')
-            if os.path.exists(stk):
-                stk_data = load_yaml_safe(stk)
-                cmd_data = stk_data.get('commands', {})
-                if isinstance(cmd_data, dict):
-                    entry = cmd_data.get(parent_cmd, {})
-                    if isinstance(entry, dict):
-                        for field in ['title', 'command', 'description']:
-                            if _PARITY_RE.search(str(entry.get(field, '') or '')):
-                                is_parity = True
-                                break
+    # 2. タスク自体になければ親cmdを確認
+    if not is_parity and parent_entry:
+        for field in ['title', 'command', 'description']:
+            if _PARITY_RE.search(str(parent_entry.get(field, '') or '')):
+                is_parity = True
+                break
 
     if not is_parity:
         return False

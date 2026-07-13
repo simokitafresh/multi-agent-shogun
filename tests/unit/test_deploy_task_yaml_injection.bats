@@ -689,6 +689,94 @@ assert len(task['acceptance_criteria']) == 5, task['acceptance_criteria']
 PY
 }
 
+# ── cmd_karo_hotfix_split_ac_modifier_scope_202607131307 回帰テスト(第2弾) ──
+# Origin: karo RC — 本cmd自身のqueue/tasks/kotaro.yaml(project: infra,
+# target_path: scripts/deploy_task.sh)がLSA16+target_date AC 4件を誤混入された。
+# 原因はis_dm_signal判定がproject/target_pathではなくdescription/purpose等の
+# 自由文に対する"DM-Signal"文字列一致だったため。本taskの説明文がcmd_3873
+# (DM-Signalのfixture)へ言及しただけでinfra taskがDM-Signal scopeと誤認された。
+@test "cmd_karo_hotfix_split_ac_modifier_scope: infra task merely mentioning DM-Signal in prose does not inject" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_karo_hotfix_test_infra_mentions_dmsignal
+  project: infra
+  target_path: scripts/deploy_task.sh
+  task_id: cmd_karo_hotfix_test_infra_mentions_dmsignal_normal
+  status: assigned
+  purpose: "cmd_3873の実再現では、DM-Signal本番DB fullrecalculate系cmdでassigned_acs=[AC1,AC2]へAC混入しparity確認契約が偽BLOCKした根因を修正する"
+  description: "DM-Signal本番DB fullrecalculateのparity検証fixtureを参照しつつ、infra側のtask modifier注入ロジックのみを修正する"
+  acceptance_criteria:
+  - id: AC1
+    description: "modifierのscope判定を修正する"
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_karo_hotfix_test_infra_mentions_dmsignal:
+    project: infra
+    title: "DM-Signal fixtureを参照するinfra hotfix"
+    command: |
+      DM-Signal本番DB fullrecalculateとparity確認の事例を根拠にinfra側を直す
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" INJECT_TASK_MODIFIERS_ONLY="lsa16_production_parity_controls,parity_target_date_ac" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+# project=infra/target_path非DM-Signalなら、説明文がDM-Signal/fullrecalculate/parityへ
+# 言及していてもAC混入ゼロ・stop_forも注入されない
+assert [ac['id'] for ac in task['acceptance_criteria']] == ['AC1'], task['acceptance_criteria']
+assert 'stop_for' not in task, task
+assert '【LS-A16 本番パリティ必須】' not in task['description'], task['description']
+PY
+}
+
+@test "cmd_karo_hotfix_split_ac_modifier_scope: target_path-based DM-Signal detection still injects (project unset)" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_test_target_path_dmsignal
+  target_path: /mnt/c/Python_app/DM-signal
+  task_id: cmd_test_target_path_dmsignal_impl
+  status: assigned
+  purpose: "本番DB fullrecalculateのparity確認を行う"
+  description: "本番DB fullrecalculate系cmd"
+  acceptance_criteria:
+  - id: AC1
+    description: "bundle exportを実装する"
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands: {}
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" INJECT_TASK_MODIFIERS_ONLY="lsa16_production_parity_controls,parity_target_date_ac" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+# projectフィールド不在でもtarget_pathがDM-Signalを指せば真陽性を維持する
+ac_text = '\n'.join(ac['description'] for ac in task['acceptance_criteria'])
+assert 'DB/API/FEの3レイヤー貫通確認結果' in ac_text, ac_text
+assert 'target_dateがproduction fullrecalculateと同一であること' in ac_text, ac_text
+assert len(task['acceptance_criteria']) == 5, task['acceptance_criteria']
+PY
+}
+
 # ── cmd_karo_hotfix_deploy_task_atomic_publish_202607111645 回帰テスト ──
 # Origin: cmd_3847偵察で、旧direct_modeは$YAML_FILEを検証前に$task_yamlへ直接cpし
 # (fail-open)、repair失敗時は壊れた内容がtask_yamlに居座っていた。
