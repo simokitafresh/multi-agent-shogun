@@ -302,7 +302,70 @@ append_status=0
             exit found ? 0 : 1
         }
     ' "$LOG_FILE"; then
-        echo "[cmd_quality_log] SKIP duplicate CLEAR: $CMD_ID | source:$SOURCE_STAGE"
+        if [[ "$KARO_REWORK" == "yes" ]]; then
+            # Rework is monotonic evidence: a late/manual cmd-complete pass may
+            # know more than the automatic CLEAR logger.  Upgrade the existing
+            # entry in place instead of appending a duplicate or preserving a
+            # false `no`.  This is a line-preserving atomic rewrite; no YAML
+            # serializer is used.
+            upgrade_result=$(python3 - "$LOG_FILE" "$CMD_ID" "$GATE_RESULT" "$SOURCE_STAGE" <<'PY'
+import os
+from pathlib import Path
+import re
+import stat
+import sys
+import tempfile
+
+path = Path(sys.argv[1])
+cmd_id, gate_result, source = sys.argv[2:]
+lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+starts = [i for i, line in enumerate(lines) if re.match(r"^\s*-\s+cmd_id:\s*", line)]
+starts.append(len(lines))
+upgraded = False
+
+def scalar(line: str) -> str:
+    value = line.split(":", 1)[1].strip()
+    return value.strip("\"'")
+
+for pos in range(len(starts) - 1):
+    begin, end = starts[pos], starts[pos + 1]
+    fields = {}
+    for line in lines[begin:end]:
+        match = re.match(r"^\s*(?:-\s+)?([A-Za-z_][A-Za-z0-9_]*):", line)
+        if match:
+            fields[match.group(1)] = scalar(line)
+    if fields.get("cmd_id") != cmd_id or fields.get("gate_result") != gate_result or fields.get("source") != source:
+        continue
+    for index in range(begin, end):
+        if re.match(r"^\s*karo_rework:\s*", lines[index]) and scalar(lines[index]) == "no":
+            prefix = lines[index].split(":", 1)[0]
+            newline = "\n" if lines[index].endswith("\n") else ""
+            lines[index] = f'{prefix}: "yes"{newline}'
+            upgraded = True
+    break
+
+if upgraded:
+    mode = stat.S_IMODE(path.stat().st_mode)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.writelines(lines)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(tmp_name, mode)
+        os.replace(tmp_name, path)
+    finally:
+        if os.path.exists(tmp_name):
+            os.unlink(tmp_name)
+    print("UPGRADED rework no->yes")
+else:
+    print("UNCHANGED")
+PY
+            )
+            echo "[cmd_quality_log] $upgrade_result: $CMD_ID | source:$SOURCE_STAGE"
+        else
+            echo "[cmd_quality_log] SKIP duplicate CLEAR: $CMD_ID | source:$SOURCE_STAGE"
+        fi
         exit 10
     fi
 

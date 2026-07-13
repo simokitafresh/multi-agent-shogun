@@ -37,6 +37,22 @@ count_entries() {
     [ "$(count_entries)" -eq 1 ]
 }
 
+@test "cmd_quality_log monotonically upgrades duplicate CLEAR rework no to yes" {
+    run bash "$PROJECT_ROOT/scripts/cmd_quality_log.sh" cmd_quality_upgrade CLEAR no 0
+    [ "$status" -eq 0 ]
+
+    run bash "$PROJECT_ROOT/scripts/cmd_quality_log.sh" cmd_quality_upgrade CLEAR yes 0
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"UPGRADED rework no->yes"* ]]
+    [ "$(count_entries)" -eq 1 ]
+    grep -A4 'cmd_id: "cmd_quality_upgrade"' "$CMD_QUALITY_LOG_FILE" | grep -q 'karo_rework: "yes"'
+
+    run bash "$PROJECT_ROOT/scripts/cmd_quality_log.sh" cmd_quality_upgrade CLEAR no 0
+    [ "$status" -eq 0 ]
+    [ "$(count_entries)" -eq 1 ]
+    grep -A4 'cmd_id: "cmd_quality_upgrade"' "$CMD_QUALITY_LOG_FILE" | grep -q 'karo_rework: "yes"'
+}
+
 @test "cmd_quality_log keeps non-CLEAR retry history" {
     run bash "$PROJECT_ROOT/scripts/cmd_quality_log.sh" cmd_quality_retry BLOCK no 0 first_reason
     [ "$status" -eq 0 ]

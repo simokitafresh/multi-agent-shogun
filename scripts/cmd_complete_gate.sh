@@ -8065,7 +8065,11 @@ print('\n'.join(scripts))
     echo ""
     echo "Cmd quality log (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/cmd_quality_log.sh" ]; then
-        if bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "CLEAR" "no" "0" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1; then
+        _quality_karo_rework="no"
+        if [ -f "$SCRIPT_DIR/queue/gates/$CMD_ID/review_approvals/karo_rework.seen" ]; then
+            _quality_karo_rework="yes"
+        fi
+        if bash "$SCRIPT_DIR/scripts/cmd_quality_log.sh" "$CMD_ID" "CLEAR" "$_quality_karo_rework" "0" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1; then
             echo "  cmd_quality_log: OK"
         else
             echo "  [INFO] cmd_quality_log: WARN (logging failed, non-blocking)"

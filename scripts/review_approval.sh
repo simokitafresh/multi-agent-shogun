@@ -9,6 +9,20 @@ case "$role:$result" in gunshi:LGTM|karo:ACCEPT|karo:RC) ;; *) echo "BLOCK: inva
 [[ "$report" = /* ]] || report="$ROOT/$report"
 PROJECT_ROOT="$ROOT" review_validate_report "$cmd_id" "$report" || { echo "BLOCK: invalid cmd/report boundary or parent_cmd mismatch" >&2; exit 2; }
 report=$(realpath "$report")
+# A formal decision is valid only for a submitted report.  Karo RC moves the
+# report to revision_requested before waking the worker; without this guard a
+# delayed Gunshi review can bind LGTM to that post-RC document and recreate a
+# stale approval after RC invalidation.
+report_status=$(python3 - "$report" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(data.get("status") or "").strip())
+PY
+) || { echo "BLOCK: report status unreadable: $report" >&2; exit 1; }
+[ "$report_status" = "completed" ] || {
+  echo "BLOCK: formal review requires status=completed (actual=${report_status:-missing}): $report" >&2
+  exit 1
+}
 base="$ROOT/queue/gates/$cmd_id/review_approvals"
 mkdir -p "$base"
 exec 200>"$base/.lock"; flock -w 10 200
@@ -20,6 +34,12 @@ trap 'rm -f "$tmp"' EXIT
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 if [ "$role" = karo ] && [ "$result" = RC ]; then
+  # Preserve RC as monotonic command history.  The per-report karo.yaml is
+  # intentionally overwritten by the later ACCEPT, so it cannot tell the
+  # completion-quality logger that rework occurred.
+  rework_tmp=$(mktemp "$base/.karo_rework.XXXXXX")
+  printf 'timestamp: %s\nsource: formal_karo_rc\n' "$(date -Iseconds)" > "$rework_tmp"
+  mv -f "$rework_tmp" "$base/karo_rework.seen"
   worker_id=$(python3 - "$report" <<'PY'
 import re, sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}

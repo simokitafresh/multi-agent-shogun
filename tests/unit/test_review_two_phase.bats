@@ -14,7 +14,7 @@ printf '%s\n' "$*" >> "${REVIEW_APPROVAL_ROOT:?}/bulletin_calls.log"
 SH
   chmod +x "$TMPROOT/scripts/bulletin_write.sh"
   REPORT="$TMPROOT/queue/reports/ninja_report_cmd_test.yaml"
-  printf 'worker_id: ninja\nparent_cmd: cmd_test\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nresult:\n  summary: ok\n' > "$REPORT"
+  printf 'worker_id: ninja\nparent_cmd: cmd_test\nstatus: completed\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\nresult:\n  summary: ok\n' > "$REPORT"
   PROJECT_ROOT="$TMPROOT"
   source "$ROOT/scripts/lib/review_approval.sh"
   KEY=$(review_report_key "${REPORT#"$TMPROOT"/}")
@@ -60,7 +60,7 @@ approve() {
 @test "regenerated report does not duplicate the gunshi LGTM notice before RC" {
   approve gunshi LGTM "$REPORT"
   printf 'result:\n  summary: regenerated\n' > "$REPORT"
-  printf 'worker_id: ninja\nparent_cmd: cmd_test\ncommit_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n' >> "$REPORT"
+  printf 'worker_id: ninja\nparent_cmd: cmd_test\nstatus: completed\ncommit_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n' >> "$REPORT"
   approve gunshi LGTM "$REPORT"
   [ "$(wc -l < "$TMPROOT/bulletin_calls.log")" -eq 1 ]
   [ -f "$APPROVALS/gunshi_notice.sent" ]
@@ -125,6 +125,7 @@ YAML
   cat > "$REPORT" <<YAML
 parent_cmd: cmd_test
 task_type: scout
+status: completed
 files_modified:
   - path: queue/reports/ninja_report_cmd_test.yaml
     change: report artifact
@@ -197,8 +198,8 @@ YAML
   mkdir -p "$TMPROOT/queue/reports" "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
   rm "$REPORT"
-  printf 'parent_cmd: cmd_test\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n' > "$TMPROOT/queue/reports/a_report_cmd_test.yaml"
-  printf 'parent_cmd: cmd_test\ncommit_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n' > "$TMPROOT/queue/reports/b_report_cmd_test.yaml"
+  printf 'parent_cmd: cmd_test\nstatus: completed\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n' > "$TMPROOT/queue/reports/a_report_cmd_test.yaml"
+  printf 'parent_cmd: cmd_test\nstatus: completed\ncommit_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n' > "$TMPROOT/queue/reports/b_report_cmd_test.yaml"
   local a="$TMPROOT/queue/reports/a_report_cmd_test.yaml" b="$TMPROOT/queue/reports/b_report_cmd_test.yaml"
   approve gunshi LGTM "$a"; approve karo ACCEPT "$a"
   [ ! -e "$TMPROOT/queue/gates/cmd_test/review_gate.done" ]
@@ -220,6 +221,16 @@ YAML
 @test "RC reopens done worker task, clears completion times, and persists task_start" {
   setup_rc_task
   approve karo RC "$REPORT"
+  [ -f "$TMPROOT/queue/gates/cmd_test/review_approvals/karo_rework.seen" ]
+  grep -q '^source: formal_karo_rc$' "$TMPROOT/queue/gates/cmd_test/review_approvals/karo_rework.seen"
+
+  # A delayed Gunshi review must not recreate LGTM after RC changed the report
+  # into revision_requested.
+  run approve gunshi LGTM "$REPORT"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"formal review requires status=completed"* ]]
+  [ ! -f "$APPROVALS/gunshi.yaml" ]
+
   run python3 - "$TMPROOT/queue/tasks/ninja.yaml" <<'PY'
 import sys, yaml
 t = yaml.safe_load(open(sys.argv[1]))['task']
@@ -264,8 +275,9 @@ PY
   [ -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered.$manifest" ]
   approve karo RC "$REPORT"
   [ ! -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered.$manifest" ]
+  bash "$TMPROOT/scripts/report_field_set.sh" "$REPORT" status completed
   revised_manifest=$(review_manifest_fingerprint "$REPORT")
-  [ "$revised_manifest" != "$manifest" ]
+  [ "$revised_manifest" = "$manifest" ]
   approve gunshi LGTM "$REPORT"; approve karo ACCEPT "$REPORT"
   [ -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered.$revised_manifest" ]
   grep -q "^manifest: $revised_manifest$" "$TMPROOT/queue/gates/cmd_test/review_gate.done"

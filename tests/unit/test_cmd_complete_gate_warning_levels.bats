@@ -679,7 +679,9 @@ start = text.index("Cmd quality log (GATE CLEAR):")
 end = text.index("Gunshi verdict update to cmd_design_quality", start)
 section = text[start:end]
 
-assert "if bash \"$SCRIPT_DIR/scripts/cmd_quality_log.sh\" \"$CMD_ID\" \"CLEAR\" \"no\" \"0\" >> \"$LOG_DIR/cmd_complete_gate_async.log\" 2>&1; then" in section
+assert 'review_approvals/karo_rework.seen' in section
+assert '_quality_karo_rework="yes"' in section
+assert "if bash \"$SCRIPT_DIR/scripts/cmd_quality_log.sh\" \"$CMD_ID\" \"CLEAR\" \"$_quality_karo_rework\" \"0\" >> \"$LOG_DIR/cmd_complete_gate_async.log\" 2>&1; then" in section
 assert "cmd_quality_log: OK" in section
 assert "[INFO] cmd_quality_log: WARN (logging failed, non-blocking)" in section
 assert "cmd_quality_log: queued (async)" not in section
