@@ -1966,6 +1966,10 @@ for gate_dir in glob.glob(os.path.join(gates_dir, "cmd_*")):
     except OSError:
         pass
 # Formal approvals count only while bound to the current report generation.
+# A matching gunshi_notice.sent is the durable transition proving that this
+# approved generation was already delivered to Shogun.  Treat that generation
+# as terminal regardless of PASS/FAIL; a later RC followed by a new LGTM has a
+# newer event timestamp and therefore remains detectable.
 for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
     report = load_yaml(report_path)
     cmd_id = str(report.get("parent_cmd") or "") if isinstance(report, dict) else ""
@@ -1983,6 +1987,13 @@ for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
         ts = epoch(approval.get("timestamp"))
         if ts is not None:
             lgtm_events.append((cmd_id, ts))
+            notice_marker = os.path.join(
+                gates_dir, cmd_id, "review_approvals", "reports", key, "gunshi_notice.sent"
+            )
+            try:
+                terminal_events.append((dedup_key(cmd_id), int(os.path.getmtime(notice_marker))))
+            except OSError:
+                pass
 for msg in messages:
     if not isinstance(msg, dict):
         continue

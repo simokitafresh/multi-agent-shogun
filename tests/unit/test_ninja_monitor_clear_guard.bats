@@ -100,6 +100,31 @@ grep -q cmd_formal "$LOG"
     [ "$status" -eq 0 ]
 }
 
+@test "completion_notify_gap: notified formal LGTM generation is terminal even when report verdict is FAIL" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T=$(mktemp -d); trap "rm -rf \"$T\"" EXIT
+SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
+mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_terminal_fail/review_approvals/reports" "$T/scripts" "$STATE_DIR"
+old=$(date -d "-600 seconds" -Iseconds)
+printf "messages: []\n" > "$T/queue/inbox/karo.yaml"; printf "messages: []\n" > "$T/queue/inbox/shogun.yaml"; printf "entries: []\n" > "$T/queue/bulletin_board.yaml"
+printf "#!/bin/bash\necho INBOX_CALLED:\\$@ >> \"$LOG\"\n" > "$T/scripts/inbox_write.sh"; chmod +x "$T/scripts/inbox_write.sh"
+report="$T/queue/reports/n_report_cmd_terminal_fail.yaml"; commit=$(printf a%.0s {1..40})
+printf "parent_cmd: cmd_terminal_fail\ncommit_hash: %s\nverdict: FAIL\n" "$commit" > "$report"
+key=$(printf %s queue/reports/n_report_cmd_terminal_fail.yaml | sha256sum | awk "{print \\$1}")
+approval_dir="$T/queue/gates/cmd_terminal_fail/review_approvals/reports/$key"; mkdir -p "$approval_dir"
+fp=$(sha256sum "$report" | awk "{print \\$1}"):$commit
+printf "timestamp: %s\nresult: LGTM\nfingerprint: %s\n" "$old" "$fp" > "$approval_dir/gunshi.yaml"
+touch -d "-500 seconds" "$approval_dir/gunshi_notice.sent"
+log() { echo "$1" >> "$LOG"; }; NINJA_MONITOR_LGTM_NOTIFY_GRACE=1 check_karo_completion_notify_gap
+check_karo_completion_notify_gap; check_karo_completion_notify_gap
+test "$(grep -c INBOX_CALLED "$LOG" 2>/dev/null || true)" -eq 0
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "completion_notify_gap: terminal GATE CLEAR after LGTM suppresses cmd_3869-type false positive" {
     run bash -lc '
 set -eo pipefail
