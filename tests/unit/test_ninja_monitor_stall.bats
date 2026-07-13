@@ -1103,7 +1103,8 @@ check_three_layer_maintenance
 check_three_layer_maintenance
 
 for _ in {1..100}; do
-    [ -e "$THREE_LAYER_MAINTENANCE_STATE_FILE" ] && [ ! -d "$STATE_DIR/shogun_three_layer_maintenance.lock" ] && break
+    [ -e "$THREE_LAYER_MAINTENANCE_STATE_FILE" ] && ! flock -n "$STATE_DIR/shogun_three_layer_maintenance.lock" -c : 2>/dev/null && { sleep 0.01; continue; }
+    [ -e "$THREE_LAYER_MAINTENANCE_STATE_FILE" ] && break
     sleep 0.01
 done
 
@@ -1149,6 +1150,39 @@ grep -q "already running, skip" "$LOG"
 wait
 '
     [ "$status" -eq 0 ]
+}
+
+@test "check_three_layer_maintenance flock has no stale block after holder exits abnormally" {
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+TMP_ROOT="$(mktemp -d)"
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+THREE_LAYER_MAINTENANCE_INTERVAL=0
+THREE_LAYER_MAINTENANCE_TIMEOUT=1
+THREE_LAYER_MAINTENANCE_STATE_FILE="$STATE_DIR/last"
+THREE_LAYER_MAINTENANCE_LOG="$TMP_ROOT/maintenance.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$STATE_DIR"
+printf %s\\n "#!/usr/bin/env bash" "exit 137" > "$SCRIPT_DIR/scripts/cleanup_three_layer_tmp.sh"
+chmod +x "$SCRIPT_DIR/scripts/cleanup_three_layer_tmp.sh"
+log() { printf "%s\n" "$1" >> "$LOG"; }
+check_three_layer_maintenance
+for _ in {1..100}; do
+    flock -n "$STATE_DIR/shogun_three_layer_maintenance.lock" -c : 2>/dev/null && break
+    sleep 0.01
+done
+check_three_layer_maintenance
+wait
+starts=$(grep -c "tmp cleanup start" "$LOG")
+skips=$(grep -c "already running, skip" "$LOG" || true)
+test "$starts" -eq 2
+test "$skips" -eq 0
+printf "maintenance_started=%s duplicates=0 stale_blocks=%s\n" "$starts" "$skips"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"maintenance_started=2 duplicates=0 stale_blocks=0"* ]]
 }
 
 @test "build_pane_head_tail_excerpt filters blanks and keeps head tail in one pass" {

@@ -6045,7 +6045,7 @@ check_lesson_deprecation_candidates() {
 }
 
 check_three_layer_maintenance() {
-    local now last elapsed lock_dir maintenance_timeout
+    local now last elapsed lock_file lock_fd maintenance_timeout
     now=$EPOCHSECONDS
     maintenance_timeout="${THREE_LAYER_MAINTENANCE_TIMEOUT:-120}"
     last=0
@@ -6057,16 +6057,17 @@ check_three_layer_maintenance() {
     [ "$elapsed" -lt "$THREE_LAYER_MAINTENANCE_INTERVAL" ] && return
 
     mkdir -p "$(dirname "$THREE_LAYER_MAINTENANCE_LOG")"
-    lock_dir="${THREE_LAYER_MAINTENANCE_LOCK_DIR:-$STATE_DIR/shogun_three_layer_maintenance.lock}"
-    if ! mkdir "$lock_dir" 2>/dev/null; then
+    lock_file="${THREE_LAYER_MAINTENANCE_LOCK_FILE:-$STATE_DIR/shogun_three_layer_maintenance.lock}"
+    exec {lock_fd}>"$lock_file"
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
         log "THREE-LAYER-MAINTENANCE: already running, skip"
         return
     fi
-    # Claim the interval before detaching. The mkdir lock supplies single-flight;
-    # the monitor loop never waits for maintenance or its timeout.
+    # Claim the interval before detaching. The child inherits the locked FD;
+    # the kernel releases it even when the child dies without running a trap.
     printf '%s\n' "$now" > "$THREE_LAYER_MAINTENANCE_STATE_FILE" 2>/dev/null || true
     (
-        trap 'rmdir "$lock_dir" 2>/dev/null || true' EXIT
         local cleanup_script recall_script promote_script
         cleanup_script="$SCRIPT_DIR/scripts/cleanup_three_layer_tmp.sh"
         if [ -f "$cleanup_script" ]; then
@@ -6090,6 +6091,9 @@ check_three_layer_maintenance() {
                 || log "THREE-LAYER-MAINTENANCE: obsidian_promote apply failed (non-blocking)"
         fi
     ) &
+    # Only the detached child keeps the lock. Closing the monitor's copy avoids
+    # a permanent lock across hot reload/respawn while preserving single-flight.
+    exec {lock_fd}>&-
 }
 
 # ─── obsidian candidate自動昇格 (cmd_3240) ───
