@@ -219,6 +219,18 @@ expect_allow "git commit (normal)"                  "git commit -m 'test message
 expect_allow "git log -n 5 (not commit)"            "git log -n 5"
 expect_allow "git push (normal)"                    "git push origin feature"
 
+# Shared worktree: stash mutates every tracked dirty path, including live task
+# generations owned by other agents.  All stash subcommands are banned; the
+# documented git-log/git-show alternatives stay readable.
+expect_block "shared worktree bare stash"            "git stash"
+expect_block "shared worktree stash push"            "git stash push -m 'temporary'"
+expect_block "shared worktree stash pop"             "git stash pop"
+expect_block "shared worktree stash apply"           "git stash apply stash@{0}"
+expect_block "compound command stash"                "cd /tmp && git stash --include-untracked"
+expect_block "read-only stash subcommand also closed" "git stash list | head -3"
+expect_allow "stash reflog inspection alternative"   "git log -g refs/stash -3"
+expect_allow "stash object inspection alternative"   "git show stash@{0} --stat"
+
 # ─── Guard 2: yaml dump on operational YAML ───
 # Build test strings dynamically to avoid GP-136 pre-commit false positive
 _yd="yaml.dum"; _yd+="p"

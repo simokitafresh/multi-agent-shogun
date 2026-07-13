@@ -527,6 +527,19 @@ pre_bash_combined_eval_command() {
         return 1
     fi
 
+    # Shared-worktree invariant: `git stash` is never local to the invoking agent.
+    # It snapshots and restores every tracked dirty path by default, including the
+    # live queue/tasks and queue/reports state owned by other agents.  On 2026-07-13
+    # one bare stash rewound five task generations and resurrected three archived
+    # reports.  Ban the whole stash command family (including pop/apply/list/show)
+    # so aliases/options/compound commands cannot create a bypass.  Read-only
+    # inspection remains available through `git log -g refs/stash` and
+    # `git show stash@{N}`; task-scoped preservation must use a scoped commit.
+    if [[ "$command" =~ (^|[[:space:]\;\&\|])git[[:space:]]+stash([[:space:]\;\&\|]|$) ]]; then
+        pre_bash_combined_emit_deny "BLOCKED(GA-239): git stash is forbidden in the shared multi-agent worktree. It can rewind other agents' tracked task/report YAML. Preserve only assigned files with a scoped commit; inspect existing stashes with 'git log -g refs/stash' or 'git show stash@{N}'."
+        return 1
+    fi
+
     if [[ "$command" == *'yaml.dump'* || "$command" == *'yaml.safe_dump'* ]]; then
         if [[ "$command" == *'python3'* || "$command" == *'python '* || "$command" == *$'python\t'* || "$command" == *'python -'* ]]; then
             for pattern in "queue/" "tasks/" "shogun_to_karo" "karo_snapshot" "inbox/" "reports/"; do
