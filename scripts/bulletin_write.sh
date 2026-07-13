@@ -405,7 +405,7 @@ if [[ -x "$SCRIPT_DIR/scripts/yaml_auto_archive.sh" ]]; then
 fi
 
 # --- 投稿者以外に自動通知 ---
-INBOX_WRITE="$SCRIPT_DIR/scripts/inbox_write.sh"
+INBOX_WRITE="${BULLETIN_INBOX_WRITE:-$SCRIPT_DIR/scripts/inbox_write.sh}"
 if [[ -f "$INBOX_WRITE" ]]; then
     # BULLETIN_NOTIFY: 環境変数で通知先を限定可能(カンマ区切り)
     # 未指定時は将軍+家老+軍師の全3者
@@ -446,7 +446,13 @@ if [[ -f "$INBOX_WRITE" ]]; then
         local target="$1"
         local attempt=1
         while (( attempt <= NOTIFY_RETRIES )); do
-            if bash "$INBOX_WRITE" "$target" "掲示板新規投稿($ENTRY_ID): ${CONTENT}" bulletin_notify "$POSTED_BY" 2>/dev/null; then
+            # 呼出元のtest/fixture用INBOX_WRITE_*を継承すると、掲示板は正本へ
+            # 書けても通知だけ別rootへ逸脱する。通知rootはbulletin rootへ固定する。
+            if INBOX_WRITE_ROOT_OVERRIDE="$SCRIPT_DIR" \
+                INBOX_WRITE_TEST="${BULLETIN_INBOX_WRITE_TEST:-}" \
+                bash "$INBOX_WRITE" "$target" \
+                "掲示板新規投稿($ENTRY_ID): ${CONTENT}" \
+                bulletin_notify "$POSTED_BY" bulletin_notify; then
                 if ! pgrep -f "inbox_watcher.sh ${target}" >/dev/null 2>&1; then
                     echo "[bulletin_write] WARN: inbox_watcher not running for ${target} — nudge may be lost" >&2
                 fi

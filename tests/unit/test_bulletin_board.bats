@@ -10,6 +10,7 @@ setup_file() {
     export SRC_AGENT_CONFIG="$PROJECT_ROOT/scripts/lib/agent_config.sh"
     export SRC_MEMORY_DB_LIVE_INSERT="$PROJECT_ROOT/scripts/memory_db_live_insert.py"
     export SRC_MEMORY_DB_LIVE_INSERT_ASYNC="$PROJECT_ROOT/scripts/memory_db_live_insert_async.py"
+    export SRC_INBOX_WRITE="$PROJECT_ROOT/scripts/inbox_write.sh"
     [ -f "$SRC_WRITE" ] || return 1
     [ -f "$SRC_ARCHIVE" ] || return 1
     [ -f "$SRC_CONFIRM" ] || return 1
@@ -17,6 +18,7 @@ setup_file() {
     [ -f "$SRC_AGENT_CONFIG" ] || return 1
     [ -f "$SRC_MEMORY_DB_LIVE_INSERT" ] || return 1
     [ -f "$SRC_MEMORY_DB_LIVE_INSERT_ASYNC" ] || return 1
+    [ -f "$SRC_INBOX_WRITE" ] || return 1
 }
 
 setup() {
@@ -336,6 +338,41 @@ EOF
     [[ "$output" == blt_* ]]
     [ "$(cat "$retry_state")" -eq 2 ]
     [ ! -e "$failure_log" ]
+}
+
+@test "bulletin_write pins real inbox_write to bulletin root for INSIGHT_REPEAT notification" {
+    mkdir -p "$TEST_TMPDIR/queue/inbox"
+    printf 'messages: []\n' > "$TEST_TMPDIR/queue/inbox/shogun.yaml"
+    local failure_log="$TEST_TMPDIR/logs/bulletin_notify_failures.yaml"
+    local payload="INSIGHT_REPEAT: source=manual pending_count=3 threshold=3 latest=INS-probe priority=medium insight_summary=probe"
+
+    # /proc/invalid simulates a leaked caller fixture root. bulletin_write must
+    # override it and use its own root while executing the real inbox_write.
+    run env \
+        BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" \
+        BULLETIN_INBOX_WRITE="$SRC_INBOX_WRITE" \
+        BULLETIN_INBOX_WRITE_TEST=1 \
+        BULLETIN_NOTIFY_FAILURE_LOG="$failure_log" \
+        BULLETIN_NOTIFY_RETRIES=1 \
+        BULLETIN_NOTIFY=shogun \
+        INBOX_WRITE_ROOT_OVERRIDE=/proc/invalid \
+        INBOX_WRITE_TEST=1 \
+        PATH="$PATH" \
+        bash "$TEST_TMPDIR/scripts/bulletin_write.sh" saizo "$payload" false action_required
+
+    [ "$status" -eq 0 ]
+    [ ! -e "$failure_log" ]
+    run python3 - "$TEST_TMPDIR/queue/inbox/shogun.yaml" <<'PY'
+import sys, yaml
+messages = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("messages", [])
+matches = [m for m in messages if m.get("type") == "bulletin_notify"]
+print(len(matches))
+print(matches[0]["from"] if matches else "")
+print(matches[0].get("action", "") if matches else "")
+print("INSIGHT_REPEAT" in matches[0]["content"] if matches else False)
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = $'1\nsaizo\nbulletin_notify\nTrue' ]
 }
 
 @test "bulletin_confirm adds agent to confirmed_by" {
