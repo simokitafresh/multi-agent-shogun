@@ -491,6 +491,33 @@ INFRA_CONTEXT_PATHS: dict[str, list[str]] = {
         "scripts/semantic_",
     ],
 }
+SOURCE_CONTEXT_REGISTRY = os.path.join(root, "scripts", "config", "context_source_commits.tsv")
+
+
+def load_registered_source_contexts() -> frozenset[str]:
+    try:
+        with open(SOURCE_CONTEXT_REGISTRY, encoding="utf-8") as f:
+            return frozenset(
+                line.split("\t", 1)[0].strip()
+                for line in f
+                if line.strip() and not line.lstrip().startswith("#")
+            )
+    except FileNotFoundError:
+        return frozenset()
+
+
+REGISTERED_SOURCE_CONTEXTS = load_registered_source_contexts()
+
+
+def is_registered_source_context(rel_path: str) -> bool:
+    return rel_path in REGISTERED_SOURCE_CONTEXTS
+
+
+def build_missing_source_commit_warning(rel_path: str) -> str:
+    return (
+        f"ALERT: {rel_path} MISSING_SOURCE_COMMIT — registered pathspec contextは"
+        "exact revision境界が必須。日付--since fallbackは禁止"
+    )
 # WSL2/9pマウント上でgit logが数秒〜十数秒かかるため並列実行と組み合わせてこの値で
 # 打ち切る。GA-245実測: 集約後の呼び出しは6秒以下では不安定(5回中2回timeout)、
 # 8秒で安定、安全マージンを見て10秒を既定とする(旧既定3秒は実測を大幅に下回り
@@ -1217,7 +1244,11 @@ if mode == "--dashboard-warnings":
         if updated_at is None:
             warnings.append(build_warning(rel_path, None))
             continue
-        files_for_git.append((project_id, rel_path, abs_path, updated_at, source_commit_marker(abs_path)))
+        source_commit = source_commit_marker(abs_path)
+        if is_registered_source_context(rel_path) and not source_commit:
+            warnings.append(build_missing_source_commit_warning(rel_path))
+            continue
+        files_for_git.append((project_id, rel_path, abs_path, updated_at, source_commit))
     commit_summaries = batch_source_commit_summaries(files_for_git)
     min_source_commits = int(os.environ.get("CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS", "1"))
     alerted_for_group: list[tuple[str, list[str]]] = []
@@ -1242,7 +1273,11 @@ elif mode == "--cmd-warnings":
             if updated_at is None:
                 warnings.append(build_warning(rel_path, None))
                 continue
-            files_for_git.append((current_project, rel_path, abs_path, updated_at, source_commit_marker(abs_path)))
+            source_commit = source_commit_marker(abs_path)
+            if is_registered_source_context(rel_path) and not source_commit:
+                warnings.append(build_missing_source_commit_warning(rel_path))
+                continue
+            files_for_git.append((current_project, rel_path, abs_path, updated_at, source_commit))
         commit_summaries = batch_source_commit_summaries(files_for_git)
         alerted_for_group = []
         for current_project, rel_path, abs_path, updated_at, _source_commit in files_for_git:
@@ -1271,12 +1306,16 @@ elif mode == "--cmd-commit-list":
             updated_at = last_updated_date(abs_path)
             if updated_at is None:
                 continue
+            source_commit = source_commit_marker(abs_path)
+            if is_registered_source_context(rel_path) and not source_commit:
+                print(f"MISSING_SOURCE_COMMIT\t{rel_path}")
+                continue
             cc, details = source_commit_summary_since(
                 current_project,
                 rel_path,
                 abs_path,
                 updated_at,
-                source_commit_marker(abs_path),
+                source_commit,
                 max_details=1000,
             )
             if cc < 0:

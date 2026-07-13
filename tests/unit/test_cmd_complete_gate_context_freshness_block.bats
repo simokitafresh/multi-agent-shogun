@@ -151,6 +151,18 @@ OUT
     [[ "$output" == *"context/dm-signal-frontend.md"* ]]
 }
 
+@test "MISSING_SOURCE_COMMIT for a registered context fails closed and blocks completion" {
+    _write_task hayate infra
+    MATCHING_TASK_FILES=("$TEST_TMPDIR/queue/tasks/hayate.yaml")
+    _write_mock_check_script '
+echo -e "MISSING_SOURCE_COMMIT\tcontext/codd.md"
+'
+    run check_context_freshness_own_commit "cmd_3873"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"source_commit marker missing"* ]]
+    [[ "$output" == *"context/codd.md"* ]]
+}
+
 @test "substring collision guard: cmd_id must be an exact subject prefix, not a partial match" {
     _write_task hayate dm-signal
     MATCHING_TASK_FILES=("$TEST_TMPDIR/queue/tasks/hayate.yaml")

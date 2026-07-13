@@ -484,6 +484,40 @@ EOF
     [[ "$output" == *"ALERT: context/dm-signal-core.md source commits 1件"* ]]
 }
 
+@test "GA-245 registered context without source_commit fails fast before git log" {
+    mkdir -p "$TEST_TMPDIR/scripts/config"
+    printf 'context/dm-signal.md\tdm-signal\n' > "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
+    _create_context "context/dm-signal.md" "$TODAY"
+    _create_archive_cmd "cmd_ga245_fixture" "dm-signal"
+    mkdir -p "$TEST_TMPDIR/bin"
+    cat > "$TEST_TMPDIR/bin/git" <<'EOF'
+#!/usr/bin/env bash
+echo called >> "$TEST_TMPDIR/git-calls.log"
+exec /usr/bin/git "$@"
+EOF
+    chmod +x "$TEST_TMPDIR/bin/git"
+    rm -f "$TEST_TMPDIR/git-calls.log"
+    PATH="$TEST_TMPDIR/bin:$PATH" CFC_OUTPUT_CACHE_TTL=0 run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MISSING_SOURCE_COMMIT"* ]]
+    [ ! -e "$TEST_TMPDIR/git-calls.log" ]
+}
+
+@test "GA-245 registered and enforced context sets are exact" {
+    run python3 - "$SRC_SCRIPT" "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" <<'PY'
+import re, sys
+text=open(sys.argv[1], encoding='utf-8').read()
+registered={line.split('\t',1)[0] for line in open(sys.argv[2], encoding='utf-8') if line.strip() and not line.startswith('#')}
+expected={'context/dm-signal.md','context/dm-signal-core.md','context/dm-signal-frontend.md','context/dm-signal-ops.md','context/dm-signal-research.md','context/codd.md','context/memory-db-queries.md','context/memory-db-schema.md','context/obsidian-link-principles.md'}
+assert registered == expected, (registered, expected)
+for path in expected:
+    assert f'"{path}": [' in text, path
+print(f'registered={len(registered)} enforced={len(expected)}')
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"registered=9 enforced=9"* ]]
+}
+
 @test "duplicate context_file mapping keeps dm-signal.md attached to dm-signal project" {
     local source_repo="$TEST_TMPDIR/source/dm-signal"
     mkdir -p "$source_repo/docs/rule" "$TEST_TMPDIR/projects"

@@ -5668,6 +5668,13 @@ check_context_freshness_own_commit() {
             continue
         fi
 
+        if echo "$commit_list" | grep -q '^MISSING_SOURCE_COMMIT'; then
+            local missing_marker_paths
+            missing_marker_paths=$(echo "$commit_list" | awk -F'\t' '/^MISSING_SOURCE_COMMIT/{print $2}' | tr '\n' ' ')
+            echo "  registered context source_commit marker missing (project=${_proj_id}): ${missing_marker_paths}"
+            _any_block=1
+        fi
+
         if echo "$commit_list" | grep -q '^CHECK_FAILED'; then
             local failed_paths
             failed_paths=$(echo "$commit_list" | awk -F'\t' '/^CHECK_FAILED/{print $2}' | tr '\n' ' ')

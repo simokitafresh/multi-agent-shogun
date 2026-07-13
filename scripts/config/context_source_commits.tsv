@@ -1,0 +1,10 @@
+# Registered context pathspecs requiring an exact source_commit boundary.
+context/dm-signal.md	dm-signal
+context/dm-signal-core.md	dm-signal
+context/dm-signal-frontend.md	dm-signal
+context/dm-signal-ops.md	dm-signal
+context/dm-signal-research.md	dm-signal
+context/codd.md	infra
+context/memory-db-queries.md	infra
+context/memory-db-schema.md	infra
+context/obsidian-link-principles.md	infra
