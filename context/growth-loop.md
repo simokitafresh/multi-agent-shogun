@@ -236,6 +236,7 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 ## 因果リンク
 
 - テスト時間免疫系は新runnerを作らず、既存`run_tests.sh`のtiming/cacheと`test_select.sh`の影響選択を台帳writerへ統合する。静的棚卸し材料 → `docs/research/cmd_3894_test_asset_inventory.md`
+- 計測機構自身の停止を見逃さないため、通常all/unit完走だけが時間台帳の鮮度を更新し、cache/部分runは更新せず、staleをstartup gateでWARNする。→ `docs/research/cmd_3895_timing_ledger_revival.md`
 
 - ← [[deepdive_why_chain_20260321]] Phase 4-5: 自動化×強制=知性の外部化→成長ループの理論的基盤
 - ← [[deepdive_causal_tracing_20260415]] 因果をたどる=成長ループのSystem 2側
