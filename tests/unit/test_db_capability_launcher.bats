@@ -228,10 +228,8 @@ PY
 
   run env DB_CAPABILITY=production_role_probe DB_CAPABILITY_MODE=production_role_probe \
     DB_CAPABILITY_DEPENDENCY_TOOL="$dependency" DB_CAPABILITY_PROJECT_ROOT="$project" \
-    DATABASE_URL='postgresql://user:secret@prod.example.invalid/dm_signal' \
+    DATABASE_URL='postgresql://user:secret@dpg-test-a.singapore-postgres.render.com/dm_signal' \
     python3 "$ROOT/scripts/lib/db_capability_tool.py" run \
-    --expected-resource-identity prod.example.invalid \
-    --expected-database-identity dm_signal \
     --probe-role cmd3881_cap_probe_deadbeef --output "$artifact"
   [ "$status" -eq 0 ]
   [ -f "$artifact" ]
@@ -239,13 +237,19 @@ PY
 
   run env DB_CAPABILITY=production_role_probe DB_CAPABILITY_MODE=production_role_probe \
     DB_CAPABILITY_DEPENDENCY_TOOL="$dependency" DB_CAPABILITY_PROJECT_ROOT="$project" \
-    DATABASE_URL='postgresql://user:secret@prod.example.invalid/dm_signal' \
+    DATABASE_URL='postgresql://user:secret@wrong.example.invalid/dm_signal' \
     python3 "$ROOT/scripts/lib/db_capability_tool.py" run \
-    --expected-resource-identity wrong.example.invalid \
-    --expected-database-identity dm_signal \
     --probe-role cmd3881_cap_probe_deadbeef --output "$artifact"
   [ "$status" -ne 0 ]
-  [[ "$output" == *"does not match DATABASE_URL"* ]]
+  [[ "$output" == *"not the registered Render production resource"* ]]
+
+  run env DB_CAPABILITY=production_role_probe DB_CAPABILITY_MODE=production_role_probe \
+    DB_CAPABILITY_DEPENDENCY_TOOL="$dependency" DB_CAPABILITY_PROJECT_ROOT="$project" \
+    DATABASE_URL='postgresql://user:secret@dpg-test-a.singapore-postgres.render.com/wrong_db' \
+    python3 "$ROOT/scripts/lib/db_capability_tool.py" run \
+    --probe-role cmd3881_cap_probe_deadbeef --output "$artifact"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"not the registered production database"* ]]
 }
 
 @test "locked restore excludes writers and proves empty tables before COPY" {

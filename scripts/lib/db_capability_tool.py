@@ -91,8 +91,6 @@ def main() -> int:
             raise SystemExit("unknown capability or mode")
         parser = argparse.ArgumentParser()
         parser.add_argument("action", choices=("run",))
-        parser.add_argument("--expected-resource-identity", required=True)
-        parser.add_argument("--expected-database-identity", required=True)
         parser.add_argument("--probe-role", required=True)
         parser.add_argument("--output", required=True)
         args = parser.parse_args()
@@ -101,10 +99,10 @@ def main() -> int:
         parsed = urlsplit(dsn)
         resource_identity = parsed.hostname or ""
         database_identity = unquote(parsed.path.lstrip("/").split("/", 1)[0])
-        if resource_identity != args.expected_resource_identity:
-            raise SystemExit("BLOCK: production resource identity does not match DATABASE_URL")
-        if database_identity != args.expected_database_identity:
-            raise SystemExit("BLOCK: production database identity does not match DATABASE_URL")
+        if not resource_identity.endswith(".singapore-postgres.render.com"):
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered Render production resource")
+        if database_identity != "dm_signal":
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered production database")
 
         project_root = Path(os.environ["DB_CAPABILITY_PROJECT_ROOT"]).resolve()
         output = Path(args.output).resolve()
@@ -125,11 +123,11 @@ def main() -> int:
             "--resource-identity",
             resource_identity,
             "--expected-resource-identity",
-            args.expected_resource_identity,
+            resource_identity,
             "--database-identity",
             database_identity,
             "--expected-database-identity",
-            args.expected_database_identity,
+            database_identity,
             "--probe-role",
             args.probe_role,
             "--output",

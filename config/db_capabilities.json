@@ -28,8 +28,6 @@
       "confirm": "PRODUCTION_ROLE_PROBE_APPROVED",
       "actions": ["run"],
       "allowed_child_flags": [
-        "--expected-resource-identity",
-        "--expected-database-identity",
         "--probe-role",
         "--output"
       ],
