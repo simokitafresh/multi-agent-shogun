@@ -86,6 +86,7 @@ FP率60%以上 → ALERT。gate精度劣化の早期発見 → gate改善も成�
 - **複利構造**: 使用強制→利用頻度向上→問題発見頻度向上→改善頻度向上→品質向上→さらに使いやすく→さらに使われる→...加速度的に回る
 - **全エージェント共通**: 将軍(/cdp-browse等)・家老(/cmd-complete等)・軍師(/review-bundle等)・忍者(/report-write等)の全員が対象
 - **実装**: pre-bash-combined.sh Guard 9 (commit d38ab3f4)。手動操作検出→BLOCK+対応スキル名表示
+- **生成側と検査側の契約同期**: 配備必須欄は検査側BLOCKだけでなく起票雛形から生成する。`cmd_skeleton.sh`は`estimated_minutes`と10分超/15分超の構造化例外条件を出力し、配備時workaroundを入口で根絶する。実装・隔離fixture証跡 → `docs/research/cmd_3891_skeleton_deploy_contract.md`
 
 **帰属精度(cmd_2604)**: GATE_SKILL_MAP固定マッピングでgateとスキルを1対1対応。
 スキル別GATE結果の帰属を正確に計測し、改善対象スキルを特定する。

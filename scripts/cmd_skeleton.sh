@@ -101,6 +101,7 @@ cat <<SKELETON
     depends_on: none
     execution_env: "FILL_THIS_or_DELETE: Linux venv必須/RSS計測=/usr/bin/time -v等。不要なら行削除(GS/DB系cmdは必須。origin: cmd_3496 kagemaru PowerShell事故)"
     timeout_minutes: 30
+    estimated_minutes: 10  # 正数必須。10分超はsplit_decision、15分超はexecution_env.long_runtime_reason+measured_runtime_secが配備契約で必須
     quality_gate:
       q1_firefighting: "FILL_THIS: 消火でなく品質向上である理由"
       q2_learning: "FILL_THIS: 忍者の学習機会を奪わない理由"
@@ -139,4 +140,5 @@ cat >&2 <<'GUIDE'
 14. AC4本以上のcmdはBLOCK率75%(score_matrix実測2026-06-26)。AC4+は分割を最初に検討せよ。1CMD1道具(殿裁定cmd_2316)×AC2-3本が最適帯
 15. テスト/CI修正cmdはACに全量実行コマンド・FAIL0・SKIP0・中断再開時の成果物引継ぎを、本番DB書込みcmdはrestore手順・実行identity・破壊時復元証跡を固定せよ。cmd_save.shが不足をBLOCKしgate_fire_logへ記録する。
 16. check関数のoriginと防御対象を逆引きするには: docs/research/cmd_save_gate_catalog.md を参照せよ(82check関数の発火origin・防御対象・severity・教訓逆引き一覧。中間レイヤー: 教訓→設計思想カタログ→個別check関数)
+17. estimated_minutesは正数必須。10分超はsplit_decision、15分超はexecution_envをmappingにしてlong_runtime_reason+measured_runtime_secを記入せよ(deploy_task.shのTEN_MIN_CONTRACT)
 GUIDE
