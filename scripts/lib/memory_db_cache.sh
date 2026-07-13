@@ -58,11 +58,26 @@ refresh_memory_db_cache_async() {
     (
         flock -n 8 2>/dev/null || exit 0
         if command -v timeout >/dev/null 2>&1; then
+            # shellcheck disable=SC2016 # $1/$2 are intentionally expanded by bash -c.
             timeout -k 1 "$timeout_sec" bash -c 'create_memory_db_cache "$1" "$2"' _ "$repo_root" "$source_path" >/dev/null 2>&1 || true
         else
             create_memory_db_cache "$repo_root" "$source_path" >/dev/null 2>&1 || true
         fi
     ) 8>"${cache_path}.refresh.lock" >/dev/null 2>&1 </dev/null &
+}
+
+# warm_memory_db_cache_async <repo_root> <source_path>
+# 起動フローから呼ぶ非同期warm-up入口。refreshと同じlockを使うため、複数の
+# 起動フローや初回readが重なってもcache生成は常にsingle-flightになる。
+warm_memory_db_cache_async() {
+    local repo_root="$1"
+    local source_path="$2"
+    local cache_path
+
+    [ -f "$source_path" ] || return 0
+    cache_path="$(memory_db_cache_path "$repo_root" "$source_path" 2>/dev/null || true)"
+    [ -n "$cache_path" ] || return 0
+    refresh_memory_db_cache_async "$repo_root" "$source_path" "$cache_path"
 }
 
 notify_memory_db_cache_timeout() {
@@ -110,11 +125,17 @@ prepare_memory_db_for_read() {
 
     timeout_sec="${SHOGUN_MEMORY_DB_CACHE_INIT_TIMEOUT:-30}"
     rc=0
+    # async warm-upと同じlockを非blocking取得する。warm-upが既に生成中なら
+    # 待たずに正本へfallbackし、二重生成と初回read遅延をともに防ぐ。
     if command -v timeout >/dev/null 2>&1; then
         export -f create_memory_db_cache
-        timeout -k 1 "$timeout_sec" bash -c 'create_memory_db_cache "$1" "$2"' _ "$repo_root" "$source_path" 2>/dev/null || rc=$?
+        # shellcheck disable=SC2016 # $1/$2 are intentionally expanded by bash -c.
+        timeout -k 1 "$timeout_sec" bash -c \
+            'flock -n 8 2>/dev/null || exit 75; create_memory_db_cache "$1" "$2"' \
+            _ "$repo_root" "$source_path" 8>"${cache_path}.refresh.lock" 2>/dev/null || rc=$?
     else
-        create_memory_db_cache "$repo_root" "$source_path" 2>/dev/null || rc=$?
+        { flock -n 8 2>/dev/null || exit 75; create_memory_db_cache "$repo_root" "$source_path"; } \
+            8>"${cache_path}.refresh.lock" 2>/dev/null || rc=$?
     fi
     if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
         notify_memory_db_cache_timeout "$repo_root" "$timeout_sec"

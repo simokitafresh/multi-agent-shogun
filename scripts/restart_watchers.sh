@@ -16,6 +16,12 @@ if ! flock -n 200; then
     exit 1
 fi
 
+# WSL shutdownで/tmp cacheが消えた直後も、三層記憶preflightより先に生成を始める。
+# 非同期かつ共通ライブラリのflock single-flightなのでwatcher再起動を待たせない。
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/memory_db_cache.sh"
+warm_memory_db_cache_async "$SCRIPT_DIR" "$SCRIPT_DIR/data/multi_agent_shogun_memory.db"
+
 echo "=== inbox_watcher 再起動 ==="
 
 watcher_process_count() {
