@@ -1842,3 +1842,7 @@ load average最大40.05/8コア。全量backend/tests(206ファイル)合計455.
 ## 記憶DBバックアップ棚卸し（cmd_3869）
 
 `data/`配下の記憶DBバックアップ903件/246,244,670,464 bytesを完全二分し、保持22件/5,701,424,128 bytes、削除候補881件/240,543,246,336 bytes（未削除・殿確認待ち）。完全一覧と各行の根拠 → `docs/research/cmd_3869_memory_db_backup_inventory.md`
+
+## DM-Signal outputs陳腐化中間成果物削除（cmd_3871）
+
+`outputs/`配下のDELETE候補38件のうちrg参照検証で10件(cmd_3819/cmd_3825/1026_yotsume DM系8ファイル)が現役設計書・lessons.mdから参照ありと判明しKEEPへ再分類、残28件を削除実行（df実測回収4,804,820,992 bytes≒4.47GiB）。**教訓: DELETE候補リストは前担当者の分類を鵜呑みにせず、AC2のrg参照検証を必ず自分で実行してから削除せよ**。完全一覧 → `docs/research/cmd_3871_stale_artifact_inventory.md`
