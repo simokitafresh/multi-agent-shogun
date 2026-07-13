@@ -25,6 +25,47 @@ teardown() {
     rm -rf "$TMP"
 }
 
+make_split_contexts() {
+    mkdir -p "$TMP/root/context"
+    for name in core ops research; do
+        printf '# %s\n<!-- last_updated: 2026-07-14 cmd_old -->\n<!-- source_commit:%s reason:old evidence:old -->\ncmd_3880 reflected\n' \
+            "$name" "$(git -C "$DM" rev-parse --short HEAD)" > "$TMP/root/context/dm-signal-$name.md"
+    done
+}
+
+@test "GA-249: reflected split 3件を同一commit markerへ同期する" {
+    make_split_contexts
+    printf 'same-day\n' >> "$DM/README.md"
+    git -C "$DM" add README.md && git -C "$DM" commit -qm 'cmd_3880: same-day'
+    head=$(git -C "$DM" rev-parse HEAD)
+    run env SHOGUN_ROOT_DIR="$TMP/root" bash "$GUARD" sync-split --repo "$DM" --commit "$head" --cmd cmd_3880 \
+        --context context/dm-signal-core.md --context context/dm-signal-ops.md --context context/dm-signal-research.md
+    [ "$status" -eq 0 ]
+    [ "$(grep -rl "source_commit:$head" "$TMP/root/context" | wc -l)" -eq 3 ]
+}
+
+@test "GA-249: content未反映1件があればmarker更新0件でfail-closed" {
+    make_split_contexts
+    sed -i 's/cmd_3880 reflected/not reflected/' "$TMP/root/context/dm-signal-ops.md"
+    before=$(sha256sum "$TMP/root/context/"*.md)
+    run env SHOGUN_ROOT_DIR="$TMP/root" bash "$GUARD" sync-split --repo "$DM" --commit "$(git -C "$DM" rev-parse HEAD)" --cmd cmd_3880 \
+        --context context/dm-signal-core.md --context context/dm-signal-ops.md --context context/dm-signal-research.md
+    [ "$status" -eq 1 ]
+    [ "$before" = "$(sha256sum "$TMP/root/context/"*.md)" ]
+}
+
+@test "GA-249: 未統合commitと欠落contextをBLOCKする" {
+    make_split_contexts
+    git -C "$DM" checkout -qb future
+    printf future >> "$DM/README.md" && git -C "$DM" commit -qam future
+    future=$(git -C "$DM" rev-parse HEAD)
+    git -C "$DM" checkout -q master
+    run env SHOGUN_ROOT_DIR="$TMP/root" bash "$GUARD" sync-split --repo "$DM" --commit "$future" --cmd cmd_3880 --context context/dm-signal-core.md
+    [ "$status" -eq 2 ]
+    run env SHOGUN_ROOT_DIR="$TMP/root" bash "$GUARD" sync-split --repo "$DM" --commit "$(git -C "$DM" rev-parse HEAD)" --cmd cmd_3880 --context context/missing.md
+    [ "$status" -eq 1 ]
+}
+
 @test "修正前相当: 証跡なしresearch commit候補をBLOCKする" {
     printf 'design\n' > "$DM/docs/research/design.md"
     git -C "$DM" add docs/research/design.md

@@ -2,7 +2,7 @@
 # DM-Signal docs/research commit -> 本陣 research context reflux fingerprint guard.
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="${SHOGUN_ROOT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 CONTEXT_FILE="${DM_SIGNAL_REFLUX_CONTEXT_FILE:-$ROOT_DIR/context/dm-signal-research.md}"
 DM_SIGNAL_REPO="${DM_SIGNAL_REPO:-/mnt/c/Python_app/DM-signal}"
 
@@ -10,6 +10,80 @@ usage() {
     echo "Usage: $0 prepare --repo PATH --mode synced|non-target --evidence TEXT" >&2
     echo "       $0 check --repo PATH" >&2
     echo "       $0 check-command COMMAND" >&2
+    echo "       $0 sync-split --repo PATH --commit HASH --cmd CMD --context PATH [--context PATH ...]" >&2
+}
+
+sync_split() {
+    local repo="" commit="" cmd=""
+    local -a contexts=()
+    while (($#)); do
+        case "$1" in
+            --repo) repo="${2:-}"; shift 2 ;;
+            --commit) commit="${2:-}"; shift 2 ;;
+            --cmd) cmd="${2:-}"; shift 2 ;;
+            --context) contexts+=("${2:-}"); shift 2 ;;
+            *) usage; return 2 ;;
+        esac
+    done
+    [[ -n "$repo" && "$commit" =~ ^[0-9a-f]{7,40}$ && "$cmd" =~ ^cmd_[A-Za-z0-9_-]+$ && ${#contexts[@]} -gt 0 ]] || { usage; return 2; }
+    git -C "$repo" cat-file -e "${commit}^{commit}" 2>/dev/null || { echo "BLOCK(GA-249): commit不存在: $commit" >&2; return 2; }
+    git -C "$repo" merge-base --is-ancestor "$commit" HEAD || { echo "BLOCK(GA-249): commitはmain/HEAD未統合: $commit" >&2; return 2; }
+
+    # 内容反映を先に証明できたcontextだけを、一回のtransactionでmarker同期する。
+    # 1件でも未反映/欠落なら全ファイルbyte不変で停止する。
+    local context_list
+    context_list=$(printf '%s\n' "${contexts[@]}")
+    CONTEXT_LIST="$context_list" python3 - "$ROOT_DIR" "$commit" "$cmd" <<'PY'
+import os, re, sys, tempfile
+root, commit, cmd = sys.argv[1:]
+rels = [p for p in os.environ.get("CONTEXT_LIST", "").splitlines() if p]
+if len(rels) != len(set(rels)):
+    raise SystemExit("BLOCK(GA-249): duplicate context path")
+prepared = []
+today = __import__('datetime').date.today().isoformat()
+for rel in rels:
+    if not re.fullmatch(r"context/[A-Za-z0-9._-]+\.md", rel):
+        raise SystemExit(f"BLOCK(GA-249): invalid context path: {rel}")
+    path = os.path.join(root, rel)
+    try:
+        text = open(path, encoding="utf-8").read()
+    except OSError:
+        raise SystemExit(f"BLOCK(GA-249): context missing: {rel}")
+    if cmd not in text:
+        raise SystemExit(f"BLOCK(GA-249): content未反映のためmarker同期禁止: {rel} token={cmd}")
+    text, n1 = re.subn(r"<!--\s*last_updated:\s*[^>]*-->", f"<!-- last_updated: {today} {cmd} -->", text, count=1)
+    source = f"<!-- source_commit:{commit} reason:{cmd}_main_integration evidence:{cmd}_content_present -->"
+    text, n2 = re.subn(r"<!--\s*source_commit:[0-9a-f]{7,40}[^>]*-->", source, text, count=1)
+    if n1 != 1 or n2 != 1:
+        raise SystemExit(f"BLOCK(GA-249): marker missing/ambiguous: {rel} last_updated={n1} source_commit={n2}")
+    prepared.append((path, text, open(path, "rb").read()))
+
+temps = []
+try:
+    for path, text, _original in prepared:
+        fd, tmp = tempfile.mkstemp(prefix=".split-sync.", dir=os.path.dirname(path))
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text); f.flush(); os.fsync(f.fileno())
+        temps.append((tmp, path))
+    replaced = []
+    try:
+        for tmp, path in temps:
+            os.replace(tmp, path); replaced.append(path)
+    except BaseException:
+        originals = {path: original for path, _text, original in prepared}
+        for path in replaced:
+            fd, rollback = tempfile.mkstemp(prefix=".split-rollback.", dir=os.path.dirname(path))
+            with os.fdopen(fd, "wb") as f:
+                f.write(originals[path]); f.flush(); os.fsync(f.fileno())
+            os.replace(rollback, path)
+        raise
+    temps.clear()
+finally:
+    for tmp, _ in temps:
+        try: os.unlink(tmp)
+        except FileNotFoundError: pass
+print(f"SPLIT_SYNCED count={len(prepared)} commit={commit} cmd={cmd}")
+PY
 }
 
 # GA-220: repo identityはgit-common-dir(絶対正規化)で比較する。show-toplevelは
@@ -306,5 +380,6 @@ case "${1:-}" in
     prepare) shift; prepare "$@" ;;
     check) [[ "${2:-}" == "--repo" && -n "${3:-}" ]] || { usage; exit 2; }; check_repo "$3" ;;
     check-command) (($# == 2)) || { usage; exit 2; }; check_command "$2" ;;
+    sync-split) shift; sync_split "$@" ;;
     *) usage; exit 2 ;;
 esac
