@@ -14,8 +14,9 @@ setup() {
     export INSIGHT_SOURCE_REPEAT_THRESHOLD=0
     mkdir -p "$TEST_TMPDIR/queue"
     echo "insights: []" > "$TEST_TMPDIR/queue/insights.yaml"
-    mkdir -p "$TEST_TMPDIR/scripts"
+    mkdir -p "$TEST_TMPDIR/scripts/lib"
     cp "$INSIGHT_SCRIPT" "$TEST_TMPDIR/scripts/insight_write.sh"
+    cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$TEST_TMPDIR/scripts/lib/yaml_field_set.sh"
 }
 
 teardown() {
