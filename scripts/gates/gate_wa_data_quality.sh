@@ -64,8 +64,12 @@ run_check_mode_scan() {
             workaround[n] = value
         } else if (key == "category") {
             category[n] = value
+        } else if (key == "root_signature") {
+            root_signature[n] = value
         } else if (key == "detail") {
             detail[n] = value
+        } else if (key == "root_cause") {
+            root_cause[n] = value
         } else if (key == "auto_captured") {
             auto_captured[n] = value
         } else if (key == "event_kind") {
@@ -121,7 +125,34 @@ run_check_mode_scan() {
         }
 
         for (i = 1; i <= n; i++) {
-            key = cmd[i] SUBSEP ninja[i]
+            # clean entries intentionally replace every WA for cmd+ninja.
+            # WA-vs-WA deduplication is narrower: only the same canonical cause
+            # is duplicate.  Legacy records derive a structural fingerprint so
+            # unrelated causes are never collapsed into one "general" bucket.
+            if (workaround[i] == "true") {
+                cause = root_signature[i]
+                if (cause == "") {
+                    cause = "legacy:" category[i] "|" detail[i] "|" root_cause[i]
+                }
+                key = cmd[i] SUBSEP ninja[i] SUBSEP cause
+            } else {
+                key = cmd[i] SUBSEP ninja[i] SUBSEP "__clean__"
+            }
+            clean_key = cmd[i] SUBSEP ninja[i]
+            if (clean_key in clean_seen) {
+                prev_i = clean_seen[clean_key]
+                add_issue_pattern("DUPLICATE", sprintf("DUPLICATE[%d,%d]: %s/%s — keeping clean entry [%d]", prev_i - 1, i - 1, cmd[i], ninja[i], prev_i - 1))
+                continue
+            }
+            if (workaround[i] != "true") {
+                for (candidate in seen) {
+                    split(candidate, parts, SUBSEP)
+                    if (parts[1] == cmd[i] && parts[2] == ninja[i]) {
+                        add_issue_pattern("DUPLICATE", sprintf("DUPLICATE[%d,%d]: %s/%s — keeping clean entry [%d]", seen[candidate] - 1, i - 1, cmd[i], ninja[i], i - 1))
+                    }
+                }
+                clean_seen[clean_key] = i
+            }
             if (!(key in seen)) {
                 seen[key] = i
                 continue
@@ -305,13 +336,40 @@ for i, entry in enumerate(entries):
                 break
 
 seen: dict[str, int] = {}
+clean_seen: dict[str, int] = {}
 dup_indices: list[int] = []
 for i, entry in enumerate(entries):
     if not isinstance(entry, dict):
         continue
     cmd_id = str(entry.get("cmd_id", ""))
     ninja = str(entry.get("ninja", ""))
-    key = f"{cmd_id}|{ninja}"
+    cmd_ninja = f"{cmd_id}|{ninja}"
+    if entry.get("workaround", False):
+        root_signature = str(entry.get("root_signature", "")).strip()
+        if root_signature:
+            cause = root_signature
+        else:
+            cause = "legacy:" + "|".join(
+                str(entry.get(field, "")).strip()
+                for field in ("category", "detail", "root_cause")
+            )
+        key = f"{cmd_ninja}|{cause}"
+    else:
+        key = f"{cmd_ninja}|__clean__"
+
+    if cmd_ninja in clean_seen:
+        prev_i = clean_seen[cmd_ninja]
+        add_issue("DUPLICATE", f"DUPLICATE[{prev_i},{i}]: {cmd_id}/{ninja} — keeping clean entry [{prev_i}]")
+        dup_indices.append(i)
+        continue
+
+    if not entry.get("workaround", False):
+        prior_indices = [prior_i for prior_key, prior_i in seen.items() if prior_key.startswith(f"{cmd_ninja}|")]
+        for prior_i in prior_indices:
+            add_issue("DUPLICATE", f"DUPLICATE[{prior_i},{i}]: {cmd_id}/{ninja} — keeping clean entry [{i}]")
+            dup_indices.append(prior_i)
+        clean_seen[cmd_ninja] = i
+
     if key not in seen:
         seen[key] = i
         continue

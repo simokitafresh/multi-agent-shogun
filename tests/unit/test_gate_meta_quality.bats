@@ -145,6 +145,73 @@ EOF
     [ "$output" = "2" ]
 }
 
+@test "gate_wa_data_quality: canonical cause preserves distinct WA and deduplicates same cause" {
+    cat > "$TEST_TMPDIR/wa.yaml" <<'EOF'
+- cmd_id: cmd_canonical
+  ninja: hayate
+  workaround: true
+  category: report_yaml_format
+  root_signature: report_yaml_format::commit_provenance
+  detail: 既存参照のcommit provenanceが不足した
+  root_cause: verified dependency証跡不足
+- cmd_id: cmd_canonical
+  ninja: hayate
+  workaround: true
+  category: gate_logic_gap
+  root_signature: gate_logic_gap::status_transition
+  detail: completed状態への追記がBLOCKされた
+  root_cause: status遷移順序の不整合
+- cmd_id: cmd_canonical
+  ninja: hayate
+  workaround: true
+  category: gate_logic_gap
+  root_signature: gate_logic_gap::status_transition
+  detail: 同じ原因の後続記録
+  root_cause: status遷移順序の不整合
+EOF
+
+    run env WA_FILE="$TEST_TMPDIR/wa.yaml" bash "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh"
+    [ "$status" -eq 1 ]
+    [ "$(grep -c 'DUPLICATE\[' <<<"$output")" -eq 1 ]
+
+    run env WA_FILE="$TEST_TMPDIR/wa.yaml" bash "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh" --fix
+    [ "$status" -eq 1 ]
+    run grep -c "cmd_id: cmd_canonical" "$TEST_TMPDIR/wa.yaml"
+    [ "$output" = "2" ]
+    run grep -c "report_yaml_format::commit_provenance" "$TEST_TMPDIR/wa.yaml"
+    [ "$output" = "1" ]
+    run grep -c "gate_logic_gap::status_transition" "$TEST_TMPDIR/wa.yaml"
+    [ "$output" = "1" ]
+}
+
+@test "gate_wa_data_quality: legacy structural fingerprint avoids individual cmd allowlists" {
+    cat > "$TEST_TMPDIR/wa.yaml" <<'EOF'
+- cmd_id: cmd_legacy
+  ninja: hayate
+  workaround: true
+  category: deploy_contract
+  detail: estimated_minutesが不足した
+  root_cause: 自然境界の不足
+- cmd_id: cmd_legacy
+  ninja: hayate
+  workaround: true
+  category: deploy_contract
+  detail: QUALITY_CONTRACT射影が不足した
+  root_cause: command以外を評価しない
+- cmd_id: cmd_legacy
+  ninja: hayate
+  workaround: true
+  category: deploy_contract
+  detail: estimated_minutesが不足した
+  root_cause: 自然境界の不足
+EOF
+
+    run env WA_FILE="$TEST_TMPDIR/wa.yaml" bash "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh"
+    [ "$status" -eq 1 ]
+    [ "$(grep -c 'DUPLICATE\[' <<<"$output")" -eq 1 ]
+    ! grep -q "cmd_legacy" "$PROJECT_ROOT/scripts/gates/gate_wa_data_quality.sh"
+}
+
 @test "gate_wa_data_quality: known_ninjas.sh の共有リストでninja汚染を検出する" {
     cat > "$TEST_TMPDIR/wa.yaml" <<'EOF'
 - cmd_id: cmd_bad_ninja
