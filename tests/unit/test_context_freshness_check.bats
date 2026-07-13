@@ -673,7 +673,11 @@ project:
 path: $source_repo
 PROJ
 
-    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
+    local ops_path="$TEST_TMPDIR/context/dm-signal-ops.md"
+    printf '<!-- last_updated: %s -->\n# ops\nSee `docs/research/shared_note.md` for details.\n' \
+        "$STALE_DATE" > "$ops_path"
+    git -C "$TEST_TMPDIR" add "context/dm-signal-ops.md"
+    git -C "$TEST_TMPDIR" commit -q -m "test source update for context/dm-signal-ops.md"
     _create_context "context/dm-signal-research.md" "$STALE_DATE"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
 
@@ -790,4 +794,98 @@ PROJ
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
     [[ "$output" != *"GROUP:"* ]]
+}
+
+# ── GA-237 karo RC(0件化要求): docs/research配下の"cited:"pathspecは、context本文が
+# 既に名指し引用しているファイルへの変更だけを関連commitとして数える。同一fixture
+# (ops.mdが引用していないdocs/researchファイルへの単発commit)の再現をmin_source_commits
+# を緩めずに0件へ抑え、引用済みファイルへの変更は真陽性のままALERTすることを検証する。
+
+@test "cited pathspec ignores commits to docs/research files the context never cites (false positive → 0)" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$TEST_TMPDIR/projects" "$source_repo/docs/research"
+    cat > "$TEST_TMPDIR/projects/dm-signal.yaml" <<PROJ
+project:
+  id: dm-signal
+path: $source_repo
+PROJ
+
+    local abs_path="$TEST_TMPDIR/context/dm-signal-ops.md"
+    mkdir -p "$(dirname "$abs_path")"
+    printf '<!-- last_updated: %s -->\n# ops\nSee `docs/research/cmd_100_recalc_status.md` for details.\n' \
+        "$STALE_DATE" > "$abs_path"
+    git -C "$TEST_TMPDIR" add "context/dm-signal-ops.md"
+    git -C "$TEST_TMPDIR" commit -q -m "test source update for context/dm-signal-ops.md"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'unrelated topic\n' > "$source_repo/docs/research/cmd_200_gs_precompute.md"
+    git -C "$source_repo" add docs/research/cmd_200_gs_precompute.md
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$source_repo" commit -q -m "docs: unrelated GS precompute progress note, never cited by ops.md"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/dm-signal-ops.md source commits"* ]]
+}
+
+@test "cited pathspec still alerts when a cited docs/research file changes (true positive preserved)" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$TEST_TMPDIR/projects" "$source_repo/docs/research"
+    cat > "$TEST_TMPDIR/projects/dm-signal.yaml" <<PROJ
+project:
+  id: dm-signal
+path: $source_repo
+PROJ
+
+    local abs_path="$TEST_TMPDIR/context/dm-signal-ops.md"
+    mkdir -p "$(dirname "$abs_path")"
+    printf '<!-- last_updated: %s -->\n# ops\nSee `docs/research/cmd_100_recalc_status.md` for details.\n' \
+        "$STALE_DATE" > "$abs_path"
+    git -C "$TEST_TMPDIR" add "context/dm-signal-ops.md"
+    git -C "$TEST_TMPDIR" commit -q -m "test source update for context/dm-signal-ops.md"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'recalc status update\n' > "$source_repo/docs/research/cmd_100_recalc_status.md"
+    git -C "$source_repo" add docs/research/cmd_100_recalc_status.md
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$source_repo" commit -q -m "docs: recalc status update, cited by ops.md"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/dm-signal-ops.md source commits 1件"* ]]
+    [[ "$output" == *"docs: recalc status update, cited by ops.md"* ]]
+}
+
+@test "cited pathspec still alerts on plain (non-cited) pathspec entries like backend/app/jobs" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$TEST_TMPDIR/projects" "$source_repo/backend/app/jobs"
+    cat > "$TEST_TMPDIR/projects/dm-signal.yaml" <<PROJ
+project:
+  id: dm-signal
+path: $source_repo
+PROJ
+
+    _create_context "context/dm-signal-ops.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'backend job change\n' > "$source_repo/backend/app/jobs/recalculate_fast.py"
+    git -C "$source_repo" add backend/app/jobs/recalculate_fast.py
+    GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
+    GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
+        git -C "$source_repo" commit -q -m "fix: backend job change unrelated to docs/research"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: context/dm-signal-ops.md source commits 1件"* ]]
 }

@@ -454,11 +454,19 @@ DM_SIGNAL_CONTEXT_PATHS: dict[str, list[str]] = {
         "backend/app/services",
         "backend/tests",
         "docs/rule",
-        "docs/research",
+        "cited:docs/research",
         "render.yaml",
         "tasks/lessons.md",
     ],
 }
+# GA-237/karo RC(2026-07-13): "cited:<dir>"はdocs/researchのような広域共有ディレクトリを
+# 二次的スコープとして持つcontext file専用のマーカー。dm-signal-research.mdのようにdocs/research
+# 自体を主目的として網羅追跡するcontext fileには付けない(新規未引用ファイルを検知できなくなり
+# 逆行するため)。付与したcontext fileでは、そのディレクトリ配下のcommitは自分の本文が既に
+# `docs/research/xxx.md`の形で名指し引用しているファイルを変更した場合のみ関連commitとして
+# 数える。min_source_commitsの既定閾値1(GA-226/L1056で意図的に固定)は一切変更しない —
+# 発火条件ではなく「どのcommitを対象母集団に含めるか」というpathspecの意味的境界を絞る。
+CITED_PATHSPEC_PREFIX = "cited:"
 INFRA_CONTEXT_PATHS: dict[str, list[str]] = {
     "context/codd.md": [
         "scripts/codd",
@@ -577,8 +585,57 @@ def _root_fallback_commit_count_since(
     return count
 
 
+def load_cited_paths(abs_path: str, dirs: list[str]) -> set[str]:
+    """context fileの本文が`<dir>/xxx.md`の形で直接名指し引用しているファイルの集合を返す。
+    "cited:"pathspec entryの関連性フィルタで使う。dirsが空なら空集合。"""
+    cited: set[str] = set()
+    if not dirs:
+        return cited
+    try:
+        with open(abs_path, encoding="utf-8", errors="ignore") as f:
+            text = f.read()
+    except Exception:
+        return cited
+    for d in dirs:
+        d_norm = d.rstrip("/")
+        pattern = re.compile(re.escape(d_norm) + r"/[A-Za-z0-9_./-]+\.[A-Za-z0-9]+")
+        for match in pattern.finditer(text):
+            cited.add(match.group(0))
+    return cited
+
+
+def _commit_touches_relevant_path(
+    changed_paths: list[str],
+    plain_prefixes: list[str],
+    cited_dirs: list[str],
+    cited_files: set[str],
+) -> bool:
+    """変更ファイルのいずれかが、非cited pathspecに一致するか、cited pathspec配下かつ
+    context fileが既に名指し引用しているファイルであれば関連commitとみなす。"""
+    for raw in changed_paths:
+        path = raw.strip()
+        if not path:
+            continue
+        if any(
+            path == prefix or path.startswith(prefix.rstrip("/") + "/")
+            for prefix in plain_prefixes
+        ):
+            return True
+        for cited_dir in cited_dirs:
+            cited_dir_norm = cited_dir.rstrip("/")
+            if (
+                path == cited_dir_norm or path.startswith(cited_dir_norm + "/")
+            ) and path in cited_files:
+                return True
+    return False
+
+
 def source_commit_summary_since(
-    project_id: str, rel_path: str, updated_at: date, source_commit: str | None = None
+    project_id: str,
+    rel_path: str,
+    abs_path: str,
+    updated_at: date,
+    source_commit: str | None = None,
 ) -> tuple[int, list[str]]:
     repo_path, pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
     if not repo_path or not os.path.isdir(repo_path):
@@ -586,20 +643,28 @@ def source_commit_summary_since(
     if root_fallback:
         return _root_fallback_commit_count_since(updated_at, source_commit), []
 
+    cited_dirs = [
+        p[len(CITED_PATHSPEC_PREFIX):] for p in pathspecs if p.startswith(CITED_PATHSPEC_PREFIX)
+    ]
+    plain_pathspecs = [p for p in pathspecs if not p.startswith(CITED_PATHSPEC_PREFIX)]
+    git_pathspecs = [*plain_pathspecs, *cited_dirs]
+    cited_files = load_cited_paths(abs_path, cited_dirs) if cited_dirs else set()
+
     revision = f"{source_commit}..HEAD" if source_commit else None
     cmd = [
         "git",
         "-C",
         repo_path,
         "log",
-        "--pretty=format:%h%x00%s",
+        "--pretty=format:__CFC_C__%x00%h%x00%s",
+        "--name-only",
     ]
     if revision:
         cmd.append(revision)
     else:
         cmd.append(f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00")
-    if pathspecs:
-        cmd.extend(["--", *pathspecs])
+    if git_pathspecs:
+        cmd.extend(["--", *git_pathspecs])
 
     try:
         result = subprocess.run(
@@ -620,17 +685,32 @@ def source_commit_summary_since(
 
     count = 0
     details: list[str] = []
-    for raw_line in result.stdout.splitlines():
-        if "\x00" in raw_line:
-            short_hash, subject = raw_line.split("\x00", 1)
-        else:
-            short_hash, subject = "", raw_line
-        subject = subject.strip()
+    current_hash = ""
+    current_subject = ""
+    changed_paths: list[str] = []
+
+    def flush_commit() -> None:
+        nonlocal count, current_hash, current_subject, changed_paths
+        subject = current_subject.strip()
         if not subject or AUTO_COMMIT_SUBJECT_RE.match(subject):
-            continue
+            return
+        if cited_dirs and not _commit_touches_relevant_path(
+            changed_paths, plain_pathspecs, cited_dirs, cited_files
+        ):
+            return
         count += 1
         if len(details) < 3:
-            details.append(f"{short_hash} {subject}".strip())
+            details.append(f"{current_hash} {subject}".strip())
+
+    for line in result.stdout.splitlines():
+        if line.startswith("__CFC_C__\x00"):
+            flush_commit()
+            _marker, current_hash, current_subject = line.split("\x00", 2)
+            changed_paths = []
+            continue
+        if line.strip():
+            changed_paths.append(line.strip())
+    flush_commit()
     return count, details
 
 
@@ -638,9 +718,9 @@ def _compute_one_commit_count(
     args: tuple[str, str, str, date, str | None],
 ) -> tuple[tuple[str, str], int, list[str]]:
     """ThreadPoolExecutor worker: source_commit_count_since を呼んで結果を返す"""
-    project_id, rel_path, _abs_path, updated_at, source_commit = args
+    project_id, rel_path, abs_path, updated_at, source_commit = args
     count, details = source_commit_summary_since(
-        project_id, rel_path, updated_at, source_commit
+        project_id, rel_path, abs_path, updated_at, source_commit
     )
     return (project_id, rel_path), count, details
 

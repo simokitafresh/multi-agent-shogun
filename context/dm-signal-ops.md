@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
 <!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga237_context_freshness_202607131156 -->
-<!-- source_commit:c84bcd93654c17b344698694257d912bf3847683 (DM-Signal ops対象pathspecの最終同期commit。c84bcd93はP4 AC2実行/FAIL/restore状況の進捗更新のみでops.md記載のOPT-E/deploy/crash-safety/DB SSOTと直接の内容重複なしと確認済み=境界更新のみで解消。根本原因分析は docs/research/ga237_context_freshness_root_cause.md 参照) -->
+<!-- source_commit:c84bcd93654c17b344698694257d912bf3847683 (DM-Signal ops対象pathspecの最終同期commit。c84bcd93はP4 AC2本番1run実行結果=FAIL+restore-locked原状回復という運用上重要な内容を含み、§72へ実質反映済み(v1.4.16)。根本原因分析・境界更新の経緯は docs/research/ga237_context_freshness_root_cause.md 参照) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -85,7 +85,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - PF選択: URLパス直指定(`/portfolio/{id}`)を優先。UI操作時はサイドバーPF一覧を開いて対象名を選択
 - 保有シグナル確認: `/signals`
 - L754: WeightedMultiViewMomentumFilterBlock追加はcontext/dm-signal-core.md §4 BB種別分類の即時更新対象（cmd_karo_hotfix_context_dm_core_ga102_20260620）
-<!-- last_synced_lesson: L881 -->
+<!-- last_synced_lesson: L883 -->
 - L862: cmd_3771 archive payloadとsnapshotの復元正本を区別する（cmd_3826）
 - L864: LayerTimer新Layer追加時は集計ハブへ同時登録する（cmd_3831）
 - L865: L1/L2/L3 cronは固定時間差や上流ロック解放を完了とみなさず、`EtlLayerStatus.last_success_date`が当日になった後だけ次層を実行せよ。cmd_3685でL0(sync-prices)が19s→~700-850sに増大しL1の固定5分起動が409で失敗、L1だけのロック待ちではL2/L3に障害が移るため、`scripts/etl_layer_sync_wait.sh`でL1→L2→L3を同一の実成功契約に統一した（cmd_3832、`docs/research/cmd_3832_sync_tickers_recon.md`）
@@ -94,6 +94,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - L875: 差分テストの母集団定義は隣接AC/設計行からの数値継承を疑い、機構(adapter有無)ごとに独立検証せよ（cmd_karo_recon_cmd3851_adapter_coverage_b_202607120024）
 - L877: 100MB超golden-baselineはmanifestとgitignore archiveへ二層分離せよ（cmd_3854）
 - L879: PASS件数だけでは実データ検証を証明しない、契約テストと実データテストを区別せよ（cmd_karo_verify_p3b_nocode_closure_202607120339）
+- L883: input snapshot IDだけでは差分監査できない（cmd_3872）
 
 ## §36 API認証
 
@@ -1192,6 +1193,8 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - **結論**: §70/§71時点で「push/deploy意図的見送り」だった状態は解消済み。P4統合branch(親`732dfef3`+`8241f41c`)がRender backend(`srv-d4ja7q15pdvs739a4q1g`)へdeploy済み(deploy=`dep-d99oaseq1p3s73d2keb0`、status=live、finishedAt=2026-07-12T12:18:36Z)。**live commit=`34747ad118aebd42a05e00a358f2c709542f3ec9`**。local HEAD(`9252af73`)/origin main(`f17c93cd`)/live(`34747ad1`)の3値は意図的に異なり、以後の本番照合はlive `34747ad1`を用いる(origin/mainとの混同禁止)。
 - **restore契約完成(運用フェイルセーフ)**: negative A(artifact改竄/schema不一致/source commit不一致/DB identity不一致)4/4 PASS、negative B(confirm欠落/lock競合/実行中recalc/途中例外)4/4 PASS、全ケースbusiness write 0・必要時rollback 1。core統合commit=`732dfef3`(restore core+negative A/B+runbook)、対象42→統合後43 PASS/FAIL0/SKIP0。実行側fail-closed境界としてtracked capability launcher(infra commit `4da46f0e2`→`7ba136462`→`b65d32fc5`)+runbookのexecution-rootをlive commitへpinする契約(`9252af73`)を追補。
 - **速度実測(recalculate_fast.py系列)**: shadow run(`run_id=202607112047232OVP4O`)のtotal_elapsed_sec=**497.02秒**(§6-7記載の本番545秒比**-8.80%**、bottleneck=L3_fof)。P1c instrumentationは`P1C_ARTIFACT_DIR`未設定の通常経路でhex書出し条件falseのため本番inert(production DB同run_id 0件で確認済み)。
-- **AC2(本番fullrecalculate 1run照合)の現在地**: 前提不成立blockは全て解消(shadow 2run exact+CI GREEN+restore契約+live hash確定+revert/restore経路)。**残る実行項目**=live `34747ad1`固定worktree/expected_commit確定→credential+one-use nonce→no active recalculation/advisory lock確認→18表pre-snapshot+manifest→fullrecalculate 1回のみ実行→同expected artifactへcanonical exact照合。本番1run自体は未実行。GREEN後はP5(cmd_3827事故条件回帰)で決定性最終宣言。
-- 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.15(§9.1 Phase表)、研究文脈の対応記述: `context/dm-signal-research.md` §57、家老一次照合: 掲示板`blt_20260713_021355`
-- 因果リンク: [[cmd_3861全量FAIL0/SKIP0達成]] -> [[cmd_karo_hotfix_p4_restore_core_integrator_202607121954でrestore契約統合]] -> [[origin main統合push+Render_Auto_Deployでlive=34747ad1確定]] -> [[AC2本番fullrecalculate_1run実行待ち]]
+- **AC2(本番fullrecalculate 1run照合)実行結果(v1.4.16, 2026-07-13 12:00更新, cmd_3870)**: 本番1run実行済み(strict、run id 213、01:26:17〜01:37:44Z=**687.35秒**、error NULL)。**結果はFAIL**: canonical comparatorがexpected input_snapshot_id=`75886e9f`(cmd_3859 shadow由来)とactual=`c2b66a69`(run213実測)の不一致でfail-closed停止(missing/mismatch比較未到達=決定性の反証ではなく照合契約の入力固定不備が主仮説)。P5進行は禁止のまま継続。
+  - **原状回復**: 初回restoreはtrade_performance COPY中のPK duplicateで全rollback(部分復元0)。根因=advisory lockがfullrecalc同士のみ排他し通常writer(`etl_trigger` Background precompute-raw)を止めないため、DELETE→COPY間の隙間で待機writerが再insertしていた。**restore-locked**(18表SHARE ROW EXCLUSIVE一括lock+DELETE後0件assert+COPY後row/sha256二重検証、commit`bc1092695`)を新設し2回目実行で**18/18表・565,756行exact=true**の原状回復を確認(manifest sha=`d9ec7e4f`)。business write時のcrash-safety運用資産としてrestore-lockedをcapability launcherへ追加済み。
+  - **次工程**: `cmd_3872`(input_snapshot_id採番経路の実差分偵察)→照合契約の入力固定方式確定→AC2再挑戦→GREEN後P5(cmd_3827事故条件回帰)。
+- 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.16(§9.1 Phase表)、AC2実行証跡: `/mnt/c/Python_app/DM-signal/docs/research/cmd_3870_p4_ac2_evidence.md`、研究文脈の対応記述: `context/dm-signal-research.md` §57(2026-07-13時点でv1.4.15のまま未反映 — 別途GA相当cmdでの反映対象)、家老一次照合: 掲示板`blt_20260713_021355`
+- 因果リンク: [[cmd_3861全量FAIL0/SKIP0達成]] -> [[cmd_karo_hotfix_p4_restore_core_integrator_202607121954でrestore契約統合]] -> [[origin main統合push+Render_Auto_Deployでlive=34747ad1確定]] -> [[AC2本番fullrecalculate_1run実行(cmd_3870)]] -> [[input_snapshot_id不一致でFAIL・restore-lockedで原状回復]] -> [[cmd_3872入力差分偵察待ち]]
