@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import pwd
 import subprocess
 import sys
 
@@ -223,6 +224,7 @@ def main() -> int:
     except ValueError as exc:
         raise SystemExit(f"BLOCK: {exc}")
     env = {key: os.environ[key] for key in ("PATH", "LANG", "LC_ALL", "TZ") if key in os.environ}
+    env["HOME"] = pwd.getpwuid(os.getuid()).pw_dir
     env.update(credentials)
     env["DB_CAPABILITY"] = args.capability
     env["DB_CAPABILITY_MODE"] = args.mode

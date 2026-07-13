@@ -252,6 +252,40 @@ PY
   [[ "$output" == *"not the registered production database"* ]]
 }
 
+@test "production role probe launcher supplies trusted account HOME to dependency" {
+  fixture="$BATS_TEST_TMPDIR/probe-launcher-repo"
+  mkdir -p "$fixture/scripts/lib" "$fixture/scripts/oneshot" "$fixture/config" \
+    "$fixture/outputs/analysis"
+  cp "$LAUNCHER" "$fixture/scripts/db_capability_launcher.py"
+  cp "$ROOT/scripts/lib/db_capability_tool.py" "$fixture/scripts/lib/db_capability_tool.py"
+  cp "$ROOT/config/db_capabilities.json" "$fixture/config/db_capabilities.json"
+  printf 'projects:\n  - id: dm-signal\n    path: %s\n' "$fixture" > "$fixture/config/projects.yaml"
+  printf '%s\n' \
+    'import os, pathlib, sys' \
+    'pathlib.Path(sys.argv[sys.argv.index("--output") + 1]).write_text(os.environ["HOME"])' \
+    > "$fixture/scripts/oneshot/cmd_3881_db_fence_verify.py"
+  git -C "$fixture" init -q
+  git -C "$fixture" config user.email fixture@example.invalid
+  git -C "$fixture" config user.name fixture
+  git -C "$fixture" add .
+  git -C "$fixture" commit -qm fixture
+  head="$(git -C "$fixture" rev-parse HEAD)"
+  credentials="$BATS_TEST_TMPDIR/probe-launcher.env"
+  printf 'DATABASE_URL=postgresql://user:secret@dpg-test-a.singapore-postgres.render.com/dm_signal\n' > "$credentials"
+  chmod 600 "$credentials"
+  artifact="$fixture/outputs/analysis/home.txt"
+
+  run env HOME=/tmp/untrusted-home python3 "$fixture/scripts/db_capability_launcher.py" \
+    --capability production_role_probe --mode production_role_probe \
+    --confirm PRODUCTION_ROLE_PROBE_APPROVED --nonce "home-$RANDOM" \
+    --credential-file "$credentials" --expected-commit "$head" \
+    --execution-root "$fixture" -- run \
+    --probe-role cmd3881_cap_probe_deadbeef --output "$artifact"
+  [ "$status" -eq 0 ]
+  expected_home="$(python3 -c 'import os,pwd; print(pwd.getpwuid(os.getuid()).pw_dir)')"
+  [ "$(cat "$artifact")" = "$expected_home" ]
+}
+
 @test "locked restore excludes writers and proves empty tables before COPY" {
   run python3 - "$ROOT/scripts/lib/db_capability_tool.py" "$BATS_TEST_TMPDIR" <<'PY'
 import hashlib, importlib.util, pathlib, tempfile, types, sys
