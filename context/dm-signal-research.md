@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-13 cmd_3873 -->
-<!-- dm_signal_research_reflux: fingerprint=6af75672106a53f047ffa75b0f3db45da5e46dafe1f3be25792c44801f8447bd; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgwqc1NuOBuGNtZF8zODczIEFDM+i/veijnDHooYzjgpLov73oqJjmuIjjgb8oY29tbWl05LqI5a6aKeOAgmRvY3MvcmVzZWFyY2gvY21kXzM4NzNfYnVuZGxlX2ltcGxfbm90ZXMubWTjga7miJDmnpznianjgpLopoHntITpgoTmtYE= -->
+<!-- dm_signal_research_reflux: fingerprint=eb4ecb0796daae45d2326f2fd00521c0c36dc2610f04d1ca11f0b50b2d3d28dd; mode=non-target; evidence_b64=Y21kXzM4NjjkuIDlm57pmZDjgorjga7lhahEQuS4luS7o+aknOWIhuWPsOW4s1JD5L+u5q2j44Gn44CB5pei5a2YY29udGV4dOe0ouW8leOBruaBkuS5heS7leanmOWkieabtOOCkuS8tOOCj+OBquOBhA== -->
 <!-- source_commit:4a57a81f9f1bcb5a760258aae40e8190188579e1 (DM-Signal docs/research配下の最終同期commit。GA-238で反映: c84bcd93[v1.4.16]/1ac02744[cmd_3872]/68fc3d95[v1.4.17]/4a57a81f[cmd_3868]の4件を§末尾へ反映済み。次回鮮度チェックはこのcommit以降のdiffのみ照合対象) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
