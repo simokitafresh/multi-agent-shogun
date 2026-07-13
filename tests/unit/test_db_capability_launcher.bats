@@ -141,7 +141,7 @@ PY
 import importlib.util, sys
 spec = importlib.util.spec_from_file_location("launcher", sys.argv[1])
 module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
-contract = {"actions": ["backup", "dry-run", "restore"], "allowed_child_flags": ["--artifact", "--service"]}
+contract = {"actions": ["backup", "dry-run", "restore", "restore-locked"], "allowed_child_flags": ["--artifact", "--service"]}
 for action in contract["actions"]:
     assert module._validate_child_args(contract, ["--", action, "--artifact", "/tmp/a"])[0] == action
 try:
