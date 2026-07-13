@@ -3387,11 +3387,21 @@ PY_MEMORY_REFS
         }
     ' "$task_file" 2>/dev/null)
 
-    # cmd_1512: Standard commit check - skip for scout/recon (no code changes)
+    # cmd_karo_hotfix_recon_report_commit_contract_202607140443:
+    # Read-only tasks must prove that stage/commit was not performed.  Omitting
+    # the check made a correct recon report indistinguishable from an incomplete
+    # implementation report and caused gate false-BLOCKs on task status/progress.
     # cmd_1983: field_get_multiで一括取得済み → task_type変数を直接使用
     local _deploy_task_type="${task_type}"
     local _commit_bc=""
-    if [ "$_deploy_task_type" != "scout" ] && [ "$_deploy_task_type" != "recon" ]; then
+    local _commit_contract_text="${command} ${constraints} ${not_in_scope} ${title}"
+    if [[ "${_deploy_task_type,,}" =~ ^(recon|recon2|scout)$ ]] \
+        || printf '%s\n' "$_commit_contract_text" | grep -qiE \
+            '(コード|ソース|ファイル).*(変更|修正|編集).*(禁止|不可)|(変更|修正|編集).*(禁止|不可).*(コード|ソース|ファイル)|no[ _-]*code[ _-]*change|read[ _-]*only'; then
+        _commit_bc='  commit:
+  - check: "stage/commitを実行していない"
+    result: ""  # yes or no'
+    else
         _commit_bc="  commit:
   - check: git commitが完了したか(untracked/modified=0)
     result: ''  # yes or no"
@@ -3415,7 +3425,7 @@ PY_MEMORY_REFS
         fi
         # GP-190修正: scout_exempt=trueはscout gate免除フラグ。commit要否とは独立。
         # impl taskはscout_exemptに関わらずcommit checkが必要。
-        # (scout/recon taskはline 1336でcommit_bcが生成されないためここに到達しない)
+        # read-only taskは上でno-commit契約を生成するため、gitignore免除で上書きしない。
         if [ -n "$_tp_raw" ]; then
             local -a _tp_paths=()
             if echo "$_tp_raw" | grep -q '^- '; then

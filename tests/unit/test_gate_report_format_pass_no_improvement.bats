@@ -296,6 +296,7 @@ EOF
     git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m init
     cat >> "$task_path" <<EOF
   status: done
+  progress: "AC1完了"
 EOF
     cat > "$rpath" <<EOF
 worker_id: ${worker}
@@ -312,7 +313,7 @@ purpose_validation:
   purpose_gap: ""
 files_modified:
   - path: queue/tasks/${worker}.yaml
-    change: task status updated by recovery
+    change: task status/progress updated by recovery
 lesson_candidate:
   found: false
   no_lesson_reason: "テスト用の報告であるため新規教訓なし"

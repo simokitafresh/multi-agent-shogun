@@ -149,7 +149,7 @@ EOF
     _fixture_project_start
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
-  title: "recon commit skip test"
+  title: "recon no-commit contract test"
   task_type: recon
   parent_cmd: cmd_gp183
   task_id: cmd_gp183_recon
@@ -159,6 +159,37 @@ task:
       description: "既存の挙動を確認する"
 EOF
     _build_report_fixture recon_template
+    _fixture_project_end
+
+    _fixture_project_start
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "recon2 no-commit contract test"
+  task_type: recon2
+  parent_cmd: cmd_recon2_contract
+  task_id: cmd_recon2_contract_recon2
+  project: infra
+  acceptance_criteria:
+    - id: AC1
+      description: "独立系統で現象を確認する"
+EOF
+    _build_report_fixture recon2_template
+    _fixture_project_end
+
+    _fixture_project_start
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "explicit read-only contract test"
+  task_type: normal
+  parent_cmd: cmd_readonly_contract
+  task_id: cmd_readonly_contract_normal
+  project: infra
+  constraints: "コード変更禁止。調査と報告のみ。"
+  acceptance_criteria:
+    - id: AC1
+      description: "現物を読み証跡を報告する"
+EOF
+    _build_report_fixture readonly_template
     _fixture_project_end
 
     _fixture_project_start
@@ -322,13 +353,26 @@ _setup_git_project() {
     [[ "$ac5_block" == *'waive_reason: waive_ac指定'* ]]
 }
 
-@test "recon taskではcommit checkを引き続き注入しない" {
+@test "recon taskはno-commit二値契約を注入する" {
     local report_path
     report_path="$(fixture_report_path recon_template)"
 
     local commit_block
     commit_block="$(report_block "$report_path" "commit")"
-    [ -z "$commit_block" ]
+    [[ "$commit_block" == *'stage/commitを実行していない'* ]]
+    [[ "$commit_block" == *'result: ""'* ]]
+}
+
+@test "recon2 taskもno-commit二値契約を注入する" {
+    local commit_block
+    commit_block="$(report_block "$(fixture_report_path recon2_template)" "commit")"
+    [[ "$commit_block" == *'stage/commitを実行していない'* ]]
+}
+
+@test "コード変更禁止taskはno-commit二値契約を注入する" {
+    local commit_block
+    commit_block="$(report_block "$(fixture_report_path readonly_template)" "commit")"
+    [[ "$commit_block" == *'stage/commitを実行していない'* ]]
 }
 
 @test "recon task template includes existing dependency and memory reference write examples" {
