@@ -216,6 +216,7 @@ cmd_2673-2676で4件全てL5化完了(2026-05-11):
 - **Level 5到達後**: 「BLOCKされた時の学び」を最大化するL6を考えよ。FIX hint/弱点注入/失敗履歴の横展開
 - GP提案時: `defense_level`フィールドにLevelを明記。Level 4以下なら「Level 5化できないか？」を自問
 - **BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め
+- **教訓注入は適合条件を狭く機械化する**: useful率0%の5教訓はタグ/条件を絞り、通常infra taskへの空振りを5→0件、即時シミュレーションでuseful率24.4%→27.8%（+3.4pt）に改善した（cmd_3890）。→ `docs/research/cmd_3855_lesson_injection_precision.md`
 
 **計測指標**: Level 4:Level 5の比率。2026-05-10時点 = Level5:7件(44%)。Level 5比率の向上が成長の指標。L6は「BLOCK→自力修正→PASS遷移率」で計測。
 
