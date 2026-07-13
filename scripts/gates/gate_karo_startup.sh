@@ -17,6 +17,22 @@ _KARO_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo 
 
 overall="OK"
 alerts=()
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"
+_disk_measure="$(disk_space_watch_measure 2>/dev/null || true)"
+IFS='|' read -r _disk_status _disk_available_kb _disk_warn_gb _disk_danger_gb _disk_mount <<< "$_disk_measure"
+if [ "$_disk_status" = "BLOCK" ]; then
+    _disk_free_gb="$(disk_space_watch_human_gb "$_disk_available_kb")"
+    overall="BLOCK"
+    alerts+=("disk残量危険: ${_disk_mount} free=${_disk_free_gb}GB < danger=${_disk_danger_gb}GB。回収対応完了まで通常作業開始禁止")
+elif [ "$_disk_status" = "WARN" ]; then
+    _disk_free_gb="$(disk_space_watch_human_gb "$_disk_available_kb")"
+    overall="WARN"
+    alerts+=("disk残量警告: ${_disk_mount} free=${_disk_free_gb}GB < warn=${_disk_warn_gb}GB")
+elif [ "$_disk_status" != "OK" ]; then
+    overall="ALERT"
+    alerts+=("disk残量計測失敗: ${DISK_WATCH_MOUNT_PATH:-/mnt/c}")
+fi
 STARTUP_STDERR_LOG="$SCRIPT_DIR/logs/gate_karo_startup_stderr.log"
 STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/karo_startup_alert_history.tsv"
 STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-1}"
@@ -2619,6 +2635,7 @@ echo "  理解を出力するな。使え。contextファイル更新だけで�
 
 # --- 総合判定 ---
 echo ""
+[ "${_disk_status:-}" = "BLOCK" ] && overall="BLOCK"
 echo "=== 総合判定: $overall ==="
 if [ ${#alerts[@]} -gt 0 ]; then
     for a in "${alerts[@]}"; do

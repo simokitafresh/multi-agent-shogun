@@ -1851,3 +1851,7 @@ load average最大40.05/8コア。全量backend/tests(206ファイル)合計455.
 ## DM-Signal outputs陳腐化中間成果物削除（cmd_3871）
 
 `outputs/`配下のDELETE候補38件のうちrg参照検証で10件(cmd_3819/cmd_3825/1026_yotsume DM系8ファイル)が現役設計書・lessons.mdから参照ありと判明しKEEPへ再分類、残28件を削除実行（df実測回収4,804,820,992 bytes≒4.47GiB）。**教訓: DELETE候補リストは前担当者の分類を鵜呑みにせず、AC2のrg参照検証を必ず自分で実行してから削除せよ**。完全一覧 → `docs/research/cmd_3871_stale_artifact_inventory.md`
+
+## `/mnt/c`残量の事前検知（cmd_3875）
+
+df計測SSOT=`scripts/lib/disk_space_watch.sh`。将軍/家老startupは警告域でALERT、危険域で総合BLOCK、`ninja_monitor.sh`は家老へ`disk_space_alert`通知して`gate_fire_log`へ記録する。既定50GB/20GB、環境変数で調整可能。動作証跡 → `docs/research/cmd_3875_disk_watch.md`

@@ -50,6 +50,7 @@ source "$SCRIPT_DIR/lib/cli_adapter.sh"
 source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
+source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"
 
 # --- CTX profile cache（L4-R?: cli_profile_getサブシェル呼び出し削減） ---
 # update_context_pct ループ内での$(cli_profile_get ...)サブシェル(78ms/回)を排除するグローバルキャッシュ
@@ -178,6 +179,31 @@ fi  # end NINJA_MONITOR_LIB_ONLY guard (daemon init)
 
 log() {
     printf '[%(%Y-%m-%d %H:%M:%S)T] %s\n' -1 "$1" >> "$LOG"
+}
+
+check_disk_space_watch() {
+    local measurement status available_kb warn_gb danger_gb mount_path free_gb message now
+    local state_file="${DISK_WATCH_STATE_FILE:-$STATE_DIR/shogun_disk_space_watch.last}"
+    local cooldown="${DISK_WATCH_NOTIFY_COOLDOWN_SEC:-1800}"
+    measurement="$(disk_space_watch_measure 2>/dev/null || true)"
+    IFS='|' read -r status available_kb warn_gb danger_gb mount_path <<< "$measurement"
+    [[ "$status" = "WARN" || "$status" = "BLOCK" ]] || return 0
+    free_gb="$(disk_space_watch_human_gb "$available_kb")"
+    now=$EPOCHSECONDS
+    local last_status="" last_epoch=0
+    if [[ -f "$state_file" ]]; then
+        read -r last_status last_epoch < "$state_file" || true
+    fi
+    if [[ "$status" = "$last_status" && "$last_epoch" =~ ^[0-9]+$ ]] && (( now - last_epoch < cooldown )); then
+        return 0
+    fi
+    message="【disk残量${status}】${mount_path} free=${free_gb}GB (warn=${warn_gb}GB danger=${danger_gb}GB)。回収タスクを即時配備せよ。"
+    if send_inbox_message karo "$message" disk_space_alert; then
+        mkdir -p "$(dirname "$state_file")"
+        printf '%s %s\n' "$status" "$now" > "$state_file"
+        disk_space_watch_log_fire "$SCRIPT_DIR" "$status" "$message"
+        log "DISK-SPACE-${status}: notified karo free=${free_gb}GB"
+    fi
 }
 
 acquire_singleton_lock() {
@@ -6946,6 +6972,8 @@ while true; do
     fi
 
     # ═══ CI赤検知チェック（5分間隔 cmd_715） ═══
+    check_disk_space_watch
+
     if [ $((cycle % 15)) -eq 0 ]; then
         bash "$SCRIPT_DIR/scripts/ci_status_check.sh" 2>>"$SCRIPT_DIR/logs/ci_status_check.log" || true
     fi

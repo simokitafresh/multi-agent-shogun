@@ -38,6 +38,23 @@ fi
 
 overall="OK"
 alerts=()
+# /mnt/c capacity is a startup invariant: danger blocks normal work, warning is visible.
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"
+_disk_measure="$(disk_space_watch_measure 2>/dev/null || true)"
+IFS='|' read -r _disk_status _disk_available_kb _disk_warn_gb _disk_danger_gb _disk_mount <<< "$_disk_measure"
+if [ "$_disk_status" = "BLOCK" ]; then
+    _disk_free_gb="$(disk_space_watch_human_gb "$_disk_available_kb")"
+    overall="BLOCK"
+    alerts+=("disk残量危険: ${_disk_mount} free=${_disk_free_gb}GB < danger=${_disk_danger_gb}GB。回収対応完了まで通常作業開始禁止")
+elif [ "$_disk_status" = "WARN" ]; then
+    _disk_free_gb="$(disk_space_watch_human_gb "$_disk_available_kb")"
+    overall="WARN"
+    alerts+=("disk残量警告: ${_disk_mount} free=${_disk_free_gb}GB < warn=${_disk_warn_gb}GB")
+elif [ "$_disk_status" != "OK" ]; then
+    overall="ALERT"
+    alerts+=("disk残量計測失敗: ${DISK_WATCH_MOUNT_PATH:-/mnt/c}")
+fi
 # ダイジェスト用変数（殿裁定2026-03-24: grepフィルタで情報欠落→想像で埋める問題の根本修正）
 _d_insights=0
 _d_proposals=0
@@ -3848,6 +3865,8 @@ echo "  (3) 回答に[MEM: memory_db ts=YYYY-MM-DD]タグで引用"
 echo "  理解を出力するな。使え。contextファイル更新だけでは三層貫通ではない"
 
 echo ""
+# Later checks may assign WARN/ALERT directly; disk danger is an overriding invariant.
+[ "${_disk_status:-}" = "BLOCK" ] && overall="BLOCK"
 echo "=== 総合判定: $overall ==="
 if [ ${#alerts[@]} -gt 0 ]; then
     for a in "${alerts[@]}"; do
