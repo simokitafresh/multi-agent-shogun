@@ -24,13 +24,19 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 QUEUE_FILE="${CMD_SKELETON_QUEUE_FILE:-$PROJECT_DIR/queue/shogun_to_karo.yaml}"
 ARCHIVE_CMD_DIR="${CMD_SKELETON_ARCHIVE_CMD_DIR:-$PROJECT_DIR/queue/archive/cmds}"
 LAST_CMD_FILE="${CMD_SKELETON_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_last_cmd.txt}"
+RESERVATION_FILE="${CMD_SKELETON_RESERVATION_FILE:-$PROJECT_DIR/config/cmd_id_reservations.txt}"
+RESERVATION_LOCK="${CMD_SKELETON_RESERVATION_LOCK:-${RESERVATION_FILE}.lock}"
 
 TITLE="${1:-FILL_THIS: タイトル(パリティ/新規作成/new_fileの語を含めるな=偽陽性トリガー)}"
 PROJECT="${2:-FILL_THIS_project}"
 
-# --- 次cmd_id算出: queue + last_cmd の最大値+1 ---
+# --- 次cmd_id算出: queue + last_cmd + 明示予約の最大値+1 ---
 # archiveは採番の正本にしない: cmd_9997-9999等の帯域外IDが混在し採番が飛ぶ(実測2026-06-10)。
-# last_cmdはcmd_save PASS毎に更新される=連番の正本。queueは保存前の手動採番をカバー。
+# last_cmdはcmd_save PASS毎に更新される。queueは保存前の手動採番、予約SSOTは設計段階の未来IDをカバー。
+# flockを採番から予約追記まで保持し、並行skeletonが同じ番号を返す競合を防ぐ。
+mkdir -p "$(dirname "$RESERVATION_FILE")" "$(dirname "$RESERVATION_LOCK")"
+exec 9>>"$RESERVATION_LOCK"
+flock -x 9
 max_id=0
 if [[ -f "$QUEUE_FILE" ]]; then
     while IFS= read -r line; do
@@ -46,7 +52,20 @@ if [[ -f "$LAST_CMD_FILE" ]]; then
         (( n > max_id )) && max_id=$n
     fi
 fi
-# フォールバック: queue/last_cmdが共に空の環境のみarchiveを参照
+# 予約形式: cmd_N または cmd_A-cmd_B。コメント/空行は無視する。
+if [[ -f "$RESERVATION_FILE" ]]; then
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^cmd_([0-9]+)-cmd_([0-9]+)([[:space:]]|$) ]]; then
+            n="${BASH_REMATCH[2]}"
+        elif [[ "$line" =~ ^cmd_([0-9]+)([[:space:]]|$) ]]; then
+            n="${BASH_REMATCH[1]}"
+        else
+            continue
+        fi
+        (( n > max_id )) && max_id=$n
+    done < "$RESERVATION_FILE"
+fi
+# フォールバック: queue/last_cmd/予約が全て空の環境のみarchiveを参照
 if (( max_id == 0 )) && [[ -d "$ARCHIVE_CMD_DIR" ]]; then
     while read -r n; do
         (( n > max_id )) && max_id=$n
@@ -54,6 +73,7 @@ if (( max_id == 0 )) && [[ -d "$ARCHIVE_CMD_DIR" ]]; then
 fi
 NEXT_ID=$(( max_id + 1 ))
 TODAY="$(date +%Y-%m-%d)"
+printf 'cmd_%s skeleton %s\n' "$NEXT_ID" "$TODAY" >> "$RESERVATION_FILE"
 
 # --- 雛形出力(stdout=貼付け用YAML。ガイドはFILL_THIS内に埋込み) ---
 cat <<SKELETON
