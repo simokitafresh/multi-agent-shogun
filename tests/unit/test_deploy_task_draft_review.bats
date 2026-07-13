@@ -341,3 +341,116 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" == *"quality_contract: PASS"* ]]
 }
+
+@test "structured direct detector quality contract is canonical YAML and not a false positive" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  project: infra
+  purpose: "新規gateを追加する: 日本語と引用符 'single' / \"double\""
+  acceptance_criteria:
+    - id: AC1
+      description: action conversionはBLOCKして停止する
+    - id: AC2
+      description: gate_fire_logとdetector_fp_rateで偽陽性率を計測する
+  quality_gate:
+    action_conversion: "欠落時はBLOCK"
+    fp_measurement: "false_positiveを計測"
+YAML
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"
+        deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"
+    '
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "PASS" ]
+}
+
+@test "structured direct detector quality contract fails closed for each missing requirement" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  project: infra
+  purpose: 新規hookを追加する
+  acceptance_criteria:
+    - description: 実装後に通知する
+  quality_gate:
+    note: 品質を確認する
+YAML
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"
+        deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"
+    '
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "WARN(action=missing,fp=missing)" ]
+
+    sed -i 's/実装後に通知する/BLOCKして停止する/' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    run bash -lc 'export DEPLOY_TASK_LIB_ONLY=1; source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"; deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"'
+    [ "$output" = "WARN(action=pass,fp=missing)" ]
+
+    sed -i 's/品質を確認する/detector_fp_rateで計測する/' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    run bash -lc 'export DEPLOY_TASK_LIB_ONLY=1; source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"; deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"'
+    [ "$output" = "PASS" ]
+}
+
+@test "non-candidate structured task remains not applicable" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  project: infra
+  acceptance_criteria:
+    - description: 既存の文書を確認する
+  quality_gate:
+    action_conversion: BLOCK
+    fp_measurement: gate_fire_log
+YAML
+
+    run bash -lc 'export DEPLOY_TASK_LIB_ONLY=1; source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"; deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"'
+    [ "$status" -eq 0 ]
+    [ "$output" = "NOT_APPLICABLE" ]
+}
+
+@test "block scalar and heredoc-like structured text retain quality contract meaning" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  project: infra
+  purpose: |
+    新規gateを追加する。
+    cat <<'CHECK'
+    引用符: "値"
+    CHECK
+  acceptance_criteria:
+    - description: |
+        欠落した場合はBLOCKして停止する。
+  quality_gate:
+    fp_measurement: |
+      gate_fire_log と detector_fp_rate で偽陽性を計測する。
+YAML
+
+    run bash -lc 'export DEPLOY_TASK_LIB_ONLY=1; source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"; deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"'
+    [ "$status" -eq 0 ]
+    [ "$output" = "PASS" ]
+}
+
+@test "linked-worktree task path uses the same read-only projection" {
+    mkdir -p "$TEST_PROJECT/.karo_worktrees/feature/queue/tasks"
+    cat > "$TEST_PROJECT/.karo_worktrees/feature/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  project: infra
+  acceptance_criteria:
+    - description: 新規hook追加時はBLOCKして停止する
+  quality_gate:
+    fp_measurement: gate_fire_logでdetector_fp_rateを計測する
+YAML
+    before="$(sha256sum "$TEST_PROJECT/.karo_worktrees/feature/queue/tasks/sasuke.yaml")"
+
+    run bash -lc 'export DEPLOY_TASK_LIB_ONLY=1; source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"; deploy_task_quality_contract_result "'"$TEST_PROJECT"'/.karo_worktrees/feature/queue/tasks/sasuke.yaml"'
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "PASS" ]
+    [ "$(sha256sum "$TEST_PROJECT/.karo_worktrees/feature/queue/tasks/sasuke.yaml")" = "$before" ]
+}

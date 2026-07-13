@@ -8830,17 +8830,38 @@ deploy_task_quality_contract_result() {
     local task_block applicable action fp
     [[ -f "$task_file" ]] || { printf 'UNAVAILABLE'; return 0; }
     task_block="$(python3 - "$task_file" <<'PY' 2>/dev/null
-import sys, yaml
+import io, sys, yaml
+class CanonicalProjectionDumper(yaml.SafeDumper):
+    # The shared line-oriented evaluator treats indentation as the section
+    # boundary. Keep sequence items nested beneath their mapping key.
+    def increase_indent(self, flow=False, indentless=False):
+        return super().increase_indent(flow, False)
+
 try:
     data = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
     task = data.get('task', data)
     if isinstance(task, dict):
-        # The shared evaluator only needs the detector-relevant text.  Emit a
-        # stable, read-only projection instead of serializing operational YAML.
-        for key in ('project', 'title', 'purpose', 'command', 'acceptance_criteria', 'quality_gate'):
-            value = task.get(key)
-            if value not in (None, '', [], {}):
-                print(f'{key}: {value}')
+        # The shared evaluator only needs the detector-relevant text. Emit a
+        # deterministic canonical-YAML projection to stdout; never write back
+        # to the operational task. Python repr loses YAML nesting and makes
+        # structured AC/quality_gate text invisible to the shared evaluator.
+        keys = ('project', 'title', 'purpose', 'command', 'acceptance_criteria', 'quality_gate')
+        projection = {key: task[key] for key in keys if task.get(key) not in (None, '', [], {})}
+        stream = io.StringIO()
+        dumper = CanonicalProjectionDumper(
+            stream,
+            allow_unicode=True,
+            default_flow_style=False,
+            sort_keys=False,
+            width=4096,
+        )
+        try:
+            dumper.open()
+            dumper.represent(projection)
+            dumper.close()
+        finally:
+            dumper.dispose()
+        print(stream.getvalue(), end='')
 except Exception:
     pass
 PY
