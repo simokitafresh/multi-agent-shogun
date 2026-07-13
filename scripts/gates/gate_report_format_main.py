@@ -11,6 +11,23 @@ import sys
 import yaml
 
 
+# gate_report_format.sh の contamination check(_CC_CHECK)と同一のread-only/
+# commit禁止マーカー。忍者が"commit:"項目にread-only遵守を記述した場合、
+# commit完了の申告として扱わない(両ゲートで判定基準を一致させる)。
+_READONLY_COMMIT_MARKERS = (
+    "read-only",
+    "readonly",
+    "読み取り専用",
+    "commit禁止",
+    "コミット禁止",
+    "stage/commitを実行していない",
+    "stage/commitを実行していないか",
+    "stage・commit",
+    "stage・commit・revert",
+    "stage・commit・revert・削除",
+)
+
+
 def _iter_task_acceptance_criteria(task_data):
     ac = task_data.get("acceptance_criteria", [])
     if isinstance(ac, dict):
@@ -584,8 +601,8 @@ def main() -> int:
             elif verdict == "FAIL" and not bc_has_no:
                 hints.append('GP-128 WARN: verdict=FAIL but all binary_checks are "yes" — 外部制約によるFAILか確認せよ')
 
-    # ─── binary_checks 客観裏付けチェック(a)(b)(c) [cmd_2124] ───
-    # WARNのみ（段階的導入。BLOCKなし）
+    # ─── binary_checks 客観裏付けチェック(a)(b)(c)(d) [cmd_2124, cmd_karo_hotfix_report_commit_contract_202607131320] ───
+    # (a)(b)(c)はWARNのみ（段階的導入）。(d)はcommit_hash欠落をBLOCK（review_approval後段BLOCKの前段検出）
     if isinstance(bc, dict) and bc:
         _pc_for_check = str(data.get("parent_cmd", "") or "").strip()
 
@@ -637,6 +654,56 @@ def main() -> int:
                     hints.append(
                         f"GP-201b WARN: commit+push ACがyesだが直近5コミットに{_pc_for_check}が見つからない — "
                         "pushが完了しているか確認せよ"
+                    )
+        except Exception:
+            pass
+
+        # (d) commit完了を申告(binary_checks.commit=yes)した報告のcommit_hash欠落を
+        # review_approval到達前にBLOCK。scripts/lib/review_approval.sh
+        # review_report_fingerprint()のno-code(scout/recon)契約は「commit未申告」
+        # (not commit_claimed)が前提なので、commit_claimed=yesの時点でその契約上も
+        # 常にfail-closed — ここでは前段の(b)と異なりparent_cmdの直近git log一致を
+        # 問わない(karo_direct hotfixのようにparent cmd sourceが無いfixtureでも
+        # 欠落を検出するため)。commit未申告(偵察等)の報告は対象外のまま真陰性を維持。
+        # 実運用でPASS→review_approval.shの後段BLOCKが繰り返し発生した(段階的導入卒業)。
+        try:
+            _commit_claimed_d = False
+            _commit_items_d = bc.get("commit", [])
+            if isinstance(_commit_items_d, list):
+                for _item_d in _commit_items_d:
+                    if isinstance(_item_d, dict):
+                        _chk_d = str(_item_d.get("check", "") or "")
+                        if any(_marker in _chk_d for _marker in _READONLY_COMMIT_MARKERS):
+                            continue
+                        _rs_d = _item_d.get("result")
+                        if _rs_d is True or str(_rs_d).strip().lower() == "yes":
+                            _commit_claimed_d = True
+                            break
+
+            if _commit_claimed_d and data.get("status") == "completed":
+                _commit_identity_d = ""
+                for _ch_key_d in ("commit_hash", "commit", "git_commit"):
+                    _ch_val_d = data.get(_ch_key_d)
+                    if isinstance(_ch_val_d, str) and _ch_val_d.strip():
+                        _commit_identity_d = _ch_val_d.strip()
+                        break
+                if not _commit_identity_d:
+                    _result_field_d = data.get("result")
+                    if isinstance(_result_field_d, dict):
+                        _rch_d = _result_field_d.get("commit_hash")
+                        if isinstance(_rch_d, str) and _rch_d.strip():
+                            _commit_identity_d = _rch_d.strip()
+                _has_valid_identity_d = bool(re.fullmatch(r"[0-9a-f]{40}", _commit_identity_d))
+
+                if not _has_valid_identity_d:
+                    errors.append(
+                        "commit_hash: 欠落または40文字フルhashでない(binary_checks.commitがyes) — "
+                        "review_approvalの後段BLOCK(review_report_fingerprint契約)をここで前段検出。"
+                        "git rev-parse HEADの40文字フルhashを記入せよ"
+                    )
+                    hints.append(
+                        "FIX COMMAND (commit_hash): "
+                        + _rfs_cmd(report_path, "commit_hash", "$(git rev-parse HEAD)")
                     )
         except Exception:
             pass

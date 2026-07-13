@@ -169,6 +169,127 @@ YAML
     [[ "$output" != *"40文字フルhashでない"* ]]
 }
 
+# --- cmd_karo_hotfix_report_commit_contract_202607131320: commit_hash欠落の前段BLOCK ---
+# tobisaruのhotfix実装報告(binary_checks.commit=yes, commit_hash欠落, status=completed)が
+# gate_report_formatをPASSし、review_approval.shで初めてBLOCKした事故の再発防止。
+# parent cmd sourceが直近git logに無いkaro_direct hotfixでも欠落を検出しなければならない(AC1)。
+
+@test "T-CHC-1 (AC1): commit AC=yes without commit_hash is BLOCKed even without parent_cmd in git log" {
+    local report="$TMPDIR_BATS/chc1_report.yaml"
+    cat > "$report" << 'YAML'
+worker_id: testninja
+parent_cmd: cmd_karo_hotfix_no_parent_source_in_recent_log
+ac_version_read: abc12345
+timestamp: '2026-07-13T00:00:00+09:00'
+status: completed
+result:
+  summary: "hotfix実装完了"
+purpose_validation:
+  cmd_purpose: "テスト"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - path: scripts/gates/gate_report_format_main.py
+lesson_candidate:
+  found: false
+  no_lesson_reason: "既知パターンのため新規教訓なし"
+lessons_useful: []
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+binary_checks:
+  AC1:
+    - check: "テスト対象の確認項目を詳細に記載"
+      result: "yes"
+  commit:
+    - check: "git commitが完了したか(untracked/modified=0)"
+      result: "yes"
+verdict: PASS
+YAML
+
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"commit_hash"* ]]
+    [[ "$output" == *"binary_checks.commitがyes"* ]]
+}
+
+@test "T-CHC-2 (AC2 true negative): commit AC=yes with valid 40-char commit_hash still PASSes" {
+    local report="$TMPDIR_BATS/chc2_report.yaml"
+    cat > "$report" << 'YAML'
+worker_id: testninja
+parent_cmd: cmd_karo_hotfix_no_parent_source_in_recent_log
+ac_version_read: abc12345
+timestamp: '2026-07-13T00:00:00+09:00'
+status: completed
+commit_hash: 0123456789abcdef0123456789abcdef01234567
+result:
+  summary: "hotfix実装完了"
+purpose_validation:
+  cmd_purpose: "テスト"
+  fit: true
+  purpose_gap: ""
+files_modified:
+  - path: scripts/gates/gate_report_format_main.py
+lesson_candidate:
+  found: false
+  no_lesson_reason: "既知パターンのため新規教訓なし"
+lessons_useful: []
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+binary_checks:
+  AC1:
+    - check: "テスト対象の確認項目を詳細に記載"
+      result: "yes"
+  commit:
+    - check: "git commitが完了したか(untracked/modified=0)"
+      result: "yes"
+verdict: PASS
+YAML
+
+    run bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
+@test "T-CHC-3 (AC2 true negative): no-code recon report without commit_hash still PASSes" {
+    local report="$TMPDIR_BATS/chc3_report.yaml"
+    cat > "$report" << 'YAML'
+worker_id: testninja
+parent_cmd: cmd_test
+task_type: recon
+ac_version_read: abc12345
+timestamp: '2026-07-13T00:00:00+09:00'
+status: completed
+result:
+  summary: "偵察完了。変更なし"
+purpose_validation:
+  cmd_purpose: "テスト"
+  fit: true
+  purpose_gap: ""
+files_modified: []
+lesson_candidate:
+  found: false
+  no_lesson_reason: "既知パターンのため新規教訓なし"
+lessons_useful: []
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ""
+binary_checks:
+  AC1:
+    - check: "偵察対象の確認"
+      result: "yes"
+verdict: PASS
+YAML
+
+    run bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
 @test "T-GP286-1: non-path files_modified fails" {
     local non_path_report="$TMPDIR_BATS/non_path_files_modified_report.yaml"
     create_valid_report "$non_path_report" >/dev/null
@@ -653,6 +774,8 @@ task:
 YAML
     git -C "$repo" add queue/tasks/testninja.yaml
     git -C "$repo" commit -q -m "seed task"
+    local commit_hash
+    commit_hash=$(git -C "$repo" rev-parse HEAD)
     cat >> "$repo/queue/tasks/testninja.yaml" <<'YAML'
   session_state:
     attempt: 1
@@ -663,12 +786,13 @@ YAML
     - attempt: 1
       block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
 YAML
-    cat > "$report" <<'YAML'
+    cat > "$report" <<YAML
 worker_id: testninja
 parent_cmd: cmd_test
 ac_version_read: abc12345
 timestamp: '2026-07-08T00:00:00'
 status: completed
+commit_hash: ${commit_hash}
 result:
   summary: "test summary"
 purpose_validation:

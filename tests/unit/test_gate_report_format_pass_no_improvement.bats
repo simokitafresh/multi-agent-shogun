@@ -369,6 +369,8 @@ owned
 EOF
     git -C "$workdir" add context/owned.md
     git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m init
+    local commit_hash
+    commit_hash=$(git -C "$workdir" rev-parse HEAD)
     cat > "$task_path" <<EOF
 task:
   target_path: $workdir
@@ -380,6 +382,7 @@ parent_cmd: cmd_3264
 ac_version_read: test_hash_abc
 timestamp: 2026-07-13T00:00:00+09:00
 status: completed
+commit_hash: ${commit_hash}
 result:
   summary: "テスト用報告"
   details: "詳細"
@@ -449,6 +452,8 @@ owned
 EOF
     git -C "$workdir" add context/shared.md context/owned.md
     git -C "$workdir" -c user.email=test@example.com -c user.name=test commit -q -m init
+    local commit_hash
+    commit_hash=$(git -C "$workdir" rev-parse HEAD)
     cat > "$task_path" <<EOF
 task:
   target_path: context/shared.md
@@ -460,6 +465,7 @@ parent_cmd: cmd_3264
 ac_version_read: test_hash_abc
 timestamp: 2026-07-13T00:00:00+09:00
 status: completed
+commit_hash: ${commit_hash}
 result:
   summary: "テスト用報告"
   details: "詳細"

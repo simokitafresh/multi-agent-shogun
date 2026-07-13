@@ -22,6 +22,7 @@ parent_cmd: cmd_test
 timestamp: '2026-04-14T09:00:00'
 status: completed
 ac_version_read: abc12345
+commit_hash: 0123456789abcdef0123456789abcdef01234567
 result:
   summary: "テスト報告"
 purpose_validation:
