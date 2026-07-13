@@ -173,6 +173,82 @@ PY
   done
 }
 
+@test "locked restore excludes writers and proves empty tables before COPY" {
+  run python3 - "$ROOT/scripts/lib/db_capability_tool.py" "$BATS_TEST_TMPDIR" <<'PY'
+import hashlib, importlib.util, pathlib, tempfile, types, sys
+
+spec = importlib.util.spec_from_file_location("tool", sys.argv[1])
+tool = importlib.util.module_from_spec(spec); spec.loader.exec_module(tool)
+root = pathlib.Path(sys.argv[2])
+artifact = root / "artifact"; artifact.mkdir()
+tables = ("alpha", "beta")
+for table in tables:
+    (artifact / f"{table}.copy").write_bytes((table + "-payload").encode())
+manifest = {"tables": {
+    table: {"columns": ["id"], "order": ["id"], "rows": 1,
+            "sha256": hashlib.sha256((artifact / f"{table}.copy").read_bytes()).hexdigest()}
+    for table in tables
+}}
+
+class Fragment:
+    def __init__(self, value): self.value = str(value)
+    def format(self, *values):
+        text = self.value
+        for value in values: text = text.replace("{}", str(value), 1)
+        return Fragment(text)
+    def join(self, values): return Fragment(self.value.join(map(str, values)))
+    def as_string(self, _cur): return self.value
+    def __str__(self): return self.value
+class SQL:
+    SQL = staticmethod(Fragment)
+    Identifier = staticmethod(lambda value: Fragment(f'"{value}"'))
+
+class Cursor:
+    def __init__(self):
+        self.events=[]; self.counts={table: 9 for table in tables}; self.result=None
+    def execute(self, query, params=None):
+        text=str(query); self.events.append(text)
+        if text.startswith("SELECT pg_try_advisory_lock"): self.result=(True,)
+        elif text.startswith("SELECT EXISTS"): self.result=(False,)
+        elif text.startswith("DELETE FROM"):
+            table=text.split('"')[1]; self.counts[table]=0
+        elif text.startswith("SELECT count(*)"):
+            table=text.split('"')[1]; self.result=(self.counts[table],)
+    def fetchone(self): return self.result
+    def copy_expert(self, query, stream):
+        text=str(query); self.events.append(text)
+        table=text.split('"')[1]; stream.read(); self.counts[table]=1
+class Connection:
+    def __init__(self): self.cur=Cursor(); self.committed=False; self.rolled_back=False; self.closed=False
+    def cursor(self): return self.cur
+    def commit(self): self.committed=True
+    def rollback(self): self.rolled_back=True
+    def close(self): self.closed=True
+conn=Connection()
+
+def copy_out(cur, table, columns, order, destination):
+    destination.write_bytes((artifact / f"{table}.copy").read_bytes()); return 1
+module = types.SimpleNamespace(
+    psycopg2=types.SimpleNamespace(connect=lambda _dsn: conn), LOCK_KEY=8675309,
+    validate_artifact=lambda *_args, **_kwargs: manifest,
+    contract=lambda: types.SimpleNamespace(INVENTORY={table: None for table in tables}),
+    sql=SQL, tempfile=tempfile, copy_out=copy_out,
+    sha256=lambda path: hashlib.sha256(path.read_bytes()).hexdigest(),
+)
+tool._restore_with_writer_lock(module, "unused", artifact, "deadbeef")
+events=conn.cur.events
+lock_index=next(i for i,e in enumerate(events) if e.startswith("LOCK TABLE"))
+first_delete=next(i for i,e in enumerate(events) if e.startswith("DELETE FROM"))
+first_copy=next(i for i,e in enumerate(events) if e.startswith("COPY "))
+zero_checks=[i for i,e in enumerate(events) if e.startswith("SELECT count(*)") and i < first_copy]
+assert lock_index < first_delete < first_copy
+assert len(zero_checks) == len(tables)
+assert "SHARE ROW EXCLUSIVE" in events[lock_index]
+assert conn.committed and not conn.rolled_back and conn.closed
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "readonly tool forces database transaction readonly before executing attack corpus" {
   cat > "$BATS_TEST_TMPDIR/psycopg2.py" <<'PY'
 import os
