@@ -66,9 +66,23 @@ PY
     [ "$(wc -l < "$TEST_TMPDIR/create.calls")" -eq 1 ]
 }
 
-@test "restart_watchers starts common cache warm-up before watcher restart" {
-    run grep -nE 'source .*memory_db_cache\.sh|warm_memory_db_cache_async' \
-        "$PROJECT_ROOT/scripts/restart_watchers.sh"
+@test "restart_watchers flow creates a missing cache before touching watchers" {
+    rm -f "$SHOGUN_MEMORY_DB_CACHE_PATH"
+
+    run env \
+        RESTART_WATCHERS_WARMUP_ONLY=1 \
+        SHOGUN_MEMORY_DB_SOURCE_PATH="$TEST_TMPDIR/source.db" \
+        SHOGUN_MEMORY_DB_CACHE_PATH="$SHOGUN_MEMORY_DB_CACHE_PATH" \
+        bash "$PROJECT_ROOT/scripts/restart_watchers.sh"
+
     [ "$status" -eq 0 ]
-    [ "$(printf '%s\n' "$output" | wc -l)" -eq 2 ]
+    wait_for_file "$SHOGUN_MEMORY_DB_CACHE_PATH"
+    run python3 - "$SHOGUN_MEMORY_DB_CACHE_PATH" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+print(conn.execute("SELECT value FROM probe").fetchone()[0])
+conn.close()
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "source-db" ]
 }

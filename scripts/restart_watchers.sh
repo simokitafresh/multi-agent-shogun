@@ -20,7 +20,13 @@ fi
 # 非同期かつ共通ライブラリのflock single-flightなのでwatcher再起動を待たせない。
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/memory_db_cache.sh"
-warm_memory_db_cache_async "$SCRIPT_DIR" "$SCRIPT_DIR/data/multi_agent_shogun_memory.db"
+memory_db_source="${SHOGUN_MEMORY_DB_SOURCE_PATH:-$SCRIPT_DIR/data/multi_agent_shogun_memory.db}"
+warm_memory_db_cache_async "$SCRIPT_DIR" "$memory_db_source"
+
+# 隔離テスト用: watcher processへ触れず、上記の実起動フローだけを実行する。
+if [ "${RESTART_WATCHERS_WARMUP_ONLY:-0}" = "1" ]; then
+    exit 0
+fi
 
 echo "=== inbox_watcher 再起動 ==="
 
