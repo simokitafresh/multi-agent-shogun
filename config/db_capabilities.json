@@ -19,6 +19,22 @@
       "allowed_child_flags": ["--artifact", "--service"],
       "required_credential_keys": ["DATABASE_URL"],
       "requires_expected_commit": true
+    },
+    "production_role_probe": {
+      "tool": "scripts/lib/db_capability_tool.py",
+      "project": "dm-signal",
+      "dependency_tool": "scripts/oneshot/cmd_3881_db_fence_verify.py",
+      "modes": ["production_role_probe"],
+      "confirm": "PRODUCTION_ROLE_PROBE_APPROVED",
+      "actions": ["run"],
+      "allowed_child_flags": [
+        "--expected-resource-identity",
+        "--expected-database-identity",
+        "--probe-role",
+        "--output"
+      ],
+      "required_credential_keys": ["DATABASE_URL"],
+      "requires_expected_commit": true
     }
   }
 }

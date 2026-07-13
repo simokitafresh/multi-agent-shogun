@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 import argparse
 import importlib.util
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 
 def _restore_with_writer_lock(module, dsn: str, artifact: Path, expected_commit: str) -> None:
@@ -84,6 +86,56 @@ def main() -> int:
         finally:
             conn.close()
         return 0
+    if capability == "production_role_probe":
+        if mode != "production_role_probe":
+            raise SystemExit("unknown capability or mode")
+        parser = argparse.ArgumentParser()
+        parser.add_argument("action", choices=("run",))
+        parser.add_argument("--expected-resource-identity", required=True)
+        parser.add_argument("--expected-database-identity", required=True)
+        parser.add_argument("--probe-role", required=True)
+        parser.add_argument("--output", required=True)
+        args = parser.parse_args()
+
+        dsn = os.environ["DATABASE_URL"]
+        parsed = urlsplit(dsn)
+        resource_identity = parsed.hostname or ""
+        database_identity = unquote(parsed.path.lstrip("/").split("/", 1)[0])
+        if resource_identity != args.expected_resource_identity:
+            raise SystemExit("BLOCK: production resource identity does not match DATABASE_URL")
+        if database_identity != args.expected_database_identity:
+            raise SystemExit("BLOCK: production database identity does not match DATABASE_URL")
+
+        project_root = Path(os.environ["DB_CAPABILITY_PROJECT_ROOT"]).resolve()
+        output = Path(args.output).resolve()
+        allowed_output_root = (project_root / "outputs" / "analysis").resolve()
+        if allowed_output_root not in output.parents:
+            raise SystemExit("BLOCK: probe output must be under outputs/analysis")
+
+        child_env = os.environ.copy()
+        child_env["CMD3881_PRODUCTION_PROBE_DSN"] = dsn
+        dependency = os.environ["DB_CAPABILITY_DEPENDENCY_TOOL"]
+        command = [
+            sys.executable,
+            dependency,
+            "--production-capability-probe",
+            "--arm-production-capability-probe",
+            "--environment",
+            "production",
+            "--resource-identity",
+            resource_identity,
+            "--expected-resource-identity",
+            args.expected_resource_identity,
+            "--database-identity",
+            database_identity,
+            "--expected-database-identity",
+            args.expected_database_identity,
+            "--probe-role",
+            args.probe_role,
+            "--output",
+            str(output),
+        ]
+        return subprocess.run(command, env=child_env).returncode
     if capability != "transactional_restore" or mode != "transactional_restore":
         raise SystemExit("unknown capability or mode")
     parser = argparse.ArgumentParser()

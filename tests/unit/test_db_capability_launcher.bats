@@ -214,6 +214,40 @@ PY
   done
 }
 
+@test "production role probe binds identities to credential DSN and keeps secret out of argv" {
+  project="$BATS_TEST_TMPDIR/probe-project"
+  mkdir -p "$project/outputs/analysis"
+  dependency="$BATS_TEST_TMPDIR/probe-dependency.py"
+  artifact="$project/outputs/analysis/probe.json"
+  printf '%s\n' \
+    'import json, os, pathlib, sys' \
+    'assert os.environ["CMD3881_PRODUCTION_PROBE_DSN"] == os.environ["DATABASE_URL"]' \
+    'assert os.environ["DATABASE_URL"] not in " ".join(sys.argv)' \
+    'pathlib.Path(sys.argv[sys.argv.index("--output") + 1]).write_text(json.dumps({"argv": sys.argv[1:]}))' \
+    > "$dependency"
+
+  run env DB_CAPABILITY=production_role_probe DB_CAPABILITY_MODE=production_role_probe \
+    DB_CAPABILITY_DEPENDENCY_TOOL="$dependency" DB_CAPABILITY_PROJECT_ROOT="$project" \
+    DATABASE_URL='postgresql://user:secret@prod.example.invalid/dm_signal' \
+    python3 "$ROOT/scripts/lib/db_capability_tool.py" run \
+    --expected-resource-identity prod.example.invalid \
+    --expected-database-identity dm_signal \
+    --probe-role cmd3881_cap_probe_deadbeef --output "$artifact"
+  [ "$status" -eq 0 ]
+  [ -f "$artifact" ]
+  ! grep -q secret "$artifact"
+
+  run env DB_CAPABILITY=production_role_probe DB_CAPABILITY_MODE=production_role_probe \
+    DB_CAPABILITY_DEPENDENCY_TOOL="$dependency" DB_CAPABILITY_PROJECT_ROOT="$project" \
+    DATABASE_URL='postgresql://user:secret@prod.example.invalid/dm_signal' \
+    python3 "$ROOT/scripts/lib/db_capability_tool.py" run \
+    --expected-resource-identity wrong.example.invalid \
+    --expected-database-identity dm_signal \
+    --probe-role cmd3881_cap_probe_deadbeef --output "$artifact"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"does not match DATABASE_URL"* ]]
+}
+
 @test "locked restore excludes writers and proves empty tables before COPY" {
   run python3 - "$ROOT/scripts/lib/db_capability_tool.py" "$BATS_TEST_TMPDIR" <<'PY'
 import hashlib, importlib.util, pathlib, tempfile, types, sys
