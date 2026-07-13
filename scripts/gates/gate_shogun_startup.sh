@@ -38,6 +38,19 @@ fi
 
 overall="OK"
 alerts=()
+# cmd_3895: the timing ledger is useful only while its writer is alive.  This
+# read-only startup check detects a stopped writer without launching tests.
+echo "■ テスト時間台帳鮮度"
+if [ -f "$SCRIPT_DIR/logs/test_timing_ledger.tsv" ]; then
+    _timing_health_out="$(bash "$GATE_DIR/gate_test_health.sh" --ledger-health 2>&1)"
+    printf '%s\n' "$_timing_health_out" | grep -E '^(OK:|WARN:|INFO:|総合判定:)' | sed 's/^/  /' || true
+    if ! printf '%s\n' "$_timing_health_out" | grep -q '^総合判定: OK'; then
+        [ "$overall" = "OK" ] && overall="WARN"
+        alerts+=("テスト時間台帳: stale/writer停止を確認せよ")
+    fi
+else
+    echo "  INFO: timing ledger未生成（初回all/unit完走後に監視開始）"
+fi
 # /mnt/c capacity is a startup invariant: danger blocks normal work, warning is visible.
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"

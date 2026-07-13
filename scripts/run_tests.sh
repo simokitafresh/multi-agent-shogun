@@ -72,6 +72,7 @@ run_bats_files_parallel() {
     local -A pid_out=()
     local -A pid_weight=()
     local -A pid_cache_path=()
+    local -A pid_time=()
 
     # Each file is a separate bats-core root process.  Never let it inherit a
     # caller/previous bats root's transport namespace: bats uses BATS_* state
@@ -175,8 +176,13 @@ run_bats_files_parallel() {
             fi
         fi
         wait_for_capacity "$file_weight"
+        timing_path="$out_dir/$(basename "$file").$$.time"
         (
-            run_bats_file_isolated "$file" "$file_inner_jobs"
+            _started_ns="$(date +%s%N)"
+            _rc=0
+            run_bats_file_isolated "$file" "$file_inner_jobs" || _rc=$?
+            printf '%s\t%s\n' "$_started_ns" "$(date +%s%N)" >"$timing_path"
+            exit "$_rc"
         ) >"$out_dir/$(basename "$file").$$.out" 2>&1 &
         pid=$!
         launched_count=$((launched_count + 1))
@@ -186,6 +192,7 @@ run_bats_files_parallel() {
         pid_out["$pid"]="$out_dir/$(basename "$file").$$.out"
         pid_weight["$pid"]="$file_weight"
         pid_cache_path["$pid"]="$cache_path"
+        pid_time["$pid"]="$timing_path"
     done
 
     for pid in "${pids[@]}"; do
@@ -219,6 +226,40 @@ run_bats_files_parallel() {
         return 1
     fi
 
+    # Publish timing only after the whole selected suite completed.  Thus an
+    # interrupted/failed run cannot claim all/unit freshness.  Cache rows are
+    # retained for accounting but gate_test_health deliberately excludes them
+    # from timing freshness and regression comparisons.
+    local mode="${RUN_TESTS_MODE:-file}" run_id commit_sha measured_at batch
+    local test_count skip_count elapsed_ns wall_sec status cache_hit
+    run_id="$(date -u +%Y%m%dT%H%M%S).$$"
+    commit_sha="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || printf unknown)"
+    measured_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    batch="$(mktemp "${TMPDIR:-/tmp}/shogun-timing.XXXXXX")"
+    for file in "${files[@]}"; do
+        cache_hit=1
+        wall_sec=0
+        skip_count=0
+        status=pass
+        for pid in "${all_pids[@]}"; do
+            [ "${pid_file[$pid]}" = "$file" ] || continue
+            cache_hit=0
+            IFS=$'\t' read -r started_ns ended_ns <"${pid_time[$pid]}"
+            elapsed_ns=$((ended_ns - started_ns))
+            wall_sec="$(awk -v ns="$elapsed_ns" 'BEGIN {printf "%.3f", ns/1000000000}')"
+            skip_count="$(grep -c '# skip' "${pid_out[$pid]}" 2>/dev/null || true)"
+            break
+        done
+        test_count="$(grep -c '^@test ' "$file" 2>/dev/null || true)"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+          "$run_id" "$(basename "$REPO_ROOT")" "$commit_sha" "$mode" bats \
+          "$file" "$test_count" "$wall_sec" "$status" "$skip_count" "$cache_hit" \
+          "$source_fp" "$measured_at" "mode=$mode;jobs=$MAX_TEST_JOBS" >>"$batch"
+    done
+    TEST_TIMING_LEDGER="${TEST_TIMING_LEDGER:-$REPO_ROOT/logs/test_timing_ledger.tsv}" \
+      bash "$REPO_ROOT/scripts/test_timing_ledger_write.sh" "$batch"
+    rm -f "$batch"
+
     if [ "$BATS_CACHE" = "1" ]; then
         for pid in "${all_pids[@]}"; do
             cache_path="${pid_cache_path[$pid]}"
@@ -251,6 +292,7 @@ _run_tests_main() {
 
     case "${1:-all}" in
         all)
+            RUN_TESTS_MODE=all
             mapfile -t test_files < <(
                 find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print
                 find "$REPO_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print
@@ -258,6 +300,7 @@ _run_tests_main() {
             run_bats_files_parallel "${test_files[@]}"
             ;;
         unit)
+            RUN_TESTS_MODE=unit
             mapfile -t test_files < <(find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
             run_bats_files_parallel "${test_files[@]}"
             ;;

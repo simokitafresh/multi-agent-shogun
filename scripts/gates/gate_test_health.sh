@@ -22,11 +22,15 @@ TESTS_DIR="${TESTS_DIR:-${REPO_ROOT}/tests/unit}"
 LEDGER="${TEST_TIMING_LEDGER:-${REPO_ROOT}/logs/test_timing_ledger.tsv}"
 SLOW_THRESHOLD="${SLOW_THRESHOLD:-30}"
 CONSOLIDATE_THRESHOLD="${CONSOLIDATE_THRESHOLD:-5}"
+LEDGER_STALE_HOURS="${LEDGER_STALE_HOURS:-168}"
+REGRESSION_PCT="${TEST_TIMING_REGRESSION_PCT:-25}"
 
 MEASURE=false
+LEDGER_ONLY=false
 for arg in "$@"; do
   case "$arg" in
     --timing) MEASURE=true ;;
+    --ledger-health) LEDGER_ONLY=true ;;
   esac
 done
 
@@ -85,27 +89,57 @@ if $MEASURE; then
     echo "OK: ${SLOW_THRESHOLD}秒超のファイルなし"
   fi
 
-elif [ -f "$LEDGER" ]; then
-  # 既存台帳を表示
-  slow_count=$(awk -F'\t' -v th="$SLOW_THRESHOLD" 'NR>1 && $1+0 > th {count++} END {print count+0}' "$LEDGER")
-  total_count=$(awk 'NR>1{count++} END{print count+0}' "$LEDGER")
-  echo "台帳読込: ${LEDGER}"
-  echo "合計: ${total_count}ファイル / SLOW(>${SLOW_THRESHOLD}s): ${slow_count}ファイル"
-
-  if (( slow_count > 0 )); then
-    echo ""
-    echo "⚠ SLOW FILES (>${SLOW_THRESHOLD}s):"
-    awk -F'\t' -v th="$SLOW_THRESHOLD" 'NR>1 && $1+0 > th {printf "  %ss\t%stests\t%s\n", $1, $3, $2}' "$LEDGER"
+elif [ -f "$LEDGER" ] && head -1 "$LEDGER" | grep -q '^run_id'; then
+  latest_fresh_epoch=$(awk -F'\t' '$9=="pass" && $11==0 && ($4=="all" || $4=="unit") {gsub(/Z$/, "", $13); cmd="date -u -d \"" $13 "\" +%s"; cmd | getline e; close(cmd); if(e>m)m=e} END{print m+0}' "$LEDGER")
+  now_epoch=$(date +%s)
+  age_hours=$(( (now_epoch - latest_fresh_epoch) / 3600 ))
+  if (( latest_fresh_epoch == 0 || age_hours > LEDGER_STALE_HOURS )); then
+    echo "WARN: timing ledger stale (age=${age_hours}h threshold=${LEDGER_STALE_HOURS}h); writer停止を確認してください"
     alert=1
   else
-    echo "OK: ${SLOW_THRESHOLD}秒超のファイルなし"
+    echo "OK: timing ledger fresh (age=${age_hours}h threshold=${LEDGER_STALE_HOURS}h)"
   fi
+  mapfile -t completed_runs < <(awk -F'\t' '$9=="pass" && $11==0 && ($4=="all" || $4=="unit") {seen[$1]=$13} END{for(r in seen) print seen[r] "\t" r}' "$LEDGER" | sort -r | cut -f2 | head -2)
+  if (( ${#completed_runs[@]} >= 2 )); then
+    current="${completed_runs[0]}" previous="${completed_runs[1]}"
+    current_wall=$(awk -F'\t' -v r="$current" '$1==r && $11==0{s+=$8} END{print s+0}' "$LEDGER")
+    previous_wall=$(awk -F'\t' -v r="$previous" '$1==r && $11==0{s+=$8} END{print s+0}' "$LEDGER")
+    regression=$(awk -v c="$current_wall" -v p="$previous_wall" 'BEGIN{if(p<=0)print 0;else printf "%.1f",(c-p)*100/p}')
+    echo "suite wall: ${previous_wall}s -> ${current_wall}s (${regression}%)"
+    if awk -v r="$regression" -v th="$REGRESSION_PCT" 'BEGIN{exit !(r>th)}'; then
+      echo "WARN: suite wall regression > ${REGRESSION_PCT}%"
+      alert=1
+    fi
+    awk -F'\t' -v c="$current" -v p="$previous" -v th="$REGRESSION_PCT" '
+      $1==c && $11==0 {cw[$6]=$8} $1==p && $11==0 {pw[$6]=$8}
+      END {for(f in cw) if(pw[f]>0 && (cw[f]-pw[f])*100/pw[f]>th) printf "WARN: per-file regression %.1f%% %s\n",(cw[f]-pw[f])*100/pw[f],f}' "$LEDGER" | sort -nr -k4 | head -5
+  else
+    echo "INFO: regression comparison requires two completed all/unit runs"
+  fi
+  total_count=$(awk -F'\t' 'NR>1{count++} END{print count+0}' "$LEDGER")
+  slow_count=$(awk -F'\t' -v th="$SLOW_THRESHOLD" 'NR>1 && $11==0 && $8+0>th{count++} END{print count+0}' "$LEDGER")
+  echo "台帳読込: ${LEDGER}"
+  echo "合計: ${total_count}行 / SLOW(>${SLOW_THRESHOLD}s): ${slow_count}行"
+elif [ -f "$LEDGER" ]; then
+  echo "WARN: legacy timing ledger schema; normal run_tests.sh完走で14列へ移行してください"
+  alert=1
+  total_count=0
+  slow_count=0
 else
   echo "INFO: 台帳未生成。--timing オプションで実行時間を計測してください。"
   echo "  bash scripts/gates/gate_test_health.sh --timing"
 fi
 
 echo ""
+
+if $LEDGER_ONLY; then
+  if (( alert > 0 )); then
+    echo "総合判定: ALERT — timing ledger health"
+    exit 1
+  fi
+  echo "総合判定: OK — timing ledger health"
+  exit 0
+fi
 
 # ─────────────────────────────────────────────
 # AC2: 重複テスト名検出
