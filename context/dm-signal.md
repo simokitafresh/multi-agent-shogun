@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
-<!-- last_synced_lesson: L887 -->
+<!-- last_synced_lesson: L888 -->
 <!-- source_commit:5e9ea355d0ad6d6856b0e03f08993f2ca1c744fa (DM-Signal terminology/disambiguation/db-operations-runbook対象pathspecの最終同期commit。GA-238で導入。当該pathspecは2026-07-13時点で未反映commitなし=同型穴の解消のみ、新規本文反映は不要) -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -333,6 +333,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - （L831-L843は振り分け済 2026-07-10 /lesson-sort → ops§33(L831/L835/L842/L843), ops§12(L832), ops§6-7(L833/L836), ops§39(L841), research§48(L834/L837/L838/L839)。L840はops教訓索引に既存。新規PIなし(DTB3系はPI-028既存でカバー)）
 - （L851-L876は振り分け済 2026-07-12 /lesson-sort → ops§12(L851:matched_weight=sum比較), ops§9(L870:run不変値subprocess再取得禁止), ops§32(L857:env override差替え), research教訓索引(L874:オラクル機能的意味先検証)。L852はPI候補節に既存。L876はL1049と根重複+heredoc断定未検証のため非活性化を家老へ依頼済み。新規PIなし）
 - L887: 非階層containerの敵対fixture対応（cmd_3878）
+- L888: 全量テスト前提artifactと実行環境のpreflight必須（cmd_3879）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 
