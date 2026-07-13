@@ -221,38 +221,163 @@ collect_task_yaml_mixed_commit_violations() {
 }
 
 collect_yaml_dump_violations() {
-    local current_file="" current_matches="" violations="" line added_line
+    # GA-250: inspect the staged blob with Python's AST, but report only dump
+    # calls introduced by this commit.  A dump word alone is harmless (for
+    # example StringIO/stdout projection); the dangerous condition is a data
+    # flow into an operational YAML path through a write-capable sink.
+    python3 - "$REPO_ROOT" <<'PY'
+import ast
+import re
+import subprocess
+import sys
 
-    flush_current_matches() {
-        if [[ -n "$current_matches" ]] && [[ -n "$current_file" ]]; then
-            violations+=$(printf '  %s: %s\n' "$current_file" "$(printf '%s' "$current_matches" | paste -sd ' ' -)")
-        fi
-        current_matches=""
-    }
+root = sys.argv[1]
 
-    while IFS= read -r line; do
-        case "$line" in
-            "+++ b/"*)
-                flush_current_matches
-                current_file="${line#+++ b/}"
-                if ! is_yaml_dump_scan_target "$current_file"; then
-                    current_file=""
-                fi
-                ;;
-            "+"*)
-                [[ "$line" == "+++"* ]] && continue
-                [[ -n "$current_file" ]] || continue
-                added_line="${line#+}"
-                [[ "$added_line" =~ ^[[:space:]]*# ]] && continue
-                if [[ "$added_line" == *"yaml.dump"* || "$added_line" == *"yaml.safe_dump"* ]]; then
-                    current_matches+="${line}"$'\n'
-                fi
-                ;;
-        esac
-    done < <(git diff --cached --unified=0 --no-color --diff-filter=ACMR 2>/dev/null)
+def git(*args):
+    return subprocess.run(
+        ["git", "-C", root, *args], text=True, check=False,
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+    ).stdout
 
-    flush_current_matches
-    printf '%s' "$violations"
+def scan_target(path):
+    return (
+        path.endswith((".py", ".sh"))
+        and not path.startswith(("tests/", "scripts/hooks/", "skills/"))
+        and "yaml-dump-guard" not in path
+        and "pre_bash_combined_guard" not in path
+        and path != "scripts/lib/yaml_atomic.py"
+    )
+
+def added_lines(path):
+    out = set()
+    diff = git("diff", "--cached", "--unified=0", "--no-color", "--", path)
+    for line in diff.splitlines():
+        match = re.match(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", line)
+        if match:
+            start, count = int(match.group(1)), int(match.group(2) or 1)
+            out.update(range(start, start + count))
+    return out
+
+def call_name(node):
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        base = call_name(node.value)
+        return f"{base}.{node.attr}" if base else node.attr
+    return ""
+
+def literal(node, values):
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.Name):
+        return values.get(node.id)
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left, right = literal(node.left, values), literal(node.right, values)
+        return left + right if left is not None and right is not None else None
+    return None
+
+def operational(path):
+    if not path:
+        return False
+    path = path.replace("\\", "/").lstrip("./")
+    return bool(re.match(r"^(queue(?:/|$)|logs/[^/]+\.ya?ml$)", path)) and path.endswith((".yaml", ".yml"))
+
+def mode_writes(node, values, default="r"):
+    mode = literal(node, values) if node is not None else default
+    return bool(mode and any(flag in mode for flag in "wax+"))
+
+def analyse(path, source, introduced):
+    try:
+        tree = ast.parse(source, filename=path)
+    except SyntaxError:
+        return []
+    values, path_vars, sink_vars = {}, {}, {}
+    findings = []
+
+    def resolve_path(expr):
+        value = literal(expr, values)
+        if value is not None:
+            return value
+        if isinstance(expr, ast.Name):
+            return path_vars.get(expr.id)
+        if isinstance(expr, ast.Call) and call_name(expr.func) in ("Path", "pathlib.Path") and expr.args:
+            return resolve_path(expr.args[0])
+        return None
+
+    def sink(expr):
+        if isinstance(expr, ast.Name):
+            return sink_vars.get(expr.id)
+        if not isinstance(expr, ast.Call):
+            return None
+        name = call_name(expr.func)
+        if name in ("open", "io.open") and expr.args:
+            mode = expr.args[1] if len(expr.args) > 1 else next((k.value for k in expr.keywords if k.arg == "mode"), None)
+            path_value = resolve_path(expr.args[0])
+            return path_value if operational(path_value) and mode_writes(mode, values) else None
+        if isinstance(expr.func, ast.Attribute) and expr.func.attr == "open":
+            mode = expr.args[0] if expr.args else next((k.value for k in expr.keywords if k.arg == "mode"), None)
+            path_value = resolve_path(expr.func.value)
+            return path_value if operational(path_value) and mode_writes(mode, values) else None
+        return None
+
+    # Iterate to a fixed point because ast.walk() does not promise source
+    # order, and a handle may depend on a path variable discovered later.
+    bindings = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Assign, ast.AnnAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            bindings.extend((target, node.value) for target in targets)
+        elif isinstance(node, (ast.With, ast.AsyncWith)):
+            bindings.extend((item.optional_vars, item.context_expr) for item in node.items if item.optional_vars)
+    for _ in range(len(bindings) + 1):
+        changed = False
+        for target, value in bindings:
+            if not isinstance(target, ast.Name):
+                continue
+            before = (values.get(target.id), path_vars.get(target.id), sink_vars.get(target.id))
+            text = literal(value, values)
+            if text is not None:
+                values[target.id] = text
+            resolved = resolve_path(value)
+            if resolved is not None:
+                path_vars[target.id] = resolved
+            resolved_sink = sink(value)
+            if resolved_sink:
+                sink_vars[target.id] = resolved_sink
+            after = (values.get(target.id), path_vars.get(target.id), sink_vars.get(target.id))
+            changed |= before != after
+        if not changed:
+            break
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call) or node.lineno not in introduced:
+            continue
+        name = call_name(node.func)
+        if name in ("yaml.dump", "yaml.safe_dump", "yaml.dump_all"):
+            stream = node.args[1] if len(node.args) > 1 else next((k.value for k in node.keywords if k.arg in ("stream", "file")), None)
+            target = sink(stream) if stream is not None else None
+            if target:
+                snippet = ast.get_source_segment(source, node) or name
+                findings.append((node.lineno, target, f"{name} -> write-capable sink; source={snippet}"))
+        elif isinstance(node.func, ast.Attribute) and node.func.attr == "write_text":
+            target = resolve_path(node.func.value)
+            if not operational(target):
+                continue
+            for arg in node.args:
+                if isinstance(arg, ast.Call) and call_name(arg.func) in ("yaml.dump", "yaml.safe_dump", "yaml.dump_all"):
+                    snippet = ast.get_source_segment(source, node) or call_name(arg.func)
+                    findings.append((node.lineno, target, f"{call_name(arg.func)} -> Path.write_text; source={snippet}"))
+    return findings
+
+for path in git("diff", "--cached", "--name-only", "--diff-filter=ACMR").splitlines():
+    if not scan_target(path):
+        continue
+    source = git("show", f":{path}")
+    for lineno, target, reason in analyse(path, source, added_lines(path)):
+        source_part = reason.partition("; source=")[2]
+        reason_part = reason.partition("; source=")[0]
+        print(f"  {path}:{lineno}: source={source_part} target={target} reason={reason_part}")
+PY
 }
 
 main() {

@@ -158,6 +158,65 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "GP-136 blocks all operational YAML write sinks and reports targets" {
+    cat >> "$TEST_ROOT/tool.py" <<'EOF'
+import yaml
+from pathlib import Path
+task_path = "queue/tasks/direct.yaml"
+report_path = Path("queue/reports/path-open.yaml")
+log_path = Path("logs/events.yaml")
+with open(task_path, "w") as task_out:
+    yaml.dump({"status": "bad"}, task_out)
+report_out = report_path.open(mode="a")
+yaml.safe_dump({"status": "bad"}, stream=report_out)
+log_path.write_text(yaml.dump_all([{"bad": True}]))
+EOF
+    (cd "$TEST_ROOT" && git add tool.py)
+
+    run_hook
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"target=queue/tasks/direct.yaml"* ]]
+    [[ "$output" == *"target=queue/reports/path-open.yaml"* ]]
+    [[ "$output" == *"target=logs/events.yaml"* ]]
+}
+
+@test "GP-136 permits StringIO stdout and serialized print projections without operational mutation" {
+    before="$(sha256sum "$TEST_ROOT/queue/tasks/kagemaru.yaml" | cut -d' ' -f1)"
+    cat >> "$TEST_ROOT/tool.py" <<'EOF'
+import io
+import sys
+import yaml
+memory = io.StringIO()
+yaml.dump({"projection": True}, memory)
+yaml.safe_dump({"projection": True}, sys.stdout)
+print(yaml.dump({"projection": True}))
+EOF
+    (cd "$TEST_ROOT" && git add tool.py)
+
+    run_hook
+
+    [ "$status" -eq 0 ]
+    after="$(sha256sum "$TEST_ROOT/queue/tasks/kagemaru.yaml" | cut -d' ' -f1)"
+    [ "$before" = "$after" ]
+}
+
+@test "GP-136 follows quoted heredoc and distinct path and sink variables" {
+    cat >> "$TEST_ROOT/tool.py" <<'PYEOF'
+import yaml
+destination = 'queue/tasks/heredoc.yaml'
+handle = open(destination, 'x')
+yaml.dump_all([{"status": "bad"}], handle)
+PYEOF
+    (cd "$TEST_ROOT" && git add tool.py)
+
+    run_hook
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"target=queue/tasks/heredoc.yaml"* ]]
+    [[ "$output" == *"yaml.dump_all -> write-capable sink"* ]]
+}
+
 @test "ignores yaml dump text in markdown/yaml files and pre_bash_combined_guard helper" {
     mkdir -p "$TEST_ROOT/projects/infra"
     cat > "$TEST_ROOT/projects/infra/lessons.yaml" <<'EOF'
