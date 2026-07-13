@@ -315,6 +315,17 @@ _validate_field_value() {
     local field="${dot_key%%.*}"
 
     case "$field" in
+        result)
+            if [[ "$dot_key" == "result.summary" ]]; then
+                local clean_summary
+                clean_summary="$(printf '%s' "$val" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+                if [[ -z "$clean_summary" || "$clean_summary" == "''" || "$clean_summary" == '\"\"' || "$clean_summary" == *FILL_THIS* ]]; then
+                    echo "BLOCK: result.summary は実値必須。空文字/FILL_THIS残存は禁止（有効値の自動補完もしない）。" >&2
+                    echo "  正: bash scripts/report_field_set.sh <report> result.summary \"実施内容と検証結果の1行要約\"" >&2
+                    return 1
+                fi
+            fi
+            ;;
         files_modified)
             if [[ "$dot_key" == "files_modified" ]]; then
                 python3 -c "

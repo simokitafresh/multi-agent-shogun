@@ -117,6 +117,10 @@ FAIL時だけでなくPASS時も記録することで、スキル全体のパフ
 - **Level 4+(BLOCK/フロー内埋込)のみ時間減衰しない**。通らないから慣れようがない
 - 新ルール追加時: Level 2(doc)で止めるな。Level 4+(BLOCK)まで実装して初めて恒久防御
 
+### §11.0a result.summary入口防御（cmd_3876）
+
+`result.summary`はテンプレート生成時に`FILL_THIS`を置き、実施内容+検証結果の実値へ置換するまで`report_field_set.sh`が空値/token残存を事前BLOCKする。推定による自動補完は禁止。実装・三態証跡 → `docs/research/cmd_3876_report_summary_funnel.md`
+
 ### §11.1 Human Checkpoint一覧 — Cognitive Surrender防御 (Loop Engineering §XI-C)
 
 ループが信頼できるほど判断を放棄したくなる(Cognitive surrender)。防御は態度ではなく構造。ループに最低1つの停止点を作れ — 人間が常に介入するためではなく、介入できる位置に居続けるために(§IX "Keep One Door Open")。

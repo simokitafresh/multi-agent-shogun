@@ -116,6 +116,7 @@ bash scripts/report_field_set.sh "$REPORT" purpose_validation "目的に合致"
 bash scripts/report_field_set.sh "$REPORT" files_modified "[file1.py, file2.sh]"
 
 # 6. result.summary
+# ★テンプレート初期値FILL_THISは規約トークン。実測を含む実値へ手動置換必須。自動補完禁止。
 bash scripts/report_field_set.sh "$REPORT" result.summary "作業結果の1行要約"
 
 # 7. assumption_invalidation

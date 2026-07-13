@@ -26,6 +26,24 @@ teardown() {
     rm -rf "$TEST_TMPDIR"
 }
 
+@test "result.summary: 正常な実値はexit 0" {
+    run bash "$SCRIPT" "$TEST_REPORT" result.summary "実装完了、bats 3/3 PASS"
+    [ "$status" -eq 0 ]
+    grep -Fq "bats 3/3 PASS" "$TEST_REPORT"
+}
+
+@test "result.summary: 空文字は入口でexit 1" {
+    run bash "$SCRIPT" "$TEST_REPORT" result.summary ""
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"空文字/FILL_THIS残存は禁止"* ]]
+}
+
+@test "result.summary: FILL_THIS残存値は入口でexit 1" {
+    run bash "$SCRIPT" "$TEST_REPORT" result.summary "FILL_THIS - 後で書く"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"空文字/FILL_THIS残存は禁止"* ]]
+}
+
 @test "lessons_useful: dict形式入力はautofix→exit 0" {
     run bash -c "echo '{0: {id: L001, useful: true}, 1: {id: L002, useful: false}}' | bash '$SCRIPT' '$TEST_REPORT' lessons_useful - 2>&1"
     [ "$status" -eq 0 ]

@@ -874,8 +874,8 @@ EOF
     [ "$status" -eq 0 ]
     run grep -F '# AUTO-PREFILL: gate_report_format学習済み — files_modified未記入再発防止。変更ファイル一覧を記入せよ' "$report_path"
     [ "$status" -eq 0 ]
-    run grep -F 'FILL_THIS' "$report_path"
-    [ "$status" -ne 0 ]
+    run grep -F 'summary: "FILL_THIS"  # 必須: 実施内容+検証結果の1行要約へ置換。自動補完禁止' "$report_path"
+    [ "$status" -eq 0 ]
 
     run env GATE_NO_LOG=1 bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$report_path"
     [ "$status" -eq 1 ]
@@ -883,8 +883,7 @@ EOF
     # gate_report_format.sh also removed this check in 44b191b8
     [[ "$output" != *"files_modified: MISSING"* ]]
     [[ "$output" == *"binary_checks.AC1[0].result: 空文字"* ]]
-    [[ "$output" == *"result.summary: MISSING or empty"* ]]
-    [[ "$output" != *"FILL_THIS"* ]]
+    [[ "$output" == *"result.summary: FILL_THIS placeholder remaining"* ]]
 }
 
 # Duplicate ac_version/modifier/report-path tests are covered by test_deploy_task_ac_version.bats.

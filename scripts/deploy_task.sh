@@ -2947,7 +2947,8 @@ EOF
 # Step1: Read this file → Step2: bash scripts/report_field_set.sh <this_file> <key> <value> で各フィールドを埋めよ
 # ━━━ report_field_set.sh ドット記法クイックリファレンス ━━━
 # RFS="bash scripts/report_field_set.sh <このファイル>"
-# \$RFS result.summary "要約文"
+# !! result.summary の FILL_THIS は提出前に実測を含む要約へ必ず置換せよ。自動補完禁止 !!
+# \$RFS result.summary "実施内容と検証結果の1行要約"
 # \$RFS result.details "詳細文"
 # \$RFS lesson_candidate.found "false"
 # \$RFS lesson_candidate.no_lesson_reason "既知パターンL084"
@@ -2972,7 +2973,7 @@ timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
 status: pending
 ac_version_read: ${ac_version}
 result:
-  summary: ""  # 要約を記入
+  summary: "FILL_THIS"  # 必須: 実施内容+検証結果の1行要約へ置換。自動補完禁止
   details: ""
 purpose_validation:
   cmd_purpose: ""
