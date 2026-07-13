@@ -85,14 +85,18 @@ CONNECTION_CMDS = {
 }
 OPERATORS = {"&&", "||", ";", "|", "&"}
 
-# check_pf_config.py は実在するDM-Signalスクリプト(PF構成一括確認, cmd_3378)。
-# これを実行するsegmentのみ構造的に免除する。"db-check"のような自由文字列免除はしない。
-EXEMPT_SCRIPT_BASENAMES = {"check_pf_config.py"}
+# These scripts are trusted capability boundaries, not free-text exceptions.
+# The executed operand must still resolve to the canonical file below.
+EXEMPT_SCRIPT_BASENAMES = {"check_pf_config.py", "db_capability_launcher.py"}
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 
-def _canonical_exempt_script_path() -> str | None:
+def _canonical_exempt_script_path(basename: str) -> str | None:
+    if basename == "db_capability_launcher.py":
+        return os.path.realpath(os.path.join(_REPO_ROOT, "scripts", basename))
+    if basename != "check_pf_config.py":
+        return None
     # config/projects.yaml (SSOT) の dm-signal.path から正規check_pf_config.pyパスを導出する。
     # ハードコードしない(Guard18: 操作的オントロジー — PJパス直書き禁止)。
     # hookは python3 -S (site初期化skip、実測-6ms/呼び出し)で起動するため、通常経路では
@@ -152,6 +156,7 @@ DB_ENV_VAR_RE = re.compile(r"\b[A-Z][A-Z0-9_]*(?:DB|DATABASE|POSTGRES|PG)[A-Z0-9
 CONNECT_CALL_RE = re.compile(r"\.connect\s*\(")
 CREATE_ENGINE_RE = re.compile(r"create_[A-Za-z_]*engine\s*\(")
 ENV_CREDENTIAL_FILE_RE = re.compile(r"(?:^|[^A-Za-z0-9_])\.env(?:\.[A-Za-z0-9_]+)?\b")
+CREDENTIAL_FILE_FLAG_RE = re.compile(r"^--credential-file(?:=.*)?$")
 HTTP_CLIENT_CALL_RE = re.compile(
     r"\b(?:requests|httpx)\.(?:get|post|put|patch|delete|request)\s*\("
     r"|\burllib\.request\.urlopen\s*\("
@@ -321,7 +326,10 @@ def _is_connection_segment(tokens: list[str]) -> bool:
 
 
 def _segment_has_env_credential_source(tokens: list[str]) -> bool:
-    return ENV_CREDENTIAL_FILE_RE.search(" ".join(tokens)) is not None
+    return (
+        ENV_CREDENTIAL_FILE_RE.search(" ".join(tokens)) is not None
+        or any(CREDENTIAL_FILE_FLAG_RE.match(token) for token in tokens)
+    )
 
 
 def _segment_has_explicit_http_call(tokens: list[str]) -> bool:
@@ -470,7 +478,7 @@ def _segment_is_exempt(tokens: list[str]) -> bool:
         # review_correction(2026-07-12 09:24, karo): basename一致だけでは同名の別ファイル
         # (例: /tmp/check_pf_config.py)でも免除されてしまう。実行operandのrealpathを
         # 正規パスとsamefile同一性確認(両方の実在確認込み)した場合のみ免除する。
-        canonical = _canonical_exempt_script_path()
+        canonical = _canonical_exempt_script_path(os.path.basename(clean))
         if not canonical or not os.path.exists(canonical):
             return False
         resolved = os.path.realpath(clean)
@@ -543,9 +551,15 @@ def classify(command: str) -> str:
         return "connection:untrusted"
 
     segments = _split_into_segments(all_tokens)
-    connection_segments = [seg for seg in segments if _is_connection_segment(seg)]
+    # A canonical capability launcher owns validation of its credential file,
+    # nonce, mode and child command.  Remove only that exact segment from both
+    # generic DB-intent and credential-source classification.  Other segments
+    # in a compound command remain fully fail-closed.
+    exempt_connection_present = any(_segment_is_exempt(seg) and _is_connection_segment(seg) for seg in segments)
+    untrusted_boundary_segments = [seg for seg in segments if not _segment_is_exempt(seg)]
+    connection_segments = [seg for seg in untrusted_boundary_segments if _is_connection_segment(seg)]
 
-    credential_segments = [seg for seg in segments if _segment_has_env_credential_source(seg)]
+    credential_segments = [seg for seg in untrusted_boundary_segments if _segment_has_env_credential_source(seg)]
     if credential_segments and not connection_segments:
         # 全segmentを能力分類し、未知shell/Python実行が1つでもあればfail-closed。
         if _shell_segments_are_bounded(command, segments):
@@ -553,7 +567,7 @@ def classify(command: str) -> str:
         return "connection:untrusted"
 
     if not connection_segments:
-        return "not_connection"
+        return "connection:local_ephemeral" if exempt_connection_present else "not_connection"
 
     for seg in connection_segments:
         if _segment_is_exempt(seg):

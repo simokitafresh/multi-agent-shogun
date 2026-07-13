@@ -538,6 +538,31 @@ _classify() {
     [ "$status" -eq 0 ]
 }
 
+@test "Guard14 classifier: canonical DB capability launcher owns credential validation" {
+    _classify "python3 $PROJECT_ROOT/scripts/db_capability_launcher.py --capability transactional_restore --mode transactional_restore --credential-file /protected/path/dm-signal-db.env"
+    [ "$status" -eq 0 ]
+    [ "$output" = "not_connection" ]
+}
+
+@test "Guard14: canonical DB capability launcher is ALLOWED via hook" {
+    _run_hook_cmd "python3 $PROJECT_ROOT/scripts/db_capability_launcher.py --capability transactional_restore --mode transactional_restore --credential-file /protected/path/dm-signal-db.env"
+    [ "$status" -eq 0 ]
+}
+
+@test "Guard14 classifier ADVERSARIAL: decoy DB capability launcher is not exempt" {
+    decoy="$BATS_TEST_TMPDIR/db_capability_launcher.py"
+    printf '# decoy\n' > "$decoy"
+    _classify "python3 $decoy --credential-file /protected/path/dm-signal-db.env"
+    [ "$status" -eq 0 ]
+    [ "$output" = "connection:untrusted" ]
+}
+
+@test "Guard14 classifier ADVERSARIAL: canonical launcher does not exempt a second remote segment" {
+    _classify "python3 $PROJECT_ROOT/scripts/db_capability_launcher.py --credential-file /protected/path/dm-signal-db.env ; python3 -c \"import psycopg2; psycopg2.connect(host='db.example.com')\""
+    [ "$status" -eq 0 ]
+    [ "$output" = "connection:untrusted" ]
+}
+
 # --- BLOCK: db-check free-text marker no longer exempts anything (superseded behavior) ---
 
 @test "Guard14: trailing comment mentioning /db-check skill no longer exempts a real remote connect (BLOCKED)" {
