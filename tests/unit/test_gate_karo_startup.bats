@@ -37,6 +37,7 @@ setup() {
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_codex_hooks_no_stop.sh"
     cp "$PROJECT_ROOT/scripts/lib/known_ninjas.sh" "$TEST_TMPDIR/scripts/lib/known_ninjas.sh"
     cp "$PROJECT_ROOT/scripts/lib/yaml_safe_read.py" "$TEST_TMPDIR/scripts/lib/yaml_safe_read.py"
+    cp "$PROJECT_ROOT/scripts/lib/disk_space_watch.sh" "$TEST_TMPDIR/scripts/lib/disk_space_watch.sh"
     cp "$PROJECT_ROOT/scripts/cleanup_three_layer_tmp.sh" "$TEST_TMPDIR/scripts/cleanup_three_layer_tmp.sh"
     chmod +x "$TEST_TMPDIR/scripts/cleanup_three_layer_tmp.sh"
     cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
