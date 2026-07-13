@@ -6,18 +6,21 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_ARCHIVE_SCRIPT="$PROJECT_ROOT/scripts/archive_completed.sh"
     export SRC_FIELD_GET_SCRIPT="$PROJECT_ROOT/scripts/lib/field_get.sh"
+    export SRC_LOCK_PATH_SCRIPT="$PROJECT_ROOT/scripts/lib/lock_path.sh"
     export TEST_ROOT
     TEST_ROOT="$(mktemp -d "$BATS_TMPDIR/archive_completed.root.XXXXXX")"
     export TEST_TEMPLATE="$TEST_ROOT/template"
 
     [ -f "$SRC_ARCHIVE_SCRIPT" ] || return 1
     [ -f "$SRC_FIELD_GET_SCRIPT" ] || return 1
+    [ -f "$SRC_LOCK_PATH_SCRIPT" ] || return 1
     command -v awk >/dev/null 2>&1 || return 1
     command -v flock >/dev/null 2>&1 || return 1
 
     mkdir -p "$TEST_TEMPLATE/scripts/lib" "$TEST_TEMPLATE/queue/reports" "$TEST_TEMPLATE/context"
     ln -s "$SRC_ARCHIVE_SCRIPT" "$TEST_TEMPLATE/scripts/archive_completed.sh"
     ln -s "$SRC_FIELD_GET_SCRIPT" "$TEST_TEMPLATE/scripts/lib/field_get.sh"
+    ln -s "$SRC_LOCK_PATH_SCRIPT" "$TEST_TEMPLATE/scripts/lib/lock_path.sh"
 
     # postconditionで呼ばれても外部通知しないようにスタブ化
     cat > "$TEST_TEMPLATE/scripts/ntfy.sh" <<'EOF'

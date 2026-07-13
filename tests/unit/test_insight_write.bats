@@ -5,7 +5,7 @@ setup() {
     TEST_TMP="$(mktemp -d)"
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 
-    mkdir -p "${TEST_TMP}/scripts"
+    mkdir -p "${TEST_TMP}/scripts/lib"
     mkdir -p "${TEST_TMP}/queue"
 
     # insight_write.sh をコピーし、SCRIPT_DIRをテスト用に差し替え
@@ -13,6 +13,7 @@ setup() {
         -e "s|SCRIPT_DIR=\"\$(cd \"\$(dirname \"\${BASH_SOURCE\[0\]}\")\/\.\.\" && pwd)\"|SCRIPT_DIR=\"${TEST_TMP}\"|" \
         "$PROJECT_ROOT/scripts/insight_write.sh" > "${TEST_TMP}/scripts/insight_write.sh"
     cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "${TEST_TMP}/scripts/memory_db_live_insert.py"
+    cp "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "${TEST_TMP}/scripts/lib/yaml_field_set.sh"
     chmod +x "${TEST_TMP}/scripts/insight_write.sh"
 }
 
@@ -679,4 +680,43 @@ print('FIX_KNOWN_FAILED_RECORDED')
 "
     [ "$status" -eq 0 ]
     [[ "$output" == *"FIX_KNOWN_FAILED_RECORDED"* ]]
+}
+
+@test "並行排他: insight_write追記とyaml_field_set status更新を同時多重実行してもinsights.yamlが破損しない (cmd_3874 AC1)" {
+    local ids=()
+    local id
+    for i in 1 2 3 4 5; do
+        id="$(bash "${TEST_TMP}/scripts/insight_write.sh" "concurrent base entry ${i}" "medium" "test")"
+        ids+=("$id")
+    done
+
+    local pids=()
+    for i in $(seq 1 10); do
+        bash "${TEST_TMP}/scripts/insight_write.sh" "concurrent write ${i}" "medium" "concurrent_test" >/dev/null 2>&1 &
+        pids+=("$!")
+    done
+    for id in "${ids[@]}"; do
+        bash "${TEST_TMP}/scripts/lib/yaml_field_set.sh" "${TEST_TMP}/queue/insights.yaml" "$id" status resolved >/dev/null 2>&1 &
+        pids+=("$!")
+    done
+
+    local failures=0
+    local pid
+    for pid in "${pids[@]}"; do
+        wait "$pid" || failures=$((failures + 1))
+    done
+    [ "$failures" -eq 0 ]
+
+    run python3 -c "
+import yaml
+with open('${TEST_TMP}/queue/insights.yaml', encoding='utf-8') as f:
+    data = yaml.safe_load(f)
+entries = data['insights']
+assert len(entries) == 15, f'expected 15 entries (no loss), got {len(entries)}'
+resolved = [e for e in entries if e.get('status') == 'resolved']
+assert len(resolved) == 5, f'expected 5 resolved, got {len(resolved)}'
+print('CONCURRENT_OK entries=' + str(len(entries)) + ' resolved=' + str(len(resolved)))
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CONCURRENT_OK entries=15 resolved=5"* ]]
 }

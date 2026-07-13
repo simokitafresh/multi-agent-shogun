@@ -708,6 +708,13 @@ inotifywait不可(/mnt/c)→statポーリング。.wslconfigミスで全凍死�
 - L316: WSL→Windows venv Ruff hook: repo-relative pathを使え（cmd_976）
 - L301: bash埋込みPythonではsys.argv経由でパスを渡せ。ヒアドキュメント内の変数展開でエスケープ地獄を回避（cmd_training_L4_004）
 
+**lock_path()実装の二重化に注意(cmd_3874, 2026-07-13)**: `scripts/lib/lock_path.sh`(正本)とは別に、`scripts/lib/yaml_field_set.sh`
+がホットパス回避目的で`lock_path()`を独自にインライン再実装しており、`/mnt/c/*`パスで**正本と異なるハッシュ**を生成していた
+(3箇所で重複実装、DJB2ハッシュ vs サニタイズ文字列末尾48文字)。`queue/insights.yaml`全損事故の直接原因、および`queue/tasks/*.yaml`
+での潜在的事故要因(cmd_complete_gate.shは正本経由、ninja_monitor.sh/deploy_task.shはyaml_field_set()経由で異なるロック)を実証し統一済み。
+L894(同一ファイル複数writerは単一lock_path()共有)の具体的落とし穴 — **「lock_path()」という同名関数が2つ存在しうる**ことも点検せよ。
+新規flock実装は正本`scripts/lib/lock_path.sh`をsourceし、ロジックを複製・再実装するな → `docs/research/cmd_3874_lock_domain_unification.md`
+
 ## 競合調査
 
 6スタイル+我らの定点観測レポート。毎回検索するな、ここを参照せよ。

@@ -16,13 +16,20 @@
 # - Verifies written value by re-reading; exits 1 with FATAL on mismatch.
 
 # Inline lock_path helper to avoid sourcing another file on the hot path.
+# ロジックはscripts/lib/lock_path.sh(正本)と完全一致させること — 独自の派生ロジックは
+# 同一ファイルに対し正本経由の書き手と異なるロックパスを生成し排他が破綻する
+# (cmd_3874: queue/insights.yaml全損の真因。queue/tasks/*.yamlでも同型不一致を確認済み)
 lock_path() {
     local file_path="$1"
     case "$file_path" in
         /mnt/c/*|/mnt/d/*)
-            # WSL2最適化: md5sum+cut subprocess(~10ms)を純bashハッシュ(~0ms)に置換
-            local sanitized="${file_path//[\/: .#*?!]/_}"
-            printf '/tmp/shogun_lock_%s.lock' "${sanitized: -48}"
+            # 純bash DJB2ハッシュ — md5sum subprocessを排除(scripts/lib/lock_path.shと同一導出)
+            local hash=5381 i c
+            for (( i=0; i<${#file_path}; i++ )); do
+                printf -v c '%d' "'${file_path:$i:1}"
+                (( hash = hash * 33 + c ))
+            done
+            printf '/tmp/shogun_lock_%016x.lock' "$hash"
             ;;
         *)
             printf '%s.lock' "$file_path"
@@ -952,15 +959,7 @@ yaml_field_set() {
     fi
 
     local lock_file
-    case "$yaml_file" in
-        /mnt/c/*|/mnt/d/*)
-            local sanitized="${yaml_file//[\/: .#*?!]/_}"
-            lock_file="/tmp/shogun_lock_${sanitized: -48}.lock"
-            ;;
-        *)
-            lock_file="${yaml_file}.lock"
-            ;;
-    esac
+    lock_file="$(lock_path "$yaml_file")"
     local tmp_file
     # cmd_karo_hotfix_queue_yaml_atomicity_202607110113: 同一ディレクトリ(同一FS)にtemp作成。
     # 旧実装はtmpfs(/tmp)にtemp作成しflock内cat>yaml_fileで公開していたが、
@@ -1090,15 +1089,7 @@ yaml_field_set_batch() {
     if [ "$_count" -eq 0 ]; then return 0; fi
 
     local lock_file
-    case "$yaml_file" in
-        /mnt/c/*|/mnt/d/*)
-            local sanitized="${yaml_file//[\/: .#*?!]/_}"
-            lock_file="/tmp/shogun_lock_${sanitized: -48}.lock"
-            ;;
-        *)
-            lock_file="${yaml_file}.lock"
-            ;;
-    esac
+    lock_file="$(lock_path "$yaml_file")"
     local tmp_file
     tmp_file="$(mktemp "${yaml_file}.tmp.XXXXXX")" || {
         echo "FATAL: yaml_field_set_batch: failed to create temp file" >&2

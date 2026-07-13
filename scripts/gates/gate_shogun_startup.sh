@@ -1830,8 +1830,12 @@ if [ -f "$INSIGHTS_FILE" ]; then
         # 閾値到達時のみテキストベースでアーカイブ実行（yaml.dump禁止準拠 cmd_training_L4_R7）
         # gawkでinsightsブロックをstatus別に分離→テキスト追記/書戻し
         # flock排他+mktemp一意tmp: SessionStart/UserPromptSubmitの並行起動で固定tmp名のmvが
-        # cannot statで失敗し更新消失するレースの防止(2026-06-12将軍D0。insight_write.shと同一lock)
-        exec 207>>"${INSIGHTS_FILE}.lock"
+        # cannot statで失敗し更新消失するレースの防止(2026-06-12将軍D0)。
+        # lock_path()経由でinsight_write.sh/yaml_field_set()と同一ロックドメインへ統一
+        # (cmd_3874: 隣接.lockのままだとinsight_write.sh側の修正で二系統lockに再分裂する)
+        # shellcheck source=lib/yaml_field_set.sh
+        source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+        exec 207>>"$(lock_path "$INSIGHTS_FILE")"
         if ! flock -w 5 207; then
             archive_result="SKIP(insights lock timeout — 並行プロセスがアーカイブ中)"
             exec 207>&-

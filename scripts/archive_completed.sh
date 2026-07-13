@@ -21,6 +21,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 # shellcheck disable=SC1091
 source "$PROJECT_DIR/scripts/lib/field_get.sh"
+# shellcheck disable=SC1091
+source "$PROJECT_DIR/scripts/lib/lock_path.sh"
 
 QUEUE_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 CHANGELOG_FILE="$PROJECT_DIR/queue/completed_changelog.yaml"
@@ -452,7 +454,7 @@ write_yaml(pending_path, build_doc(kept))
 write_yaml(archive_path, build_doc(archive_decisions))
 print(len(matched))
 PY
-    ) 200>"/tmp/mas-pending-decisions.lock" 201>"/tmp/mas-pending-decisions-archive.lock"
+    ) 200>"$(lock_path "$PENDING_DECISIONS_FILE")" 201>"$(lock_path "$PENDING_DECISIONS_ARCHIVE")"
 }
 
 archive_pending_decisions_for_cmd() {

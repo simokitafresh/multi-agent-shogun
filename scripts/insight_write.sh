@@ -16,6 +16,10 @@ _insight_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_insight_self" != /* ]] && _insight_self="$PWD/$_insight_self"
 SCRIPT_DIR="${_insight_self%/scripts/insight_write.sh}"
 INSIGHTS_FILE="${INSIGHTS_FILE:-$SCRIPT_DIR/queue/insights.yaml}"
+# lock_path()導入: yaml_field_set経路(insight_resolve.sh等)と同一ロックドメインへ統一
+# (cmd_3874: 隣接.lockとlock_path()由来の二系統lock不整合がinsights.yaml全損の真因)
+# shellcheck source=lib/yaml_field_set.sh
+source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 BULLETIN_SCRIPT="$SCRIPT_DIR/scripts/bulletin_write.sh"
 MEMORY_DB_LIVE_INSERT="$SCRIPT_DIR/scripts/memory_db_live_insert_async.py"
 if [[ ! -f "$MEMORY_DB_LIVE_INSERT" ]]; then
@@ -134,7 +138,7 @@ if not found:
 atomic_replace_lines(insights_file, modified)
 print(f'RESOLVED: {resolve_id}')
 PYEOF
-  ) 200>"$INSIGHTS_FILE.lock"
+  ) 200>"$(lock_path "$INSIGHTS_FILE")"
   exit 0
 fi
 
@@ -546,4 +550,4 @@ PYEOF
     fi
   fi
 
-) 200>"$INSIGHTS_FILE.lock"
+) 200>"$(lock_path "$INSIGHTS_FILE")"
