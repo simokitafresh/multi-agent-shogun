@@ -72,6 +72,7 @@ task:
   task_type: <task_type>
   project: <project>
   purpose: <purpose>
+  estimated_minutes: <positive number>
   acceptance_criteria:
     AC1:
       description: "<AC内容>"
