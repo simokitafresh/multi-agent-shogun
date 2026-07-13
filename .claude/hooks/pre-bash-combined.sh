@@ -54,7 +54,7 @@ fi
 # directly (bypassing this dispatcher) with crafted evidence, so they are
 # unaffected by this bypass; the fail-closed check above still runs.
 if [[ -z "${BATS_TEST_FILENAME:-}" ]] && ! bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" verify "Bash" "" "$command" >/dev/null 2>&1; then
-    emit_deny "BLOCK: 三層preflight証跡なし/無効。UserPromptSubmitごとに記憶DB・semantic・Obsidian検索を完了せよ"
+    emit_deny "BLOCK: 三層preflight証跡なし/無効。UserPromptSubmitごとに記憶DB・semantic・Obsidian検索を完了せよ。復旧: bash scripts/hooks/three_layer_preflight.sh issue \"<今の作業内容1行>\" を実行せよ(証跡発行コマンド自体はallowlist済みでBLOCK中も実行可能)"
 fi
 
 mark_memory_or_gist_numeric_flags() {

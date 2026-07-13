@@ -181,7 +181,7 @@ verify() {
         [[ "$target_real" == "$root_real"/* ]] || return 0
     fi
     [[ -s "$evidence_file" ]] || {
-        echo "BLOCK: 三層preflight証跡なし。UserPromptSubmit後に記憶DB・semantic・Obsidian検索を完了せよ" >&2
+        echo "BLOCK: 三層preflight証跡なし。UserPromptSubmit後に記憶DB・semantic・Obsidian検索を完了せよ。復旧: bash scripts/hooks/three_layer_preflight.sh issue \"<今の作業内容1行>\"" >&2
         return 1
     }
     parsed_status="$(python3 - "$evidence_file" "$nonce_file" "${THREE_LAYER_PREACTION_MAX_AGE_SECONDS:-14400}" <<'PY'
@@ -209,7 +209,7 @@ if data.get("status") != "success" or any(str(data.get(key)) != "0" for key in (
 print("success")
 PY
     )" || {
-        echo "BLOCK: 三層preflight証跡が無効または失敗状態" >&2
+        echo "BLOCK: 三層preflight証跡が無効または失敗状態。復旧: bash scripts/hooks/three_layer_preflight.sh issue \"<今の作業内容1行>\" で再発行せよ" >&2
         return 1
     }
     [[ "$parsed_status" == success ]]
