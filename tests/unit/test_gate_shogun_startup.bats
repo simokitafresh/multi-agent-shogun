@@ -319,7 +319,11 @@ setup() {
     # Fresh per-test process: re-source for a local (non-exported) function def.
     SHOGUN_STARTUP_LIB_ONLY=1 source "$SRC_GATE_SCRIPT"
 
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/shogun_startup.XXXXXX")"
+    # Bats already creates and removes one isolated directory per test.
+    # Reuse it instead of spawning mktemp and recursively deleting a second
+    # tree for every case; fixture mutation isolation remains unchanged.
+    TEST_TMPDIR="$BATS_TEST_TMPDIR/shogun_startup"
+    mkdir -p "$TEST_TMPDIR"
     cp -a "$SHARED_BASE/." "$TEST_TMPDIR/"
 
     export ORIG_HOME="$HOME"
@@ -346,7 +350,6 @@ teardown() {
     unset SHOGUN_MEMORY_DB_CACHE_PATH
     unset SHOGUN_THREE_LAYER_CACHE_WARN_BYTES
     unset WEEKLY_METRICS_NOW
-    [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
 # === Test 1: 全項目正常 → 総合判定OK ===
