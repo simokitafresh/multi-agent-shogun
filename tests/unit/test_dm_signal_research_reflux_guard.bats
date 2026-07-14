@@ -1,5 +1,25 @@
 #!/usr/bin/env bats
 
+# Related implementation: [[dm_signal_research_reflux_guard.sh]]
+
+setup_file() {
+    SUITE_TMP="$(mktemp -d)"
+    export SUITE_TMP
+    for repo in dm-seed other-seed; do
+        git init -q "$SUITE_TMP/$repo"
+        git -C "$SUITE_TMP/$repo" config user.email test@example.com
+        git -C "$SUITE_TMP/$repo" config user.name test
+        mkdir -p "$SUITE_TMP/$repo/docs/research"
+        printf 'base\n' > "$SUITE_TMP/$repo/README.md"
+        git -C "$SUITE_TMP/$repo" add README.md
+        git -C "$SUITE_TMP/$repo" commit -qm baseline
+    done
+}
+
+teardown_file() {
+    rm -rf "$SUITE_TMP"
+}
+
 setup() {
     ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
     GUARD="$ROOT/scripts/dm_signal_research_reflux_guard.sh"
@@ -8,14 +28,12 @@ setup() {
     OTHER="$TMP/other"
     CTX="$TMP/dm-signal-research.md"
     printf '# research\n<!-- last_updated: 2026-07-10 test -->\n' > "$CTX"
+    cp -a "$SUITE_TMP/dm-seed" "$DM"
+    cp -a "$SUITE_TMP/other-seed" "$OTHER"
     for repo in "$DM" "$OTHER"; do
-        git init -q "$repo"
+        mkdir -p "$repo/docs/research"
         git -C "$repo" config user.email test@example.com
         git -C "$repo" config user.name test
-        mkdir -p "$repo/docs/research"
-        printf 'base\n' > "$repo/README.md"
-        git -C "$repo" add README.md
-        git -C "$repo" commit -qm baseline
     done
     export DM_SIGNAL_REPO="$DM"
     export DM_SIGNAL_REFLUX_CONTEXT_FILE="$CTX"
