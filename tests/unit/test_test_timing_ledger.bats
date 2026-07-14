@@ -14,9 +14,9 @@ make_row() {
 }
 
 make_budget_run() {
-  local run_id="$1" wall="$2" revision="${3:-sha}"
-  printf '%s\trepo\t%s\tunit\tbats\ttests/a.bats\t1\t%s\tpass\t0\t0\tfp-%s\t%s\tmode=unit;jobs=1\n' \
-    "$run_id" "$revision" "$wall" "$run_id" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  local run_id="$1" wall="$2" revision="${3:-sha}" fingerprint="${4:-fp-stable}"
+  printf '%s\trepo\t%s\tunit\tbats\ttests/a.bats\t1\t%s\tpass\t0\t0\t%s\t%s\tmode=unit;jobs=1\n' \
+    "$run_id" "$revision" "$wall" "$fingerprint" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 
 @test "writer creates exact 14-column schema in tmp ledger" {
@@ -71,7 +71,7 @@ make_budget_run() {
 
 @test "ratchet blocks a fifth comparable run exceeding absolute and relative limits" {
   for n in 1 2 3 4; do make_budget_run "r$n" 1 >>"$TMPROOT/batch"; done
-  make_budget_run r5 40 >>"$TMPROOT/batch"
+  make_budget_run r5 40 sha fp-changed >>"$TMPROOT/batch"
   bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/batch"
   run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
   [ "$status" -eq 2 ]
@@ -79,9 +79,32 @@ make_budget_run() {
   [[ "$output" == *"BLOCK: suite wall exceeded"* ]]
 }
 
-@test "ratchet exception requires exact owner expiry reason schema" {
+@test "ratchet does not file-BLOCK an unchanged existing slow test" {
   for n in 1 2 3 4; do make_budget_run "r$n" 1 >>"$TMPROOT/batch"; done
   make_budget_run r5 40 >>"$TMPROOT/batch"
+  bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/batch"
+  run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" \
+    TEST_TIMING_RATCHET_SUITE_ABS_SEC=1000 bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"WARN: suite wall regression"* ]]
+  [[ "$output" == *"OK: timing budget ratchet"* ]]
+  [[ "$output" != *"new/changed test budget exceeded"* ]]
+}
+
+@test "ratchet file-BLOCKs the same test when its source fingerprint changes" {
+  for n in 1 2 3 4; do make_budget_run "r$n" 1 >>"$TMPROOT/batch"; done
+  make_budget_run r5 40 sha fp-changed >>"$TMPROOT/batch"
+  bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/batch"
+  run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" \
+    TEST_TIMING_RATCHET_SUITE_ABS_SEC=1000 bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: new/changed test budget exceeded: tests/a.bats"* ]]
+  [[ "$output" != *"BLOCK: suite wall exceeded"* ]]
+}
+
+@test "ratchet exception requires exact owner expiry reason schema" {
+  for n in 1 2 3 4; do make_budget_run "r$n" 1 >>"$TMPROOT/batch"; done
+  make_budget_run r5 40 sha fp-changed >>"$TMPROOT/batch"
   bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/batch"
   printf 'owner\texpires\nteam\t2099-01-01\n' >"$TMPROOT/exceptions.tsv"
   run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" \

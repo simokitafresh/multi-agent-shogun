@@ -220,7 +220,20 @@ if path.exists():
         active_exception |= expiry >= today
 
 limit_ratio = 1.0 + pct / 100.0
-file_hits = [r for r in current[3] if float(r["wall_sec"]) > p95 and float(r["wall_sec"]) > p95 * limit_ratio]
+# A file budget applies only at the change boundary.  Compare each current
+# row with the newest baseline row for that same test_file: absence means new;
+# a different source fingerprint means changed.  Existing unchanged slowness
+# remains visible in distribution output but cannot newly trip the file BLOCK.
+latest_baseline_file = {}
+for run in baseline:
+    for row in run[3]:
+        latest_baseline_file[row["test_file"]] = row
+changed_rows = []
+for row in current[3]:
+    previous = latest_baseline_file.get(row["test_file"])
+    if previous is None or previous["source_fingerprint"] != row["source_fingerprint"]:
+        changed_rows.append(row)
+file_hits = [r for r in changed_rows if float(r["wall_sec"]) > p95 and float(r["wall_sec"]) > p95 * limit_ratio]
 suite_hit = current_wall > wall_median + suite_abs and current_wall > wall_median * limit_ratio
 if file_hits or suite_hit:
     if active_exception:
