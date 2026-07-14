@@ -294,6 +294,55 @@ EOF
     [ -s "$TEST_TMPDIR/cache/memory.db" ]
 }
 
+@test "stale cache search merges canonical append delta with global limit and ordering" {
+    cat > "$TEST_TMPDIR/archive/stale-delta.jsonl" <<'EOF'
+{"ts":"2026-07-15T05:00:00+09:00","agent":"lord","target":"hanzo","direction":"inbound","summary":"cache older","detail":"sharedstaledeltaneedle"}
+{"ts":"2026-07-15T05:10:00+09:00","agent":"lord","target":"hanzo","direction":"inbound","summary":"cache newer","detail":"sharedstaledeltaneedle"}
+EOF
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
+    export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
+    AGENT_ID=hanzo run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" --search "sharedstaledeltaneedle"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cache newer"* ]]
+
+    # A write after cache publication must be visible immediately without a
+    # full canonical FTS scan.  Insert through SQLite to model a canonical
+    # writer that does not know about the ext4 cache.
+    python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
+import sqlite3, sys
+conn = sqlite3.connect(sys.argv[1])
+template = conn.execute("SELECT * FROM events LIMIT 1").fetchone()
+cols = [row[1] for row in conn.execute("PRAGMA table_info(events)")]
+values = dict(zip(cols, template))
+values.update({
+    "id": "stale-delta-direct-write",
+    "ts": "2026-07-15T05:20:00+09:00",
+    "target": "hanzo",
+    "summary": "canonical delta newest",
+    "detail": "sharedstaledeltaneedle",
+    "importance": "normal",
+})
+placeholders = ",".join("?" for _ in cols)
+conn.execute(f"INSERT INTO events ({','.join(cols)}) VALUES ({placeholders})", [values[c] for c in cols])
+rowid = conn.execute("SELECT rowid FROM events WHERE id=?", (values["id"],)).fetchone()[0]
+conn.execute("INSERT INTO events_fts(rowid,summary,detail) VALUES (?,?,?)", (rowid, values["summary"], values["detail"]))
+conn.commit()
+PY
+
+    MEMORY_DB_QUERY_LIMIT=2 AGENT_ID=hanzo run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
+        --db "$TEST_TMPDIR/data/memory.db" --search "sharedstaledeltaneedle"
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | wc -l)" -eq 2 ]
+    [ "$(printf '%s\n' "$output" | sed -n '1p' | cut -f6)" = "canonical delta newest" ]
+    [ "$(printf '%s\n' "$output" | sed -n '2p' | cut -f6)" = "cache newer" ]
+}
+
 @test "memory_db_query atomically regenerates malformed cache and retries once" {
     python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
 import sqlite3

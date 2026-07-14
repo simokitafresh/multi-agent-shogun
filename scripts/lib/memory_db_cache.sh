@@ -56,15 +56,30 @@ refresh_memory_db_cache_async() {
     local timeout_sec="${SHOGUN_MEMORY_DB_CACHE_REFRESH_TIMEOUT:-60}"
     mkdir -p "$(dirname "$cache_path")" 2>/dev/null || return 0
     export -f create_memory_db_cache
-    (
-        flock -n 8 2>/dev/null || exit 0
-        if command -v timeout >/dev/null 2>&1; then
-            # shellcheck disable=SC2016 # $1/$2 are intentionally expanded by bash -c.
-            timeout -k 1 "$timeout_sec" bash -c 'create_memory_db_cache "$1" "$2"' _ "$repo_root" "$source_path" >/dev/null 2>&1 || true
-        else
+    # prepare_memory_db_for_read is normally called inside command
+    # substitution.  A plain `( ... ) &` remains a child of that substitution
+    # shell, so bash waits for the 622MB backup before returning the selected
+    # read path.  Double-fork through setsid -f: the launcher returns
+    # immediately and the actual refresh no longer keeps the substitution
+    # alive.  All stdio is detached before forking so no command-substitution
+    # pipe remains open in the daemonized child.
+    if command -v setsid >/dev/null 2>&1; then
+        # shellcheck disable=SC2016 # positional args are expanded by bash -c.
+        setsid -f bash -c '
+            flock -n 8 2>/dev/null || exit 0
+            if command -v timeout >/dev/null 2>&1; then
+                timeout -k 1 "$3" bash -c '\''create_memory_db_cache "$1" "$2"'\'' _ "$1" "$2" || true
+            else
+                create_memory_db_cache "$1" "$2" || true
+            fi
+        ' _ "$repo_root" "$source_path" "$timeout_sec" \
+            8>"${cache_path}.refresh.lock" >/dev/null 2>&1 </dev/null
+    else
+        (
+            flock -n 8 2>/dev/null || exit 0
             create_memory_db_cache "$repo_root" "$source_path" >/dev/null 2>&1 || true
-        fi
-    ) 8>"${cache_path}.refresh.lock" >/dev/null 2>&1 </dev/null &
+        ) 8>"${cache_path}.refresh.lock" >/dev/null 2>&1 </dev/null &
+    fi
 }
 
 # warm_memory_db_cache_async <repo_root> <source_path>

@@ -84,6 +84,23 @@ PY
     [ "$(wc -l < "$TEST_TMPDIR/refresh.calls")" -eq 1 ]
 }
 
+@test "stale cache command substitution returns before slow refresh child" {
+    create_memory_db_cache "$PROJECT_ROOT" "$TEST_TMPDIR/source.db"
+    touch -d '2 minutes ago' "$SHOGUN_MEMORY_DB_CACHE_PATH"
+    touch "$TEST_TMPDIR/source.db"
+    create_memory_db_cache() {
+        sleep 2
+    }
+
+    local started elapsed_ms read_path
+    started="$(date +%s%3N)"
+    read_path="$(prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db")"
+    elapsed_ms=$(( $(date +%s%3N) - started ))
+
+    [ "$read_path" = "$TEST_TMPDIR/source.db" ]
+    [ "$elapsed_ms" -lt 1000 ]
+}
+
 @test "restart_watchers flow creates a missing cache before touching watchers" {
     rm -f "$SHOGUN_MEMORY_DB_CACHE_PATH"
 

@@ -73,9 +73,31 @@ if [ -z "$target" ] && [ -n "${TMUX_PANE:-}" ]; then
 fi
 
 source_db_path="$db_path"
+cache_db_path="$(memory_db_cache_path "$script_dir" "$source_db_path" 2>/dev/null || true)"
 db_path="$(prepare_memory_db_for_read "$script_dir" "$db_path" "$default_db_path")"
 
 if [ -n "$search_query" ]; then
+    # A stale cache means the canonical DB has newer writes.  Searching the
+    # entire 9P-backed canonical DB makes long CJK LIKE queries exceed the
+    # preflight's 5s budget.  Search the complete ext4 snapshot, then only the
+    # canonical rows appended after that snapshot's max rowid.  This preserves
+    # read-after-write for live inserts without turning every recent write into
+    # a 622MB 9P full scan while the asynchronous cache refresh is in flight.
+    delta_source_path=""
+    delta_after_rowid=""
+    if [ "$db_path" = "$source_db_path" ] && [ -s "$cache_db_path" ]; then
+        delta_after_rowid="$(python3 - "$cache_db_path" <<'PY' 2>/dev/null || true
+import sqlite3, sys
+with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True) as conn:
+    row = conn.execute("SELECT COALESCE(MAX(rowid), 0) FROM events").fetchone()
+print(int(row[0]) if row else 0)
+PY
+)"
+        if [[ "$delta_after_rowid" =~ ^[0-9]+$ ]]; then
+            delta_source_path="$source_db_path"
+            db_path="$cache_db_path"
+        fi
+    fi
     # A cache whose SQLite header is absent cannot satisfy any search. Repair
     # it through SQL mode before launching the heavier FTS search process.
     # Concurrent callers converge in regenerate_cache_atomically(): the flock
@@ -93,11 +115,53 @@ if [ -n "$search_query" ]; then
     if [ -n "$target" ] && [ "$target" != "unknown" ]; then
         search_args+=(--target "$target")
     fi
+    # Cache and delta must use one comparable ordering contract when merged.
+    # LIKE orders both partitions by importance then timestamp; the delta's
+    # rowid predicate makes the canonical read an indexed range scan instead
+    # of an unbounded FTS traversal over the 622MB primary DB.
+    if [ -n "$delta_source_path" ]; then
+        search_args+=(--force-like)
+    fi
     search_stdout="$(mktemp "${TMPDIR:-/tmp}/memory_db_query.search.XXXXXX")"
     search_stderr="$(mktemp "${TMPDIR:-/tmp}/memory_db_query.search_err.XXXXXX")"
     search_rc=0
     python3 "$script_dir/scripts/memory_db_import.py" \
         "${search_args[@]}" >"$search_stdout" 2>"$search_stderr" || search_rc=$?
+    if [ "$search_rc" -eq 0 ] && [ -n "$delta_source_path" ]; then
+        delta_args=(
+            --db "$delta_source_path"
+            --search "$search_query"
+            --limit "${MEMORY_DB_QUERY_LIMIT:-20}"
+            --min-rowid-exclusive "$delta_after_rowid"
+            --force-like
+        )
+        if [ -n "$target" ] && [ "$target" != "unknown" ]; then
+            delta_args+=(--target "$target")
+        fi
+        python3 "$script_dir/scripts/memory_db_import.py" "${delta_args[@]}" \
+            >>"$search_stdout" 2>>"$search_stderr" || search_rc=$?
+        if [ "$search_rc" -eq 0 ]; then
+            python3 - "$search_stdout" "${MEMORY_DB_QUERY_LIMIT:-20}" <<'PY'
+import sys
+
+path, limit_text = sys.argv[1:]
+priority = {"critical": 4, "high": 3, "normal": 2, "low": 1}
+rows = []
+seen = set()
+with open(path, encoding="utf-8") as handle:
+    for order, line in enumerate(handle):
+        parts = line.rstrip("\n").split("\t", 5)
+        if len(parts) < 6 or parts[0] in seen:
+            continue
+        seen.add(parts[0])
+        rows.append((priority.get(parts[4], 0), parts[1], -order, line))
+rows.sort(reverse=True)
+with open(path, "w", encoding="utf-8") as handle:
+    for _, _, _, line in rows[: int(limit_text)]:
+        handle.write(line)
+PY
+        fi
+    fi
     if [ "$search_rc" -eq 0 ]; then
         cat "$search_stdout"
         cat "$search_stderr" >&2

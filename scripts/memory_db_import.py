@@ -1020,7 +1020,14 @@ def default_pending_decisions_path_for_archive(archive_dir: Path) -> Path:
     return archive_dir.parent / "queue" / "pending_decisions.yaml"
 
 
-def search_events(db_path: Path, query: str, limit: int = 20, target: str = "") -> list[sqlite3.Row]:
+def search_events(
+    db_path: Path,
+    query: str,
+    limit: int = 20,
+    target: str = "",
+    min_rowid_exclusive: int = 0,
+    force_like: bool = False,
+) -> list[sqlite3.Row]:
     normalized_query = normalize_text(query)
     if not normalized_query:
         return []
@@ -1029,7 +1036,14 @@ def search_events(db_path: Path, query: str, limit: int = 20, target: str = "") 
 
     try:
         return _search_events_impl(
-            db_path, normalized_query, query, target, target_clause, limit
+            db_path,
+            normalized_query,
+            query,
+            target,
+            target_clause,
+            limit,
+            min_rowid_exclusive,
+            force_like,
         )
     except sqlite3.OperationalError as exc:
         # A DB that has not been through the ETL import yet (fresh checkout,
@@ -1047,22 +1061,25 @@ def _search_events_impl(
     target: str,
     target_clause: str,
     limit: int,
+    min_rowid_exclusive: int = 0,
+    force_like: bool = False,
 ) -> list[sqlite3.Row]:
     with sqlite3.connect(db_path) as conn:
         configure_connection(conn)
         conn.row_factory = sqlite3.Row
 
         # CJK文字を含むクエリはLIKEフォールバック(FTS5 trigramはCJK MATCH非対応)
-        if has_cjk(normalized_query):
+        if has_cjk(normalized_query) or force_like:
             like_terms = cjk_like_terms(normalized_query)
             like_clause = " AND ".join("(e.summary LIKE ? OR e.detail LIKE ?)" for _ in like_terms)
             like_params: list[object] = []
             for term in like_terms:
                 like_pattern = f"%{term}%"
                 like_params.extend((like_pattern, like_pattern))
+            rowid_clause = "AND e.rowid > ?" if min_rowid_exclusive > 0 else ""
             params: tuple[object, ...] = (
-                tuple(like_params + [target, limit]) if target
-                else tuple(like_params + [limit])
+                tuple(like_params + ([min_rowid_exclusive] if min_rowid_exclusive > 0 else []) + [target, limit]) if target
+                else tuple(like_params + ([min_rowid_exclusive] if min_rowid_exclusive > 0 else []) + [limit])
             )
             return list(
                 conn.execute(
@@ -1081,6 +1098,7 @@ def _search_events_impl(
                         0 AS rank
                     FROM events AS e
                     WHERE {like_clause}
+                      {rowid_clause}
                       {target_clause}
                     ORDER BY e.importance DESC, e.ts DESC
                     LIMIT ?
@@ -1093,7 +1111,16 @@ def _search_events_impl(
         fts_query = fts5_query_for_text(query)
         if not fts_query:
             return []
-        params = (fts_query, target, limit) if target else (fts_query, limit)
+        rowid_clause = "AND e.rowid > ?" if min_rowid_exclusive > 0 else ""
+        params = (
+            (fts_query, min_rowid_exclusive, target, limit)
+            if min_rowid_exclusive > 0 and target
+            else (fts_query, min_rowid_exclusive, limit)
+            if min_rowid_exclusive > 0
+            else (fts_query, target, limit)
+            if target
+            else (fts_query, limit)
+        )
         return list(
             conn.execute(
                 f"""
@@ -1112,6 +1139,7 @@ def _search_events_impl(
                 FROM events_fts
                 JOIN events AS e ON e.rowid = events_fts.rowid
                 WHERE events_fts MATCH ?
+                  {rowid_clause}
                   {target_clause}
                 ORDER BY rank, e.ts
                 LIMIT ?
@@ -1589,6 +1617,17 @@ def parse_args() -> argparse.Namespace:
         help="Filter --search results to events.target. Empty keeps the historical unfiltered behavior.",
     )
     parser.add_argument(
+        "--min-rowid-exclusive",
+        type=int,
+        default=0,
+        help="Restrict --search to events rows newer than this rowid (stale-cache delta reads).",
+    )
+    parser.add_argument(
+        "--force-like",
+        action="store_true",
+        help="Use bounded events-table LIKE search instead of FTS MATCH (stale-cache delta merge).",
+    )
+    parser.add_argument(
         "--build",
         action="store_true",
         help="Explicitly rebuild the DB. This is the default when neither --search nor --schema is set.",
@@ -1641,7 +1680,14 @@ def main() -> int:
         Path(args.lord_ruling_cache) if args.lord_ruling_cache else default_lord_ruling_cache_path(db_path)
     )
     if args.search:
-        for row in search_events(db_path, args.search, args.limit, args.target):
+        for row in search_events(
+            db_path,
+            args.search,
+            args.limit,
+            args.target,
+            args.min_rowid_exclusive,
+            args.force_like,
+        ):
             print(
                 "\t".join(
                     [
