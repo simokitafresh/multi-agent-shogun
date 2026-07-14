@@ -73,22 +73,29 @@ def generate(args):
         if not args.fail_reason: raise ValueError("FAIL requires --fail-reason")
         review["karo_attention"] = args.fail_reason
     bundle = {"review": review}; validate(bundle, args.cmd, verdict)
-    # LGTM is a bound approval, not a message label.  Persist the approval for
-    # this exact report fingerprint before any report_review_result can exist.
-    # inbox_write.sh independently validates the marker, preserving defense in
-    # depth when this generator is called outside the skill.
-    if verdict == "APPROVE" and not args.no_notify:
-        subprocess.run(
-            ["bash", str(root / "scripts/review_approval.sh"), args.cmd, "gunshi", "LGTM", str(report.relative_to(root))],
-            cwd=root,
-            check=True,
-        )
     path = root / f"queue/gates/{args.cmd}/sg7_bundle.json"; atomic_json(path, bundle); relative = str(path.relative_to(root)); spec = review["cmd_spec_summary"]
-    notify_verdict = "LGTM" if verdict == "APPROVE" else "RC"
-    message = f"{args.cmd} SG7 bundle. verdict: {notify_verdict}. report: {review['report']} bundle: {relative} cmd_spec_summary: acceptance_criteria_count={spec['acceptance_criteria_count']}, scope={json.dumps(spec['scope'], ensure_ascii=False, separators=(',', ':'))}, project={spec['project']}"
-    if verdict == "FAIL": message += f" karo_attention={args.fail_reason}"
-    if not args.no_notify: subprocess.run(["bash", str(root / "scripts/inbox_write.sh"), "karo", message, "report_review_result", "gunshi"], cwd=root, check=True)
-    print(relative); print(message); return 0
+    print(relative); print(json.dumps(spec, ensure_ascii=False, sort_keys=True)); return 0
+
+def notify(args):
+    root = Path(args.root).resolve(); path = Path(args.bundle)
+    if not path.is_absolute(): path = root / path
+    path = path.resolve(); gates = (root / "queue/gates").resolve()
+    if gates not in path.parents or path.name != "sg7_bundle.json": raise ValueError("bundle must be queue/gates/<cmd>/sg7_bundle.json")
+    review = validate(load(path), args.cmd, "APPROVE")
+    report = (root / review["report"]).resolve(); reports = (root / "queue/reports").resolve()
+    if report.parent != reports or not report.is_file(): raise ValueError("bundle report is missing or outside queue/reports")
+    if hashlib.sha256(report.read_bytes()).hexdigest() != review.get("report_fingerprint"): raise ValueError("bundle report fingerprint is stale")
+    # Step 1.5 observations and Step 2 review_log happen before the skill calls
+    # formal review_approval.  This final boundary merely verifies that exact
+    # marker; it never creates approvals itself.
+    approval_check = f'''source "{root / 'scripts/lib/review_approval.sh'}"
+PROJECT_ROOT="{root}" review_two_phase_ready_gunshi "{args.cmd}" "{report}"
+'''
+    subprocess.run(["bash", "-c", approval_check], cwd=root, check=True)
+    spec = review["cmd_spec_summary"]; relative = str(path.relative_to(root))
+    message = f"{args.cmd} SG7 bundle. verdict: LGTM. report: {review['report']} bundle: {relative} cmd_spec_summary: acceptance_criteria_count={spec['acceptance_criteria_count']}, scope={json.dumps(spec['scope'], ensure_ascii=False, separators=(',', ':'))}, project={spec['project']}"
+    subprocess.run(["bash", str(root / "scripts/inbox_write.sh"), "karo", message, "report_review_result", "gunshi"], cwd=root, check=True)
+    print(message); return 0
 
 def consume(args):
     root = Path(args.root).resolve(); path = Path(args.bundle)
@@ -99,7 +106,8 @@ def consume(args):
 
 def build_parser():
     p = argparse.ArgumentParser(); p.add_argument("--root", default=str(Path(__file__).resolve().parents[1])); subs = p.add_subparsers(dest="action", required=True)
-    g = subs.add_parser("generate"); g.add_argument("--cmd", required=True); g.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); g.add_argument("--report", required=True); g.add_argument("--fail-reason"); g.add_argument("--no-notify", action="store_true"); g.set_defaults(func=generate)
+    g = subs.add_parser("generate"); g.add_argument("--cmd", required=True); g.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); g.add_argument("--report", required=True); g.add_argument("--fail-reason"); g.set_defaults(func=generate)
+    n = subs.add_parser("notify"); n.add_argument("--cmd", required=True); n.add_argument("--bundle", required=True); n.set_defaults(func=notify)
     c = subs.add_parser("consume"); c.add_argument("--cmd", required=True); c.add_argument("--bundle", required=True); c.add_argument("--expect-verdict", choices=("APPROVE", "FAIL")); c.set_defaults(func=consume); return p
 
 def main():

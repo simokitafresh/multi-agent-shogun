@@ -54,9 +54,8 @@ bash scripts/gates/gate_gunshi_report_precheck.sh <report_path>
 
 ### Step 1: SG7バンドル生成
 
-レビュー結果は実行器で生成する。APPROVE時は内部で `review_approval.sh ... gunshi LGTM`
-を先に成功させ、軍師が既読のcmd spec正本からAC数・scope・projectを自動転記し、
-atomic保存後、その実値とbundle pathを家老通知へ埋め込む。approval失敗時は通知0件・exit 2:
+レビュー結果は実行器で生成する。このStepでは軍師が既読のcmd spec正本から
+AC数・scope・projectを自動転記してatomic保存するだけで、approvalも通知も行わない:
 ```bash
 python3 scripts/review_bundle.py generate --cmd "$CMD_ID" --verdict APPROVE --report "$REPORT_PATH"
 # FAIL時のみ
@@ -161,8 +160,13 @@ bash scripts/review_approval.sh "$CMD_ID" gunshi LGTM "$REPORT_PATH"
 ```
 このコマンド成功前にLGTM通知を送るな。report更新後は再レビュー・再実行が必須。
 
-`scripts/review_bundle.py generate` がSG7実値を含む `report_review_result` を送る。
-以下の旧手動MESSAGE送信はfallback専用とし、bundle生成成功後に二重送信するな。
+既存の `review_approval.sh` 成功後、最後にSG7 notifyを実行する。notifyはexact reportの
+approval markerとbundle fingerprintを再検証し、どちらか不一致なら通知0件・exit 2:
+```bash
+python3 scripts/review_bundle.py notify --cmd "$CMD_ID" --bundle "queue/gates/$CMD_ID/sg7_bundle.json"
+```
+
+以下の旧手動MESSAGE送信はfallback専用とし、notify成功後に二重送信するな。
 
 ```bash
 CMD_ID="<cmd_id>"
