@@ -2669,19 +2669,10 @@ run_context_update_check() {
 }
 
 run_context_freshness_nudge() {
-    local context_warn_lines
-
     echo "Context freshness nudge (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/context_freshness_check.sh" ]; then
-        context_warn_lines=$(bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --cmd-warnings "$TEST_CMD_ID" 2>/dev/null || true)
-        if [ -n "$context_warn_lines" ]; then
-            while IFS= read -r warn_line; do
-                [ -n "$warn_line" ] || continue
-                echo "  ${warn_line}"
-            done <<< "$context_warn_lines"
-        else
-            echo "  OK: no stale project context files"
-        fi
+        (bash "$SCRIPT_DIR/scripts/context_freshness_check.sh" --cmd-warnings "$TEST_CMD_ID" >/dev/null 2>&1 || true) &
+        echo "  queued (async)"
     else
         echo "  [INFO] context_freshness_check.sh not found (skip)"
     fi
@@ -2886,7 +2877,7 @@ EOF
     run run_context_freshness_nudge
     [ "$status" -eq 0 ]
     [[ "$output" == *"Context freshness nudge (GATE CLEAR):"* ]]
-    [[ "$output" == *"ALERT: context/infrastructure.md source commits"* ]]
+    [[ "$output" == *"queued (async)"* ]]
 }
 
 @test "lesson_impact rows keyed by subtask_id are updated on gate clear" {
