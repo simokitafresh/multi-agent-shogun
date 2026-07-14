@@ -2713,6 +2713,15 @@ except Exception:
 
 task = raw.get('task', raw) if isinstance(raw, dict) else {}
 
+# Reconnaissance is structurally no-code.  Injected lessons and context may
+# contain words such as scripts/ and gate; those must never reclassify a recon
+# task as an enforcement implementation that requires runtime variation tests.
+task_type = str(
+    task.get('task_type', task.get('type', task.get('scope_mode', '')))
+).strip().lower()
+if task_type in {'scout', 'recon', 'recon2'}:
+    raise SystemExit(1)
+
 def flatten(value):
     if isinstance(value, dict):
         return ' '.join(flatten(item) for item in value.values())

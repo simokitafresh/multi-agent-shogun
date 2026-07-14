@@ -25,8 +25,9 @@ if isinstance(commit_hash, str) and len(commit_hash) == 40 and all(c in "0123456
     print(commit_hash)
     raise SystemExit(0)
 
+no_code_task_types = ("scout", "recon", "recon2")
 task_type = str(d.get("task_type", "")).strip().lower()
-if task_type not in ("scout", "recon"):
+if task_type not in no_code_task_types:
     parent_cmd = str(d.get("parent_cmd", "")).strip()
     for task_path in (root / "queue" / "tasks").glob("*.yaml"):
         try:
@@ -36,14 +37,18 @@ if task_type not in ("scout", "recon"):
             continue
         if isinstance(task, dict) and str(task.get("parent_cmd", "")).strip() == parent_cmd:
             task_type = str(task.get("task_type", task.get("type", task.get("scope_mode", "")))).strip().lower()
-            if task_type in ("scout", "recon"):
+            if task_type in no_code_task_types:
                 break
 files_modified = d.get("files_modified")
 checks = d.get("binary_checks") or {}
 commit_claimed = False
 if isinstance(checks, dict):
     for item in checks.get("commit", []) if isinstance(checks.get("commit", []), list) else []:
-        if isinstance(item, dict) and (
+        check_text = str(item.get("check", "")).strip().lower() if isinstance(item, dict) else ""
+        no_commit_assertion = any(marker in check_text for marker in (
+            "実行していない", "commit禁止", "commit不要", "no-commit", "no commit",
+        ))
+        if isinstance(item, dict) and not no_commit_assertion and (
             item.get("result") is True
             or str(item.get("result", "")).strip().lower() == "yes"
         ):
@@ -64,7 +69,7 @@ no_code_files = files_modified == [] or (
     and bool(files_modified)
     and all(reported_path(item) == report_path for item in files_modified)
 )
-if task_type in ("scout", "recon") and no_code_files and not commit_claimed and not commit_hash:
+if task_type in no_code_task_types and no_code_files and not commit_claimed and not commit_hash:
     print("no-code-change")
     raise SystemExit(0)
 

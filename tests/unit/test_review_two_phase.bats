@@ -114,6 +114,12 @@ SH
   review_report_fingerprint "$REPORT"
 }
 
+@test "no-code RECON2 report-only artifact and affirmative no-commit check fingerprints" {
+  printf 'parent_cmd: cmd_test\ntask_type: recon2\nfiles_modified:\n  - path: queue/reports/ninja_report_cmd_test.yaml\n    change: recon result\nbinary_checks:\n  commit:\n    - {check: stage/commitを実行していない, result: yes}\n' > "$REPORT"
+  fp=$(review_report_fingerprint "$REPORT")
+  [[ "$fp" == *":no-code-change" ]]
+}
+
 @test "deployed SCOUT report remains self-contained after task YAML is overwritten" {
   mkdir -p "$TMPROOT/scripts/lib"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"

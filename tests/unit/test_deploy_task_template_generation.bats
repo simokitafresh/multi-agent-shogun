@@ -932,6 +932,16 @@ EOF
             printf 'task:\n  title: "%s"\n  purpose: "%s"\n' "$scope" "$scope" > "$TEST_PROJECT/queue/tasks/sasuke.yaml"
             ! is_enforcement_variation_contract_task "$TEST_PROJECT/queue/tasks/sasuke.yaml"
         done
+        cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  task_type: recon2
+  purpose: "P5 gate事故条件を偵察する"
+  description: "注入教訓: scripts/gate_detector.sh を実装して修正する"
+  acceptance_criteria:
+    - id: AC1
+      description: "実装材料を行番号付きで報告する"
+YAML
+        ! is_enforcement_variation_contract_task "$TEST_PROJECT/queue/tasks/sasuke.yaml"
     )
 
     _fixture_project_end
