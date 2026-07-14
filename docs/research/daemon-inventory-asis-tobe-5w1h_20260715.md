@@ -1,23 +1,23 @@
-# デーモン棚卸し — AsIs/ToBe 5W1H調査 v1.1 (2026-07-15)
+# デーモン棚卸し — AsIs/ToBe 5W1H調査 v1.2 (2026-07-15)
 
 - 起案: 殿指示 2026-07-15 03:33「デーモンの調査ファイルを作成してgistで共有。各デーモンについて別々にasis/tobe 5w1hで改善点をまとめよう」
-- レビュー: 殿指示03:42により家老・軍師の覚醒レビュー往復2回。**v1.1=R1反映済み**（家老5点=blt_034628、軍師6点=blt_034642）。R2待ち
+- レビュー: 殿指示03:42により家老・軍師の覚醒レビュー往復2回。v1.1=R1反映（家老5点+軍師6点）。**v1.2=家老R2の4点反映（blt_035249、verdict=修正後PASS）**。軍師R2は到着次第追反映
 - 一次データ: `ps -ef`実測(03:34) + cron設定 + 各ログ現物 + 本セッションの実事故 + ninja_monitor.log（R1で家老が突合）
 - 正本: 本ファイル。gist: 2232467c4928227cddaea75e8af6404a
 
 ## §0 全体像（実測 03:34 JST、監視区分はR1家老指摘3で三分類）
 
-| デーモン | プロセス数 | 稼働形態 | 監視区分（現状） | 状態 |
+| デーモン | プロセス数 | 稼働形態 | 監視区分（**P0後確定・家老R2**） | 状態 |
 |---|---|---|---|---|
-| inbox_watcher.sh | 9（agent別） | 常駐（restart_watchers.sh起動、専用lock有） | **要実測**: watchdog対象への9本包含は未突合（軍師R1） | ✅ 稼働 |
-| ninja_monitor.sh | 1（+子） | 常駐 | 要確認 | ✅ 稼働 |
-| ntfy_listener.sh | 1（+curl子） | 常駐 | supervised（HEALTH-OK記録あり、ただしタイムライン注意=§3） | ✅ 稼働 |
-| usage_statusbar_loop.sh | 1 | 常駐 | not-covered疑い | ✅ 稼働（CTX:?%頻発） |
-| gist_sync.sh | 1（dashboard用） | 常駐 | not-covered疑い | ✅ 稼働 |
-| daemon_watchdog.sh | 0（毎分cron） | cron | **watchdog自身の監視者なし**（軍師R1: crontab破損時に誰も気づかない） | ⚠️ 実バグ発現中（§6） |
+| inbox_watcher.sh | **root instance 9**（agent別。生ps substringは子shell含め18を数えるため、厳密数はrestart_watchersのparent除外watcher_process_countを使う=家老R2-4） | 常駐（restart_watchers.sh起動、専用lock有） | **supervised+auto-restart** | ✅ 稼働 |
+| ninja_monitor.sh | 1（+子） | 常駐 | **supervised+auto-restart** | ✅ 稼働 |
+| ntfy_listener.sh | 1（+curl子） | 常駐 | **supervised+auto-restart** | ✅ 稼働 |
+| usage_statusbar_loop.sh | 1 | 常駐 | **inventory-WARN-only** | ✅ 稼働（CTX:?%頻発） |
+| gist_sync.sh | 1（dashboard用） | 常駐 | **inventory-WARN-only** | ✅ 稼働 |
+| daemon_watchdog.sh | 0（毎分cron） | cron | **自身のheartbeat監視は未実装**（P1bの対象） | ✅ **P0是正済み**（§6） |
 | daemon_supervisor.sh | 0 | 非常駐script | — | ⚠️ entry point 4系統併存 |
 
-**監視区分の定義（ToBe側で確立する三分類・家老R1-3）**: (a) supervised+auto-restart（死活判定→自動再起動まで） (b) inventory-WARN-only（登録漏れ・停止をWARN通知のみ——cmd_3951の突合検査はここ） (c) not-covered。**「全デーモンの死活が正しく判定される」はcmd_3951だけでは過大**——cmd_3951後も(b)止まりのデーモンが残る。
+**監視区分の定義（三分類・家老R1-3、P0後の確定=家老R2-2）**: (a) supervised+auto-restart（死活判定→自動再起動まで） (b) inventory-WARN-only（登録漏れ・停止をWARN通知のみ） (c) not-covered。**注意: process inventoryはmin-count+substring判定であり厳密なidentity照合ではない**（同名別プロセスを誤カウントしうる。精密化は必要になった時点で）。
 
 **横断所見（R1で強化）**:
 1. **監視の非対称（軍師R1で数値化）**: 7デーモン中HEALTHログを持つのはntfy_listener等に限られ、**約4/7がHEALTHログなし=約57%が監視外**。さらにwatchdog自体がバグ発現中のため現時点の実効監視率は不明（0%に近い可能性）。HEALTH-OK記録（07-14 22:20）はバグ発現確認（07-15 03:34ログ）より前で、**「今も監視できているか」は未確認**——cmd_3951 AC1の修正後実行が最初の確認点。
@@ -78,21 +78,19 @@
 - **WHAT(AsIs)**: dashboard.md変更検知→固定Gistへ自動アップロード。03:36成功ログ=健全。
 - **ToBe / HOW**: (1)戦況artifact（HTML正本）との役割整理——**P4bとしてentry point一本化(P4a)と分離して個別裁定**（家老R1-5） (2)gh API失敗時リトライ (3)監視区分の確定（not-covered→WARN-onlyへ）
 
-## §6 daemon_watchdog.sh（毎分cron、番人）— R1家老指摘1で因果を訂正
+## §6 daemon_watchdog.sh（毎分cron、番人）— **P0是正完了（家老R2-1で状態更新）**
 
 - **WHAT(AsIs)**: 毎分cronでデーモン死活を確認し自動再起動。**設計意図**: `set -uo pipefail`でset -eを意図的に外し、個別checkの失敗が他checkを止めない造り（家老R1が現物確認）。
-- **実測バグ（本番cronログ・事実は不変）**:
-  - L251: 算術評価が毎分syntax error（カウント変数への複数行値混入）
-  - L84: /proc読み取りとプロセス消滅のrace（ログ汚染）
-- **影響範囲の正確な評価（v1.0の過大表現を訂正）**:
-  - set -e非依存設計のため、**L251エラー=全監視の空洞化は未証明**。壊れているのは当該checkの判定で、他checkは継続している可能性が高い。実効影響はcmd_3951 AC1の修正前後ログ比較で確定する
-  - watchdogは**tmux paneを監視対象にしていない**ため、03:09 dead pane事故の遠因とするv1.0の推定は**削除**（未検証の因果を書かない）
-- **軍師R1追加の構造欠陥**:
-  - **watchdog自身の監視者なし**: crontab破損・cron停止時にwatchdogが起動しないことを誰も検知しない
-  - **tmux health checkなし**: tmux server死=全watcher/monitor無音消失を検知できない（P1相当）
+- **実測バグと是正（完了）**:
+  - L251算術syntax error（複数行値混入）+L84 /proc race → **cmd_3951で是正済み**: commit 4bf8858c0・SG7 APPROVE・GATE CLEAR。**家老実走03:50:23 exit 0・「All daemons running」1行・syntax/proc error 0件・heartbeat更新**を本番確認
+  - 監視対象の突合検査（登録漏れWARN=三分類(b)）も同commitで追加済み
+- **影響範囲の評価（R1訂正を維持）**: set -e非依存設計のためL251エラー=全監視空洞化は未証明だった。dead pane事故の遠因説は削除済み（未検証の因果を書かない）。
+- **残る構造欠陥（軍師R1、P1bの対象）**:
+  - **watchdog自身のheartbeat監視が未実装**: crontab破損・cron停止時にwatchdogが起動しないことを誰も検知しない（heartbeatファイルは書かれるようになったが読み手がいない）
+  - **tmux health checkなし**: tmux server死=全watcher/monitor無音消失を検知できない
 - **ToBe / HOW**:
-  1. P0（cmd_3951委任済み）: L251正規化+L84 race修正+監視対象突合検査（**突合はWARN-only**=三分類(b)。auto-restart化は別段）
-  2. watchdog自身の健全性: 最終実行時刻をstartup gateが検査（cron停止の検知を人でなくgateに）→ P1b
+  1. ~~P0~~ **完了**（cmd_3951、4bf8858c0）
+  2. watchdog heartbeatの読み手: 最終実行時刻をstartup gateが検査（cron停止の検知を人でなくgateに）→ P1b
   3. tmux health check追加 → P1b
 
 ## §7 daemon_supervisor.sh（非常駐・管理層）
@@ -110,9 +108,11 @@
 
 | 優先 | 改善項目 | 実行形態 | 状態 |
 |---|---|---|---|
-| P0 | watchdog L251/L84修正+監視対象突合WARN(§6-1) | 将軍cmd | **cmd_3951 委任済み・疾風acknowledged** |
-| P1a | restart系status/restart分離+backoff/max restarts+共通maintenance lock(§7-1,2) | **独立緊急cmd（P0同梱せず・依存なし）** | 未起票——R2後に起票 |
-| P1b | tmux health check+watchdog自身の健全性検査(§6-2,3) | 将軍cmd | 未起票——R2後に起票 |
+| P0 | watchdog L251/L84修正+監視対象突合WARN(§6-1) | 将軍cmd | ✅ **cmd_3951 GATE CLEAR（4bf8858c0、本番error 0実証）** |
+| P1a-1 | **restart_watchers --statusの副作用除去（read-only status）のみ**の最小緊急cmd（家老R2-3で分割） | 独立緊急cmd・依存なし | 未起票——R2完了後に起票 |
+| P1a-2 | 全daemon共通maintenance lock（複数restart script横断） | 別cmd（P1a-1と分離） | 未起票 |
+| — | ~~restart_watchersへのbackoff追加~~ | **見送り（家老R2-3）**: 一回実行scriptには根拠薄、watchdog側に600秒/3回throttle既存。再起動loopの実呼出元と計測証拠が出るまで同梱しない | 保留（証拠待ち=evidence_gathering） |
+| P1b | tmux health check+watchdog heartbeatの読み手検査(§6-2,3) | 将軍cmd | 未起票——R2完了後に起票 |
 | P2 | monitor respawn成否検証+バックオフ再試行(§2-1) | GA259成果(1cfa0e2f6)土台に既存経路を磨く | 3者協議提案C・殿裁定待ち |
 | P3 | watcher配達レイテンシ・usage `?%`原因の計測弾(§1-1,§4-1) | スクリプト速度レーン | レーン台帳登録候補 |
 | P4a | entry point一本化(§7-3) | 殿裁定事項 | **P1完了後に判断** |
