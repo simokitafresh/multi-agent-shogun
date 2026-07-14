@@ -1111,4 +1111,5 @@ WHY=台帳鮮度回復+aliases品質向上、WHAT=対象スクリプトのCoDD�
 - [[gunshi_idle_bats_speed_bottleneck_20260603]] — 軍師idle: bats速度ボトルネック分析(2026-06-03)
 - [[gunshi_idle_bats_speed_redesign_20260603]] — 軍師idle: bats速度再設計(2026-06-03)
 - [[test_prompt_state_inject_skill_trigger.bats]] — prompt state skill trigger Unit。共通fixtureはsetup_fileで一度だけ生成し、各testで統合preflight相当の準備を反復しない。
+- [[test_semantic_index_update.bats]] — semantic index Unit。実generator契約2件は維持し、既定の全cmd履歴・project registry走査を空fixtureへ束縛して支配項を除く。実装契約は [[semantic_map_generate.sh]] を参照。
 - → [[gunshi_idle_training_rethink_nazenaze_20260516]] 修行再考のなぜなぜ: 修行設計の構造的問題

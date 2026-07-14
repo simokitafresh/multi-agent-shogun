@@ -22,6 +22,12 @@ setup() {
     export SEMANTIC_NEW_FILE_LIST="__semantic_test_no_new_files__"
     unset SEMANTIC_PROJECTS_CONFIG
 
+    # Keep real map generation focused on the two map-contract assertions.
+    # Production defaults scan the full command chronicle and project registry,
+    # which are unrelated to this unit fixture and grow with repository history.
+    export SEMANTIC_CMD_HISTORY_FILES="$TEST_TMPDIR/nonexistent_cmd_history"
+    export SEMANTIC_PROJECTS_CONFIG="$TEST_TMPDIR/nonexistent_projects.yaml"
+
     cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
 # セマンティクスインデックス SSOT
 
