@@ -21,4 +21,7 @@ teardown() {
   [[ "$output" == *"estimated_minutes: 10"* ]]
   [[ "$output" == *"10分超はsplit_decision"* ]]
   [[ "$output" == *"15分超はexecution_env.long_runtime_reason+measured_runtime_sec"* ]]
+  [[ "$output" == *"execution_env:"* ]]
+  [[ "$output" == *"long_runtime_reason:"* ]]
+  [[ "$output" == *"measured_runtime_sec: 0"* ]]
 }

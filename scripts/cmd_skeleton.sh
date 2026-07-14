@@ -99,7 +99,10 @@ cat <<SKELETON
       source: "FILL_THIS: 一次情報のパス(コード現物/DB/設計書§)"
       trust: verified
     depends_on: none
-    execution_env: "FILL_THIS_or_DELETE: Linux venv必須/RSS計測=/usr/bin/time -v等。不要なら行削除(GS/DB系cmdは必須。origin: cmd_3496 kagemaru PowerShell事故)"
+    execution_env:
+      runtime_constraints: "FILL_THIS_or_DELETE: Linux venv必須/RSS計測=/usr/bin/time -v等。不要ならexecution_env全体を削除"
+      long_runtime_reason: "FILL_THIS_if_estimated_minutes_gt_15: 15分超が不可分である具体的理由"
+      measured_runtime_sec: 0  # 15分超のみ実測した正数秒へ置換。15分以下は不要な2行を削除
     timeout_minutes: 30
     estimated_minutes: 10  # 正数必須。10分超はsplit_decision、15分超はexecution_env.long_runtime_reason+measured_runtime_secが配備契約で必須
     quality_gate:

@@ -25,6 +25,9 @@ setup_file() {
     eval "$(sed -n '/^check_ac_must_should_mix()/,/^}/p' "$SRC_SAVE_EXTRACT_SCRIPT")"
     export -f check_ac_must_should_mix
 
+    eval "$(sed -n '/^check_long_runtime_execution_env_contract()/,/^}/p' "$SRC_SAVE_EXTRACT_SCRIPT")"
+    export -f check_long_runtime_execution_env_contract
+
     # check_gp_duplicate: Check 6インラインセクションを関数化
     eval "check_gp_duplicate() {
 $(sed -n '/^# --- Check 6:/,/^# --- Check 7:/{/^# --- Check 7:/d;p}' "$SRC_SAVE_EXTRACT_SCRIPT")
@@ -357,6 +360,37 @@ _setup_cmd_block() {
 }
 
 # --- Check 6: GP重複検出 ---
+
+@test "Check19.5: estimated_minutes>15のscalar execution_envは修正例つきBLOCK" {
+    CMD_BLOCK_NC=$'cmd_test:\n  estimated_minutes: 60\n  execution_env: "Linux venv"'
+    export CMD_BLOCK_NC
+
+    run check_long_runtime_execution_env_contract
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"execution_env mapping"* ]]
+    [[ "$output" == *"long_runtime_reason"* ]]
+    [[ "$output" == *"measured_runtime_sec: 1200"* ]]
+}
+
+@test "Check19.5: estimated_minutes>15の適合mappingはPASS" {
+    CMD_BLOCK_NC=$'cmd_test:\n  estimated_minutes: 60\n  execution_env:\n    long_runtime_reason: "全量処理の実測に基づき不可分"\n    measured_runtime_sec: 1200'
+    export CMD_BLOCK_NC
+
+    run check_long_runtime_execution_env_contract
+
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "Check19.5: estimated_minutes=15はlong-runtime mapping対象外" {
+    CMD_BLOCK_NC=$'cmd_test:\n  estimated_minutes: 15\n  execution_env: "既存scalar"'
+    export CMD_BLOCK_NC
+
+    run check_long_runtime_execution_env_contract
+
+    [ "$status" -eq 0 ]
+}
 
 @test "Check6: GP番号一致でWARN出力" {
     create_queue_file << 'YAML'
