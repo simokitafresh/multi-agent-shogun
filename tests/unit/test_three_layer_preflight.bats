@@ -128,24 +128,101 @@ JSON
     local log="$TMP_EVIDENCE/parallel.log" verify_log="$TMP_EVIDENCE/verify.log"
     : > "$log"
     : > "$verify_log"
+    local -a issue_pids=()
+    local success_count=0 superseded_count=0 other_count=0 rc
     for i in 1 2 3 4; do
         env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
             bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "parallel generation $i" >>"$log" 2>&1 &
+        issue_pids+=("$!")
     done
-    local issue_pids verify_rc i
-    issue_pids="$(jobs -pr)"
+    local verify_rc i pid
     for i in $(seq 1 80); do
         verify_rc=0
         verify Write "$ROOT/context/infrastructure.md" "" >>"$verify_log" 2>&1 || verify_rc=$?
         [ "$verify_rc" -eq 0 ] || [ "$verify_rc" -eq 1 ]
         sleep 0.01
     done
-    wait $issue_pids
+    for pid in "${issue_pids[@]}"; do
+        rc=0
+        wait "$pid" || rc=$?
+        case "$rc" in
+            0) success_count=$((success_count + 1)) ;;
+            75) superseded_count=$((superseded_count + 1)) ;;
+            *) other_count=$((other_count + 1)) ;;
+        esac
+    done
 
+    [ "$success_count" -eq 1 ]
+    [ "$superseded_count" -eq 3 ]
+    [ "$other_count" -eq 0 ]
     ! grep -Eq 'No such file|JSONDecodeError|Traceback|nonce mismatch' "$log" "$verify_log"
     run verify Write "$ROOT/context/infrastructure.md" ""
     [ "$status" -eq 0 ]
     [ "$(find "$TMP_EVIDENCE" -maxdepth 1 -name '.nonce.*' | wc -l)" -eq 0 ]
+}
+
+@test "slow A is superseded by fast B and cannot resurrect old proof" {
+    local tmp_root="$TMP_EVIDENCE/generation_order"
+    local evidence_dir="$TMP_EVIDENCE/generation_order_evidence"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$evidence_dir"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    cp "$ROOT/context/semantic-map.md" "$tmp_root/context/semantic-map.md"
+    : > "$tmp_root/context/probe.md"
+    : > "$tmp_root/docs/semantic-index/index.md"
+    cat > "$tmp_root/scripts/memory_db_query.sh" <<'EOF'
+#!/usr/bin/env bash
+[[ "$*" == *slow-A* ]] && sleep 0.8 || sleep 0.2
+exit 0
+EOF
+    cp "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
+    chmod +x "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
+
+    local agent="generation" pane="%generation" evidence="$evidence_dir/evidence_generation__generation.json"
+    local a_pid b_pid a_rc=0 b_rc=0 a_nonce b_nonce old_proof_pass=0 observed_nonce
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="$agent" TMUX_PANE="$pane" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Write "$tmp_root/context/probe.md" ""
+    [ "$status" -eq 1 ]
+    env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="$agent" TMUX_PANE="$pane" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "slow-A" >"$TMP_EVIDENCE/a.out" 2>&1 &
+    a_pid=$!
+    for _ in $(seq 1 50); do [ -s "$evidence.current" ] && break; sleep 0.01; done
+    a_nonce="$(cat "$evidence.current")"
+
+    env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="$agent" TMUX_PANE="$pane" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "fast-B" >"$TMP_EVIDENCE/b.out" 2>&1 &
+    b_pid=$!
+    for _ in $(seq 1 50); do
+        b_nonce="$(cat "$evidence.current" 2>/dev/null || true)"
+        [ -n "$b_nonce" ] && [ "$b_nonce" != "$a_nonce" ] && break
+        sleep 0.01
+    done
+    [ -n "$b_nonce" ]
+    [ "$b_nonce" != "$a_nonce" ]
+    while kill -0 "$a_pid" 2>/dev/null || kill -0 "$b_pid" 2>/dev/null; do
+        if env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="$agent" TMUX_PANE="$pane" \
+            bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Write "$tmp_root/context/probe.md" "" >/dev/null 2>&1; then
+            observed_nonce="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["nonce"])' "$evidence")"
+            [ "$observed_nonce" = "$b_nonce" ] || old_proof_pass=$((old_proof_pass + 1))
+        fi
+        sleep 0.01
+    done
+    wait "$a_pid" || a_rc=$?
+    wait "$b_pid" || b_rc=$?
+
+    [ "$a_rc" -eq 75 ]
+    [ "$b_rc" -eq 0 ]
+    ! grep -q "$evidence" "$TMP_EVIDENCE/a.out"
+    [ "$old_proof_pass" -eq 0 ]
+    run python3 - "$evidence" "$b_nonce" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["nonce"] == sys.argv[2]
+assert data["prompt_hash"]
+PY
+    [ "$status" -eq 0 ]
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="$agent" TMUX_PANE="$pane" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Write "$tmp_root/context/probe.md" ""
+    [ "$status" -eq 0 ]
 }
 
 @test "redirectを含むechoはread-only偽装としてBLOCK" {
