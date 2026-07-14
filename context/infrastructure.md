@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_infrastructure_context_freshness_20260715 -->
-<!-- source_commit:80f345bbc5104d0fbb9be5f5b25ddb037da412b0 reason:cmd3956-wrapper-and-startup-loop-contracts-reviewed evidence:indexed cmd_complete SG7 sequence, archive evidence, Q6 archive search, CI run-id flock dedupe; L1140-L1141 reflux retained -->
+<!-- source_commit:e15d1f0cb049156d65016503b381f35f5fc93c57 reason:direct-cmd-completion-evidence-reviewed evidence:direct commands require consumed SG7, formal review gate, and CLEAR metric; wrapper regression 9 of 9 PASS -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -19,7 +19,7 @@ context freshnessの`source_commit`境界はinfra root fallbackにも適用し�
 
 SG7レビュー情報はformal Gunshi LGTM時に`review_approval.sh`が`review_bundle.py generate`を原子的に実行して永続化する。GATE後に報告がarchiveされても、`dashboard_update.sh --bundle`はfingerprint済みbundleをSSOTとして再検証せず消費する。archive済みdirect/training報告の復旧時だけ`review_bundle.py generate --allow-archived`を使う。→ `scripts/review_approval.sh` / `scripts/review_bundle.py` / `scripts/dashboard_update.sh`（cmd_3932根治、commits `d2c108a9f`, `b52d88702`）
 
-家老の完了処理は`scripts/cmd_complete.sh`を単一入口とし、SG7 consume→lesson review→cmd gate→context freshness→品質記録→status証明→dashboard→ntfy→inbox archiveをfail-closedで直列実行する。archive済みcmdはarchive・dashboard・gate_metricsのCLEAR三証拠が揃う時だけstatus完了扱いとする。将軍startupのQ6実装証拠は現行inboxに加えて自agentの当日/前日archiveを探索し、CI RED通知はGitHub run ID台帳を単一flock区間で判定・送信・追記して同一run再送を抑止する。→ `scripts/cmd_complete.sh` / `scripts/gates/gate_shogun_startup.sh` / `tests/unit/test_cmd_complete_wrapper.bats` / `tests/unit/test_gate_shogun_startup.bats`（cmd_3956、commits `4b696fd5b`, `9b91e40c1`, `96482b4ef`, `9fe3fb9fa`）
+家老の完了処理は`scripts/cmd_complete.sh`を単一入口とし、SG7 consume→lesson review→cmd gate→context freshness→品質記録→status証明→dashboard→ntfy→inbox archiveをfail-closedで直列実行する。archive済み番号cmdはarchive・dashboard・gate_metricsのCLEAR三証拠、active/archive statusを持たないdirect cmdは消費済みSG7・formal review gate・gate_metrics CLEARの三証拠が揃う時だけstatus完了扱いとする。将軍startupのQ6実装証拠は現行inboxに加えて自agentの当日/前日archiveを探索し、CI RED通知はGitHub run ID台帳を単一flock区間で判定・送信・追記して同一run再送を抑止する。→ `scripts/cmd_complete.sh` / `scripts/gates/gate_shogun_startup.sh` / `tests/unit/test_cmd_complete_wrapper.bats` / `tests/unit/test_gate_shogun_startup.bats`（cmd_3956、commits `4b696fd5b`, `9b91e40c1`, `96482b4ef`, `9fe3fb9fa`, `e15d1f0cb`）
 
 配備の排他はcmd別lockに加え、同じ忍者のtask/report mutationからdurable task_start通知までを忍者別flockで直列化する。待機後は`assigned|acknowledged|in_progress`の別cmdを再読して上書きBLOCKするため、異なるcmdの同時配備でもtask YAMLを混線させない。破損taskはsame-cmd再利用を禁止してstale reset+atomic `--yaml` publishへ必ず戻す。→ `scripts/deploy_task.sh` / `tests/unit/test_deploy_task_lifecycle.bats`（GA-257/258、commits `e6847f0ab`, `448eba94b`、全量76/76 PASS・SKIP0）
 
