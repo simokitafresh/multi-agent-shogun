@@ -4,10 +4,23 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=/dev/null
+source "$ROOT/scripts/lib/agent_config.sh"
+
+is_configured_ninja() {
+    local candidate="${1:-}"
+    case " $(get_ninja_names) " in
+        *" $candidate "*) return 0 ;;
+    esac
+    return 1
+}
+
+[[ "${RESPAWN_DEAD_AGENT_LIB_ONLY:-0}" == "1" ]] && return 0
+
 agent="${1:-}"
 dry_run="${2:-}"
 
-if [[ ! "$agent" =~ ^(hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)$ ]]; then
+if ! is_configured_ninja "$agent"; then
     echo "Usage: $0 <ninja> [--dry-run]" >&2
     exit 2
 fi
