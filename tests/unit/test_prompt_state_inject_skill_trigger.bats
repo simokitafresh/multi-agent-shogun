@@ -37,6 +37,8 @@ EOF
 projects: []
 current_project: dm-signal
 EOF
+  cp -a "$BATS_FILE_TMPDIR/skills" "$BATS_FILE_TMPDIR/role_skills"
+  cp -a "$BATS_FILE_TMPDIR/skills" "$BATS_FILE_TMPDIR/cache_skills"
 }
 
 setup() {
@@ -163,8 +165,7 @@ PY
 
 @test "semantic_search skill recommendations respect SKILL role markers" {
   export PROMPT_STATE_AGENT_ID="hayate"
-  export PROMPT_STATE_SKILLS_DIR="$TEST_TMPDIR/skills"
-  cp -a "$BATS_FILE_TMPDIR/skills/." "$PROMPT_STATE_SKILLS_DIR/"
+  export PROMPT_STATE_SKILLS_DIR="$BATS_FILE_TMPDIR/role_skills"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_role_skills.sh"
   mkdir -p "$PROMPT_STATE_SKILLS_DIR/lesson-sort" "$PROMPT_STATE_SKILLS_DIR/report-write" "$PROMPT_STATE_SKILLS_DIR/general-skill"
   cat > "$PROMPT_STATE_SKILLS_DIR/lesson-sort/SKILL.md" <<'EOF'
@@ -355,8 +356,7 @@ EOF
 }
 
 @test "same prompt reuses skill recommendation cache without rerunning semantic_search" {
-  export PROMPT_STATE_SKILLS_DIR="$TEST_TMPDIR/skills"
-  cp -a "$BATS_FILE_TMPDIR/skills/." "$PROMPT_STATE_SKILLS_DIR/"
+  export PROMPT_STATE_SKILLS_DIR="$BATS_FILE_TMPDIR/cache_skills"
   export PROMPT_STATE_AGENT_ID="hayate_cache_test"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_counting.sh"
   mkdir -p "$PROMPT_STATE_SKILLS_DIR/report-write"
