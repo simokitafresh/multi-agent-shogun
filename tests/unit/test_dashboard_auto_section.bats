@@ -109,13 +109,15 @@ task:
 EOF
 
     failures=0
+    pids=()
     for round in $(seq 1 20); do
         bash "$TEST_PROJECT/scripts/dashboard_auto_section.sh" >"$BATS_TEST_TMPDIR/a.$round.log" 2>&1 &
-        first=$!
+        pids+=("$!")
         bash "$TEST_PROJECT/scripts/dashboard_auto_section.sh" >"$BATS_TEST_TMPDIR/b.$round.log" 2>&1 &
-        second=$!
-        wait "$first" || failures=$((failures + 1))
-        wait "$second" || failures=$((failures + 1))
+        pids+=("$!")
+    done
+    for pid in "${pids[@]}"; do
+        wait "$pid" || failures=$((failures + 1))
     done
 
     [ "$failures" -eq 0 ]

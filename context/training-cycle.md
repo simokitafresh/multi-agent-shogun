@@ -62,6 +62,7 @@ idle忍者に報告書作成修行を配備し、gate BLOCKパターンを実戦
 3. gate_report_format.shが本番同様に検証
 4. BLOCKされたら忍者が自力修正（FIX hintsがgateから表示される）
 5. 自動配備の実装入口は [[ninja_monitor.sh]]。修行idle検知・クールダウン・配備判断を同スクリプト側で担う。
+6. テスト高速化の実測事例は [[dashboard-auto-section-test-speed]]。40 writer検証を維持した並列化の根拠と結果を記録する。
 
 ### 自動修行サイクル（将来的な自動化）
 
