@@ -44,7 +44,10 @@ echo "■ テスト時間台帳鮮度"
 if [ -f "$SCRIPT_DIR/logs/test_timing_ledger.tsv" ]; then
     _timing_health_out="$(bash "$GATE_DIR/gate_test_health.sh" --ledger-health 2>&1 || true)"
     printf '%s\n' "$_timing_health_out" | grep -E '^(OK:|WARN:|INFO:|総合判定:)' | sed 's/^/  /' || true
-    if ! printf '%s\n' "$_timing_health_out" | grep -q '^総合判定: OK'; then
+    # Performance regressions and ratchet warm-up are useful ledger alerts, but
+    # they do not prove that the writer stopped.  Startup labels only an actual
+    # stale ledger or a missing writer path as stale/writer停止.
+    if printf '%s\n' "$_timing_health_out" | grep -Eq '^WARN: timing ledger stale|^WARN: completed test-speed cmd has no timing ledger row'; then
         [ "$overall" = "OK" ] && overall="WARN"
         alerts+=("テスト時間台帳: stale/writer停止を確認せよ")
     fi
