@@ -56,9 +56,13 @@ guard14_classify() {
         # review_correction(09:51, karo): script_dir算出(dirname+cd+pwdサブシェル)は
         # fast-not_connection経路にも課税されていた。slow-path(実際にpython3を
         # 起動する場合)の内側だけへ移す。
-        local script_dir
-        script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-        local classify_script="${script_dir}/scripts/lib/guard14_db_trust_classify.py"
+        # The Python classifier lives beside this shell entrypoint.  Derive its
+        # path with parameter expansion so every slow-path classification does
+        # not fork dirname plus a command-substitution subshell merely to walk
+        # up to the repository root and back down to this directory.
+        local classifier_dir="${BASH_SOURCE[0]%/*}"
+        [[ "$classifier_dir" == "${BASH_SOURCE[0]}" ]] && classifier_dir="."
+        local classify_script="${classifier_dir}/guard14_db_trust_classify.py"
         if [[ -n "${BATS_TEST_FILENAME:-}" && -n "${GUARD14_BATS_CLASSIFY_SCRIPT:-}" ]]; then
             classify_script="$GUARD14_BATS_CLASSIFY_SCRIPT"
         fi
