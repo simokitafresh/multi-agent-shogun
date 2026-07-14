@@ -9,6 +9,8 @@
 #   (A) Extract script references from all SKILL.md files.
 #   (B) Verify referenced script paths exist.
 #   (C) List SKILL.md files that may need updates because a referenced script is newer.
+#   (D) Verify static file paths in fenced examples exist.
+#   (E) Require a dated execution marker for examples declared side-effecting.
 #
 # Exit code: 0=PASS, 2=WARN (missing or stale references)
 set -euo pipefail
@@ -22,6 +24,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+import fcntl
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -40,6 +43,19 @@ checked_at_re = re.compile(
     r"<!--\s*script_refs_checked_at\s*[:=]\s*"
     r"([0-9]{4}-[0-9]{2}-[0-9]{2}(?:[T ][0-9]{2}:[0-9]{2}:[0-9]{2}(?:Z|[+-][0-9]{2}:[0-9]{2})?)?)"
     r"\s*-->"
+)
+fenced_block_re = re.compile(r"```[^\n]*\n(?P<body>.*?)```", re.DOTALL)
+example_path_re = re.compile(
+    r"(?<![A-Za-z0-9_./-])((?:(?:/mnt/[a-zA-Z]/|/home/|/protected/|/etc/)"
+    r"[A-Za-z0-9_./-]+|(?:scripts|skills|context|docs|tests|config|queue)/[A-Za-z0-9_./-]+)"
+    r"\.(?:sh|py|js|md|ya?ml|json|bats|env))(?=$|[\s`'\"|;&),\]])"
+)
+side_effect_re = re.compile(r"<!--\s*example_side_effect\s*:\s*true\s*-->", re.I)
+execution_verified_re = re.compile(
+    r"<!--\s*example_execution_verified_at\s*:\s*"
+    r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:Z|[+-][0-9]{2}:[0-9]{2})"
+    r"\s*-->",
+    re.I,
 )
 
 
@@ -74,6 +90,48 @@ def extract_refs(text: str) -> list[str]:
     for match in inline_ref_re.finditer(text):
         refs.append(clean_ref(match.group(1)))
     return sorted(set(refs))
+
+
+def extract_example_paths(text: str) -> list[str]:
+    paths: set[str] = set()
+    for block in fenced_block_re.finditer(text):
+        body = "\n".join(
+            line for line in block.group("body").splitlines()
+            if not line.lstrip().startswith("#")
+        )
+        for match in example_path_re.finditer(body):
+            raw = clean_ref(match.group(1)).rstrip("]}")
+            # Runtime destinations and intentionally variable/template paths cannot
+            # have a repository-time existence guarantee.
+            if raw.startswith(("/tmp/", "/dev/", "/proc/", "/sys/")):
+                continue
+            if any(token in raw for token in ("$", "<", ">", "{", "}", "*", "?")):
+                continue
+            if re.search(r"(?:YYYY|MM|DD|20XX|\d{8})", raw, re.I):
+                continue
+            if any(part in {"X.bats", "example.json", "example.yaml"} or part.startswith("my_") for part in Path(raw).parts):
+                continue
+            paths.add(raw)
+    return sorted(paths)
+
+
+def example_path_exists(raw: str) -> tuple[bool, Path]:
+    resolved = resolve_ref(raw)
+    if resolved.exists() or Path(raw).is_absolute():
+        return resolved.exists(), resolved
+    # A skill may intentionally run inside another registered project. Resolve
+    # relative examples against those roots before declaring them absent.
+    try:
+        import yaml
+        projects = yaml.safe_load((repo_root / "config/projects.yaml").read_text(encoding="utf-8")) or {}
+        for item in projects.get("projects", []):
+            root = Path(str(item.get("path") or "")).expanduser()
+            candidate = (root / raw).resolve()
+            if candidate.exists():
+                return True, candidate
+    except Exception:
+        pass
+    return False, resolved
 
 
 def parse_checked_at_epoch(text: str) -> float | None:
@@ -118,6 +176,8 @@ skill_files = sorted(
 )
 missing: list[tuple[str, str, str]] = []
 stale: list[tuple[str, str, str]] = []
+missing_example_paths: list[tuple[str, str, str]] = []
+unverified_side_effect_examples: list[str] = []
 total_refs = 0
 skills_with_refs = 0
 
@@ -135,9 +195,16 @@ for skill_file in skill_files:
     checked_at_epoch = parse_checked_at_epoch(text)
     skill_freshness_time = checked_at_epoch if checked_at_epoch is not None else skill_file.stat().st_mtime
 
+    display_skill = str(skill_file.relative_to(repo_root))
+    for example_path in extract_example_paths(text):
+        exists, resolved_example = example_path_exists(example_path)
+        if not exists:
+            missing_example_paths.append((display_skill, example_path, str(resolved_example)))
+    if side_effect_re.search(text) and not execution_verified_re.search(text):
+        unverified_side_effect_examples.append(display_skill)
+
     for ref in refs:
         resolved = resolve_ref(ref)
-        display_skill = str(skill_file.relative_to(repo_root))
         if not resolved.exists():
             missing.append((display_skill, ref, str(resolved)))
             continue
@@ -174,7 +241,39 @@ if stale:
 else:
     print("OK: SKILL.md更新日がscript参照先以上に新しい")
 
-if missing or stale:
+if missing_example_paths:
+    print("=== 例示コードブロック内パス不在 ===")
+    for skill, ref, resolved in missing_example_paths[:30]:
+        print(f"  WARN: {skill} -> {ref} (resolved: {resolved})")
+    if len(missing_example_paths) > 30:
+        print(f"  ... {len(missing_example_paths) - 30} more")
+else:
+    print("OK: 例示コードブロック内の静的ファイルパスが実在")
+
+if unverified_side_effect_examples:
+    print("=== 副作用例示の実走検証マーカー不在 ===")
+    for skill in unverified_side_effect_examples[:30]:
+        print(f"  WARN: {skill} requires example_execution_verified_at (ISO 8601)")
+else:
+    print("OK: 宣言済み副作用例示に日時つき実走検証マーカーあり")
+
+if missing or stale or missing_example_paths or unverified_side_effect_examples:
+    fire_log = Path(os.environ.get("GATE_FIRE_LOG_FILE", repo_root / "logs/gate_fire_log.yaml"))
+    fire_log.parent.mkdir(parents=True, exist_ok=True)
+    reasons = (
+        f"missing={len(missing)},stale={len(stale)},"
+        f"example_path_missing={len(missing_example_paths)},"
+        f"side_effect_marker_missing={len(unverified_side_effect_examples)}"
+    )
+    with fire_log.open("a", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        ts = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+        handle.write(
+            f'- ts: "{ts}", file: "SKILL.md", gate: "skill_script_refs", '
+            f'result: WARN, reasons: "{reasons}"\n'
+        )
+        handle.flush()
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
     print("--- 総合判定: WARN ---")
     sys.exit(2)
 

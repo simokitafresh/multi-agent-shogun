@@ -119,3 +119,14 @@ PY
     [ "$status" -eq 0 ]
     [ "$output" = "" ]
 }
+
+@test "detector_fp_rate connects skill_script_refs gate fires" {
+    cat > "$TEST_TMPDIR/logs/gate_fire_log.yaml" <<'EOF'
+- ts: "2026-07-15T03:40:00+09:00", file: "SKILL.md", gate: "skill_script_refs", result: WARN, reasons: "example_path_missing=1"
+EOF
+
+    run env DETECTOR_FP_ROOT="$TEST_TMPDIR" bash "$PROJECT_ROOT/scripts/detector_fp_rate.sh"
+    [ "$status" -eq 0 ]
+    grep -q 'detector: "skill_script_refs"' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+    grep -q 'outcome: "unknown"' "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+}

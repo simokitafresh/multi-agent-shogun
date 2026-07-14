@@ -161,6 +161,22 @@ def gunshi_cs_events():
     return events
 
 
+def skill_script_ref_events():
+    events = []
+    for e in parse_fire_log(gate_fire_path):
+        if e.get("gate") != "skill_script_refs":
+            continue
+        events.append({
+            "ts": e.get("ts"),
+            "detector": "skill_script_refs",
+            "cmd_id": e.get("file") or "SKILL.md",
+            "result": e.get("result"),
+            "reason": e.get("reasons") or "",
+            "source": "gate_fire_log",
+        })
+    return events
+
+
 def backup_rotation_summary():
     """Aggregate memory_db_backup_rotation fires (scripts/memory_db_live_insert.py's
     rotate_routine_backups) into their own measurement section. These fires are
@@ -295,7 +311,10 @@ def cmd_save_currently_emits_detector(cmd_id, detector):
     return f"check={check_name}" in proc.stdout or f'checks: "{check_name}"' in proc.stdout
 
 
-events = cmd_save_events() + escalation_events() + today_history_events() + gunshi_cs_events()
+events = (
+    cmd_save_events() + escalation_events() + today_history_events()
+    + gunshi_cs_events() + skill_script_ref_events()
+)
 events.sort(key=lambda x: parse_ts(x.get("ts")) or dt.datetime.min.replace(tzinfo=dt.timezone.utc))
 
 by_cmd = collections.defaultdict(list)
