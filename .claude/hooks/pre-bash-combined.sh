@@ -8,12 +8,16 @@ if [ -n "${HOOK_PAYLOAD+x}" ]; then
 else
     payload="$(cat)"
 fi
+if [[ -n "${BATS_TEST_FILENAME:-}" && -n "${GUARD14_BATS_COMMAND+x}" ]]; then
+    command="$GUARD14_BATS_COMMAND"
+    payload='{"tool_name":"Bash","tool_input":{"command":"guard14-bats-command"}}'
+fi
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 [[ "$payload" != *'"Bash"'* ]] && exit 0
-command=""
+command="${command:-}"
 # cmd_2075: jq → awk置換 (jq≈4ms → awk≈2ms, 前回revertとの差: サブシェル維持/ツール軽量化)
 # awk char-by-char で \"エスケープを正しく処理
-if [[ "$payload" == *'"tool_input"'* && "$payload" == *'"command"'* ]]; then
+if [[ -z "$command" && "$payload" == *'"tool_input"'* && "$payload" == *'"command"'* ]]; then
     command="$(awk '
         match($0, /"command"[[:space:]]*:[[:space:]]*"/) {
             s = substr($0, RSTART + RLENGTH)
@@ -38,7 +42,37 @@ emit_deny() {
 _pre_bash_self="${BASH_SOURCE[0]}"
 [[ "$_pre_bash_self" != /* ]] && _pre_bash_self="$PWD/$_pre_bash_self"
 SCRIPT_DIR="${_pre_bash_self%/.claude/hooks/pre-bash-combined.sh}"
+if [[ -n "${BATS_TEST_FILENAME:-}" && -n "${GUARD14_BATS_PROJECT_ROOT:-}" ]]; then
+    SCRIPT_DIR="$GUARD14_BATS_PROJECT_ROOT"
+fi
 unset _pre_bash_self
+
+# Guard14's boundary suite exercises this combined-hook entry point dozens of
+# times.  Let that suite skip unrelated guards while still using the exact
+# production Guard14 implementation below.  BATS_TEST_FILENAME makes the
+# override unavailable in agent sessions even if the environment leaks.
+run_guard14() {
+    if [[ ! -f "$SCRIPT_DIR/scripts/lib/guard14_db_trust_classify.sh" ]]; then
+        echo "BLOCK [Guard14]: DB接続分類器(scripts/lib/guard14_db_trust_classify.sh)が見つからない。fail-closedのため全DB関連コマンドをBLOCKする。" >&2
+        return 2
+    fi
+    # shellcheck source=scripts/lib/guard14_db_trust_classify.sh
+    source "$SCRIPT_DIR/scripts/lib/guard14_db_trust_classify.sh"
+    local classification
+    if ! classification="$(guard14_classify "$payload" "$command")"; then
+        echo "BLOCK [Guard14]: DB接続分類器(guard14_classify)の実行に失敗した。fail-closedのためBLOCKする。" >&2
+        return 2
+    fi
+    if [[ "$classification" != "not_connection" && "$classification" != "connection:local_ephemeral" ]]; then
+        echo "BLOCK [Guard14]: DB直接接続禁止(判定=${classification:-classification_error})。/db-checkスキルを使え(skills/db-check/SKILL.md)。スキーマ・接続方式・クエリテンプレート全て完備。試行錯誤ゼロで到達できる。localhost/127.0.0.1/::1/Unix socket/sqlite:///:memory: を使うローカルCI接続は自動許可対象。" >&2
+        return 2
+    fi
+}
+
+if [[ "${GUARD14_BATS_ONLY:-0}" == "1" && -n "${BATS_TEST_FILENAME:-}" ]]; then
+    run_guard14
+    exit 0
+fi
 
 # All state-changing Bash commands in this repository consume the same
 # per-prompt three-layer evidence as Write/Edit. The verifier has a narrow
@@ -845,26 +879,13 @@ fi
 # set -euoによりexit 1(hookエラー扱い。Codex CLIはこれでクラッシュしうる)で終わり、
 # Guard14表記の無い一般的なbashエラーになる。fail-closedの意図(exit 2+明示BLOCK)を
 # 保つため、source前に実在確認して専用のGuard14 BLOCKへ倒す。
-if [[ ! -f "$SCRIPT_DIR/scripts/lib/guard14_db_trust_classify.sh" ]]; then
-    echo "BLOCK [Guard14]: DB接続分類器(scripts/lib/guard14_db_trust_classify.sh)が見つからない。fail-closedのため全DB関連コマンドをBLOCKする。" >&2
-    exit 2
-fi
-# shellcheck source=scripts/lib/guard14_db_trust_classify.sh
-source "$SCRIPT_DIR/scripts/lib/guard14_db_trust_classify.sh"
 # review_correction(2026-07-12 10:03, karo): 単純代入 `_g14_classification="$(guard14_classify ...)"`
 # はset -euo下で、guard14_classify内部のpython3が失敗した場合その非zero終了statusをそのまま
 # 引き継ぎ、if判定に到達する前にset -eでhookが即終了する。この経路ではpython3のstderrを
 # 2>/dev/nullで握り潰しているためGuard14表記の無い、失敗理由不明のexitになる(実際の失敗modeに
 # よってexit codeも不定)。`if !`形式(set -eの対象外)で明示的に捕捉し、専用Guard14 BLOCK+exit 2へ
 # 正規化する。
-if ! _g14_classification="$(guard14_classify "$payload" "$command")"; then
-    echo "BLOCK [Guard14]: DB接続分類器(guard14_classify)の実行に失敗した。fail-closedのためBLOCKする。" >&2
-    exit 2
-fi
-if [[ "$_g14_classification" != "not_connection" && "$_g14_classification" != "connection:local_ephemeral" ]]; then
-    echo "BLOCK [Guard14]: DB直接接続禁止(判定=${_g14_classification:-classification_error})。/db-checkスキルを使え(skills/db-check/SKILL.md)。スキーマ・接続方式・クエリテンプレート全て完備。試行錯誤ゼロで到達できる。localhost/127.0.0.1/::1/Unix socket/sqlite:///:memory: を使うローカルCI接続は自動許可対象。" >&2
-    exit 2
-fi
+run_guard14
 
 # === Guard 15: CoDD greenfield generate before extract BLOCK (LS036 L4, cmd_2891事故) ===
 # 一次情報確認(2026-07-08, codd v2.19.0 --help): `codd require`はbrownfield専用("Run 'codd extract' first"と明記)、

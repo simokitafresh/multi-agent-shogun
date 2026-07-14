@@ -26,8 +26,15 @@
 setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    export HOOK_SCRIPT="$PROJECT_ROOT/.claude/hooks/pre-bash-combined.sh"
-    export CLASSIFY_SCRIPT="$PROJECT_ROOT/scripts/lib/guard14_db_trust_classify.py"
+    export HOOK_SCRIPT="$BATS_FILE_TMPDIR/pre-bash-combined.sh"
+    cp "$PROJECT_ROOT/.claude/hooks/pre-bash-combined.sh" "$HOOK_SCRIPT"
+    export GUARD14_BATS_PROJECT_ROOT="$PROJECT_ROOT"
+    mkdir -p "$BATS_FILE_TMPDIR/scripts/lib"
+    export CLASSIFY_SCRIPT="$BATS_FILE_TMPDIR/scripts/lib/guard14_db_trust_classify.py"
+    cp "$PROJECT_ROOT/scripts/lib/guard14_db_trust_classify.py" "$CLASSIFY_SCRIPT"
+    ln -s "$PROJECT_ROOT/scripts/db_capability_launcher.py" "$BATS_FILE_TMPDIR/scripts/db_capability_launcher.py"
+    export GUARD14_BATS_CLASSIFY_SCRIPT="$CLASSIFY_SCRIPT"
+    export GUARD14_BATS_ONLY=1
     [ -f "$HOOK_SCRIPT" ] || return 1
     [ -f "$CLASSIFY_SCRIPT" ] || return 1
     # CI has no external DM-Signal checkout.  Build a minimal SSOT fixture so
@@ -49,9 +56,7 @@ EOF
 
 _run_hook_cmd() {
     local cmd="$1"
-    local payload
-    payload="$(python3 -c "import json,sys; print(json.dumps({'tool_name':'Bash','tool_input':{'command':sys.argv[1]}}))" "$cmd")"
-    run bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$HOOK_SCRIPT"
+    run env GUARD14_BATS_COMMAND="$cmd" bash "$HOOK_SCRIPT"
 }
 
 _classify() {

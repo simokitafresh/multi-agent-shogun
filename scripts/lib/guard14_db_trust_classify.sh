@@ -58,7 +58,15 @@ guard14_classify() {
         # 起動する場合)の内側だけへ移す。
         local script_dir
         script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-        HOOK_PAYLOAD_JSON="$payload" python3 -S "${script_dir}/scripts/lib/guard14_db_trust_classify.py" 2>/dev/null
+        local classify_script="${script_dir}/scripts/lib/guard14_db_trust_classify.py"
+        if [[ -n "${BATS_TEST_FILENAME:-}" && -n "${GUARD14_BATS_CLASSIFY_SCRIPT:-}" ]]; then
+            classify_script="$GUARD14_BATS_CLASSIFY_SCRIPT"
+        fi
+        if [[ -n "${BATS_TEST_FILENAME:-}" && -n "${GUARD14_BATS_COMMAND+x}" ]]; then
+            COMMAND="$command" python3 -S "$classify_script" 2>/dev/null
+        else
+            HOOK_PAYLOAD_JSON="$payload" python3 -S "$classify_script" 2>/dev/null
+        fi
     else
         echo "not_connection"
     fi
