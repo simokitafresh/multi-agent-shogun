@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_infrastructure_context_freshness_20260715 -->
-<!-- source_commit:3f9931302f25b00684123bb781e5b832f36cd26c reason:daemon-inventory-v1.3-and-multiround-spec-indexed evidence:daemon R2 final indexed; speed commits 18/18 and campaign v2.1 consensus indexed; FAIL0 SKIP0 -->
+<!-- source_commit:73473ce19f26a968b00bb9f561da3c36ae2eeed2 reason:ga260-test-contract-reviewed evidence:cmd_complete freshness nudge fixture synchronized to existing async behavior; test-only change; before FAIL1 after 111/111 PASS SKIP0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -776,7 +776,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1137 -->
+<!-- last_synced_lesson: L1139 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1620,6 +1620,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1135: 巨大shell libraryはBats process単位で一度だけsourceする（cmd_training_test_speed_test_deploy_task_ten_min_contract__20260715030536）
 - L1136: 反復shell fixtureは状態集合を維持したまま子process境界を共有する（cmd_training_test_speed_test_test_speed_task_generator__20260715030405）
 - L1137: 統合入口テストは対象外の独立preflightをfixtureで差し替える（cmd_training_test_speed_test_prompt_state_defer_reconcile__20260715031406）
+- L1138: 非同期化時はfixtureの出力粒度も同時同期する（cmd_karo_hotfix_ga260_cmd_complete_context_nudge_20260715）
+- L1139: command substitution内のbackgroundは非同期保証ではない（cmd_karo_hotfix_preflight_memory_timeout_loop_202607150518）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
