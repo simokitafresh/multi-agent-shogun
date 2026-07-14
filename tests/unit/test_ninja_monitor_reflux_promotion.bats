@@ -15,6 +15,56 @@ setup_file() {
     command -v python3 >/dev/null 2>&1 || return 1
 }
 
+@test "_reflux_select_kind: 実績在庫 insight=35 promotion=192 でpromotionを選ぶ" {
+    run bash -lc '
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+_reflux_select_kind 35 INS-001 0 - 192 "[lessons_shogun.yaml] LS086"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "promotion" ]
+}
+
+@test "_reflux_select_kind: promotion=0 で利用可能なinsightを選ぶ" {
+    run bash -lc '
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+_reflux_select_kind 35 INS-001 0 - 0 -
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "insight" ]
+}
+
+@test "_reflux_select_kind: 同数は既存順で決定する" {
+    run bash -lc '
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+_reflux_select_kind 7 INS-001 7 docs/a.md 7 "[lessons_shogun.yaml] LS086"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "insight" ]
+}
+
+@test "_reflux_select_kind: 最大在庫に対象がなければ次の利用可能種別を選ぶ" {
+    run bash -lc '
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+_reflux_select_kind 35 INS-001 500 - 192 "[lessons_shogun.yaml] LS086"
+'
+    [ "$status" -eq 0 ]
+    [ "$output" = "promotion" ]
+}
+
+@test "_reflux_select_kind: 全種別に対象がなければ失敗する" {
+    run bash -lc '
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+_reflux_select_kind 35 - 12 - 192 -
+'
+    [ "$status" -ne 0 ]
+    [ -z "$output" ]
+}
+
 setup() {
     export TEST_TMPDIR
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/reflux_promotion.XXXXXX")"

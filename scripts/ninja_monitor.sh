@@ -3237,6 +3237,34 @@ _reflux_inventory_snapshot() {
         "${backlink_status:-ok}" "${promotion_status:-ok}"
 }
 
+# Select the available inventory with the greatest stock pressure. Ties keep
+# the historical insight -> backlink -> promotion order, making selection
+# deterministic without adding scheduler state.
+_reflux_select_kind() {
+    local insight_count="${1:-0}" insight_target="${2:-}"
+    local backlink_count="${3:-0}" backlink_target="${4:-}"
+    local promotion_count="${5:-0}" promotion_target="${6:-}"
+    local best_kind="" best_count=-1 kind count target
+
+    for kind in insight backlink promotion; do
+        case "$kind" in
+            insight) count="$insight_count"; target="$insight_target" ;;
+            backlink) count="$backlink_count"; target="$backlink_target" ;;
+            promotion) count="$promotion_count"; target="$promotion_target" ;;
+        esac
+        [[ "$count" =~ ^[0-9]+$ ]] || count=0
+        [ "$count" -gt 0 ] 2>/dev/null || continue
+        [ -n "$target" ] && [ "$target" != "-" ] || continue
+        if [ "$count" -gt "$best_count" ]; then
+            best_kind="$kind"
+            best_count="$count"
+        fi
+    done
+
+    [ -n "$best_kind" ] || return 1
+    printf '%s\n' "$best_kind"
+}
+
 _reflux_active_target_owner() {
     local target_path="$1"
     local current_name="$2"
@@ -3383,26 +3411,32 @@ _handle_reflux_auto_deploy() {
         return 1
     fi
 
-    if [ "${insight_before:-0}" -gt 0 ] 2>/dev/null && [ -n "$first_insight" ]; then
-        kind="insight"
+    kind=$(_reflux_select_kind \
+        "${insight_before:-0}" "$first_insight" \
+        "${backlink_before:-0}" "$first_backlink" \
+        "${promotion_before:-0}" "$first_promotion" 2>/dev/null || true)
+    case "$kind" in
+      insight)
         target_path="queue/insights.yaml"
         purpose="還流在庫自動消化: queue/insights.yaml の pending insight ${first_insight} を三層記憶・semantic-map・既存contextで確認し、resolveまたは必要な実修正/decision_candidateへ整理する"
         ac1="対象insight ${first_insight} を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する"
-    elif [ -n "$first_backlink" ]; then
-        kind="backlink"
+        ;;
+      backlink)
         target_path="$first_backlink"
         purpose="還流在庫自動消化: backlinksゼロ文書 ${first_backlink} を確認し、適切なsemantic-links/origin/因果リンクを追加して孤立を減らす"
         ac1="対象文書 ${first_backlink} のincoming backlinkゼロ状態を確認し、適切な因果リンクを追加する"
-    elif [ "${promotion_before:-0}" -gt 0 ] 2>/dev/null && [ -n "$first_promotion" ]; then
-        kind="promotion"
+        ;;
+      promotion)
         target_path=$(_reflux_promotion_target_path "$first_promotion")
         purpose="還流在庫自動消化: 恒久防御未到達の昇格候補 ${first_promotion} を確認し、Level4以上の実装・gate・task注入などへ昇格する"
         ac1="昇格候補 ${first_promotion} を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する"
-    else
+        ;;
+      *)
         unset "REFLUX_IDLE_FIRST_SEEN[$name]"
         log "REFLUX-AUTO-SKIP: $name inventory count positive but no target item"
         return 1
-    fi
+        ;;
+    esac
     ac2="作業前後の還流在庫残数(insights_pending/zero_backlinks/promotions/total)を報告YAMLへ記録し、実行証拠を残す"
     ac1_yaml=$(_yaml_single_quote_scalar "$ac1")
     ac2_yaml=$(_yaml_single_quote_scalar "$ac2")
