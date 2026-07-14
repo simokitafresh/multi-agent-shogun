@@ -10,7 +10,8 @@ description: |
   DO NOT TRIGGER: 報告YAMLの読み取り（→Read tool直接）、verdict判定（→/verdict-check）、commit（→/ninja-commit）
 ---
 
-<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- cmd_3948検分: report_field_set.sh直近差分はsummary placeholder入口BLOCK。field-set CLI・型契約不変。 -->
 <!-- 検分: report_field_set.sh cd0411247dはresult.summaryの空値/FILL_THISを入口でfail-closed BLOCK。既存のCLI引数、stdin YAML、binary_checks→verdict自動導出、呼出順序は不変 -->
 
 Script refs verified: 2026-07-13 将軍検分. `report_field_set.sh` checked_at以降の変更(08f9440fb/69ace96dc/5dfec6b28)をgit showで確認。completed/done報告の内容変更fail-closed BLOCK+normalize_report異常終了時のbyte不変中断=内部堅牢化。`bash scripts/report_field_set.sh "$REPORT" <field> <value>`契約・stdin YAML・verdict自動導出は不変。手順書き換え不要。
