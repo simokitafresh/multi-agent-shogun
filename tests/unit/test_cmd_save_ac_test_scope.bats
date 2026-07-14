@@ -180,3 +180,49 @@ _run_check() {
     echo "$output" >&2
     [[ "$output" == *"WARN_COUNT=0"* ]]
 }
+
+@test "D7新behaviorで新規または拡張test ACがなければWARN" {
+    _set_cmd_block_nc "    purpose: '新behaviorを追加する'
+    acceptance_criteria:
+    - id: AC1
+      description: '新機能を実装する'"
+    _run_check
+    [[ "$output" == *"D7テスト作成規律(new_behavior)のAC証跡が不足"* ]]
+    [[ "$output" == *"ac_test_creation_discipline"* ]]
+}
+
+@test "D7 bugfixで再現regression test ACがあれば通過" {
+    _set_cmd_block_nc "    purpose: 'バグ修正を行う'
+    acceptance_criteria:
+    - id: AC1
+      description: '不具合の再現regressionテストを追加してPASS'"
+    _run_check
+    [[ "$output" != *"D7テスト作成規律"* ]]
+}
+
+@test "D7 behavior不変refactorは既存coverage維持ACで通過" {
+    _set_cmd_block_nc "    purpose: 'behavior不変refactorを行う'
+    acceptance_criteria:
+    - id: AC1
+      description: '既存coverageを維持する'"
+    _run_check
+    [[ "$output" != *"D7テスト作成規律"* ]]
+}
+
+@test "D7 docs data-onlyは実行test免除の根拠記載で通過" {
+    _set_cmd_block_nc "    purpose: 'docs/data-only変更'
+    acceptance_criteria:
+    - id: AC1
+      description: '実行テスト免除。根拠は実行behaviorを変更しないため'"
+    _run_check
+    [[ "$output" != *"D7テスト作成規律"* ]]
+}
+
+@test "D7 docs data-onlyで免除根拠がなければWARN" {
+    _set_cmd_block_nc "    purpose: 'ドキュメントのみ変更'
+    acceptance_criteria:
+    - id: AC1
+      description: '文書を更新する'"
+    _run_check
+    [[ "$output" == *"D7テスト作成規律(docs_data_only)のAC証跡が不足"* ]]
+}

@@ -4507,6 +4507,7 @@ inject_model_injection_profile() {
     inject_block="${inject_block}"$'\n'"${indent}  - \"binary_checks全resultをyes/noで記入\""
     inject_block="${inject_block}"$'\n'"${indent}  - \"lessons_useful全reasonを具体記入\""
     inject_block="${inject_block}"$'\n'"${indent}  - \"files_modifiedはrepo相対path形式\""
+    inject_block="${inject_block}"$'\n'"${indent}  - \"D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除\""
     if [ "$intensity" = "max" ]; then
         inject_block="${inject_block}"$'\n'"${indent}  extra_scaffold:"
         inject_block="${inject_block}"$'\n'"${indent}  - \"ACごとに実テスト証跡をresult.detailsへ記録\""

@@ -150,6 +150,7 @@ failure_modes:
 - 軍師D0実装時は、stdinモードだけでなく cmd_id モード、archive モード、空結果モードを検証せよ。
 - 「既存バグ」と切り離す判断は、全入力モードのテストがPASSした後だけ許される。
 - D0事故 2026-06-05: stdinのみテストして既存バグ扱いした結果、cmd_idモードでset -u/pipefailバグ4件が残り、家老修正が必要になった。
+- D7テスト作成レビュー: 同一対象・分岐の既存contractを先に再利用し、既存file拡張/新fileを同一fixture・責務、isolation、per-file wall、並列laneで二値判定せよ。適用表は新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。モックは外部サービス・破壊的操作・実時間依存・side-effect境界の決定的failure injectionの4類型のみ（第4は正常系real path/contract test併設）。contract消滅時のみ削除し、置換/refactorでは維持する。
 
 ### 5. 確信度ラベル
 

@@ -6438,7 +6438,7 @@ check_ac_phase_mixing() {
 }
 
 check_ac_test_scope() {
-    local ac_block scope_hits
+    local ac_block scope_hits cmd_text category requirement_pattern
 
     ac_block="$(extract_acceptance_criteria_block)"
     [[ -n "${ac_block//[[:space:]]/}" ]] || return 0
@@ -6450,17 +6450,45 @@ check_ac_test_scope() {
         grep -inE \
         '全[[:space:]]*(テスト|test)[[:space:]]*(PASS|通過|成功|pass|green)|テスト[[:space:]]*全[[:space:]]*(PASS|通過|成功|pass|green)|0[[:space:]]*(failures?|errors?|skips?|失敗|エラー|スキップ)|all[[:space:]]*(tests?|テスト)[[:space:]]*(pass|green|通過)|no[[:space:]]*(failures?|errors?|skips?)' \
         || true)"
-    [[ -n "$scope_hits" ]] || return 0
+    if [[ -n "$scope_hits" ]]; then
+        echo "WARN: ACにスコープ未指定のテスト全件条件を検出。変更対象の関連テストのみに限定すべき" >&2
+        printf '%s\n' "$scope_hits" | head -n 5 | while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            echo "  → $(echo "$line" | sed -E 's/^[[:space:]-]*(description|check|id):[[:space:]]*//; s/^\"//; s/\"$//' | cut -c1-100)" >&2
+        done
+        echo "  修正例: 「全テストPASS」→「変更対象(scripts/cmd_save.sh)の関連テストPASS」" >&2
+        echo "  修正例: 「0 failures」→「変更ファイルに対応するテスト(test_cmd_save*.bats等)0 failures」" >&2
+        echo "  理由: スコープ未指定のAC=pre-existing failureを全て抱え込み、AC達成不能になりうる(cmd_2342教訓)" >&2
+        record_warn_reason "ac_test_scope_too_broad" "check=check_ac_test_scope"
+    fi
 
-    echo "WARN: ACにスコープ未指定のテスト全件条件を検出。変更対象の関連テストのみに限定すべき" >&2
-    printf '%s\n' "$scope_hits" | head -n 5 | while IFS= read -r line; do
-        [[ -z "$line" ]] && continue
-        echo "  → $(echo "$line" | sed -E 's/^[[:space:]-]*(description|check|id):[[:space:]]*//; s/^\"//; s/\"$//' | cut -c1-100)" >&2
-    done
-    echo "  修正例: 「全テストPASS」→「変更対象(scripts/cmd_save.sh)の関連テストPASS」" >&2
-    echo "  修正例: 「0 failures」→「変更ファイルに対応するテスト(test_cmd_save*.bats等)0 failures」" >&2
-    echo "  理由: スコープ未指定のAC=pre-existing failureを全て抱え込み、AC達成不能になりうる(cmd_2342教訓)" >&2
-    record_warn_reason "ac_test_scope_too_broad" "check=check_ac_test_scope"
+    # D7: テスト作成規律の適用表をcmd入口で固定する。実行対象の選択は
+    # 新selectorを作らず既存test_select.shの3層mappingへ委ねる。
+    cmd_text="$(printf '%s\n' "${CMD_BLOCK_NC:-$CMD_BLOCK}" | tr '[:upper:]' '[:lower:]')"
+    category=""
+    requirement_pattern=""
+    if printf '%s\n' "$cmd_text" | grep -qE '(bugfix|bug[ _-]?fix|バグ修正|不具合修正|障害修正|回帰修正)'; then
+        category="bugfix"
+        requirement_pattern='(再現|regression|回帰).*(test|テスト)|(test|テスト).*(再現|regression|回帰)'
+    elif printf '%s\n' "$cmd_text" | grep -qE '(behavior[ _-]?不変|behavior[ _-]?preserving|挙動不変|動作不変).*(refactor|リファクタ)|(refactor|リファクタ).*(behavior[ _-]?不変|behavior[ _-]?preserving|挙動不変|動作不変)'; then
+        category="behavior_preserving_refactor"
+        requirement_pattern='(既存|existing).*(coverage|カバレッジ).*(維持|保持|preserv)|(coverage|カバレッジ).*(維持|保持|preserv)'
+    elif printf '%s\n' "$cmd_text" | grep -qE '(docs?[ /_-]?only|data[ /_-]?only|文書のみ|ドキュメントのみ|データのみ|docs/data-only)'; then
+        category="docs_data_only"
+        requirement_pattern='(実行テスト|test|テスト).*(免除|不要|省略).*(根拠|理由)|(根拠|理由).*(実行テスト|test|テスト).*(免除|不要|省略)'
+    elif printf '%s\n' "$cmd_text" | grep -qE '(新規実装|新機能|新behavior|new[ _-]?behavior|behavior追加|機能追加|分岐追加)'; then
+        category="new_behavior"
+        requirement_pattern='(新規|追加|拡張|new|regression|回帰).*(test|テスト)|(test|テスト).*(新規|追加|拡張|new|regression|回帰)'
+    fi
+
+    if [[ -n "$category" ]] && ! printf '%s\n' "$ac_block" | grep -qiE "$requirement_pattern"; then
+        echo "WARN: D7テスト作成規律(${category})のAC証跡が不足" >&2
+        echo "  適用表: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除の根拠" >&2
+        echo "  配置: 同一fixture/責務・isolation・per-file wall・並列laneで既存file拡張か新fileかを二値決定" >&2
+        echo "  test double: 外部サービス/破壊的操作/実時間依存/side-effect境界failure injectionのみ。第4類型は正常系real pathまたはcontract test併設" >&2
+        echo "  削除: contract消滅時のみ。置換/refactorではcoverageを維持" >&2
+        record_warn_reason "ac_test_creation_discipline" "check=check_ac_test_scope category=${category}"
+    fi
 }
 
 check_ac_absolute_literals

@@ -67,6 +67,7 @@ EOF
     grep -q 'model_injection_profile:' "$TEST_PROJECT/queue/tasks/saizo.yaml"
     grep -q 'injection_intensity: "max"' "$TEST_PROJECT/queue/tasks/saizo.yaml"
     grep -q 'binary_checks全resultをyes/noで記入' "$TEST_PROJECT/queue/tasks/saizo.yaml"
+    grep -q 'D7適用表を証跡化' "$TEST_PROJECT/queue/tasks/saizo.yaml"
 }
 
 @test "GPT priority blocks non-Codex deployment while Codex ninja is idle" {

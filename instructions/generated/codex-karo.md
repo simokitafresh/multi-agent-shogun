@@ -465,6 +465,7 @@ External PRs are reinforcements. Treat with respect.
 - Modified `instructions/*.md` → plan regression test for affected scope
 - Modified `CLAUDE.md` → test /new recovery
 - Modified `shutsujin_departure.sh` → test startup
+- D7 test plan → reuse an existing contract before creating a duplicate. Choose existing-file extension vs new file by same fixture/responsibility, isolation, per-file wall time, and parallel lane. New behavior requires new/extended tests; bugfix requires a reproducing regression; behavior-preserving refactor maintains existing coverage; docs/data-only records the executable-test exemption reason. Mocks are limited to external services, destructive operations, real-time dependency, or deterministic failure injection at a side-effect boundary (the fourth requires a normal real-path or contract test). Delete tests only when the contract disappears.
 
 ### Quality Assurance
 
