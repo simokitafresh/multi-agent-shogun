@@ -118,6 +118,7 @@ DM3高精度はTMV含有+クラスバランスの固有構造。汎化不可。P
 
 | ID | 結論(1行) | 出典 |
 |----|----------|------|
+| L887 | 非階層containerではduplicate/path/symlinkが物理entryとして成立しない候補を非allowlist logical artifactとして同一contract内で扱う | cmd_3878 |
 | L146 | 最新引け軸を使う比較ではlatest_close_dateを先に確定し、軸重複を判定する | cmd_495 |
 | L145 | FoF差分はholding_signal文字列ではなく、展開後ticker×weightで比較する | cmd_495 |
 | L186 | 日次比較偵察は対象日N点固定に加えMAX(date)確認を同時実施すると欠落原因を誤診しにくい | recon |

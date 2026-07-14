@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
 <!-- last_updated: 2026-07-14 cmd_karo_hotfix_ga251_context_freshness -->
-<!-- source_commit:cb3e7e7e76b3c962700608559c506d5bf5d350c2 reason:ga251_keeper_orchestration_context_sync evidence:section79_cmd3902_classified -->
+<!-- source_commit:f16625f6 reason:ci_golden_contract_reflected_p4_test_only evidence:section38_ci_golden_row_7tables_573649_rows_243293_exact_run29326659277 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -642,6 +642,8 @@ import metrics_research_engine as MRE
 > 偵察開始時: 症状を見て下表の「共通パターン」「DM-signal固有パターン」に当てはめ、初期仮説を立ててから調査に入れ。想像で進むな — 仮説1つに絞って検証→結果見て次仮説へ。
 
 - L857: 既存スクリプトの再利用はexec文字列置換でなく環境変数overrideで差し替える。exec置換はpre-commit S102でBLOCK（cmd_3815）
+- L891: pytest node idは推測せず`--collect-only -q`の実在収集結果から固定する。collected 0は指定ミスのサイン（cmd_3896）
+- L899: subprocessのready待ちloopはtimeout後の無条件継続を禁止し、成功条件を二値assert+child早期exitを即伝播する（cmd_karo_ci_red_dm_p4_uvicorn_29326659277）
 
 - L819: PF単位の確定イベント実装はrebalance_trigger等のPF別設定を参照せよ。全PF一律の固定日付/件数はハードコードの温床（cmd_3702）
 - L822: MonthlyTradeCalculatorのMockベースdbテストは新規DB問合せ関数追加のたびに複数クラスへ横展開して壊れる（cmd_3710）
@@ -871,6 +873,7 @@ import metrics_research_engine as MRE
 | 領域 | 結論 | 参照 |
 |------|------|------|
 | CI pytest | GitHub Actions pytest workflow追加。PyYAML/pytest依存、PostgreSQL service導入済み。DB接続前提テストはCI service前提で確認する | commits 2e9e1b7d, 0771ba29, 5b93ae17, a99a8623 |
+| CI golden | stock runnerではCI PostgreSQLへ依存閉包7表573,649行をportable COPY復元し、78PF・243,293行をexact比較する。run 29326659277でgolden+lifecycle 7/7 PASS・SKIP0・266.21秒 | commits a63d0920, d7403ca8, 7baa7533 / `scripts/oneshot/cmd_3854_fof_golden_regression_check.py` |
 | codd lexicon | `codd.yaml` / `project_lexicon.yaml` 追加。CoDD設計・fix時はPJ語彙を参照する | cmd_2761 |
 | lesson metadata | `tasks/lessons.md` にwhen/how系field backfill + concrete tags追加。教訓検索・注入の粒度が上がっている | cmd_2748, cmd_2836 |
 | knowledge links | `docs/research/knowledge-base/methods/*.md` 全般に投資知識リンクを接続。method横断探索時はknowledge-base indexだけでなく各method末尾リンクも見る | cmd_3015 |
@@ -1237,6 +1240,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - input bundleは`safe_bundle_v2.load_bundle`のみで読み、raw SHA-256→entry allowlist/size/path→artifact hash→schema/row count→typed decodeの順にfail-closed検証する。pickleと旧`export_input_bundle`経路は使用禁止。
 - materializeは`REPEATABLE READ READ ONLY`をtransaction先頭で設定し、`SHOW transaction_read_only=on`確認後に実行する。valid bundle consumer時のsource SELECT fallbackは0でなければ失敗扱い。
 - 全量前preflightはgolden存在+canonical SHA、pytest-asyncio導入済み`/usr/bin/python3`、`RECALC_RSS_CAP_MB=8192`を二値確認する。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3879_safe_bundle_impl.md`、main統合=`97c13040→b5716329→29ea37a9`。
+- L888: 全量テスト前提artifactと実行環境のpreflight必須——本§の二値確認手順が正本（cmd_3879）
 
 ## §77 SIGNAL CHANGE 07-13/07-14偵察 (cmd_3903, 2026-07-14)
 
@@ -1259,3 +1263,10 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 
 - 07-14上書き対象の23PF×7営業日=161行を7/1確定値へ復元。post値、latest ledger値、独立readonly再照合はそれぞれ161/161 exact、他表write 0、recalculate 0。実行証跡とrollback artifactは`queue/reports/hayate_report_cmd_3905.yaml`。
 - 因果リンク: [[07-14_23FoF月間保有上書き]] -> [[cmd_3905_bounded_restore]] -> [[7/1確定値161行復元]]
+- L897: 本番bounded restoreは実project pathでのlauncher貫通試験を事前要求する。unit PASSだけではroot結合不整合を見逃す（cmd_3905）
+
+## §81 新規Signal INSERTのledger drift通知契約 (cmd_karo_hotfix_signal_insert_ledger_drift_alert_202607141340, 2026-07-14)
+
+- 確定域ledgerで矯正された新規`signals` INSERTは、旧Signal行がなくてもrun-level `SIGNAL CHANGE ALERT`へ1件として可視化する。synthetic entryは通知collector専用であり、架空の`old_holding_signal`を`signal_change_log`へINSERTしない。
+- ledger一致INSERT・ledger未被覆pending・既存UPDATEのchange-log契約・cleanup経路は不変。回帰70/70 PASS、FAIL 0、SKIP 0。一次根拠=`/mnt/c/Python_app/DM-signal` commit `05a45d83`、`backend/app/jobs/flush/signal_flush.py::_collect_new_insert_ledger_drift_alerts`。
+- 因果リンク: [[2026-07-14_23FoF新規INSERT]] -> [[existing_is_Noneでchange_log除外]] -> [[ledger_drift通知0件]] -> [[run_level_ALERT橋渡し]]
