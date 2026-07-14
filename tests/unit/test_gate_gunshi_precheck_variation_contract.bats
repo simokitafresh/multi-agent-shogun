@@ -47,7 +47,7 @@ YAML
 @test "SG-PRE33 detects a completely unperformed variation contract" {
     _write_report ""
 
-    run env GUNSHI_PRECHECK_TASKS_DIR="$TEST_TMPDIR/tasks" bash "$PRECHECK" "$TEST_TMPDIR/report.yaml"
+    run env GUNSHI_PRECHECK_ONLY=SG-PRE33 GUNSHI_PRECHECK_TASKS_DIR="$TEST_TMPDIR/tasks" bash "$PRECHECK" "$TEST_TMPDIR/report.yaml"
     [[ "$output" == *"SG-PRE33"* ]]
     [[ "$output" == *"変形検査が全セル未実施"* ]]
 }
@@ -55,13 +55,13 @@ YAML
 @test "SG-PRE33 detects partially blank variation cells" {
     _write_report $'variation_checks:\n  normal_pass:\n    check: normal\n    result: yes\n  quoted_or_heredoc:\n    check: quoted\n    result: ""'
 
-    run env GUNSHI_PRECHECK_TASKS_DIR="$TEST_TMPDIR/tasks" bash "$PRECHECK" "$TEST_TMPDIR/report.yaml"
+    run env GUNSHI_PRECHECK_ONLY=SG-PRE33 GUNSHI_PRECHECK_TASKS_DIR="$TEST_TMPDIR/tasks" bash "$PRECHECK" "$TEST_TMPDIR/report.yaml"
     [[ "$output" == *"変形検査欄の未記入: quoted_or_heredoc"* ]]
 }
 
 @test "SG-PRE33 passes when all five variation cells have binary results" {
     _write_report $'variation_checks:\n  normal_pass: {check: normal, result: yes}\n  quoted_or_heredoc: {check: quoted, result: yes}\n  linked_worktree: {check: worktree, result: yes}\n  parallel_or_respawn: {check: respawn, result: yes}\n  abnormal_exit: {check: exit, result: yes}'
 
-    run env GUNSHI_PRECHECK_TASKS_DIR="$TEST_TMPDIR/tasks" bash "$PRECHECK" "$TEST_TMPDIR/report.yaml"
+    run env GUNSHI_PRECHECK_ONLY=SG-PRE33 GUNSHI_PRECHECK_TASKS_DIR="$TEST_TMPDIR/tasks" bash "$PRECHECK" "$TEST_TMPDIR/report.yaml"
     [[ "$output" == *"PASS: 変形検査5セルがyes/noで記入済み"* ]]
 }

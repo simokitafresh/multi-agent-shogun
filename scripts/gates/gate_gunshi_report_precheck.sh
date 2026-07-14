@@ -31,6 +31,17 @@ eval "$(python3 "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py"
     --report "$REPORT_PATH" \
     --tasks-dir "${GUNSHI_PRECHECK_TASKS_DIR:-$REPO_ROOT/queue/tasks}" 2>/dev/null)"
 
+# Focused contract checks may stop after the shared engine has parsed the
+# report/task pair.  This avoids unrelated git-history and repository scans;
+# the default remains the complete precheck.
+if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE33" ]; then
+    echo ""
+    echo "■ SG-PRE33: enforcement層の変形検査契約"
+    echo "${VARIATION_CHECKS_MSG:-  SKIP: 変形検査契約の対象外}"
+    [[ "${VARIATION_CHECKS_MSG:-}" != *"ERROR:"* ]]
+    exit $?
+fi
+
 # Project directory (commit検証用)
 PROJECT_DIR=""
 if [ "${IS_DM_SIGNAL:-0}" = "1" ]; then
