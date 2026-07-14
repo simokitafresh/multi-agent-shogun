@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-15 cmd_karo_hotfix_ga258_malformed_task_repair_20260715 -->
-<!-- source_commit:448eba94b4c73d53a554201bc11784a53bedfe10 reason:ga257-ga258-deploy-repair evidence:same-ninja collision BLOCK 2/2; malformed same-cmd repair 1/1; lifecycle 76/76 PASS SKIP0 -->
+<!-- last_updated: 2026-07-15 cmd_karo_hotfix_completion_notify_terminal_duplicate_20260715 -->
+<!-- source_commit:5efbb3a371e06b9f5a911903d773e4095c955a46 reason:timing-dashboard-completion-terminal-contracts evidence:cmd_3942+dashboard contracts reflected; duplicate terminal LGTM alerts 3->0 by explicit reopen requirement; focused 6/6 PASS SKIP0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -16,6 +16,12 @@ context freshnessの`source_commit`境界はinfra root fallbackにも適用し�
 SG7レビュー情報はformal Gunshi LGTM時に`review_approval.sh`が`review_bundle.py generate`を原子的に実行して永続化する。GATE後に報告がarchiveされても、`dashboard_update.sh --bundle`はfingerprint済みbundleをSSOTとして再検証せず消費する。archive済みdirect/training報告の復旧時だけ`review_bundle.py generate --allow-archived`を使う。→ `scripts/review_approval.sh` / `scripts/review_bundle.py` / `scripts/dashboard_update.sh`（cmd_3932根治、commits `d2c108a9f`, `b52d88702`）
 
 配備の排他はcmd別lockに加え、同じ忍者のtask/report mutationからdurable task_start通知までを忍者別flockで直列化する。待機後は`assigned|acknowledged|in_progress`の別cmdを再読して上書きBLOCKするため、異なるcmdの同時配備でもtask YAMLを混線させない。破損taskはsame-cmd再利用を禁止してstale reset+atomic `--yaml` publishへ必ず戻す。→ `scripts/deploy_task.sh` / `tests/unit/test_deploy_task_lifecycle.bats`（GA-257/258、commits `e6847f0ab`, `448eba94b`、全量76/76 PASS・SKIP0）
+
+Bats直接実行は`run_timed_bats.sh`へ集約し、既存writerの14列台帳へ必ず追記する。速度修行task生成もwrapperを強制し、`gate_test_health.sh`が完了reportと台帳の対象集合差を検知する。夜戦欠測7件をbackfillし、台帳543→551・coverage 7/7・対象24/24 PASS。→ `scripts/run_timed_bats.sh` / `scripts/test_speed_task_generator.sh` / `scripts/gates/gate_test_health.sh`（cmd_3942、commit `7e11d37c5`）
+
+dashboardの`## 🚨要対応`は任意セクションであり、欠落時は同期・postcondition・template検証の全3段でno-op成功にする。存在時の件数照合と破損入力WARNは維持する。→ `scripts/dashboard_update.sh` / `tests/unit/test_skill_feedback_loop.bats`（commit `f2f3f2c48`、関連130/130 PASS・SKIP0）
+
+完了通知欠落監視は、terminal marker後のLGTMだけではcmdを再OPEN扱いにしない。明示RC/revisionまたはactive taskがterminal後に存在する場合だけ新世代と判定し、archive済み同一報告への遅延・重複LGTMによる恒久偽陽性を抑止する。→ `scripts/ninja_monitor.sh` / `tests/unit/test_ninja_monitor_clear_guard.bats`（commit `5efbb3a37`、semantic通知偽陽性3→0、focused 6/6 PASS・SKIP0）
 
 15分超cmdは保存時点で`execution_env` mappingの具体的`long_runtime_reason`と正の`measured_runtime_sec`を必須とし、配備時TEN_MIN_CONTRACTまで不備を持ち越さない。雛形も同じmapping契約を提示する。→ `scripts/cmd_save.sh` / `scripts/cmd_skeleton.sh`（cmd_3933, commit `daee77f03`）
 
