@@ -4653,16 +4653,16 @@ ${command_text}"
     local is_dm_signal=false
     [ "$project" = "dm-signal" ] && is_dm_signal=true
 
-    if [ "$is_dm_signal" = true ] || printf '%s\n' "$haystack" | grep -Eqi 'robustness|ロバスト|PBO|MaxDD|robustness-verification-catalog|検証カタログ'; then
+    if [ "$is_dm_signal" = true ] || grep -Eqi 'robustness|ロバスト|PBO|MaxDD|robustness-verification-catalog|検証カタログ' <<< "$haystack"; then
         hints+=("context/robustness-verification-catalog.md")
     fi
-    if [ "$is_dm_signal" = true ] || printf '%s\n' "$haystack" | grep -Eqi 'GS|grid[ -]?search|グリッド|高速化|fullrecalculate|gs-speedup-knowledge'; then
+    if [ "$is_dm_signal" = true ] || grep -Eqi 'GS|grid[ -]?search|グリッド|高速化|fullrecalculate|gs-speedup-knowledge' <<< "$haystack"; then
         hints+=("context/gs-speedup-knowledge.md")
     fi
-    if [ "$is_dm_signal" = true ] || printf '%s\n' "$haystack" | grep -Eqi 'terminology|用語|dm-signal-terminology|disambiguation|解釈|Flair|ALM|FOF|PF'; then
+    if [ "$is_dm_signal" = true ] || grep -Eqi 'terminology|用語|dm-signal-terminology|disambiguation|解釈|Flair|ALM|FOF|PF' <<< "$haystack"; then
         hints+=("$(get_project_path 'dm-signal' 2>/dev/null || echo '')/context/dm-signal-terminology.md")
     fi
-    if [ "$project" = "infra" ] || [ "$task_type" = "training" ] || printf '%s\n' "$haystack" | grep -Eqi 'training-cycle|修行|L[1-4]|訓練|idle'; then
+    if [ "$project" = "infra" ] || [ "$task_type" = "training" ] || grep -Eqi 'training-cycle|修行|L[1-4]|訓練|idle' <<< "$haystack"; then
         hints+=("context/training-cycle.md")
     fi
 
