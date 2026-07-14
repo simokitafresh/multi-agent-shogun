@@ -6,10 +6,28 @@ run_embedded_test() {
     local test_name="$2"
     local content_func="$3"
 
-    # Place temp file in tests/unit/ so BATS_TEST_FILENAME/../.. resolves to PROJECT_ROOT
-    local unique_path
+    # Decode each embedded suite once per run. Several tests share the same
+    # base64 payload, so regenerating it for every filtered nested Bats process
+    # adds avoidable filesystem and decode work.
+    local cache_dir cache_path unique_path
+    cache_dir="${BATS_RUN_TMPDIR:-${BATS_TMPDIR:-/tmp}}/infra-misc-embedded-cache"
+    mkdir -p "$cache_dir"
+    cache_path="$cache_dir/$(basename "$original_path")"
+    if [ ! -s "$cache_path" ]; then
+        local pending_path
+        pending_path="${cache_path}.${BASHPID}.tmp"
+        "$content_func" > "$pending_path"
+        if ! ln "$pending_path" "$cache_path" 2>/dev/null; then
+            [ -s "$cache_path" ] || mv "$pending_path" "$cache_path"
+        fi
+        rm -f "$pending_path"
+    fi
+
+    # Keep BATS_TEST_FILENAME under tests/unit/ so ../.. still resolves to the
+    # project root while the immutable decoded content remains shared.
     unique_path="$(mktemp "$(dirname "$BATS_TEST_FILENAME")/_tmp_${BATS_TEST_NUMBER:-0}_$(basename "$original_path" .bats).XXXXXX.bats")"
-    "$content_func" > "$unique_path"
+    rm -f "$unique_path"
+    ln -s "$cache_path" "$unique_path"
 
     run env -u BATS_TMPDIR -u BATS_TEST_TMPDIR -u BATS_TEST_NUMBER -u BATS_TEST_FILENAME bats --filter "^${test_name}$" "$unique_path"
     local nested_status="$status"
