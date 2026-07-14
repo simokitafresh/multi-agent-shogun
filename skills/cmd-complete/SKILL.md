@@ -20,6 +20,11 @@ GATE CLEAR後の5-7ステップを順序保証で1コマンド実行。ステッ
 
 `/cmd-complete <cmd_id>` — 完了処理するcmd IDを指定
 
+実行wrapper（下記フローを同一順序・fail-closedで直列実行）:
+```bash
+bash scripts/cmd_complete.sh <cmd_id> [sg7_bundle.json]
+```
+
 ## 実行フロー（順序厳守）
 
 ### SG7バンドルを完了処理の単一情報源にする
