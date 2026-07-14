@@ -275,6 +275,21 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "implementation report cannot be re-approved with the same commit after Karo RC" {
+  setup_rc_task
+  approve karo RC "$REPORT"
+  grep -qx 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' "$APPROVALS/last_rc_commit"
+
+  sed -i 's/^status: revision_requested$/status: completed/' "$REPORT"
+  run approve gunshi LGTM "$REPORT"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"implementation commit unchanged since Karo RC"* ]]
+
+  sed -i 's/^commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$/commit_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/' "$REPORT"
+  run approve gunshi LGTM "$REPORT"
+  [ "$status" -eq 0 ]
+}
+
 @test "RC fails closed for missing worker task or parent mismatch" {
   setup_rc_task
   sed -i 's/parent_cmd: cmd_test/parent_cmd: cmd_other/' "$TMPROOT/queue/tasks/ninja.yaml"

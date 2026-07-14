@@ -1081,6 +1081,28 @@ echo ""
 echo "■ SG-PRE32: 視点列間一致検出(LG049)"
 _sg_pre32_check "${FILES_MODIFIED:-}" "$PROJECT_DIR" "$REPO_ROOT"
 
+# ─── SG-PRE34: integration contract未テスト検出(LG055: テスト存在≠実行経路) ───
+echo ""
+echo "■ SG-PRE34: integration contract検出(LG055)"
+_pre34_has_integration=false
+if [ -n "${CMD_SPEC:-}" ]; then
+    if echo "$CMD_SPEC" | grep -qiE '実装|経路|連携|統合|integrate|consume|generate.*notify|焼き込む|配備経路'; then
+        _pre34_has_integration=true
+    fi
+fi
+if [ "$_pre34_has_integration" = true ]; then
+    # files_modifiedにbats/test以外の実装ファイルがあるか確認
+    _pre34_impl_count=$(echo "${FILES_MODIFIED:-}" | tr ',' '\n' | grep -vcE '\.bats$|^tests/|^docs/' || true)
+    _pre34_test_count=$(echo "${FILES_MODIFIED:-}" | tr ',' '\n' | grep -cE '\.bats$|^tests/' || true)
+    if [ "${_pre34_impl_count:-0}" -gt 0 ]; then
+        echo "  PASS: 実装ファイル${_pre34_impl_count}本+テスト${_pre34_test_count}本(integration対象あり)"
+    else
+        echo "  ★ INFO(LG055): ACにintegrationキーワードあるがfiles_modifiedにテストのみ。実行経路assertを実走確認せよ"
+    fi
+else
+    echo "  PASS: integrationキーワードなし(対象外)"
+fi
+
 echo ""
 echo "■ GATE_PREDICTION (自動計算 — SG7 gate_predictionに転記せよ)"
 echo "  prediction: ${GATE_PREDICTION:-UNKNOWN}"

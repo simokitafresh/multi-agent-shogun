@@ -29,6 +29,21 @@ exec 200>"$base/.lock"; flock -w 10 200
 fingerprint=$(review_report_fingerprint "$report") || { echo "BLOCK: report missing or commit_hash absent: $report" >&2; exit 1; }
 report_rel=${report#"$ROOT"/}; report_key=$(review_report_key "$report_rel")
 dir="$base/reports/$report_key"; mkdir -p "$dir"
+# An RC means the reviewed implementation was not acceptable.  Re-submitting
+# the same implementation commit merely by toggling report lifecycle fields
+# recreates the handoff without changing the artifact.  Persist the rejected
+# commit identity and fail closed until a new implementation commit exists.
+# No-code reviews are content-bound instead and therefore excluded here.
+rejected_commit_file="$dir/last_rc_commit"
+current_commit=${fingerprint##*:}
+if [ ! "$role:$result" = "karo:RC" ] && [ -f "$rejected_commit_file" ] \
+  && [ "$current_commit" != "no-code-change" ]; then
+  rejected_commit=$(head -n 1 "$rejected_commit_file" 2>/dev/null || true)
+  if [ -n "$rejected_commit" ] && [ "$rejected_commit" = "$current_commit" ]; then
+    echo "BLOCK: implementation commit unchanged since Karo RC: $current_commit" >&2
+    exit 1
+  fi
+fi
 # SG7 used to exist only as a skill instruction: review_bundle.py generate had
 # no production caller, so GATE could archive the report before Karo consumed
 # the bundle.  Bind generation to the existing formal Gunshi-LGTM boundary.
@@ -50,6 +65,11 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
   rework_tmp=$(mktemp "$base/.karo_rework.XXXXXX")
   printf 'timestamp: %s\nsource: formal_karo_rc\n' "$(date -Iseconds)" > "$rework_tmp"
   mv -f "$rework_tmp" "$base/karo_rework.seen"
+  if [ "$current_commit" != "no-code-change" ]; then
+    rejected_tmp=$(mktemp "$dir/.last_rc_commit.XXXXXX")
+    printf '%s\n' "$current_commit" > "$rejected_tmp"
+    mv -f "$rejected_tmp" "$rejected_commit_file"
+  fi
   worker_id=$(python3 - "$report" <<'PY'
 import re, sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
