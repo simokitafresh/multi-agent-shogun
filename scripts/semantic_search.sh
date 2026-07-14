@@ -134,12 +134,22 @@ memory_db_source_path="${SEMANTIC_MEMORY_DB_PATH:-$default_memory_db_path}"
 # semantic preflight waited for a full 622MB refresh under concurrent writes.
 export SHOGUN_MEMORY_DB_CACHE_PATH="${SEMANTIC_MEMORY_DB_CACHE_PATH:-${SHOGUN_MEMORY_DB_CACHE_PATH:-}}"
 export SHOGUN_MEMORY_DB_CACHE_DIR="${SEMANTIC_MEMORY_DB_CACHE_DIR:-${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}}"
+export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
 if [ "${SEMANTIC_DISABLE_MEMORY_DB_CACHE:-0}" = "1" ]; then
     export SHOGUN_MEMORY_DB_QUERY_DISABLE_CACHE=1
 fi
-# shellcheck source=lib/memory_db_cache.sh
-source "$script_dir/scripts/lib/memory_db_cache.sh"
-memory_db_path="$(prepare_memory_db_for_read "$script_dir" "$memory_db_source_path" "$default_memory_db_path")"
+memory_db_cache_helper="$script_dir/scripts/lib/memory_db_cache.sh"
+if [ -f "$memory_db_cache_helper" ]; then
+    # shellcheck source=lib/memory_db_cache.sh
+    source "$memory_db_cache_helper"
+    memory_db_path="$(prepare_memory_db_for_read "$script_dir" "$memory_db_source_path" "$default_memory_db_path")"
+else
+    # semantic_search.sh is also copied with semantic_index.py into bounded
+    # helper fixtures/installations. Preserve that existing standalone
+    # contract; absence of the optional cache helper must not abort an
+    # alias-only semantic search or its search-log write.
+    memory_db_path="$memory_db_source_path"
+fi
 
 semantic_index_python() {
     local mode="$1"
