@@ -95,6 +95,21 @@ def report_paths(root: Path, cmd_id: str):
                     yield path
 
 
+def binary_check_satisfied(item, *, allow_waiver: bool):
+    """Match GP-190: a PASS report may satisfy a check by explicit waiver."""
+    if not isinstance(item, dict):
+        return False
+    result = item.get("result")
+    normalized = "" if result is None else str(result).strip().lower()
+    if result is True or normalized == "yes":
+        return True
+    return (
+        allow_waiver
+        and normalized in {"no", "false", "fail", "ng"}
+        and bool(str(item.get("waive_reason") or "").strip())
+    )
+
+
 def validate(root: Path, cmd_id: str):
     if not re.fullmatch(r"cmd_\d+", cmd_id):
         return True, "direct/non-numbered cmd exempt"
@@ -140,9 +155,11 @@ def validate(root: Path, cmd_id: str):
         checks = report.get("binary_checks") or {}
         if isinstance(checks, dict):
             # Child AC names are a separate namespace.  Coverage is granted only
-            # when every child check passes and the immutable mapping is bound.
+            # when every child check passes (or a PASS report explicitly waives
+            # the failed check per GP-190) and the immutable mapping is bound.
+            allow_waiver = str(report.get("verdict") or "").strip().upper() == "PASS"
             if checks and all(isinstance(entries, list) and entries and all(
-                    isinstance(x, dict) and (x.get("result") is True or str(x.get("result", "")).lower() == "yes") for x in entries
+                    binary_check_satisfied(x, allow_waiver=allow_waiver) for x in entries
                 ) for entries in checks.values()):
                 covered.update(mapping)
     missing = sorted(expected - covered)

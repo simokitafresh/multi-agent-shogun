@@ -245,3 +245,30 @@ YAML
   [ "$status" -eq 0 ]
   [ -f "$T/queue/archive/parent_contracts/ninja__cmd_3869.yaml" ]
 }
+
+@test "PASS report with an explicit GP-190 waiver covers the parent AC mapping" {
+  parent
+  task 'AC1, AC2, AC3'
+  printf 'worker_id: ninja\nparent_cmd: cmd_3869\nparent_ac_coverage: [AC1, AC2, AC3]\nparent_contract_fingerprint: %s\nverdict: PASS\nbinary_checks:\n  CHILD1:\n    - {check: unavailable historical evidence, result: no, waive_reason: formally approved historical waiver}\n  CHILD2: [{check: current evidence, result: yes}]\n' "$(fp)" > "$T/queue/reports/ninja_report_cmd_3869.yaml"
+  run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_3869 --root "$T"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *parent_contract_ok* ]]
+}
+
+@test "PASS report with an empty waiver does not cover the parent AC mapping" {
+  parent
+  task 'AC1, AC2, AC3'
+  printf 'worker_id: ninja\nparent_cmd: cmd_3869\nparent_ac_coverage: [AC1, AC2, AC3]\nparent_contract_fingerprint: %s\nverdict: PASS\nbinary_checks:\n  CHILD1:\n    - {check: missing evidence, result: no, waive_reason: ""}\n' "$(fp)" > "$T/queue/reports/ninja_report_cmd_3869.yaml"
+  run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_3869 --root "$T"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *'parent_ac_uncovered:AC1,AC2,AC3'* ]]
+}
+
+@test "FAIL report cannot turn a waiver into parent AC coverage" {
+  parent
+  task 'AC1, AC2, AC3'
+  printf 'worker_id: ninja\nparent_cmd: cmd_3869\nparent_ac_coverage: [AC1, AC2, AC3]\nparent_contract_fingerprint: %s\nverdict: FAIL\nbinary_checks:\n  CHILD1:\n    - {check: missing evidence, result: no, waive_reason: explanatory text only}\n' "$(fp)" > "$T/queue/reports/ninja_report_cmd_3869.yaml"
+  run python3 "$ROOT/scripts/lib/parent_cmd_contract.py" cmd_3869 --root "$T"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *'parent_ac_uncovered:AC1,AC2,AC3'* ]]
+}
