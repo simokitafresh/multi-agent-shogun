@@ -95,8 +95,9 @@ EOF
 
 @test "wrapper: 2重量ジョブ同時要求で実行中最大1、第2はevent-driven待機(busy pollingでない)" {
     local started_marker="$TMP/a_started"
+    local release_marker="$TMP/release_a"
     (
-        bash "$WRAPPER" -- bash -c "echo A-start \$(date +%s.%N) >> '$OUT'; touch '$started_marker'; sleep 2; echo A-end \$(date +%s.%N) >> '$OUT'"
+        bash "$WRAPPER" -- bash -c "echo A-start \$(date +%s.%N) >> '$OUT'; touch '$started_marker'; while [ ! -f '$release_marker' ]; do sleep 0.01; done; echo A-end \$(date +%s.%N) >> '$OUT'"
     ) &
     pid_a=$!
     # host高負荷時のプロセス起動遅延に対して固定sleepより堅牢にするため、Aが実際に
@@ -109,9 +110,13 @@ EOF
         [ "$waited" -le 200 ] || break
     done
     (
-        bash "$WRAPPER" -- bash -c "echo B-start \$(date +%s.%N) >> '$OUT'"
+        bash "$WRAPPER" -- bash -c "echo B-start \$(date +%s.%N) >> '$OUT'; touch '$TMP/b_started'"
     ) &
     pid_b=$!
+    # Bがlock待機へ入る猶予を与え、A解放前には開始できないことを直接確認する。
+    sleep 0.05
+    [ ! -f "$TMP/b_started" ]
+    touch "$release_marker"
     wait "$pid_a" "$pid_b"
 
     a_end="$(awk '/^A-end/{print $2}' "$OUT")"
@@ -148,16 +153,25 @@ EOF
 }
 
 @test "修正前相当: adminissionを経由しない直接実行は2ジョブが同時並走できる(max>=2)" {
+    local started_marker="$TMP/direct_a_started"
+    local release_marker="$TMP/direct_release_a"
     (
-        bash -c "echo A-start \$(date +%s.%N) >> '$OUT'; sleep 1; echo A-end \$(date +%s.%N) >> '$OUT'"
+        bash -c "echo A-start \$(date +%s.%N) >> '$OUT'; touch '$started_marker'; while [ ! -f '$release_marker' ]; do sleep 0.01; done; echo A-end \$(date +%s.%N) >> '$OUT'"
     ) &
     pid_a=$!
-    sleep 0.2
+    local waited=0
+    while [ ! -f "$started_marker" ]; do
+        sleep 0.01
+        waited=$((waited + 1))
+        [ "$waited" -le 200 ] || break
+    done
     (
         bash -c "echo B-start \$(date +%s.%N) >> '$OUT'; echo B-end \$(date +%s.%N) >> '$OUT'"
     ) &
     pid_b=$!
-    wait "$pid_a" "$pid_b"
+    wait "$pid_b"
+    touch "$release_marker"
+    wait "$pid_a"
 
     a_end="$(awk '/^A-end/{print $2}' "$OUT")"
     b_start="$(awk '/^B-start/{print $2}' "$OUT")"
