@@ -150,6 +150,17 @@ deploy_task_scaffold() {
         printf '<!-- DASHBOARD_AUTO_START -->\n<!-- DASHBOARD_AUTO_END -->\n' \
             > "$TEST_PROJECT/dashboard.md"
     fi
+
+    # Cache the 10k-line deploy library once per Bats test process.  The helper
+    # entry points below run in subshells, so the functions remain isolated
+    # while avoiding repeated parsing on every deploy_task_* invocation.
+    if ! declare -F parse_deploy_task_args >/dev/null 2>&1; then
+        export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
+        export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+    fi
 }
 
 deploy_task_teardown() {
@@ -165,6 +176,13 @@ maybe_normalize_task_yaml() {
     :
 }
 
+ensure_deploy_task_library() {
+    if ! declare -F parse_deploy_task_args >/dev/null 2>&1; then
+        # shellcheck disable=SC1090,SC1091
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+    fi
+}
+
 deploy_task_fast() {
     (
         # shellcheck disable=SC2030,SC2031
@@ -173,8 +191,7 @@ deploy_task_fast() {
         export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        ensure_deploy_task_library
         # shellcheck disable=SC2317
         log() { :; }
 
@@ -259,8 +276,7 @@ deploy_task_template_only() {
         export DEPLOY_TASK_LIB_ONLY=1
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        ensure_deploy_task_library
         # shellcheck disable=SC2317
         log() { :; }
 
@@ -331,8 +347,7 @@ deploy_task_lessons_only() {
         export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        ensure_deploy_task_library
         # shellcheck disable=SC2317
         log() { :; }
 
@@ -359,8 +374,7 @@ deploy_task_ac_only() {
         export DEPLOY_TASK_SKIP_REPORT_NORMALIZE=1
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        ensure_deploy_task_library
         # shellcheck disable=SC2317
         log() { :; }
 
@@ -392,8 +406,7 @@ deploy_task_resolve_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        ensure_deploy_task_library
         # shellcheck disable=SC2317
         log() { :; }
 
@@ -426,8 +439,7 @@ inject_report_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        ensure_deploy_task_library
         # shellcheck disable=SC2317
         log() { :; }
 
@@ -462,8 +474,7 @@ inject_ac_version_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        ensure_deploy_task_library
         # shellcheck disable=SC2317
         log() { :; }
         inject_ac_version "$task_file"
@@ -541,8 +552,7 @@ inject_skill_hint_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        ensure_deploy_task_library
         # shellcheck disable=SC2317
         log() { :; }
         inject_skill_hint "$task_file"
@@ -555,8 +565,7 @@ inject_context_hints_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        ensure_deploy_task_library
         # shellcheck disable=SC2317
         log() { :; }
         inject_context_hints "$task_file"
@@ -569,8 +578,7 @@ inject_production_invariants_only() {
     (
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_LIB_ONLY=1
-        # shellcheck disable=SC1090,SC1091
-        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        ensure_deploy_task_library
         # shellcheck disable=SC2317
         log() { :; }
         inject_production_invariants "$task_file"
