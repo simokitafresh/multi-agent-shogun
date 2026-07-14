@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_infrastructure_context_freshness_20260715 -->
-<!-- source_commit:1cfa0e2f6fdff48013ef92bffc69781771519be5 reason:dead-only-recovery-agent-ssot evidence:dead pane guard; metadata sync; configured ninja validation 2/2 PASS SKIP0 -->
+<!-- source_commit:4bf8858c0b999df241775375e25415f7c8888d05 reason:dead-recovery-and-daemon-inventory evidence:dead recovery 2/2 PASS; watchdog race+inventory 4/4 PASS; FAIL0 SKIP0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -12,6 +12,8 @@
 ## コンテキスト管理
 
 死亡agentの局所復旧は`scripts/respawn_dead_agent.sh <ninja> [--dry-run]`を使う。対象paneがdeadでない場合はBLOCKし、復旧後は`@agent_id`・`@context_pct`・active task由来の`@current_task`を同期する。忍者名はハードコードせず`scripts/lib/agent_config.sh`の`get_ninja_names`をSSOTとする。→ `scripts/respawn_dead_agent.sh` / `tests/unit/test_respawn_dead_agent.bats`（commits `76849460f`, `9fe5ec064`, `1cfa0e2f6`）
+
+daemon watchdogは個別health checkに加え、`inbox_watcher.sh>=9`・`ninja_monitor.sh`・`ntfy_listener.sh`・`usage_statusbar_loop.sh`・`gist_sync.sh`のprocess inventoryを1 snapshotで監査し、不足classごとにWARNする。消滅PIDの`/proc/<pid>/cmdline` raceは無音で扱い、inbox unread countは読取異常時も単一整数へ正規化する。→ `scripts/daemon_watchdog.sh` / `tests/unit/test_daemon_watchdog.bats`（cmd_3951、commit `4bf8858c0`）
 
 context freshnessの`source_commit`境界はinfra root fallbackにも適用し、同日のcontext更新より前のsource commitを再ALERTしない。境界後のsource commitだけを検出する。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124）
 
