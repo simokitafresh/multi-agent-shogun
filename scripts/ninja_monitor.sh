@@ -1949,10 +1949,11 @@ lgtm_events = []
 reopen_events = []
 terminal_events = []
 current_report_cmds = set()
-# cmd_complete_gate.trigger.log is the canonical evidence that the completion
-# gate reached its terminal CLEAR branch.  Marker files such as archive.done
-# can predate a later RC/review cycle, so only the successful gate log and its
-# generation timestamp participate in the event ordering.
+# cmd_complete_gate.trigger.log and archive.done are durable evidence that the
+# completion gate reached its terminal CLEAR branch.  A later /cmd-complete can
+# overwrite the trigger log with "Already CLEARED", so archive.done must also
+# participate.  Timestamp ordering keeps an older marker from suppressing a
+# later RC -> new LGTM generation.
 for gate_dir in glob.glob(os.path.join(gates_dir, "cmd_*")):
     trigger_log = os.path.join(gate_dir, "cmd_complete_gate.trigger.log")
     try:
@@ -1963,6 +1964,11 @@ for gate_dir in glob.glob(os.path.join(gates_dir, "cmd_*")):
             )
         if terminal_clear:
             terminal_events.append((dedup_key(os.path.basename(gate_dir)), int(os.path.getmtime(trigger_log))))
+    except OSError:
+        pass
+    archive_marker = os.path.join(gate_dir, "archive.done")
+    try:
+        terminal_events.append((dedup_key(os.path.basename(gate_dir)), int(os.path.getmtime(archive_marker))))
     except OSError:
         pass
 # Formal approvals count only while bound to the current report generation.
@@ -2024,10 +2030,10 @@ for entry in (bulletin_entries or []):
     if not isinstance(entry, dict):
         continue
     content = str(entry.get("content", ""))
-    m = re.match(r'^(cmd_[A-Za-z0-9_]+)', content)
     notice_ts = epoch(entry.get("posted_at") or entry.get("timestamp"))
-    if m and notice_ts is not None and completion_words.search(content):
-        notifications.append((dedup_key(m.group(1)), notice_ts))
+    if notice_ts is not None and completion_words.search(content):
+        for m in re.finditer(r'(cmd_[A-Za-z0-9_]+)', content):
+            notifications.append((dedup_key(m.group(1)), notice_ts))
 
 shogun_data = load_yaml(shogun_inbox)
 shogun_messages = shogun_data.get("messages") if isinstance(shogun_data, dict) else None

@@ -2750,7 +2750,7 @@ INNEREOF
 cat > "$SCRIPT_DIR/queue/bulletin_board.yaml" <<INNEREOF
 entries:
 - id: blt_test_gap002
-  content: "cmd_test_gap002完了報告: hayate PASS/LGTM。"
+  content: "GATE CLEAR cmd_test_gap002: hayate完了 PASS/LGTM。"
   posted_by: karo
   posted_at: "$(date "+%Y-%m-%dT%H:%M:%S")"
 INNEREOF
@@ -2772,6 +2772,45 @@ fi
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: bulletin notification suppresses detection"* ]]
+}
+
+@test "completion_notify_gap: archive marker newer than LGTM suppresses overwritten trigger-log false positive" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T="$BATS_TEST_TMPDIR"; SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
+mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_archive_terminal" "$T/scripts" "$STATE_DIR"
+: > "$LOG"
+old=$(date -d "-600 seconds" -Iseconds)
+printf "messages:\n- content: \"cmd_archive_terminal verdict: LGTM\"\n  timestamp: \"%s\"\n  type: review_feedback\n" "$old" > "$T/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$T/queue/inbox/shogun.yaml"; printf "entries: []\n" > "$T/queue/bulletin_board.yaml"
+printf "#!/bin/bash\necho INBOX_CALLED:\\$@ >> \"$LOG\"\n" > "$T/scripts/inbox_write.sh"; chmod +x "$T/scripts/inbox_write.sh"
+printf "[gate] cmd_archive_terminal: Already CLEARED\n" > "$T/queue/gates/cmd_archive_terminal/cmd_complete_gate.trigger.log"
+touch -d "-500 seconds" "$T/queue/gates/cmd_archive_terminal/archive.done"
+log() { echo "$1" >> "$LOG"; }; NINJA_MONITOR_LGTM_NOTIFY_GRACE=1 check_karo_completion_notify_gap
+test "$(grep -c INBOX_CALLED "$LOG" 2>/dev/null || true)" -eq 0
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "completion_notify_gap: archive marker older than a new LGTM does not suppress the gap" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T="$BATS_TEST_TMPDIR"; SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
+mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_archive_reopened" "$T/scripts" "$STATE_DIR"
+: > "$LOG"
+new_lgtm=$(date -d "-500 seconds" -Iseconds)
+printf "messages:\n- content: \"cmd_archive_reopened verdict: LGTM\"\n  timestamp: \"%s\"\n  type: review_feedback\n" "$new_lgtm" > "$T/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$T/queue/inbox/shogun.yaml"; printf "entries: []\n" > "$T/queue/bulletin_board.yaml"
+printf "#!/bin/bash\necho INBOX_CALLED:\\$@ >> \"$LOG\"\n" > "$T/scripts/inbox_write.sh"; chmod +x "$T/scripts/inbox_write.sh"
+touch -d "-700 seconds" "$T/queue/gates/cmd_archive_reopened/archive.done"
+log() { echo "$1" >> "$LOG"; }; NINJA_MONITOR_LGTM_NOTIFY_GRACE=1 check_karo_completion_notify_gap
+grep -q "KARO-COMPLETION-NOTIFY-GAP: LGTM received for cmd_archive_reopened" "$LOG"
+'
+    [ "$status" -eq 0 ]
 }
 
 # shogun inboxに完了通知済みなら重複検知しない
