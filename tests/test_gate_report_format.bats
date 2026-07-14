@@ -74,6 +74,52 @@ YAML
     [[ "$output" == *"report_field_set.sh <report> origin"* ]]
 }
 
+@test "T-001c: required variation 5項目が空なら正規report gateがFAIL" {
+    mkdir -p "$TMPDIR_BATS/queue/reports" "$TMPDIR_BATS/queue/tasks"
+    local report="$TMPDIR_BATS/queue/reports/testninja_report_cmd_test.yaml"
+    create_valid_report "$report" >/dev/null
+    cat > "$TMPDIR_BATS/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_test
+  variation_checks_required: true
+YAML
+    cat >> "$report" <<'YAML'
+variation_checks:
+  normal_pass: {check: normal, result: ""}
+  quoted_or_heredoc: {check: quoted, result: ""}
+  linked_worktree: {check: worktree, result: ""}
+  parallel_or_respawn: {check: parallel, result: ""}
+  abnormal_exit: {check: abnormal, result: ""}
+YAML
+
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"variation_checks: required cells unfilled"* ]]
+}
+
+@test "T-001d: required variation 5項目がyes/noなら正規report gateがPASS" {
+    mkdir -p "$TMPDIR_BATS/queue/reports" "$TMPDIR_BATS/queue/tasks"
+    local report="$TMPDIR_BATS/queue/reports/testninja_report_cmd_test.yaml"
+    create_valid_report "$report" >/dev/null
+    cat > "$TMPDIR_BATS/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_test
+  variation_checks_required: true
+YAML
+    cat >> "$report" <<'YAML'
+variation_checks:
+  normal_pass: {check: normal, result: yes}
+  quoted_or_heredoc: {check: quoted, result: no}
+  linked_worktree: {check: worktree, result: yes}
+  parallel_or_respawn: {check: parallel, result: no}
+  abnormal_exit: {check: abnormal, result: yes}
+YAML
+
+    run bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
 # --- T-002: Missing file → FAIL ---
 @test "T-002: missing file returns FAIL" {
     run bash "$GATE" "$TMPDIR_BATS/nonexistent.yaml"

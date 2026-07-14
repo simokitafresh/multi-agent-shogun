@@ -12,7 +12,8 @@ setup_file() {
 setup() {
     export TEST_TMPDIR
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/rfs_verdict_status.XXXXXX")"
-    export TEST_REPORT="$TEST_TMPDIR/kagemaru_report_cmd_test.yaml"
+    mkdir -p "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/queue/tasks"
+    export TEST_REPORT="$TEST_TMPDIR/queue/reports/kagemaru_report_cmd_test.yaml"
     cat > "$TEST_REPORT" <<'EOF'
 worker_id: kagemaru
 parent_cmd: cmd_test
@@ -33,6 +34,14 @@ binary_checks:
       result: yes
 verdict: ""
 EOF
+}
+
+_write_required_variation_task() {
+    cat > "$TEST_TMPDIR/queue/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_test
+  variation_checks_required: true
+YAML
 }
 
 teardown() {
@@ -105,4 +114,42 @@ PY
     run _field status
     [ "$status" -eq 0 ]
     [ "$output" = "pending" ]
+}
+
+@test "required variation 5項目が空ならverdict自動完了と直接completedをBLOCK" {
+    _write_required_variation_task
+    cat >> "$TEST_REPORT" <<'YAML'
+variation_checks:
+  normal_pass: {check: normal, result: ""}
+  quoted_or_heredoc: {check: quoted, result: ""}
+  linked_worktree: {check: worktree, result: ""}
+  parallel_or_respawn: {check: parallel, result: ""}
+  abnormal_exit: {check: abnormal, result: ""}
+YAML
+
+    run bash "$RFS" "$TEST_REPORT" verdict PASS
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"variation_checks_required=true"* ]]
+    [ "$(_field status)" = "pending" ]
+
+    run bash "$RFS" "$TEST_REPORT" status completed
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"variation_checks_required=true"* ]]
+    [ "$(_field status)" = "pending" ]
+}
+
+@test "required variation 5項目がyes/noならverdict自動完了を許可" {
+    _write_required_variation_task
+    cat >> "$TEST_REPORT" <<'YAML'
+variation_checks:
+  normal_pass: {check: normal, result: yes}
+  quoted_or_heredoc: {check: quoted, result: no}
+  linked_worktree: {check: worktree, result: yes}
+  parallel_or_respawn: {check: parallel, result: no}
+  abnormal_exit: {check: abnormal, result: yes}
+YAML
+
+    run bash "$RFS" "$TEST_REPORT" verdict PASS
+    [ "$status" -eq 0 ]
+    [ "$(_field status)" = "completed" ]
 }

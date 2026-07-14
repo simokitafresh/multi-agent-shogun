@@ -304,6 +304,87 @@ else:
 " "$mode" <<< "$val" || return 1
 }
 
+# A report may only become terminal after the task-requested variation matrix
+# is filled.  SG-PRE33 already checked this during Gunshi review, but the two
+# authoritative report entry points (verdict auto-complete and direct
+# status=completed) previously ignored it, allowing an invalid completed
+# report to exist until review time.
+_validate_variation_completion_contract() {
+    REPORT_PATH="$REPORT_PATH" python3 - <<'PY'
+import os
+import sys
+
+import yaml
+
+report_path = os.environ.get("REPORT_PATH", "")
+if not report_path or not os.path.exists(report_path):
+    raise SystemExit(0)
+
+with open(report_path, encoding="utf-8") as report_file:
+    report = yaml.safe_load(report_file) or {}
+if not isinstance(report, dict):
+    raise SystemExit(0)
+
+worker_id = str(report.get("worker_id") or "").strip()
+parent_cmd = str(report.get("parent_cmd") or "").strip()
+task_path = os.path.join(os.path.dirname(os.path.dirname(report_path)), "tasks", f"{worker_id}.yaml")
+if not worker_id or not parent_cmd or not os.path.exists(task_path):
+    raise SystemExit(0)
+
+with open(task_path, encoding="utf-8") as task_file:
+    raw_task = yaml.safe_load(task_file) or {}
+task = raw_task.get("task", raw_task) if isinstance(raw_task, dict) else {}
+if not isinstance(task, dict) or str(task.get("parent_cmd") or "").strip() != parent_cmd:
+    raise SystemExit(0)
+
+required_raw = task.get("variation_checks_required", False)
+required = required_raw is True or str(required_raw).strip().lower() in {"1", "true", "yes", "on"}
+if not required:
+    raise SystemExit(0)
+
+required_names = (
+    "normal_pass",
+    "quoted_or_heredoc",
+    "linked_worktree",
+    "parallel_or_respawn",
+    "abnormal_exit",
+)
+checks = report.get("variation_checks")
+missing = []
+invalid = []
+for name in required_names:
+    item = checks.get(name) if isinstance(checks, dict) else None
+    if not isinstance(item, dict):
+        missing.append(name)
+        continue
+    raw_result = item.get("result", "")
+    if isinstance(raw_result, bool):
+        normalized = "yes" if raw_result else "no"
+    else:
+        normalized = str(raw_result or "").strip().strip("\"'").lower()
+    if not normalized:
+        missing.append(name)
+    elif normalized not in {"yes", "no"}:
+        invalid.append(name)
+
+if missing or invalid:
+    details = []
+    if missing:
+        details.append("未記入=" + ",".join(missing))
+    if invalid:
+        details.append("yes/no以外=" + ",".join(invalid))
+    print(
+        "BLOCK: variation_checks_required=true の完了前提未達 (" + "; ".join(details) + ")",
+        file=sys.stderr,
+    )
+    print(
+        "  先に report_field_set.sh <report> variation_checks.<name>.result yes|no を全5項目へ記入せよ",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
+}
+
 # --- GP-072: Pre-write field value validation (Level 4 BLOCK) ---
 # 書込み前にフィールド値の妥当性を検証。不正値はBLOCKして忍者に即フィードバック。
 # GP-072c2: per-item writes, dict→list conversion, verdict pre-conditions
@@ -682,6 +763,7 @@ if found is True:
                 status_val="${status_val#\'}"
                 status_val="$(echo "$status_val" | xargs)"
                 if [[ "$status_val" == "completed" || "$status_val" == "done" ]]; then
+                    _validate_variation_completion_contract || return 1
                     REPORT_PATH="$REPORT_PATH" python3 -c "
 import os
 import sys
@@ -738,6 +820,7 @@ if missing:
         verdict)
             # GP-072c2+c3+c4: verdict書込み時に前提条件チェック
             if [[ "$dot_key" == "verdict" ]] && [[ "$val" == "PASS" || "$val" == "FAIL" || "$val" == "PASS_NO_IMPROVEMENT" ]]; then
+                _validate_variation_completion_contract || return 1
                 REPORT_PATH="$REPORT_PATH" FIELD_VAL="$val" python3 -c "
 import yaml, sys, os
 rp = os.environ.get('REPORT_PATH', '')

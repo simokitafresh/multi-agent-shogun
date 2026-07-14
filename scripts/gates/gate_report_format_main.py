@@ -141,6 +141,44 @@ def _causal_verification_filled(value):
     return bool(value)
 
 
+_REQUIRED_VARIATION_CHECKS = (
+    "normal_pass",
+    "quoted_or_heredoc",
+    "linked_worktree",
+    "parallel_or_respawn",
+    "abnormal_exit",
+)
+
+
+def _variation_contract_issues(task_data, report_data):
+    """Return missing/invalid cells for an active required variation contract."""
+    if not isinstance(task_data, dict) or not isinstance(report_data, dict):
+        return [], []
+    required_raw = task_data.get("variation_checks_required", False)
+    required = required_raw is True or str(required_raw).strip().lower() in {"1", "true", "yes", "on"}
+    if not required:
+        return [], []
+
+    checks = report_data.get("variation_checks")
+    missing = []
+    invalid = []
+    for name in _REQUIRED_VARIATION_CHECKS:
+        item = checks.get(name) if isinstance(checks, dict) else None
+        if not isinstance(item, dict):
+            missing.append(name)
+            continue
+        raw_result = item.get("result", "")
+        if isinstance(raw_result, bool):
+            normalized = "yes" if raw_result else "no"
+        else:
+            normalized = str(raw_result or "").strip().strip("\"'").lower()
+        if not normalized:
+            missing.append(name)
+        elif normalized not in {"yes", "no"}:
+            invalid.append(name)
+    return missing, invalid
+
+
 def _rfs_cmd(report_path, key, value):
     return "bash scripts/report_field_set.sh {} {} {}".format(
         shlex.quote(report_path),
@@ -338,6 +376,27 @@ def main() -> int:
             task_data = (raw or {}).get("task", raw or {})
     except Exception:
         pass
+
+    # The current task is the contract source only when it still belongs to
+    # this report.  Ninja task files are reused, so applying a later task's
+    # variation requirement to an older report would be a false BLOCK.
+    task_matches_report = str(task_data.get("parent_cmd") or "").strip() == parent_cmd_value
+    if task_matches_report:
+        variation_missing, variation_invalid = _variation_contract_issues(task_data, data)
+        if variation_missing:
+            errors.append(
+                "variation_checks: required cells unfilled: " + ", ".join(variation_missing)
+            )
+        if variation_invalid:
+            errors.append(
+                "variation_checks: result must be yes/no: " + ", ".join(variation_invalid)
+            )
+        if variation_missing or variation_invalid:
+            hints.append(
+                "FIX (variation_checks): variation_checks_required=true。"
+                "normal_pass/quoted_or_heredoc/linked_worktree/parallel_or_respawn/abnormal_exit "
+                "の全resultをyes/noで記入せよ"
+            )
 
     def metric_filled(metric) -> bool:
         if metric is None:
