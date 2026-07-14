@@ -6,32 +6,25 @@ setup_file() {
     export SRC_SCRIPT="$PROJECT_ROOT/scripts/gates/gate_lesson_health.sh"
     [ -f "$SRC_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
-}
 
-setup() {
-    export TEST_TMPDIR
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/gate_lesson_health.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/scripts/gates" \
-             "$TEST_TMPDIR/config" \
-             "$TEST_TMPDIR/context" \
-             "$TEST_TMPDIR/projects/infra" \
-             "$TEST_TMPDIR/tasks" \
-             "$TEST_TMPDIR/logs" \
-             "$TEST_TMPDIR/queue"
+    export BASE_FIXTURE
+    BASE_FIXTURE="$(mktemp -d "$BATS_TMPDIR/gate_lesson_health.base.XXXXXX")"
+    mkdir -p "$BASE_FIXTURE/scripts/gates" \
+             "$BASE_FIXTURE/config" \
+             "$BASE_FIXTURE/context" \
+             "$BASE_FIXTURE/projects/infra" \
+             "$BASE_FIXTURE/tasks" \
+             "$BASE_FIXTURE/logs" \
+             "$BASE_FIXTURE/queue"
 
-    cp "$SRC_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
-    chmod +x "$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
-    export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
-
-    # GA-216/GA-217: gate sources the shared subdomain routing SSOT.
+    cp "$SRC_SCRIPT" "$BASE_FIXTURE/scripts/gates/gate_lesson_health.sh"
+    chmod +x "$BASE_FIXTURE/scripts/gates/gate_lesson_health.sh"
     cp "$PROJECT_ROOT/scripts/gates/lesson_context_routes.sh" \
-        "$TEST_TMPDIR/scripts/gates/lesson_context_routes.sh"
+        "$BASE_FIXTURE/scripts/gates/lesson_context_routes.sh"
+    printf '#!/bin/bash\nexit 0\n' > "$BASE_FIXTURE/scripts/ntfy.sh"
+    chmod +x "$BASE_FIXTURE/scripts/ntfy.sh"
 
-    # Stub ntfy.sh to prevent exit 127 when WARN/ALERT triggers notification
-    printf '#!/bin/bash\nexit 0\n' > "$TEST_TMPDIR/scripts/ntfy.sh"
-    chmod +x "$TEST_TMPDIR/scripts/ntfy.sh"
-
-    cat > "$TEST_TMPDIR/config/projects.yaml" <<'EOF'
+    cat > "$BASE_FIXTURE/config/projects.yaml" <<'EOF'
 projects:
   - id: infra
     path: "/tmp/test-project"
@@ -39,17 +32,17 @@ projects:
     status: active
 EOF
 
-    cat > "$TEST_TMPDIR/context/infrastructure.md" <<'EOF'
+    cat > "$BASE_FIXTURE/context/infrastructure.md" <<'EOF'
 <!-- last_synced_lesson: L001 -->
 
 ## 教訓索引（自動追記）
 - L001 sample
 EOF
 
-    cat > "$TEST_TMPDIR/projects/infra/lessons.yaml" <<EOF
-ssot_path: $TEST_TMPDIR/tasks/lessons.md
+    cat > "$BASE_FIXTURE/projects/infra/lessons.yaml" <<'EOF'
+ssot_path: __TEST_TMPDIR__/tasks/lessons.md
 last_synced: '2026-04-24T00:00:00'
-archive_path: $TEST_TMPDIR/projects/infra/lessons_archive.yaml
+archive_path: __TEST_TMPDIR__/projects/infra/lessons_archive.yaml
 lesson_count: 1
 lessons:
 - id: L001
@@ -57,17 +50,30 @@ lessons:
   summary: sample
 EOF
 
-    cat > "$TEST_TMPDIR/tasks/lessons.md" <<'EOF'
+    cat > "$BASE_FIXTURE/tasks/lessons.md" <<'EOF'
 # lessons
 
 ## L001
 sample
 EOF
 
-    cat > "$TEST_TMPDIR/logs/lesson_impact.tsv" <<'EOF'
+    cat > "$BASE_FIXTURE/logs/lesson_impact.tsv" <<'EOF'
 timestamp	cmd_id	lesson_id	action	result	referenced	project	extra
 2026-04-24T00:00:00	cmd_1	L001	injected		true	infra	-
 EOF
+}
+
+teardown_file() {
+    [ -n "${BASE_FIXTURE:-}" ] && [ -d "$BASE_FIXTURE" ] && rm -rf "$BASE_FIXTURE"
+}
+
+setup() {
+    export TEST_TMPDIR
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/gate_lesson_health.XXXXXX")"
+    cp -a "$BASE_FIXTURE/." "$TEST_TMPDIR/"
+    export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_lesson_health.sh"
+    sed -i "s|__TEST_TMPDIR__|$TEST_TMPDIR|g" \
+        "$TEST_TMPDIR/projects/infra/lessons.yaml"
 }
 
 teardown() {
