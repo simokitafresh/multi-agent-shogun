@@ -1,17 +1,23 @@
 #!/usr/bin/env bats
 
-setup() {
+setup_file() {
   ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+  export ROOT SOURCE_MARKER_TEMPLATE
+  SOURCE_MARKER_TEMPLATE="$(mktemp -d "$BATS_TMPDIR/source-marker-template.XXXXXX")"
+  mkdir -p "$SOURCE_MARKER_TEMPLATE/scripts/config" "$SOURCE_MARKER_TEMPLATE/scripts/lib" "$SOURCE_MARKER_TEMPLATE/context" "$SOURCE_MARKER_TEMPLATE/config"
+  cp "$ROOT/scripts/context_source_commit_set.sh" "$SOURCE_MARKER_TEMPLATE/scripts/"
+  cp "$ROOT/scripts/lib/project_path.sh" "$ROOT/scripts/lib/repo_root.sh" "$SOURCE_MARKER_TEMPLATE/scripts/lib/"
+  printf 'context/test.md\tinfra\n' > "$SOURCE_MARKER_TEMPLATE/scripts/config/context_source_commits.tsv"
+  git -C "$SOURCE_MARKER_TEMPLATE" init -q
+  git -C "$SOURCE_MARKER_TEMPLATE" config user.email test@example.invalid
+  git -C "$SOURCE_MARKER_TEMPLATE" config user.name Test
+  printf '# Test\n<!-- last_updated: 2026-07-01 -->\n' > "$SOURCE_MARKER_TEMPLATE/context/test.md"
+  git -C "$SOURCE_MARKER_TEMPLATE" add . && git -C "$SOURCE_MARKER_TEMPLATE" commit -qm init
+}
+
+setup() {
   TMP="$(mktemp -d "$BATS_TMPDIR/source-marker.XXXXXX")"
-  mkdir -p "$TMP/scripts/config" "$TMP/scripts/lib" "$TMP/context" "$TMP/config"
-  cp "$ROOT/scripts/context_source_commit_set.sh" "$TMP/scripts/"
-  cp "$ROOT/scripts/lib/project_path.sh" "$ROOT/scripts/lib/repo_root.sh" "$TMP/scripts/lib/"
-  printf 'context/test.md\tinfra\n' > "$TMP/scripts/config/context_source_commits.tsv"
-  git -C "$TMP" init -q
-  git -C "$TMP" config user.email test@example.invalid
-  git -C "$TMP" config user.name Test
-  printf '# Test\n<!-- last_updated: 2026-07-01 -->\n' > "$TMP/context/test.md"
-  git -C "$TMP" add . && git -C "$TMP" commit -qm init
+  cp -r "$SOURCE_MARKER_TEMPLATE/." "$TMP/"
   SHA="$(git -C "$TMP" rev-parse HEAD)"
 }
 
@@ -39,6 +45,8 @@ setup() {
 }
 
 teardown() { rm -rf "$TMP"; }
+
+teardown_file() { rm -rf "$SOURCE_MARKER_TEMPLATE"; }
 
 @test "sets validated source commit with reason and evidence" {
   run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "$SHA" audit log-zero
