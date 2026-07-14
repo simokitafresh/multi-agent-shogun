@@ -1123,4 +1123,8 @@ WHY=台帳鮮度回復+aliases品質向上、WHAT=対象スクリプトのCoDD�
 - [[prompt-state-recovery-marker-test-speed]] — recovery marker Unitは実三層preflightを成功no-op dependencyへ束縛し、markerの5契約を独立検証する。実装契約は [[test_prompt_state_recovery_marker.bats]] と [[prompt_state_inject.sh]] を参照。
 - [[gate-small-consolidated-test-speed]] — consolidated gate Unitはcontent function単位のflock+atomic TAP cacheでnested Bats起動を27回からembedded source数へ集約する。実装契約は [[test_gate_small_consolidated.bats]] を参照。
 - [[test-speed-task-generator-test-speed]] — test speed task generator Unitは非idle 6状態の子bash起動を1回へ集約し、状態集合・hash不変・idle成功契約を維持する。実装契約は [[test_test_speed_task_generator.bats]] / [[test_speed_task_generator.sh]] / [[run_timed_bats.sh]] を参照。
+- [[bash-speed-training-test-speed]] — Bash速度修行Unitの共有fixture・bounded concurrency・idle-handler隔離を、期待値とSKIP=0を維持した実測記録として参照する。
+- [[cmd-complete-gate-test-speed]] — cmd_complete_gate Unitのhelper抽出を単一走査へ集約し、27 testの書込み隔離と判定契約を維持した実測記録として参照する。
+- [[context-source-commit-set-test-speed]] — Git repository fixtureをsuite単位で生成して各testへ隔離copyする高速化と、5 testの期待値不変を参照する。
+- [[deploy-task-ac-handling-test-speed]] — deploy task AC検証のfixture root漏洩を局所化し、後続testのパス契約を保った速度修行記録を参照する。
 - → [[gunshi_idle_training_rethink_nazenaze_20260516]] 修行再考のなぜなぜ: 修行設計の構造的問題

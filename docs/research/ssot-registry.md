@@ -4,6 +4,8 @@
 担当: hanzo
 根拠: `queue/shogun_to_karo.yaml` cmd_3463 / `docs/research/ssot-audit-round1.md`
 
+動的CLI設定の2層SSOT（`settings.yaml`の実行時値と`cli_profiles.yaml defaults`の復元値）の全フィールド監査は [[cmd_3484_ssot_dynamic_defaults_audit]] を参照する。
+
 ## 計測条件
 
 - 対象: `scripts/`, `.claude/`, `.codex/`, `config/`, `skills/`, `AGENTS.md`, `CLAUDE.md`
