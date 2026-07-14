@@ -642,6 +642,17 @@ EOF
     cat > "$TEST_REPO/queue/gates/cmd_2473/sg7_bundle.json" <<'EOF'
 {"review":{"cmd_id":"cmd_2473","verdict":"APPROVE","cmd_spec_summary":{"acceptance_criteria_count":1,"scope":["fixture"],"project":"infra"},"dashboard_line":"- **cmd_2473**: 完了。bundle line is authoritative"}}
 EOF
+    # The reviewed bundle must remain authoritative even when a later task
+    # makes legacy report revalidation fail.  This reproduces cmd_3932 where
+    # the worker's next task had 14 checks while the archived report had 3.
+    python3 - "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml" <<'PY'
+import pathlib, sys, yaml
+p = pathlib.Path(sys.argv[1])
+d = yaml.safe_load(p.read_text(encoding="utf-8"))
+d["binary_checks"]["AC1"][0]["result"] = "no"
+d["verdict"] = "FAIL"
+p.write_text(yaml.safe_dump(d, sort_keys=False, allow_unicode=True), encoding="utf-8")
+PY
     cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
 # dashboard-update
 EOF

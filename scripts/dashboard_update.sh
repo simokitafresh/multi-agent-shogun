@@ -217,7 +217,13 @@ PY
     )
 }
 
-validate_reports_before_dashboard
+# SG7 bundle is the reviewed, fingerprint-bound SSOT.  Re-reading the report
+# here can join an archived report to the worker's later task and manufacture
+# a binary_checks mismatch (cmd_3932 production replay).  Keep legacy report
+# validation only for callers that have not supplied a reviewed bundle.
+if [[ -z "$BUNDLE_PATH" ]]; then
+    validate_reports_before_dashboard
+fi
 
 # ─── Main processing (flock for concurrency safety) ───
 LOCK_FILE="${DASHBOARD}.lock"
