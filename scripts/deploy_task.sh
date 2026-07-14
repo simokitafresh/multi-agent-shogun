@@ -7539,6 +7539,42 @@ inject_report_filename() {
     log "[REPORT_FN] Injected report_filename=${report_filename}"
 }
 
+# A speed-campaign round owns its report identity.  Generic direct YAML must
+# still be normalized, but replacing this exact generator contract collapses
+# R1/R2 onto the parent-cmd report and destroys the campaign history.
+deploy_task_speed_campaign_report_is_explicit() {
+    local task_file="$1"
+    python3 - "$task_file" <<'PY'
+import sys, yaml
+try:
+    task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+except (OSError, yaml.YAMLError):
+    raise SystemExit(1)
+c = task.get("speed_campaign") or {}
+campaign = str(c.get("campaign_id") or "")
+round_index = c.get("round_index")
+name = str(task.get("report_filename") or "")
+path = str(task.get("report_path") or "")
+expected = f"test_speed_report_{campaign}_r{round_index}.yaml"
+ok = bool(campaign and isinstance(round_index, int) and round_index > 0
+          and name == expected and path == f"queue/reports/{expected}")
+raise SystemExit(0 if ok else 1)
+PY
+}
+
+deploy_task_normalize_report_metadata() {
+    local task_file="$1"
+    if deploy_task_speed_campaign_report_is_explicit "$task_file"; then
+        log "[REPORT_FN] Preserving explicit speed campaign round report"
+    else
+        yaml_field_set "$task_file" "task" "report_filename" "" \
+            || { log "FATAL: yaml_field_set failed for report_filename"; return 1; }
+        yaml_field_set "$task_file" "task" "report_path" "" \
+            || { log "FATAL: yaml_field_set failed for report_path"; return 1; }
+    fi
+    inject_report_filename "$task_file" || true
+}
+
 # ─── bloom_level自動注入（cmd_434: タスク複雑度メタデータ） ───
 # cmd_1393: Python→bash変換（grep+yaml_field_set）
 inject_bloom_level() {
@@ -9791,14 +9827,7 @@ deploy_task_apply_task_mutations() {
     fi
 
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
-        yaml_field_set "$task_file" "task" "report_filename" "" \
-            || { log "FATAL: yaml_field_set failed for report_filename"; return 1; }
-        yaml_field_set "$task_file" "task" "report_path" "" \
-            || { log "FATAL: yaml_field_set failed for report_path"; return 1; }
-    fi
-
-    if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
-        inject_report_filename "$task_file" || true
+        deploy_task_normalize_report_metadata "$task_file" || return 1
         inject_bloom_level "$task_file" || true
         inject_execution_controls "$task_file" || true
         inject_ninja_weak_points "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_ninja_weak_points" "$task_file" "$ninja_name"

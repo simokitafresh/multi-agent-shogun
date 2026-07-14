@@ -29,16 +29,32 @@ YAML
   grep -Fq 'shared fixture/cache first; switch to production script at plateau' "$generated"
 }
 
-@test "round reports are unique and complete-deploy reaches real deploy boundary" {
-  mkdir -p "$TMP/scripts" "$TMP/bin"
+@test "production deploy contract preserves unique round reports and complete-deploy reaches assigned R2" {
+  mkdir -p "$TMP/scripts/lib" "$TMP/bin"
   cp "$ROOT/scripts/test_speed_task_generator.sh" "$TMP/scripts/"
-  cat > "$TMP/scripts/deploy_task.sh" <<'SH'
+  cp "$ROOT/scripts/lib/field_get.sh" "$ROOT/scripts/lib/yaml_field_set.sh" "$TMP/scripts/lib/"
+  extract_function() { sed -n "/^$1()/,/^}/p" "$ROOT/scripts/deploy_task.sh"; }
+  eval "$(extract_function inject_report_filename)"
+  eval "$(extract_function deploy_task_speed_campaign_report_is_explicit)"
+  eval "$(extract_function deploy_task_normalize_report_metadata)"
+  field_get() { FIELD_GET_NO_LOG=1 bash "$TMP/scripts/lib/field_get.sh" "$@"; }
+  yaml_field_set() { bash "$TMP/scripts/lib/yaml_field_set.sh" "$@"; }
+  log() { :; }
+  cat > "$TMP/scripts/deploy_task.sh" <<SH
 #!/usr/bin/env bash
 set -euo pipefail
-cp "$3" "$SHOGUN_REPO_ROOT/queue/tasks/$4.yaml"
-report=$(sed -n 's/^[[:space:]]*report_path:[[:space:]]*"\{0,1\}\([^" ]*\)"\{0,1\}$/\1/p' "$3")
-mkdir -p "$SHOGUN_REPO_ROOT/$(dirname "$report")"
-printf 'status: pending\n' > "$SHOGUN_REPO_ROOT/$report"
+source "$TMP/scripts/lib/field_get.sh"
+source "$TMP/scripts/lib/yaml_field_set.sh"
+$(extract_function inject_report_filename)
+$(extract_function deploy_task_speed_campaign_report_is_explicit)
+$(extract_function deploy_task_normalize_report_metadata)
+log() { :; }
+NINJA_NAME="\$4"
+cp "\$3" "$TMP/queue/tasks/\$4.yaml"
+deploy_task_normalize_report_metadata "$TMP/queue/tasks/\$4.yaml"
+report=\$(FIELD_GET_NO_LOG=1 field_get "$TMP/queue/tasks/\$4.yaml" report_path "")
+mkdir -p "$TMP/\$(dirname "\$report")"
+printf 'status: pending\n' > "$TMP/\$report"
 SH
   chmod +x "$TMP/scripts/deploy_task.sh"
   task1="$TMP/queue/training/r1.yaml"
@@ -67,6 +83,30 @@ YAML
   r2_report=$(sed -n 's/^[[:space:]]*report_filename:[[:space:]]*"\([^" ]*\)"$/\1/p' "$TMP/queue/tasks/hayate.yaml")
   [ "$r2_report" = 'test_speed_report_camp_r2.yaml' ]
   [ -f "$TMP/queue/reports/$r2_report" ]
+  [ "$(sed -n 's/^[[:space:]]*status:[[:space:]]*//p' "$TMP/queue/tasks/hayate.yaml" | head -1)" = assigned ]
+  [ "$r2_report" != r1.yaml ]
+  [ -f "$report1" ]
+}
+
+@test "production deploy contract normalizes arbitrary direct YAML report metadata" {
+  task="$TMP/queue/training/arbitrary.yaml"
+  cat > "$task" <<'YAML'
+task:
+  parent_cmd: cmd_plain
+  report_filename: caller_chosen.yaml
+  report_path: queue/reports/caller_chosen.yaml
+YAML
+  extract_function() { sed -n "/^$1()/,/^}/p" "$ROOT/scripts/deploy_task.sh"; }
+  source "$ROOT/scripts/lib/field_get.sh"
+  source "$ROOT/scripts/lib/yaml_field_set.sh"
+  eval "$(extract_function inject_report_filename)"
+  eval "$(extract_function deploy_task_speed_campaign_report_is_explicit)"
+  eval "$(extract_function deploy_task_normalize_report_metadata)"
+  log() { :; }
+  NINJA_NAME=hayate
+  deploy_task_normalize_report_metadata "$task"
+  grep -Fq 'report_filename: hayate_report_cmd_plain.yaml' "$task"
+  ! grep -Fq 'caller_chosen.yaml' "$task"
 }
 
 @test "deteriorating round cannot adopt a different commit" {
