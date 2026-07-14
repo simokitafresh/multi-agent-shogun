@@ -120,6 +120,45 @@ SH
     run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
         bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
     [ "$status" -ne 0 ]
-    [[ "$output" == *"evidence incomplete"* ]]
+    [[ "$output" == *"completion evidence incomplete"* ]]
+    ! grep -q 'dashboard_update.sh' "$CMD_COMPLETE_TEST_LOG"
+}
+
+@test "direct command not-found continues with consumed SG7 formal review and CLEAR" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/direct.log"
+    local cmd=cmd_karo_fixture
+    mkdir -p "$FIXTURE/queue/gates/$cmd" "$FIXTURE/logs"
+    cp "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
+    : > "$FIXTURE/queue/gates/$cmd/review_gate.done"
+    printf '%s CLEAR\n' "$cmd" > "$FIXTURE/logs/gate_metrics.log"
+    cat > "$FIXTURE/scripts/gates/gate_yaml_status.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'gate_yaml_status.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+echo "ERROR: $1 not found in shogun_to_karo.yaml" >&2
+exit 1
+SH
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" "$cmd"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"direct SG7/review/CLEAR evidence"* ]]
+    grep -q 'dashboard_update.sh' "$CMD_COMPLETE_TEST_LOG"
+}
+
+@test "direct command not-found stops without formal review evidence" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/direct-missing.log"
+    local cmd=cmd_karo_fixture
+    mkdir -p "$FIXTURE/queue/gates/$cmd" "$FIXTURE/logs"
+    cp "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
+    printf '%s CLEAR\n' "$cmd" > "$FIXTURE/logs/gate_metrics.log"
+    cat > "$FIXTURE/scripts/gates/gate_yaml_status.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'gate_yaml_status.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+echo "ERROR: $1 not found in shogun_to_karo.yaml" >&2
+exit 1
+SH
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" "$cmd"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"completion evidence incomplete"* ]]
     ! grep -q 'dashboard_update.sh' "$CMD_COMPLETE_TEST_LOG"
 }

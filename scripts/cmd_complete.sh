@@ -30,7 +30,7 @@ run_step() {
 }
 
 run_status_step() {
-    local output rc=0 archive_hit=""
+    local output rc=0 archive_hit="" direct_review_gate=""
     printf '[cmd_complete] START status_completed\n' >&2
     output="$(bash "$SCRIPT_DIR/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1)" || rc=$?
     printf '%s\n' "$output"
@@ -49,7 +49,15 @@ run_status_step() {
         printf '[cmd_complete] PASS status_completed (archived CLEAR evidence)\n' >&2
         return 0
     fi
-    printf '[cmd_complete] FAILED status_completed (archive/dashboard/CLEAR evidence incomplete)\n' >&2
+    direct_review_gate="$ROOT_DIR/queue/gates/$CMD_ID/review_gate.done"
+    if [[ "$CMD_ID" =~ ^cmd_(karo|training)_ ]] \
+        && [[ -f "$BUNDLE_PATH" ]] \
+        && [[ -f "$direct_review_gate" ]] \
+        && awk -v id="$CMD_ID" 'index($0,id) && /CLEAR/ {found=1} END {exit !found}' "$ROOT_DIR/logs/gate_metrics.log"; then
+        printf '[cmd_complete] PASS status_completed (direct SG7/review/CLEAR evidence)\n' >&2
+        return 0
+    fi
+    printf '[cmd_complete] FAILED status_completed (archive or direct completion evidence incomplete)\n' >&2
     return "$rc"
 }
 
