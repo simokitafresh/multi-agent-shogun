@@ -65,12 +65,9 @@ setup() {
     mkdir -p "$TEST_PROJECT/config" "$TEST_PROJECT/context" "$TEST_PROJECT/projects/testproj" "$TEST_PROJECT/logs"
     ln -s "$SHARED_DIR/scripts" "$TEST_PROJECT/scripts"
 
-    cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
-projects:
-  - id: testproj
-    path: $EXT_PROJECT
-    context_file: context/test-context.md
-EOF
+    # Per-test pathだけをbuiltinで生成し、43回のheredoc一時ファイル作成を避ける。
+    printf 'projects:\n  - id: testproj\n    path: %s\n    context_file: context/test-context.md\n' \
+        "$EXT_PROJECT" > "$TEST_PROJECT/config/projects.yaml"
 
     cp "$LESSONS_TEMPLATE" "$EXT_PROJECT/tasks/lessons.md"
     cp "$CONTEXT_TEMPLATE" "$TEST_PROJECT/context/test-context.md"
