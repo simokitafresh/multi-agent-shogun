@@ -130,3 +130,52 @@ make_budget_run() {
   [[ "$output" == *"mixed revision; BLOCK disabled"* ]]
   [[ "$output" != *"総合判定: BLOCK"* ]]
 }
+
+run_asset_gate() {
+  env TESTS_DIR="$TMPROOT/assets" TEST_TIMING_LEDGER="$TMPROOT/missing-ledger.tsv" \
+    TEST_ASSET_CATALOG="$TMPROOT/catalog.tsv" TEST_PRODUCTION_ROOT="$TMPROOT" \
+    bash "$ROOT/scripts/gates/gate_test_health.sh"
+}
+
+@test "stale fixture emits four-column static catalog and WARN" {
+  mkdir -p "$TMPROOT/assets"
+  cat >"$TMPROOT/assets/stale.bats" <<'EOF'
+# test-health: production-symbol removed_contract
+# test-health: spec-status removed
+@test "stale" { run scripts/missing.sh; }
+EOF
+  run run_asset_gate
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"stale candidates: 1"* ]]
+  [ "$(head -1 "$TMPROOT/catalog.tsv")" = $'test_file\treferenced_path_exists\tproduction_symbol_exists\tlast_target_change_sha\tspec_status' ]
+  awk -F'\t' 'NR==2{exit !($2=="false" && $3=="false" && $5=="removed")}' "$TMPROOT/catalog.tsv"
+}
+
+@test "all four allowed mock categories avoid divergence WARN" {
+  mkdir -p "$TMPROOT/assets"
+  cat >"$TMPROOT/assets/allowed.bats" <<'EOF'
+# test-health: mock-category external-service
+@test "external" { run mock_http; }
+# test-health: mock-category destructive-operation
+@test "destructive" { run fake_delete; }
+# test-health: mock-category real-time
+@test "clock" { run patch_clock; }
+# test-health: mock-category failure-injection
+@test "failure" { run monkeypatch_failure; }
+EOF
+  run run_asset_gate
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"outside mock categories: 0"* ]]
+  [[ "$output" != *"mock outside allowed categories"* ]]
+}
+
+@test "mock without one of four categories emits divergence WARN" {
+  mkdir -p "$TMPROOT/assets"
+  cat >"$TMPROOT/assets/outside.bats" <<'EOF'
+@test "unclassified" { run mock_internal_helper; }
+EOF
+  run run_asset_gate
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"outside mock categories: 1"* ]]
+  [[ "$output" == *"WARN: mock outside allowed categories"* ]]
+}

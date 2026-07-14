@@ -348,7 +348,7 @@ catalog.parent.mkdir(parents=True, exist_ok=True)
 path_re = re.compile(r"(?<![A-Za-z0-9_.-])((?:scripts|src|app|lib)/[A-Za-z0-9_./-]+)")
 symbol_re = re.compile(r"test-health:\s*production-symbol\s+([A-Za-z_][A-Za-z0-9_]*)")
 spec_re = re.compile(r"test-health:\s*spec-status\s+(active|superseded|removed)")
-mock_re = re.compile(r"\b(mock|monkeypatch|patch|stub|fake)\b", re.I)
+mock_re = re.compile(r"\b(?:mock|monkeypatch|patch|stub|fake)(?:_|\b)", re.I)
 category_re = re.compile(r"test-health:\s*mock-category\s+(external-service|destructive-operation|real-time|failure-injection)")
 
 latest_sha = {}
