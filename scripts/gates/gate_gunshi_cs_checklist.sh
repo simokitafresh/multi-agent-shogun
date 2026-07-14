@@ -422,6 +422,11 @@ with open(path, encoding="utf-8") as fh:
                 current["finding_categories"].extend(clean(v) for v in values.split(",") if clean(v))
             capture_categories = False
             continue
+        m_fc_quoted = re.match(r'^\s{2}finding_categories:\s*["\'](.+)["\']', line)
+        if m_fc_quoted:
+            current["finding_categories"].extend(clean(v) for v in m_fc_quoted.group(1).split(",") if clean(v))
+            capture_categories = False
+            continue
         if re.match(r"^\s{2}finding_categories:\s*$", line):
             capture_categories = True
             continue
