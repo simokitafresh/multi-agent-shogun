@@ -480,6 +480,7 @@ import memory_db_live_insert as li
 li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
 "
 
+    mkdir -p "$TEST_TMPDIR/results20"
     for worker in $(seq 1 20); do
         (
             python3 - "$TEST_TMPDIR/cache_live/memory.db" "$TEST_TMPDIR/results20/reader_$worker.err" <<'PY'
@@ -497,9 +498,9 @@ while time.monotonic() < deadline:
         with open(err_path, "a", encoding="utf-8") as handle:
             handle.write(str(exc) + "\n")
 PY
+            : > "$TEST_TMPDIR/results20/reader_$worker.done"
         ) &
     done
-    mkdir -p "$TEST_TMPDIR/results20"
 
     for i in $(seq 1 5); do
         python3 -c "
@@ -511,6 +512,7 @@ li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
     done
     wait
 
+    [ "$(find "$TEST_TMPDIR/results20" -name 'reader_*.done' -type f | wc -l)" -eq 20 ]
     run bash -c "cat '$TEST_TMPDIR'/results20/reader_*.err 2>/dev/null"
     [ -z "$output" ]
     python3 - "$TEST_TMPDIR/cache_live/memory.db" <<'PY'
