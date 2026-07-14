@@ -127,104 +127,19 @@ if [ ! -f "$index_path" ]; then
 fi
 
 default_memory_db_path="$script_dir/data/multi_agent_shogun_memory.db"
-
-memory_db_cache_path_for() {
-    local source_path="$1"
-    if [ -n "${SEMANTIC_MEMORY_DB_CACHE_PATH:-}" ]; then
-        printf '%s\n' "$SEMANTIC_MEMORY_DB_CACHE_PATH"
-        return 0
-    fi
-    local cache_dir="${SEMANTIC_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
-    local cache_key
-    cache_key="${script_dir//[^A-Za-z0-9_.-]/_}"
-    printf '%s/%s_%s\n' "$cache_dir" "$cache_key" "$(basename "$source_path")"
-}
-
-# SQLite Backup APIで一貫スナップショットを作成する。
-# cp生コピーは書込み中(WAL checkpoint/drain等)のDBで非一貫コピーとなり
-# 「database disk image is malformed」を引き起こす(2026-06-10 22:27実測:
-# 19k backlog drain中のrefreshで破損cacheが生成され読み手がクラッシュ)。
-# Backup APIはWAL内容も統合するためwal/shmの個別コピーは不要。
-_consistent_db_snapshot() {
-    python3 - "$1" "$2" 2>/dev/null <<'PY'
-import sqlite3
-import sys
-
-src = sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True)
-dst = sqlite3.connect(sys.argv[2])
-try:
-    src.backup(dst)
-finally:
-    dst.close()
-    src.close()
-PY
-}
-
-remove_memory_db_cache_sidecars() {
-    local cache_path="$1"
-    rm -f "${cache_path}-wal" "${cache_path}-shm" "${cache_path}-journal" 2>/dev/null || true
-}
-
-prepare_memory_db_for_read() {
-    local source_path="${SEMANTIC_MEMORY_DB_PATH:-$default_memory_db_path}"
-    [ "${SEMANTIC_DISABLE_MEMORY_DB_CACHE:-0}" != "1" ] || {
-        printf '%s\n' "$source_path"
-        return 0
-    }
-    [ -f "$source_path" ] || {
-        printf '%s\n' "$source_path"
-        return 0
-    }
-
-    local cache_path lock_path tmp_path
-    cache_path="$(memory_db_cache_path_for "$source_path")"
-    lock_path="${cache_path}.lock"
-    tmp_path="${cache_path}.tmp.$$"
-    mkdir -p "$(dirname "$cache_path")" 2>/dev/null || {
-        printf '%s\n' "$source_path"
-        return 0
-    }
-
-    if [ -s "$cache_path" ] && [ ! "$source_path" -nt "$cache_path" ]; then
-        printf '%s\n' "$cache_path"
-        return 0
-    fi
-
-    if [ -s "$cache_path" ]; then
-        # shellcheck disable=SC2030,SC2031
-        (
-            flock -n 9 2>/dev/null || exit 0
-            tmp_path="${cache_path}.tmp.$$"
-            rm -f "$tmp_path" 2>/dev/null || true
-            _consistent_db_snapshot "$source_path" "$tmp_path" || { rm -f "$tmp_path"; exit 0; }
-            mv "$tmp_path" "$cache_path" 2>/dev/null || rm -f "$tmp_path"
-            # Backup APIはWALを本体に統合済み。古いサイドカーが残ると不整合になるため削除
-            remove_memory_db_cache_sidecars "$cache_path"
-        ) 9>"$lock_path" >/dev/null 2>&1 &
-        printf '%s\n' "$cache_path"
-        return 0
-    fi
-
-    # shellcheck disable=SC2031
-    (
-        flock 9 2>/dev/null || exit 0
-        if [ ! -s "$cache_path" ] || [ "$source_path" -nt "$cache_path" ]; then
-            rm -f "$tmp_path" 2>/dev/null || true
-            _consistent_db_snapshot "$source_path" "$tmp_path" || { rm -f "$tmp_path"; exit 0; }
-            mv "$tmp_path" "$cache_path" 2>/dev/null || rm -f "$tmp_path"
-            # Backup APIはWALを本体に統合済み。古いサイドカーが残ると不整合になるため削除
-            remove_memory_db_cache_sidecars "$cache_path"
-        fi
-    ) 9>"$lock_path"
-
-    if [ -s "$cache_path" ]; then
-        printf '%s\n' "$cache_path"
-    else
-        printf '%s\n' "$source_path"
-    fi
-}
-
-memory_db_path="$(prepare_memory_db_for_read)"
+memory_db_source_path="${SEMANTIC_MEMORY_DB_PATH:-$default_memory_db_path}"
+# Use the same atomic snapshot/single-flight refresh contract as
+# memory_db_query.sh. The former local implementation launched a plain
+# background subshell from command substitution; bash retained that child and
+# semantic preflight waited for a full 622MB refresh under concurrent writes.
+export SHOGUN_MEMORY_DB_CACHE_PATH="${SEMANTIC_MEMORY_DB_CACHE_PATH:-${SHOGUN_MEMORY_DB_CACHE_PATH:-}}"
+export SHOGUN_MEMORY_DB_CACHE_DIR="${SEMANTIC_MEMORY_DB_CACHE_DIR:-${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}}"
+if [ "${SEMANTIC_DISABLE_MEMORY_DB_CACHE:-0}" = "1" ]; then
+    export SHOGUN_MEMORY_DB_QUERY_DISABLE_CACHE=1
+fi
+# shellcheck source=lib/memory_db_cache.sh
+source "$script_dir/scripts/lib/memory_db_cache.sh"
+memory_db_path="$(prepare_memory_db_for_read "$script_dir" "$memory_db_source_path" "$default_memory_db_path")"
 
 semantic_index_python() {
     local mode="$1"

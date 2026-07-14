@@ -138,11 +138,13 @@ prepare_memory_db_for_read() {
             || { [ -f "${source_path}-wal" ] && [ "${source_path}-wal" -nt "$cache_path" ]; } \
             || { [ -f "${source_path}-shm" ] && [ "${source_path}-shm" -nt "$cache_path" ]; }; then
             refresh_memory_db_cache_async "$repo_root" "$source_path" "$cache_path"
-            # The refresh is intentionally asynchronous, so the published cache
-            # remains stale until it completes.  Serve the primary DB for this
-            # read to preserve read-after-write consistency; later reads return
-            # to the fast cache once its mtime catches up.
-            printf '%s\n' "$source_path"
+            # Keep readers on the last atomically-published snapshot while the
+            # refresh is in flight. Falling back to the 9p primary here made a
+            # preflight contend with concurrent SQLite writers and exceed its
+            # fixed 5s budget (rc=124). The cache publisher uses os.replace(),
+            # so this is always a complete snapshot; a later call observes the
+            # refreshed generation without ever reading a partial backup.
+            printf '%s\n' "$cache_path"
             return 0
         fi
         printf '%s\n' "$cache_path"

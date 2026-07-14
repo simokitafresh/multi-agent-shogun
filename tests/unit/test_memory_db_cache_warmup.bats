@@ -70,7 +70,7 @@ PY
     [ "$(wc -l < "$TEST_TMPDIR/create.calls")" -eq 1 ]
 }
 
-@test "stale cache refresh serves source for read-after-write consistency" {
+@test "stale cache refresh serves the last complete snapshot without touching busy source" {
     create_memory_db_cache "$PROJECT_ROOT" "$TEST_TMPDIR/source.db"
     touch -d '2 minutes ago' "$SHOGUN_MEMORY_DB_CACHE_PATH"
     touch "$TEST_TMPDIR/source.db"
@@ -80,7 +80,7 @@ PY
 
     read_path="$(prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db")"
 
-    [ "$read_path" = "$TEST_TMPDIR/source.db" ]
+    [ "$read_path" = "$SHOGUN_MEMORY_DB_CACHE_PATH" ]
     [ "$(wc -l < "$TEST_TMPDIR/refresh.calls")" -eq 1 ]
 }
 
@@ -97,8 +97,34 @@ PY
     read_path="$(prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db")"
     elapsed_ms=$(( $(date +%s%3N) - started ))
 
-    [ "$read_path" = "$TEST_TMPDIR/source.db" ]
+    [ "$read_path" = "$SHOGUN_MEMORY_DB_CACHE_PATH" ]
     [ "$elapsed_ms" -lt 1000 ]
+}
+
+@test "ten concurrent stale readers never wait for refresh or select the source" {
+    create_memory_db_cache "$PROJECT_ROOT" "$TEST_TMPDIR/source.db"
+    touch -d '2 minutes ago' "$SHOGUN_MEMORY_DB_CACHE_PATH"
+    touch "$TEST_TMPDIR/source.db"
+    create_memory_db_cache() {
+        sleep 2
+    }
+    export -f create_memory_db_cache
+
+    local started elapsed_ms i
+    started="$(date +%s%3N)"
+    for i in $(seq 1 10); do
+        (
+            source "$PROJECT_ROOT/scripts/lib/memory_db_cache.sh"
+            prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db"
+        ) >"$TEST_TMPDIR/read.$i" &
+    done
+    wait
+    elapsed_ms=$(( $(date +%s%3N) - started ))
+
+    [ "$elapsed_ms" -lt 1500 ]
+    for i in $(seq 1 10); do
+        [ "$(cat "$TEST_TMPDIR/read.$i")" = "$SHOGUN_MEMORY_DB_CACHE_PATH" ]
+    done
 }
 
 @test "restart_watchers flow creates a missing cache before touching watchers" {
