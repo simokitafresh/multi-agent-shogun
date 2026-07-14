@@ -777,7 +777,10 @@ setup_git_test_env() {
     unset INBOX_WRITE_TEST
 
     rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/src" "$TEST_TMPDIR/.git"
-    cp -a "$GIT_TEMPLATE_DIR/." "$TEST_TMPDIR/"
+    # The template is immutable and both paths normally live on /tmp. Prefer a
+    # CoW clone so git-heavy cases retain full isolation without recopying the
+    # repository fixture; fall back to an ordinary copy where unsupported.
+    cp -a --reflink=auto "$GIT_TEMPLATE_DIR/." "$TEST_TMPDIR/"
 }
 
 # Wrapper to capture stderr in bats output
