@@ -1236,3 +1236,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - input bundleは`safe_bundle_v2.load_bundle`のみで読み、raw SHA-256→entry allowlist/size/path→artifact hash→schema/row count→typed decodeの順にfail-closed検証する。pickleと旧`export_input_bundle`経路は使用禁止。
 - materializeは`REPEATABLE READ READ ONLY`をtransaction先頭で設定し、`SHOW transaction_read_only=on`確認後に実行する。valid bundle consumer時のsource SELECT fallbackは0でなければ失敗扱い。
 - 全量前preflightはgolden存在+canonical SHA、pytest-asyncio導入済み`/usr/bin/python3`、`RECALC_RSS_CAP_MB=8192`を二値確認する。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3879_safe_bundle_impl.md`、main統合=`97c13040→b5716329→29ea37a9`。
+
+## §77 SIGNAL CHANGE 07-13/07-14偵察 (cmd_3903, 2026-07-14)
+
+- 07-13の800件はfull run 213（01:26:17〜01:37:44 UTC）と一致するが、restore-locked後の現DBでは行別履歴0件。07-14はFoF cron時間帯の23PF×7日=161件exact（01:48:01〜01:49:32 UTC）だがinput snapshot 0/161。価格旧版が無いため非決定性と断定せず、全961件を証跡不足に分類した。詳細・PF別内訳・SQL → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3903_signal_change_root_cause.md`
