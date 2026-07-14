@@ -27,6 +27,8 @@ REGRESSION_PCT="${TEST_TIMING_REGRESSION_PCT:-25}"
 RATCHET_MIN_RUNS="${TEST_TIMING_RATCHET_MIN_RUNS:-5}"
 RATCHET_SUITE_ABS_SEC="${TEST_TIMING_RATCHET_SUITE_ABS_SEC:-30}"
 RATCHET_EXCEPTIONS="${TEST_TIMING_RATCHET_EXCEPTIONS:-${REPO_ROOT}/config/test_timing_budget_exceptions.tsv}"
+ASSET_CATALOG="${TEST_ASSET_CATALOG:-${REPO_ROOT}/logs/test_asset_catalog.tsv}"
+PRODUCTION_ROOT="${TEST_PRODUCTION_ROOT:-${REPO_ROOT}}"
 
 MEASURE=false
 LEDGER_ONLY=false
@@ -322,6 +324,100 @@ if (( ${#consolidate_list[@]} > 0 )); then
   done
 else
   echo "OK: 統合候補なし"
+fi
+
+echo ""
+
+# ─────────────────────────────────────────────
+# AC4: 陳腐化4列 + test-double許可4類型catalog (D4')
+# ─────────────────────────────────────────────
+echo "=== [AC4] test asset / double catalog ==="
+
+# Static-only scan.  Optional annotations make symbol/spec intent explicit:
+#   # test-health: production-symbol function_name
+#   # test-health: spec-status active|superseded|removed
+# Double allow-list categories are declared beside the use site:
+#   # test-health: mock-category external-service|destructive-operation|real-time|failure-injection
+asset_out="$(python3 - "$PRODUCTION_ROOT" "$ASSET_CATALOG" "${_bats_files[@]}" <<'PY'
+import pathlib, re, subprocess, sys
+
+root, catalog, *test_files = sys.argv[1:]
+root = pathlib.Path(root).resolve()
+catalog = pathlib.Path(catalog)
+catalog.parent.mkdir(parents=True, exist_ok=True)
+path_re = re.compile(r"(?<![A-Za-z0-9_.-])((?:scripts|src|app|lib)/[A-Za-z0-9_./-]+)")
+symbol_re = re.compile(r"test-health:\s*production-symbol\s+([A-Za-z_][A-Za-z0-9_]*)")
+spec_re = re.compile(r"test-health:\s*spec-status\s+(active|superseded|removed)")
+mock_re = re.compile(r"\b(mock|monkeypatch|patch|stub|fake)\b", re.I)
+category_re = re.compile(r"test-health:\s*mock-category\s+(external-service|destructive-operation|real-time|failure-injection)")
+
+latest_sha = {}
+try:
+    history = subprocess.run(
+        ["git", "-C", str(root), "log", "-500", "--format=@@%H", "--name-only", "--", "scripts", "src", "app", "lib"],
+        check=False, capture_output=True, text=True, timeout=10,
+    ).stdout.splitlines()
+    commit = ""
+    for item in history:
+        if item.startswith("@@"):
+            commit = item[2:]
+        elif item and commit:
+            latest_sha.setdefault(item, commit)
+except (OSError, subprocess.TimeoutExpired):
+    pass
+
+rows, stale, outside, production_cache = [], [], [], {}
+for raw_path in test_files:
+    path = pathlib.Path(raw_path)
+    text = path.read_text(encoding="utf-8", errors="replace")
+    refs = sorted(set(path_re.findall(text)))
+    ref_exists = all((root / ref).exists() for ref in refs) if refs else True
+    symbols = symbol_re.findall(text)
+    production_text = ""
+    for ref in refs:
+        target = root / ref
+        if target.is_file():
+            if ref not in production_cache:
+                production_cache[ref] = target.read_text(encoding="utf-8", errors="replace")
+            production_text += production_cache[ref] + "\n"
+    symbol_exists = all(re.search(rf"\b{re.escape(symbol)}\b", production_text) for symbol in symbols) if symbols else True
+    existing_refs = [ref for ref in refs if (root / ref).exists()]
+    sha = next((latest_sha[ref] for ref in existing_refs if ref in latest_sha), "untracked" if existing_refs else "none")
+    spec = (spec_re.findall(text) or ["active"])[-1]
+    stale_candidate = (not ref_exists) or (not symbol_exists) or spec in {"superseded", "removed"}
+    if stale_candidate:
+        stale.append(str(path))
+
+    lines = text.splitlines()
+    for number, line in enumerate(lines, 1):
+        if not mock_re.search(line) or "test-health: mock-category" in line:
+            continue
+        nearby = "\n".join(lines[max(0, number - 3):min(len(lines), number + 2)])
+        category = category_re.search(nearby)
+        if not category:
+            outside.append(f"{path}:{number}")
+
+    rows.append((str(path), str(ref_exists).lower(), str(symbol_exists).lower(), sha, spec))
+
+with catalog.open("w", encoding="utf-8") as handle:
+    handle.write("test_file\treferenced_path_exists\tproduction_symbol_exists\tlast_target_change_sha\tspec_status\n")
+    for row in rows:
+        handle.write("\t".join(row) + "\n")
+print(f"catalog: {catalog}")
+print(f"stale candidates: {len(stale)}")
+for item in stale:
+    print(f"WARN: stale test candidate {item}")
+print(f"outside mock categories: {len(outside)}")
+for item in outside:
+    print(f"WARN: mock outside allowed categories {item}")
+if stale or outside:
+    raise SystemExit(1)
+PY
+)" || asset_rc=$?
+asset_rc="${asset_rc:-0}"
+printf '%s\n' "$asset_out"
+if (( asset_rc != 0 )); then
+  alert=1
 fi
 
 echo ""
