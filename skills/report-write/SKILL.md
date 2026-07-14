@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-15T05:58:00+09:00 -->
+<!-- 2026-07-15契約更新: commit=yes報告はcommit_hashと必須証拠が揃うまでterminal statusへ遷移しない。先に全必須欄、最後に40桁commit_hashを記入する。backslash scalarは原文保持される。 -->
 name: report-write
 argument-hint: "[report_path]"
 quality_metric: "忍者系: report-write使用後の報告YAML関連WA不発生率(対象報告のうちreport_yaml_format/report_field欠陥なしの割合)"
