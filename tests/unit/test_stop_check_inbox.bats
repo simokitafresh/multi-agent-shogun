@@ -58,6 +58,13 @@ setup() {
     : > "$INBOX_WRITE_LOG"
 }
 
+write_successful_preflight_evidence() {
+    local dir="$TEST_ROOT/preaction_memory"
+    mkdir -p "$dir"
+    printf '%s\n' '{"agent_id":"shogun","pane_id":"%1","prompt_hash":"hash","nonce":"nonce","issued_at":"2099-01-01T00:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}' > "$dir/evidence_shogun__1.json"
+    export THREE_LAYER_PREACTION_EVIDENCE_DIR="$dir"
+}
+
 teardown() {
     rm -f "${TEST_IDLE_FLAG:-}"
     [ -n "${TEST_ROOT:-}" ] && [ -d "$TEST_ROOT" ] && rm -rf "$TEST_ROOT"
@@ -742,4 +749,45 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
     [ "$status" -eq 0 ]
     [[ "$output" != *"WARN: 確認行為ゼロ"* ]]
     [ ! -f "$SHOGUN_STATE_DIR/shogun_verification_action_count_shogun" ]
+}
+
+@test "T-SCI-MEM-001: preflight evidence plus substantive response without MEM tag blocks" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    write_successful_preflight_evidence
+
+    run_hook '{"stop_hook_active":false,"last_assistant_message":"過去の裁定を踏まえて設計理由を説明する"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"decision":"block"'* ]]
+    [[ "$output" == *"[MEM:]引用タグがない"* ]]
+}
+
+@test "T-SCI-MEM-002: preflight evidence plus MEM citation passes" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    write_successful_preflight_evidence
+
+    run_hook '{"stop_hook_active":false,"last_assistant_message":"過去の裁定を踏まえる。[MEM: semantic concept=three_layer_memory]"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'"decision":"block"'* ]]
+}
+
+@test "T-SCI-MEM-003: routine response without MEM tag passes even with preflight" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    write_successful_preflight_evidence
+
+    run_hook '{"stop_hook_active":false,"last_assistant_message":"配備完了。新着を待つ。"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'"decision":"block"'* ]]
+}
+
+@test "T-SCI-MEM-004: substantive response without preflight evidence passes" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+    export THREE_LAYER_PREACTION_EVIDENCE_DIR="$TEST_ROOT/no-evidence"
+
+    run_hook '{"stop_hook_active":false,"last_assistant_message":"現在の設計理由を説明する"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *'"decision":"block"'* ]]
 }

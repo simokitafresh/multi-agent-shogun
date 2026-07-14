@@ -15,6 +15,32 @@ readonly SUMMARY_LIMIT=5
 readonly SUMMARY_SNIPPET_LEN=80
 readonly SHOGUN_BRAINWASH_AUDIT='洗脳8パターン自問: #1早期終了 #2検証スキップ #3他者依存 #4緩い設計 #5先送り #6出力=仕事 #7簡潔本能 #8完了急ぎ'
 
+has_successful_three_layer_preflight() {
+  local evidence_dir="${THREE_LAYER_PREACTION_EVIDENCE_DIR:-$SCRIPT_DIR/logs/preaction_memory}"
+  local evidence
+  shopt -s nullglob
+  for evidence in "$evidence_dir"/evidence_shogun_*.json; do
+    if python3 - "$evidence" <<'PY' >/dev/null 2>&1
+import json, sys
+try:
+    data = json.load(open(sys.argv[1], encoding="utf-8"))
+except Exception:
+    raise SystemExit(1)
+raise SystemExit(0 if data.get("status") == "success" and all(str(data.get(k)) == "0" for k in ("memory_db", "semantic", "obsidian")) else 1)
+PY
+    then
+      shopt -u nullglob
+      return 0
+    fi
+  done
+  shopt -u nullglob
+  return 1
+}
+
+is_routine_shogun_response() {
+  grep -qiE '配備(開始|完了)|初回配備|GATE (CLEAR|BLOCK)|完了(しました|報告)|inbox(未読|空)|新着を待つ|レビュー依頼待ち' <<<"$1"
+}
+
 unresolved_startup_defer_count() {
   local history_file="$1"
   [[ -f "$history_file" ]] || {
@@ -393,12 +419,11 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
         printf 'WARN: startup先送りBLOCK 現在未解消%s件。cmd起票またはD0修正で穴を塞げ(洗脳#5)。\n' "$_block_count" >&2
       fi
     fi
-    # cmd_3418 AC2: 技術回答で[MEM:]タグ欠落WARN
-    # DM-Signal/技術調査キーワードを含む回答で三層記憶引用タグが欠落している場合
-    if echo "$last_assistant_message" | grep -qiE 'dm.?signal|deteriorat|portfolio|グリッド|忍法|四神|先物|PF登録|fullrecalc|コードを|スクリプトを'; then
-      if [[ "$last_assistant_message" != *'[MEM:'* ]]; then
-        printf 'WARN: 三層記憶タグ[MEM:]欠落。DM-Signal/技術調査回答は記憶DB/セマンティック/Obsidianを検索し[MEM:]タグで引用元を明記せよ(cmd_3418: 三層記憶ファーストを徹底)。\n' >&2
-      fi
+    # cmd_3418 + memory citation enforcement: preflightを使った非定型回答は
+    # 引用タグまでを一つの契約としてfail-closedにする。定型応答とpreflight未実施は対象外。
+    if has_successful_three_layer_preflight && ! is_routine_shogun_response "$last_assistant_message" && [[ "$last_assistant_message" != *'[MEM:'* ]]; then
+      printf '{"decision":"block","reason":"BLOCK: 三層preflight済みの非定型回答に[MEM:]引用タグがない。memory_db/semantic/obsidianの引用元を明記せよ。"}\n'
+      exit 0
     fi
     # cmd_3420 AC1/AC2: 数量表現→全件照合強制WARN(洗脳#1/#8 L5化)
     detect_quantity_in_lord_response "$last_assistant_message"
