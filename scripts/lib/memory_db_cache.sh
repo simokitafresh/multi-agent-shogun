@@ -53,7 +53,9 @@ refresh_memory_db_cache_async() {
     local repo_root="$1"
     local source_path="$2"
     local cache_path="$3"
-    local timeout_sec="${SHOGUN_MEMORY_DB_CACHE_REFRESH_TIMEOUT:-60}"
+    # 626MB DBの9p→ext4コピーは実測66s(2026-07-15将軍計測)。旧デフォルト60sは
+    # コピー完了直前にkillし、cold cacheが恒久化して全preflightが124連鎖した。
+    local timeout_sec="${SHOGUN_MEMORY_DB_CACHE_REFRESH_TIMEOUT:-300}"
     mkdir -p "$(dirname "$cache_path")" 2>/dev/null || return 0
     export -f create_memory_db_cache
     # prepare_memory_db_for_read is normally called inside command
@@ -123,7 +125,7 @@ prepare_memory_db_for_read() {
         return 0
     fi
 
-    local cache_path timeout_sec rc
+    local cache_path
     cache_path="$(memory_db_cache_path "$repo_root" "$source_path" 2>/dev/null || true)"
     if [ -z "$cache_path" ]; then
         printf '%s\n' "$source_path"
@@ -151,26 +153,12 @@ prepare_memory_db_for_read() {
         return 0
     fi
 
-    timeout_sec="${SHOGUN_MEMORY_DB_CACHE_INIT_TIMEOUT:-30}"
-    rc=0
-    # async warm-upと同じlockを非blocking取得する。warm-upが既に生成中なら
-    # 待たずに正本へfallbackし、二重生成と初回read遅延をともに防ぐ。
-    if command -v timeout >/dev/null 2>&1; then
-        export -f create_memory_db_cache
-        # shellcheck disable=SC2016 # $1/$2 are intentionally expanded by bash -c.
-        timeout -k 1 "$timeout_sec" bash -c \
-            'flock -n 8 2>/dev/null || exit 75; create_memory_db_cache "$1" "$2"' \
-            _ "$repo_root" "$source_path" 8>"${cache_path}.refresh.lock" 2>/dev/null || rc=$?
-    else
-        { flock -n 8 2>/dev/null || exit 75; create_memory_db_cache "$repo_root" "$source_path"; } \
-            8>"${cache_path}.refresh.lock" 2>/dev/null || rc=$?
-    fi
-    if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
-        notify_memory_db_cache_timeout "$repo_root" "$timeout_sec"
-    fi
-    if [ "$rc" -eq 0 ] && [ -s "$cache_path" ]; then
-        printf '%s\n' "$cache_path"
-    else
-        printf '%s\n' "$source_path"
-    fi
+    # Cold-cache creation is deliberately asynchronous too.  The former path
+    # held refresh.lock while synchronously copying the production DB for up to
+    # 30s.  memory_db_query and semantic_search start together in the preflight
+    # (outer budget: 5s), so they alternated between waiting on that copy and
+    # returning rc=124.  Single-flight remains enforced inside the async helper;
+    # readers use the canonical DB until an atomic cache snapshot exists.
+    refresh_memory_db_cache_async "$repo_root" "$source_path" "$cache_path"
+    printf '%s\n' "$source_path"
 }
