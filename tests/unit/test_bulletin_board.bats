@@ -277,9 +277,14 @@ PY
 }
 
 @test "bulletin_write auto archives when bulletin exceeds threshold" {
-    for i in $(seq 1 50); do
-        env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun" TMUX_PANE="$TMUX_PANE" PATH="$PATH" INBOX_WRITE_LOG="$TEST_TMPDIR/inbox_write.log" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "既存投稿 $i" >/dev/null
-    done
+    # Seed the precondition directly: this test exercises the 51st write and
+    # archive boundary, not the already-covered mechanics of the first 50 writes.
+    {
+        printf 'entries:\n'
+        for i in $(seq 1 50); do
+            printf -- "- id: 'seed_%02d'\n  content: |-\n    既存投稿 %d\n  posted_by: 'saizo'\n  posted_at: '2026-01-01T00:00:00+09:00'\n  requires_confirmation: false\n  confirmed_by: []\n  status: 'open'\n" "$i" "$i"
+        done
+    } > "$TEST_TMPDIR/queue/bulletin_board.yaml"
 
     run env BULLETIN_ROOT_OVERRIDE="$TEST_TMPDIR" BULLETIN_TEST_AGENT_ID=saizo BULLETIN_NOTIFY="shogun" TMUX_PANE="$TMUX_PANE" PATH="$PATH" INBOX_WRITE_LOG="$TEST_TMPDIR/inbox_write.log" bash "$TEST_TMPDIR/scripts/bulletin_write.sh" "閾値超過投稿"
     [ "$status" -eq 0 ]
