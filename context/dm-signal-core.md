@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
 <!-- last_updated: 2026-07-14 cmd_karo_hotfix_ga249_context_reflux_last_updated_202607140250 -->
-<!-- source_commit:ba4c0cee reason:cmd_3880_main_integration evidence:cmd_3880_content_present -->
+<!-- source_commit:32ee997c reason:CI uvicorn test import path修正のみでcore本番契約の変更なし evidence:git show 32ee997c: backend/tests/test_p4_bundle_uvicorn_cmd_3880.py 1ファイル4行変更、production code変更0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -597,6 +597,7 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - 2026-07-08 cmd_3753: PF復元R1完了。`portfolio_archive`(FKなし`portfolio_id`+payload JSON+deleted/restored metadata)を追加し、`PortfolioRepository.delete_by_id`直前でportfolio/folder階層/`signal_decision_ledger`/`month_start_signal_input_snapshots`を同一transaction退避。archive INSERT失敗時は削除rollback。対象commit: `/mnt/c/Python_app/DM-signal` `f6404d70`。
 - 2026-07-10 cmd_3810: Monthly Trade FoF表示で`display_ticker_weights`変更時、`calculated_return_open/close`・`matched_weight`・`missing_tickers`を表示weightsと同一基盤で再計算するよう統一(`_sync_entry_calculation_to_display_weights`)。旧実装は表示weightsだけ差し替え、計算returnは別ソースのweightsを参照し不整合だった。`matched_weight`判定も厳密等価(`!= 1.0`)から浮動小数点許容(`abs(matched_weight-1.0)>1e-9`)へ修正。対象commit: `/mnt/c/Python_app/DM-signal` `67bdffc8`。
 - 2026-07-10 cmd_3812: `monthly_returns.py::_generate_monthly_returns`に`signal_decision_ledger`のband確定weight(`decision_ticker_weights`)優先ロジックを追加。台帳にband weightがあれば通常計算weightより優先使用し(`_normalize_ledger_ticker_weights`)、価格キャッシュ対象tickerにも台帳weightのtickerを含める。台帳のband weightsがMonthly Returns生成時に上書きされていた問題への対処。対象commit: `/mnt/c/Python_app/DM-signal` `8fc49267`。
+- 2026-07-14 cmd_karo_hotfix_signal_insert_ledger_drift_alert_202607141340: 新規`signals` INSERTは旧値がないため通常の`signal_change_log`対象外だが、確定域ledgerとのdriftはrun-level `SIGNAL CHANGE ALERT`へ必ず載せる。架空の旧値をDB永続化せず、既存UPDATE・ledger一致INSERT・未被覆pendingの契約を維持する。対象commit: `/mnt/c/Python_app/DM-signal` `05a45d83`、回帰=`backend/tests/test_signal_decision_ledger_guard.py`。
 
 ## §22 CI/テスト基盤 2026-05更新 (cmd_2652〜2660)
 

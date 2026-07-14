@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
 <!-- last_updated: 2026-07-14 cmd_karo_hotfix_ga251_context_freshness -->
-<!-- source_commit:f16625f6 reason:ci_golden_contract_reflected_p4_test_only evidence:section38_ci_golden_row_7tables_573649_rows_243293_exact_run29326659277 -->
+<!-- source_commit:32ee997c reason:CI uvicorn test import path修正のみでops手順・本番契約の変更なし evidence:git show 32ee997c: backend/tests/test_p4_bundle_uvicorn_cmd_3880.py 1ファイル4行変更、production code変更0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 

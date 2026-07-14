@@ -1,7 +1,7 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga245_source_commit_lifecycle_202607131954 -->
-<!-- source_commit:abe55194e2c2d9e5f2fa8c16b04a6b806b419ba0 reason:full-audit-boundary evidence:migration-commit-70-tests -->
+<!-- last_updated: 2026-07-14 cmd_3910 -->
+<!-- source_commit:00e4ca3c6 reason:cmd3910-codd-refactor-d6-contract evidence:17-of-17-pass-skip0 -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
@@ -132,7 +132,7 @@
 | 使い方 | 結論 | 参照 |
 |--------|------|------|
 | `/codd` | 設計書/DAG/lexiconパイプライン専用。specからWave設計書群を起こし、必要に応じて`elicit`/`dag verify`/`propagate`まで確認する | `skills/codd/SKILL.md` |
-| `/codd-refactor` | 計測 -> spec -> CoDD -> 実装試行/手動実装 -> 再計測の一連を回す | `skills/codd-refactor/SKILL.md` |
+| `/codd-refactor` | 計測 -> spec -> CoDD -> 実装試行/手動実装 -> 再計測の一連を回す。no-arg時は14列test timing ledgerの最新`cache_hit=0`完了runを基準にし、Phase 5は同一test_file/suite_rootのrun同士だけを比較、欠損・旧4列台帳は`UNVERIFIED`でfail-closed | `skills/codd-refactor/SKILL.md`, `docs/research/test-suite-time-immune-asis-tobe-5w1h_20260714.md`, `tests/unit/test_codd_refactor_contract.bats` |
 | `codd fix` | CI RED修正向け。診断推論+Session State。家老CI RED検知→`codd fix`でパッチ生成→忍者配備 | `docs/research/gunshi_codd_swebench_application_20260416.md` §2, §4-§5 |
 | `codd fix [PHENOMENON]` | 「ログインエラーをわかりやすくしたい」等の観測事象から設計書・実装・テストを更新する。非対話CIでは`--non-interactive --on-ambiguity abort`を優先 | `memory/reference_codd_oshio_articles.md` |
 | `elicit` / `lexicon list/install/diff` / `coverage report` | 要件穴・coverage軸・業界標準制約を正本化する。v2.x系の主入口 | `memory/reference_codd_oshio_articles.md` |
