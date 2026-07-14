@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-07-08 cmd_training_L4_auto_202607081543_hayate -->
+<!-- last_updated: 2026-07-14 cmd_training_test_speed_test_semantic_index_update__20260714210006 -->
 # 修行サイクル設計書（殿直伝 2026-03-25）
 
 ## §1 背景と原理
@@ -1112,4 +1112,5 @@ WHY=台帳鮮度回復+aliases品質向上、WHAT=対象スクリプトのCoDD�
 - [[gunshi_idle_bats_speed_redesign_20260603]] — 軍師idle: bats速度再設計(2026-06-03)
 - [[test_prompt_state_inject_skill_trigger.bats]] — prompt state skill trigger Unit。共通fixtureはsetup_fileで一度だけ生成し、各testで統合preflight相当の準備を反復しない。
 - [[test_semantic_index_update.bats]] — semantic index Unit。実generator契約2件は維持し、既定の全cmd履歴・project registry走査を空fixtureへ束縛して支配項を除く。実装契約は [[semantic_map_generate.sh]] を参照。
+- [[test_semantic_index_update.bats]] fixture follow-up — 固定indexとmock writerは`BATS_FILE_TMPDIR`で一度だけ生成し各testへ複製する。mockの実処理契約は [[insight_write.sh]] と照合する。
 - → [[gunshi_idle_training_rethink_nazenaze_20260516]] 修行再考のなぜなぜ: 修行設計の構造的問題

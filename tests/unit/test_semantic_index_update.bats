@@ -28,7 +28,10 @@ setup() {
     export SEMANTIC_CMD_HISTORY_FILES="$TEST_TMPDIR/nonexistent_cmd_history"
     export SEMANTIC_PROJECTS_CONFIG="$TEST_TMPDIR/nonexistent_projects.yaml"
 
-    cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
+    local shared_index="$BATS_FILE_TMPDIR/semantic_index.fixture.md"
+    local shared_insight_write="$BATS_FILE_TMPDIR/semantic_insight_write.fixture.sh"
+    if [ ! -f "$shared_index" ]; then
+    cat > "$shared_index" <<'EOF'
 # セマンティクスインデックス SSOT
 
 ## semantic_dictionary_design — セマンティック辞書構想
@@ -56,8 +59,11 @@ setup() {
 |------|----------|
 | file | `context/growth-loop.md` |
 EOF
+    fi
+    cp "$shared_index" "$SEMANTIC_INDEX_PATH"
 
-    cat > "$SEMANTIC_INSIGHT_WRITE" <<'EOF'
+    if [ ! -f "$shared_insight_write" ]; then
+    cat > "$shared_insight_write" <<'EOF'
 #!/usr/bin/env bash
 if [ "${1:-}" = "--resolve" ]; then
     [ "$#" -eq 4 ] || exit 2
@@ -82,6 +88,9 @@ fi
 printf '%s|%s|%s\n' "$1" "${2:-}" "${3:-}" >> "$TEST_TMPDIR/queue/insights.log"
 echo "INS-TEST"
 EOF
+    chmod +x "$shared_insight_write"
+    fi
+    cp "$shared_insight_write" "$SEMANTIC_INSIGHT_WRITE"
     chmod +x "$SEMANTIC_INSIGHT_WRITE"
 }
 
