@@ -1,26 +1,14 @@
 #!/usr/bin/env bats
 # test_semantic_search.bats — semantic_search.sh unit tests
+# Test-speed design: [[semantic-search-test-speed]]
 
 setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export PROJECT_ROOT
-}
-
-setup() {
-    export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/semantic_search.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/docs/semantic-index"
-    export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
-    export SEMANTIC_CACHE_DIR="$TEST_TMPDIR/cache"
-    export SEMANTIC_INDEX_CACHE_DIR="$TEST_TMPDIR/index_cache"
-    export SEMANTIC_DISABLE_MEMORY_DB_CACHE=1
-    export SEMANTIC_MEMORY_DB_CACHE_DIR="$TEST_TMPDIR/memory_db_cache"
-    mkdir -p "$TEST_TMPDIR/data"
-    export SEMANTIC_SEARCH_LOG_DB_PATH="$TEST_TMPDIR/data/search_logs.db"
-    export SEMANTIC_DISABLE_CAUSAL=1
-    unset SEMANTIC_MEMORY_DB_PATH
-    export SEMANTIC_DISABLE_MEMORY_DB=1
-
-    cat > "$SEMANTIC_INDEX_PATH" <<'EOF'
+    export SEMANTIC_MASTER_INDEX="$BATS_FILE_TMPDIR/index.md"
+    export SEMANTIC_SHARED_INDEX_CACHE_DIR="$BATS_FILE_TMPDIR/index_cache"
+    mkdir -p "$SEMANTIC_SHARED_INDEX_CACHE_DIR"
+    cat > "$SEMANTIC_MASTER_INDEX" <<'EOF'
 # セマンティクスインデックス SSOT
 
 ## semantic_dictionary_design — セマンティック辞書構想
@@ -104,6 +92,22 @@ setup() {
 |------|----------|
 | file | `context/gs-speedup-knowledge.md` |
 EOF
+}
+
+setup() {
+    export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/semantic_search.XXXXXX")"
+    mkdir -p "$TEST_TMPDIR/docs/semantic-index"
+    export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
+    cp "$SEMANTIC_MASTER_INDEX" "$SEMANTIC_INDEX_PATH"
+    export SEMANTIC_CACHE_DIR="$TEST_TMPDIR/cache"
+    export SEMANTIC_INDEX_CACHE_DIR="$SEMANTIC_SHARED_INDEX_CACHE_DIR"
+    export SEMANTIC_DISABLE_MEMORY_DB_CACHE=1
+    export SEMANTIC_MEMORY_DB_CACHE_DIR="$TEST_TMPDIR/memory_db_cache"
+    mkdir -p "$TEST_TMPDIR/data"
+    export SEMANTIC_SEARCH_LOG_DB_PATH="$TEST_TMPDIR/data/search_logs.db"
+    export SEMANTIC_DISABLE_CAUSAL=1
+    unset SEMANTIC_MEMORY_DB_PATH
+    export SEMANTIC_DISABLE_MEMORY_DB=1
 }
 
 teardown() {
@@ -716,6 +720,7 @@ EOF
 
 @test "parsed index cache stays in SEMANTIC_INDEX_CACHE_DIR" {
     export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+    export SEMANTIC_INDEX_CACHE_DIR="$TEST_TMPDIR/index_cache_contract"
 
     run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "意味検索"
 
