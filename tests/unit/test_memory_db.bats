@@ -2,7 +2,7 @@
 # test_memory_db.bats — SQLite memory DB import tests
 
 setup_file() {
-    export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export PROJECT_ROOT="${MEMORY_DB_TEST_PROJECT_ROOT:-$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)}"
     export MEMORY_DB_MASTER_DIR="$BATS_FILE_TMPDIR/memory_db_master"
     mkdir -p "$MEMORY_DB_MASTER_DIR/archive" "$MEMORY_DB_MASTER_DIR/data"
     # Every test launches the same shell/Python entrypoints.  Reading those
@@ -27,7 +27,7 @@ teardown_file() {
 }
 
 setup() {
-    export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export PROJECT_ROOT="${MEMORY_DB_TEST_PROJECT_ROOT:-$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)}"
     export TEST_TMPDIR="$BATS_TEST_TMPDIR/memory_db"
     mkdir -p "$TEST_TMPDIR/archive" "$TEST_TMPDIR/data"
     # Mutation/concurrency/recovery tests construct deliberately bespoke or
