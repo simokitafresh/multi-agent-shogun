@@ -368,7 +368,7 @@ description: |
   TRIGGER: /report-write、報告YAML作成、報告記入
 ---
 EOF
-  rm -f /tmp/skill_recommend_cache_hayate_cache_test
+  rm -f "$PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR/prompt_state_hayate_cache_test"
   cat > "$PROMPT_STATE_SEMANTIC_SEARCH_CMD" <<'EOF'
 #!/usr/bin/env bash
 printf 'call\n' >> "$SEMANTIC_CALL_LOG"
@@ -384,6 +384,7 @@ EOF
   run bash "$HOOK" <<< '{"prompt":"報告YAML作成"}'
   [ "$status" -eq 0 ]
   [[ "$output" == *"/report-write"* ]]
+  [ -f "$PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR/prompt_state_hayate_cache_test" ]
 
   run bash "$HOOK" <<< '{"prompt":"報告YAML作成"}'
   [ "$status" -eq 0 ]

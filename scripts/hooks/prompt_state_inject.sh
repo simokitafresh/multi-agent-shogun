@@ -481,6 +481,7 @@ filter_skills_for_agent() {
 }
 
 semantic_skill_recommendations() {
+  local cache_dir
   local cache_file
   local cache_version="role-filter-v2"
   local prompt_hash
@@ -495,7 +496,9 @@ semantic_skill_recommendations() {
   # Skip inbox nudge prompts (precision fix: inbox1 hash=86/111 FP)
   (( prompt_is_inbox_nudge == 0 )) || return 0
 
-  cache_file="/tmp/skill_recommend_cache_${agent_id//[^A-Za-z0-9_.-]/_}"
+  cache_dir="${PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR:-/tmp/skill_recommend_cache}"
+  mkdir -p "$cache_dir"
+  cache_file="$cache_dir/prompt_state_${agent_id//[^A-Za-z0-9_.-]/_}"
   prompt_hash="$(
     {
       printf 'prompt=%s\n' "$prompt_text"
