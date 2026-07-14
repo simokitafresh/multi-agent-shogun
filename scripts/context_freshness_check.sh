@@ -496,7 +496,8 @@ SOURCE_CONTEXT_REGISTRY = os.path.join(root, "scripts", "config", "context_sourc
 
 def expected_source_contexts() -> dict[str, str]:
     return ({path: "dm-signal" for path in DM_SIGNAL_CONTEXT_PATHS}
-            | {path: "infra" for path in INFRA_CONTEXT_PATHS})
+            | {path: "infra" for path in INFRA_CONTEXT_PATHS}
+            | {"context/infrastructure.md": "infra"})
 
 
 def load_registered_source_contexts() -> frozenset[str]:

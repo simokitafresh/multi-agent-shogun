@@ -515,12 +515,32 @@ def mapping(name):
     match=re.search(rf'{name}: dict\[str, list\[str\]\] = (\{{.*?\n\}})', text, re.S)
     return ast.literal_eval(match.group(1))
 expected={**{p:'dm-signal' for p in mapping('DM_SIGNAL_CONTEXT_PATHS')},
-          **{p:'infra' for p in mapping('INFRA_CONTEXT_PATHS')}}
+          **{p:'infra' for p in mapping('INFRA_CONTEXT_PATHS')},
+          'context/infrastructure.md':'infra'}
 assert registered == expected, (registered, expected)
 print(f'registered={len(registered)} enforced={len(expected)}')
 PY
     [ "$status" -eq 0 ]
-    [[ "$output" == *"registered=9 enforced=9"* ]]
+    [[ "$output" == *"registered=10 enforced=10"* ]]
+}
+
+@test "GA-255 infrastructure context without source_commit blocks before git" {
+    mkdir -p "$TEST_TMPDIR/scripts/config"
+    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
+    _create_context "context/infrastructure.md" "$TODAY"
+    _create_archive_cmd "cmd_ga255_fixture" "infra"
+    mkdir -p "$TEST_TMPDIR/bin"
+    cat > "$TEST_TMPDIR/bin/git" <<'EOF'
+#!/usr/bin/env bash
+echo called >> "$TEST_TMPDIR/git-calls.log"
+exec /usr/bin/git "$@"
+EOF
+    chmod +x "$TEST_TMPDIR/bin/git"
+    rm -f "$TEST_TMPDIR/git-calls.log"
+    PATH="$TEST_TMPDIR/bin:$PATH" CFC_OUTPUT_CACHE_TTL=0 CFC_REQUIRE_SOURCE_COMMIT=1 run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"context/infrastructure.md MISSING_SOURCE_COMMIT"* ]]
+    [ ! -e "$TEST_TMPDIR/git-calls.log" ]
 }
 
 @test "GA-245 new pathspec map key without registry row blocks before git" {
