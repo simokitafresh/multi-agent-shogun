@@ -917,6 +917,58 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "GA-257: different commands cannot mutate the same ninja concurrently" {
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        DEPLOY_TASK_NINJA_LOCK_TIMEOUT_SEC=1
+        deploy_task_acquire_ninja_lock hayate
+        second_status=0
+        (
+            export DEPLOY_TASK_LIB_ONLY=1
+            source "$1/scripts/deploy_task.sh"
+            DEPLOY_TASK_NINJA_LOCK_TIMEOUT_SEC=0
+            deploy_task_acquire_ninja_lock hayate
+        ) || second_status=$?
+        [ "$second_status" -ne 0 ]
+        deploy_task_release_ninja_lock
+        (
+            export DEPLOY_TASK_LIB_ONLY=1
+            source "$1/scripts/deploy_task.sh"
+            DEPLOY_TASK_NINJA_LOCK_TIMEOUT_SEC=1
+            deploy_task_acquire_ninja_lock hayate
+            deploy_task_release_ninja_lock
+        )
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"deploy lock busy"* ]]
+}
+
+@test "GA-257: queued deployment cannot overwrite a newly assigned different command" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_first
+  status: assigned
+EOF
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=hayate
+        before=$(sha256sum "$1/queue/tasks/hayate.yaml")
+        if deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_second; then
+            exit 9
+        fi
+        after=$(sha256sum "$1/queue/tasks/hayate.yaml")
+        [ "$before" = "$after" ]
+        deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_first
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"別cmd cmd_second で上書きしない"* ]]
+}
+
 @test "cmd_3701: draft cmd is blocked before deployment" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
@@ -1516,6 +1568,9 @@ EOF
     [ "$status" -eq 0 ]
     [ "$output" = "cmd_2538_exact" ]
 
+    # A different command may replace this task only after the current
+    # assignment reaches a terminal state (GA-257 worker overwrite guard).
+    bash "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" "$TEST_PROJECT/queue/tasks/sasuke.yaml" task status done
     bash "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" "$TEST_PROJECT/queue/tasks/sasuke.yaml" task task_type impl
     bash "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" "$TEST_PROJECT/queue/tasks/sasuke.yaml" task task_id cmd_OLD_impl
 

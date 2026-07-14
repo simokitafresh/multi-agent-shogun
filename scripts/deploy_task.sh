@@ -258,6 +258,60 @@ deploy_task_release_lock() {
     log "deploy_lock: released ${lock_file}"
 }
 
+DEPLOY_TASK_NINJA_LOCK_FD=""
+DEPLOY_TASK_NINJA_LOCK_FILE=""
+
+deploy_task_acquire_ninja_lock() {
+    local ninja_name="$1"
+    local timeout_sec="${DEPLOY_TASK_NINJA_LOCK_TIMEOUT_SEC:-300}"
+    case "$timeout_sec" in
+        ''|*[!0-9]*) timeout_sec=300 ;;
+    esac
+    [ -z "$DEPLOY_TASK_NINJA_LOCK_FD" ] || return 0
+
+    DEPLOY_TASK_NINJA_LOCK_FILE="$(deploy_task_lock_path "ninja_${ninja_name}")"
+    exec {DEPLOY_TASK_NINJA_LOCK_FD}>"$DEPLOY_TASK_NINJA_LOCK_FILE"
+    if ! flock -w "$timeout_sec" "$DEPLOY_TASK_NINJA_LOCK_FD"; then
+        log "BLOCK: could not acquire ninja deploy lock for ${ninja_name}: ${DEPLOY_TASK_NINJA_LOCK_FILE}"
+        echo "BLOCK: ${ninja_name} deploy lock busy. Retry after the current deployment finishes." >&2
+        eval "exec ${DEPLOY_TASK_NINJA_LOCK_FD}>&-"
+        DEPLOY_TASK_NINJA_LOCK_FD=""
+        DEPLOY_TASK_NINJA_LOCK_FILE=""
+        return 1
+    fi
+    log "ninja_deploy_lock: acquired ${DEPLOY_TASK_NINJA_LOCK_FILE}"
+}
+
+deploy_task_release_ninja_lock() {
+    [ -n "$DEPLOY_TASK_NINJA_LOCK_FD" ] || return 0
+    deploy_task_release_lock "$DEPLOY_TASK_NINJA_LOCK_FD" "$DEPLOY_TASK_NINJA_LOCK_FILE"
+    DEPLOY_TASK_NINJA_LOCK_FD=""
+    DEPLOY_TASK_NINJA_LOCK_FILE=""
+}
+
+deploy_task_guard_worker_assignment() {
+    local task_file="$1"
+    local incoming_cmd="$2"
+    local current_status current_parent
+
+    current_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "unknown" 2>/dev/null || true)
+    current_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    case "$current_status" in
+        assigned|acknowledged|in_progress)
+            if [ -n "$incoming_cmd" ] && [ "$current_parent" != "$incoming_cmd" ]; then
+                log "BLOCK(GA-257): ${NINJA_NAME:-worker} already has active task ${current_parent:-unknown} (status=${current_status})"
+                echo "BLOCK: ${NINJA_NAME:-worker} は ${current_parent:-unknown} を実行中/受領済み。別cmd ${incoming_cmd} で上書きしない。" >&2
+                return 1
+            fi
+            ;;
+    esac
+}
+
+deploy_task_exit_cleanup() {
+    deploy_task_exit_nudge
+    deploy_task_release_ninja_lock
+}
+
 deploy_task_start_deadline() {
     local timeout_sec="${DEPLOY_TASK_MAIN_TIMEOUT_SEC:-0}"
     case "$timeout_sec" in
@@ -9768,7 +9822,7 @@ deploy_task_main() {
     DEPLOY_TASK_DRAFT_REVIEW_CMD_ID=""
     DEPLOY_TASK_DRAFT_REVIEW_NINJA=""
     DEPLOY_TASK_DRAFT_REVIEW_TYPE=""
-    trap deploy_task_exit_nudge EXIT
+    trap deploy_task_exit_cleanup EXIT
 
     local pane_target ctx_pct
     local is_idle=false
@@ -9787,6 +9841,11 @@ deploy_task_main() {
     local deploy_lock_fd="" deploy_lock_file=""
     local deploy_task_resolved_mutated=0
     task_yaml="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
+
+    # A per-command lock cannot protect one ninja from two different commands
+    # arriving concurrently.  Hold the worker lock across every task/report
+    # mutation and the durable task_start notification (GA-257).
+    deploy_task_acquire_ninja_lock "$NINJA_NAME" || return 1
 
     normalize_task_yaml "$task_yaml" || true
     if [ "$DIRECT_MODE" != true ]; then
@@ -9807,6 +9866,7 @@ deploy_task_main() {
 
     if [ -n "$CMD_ID" ] && deploy_task_cleanup_canceled_cmd "$NINJA_NAME" "$CMD_ID"; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        deploy_task_release_ninja_lock
         return 0
     fi
 
@@ -9825,10 +9885,8 @@ deploy_task_main() {
     fi
 
     pre_resolve_status=$(field_get "$task_yaml" "status" "unknown")
-    if [ "$pre_resolve_status" = "in_progress" ] && [ -n "$CMD_ID" ]; then
-        pre_resolve_cmd=$(field_get "$task_yaml" "parent_cmd" "")
-        log "BLOCK(GP-069): ${NINJA_NAME} is in_progress on ${pre_resolve_cmd:-unknown}. 前タスク完了を待て。"
-        echo "BLOCK: ${NINJA_NAME} は ${pre_resolve_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+    pre_resolve_cmd=$(field_get "$task_yaml" "parent_cmd" "")
+    if [ -n "$CMD_ID" ] && ! deploy_task_guard_worker_assignment "$task_yaml" "$CMD_ID"; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi
@@ -9982,6 +10040,7 @@ except Exception:
         bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" "status_update"
         log "${NINJA_NAME}: deployment complete (type=${TYPE})"
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        deploy_task_release_ninja_lock
         return 0
     fi
 
@@ -10192,6 +10251,7 @@ except Exception:
     DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
     DEPLOY_TASK_DRAFT_REVIEW_SENT=1
     log "${NINJA_NAME}: deployment complete (type=${TYPE})"
+    deploy_task_release_ninja_lock
 
     # post-deploy pane verification (自動化×強制: 配備後に忍者が動いているか家老が確認せざるを得ない)
     # 理由: 配備ログ=完了と思い込み、忍者がプロンプト待ちのまま気づかない事故(cmd_2509/2511)
