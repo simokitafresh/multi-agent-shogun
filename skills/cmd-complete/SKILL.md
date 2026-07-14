@@ -23,6 +23,8 @@ GATE CLEAR後の5-7ステップを順序保証で1コマンド実行。ステッ
 ### SG7バンドルを完了処理の単一情報源にする
 
 軍師LGTM済みのcmdは、軍師から届いたSG7バンドルの `cmd_spec_summary` を起点にする。
+まず `python3 scripts/review_bundle.py consume --cmd "$CMD_ID" --bundle "$BUNDLE_PATH" --expect-verdict APPROVE`
+を実行し、exit 0で出力された実値だけを使う。exit 2は必須値欠落・cmd/verdict矛盾なので即停止する。
 `acceptance_criteria_count`・`scope`・`project` を完了スタンプ/GATE入力として使い、
 忍者の報告YAML全文と `queue/shogun_to_karo.yaml` のcmd specを再Readしてはならない。
 例外はSG7 verdict=FAIL、`karo_attention` あり、またはsummaryの必須3値が欠落/矛盾した場合のみ。

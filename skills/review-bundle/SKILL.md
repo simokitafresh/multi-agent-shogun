@@ -54,7 +54,15 @@ bash scripts/gates/gate_gunshi_report_precheck.sh <report_path>
 
 ### Step 1: SG7バンドル生成
 
-レビュー結果をバンドルYAML形式で構成:
+レビュー結果は実行器で生成する。軍師が既読のcmd spec正本からAC数・scope・projectを
+自動転記し、atomic保存後、その実値とbundle pathを家老通知へ埋め込む:
+```bash
+python3 scripts/review_bundle.py generate --cmd "$CMD_ID" --verdict APPROVE --report "$REPORT_PATH"
+# FAIL時のみ
+python3 scripts/review_bundle.py generate --cmd "$CMD_ID" --verdict FAIL --report "$REPORT_PATH" --fail-reason "$FAIL_REASON"
+```
+
+生成物の形式:
 ```yaml
 review:
   cmd_id: <cmd_id>
@@ -84,6 +92,11 @@ review:
 `acceptance_criteria_count` は配列長の整数、`scope` は対象ファイル/機能とnot_in_scopeの境界、
 `project` はcmd specの値をそのまま用いる。FAIL時だけ `karo_attention` に差し戻し要点を置き、
 APPROVE時は重複説明を生成しない。
+
+家老は受信後、本文のbundle pathを機械的に消費する。exit 2なら完了処理を停止する:
+```bash
+python3 scripts/review_bundle.py consume --cmd "$CMD_ID" --bundle "$BUNDLE_PATH" --expect-verdict APPROVE
+```
 
 ### Step 1.5: observations必須チェック（review_log追記前BLOCK）
 
@@ -146,6 +159,9 @@ report reviewでLGTMを通知する前に、レビューした現物へfingerpri
 bash scripts/review_approval.sh "$CMD_ID" gunshi LGTM "$REPORT_PATH"
 ```
 このコマンド成功前にLGTM通知を送るな。report更新後は再レビュー・再実行が必須。
+
+`scripts/review_bundle.py generate` がSG7実値を含む `report_review_result` を送る。
+以下の旧手動MESSAGE送信はfallback専用とし、bundle生成成功後に二重送信するな。
 
 ```bash
 CMD_ID="<cmd_id>"
