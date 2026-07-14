@@ -542,6 +542,157 @@ MOCK
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+# 起源: 2026-07-15 同一run 29361581880のCI RED通知が10件重複しkaro inbox nudgeループを形成。
+# run_id単位dedupe: 初回1件・同run再起動0件・新run1件。警報抑制ではなく処理済みrun証跡(ledger)による構造防止。
+@test "CI RED same run_id is notified once, restart 0, new run 1 (run_id dedupe ledger)" {
+    cat > "$TEST_TMPDIR/bin/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [ "$1" = "run" ] && [ "$2" = "list" ]; then
+    printf '[{"conclusion":"failure","databaseId":29361581880}]\n'
+    exit 0
+fi
+exit 1
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/gh"
+    export SHOGUN_STARTUP_GH_TIMEOUT=5
+    export SHOGUN_STARTUP_INBOX_TIMEOUT=5
+
+    # 初回: 通知1件 + ledgerにrun_id証跡
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 最新CI conclusion=failure (run_id=29361581880)"* ]]
+    [[ "$output" == *"ACTION: karoへci_red_fix通知送信"* ]]
+    [ "$(grep -c 'ci_red_fix gate_shogun_startup' "$TEST_TMPDIR/logs/inbox_write_calls.log")" -eq 1 ]
+    grep -q $'^29361581880\t' "$TEST_TMPDIR/logs/ci_red_notified_runs.tsv"
+
+    # 同一run再起動: 再送0件。WARN表示は残す(警報抑制ではない)
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 最新CI conclusion=failure (run_id=29361581880)"* ]]
+    [[ "$output" == *"同一run通知済み"* ]]
+    [[ "$output" == *"ci_red_fix再送を抑止"* ]]
+    [[ "$output" != *"ACTION: karoへci_red_fix通知送信"* ]]
+    [ "$(grep -c 'ci_red_fix gate_shogun_startup' "$TEST_TMPDIR/logs/inbox_write_calls.log")" -eq 1 ]
+
+    # 新run: 通知1件追加
+    cat > "$TEST_TMPDIR/bin/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [ "$1" = "run" ] && [ "$2" = "list" ]; then
+    printf '[{"conclusion":"failure","databaseId":29361581999}]\n'
+    exit 0
+fi
+exit 1
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/gh"
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ACTION: karoへci_red_fix通知送信"* ]]
+    [ "$(grep -c 'ci_red_fix gate_shogun_startup' "$TEST_TMPDIR/logs/inbox_write_calls.log")" -eq 2 ]
+    grep -q $'^29361581999\t' "$TEST_TMPDIR/logs/ci_red_notified_runs.tsv"
+}
+
+@test "CI RED without databaseId falls back to always-notify (no dedupe regression)" {
+    cat > "$TEST_TMPDIR/bin/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [ "$1" = "run" ] && [ "$2" = "list" ]; then
+    printf '[{"conclusion":"failure"}]\n'
+    exit 0
+fi
+exit 1
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/gh"
+    export SHOGUN_STARTUP_GH_TIMEOUT=5
+    export SHOGUN_STARTUP_INBOX_TIMEOUT=5
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ACTION: karoへci_red_fix通知送信"* ]]
+    [ ! -f "$TEST_TMPDIR/logs/ci_red_notified_runs.tsv" ]
+}
+
+# 2026-07-15家老RC: 既送判定→send→追記が別排他区間だと並行startup A/Bが両方「未通知」と
+# 読んで二重送信するTOCTOUが残る。inbox_writeにsleepを入れて競合窓を広げ、通知総数1を実走検証。
+@test "CI RED parallel two startups send exactly one notification (TOCTOU dedupe)" {
+    cat > "$TEST_TMPDIR/bin/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [ "$1" = "run" ] && [ "$2" = "list" ]; then
+    printf '[{"conclusion":"failure","databaseId":29361581880}]\n'
+    exit 0
+fi
+exit 1
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/gh"
+    # 競合窓を広げる: send中にもう一方が既送判定へ到達する時間を確保
+    cat > "$TEST_TMPDIR/scripts/inbox_write.sh" <<'MOCK'
+#!/usr/bin/env bash
+sleep 0.5
+printf '%s\n' "$*" >> "${SHOGUN_STARTUP_ROOT}/logs/inbox_write_calls.log"
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/inbox_write.sh"
+    export SHOGUN_STARTUP_GH_TIMEOUT=5
+    export SHOGUN_STARTUP_INBOX_TIMEOUT=5
+
+    run_gate_shogun_startup > "$TEST_TMPDIR/parallel_a.log" 2>&1 &
+    local _pid_a=$!
+    run_gate_shogun_startup > "$TEST_TMPDIR/parallel_b.log" 2>&1 &
+    local _pid_b=$!
+    wait "$_pid_a"
+    wait "$_pid_b"
+
+    [ "$(grep -c 'ci_red_fix gate_shogun_startup' "$TEST_TMPDIR/logs/inbox_write_calls.log")" -eq 1 ]
+    [ "$(grep -c $'^29361581880\t' "$TEST_TMPDIR/logs/ci_red_notified_runs.tsv")" -eq 1 ]
+    # 片方はsend、もう片方はdedupe(順序不定)
+    grep -q 'ACTION: karoへci_red_fix通知送信' "$TEST_TMPDIR/parallel_a.log" "$TEST_TMPDIR/parallel_b.log"
+    grep -q 'ci_red_fix再送を抑止' "$TEST_TMPDIR/parallel_a.log" "$TEST_TMPDIR/parallel_b.log"
+}
+
+# 2026-07-15家老追加RC: lock_timeout時にロック外sendすると、Aが送信中(ロック保持)にBがtimeout→
+# Bもsendの二重通知が復活する。lock保持>wait時はinbox送信0(ALERT+次回startup再試行)を実走証明。
+@test "CI RED lock held longer than wait sends nothing and retries next startup (total <=1)" {
+    cat > "$TEST_TMPDIR/bin/gh" <<'MOCK'
+#!/usr/bin/env bash
+if [ "$1" = "run" ] && [ "$2" = "list" ]; then
+    printf '[{"conclusion":"failure","databaseId":29361581880}]\n'
+    exit 0
+fi
+exit 1
+MOCK
+    chmod +x "$TEST_TMPDIR/bin/gh"
+    export SHOGUN_STARTUP_GH_TIMEOUT=5
+    export SHOGUN_STARTUP_INBOX_TIMEOUT=5
+    export SHOGUN_STARTUP_CI_LOCK_WAIT=1
+
+    # 外部プロセスがlockをwait(1s)より長く保持 → gateはlock_timeoutで送信スキップ
+    mkdir -p "$TEST_TMPDIR/logs"
+    (
+        flock 9
+        sleep 3
+    ) 9>>"$TEST_TMPDIR/logs/ci_red_notified_runs.tsv.lock" &
+    local _lock_holder=$!
+    sleep 0.3
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: ci_red dedupe lock取得不可 — inbox送信せず次回startupで再試行"* ]]
+    [[ "$output" != *"ACTION: karoへci_red_fix通知送信"* ]]
+    # lock_timeout中の送信は0件(ロック外sendの二重通知経路が存在しない)
+    if [ -f "$TEST_TMPDIR/logs/inbox_write_calls.log" ]; then
+        [ "$(grep -c 'ci_red_fix gate_shogun_startup' "$TEST_TMPDIR/logs/inbox_write_calls.log")" -eq 0 ]
+    fi
+    # ledger未追記 → 次回startupで再試行される
+    if [ -f "$TEST_TMPDIR/logs/ci_red_notified_runs.tsv" ]; then
+        [ "$(grep -c $'^29361581880\t' "$TEST_TMPDIR/logs/ci_red_notified_runs.tsv")" -eq 0 ]
+    fi
+
+    wait "$_lock_holder"
+
+    # lock解放後の次回startup: 通知1件 → 通知総数は全体で1 (<=1を満たす)
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ACTION: karoへci_red_fix通知送信"* ]]
+    [ "$(grep -c 'ci_red_fix gate_shogun_startup' "$TEST_TMPDIR/logs/inbox_write_calls.log")" -eq 1 ]
+    [ "$(grep -c $'^29361581880\t' "$TEST_TMPDIR/logs/ci_red_notified_runs.tsv")" -eq 1 ]
+}
+
 @test "Q6 automation target proof missing keyword → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: scripts/gates/q6_target_fixture.sh に `definitely_missing_q6_probe` をgrep検証する。"}
@@ -551,6 +702,89 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"BLOCK: 自動化ターゲット実装証拠未検出"* ]]
     [[ "$output" == *"definitely_missing_q6_probe"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
+}
+
+# 起源: 2026-07-15 本番のqueue/inboxはroot外へのsymlink。旧実装のresolve()+relative_to(root)が
+# ValueErrorで実在ファイルを「ファイル不在」と誤BLOCKした一次再現。
+@test "Q6 evidence in symlinked queue/inbox is detected (no false ファイル不在)" {
+    # queue/inboxを本番同様にroot外実体へのsymlinkに置き換える
+    local outside_store="$BATS_TEST_TMPDIR/external_inbox_store"
+    mkdir -p "$outside_store"
+    cp -a "$TEST_TMPDIR/queue/inbox/." "$outside_store/" 2>/dev/null || true
+    rm -rf "$TEST_TMPDIR/queue/inbox"
+    ln -s "$outside_store" "$TEST_TMPDIR/queue/inbox"
+    cat > "$TEST_TMPDIR/queue/inbox/shogun.yaml" <<'EOF'
+messages:
+- content: 'q6_inbox_evidence_probe 実装済み'
+  read: false
+EOF
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: queue/inbox/shogun.yaml に `q6_inbox_evidence_probe` をgrep検証する。"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" != *"queue/inbox/shogun.yaml: ファイル不在"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
+# 起源: 2026-07-15 inbox_archive.shが既読メッセージをarchive/inbox/{agent}_{date}.yamlへ退避後、
+# 現行inboxから証跡tokenが消えて「キーワード未検出」偽BLOCK。現行+archiveの両方を探索する回帰。
+@test "Q6 evidence archived by inbox_archive is still detected via archive fallback" {
+    cat > "$TEST_TMPDIR/queue/inbox/shogun.yaml" <<'EOF'
+messages: []
+EOF
+    mkdir -p "$TEST_TMPDIR/archive/inbox"
+    cat > "$TEST_TMPDIR/archive/inbox/shogun_$(date +%Y%m%d).yaml" <<'EOF'
+messages:
+- content: 'q6_archived_evidence_probe 実装済み(archived)'
+  read: true
+EOF
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: queue/inbox/shogun.yaml に `q6_archived_evidence_probe` をgrep検証する。"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証"* ]]
+    [[ "$output" == *"→archive/inbox/"* ]]
+    [[ "$output" == *"総合判定: OK"* ]]
+}
+
+# 証拠捏造・WARN抑制なしの証明: 現行にもarchiveにも証跡がなければ従来通りBLOCKを維持する。
+@test "Q6 evidence absent from both current inbox and archive still BLOCKs" {
+    cat > "$TEST_TMPDIR/queue/inbox/shogun.yaml" <<'EOF'
+messages: []
+EOF
+    mkdir -p "$TEST_TMPDIR/archive/inbox"
+    cat > "$TEST_TMPDIR/archive/inbox/shogun_$(date +%Y%m%d).yaml" <<'EOF'
+messages:
+- content: '無関係メッセージ'
+  read: true
+EOF
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: queue/inbox/shogun.yaml に `definitely_missing_inbox_probe` をgrep検証する。"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK: 自動化ターゲット実装証拠未検出"* ]]
+    [[ "$output" == *"definitely_missing_inbox_probe"* ]]
+    [[ "$output" == *"総合判定: BLOCK"* ]]
+}
+
+# resolve()廃止の代償措置: 親ディレクトリ参照(..)によるroot脱出は字句検査で拒否する。
+@test "Q6 evidence path with parent traversal is rejected as 不正パス" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: queue/../../etc/traversal_probe.yaml に `traversal_probe` をgrep検証する。"}
+EOF
+
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK: 自動化ターゲット実装証拠未検出"* ]]
+    [[ "$output" == *"不正パス(親ディレクトリ参照)"* ]]
     [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 

@@ -151,14 +151,15 @@ count_unread_inbox_messages() {
 	        return 0
 	    fi
 
-	    local ci_json ci_conclusion
+	    local ci_json ci_conclusion ci_run_id ci_red_ledger
 	    # timeout既定8s: 本関数はasync(&)実行で回収時に未完了ならdisownされるためgate直列時間に影響しない。
 	    # 0.05sはgh APIレイテンシ(数百ms〜)未満で常に空応答となり、CI RED検知が2026-06-12速度hotfixから
 	    # 無音死していた(2026-07-07実測: CI RED 2連続failureが起動時に一切表示されず)。silent-skip禁止。
-	    ci_json="$(timeout "${SHOGUN_STARTUP_GH_TIMEOUT:-8}" gh run list --repo simokitafresh/multi-agent-shogun --limit 1 --json conclusion 2>/dev/null || true)"
+	    ci_json="$(timeout "${SHOGUN_STARTUP_GH_TIMEOUT:-8}" gh run list --repo simokitafresh/multi-agent-shogun --limit 1 --json conclusion,databaseId 2>/dev/null || true)"
 	    [ -n "$ci_json" ] || return 0
 
-	    ci_conclusion="$(python3 - "$ci_json" <<'PY' 2>/dev/null || true
+	    local _ci_parsed
+	    _ci_parsed="$(python3 - "$ci_json" <<'PY' 2>/dev/null || true
 import json
 import sys
 
@@ -167,9 +168,13 @@ try:
 except Exception:
     raise SystemExit(0)
 if isinstance(runs, list) and runs:
-    print(str((runs[0] or {}).get("conclusion") or ""))
+    run = runs[0] or {}
+    print(str(run.get("conclusion") or ""))
+    print(str(run.get("databaseId") or ""))
 PY
 )"
+	    ci_conclusion="$(printf '%s\n' "$_ci_parsed" | sed -n '1p')"
+	    ci_run_id="$(printf '%s\n' "$_ci_parsed" | sed -n '2p')"
 	    # DIGEST用にconclusionを記録(空=in_progress等はunknown扱い。回収はDIGEST生成部)
 	    if [ -n "${_TMP_CI_CONCLUSION:-}" ] && [ -n "$ci_conclusion" ]; then
 	        printf '%s' "$ci_conclusion" > "$_TMP_CI_CONCLUSION" 2>/dev/null || true
@@ -177,17 +182,75 @@ PY
 	    [ "$ci_conclusion" = "failure" ] || return 0
 
 	    echo "■ CI RED自動修正配備"
-	    echo "  WARN: 最新CI conclusion=failure"
-	    if timeout "${SHOGUN_STARTUP_INBOX_TIMEOUT:-10}" bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-	        "CI RED検知: 最新GitHub Actions conclusion=failure。gh run view --log-failedで失敗テストを特定し、idle忍者へci_red_fix配備せよ。" \
-	        ci_red_fix gate_shogun_startup >/dev/null 2>&1; then
-	        echo "  ACTION: karoへci_red_fix通知送信"
-	    else
-	        echo "  ALERT: karoへのci_red_fix通知失敗"
-	        overall="ALERT"
-	        alerts+=("CI RED自動修正配備: inbox送信失敗")
-	        return 0
+	    echo "  WARN: 最新CI conclusion=failure${ci_run_id:+ (run_id=${ci_run_id})}"
+	    # run_id単位dedupe: 同一runのci_red_fix再通知を処理済みrun証跡(ledger)で構造防止。
+	    # 起源: 2026-07-15 同一run 29361581880のCI RED通知が10件重複しkaro inbox nudgeループ形成。
+	    # 警報表示(WARN)は毎セッション残す。抑止するのはinbox_write再送のみ=警報抑制ではなく再送dedupe。
+	    # 排他設計: 既送判定→inbox_write→ledger追記を同一flock区間で実行する。
+	    # 判定と追記が別区間だと、並行startup A/Bが両方「未通知」と読んでから両方sendする
+	    # TOCTOU二重送信が残る(2026-07-15家老RC)。区間内で送信成功した場合のみ追記する。
+	    ci_red_ledger="$SCRIPT_DIR/logs/ci_red_notified_runs.tsv"
+	    local _ci_red_msg _ci_send_outcome
+	    _ci_red_msg="CI RED検知: 最新GitHub Actions conclusion=failure${ci_run_id:+ run_id=${ci_run_id}}。gh run view --log-failedで失敗テストを特定し、idle忍者へci_red_fix配備せよ。"
+	    _ci_send_outcome=""
+	    if [ -n "$ci_run_id" ]; then
+	        mkdir -p "$(dirname "$ci_red_ledger")" 2>/dev/null || true
+	        _ci_send_outcome=$(
+	            (
+	                flock -w "${SHOGUN_STARTUP_CI_LOCK_WAIT:-10}" 9 || { echo "lock_timeout"; exit 0; }
+	                if [ -f "$ci_red_ledger" ] && \
+	                    awk -F'\t' -v rid="$ci_run_id" '$1==rid{found=1;exit} END{exit !found}' "$ci_red_ledger" 2>/dev/null; then
+	                    echo "dup"
+	                    exit 0
+	                fi
+	                if timeout "${SHOGUN_STARTUP_INBOX_TIMEOUT:-10}" bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+	                    "$_ci_red_msg" ci_red_fix gate_shogun_startup >/dev/null 2>&1; then
+	                    printf '%s\t%s\n' "$ci_run_id" "$(date '+%Y-%m-%dT%H:%M:%S%z')" >> "$ci_red_ledger"
+	                    echo "sent"
+	                else
+	                    echo "send_fail"
+	                fi
+	            ) 9>>"${ci_red_ledger}.lock"
+	        ) || _ci_send_outcome="send_fail"
 	    fi
+	    if [ -z "$_ci_send_outcome" ]; then
+	        # ci_run_id空(run_id取得不可)のみ従来send。dedupe不能でも警報消失より再送を選ぶ。
+	        # lock_timeoutはここに来ない: ロック外sendはAが送信中にBがtimeout→Bもsendの
+	        # 二重通知を復活させるため禁止(2026-07-15家老追加RC)。ALERT扱い+次回startup再試行。
+	        if timeout "${SHOGUN_STARTUP_INBOX_TIMEOUT:-10}" bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+	            "$_ci_red_msg" ci_red_fix gate_shogun_startup >/dev/null 2>&1; then
+	            _ci_send_outcome="sent"
+	        else
+	            _ci_send_outcome="send_fail"
+	        fi
+	    fi
+	    case "$_ci_send_outcome" in
+	        dup)
+	            echo "  OK: 同一run通知済み(証跡=logs/ci_red_notified_runs.tsv) — ci_red_fix再送を抑止"
+	            if [ "$overall" = "OK" ]; then
+	                overall="WARN"
+	            fi
+	            alerts+=("CI RED自動修正配備: WARN (run ${ci_run_id} 通知済み)")
+	            return 0
+	            ;;
+	        sent)
+	            echo "  ACTION: karoへci_red_fix通知送信"
+	            ;;
+	        lock_timeout)
+	            # ロック取得不可=他startupが処理中の可能性。ロック外sendは二重通知を復活させるため
+	            # inbox送信せずALERTのみ。ledger未追記なので次回startupで自動再試行される。
+	            echo "  ALERT: ci_red dedupe lock取得不可 — inbox送信せず次回startupで再試行"
+	            overall="ALERT"
+	            alerts+=("CI RED自動修正配備: dedupe lock timeout (送信スキップ・次回再試行)")
+	            return 0
+	            ;;
+	        *)
+	            echo "  ALERT: karoへのci_red_fix通知失敗"
+	            overall="ALERT"
+	            alerts+=("CI RED自動修正配備: inbox送信失敗")
+	            return 0
+	            ;;
+	    esac
 	    if [ "$overall" = "OK" ]; then
 	        overall="WARN"
 	    fi
@@ -437,8 +500,11 @@ if [ "$LIGHT_MODE" != "1" ] && [ -x "$YAML_AUTO_ARCHIVE" ]; then
 fi
 
 # --- Gate 0.9: CI RED自動修正配備 ---
-_TMP_CI_RED=$(mktemp)
-_TMP_CI_CONCLUSION=$(mktemp)
+# 1回の起動で25個のmktemp子processを起動していた。同一呼出内の一時名は
+# 単一のprivate directory配下で一意なため、directoryを1回だけ作り固定名を共有する。
+_TMP_STARTUP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/shogun-startup.XXXXXX")
+_TMP_CI_RED="$_TMP_STARTUP_DIR/ci_red"
+_TMP_CI_CONCLUSION="$_TMP_STARTUP_DIR/ci_conclusion"
 check_ci_red_autodeploy > "$_TMP_CI_RED" 2>&1 &
 _PID_CI_RED=$!
 
@@ -447,15 +513,19 @@ echo "■ 将軍watcher環境変数"
 check_shogun_watcher_escalation_env
 
 # --- Parallel launch: independent sub-gates ---
-_TMP_G1=$(mktemp) _TMP_G2=$(mktemp) _TMP_G3=$(mktemp) _TMP_G12=$(mktemp) _TMP_G13=$(mktemp) _TMP_G25=$(mktemp) _TMP_UNPUSHED=$(mktemp)
-_TMP_DQ_RECENT=$(mktemp) _TMP_WA_RECENT=$(mktemp) _TMP_SKILL_EXEC_RECENT=$(mktemp) _TMP_SKILL_REFS=$(mktemp)
-_TMP_SCRIPTS_STATUS=$(mktemp) _TMP_GUNSHI_INFO=$(mktemp) _TMP_EVO_SCAN=$(mktemp)
-_TMP_DEFERRED_HOLES=$(mktemp) _TMP_BACKLINK_ZERO=$(mktemp)
-_TMP_THREE_LAYER=$(mktemp) _TMP_THREE_LAYER_STATUS=$(mktemp)
-_TMP_GATE4_YAML=$(mktemp) _TMP_SEMANTIC_NO_MATCH=$(mktemp)
-	_TMP_SKILL_REC=$(mktemp) _TMP_SKILL_USAGE=$(mktemp) _TMP_WEEKLY_METRICS=$(mktemp) _TMP_LOOP_LEDGER=$(mktemp)
-	_TMP_ENFORCE_LEVEL=$(mktemp)
-	trap 'rm -f "$_TMP_CI_RED" "$_TMP_CI_CONCLUSION" "$_TMP_G1" "$_TMP_G2" "$_TMP_G3" "$_TMP_G12" "$_TMP_G13" "$_TMP_G25" "$_TMP_UNPUSHED" "$_TMP_DQ_RECENT" "$_TMP_WA_RECENT" "$_TMP_SKILL_EXEC_RECENT" "$_TMP_SKILL_REFS" "$_TMP_SCRIPTS_STATUS" "$_TMP_GUNSHI_INFO" "$_TMP_EVO_SCAN" "$_TMP_DEFERRED_HOLES" "$_TMP_BACKLINK_ZERO" "$_TMP_THREE_LAYER" "$_TMP_THREE_LAYER_STATUS" "$_TMP_GATE4_YAML" "$_TMP_SEMANTIC_NO_MATCH" "$_TMP_SKILL_REC" "$_TMP_SKILL_USAGE" "$_TMP_WEEKLY_METRICS" "$_TMP_LOOP_LEDGER" "$_TMP_ENFORCE_LEVEL"' EXIT
+_TMP_G1="$_TMP_STARTUP_DIR/g1" _TMP_G2="$_TMP_STARTUP_DIR/g2" _TMP_G3="$_TMP_STARTUP_DIR/g3"
+_TMP_G12="$_TMP_STARTUP_DIR/g12" _TMP_G13="$_TMP_STARTUP_DIR/g13" _TMP_G25="$_TMP_STARTUP_DIR/g25"
+_TMP_UNPUSHED="$_TMP_STARTUP_DIR/unpushed" _TMP_DQ_RECENT="$_TMP_STARTUP_DIR/dq_recent"
+_TMP_WA_RECENT="$_TMP_STARTUP_DIR/wa_recent" _TMP_SKILL_EXEC_RECENT="$_TMP_STARTUP_DIR/skill_exec_recent"
+_TMP_SKILL_REFS="$_TMP_STARTUP_DIR/skill_refs" _TMP_SCRIPTS_STATUS="$_TMP_STARTUP_DIR/scripts_status"
+_TMP_GUNSHI_INFO="$_TMP_STARTUP_DIR/gunshi_info" _TMP_EVO_SCAN="$_TMP_STARTUP_DIR/evo_scan"
+_TMP_DEFERRED_HOLES="$_TMP_STARTUP_DIR/deferred_holes" _TMP_BACKLINK_ZERO="$_TMP_STARTUP_DIR/backlink_zero"
+_TMP_THREE_LAYER="$_TMP_STARTUP_DIR/three_layer" _TMP_THREE_LAYER_STATUS="$_TMP_STARTUP_DIR/three_layer_status"
+_TMP_GATE4_YAML="$_TMP_STARTUP_DIR/gate4_yaml" _TMP_SEMANTIC_NO_MATCH="$_TMP_STARTUP_DIR/semantic_no_match"
+_TMP_SKILL_REC="$_TMP_STARTUP_DIR/skill_rec" _TMP_SKILL_USAGE="$_TMP_STARTUP_DIR/skill_usage"
+_TMP_WEEKLY_METRICS="$_TMP_STARTUP_DIR/weekly_metrics" _TMP_LOOP_LEDGER="$_TMP_STARTUP_DIR/loop_ledger"
+_TMP_ENFORCE_LEVEL="$_TMP_STARTUP_DIR/enforce_level"
+	trap 'rm -f "$_TMP_STARTUP_DIR"/* 2>/dev/null || true; rmdir "$_TMP_STARTUP_DIR" 2>/dev/null || true' EXIT
 	STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
 	"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 	_PID_G1=$!
@@ -1465,31 +1535,71 @@ if not tokens:
 
 failures = []
 passes = []
+
+import datetime as _dt
+
+def inbox_archive_files(rel: str):
+    """queue/inbox/<agent>.yaml参照時のarchive退避先(直近2日)を返す。
+    起源: inbox_archive.shがread:trueメッセージをarchive/inbox/<agent>_<YYYYMMDD>.yamlへ
+    退避すると、Q6実装証拠のgrep対象が現行inboxから消え偽BLOCKになる(2026-07-15一次再現)。
+    現行+archiveの両方を正しい証跡として検索する。bulletin fallback(直近2日)と同型。"""
+    m = re.match(r"queue/inbox/([A-Za-z0-9_.-]+)\.yaml$", rel)
+    if not m:
+        return []
+    agent = m.group(1)
+    out = []
+    today = _dt.date.today()
+    for delta in range(2):
+        d = today - _dt.timedelta(days=delta)
+        af = root / "archive" / "inbox" / f"{agent}_{d.strftime('%Y%m%d')}.yaml"
+        if af.is_file():
+            out.append(af)
+    return out
+
 for rel in paths:
+    # 親ディレクトリ参照によるroot脱出のみを字句で拒否する。
+    # 旧実装のresolve()+relative_to()は、repo内のsymlink(例: queue/inbox →
+    # ~/.local/share/.../inbox)が実体をroot外に持つだけで「ファイル不在」と
+    # 誤判定していた(2026-07-15一次再現: queue/inbox/shogun.yaml実在なのにBLOCK)。
+    if ".." in Path(rel).parts or Path(rel).is_absolute():
+        failures.append(f"{rel}: 不正パス(親ディレクトリ参照)")
+        continue
     path = None
     project_id = ""
     for candidate_project_id, candidate_root in project_roots:
-        candidate = (candidate_root / rel).resolve()
-        try:
-            candidate.relative_to(candidate_root)
-        except ValueError:
-            continue
+        candidate = candidate_root / rel
         if candidate.is_file():
             path = candidate
             project_id = candidate_project_id
             break
-    if path is None:
+    display_rel = rel if project_id in ("", "infra") else f"{project_id}:{rel}"
+    # 証跡候補: 現行ファイル + (inbox参照時のみ)archive退避先
+    sources = []
+    if path is not None:
+        sources.append((display_rel, path))
+    for af in inbox_archive_files(rel):
+        sources.append((f"{rel}→archive/inbox/{af.name}", af))
+    if not sources:
         failures.append(f"{rel}: ファイル不在")
         continue
-    try:
-        text = path.read_text(encoding="utf-8", errors="ignore")
-    except OSError as exc:
-        failures.append(f"{rel}: 読込失敗({exc})")
-        continue
-    matched = [token for token in tokens if token in text]
-    display_rel = rel if project_id in ("", "infra") else f"{project_id}:{rel}"
+    matched = []
+    matched_label = ""
+    read_errors = []
+    for label, src in sources:
+        try:
+            text = src.read_text(encoding="utf-8", errors="ignore")
+        except OSError as exc:
+            read_errors.append(f"{label}: 読込失敗({exc})")
+            continue
+        hit = [token for token in tokens if token in text]
+        if hit:
+            matched = hit
+            matched_label = label
+            break
     if matched:
-        passes.append(f"{display_rel}: {','.join(matched[:3])}")
+        passes.append(f"{matched_label}: {','.join(matched[:3])}")
+    elif read_errors and len(read_errors) == len(sources):
+        failures.append(read_errors[0])
     else:
         failures.append(f"{display_rel}: キーワード未検出({','.join(tokens[:5])})")
 
