@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-14 cmd_karo_hotfix_ga249_context_reflux_last_updated_202607140250 -->
-<!-- source_commit:ba4c0cee reason:cmd_3880_main_integration evidence:cmd_3880_content_present -->
+<!-- last_updated: 2026-07-14 cmd_karo_hotfix_cmd3840_v1428_doc_sync_202607141020 -->
+<!-- source_commit:2def023a reason:cmd3840_v1428_doc_sync evidence:v1.4.28_nologin_ops_present -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
