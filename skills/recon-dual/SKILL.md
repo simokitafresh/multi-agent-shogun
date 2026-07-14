@@ -9,7 +9,8 @@ description: |
 quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-13T14:15:58+09:00 -->
+<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+<!-- 検分: deploy_task.sh 030d267b..87ef68b7(継続配備、独立recon投影、no-code報告契約、事前検証)とyaml_field_set.sh 386cb6bb(lock domain統一)。CLI引数・出口値・1人目→2人目の呼出順序は不変 -->
 <!-- Script refs verified 2026-07-13 shogun復帰時: checked_at以降の変更(yaml_field_set wrapped scalar保持fix de3df4b83, deploy_task parent AC contract dbcb20aa2, ninja_monitor journal+flock 93f8c898e/16f16e699, db_capability_launcher scoped credential 84231a01c)をgit logで確認。全て内部強化で呼出し契約・出口文言不変 -->
 
 Script refs verified: 2026-07-13 将軍検分. checked_at以降の変更: `deploy_task.sh` 793d03399..1f55aae59(自然境界mapping検証+reopened parent解決+formal approval連動=内部配備ロジック。1人目/2人目の呼出し契約・safe_inbox_write通知は不変。親AC偽CLEAR hotfix RC継続中のため次回commit時に再検分される)、`yaml_field_set.sh` 692b6c8d8(post-write検証をyaml.safe_load scalar比較へ統一+複数行値の安全エスケープ。`<file> <block_id> <field> <value>`契約不変)。recon-dual手順の書き換え不要。

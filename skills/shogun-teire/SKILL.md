@@ -25,7 +25,8 @@ allowed-tools:
   - Edit
 ---
 
-<!-- script_refs_checked_at: 2026-07-10T19:55:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+<!-- 検分: gate_lesson_health.sh 5da84a53は完了infra教訓のmarker gap自動修復を追加。引数なし全project走査、METRIC/WARN/ALERT出口、棚卸し呼出順序は不変 -->
 <!-- 検分: gate_lesson_health.sh 1f0aed8d1(subdomain別context routeをlesson_write.shとSSOT化し、合流済み教訓の偽ALERTを解消)。引数なし全project走査・ALERT/CLEAR出口・棚卸し手順は不変 -->
 <!-- 検分: gate_lesson_health.sh GA-196で自己修復cmd(reflux/karo_hotfix/ci_fix)を長期useful率健康指標から除外。棚卸し時のlesson health確認、METRIC行、WARN/ALERT出力契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-05T01:06:00+09:00 -->

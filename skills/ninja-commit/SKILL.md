@@ -10,7 +10,8 @@ description: |
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcommit漏れ・scope外混入・未commit残存起因のworkaroundが記録されない割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+<!-- 検分: report_field_set.sh cd0411247d(書込み入口でresult.summary placeholderをBLOCK)。CLI引数、commit_hash記録、completed前記録順、出口契約は不変 -->
 
 Script refs verified: 2026-07-13 将軍検分. `report_field_set.sh` checked_at以降の変更(08f9440fb/69ace96dc/5dfec6b28)をgit showで確認。completed/done報告のfail-closed BLOCK+normalize異常終了時byte不変中断=内部堅牢化で、ninja-commit手順の呼出し契約不変。書き換え不要。
 <!-- 検分: report_field_set.sh b86ddd6f5。active report欠落かつ同basenameのarchive存在時は残骸YAML再生成をBLOCKする契約へ変更。commit_hash記録先がarchive済みならactive pathを再生成せずcanonical archive pathを明示して更新する -->
