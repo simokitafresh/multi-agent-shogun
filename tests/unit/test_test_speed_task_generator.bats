@@ -125,27 +125,28 @@ SH
   chmod +x "$TMP/scripts/test_speed_task_generator.sh"
   function_body=$(sed -n '/^_handle_test_speed_auto_deploy()/,/^}/p' "$ROOT/scripts/ninja_monitor.sh")
 
-  for task_status in done completed failed assigned acknowledged in_progress; do
-    cat > "$TMP/queue/tasks/hayate.yaml" <<YAML
-task:
-  status: $task_status
-  ac_version: original-$task_status
-YAML
-    printf 'status: completed\nac_version_read: original-%s\n' "$task_status" > "$TMP/queue/reports/hayate_report_fixture.yaml"
-    task_before=$(sha256sum "$TMP/queue/tasks/hayate.yaml")
-    report_before=$(sha256sum "$TMP/queue/reports/hayate_report_fixture.yaml")
+  run env -i PATH="$PATH" HOME="$HOME" SHOGUN_REPO_ROOT="$TMP" bash -c '
+    SCRIPT_DIR=$1
+    yaml_field_get() { sed -n "s/^[[:space:]]*$2:[[:space:]]*//p" "$1" | head -n 1; }
+    log() { :; }
+    eval "$2"
 
-    run env -i PATH="$PATH" HOME="$HOME" SHOGUN_REPO_ROOT="$TMP" bash -c '
-      SCRIPT_DIR=$1
-      yaml_field_get() { sed -n "s/^[[:space:]]*$2:[[:space:]]*//p" "$1" | head -n 1; }
-      log() { :; }
-      eval "$2"
-      _handle_test_speed_auto_deploy hayate
-    ' _ "$TMP" "$function_body"
-    [ "$status" -ne 0 ]
-    [ "$(sha256sum "$TMP/queue/tasks/hayate.yaml")" = "$task_before" ]
-    [ "$(sha256sum "$TMP/queue/reports/hayate_report_fixture.yaml")" = "$report_before" ]
-  done
+    for task_status in done completed failed assigned acknowledged in_progress; do
+      printf "task:\n  status: %s\n  ac_version: original-%s\n" \
+        "$task_status" "$task_status" > "$1/queue/tasks/hayate.yaml"
+      printf "status: completed\nac_version_read: original-%s\n" \
+        "$task_status" > "$1/queue/reports/hayate_report_fixture.yaml"
+      task_before=$(sha256sum "$1/queue/tasks/hayate.yaml")
+      report_before=$(sha256sum "$1/queue/reports/hayate_report_fixture.yaml")
+
+      if _handle_test_speed_auto_deploy hayate; then
+        exit 1
+      fi
+      [ "$(sha256sum "$1/queue/tasks/hayate.yaml")" = "$task_before" ]
+      [ "$(sha256sum "$1/queue/reports/hayate_report_fixture.yaml")" = "$report_before" ]
+    done
+  ' _ "$TMP" "$function_body"
+  [ "$status" -eq 0 ]
 
   cat > "$TMP/queue/tasks/hayate.yaml" <<'YAML'
 task:
