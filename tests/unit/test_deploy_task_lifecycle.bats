@@ -135,10 +135,10 @@ resolve_fixture_task() {
     # shellcheck disable=SC1091
     source "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
 
-    eval "$(extract_function reset_stale_fields)"
-    eval "$(extract_function resolve_cmd_source_path)"
-    eval "$(extract_function resolve_cmd_to_task)"
-    eval "$(extract_function inject_cmd_assumptions)"
+    # setup_file extracts this stable function bundle once from the 2,000+
+    # line production script.  Re-sourcing the ext4 fixture preserves the real
+    # functions while avoiding four full awk+sed scans for every fixture.
+    source "$RESOLVE_FUNCTIONS_FILE"
     reset_stale_fields "$ninja_name"
     resolve_cmd_to_task "$cmd_id" "$ninja_name"
 }
@@ -533,6 +533,15 @@ setup_file() {
     export REAL_PROJECT_ROOT="$PROJECT_ROOT"
     [ -f "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
+
+    export RESOLVE_FUNCTIONS_FILE="$BATS_FILE_TMPDIR/deploy_resolve_functions.sh"
+    {
+        extract_function reset_stale_fields
+        extract_function resolve_cmd_source_path
+        extract_function resolve_cmd_to_task
+        extract_function inject_cmd_assumptions
+    } > "$RESOLVE_FUNCTIONS_FILE"
+    [ -s "$RESOLVE_FUNCTIONS_FILE" ] || return 1
 
     # stale_field_reset: 共有フィクスチャを一度だけ準備
     export SOURCE_FIXTURE_ROOT
