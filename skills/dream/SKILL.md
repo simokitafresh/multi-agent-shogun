@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-15T05:58:00+09:00 -->
+<!-- 2026-07-15検分: memory_db_query.shはstale cache時のdelta検索高速化。dreamの検索CLI・出力上限・並び順契約は不変。 -->
 name: dream
 argument-hint: ""
 description: |

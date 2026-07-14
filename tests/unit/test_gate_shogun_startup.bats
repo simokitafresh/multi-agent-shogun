@@ -372,6 +372,7 @@ teardown() {
     cat > "$TEST_TMPDIR/scripts/gates/gate_test_health.sh" <<'EOF'
 #!/bin/bash
 echo "WARN: legacy timing ledger schema (fixture)"
+echo "WARN: timing ledger stale (age=999h threshold=168h); writer停止を確認してください"
 echo "総合判定: ALERT — timing ledger health"
 exit 1
 EOF
@@ -384,6 +385,27 @@ EOF
     [[ "$output" == *"■ 週次品質指標トレンド"* ]]
     [[ "$output" == *"総合判定:"* ]]
     [[ "$output" == *"テスト時間台帳: stale/writer停止を確認せよ"* ]]
+}
+
+@test "fresh ledger performance alert is not mislabeled as writer stop" {
+    printf 'run_id\trepo\n' > "$TEST_TMPDIR/logs/test_timing_ledger.tsv"
+    cat > "$TEST_TMPDIR/scripts/gates/gate_test_health.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "OK: timing ledger fresh (age=12h threshold=168h)"
+echo "WARN: per-file regression 335.8% tests/unit/example.bats"
+echo "timing path coverage: 5/5 completed speed-training cmd(s)"
+echo "WARN: timing ratchet warm-up 2/5 comparable runs; BLOCK disabled"
+echo "総合判定: ALERT — timing ledger health"
+exit 1
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_test_health.sh"
+
+    export SHOGUN_RECOVERY_MARKER="$TEST_TMPDIR/logs/shogun_recovery_complete"
+    SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run bash "$SRC_GATE_SCRIPT"
+    unset SHOGUN_RECOVERY_MARKER
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: timing ledger fresh (age=12h threshold=168h)"* ]]
+    [[ "$output" != *"テスト時間台帳: stale/writer停止を確認せよ"* ]]
 }
 
 @test "weekly metrics three-week worsening is surfaced as startup ALERT" {

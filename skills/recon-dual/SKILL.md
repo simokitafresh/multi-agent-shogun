@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-15T05:58:00+09:00 -->
+<!-- 2026-07-15検分: deploy_task.shはspeed campaign固有report名を保存。recon-dualの2名配備順序・karo-direct併用契約は不変。 -->
 name: recon-dual
 argument-hint: "[cmd_id] [target_scope]"
 description: |

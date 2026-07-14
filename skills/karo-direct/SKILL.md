@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-15T05:58:00+09:00 -->
+<!-- 2026-07-15検分: deploy_task.shはspeed campaign固有report名を保存。karo-directの配備CLI・重複guard回避契約は不変。 -->
 name: karo-direct
 argument-hint: "[task_id] [ninja_name] [reason]"
 description: |
