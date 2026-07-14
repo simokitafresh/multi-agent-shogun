@@ -6710,9 +6710,12 @@ check_new_file_structure_warning() {
     record_warn_reason "new_file_or_structure_requested" "check=check_new_file_structure_warning"
 }
 
-if load_cmd_block; then
-    check_new_file_structure_warning
-fi
+# PRUNED 2026-07-15: fp_rate=100%(4/4偽陽性, logs/detector_fp_rate.yaml)につき呼び出し停止
+# (throughput v1.1原則: FP率計測は削るための装置。INS-20260714-223520338-c75b)
+# 関数と回帰batsは温存。再有効化は真陽性の実例が出てから
+# if load_cmd_block; then
+#     check_new_file_structure_warning
+# fi
 
 # --- Check 3.6b: WARN時environment_change強制（殿指摘2026-04-20） ---
 # 目的: WARNが出た=問題がある。次のcmdで同じWARNが出ないように環境に埋め込め。
