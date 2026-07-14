@@ -1024,10 +1024,13 @@ yaml_field_set() {
             return 1
         fi
 
-        # 公開前にYAML構文を検証する。不正なら旧ファイルは一切変更せず失敗する(fail-closed)。
-        if ! _yaml_field_set_validate_parseable "$tmp_file" 2>&1; then
+        # 候補上でparseと期待値を同時検証する。旧実装はparse→mv→値検証と
+        # 同じYAMLをPythonで2回読んでいたうえ、値不一致時には公開済みだった。
+        # 先に候補を検証すれば1 processで済み、失敗時も旧ファイルを保持できる。
+        local _verify_err
+        if ! _verify_err="$(_yaml_field_set_verify_parsed "$tmp_file" "$block_id" "$field" "$new_value" "$use_root" 2>&1 1>/dev/null)"; then
             rm -f "$tmp_file"
-            echo "FATAL: yaml_field_set: generated content failed YAML validation, original file kept unchanged: $yaml_file" >&2
+            echo "FATAL: yaml_field_set: candidate verification mismatch for ${block_id}.${field} in $yaml_file ($_verify_err); original file kept unchanged" >&2
             return 1
         fi
 
@@ -1039,13 +1042,6 @@ yaml_field_set() {
             return 1
         fi
 
-        # post-write比較はYAML表現文字列(awk単一物理行の生テキスト)ではなく
-        # yaml.safe_load後のscalar同士で行う(_yaml_field_set_verify_parsed)。
-        local _verify_err
-        if ! _verify_err="$(_yaml_field_set_verify_parsed "$yaml_file" "$block_id" "$field" "$new_value" "$use_root" 2>&1 1>/dev/null)"; then
-            echo "FATAL: yaml_field_set: post-write verification mismatch for ${block_id}.${field} in $yaml_file ($_verify_err)" >&2
-            return 1
-        fi
     } 200>"$lock_file"
 }
 

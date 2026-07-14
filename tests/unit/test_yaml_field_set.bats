@@ -778,7 +778,9 @@ EOF
 # 以下2テストで(1)個別未対応readerには残余曝露が実在すること(修正前FAIL再現の裏付け)
 # (2) 共通entry point採用readerは10連続ラウンドすべてbad=0であること、の両方を証明する。
 
+# bats test_tags=long_race
 @test "並行アクセス(生reader・リトライなし): flock非取得の素朴なopen()は稀にFileNotFoundErrorを観測しうる(残余曝露の実証)" {
+    source "$YFS"
     # $BATS_TMPDIR(=/tmp)はtmpfsでwriteがμs級のため非atomic窓が狭すぎて再現しない(実測済み)。
     # /mnt/c(drvfs)配下でのみ再現する。本テストはbad=0を要求しない。むしろ「個別のreaderが
     # 各自でopen()するだけでは家老指摘のAC4(読取失敗0)を満たせない」ことの生き証拠であり、
@@ -818,8 +820,9 @@ with open('$race_dir/reader_result.txt', 'w') as out:
     end=$((SECONDS + 3))
     local i=0
     while [ $SECONDS -lt $end ]; do
-        bash "$YFS" "$yaml" task status "in_progress_${i}" >/dev/null 2>&1 || true
+        yaml_field_set "$yaml" task status "in_progress_${i}" >/dev/null 2>&1 || true
         i=$((i + 1))
+        sleep 0.05
     done
     wait "$reader_pid"
 
@@ -832,7 +835,9 @@ with open('$race_dir/reader_result.txt', 'w') as out:
     [ "$other_bad" -eq 0 ]
 }
 
+# bats test_tags=long_race
 @test "並行アクセス(共通entry point・safe_load_retry): 10連続ラウンドすべてbad=0" {
+    source "$YFS"
     # scripts/lib/yaml_safe_read.py の safe_load_retry() を「全reader共通入口」として
     # 採用した場合、drvfsの瞬間的ENOENTを吸収して10連続ラウンドすべてbad=0になることを証明する。
     local race_dir="$PROJECT_ROOT/tmp/yfs_race_safe_$$"
@@ -872,8 +877,9 @@ with open('$race_dir/round_result.txt', 'w') as out:
         end=$((SECONDS + 1))
         local i=0
         while [ $SECONDS -lt $end ]; do
-            bash "$YFS" "$yaml" task status "in_progress_${round}_${i}" >/dev/null 2>&1 || true
+            yaml_field_set "$yaml" task status "in_progress_${round}_${i}" >/dev/null 2>&1 || true
             i=$((i + 1))
+            sleep 0.05
         done
         wait "$reader_pid"
 
