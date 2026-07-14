@@ -79,7 +79,11 @@ if [[ -n "${CMD_COMPLETE_WORKAROUND_NINJA:-}" ]]; then
 fi
 
 run_step cmd_complete_gate bash "$SCRIPT_DIR/cmd_complete_gate.sh" "$CMD_ID"
-run_step context_freshness bash "$SCRIPT_DIR/gates/gate_context_freshness.sh"
+# cmd_complete_gate performs the fail-closed, command-correlated freshness
+# check before CLEAR. Do not run the dashboard-wide freshness monitor here:
+# an unrelated commit after another context's source_commit would otherwise
+# permanently block this already-reviewed command. The global monitor remains
+# active in its dashboard/startup callers; completion uses the narrower check.
 run_step quality_log bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" CLEAR \
     "${CMD_COMPLETE_KARO_REWORK:-no}" "${CMD_COMPLETE_SUPPLEMENTARY_CMDS:-0}"
 run_status_step

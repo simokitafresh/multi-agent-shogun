@@ -35,7 +35,8 @@ SH
     [ "$status" -eq 0 ]
     run cut -d'|' -f1 "$CMD_COMPLETE_TEST_LOG"
     [ "$status" -eq 0 ]
-    [ "$output" = $'lesson_review.sh\ncmd_complete_gate.sh\ngate_context_freshness.sh\ncmd_quality_log.sh\ngate_yaml_status.sh\ndashboard_update.sh\nntfy_cmd.sh\ninbox_archive.sh' ]
+    [ "$output" = $'lesson_review.sh\ncmd_complete_gate.sh\ncmd_quality_log.sh\ngate_yaml_status.sh\ndashboard_update.sh\nntfy_cmd.sh\ninbox_archive.sh' ]
+    ! grep -q 'gate_context_freshness.sh' "$CMD_COMPLETE_TEST_LOG"
     grep -q 'gate_yaml_status.sh|cmd_fixture' "$CMD_COMPLETE_TEST_LOG"
     grep -q 'dashboard_update.sh|cmd_fixture --bundle .*sg7_bundle.json' "$CMD_COMPLETE_TEST_LOG"
     grep -q 'ntfy_cmd.sh|cmd_fixture 完了' "$CMD_COMPLETE_TEST_LOG"
@@ -69,7 +70,7 @@ SH
         CMD_COMPLETE_SCRIPT_DIR="$BATS_TEST_TMPDIR/linked-root/scripts" \
         bash "$BATS_TEST_TMPDIR/linked-root/scripts/cmd_complete.sh" cmd_fixture
     [ "$status" -eq 0 ]
-    [ "$(wc -l < "$CMD_COMPLETE_TEST_LOG")" -eq 8 ]
+    [ "$(wc -l < "$CMD_COMPLETE_TEST_LOG")" -eq 7 ]
 }
 
 @test "parallel invocations keep complete independent ordered flows" {
@@ -82,8 +83,18 @@ SH
     local pid_b=$!
     wait "$pid_a"
     wait "$pid_b"
-    [ "$(wc -l < "$log_a")" -eq 8 ]
-    [ "$(wc -l < "$log_b")" -eq 8 ]
+    [ "$(wc -l < "$log_a")" -eq 7 ]
+    [ "$(wc -l < "$log_b")" -eq 7 ]
+}
+
+@test "unrelated dashboard-wide freshness ALERT cannot block command completion" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/unrelated-global.log"
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        CMD_COMPLETE_FAIL_STEP=gate_context_freshness.sh \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    ! grep -q 'gate_context_freshness.sh' "$CMD_COMPLETE_TEST_LOG"
+    grep -q 'cmd_complete_gate.sh|cmd_fixture' "$CMD_COMPLETE_TEST_LOG"
 }
 
 @test "archived command not-found continues only with all three CLEAR evidences" {
