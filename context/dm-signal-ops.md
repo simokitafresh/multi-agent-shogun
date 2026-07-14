@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-15 cmd_karo_hotfix_ga256_pgserver_recovery -->
+<!-- last_updated: 2026-07-15 cmd_3907 -->
 <!-- source_commit:4abf69c39e5965d5165029fa161c412f06532cb5 reason:ga256-local-pgserver-recovery evidence:healthy restart=0 stale restart=1; commit-after golden 8/8 PASS SKIP0 in 280.52s -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
@@ -1270,3 +1270,10 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 確定域ledgerで矯正された新規`signals` INSERTは、旧Signal行がなくてもrun-level `SIGNAL CHANGE ALERT`へ1件として可視化する。synthetic entryは通知collector専用であり、架空の`old_holding_signal`を`signal_change_log`へINSERTしない。
 - ledger一致INSERT・ledger未被覆pending・既存UPDATEのchange-log契約・cleanup経路は不変。回帰70/70 PASS、FAIL 0、SKIP 0。一次根拠=`/mnt/c/Python_app/DM-signal` commit `05a45d83`、`backend/app/jobs/flush/signal_flush.py::_collect_new_insert_ledger_drift_alerts`。
 - 因果リンク: [[2026-07-14_23FoF新規INSERT]] -> [[existing_is_Noneでchange_log除外]] -> [[ledger_drift通知0件]] -> [[run_level_ALERT橋渡し]]
+
+## §82 確定域holding_signal correction event運用 (cmd_3908, 2026-07-15)
+
+- 過去の確定域訂正はadmin `POST /admin/signal-decision-ledger/corrections` のみを使う。必須入力は`portfolio_id`、`date`、訂正後`holding_signal`、空でない`reason`、実行主体`actor`。対象日以前にledger eventがなければfail-closedで拒否する。
+- APIは既存ledger/Signal行をUPDATE/DELETEせず、`event_type='correction'`をappend-only INSERTする。resolverは`effective_start_date/recorded_at/id`の決定的最新eventを採用し、一般full rebuild/flushが確定域を別値へ変更しようとしてもledger値へ矯正する。
+- 操作後確認: responseの`event_type=correction`、`reason`、`actor`、対象PF/date/valueを照合し、同じPF/dateをresolver経由で再読して訂正値が最新であることを確認する。直接`signals.holding_signal` UPDATEや既存ledger行の変更・削除は禁止。
+- 因果リンク: [[cmd_3907_決定的resolver]] -> [[cmd_3908_correction_event専用経路]] -> [[確定域変更手段の一本化]]
