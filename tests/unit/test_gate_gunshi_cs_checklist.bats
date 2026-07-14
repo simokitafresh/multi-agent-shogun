@@ -6,13 +6,18 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_GATE_SCRIPT="$PROJECT_ROOT/scripts/gates/gate_gunshi_cs_checklist.sh"
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
+
+    # Cache the immutable 1,500+ line gate once per suite. Re-reading it from
+    # /mnt/c in every test dominates fixture setup on WSL2.
+    export CACHED_GATE_SCRIPT="$BATS_FILE_TMPDIR/gate_gunshi_cs_checklist.sh"
+    cp "$SRC_GATE_SCRIPT" "$CACHED_GATE_SCRIPT"
 }
 
 setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/gunshi_cs.XXXXXX")"
     mkdir -p "$TEST_TMPDIR/scripts/gates" "$TEST_TMPDIR/logs"
 
-    cp "$SRC_GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
+    cp "$CACHED_GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
 
     export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"

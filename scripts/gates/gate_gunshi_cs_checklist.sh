@@ -326,9 +326,11 @@ done <<< "$RESULT"
 # partial value and /tmp usage stays bounded.
 _cs_hash_file() {
     if [ -f "$1" ]; then
-        sha256sum -- "$1" 2>/dev/null || printf 'unreadable  %s\n' "$1"
+        local digest _rest
+        read -r digest _rest < <(sha256sum -- "$1" 2>/dev/null) || digest="unreadable:$1"
+        printf '%s\n' "$digest"
     else
-        printf 'missing  %s\n' "$1"
+        printf 'missing:%s\n' "$1"
     fi
 }
 
@@ -355,8 +357,8 @@ _cs_cache_dir="/tmp/shogun_cs_checklist_cache/${_cs_namespace}"
 mkdir -p "$_cs_cache_dir" 2>/dev/null || true
 _cs_cold_cache="$_cs_cache_dir/cold.cache"
 _cs_skill_cache="$_cs_cache_dir/skill.cache"
-_cs_gate_hash="$(_cs_hash_file "${BASH_SOURCE[0]}" | sha256sum | awk '{print $1}')"
-_cs_review_hash="$(_cs_hash_file "$LOG_FILE" | sha256sum | awk '{print $1}')"
+_cs_gate_hash="$(_cs_hash_file "${BASH_SOURCE[0]}")"
+_cs_review_hash="$(_cs_hash_file "$LOG_FILE")"
 _cs_cold_key="$(printf '%s\n%s\n' "$_cs_gate_hash" "$_cs_review_hash" | sha256sum | awk '{print $1}')"
 _cs_skill_key="$({
     printf '%s\n%s\n' "$_cs_gate_hash" "$_cs_review_hash"
