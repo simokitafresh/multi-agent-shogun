@@ -13,6 +13,12 @@ make_row() {
   printf '%s\trepo\tsha\t%s\tbats\t%s\t1\t%s\tpass\t0\t%s\tfp\t%s\tmode=%s\n' "$1" "$2" "$3" "$4" "$5" "$6" "$2"
 }
 
+make_budget_run() {
+  local run_id="$1" wall="$2" revision="${3:-sha}"
+  printf '%s\trepo\t%s\tunit\tbats\ttests/a.bats\t1\t%s\tpass\t0\t0\tfp-%s\t%s\tmode=unit;jobs=1\n' \
+    "$run_id" "$revision" "$wall" "$run_id" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+
 @test "writer creates exact 14-column schema in tmp ledger" {
   make_row r1 unit tests/a.bats 1.0 0 2026-07-14T00:00:00Z >"$TMPROOT/batch"
   run bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/batch"
@@ -32,7 +38,7 @@ make_row() {
   grep -q '^r2' "$TEST_TIMING_LEDGER"
 }
 
-@test "gate warns stale and reports OK after fresh completed non-cache run" {
+@test "gate clears stale warning but keeps ratchet warm-up WARN after one fresh run" {
   make_row old unit tests/a.bats 1.0 0 2020-01-01T00:00:00Z >"$TMPROOT/old"
   bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/old"
   run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
@@ -41,8 +47,9 @@ make_row() {
   make_row fresh unit tests/a.bats 1.0 0 "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$TMPROOT/fresh"
   bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/fresh"
   run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
   [[ "$output" == *"ledger fresh"* ]]
+  [[ "$output" == *"warm-up 2/5"* ]]
 }
 
 @test "cache-only recent row does not refresh suite freshness" {
@@ -51,4 +58,52 @@ make_row() {
   run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
   [ "$status" -ne 0 ]
   [[ "$output" == *"ledger stale"* ]]
+}
+
+@test "ratchet keeps BLOCK disabled while comparable run count is below five" {
+  for n in 1 2 3 4; do make_budget_run "r$n" 1 >>"$TMPROOT/batch"; done
+  bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/batch"
+  run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"warm-up 4/5"* ]]
+  [[ "$output" != *"総合判定: BLOCK"* ]]
+}
+
+@test "ratchet blocks a fifth comparable run exceeding absolute and relative limits" {
+  for n in 1 2 3 4; do make_budget_run "r$n" 1 >>"$TMPROOT/batch"; done
+  make_budget_run r5 40 >>"$TMPROOT/batch"
+  bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/batch"
+  run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: new/changed test budget exceeded"* ]]
+  [[ "$output" == *"BLOCK: suite wall exceeded"* ]]
+}
+
+@test "ratchet exception requires exact owner expiry reason schema" {
+  for n in 1 2 3 4; do make_budget_run "r$n" 1 >>"$TMPROOT/batch"; done
+  make_budget_run r5 40 >>"$TMPROOT/batch"
+  bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/batch"
+  printf 'owner\texpires\nteam\t2099-01-01\n' >"$TMPROOT/exceptions.tsv"
+  run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" \
+    TEST_TIMING_RATCHET_EXCEPTIONS="$TMPROOT/exceptions.tsv" bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"exception schema must be owner<TAB>expires<TAB>reason"* ]]
+
+  printf 'owner\texpires\treason\nteam\t2099-01-01\tmeasured fixture overhead\n' >"$TMPROOT/exceptions.tsv"
+  run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" \
+    TEST_TIMING_RATCHET_EXCEPTIONS="$TMPROOT/exceptions.tsv" bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"active measured exception suppresses BLOCK"* ]]
+}
+
+@test "mixed revision run disables ratchet BLOCK fail-closed" {
+  for n in 1 2 3 4; do make_budget_run "r$n" 1 >>"$TMPROOT/batch"; done
+  make_budget_run r5 40 >>"$TMPROOT/batch"
+  make_budget_run mixed 1 sha-a >>"$TMPROOT/batch"
+  make_budget_run mixed 1 sha-b >>"$TMPROOT/batch"
+  bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/batch"
+  run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"mixed revision; BLOCK disabled"* ]]
+  [[ "$output" != *"総合判定: BLOCK"* ]]
 }

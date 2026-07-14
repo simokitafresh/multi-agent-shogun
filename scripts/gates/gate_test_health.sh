@@ -24,6 +24,9 @@ SLOW_THRESHOLD="${SLOW_THRESHOLD:-30}"
 CONSOLIDATE_THRESHOLD="${CONSOLIDATE_THRESHOLD:-5}"
 LEDGER_STALE_HOURS="${LEDGER_STALE_HOURS:-168}"
 REGRESSION_PCT="${TEST_TIMING_REGRESSION_PCT:-25}"
+RATCHET_MIN_RUNS="${TEST_TIMING_RATCHET_MIN_RUNS:-5}"
+RATCHET_SUITE_ABS_SEC="${TEST_TIMING_RATCHET_SUITE_ABS_SEC:-30}"
+RATCHET_EXCEPTIONS="${TEST_TIMING_RATCHET_EXCEPTIONS:-${REPO_ROOT}/config/test_timing_budget_exceptions.tsv}"
 
 MEASURE=false
 LEDGER_ONLY=false
@@ -35,6 +38,7 @@ for arg in "$@"; do
 done
 
 alert=0
+ratchet_block=0
 
 # ─── 共通: ファイルリストと@test一覧を1回取得 ───
 mapfile -t _bats_files < <(find "$TESTS_DIR" -name "*.bats" | sort)
@@ -90,6 +94,7 @@ if $MEASURE; then
   fi
 
 elif [ -f "$LEDGER" ] && head -1 "$LEDGER" | grep -q '^run_id'; then
+  ledger_fresh=0
   latest_fresh_epoch=$(awk -F'\t' '$9=="pass" && $11==0 && ($4=="all" || $4=="unit") {gsub(/Z$/, "", $13); cmd="date -u -d \"" $13 "\" +%s"; cmd | getline e; close(cmd); if(e>m)m=e} END{print m+0}' "$LEDGER")
   now_epoch=$(date +%s)
   age_hours=$(( (now_epoch - latest_fresh_epoch) / 3600 ))
@@ -98,6 +103,7 @@ elif [ -f "$LEDGER" ] && head -1 "$LEDGER" | grep -q '^run_id'; then
     alert=1
   else
     echo "OK: timing ledger fresh (age=${age_hours}h threshold=${LEDGER_STALE_HOURS}h)"
+    ledger_fresh=1
   fi
   mapfile -t completed_runs < <(awk -F'\t' '$9=="pass" && $11==0 && ($4=="all" || $4=="unit") {seen[$1]=$13} END{for(r in seen) print seen[r] "\t" r}' "$LEDGER" | sort -r | cut -f2 | head -2)
   if (( ${#completed_runs[@]} >= 2 )); then
@@ -120,6 +126,123 @@ elif [ -f "$LEDGER" ] && head -1 "$LEDGER" | grep -q '^run_id'; then
   slow_count=$(awk -F'\t' -v th="$SLOW_THRESHOLD" 'NR>1 && $11==0 && $8+0>th{count++} END{print count+0}' "$LEDGER")
   echo "台帳読込: ${LEDGER}"
   echo "合計: ${total_count}行 / SLOW(>${SLOW_THRESHOLD}s): ${slow_count}行"
+
+  # D3 budget ratchet.  It only compares complete, non-cache all/unit runs
+  # produced by the same repo/suite_root/resource_tags pipeline.  Until five
+  # comparable runs exist, a threshold is deliberately not invented.
+  ratchet_out="$(python3 - "$LEDGER" "$RATCHET_MIN_RUNS" "$REGRESSION_PCT" "$RATCHET_SUITE_ABS_SEC" "$RATCHET_EXCEPTIONS" "$ledger_fresh" <<'PY'
+import csv, datetime as dt, math, pathlib, statistics, sys
+
+ledger, min_runs, pct, suite_abs, exception_path, ledger_fresh = sys.argv[1:]
+min_runs, pct, suite_abs = int(min_runs), float(pct), float(suite_abs)
+if ledger_fresh != "1":
+    print("WARN: timing ratchet unavailable: stale ledger; BLOCK disabled")
+    raise SystemExit(0)
+rows = list(csv.DictReader(open(ledger, encoding="utf-8"), delimiter="\t"))
+required = {"run_id", "repo", "commit_sha", "suite_root", "test_file", "wall_sec",
+            "status", "skip_count", "cache_hit", "source_fingerprint", "measured_at", "resource_tags"}
+if not rows or not required.issubset(rows[0]):
+    print("WARN: timing ratchet unavailable: legacy schema")
+    raise SystemExit(0)
+
+runs = {}
+for row in rows:
+    if row["status"] != "pass" or row["cache_hit"] != "0" or row["suite_root"] not in ("all", "unit"):
+        continue
+    runs.setdefault(row["run_id"], []).append(row)
+
+valid = []
+mixed = 0
+for run_id, items in runs.items():
+    identity = {(r["repo"], r["suite_root"], r["resource_tags"], r["commit_sha"], r["measured_at"]) for r in items}
+    if len(identity) != 1 or any(r["skip_count"] != "0" for r in items):
+        mixed += 1
+        continue
+    repo, suite, tags, revision, measured = next(iter(identity))
+    try:
+        stamp = dt.datetime.fromisoformat(measured.replace("Z", "+00:00"))
+    except ValueError:
+        mixed += 1
+        continue
+    valid.append(((repo, suite, tags), stamp, revision, items))
+
+if mixed:
+    print(f"WARN: timing ratchet ignored {mixed} mixed-revision/incomplete run(s)")
+    print("WARN: timing ratchet unavailable: mixed revision; BLOCK disabled")
+    raise SystemExit(0)
+
+cohorts = {}
+for item in valid:
+    cohorts.setdefault(item[0], []).append(item)
+if not cohorts:
+    print("WARN: timing ratchet unavailable: no comparable completed runs")
+    raise SystemExit(0)
+
+cohort, history = max(cohorts.items(), key=lambda pair: max(x[1] for x in pair[1]))
+history.sort(key=lambda x: x[1])
+if len(history) < min_runs:
+    print(f"WARN: timing ratchet warm-up {len(history)}/{min_runs} comparable runs; BLOCK disabled")
+    raise SystemExit(0)
+
+def percentile(values, q):
+    values = sorted(values)
+    pos = (len(values) - 1) * q
+    lo, hi = math.floor(pos), math.ceil(pos)
+    return values[lo] if lo == hi else values[lo] + (values[hi] - values[lo]) * (pos - lo)
+
+current, baseline = history[-1], history[:-1]
+baseline_files = [float(r["wall_sec"]) for run in baseline for r in run[3]]
+p50, p90, p95, maximum = (percentile(baseline_files, q) for q in (.50, .90, .95, 1.0))
+walls = [sum(float(r["wall_sec"]) for r in run[3]) for run in baseline]
+wall_median = statistics.median(walls)
+current_wall = sum(float(r["wall_sec"]) for r in current[3])
+print(f"ratchet cohort repo={cohort[0]} suite={cohort[1]} tags={cohort[2]} runs={len(history)}")
+print(f"ratchet file distribution p50={p50:.3f}s p90={p90:.3f}s p95={p95:.3f}s max={maximum:.3f}s")
+print(f"ratchet suite rolling_median={wall_median:.3f}s current={current_wall:.3f}s")
+
+active_exception = False
+path = pathlib.Path(exception_path)
+if path.exists():
+    exception_rows = list(csv.DictReader(path.open(encoding="utf-8"), delimiter="\t"))
+    if not exception_rows or set(exception_rows[0]) != {"owner", "expires", "reason"}:
+        print("BLOCK: timing ratchet exception schema must be owner<TAB>expires<TAB>reason")
+        raise SystemExit(2)
+    today = dt.datetime.now(dt.timezone.utc).date()
+    for item in exception_rows:
+        try:
+            expiry = dt.date.fromisoformat(item["expires"])
+        except (TypeError, ValueError):
+            print("BLOCK: timing ratchet exception expires must be YYYY-MM-DD")
+            raise SystemExit(2)
+        if not item["owner"].strip() or not item["reason"].strip():
+            print("BLOCK: timing ratchet exception requires owner and measured reason")
+            raise SystemExit(2)
+        active_exception |= expiry >= today
+
+limit_ratio = 1.0 + pct / 100.0
+file_hits = [r for r in current[3] if float(r["wall_sec"]) > p95 and float(r["wall_sec"]) > p95 * limit_ratio]
+suite_hit = current_wall > wall_median + suite_abs and current_wall > wall_median * limit_ratio
+if file_hits or suite_hit:
+    if active_exception:
+        print("WARN: timing ratchet exceeded but active measured exception suppresses BLOCK")
+    else:
+        if file_hits:
+            print("BLOCK: new/changed test budget exceeded: " + ", ".join(r["test_file"] for r in file_hits))
+        if suite_hit:
+            print(f"BLOCK: suite wall exceeded absolute +{suite_abs:.1f}s and relative +{pct:.1f}%")
+        raise SystemExit(2)
+else:
+    print("OK: timing budget ratchet within absolute and relative limits")
+PY
+)" || ratchet_rc=$?
+  ratchet_rc="${ratchet_rc:-0}"
+  printf '%s\n' "$ratchet_out"
+  if (( ratchet_rc == 2 )); then
+    ratchet_block=1
+    alert=1
+  elif [[ "$ratchet_out" == *WARN:* ]]; then
+    alert=1
+  fi
 elif [ -f "$LEDGER" ]; then
   echo "WARN: legacy timing ledger schema; normal run_tests.sh完走で14列へ移行してください"
   alert=1
@@ -133,6 +256,10 @@ fi
 echo ""
 
 if $LEDGER_ONLY; then
+  if (( ratchet_block > 0 )); then
+    echo "総合判定: BLOCK — timing budget ratchet"
+    exit 2
+  fi
   if (( alert > 0 )); then
     echo "総合判定: ALERT — timing ledger health"
     exit 1

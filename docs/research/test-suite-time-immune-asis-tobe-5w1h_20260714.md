@@ -76,7 +76,7 @@
 | **P0 静的棚卸し(実行なし)** | 対象を明記(R12+R13+R18): **gate_test_health.sh・test_timing_ledger.tsv(stale根因特定)・codd_refactor_registry.md・test_select.sh/cache関連testの有無**+**既存test作成/更新契約4つ(cmd_save check_ac_test_scope・codex-karo modified-file regression plan・軍師fixture/全入力mode観点・git pre-commit関連test選択)のD7統合先判定(R13)**+**bats/pytestのbranch・contract・mutation coverage計測器の現物棚卸しと利用可能な二値手段の固定(R18)**+sleep・実プロセス・モック/test double使用箇所・重複/陳腐化候補・pytest側cache/durations現状・共有資源catalog。grep/AST/git履歴のみ、**テスト実行ゼロ** | 0分 | なし | **cmd_3894**(2026-07-14 02:1x委任) |
 | **P1 D1'+D2'前半** | 台帳再稼働(自動追記+悪化WARN+鮮度監視)+pytest durations常設。以後通常業務が計測データ化 | 実装のみ | P0 | **cmd_3895**(infra側、02:4x委任。P0所見14列形式+lifecycle)。pytest側durations常設はDM-Signal別cmdとして後続 |
 | **P2 D6→道具磨き** | **D6契約更新済み(cmd_3910)**: codd-refactorは最新cache_hit=0・mode=all/unit完走runの台帳top-Nからテスト+被テストスクリプト候補を出し、改善済み対象をregistryで除外。before/after=同一test_file/suite_rootのcommit_sha+run_id付き台帳比較、欠損はUNVERIFIED fail-closed、専用run禁止 | 実装のみ | P1蓄積 | **cmd_3910** |
-| **P3 D3+D4'+D7** | バジェットratchet(P1蓄積の分布から設計)+陳腐化スキャン+モック規律+統合第1巡(coverage同等証明)+**D7作成規律の契約化(雛形・report契約・軍師SG)。ただしD7の(1)重複禁止(3)モック類型(4)道連れ更新はバジェット不要のためP1で先行実装可** | 実装のみ | P1蓄積(D7一部はP1) | (未起票) |
+| **P3 D3+D4'+D7** | **D3 ratchet骨格はcmd_3911で実装済み**: 14列台帳の同格non-cache完走runをcohort化し、5 run未満/legacy/stale/mixed revisionではWARN維持、5 run以降はfile p95とsuite rolling median+25%を絶対秒・相対率の双方超過時だけBLOCK。例外はowner・期限・実測reason必須。閾値は台帳実分布で確定する。残り=陳腐化スキャン+モック規律+統合第1巡(coverage同等証明)+**D7作成規律の契約化(雛形・report契約・軍師SG)。ただしD7の(1)重複禁止(3)モック類型(4)道連れ更新はバジェット不要のためP1で先行実装可** | 実装のみ | P1蓄積(D7一部はP1) | **cmd_3911(D3骨格)** |
 | **P4 D5'+D2'後半** | full evidence契約のgate強化(cache=0正本)+pytest cache(fingerprint契約化後)+二重全量の統合判断(台帳実測に基づく) | 実装のみ | P1 | (未起票) |
 
 ## §5 リスクと非対称性
