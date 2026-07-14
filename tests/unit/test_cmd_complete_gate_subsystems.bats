@@ -21,35 +21,18 @@ setup_file() {
     command -v python3 >/dev/null 2>&1 || return 1
 
     export SUBSYSTEM_HELPERS="$BATS_FILE_TMPDIR/cmd_complete_gate_subsystems_helpers.bash"
-    {
-        sed -n '/^append_line_locked()/,/^}/p' "$SRC_GATE_SCRIPT"
-        extract_function record_block_reason
-        extract_function resolve_gate_rg
-        extract_function level_heading
-        extract_function detect_task_role
-        extract_function cmd_task_matches
-        extract_function evaluate_review_report_status
-        extract_function find_overlapping_workers
-        extract_function run_review_quality_check
-        extract_function run_todo_fixme_residual_check
-        extract_function run_skill_script_refs_check
-        extract_function run_report_memory_semantic_scan
-        extract_function classify_missing_report_status
-        sed -n '/^check_gs_bench_gate_warn()/,/^}/p' "$SRC_GATE_SCRIPT"
-        sed -n '/^update_status()/,/^}/p' "$SRC_GATE_SCRIPT"
-    } > "$SUBSYSTEM_HELPERS"
-}
-
-extract_function() {
-    local name="$1"
-    local start end
-    start=$(awk -v name="$name" '$0 ~ "^" name "\\(\\) \\{" { print NR; exit }' "$SRC_GATE_SCRIPT")
-    [ -n "$start" ] || return 1
-    end=$(awk -v start="$start" '
-        NR > start && /^[A-Za-z0-9_]+\(\) \{/ { print NR - 1; found = 1; exit }
-        END { if (!found) print NR }
-    ' "$SRC_GATE_SCRIPT")
-    sed -n "${start},${end}p" "$SRC_GATE_SCRIPT"
+    awk '
+        BEGIN {
+            split("append_line_locked record_block_reason resolve_gate_rg level_heading detect_task_role cmd_task_matches evaluate_review_report_status find_overlapping_workers run_review_quality_check run_todo_fixme_residual_check run_skill_script_refs_check run_report_memory_semantic_scan classify_missing_report_status check_gs_bench_gate_warn update_status", names)
+            for (i in names) wanted[names[i]] = 1
+        }
+        /^[A-Za-z0-9_]+\(\) \{/ {
+            name = $0
+            sub(/\(\) \{.*/, "", name)
+            emit = wanted[name]
+        }
+        emit { print }
+    ' "$SRC_GATE_SCRIPT" > "$SUBSYSTEM_HELPERS"
 }
 
 setup() {
