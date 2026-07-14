@@ -192,9 +192,21 @@ prompt_text="$(_prompt_state_json_get ".prompt" "")" || {
 # prior evidence and atomically issues a fresh per-agent/pane three-layer
 # preflight record. Failure remains visible to PreToolUse; prompt handling is
 # not swallowed into a false success state.
+prompt_state_preflight_pid=""
 if [[ -x "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" ]]; then
-  bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" issue <<<"$payload" >/dev/null 2>&1 || true
+  # The preflight performs three independent read-only searches and is the
+  # dominant UserPromptSubmit cost.  Start it while this hook builds the
+  # remaining read-only context, then join before emitting output so every
+  # prompt still invalidates and receives fresh evidence before Codex acts.
+  bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" issue <<<"$payload" >/dev/null 2>&1 &
+  prompt_state_preflight_pid=$!
 fi
+
+prompt_state_wait_preflight() {
+  [[ -n "$prompt_state_preflight_pid" ]] || return 0
+  wait "$prompt_state_preflight_pid" || true
+  prompt_state_preflight_pid=""
+}
 
 prompt_is_inbox_nudge=0
 if [[ "$prompt_text" =~ ^inbox[0-9]+$ ]]; then
@@ -955,6 +967,7 @@ ${karo_snapshot}
 ${diary_content}
 ${verification_questions}"
 
+  prompt_state_wait_preflight
   _prompt_state_emit_output "UserPromptSubmit" "$additional_context"
   exit 0
 fi
@@ -1135,6 +1148,7 @@ ${memory_candidate_counts}"
 fi
 
 # --- Output JSON ---
+prompt_state_wait_preflight
 _prompt_state_emit_output "UserPromptSubmit" "$additional_context"
 
 exit 0
