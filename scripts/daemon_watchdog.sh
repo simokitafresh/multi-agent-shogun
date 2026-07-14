@@ -81,7 +81,9 @@ pid_cmdline_matches() {
     pid_is_live "$pid" || return 1
 
     local cmdline=""
-    cmdline=$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null || true)
+    # The process can disappear between kill -0 and reading cmdline.  Keep the
+    # pathname open inside cat so that a failed open is silenced as well.
+    cmdline=$(cat "/proc/${pid}/cmdline" 2>/dev/null | tr '\0' ' ' || true)
     [[ "$cmdline" == *"$needle"* ]]
 }
 
@@ -230,7 +232,8 @@ inbox_unread_count_file() {
         return 0
     }
 
-    awk '
+    local count=""
+    count=$(awk '
         BEGIN { c = 0 }
         /^- / { in_msg = 1; read_state = "false"; next }
         in_msg && /^  read:[[:space:]]*/ {
@@ -244,7 +247,36 @@ inbox_unread_count_file() {
             if (in_msg) c++
             print c
         }
-    ' "$inbox_file" 2>/dev/null || echo 0
+    ' "$inbox_file" 2>/dev/null || true)
+    # awk still executes END after an input error. Select exactly one numeric
+    # line so arithmetic callers can never receive a multi-line value.
+    count=$(printf '%s\n' "$count" | awk '/^[0-9]+$/ { value=$0 } END { print value == "" ? 0 : value }')
+    printf '%s\n' "$count"
+}
+
+daemon_inventory_snapshot() {
+    ps ax -o args= 2>/dev/null || true
+}
+
+check_daemon_inventory() {
+    local snapshot
+    snapshot=$(daemon_inventory_snapshot)
+    local -a expected=(
+        "inbox_watcher.sh:9"
+        "ninja_monitor.sh:1"
+        "ntfy_listener.sh:1"
+        "usage_statusbar_loop.sh:1"
+        "gist_sync.sh:1"
+    )
+    local spec daemon expected_count actual_count
+    for spec in "${expected[@]}"; do
+        daemon=${spec%%:*}
+        expected_count=${spec##*:}
+        actual_count=$(printf '%s\n' "$snapshot" | awk -v daemon="$daemon" 'index($0, daemon) { count++ } END { print count + 0 }')
+        if (( actual_count < expected_count )); then
+            log "DAEMON-INVENTORY-WARN: ${daemon} expected>=${expected_count} actual=${actual_count}"
+        fi
+    done
 }
 
 _check_inbox_watcher_hang() {
@@ -401,6 +433,7 @@ check_crontab_registration || true
 check_ninja_monitor
 check_ntfy_listener
 check_inbox_watchers
+check_daemon_inventory
 
 # heartbeat更新: 外部から「watchdog自体が動いているか」を検証可能にする
 date +%s > "$HEARTBEAT_FILE"
