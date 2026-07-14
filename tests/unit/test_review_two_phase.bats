@@ -2,7 +2,7 @@
 
 setup() {
   ROOT=$(cd "$BATS_TEST_DIRNAME/../.." && pwd)
-  TMPROOT=$(mktemp -d)
+  TMPROOT="$BATS_TEST_TMPDIR"
   mkdir -p "$TMPROOT/queue/gates/cmd_test/review_approvals/reports"
   mkdir -p "$TMPROOT/queue/reports"
   mkdir -p "$TMPROOT/queue/tasks"
@@ -38,8 +38,6 @@ task:
   done_at: "2026-07-11T10:01:00+09:00"
 YAML
 }
-teardown() { rm -rf "$TMPROOT"; }
-
 approve() {
   REVIEW_APPROVAL_ROOT="$TMPROOT" REVIEW_APPROVAL_NO_TRIGGER=1 \
     bash "$ROOT/scripts/review_approval.sh" cmd_test "$1" "$2" "$3"
