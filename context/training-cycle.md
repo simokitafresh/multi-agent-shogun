@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-07-15 cmd_training_test_speed_test_gate_small_consolidated__20260715001204 -->
+<!-- last_updated: 2026-07-15 cmd_training_test_speed_test_test_speed_task_generator__20260715030405 -->
 # 修行サイクル設計書（殿直伝 2026-03-25）
 
 ## §1 背景と原理

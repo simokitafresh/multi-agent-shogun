@@ -325,7 +325,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 - L798: 重いページはPAGE_APIS prefetchを空にしてページ本体fetchをSSOTにする（cmd_3650）
 - L801: Next App Router共通chunkはapp module分割だけではhash/サイズが変わらない — 初期レンダー計算量削減が正道（cmd_3659）
 - L804: FoF調査では構成定義(component_portfolios)と当月選択結果(signals/fof_component_weights/monthly_trade)を分けて証拠化する（cmd_3676_recon2）
-<!-- last_synced_lesson: L890 -->
+<!-- last_synced_lesson: L902 -->
 - L850: 本番への非同期長時間処理(fullrecalculate等)をトリガー後に設計変更指示が届いた場合、走行中処理は中断せず完了を待ち、変更は次回反復から適用する（cmd_3804）
 - L858: パリティ残存乖離の原因は推測せず3点突合(本番/ライブ実行/GS)で必ず切り分けよ（cmd_3816）
 - L861: 非決定性偵察はDB再クエリの前に既存分析成果物(outputs/analysis/*.json)を横断確認せよ（cmd_karo_recon2_cmd3824_mechanism_202607101223）
@@ -336,6 +336,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 - L878: adapterを跨ぐ純粋関数統合ではdate-like入力の型正規化(pd.Timestamp化)を移植先で再実装せよ（cmd_3856）
 - L880: 永続化するset由来の配列は明示sorted()なしでは非決定。telemetry leafは分類し境界をharnessへ反映せよ（cmd_3858）
 - L890: 実装中dirty checkoutはsource identity全量テストを意図どおりBLOCKする（cmd_3880）
+- L902: worktree全量pytestはenv前提をpreflightせよ（cmd_3908）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 

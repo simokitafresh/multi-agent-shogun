@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-15 cmd_3907 -->
-<!-- source_commit:4abf69c39e5965d5165029fa161c412f06532cb5 reason:ga256-local-pgserver-recovery evidence:healthy restart=0 stale restart=1; commit-after golden 8/8 PASS SKIP0 in 280.52s -->
+<!-- last_updated: 2026-07-15 cmd_3908 -->
+<!-- source_commit:e0279aa09a7cc7ee0c132185590808a26b7923a4 reason:cmd3908-correction-path evidence:ops §82 records append-only correction API and deterministic resolver; focused 32/32 and full 2010 PASS SKIP0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 

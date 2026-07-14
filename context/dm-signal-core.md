@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_ga256_pgserver_recovery -->
-<!-- source_commit:4abf69c39e5965d5165029fa161c412f06532cb5 reason:ga256-no-core-contract-change evidence:commit 4abf69c3 changes isolated local pgserver test harness only; backend production core files changed=0 -->
+<!-- source_commit:e0279aa09a7cc7ee0c132185590808a26b7923a4 reason:cmd3908-core-boundary evidence:correction path is documented in ops §82; core index contract unchanged -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 

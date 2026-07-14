@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_context_source_marker_arrow_20260715 -->
-<!-- source_commit:08e360e53 reason:source-marker-arrow-dedup evidence:before:2 markers after:1; tests 33/33 PASS SKIP0 -->
+<!-- source_commit:94e4c50a356eb4d05d16cf91effcc2722a9c2427 reason:script-speed-lane-and-training-boundary evidence:idle priority reflux->script speed->test speed->legacy; postcommit 25/25 PASS SKIP0; capability fail-closed target drift INSERT0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -26,6 +26,8 @@ dashboardの`## 🚨要対応`は任意セクションであり、欠落時は�
 draft-review配備テストは、Bats processでsetup済みの`deploy_task.sh`関数を再sourceせず直接再利用する。独立shellが必要なEXIT trap類型は維持し、20/20 PASS・FAIL0・SKIP0のまま15.982→15.184秒（5.0%短縮）。→ `tests/unit/test_deploy_task_draft_review.bats` / `docs/research/deploy-task-draft-review-test-speed.md`（commit `d47ec43d6`）
 
 contextの`source_commit`置換はevidence内の比較矢印（例: `3->0`）も含む行全体を認識し、既存重複markerを1行へ正規化する。DM-Signal split-context同期も同じ矢印対応regexを使う。→ `scripts/context_source_commit_set.sh` / `scripts/dm_signal_research_reflux_guard.sh` / 対応Unit 33/33 PASS・SKIP0（commit `08e360e53`）
+
+忍者idle時の速度修行は`reflux → 本体scripts/*.sh速度レーン → Bats速度レーン → legacy`の順とする。本体レーンがpendingの間はBatsを先に配備せず、機能痩せ禁止・FAIL 0・SKIP 0の品質契約は維持する。→ `scripts/ninja_monitor.sh` / `tests/unit/test_test_speed_task_generator.bats` / `tests/unit/test_bash_speed_training.bats`（commit `b8a07e061`、事後計測 25/25 PASS・SKIP0）
 
 15分超cmdは保存時点で`execution_env` mappingの具体的`long_runtime_reason`と正の`measured_runtime_sec`を必須とし、配備時TEN_MIN_CONTRACTまで不備を持ち越さない。雛形も同じmapping契約を提示する。→ `scripts/cmd_save.sh` / `scripts/cmd_skeleton.sh`（cmd_3933, commit `daee77f03`）
 
@@ -768,7 +770,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1122 -->
+<!-- last_synced_lesson: L1137 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1597,6 +1599,21 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1120: 共有fixtureは保存層とcache identityを別々に検証する（cmd_training_test_speed_test_three_layer_preflight__20260714235557）
 - L1121: 副作用contractを検証しないfixtureでは既存disable入口を使う（cmd_training_test_speed_test_skill_feedback_loop__20260714234932）
 - L1122: source済み関数の参照先fixtureを途中削除しない（cmd_training_test_speed_test_deploy_task_template_generation__20260714234714）
+- L1123: 計測経路coverageは完了reportとledger対象pathの集合差で検出できる（cmd_3942）
+- L1124: 統合Batsはcontent単位single-flight TAP cacheでwrapper独立性と速度を両立する（cmd_training_test_speed_test_gate_small_consolidated__20260715001204）
+- L1125: テストフレームワーク所有のtemp lifecycleへ委ねて生成と削除のforkを同時除去する（cmd_training_test_speed_test_small_workflow_consolidated__20260715001635）
+- L1126: 任意セクション契約は全検証段で統一する（cmd_karo_hotfix_dashboard_optional_attention_section_20260715）
+- L1127: 埋込Bats統合は元ファイル単位TAP cacheで起動回数を削減する（cmd_training_test_speed_test_cmd_save_small_consolidated__20260715020311）
+- L1128: 高速化候補は同一runner実測で採否を決め、悪化案を即撤回する（cmd_training_test_speed_test_pre_bash_guard14_fast_filter_sync__20260715020028）
+- L1129: YAML C Loaderはプロセス境界支配のBatsでは速度改善を保証しない（cmd_training_test_speed_test_deploy_task_yaml_injection__20260715020149）
+- L1130: 並行性テストは時間待ちでなく因果マーカーで同期する（cmd_training_test_speed_test_heavy_job_admission__20260715020800）
+- L1131: Bats setup cacheはhelper呼出しも直接関数化する（cmd_training_test_speed_test_deploy_task_draft_review__20260715022212）
+- L1132: mutable fixtureはimmutable baseからcase単位copyする（cmd_training_test_speed_test_gate_lesson_health__20260715023732）
+- L1133: Git依存Batsはcommitted fixtureをsetup_fileで一度だけ作る（cmd_training_test_speed_test_context_source_commit_set__20260715024433）
+- L1134: 速度最適化前に共有fixtureの現行契約適合を二値確認する（cmd_training_test_speed_test_report_template_gate_compat__20260715022413）
+- L1135: 巨大shell libraryはBats process単位で一度だけsourceする（cmd_training_test_speed_test_deploy_task_ten_min_contract__20260715030536）
+- L1136: 反復shell fixtureは状態集合を維持したまま子process境界を共有する（cmd_training_test_speed_test_test_speed_task_generator__20260715030405）
+- L1137: 統合入口テストは対象外の独立preflightをfixtureで差し替える（cmd_training_test_speed_test_prompt_state_defer_reconcile__20260715031406）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
