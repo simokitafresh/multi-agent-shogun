@@ -6,25 +6,37 @@ run_embedded_test() {
     local test_name="$2"
     local content_func="$3"
 
-    # Place temp file in tests/unit/ so BATS_TEST_FILENAME/../.. resolves to PROJECT_ROOT
-    local unique_path
-    unique_path="$(mktemp "$(dirname "$BATS_TEST_FILENAME")/_tmp_${BATS_TEST_NUMBER:-0}_$(basename "$original_path" .bats).XXXXXX.bats")"
-    "$content_func" > "$unique_path"
+    # Each embedded source is shared by multiple outer tests. Run the full source once,
+    # publish its TAP atomically, then let every wrapper verify its own exact result.
+    local cache_dir="$BATS_FILE_TMPDIR/gate_small_embedded_cache"
+    local cache_key="${content_func#content_}"
+    local result_file="$cache_dir/${cache_key}.tap"
+    local lock_file="$cache_dir/${cache_key}.lock"
+    mkdir -p "$cache_dir"
 
-    run env -u BATS_TMPDIR -u BATS_TEST_TMPDIR -u BATS_TEST_NUMBER -u BATS_TEST_FILENAME bats --filter "^${test_name}$" "$unique_path"
-    local nested_status="$status"
-    local nested_output="$output"
-    rm -f "$unique_path"
+    (
+        flock 9
+        if [[ ! -s "$result_file" ]]; then
+            local unique_path tmp_result nested_rc
+            unique_path="$(mktemp "$(dirname "$BATS_TEST_FILENAME")/_tmp_${cache_key}.XXXXXX.bats")"
+            tmp_result="$(mktemp "$cache_dir/${cache_key}.tap.XXXXXX")"
+            "$content_func" > "$unique_path"
+            nested_rc=0
+            env -u BATS_TMPDIR -u BATS_TEST_TMPDIR -u BATS_TEST_NUMBER -u BATS_TEST_FILENAME \
+                bats "$unique_path" > "$tmp_result" 2>&1 || nested_rc=$?
+            printf '# nested_rc=%s\n' "$nested_rc" >> "$tmp_result"
+            rm -f "$unique_path"
+            mv "$tmp_result" "$result_file"
+        fi
+    ) 9>"$lock_file"
 
-    if printf '%s\n' "$nested_output" | grep -qx '1\.\.0'; then
-        printf 'No embedded test matched filter: %s\n%s\n' "$test_name" "$nested_output" >&2
-        nested_status=1
+    # TAP sequence number is not known beforehand; compare the name as data, not a regex.
+    if awk -v expected="$test_name" '$1 == "ok" {line=$0; sub(/^ok [0-9]+ /, "", line); if (line == expected) found=1} END {exit !found}' "$result_file"; then
+        return 0
     fi
-
-    if [ "$nested_status" -ne 0 ]; then
-        printf '%s\n' "$nested_output" >&2
-    fi
-    [ "$nested_status" -eq 0 ]
+    printf 'Embedded test did not pass: %s\n' "$test_name" >&2
+    cat "$result_file" >&2
+    return 1
 }
 
 content_test_gate_autofix_proposal() {
