@@ -30,6 +30,12 @@ commit_hash: '0000000000000000000000000000000000000000'
 result:
   summary: original summary
   details: original details
+purpose_validation:
+  cmd_purpose: immutable report contract
+  fit: true
+files_modified:
+  - path: scripts/example.sh
+    change: test fixture
 lesson_candidate:
   found: false
   no_lesson_reason: covered
@@ -207,16 +213,17 @@ _status() {
     grep -q 'summary: updated wip' "$REPORT"
 }
 
-# --- AC3: existing verdict->completed auto-transition is not broken ---
+# --- AC3: commit=yes report stays editable until its commit fingerprint exists ---
 
-@test "pending report: verdict PASS still auto-completes status" {
+@test "pending report: verdict PASS waits for required commit_hash" {
     write_pending_report "$REPORT"
 
     run bash "$RFS" "$REPORT" verdict PASS
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"status = completed (auto after verdict)"* ]]
-    [ "$(_status "$REPORT")" = completed ]
+    [[ "$output" != *"status = completed (auto after verdict)"* ]]
+    [ "$(_status "$REPORT")" = pending ]
+    grep -q '^verdict: PASS' "$REPORT"
 }
 
 # --- archived reports are out of guard scope (no live fingerprint to protect) ---

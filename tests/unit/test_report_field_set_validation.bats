@@ -403,6 +403,49 @@ YAML
     grep -Fq "status: completed" "$TEST_REPORT"
 }
 
+@test "verdict auto-completion waits for required commit_hash then hash write completes" {
+    TEST_REPORT="$TEST_TMPDIR/kotaro_report_cmd_test.yaml"
+    cat > "$TEST_REPORT" <<'YAML'
+worker_id: rfs_validation_test
+parent_cmd: cmd_test
+ac_version_read: abc12345
+result:
+  summary: regression verified
+purpose_validation:
+  fit: true
+files_modified:
+  - path: scripts/report_field_set.sh
+lesson_candidate:
+  found: true
+  title: commit ordering
+  detail: commit hash must precede terminal completion
+  project: infra
+lessons_useful:
+  - id: LTEST
+    useful: true
+    reason: regression contract
+memory_references: []
+status: pending
+binary_checks:
+  AC1:
+    - check: behavior verified
+      result: yes
+  commit:
+    - check: git commitが完了したか
+      result: yes
+YAML
+    run bash "$SCRIPT" "$TEST_REPORT" verdict PASS
+    [ "$status" -eq 0 ]
+    grep -Fq "verdict: PASS" "$TEST_REPORT"
+    grep -Fq "status: pending" "$TEST_REPORT"
+    ! grep -Fq "status: completed" "$TEST_REPORT"
+
+    run bash "$SCRIPT" "$TEST_REPORT" commit_hash a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0
+    [ "$status" -eq 0 ]
+    grep -Fq "commit_hash: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0" "$TEST_REPORT"
+    grep -Fq "status: completed" "$TEST_REPORT"
+}
+
 @test "origin: omitted value inherits origin from parent_cmd archive" {
     local archive_dir="$PROJECT_ROOT/queue/archive/cmds"
     local archive_file="$archive_dir/cmd_rfs_origin_auto_completed_20990101.yaml"

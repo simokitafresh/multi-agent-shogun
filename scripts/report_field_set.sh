@@ -1294,6 +1294,71 @@ fi
 AUTO_COMPLETE_STATUS=0
 if [[ "$DOT_KEY" == "verdict" ]] && [[ "$VALUE" == "PASS" || "$VALUE" == "FAIL" || "$VALUE" == "PASS_NO_IMPROVEMENT" ]]; then
     AUTO_COMPLETE_STATUS=1
+    # A report that claims commit=yes must remain writable until its immutable
+    # commit fingerprint has been recorded.  Otherwise verdict auto-completion
+    # makes the immediately-following commit_hash write impossible.
+    if [ -f "$REPORT_PATH" ] && ! REPORT_PATH="$REPORT_PATH" python3 - <<'PY'
+import os, re, sys, yaml
+data = yaml.safe_load(open(os.environ['REPORT_PATH'], encoding='utf-8')) or {}
+checks = (data.get('binary_checks') or {}).get('commit')
+if not checks:
+    sys.exit(0)
+def is_yes(value):
+    return value is True or (isinstance(value, str) and value.strip().lower() == 'yes')
+all_yes = isinstance(checks, list) and all(
+    isinstance(item, dict) and is_yes(item.get('result')) for item in checks
+)
+commit_hash = str(data.get('commit_hash', '')).strip()
+def terminal_ready(d):
+    summary = str((d.get('result') or {}).get('summary', '')).strip()
+    files = d.get('files_modified')
+    lessons = d.get('lessons_useful')
+    memories = d.get('memory_references') or []
+    return (
+        summary not in ('', 'FILL_THIS')
+        and isinstance(d.get('purpose_validation'), dict)
+        and isinstance(files, list) and bool(files)
+        and isinstance(d.get('lesson_candidate'), dict)
+        and isinstance(lessons, list) and bool(lessons)
+        and all(isinstance(x, dict) and str(x.get('reason', '')).strip() not in ('', 'FILL_THIS', '未参照') for x in lessons)
+        and all(isinstance(x, dict) and str(x.get('reason', '')).strip() for x in memories)
+    )
+sys.exit(0 if (not all_yes or (re.fullmatch(r'[0-9a-f]{40}', commit_hash) and terminal_ready(data))) else 1)
+PY
+    then
+        AUTO_COMPLETE_STATUS=0
+    fi
+elif [[ "$DOT_KEY" == "commit_hash" ]] && [[ "$VALUE" =~ ^[0-9a-f]{40}$ ]] && [ -f "$REPORT_PATH" ]; then
+    # Complete atomically when commit_hash is the final missing prerequisite.
+    if REPORT_PATH="$REPORT_PATH" python3 - <<'PY'
+import os, sys, yaml
+data = yaml.safe_load(open(os.environ['REPORT_PATH'], encoding='utf-8')) or {}
+checks = (data.get('binary_checks') or {}).get('commit')
+def is_yes(value):
+    return value is True or (isinstance(value, str) and value.strip().lower() == 'yes')
+all_yes = isinstance(checks, list) and bool(checks) and all(
+    isinstance(item, dict) and is_yes(item.get('result')) for item in checks
+)
+verdict = str(data.get('verdict', '')).strip()
+status = str(data.get('status', '')).strip()
+summary = str((data.get('result') or {}).get('summary', '')).strip()
+files = data.get('files_modified')
+lessons = data.get('lessons_useful')
+memories = data.get('memory_references') or []
+terminal_ready = (
+    summary not in ('', 'FILL_THIS')
+    and isinstance(data.get('purpose_validation'), dict)
+    and isinstance(files, list) and bool(files)
+    and isinstance(data.get('lesson_candidate'), dict)
+    and isinstance(lessons, list) and bool(lessons)
+    and all(isinstance(x, dict) and str(x.get('reason', '')).strip() not in ('', 'FILL_THIS', '未参照') for x in lessons)
+    and all(isinstance(x, dict) and str(x.get('reason', '')).strip() for x in memories)
+)
+sys.exit(0 if all_yes and terminal_ready and verdict in ('PASS', 'FAIL', 'PASS_NO_IMPROVEMENT') and status not in ('completed', 'done') else 1)
+PY
+    then
+        AUTO_COMPLETE_STATUS=1
+    fi
 fi
 
 # Create file if not exists
@@ -2110,6 +2175,17 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
         # awk経路は構造体をリテラル文字列として書くためYAML破壊の原因になる
         if [[ "$VALUE" == '['* ]] || [[ "$VALUE" == '{'* ]]; then
             _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "-" "$VALUE"
+            exit $?
+        fi
+
+        # A literal backslash is data, not a reason to reject the write.  The
+        # awk scalar writer uses YAML double quotes when the value contains
+        # punctuation such as ':', but cannot faithfully escape every YAML
+        # backslash sequence (for example regex text '\.' or '\q').  Route all
+        # such scalars through the atomic Python writer, which preserves the
+        # literal value and emits valid YAML.
+        if [[ "$VALUE" == *'\'* ]]; then
+            _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "$VALUE" "$STDIN_VALUE"
             exit $?
         fi
 

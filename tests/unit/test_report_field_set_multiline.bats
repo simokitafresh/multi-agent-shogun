@@ -109,17 +109,22 @@ print('Single line OK')
     [[ "$output" == *"parse ok"* ]]
 }
 
-@test "書込み後YAML検証: 構文崩壊値は復元して非0終了する" {
-    cp "$TEST_REPORT" "$TEST_REPORT.before"
-
-    run bash -c "bash '$SCRIPT' '$TEST_REPORT' result.summary 'bad: \\\\q' 2>&1"
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"YAML parse error after field set — reverting"* ]]
-
-    run cmp -s "$TEST_REPORT.before" "$TEST_REPORT"
+@test "backslashを含むscalar: Python経路でliteralを保持してPASSする" {
+    local value='bad: \q'
+    run bash "$SCRIPT" "$TEST_REPORT" result.summary "$value"
     [ "$status" -eq 0 ]
 
-    run python3 -c "import yaml, sys; yaml.safe_load(open(sys.argv[1], encoding='utf-8')); print('restored parse ok')" "$TEST_REPORT"
+    run python3 -c "import yaml, sys; value=yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['result']['summary']; assert value == sys.argv[2], repr(value); print('literal preserved')" "$TEST_REPORT" "$value"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"restored parse ok"* ]]
+    [[ "$output" == *"literal preserved"* ]]
+}
+
+@test "regex証跡scalar: colonとbackslash-dotを同時にliteral保持する" {
+    local evidence='rg -n "old\\.py" context/codd.md: exit=1, residual=0'
+    run bash "$SCRIPT" "$TEST_REPORT" result.details "$evidence"
+    [ "$status" -eq 0 ]
+
+    run python3 -c "import yaml, sys; value=yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['result']['details']; assert value == sys.argv[2], repr(value); print('regex literal preserved')" "$TEST_REPORT" "$evidence"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"regex literal preserved"* ]]
 }
