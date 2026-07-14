@@ -8,6 +8,10 @@ setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/prompt_state_defer.XXXXXX")"
     export PROMPT_STATE_DEFER_HISTORY_FILE="$TEST_TMPDIR/history.tsv"
     export PROMPT_STATE_SESSION_ALERTS_FILE="$TEST_TMPDIR/session_alerts.txt"
+    # These tests exercise defer-history reconciliation, not the independent
+    # three-layer search preflight. Keep that dependency deterministic so each
+    # case measures only the contract under test.
+    export PROMPT_STATE_PREFLIGHT_CMD=/bin/true
     printf '2026-07-02T20:41:51+0900\t先送り判断: SKILL.md script参照: 要確認あり が3セッション連続\n' > "$PROMPT_STATE_DEFER_HISTORY_FILE"
 }
 
