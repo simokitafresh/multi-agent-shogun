@@ -405,7 +405,7 @@ def new_file_candidates():
 def is_ignored_new_file_candidate(path):
     name = Path(path).name
     return (
-        path.startswith(".karo_worktrees/")
+        re.match(r"^\.[^/]+_worktrees/", path) is not None
         or path.startswith("tests/unit/_tmp_")
         or "/_tmp_" in path
         or name.startswith("_tmp_")
@@ -873,7 +873,7 @@ except OSError:
 def is_ignored_new_file_candidate(path):
     name = Path(path).name
     return (
-        path.startswith(".karo_worktrees/")
+        re.match(r"^\.[^/]+_worktrees/", path) is not None
         or path.startswith("tests/unit/_tmp_")
         or "/_tmp_" in path
         or name.startswith("_tmp_")

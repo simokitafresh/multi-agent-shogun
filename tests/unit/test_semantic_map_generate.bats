@@ -127,10 +127,11 @@ EOF
     fi
 }
 
-@test "semantic_map_generate ignores karo worktree assets but retains ordinary new code" {
+@test "semantic_map_generate ignores every agent worktree but retains ordinary new resources" {
     write_fixture
-    mkdir -p .karo_worktrees/probe scripts queue
-    touch .karo_worktrees/probe/transient.sh scripts/ordinary_candidate.sh
+    mkdir -p .karo_worktrees/probe .hayate_worktrees/probe scripts docs/research queue
+    touch .karo_worktrees/probe/transient.sh .hayate_worktrees/probe/transient.sh \
+        scripts/ordinary_candidate.sh docs/research/worktree-design.md
     cat > scripts/insight_stub.sh <<'EOF'
 #!/bin/bash
 printf '%s\n' "$1" >> queue/insights.log
@@ -138,10 +139,39 @@ EOF
     chmod +x scripts/insight_stub.sh
 
     run env SEMANTIC_INSIGHT_WRITE="$TEST_TMPDIR/scripts/insight_stub.sh" \
-        SEMANTIC_NEW_FILE_LIST=$'.karo_worktrees/probe/transient.sh\nscripts/ordinary_candidate.sh' \
+        SEMANTIC_NEW_FILE_LIST=$'.karo_worktrees/probe/transient.sh\n.hayate_worktrees/probe/transient.sh\nscripts/ordinary_candidate.sh\ndocs/research/worktree-design.md' \
         bash scripts/semantic_map_generate.sh
     [ "$status" -eq 0 ]
-    [[ "$output" == *"new file semantic insights queued: 1"* ]]
+    [[ "$output" == *"new file semantic insights queued: 2"* ]]
     [ "$(grep -F -c '.karo_worktrees/probe/transient.sh' queue/insights.log || true)" -eq 0 ]
+    [ "$(grep -F -c '.hayate_worktrees/probe/transient.sh' queue/insights.log || true)" -eq 0 ]
     [ "$(grep -F -c 'scripts/ordinary_candidate.sh' queue/insights.log)" -eq 1 ]
+    [ "$(grep -F -c 'docs/research/worktree-design.md' queue/insights.log)" -eq 1 ]
+}
+
+@test "semantic_map_generate auto-resolves pending insights for every agent worktree only" {
+    write_fixture
+    mkdir -p queue scripts
+    cat > queue/insights.yaml <<'EOF'
+- id: INS-HAYATE
+  insight: "semantic_map_generate新規ファイル候補: `.hayate_worktrees/probe/transient.sh` は未登録"
+  source: semantic_map_generate:new_file
+  status: pending
+- id: INS-ORDINARY
+  insight: "semantic_map_generate新規ファイル候補: `docs/research/worktree-design.md` は未登録"
+  source: semantic_map_generate:new_file
+  status: pending
+EOF
+    cat > scripts/insight_write.sh <<'EOF'
+#!/bin/bash
+[ "$1" = "--resolve" ] || exit 1
+printf '%s\n' "$2" >> queue/resolved.log
+EOF
+    chmod +x scripts/insight_write.sh
+
+    run env SEMANTIC_INSIGHT_AUTO_RESOLVE=1 bash scripts/semantic_map_generate.sh
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"semantic insights auto-resolved: 1"* ]]
+    [ "$(grep -F -c 'INS-HAYATE' queue/resolved.log)" -eq 1 ]
+    [ "$(grep -F -c 'INS-ORDINARY' queue/resolved.log || true)" -eq 0 ]
 }
