@@ -6,6 +6,10 @@ ROOT="${SHOGUN_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 LEDGER="${TEST_TIMING_LEDGER:-$ROOT/logs/test_timing_ledger.tsv}"
 OUT_DIR="${TEST_SPEED_TASK_DIR:-$ROOT/queue/training}"
 THRESHOLD="${TEST_SPEED_THRESHOLD_SEC:-10}"
+CAMPAIGN_LEDGER="${TEST_SPEED_CAMPAIGN_LEDGER:-$ROOT/logs/test_speed_campaign_ledger.tsv}"
+MIN_ROUNDS=2
+MAX_ROUNDS=3
+CAMPAIGN_BUDGET_SEC=600
 
 active_or_completed() {
     local target="$1"
@@ -91,8 +95,57 @@ next_target() {
     return 1
 }
 
+append_campaign() {
+    local campaign="$1" round="$2" target="$3" best="$4" last="$5" approach="$6" stop="$7"
+    mkdir -p "$(dirname "$CAMPAIGN_LEDGER")"
+    if [ ! -s "$CAMPAIGN_LEDGER" ]; then
+        printf 'campaign_id\tround_index\ttarget_path\tbest_wall\tlast_wall\tapproach\tstop_reason\n' > "$CAMPAIGN_LEDGER"
+    fi
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$campaign" "$round" "$target" "$best" "$last" "$approach" "$stop" >> "$CAMPAIGN_LEDGER"
+}
+
+emit_round_task() {
+    local campaign="$1" round="$2" target="$3" best="$4" elapsed="$5" slug stamp file
+    slug=$(basename "$target" .bats | tr -c '[:alnum:]_-' '_')
+    stamp=$(date +%Y%m%d%H%M%S)
+    file="$OUT_DIR/test_speed_${campaign#cmd_training_test_speed_}_r${round}_${stamp}.yaml"
+    cat > "$file" <<YAML
+task:
+  parent_cmd: "${campaign}"
+  task_id: "${campaign}_r${round}_${stamp}"
+  task_type: training
+  estimated_minutes: 5
+  project: infra
+  target_path: "$target"
+  status: assigned
+  purpose: "round ${round}/${MAX_ROUNDS}: best_so_far ${best}s を基準にunit testを高速化する"
+  command: "支配項を実測し、共有fixture/cache化を優先する。頭打ちなら被テストscript本体へ切り替える。best_so_far=${best}s未満のみ改善として採用し、悪化runはcommitせずlast-goodへ戻す。検証は bash scripts/run_timed_bats.sh $target でFAIL0/SKIP0を強制する。"
+  acceptance_criteria:
+    - id: AC1
+      description: "best_so_far ${best}sとの比較、変更前後wall秒、支配項を実測し、FAIL=0・SKIP=0で全量完走する"
+    - id: AC2
+      description: "related_lessonsが注入された場合のみ有用性を検証する。round別report/commitを作り、完了後に test_speed_task_generator.sh continue を実行して台帳と次roundへ継承する"
+  related_lessons: []
+  speed_campaign:
+    campaign_id: "$campaign"
+    round_index: $round
+    min_rounds: $MIN_ROUNDS
+    max_rounds: $MAX_ROUNDS
+    campaign_budget_sec: $CAMPAIGN_BUDGET_SEC
+    elapsed_sec: $elapsed
+    best_wall: $best
+    baseline_policy: best_so_far
+    ctx_clear_after_round2_at_percent: 70
+  speed_evidence:
+    source: "logs/test_timing_ledger.tsv"
+    before_wall_sec: $best
+    quality_contract: "FAIL0; SKIP0; no expectation relaxation; shared fixture/cache first; switch to production script at plateau; deterioration is not adopted"
+YAML
+    printf '%s\n' "$file"
+}
+
 generate() {
-    local picked wall target slug stamp file
+    local picked wall target slug stamp file campaign
     mkdir -p "$OUT_DIR"
     exec 9>"$OUT_DIR/.test_speed_task_generator.lock"
     flock 9
@@ -100,29 +153,27 @@ generate() {
     wall=${picked%%$'\t'*}; target=${picked#*$'\t'}
     slug=$(basename "$target" .bats | tr -c '[:alnum:]_-' '_')
     stamp=$(date +%Y%m%d%H%M%S)
-    file="$OUT_DIR/test_speed_${slug}_${stamp}.yaml"
-    cat > "$file" <<YAML
-task:
-  parent_cmd: "cmd_training_test_speed_${slug}_${stamp}"
-  task_id: "cmd_training_test_speed_${slug}_${stamp}"
-  task_type: training
-  estimated_minutes: 5
-  project: infra
-  target_path: "$target"
-  status: assigned
-  purpose: "実測 ${wall}s のunit testを契約不変のまま5分以内へ高速化する"
-  command: "支配項を実測し、共有fixture/cache化を優先する。頭打ちなら被テストscript本体へ切り替える。検証は bash scripts/run_timed_bats.sh $target で実行し台帳追記を強制する。期待値緩和、SKIP/xfail追加、対象縮小は禁止。"
-  acceptance_criteria:
-    - id: AC1
-      description: "変更前後wall秒と支配項を実測し、bash scripts/run_timed_bats.sh $target により台帳へ追記し、FAIL=0・SKIP=0で対象bats全量完走する"
-    - id: AC2
-      description: "related_lessonsが注入された場合のみ各教訓の有用性を検証し、生成物をdeploy契約とgate_report_format契約に従い報告してscope限定commitする"
-  related_lessons: []
-  speed_evidence:
-    source: "logs/test_timing_ledger.tsv"
-    before_wall_sec: $wall
-    quality_contract: "FAIL0; SKIP0; no expectation relaxation; shared fixture/cache first; switch to production script at plateau"
-YAML
+    campaign="cmd_training_test_speed_${slug}_${stamp}"
+    append_campaign "$campaign" 0 "$target" "$wall" "$wall" selected ""
+    emit_round_task "$campaign" 1 "$target" "$wall" 0
+}
+
+continue_campaign() {
+    local campaign="${1:?campaign_id required}" round="${2:?round required}" target="${3:?target required}"
+    local best="${4:?best_wall required}" last="${5:?last_wall required}" approach="${6:?approach required}"
+    local quality="${7:?quality pass|fail|skip required}" dominant="${8:-none}" elapsed="${9:-0}" ctx="${10:-0}"
+    local adopted_best stop next file
+    adopted_best=$(awk -v b="$best" -v l="$last" 'BEGIN { printf "%.3f", (l < b ? l : b) }')
+    stop=""
+    if [ "$quality" != pass ]; then stop="quality_${quality}";
+    elif [ "$elapsed" -ge "$CAMPAIGN_BUDGET_SEC" ]; then stop="budget";
+    elif [ "$round" -ge "$MAX_ROUNDS" ]; then stop="max_rounds";
+    elif [ "$round" -ge "$MIN_ROUNDS" ] && [ "$dominant" = none ]; then stop="no_next_dominant"; fi
+    append_campaign "$campaign" "$round" "$target" "$adopted_best" "$last" "$approach" "$stop"
+    [ -z "$stop" ] || { printf 'STOP:%s\n' "$stop"; return 0; }
+    next=$((round + 1))
+    file=$(emit_round_task "$campaign" "$next" "$target" "$adopted_best" "$elapsed")
+    if [ "$round" -ge 2 ] && [ "$ctx" -ge 70 ]; then printf 'CLEAR_REQUIRED ledger=%s\n' "$CAMPAIGN_LEDGER"; fi
     printf '%s\n' "$file"
 }
 
@@ -134,5 +185,13 @@ case "${1:-generate}" in
     task=$(generate) || exit 1
     bash "$ROOT/scripts/deploy_task.sh" --direct --yaml "$task" "$ninja"
     ;;
-  *) echo "usage: $0 {next|generate|deploy NINJA}" >&2; exit 2 ;;
+  continue) shift; continue_campaign "$@" ;;
+  continue-deploy)
+    ninja="${2:?ninja required}"; shift 2
+    task=$(continue_campaign "$@") || exit 1
+    [[ "$task" == STOP:* ]] && { printf '%s\n' "$task"; exit 0; }
+    task=$(printf '%s\n' "$task" | tail -n 1)
+    bash "$ROOT/scripts/deploy_task.sh" --direct --yaml "$task" "$ninja"
+    ;;
+  *) echo "usage: $0 {next|generate|deploy NINJA|continue CAMPAIGN ROUND TARGET BEST LAST APPROACH QUALITY [DOMINANT ELAPSED CTX]|continue-deploy NINJA ...}" >&2; exit 2 ;;
 esac

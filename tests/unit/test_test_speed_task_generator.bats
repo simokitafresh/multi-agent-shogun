@@ -20,8 +20,42 @@ YAML
   generated="$output"
   grep -Fq 'target_path: "tests/unit/slow.bats"' "$generated"
   grep -Fq 'estimated_minutes: 5' "$generated"
+  grep -Fq 'min_rounds: 2' "$generated"
+  grep -Fq 'max_rounds: 3' "$generated"
+  grep -Fq 'baseline_policy: best_so_far' "$generated"
   grep -Fq 'FAIL0; SKIP0; no expectation relaxation' "$generated"
   grep -Fq 'shared fixture/cache first; switch to production script at plateau' "$generated"
+}
+
+@test "multi-round preserves best-so-far and rejects false improvement after deterioration" {
+  ledger="$TMP/logs/campaign.tsv"
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_TASK_DIR="$TMP/queue/training" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" \
+    bash "$ROOT/scripts/test_speed_task_generator.sh" continue camp 1 tests/unit/slow.bats 10 15 regression pass cache 120 20
+  [ "$status" -eq 0 ]
+  r2=$(printf '%s\n' "$output" | tail -n 1)
+  grep -Fq 'round_index: 2' "$r2"
+  grep -Fq 'best_wall: 10.000' "$r2"
+
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_TASK_DIR="$TMP/queue/training" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" \
+    bash "$ROOT/scripts/test_speed_task_generator.sh" continue camp 2 tests/unit/slow.bats 10 12 retry pass cache 300 75
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CLEAR_REQUIRED"* ]]
+  r3=$(printf '%s\n' "$output" | tail -n 1)
+  grep -Fq 'round_index: 3' "$r3"
+  grep -Fq 'best_wall: 10.000' "$r3"
+  [ "$(awk -F '\t' 'NR>1 && $4=="10.000" {n++} END{print n+0}' "$ledger")" -eq 2 ]
+}
+
+@test "multi-round records all four stop conditions" {
+  ledger="$TMP/logs/campaign.tsv"
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" bash "$ROOT/scripts/test_speed_task_generator.sh" continue cfail 1 t 10 10 x fail cache 1
+  [[ "$output" == 'STOP:quality_fail' ]]
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" bash "$ROOT/scripts/test_speed_task_generator.sh" continue cbudget 1 t 10 9 x pass cache 600
+  [[ "$output" == 'STOP:budget' ]]
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" bash "$ROOT/scripts/test_speed_task_generator.sh" continue cnone 2 t 10 9 x pass none 100
+  [[ "$output" == 'STOP:no_next_dominant' ]]
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" bash "$ROOT/scripts/test_speed_task_generator.sh" continue cmax 3 t 10 9 x pass cache 100
+  [[ "$output" == 'STOP:max_rounds' ]]
 }
 
 @test "generator returns no candidate when completed evidence already claims target" {
