@@ -17,6 +17,7 @@ setup() {
     deploy_task_scaffold "ten_min_contract"
     export FIXTURE_DIR="$TEST_TMPDIR/fixtures"
     mkdir -p "$FIXTURE_DIR"
+    printf 'task:\n  status: idle\n' > "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }
 
 teardown() {
@@ -32,20 +33,18 @@ write_fixture() {
 
 run_precheck() {
     local task_file="$1"
-    run bash -lc '
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
-        deploy_task_ten_min_contract_precheck "'"$task_file"'"
-    '
+    run deploy_task_ten_min_contract_precheck "$task_file"
 }
 
 run_source_precheck() {
     local task_file="$1" cmd_id="${2:-}"
-    run bash -lc '
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
-        deploy_task_source_contract_precheck "'"$task_file"'" "'"$cmd_id"'"
-    '
+    run deploy_task_source_contract_precheck "$task_file" "$cmd_id"
+}
+
+source_precheck_and_reset() {
+    deploy_task_source_contract_precheck "$1" || return
+    reset_stale_fields sasuke
+    [ "${_STALE_RESET_DONE:-0}" = 1 ]
 }
 
 @test "source precheck: invalid direct YAML BLOCK keeps existing task sha256 exact" {
@@ -75,13 +74,7 @@ run_source_precheck() {
     printf 'task:\n  estimated_minutes: 10\n' > "$source"
     mkdir -p "$(dirname "$task")"
     printf 'task:\n  status: idle\n  stale_marker: old\n' > "$task"
-    run bash -lc '
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
-        deploy_task_source_contract_precheck "'"$source"'" || exit
-        reset_stale_fields sasuke
-        [ "${_STALE_RESET_DONE:-0}" = 1 ]
-    '
+    run source_precheck_and_reset "$source"
     [ "$status" -eq 0 ]
 }
 
