@@ -1,0 +1,211 @@
+<title>将軍戦況ダッシュボード</title>
+<style>
+  :root {
+    --paper: #f2f3f0;
+    --card: #ffffff;
+    --ink: #1c2027;
+    --ink-2: #4c525e;
+    --ink-3: #7d838f;
+    --line: #d9dbd5;
+    --indigo: #2f4a7a;
+    --indigo-soft: #e6ebf4;
+    --shu: #b53a2b;
+    --shu-soft: #f6e7e4;
+    --ok: #2e7d4f;
+    --ok-soft: #e2efe7;
+    --warn: #9a6b13;
+    --warn-soft: #f5ecd8;
+    --wait: #7d838f;
+    --wait-soft: #eceded;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #15171c;
+      --card: #1d2027;
+      --ink: #e8e9e6;
+      --ink-2: #b3b7bd;
+      --ink-3: #82868f;
+      --line: #33373f;
+      --indigo: #8fa9d6;
+      --indigo-soft: #262d3b;
+      --shu: #e07362;
+      --shu-soft: #3a2523;
+      --ok: #6dbb8f;
+      --ok-soft: #21332a;
+      --warn: #d3a94f;
+      --warn-soft: #362d1a;
+      --wait: #82868f;
+      --wait-soft: #262930;
+    }
+  }
+  :root[data-theme="light"] {
+    --paper: #f2f3f0; --card: #ffffff; --ink: #1c2027; --ink-2: #4c525e; --ink-3: #7d838f;
+    --line: #d9dbd5; --indigo: #2f4a7a; --indigo-soft: #e6ebf4; --shu: #b53a2b; --shu-soft: #f6e7e4;
+    --ok: #2e7d4f; --ok-soft: #e2efe7; --warn: #9a6b13; --warn-soft: #f5ecd8; --wait: #7d838f; --wait-soft: #eceded;
+  }
+  :root[data-theme="dark"] {
+    --paper: #15171c; --card: #1d2027; --ink: #e8e9e6; --ink-2: #b3b7bd; --ink-3: #82868f;
+    --line: #33373f; --indigo: #8fa9d6; --indigo-soft: #262d3b; --shu: #e07362; --shu-soft: #3a2523;
+    --ok: #6dbb8f; --ok-soft: #21332a; --warn: #d3a94f; --warn-soft: #362d1a; --wait: #82868f; --wait-soft: #262930;
+  }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", "Meiryo", sans-serif;
+    line-height: 1.6; margin: 0; padding: 24px 20px 56px;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; border-bottom: 2px solid var(--ink); padding-bottom: 12px; }
+  header.top h1 { font-size: 1.35rem; margin: 0; letter-spacing: .04em; }
+  .stamp { margin-left: auto; font-size: .8rem; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .stamp b { color: var(--ink-2); font-weight: 600; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .tile .k { font-size: .72rem; letter-spacing: .09em; color: var(--ink-3); text-transform: uppercase; }
+  .tile .v { font-size: 1.18rem; font-weight: 700; letter-spacing: .01em; }
+  .tile .s { font-size: .8rem; color: var(--ink-2); }
+  .tile.ok .v { color: var(--ok); }
+  .tile.warn .v { color: var(--warn); }
+  .tile.shu .v { color: var(--shu); }
+
+  section.panel { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; }
+  section.panel h2 { font-size: .95rem; margin: 0 0 4px; letter-spacing: .06em; display: flex; align-items: center; gap: 10px; }
+  section.panel h2 .tag { font-size: .68rem; font-weight: 600; letter-spacing: .1em; color: var(--indigo); background: var(--indigo-soft); padding: 2px 8px; border-radius: 3px; }
+  section.panel .sub { font-size: .8rem; color: var(--ink-3); margin: 0 0 14px; }
+
+  ul.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  ul.steps li { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-top: 1px dashed var(--line); }
+  ul.steps li:first-child { border-top: none; }
+  .chip { flex: 0 0 auto; font-size: .68rem; font-weight: 700; letter-spacing: .06em; padding: 2px 9px; border-radius: 999px; margin-top: 3px; white-space: nowrap; }
+  .chip.done { background: var(--ok-soft); color: var(--ok); }
+  .chip.run { background: var(--warn-soft); color: var(--warn); }
+  .chip.wait { background: var(--wait-soft); color: var(--wait); }
+  .chip.stop { background: var(--shu-soft); color: var(--shu); }
+  .step-body { min-width: 0; }
+  .step-body .t { font-weight: 600; font-size: .9rem; }
+  .step-body .d { font-size: .8rem; color: var(--ink-2); }
+  code { font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace; font-size: .85em; background: var(--indigo-soft); color: var(--indigo); padding: 1px 5px; border-radius: 3px; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+
+  .tablewrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+  th { text-align: left; font-size: .7rem; letter-spacing: .09em; color: var(--ink-3); font-weight: 600; padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.mono, .mono { font-family: ui-monospace, "Cascadia Mono", "Consolas", monospace; font-variant-numeric: tabular-nums; font-size: .8rem; }
+
+  ol.log { margin: 0; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: .85rem; }
+  ol.log li { display: flex; gap: 12px; }
+  ol.log .tm { flex: 0 0 3.2em; color: var(--ink-3); font-family: ui-monospace, monospace; font-size: .78rem; padding-top: 2px; }
+  footer { font-size: .75rem; color: var(--ink-3); text-align: center; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>将軍戦況ダッシュボード</h1>
+    <span class="stamp">最終更新 <b>2026-07-14 17:15 JST</b> ｜ 将軍が随時更新</span>
+  </header>
+
+  <div class="tiles">
+    <div class="tile ok">
+      <span class="k">本番 保有シグナル</span>
+      <span class="v">復元完了 184/184</span>
+      <span class="s">7月全行 exact・ledger一致・バックアップ保全済み</span>
+    </div>
+    <div class="tile warn">
+      <span class="k">真因修正 cmd_3907</span>
+      <span class="v">SKIP除去中</span>
+      <span class="s">全量1995 PASS。期限=07-15 01:40 UTC cron前 live反映</span>
+    </div>
+    <div class="tile ok">
+      <span class="k">テスト時間免疫系</span>
+      <span class="v">P2・P3 全4本 CLEAR</span>
+      <span class="s">D3・D6・D7・D4'完了。残るはP4 evidence契約（台帳実測待ち）</span>
+    </div>
+    <div class="tile ok">
+      <span class="k">忍者陣形</span>
+      <span class="v">6/6 稼働</span>
+      <span class="s">停滞なし（15:07一次確認済み）</span>
+    </div>
+  </div>
+
+  <div class="cols">
+    <section class="panel">
+      <h2><span class="tag">戦線一</span>保有シグナル不変性（ledger-bound freeze）</h2>
+      <p class="sub">殿裁定 11:51「目的は過去の保有シグナルの不変性」— 複雑機構を退役し既存ledgerを磨く路線</p>
+      <ul class="steps">
+        <li><span class="chip done">完了</span><div class="step-body">
+          <div class="t">警報の原因確定</div>
+          <div class="d">ledger読込がORDER BYなし+末尾選択仮定 → 7月確定保有が6月値へ誤巻き戻し（本番実測で証明）</div></div></li>
+        <li><span class="chip done">完了</span><div class="step-body">
+          <div class="t"><code>cmd_3905</code> 本番復元 + 検証で漏れ発見→即修正</div>
+          <div class="d">161行復元 → 殿の「検証しよう」が7/13×23行の漏れを捕捉 → 7月全行184/184 exact・API 5/5 exact</div></div></li>
+        <li><span class="chip done">完了</span><div class="step-body">
+          <div class="t">警報検知の穴をふさぐ</div>
+          <div class="d">新規行INSERT経由のledger driftも発報するよう修正（GATE CLEAR）</div></div></li>
+        <li><span class="chip run">進行中</span><div class="step-body">
+          <div class="t"><code>cmd_3907</code> 真因修正 — 決定的選択 + fail-closed</div>
+          <div class="d">全量テスト1995 PASS・残SKIP1除去中。明日cron前のlive反映で誤巻き戻しは構造的に再発不能</div></div></li>
+        <li><span class="chip wait">待機</span><div class="step-body">
+          <div class="t"><code>cmd_3908</code> correction event専用経路</div>
+          <div class="d">過去訂正をreason・actor必須のappend-onlyへ一本化（3907完了後に配備）</div></div></li>
+        <li><span class="chip wait">待機</span><div class="step-body">
+          <div class="t"><code>cmd_3909</code> 未被覆478行のbaseline凍結</div>
+          <div class="d">確定域のledger被覆を100%へ（3908完了後に配備）→ 不変性の構造保証が完成</div></div></li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2><span class="tag">戦線二</span>テスト時間免疫系（gist cfd920e7）</h2>
+      <p class="sub">P0・P1・D2'完了済み。殿指示 13:25で P2・P3 実装cmd を全起票</p>
+      <ul class="steps">
+        <li><span class="chip done">完了</span><div class="step-body">
+          <div class="t"><code>cmd_3910</code> D6: codd-refactor契約差替え（疾風）</div>
+          <div class="d">GATE CLEAR。専用全量profile廃止 → 台帳top-N入力+前後run比較へ（契約回帰bats付き）</div></div></li>
+        <li><span class="chip done">完了</span><div class="step-body">
+          <div class="t"><code>cmd_3911</code> D3: バジェットratchet骨格</div>
+          <div class="d">GATE CLEAR。家老RCが過剰gate穴（全ファイル比較）を捕捉→変更テスト限定へ是正済み</div></div></li>
+        <li><span class="chip done">完了</span><div class="step-body">
+          <div class="t"><code>cmd_3912</code> D4': 陳腐化スキャン+モックcatalog（才蔵）</div>
+          <div class="d">GATE CLEAR。陳腐化4列検出+許可4類型からの乖離WARN — P3三本柱が完結</div></div></li>
+        <li><span class="chip done">完了</span><div class="step-body">
+          <div class="t"><code>cmd_3913</code> D7: テスト作成規律の入口契約化（影丸）</div>
+          <div class="d">GATE CLEAR。適用表4区分（新behavior必須・bugfix再現必須・refactor維持・docs免除）を既存検査へ統合</div></div></li>
+        <li><span class="chip wait">未起票</span><div class="step-body">
+          <div class="t">P4: full evidence契約</div>
+          <div class="d">台帳実測で二重全量コストを確認後に起票判断</div></div></li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2><span class="tag">陣形</span>忍者配備（16:16 陣形図）</h2>
+    <div class="tablewrap">
+      <table>
+        <tr><th>忍者</th><th>任務</th><th>状態</th></tr>
+        <tr><td>疾風</td><td class="mono">GA-253 retry budget修正 完了 → 次配備待ち</td><td>待機</td></tr>
+        <tr><td>影丸</td><td class="mono">cmd_3913（D7作成規律）完了 → 次配備待ち</td><td>待機</td></tr>
+        <tr><td>半蔵</td><td class="mono">CI RED修正 rc7（unit並列カスケード）</td><td>実装中</td></tr>
+        <tr><td>才蔵</td><td class="mono">cmd_3912（D4'）完了 → 次配備待ち</td><td>待機</td></tr>
+        <tr><td>小太郎</td><td class="mono">ALERT穴修正（完了）→ 次配備待ち</td><td>待機</td></tr>
+        <tr><td>飛猿</td><td class="mono">cmd_3912（D4'陳腐化+モック）</td><td>実装中</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag">裁定録</span>本日の殿裁定と帰結</h2>
+    <ol class="log">
+      <li><span class="tm">08:11</span><span>「厳密さは最終チェックのみ」— 途中試行の重契約を撤廃（overhead 69.6%実測が裏付け）</span></li>
+      <li><span class="tm">11:51</span><span>「複雑な仕組みはすべて無駄。目的は保有シグナルの不変性」— ledger-bound freeze採用。cmd_3902/3904退役</span></li>
+      <li><span class="tm">12:01</span><span>「即時修正せよ」— 復元完了（12:17）+ 真因修正cmd_3907起票</span></li>
+      <li><span class="tm">12:35</span><span>「freeze残りも起票を」— correction経路3908 + baseline凍結3909 起票</span></li>
+      <li><span class="tm">13:24</span><span>「検証しよう」— 復元漏れ7/13×23行を発見→即修正。ALERT検知の穴も特定→修正CLEAR</span></li>
+      <li><span class="tm">13:25</span><span>gist再構築（非決定性→freeze v2.0）+ テスト時間免疫系P2・P3実装続行（4本起票）</span></li>
+    </ol>
+  </section>
+
+  <footer>将軍戦況ダッシュボード ｜ 一次情報: 掲示板・GATE CLEAR・capture-pane ｜ 詳細はdashboard.md（家老更新）</footer>
+</div>
