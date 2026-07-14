@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-14 -->
+<!-- last_updated: 2026-07-15 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,20 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3368 | 家老掲示板要請(blt_195849, 2026-06-13)。deploy_task.shのinject_related_lessons関数(L4002)がPython exit 1で失敗し、safety net(10件universal lessons)に毎回フォールバックしている。3件連続(kagemaru×2, hayate×1)。教訓のタスク別マッチング精度が低下しており、毎配備で再発する構造バグ | infra | 06-14 | deploy_task.shの配備前stale除去対象にLe |
-| cmd_3369 | 軍師分析(blt_010852, 2026-06-14)。6月BLOCK 22件中10件(45%)がgate新ルール追加→cmd_skeleton未更新による非対称成長。gate側が賢くなるほど将軍BLOCKが増える構造。cmd_save.shにチェック追加した際にcmd_skeleton.shのテンプレートへ反映を強制する仕組みを構築する | infra | 06-14 | cmd_save.sh追加チェック3件(gate_scrip |
-| cmd_3370 | 軍師掲示板要請(blt_194349, 2026-06-13)。cmd_complete_gateのreflux実行がreportエントリ追記より先に走り、gate_result: nullが残存する(cmd_3362/3363/3360で実証)。手動更新で対処しているが構造バグ | infra | 06-14 | cmd_complete_gate.shのreflux競合修 |
-| cmd_3371 | 軍師意志依存調査(blt_011952, 2026-06-14)で特定。brainwash_checkフィールドは存在チェック(gate)済みだが中身が数値なしOKでも通過する。LG027横展開: 記入率≠検出率。数値なしをBLOCK化しレビュー品質を構造的に強制する | infra | 06-14 | gate_gunshi_cs_checklist.shのbr |
-| cmd_3372 | 軍師意志依存調査(blt_011952)の項目(2)(3)。実動作確認なし(L910付近)と実行確認欄(step three five verified)未記入(L949付近)が共にWARNのみで通過可能。infra変更レビューで実行証拠なしLGTMが出せる穴を塞ぐ | infra | 06-14 | AC1: gate_gunshi_cs_checklist. |
-| cmd_3373 | 軍師意志依存調査(blt_011952)の項目(4)(5)。cs_checklistはフィールド存在のみ検知で中身は意志依存。Quality Check三問は記録義務がなく自問の証拠がない。cs_checklist中身が空文字やnullでBLOCK+Quality Checkをbrainwash_check欄に統合し記録を強制する | infra | 06-14 | AC1: cs_checklistが空/nullのself_ |
-| cmd_3374 | 軍師意志依存調査(blt_011952)の項目(6)(7)。D0すべき場面(軽微修正)でD0しなくても何も起きない。利他還流でnot_neededと書けば通過する。D0未実施検出をWARN追加+not_neededに理由必須を追加する | infra | 06-14 | AC1: draft/reportでtypo/format等 |
-| cmd_3375 | 殿指示(2026-06-14)。忍法=ビルディングブロック(BB)ごとの特性を定量的に把握したい。各BBがリターン・リスクリターン・Avg UWPにどう貢献するかを分析する。シン忍法(pf_L1)と奥義(pf_L2)を対象に、全忍法PFのメトリクスをBB別に集計・比較する | dm-signal | 06-14 | 本番DB monthly_returns からpf_L1忍法 |
-| cmd_3376 | 殿指摘(2026-06-14)。教訓を記録しても使わないのは仕組みがないから。各論パッチ(α6指標だけ検出等)ではなく、全cmd起票前に三層記憶を自動検索し、cmd内容に関連する殿裁定・定義をcmd_save.shの出力に表示する汎用仕組みを構築する | infra | 06-14 | Check 11.12(show_three_layer_m |
-| cmd_3377 | 殿指示(2026-06-14)。cmd_3375はシャープで算出+pf_L0ベースラインなし。α6指標(CAGR・NHF・MaxDD・MRU・Calmar・Avg UWP)でpf_L0(四神)→pf_L1(シン忍法)→pf_L2(奥義)の各段差分を算出し、BB単体効果+BB組合せ行列を定量化する | dm-signal | 06-14 | pf_L0(四神12体均等)→pf_L1(シン忍法BB別3目 |
-| cmd_3378 | 殿指示(2026-06-14)。PFの構成を確認する際に将軍がportfoliosテーブルだけ見てtier_visibility_settingsやpipeline_configを確認しなかった。誰でもいつでもPF名を指定するだけで全構成を一発確認できるスクリプトを作る | dm-signal | 06-14 | scripts/check_pf_config.py作成: |
-| cmd_3379 | startup gateのSKILL.md script参照WARNが3セッション連続BLOCK(2026-06-14)。note_draft.sh(shellcheck SC1036修正 82fda53)とcmd_complete_gate.sh(reflux競合修正 23edb56)がSKILL.mdより新しい。5件のSKILL.mdを現行スクリプト動作と照合し追随更新する | infra | 06-14 | SKILL.md 5件を現行スクリプト動作と照合し追随更新。 |
-| cmd_3381 | 殿指示(2026-06-14)『偽陽性はバグだ』。cmd_save.sh L723 check_deferral_language_warnが品質向上文脈の語(N回連続startup BLOCK解消で起動品質向上)を先送りと誤判定。grepパターンに文脈除外を追加する | infra | 06-14 | cmd_save.sh L723 check_deferra |
-| cmd_3380 | 殿指示(2026-06-14)『偽陽性はバグだ。バグは修正しよう』。SG-PRE25がcommand欄の実行参照(bash scripts/X.sh等)を変更対象ファイルと誤判定し、毎セッション5件の家老waive作業が発生(10分/セッション負の複利)。軍師提案(blt_20260614_162444)に基づきcommand欄のファイル参照を自動分類するヒューリスティックを追加する | infra | 06-14 | SG-PRE25のcommand欄偽陽性修正完了。exec_ |
 | cmd_3383 | 殿指示(2026-06-15)。変わり身BBの名前TrendReversalFilterは本質(トレンドフォロー+ミーンリバージョンのペア戦略)と不一致。FE+BE両方でBB名を本質と一致させるために、影響範囲と依存関係を徹底調査する偵察cmd | dm-signal | 06-15 | TrendReversalFilterの全参照箇所を調査完了 |
 | cmd_3384 | 殿裁定(2026-06-15)。既存四つ目(MultiViewMomentumFilter)はunion(set)で4視点の投票数情報が消失する設計バグ。新BBを実装し、4視点の投票数に比例したウェイトをcontext.final_weightsに書込むことでengine既存伝搬経路(L179)を活用する | dm-signal | 06-15 | WeightedMultiViewMomentumFilte |
 | cmd_3385 | 殿指示(2026-06-15)。新四つ目(WeightedMultiView)BBのGSスクリプトを作成し、1パラメータ組合せで小規模実行してメモリ・時間・パリティを確認する。全探索は道具が動作確認できてから。構成PFは既存7忍法21体のみ(OOM防止。殿指示) | dm-signal | 06-15 | — |
@@ -377,3 +363,5 @@
 | cmd_3913 | 殿指示(2026-07-14 13:25 実装続行)。設計書P3のD7=新規実装のテスト作成義務を維持しつつ「テスト追加=無条件に善」を規律化する入口契約。飛猿偵察(GATE CLEAR済み)が統合先を確定済み: 新selector新設なし、cmd_save.shのcheck_ac_test_scope(L6440-6463)を入口統合先とし、既存test_select.shの3層mappingを再利用、軍師レビュー観点とreport契約へ観点拡張。適用表=新behavior:テスト必須・bugfix:再現regression必須・behavior不変refactor:既存coverage維持・docsとdata-only:実行テスト免除(根拠記載) | infra | 07-14 | D7作成規律を既存入口・レビュー正本・report契約へ統合 |
 | cmd_3912 | 殿指示(2026-07-14 13:25 実装続行)。設計書P3のD4'を実装する。重複test名と統合候補の抽出はgate_test_health.sh L145-185に既実装のため、差分のみ追加: (a)陳腐化判定の静的スキャン=4列(referenced_path_exists・production_symbol_exists・last_target_change_sha・spec_status)を同gateへ (b)モック使用箇所catalogと許可4類型(外部サービス・破壊的操作・実時間依存・side-effect境界の決定的failure injection)からの乖離検出。接続先と4列定義は飛猿偵察(GATE CLEAR済み)がcmd_3894棚卸しの現物から確定済み | infra | 07-14 | D4静的scan実装を検証: fixture 19/19、全 |
 | cmd_3920 | 殿指示(2026-07-14 22:25「家老に本体スクリプトの面攻略をテスト高速化と同じ仕組みで実行させよ。利他の精神でCMDを起票せよ」+22:04裁定「本体スクリプトの面攻略がベター」)の環境埋込み。既存speed_trainingレーン(logs/script_speed_training_ledger.yaml+tools/bash_speed_training.sh+ninja_monitor自動配備)はidle自動配備を持つが、弾選定がledger先頭からの単純順次(ファイル名順)で優先根拠がなく、テスト側レーン(cmd_3919)で実証済みの実測優先選定・品質契約焼き込み・安全ガードを欠く。テスト側で今夜実証された型を本体レーンへ移植し、面攻略を自走化する | infra | 07-14 | 本体速度レーンを実測優先選定へ変更し、品質契約・satura |
+| cmd_3930 | 殿指示(2026-07-14 22:34「家老ー軍師ー忍者6名の間のボトルネックがあれば覚醒して利他の精神で解決しよう」)への軍師の一次特定(掲示板blt_20260714_224715)の環境化。家老CTX 81%到達の主因の上位2つを排除する: 軍師が全文レビュー済みの報告YAMLを家老も受領時に全文Readしている重複と、GATE処理の度にshogun_to_karo.yamlからcmd specを再Readする重複。SG7バンドル(軍師レビュー成果物)を完了処理の単一情報源へ昇格させ、家老の1サイクル読取り量を構造的に削減する | infra | 07-14 | — |
+| cmd_3932 | 殿指示(2026-07-14 22:34 家老ー軍師ー忍者間のボトルネック解消)と軍師特定Top3(blt_20260714_224715)の残項目。cmd_3931(SG7バンドルSSOT化、commit 6ada5c78b GATE CLEAR済み)で家老の報告YAML再読は解消済み。残るdashboard読み書きサイクルを、SG7バンドルのdashboard_lineを入力とするscript側append操作へ寄せ、家老LLMがdashboard.mdを開かずに完了処理を終えられるようにする | infra | 07-15 | SG7 bundleのdashboard_line生成・検証 |
