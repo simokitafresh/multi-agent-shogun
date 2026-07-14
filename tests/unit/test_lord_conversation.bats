@@ -8,7 +8,8 @@ setup_file() {
 }
 
 setup() {
-    export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/lord_conv_test.XXXXXX")"
+    export TEST_TMPDIR="$BATS_TEST_TMPDIR/lord_conv_test"
+    mkdir -p "$TEST_TMPDIR"
     export LORD_CONVERSATION="$TEST_TMPDIR/lord_conversation.jsonl"
     export LORD_CONVERSATION_LOCK="$TEST_TMPDIR/lord_conversation.jsonl.lock"
     source "$LORD_CONV_LIB"
