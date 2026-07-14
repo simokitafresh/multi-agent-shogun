@@ -324,7 +324,9 @@ setup() {
     # tree for every case; fixture mutation isolation remains unchanged.
     TEST_TMPDIR="$BATS_TEST_TMPDIR/shogun_startup"
     mkdir -p "$TEST_TMPDIR"
-    cp -a "$SHARED_BASE/." "$TEST_TMPDIR/"
+    # Prefer copy-on-write fixture clones where the filesystem supports them;
+    # --reflink=auto preserves the ordinary-copy fallback and test isolation.
+    cp -a --reflink=auto "$SHARED_BASE/." "$TEST_TMPDIR/"
 
     export ORIG_HOME="$HOME"
     export HOME="$TEST_TMPDIR/fakehome"

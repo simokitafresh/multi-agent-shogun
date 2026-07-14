@@ -19,8 +19,9 @@ cases; each case still receives an isolated copy of the shared base fixture.
 1. The test file sources the roughly 147 KB startup gate in every test process.
    Keep this until a bounded loader avoids the `MAX_ARG_STRLEN` failure recorded
    by L930; exporting the function is not safe.
-2. Every test copies the shared base fixture. Measure reflink support and
-   mutation isolation before replacing `cp -a`.
+2. Every test clones the shared base fixture with `cp -a --reflink=auto`.
+   Filesystems with copy-on-write support avoid payload copies; unsupported
+   filesystems retain the ordinary-copy fallback and mutation isolation.
 3. The gate itself launches many subprocesses per case. If fixture improvements
    plateau, profile the production script and remove repeated scans without
    weakening FAIL, SKIP, or coverage contracts.
