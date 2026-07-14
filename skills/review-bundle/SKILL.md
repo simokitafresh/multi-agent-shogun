@@ -54,8 +54,9 @@ bash scripts/gates/gate_gunshi_report_precheck.sh <report_path>
 
 ### Step 1: SG7バンドル生成
 
-レビュー結果は実行器で生成する。軍師が既読のcmd spec正本からAC数・scope・projectを
-自動転記し、atomic保存後、その実値とbundle pathを家老通知へ埋め込む:
+レビュー結果は実行器で生成する。APPROVE時は内部で `review_approval.sh ... gunshi LGTM`
+を先に成功させ、軍師が既読のcmd spec正本からAC数・scope・projectを自動転記し、
+atomic保存後、その実値とbundle pathを家老通知へ埋め込む。approval失敗時は通知0件・exit 2:
 ```bash
 python3 scripts/review_bundle.py generate --cmd "$CMD_ID" --verdict APPROVE --report "$REPORT_PATH"
 # FAIL時のみ

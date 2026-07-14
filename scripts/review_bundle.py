@@ -73,6 +73,16 @@ def generate(args):
         if not args.fail_reason: raise ValueError("FAIL requires --fail-reason")
         review["karo_attention"] = args.fail_reason
     bundle = {"review": review}; validate(bundle, args.cmd, verdict)
+    # LGTM is a bound approval, not a message label.  Persist the approval for
+    # this exact report fingerprint before any report_review_result can exist.
+    # inbox_write.sh independently validates the marker, preserving defense in
+    # depth when this generator is called outside the skill.
+    if verdict == "APPROVE" and not args.no_notify:
+        subprocess.run(
+            ["bash", str(root / "scripts/review_approval.sh"), args.cmd, "gunshi", "LGTM", str(report.relative_to(root))],
+            cwd=root,
+            check=True,
+        )
     path = root / f"queue/gates/{args.cmd}/sg7_bundle.json"; atomic_json(path, bundle); relative = str(path.relative_to(root)); spec = review["cmd_spec_summary"]
     notify_verdict = "LGTM" if verdict == "APPROVE" else "RC"
     message = f"{args.cmd} SG7 bundle. verdict: {notify_verdict}. report: {review['report']} bundle: {relative} cmd_spec_summary: acceptance_criteria_count={spec['acceptance_criteria_count']}, scope={json.dumps(spec['scope'], ensure_ascii=False, separators=(',', ':'))}, project={spec['project']}"
