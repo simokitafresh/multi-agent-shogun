@@ -1,13 +1,19 @@
 #!/usr/bin/env bats
 
+setup_file() {
+    PARITY_SUITE_TMPDIR="$(mktemp -d "$BATS_TMPDIR/parity_check.XXXXXX")"
+    export PARITY_SUITE_TMPDIR
+}
+
+teardown_file() {
+    [ -n "${PARITY_SUITE_TMPDIR:-}" ] && [ -d "$PARITY_SUITE_TMPDIR" ] && rm -rf "$PARITY_SUITE_TMPDIR"
+}
+
 setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     SCRIPT_PATH="$PROJECT_ROOT/scripts/parity_check.sh"
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/parity_check.XXXXXX")"
-}
-
-teardown() {
-    [ -n "${TEST_TMPDIR:-}" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+    TEST_TMPDIR="$PARITY_SUITE_TMPDIR/$BATS_TEST_NUMBER"
+    mkdir -p "$TEST_TMPDIR"
 }
 
 @test "--help returns usage without touching missing default paths" {

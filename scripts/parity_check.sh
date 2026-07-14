@@ -11,13 +11,6 @@
 
 set -euo pipefail
 
-_PC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# shellcheck source=scripts/lib/project_path.sh
-source "${_PC_ROOT}/scripts/lib/project_path.sh"
-DM_SIGNAL_PATH="${DM_SIGNAL_PATH:-$(get_project_path 'dm-signal')}"
-ENV_PATH="${ENV_PATH:-${DM_SIGNAL_PATH}/backend/.env}"
-EXPERIMENTS_DB="${EXPERIMENTS_DB:-${DM_SIGNAL_PATH}/analysis_runs/experiments.db}"
-
 print_usage() {
     echo "Usage: bash scripts/parity_check.sh <PF名 or UUID> [...]"
     echo "       bash scripts/parity_check.sh --all"
@@ -37,6 +30,16 @@ if [[ "${PARITY_CHECK_LIB_ONLY:-0}" != "1" ]]; then
         esac
     done
 fi
+
+# Resolve production paths only after argument-only fast paths have returned.
+# This avoids sourcing project_path.sh and scanning config/projects.yaml for
+# --help/no-argument calls while preserving the default production path.
+_PC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/lib/project_path.sh
+source "${_PC_ROOT}/scripts/lib/project_path.sh"
+DM_SIGNAL_PATH="${DM_SIGNAL_PATH:-$(get_project_path 'dm-signal')}"
+ENV_PATH="${ENV_PATH:-${DM_SIGNAL_PATH}/backend/.env}"
+EXPERIMENTS_DB="${EXPERIMENTS_DB:-${DM_SIGNAL_PATH}/analysis_runs/experiments.db}"
 
 is_help_request() {
     local arg
