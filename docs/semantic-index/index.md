@@ -6848,3 +6848,52 @@ codd:
 | causal | `cmd_reflux_promotion_202607090418_saizo` files_modified: [[cmd_save_gate_catalog]] |
 | causal | `cmd_karo_hotfix_startup_alerts_202607101046` files_modified: [[cmd_save_gate_catalog]] |
 | causal | `cmd_3891` files_modified: [[cmd_save_gate_catalog]] |
+
+## infra_research_backlink_inventory_20260715 — Infra研究文書の主題別導線
+
+将軍startupの因果backlink在庫を、本文の重複や候補除外を行わず既存セマンティック索引から主題別に接続する。
+
+### テスト速度・fixture最適化
+
+- [[deploy-task-ac-version-test-speed]]
+- [[deploy-task-lifecycle-test-speed]]
+- [[deploy-task-template-generation-test-speed]]
+- [[deploy-task-yaml-injection-test-speed]]
+- [[gate-lesson-health-test-speed]]
+- [[guard14-db-trust-test-speed]]
+- [[gunshi-cs-checklist-test-speed]]
+- [[gunshi-precheck-variation-contract-test-speed]]
+- [[heavy-job-admission-test-speed]]
+- [[inbox-write-test-speed]]
+- [[infra-misc-small-consolidated-test-speed]]
+- [[insight-write-test-speed]]
+- [[learning-ops-small-consolidated-test-speed]]
+- [[memory-db-test-speed]]
+- [[ninja-monitor-clear-guard-test-speed]]
+- [[ninja-monitor-stall-test-speed]]
+- [[parent-cmd-contract-test-speed]]
+- [[prompt-state-defer-reconcile-test-speed]]
+- [[prompt-state-skill-trigger-test-speed-cycle2]]
+- [[report-template-gate-compat-test-speed]]
+- [[review-two-phase-test-speed]]
+- [[skill-feedback-loop-test-speed]]
+- [[three-layer-preflight-test-speed]]
+
+### 運用契約・因果設計
+
+- [[ga216_lesson_context_reflux]]
+- [[ga226_context_freshness_revert_stale_20260712]]
+- [[ga238_context_freshness_root_cause]]
+- [[gunshi_precompute_fingerprint_skip_design_20260711]]
+- [[lessons_shogun_a04_a09_detail]]
+- [[nondeterminism-single-path-asis-tobe-5w1h_20260711]]
+- [[review-two-phase-runbook]]
+- [[semantic-lesson-id-scope-collision-20260714]]
+
+### SSOT監査
+
+- [[kotaro]]
+- [[ssot-audit-round2-clinic-expense-tracker]]
+- [[ssot-audit-round2-crossproject]]
+- [[ssot-audit-round2-dividend-tracker]]
+- [[ssot-audit-round2-dm-signal]]
