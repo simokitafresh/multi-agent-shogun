@@ -109,10 +109,10 @@ YAML
   grep -Fq 'related_lessonsが注入された場合のみ' "$generated"
 }
 
-@test "idle priority is reflux then test speed then script speed then legacy" {
+@test "idle priority is reflux then script speed then test speed then legacy" {
   body=$(sed -n '/handle_confirmed_idle()/,/^}/p' "$ROOT/scripts/ninja_monitor.sh")
   order=$(printf '%s\n' "$body" | grep -E '_handle_(reflux|test_speed|speed_training|training)_auto_deploy' | sed -E 's/.*_handle_([^ ]+) .*/\1/' | tr '\n' ' ')
-  [ "$order" = "reflux_auto_deploy test_speed_auto_deploy speed_training_auto_deploy training_auto_deploy " ]
+  [ "$order" = "reflux_auto_deploy speed_training_auto_deploy test_speed_auto_deploy training_auto_deploy " ]
 }
 
 @test "test speed auto-deploy only replaces an explicitly idle task" {

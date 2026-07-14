@@ -3935,9 +3935,9 @@ handle_confirmed_idle() {
     _record_training_effect "$name"  # 修行完了時にbefore/after FAIL率を比較記録 (cmd_2767)
     _trigger_training_completion_check "$name"  # 修行完了判定→SKILL.md自動更新 (cmd_3230: Phase3)
     if _handle_reflux_auto_deploy "$name" "$now"; then return; fi
-    # Unit速度攻略はproduction work。修行系より先に弾を供給する。
-    if _handle_test_speed_auto_deploy "$name"; then return; fi
+    # 殿裁定(2026-07-15): 本体script面攻略をBats深掘りより優先する。
     if _handle_speed_training_auto_deploy "$name" "$now"; then return; fi
+    if _handle_test_speed_auto_deploy "$name"; then return; fi
     if _handle_training_auto_deploy "$name" "$now"; then return; fi
     _handle_auto_clear "$name" "$now"
 
