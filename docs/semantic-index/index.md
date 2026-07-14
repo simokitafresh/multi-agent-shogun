@@ -5858,7 +5858,7 @@ codd:
 |------|---|
 | id | test_quality_framework |
 | label | テスト品質統合フレームワーク |
-| aliases | テスト統合, test consolidation, テストクオリティ, test quality, テストファイル整理, 小ファイル統合, test_is_debt, test_cleanup, test_gap, test_file_granularity, script_unit_consolidation, テスト負債, 回帰テスト不足, 専用回帰テスト不足, 回帰テスト追加, regression test gap, @test境界, test_select, テスト選定, 変更差分テスト選定, 影響テスト抽出, テストマッピング構築, gate依存テスト選択, SKILL変更テスト除外, saizoはいろいろ計測しているようだな, file uncovered phrase |
+| aliases | run_tests通常実行の自動計測データ化, テスト時間免疫系, テスト統合, test consolidation, テストクオリティ, test quality, テストファイル整理, 小ファイル統合, test_is_debt, test_cleanup, test_gap, test_file_granularity, script_unit_consolidation, テスト負債, 回帰テスト不足, 専用回帰テスト不足, 回帰テスト追加, regression test gap, @test境界, test_select, テスト選定, 変更差分テスト選定, 影響テスト抽出, テストマッピング構築, gate依存テスト選択, SKILL変更テスト除外, saizoはいろいろ計測しているようだな, file uncovered phrase |
 | skills | |
 | related_concepts | codd_methodology, cmd_quality_logging, parameter_space_integrity, modern_web_guidance |
 
