@@ -19,6 +19,7 @@ safe_key="${agent_id}_${pane_id}"
 safe_key="${safe_key//[^A-Za-z0-9_.-]/_}"
 evidence_file="$EVIDENCE_DIR/evidence_${safe_key}.json"
 nonce_file="$evidence_file.current"
+publish_lock="${evidence_file}.publish.lock"
 
 json_escape() {
     local value="$1"
@@ -45,7 +46,10 @@ issue() {
     # Invalidate before parsing or searching: a malformed/failed new prompt
     # must not inherit the previous prompt's proof.
     mkdir -p "$EVIDENCE_DIR"
-    rm -f "$evidence_file" "$nonce_file"
+    (
+        flock -x 9
+        rm -f "$evidence_file" "$nonce_file"
+    ) 9>"$publish_lock"
     if [[ -n "$prompt_arg" ]]; then
         prompt="$prompt_arg"
     else
@@ -113,14 +117,24 @@ issue() {
     local status=success
     [[ "$memory_rc" == 0 && "$semantic_rc" == 0 && "$obsidian_rc" == 0 ]] || status=failed
     tmp_file="$(mktemp "$EVIDENCE_DIR/.evidence.XXXXXX")"
+    local nonce_tmp
+    nonce_tmp="$(mktemp "$EVIDENCE_DIR/.nonce.XXXXXX")"
     {
         printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","status":"%s"}\n' \
             "$(json_escape "$agent_id")" "$(json_escape "$pane_id")" "$prompt_hash" "$nonce" "$issued_at" \
             "$memory_rc" "$semantic_rc" "$obsidian_rc" "$status"
     } >"$tmp_file"
-    mv -f "$tmp_file" "$evidence_file"
-    printf '%s\n' "$nonce" >"${nonce_file}.tmp"
-    mv -f "${nonce_file}.tmp" "$nonce_file"
+    printf '%s\n' "$nonce" >"$nonce_tmp"
+    # Evidence and its current nonce form one generation.  A fixed
+    # ${nonce_file}.tmp let concurrent issue calls delete each other's temp;
+    # without serialization, their two final renames could also publish a
+    # mismatched pair.  Unique temps plus this short publish-only lock preserve
+    # generation consistency without serializing the three searches.
+    (
+        flock -x 9
+        mv -f "$tmp_file" "$evidence_file"
+        mv -f "$nonce_tmp" "$nonce_file"
+    ) 9>"$publish_lock"
     [[ "$status" == success ]] || {
         printf 'three_layer_preflight: %s evidence failed (memory=%s semantic=%s obsidian=%s)\n' "$agent_id" "$memory_rc" "$semantic_rc" "$obsidian_rc" >&2
         return 1
@@ -180,11 +194,14 @@ verify() {
         target_real="$(realpath -m -- "$target")"
         [[ "$target_real" == "$root_real"/* ]] || return 0
     fi
-    [[ -s "$evidence_file" ]] || {
-        echo "BLOCK: 三層preflight証跡なし。UserPromptSubmit後に記憶DB・semantic・Obsidian検索を完了せよ。復旧: bash scripts/hooks/three_layer_preflight.sh issue \"<今の作業内容1行>\"" >&2
-        return 1
-    }
-    parsed_status="$(python3 - "$evidence_file" "$nonce_file" "${THREE_LAYER_PREACTION_MAX_AGE_SECONDS:-14400}" <<'PY'
+    # Read the two-file generation under the same lock used by invalidation and
+    # publish.  This prevents verify from observing the rename boundary between
+    # evidence JSON and its nonce while concurrent issue calls are active.
+    parsed_status="$(
+      {
+        flock -s 9
+        [[ -s "$evidence_file" && -s "$nonce_file" ]] || exit 4
+        python3 - "$evidence_file" "$nonce_file" "${THREE_LAYER_PREACTION_MAX_AGE_SECONDS:-14400}" <<'PY'
 import json, sys
 from datetime import datetime, timezone
 try:
@@ -208,6 +225,7 @@ if data.get("status") != "success" or any(str(data.get(key)) != "0" for key in (
     raise SystemExit(3)
 print("success")
 PY
+      } 9>"$publish_lock"
     )" || {
         echo "BLOCK: 三層preflight証跡が無効または失敗状態。復旧: bash scripts/hooks/three_layer_preflight.sh issue \"<今の作業内容1行>\" で再発行せよ" >&2
         return 1

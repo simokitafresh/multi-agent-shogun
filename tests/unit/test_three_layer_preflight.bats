@@ -124,6 +124,30 @@ JSON
     [ -s "$EVIDENCE" ]
 }
 
+@test "同一paneの並行issueは固有tempで世代整合しverify可能" {
+    local log="$TMP_EVIDENCE/parallel.log" verify_log="$TMP_EVIDENCE/verify.log"
+    : > "$log"
+    : > "$verify_log"
+    for i in 1 2 3 4; do
+        env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+            bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "parallel generation $i" >>"$log" 2>&1 &
+    done
+    local issue_pids verify_rc i
+    issue_pids="$(jobs -pr)"
+    for i in $(seq 1 80); do
+        verify_rc=0
+        verify Write "$ROOT/context/infrastructure.md" "" >>"$verify_log" 2>&1 || verify_rc=$?
+        [ "$verify_rc" -eq 0 ] || [ "$verify_rc" -eq 1 ]
+        sleep 0.01
+    done
+    wait $issue_pids
+
+    ! grep -Eq 'No such file|JSONDecodeError|Traceback|nonce mismatch' "$log" "$verify_log"
+    run verify Write "$ROOT/context/infrastructure.md" ""
+    [ "$status" -eq 0 ]
+    [ "$(find "$TMP_EVIDENCE" -maxdepth 1 -name '.nonce.*' | wc -l)" -eq 0 ]
+}
+
 @test "redirectを含むechoはread-only偽装としてBLOCK" {
     run verify Bash "" "echo ok > repo-file"
     [ "$status" -eq 1 ]

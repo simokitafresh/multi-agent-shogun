@@ -70,6 +70,25 @@ PY
     [ "$(wc -l < "$TEST_TMPDIR/create.calls")" -eq 1 ]
 }
 
+@test "missing cache read starts single-flight refresh and returns source immediately" {
+    create_memory_db_cache() {
+        printf 'create\n' >> "$TEST_TMPDIR/create.calls"
+        sleep 2
+        cp "$2" "$SHOGUN_MEMORY_DB_CACHE_PATH"
+    }
+    export -f create_memory_db_cache
+
+    local started elapsed_ms read_path
+    started="$(date +%s%3N)"
+    read_path="$(prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db")"
+    elapsed_ms=$(( $(date +%s%3N) - started ))
+
+    [ "$read_path" = "$TEST_TMPDIR/source.db" ]
+    [ "$elapsed_ms" -lt 1000 ]
+    wait_for_file "$SHOGUN_MEMORY_DB_CACHE_PATH"
+    [ "$(wc -l < "$TEST_TMPDIR/create.calls")" -eq 1 ]
+}
+
 @test "stale cache refresh serves the last complete snapshot without touching busy source" {
     create_memory_db_cache "$PROJECT_ROOT" "$TEST_TMPDIR/source.db"
     touch -d '2 minutes ago' "$SHOGUN_MEMORY_DB_CACHE_PATH"
