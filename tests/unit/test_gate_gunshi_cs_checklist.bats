@@ -1405,6 +1405,27 @@ YAML
     [[ "$output" == *"cmd_unresolved_redeploy_required"* ]]
 }
 
+@test "imperative resolved-words without d0_applied still warns (false positive guard)" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_imperative_fix
+  review_type: draft
+  observations:
+    - "フォーマット不備を修正済みにせよ"
+  timestamp: "2026-07-14T14:10:00"
+- cmd_id: cmd_imperative_resolve
+  review_type: draft
+  observations:
+    - "記入漏れを対応済みにする必要がある"
+  timestamp: "2026-07-14T14:11:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"WARN(AC1-D0未実施): 2件"* ]]
+    [[ "$output" == *"cmd_imperative_fix"* ]]
+    [[ "$output" == *"cmd_imperative_resolve"* ]]
+}
+
 @test "altruism_check not_needed without reason blocks with exit 2 (AC2 cmd_3374)" {
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
 - cmd_id: idle_study_X001

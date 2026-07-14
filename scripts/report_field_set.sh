@@ -674,6 +674,15 @@ elif found_s == 'false':
         print(\"  Correct: {found: false, no_lesson_reason: '既知教訓で被覆済み'}\", file=sys.stderr)
         sys.exit(1)
 " <<< "$val" || return 1
+                # found=true時にno_lesson_reasonが残っていれば自動消去（意味矛盾の正規化）
+                if [[ "$val" == *"found: true"* ]] && [[ "$val" == *"no_lesson_reason:"* ]]; then
+                    local _nlr
+                    _nlr=$(echo "$val" | grep -oP 'no_lesson_reason:\s*\K.+' || true)
+                    if [[ -n "$_nlr" && "$_nlr" != "''" && "$_nlr" != '""' ]]; then
+                        echo "INFO: found=true のため no_lesson_reason を自動消去" >&2
+                        bash "$SCRIPT_DIR/lib/yaml_field_set.sh" "$report" "$block_id" "lesson_candidate.no_lesson_reason" "" 2>/dev/null || true
+                    fi
+                fi
             fi
             ;;
         assumption_invalidation)

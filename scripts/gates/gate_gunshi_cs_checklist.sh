@@ -1284,7 +1284,7 @@ _d0_missing=$(awk '
     /^[[:space:]]*findings_summary:/ {
         if ($0 ~ /typo|フォーマット|format|missing.field|フィールド不備|記入漏れ|欠落|誤字|脱字|field.*missing|フィールド.*不備/) {
             has_minor = 1
-            if ($0 ~ /修正済み|訂正済み|解消済み|対応済み|再配備済み|再配備完了|→再配備[。．.!！]?"?[[:space:]]*$/) has_resolved = 1
+            if ($0 ~ /(修正済み|訂正済み|解消済み|対応済み|再配備済み|再配備完了)[。．.!！）)」"[:space:]]*$/ || $0 ~ /→再配備[。．.!！]?"?[[:space:]]*$/) { if ($0 !~ /(修正済み|訂正済み|解消済み|対応済み)[にをが]/) has_resolved = 1; else has_unresolved_minor = 1 }
             else has_unresolved_minor = 1
         }
     }
@@ -1293,7 +1293,7 @@ _d0_missing=$(awk '
     in_obs && /^[[:space:]]{4,}-/ {
         if ($0 ~ /typo|フォーマット|format|missing.field|フィールド不備|記入漏れ|欠落|誤字|脱字|field.*missing|フィールド.*不備/) {
             has_minor = 1
-            if ($0 ~ /修正済み|訂正済み|解消済み|対応済み|再配備済み|再配備完了|→再配備[。．.!！]?"?[[:space:]]*$/) has_resolved = 1
+            if ($0 ~ /(修正済み|訂正済み|解消済み|対応済み|再配備済み|再配備完了)[。．.!！）)」"[:space:]]*$/ || $0 ~ /→再配備[。．.!！]?"?[[:space:]]*$/) { if ($0 !~ /(修正済み|訂正済み|解消済み|対応済み)[にをが]/) has_resolved = 1; else has_unresolved_minor = 1 }
             else has_unresolved_minor = 1
         }
         next
