@@ -10,7 +10,10 @@ setup_file() {
 }
 
 setup() {
-    TMP_ROOT="$(mktemp -d)"
+    # setup_file already owns an isolated suite root. A deterministic per-test
+    # directory avoids one mktemp process per case while preserving isolation.
+    TMP_ROOT="$FIXTURE_ROOT/test_$BATS_TEST_NUMBER"
+    mkdir -p "$TMP_ROOT"
     LEDGER="$TMP_ROOT/script_speed_training_ledger.yaml"
     cp "$BASE_LEDGER" "$LEDGER"
     export SPEED_TRAINING_LEDGER="$LEDGER"
