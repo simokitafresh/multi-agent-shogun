@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 # test_skill_feedback_loop.bats — cmd_2459 skill execution feedback loop
+# Test-speed design: [[skill-feedback-loop-test-speed]]
 
 setup_file() {
     export PROJECT_ROOT
@@ -756,7 +757,7 @@ EOF
 # dashboard-update
 EOF
 
-    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 \
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKILL_EXECUTION_LOG_DISABLE=1 SKIP_AUTO_SECTION=1 \
         bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_5001 --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"completed evidence wins"* ]]
@@ -800,7 +801,7 @@ EOF
 # dashboard-update
 EOF
 
-    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_3000 --dry-run
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKILL_EXECUTION_LOG_DISABLE=1 SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_3000 --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"DRY-RUN: - **cmd_3000**:"* ]]
     [[ "$output" == *"fallback purpose"* ]]
@@ -842,7 +843,7 @@ EOF
 # dashboard-update
 EOF
 
-    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_training_L1_report-write_20260708020332 --dry-run
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKILL_EXECUTION_LOG_DISABLE=1 SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_training_L1_report-write_20260708020332 --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"DRY-RUN: - **cmd_training_L1_report-write_20260708020332**:"* ]]
     [[ "$output" == *"hyphenated skill training completed"* ]]
@@ -883,7 +884,7 @@ EOF
 # dashboard-update
 EOF
 
-    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_karo_hotfix_ga190 --dry-run
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKILL_EXECUTION_LOG_DISABLE=1 SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_karo_hotfix_ga190 --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"DRY-RUN: - **cmd_karo_hotfix_ga190**:"* ]]
     [[ "$output" == *"generated instructions hook fixed"* ]]
@@ -976,7 +977,7 @@ EOF
 # dashboard-update
 EOF
 
-    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4000
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKILL_EXECUTION_LOG_DISABLE=1 SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4000
     [ "$status" -eq 0 ]
     [[ "$output" == *"UPDATED: cmd_4000 line appended"* ]]
     [[ "$output" == *"WARN: DATA_QUALITY dashboard.md missing ## 最新更新"* ]]
@@ -1032,7 +1033,7 @@ EOF
 # dashboard-update
 EOF
 
-    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4002
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKILL_EXECUTION_LOG_DISABLE=1 SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4002
     [ "$status" -eq 0 ]
     [[ "$output" == *"UPDATED: cmd_4002 line appended"* ]]
     [[ "$output" == *"restored partial template dashboard from template"* ]]
@@ -1078,7 +1079,7 @@ EOF
 # dashboard-update
 EOF
 
-    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4001
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKILL_EXECUTION_LOG_DISABLE=1 SKIP_AUTO_SECTION=1 bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4001
     [ "$status" -eq 1 ]
     [[ "$output" == *"ERROR: DATA_QUALITY '## 最新更新' section not found"* ]]
     ! grep -q 'cmd_4001' "$TEST_REPO/dashboard.md"
