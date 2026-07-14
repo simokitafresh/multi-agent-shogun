@@ -601,11 +601,11 @@ pre_bash_combined_eval_command() {
         if [[ -f "$read_log" ]]; then
             recent_reads="$(tail -5 "$read_log" 2>/dev/null || true)"
             if [[ "$recent_reads" != *"$inbox_pattern"* ]]; then
-                pre_bash_combined_emit_deny "BLOCK: inbox_mark_read前にRead toolでinboxを読め。中身を確認せずに既読化するとメッセージ処理漏れが発生する(2026-04-07実証)"
+                pre_bash_combined_emit_deny "BLOCK: inbox_mark_read前にRead toolまたはscripts/inbox_read.shでinboxを読め。中身を確認せずに既読化するとメッセージ処理漏れが発生する(2026-04-07実証)"
                 return 1
             fi
         else
-            pre_bash_combined_emit_deny "BLOCK: inbox_mark_read前にRead toolでinboxを読め。read logが存在しない"
+            pre_bash_combined_emit_deny "BLOCK: inbox_mark_read前にRead toolまたはscripts/inbox_read.shでinboxを読め。read logが存在しない"
             return 1
         fi
     fi
