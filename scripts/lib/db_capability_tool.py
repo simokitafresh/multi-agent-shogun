@@ -636,14 +636,10 @@ def _restore_signal_july_drift_20260714(dsn: str, output: Path) -> dict:
 
 
 def _freeze_signal_ledger_baseline_20260715(dsn: str, output: Path) -> dict:
-    """Append exactly the 478 cmd_3909 baseline events and nothing else."""
+    """Freeze every currently uncovered confirmed signal without fixed counts."""
     import psycopg2
     from psycopg2.extras import Json, execute_values
 
-    expected_missing = 478
-    expected_portfolios = 76
-    expected_scope = 341_409
-    expected_covered_before = expected_scope - expected_missing
     target_sql = """
         SELECT s.portfolio_id, s.date, s.signal, s.holding_signal,
                s.momentum_data -> 'weights' AS ticker_weights
@@ -686,8 +682,35 @@ def _freeze_signal_ledger_baseline_20260715(dsn: str, output: Path) -> dict:
     insert_template = (
         "(%s, %s, %s, NULL, %s, %s, %s, %s, %s, "
         "'baseline', NULL, NULL, 'signals', %s, CURRENT_TIMESTAMP, "
-        "CURRENT_TIMESTAMP, 'cmd_3909_baseline_freeze')"
+        "CURRENT_TIMESTAMP, 'cmd_3947_predicate_freeze')"
     )
+    snapshot_sql = """
+        SELECT id, portfolio_id, rebalance_decision_date, effective_start_date,
+               effective_end_date, decision_holding_signal,
+               decision_ticker_weights, source_signal_date, source_signal,
+               source_ticker_weights, event_type, correction_reason_code,
+               correction_reason, source_table, source_row_ref, decided_at,
+               recorded_at, created_by
+        FROM signal_decision_ledger
+        ORDER BY id
+    """
+    snapshot_columns = (
+        "id", "portfolio_id", "rebalance_decision_date", "effective_start_date",
+        "effective_end_date", "decision_holding_signal", "decision_ticker_weights",
+        "source_signal_date", "source_signal", "source_ticker_weights", "event_type",
+        "correction_reason_code", "correction_reason", "source_table",
+        "source_row_ref", "decided_at", "recorded_at", "created_by",
+    )
+
+    def serialize_snapshot(snapshot_rows):
+        return [dict(zip(snapshot_columns, row)) for row in snapshot_rows]
+
+    def snapshot_hash(serialized_rows):
+        canonical = json.dumps(
+            serialized_rows, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":"), default=str,
+        ).encode()
+        return hashlib.sha256(canonical).hexdigest()
 
     conn = psycopg2.connect(dsn)
     conn.autocommit = False
@@ -716,34 +739,33 @@ def _freeze_signal_ledger_baseline_20260715(dsn: str, output: Path) -> dict:
             "LOCK TABLE signals, signal_decision_ledger IN SHARE ROW EXCLUSIVE MODE"
         )
 
-        cursor.execute("SELECT COUNT(*) FROM signal_decision_ledger")
-        ledger_before = int(cursor.fetchone()[0])
+        cursor.execute(snapshot_sql)
+        existing_rows_before = cursor.fetchall()
+        existing_snapshot = serialize_snapshot(existing_rows_before)
+        existing_snapshot_sha256 = snapshot_hash(existing_snapshot)
+        ledger_before = len(existing_rows_before)
+        max_existing_id = max((int(row[0]) for row in existing_rows_before), default=0)
         cursor.execute(target_sql)
         rows = cursor.fetchall()
         keys = {(str(row[0]), row[1]) for row in rows}
         portfolios = {str(row[0]) for row in rows}
-        if (len(rows), len(keys), len(portfolios)) != (
-            expected_missing,
-            expected_missing,
-            expected_portfolios,
-        ):
+        if len(rows) != len(keys):
             raise RuntimeError(
-                "baseline target drift: "
-                f"rows={len(rows)} keys={len(keys)} portfolios={len(portfolios)}"
+                f"baseline target contains duplicate keys: rows={len(rows)} keys={len(keys)}"
             )
         if any(row[3] is None or not str(row[3]).strip() for row in rows):
             raise RuntimeError("baseline target contains empty holding_signal")
 
         cursor.execute(coverage_sql)
         scope_before, covered_before = map(int, cursor.fetchone())
-        if (scope_before, covered_before) != (expected_scope, expected_covered_before):
+        if scope_before - covered_before != len(rows):
             raise RuntimeError(
-                "baseline coverage drift before insert: "
-                f"scope={scope_before} covered={covered_before}"
+                "baseline predicate/coverage mismatch before insert: "
+                f"scope={scope_before} covered={covered_before} targets={len(rows)}"
             )
 
         inventory = {
-            "cmd": "cmd_3909",
+            "cmd": "cmd_3947",
             "identity": {
                 "current_user": current_user,
                 "session_user": session_user,
@@ -755,9 +777,15 @@ def _freeze_signal_ledger_baseline_20260715(dsn: str, output: Path) -> dict:
             "scope_rows_before": scope_before,
             "covered_rows_before": covered_before,
             "ledger_rows_before": ledger_before,
+            "existing_ledger_max_id": max_existing_id,
+            "existing_ledger_sha256": existing_snapshot_sha256,
             "target_sql": target_sql.strip(),
             "coverage_sql": coverage_sql.strip(),
             "insert_sql": insert_sql.strip(),
+            "restore": {
+                "physical_delete": "forbidden",
+                "procedure": "For a wrong frozen value, append a correction event through POST /admin/signal-decision-ledger/corrections using this backup row and reason/actor; never UPDATE or DELETE existing ledger rows.",
+            },
             "rows": [
                 {
                     "portfolio_id": str(row[0]),
@@ -768,6 +796,7 @@ def _freeze_signal_ledger_baseline_20260715(dsn: str, output: Path) -> dict:
                 }
                 for row in rows
             ],
+            "existing_ledger_rows": existing_snapshot,
         }
         payload = (json.dumps(inventory, ensure_ascii=False, indent=2, default=str) + "\n").encode()
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -790,24 +819,39 @@ def _freeze_signal_ledger_baseline_20260715(dsn: str, output: Path) -> dict:
             (
                 str(row[0]), row[1], row[1], row[3], Json(row[4]) if row[4] is not None else None,
                 row[1], row[2], Json(row[4]) if row[4] is not None else None,
-                Json({"portfolio_id": str(row[0]), "date": row[1].isoformat(), "cutover": "cmd_3909"}),
+                Json({"portfolio_id": str(row[0]), "date": row[1].isoformat(), "cutover": "cmd_3947"}),
             )
             for row in rows
         ]
-        execute_values(cursor, insert_sql, values, template=insert_template, page_size=expected_missing)
-        inserted = int(cursor.rowcount)
-        if inserted != expected_missing:
+        if values:
+            execute_values(
+                cursor, insert_sql, values, template=insert_template,
+                page_size=len(values),
+            )
+            inserted = int(cursor.rowcount)
+        else:
+            inserted = 0
+        if inserted != len(rows):
             raise RuntimeError(f"baseline insert count drift: inserted={inserted}")
 
         cursor.execute("SELECT COUNT(*) FROM signal_decision_ledger")
         ledger_after = int(cursor.fetchone()[0])
+        cursor.execute(snapshot_sql.replace("ORDER BY id", "WHERE id <= %s ORDER BY id"), (max_existing_id,))
+        existing_rows_after = cursor.fetchall()
+        existing_snapshot_after = serialize_snapshot(existing_rows_after)
+        existing_snapshot_sha256_after = snapshot_hash(existing_snapshot_after)
         cursor.execute(coverage_sql)
         scope_after, covered_after = map(int, cursor.fetchone())
-        if ledger_after - ledger_before != expected_missing:
+        if ledger_after - ledger_before != inserted:
             raise RuntimeError(
                 f"ledger row delta drift: before={ledger_before} after={ledger_after}"
             )
-        if (scope_after, covered_after) != (expected_scope, expected_scope):
+        if existing_snapshot_after != existing_snapshot:
+            raise RuntimeError(
+                "existing ledger rows changed during append-only baseline freeze: "
+                f"before={existing_snapshot_sha256} after={existing_snapshot_sha256_after}"
+            )
+        if scope_after != scope_before or covered_after != scope_after:
             raise RuntimeError(
                 "baseline coverage drift after insert: "
                 f"scope={scope_after} covered={covered_after}"
@@ -821,12 +865,16 @@ def _freeze_signal_ledger_baseline_20260715(dsn: str, output: Path) -> dict:
             "portfolio_count": len(portfolios),
             "ledger_rows_before": ledger_before,
             "ledger_rows_after": ledger_after,
+            "existing_ledger_sha256_before": existing_snapshot_sha256,
+            "existing_ledger_sha256_after": existing_snapshot_sha256_after,
+            "existing_ledger_unchanged": True,
             "scope_rows": scope_after,
             "covered_rows": covered_after,
             "coverage_percent": 100.0,
             "other_table_writes": 0,
             "recalculate_runs": 0,
-            "correction_path": "append_signal_decision_correction",
+            "restore_procedure": inventory["restore"]["procedure"],
+            "correction_path": "POST /admin/signal-decision-ledger/corrections",
             "identity": inventory["identity"],
         }
     except Exception:
@@ -914,9 +962,9 @@ def main() -> int:
         args = parser.parse_args()
         project_root = Path(os.environ["DB_CAPABILITY_PROJECT_ROOT"]).resolve()
         output = Path(args.output).resolve()
-        expected_output = (project_root / "outputs" / "analysis" / "cmd_3909_baseline_freeze_inventory.json").resolve()
+        expected_output = (project_root / "outputs" / "analysis" / "cmd_3947_baseline_freeze_backup.json").resolve()
         if output != expected_output:
-            raise SystemExit("BLOCK: baseline inventory must use the cmd_3909 canonical output path")
+            raise SystemExit("BLOCK: baseline backup must use the cmd_3947 canonical output path")
         dsn = os.environ["DATABASE_URL"]
         parsed = urlsplit(dsn)
         resource_identity = parsed.hostname or ""

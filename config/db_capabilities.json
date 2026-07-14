@@ -33,7 +33,7 @@
       "tool": "scripts/lib/db_capability_tool.py",
       "project": "dm-signal",
       "modes": ["bounded_signal_ledger_baseline"],
-      "confirm": "FREEZE_EXACT_478_SIGNAL_LEDGER_BASELINES",
+      "confirm": "FREEZE_ALL_CURRENT_UNCOVERED_SIGNAL_LEDGER_BASELINES",
       "actions": ["freeze"],
       "allowed_child_flags": ["--output"],
       "required_credential_keys": ["DATABASE_URL"],

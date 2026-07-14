@@ -220,7 +220,7 @@ PY
   [ "$status" -eq 0 ]
 }
 
-@test "cmd_3909 baseline capability is exact-cardinality and non-generic" {
+@test "cmd_3947 baseline capability derives the live predicate and preserves existing ledger rows" {
   run python3 - "$ROOT/config/db_capabilities.json" "$ROOT/scripts/lib/db_capability_tool.py" "$BATS_TEST_TMPDIR/inventory.json" <<'PY'
 import importlib.util
 import json
@@ -232,7 +232,7 @@ from datetime import date, timedelta
 registry_path, tool_path, output_path = map(pathlib.Path, sys.argv[1:])
 contract = json.loads(registry_path.read_text())["capabilities"]["bounded_signal_ledger_baseline_20260715"]
 assert contract["modes"] == ["bounded_signal_ledger_baseline"]
-assert contract["confirm"] == "FREEZE_EXACT_478_SIGNAL_LEDGER_BASELINES"
+assert contract["confirm"] == "FREEZE_ALL_CURRENT_UNCOVERED_SIGNAL_LEDGER_BASELINES"
 assert contract["actions"] == ["freeze"]
 assert contract["allowed_child_flags"] == ["--output"]
 assert contract["requires_expected_commit"] is True
@@ -240,22 +240,29 @@ assert contract["requires_expected_commit"] is True
 spec = importlib.util.spec_from_file_location("db_capability_tool", tool_path)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
-rows = [
+target_rows = [
     (
-        f"pf-{i % 76:02d}",
-        date(2020, 1, 1) + timedelta(days=i // 76),
+        f"pf-{i % 2:02d}",
+        date(2020, 1, 1) + timedelta(days=i),
         "raw",
         "hold",
         {"SPY": 1.0},
     )
-    for i in range(478)
+    for i in range(3)
+]
+existing_rows = [
+    (
+        i, f"pf-{i:02d}", date(2020, 1, 1), date(2020, 1, 1), None,
+        "hold", {"SPY": 1.0}, date(2020, 1, 1), "raw", {"SPY": 1.0},
+        "initial", None, None, "signals", {"row": i}, None, None, "system",
+    )
+    for i in (1, 2)
 ]
 
 class Cursor:
     def __init__(self):
         self.value = None
         self.statements = []
-        self.ledger_reads = 0
         self.coverage_reads = 0
         self.rowcount = -1
     def execute(self, statement, params=None):
@@ -268,13 +275,14 @@ class Cursor:
         elif "recalculation_status" in text:
             self.value = (False,)
         elif text.startswith("SELECT COUNT(*) FROM signal_decision_ledger"):
-            self.ledger_reads += 1
-            self.value = (15160 if self.ledger_reads == 1 else 15638,)
+            self.value = (5,)
+        elif "SELECT id, portfolio_id" in text and "FROM signal_decision_ledger" in text:
+            self.value = existing_rows
         elif "WITH scope AS" in text:
             self.coverage_reads += 1
-            self.value = (341409, 340931 if self.coverage_reads == 1 else 341409)
+            self.value = (10, 7 if self.coverage_reads == 1 else 10)
         elif "FROM signals s" in text and "NOT EXISTS" in text:
-            self.value = rows
+            self.value = target_rows
         else:
             self.value = None
     def fetchone(self): return self.value
@@ -298,7 +306,7 @@ extras = types.ModuleType("psycopg2.extras")
 class Json:
     def __init__(self, value): self.value = value
 def execute_values(cursor, statement, values, template=None, page_size=None):
-    assert len(values) == page_size == 478
+    assert len(values) == page_size == 3
     cursor.statements.append((statement, values))
     cursor.rowcount = len(values)
 extras.Json = Json
@@ -310,10 +318,14 @@ sys.modules["psycopg2.extras"] = extras
 
 result = module._freeze_signal_ledger_baseline_20260715("unused", output_path)
 inventory = json.loads(output_path.read_text())
-assert inventory["row_count"] == 478 and inventory["portfolio_count"] == 76
-assert result["inserted_rows"] == 478
-assert result["ledger_rows_after"] - result["ledger_rows_before"] == 478
-assert result["scope_rows"] == result["covered_rows"] == 341409
+assert inventory["cmd"] == "cmd_3947"
+assert inventory["row_count"] == 3 and inventory["portfolio_count"] == 2
+assert len(inventory["existing_ledger_rows"]) == 2
+assert result["inserted_rows"] == 3
+assert result["ledger_rows_after"] - result["ledger_rows_before"] == 3
+assert result["scope_rows"] == result["covered_rows"] == 10
+assert result["existing_ledger_unchanged"] is True
+assert result["existing_ledger_sha256_before"] == result["existing_ledger_sha256_after"]
 assert result["other_table_writes"] == result["recalculate_runs"] == 0
 writes = [sql for sql, _ in connection.cursor_obj.statements if sql.lstrip().upper().startswith(("INSERT", "UPDATE", "DELETE"))]
 assert len(writes) == 1 and "INSERT INTO signal_decision_ledger" in writes[0]
