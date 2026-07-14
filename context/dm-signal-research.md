@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-14 cmd_3896 -->
-<!-- dm_signal_research_reflux: fingerprint=d1abac2eea53f707903f29049e35be2069682aa2960dd53f74e681add2cac504; mode=non-target; evidence_b64=c2FtZS10YXNrIHJldmlldyB0cmltIHVwZGF0ZXMgRE0tU2lnbmFsIGNhbm9uaWNhbCBkb2NzL3Rlc3RzIG9ubHk7IG11bHRpLWFnZW50IGNvbnRleHQgcmVtYWlucyBvdXRzaWRlIG5pbmphLW93bmVkIHByb2plY3QgdHJlZQ== -->
+<!-- dm_signal_research_reflux: fingerprint=b515426a3269ae0fb609b56b22e4940044533537459cc5f0f4bb5478e15501f3; mode=non-target; evidence_b64=Y21kXzM4NDDmraPmnKzlhoXjga52MS40LjI3LzI454mI5bGl5q2044O75o6h55So5pa55byP44O7REFH5ZCM5pyf44Gu44G/44CCY29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWTjga7ml6LlrZjntKLlvJXjgavjga9ibHRfMjAyNjA3MTRfMDkyNDMw5pyA57WCY2hlY2twb2ludOOBjOaXouOBq+WPjeaYoOOBleOCjOOAgeacrHRhc2vjgafntKLlvJXmnKzmlofov73liqDjga/kuI3opoHjgII= -->
 <!-- source_commit:345286d0 reason:cmd_3896_main_integration evidence:cmd_3896_content_present -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
