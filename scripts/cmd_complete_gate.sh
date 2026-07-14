@@ -159,6 +159,15 @@ if ! flock -n 209; then
     exit 0
 fi
 
+classify_missing_report_status() {
+    local status="${1,,}"
+    case "$status" in
+        assigned|acknowledged|in_progress) printf 'wait\n' ;;
+        idle|failed|canceled|cancelled|superseded|skipped) printf 'skip\n' ;;
+        *) printf 'missing\n' ;;
+    esac
+}
+
 # ─── 報告YAML解決関数（L085: 新命名規則対応、cmd_410: report_filename最優先） ───
 # 優先順位: 1. タスクYAMLのreport_filename  2. 新形式  3. 旧形式
 resolve_report_file() {
@@ -6060,7 +6069,7 @@ done
 auto_update_context_last_updated_for_changes "$CMD_ID" >/dev/null 2>&1 || true
 check_context_update "$CMD_ID"
 
-# ─── 報告YAML存在チェック（cmd_1192: タスクあり報告なしをBLOCK, GP-026: in_progress忍者はWAIT） ───
+# ─── 報告YAML存在チェック（cmd_1192: タスクあり報告なしをBLOCK, GP-026: 活動中忍者はWAIT） ───
 level_heading "[L1]" "Report YAML existence check:"
 REPORT_TASK_COUNT=0
 REPORT_FOUND_COUNT=0
@@ -6083,11 +6092,13 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
         echo "  ${ninja_name}: OK ($(basename "$report_file"))"
         notify_gunshi_for_report "$ninja_name" "$report_file" "$CMD_ID"
     else
-        # GP-026 B案(cmd_1332): done以外の全状態(assigned/acknowledged/in_progress)でWAIT
+        # GP-026 B案(cmd_1332): 活動中の3状態だけWAIT。idleは既に非稼働の
+        # stale taskであり、180秒待っでも報告は生成されない。
         ninja_status=$(grep -E '^\s+status:' "$task_file" | head -1 | sed 's/.*status:[[:space:]]*//' | tr -d "'" | tr -d '"')
-        if [[ "$ninja_status" =~ ^(failed|canceled|cancelled|superseded|skipped)$ ]]; then
+        missing_action=$(classify_missing_report_status "$ninja_status")
+        if [ "$missing_action" = "skip" ]; then
             echo "  [SKIP] ${ninja_name}: 報告YAML未着（status=${ninja_status}、再配備/失敗済みタスクのため待機対象外）"
-        elif [ "$ninja_status" != "done" ] && [ "$ninja_status" != "complete" ]; then
+        elif [ "$missing_action" = "wait" ]; then
             REPORT_WAIT_NINJAS+=("$ninja_name")
             echo "  [WAIT] ${ninja_name}: 報告YAML未着（status=${ninja_status}、リトライ待ち）"
         else

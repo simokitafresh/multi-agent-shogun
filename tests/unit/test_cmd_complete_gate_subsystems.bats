@@ -34,6 +34,7 @@ setup_file() {
         extract_function run_todo_fixme_residual_check
         extract_function run_skill_script_refs_check
         extract_function run_report_memory_semantic_scan
+        extract_function classify_missing_report_status
         sed -n '/^check_gs_bench_gate_warn()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^update_status()/,/^}/p' "$SRC_GATE_SCRIPT"
     } > "$SUBSYSTEM_HELPERS"
@@ -633,4 +634,36 @@ EOF
     _setup_ac_version; _write_acv_task "a3f2b1c9"; _write_acv_report ""
     run check_ac_version "$TEST_TMPDIR/queue/tasks/sasuke.yaml" "$TEST_TMPDIR/queue/reports/sasuke_report.yaml" "sasuke"
     [ "$status" -eq 0 ]; [[ "$output" == *"ac_version_read未記載"* ]]
+}
+
+_setup_missing_report_status() {
+    export TEST_TMPDIR
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/missing_report_status.XXXXXX")"
+}
+
+@test "missing report waits only for active task states" {
+    _setup_missing_report_status
+    for state in assigned acknowledged in_progress; do
+        run classify_missing_report_status "$state"
+        [ "$status" -eq 0 ]
+        [ "$output" = "wait" ]
+    done
+}
+
+@test "missing report skips idle and terminal inactive task states" {
+    _setup_missing_report_status
+    for state in idle failed canceled cancelled superseded skipped; do
+        run classify_missing_report_status "$state"
+        [ "$status" -eq 0 ]
+        [ "$output" = "skip" ]
+    done
+}
+
+@test "missing report fails fast for done and unknown states" {
+    _setup_missing_report_status
+    for state in done complete unexpected ""; do
+        run classify_missing_report_status "$state"
+        [ "$status" -eq 0 ]
+        [ "$output" = "missing" ]
+    done
 }
