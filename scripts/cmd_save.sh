@@ -5937,8 +5937,10 @@ check_research_artifact_reflux_ac() {
         "$TASK_TYPE" \
         "$(cmd_block_get_field "title")" \
         "$(cmd_block_get_field "purpose")")"
-    # Japanese classifier terms remain a full-command scan by contract.
-    SEARCH_TEXT_JA="${CMD_BLOCK_NC:-}"
+    # Keep Japanese classifier terms on the same semantic-header boundary as
+    # English. Full-command scanning misclassifies implementation commands when
+    # explanatory AC/q5 text merely mentions research, analysis, or investigation.
+    SEARCH_TEXT_JA="$SEARCH_TEXT_EN"
 
     if ! printf '%s\n' "$SEARCH_TEXT_EN" | grep -qiE '(^|[^[:alnum:]_])(research|analysis|investigation)([^[:alnum:]_]|$)' \
         && ! printf '%s\n' "$SEARCH_TEXT_JA" | grep -qE '研究|分析|調査|リサーチ'; then

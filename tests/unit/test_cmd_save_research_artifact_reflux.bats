@@ -137,3 +137,30 @@ teardown() {
     [[ "$output" == *"BLOCK_COUNT=1"* ]]
     [[ "$output" == *"LK-A10"* ]]
 }
+
+@test "LK-A10: Japanese classifier word only in explanatory AC text does not classify implementation cmd" {
+    local cmd='  type: implementation
+  project: infra
+  title: LK-A10分類器を修正
+  purpose: 日本語分類器の偽陽性を除去する
+  acceptance_criteria:
+  - 説明文にのみ研究・分析・調査を含む実装cmdがBLOCKされない'
+
+    run bash "$TEST_TMPDIR/run_check.sh" "$cmd" 2>&1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK_COUNT=0"* ]]
+}
+
+@test "LK-A10: Japanese classifier word in purpose still classifies true research cmd" {
+    local cmd='  type: task
+  project: infra
+  title: LK-A10検証
+  purpose: 日本語分類器を調査する
+  acceptance_criteria:
+  - 結果を確認する'
+
+    run bash "$TEST_TMPDIR/run_check.sh" "$cmd" 2>&1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK_COUNT=1"* ]]
+    [[ "$output" == *"LK-A10"* ]]
+}
