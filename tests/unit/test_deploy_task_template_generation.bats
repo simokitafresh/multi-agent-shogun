@@ -30,14 +30,17 @@ teardown_file() {
 }
 
 _fixture_project_start() {
-    deploy_task_scaffold "tmpl_gen"
+    if [ -z "${TEST_PROJECT:-}" ] || [ ! -d "$TEST_PROJECT" ]; then
+        deploy_task_scaffold "tmpl_gen"
+    else
+        rm -f "$TEST_PROJECT/queue/tasks/"*.yaml "$TEST_PROJECT/queue/reports/"*.yaml
+    fi
     # shellcheck disable=SC1090
     source "$TEST_PROJECT/scripts/lib/field_get.sh"
 }
 
 _fixture_project_end() {
-    deploy_task_teardown
-    unset TEST_TMPDIR TEST_PROJECT
+    : # Reuse the project: sourced deploy_task functions retain paths into it.
 }
 
 _save_report_fixture() {
@@ -66,6 +69,7 @@ _build_report_fixture() {
         # shellcheck disable=SC1090,SC1091
         export DEPLOY_TASK_LIB_ONLY=1
         source "$TEST_PROJECT/scripts/deploy_task.sh"
+        export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=0
         log() { :; }
         NINJA_NAME="sasuke"
 
@@ -103,6 +107,9 @@ report_block() {
 }
 
 _generate_report_fixtures() {
+    # These fixtures explicitly verify waiver generation; the shared helper's
+    # speed-only waiver bypass must not leak into this suite's contract.
+    export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=0
     _fixture_project_start
     _setup_git_project
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
@@ -143,7 +150,7 @@ task:
     - id: AC5
       description: "後続レビューで免除する"
 EOF
-    _build_report_fixture_full waive_ac
+    _build_report_fixture waive_ac
     _fixture_project_end
 
     _fixture_project_start
