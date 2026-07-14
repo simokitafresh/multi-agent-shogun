@@ -1,6 +1,6 @@
 # Prompt state skill-trigger Unit 高速化 cycle 2
 
-対象: [[test_prompt_state_inject_skill_trigger.bats]] / 被テスト: [[prompt_state_inject.sh]]
+対象: [[test_prompt_state_inject_skill_trigger.bats]] / 被テスト: [[prompt_state_inject.sh]] / 推薦器: [[skill_recommend.sh]]
 
 ## 改善候補
 

@@ -37,8 +37,42 @@ EOF
 projects: []
 current_project: dm-signal
 EOF
-  cp -a "$BATS_FILE_TMPDIR/skills" "$BATS_FILE_TMPDIR/role_skills"
-  cp -a "$BATS_FILE_TMPDIR/skills" "$BATS_FILE_TMPDIR/cache_skills"
+  mkdir -p "$BATS_FILE_TMPDIR/role_skills/lesson-sort" \
+    "$BATS_FILE_TMPDIR/role_skills/report-write" \
+    "$BATS_FILE_TMPDIR/role_skills/general-skill" \
+    "$BATS_FILE_TMPDIR/cache_skills/report-write"
+  cat > "$BATS_FILE_TMPDIR/role_skills/lesson-sort/SKILL.md" <<'EOF'
+---
+name: lesson-sort
+description: |
+  【将軍専用】家老・忍者は使用禁止。
+  TRIGGER: /lesson-sort、教訓ソート
+---
+EOF
+  cat > "$BATS_FILE_TMPDIR/role_skills/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+description: |
+  【忍者専用】報告YAML作成を標準化する。
+  TRIGGER: /report-write、報告作成
+---
+EOF
+  cat > "$BATS_FILE_TMPDIR/role_skills/general-skill/SKILL.md" <<'EOF'
+---
+name: general-skill
+description: |
+  Markerless skill.
+  TRIGGER: /general-skill、汎用確認
+---
+EOF
+  cat > "$BATS_FILE_TMPDIR/cache_skills/report-write/SKILL.md" <<'EOF'
+---
+name: report-write
+description: |
+  【忍者専用】報告YAML作成を標準化する。
+  TRIGGER: /report-write、報告YAML作成、報告記入
+---
+EOF
 }
 
 setup() {
@@ -166,31 +200,6 @@ PY
   export PROMPT_STATE_AGENT_ID="hayate"
   export PROMPT_STATE_SKILLS_DIR="$BATS_FILE_TMPDIR/role_skills"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_role_skills.sh"
-  mkdir -p "$PROMPT_STATE_SKILLS_DIR/lesson-sort" "$PROMPT_STATE_SKILLS_DIR/report-write" "$PROMPT_STATE_SKILLS_DIR/general-skill"
-  cat > "$PROMPT_STATE_SKILLS_DIR/lesson-sort/SKILL.md" <<'EOF'
----
-name: lesson-sort
-description: |
-  【将軍専用】家老・忍者は使用禁止。
-  TRIGGER: /lesson-sort、教訓ソート
----
-EOF
-  cat > "$PROMPT_STATE_SKILLS_DIR/report-write/SKILL.md" <<'EOF'
----
-name: report-write
-description: |
-  【忍者専用】報告YAML作成を標準化する。
-  TRIGGER: /report-write、報告作成
----
-EOF
-  cat > "$PROMPT_STATE_SKILLS_DIR/general-skill/SKILL.md" <<'EOF'
----
-name: general-skill
-description: |
-  Markerless skill.
-  TRIGGER: /general-skill、汎用確認
----
-EOF
   cat > "$PROMPT_STATE_SEMANTIC_SEARCH_CMD" <<'EOF'
 #!/usr/bin/env bash
 cat <<'OUT'
@@ -358,15 +367,6 @@ EOF
   export PROMPT_STATE_SKILLS_DIR="$BATS_FILE_TMPDIR/cache_skills"
   export PROMPT_STATE_AGENT_ID="hayate_cache_test"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_counting.sh"
-  mkdir -p "$PROMPT_STATE_SKILLS_DIR/report-write"
-  cat > "$PROMPT_STATE_SKILLS_DIR/report-write/SKILL.md" <<'EOF'
----
-name: report-write
-description: |
-  【忍者専用】報告YAML作成を標準化する。
-  TRIGGER: /report-write、報告YAML作成、報告記入
----
-EOF
   rm -f "$PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR/prompt_state_hayate_cache_test"
   cat > "$PROMPT_STATE_SEMANTIC_SEARCH_CMD" <<'EOF'
 #!/usr/bin/env bash
