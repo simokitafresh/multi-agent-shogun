@@ -2816,8 +2816,19 @@ generate_report_template() {
         parent_cmd cmd_id ac_version title task_type target_path scout_exempt \
         type scope_mode command constraints not_in_scope 2>/dev/null)" || true
 
+    # Reuse values already parsed by field_get_multi above.  Calling
+    # is_enforcement_variation_contract_task here reparsed the same YAML in a
+    # fresh Python process for every report template (the dominant hot path in
+    # template-generation tests).
     local _variation_checks_required=false
-    if is_enforcement_variation_contract_task "$task_file"; then
+    local _variation_text="${title} ${command} ${target_path} ${constraints} ${not_in_scope}"
+    _variation_text="${_variation_text,,}"
+    local _variation_task_type="${task_type:-${type:-${scope_mode:-}}}"
+    _variation_task_type="${_variation_task_type,,}"
+    if [[ ! "$_variation_task_type" =~ ^(scout|recon|recon2)$ ]] \
+        && [[ "$_variation_text" =~ enforcement|gate|hook|detector|guard|watcher|state[[:space:]_-]?machine|ゲート|フック|検知器|ガード|監視 ]] \
+        && [[ "$_variation_text" =~ scripts/|\.sh([^[:alnum:]_]|$)|\.py([^[:alnum:]_]|$)|コード変更|コード修正|実装|修正|implement|fix([^[:alnum:]_]|$) ]] \
+        && [[ ! "$_variation_text" =~ docs?[[:space:]_-]?only|documentation[[:space:]_-]?only|教訓のみ|fixtureのみ|索引のみ|docsのみ ]]; then
         _variation_checks_required=true
         yaml_field_set "$task_file" "task" "variation_checks_required" "true"
     else
