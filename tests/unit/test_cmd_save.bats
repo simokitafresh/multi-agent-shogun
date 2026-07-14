@@ -7,6 +7,7 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_SAVE_SCRIPT="$PROJECT_ROOT/scripts/cmd_save.sh"
     [ -f "$SRC_SAVE_SCRIPT" ] || return 1
+    export SRC_SAVE_EXTRACT_SCRIPT="$SRC_SAVE_SCRIPT"
 
     # 消火キーワードパターンをロード (Check 3 q9で使用)
     # shellcheck disable=SC1091
@@ -17,104 +18,40 @@ setup_file() {
     # 各チェック関数をsed -nで抽出+eval (setup_fileで1回のみ実行)
 
     # check_impl_push_ac: Check 11 — 既存関数をそのまま抽出
-    eval "$(sed -n '/^check_impl_push_ac()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_impl_push_ac()/,/^}/p' "$SRC_SAVE_EXTRACT_SCRIPT")"
     export -f check_impl_push_ac
 
     # check_ac_must_should_mix: Check 11.3 — AC推奨/必須混在検出
-    eval "$(sed -n '/^check_ac_must_should_mix()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    eval "$(sed -n '/^check_ac_must_should_mix()/,/^}/p' "$SRC_SAVE_EXTRACT_SCRIPT")"
     export -f check_ac_must_should_mix
 
     # check_gp_duplicate: Check 6インラインセクションを関数化
     eval "check_gp_duplicate() {
-$(sed -n '/^# --- Check 6:/,/^# --- Check 7:/{/^# --- Check 7:/d;p}' "$SRC_SAVE_SCRIPT")
+$(sed -n '/^# --- Check 6:/,/^# --- Check 7:/{/^# --- Check 7:/d;p}' "$SRC_SAVE_EXTRACT_SCRIPT")
 }"
     export -f check_gp_duplicate
 
     # check_3_7_checklist: Check 3.7インラインセクションを関数化
     eval "check_3_7_checklist() {
-$(sed -n '/# --- Check 3.7:/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_SCRIPT")
+$(sed -n '/# --- Check 3.7:/,/^    fi/{p;/^    fi/q}' "$SRC_SAVE_EXTRACT_SCRIPT")
 }"
     export -f check_3_7_checklist
 
     # check_q4_depth: q4_depthインラインセクションを関数化
     eval "check_q4_depth() {
-$(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:space:]]*# q5_verified_source:/d;p}' "$SRC_SAVE_SCRIPT")
+$(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:space:]]*# q5_verified_source:/d;p}' "$SRC_SAVE_EXTRACT_SCRIPT")
 }"
     export -f check_q4_depth
 
-    # check_quality_gate が依存する helper 群
-    eval "$(sed -n '/^trim_inline_yaml_scalar()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^path_exists_for_cmd_source()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^parent_exists_for_cmd_source()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^display_parent_for_cmd_source()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^load_cmd_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^load_cmd_block_cache()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^cmd_block_has_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^cmd_block_get_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^collect_primary_cmd_targets()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^is_gate_or_hook_addition_cmd()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^_is_gate_or_hook_addition_cmd_uncached()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^q11_has_existing_alternative_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^collect_assumption_source_files()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^extract_guard_list_from_files()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^q11_has_guard_duplicate_check()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^collect_q11_guard_list()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_gate_hook_action_conversion()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_lord_instruction_ac_alignment_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^collect_assumption_claims_missing_dates()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^collect_negative_claims_missing_grep_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^collect_bulletin_count_claims_missing_grep_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_measurement_env_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_lord_30min_cost_question()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_deferral_language_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_comparison_pipeline_parity_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^extract_acceptance_criteria_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_action_immediate_verification()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^extract_command_text_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^collect_numeric_derivation_source_evidence()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^numeric_derivation_source_evidence_exists()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_numeric_literal_derivation_source_info()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_self_reread_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^extract_cmd_target_path_text()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_three_layer_penetration()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_bundle_red_flag()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_cmd_text_pipe_danger()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^is_db_operation_command_text()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_db_backup_ac_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_execution_contract_requirements_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^build_warn_note()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^warn_note_key()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^warn_note_message()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^record_warn_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^record_block_reason()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^cmd_save_caller_check_name()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^abort_if_block_immediate()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^cmd_text_matches_pattern()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^warn_q5_pair_missing_session_state()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_depends_on_field()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_unverified_assumptions_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_assumption_source_paths_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_assumption_claim_dates_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_negative_claim_grep_evidence_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_bulletin_count_grep_evidence_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q4_depth_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_research_baseline_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q6_not_hiding_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q7_definition_verified_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q10_knowledge_boundary_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q5_code_reading_only_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q8_scope_expression_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q8_compound_question_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q8_when_how_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q8_where_who_warn()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q9_firefighting_root_cause_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q9_root_cause_label_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q9_prevention_label_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q9_root_cause_length_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q9_prevention_length_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_required_quality_gate_keys_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q11_guard_duplicate_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
-    eval "$(sed -n '/^check_q11_existing_alternative_block()/,/^}/p' "$SRC_SAVE_SCRIPT")"
+    # check_quality_gate が依存する helper 群を1回のsed走査で抽出する。
+    local extract_functions
+    extract_functions=$(sed -n "/^[[:space:]]*export -f gate_hook_quality_contract_action_text /{s/.*export -f //;p;q}" "$BATS_TEST_FILENAME")
+    local -a extract_args=()
+    local fn
+    for fn in $extract_functions; do
+        extract_args+=(-e "/^${fn}()/,/^}/p")
+    done
+    eval "$(sed -n "${extract_args[@]}" "$SRC_SAVE_EXTRACT_SCRIPT")"
     check_origin_field() { :; }
     check_gate_script_execution_evidence() { :; }
     is_gate_or_script_modification_cmd() { return 1; }
@@ -139,12 +76,12 @@ $(sed -n '/^[[:space:]]*# q4_depth:/,/^[[:space:]]*# q5_verified_source:/{/^[[:s
 
     # check_quality_gate: Check 3インラインセクション(質問ゲートブロック)を関数化 + 成功時OK出力
     local _qg_start _qg_end
-    _qg_start=$(grep -n '# --- Check 3: quality_gate' "$SRC_SAVE_SCRIPT" | head -1 | cut -d: -f1)
-    _qg_end=$(grep -n '# --- Check 4:' "$SRC_SAVE_SCRIPT" | head -1 | cut -d: -f1)
+    _qg_start=$(grep -n '# --- Check 3: quality_gate' "$SRC_SAVE_EXTRACT_SCRIPT" | head -1 | cut -d: -f1)
+    _qg_end=$(grep -n '# --- Check 4:' "$SRC_SAVE_EXTRACT_SCRIPT" | head -1 | cut -d: -f1)
     _qg_end=$((_qg_end - 1))
     eval "check_quality_gate() {
 local WARN_COUNT=0
-$(sed -n "${_qg_start},${_qg_end}p" "$SRC_SAVE_SCRIPT")
+$(sed -n "${_qg_start},${_qg_end}p" "$SRC_SAVE_EXTRACT_SCRIPT")
 if [[ \"\${BLOCK_COUNT:-0}\" -gt 0 ]]; then
     return 1
 fi
@@ -155,7 +92,7 @@ echo \"保存確認OK: \${CMD_ID}\"
     # check_20_assumptions: Check 20インラインセクション（assumptions検査）を関数化
     eval "check_20_assumptions() {
 local WARN_COUNT=0
-$(sed -n '/^# --- Check 20:/,/^# --- Check 21:/{/^# --- Check 21:/d;p}' "$SRC_SAVE_SCRIPT")
+$(sed -n '/^# --- Check 20:/,/^# --- Check 21:/{/^# --- Check 21:/d;p}' "$SRC_SAVE_EXTRACT_SCRIPT")
 if [[ \"\${BLOCK_COUNT:-0}\" -gt 0 ]]; then
     return 1
 fi
