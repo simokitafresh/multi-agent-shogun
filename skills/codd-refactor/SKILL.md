@@ -24,7 +24,7 @@ bashスクリプトのリファクタリングを、データ駆動で設計→�
 # パターン2: spec指定 — 既に書いたspecからCoDD実行+実装
 /codd-refactor docs/research/my_refactor_spec.md
 
-# パターン3: 引数なし — テスト全量プロファイリングからボトルネック発見
+# パターン3: 引数なし — 14列時間台帳から未改善ボトルネック候補を表示
 /codd-refactor
 ```
 
@@ -82,18 +82,22 @@ func cacheは`/tmp/_func_cache_$$_*.sh`（PID分離）で並列安全。
 
 ## Phase 1: プロファイリング（計測が全て）
 
-**引数がスクリプトパスの場合**: そのスクリプトの関数レベル分解に直行。
-**引数がspec.mdの場合**: Phase 3に直行（計測は済んでいる前提）。
-**引数なしの場合**: テスト全量計測から開始。
+**引数がスクリプトパスの場合**: そのスクリプトの関数レベル分解に直行。候補選定には既存14列台帳を利用する。
+**引数がspec.mdの場合**: Phase 3に直行（計測は済んでいる前提）。候補選定には既存14列台帳を利用する。
+**引数なしの場合**: `logs/test_timing_ledger.tsv` の最新の完走runを入力にする。専用の `bats` loop、`scripts/run_tests.sh`、`scripts/gates/gate_test_health.sh --timing` は起動しない。
 
 ```bash
-# テスト実行時間Top 10
-for f in $(find tests/unit -name "*.bats" -type f); do
-  cnt=$(grep -c '@test' "$f")
-  t=$({ time bats "$f" > /dev/null 2>&1; } 2>&1 | grep real | awk '{print $2}')
-  echo "$t	$cnt	$(basename $f)"
-done | sort -t'm' -k2 -rn | head -10
+# 最新の非cache完走 all/unit runから遅い順に候補を得る。
+# 14列: run_id repo commit_sha suite_root runner test_file test_id_count
+#       wall_sec status skip_count cache_hit source_fingerprint measured_at resource_tags
+LEDGER="${TEST_TIMING_LEDGER:-logs/test_timing_ledger.tsv}"
+LATEST_RUN="$(awk -F '\t' 'NR>1 && $9=="pass" && $11==0 && ($4=="all" || $4=="unit") {run=$1} END{print run}' "$LEDGER")"
+[ -n "$LATEST_RUN" ] || { echo "UNVERIFIED: completed cache_hit=0 mode=all/unit timing run missing" >&2; return 1; }
+awk -F '\t' -v run="$LATEST_RUN" 'NR>1 && $1==run && $9=="pass" && $11==0 && ($4=="all" || $4=="unit") {print $8 "\t" $6}' "$LEDGER" \
+  | sort -t $'\t' -k1,1nr | head -10
 ```
+
+各 `test_file` から被テストtarget候補を `scripts/test_select.sh` で照合し、`docs/research/codd_refactor_registry.md` の改善済み対象を除外して表示する。候補表示は既存runner・selector・`scripts/test_timing_ledger_write.sh` の成果を再利用し、新たな計測runを作らない。
 
 ### 関数レベル分解
 
@@ -151,13 +155,15 @@ v2.18.0+で`codd implement run --language`オプションをローカル確認�
 
 **鉄則: R1実装→テスト全PASS確認→R2実装→テスト全PASS確認。一気にやるな。**
 
-## Phase 5: 検証（before/after比較表を出力して初めて完了）
+## Phase 5: 検証（14列台帳のbefore/after比較表を出力して初めて完了）
+
+通常の `scripts/run_tests.sh` が自動記録した2 runを比較する。専用計測runは禁止。同一 `test_file`・同一 `suite_root`、`cache_hit=0`、`mode=all/unit` の完走行のみを使い、Before/Afterの `commit_sha` と `run_id` を表へ必ず記す。一方でも欠損した場合は `UNVERIFIED` としてfail-closedし、完了を宣言しない。
 
 ```
-| 段階 | 1テスト | 全量 | 改善率 |
-|------|---------|------|--------|
-| Before | Xms | Xs | baseline |
-| After | Yms | Ys | -N% |
+| 段階 | test_file | suite_root | commit_sha | run_id | wall_sec | 改善率 |
+|------|-----------|------------|------------|--------|----------|--------|
+| Before | tests/unit/X.bats | unit | <sha> | <run_id> | Xs | baseline |
+| After | tests/unit/X.bats | unit | <sha> | <run_id> | Ys | -N% |
 ```
 
 ## Phase 6: After設計書（車輪の再発明防止）
