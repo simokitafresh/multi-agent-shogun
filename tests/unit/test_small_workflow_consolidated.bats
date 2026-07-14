@@ -7,13 +7,15 @@ setup() {
 }
 
 teardown() {
-    [ -n "${TEST_TMPDIR:-}" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
     true
 }
 
 make_test_tmpdir() {
     export TEST_TMPDIR
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/small_workflow.XXXXXX")"
+    # Bats guarantees a unique per-test directory and removes it after the test.
+    # Reuse that lifecycle instead of spawning mktemp + rm for each fixture test.
+    TEST_TMPDIR="$BATS_TEST_TMPDIR/small_workflow"
+    mkdir -p "$TEST_TMPDIR"
 }
 
 @test "cmd-complete skill points to the real cmd_complete_gate path" {
