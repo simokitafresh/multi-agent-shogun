@@ -112,7 +112,7 @@
 - 一次情報: `logs/test_timing_ledger.tsv` run_id=`20260714T080258.4150838` + `/tmp/hanzo_rc7_artifacts` + `scripts/run_tests.sh` 現物。
 - 完走cohort: **271 files / 3,895 tests / SKIP 0 / cache_hit 0 / sum_file_sec 2,244.613s**。artifactの実wallは約26分。当該runの現行キュー順+重みを同じfile秒で再現したtwo-lane相当makespanは**1,305.269s**。差の約255sはhost/I/O競合、bats root起動、TAP出力・集約を含む。
 - 寄与集中: `>=30s` 11 files = **541.467s (24.1%)**、`>=20s` 26 files = **914.028s (40.7%)**、`>=10s` 58 files = **1,360.682s (60.6%)**。最上位は `test_gate_karo_startup` 67.350s、`test_gate_shogun_startup` 66.015s、`test_semantic_index_update` 58.072s、`test_write_edit_combined_hooks` 54.364s、`test_bash_speed_training` 50.892s。
-- lane分解: 通常258 files = **1,990.772s (88.7%)**、heavy 4 files = **172.387s (7.7%)**、serial隔離9 files = **81.454s (3.6%)**。serial隔離そのもは主因ではない。通常fileも`INNER_JOBS=4`/weight=4でhost cap 8を使うため実質同時2 filesで、重いfileのFIFO tailが空きlaneを作る。
+- lane分解: 通常258 files = **1,990.772s (88.7%)**、heavy 4 files = **172.387s (7.7%)**、serial隔離9 files = **81.454s (3.6%)**。serial隔離そのものは主因ではない。通常fileも`INNER_JOBS=4`/weight=4でhost cap 8を使うため実質同時2 filesで、重いfileのFIFO tailが空きlaneを作る。
 - artifactの7-file matrix中央値: jobs1=547s, jobs2=221s, jobs4=132s, jobs8=109s。inner parallel自体は必要だが4→8の改善は約17%に留まる。よってjobs値のみで300sは不可。
 - TAP 3,886件の合計は8,129.690 test-sec。`>=10s` 160 testsだけで2,792.508s。上位は`test_bash_speed_training` auto-deploy/ledger系の45秒級反復、write hook Guard16/17の41–44秒級反復、memory DB/semantic indexの20秒級実I/O反復。ここが第一ボトルネック。
 
