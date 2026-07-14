@@ -37,9 +37,10 @@ def documents(directory):
 
 wanted = canonical(target)
 tasks = []
-for data, path in documents(root / "queue" / "tasks"):
-    if canonical(data.get("target_path")) == wanted:
-        tasks.append((data, path))
+for directory in (root / "queue" / "tasks", root / "queue" / "training"):
+    for data, path in documents(directory) or []:
+        if canonical(data.get("target_path")) == wanted:
+            tasks.append((data, path))
 
 # Active ownership remains fail-closed and does not require a report.
 if any(str(data.get("status", "")) in {"assigned", "acknowledged", "in_progress"}
@@ -76,23 +77,30 @@ next_target() {
         active_or_completed "$target" || { printf '%s\t%s\n' "$wall" "$target"; return 0; }
     done < <(awk -F '\t' -v threshold="$THRESHOLD" '
       NR == 1 { for (i=1;i<=NF;i++) h[$i]=i; next }
-      $(h["runner"]) == "bats" && $(h["wall_sec"])+0 > threshold && $(h["status"]) != "skip" {
-        file=$(h["test_file"]); wall=$(h["wall_sec"])+0
-        if (!(file in worst) || wall > worst[file]) worst[file]=wall
+      $(h["runner"]) == "bats" {
+        file=$(h["test_file"])
+        latest_wall[file]=$(h["wall_sec"])+0
+        latest_status[file]=$(h["status"])
       }
-      END { for (file in worst) printf "%.3f\t%s\n", worst[file], file }
+      END {
+        for (file in latest_wall)
+          if (latest_wall[file] > threshold && latest_status[file] != "skip")
+            printf "%.3f\t%s\n", latest_wall[file], file
+      }
     ' "$LEDGER" | sort -nr)
     return 1
 }
 
 generate() {
     local picked wall target slug stamp file
+    mkdir -p "$OUT_DIR"
+    exec 9>"$OUT_DIR/.test_speed_task_generator.lock"
+    flock 9
     picked=$(next_target) || { echo "NO_CANDIDATE"; return 1; }
     wall=${picked%%$'\t'*}; target=${picked#*$'\t'}
     slug=$(basename "$target" .bats | tr -c '[:alnum:]_-' '_')
     stamp=$(date +%Y%m%d%H%M%S)
     file="$OUT_DIR/test_speed_${slug}_${stamp}.yaml"
-    mkdir -p "$OUT_DIR"
     cat > "$file" <<YAML
 task:
   parent_cmd: "cmd_training_test_speed_${slug}_${stamp}"

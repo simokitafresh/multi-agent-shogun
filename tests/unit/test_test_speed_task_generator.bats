@@ -57,6 +57,46 @@ YAML
   [ "$status" -ne 0 ]
 }
 
+@test "canonical absolute and relative active targets remain claimed" {
+  printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  for task_status in assigned acknowledged in_progress; do
+    for target in 'tests/unit/slow.bats' "$TMP/tests/unit/slow.bats"; do
+      cat > "$TMP/queue/tasks/kotaro.yaml" <<YAML
+task:
+  target_path: "$target"
+  status: $task_status
+YAML
+      run env SHOGUN_REPO_ROOT="$TMP" TEST_TIMING_LEDGER="$TMP/logs/test_timing_ledger.tsv" bash "$ROOT/scripts/test_speed_task_generator.sh" next
+      [ "$status" -ne 0 ]
+    done
+  done
+}
+
+@test "parallel generate reserves one canonical target only" {
+  printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  env SHOGUN_REPO_ROOT="$TMP" TEST_TIMING_LEDGER="$TMP/logs/test_timing_ledger.tsv" TEST_SPEED_TASK_DIR="$TMP/queue/training" bash "$ROOT/scripts/test_speed_task_generator.sh" generate > "$TMP/first.out" &
+  first_pid=$!
+  env SHOGUN_REPO_ROOT="$TMP" TEST_TIMING_LEDGER="$TMP/logs/test_timing_ledger.tsv" TEST_SPEED_TASK_DIR="$TMP/queue/training" bash "$ROOT/scripts/test_speed_task_generator.sh" generate > "$TMP/second.out" &
+  second_pid=$!
+  wait "$first_pid" || true
+  wait "$second_pid" || true
+
+  [ "$(find "$TMP/queue/training" -name 'test_speed_*.yaml' -type f | wc -l)" -eq 1 ]
+  [ "$(grep -l 'target_path: "tests/unit/slow.bats"' "$TMP"/queue/training/test_speed_*.yaml | wc -l)" -eq 1 ]
+}
+
+@test "latest ledger measurement controls threshold candidacy" {
+  printf 'old\tx\tc\tunit\tbats\ttests/unit/stale.bats\t2\t99.0\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  printf 'old\tx\tc\tunit\tbats\ttests/unit/current.bats\t2\t8.0\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  printf 'new\tx\tc\tunit\tbats\ttests/unit/stale.bats\t2\t8.0\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  printf 'new\tx\tc\tunit\tbats\ttests/unit/current.bats\t2\t14.0\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_TIMING_LEDGER="$TMP/logs/test_timing_ledger.tsv" bash "$ROOT/scripts/test_speed_task_generator.sh" next
+  [ "$status" -eq 0 ]
+  [[ "$output" == *$'14.000\ttests/unit/current.bats'* ]]
+  [[ "$output" != *"stale.bats"* ]]
+}
+
 @test "generated lesson check is satisfiable for empty and nonempty related_lessons" {
   printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
   run env SHOGUN_REPO_ROOT="$TMP" TEST_TIMING_LEDGER="$TMP/logs/test_timing_ledger.tsv" TEST_SPEED_TASK_DIR="$TMP/queue/training" bash "$ROOT/scripts/test_speed_task_generator.sh" generate
