@@ -5921,16 +5921,21 @@ check_research_tool_explicit
 check_research_artifact_reflux_ac() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
-    local TASK_TYPE PROJECT_ID SEARCH_TEXT AC_SECTION
+    local TASK_TYPE PROJECT_ID SEARCH_TEXT_EN SEARCH_TEXT_JA AC_SECTION
     TASK_TYPE="$(cmd_block_get_field "type")"
     PROJECT_ID="$(cmd_block_get_field "project")"
-    SEARCH_TEXT="$(printf '%s\n%s\n%s\n%s\n' \
+    # English classifier terms are intentionally limited to semantic header fields.
+    # Scanning the whole command made artifact/design paths such as
+    # docs/research/... classify ordinary implementation commands as research.
+    SEARCH_TEXT_EN="$(printf '%s\n%s\n%s\n' \
         "$TASK_TYPE" \
         "$(cmd_block_get_field "title")" \
-        "$(cmd_block_get_field "purpose")" \
-        "${CMD_BLOCK_NC:-}")"
+        "$(cmd_block_get_field "purpose")")"
+    # Japanese classifier terms remain a full-command scan by contract.
+    SEARCH_TEXT_JA="${CMD_BLOCK_NC:-}"
 
-    if ! printf '%s\n' "$SEARCH_TEXT" | grep -qiE 'research|analysis|investigation|研究|分析|調査|リサーチ'; then
+    if ! printf '%s\n' "$SEARCH_TEXT_EN" | grep -qiE '(^|[^[:alnum:]_])(research|analysis|investigation)([^[:alnum:]_]|$)' \
+        && ! printf '%s\n' "$SEARCH_TEXT_JA" | grep -qE '研究|分析|調査|リサーチ'; then
         return 0
     fi
 

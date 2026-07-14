@@ -16,15 +16,14 @@ CMD_SAVE_ACCUMULATE_BLOCKS=1
 
 cmd_block_get_field() {
     local field="$1"
-    python3 - "$field" <<'PY' <<<"$CMD_BLOCK_NC"
-import re, sys
-field = sys.argv[1]
-text = sys.stdin.read()
-pattern = re.compile(r"(?m)^[ \t]*" + re.escape(field) + r":[ \t]*(.*)$")
-match = pattern.search(text)
-if match:
-    print(match.group(1).strip().strip('"').strip("'"), end="")
-PY
+    printf '%s\n' "$CMD_BLOCK_NC" | awk -v key="$field" '
+        $0 ~ "^[[:space:]]*" key ":[[:space:]]*" {
+            sub("^[[:space:]]*" key ":[[:space:]]*", "")
+            gsub(/^['\''\"]|['\''\"]$/, "")
+            print
+            exit
+        }
+    '
 }
 
 record_block_reason() {
@@ -110,4 +109,31 @@ teardown() {
     run bash "$TEST_TMPDIR/run_check.sh" "$cmd" 2>&1
     [ "$status" -eq 0 ]
     [[ "$output" == *"BLOCK_COUNT=0"* ]]
+}
+
+@test "LK-A10: English classifier word in artifact path does not classify implementation cmd" {
+    local cmd='  type: impl
+  project: infra
+  title: 修正 — LK-A10分類器
+  purpose: 偽陽性をなくす
+  acceptance_criteria:
+  - docs/research/cmd_3915_analysis_fixture.md と tests/unit/test_cmd_save_research_artifact_reflux.bats を更新する'
+
+    run bash "$TEST_TMPDIR/run_check.sh" "$cmd" 2>&1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK_COUNT=0"* ]]
+}
+
+@test "LK-A10: English classifier word in title still classifies true research cmd" {
+    local cmd='  type: task
+  project: infra
+  title: Analysis of gate false positives
+  purpose: classify detector behavior
+  acceptance_criteria:
+  - detector behavior is documented'
+
+    run bash "$TEST_TMPDIR/run_check.sh" "$cmd" 2>&1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK_COUNT=1"* ]]
+    [[ "$output" == *"LK-A10"* ]]
 }
