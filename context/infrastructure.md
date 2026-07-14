@@ -1,5 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-14 cmd_karo_hotfix_wa_duplicate_identity_data_restore_202607140312 -->
+<!-- source_commit:77610c8ec4056f0c82acef104ff13f8ddd04c547 reason:ga255-exact-boundary evidence:60/60 related unit PASS; root fallback registry enforcement -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -751,7 +752,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1102 -->
+<!-- last_synced_lesson: L1121 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1560,6 +1561,25 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1100: 大規模BATSでtest単位tmpを二重生成しない（cmd_training_test_speed_test_ninja_monitor_clear_guard__20260714220734）
 - L1101: focused gate testは共通parse後に対象観点だけ終了可能にする（cmd_training_test_speed_test_gate_gunshi_precheck_variation_contract__20260714221210）
 - L1102: 速度攻略のno_improvementは再配備せずsaturated終端にする（cmd_3920）
+- L1103: 埋込みBatsはpayload共有cacheとpath互換を同時に守る（cmd_training_test_speed_test_infra_misc_small_consolidated__20260714222929）
+- L1104: 共有負荷下の速度改善は同時control差分で判定する（cmd_training_test_speed_test_cmd_save__20260714222612）
+- L1105: 純bash helperはREPLY返却でcommand substitutionを避ける（cmd_karo_speed_session_start_body_202607142235）
+- L1106: Bats immutable入力はsetup_fileで一度だけcacheする（cmd_training_test_speed_test_karo_workaround_validation__20260714224800）
+- L1107: Bats標準隔離rootを再利用してmktemp反復を除く（cmd_training_test_speed_test_ninja_monitor_stall__20260714225400）
+- L1108: 統合Batsのfixture rootをテスト群境界で局所束縛する（cmd_training_test_speed_test_deploy_task_ac_handling__20260714230732）
+- L1109: fixture cacheが頭打ちなら同一run内の二重digestを除去する（cmd_training_test_speed_test_gate_gunshi_cs_checklist__20260714225825）
+- L1110: Unit fixtureの識別子もlive運用データ探索を誘発し得る（cmd_training_test_speed_test_report_field_set_validation__20260714225703）
+- L1111: timeout回帰は実時間ではなく比率維持で短縮する（cmd_training_test_speed_test_context_freshness_check__20260714225556）
+- L1112: 共有cacheは生成全体をsingle-flight化し完成後だけ公開する（cmd_training_test_speed_test_learning_ops_small_consolidated__20260714224645）
+- L1113: 境界テストのpreconditionは公開CLI反復でなくfixture化する（cmd_training_test_speed_test_bulletin_board__20260714232325）
+- L1114: optional fixtureのteardownは未作成時も成功させる（cmd_training_test_speed_test_deploy_task__20260714232642）
+- L1115: 共有cache化ではcache内容件数を検証するtestのみ隔離せよ（cmd_training_test_speed_test_semantic_search__20260714233349）
+- L1116: mtime境界テストでは実時間待機せず比較対象+1秒を設定する（cmd_training_test_speed_test_stop_check_inbox__20260714233517）
+- L1117: 反復fixtureの小さな外部プロセスも全test累積で支配項になる（cmd_training_test_speed_test_lesson_write__20260714233634）
+- L1118: 局所順序だけでなくworkflow全体の前後条件をtestする（cmd_3931）
+- L1119: Unitの主契約外preflightは既定維持の依存注入seamで隔離する（cmd_training_test_speed_test_prompt_state_recovery_marker__20260714235151）
+- L1120: 共有fixtureは保存層とcache identityを別々に検証する（cmd_training_test_speed_test_three_layer_preflight__20260714235557）
+- L1121: 副作用contractを検証しないfixtureでは既存disable入口を使う（cmd_training_test_speed_test_skill_feedback_loop__20260714234932）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
