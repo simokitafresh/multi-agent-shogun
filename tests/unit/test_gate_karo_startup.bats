@@ -214,7 +214,10 @@ MOCK
 }
 
 setup() {
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/karo_startup.XXXXXX")"
+    # Bats already provides an isolated, automatically cleaned directory for
+    # each test. Reuse it instead of spawning mktemp 66 times.
+    TEST_TMPDIR="$BATS_TEST_TMPDIR/karo_startup"
+    mkdir -p "$TEST_TMPDIR"
     cp -a "$KARO_BASE_FIXTURE/." "$TEST_TMPDIR/"
 
     export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
