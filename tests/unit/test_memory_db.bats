@@ -427,6 +427,7 @@ EOF
     printf 'not-a-sqlite-database' > "$TEST_TMPDIR/cache/memory.db"
     export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
+    export MEMORY_DB_QUERY_RECOVERY_LOG="$TEST_TMPDIR/recovery.log"
     for worker in $(seq 1 20); do
         AGENT_ID=hanzo bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
             --db "$TEST_TMPDIR/data/memory.db" \
@@ -445,6 +446,7 @@ EOF
         [ "$output" = "0" ]
     done
     [ "$success_count" -eq 20 ]
+    [ "$(wc -l < "$MEMORY_DB_QUERY_RECOVERY_LOG")" -eq 1 ]
     run find "$TEST_TMPDIR/cache" -maxdepth 1 -name '.memory.db.*.tmp'
     [ "$status" -eq 0 ]
     [ -z "$output" ]

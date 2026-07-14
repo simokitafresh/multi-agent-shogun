@@ -76,6 +76,15 @@ source_db_path="$db_path"
 db_path="$(prepare_memory_db_for_read "$script_dir" "$db_path" "$default_db_path")"
 
 if [ -n "$search_query" ]; then
+    # A cache whose SQLite header is absent cannot satisfy any search. Repair
+    # it through SQL mode before launching the heavier FTS search process.
+    # Concurrent callers converge in regenerate_cache_atomically(): the flock
+    # holder rechecks cache health, so exactly one process performs the backup.
+    if [ "$db_path" != "$source_db_path" ] \
+        && [ "$(LC_ALL=C head -c 15 "$db_path" 2>/dev/null || true)" != "SQLite format 3" ]; then
+        bash "$0" --db "$source_db_path" \
+            "SELECT name FROM sqlite_master LIMIT 1" >/dev/null 2>&1 || true
+    fi
     search_args=(
         --db "$db_path"
         --search "$search_query"
@@ -272,6 +281,11 @@ def regenerate_cache_atomically(source_path: Path, cache_path: Path) -> None:
             return
         except (OSError, sqlite3.DatabaseError):
             pass
+
+        recovery_log = os.environ.get("MEMORY_DB_QUERY_RECOVERY_LOG", "")
+        if recovery_log:
+            with open(recovery_log, "a", encoding="utf-8") as handle:
+                handle.write(f"backup pid={os.getpid()}\n")
 
         fd, temp_name = tempfile.mkstemp(
             prefix=f".{cache_path.name}.", suffix=".tmp", dir=cache_path.parent
