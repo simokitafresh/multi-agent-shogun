@@ -696,7 +696,7 @@ fi
 if [[ -n "${command:-}" ]]; then
     if [[ "$command" == *'shogun_to_karo'* ]]; then
         if [[ "$command" == *'sed '* || "$command" == *'sed -'* || "$command" == *"re.sub"* || "$command" == *".replace("* || "$command" == *'awk '* ]]; then
-            emit_deny "BLOCK: shogun_to_karo.yamlへのsed/regex操作は禁止。Edit toolで手動変更せよ。status遷移gateの迂回を防ぐため。"
+            emit_deny "BLOCK: shogun_to_karo.yamlへのsed/regex操作は禁止。変更はEdit tool、読み取りはRead tool(offset/limit指定)を使え。status遷移gateの迂回を防ぐため。"
         fi
     fi
 fi
