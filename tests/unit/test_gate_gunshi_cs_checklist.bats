@@ -1364,6 +1364,25 @@ YAML
     [[ "$output" != *"WARN(AC1-D0未実施)"* ]]
 }
 
+@test "resolved minor-fix history without d0_applied does not warn" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_resolved_commit
+  review_type: report
+  observations:
+    - "commit_hash欠落→再配備して修正済み"
+  timestamp: "2026-07-14T14:00:00"
+- cmd_id: cmd_resolved_format
+  review_type: draft
+  findings_summary: "format不備は訂正済み"
+  observations:
+    - "通常のレビュー完了"
+  timestamp: "2026-07-14T14:01:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [[ "$output" != *"WARN(AC1-D0未実施)"* ]]
+}
+
 @test "altruism_check not_needed without reason blocks with exit 2 (AC2 cmd_3374)" {
     cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
 - cmd_id: idle_study_X001
