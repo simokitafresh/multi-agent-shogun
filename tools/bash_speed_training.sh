@@ -59,7 +59,7 @@ measure_bash_n_ms() {
 measure_bash_n_inventory() {
     local result_dir="$1"
     shift
-    local max_jobs="${SPEED_TRAINING_SYNTAX_JOBS:-8}"
+    local max_jobs="${SPEED_TRAINING_SYNTAX_JOBS:-16}"
     local active=0 index=0 job_index path
     [[ "$max_jobs" =~ ^[1-9][0-9]*$ ]] || { echo "SPEED_TRAINING_SYNTAX_JOBS must be a positive integer" >&2; return 2; }
 
