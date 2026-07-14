@@ -69,8 +69,12 @@ _session_start_emit_output() {
   local _session_start_event_json
   local _session_start_context_json
 
-  _session_start_event_json="$(_session_start_json_escape "$_session_start_event")"
-  _session_start_context_json="$(_session_start_json_escape "$_session_start_context")"
+  # Keep escaping in the current shell. Command substitutions fork two bash
+  # processes on every SessionStart, despite this helper only returning text.
+  _session_start_json_escape "$_session_start_event"
+  _session_start_event_json="$REPLY"
+  _session_start_json_escape "$_session_start_context"
+  _session_start_context_json="$REPLY"
   printf '{"hookSpecificOutput":{"hookEventName":"%s","additionalContext":"%s"}}\n' \
     "$_session_start_event_json" "$_session_start_context_json"
 }
@@ -82,7 +86,7 @@ _session_start_json_escape() {
   _session_start_value="${_session_start_value//$'\n'/\\n}"
   _session_start_value="${_session_start_value//$'\r'/\\r}"
   _session_start_value="${_session_start_value//$'\t'/\\t}"
-  printf '%s' "$_session_start_value"
+  REPLY="$_session_start_value"
 }
 
 _session_start_epoch_result=0
