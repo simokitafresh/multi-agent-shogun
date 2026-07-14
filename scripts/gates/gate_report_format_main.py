@@ -630,6 +630,17 @@ def main() -> int:
         hints.append("verdictはPASS/FAIL/PASS_NO_IMPROVEMENTの三値のみ。binary_checks全yes→PASS、1つでもno→FAIL、revert多数→PASS_NO_IMPROVEMENT")
         hints.append("FIX COMMAND (verdict): " + _rfs_cmd(report_path, "verdict", "PASS"))
 
+    # revision_requested is an editing/unlock state, not a terminal report
+    # state.  A successful terminal verdict must only be accepted after the
+    # explicit revision round-trip has returned the report to completed.
+    status_norm = status_val.strip().lower() if isinstance(status_val, str) else ""
+    if verdict in ("PASS", "PASS_NO_IMPROVEMENT") and status_norm != "completed":
+        errors.append(
+            f'status: "{status_val}" cannot carry terminal verdict {verdict} '
+            '(set status to completed after revisions)'
+        )
+        hints.append("FIX (status): bash scripts/report_field_set.sh <report> status completed")
+
     if isinstance(verdict, str) and verdict in _VALID_VERDICTS and isinstance(bc, dict) and bc:
         bc_has_no = False
         bc_has_empty = False
