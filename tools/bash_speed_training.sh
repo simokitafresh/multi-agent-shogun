@@ -56,6 +56,30 @@ measure_bash_n_ms() {
     printf '%s %s\n' "$(((end - start) / 1000000))" "$status"
 }
 
+measure_bash_n_inventory() {
+    local result_dir="$1"
+    shift
+    local max_jobs="${SPEED_TRAINING_SYNTAX_JOBS:-8}"
+    local active=0 index=0 job_index path
+    [[ "$max_jobs" =~ ^[1-9][0-9]*$ ]] || { echo "SPEED_TRAINING_SYNTAX_JOBS must be a positive integer" >&2; return 2; }
+
+    for path in "$@"; do
+        job_index=$index
+        (
+            local measured
+            measured=$(measure_bash_n_ms "$path")
+            printf '%s\n' "$measured" > "$result_dir/$job_index"
+        ) &
+        active=$((active + 1))
+        index=$((index + 1))
+        if [ "$active" -ge "$max_jobs" ]; then
+            wait -n
+            active=$((active - 1))
+        fi
+    done
+    wait
+}
+
 lock_path() {
     local file_path="$1"
     local sanitized
@@ -82,10 +106,18 @@ ledger_global_status() {
 
 init_ledger_unlocked() {
     local ledger="$1"
-    local tmp count path ms syntax_status generated_at
+    local tmp count path ms syntax_status generated_at result_dir index
+    local -a script_paths
     tmp=$(mktemp "${ledger}.XXXXXX")
+    result_dir=$(mktemp -d "${ledger}.syntax.XXXXXX")
+    trap 'rm -f "$result_dir"/* "$tmp"; rmdir "$result_dir" 2>/dev/null || true' RETURN
     generated_at=$(now_iso)
-    count=$(find "$SCRIPT_DIR/scripts" -type f -name '*.sh' | wc -l | tr -d ' ')
+    mapfile -d '' -t script_paths < <(find "$SCRIPT_DIR/scripts" -type f -name '*.sh' -printf '%P\0' | sort -z)
+    for index in "${!script_paths[@]}"; do
+        script_paths[$index]="scripts/${script_paths[$index]}"
+    done
+    count=${#script_paths[@]}
+    measure_bash_n_inventory "$result_dir" "${script_paths[@]}"
     {
         printf 'global_status: running\n'
         printf 'generated_at: %s\n' "$(yaml_quote "$generated_at")"
@@ -93,9 +125,9 @@ init_ledger_unlocked() {
         printf 'real_measurement_policy: %s\n' "$(yaml_quote 'Ninja must choose a safe runtime command per script: time bash script.sh <args>, --help, dry-run mode, or sandboxed equivalent. Record before_real_ms/after_real_ms with the same command before and after.')"
         printf 'script_count: %s\n' "$count"
         printf 'entries:\n'
-        while IFS= read -r abs_path; do
-            path="${abs_path#$SCRIPT_DIR/}"
-            read -r ms syntax_status < <(measure_bash_n_ms "$path")
+        index=0
+        for path in "${script_paths[@]}"; do
+            read -r ms syntax_status < "$result_dir/$index"
             printf '  - script_path: %s\n' "$(yaml_quote "$path")"
             printf '    status: pending\n'
             printf '    before_ms: %s\n' "$ms"
@@ -108,9 +140,13 @@ init_ledger_unlocked() {
             printf '    commit: ""\n'
             printf '    assigned_to: ""\n'
             printf '    updated_at: ""\n'
-        done < <(find "$SCRIPT_DIR/scripts" -type f -name '*.sh' | sort)
+            index=$((index + 1))
+        done
     } > "$tmp"
     mv "$tmp" "$ledger"
+    rm -f "$result_dir"/*
+    rmdir "$result_dir"
+    trap - RETURN
 }
 
 cmd_record_real() {

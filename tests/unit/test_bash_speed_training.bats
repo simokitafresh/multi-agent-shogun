@@ -17,6 +17,10 @@ setup() {
     export SHOGUN_STATE_DIR="$TMP_ROOT/state"
     export SPEED_TRAINING_TASK_DIR="$TMP_ROOT/tasks"
     mkdir -p "$SPEED_TRAINING_TASK_DIR"
+
+    # Source the CLI once per test so repeated subcommand assertions exercise
+    # the same functions without paying a fresh Bash startup for every call.
+    source "$PROJECT_ROOT/tools/bash_speed_training.sh"
 }
 
 teardown() {
@@ -40,19 +44,38 @@ teardown_file() {
     grep -Fq 'after_real_ms: ""' "$LEDGER"
     grep -Fq 'real_measurement_command: ""' "$LEDGER"
     grep -Fq 'global_status: running' "$LEDGER"
+
+    # Mutation regression: deterministic ordering must not hide syntax failures.
+    fixture_project="$TMP_ROOT/mutated-project"
+    mkdir -p "$fixture_project/tools" "$fixture_project/scripts"
+    cp "$PROJECT_ROOT/tools/bash_speed_training.sh" "$fixture_project/tools/"
+    printf '#!/usr/bin/env bash\nprintf ok\n' > "$fixture_project/scripts/a_valid.sh"
+    printf '#!/usr/bin/env bash\nif then\n' > "$fixture_project/scripts/b_invalid.sh"
+
+    run bash "$fixture_project/tools/bash_speed_training.sh" init-ledger "$TMP_ROOT/mutated-ledger.yaml"
+    [ "$status" -eq 0 ]
+    [ "$(grep -c 'script_path:' "$TMP_ROOT/mutated-ledger.yaml")" -eq 2 ]
+    awk '
+        /script_path: "scripts\/a_valid.sh"/ { target = "valid" }
+        /script_path: "scripts\/b_invalid.sh"/ { target = "invalid" }
+        target == "valid" && /test_result: "baseline_bash_n_exit_0"/ { valid = 1; target = "" }
+        target == "invalid" && /test_result: "baseline_bash_n_exit_[1-9][0-9]*"/ { invalid = 1; target = "" }
+        END { exit !(valid && invalid) }
+    ' "$TMP_ROOT/mutated-ledger.yaml"
 }
 
 @test "paused ledger prevents auto-deploy" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" set-global-status paused "$LEDGER"
+    cmd_set_global_status paused "$LEDGER"
 
-    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" auto-deploy hayate "$LEDGER"
+    run cmd_auto_deploy hayate "$LEDGER"
     [ "$status" -eq 0 ]
     [ "$output" = "paused" ]
     ! grep -Fq 'status: assigned' "$LEDGER"
 }
 
 @test "auto-deploy dry-run assigns exactly one pending script and emits deploy_task command" {
-    run env SPEED_TRAINING_DRY_RUN=1 bash "$PROJECT_ROOT/tools/bash_speed_training.sh" auto-deploy hayate "$LEDGER"
+    export SPEED_TRAINING_DRY_RUN=1
+    run cmd_auto_deploy hayate "$LEDGER"
     [ "$status" -eq 0 ]
     [[ "$output" == DRY_RUN\ deploy_task* ]]
     [[ "$output" == *" hayate cmd_training_speed_"* ]]
@@ -63,14 +86,15 @@ teardown_file() {
 }
 
 @test "auto-deploy skips scripts already active in task yaml" {
-    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+    first=$(cmd_next "$LEDGER")
     cat > "$SPEED_TRAINING_TASK_DIR/hayate.yaml" <<EOF
 task:
   status: in_progress
   target_path: $first
 EOF
 
-    run env SPEED_TRAINING_DRY_RUN=1 bash "$PROJECT_ROOT/tools/bash_speed_training.sh" auto-deploy kagemaru "$LEDGER"
+    export SPEED_TRAINING_DRY_RUN=1
+    run cmd_auto_deploy kagemaru "$LEDGER"
     [ "$status" -eq 0 ]
     [[ "$output" == DRY_RUN\ deploy_task* ]]
 
@@ -83,10 +107,11 @@ EOF
 }
 
 @test "auto-deploy reassigns no_improvement entries for rework" {
-    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-after "$first" no_improvement 12 "no improvement" no_change "$LEDGER"
+    first=$(cmd_next "$LEDGER")
+    cmd_record_after "$first" no_improvement 12 "no improvement" no_change "$LEDGER"
 
-    run env SPEED_TRAINING_DRY_RUN=1 bash "$PROJECT_ROOT/tools/bash_speed_training.sh" auto-deploy hayate "$LEDGER"
+    export SPEED_TRAINING_DRY_RUN=1
+    run cmd_auto_deploy hayate "$LEDGER"
     [ "$status" -eq 0 ]
 
     awk -v first="$first" '
@@ -99,7 +124,8 @@ EOF
 }
 
 @test "auto-deploy generated task preserves speed purpose and real runtime ACs" {
-    run env SPEED_TRAINING_DRY_RUN=1 bash "$PROJECT_ROOT/tools/bash_speed_training.sh" auto-deploy hayate "$LEDGER"
+    export SPEED_TRAINING_DRY_RUN=1
+    run cmd_auto_deploy hayate "$LEDGER"
     [ "$status" -eq 0 ]
 
     generated_task=$(find "$SHOGUN_STATE_DIR" -type f -name 'speed_training_hayate.*.yaml' | head -n 1)
@@ -134,9 +160,9 @@ EOF
 }
 
 @test "record-after writes after measurement, test result, commit, and terminal status" {
-    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+    first=$(cmd_next "$LEDGER")
 
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-after "$first" completed 12 "bats target PASS SKIP=0" abc123 "$LEDGER"
+    cmd_record_after "$first" completed 12 "bats target PASS SKIP=0" abc123 "$LEDGER"
 
     awk -v script="$first" '
         $0 ~ "script_path: \"" script "\"" { in_target = 1 }
@@ -149,9 +175,9 @@ EOF
 }
 
 @test "record-real writes runtime before and after with measurement command" {
-    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+    first=$(cmd_next "$LEDGER")
 
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 101 72 "time bash $first --help" "bats target PASS SKIP=0" abc123 "$LEDGER"
+    cmd_record_real "$first" completed 101 72 "time bash $first --help" "bats target PASS SKIP=0" abc123 "$LEDGER"
 
     awk -v script="$first" '
         $0 ~ "script_path: \"" script "\"" { in_target = 1 }
@@ -166,20 +192,20 @@ EOF
 }
 
 @test "record-real completed rejects non-improving runtime" {
-    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
+    first=$(cmd_next "$LEDGER")
 
-    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 101 101 "time bash $first --help" "bats target PASS SKIP=0" abc123 "$LEDGER"
+    run cmd_record_real "$first" completed 101 101 "time bash $first --help" "bats target PASS SKIP=0" abc123 "$LEDGER"
     [ "$status" -eq 2 ]
     [[ "$output" == *"after_real_ms < before_real_ms"* ]]
 }
 
 @test "re-enqueue returns top completed entries to pending and carries after_real_ms into next before_real_ms" {
-    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 200 50 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
-    second=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$second" completed 300 100 "time bash $second --help" "PASS SKIP=0" def456 "$LEDGER"
+    first=$(cmd_next "$LEDGER")
+    cmd_record_real "$first" completed 200 50 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
+    second=$(cmd_next "$LEDGER")
+    cmd_record_real "$second" completed 300 100 "time bash $second --help" "PASS SKIP=0" def456 "$LEDGER"
 
-    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" re-enqueue 1 "$LEDGER"
+    run cmd_re_enqueue 1 "$LEDGER"
     [ "$status" -eq 0 ]
     [ "$output" = "1" ]
 
@@ -196,10 +222,10 @@ EOF
 }
 
 @test "re-enqueue preserves decimal after_real_ms values" {
-    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 24.565 16.634 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
+    first=$(cmd_next "$LEDGER")
+    cmd_record_real "$first" completed 24.565 16.634 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
 
-    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" re-enqueue 1 "$LEDGER"
+    run cmd_re_enqueue 1 "$LEDGER"
     [ "$status" -eq 0 ]
     [ "$output" = "1" ]
 
@@ -213,12 +239,12 @@ EOF
 }
 
 @test "re-enqueue stops at max iteration" {
-    first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 200 100 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" re-enqueue 1 "$LEDGER" 1
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 100 80 "time bash $first --help" "PASS SKIP=0" def456 "$LEDGER"
+    first=$(cmd_next "$LEDGER")
+    cmd_record_real "$first" completed 200 100 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
+    cmd_re_enqueue 1 "$LEDGER" 1
+    cmd_record_real "$first" completed 100 80 "time bash $first --help" "PASS SKIP=0" def456 "$LEDGER"
 
-    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" re-enqueue 1 "$LEDGER" 1
+    run cmd_re_enqueue 1 "$LEDGER" 1
     [ "$status" -eq 0 ]
     [ "$output" = "0" ]
 
@@ -243,7 +269,7 @@ entries:
     updated_at: ""
 EOF
 
-    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" re-enqueue 20 "$LEDGER"
+    run cmd_re_enqueue 20 "$LEDGER"
     [ "$status" -eq 0 ]
     [ "$output" = "0" ]
 
