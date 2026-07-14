@@ -52,7 +52,7 @@ def _nologin_rehearsal(dsn: str, app_role: str, keeper_role: str, output: Path) 
             result["sqlstates"]["create_keeper"] = "00000"
             cur.execute(sql.SQL("CREATE ROLE {} LOGIN PASSWORD %s").format(sql.Identifier(app_role)), (password,))
             result["sqlstates"]["create_app"] = "00000"
-            cur.execute(sql.SQL("GRANT {} TO CURRENT_USER WITH ADMIN OPTION").format(sql.Identifier(app_role)))
+            cur.execute(sql.SQL("GRANT {} TO CURRENT_USER").format(sql.Identifier(app_role)))
             result["sqlstates"]["grant_app_admin"] = "00000"
 
         parsed = urlsplit(dsn)
