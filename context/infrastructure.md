@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_infrastructure_context_freshness_20260715 -->
-<!-- source_commit:73473ce19f26a968b00bb9f561da3c36ae2eeed2 reason:ga260-test-contract-reviewed evidence:cmd_complete freshness nudge fixture synchronized to existing async behavior; test-only change; before FAIL1 after 111/111 PASS SKIP0 -->
+<!-- source_commit:80f345bbc5104d0fbb9be5f5b25ddb037da412b0 reason:cmd3956-wrapper-and-startup-loop-contracts-reviewed evidence:indexed cmd_complete SG7 sequence, archive evidence, Q6 archive search, CI run-id flock dedupe; L1140-L1141 reflux retained -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -18,6 +18,8 @@ daemon watchdogは個別health checkに加え、`inbox_watcher.sh>=9`・`ninja_m
 context freshnessの`source_commit`境界はinfra root fallbackにも適用し、同日のcontext更新より前のsource commitを再ALERTしない。境界後のsource commitだけを検出する。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124）
 
 SG7レビュー情報はformal Gunshi LGTM時に`review_approval.sh`が`review_bundle.py generate`を原子的に実行して永続化する。GATE後に報告がarchiveされても、`dashboard_update.sh --bundle`はfingerprint済みbundleをSSOTとして再検証せず消費する。archive済みdirect/training報告の復旧時だけ`review_bundle.py generate --allow-archived`を使う。→ `scripts/review_approval.sh` / `scripts/review_bundle.py` / `scripts/dashboard_update.sh`（cmd_3932根治、commits `d2c108a9f`, `b52d88702`）
+
+家老の完了処理は`scripts/cmd_complete.sh`を単一入口とし、SG7 consume→lesson review→cmd gate→context freshness→品質記録→status証明→dashboard→ntfy→inbox archiveをfail-closedで直列実行する。archive済みcmdはarchive・dashboard・gate_metricsのCLEAR三証拠が揃う時だけstatus完了扱いとする。将軍startupのQ6実装証拠は現行inboxに加えて自agentの当日/前日archiveを探索し、CI RED通知はGitHub run ID台帳を単一flock区間で判定・送信・追記して同一run再送を抑止する。→ `scripts/cmd_complete.sh` / `scripts/gates/gate_shogun_startup.sh` / `tests/unit/test_cmd_complete_wrapper.bats` / `tests/unit/test_gate_shogun_startup.bats`（cmd_3956、commits `4b696fd5b`, `9b91e40c1`, `96482b4ef`, `9fe3fb9fa`）
 
 配備の排他はcmd別lockに加え、同じ忍者のtask/report mutationからdurable task_start通知までを忍者別flockで直列化する。待機後は`assigned|acknowledged|in_progress`の別cmdを再読して上書きBLOCKするため、異なるcmdの同時配備でもtask YAMLを混線させない。破損taskはsame-cmd再利用を禁止してstale reset+atomic `--yaml` publishへ必ず戻す。→ `scripts/deploy_task.sh` / `tests/unit/test_deploy_task_lifecycle.bats`（GA-257/258、commits `e6847f0ab`, `448eba94b`、全量76/76 PASS・SKIP0）
 
@@ -776,7 +778,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1139 -->
+<!-- last_synced_lesson: L1141 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1622,6 +1624,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1137: 統合入口テストは対象外の独立preflightをfixtureで差し替える（cmd_training_test_speed_test_prompt_state_defer_reconcile__20260715031406）
 - L1138: 非同期化時はfixtureの出力粒度も同時同期する（cmd_karo_hotfix_ga260_cmd_complete_context_nudge_20260715）
 - L1139: command substitution内のbackgroundは非同期保証ではない（cmd_karo_hotfix_preflight_memory_timeout_loop_202607150518）
+- L1140: 共有cacheは生成完了をkey単位lockで同期する（cmd_karo_ci_fix_run_29361581880_202607150438）
+- L1141: gate_shogun_startupのasync checkはsubshell実行のためoverall/alerts変数が親へ伝播しない。判定はcollector側の出力文字列再解析が正（cmd_karo_hotfix_shogun_startup_evidence_202607150553）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
