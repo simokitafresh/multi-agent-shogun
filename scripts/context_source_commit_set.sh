@@ -32,9 +32,10 @@ import os, re, sys, tempfile
 path, commit, reason, evidence = sys.argv[1:]
 text = open(path, encoding='utf-8').read()
 line = f'<!-- source_commit:{commit} reason:{reason} evidence:{evidence} -->'
-pattern = re.compile(r'<!--\s*source_commit:[0-9a-f]{7,40}[^>]*-->')
-if pattern.search(text):
-    updated = pattern.sub(line, text, count=1)
+pattern = re.compile(r'<!--\s*source_commit:[0-9a-f]{7,40}[^\n]*?-->')
+match = pattern.search(text)
+if match:
+    updated = text[:match.start()] + line + pattern.sub('', text[match.end():])
 else:
     lines = text.splitlines(True)
     pos = next((i + 1 for i, v in enumerate(lines[:8]) if 'last_updated:' in v), min(1, len(lines)))

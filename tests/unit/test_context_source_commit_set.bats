@@ -46,6 +46,14 @@ teardown() { rm -rf "$TMP"; }
   grep -q "source_commit:$SHA reason:audit evidence:log-zero" "$TMP/context/test.md"
 }
 
+@test "replaces a source marker whose evidence contains an arrow" {
+  printf '# Test\n<!-- last_updated: 2026-07-01 -->\n<!-- source_commit:deadbee reason:old evidence:alerts:3->0 -->\n<!-- source_commit:feedbee reason:duplicate evidence:stale -->\n' > "$TMP/context/test.md"
+  run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "$SHA" audit current
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '<!-- source_commit:' "$TMP/context/test.md")" -eq 1 ]
+  grep -q "source_commit:$SHA reason:audit evidence:current" "$TMP/context/test.md"
+}
+
 @test "rejects invalid or non-ancestor commit" {
   run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md HEAD audit evidence
   [ "$status" -ne 0 ]

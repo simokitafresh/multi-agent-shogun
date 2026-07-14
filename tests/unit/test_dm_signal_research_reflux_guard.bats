@@ -46,7 +46,7 @@ teardown() {
 make_split_contexts() {
     mkdir -p "$TMP/root/context"
     for name in core ops research; do
-        printf '# %s\n<!-- last_updated: 2026-07-14 cmd_old -->\n<!-- source_commit:%s reason:old evidence:old -->\ncmd_3880 reflected\n' \
+        printf '# %s\n<!-- last_updated: 2026-07-14 cmd_old -->\n<!-- source_commit:%s reason:old evidence:alerts:3->0 -->\ncmd_3880 reflected\n' \
             "$name" "$(git -C "$DM" rev-parse --short HEAD)" > "$TMP/root/context/dm-signal-$name.md"
     done
 }
@@ -60,6 +60,9 @@ make_split_contexts() {
         --context context/dm-signal-core.md --context context/dm-signal-ops.md --context context/dm-signal-research.md
     [ "$status" -eq 0 ]
     [ "$(grep -rl "source_commit:$head" "$TMP/root/context" | wc -l)" -eq 3 ]
+    for file in "$TMP/root/context/"*.md; do
+        [ "$(grep -c '<!-- source_commit:' "$file")" -eq 1 ]
+    done
 }
 
 @test "GA-249: content未反映1件があればmarker更新0件でfail-closed" {

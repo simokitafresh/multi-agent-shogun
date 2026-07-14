@@ -53,7 +53,7 @@ for rel in rels:
         raise SystemExit(f"BLOCK(GA-249): content未反映のためmarker同期禁止: {rel} token={cmd}")
     text, n1 = re.subn(r"<!--\s*last_updated:\s*[^>]*-->", f"<!-- last_updated: {today} {cmd} -->", text, count=1)
     source = f"<!-- source_commit:{commit} reason:{cmd}_main_integration evidence:{cmd}_content_present -->"
-    text, n2 = re.subn(r"<!--\s*source_commit:[0-9a-f]{7,40}[^>]*-->", source, text, count=1)
+    text, n2 = re.subn(r"<!--\s*source_commit:[0-9a-f]{7,40}[^\n]*?-->", source, text, count=1)
     if n1 != 1 or n2 != 1:
         raise SystemExit(f"BLOCK(GA-249): marker missing/ambiguous: {rel} last_updated={n1} source_commit={n2}")
     prepared.append((path, text, open(path, "rb").read()))
