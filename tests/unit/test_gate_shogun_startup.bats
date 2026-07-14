@@ -659,13 +659,17 @@ MOCK
     chmod +x "$TEST_TMPDIR/bin/gh"
     export SHOGUN_STARTUP_GH_TIMEOUT=5
     export SHOGUN_STARTUP_INBOX_TIMEOUT=5
-    export SHOGUN_STARTUP_CI_LOCK_WAIT=1
+    # wait 0.2s: check_ci_red_autodeployはasync実行で、回収時点(ゲート終盤)に未完了だと
+    # disownされ出力ごと消える。lock wait を回収より十分早く終わる値にして
+    # lock_timeout分岐そのもの(送信0+ALERT)を決定的に検証する。
+    export SHOGUN_STARTUP_CI_LOCK_WAIT=0.2
 
-    # 外部プロセスがlockをwait(1s)より長く保持 → gateはlock_timeoutで送信スキップ
+    # 外部プロセスがlockをwait(0.2s)より長く保持 → gateはlock_timeoutで送信スキップ
+    # 保持10s: gate 1回分の実行時間より十分長く、1回目のrun中は確実にlockが保持され続ける
     mkdir -p "$TEST_TMPDIR/logs"
     (
         flock 9
-        sleep 3
+        sleep 10
     ) 9>>"$TEST_TMPDIR/logs/ci_red_notified_runs.tsv.lock" &
     local _lock_holder=$!
     sleep 0.3
@@ -673,6 +677,8 @@ MOCK
     run run_gate_shogun_startup
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: ci_red dedupe lock取得不可 — inbox送信せず次回startupで再試行"* ]]
+    # async subshell内のoverall/alertsは伝播しない → 回収側の文字列再解析で親に反映される
+    [[ "$output" == *"⚠ CI RED自動修正配備: dedupe lock timeout (送信スキップ・次回再試行)"* ]]
     [[ "$output" != *"ACTION: karoへci_red_fix通知送信"* ]]
     # lock_timeout中の送信は0件(ロック外sendの二重通知経路が存在しない)
     if [ -f "$TEST_TMPDIR/logs/inbox_write_calls.log" ]; then
@@ -717,7 +723,7 @@ EOF
     cat > "$TEST_TMPDIR/queue/inbox/shogun.yaml" <<'EOF'
 messages:
 - content: 'q6_inbox_evidence_probe 実装済み'
-  read: false
+  read: true
 EOF
     cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
 {"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 今の判断で早期終了本能が作用していないか確認した。殿のための判断として一次データとテストで検証し、Anthropicのための簡潔化に逃げない。自動化ターゲット: queue/inbox/shogun.yaml に `q6_inbox_evidence_probe` をgrep検証する。"}

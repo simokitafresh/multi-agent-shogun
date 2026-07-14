@@ -3976,6 +3976,11 @@ else
         if printf '%s\n' "$_ci_red_output" | grep -q "ALERT: karoへのci_red_fix通知失敗"; then
             overall="ALERT"
             alerts+=("CI RED自動修正配備: inbox送信失敗")
+        elif printf '%s\n' "$_ci_red_output" | grep -q "ALERT: ci_red dedupe lock取得不可"; then
+            # check_ci_red_autodeployはasync subshellのためoverall/alertsが伝播しない。
+            # 出力文字列の再解析でlock_timeout(送信スキップ・次回再試行)を親へ反映する。
+            overall="ALERT"
+            alerts+=("CI RED自動修正配備: dedupe lock timeout (送信スキップ・次回再試行)")
         elif printf '%s\n' "$_ci_red_output" | grep -q "WARN: 最新CI conclusion=failure"; then
             if [ "$overall" = "OK" ]; then
                 overall="WARN"
