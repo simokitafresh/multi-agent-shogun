@@ -168,31 +168,39 @@ detect_shogun_brainwash_pattern() {
 # cmd_3252 AC1: 過去形引用パターン除外（偽陽性防止）
 detect_f009_lord_delegation() {
   local message="$1"
-  # 過去形引用チェック: 「殿にpushしてもらった」「殿が実行してくれた」等は
-  # 報告・引用であり依頼ではない。過去形のみで依頼表現がなければスキップ
-  local has_past=0 has_request=0
-  if [[ "$message" =~ (してもらった|してくれた|してくださった|していただいた|しました|された結果|した経緯|した際) ]]; then
-    has_past=1
-  fi
-  if [[ "$message" =~ (ください|いただきたい|頂きたい|してほしい|お願いします|していただけ) ]]; then
-    has_request=1
-  fi
-  if [[ $has_past -eq 1 && $has_request -eq 0 ]]; then
-    return 1
-  fi
-  # 殿に操作を依頼するパターン(殿/lordコンテキスト必須)
-  # FP修正(2026-06-10): 無制限の.*は文境界を越えて全文マッチし、報告文の
-  # 「殿、…(commit abc123)…是正しており」を依頼と誤検出する(同日実測2件)。
-  # 依頼文では殿/操作語/依頼語が近接する。ギャップ有界化で遠距離FPのみ排除
-  if [[ "$message" =~ 殿.{0,60}(手動で|実行して|操作して|貼り付けて|入力して|コピーして|commit.{0,16}して|push.{0,16}して|kill.{0,16}して|respawn.{0,16}して) ]]; then
+  local clause normalized
+
+  # F009は「誰に」「何の操作を」「今依頼しているか」が同じ文節に揃う時だけ発火する。
+  # 完了報告・引用・第三者への依頼・F009自身の説明を、単語の共起だけで拾わない。
+  normalized="${message//$'\n'/。}"
+  normalized="${normalized//！/。}"
+  normalized="${normalized//？/。}"
+  normalized="${normalized//!/。}"
+  normalized="${normalized//\?/。}"
+  normalized="${normalized//。/$'\n'}"
+  normalized="${normalized//；/$'\n'}"
+  normalized="${normalized//;/$'\n'}"
+  while IFS= read -r clause; do
+    [[ -n "$clause" ]] || continue
+
+    # 過去の実施・依頼済み報告、引用、禁止規則や検出理由の説明は依頼ではない。
+    if [[ "$clause" =~ (依頼済み|お願い済み|してもらった|してくれた|してくださった|していただいた|実行済み|操作済み|完了報告|過去報告|引用|BLOCK理由|発火理由|依頼するな|依頼しない|求めるな) ]]; then
+      continue
+    fi
+
+    # 操作語と依頼態の両方を必須にする。「殿05:02指示」「次の一手として推薦」は除外。
+    [[ "$clause" =~ (手動|実行|操作|貼り付け|入力|コピー|commit|push|kill|respawn|CLI) ]] || continue
+    [[ "$clause" =~ (ください|いただけ|頂け|いただきたい|頂きたい|してほしい|お願いします|お願いしたい|頼む|してくれ) ]] || continue
+
+    # 家老・軍師・忍者への明示依頼は指揮系統内でありF009対象外。
+    if [[ "$clause" =~ (家老|軍師|忍者|karo|gunshi|hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)(に|へ|、).{0,40}(手動|実行|操作|貼り付け|入力|コピー|commit|push|kill|respawn|CLI) ]] \
+      && [[ ! "$clause" =~ 殿(に|へ|、).{0,40}(手動|実行|操作|貼り付け|入力|コピー|commit|push|kill|respawn|CLI) ]]; then
+      continue
+    fi
+
+    # 将軍の最終応答は殿宛なので、対象省略の直接命令も押し返しとして扱う。
     return 0
-  fi
-  if [[ "$message" =~ (手動で|実行して|操作して|貼り付けて|入力して|コピーして).{0,30}(ください|頂|いただ|願い) ]]; then
-    return 0
-  fi
-  if [[ "$message" =~ 殿.{0,30}(お願い|依頼) ]]; then
-    return 0
-  fi
+  done <<< "$normalized"
   return 1
 }
 

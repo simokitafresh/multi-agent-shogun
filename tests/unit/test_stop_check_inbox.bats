@@ -262,6 +262,59 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh" 
     [[ "$output" == *"F009"* ]]
 }
 
+@test "T-SCI-F009-007: shogun completion report context does not trigger F009" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"殿05:02指示を受け、家老へ依頼済み。依頼直後に修正を確認し、次の一手としてcommit整理を推薦する。"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh" 2>/dev/null
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"F009"* ]]
+}
+
+@test "T-SCI-F009-008: explicit request to karo does not trigger F009" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"家老へCLIをrespawnしてください。"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh" 2>/dev/null
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"F009"* ]]
+}
+
+@test "T-SCI-F009-009: detector BLOCK reason mention does not retrigger F009" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"F009のBLOCK理由は、殿にcommitやpushを依頼するな、自分で実行せよという防御である。"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh" 2>/dev/null
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"F009"* ]]
+}
+
+@test "T-SCI-F009-010: direct lord CLI operation request remains blocked" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"殿、CLIをrespawnしてください"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="shogun"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh" 2>/dev/null
+'
+    [ "$status" -eq 0 ]
+    echo "$output" | jq -e '.decision == "block"' >/dev/null
+    [[ "$output" == *"F009"* ]]
+}
+
 @test "T-SCI-004: unread summary is embedded in block reason" {
     cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
 messages:
