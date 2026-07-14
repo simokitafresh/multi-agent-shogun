@@ -9,11 +9,64 @@ THRESHOLD="${TEST_SPEED_THRESHOLD_SEC:-10}"
 
 active_or_completed() {
     local target="$1"
-    local file
-    while read -r file; do
-        rg -q 'status:[[:space:]]*(assigned|acknowledged|in_progress|done|completed)' "$file" && return 0
-    done < <(rg -l --fixed-strings "$target" "$ROOT/queue/tasks" "$ROOT/queue/reports" "$ROOT/queue/archive/reports" 2>/dev/null || true)
-    return 1
+    python3 - "$ROOT" "$target" <<'PY'
+import os
+import sys
+from pathlib import Path
+
+import yaml
+
+root = Path(sys.argv[1]).resolve()
+target = sys.argv[2]
+
+def canonical(value):
+    if not value:
+        return None
+    path = Path(str(value))
+    return Path(os.path.normpath(path if path.is_absolute() else root / path))
+
+def documents(directory):
+    if not directory.is_dir():
+        return
+    for path in directory.rglob("*.yaml"):
+        try:
+            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except (OSError, yaml.YAMLError):
+            continue
+        yield data.get("task", data), path
+
+wanted = canonical(target)
+tasks = []
+for data, path in documents(root / "queue" / "tasks"):
+    if canonical(data.get("target_path")) == wanted:
+        tasks.append((data, path))
+
+# Active ownership remains fail-closed and does not require a report.
+if any(str(data.get("status", "")) in {"assigned", "acknowledged", "in_progress"}
+       for data, _ in tasks):
+    raise SystemExit(0)
+
+reports = []
+for directory in (root / "queue" / "reports", root / "queue" / "archive" / "reports"):
+    reports.extend(documents(directory) or [])
+
+# A terminal task is permanently claimed only when a corresponding completed
+# report exists.  This preserves retries for failed/incomplete work while also
+# allowing reports to omit/reformat target_path.
+for task, _ in tasks:
+    if str(task.get("status", "")) not in {"done", "completed"}:
+        continue
+    task_ids = {str(task.get(key)) for key in ("task_id", "parent_cmd") if task.get(key)}
+    for report, _ in reports:
+        if str(report.get("status", "")) != "completed":
+            continue
+        report_ids = {str(report.get(key)) for key in ("task_id", "parent_cmd") if report.get(key)}
+        report_target = canonical(report.get("target_path"))
+        if (task_ids and task_ids & report_ids) or report_target == wanted:
+            raise SystemExit(0)
+
+raise SystemExit(1)
+PY
 }
 
 next_target() {
@@ -55,7 +108,8 @@ task:
     - id: AC1
       description: "変更前後wall秒と支配項を実測し、FAIL=0・SKIP=0で対象bats全量完走する"
     - id: AC2
-      description: "生成物をdeploy契約とgate_report_format契約に従い報告しscope限定commitする"
+      description: "related_lessonsが注入された場合のみ各教訓の有用性を検証し、生成物をdeploy契約とgate_report_format契約に従い報告してscope限定commitする"
+  related_lessons: []
   speed_evidence:
     source: "logs/test_timing_ledger.tsv"
     before_wall_sec: $wall

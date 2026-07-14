@@ -26,12 +26,47 @@ YAML
 
 @test "generator returns no candidate when completed evidence already claims target" {
   printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  cat > "$TMP/queue/tasks/kotaro.yaml" <<YAML
+task:
+  task_id: cmd_speed_done
+  target_path: "$TMP/tests/unit/slow.bats"
+  status: done
+YAML
   cat > "$TMP/queue/reports/kotaro_report_done.yaml" <<'YAML'
+task_id: cmd_speed_done
 status: completed
 target_path: tests/unit/slow.bats
 YAML
   run env SHOGUN_REPO_ROOT="$TMP" TEST_TIMING_LEDGER="$TMP/logs/test_timing_ledger.tsv" bash "$ROOT/scripts/test_speed_task_generator.sh" next
   [ "$status" -ne 0 ]
+}
+
+@test "generator preserves retry and active ownership semantics" {
+  printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  cat > "$TMP/queue/tasks/kotaro.yaml" <<'YAML'
+task:
+  task_id: cmd_speed_failed
+  target_path: tests/unit/slow.bats
+  status: failed
+YAML
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_TIMING_LEDGER="$TMP/logs/test_timing_ledger.tsv" bash "$ROOT/scripts/test_speed_task_generator.sh" next
+  [ "$status" -eq 0 ]
+
+  sed -i 's/status: failed/status: in_progress/' "$TMP/queue/tasks/kotaro.yaml"
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_TIMING_LEDGER="$TMP/logs/test_timing_ledger.tsv" bash "$ROOT/scripts/test_speed_task_generator.sh" next
+  [ "$status" -ne 0 ]
+}
+
+@test "generated lesson check is satisfiable for empty and nonempty related_lessons" {
+  printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_TIMING_LEDGER="$TMP/logs/test_timing_ledger.tsv" TEST_SPEED_TASK_DIR="$TMP/queue/training" bash "$ROOT/scripts/test_speed_task_generator.sh" generate
+  [ "$status" -eq 0 ]
+  generated="$output"
+  grep -Fq 'related_lessons: []' "$generated"
+  grep -Fq 'related_lessonsが注入された場合のみ' "$generated"
+  sed -i 's/related_lessons: \[\]/related_lessons: [{id: L001}]/' "$generated"
+  grep -Fq 'related_lessons: [{id: L001}]' "$generated"
+  grep -Fq 'related_lessonsが注入された場合のみ' "$generated"
 }
 
 @test "idle priority is reflux then test speed then script speed then legacy" {
