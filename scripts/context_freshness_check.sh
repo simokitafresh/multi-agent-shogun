@@ -540,8 +540,8 @@ def build_missing_source_commit_warning(rel_path: str) -> str:
 # 8秒で安定、安全マージンを見て10秒を既定とする(旧既定3秒は実測を大幅に下回り
 # ほぼ全件timeoutしていた)。テスト用小さいrepoでは瞬時完了するため精度に影響しない。
 # 環境変数 CFC_GIT_TIMEOUT で上書き可能（テスト/開発用）。
-_GIT_TIMEOUT: int = int(os.environ.get("CFC_GIT_TIMEOUT", "10"))
-_GIT_RETRY_TIMEOUT: int = int(os.environ.get("CFC_GIT_RETRY_TIMEOUT", "60"))
+_GIT_TIMEOUT: float = float(os.environ.get("CFC_GIT_TIMEOUT", "10"))
+_GIT_RETRY_TIMEOUT: float = float(os.environ.get("CFC_GIT_RETRY_TIMEOUT", "60"))
 _GIT_ATTEMPTS: int = 2
 
 

@@ -8,23 +8,18 @@ setup_file() {
     export SRC_SCRIPT="$PROJECT_ROOT/scripts/context_freshness_check.sh"
     [ -f "$SRC_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
-}
 
-setup() {
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/cfc.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/scripts/config" \
-             "$TEST_TMPDIR/config" \
-             "$TEST_TMPDIR/context" \
-             "$TEST_TMPDIR/queue/archive/cmds" \
-             "$TEST_TMPDIR/queue"
+    export CFC_MASTER_FIXTURE="$BATS_FILE_TMPDIR/master"
+    mkdir -p "$CFC_MASTER_FIXTURE/scripts/config" \
+             "$CFC_MASTER_FIXTURE/config" \
+             "$CFC_MASTER_FIXTURE/context" \
+             "$CFC_MASTER_FIXTURE/queue/archive/cmds" \
+             "$CFC_MASTER_FIXTURE/queue"
+    cp "$SRC_SCRIPT" "$CFC_MASTER_FIXTURE/scripts/context_freshness_check.sh"
+    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$CFC_MASTER_FIXTURE/scripts/config/context_source_commits.tsv"
+    chmod +x "$CFC_MASTER_FIXTURE/scripts/context_freshness_check.sh"
 
-    # Copy the script under test
-    cp "$SRC_SCRIPT" "$TEST_TMPDIR/scripts/context_freshness_check.sh"
-    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
-    chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
-
-    # Default: one active project with context_file mapping
-    cat > "$TEST_TMPDIR/config/projects.yaml" <<'PROJYAML'
+    cat > "$CFC_MASTER_FIXTURE/config/projects.yaml" <<'PROJYAML'
 projects:
   - id: dm-signal
     status: active
@@ -39,6 +34,24 @@ projects:
     context_file: context/archived-proj.md
 PROJYAML
 
+    cat > "$CFC_MASTER_FIXTURE/config/context_freshness_excludes.txt" <<'EOF'
+context/README.md
+context/cdp-philosophy.md
+context/cdp-severity.md
+context/checklist-alm-registration.md
+context/checklist-shin-v2-registration.md
+context/checklist-ward-fof-production.md
+EOF
+
+    git -C "$CFC_MASTER_FIXTURE" init -q
+    git -C "$CFC_MASTER_FIXTURE" config user.email "test@example.invalid"
+    git -C "$CFC_MASTER_FIXTURE" config user.name "Test User"
+}
+
+setup() {
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/cfc.XXXXXX")"
+    cp -a "$CFC_MASTER_FIXTURE/." "$TEST_TMPDIR/"
+
     # Helper: today and stale date strings
     TODAY="$(date +%Y-%m-%d)"
     STALE_DATE="$(date -d '30 days ago' +%Y-%m-%d 2>/dev/null || date -v-30d +%Y-%m-%d)"
@@ -49,18 +62,6 @@ PROJYAML
     export CFC_OUTPUT_CACHE_TTL=0
     export CFC_REQUIRE_SOURCE_COMMIT=0
 
-    cat > "$CONTEXT_FRESHNESS_EXCLUDE_LIST" <<'EOF'
-context/README.md
-context/cdp-philosophy.md
-context/cdp-severity.md
-context/checklist-alm-registration.md
-context/checklist-shin-v2-registration.md
-context/checklist-ward-fof-production.md
-EOF
-
-    git -C "$TEST_TMPDIR" init -q
-    git -C "$TEST_TMPDIR" config user.email "test@example.invalid"
-    git -C "$TEST_TMPDIR" config user.name "Test User"
 }
 
 teardown() {
@@ -719,14 +720,14 @@ if [[ " $* " == *" log "* ]]; then
     [[ -f "$CFC_FAKE_GIT_COUNTER" ]] && count="$(cat "$CFC_FAKE_GIT_COUNTER")"
     count=$((count + 1))
     printf '%s\n' "$count" > "$CFC_FAKE_GIT_COUNTER"
-    if (( count == 1 )); then sleep 2; fi
+    if (( count == 1 )); then sleep 0.2; fi
 fi
 exec "$CFC_REAL_GIT" "$@"
 SH
     chmod +x "$fake_bin/git"
 
     PATH="$fake_bin:$PATH" CFC_REAL_GIT="$real_git" CFC_FAKE_GIT_COUNTER="$counter_file" \
-      CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=3 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
+      CFC_GIT_TIMEOUT=0.1 CFC_GIT_RETRY_TIMEOUT=0.3 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
 
     [ "$status" -eq 0 ]
     [ "$(cat "$counter_file")" -ge 2 ]
@@ -749,14 +750,14 @@ if [[ " $* " == *" log "* ]]; then
     count=0
     [[ -f "$CFC_FAKE_GIT_COUNTER" ]] && count="$(cat "$CFC_FAKE_GIT_COUNTER")"
     printf '%s\n' "$((count + 1))" > "$CFC_FAKE_GIT_COUNTER"
-    sleep 2
+    sleep 0.2
 fi
 exec "$CFC_REAL_GIT" "$@"
 SH
     chmod +x "$fake_bin/git"
 
     PATH="$fake_bin:$PATH" CFC_REAL_GIT="$real_git" CFC_FAKE_GIT_COUNTER="$counter_file" \
-      CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=1 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
+      CFC_GIT_TIMEOUT=0.1 CFC_GIT_RETRY_TIMEOUT=0.1 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
 
     [ "$status" -eq 0 ]
     [ "$(cat "$counter_file")" -eq 2 ]
