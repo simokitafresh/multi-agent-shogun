@@ -59,13 +59,25 @@ run_draft_review() {
     local task_file="${2:-$TEST_PROJECT/queue/tasks/sasuke.yaml}"
     local deploy_type="${3:-task_assigned}"
 
-    run bash -lc '
-        set -euo pipefail
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
-        log() { printf "%s\n" "$1"; }
-        maybe_notify_draft_review "'"$task_file"'" "'"$cmd_id"'" sasuke "'"$deploy_type"'"
-    '
+    run maybe_notify_draft_review "$task_file" "$cmd_id" sasuke "$deploy_type"
+}
+
+run_quality_contract() {
+    run deploy_task_quality_contract_result "$1"
+}
+
+run_draft_review_skipped() {
+    SKIP_DRAFT_REVIEW=1 maybe_notify_draft_review "$1" cmd_normal sasuke task_assigned
+}
+
+run_draft_review_with_invalid_count() {
+    count_task_acceptance_criteria() { printf 'not-a-number\n'; }
+    maybe_notify_draft_review "$1" cmd_normal sasuke task_assigned
+}
+
+run_draft_review_with_failed_count() {
+    count_task_acceptance_criteria() { return 1; }
+    maybe_notify_draft_review "$1" cmd_normal sasuke task_assigned
 }
 
 @test "normal deploy sends review_draft to gunshi" {
@@ -174,14 +186,7 @@ YAML
 }
 
 @test "invalid AC count output warns and still sends draft review" {
-    run bash -lc '
-        set -euo pipefail
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
-        log() { printf "%s\n" "$1"; }
-        count_task_acceptance_criteria() { printf "not-a-number\n"; }
-        maybe_notify_draft_review "'"$TEST_PROJECT/queue/tasks/sasuke.yaml"'" cmd_normal sasuke task_assigned
-    '
+    run run_draft_review_with_invalid_count "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"draft_review: WARN (ac_count invalid: not-a-number; sending review)"* ]]
@@ -189,14 +194,7 @@ YAML
 }
 
 @test "failed AC count command warns and still sends draft review" {
-    run bash -lc '
-        set -euo pipefail
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
-        log() { printf "%s\n" "$1"; }
-        count_task_acceptance_criteria() { return 1; }
-        maybe_notify_draft_review "'"$TEST_PROJECT/queue/tasks/sasuke.yaml"'" cmd_normal sasuke task_assigned
-    '
+    run run_draft_review_with_failed_count "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"draft_review: WARN (ac_count unavailable; sending review)"* ]]
@@ -290,14 +288,7 @@ YAML
 }
 
 @test "SKIP_DRAFT_REVIEW=1 skips draft review" {
-    run bash -lc '
-        set -euo pipefail
-        export DEPLOY_TASK_LIB_ONLY=1
-        export SKIP_DRAFT_REVIEW=1
-        source "'"$TEST_PROJECT/scripts/deploy_task.sh"'"
-        log() { printf "%s\n" "$1"; }
-        maybe_notify_draft_review "'"$TEST_PROJECT/queue/tasks/sasuke.yaml"'" cmd_normal sasuke task_assigned
-    '
+    run run_draft_review_skipped "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"draft_review: SKIP (env)"* ]]
@@ -311,13 +302,7 @@ task:
   command: "新規gateを追加して警告を出す"
 YAML
 
-    run bash -lc '
-        set -euo pipefail
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"
-        log() { printf "%s\\n" "$1"; }
-        deploy_task_direct_quality_contract_precheck "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"
-    '
+    run deploy_task_direct_quality_contract_precheck "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK: direct deployment detector quality contract failed"* ]]
@@ -330,13 +315,7 @@ task:
   command: "新規gateを追加し、BLOCKしてdetector_fp_rateでFP率計測する"
 YAML
 
-    run bash -lc '
-        set -euo pipefail
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"
-        log() { printf "%s\\n" "$1"; }
-        deploy_task_direct_quality_contract_precheck "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"
-    '
+    run deploy_task_direct_quality_contract_precheck "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"quality_contract: PASS"* ]]
@@ -357,12 +336,7 @@ task:
     fp_measurement: "false_positiveを計測"
 YAML
 
-    run bash -lc '
-        set -euo pipefail
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"
-        deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"
-    '
+    run_quality_contract "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 
     [ "$status" -eq 0 ]
     [ "$output" = "PASS" ]
@@ -379,22 +353,17 @@ task:
     note: 品質を確認する
 YAML
 
-    run bash -lc '
-        set -euo pipefail
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"
-        deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"
-    '
+    run_quality_contract "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 
     [ "$status" -eq 0 ]
     [ "$output" = "WARN(action=missing,fp=missing)" ]
 
     sed -i 's/実装後に通知する/BLOCKして停止する/' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
-    run bash -lc 'export DEPLOY_TASK_LIB_ONLY=1; source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"; deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"'
+    run_quality_contract "$TEST_PROJECT/queue/tasks/sasuke.yaml"
     [ "$output" = "WARN(action=pass,fp=missing)" ]
 
     sed -i 's/品質を確認する/detector_fp_rateで計測する/' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
-    run bash -lc 'export DEPLOY_TASK_LIB_ONLY=1; source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"; deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"'
+    run_quality_contract "$TEST_PROJECT/queue/tasks/sasuke.yaml"
     [ "$output" = "PASS" ]
 }
 
@@ -409,7 +378,7 @@ task:
     fp_measurement: gate_fire_log
 YAML
 
-    run bash -lc 'export DEPLOY_TASK_LIB_ONLY=1; source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"; deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"'
+    run_quality_contract "$TEST_PROJECT/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
     [ "$output" = "NOT_APPLICABLE" ]
 }
@@ -431,7 +400,7 @@ task:
       gate_fire_log と detector_fp_rate で偽陽性を計測する。
 YAML
 
-    run bash -lc 'export DEPLOY_TASK_LIB_ONLY=1; source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"; deploy_task_quality_contract_result "'"$TEST_PROJECT"'/queue/tasks/sasuke.yaml"'
+    run_quality_contract "$TEST_PROJECT/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
     [ "$output" = "PASS" ]
 }
@@ -448,7 +417,7 @@ task:
 YAML
     before="$(sha256sum "$TEST_PROJECT/.karo_worktrees/feature/queue/tasks/sasuke.yaml")"
 
-    run bash -lc 'export DEPLOY_TASK_LIB_ONLY=1; source "'"$TEST_PROJECT"'/scripts/deploy_task.sh"; deploy_task_quality_contract_result "'"$TEST_PROJECT"'/.karo_worktrees/feature/queue/tasks/sasuke.yaml"'
+    run_quality_contract "$TEST_PROJECT/.karo_worktrees/feature/queue/tasks/sasuke.yaml"
 
     [ "$status" -eq 0 ]
     [ "$output" = "PASS" ]
