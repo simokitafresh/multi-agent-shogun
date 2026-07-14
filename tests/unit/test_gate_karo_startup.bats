@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 # test_gate_karo_startup.bats — gate_karo_startup.sh unit tests
 # cmd_1554: 家老起動ゲート8項目チェックのテスト可能分岐を検証
+# Speed measurements and the no-SKIP contract: [[gate-karo-startup-test-speed]]
 
 setup_file() {
     export PROJECT_ROOT
@@ -238,11 +239,9 @@ teardown() {
     unset SHOGUN_THREE_LAYER_CACHE_WARN_BYTES
     unset DISK_WATCH_AVAILABLE_KB
     unset KARO_QUALITY_MISSING_CUTOFF
-    [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
-}
-
-teardown_file() {
-    [ -n "$KARO_BASE_FIXTURE" ] && [ -d "$KARO_BASE_FIXTURE" ] && rm -rf "$KARO_BASE_FIXTURE"
+    # TEST_TMPDIR is below BATS_TEST_TMPDIR and KARO_BASE_FIXTURE is below
+    # BATS_FILE_TMPDIR. Bats removes both managed roots, so deleting the same
+    # fixture trees here only duplicates filesystem work for every test.
 }
 
 # === Test 1: 全項目正常 → 総合判定OK ===
