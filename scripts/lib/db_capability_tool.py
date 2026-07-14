@@ -38,8 +38,13 @@ def _nologin_rehearsal(dsn: str, app_role: str, keeper_role: str, output: Path) 
         "dm_signal_user_alter": 0, "sqlstates": {},
     }
     try:
+        snapshot_sql = """SELECT r.rolname, r.rolcanlogin, COALESCE(array_agg(m.rolname ORDER BY m.rolname) FILTER (WHERE m.rolname IS NOT NULL), ARRAY[]::name[])
+                          FROM pg_catalog.pg_roles r
+                          LEFT JOIN pg_catalog.pg_auth_members am ON am.roleid=r.oid
+                          LEFT JOIN pg_catalog.pg_roles m ON m.oid=am.member
+                          WHERE r.rolname IN (%s,%s) GROUP BY r.rolname,r.rolcanlogin ORDER BY r.rolname"""
         with admin.cursor() as cur:
-            cur.execute("SELECT rolname, rolcanlogin FROM pg_catalog.pg_roles WHERE rolname IN (%s,%s) ORDER BY rolname", (app_role, keeper_role))
+            cur.execute(snapshot_sql, (app_role, keeper_role))
             before_rows = cur.fetchall()
             if before_rows:
                 raise RuntimeError("disposable rehearsal role already exists")
@@ -47,6 +52,8 @@ def _nologin_rehearsal(dsn: str, app_role: str, keeper_role: str, output: Path) 
             result["sqlstates"]["create_keeper"] = "00000"
             cur.execute(sql.SQL("CREATE ROLE {} LOGIN PASSWORD %s").format(sql.Identifier(app_role)), (password,))
             result["sqlstates"]["create_app"] = "00000"
+            cur.execute(sql.SQL("GRANT {} TO CURRENT_USER WITH ADMIN OPTION").format(sql.Identifier(app_role)))
+            result["sqlstates"]["grant_app_admin"] = "00000"
 
         parsed = urlsplit(dsn)
         app_dsn = dsn.replace(parsed.username or "", app_role, 1)
@@ -81,7 +88,7 @@ def _nologin_rehearsal(dsn: str, app_role: str, keeper_role: str, output: Path) 
                     cur.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(sql.Identifier(role)))
                 except Exception as exc:
                     result["sqlstates"][f"drop_{role}"] = _sqlstate(exc)
-            cur.execute("SELECT rolname, rolcanlogin FROM pg_catalog.pg_roles WHERE rolname IN (%s,%s) ORDER BY rolname", (app_role, keeper_role))
+            cur.execute(snapshot_sql, (app_role, keeper_role))
             after_rows = cur.fetchall()
         admin.close()
         result["roles_remaining"] = len(after_rows)
