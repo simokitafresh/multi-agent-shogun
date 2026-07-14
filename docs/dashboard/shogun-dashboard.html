@@ -105,7 +105,7 @@
 <div class="wrap">
   <header class="top">
     <h1>将軍戦況ダッシュボード</h1>
-    <span class="stamp">最終更新 <b>2026-07-14 22:22 JST</b> ｜ 将軍が随時更新</span>
+    <span class="stamp">最終更新 <b>2026-07-14 23:50 JST</b> ｜ 将軍が随時更新</span>
   </header>
 
   <div class="tiles">
@@ -122,7 +122,7 @@
     <div class="tile ok">
       <span class="k">unit5個別攻略（殿裁定19:16/19:20）</span>
       <span class="v">15本刈り取り（CLEAR 12）</span>
-      <span class="s">テスト側7本CLEAR（gate_karo_startup 67.4→19.1s ｜ semantic_index 58.1→16.9s ｜ cmd_complete_gate 46.5→19.1s ｜ guard14 39.4→17.6s ほか）＋回帰是正4本CLEAR（disk_space 5.8→1.25s ｜ parity_check 4.8→0.9s ｜ inbox_archive 本体hot path ｜ gunshi_auto_idle 6.45→0.95s）＋配備自動化ガードCLEAR＋報告終端不変量CLEAR。攻略16ファイル合計576→192秒（約6.4分削減・67%減、22:22時点）。最大の一手: gate_gunshi_precheck 29.0→0.77s(97%減)=殿裁定22:04「本体面攻略」の初実証（gate本体へfocused selector追加=テストも本番gateも速くなる両取り）。他: prompt_state 94%・write_hooks 90%・guard14 72%。副産物の品質修正2本。主軸は本体スクリプト面攻略（speed_training ledger 312本）へ移行中</span>
+      <span class="s">テスト側7本CLEAR（gate_karo_startup 67.4→19.1s ｜ semantic_index 58.1→16.9s ｜ cmd_complete_gate 46.5→19.1s ｜ guard14 39.4→17.6s ほか）＋回帰是正4本CLEAR（disk_space 5.8→1.25s ｜ parity_check 4.8→0.9s ｜ inbox_archive 本体hot path ｜ gunshi_auto_idle 6.45→0.95s）＋配備自動化ガードCLEAR＋報告終端不変量CLEAR。23:50時点: テスト側攻略30本超CLEAR（累計67%減）＋品質修正4本＋本体hook 3本（guard14 32%減・prompt_state 16%減・session_start 13%減）。自走レーン2本稼働（cmd_3919テスト側＋cmd_3920本体面攻略、飽和終端込み）＋基盤文書化（gist f777582a）。家老CTX根治=cmd_3931（バンドルSSOT化）LGTM済みGATE待ち。次セッション必須: 07-15 01:40 UTC cron後のfreeze発動確認＋攻略収束後の全量再実測（2244.6s基準）</span>
     </div>
     <div class="tile warn">
       <span class="k">忍者陣形</span>
