@@ -493,7 +493,7 @@ setup() {
     export TEST_PROJECT="$TEST_TMPDIR/project"
     export TEST_CMD_ID="cmd_999"
     mkdir -p "$TEST_PROJECT"
-    cp -a "$CMD_GATE_MASTER_PROJECT/." "$TEST_PROJECT/"
+    cp -a --reflink=auto "$CMD_GATE_MASTER_PROJECT/." "$TEST_PROJECT/"
     export SCRIPT_DIR="$TEST_PROJECT"
     export TASKS_DIR="$TEST_PROJECT/queue/tasks"
     export LOG_DIR="$TEST_PROJECT/logs"
