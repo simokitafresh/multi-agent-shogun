@@ -865,13 +865,19 @@ extract_acceptance_criteria_block() {
 
     printf '%s\n' "$CMD_BLOCK_NC" | awk '
         /^[[:space:]]*acceptance_criteria:/ {
+            match($0, /^[[:space:]]*/)
+            ac_indent = RLENGTH
             line = $0
             sub(/^[[:space:]]*acceptance_criteria:[[:space:]]*/, "", line)
             if (line != "") print line
             in_ac=1
             next
         }
-        in_ac && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / { exit }
+        in_ac {
+            match($0, /^[[:space:]]*/)
+            line_indent = RLENGTH
+            if ($0 ~ /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:/ && line_indent <= ac_indent) exit
+        }
         in_ac { print }
     '
 }
@@ -6678,7 +6684,7 @@ check_new_file_structure_warning() {
 
     # Filter out quality_gate/diagnosis/assumptions content that may leak into search scope
     # (defensive: extract functions should exclude these, but edge cases exist)
-    hits="$(printf '%s\n' "$search_text" | grep -v -E '^\s*(diagnosis|nazenaze_root_cause|quality_gate|q[0-9]+_|q_ambiguity|assumptions|trust|claim|environment_change|delegated_at):' | grep -inE 'new_file|new_structure|新規ファイル|新規構造|新規作成|新設|新規に.*(作成|追加)|新しい.*(ファイル|構造)' || true)"
+    hits="$(printf '%s\n' "$search_text" | grep -v -E '^[[:space:]]*(-[[:space:]]*)?(diagnosis|nazenaze_root_cause|quality_gate|q[0-9]+_[A-Za-z0-9_]*|q_ambiguity|assumptions|trust|claim|environment_change|delegated_at):' | grep -inE 'new_file|new_structure|新規ファイル|新規構造|新規作成|新設|新規に.*(作成|追加)|新しい.*(ファイル|構造)' || true)"
     [[ -n "$hits" ]] || return 0
 
     echo "WARN: new_file/new_structure要求を検出。既存活用できるファイル・構造がないか確認せよ" >&2
