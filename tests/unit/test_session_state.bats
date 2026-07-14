@@ -226,6 +226,7 @@ YAML
     # _DEPLOY_PREV_SESSION_STATEをセットしてinject_session_state_hintsを呼ぶ
     (
         export _DEPLOY_PREV_SESSION_STATE='{"attempt": 2, "last_block_reason": "binary_checks FAIL", "tried_approaches": ["binary_checks FAIL"], "diagnose_reason": "diag text", "approach_summary": "summary text", "prior_attempts": [{"attempt": 1, "block_reason": "older fail", "diagnose_reason": "older diag", "approach_summary": "older summary"}, {"attempt": 2, "block_reason": "binary_checks FAIL", "diagnose_reason": "diag text", "approach_summary": "summary text"}]}'
+        export _DEPLOY_PREV_PARENT_CMD=cmd_test
         inject_session_state_hints "$task_yaml"
     )
 
@@ -261,6 +262,7 @@ YAML
 
     (
         export _DEPLOY_PREV_SESSION_STATE='{"attempt": 2, "last_block_reason": "binary_checks FAIL\nsame failure", "tried_approaches": ["binary_checks FAIL\nsame failure"], "diagnose_reason": "diag line1\nline2", "approach_summary": "summary line1\nline2", "prior_attempts": [{"attempt": 1, "block_reason": "older fail\nagain", "diagnose_reason": "older diag\nmore", "approach_summary": "older summary\nmore"}]}'
+        export _DEPLOY_PREV_PARENT_CMD=cmd_test
         inject_session_state_hints "$task_yaml"
     )
 
@@ -296,6 +298,26 @@ YAML
     )
 
     # previous_failuresが存在しないことを確認
+    run grep -q "previous_failures" "$task_yaml"
+    [ "$status" -eq 1 ]
+}
+
+@test "T-SS-006: 別parent_cmdのsession_stateはprevious_failuresへ注入しない" {
+    local task_yaml="$TASK_TMPDIR/sasuke_cross_cmd.yaml"
+    cat > "$task_yaml" << 'YAML'
+task:
+  parent_cmd: cmd_new
+  task_id: cmd_new_impl
+  status: assigned
+  worker_id: sasuke
+YAML
+
+    (
+        export _DEPLOY_PREV_PARENT_CMD=cmd_old
+        export _DEPLOY_PREV_SESSION_STATE='{"attempt": 1, "last_block_reason": "old command failure"}'
+        inject_session_state_hints "$task_yaml"
+    )
+
     run grep -q "previous_failures" "$task_yaml"
     [ "$status" -eq 1 ]
 }

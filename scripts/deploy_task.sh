@@ -8013,6 +8013,22 @@ PY
 inject_session_state_hints() {
     local task_file="$1"
     [ -z "${_DEPLOY_PREV_SESSION_STATE:-}" ] && return 0
+    # Failure history belongs to a command attempt, not to the ninja slot.
+    # A newly assigned command must not inherit an unrelated task's gate failure.
+    local current_parent_cmd
+    current_parent_cmd=$(awk '
+        /^[[:space:]]+parent_cmd:[[:space:]]*/ {
+            line=$0
+            sub(/^[[:space:]]+parent_cmd:[[:space:]]*/, "", line)
+            gsub(/^["'\'' ]+|["'\'' ]+$/, "", line)
+            print line
+            exit
+        }
+    ' "$task_file" 2>/dev/null || true)
+    if [ -z "${_DEPLOY_PREV_PARENT_CMD:-}" ] || [ -z "$current_parent_cmd" ] || \
+       [ "$_DEPLOY_PREV_PARENT_CMD" != "$current_parent_cmd" ]; then
+        return 0
+    fi
     local ss_tmp
     ss_tmp=$(mktemp)
     printf '%s' "$_DEPLOY_PREV_SESSION_STATE" > "$ss_tmp"
