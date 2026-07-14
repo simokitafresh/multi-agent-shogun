@@ -11,18 +11,13 @@ setup_file() {
 
 setup() {
     deploy_task_scaffold "deploy_yaml_freshness"
-
-    export TEST_GIT_ROOT
-    TEST_GIT_ROOT="$(mktemp -d "$BATS_TMPDIR/test_git_root.XXXXXX")"
-    git -C "$TEST_GIT_ROOT" init --quiet
-    git -C "$TEST_GIT_ROOT" config user.name "Test User"
-    git -C "$TEST_GIT_ROOT" config user.email "test@example.com"
-    mkdir -p "$TEST_GIT_ROOT/scripts"
 }
 
 teardown() {
     deploy_task_teardown
-    [ -n "${TEST_GIT_ROOT:-}" ] && [ -d "$TEST_GIT_ROOT" ] && rm -rf "$TEST_GIT_ROOT"
+    if [ -n "${TEST_GIT_ROOT:-}" ] && [ -d "$TEST_GIT_ROOT" ]; then
+        rm -rf "$TEST_GIT_ROOT"
+    fi
 }
 
 run_yaml_freshness_check() {
@@ -34,6 +29,15 @@ run_yaml_freshness_check() {
         source "$TEST_PROJECT/scripts/deploy_task.sh"
         check_yaml_freshness "$yaml_file" "$git_root"
     ) 2>&1
+}
+
+setup_git_fixture() {
+    export TEST_GIT_ROOT
+    TEST_GIT_ROOT="$(mktemp -d "$BATS_TMPDIR/test_git_root.XXXXXX")"
+    git -C "$TEST_GIT_ROOT" init --quiet
+    git -C "$TEST_GIT_ROOT" config user.name "Test User"
+    git -C "$TEST_GIT_ROOT" config user.email "test@example.com"
+    mkdir -p "$TEST_GIT_ROOT/scripts"
 }
 
 make_script_commit() {
@@ -58,6 +62,7 @@ use_private_scripts_fixture() {
 }
 
 @test "スクリプトがYAML作成後にcommitされていた場合WARNが出力される" {
+    setup_git_fixture
     local recent_date
     recent_date="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
     make_script_commit "scripts/my_tool.sh" "$recent_date"
@@ -78,6 +83,7 @@ EOF
 }
 
 @test "スクリプトがYAML作成前にcommitされていた場合WARNは出力されない" {
+    setup_git_fixture
     local old_date
     old_date="$(date -u -d '2 hours ago' '+%Y-%m-%dT%H:%M:%SZ')"
     make_script_commit "scripts/my_tool.sh" "$old_date"
