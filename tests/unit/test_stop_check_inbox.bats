@@ -298,7 +298,6 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"初回タスクを確認せよ"* ]]
 
-    sleep 1
     cat > "$TEST_PROJECT/queue/inbox/hayate.yaml" <<'EOF'
 messages:
   - id: msg2
@@ -307,6 +306,9 @@ messages:
     content: 更新後タスクを確認せよ
     read: false
 EOF
+    # Cache invalidation is an mtime contract; advance it deterministically without a wall-clock sleep.
+    touch -d "@$(($(stat -c %Y "$SHOGUN_STATE_DIR/shogun_stop_check_inbox_summary_hayate") + 1))" \
+        "$TEST_PROJECT/queue/inbox/hayate.yaml"
 
     run_hook '{"stop_hook_active":false}'
     [ "$status" -eq 0 ]
@@ -488,8 +490,10 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
     [ -f "$_q6_flag" ]
 
     # Simulate cmd issued: update karo_yaml after flag creation
-    sleep 1
     printf 'commands:\ncmd_9999:\n  status: delegated\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    # The hook compares integer mtimes. Set the command queue one second past the flag directly.
+    touch -d "@$(($(stat -c %Y "$SHOGUN_STATE_DIR/shogun_q6_brainwash_shogun") + 1))" \
+        "$TEST_PROJECT/queue/shogun_to_karo.yaml"
 
     # 2nd turn: karo_yaml newer than flag → flag cleared, no LS065 WARN
     PAYLOAD='{"stop_hook_active":false,"last_assistant_message":"一次データを確認して進む"}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
