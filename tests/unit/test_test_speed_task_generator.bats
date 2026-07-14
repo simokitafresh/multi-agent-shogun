@@ -20,6 +20,7 @@ YAML
   [ "$status" -eq 0 ]
   generated="$output"
   grep -Fq 'target_path: "tests/unit/slow.bats"' "$generated"
+  grep -Fq 'estimated_minutes: 5' "$generated"
   grep -Fq 'FAIL0; SKIP0; no expectation relaxation' "$generated"
   grep -Fq 'shared fixture/cache first; switch to production script at plateau' "$generated"
 }

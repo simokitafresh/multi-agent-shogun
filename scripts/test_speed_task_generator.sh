@@ -45,6 +45,7 @@ task:
   parent_cmd: "cmd_training_test_speed_${slug}_${stamp}"
   task_id: "cmd_training_test_speed_${slug}_${stamp}"
   task_type: training
+  estimated_minutes: 5
   project: infra
   target_path: "$target"
   status: assigned
