@@ -45,6 +45,17 @@ tmux respawn-pane -t "$pane" \
     "reset 2>/dev/null; export PATH=\"${node_path}:\$PATH\"; cd \"${ROOT}\" && exec ${launch}"
 tmux clear-history -t "$pane" 2>/dev/null || true
 tmux set-option -p -t "$pane" @agent_id "$agent"
+tmux set-option -p -t "$pane" @context_pct "0%"
+task_state="$(python3 - "$ROOT/queue/tasks/${agent}.yaml" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+task = data.get("task", data) if isinstance(data, dict) else {}
+status = str(task.get("status") or "")
+parent = str(task.get("parent_cmd") or "")
+print(parent if status in {"assigned", "acknowledged", "in_progress", "pending"} else "")
+PY
+)"
+tmux set-option -p -t "$pane" @current_task "$task_state"
 
 for _ in {1..20}; do
     sleep 0.25
