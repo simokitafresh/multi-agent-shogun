@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-15 cmd_karo_hotfix_completion_notify_terminal_duplicate_20260715 -->
-<!-- source_commit:5efbb3a371e06b9f5a911903d773e4095c955a46 reason:timing-dashboard-completion-terminal-contracts evidence:cmd_3942+dashboard contracts reflected; duplicate terminal LGTM alerts 3->0 by explicit reopen requirement; focused 6/6 PASS SKIP0 -->
+<!-- last_updated: 2026-07-15 cmd_karo_hotfix_context_source_marker_arrow_20260715 -->
+<!-- source_commit:08e360e53 reason:source-marker-arrow-dedup evidence:before:2 markers after:1; tests 33/33 PASS SKIP0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -22,6 +22,10 @@ Bats直接実行は`run_timed_bats.sh`へ集約し、既存writerの14列台帳�
 dashboardの`## 🚨要対応`は任意セクションであり、欠落時は同期・postcondition・template検証の全3段でno-op成功にする。存在時の件数照合と破損入力WARNは維持する。→ `scripts/dashboard_update.sh` / `tests/unit/test_skill_feedback_loop.bats`（commit `f2f3f2c48`、関連130/130 PASS・SKIP0）
 
 完了通知欠落監視は、terminal marker後のLGTMだけではcmdを再OPEN扱いにしない。明示RC/revisionまたはactive taskがterminal後に存在する場合だけ新世代と判定し、archive済み同一報告への遅延・重複LGTMによる恒久偽陽性を抑止する。→ `scripts/ninja_monitor.sh` / `tests/unit/test_ninja_monitor_clear_guard.bats`（commit `5efbb3a37`、semantic通知偽陽性3→0、focused 6/6 PASS・SKIP0）
+
+draft-review配備テストは、Bats processでsetup済みの`deploy_task.sh`関数を再sourceせず直接再利用する。独立shellが必要なEXIT trap類型は維持し、20/20 PASS・FAIL0・SKIP0のまま15.982→15.184秒（5.0%短縮）。→ `tests/unit/test_deploy_task_draft_review.bats` / `docs/research/deploy-task-draft-review-test-speed.md`（commit `d47ec43d6`）
+
+contextの`source_commit`置換はevidence内の比較矢印（例: `3->0`）も含む行全体を認識し、既存重複markerを1行へ正規化する。DM-Signal split-context同期も同じ矢印対応regexを使う。→ `scripts/context_source_commit_set.sh` / `scripts/dm_signal_research_reflux_guard.sh` / 対応Unit 33/33 PASS・SKIP0（commit `08e360e53`）
 
 15分超cmdは保存時点で`execution_env` mappingの具体的`long_runtime_reason`と正の`measured_runtime_sec`を必須とし、配備時TEN_MIN_CONTRACTまで不備を持ち越さない。雛形も同じmapping契約を提示する。→ `scripts/cmd_save.sh` / `scripts/cmd_skeleton.sh`（cmd_3933, commit `daee77f03`）
 
