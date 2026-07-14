@@ -1,12 +1,55 @@
 #!/bin/bash
 # semantic-links: [[inbox_watcherプロセスモデル]]
 # restart_watchers.sh — inbox_watcher全プロセスを再起動
-# Usage: bash scripts/restart_watchers.sh
+# Usage: bash scripts/restart_watchers.sh [--status]
 # cmd_100: スクリプト更新後の再起動用
 
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EXPECTED_WATCHER_COUNT="${EXPECTED_WATCHER_COUNT:-9}"
+
+watcher_processes() {
+    ps -eo pid=,ppid=,args= 2>/dev/null | awk '
+        /(^| )bash .*\/inbox_watcher\.sh [a-z]/ {
+            pid=$1; ppid=$2; watcher[pid]=1; parent[pid]=ppid; line[pid]=$0
+        }
+        END {
+            for (pid in watcher) {
+                if (!(parent[pid] in watcher)) print line[pid]
+            }
+        }
+    ' | sort -n
+}
+
+show_status() {
+    local processes actual
+    processes="$(watcher_processes)"
+    if [ -n "$processes" ]; then
+        printf '%s\n' "$processes"
+        actual="$(printf '%s\n' "$processes" | wc -l)"
+    else
+        actual=0
+    fi
+    echo "inbox_watcher: ${actual}/${EXPECTED_WATCHER_COUNT} running"
+    [ "$actual" -eq "$EXPECTED_WATCHER_COUNT" ]
+}
+
+usage() {
+    echo "Usage: bash scripts/restart_watchers.sh [--status]" >&2
+}
+
+case "${1:-}" in
+    "") ;;
+    --status)
+        [ "$#" -eq 1 ] || { usage; exit 2; }
+        show_status
+        exit $?
+        ;;
+    *)
+        usage
+        exit 2
+        ;;
+esac
 
 # 並行実行ガード（flock排他）
 LOCK_FILE="/tmp/restart_watchers.lock"
@@ -31,18 +74,13 @@ fi
 echo "=== inbox_watcher 再起動 ==="
 
 watcher_process_count() {
-    ps -eo pid=,ppid=,args= 2>/dev/null | awk '
-        /(^| )bash .*\/inbox_watcher\.sh [a-z]/ {
-            pid=$1; ppid=$2; watcher[pid]=1; parent[pid]=ppid; line[pid]=$0
-        }
-        END {
-            count=0
-            for (pid in watcher) {
-                if (!(parent[pid] in watcher)) count++
-            }
-            print count + 0
-        }
-    '
+    local processes
+    processes="$(watcher_processes)"
+    if [ -n "$processes" ]; then
+        printf '%s\n' "$processes" | wc -l
+    else
+        echo 0
+    fi
 }
 
 stop_existing_watchers() {
