@@ -263,6 +263,10 @@ for arg in "$@"; do
         *fail*) echo "not ok 1 fake fail ($arg)"; exit 1 ;;
     esac
 done
+if [ -n "${BATS_TAP_OUTPUT:-}" ]; then
+    echo "not ok 1 inherited shared BATS_TAP_OUTPUT" >&2
+    exit 1
+fi
 echo "ok 1 fake pass"
 exit 0
 FAKEEOF

@@ -96,6 +96,7 @@ run_bats_files_parallel() {
             -u BATS_SUITE_TEST_NUMBER \
             -u BATS_TEST_FILE_NUMBER \
             -u BATS_OUT \
+            -u BATS_TAP_OUTPUT \
             bats "$test_file" --jobs "$test_jobs" --timing 3>&-
     }
 
