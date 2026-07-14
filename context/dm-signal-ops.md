@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-14 cmd_3903_context_sync_202607141136 -->
+<!-- last_updated: 2026-07-14 cmd_3903 -->
 <!-- source_commit:f2e5756a reason:cmd3903_signal_change_context_sync evidence:section77_961_classified -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
