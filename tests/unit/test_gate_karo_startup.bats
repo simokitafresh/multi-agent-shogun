@@ -7,10 +7,14 @@ setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export SRC_GATE_SCRIPT="$PROJECT_ROOT/scripts/gates/gate_karo_startup.sh"
     [ -f "$SRC_GATE_SCRIPT" ] || return 1
+
+    export KARO_BASE_FIXTURE
+    KARO_BASE_FIXTURE="$(mktemp -d "$BATS_FILE_TMPDIR/karo_startup_base.XXXXXX")"
+    TEST_TMPDIR="$KARO_BASE_FIXTURE"
+    build_fixture
 }
 
-setup() {
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/karo_startup.XXXXXX")"
+build_fixture() {
     mkdir -p "$TEST_TMPDIR/scripts/gates" \
              "$TEST_TMPDIR/scripts/lib" \
              "$TEST_TMPDIR/queue/inbox" \
@@ -36,6 +40,29 @@ setup() {
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh"
     cp "$PROJECT_ROOT/scripts/gates/gate_codex_hooks_no_stop.sh" "$TEST_TMPDIR/scripts/gates/gate_codex_hooks_no_stop.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_codex_hooks_no_stop.sh"
+    # Most cases exercise gate_karo_startup orchestration, not these nested
+    # gates. Keep their real implementations beside fast contract stubs; the
+    # dedicated nested-gate cases restore the real script explicitly.
+    for nested in gate_wa_data_quality.sh gate_queue_yaml_parse.sh gate_three_layer_health.sh; do
+        cp "$TEST_TMPDIR/scripts/gates/$nested" "$TEST_TMPDIR/scripts/gates/$nested.real"
+    done
+    cat > "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo '■ WAデータ品質'
+echo '  OK: False WAなし'
+MOCK
+    cat > "$TEST_TMPDIR/scripts/gates/gate_queue_yaml_parse.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo '■ queue YAML parse'
+echo '  OK: queue YAML parse clean'
+MOCK
+    cat > "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo 'STATUS: PASS'
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh" \
+        "$TEST_TMPDIR/scripts/gates/gate_queue_yaml_parse.sh" \
+        "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh"
     cp "$PROJECT_ROOT/scripts/lib/known_ninjas.sh" "$TEST_TMPDIR/scripts/lib/known_ninjas.sh"
     cp "$PROJECT_ROOT/scripts/lib/yaml_safe_read.py" "$TEST_TMPDIR/scripts/lib/yaml_safe_read.py"
     cp "$PROJECT_ROOT/scripts/lib/disk_space_watch.sh" "$TEST_TMPDIR/scripts/lib/disk_space_watch.sh"
@@ -184,6 +211,12 @@ exit 0
 MOCK
     chmod +x "$TEST_TMPDIR/bin/tmux"
 
+}
+
+setup() {
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/karo_startup.XXXXXX")"
+    cp -a "$KARO_BASE_FIXTURE/." "$TEST_TMPDIR/"
+
     export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
     export KARO_WA_RATE_CACHE="$TEST_TMPDIR/karo_wa_rate_cache"
     export KARO_NINJA_WA_CACHE="$TEST_TMPDIR/karo_ninja_wa_cache"
@@ -192,6 +225,9 @@ MOCK
     export KARO_QUALITY_MISSING_CUTOFF="2026-06-01T00:00:00"
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/data/three_layer_health.db"
     export SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=999999999
+    # Disk capacity is invariant for these gate-logic tests. Avoid a slow WSL
+    # /mnt/c df subprocess per test while preserving the production default.
+    export DISK_WATCH_AVAILABLE_KB=104857600
     export ORIG_PATH="$PATH"
     export PATH="$TEST_TMPDIR/bin:$PATH"
 }
@@ -200,8 +236,13 @@ teardown() {
     export PATH="$ORIG_PATH"
     unset SHOGUN_MEMORY_DB_CACHE_PATH
     unset SHOGUN_THREE_LAYER_CACHE_WARN_BYTES
+    unset DISK_WATCH_AVAILABLE_KB
     unset KARO_QUALITY_MISSING_CUTOFF
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+}
+
+teardown_file() {
+    [ -n "$KARO_BASE_FIXTURE" ] && [ -d "$KARO_BASE_FIXTURE" ] && rm -rf "$KARO_BASE_FIXTURE"
 }
 
 # === Test 1: 全項目正常 → 総合判定OK ===
@@ -223,6 +264,7 @@ EOF
 }
 
 @test "three-layer health cache invalidates when cache DB appears after stale WARN" {
+    cp "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh.real" "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh"
     export KARO_THREE_LAYER_HEALTH_CACHE="$TEST_TMPDIR/three_layer_health.cache"
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/data/missing_three_layer_health.db"
     rm -f "$SHOGUN_MEMORY_DB_CACHE_PATH"
@@ -1107,6 +1149,7 @@ EOF
 }
 
 @test "WA data quality issues → startup gate shows False WA TOP3" {
+    cp "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh.real" "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh"
     cat > "$TEST_TMPDIR/logs/karo_workarounds.yaml" <<'EOF'
 - cmd_id: cmd_400
   ninja: hayate
@@ -1553,6 +1596,7 @@ EOF
 }
 
 @test "queue YAML parse: truncated quoted block reports file and line ALERT" {
+    cp "$TEST_TMPDIR/scripts/gates/gate_queue_yaml_parse.sh.real" "$TEST_TMPDIR/scripts/gates/gate_queue_yaml_parse.sh"
     cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
   cmd_broken:
@@ -1569,6 +1613,7 @@ EOF
 }
 
 @test "queue YAML parse: valid queue files pass without ALERT" {
+    cp "$TEST_TMPDIR/scripts/gates/gate_queue_yaml_parse.sh.real" "$TEST_TMPDIR/scripts/gates/gate_queue_yaml_parse.sh"
     run bash "$TEST_TMPDIR/scripts/gates/gate_queue_yaml_parse.sh"
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK: queue YAML parse clean"* ]]
