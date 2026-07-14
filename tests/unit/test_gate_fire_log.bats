@@ -1,18 +1,23 @@
 #!/usr/bin/env bats
 # test_gate_fire_log.bats — scripts/gate_fire_log.sh のユニットテスト
 
-setup() {
+setup_file() {
     REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     SCRIPT="$REPO_ROOT/scripts/gate_fire_log.sh"
-    TMP_DIR="$(mktemp -d)"
-    TMP_LOG="$TMP_DIR/gate_fire_log.yaml"
-    export GATE_FIRE_LOG_CACHE_DIR="$TMP_DIR"
-    export GATE_FIRE_LOG_REPO_ROOT="$TMP_DIR"
-    export GATE_FIRE_LOG_LIVE_REPORT_DIR="$TMP_DIR/queue/reports"
+    SUITE_TMP_DIR="$(mktemp -d)"
+    export REPO_ROOT SCRIPT SUITE_TMP_DIR
 }
 
-teardown() {
-    rm -rf "$TMP_DIR" 2>/dev/null || true
+setup() {
+    TMP_DIR="$SUITE_TMP_DIR"
+    TMP_LOG="$TMP_DIR/gate_fire_log_$BATS_TEST_NUMBER.yaml"
+    export GATE_FIRE_LOG_CACHE_DIR="$SUITE_TMP_DIR"
+    export GATE_FIRE_LOG_REPO_ROOT="$SUITE_TMP_DIR"
+    export GATE_FIRE_LOG_LIVE_REPORT_DIR="$SUITE_TMP_DIR/queue/reports"
+}
+
+teardown_file() {
+    rm -rf "$SUITE_TMP_DIR" 2>/dev/null || true
 }
 
 # ファイル不在 → healed=0 fail_total=0 fail_live=0
