@@ -28,6 +28,17 @@ now_iso() {
     date '+%Y-%m-%dT%H:%M:%S'
 }
 
+append_selection_event() {
+    local result="$1" reason="$2"
+    local log_file="${GATE_FIRE_LOG_FILE:-$SCRIPT_DIR/logs/gate_fire_log.yaml}"
+    mkdir -p "$(dirname "$log_file")"
+    (
+        flock -w 5 8 || exit 1
+        printf -- '- ts: "%s"\n  detector: "script_speed_target_selection"\n  source: "gate_fire_log"\n  result: "%s"\n  reason: "%s"\n' \
+            "$(now_iso)" "$result" "$reason" >> "$log_file"
+    ) 8>"${log_file}.lock"
+}
+
 yaml_quote() {
     local value="$1"
     value="${value//\\/\\\\}"
@@ -186,19 +197,25 @@ cmd_next() {
     if [ "$(ledger_global_status "$ledger")" != "running" ]; then
         return 2
     fi
-    awk '
-        /script_path:/ {
-            path = $0
-            sub(/^.*script_path:[[:space:]]*"?/, "", path)
-            sub(/"?[[:space:]]*$/, "", path)
-        }
-        /^[[:space:]]+status:[[:space:]]*(pending|no_improvement)[[:space:]]*$/ {
-            print path
-            found = 1
-            exit 0
-        }
-        END { if (!found) exit 1 }
-    ' "$ledger"
+    python3 - "$ledger" <<'PY'
+import sys, yaml
+
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+hot = ("pre-bash", "guard14", "prompt_state_inject", "session_start_inject")
+plateau = ("review_two_phase", "memory_db", "ninja_monitor")
+def rank(e):
+    path = str(e.get("script_path", ""))
+    axis = 2 if any(x in path for x in hot) else 1 if any(x in path for x in plateau) else 0
+    measured = e.get("before_real_ms") or e.get("after_real_ms") or e.get("before_ms") or 0
+    try: measured = float(measured)
+    except (TypeError, ValueError): measured = 0
+    return axis, measured, path
+candidates = [e for e in data.get("entries", []) if e.get("status") == "pending"]
+if not candidates:
+    raise SystemExit(1)
+e = max(candidates, key=rank)
+print(e.get("script_path", ""))
+PY
 }
 
 ledger_status_count() {
@@ -407,19 +424,33 @@ reserve_next_unlocked() {
             for (target in active) print target
         }
     ' > "${tmp}.active"
-    awk -v ninja="$ninja" -v now="$now" -v active_file="${tmp}.active" -v reserved_file="$reserved_file" '
-        BEGIN {
-            while ((getline line < active_file) > 0) {
-                active[line] = 1
-            }
-            close(active_file)
-        }
+    local wanted
+    wanted=$(python3 - "$ledger" "${tmp}.active" <<'PY'
+import sys, yaml
+ledger, active_file = sys.argv[1:]
+data = yaml.safe_load(open(ledger, encoding="utf-8")) or {}
+active = {line.strip() for line in open(active_file, encoding="utf-8") if line.strip()}
+hot = ("pre-bash", "guard14", "prompt_state_inject", "session_start_inject")
+plateau = ("review_two_phase", "memory_db", "ninja_monitor")
+def rank(e):
+    path = str(e.get("script_path", ""))
+    axis = 2 if any(x in path for x in hot) else 1 if any(x in path for x in plateau) else 0
+    measured = e.get("before_real_ms") or e.get("after_real_ms") or e.get("before_ms") or 0
+    try: measured = float(measured)
+    except (TypeError, ValueError): measured = 0
+    return axis, measured, path
+candidates = [e for e in data.get("entries", [])
+              if e.get("status") == "pending" and str(e.get("script_path", "")) not in active]
+if candidates: print(max(candidates, key=rank).get("script_path", ""))
+PY
+)
+    awk -v ninja="$ninja" -v now="$now" -v wanted="$wanted" -v reserved_file="$reserved_file" '
         /^[[:space:]]*-[[:space:]]+script_path:/ {
             if (in_target && !reserved) emit_pending()
             path = $0
             sub(/^.*script_path:[[:space:]]*"?/, "", path)
             sub(/"?[[:space:]]*$/, "", path)
-            in_target = (reserved == 0 && !(path in active))
+            in_target = (reserved == 0 && path == wanted)
             if (in_target) {
                 block = $0 ORS
                 status_seen = assigned_seen = updated_seen = 0
@@ -431,7 +462,7 @@ reserve_next_unlocked() {
         }
         in_target {
             line = $0
-            if ($0 ~ /^[[:space:]]+status:[[:space:]]*(pending|no_improvement)[[:space:]]*$/) {
+            if ($0 ~ /^[[:space:]]+status:[[:space:]]*pending[[:space:]]*$/) {
                 line = "    status: assigned"
                 pending_target = 1
                 status_seen = 1
@@ -572,11 +603,14 @@ cmd_record_after() {
     local ledger="${6:-$LEDGER}"
     [ -n "$script_path" ] && [ -n "$status" ] && [ -n "$after_ms" ] && [ -n "$test_result" ] && [ -n "$commit" ] || { usage >&2; return 2; }
     [ -f "$ledger" ] || return 1
+    [ "$status" != "no_improvement" ] || status="saturated"
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "status" "$status"
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "after_ms" "$after_ms"
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "test_result" "$test_result"
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "commit" "$commit"
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "updated_at" "$(now_iso)"
+    append_selection_event "$([ "$status" = completed ] && printf PASS || printf WARN)" \
+        "target=${script_path} status=${status}"
 }
 
 cmd_reconcile() {
@@ -622,6 +656,19 @@ write_training_task() {
     local tmp_task="$1"
     local cmd_id="$2"
     local script_path="$3"
+    local evidence axis
+    evidence=$(python3 - "$LEDGER" "$script_path" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+entry = next((e for e in data.get("entries", []) if e.get("script_path") == sys.argv[2]), {})
+print(entry.get("before_real_ms") or entry.get("after_real_ms") or entry.get("before_ms") or 0)
+PY
+)
+    case "$script_path" in
+        *pre-bash*|*guard14*|*prompt_state_inject*|*session_start_inject*) axis="high-frequency hook/gate hot path" ;;
+        *review_two_phase*|*memory_db*|*ninja_monitor*) axis="test-side plateau production target" ;;
+        *) axis="measured runtime fallback" ;;
+    esac
     cat > "$tmp_task" <<EOF
 task:
   parent_cmd: ${cmd_id}
@@ -632,6 +679,10 @@ task:
   scout_exempt: true
   status: assigned
   purpose: "Speed-train ${script_path}: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger."
+  selection_evidence:
+    measured_ms: ${evidence}
+    priority_axis: "${axis}"
+    source: "logs/script_speed_training_ledger.yaml"
   acceptance_criteria:
     - id: AC1
       checks:
@@ -639,15 +690,16 @@ task:
         - check: "before_real_ms is measured with a safe runtime command chosen for this script (time bash script.sh <args>, --help, dry-run, or sandboxed equivalent)"
     - id: AC2
       checks:
-        - check: "implementation improves runtime without reducing behavior or safety"
+        - check: "implementation improves runtime without reducing behavior or safety; async timeout shortening and other feature thinning (LS081) are forbidden"
         - check: "safety patterns (|| true, 2>/dev/null, cat 2>/dev/null, trap, timeout, set +e) are NOT deleted. git diff must show zero removed safety lines"
         - check: "if new functions are added, all test files that source/export -f the parent script have updated mock/export lists"
-        - check: "script-specific verification passes with SKIP=0"
+        - check: "all related tests pass with FAIL=0 and SKIP=0; expectations, coverage, and target count are unchanged"
     - id: AC3
       checks:
-        - check: "after_real_ms is measured with the same command as before_real_ms"
+        - check: "dominant cost is measured before editing; after_real_ms is measured with the same command as before_real_ms (exact command equality required)"
         - check: "after_real_ms is strictly lower than before_real_ms"
-        - check: "bash tools/bash_speed_training.sh record-after ${script_path} completed <after_real_ms> \"<test_result>\" <commit> is called to write results back to script_speed_training_ledger"
+        - check: "bash tools/bash_speed_training.sh record-after ${script_path} completed <after_real_ms> \"<test_result>\" <commit> is called; no improvement uses status saturated and is not redeployed"
+        - check: "deployment/result event is appended to gate_fire_log and measurable by detector_fp_rate"
 EOF
 }
 
@@ -671,6 +723,7 @@ cmd_auto_deploy() {
     mkdir -p "$STATE_DIR"
     tmp_task=$(mktemp "${STATE_DIR}/speed_training_${ninja}.XXXXXX.yaml")
     write_training_task "$tmp_task" "$cmd_id" "$script_path"
+    append_selection_event PASS "target=${script_path} event=deploy ninja=${ninja}"
     deploy_script="$SCRIPT_DIR/scripts/deploy_task.sh"
     if [ "${SPEED_TRAINING_DRY_RUN:-0}" = "1" ]; then
         printf 'DRY_RUN deploy_task --direct --yaml %s %s %s\n' "$tmp_task" "$ninja" "$cmd_id"

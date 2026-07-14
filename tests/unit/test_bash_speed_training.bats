@@ -109,21 +109,46 @@ EOF
     ' "$LEDGER"
 }
 
-@test "auto-deploy reassigns no_improvement entries for rework" {
+@test "no improvement becomes saturated and is not redeployed" {
     first=$(cmd_next "$LEDGER")
     cmd_record_after "$first" no_improvement 12 "no improvement" no_change "$LEDGER"
 
+    grep -Fq 'status: saturated' "$LEDGER"
     export SPEED_TRAINING_DRY_RUN=1
     run cmd_auto_deploy hayate "$LEDGER"
     [ "$status" -eq 0 ]
-
     awk -v first="$first" '
         $0 ~ "script_path: \"" first "\"" { in_first = 1; next }
-        in_first && /status: assigned/ { status_seen = 1 }
-        in_first && /assigned_to: "hayate"/ { assignee_seen = 1 }
+        in_first && /status: saturated/ { saturated = 1 }
+        in_first && /assigned_to: "hayate"/ { bad = 1 }
         in_first && /^[[:space:]]*-[[:space:]]+script_path:/ { in_first = 0 }
-        END { exit !(status_seen && assignee_seen) }
+        END { exit !(saturated && !bad) }
     ' "$LEDGER"
+}
+
+@test "priority selection favors hot production paths and embeds evidence contract" {
+    cat > "$LEDGER" <<'EOF'
+global_status: running
+entries:
+  - script_path: "scripts/zzz_slow.sh"
+    status: pending
+    before_ms: 999
+    before_real_ms: ""
+  - script_path: "scripts/hooks/prompt_state_inject.sh"
+    status: pending
+    before_ms: 12
+    before_real_ms: 25
+EOF
+    [ "$(cmd_next "$LEDGER")" = "scripts/hooks/prompt_state_inject.sh" ]
+    export SPEED_TRAINING_DRY_RUN=1
+    run cmd_auto_deploy hayate "$LEDGER"
+    [ "$status" -eq 0 ]
+    generated_task=$(find "$SHOGUN_STATE_DIR" -type f -name 'speed_training_hayate.*.yaml' | head -n 1)
+    grep -Fq 'measured_ms: 25' "$generated_task"
+    grep -Fq 'priority_axis: "high-frequency hook/gate hot path"' "$generated_task"
+    grep -Fq 'async timeout shortening' "$generated_task"
+    grep -Fq 'FAIL=0 and SKIP=0' "$generated_task"
+    grep -Fq 'detector_fp_rate' "$generated_task"
 }
 
 @test "auto-deploy generated task preserves speed purpose and real runtime ACs" {
