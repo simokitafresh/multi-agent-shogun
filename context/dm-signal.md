@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
-<!-- last_synced_lesson: L891 -->
+<!-- last_synced_lesson: L897 -->
 <!-- source_commit:5e9ea355d0ad6d6856b0e03f08993f2ca1c744fa (DM-Signal terminology/disambiguation/db-operations-runbook対象pathspecの最終同期commit。GA-238で導入。当該pathspecは2026-07-13時点で未反映commitなし=同型穴の解消のみ、新規本文反映は不要) -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -335,6 +335,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - L887: 非階層containerの敵対fixture対応（cmd_3878）
 - L888: 全量テスト前提artifactと実行環境のpreflight必須（cmd_3879）
 - L891: pytest node idは実在収集結果から固定する（cmd_3896）
+- L897: 本番bounded restoreは実project pathのlauncher貫通試験を要求する（cmd_3905）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 
