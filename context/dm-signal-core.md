@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-14 cmd_karo_hotfix_ga249_context_reflux_last_updated_202607140250 -->
-<!-- source_commit:32ee997c reason:CI uvicorn test import path修正のみでcore本番契約の変更なし evidence:git show 32ee997c: backend/tests/test_p4_bundle_uvicorn_cmd_3880.py 1ファイル4行変更、production code変更0 -->
+<!-- last_updated: 2026-07-15 cmd_karo_hotfix_ga256_pgserver_recovery -->
+<!-- source_commit:4abf69c39e5965d5165029fa161c412f06532cb5 reason:ga256-no-core-contract-change evidence:commit 4abf69c3 changes isolated local pgserver test harness only; backend production core files changed=0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 

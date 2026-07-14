@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-14 cmd_karo_hotfix_ga251_context_freshness -->
-<!-- source_commit:32ee997c reason:CI uvicorn test import path修正のみでops手順・本番契約の変更なし evidence:git show 32ee997c: backend/tests/test_p4_bundle_uvicorn_cmd_3880.py 1ファイル4行変更、production code変更0 -->
+<!-- last_updated: 2026-07-15 cmd_karo_hotfix_ga256_pgserver_recovery -->
+<!-- source_commit:4abf69c39e5965d5165029fa161c412f06532cb5 reason:ga256-local-pgserver-recovery evidence:healthy restart=0 stale restart=1; commit-after golden 8/8 PASS SKIP0 in 280.52s -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -873,7 +873,7 @@ import metrics_research_engine as MRE
 | 領域 | 結論 | 参照 |
 |------|------|------|
 | CI pytest | GitHub Actions pytest workflow追加。PyYAML/pytest依存、PostgreSQL service導入済み。DB接続前提テストはCI service前提で確認する | commits 2e9e1b7d, 0771ba29, 5b93ae17, a99a8623 |
-| CI golden | stock runnerではCI PostgreSQLへ依存閉包7表573,649行をportable COPY復元し、78PF・243,293行をexact比較する。run 29326659277でgolden+lifecycle 7/7 PASS・SKIP0・266.21秒 | commits a63d0920, d7403ca8, 7baa7533 / `scripts/oneshot/cmd_3854_fof_golden_regression_check.py` |
+| CI golden | stock runnerではCI PostgreSQLへ依存閉包7表573,649行をportable COPY復元し、78PF・243,293行をexact比較する。ローカル隔離pgserverはlive PIDだけでhealthy判定せず、接続probe失敗時だけchecked-in helperを同期して`pg_ctl stop`→再起動→再probeする。healthy再起動0/stale再起動1、commit後golden 8/8 PASS・SKIP0・280.52秒 | commits a63d0920, d7403ca8, 7baa7533, 4abf69c3 / `scripts/oneshot/cmd_3819_baseline_provision.py` / `scripts/oneshot/cmd_3854_fof_golden_regression_check.py` |
 | codd lexicon | `codd.yaml` / `project_lexicon.yaml` 追加。CoDD設計・fix時はPJ語彙を参照する | cmd_2761 |
 | lesson metadata | `tasks/lessons.md` にwhen/how系field backfill + concrete tags追加。教訓検索・注入の粒度が上がっている | cmd_2748, cmd_2836 |
 | knowledge links | `docs/research/knowledge-base/methods/*.md` 全般に投資知識リンクを接続。method横断探索時はknowledge-base indexだけでなく各method末尾リンクも見る | cmd_3015 |
