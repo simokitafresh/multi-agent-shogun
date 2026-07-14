@@ -6,27 +6,41 @@ run_embedded_test() {
     local test_name="$2"
     local content_func="$3"
 
-    # Place temp file in tests/unit/ so BATS_TEST_FILENAME/../.. resolves to PROJECT_ROOT
-    local unique_path
-    unique_path="$(mktemp "$(dirname "$BATS_TEST_FILENAME")/_tmp_${BATS_TEST_NUMBER:-0}_$(basename "$original_path" .bats).XXXXXX.bats")"
-    "$content_func" > "$unique_path"
+    local fixture_cache_dir="${BATS_FILE_TMPDIR:-${BATS_TMPDIR}}/learning_ops_embedded"
+    local fixture_cache="$fixture_cache_dir/${content_func}.bats"
+    local result_cache="$fixture_cache_dir/${content_func}.tap"
+    local embedded_root
+    embedded_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    mkdir -p "$fixture_cache_dir"
 
-    # Consolidated legacy fixtures predate context_freshness_check.sh's
-    # registered source-context dependency. Inject the tracked registry into
-    # the generated throwaway fixture without weakening the production check.
-    if grep -q 'SRC_CONTEXT_FRESHNESS_SCRIPT' "$unique_path"; then
-        sed -i '/cp "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT\/scripts\/context_freshness_check.sh"/a\    mkdir -p "$TEST_PROJECT/scripts/config"\n    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_PROJECT/scripts/config/context_source_commits.tsv"' "$unique_path"
+    # Each content function is immutable within this consolidated suite. Decode
+    # and normalize it once per Bats file, then copy the shared fixture for each
+    # isolated nested invocation.
+    if [ ! -f "$fixture_cache" ]; then
+        local fixture_build="${fixture_cache}.tmp.$$"
+        "$content_func" > "$fixture_build"
+        sed -i 's|^    PROJECT_ROOT=.*|    PROJECT_ROOT="${EMBEDDED_PROJECT_ROOT:?}"|' "$fixture_build"
+        sed -i 's|^    REAL_PROJECT_ROOT=.*|    REAL_PROJECT_ROOT="${EMBEDDED_PROJECT_ROOT:?}"|' "$fixture_build"
+
+        # Consolidated legacy fixtures predate context_freshness_check.sh's
+        # registered source-context dependency. Inject the tracked registry into
+        # the generated throwaway fixture without weakening the production check.
+        if grep -q 'SRC_CONTEXT_FRESHNESS_SCRIPT' "$fixture_build"; then
+            sed -i '/cp "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT\/scripts\/context_freshness_check.sh"/a\    mkdir -p "$TEST_PROJECT/scripts/config"\n    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_PROJECT/scripts/config/context_source_commits.tsv"' "$fixture_build"
+        fi
+        mv "$fixture_build" "$fixture_cache"
     fi
-
-    run env -u BATS_TMPDIR -u BATS_TEST_TMPDIR -u BATS_TEST_NUMBER -u BATS_TEST_FILENAME bats --filter "^${test_name}$" "$unique_path"
-    local nested_status="$status"
-    local nested_output="$output"
-    rm -f "$unique_path"
-
-    if [ "$nested_status" -ne 0 ]; then
-        printf '%s\n' "$nested_output" >&2
+    # Run each original suite once. The consolidated outer cases retain their
+    # individual names and assert the corresponding TAP result from that run.
+    if [ ! -f "$result_cache" ]; then
+        env -u BATS_TMPDIR -u BATS_TEST_TMPDIR -u BATS_TEST_NUMBER -u BATS_TEST_FILENAME \
+            EMBEDDED_PROJECT_ROOT="$embedded_root" \
+            bats "$fixture_cache" > "$result_cache" 2>&1 || true
     fi
-    [ "$nested_status" -eq 0 ]
+    if ! grep -Eq "^ok [0-9]+ ${test_name}$" "$result_cache"; then
+        cat "$result_cache" >&2
+        return 1
+    fi
 }
 
 content_test_auto_failure_lesson() {
