@@ -3,10 +3,36 @@
 setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    export PRE_HOOK="$PROJECT_ROOT/.claude/hooks/pre-write-edit-combined.sh"
+    export PRE_HOOK_SOURCE="$PROJECT_ROOT/.claude/hooks/pre-write-edit-combined.sh"
+    export PRE_HOOK="/tmp/pre-write-edit-combined-bats-${BATS_SUITE_TEST_NUMBER:-$$}-$$.sh"
+    cp "$PRE_HOOK_SOURCE" "$PRE_HOOK"
+    chmod +x "$PRE_HOOK"
+    export PRE_WRITE_SCRIPT_DIR_OVERRIDE="$PROJECT_ROOT"
+    export SHARED_FIXTURE_ROOT="/tmp/write-edit-combined-fixture-${BATS_SUITE_TEST_NUMBER:-$$}-$$"
+    mkdir -p "$SHARED_FIXTURE_ROOT"
+    printf '%s\n' 'scripts/gates/gate_report_format.sh' > "$SHARED_FIXTURE_ROOT/q11-reference.txt"
+    : > "$SHARED_FIXTURE_ROOT/causal-index.tsv"
+    cp "$PROJECT_ROOT/docs/research/cmd_save_gate_catalog.md" "$SHARED_FIXTURE_ROOT/cmd_save_gate_catalog.md"
+    export Q11_SEARCH_ROOT_OVERRIDE="$SHARED_FIXTURE_ROOT"
+    export G12B_CATALOG_OVERRIDE="$SHARED_FIXTURE_ROOT/cmd_save_gate_catalog.md"
+    export MEMORY_DB_PREFLIGHT_DISABLE=1
+    export GUARD19_GIT_ROOT_OVERRIDE="$SHARED_FIXTURE_ROOT"
+    export CAUSAL_INDEX_DISABLE_SCRIPT=1
+    export CAUSAL_INDEX_CACHE="$SHARED_FIXTURE_ROOT/causal-index.tsv"
     export POST_HOOK="$PROJECT_ROOT/.claude/hooks/post-write-edit-combined.sh"
     [ -f "$PRE_HOOK" ] || return 1
     [ -f "$POST_HOOK" ] || return 1
+
+    # Guard16 only needs the immutable agent-name fixture. Resolve it once per
+    # file instead of sourcing/scanning config in every hook subprocess.
+    export G16_AGENT_NAMES_OVERRIDE
+    G16_AGENT_NAMES_OVERRIDE="$(source "$PROJECT_ROOT/scripts/lib/agent_config.sh" && get_ninja_names)"
+}
+
+teardown_file() {
+    rm -f "$PRE_HOOK"
+    rm -f "$SHARED_FIXTURE_ROOT/q11-reference.txt" "$SHARED_FIXTURE_ROOT/cmd_save_gate_catalog.md" "$SHARED_FIXTURE_ROOT/causal-index.tsv"
+    rmdir "$SHARED_FIXTURE_ROOT"
 }
 
 setup() {
@@ -32,7 +58,11 @@ teardown() {
 
 _run_pre() {
     local payload="$1"
-    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" PREFLIGHT_AUTOLEARN_FILE="$3" CMD_DESIGN_QUALITY_FILE="$4" GUARD_0D_INBOX_OVERRIDE="$5" bash "$2"' _ "$payload" "$PRE_HOOK" "$TMP_AUTOLEARN" "$TMP_CMD_QUALITY" "$TMP_DIR/default_inbox.yaml" "$TEST_AGENT_ID"
+    run env MOCK_AGENT_ID="$TEST_AGENT_ID" G16_AGENT_NAMES_OVERRIDE="$G16_AGENT_NAMES_OVERRIDE" \
+        PREFLIGHT_AUTOLEARN_FILE="$TMP_AUTOLEARN" CMD_DESIGN_QUALITY_FILE="$TMP_CMD_QUALITY" \
+        GUARD_0D_INBOX_OVERRIDE="$TMP_DIR/default_inbox.yaml" Q11_SEARCH_ROOT_OVERRIDE="$Q11_SEARCH_ROOT_OVERRIDE" \
+        G12B_CATALOG_OVERRIDE="$G12B_CATALOG_OVERRIDE" MEMORY_DB_PREFLIGHT_DISABLE="$MEMORY_DB_PREFLIGHT_DISABLE" \
+        bash -c 'source "$2" <<<"$1"' _ "$payload" "$PRE_HOOK"
 }
 
 _run_post() {

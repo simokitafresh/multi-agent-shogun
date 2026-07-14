@@ -33,6 +33,7 @@ emit_context() {
 _pre_write_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_pre_write_self" != /* ]] && _pre_write_self="$PWD/$_pre_write_self"
 SCRIPT_DIR="${_pre_write_self%/.claude/hooks/pre-write-edit-combined.sh}"
+SCRIPT_DIR="${PRE_WRITE_SCRIPT_DIR_OVERRIDE:-$SCRIPT_DIR}"
 unset _pre_write_self
 PREFLIGHT_AUTOLEARN_FILE="${PREFLIGHT_AUTOLEARN_FILE:-$SCRIPT_DIR/logs/preflight_autolearn.txt}"
 CMD_DESIGN_QUALITY_FILE="${CMD_DESIGN_QUALITY_FILE:-$SCRIPT_DIR/logs/cmd_design_quality.yaml}"
@@ -91,23 +92,24 @@ PY
 
 auto_q11_script_grep_results() {
     local cmd_text="$1"
-    local script_paths
+    local script_paths search_root
 
     script_paths="$(printf '%s\n' "$cmd_text" \
         | grep -oE '(\.claude/hooks|scripts/(gates|hooks))/[A-Za-z0-9_.-]+\.sh' \
         | sort -u || true)"
     [[ -n "$script_paths" ]] || return 0
+    search_root="${Q11_SEARCH_ROOT_OVERRIDE:-$SCRIPT_DIR}"
 
     printf '自動grep結果(q11コピー用):\n'
     while IFS= read -r script_path; do
         [[ -n "$script_path" ]] || continue
         local count hits
-        count="$(timeout 2s rg -nF "$script_path" "$SCRIPT_DIR" \
+        count="$(timeout 2s rg -nF "$script_path" "$search_root" \
             --glob '!queue/**' \
             --glob '!logs/**' \
             --glob '!tests/test_helper/**' \
             2>/dev/null | wc -l | tr -d '[:space:]')"
-        hits="$(timeout 2s rg -nF "$script_path" "$SCRIPT_DIR" \
+        hits="$(timeout 2s rg -nF "$script_path" "$search_root" \
             --glob '!queue/**' \
             --glob '!logs/**' \
             --glob '!tests/test_helper/**' \
@@ -117,7 +119,7 @@ auto_q11_script_grep_results() {
         printf '  count: %s\n' "${count:-0}"
         if [[ -n "$hits" ]]; then
             printf '  hits:\n'
-            printf '%s\n' "$hits" | sed "s#^$SCRIPT_DIR/##" | sed 's/^/    /'
+            printf '%s\n' "$hits" | sed "s#^$search_root/##" | sed 's/^/    /'
         else
             printf '  hits: none\n'
         fi
@@ -127,6 +129,8 @@ auto_q11_script_grep_results() {
 memory_db_fts5_top3() {
     local cmd_text="$1"
     local title purpose
+
+    [[ "${MEMORY_DB_PREFLIGHT_DISABLE:-0}" != "1" ]] || return 0
 
     title="$(printf '%s\n' "$cmd_text" | awk '/^[[:space:]]*title:[[:space:]]*/ { sub(/^[[:space:]]*title:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }')"
     purpose="$(printf '%s\n' "$cmd_text" | awk '/^[[:space:]]*purpose:[[:space:]]*/ { sub(/^[[:space:]]*purpose:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }')"
@@ -628,7 +632,7 @@ fi
 if [[ "$file_path" == *'scripts/cmd_save.sh' ]]; then
     _g12b_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | [(.new_string // empty), (.content // empty), ((.edits // [])[]?.new_string // empty)] | join("\n")' 2>/dev/null)" || true
     if printf '%s\n' "$_g12b_content" | grep -qE '^(check_[A-Za-z0-9_]+|q[0-9]+_[A-Za-z0-9_]+|[A-Za-z0-9_]*gate[A-Za-z0-9_]*)\(\)[[:space:]]*\{'; then
-        _g12b_catalog="$SCRIPT_DIR/docs/research/cmd_save_gate_catalog.md"
+        _g12b_catalog="${G12B_CATALOG_OVERRIDE:-$SCRIPT_DIR/docs/research/cmd_save_gate_catalog.md}"
         _g12b_missing=""
         while IFS= read -r _g12b_fn; do
             [[ -n "$_g12b_fn" ]] || continue
@@ -649,7 +653,8 @@ unset _g12b_content _g12b_catalog _g12b_missing _g12b_fn
 
 # === Guard 17: config SSOTフィールド変更は許可スクリプト経由必須 (殿裁定2026-06-20) ===
 # 手動Edit禁止。SSOTごとに許可経路を定義し、変更・検証・伝播を一貫実行する。
-_g17_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | [(.new_string // empty), (.content // empty), ((.edits // [])[]?.new_string // empty)] | join("\n")' 2>/dev/null)" || true
+_write_edit_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | [(.new_string // empty), (.content // empty), ((.edits // [])[]?.new_string // empty)] | join("\n")' 2>/dev/null)" || true
+_g17_content="$_write_edit_content"
 if [[ -n "$_g17_content" ]]; then
     _G17_FILES=(
         'config/settings\.yaml$'
@@ -697,15 +702,22 @@ unset _g17_content
 # テーブル駆動: 新概念追加 = 5並列配列に1要素追加するだけ
 # 列: _G16_CONCEPTS / _G16_MIN_COUNTS / _G16_EXEMPTS / _G16_FNS / _G16_SSOTS
 if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
-    _g16_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | [(.new_string // empty), (.content // empty), ((.edits // [])[]?.new_string // empty)] | join("\n")' 2>/dev/null)" || true
+    _g16_content="$_write_edit_content"
     if [ -n "$_g16_content" ]; then
 
         # ── 検出関数 (content=$1, stdout=count) ────────────────────────────────
         _g16_count_agent_names() {
             local _names _cnt=0 _n _code
-            _names="$(source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null \
-                && get_ninja_names 2>/dev/null)" || true
+            _names="${G16_AGENT_NAMES_OVERRIDE:-}"
+            if [[ -z "$_names" ]]; then
+                _names="$(source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null \
+                    && get_ninja_names 2>/dev/null)" || true
+            fi
             [ -n "$_names" ] || { printf '0'; return; }
+            for _n in $_names; do
+                [[ "$1" == *"$_n"* ]] && break
+            done
+            [[ -n "${_n:-}" && "$1" == *"$_n"* ]] || { printf '0'; return; }
             _code="$(_g16_strip_comments "$1")"
             for _n in $_names; do
                 printf '%s' "$_code" | grep -q "$_n" && ((_cnt++)) || true
@@ -719,6 +731,7 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
         _g16_count_repo_path() {
             local _rp="$SCRIPT_DIR" _c _code _escaped
             [[ -n "$_rp" ]] || { printf '0'; return; }
+            [[ "$1" == *"$_rp"* ]] || { printf '0'; return; }
             _code="$(_g16_strip_comments "$1")"
             # 部分一致防止: パスの後に/・空白・引用符・行末のいずれかを要求
             _escaped="$(printf '%s' "$_rp" | sed 's/[.[\\/^$*+?(){}|]/\\&/g')"
@@ -728,6 +741,7 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
         _g16_count_home_path() {
             local _hp="${HOME:-}" _c _code
             [[ -n "$_hp" ]] || { printf '0'; return; }
+            [[ "$1" == *"$_hp"* ]] || { printf '0'; return; }
             _code="$(_g16_strip_comments "$1")"
             _c="$(printf '%s' "$_code" | grep -cF "$_hp" 2>/dev/null)" || _c=0
             printf '%s' "${_c##*$'\n'}"
@@ -735,12 +749,14 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
         _g16_count_project_path() {
             # /mnt/c/Python_app/ を含む絶対パスの直書きを検出 (config/projects.yaml のパス群)
             local _c _code
+            [[ "$1" == *'/mnt/c/Python_app/'* ]] || { printf '0'; return; }
             _code="$(_g16_strip_comments "$1")"
             _c="$(printf '%s' "$_code" | grep -cE '/mnt/c/Python_app/' 2>/dev/null)" || _c=0
             printf '%s' "${_c##*$'\n'}"
         }
         _g16_count_tmux_window_target() {
             local _c _code
+            [[ "$1" == *'shogun:2'* || "$1" == *'shogun:agents'* ]] || { printf '0'; return; }
             _code="$(_g16_strip_comments "$1" | grep -vE 'pane_lookup|TMUX_WINDOW|resolve_window_target' 2>/dev/null || true)"
             _c="$(printf '%s' "$_code" | grep -cE 'shogun:(2|agents)(\.|["'\''[:space:]]|$)' 2>/dev/null)" || _c=0
             printf '%s' "${_c##*$'\n'}"
@@ -750,6 +766,10 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
             # 検出器実体はモデル名パターンを保持するのが本務(SSOT実装側)。行単位除外では新規パターン行が漏れるためfile_path単位で除外 (blt_20260702_124855)
             case "$file_path" in
                 */scripts/lib/model_detect.sh|*/scripts/lib/model_resolve.sh|*/scripts/lib/model_family.py|*/scripts/lib/model_colors.sh) printf '0'; return;;
+            esac
+            case "${1,,}" in
+                *opus*|*sonnet*|*haiku*|*gpt-5*) ;;
+                *) printf '0'; return;;
             esac
             _code="$(_g16_strip_comments "$1" | grep -vE 'model_resolve|resolve_model_display|cli_lookup|cli_model_display|cli_launch_cmd|model_detect|detect_real_model|model_colors|model_family|@model_name|model_name:' 2>/dev/null || true)"
             _c="$(printf '%s' "$_code" | grep -ciE '\b(opus|sonnet|haiku|claude-opus|claude-sonnet|claude-haiku|gpt-5(\.[0-9])?)\b' 2>/dev/null)" || _c=0
@@ -811,6 +831,7 @@ if [[ "$file_path" =~ \.(sh|bash|py)$ ]]; then
         unset -f _g16_count_agent_names _g16_strip_comments _g16_count_repo_path _g16_count_home_path _g16_count_project_path _g16_count_tmux_window_target _g16_count_model_name_literal
     fi
 fi
+unset _write_edit_content
 
 # === Guard 18: causal backlink impact context (informational only) ===
 # If the edited file is the target of [[links]], show the referring files so
@@ -819,13 +840,18 @@ guard18_causal_backlinks() {
     local target="$1" rel base stem cache line link source output script
     [[ -n "$target" ]] || return 0
 
+    # Temporary/external fixture paths cannot be targets in this repository's
+    # causal index.  Avoid spawning causal_index.sh (and its index probes) for
+    # every such Write/Edit invocation.
+    [[ "$target" == "$SCRIPT_DIR/"* || -n "${CAUSAL_INDEX_CACHE:-}" ]] || return 0
+
     rel="$target"
     [[ "$rel" == "$SCRIPT_DIR/"* ]] && rel="${rel#"$SCRIPT_DIR/"}"
     base="${rel##*/}"
     stem="${base%.*}"
     script="$SCRIPT_DIR/scripts/lib/causal_index.sh"
 
-    if [[ -x "$script" ]]; then
+    if [[ "${CAUSAL_INDEX_DISABLE_SCRIPT:-0}" != "1" && -x "$script" ]]; then
         output="$("$script" --lookup "$rel" 2>/dev/null || true)"
         [[ -n "$output" ]] || output="$("$script" lookup "$rel" 2>/dev/null || true)"
         if [[ -n "$output" ]]; then
