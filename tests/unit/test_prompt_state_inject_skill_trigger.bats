@@ -1,26 +1,11 @@
 #!/usr/bin/env bats
 
-setup() {
-  PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
-  HOOK="$PROJECT_ROOT/scripts/hooks/prompt_state_inject.sh"
-  TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/prompt_state_skill.XXXXXX")"
-  export PROMPT_STATE_SKILLS_DIR="$TEST_TMPDIR/skills"
-  export PROMPT_STATE_GROWTH_METRICS_FILE="$TEST_TMPDIR/growth.yaml"
-  export PROMPT_STATE_LORD_CONVERSATION_FILE="$TEST_TMPDIR/lord_conversation.jsonl"
-  export PROMPT_STATE_PROJECTS_YAML="$TEST_TMPDIR/projects.yaml"
-  export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/no_semantic_search.sh"
-  export PROMPT_STATE_SKILL_RECOMMEND_LOG_FILE="$TEST_TMPDIR/skill_recommend_log.yaml"
-  export PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR="$TEST_TMPDIR/skill_cache"
-  mkdir -p "$PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR"
-  export PROMPT_STATE_SKILL_TRIGGER_TIMEOUT=1
-  export PROMPT_STATE_SKILL_SEMANTIC_TIMEOUT=1
-  unset PROMPT_STATE_CURRENT_PROJECT
-  cat > "$PROMPT_STATE_PROJECTS_YAML" <<'EOF'
-projects: []
-current_project: dm-signal
-EOF
-  mkdir -p "$PROMPT_STATE_SKILLS_DIR/cdp-browse"
-  cat > "$PROMPT_STATE_SKILLS_DIR/cdp-browse/SKILL.md" <<'EOF'
+setup_file() {
+  mkdir -p "$BATS_FILE_TMPDIR/hook_root/scripts/hooks"
+  cp "$BATS_TEST_DIRNAME/../../scripts/hooks/prompt_state_inject.sh" "$BATS_FILE_TMPDIR/hook_root/scripts/hooks/prompt_state_inject.sh"
+  cp "$BATS_TEST_DIRNAME/../../scripts/skill_recommend.sh" "$BATS_FILE_TMPDIR/hook_root/scripts/skill_recommend.sh"
+  mkdir -p "$BATS_FILE_TMPDIR/skills/cdp-browse" "$BATS_FILE_TMPDIR/skills/db-check" "$BATS_FILE_TMPDIR/skills/codd-fix" "$BATS_FILE_TMPDIR/skill_cache"
+  cat > "$BATS_FILE_TMPDIR/skills/cdp-browse/SKILL.md" <<'EOF'
 ---
 name: cdp-browse
 description: |
@@ -28,11 +13,8 @@ description: |
   TRIGGER: /cdp-browse、CDPで確認、ブラウザ確認、本番画面をスクショ、rebalancer本番画面確認 project:rebalancer
   DO NOT TRIGGER: DB確認（→/db-check）
 ---
-
-# cdp-browse
 EOF
-  mkdir -p "$PROMPT_STATE_SKILLS_DIR/db-check"
-  cat > "$PROMPT_STATE_SKILLS_DIR/db-check/SKILL.md" <<'EOF'
+  cat > "$BATS_FILE_TMPDIR/skills/db-check/SKILL.md" <<'EOF'
 ---
 name: db-check
 description: |
@@ -41,11 +23,8 @@ description: |
   DO NOT TRIGGER: DM-Signal以外の画面確認
 allowed_projects: [dm-signal]
 ---
-
-# db-check
 EOF
-  mkdir -p "$PROMPT_STATE_SKILLS_DIR/codd-fix"
-  cat > "$PROMPT_STATE_SKILLS_DIR/codd-fix/SKILL.md" <<'EOF'
+  cat > "$BATS_FILE_TMPDIR/skills/codd-fix/SKILL.md" <<'EOF'
 ---
 name: codd-fix
 description: |
@@ -53,13 +32,28 @@ description: |
   TRIGGER: /codd-fix、codd fix、事象修正、現象修正、PHENOMENON修正
   DO NOT TRIGGER: 設計書の新規生成のみ
 ---
-
-# codd-fix
 EOF
 }
 
-teardown() {
-  rm -rf "$TEST_TMPDIR"
+setup() {
+  PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  HOOK="$BATS_FILE_TMPDIR/hook_root/scripts/hooks/prompt_state_inject.sh"
+  TEST_TMPDIR="$BATS_TEST_TMPDIR/prompt_state_skill"
+  mkdir -p "$TEST_TMPDIR"
+  export PROMPT_STATE_SKILLS_DIR="$BATS_FILE_TMPDIR/skills"
+  export PROMPT_STATE_GROWTH_METRICS_FILE="$TEST_TMPDIR/growth.yaml"
+  export PROMPT_STATE_LORD_CONVERSATION_FILE="$TEST_TMPDIR/lord_conversation.jsonl"
+  export PROMPT_STATE_PROJECTS_YAML="$TEST_TMPDIR/projects.yaml"
+  export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/no_semantic_search.sh"
+  export PROMPT_STATE_SKILL_RECOMMEND_LOG_FILE="$TEST_TMPDIR/skill_recommend_log.yaml"
+  export PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR="$BATS_FILE_TMPDIR/skill_cache"
+  export PROMPT_STATE_SKILL_TRIGGER_TIMEOUT=1
+  export PROMPT_STATE_SKILL_SEMANTIC_TIMEOUT=1
+  unset PROMPT_STATE_CURRENT_PROJECT
+  cat > "$PROMPT_STATE_PROJECTS_YAML" <<'EOF'
+projects: []
+current_project: dm-signal
+EOF
 }
 
 @test "shogun prompt matching skill trigger injects mandatory skill reminder" {
@@ -169,6 +163,8 @@ PY
 
 @test "semantic_search skill recommendations respect SKILL role markers" {
   export PROMPT_STATE_AGENT_ID="hayate"
+  export PROMPT_STATE_SKILLS_DIR="$TEST_TMPDIR/skills"
+  cp -a "$BATS_FILE_TMPDIR/skills/." "$PROMPT_STATE_SKILLS_DIR/"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_role_skills.sh"
   mkdir -p "$PROMPT_STATE_SKILLS_DIR/lesson-sort" "$PROMPT_STATE_SKILLS_DIR/report-write" "$PROMPT_STATE_SKILLS_DIR/general-skill"
   cat > "$PROMPT_STATE_SKILLS_DIR/lesson-sort/SKILL.md" <<'EOF'
@@ -359,6 +355,8 @@ EOF
 }
 
 @test "same prompt reuses skill recommendation cache without rerunning semantic_search" {
+  export PROMPT_STATE_SKILLS_DIR="$TEST_TMPDIR/skills"
+  cp -a "$BATS_FILE_TMPDIR/skills/." "$PROMPT_STATE_SKILLS_DIR/"
   export PROMPT_STATE_AGENT_ID="hayate_cache_test"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/semantic_search_counting.sh"
   mkdir -p "$PROMPT_STATE_SKILLS_DIR/report-write"
