@@ -40,3 +40,52 @@ YAML
   order=$(printf '%s\n' "$body" | grep -E '_handle_(reflux|test_speed|speed_training|training)_auto_deploy' | sed -E 's/.*_handle_([^ ]+) .*/\1/' | tr '\n' ' ')
   [ "$order" = "reflux_auto_deploy test_speed_auto_deploy speed_training_auto_deploy training_auto_deploy " ]
 }
+
+@test "test speed auto-deploy only replaces an explicitly idle task" {
+  mkdir -p "$TMP/scripts" "$TMP/queue/tasks" "$TMP/queue/reports"
+  cat > "$TMP/scripts/test_speed_task_generator.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'task:\n  status: assigned\n  ac_version: replacement\n' > "$SHOGUN_REPO_ROOT/queue/tasks/$2.yaml"
+printf 'DEPLOYED\n'
+SH
+  chmod +x "$TMP/scripts/test_speed_task_generator.sh"
+  function_body=$(sed -n '/^_handle_test_speed_auto_deploy()/,/^}/p' "$ROOT/scripts/ninja_monitor.sh")
+
+  for task_status in done completed failed assigned acknowledged in_progress; do
+    cat > "$TMP/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: $task_status
+  ac_version: original-$task_status
+YAML
+    printf 'status: completed\nac_version_read: original-%s\n' "$task_status" > "$TMP/queue/reports/hayate_report_fixture.yaml"
+    task_before=$(sha256sum "$TMP/queue/tasks/hayate.yaml")
+    report_before=$(sha256sum "$TMP/queue/reports/hayate_report_fixture.yaml")
+
+    run env SHOGUN_REPO_ROOT="$TMP" bash -c '
+      SCRIPT_DIR=$1
+      yaml_field_get() { sed -n "s/^[[:space:]]*$2:[[:space:]]*//p" "$1" | head -n 1; }
+      log() { :; }
+      eval "$2"
+      _handle_test_speed_auto_deploy hayate
+    ' _ "$TMP" "$function_body"
+    [ "$status" -ne 0 ]
+    [ "$(sha256sum "$TMP/queue/tasks/hayate.yaml")" = "$task_before" ]
+    [ "$(sha256sum "$TMP/queue/reports/hayate_report_fixture.yaml")" = "$report_before" ]
+  done
+
+  cat > "$TMP/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: idle
+  ac_version: original-idle
+YAML
+  run env SHOGUN_REPO_ROOT="$TMP" bash -c '
+    SCRIPT_DIR=$1
+    yaml_field_get() { sed -n "s/^[[:space:]]*$2:[[:space:]]*//p" "$1" | head -n 1; }
+    log() { :; }
+    eval "$2"
+    _handle_test_speed_auto_deploy hayate
+  ' _ "$TMP" "$function_body"
+  [ "$status" -eq 0 ]
+  grep -Fq 'status: assigned' "$TMP/queue/tasks/hayate.yaml"
+  grep -Fq 'ac_version: replacement' "$TMP/queue/tasks/hayate.yaml"
+}

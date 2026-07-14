@@ -3004,8 +3004,19 @@ _handle_speed_training_auto_deploy() {
 
 _handle_test_speed_auto_deploy() {
     local name="$1" helper="$SCRIPT_DIR/scripts/test_speed_task_generator.sh" output status
+    local task_file task_status
     [ -n "$name" ] || return 1
     [ -r "$helper" ] || return 1
+    task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    [ -f "$task_file" ] || {
+        log "TEST-SPEED-AUTO-SKIP: $name task file missing"
+        return 1
+    }
+    task_status=$(yaml_field_get "$task_file" "status")
+    if [ "$task_status" != "idle" ]; then
+        log "TEST-SPEED-AUTO-SKIP: $name task status=${task_status:-missing}"
+        return 1
+    fi
     output=$(bash "$helper" deploy "$name" 2>&1); status=$?
     if [ "$status" -eq 0 ]; then
         log "TEST-SPEED-AUTO-DEPLOY: $name ${output}"
