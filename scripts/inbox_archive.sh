@@ -54,8 +54,15 @@ inbox_archive_fast_path() {
 
     if ! awk -v read_out="$read_tmp" -v unread_out="$unread_tmp" -v stats_out="$stats_tmp" '
 # Detect complex YAML in a single pass — replaces grep -Eq pre-scan
-/^[[:space:]][[:space:]][[:space:]][[:space:]][^[:space:]]/ { exit 2 }
-/:[[:space:]]*[|>][+-]?[0-9]*[[:space:]]*$/ { exit 2 }
+/^[[:space:]][[:space:]][[:space:]][[:space:]][^[:space:]]/ {
+    if (block_key != "") {
+        line = $0
+        sub(/^[[:space:]][[:space:]][[:space:]][[:space:]]/, "", line)
+        values[block_key] = values[block_key] (block_lines++ ? "\n" : "") line
+        next
+    }
+    exit 2
+}
 function trim(v) {
     gsub(/^[ \t\r\n]+/, "", v)
     gsub(/[ \t\r\n]+$/, "", v)
@@ -95,17 +102,33 @@ function reset_msg(    i) {
     extra_count = 0
     in_msg = 0
     read_value = "false"
+    block_key = ""
+    block_lines = 0
 }
 function set_field(k, v,    known) {
     if (k == "") return
     values[k] = v
+    if (v ~ /^[|>][+-]?[0-9]*$/) {
+        if (v !~ /^\|-/) exit 2
+        values[k] = ""
+        block_key = k
+        block_lines = 0
+    } else {
+        block_key = ""
+    }
     seen[k] = 1
     if (k == "read") read_value = unquote(v)
     known = (k == "content" || k == "from" || k == "id" || k == "read" || k == "timestamp" || k == "type")
     if (!known) extra_keys[++extra_count] = k
 }
-function emit_field(out, prefix, k) {
-    print prefix k ": " sv(values[k]) >> out
+function emit_field(out, prefix, k,    lines,n,i) {
+    if (index(values[k], "\n")) {
+        print prefix k ": |-" >> out
+        n = split(values[k], lines, "\n")
+        for (i = 1; i <= n; i++) print "    " lines[i] >> out
+    } else {
+        print prefix k ": " sv(values[k]) >> out
+    }
 }
 function emit_msg(out,    keys,nkeys,i,prefix,k) {
     if (!in_msg) return
