@@ -5,7 +5,19 @@ setup_file() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export MEMORY_DB_MASTER_DIR="$BATS_FILE_TMPDIR/memory_db_master"
     mkdir -p "$MEMORY_DB_MASTER_DIR/archive" "$MEMORY_DB_MASTER_DIR/data"
-    python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    # Every test launches the same shell/Python entrypoints.  Reading those
+    # sources from /mnt/c for every process dominates the small DB fixtures, so
+    # stage the current script tree once on ext4.  Symlink adjacent repository
+    # resources to preserve each script's normal repo-root resolution.
+    export MEMORY_DB_SCRIPT_ROOT="$MEMORY_DB_MASTER_DIR/project"
+    mkdir -p "$MEMORY_DB_SCRIPT_ROOT"
+    for entry in "$PROJECT_ROOT"/* "$PROJECT_ROOT"/.[!.]*; do
+        [ -e "$entry" ] || continue
+        [ "$(basename "$entry")" = "scripts" ] && continue
+        ln -s "$entry" "$MEMORY_DB_SCRIPT_ROOT/$(basename "$entry")"
+    done
+    cp -a "$PROJECT_ROOT/scripts" "$MEMORY_DB_SCRIPT_ROOT/scripts"
+    python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$MEMORY_DB_MASTER_DIR/archive" \
         --db "$MEMORY_DB_MASTER_DIR/data/memory.db" >/dev/null
 }
@@ -41,7 +53,7 @@ teardown() {
 {"ts":"2026-05-01T00:01:00+09:00","agent":"shogun","direction":"response","summary":"sum2","detail":"detail2","session_id":"explicit-session"}
 EOF
 
-    run bash "$PROJECT_ROOT/scripts/memory_db_init.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_init.sh" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -82,7 +94,7 @@ PY
 {"ts":"2026-05-25T20:01:00+09:00","agent":"shogun","direction":"response","summary":"将軍返答","detail":"キャッシュ対象外"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --lord-ruling-cache "$TEST_TMPDIR/data/lord_ruling_cache.db"
@@ -107,7 +119,7 @@ PY
 {"ts":"2026-05-22T12:01:00+09:00","agent":"shogun","direction":"response","summary":"別件","detail":"通常の返答"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -159,12 +171,12 @@ PY
 {"ts":"2026-05-22T12:01:00+09:00","agent":"shogun","direction":"response","summary":"無関係","detail":"通常の返答"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --search "importance"
     [ "$status" -eq 0 ]
@@ -178,12 +190,12 @@ EOF
 {"ts":"2026-05-22T12:01:00+09:00","agent":"lord","target":"karo","direction":"inbound","summary":"karo宛検索対象","detail":"sameuniquetargetneedle"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --search "sameuniquetargetneedle" \
         --target "hayate"
@@ -197,7 +209,7 @@ EOF
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"schema sample","detail":"event_type distribution check"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --schema-output "$TEST_TMPDIR/memory-db-schema.md"
@@ -205,7 +217,7 @@ EOF
     [ -f "$TEST_TMPDIR/memory-db-schema.md" ]
     [[ "$output" == *"schema=$TEST_TMPDIR/memory-db-schema.md"* ]]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --schema
     [ "$status" -eq 0 ]
@@ -225,19 +237,19 @@ EOF
 {"ts":"2026-05-22T12:01:00+09:00","agent":"shogun","direction":"response","summary":"無関係","detail":"通常の返答"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --search "日本語の長いクエリでFTS5検索がタイムアウトする問題を改善する"
     [ "$status" -eq 0 ]
     [[ "$output" == *"日本語FTS改善"* ]]
     [[ "$output" != *"無関係"* ]]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --search "FTS5検索"
     [ "$status" -eq 0 ]
@@ -250,12 +262,12 @@ EOF
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"query wrapper","detail":"Python sqlite3 wrapper output check"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
-    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         "SELECT summary, target, parent_event_id FROM events ORDER BY ts"
     [ "$status" -eq 0 ]
@@ -267,14 +279,14 @@ EOF
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"cache wrapper","detail":"ext4 cache read path"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
     export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
-    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         "SELECT summary FROM events ORDER BY ts"
     [ "$status" -eq 0 ]
@@ -297,7 +309,7 @@ PY
     export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
 
-    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         "SELECT summary FROM events"
     [ "$status" -eq 0 ]
@@ -316,7 +328,7 @@ PY
     cat > "$TEST_TMPDIR/archive/search.jsonl" <<'EOF'
 {"ts":"2026-07-11T13:00:00+09:00","agent":"lord","target":"hanzo","direction":"inbound","summary":"search recovered","detail":"malformedrecoveryneedle"}
 EOF
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -325,7 +337,7 @@ EOF
     export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
 
-    AGENT_ID=hanzo run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    AGENT_ID=hanzo run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --search "malformedrecoveryneedle"
     [ "$status" -eq 0 ]
@@ -339,7 +351,7 @@ EOF
     export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
 
-    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         "SELECT name FROM sqlite_master"
     [ "$status" -ne 0 ]
@@ -360,7 +372,7 @@ PY
     export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
 
-    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         "SELECT summary FROM events"
     [ "$status" -ne 0 ]
@@ -384,7 +396,7 @@ PY
     for worker in 1 2 3 4 5; do
         SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1 \
         SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db" \
-            bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+            bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
             --db "$TEST_TMPDIR/data/memory.db" \
             "SELECT summary FROM events" \
             > "$TEST_TMPDIR/results/$worker.out" \
@@ -407,7 +419,7 @@ PY
     cat > "$TEST_TMPDIR/archive/search20.jsonl" <<'EOF'
 {"ts":"2026-07-13T01:00:00+09:00","agent":"lord","target":"hanzo","direction":"inbound","summary":"parallel search fixture","detail":"needleparallel20fixture"}
 EOF
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -416,7 +428,7 @@ EOF
     export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
     for worker in $(seq 1 20); do
-        AGENT_ID=hanzo bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        AGENT_ID=hanzo bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
             --db "$TEST_TMPDIR/data/memory.db" \
             --search "needleparallel20fixture" \
             > "$TEST_TMPDIR/results20/$worker.out" \
@@ -461,7 +473,7 @@ PY
 
     python3 -c "
 import sys
-sys.path.insert(0, '$PROJECT_ROOT/scripts')
+sys.path.insert(0, '$MEMORY_DB_SCRIPT_ROOT/scripts')
 import memory_db_live_insert as li
 li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
 "
@@ -490,7 +502,7 @@ PY
     for i in $(seq 1 5); do
         python3 -c "
 import sys
-sys.path.insert(0, '$PROJECT_ROOT/scripts')
+sys.path.insert(0, '$MEMORY_DB_SCRIPT_ROOT/scripts')
 import memory_db_live_insert as li
 li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
 "
@@ -530,7 +542,7 @@ PY
 
     python3 -c "
 import sys
-sys.path.insert(0, '$PROJECT_ROOT/scripts')
+sys.path.insert(0, '$MEMORY_DB_SCRIPT_ROOT/scripts')
 import memory_db_live_insert as li
 li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
 "
@@ -563,7 +575,7 @@ PY
     # First build: a healthy published cache with the original row count.
     python3 -c "
 import sys
-sys.path.insert(0, '$PROJECT_ROOT/scripts')
+sys.path.insert(0, '$MEMORY_DB_SCRIPT_ROOT/scripts')
 import memory_db_live_insert as li
 li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
 "
@@ -581,7 +593,7 @@ PY
 
     # Kill the writer almost immediately — well before backup+verify can finish —
     # to prove os.replace() means an interrupted write can never touch cache_path.
-    python3 - "$PROJECT_ROOT/scripts" "$TEST_TMPDIR/data/memory.db" <<'PY'
+    python3 - "$MEMORY_DB_SCRIPT_ROOT/scripts" "$TEST_TMPDIR/data/memory.db" <<'PY'
 import os
 import signal
 import subprocess
@@ -619,7 +631,7 @@ PY
     # picks up the grown source.
     python3 -c "
 import sys
-sys.path.insert(0, '$PROJECT_ROOT/scripts')
+sys.path.insert(0, '$MEMORY_DB_SCRIPT_ROOT/scripts')
 import memory_db_live_insert as li
 li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
 "
@@ -645,7 +657,7 @@ PY
     touch -d '3 days ago' "$TEST_TMPDIR/cache/.memory.db.old.tmp-journal"
     touch -d '3 days ago' "$TEST_TMPDIR/cache/_tmp_bats_memory.db"
 
-    run bash "$PROJECT_ROOT/scripts/cleanup_three_layer_tmp.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/cleanup_three_layer_tmp.sh" \
         --dry-run \
         --ttl-hours 6 \
         --cache-dir "$TEST_TMPDIR/cache"
@@ -681,7 +693,7 @@ PY
     export SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=999999999
     export THREE_LAYER_CHAIN_LOG="$TEST_TMPDIR/three_layer_chain_async.log"
 
-    run bash "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh"
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/gates/gate_three_layer_health.sh"
     [ "$status" -eq 0 ]
     [[ "$output" == *"cache容量チェック"* ]]
     [[ "$output" == *"tmp残骸cleanup dry-run"* ]]
@@ -693,12 +705,12 @@ PY
 {"ts":"2026-05-22T12:01:00+09:00","agent":"shogun","direction":"response","summary":"miss","detail":"ordinary response"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
-    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         "SELECT e.summary FROM events_fts JOIN events AS e ON e.rowid = events_fts.rowid WHERE events_fts MATCH 'uniqueftsneedle'"
     [ "$status" -eq 0 ]
@@ -711,12 +723,12 @@ EOF
 {"ts":"2026-05-22T12:01:00+09:00","agent":"lord","target":"karo","direction":"inbound","summary":"karo query wrapper","detail":"querytargetneedle"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
-    AGENT_ID=hayate run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    AGENT_ID=hayate run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --search "querytargetneedle"
     [ "$status" -eq 0 ]
@@ -729,24 +741,24 @@ EOF
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"guard row","detail":"SELECT-only guard"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
-    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         "select summary from events"
     [ "$status" -eq 0 ]
     [ "$output" = "guard row" ]
 
-    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         "WITH recent AS (SELECT summary FROM events) SELECT summary FROM recent"
     [ "$status" -eq 0 ]
     [ "$output" = "guard row" ]
 
-    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         "delete from events"
     [ "$status" -ne 0 ]
@@ -759,14 +771,14 @@ EOF
         "alter table events add column blocked_text text" \
         "create table blocked_table (id text)"
     do
-        run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+        run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
             --db "$TEST_TMPDIR/data/memory.db" \
             "$sql"
         [ "$status" -ne 0 ]
         [[ "$output" == *"BLOCKED"* ]]
     done
 
-    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         "SELECT summary FROM events;
 UPDATE events SET summary = 'changed'"
@@ -774,7 +786,7 @@ UPDATE events SET summary = 'changed'"
     [[ "$output" == *"BLOCKED"* ]]
     [[ "$output" == *"UPDATE"* ]]
 
-    run bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         "WITH target AS (SELECT id FROM events) DELETE FROM events WHERE id IN (SELECT id FROM target)"
     [ "$status" -ne 0 ]
@@ -793,7 +805,7 @@ not-json
 {"ts":"2026-05-02T00:00:00+09:00","direction":"outbound","summary":"c","detail":"c"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -829,7 +841,7 @@ PY
 {"ts":"2026-05-22T12:56:54+09:00","agent":"shogun","direction":"response","summary":"cmd_2966 eventsテーブル拡張","detail":"multi_agent_shogun_memory.db とセマンティクスインデックスを連携する"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -865,7 +877,7 @@ PY
 {"ts":"2026-05-22T12:57:54+09:00","agent":"shogun","direction":"response","summary":"cmd_2970 FTS5","detail":"SQLite記憶DBをFTS5対応にする"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -925,7 +937,7 @@ EOF
 {"ts":"2026-05-22T12:57:54+09:00","agent":"shogun","direction":"response","summary":"cmd_2970 FTS5","detail":"SQLite記憶DBをFTS5対応にする"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --semantic-index "$TEST_TMPDIR/semantic-index.md"
@@ -940,7 +952,7 @@ conn.execute("DELETE FROM event_concepts")
 conn.commit()
 PY
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --semantic-index "$TEST_TMPDIR/semantic-index.md" \
         --backfill-concepts
@@ -1000,7 +1012,7 @@ entries:
   status: 'open'
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -1049,7 +1061,7 @@ insights:
   resolved_reason: "noise"
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -1112,7 +1124,7 @@ executions:
   skill_path: "/mnt/c/tools/multi-agent-shogun/skills/verdict-check/SKILL.md"
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -1166,7 +1178,7 @@ commands:
     status: done
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -1215,7 +1227,7 @@ decisions:
   created_by: shogun
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -1267,7 +1279,7 @@ EOF
 txt checklist searchable marker
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --doc-dirs "$TEST_TMPDIR/docs/context,$TEST_TMPDIR/docs/projects/infra"
@@ -1302,13 +1314,13 @@ PY
     [[ "${result[1]}" == "document|document|document|Context Document Heading|cmd_3011_exact_document|"* ]]
     [ "${result[2]}" = "1" ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --search "cmd_3011_exact_document"
     [ "$status" -eq 0 ]
     [[ "$output" == *"Context Document Heading"* ]]
 
-    run env MEMORY_DB_QUERY_TARGET=hayate bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
+    run env MEMORY_DB_QUERY_TARGET=hayate bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_query.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --search "cmd_3011_exact_document"
     [ "$status" -eq 0 ]
@@ -1320,12 +1332,12 @@ PY
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_live_insert.py" \
         --db-path "$TEST_TMPDIR/data/memory.db" \
         bulletin \
         --entry-id "live-test" \
@@ -1335,7 +1347,7 @@ EOF
         --source-file "queue/inbox/hayate.yaml"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -1369,12 +1381,12 @@ PY
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"会話","detail":"通常ログ"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_live_insert.py" \
         --db-path "$TEST_TMPDIR/data/memory.db" \
         workaround \
         --cmd-id "cmd_2990" \
@@ -1420,7 +1432,7 @@ PY
 {"ts":"2026-05-22T12:02:00+09:00","agent":"shogun","direction":"response","summary":"リンクなし","detail":"通常のテキストのみ"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -1478,7 +1490,7 @@ PY
 {"ts":"2026-06-01T10:01:00+09:00","agent":"shogun","direction":"response","summary":"state列応答","detail":"新規行のstateはrawである"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -1553,7 +1565,7 @@ PY
     [ "$output" = "False" ]
 
     # Run import: should migrate and add state column
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -1578,12 +1590,12 @@ PY
 {"ts":"2026-06-03T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"記憶候補テスト","detail":"候補イベントのstate確認"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_live_insert.py" \
         --db-path "$TEST_TMPDIR/data/memory.db" \
         contradiction_candidate \
         --candidate-id "contradiction-test" \
@@ -1596,7 +1608,7 @@ EOF
         --source-file "tests/unit/test_memory_db.bats"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_live_insert.py" \
         --db-path "$TEST_TMPDIR/data/memory.db" \
         duplicate_candidate \
         --candidate-id "duplicate-test" \
@@ -1634,12 +1646,12 @@ PY
 {"ts":"2026-06-03T10:00:00+09:00","agent":"lord","direction":"inbound","summary":"記憶候補テスト","detail":"候補イベントのstate確認"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_live_insert.py" \
         --db-path "$TEST_TMPDIR/data/memory.db" \
         contradiction_candidate \
         --candidate-id "bad-contradiction-test" \
@@ -1696,7 +1708,7 @@ conn.commit()
 PY
 
     mkdir -p "$TEST_TMPDIR/backups"
-    run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/obsidian_promote_candidate.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --backup-dir "$TEST_TMPDIR/backups" \
         --min-concept-frequency 3 \
@@ -1752,7 +1764,7 @@ conn.commit()
 PY
 
     mkdir -p "$TEST_TMPDIR/backups"
-    run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/obsidian_promote_candidate.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --backup-dir "$TEST_TMPDIR/backups" \
         --dry-run
@@ -1789,7 +1801,7 @@ conn.execute("CREATE TABLE event_state_transitions (id INTEGER PRIMARY KEY AUTOI
 conn.execute("CREATE TRIGGER reject_transition BEFORE INSERT ON event_state_transitions BEGIN SELECT RAISE(ABORT, 'fixture failure'); END")
 conn.commit()
 PY
-    run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" --db "$TEST_TMPDIR/data/memory.db"
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/obsidian_promote_candidate.sh" --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -ne 0 ]
     readarray -t counts < <(python3 - "$TEST_TMPDIR/data/memory.db" <<'PY'
 import sqlite3, sys
@@ -1839,7 +1851,7 @@ PY
     printf '%s\n' 'event:a' 'event:b' > "$TEST_TMPDIR/event_ids.txt"
     mkdir -p "$TEST_TMPDIR/backups" "$TEST_TMPDIR/notes"
 
-    run bash "$PROJECT_ROOT/scripts/obsidian_promote_finalize.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/obsidian_promote_finalize.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --backup-dir "$TEST_TMPDIR/backups" \
         --notes-dir "$TEST_TMPDIR/notes" \
@@ -1881,7 +1893,7 @@ PY
 }
 
 @test "memory_db_live_insert defines the complete event state set" {
-    readarray -t result < <(python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" <<'PY'
+    readarray -t result < <(python3 - "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_live_insert.py" <<'PY'
 import importlib.util
 import sys
 spec = importlib.util.spec_from_file_location("memory_db_live_insert", sys.argv[1])
@@ -1894,7 +1906,7 @@ PY
 }
 
 @test "update_event_state updates state and logs transition reason" {
-    readarray -t result < <(python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/data/memory.db" <<'PY'
+    readarray -t result < <(python3 - "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/data/memory.db" <<'PY'
 import importlib.util
 import sqlite3
 import sys
@@ -1942,7 +1954,7 @@ conn.commit()
 PY
 
     mkdir -p "$TEST_TMPDIR/backups"
-    run bash "$PROJECT_ROOT/scripts/memory_recall_control.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_recall_control.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --backup-dir "$TEST_TMPDIR/backups" \
         --older-than-days 30 \
@@ -1981,7 +1993,7 @@ PY
 {"ts":"2026-06-01T10:01:00+09:00","agent":"shogun","direction":"response","summary":"属性列応答","detail":"importance と信頼度を分離する"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -2047,7 +2059,7 @@ conn.execute("INSERT INTO events_fts(events_fts) VALUES ('rebuild')")
 conn.commit()
 PY
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -2079,7 +2091,7 @@ PY
 {"ts":"2026-06-01T10:01:00+09:00","agent":"shogun","direction":"response","summary":"timestamp列応答","detail":"occurred_at recorded_at updated_at"}
 EOF
 
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -2166,7 +2178,7 @@ PY
     [ "$output" = "False" ]
 
     # importを実行 → occurred_at/recorded_at/updated_at が追加されバックフィルされる
-    run python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/memory.db"
     [ "$status" -eq 0 ]
@@ -2213,7 +2225,7 @@ for i in range(3):
     os.utime(path, (ts, ts))
 PY
 
-    readarray -t result < <(python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/backups" <<'PY'
+    readarray -t result < <(python3 - "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/backups" <<'PY'
 import datetime
 import importlib.util
 import sys
@@ -2234,7 +2246,7 @@ PY
 
 @test "create_sqlite_backup enables routine rotation by default and supports an explicit kill switch" {
     mkdir -p "$TEST_TMPDIR/default-enabled" "$TEST_TMPDIR/disabled"
-    python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR" <<'PY'
+    python3 - "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR" <<'PY'
 import importlib.util
 import os
 import sqlite3
@@ -2294,7 +2306,7 @@ touch("memory.db.bak_cmd3153_20260603T174448", now - datetime.timedelta(days=40)
 touch("memory.db.bak", now - datetime.timedelta(days=100))
 PY
 
-    readarray -t result < <(python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/backups" <<'PY'
+    readarray -t result < <(python3 - "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/backups" <<'PY'
 import datetime
 import importlib.util
 import sys
@@ -2347,7 +2359,7 @@ for i in range(10):
 PY
 
     for _ in 1 2 3 4 5 6 7 8; do
-        python3 - "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/backups" <<'PY' &
+        python3 - "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/backups" <<'PY' &
 import datetime
 import importlib.util
 import sys
@@ -2411,7 +2423,7 @@ PY
     # (cmd_3869 flipped the flag-unset default to enabled; this test's intent — verifying the
     # disabled path leaves the backlog untouched — now requires an explicit "0".)
     export SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED=0
-    run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/obsidian_promote_candidate.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --backup-dir "$TEST_TMPDIR/backups" \
         --min-concept-frequency 2 \
@@ -2441,7 +2453,7 @@ PY
 
     # Even the legacy rotation flag cannot re-enable routine full backup creation here.
     export SHOGUN_MEMORY_DB_BACKUP_ROTATION_ENABLED=1
-    run bash "$PROJECT_ROOT/scripts/obsidian_promote_candidate.sh" \
+    run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/obsidian_promote_candidate.sh" \
         --db "$TEST_TMPDIR/data/memory.db" \
         --backup-dir "$TEST_TMPDIR/backups" \
         --min-concept-frequency 2 \
