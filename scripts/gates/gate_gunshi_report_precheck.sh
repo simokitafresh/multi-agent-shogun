@@ -705,13 +705,13 @@ if [ -f "$_semantic_script" ] && [ -n "${_purpose:-}" ]; then
     set +e
     _sem_result=$(SEMANTIC_DISABLE_LLM=1 SEMANTIC_DISABLE_CAUSAL=1 timeout 1 bash "$_semantic_script" "$_purpose" 2>/dev/null)
     _sem_rc=$?
+    _sem_result=$(printf '%s\n' "$_sem_result" | head -5 || true)
     set -e
-    _sem_result=$(printf '%s\n' "$_sem_result" | head -5)
     if [ "$_sem_rc" -eq 124 ]; then
         echo "  WARN: semantic_search timeout(1s). 手動で関連概念を確認せよ"
     elif [ -n "$_sem_result" ]; then
         echo "  関連概念:"
-        printf '%s\n' "$_sem_result" | while IFS= read -r _line; do echo "    $_line"; done
+        printf '%s\n' "$_sem_result" | while IFS= read -r _line; do echo "    $_line"; done || true
     else
         echo "  NO_MATCH: 関連概念なし(aliases候補として蓄積検討)"
     fi
