@@ -310,7 +310,9 @@ spec = importlib.util.spec_from_file_location("tool", sys.argv[1])
 tool = importlib.util.module_from_spec(spec); spec.loader.exec_module(tool)
 root = pathlib.Path(sys.argv[2])
 artifact = root / "artifact"; artifact.mkdir()
-tables = ("alpha", "beta")
+output_tables = tuple(f"output_{index:02d}" for index in range(17))
+guard_table = "signal_decision_ledger"
+tables = (*output_tables, guard_table)
 for table in tables:
     (artifact / f"{table}.copy").write_bytes((table + "-payload").encode())
 manifest = {"tables": {
@@ -338,6 +340,7 @@ class Cursor:
     def execute(self, query, params=None):
         text=str(query); self.events.append(text)
         if text.startswith("SELECT pg_try_advisory_lock"): self.result=(True,)
+        elif "FROM pg_catalog.pg_locks" in text: self.result=(True,)
         elif text.startswith("SELECT EXISTS"): self.result=(False,)
         elif text.startswith("DELETE FROM"):
             table=text.split('"')[1]; self.counts[table]=0
@@ -364,16 +367,70 @@ module = types.SimpleNamespace(
     sql=SQL, tempfile=tempfile, copy_out=copy_out,
     sha256=lambda path: hashlib.sha256(path.read_bytes()).hexdigest(),
 )
-tool._restore_with_writer_lock(module, "unused", artifact, "deadbeef")
+evidence=tool._restore_with_writer_lock(module, "unused", artifact, "deadbeef")
 events=conn.cur.events
 lock_index=next(i for i,e in enumerate(events) if e.startswith("LOCK TABLE"))
 first_delete=next(i for i,e in enumerate(events) if e.startswith("DELETE FROM"))
 first_copy=next(i for i,e in enumerate(events) if e.startswith("COPY "))
 zero_checks=[i for i,e in enumerate(events) if e.startswith("SELECT count(*)") and i < first_copy]
 assert lock_index < first_delete < first_copy
-assert len(zero_checks) == len(tables)
+assert len(zero_checks) == len(output_tables)
+assert not any('DELETE FROM "signal_decision_ledger"' in event for event in events)
+assert not any('COPY "signal_decision_ledger"' in event for event in events)
 assert "SHARE ROW EXCLUSIVE" in events[lock_index]
 assert conn.committed and not conn.rolled_back and conn.closed
+assert evidence == {
+    "output_tables_restored": 17,
+    "guard_tables_mutated": 0,
+    "guard_sha256": manifest["tables"][guard_table]["sha256"],
+    "transaction": "committed",
+}
+
+conn2=Connection()
+guard_reads=0
+def mutating_copy_out(cur, table, columns, order, destination):
+    global guard_reads
+    payload=(artifact / f"{table}.copy").read_bytes()
+    if table == guard_table:
+        guard_reads += 1
+        if guard_reads == 2: payload=b"mutated-ledger"
+    destination.write_bytes(payload); return 1
+module.psycopg2=types.SimpleNamespace(connect=lambda _dsn: conn2)
+module.copy_out=mutating_copy_out
+try:
+    tool._restore_with_writer_lock(module, "unused", artifact, "deadbeef")
+except RuntimeError as exc:
+    assert "immutable ledger guard changed" in str(exc)
+else:
+    raise AssertionError("G1 mutation did not fail closed")
+assert conn2.rolled_back and not conn2.committed and conn2.closed
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "separate restore connection self-blocks while keeper owns advisory lock" {
+  run python3 - "$ROOT/scripts/lib/db_capability_tool.py" "$BATS_TEST_TMPDIR" <<'PY'
+import importlib.util, pathlib, types, sys
+spec = importlib.util.spec_from_file_location("tool", sys.argv[1])
+tool = importlib.util.module_from_spec(spec); spec.loader.exec_module(tool)
+
+class Cursor:
+    def execute(self, query, params=None): self.query = str(query)
+    def fetchone(self): return (False,)
+class Connection:
+    def __init__(self): self.cur=Cursor(); self.rolled_back=False; self.closed=False
+    def cursor(self): return self.cur
+    def rollback(self): self.rolled_back=True
+    def close(self): self.closed=True
+conn=Connection()
+module=types.SimpleNamespace(psycopg2=types.SimpleNamespace(connect=lambda _dsn: conn), LOCK_KEY=8675309)
+try:
+    tool._restore_with_writer_lock(module, "unused", pathlib.Path(sys.argv[2]), "deadbeef")
+except RuntimeError as exc:
+    assert "advisory lock is held" in str(exc)
+else:
+    raise AssertionError("separate connection bypassed keeper advisory lock")
+assert conn.rolled_back and conn.closed
 PY
   [ "$status" -eq 0 ]
 }

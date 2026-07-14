@@ -104,36 +104,67 @@ def _nologin_rehearsal(dsn: str, app_role: str, keeper_role: str, output: Path) 
     return 0 if result["decision"] == "PASS" else 1
 
 
-def _restore_with_writer_lock(module, dsn: str, artifact: Path, expected_commit: str) -> None:
-    """Restore while excluding ordinary writers that do not take the recalc lock."""
-    conn = module.psycopg2.connect(dsn)
-    conn.autocommit = False
+def _keeper_owns_advisory_lock(cur, lock_key: int) -> bool:
+    """Return whether this backend owns the exact bigint advisory lock."""
+    unsigned = lock_key & ((1 << 64) - 1)
+    class_id = (unsigned >> 32) & 0xFFFFFFFF
+    object_id = unsigned & 0xFFFFFFFF
+    cur.execute(
+        """SELECT EXISTS(
+               SELECT 1 FROM pg_catalog.pg_locks
+               WHERE locktype='advisory' AND pid=pg_backend_pid() AND granted
+                 AND classid=%s AND objid=%s AND objsubid=1
+           )""",
+        (class_id, object_id),
+    )
+    return bool(cur.fetchone()[0])
+
+
+def _canonical_table_hash(module, cur, artifact: Path, manifest: dict, table: str) -> str:
+    meta = manifest["tables"][table]
+    with module.tempfile.NamedTemporaryFile() as verify:
+        module.copy_out(cur, table, meta["columns"], meta["order"], Path(verify.name))
+        return module.sha256(Path(verify.name))
+
+
+def restore_with_keeper_connection(module, conn, artifact: Path, expected_commit: str) -> dict:
+    """Restore F17 and verify immutable G1 on the keeper-owned transaction.
+
+    The caller must pass the same live connection that owns the recalculation
+    advisory lock.  This function never opens another connection and owns the
+    commit/rollback boundary for the restore transaction.
+    """
     try:
         cur = conn.cursor()
         manifest = module.validate_artifact(artifact, cur, expected_commit)
-        cur.execute("SELECT pg_try_advisory_lock(%s)", (module.LOCK_KEY,))
-        if not cur.fetchone()[0]:
-            raise RuntimeError("recalculate advisory lock is held")
-        cur.execute("SELECT EXISTS(SELECT 1 FROM recalculation_status WHERE status='running' AND end_time IS NULL)")
-        if cur.fetchone()[0]:
-            raise RuntimeError("running recalculation exists")
+        if not _keeper_owns_advisory_lock(cur, module.LOCK_KEY):
+            raise RuntimeError("keeper connection does not own recalculation advisory lock")
 
-        tables = list(module.contract().INVENTORY)
+        guard_table = "signal_decision_ledger"
+        inventory = list(module.contract().INVENTORY)
+        if guard_table not in inventory:
+            raise RuntimeError("restore contract is missing immutable ledger guard")
+        output_tables = [table for table in inventory if table != guard_table]
+        if len(output_tables) != 17:
+            raise RuntimeError(f"restore contract requires F17 exactly, got {len(output_tables)}")
+        lock_tables = sorted([*output_tables, guard_table])
         cur.execute("SET LOCAL lock_timeout = '30s'")
         cur.execute(
             module.sql.SQL("LOCK TABLE {} IN SHARE ROW EXCLUSIVE MODE").format(
-                module.sql.SQL(", ").join(map(module.sql.Identifier, tables))
+                module.sql.SQL(", ").join(map(module.sql.Identifier, lock_tables))
             )
         )
-        for table in reversed(tables):
+        guard_before = _canonical_table_hash(module, cur, artifact, manifest, guard_table)
+        for table in reversed(output_tables):
             cur.execute(module.sql.SQL("DELETE FROM {}").format(module.sql.Identifier(table)))
-        for table in tables:
+        for table in output_tables:
             cur.execute(module.sql.SQL("SELECT count(*) FROM {}").format(module.sql.Identifier(table)))
             remaining = int(cur.fetchone()[0])
             if remaining != 0:
                 raise RuntimeError(f"table not empty after delete: {table} ({remaining})")
 
-        for table in tables:
+        restored = {}
+        for table in output_tables:
             meta = manifest["tables"][table]
             columns = module.sql.SQL(", ").join(map(module.sql.Identifier, meta["columns"]))
             with (artifact / f"{table}.copy").open("rb") as stream:
@@ -146,11 +177,38 @@ def _restore_with_writer_lock(module, dsn: str, artifact: Path, expected_commit:
             cur.execute(module.sql.SQL("SELECT count(*) FROM {}").format(module.sql.Identifier(table)))
             if int(cur.fetchone()[0]) != meta["rows"]:
                 raise RuntimeError(f"row count mismatch after restore: {table}")
-            with module.tempfile.NamedTemporaryFile() as verify:
-                module.copy_out(cur, table, meta["columns"], meta["order"], Path(verify.name))
-                if module.sha256(Path(verify.name)) != meta["sha256"]:
-                    raise RuntimeError(f"content mismatch after restore: {table}")
+            actual_hash = _canonical_table_hash(module, cur, artifact, manifest, table)
+            if actual_hash != meta["sha256"]:
+                raise RuntimeError(f"content mismatch after restore: {table}")
+            restored[table] = {"rows": meta["rows"], "sha256": actual_hash}
+        guard_after = _canonical_table_hash(module, cur, artifact, manifest, guard_table)
+        if guard_after != guard_before or guard_after != manifest["tables"][guard_table]["sha256"]:
+            raise RuntimeError("immutable ledger guard changed during restore")
         conn.commit()
+        return {
+            "output_tables_restored": len(restored),
+            "guard_tables_mutated": 0,
+            "guard_sha256": guard_after,
+            "transaction": "committed",
+        }
+    except Exception:
+        conn.rollback()
+        raise
+
+
+def _restore_with_writer_lock(module, dsn: str, artifact: Path, expected_commit: str) -> dict:
+    """Standalone recovery wrapper; P4 keeper paths call the core directly."""
+    conn = module.psycopg2.connect(dsn)
+    conn.autocommit = False
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT pg_try_advisory_lock(%s)", (module.LOCK_KEY,))
+        if not cur.fetchone()[0]:
+            raise RuntimeError("recalculate advisory lock is held")
+        cur.execute("SELECT EXISTS(SELECT 1 FROM recalculation_status WHERE status='running' AND end_time IS NULL)")
+        if cur.fetchone()[0]:
+            raise RuntimeError("running recalculation exists")
+        return restore_with_keeper_connection(module, conn, artifact, expected_commit)
     except Exception:
         conn.rollback()
         raise
