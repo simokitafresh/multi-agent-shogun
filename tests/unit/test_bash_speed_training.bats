@@ -1,9 +1,18 @@
 #!/usr/bin/env bats
 
-setup() {
+setup_file() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    FIXTURE_ROOT="$(mktemp -d)"
+    BASE_LEDGER="$FIXTURE_ROOT/script_speed_training_ledger.yaml"
+    export PROJECT_ROOT FIXTURE_ROOT BASE_LEDGER
+
+    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$BASE_LEDGER"
+}
+
+setup() {
     TMP_ROOT="$(mktemp -d)"
     LEDGER="$TMP_ROOT/script_speed_training_ledger.yaml"
+    cp "$BASE_LEDGER" "$LEDGER"
     export SPEED_TRAINING_LEDGER="$LEDGER"
     export SHOGUN_STATE_DIR="$TMP_ROOT/state"
     export SPEED_TRAINING_TASK_DIR="$TMP_ROOT/tasks"
@@ -14,10 +23,11 @@ teardown() {
     rm -rf "$TMP_ROOT"
 }
 
-@test "init-ledger records every scripts/*.sh file with non-destructive bash -n syntax baseline and real timing columns" {
-    run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
-    [ "$status" -eq 0 ]
+teardown_file() {
+    rm -rf "$FIXTURE_ROOT"
+}
 
+@test "init-ledger records every scripts/*.sh file with non-destructive bash -n syntax baseline and real timing columns" {
     expected=$(find "$PROJECT_ROOT/scripts" -type f -name '*.sh' | wc -l | tr -d ' ')
     entry_count=$(grep -c 'script_path:' "$LEDGER")
 
@@ -33,7 +43,6 @@ teardown() {
 }
 
 @test "paused ledger prevents auto-deploy" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     bash "$PROJECT_ROOT/tools/bash_speed_training.sh" set-global-status paused "$LEDGER"
 
     run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" auto-deploy hayate "$LEDGER"
@@ -43,8 +52,6 @@ teardown() {
 }
 
 @test "auto-deploy dry-run assigns exactly one pending script and emits deploy_task command" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
-
     run env SPEED_TRAINING_DRY_RUN=1 bash "$PROJECT_ROOT/tools/bash_speed_training.sh" auto-deploy hayate "$LEDGER"
     [ "$status" -eq 0 ]
     [[ "$output" == DRY_RUN\ deploy_task* ]]
@@ -56,7 +63,6 @@ teardown() {
 }
 
 @test "auto-deploy skips scripts already active in task yaml" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
     cat > "$SPEED_TRAINING_TASK_DIR/hayate.yaml" <<EOF
 task:
@@ -77,7 +83,6 @@ EOF
 }
 
 @test "auto-deploy reassigns no_improvement entries for rework" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
     bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-after "$first" no_improvement 12 "no improvement" no_change "$LEDGER"
 
@@ -94,8 +99,6 @@ EOF
 }
 
 @test "auto-deploy generated task preserves speed purpose and real runtime ACs" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
-
     run env SPEED_TRAINING_DRY_RUN=1 bash "$PROJECT_ROOT/tools/bash_speed_training.sh" auto-deploy hayate "$LEDGER"
     [ "$status" -eq 0 ]
 
@@ -131,7 +134,6 @@ EOF
 }
 
 @test "record-after writes after measurement, test result, commit, and terminal status" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
 
     bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-after "$first" completed 12 "bats target PASS SKIP=0" abc123 "$LEDGER"
@@ -147,7 +149,6 @@ EOF
 }
 
 @test "record-real writes runtime before and after with measurement command" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
 
     bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 101 72 "time bash $first --help" "bats target PASS SKIP=0" abc123 "$LEDGER"
@@ -165,7 +166,6 @@ EOF
 }
 
 @test "record-real completed rejects non-improving runtime" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
 
     run bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 101 101 "time bash $first --help" "bats target PASS SKIP=0" abc123 "$LEDGER"
@@ -174,7 +174,6 @@ EOF
 }
 
 @test "re-enqueue returns top completed entries to pending and carries after_real_ms into next before_real_ms" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
     bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 200 50 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
     second=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
@@ -197,7 +196,6 @@ EOF
 }
 
 @test "re-enqueue preserves decimal after_real_ms values" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
     bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 24.565 16.634 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
 
@@ -215,7 +213,6 @@ EOF
 }
 
 @test "re-enqueue stops at max iteration" {
-    bash "$PROJECT_ROOT/tools/bash_speed_training.sh" init-ledger "$LEDGER"
     first=$(bash "$PROJECT_ROOT/tools/bash_speed_training.sh" next "$LEDGER")
     bash "$PROJECT_ROOT/tools/bash_speed_training.sh" record-real "$first" completed 200 100 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
     bash "$PROJECT_ROOT/tools/bash_speed_training.sh" re-enqueue 1 "$LEDGER" 1
