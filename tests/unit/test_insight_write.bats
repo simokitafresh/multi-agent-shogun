@@ -478,6 +478,7 @@ print('CUSTOM RESOLVE OK')
 
     TEST_TMP_ENV="$TEST_TMP" INS_ID_ENV="$ins_id" python3 - <<'PY'
 import os
+from pathlib import Path
 import subprocess
 import time
 
@@ -486,7 +487,12 @@ ins_id = os.environ["INS_ID_ENV"]
 env = os.environ.copy()
 env["INSIGHT_TEST_SLEEP_BEFORE_REPLACE"] = "5"
 proc = subprocess.Popen(["bash", f"{tmp}/scripts/insight_write.sh", "--resolve", ins_id, "interrupt test", "test=atomic"], env=env)
-time.sleep(1)
+deadline = time.monotonic() + 2
+while not list(Path(f"{tmp}/queue").glob(".insights-resolve.*.tmp")):
+    if time.monotonic() >= deadline:
+        proc.terminate()
+        raise TimeoutError("resolve did not reach pre-replace checkpoint")
+    time.sleep(0.01)
 proc.terminate()
 try:
     proc.wait(timeout=3)
@@ -525,6 +531,7 @@ EOF
 
     TEST_TMP_ENV="$TEST_TMP" python3 - <<'PY'
 import os
+from pathlib import Path
 import subprocess
 import time
 
@@ -532,7 +539,12 @@ tmp = os.environ["TEST_TMP_ENV"]
 env = os.environ.copy()
 env["INSIGHT_TEST_SLEEP_BEFORE_REPLACE"] = "5"
 proc = subprocess.Popen(["bash", f"{tmp}/scripts/insight_write.sh", "after interrupt", "high", "unit_test"], env=env)
-time.sleep(1)
+deadline = time.monotonic() + 2
+while not list(Path(f"{tmp}/queue").glob(".insights.*.tmp")):
+    if time.monotonic() >= deadline:
+        proc.terminate()
+        raise TimeoutError("tail repair did not reach pre-replace checkpoint")
+    time.sleep(0.01)
 proc.terminate()
 try:
     proc.wait(timeout=3)
