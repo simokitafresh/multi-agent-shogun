@@ -332,6 +332,9 @@ _handle_deploy_stall() { return 1; }
 _clear_stall_tracking_for_completed_idle() { :; }
 _handle_idle_notify() { :; }
 _record_training_effect() { :; }
+_trigger_training_completion_check() { :; }
+_handle_reflux_auto_deploy() { return 1; }
+_handle_test_speed_auto_deploy() { return 1; }
 _handle_speed_training_auto_deploy() { calls="${calls}speed "; return 0; }
 _handle_training_auto_deploy() { calls="${calls}legacy "; return 0; }
 _handle_auto_clear() { calls="${calls}clear "; return 0; }

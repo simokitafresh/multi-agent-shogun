@@ -18,3 +18,11 @@
 - Improvement 3: each setup still sources `tools/bash_speed_training.sh`; optimize parse/source time only if a follow-up profile shows it has become dominant.
 
 The governing constraint is quoted from [[training-cycle.md]]: “FAIL→即停止・原因報告。PASS→次ACへ。” Speed work must not weaken expectations or introduce SKIP.
+
+## Cycle 2: idle-handler isolation
+
+- Improvement 1 (implemented): [[test_bash_speed_training.bats]] test 15 exercised three unrelated pre-speed branches in `handle_confirmed_idle`; stub completion-check, reflux, and test-speed handlers so the test measures only the asserted speed-before-legacy ordering.
+- Improvement 2: tests 14 and 15 each source [[ninja_monitor.sh]] in a fresh Bash; consider a shared focused fixture only if source time becomes dominant.
+- Improvement 3: per-test ledger isolation still uses an ordinary copy; measure `cp --reflink=auto` before changing it because the fixture is already small and on ext4.
+
+The production ordering remains anchored in [[ninja_monitor.sh]]: `_handle_test_speed_auto_deploy` precedes `_handle_speed_training_auto_deploy`, which precedes `_handle_training_auto_deploy`. The focused test still reaches the speed handler and asserts that legacy is never called.
