@@ -1,120 +1,83 @@
-# 本番再計算の非決定性根治 — AS-IS / TO-BE 5W1H (v1.2)
+# 本番再計算の非決定性根治 — AS-IS / TO-BE 5W1H (v2.0 — ledger-bound freezeへ転換)
 
-作成: 2026-07-11 将軍 | v1.1: 軍師深層レビュー(A-H)反映 | v1.2: 家老運用レビュー(依存・影響範囲・cron・縮退)反映
-源流: cmd_3827 FAIL → cmd_3840偵察設計 → 軍師レビュー → 家老運用レビュー(blt_20260711_014245)
-正本設計書: DM-signal `docs/research/cmd_3840_nondeterminism_redesign.md` (v1.2、§8=運用確定仕様)
+作成: 2026-07-11 将軍 | v1.1-v1.3.1: 軍師・家老・将軍メタレビュー反映 | **v2.0 (2026-07-14): 殿裁定による戦略転換**
+源流: cmd_3827 FAIL → cmd_3840偵察設計 → P1-P3実装GREEN → P4複雑機構の性能不採用連鎖 → **SIGNAL CHANGE ALERT実事故(07-14) → 殿裁定「目的は保有シグナルの不変性」→ ledger-bound freeze採用**
+正本設計書: DM-signal `docs/research/cmd_3840_nondeterminism_redesign.md` (v1.4.28) ※P4以降の重厚契約は本転換で退役
 
 ---
 
-## 0. 一言でいうと
+## 0. 時系列ナビゲーション（旧方式→問題→新版）
 
-**「同じデータで再計算したのに、シグナルが前回と違う」問題**の根治計画。
-検証した範囲（DM-safe 1PF・最初の5,000行・単一プロセス・vectorized経路・created_at除外）では**反復差分ゼロ**だった。ただしこれは有界の実証であり、全PF・全日付・PipelineEngine側の決定性は**differential testがGREENになって初めて宣言できる**（レビュー指摘A）。
-構造問題は2つ:
-1. **計算経路が2本ある**（PipelineEngineと高速化用の手書きvectorized経路）。独立実装なので修正のたびに乖離し得る。実際、cmd_3835作業中に**日跨ぎ（date.today変化）だけでexact parityが42/45に割れた**実例が出た（指摘H）
-2. **「同じ入力」を証明する仕組みがない**。run中に価格・config・ledgerが動くと「入力が違う」のか「バグ」なのか区別できない
+| 版 | 方式 | 何が起きたか |
+|---|---|---|
+| v1.0-v1.3.1 (07-11) | 単一経路化+入力manifest+P4本番決定性証明 | P1-P3は完成しGREEN。P4(本番1run証明)の前提となるwriter fence機構が**trigger 2案・ACL・GUC・RLSと4方式連続で性能/安全不採用**。bundle・keeper・restore契約と複雑機構が肥大化 |
+| 転機 (07-14朝) | — | **本番でSIGNAL CHANGE ALERT実事故**: 23FoFの7月確定保有161行が日次cronで6月値へ誤巻き戻し。遡及調査は証跡消失で不能(restore-lockedが診断履歴まで復元) |
+| **v2.0 (07-14)** | **ledger-bound freeze** | 殿裁定11:51「複雑な仕組みはすべて無駄。目的は過去の保有シグナルの不変性そのもの」。既存のappend-only ledger+既存reconcileを磨くだけの構造へ転換。実事故の真因も特定済み(下記) |
 
-調査を妨げていた「基準生成30秒timeout」は計算ではなく、**日次ループ内のgit rev-parse subprocess 238回**（35.2秒中21.2秒=60.1%）が主因。
+**一言でいうと**: 「同じデータで再計算してもシグナルが変わらない」を計算の決定性で証明する路線から、**「確定した保有はそもそも再計算で上書きできない」構造で保証する路線へ転換した**。前者は手段、後者が目的だった。
 
-## 1. AS-IS（現状）
+## 1. 実事故と真因（2026-07-14、本転換の決定打）
+
+- **事象**: sync-fof日次cron(01:40 UTC)が23FoFの2026-07-01〜07-10 holding_signal 161行(23PF×7営業日)を上書き。SIGNAL CHANGE ALERTが発報
+- **真因(本番実測で確定)**: 凍結機構は既に実装済みで**正しく発火していた**が、`recalculate_fast.py`のledger snapshot取得が**ORDER BYなし**+`signal_decision_ledger.py`のresolverが`applicable[-1]`を最新と仮定→順序非決定なsnapshotで**6月のeventが最新として選ばれ、7月確定値を6月確定値へ誤巻き戻し**。証跡: 変更前値=最新ledger(07-01)と161/161一致、変更後値=旧ledger(06-01)と161/161一致
+- **即時対応**: cmd_3905で161行を7/1時点値へ復元完了(バックアップ+161/161 exact照合+ledger突合、家老独立再検証済み)
+- **教訓**: 価格改定でも計算非決定性でもなく、**守りの器の選択バグ**。「すでに実装したものが効果を発揮していない」(殿)
+
+## 2. AS-IS（現状 2026-07-14）
 
 | 項目 | 現状 |
 |---|---|
-| 計算経路 | **2本並存**。PipelineEngine（日次の正）と`_compute_pipeline_signals()`（recalculate_fast.py内の独立vectorized実装） |
-| 決定性の実証範囲 | **有界**: DM-safe 1PF×5,000行×単一プロセス×vectorized経路で反復差分ゼロ。全PF/全日付/Engine側は未実証 |
-| 入力の同一性 | 証明手段なし。git hashはshort/unknownになり得る。watermark+件数では過去値の遡及訂正を検知できない（指摘B） |
-| 途中commit構造 | `_flush_batch`がbatchごとにdb.commit()するため、**終端で入力差を検知しても既書込みは戻せない**（指摘E）。「並行更新検知でabort」は現構造では成立しない |
-| ledger guard | 正常動作。ただし正確な保証は「**不一致の提案holding_signalは永続化されない**」（ledger値へ置換後UPSERT。書込み自体がゼロではない。指摘F） |
-| 計測汚染 | git rev-parse 238回=Stage A 60.1%。vectorized計算本体は0.198秒 |
-| 被害 | cmd_3827が原因特定不能でFAIL。日跨ぎでparity割れ（cmd_3835実測）。検証のたび原因切り分けから始まる運用コスト |
+| 資産(有効) | P1a-P3a完成: full source identity・logical_date固定・immutable snapshot・strict manifest・共通pure executor(`execute_pipeline_semantics`がSSOT、旧`_compute_pipeline_signals`全廃)・shadow 2run exact・全量テストGREEN |
+| ledger | `SignalDecisionLedger`=**append-only(UPDATE/DELETE拒否)**が稼働中。15,160行/102PF、2003-09-02〜2026-07-01被覆。reconcile処理もsignal_flush/monthly_returnsに実装済み |
+| 被覆の穴 | 確定域signals 341,409行のうち**ledger未被覆478行/76PF(0.14%)がpass-through** |
+| 選択の穴 | resolver最新event選択が順序非決定(上記真因)。**修正cmd_3907実装中** |
+| 訂正経路 | 過去訂正の専用経路なし(**cmd_3908で新設**) |
+| 退役済み | P4本番bundle/fence/keeper/restore契約(cmd_3902 canceled)・restore証跡artifact(cmd_3904 canceled)・trigger/ACL/GUC/RLS 4方式(反例履歴として保全、再採用禁止) |
 
-## 2. TO-BE（あるべき姿）
+## 3. TO-BE（あるべき姿 = ledger-bound freeze）
 
 | 項目 | あるべき姿 |
 |---|---|
-| 計算経路 | **意味論は1本**。DB/session/subprocess/date.todayを受けない純粋関数 `execute_pipeline_semantics(block_defs, terminal_def, date, initial_tickers, precomputed_inputs) -> {signal, weights, trace}` をSSOTとし、Engine adapterとvectorized adapterの双方が同関数を呼ぶ。共有範囲はselectionだけでなくterminal・SafeHaven・EqualWeight・ALM・date-miss・tie・DTB3・weightsのkey順まで。旧`_compute_pipeline_signals`は定義・呼出しとも0件に（指摘G） |
-| 入力契約 | **immutable snapshot契約**（指摘E）: run開始時に全入力（価格・config・economic指標・ledger全件preload）をsnapshotへロードし、以後のsource table SELECTをquery guardで0件強制。並行更新は現在runに混入せず「次runのmanifest差」として現れる |
-| 入力manifest | **実際にロードしたartifactのcanonical SHA-256が正本**（指摘B）。必須キー: manifest_version、full 40桁source hash+dirty/source fingerprint、logical_date、run_started_at、対象PFのexact set、正規化config hash/PF、price hash/symbol、全economic-input hash、ledger canonical hash+件数+max recorded_at、Python/pandas/numpyバージョン |
-| git hash | full hashを環境変数（RenderのcommitSHA）優先+git fallbackで**run開始時に1回**取得。unknown/dirtyは本番write前にfail-closed（指摘C） |
-| logical_date | **1 run 1値で固定**。date.today直参照を排し日跨ぎ非決定性を根絶（指摘H） |
-| manifest永続化 | schema migrationゼロ。既存`recalculation_timings.layer_data["input_manifest"]`へrun開始時にprovisional UPSERT、失敗時は最初のSignal write前にabort、完了時に同run_idを更新（指摘D）。※「本番DB変更ゼロ」ではなく「**schema変更ゼロ・既存JSON列への書込みあり**」が正確 |
-| ledger guard | 維持・緩めない。drift収集にmanifest_id/source hashを添付し「入力が違った/計算が違った」を即断可能に（指摘F） |
-| 速度 | Stage A warm 5回 median≤5s/p95≤6s/hard<30s、cold≤15s、RSS非増大。全日付Engine逐日（約2,000秒）はoracle限定 |
+| 原理(1行) | **保有シグナルの確定域はledgerが正。ledger欠落での確定域書込みはfail-closed** |
+| 確定境界 | カレンダー月ではなく**ledger event有無をSSOT**とする |
+| 選択の決定性 | 最新applicable event=(effective_start_date, recorded_at, id)明示ソートまたはmax選択。順序非依存 (cmd_3907) |
+| 被覆100% | 未被覆478行はcutover時の現保有をbaseline eventとして一度だけ凍結。以後fail-closed (cmd_3909) |
+| 変更の一本化 | 過去訂正はreason・actor必須のappend-only correction eventのみ。一般full rebuildでの確定域上書き手段は封鎖 (cmd_3908) |
+| 可変なもの | signals.signal(生シグナル)・monthly_returns等の価格評価は再計算可。**不変なのはholding_signal=投資判断の記録のみ** |
+| 新規PF/設定変更 | 過去はsimulation扱い。実保有のledger化は将来決定から |
+| 決定性検証の位置づけ | P1-P3資産(共通executor+manifest)は維持。決定性試験は**未確定域・オフライン限定へ縮小・低優先化**。本番restore/fenceを不変性のために続けない |
 
-## 3. 5W1H
+## 4. 5W1H (v2.0)
 
 | | 内容 |
 |---|---|
-| **Why** | 再計算の信頼性はDM-Signal全機能の土台。二重実装は乖離リスクを永久に抱え（日跨ぎparity割れで実証済み）、入力証明がないと検証が実験として成立しない。cmd_3827 FAILで実害顕在化 |
-| **What** | P1 hotfix（git hash定数化+logical_date固定+immutable snapshot+strict manifest）→P2 differential testを先にRED化→P3 共通executor実装+両adapter接続+旧関数削除→P4 全shard exact GREEN+性能確認 |
-| **When** | P1は実装cmd裁可後すぐ。P2-P4は直列（differential RED化が共通executorの前提） |
-| **Where** | `recalculate_fast.py`・`services/pipeline/engine.py`・`backend/tests/`・`recalculation_timings.layer_data`。ledger guard（signal_flush.py）は保証文言の正確化のみで緩めない。DB schema変更ゼロ |
-| **Who** | 忍者直列（P1 hotfix cmd→P2-P4本体cmd）。設計は正本設計書+本レビュー反映で確定 |
-| **How** | 下記の実装順P1-P4と二値AC7本。対象縮小禁止（全PF×全日付、PF shard分割で網羅） |
+| **Why** | 目的は過去の保有シグナルの不変性。計算の決定性証明は手段であり、確定域を再計算で触れない構造にすれば目的は直接達成される。実事故が「既実装の器+小さな選択バグ」という最短修正点を示した |
+| **What** | freeze三段直列: cmd_3907(誤選択根治+fail-closed)→cmd_3908(correction event専用経路+他手段封鎖)→cmd_3909(478行baseline凍結→被覆100%) |
+| **When** | 即時。3907は次回sync-fof cron(07-15 01:40 UTC)前のlive反映が期限 |
+| **Where** | `recalculate_fast.py`(snapshot取得)・`signal_decision_ledger.py`(resolver)・本番signal_decision_ledger(baseline INSERT 478行のみ) |
+| **Who** | 忍者直列(家老配備)。復元(3905)は完了済み |
+| **How** | 新規trigger/artifact/複雑機構ゼロ。既存append-only ledger+既存reconcile 1箇所を磨く。二値基準=fullrecalc後ledger被覆holding 340,931+478行全量exact不変・未被覆確定書込reject・correction event以外の変更ゼロ |
 
-## 4. 確定実装順（軍師+家老レビューで未決断ゼロ化。v1.2でP1を二分）
+## 5. 検証（3層）
 
-| Phase | 内容 |
-|---|---|
-| **P1a**（単独デプロイ可） | full source identity(40hex、Render環境変数優先)のrun開始1回化+logical_date 1値固定+20桁一意run_id+loop内git呼出0 |
-| **P1b**（全統合test後） | immutable input/ledger snapshot+strict manifest+query guard+全呼出し元/cron対応 |
-| P2 RED | 専用branch/worktreeで全PF×全日付のEngine対adapter exact比較testをRED整備（mainに置かない、対象縮小禁止） |
-| P3 実装 | 同branchで共通pure executor実装、両adapter接続、旧関数削除。GREEN後のみmerge |
-| P4 GREEN+性能 | 全shard exact GREEN、Stage A warm5 median≤5s/p95≤6s/hard<30s、cold≤15s、本番fullrecalculateは許可済み1回のみ |
+1. **即時**: 復元161行の再照合(161/161 exact維持+12:17以降change 0件) — 家老実行中
+2. **FE**: monthly tradeページで23FoFの7月保有が復元値と一致(DB→API→FE貫通)
+3. **実弾**: cmd_3907 live反映後、**明日のsync-fof cron通過でSIGNAL CHANGE ALERT 0件** = 同じ再計算が走っても確定保有が動かないことの実証
 
-**着手条件**: cmd_3835（同ファイル群を変更中）のGATE CLEAR+作業ツリー整流後。並行編集禁止。
+## 6. これで何が変わるか（殿の体験）
 
-**二値AC（軍師7本+家老7本）**: 軍師分=①loop内git hash呼出0・manifest 1/run・unknown/dirtyでwrite0 ②snapshot後source SELECT0・ledger query0 ③differential exact mismatch0・SKIP0 ④旧関数定義/呼出0 ⑤guard不一致提案値write0+manifest_id ⑥性能値 ⑦既存test PASS/SKIP0・schema migration0。家老分=Ⓐ失敗時はconfig audit含むbusiness write0 Ⓑ5つの本番呼出し元全てで識別情報の伝播一致 Ⓒprovisional→completedでmanifest消失0+run_id衝突test Ⓓ L2失敗→L3/L5実行0+cron nonzero検知 Ⓔstandalone L5のmanifest+L3当日成功必須 Ⓕguard 0件強制 Ⓖ全PF×全日付shard網羅
+- 確定した保有シグナルは**構造的に二度と変わらない**。adj価格がどれだけ遡及改定されても、計算にどんなバグが入っても、確定域はledgerが守る
+- SIGNAL CHANGE ALERTは「correction event以外で確定域が動いた」ときだけ鳴る真の異常検知になる
+- 原因調査・証跡保全・復元contract等の複雑な事後装置は原理的に不要(変わり得ないものに法医学はいらない)
 
-## 4.5 家老運用レビューで塞がった穴（v1.2）
+## 7. 因果
 
-- **書込み順序の重大穴**: 現コードは入力ロード前にconfig snapshot INSERT+cleanupを実行しており「manifest失敗時write0」が現順序では偽。REPEATABLE READのread-sessionで全入力をmaterialize→manifest確定→**初めて**業務書込み、の順序に確定。失敗時は旧公開データ完全維持
-- **standalone L5経路の未被覆**: precompute単独実行(admin API+02:00UTC fallback cron)がmanifest対象外だった→専用manifest_kind=l5を新設
-- **cronの見かけ成功問題**: L2/L3/月次はHTTP acceptedを即返すためcurl成功≠job成功。endpoint受理前の同期preflight+terminal poll+失敗時nonzeroへ変更。UNKNOWN/DIRTYは恒久エラーとして自動retry禁止+alert
-- **L5 fallback cronの穴**: L3失敗日でもstale DBで走れる→L3当日成功を実行条件に追加
-- **timing書込みの穴**: LayerTimerは例外握り潰し+layer_data全置換でmanifestが消え得る→"_run"予約key+strict UPSERT(失敗raise)+merge方式へ
+`[[cmd_3827_FAIL]] -> [[P1-P3単一経路化GREEN]] -> [[P4 fence4方式連続不採用]] + [[SIGNAL_CHANGE_ALERT実事故07-14]] -> [[殿裁定_目的は保有不変性]] -> [[真因=ledger選択の順序非決定]] -> [[cmd_3905復元]] -> [[freeze三段: cmd_3907決定的選択 -> cmd_3908 correction経路 -> cmd_3909 baseline凍結]] -> [[確定域不変性の構造保証]]`
 
-## 5. これで何が変わるか（殿の体験）
-
-- 差分が出たら**manifest差分を見るだけで「入力が動いた」か「バグ」かを即断**できる（入力はimmutable snapshotで固定済みなので、run内混入はそもそも起きない）
-- シグナルロジックの修正は純粋関数1箇所で日次もbatchも揃う。「片方だけ直る」事故が構造的に消える
-- 日跨ぎ・dirty worktree・並行更新という「たまたま起きる」系の不安定要因が全てfail-closedまたはmanifest差分として可視化される
-
-## 5.5 将軍メタレビュー（v1.2.1、殿指示2026-07-11 01:51「覚醒して穴がないかメタレビューせよ」）
-
-軍師（コード）・家老（運用）の二重レビュー後に残る、戦略・前提・プロセス層の穴7点:
-
-| # | 穴 | 対処 |
-|---|---|---|
-| M1 | **元の問いへの回帰パスがない**。本計画の発端はcmd_3827「バンドなしledgerとsignalsの整合検証」のFAIL。P4完了後にcmd_3827相当の再検証（DRIFT BLOCK原因の最終確定）を行う工程が設計に存在しない | P4の後工程として「manifest固定下でのcmd_3827再実行=整合検証の完結」を追加。これが完了して初めて発端の問いが閉じる |
-| M2 | **実測値の時限性**。35.2s/0.198s/warm3.9s等のbaselineは全てcmd_3835による同ファイル群の大改修**前**の実測。P1a着手時点ではコードが変わっている | P1aの最初のACに「baseline再計測」を含める。旧数値を目標値の根拠にしない |
-| M3 | **P2の計算量計画がない**。全PF×全日付differential（103PF×約5,000日）の実行時間・メモリ見積もりが未記載。GS系の実証教訓（並列RSS 8.5GB、直列1本ずつが正解）が適用されるべき領域 | P2起票時にshard実行の直列/並列方針とRSS上限を明記。対象縮小はしない、実行計画で吸収する |
-| M4 | **「停止点なく実装可能」への疑義=殿裁定チェックポイント欠落**。P1a+P1bだけで実害（timeout・比較不能・日跨ぎ）はほぼ消える。P2-P4（共通executor化）は乖離リスクへの恒久投資であり価値は実在するが、レビュー3者とも「全部やる」前提で「P1b完了後の実測を見てP2-P4の着手時機を殿が裁定する」停止点を置いていない | P1b完了時に実測+乖離リスク再評価を殿へ上程する裁定点を工程に追加 |
-| M5 | **drift検知の監視経路がない**。manifest_id付きdriftを記録しても、殿/家老に届く通知経路（ntfy/dashboard）が未設計。検知しても誰も見なければ存在しないのと同じ | P1bのACに「drift+manifest差分発生時の通知経路（既存ntfy/dashboardへの接続）」を追加 |
-| M6 | **cmd_3788との統合未確認**。uvicorn --workers 2でのrecalculation statusクロスプロセス誤答は既知で設計書化済み（cmd_3788、gist 5ca0ffd5）。manifestの「1 run 1値」保証はプロセス排他の上に立つが、既存409排他（L0-L3は確認済み）が④PF保存後partial・⑤復元後partialとsync系の並行実行も排他するかは未確認 | P1b設計時にcmd_3788設計書と突合し、partial系との並行時のmanifest/書込み整合を確認事項に追加 |
-| M7 | **正本の版管理が宙**。設計書v1.2はworking tree上にあり、hanzoのstaged混在でcommit不能。実装cmdが「どの版の設計書に従うか」が固定されていない | P1a起票の前提条件に「設計書v1.2のcommit確定+task YAMLへcommit hash明記」を置く（家老整流時に解消予定） |
-
-横展開メモ: 「HTTP accepted≠job成功」（家老発見）は他cron・他PJにも同型があり得る。lesson登録時に横展開対象の列挙を含めること。
-
-### M1-M7の確定仕様（v1.3、家老全採用 blt_20260711_015722 + 軍師盲点認定 blt_20260711_015612）
-
-- **M1→P5回帰の新設**: P4本番fullrecalculate後に、発端cmd_3827と同一の整合シナリオ（ledger・confirmed holding・exact-set・DRIFT BLOCKの元事故条件）を再実行しmismatch 0で発端の問いを閉じる
-- **M4→裁定checkpoint必須化**: 「停止点なく実装可能」の結語は洗脳#8として削除。設計確定範囲は**P1a→P1bまで**。P1b完了時にmanifest現物・5呼出し元・cron縮退・production preflight結果を殿へ提示し、**P2-P4への進行は殿裁定必須。自動継続禁止**
-- **M5→drift三段通知**: (1)primary=DB永続（layer_data._run.drift_summaryにmanifest_id/source hash/PF/date/before/ledger/count）(2)immediate=ntfy集約1件 (3)dashboard=未解消drift件数+最新manifest_id。ntfy失敗でもguardは緩めず、DB永続を正本に再送可能化
-- **M2→baseline再計測**: P1a冒頭でStage A cold/warmを再計測。旧35.2/11.8/3.9秒は現値扱いしない
-- **M3→shard/chunk実行計画**: 固定PF shard manifest+同一fixture read-only+shard内直列。RSS上限超過時はchunk分割で全量統合（対象縮小・SKIP 0）
-- **M6→cmd_3788正本へ統合**: 新しいstatus SSOTを作らず、既存のcross-process recalc lock+cmd_3788正本へmanifest phase（provisional/completed/failed）を統合。partial 2系にもlock必須+5呼出し元の並行排他test
-- **M7→版固定**: 起票時に正本設計書のcommit full 40桁+gist revisionをtask YAMLへ固定。実装中の設計変更は再レビューなしの取込禁止。**正本commit固定前はP1a配備BLOCK**
-
-軍師はレビュー機構へ「運用接続3問（回帰はどこで？裁定はいつ？通知は誰へ？）」を恒常追加（プロセス還流済み）。
-
-- **M8（殿指摘2026-07-11 02:03で発見、v1.3.1）**: 家老の呼出し元全列挙に**第6の書込みcallerが漏れていた**。`api/debug.py`のadmin向けFoFプロファイリングEPが`_recalculate_fof_history`を直呼びし、確定済みholding_signalを実書き換えし得る（内部commit・rollback不能とコード内コメントに明記済み）。recalculate_history_fastを経由しないためmanifest/snapshot契約の迂回路になる——P1bで被覆(manifest必須化 or write禁止化)、AC-Bの対象へ追加。あわせて用語整理: `fullrecalculate.py`というファイルは存在せず、実体はrecalculate_fast.py+recalculate_fof.py+precompute_raw/mtd.pyの4ファイル（fullrecalculateは運用操作名）。
-
-## 6. 因果
-
-`[[cmd_3827_FAIL]] -> [[Stage_A計測汚染=git_hash_subprocess238回]] + [[入力manifest不在で比較不能]] + [[二重実装の乖離(日跨ぎparity割れで実証)]] -> [[P1 hotfix(snapshot+manifest) -> P2 differential RED -> P3 共通executor -> P4 GREEN]]`
-
-## 7. 改訂履歴
+## 8. 改訂履歴
 
 - v1.0 (2026-07-11 00:05): 初版
-- v1.1 (2026-07-11 01:05): 軍師深層レビュー(REQUEST_CHANGES)のA-H全反映 — 決定性主張の有界化(A)、manifest正本=canonical SHA-256+必須キー(B)、full hash+fail-closed(C)、永続化先確定+「DB変更0」訂正(D)、immutable snapshot契約への変更(E)、ledger guard保証の正確化(F)、共通executor契約の具体化(G)、logical_date固定(H)、実装順P1-P4+二値AC7本
+- v1.1 (2026-07-11 01:05): 軍師深層レビューA-H反映(immutable snapshot契約・manifest正本・P1-P4実装順)
+- v1.2 (2026-07-11 01:45): 家老運用レビュー反映(書込み順序・standalone L5・cron見かけ成功・二値AC14本)
+- v1.3.1 (2026-07-11 02:03): 将軍メタレビューM1-M8反映(P5回帰新設・殿裁定checkpoint・drift三段通知・第6caller被覆)
+- **v2.0 (2026-07-14 13:30): 殿裁定による戦略転換。単一経路の決定性証明(P4/P5重厚契約)からledger-bound freeze(確定域の構造的不変性)へ。実事故真因(ledger選択の順序非決定)と復元完了を記録。P1-P3資産は維持、P4複雑機構は退役**
