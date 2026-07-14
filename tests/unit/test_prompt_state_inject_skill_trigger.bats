@@ -44,8 +44,7 @@ EOF
 setup() {
   PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   HOOK="$BATS_FILE_TMPDIR/hook_root/scripts/hooks/prompt_state_inject.sh"
-  TEST_TMPDIR="$BATS_TEST_TMPDIR/prompt_state_skill"
-  mkdir -p "$TEST_TMPDIR"
+  TEST_TMPDIR="$BATS_TEST_TMPDIR"
   export PROMPT_STATE_SKILLS_DIR="$BATS_FILE_TMPDIR/skills"
   export PROMPT_STATE_GROWTH_METRICS_FILE="$TEST_TMPDIR/growth.yaml"
   export PROMPT_STATE_LORD_CONVERSATION_FILE="$TEST_TMPDIR/lord_conversation.jsonl"
