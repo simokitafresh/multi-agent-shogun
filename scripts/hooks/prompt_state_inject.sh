@@ -497,7 +497,7 @@ semantic_skill_recommendations() {
   (( prompt_is_inbox_nudge == 0 )) || return 0
 
   cache_dir="${PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR:-/tmp/skill_recommend_cache}"
-  mkdir -p "$cache_dir"
+  [[ -d "$cache_dir" ]] || mkdir -p "$cache_dir"
   cache_file="$cache_dir/prompt_state_${agent_id//[^A-Za-z0-9_.-]/_}"
   prompt_hash="$(
     {
