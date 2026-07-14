@@ -15,11 +15,7 @@ setup_file() {
 
 setup() {
     export TEST_TMPDIR
-    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/yfs.XXXXXX")"
-}
-
-teardown() {
-    rm -rf "$TEST_TMPDIR"
+    TEST_TMPDIR="$BATS_TEST_TMPDIR"
 }
 
 # --- 1. 既存フィールドの値更新 ---
