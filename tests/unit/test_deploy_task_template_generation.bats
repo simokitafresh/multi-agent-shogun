@@ -1289,6 +1289,8 @@ for needle in [
     "causal_backlink_counts.sh --zero --limit 20",
 ]:
     assert needle in dump, needle
+assert "related_lessonsが1件以上なら" in acs["AC4"]["description"]
+assert "0件なら" in acs["AC4"]["description"]
 PY
 
     _fixture_project_end

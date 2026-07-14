@@ -653,7 +653,9 @@ ac2_checks = "\n".join(acs["AC2"]["binary_checks"])
 assert "直接[[ファイル名]]リンク" in ac2_checks
 assert "リンク先ファイルから特定行を引用" in ac2_checks
 assert "lesson_candidate found=true" in acs["AC3"]["description"]
-assert "注入教訓から1件以上" in acs["AC4"]["description"]
+assert "related_lessonsが1件以上なら" in acs["AC4"]["description"]
+assert "0件なら" in acs["AC4"]["description"]
+assert "task.related_lessonsの件数を確認" in "\n".join(acs["AC4"]["binary_checks"])
 assert "lessons_useful" in acs["AC4"]["description"]
 assert "incoming backlink数" in acs["AC5"]["description"]
 assert "孤立解消" in acs["AC5"]["description"]
@@ -736,7 +738,9 @@ assert "直接[[ファイル名]]リンク" in acs["AC2"]["description"]
 assert "既存概念" not in acs["AC2"]["description"]
 assert "リンク先ファイルから特定行を引用" in "\n".join(acs["AC2"]["binary_checks"])
 assert "lesson_candidate found=true" in acs["AC3"]["description"]
-assert "注入教訓から1件以上" in acs["AC4"]["description"]
+assert "related_lessonsが1件以上なら" in acs["AC4"]["description"]
+assert "0件なら" in acs["AC4"]["description"]
+assert "task.related_lessonsの件数を確認" in "\n".join(acs["AC4"]["binary_checks"])
 assert "incoming backlink数" in acs["AC5"]["description"]
 assert "causal_backlink_counts.sh --zero --limit 20" in "\n".join(acs["AC5"]["binary_checks"])
 PY
