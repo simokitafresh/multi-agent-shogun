@@ -1,15 +1,28 @@
 #!/usr/bin/env bats
 
+setup_file() {
+    export ROOT THREE_LAYER_DB_FIXTURE THREE_LAYER_FIXTURE_ROOT
+    ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    THREE_LAYER_FIXTURE_ROOT="$(mktemp -d)"
+    mkdir -p "$THREE_LAYER_FIXTURE_ROOT/archive"
+    printf '%s\n' '{"ts":"2026-07-10T15:00:00+09:00","agent":"lord","direction":"inbound","summary":"fixture","detail":"three layer preflight fixture"}' > "$THREE_LAYER_FIXTURE_ROOT/archive/fixture.jsonl"
+    : > "$THREE_LAYER_FIXTURE_ROOT/semantic-index.md"
+    THREE_LAYER_DB_FIXTURE="$THREE_LAYER_FIXTURE_ROOT/memory.db"
+    python3 "$ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$THREE_LAYER_FIXTURE_ROOT/archive" \
+        --semantic-index "$THREE_LAYER_FIXTURE_ROOT/semantic-index.md" \
+        --db "$THREE_LAYER_DB_FIXTURE" >/dev/null
+}
+
+teardown_file() {
+    rm -rf "$THREE_LAYER_FIXTURE_ROOT"
+}
+
 setup() {
     export ROOT TMP_EVIDENCE AGENT PANE EVIDENCE MEMORY_DB_QUERY_DB
-    ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     TMP_EVIDENCE="$(mktemp -d)"
-    mkdir -p "$TMP_EVIDENCE/archive"
-    printf '%s\n' '{"ts":"2026-07-10T15:00:00+09:00","agent":"lord","direction":"inbound","summary":"fixture","detail":"three layer preflight fixture"}' > "$TMP_EVIDENCE/archive/fixture.jsonl"
     MEMORY_DB_QUERY_DB="$TMP_EVIDENCE/memory.db"
-    python3 "$ROOT/scripts/memory_db_import.py" \
-        --archive-dir "$TMP_EVIDENCE/archive" \
-        --db "$MEMORY_DB_QUERY_DB" >/dev/null
+    cp "$THREE_LAYER_DB_FIXTURE" "$MEMORY_DB_QUERY_DB"
     AGENT="kagemaru"
     PANE="%test_${BATS_TEST_NUMBER}"
     EVIDENCE="$TMP_EVIDENCE/evidence_${AGENT}__test_${BATS_TEST_NUMBER}.json"
