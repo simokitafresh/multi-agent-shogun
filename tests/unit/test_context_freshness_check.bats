@@ -698,7 +698,7 @@ PROJ
     _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
     _create_shogun_to_karo "cmd_934" "infra"
 
-    CFC_GIT_TIMEOUT=0 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
+    CFC_GIT_TIMEOUT=0 CFC_GIT_RETRY_TIMEOUT=0 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
 }
@@ -726,7 +726,7 @@ SH
     chmod +x "$fake_bin/git"
 
     PATH="$fake_bin:$PATH" CFC_REAL_GIT="$real_git" CFC_FAKE_GIT_COUNTER="$counter_file" \
-      CFC_GIT_TIMEOUT=1 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
+      CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=3 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
 
     [ "$status" -eq 0 ]
     [ "$(cat "$counter_file")" -ge 2 ]
@@ -756,7 +756,36 @@ SH
     chmod +x "$fake_bin/git"
 
     PATH="$fake_bin:$PATH" CFC_REAL_GIT="$real_git" CFC_FAKE_GIT_COUNTER="$counter_file" \
-      CFC_GIT_TIMEOUT=1 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
+      CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=1 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
+
+    [ "$status" -eq 0 ]
+    [ "$(cat "$counter_file")" -eq 2 ]
+    [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
+}
+
+@test "GA-253 persistent git returncode remains fail-closed after the bounded retry" {
+    _create_context "context/codd.md" "$STALE_DATE"
+    _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
+    _create_shogun_to_karo "cmd_934" "infra"
+    local real_git counter_file fake_bin
+    real_git="$(command -v git)"
+    counter_file="$TEST_TMPDIR/git-log-count"
+    fake_bin="$TEST_TMPDIR/fake-bin"
+    mkdir -p "$fake_bin"
+    cat > "$fake_bin/git" <<'SH'
+#!/usr/bin/env bash
+if [[ " $* " == *" log "* ]]; then
+    count=0
+    [[ -f "$CFC_FAKE_GIT_COUNTER" ]] && count="$(cat "$CFC_FAKE_GIT_COUNTER")"
+    printf '%s\n' "$((count + 1))" > "$CFC_FAKE_GIT_COUNTER"
+    exit 17
+fi
+exec "$CFC_REAL_GIT" "$@"
+SH
+    chmod +x "$fake_bin/git"
+
+    PATH="$fake_bin:$PATH" CFC_REAL_GIT="$real_git" CFC_FAKE_GIT_COUNTER="$counter_file" \
+      CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=3 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
 
     [ "$status" -eq 0 ]
     [ "$(cat "$counter_file")" -eq 2 ]
@@ -895,7 +924,7 @@ PROJ
     _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
     _create_shogun_to_karo "cmd_934" "infra"
 
-    CFC_GIT_TIMEOUT=0 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
+    CFC_GIT_TIMEOUT=0 CFC_GIT_RETRY_TIMEOUT=0 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
     [ "$status" -eq 0 ]
     [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
     [[ "$output" != *"GROUP:"* ]]

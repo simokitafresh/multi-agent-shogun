@@ -541,12 +541,14 @@ def build_missing_source_commit_warning(rel_path: str) -> str:
 # ほぼ全件timeoutしていた)。テスト用小さいrepoでは瞬時完了するため精度に影響しない。
 # 環境変数 CFC_GIT_TIMEOUT で上書き可能（テスト/開発用）。
 _GIT_TIMEOUT: int = int(os.environ.get("CFC_GIT_TIMEOUT", "10"))
+_GIT_RETRY_TIMEOUT: int = int(os.environ.get("CFC_GIT_RETRY_TIMEOUT", "60"))
 _GIT_ATTEMPTS: int = 2
 
 
 def _run_git_with_bounded_retry(cmd: list[str], label: str) -> subprocess.CompletedProcess[str] | None:
-    """Run a read-only git query at most twice; persistent failure stays fail-closed."""
+    """Run git with bounded 10s/60s budgets; persistent failure stays fail-closed."""
     for attempt in range(1, _GIT_ATTEMPTS + 1):
+        timeout_seconds = _GIT_TIMEOUT if attempt == 1 else _GIT_RETRY_TIMEOUT
         try:
             result = subprocess.run(
                 cmd,
@@ -554,12 +556,13 @@ def _run_git_with_bounded_retry(cmd: list[str], label: str) -> subprocess.Comple
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 text=True,
-                timeout=_GIT_TIMEOUT,
+                timeout=timeout_seconds,
             )
         except Exception as exc:
             if attempt < _GIT_ATTEMPTS:
                 print(
-                    f"WARN: {label} git transient failure attempt={attempt}/{_GIT_ATTEMPTS}: {exc}; retrying",
+                    f"WARN: {label} git transient failure attempt={attempt}/{_GIT_ATTEMPTS} "
+                    f"timeout={timeout_seconds}s: {exc}; retrying with timeout={_GIT_RETRY_TIMEOUT}s",
                     file=sys.stderr,
                 )
                 continue
