@@ -19,6 +19,16 @@
       "required_credential_keys": ["DATABASE_URL"],
       "requires_expected_commit": true
     },
+    "bounded_signal_july_drift_restore_20260714": {
+      "tool": "scripts/lib/db_capability_tool.py",
+      "project": "dm-signal",
+      "modes": ["bounded_signal_july_drift_restore"],
+      "confirm": "RESTORE_ALL_23FOF_JULY_LEDGER_DRIFT",
+      "actions": ["restore"],
+      "allowed_child_flags": ["--output"],
+      "required_credential_keys": ["DATABASE_URL"],
+      "requires_expected_commit": true
+    },
     "transactional_restore": {
       "tool": "scripts/lib/db_capability_tool.py",
       "project": "dm-signal",

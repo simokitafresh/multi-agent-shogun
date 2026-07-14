@@ -414,6 +414,227 @@ def _restore_signal_window_20260714(dsn: str, output: Path) -> dict:
         conn.close()
 
 
+def _restore_signal_july_drift_20260714(dsn: str, output: Path) -> dict:
+    """Restore every July ledger drift row for the exact 23 affected FoFs.
+
+    The affected portfolio set is derived from the immutable 01:48-01:50 UTC
+    change-log window used by the original restore.  Scope comes from the
+    invariant (all July rows equal the latest ledger decision), not from an
+    alert's incomplete row list.  The month, portfolio set, ledger ordering,
+    lock, backup and zero-drift postcondition are fixed here.
+    """
+    import psycopg2
+
+    conn = psycopg2.connect(dsn)
+    conn.autocommit = False
+    cursor = None
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT current_user, session_user, current_database(), "
+            "COALESCE(inet_server_addr()::text, '')"
+        )
+        current_user, session_user, database_name, server_address = cursor.fetchone()
+        if database_name != "dm_signal":
+            raise RuntimeError("bounded July drift restore requires dm_signal database")
+
+        cursor.execute("SELECT pg_try_advisory_lock(%s)", (8675309,))
+        if not cursor.fetchone()[0]:
+            raise RuntimeError("recalculate advisory lock is held")
+        cursor.execute(
+            "SELECT EXISTS(SELECT 1 FROM recalculation_status "
+            "WHERE status='running' AND end_time IS NULL)"
+        )
+        if cursor.fetchone()[0]:
+            raise RuntimeError("running recalculation exists")
+
+        cursor.execute("SET LOCAL lock_timeout = '30s'")
+        cursor.execute(
+            "LOCK TABLE signals, signal_change_log, signal_decision_ledger "
+            "IN SHARE ROW EXCLUSIVE MODE"
+        )
+        cursor.execute(
+            """
+            WITH affected AS (
+              SELECT DISTINCT portfolio_id
+              FROM signal_change_log
+              WHERE changed_at >= TIMESTAMP '2026-07-14 01:48:00'
+                AND changed_at <  TIMESTAMP '2026-07-14 01:50:00'
+            )
+            SELECT s.portfolio_id, s.date, s.holding_signal,
+                   l.effective_start_date, l.decision_holding_signal
+            FROM signals s
+            JOIN affected a ON a.portfolio_id=s.portfolio_id
+            LEFT JOIN LATERAL (
+              SELECT effective_start_date, decision_holding_signal
+              FROM signal_decision_ledger d
+              WHERE d.portfolio_id=s.portfolio_id
+                AND d.effective_start_date <= s.date
+              ORDER BY d.effective_start_date DESC, d.recorded_at DESC, d.id DESC
+              LIMIT 1
+            ) l ON TRUE
+            WHERE s.date >= DATE '2026-07-01'
+              AND s.date <  DATE '2026-08-01'
+            ORDER BY s.portfolio_id, s.date
+            """
+        )
+        target_rows = cursor.fetchall()
+        keys = {(row[0], row[1]) for row in target_rows}
+        portfolios = {row[0] for row in target_rows}
+        if len(target_rows) < 161 or len(target_rows) > 713:
+            raise RuntimeError(
+                f"July comparison cardinality drift: rows={len(target_rows)} "
+                f"keys={len(keys)} portfolios={len(portfolios)}"
+            )
+        if len(keys) != len(target_rows) or len(portfolios) != 23:
+            raise RuntimeError(
+                f"July comparison key drift: rows={len(target_rows)} "
+                f"keys={len(keys)} portfolios={len(portfolios)}"
+            )
+        if any(row[4] is None for row in target_rows):
+            raise RuntimeError("July comparison has no ledger decision")
+        if any(str(row[3]) != "2026-07-01" for row in target_rows):
+            raise RuntimeError("July comparison latest ledger is not the 2026-07-01 decision")
+        drift_rows = [row for row in target_rows if row[2] != row[4]]
+        if not drift_rows:
+            raise RuntimeError("July comparison has no drift to restore")
+
+        serialized_rows = [
+            {
+                "portfolio_id": str(row[0]),
+                "date": row[1].isoformat() if hasattr(row[1], "isoformat") else str(row[1]),
+                "pre_restore_holding_signal": row[2],
+                "ledger_effective_start_date": (
+                    row[3].isoformat() if hasattr(row[3], "isoformat") else str(row[3])
+                ),
+                "restored_holding_signal": row[4],
+            }
+            for row in drift_rows
+        ]
+        rows_json = json.dumps(serialized_rows, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        backup = {
+            "capability": "bounded_signal_july_drift_restore_20260714",
+            "source_window_utc": ["2026-07-14T01:48:00Z", "2026-07-14T01:50:00Z"],
+            "target_month": "2026-07",
+            "comparison_row_count": len(target_rows),
+            "row_count": len(drift_rows),
+            "portfolio_count": 23,
+            "rows_sha256": hashlib.sha256(rows_json.encode("utf-8")).hexdigest(),
+            "identity": {
+                "current_user": current_user,
+                "session_user": session_user,
+                "database": database_name,
+                "server_address": server_address,
+            },
+            "rows": serialized_rows,
+        }
+        output.parent.mkdir(parents=True, exist_ok=True)
+        payload = (json.dumps(backup, indent=2, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
+        fd = os.open(output, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+
+        cursor.execute(
+            """
+            WITH affected AS (
+              SELECT DISTINCT portfolio_id
+              FROM signal_change_log
+              WHERE changed_at >= TIMESTAMP '2026-07-14 01:48:00'
+                AND changed_at <  TIMESTAMP '2026-07-14 01:50:00'
+            ), target AS (
+              SELECT s.portfolio_id, s.date, l.decision_holding_signal
+              FROM signals s
+              JOIN affected a ON a.portfolio_id=s.portfolio_id
+              JOIN LATERAL (
+                SELECT decision_holding_signal
+                FROM signal_decision_ledger d
+                WHERE d.portfolio_id=s.portfolio_id
+                  AND d.effective_start_date <= s.date
+                ORDER BY d.effective_start_date DESC, d.recorded_at DESC, d.id DESC
+                LIMIT 1
+              ) l ON TRUE
+              WHERE s.date >= DATE '2026-07-01'
+                AND s.date <  DATE '2026-08-01'
+                AND s.holding_signal IS DISTINCT FROM l.decision_holding_signal
+            )
+            UPDATE signals s
+               SET holding_signal=target.decision_holding_signal
+              FROM target
+             WHERE s.portfolio_id=target.portfolio_id AND s.date=target.date
+            RETURNING s.portfolio_id, s.date
+            """
+        )
+        updated = cursor.fetchall()
+        if len(updated) != len(drift_rows) or len(set(updated)) != len(drift_rows):
+            raise RuntimeError(
+                f"July drift update cardinality mismatch: "
+                f"expected={len(drift_rows)} actual={len(updated)}"
+            )
+
+        cursor.execute(
+            """
+            WITH affected AS (
+              SELECT DISTINCT portfolio_id
+              FROM signal_change_log
+              WHERE changed_at >= TIMESTAMP '2026-07-14 01:48:00'
+                AND changed_at <  TIMESTAMP '2026-07-14 01:50:00'
+            ), compared AS (
+              SELECT s.portfolio_id, s.date, s.holding_signal,
+                     l.effective_start_date, l.decision_holding_signal
+              FROM signals s
+              JOIN affected a ON a.portfolio_id=s.portfolio_id
+              LEFT JOIN LATERAL (
+                SELECT effective_start_date, decision_holding_signal
+                FROM signal_decision_ledger d
+                WHERE d.portfolio_id=s.portfolio_id
+                  AND d.effective_start_date <= s.date
+                ORDER BY d.effective_start_date DESC, d.recorded_at DESC, d.id DESC
+                LIMIT 1
+              ) l ON TRUE
+              WHERE s.date >= DATE '2026-07-01'
+                AND s.date <  DATE '2026-08-01'
+            )
+            SELECT COUNT(*),
+                   COUNT(*) FILTER (
+                     WHERE holding_signal IS NOT DISTINCT FROM decision_holding_signal
+                   ),
+                   COUNT(*) FILTER (WHERE effective_start_date=DATE '2026-07-01')
+            FROM compared
+            """
+        )
+        target_count, restored_exact, ledger_date_exact = map(int, cursor.fetchone())
+        if (target_count, restored_exact, ledger_date_exact) != (
+            len(target_rows), len(target_rows), len(target_rows)
+        ):
+            raise RuntimeError(
+                "July drift postcondition mismatch: "
+                f"target={target_count} restored={restored_exact} ledger_date={ledger_date_exact}"
+            )
+        conn.commit()
+        return {
+            "decision": "PASS",
+            "backup": str(output),
+            "backup_bytes": len(payload),
+            "comparison_rows": target_count,
+            "drift_rows": len(drift_rows),
+            "updated_rows": len(updated),
+            "restored_exact": restored_exact,
+            "ledger_date_exact": ledger_date_exact,
+            "other_table_writes": 0,
+            "recalculate_runs": 0,
+            "identity": backup["identity"],
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conn.close()
+
+
 def main() -> int:
     capability = os.environ.get("DB_CAPABILITY")
     mode = os.environ.get("DB_CAPABILITY_MODE")
@@ -456,6 +677,29 @@ def main() -> int:
         if database_identity != "dm_signal":
             raise SystemExit("BLOCK: DATABASE_URL is not the registered production database")
         result = _restore_signal_window_20260714(dsn, output)
+        print(json.dumps(result, sort_keys=True, ensure_ascii=False))
+        return 0
+    if capability == "bounded_signal_july_drift_restore_20260714":
+        if mode != "bounded_signal_july_drift_restore":
+            raise SystemExit("unknown capability or mode")
+        parser = argparse.ArgumentParser()
+        parser.add_argument("action", choices=("restore",))
+        parser.add_argument("--output", required=True)
+        args = parser.parse_args()
+        project_root = Path(os.environ["DB_CAPABILITY_PROJECT_ROOT"]).resolve()
+        output = Path(args.output).resolve()
+        allowed_output_root = (project_root / "outputs" / "analysis").resolve()
+        if allowed_output_root not in output.parents or output.suffix != ".json":
+            raise SystemExit("BLOCK: backup output must be a JSON file under outputs/analysis")
+        dsn = os.environ["DATABASE_URL"]
+        parsed = urlsplit(dsn)
+        resource_identity = parsed.hostname or ""
+        database_identity = unquote(parsed.path.lstrip("/").split("/", 1)[0])
+        if not resource_identity.endswith(".singapore-postgres.render.com"):
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered Render production resource")
+        if database_identity != "dm_signal":
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered production database")
+        result = _restore_signal_july_drift_20260714(dsn, output)
         print(json.dumps(result, sort_keys=True, ensure_ascii=False))
         return 0
     if capability == "production_role_probe":

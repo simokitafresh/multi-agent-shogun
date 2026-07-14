@@ -195,6 +195,31 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "bounded July drift restore uses invariant scope and stays non-generic" {
+  run python3 - "$ROOT/config/db_capabilities.json" "$ROOT/scripts/lib/db_capability_tool.py" <<'PY'
+import json, pathlib, sys
+config = json.loads(pathlib.Path(sys.argv[1]).read_text())
+contract = config["capabilities"]["bounded_signal_july_drift_restore_20260714"]
+assert contract["modes"] == ["bounded_signal_july_drift_restore"]
+assert contract["confirm"] == "RESTORE_ALL_23FOF_JULY_LEDGER_DRIFT"
+assert contract["actions"] == ["restore"]
+assert contract["allowed_child_flags"] == ["--output"]
+assert contract["requires_expected_commit"] is True
+source = pathlib.Path(sys.argv[2]).read_text()
+required = (
+    "def _restore_signal_july_drift_20260714",
+    "s.date >= DATE '2026-07-01'",
+    "s.date <  DATE '2026-08-01'",
+    "s.holding_signal IS DISTINCT FROM l.decision_holding_signal",
+    "if not drift_rows",
+    "len(target_rows), len(target_rows), len(target_rows)",
+    "os.O_CREAT | os.O_EXCL | os.O_WRONLY",
+)
+assert all(item in source for item in required)
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "transactional tool passes artifact as Path for every registered action" {
   dependency="$BATS_TEST_TMPDIR/dependency.py"
   cat > "$dependency" <<'PY'
