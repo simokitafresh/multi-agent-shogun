@@ -1113,4 +1113,5 @@ WHY=台帳鮮度回復+aliases品質向上、WHAT=対象スクリプトのCoDD�
 - [[test_prompt_state_inject_skill_trigger.bats]] — prompt state skill trigger Unit。共通fixtureはsetup_fileで一度だけ生成し、各testで統合preflight相当の準備を反復しない。
 - [[test_semantic_index_update.bats]] — semantic index Unit。実generator契約2件は維持し、既定の全cmd履歴・project registry走査を空fixtureへ束縛して支配項を除く。実装契約は [[semantic_map_generate.sh]] を参照。
 - [[test_semantic_index_update.bats]] fixture follow-up — 固定indexとmock writerは`BATS_FILE_TMPDIR`で一度だけ生成し各testへ複製する。mockの実処理契約は [[insight_write.sh]] と照合する。
+- [[test_report_field_set_validation.bats]] — report field validation Unit。fixtureのworkerは非実在IDに固定し、実運用`queue/tasks/*.yaml`の探索・解析を各testへ混入させない。実装契約は [[report_field_set.sh]] を参照。
 - → [[gunshi_idle_training_rethink_nazenaze_20260516]] 修行再考のなぜなぜ: 修行設計の構造的問題

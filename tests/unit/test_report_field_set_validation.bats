@@ -16,7 +16,8 @@ setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/rfs_val.XXXXXX")"
     export TEST_REPORT="$TEST_TMPDIR/report.yaml"
     cat > "$TEST_REPORT" <<'EOF'
-worker_id: hayate
+# A nonexistent worker keeps unit validation isolated from live queue/tasks YAML.
+worker_id: rfs_validation_test
 parent_cmd: cmd_test
 ac_version_read: abc12345
 EOF
