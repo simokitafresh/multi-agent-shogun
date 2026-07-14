@@ -2,11 +2,10 @@
 
 setup() {
   ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-  TMP="$(mktemp -d)"
+  TMP="$BATS_TEST_TMPDIR/repo"
   mkdir -p "$TMP/logs" "$TMP/queue/tasks" "$TMP/queue/reports" "$TMP/queue/archive/reports" "$TMP/queue/training"
   printf 'run_id\trepo\tcommit_sha\tsuite_root\trunner\ttest_file\ttest_id_count\twall_sec\tstatus\tskip_count\n' > "$TMP/logs/test_timing_ledger.tsv"
 }
-teardown() { rm -rf "$TMP"; }
 
 @test "generator selects worst unclaimed threshold breach and embeds quality contract" {
   printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
@@ -61,7 +60,7 @@ YAML
     task_before=$(sha256sum "$TMP/queue/tasks/hayate.yaml")
     report_before=$(sha256sum "$TMP/queue/reports/hayate_report_fixture.yaml")
 
-    run env SHOGUN_REPO_ROOT="$TMP" bash -c '
+    run env -i PATH="$PATH" HOME="$HOME" SHOGUN_REPO_ROOT="$TMP" bash -c '
       SCRIPT_DIR=$1
       yaml_field_get() { sed -n "s/^[[:space:]]*$2:[[:space:]]*//p" "$1" | head -n 1; }
       log() { :; }
@@ -78,7 +77,7 @@ task:
   status: idle
   ac_version: original-idle
 YAML
-  run env SHOGUN_REPO_ROOT="$TMP" bash -c '
+  run env -i PATH="$PATH" HOME="$HOME" SHOGUN_REPO_ROOT="$TMP" bash -c '
     SCRIPT_DIR=$1
     yaml_field_get() { sed -n "s/^[[:space:]]*$2:[[:space:]]*//p" "$1" | head -n 1; }
     log() { :; }
