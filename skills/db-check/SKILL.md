@@ -11,6 +11,8 @@ quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_wor
 allowed_projects: [dm-signal]
 ---
 
+<!-- script_refs_checked_at: 2026-07-15T03:10:00+09:00 -->
+<!-- 検分: 2026-07-15将軍が本番一次確認で実走。旧例示 /protected/path/dm-signal-db.env はlauncher L72-76の制約(tmp直下+dm-signal-db-*.env命名)に違反しBLOCK往復3回を誘発したため、実証済み2ステップ完全例+制約3つ(BLOCK文言つき)へ置換。方式A(psycopg2直接)はGuard14でBLOCKされる旧手順のため方式選択ガイドから削除しlauncher readonly_queryへ一本化 -->
 <!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
 <!-- 検分: db_capability_launcher.py 4286b2fe1/72abd6cceをgit showで確認。credential準備を`--prepare-only --credential-source-file`へ分離（この経路ではnonce/expected-commit/child引数不要、準備後exit 0）。実行経路はnonce必須を維持し、依存toolへ信頼済みHOMEを注入する。readonly_query例の引数・stdin SQL・nonce再利用禁止は不変。 -->
 <!-- 検分: db_capability_launcher.py 4da46f0e2(cmd_karo_hotfix_guard14_db_capability_launcher: 追跡済みlauncher新規追加)+7ba136462(contract RC強化: git index一致判定をHEAD blob一致判定へ変更/credential env keysをregistry required_credential_keysと完全一致検証/child引数をcontractのallowed_child_flagsで検証/`--execution-root`任意フラグ追加)。本SKILL.mdが例示する`--capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce <nonce> --credential-file <path>`はreadonly_query契約(dependency_toolなし・actionsなし・required_credential_keys=[DATABASE_URL]のみ)のため影響を受けない。SQLはstdin渡しでtool_argsは空のまま。呼び出し契約は不変 -->
@@ -26,40 +28,44 @@ allowed_projects: [dm-signal]
 直接の `psycopg2.connect`、SQLAlchemy接続、接続文字列をargvへ載せる実行は禁止。
 追跡済み `config/db_capabilities.json` を正本とする共通launcherだけを使う。
 
+**そのまま通る完全手順（2ステップ、2026-07-15本番実証済み）**:
+
 ```bash
-printf 'SELECT ...' | python3 scripts/db_capability_launcher.py \
+# Step 1: credential準備(backend/.envから0600の実行用fileを生成。nonce不要)
+python3 scripts/db_capability_launcher.py \
   --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK \
-  --nonce "$(date +%s)-readonly" --credential-file /protected/path/dm-signal-db.env
+  --prepare-only --credential-source-file /mnt/c/Python_app/DM-signal/backend/.env \
+  --credential-file /tmp/dm-signal-db-check.env
+
+# Step 2: SQLをstdinで実行(nonceは毎回新しく)
+printf 'SELECT COUNT(*) FROM portfolios;' | python3 scripts/db_capability_launcher.py \
+  --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK \
+  --nonce "$(date +%s)-readonly" --credential-file /tmp/dm-signal-db-check.env
+
+# 終了後: rm -f /tmp/dm-signal-db-check.env
 ```
 
-**重要**: DATABASE_URLをそのままpsycopg2.connect()に渡すとunix socket fallbackでエラーになる。必ず上記のように個別パラメータで接続せよ。
+**credential-fileの制約3つ（launcher実装 scripts/db_capability_launcher.py L72-76が強制。違反は即BLOCK）**:
+1. **`/tmp`直下必須** — scratchpad等のサブディレクトリは `BLOCK: prepared credential destination must be directly under /tmp`
+2. **ファイル名は`dm-signal-db-*.env`** — 他の名前は `BLOCK: prepared credential filename must match dm-signal-db-*.env`
+3. **既存ファイルへの上書き拒否** — 再実行時は先に`rm`するか別名にする
 
 transactional restoreは `--capability transactional_restore --mode transactional_restore
 --confirm TRANSACTIONAL_RESTORE_ROLLBACK_READY --expected-commit "$(git rev-parse HEAD)"` を使う。
 credential fileは0600、SQLはstdin、nonceは再利用不可。launcher外接続は禁止。
 
-credential sourceから0600の実行用fileを準備する場合は、実行と分離して次を使う。この準備専用経路ではchild引数を渡さず、nonceとexpected commitは不要。
-```bash
-python3 scripts/db_capability_launcher.py \
-  --capability <capability> --mode <mode> --confirm <confirmation> \
-  --prepare-only --credential-source-file <source.env> \
-  --credential-file <prepared.env>
-```
-
 ### 方式選択ガイド
 
 | 条件 | 方式 |
 |------|------|
-| WSL python3で即実行したい | **方式A**（psycopg2直接） |
-| SQLAlchemy ORMが必要 | 方式B（Windows python.exe） |
+| 単発SQL・件数確認・突合 | **launcher readonly_query**（上記2ステップ。唯一の直接SQL経路） |
+| psycopg2/SQLAlchemyの直接接続 | **使用禁止**（Guard14が`connection:untrusted`でBLOCK） |
+| SQLAlchemy ORMが必要なスクリプト | 方式B（Windows python.exe、backend/.env経由。下記) |
 | psqlコマンド | **使用禁止**（未インストール） |
 
 ### 実行場所と文字コード
 
-方式A:
-```bash
-python3 -c "import psycopg2; ..."  # WSL python3で直接実行
-```
+launcher readonly_query: リポジトリroot(`/mnt/c/tools/multi-agent-shogun`)から実行。SQLはstdin、結果はタプル形式で標準出力。
 
 方式B:
 ```bash
