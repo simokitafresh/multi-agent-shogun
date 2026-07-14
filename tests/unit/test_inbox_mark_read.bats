@@ -114,15 +114,15 @@ for entry in data.get('entries', []):
     [ "$(_get_read_status testagent msg_003)" = "true" ]
 }
 
-@test "explicit audited override marks all unread messages" {
+@test "bulk override cannot consume messages that arrived after inbox read" {
     _create_inbox testagent
 
     run env INBOX_MARK_READ_ALLOW_ALL=1 bash "$TEST_SCRIPT" testagent
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"Marked 2 message"* ]]
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"Bulk acknowledgement is forbidden"* ]]
 
-    [ "$(_get_read_status testagent msg_001)" = "true" ]
-    [ "$(_get_read_status testagent msg_002)" = "true" ]
+    [ "$(_get_read_status testagent msg_001)" = "false" ]
+    [ "$(_get_read_status testagent msg_002)" = "false" ]
     [ "$(_get_read_status testagent msg_003)" = "true" ]
 }
 

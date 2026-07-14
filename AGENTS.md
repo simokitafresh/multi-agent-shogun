@@ -336,7 +336,7 @@ When you receive `inboxN` (e.g. `inbox3`):
 1. `Read queue/inbox/{your_id}.yaml`
 2. Find all entries with `read: false`
 3. Process each message according to its `type`
-4. Mark as read: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}` (per message) or `bash scripts/inbox_mark_read.sh {your_id}` (all unread)
+4. Mark each processed message by ID: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}`. ID省略・全未読一括既読は禁止（Read後に到着した未処理メッセージを巻き込むため）
    **Edit toolでのinbox既読化は禁止** — flock未使用のためLost Update(メッセージ消失)が発生する
 5. Resume normal workflow
 

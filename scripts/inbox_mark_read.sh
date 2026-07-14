@@ -4,7 +4,7 @@
 # Usage: bash scripts/inbox_mark_read.sh <agent_id> <msg_id...>
 #   msg_id指定: そのメッセージのみ read:true に変更（複数指定可。1件ずつ逐次処理）
 #   msg_id省略: 未読がある場合はBLOCK（処理していない別件を既読化する事故を防ぐ）
-#   例外: INBOX_MARK_READ_ALLOW_ALL=1 指定時のみ全 read:false を read:true に変更
+#   環境変数による全件既読化も禁止。Read後に到着した別件を巻き込むため。
 #
 # inbox_write.sh と同じ lockfile (${INBOX}.lock) で flock を取得し、
 # mkstemp + os.replace によるアトミック書込みで Lost Update を防止する。
@@ -202,9 +202,8 @@ if [ ! -f "$INBOX" ]; then
 fi
 
 if [ -z "$MSG_ID" ] \
-    && [ "${INBOX_MARK_READ_ALLOW_ALL:-}" != "1" ] \
     && grep -q "^  read:[[:space:]]*false[[:space:]]*$" "$INBOX" 2>/dev/null; then
-    echo "[inbox_mark_read] ERROR: msg_id is required when unread messages exist. Use INBOX_MARK_READ_ALLOW_ALL=1 only for audited bulk acknowledgement." >&2
+    echo "[inbox_mark_read] ERROR: msg_id is required when unread messages exist. Bulk acknowledgement is forbidden because it can consume messages that arrived after the inbox read." >&2
     exit 2
 fi
 
