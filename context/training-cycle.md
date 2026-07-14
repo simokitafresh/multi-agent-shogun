@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-07-14 cmd_training_test_speed_test_context_freshness_check__20260714225556 -->
+<!-- last_updated: 2026-07-14 cmd_training_test_speed_test_stop_check_inbox__20260714233517 -->
 # 修行サイクル設計書（殿直伝 2026-03-25）
 
 ## §1 背景と原理
