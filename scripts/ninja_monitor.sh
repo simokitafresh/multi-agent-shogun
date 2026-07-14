@@ -2071,8 +2071,22 @@ for path in glob.glob(os.path.join(tasks_dir, "*.yaml")):
 
 for cmd_id, ts in lgtm_events:
     event_key = dedup_key(cmd_id)
-    if any(key == event_key and clear_ts >= ts for key, clear_ts in terminal_events):
-        continue
+    terminal_ts = max(
+        (clear_ts for key, clear_ts in terminal_events if key == event_key),
+        default=None,
+    )
+    if terminal_ts is not None:
+        # A command is not reopened merely because the same completed report
+        # receives a later duplicate LGTM.  Reopening requires primary state:
+        # an RC/revision or an active task created after the terminal marker.
+        # Without this guard, archived reports disappear from reports_dir and
+        # a delayed duplicate review_feedback recreates a permanent false gap.
+        explicitly_reopened = any(
+            key == event_key and terminal_ts < reopen_ts <= ts
+            for key, reopen_ts in reopen_events
+        )
+        if not explicitly_reopened:
+            continue
     if any(key == event_key and reopen_ts >= ts for key, reopen_ts in reopen_events):
         continue
     if any(key == event_key and notice_ts >= ts for key, notice_ts in notifications):
