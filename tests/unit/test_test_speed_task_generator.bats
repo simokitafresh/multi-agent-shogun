@@ -23,8 +23,68 @@ YAML
   grep -Fq 'min_rounds: 2' "$generated"
   grep -Fq 'max_rounds: 3' "$generated"
   grep -Fq 'baseline_policy: best_so_far' "$generated"
+  grep -Fq 'report_filename: "test_speed_report_' "$generated"
+  grep -Fq 'action: "complete-deploy"' "$generated"
   grep -Fq 'FAIL0; SKIP0; no expectation relaxation' "$generated"
   grep -Fq 'shared fixture/cache first; switch to production script at plateau' "$generated"
+}
+
+@test "round reports are unique and complete-deploy reaches real deploy boundary" {
+  mkdir -p "$TMP/scripts" "$TMP/bin"
+  cp "$ROOT/scripts/test_speed_task_generator.sh" "$TMP/scripts/"
+  cat > "$TMP/scripts/deploy_task.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+cp "$3" "$SHOGUN_REPO_ROOT/queue/tasks/$4.yaml"
+report=$(sed -n 's/^[[:space:]]*report_path:[[:space:]]*"\{0,1\}\([^" ]*\)"\{0,1\}$/\1/p' "$3")
+mkdir -p "$SHOGUN_REPO_ROOT/$(dirname "$report")"
+printf 'status: pending\n' > "$SHOGUN_REPO_ROOT/$report"
+SH
+  chmod +x "$TMP/scripts/deploy_task.sh"
+  task1="$TMP/queue/training/r1.yaml"
+  cat > "$task1" <<'YAML'
+task:
+  parent_cmd: camp
+  task_id: camp_r1
+  target_path: tests/unit/slow.bats
+  speed_campaign:
+    campaign_id: camp
+    round_index: 1
+    best_wall: 10
+    elapsed_sec: 0
+    baseline_commit: same
+YAML
+  report1="$TMP/queue/reports/r1.yaml"
+  cat > "$report1" <<'YAML'
+status: completed
+commit_hash: same
+speed_result: {last_wall: 9, approach: cache, quality: pass, dominant: cache, elapsed_sec: 10, ctx_percent: 10}
+YAML
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_TASK_DIR="$TMP/queue/training" TEST_SPEED_CAMPAIGN_LEDGER="$TMP/logs/campaign.tsv" \
+    bash "$ROOT/scripts/test_speed_task_generator.sh" complete-deploy hayate "$task1" "$report1"
+  [ "$status" -eq 0 ]
+  grep -Fq 'round_index: 2' "$TMP/queue/tasks/hayate.yaml"
+  r2_report=$(sed -n 's/^[[:space:]]*report_filename:[[:space:]]*"\([^" ]*\)"$/\1/p' "$TMP/queue/tasks/hayate.yaml")
+  [ "$r2_report" = 'test_speed_report_camp_r2.yaml' ]
+  [ -f "$TMP/queue/reports/$r2_report" ]
+}
+
+@test "deteriorating round cannot adopt a different commit" {
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_CAMPAIGN_LEDGER="$TMP/logs/campaign.tsv" \
+    bash "$ROOT/scripts/test_speed_task_generator.sh" continue camp 1 t 10 15 retry pass cache 10 0 baseline changed
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK:deterioration_commit_adopted"* ]]
+}
+
+@test "campaign ledger serializes concurrent append and deduplicates one round" {
+  ledger="$TMP/logs/campaign.tsv"
+  for i in $(seq 1 12); do
+    env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" \
+      bash "$ROOT/scripts/test_speed_task_generator.sh" continue camp 3 t 10 9 "try$i" pass cache 10 0 >/dev/null &
+  done
+  wait
+  [ "$(wc -l < "$ledger")" -eq 2 ]
+  [ "$(awk -F '\t' '$1=="camp" && $2==3 {n++} END{print n+0}' "$ledger")" -eq 1 ]
 }
 
 @test "multi-round preserves best-so-far and rejects false improvement after deterioration" {

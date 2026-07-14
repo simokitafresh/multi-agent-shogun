@@ -1579,12 +1579,34 @@ for source in sources:
 sys.exit(1)
 PY
     then
+        run_test_speed_completion_callback "$name" "$report_file" || return 1
         return 0
     fi
 
     log "REPORT-NOTIFY-MISSING-BLOCK: $name report exists and verdict is valid but karo report_received notification is missing (${trigger}, report=$(basename "$report_file"))"
     notify_karo_throttled report_notification_missing "$name" "【自動検知】${name}の報告YAMLは存在するが家老へのreport_received通知が未確認。/clear保留中。対象: $(basename "$report_file")"
     return 1
+}
+
+# A completed speed-campaign report advances itself. Only the fixed in-repo
+# runner/action pair is accepted; task YAML cannot inject an arbitrary command.
+run_test_speed_completion_callback() {
+    local name="$1" report_file="$2" task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local enabled
+    enabled=$(python3 - "$task_file" <<'PY' 2>/dev/null || true
+import sys, yaml
+d=(yaml.safe_load(open(sys.argv[1])) or {}).get('task', {})
+c=d.get('completion_callback') or {}
+if c.get('runner') == 'scripts/test_speed_task_generator.sh' and c.get('action') == 'complete-deploy':
+    print('yes')
+PY
+)
+    [ "$enabled" = yes ] || return 0
+    if ! bash "$SCRIPT_DIR/scripts/test_speed_task_generator.sh" complete-deploy "$name" "$task_file" "$report_file" >> "$LOG" 2>&1; then
+        log "SPEED-CAMPAIGN-CALLBACK-BLOCK: $name report=$(basename "$report_file")"
+        return 1
+    fi
+    log "SPEED-CAMPAIGN-CALLBACK: $name report=$(basename "$report_file")"
 }
 
 # 同一(type,ninja)の自動検知通知をクールダウン付きで送る。

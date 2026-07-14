@@ -98,21 +98,30 @@ next_target() {
 append_campaign() {
     local campaign="$1" round="$2" target="$3" best="$4" last="$5" approach="$6" stop="$7"
     mkdir -p "$(dirname "$CAMPAIGN_LEDGER")"
-    if [ ! -s "$CAMPAIGN_LEDGER" ]; then
-        printf 'campaign_id\tround_index\ttarget_path\tbest_wall\tlast_wall\tapproach\tstop_reason\n' > "$CAMPAIGN_LEDGER"
-    fi
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$campaign" "$round" "$target" "$best" "$last" "$approach" "$stop" >> "$CAMPAIGN_LEDGER"
+    (
+        flock 8
+        if [ ! -s "$CAMPAIGN_LEDGER" ]; then
+            printf 'campaign_id\tround_index\ttarget_path\tbest_wall\tlast_wall\tapproach\tstop_reason\n' > "$CAMPAIGN_LEDGER"
+        fi
+        # monitor callbacks are at-least-once; make each campaign round idempotent.
+        awk -F '\t' -v c="$campaign" -v r="$round" 'NR>1 && $1==c && $2==r {found=1} END{exit !found}' "$CAMPAIGN_LEDGER" && exit 0
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$campaign" "$round" "$target" "$best" "$last" "$approach" "$stop" >> "$CAMPAIGN_LEDGER"
+    ) 8>"${CAMPAIGN_LEDGER}.lock"
 }
 
 emit_round_task() {
-    local campaign="$1" round="$2" target="$3" best="$4" elapsed="$5" slug stamp file
+    local campaign="$1" round="$2" target="$3" best="$4" elapsed="$5" slug stamp file report baseline_commit
     slug=$(basename "$target" .bats | tr -c '[:alnum:]_-' '_')
     stamp=$(date +%Y%m%d%H%M%S)
     file="$OUT_DIR/test_speed_${campaign#cmd_training_test_speed_}_r${round}_${stamp}.yaml"
+    report="test_speed_report_${campaign}_r${round}.yaml"
+    baseline_commit=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || printf 'unknown')
     cat > "$file" <<YAML
 task:
   parent_cmd: "${campaign}"
   task_id: "${campaign}_r${round}_${stamp}"
+  report_filename: "$report"
+  report_path: "queue/reports/$report"
   task_type: training
   estimated_minutes: 5
   project: infra
@@ -124,7 +133,7 @@ task:
     - id: AC1
       description: "best_so_far ${best}sとの比較、変更前後wall秒、支配項を実測し、FAIL=0・SKIP=0で全量完走する"
     - id: AC2
-      description: "related_lessonsが注入された場合のみ有用性を検証する。round別report/commitを作り、完了後に test_speed_task_generator.sh continue を実行して台帳と次roundへ継承する"
+      description: "related_lessonsが注入された場合のみ有用性を検証する。round別report/commitを作り、speed_result(last_wall/approach/quality/dominant/elapsed_sec/ctx_percent)を記録する。完了後はmonitor callbackが自動継承する"
   related_lessons: []
   speed_campaign:
     campaign_id: "$campaign"
@@ -135,7 +144,11 @@ task:
     elapsed_sec: $elapsed
     best_wall: $best
     baseline_policy: best_so_far
+    baseline_commit: "$baseline_commit"
     ctx_clear_after_round2_at_percent: 70
+  completion_callback:
+    runner: "scripts/test_speed_task_generator.sh"
+    action: "complete-deploy"
   speed_evidence:
     source: "logs/test_timing_ledger.tsv"
     before_wall_sec: $best
@@ -162,7 +175,12 @@ continue_campaign() {
     local campaign="${1:?campaign_id required}" round="${2:?round required}" target="${3:?target required}"
     local best="${4:?best_wall required}" last="${5:?last_wall required}" approach="${6:?approach required}"
     local quality="${7:?quality pass|fail|skip required}" dominant="${8:-none}" elapsed="${9:-0}" ctx="${10:-0}"
-    local adopted_best stop next file
+    local adopted_best stop next file baseline_commit="${11:-}" result_commit="${12:-}"
+    if awk -v b="$best" -v l="$last" 'BEGIN{exit !(l>=b)}' && [ -n "$baseline_commit" ] && \
+       [ -n "$result_commit" ] && [ "$baseline_commit" != "$result_commit" ]; then
+        echo "BLOCK:deterioration_commit_adopted baseline=$baseline_commit result=$result_commit" >&2
+        return 2
+    fi
     adopted_best=$(awk -v b="$best" -v l="$last" 'BEGIN { printf "%.3f", (l < b ? l : b) }')
     stop=""
     if [ "$quality" != pass ]; then stop="quality_${quality}";
@@ -185,6 +203,26 @@ case "${1:-generate}" in
     task=$(generate) || exit 1
     bash "$ROOT/scripts/deploy_task.sh" --direct --yaml "$task" "$ninja"
     ;;
+  complete-deploy)
+    ninja="${2:?ninja required}"; task_file="${3:?task file required}"; report_file="${4:?report file required}"
+    eval "$(python3 - "$task_file" "$report_file" <<'PY'
+import shlex, sys, yaml
+t=(yaml.safe_load(open(sys.argv[1])) or {}).get('task', {})
+r=yaml.safe_load(open(sys.argv[2])) or {}
+c=t.get('speed_campaign') or {}; s=r.get('speed_result') or {}
+vals=[c.get('campaign_id'), c.get('round_index'), t.get('target_path'), c.get('best_wall'),
+      s.get('last_wall'), s.get('approach'), s.get('quality'), s.get('dominant','none'),
+      s.get('elapsed_sec', c.get('elapsed_sec',0)), s.get('ctx_percent',0),
+      c.get('baseline_commit',''), r.get('commit_hash','')]
+if any(v in (None, '') for v in vals[:7]): raise SystemExit('missing speed_result callback fields')
+print('set -- ' + ' '.join(shlex.quote(str(v)) for v in vals))
+PY
+)"
+    task=$(continue_campaign "$@") || exit $?
+    [[ "$task" == STOP:* ]] && { printf '%s\n' "$task"; exit 0; }
+    task=$(printf '%s\n' "$task" | tail -n 1)
+    bash "$ROOT/scripts/deploy_task.sh" --direct --yaml "$task" "$ninja"
+    ;;
   continue) shift; continue_campaign "$@" ;;
   continue-deploy)
     ninja="${2:?ninja required}"; shift 2
@@ -193,5 +231,5 @@ case "${1:-generate}" in
     task=$(printf '%s\n' "$task" | tail -n 1)
     bash "$ROOT/scripts/deploy_task.sh" --direct --yaml "$task" "$ninja"
     ;;
-  *) echo "usage: $0 {next|generate|deploy NINJA|continue CAMPAIGN ROUND TARGET BEST LAST APPROACH QUALITY [DOMINANT ELAPSED CTX]|continue-deploy NINJA ...}" >&2; exit 2 ;;
+  *) echo "usage: $0 {next|generate|deploy NINJA|continue ...|continue-deploy NINJA ...|complete-deploy NINJA TASK REPORT}" >&2; exit 2 ;;
 esac
