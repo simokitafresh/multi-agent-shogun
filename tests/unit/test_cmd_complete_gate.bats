@@ -100,6 +100,29 @@ end = text.index("\n# ─── changelog自動記録関数", start)
 print(text[start:end])
 PY
     } > "$GATE_HELPERS_FILE"
+
+    # Build the invariant scaffold once on ext4. Each test still receives an
+    # isolated copy, but avoids repeating mkdir/symlink/stub process setup.
+    cmd_gate_scaffold "cmd_gate_master"
+    cp "$SRC_NORMALIZE_SCRIPT" "$TEST_PROJECT/scripts/lib/normalize_report.sh"
+    chmod +x "$TEST_PROJECT/scripts/lib/normalize_report.sh"
+    cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
+projects:
+  - id: infra
+    path: __TEST_PROJECT__
+EOF
+    cat > "$TEST_PROJECT/tasks/lessons.md" <<'EOF'
+# Lessons
+- **status**: confirmed
+EOF
+    cat > "$TEST_PROJECT/queue/inbox/karo.yaml" <<'EOF'
+messages:
+  - id: msg_test
+    read: false
+EOF
+    write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
+    export CMD_GATE_MASTER_PROJECT="$TEST_PROJECT"
+    export CMD_GATE_MASTER_TMPDIR="$TEST_TMPDIR"
 }
 
 @test "build_clear_throughput_metric records stage durations for nested and flat task YAML" {
@@ -465,31 +488,18 @@ PY
 }
 
 setup() {
-    cmd_gate_scaffold "cmd_gate_ctx"
+    export TEST_TMPDIR
+    TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/cmd_gate_ctx.XXXXXX")"
+    export TEST_PROJECT="$TEST_TMPDIR/project"
+    export TEST_CMD_ID="cmd_999"
+    mkdir -p "$TEST_PROJECT"
+    cp -a "$CMD_GATE_MASTER_PROJECT/." "$TEST_PROJECT/"
     export SCRIPT_DIR="$TEST_PROJECT"
     export TASKS_DIR="$TEST_PROJECT/queue/tasks"
     export LOG_DIR="$TEST_PROJECT/logs"
     export CMD_ID="$TEST_CMD_ID"
 
-    cp "$SRC_NORMALIZE_SCRIPT" "$TEST_PROJECT/scripts/lib/normalize_report.sh"
-    chmod +x "$TEST_PROJECT/scripts/lib/normalize_report.sh"
-
-    cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
-projects:
-  - id: infra
-    path: $TEST_PROJECT
-EOF
-
-    cat > "$TEST_PROJECT/tasks/lessons.md" <<'EOF'
-# Lessons
-- **status**: confirmed
-EOF
-
-    cat > "$TEST_PROJECT/queue/inbox/karo.yaml" <<'EOF'
-messages:
-  - id: msg_test
-    read: false
-EOF
+    sed -i "s|__TEST_PROJECT__|$TEST_PROJECT|" "$TEST_PROJECT/config/projects.yaml"
 
     source "$SRC_FIELD_GET_SCRIPT"
     source "$SRC_LOCK_PATH_SCRIPT"
@@ -499,7 +509,6 @@ EOF
     ALL_CLEAR=true
     BLOCK_REASONS=()
 
-    write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
 }
 
 _run_command_files_modified_coverage_with_state() {
@@ -2409,6 +2418,11 @@ EOF
 }
 
 teardown() {
+    cmd_gate_teardown
+}
+
+teardown_file() {
+    TEST_TMPDIR="$CMD_GATE_MASTER_TMPDIR"
     cmd_gate_teardown
 }
 
