@@ -1277,3 +1277,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - APIは既存ledger/Signal行をUPDATE/DELETEせず、`event_type='correction'`をappend-only INSERTする。resolverは`effective_start_date/recorded_at/id`の決定的最新eventを採用し、一般full rebuild/flushが確定域を別値へ変更しようとしてもledger値へ矯正する。
 - 操作後確認: responseの`event_type=correction`、`reason`、`actor`、対象PF/date/valueを照合し、同じPF/dateをresolver経由で再読して訂正値が最新であることを確認する。直接`signals.holding_signal` UPDATEや既存ledger行の変更・削除は禁止。
 - 因果リンク: [[cmd_3907_決定的resolver]] -> [[cmd_3908_correction_event専用経路]] -> [[確定域変更手段の一本化]]
+
+## §83 確定域ledger baseline freeze運用 (cmd_3947, 2026-07-15)
+
+- `bounded_signal_ledger_baseline_20260715` capabilityは、実行時点で「確定域かつledger event不在」の行を述語から全件導出し、現行`holding_signal`をbaseline eventとしてappend-only INSERTする。事前件数を固定せず、transaction内で未被覆0・既存ledger canonical SHA不変・他表write 0をfail-closed検証する。
+- 2026-07-15本番実績はscope 341,799、実行前未被覆52行/52PF、INSERT 52、実行後被覆341,799/341,799 (100%)、ledger 15,160→15,212、既存SHA前後一致。backup=`/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3947_baseline_freeze_backup.json`。
+- 再実行は同じ述語で対象を再導出するため、現時点で未被覆0ならINSERT 0となる。新たな未被覆が発生した場合のみ新規baselineを追加する。凍結値が誤っていた場合も既存行をUPDATE/DELETEせず、`POST /admin/signal-decision-ledger/corrections`でcorrection eventを追記する。
