@@ -1247,3 +1247,8 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - `cb3e7e7e76b3c962700608559c506d5bf5d350c2` はstrict consume APIをkeeper orchestratorへ接続し、未設定時はHTTP 503でfail-closed。keeperはlock readyからbusiness write、compare/restore、terminalまで同一contextで生存し、run tokenを`LEASED→CONSUMED→TERMINAL`で管理する。実装checkpointはfocused transport 9/9、uvicorn E2E 1/1、ruff PASS。ただし最終全量は31%で中断されSKIP 1を解消していないため、cmd_3902はverdict FAIL/canceledの安全checkpointであり本番適用許可ではない。
 - 一次根拠: `/mnt/c/Python_app/DM-signal/backend/app/api/p4_bundle.py` L49-58/L111-115、`backend/app/jobs/bundle_transport.py` L235-239/L262-307、`queue/reports/hanzo_report_cmd_3902.yaml`。
 - 因果リンク: [[cmd_3902_commit後terminal_pause]] -> [[完了gate内own_commit鮮度check未到達]] -> [[GA-251常設context鮮度ALERT]] -> [[ops索引とsource_commit境界を同時更新]]
+
+## §80 07-14 holding_signal 161行復元 (cmd_3905, 2026-07-14)
+
+- 07-14上書き対象の23PF×7営業日=161行を7/1確定値へ復元。post値、latest ledger値、独立readonly再照合はそれぞれ161/161 exact、他表write 0、recalculate 0。実行証跡とrollback artifactは`queue/reports/hayate_report_cmd_3905.yaml`。
+- 因果リンク: [[07-14_23FoF月間保有上書き]] -> [[cmd_3905_bounded_restore]] -> [[7/1確定値161行復元]]
