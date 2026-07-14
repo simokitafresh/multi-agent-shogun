@@ -461,3 +461,82 @@ PY
     [[ "$(sed -n '2p' "$log")" == EXECUTE* ]]
   done
 }
+
+@test "bounded 20260714 signal restore writes exactly one fixed column after 161-row preflight" {
+  run python3 - "$ROOT/scripts/lib/db_capability_tool.py" "$BATS_TEST_TMPDIR/backup.json" <<'PY'
+import importlib.util
+import json
+import pathlib
+import sys
+import types
+
+spec = importlib.util.spec_from_file_location("db_capability_tool", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+target = []
+for pf_index in range(23):
+    for day in range(1, 8):
+        target.append((f"pf-{pf_index:02d}", f"2026-07-{day:02d}", "old", "new", "new"))
+ledger = [(row[0], row[1], row[2], row[2]) for row in target]
+updated = [(row[0], row[1]) for row in target]
+
+class Cursor:
+    def __init__(self):
+        self.value = None
+        self.statements = []
+    def execute(self, statement, params=None):
+        text = str(statement)
+        self.statements.append((text, params))
+        if text.startswith("SELECT current_user"):
+            self.value = ("writer", "writer", "dm_signal", "127.0.0.1")
+        elif "pg_try_advisory_lock" in text:
+            self.value = (True,)
+        elif "recalculation_status" in text:
+            self.value = (False,)
+        elif "c.new_holding_signal, s.holding_signal" in text:
+            self.value = target
+        elif "SELECT t.portfolio_id, t.date, t.old_holding_signal" in text:
+            self.value = ledger
+        elif "UPDATE signals s" in text:
+            self.value = updated
+        elif "COUNT(*) AS target_rows" in text:
+            self.value = (161, 161, 161)
+        else:
+            self.value = None
+    def fetchone(self):
+        return self.value
+    def fetchall(self):
+        return list(self.value)
+    def close(self):
+        pass
+
+class Connection:
+    def __init__(self):
+        self.autocommit = None
+        self.cursor_obj = Cursor()
+        self.commits = 0
+        self.rollbacks = 0
+    def cursor(self):
+        return self.cursor_obj
+    def commit(self):
+        self.commits += 1
+    def rollback(self):
+        self.rollbacks += 1
+    def close(self):
+        pass
+
+connection = Connection()
+sys.modules["psycopg2"] = types.SimpleNamespace(connect=lambda dsn: connection)
+result = module._restore_signal_window_20260714("postgresql://unused", pathlib.Path(sys.argv[2]))
+updates = [sql for sql, _ in connection.cursor_obj.statements if "UPDATE signals s" in sql]
+assert len(updates) == 1
+assert "SET holding_signal = target.old_holding_signal" in updates[0]
+assert "updated_at" not in updates[0]
+assert connection.commits == 1 and connection.rollbacks == 0
+assert result["updated_rows"] == result["restored_exact"] == result["ledger_exact"] == 161
+backup = json.loads(pathlib.Path(sys.argv[2]).read_text())
+assert backup["row_count"] == 161 and backup["portfolio_count"] == 23
+PY
+  [ "$status" -eq 0 ]
+}

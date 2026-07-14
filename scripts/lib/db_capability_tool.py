@@ -216,6 +216,204 @@ def _restore_with_writer_lock(module, dsn: str, artifact: Path, expected_commit:
         conn.close()
 
 
+def _restore_signal_window_20260714(dsn: str, output: Path) -> dict:
+    """Restore exactly the 2026-07-14 alert window from its recorded old values.
+
+    This is deliberately not a generic SQL capability.  The table, column,
+    UTC window, expected row/key/portfolio counts, advisory lock, ledger
+    comparison, and postcondition are all fixed here.  Any drift rolls the
+    transaction back before it can commit.
+    """
+    import psycopg2
+
+    conn = psycopg2.connect(dsn)
+    conn.autocommit = False
+    cursor = None
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT current_user, session_user, current_database(), "
+            "COALESCE(inet_server_addr()::text, '')"
+        )
+        current_user, session_user, database_name, server_address = cursor.fetchone()
+        if database_name != "dm_signal":
+            raise RuntimeError("bounded restore requires dm_signal database")
+
+        cursor.execute("SELECT pg_try_advisory_lock(%s)", (8675309,))
+        if not cursor.fetchone()[0]:
+            raise RuntimeError("recalculate advisory lock is held")
+        cursor.execute(
+            "SELECT EXISTS(SELECT 1 FROM recalculation_status "
+            "WHERE status='running' AND end_time IS NULL)"
+        )
+        if cursor.fetchone()[0]:
+            raise RuntimeError("running recalculation exists")
+
+        cursor.execute("SET LOCAL lock_timeout = '30s'")
+        cursor.execute(
+            "LOCK TABLE signals, signal_change_log, signal_decision_ledger "
+            "IN SHARE ROW EXCLUSIVE MODE"
+        )
+        cursor.execute(
+            """
+            SELECT c.portfolio_id, c.date, c.old_holding_signal,
+                   c.new_holding_signal, s.holding_signal
+            FROM signal_change_log c
+            JOIN signals s ON s.portfolio_id=c.portfolio_id AND s.date=c.date
+            WHERE c.changed_at >= TIMESTAMP '2026-07-14 01:48:00'
+              AND c.changed_at <  TIMESTAMP '2026-07-14 01:50:00'
+            ORDER BY c.portfolio_id, c.date
+            """
+        )
+        target_rows = cursor.fetchall()
+        keys = {(row[0], row[1]) for row in target_rows}
+        portfolios = {row[0] for row in target_rows}
+        if len(target_rows) != 161 or len(keys) != 161 or len(portfolios) != 23:
+            raise RuntimeError(
+                f"target cardinality drift: rows={len(target_rows)} "
+                f"keys={len(keys)} portfolios={len(portfolios)}"
+            )
+        if any(row[2] is None for row in target_rows):
+            raise RuntimeError("target contains null old_holding_signal")
+        if any(row[4] != row[3] for row in target_rows):
+            raise RuntimeError("current holding_signal no longer equals recorded new value")
+
+        cursor.execute(
+            """
+            WITH target AS (
+              SELECT c.portfolio_id, c.date, c.old_holding_signal
+              FROM signal_change_log c
+              WHERE c.changed_at >= TIMESTAMP '2026-07-14 01:48:00'
+                AND c.changed_at <  TIMESTAMP '2026-07-14 01:50:00'
+            )
+            SELECT t.portfolio_id, t.date, t.old_holding_signal,
+                   l.decision_holding_signal
+            FROM target t
+            LEFT JOIN LATERAL (
+              SELECT decision_holding_signal
+              FROM signal_decision_ledger d
+              WHERE d.portfolio_id=t.portfolio_id
+                AND d.effective_start_date <= t.date
+              ORDER BY d.effective_start_date DESC, d.recorded_at DESC, d.id DESC
+              LIMIT 1
+            ) l ON TRUE
+            ORDER BY t.portfolio_id, t.date
+            """
+        )
+        ledger_rows = cursor.fetchall()
+        ledger_exact = sum(1 for row in ledger_rows if row[2] == row[3])
+        if len(ledger_rows) != 161 or ledger_exact != 161:
+            raise RuntimeError(
+                f"ledger precondition mismatch: rows={len(ledger_rows)} exact={ledger_exact}"
+            )
+
+        serialized_rows = [
+            {
+                "portfolio_id": str(row[0]),
+                "date": row[1].isoformat() if hasattr(row[1], "isoformat") else str(row[1]),
+                "old_holding_signal": row[2],
+                "new_holding_signal": row[3],
+                "pre_restore_holding_signal": row[4],
+            }
+            for row in target_rows
+        ]
+        rows_json = json.dumps(serialized_rows, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+        backup = {
+            "capability": "bounded_signal_restore_20260714",
+            "window_utc": ["2026-07-14T01:48:00Z", "2026-07-14T01:50:00Z"],
+            "row_count": 161,
+            "portfolio_count": 23,
+            "rows_sha256": hashlib.sha256(rows_json.encode("utf-8")).hexdigest(),
+            "identity": {
+                "current_user": current_user,
+                "session_user": session_user,
+                "database": database_name,
+                "server_address": server_address,
+            },
+            "rows": serialized_rows,
+        }
+        output.parent.mkdir(parents=True, exist_ok=True)
+        payload = (json.dumps(backup, indent=2, sort_keys=True, ensure_ascii=False) + "\n").encode("utf-8")
+        fd = os.open(output, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+
+        cursor.execute(
+            """
+            WITH target AS (
+              SELECT c.portfolio_id, c.date, c.old_holding_signal
+              FROM signal_change_log c
+              WHERE c.changed_at >= TIMESTAMP '2026-07-14 01:48:00'
+                AND c.changed_at <  TIMESTAMP '2026-07-14 01:50:00'
+            )
+            UPDATE signals s
+               SET holding_signal = target.old_holding_signal
+              FROM target
+             WHERE s.portfolio_id=target.portfolio_id AND s.date=target.date
+            RETURNING s.portfolio_id, s.date
+            """
+        )
+        updated = cursor.fetchall()
+        if len(updated) != 161 or len(set(updated)) != 161:
+            raise RuntimeError(f"update cardinality mismatch: {len(updated)}")
+
+        cursor.execute(
+            """
+            WITH target AS (
+              SELECT c.portfolio_id, c.date, c.old_holding_signal
+              FROM signal_change_log c
+              WHERE c.changed_at >= TIMESTAMP '2026-07-14 01:48:00'
+                AND c.changed_at <  TIMESTAMP '2026-07-14 01:50:00'
+            )
+            SELECT COUNT(*) AS target_rows,
+                   COUNT(*) FILTER (
+                     WHERE s.holding_signal IS NOT DISTINCT FROM t.old_holding_signal
+                   ) AS restored_exact,
+                   COUNT(*) FILTER (
+                     WHERE l.decision_holding_signal IS NOT DISTINCT FROM t.old_holding_signal
+                   ) AS ledger_exact
+            FROM target t
+            JOIN signals s ON s.portfolio_id=t.portfolio_id AND s.date=t.date
+            LEFT JOIN LATERAL (
+              SELECT decision_holding_signal
+              FROM signal_decision_ledger d
+              WHERE d.portfolio_id=t.portfolio_id
+                AND d.effective_start_date <= t.date
+              ORDER BY d.effective_start_date DESC, d.recorded_at DESC, d.id DESC
+              LIMIT 1
+            ) l ON TRUE
+            """
+        )
+        target_count, restored_exact, post_ledger_exact = map(int, cursor.fetchone())
+        if (target_count, restored_exact, post_ledger_exact) != (161, 161, 161):
+            raise RuntimeError(
+                "postcondition mismatch: "
+                f"target={target_count} restored={restored_exact} ledger={post_ledger_exact}"
+            )
+        conn.commit()
+        return {
+            "decision": "PASS",
+            "backup": str(output),
+            "backup_bytes": len(payload),
+            "target_rows": target_count,
+            "updated_rows": len(updated),
+            "restored_exact": restored_exact,
+            "ledger_exact": post_ledger_exact,
+            "other_table_writes": 0,
+            "recalculate_runs": 0,
+            "identity": backup["identity"],
+        }
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        if cursor is not None:
+            cursor.close()
+        conn.close()
+
+
 def main() -> int:
     capability = os.environ.get("DB_CAPABILITY")
     mode = os.environ.get("DB_CAPABILITY_MODE")
@@ -236,6 +434,29 @@ def main() -> int:
             conn.rollback()
         finally:
             conn.close()
+        return 0
+    if capability == "bounded_signal_restore_20260714":
+        if mode != "bounded_signal_restore":
+            raise SystemExit("unknown capability or mode")
+        parser = argparse.ArgumentParser()
+        parser.add_argument("action", choices=("restore",))
+        parser.add_argument("--output", required=True)
+        args = parser.parse_args()
+        project_root = Path(os.environ["DB_CAPABILITY_PROJECT_ROOT"]).resolve()
+        output = Path(args.output).resolve()
+        allowed_output_root = (project_root / "outputs" / "analysis").resolve()
+        if allowed_output_root not in output.parents or output.suffix != ".json":
+            raise SystemExit("BLOCK: backup output must be a JSON file under outputs/analysis")
+        dsn = os.environ["DATABASE_URL"]
+        parsed = urlsplit(dsn)
+        resource_identity = parsed.hostname or ""
+        database_identity = unquote(parsed.path.lstrip("/").split("/", 1)[0])
+        if not resource_identity.endswith(".singapore-postgres.render.com"):
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered Render production resource")
+        if database_identity != "dm_signal":
+            raise SystemExit("BLOCK: DATABASE_URL is not the registered production database")
+        result = _restore_signal_window_20260714(dsn, output)
+        print(json.dumps(result, sort_keys=True, ensure_ascii=False))
         return 0
     if capability == "production_role_probe":
         if mode != "production_role_probe":

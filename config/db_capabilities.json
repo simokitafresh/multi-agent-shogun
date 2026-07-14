@@ -9,6 +9,16 @@
       "required_credential_keys": ["DATABASE_URL"],
       "requires_expected_commit": false
     },
+    "bounded_signal_restore_20260714": {
+      "tool": "scripts/lib/db_capability_tool.py",
+      "project": "dm-signal",
+      "modes": ["bounded_signal_restore"],
+      "confirm": "RESTORE_EXACT_161_HOLDING_SIGNALS",
+      "actions": ["restore"],
+      "allowed_child_flags": ["--output"],
+      "required_credential_keys": ["DATABASE_URL"],
+      "requires_expected_commit": true
+    },
     "transactional_restore": {
       "tool": "scripts/lib/db_capability_tool.py",
       "project": "dm-signal",
