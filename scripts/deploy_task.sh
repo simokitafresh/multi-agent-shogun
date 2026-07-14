@@ -2810,18 +2810,20 @@ generate_report_template() {
     local _p_task_id="$task_id" _p_parent_cmd="$parent_cmd"
     local report_filename assigned_to subtask_id task_id _ac_task_id parent_cmd cmd_id \
           ac_version title task_type target_path scout_exempt type scope_mode \
-          command constraints not_in_scope
+          purpose command description constraints not_in_scope files_to_modify \
+          files_modified acceptance_criteria
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
         report_filename assigned_to subtask_id task_id _ac_task_id \
         parent_cmd cmd_id ac_version title task_type target_path scout_exempt \
-        type scope_mode command constraints not_in_scope 2>/dev/null)" || true
+        type scope_mode purpose command description constraints not_in_scope \
+        files_to_modify files_modified acceptance_criteria 2>/dev/null)" || true
 
     # Reuse values already parsed by field_get_multi above.  Calling
     # is_enforcement_variation_contract_task here reparsed the same YAML in a
     # fresh Python process for every report template (the dominant hot path in
     # template-generation tests).
     local _variation_checks_required=false
-    local _variation_text="${title} ${command} ${target_path} ${constraints} ${not_in_scope}"
+    local _variation_text="${title} ${purpose} ${command} ${description} ${target_path} ${files_to_modify} ${files_modified} ${acceptance_criteria} ${constraints} ${not_in_scope}"
     _variation_text="${_variation_text,,}"
     local _variation_task_type="${task_type:-${type:-${scope_mode:-}}}"
     _variation_task_type="${_variation_task_type,,}"

@@ -925,6 +925,36 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
 
+    # The cached generate_report_template path must classify every field used
+    # by is_enforcement_variation_contract_task, not only title/command/path.
+    for source_field in purpose acceptance_criteria; do
+        if [ "$source_field" = purpose ]; then
+            classifier_input='  purpose: "gate enforcement script実装"'
+        else
+            classifier_input='  acceptance_criteria:\n    - id: AC1\n      description: "hook guardのPythonコード修正"'
+        fi
+        printf 'task:\n  assigned_to: sasuke\n  title: "neutral task"\n  task_id: cmd_variation_%s_impl\n  parent_cmd: cmd_variation_%s\n  project: infra\n  report_filename: sasuke_report_cmd_variation_%s.yaml\n%b\n' \
+            "$source_field" "$source_field" "$source_field" "$classifier_input" \
+            > "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+
+        (
+            export DEPLOY_TASK_LIB_ONLY=1
+            source "$TEST_PROJECT/scripts/deploy_task.sh"
+            log() { :; }
+            generate_report_template sasuke "cmd_variation_${source_field}_impl" "cmd_variation_${source_field}" infra
+        )
+
+        run python3 - <<EOF
+import yaml
+from pathlib import Path
+task = yaml.safe_load(Path("$TEST_PROJECT/queue/tasks/sasuke.yaml").read_text())['task']
+assert task['variation_checks_required'] is True
+print('OK')
+EOF
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"OK"* ]]
+    done
+
     (
         export DEPLOY_TASK_LIB_ONLY=1
         source "$TEST_PROJECT/scripts/deploy_task.sh"
