@@ -104,3 +104,31 @@
 - → [[deepdive_why_chain_20260321]] Phase 9(自動化自体の停止を検出する層)=D1'-(d)の理論的根拠
 - → [[LS086]] 設計書クローズ時の起票照合(§4表)
 - → [[codd-refactor]] 道具磨きの既存スキル(D6で契約更新)
+
+## §7 cmd_karo_recon2_unit_5min_profile_202607141742 — 26分→5分実装指示
+
+### §7.1 AsIs（専用full runなし、既存artifactのみ）
+
+- 一次情報: `logs/test_timing_ledger.tsv` run_id=`20260714T080258.4150838` + `/tmp/hanzo_rc7_artifacts` + `scripts/run_tests.sh` 現物。
+- 完走cohort: **271 files / 3,895 tests / SKIP 0 / cache_hit 0 / sum_file_sec 2,244.613s**。artifactの実wallは約26分。当該runの現行キュー順+重みを同じfile秒で再現したtwo-lane相当makespanは**1,305.269s**。差の約255sはhost/I/O競合、bats root起動、TAP出力・集約を含む。
+- 寄与集中: `>=30s` 11 files = **541.467s (24.1%)**、`>=20s` 26 files = **914.028s (40.7%)**、`>=10s` 58 files = **1,360.682s (60.6%)**。最上位は `test_gate_karo_startup` 67.350s、`test_gate_shogun_startup` 66.015s、`test_semantic_index_update` 58.072s、`test_write_edit_combined_hooks` 54.364s、`test_bash_speed_training` 50.892s。
+- lane分解: 通常258 files = **1,990.772s (88.7%)**、heavy 4 files = **172.387s (7.7%)**、serial隔離9 files = **81.454s (3.6%)**。serial隔離そのもは主因ではない。通常fileも`INNER_JOBS=4`/weight=4でhost cap 8を使うため実質同時2 filesで、重いfileのFIFO tailが空きlaneを作る。
+- artifactの7-file matrix中央値: jobs1=547s, jobs2=221s, jobs4=132s, jobs8=109s。inner parallel自体は必要だが4→8の改善は約17%に留まる。よってjobs値のみで300sは不可。
+- TAP 3,886件の合計は8,129.690 test-sec。`>=10s` 160 testsだけで2,792.508s。上位は`test_bash_speed_training` auto-deploy/ledger系の45秒級反復、write hook Guard16/17の41–44秒級反復、memory DB/semantic indexの20秒級実I/O反復。ここが第一ボトルネック。
+
+### §7.2 ToBe（全量性・coverage・FAIL/SKIP・heavy admission不変）
+
+| 順序 | 変更対象 | 実装 | 期待削減（現wall比） | 副作用/防御 | focused test |
+|---|---|---|---:|---|---|
+| 1 | `scripts/run_tests.sh:64-205` `run_bats_files_parallel` | fileを実測台帳のLPT（長い順）で投入。weight=inner jobs契約とcap=8は維持。未計測fileは保守的上限値。 | 100–180s | 古いtimingの誤配置→commit/source fingerprint一致runのみ使う | `tests/unit/test_run_tests.bats` + `tests/unit/test_heavy_job_admission.bats` に順序/cap/FAIL集約 |
+| 2 | `scripts/run_tests.sh:123-145` scheduler | FIFO `wait -n` をwork-conserving priority queue化。serial(weight=8)は通常lane間に散らし、tailの長尺file残りを禁止。 | 80–120s | starvation→全fileを1回だけenqueueする二値test | 同上でstarted orderとtotal=271相当fixture |
+| 3 | `scripts/bash_speed_training.sh` と `tests/unit/test_bash_speed_training.bats` | 45s級各8testが毎回作る同一scripts inventory/git情報をsetup_fileで1回生成しfixture共有。assertion/branchは維持。 | 250–320s | test間状態漏洩→各testはcopy-on-write tmp ledger | 当該file全量（専用改善runではなく実装focused検証） |
+| 4 | `scripts/hooks/pre_write_edit_combined.py`/関連shell + `tests/unit/test_write_edit_combined_hooks.bats` | Guard16/17/19ごとのrepo/git scanを1fixture内1回にメモ化。入力文字列の分岐のみ各testで差替える。 | 220–280s | cache key欠落→repo root/index mtime/input hashをkey化 | `test_write_edit_combined_hooks.bats` |
+| 5 | `scripts/memory_db_query.sh`, `scripts/semantic_index_update.py`, 各test fixture | テスト1件ごとのWSL `/mnt/c` SQLite/semantic corpus構築をsetup_fileのext4 tmp master DB→テスト毎reflink/copyへ。concurrency/recoveryテストは独立群として実際の20 workers契約を維持。 | 250–350s | 並行契約の弱体化→concurrency/recovery casesだけはreal multi-processを維持 | `test_memory_db.bats`, `test_semantic_index_update.bats` |
+| 6 | 台帳top 58 filesの`>=10s` test | 上記3–5と同じ型で「同test file内の不変setup」を共有。sleep/retryは本番defaultを変えず、dependency injectionしたtest clock/retry budgetのみ0化。 | 450–550s | 本番契約弱体化→default値とabnormal/retry回数のcontract testを残す | 各対象file + `tests/unit/test_test_timing_ledger.bats` |
+| 7 | `scripts/run_tests.sh:207-260` TAP/ledger aggregation | child完了後の271回grepを1回stream parseに集約。TAP連結、SKIP/FAIL判定、test count、14列ledgerは不変。 | 40–80s | parser取りこぼし→ok/not ok/skip/abnormal/multi-plan fixture | `tests/unit/test_run_tests.bats`, `tests/unit/test_test_timing_ledger.bats` |
+
+目標budget: 上記の重複を除いた保守的削減 **1,260s**（26分→約5分）。順序は1→2で即時のtailを減らし、3→5で最大の反復I/O/setupを消し、6を台帳top-N順に反復、7で固定overheadを取る。各段のbefore/afterは通常業務のcache_hit=0完走run同士で比較し、専用full runは起動しない。
+
+- D7: 今回はdocs/data-only偵察のため実行test免除。新behavior/bugfix/refactorはなく、既存artifactの再集計と実装指示のみ。
+- origin: [[殿裁定_10分超は道具磨き]] -> [[全量Unit26分]] -> [[r1_5分以内]]
