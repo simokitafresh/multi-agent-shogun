@@ -52,6 +52,22 @@ inbox_archive_fast_path() {
     unread_tmp="$_ia_tmpdir/u"
     stats_tmp="$_ia_tmpdir/s"
 
+    # Create an exclusive temporary file with shell builtins.  The destination
+    # directory is retained so the later mv remains an atomic same-filesystem
+    # replace, while avoiding a fixed mktemp process on each output file.
+    inbox_archive_tempfile() {
+        local dir="$1" kind="$2" candidate attempt=0
+        while [ "$attempt" -lt 8 ]; do
+            candidate="$dir/.ia_${kind}_${BASHPID}_${RANDOM}.tmp"
+            if (set -o noclobber; : > "$candidate") 2>/dev/null; then
+                printf '%s\n' "$candidate"
+                return 0
+            fi
+            attempt=$((attempt + 1))
+        done
+        return 1
+    }
+
     if ! awk -v read_out="$read_tmp" -v unread_out="$unread_tmp" -v stats_out="$stats_tmp" '
 # Detect complex YAML in a single pass — replaces grep -Eq pre-scan
 /^[[:space:]][[:space:]][[:space:]][[:space:]][^[:space:]]/ {
@@ -225,7 +241,10 @@ END {
     if [ -f "$archive_path" ]; then
         cat "$read_tmp" >> "$archive_path"
     else
-        archive_tmp=$(mktemp "$archive_dir/.ia_archive_XXXXXX.tmp")
+        archive_tmp=$(inbox_archive_tempfile "$archive_dir" archive) || {
+            rm -rf "$_ia_tmpdir"
+            return 1
+        }
         {
             printf 'messages:\n'
             cat "$read_tmp"
@@ -233,7 +252,10 @@ END {
         mv "$archive_tmp" "$archive_path"
     fi
 
-    inbox_tmp=$(mktemp "$inbox_dir/.ia_inbox_XXXXXX.tmp")
+    inbox_tmp=$(inbox_archive_tempfile "$inbox_dir" inbox) || {
+        rm -rf "$_ia_tmpdir"
+        return 1
+    }
     if [ "${unread_count:-0}" -eq 0 ]; then
         printf 'messages: []\n' > "$inbox_tmp"
     else
