@@ -59,7 +59,7 @@ count_unread_inbox_messages() {
     while IFS= read -r line || [ -n "$line" ]; do
         trimmed="${line#"${line%%[![:space:]]*}"}"
         indent=$(( ${#line} - ${#trimmed} ))
-        if [[ "$trimmed" == -[[:space:]]* ]]; then
+        if [[ "$trimmed" == -[[:space:]]* ]] && (( indent == 0 )); then
             (( in_msg && ! saw_read )) && count=$((count + 1))
             in_msg=1
             saw_read=0

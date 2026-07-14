@@ -90,7 +90,7 @@ count_unread_inbox_messages() {
             return length(line)
         }
         BEGIN { c = 0; in_msg = 0; saw_read = 0; item_indent = 0 }
-        /^[[:space:]]*-[[:space:]]/ {
+        /^-[[:space:]]/ {
             if (in_msg && !saw_read) c++
             in_msg = 1
             saw_read = 0

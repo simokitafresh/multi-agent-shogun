@@ -2372,3 +2372,35 @@ EOF
     [[ "$output" != *"⚠ 三層記憶引用率0%"* ]]
     ! grep -q '三層記憶引用率0%' "$TEST_TMPDIR/queue/session_alerts_shogun.txt" 2>/dev/null
 }
+
+# 回帰: content block scalar内のインデント付き"- "行をメッセージ境界と誤認しない(偽未読10件事故 2026-07-15)
+@test "Gate 4 inbox: block scalar内のdash行があっても全read:trueなら未読0件" {
+    cat > "$TEST_TMPDIR/queue/inbox/shogun.yaml" <<'YAML'
+messages:
+- action: 'bulletin_notify'
+  content: |-
+    掲示板新規投稿:
+    - 今夜22:00以降: 家老ACCEPT 85件
+    - dead pane: 3/6
+    - 稼働忍者: 3/6
+  from: 'gunshi'
+  id: 'msg_a'
+  read: true
+  timestamp: '2026-07-15T03:56:29'
+  type: 'bulletin_notify'
+- content: |-
+    レビュー結果:
+    - §0表: 反映OK
+    - §6: 反映OK
+  from: 'karo'
+  id: 'msg_b'
+  read: true
+  timestamp: '2026-07-15T04:00:00'
+  type: 'bulletin_notify'
+YAML
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"未読: 0件"* ]]
+    [[ "$output" != *"⚠ inbox未読"* ]]
+}
