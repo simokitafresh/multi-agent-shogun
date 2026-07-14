@@ -46,6 +46,22 @@ teardown() {
     [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$other_index_before" ]
 }
 
+@test "commit後に同一hunkのdirty差分が残れば報告前にBLOCKする" {
+    mkdir -p "$REPO/.git/hooks"
+    cat > "$REPO/.git/hooks/post-commit" <<'HOOK'
+#!/bin/sh
+printf 'dirty after commit\n' > own.txt
+HOOK
+    chmod +x "$REPO/.git/hooks/post-commit"
+    printf 'committed change\n' > "$REPO/own.txt"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m overlap -- own.txt"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK(GA-260)"* ]]
+    [[ "$output" == *"own.txt"* ]]
+}
+
 make_shared_fixture() {
     : > "$REPO/shared.txt"
     for i in $(seq 1 36); do printf 'base-%02d\n' "$i" >> "$REPO/shared.txt"; done

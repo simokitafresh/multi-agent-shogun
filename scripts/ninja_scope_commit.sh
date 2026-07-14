@@ -211,6 +211,7 @@ if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" ]];
     bash "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" check --repo "$repo_root"
 fi
 git commit --only -m "$message" -- "${paths[@]}"
+commit_hash="$(git rev-parse HEAD)"
 
 # 二値postcondition: commit treeは指定scopeのみ、他者stageはそのまま残る。
 # scope_path_is_in_scope(SSOT)で判定することで、正規化ロジックの重複を避ける。
@@ -220,4 +221,28 @@ for committed_path in "${committed[@]}"; do
         || { echo "FATAL: out-of-scope path entered commit: $committed_path" >&2; exit 1; }
 done
 
-git rev-parse HEAD
+# Commit直後に同一scopeへ自分のcommitと重なるdirty hunkが残れば、報告gateまで
+# 遅延させずここで停止する。他者の並行作業による非重複hunkは許容する。
+if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/report_commit_nonoverlap_filter.sh" ]]; then
+    # shellcheck source=scripts/lib/report_commit_nonoverlap_filter.sh
+    source "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/report_commit_nonoverlap_filter.sh"
+    dirty_scope_paths="$({ git diff --name-only -- "${paths[@]}"; git diff --cached --name-only -- "${paths[@]}"; } | sort -u | sed '/^$/d')"
+    if [[ -n "$dirty_scope_paths" ]]; then
+        commit_probe="$(mktemp)"
+        trap 'rm -f "${commit_probe:-}"' EXIT
+        printf 'commit_hash: %s\n' "$commit_hash" > "$commit_probe"
+        overlapping_dirty="$(filter_report_commit_nonoverlap_uncommitted "$repo_root" "$commit_probe" "$dirty_scope_paths")"
+        rm -f "$commit_probe"
+        trap - EXIT
+        if [[ -n "$overlapping_dirty" ]]; then
+            echo "BLOCK(GA-260): commit後も同一scopeにcommit hunkと重なる未commit差分あり:" >&2
+            while IFS= read -r dirty_path; do
+                [[ -n "$dirty_path" ]] && printf '  %s\n' "$dirty_path" >&2
+            done <<< "$overlapping_dirty"
+            echo "追加差分をscope commitして作業木を収束させてから報告せよ" >&2
+            exit 1
+        fi
+    fi
+fi
+
+printf '%s\n' "$commit_hash"
