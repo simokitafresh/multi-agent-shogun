@@ -1,10 +1,30 @@
 #!/usr/bin/env bats
 # test_memory_db.bats — SQLite memory DB import tests
 
+setup_file() {
+    export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export MEMORY_DB_MASTER_DIR="$BATS_FILE_TMPDIR/memory_db_master"
+    mkdir -p "$MEMORY_DB_MASTER_DIR/archive" "$MEMORY_DB_MASTER_DIR/data"
+    python3 "$PROJECT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$MEMORY_DB_MASTER_DIR/archive" \
+        --db "$MEMORY_DB_MASTER_DIR/data/memory.db" >/dev/null
+}
+
+teardown_file() {
+    : # Bats owns and safely removes BATS_FILE_TMPDIR after the file completes.
+}
+
 setup() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/memory_db.XXXXXX")"
+    export TEST_TMPDIR="$BATS_TEST_TMPDIR/memory_db"
     mkdir -p "$TEST_TMPDIR/archive" "$TEST_TMPDIR/data"
+    # Mutation/concurrency/recovery tests construct deliberately bespoke or
+    # corrupt databases and must keep their real multi-process setup.  Normal
+    # import/query tests start from the same ext4 master schema via CoW/copy.
+    case "$BATS_TEST_DESCRIPTION" in
+        *malformed*|*recovery*|*parallel*|*concurrent*|*cache\ generation*|*killed*|*fails\ closed*|*migrates\ existing*|*obsidian*|*update_event*|*recall*|*backup*|*gate_three_layer*) ;;
+        *) cp --reflink=auto "$MEMORY_DB_MASTER_DIR/data/memory.db" "$TEST_TMPDIR/data/memory.db" ;;
+    esac
     # create_sqlite_backup()'s routine-backup rotation logs to GATE_FIRE_LOG_FILE
     # (defaults to the real repo's logs/gate_fire_log.yaml); redirect it here so
     # test runs never write rotation-fire noise into the production log.
@@ -12,7 +32,7 @@ setup() {
 }
 
 teardown() {
-    rm -rf "$TEST_TMPDIR"
+    : # Bats owns and safely removes BATS_TEST_TMPDIR after each test completes.
 }
 
 @test "memory_db_import creates conversations view and events table with required columns" {
@@ -395,7 +415,6 @@ EOF
     printf 'not-a-sqlite-database' > "$TEST_TMPDIR/cache/memory.db"
     export SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
-
     for worker in $(seq 1 20); do
         AGENT_ID=hanzo bash "$PROJECT_ROOT/scripts/memory_db_query.sh" \
             --db "$TEST_TMPDIR/data/memory.db" \
@@ -449,21 +468,21 @@ li.create_memory_db_ext4_cache('$TEST_TMPDIR/data/memory.db')
 
     for worker in $(seq 1 20); do
         (
-            end=$((SECONDS + 2))
-            while [ "$SECONDS" -lt "$end" ]; do
-                python3 - "$TEST_TMPDIR/cache_live/memory.db" "$TEST_TMPDIR/results20/reader_$worker.err" <<'PY'
+            python3 - "$TEST_TMPDIR/cache_live/memory.db" "$TEST_TMPDIR/results20/reader_$worker.err" <<'PY'
 import sqlite3
 import sys
+import time
 
 cache_path, err_path = sys.argv[1], sys.argv[2]
-try:
-    with sqlite3.connect(f"file:{cache_path}?mode=ro", uri=True) as conn:
-        conn.execute("SELECT count(*) FROM events").fetchone()
-except sqlite3.DatabaseError as exc:
-    with open(err_path, "a", encoding="utf-8") as handle:
-        handle.write(str(exc) + "\n")
+deadline = time.monotonic() + 2
+while time.monotonic() < deadline:
+    try:
+        with sqlite3.connect(f"file:{cache_path}?mode=ro", uri=True) as conn:
+            conn.execute("SELECT count(*) FROM events").fetchone()
+    except sqlite3.DatabaseError as exc:
+        with open(err_path, "a", encoding="utf-8") as handle:
+            handle.write(str(exc) + "\n")
 PY
-            done
         ) &
     done
     mkdir -p "$TEST_TMPDIR/results20"
