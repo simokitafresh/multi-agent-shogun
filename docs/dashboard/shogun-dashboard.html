@@ -105,7 +105,7 @@
 <div class="wrap">
   <header class="top">
     <h1>将軍戦況ダッシュボード</h1>
-    <span class="stamp">最終更新 <b>2026-07-14 18:10 JST</b> ｜ 将軍が随時更新</span>
+    <span class="stamp">最終更新 <b>2026-07-14 18:35 JST</b> ｜ 将軍が随時更新</span>
   </header>
 
   <div class="tiles">
@@ -116,18 +116,18 @@
     </div>
     <div class="tile warn">
       <span class="k">真因修正 cmd_3907</span>
-      <span class="v">SKIP除去中</span>
-      <span class="s">全量1995 PASS。期限=07-15 01:40 UTC cron前 live反映</span>
+      <span class="v">main push済み→配信中</span>
+      <span class="s">52commits push(4db48813)。Render自動デプロイ進行。期限=07-15 01:40 UTC cronまで16h</span>
     </div>
     <div class="tile ok">
       <span class="k">テスト時間免疫系</span>
       <span class="v">P2・P3 全4本 CLEAR</span>
       <span class="s">D3・D6・D7・D4'完了。残るはP4 evidence契約（台帳実測待ち）</span>
     </div>
-    <div class="tile ok">
+    <div class="tile warn">
       <span class="k">忍者陣形</span>
-      <span class="v">6/6 稼働</span>
-      <span class="s">停滞なし（15:07一次確認済み）</span>
+      <span class="v">6/6 稼働・unit5高速化 反復中</span>
+      <span class="s">18:19陣形図: 高速化hotfix 3件が目標未達FAIL→家老が再配備反復（正常な収斂過程）</span>
     </div>
   </div>
 
@@ -145,9 +145,9 @@
         <li><span class="chip done">完了</span><div class="step-body">
           <div class="t">警報検知の穴をふさぐ</div>
           <div class="d">新規行INSERT経由のledger driftも発報するよう修正（GATE CLEAR）</div></div></li>
-        <li><span class="chip run">進行中</span><div class="step-body">
+        <li><span class="chip run">配信中</span><div class="step-body">
           <div class="t"><code>cmd_3907</code> 真因修正 — 決定的選択 + fail-closed</div>
-          <div class="d">全量テスト1995 PASS・残SKIP1除去中。明日cron前のlive反映で誤巻き戻しは構造的に再発不能</div></div></li>
+          <div class="d">全量1995 PASS。18:24 main push（52commits, →4db48813）→Render自動デプロイ進行。push露出のCI RED 2件はテスト環境系（golden用隔離Postgres前提=小太郎が修正中・p4 uvicorn接続拒否）で本体コード起因ではない</div></div></li>
         <li><span class="chip wait">待機</span><div class="step-body">
           <div class="t"><code>cmd_3908</code> correction event専用経路</div>
           <div class="d">過去訂正をreason・actor必須のappend-onlyへ一本化（3907完了後に配備）</div></div></li>
@@ -181,16 +181,16 @@
   </div>
 
   <section class="panel">
-    <h2><span class="tag">陣形</span>忍者配備（16:16 陣形図）</h2>
+    <h2><span class="tag">陣形</span>忍者配備（18:19 陣形図）</h2>
     <div class="tablewrap">
       <table>
         <tr><th>忍者</th><th>任務</th><th>状態</th></tr>
-        <tr><td>疾風</td><td class="mono">GA-253 retry budget修正 完了 → 次配備待ち</td><td>待機</td></tr>
-        <tr><td>影丸</td><td class="mono">cmd_3913（D7作成規律）完了 → 次配備待ち</td><td>待機</td></tr>
-        <tr><td>半蔵</td><td class="mono">CI RED修正 rc7（unit並列カスケード）</td><td>実装中</td></tr>
-        <tr><td>才蔵</td><td class="mono">cmd_3912（D4'）完了 → 次配備待ち</td><td>待機</td></tr>
-        <tr><td>小太郎</td><td class="mono">ALERT穴修正（完了）→ 次配備待ち</td><td>待機</td></tr>
-        <tr><td>飛猿</td><td class="mono">cmd_3912（D4'陳腐化+モック）</td><td>実装中</td></tr>
+        <tr><td>疾風</td><td class="mono">unit5高速化 memory_db（目標未達FAIL→再配備待ち）</td><td>反復中</td></tr>
+        <tr><td>影丸</td><td class="mono">cmd_3915（LK-A10分類器FP根治）</td><td>実装中</td></tr>
+        <tr><td>半蔵</td><td class="mono">CI RED修正 rc7（unit並列カスケード・順序4/5統合待ち）</td><td>実装中</td></tr>
+        <tr><td>才蔵</td><td class="mono">unit5高速化 bash_speed（50.9→27.0sも15s基準未達FAIL）</td><td>反復中</td></tr>
+        <tr><td>小太郎</td><td class="mono">DM golden隔離Postgres自動起動（CI RED根治）</td><td>実装中</td></tr>
+        <tr><td>飛猿</td><td class="mono">unit5高速化 write_hooks（FAIL→再配備待ち）</td><td>反復中</td></tr>
       </table>
     </div>
   </section>
@@ -205,6 +205,8 @@
       <li><span class="tm">13:24</span><span>「検証しよう」— 復元漏れ7/13×23行を発見→即修正。ALERT検知の穴も特定→修正CLEAR</span></li>
       <li><span class="tm">13:25</span><span>gist再構築（非決定性→freeze v2.0）+ テスト時間免疫系P2・P3実装続行（4本起票→17:15全CLEAR）</span></li>
       <li><span class="tm">17:44</span><span>「強くてニューゲームできるようにせよ」— 穴4つを永続化: ダッシュボード正本repo化(436afaf00)・LS-A09(37)修復スコープ教訓(4ac0c0bb2)・中核裁定の記憶DB書込み・LK-A10分類器FP根治cmd_3915起票</span></li>
+      <li><span class="tm">18:07</span><span>/clear→復帰。起動BLOCK 6件を全件一次確認処理（掲示板3件確認・action_required依存宣言・scripts差分解消確認・detector FP検分）</span></li>
+      <li><span class="tm">18:24</span><span>将軍自走: cmd_3907 live反映のためDM-Signal main 52commitsをpush（可逆原則）。Render自動デプロイ進行、CI RED2件=テスト環境系は対処進行中</span></li>
     </ol>
   </section>
 
