@@ -70,6 +70,20 @@ PY
     [ "$(wc -l < "$TEST_TMPDIR/create.calls")" -eq 1 ]
 }
 
+@test "stale cache refresh serves source for read-after-write consistency" {
+    create_memory_db_cache "$PROJECT_ROOT" "$TEST_TMPDIR/source.db"
+    touch -d '2 minutes ago' "$SHOGUN_MEMORY_DB_CACHE_PATH"
+    touch "$TEST_TMPDIR/source.db"
+    refresh_memory_db_cache_async() {
+        printf 'refresh\n' >> "$TEST_TMPDIR/refresh.calls"
+    }
+
+    read_path="$(prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db")"
+
+    [ "$read_path" = "$TEST_TMPDIR/source.db" ]
+    [ "$(wc -l < "$TEST_TMPDIR/refresh.calls")" -eq 1 ]
+}
+
 @test "restart_watchers flow creates a missing cache before touching watchers" {
     rm -f "$SHOGUN_MEMORY_DB_CACHE_PATH"
 
