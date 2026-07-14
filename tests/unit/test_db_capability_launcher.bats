@@ -286,6 +286,22 @@ PY
   [ "$(cat "$artifact")" = "$expected_home" ]
 }
 
+@test "production role probe registry admits only the scoped nologin rehearsal arguments" {
+  run python3 - "$LAUNCHER" "$ROOT/config/db_capabilities.json" <<'PY'
+import importlib.util, json, sys
+spec = importlib.util.spec_from_file_location("launcher", sys.argv[1])
+module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+contract = json.load(open(sys.argv[2]))["capabilities"]["production_role_probe"]
+args = module._validate_child_args(contract, ["--", "nologin-rehearsal", "--app-role", "cmd3881_nologin_app_x", "--keeper-role", "cmd3881_nologin_keeper_x", "--output", "/tmp/a"])
+assert args[0] == "nologin-rehearsal"
+for bad in (["nologin-rehearsal", "--dsn", "secret"], ["unknown", "--output", "/tmp/a"]):
+    try: module._validate_child_args(contract, bad)
+    except SystemExit as exc: assert "BLOCK" in str(exc)
+    else: raise AssertionError("unsafe rehearsal args allowed")
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "locked restore excludes writers and proves empty tables before COPY" {
   run python3 - "$ROOT/scripts/lib/db_capability_tool.py" "$BATS_TEST_TMPDIR" <<'PY'
 import hashlib, importlib.util, pathlib, tempfile, types, sys

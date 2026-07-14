@@ -26,9 +26,11 @@
       "dependency_tool": "scripts/oneshot/cmd_3881_db_fence_verify.py",
       "modes": ["production_role_probe"],
       "confirm": "PRODUCTION_ROLE_PROBE_APPROVED",
-      "actions": ["run"],
+      "actions": ["run", "nologin-rehearsal"],
       "allowed_child_flags": [
         "--probe-role",
+        "--app-role",
+        "--keeper-role",
         "--output"
       ],
       "required_credential_keys": ["DATABASE_URL"],

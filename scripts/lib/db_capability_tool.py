@@ -7,8 +7,94 @@ import subprocess
 import sys
 import argparse
 import importlib.util
+import hashlib
+import json
+import secrets
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
+
+
+def _sqlstate(exc: BaseException) -> str:
+    return str(getattr(exc, "pgcode", None) or "XXXXX")
+
+
+def _nologin_rehearsal(dsn: str, app_role: str, keeper_role: str, output: Path) -> int:
+    """Rehearse LOGIN fencing solely on two disposable, prefix-scoped roles."""
+    import psycopg2
+    from psycopg2 import sql
+
+    prefix = "cmd3881_nologin_"
+    if app_role == keeper_role or any(not r.startswith(prefix) for r in (app_role, keeper_role)):
+        raise SystemExit("BLOCK: rehearsal roles must be distinct and use cmd3881_nologin_ prefix")
+    password = secrets.token_urlsafe(32)
+    admin = psycopg2.connect(dsn)
+    admin.autocommit = True
+    app = None
+    before_rows = []
+    result = {
+        "decision": "FAIL", "app_role": app_role, "keeper_role": keeper_role,
+        "initial_connect": False, "connection_refused": False, "restored_connect": False,
+        "catalog_exact": False, "roles_remaining": None, "business_relation_access": 0,
+        "dm_signal_user_alter": 0, "sqlstates": {},
+    }
+    try:
+        with admin.cursor() as cur:
+            cur.execute("SELECT rolname, rolcanlogin FROM pg_catalog.pg_roles WHERE rolname IN (%s,%s) ORDER BY rolname", (app_role, keeper_role))
+            before_rows = cur.fetchall()
+            if before_rows:
+                raise RuntimeError("disposable rehearsal role already exists")
+            cur.execute(sql.SQL("CREATE ROLE {} NOLOGIN").format(sql.Identifier(keeper_role)))
+            result["sqlstates"]["create_keeper"] = "00000"
+            cur.execute(sql.SQL("CREATE ROLE {} LOGIN PASSWORD %s").format(sql.Identifier(app_role)), (password,))
+            result["sqlstates"]["create_app"] = "00000"
+
+        parsed = urlsplit(dsn)
+        app_dsn = dsn.replace(parsed.username or "", app_role, 1)
+        if parsed.password:
+            app_dsn = app_dsn.replace(parsed.password, password, 1)
+        app = psycopg2.connect(app_dsn, connect_timeout=10, application_name="cmd3881_nologin_rehearsal")
+        result["initial_connect"] = True
+        with admin.cursor() as cur:
+            cur.execute(sql.SQL("ALTER ROLE {} NOLOGIN").format(sql.Identifier(app_role)))
+            result["sqlstates"]["alter_nologin"] = "00000"
+            cur.execute("SELECT pg_terminate_backend(pid) FROM pg_catalog.pg_stat_activity WHERE usename=%s AND application_name=%s AND pid<>pg_backend_pid()", (app_role, "cmd3881_nologin_rehearsal"))
+        app.close(); app = None
+        try:
+            rejected = psycopg2.connect(app_dsn, connect_timeout=10, application_name="cmd3881_nologin_rehearsal_rejected")
+        except Exception as exc:
+            result["connection_refused"] = True
+            result["sqlstates"]["rejected_connect"] = _sqlstate(exc)
+        else:
+            rejected.close()
+        with admin.cursor() as cur:
+            cur.execute(sql.SQL("ALTER ROLE {} LOGIN").format(sql.Identifier(app_role)))
+            result["sqlstates"]["alter_login"] = "00000"
+        restored = psycopg2.connect(app_dsn, connect_timeout=10, application_name="cmd3881_nologin_rehearsal_restored")
+        restored.close()
+        result["restored_connect"] = True
+    finally:
+        if app is not None:
+            app.close()
+        with admin.cursor() as cur:
+            for role in (app_role, keeper_role):
+                try:
+                    cur.execute(sql.SQL("DROP ROLE IF EXISTS {}").format(sql.Identifier(role)))
+                except Exception as exc:
+                    result["sqlstates"][f"drop_{role}"] = _sqlstate(exc)
+            cur.execute("SELECT rolname, rolcanlogin FROM pg_catalog.pg_roles WHERE rolname IN (%s,%s) ORDER BY rolname", (app_role, keeper_role))
+            after_rows = cur.fetchall()
+        admin.close()
+        result["roles_remaining"] = len(after_rows)
+        before_hash = hashlib.sha256(json.dumps(before_rows, separators=(",", ":")).encode()).hexdigest()
+        after_hash = hashlib.sha256(json.dumps(after_rows, separators=(",", ":")).encode()).hexdigest()
+        result["catalog_before_hash"] = before_hash
+        result["catalog_after_hash"] = after_hash
+        result["catalog_exact"] = before_hash == after_hash
+        if result["initial_connect"] and result["connection_refused"] and result["restored_connect"] and result["catalog_exact"] and result["roles_remaining"] == 0:
+            result["decision"] = "PASS"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return 0 if result["decision"] == "PASS" else 1
 
 
 def _restore_with_writer_lock(module, dsn: str, artifact: Path, expected_commit: str) -> None:
@@ -90,8 +176,10 @@ def main() -> int:
         if mode != "production_role_probe":
             raise SystemExit("unknown capability or mode")
         parser = argparse.ArgumentParser()
-        parser.add_argument("action", choices=("run",))
-        parser.add_argument("--probe-role", required=True)
+        parser.add_argument("action", choices=("run", "nologin-rehearsal"))
+        parser.add_argument("--probe-role")
+        parser.add_argument("--app-role")
+        parser.add_argument("--keeper-role")
         parser.add_argument("--output", required=True)
         args = parser.parse_args()
 
@@ -109,6 +197,13 @@ def main() -> int:
         allowed_output_root = (project_root / "outputs" / "analysis").resolve()
         if allowed_output_root not in output.parents:
             raise SystemExit("BLOCK: probe output must be under outputs/analysis")
+
+        if args.action == "nologin-rehearsal":
+            if args.probe_role or not args.app_role or not args.keeper_role:
+                raise SystemExit("BLOCK: rehearsal requires app/keeper roles only")
+            return _nologin_rehearsal(dsn, args.app_role, args.keeper_role, output)
+        if not args.probe_role or args.app_role or args.keeper_role:
+            raise SystemExit("BLOCK: run requires probe role only")
 
         child_env = os.environ.copy()
         child_env["CMD3881_PRODUCTION_PROBE_DSN"] = dsn
