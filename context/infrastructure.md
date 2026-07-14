@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-15 cmd_karo_hotfix_context_source_marker_arrow_20260715 -->
-<!-- source_commit:94e4c50a356eb4d05d16cf91effcc2722a9c2427 reason:script-speed-lane-and-training-boundary evidence:idle priority reflux->script speed->test speed->legacy; postcommit 25/25 PASS SKIP0; capability fail-closed target drift INSERT0 -->
+<!-- last_updated: 2026-07-15 cmd_karo_hotfix_infrastructure_context_freshness_20260715 -->
+<!-- source_commit:1cfa0e2f6fdff48013ef92bffc69781771519be5 reason:dead-only-recovery-agent-ssot evidence:dead pane guard; metadata sync; configured ninja validation 2/2 PASS SKIP0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -10,6 +10,8 @@
 > deploy_task --yaml高速化 + recon guard: `docs/research/deploy_task_yaml_speed_recon_guard_spec_20260702.md`
 
 ## コンテキスト管理
+
+死亡agentの局所復旧は`scripts/respawn_dead_agent.sh <ninja> [--dry-run]`を使う。対象paneがdeadでない場合はBLOCKし、復旧後は`@agent_id`・`@context_pct`・active task由来の`@current_task`を同期する。忍者名はハードコードせず`scripts/lib/agent_config.sh`の`get_ninja_names`をSSOTとする。→ `scripts/respawn_dead_agent.sh` / `tests/unit/test_respawn_dead_agent.bats`（commits `76849460f`, `9fe5ec064`, `1cfa0e2f6`）
 
 context freshnessの`source_commit`境界はinfra root fallbackにも適用し、同日のcontext更新より前のsource commitを再ALERTしない。境界後のsource commitだけを検出する。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124）
 
