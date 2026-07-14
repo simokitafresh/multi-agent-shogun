@@ -55,38 +55,27 @@ count_unread_inbox_messages() {
         return 0
     }
 
-    awk '
-        function leading_spaces(line,    i, ch) {
-            for (i = 1; i <= length(line); i++) {
-                ch = substr(line, i, 1)
-                if (ch != " ") return i - 1
-            }
-            return length(line)
-        }
-        BEGIN { c = 0; in_msg = 0; saw_read = 0; item_indent = 0 }
-        /^[[:space:]]*-[[:space:]]/ {
-            if (in_msg && !saw_read) c++
-            in_msg = 1
-            saw_read = 0
-            item_indent = leading_spaces($0)
-            next
-        }
-        in_msg && /^[[:space:]]*read:[[:space:]]*/ {
-            indent = leading_spaces($0)
-            if (indent == item_indent + 2) {
-                line = $0
-                sub(/^[[:space:]]*read:[[:space:]]*/, "", line)
-                gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
-                if (tolower(line) != "true") c++
-                saw_read = 1
-                in_msg = 0
-            }
-        }
-        END {
-            if (in_msg && !saw_read) c++
-            print c
-        }
-    ' "$inbox_file" 2>/dev/null || echo 0
+    local line trimmed indent item_indent=0 count=0 in_msg=0 saw_read=0
+    while IFS= read -r line || [ -n "$line" ]; do
+        trimmed="${line#"${line%%[![:space:]]*}"}"
+        indent=$(( ${#line} - ${#trimmed} ))
+        if [[ "$trimmed" == -[[:space:]]* ]]; then
+            (( in_msg && ! saw_read )) && count=$((count + 1))
+            in_msg=1
+            saw_read=0
+            item_indent=$indent
+            continue
+        fi
+        if (( in_msg )) && [[ "$trimmed" == read:* ]] && (( indent == item_indent + 2 )); then
+            trimmed="${trimmed#read:}"
+            trimmed="${trimmed#"${trimmed%%[![:space:]]*}"}"
+            [ "${trimmed,,}" = "true" ] || count=$((count + 1))
+            saw_read=1
+            in_msg=0
+        fi
+    done < "$inbox_file"
+    (( in_msg && ! saw_read )) && count=$((count + 1))
+    printf '%d\n' "$count"
 }
 
 idle_action_for_alert() {
@@ -107,7 +96,8 @@ idle_action_for_alert() {
 }
 
 write_auto_idle_actions() {
-    mkdir -p "$(dirname "$AUTO_IDLE_ACTIONS_FILE")"
+    # queue/ is a required production directory; avoid dirname+mkdir subprocesses
+    # on every startup while preserving the same output and failure semantics.
     if [ "${#idle_actions[@]}" -eq 0 ]; then
         rm -f "$AUTO_IDLE_ACTIONS_FILE"
         return 0
@@ -152,6 +142,7 @@ _PID_FIND_R=$!
 # sqlite3 CLI不在環境ではCLI呼び出し失敗が2>/dev/nullで握りつぶされ、
 # 「直近6hの殿→軍師対話なし」という誤った正常系メッセージに化けていた(2026-07-07発見)。
 # python3のsqlite3モジュール経由にし、exit statusを別ファイルに残して呼び出し元で判定する。
+if [ -f "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" ] || [ -d "$SCRIPT_DIR/data" ]; then
 { trap - EXIT; set +e; python3 -c "
 import sqlite3, sys
 from pathlib import Path
@@ -175,11 +166,18 @@ except Exception as exc:
     sys.exit(1)
 " "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" > "$_TMP_D/lord_rulings" 2>"$_TMP_D/lord_rulings_err"; echo $? > "$_TMP_D/lord_rulings_exit"; } &
 _PID_LORD_RULINGS=$!
+else
+    : > "$_TMP_D/lord_rulings"
+    : > "$_TMP_D/lord_rulings_err"
+    printf '0\n' > "$_TMP_D/lord_rulings_exit"
+    _PID_LORD_RULINGS=""
+fi
 # §3.3: gate_immunity_depth.sh を並列化(~150ms削減。cmd_3632)
 _DEPTH_SH="$SCRIPT_DIR/scripts/gates/gate_immunity_depth.sh"
 { trap - EXIT; set +e; if [ -f "$_DEPTH_SH" ]; then bash "$_DEPTH_SH" 2>/dev/null | grep -E '種類|FAIL→LGTM回復|RC解決率|RC発行|月別|未回復|^[[:space:]]+[0-9]{4}-[0-9]{2}:' | head -10 > "$_TMP_D/depth" 2>/dev/null; echo $? > "$_TMP_D/depth_exit"; else echo 127 > "$_TMP_D/depth_exit"; fi; } &
 _PID_DEPTH=$!
 # §3.2: lord_conversation解析を並列化(python3起動~650ms削減)
+if [ -f "$SCRIPT_DIR/queue/lord_conversation.jsonl" ]; then
 { trap - EXIT; python3 - "$SCRIPT_DIR/queue/lord_conversation.jsonl" <<'PY_LC' > "$_TMP_D/prev_session" 2>/dev/null
 import sys, json
 log_file = sys.argv[1]
@@ -204,7 +202,12 @@ print(summary)
 PY_LC
 } &
 _PID_PREV_SESSION=$!
+else
+    printf '(前セッション要約なし)\n' > "$_TMP_D/prev_session"
+    _PID_PREV_SESSION=""
+fi
 # §3.2: 掲示板チェックも並列化(python3+yaml.safe_load ~650ms)
+if [ -f "$SCRIPT_DIR/queue/bulletin_board.yaml" ]; then
 { trap - EXIT; python3 - "$SCRIPT_DIR/queue/bulletin_board.yaml" gunshi <<'PY_BLT' > "$_TMP_D/bulletin" 2>/dev/null
 import sys, yaml
 path, agent = sys.argv[1:3]
@@ -237,6 +240,10 @@ for item in pending[:3]:
 PY_BLT
 } &
 _PID_BULLETIN=$!
+else
+    printf '0\n' > "$_TMP_D/bulletin"
+    _PID_BULLETIN=""
+fi
 
 echo "=== 軍師起動チェック $(date '+%H:%M:%S') ==="
 echo ""
