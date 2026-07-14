@@ -72,7 +72,18 @@ review:
   fail_reason: <該当時のみ>
   gate_prediction: <CLEAR|BLOCK>
   gate_prediction_reason: <precheck reason。CLEAR時は all checks passed>
+  cmd_spec_summary:
+    acceptance_criteria_count: <軍師がレビュー時に既読のcmd specから数えた整数>
+    scope: <cmd specのnot_in_scopeまたはcommandから抽出した対象範囲の短い要約>
+    project: <cmd specのproject>
+  karo_attention: <FAIL時のみ。家老が差し戻し/GATE判断に必要な要点。APPROVE時はキー自体を省略>
 ```
+
+`cmd_spec_summary` は軍師がレビューですでに読んだcmd specから自動転記し、家老が
+`queue/shogun_to_karo.yaml` を再Readしなくても完了スタンプとGATE処理へ進める値を固定する。
+`acceptance_criteria_count` は配列長の整数、`scope` は対象ファイル/機能とnot_in_scopeの境界、
+`project` はcmd specの値をそのまま用いる。FAIL時だけ `karo_attention` に差し戻し要点を置き、
+APPROVE時は重複説明を生成しない。
 
 ### Step 1.5: observations必須チェック（review_log追記前BLOCK）
 

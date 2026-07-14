@@ -20,6 +20,14 @@ GATE CLEAR後の5-7ステップを順序保証で1コマンド実行。ステッ
 
 ## 実行フロー（順序厳守）
 
+### SG7バンドルを完了処理の単一情報源にする
+
+軍師LGTM済みのcmdは、軍師から届いたSG7バンドルの `cmd_spec_summary` を起点にする。
+`acceptance_criteria_count`・`scope`・`project` を完了スタンプ/GATE入力として使い、
+忍者の報告YAML全文と `queue/shogun_to_karo.yaml` のcmd specを再Readしてはならない。
+例外はSG7 verdict=FAIL、`karo_attention` あり、またはsummaryの必須3値が欠落/矛盾した場合のみ。
+その場合はfail-closedで停止し、バンドルの要点から必要箇所だけを一次確認する。
+
 
 ### 自動防止ステップ
 - <!-- skill-auto-improve:407f5d0b9905 --> 自動防止: gate=cmd_complete_gate のTop FAIL理由「draft_lessons:1」(count=1, last=2026-05-05T09:25:12+0900)を避ける。確認: 関連教訓ごとに lessons_useful の id/useful/reason が埋まっていることを確認する。修正: UNKNOWN/null/FILL_THISを使わず、各教訓の有用性と理由を記入する。
