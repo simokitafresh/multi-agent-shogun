@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-14 cmd_karo_hotfix_wa_duplicate_identity_data_restore_202607140312 -->
-<!-- source_commit:77610c8ec4056f0c82acef104ff13f8ddd04c547 reason:ga255-exact-boundary evidence:60/60 related unit PASS; root fallback registry enforcement -->
+<!-- last_updated: 2026-07-15 cmd_karo_hotfix_ga255_context_freshness_20260715 -->
+<!-- source_commit:b52d88702ab736fc5445bad0abb4ad61f1aa4476 reason:ga255-reviewed-infra-boundary evidence:SG7 persistence 6/6 PASS; execution_env cmd_save tests PASS; source commits reviewed through b52d88702 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -12,6 +12,10 @@
 ## コンテキスト管理
 
 context freshnessの`source_commit`境界はinfra root fallbackにも適用し、同日のcontext更新より前のsource commitを再ALERTしない。境界後のsource commitだけを検出する。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124）
+
+SG7レビュー情報はformal Gunshi LGTM時に`review_approval.sh`が`review_bundle.py generate`を原子的に実行して永続化する。GATE後に報告がarchiveされても、`dashboard_update.sh --bundle`はfingerprint済みbundleをSSOTとして再検証せず消費する。archive済みdirect/training報告の復旧時だけ`review_bundle.py generate --allow-archived`を使う。→ `scripts/review_approval.sh` / `scripts/review_bundle.py` / `scripts/dashboard_update.sh`（cmd_3932根治、commits `d2c108a9f`, `b52d88702`）
+
+15分超cmdは保存時点で`execution_env` mappingの具体的`long_runtime_reason`と正の`measured_runtime_sec`を必須とし、配備時TEN_MIN_CONTRACTまで不備を持ち越さない。雛形も同じmapping契約を提示する。→ `scripts/cmd_save.sh` / `scripts/cmd_skeleton.sh`（cmd_3933, commit `daee77f03`）
 
 非対話shellの`rg` PATH解決は`$HOME/.local/bin/rg`までフォールバックし、causal backlinks・Vercel phase gate・lesson harvestのsilent false-negativeを防ぐ。また`cmd_save.sh`はnew-file WARN抽出0件を正常系とし、`pipefail`によるsilent exit 1を防ぐ。→ `scripts/causal_backlinks.sh` / `scripts/gates/gate_vercel_phase.sh` / `scripts/lesson_harvest.sh` / `scripts/cmd_save.sh`
 
