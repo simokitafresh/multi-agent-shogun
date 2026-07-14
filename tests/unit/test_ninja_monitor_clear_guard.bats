@@ -13,7 +13,7 @@ PROJECT_ROOT="'"$PROJECT_ROOT"'"
 export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
-TMP_ROOT="$(mktemp -d)"; trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR";
 SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$STATE_DIR"
 cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUB
@@ -49,7 +49,7 @@ log() { echo "$1" >> "$LOG"; }; check_karo_completion_notify_gap
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
-TMP_ROOT="$(mktemp -d)"; trap "rm -rf \"$TMP_ROOT\"" EXIT; SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/test.log"
+TMP_ROOT="$BATS_TEST_TMPDIR"; SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$STATE_DIR"
 cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<STUB
 #!/bin/bash
@@ -77,7 +77,7 @@ grep -q "INBOX_CALLED:karo .*cmd_gap_again.*completion_notify_gap" "$LOG"
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
-T=$(mktemp -d); trap "rm -rf \"$T\"" EXIT
+T=$BATS_TEST_TMPDIR;
 SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
 mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_formal/review_approvals/reports" "$T/scripts" "$STATE_DIR"
 old=$(date -d "-600 seconds" -Iseconds)
@@ -105,7 +105,7 @@ grep -q cmd_formal "$LOG"
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
-T=$(mktemp -d); trap "rm -rf \"$T\"" EXIT
+T=$BATS_TEST_TMPDIR;
 SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
 mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_terminal_fail/review_approvals/reports" "$T/scripts" "$STATE_DIR"
 : > "$LOG"
@@ -131,7 +131,7 @@ test "$(grep -c INBOX_CALLED "$LOG" 2>/dev/null || true)" -eq 0
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
-T=$(mktemp -d); trap "rm -rf \"$T\"" EXIT
+T=$BATS_TEST_TMPDIR;
 SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
 mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_terminal" "$T/scripts" "$STATE_DIR"
 touch "$LOG"
@@ -152,7 +152,7 @@ test "$(grep -c INBOX_CALLED "$LOG" 2>/dev/null || true)" -eq 0
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
-T=$(mktemp -d); trap "rm -rf \"$T\"" EXIT
+T=$BATS_TEST_TMPDIR;
 SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
 mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_reopened" "$T/scripts" "$STATE_DIR"
 clear=$(date -d "-700 seconds" -Iseconds); reopen=$(date -d "-600 seconds" -Iseconds); lgtm=$(date -d "-500 seconds" -Iseconds)
@@ -176,8 +176,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -218,8 +218,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -265,8 +265,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -316,8 +316,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -356,8 +356,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -417,8 +417,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -477,8 +477,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -518,8 +518,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 mkdir -p "$SCRIPT_DIR/queue/tasks"
 
@@ -570,8 +570,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
@@ -630,8 +630,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 mkdir -p "$SCRIPT_DIR/queue/tasks"
 # No task YAML file for kagemaru
@@ -666,8 +666,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts"
@@ -729,8 +729,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox"
@@ -786,8 +786,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts"
@@ -841,8 +841,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/archive/inbox" "$SCRIPT_DIR/scripts"
@@ -914,7 +914,7 @@ PROJECT_ROOT="'"$PROJECT_ROOT"'"
 export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
-SCRIPT_DIR="$(mktemp -d)"; trap "rm -rf \"$SCRIPT_DIR\"" EXIT
+SCRIPT_DIR="$BATS_TEST_TMPDIR";
 LOG="$SCRIPT_DIR/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/archive/inbox" "$SCRIPT_DIR/scripts"
 cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<YAML
@@ -950,8 +950,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts/lib"
@@ -1023,8 +1023,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts/lib"
@@ -1098,8 +1098,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts"
@@ -1160,8 +1160,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
@@ -1220,8 +1220,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
@@ -1279,8 +1279,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 mkdir -p "$SCRIPT_DIR/queue"
 
@@ -1310,8 +1310,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks"
@@ -1369,8 +1369,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks"
@@ -1428,8 +1428,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -1481,8 +1481,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -1574,8 +1574,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -1637,8 +1637,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -1705,8 +1705,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -1774,8 +1774,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -1839,8 +1839,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/scripts"
@@ -1879,8 +1879,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -1958,8 +1958,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -2011,8 +2011,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 mkdir -p "$TMP_ROOT/config"
 
 test "$(get_max_clear_per_cmd "$TMP_ROOT/config/missing.yaml")" = "3"
@@ -2042,8 +2042,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -2105,8 +2105,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -2168,8 +2168,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -2227,8 +2227,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -2277,8 +2277,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -2329,8 +2329,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -2382,8 +2382,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -2435,8 +2435,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT/repo"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/monitor.log"
@@ -2484,8 +2484,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks"
@@ -2550,8 +2550,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 LOG="$TMP_ROOT/test.log"
 mkdir -p "$SCRIPT_DIR/queue/tasks"
@@ -2612,8 +2612,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -2669,8 +2669,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -2723,8 +2723,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -2783,8 +2783,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -2845,8 +2845,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
@@ -2901,8 +2901,8 @@ export NINJA_MONITOR_LIB_ONLY=1
 source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
-TMP_ROOT="$(mktemp -d)"
-trap "rm -rf \"$TMP_ROOT\"" EXIT
+TMP_ROOT="$BATS_TEST_TMPDIR"
+
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
