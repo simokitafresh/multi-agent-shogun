@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-14 cmd_karo_hotfix_cmd3840_v1428_doc_sync_202607141020 -->
-<!-- dm_signal_research_reflux: fingerprint=b515426a3269ae0fb609b56b22e4940044533537459cc5f0f4bb5478e15501f3; mode=non-target; evidence_b64=Y21kXzM4NDDmraPmnKzlhoXjga52MS40LjI3LzI454mI5bGl5q2044O75o6h55So5pa55byP44O7REFH5ZCM5pyf44Gu44G/44CCY29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWTjga7ml6LlrZjntKLlvJXjgavjga9ibHRfMjAyNjA3MTRfMDkyNDMw5pyA57WCY2hlY2twb2ludOOBjOaXouOBq+WPjeaYoOOBleOCjOOAgeacrHRhc2vjgafntKLlvJXmnKzmlofov73liqDjga/kuI3opoHjgII= -->
-<!-- source_commit:2def023a reason:cmd3840_v1428_doc_sync evidence:v1.4.28_nologin_design_indexed -->
+<!-- last_updated: 2026-07-14 cmd_3903_context_sync_202607141136 -->
+<!-- dm_signal_research_reflux: fingerprint=408670e269519a52802955a32f55343df28f82a3fd806a21834ee2b21d7ef089; mode=synced; evidence_b64=bXVsdGktYWdlbnQtc2hvZ3VuIGNvbnRleHQvZG0tc2lnbmFsLW9wcy5tZCDCpzc3IGNvbW1pdCAxYmVmZTFjOGU0ZjM0YzdmOWU5MmE5YTU4MzEwZjVlZDFlYjk3ZTI5 -->
+<!-- source_commit:f2e5756a reason:cmd3903_signal_change_context_sync evidence:reflux_to_ops_section77 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -791,3 +791,4 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 - → [[cmd_3896_pytest_durations_coverage]] pytestの通常実行に`--durations=10`を常設。pytest-cov/`--cov-branch`とmutation runnerはbackend環境・依存宣言・pytest設定・CIの4層で0件、現状の二値手段は既存contract test+negative/fail-closed fixture。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3896_pytest_durations_coverage.md` (2026-07-14)
 - → [[cmd_3880_transport_state_API]] 1 instance×2 worker共有transportと`SEALED→ARMED→LEASED→CONSUMED`のone-use CAS、bundle TTL 24h/nonce 15m/approval bind/明示re-armを実装。実`uvicorn --workers 2`で異なるworker PID跨ぎのconsume成功、12同時requestのHTTP 202=ちょうど1件、敵対fixture 8/8 PASS。詳細=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3880_transport_state_api.md` (2026-07-14)
 - → [[P4_writer_fence_v1.4.28]] previewの`rolcreaterole=false`/SQLSTATE `42501`はpreview環境の不成立だけを示し、本番実行可能性のproxyには使わない。本番能力は業務role無接触の専用prefix probe roleを`CREATE NOLOGIN→ALTER LOGIN→ALTER NOLOGIN→DROP`の4 step・timeout 30秒・retry 0・finally DROP・catalog before/after exactで測る。`dm_signal_user`自己ALTERは禁止、軍師敵対レビュー→将軍承認前のprobe禁止、cmd_3882-3885 freezeを維持。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3840_nondeterminism_redesign.md` v1.4.28、commit=`2def023a32ca133010f9d9d7963a24c8594243ac` (2026-07-14)
+- → [[cmd_3903_signal_change_evidence_classification]] 07-13の800行はrestore-lockedで履歴が物理消失し再分類不能、07-14の161行は23PF×7日exactだがinput snapshot不在のため非決定性と断定せず、961/961を証拠不足とした。運用結論=`context/dm-signal-ops.md` §77、正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_3903_signal_change_root_cause.md` (2026-07-14)
