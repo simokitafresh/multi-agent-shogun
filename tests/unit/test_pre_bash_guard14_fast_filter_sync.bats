@@ -2,7 +2,7 @@
 # test_pre_bash_guard14_fast_filter_sync.bats - Guard14 二段化classifierの同期検証
 # (cmd_karo_hotfix_guard14_db_trust_boundary_202607120854, review_correction 09:42/09:45 karo)
 #
-# scripts/lib/guard14_db_trust_classify.sh の guard14_classify() が Guard14の唯一の入口
+# [[guard14_db_trust_classify.sh]] の guard14_classify() が Guard14の唯一の入口
 # (SSOT)。全Bash commandを無条件でpython3 -S classify.pyへ渡すと実測+29ms/呼び出し
 # (N=20 median, WSL2)で許容不能だったため、内部でguard14_maybe_connection()という
 # 保守的negative filterを先に通す二段構成にした。
@@ -48,7 +48,7 @@ _fast_filter_says_maybe() {
 
 _classify() {
     local cmd="$1"
-    run bash -c 'COMMAND="$1" python3 "$2"' _ "$cmd" "$CLASSIFY_SCRIPT"
+    run env COMMAND="$cmd" python3 "$CLASSIFY_SCRIPT"
 }
 
 _run_hook_cmd_local() {
