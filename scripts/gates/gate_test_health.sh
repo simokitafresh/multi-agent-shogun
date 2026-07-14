@@ -29,6 +29,7 @@ RATCHET_SUITE_ABS_SEC="${TEST_TIMING_RATCHET_SUITE_ABS_SEC:-30}"
 RATCHET_EXCEPTIONS="${TEST_TIMING_RATCHET_EXCEPTIONS:-${REPO_ROOT}/config/test_timing_budget_exceptions.tsv}"
 ASSET_CATALOG="${TEST_ASSET_CATALOG:-${REPO_ROOT}/logs/test_asset_catalog.tsv}"
 PRODUCTION_ROOT="${TEST_PRODUCTION_ROOT:-${REPO_ROOT}}"
+TRAINING_REPORT_DIR="${TEST_SPEED_REPORT_DIR:-${REPO_ROOT}/queue/reports}"
 
 MEASURE=false
 LEDGER_ONLY=false
@@ -128,6 +129,40 @@ elif [ -f "$LEDGER" ] && head -1 "$LEDGER" | grep -q '^run_id'; then
   slow_count=$(awk -F'\t' -v th="$SLOW_THRESHOLD" 'NR>1 && $11==0 && $8+0>th{count++} END{print count+0}' "$LEDGER")
   echo "台帳読込: ${LEDGER}"
   echo "合計: ${total_count}行 / SLOW(>${SLOW_THRESHOLD}s): ${slow_count}行"
+
+  # A completed speed-training report without a ledger row for its changed
+  # bats file proves that a direct execution path bypassed timing publication.
+  coverage_out="$(python3 - "$TRAINING_REPORT_DIR" "$LEDGER" <<'PY'
+import csv, glob, os, sys, yaml
+report_dir, ledger = sys.argv[1:]
+rows = list(csv.DictReader(open(ledger, encoding="utf-8"), delimiter="\t"))
+timed = {os.path.normpath(r.get("test_file", "")) for r in rows}
+timed |= {os.path.normpath(os.path.relpath(p, os.getcwd())) for p in timed if os.path.isabs(p)}
+completed = []
+for path in glob.glob(os.path.join(report_dir, "*training_test_speed*.yaml")):
+    try:
+        data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    if data.get("status") != "completed":
+        continue
+    tests = []
+    for item in data.get("files_modified") or []:
+        value = item.get("path", "") if isinstance(item, dict) else str(item)
+        if value.endswith(".bats"):
+            tests.append(os.path.normpath(value))
+    if tests:
+        completed.append((data.get("parent_cmd", os.path.basename(path)), tests))
+missing = [(cmd, test) for cmd, tests in completed for test in tests if test not in timed]
+print(f"timing path coverage: {len(completed) - len({c for c, _ in missing})}/{len(completed)} completed speed-training cmd(s)")
+for cmd, test in missing:
+    print(f"WARN: completed test-speed cmd has no timing ledger row: {cmd} {test}")
+raise SystemExit(1 if missing else 0)
+PY
+)" || coverage_rc=$?
+  coverage_rc="${coverage_rc:-0}"
+  printf '%s\n' "$coverage_out"
+  (( coverage_rc == 0 )) || alert=1
 
   # D3 budget ratchet.  It only compares complete, non-cache all/unit runs
   # produced by the same repo/suite_root/resource_tags pipeline.  Until five

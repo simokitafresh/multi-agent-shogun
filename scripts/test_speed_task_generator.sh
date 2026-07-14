@@ -111,10 +111,10 @@ task:
   target_path: "$target"
   status: assigned
   purpose: "実測 ${wall}s のunit testを契約不変のまま5分以内へ高速化する"
-  command: "支配項を実測し、共有fixture/cache化を優先する。頭打ちなら被テストscript本体へ切り替える。期待値緩和、SKIP/xfail追加、対象縮小は禁止。"
+  command: "支配項を実測し、共有fixture/cache化を優先する。頭打ちなら被テストscript本体へ切り替える。検証は bash scripts/run_timed_bats.sh $target で実行し台帳追記を強制する。期待値緩和、SKIP/xfail追加、対象縮小は禁止。"
   acceptance_criteria:
     - id: AC1
-      description: "変更前後wall秒と支配項を実測し、FAIL=0・SKIP=0で対象bats全量完走する"
+      description: "変更前後wall秒と支配項を実測し、bash scripts/run_timed_bats.sh $target により台帳へ追記し、FAIL=0・SKIP=0で対象bats全量完走する"
     - id: AC2
       description: "related_lessonsが注入された場合のみ各教訓の有用性を検証し、生成物をdeploy契約とgate_report_format契約に従い報告してscope限定commitする"
   related_lessons: []

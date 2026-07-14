@@ -38,6 +38,37 @@ make_budget_run() {
   grep -q '^r2' "$TEST_TIMING_LEDGER"
 }
 
+@test "direct timed bats wrapper publishes one ledger row" {
+  cat >"$TMPROOT/direct.bats" <<'EOF'
+@test "direct pass" { true; }
+EOF
+  before=0
+  [ ! -f "$TEST_TIMING_LEDGER" ] || before="$(wc -l <"$TEST_TIMING_LEDGER")"
+  run env SHOGUN_REPO_ROOT="$ROOT" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" \
+    bash "$ROOT/scripts/run_timed_bats.sh" "$TMPROOT/direct.bats"
+  [ "$status" -eq 0 ]
+  after="$(wc -l <"$TEST_TIMING_LEDGER")"
+  [ "$after" -eq "$((before + 2))" ]
+  awk -F'\t' -v f="$TMPROOT/direct.bats" 'NR==2{exit !($4=="direct" && $6==f && $9=="pass" && $10==0)}' "$TEST_TIMING_LEDGER"
+}
+
+@test "ledger health warns when completed speed report has no timing row" {
+  make_row fresh unit tests/recorded.bats 1.0 0 "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$TMPROOT/fresh"
+  bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/fresh"
+  mkdir -p "$TMPROOT/reports"
+  cat >"$TMPROOT/reports/ninja_report_cmd_training_test_speed_missing.yaml" <<'EOF'
+status: completed
+parent_cmd: cmd_training_test_speed_missing
+files_modified:
+  - path: tests/missing.bats
+EOF
+  run env TESTS_DIR="$TMPROOT/empty" TEST_TIMING_LEDGER="$TEST_TIMING_LEDGER" \
+    TEST_SPEED_REPORT_DIR="$TMPROOT/reports" bash "$ROOT/scripts/gates/gate_test_health.sh" --ledger-health
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"timing path coverage: 0/1"* ]]
+  [[ "$output" == *"has no timing ledger row"* ]]
+}
+
 @test "gate clears stale warning but keeps ratchet warm-up WARN after one fresh run" {
   make_row old unit tests/a.bats 1.0 0 2020-01-01T00:00:00Z >"$TMPROOT/old"
   bash "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/old"
