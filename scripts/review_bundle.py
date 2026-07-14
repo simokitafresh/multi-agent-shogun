@@ -35,6 +35,12 @@ def summary(command):
     if not project: raise ValueError("cmd spec project is missing")
     return {"acceptance_criteria_count": len(ac), "scope": scope, "project": project}
 
+def dashboard_line(report, cmd_id):
+    result = report.get("result") if isinstance(report.get("result"), dict) else {}
+    text = str(result.get("summary") or report.get("summary") or "").strip()
+    if not text: raise ValueError("report result.summary is missing for dashboard_line")
+    return f"- **{cmd_id}**: 完了。{text}"
+
 def atomic_json(path, value):
     path.parent.mkdir(parents=True, exist_ok=True); lock_path = path.with_suffix(path.suffix + ".lock")
     with lock_path.open("a+", encoding="utf-8") as lock:
@@ -59,6 +65,9 @@ def validate(bundle, expected_cmd=None, expected_verdict=None):
     if not str(spec.get("project") or "").strip(): raise ValueError("cmd_spec_summary.project is missing")
     if verdict == "APPROVE" and "karo_attention" in review: raise ValueError("APPROVE bundle must omit karo_attention")
     if verdict == "FAIL" and not str(review.get("karo_attention") or "").strip(): raise ValueError("FAIL bundle requires karo_attention")
+    line = str(review.get("dashboard_line") or "").strip()
+    if not line: raise ValueError("dashboard_line is missing")
+    if not line.startswith(f"- **{cmd_id}**:"): raise ValueError("dashboard_line contradicts cmd_id")
     return review
 
 def generate(args):
@@ -66,9 +75,10 @@ def generate(args):
     if not report.is_absolute(): report = root / report
     report = report.resolve(); reports = (root / "queue/reports").resolve()
     if report.parent != reports or not report.is_file(): raise ValueError("report must be an existing direct child of queue/reports")
-    if str(load(report).get("parent_cmd") or "") != args.cmd: raise ValueError("report parent_cmd contradicts requested cmd")
+    report_data = load(report)
+    if str(report_data.get("parent_cmd") or "") != args.cmd: raise ValueError("report parent_cmd contradicts requested cmd")
     command, source = find_command(root, args.cmd); verdict = args.verdict.upper()
-    review = {"cmd_id": args.cmd, "verdict": verdict, "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report.relative_to(root)), "report_fingerprint": hashlib.sha256(report.read_bytes()).hexdigest(), "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command)}
+    review = {"cmd_id": args.cmd, "verdict": verdict, "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report.relative_to(root)), "report_fingerprint": hashlib.sha256(report.read_bytes()).hexdigest(), "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
     if verdict == "FAIL":
         if not args.fail_reason: raise ValueError("FAIL requires --fail-reason")
         review["karo_attention"] = args.fail_reason

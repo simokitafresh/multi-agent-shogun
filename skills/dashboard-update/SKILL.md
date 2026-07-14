@@ -91,7 +91,7 @@ if [ -z "$cmd_id" ] || [ "$cmd_id" = "--dry-run" ] || ! [[ "$cmd_id" =~ ^cmd_[A-
   echo "BLOCK: dashboard-update requires cmd_id like cmd_3193 before optional --dry-run" >&2
   exit 1
 fi
-bash scripts/dashboard_update.sh "$cmd_id" --dry-run
+bash scripts/dashboard_update.sh "$cmd_id" --bundle "queue/gates/$cmd_id/sg7_bundle.json" --dry-run
 ```
 
 非dry-runの実更新はcmd完了後/GATE CLEAR後だけに実行する。対象cmdのmatching reportが全て
@@ -104,7 +104,13 @@ completed報告のみを検証対象とする。
 ```bash
 bash scripts/dashboard_update.sh cmd_3193 --dry-run
 ```
-### Step 1: データ収集
+### Step 1: SG7バンドル消費
+
+cmd完了時は `--bundle "queue/gates/$cmd_id/sg7_bundle.json"` を必ず渡す。scriptが
+`review_bundle.py consume` でcmd/verdict/必須値をfail-closed検証し、`review.dashboard_line`
+をKARO_SECTIONの最新更新行に原文のままappend/replaceする。家老はdashboard.mdをRead/Editしない。
+
+### Step 2: データ収集
 
 以下のデータソースを読み、変数を収集する:
 

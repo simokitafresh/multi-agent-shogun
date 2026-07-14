@@ -4,7 +4,7 @@
 # report YAMLからdashboard.mdの「最新更新」セクションを自動更新
 # 家老の手動更新作業を排除する
 #
-# Usage: bash scripts/dashboard_update.sh <cmd_id> [--dry-run]
+# Usage: bash scripts/dashboard_update.sh <cmd_id> [--bundle <sg7_bundle.json>] [--dry-run]
 #   cmd_id (必須): cmd_XXX 形式（英数字・アンダースコア・ハイフン）
 #   --dry-run: 差分のみ表示。dashboard.mdは変更しない
 #
@@ -20,12 +20,18 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 source "$PROJECT_DIR/scripts/lib/agent_config.sh"
 
 CMD_ID=""
+BUNDLE_PATH=""
 DRY_RUN=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --dry-run)
             DRY_RUN=true
             shift
+            ;;
+        --bundle)
+            BUNDLE_PATH="${2:-}"
+            [ -n "$BUNDLE_PATH" ] || { echo "ERROR: --bundle requires a path" >&2; exit 1; }
+            shift 2
             ;;
         *)
             if [[ -z "$CMD_ID" ]]; then
@@ -79,6 +85,23 @@ if [[ -z "$CMD_ID" || ! "$CMD_ID" =~ ^cmd_[a-zA-Z0-9_-]+$ ]]; then
 fi
 
 DASHBOARD="$PROJECT_DIR/dashboard.md"
+
+if [[ -n "$BUNDLE_PATH" ]]; then
+    [[ "$BUNDLE_PATH" = /* ]] || BUNDLE_PATH="$PROJECT_DIR/$BUNDLE_PATH"
+    python3 "$PROJECT_DIR/scripts/review_bundle.py" consume --cmd "$CMD_ID" \
+        --bundle "$BUNDLE_PATH" --expect-verdict APPROVE >/dev/null
+    DASHBOARD_LINE=$(python3 - "$BUNDLE_PATH" "$CMD_ID" <<'PY'
+import json, sys
+review = json.load(open(sys.argv[1], encoding='utf-8'))['review']
+line = str(review.get('dashboard_line') or '').strip()
+if not line.startswith(f'- **{sys.argv[2]}**:'):
+    raise SystemExit('ERROR: bundle dashboard_line contradicts cmd_id')
+print(line)
+PY
+    )
+else
+    DASHBOARD_LINE=""
+fi
 
 # 二重化防止: queue/dashboard.md誤作成検出
 if [[ -f "$PROJECT_DIR/queue/dashboard.md" ]]; then
@@ -147,7 +170,7 @@ refresh_snapshot_before_auto_section() {
 
 # ─── Export for Python ───
 TEMPLATE="$PROJECT_DIR/config/dashboard_template.md"
-export DASHBOARD REPORTS_DIR STK_FILE CMD_ID DRY_RUN TEMPLATE
+export DASHBOARD REPORTS_DIR STK_FILE CMD_ID DRY_RUN TEMPLATE DASHBOARD_LINE
 export ARCHIVE_REPORTS_DIR
 
 # Revalidate reports before dashboard generation.  After GATE CLEAR, lesson
@@ -210,6 +233,7 @@ ARCHIVE_REPORTS_DIR = os.environ['ARCHIVE_REPORTS_DIR']
 STK_FILE = os.environ['STK_FILE']
 CMD_ID = os.environ['CMD_ID']
 DRY_RUN = os.environ['DRY_RUN'] == 'true'
+DASHBOARD_LINE = os.environ.get('DASHBOARD_LINE', '')
 
 def atomic_write_text(path, content):
     tmp_path = f"{path}.tmp.{os.getpid()}"
@@ -524,6 +548,8 @@ if ac_str:
 new_line = ''.join(parts)
 # Sanitize: remove control characters (backspace etc.) that break gh gist edit
 new_line = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', new_line)
+if DASHBOARD_LINE:
+    new_line = DASHBOARD_LINE
 
 if DRY_RUN:
     print(f'DRY-RUN: {new_line}')

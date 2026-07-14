@@ -86,7 +86,11 @@ bash scripts/gates/gate_yaml_status.sh <cmd_id>
 でarchive/dashboard/gate_metrics上のCLEARを確認し、status更新は不要としてStep 6へ進む。
 
 ### Step 6: dashboard更新
-[[dashboard-update]] スキルを実行。
+dashboard.mdはRead/Editせず、Step 0で消費した同じSG7バンドルをscriptに渡す。
+```bash
+bash scripts/dashboard_update.sh "$CMD_ID" --bundle "$BUNDLE_PATH"
+```
+scriptが `review.dashboard_line` をKARO_SECTIONへappend/replaceする。
 
 ### Step 7: ntfy送信
 ```bash

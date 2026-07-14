@@ -608,8 +608,9 @@ EOF
 @test "dashboard_update.sh dry-run logs dashboard-update PASS with dashboard_update gate" {
     TEST_REPO="$TEST_TMPDIR/repo"
     mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \
-             "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
+             "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/queue/gates/cmd_2473" "$TEST_REPO/skills/dashboard-update"
     cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
+    cp "$PROJECT_ROOT/scripts/review_bundle.py" "$TEST_REPO/scripts/review_bundle.py"
     cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
     install_dashboard_update_dependencies "$TEST_REPO"
     chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
@@ -638,13 +639,17 @@ result:
   summary: dashboard update test
 EOF
     complete_dashboard_report_fixture "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml"
+    cat > "$TEST_REPO/queue/gates/cmd_2473/sg7_bundle.json" <<'EOF'
+{"review":{"cmd_id":"cmd_2473","verdict":"APPROVE","cmd_spec_summary":{"acceptance_criteria_count":1,"scope":["fixture"],"project":"infra"},"dashboard_line":"- **cmd_2473**: 完了。bundle line is authoritative"}}
+EOF
     cat > "$TEST_REPO/skills/dashboard-update/SKILL.md" <<'EOF'
 # dashboard-update
 EOF
 
-    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_2473 --dry-run
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_2473 --bundle queue/gates/cmd_2473/sg7_bundle.json --dry-run
     [ "$status" -eq 0 ]
-    [[ "$output" == *"test purpose"* ]]
+    [[ "$output" == *"bundle line is authoritative"* ]]
+    [[ "$output" != *"test purpose"* ]]
 
     run python3 - <<EOF
 import yaml
