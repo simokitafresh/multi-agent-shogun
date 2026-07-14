@@ -1110,4 +1110,5 @@ WHY=台帳鮮度回復+aliases品質向上、WHAT=対象スクリプトのCoDD�
 - [[gunshi_idle_l7_causal_network_learning_20260520]] — 軍師idle: L7因果ネットワーク学習設計(2026-05-20)
 - [[gunshi_idle_bats_speed_bottleneck_20260603]] — 軍師idle: bats速度ボトルネック分析(2026-06-03)
 - [[gunshi_idle_bats_speed_redesign_20260603]] — 軍師idle: bats速度再設計(2026-06-03)
+- [[test_prompt_state_inject_skill_trigger.bats]] — prompt state skill trigger Unit。共通fixtureはsetup_fileで一度だけ生成し、各testで統合preflight相当の準備を反復しない。
 - → [[gunshi_idle_training_rethink_nazenaze_20260516]] 修行再考のなぜなぜ: 修行設計の構造的問題

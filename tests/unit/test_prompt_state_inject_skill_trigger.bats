@@ -33,6 +33,10 @@ description: |
   DO NOT TRIGGER: 設計書の新規生成のみ
 ---
 EOF
+  cat > "$BATS_FILE_TMPDIR/projects.yaml" <<'EOF'
+projects: []
+current_project: dm-signal
+EOF
 }
 
 setup() {
@@ -43,17 +47,13 @@ setup() {
   export PROMPT_STATE_SKILLS_DIR="$BATS_FILE_TMPDIR/skills"
   export PROMPT_STATE_GROWTH_METRICS_FILE="$TEST_TMPDIR/growth.yaml"
   export PROMPT_STATE_LORD_CONVERSATION_FILE="$TEST_TMPDIR/lord_conversation.jsonl"
-  export PROMPT_STATE_PROJECTS_YAML="$TEST_TMPDIR/projects.yaml"
+  export PROMPT_STATE_PROJECTS_YAML="$BATS_FILE_TMPDIR/projects.yaml"
   export PROMPT_STATE_SEMANTIC_SEARCH_CMD="$TEST_TMPDIR/no_semantic_search.sh"
   export PROMPT_STATE_SKILL_RECOMMEND_LOG_FILE="$TEST_TMPDIR/skill_recommend_log.yaml"
   export PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR="$BATS_FILE_TMPDIR/skill_cache"
   export PROMPT_STATE_SKILL_TRIGGER_TIMEOUT=1
   export PROMPT_STATE_SKILL_SEMANTIC_TIMEOUT=1
   unset PROMPT_STATE_CURRENT_PROJECT
-  cat > "$PROMPT_STATE_PROJECTS_YAML" <<'EOF'
-projects: []
-current_project: dm-signal
-EOF
 }
 
 @test "shogun prompt matching skill trigger injects mandatory skill reminder" {
