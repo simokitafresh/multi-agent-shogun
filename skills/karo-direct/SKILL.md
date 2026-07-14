@@ -10,8 +10,8 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-13T14:15:58+09:00 -->
-<!-- Script refs verified 2026-07-13 shogun復帰時: checked_at以降の変更(yaml_field_set wrapped scalar保持fix de3df4b83, deploy_task parent AC contract dbcb20aa2, ninja_monitor journal+flock 93f8c898e/16f16e699, db_capability_launcher scoped credential 84231a01c)をgit logで確認。全て内部強化で呼出し契約・出口文言不変 -->
+<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+<!-- 検分: deploy_task.sh 758585318/030d267bb/680edbe74/f5431606f/6cab52d61/880976003/87ef68b76をgit showで確認。履歴mapping、staged continuation、独立recon、配備前source検証、direct品質projection、no-code report契約を強化。CLI引数は不変だが、10分超taskの自然境界契約が追加されたため本文を現行化。 -->
 
 Script refs verified: 2026-07-13 将軍検分. `deploy_task.sh` checked_at以降の変更(793d03399..1f55aae59: 自然境界mapping検証+reopened parent解決+formal approval連動)をgit logで確認。karo_direct呼出し契約(--yaml経路含む)不変。親AC偽CLEAR hotfix RC継続中のため次回commit時に再検分される。手順書き換え不要。
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
@@ -53,6 +53,21 @@ Script refs verified: 2026-06-11 ab0d45dad. `deploy_task.sh` はzero-useful less
 - `bash scripts/deploy_task.sh --yaml <yaml_file> <ninja_name>`: ci_fix/recon2/hotfix用。YAML内の `parent_cmd:` を `CMD_ID` として自動取得する。
 - `bash scripts/deploy_task.sh --direct <ninja_name> <cmd_id>`: trainingテンプレートをその場で自動生成する場合。
 - `bash scripts/deploy_task.sh --direct --yaml <yaml_file> <ninja_name>`: `queue/training`でauto-generated済みの完全AC YAMLを配備する場合。source YAMLのACを保持する正本経路。
+
+### 10分超taskの配備前契約（必須）
+
+- `estimated_minutes <= 10`: 追加情報不要。
+- `10 < estimated_minutes <= 15`: `split_decision`をexact 3キーで必須記入する。`boundary_ac_ids`は当該taskのAC IDから選ぶ重複なし非空list、`integration_tasks`と`review_round_trips`は0以上の整数で合計1以上。
+- `estimated_minutes > 15`: `execution_env.long_runtime_reason`と正の`execution_env.measured_runtime_sec`を必須記入する。
+- free-formの`split_decision_reason`は代替にならない。契約検証はtask YAML公開・既存task変更より前にfail-closedで行われる。
+
+```yaml
+estimated_minutes: 15
+split_decision:
+  boundary_ac_ids: [AC2]
+  integration_tasks: 0
+  review_round_trips: 1
+```
 
 ## 実行フロー
 

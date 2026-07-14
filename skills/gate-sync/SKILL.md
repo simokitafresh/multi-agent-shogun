@@ -10,8 +10,8 @@ description: |
 quality_metric: "当該スキル同期後の軍師review精度（logs/gunshi_review_log.yamlでgate_prediction==gate_resultとなった割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-13T14:15:58+09:00 -->
-<!-- Script refs verified 2026-07-13 shogun復帰時: checked_at以降の変更(yaml_field_set wrapped scalar保持fix de3df4b83, deploy_task parent AC contract dbcb20aa2, ninja_monitor journal+flock 93f8c898e/16f16e699, db_capability_launcher scoped credential 84231a01c)をgit logで確認。全て内部強化で呼出し契約・出口文言不変 -->
+<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+<!-- 検分: bulletin_write.sh 96e5f606eとyaml_field_set.sh 386cb6bbeをgit showで確認。通知先inbox root固定とlock_path SSOT化によるrace防止の内部強化。`yaml_field_set.sh <file> <block_id> <field> <value>`、`bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]`、更新→accuracy→必要時投稿の順序は不変。 -->
 
 Script refs verified: 2026-07-13 将軍検分. `yaml_field_set.sh` checked_at以降の変更(692b6c8d8)をgit showで確認。post-write検証のyaml.safe_load scalar比較統一+複数行値の安全エスケープ=内部改善。`<file> <block_id> <field> <value>`契約不変。手順書き換え不要。
 <!-- 検分: yaml_field_set.sh 692b6c8d8(cmd_karo_hotfix_yaml_field_set_multiline_verify: post-write検証をawk生テキスト比較からyaml.safe_load後のscalar比較へ統一。複数行/引用符混在値の書込みを1物理行のquoted scalarへ安全にエスケープし、書込み自体は成功しているのに旧検証が偽FAILする問題を解消)。`bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value>`の呼び出し契約・Usageは不変。本SKILL.mdのStep1呼び出し(`<file> "<cmd_id>" gate_result/gate_synced_at "<value>"`)への影響なし -->

@@ -11,8 +11,8 @@ quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_wor
 allowed_projects: [dm-signal]
 ---
 
-<!-- script_refs_checked_at: 2026-07-13T14:15:58+09:00 -->
-<!-- Script refs verified 2026-07-13 shogun復帰時: checked_at以降の変更(yaml_field_set wrapped scalar保持fix de3df4b83, deploy_task parent AC contract dbcb20aa2, ninja_monitor journal+flock 93f8c898e/16f16e699, db_capability_launcher scoped credential 84231a01c)をgit logで確認。全て内部強化で呼出し契約・出口文言不変 -->
+<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+<!-- 検分: db_capability_launcher.py 4286b2fe1/72abd6cceをgit showで確認。credential準備を`--prepare-only --credential-source-file`へ分離（この経路ではnonce/expected-commit/child引数不要、準備後exit 0）。実行経路はnonce必須を維持し、依存toolへ信頼済みHOMEを注入する。readonly_query例の引数・stdin SQL・nonce再利用禁止は不変。 -->
 <!-- 検分: db_capability_launcher.py 4da46f0e2(cmd_karo_hotfix_guard14_db_capability_launcher: 追跡済みlauncher新規追加)+7ba136462(contract RC強化: git index一致判定をHEAD blob一致判定へ変更/credential env keysをregistry required_credential_keysと完全一致検証/child引数をcontractのallowed_child_flagsで検証/`--execution-root`任意フラグ追加)。本SKILL.mdが例示する`--capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce <nonce> --credential-file <path>`はreadonly_query契約(dependency_toolなし・actionsなし・required_credential_keys=[DATABASE_URL]のみ)のため影響を受けない。SQLはstdin渡しでtool_argsは空のまま。呼び出し契約は不変 -->
 
 # /db-check — DM-Signal DB確認スキル
@@ -37,6 +37,14 @@ printf 'SELECT ...' | python3 scripts/db_capability_launcher.py \
 transactional restoreは `--capability transactional_restore --mode transactional_restore
 --confirm TRANSACTIONAL_RESTORE_ROLLBACK_READY --expected-commit "$(git rev-parse HEAD)"` を使う。
 credential fileは0600、SQLはstdin、nonceは再利用不可。launcher外接続は禁止。
+
+credential sourceから0600の実行用fileを準備する場合は、実行と分離して次を使う。この準備専用経路ではchild引数を渡さず、nonceとexpected commitは不要。
+```bash
+python3 scripts/db_capability_launcher.py \
+  --capability <capability> --mode <mode> --confirm <confirmation> \
+  --prepare-only --credential-source-file <source.env> \
+  --credential-file <prepared.env>
+```
 
 ### 方式選択ガイド
 

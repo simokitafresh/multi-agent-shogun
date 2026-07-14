@@ -24,7 +24,9 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-07-13T07:55:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+
+<!-- 検分: gate_lesson_health.sh 5da84a531、insight_write.sh 386cb6bbe/ca7258b4d/008675367をgit showで確認。infra lesson markerの自動修復、lock SSOT化、証跡付きinsight resolutionへの委譲と破損tail復元を追加した内部強化。各scriptの既存引数、成功/失敗exit、/dreamのGather→Consolidate順序は不変。 -->
 
 Script refs verified: 2026-07-13 将軍検分. `memory_db_query.sh` checked_at以降の変更(cc0ad2e6e)をgit showで確認。ext4 cache生成のtemp+os.replace atomic化+FTS integrity-check追加+self-heal race解消=内部堅牢化。クエリ呼出し契約不変。手順書き換え不要。
 <!-- 検分: memory_db_query.sh cc0ad2e6e(cmd_karo_hotfix_memory_cache_malformed_recurrence: create_memory_db_ext4_cacheのcache生成をtemp+os.replaceでatomic化しFTS5 integrity-check検証を追加、search失敗時の再検査ロジックを"再probe"から"常に一度だけ復旧+retry"へ変更、torn-read偽陽性を根治)。`bash scripts/memory_db_query.sh "SELECT ..."`のクエリ引数・SQL実行・出力形式契約は不変 -->
