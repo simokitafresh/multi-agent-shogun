@@ -7,9 +7,27 @@ LEDGER="${TEST_TIMING_LEDGER:-$ROOT/logs/test_timing_ledger.tsv}"
 OUT_DIR="${TEST_SPEED_TASK_DIR:-$ROOT/queue/training}"
 THRESHOLD="${TEST_SPEED_THRESHOLD_SEC:-10}"
 CAMPAIGN_LEDGER="${TEST_SPEED_CAMPAIGN_LEDGER:-$ROOT/logs/test_speed_campaign_ledger.tsv}"
+SPEED_TRAINING_LEDGER="${SPEED_TRAINING_LEDGER:-$ROOT/logs/script_speed_training_ledger.yaml}"
 MIN_ROUNDS=2
 MAX_ROUNDS=3
 CAMPAIGN_BUDGET_SEC=600
+
+# PD-132 pause is shared by the script-speed and test-speed lanes.  Only an
+# explicit running state reopens generation/deployment; missing or malformed
+# state is fail-closed so an incomplete recovery cannot create new work.
+require_speed_training_running() {
+    local status
+    status=$(awk '
+      /^[[:space:]]*global_status:[[:space:]]*/ {
+        value=$0; sub(/^[^:]*:[[:space:]]*/, "", value)
+        gsub(/[[:space:]"]/, "", value); print tolower(value); exit
+      }
+    ' "$SPEED_TRAINING_LEDGER" 2>/dev/null) || status=""
+    if [ "$status" != running ]; then
+        printf 'PAUSED: speed training global_status=%s\n' "${status:-missing}" >&2
+        return 3
+    fi
+}
 
 active_or_completed() {
     local target="$1"
@@ -195,7 +213,14 @@ continue_campaign() {
     printf '%s\n' "$file"
 }
 
-case "${1:-generate}" in
+command_name="${1:-generate}"
+case "$command_name" in
+  generate|deploy|continue|continue-deploy|complete-deploy)
+    require_speed_training_running || exit $?
+    ;;
+esac
+
+case "$command_name" in
   next) next_target ;;
   generate) generate ;;
   deploy)

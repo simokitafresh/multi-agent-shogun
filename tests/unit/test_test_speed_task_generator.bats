@@ -5,6 +5,7 @@ setup() {
   TMP="$BATS_TEST_TMPDIR/repo"
   mkdir -p "$TMP/logs" "$TMP/queue/tasks" "$TMP/queue/reports" "$TMP/queue/archive/reports" "$TMP/queue/training"
   printf 'run_id\trepo\tcommit_sha\tsuite_root\trunner\ttest_file\ttest_id_count\twall_sec\tstatus\tskip_count\n' > "$TMP/logs/test_timing_ledger.tsv"
+  printf 'global_status: running\n' > "$TMP/logs/script_speed_training_ledger.yaml"
 }
 
 @test "generator selects worst unclaimed threshold breach and embeds quality contract" {
@@ -297,4 +298,69 @@ YAML
   [ "$status" -eq 0 ]
   grep -Fq 'status: assigned' "$TMP/queue/tasks/hayate.yaml"
   grep -Fq 'ac_version: replacement' "$TMP/queue/tasks/hayate.yaml"
+}
+
+@test "shared pause blocks generate deploy continue-deploy and complete-deploy without mutation" {
+  mkdir -p "$TMP/scripts"
+  printf 'global_status: paused\n' > "$TMP/logs/script_speed_training_ledger.yaml"
+  printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  cat > "$TMP/scripts/deploy_task.sh" <<'SH'
+#!/usr/bin/env bash
+printf deployed >> "$SHOGUN_REPO_ROOT/deployed"
+SH
+  chmod +x "$TMP/scripts/deploy_task.sh"
+  task="$TMP/queue/training/r1.yaml"
+  report="$TMP/queue/reports/r1.yaml"
+  printf 'task:\n  speed_campaign: {}\n' > "$task"
+  printf 'status: completed\n' > "$report"
+
+  for invocation in \
+    "generate" \
+    "deploy hayate" \
+    "continue-deploy hayate camp 1 t 10 9 x pass cache 1 0" \
+    "complete-deploy hayate $task $report"; do
+    before=$(find "$TMP/queue" -type f -printf '%p:%s\n' | sort | sha256sum)
+    run env SHOGUN_REPO_ROOT="$TMP" bash "$ROOT/scripts/test_speed_task_generator.sh" $invocation
+    [ "$status" -eq 3 ]
+    [[ "$output" == *"PAUSED:"* ]]
+    [ "$(find "$TMP/queue" -type f -printf '%p:%s\n' | sort | sha256sum)" = "$before" ]
+    [ ! -e "$TMP/deployed" ]
+  done
+}
+
+@test "monitor test-speed auto-deploy shares pause contract and running still deploys" {
+  mkdir -p "$TMP/scripts" "$TMP/queue/tasks"
+  cp "$ROOT/scripts/test_speed_task_generator.sh" "$TMP/scripts/"
+  cat > "$TMP/scripts/deploy_task.sh" <<'SH'
+#!/usr/bin/env bash
+printf deployed > "$SHOGUN_REPO_ROOT/deployed"
+SH
+  chmod +x "$TMP/scripts/deploy_task.sh"
+  printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  printf 'task:\n  status: idle\n' > "$TMP/queue/tasks/hayate.yaml"
+  function_body=$(sed -n '/^_handle_test_speed_auto_deploy()/,/^}/p' "$ROOT/scripts/ninja_monitor.sh")
+
+  for state in paused broken; do
+    printf 'global_status: %s\n' "$state" > "$TMP/logs/script_speed_training_ledger.yaml"
+    run env -i PATH="$PATH" HOME="$HOME" SHOGUN_REPO_ROOT="$TMP" bash -c '
+      SCRIPT_DIR=$1
+      yaml_field_get() { sed -n "s/^[[:space:]]*$2:[[:space:]]*//p" "$1" | head -n 1; }
+      log() { :; }
+      eval "$2"
+      _handle_test_speed_auto_deploy hayate
+    ' _ "$TMP" "$function_body"
+    [ "$status" -ne 0 ]
+    [ ! -e "$TMP/deployed" ]
+  done
+
+  printf 'global_status: running\n' > "$TMP/logs/script_speed_training_ledger.yaml"
+  run env -i PATH="$PATH" HOME="$HOME" SHOGUN_REPO_ROOT="$TMP" bash -c '
+    SCRIPT_DIR=$1
+    yaml_field_get() { sed -n "s/^[[:space:]]*$2:[[:space:]]*//p" "$1" | head -n 1; }
+    log() { :; }
+    eval "$2"
+    _handle_test_speed_auto_deploy hayate
+  ' _ "$TMP" "$function_body"
+  [ "$status" -eq 0 ]
+  [ -f "$TMP/deployed" ]
 }
