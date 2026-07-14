@@ -540,3 +540,28 @@ assert backup["row_count"] == 161 and backup["portfolio_count"] == 23
 PY
   [ "$status" -eq 0 ]
 }
+
+@test "project capability without dependency receives its registered project root" {
+  fixture="$BATS_TEST_TMPDIR/project-root-repo"
+  project="$fixture/project"
+  mkdir -p "$fixture/scripts/lib" "$fixture/config" "$project/backend"
+  cp "$LAUNCHER" "$fixture/scripts/db_capability_launcher.py"
+  cat > "$fixture/scripts/lib/project_root_probe.py" <<'PY'
+import os
+print(os.environ["DB_CAPABILITY_PROJECT_ROOT"])
+PY
+  cat > "$fixture/config/db_capabilities.json" <<'JSON'
+{"version":1,"capabilities":{"probe":{"tool":"scripts/lib/project_root_probe.py","project":"dm-signal","modes":["probe"],"confirm":"PROBE","required_credential_keys":["DATABASE_URL"],"requires_expected_commit":false}}}
+JSON
+  printf 'projects:\n  - id: dm-signal\n    path: %s\n' "$project" > "$fixture/config/projects.yaml"
+  git -C "$fixture" init -q
+  git -C "$fixture" config user.email fixture@example.invalid
+  git -C "$fixture" config user.name fixture
+  git -C "$fixture" add scripts config
+  git -C "$fixture" commit -qm fixture
+  run python3 "$fixture/scripts/db_capability_launcher.py" \
+    --capability probe --mode probe --confirm PROBE --nonce "$BATS_TEST_NAME" \
+    --credential-file "$CREDS"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$project" ]
+}

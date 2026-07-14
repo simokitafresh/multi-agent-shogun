@@ -229,7 +229,7 @@ def main() -> int:
     env["DB_CAPABILITY"] = args.capability
     env["DB_CAPABILITY_MODE"] = args.mode
     env["DB_CAPABILITY_EXPECTED_COMMIT"] = args.expected_commit or ""
-    env["DB_CAPABILITY_PROJECT_ROOT"] = str(target_root)
+    env["DB_CAPABILITY_PROJECT_ROOT"] = str(project_root or target_root)
     if dependency:
         env["DB_CAPABILITY_DEPENDENCY_TOOL"] = str(dependency_path)
     return subprocess.run([sys.executable, str(tool), *child_args], env=env).returncode
