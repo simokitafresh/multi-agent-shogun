@@ -4,11 +4,11 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export PRE_HOOK_SOURCE="$PROJECT_ROOT/.claude/hooks/pre-write-edit-combined.sh"
-    export PRE_HOOK="/tmp/pre-write-edit-combined-bats-${BATS_SUITE_TEST_NUMBER:-$$}-$$.sh"
+    export PRE_HOOK="$BATS_FILE_TMPDIR/pre-write-edit-combined.sh"
     cp "$PRE_HOOK_SOURCE" "$PRE_HOOK"
     chmod +x "$PRE_HOOK"
     export PRE_WRITE_SCRIPT_DIR_OVERRIDE="$PROJECT_ROOT"
-    export SHARED_FIXTURE_ROOT="/tmp/write-edit-combined-fixture-${BATS_SUITE_TEST_NUMBER:-$$}-$$"
+    export SHARED_FIXTURE_ROOT="$BATS_FILE_TMPDIR/write-edit-combined-fixture"
     mkdir -p "$SHARED_FIXTURE_ROOT"
     printf '%s\n' 'scripts/gates/gate_report_format.sh' > "$SHARED_FIXTURE_ROOT/q11-reference.txt"
     : > "$SHARED_FIXTURE_ROOT/causal-index.tsv"
@@ -29,15 +29,9 @@ setup_file() {
     G16_AGENT_NAMES_OVERRIDE="$(source "$PROJECT_ROOT/scripts/lib/agent_config.sh" && get_ninja_names)"
 }
 
-teardown_file() {
-    rm -f "$PRE_HOOK"
-    rm -f "$SHARED_FIXTURE_ROOT/q11-reference.txt" "$SHARED_FIXTURE_ROOT/cmd_save_gate_catalog.md" "$SHARED_FIXTURE_ROOT/causal-index.tsv"
-    rmdir "$SHARED_FIXTURE_ROOT"
-}
-
 setup() {
     export TMP_DIR TMP_REPORT TMP_STK TMP_AUTOLEARN TMP_CMD_QUALITY TEST_AGENT_ID
-    TMP_DIR="$(mktemp -d)"
+    TMP_DIR="$BATS_TEST_TMPDIR/write-edit-combined"
     mkdir -p "$TMP_DIR/queue/reports"
     TMP_REPORT="$TMP_DIR/queue/reports/hanzo_report_cmd_100.yaml"
     TMP_STK="$TMP_DIR/queue/shogun_to_karo.yaml"
@@ -53,7 +47,6 @@ setup() {
 
 teardown() {
     rm -f "/tmp/claude_read_log_${TEST_AGENT_ID:-unknown}.txt"
-    rm -rf "$TMP_DIR"
 }
 
 _run_pre() {
