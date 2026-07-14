@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-14 cmd_3903 -->
-<!-- source_commit:f2e5756a reason:cmd3903_signal_change_context_sync evidence:section77_961_classified -->
+<!-- last_updated: 2026-07-14 cmd_karo_hotfix_ga251_context_freshness -->
+<!-- source_commit:cb3e7e7e76b3c962700608559c506d5bf5d350c2 reason:ga251_keeper_orchestration_context_sync evidence:section79_cmd3902_classified -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1241,3 +1241,9 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 ## §77 SIGNAL CHANGE 07-13/07-14偵察 (cmd_3903, 2026-07-14)
 
 - 07-13の800件はfull run 213（01:26:17〜01:37:44 UTC）と一致するが、restore-locked後の現DBでは行別履歴0件。07-14はFoF cron時間帯の23PF×7日=161件exact（01:48:01〜01:49:32 UTC）だがinput snapshot 0/161。価格旧版が無いため非決定性と断定せず、全961件を証跡不足に分類した。詳細・PF別内訳・SQL → `/mnt/c/Python_app/DM-signal/docs/research/cmd_3903_signal_change_root_cause.md`
+
+## §79 P4 keeper同一connection run orchestration checkpoint (cmd_3902, 2026-07-14)
+
+- `cb3e7e7e76b3c962700608559c506d5bf5d350c2` はstrict consume APIをkeeper orchestratorへ接続し、未設定時はHTTP 503でfail-closed。keeperはlock readyからbusiness write、compare/restore、terminalまで同一contextで生存し、run tokenを`LEASED→CONSUMED→TERMINAL`で管理する。実装checkpointはfocused transport 9/9、uvicorn E2E 1/1、ruff PASS。ただし最終全量は31%で中断されSKIP 1を解消していないため、cmd_3902はverdict FAIL/canceledの安全checkpointであり本番適用許可ではない。
+- 一次根拠: `/mnt/c/Python_app/DM-signal/backend/app/api/p4_bundle.py` L49-58/L111-115、`backend/app/jobs/bundle_transport.py` L235-239/L262-307、`queue/reports/hanzo_report_cmd_3902.yaml`。
+- 因果リンク: [[cmd_3902_commit後terminal_pause]] -> [[完了gate内own_commit鮮度check未到達]] -> [[GA-251常設context鮮度ALERT]] -> [[ops索引とsource_commit境界を同時更新]]
