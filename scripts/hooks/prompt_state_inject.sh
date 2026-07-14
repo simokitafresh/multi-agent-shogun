@@ -193,12 +193,13 @@ prompt_text="$(_prompt_state_json_get ".prompt" "")" || {
 # preflight record. Failure remains visible to PreToolUse; prompt handling is
 # not swallowed into a false success state.
 prompt_state_preflight_pid=""
-if [[ -x "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" ]]; then
+prompt_state_preflight_cmd="${PROMPT_STATE_PREFLIGHT_CMD:-$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh}"
+if [[ -x "$prompt_state_preflight_cmd" ]]; then
   # The preflight performs three independent read-only searches and is the
   # dominant UserPromptSubmit cost.  Start it while this hook builds the
   # remaining read-only context, then join before emitting output so every
   # prompt still invalidates and receives fresh evidence before Codex acts.
-  bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" issue <<<"$payload" >/dev/null 2>&1 &
+  bash "$prompt_state_preflight_cmd" issue <<<"$payload" >/dev/null 2>&1 &
   prompt_state_preflight_pid=$!
 fi
 

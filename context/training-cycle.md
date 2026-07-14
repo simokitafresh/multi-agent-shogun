@@ -1117,4 +1117,5 @@ WHY=台帳鮮度回復+aliases品質向上、WHAT=対象スクリプトのCoDD�
 - [[test_lesson_write.bats]] — lesson write Unitは共有script/templateを`setup_file`で一度だけ生成し、各test固有のproject pathだけをbuiltinで構築する。heredoc一時ファイルを43件分作らず、実装契約は [[lesson_write.sh]] を参照。
 - [[context-freshness-check-test-speed]] — context freshness Unitはmaster fixture共有と小数秒timeout budgetで、48件の独立性・2試行・fail-closed契約を維持したまま高速化する。実装契約は [[context_freshness_check.sh]] を参照。
 - [[stop-check-inbox-test-speed]] — stop hook Unitは整数mtime境界を明示設定し、キャッシュ/Q6 flagの新旧契約を維持したまま固定2秒sleepを除去する。実装契約は [[test_stop_check_inbox.bats]] と [[stop_check_inbox.sh]] を参照。
+- [[prompt-state-recovery-marker-test-speed]] — recovery marker Unitは実三層preflightを成功no-op dependencyへ束縛し、markerの5契約を独立検証する。実装契約は [[test_prompt_state_recovery_marker.bats]] と [[prompt_state_inject.sh]] を参照。
 - → [[gunshi_idle_training_rethink_nazenaze_20260516]] 修行再考のなぜなぜ: 修行設計の構造的問題

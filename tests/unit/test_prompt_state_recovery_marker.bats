@@ -14,6 +14,8 @@ setup() {
   export PROMPT_STATE_SKILL_RECOMMEND_LOG_FILE="$TEST_TMPDIR/skill_recommend_log.yaml"
   export PROMPT_STATE_LORD_RULING_CACHE_PATH="$TEST_TMPDIR/no_lord_cache.db"
   export PROMPT_STATE_MEMORY_DB_PATH="$TEST_TMPDIR/no_memory.db"
+  # Recovery-marker tests do not exercise three-layer search; keep that dependency deterministic.
+  export PROMPT_STATE_PREFLIGHT_CMD="/bin/true"
   export PROMPT_STATE_AGENT_ID="shogun"
   export SHOGUN_ROOT="$PROJECT_ROOT"
   export SHOGUN_RECOVERY_MARKER="$PROMPT_STATE_RECOVERY_MARKER"
