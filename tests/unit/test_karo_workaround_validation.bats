@@ -5,6 +5,16 @@
 
 SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../scripts" && pwd)/karo_workaround_log.sh"
 
+setup_file() {
+    # Cache immutable production inputs once per file.  Copying them from the
+    # /mnt/c worktree in every test is disproportionately expensive on WSL2.
+    export SHARED_INPUTS="$BATS_FILE_TMPDIR/karo-workaround-inputs"
+    mkdir -p "$SHARED_INPUTS/lib"
+    cp "$SCRIPT" "$SHARED_INPUTS/karo_workaround_log.sh"
+    cp "$(dirname "$SCRIPT")/lib/known_ninjas.sh" "$SHARED_INPUTS/lib/known_ninjas.sh"
+    cp "$(dirname "$SCRIPT")/memory_db_live_insert.py" "$SHARED_INPUTS/memory_db_live_insert.py"
+}
+
 setup() {
     export TMPDIR="${BATS_TMPDIR:-/tmp}"
     TEST_DIR=$(mktemp -d "$TMPDIR/wa_test.XXXXXX")
@@ -58,9 +68,9 @@ SH
 
     # Copy under the fixture repo so the script's own SCRIPT_DIR/REPO_ROOT discovery
     # resolves to TEST_DIR without per-test sed rewrites on /mnt/c.
-    cp "$SCRIPT" "$TEST_DIR/scripts/karo_workaround_log.sh"
-    cp "$(dirname "$SCRIPT")/lib/known_ninjas.sh" "$TEST_DIR/scripts/lib/known_ninjas.sh"
-    cp "$(dirname "$SCRIPT")/memory_db_live_insert.py" "$TEST_DIR/scripts/memory_db_live_insert.py"
+    cp "$SHARED_INPUTS/karo_workaround_log.sh" "$TEST_DIR/scripts/karo_workaround_log.sh"
+    cp "$SHARED_INPUTS/lib/known_ninjas.sh" "$TEST_DIR/scripts/lib/known_ninjas.sh"
+    cp "$SHARED_INPUTS/memory_db_live_insert.py" "$TEST_DIR/scripts/memory_db_live_insert.py"
     chmod +x "$TEST_DIR/scripts/karo_workaround_log.sh"
 
     TEST_SCRIPT="$TEST_DIR/scripts/karo_workaround_log.sh"
