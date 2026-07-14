@@ -37,8 +37,6 @@ EOF
         "$TEST_TMPDIR/queue/tasks" \
         "$TEST_TMPDIR/queue/archive/cmds"
 
-    # SCRIPT_DIR for verify_ac_consistency (ac_verify tests use TEST_TMPDIR)
-    export SCRIPT_DIR="$TEST_TMPDIR"
     export LOG="/dev/null"
 
     # log stub
@@ -245,7 +243,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
+    SCRIPT_DIR="$TEST_TMPDIR" run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 
     [[ "$output" == *"[AC_VERIFY] WARNING: AC count mismatch"* ]]
@@ -283,7 +281,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
+    SCRIPT_DIR="$TEST_TMPDIR" run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 
     [[ "$output" == *"[AC_VERIFY] WARNING: AC count mismatch"* ]]
@@ -322,7 +320,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
+    SCRIPT_DIR="$TEST_TMPDIR" run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 
     [[ "$output" == *"[AC_VERIFY] WARNING: AC id mismatch"* ]]
@@ -357,7 +355,7 @@ task:
     description: second criterion
 EOF
 
-    run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
+    SCRIPT_DIR="$TEST_TMPDIR" run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 
     if [[ "$output" == *"[AC_VERIFY] WARNING"* ]]; then
@@ -400,7 +398,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
+    SCRIPT_DIR="$TEST_TMPDIR" run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 
     [[ "$output" == *"[AC_VERIFY] OK"* ]]
@@ -433,7 +431,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
+    SCRIPT_DIR="$TEST_TMPDIR" run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 
     [[ "$output" == *"[AC_VERIFY] SKIP"* ]]
@@ -453,7 +451,7 @@ task:
     description: first
 EOF
 
-    run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
+    SCRIPT_DIR="$TEST_TMPDIR" run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 
     if [[ "$output" == *"[AC_VERIFY] WARNING"* ]]; then
@@ -495,7 +493,7 @@ task:
   _ac_worker_id: sasuke
 EOF
 
-    run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
+    SCRIPT_DIR="$TEST_TMPDIR" run verify_ac_consistency "$TEST_TMPDIR/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 
     [[ "$output" == *"[AC_VERIFY] OK"* ]]
@@ -524,7 +522,7 @@ EOF
     run read_task_field stop_for
     [ "$status" -eq 0 ]
     [ "${lines[0]}" = "list" ]
-    [ "${lines[1]}" = "" ]
+    [ "${lines[1]-}" = "" ]
 
     run read_task_field never_stop_for
     [ "$status" -eq 0 ]
