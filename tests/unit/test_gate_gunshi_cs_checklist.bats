@@ -1369,11 +1369,11 @@ YAML
 - cmd_id: cmd_resolved_commit
   review_type: report
   observations:
-    - "commit_hash欠落→再配備して修正済み"
+    - "commit_hash欠落→再配備。"
   timestamp: "2026-07-14T14:00:00"
 - cmd_id: cmd_resolved_format
   review_type: draft
-  findings_summary: "format不備は訂正済み"
+  findings_summary: "format不備は再配備完了"
   observations:
     - "通常のレビュー完了"
   timestamp: "2026-07-14T14:01:00"
@@ -1381,6 +1381,28 @@ YAML
 
     run bash "$TEST_GATE"
     [[ "$output" != *"WARN(AC1-D0未実施)"* ]]
+}
+
+@test "unresolved redeploy command or requirement without d0_applied still warns" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_unresolved_redeploy_command
+  review_type: draft
+  observations:
+    - "commit_hash欠落、再配備せよ"
+  timestamp: "2026-07-14T14:02:00"
+- cmd_id: cmd_unresolved_redeploy_required
+  review_type: draft
+  findings_summary: "format不備のため再配備が必要"
+  observations:
+    - "通常のレビュー継続中"
+  timestamp: "2026-07-14T14:03:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"WARN(AC1-D0未実施): 2件"* ]]
+    [[ "$output" == *"cmd_unresolved_redeploy_command"* ]]
+    [[ "$output" == *"cmd_unresolved_redeploy_required"* ]]
 }
 
 @test "altruism_check not_needed without reason blocks with exit 2 (AC2 cmd_3374)" {
