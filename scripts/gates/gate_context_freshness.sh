@@ -76,6 +76,20 @@ record_stale_template_candidate() {
     STALE_TEMPLATE_ROWS+=("${sort_days}"$'\t'"${rel_path}"$'\t'"${days_ago}"$'\t'"${last_updated}")
 }
 
+source_commit_action() {
+    local rel_path="$1"
+    local alert_line="$2"
+    local latest_hash=""
+    if [[ "$alert_line" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]]; then
+        latest_hash="${BASH_REMATCH[1]}"
+    fi
+    if [[ -n "$latest_hash" ]]; then
+        printf '%s' "一次差分を照合後、bash scripts/context_source_commit_set.sh ${rel_path} ${latest_hash} '<reason>' '<evidence>' で検出済み境界を記録せよ。last_updatedだけの更新は禁止。"
+    else
+        printf '%s' "${rel_path} をソースPJの最新commitと照合し、必要なら内容とsource_commitをscripts/context_source_commit_set.shで更新せよ。last_updatedだけの更新は禁止。"
+    fi
+}
+
 emit_update_cmd_templates() {
     [[ "${#STALE_TEMPLATE_ROWS[@]}" -gt 0 ]] || return 0
 
@@ -300,7 +314,7 @@ for rel_path in "${target_rel_paths[@]}"; do
     if [[ -n "${source_alerts[$rel_path]:-}" ]]; then
         emit_actionable \
             "ALERT: ${basename_file} (source commits since last_updated=${last_updated})" \
-            "${basename_file} をソースPJの最新commitと照合し、必要なら内容とlast_updatedを更新せよ。"
+            "$(source_commit_action "$rel_path" "${source_alerts[$rel_path]}")"
         HAS_ALERT=1
         ALERT_LIST+=("${basename_file}(source更新)")
     elif [[ -n "${check_failed_paths[$rel_path]:-}" ]]; then

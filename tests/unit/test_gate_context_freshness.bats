@@ -166,6 +166,21 @@ SH
     [[ "$output" == *"--- 更新cmdテンプレート TOP3 ---"* ]]
 }
 
+@test "GA-252 ALERT action injects detected source boundary helper command" {
+    cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
+#!/usr/bin/env bash
+echo 'ALERT: context/source-changed.md source commits 2件 since last_updated=2026-05-10。更新要否を確認せよ latest: deadbee fix: source changed'
+SH
+    chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
+    write_context_file context/source-changed.md 2026-05-10
+
+    run_gate
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"bash scripts/context_source_commit_set.sh context/source-changed.md deadbee"* ]]
+    [[ "$output" == *"last_updatedだけの更新は禁止"* ]]
+}
+
 @test "cache invalidates when context markdown content changes" {
     cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
 #!/usr/bin/env bash
