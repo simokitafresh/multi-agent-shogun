@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_infrastructure_context_freshness_20260715 -->
-<!-- source_commit:b05faaaa5ad328437f57b6c7f963ab449a4d9f22 reason:preflight-concurrent-writer-root-fix-reviewed evidence:writer load 10/10 timeout to 10/10 success; related Bats 64/64; live gate overlap preflight exit0 in 2.33s -->
+<!-- source_commit:a1ea08648f17c60fc600f9c07ac69d844dfe5f23 reason:infrastructure-source-reviewed-through-test-select-batching evidence:preflight concurrent fix verified 64/64 and live; test_select batching verified 5/5 at 10.26s below 10.742s best -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -26,6 +26,8 @@ SG7レビュー情報はformal Gunshi LGTM時に`review_approval.sh`が`review_b
 配備の排他はcmd別lockに加え、同じ忍者のtask/report mutationからdurable task_start通知までを忍者別flockで直列化する。待機後は`assigned|acknowledged|in_progress`の別cmdを再読して上書きBLOCKするため、異なるcmdの同時配備でもtask YAMLを混線させない。破損taskはsame-cmd再利用を禁止してstale reset+atomic `--yaml` publishへ必ず戻す。→ `scripts/deploy_task.sh` / `tests/unit/test_deploy_task_lifecycle.bats`（GA-257/258、commits `e6847f0ab`, `448eba94b`、全量76/76 PASS・SKIP0）
 
 Bats直接実行は`run_timed_bats.sh`へ集約し、既存writerの14列台帳へ必ず追記する。速度修行task生成もwrapperを強制し、`gate_test_health.sh`が完了reportと台帳の対象集合差を検知する。夜戦欠測7件をbackfillし、台帳543→551・coverage 7/7・対象24/24 PASS。→ `scripts/run_timed_bats.sh` / `scripts/test_speed_task_generator.sh` / `scripts/gates/gate_test_health.sh`（cmd_3942、commit `7e11d37c5`）
+
+同一CLIが複数入力を受けるBatsでは、互換caseをbatch化してassertionを維持したまま重複初期化だけを減らす。`test_test_select.bats`は`test_select.sh`起動10→5、wall 18.248→8.444秒（53.7%短縮）、5/5 PASS・FAIL0・SKIP0。→ `tests/unit/test_test_select.bats` / `scripts/test_select.sh`（commit `a1ea08648`）
 
 速度修行の連続攻略は`min_rounds=2`・`max_rounds=3`・campaign budget 10分とし、次roundのbaselineは直前値でなく`best_so_far`を継承する。悪化runは採用せず、round別task/commit/reportとledgerの`round_index/best_wall/last_wall/approach/stop_reason`で強くてニューゲームする。→ `docs/research/ledger-driven-campaign-lane-pattern_20260714.md` §6.5（3者合意、v2.1 commit `3f9931302`、実装cmd_3952）
 
