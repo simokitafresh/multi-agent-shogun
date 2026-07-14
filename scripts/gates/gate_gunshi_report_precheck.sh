@@ -1085,19 +1085,36 @@ _sg_pre32_check "${FILES_MODIFIED:-}" "$PROJECT_DIR" "$REPO_ROOT"
 echo ""
 echo "■ SG-PRE34: integration contract検出(LG055)"
 _pre34_has_integration=false
-if [ -n "${CMD_SPEC:-}" ]; then
-    if echo "$CMD_SPEC" | grep -qiE '実装|経路|連携|統合|integrate|consume|generate.*notify|焼き込む|配備経路'; then
+_pre34_search="${CMD_SPEC:-}"
+# CMD_SPECがなければ報告YAML自体からACとcommandを検索
+if [ -z "$_pre34_search" ] && [ -f "$REPORT_PATH" ]; then
+    _pre34_search=$(grep -E 'description:|command:|summary:|acceptance_criteria' "$REPORT_PATH" 2>/dev/null | head -20 || true)
+fi
+if [ -n "$_pre34_search" ]; then
+    if echo "$_pre34_search" | grep -qiE '実装|経路|連携|統合|integrate|consume|generate.*notify|焼き込む|配備経路|round.*task|multi.?round'; then
         _pre34_has_integration=true
     fi
 fi
 if [ "$_pre34_has_integration" = true ]; then
-    # files_modifiedにbats/test以外の実装ファイルがあるか確認
-    _pre34_impl_count=$(echo "${FILES_MODIFIED:-}" | tr ',' '\n' | grep -vcE '\.bats$|^tests/|^docs/' || true)
-    _pre34_test_count=$(echo "${FILES_MODIFIED:-}" | tr ',' '\n' | grep -cE '\.bats$|^tests/' || true)
-    if [ "${_pre34_impl_count:-0}" -gt 0 ]; then
-        echo "  PASS: 実装ファイル${_pre34_impl_count}本+テスト${_pre34_test_count}本(integration対象あり)"
+    # integration ACには実走証跡(operational_simulation with実行command/expected/actual/result)が必須
+    _pre34_has_opsim=false
+    if [ -f "$REPORT_PATH" ]; then
+        if grep -qE 'operational_simulation:|実走証跡:|liveproof:' "$REPORT_PATH" 2>/dev/null; then
+            # 実走証跡に実行command+result/actual等の具体的証跡があるか
+            if grep -A10 -E 'operational_simulation:|実走証跡:|liveproof:' "$REPORT_PATH" 2>/dev/null | grep -qiE 'command.*:|actual.*:|result.*PASS|expected.*:|entrypoint' 2>/dev/null; then
+                _pre34_has_opsim=true
+            fi
+        fi
+    fi
+    if [ "$_pre34_has_opsim" = true ]; then
+        echo "  PASS: integration AC+operational_simulation実走証跡あり"
     else
-        echo "  ★ INFO(LG055): ACにintegrationキーワードあるがfiles_modifiedにテストのみ。実行経路assertを実走確認せよ"
+        echo "  ★★★ ERROR(LG055): integration ACだがoperational_simulation実走証跡なし"
+        echo "  → reportにoperational_simulation(実行command/expected/actual/result PASS)を記録せよ"
+        echo "  → production entrypointを実走し、文書grepでなく挙動を確認せよ"
+        ERRORS=$((ERRORS + 1))
+        GATE_PREDICTION="BLOCK"
+        GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG055:integration_opsim_missing"
     fi
 else
     echo "  PASS: integrationキーワードなし(対象外)"
