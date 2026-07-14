@@ -43,13 +43,7 @@ prompt_from_payload() {
 issue() {
     local prompt_arg="${1:-}"
     local payload prompt prompt_hash issued_at tmp_file rg_cmd
-    # Invalidate before parsing or searching: a malformed/failed new prompt
-    # must not inherit the previous prompt's proof.
     mkdir -p "$EVIDENCE_DIR"
-    (
-        flock -x 9
-        rm -f "$evidence_file" "$nonce_file"
-    ) 9>"$publish_lock"
     if [[ -n "$prompt_arg" ]]; then
         prompt="$prompt_arg"
     else
@@ -60,6 +54,17 @@ issue() {
     prompt_hash="$(printf '%s\n%s\n%s' "$prompt" "$issued_at" "${RANDOM:-0}" | sha256sum | awk '{print $1}')"
     local nonce
     nonce="$(printf '%s\n%s\n%s' "$prompt_hash" "$issued_at" "${RANDOM:-0}" | sha256sum | awk '{print $1}')"
+    local nonce_tmp
+    nonce_tmp="$(mktemp "$EVIDENCE_DIR/.nonce.XXXXXX")"
+    printf '%s\n' "$nonce" >"$nonce_tmp"
+    # Publish this generation marker before searching.  A newer issue replaces
+    # it immediately, so an older slow search can never resurrect its proof.
+    # Evidence stays absent until the current generation completes successfully.
+    (
+        flock -x 9
+        rm -f "$evidence_file"
+        mv -f "$nonce_tmp" "$nonce_file"
+    ) 9>"$publish_lock"
 
     # rg --fixed-strings cannot handle a pattern with an embedded newline: it
     # exits 2 (a real error, not "no match"), which fails the whole evidence
@@ -117,24 +122,28 @@ issue() {
     local status=success
     [[ "$memory_rc" == 0 && "$semantic_rc" == 0 && "$obsidian_rc" == 0 ]] || status=failed
     tmp_file="$(mktemp "$EVIDENCE_DIR/.evidence.XXXXXX")"
-    local nonce_tmp
-    nonce_tmp="$(mktemp "$EVIDENCE_DIR/.nonce.XXXXXX")"
     {
         printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","status":"%s"}\n' \
             "$(json_escape "$agent_id")" "$(json_escape "$pane_id")" "$prompt_hash" "$nonce" "$issued_at" \
             "$memory_rc" "$semantic_rc" "$obsidian_rc" "$status"
     } >"$tmp_file"
-    printf '%s\n' "$nonce" >"$nonce_tmp"
-    # Evidence and its current nonce form one generation.  A fixed
-    # ${nonce_file}.tmp let concurrent issue calls delete each other's temp;
-    # without serialization, their two final renames could also publish a
-    # mismatched pair.  Unique temps plus this short publish-only lock preserve
-    # generation consistency without serializing the three searches.
+    # Publish only if no newer issue superseded this generation.  The shared
+    # lock also makes the evidence/current pair atomic to verify readers.
+    local publish_rc=0
     (
         flock -x 9
-        mv -f "$tmp_file" "$evidence_file"
-        mv -f "$nonce_tmp" "$nonce_file"
-    ) 9>"$publish_lock"
+        if [[ "$(cat "$nonce_file" 2>/dev/null || true)" == "$nonce" ]]; then
+            mv -f "$tmp_file" "$evidence_file"
+        else
+            rm -f "$tmp_file"
+            exit 75
+        fi
+    ) 9>"$publish_lock" || publish_rc=$?
+    if [[ "$publish_rc" -eq 75 ]]; then
+        printf 'three_layer_preflight: %s generation superseded before publish\n' "$agent_id" >&2
+        return 75
+    fi
+    [[ "$publish_rc" -eq 0 ]] || return "$publish_rc"
     [[ "$status" == success ]] || {
         printf 'three_layer_preflight: %s evidence failed (memory=%s semantic=%s obsidian=%s)\n' "$agent_id" "$memory_rc" "$semantic_rc" "$obsidian_rc" >&2
         return 1

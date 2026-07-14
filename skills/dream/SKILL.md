@@ -1,6 +1,6 @@
 ---
-<!-- script_refs_checked_at: 2026-07-15T05:58:00+09:00 -->
-<!-- 2026-07-15検分: memory_db_query.shはstale cache時のdelta検索高速化。dreamの検索CLI・出力上限・並び順契約は不変。 -->
+<!-- script_refs_checked_at: 2026-07-15T08:42:00+09:00 -->
+<!-- 2026-07-15検分: semantic_search.sh b05faaaa5はcache helper optional化(standalone契約保全)+NONDEFAULT env注入。検索CLI引数・出力形式・/dream手順は不変。 -->
 name: dream
 argument-hint: ""
 description: |
