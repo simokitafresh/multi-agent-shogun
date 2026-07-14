@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_infrastructure_context_freshness_20260715 -->
-<!-- source_commit:0dd200030e2038efde5c0d34b5cb2851eb48c591 reason:daemon-inventory-v1.2-and-speed-fixture-reviewed evidence:watchdog P0/P1 split indexed; insight fixture has no platform-contract change; daemon Bats 4/4 and insight Bats 29/29x3 FAIL0 SKIP0 -->
+<!-- source_commit:3f9931302f25b00684123bb781e5b832f36cd26c reason:daemon-inventory-v1.3-and-multiround-spec-indexed evidence:daemon R2 final indexed; speed commits 18/18 and campaign v2.1 consensus indexed; FAIL0 SKIP0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -13,7 +13,7 @@
 
 死亡agentの局所復旧は`scripts/respawn_dead_agent.sh <ninja> [--dry-run]`を使う。対象paneがdeadでない場合はBLOCKし、復旧後は`@agent_id`・`@context_pct`・active task由来の`@current_task`を同期する。忍者名はハードコードせず`scripts/lib/agent_config.sh`の`get_ninja_names`をSSOTとする。→ `scripts/respawn_dead_agent.sh` / `tests/unit/test_respawn_dead_agent.bats`（commits `76849460f`, `9fe5ec064`, `1cfa0e2f6`）
 
-daemon watchdogは個別health checkに加え、`inbox_watcher.sh>=9`・`ninja_monitor.sh`・`ntfy_listener.sh`・`usage_statusbar_loop.sh`・`gist_sync.sh`のprocess inventoryを1 snapshotで監査し、不足classごとにWARNする。消滅PIDの`/proc/<pid>/cmdline` raceは無音で扱い、inbox unread countは読取異常時も単一整数へ正規化する。P0は本番実走error 0で完了。次段は副作用のある`restart_watchers --status`修正(P1a-1)と全daemon共通maintenance lock(P1a-2)を分離し、既存watchdogの600秒/3回throttleと重複するbackoffは追加しない。→ `scripts/daemon_watchdog.sh` / `tests/unit/test_daemon_watchdog.bats` / `docs/research/daemon-inventory-asis-tobe-5w1h_20260715.md`（cmd_3951、commit `4bf8858c0`、inventory v1.2 `f04428f85`）
+daemon watchdogは個別health checkに加え、`inbox_watcher.sh>=9`・`ninja_monitor.sh`・`ntfy_listener.sh`・`usage_statusbar_loop.sh`・`gist_sync.sh`のprocess inventoryを1 snapshotで監査し、不足classごとにWARNする。消滅PIDの`/proc/<pid>/cmdline` raceは無音で扱い、inbox unread countは読取異常時も単一整数へ正規化する。P0は本番実走error 0で完了。次段は副作用のある`restart_watchers --status`修正(P1a-1)と全daemon共通maintenance lock(P1a-2)を分離し、既存watchdogの600秒/3回throttleと重複するbackoffは追加しない。→ `scripts/daemon_watchdog.sh` / `tests/unit/test_daemon_watchdog.bats` / `docs/research/daemon-inventory-asis-tobe-5w1h_20260715.md`（cmd_3951、commit `4bf8858c0`、R2最終inventory v1.3 `2afc5d9a1`）
 
 context freshnessの`source_commit`境界はinfra root fallbackにも適用し、同日のcontext更新より前のsource commitを再ALERTしない。境界後のsource commitだけを検出する。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124）
 
@@ -22,6 +22,8 @@ SG7レビュー情報はformal Gunshi LGTM時に`review_approval.sh`が`review_b
 配備の排他はcmd別lockに加え、同じ忍者のtask/report mutationからdurable task_start通知までを忍者別flockで直列化する。待機後は`assigned|acknowledged|in_progress`の別cmdを再読して上書きBLOCKするため、異なるcmdの同時配備でもtask YAMLを混線させない。破損taskはsame-cmd再利用を禁止してstale reset+atomic `--yaml` publishへ必ず戻す。→ `scripts/deploy_task.sh` / `tests/unit/test_deploy_task_lifecycle.bats`（GA-257/258、commits `e6847f0ab`, `448eba94b`、全量76/76 PASS・SKIP0）
 
 Bats直接実行は`run_timed_bats.sh`へ集約し、既存writerの14列台帳へ必ず追記する。速度修行task生成もwrapperを強制し、`gate_test_health.sh`が完了reportと台帳の対象集合差を検知する。夜戦欠測7件をbackfillし、台帳543→551・coverage 7/7・対象24/24 PASS。→ `scripts/run_timed_bats.sh` / `scripts/test_speed_task_generator.sh` / `scripts/gates/gate_test_health.sh`（cmd_3942、commit `7e11d37c5`）
+
+速度修行の連続攻略は`min_rounds=2`・`max_rounds=3`・campaign budget 10分とし、次roundのbaselineは直前値でなく`best_so_far`を継承する。悪化runは採用せず、round別task/commit/reportとledgerの`round_index/best_wall/last_wall/approach/stop_reason`で強くてニューゲームする。→ `docs/research/ledger-driven-campaign-lane-pattern_20260714.md` §6.5（3者合意、v2.1 commit `3f9931302`、実装cmd_3952）
 
 dashboardの`## 🚨要対応`は任意セクションであり、欠落時は同期・postcondition・template検証の全3段でno-op成功にする。存在時の件数照合と破損入力WARNは維持する。→ `scripts/dashboard_update.sh` / `tests/unit/test_skill_feedback_loop.bats`（commit `f2f3f2c48`、関連130/130 PASS・SKIP0）
 
