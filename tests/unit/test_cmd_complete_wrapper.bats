@@ -85,3 +85,41 @@ SH
     [ "$(wc -l < "$log_a")" -eq 8 ]
     [ "$(wc -l < "$log_b")" -eq 8 ]
 }
+
+@test "archived command not-found continues only with all three CLEAR evidences" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/archived.log"
+    mkdir -p "$FIXTURE/queue/archive/cmds" "$FIXTURE/logs"
+    : > "$FIXTURE/queue/archive/cmds/cmd_fixture_completed.yaml"
+    printf 'cmd_fixture complete\n' > "$FIXTURE/dashboard.md"
+    printf 'cmd_fixture CLEAR\n' > "$FIXTURE/logs/gate_metrics.log"
+    cat > "$FIXTURE/scripts/gates/gate_yaml_status.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'gate_yaml_status.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+echo 'ERROR: cmd_fixture not found in shogun_to_karo.yaml' >&2
+exit 1
+SH
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"archived CLEAR evidence"* ]]
+    grep -q 'dashboard_update.sh' "$CMD_COMPLETE_TEST_LOG"
+}
+
+@test "archived command not-found stops when any CLEAR evidence is missing" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/missing-evidence.log"
+    mkdir -p "$FIXTURE/queue/archive/cmds" "$FIXTURE/logs"
+    : > "$FIXTURE/queue/archive/cmds/cmd_fixture_completed.yaml"
+    printf 'cmd_fixture complete\n' > "$FIXTURE/dashboard.md"
+    : > "$FIXTURE/logs/gate_metrics.log"
+    cat > "$FIXTURE/scripts/gates/gate_yaml_status.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'gate_yaml_status.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+echo 'ERROR: cmd_fixture not found in shogun_to_karo.yaml' >&2
+exit 1
+SH
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"evidence incomplete"* ]]
+    ! grep -q 'dashboard_update.sh' "$CMD_COMPLETE_TEST_LOG"
+}
