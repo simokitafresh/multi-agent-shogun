@@ -61,7 +61,7 @@ worker_id: test_ninja
 task_id: cmd_test
 parent_cmd: cmd_test
 timestamp: "2026-01-01T00:00:00"
-status: done
+status: completed
 ac_version_read: abc12345
 result:
   summary: "テスト完了"
