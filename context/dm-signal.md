@@ -1,6 +1,6 @@
 # DM-signal コンテキスト（索引）
 <!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
-<!-- last_synced_lesson: L900 -->
+<!-- last_synced_lesson: L901 -->
 <!-- source_commit:5e9ea355d0ad6d6856b0e03f08993f2ca1c744fa (DM-Signal terminology/disambiguation/db-operations-runbook対象pathspecの最終同期commit。GA-238で導入。当該pathspecは2026-07-13時点で未反映commitなし=同型穴の解消のみ、新規本文反映は不要) -->
 
 > 読者: エージェント。推測するな。タスクに応じて必要なファイルを読め。
@@ -334,6 +334,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - （L851-L876は振り分け済 2026-07-12 /lesson-sort → ops§12(L851:matched_weight=sum比較), ops§9(L870:run不変値subprocess再取得禁止), ops§32(L857:env override差替え), research教訓索引(L874:オラクル機能的意味先検証)。L852はPI候補節に既存。L876はL1049と根重複+heredoc断定未検証のため非活性化を家老へ依頼済み。新規PIなし）
 - （L887-L899は振り分け済 2026-07-14 /lesson-sort → research教訓索引(L887:非階層container敵対fixture), ops§76(L888:全量前preflight=既存本文とマージ), ops§32(L891:pytest node id実在収集固定/L899:subprocess ready timeout無条件継続禁止), ops§80(L897:bounded restore launcher貫通試験)。新規PIなし(全て手順・テスト教訓)）
 - L900: subprocess moduleはpackage名でなくapp-dirで探索根を固定する（cmd_karo_ci_red_dm_p4_uvicorn_import_29328352201_202607142033）
+- L901: 永続helperはchecked-in source同期後に実行する（cmd_karo_ci_fix_ga256_cmd3907_fof_golden_20260715）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 

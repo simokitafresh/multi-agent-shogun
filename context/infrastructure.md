@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-15 cmd_karo_hotfix_ga257_deploy_per_ninja_lock_20260715 -->
-<!-- source_commit:e6847f0ab5275e1acf3b8226c989cf8e6600479e reason:ga257-per-ninja-deploy-lock evidence:same-ninja collision BLOCK 2/2; lifecycle 75/75 PASS SKIP0 -->
+<!-- last_updated: 2026-07-15 cmd_karo_hotfix_ga258_malformed_task_repair_20260715 -->
+<!-- source_commit:448eba94b4c73d53a554201bc11784a53bedfe10 reason:ga257-ga258-deploy-repair evidence:same-ninja collision BLOCK 2/2; malformed same-cmd repair 1/1; lifecycle 76/76 PASS SKIP0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -15,7 +15,7 @@ context freshnessの`source_commit`境界はinfra root fallbackにも適用し�
 
 SG7レビュー情報はformal Gunshi LGTM時に`review_approval.sh`が`review_bundle.py generate`を原子的に実行して永続化する。GATE後に報告がarchiveされても、`dashboard_update.sh --bundle`はfingerprint済みbundleをSSOTとして再検証せず消費する。archive済みdirect/training報告の復旧時だけ`review_bundle.py generate --allow-archived`を使う。→ `scripts/review_approval.sh` / `scripts/review_bundle.py` / `scripts/dashboard_update.sh`（cmd_3932根治、commits `d2c108a9f`, `b52d88702`）
 
-配備の排他はcmd別lockに加え、同じ忍者のtask/report mutationからdurable task_start通知までを忍者別flockで直列化する。待機後は`assigned|acknowledged|in_progress`の別cmdを再読して上書きBLOCKするため、異なるcmdの同時配備でもtask YAMLを混線させない。→ `scripts/deploy_task.sh` / `tests/unit/test_deploy_task_lifecycle.bats`（GA-257、commit `e6847f0ab`、全量75/75 PASS・SKIP0）
+配備の排他はcmd別lockに加え、同じ忍者のtask/report mutationからdurable task_start通知までを忍者別flockで直列化する。待機後は`assigned|acknowledged|in_progress`の別cmdを再読して上書きBLOCKするため、異なるcmdの同時配備でもtask YAMLを混線させない。破損taskはsame-cmd再利用を禁止してstale reset+atomic `--yaml` publishへ必ず戻す。→ `scripts/deploy_task.sh` / `tests/unit/test_deploy_task_lifecycle.bats`（GA-257/258、commits `e6847f0ab`, `448eba94b`、全量76/76 PASS・SKIP0）
 
 15分超cmdは保存時点で`execution_env` mappingの具体的`long_runtime_reason`と正の`measured_runtime_sec`を必須とし、配備時TEN_MIN_CONTRACTまで不備を持ち越さない。雛形も同じmapping契約を提示する。→ `scripts/cmd_save.sh` / `scripts/cmd_skeleton.sh`（cmd_3933, commit `daee77f03`）
 
@@ -758,7 +758,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1121 -->
+<!-- last_synced_lesson: L1122 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1586,6 +1586,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1119: Unitの主契約外preflightは既定維持の依存注入seamで隔離する（cmd_training_test_speed_test_prompt_state_recovery_marker__20260714235151）
 - L1120: 共有fixtureは保存層とcache identityを別々に検証する（cmd_training_test_speed_test_three_layer_preflight__20260714235557）
 - L1121: 副作用contractを検証しないfixtureでは既存disable入口を使う（cmd_training_test_speed_test_skill_feedback_loop__20260714234932）
+- L1122: source済み関数の参照先fixtureを途中削除しない（cmd_training_test_speed_test_deploy_task_template_generation__20260714234714）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
