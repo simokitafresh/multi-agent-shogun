@@ -1120,4 +1120,5 @@ WHY=台帳鮮度回復+aliases品質向上、WHAT=対象スクリプトのCoDD�
 - [[stop-check-inbox-test-speed]] — stop hook Unitは整数mtime境界を明示設定し、キャッシュ/Q6 flagの新旧契約を維持したまま固定2秒sleepを除去する。実装契約は [[test_stop_check_inbox.bats]] と [[stop_check_inbox.sh]] を参照。
 - [[prompt-state-recovery-marker-test-speed]] — recovery marker Unitは実三層preflightを成功no-op dependencyへ束縛し、markerの5契約を独立検証する。実装契約は [[test_prompt_state_recovery_marker.bats]] と [[prompt_state_inject.sh]] を参照。
 - [[gate-small-consolidated-test-speed]] — consolidated gate Unitはcontent function単位のflock+atomic TAP cacheでnested Bats起動を27回からembedded source数へ集約する。実装契約は [[test_gate_small_consolidated.bats]] を参照。
+- [[test-speed-task-generator-test-speed]] — test speed task generator Unitは非idle 6状態の子bash起動を1回へ集約し、状態集合・hash不変・idle成功契約を維持する。実装契約は [[test_test_speed_task_generator.bats]] / [[test_speed_task_generator.sh]] / [[run_timed_bats.sh]] を参照。
 - → [[gunshi_idle_training_rethink_nazenaze_20260516]] 修行再考のなぜなぜ: 修行設計の構造的問題
