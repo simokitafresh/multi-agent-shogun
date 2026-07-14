@@ -740,7 +740,7 @@ with open(dashboard_path, encoding='utf-8', errors='replace') as f:
 # Split on 要対応 heading (emoji/prefix/suffix tolerant)
 heading_match = re.search(r'^(## [^\n]*要対応[^\n]*\n)', content, re.MULTILINE)
 if not heading_match:
-    print('WARN: 要対応セクションが見つかりません', file=sys.stderr)
+    # 要対応は任意セクション。見出しがないdashboardは更新せずno-op成功とする。
     sys.exit(0)
 
 before = content[:heading_match.start()]
@@ -810,7 +810,7 @@ try:
         content = f.read()
     heading_match = re.search(r'^## [^\n]*要対応[^\n]*\n', content, re.MULTILINE)
     if not heading_match:
-        print('[dashboard] WARN: postcondition: 要対応セクション未発見', file=sys.stderr)
+        # 任意セクション不在時は整合性検証自体が非適用。
         sys.exit(0)
     rest = content[heading_match.end():]
     next_heading = re.search(r'^## ', rest, re.MULTILINE)
@@ -926,7 +926,10 @@ validate_dashboard() {
         local _i=0
         for pattern in "${check_patterns[@]}"; do
             if [[ "${_lnums[$_i]:-0}" -eq 0 ]]; then
-                echo "[WARN] Missing section: $pattern" >&2
+                # 要対応は任意セクション。欠落のみは検証WARN対象外。
+                if [[ "$pattern" != *"要対応"* ]]; then
+                    echo "[WARN] Missing section: $pattern" >&2
+                fi
             fi
             (( _i++ )) || true
         done

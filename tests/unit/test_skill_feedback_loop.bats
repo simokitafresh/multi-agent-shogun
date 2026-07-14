@@ -1101,6 +1101,71 @@ EOF
     ! grep -q 'cmd_4001' "$TEST_REPO/dashboard.md"
 }
 
+@test "dashboard_update.sh treats missing optional 要対応 as no-op and validates it when present" {
+    TEST_REPO="$TEST_TMPDIR/repo"
+    mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/scripts/lib" "$TEST_REPO/config" \
+             "$TEST_REPO/queue/reports" "$TEST_REPO/queue/archive/reports" "$TEST_REPO/skills/dashboard-update"
+    cp "$DASHBOARD_UPDATE_SCRIPT" "$TEST_REPO/scripts/dashboard_update.sh"
+    cp "$SKILL_LOG_SCRIPT" "$TEST_REPO/scripts/skill_execution_log.sh"
+    install_dashboard_update_dependencies "$TEST_REPO"
+    chmod +x "$TEST_REPO/scripts/dashboard_update.sh" "$TEST_REPO/scripts/skill_execution_log.sh"
+    printf '#!/usr/bin/env bash\n' > "$TEST_REPO/scripts/lib/agent_config.sh"
+    printf 'cli:\n  agents: {}\n' > "$TEST_REPO/config/settings.yaml"
+    cat > "$TEST_REPO/config/dashboard_template.md" <<'EOF'
+## 最新更新
+## 要対応
+EOF
+    cat > "$TEST_REPO/dashboard.md" <<'EOF'
+# Dashboard
+## 最新更新
+EOF
+    printf 'decisions:\n  - id: PD-TEST\n    status: pending\n    summary: test\n' > "$TEST_REPO/queue/pending_decisions.yaml"
+    printf 'commands: []\n' > "$TEST_REPO/queue/shogun_to_karo.yaml"
+    cat > "$TEST_REPO/queue/reports/hayate_report_cmd_4010.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_4010
+status: completed
+result:
+  summary: optional section fixture
+EOF
+    complete_dashboard_report_fixture "$TEST_REPO/queue/reports/hayate_report_cmd_4010.yaml"
+    printf '# dashboard-update\n' > "$TEST_REPO/skills/dashboard-update/SKILL.md"
+
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKILL_EXECUTION_LOG_DISABLE=1 SKIP_AUTO_SECTION=1 \
+        bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4010
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"UPDATED: cmd_4010 line appended"* ]]
+    [[ "$output" != *"要対応セクションが見つかりません"* ]]
+    [[ "$output" != *"postcondition: 要対応セクション未発見"* ]]
+    [[ "$output" != *"Missing section: ## 要対応"* ]]
+
+    printf '\n## 要対応\n古い値\n' >> "$TEST_REPO/dashboard.md"
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKILL_EXECUTION_LOG_DISABLE=1 SKIP_AUTO_SECTION=1 \
+        bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4010
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"UPDATED: 要対応セクション同期完了 (1件)"* ]]
+    [[ "$output" == *"OK: PD⇔要対応一致 (1件)"* ]]
+
+    printf 'decisions: [\n' > "$TEST_REPO/queue/pending_decisions.yaml"
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" SKILL_EXECUTION_LOG_DISABLE=1 SKIP_AUTO_SECTION=1 \
+        bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_4010
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"pending_decisions.yaml読み込み失敗"* ]]
+}
+
+@test "dashboard_update.sh keeps 要対応 postcondition when optional section exists" {
+    run python3 - <<EOF
+from pathlib import Path
+text = Path("$DASHBOARD_UPDATE_SCRIPT").read_text()
+assert "WARN: PD⇔要対応不一致" in text
+assert "OK: PD⇔要対応一致" in text
+assert "if expected != actual:" in text
+print("OK")
+EOF
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 @test "skill_auto_improve outputs per-skill Top3 FAIL reasons" {
     mkdir -p "$TEST_TMPDIR/skills/report-write" "$TEST_TMPDIR/skills/cmd-complete"
     cat > "$TEST_SKILL_LOG" <<'EOF'
