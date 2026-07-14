@@ -362,7 +362,11 @@ def run_git_lines(args, timeout_sec=3):
 def new_file_candidates():
     env_list = os.environ.get("SEMANTIC_NEW_FILE_LIST", "").strip()
     if env_list:
-        return [line.strip() for line in re.split(r"[\n,]", env_list) if line.strip()]
+        return [
+            path
+            for line in re.split(r"[\n,]", env_list)
+            if (path := line.strip()) and not is_ignored_new_file_candidate(path)
+        ]
 
     # TTLキャッシュ: git ls-files --othersはWSL2 NTFSで~3s。30s以内は再実行しない
     _cache_ttl = 30
@@ -401,7 +405,8 @@ def new_file_candidates():
 def is_ignored_new_file_candidate(path):
     name = Path(path).name
     return (
-        path.startswith("tests/unit/_tmp_")
+        path.startswith(".karo_worktrees/")
+        or path.startswith("tests/unit/_tmp_")
         or "/_tmp_" in path
         or name.startswith("_tmp_")
     )
@@ -868,7 +873,8 @@ except OSError:
 def is_ignored_new_file_candidate(path):
     name = Path(path).name
     return (
-        path.startswith("tests/unit/_tmp_")
+        path.startswith(".karo_worktrees/")
+        or path.startswith("tests/unit/_tmp_")
         or "/_tmp_" in path
         or name.startswith("_tmp_")
     )

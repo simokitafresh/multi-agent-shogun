@@ -931,6 +931,8 @@ PY
     mkdir -p "$TEST_TMPDIR/docs/research" "$TEST_TMPDIR/tests/unit"
     touch "$TEST_TMPDIR/docs/research/handled.md"
     touch "$TEST_TMPDIR/tests/unit/_tmp_generated.bats"
+    mkdir -p "$TEST_TMPDIR/.karo_worktrees/probe"
+    touch "$TEST_TMPDIR/.karo_worktrees/probe/transient.sh"
     touch "$TEST_TMPDIR/docs/research/unhandled.md"
     cat >> "$SEMANTIC_INDEX_PATH" <<'EOF'
 | file | `docs/research/handled.md` |
@@ -955,11 +957,17 @@ insights:
   priority: "low"
   source: "semantic_map_generate:new_file"
   status: pending
+- id: INS-WORKTREE
+  ts: "2026-06-24T00:00:03+09:00"
+  insight: "semantic_map_generate新規ファイル候補: `.karo_worktrees/probe/transient.sh` は semantic index未登録。既存概念へのfile追加または新概念定義を検討せよ"
+  priority: "low"
+  source: "semantic_map_generate:new_file"
+  status: pending
 EOF
 
-    run env INSIGHTS_FILE="$SEMANTIC_INSIGHTS_PATH" SEMANTIC_INSIGHT_AUTO_RESOLVE=1 SEMANTIC_NEW_FILE_LIST=$'docs/research/handled.md\ntests/unit/_tmp_generated.bats\ndocs/research/unhandled.md' bash "$PROJECT_ROOT/scripts/semantic_map_generate.sh"
+    run env INSIGHTS_FILE="$SEMANTIC_INSIGHTS_PATH" SEMANTIC_INSIGHT_AUTO_RESOLVE=1 SEMANTIC_NEW_FILE_LIST=$'docs/research/handled.md\ntests/unit/_tmp_generated.bats\n.karo_worktrees/probe/transient.sh\ndocs/research/unhandled.md' bash "$PROJECT_ROOT/scripts/semantic_map_generate.sh"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"semantic insights auto-resolved: 2"* ]]
+    [[ "$output" == *"semantic insights auto-resolved: 3"* ]]
 
     python3 - <<PY
 import yaml
@@ -967,6 +975,7 @@ data = yaml.safe_load(open("$SEMANTIC_INSIGHTS_PATH"))
 rows = {e["id"]: e for e in data["insights"]}
 assert rows["INS-HANDLED"]["status"] == "resolved"
 assert rows["INS-TMP"]["status"] == "resolved"
+assert rows["INS-WORKTREE"]["status"] == "resolved"
 assert rows["INS-UNHANDLED"]["status"] == "pending"
 PY
 }

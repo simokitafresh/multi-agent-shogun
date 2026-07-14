@@ -126,3 +126,22 @@ EOF
         [ "$(grep -F -c 'docs/research/already_registered.md' queue/insights.yaml)" -eq 0 ]
     fi
 }
+
+@test "semantic_map_generate ignores karo worktree assets but retains ordinary new code" {
+    write_fixture
+    mkdir -p .karo_worktrees/probe scripts queue
+    touch .karo_worktrees/probe/transient.sh scripts/ordinary_candidate.sh
+    cat > scripts/insight_stub.sh <<'EOF'
+#!/bin/bash
+printf '%s\n' "$1" >> queue/insights.log
+EOF
+    chmod +x scripts/insight_stub.sh
+
+    run env SEMANTIC_INSIGHT_WRITE="$TEST_TMPDIR/scripts/insight_stub.sh" \
+        SEMANTIC_NEW_FILE_LIST=$'.karo_worktrees/probe/transient.sh\nscripts/ordinary_candidate.sh' \
+        bash scripts/semantic_map_generate.sh
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"new file semantic insights queued: 1"* ]]
+    [ "$(grep -F -c '.karo_worktrees/probe/transient.sh' queue/insights.log || true)" -eq 0 ]
+    [ "$(grep -F -c 'scripts/ordinary_candidate.sh' queue/insights.log)" -eq 1 ]
+}
