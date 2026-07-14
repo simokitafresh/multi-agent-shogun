@@ -372,6 +372,7 @@ L1-L3パターン「レベルアップ→回帰→環境改善→100%」に従�
 - **3AC構造**: AC1=改善点3つ特定, AC2=最高インパクト1件実装+commit, AC3=lesson_candidate found=true+完全報告
 - L4の新要素: 3AC同時+FILL_THIS罠3箇所+BC7項目+実装あり
 - ターゲット: archive_completed.sh/cmd_delegate.sh/daemon_watchdog.sh/context_freshness_check.sh/gate_cycle_health.sh/gate_ninja_workaround_rate.sh
+- gate_cycle_health速度回帰の正本: [[test_gate_cycle_health.bats]]（cache invalidationは実時間待機でなくmtime境界をfixtureで明示する）
 
 ### L4 Round 1結果
 

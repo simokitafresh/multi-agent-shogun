@@ -390,8 +390,10 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"GATE未処理報告: 1件"* ]]
 
-    sleep 1
     printf "2026-03-30T05:00:00\tCLEAR\tcmd_711\tninja1\n" >> "$TEST_TMPDIR/logs/gate_metrics.log"
+    # Force an mtime change without a wall-clock sleep. The cache signature is
+    # second-granularity, so make the boundary explicit and deterministic.
+    touch -d '@2147483646' "$TEST_TMPDIR/logs/gate_metrics.log"
 
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
