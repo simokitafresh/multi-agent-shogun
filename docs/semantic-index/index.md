@@ -4793,7 +4793,7 @@ codd:
 |------|---|
 | id | task_modifier_injection |
 | label | タスク修飾子注入 |
-| aliases | inject_task_modifiers, タスク修飾子, engineering_preferences注入, reports_to_read注入, context注入, credential注入, report_template注入, execution_controls注入, DB変更検出, task context injection, バックアップ, DB変更前バックアップ指示, まずは現在のものをバックアップしよう, 汎用AC modifier汚染, yaml分割taskのassigned acs契約, AC modifierスコープ限定, split ac modifier scope |
+| aliases | inject_task_modifiers, タスク修飾子, engineering_preferences注入, reports_to_read注入, context注入, credential注入, report_template注入, execution_controls注入, DB変更検出, task context injection, バックアップ, DB変更前バックアップ指示, まずは現在のものをバックアップしよう, 汎用AC modifier汚染, yaml分割taskのassigned acs契約, AC modifierスコープ限定, split ac modifier scope, 文書専用task, documentation-only target, 文書記述は操作許可ではない, production gate誤注入 |
 | skills | なし |
 | related_concepts | agent_formation_management, semantic_dictionary_design, scope_integrity_lifecycle |
 
@@ -4814,6 +4814,7 @@ codd:
 | causal | `cmd_karo_hotfix_scout_review_commit_contract_202607111620` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_3868_review_and_continuation_rootfix_202607131728` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_direct_quality_contract_projection_202607140423` files_modified: [[task_modifier_injection]] |
+| causal_chain | `[[文書内のDB操作記述]] -> [[操作task誤判定]] -> [[文書専用target構造除外]]` (`cmd_karo_d0_202607141025`) |
 
 ## training_cycle_quality — 忍者修行サイクル品質
 
