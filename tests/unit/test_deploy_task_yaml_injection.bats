@@ -379,6 +379,27 @@ assert ctx == ['2026-06-20 | 殿: "オントロジー" and can\'t stop'], ctx
 PY
 }
 
+@test "workaround lesson description preserves regex backslashes as printable text" {
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1]).read_text(encoding="utf-8")
+start = source.index("def sync_description(description, related):")
+end = source.index("\ntry:\n", start)
+namespace = {"re": re}
+exec(source[start:end], namespace)
+
+result = namespace["sync_description"](
+    "【注入教訓】 old\n──────────\nbody",
+    [{"id": "L1020", "summary": r"日本語隣接語は\bpush\bで検出できない"}],
+)
+assert "\x08" not in result, repr(result)
+assert r"\bpush\b" in result, repr(result)
+PY
+}
+
 @test "cmd_3300: deploy_task injects command readonly refs into task YAML" {
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue" "$tmpdir/scripts/lib"
@@ -640,6 +661,49 @@ with open(sys.argv[1], encoding='utf-8') as f:
 assert 'stop_for' not in task, task
 assert '【LS-A16 本番パリティ必須】' not in task['description'], task['description']
 assert len(task['acceptance_criteria']) == 1, task['acceptance_criteria']
+PY
+}
+
+@test "documentation-only DM-Signal task does not receive DB parity operation gates" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"
+    cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_docs_db_history
+  project: dm-signal
+  target_path:
+  - docs/research/nondeterminism.md
+  task_id: cmd_docs_db_history_impl
+  status: assigned
+  purpose: "本番DB fullrecalculateとparityの過去証跡を文書に追記する"
+  description: "restore-allとDB schemaの反例履歴を更新する"
+  acceptance_criteria:
+  - id: AC1
+    description: "文書が更新される"
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_docs_db_history:
+    project: dm-signal
+    command: |
+      本番DB変更後のfullrecalculateとtarget_date parityを文書化する
+YAML
+
+    run env TASK_FILE_ENV="$tmpdir/queue/tasks/sasuke.yaml" SCRIPT_DIR_ENV="$tmpdir" INJECT_TASK_MODIFIERS_ONLY="db_backup_controls,lsa16_production_parity_controls,parity_target_date_ac" \
+        python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/sasuke.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+assert [ac['id'] for ac in task['acceptance_criteria']] == ['AC1'], task
+assert 'stop_for' not in task, task
+assert '【DB変更前バックアップ必須】' not in task['description'], task
+assert '【LS-A16 本番パリティ必須】' not in task['description'], task
 PY
 }
 

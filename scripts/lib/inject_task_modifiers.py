@@ -136,6 +136,29 @@ def is_dm_signal_scope(task, parent_entry):
     return _matches(task) or _matches(parent_entry)
 
 
+def is_documentation_only_task(task):
+    """Return True when every explicit target is a documentation file.
+
+    Design documents often describe DB/recalculate/parity operations without
+    performing them.  Those words are evidence to preserve in the document,
+    not authorization to inject production-operation gates into the task.
+    The structural target_path boundary therefore wins over prose matching.
+    """
+    raw_paths = task.get('target_path')
+    if isinstance(raw_paths, str):
+        paths = [raw_paths]
+    elif isinstance(raw_paths, list):
+        paths = [str(path or '') for path in raw_paths]
+    else:
+        return False
+
+    paths = [path.strip() for path in paths if path.strip()]
+    if not paths:
+        return False
+    documentation_suffixes = ('.md', '.mdx', '.rst', '.adoc')
+    return all(path.lower().endswith(documentation_suffixes) for path in paths)
+
+
 def atomic_write(data, task_file):
     tmp_fd, tmp_path = tempfile.mkstemp(
         dir=os.path.dirname(task_file), suffix='.tmp')
@@ -624,6 +647,9 @@ def inject_execution_controls(task):
 
 
 def inject_db_backup_controls(task, script_dir):
+    if is_documentation_only_task(task):
+        return False
+
     texts = [
         str(task.get('command', '') or ''),
         str(task.get('description', '') or ''),
@@ -659,6 +685,9 @@ def inject_db_backup_controls(task, script_dir):
 
 def inject_lsa16_production_parity_controls(task, script_dir):
     """LS-A16: DM-Signal本番DB/recalculate系cmdへ確認ACを事前注入する。"""
+    if is_documentation_only_task(task):
+        return False
+
     parent_entry = parent_cmd_entry(task, script_dir)
     if not is_dm_signal_scope(task, parent_entry):
         return False
@@ -822,6 +851,9 @@ def inject_parity_target_date_ac(task, script_dir):
     target_dateはDM-Signal production fullrecalculateの概念であり、project/
     target_path がDM-Signalを指す場合のみ対象とする(is_dm_signal_scope)。
     """
+    if is_documentation_only_task(task):
+        return False
+
     parent_entry = parent_cmd_entry(task, script_dir)
     if not is_dm_signal_scope(task, parent_entry):
         return False

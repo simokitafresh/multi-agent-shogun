@@ -4549,12 +4549,35 @@ insert_task_block_before_description() {
     fi
 }
 
+task_targets_are_documentation_only() {
+    local task_file="$1"
+    python3 - "$task_file" <<'PY'
+import sys
+import yaml
+
+try:
+    data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+except Exception:
+    raise SystemExit(1)
+task = data.get("task") or data
+raw = task.get("target_path")
+paths = [raw] if isinstance(raw, str) else raw if isinstance(raw, list) else []
+paths = [str(path or "").strip() for path in paths if str(path or "").strip()]
+suffixes = (".md", ".mdx", ".rst", ".adoc")
+raise SystemExit(0 if paths and all(path.lower().endswith(suffixes) for path in paths) else 1)
+PY
+}
+
 # ─── DM-Signal PF削除/復元運用ガードレール注入 ───
 # Level5: cmd_3786で露呈した前提知識不備をタスクYAMLへ自動注入し、
 # PF一括削除/restore-all/rollback系で同じ試行錯誤を再発させない。
 inject_dm_signal_pf_operation_guardrails() {
     local task_file="$1"
     [ -f "$task_file" ] || return 0
+    task_targets_are_documentation_only "$task_file" && {
+        log "inject_dm_signal_pf_operation_guardrails: documentation-only target, skip"
+        return 0
+    }
 
     local project task_type title purpose command_text parent_cmd haystack
     project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
@@ -6996,7 +7019,17 @@ def sync_description(description, related):
     block = '\n'.join(lines)
     desc = str(description or '')
     if marker in desc:
-        return re.sub(r'【注入教訓】.*?─{10,}', block, desc, count=1, flags=re.DOTALL)
+        # Replacement strings interpret backslash escapes (for example lesson
+        # text ``\bpush\b`` becomes literal 0x08 backspaces).  A callable
+        # replacement preserves lesson prose byte-for-byte and keeps the task
+        # YAML printable.
+        return re.sub(
+            r'【注入教訓】.*?─{10,}',
+            lambda _match: block,
+            desc,
+            count=1,
+            flags=re.DOTALL,
+        )
     return block + '\n\n' + desc
 
 try:
