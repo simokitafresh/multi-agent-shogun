@@ -4,6 +4,8 @@
 
 `run_embedded_test` がnested Batsを外側testごとに34回起動していたため、元suite単位13回の共有TAP結果へ集約する。外側34件は個別test名に対応する`ok`を二値検証し、期待値・対象・SKIP契約は変更しない。
 
+並列実行では同一content functionを複数outer testが同時に要求するため、content function単位の`flock`でfixture生成とnested suite実行をsingle-flight化する。fixture/TAPはいずれも一時ファイルを完成後に`mv`し、不完全cacheを公開しない。
+
 ## 改善候補
 
 1. 最高インパクト: `tests/unit/test_learning_ops_small_consolidated.bats` L4-L35のnested `bats` process起動34回をcontent function単位13回へ集約し、共有TAPから個別test名を判定する。
@@ -19,5 +21,6 @@
 ## 検証契約
 
 - `bats tests/unit/test_learning_ops_small_consolidated.bats`: 34/34、FAIL 0、SKIP 0。
+- `bats -j 8 tests/unit/test_learning_ops_small_consolidated.bats`: 34/34、FAIL 0、SKIP 0。
 - wall timeを変更前後で比較する。
 - D7分類: behavior不変refactor。既存34 testのcoverageと期待値を維持し、新behaviorは追加しない。

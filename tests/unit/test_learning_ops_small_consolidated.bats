@@ -9,9 +9,13 @@ run_embedded_test() {
     local fixture_cache_dir="${BATS_FILE_TMPDIR:-${BATS_TMPDIR}}/learning_ops_embedded"
     local fixture_cache="$fixture_cache_dir/${content_func}.bats"
     local result_cache="$fixture_cache_dir/${content_func}.tap"
+    local cache_lock="$fixture_cache_dir/${content_func}.lock"
     local embedded_root
+    local lock_fd
     embedded_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     mkdir -p "$fixture_cache_dir"
+    exec {lock_fd}>"$cache_lock"
+    flock "$lock_fd"
 
     # Each content function is immutable within this consolidated suite. Decode
     # and normalize it once per Bats file, then copy the shared fixture for each
@@ -33,10 +37,14 @@ run_embedded_test() {
     # Run each original suite once. The consolidated outer cases retain their
     # individual names and assert the corresponding TAP result from that run.
     if [ ! -f "$result_cache" ]; then
+        local result_build="${result_cache}.tmp.${BASHPID}"
         env -u BATS_TMPDIR -u BATS_TEST_TMPDIR -u BATS_TEST_NUMBER -u BATS_TEST_FILENAME \
             EMBEDDED_PROJECT_ROOT="$embedded_root" \
-            bats "$fixture_cache" > "$result_cache" 2>&1 || true
+            bats "$fixture_cache" > "$result_build" 2>&1 || true
+        mv "$result_build" "$result_cache"
     fi
+    flock -u "$lock_fd"
+    exec {lock_fd}>&-
     if ! grep -Eq "^ok [0-9]+ ${test_name}$" "$result_cache"; then
         cat "$result_cache" >&2
         return 1
