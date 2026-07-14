@@ -220,6 +220,108 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "cmd_3909 baseline capability is exact-cardinality and non-generic" {
+  run python3 - "$ROOT/config/db_capabilities.json" "$ROOT/scripts/lib/db_capability_tool.py" "$BATS_TEST_TMPDIR/inventory.json" <<'PY'
+import importlib.util
+import json
+import pathlib
+import sys
+import types
+from datetime import date, timedelta
+
+registry_path, tool_path, output_path = map(pathlib.Path, sys.argv[1:])
+contract = json.loads(registry_path.read_text())["capabilities"]["bounded_signal_ledger_baseline_20260715"]
+assert contract["modes"] == ["bounded_signal_ledger_baseline"]
+assert contract["confirm"] == "FREEZE_EXACT_478_SIGNAL_LEDGER_BASELINES"
+assert contract["actions"] == ["freeze"]
+assert contract["allowed_child_flags"] == ["--output"]
+assert contract["requires_expected_commit"] is True
+
+spec = importlib.util.spec_from_file_location("db_capability_tool", tool_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+rows = [
+    (
+        f"pf-{i % 76:02d}",
+        date(2020, 1, 1) + timedelta(days=i // 76),
+        "raw",
+        "hold",
+        {"SPY": 1.0},
+    )
+    for i in range(478)
+]
+
+class Cursor:
+    def __init__(self):
+        self.value = None
+        self.statements = []
+        self.ledger_reads = 0
+        self.coverage_reads = 0
+        self.rowcount = -1
+    def execute(self, statement, params=None):
+        text = str(statement)
+        self.statements.append((text, params))
+        if text.startswith("SELECT current_user"):
+            self.value = ("writer", "writer", "dm_signal", "127.0.0.1")
+        elif "pg_try_advisory_lock" in text:
+            self.value = (True,)
+        elif "recalculation_status" in text:
+            self.value = (False,)
+        elif text.startswith("SELECT COUNT(*) FROM signal_decision_ledger"):
+            self.ledger_reads += 1
+            self.value = (15160 if self.ledger_reads == 1 else 15638,)
+        elif "WITH scope AS" in text:
+            self.coverage_reads += 1
+            self.value = (341409, 340931 if self.coverage_reads == 1 else 341409)
+        elif "FROM signals s" in text and "NOT EXISTS" in text:
+            self.value = rows
+        else:
+            self.value = None
+    def fetchone(self): return self.value
+    def fetchall(self): return list(self.value)
+    def close(self): pass
+
+class Connection:
+    def __init__(self):
+        self.autocommit = None
+        self.cursor_obj = Cursor()
+        self.commits = 0
+        self.rollbacks = 0
+    def cursor(self): return self.cursor_obj
+    def commit(self): self.commits += 1
+    def rollback(self): self.rollbacks += 1
+    def close(self): pass
+
+connection = Connection()
+psycopg2 = types.ModuleType("psycopg2")
+extras = types.ModuleType("psycopg2.extras")
+class Json:
+    def __init__(self, value): self.value = value
+def execute_values(cursor, statement, values, template=None, page_size=None):
+    assert len(values) == page_size == 478
+    cursor.statements.append((statement, values))
+    cursor.rowcount = len(values)
+extras.Json = Json
+extras.execute_values = execute_values
+psycopg2.connect = lambda _dsn: connection
+psycopg2.extras = extras
+sys.modules["psycopg2"] = psycopg2
+sys.modules["psycopg2.extras"] = extras
+
+result = module._freeze_signal_ledger_baseline_20260715("unused", output_path)
+inventory = json.loads(output_path.read_text())
+assert inventory["row_count"] == 478 and inventory["portfolio_count"] == 76
+assert result["inserted_rows"] == 478
+assert result["ledger_rows_after"] - result["ledger_rows_before"] == 478
+assert result["scope_rows"] == result["covered_rows"] == 341409
+assert result["other_table_writes"] == result["recalculate_runs"] == 0
+writes = [sql for sql, _ in connection.cursor_obj.statements if sql.lstrip().upper().startswith(("INSERT", "UPDATE", "DELETE"))]
+assert len(writes) == 1 and "INSERT INTO signal_decision_ledger" in writes[0]
+assert connection.commits == 1 and connection.rollbacks == 0
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "transactional tool passes artifact as Path for every registered action" {
   dependency="$BATS_TEST_TMPDIR/dependency.py"
   cat > "$dependency" <<'PY'
