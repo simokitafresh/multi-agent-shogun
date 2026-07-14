@@ -61,7 +61,7 @@ _run_hook_cmd() {
 
 _classify() {
     local cmd="$1"
-    run bash -c 'COMMAND="$1" python3 "$2"' _ "$cmd" "$CLASSIFY_SCRIPT"
+    run env COMMAND="$cmd" python3 "$CLASSIFY_SCRIPT"
 }
 
 # --- ALLOW: local_ephemeral connection (localhost/127.0.0.1/::1/Unix socket/sqlite memory) ---
