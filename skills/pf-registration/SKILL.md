@@ -12,7 +12,8 @@ quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_wor
 allowed_projects: [dm-signal]
 ---
 
-<!-- script_refs_checked_at: 2026-05-29T20:07:36+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- cmd_3948検分: parity_check.sh直近差分はunit parity速度回帰修復。既存CLI・即時パリティ契約不変。 -->
 
 # /pf-registration — 本番PF登録スキル
 

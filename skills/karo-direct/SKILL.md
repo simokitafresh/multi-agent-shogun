@@ -10,7 +10,8 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
-<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- cmd_3948検分: deploy_task.sh直近差分はtask publication直列化・malformed YAML修復。配備CLI契約不変。 -->
 <!-- 検分: deploy_task.sh 758585318/030d267bb/680edbe74/f5431606f/6cab52d61/880976003/87ef68b76をgit showで確認。履歴mapping、staged continuation、独立recon、配備前source検証、direct品質projection、no-code report契約を強化。CLI引数は不変だが、10分超taskの自然境界契約が追加されたため本文を現行化。 -->
 
 Script refs verified: 2026-07-13 将軍検分. `deploy_task.sh` checked_at以降の変更(793d03399..1f55aae59: 自然境界mapping検証+reopened parent解決+formal approval連動)をgit logで確認。karo_direct呼出し契約(--yaml経路含む)不変。親AC偽CLEAR hotfix RC継続中のため次回commit時に再検分される。手順書き換え不要。

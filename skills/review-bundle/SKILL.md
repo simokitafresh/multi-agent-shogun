@@ -10,7 +10,8 @@ description: |
   DO NOT TRIGGER: レビュー判定そのもの（→手動）、gate_sync（→/gate-sync）、idle分析永続化（→/idle-persist）
 ---
 
-<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- cmd_3948検分: yaml_field_set.sh/review_bundle.py直近差分はparse削減・SG7永続化。bundle生成CLI契約不変。 -->
 <!-- 検分: bulletin_write.sh 96e5f606(inbox root固定)、inbox_write.sh 91058358(完了type正規化)、yaml_field_set.sh 386cb6bb(lock統一)。CLI引数・出口値・precheck→記録→通知の順序は不変 -->
 <!-- Script refs verified 2026-07-13 shogun復帰時: checked_at以降の変更(yaml_field_set wrapped scalar保持fix de3df4b83, deploy_task parent AC contract dbcb20aa2, ninja_monitor journal+flock 93f8c898e/16f16e699, db_capability_launcher scoped credential 84231a01c)をgit logで確認。全て内部強化で呼出し契約・出口文言不変 -->
 

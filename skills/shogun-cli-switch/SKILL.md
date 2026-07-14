@@ -10,7 +10,8 @@ description: |
   DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
-<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- cmd_3948検分: yaml_field_set.sh/ninja_monitor.sh直近差分はparse削減・terminal再開明示化。切替CLI契約不変。 -->
 <!-- 検分: yaml_field_set.sh 386cb6bb(lock統一)、ninja_monitor.sh 6034dd0d/4a7c6f38/b2a69a65/066d4f06(容量guard、stage保全、終端FAIL dedupe)。CLI切替引数・respawn副作用・設定→実態確認順序は不変 -->
 <!-- Script refs verified 2026-07-13 shogun復帰時: checked_at以降の変更(yaml_field_set wrapped scalar保持fix de3df4b83, deploy_task parent AC contract dbcb20aa2, ninja_monitor journal+flock 93f8c898e/16f16e699, db_capability_launcher scoped credential 84231a01c)をgit logで確認。全て内部強化で呼出し契約・出口文言不変 -->
 

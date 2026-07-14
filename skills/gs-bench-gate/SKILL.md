@@ -21,7 +21,7 @@ argument-hint: "before|after [--ninjutsu kasoku_diff|kasoku_ratio|nukimi|oikaze|
 
 ## 概要
 
-GS共通コード（gs_shared*.py, pipeline/blocks/*.py, engine.py, gs_data_loader.py,
+GS共通コード（gs_shared*.py, pipeline/blocks/*.py, gs_runner.py, gs_data_loader.py,
 gs_numba_kernels.py, /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/gs_benchmark.py）を変更する際に、パフォーマンス回帰を自動検出する。
 コード変更の前後でベンチマークを実行し、ms/patの悪化率で判定する。
 
@@ -32,7 +32,7 @@ gs_numba_kernels.py, /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/gs
 ```
 scripts/analysis/grid_search/gs_shared*.py
 scripts/analysis/grid_search/pipeline/blocks/*.py
-scripts/analysis/grid_search/engine.py
+scripts/analysis/grid_search/gs_runner.py
 scripts/analysis/grid_search/gs_data_loader.py
 scripts/analysis/grid_search/gs_numba_kernels.py
 /mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/gs_benchmark.py

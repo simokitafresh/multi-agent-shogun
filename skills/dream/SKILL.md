@@ -24,7 +24,8 @@ allowed-tools:
   - mcp__memory__delete_observations
 ---
 
-<!-- script_refs_checked_at: 2026-07-14T10:08:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- cmd_3948検分: memory_db_query.sh直近差分はmalformed cache単一復旧。検索CLI契約不変。 -->
 
 <!-- 検分: gate_lesson_health.sh 5da84a531、insight_write.sh 386cb6bbe/ca7258b4d/008675367をgit showで確認。infra lesson markerの自動修復、lock SSOT化、証跡付きinsight resolutionへの委譲と破損tail復元を追加した内部強化。各scriptの既存引数、成功/失敗exit、/dreamのGather→Consolidate順序は不変。 -->
 
