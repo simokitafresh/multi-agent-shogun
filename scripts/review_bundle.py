@@ -16,13 +16,31 @@ def command_from(data, cmd_id):
     if isinstance(commands, list):
         return next((x for x in commands if isinstance(x, dict) and str(x.get("id")) == cmd_id), None)
 
-def find_command(root, cmd_id):
+def find_command(root, cmd_id, report=None, report_path=None):
     paths = [root / "queue/shogun_to_karo.yaml", root / f"queue/reopened_cmds/{cmd_id}.yaml"]
     paths += [Path(p) for p in sorted(glob.glob(str(root / f"queue/archive/cmds/{cmd_id}_*.yaml")), reverse=True)]
     for path in paths:
         if path.is_file():
             item = command_from(load(path), cmd_id)
             if item is not None: return item, path
+    # Karo-direct/training commands do not have a shogun command record.  Their
+    # completed report is still a durable contract source, so reconstruct the
+    # minimal summary instead of leaving SG7 generation as a dead manual path.
+    if isinstance(report, dict) and report_path is not None:
+        checks = report.get("binary_checks")
+        ac_ids = [key for key in checks if str(key).upper().startswith("AC")] if isinstance(checks, dict) else []
+        modified = report.get("files_modified")
+        scope = []
+        if isinstance(modified, list):
+            scope = [str(item.get("path") or "").strip() for item in modified if isinstance(item, dict) and str(item.get("path") or "").strip()]
+        lesson = report.get("lesson_candidate") if isinstance(report.get("lesson_candidate"), dict) else {}
+        project = str(report.get("project") or lesson.get("project") or "").strip()
+        if ac_ids and scope and project:
+            return {
+                "acceptance_criteria": ac_ids,
+                "not_in_scope": scope,
+                "project": project,
+            }, report_path
     raise ValueError(f"cmd spec not found: {cmd_id}")
 
 def summary(command):
@@ -71,14 +89,19 @@ def validate(bundle, expected_cmd=None, expected_verdict=None):
     return review
 
 def generate(args):
-    root = Path(args.root).resolve(); report = Path(args.report)
-    if not report.is_absolute(): report = root / report
-    report = report.resolve(); reports = (root / "queue/reports").resolve()
-    if report.parent != reports or not report.is_file(): raise ValueError("report must be an existing direct child of queue/reports")
+    root = Path(args.root).resolve(); report_arg = Path(args.report)
+    if not report_arg.is_absolute(): report_arg = root / report_arg
+    report_arg = Path(os.path.abspath(report_arg)); report = report_arg.resolve()
+    reports = (root / "queue/reports").resolve(); archived = (root / "queue/archive/reports").resolve()
+    current_direct = report_arg.parent == reports and report.parent == reports
+    archived_direct = args.allow_archived and report.parent == archived
+    if not (current_direct or archived_direct) or not report.is_file():
+        raise ValueError("report must be a current direct report (or archived with --allow-archived)")
     report_data = load(report)
     if str(report_data.get("parent_cmd") or "") != args.cmd: raise ValueError("report parent_cmd contradicts requested cmd")
-    command, source = find_command(root, args.cmd); verdict = args.verdict.upper()
-    review = {"cmd_id": args.cmd, "verdict": verdict, "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report.relative_to(root)), "report_fingerprint": hashlib.sha256(report.read_bytes()).hexdigest(), "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
+    report_ref = report_arg if report_arg.is_relative_to(root) else report
+    command, source = find_command(root, args.cmd, report_data, report_ref); verdict = args.verdict.upper()
+    review = {"cmd_id": args.cmd, "verdict": verdict, "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report_ref.relative_to(root)), "report_fingerprint": hashlib.sha256(report.read_bytes()).hexdigest(), "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
     if verdict == "FAIL":
         if not args.fail_reason: raise ValueError("FAIL requires --fail-reason")
         review["karo_attention"] = args.fail_reason
@@ -116,7 +139,7 @@ def consume(args):
 
 def build_parser():
     p = argparse.ArgumentParser(); p.add_argument("--root", default=str(Path(__file__).resolve().parents[1])); subs = p.add_subparsers(dest="action", required=True)
-    g = subs.add_parser("generate"); g.add_argument("--cmd", required=True); g.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); g.add_argument("--report", required=True); g.add_argument("--fail-reason"); g.set_defaults(func=generate)
+    g = subs.add_parser("generate"); g.add_argument("--cmd", required=True); g.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); g.add_argument("--report", required=True); g.add_argument("--fail-reason"); g.add_argument("--allow-archived", action="store_true"); g.set_defaults(func=generate)
     n = subs.add_parser("notify"); n.add_argument("--cmd", required=True); n.add_argument("--bundle", required=True); n.set_defaults(func=notify)
     c = subs.add_parser("consume"); c.add_argument("--cmd", required=True); c.add_argument("--bundle", required=True); c.add_argument("--expect-verdict", choices=("APPROVE", "FAIL")); c.set_defaults(func=consume); return p
 

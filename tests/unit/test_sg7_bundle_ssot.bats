@@ -42,3 +42,22 @@ setup() {
   run python3 "$T/scripts/review_bundle.py" --root "$T" consume --cmd cmd_other --bundle queue/gates/cmd_3931/sg7_bundle.json --expect-verdict APPROVE
   [ "$status" -eq 2 ]; [[ "$output" == *"bundle cmd mismatch"* ]]
 }
+@test "archived direct task report reconstructs the bundle contract" {
+  rm -f "$T/queue/shogun_to_karo.yaml"
+  cat >> "$T/queue/reports/hayate_report_cmd_3931.yaml" <<'YAML'
+files_modified:
+  - {path: scripts/review_approval.sh}
+binary_checks:
+  AC1: [{check: one, result: yes}]
+  AC2: [{check: two, result: yes}]
+  commit: [{check: commit, result: yes}]
+lesson_candidate: {found: false, project: infra}
+YAML
+  mkdir -p "$T/queue/archive/reports"
+  mv "$T/queue/reports/hayate_report_cmd_3931.yaml" "$T/queue/archive/reports/hayate_report_cmd_3931_20260715.yaml"
+  run python3 "$T/scripts/review_bundle.py" --root "$T" generate --cmd cmd_3931 --verdict APPROVE \
+    --report queue/archive/reports/hayate_report_cmd_3931_20260715.yaml --allow-archived
+  [ "$status" -eq 0 ]
+  run python3 -c "import json; r=json.load(open('$T/queue/gates/cmd_3931/sg7_bundle.json'))['review']; assert r['cmd_spec_summary']=={'acceptance_criteria_count':2,'scope':['scripts/review_approval.sh'],'project':'infra'}"
+  [ "$status" -eq 0 ]
+}

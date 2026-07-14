@@ -29,6 +29,16 @@ exec 200>"$base/.lock"; flock -w 10 200
 fingerprint=$(review_report_fingerprint "$report") || { echo "BLOCK: report missing or commit_hash absent: $report" >&2; exit 1; }
 report_rel=${report#"$ROOT"/}; report_key=$(review_report_key "$report_rel")
 dir="$base/reports/$report_key"; mkdir -p "$dir"
+# SG7 used to exist only as a skill instruction: review_bundle.py generate had
+# no production caller, so GATE could archive the report before Karo consumed
+# the bundle.  Bind generation to the existing formal Gunshi-LGTM boundary.
+if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ -f "$ROOT/scripts/review_bundle.py" ]; then
+  python3 "$ROOT/scripts/review_bundle.py" generate \
+    --cmd "$cmd_id" --verdict APPROVE --report "$report_rel" >/dev/null || {
+      echo "BLOCK: SG7 bundle generation failed: $cmd_id $report_rel" >&2
+      exit 1
+    }
+fi
 tmp=$(mktemp "$dir/.${role}.XXXXXX")
 trap 'rm -f "$tmp"' EXIT
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" > "$tmp"

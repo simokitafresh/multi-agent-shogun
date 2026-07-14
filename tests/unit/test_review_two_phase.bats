@@ -38,6 +38,22 @@ task:
   done_at: "2026-07-11T10:01:00+09:00"
 YAML
 }
+
+@test "formal Gunshi LGTM persists SG7 bundle before approval" {
+  cp "$ROOT/scripts/review_bundle.py" "$TMPROOT/scripts/review_bundle.py"
+  cat > "$TMPROOT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_test:
+    id: cmd_test
+    project: infra
+    not_in_scope: [unrelated]
+    acceptance_criteria: [{id: AC1}]
+YAML
+  REVIEW_APPROVAL_ROOT="$TMPROOT" REVIEW_APPROVAL_NO_NOTIFY=1 REVIEW_APPROVAL_NO_TRIGGER=1 \
+    bash "$ROOT/scripts/review_approval.sh" cmd_test gunshi LGTM "$REPORT"
+  [ -f "$TMPROOT/queue/gates/cmd_test/sg7_bundle.json" ]
+  [ -f "$APPROVALS/gunshi.yaml" ]
+}
 approve() {
   REVIEW_APPROVAL_ROOT="$TMPROOT" REVIEW_APPROVAL_NO_TRIGGER=1 \
     bash "$ROOT/scripts/review_approval.sh" cmd_test "$1" "$2" "$3"
