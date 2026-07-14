@@ -5691,6 +5691,58 @@ check_context_freshness_own_commit() {
     local check_script="$SCRIPT_DIR/scripts/context_freshness_check.sh"
     [ -f "$check_script" ] || return 0
 
+    # Test-only commits do not change runtime or operational knowledge.  At
+    # this point every report is immutable and fingerprint-verified, so its
+    # files_modified list is the narrowest trustworthy scope boundary.  Do
+    # not force meaningless core/ops context edits for tests, but keep the
+    # existing fail-closed behavior when even one source path is present.
+    local _all_reports_test_only=1 _saw_reported_path=0
+    local _scope_tf _scope_report _scope_path
+    if declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
+        for _scope_tf in "${MATCHING_TASK_FILES[@]}"; do
+            [ -f "$_scope_tf" ] || { _all_reports_test_only=0; break; }
+            _scope_report=$(awk '
+                /^  report_path:/ {
+                    sub(/^  report_path:[[:space:]]*/, "")
+                    gsub(/^["'"'"']|["'"'"']$/, "")
+                    print
+                    exit
+                }
+            ' "$_scope_tf" 2>/dev/null)
+            [ -n "$_scope_report" ] || { _all_reports_test_only=0; break; }
+            [[ "$_scope_report" = /* ]] || _scope_report="$SCRIPT_DIR/$_scope_report"
+            [ -f "$_scope_report" ] || { _all_reports_test_only=0; break; }
+
+            while IFS= read -r _scope_path; do
+                [ -n "$_scope_path" ] || continue
+                _saw_reported_path=1
+                case "$_scope_path" in
+                    tests/*|*/tests/*|test_*.py|*/test_*.py|*_test.py|*/*_test.py|*.bats|*/conftest.py|conftest.py)
+                        ;;
+                    *)
+                        _all_reports_test_only=0
+                        break
+                        ;;
+                esac
+            done < <(awk '
+                /^files_modified:/ { in_files = 1; next }
+                in_files && /^[^[:space:]-]/ { exit }
+                in_files && /^[[:space:]]*-[[:space:]]+path:/ {
+                    sub(/^[[:space:]]*-[[:space:]]+path:[[:space:]]*/, "")
+                    gsub(/^["'"'"']|["'"'"']$/, "")
+                    print
+                }
+            ' "$_scope_report")
+            [ "$_all_reports_test_only" -eq 1 ] || break
+        done
+    else
+        _all_reports_test_only=0
+    fi
+    if [ "$_all_reports_test_only" -eq 1 ] && [ "$_saw_reported_path" -eq 1 ]; then
+        echo "  [INFO] context freshness own-commit check skipped: approved files_modified are test-only"
+        return 0
+    fi
+
     local -A _cfoc_projects=()
     local _tf _proj
     if declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then

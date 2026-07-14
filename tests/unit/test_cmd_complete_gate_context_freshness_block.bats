@@ -36,7 +36,7 @@ setup() {
     export TEST_TMPDIR
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/cfb.XXXXXX")"
     export SCRIPT_DIR="$TEST_TMPDIR"
-    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks"
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
 }
 
 teardown() {
@@ -62,6 +62,20 @@ SH
     chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
 }
 
+_write_report_paths() {
+    local ninja="$1"
+    shift
+    local report_rel="queue/reports/${ninja}_report.yaml"
+    printf '\n  report_path: %s\n' "$report_rel" >> "$TEST_TMPDIR/queue/tasks/${ninja}.yaml"
+    {
+        echo "files_modified:"
+        local path
+        for path in "$@"; do
+            printf -- '- path: %s\n  change: test fixture\n' "$path"
+        done
+    } > "$TEST_TMPDIR/$report_rel"
+}
+
 @test "own commit present in unreflected backlog -> BLOCK (return 1)" {
     _write_task hayate dm-signal
     MATCHING_TASK_FILES=("$TEST_TMPDIR/queue/tasks/hayate.yaml")
@@ -75,6 +89,33 @@ OUT
     [ "$status" -eq 1 ]
     [[ "$output" == *"context/dm-signal-core.md"* ]]
     [[ "$output" == *"context/dm-signal-ops.md"* ]]
+}
+
+@test "approved report with test-only files skips context reflux BLOCK" {
+    _write_task hanzo dm-signal
+    _write_report_paths hanzo backend/tests/test_p4_bundle_uvicorn_cmd_3880.py
+    MATCHING_TASK_FILES=("$TEST_TMPDIR/queue/tasks/hanzo.yaml")
+    _write_mock_check_script '
+cat <<OUT
+context/dm-signal-core.md\t5ae3e208\tcmd_test_only: fix uvicorn test cwd
+context/dm-signal-ops.md\t5ae3e208\tcmd_test_only: fix uvicorn test cwd
+OUT
+'
+    run check_context_freshness_own_commit "cmd_test_only"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"approved files_modified are test-only"* ]]
+}
+
+@test "approved report containing source path still blocks context reflux" {
+    _write_task tobisaru dm-signal
+    _write_report_paths tobisaru tests/test_loader.py scripts/analysis/loader.py
+    MATCHING_TASK_FILES=("$TEST_TMPDIR/queue/tasks/tobisaru.yaml")
+    _write_mock_check_script '
+echo -e "context/dm-signal-core.md\t1611ef2e\tcmd_source_change: restore loader"
+'
+    run check_context_freshness_own_commit "cmd_source_change"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"context/dm-signal-core.md"* ]]
 }
 
 @test "unrelated cmd whose own commit is NOT in the backlog -> PASS (return 0), zero false block" {
