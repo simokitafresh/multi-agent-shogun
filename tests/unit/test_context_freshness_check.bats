@@ -703,6 +703,66 @@ PROJ
     [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
 }
 
+@test "GA-253 transient git timeout retries once and preserves the source freshness result" {
+    _create_context "context/codd.md" "$STALE_DATE"
+    _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
+    _create_shogun_to_karo "cmd_934" "infra"
+    local real_git counter_file fake_bin
+    real_git="$(command -v git)"
+    counter_file="$TEST_TMPDIR/git-log-count"
+    fake_bin="$TEST_TMPDIR/fake-bin"
+    mkdir -p "$fake_bin"
+    cat > "$fake_bin/git" <<'SH'
+#!/usr/bin/env bash
+if [[ " $* " == *" log "* ]]; then
+    count=0
+    [[ -f "$CFC_FAKE_GIT_COUNTER" ]] && count="$(cat "$CFC_FAKE_GIT_COUNTER")"
+    count=$((count + 1))
+    printf '%s\n' "$count" > "$CFC_FAKE_GIT_COUNTER"
+    if (( count == 1 )); then sleep 2; fi
+fi
+exec "$CFC_REAL_GIT" "$@"
+SH
+    chmod +x "$fake_bin/git"
+
+    PATH="$fake_bin:$PATH" CFC_REAL_GIT="$real_git" CFC_FAKE_GIT_COUNTER="$counter_file" \
+      CFC_GIT_TIMEOUT=1 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
+
+    [ "$status" -eq 0 ]
+    [ "$(cat "$counter_file")" -ge 2 ]
+    [[ "$output" == *"ALERT: context/codd.md source commits 1件"* ]]
+    [[ "$output" != *"source commit check failed"* ]]
+}
+
+@test "GA-253 persistent git timeout remains fail-closed after the bounded retry" {
+    _create_context "context/codd.md" "$STALE_DATE"
+    _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
+    _create_shogun_to_karo "cmd_934" "infra"
+    local real_git counter_file fake_bin
+    real_git="$(command -v git)"
+    counter_file="$TEST_TMPDIR/git-log-count"
+    fake_bin="$TEST_TMPDIR/fake-bin"
+    mkdir -p "$fake_bin"
+    cat > "$fake_bin/git" <<'SH'
+#!/usr/bin/env bash
+if [[ " $* " == *" log "* ]]; then
+    count=0
+    [[ -f "$CFC_FAKE_GIT_COUNTER" ]] && count="$(cat "$CFC_FAKE_GIT_COUNTER")"
+    printf '%s\n' "$((count + 1))" > "$CFC_FAKE_GIT_COUNTER"
+    sleep 2
+fi
+exec "$CFC_REAL_GIT" "$@"
+SH
+    chmod +x "$fake_bin/git"
+
+    PATH="$fake_bin:$PATH" CFC_REAL_GIT="$real_git" CFC_FAKE_GIT_COUNTER="$counter_file" \
+      CFC_GIT_TIMEOUT=1 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
+
+    [ "$status" -eq 0 ]
+    [ "$(cat "$counter_file")" -eq 2 ]
+    [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
+}
+
 # ── GA-237/L1089: 共通防御層(GROUP検出) ──
 # 根本原因: 高頻度共有pathspec(docs/research等)を持つ複数context fileが
 # 同一source commitで同時ALERTし、家老が同じcommitを重複調査するcmdを

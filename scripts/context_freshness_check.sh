@@ -541,6 +541,44 @@ def build_missing_source_commit_warning(rel_path: str) -> str:
 # ほぼ全件timeoutしていた)。テスト用小さいrepoでは瞬時完了するため精度に影響しない。
 # 環境変数 CFC_GIT_TIMEOUT で上書き可能（テスト/開発用）。
 _GIT_TIMEOUT: int = int(os.environ.get("CFC_GIT_TIMEOUT", "10"))
+_GIT_ATTEMPTS: int = 2
+
+
+def _run_git_with_bounded_retry(cmd: list[str], label: str) -> subprocess.CompletedProcess[str] | None:
+    """Run a read-only git query at most twice; persistent failure stays fail-closed."""
+    for attempt in range(1, _GIT_ATTEMPTS + 1):
+        try:
+            result = subprocess.run(
+                cmd,
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=_GIT_TIMEOUT,
+            )
+        except Exception as exc:
+            if attempt < _GIT_ATTEMPTS:
+                print(
+                    f"WARN: {label} git transient failure attempt={attempt}/{_GIT_ATTEMPTS}: {exc}; retrying",
+                    file=sys.stderr,
+                )
+                continue
+            print(f"WARN: {label} git failed after {_GIT_ATTEMPTS} attempts: {exc}", file=sys.stderr)
+            return None
+        if result.returncode == 0:
+            return result
+        if attempt < _GIT_ATTEMPTS:
+            print(
+                f"WARN: {label} git transient returncode={result.returncode} "
+                f"attempt={attempt}/{_GIT_ATTEMPTS}; retrying",
+                file=sys.stderr,
+            )
+            continue
+        print(
+            f"WARN: {label} git returncode={result.returncode} after {_GIT_ATTEMPTS} attempts",
+            file=sys.stderr,
+        )
+    return None
 
 
 def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[str], bool]:
@@ -586,21 +624,8 @@ def _root_fallback_commit_count_since(
     else:
         cmd.insert(4, f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00")
 
-    try:
-        result = subprocess.run(
-            cmd,
-            check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-            timeout=_GIT_TIMEOUT,
-        )
-    except Exception as e:
-        print(f"WARN: source_commit_count_since git failed: {root} — {e}", file=sys.stderr)
-        return -1
-
-    if result.returncode != 0:
-        print(f"WARN: source_commit_count_since git returncode={result.returncode}: {root}", file=sys.stderr)
+    result = _run_git_with_bounded_retry(cmd, f"source_commit_count_since: {root}")
+    if result is None:
         return -1
 
     count = 0
@@ -715,21 +740,8 @@ def source_commit_summary_since(
     if git_pathspecs:
         cmd.extend(["--", *git_pathspecs])
 
-    try:
-        result = subprocess.run(
-            cmd,
-            check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-            timeout=_GIT_TIMEOUT,
-        )
-    except Exception as e:
-        print(f"WARN: source_commit_count_since git failed: {repo_path} — {e}", file=sys.stderr)
-        return -1, []
-
-    if result.returncode != 0:
-        print(f"WARN: source_commit_count_since git returncode={result.returncode}: {repo_path}", file=sys.stderr)
+    result = _run_git_with_bounded_retry(cmd, f"source_commit_count_since: {repo_path}")
+    if result is None:
         return -1, []
 
     count = 0
@@ -786,21 +798,8 @@ def _run_grouped_git_log(
     if pathspecs:
         cmd.extend(["--", *pathspecs])
 
-    try:
-        result = subprocess.run(
-            cmd,
-            check=False,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-            timeout=_GIT_TIMEOUT,
-        )
-    except Exception as e:
-        print(f"WARN: grouped git log failed: {repo_path} — {e}", file=sys.stderr)
-        return None
-
-    if result.returncode != 0:
-        print(f"WARN: grouped git log returncode={result.returncode}: {repo_path}", file=sys.stderr)
+    result = _run_git_with_bounded_retry(cmd, f"grouped git log: {repo_path}")
+    if result is None:
         return None
 
     commits: list[tuple[str, str, list[str]]] = []
