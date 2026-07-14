@@ -1,4 +1,17 @@
 #!/usr/bin/env bats
+setup_file() {
+  local root
+  root=$(cd "$BATS_TEST_DIRNAME/../.." && pwd)
+  PARENT_FP=$(python3 - "$root" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+from scripts.lib.parent_cmd_contract import contract_fingerprint
+print(contract_fingerprint('cmd_3869', 'rotate safely', ['AC1', 'AC2', 'AC3']))
+PY
+)
+  export PARENT_FP
+}
+
 setup() {
   ROOT=$(cd "$BATS_TEST_DIRNAME/../.." && pwd); T=$(mktemp -d)
   mkdir -p "$T/queue/tasks" "$T/queue/reports" "$T/queue/archive/cmds"
@@ -14,11 +27,7 @@ commands:
       - {id: AC3, description: rotate}
 YAML
 }
-fp() { python3 - "$ROOT" <<'PY'
-import sys; sys.path.insert(0,sys.argv[1]); from scripts.lib.parent_cmd_contract import contract_fingerprint
-print(contract_fingerprint('cmd_3869','rotate safely',['AC1','AC2','AC3']))
-PY
-}
+fp() { printf '%s\n' "$PARENT_FP"; }
 task() { local coverage=${1:-AC1}; cat > "$T/queue/tasks/ninja.yaml" <<YAML
 task:
   parent_cmd: cmd_3869
