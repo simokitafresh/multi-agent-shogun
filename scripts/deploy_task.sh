@@ -9226,6 +9226,14 @@ should_skip_same_cmd_resolve() {
     [ -f "$task_file" ] || return 1
     [ -n "$requested_cmd" ] || return 1
 
+    # Partial field extraction can succeed even when the task document is
+    # malformed.  Reusing that document would skip stale reset/atomic --yaml
+    # publication and make the corruption unrecoverable (GA-258).
+    if ! python3 -c "import sys,yaml; yaml.safe_load(open(sys.argv[1], encoding='utf-8'))" "$task_file" >/dev/null 2>&1; then
+        log "same_cmd_redeploy: task YAML invalid; force repair path for ${requested_cmd}"
+        return 1
+    fi
+
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
         status parent_cmd task_id report_path report_filename 2>/dev/null)" || true
 

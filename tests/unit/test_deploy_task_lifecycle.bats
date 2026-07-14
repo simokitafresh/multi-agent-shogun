@@ -969,6 +969,30 @@ EOF
     [[ "$output" == *"別cmd cmd_second で上書きしない"* ]]
 }
 
+@test "GA-258: malformed same-command task cannot skip the atomic repair path" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_repair
+  status: assigned
+  task_id: cmd_repair_normal
+  report_path: queue/reports/hayate_report_cmd_repair.yaml
+  estimated_minutes: 5
+  - orphaned-list-item
+EOF
+    : > "$TEST_PROJECT/queue/reports/hayate_report_cmd_repair.yaml"
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        if should_skip_same_cmd_resolve "$1/queue/tasks/hayate.yaml" cmd_repair hayate; then
+            exit 9
+        fi
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"task YAML invalid; force repair path"* ]]
+}
+
 @test "cmd_3701: draft cmd is blocked before deployment" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
