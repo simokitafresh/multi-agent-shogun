@@ -7,7 +7,10 @@ setup() {
     mkdir -p "$TEST_TMPDIR/docs/semantic-index" "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue" "$TEST_TMPDIR/context"
     export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
     export SEMANTIC_MAP_PATH="$TEST_TMPDIR/context/semantic-map.md"
-    export SEMANTIC_MAP_GENERATE="$PROJECT_ROOT/scripts/semantic_map_generate.sh"
+    # Most cases exercise index matching/update behavior; regenerating the
+    # same map in every case is unrelated fixed cost.  Tests that assert map
+    # output opt back into the production generator explicitly.
+    export SEMANTIC_MAP_GENERATE=/bin/true
     export SEMANTIC_INSIGHT_WRITE="$TEST_TMPDIR/scripts/insight_write.sh"
     # Speed: デフォルトでは本番246MB DBを参照しない。memory DB tag propagationテストは自身でオーバーライドする
     export SEMANTIC_MEMORY_DB_PATH="$TEST_TMPDIR/nonexistent_memory.db"
@@ -100,6 +103,7 @@ teardown() {
 }
 
 @test "HIGH: exact alias appends cmd resource to matched concept" {
+    export SEMANTIC_MAP_GENERATE="$PROJECT_ROOT/scripts/semantic_map_generate.sh"
     run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2564","title":"セマンティクスインデックス","purpose":"段階3","files":["scripts/semantic_index_update.sh"]}'
     [ "$status" -eq 0 ]
     [[ "$output" == *"HIGH: semantic_dictionary_design updated"* ]]
@@ -223,6 +227,7 @@ PY
 }
 
 @test "cmd_complete payload appends origin and depends_on causal resources" {
+    export SEMANTIC_MAP_GENERATE="$PROJECT_ROOT/scripts/semantic_map_generate.sh"
     run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" cmd_complete '{"id":"cmd_2885","title":"セマンティクスインデックス 因果辺","purpose":"semantic-mapへ因果辺を還流","files":["scripts/cmd_complete_gate.sh"],"origin":"[[cmd_2818_causal_NW]] -> [[semantic_map_generate]] -> [[obsidian_link_stagnation]]","depends_on":"[[cmd_2875]] -> [[セマンティック辞書構想]]"}'
     [ "$status" -eq 0 ]
     [[ "$output" == *"HIGH: semantic_dictionary_design updated"* ]]
