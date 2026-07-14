@@ -1,11 +1,17 @@
 #!/usr/bin/env bats
 
+setup_file() {
+  SHARED_GIT_CONFIG="$BATS_FILE_TMPDIR/gitconfig"
+  printf '[user]\n\temail = fixture@example.invalid\n\tname = fixture\n' > "$SHARED_GIT_CONFIG"
+}
+
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   LAUNCHER="$ROOT/scripts/db_capability_launcher.py"
   CREDS="$BATS_TEST_TMPDIR/db.env"
   printf 'DATABASE_URL=postgresql://invalid\n' > "$CREDS"
   chmod 600 "$CREDS"
+  export GIT_CONFIG_GLOBAL="$BATS_FILE_TMPDIR/gitconfig"
 }
 
 @test "unknown capability fails closed before child" {
@@ -29,8 +35,6 @@ setup() {
   printf '#!/usr/bin/env python3\n' > "$fixture/scripts/oneshot/cmd_p4_prod_restore_contract.py"
   printf 'projects:\n  - id: dm-signal\n    path: %s\n' "$fixture" > "$fixture/config/projects.yaml"
   git -C "$fixture" init -q
-  git -C "$fixture" config user.email fixture@example.invalid
-  git -C "$fixture" config user.name fixture
   git -C "$fixture" add scripts/db_capability_launcher.py scripts/lib/db_capability_tool.py \
     scripts/oneshot/cmd_p4_prod_restore_contract.py config/db_capabilities.json config/projects.yaml
   git -C "$fixture" commit -qm fixture
@@ -56,8 +60,6 @@ setup() {
   cp "$ROOT/scripts/lib/db_capability_tool.py" "$fixture/scripts/lib/db_capability_tool.py"
   cp "$ROOT/config/db_capabilities.json" "$fixture/config/db_capabilities.json"
   git -C "$fixture" init -q
-  git -C "$fixture" config user.email fixture@example.invalid
-  git -C "$fixture" config user.name fixture
   git -C "$fixture" add scripts/db_capability_launcher.py scripts/lib/db_capability_tool.py config/db_capabilities.json
   git -C "$fixture" commit -qm fixture
   registry="$fixture/config/db_capabilities.json"
@@ -145,8 +147,6 @@ PY
   printf 'projects:\n  - id: dm-signal\n    path: %s\n' "$fixture" > "$fixture/config/projects.yaml"
   printf 'DATABASE_URL=postgresql://secret\nUNRELATED=must-not-copy\n' > "$fixture/backend/.env"
   git -C "$fixture" init -q
-  git -C "$fixture" config user.email fixture@example.invalid
-  git -C "$fixture" config user.name fixture
   git -C "$fixture" add scripts/db_capability_launcher.py scripts/lib/db_capability_tool.py \
     config/db_capabilities.json config/projects.yaml
   git -C "$fixture" commit -qm fixture
@@ -404,8 +404,6 @@ PY
     'pathlib.Path(sys.argv[sys.argv.index("--output") + 1]).write_text(os.environ["HOME"])' \
     > "$fixture/scripts/oneshot/cmd_3881_db_fence_verify.py"
   git -C "$fixture" init -q
-  git -C "$fixture" config user.email fixture@example.invalid
-  git -C "$fixture" config user.name fixture
   git -C "$fixture" add .
   git -C "$fixture" commit -qm fixture
   head="$(git -C "$fixture" rev-parse HEAD)"
@@ -694,8 +692,6 @@ PY
 JSON
   printf 'projects:\n  - id: dm-signal\n    path: %s\n' "$project" > "$fixture/config/projects.yaml"
   git -C "$fixture" init -q
-  git -C "$fixture" config user.email fixture@example.invalid
-  git -C "$fixture" config user.name fixture
   git -C "$fixture" add scripts config
   git -C "$fixture" commit -qm fixture
   run python3 "$fixture/scripts/db_capability_launcher.py" \
