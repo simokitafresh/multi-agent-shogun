@@ -68,16 +68,16 @@ bash scripts/cmd_complete_gate.sh <cmd_id>
 ```
 GATE CLEAR → Step 3.5へ。BLOCK → 停止。BLOCK理由を報告。
 
-### Step 3.5: context鮮度チェック（GA-038防御層A・殿裁定2026-06-10）
-```bash
-bash scripts/gates/gate_context_freshness.sh
-```
-研究系cmd（research/分析/検証系）の完了時にcontext索引の鮮度劣化を検出する。
-- ALERT/WARNが出たら: 当該cmdの結果が対象context（例: `context/dm-signal-research.md`）に
-  反映済みか確認し、未反映なら索引層スタイル（結論1-2行+参照先）で追記+last_updated更新
-- OK → Step 4へ。BLOCKしない（WARN表示のみ）
-- 理由: cmd-complete Step1-8にcontext更新ステップが構造的に欠落しており、
-  研究系cmd完了後にcontextが停滞する（GA-038実例: 研究3件が12日未反映。L771）
+### Step 3.5: context鮮度チェック（当該cmd相関）
+
+Step 3の `cmd_complete_gate.sh` が、当該cmd自身のcommitだけを
+`context_freshness_check.sh --cmd-commit-list` と厳密なcmd subject一致で
+fail-closed確認する。関連未反映commitまたは登録contextのsource_commit欠落は
+Step 3でBLOCK済みなので、wrapperから追加コマンドは実行しない。
+
+dashboard/startup用のglobal監視 `scripts/gates/gate_context_freshness.sh` は別callerで
+維持する。これをcmd完了フローで重ねると、他忍者の無関係commitによるglobal ALERTが
+当該cmdを永久遮断するため、`cmd_complete.sh` からは呼ばない。
 
 ### Step 4: cmd品質記録
 ```bash
