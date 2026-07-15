@@ -13,23 +13,36 @@ text, matching the Guard 5→17 lesson from the same task): a segment blocks
 only when a real `git` invocation's first `stash` (or stash-aliased)
 positional subcommand is anything other than a read-only one.
 
-2026-07-15 karo RC2/RC3: enumerating known exec-wrapper program names
-(env, command, nohup, nice, timeout, setsid, ..., then time, ionice,
-taskset, chrt, xargs, ...) is an unwinnable chase — any current or future
-launcher this doesn't yet name is a bypass. Every one of those wrappers
-shares one structural property: the wrapped command's argv tokens appear
-later in the SAME shell segment (same exec argv), verbatim. So instead of
-parsing each wrapper's own option grammar, recursively re-evaluate every
-suffix of the segment's token list — this generalizes to any launcher
-without a maintained table. A quoted multi-word explanation (a single
-token, e.g. an inbox_write.sh message) never collapses to a bare "git"
-token, so it is never mistaken for an invocation.
+2026-07-15 karo RC2/RC3/RC4: two competing failure modes were both proven by
+direct measurement:
+  - RC2/RC3: enumerating known exec-wrapper program names (env, command,
+    nohup, ...) is an unwinnable chase — a fixed set of untested wrapper
+    names (time, ionice, taskset, chrt, xargs, ...) bypassed it.
+  - RC3's fix (recursing on every token-list suffix to catch ANY unknown
+    wrapper) proved to have the opposite, WORSE failure: `echo git stash`,
+    `printf %s git stash`, `rg -n git stash scripts`, `python3 tool.py git
+    stash`, `bash script.sh git stash`, and `inbox_write.sh karo git stash
+    report` all falsely BLOCKed — "git"/"stash" as a data/search-term/
+    positional-argument to an ordinary command is structurally
+    indistinguishable from a real nested invocation without knowing what
+    the leading program actually does with its trailing arguments.
+Unknown-wrapper detection and zero false positives on arbitrary arguments
+are provably NOT simultaneously achievable from argv shape alone (RC4
+counter-examples). Per karo's RC4 direction, this module adopts the
+explicit-SSOT / unknown-fails-open design: `_EXEC_WRAPPERS` is the single
+enumerated table of known process launchers (env, command, nohup, nice,
+timeout, setsid, exec, stdbuf, time, ionice, taskset, chrt, xargs) that
+this classifier unwraps; a program NOT in this table is never treated as a
+wrapper, so its trailing tokens are always its own data, never rechecked.
+This table lives in exactly one place (this file), imported by both the
+production hook and the legacy GA-239 path — no per-hook duplication.
 
-`git -c alias.NAME=stash NAME` (and `-calias.NAME=stash`) is a second,
-unrelated bypass class: git's own alias mechanism, not a process launcher.
-`-c` config overrides are parsed for `alias.*` definitions and an alias
-that expands to a stash (sub)command is treated exactly like a literal
-`stash` subcommand.
+`git -c alias.NAME=stash NAME` (and `-calias.NAME=stash`) is a separate,
+unrelated bypass class: git's own alias mechanism, not a process launcher,
+and precisely parseable from git's own `-c` option syntax without the
+ambiguity above. `-c` config overrides are parsed for `alias.*` definitions
+and an alias that expands to a stash (sub)command is treated exactly like a
+literal `stash` subcommand.
 
 Output: "block" or "allow" on stdout.
 """
@@ -47,9 +60,66 @@ _READONLY_STASH_SUBCOMMANDS = {"list", "show"}
 # versa). Mirrors the subset relevant to reaching a subcommand.
 _GIT_GLOBAL_OPTS_WITH_VALUE = {"-C", "--git-dir", "--work-tree", "-c"}
 
-_SHELL_DASH_C_PROGS = {"bash", "sh", "zsh", "dash", "ksh"}
+_ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 
 _ALIAS_RE = re.compile(r"^alias\.([A-Za-z0-9_-]+)=(.*)$")
+
+# env options that consume a following value token (GNU/POSIX subset
+# relevant to reaching the wrapped command). Any other "-x" token before the
+# wrapped command is treated as env's own no-value flag.
+_ENV_VALUE_OPTS = {"-u", "--unset", "-C", "--chdir", "-S", "--split-string"}
+
+_SHELL_DASH_C_PROGS = {"bash", "sh", "zsh", "dash", "ksh"}
+
+# Single explicit SSOT of known process-launcher wrappers this classifier
+# unwraps (karo RC4: enumerated table, not a per-hook duplicate; a program
+# NOT listed here is never treated as a wrapper — its trailing tokens stay
+# its own data and are never re-examined). Each entry:
+#   value_opts  — this wrapper's own options that consume a following token
+#   stop_tokens — no-value tokens/markers specific to this wrapper (e.g.
+#                 "--" for the `command` builtin, "-c" for taskset's
+#                 cpu-list-format flag)
+#   positional_skip — non-option positional args this wrapper itself
+#                 consumes AFTER its flags but BEFORE the wrapped command
+#                 (e.g. `timeout 5 CMD...`, `taskset 0x1 CMD...`,
+#                 `chrt 99 CMD...`).
+# Any other "-x" token encountered before the wrapped command is treated as
+# a no-value flag of the wrapper (safe default: still unwraps to the real
+# command instead of misreading it as the program).
+_EXEC_WRAPPERS = {
+    "command": {"value_opts": set(), "stop_tokens": {"--"}, "positional_skip": 0},
+    "nohup": {"value_opts": set(), "stop_tokens": set(), "positional_skip": 0},
+    "nice": {"value_opts": {"-n", "--adjustment"}, "stop_tokens": set(), "positional_skip": 0},
+    "setsid": {"value_opts": set(), "stop_tokens": set(), "positional_skip": 0},
+    "timeout": {
+        "value_opts": {"-k", "--kill-after", "-s", "--signal"},
+        "stop_tokens": {"--foreground", "--preserve-status", "--"},
+        "positional_skip": 1,
+    },
+    "exec": {"value_opts": {"-a"}, "stop_tokens": {"-c", "-l"}, "positional_skip": 0},
+    "stdbuf": {"value_opts": {"-i", "-o", "-e"}, "stop_tokens": set(), "positional_skip": 0},
+    "time": {"value_opts": {"-o", "--output", "-f", "--format"}, "stop_tokens": set(), "positional_skip": 0},
+    "ionice": {
+        "value_opts": {"-c", "--class", "-n", "--classdata", "-p", "--pid"},
+        "stop_tokens": {"-t", "--ignore"},
+        "positional_skip": 0,
+    },
+    "taskset": {"value_opts": set(), "stop_tokens": {"-c", "--cpu-list", "-p", "--pid"}, "positional_skip": 1},
+    "chrt": {
+        "value_opts": set(),
+        "stop_tokens": {"-f", "-r", "-o", "-i", "-b", "--fifo", "--rr", "--other", "--idle", "--batch"},
+        "positional_skip": 1,
+    },
+    "xargs": {
+        "value_opts": {
+            "-I", "-L", "-n", "-P", "-s", "-a", "-d", "-E",
+            "--replace", "--max-lines", "--max-args", "--max-procs",
+            "--max-chars", "--arg-file", "--delimiter", "--eof-string",
+        },
+        "stop_tokens": {"-0", "-r", "-t", "-p", "-x", "-o", "--null", "--no-run-if-empty", "--interactive", "--verbose"},
+        "positional_skip": 0,
+    },
+}
 
 
 def _first_positional_index_after_git(args):
@@ -100,65 +170,116 @@ def _collect_git_aliases(args):
     return aliases
 
 
-def _stash_subcommand_blocks(args, subcommand_index):
-    """args[subcommand_index] is the literal "stash" token; check what follows it."""
+def _git_blocks(args):
+    subcommand_index = _first_positional_index_after_git(args)
+    if subcommand_index is None:
+        return False
+    subcommand = args[subcommand_index]
+    if subcommand == "stash":
+        stash_sub = _next_positional(args, subcommand_index)
+        return stash_sub not in _READONLY_STASH_SUBCOMMANDS
+    alias_value = _collect_git_aliases(args).get(subcommand)
+    if alias_value is None:
+        return False
+    alias_tokens = alias_value.split()
+    if not alias_tokens or alias_tokens[0] != "stash":
+        return False
+    if len(alias_tokens) > 1:
+        return alias_tokens[1] not in _READONLY_STASH_SUBCOMMANDS
     stash_sub = _next_positional(args, subcommand_index)
     return stash_sub not in _READONLY_STASH_SUBCOMMANDS
 
 
-def _segment_blocks(tokens):
+def _unwrap_indirection(tokens):
+    """Strip leading VAR=value assignments and known exec-wrapper programs.
+
+    `env git stash`, `command git stash`, `nohup git stash`,
+    `timeout 5 git stash`, `taskset -c 0 git stash`, and `FOO=bar git stash`
+    all reach the real `git stash` invocation through a launcher the naive
+    "is seg[0] literally 'git'" check never sees. Peel these layers (in any
+    order, any number of times — e.g. `command env timeout 5 git stash`)
+    until the remaining tokens start with the actual wrapped program. Only
+    programs explicitly listed in `_EXEC_WRAPPERS` (or `env`) are unwrapped;
+    everything else is left untouched (karo RC4: unknown programs fail
+    open rather than being guessed at).
+    """
+    tokens = list(tokens)
+    changed = True
+    while changed and tokens:
+        changed = False
+        while tokens and _ASSIGNMENT_RE.match(tokens[0]):
+            tokens.pop(0)
+            changed = True
+        if not tokens:
+            break
+        prog = os.path.basename(tokens[0])
+        if prog == "env":
+            tokens.pop(0)
+            changed = True
+            while tokens:
+                if _ASSIGNMENT_RE.match(tokens[0]):
+                    tokens.pop(0)
+                    continue
+                if tokens[0] in _ENV_VALUE_OPTS:
+                    tokens.pop(0)
+                    if tokens:
+                        tokens.pop(0)
+                    continue
+                if tokens[0].startswith("-"):
+                    tokens.pop(0)
+                    continue
+                break
+        elif prog in _EXEC_WRAPPERS:
+            spec = _EXEC_WRAPPERS[prog]
+            tokens.pop(0)
+            changed = True
+            while tokens:
+                if tokens[0] in spec["value_opts"]:
+                    tokens.pop(0)
+                    if tokens:
+                        tokens.pop(0)
+                    continue
+                if tokens[0] in spec["stop_tokens"]:
+                    tokens.pop(0)
+                    continue
+                if tokens[0].startswith("-"):
+                    tokens.pop(0)
+                    continue
+                break
+            for _ in range(spec["positional_skip"]):
+                if tokens and not tokens[0].startswith("-"):
+                    tokens.pop(0)
+    return tokens
+
+
+def _segment_blocks(seg):
+    tokens = _unwrap_indirection(seg)
     if not tokens:
         return False
     prog = os.path.basename(tokens[0])
 
     if prog == "git":
-        args = tokens[1:]
-        subcommand_index = _first_positional_index_after_git(args)
-        if subcommand_index is None:
-            return False
-        subcommand = args[subcommand_index]
-        if subcommand == "stash":
-            return _stash_subcommand_blocks(args, subcommand_index)
-        alias_value = _collect_git_aliases(args).get(subcommand)
-        if alias_value is None:
-            return False
-        alias_tokens = alias_value.split()
-        if not alias_tokens or alias_tokens[0] != "stash":
-            return False
-        if len(alias_tokens) > 1:
-            return alias_tokens[1] not in _READONLY_STASH_SUBCOMMANDS
-        stash_sub = _next_positional(args, subcommand_index)
-        return stash_sub not in _READONLY_STASH_SUBCOMMANDS
+        return _git_blocks(tokens[1:])
 
     # `bash -c '...'` (and sh/zsh/dash/ksh) hands an entire nested shell
     # command as a single string argument. The tokens inside are invisible
     # to token-position scanning of the OUTER command, so recurse into a
-    # fresh parse of that string instead of scanning it as ordinary tokens.
+    # fresh parse of that string. Without an explicit "-c" flag, this is
+    # `bash script.sh ...` — trailing tokens are the SCRIPT's own arguments
+    # (opaque to us, never a nested invocation), so fail open rather than
+    # guessing (karo RC4 counter-example: `bash script.sh git stash`).
     if prog in _SHELL_DASH_C_PROGS:
         args = tokens[1:]
         for index, arg in enumerate(args):
             if arg == "-c":
                 nested = args[index + 1] if index + 1 < len(args) else None
-                if nested is not None:
-                    return classify(nested) == "block"
-                break
+                return nested is not None and classify(nested) == "block"
             if arg.startswith("-") and not arg.startswith("--") and "c" in arg[1:]:
                 # combined short flags, e.g. "-lc" — value is the next token
                 nested = args[index + 1] if index + 1 < len(args) else None
-                if nested is not None:
-                    return classify(nested) == "block"
-                break
-        # No -c found (e.g. `bash script.sh ...`): fall through to the
-        # generic launcher fallback below rather than declaring this safe.
+                return nested is not None and classify(nested) == "block"
+        return False
 
-    # Generic launcher fallback: env, command, VAR=val prefixes, nohup,
-    # nice, timeout, setsid, time, /usr/bin/time, ionice, taskset, chrt,
-    # xargs, and any future exec-launcher not named above all place the
-    # wrapped command's tokens later in this same list. Recurse on every
-    # suffix rather than parsing each wrapper's own option grammar.
-    for index in range(1, len(tokens)):
-        if _segment_blocks(tokens[index:]):
-            return True
     return False
 
 
