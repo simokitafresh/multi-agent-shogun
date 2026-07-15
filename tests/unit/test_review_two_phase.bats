@@ -422,10 +422,20 @@ YAML
   run approve karo RC "$REPORT"
   [ "$status" -ne 0 ]
   [[ "$output" == *"parent_cmd mismatch"* ]]
+  [ ! -e "$APPROVALS/karo.yaml" ]
+  [ ! -e "$APPROVALS/last_rc_scope" ]
+  [ ! -e "$APPROVALS/last_rc_commit" ]
+  [ ! -e "$APPROVALS/last_rc_report_payload" ]
+  [ ! -e "$TMPROOT/queue/gates/cmd_test/review_approvals/karo_rework.seen" ]
   rm "$TMPROOT/queue/tasks/ninja.yaml"
   run approve karo RC "$REPORT"
   [ "$status" -ne 0 ]
   [[ "$output" == *"task not found"* ]]
+  [ ! -e "$APPROVALS/karo.yaml" ]
+  [ ! -e "$APPROVALS/last_rc_scope" ]
+  [ ! -e "$APPROVALS/last_rc_commit" ]
+  [ ! -e "$APPROVALS/last_rc_report_payload" ]
+  [ ! -e "$TMPROOT/queue/gates/cmd_test/review_approvals/karo_rework.seen" ]
 }
 
 @test "RC permits a revised implementation manifest to trigger once again" {
