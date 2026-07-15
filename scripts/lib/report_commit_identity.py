@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import pathlib
 import re
+import subprocess
 from typing import Any
 
 
@@ -34,6 +35,22 @@ def explicit_no_commit(report: dict[str, Any]) -> bool:
     return False
 
 
+def _ignored_project_path(rel: pathlib.Path, root: pathlib.Path) -> bool:
+    if not rel.parts or rel.parts[0] != "projects":
+        return False
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "check-ignore", "--quiet", "--", str(rel)],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
 def operational_files_only(report: dict[str, Any], root: pathlib.Path) -> bool:
     files = report.get("files_modified")
     if not isinstance(files, list) or not files:
@@ -49,7 +66,10 @@ def operational_files_only(report: dict[str, Any], root: pathlib.Path) -> bool:
             rel = resolved.relative_to(root)
         except ValueError:
             return False
-        if not rel.parts or rel.parts[0] not in ("queue", "logs"):
+        if not rel.parts or (
+            rel.parts[0] not in ("queue", "logs")
+            and not _ignored_project_path(rel, root)
+        ):
             return False
     return True
 

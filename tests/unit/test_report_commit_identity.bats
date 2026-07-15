@@ -27,6 +27,60 @@ YAML
   grep -q '^commit_hash: no-code-change$' "$REPORT"
 }
 
+@test "all three consumers accept ignored projects knowledge with explicit no-commit" {
+  cat > "$REPORT" <<'YAML'
+worker_id: hanzo
+parent_cmd: cmd_test
+task_type: normal
+status: pending
+files_modified:
+  - {path: projects/infra.yaml, change: core knowledge}
+binary_checks:
+  commit:
+    - {check: gitignore管理データのためcommit不要, result: yes}
+YAML
+
+  run bash "$ROOT/scripts/report_field_set.sh" "$REPORT" commit_hash no-code-change
+  [ "$status" -eq 0 ]
+
+  run python3 "$ROOT/scripts/gates/gate_report_format_main.py" "$REPORT"
+  [[ "$output" != *"commit_hash: 'no-code-change'"* ]]
+
+  source "$ROOT/scripts/lib/review_approval.sh"
+  fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT")
+  [[ "$fp" == *":no-code-change" ]]
+}
+
+@test "no-code allowance stays fail-closed for five forbidden categories" {
+  local outside="$BATS_TEST_TMPDIR/../outside.yaml"
+  local cases=(
+    "projects/infra/lessons.yaml"
+    "scripts/report_field_set.sh"
+    "config/settings.yaml"
+    "docs/research/example.md"
+    "$outside"
+  )
+  local path
+  for path in "${cases[@]}"; do
+    base_report
+    printf -- '- {path: "%s", change: must stay committed}\n' "$path" \
+      | bash "$ROOT/scripts/report_field_set.sh" "$REPORT" files_modified -
+    run bash "$ROOT/scripts/report_field_set.sh" "$REPORT" commit_hash no-code-change
+    [ "$status" -ne 0 ]
+  done
+}
+
+@test "no-code allowance blocks empty files and negative commit evidence" {
+  sed -i '/^files_modified:/,/^binary_checks:/c\files_modified: []\nbinary_checks:' "$REPORT"
+  run bash "$ROOT/scripts/report_field_set.sh" "$REPORT" commit_hash no-code-change
+  [ "$status" -ne 0 ]
+
+  base_report
+  sed -i 's/result: yes/result: no/' "$REPORT"
+  run bash "$ROOT/scripts/report_field_set.sh" "$REPORT" commit_hash no-code-change
+  [ "$status" -ne 0 ]
+}
+
 @test "report_field_set blocks no-code identity when source is mixed" {
   sed -i 's#logs/loop_ledger.yaml#scripts/report_field_set.sh#' "$REPORT"
   run bash "$ROOT/scripts/report_field_set.sh" "$REPORT" commit_hash no-code-change
