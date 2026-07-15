@@ -907,6 +907,49 @@ fi
     [[ "$output" == *"PASS: archived report_received → return 0 (allowed)"* ]]
 }
 
+@test "report_gate: memory DB report_received survives missing hot and archive history" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$BATS_TEST_TMPDIR"
+LOG="$SCRIPT_DIR/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/data"
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  status: done
+  parent_cmd: cmd_memory_fallback
+  report_filename: kagemaru_report_cmd_memory_fallback.yaml
+YAML
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_memory_fallback.yaml" <<YAML
+worker_id: kagemaru
+timestamp: "2026-07-15T12:00:00+09:00"
+verdict: PASS
+YAML
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/karo.yaml"
+python3 - "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" <<PY
+import sqlite3, sys
+db = sqlite3.connect(sys.argv[1])
+db.execute("CREATE TABLE events (ts TEXT, event_type TEXT, agent TEXT, target TEXT, detail TEXT, raw_content TEXT)")
+db.execute("INSERT INTO events VALUES (?,?,?,?,?,?)", (
+    "2026-07-15T12:00:05+09:00", "inbox", "kagemaru", "karo",
+    "type: report_received\\nfrom: kagemaru\\ntarget: karo", "completed"))
+db.commit()
+PY
+log() { echo "$1" >> "$LOG"; }
+can_send_clear_with_report_gate kagemaru test_trigger
+if grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG" 2>/dev/null; then
+    echo "FAIL: durable memory evidence was ignored"
+    exit 1
+fi
+echo "PASS: memory DB report_received allowed clear"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: memory DB report_received allowed clear"* ]]
+}
+
 @test "report_gate: legacy timestamp fallback uses deployed_at, not mutable report mtime" {
     run bash -lc '
 set -eo pipefail

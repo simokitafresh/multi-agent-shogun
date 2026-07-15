@@ -20,6 +20,27 @@ if [ -z "$AGENT" ]; then
 fi
 
 INBOX="$SCRIPT_DIR/queue/inbox/${AGENT}.yaml"
+
+# queue/inbox may be a symlink to the runtime mailbox.  Lock the canonical
+# target so archive/mark/prune cannot race inbox_write on a different inode.
+resolve_inbox_file_path() {
+    local inbox_file="$1" resolved="" inbox_dir="" inbox_base="" resolved_dir=""
+    resolved=$(readlink -f "$inbox_file" 2>/dev/null || true)
+    if [ -n "$resolved" ]; then
+        printf '%s\n' "$resolved"
+        return 0
+    fi
+    inbox_dir="${inbox_file%/*}"
+    inbox_base="${inbox_file##*/}"
+    resolved_dir=$(readlink -f "$inbox_dir" 2>/dev/null || true)
+    if [ -n "$resolved_dir" ]; then
+        printf '%s/%s\n' "$resolved_dir" "$inbox_base"
+    else
+        printf '%s\n' "$inbox_file"
+    fi
+}
+
+INBOX="$(resolve_inbox_file_path "$INBOX")"
 LOCKFILE="$(lock_path "$INBOX")"
 
 if [ ! -f "$INBOX" ]; then

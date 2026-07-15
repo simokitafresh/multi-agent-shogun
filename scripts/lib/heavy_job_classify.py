@@ -58,7 +58,7 @@ def _strip_heredocs(text):
     return "\n".join(out)
 
 
-_SEPS = {"&&", ";", "||", "|", "&"}
+_SEPS = {"&&", ";", "||", "|", "&", "\n"}
 
 
 def _segments(command):
@@ -69,8 +69,13 @@ def _segments(command):
         # a false "multiple files" heavy classification.  punctuation_chars
         # makes command boundaries structural, including &&/|| combinations.
         lexer = shlex.shlex(
-            _strip_heredocs(command), posix=True, punctuation_chars=";&|"
+            _strip_heredocs(command), posix=True, punctuation_chars=";&|\n"
         )
+        # Newline is a shell command boundary, not ordinary whitespace.  If it
+        # is swallowed here, arguments from a later git/commit command become
+        # extra bats targets and a single-file test is falsely classified as
+        # heavy.
+        lexer.whitespace = " \t\r"
         lexer.whitespace_split = True
         lexer.commenters = ""
         tokens = list(lexer)

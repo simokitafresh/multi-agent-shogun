@@ -1520,9 +1520,10 @@ PY
     shopt -u nullglob
     inbox_sources+=("${archive_sources[@]}")
 
-    if python3 - "$name" "$report_epoch" "${inbox_sources[@]}" <<'PY'
+    if python3 - "$name" "$report_epoch" "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" "${inbox_sources[@]}" <<'PY'
 import datetime as _dt
 import os
+import sqlite3
 import sys
 
 import yaml
@@ -1532,7 +1533,8 @@ try:
     report_epoch = int(float(sys.argv[2]))
 except Exception:
     report_epoch = 0
-sources = sys.argv[3:]
+memory_db = sys.argv[3]
+sources = sys.argv[4:]
 
 
 def _timestamp_epoch(value):
@@ -1575,6 +1577,35 @@ for source in sources:
         # report. Allow a small filesystem timestamp skew on WSL2/NTFS.
         if report_epoch == 0 or msg_epoch >= report_epoch - 10:
             sys.exit(0)
+
+# The inbox is the hot queue, not the only durable evidence.  Older versions
+# of inbox_prune discarded read entries without archiving them; inbox_write's
+# append-only memory event lets the clear gate recover from that history gap.
+if os.path.isfile(memory_db):
+    try:
+        conn = sqlite3.connect(f"file:{memory_db}?mode=ro", uri=True)
+        rows = conn.execute(
+            """SELECT ts, detail, raw_content FROM events
+               WHERE event_type = 'inbox' AND agent = ? AND target = 'karo'
+                 AND (instr(coalesce(detail, ''), 'type: report_received') > 0
+                      OR instr(coalesce(raw_content, ''), 'type: report_received') > 0)
+               ORDER BY ts DESC""",
+            (name,),
+        )
+        for ts, detail, raw_content in rows:
+            evidence = f"{detail or ''}\n{raw_content or ''}"
+            if "type: report_received" not in evidence:
+                continue
+            msg_epoch = _timestamp_epoch(ts)
+            if msg_epoch is not None and (report_epoch == 0 or msg_epoch >= report_epoch - 10):
+                sys.exit(0)
+    except (OSError, sqlite3.Error):
+        pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 sys.exit(1)
 PY
