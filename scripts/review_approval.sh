@@ -65,6 +65,35 @@ elif [ "$requested_scope" = report ]; then
 else
   correction_scope=${stored_scope:-implementation}
 fi
+
+# Validate the RC redeployment target before writing any durable review or
+# rework state.  A stale report can outlive the worker's task pointer; recording
+# karo.yaml/last_rc_* first would leave a false RC history even though no task
+# was reopened.
+if [ "$role:$result" = "karo:RC" ]; then
+  worker_id=$(python3 - "$report" <<'PY'
+import re, sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+worker = str(data.get("worker_id") or "")
+if not re.fullmatch(r"[a-z][a-z0-9_-]*", worker):
+    raise SystemExit(1)
+print(worker)
+PY
+  ) || { echo "BLOCK: RC report worker_id missing or invalid: $report_rel" >&2; exit 1; }
+  task_file="$ROOT/queue/tasks/$worker_id.yaml"
+  [ -f "$task_file" ] || { echo "BLOCK: RC worker task not found: $worker_id" >&2; exit 1; }
+  task_parent=$(python3 - "$task_file" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str((data.get("task") or {}).get("parent_cmd") or ""))
+PY
+  ) || { echo "BLOCK: RC worker task unreadable: $worker_id" >&2; exit 1; }
+  [ "$task_parent" = "$cmd_id" ] || {
+    echo "BLOCK: RC worker task parent_cmd mismatch: worker=$worker_id expected=$cmd_id actual=${task_parent:-missing}" >&2
+    exit 1
+  }
+fi
+
 if [ ! "$role:$result" = "karo:RC" ] && [ "$correction_scope" = implementation ] \
   && [ -f "$rejected_commit_file" ] && [ "$current_commit" != "no-code-change" ]; then
   rejected_commit=$(head -n 1 "$rejected_commit_file" 2>/dev/null || true)
@@ -134,28 +163,6 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
     mv -f "$rejected_tmp" "$rejected_payload_file"
     rm -f "$rejected_commit_file"
   fi
-  worker_id=$(python3 - "$report" <<'PY'
-import re, sys, yaml
-data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-worker = str(data.get("worker_id") or "")
-if not re.fullmatch(r"[a-z][a-z0-9_-]*", worker):
-    raise SystemExit(1)
-print(worker)
-PY
-  ) || { echo "BLOCK: RC report worker_id missing or invalid: $report_rel" >&2; exit 1; }
-  task_file="$ROOT/queue/tasks/$worker_id.yaml"
-  [ -f "$task_file" ] || { echo "BLOCK: RC worker task not found: $worker_id" >&2; exit 1; }
-  task_parent=$(python3 - "$task_file" <<'PY'
-import sys, yaml
-data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-print(str((data.get("task") or {}).get("parent_cmd") or ""))
-PY
-  ) || { echo "BLOCK: RC worker task unreadable: $worker_id" >&2; exit 1; }
-  [ "$task_parent" = "$cmd_id" ] || {
-    echo "BLOCK: RC worker task parent_cmd mismatch: worker=$worker_id expected=$cmd_id actual=${task_parent:-missing}" >&2
-    exit 1
-  }
-
   mapfile -t current_reports < <(find "$ROOT/queue/reports" -maxdepth 1 -type f -name "*_report_${cmd_id}.yaml" -print | LC_ALL=C sort)
   current_manifest=$(PROJECT_ROOT="$ROOT" review_manifest_fingerprint "${current_reports[@]}" 2>/dev/null || true)
   # RC starts a fresh report-review lifecycle.  Clear both the formal approval
