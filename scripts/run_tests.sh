@@ -224,6 +224,17 @@ run_bats_files_parallel() {
                 file_weight="$MAX_TEST_JOBS"
                 ;;
         esac
+        # These fixture suites intentionally share mutable state between tests:
+        # hook/agent ontology, one temporary git repository, or one reusable
+        # deploy-task scaffold.  bats --jobs >1 races teardown against sibling
+        # tests (CI run 29411257165: 28 failures), so make the fixture contract
+        # explicit and keep the whole file exclusive from other file roots.
+        case "$(basename "$file")" in
+            test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats)
+                file_inner_jobs=1
+                file_weight="$MAX_TEST_JOBS"
+                ;;
+        esac
         # Per-file overrides are hints, never permission to exceed the
         # host-wide admission budget.
         if [ "$file_inner_jobs" -gt "$MAX_TEST_JOBS" ]; then
