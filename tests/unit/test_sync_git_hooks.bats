@@ -46,11 +46,14 @@ teardown() {
 
 commit_hook_source() {
     local content="$1"
-    mkdir -p "$TEST_ROOT/scripts/hooks"
+    mkdir -p "$TEST_ROOT/scripts/hooks" "$TEST_ROOT/.githooks"
     printf '%s\n' "$content" > "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
+    if [ ! -f "$TEST_ROOT/.githooks/pre-push" ]; then
+        printf '#!/usr/bin/env bash\necho PRE_PUSH_HEAD\n' > "$TEST_ROOT/.githooks/pre-push"
+    fi
     (
         cd "$TEST_ROOT"
-        git add scripts/hooks/git-pre-commit.sh
+        git add scripts/hooks/git-pre-commit.sh .githooks/pre-push
         git commit -qm "hook source: $content"
     )
 }
@@ -160,16 +163,46 @@ OLDSCRIPT
     [[ "$output" != *"OTHER_AGENT_UNCOMMITTED_WIP"* ]]
 }
 
-@test "does not touch unrelated hook files" {
+@test "does not touch hook files absent from the tracked manifest" {
     commit_hook_source "echo v1"
-    printf '#!/usr/bin/env bash\necho pre-push-untouched\n' > "$TEST_ROOT/.git/hooks/pre-push"
+    printf '#!/usr/bin/env bash\necho commit-msg-untouched\n' > "$TEST_ROOT/.git/hooks/commit-msg"
+    chmod +x "$TEST_ROOT/.git/hooks/commit-msg"
+
+    run bash -c "cd '$TEST_ROOT' && bash '$HELPER'"
+
+    [ "$status" -eq 0 ]
+    run cat "$TEST_ROOT/.git/hooks/commit-msg"
+    [[ "$output" == *"commit-msg-untouched"* ]]
+}
+
+@test "pre-push tracked source is installed and stale active hook is overwritten" {
+    commit_hook_source "echo v1"
+    printf '#!/usr/bin/env bash\necho STALE_PRE_PUSH\n' > "$TEST_ROOT/.git/hooks/pre-push"
     chmod +x "$TEST_ROOT/.git/hooks/pre-push"
 
     run bash -c "cd '$TEST_ROOT' && bash '$HELPER'"
 
     [ "$status" -eq 0 ]
     run cat "$TEST_ROOT/.git/hooks/pre-push"
-    [[ "$output" == *"pre-push-untouched"* ]]
+    [[ "$output" == *"PRE_PUSH_HEAD"* ]]
+    [[ "$output" != *"STALE_PRE_PUSH"* ]]
+}
+
+@test "pre-push working-tree WIP stays out of active hook unless explicitly in scope" {
+    commit_hook_source "echo v1"
+    printf '#!/usr/bin/env bash\necho PRE_PUSH_WIP\n' > "$TEST_ROOT/.githooks/pre-push"
+
+    run bash -c "cd '$TEST_ROOT' && bash '$HELPER'"
+    [ "$status" -eq 0 ]
+    run cat "$TEST_ROOT/.git/hooks/pre-push"
+    [[ "$output" == *"PRE_PUSH_HEAD"* ]]
+    [[ "$output" != *"PRE_PUSH_WIP"* ]]
+
+    (cd "$TEST_ROOT" && git add .githooks/pre-push)
+    run bash -c "cd '$TEST_ROOT' && bash '$HELPER' --scope-path .githooks/pre-push"
+    [ "$status" -eq 0 ]
+    run cat "$TEST_ROOT/.git/hooks/pre-push"
+    [[ "$output" == *"PRE_PUSH_WIP"* ]]
 }
 
 @test "GA-222 REQUEST_CHANGES: another agent's uncommitted working-tree edit never leaks into the live hook" {

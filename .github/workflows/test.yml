@@ -37,6 +37,7 @@ jobs:
           bash scripts/sync_git_hooks.sh
           test "$(git config --get core.hooksPath)" = "$PWD/.git/hooks"
           cmp -s scripts/hooks/git-pre-commit.sh .git/hooks/pre-commit
+          cmp -s .githooks/pre-push .git/hooks/pre-push
 
       - name: Run root-level tests (inbox_write.sh etc.)
         run: |

@@ -65,6 +65,7 @@ source "$SYNC_GIT_HOOKS_SCRIPT_DIR/lib/scope_path.sh"
 # "<hook名>:<正本の repo-root 相対path>" のペア。
 HOOK_MANIFEST=(
     "pre-commit:scripts/hooks/git-pre-commit.sh"
+    "pre-push:.githooks/pre-push"
 )
 
 scope_paths=()
@@ -92,7 +93,8 @@ is_in_scope() {
 }
 
 uses_hook_source_convention() {
-    git -C "$repo_root" cat-file -e "HEAD:scripts/hooks" 2>/dev/null
+    git -C "$repo_root" cat-file -e "HEAD:scripts/hooks" 2>/dev/null \
+        || git -C "$repo_root" cat-file -e "HEAD:.githooks" 2>/dev/null
 }
 
 resolve_installed_path() {
