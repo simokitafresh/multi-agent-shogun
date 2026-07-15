@@ -15,6 +15,11 @@ setup() {
 
     cp "$SOURCE_HOOK" "$TEST_ROOT/.githooks/pre-push"
     chmod +x "$TEST_ROOT/.githooks/pre-push"
+    git -C "$TEST_ROOT" init -q
+    git -C "$TEST_ROOT" config user.email test@example.invalid
+    git -C "$TEST_ROOT" config user.name "Pre-push Test"
+    git -C "$TEST_ROOT" add .githooks/pre-push
+    git -C "$TEST_ROOT" commit -qm fixture
 
     cat > "$TEST_ROOT/mock_bin/timeout" <<'MOCK'
 #!/usr/bin/env bash
@@ -87,4 +92,26 @@ run_hook() {
     run env TEST_ROOT="$TEST_ROOT" PATH="$TEST_ROOT/mock_bin:$PATH" \
         "$TEST_ROOT/run_hook.sh" --force-with-lease
     [ "$status" -eq 0 ]
+}
+
+@test "concurrent pre-push for the same HEAD runs the full suite once and reuses PASS" {
+    cat > "$TEST_ROOT/scripts/run_tests.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo "$*" >> "$TEST_ROOT/run_tests_calls.log"
+if [ "$1" = "unit" ]; then sleep 1; fi
+echo "PASS: isolated runner"
+MOCK
+    chmod +x "$TEST_ROOT/scripts/run_tests.sh"
+
+    env TEST_ROOT="$TEST_ROOT" PATH="$TEST_ROOT/mock_bin:$PATH" \
+        bash -lc 'cd "$TEST_ROOT" && bash .githooks/pre-push' >"$TEST_ROOT/first.out" 2>&1 &
+    first_pid=$!
+    sleep 0.1
+    run env TEST_ROOT="$TEST_ROOT" PATH="$TEST_ROOT/mock_bin:$PATH" \
+        bash -lc 'cd "$TEST_ROOT" && bash .githooks/pre-push'
+    wait "$first_pid"
+
+    [ "$status" -eq 0 ]
+    [ "$(grep -c '^unit$' "$TEST_ROOT/run_tests_calls.log")" -eq 1 ]
+    [[ "$output" == *"Reusing serialized PASS"* ]]
 }
