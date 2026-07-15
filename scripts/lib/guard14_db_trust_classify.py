@@ -537,8 +537,24 @@ def _segment_is_exempt(tokens: list[str]) -> bool:
     return False
 
 
+_REDIRECT_RE = re.compile(r"^[0-9]*[><]")
+
+
+def _strip_shell_redirects(tokens: list[str]) -> list[str]:
+    """Remove shell redirect tokens (2>, >, <, etc.) that shlex leaves in segments.
+
+    Claude Code appends '2>&1' to bash commands. shlex with punctuation_chars=";&|"
+    tokenizes this as '2>' + '&' + '1'. The '&' is a segment separator, so '2>' ends
+    up as the last token of the preceding segment. This is a shell redirect, not a
+    script argument (2026-07-15 shogun root cause: launcher exempt rejected because
+    '2>' was treated as unknown child arg → not child = False).
+    """
+    return [t for t in tokens if not _REDIRECT_RE.match(t)]
+
+
 def _db_launcher_invocation_valid(argv: list[str]) -> bool:
     """Prove the canonical launcher was invoked through its registered contract."""
+    argv = _strip_shell_redirects(argv)
     value_flags = {
         "--capability", "--mode", "--confirm", "--nonce", "--credential-file",
         "--credential-source-file", "--expected-commit", "--execution-root",
