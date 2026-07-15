@@ -24,11 +24,23 @@ teardown() {
 
 wait_for_file() {
     local path="$1" i=0
-    while [ ! -s "$path" ] && [ "$i" -lt 50 ]; do
+    while [ ! -s "$path" ] && [ "$i" -lt 200 ]; do
         sleep 0.05
         i=$((i + 1))
     done
     [ -s "$path" ]
+}
+
+wait_for_nonempty_readers() {
+    local expected="$1" i=0 count=0
+    while [ "$i" -lt 200 ]; do
+        count="$(find "$TEST_TMPDIR" -maxdepth 1 -type f -name 'read.*' -size +0c | wc -l)"
+        [ "$count" -eq "$expected" ] && return 0
+        sleep 0.05
+        i=$((i + 1))
+    done
+    printf 'reader outputs ready=%s expected=%s\n' "$count" "$expected" >&2
+    return 1
 }
 
 @test "startup warm-up creates a missing cache asynchronously" {
@@ -73,18 +85,22 @@ PY
 @test "missing cache read starts single-flight refresh and returns source immediately" {
     create_memory_db_cache() {
         printf 'create\n' >> "$TEST_TMPDIR/create.calls"
-        sleep 2
+        while [ ! -e "$TEST_TMPDIR/release.create" ]; do sleep 0.02; done
         cp "$2" "$SHOGUN_MEMORY_DB_CACHE_PATH"
     }
     export -f create_memory_db_cache
 
-    local started elapsed_ms read_path
-    started="$(date +%s%3N)"
-    read_path="$(prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db")"
-    elapsed_ms=$(( $(date +%s%3N) - started ))
+    prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db" \
+        >"$TEST_TMPDIR/read.1" &
+    local reader_pid=$!
 
-    [ "$read_path" = "$TEST_TMPDIR/source.db" ]
-    [ "$elapsed_ms" -lt 1000 ]
+    # The refresh remains deliberately unreleased.  Seeing the reader output
+    # before release proves the read path did not wait for that child; no
+    # machine-speed threshold is involved.
+    wait_for_nonempty_readers 1
+    [ "$(cat "$TEST_TMPDIR/read.1")" = "$TEST_TMPDIR/source.db" ]
+    touch "$TEST_TMPDIR/release.create"
+    wait "$reader_pid"
     wait_for_file "$SHOGUN_MEMORY_DB_CACHE_PATH"
     [ "$(wc -l < "$TEST_TMPDIR/create.calls")" -eq 1 ]
 }
@@ -108,16 +124,22 @@ PY
     touch -d '2 minutes ago' "$SHOGUN_MEMORY_DB_CACHE_PATH"
     touch "$TEST_TMPDIR/source.db"
     create_memory_db_cache() {
-        sleep 2
+        printf 'started\n' > "$TEST_TMPDIR/refresh.started"
+        while [ ! -e "$TEST_TMPDIR/release.create" ]; do sleep 0.02; done
+        printf 'done\n' > "$TEST_TMPDIR/refresh.done"
     }
+    export -f create_memory_db_cache
 
-    local started elapsed_ms read_path
-    started="$(date +%s%3N)"
-    read_path="$(prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db")"
-    elapsed_ms=$(( $(date +%s%3N) - started ))
+    prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db" \
+        >"$TEST_TMPDIR/read.1" &
+    local reader_pid=$!
 
-    [ "$read_path" = "$SHOGUN_MEMORY_DB_CACHE_PATH" ]
-    [ "$elapsed_ms" -lt 1000 ]
+    wait_for_file "$TEST_TMPDIR/refresh.started"
+    wait_for_nonempty_readers 1
+    [ "$(cat "$TEST_TMPDIR/read.1")" = "$SHOGUN_MEMORY_DB_CACHE_PATH" ]
+    touch "$TEST_TMPDIR/release.create"
+    wait "$reader_pid"
+    wait_for_file "$TEST_TMPDIR/refresh.done"
 }
 
 @test "ten concurrent stale readers never wait for refresh or select the source" {
@@ -125,25 +147,28 @@ PY
     touch -d '2 minutes ago' "$SHOGUN_MEMORY_DB_CACHE_PATH"
     touch "$TEST_TMPDIR/source.db"
     create_memory_db_cache() {
-        sleep 2
+        printf 'started\n' > "$TEST_TMPDIR/refresh.started"
+        while [ ! -e "$TEST_TMPDIR/release.create" ]; do sleep 0.02; done
+        printf 'done\n' > "$TEST_TMPDIR/refresh.done"
     }
     export -f create_memory_db_cache
 
-    local started elapsed_ms i
-    started="$(date +%s%3N)"
+    local i
     for i in $(seq 1 10); do
         (
             source "$PROJECT_ROOT/scripts/lib/memory_db_cache.sh"
             prepare_memory_db_for_read "$PROJECT_ROOT" "$TEST_TMPDIR/source.db"
         ) >"$TEST_TMPDIR/read.$i" &
     done
-    wait
-    elapsed_ms=$(( $(date +%s%3N) - started ))
 
-    [ "$elapsed_ms" -lt 1500 ]
+    wait_for_file "$TEST_TMPDIR/refresh.started"
+    wait_for_nonempty_readers 10
     for i in $(seq 1 10); do
         [ "$(cat "$TEST_TMPDIR/read.$i")" = "$SHOGUN_MEMORY_DB_CACHE_PATH" ]
     done
+    touch "$TEST_TMPDIR/release.create"
+    wait
+    wait_for_file "$TEST_TMPDIR/refresh.done"
 }
 
 @test "restart_watchers flow creates a missing cache before touching watchers" {

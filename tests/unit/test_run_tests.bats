@@ -75,7 +75,7 @@ SH
 printf '2\n'
 SH
   chmod +x "$TMPROOT/bin/nproc"
-  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" bash -c '
+  run env -u BATS_MAX_TEST_JOBS PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" bash -c '
     source "$1/scripts/run_tests.sh"
     [ "$MAX_TEST_JOBS" -eq 2 ]
   ' _ "$TMPROOT"
@@ -86,7 +86,7 @@ SH
 printf '64\n'
 SH
   chmod +x "$TMPROOT/bin/nproc"
-  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" bash -c '
+  run env -u BATS_MAX_TEST_JOBS PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" bash -c '
     source "$1/scripts/run_tests.sh"
     [ "$MAX_TEST_JOBS" -eq 8 ]
   ' _ "$TMPROOT"
