@@ -51,6 +51,8 @@ _BATS_OPTIONS_WITH_VALUE = {
     "--setup-suite-file",
 }
 
+_INFO_ONLY_OPTIONS = {"-h", "--help", "-v", "--version"}
+
 
 def _bats_targets(args):
     targets = []
@@ -71,6 +73,13 @@ def _bats_targets(args):
 
 def _is_bats_heavy(args):
     file_args = _bats_targets(args)
+    # Metadata/help queries do not execute tests.  Treating `bats --version`
+    # like a stdin/full-suite invocation makes a harmless capability probe
+    # require the host-wide admission lock (GA-270 false positive).
+    if not file_args and any(
+        arg.split("=", 1)[0] in _INFO_ONLY_OPTIONS for arg in args
+    ):
+        return False
     if len(file_args) != 1:
         return True
     target = file_args[0]
@@ -106,6 +115,12 @@ def _is_pytest_heavy(targets):
     return True
 
 
+def _is_info_only(args):
+    return not [a for a in args if not a.startswith("-")] and any(
+        a.split("=", 1)[0] in _INFO_ONLY_OPTIONS for a in args
+    )
+
+
 _ONESHOT_HEAVY_NAME_RE = re.compile(
     r"golden|regression_check|fullrecalculate", re.IGNORECASE
 )
@@ -127,6 +142,8 @@ def classify(command):
             continue
 
         if prog == "pytest":
+            if _is_info_only(args):
+                continue
             targets = [a for a in args if not a.startswith("-")]
             if _is_pytest_heavy(targets):
                 return "heavy"
@@ -138,6 +155,8 @@ def classify(command):
             and args[0] == "-m"
             and args[1] == "pytest"
         ):
+            if _is_info_only(args[2:]):
+                continue
             targets = [a for a in args[2:] if not a.startswith("-")]
             if _is_pytest_heavy(targets):
                 return "heavy"

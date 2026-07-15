@@ -265,13 +265,15 @@ run_bats_files_parallel() {
                 file_weight="$MAX_TEST_JOBS"
                 ;;
         esac
-        # These fixture suites intentionally share mutable state between tests:
-        # hook/agent ontology, one temporary git repository, or one reusable
-        # deploy-task scaffold.  bats --jobs >1 races teardown against sibling
-        # tests (CI run 29411257165: 28 failures), so make the fixture contract
-        # explicit and keep the whole file exclusive from other file roots.
+        # These fixture suites exercise process-wide hooks, git configuration,
+        # daemon locks/children, startup caches, or a reusable mutable scaffold.
+        # They are serial internally, but are not independent from other bats
+        # roots on a clean runner.  CI run 29435270210 overlapped the 106-case
+        # startup gate with three roots and produced 39 assertion failures plus
+        # one post-plan daemon timeout.  One such fixture therefore owns the
+        # aggregate budget until it exits.
         case "$(basename "$file")" in
-            test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats)
+            test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats)
                 file_inner_jobs=1
                 file_weight="$MAX_TEST_JOBS"
                 ;;

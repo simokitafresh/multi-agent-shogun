@@ -10,6 +10,10 @@ setup() {
     # an absent fixture DB so the test cannot start a detached copy of the
     # production memory DB and leak work beyond the bats root in clean CI.
     export SHOGUN_MEMORY_DB_SOURCE_PATH="$TEST_ROOT/missing-memory.db"
+    # Never contend with or inherit the production restart lock.  A clean CI
+    # run printed all 5 passing tests, then kept the bats root open until the
+    # outer 900s timeout while daemon fixtures shared the global /tmp lock.
+    export RESTART_WATCHERS_LOCK_FILE="$TEST_ROOT/restart-watchers.lock"
 }
 
 teardown() { rm -rf "$TEST_ROOT"; }

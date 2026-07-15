@@ -55,6 +55,14 @@ CMD
     [ "$result" = "heavy" ]
 }
 
+@test "分類器: bats/pytestのversion・help照会はテストを実行せず軽量" {
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    [ "$(heavy_job_classify "bats --version")" = "light" ]
+    [ "$(heavy_job_classify "bats --help")" = "light" ]
+    [ "$(heavy_job_classify "pytest --version")" = "light" ]
+    [ "$(heavy_job_classify "python3 -m pytest --help")" = "light" ]
+}
+
 @test "分類器: pytest全量ディレクトリは重量、単一::テスト関数指定は軽量" {
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
     heavy="$(heavy_job_classify "python3 -m pytest backend/tests")"
@@ -339,12 +347,13 @@ print('ok')
     grep -q 'file_inner_jobs="\$MAX_TEST_JOBS"' "$runner"
 }
 
-@test "shared commit and deploy fixtures are serial inside an exclusive file root" {
+@test "shared hook git daemon and startup fixtures are exclusive file roots" {
     runner="$ROOT/scripts/run_tests.sh"
-    grep -q 'test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats' "$runner"
-    grep -A3 'test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats)' "$runner" \
+    fixture_contract='test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats'
+    grep -Fq "$fixture_contract" "$runner"
+    grep -F -A3 "${fixture_contract})" "$runner" \
         | grep -q 'file_inner_jobs=1'
-    grep -A3 'test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats)' "$runner" \
+    grep -F -A3 "${fixture_contract})" "$runner" \
         | grep -q 'file_weight="\$MAX_TEST_JOBS"'
 }
 
@@ -352,6 +361,13 @@ print('ok')
     run _run_hook "bats tests/unit/test_foo.bats"
     [ "$status" -eq 0 ]
     run _run_hook "python3 -m pytest backend/tests/test_foo.py::test_bar"
+    [ "$status" -eq 0 ]
+}
+
+@test "hook: bats/pytestのversion照会はheavy admissionを要求しない" {
+    run _run_hook "bats --version"
+    [ "$status" -eq 0 ]
+    run _run_hook "python3 -m pytest --version"
     [ "$status" -eq 0 ]
 }
 

@@ -59,13 +59,13 @@ printf '1..1\nok 1 sample\n'
 SH
   chmod +x "$TMPROOT/bin/bats"
   run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$TMPROOT/bats.args" \
-    BATS_CACHE=0 BATS_INNER_JOBS=1 bash -c '
+    BATS_CACHE=0 BATS_INNER_JOBS=1 BATS_MAX_TEST_JOBS=8 bash -c '
       source "$1/scripts/run_tests.sh"
       run_bats_files_parallel "$1/tests/unit/sample.bats"
     ' _ "$TMPROOT"
   [ "$status" -eq 0 ]
   grep -Fq -- '--jobs 1' "$TMPROOT/bats.args"
-  run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; [ "$INNER_JOBS" -eq 1 ] && [ "$MAX_TEST_JOBS" -eq 8 ]' _ "$TMPROOT"
+  run env REPO_ROOT="$TMPROOT" BATS_MAX_TEST_JOBS=8 bash -c 'source "$1/scripts/run_tests.sh"; [ "$INNER_JOBS" -eq 1 ] && [ "$MAX_TEST_JOBS" -eq 8 ]' _ "$TMPROOT"
   [ "$status" -eq 0 ]
 }
 
