@@ -19,6 +19,7 @@
 #   review_feedback      — GATEフィードバック（家老→軍師）
 #   report_review        — 忍者報告一次レビュー依頼（家老→軍師）
 #   report_review_result — 忍者報告レビュー結果（軍師→家老）
+#   report_revision      — 正式RC後の忍者への修正通知
 #   workaround_feedback  — workaround原因共有（家老→軍師）
 #   review_hint          — レビューヒント（家老→軍師）
 #   analysis_result      — idle時データ分析結果（軍師→家老）
@@ -222,6 +223,48 @@ report_yaml_is_template() {
     fi
 
     echo "no"
+}
+
+guard_report_revision_delivery() {
+    local target="$1"
+    local type="$2"
+    local task_yaml report_path task_status report_status parent_cmd
+
+    [ "$type" = "report_revision" ] || return 0
+    target_is_ninja "$target" || return 0
+
+    task_yaml="$SCRIPT_DIR/queue/tasks/${target}.yaml"
+    [ -f "$task_yaml" ] || return 0
+    task_status=$(inbox_yaml_field_get "$task_yaml" "status" "")
+    parent_cmd=$(inbox_yaml_field_get "$task_yaml" "parent_cmd" "")
+    report_path=$(inbox_yaml_field_get "$task_yaml" "report_path" "")
+    if [ -z "$report_path" ]; then
+        report_path=$(inbox_yaml_field_get "$task_yaml" "report_filename" "")
+        [ -z "$report_path" ] || report_path="queue/reports/$report_path"
+    fi
+    case "$report_path" in
+        /*) ;;
+        ?*) report_path="$SCRIPT_DIR/$report_path" ;;
+    esac
+    report_status=""
+    [ -n "$report_path" ] && [ -f "$report_path" ] \
+        && report_status=$(inbox_yaml_field_get "$report_path" "status" "")
+
+    case "$task_status:$report_status" in
+        assigned:revision_requested|acknowledged:revision_requested|in_progress:revision_requested)
+            return 0
+            ;;
+    esac
+    case "$task_status" in
+        done|failed|blocked) ;;
+        *)
+            [ "$report_status" = "completed" ] || return 0
+            ;;
+    esac
+
+    echo "BLOCK: report_revision requires formal RC reopen before delivery (task status=${task_status:-missing}, report status=${report_status:-missing})." >&2
+    echo "Run: bash scripts/review_approval.sh ${parent_cmd:-<cmd>} karo RC ${report_path:-<report>}" >&2
+    exit 2
 }
 
 report_yaml_fail_details() {
@@ -1454,7 +1497,7 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
             done
         fi
     fi
-    if [ "$valid_target" -eq 0 ]; then
+if [ "$valid_target" -eq 0 ]; then
         echo "ERROR: Invalid target agent: '$TARGET'. Allowed: ${ALLOWED_TARGETS:-none}" >&2
         exit 1
     fi
@@ -1482,6 +1525,11 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
         exit 1
     fi
 fi
+
+# A bare revision notification must never race ahead of formal RC.  The RC
+# helper atomically reopens task/report state; persistence before that point can
+# be consumed and then erased by monitor auto-clear.
+guard_report_revision_delivery "$TARGET" "$TYPE"
 
 # task_new gate: 将軍からの直接作業指示はcmd品質ゲートを迂回するため禁止
 if [ "$FROM" = "shogun" ] && [ "$TYPE" = "task_new" ]; then

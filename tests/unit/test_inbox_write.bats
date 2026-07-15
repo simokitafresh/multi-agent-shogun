@@ -1311,6 +1311,45 @@ EOF
     [ ! -e "$inbox" ]
 }
 
+@test "report_revision: terminal task and completed report are blocked before persistence with formal RC command" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_terminal_revision
+  report_path: queue/reports/testninja_report_cmd_terminal_revision.yaml
+YAML
+    printf 'status: completed\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_terminal_revision.yaml"
+
+    run _run_inbox_write testninja "修正せよ" report_revision karo
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"requires formal RC reopen"* ]]
+    [[ "$output" == *"bash scripts/review_approval.sh cmd_terminal_revision karo RC"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/inbox/testninja.yaml" ]
+}
+
+@test "report_revision: formal RC reopened state and normal notification classes remain allowed" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+  parent_cmd: cmd_formal_revision
+  report_path: queue/reports/testninja_report_cmd_formal_revision.yaml
+YAML
+    printf 'status: revision_requested\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_formal_revision.yaml"
+
+    run _run_inbox_write testninja "正式RC後の修正" report_revision karo
+    [ "$status" -eq 0 ]
+    run _run_inbox_write testninja "再開せよ" task_reopened karo
+    [ "$status" -eq 0 ]
+    run _run_inbox_write testninja "通常レビュー" report_review karo
+    [ "$status" -eq 0 ]
+    run _run_inbox_write karo "非忍者宛revision" report_revision gunshi
+    [ "$status" -eq 0 ]
+}
+
 @test "review notification contradiction guard ignores valid non-contradictory forms" {
     setup_basic_test_env
     run _run_inbox_write karo "verdict: FAIL; gate_prediction: BLOCK" report_review_result gunshi
