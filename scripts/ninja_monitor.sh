@@ -473,9 +473,17 @@ auto_commit_normalize_scope_path() {
 auto_commit_scope_paths_for_agent() {
     local agent_name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
-    local raw_scope
+    local task_status raw_scope
 
     [ -f "$task_file" ] || return 0
+    task_status="$(yaml_field_get "$task_file" "status" "" || true)"
+    case "$task_status" in
+        assigned|acknowledged|in_progress) ;;
+        *)
+            log "AUTO-COMMIT-STALE-SCOPE-SKIP: $agent_name task_status=${task_status:-missing}; target_path is not ownership evidence"
+            return 0
+            ;;
+    esac
     raw_scope="$(yaml_field_get "$task_file" "target_path" "" || true)"
     [ -n "${raw_scope//[[:space:]]/}" ] || return 0
     while IFS= read -r raw_line || [ -n "$raw_line" ]; do

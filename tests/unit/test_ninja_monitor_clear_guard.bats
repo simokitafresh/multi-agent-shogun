@@ -257,7 +257,7 @@ grep -q "AUTO-COMMIT-OPERATIONAL-SKIP: saizo excluded config/settings.yaml" "$LO
     [[ "$output" == *"AUTO-COMMIT-OPERATIONAL-SKIP"* ]]
 }
 
-@test "auto_commit: task target_path limits regular git add scope" {
+@test "auto_commit: stale terminal target_path cannot claim code but operational files still commit" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -277,7 +277,8 @@ git config user.email test@example.com
 git config user.name test
 printf "base\n" > scripts/a.sh
 printf "base\n" > scripts/other.sh
-git add scripts/a.sh scripts/other.sh
+printf "base\n" > queue/state.yaml
+git add scripts/a.sh scripts/other.sh queue/state.yaml
 git commit -qm initial
 
 cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<INNEREOF
@@ -288,9 +289,10 @@ INNEREOF
 
 printf "change\n" >> scripts/a.sh
 printf "change\n" >> scripts/other.sh
+printf "change\n" >> queue/state.yaml
 NINJA_MONITOR_NOW=10000
 export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
-_uncommitted=$(git status --porcelain -uno -- scripts/)
+_uncommitted=$(git status --porcelain -uno -- scripts/ queue/)
 auto_commit_before_clear hayate "$_uncommitted"
 
 committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
@@ -298,14 +300,15 @@ worktree_files=$(git diff --name-only | sort | tr "\n" " ")
 echo "committed=$committed_files"
 echo "worktree=$worktree_files"
 cat "$LOG"
-test "$committed_files" = "scripts/a.sh "
-test "$worktree_files" = "scripts/other.sh "
-grep -q "AUTO-COMMIT-SCOPE-SKIP: hayate excluded scripts/other.sh (outside target_path)" "$LOG"
+test "$committed_files" = "queue/state.yaml "
+test "$worktree_files" = "scripts/a.sh scripts/other.sh "
+grep -q "AUTO-COMMIT-STALE-SCOPE-SKIP: hayate task_status=done; target_path is not ownership evidence" "$LOG"
+grep -q "AUTO-COMMIT-OPERATIONAL-SKIP: hayate excluded scripts/a.sh" "$LOG"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"committed=scripts/a.sh"* ]]
-    [[ "$output" == *"worktree=scripts/other.sh"* ]]
-    [[ "$output" == *"AUTO-COMMIT-SCOPE-SKIP"* ]]
+    [[ "$output" == *"committed=queue/state.yaml"* ]]
+    [[ "$output" == *"worktree=scripts/a.sh scripts/other.sh"* ]]
+    [[ "$output" == *"AUTO-COMMIT-STALE-SCOPE-SKIP"* ]]
 }
 
 @test "auto_commit: regular auto-commit skips within 30 minutes" {
@@ -372,7 +375,7 @@ git add scripts/a.sh config/other.yaml
 git commit -qm initial
 cat > queue/tasks/hayate.yaml <<INNEREOF
 task:
-  status: done
+  status: in_progress
   target_path: scripts/a.sh
 INNEREOF
 
@@ -432,7 +435,7 @@ git add scripts/a.sh
 git commit -qm initial
 cat > queue/tasks/hayate.yaml <<INNEREOF
 task:
-  status: done
+  status: in_progress
   target_path: scripts/a.sh
 INNEREOF
 
@@ -2237,7 +2240,7 @@ INNEREOF
 # operational-only filter applies only when clearing agent has no target_path)
 cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<INNEREOF
 task:
-  status: done
+  status: in_progress
   target_path: scripts
 INNEREOF
 NINJA_NAMES=(hanzo saizo)
@@ -2389,7 +2392,7 @@ git commit -qm initial
 
 cat > "$SCRIPT_DIR/queue/tasks/kotaro.yaml" <<INNEREOF
 task:
-  status: done
+  status: in_progress
   target_path: scripts
 INNEREOF
 
@@ -2443,7 +2446,7 @@ git commit -qm initial
 # target_path=.claude で .claude/ スコープ内として安全フィルタが適用される
 cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<INNEREOF
 task:
-  status: done
+  status: in_progress
   target_path: .claude
 INNEREOF
 
