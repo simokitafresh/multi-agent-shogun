@@ -29,6 +29,27 @@ run_step() {
     fi
 }
 
+run_step_with_retry() {
+    local name="$1" max_attempts="$2" retry_delay="$3"
+    local attempt rc=0
+    shift 3
+    for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+        printf '[cmd_complete] START %s attempt=%d/%d\n' "$name" "$attempt" "$max_attempts" >&2
+        if "$@"; then
+            printf '[cmd_complete] PASS %s attempt=%d/%d\n' "$name" "$attempt" "$max_attempts" >&2
+            return 0
+        else
+            rc=$?
+        fi
+        if (( attempt < max_attempts )); then
+            printf '[cmd_complete] RETRY %s after transient failure rc=%d\n' "$name" "$rc" >&2
+            sleep "$retry_delay"
+        fi
+    done
+    printf '[cmd_complete] FAILED %s after %d attempts\n' "$name" "$max_attempts" >&2
+    return "$rc"
+}
+
 run_status_step() {
     local output rc=0 archive_hit=""
     printf '[cmd_complete] START status_completed\n' >&2
@@ -90,7 +111,13 @@ run_step cmd_complete_gate bash "$SCRIPT_DIR/cmd_complete_gate.sh" "$CMD_ID"
 run_step quality_log bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" CLEAR \
     "${CMD_COMPLETE_KARO_REWORK:-no}" "${CMD_COMPLETE_SUPPLEMENTARY_CMDS:-0}"
 run_status_step
-run_step dashboard bash "$SCRIPT_DIR/dashboard_update.sh" "$CMD_ID" --bundle "$BUNDLE_PATH"
+# dashboard_update has its own 10s flock wait, but several independently
+# completed commands can legitimately queue behind one writer.  A single lock
+# timeout is transient, while publishing later steps without dashboard is not;
+# bounded retry keeps the sequence fail-closed without requiring manual reruns.
+run_step_with_retry dashboard "${CMD_COMPLETE_DASHBOARD_ATTEMPTS:-3}" \
+    "${CMD_COMPLETE_DASHBOARD_RETRY_DELAY:-1}" \
+    bash "$SCRIPT_DIR/dashboard_update.sh" "$CMD_ID" --bundle "$BUNDLE_PATH"
 run_step ntfy bash "$SCRIPT_DIR/ntfy_cmd.sh" "$CMD_ID" "完了"
 run_step inbox_archive bash "$SCRIPT_DIR/inbox_archive.sh" karo
 

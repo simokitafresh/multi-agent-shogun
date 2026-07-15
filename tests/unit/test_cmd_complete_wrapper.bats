@@ -53,6 +53,41 @@ SH
     ! grep -q 'dashboard_update.sh' "$CMD_COMPLETE_TEST_LOG"
 }
 
+@test "transient dashboard lock failure is retried before later steps" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/dashboard-retry.log"
+    cat > "$FIXTURE/scripts/dashboard_update.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'dashboard_update.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+attempt_file="${CMD_COMPLETE_TEST_LOG}.dashboard-attempt"
+attempt=0
+[ ! -f "$attempt_file" ] || attempt=$(cat "$attempt_file")
+attempt=$((attempt + 1))
+printf '%s\n' "$attempt" > "$attempt_file"
+[ "$attempt" -ge 2 ]
+SH
+    chmod +x "$FIXTURE/scripts/dashboard_update.sh"
+
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        CMD_COMPLETE_DASHBOARD_RETRY_DELAY=0 \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    [ "$(grep -c '^dashboard_update.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 2 ]
+    [ "$(grep -c '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 1 ]
+    [[ "$output" == *"RETRY dashboard"* ]]
+}
+
+@test "persistent dashboard failure stops after bounded attempts" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/dashboard-fail.log"
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        CMD_COMPLETE_FAIL_STEP=dashboard_update.sh \
+        CMD_COMPLETE_DASHBOARD_ATTEMPTS=2 CMD_COMPLETE_DASHBOARD_RETRY_DELAY=0 \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -ne 0 ]
+    [ "$(grep -c '^dashboard_update.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 2 ]
+    ! grep -q '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG"
+    [[ "$output" == *"FAILED dashboard after 2 attempts"* ]]
+}
+
 @test "quoted bundle path remains one argument" {
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/quoted.log"
     local bundle="$FIXTURE/queue/gates/cmd_fixture/sg7 bundle.json"
