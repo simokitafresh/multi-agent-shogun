@@ -22,7 +22,19 @@ INNER_JOBS="${BATS_INNER_JOBS:-1}"
 # of live tests must still honour the public --jobs 8 contract.  The previous
 # default (128) let a 2-core CI runner launch 64 tests from one "heavy" file
 # while other files were also live, producing timeout/cross-fixture cascades.
-MAX_TEST_JOBS="${BATS_MAX_TEST_JOBS:-8}"
+# File roots are process-heavy even when their inner bats jobs stay at one:
+# each test commonly launches Python, git, tmux, or another shell.  Treating
+# an N-core host as eight interchangeable roots oversubscribed GitHub runners
+# and made internal timeout/daemon fixtures fail nondeterministically.  Keep
+# eight as the public ceiling, but default the live-root budget to the host's
+# reported CPU count.  BATS_MAX_TEST_JOBS remains an explicit override.
+_detected_test_cpus="$(nproc 2>/dev/null || printf '1')"
+[[ "$_detected_test_cpus" =~ ^[1-9][0-9]*$ ]] || _detected_test_cpus=1
+if [ "$_detected_test_cpus" -gt 8 ]; then
+    _detected_test_cpus=8
+fi
+MAX_TEST_JOBS="${BATS_MAX_TEST_JOBS:-$_detected_test_cpus}"
+unset _detected_test_cpus
 BATS_FILE_TIMEOUT_SECONDS="${BATS_FILE_TIMEOUT_SECONDS:-900}"
 BATS_CACHE="${BATS_CACHE:-1}"
 BATS_CACHE_DIR="${BATS_CACHE_DIR:-$REPO_ROOT/.cache/bats}"

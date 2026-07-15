@@ -69,6 +69,30 @@ SH
   [ "$status" -eq 0 ]
 }
 
+@test "default aggregate budget follows host CPUs and remains capped at eight" {
+  cat >"$TMPROOT/bin/nproc" <<'SH'
+#!/usr/bin/env bash
+printf '2\n'
+SH
+  chmod +x "$TMPROOT/bin/nproc"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" bash -c '
+    source "$1/scripts/run_tests.sh"
+    [ "$MAX_TEST_JOBS" -eq 2 ]
+  ' _ "$TMPROOT"
+  [ "$status" -eq 0 ]
+
+  cat >"$TMPROOT/bin/nproc" <<'SH'
+#!/usr/bin/env bash
+printf '64\n'
+SH
+  chmod +x "$TMPROOT/bin/nproc"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" bash -c '
+    source "$1/scripts/run_tests.sh"
+    [ "$MAX_TEST_JOBS" -eq 8 ]
+  ' _ "$TMPROOT"
+  [ "$status" -eq 0 ]
+}
+
 @test "CI pins file-internal jobs to one and leaves aggregate parallelism to run_tests" {
   workflow="$ROOT/.github/workflows/test.yml"
 

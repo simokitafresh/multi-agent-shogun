@@ -321,7 +321,8 @@ print('ok')
 
 @test "file-level overrides cannot exceed the aggregate test job budget" {
     runner="$ROOT/scripts/run_tests.sh"
-    grep -q 'MAX_TEST_JOBS="${BATS_MAX_TEST_JOBS:-8}"' "$runner"
+    grep -q 'MAX_TEST_JOBS="${BATS_MAX_TEST_JOBS:-$_detected_test_cpus}"' "$runner"
+    grep -q 'if \[ "\$_detected_test_cpus" -gt 8 \]' "$runner"
     grep -q 'file_inner_jobs="\$MAX_TEST_JOBS"' "$runner"
 }
 

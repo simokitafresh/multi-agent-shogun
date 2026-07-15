@@ -63,8 +63,8 @@ jobs:
             exit 0
           fi
           # Each bats file owns mutable setup/teardown fixtures. Keep tests
-          # inside a file serial; run_tests.sh still schedules independent
-          # files concurrently under the aggregate eight-test budget.
+          # inside a file serial; run_tests.sh schedules independent files up
+          # to the detected CPU count, with eight as the hard ceiling.
           BATS_CACHE=0 \
           BATS_INNER_JOBS=1 \
           BATS_FILE_TIMEOUT_SECONDS=900 \

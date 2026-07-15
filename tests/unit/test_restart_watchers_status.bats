@@ -3,7 +3,19 @@
 setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
     SCRIPT="$PROJECT_ROOT/scripts/restart_watchers.sh"
+    TEST_ROOT="$(mktemp -d)"
+    mkdir -p "$TEST_ROOT/bin"
+    cat > "$TEST_ROOT/bin/ps" <<'SH'
+#!/usr/bin/env bash
+for n in $(seq 1 9); do
+    printf '%s %s bash /fixture/inbox_watcher.sh agent%s pane codex\n' "$((1000 + n))" 1 "$n"
+done
+SH
+    chmod +x "$TEST_ROOT/bin/ps"
+    export PATH="$TEST_ROOT/bin:$PATH"
 }
+
+teardown() { rm -rf "$TEST_ROOT"; }
 
 watcher_pids() {
     ps -eo pid=,ppid=,args= | awk '

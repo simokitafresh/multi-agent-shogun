@@ -63,7 +63,6 @@ run_helper_case() {
 
 @test "default timeout and backoffs bound one failed agent to 110 seconds" {
     run bash -c '
-        source "$1/scripts/ninja_monitor.sh" >/dev/null 2>&1 || true
         grep -q "RESPAWN_CLI_VERIFY_TIMEOUT:-30" "$1/scripts/ninja_monitor.sh"
         grep -q "RESPAWN_BACKOFF_FIRST_SEC:-5" "$1/scripts/ninja_monitor.sh"
         grep -q "RESPAWN_BACKOFF_SECOND_SEC:-15" "$1/scripts/ninja_monitor.sh"
@@ -102,20 +101,24 @@ run_helper_case() {
             return 0
         }
         build_cli_command() { printf "codex\n"; }
-        _respawn_with_cli_verification() { command sleep 2; return 1; }
+        _respawn_with_cli_verification() {
+            : > "$T/respawn.started"
+            while [ ! -e "$T/respawn.release" ]; do command sleep 0.05; done
+            return 1
+        }
         codex_config_apply_agent() { return 0; }
         codex_config_restore() { return 0; }
         NINJA_NAMES=(alpha)
         unset PANE_TARGETS CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
         declare -A PANE_TARGETS=([alpha]=pane) CLI_DEAD_RESTART_TIMES CLI_DEAD_LOOP_LAST_NTFY
         CLI_DEAD_LOOP_WINDOW=300; CLI_DEAD_LOOP_THRESHOLD=2
-        started=$(date +%s%3N)
         check_ninja_cli_dead
-        elapsed=$(( $(date +%s%3N) - started ))
-        printf "scan_elapsed_ms=%s\n" "$elapsed"
-        test "$elapsed" -lt 1000
+        background_pid="$(jobs -pr)"
+        printf "background_pid_present=%s\n" "$([ -n "$background_pid" ] && echo yes || echo no)"
+        test -n "$background_pid"
+        : > "$T/respawn.release"
         wait
     '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"scan_elapsed_ms="* ]]
+    [[ "$output" == *"background_pid_present=yes"* ]]
 }
