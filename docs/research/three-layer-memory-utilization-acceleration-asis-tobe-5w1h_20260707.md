@@ -2,7 +2,8 @@
 
 origin: [[殿指示_三層記憶有効利用加速_20260707]] <- [[three-layer-memory-l0-l7-penetration-design_20260604]] + [[three_layer_memory_first_priority_design_20260606]] + [[three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707]]
 created: 2026-07-07T21:30+09:00 (将軍直筆。設計書=将軍直接編集)
-status: **v1.2 — M1-M6全施策 同日実装完了(2026-07-07 23:20検証済み。§7実績表参照)。派生: Layer2連鎖自己修復=cmd_3742配備中**
+updated: 2026-07-16T07:54+09:00
+status: **v1.3 — M1-M6実装完了に加え、普遍knowledgeの全agent検索・Claude/Codex自動prompt注入・異CLI異ロール独立一致まで本番パリティ実証済み（§9）**
 baseline計測日: 2026-07-07 21:25 (gate_three_layer_health.sh + search_logs SQL一次計測)。M1初回実測(22:16): 検索→引用変換率1.9%
 
 ## §0 要求定義（殿指示 2026-07-07 21:24 の5W1H）
@@ -164,6 +165,7 @@ baseline計測日: 2026-07-07 21:25 (gate_three_layer_health.sh + search_logs SQ
 | 5 | cmd_3740 | M4 引用有効率集計+還流リスト | **完了**(22:41 CLEAR)。初回実測: 引用有効率12.5%(evaluated=8)、還流対象2 source(semantic_search 6件が同一無関係結果を重複注入=検索品質の還流入口が初稼働) |
 | 6 | cmd_3741 | M6 bootstrap想起同梱(T6の増分) | **完了**(23:14 CLEAR)。recall_inject.sh(クエリ生成+検索+注入)を可搬コアへ同梱。将軍が新PJ相当一時dirで動作実証: 境界=空出力exit 0、ヒット時=キーワード抽出→検索→注入テキスト出力 |
 | 7 | cmd_3742 | 派生: Layer2連鎖自己修復(失敗理由記録+未貫通の自動再貫通) | **完了**(23:19 CLEAR、将軍検分済み: エラー要点をERROR行へ記録+ERROR後OKなしをrepair=1で自動再貫通)。発端=家老エスカレーション(三層記憶DB健全性WARN複数セッション連続)。将軍手動再貫通で当座回復(未貫通1→0)→本cmdで構造化。書込み時retryはfix 04cea95d9で別途稼働 |
+| 8 | cmd_karo_hotfix_three_layer_universal_recall_202607160630 | 派生: 普遍knowledge visibility SSOT + write直後atomic prompt cache + 実異CLI独立検証 | **完了**(2026-07-16 GATE CLEAR)。全agent検索0/9→9/9、実異CLI自動入口0/2→2/2、private漏洩0/8、対象summary hash 2/2一致 |
 
 ## §8 先行設計書との対応（車輪防止）
 
@@ -175,6 +177,82 @@ baseline計測日: 2026-07-07 21:25 (gate_three_layer_health.sh + search_logs SQ
 | クエリ自動生成 | T5モデル階層プロファイル(cmd_3727実装済み)と連動。弱LLM対応の想起版 |
 | bootstrap M6 | T6(cmd_3728実装済み)の増分。新規機構なし |
 
+## §9 v1.3追補 — 普遍knowledge自動想起の本番パリティ（2026-07-16）
+
+### §9.1 追加で判明したAS-IS
+
+M1-M6は「イベントで検索し、差し出し、利用を計測する」経路を実装した。しかし、2026-07-16の実CLI横断検証で、**保存済みの普遍knowledgeが全ロール・全CLIへ同じ意味と粒度で届くとは限らない**穴が判明した。
+
+| 観点 | AS-IS（修正前） | 真因 |
+|------|-----------------|------|
+| target空欄の普遍knowledge | 正本events/FTS5には存在するが、agent指定検索では全9agent **0/9** | `memory_db_import.py`のtarget検索が`target=self OR document`だけを許し、target空/NULLを除外 |
+| visibility意味論 | 記憶DB検索・semantic検索・prompt cacheで条件が分裂 | visibilityの共通SSOTがなかった |
+| write後の再利用 | 手動DB検索では到達するが、実CLI自動入口は **0/2** | knowledge write後にprompt cacheをrefreshするproduction経路がなかった |
+| テスト証明 | テスト内でcacheへ手動INSERTすれば入口contractはPASS | production write→cache→実prompt hookの連鎖を通していなかった |
+| 全CLI証明 | 1つのCLIがenvで全役を模倣 | 同一processの役割模倣であり、異CLI・異役割の独立性を証明しない |
+| 理解の粒度 | hit件数だけを一致判定に使用 | concept ID・殿原文timestamp・raw・origin因果・payload hashの一致を見ていなかった |
+
+### §9.2 達成したTO-BE
+
+| 契約 | TO-BE（実装済み） |
+|------|-------------------|
+| visibility SSOT | `scripts/memory_visibility.py`へ`target空/NULL OR target=self OR document`を一元化。`memory_db_import.py`と`semantic_index.py`が共有 |
+| 自動再利用経路 | `memory_db_knowledge_write.sh`成功→主DBからprompt cache再構築→Claude/Codex共通`prompt_state_inject.sh`へ自動反映 |
+| atomic publish | flock→一時SQLite→`PRAGMA quick_check`→`os.replace`。更新途中のreaderへ不完全cacheを見せない |
+| payload粒度 | `event_id`・`ts`・`concept`・`raw`・`origin`を構造化summaryに保持 |
+| private境界 | directed knowledgeは普遍prompt cacheへ収録せず、他agentへの漏洩を防止 |
+| 実CLI完了条件 | 実家老Codexと実軍師Claudeが互いの回答を参照せず同一問いを独立取得し、concept・原文timestamp・因果鎖・payload hashを突合 |
+| 擬似試験の位置付け | 単一CLI env擬似8役はentrypoint contractの補助証拠へ降格 |
+
+自動再利用経路:
+
+```text
+knowledge write
+  → Layer1: memory DB（event_id / raw / timestamp）
+  → Layer2: semantic concept / aliases
+  → Layer3: Obsidian origin因果鎖
+  → atomic prompt cache
+  → prompt_state_inject.sh
+  → Claude / Codexの各実CLI・各role
+```
+
+### §9.3 AS-IS / TO-BE実測
+
+| 指標 | AS-IS | TO-BE実測 |
+|------|------:|----------:|
+| target空欄knowledgeの全agent検索 | 0/9 | **9/9** |
+| 実異CLI自動入口 | 0/2 | **2/2** |
+| 実異CLI対象summary hash一致 | 未成立 | **2/2一致** |
+| 他agent宛private漏洩 | 0/8 | **0/8** |
+| refresh並行reader瞬断 | 未計測 | **0/300**（refresh 30回と並行） |
+| memory tests | — | **60/60 PASS、SKIP 0** |
+| semantic tests | — | **33/33 PASS、SKIP 0** |
+
+独立checkpointは`knowledge:d39dfb36cbf94766`、markerは`cross_cli_independent_checkpoint_20260716`。実家老Codexと実軍師Claudeで対象summary SHA256 `54486b88764aabc3585271b40f18fe21fa7c31ac29290a80d0fd6f1fa9cff3cc`、field 5/5一致を確認した。
+
+実装commit:
+
+- `8dacb9fbf`: target visibilityを`scripts/memory_visibility.py`へ統一
+- `c2e7352ee`: knowledge write直後のatomic prompt cache refreshを実装
+
+詳細: `docs/research/cmd_karo_hotfix_three_layer_universal_recall_202607160630.md`
+
+### §9.4 完了判定の更新
+
+三層記憶の完了は、以後「保存成功」「DB検索成功」「同一CLIのcontract test成功」では判定しない。
+
+```text
+production write
+  → atomic cache refresh
+  → actual prompt hook
+  → 異CLI・異役割の独立取得
+  → concept / raw / timestamp / origin / hash一致
+```
+
+この全経路がPASSして初めて、**全ロール・全CLIが同じレベルと粒度で自動想起できる**と判定する。
+
+因果: `[[殿指摘20260716_単一CLI擬似全役は洗脳]] -> [[knowledge_write_to_atomic_prompt_cache]] -> [[家老Codex軍師Claude独立一致]]`
+
 ## 因果リンク
 
 - ← [[three-layer-memory-l0-l7-penetration-design_20260604]] 導線接続(部品→貫通)=本設計の前提
@@ -182,3 +260,5 @@ baseline計測日: 2026-07-07 21:25 (gate_three_layer_health.sh + search_logs SQ
 - ← [[three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707]] 生産側の極限化=姉妹編。P1-P6原理を想起軸へ継承
 - ← [[deepdive_why_chain_20260321]] Phase 4: 理解・意志依存の設計は原理的に壊れる→push型想起の理論的根拠
 - → [[lessons_shogun]] LS-A23(道具を作っても使わなければ存在しない)+LS-A18(計測なき改善は不能)=施策M1/M5の教訓的根拠
+- → [[殿指摘20260716_全ロール全CLI同一粒度]] 保存成功ではなく全入口の自動再利用成功を完了条件にする
+- → [[殿指摘20260716_単一CLI擬似全役は洗脳]] 異CLI・異役割の独立取得一致を最終checkpointにする
