@@ -81,6 +81,7 @@ agent_id="${agent_id:-memory_db_knowledge_write}"
 
 py_output="$(python3 - "$SCRIPT_DIR" "$db_path" "$knowledge_text" "$source_text" "$cmd_id" "$agent_id" <<'PY'
 import hashlib
+import os
 import sqlite3
 import sys
 import time
@@ -88,6 +89,14 @@ import time
 repo_root, db_path, knowledge_text, source_text, cmd_id, agent_id = sys.argv[1:7]
 sys.path.insert(0, f"{repo_root}/scripts")
 import memory_db_live_insert as live_insert
+import memory_db_import
+
+if os.environ.get("MEMORY_DB_SEMANTIC_INDEX_PATH"):
+    semantic_index_path = os.environ["MEMORY_DB_SEMANTIC_INDEX_PATH"]
+    live_insert.DEFAULT_SEMANTIC_INDEX_PATH = semantic_index_path
+    live_insert._SEMANTIC_CONCEPT_CACHE = live_insert.load_semantic_map_concept_cache(
+        semantic_index_path=semantic_index_path,
+    )
 
 live_insert.SQLITE_BUSY_TIMEOUT_MS = 1000
 knowledge = live_insert.normalize_text(knowledge_text)
@@ -130,6 +139,10 @@ for attempt in range(1, 11):
             event_row,
             concept_text_extra=f"{source}\n{event_cmd_id}",
             raw_content=knowledge,
+        )
+        memory_db_import.build_lord_ruling_cache(
+            memory_db_import.default_lord_ruling_cache_path(memory_db_import.Path(db_path)),
+            memory_db_import.Path(db_path),
         )
         break
     except sqlite3.OperationalError as exc:

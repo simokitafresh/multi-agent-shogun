@@ -5,10 +5,13 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
+import os
 import re
 import sqlite3
 import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
@@ -1521,21 +1524,76 @@ def build_db(
         )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_event_links_source_event_id ON event_links(source_event_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_event_links_target_concept ON event_links(target_concept)")
-    build_lord_ruling_cache(lord_ruling_cache_path, event_rows)
+    build_lord_ruling_cache(lord_ruling_cache_path, db_path)
 
 
-def build_lord_ruling_cache(cache_path: Path, event_rows: list[EventRow]) -> None:
+def _prompt_cache_summary(
+    event_id: str,
+    ts: str,
+    event_type: str,
+    summary: str,
+    detail: str,
+    concepts_json: str,
+    raw_content: str,
+) -> str:
+    """Preserve legacy ruling summaries and normalize universal knowledge."""
+    if event_type != "knowledge":
+        return summary
+    try:
+        concepts = json.loads(concepts_json or "[]")
+    except json.JSONDecodeError:
+        concepts = []
+    concept_payload = ",".join(str(value) for value in concepts if str(value).strip())
+    raw_payload = normalize_text(raw_content) or normalize_text(detail)
+    first_link = raw_payload.find("[[")
+    last_link = raw_payload.rfind("]]" )
+    origin_payload = (
+        raw_payload[first_link:last_link + 2]
+        if first_link >= 0 and last_link >= first_link
+        else ""
+    )
+    return (
+        f"event_id={event_id} ts={ts} concept={concept_payload or 'unclassified'} "
+        f"raw={raw_payload} origin={origin_payload or 'none'}"
+    )
+
+
+def build_lord_ruling_cache(cache_path: Path, db_path: Path) -> None:
+    """Refresh prompt cache from the main DB, including universal knowledge."""
     cache_path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(db_path) as source_conn:
+        source_rows = source_conn.execute(
+            """
+            SELECT id, ts, event_type, cmd_id, summary, detail, target,
+                   concepts, raw_content
+            FROM events
+            WHERE (event_type = 'conversation' AND agent = 'lord' AND direction = 'inbound')
+               OR (event_type = 'knowledge' AND (target = '' OR target IS NULL))
+            """
+        ).fetchall()
     rows = [
-        (event_row[0], event_row[1], event_row[2], event_row[9], event_row[6], event_row[7], event_row[4])
-        for event_row in event_rows
-        if event_row[2] == "conversation" and event_row[3] == "lord" and event_row[5] == "inbound"
+        (
+            event_id,
+            ts,
+            event_type,
+            cmd_id,
+            _prompt_cache_summary(event_id, ts, event_type, summary, detail, concepts, raw_content),
+            detail,
+            target or "",
+        )
+        for event_id, ts, event_type, cmd_id, summary, detail, target, concepts, raw_content in source_rows
     ]
-    with sqlite3.connect(cache_path) as conn:
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
-        conn.execute("DROP TABLE IF EXISTS lord_rulings")
-        conn.execute(
+    lock_path = cache_path.with_name(f"{cache_path.name}.lock")
+    with lock_path.open("a", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        fd, tmp_name = tempfile.mkstemp(prefix=f".{cache_path.name}.", suffix=".tmp", dir=cache_path.parent)
+        os.close(fd)
+        tmp_path = Path(tmp_name)
+        try:
+            with sqlite3.connect(tmp_path) as conn:
+                conn.execute("PRAGMA journal_mode=DELETE")
+                conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+                conn.execute(
             """
             CREATE TABLE lord_rulings (
                 event_id TEXT PRIMARY KEY,
@@ -1547,16 +1605,22 @@ def build_lord_ruling_cache(cache_path: Path, event_rows: list[EventRow]) -> Non
                 target TEXT DEFAULT ''
             )
             """
-        )
-        conn.executemany(
+                )
+                conn.executemany(
             """
             INSERT OR REPLACE INTO lord_rulings (
                 event_id, ts, event_type, cmd_id, summary, detail, target
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            rows,
-        )
-        conn.execute("CREATE INDEX IF NOT EXISTS idx_lord_rulings_ts ON lord_rulings(ts)")
+                    rows,
+                )
+                conn.execute("CREATE INDEX idx_lord_rulings_ts ON lord_rulings(ts)")
+                health = conn.execute("PRAGMA quick_check").fetchone()
+                if health is None or health[0] != "ok":
+                    raise sqlite3.DatabaseError("prompt cache quick_check failed")
+            os.replace(tmp_path, cache_path)
+        finally:
+            tmp_path.unlink(missing_ok=True)
 
 
 def parse_args() -> argparse.Namespace:

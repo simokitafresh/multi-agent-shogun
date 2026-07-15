@@ -786,7 +786,9 @@ for ts, event_type, cmd_id, summary in rows:
     print(f"  event_type: {one_line(event_type, 40)}")
     if cmd_id:
         print(f"  cmd_id: {one_line(cmd_id, 40)}")
-    print(f"  summary: {one_line(summary)}")
+    # Universal knowledge carries event/concept/raw/origin in this structured
+    # field.  Do not collapse it to the legacy 120-character display limit.
+    print(f"  summary: {one_line(summary, 600)}")
 PY
 	  )"
 	  _psi_rc=$?

@@ -252,31 +252,31 @@ EOF
     [ "$status" -eq 0 ]
 
     cache="$TEST_TMPDIR/data/lord_ruling_cache.db"
-    python3 - "$MEMORY_DB_SCRIPT_ROOT" "$TEST_TMPDIR/data/memory.db" "$cache" <<'PY'
-import importlib.util, sqlite3, sys
-from pathlib import Path
+    long_original="crossclipayloadneedle $(printf '殿原文%.0s' {1..120}) [[origin]]->[[cause]]->[[result]]"
+    [ "${#long_original}" -gt 300 ]
+    THREE_LAYER_CHAIN_SYNC=1 AGENT_ID=saizo \
+        THREE_LAYER_CHAIN_STATE_DIR="$TEST_TMPDIR/chain" \
+        THREE_LAYER_CHAIN_LOG="$TEST_TMPDIR/chain.log" \
+        THREE_LAYER_SEMANTIC_UPDATE_CMD=/bin/true \
+        MEMORY_DB_SEMANTIC_INDEX_PATH="$TEST_TMPDIR/semantic-map.md" \
+        SHOGUN_MEMORY_DB="$TEST_TMPDIR/data/memory.db" \
+        run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_knowledge_write.sh" \
+            "$long_original" \
+            "universal_recall_contract"
+    [ "$status" -eq 0 ]
 
-root, source_db, cache = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
-spec = importlib.util.spec_from_file_location("memory_db_import", root / "scripts/memory_db_import.py")
-module = importlib.util.module_from_spec(spec)
-assert spec.loader is not None
-spec.loader.exec_module(module)
-rows = module.search_events(source_db, "crossclipayloadneedle", target="saizo")
-assert len(rows) == 1
-row = rows[0]
-assert row["summary"] == "crossclipayloadneedle"
-assert row["raw_content"] == "original_payload [[origin]]->[[cause]]->[[result]]"
-assert "universal_recall_contract" in row["concepts"]
-normalized = (
-    f"concept=universal_recall_contract raw=original_payload "
-    "causal=[[origin]]->[[cause]]->[[result]] universalpayloadneedle"
-)
-with sqlite3.connect(cache) as conn:
-    conn.execute("DELETE FROM lord_rulings")
-    conn.execute("INSERT INTO lord_rulings (event_id, ts, event_type, cmd_id, summary, detail, target) VALUES (?,?,?,?,?,?,?)", (
-        row["id"], "2026-07-16T06:10:00+09:00", "knowledge", "", normalized,
-        "universalpayloadneedle", "",
-    ))
+    python3 - "$cache" <<'PY'
+import sqlite3, sys
+with sqlite3.connect(sys.argv[1]) as conn:
+    row = conn.execute("SELECT event_type, target, summary FROM lord_rulings WHERE event_type='knowledge'").fetchone()
+assert row is not None
+assert row[1] == "", row
+assert "concept=universal_recall_contract" in row[2], row
+assert "raw=crossclipayloadneedle" in row[2], row
+assert row[2].count("殿原文") == 120, row
+assert "event_id=knowledge:" in row[2], row
+assert " ts=" in row[2], row
+assert "origin=[[origin]]->[[cause]]->[[result]]" in row[2], row
 PY
 
     outputs="$TEST_TMPDIR/entrypoint_payloads"
@@ -287,12 +287,12 @@ PY
                 payload="$(env TMUX_PANE=%99999 PROMPT_STATE_PREFLIGHT_CMD=/bin/true \
                     PROMPT_STATE_SEMANTIC_SEARCH_CMD=/bin/false PROMPT_STATE_SKILLS_DIR="$TEST_TMPDIR/no_skills" \
                     PROMPT_STATE_AGENT_ID="$agent" PROMPT_STATE_LORD_RULING_CACHE_PATH="$cache" \
-                    bash "$MEMORY_DB_SCRIPT_ROOT/scripts/hooks/prompt_state_inject.sh" <<<'{"prompt":"universalpayloadneedle"}')"
+                    bash "$MEMORY_DB_SCRIPT_ROOT/scripts/hooks/prompt_state_inject.sh" <<<'{"prompt":"crossclipayloadneedle"}')"
             else
                 payload="$(env TMUX_PANE=%99999 PROMPT_STATE_PREFLIGHT_CMD=/bin/true \
                     PROMPT_STATE_SEMANTIC_SEARCH_CMD=/bin/false PROMPT_STATE_SKILLS_DIR="$TEST_TMPDIR/no_skills" \
                     PROMPT_STATE_AGENT_ID="$agent" PROMPT_STATE_LORD_RULING_CACHE_PATH="$cache" \
-                    bash "$MEMORY_DB_SCRIPT_ROOT/scripts/hooks/codex_user_prompt_submit.sh" <<<'{"prompt":"universalpayloadneedle"}')"
+                    bash "$MEMORY_DB_SCRIPT_ROOT/scripts/hooks/codex_user_prompt_submit.sh" <<<'{"prompt":"crossclipayloadneedle"}')"
             fi
             normalized="$(PAYLOAD="$payload" python3 - <<'PY'
 import json, os
@@ -303,13 +303,51 @@ print(ctx[start:end if end >= 0 else None])
 PY
 )"
             [[ "$normalized" == *"concept=universal_recall_contract"* ]]
-            [[ "$normalized" == *"raw=original_payload"* ]]
-            [[ "$normalized" == *"causal=[[origin]]->[[cause]]->[[result]]"* ]]
+            [[ "$normalized" == *"raw=crossclipayloadneedle"* ]]
+            [ "$(grep -o '殿原文' <<<"$normalized" | wc -l)" -eq 120 ]
+            [[ "$normalized" == *"origin=[[origin]]->[[cause]]->[[result]]"* ]]
             printf '%s\n' "$normalized" | sha256sum | cut -d' ' -f1 >> "$outputs"
         done
     done
     [ "$(wc -l < "$outputs")" -eq 8 ]
     [ "$(sort -u "$outputs" | wc -l)" -eq 1 ]
+}
+
+@test "universal recall cache refresh is atomic for concurrent prompt readers" {
+    cat > "$TEST_TMPDIR/archive/2026-07-16.jsonl" <<'EOF'
+{"ts":"2026-07-16T06:10:00+09:00","agent":"lord","direction":"inbound","summary":"atomicrecallneedle","detail":"reader must never see a missing table"}
+EOF
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    cache="$TEST_TMPDIR/data/lord_ruling_cache.db"
+    errors="$TEST_TMPDIR/reader_errors"
+    : > "$errors"
+    python3 - "$cache" "$errors" <<'PY' &
+import sqlite3, sys
+cache, errors = sys.argv[1:]
+for _ in range(300):
+    try:
+        with sqlite3.connect(f"file:{cache}?mode=ro", uri=True) as conn:
+            assert conn.execute("SELECT COUNT(*) FROM lord_rulings").fetchone()[0] >= 1
+    except Exception as exc:
+        with open(errors, "a", encoding="utf-8") as handle:
+            handle.write(f"{type(exc).__name__}:{exc}\n")
+PY
+    reader_pid=$!
+    python3 - "$MEMORY_DB_SCRIPT_ROOT" "$TEST_TMPDIR/data/memory.db" "$cache" <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(sys.argv[1]) / "scripts"))
+import memory_db_import
+db, cache = Path(sys.argv[2]), Path(sys.argv[3])
+for _ in range(30):
+    memory_db_import.build_lord_ruling_cache(cache, db)
+PY
+    wait "$reader_pid"
+    [ ! -s "$errors" ]
 }
 
 @test "memory_db_import schema CLI emits markdown with event types and samples" {
