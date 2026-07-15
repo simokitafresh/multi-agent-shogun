@@ -454,6 +454,28 @@ EOF
     [[ "$output" == *"candidate: tests/unit/test_cmd_save.bats"* ]]
 }
 
+@test "does not warn for dedicated test added with matching new production script" {
+    cat > "$TEST_ROOT/scripts/new_worker.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat > "$TEST_ROOT/tests/unit/test_new_worker.bats" <<'EOF'
+#!/usr/bin/env bats
+EOF
+    # Include an existing shared-script reference that used to trigger the
+    # broad candidate scan despite the new worker/test one-to-one pairing.
+    printf '%s\n' '@'"test \"new worker\" {" '    bash scripts/new_worker.sh' '    bash scripts/cmd_save.sh --help >/dev/null 2>&1 || true' '}' >> "$TEST_ROOT/tests/unit/test_new_worker.bats"
+    (
+        cd "$TEST_ROOT"
+        git add scripts/new_worker.sh tests/unit/test_new_worker.bats
+    )
+
+    run_hook
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN: new test_*.bats file may duplicate existing script-level tests."* ]]
+}
+
 @test "runs semantic propagation when context files are staged" {
     cat >> "$TEST_ROOT/context/infrastructure.md" <<'EOF'
 new context line

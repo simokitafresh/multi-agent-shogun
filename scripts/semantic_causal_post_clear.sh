@@ -71,7 +71,7 @@ if ! timeout 30 bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" \
     notify_warn "[WARN] ${CMD_ID} semantic index update failed before causal audit"
     exit 0
 fi
-if [ -x "$SCRIPT_DIR/scripts/semantic_map_generate.sh" ]; then
+if [ -f "$SCRIPT_DIR/scripts/semantic_map_generate.sh" ]; then
     timeout 30 bash "$SCRIPT_DIR/scripts/semantic_map_generate.sh" || \
         printf '%s [%s] semantic-map regeneration WARN\n' "$(date -Iseconds)" "$CMD_ID"
 fi

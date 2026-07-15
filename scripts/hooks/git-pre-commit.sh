@@ -161,6 +161,20 @@ find_existing_test_candidates() {
     fi
 }
 
+has_added_matching_script() {
+    local base="${1:-}" candidate added
+    [[ -n "$base" ]] || return 1
+    added="$(git diff --cached --diff-filter=A --name-only)"
+    for candidate in \
+        "scripts/${base}.sh" "scripts/${base}.py" \
+        "scripts/lib/${base}.sh" "scripts/lib/${base}.py"; do
+        if grep -Fxq "$candidate" <<< "$added"; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 warn_test_file_granularity() {
     local added_file base group candidates
     local warned=false
@@ -169,6 +183,9 @@ warn_test_file_granularity() {
         [[ -n "$added_file" ]] || continue
         base="$(basename "$added_file" .bats)"
         base="${base#test_}"
+        # A brand-new production script needs a dedicated same-name test file;
+        # references to shared helpers inside that test are not duplication.
+        has_added_matching_script "$base" && continue
         group="$(infer_test_group_prefix "$base")"
         candidates="$(find_existing_test_candidates "$added_file" "$base" "$group")"
         [[ -n "$candidates" ]] || continue

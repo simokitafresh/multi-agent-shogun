@@ -8018,7 +8018,7 @@ PY
     # the worker owns a per-cmd lock and persists PASS/WARN/FAIL evidence.
     echo ""
     echo "Semantic causal traverse (GATE CLEAR):"
-    if [ -x "$SCRIPT_DIR/scripts/semantic_causal_post_clear.sh" ]; then
+    if [ -f "$SCRIPT_DIR/scripts/semantic_causal_post_clear.sh" ]; then
         _semantic_pending="$GATES_DIR/semantic_causal_audit.pending"
         printf 'queued_at=%s\nlauncher_pid=%s\n' "$(date -Iseconds)" "$$" > "${_semantic_pending}.tmp.$$"
         mv "${_semantic_pending}.tmp.$$" "$_semantic_pending"
