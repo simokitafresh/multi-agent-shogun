@@ -181,6 +181,39 @@ ENTRY
     [[ "$output" == *"OK"* ]]
 }
 
+@test "report LGTM with gate_prediction BLOCK reason suffix → BLOCK exit 2" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t_gate_contradiction
+  review_type: report
+  verdict: LGTM
+  gate_prediction: BLOCK(test_triage)
+  gate_prediction_reason: "CI check is red"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  observations:
+    - "test observation"
+  brainwash_check: "3件中3件確認、矛盾1→0"
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"verdict=LGTMとgate_prediction=BLOCKの矛盾"* ]]
+    ! grep -q 't_gate_contradiction' "$TEST_ROOT/logs/gunshi_review_log.yaml"
+}
+
+@test "report LGTM with gate_prediction CLEAR remains allowed" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: t_gate_clear
+  review_type: report
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  observations:
+    - "test observation"
+  brainwash_check: "3件中3件確認、誤BLOCK 0件"
+ENTRY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 # --- 非対象review_type → チェックなし ---
 
 @test "review_type=gate_sync without observations → exit 0" {

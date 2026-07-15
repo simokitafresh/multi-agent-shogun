@@ -85,6 +85,27 @@ EOF
     [ "$r3" = "light" ]
 }
 
+@test "分類器: semicolonで順次実行する単一bats群は各segmentを独立判定する" {
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    result="$(heavy_job_classify "bats tests/unit/test_a.bats; bats tests/unit/test_b.bats; bats tests/unit/test_c.bats")"
+    [ "$result" = "light" ]
+}
+
+@test "分類器: 単一batsのfilter値は第二の対象ファイルに数えない" {
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    result="$(heavy_job_classify "bats tests/unit/test_a.bats --filter 'specific test name'")"
+    [ "$result" = "light" ]
+}
+
+@test "分類器: chained read commandのpython heredoc本文に重量語があっても軽量" {
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    cmd="git log --oneline; python3 - <<'PY'
+print('bats pytest full regression')
+PY"
+    result="$(heavy_job_classify "$cmd")"
+    [ "$result" = "light" ]
+}
+
 # --- admission wrapper (flock host-wide semaphore) ---
 
 @test "wrapper: 単純コマンドを正常に実行できる" {

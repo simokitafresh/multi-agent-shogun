@@ -66,19 +66,18 @@ YAML
   event_kind: manual_wa
   auto_captured: false
 YAML
-    git -C "$TEST_TMP" init -q
-    git -C "$TEST_TMP" config user.email test@example.com
-    git -C "$TEST_TMP" config user.name test
-    touch "$TEST_TMP/fixture"
-    git -C "$TEST_TMP" add fixture
-    git -C "$TEST_TMP" commit -qm "cmd_karo_hotfix_a"
+    {
+        printf '2026-07-12T00:02:00\tcmd_karo_hotfix_a\tCLEAR\n'
+        printf '2026-07-12T00:03:00\tcmd_manual\tCLEAR\n'
+    } > "$TEST_TMP/logs/gate_metrics.log"
 
-    run env REWORK_CAPTURE_GIT_DIR="$TEST_TMP" REWORK_CAPTURE_SINCE="2000-01-01" \
+    run env REWORK_CAPTURE_SINCE="2000-01-01" \
         bash "$TEST_TMP/scripts/gates/gate_workaround_rate.sh" --last 2
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"WA率: 50% (1/2件)"* ]]
-    [[ "$output" == *"手戻り捕捉率: 100% (1/1件; auto_captured/eligible_rework_commits)"* ]]
+    [[ "$output" == *"手戻り捕捉率: 100% (1/1件; auto_captured/completed_rework_cmds)"* ]]
+    [[ "$output" == *"手戻り捕捉: OK"* ]]
 }
 
 @test "gate_workaround_rate: capture numerator uses the same since window as eligible commits" {
@@ -96,17 +95,27 @@ YAML
   event_kind: hotfix
   auto_captured: true
 YAML
-    git -C "$TEST_TMP" init -q
-    git -C "$TEST_TMP" config user.email test@example.com
-    git -C "$TEST_TMP" config user.name test
-    touch "$TEST_TMP/fixture"
-    git -C "$TEST_TMP" add fixture
-    git -C "$TEST_TMP" commit -qm "cmd_karo_hotfix_today"
+    printf '2026-07-12T00:02:00\tcmd_karo_hotfix_today\tCLEAR\n' > "$TEST_TMP/logs/gate_metrics.log"
 
-    run env REWORK_CAPTURE_GIT_DIR="$TEST_TMP" REWORK_CAPTURE_SINCE="2026-07-12T00:00:00Z" \
+    run env REWORK_CAPTURE_SINCE="2026-07-12T00:00:00" \
         bash "$TEST_TMP/scripts/gates/gate_workaround_rate.sh" --last 2
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *"手戻り捕捉率: 100% (1/1件; auto_captured/eligible_rework_commits)"* ]]
+    [[ "$output" == *"手戻り捕捉率: 100% (1/1件; auto_captured/completed_rework_cmds)"* ]]
     [[ "$output" != *"200%"* ]]
+}
+
+@test "gate_workaround_rate: completed rework without auto capture is ALERT" {
+    cat > "$TEST_TMP/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_unrelated
+  workaround: false
+YAML
+    printf '2026-07-12T00:02:00\tcmd_karo_hotfix_missing\tCLEAR\n' > "$TEST_TMP/logs/gate_metrics.log"
+
+    run env REWORK_CAPTURE_SINCE="2026-07-12T00:00:00" \
+        bash "$TEST_TMP/scripts/gates/gate_workaround_rate.sh" --last 2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"手戻り捕捉率: 0% (0/1件; auto_captured/completed_rework_cmds)"* ]]
+    [[ "$output" == *"手戻り捕捉: ALERT"* ]]
 }

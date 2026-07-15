@@ -6,7 +6,8 @@
 # フォールバック: gate_metrics.log不在時はkaro_workarounds.yamlのエントリ数を分母に使用
 # Output: OK/WARN/ALERT + WA率 + カテゴリ内訳
 # 閾値: OK=<15%, WARN=15-30%, ALERT=>30%
-# GATE判定には影響しない（情報表示のみ）
+# 手動WA率はGATE判定に影響しない（情報表示のみ）。
+# 完了済みreworkの自動捕捉欠落は別行でALERT表示し、startup gateが回収する。
 # 最適化(cmd_1970): python3+grep+awk3本 → awk1本に統合(-44%)
 # 最適化(cmd_2092): BEGIN内getline from tac → gate_log処理21ms→3ms(-86%) 全体36ms→25ms(-31%)
 
@@ -15,9 +16,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WA_FILE="${KARO_WORKAROUNDS_FILE:-$SCRIPT_DIR/logs/karo_workarounds.yaml}"
 GATE_LOG="${GATE_METRICS_LOG:-$SCRIPT_DIR/logs/gate_metrics.log}"
-REWORK_CAPTURE_GIT_DIR="${REWORK_CAPTURE_GIT_DIR:-$SCRIPT_DIR}"
 REWORK_CAPTURE_SINCE="${REWORK_CAPTURE_SINCE:-today 00:00}"
-REWORK_CAPTURE_SINCE_ISO="$(date -u -d "$REWORK_CAPTURE_SINCE" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || true)"
+REWORK_CAPTURE_SINCE_LOCAL_ISO="$(date -d "$REWORK_CAPTURE_SINCE" +%Y-%m-%dT%H:%M:%S 2>/dev/null || true)"
 LAST_N=10
 
 # 引数パース
@@ -170,31 +170,58 @@ function flush_item() {
 IFS='|' read -r LEVEL RATE WA_COUNT TOTAL CATS SOURCE <<< "$result"
 
 echo "  WA率: ${RATE}% (${WA_COUNT}/${TOTAL}件) — ${LEVEL}"
-capture_result=$(LC_ALL=C "$_AWK_BIN" -v since="$REWORK_CAPTURE_SINCE_ISO" '
-function flush() {
-    if (cmd != "" && timestamp >= since && kind ~ /^(hotfix|rc|karo_direct)$/ && captured == "true" && !seen[cmd SUBSEP kind]++) count++
-    cmd = ""; timestamp = ""; kind = ""; captured = ""
+capture_pair=$(LC_ALL=C "$_AWK_BIN" -F '\t' -v since="$REWORK_CAPTURE_SINCE_LOCAL_ISO" '
+function event_kind_for(cmd,    lowered) {
+    lowered = tolower(cmd)
+    if (lowered ~ /karo_direct/) return "karo_direct"
+    if (lowered ~ /hotfix/) return "hotfix"
+    if (lowered ~ /(^|[_:-])rc([_:-]|$)/) return "rc"
+    return ""
 }
-/^- cmd_id:/ { flush(); cmd=$0; sub(/^- cmd_id:[[:space:]]*/, "", cmd); gsub(/[^[:alnum:]_:-]/, "", cmd); next }
-/^  timestamp:/ { timestamp=$0; sub(/^[[:space:]]*timestamp:[[:space:]]*/, "", timestamp); gsub(/[^[:alnum:]_:+-TZ]/, "", timestamp); next }
-/^  event_kind:/ { kind=$0; sub(/^[[:space:]]*event_kind:[[:space:]]*/, "", kind); gsub(/[^[:alnum:]_:-]/, "", kind); next }
-/^  auto_captured:/ { captured=$0; sub(/^[[:space:]]*auto_captured:[[:space:]]*/, "", captured); gsub(/[^[:alnum:]_:-]/, "", captured); next }
-END { flush(); print count+0 }
-' "$WA_FILE" 2>/dev/null || echo 0)
-eligible_result=$(git -C "$REWORK_CAPTURE_GIT_DIR" log --format='%s' --since="$REWORK_CAPTURE_SINCE" 2>/dev/null | "$_AWK_BIN" '
-{
-    line=tolower($0)
-    if (line ~ /hotfix/ || line ~ /karo_direct/ || line ~ /(^|[_:-])rc([_:-]|$)/) count++
+function flush_wa(    key) {
+    key = wa_cmd SUBSEP wa_kind
+    if (wa_cmd != "" && wa_captured == "true" && key in eligible && !captured_seen[key]++) captured_count++
+    wa_cmd = ""; wa_kind = ""; wa_captured = ""
 }
-END { print count+0 }
-')
-if [ -z "$REWORK_CAPTURE_SINCE_ISO" ]; then
+FILENAME == ARGV[1] {
+    if (NF >= 3 && $1 >= since && $3 == "CLEAR") {
+        kind = event_kind_for($2)
+        key = $2 SUBSEP kind
+        if (kind != "" && !eligible[key]++) eligible_count++
+    }
+    next
+}
+FILENAME == ARGV[2] {
+    if ($0 ~ /^- cmd_id:/) {
+        flush_wa()
+        wa_cmd=$0
+        sub(/^- cmd_id:[[:space:]]*/, "", wa_cmd)
+        gsub(/[^[:alnum:]_:-]/, "", wa_cmd)
+    } else if ($0 ~ /^  event_kind:/) {
+        wa_kind=$0
+        sub(/^[[:space:]]*event_kind:[[:space:]]*/, "", wa_kind)
+        gsub(/[^[:alnum:]_:-]/, "", wa_kind)
+    } else if ($0 ~ /^  auto_captured:/) {
+        wa_captured=$0
+        sub(/^[[:space:]]*auto_captured:[[:space:]]*/, "", wa_captured)
+        gsub(/[^[:alnum:]_:-]/, "", wa_captured)
+    }
+}
+END { flush_wa(); print captured_count+0 "|" eligible_count+0 }
+' "$GATE_LOG" "$WA_FILE" 2>/dev/null || echo '0|0')
+IFS='|' read -r capture_result eligible_result <<< "$capture_pair"
+if [ -z "$REWORK_CAPTURE_SINCE_LOCAL_ISO" ]; then
     echo "  手戻り捕捉率: N/A (invalid REWORK_CAPTURE_SINCE=$REWORK_CAPTURE_SINCE)"
 elif [ -n "$eligible_result" ] && [ "$eligible_result" -gt 0 ] 2>/dev/null; then
     capture_rate=$(( capture_result * 100 / eligible_result ))
-    echo "  手戻り捕捉率: ${capture_rate}% (${capture_result}/${eligible_result}件; auto_captured/eligible_rework_commits)"
+    echo "  手戻り捕捉率: ${capture_rate}% (${capture_result}/${eligible_result}件; auto_captured/completed_rework_cmds)"
+    if [ "$capture_result" -lt "$eligible_result" ]; then
+        echo "  手戻り捕捉: ALERT (完了済みreworkの自動記録欠落 $((eligible_result - capture_result))件)"
+    else
+        echo "  手戻り捕捉: OK (完了済みreworkを全件記録)"
+    fi
 else
-    echo "  手戻り捕捉率: N/A (${capture_result}/0件; eligible_rework_commitsなし)"
+    echo "  手戻り捕捉率: N/A (${capture_result}/0件; completed_rework_cmdsなし)"
 fi
 if [ -n "$SOURCE" ] && [ "$SOURCE" = "fallback" ]; then
     echo "  (gate_metrics.log不在のためkaro_workaroundsエントリ数をフォールバック分母に使用)"

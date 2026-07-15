@@ -2018,6 +2018,10 @@ fi
 # --- Check 6: 全体workaround率（バックグラウンド結果を回収） ---
 if [ -n "$_WA_RATE_PID" ]; then wait "$_WA_RATE_PID" 2>/dev/null || true; fi
 cat "$_WA_RATE_TMP"
+if grep -q '手戻り捕捉: ALERT' "$_WA_RATE_TMP" 2>/dev/null; then
+    overall="ALERT"
+    alerts+=("完了済みreworkの自動捕捉欠落: gate_workaround_rate.sh")
+fi
 
 # --- Check 7: 忍者別workaround率（バックグラウンド結果を回収） ---
 echo "■ 忍者別workaround率"
@@ -2295,8 +2299,8 @@ else
     alerts+=("三層記憶DB健全性: gate不在")
 fi
 
-# --- Check 10: スキル品質サマリ ---
-echo "■ スキル品質"
+# --- Check 10: スキル実行品質サマリ ---
+echo "■ スキル実行品質"
 echo "  フェーズ別スキル一覧:"
 echo "    cmd完了処理: /cmd-complete"
 echo "    家老自立配備(CI修正/hotfix/recon2単独): /karo-direct"
@@ -2335,17 +2339,49 @@ if [ -x "$skill_summary_script" ]; then
             }
             END { print out }
         ')"
-        echo "  スキル品質: ${skill_quality_line}"
+        echo "  スキル実行品質: ${skill_quality_line}"
         if [ "$overall" != "ALERT" ]; then
             overall="WARN"
-            alerts+=("スキル品質: FAIL記録あり")
+            alerts+=("スキル実行品質: FAIL記録あり")
         fi
     else
-        echo "  スキル品質: 全PASS"
+        echo "  スキル実行品質: 全PASS"
     fi
 else
     echo "  SKIP: skill_execution_log.sh が存在しないか実行権限なし"
 fi
+
+echo "  スキル静的品質Gate:"
+for _skill_static_spec in \
+    "quality|gate_skill_quality.sh" \
+    "health|gate_skill_health.sh" \
+    "script_refs|gate_skill_script_refs.sh"; do
+    IFS='|' read -r _skill_static_label _skill_static_name <<< "$_skill_static_spec"
+    _skill_static_path="$SCRIPT_DIR/scripts/gates/$_skill_static_name"
+    if [ ! -x "$_skill_static_path" ]; then
+        echo "    ALERT: ${_skill_static_label}: ${_skill_static_name}不在/実行不可"
+        overall="ALERT"
+        alerts+=("スキル静的品質Gate不在: ${_skill_static_name}")
+        continue
+    fi
+    set +e
+    _skill_static_output="$(bash "$_skill_static_path" 2>&1)"
+    _skill_static_rc=$?
+    set -e
+    _skill_static_summary="$(printf '%s\n' "$_skill_static_output" | grep -E -- '--- 総合判定:|走査: .*PASS:' | tail -n 2 | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
+    [ -n "$_skill_static_summary" ] || _skill_static_summary="rc=${_skill_static_rc}"
+    if [ "$_skill_static_rc" -eq 0 ]; then
+        echo "    PASS: ${_skill_static_label}: ${_skill_static_summary}"
+    elif [ "$_skill_static_rc" -eq 2 ]; then
+        echo "    WARN: ${_skill_static_label}: ${_skill_static_summary}"
+        if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="WARN"; fi
+        alerts+=("スキル静的品質WARN: ${_skill_static_name}")
+    else
+        echo "    ALERT: ${_skill_static_label}: ${_skill_static_summary}"
+        overall="ALERT"
+        alerts+=("スキル静的品質FAIL: ${_skill_static_name}")
+    fi
+done
 echo "  スキル推薦 precision/recall:"
 skill_recommend_metrics_script="$SCRIPT_DIR/scripts/skill_recommend_metrics.sh"
 if [ -x "$skill_recommend_metrics_script" ] || [ -f "$skill_recommend_metrics_script" ]; then

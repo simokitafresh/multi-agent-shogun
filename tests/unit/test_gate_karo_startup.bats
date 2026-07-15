@@ -64,6 +64,14 @@ MOCK
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_wa_data_quality.sh" \
         "$TEST_TMPDIR/scripts/gates/gate_queue_yaml_parse.sh" \
         "$TEST_TMPDIR/scripts/gates/gate_three_layer_health.sh"
+    for static_gate in gate_skill_quality.sh gate_skill_health.sh gate_skill_script_refs.sh; do
+        cat > "$TEST_TMPDIR/scripts/gates/$static_gate" <<'MOCK'
+#!/usr/bin/env bash
+echo '走査: 1スキル, PASS: 1/1'
+echo '--- 総合判定: PASS ---'
+MOCK
+        chmod +x "$TEST_TMPDIR/scripts/gates/$static_gate"
+    done
     cp "$PROJECT_ROOT/scripts/lib/known_ninjas.sh" "$TEST_TMPDIR/scripts/lib/known_ninjas.sh"
     cp "$PROJECT_ROOT/scripts/lib/yaml_safe_read.py" "$TEST_TMPDIR/scripts/lib/yaml_safe_read.py"
     cp "$PROJECT_ROOT/scripts/cleanup_three_layer_tmp.sh" "$TEST_TMPDIR/scripts/cleanup_three_layer_tmp.sh"
@@ -260,7 +268,8 @@ EOF
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
     [[ "$output" == *"総合判定: OK"* ]]
-    [[ "$output" == *"スキル品質: 全PASS"* ]]
+    [[ "$output" == *"スキル実行品質: 全PASS"* ]]
+    [[ "$output" == *"スキル静的品質Gate:"* ]]
     [ ! -e "$TEST_TMPDIR/queue/gates/karo_alert_pending.txt" ]
 }
 
@@ -289,7 +298,22 @@ EOF
     [[ "$output" == *"cmd完了処理: /cmd-complete"* ]]
     [[ "$output" == *"家老自立配備(CI修正/hotfix/recon2単独): /karo-direct"* ]]
     [[ "$output" == *"偵察2名配備: /recon-dual"* ]]
-    [[ "$output" == *"スキル品質: dashboard-update FAIL:1"* ]]
+    [[ "$output" == *"スキル実行品質: dashboard-update FAIL:1"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+}
+
+@test "static skill gate failure is surfaced as startup ALERT" {
+    cat > "$TEST_TMPDIR/scripts/gates/gate_skill_quality.sh" <<'MOCK'
+#!/usr/bin/env bash
+echo '走査: 2スキル, PASS: 1/2'
+echo '--- 総合判定: FAIL ---'
+exit 1
+MOCK
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_skill_quality.sh"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: quality:"* ]]
     [[ "$output" == *"総合判定: ALERT"* ]]
 }
 

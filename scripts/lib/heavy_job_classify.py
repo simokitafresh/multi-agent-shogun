@@ -23,6 +23,7 @@ commit messageの説明文)、コマンド位置(segment[0])でなければ一�
 
 出力: 標準出力に "heavy" または "light" の1行のみ。
 """
+
 import os
 import re
 import shlex
@@ -62,7 +63,17 @@ _SEPS = {"&&", ";", "||", "|", "&"}
 
 def _segments(command):
     try:
-        tokens = shlex.split(_strip_heredocs(command))
+        # shlex.split() alone does not split shell punctuation when it is
+        # adjacent to a word (for example ``one.bats; bats two.bats``).  That
+        # merged the following command into the first bats argv and produced
+        # a false "multiple files" heavy classification.  punctuation_chars
+        # makes command boundaries structural, including &&/|| combinations.
+        lexer = shlex.shlex(
+            _strip_heredocs(command), posix=True, punctuation_chars=";&|"
+        )
+        lexer.whitespace_split = True
+        lexer.commenters = ""
+        tokens = list(lexer)
     except ValueError:
         # heredoc除去後も無効な引用符 → トークン化不能。呼び出し側がfail-closedで
         # 扱えるよう None を返す(=判定不能。admission wrapper側はheavyとして扱う)。
@@ -81,15 +92,53 @@ def _segments(command):
     return segs
 
 
+_BATS_OPTIONS_WITH_VALUE = {
+    "-f",
+    "--filter",
+    "--filter-status",
+    "--formatter",
+    "--gather-test-outputs-in",
+    "-j",
+    "--jobs",
+    "--line-reference-format",
+    "-o",
+    "--output",
+    "--report-formatter",
+    "--setup-suite-file",
+}
+
+
+def _bats_targets(args):
+    targets = []
+    skip_value = False
+    for arg in args:
+        if skip_value:
+            skip_value = False
+            continue
+        option = arg.split("=", 1)[0]
+        if option in _BATS_OPTIONS_WITH_VALUE:
+            skip_value = "=" not in arg
+            continue
+        if arg.startswith("-"):
+            continue
+        targets.append(arg)
+    return targets
+
+
 def _is_bats_heavy(args):
-    file_args = [a for a in args if not a.startswith("-")]
+    file_args = _bats_targets(args)
     if len(file_args) != 1:
         return True
     target = file_args[0]
     if "*" in target:
         return True
     stripped = target.rstrip("/")
-    if stripped.endswith("tests/unit") or stripped.endswith("tests/e2e") or stripped.endswith("tests/integration") or stripped == "tests":
+    if (
+        stripped.endswith("tests/unit")
+        or stripped.endswith("tests/e2e")
+        or stripped.endswith("tests/integration")
+        or stripped == "tests"
+    ):
         return True
     if target.endswith("/"):
         return True
@@ -113,7 +162,9 @@ def _is_pytest_heavy(targets):
     return True
 
 
-_ONESHOT_HEAVY_NAME_RE = re.compile(r"golden|regression_check|fullrecalculate", re.IGNORECASE)
+_ONESHOT_HEAVY_NAME_RE = re.compile(
+    r"golden|regression_check|fullrecalculate", re.IGNORECASE
+)
 
 
 def classify(command):
@@ -137,7 +188,12 @@ def classify(command):
                 return "heavy"
             continue
 
-        if prog in ("python", "python3") and len(args) >= 2 and args[0] == "-m" and args[1] == "pytest":
+        if (
+            prog in ("python", "python3")
+            and len(args) >= 2
+            and args[0] == "-m"
+            and args[1] == "pytest"
+        ):
             targets = [a for a in args[2:] if not a.startswith("-")]
             if _is_pytest_heavy(targets):
                 return "heavy"
