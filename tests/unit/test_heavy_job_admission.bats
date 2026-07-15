@@ -509,6 +509,40 @@ FAKEEOF
     [ "$status" -eq 2 ]
 }
 
+# 家老追加RC2(2026-07-15 20:47): commit 8a0680570後もnohup/nice/timeout/setsid/
+# `command --`の実行wrapper経由が5/5 allowだった。table駆動のexec-wrapper展開
+# (_EXEC_WRAPPERS)で汎化し、個別enumerate競争を止める。
+@test "分類器: nohup/nice/timeout/setsid/command --で包んだgit stashもblockする" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    for cmd in "command -- git stash" "nohup git stash" "nice git stash" \
+               "timeout 5 git stash" "setsid git stash" "nice -n 10 git stash pop" \
+               "timeout -k 5 30 git stash" "command env timeout 5 git stash"; do
+        result="$(git_stash_guard_classify "$cmd")"
+        [ "$result" = "block" ]
+    done
+}
+
+@test "分類器: nohup/timeoutで包んだgit stash list/showと文面上のstashは偽陽性0" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    r1="$(git_stash_guard_classify "nohup git stash list")"
+    r2="$(git_stash_guard_classify "timeout 5 git stash list")"
+    r3="$(git_stash_guard_classify "nohup echo 'git stash'")"
+    [ "$r1" = "allow" ]
+    [ "$r2" = "allow" ]
+    [ "$r3" = "allow" ]
+}
+
+@test "hook: nohup/nice/timeout/setsidで包んだgit stashもBLOCKする" {
+    run _run_hook "nohup git stash"
+    [ "$status" -eq 2 ]
+    run _run_hook "nice git stash pop"
+    [ "$status" -eq 2 ]
+    run _run_hook "timeout 5 git stash"
+    [ "$status" -eq 2 ]
+    run _run_hook "setsid git stash"
+    [ "$status" -eq 2 ]
+}
+
 @test "hook: git stash破壊的形はBLOCKし、list/showは通過する" {
     run _run_hook "git stash"
     [ "$status" -eq 2 ]

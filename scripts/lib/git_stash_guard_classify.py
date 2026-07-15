@@ -39,6 +39,33 @@ _ENV_VALUE_OPTS = {"-u", "--unset", "-C", "--chdir", "-S", "--split-string"}
 
 _SHELL_DASH_C_PROGS = {"bash", "sh", "zsh", "dash", "ksh"}
 
+# Table-driven exec-wrapper unwrap (2026-07-15 karo RC2: command/nohup/nice/
+# timeout/setsid all reach the wrapped program without being "git"
+# themselves — an enumerate-as-you-find-them approach chases bypasses
+# forever, so every transparent process launcher is declared once here:
+#   value_opts  — this wrapper's own options that consume a following token
+#   stop_tokens — no-value tokens/markers specific to this wrapper (e.g.
+#                 "--" for the `command` builtin)
+#   positional_skip — non-option positional args this wrapper itself
+#                 consumes AFTER its flags but BEFORE the wrapped command
+#                 (e.g. `timeout 5 CMD...` — the duration).
+# Any other "-x" token encountered before the wrapped command is treated as
+# a no-value flag of the wrapper (safe default: still unwraps to the real
+# command instead of misreading it as the program).
+_EXEC_WRAPPERS = {
+    "command": {"value_opts": set(), "stop_tokens": {"--"}, "positional_skip": 0},
+    "nohup": {"value_opts": set(), "stop_tokens": set(), "positional_skip": 0},
+    "nice": {"value_opts": {"-n", "--adjustment"}, "stop_tokens": set(), "positional_skip": 0},
+    "setsid": {"value_opts": set(), "stop_tokens": set(), "positional_skip": 0},
+    "timeout": {
+        "value_opts": {"-k", "--kill-after", "-s", "--signal"},
+        "stop_tokens": {"--foreground", "--preserve-status", "--"},
+        "positional_skip": 1,
+    },
+    "exec": {"value_opts": {"-a"}, "stop_tokens": {"-c", "-l"}, "positional_skip": 0},
+    "stdbuf": {"value_opts": {"-i", "-o", "-e"}, "stop_tokens": set(), "positional_skip": 0},
+}
+
 
 def _first_positional_index_after_git(args):
     """Return the index of the first non-option positional token in args, or None."""
@@ -68,13 +95,14 @@ def _next_positional(args, after_index):
 
 
 def _unwrap_indirection(tokens):
-    """Strip leading VAR=value assignments and env/command wrappers.
+    """Strip leading VAR=value assignments and known exec-wrapper programs.
 
-    `env git stash`, `command git stash`, and `FOO=bar git stash` all reach
-    the real `git stash` invocation through a launcher the naive "is seg[0]
-    literally 'git'" check never sees. Peel these layers (in any order, any
-    number of times — e.g. `command env git stash`) until the remaining
-    tokens start with the actual program.
+    `env git stash`, `command git stash`, `nohup git stash`,
+    `timeout 5 git stash`, and `FOO=bar git stash` all reach the real
+    `git stash` invocation through a launcher the naive "is seg[0] literally
+    'git'" check never sees. Peel these layers (in any order, any number of
+    times — e.g. `command env timeout 5 git stash`) until the remaining
+    tokens start with the actual wrapped program.
     """
     tokens = list(tokens)
     changed = True
@@ -102,11 +130,26 @@ def _unwrap_indirection(tokens):
                     tokens.pop(0)
                     continue
                 break
-        elif prog == "command":
+        elif prog in _EXEC_WRAPPERS:
+            spec = _EXEC_WRAPPERS[prog]
             tokens.pop(0)
             changed = True
-            while tokens and tokens[0] in ("-p", "-v", "-V"):
-                tokens.pop(0)
+            while tokens:
+                if tokens[0] in spec["value_opts"]:
+                    tokens.pop(0)
+                    if tokens:
+                        tokens.pop(0)
+                    continue
+                if tokens[0] in spec["stop_tokens"]:
+                    tokens.pop(0)
+                    continue
+                if tokens[0].startswith("-"):
+                    tokens.pop(0)
+                    continue
+                break
+            for _ in range(spec["positional_skip"]):
+                if tokens and not tokens[0].startswith("-"):
+                    tokens.pop(0)
     return tokens
 
 
