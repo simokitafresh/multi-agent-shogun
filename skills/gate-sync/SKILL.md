@@ -13,7 +13,8 @@ allowed-tools:
   - Read
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T13:46:00+09:00 -->
+<!-- 2026-07-15検分: gunshi_gate_reflux.sh ab302df7bは同一cmd_idのdraft/report全件を単一flock区間でatomic置換し、gate_resultとgate_synced_atを同時更新。異なる既確定resultはtimestampごと保持する。 -->
 <!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: yaml_field_set.sh 6dd44d13fはlist item内の後置id探索を追加した内部対応。既存CLI・flock・readback契約は維持。 -->
 
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
@@ -81,10 +82,10 @@ BULLETIN_NOTIFY=shogun bash scripts/bulletin_write.sh gunshi "gate予測精度�
 - Script refs verified: 2026-05-22 cmd_2952. `bulletin_write.sh` は明示 `posted_by` 形式を推奨し、旧形式(content先頭)も互換維持する。`requires_confirmation` と `BULLETIN_NOTIFY` は `true|false` またはエージェントCSVを正規化し、不正agent名はERRORで停止する。`action_type` は `info|action_required` のみ許可し、将軍対応依頼は `action_required` を使う。
 
 ## 制約
-- review_logのEdit直接編集禁止（yaml_field_set.sh経由）
+- review_logのEdit直接編集禁止（`gunshi_gate_reflux.sh`経由）
 - accuracy計算はreview_logのgate_prediction+gate_result両方存在するエントリのみ
-- gate_sync.shが一括処理する場合と競合しない（yaml_field_set.shのflock排他）
-- Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` はflock、root fallback、map/list block対応、複数行・inline scalar継続の安全置換、post-write readback検証を行う。review_log更新はこのhelper以外で行わない。
+- gate_sync.shが一括処理する場合と競合しない（両者とも`lock_path.sh`由来の同一flockで排他）
+- Script refs verified: 2026-07-15 ab302df7b. review_logのgate同期はfirst-matchの`yaml_field_set.sh`ではなく、全matching entryを更新する`gunshi_gate_reflux.sh`を正本とする。
 - Script refs verified: 2026-05-22 cmd_2959. `yaml_field_set.sh` WSL2最適化済み(lock_path純bash化、Windows path用/tmp lock、検証込み)。
 
 Script refs verified: 2026-06-09 cmd_karo_skill_update_batch1. `yaml_field_set.sh` 直近変更(3de0d29c)は_yaml_field_set_apply_rootのskip_children条件修正(YAMLリスト要素`- id:`等の子要素認識漏れ修正)。内部バグフィックスのみ、インターフェース変更なし。本スキルはroot操作を使わないため直接影響なし。flock+readback検証の契約は維持。

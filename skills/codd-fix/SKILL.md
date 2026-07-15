@@ -16,7 +16,8 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T13:46:00+09:00 -->
+<!-- 2026-07-15検分: cmd_complete_gate.sh ab302df7b/1616a1eb3はCLEAR後のsemantic auditをdurable worker化し、専用test警告を精密化。`bash scripts/cmd_complete_gate.sh <cmd_id>`の引数・CLEAR/BLOCK exit契約・codd-fix手順は不変。 -->
 <!-- cmd_3948検分: cmd_complete_gate.sh直近差分は承認済test-only commitのcontext reflux除外。呼出し契約不変。 -->
 <!-- 検分: cmd_complete_gate.sh 9018f5287/0c5f0edcc/dd368dee5/edbdb88bc/a48d80420をgit showで確認。insight消費の証跡付き解決、task/project完全一致、context source境界BLOCK、review rework履歴の単調保存を追加したgate内部強化。`bash scripts/cmd_complete_gate.sh <cmd_id>`の単一CMD_ID引数、CLEAR/BLOCK判定とexit契約、codd-fix本文の呼出し順序は不変。 -->
 

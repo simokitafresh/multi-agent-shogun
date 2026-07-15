@@ -1,6 +1,6 @@
 ---
-<!-- script_refs_checked_at: 2026-07-15T05:58:00+09:00 -->
-<!-- 2026-07-15検分: ninja_monitor.shはspeed campaign完了callbackを追加。CLI切替・idle pane respawn・設定同期契約は不変。 -->
+<!-- script_refs_checked_at: 2026-07-15T13:46:00+09:00 -->
+<!-- 2026-07-15検分: ninja_monitor.sh 2faecab31はinbox pruning時のmessage_id evidence退避を追加。CLI切替・idle pane respawn・settings同期・respawn-pane -k契約には影響なし。 -->
 name: shogun-cli-switch
 argument-hint: "[status|to-claude|to-codex|pin-2.1.87|unpin-latest] [--agent AGENT] [--scope core|all|csv]"
 quality_metric: "将軍系: CLI/version切替cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"

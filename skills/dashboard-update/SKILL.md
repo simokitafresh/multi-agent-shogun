@@ -19,7 +19,8 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T13:46:00+09:00 -->
+<!-- 2026-07-15検分: dashboard_update.sh 91c3bf2dcはarchive/update/auto publisherを同一dashboard lockへ統一し、同一filesystem上のatomic renameとauto失敗伝播を保証。`dashboard_update.sh <cmd_id> [--bundle PATH] [--dry-run]`契約は不変。 -->
 <!-- cmd_3948検分: dashboard_update.sh直近差分はoptional要対応節のno-op化。引数・出力契約不変。 -->
 <!-- 検分: dashboard_update.sh 998b8c84bをgit showで確認。非dry-run時、対象cmdにmatching reportがあるのにcompleted/doneが0件ならdashboardを変更せずSKIP・used=falseを記録し、completed報告があれば古いpending siblingを検証対象外にする内部発火条件修正。呼出し形 `<cmd_id> [--dry-run]`、exit 0/1、report検証→生成の順序は不変。 -->
 
