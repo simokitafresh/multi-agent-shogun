@@ -112,6 +112,9 @@ run_semantic_quality_after_alias_change() {
     fi
 }
 
+post_state_file="$(mktemp "${TMPDIR:-/tmp}/semantic_index_update.post.XXXXXX")"
+trap 'rm -f "$post_state_file"' EXIT
+
 (
     flock -w 10 200 || { echo "ERROR: lock timeout: $lock_path" >&2; exit 1; }
     changed_flag="$(
@@ -1780,18 +1783,28 @@ PY
             printf '%s\n' "$line"
         fi
     done <<< "$changed_flag"
-    if [ "$index_changed" = true ]; then
-        if [ -f "$map_generate" ]; then
-            # バックグラウンド実行: semantic-mapはeventual consistencyで問題なし。
-            # 同期実行(586ms)→非同期化により呼び出し元の待ち時間を削減。
-            SEMANTIC_INDEX_LOCK_HELD=1 bash "$map_generate" >/dev/null &
-            echo "semantic-map regenerated (background)"
-        else
-            echo "WARN: semantic map generator not found: $map_generate" >&2
-        fi
-        if [ "$aliases_changed" = true ]; then
-            run_semantic_stress_after_alias_change
-            run_semantic_quality_after_alias_change
-        fi
-    fi
+    printf '%s %s\n' "$index_changed" "$aliases_changed" > "$post_state_file"
 ) 200>"$lock_path"
+
+# Post-update consumers may acquire the semantic index lock themselves.
+# Running them in the flock subshell deadlocks when semantic_stress_test invokes
+# absorb_pending (the same process waits ten seconds for its own lock).  Publish
+# the two booleans under lock, then run every consumer only after lock release.
+IFS=' ' read -r index_changed aliases_changed < "$post_state_file"
+rm -f "$post_state_file"
+trap - EXIT
+
+if [ "$index_changed" = true ]; then
+    if [ "$aliases_changed" = true ]; then
+        run_semantic_stress_after_alias_change
+        run_semantic_quality_after_alias_change
+    fi
+    if [ -f "$map_generate" ]; then
+        # バックグラウンド実行: semantic-mapはeventual consistencyで問題なし。
+        # lock解放後に起動し、generator自身の正規lock取得を省略しない。
+        bash "$map_generate" >/dev/null &
+        echo "semantic-map regenerated (background)"
+    else
+        echo "WARN: semantic map generator not found: $map_generate" >&2
+    fi
+fi

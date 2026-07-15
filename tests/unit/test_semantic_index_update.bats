@@ -301,6 +301,11 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 mkdir -p "$(dirname "$log")" "$(dirname "$baseline")" "$(dirname "$insights")"
+if ! flock -w 1 "${SEMANTIC_INDEX_LOCK:?}" -c true; then
+  echo 'semantic index lock was still held during post-update stress' >&2
+  exit 9
+fi
+echo 'post_update_lock=acquired'
 printf '{"diff":{"hit_rate_delta":12.5,"no_match_delta":-2}}\n' >> "$log"
 printf '{"hit_rate":50.0,"no_match":2,"total":4}\n' > "$baseline"
 printf 'insights:\n' > "$insights"
@@ -311,10 +316,12 @@ EOF
     export SEMANTIC_STRESS_LOG="$TEST_TMPDIR/logs/stress.log"
     export SEMANTIC_STRESS_BASELINE="$TEST_TMPDIR/logs/baseline.json"
     export INSIGHTS_FILE="$TEST_TMPDIR/queue/insights.yaml"
+    export SEMANTIC_INDEX_LOCK="$SEMANTIC_INDEX_PATH.lock"
 
     run bash "$PROJECT_ROOT/scripts/semantic_index_update.sh" discussion '{"timestamp":"2026-05-05T00:00:00+09:00","summary":"意味検索の話"}'
     [ "$status" -eq 0 ]
     [[ "$output" == *"semantic-stress after-alias-change: running"* ]]
+    [[ "$output" == *"post_update_lock=acquired"* ]]
     [[ "$output" == *"before_after: hit_rate_delta=12.5 no_match_delta=-2 total_delta=0"* ]]
     [[ "$output" == *"semantic-stress after-alias-change: complete"* ]]
     grep -q '"hit_rate_delta":12.5' "$SEMANTIC_STRESS_LOG"
