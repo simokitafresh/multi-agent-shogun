@@ -879,6 +879,7 @@ codd:
 |------|----------|
 | file | `/mnt/c/Python_app/DM-signal/backend/app/jobs/recalculate_fast.py` |
 | file | `docs/research/gunshi_precompute_L5_parallel_design_v1.3_20260711.md` |
+| file | `docs/research/gunshi_precompute_fingerprint_skip_design_20260711.md` |
 | file | `docs/research/gunshi_precompute_fingerprint_skip_design_v1.2_20260711.md` |
 | file | `context/dm-signal-core.md` §19.2 |
 | file | `docs/research/fullrecalculate-architecture-2026-03-28.md` |
