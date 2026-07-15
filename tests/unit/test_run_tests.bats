@@ -73,8 +73,30 @@ SH
   workflow="$ROOT/.github/workflows/test.yml"
 
   grep -Fq 'BATS_INNER_JOBS=1 \' "$workflow"
+  grep -Fq 'BATS_FILE_TIMEOUT_SECONDS=900 \' "$workflow"
+  grep -Fq 'timeout-minutes: 45' "$workflow"
   ! grep -Fq 'BATS_INNER_JOBS=8 \' "$workflow"
   grep -Fq 'bash scripts/run_tests.sh unit' "$workflow"
+}
+
+@test "split-file runner fails closed with named evidence when a bats file times out" {
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+sleep 2
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_CACHE=0 \
+    BATS_FILE_TIMEOUT_SECONDS=1 bash -c '
+      source "$1/scripts/run_tests.sh"
+      run_bats_files_parallel "$1/tests/unit/sample.bats"
+    ' _ "$TMPROOT"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"START: sample.bats"* ]]
+  [[ "$output" == *"DONE: sample.bats rc=124"* ]]
+  [[ "$output" == *"TIMEOUT: sample.bats exceeded 1s"* ]]
+  [[ "$output" == *"==== $TMPROOT/tests/unit/sample.bats ===="* ]]
 }
 
 @test "source mode resolves repo root from run_tests path instead of caller argv zero" {

@@ -11,6 +11,7 @@ jobs:
   unit-tests:
     name: Unit Tests (bats)
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout code
@@ -62,6 +63,7 @@ jobs:
           # files concurrently under the aggregate eight-test budget.
           BATS_CACHE=0 \
           BATS_INNER_JOBS=1 \
+          BATS_FILE_TIMEOUT_SECONDS=900 \
           BATS_TAP_OUTPUT=test-results/unit.tap \
             bash scripts/run_tests.sh unit || {
             echo "::error::Unit tests failed"

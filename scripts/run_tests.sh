@@ -23,6 +23,7 @@ INNER_JOBS="${BATS_INNER_JOBS:-1}"
 # default (128) let a 2-core CI runner launch 64 tests from one "heavy" file
 # while other files were also live, producing timeout/cross-fixture cascades.
 MAX_TEST_JOBS="${BATS_MAX_TEST_JOBS:-8}"
+BATS_FILE_TIMEOUT_SECONDS="${BATS_FILE_TIMEOUT_SECONDS:-900}"
 BATS_CACHE="${BATS_CACHE:-1}"
 BATS_CACHE_DIR="${BATS_CACHE_DIR:-$REPO_ROOT/.cache/bats}"
 
@@ -140,6 +141,7 @@ run_bats_files_parallel() {
     local -A pid_weight=()
     local -A pid_cache_path=()
     local -A pid_time=()
+    local -A pid_rc=()
 
     # Each file is a separate bats-core root process.  Never let it inherit a
     # caller/previous bats root's transport namespace: bats uses BATS_* state
@@ -151,7 +153,8 @@ run_bats_files_parallel() {
     run_bats_file_isolated() {
         local test_file="$1"
         local test_jobs="$2"
-        env \
+        local rc=0
+        timeout --foreground --kill-after=10s "${BATS_FILE_TIMEOUT_SECONDS}s" env \
             -u BATS_ROOT_PID \
             -u BATS_RUN_TMPDIR \
             -u BATS_SUITE_TMPDIR \
@@ -164,7 +167,12 @@ run_bats_files_parallel() {
             -u BATS_TEST_FILE_NUMBER \
             -u BATS_OUT \
             -u BATS_TAP_OUTPUT \
-            bats "$test_file" --jobs "$test_jobs" --timing 3>&-
+            bats "$test_file" --jobs "$test_jobs" --timing 3>&- || rc=$?
+        if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+            printf 'TIMEOUT: %s exceeded %ss (rc=%s)\n' \
+                "$(basename "$test_file")" "$BATS_FILE_TIMEOUT_SECONDS" "$rc" >&2
+        fi
+        return "$rc"
     }
 
     if [ "$total" -eq 0 ]; then
@@ -203,6 +211,8 @@ run_bats_files_parallel() {
             return 0
         fi
         [ "$rc" -eq 0 ] || failed=1
+        pid_rc["$finished_pid"]="$rc"
+        printf 'DONE: %s rc=%s\n' "$(basename "${pid_file[$finished_pid]}")" "$rc" >&2
         for pid in "${pids[@]}"; do
             [ "$pid" = "$finished_pid" ] || next+=("$pid")
         done
@@ -302,14 +312,18 @@ run_bats_files_parallel() {
         pid_weight["$pid"]="$file_weight"
         pid_cache_path["$pid"]="$cache_path"
         pid_time["$pid"]="$timing_path"
+        printf 'START: %s pid=%s weight=%s timeout=%ss\n' \
+            "$(basename "$file")" "$pid" "$file_weight" "$BATS_FILE_TIMEOUT_SECONDS" >&2
     done
 
     for pid in "${pids[@]}"; do
         if wait "$pid" 2>/dev/null; then
-            :
+            pid_rc["$pid"]=0
         else
+            pid_rc["$pid"]=$?
             failed=1
         fi
+        printf 'DONE: %s rc=%s\n' "$(basename "${pid_file[$pid]}")" "${pid_rc[$pid]}" >&2
     done
 
     manifest="$(mktemp "${TMPDIR:-/tmp}/shogun-manifest.XXXXXX")"
@@ -325,7 +339,8 @@ run_bats_files_parallel() {
         for pid in "${all_pids[@]}"; do
             out="${pid_out[$pid]}"
             file="${pid_file[$pid]}"
-            if awk -F '\t' -v p="$pid" '$1==p && $5>0 {found=1} END{exit !found}' "$stats"; then
+            if [ "${pid_rc[$pid]:-0}" -ne 0 ] || \
+               awk -F '\t' -v p="$pid" '$1==p && $5>0 {found=1} END{exit !found}' "$stats"; then
                 echo "==== $file ====" >&2
                 tail -120 "$out" >&2
             fi
