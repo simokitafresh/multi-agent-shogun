@@ -89,7 +89,15 @@ if [[ "${file_path##*/}" == *.sh || "${file_path##*/}" == *.bash ]]; then
     esac
     if [[ -n "$_abs_path" && -f "$_abs_path" ]]; then
         _rel_path="${_abs_path#"$_PROJECT_ROOT"/}"
-        _sc_out=$(shellcheck "$_rel_path" 2>&1); _sc_exit=$?
+        # This file is sourced by posttool-dispatch.sh, which runs with
+        # `set -e`.  Capture shellcheck's expected non-zero lint result inside
+        # an if-condition so the dispatcher can emit context instead of
+        # terminating silently before `_sc_exit` is inspected.
+        if _sc_out=$(shellcheck "$_rel_path" 2>&1); then
+            _sc_exit=0
+        else
+            _sc_exit=$?
+        fi
         if [[ $_sc_exit -ne 0 && -n "$_sc_out" ]]; then
             # Append simplified violation log (no agent_id tmux call)
             _ts=$(printf '%(%Y-%m-%dT%H:%M:%SZ)T' -1 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)
