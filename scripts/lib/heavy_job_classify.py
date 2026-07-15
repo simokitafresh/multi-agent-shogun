@@ -25,77 +25,13 @@ commit messageの説明文)、コマンド位置(segment[0])でなければ一�
 """
 
 import os
-import json
 import re
-import shlex
 import sys
-
-_HEREDOC_RE = re.compile(r"<<(-)?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
-
-
-def _strip_heredocs(text):
-    """heredoc本文/terminator行を除去してからtokenizeする(GA-220と同一原理)。
-    heredoc本文中に偶然 "bats"/"pytest" 等の単語が含まれても誤検出しないため。
-    """
-    lines = text.split("\n")
-    out = []
-    i = 0
-    n = len(lines)
-    while i < n:
-        line = lines[i]
-        out.append(line)
-        i += 1
-        m = _HEREDOC_RE.search(line)
-        if not m:
-            continue
-        strip_tabs = m.group(1) == "-"
-        delim = m.group(3)
-        while i < n:
-            body_line = lines[i]
-            probe = body_line.lstrip("\t") if strip_tabs else body_line
-            i += 1
-            if probe == delim:
-                break
-    return "\n".join(out)
-
-
-_SEPS = {"&&", ";", "||", "|", "&", "\n"}
+from shell_command_segments import segment_tokens
 
 
 def _segments(command):
-    try:
-        # shlex.split() alone does not split shell punctuation when it is
-        # adjacent to a word (for example ``one.bats; bats two.bats``).  That
-        # merged the following command into the first bats argv and produced
-        # a false "multiple files" heavy classification.  punctuation_chars
-        # makes command boundaries structural, including &&/|| combinations.
-        lexer = shlex.shlex(
-            _strip_heredocs(command), posix=True, punctuation_chars=";&|\n"
-        )
-        # Newline is a shell command boundary, not ordinary whitespace.  If it
-        # is swallowed here, arguments from a later git/commit command become
-        # extra bats targets and a single-file test is falsely classified as
-        # heavy.
-        lexer.whitespace = " \t\r"
-        lexer.whitespace_split = True
-        lexer.commenters = ""
-        tokens = list(lexer)
-    except ValueError:
-        # heredoc除去後も無効な引用符 → トークン化不能。呼び出し側がfail-closedで
-        # 扱えるよう None を返す(=判定不能。admission wrapper側はheavyとして扱う)。
-        return None
-    segs = []
-    cur = []
-    for t in tokens:
-        if t in _SEPS:
-            if cur:
-                segs.append(cur)
-            cur = []
-        else:
-            cur.append(t)
-    if cur:
-        segs.append(cur)
-    return segs
+    return segment_tokens(command)
 
 
 _BATS_OPTIONS_WITH_VALUE = {
@@ -174,14 +110,6 @@ _ONESHOT_HEAVY_NAME_RE = re.compile(
 
 
 def classify(command):
-    if os.environ.get("HEAVY_JOB_JSON_ESCAPED") == "1":
-        try:
-            # pre-bash-combined extracts the JSON string without decoding its
-            # escapes.  Wrapping it restores newlines/quotes exactly while
-            # preserving a literal ``\\n`` (encoded as ``\\\\n``).
-            command = json.loads(f'"{command}"')
-        except (TypeError, ValueError, json.JSONDecodeError):
-            return "heavy"
     segs = _segments(command)
     if segs is None:
         return "heavy"

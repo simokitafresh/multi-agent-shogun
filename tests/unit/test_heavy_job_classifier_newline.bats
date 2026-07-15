@@ -16,6 +16,39 @@ git diff --check"
     [ "$status" -eq 0 ]
 }
 
+@test "production hook catches destructive command on the second JSON-escaped line" {
+    command="echo safe
+rm -rf /tmp/hook-boundary-must-not-run"
+    payload="$(python3 -c 'import json,sys; print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]}}))' "$command")"
+
+    run env HOOK_PAYLOAD="$payload" BATS_TEST_FILENAME="$BATS_TEST_FILENAME" bash "$HOOK"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"outside project tree"* ]]
+}
+
+@test "production hook catches codd generate wave on the second JSON-escaped line" {
+    target="$BATS_TEST_TMPDIR/existing-codd-target"
+    mkdir -p "$target"
+    printf 'print(1)\n' > "$target/app.py"
+    command="echo safe
+codd generate --wave --path '$target'"
+    payload="$(python3 -c 'import json,sys; print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]}}))' "$command")"
+
+    run env HOOK_PAYLOAD="$payload" BATS_TEST_FILENAME="$BATS_TEST_FILENAME" bash "$HOOK"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"codd generate --wave"* ]]
+}
+
+@test "production hook catches git commit no-verify on the second JSON-escaped line" {
+    command="echo safe
+git commit --no-verify -m 'must be blocked'"
+    payload="$(python3 -c 'import json,sys; print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]}}))' "$command")"
+
+    run env HOOK_PAYLOAD="$payload" BATS_TEST_FILENAME="$BATS_TEST_FILENAME" bash "$HOOK"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"--no-verify"* ]]
+}
+
 @test "newline separates a filtered single-file bats command from later git commands" {
     command="bats tests/unit/test_ninja_monitor_clear_guard.bats --filter 'memory DB report_received'
 bash -n scripts/ninja_monitor.sh

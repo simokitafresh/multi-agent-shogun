@@ -28,9 +28,7 @@ heavy_job_classify() {
     if heavy_job_maybe_relevant "$command"; then
         local script_dir
         script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-        HEAVY_JOB_COMMAND="$command" \
-            HEAVY_JOB_JSON_ESCAPED="${HEAVY_JOB_JSON_ESCAPED:-0}" \
-            python3 -S "${script_dir}/lib/heavy_job_classify.py" 2>/dev/null || echo "heavy"
+        HEAVY_JOB_COMMAND="$command" python3 -S "${script_dir}/lib/heavy_job_classify.py" 2>/dev/null || echo "heavy"
     else
         echo "light"
     fi

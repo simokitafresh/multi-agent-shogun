@@ -16,7 +16,8 @@ fi
 [[ "$payload" != *'"Bash"'* ]] && exit 0
 command="${command:-}"
 # cmd_2075: jq → awk置換 (jq≈4ms → awk≈2ms, 前回revertとの差: サブシェル維持/ツール軽量化)
-# awk char-by-char で \"エスケープを正しく処理
+# awk char-by-char でJSON stringを復元する。ここで一度だけdecodeし、
+# 全Guardへ実際のshell command（改行・quoteを含む）を渡す。
 if [[ -z "$command" && "$payload" == *'"tool_input"'* && "$payload" == *'"command"'* ]]; then
     command="$(awk '
         match($0, /"command"[[:space:]]*:[[:space:]]*"/) {
@@ -24,7 +25,24 @@ if [[ -z "$command" && "$payload" == *'"tool_input"'* && "$payload" == *'"comman
             n = length(s); result = ""
             for (i = 1; i <= n; i++) {
                 c = substr(s, i, 1)
-                if (c == "\\" && i < n) { result = result substr(s, i, 2); i++; continue }
+                if (c == "\\" && i < n) {
+                    e = substr(s, i + 1, 1)
+                    if (e == "n") result = result "\n"
+                    else if (e == "r") result = result "\r"
+                    else if (e == "t") result = result "\t"
+                    else if (e == "b") result = result sprintf("%c", 8)
+                    else if (e == "f") result = result sprintf("%c", 12)
+                    else if (e == "\"" || e == "\\" || e == "/") result = result e
+                    else if (e == "u" && i + 5 <= n) {
+                        # Unicode escapes are not shell structure. Preserve
+                        # them losslessly; command boundaries are ASCII.
+                        result = result substr(s, i, 6)
+                        i += 5
+                        continue
+                    } else result = result "\\" e
+                    i++
+                    continue
+                }
                 if (c == "\"") break
                 result = result c
             }
@@ -176,25 +194,18 @@ knowledge_grep_query() {
         fi
     fi
 
-    query="$(COMMAND="$command" python3 - <<'PY'
+    query="$(COMMAND="$command" PROJECT_ROOT="$SCRIPT_DIR" python3 - <<'PY'
 import os
-import re
-import shlex
+import sys
 
 command = os.environ.get("COMMAND", "")
+sys.path.insert(0, os.path.join(os.environ["PROJECT_ROOT"], "scripts", "lib"))
+from shell_command_segments import segment_tokens
 knowledge_roots = ("context", "docs", "projects", "memory")
 infra_roots = ("scripts/gates/", "scripts/hooks/", ".claude/hooks/")
 
 
-def split_segments(cmd: str):
-    return [seg.strip() for seg in re.split(r"(?:&&|\|\||;|\|)", cmd) if seg.strip()]
-
-
-def normalize_tokens(segment: str):
-    try:
-        tokens = shlex.split(segment, posix=True)
-    except ValueError:
-        return []
+def normalize_tokens(tokens: list[str]):
     while tokens and "=" in tokens[0] and not tokens[0].startswith("-") and tokens[0].split("=", 1)[0].isidentifier():
         tokens = tokens[1:]
     if tokens and tokens[0] == "timeout":
@@ -237,7 +248,7 @@ def extract_query(tokens: list[str], tool_index: int) -> str:
     return query
 
 
-for segment in split_segments(command):
+for segment in segment_tokens(command) or []:
     tokens = normalize_tokens(segment)
     for idx, token in enumerate(tokens):
         if os.path.basename(token) not in {"grep", "rg"}:
@@ -310,27 +321,22 @@ PY
 
 destructive_approval_reason() {
     local conversation_file="${PRE_BASH_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
-    COMMAND="$command" LORD_CONVERSATION_FILE="$conversation_file" python3 - <<'PY'
+    COMMAND="$command" LORD_CONVERSATION_FILE="$conversation_file" PROJECT_ROOT="$SCRIPT_DIR" python3 - <<'PY'
 import json
 import os
 import re
-import shlex
+import sys
 
 command = os.environ.get("COMMAND", "")
 conversation_file = os.environ.get("LORD_CONVERSATION_FILE", "")
-
-
-def split_segments(cmd: str):
-    return [seg.strip() for seg in re.split(r"(?:&&|\|\||;|\|)", cmd) if seg.strip()]
+project_root = os.path.realpath(os.environ.get("PROJECT_ROOT", "."))
+sys.path.insert(0, os.path.join(project_root, "scripts", "lib"))
+from shell_command_segments import segment_tokens
 
 
 def destructive_families(cmd: str) -> list[str]:
     families: list[str] = []
-    for segment in split_segments(cmd):
-        try:
-            tokens = shlex.split(segment, posix=True)
-        except ValueError:
-            continue
+    for tokens in segment_tokens(cmd) or []:
         if len(tokens) < 2 or os.path.basename(tokens[0]) != "git":
             continue
         sub = tokens[1]
@@ -440,69 +446,23 @@ fi
 # -C <path>)+ "commit" subcommandであるかのみを見る。全体解析が失敗した場合のみ、Guard0と同じ
 # 行頭/区切り文字直後の"git"出現有無でfail-closed可否を判定する(個別message allowlist禁止)。
 if [[ -n "${command:-}" && "$command" == *git* && "$command" == *commit* ]]; then
-    _guard1_is_git_commit="$(HOOK_PAYLOAD_JSON="$payload" python3 - <<'PY'
+    _guard1_is_git_commit="$(HOOK_PAYLOAD_JSON="$payload" PROJECT_ROOT="$SCRIPT_DIR" python3 - <<'PY'
 import json
 import os
 import re
-import shlex
+import sys
 
-HEREDOC_RE = re.compile(r"<<(-)?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
-OPERATORS = {";", "&", "|", "&&", "||"}
-
-
-def strip_heredocs(text):
-    lines = text.split("\n")
-    out = []
-    i = 0
-    n = len(lines)
-    while i < n:
-        line = lines[i]
-        out.append(line)
-        i += 1
-        m = HEREDOC_RE.search(line)
-        if not m:
-            continue
-        strip_tabs = m.group(1) == "-"
-        delim = m.group(3)
-        while i < n:
-            body_line = lines[i]
-            probe = body_line.lstrip("\t") if strip_tabs else body_line
-            i += 1
-            if probe == delim:
-                break
-    return "\n".join(out)
-
-
-def tokenize(cmd):
-    lexer = shlex.shlex(cmd, posix=True, punctuation_chars=";&|")
-    lexer.whitespace_split = True
-    return list(lexer)
-
-
-def split_into_segments(tokens):
-    segments = []
-    current = []
-    for tok in tokens:
-        if tok in OPERATORS:
-            if current:
-                segments.append(current)
-            current = []
-            continue
-        current.append(tok)
-    if current:
-        segments.append(current)
-    return segments
+sys.path.insert(0, os.path.join(os.environ["PROJECT_ROOT"], "scripts", "lib"))
+from shell_command_segments import segment_tokens
 
 
 def is_git_commit(cmd):
-    stripped = strip_heredocs(cmd)
-    try:
-        tokens = tokenize(stripped)
-    except ValueError:
+    segments = segment_tokens(cmd)
+    if segments is None:
         # 構造判定: 行頭 or 区切り文字直後がgitで始まる場合のみ疑わしいとみなしfail-closed。
         # それ以外(report/message本文の引用符崩れ等)は無関係commandとして安全にskipする。
-        return bool(re.search(r"(^|[;&|])\s*git(\s|$)", stripped))
-    for seg in split_into_segments(tokens):
+        return bool(re.search(r"(^|[;&|\n])\s*git(\s|$)", cmd))
+    for seg in segments:
         if not seg or os.path.basename(seg[0]) != "git":
             continue
         idx = 1
@@ -897,16 +857,13 @@ run_guard14
 # 新規空プロジェクトへのgenerateは許可(誤検知回避)。トークン解析(shlex)で実コマンド呼出しのみ判定し、
 # echo/grep等の引数内の文字列言及による誤検知(cmd_2075と同種のFPパターン)を避ける。
 if [[ -n "${command:-}" && "$command" == *'codd'* && "$command" == *'generate'* && "$command" == *'--wave'* ]]; then
-    _codd_block_reason="$(COMMAND="$command" python3 - <<'PY'
+    _codd_block_reason="$(COMMAND="$command" PROJECT_ROOT="$SCRIPT_DIR" python3 - <<'PY'
 import os
-import re
-import shlex
+import sys
 
 command = os.environ.get("COMMAND", "")
-
-
-def split_segments(cmd: str):
-    return [seg.strip() for seg in re.split(r"(?:&&|\|\||;|\|)", cmd) if seg.strip()]
+sys.path.insert(0, os.path.join(os.environ["PROJECT_ROOT"], "scripts", "lib"))
+from shell_command_segments import segment_tokens
 
 
 def find_path_arg(tokens: list[str]) -> str:
@@ -932,11 +889,7 @@ def has_existing_source(root_dir: str, max_depth: int = 3) -> bool:
     return False
 
 
-for segment in split_segments(command):
-    try:
-        tokens = shlex.split(segment, posix=True)
-    except ValueError:
-        continue
+for tokens in segment_tokens(command) or []:
     if len(tokens) < 2 or os.path.basename(tokens[0]) != "codd" or tokens[1] != "generate":
         continue
     if "--wave" not in tokens:
@@ -974,10 +927,7 @@ if [[ -n "${command:-}" && "$command" != *'heavy_job_admission.sh'* && "$command
     if [[ "$command" == *'bats'* || "$command" == *'pytest'* || "$command" =~ python3?([[:space:]]|$) ]]; then
         # shellcheck disable=SC1091
         source "$SCRIPT_DIR/scripts/lib/heavy_job_classify.sh"
-        # command is extracted from raw hook JSON above and still contains JSON
-        # escapes (notably \n).  Tell the SSOT classifier to restore the exact
-        # shell text before segmenting it.
-        if [[ "$(HEAVY_JOB_JSON_ESCAPED=1 heavy_job_classify "$command")" == "heavy" ]]; then
+        if [[ "$(heavy_job_classify "$command")" == "heavy" ]]; then
             emit_deny "BLOCK(heavy-job-admission): 重量テストジョブ(bats複数ファイル/全量、pytest全量、golden regression等)はhost-wide排他制御が必要。'bash scripts/heavy_job_admission.sh -- <元のコマンド全体>' の形で実行せよ。単一の.batsファイル1つや単一の::テスト関数指定は軽量とみなされ対象外。"
         fi
     fi
@@ -1037,16 +987,14 @@ reason="$(
     COMMAND="$command" PROJECT_ROOT="$SCRIPT_DIR" python3 - <<'PY'
 import os
 import re
-import shlex
 import subprocess
+import sys
 
 command = os.environ.get("COMMAND", "")
 project_root = os.path.realpath(os.environ.get("PROJECT_ROOT", "."))
 cwd = os.path.realpath(os.getcwd())
-
-
-def split_segments(cmd: str):
-    return [seg.strip() for seg in re.split(r"(?:&&|\|\||;|\|)", cmd) if seg.strip()]
+sys.path.insert(0, os.path.join(project_root, "scripts", "lib"))
+from shell_command_segments import segment_tokens
 
 
 def outside_project(path: str):
@@ -1203,11 +1151,7 @@ if reason:
     print(reason)
     raise SystemExit(0)
 
-for segment in split_segments(command):
-    try:
-        tokens = shlex.split(segment, posix=True)
-    except ValueError:
-        continue
+for tokens in segment_tokens(command) or []:
     if not tokens:
         continue
     cmd0 = os.path.basename(tokens[0])
