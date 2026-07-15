@@ -280,7 +280,12 @@ EOF
             case "$1" in
                 list-panes) printf "shogun:agents.2\n" ;;
                 show-options) printf "idle\n" ;;
-                capture-pane) printf "› inbox1 — task: queue/tasks/\nsasuke.yaml\n◦ Running UserPromptSubmit hook\n" ;;
+                capture-pane)
+                    printf "%s\n" "$@" > "$TEST_PROJECT/logs/post_deploy_capture_args.log"
+                    printf "› inbox1 — task: queue/tasks/\nsasuke.yaml\n"
+                    for i in $(seq 1 20); do printf "output line %s\n" "$i"; done
+                    printf "◦ Running UserPromptSubmit hook\n"
+                    ;;
             esac
         }
         deploy_task_send_direct_renudge() {
@@ -293,6 +298,8 @@ EOF
     [ ! -f "$TEST_PROJECT/logs/post_deploy_renudge.log" ]
     grep -q "delivery evidence present" "$TEST_PROJECT/logs/post_deploy_verify.log"
     grep -q "re-nudge suppressed" "$TEST_PROJECT/logs/post_deploy_verify.log"
+    grep -qx -- "-S" "$TEST_PROJECT/logs/post_deploy_capture_args.log"
+    grep -qx -- "-30" "$TEST_PROJECT/logs/post_deploy_capture_args.log"
 }
 
 @test "post-deploy verification leaves true non-delivery eligible for bounded delayed re-nudge" {
@@ -320,13 +327,19 @@ EOF
         source "$TEST_PROJECT/scripts/deploy_task.sh"
         log() { printf "%s\n" "$1" >> "$TEST_PROJECT/logs/delayed.log"; }
         pane_lookup() { echo "shogun:agents.2"; }
-        tmux() { printf "• Working\n"; }
+        tmux() {
+            printf "%s\n" "$@" > "$TEST_PROJECT/logs/delayed_capture_args.log"
+            printf "• Working\n"
+            for i in $(seq 1 20); do printf "output line %s\n" "$i"; done
+        }
         safe_send_keys_atomic() { printf "sent\n" > "$TEST_PROJECT/logs/sent.log"; }
         deploy_task_send_direct_renudge sasuke
     '
     [ "$status" -eq 0 ]
     [ ! -f "$TEST_PROJECT/logs/sent.log" ]
     grep -q "delivery evidence present" "$TEST_PROJECT/logs/delayed.log"
+    grep -qx -- "-S" "$TEST_PROJECT/logs/delayed_capture_args.log"
+    grep -qx -- "-30" "$TEST_PROJECT/logs/delayed_capture_args.log"
 }
 
 @test "delayed re-nudge skips when unread was consumed before send" {

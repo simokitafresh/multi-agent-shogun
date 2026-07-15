@@ -623,7 +623,7 @@ deploy_task_send_direct_renudge() {
         return 0
     fi
 
-    capture_tail=$(tmux capture-pane -t "$pane_target" -p -S -8 2>/dev/null | tail -8 || true)
+    capture_tail=$(tmux capture-pane -t "$pane_target" -p -S -30 2>/dev/null || true)
     if deploy_task_pane_has_delivery_evidence "$agent_name" "$capture_tail"; then
         log "${agent_name}: delayed re-nudge skipped (delivery evidence present; unread observed as processing)"
         return 0
@@ -660,7 +660,7 @@ deploy_task_post_deploy_verify() {
     case "$unread_count" in
         ''|*[!0-9]*) unread_count=0 ;;
     esac
-    capture_tail=$(tmux capture-pane -t "$pane_target" -p -S -8 2>/dev/null | tail -5 || true)
+    capture_tail=$(tmux capture-pane -t "$pane_target" -p -S -30 2>/dev/null || true)
     log "POST-DEPLOY VERIFY ${ninja_name}: pane=${pane_target}, state=${agent_state:-unknown}, unread=${unread_count}"
     while IFS= read -r line; do
         log "POST-DEPLOY VERIFY ${ninja_name} pane: ${line}"
