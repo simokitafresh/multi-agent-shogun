@@ -543,7 +543,9 @@ pre_bash_combined_eval_command() {
     if [[ "$command" == *'yaml.dump'* || "$command" == *'yaml.safe_dump'* ]]; then
         if [[ "$command" == *'python3'* || "$command" == *'python '* || "$command" == *$'python\t'* || "$command" == *'python -'* ]]; then
             for pattern in "queue/" "tasks/" "shogun_to_karo" "karo_snapshot" "inbox/" "reports/"; do
-                if [[ "$command" == *"$pattern"* ]]; then
+                yaml_open_write_pattern="open[[:space:]]*\\([^)]*${pattern}[^)]*,[^)]*[wax+]"
+                yaml_redirect_write_pattern="(>+|tee[[:space:]]+)[[:space:]]*[^;&|[:space:]]*${pattern}"
+                if [[ "$command" =~ $yaml_open_write_pattern ]] || [[ "$command" =~ $yaml_redirect_write_pattern ]]; then
                     pre_bash_combined_emit_deny "BLOCKED: yaml.dump on operational YAML is forbidden (data loss risk). Use: bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value>"
                     return 1
                 fi
@@ -554,12 +556,13 @@ pre_bash_combined_eval_command() {
     if [[ "$command" == *'queue/reports/'* && "$command" != *'report_field_set.sh'* ]]; then
         redirect_pattern='>+[[:space:]]*[^ ]*queue/reports/[^ ]*\.yaml'
         tee_pattern='tee[[:space:]].*queue/reports/[^ ]*\.yaml'
-        python3_pattern='python3.*open.*queue/reports/.*\.yaml'
+        python3_pattern='python3?.*open[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*,[^)]*[wax+]'
+        python_path_write_pattern='python3?.*(Path[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*\)|[^[:space:];]+)[[:space:]]*\.(write_text|write_bytes)[[:space:]]*\('
         if [[ "$command" =~ $redirect_pattern ]] || [[ "$command" =~ $tee_pattern ]]; then
             pre_bash_combined_emit_deny "報告YAMLへのBashリダイレクト(>/>>/ tee)は禁止。report_field_set.sh経由で書き込みせよ。"
             return 1
         fi
-        if [[ "$command" =~ $python3_pattern ]]; then
+        if [[ "$command" =~ $python3_pattern ]] || [[ "$command" =~ $python_path_write_pattern ]]; then
             pre_bash_combined_emit_deny "報告YAMLへのpython3 open()直接書込みは禁止。report_field_set.sh経由で書き込みせよ。"
             return 1
         fi
@@ -574,8 +577,9 @@ pre_bash_combined_eval_command() {
         && [[ "$command" != *'yaml_field_set'* ]]; then
         task_yaml_pattern='(>+|\|[[:space:]]*tee)[[:space:]]*[^ ]*(queue/tasks/[^ ]*\.yaml|shogun_to_karo\.yaml)'
         task_sed_pattern='sed[[:space:]]+-i[[:space:]].*(queue/tasks/[^ ]*\.yaml|shogun_to_karo\.yaml)'
-        task_python3_pattern='python3.*open.*(queue/tasks/[^ ]*\.yaml|shogun_to_karo\.yaml)'
-        if [[ "$command" =~ $task_yaml_pattern ]] || [[ "$command" =~ $task_sed_pattern ]] || [[ "$command" =~ $task_python3_pattern ]]; then
+        task_python3_pattern='python3?.*open[[:space:]]*\([^)]*(queue/tasks/[^)]*\.yaml|shogun_to_karo\.yaml)[^)]*,[^)]*[wax+]'
+        task_python_path_write_pattern='python3?.*(Path[[:space:]]*\([^)]*(queue/tasks/[^)]*\.yaml|shogun_to_karo\.yaml)[^)]*\)|[^[:space:];]+)[[:space:]]*\.(write_text|write_bytes)[[:space:]]*\('
+        if [[ "$command" =~ $task_yaml_pattern ]] || [[ "$command" =~ $task_sed_pattern ]] || [[ "$command" =~ $task_python3_pattern ]] || [[ "$command" =~ $task_python_path_write_pattern ]]; then
             pre_bash_combined_emit_deny "BLOCKED: task/cmd運用YAMLへの直接書換え(sed -i/リダイレクト/tee/python3 open())は禁止。bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value> 経由で書き込みせよ(非atomicな公開は破損の実因: 2026-07-11 kagemaru.yaml破損)。"
             return 1
         fi

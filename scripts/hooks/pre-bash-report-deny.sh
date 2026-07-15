@@ -22,7 +22,8 @@ command="$(jq -r '.tool_input.command // empty' 2>/dev/null <<< "$payload" || tr
 # Detect redirect (>, >>) or tee targeting report YAML files
 redirect_pattern='>+[[:space:]]*[^ ]*queue/reports/[^ ]*\.yaml'
 tee_pattern='tee[[:space:]].*queue/reports/[^ ]*\.yaml'
-python3_pattern='python3.*open.*queue/reports/.*\.yaml'
+python3_pattern='python3?.*open[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*,[^)]*[wax+]'
+python_path_write_pattern='python3?.*(Path[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*\)|[^[:space:];]+)[[:space:]]*\.(write_text|write_bytes)[[:space:]]*\('
 
 emit_deny() {
     printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$1"
@@ -33,7 +34,7 @@ if [[ "$command" =~ $redirect_pattern ]] || [[ "$command" =~ $tee_pattern ]]; th
     exit 1
 fi
 
-if [[ "$command" =~ $python3_pattern ]]; then
+if [[ "$command" =~ $python3_pattern ]] || [[ "$command" =~ $python_path_write_pattern ]]; then
     emit_deny "報告YAMLへのpython3 open()直接書込みは禁止。report_field_set.sh経由で書き込みせよ。"
     exit 1
 fi

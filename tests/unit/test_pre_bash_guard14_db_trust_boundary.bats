@@ -29,9 +29,10 @@ setup_file() {
     export HOOK_SCRIPT="$BATS_FILE_TMPDIR/pre-bash-combined.sh"
     cp "$PROJECT_ROOT/.claude/hooks/pre-bash-combined.sh" "$HOOK_SCRIPT"
     export GUARD14_BATS_PROJECT_ROOT="$PROJECT_ROOT"
-    mkdir -p "$BATS_FILE_TMPDIR/scripts/lib"
+    mkdir -p "$BATS_FILE_TMPDIR/scripts/lib" "$BATS_FILE_TMPDIR/config"
     export CLASSIFY_SCRIPT="$BATS_FILE_TMPDIR/scripts/lib/guard14_db_trust_classify.py"
     cp "$PROJECT_ROOT/scripts/lib/guard14_db_trust_classify.py" "$CLASSIFY_SCRIPT"
+    cp "$PROJECT_ROOT/config/db_capabilities.json" "$BATS_FILE_TMPDIR/config/db_capabilities.json"
     ln -s "$PROJECT_ROOT/scripts/db_capability_launcher.py" "$BATS_FILE_TMPDIR/scripts/db_capability_launcher.py"
     export GUARD14_BATS_CLASSIFY_SCRIPT="$CLASSIFY_SCRIPT"
     export GUARD14_BATS_ONLY=1
@@ -567,14 +568,25 @@ _classify() {
 }
 
 @test "Guard14 classifier: canonical DB capability launcher owns credential validation" {
-    _classify "python3 $PROJECT_ROOT/scripts/db_capability_launcher.py --capability transactional_restore --mode transactional_restore --credential-file /protected/path/dm-signal-db.env"
+    _classify "python3 $PROJECT_ROOT/scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce test-nonce --credential-file /tmp/dm-signal-db-check.env"
     [ "$status" -eq 0 ]
     [ "$output" = "not_connection" ]
 }
 
 @test "Guard14: canonical DB capability launcher is ALLOWED via hook" {
-    _run_hook_cmd "python3 $PROJECT_ROOT/scripts/db_capability_launcher.py --capability transactional_restore --mode transactional_restore --credential-file /protected/path/dm-signal-db.env"
+    _run_hook_cmd "python3 $PROJECT_ROOT/scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce test-nonce --credential-file /tmp/dm-signal-db-check.env"
     [ "$status" -eq 0 ]
+}
+
+@test "Guard14: canonical DB capability launcher prepare plus readonly query compound is ALLOWED" {
+    _run_hook_cmd "python3 $PROJECT_ROOT/scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --prepare-only --credential-source-file /mnt/c/Python_app/DM-signal/backend/.env --credential-file /tmp/dm-signal-db-check.env && printf 'SELECT 1' | python3 $PROJECT_ROOT/scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce test-nonce --credential-file /tmp/dm-signal-db-check.env"
+    [ "$status" -eq 0 ]
+}
+
+@test "Guard14 classifier: canonical launcher with unknown flag remains fail-closed" {
+    _classify "python3 $PROJECT_ROOT/scripts/db_capability_launcher.py --capability readonly_query --mode readonly --confirm READONLY_DB_CHECK --nonce test --credential-file /tmp/dm-signal-db-check.env --unsafe-bypass yes"
+    [ "$status" -eq 0 ]
+    [ "$output" = "connection:untrusted" ]
 }
 
 @test "Guard14 classifier ADVERSARIAL: decoy DB capability launcher is not exempt" {

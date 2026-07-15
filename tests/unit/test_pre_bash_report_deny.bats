@@ -41,10 +41,21 @@ _run_hook() {
     [[ "$output" == *"deny"* ]]
 }
 
+@test "Bash pathlib write_text() to report YAML is DENIED" {
+    _run_hook '{"tool_name":"Bash","tool_input":{"command":"python3 -c \"from pathlib import Path; Path(\\\"queue/reports/hanzo_report_cmd_100.yaml\\\").write_text(\\\"x\\\")\""}}'
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"deny"* ]]
+}
+
 # --- ALLOW cases ---
 
 @test "report_field_set.sh is allowed" {
     _run_hook '{"tool_name":"Bash","tool_input":{"command":"bash scripts/report_field_set.sh queue/reports/hanzo_report_cmd_100.yaml result.summary done"}}'
+    [ "$status" -eq 0 ]
+}
+
+@test "Python default open mode reading report YAML is allowed" {
+    _run_hook '{"tool_name":"Bash","tool_input":{"command":"python3 -c \"print(open(\\\"queue/reports/hanzo_report_cmd_100.yaml\\\").read())\""}}'
     [ "$status" -eq 0 ]
 }
 

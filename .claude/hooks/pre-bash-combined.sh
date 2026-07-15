@@ -614,7 +614,9 @@ if [[ "$payload" == *'yaml.dump'* || "$payload" == *'yaml.safe_dump'* ]]; then
     if [[ -n "${command:-}" ]]; then
         if [[ "$command" == *'python3'* || "$command" == *'python '* || "$command" == *'python	'* || "$command" == *'python -'* ]]; then
             for pattern in "queue/" "tasks/" "shogun_to_karo" "karo_snapshot" "inbox/" "reports/"; do
-                if [[ "$command" == *"$pattern"* ]]; then
+                yaml_open_write_pattern="open[[:space:]]*\\([^)]*${pattern}[^)]*,[^)]*[wax+]"
+                yaml_redirect_write_pattern="(>+|tee[[:space:]]+)[[:space:]]*[^;&|[:space:]]*${pattern}"
+                if [[ "$command" =~ $yaml_open_write_pattern ]] || [[ "$command" =~ $yaml_redirect_write_pattern ]]; then
                     emit_deny "BLOCKED: yaml.dump on operational YAML is forbidden (data loss risk). Use: bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value>"
                 fi
             done
@@ -627,11 +629,12 @@ if [[ "$payload" == *'queue/reports/'* ]]; then
     if [[ -n "${command:-}" && "$command" != *'report_field_set.sh'* ]]; then
         redirect_pattern='>+[[:space:]]*[^ ]*queue/reports/[^ ]*\.yaml'
         tee_pattern='tee[[:space:]].*queue/reports/[^ ]*\.yaml'
-        python3_pattern='python3.*open.*queue/reports/.*\.yaml'
+        python3_pattern='python3?.*open[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*,[^)]*[wax+]'
+        python_path_write_pattern='python3?.*(Path[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*\)|[^[:space:];]+)[[:space:]]*\.(write_text|write_bytes)[[:space:]]*\('
         if [[ "$command" =~ $redirect_pattern ]] || [[ "$command" =~ $tee_pattern ]]; then
             emit_deny "報告YAMLへのBashリダイレクト(>/>>/ tee)は禁止。report_field_set.sh経由で書き込みせよ。"
         fi
-        if [[ "$command" =~ $python3_pattern ]]; then
+        if [[ "$command" =~ $python3_pattern ]] || [[ "$command" =~ $python_path_write_pattern ]]; then
             emit_deny "報告YAMLへのpython3 open()直接書込みは禁止。report_field_set.sh経由で書き込みせよ。"
         fi
     fi

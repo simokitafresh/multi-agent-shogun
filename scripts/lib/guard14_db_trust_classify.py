@@ -485,10 +485,76 @@ def _segment_is_exempt(tokens: list[str]) -> bool:
         if not os.path.exists(resolved):
             return False
         try:
-            return os.path.samefile(resolved, canonical)
+            if not os.path.samefile(resolved, canonical):
+                return False
         except OSError:
             return False
+        if os.path.basename(clean) == "db_capability_launcher.py":
+            return _db_launcher_invocation_valid(rest[rest.index(tok) + 1 :])
+        return True
     return False
+
+
+def _db_launcher_invocation_valid(argv: list[str]) -> bool:
+    """Prove the canonical launcher was invoked through its registered contract."""
+    value_flags = {
+        "--capability", "--mode", "--confirm", "--nonce", "--credential-file",
+        "--credential-source-file", "--expected-commit", "--execution-root",
+    }
+    parsed: dict[str, str | bool] = {}
+    child: list[str] = []
+    i = 0
+    while i < len(argv):
+        token = argv[i]
+        if token == "--":
+            child = argv[i + 1 :]
+            break
+        if token == "--prepare-only":
+            if token in parsed:
+                return False
+            parsed[token] = True
+            i += 1
+            continue
+        if token in value_flags:
+            if token in parsed or i + 1 >= len(argv) or argv[i + 1].startswith("--"):
+                return False
+            parsed[token] = argv[i + 1]
+            i += 2
+            continue
+        if not token.startswith("-"):
+            child = argv[i:]
+            break
+        return False
+
+    required = {"--capability", "--mode", "--confirm", "--credential-file"}
+    if not required.issubset(parsed):
+        return False
+    try:
+        with open(os.path.join(_REPO_ROOT, "config", "db_capabilities.json"), encoding="utf-8") as handle:
+            registry = json.load(handle)
+    except (OSError, ValueError):
+        return False
+    contract = registry.get("capabilities", {}).get(parsed["--capability"])
+    if not isinstance(contract, dict):
+        return False
+    if parsed["--mode"] not in contract.get("modes", []) or parsed["--confirm"] != contract.get("confirm"):
+        return False
+    if parsed.get("--prepare-only"):
+        return bool(parsed.get("--credential-source-file")) and not child and "--nonce" not in parsed
+    if "--credential-source-file" in parsed or "--nonce" not in parsed:
+        return False
+    if contract.get("requires_expected_commit") and "--expected-commit" not in parsed:
+        return False
+    actions = contract.get("actions")
+    if not actions:
+        return not child
+    if not child or child[0] not in actions:
+        return False
+    allowed_flags = set(contract.get("allowed_child_flags", []))
+    return len(child[1:]) % 2 == 0 and all(
+        child[j] in allowed_flags and not child[j + 1].startswith("--")
+        for j in range(1, len(child), 2)
+    )
 
 
 def _url_host_candidate(url: str) -> str:
