@@ -1862,7 +1862,7 @@ run2	追体験自動化ターゲット: WARN (自動化ターゲット未記入)
 EOF
     cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'EOF'
 messages:
-- content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: 追体験自動化ターゲット: WARN (自動化ターゲット未記入) が1セッション連続。将軍がcmd起票しないため家老karo_directで対処を検討せよ'
+- content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: 追体験自動化ターゲット: WARN (自動化ターゲット未記入) が1セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'
   from: 'shogun'
   id: 'msg_existing'
   read: false

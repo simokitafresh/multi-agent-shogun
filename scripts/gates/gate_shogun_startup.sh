@@ -4117,8 +4117,8 @@ if { [ "$overall" = "ALERT" ] || [ "$overall" = "BLOCK" ]; } && [ ${#alerts[@]} 
     done
 fi
 
-# L1先送り自動エスカレーション: 先送り判断3セッション連続→家老にinbox送信
-# 将軍がcmd起票しない(行動の不在)を家老がkaro_directで代行する仕組み
+# L1先送り自動エスカレーション: 即時BLOCKした先送り判断→家老にinbox送信
+# 発火時点では将軍の後続行動は未観測。家老が一次情報を再検証し、必要時のみkaro_directで処置する。
 if [ ${#alerts[@]} -gt 0 ]; then
     _deferred_alerts=""
     for a in "${alerts[@]}"; do
@@ -4129,7 +4129,7 @@ if [ ${#alerts[@]} -gt 0 ]; then
         esac
     done
     if [ -n "$_deferred_alerts" ]; then
-        _deferred_message="将軍startup先送りBLOCK自動エスカレーション: ${_deferred_alerts}。将軍がcmd起票しないため家老karo_directで対処を検討せよ"
+        _deferred_message="将軍startup先送りBLOCK自動エスカレーション: ${_deferred_alerts}。一次情報を再検証し、未解消なら家老karo_directで対処せよ"
         mkdir -p "$SCRIPT_DIR/queue/locks"
         _deferred_lock="$SCRIPT_DIR/queue/locks/shogun_startup_escalation.lock"
         (
