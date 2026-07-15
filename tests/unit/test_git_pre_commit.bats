@@ -476,6 +476,54 @@ EOF
     [[ "$output" != *"WARN: new test_*.bats file may duplicate existing script-level tests."* ]]
 }
 
+@test "partial commit does not warn for dedicated test and matching new script" {
+    cp "$TEST_ROOT/scripts/hooks/git-pre-commit.sh" "$TEST_ROOT/.git/hooks/pre-commit"
+    chmod +x "$TEST_ROOT/.git/hooks/pre-commit"
+    cat > "$TEST_ROOT/scripts/partial_worker.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+    cat > "$TEST_ROOT/tests/unit/test_partial_worker.bats" <<'EOF'
+#!/usr/bin/env bats
+EOF
+    printf '%s\n' '@'"test \"partial worker\" {" '    bash scripts/partial_worker.sh' '    bash scripts/cmd_save.sh --help >/dev/null 2>&1 || true' '}' >> "$TEST_ROOT/tests/unit/test_partial_worker.bats"
+    (
+        cd "$TEST_ROOT"
+        git add scripts/partial_worker.sh tests/unit/test_partial_worker.bats
+        git commit --dry-run -- scripts/partial_worker.sh tests/unit/test_partial_worker.bats >/dev/null
+    )
+
+    run bash -c 'cd "$1" && git commit -m partial -- scripts/partial_worker.sh tests/unit/test_partial_worker.bats' -- "$TEST_ROOT"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN: new test_*.bats file may duplicate existing script-level tests."* ]]
+}
+
+@test "live pre-commit self-syncs tracked HEAD drift before direct git commit" {
+    cp "$BATS_TEST_DIRNAME/../../scripts/sync_git_hooks.sh" "$TEST_ROOT/scripts/sync_git_hooks.sh"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/scope_path.sh" "$TEST_ROOT/scripts/lib/scope_path.sh"
+    chmod +x "$TEST_ROOT/scripts/sync_git_hooks.sh"
+    (
+        cd "$TEST_ROOT"
+        git add scripts/sync_git_hooks.sh scripts/lib/scope_path.sh
+        git commit --no-verify -qm "add hook sync helper"
+        cp scripts/hooks/git-pre-commit.sh .git/hooks/pre-commit
+        chmod +x .git/hooks/pre-commit
+        printf '\n# tracked next version\n' >> scripts/hooks/git-pre-commit.sh
+        git add scripts/hooks/git-pre-commit.sh
+        git commit --no-verify -qm "advance tracked hook only"
+        printf '\nprint("trigger")\n' >> tool.py
+        git add tool.py
+    )
+    ! cmp -s "$TEST_ROOT/scripts/hooks/git-pre-commit.sh" "$TEST_ROOT/.git/hooks/pre-commit"
+
+    run bash -c 'cd "$1" && git commit -m trigger tool.py' -- "$TEST_ROOT"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SYNCED(GA-222)"* ]]
+    cmp -s "$TEST_ROOT/scripts/hooks/git-pre-commit.sh" "$TEST_ROOT/.git/hooks/pre-commit"
+}
+
 @test "runs semantic propagation when context files are staged" {
     cat >> "$TEST_ROOT/context/infrastructure.md" <<'EOF'
 new context line

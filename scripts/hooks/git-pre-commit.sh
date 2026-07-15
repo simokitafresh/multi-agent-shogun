@@ -13,6 +13,35 @@ if [[ -z "$REPO_ROOT" ]]; then
     REPO_ROOT="${_git_pre_commit_self%/scripts/hooks/git-pre-commit.sh}"
     unset _git_pre_commit_self
 fi
+
+# The tracked hook is the SSOT, while Git executes an untracked copy under
+# .git/hooks.  ninja_scope_commit.sh syncs that copy explicitly, but direct
+# `git commit` callers are also valid and previously left the live hook stale.
+# A live hook therefore reconciles itself from the commit index (when this
+# commit includes the SSOT) or HEAD, then re-execs the atomically replaced copy.
+if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_git_hooks.sh" ]]; then
+    _installed_hook="$(git -C "$REPO_ROOT" rev-parse --git-path hooks/pre-commit 2>/dev/null || true)"
+    [[ "$_installed_hook" = /* ]] || _installed_hook="$REPO_ROOT/$_installed_hook"
+    _running_hook="${BASH_SOURCE[0]:-$0}"
+    [[ "$_running_hook" = /* ]] || _running_hook="$PWD/$_running_hook"
+    if [[ -e "$_installed_hook" && "$_running_hook" -ef "$_installed_hook" ]]; then
+        _hook_hash_before="$(sha256sum "$_installed_hook" | awk '{print $1}')"
+        _sync_args=()
+        if git -C "$REPO_ROOT" diff --cached --name-only --diff-filter=ACMR -- \
+            scripts/hooks/git-pre-commit.sh | grep -Fxq scripts/hooks/git-pre-commit.sh; then
+            _sync_args+=(--scope-path scripts/hooks/git-pre-commit.sh)
+        fi
+        bash "$REPO_ROOT/scripts/sync_git_hooks.sh" "${_sync_args[@]}" || {
+            echo "BLOCK(GA-222): live pre-commit hook self-sync failed" >&2
+            exit 1
+        }
+        _hook_hash_after="$(sha256sum "$_installed_hook" | awk '{print $1}')"
+        if [[ "$_hook_hash_before" != "$_hook_hash_after" ]]; then
+            exec env GIT_PRE_COMMIT_SELF_SYNCED=1 "$_installed_hook" "$@"
+        fi
+        unset _installed_hook _running_hook _hook_hash_before _hook_hash_after _sync_args
+    fi
+fi
 _STDERR_FILE="/tmp/_hook_stderr_precommit_$$"
 declare -a _STAGED_FILES=()
 declare -a _ADDED_TEST_FILES=()
