@@ -1089,6 +1089,78 @@ check_idle() {
     return 2
 }
 
+# respawn-paneのexit 0はCLI起動成功を保証しない。paneにCLIのバナーまたは
+# プロンプトが出るまで確認し、失敗時は有界に再試行する。
+_pane_cli_is_ready() {
+    local pane="$1" agent_name="$2" capture idle_pattern
+    capture=$(tmux capture-pane -t "$pane" -p -J -S -100 2>/dev/null || true)
+    [ -n "$capture" ] || return 1
+    idle_pattern=$(cli_profile_get "$agent_name" "idle_pattern" 2>/dev/null || true)
+    [ -n "$idle_pattern" ] || idle_pattern='❯|›'
+    printf '%s\n' "$capture" | grep -qE "$idle_pattern|Claude Code|OpenAI Codex|Codex CLI"
+}
+
+_wait_for_cli_ready() {
+    local pane="$1" agent_name="$2"
+    local timeout_sec="${RESPAWN_CLI_VERIFY_TIMEOUT:-30}"
+    local poll_sec="${RESPAWN_CLI_VERIFY_POLL_SEC:-1}"
+    local elapsed=0
+    while (( elapsed < timeout_sec )); do
+        _pane_cli_is_ready "$pane" "$agent_name" && return 0
+        sleep "$poll_sec"
+        elapsed=$((elapsed + poll_sec))
+    done
+    _pane_cli_is_ready "$pane" "$agent_name"
+}
+
+_record_respawn_outcome() {
+    local agent_name="$1" success="$2" attempts="$3" elapsed="$4"
+    local state_file="${RESPAWN_METRICS_FILE:-$STATE_DIR/respawn_cli_metrics.tsv}"
+    local lock_file="${state_file}.lock" total=0 successes=0 success_rate
+    mkdir -p "$(dirname "$state_file")"
+    exec 208>>"$lock_file"
+    flock -w 5 208 || { log "RESPAWN-METRIC-ERROR: agent=$agent_name lock_busy"; return 1; }
+    if [ -f "$state_file" ]; then
+        read -r total successes < "$state_file" || true
+    fi
+    [[ "$total" =~ ^[0-9]+$ ]] || total=0
+    [[ "$successes" =~ ^[0-9]+$ ]] || successes=0
+    total=$((total + 1))
+    successes=$((successes + success))
+    printf '%s %s\n' "$total" "$successes" > "$state_file"
+    success_rate=$((successes * 100 / total))
+    flock -u 208
+    log "RESPAWN-METRIC: agent=$agent_name success=$success attempts=$attempts retries=$((attempts - 1)) recovery_seconds=$elapsed cumulative_successes=$successes cumulative_total=$total success_rate_pct=$success_rate"
+}
+
+_respawn_with_cli_verification() {
+    local pane="$1" agent_name="$2" launch_command="$3" label="$4"
+    local attempt backoff elapsed
+    local started=$SECONDS
+    for attempt in 1 2 3; do
+        log "${label}-ATTEMPT: $agent_name attempt=${attempt}/3"
+        # tmux respawn-paneはscrollbackを継承する。前セッションのプロンプトを
+        # 新CLIの起動成功と誤認しないよう、各試行の前に残像を消す。
+        tmux clear-history -t "$pane" 2>/dev/null || true
+        if tmux respawn-pane -k -t "$pane" "$launch_command" 2>/dev/null && \
+                _wait_for_cli_ready "$pane" "$agent_name"; then
+            elapsed=$((SECONDS - started))
+            _record_respawn_outcome "$agent_name" 1 "$attempt" "$elapsed" || true
+            return 0
+        fi
+        log "${label}-VERIFY-FAIL: $agent_name attempt=${attempt}/3 cli_not_ready"
+        if [ "$attempt" -lt 3 ]; then
+            if [ "$attempt" -eq 1 ]; then backoff="${RESPAWN_BACKOFF_FIRST_SEC:-5}"; else backoff="${RESPAWN_BACKOFF_SECOND_SEC:-15}"; fi
+            log "${label}-BACKOFF: $agent_name seconds=$backoff next_attempt=$((attempt + 1))"
+            sleep "$backoff"
+        fi
+    done
+    elapsed=$((SECONDS - started))
+    _record_respawn_outcome "$agent_name" 0 3 "$elapsed" || true
+    log "${label}-STOP: $agent_name CLI unavailable after 3 attempts"
+    return 1
+}
+
 # ─── /clear送信ラッパー（idle確認はcheck_idle()に一本化） ───
 # $1: pane_target, $2: agent_name, $3: reason(任意)
 # 戻り値: 0=送信, 1=ブロック（次サイクル再試行）
@@ -5787,12 +5859,12 @@ check_ninja_cli_dead() {
                 log "CODEX-CFG-SWITCH(CLI-DEAD): $_name_bg applied"
             # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
             local _node_path="${HOME}/.nvm/versions/node/v20.20.0/bin"
-            tmux respawn-pane -k -t "$_pane_target_bg" "export PATH=\"${_node_path}:\$PATH\" && cd '${_script_dir_bg}' && ${_launch_bg}" 2>/dev/null || true
+            local _respawn_rc=0
+            _respawn_with_cli_verification "$_pane_target_bg" "$_name_bg" \
+                "export PATH=\"${_node_path}:\$PATH\" && cd '${_script_dir_bg}' && ${_launch_bg}" \
+                "CLI-DEAD-RESPAWN" || _respawn_rc=$?
             # config.toml復元
             codex_config_restore 2>/dev/null
-            # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。前セッション残像防止(殿実測2026-07-08)
-            tmux clear-history -t "$_pane_target_bg" 2>/dev/null || true
-            sleep 30
             # LK009 enforcement: CLI再起動後に@agent_idを再設定（pane変数汚染防止）
             local _current_agent_id
             _current_agent_id=$(tmux display-message -t "$_pane_target_bg" -p '#{@agent_id}' 2>/dev/null || true)
@@ -5800,16 +5872,11 @@ check_ninja_cli_dead() {
                 log "AGENT-ID-FIX: ${_name_bg}@${_pane_target_bg} agent_id was '${_current_agent_id}' → resetting to '${_name_bg}'"
                 tmux set-option -t "$_pane_target_bg" -p @agent_id "$_name_bg" 2>/dev/null || true
             fi
-            local post_cmd
-            post_cmd=$(tmux display-message -t "$_pane_target_bg" -p '#{pane_current_command}' 2>/dev/null || true)
-            case "$post_cmd" in
-                bash|zsh|sh)
-                    bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動失敗】${_name_bg}: pane_cmd=${post_cmd}（まだshell）。手動確認が必要。" 2>/dev/null || true
-                    ;;
-                *)
-                    bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動成功】${_name_bg}: pane_cmd=${post_cmd}" 2>/dev/null || true
-                    ;;
-            esac
+            if [ "$_respawn_rc" -eq 0 ]; then
+                bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動成功】${_name_bg}: CLIバナー/プロンプト確認済み" 2>/dev/null || true
+            else
+                bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動失敗】${_name_bg}: 3回の起動確認に失敗。手動確認が必要。" 2>/dev/null || true
+            fi
         ) &
     done
 }
