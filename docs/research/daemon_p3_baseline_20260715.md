@@ -8,7 +8,29 @@
 
 ---
 
-## §1 配達レイテンシ(初回未読検知→nudge送達、busy-gating込み)
+## §1 配達レイテンシ(inbox_write時刻→同一messageのnudge送達)
+
+### AC指定metricの同一message突合（家老RC後の再計測）
+
+`queue/inbox/tobisaru.yaml`の各message `timestamp`（`inbox_write.sh`が永続化した書込み時刻、秒精度）と、`logs/inbox_watcher_tobisaru.log`の対応する成功行 `Wake-up sent` / `[DELIVERY-LATENCY]` の時刻を、未読集合が空へ戻る区間ごとに突合した。複数messageが1回のnudgeへcoalesceされた区間は、当該nudgeを発生させた先頭messageのtimestampを採用した。paste-buffer timeoutで成功しなかった21:12:30は除外し、次の成功配達21:13:18へ対応付けた。
+
+| # | message write (JST) | nudge delivery (JST) | 差分 |
+|---:|---|---|---:|
+| 1 | 17:05:36 | 17:06:33 | 57s |
+| 2 | 18:50:15 | 18:50:20 | 5s |
+| 3 | 18:52:34 | 18:52:37 | 3s |
+| 4 | 18:57:25 | 18:57:28 | 3s |
+| 5 | 19:03:08 | 19:03:11 | 3s |
+| 6 | 19:03:58 | 19:05:13 | 75s |
+| 7 | 19:14:06 | 19:15:19 | 73s |
+| 8 | 19:21:44 | 19:23:03 | 79s |
+| 9 | 19:33:48 | 19:33:52 | 4s |
+| 10 | 19:38:00 | 19:38:03 | 3s |
+| 11 | 20:42:09 | 20:42:13 | 4s |
+| 12 | 20:59:22 | 20:59:26 | 4s |
+| 13 | 21:12:27 | 21:13:18 | 51s |
+
+**結果: n=13、median=4s、p95=79s**（nearest-rank法、昇順13件の13番目）。これはACが指定するwrite→実nudge成功のmetricである。以降のn=1015統計は別指標（first-unread検知→delivery）として参考値に限定する。
 
 **【2026-07-15 21:xx 訂正】** 当初「inbox_write書込み→nudge送達の経過秒」の近似値としてこの指標を扱ったが、家老指摘により不正確と判明。`[DELIVERY-LATENCY]`は`first_unread_seen`(初回未読検知時刻)から`send_wakeup()`成功(nudge送達)までの経過秒であり、その内訳の大半は**busy gatingによる意図的な待機時間**(受信側がbusyなら優先度別デッドラインまで送信を保留する設計、L781-813)である。「inbox_write実行→検知」自体の遅延ではなく、「検知→配達」の遅延(うち大半はbusy-gating待機)を表す指標として正しく解釈すべき。「配達レイテンシ」という呼称も、単純な処理遅延ではなくbusy-gating込みの設計上の待機を含む点に注意。
 
@@ -94,10 +116,21 @@ task purposeの前提「usage_statusbar_loop.shのCTX:?%頻発」は誤帰属。
 - `/tmp/*lock*`命名ファイル総数: **183件**(初稿201件は"lock"を含む語幹での粗いカウントで条件が異なる。今回は`glob /tmp/*lock*`で再カウント)
 - 現時点で`/proc/locks`にactiveなflockとして出現するもの: **0件**(瞬間値。多くの用途はワンショットでflock取得→即解放するため、この値単独では staleの証拠にならない)
 - **確認済み現役(稼働中デーモンが保持するsingletonロック)**: 19件——9エージェント分の`inbox_watcher_singleton_*.lock`(現行watcherプロセス生存を実プロセス一覧で確認済み)+`ntfy_listener.lock`(PID 19354生存確認済み)等。これらはmtimeが12時間以上前(=起動時刻)でも、対応デーモンが生きている限り現役
-- **個別生存確認が本タスクの計測時間内では未実施(stale候補、要フォローアップ)**: 164件、合計66B(ほぼ全てゼロバイトのフラグファイル)。mtime分布: <5分=18件、5-30分=31件、30分-2時間=34件、2時間超(=本日08:10の/tmp初期化以降蓄積)=81件。命名パターン別内訳(上位): `mas-three-layer-knowledge_*.lock`48件、`shogun_lock_*.lock`37件、`shogun-build-instructions-*.lock`11件、`tmux_sendkeys_*.lock`8件、他少数
+- **RC対象164件の全量分類完了**: 初稿で「個別未確認」とした164件を、生成元のlock契約、TTL/cleanup条件、mtime、対応PID/保持者生死で再判定した。分類は **active=0 / ephemeral=127 / confirmed_stale=37、合計164/164**。`/proc/locks`の瞬間値だけではなく、singleton系は対応PID、ワンショットflock系は生成元コードのfd寿命、TTL対象はmtimeを判定根拠にした。
+
+| 生成元family | 件数 | TTL/保持者照合 | 分類 |
+|---|---:|---|---|
+| `mas-three-layer-knowledge_*.lock` | 48 | 三層記憶のワンショット排他。処理終了でfd解放、ファイル自体は再利用可能なmarker。対応する恒常holderなし | ephemeral 48 |
+| `shogun_lock_*.lock` | 37 | `lock_path.sh`系ワンショット排他。全37件が60分超で、`ninja_monitor.sh run_lock_cleanup()`の明示TTL `-mmin +60` を超過。保持PIDなし | confirmed_stale 37 |
+| `shogun-build-instructions-*.lock` | 11 | `build_instructions.sh`の実行中fd 9。対応build実行なし、処理終了後に解放される再利用marker | ephemeral 11 |
+| `tmux_sendkeys_*.lock` | 8 | `tmux_utils.sh`/`inbox_watcher.sh`の送信1回ごとのflock。送信終了で解放、pane別再利用marker | ephemeral 8 |
+| その他ワンショットlock | 60 | 生成元を`rg`で特定し、semantic-causal、auto-deploy、YAML/report/task更新等の実行区間だけfd保持する契約を確認。対応する生存holderなし、専用TTLなし | ephemeral 60 |
+| **合計** | **164** | active holder 0件 | **active 0 / ephemeral 127 / confirmed_stale 37** |
+
+ここで`ephemeral`は「現在activeではないが、生成元が再利用する正常なflock markerであり、TTL超過をstaleと定義する契約がない」もの、`confirmed_stale`は「生成元が明示するcleanup TTLを超え、かつ保持者が死んでいる」ものと定義した。したがってファイルが残るだけではstaleとしない一方、明示TTL対象37件は未確認残しにせずstale確定とした。
 - 9エージェント分の`inbox_watcher_singleton_*.lock`/`inbox_watcher_state_*.lock`は現行ロスター(shogun/karo/gunshi/hayate/kagemaru/hanzo/saizo/kotaro/tobisaru)と完全一致——過去ログに見つかった廃止済みエージェント名(例: kirimaru)の残存ロックは**0件**
 - WSL2は本日08:10(起動/再起動時刻)に`/tmp`内容がリセットされており(最古ファイルが08:10:45)、複数日にまたがる長期滞留orphanは構造的に存在しない(tmpfs的リセット挙動)
-- **方法論の限界**: 164件の「stale候補」全件について対応する所有プロセス/タスクの個別生存確認は本baseline計測の時間枠(推定10分)を超えるため未実施。真のstale件数の確定には、各命名パターンごとに生成元スクリプトを特定し対応プロセスの生死を突合する追加調査が必要
+- **方法論**: family単位の生成元特定に加え、singleton/daemon lockだけはPID単位、ワンショットlockはfd寿命とTTL単位で全164件を判定した。計算量を理由とする未確認残しは0件。
 
 ---
 
@@ -135,7 +168,7 @@ task purposeの前提「usage_statusbar_loop.shのCTX:?%頻発」は誤帰属。
 2. **`shogun-bats.*`ファイルの自動クリーンアップ機構なし**(157件/12h蓄積、要クリーンアップcron検討)
 3. **ninja_monitor.sh重複起動とBatsテスト高負荷の相関** — 本セッションでは複数忍者のCI修正作業(bats高頻度実行)と時間的に重なっていた(§3参照)。テスト非実行時間帯での再計測により、恒常パターンか高負荷時限定の現象かを切り分ける追加baselineが必要
 4. **task.assumptions等の事前調査でのgrep大文字小文字ミス** — `grep -c latency`(小文字限定)で「未実装」と誤判定した前例(§1)。事前調査grepは`-i`併用または`grep -i`で再確認する運用を推奨
-5. **stale lockの真の件数確定** — 164件の候補について命名パターンごとに生成元スクリプトと対応プロセスの生死を突合する追加調査が必要(§3参照)
+5. **stale lockの確定値** — RC対象164件はactive 0 / ephemeral 127 / confirmed_stale 37へ全量分類済み。confirmed_staleは`run_lock_cleanup()`の60分TTL対象に限定した(§3参照)
 6. **忍者の一次計測は「二次情報(ps上のcmdline等)を鵜呑みにせず、コード実読+wchan/子プロセス確認まで行う」を徹底する**——本cmdの初稿はps出力の見た目だけで「重複プロセス」と誤断定した。家老指摘で撤回・訂正(lesson_candidate参照)
 
 ---
