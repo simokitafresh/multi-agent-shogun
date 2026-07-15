@@ -190,7 +190,27 @@ if not re.fullmatch(r"[0-9a-f]{40}", commit_hash):
     print("\n".join(raw_lines))
     raise SystemExit(0)
 
-changed_files = set(run_git(["diff-tree", "--no-commit-id", "--name-only", "-r", commit_hash]).splitlines())
+# A report may legitimately span several scope-limited commits.  The old code
+# compared dirty hunks only with the final commit_hash, so files committed by
+# an earlier commit of the same task were reported as dirty/foreign.  Accept
+# additional hashes only when their commit subject proves task ownership.
+parent_cmd = str(report.get("parent_cmd") or "").strip()
+task_id = str(report.get("task_id") or "").strip()
+identity_text = "\n".join((
+    str((report.get("result") or {}).get("summary") or "") if isinstance(report.get("result"), dict) else "",
+    str((report.get("result") or {}).get("details") or "") if isinstance(report.get("result"), dict) else "",
+))
+owned_commits = [commit_hash]
+for candidate in re.findall(r"(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])", identity_text):
+    if candidate in owned_commits:
+        continue
+    subject = run_git(["show", "-s", "--format=%s", candidate]).strip()
+    if subject and ((parent_cmd and parent_cmd in subject) or (task_id and task_id in subject)):
+        owned_commits.append(candidate)
+
+changed_files = set()
+for owned in owned_commits:
+    changed_files.update(run_git(["diff-tree", "--no-commit-id", "--name-only", "-r", owned]).splitlines())
 if not changed_files:
     print("\n".join(raw_lines))
     raise SystemExit(0)
@@ -202,7 +222,9 @@ for line in raw_lines:
     if not path or path not in changed_files:
         kept.append(line)
         continue
-    commit_ranges = hunk_ranges(run_git(["diff", "--unified=0", f"{commit_hash}^", commit_hash, "--", path]))
+    commit_ranges = []
+    for owned in owned_commits:
+        commit_ranges.extend(hunk_ranges(run_git(["diff", "--unified=0", f"{owned}^", owned, "--", path])))
     dirty_ranges = hunk_ranges(run_git(["diff", "--unified=0", "--", path]) + "\n" + run_git(["diff", "--cached", "--unified=0", "--", path]))
     if commit_ranges and dirty_ranges and not overlaps(commit_ranges, dirty_ranges):
         suppressed.append(path)

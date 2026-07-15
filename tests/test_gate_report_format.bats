@@ -936,6 +936,68 @@ YAML
     [[ "$output" == *"M queue/tasks/testninja.yaml"* ]]
 }
 
+@test "T-AC2-5: earlier task-owned commit permits non-overlapping dirty hunk" {
+    local repo="$REPO_TMPDIR_BATS/multicommit_nonoverlap_repo"
+    local report="$repo/reports/testninja_report_cmd_multi.yaml"
+    mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs"
+    git -C "$repo" init -q
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    mkdir -p "$repo/context"
+    printf 'one\ntwo\nthree\nfour\n' > "$repo/context/shared.txt"
+    git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m init
+    sed -i 's/^one$/one owned/' "$repo/context/shared.txt"
+    git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m 'cmd_multi: first scoped commit'
+    local first_hash; first_hash=$(git -C "$repo" rev-parse HEAD)
+    printf 'second\n' > "$repo/second.txt"
+    git -C "$repo" add second.txt && git -C "$repo" commit -q -m 'cmd_multi: final scoped commit'
+    local final_hash; final_hash=$(git -C "$repo" rev-parse HEAD)
+    sed -i 's/^four$/four concurrent/' "$repo/context/shared.txt"
+    cat > "$repo/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: in_progress
+  target_path: context/shared.txt
+YAML
+    _write_ac3_report "$report" "$final_hash"
+    sed -i 's/path: shared.txt/path: context\/shared.txt/' "$report"
+    sed -i "s/parent_cmd: cmd_test/parent_cmd: cmd_multi/; /summary: \"test summary\"/a\\  details: \"commits ${first_hash} and ${final_hash}\"" "$report"
+    run env GATE_REPO_ROOT_OVERRIDE="$repo" GATE_SESSION_STATE_TASK_DIR="$repo/queue/tasks" bash "$GATE" "$report"
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"BLOCK(cmd_3264-AC2)"* ]]
+}
+
+@test "T-AC2-6: unowned commit mentioned in report cannot suppress dirty hunk" {
+    local repo="$REPO_TMPDIR_BATS/multicommit_unowned_repo"
+    local report="$repo/reports/testninja_report_cmd_multi.yaml"
+    mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs"
+    git -C "$repo" init -q
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    mkdir -p "$repo/context"
+    printf 'one\ntwo\nthree\nfour\n' > "$repo/context/shared.txt"
+    git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m init
+    sed -i 's/^one$/one foreign/' "$repo/context/shared.txt"
+    git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m 'other_cmd: foreign commit'
+    local foreign_hash; foreign_hash=$(git -C "$repo" rev-parse HEAD)
+    printf 'owned\n' > "$repo/owned.txt"
+    git -C "$repo" add owned.txt && git -C "$repo" commit -q -m 'cmd_multi: final scoped commit'
+    local final_hash; final_hash=$(git -C "$repo" rev-parse HEAD)
+    sed -i 's/^four$/four dirty/' "$repo/context/shared.txt"
+    cat > "$repo/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: in_progress
+  target_path: context/shared.txt
+YAML
+    _write_ac3_report "$report" "$final_hash"
+    sed -i 's/path: shared.txt/path: context\/shared.txt/' "$report"
+    sed -i "s/parent_cmd: cmd_test/parent_cmd: cmd_multi/; /summary: \"test summary\"/a\\  details: \"foreign ${foreign_hash}\"" "$report"
+    run env GATE_REPO_ROOT_OVERRIDE="$repo" GATE_SESSION_STATE_TASK_DIR="$repo/queue/tasks" bash "$GATE" "$report"
+    echo "$output"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK(cmd_3264-AC2)"* ]]
+}
+
 # --- cmd_karo_hotfix_gate_ac3_hunk_provenance_202607121205: AC3 hunk/commit provenance ---
 # AC3のfile名一致だけの旧判定は、共有fileの非重複hunkにも誤ってWARNしていた(AC2はhunk比較済み)。
 # 判定原理をAC2同様のcommit/hunk provenanceへ統一し、真の重複だけWARNする。
