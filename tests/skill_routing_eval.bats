@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # ============================================================
 # skill_routing_eval.bats
-# gate_skill_health.sh + スキルルーティングパターン検証
+# gate_skill_health.sh / gate_skill_quality.sh + スキルルーティング検証
 #
 # チェック観点:
 #   (A) 到達可能性: TRIGGER未定義 → WARN
@@ -14,7 +14,9 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
     export GATE="$PROJECT_ROOT/scripts/gates/gate_skill_health.sh"
+    export QUALITY_GATE="$PROJECT_ROOT/scripts/gates/gate_skill_quality.sh"
     [ -f "$GATE" ] || { echo "GATE not found: $GATE" >&2; return 1; }
+    [ -f "$QUALITY_GATE" ] || { echo "QUALITY_GATE not found: $QUALITY_GATE" >&2; return 1; }
     command -v python3 >/dev/null 2>&1 || { echo "python3 required" >&2; return 1; }
 }
 
@@ -339,4 +341,71 @@ PYEOF
     local total="${result##*/}"
     [ "$total" -gt 0 ]       # スキルが1件以上ある
     [ "$with_trigger" -gt 0 ]  # TRIGGER定義ありが1件以上ある
+}
+
+# ─── quality/health parser regressions ─────────────────────
+
+@test "SR-012: blank lines in block description preserve TRIGGER for both gates" {
+    mkdir -p "$TEST_SKILLS_DIR/demo"
+    cat > "$TEST_SKILLS_DIR/demo/SKILL.md" <<'EOF'
+---
+name: demo
+description: |
+  Search tool for current documentation.
+
+  TRIGGER: /demo、documentation search
+
+  DO NOT TRIGGER: local source-only inspection
+allowed-tools:
+  - Read
+---
+EOF
+
+    run env SKILL_HEALTH_DISABLE_CACHE=1 SKILLS_DIR="$TEST_SKILLS_DIR" bash "$GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"総合判定: PASS"* ]]
+
+    run env GATE_SKILL_QUALITY_CACHE_TTL_SEC=0 SKILLS_DIR="$TEST_SKILLS_DIR" bash "$QUALITY_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"What+When+NOT When 3/3"* ]]
+}
+
+@test "SR-013: script-ref HTML marker is not an angle-placeholder violation" {
+    mkdir -p "$TEST_SKILLS_DIR/demo"
+    cat > "$TEST_SKILLS_DIR/demo/SKILL.md" <<'EOF'
+---
+<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+name: demo
+description: |
+  Search tool for current documentation.
+  TRIGGER: /demo、documentation search
+  DO NOT TRIGGER: local source-only inspection
+allowed-tools:
+  - Read
+---
+EOF
+
+    run env GATE_SKILL_QUALITY_CACHE_TTL_SEC=0 SKILLS_DIR="$TEST_SKILLS_DIR" bash "$QUALITY_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"フロントマターに < > なし"* ]]
+}
+
+@test "SR-014: real angle placeholder remains fail-closed" {
+    mkdir -p "$TEST_SKILLS_DIR/demo"
+    cat > "$TEST_SKILLS_DIR/demo/SKILL.md" <<'EOF'
+---
+name: demo
+argument-hint: "<name>"
+description: |
+  Search tool for current documentation.
+  TRIGGER: /demo、documentation search
+  DO NOT TRIGGER: local source-only inspection
+allowed-tools:
+  - Read
+---
+EOF
+
+    run env GATE_SKILL_QUALITY_CACHE_TTL_SEC=0 SKILLS_DIR="$TEST_SKILLS_DIR" bash "$QUALITY_GATE"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"FAIL: (4) フロントマターに < > を検出"* ]]
 }
