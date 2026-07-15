@@ -1,7 +1,7 @@
 # CoDD (Coherence-Driven Development) 索引
 
 <!-- last_updated: 2026-07-15 cmd_3948 -->
-<!-- source_commit:775dcd4ca reason:checked-skill-metadata-only-no-codd-contract-change evidence:git-show-775dcd4ca-codd-refactor-script-ref-verification-only -->
+<!-- source_commit:786a4ef4a reason:codd-refactor-contract-changed-file-aggregate-budget8-inner-jobs1 evidence:git-show-786a4ef4a-and-context-codd-contract-row-updated -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
@@ -132,7 +132,7 @@
 | 使い方 | 結論 | 参照 |
 |--------|------|------|
 | `/codd` | 設計書/DAG/lexiconパイプライン専用。specからWave設計書群を起こし、必要に応じて`elicit`/`dag verify`/`propagate`まで確認する | `skills/codd/SKILL.md` |
-| `/codd-refactor` | 計測 -> spec -> CoDD -> 実装試行/手動実装 -> 再計測の一連を回す。no-arg時は14列test timing ledgerの最新`cache_hit=0`完了runを基準にし、Phase 5は同一test_file/suite_rootのrun同士だけを比較、欠損・旧4列台帳は`UNVERIFIED`でfail-closed | `skills/codd-refactor/SKILL.md`, `docs/research/test-suite-time-immune-asis-tobe-5w1h_20260714.md`, `tests/unit/test_codd_refactor_contract.bats` |
+| `/codd-refactor` | 計測 -> spec -> CoDD -> 実装試行/手動実装 -> 再計測の一連を回す。no-arg時は14列test timing ledgerの最新`cache_hit=0`完了runを基準にし、Phase 5は同一test_file/suite_rootのrun同士だけを比較、欠損・旧4列台帳は`UNVERIFIED`でfail-closed。テスト並列化はfile単位aggregate budget 8 / file内部jobs 1を標準とし、共有fixtureを直列化しつつfile間を最大8並列で配分する | `skills/codd-refactor/SKILL.md`, `scripts/run_tests.sh`, `docs/research/test-suite-time-immune-asis-tobe-5w1h_20260714.md`, `tests/unit/test_codd_refactor_contract.bats` |
 | CoDD/GS速度検証の参照境界 | `cmd_3948`でCoDD系SKILLのscript参照契約を再検分。GS共通コードの現行runnerは旧`engine.py`ではなく`/mnt/c/Python_app/DM-signal/scripts/analysis/grid_search/gs_runner.py`であり、変更前後の性能判定は`skills/gs-bench-gate/SKILL.md`に従う | `skills/codd-refactor/SKILL.md`, `skills/gs-bench-gate/SKILL.md`, commit `3dcdb914e` |
 | `codd fix` | CI RED修正向け。診断推論+Session State。家老CI RED検知→`codd fix`でパッチ生成→忍者配備 | `docs/research/gunshi_codd_swebench_application_20260416.md` §2, §4-§5 |
 | `codd fix [PHENOMENON]` | 「ログインエラーをわかりやすくしたい」等の観測事象から設計書・実装・テストを更新する。非対話CIでは`--non-interactive --on-ambiguity abort`を優先 | `memory/reference_codd_oshio_articles.md` |
