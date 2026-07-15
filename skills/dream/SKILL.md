@@ -25,6 +25,9 @@ allowed-tools:
   - mcp__memory__add_observations
   - mcp__memory__delete_observations
 ---
+<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: semantic_search.sh 4895b52f8は派生index miss時のsource-map fallbackとSEMANTIC_SOURCE_MAP_PATHを追加。既存検索CLI・終了契約は維持。 -->
+
 
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
 <!-- cmd_3948検分: memory_db_query.sh直近差分はmalformed cache単一復旧。検索CLI契約不変。 -->
