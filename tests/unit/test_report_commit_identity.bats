@@ -70,6 +70,38 @@ YAML
   done
 }
 
+@test "projects allowance follows isolated git ignore state, not path prefix" {
+  local repo="$BATS_TEST_TMPDIR/isolated-repo"
+  mkdir -p "$repo/projects"
+  git -C "$repo" init -q
+  git -C "$repo" config user.email test@example.com
+  git -C "$repo" config user.name test
+  printf 'projects/ignored.yaml\n' > "$repo/.gitignore"
+  printf 'tracked\n' > "$repo/projects/tracked.yaml"
+  git -C "$repo" add .gitignore projects/tracked.yaml
+  git -C "$repo" commit -qm fixture
+
+  run python3 - "$ROOT" "$repo" <<'PY'
+import pathlib, sys
+sys.path.insert(0, str(pathlib.Path(sys.argv[1]) / "scripts" / "lib"))
+from report_commit_identity import permits_no_code_identity
+
+root = pathlib.Path(sys.argv[2])
+def report(path):
+    return {
+        "files_modified": [{"path": path, "change": "knowledge"}],
+        "binary_checks": {"commit": [{"check": "commit不要", "result": "yes"}]},
+    }
+
+ignored = permits_no_code_identity(report("projects/ignored.yaml"), root)
+tracked = permits_no_code_identity(report("projects/tracked.yaml"), root)
+print(f"ignored={ignored} tracked={tracked}")
+raise SystemExit(0 if ignored and not tracked else 1)
+PY
+  [ "$status" -eq 0 ]
+  [ "$output" = "ignored=True tracked=False" ]
+}
+
 @test "no-code allowance blocks empty files and negative commit evidence" {
   sed -i '/^files_modified:/,/^binary_checks:/c\files_modified: []\nbinary_checks:' "$REPORT"
   run bash "$ROOT/scripts/report_field_set.sh" "$REPORT" commit_hash no-code-change
