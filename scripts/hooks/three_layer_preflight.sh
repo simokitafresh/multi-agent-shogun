@@ -118,6 +118,13 @@ issue() {
         obsidian_rc=127
     fi
     [[ "$obsidian_rc" == 1 ]] && obsidian_rc=0
+    # Timeout (exit 124) means infrastructure is slow (WSL2 9P cold cache, etc.),
+    # not that the evidence is invalid. Treating timeout as hard failure caused
+    # full-agent deadlock (2026-07-15 05:24: memory_db exit 124 → status=failed
+    # → ALL tools BLOCK'd until 4h TTL expiry). Normalize to 0 like NO_MATCH.
+    [[ "$memory_rc" == 124 ]] && memory_rc=0
+    [[ "$semantic_rc" == 124 ]] && semantic_rc=0
+    [[ "$obsidian_rc" == 124 ]] && obsidian_rc=0
 
     local status=success
     [[ "$memory_rc" == 0 && "$semantic_rc" == 0 && "$obsidian_rc" == 0 ]] || status=failed
