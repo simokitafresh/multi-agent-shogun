@@ -70,7 +70,10 @@ SKILL_METRICS_SCRIPT="$PROJECT_DIR/scripts/skill_metrics.sh"
 # invoking this script and advertises that fact to avoid self-deadlock.
 if [[ "$DRY_RUN" != true && "${DASHBOARD_LOCK_HELD:-0}" != "1" ]]; then
     exec 200>"${DASHBOARD}.lock"
-    flock -w 10 200 || { echo "ERROR: dashboard lock timeout: ${DASHBOARD}.lock" >&2; exit 1; }
+    # A full unit lane launches many file-isolated roots concurrently; the
+    # 40-writer stress fixture measured 14s to drain on WSL2.  Ten seconds made
+    # valid queued writers fail despite the lock correctly serializing them.
+    flock -w 30 200 || { echo "ERROR: dashboard lock timeout: ${DASHBOARD}.lock" >&2; exit 1; }
 fi
 
 # ─── 初回CLEAR率 (gate_fire_logから計算。累積CLEAR率の隣に表示) ───
