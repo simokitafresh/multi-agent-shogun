@@ -437,6 +437,18 @@ def _python_m_is_safe(tokens: list[str]) -> bool:
     return module in SAFE_PYTHON_M_MODULES
 
 
+def _bash_has_inline_code(tokens: list[str]) -> bool:
+    """bash/sh -c はインラインコード実行。-c なしはスクリプトファイル実行。
+
+    スクリプトファイル実行時の引数テキストにcredential-likeワードが含まれても
+    ファイルアクセスではないため安全(2026-07-15将軍実証: bash lesson_write_shogun.sh
+    に credential-like テキストを渡すとGuard14 FP)。
+    -c ありの場合はインラインコードを実行するため安全とは言えない。
+    """
+    stripped = _strip_env_prefix(tokens)
+    return "-c" in stripped
+
+
 def _shell_segments_are_bounded(command: str, segments: list[list[str]]) -> bool:
     """Allow only explicit env setup, capability-checked read-only inspection, curl, or verified Python.
 
@@ -453,6 +465,8 @@ def _shell_segments_are_bounded(command: str, segments: list[list[str]]) -> bool
         if cmd0 in ENV_SETUP_SHELL_CMDS:
             continue
         if cmd0 in SAFE_NON_DB_CMDS:
+            continue
+        if cmd0 in ("bash", "sh") and not _bash_has_inline_code(segment):
             continue
         if cmd0 in READ_ONLY_SHELL_CMDS:
             if _segment_is_readonly_safe(cmd0, segment):
