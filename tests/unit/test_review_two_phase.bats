@@ -8,6 +8,7 @@ setup() {
   mkdir -p "$TMPROOT/queue/tasks"
   mkdir -p "$TMPROOT/scripts/lib"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/review_approval.sh"
+  cp "$ROOT/scripts/lib/report_commit_identity.py" "$TMPROOT/scripts/lib/report_commit_identity.py"
   cat > "$TMPROOT/scripts/bulletin_write.sh" <<'SH'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >> "${REVIEW_APPROVAL_ROOT:?}/bulletin_calls.log"

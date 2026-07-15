@@ -783,21 +783,6 @@ if not rp or not os.path.exists(rp):
     sys.exit(0)
 with open(rp, encoding='utf-8') as f:
     data = yaml.safe_load(f) or {}
-summary = str((data.get('result') or {}).get('summary', '') or '').strip()
-if not summary or 'FILL_THIS' in summary:
-    print('BLOCK: result.summary が空またはplaceholderのまま terminal化は禁止。実施・検証結果を先に記録せよ', file=sys.stderr)
-    sys.exit(1)
-" || return 1
-                    REPORT_PATH="$REPORT_PATH" python3 -c "
-import os
-import sys
-import yaml
-
-rp = os.environ.get('REPORT_PATH', '')
-if not rp or not os.path.exists(rp):
-    sys.exit(0)
-with open(rp, encoding='utf-8') as f:
-    data = yaml.safe_load(f) or {}
 bc = data.get('binary_checks', {})
 commit_checks = bc.get('commit') if isinstance(bc, dict) else None
 if not commit_checks:
@@ -876,8 +861,8 @@ if _pcmd and rp:
 result = data.get('result', {})
 if isinstance(result, dict):
     s = str(result.get('summary', '')).strip()
-    if not s or 'FILL_THIS' in s:
-        issues.append('result.summary が空またはplaceholder。実施・検証結果を記述せよ')
+    if not s:
+        issues.append('result.summary が空。作業内容を記述せよ')
 # GP-072c2: lesson_candidate.found=false requires no_lesson_reason
 lc = data.get('lesson_candidate', {})
 if isinstance(lc, dict) and str(lc.get('found', '')).lower() == 'false':

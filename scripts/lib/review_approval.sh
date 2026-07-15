@@ -11,6 +11,8 @@ import pathlib, sys, yaml
 d = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 report_path = pathlib.Path(sys.argv[1]).resolve()
 root = pathlib.Path(sys.argv[2]).resolve()
+sys.path.insert(0, str(root / "scripts" / "lib"))
+from report_commit_identity import permits_no_code_identity
 commit_hash = ""
 for key in ("commit_hash", "commit", "git_commit"):
     value = d.get(key)
@@ -75,21 +77,7 @@ no_code_files = files_modified == [] or (
 # every reported path must stay under queue/ or logs/, and the report must
 # affirm that no commit is required.  Any source/config/docs path falls back to
 # the normal 40-hex implementation identity.
-def operational_runtime_path(item):
-    path = reported_path(item)
-    if path is None:
-        return False
-    try:
-        rel = path.relative_to(root)
-    except ValueError:
-        return False
-    return bool(rel.parts) and rel.parts[0] in ("queue", "logs")
-
-operational_runtime_files = (
-    isinstance(files_modified, list)
-    and bool(files_modified)
-    and all(operational_runtime_path(item) for item in files_modified)
-)
+operational_runtime_files = permits_no_code_identity(d, root)
 if (no_code_files or operational_runtime_files) and not commit_claimed and (
     task_type in no_code_task_types or no_commit_asserted
 ):

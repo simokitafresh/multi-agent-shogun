@@ -11,6 +11,12 @@ import sys
 
 import yaml
 
+_PROJECT_ROOT = pathlib.Path(
+    os.environ.get("PROJECT_ROOT") or pathlib.Path(__file__).resolve().parents[2]
+).resolve()
+sys.path.insert(0, str(_PROJECT_ROOT / "scripts" / "lib"))
+from report_commit_identity import valid_commit_identity
+
 
 # gate_report_format.sh の contamination check(_CC_CHECK)と同一のread-only/
 # commit禁止マーカー。忍者が"commit:"項目にread-only遵守を記述した場合、
@@ -27,42 +33,6 @@ _READONLY_COMMIT_MARKERS = (
     "stage・commit・revert",
     "stage・commit・revert・削除",
 )
-
-
-def _permits_operational_no_code_identity(data, root):
-    checks = data.get("binary_checks") or {}
-    items = checks.get("commit", []) if isinstance(checks, dict) else []
-    explicit = any(
-        isinstance(item, dict)
-        and (item.get("result") is True or str(item.get("result", "")).strip().lower() == "yes")
-        and any(marker in str(item.get("check", "")).lower() for marker in ("commit禁止", "commit不要", "no-commit", "no commit", "実行していない"))
-        for item in items if isinstance(items, list)
-    )
-    files = data.get("files_modified")
-    if not explicit or not isinstance(files, list) or not files:
-        return False
-    root = pathlib.Path(root).resolve()
-    for item in files:
-        raw = item.get("path", "") if isinstance(item, dict) else item
-        if not isinstance(raw, str) or not raw.strip():
-            return False
-        path = pathlib.Path(raw.strip())
-        resolved = path.resolve() if path.is_absolute() else (root / path).resolve()
-        try:
-            rel = resolved.relative_to(root)
-        except ValueError:
-            return False
-        if not rel.parts or rel.parts[0] not in ("queue", "logs"):
-            return False
-    return True
-
-
-def _valid_commit_identity(value, data):
-    identity = str(value or "").strip()
-    return bool(re.fullmatch(r"[0-9a-f]{40}", identity)) or (
-        identity == "no-code-change"
-        and _permits_operational_no_code_identity(data, pathlib.Path(__file__).resolve().parents[2])
-    )
 
 
 def _iter_task_acceptance_criteria(task_data):
@@ -348,7 +318,7 @@ def main() -> int:
     if _ch is not None:
         _ch_str = str(_ch).strip()
         if _ch_str and _ch_str.lower() not in ("", "none", "null"):
-            if not _valid_commit_identity(_ch_str, data):
+            if not valid_commit_identity(_ch_str, data, _PROJECT_ROOT):
                 errors.append(f"commit_hash: '{_ch_str}' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ")
                 hints.append("FIX COMMAND (commit_hash): " + _rfs_cmd(report_path, "commit_hash", "$(git rev-parse HEAD)"))
 
@@ -800,7 +770,7 @@ def main() -> int:
                         _rch_d = _result_field_d.get("commit_hash")
                         if isinstance(_rch_d, str) and _rch_d.strip():
                             _commit_identity_d = _rch_d.strip()
-                _has_valid_identity_d = _valid_commit_identity(_commit_identity_d, data)
+                _has_valid_identity_d = valid_commit_identity(_commit_identity_d, data, _PROJECT_ROOT)
 
                 if not _has_valid_identity_d:
                     errors.append(
