@@ -158,6 +158,18 @@ run_lesson_write_with_sync() {
     [ "$status" -eq 0 ]
 }
 
+@test "allocates after the routed context maximum to prevent cross-layer ID collisions" {
+    sed -i '/## その他/i - L009: context側で先行している教訓' "$TEST_PROJECT/context/test-context.md"
+
+    run_lesson_write testproj "context衝突防止" "routed contextの既存IDを再利用せず次番号を採番する" "cmd_502"
+    [ "$status" -eq 0 ]
+
+    run grep "### L010: context衝突防止" "$EXT_PROJECT/tasks/lessons.md"
+    [ "$status" -eq 0 ]
+    run grep -- "- L010: context衝突防止" "$TEST_PROJECT/context/test-context.md"
+    [ "$status" -eq 0 ]
+}
+
 # ============================================================
 # 4. Required argument validation
 # ============================================================

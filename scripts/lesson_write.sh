@@ -949,10 +949,41 @@ while [ $attempt -lt $max_attempts ]; do
     if (
         flock -w 10 200 || exit 1
 
-        # Find max ID and exact duplicate in one awk process. Bash line-by-line
-        # scans are costly on WSL2/NTFS for the large lessons.md file.
+        # Lesson IDs are also materialized in the routed context index. That
+        # index can be ahead of lessons.md while reflux/migration work is being
+        # reconciled. Allocating from lessons.md alone then reuses an existing
+        # context ID and silently skips a different lesson's context append.
+        _lw_context_max=0
+        resolve_lesson_context_route "$PROJECT_ID" "${SUBDOMAIN:-}"
+        _lw_context_path=""
+        if [ -n "${CONTEXT_ROUTE_FILE:-}" ]; then
+            _lw_context_path="$SCRIPT_DIR/$CONTEXT_ROUTE_FILE"
+        fi
+        if [ -f "$_lw_context_path" ]; then
+            _lw_context_max=$(awk '
+                /^-[[:space:]]L[0-9]+:/ {
+                    id = $2
+                    sub(/^L/, "", id)
+                    sub(/:.*/, "", id)
+                    n = id + 0
+                    if (n > max_id) max_id = n
+                }
+                /<!--[[:space:]]*last_synced_lesson:[[:space:]]*L[0-9]+[[:space:]]*-->/ {
+                    line = $0
+                    sub(/.*last_synced_lesson:[[:space:]]*L/, "", line)
+                    sub(/[[:space:]]*-->.*/, "", line)
+                    n = line + 0
+                    if (n > max_id) max_id = n
+                }
+                END { print max_id + 0 }
+            ' "$_lw_context_path")
+        fi
+
+        # Find max SSOT ID and exact duplicate in one awk process. Bash
+        # line-by-line scans are costly on WSL2/NTFS for the large lessons.md.
         _lw_scan=$(
-            awk -v title="$TITLE" -v force="${FORCE:-0}" '
+            awk -v title="$TITLE" -v force="${FORCE:-0}" -v context_max="$_lw_context_max" '
+                BEGIN { max_id = context_max + 0 }
                 /^##[[:space:]][0-9]+\./ {
                     id = $0
                     sub(/^##[[:space:]]*/, "", id)
