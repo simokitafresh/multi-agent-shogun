@@ -780,6 +780,44 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "assigned_lesson_ids replace auto related lessons in report feedback template" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  title: "exact lesson reflux"
+  task_type: research
+  parent_cmd: cmd_exact_lesson_reflux
+  task_id: cmd_exact_lesson_reflux_research
+  project: infra
+  assigned_lesson_ids:
+  - L101
+  - L202
+  related_lessons:
+  - id: L625
+    summary: auto-injected context lesson
+  - id: L311
+    summary: auto-injected workaround lesson
+  acceptance_criteria:
+  - id: AC1
+    description: "report exact assigned lessons"
+EOF
+
+    run deploy_task_template_only sasuke
+    [ "$status" -eq 0 ]
+
+    run read_task_report_path
+    [ "$status" -eq 0 ]
+    local report_path="$TEST_PROJECT/$output"
+
+    run python3 - "$report_path" <<'PY'
+import sys, yaml
+
+report = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+ids = [item["id"] for item in report["lessons_useful"]]
+assert ids == ["L101", "L202"], ids
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "deploy_task leaves template unchanged when gate_fail_top3 is absent" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:

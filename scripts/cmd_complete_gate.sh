@@ -859,6 +859,25 @@ build_clear_ctx_metric() {
     fi
 }
 
+# The legacy ctx_pct field is the maximum CTX of matching ninja panes.  It
+# cannot answer whether Karo's completion workload is shrinking, even though
+# cmd_3931/cmd_3932/cmd_3956 explicitly target Karo CTX.  Record the Karo pane
+# independently so future before/after averages do not mislabel ninja CTX.
+build_karo_ctx_metric() {
+    local pane_target ctx_val ctx_num
+    pane_target=$(agent_pane_target "karo" 2>/dev/null || true)
+    if [ -n "$pane_target" ]; then
+        ctx_val=$(tmux show-options -p -t "$pane_target" -v @context_pct 2>/dev/null || true)
+        ctx_num=$(printf '%s\n' "$ctx_val" | grep -oE '[0-9]+' | tail -1)
+    fi
+
+    if [ -n "${ctx_num:-}" ] && [ "$ctx_num" -ge 0 ] 2>/dev/null && [ "$ctx_num" -le 100 ] 2>/dev/null; then
+        printf 'karo_ctx_pct=%s' "$ctx_num"
+    else
+        printf 'karo_ctx_pct=unknown'
+    fi
+}
+
 build_first_gate_model_metric() {
     local first_gate="true"
     local profile
@@ -7918,20 +7937,21 @@ if [ "$ALL_CLEAR" = true ]; then
     GATE_DURATION_METRIC=$(build_clear_duration_metric)
     GATE_THROUGHPUT_METRIC=$(build_clear_throughput_metric "$GATE_CLEAR_TS")
     GATE_CTX_METRIC=$(build_clear_ctx_metric)
+    GATE_KARO_CTX_METRIC=$(build_karo_ctx_metric)
     if ! run_cdp_production_check; then
         echo "GATE BLOCK: ${CMD_ID}:cdp_production_check_failed"
-        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcdp_production_check_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
+        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcdp_production_check_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_KARO_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
         exit 1
     fi
     # cmd_3862 RC: 観測イベントはCLEAR通知・完了後処理より先に同期永続化する。
     # 非同期失敗を握り潰すと観測経路バイパスが再発するため、失敗時は通知せずBLOCKする。
     if ! capture_completed_rework_event "$CMD_ID"; then
         echo "GATE BLOCK: ${CMD_ID}:rework_event_capture_failed"
-        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\trework_event_capture_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
+        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\trework_event_capture_failed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_KARO_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
         exit 1
     fi
     echo "GATE CLEAR: cmd完了許可"
-    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_KARO_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
     (bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" >/dev/null 2>&1 || true) &
     # gate_yaml_status: YAML status更新（WARNING only）

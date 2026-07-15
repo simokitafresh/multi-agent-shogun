@@ -23,7 +23,7 @@ setup_file() {
     export SUBSYSTEM_HELPERS="$BATS_FILE_TMPDIR/cmd_complete_gate_subsystems_helpers.bash"
     awk '
         BEGIN {
-            split("append_line_locked record_block_reason resolve_gate_rg level_heading detect_task_role cmd_task_matches evaluate_review_report_status find_overlapping_workers run_review_quality_check run_todo_fixme_residual_check run_skill_script_refs_check run_report_memory_semantic_scan classify_missing_report_status check_gs_bench_gate_warn update_status", names)
+            split("append_line_locked record_block_reason resolve_gate_rg level_heading detect_task_role cmd_task_matches evaluate_review_report_status find_overlapping_workers run_review_quality_check run_todo_fixme_residual_check run_skill_script_refs_check run_report_memory_semantic_scan classify_missing_report_status check_gs_bench_gate_warn update_status build_karo_ctx_metric", names)
             for (i in names) wanted[names[i]] = 1
         }
         /^[A-Za-z0-9_]+\(\) \{/ {
@@ -43,10 +43,50 @@ setup() {
 }
 
 teardown() {
-    [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+    if [ -d "${TEST_TMPDIR:-}" ]; then
+        rm -rf "$TEST_TMPDIR"
+    fi
+}
+
+@test "completion metrics records Karo CTX separately from matching ninja CTX" {
+    agent_pane_target() {
+        [ "$1" = "karo" ] && printf '%s\n' "shogun:agents.1"
+    }
+    tmux() {
+        printf '%s\n' "46%"
+    }
+
+    run build_karo_ctx_metric
+    [ "$status" -eq 0 ]
+    [ "$output" = "karo_ctx_pct=46" ]
+}
+
+@test "completion metrics marks unavailable Karo CTX unknown" {
+    agent_pane_target() {
+        return 1
+    }
+    tmux() {
+        return 1
+    }
+
+    run build_karo_ctx_metric
+    [ "$status" -eq 0 ]
+    [ "$output" = "karo_ctx_pct=unknown" ]
 }
 
 # ═══════════════════════════════════════════════════════
+@test "completion metrics append Karo CTX on every post-clear outcome" {
+    run python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import pathlib
+import sys
+
+source = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+assert source.count('GATE_KARO_CTX_METRIC=$(build_karo_ctx_metric)') == 1
+assert source.count('"$GATE_KARO_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC"') == 3
+PY
+    [ "$status" -eq 0 ]
+}
+
 # Section 1: Review Quality (from test_cmd_complete_gate_review_quality.bats)
 # ═══════════════════════════════════════════════════════
 

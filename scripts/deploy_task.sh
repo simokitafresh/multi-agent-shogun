@@ -2863,6 +2863,60 @@ inject_causal_verification_template() {
     log "inject_causal_verification_template: causal_verification injected"
 }
 
+# Report feedback must use the task's explicit evaluation set when one exists.
+# Falling back to auto-injected related_lessons for a lesson-reflux task polluted
+# lessons_useful with unrelated context lessons (assigned=10 but report=14), so
+# the binary set check could say extra=0 while the report artifact contradicted it.
+report_lesson_ids_for_task() {
+    local task_file="$1"
+    awk '
+        function clean(value) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+            gsub(/^[\047\"]|[\047\"]$/, "", value)
+            return value
+        }
+        /^  assigned_lesson_ids:/ {
+            in_assigned=1
+            in_related=0
+            value=$0
+            sub(/^  assigned_lesson_ids:[[:space:]]*/, "", value)
+            if (value ~ /^\[/) {
+                gsub(/^\[|\]$/, "", value)
+                count=split(value, inline_ids, /[[:space:]]*,[[:space:]]*/)
+                for (i=1; i<=count; i++) {
+                    item=clean(inline_ids[i])
+                    if (item != "") assigned[++assigned_count]=item
+                }
+                in_assigned=0
+            }
+            next
+        }
+        in_assigned && /^  [A-Za-z_][A-Za-z0-9_]*:/ { in_assigned=0 }
+        in_assigned && /^[[:space:]]*-[[:space:]]*/ {
+            item=$0
+            sub(/^[[:space:]]*-[[:space:]]*/, "", item)
+            item=clean(item)
+            if (item != "") assigned[++assigned_count]=item
+            next
+        }
+        /^  related_lessons:/ { in_related=1; in_assigned=0; next }
+        in_related && /^  [A-Za-z_][A-Za-z0-9_]*:/ { in_related=0 }
+        in_related && /^[[:space:]]+(- )?id:/ {
+            item=$0
+            sub(/.*id:[[:space:]]*/, "", item)
+            item=clean(item)
+            if (item != "") related[++related_count]=item
+        }
+        END {
+            if (assigned_count > 0) {
+                for (i=1; i<=assigned_count; i++) print assigned[i]
+            } else {
+                for (i=1; i<=related_count; i++) print related[i]
+            }
+        }
+    ' "$task_file" 2>/dev/null
+}
+
 generate_report_template() {
     local ninja_name="$1"
     local task_id="$2"
@@ -3209,11 +3263,7 @@ EOF
 
     # cmd_1131+cmd_1393: related_lessonsが存在する場合、lessons_usefulを記入用雛形に差替え（Python→bash/awk）
     local _lu_ids
-    _lu_ids=$(awk '
-        /^  related_lessons:/ { in_rl=1; next }
-        in_rl && /^  [a-z]/ { exit }
-        in_rl && /^[[:space:]]+(- )?id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); gsub(/['"'"']/, ""); print }
-    ' "$task_file" 2>/dev/null)
+    _lu_ids=$(report_lesson_ids_for_task "$task_file")
 
     if [ -z "$_lu_ids" ]; then
         # GP-088/cmd_2665: related_lessonsなし or id抽出不能 → 空リストを維持
@@ -4097,11 +4147,7 @@ EOF
 
     if ! grep -Eq '^lessons_useful:' "$report_file" 2>/dev/null; then
         local _lu_ids _lu_block _lid _lu_count=0
-        _lu_ids=$(awk '
-            /^  related_lessons:/ { in_rl=1; next }
-            in_rl && /^  [a-z]/ { exit }
-            in_rl && /^[[:space:]]+(- )?id:/ { sub(/.*id:[[:space:]]*/, ""); sub(/[[:space:]]*$/, ""); gsub(/['"'"']/, ""); print }
-        ' "$task_file" 2>/dev/null)
+        _lu_ids=$(report_lesson_ids_for_task "$task_file")
 
         if [ -z "$_lu_ids" ]; then
             cat >> "$report_file" <<'EOF'
