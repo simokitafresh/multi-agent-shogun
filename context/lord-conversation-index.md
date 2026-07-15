@@ -1,19 +1,19 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-07-15 auto-generated -->
+<!-- last_updated: 2026-07-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-15T23:15:25+09:00 -->
+<!-- generated_at: 2026-07-16T00:25:02+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-15T23:15:25+09:00 | terminal | response | hook failure audit LGTM完了。レビュー依頼待機。 [meta] stop_reason=end_turn
-- 2026-07-15T23:14:13+09:00 | ntfy | outbound | 【monitor】将軍CTX:52%。/compactをご検討ください
-- 2026-07-15T23:10:41+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_karo_ci_fix_29388426180 (duration=7320s, median=250.0s, ratio=29.28x, delta=+…
-- 2026-07-15T23:09:07+09:00 | terminal | response | hook failure audit APPROVE完了。レビュー依頼待機。
-- 2026-07-15T23:08:34+09:00 | ntfy | outbound | 【家老】cmd_karo_recon2_ga263_hook_failure_audit_202607152304 初回配備開始 (title=(untitled), ninja=hayate)
-- 2026-07-15T23:07:11+09:00 | ntfy | outbound | test outside tmux warning
-- 2026-07-15T23:07:10+09:00 | ntfy | outbound | test permission warning
-- 2026-07-15T23:03:59+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-263)
-- 2026-07-15T23:01:46+09:00 | ntfy | outbound | CI赤: run 29418255805 Unit Tests (bats)
-- 2026-07-15T22:56:24+09:00 | ntfy | outbound | test outside tmux warning
+- 2026-07-16T00:25:02+09:00 | terminal | response | AC5個。context freshness GA-264修正。消火禁止(AC3)。 verdict: APPROVE。
+- 2026-07-16T00:21:50+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-264)
+- 2026-07-16T00:07:11+09:00 | ntfy | outbound | 【monitor】将軍CTX:52%。/compactをご検討ください
+- 2026-07-16T00:05:48+09:00 | ntfy | outbound | test outside tmux warning
+- 2026-07-16T00:05:47+09:00 | ntfy | outbound | test permission warning
+- 2026-07-15T23:36:53+09:00 | ntfy | outbound | test outside tmux warning
+- 2026-07-15T23:36:51+09:00 | ntfy | outbound | test permission warning
+- 2026-07-15T23:36:35+09:00 | ntfy | outbound | 【monitor】将軍CTX:52%。/compactをご検討ください
+- 2026-07-15T23:35:15+09:00 | ntfy | outbound | 【watchdog】ninja_monitor.shを自動再起動しました
+- 2026-07-15T23:34:24+09:00 | ntfy | outbound | 【daemon_supervisor】ninja_monitor.shが2重起動。古いプロセスを停止します
 
 ## 未解決確認事項
 - 【CLI再起動成功】hayate: CLIバナー/プロンプト確認済み
