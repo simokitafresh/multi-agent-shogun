@@ -709,6 +709,41 @@ print("MULTILINE_INJECTION_OK")
     [ "$output" = "0" ]
 }
 
+@test "root block scalar更新: 旧本文を除去して複数行と単一scalarをexact round-tripする" {
+    local yaml="$TEST_TMPDIR/root_block_scalar.yaml"
+    cat > "$yaml" <<'EOF'
+agent: karo
+session_summary: |-
+  old line one
+
+  old line two
+next_key: preserved
+EOF
+    local multiline=$'new line one\nnew line two'
+
+    run bash "$YFS" "$yaml" root session_summary "$multiline"
+    [ "$status" -eq 0 ]
+    export EXPECT="$multiline"
+    run python3 - "$yaml" <<'PY'
+import os, sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+assert data["session_summary"] == os.environ["EXPECT"]
+assert data["next_key"] == "preserved"
+assert "old line" not in open(sys.argv[1], encoding="utf-8").read()
+PY
+    [ "$status" -eq 0 ]
+
+    run bash "$YFS" "$yaml" root session_summary "single summary"
+    [ "$status" -eq 0 ]
+    run python3 - "$yaml" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+assert data["session_summary"] == "single summary"
+assert data["next_key"] == "preserved"
+PY
+    [ "$status" -eq 0 ]
+}
+
 # ── cmd_karo_hotfix_yaml_field_set_multiline_verify_202607122228 回帰テスト ──
 # Origin: 家老実測でLK-A13.detailへ複数行値を書込んだ際、値自体はYAML-validかつ
 # 内容も反映されていたのに、post-write検証がawk単一物理行の生テキストを誤抽出し

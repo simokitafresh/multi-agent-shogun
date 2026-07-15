@@ -268,7 +268,7 @@ BEGIN { replaced = 0; has_fields = 0; skip_children = 0 }
 {
     # When replacing a nested mapping header, skip its indented children
     if (skip_children) {
-        if (($0 ~ /^[[:space:]]/ || $0 ~ /^-[[:space:]]/) && $0 !~ /^[A-Za-z0-9_.-]+:/) {
+        if ($0 == "" || (($0 ~ /^[[:space:]]/ || $0 ~ /^-[[:space:]]/) && $0 !~ /^[A-Za-z0-9_.-]+:/)) {
             next
         }
         skip_children = 0
@@ -282,7 +282,11 @@ BEGIN { replaced = 0; has_fields = 0; skip_children = 0 }
         print field ": " yaml_safe(new_value)
         replaced = 1
         has_fields = 1
-        if (rhs == "" || rhs ~ /^#/) {
+        # A root block scalar owns the following indented physical lines just
+        # like a mapping header owns its children.  Leaving those lines behind
+        # after replacing `field: |`/`field: >-` with an inline scalar makes
+        # the candidate invalid (compact_state session_summary regression).
+        if (rhs == "" || rhs ~ /^#/ || rhs ~ /^[|>][+-]?[0-9]*([[:space:]]+#.*)?$/) {
             skip_children = 1
         }
         next
