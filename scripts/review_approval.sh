@@ -35,12 +35,22 @@ dir="$base/reports/$report_key"; mkdir -p "$dir"
 # commit identity and fail closed until a new implementation commit exists.
 # No-code reviews are content-bound instead and therefore excluded here.
 rejected_commit_file="$dir/last_rc_commit"
+rejected_payload_file="$dir/last_rc_report_payload"
 current_commit=${fingerprint##*:}
 if [ ! "$role:$result" = "karo:RC" ] && [ -f "$rejected_commit_file" ] \
   && [ "$current_commit" != "no-code-change" ]; then
   rejected_commit=$(head -n 1 "$rejected_commit_file" 2>/dev/null || true)
   if [ -n "$rejected_commit" ] && [ "$rejected_commit" = "$current_commit" ]; then
     echo "BLOCK: implementation commit unchanged since Karo RC: $current_commit" >&2
+    exit 1
+  fi
+fi
+if [ ! "$role:$result" = "karo:RC" ] && [ "$current_commit" = "no-code-change" ] \
+  && [ -f "$rejected_payload_file" ]; then
+  rejected_payload=$(head -n 1 "$rejected_payload_file" 2>/dev/null || true)
+  current_payload=$(review_report_payload_hash "$report" 2>/dev/null || true)
+  if [ -z "$current_payload" ] || [ "$current_payload" = "$rejected_payload" ]; then
+    echo "BLOCK: report-only payload unchanged since Karo RC" >&2
     exit 1
   fi
 fi
@@ -69,6 +79,14 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
     rejected_tmp=$(mktemp "$dir/.last_rc_commit.XXXXXX")
     printf '%s\n' "$current_commit" > "$rejected_tmp"
     mv -f "$rejected_tmp" "$rejected_commit_file"
+  else
+    rejected_payload=$(review_report_payload_hash "$report") || {
+      echo "BLOCK: report-only RC payload hash failed: $report_rel" >&2
+      exit 1
+    }
+    rejected_tmp=$(mktemp "$dir/.last_rc_report_payload.XXXXXX")
+    printf '%s\n' "$rejected_payload" > "$rejected_tmp"
+    mv -f "$rejected_tmp" "$rejected_payload_file"
   fi
   worker_id=$(python3 - "$report" <<'PY'
 import re, sys, yaml

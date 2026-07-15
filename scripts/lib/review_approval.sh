@@ -21,10 +21,6 @@ if not commit_hash:
     result = d.get("result") or {}
     commit_hash = result.get("commit_hash", "") if isinstance(result, dict) else ""
 
-if isinstance(commit_hash, str) and len(commit_hash) == 40 and all(c in "0123456789abcdef" for c in commit_hash):
-    print(commit_hash)
-    raise SystemExit(0)
-
 no_code_task_types = ("scout", "recon", "recon2")
 task_type = str(d.get("task_type", "")).strip().lower()
 if task_type not in no_code_task_types:
@@ -42,12 +38,14 @@ if task_type not in no_code_task_types:
 files_modified = d.get("files_modified")
 checks = d.get("binary_checks") or {}
 commit_claimed = False
+no_commit_asserted = False
 if isinstance(checks, dict):
     for item in checks.get("commit", []) if isinstance(checks.get("commit", []), list) else []:
         check_text = str(item.get("check", "")).strip().lower() if isinstance(item, dict) else ""
         no_commit_assertion = any(marker in check_text for marker in (
             "実行していない", "commit禁止", "commit不要", "no-commit", "no commit",
         ))
+        no_commit_asserted = no_commit_asserted or no_commit_assertion
         if isinstance(item, dict) and not no_commit_assertion and (
             item.get("result") is True
             or str(item.get("result", "")).strip().lower() == "yes"
@@ -69,8 +67,12 @@ no_code_files = files_modified == [] or (
     and bool(files_modified)
     and all(reported_path(item) == report_path for item in files_modified)
 )
-if task_type in no_code_task_types and no_code_files and not commit_claimed and not commit_hash:
+if no_code_files and not commit_claimed and (task_type in no_code_task_types or no_commit_asserted):
     print("no-code-change")
+    raise SystemExit(0)
+
+if isinstance(commit_hash, str) and len(commit_hash) == 40 and all(c in "0123456789abcdef" for c in commit_hash):
+    print(commit_hash)
     raise SystemExit(0)
 
 raise SystemExit(1)
@@ -78,6 +80,32 @@ PY
 ) || return 1
     [ -n "$commit_identity" ] || return 1
     printf '%s:%s\n' "$content_hash" "$commit_identity"
+}
+
+# RC on a report-only task must require a substantive report correction, not an
+# unrelated HEAD change.  Exclude lifecycle/commit identity fields that change
+# during resubmission and hash the review payload itself.
+review_report_payload_hash() {
+    local report="$1"
+    [ -f "$report" ] || return 1
+    python3 - "$report" <<'PY'
+import hashlib
+import json
+import sys
+import yaml
+
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+for key in (
+    "status", "commit_hash", "commit", "git_commit", "timestamp",
+    "submitted_at", "completed_at", "done_at", "updated_at",
+):
+    data.pop(key, None)
+result = data.get("result")
+if isinstance(result, dict):
+    result.pop("commit_hash", None)
+payload = json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+print(hashlib.sha256(payload.encode("utf-8")).hexdigest())
+PY
 }
 
 review_report_key() {

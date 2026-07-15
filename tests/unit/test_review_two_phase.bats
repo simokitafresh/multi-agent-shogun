@@ -134,6 +134,26 @@ SH
   [[ "$fp" == *":no-code-change" ]]
 }
 
+@test "explicit report-only task ignores unrelated HEAD commit identity" {
+  cat > "$REPORT" <<'YAML'
+worker_id: ninja
+parent_cmd: cmd_test
+task_type: exact
+status: completed
+commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+files_modified:
+  - path: queue/reports/ninja_report_cmd_test.yaml
+    change: feedback only
+binary_checks:
+  commit:
+    - {check: data-onlyのためcommit不要, result: yes}
+lessons_useful:
+  - {id: L001, useful: true, reason: evidence}
+YAML
+  fp=$(review_report_fingerprint "$REPORT")
+  [[ "$fp" == *":no-code-change" ]]
+}
+
 @test "deployed SCOUT report remains self-contained after task YAML is overwritten" {
   mkdir -p "$TMPROOT/scripts/lib"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"
@@ -290,6 +310,36 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "report-only RC requires changed review payload but not a new commit" {
+  setup_rc_task
+  cat > "$REPORT" <<'YAML'
+worker_id: ninja
+parent_cmd: cmd_test
+task_type: exact
+status: completed
+commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+files_modified:
+  - path: queue/reports/ninja_report_cmd_test.yaml
+    change: feedback only
+binary_checks:
+  commit:
+    - {check: data-onlyのためcommit不要, result: yes}
+lessons_useful:
+  - {id: L001, useful: true, reason: original}
+YAML
+
+  approve karo RC "$REPORT"
+  [ -f "$APPROVALS/last_rc_report_payload" ]
+  sed -i 's/^status: revision_requested$/status: completed/' "$REPORT"
+  run approve gunshi LGTM "$REPORT"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"report-only payload unchanged since Karo RC"* ]]
+
+  sed -i 's/reason: original/reason: corrected evidence/' "$REPORT"
+  run approve gunshi LGTM "$REPORT"
+  [ "$status" -eq 0 ]
+}
+
 @test "RC fails closed for missing worker task or parent mismatch" {
   setup_rc_task
   sed -i 's/parent_cmd: cmd_test/parent_cmd: cmd_other/' "$TMPROOT/queue/tasks/ninja.yaml"
@@ -302,7 +352,7 @@ PY
   [[ "$output" == *"task not found"* ]]
 }
 
-@test "RC permits the same manifest to trigger once again" {
+@test "RC permits a revised implementation manifest to trigger once again" {
   mkdir -p "$TMPROOT/scripts/lib" "$TMPROOT/scripts"
   setup_rc_task
   approve gunshi LGTM "$REPORT"; approve karo ACCEPT "$REPORT"
@@ -311,8 +361,9 @@ PY
   approve karo RC "$REPORT"
   [ ! -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered.$manifest" ]
   bash "$TMPROOT/scripts/report_field_set.sh" "$REPORT" status completed
+  sed -i 's/^commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$/commit_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/' "$REPORT"
   revised_manifest=$(review_manifest_fingerprint "$REPORT")
-  [ "$revised_manifest" = "$manifest" ]
+  [ "$revised_manifest" != "$manifest" ]
   approve gunshi LGTM "$REPORT"; approve karo ACCEPT "$REPORT"
   [ -e "$TMPROOT/queue/gates/cmd_test/review_approvals/.gate_triggered.$revised_manifest" ]
   grep -q "^manifest: $revised_manifest$" "$TMPROOT/queue/gates/cmd_test/review_gate.done"
