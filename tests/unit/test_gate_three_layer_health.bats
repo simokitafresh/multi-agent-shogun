@@ -6,6 +6,8 @@ setup() {
     export TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/three_layer_health.XXXXXX")"
     export TEST_DB="$TEST_TMPDIR/memory.db"
     export TEST_CACHE="$TEST_TMPDIR/cache.db"
+    export TEST_CHAIN_STATE="$TEST_TMPDIR/chain-state"
+    mkdir -p "$TEST_CHAIN_STATE"
 }
 
 teardown() {
@@ -50,6 +52,7 @@ run_gate() {
         SHOGUN_MEMORY_DB="$TEST_DB" \
         SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_CACHE" \
         THREE_LAYER_CHAIN_LOG="$TEST_TMPDIR/three_layer_chain_async.log" \
+        THREE_LAYER_CHAIN_STATE_DIR="$TEST_CHAIN_STATE" \
         bash "$PROJECT_ROOT/scripts/gates/gate_three_layer_health.sh"
 }
 
@@ -103,5 +106,39 @@ EOF
 
     [ "$status" -eq 2 ]
     [[ "$output" == *"未貫通件数=1"* ]]
+    [[ "$output" == *"STATUS: WARN"* ]]
+}
+
+@test "stale durable pending request is WARN" {
+    init_cache_db "obsidian_promoted"
+    printf '{}\n' > "$TEST_CHAIN_STATE/knowledge_stale.pending.json"
+    touch -d '5 minutes ago' "$TEST_CHAIN_STATE/knowledge_stale.pending.json"
+
+    run run_gate
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"stale_pending=1"* ]]
+    [[ "$output" == *"STATUS: WARN"* ]]
+}
+
+@test "fresh durable pending request is allowed while worker runs" {
+    init_cache_db "obsidian_promoted"
+    printf '{}\n' > "$TEST_CHAIN_STATE/knowledge_fresh.pending.json"
+
+    run run_gate
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"stale_pending=0"* ]]
+    [[ "$output" == *"STATUS: PASS"* ]]
+}
+
+@test "durable failed result is WARN even if chain log is absent" {
+    init_cache_db "obsidian_promoted"
+    printf 'state=FAIL\nreason=test\n' > "$TEST_CHAIN_STATE/knowledge_failed.result"
+
+    run run_gate
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"failed_results=1"* ]]
     [[ "$output" == *"STATUS: WARN"* ]]
 }

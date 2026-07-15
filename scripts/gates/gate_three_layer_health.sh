@@ -202,6 +202,8 @@ fi
 
 echo "■ 三層連鎖(memory_db_knowledge_write.sh Layer2/3)失敗検知"
 chain_log="${THREE_LAYER_CHAIN_LOG:-$repo_root/logs/three_layer_chain_async.log}"
+chain_state_dir="${THREE_LAYER_CHAIN_STATE_DIR:-$repo_root/logs/three_layer_chain_state}"
+pending_stale_seconds="${THREE_LAYER_CHAIN_PENDING_STALE_SECONDS:-120}"
 if [ -f "$chain_log" ]; then
     chain_fail_count="$(
         awk '
@@ -233,6 +235,30 @@ if [ -f "$chain_log" ]; then
     fi
 else
     echo "chain_log=$chain_log (未生成。三層連鎖の実行履歴なし)"
+fi
+
+stale_pending=0
+failed_results=0
+now_epoch="$(date +%s)"
+if [ -d "$chain_state_dir" ]; then
+    while IFS= read -r pending; do
+        [ -n "$pending" ] || continue
+        mtime="$(stat -c %Y "$pending" 2>/dev/null || echo "$now_epoch")"
+        if [ $((now_epoch - mtime)) -gt "$pending_stale_seconds" ]; then
+            stale_pending=$((stale_pending + 1))
+        fi
+    done < <(find "$chain_state_dir" -maxdepth 1 -type f -name '*.pending.json' -print 2>/dev/null)
+    while IFS= read -r result; do
+        [ -n "$result" ] || continue
+        grep -q '^state=FAIL$' "$result" && failed_results=$((failed_results + 1))
+    done < <(find "$chain_state_dir" -maxdepth 1 -type f -name '*.result' -print 2>/dev/null)
+fi
+echo "chain_state_dir=$chain_state_dir stale_pending=$stale_pending failed_results=$failed_results"
+if [ "$stale_pending" -gt 0 ] || [ "$failed_results" -gt 0 ]; then
+    echo "WARN: durable三層連鎖の未完了/失敗を検出。pending/resultを確認せよ。"
+    overall="WARN"
+else
+    echo "OK: durable三層連鎖の未完了/失敗ゼロ"
 fi
 
 echo "STATUS: $overall"

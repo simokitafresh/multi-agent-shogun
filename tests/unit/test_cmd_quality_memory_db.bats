@@ -156,6 +156,7 @@ isolate_three_layer_chain() {
     mkdir -p "$TEST_TMPDIR/docs/semantic-index" "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue" "$TEST_TMPDIR/context"
     export THREE_LAYER_CHAIN_SYNC=1
     export THREE_LAYER_CHAIN_LOG="$TEST_TMPDIR/three_layer_chain_async.log"
+    export THREE_LAYER_CHAIN_STATE_DIR="$TEST_TMPDIR/three_layer_chain_state"
     export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
     export SEMANTIC_MAP_PATH="$TEST_TMPDIR/context/semantic-map.md"
     export SEMANTIC_MAP_GENERATE="$PROJECT_ROOT/scripts/semantic_map_generate.sh"
