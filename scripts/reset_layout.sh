@@ -4,8 +4,10 @@
 # ペイン配置・変数・レイアウト・watcherを初期状態に復元する
 #
 # Usage:
-#   bash scripts/reset_layout.sh            # 実行
-#   bash scripts/reset_layout.sh --dry-run  # 診断のみ（変更なし）
+#   bash scripts/reset_layout.sh                    # 全量復元
+#   bash scripts/reset_layout.sh --dry-run           # 診断のみ（変更なし）
+#   bash scripts/reset_layout.sh --agent <id>        # 単一エージェントrespawn
+#   bash scripts/reset_layout.sh --agent <id> --dry-run  # 単一respawn診断
 
 set -e
 
