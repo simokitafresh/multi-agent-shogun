@@ -106,6 +106,66 @@ PY"
     [ "$result" = "light" ]
 }
 
+# cmd_karo_ci_red_remaining_unit_202607151950: Claude Codeが自動付加する"2>&1"が
+# shlexで"2>"+"&"+"1"にトークン化され、"2>"が単一ファイル指定segmentへ残存し
+# 第二の対象ファイルとして誤カウントされていた(shell_command_segments.py root cause)。
+@test "分類器: 単一.batsファイル1つに末尾2>&1が付いても軽量" {
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    result="$(heavy_job_classify "bats tests/unit/test_foo.bats 2>&1")"
+    [ "$result" = "light" ]
+}
+
+# 家老レビュー指摘(2026-07-15 20:24): segment_tokensの出力自体が孤立segment ['1']
+# を残していないことを直接検証する(heavy/light判定の副産物ではなく契約そのもの)。
+@test "segment_tokens: 末尾2>&1は孤立segmentを残さず元コマンド1segmentのみ" {
+    run python3 -S -c "
+import sys
+sys.path.insert(0, '$ROOT/scripts/lib')
+from shell_command_segments import segment_tokens
+result = segment_tokens('bats tests/unit/test_foo.bats 2>&1')
+expected = [['bats', 'tests/unit/test_foo.bats']]
+assert result == expected, f'expected {expected!r}, got {result!r}'
+print('ok')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "ok" ]]
+}
+
+# 家老2次レビュー指摘(2026-07-15 20:27): 旧実装は">out"/"2>/tmp/x"のような
+# attached-target token(operatorと対象が同一token、空白なし)にもbare operatorと
+# 同じ扱いで次tokenを追加消費し、後続の正当な引数を食い違って消してしまうバグを
+# 作っていた。attached-targetは1tokenで完結させ、後続tokenは消費してはならない。
+@test "segment_tokens: attached-target redirect(>out/2>/tmp/x)は後続の正当な引数を消さない" {
+    run python3 -S -c "
+import sys
+sys.path.insert(0, '$ROOT/scripts/lib')
+from shell_command_segments import segment_tokens
+cases = [
+    ('cmd >out arg', [['cmd', 'arg']]),
+    ('cmd 2>/tmp/x arg', [['cmd', 'arg']]),
+    ('cmd > out arg', [['cmd', 'arg']]),
+]
+for cmd, expected in cases:
+    result = segment_tokens(cmd)
+    assert result == expected, f'{cmd!r}: expected {expected!r}, got {result!r}'
+print('ok')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "ok" ]]
+}
+
+@test "分類器: bats全量ディレクトリに末尾2>&1が付いても重量のまま" {
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    result="$(heavy_job_classify "bats tests/unit/ 2>&1")"
+    [ "$result" = "heavy" ]
+}
+
+@test "分類器: bats複数ファイルに末尾2>&1が付いても重量のまま" {
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    result="$(heavy_job_classify "bats tests/unit/test_a.bats tests/unit/test_b.bats 2>&1")"
+    [ "$result" = "heavy" ]
+}
+
 # --- admission wrapper (flock host-wide semaphore) ---
 
 @test "wrapper: 単純コマンドを正常に実行できる" {
@@ -259,6 +319,23 @@ PY"
     [ "$status" -eq 0 ]
 }
 
+# cmd_karo_ci_red_remaining_unit_202607151950 (旧Guard 5): "bats tests/unit"を
+# 実行対象のargvではなく$payload/$command全文への部分文字列/regexで検出していたため、
+# 引用符内の説明文がたまたま一致しただけでも誤BLOCKしていた(家老一次証跡:
+# 現象説明をinbox_write本文に含めただけで同じBLOCKが発生)。argv位置ベースの
+# Guard17だけに一本化し、非実行本文(quoted prose)は誤検出しないことを固定する。
+@test "hook: inbox_writeの説明文がbats全量glob文言を含んでも偽陽性0" {
+    run _run_hook "bash scripts/inbox_write.sh saizo \"説明: bats tests/unit/*.bats のglob問題\" task_addendum karo cmd_test"
+    [ "$status" -eq 0 ]
+    run _run_hook "bash scripts/inbox_write.sh saizo \"説明: bats tests/unit/ 全量問題\" task_addendum karo cmd_test"
+    [ "$status" -eq 0 ]
+}
+
+@test "hook: unit配下のbatsグロブを引数にした読み取り専用検索は偽陽性0" {
+    run _run_hook "grep -l 'heavy_job' tests/unit/*.bats"
+    [ "$status" -eq 0 ]
+}
+
 @test "hook: cd + 絶対パスでのDM-Signal golden regression直接実行もBLOCKし、wrapper経由はPASSする" {
     run _run_hook "cd /mnt/c/Python_app/DM-signal && python3 scripts/oneshot/cmd_3854_fof_golden_regression_check.py"
     [ "$status" -eq 2 ]
@@ -332,4 +409,63 @@ FAKEEOF
         ' _ "$ROOT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS:"* ]]
+}
+
+# --- Guard 18: git stash mutation block (共有worktree保護) ---
+# cmd_karo_ci_red_remaining_unit_202607151950: 2026-07-15 20:27実例 — bareの
+# `git stash`が共有main working treeのtracked 23 files(複数忍者+運用差分)を一括退避した事故。
+# argv位置ベースで実際に"git"+読み取り専用でない"stash"サブコマンドのときだけ
+# BLOCKし、text上の"stash"言及(commit message/inbox本文等)は誤検出しないことを
+# Guard 5→17の教訓に沿って直接検証する。
+
+@test "分類器: git stash無引数/push/save/pop/apply/drop/clear/branchはblock" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    for cmd in "git stash" "git stash push" "git stash push -m msg" "git stash save msg" \
+               "git stash pop" "git stash apply" "git stash drop" "git stash clear" \
+               "git stash branch foo"; do
+        result="$(git_stash_guard_classify "$cmd")"
+        [ "$result" = "block" ]
+    done
+}
+
+@test "分類器: git stash list/showはallow(読み取り専用)" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    r1="$(git_stash_guard_classify "git stash list")"
+    r2="$(git_stash_guard_classify "git stash show")"
+    r3="$(git_stash_guard_classify "git stash show -p stash@{0}")"
+    [ "$r1" = "allow" ]
+    [ "$r2" = "allow" ]
+    [ "$r3" = "allow" ]
+}
+
+@test "分類器: git -C <root> stash形もblock、read-onlyはallow" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    r1="$(git_stash_guard_classify "git -C /some/repo stash")"
+    r2="$(git_stash_guard_classify "git -C /some/repo stash pop")"
+    r3="$(git_stash_guard_classify "git -C /some/repo stash list")"
+    [ "$r1" = "block" ]
+    [ "$r2" = "block" ]
+    [ "$r3" = "allow" ]
+}
+
+@test "分類器: git status/commitや文面上のstash言及は偽陽性0" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    r1="$(git_stash_guard_classify "git status")"
+    r2="$(git_stash_guard_classify "git commit -m 'stash cleanup message'")"
+    r3="$(git_stash_guard_classify "bash scripts/inbox_write.sh saizo 'explaining git stash push behavior' task_addendum karo cmd_test")"
+    [ "$r1" = "allow" ]
+    [ "$r2" = "allow" ]
+    [ "$r3" = "allow" ]
+}
+
+@test "hook: git stash破壊的形はBLOCKし、list/showは通過する" {
+    run _run_hook "git stash"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK"* ]]
+    run _run_hook "git stash pop"
+    [ "$status" -eq 2 ]
+    run _run_hook "git stash list"
+    [ "$status" -eq 0 ]
+    run _run_hook "git stash show"
+    [ "$status" -eq 0 ]
 }

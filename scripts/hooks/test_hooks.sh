@@ -220,14 +220,19 @@ expect_allow "git log -n 5 (not commit)"            "git log -n 5"
 expect_allow "git push (normal)"                    "git push origin feature"
 
 # Shared worktree: stash mutates every tracked dirty path, including live task
-# generations owned by other agents.  All stash subcommands are banned; the
-# documented git-log/git-show alternatives stay readable.
+# generations owned by other agents.  Mutation subcommands (bare/push/save/
+# pop/apply/drop/clear/branch) are banned; read-only list/show stay allowed
+# (cmd_karo_ci_red_remaining_unit_202607151950: SSOT moved to
+# git_stash_guard_classify.py/.sh, shared with the real runtime hook
+# .claude/hooks/pre-bash-combined.sh so this legacy self-test entry point
+# cannot silently drift from production behavior again).
 expect_block "shared worktree bare stash"            "git stash"
 expect_block "shared worktree stash push"            "git stash push -m 'temporary'"
 expect_block "shared worktree stash pop"             "git stash pop"
 expect_block "shared worktree stash apply"           "git stash apply stash@{0}"
 expect_block "compound command stash"                "cd /tmp && git stash --include-untracked"
-expect_block "read-only stash subcommand also closed" "git stash list | head -3"
+expect_allow "read-only stash list is allowed"       "git stash list | head -3"
+expect_allow "read-only stash show is allowed"       "git stash show -p stash@{0}"
 expect_allow "stash reflog inspection alternative"   "git log -g refs/stash -3"
 expect_allow "stash object inspection alternative"   "git show stash@{0} --stat"
 

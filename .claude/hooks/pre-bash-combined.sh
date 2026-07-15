@@ -677,17 +677,17 @@ if [[ -n "${command:-}" ]]; then
     fi
 fi
 
-# === Guard 5: bats full-run block (test_optimization_journal) ===
-# cmd_karo_hotfix_heavy_job_admission_202607121348: heavy_job_admission.sh経由の
-# コマンドは、元コマンド(bats tests/unit/等)がcommand文字列の末尾に含まれるため
-# 誤って本Guardにも一致してしまう。wrapper経由なら本Guardより下のGuard17が
-# admission契約を強制するため、本Guardはスキップしてよい。
-if [[ "$payload" == *'bats '* && "$payload" == *'tests/unit'* && "$command" != *'heavy_job_admission.sh'* ]]; then
-    if [[ "$command" =~ bats[[:space:]]+tests/unit/?[[:space:]]*$ ]] || \
-       [[ "$command" =~ bats[[:space:]]+tests/unit/\* ]]; then
-        emit_deny "BLOCK: bats tests/unit/ 全量実行は禁止。変更対象のテストファイルのみ指定せよ(見込み12分超)。"
-    fi
-fi
+# === Guard 5 removed (cmd_karo_ci_red_remaining_unit_202607151950) ===
+# Guard 5 matched bats/tests-unit as raw substrings/regex against the full
+# $payload and $command text, so a quoted argument merely *mentioning*
+# "bats tests/unit/*.bats" (e.g. an inbox_write.sh message describing this
+# very bug) was falsely BLOCKed even though no bats process was invoked.
+# Guard 17 below already detects the identical full-dir/glob "bats
+# tests/unit" cases through argv-position-aware parsing
+# (heavy_job_classify.py: prog must actually be "bats" in some shell
+# segment), which is a strict superset of Guard 5's coverage without the
+# false-positive surface. Removed rather than patched to eliminate the
+# raw-text-matching vector entirely.
 
 # === Guard 6: capture-pane minimum 30 lines (LK037/LK018: 末尾数行で状態を誤判断する防止) ===
 # + LG007: capture-pane=残像リマインダー
@@ -943,6 +943,22 @@ if [[ -n "${command:-}" && "$command" != *'heavy_job_admission.sh'* && "$command
         if [[ "$(heavy_job_classify "$command")" == "heavy" ]]; then
             emit_deny "BLOCK(heavy-job-admission): 重量テストジョブ(bats複数ファイル/全量、pytest全量、golden regression等)はhost-wide排他制御が必要。'bash scripts/heavy_job_admission.sh -- <元のコマンド全体>' の形で実行せよ。単一の.batsファイル1つや単一の::テスト関数指定は軽量とみなされ対象外。"
         fi
+    fi
+fi
+
+# === Guard 18: git stash mutation block (shared worktree protection) ===
+# cmd_karo_ci_red_remaining_unit_202607151950: このタスク系列は複数忍者が
+# 分離worktreeを持たず共有main working treeへ直接作業する。トップレベルの
+# `git stash` はその1つのindex/working treeを全員分まとめて退避してしまう
+# (2026-07-15 20:27実例: bare `git stash`が共有worktreeのtracked 23 files(複数忍者+運用差分)を一括退避し、
+# 家老が手動`stash@{0} apply`で復旧)。argv位置ベースで実際に"git"が起動され
+# "stash"サブコマンドが読み取り専用(list/show)以外の場合のみBLOCKする
+# (Guard 5→17の教訓と同じく、raw textの部分一致では判定しない)。
+if [[ -n "${command:-}" && "$command" == *'stash'* ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/scripts/lib/git_stash_guard_classify.sh"
+    if [[ "$(git_stash_guard_classify "$command")" == "block" ]]; then
+        emit_deny "BLOCK: git stashは共有worktreeの全員分tracked差分を一括退避し他忍者のWIPを破壊する。指定pathだけを対象にする 'bash scripts/ninja_scope_commit.sh' を使え。読み取り専用の 'git stash list'/'git stash show' はBLOCK対象外。"
     fi
 fi
 

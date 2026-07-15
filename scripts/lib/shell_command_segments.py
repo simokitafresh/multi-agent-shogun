@@ -7,6 +7,8 @@ import shlex
 
 _HEREDOC_RE = re.compile(r"<<(-)?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
 _SEPARATORS = {"&&", ";", "||", "|", "&", "\n"}
+_REDIRECT_RE = re.compile(r"^[0-9]*[><]")
+_BARE_REDIRECT_RE = re.compile(r"^[0-9]*(>>?|<)$")
 
 
 def strip_heredocs(text: str) -> str:
@@ -44,15 +46,46 @@ def segment_tokens(command: str) -> list[list[str]] | None:
     except ValueError:
         return None
 
+    # Claude Code appends "2>&1" to bash commands. shlex with
+    # punctuation_chars=";&|\n" has no concept of shell redirection, so a
+    # redirect operator (2>, >, <, ...) and its target are ordinary tokens
+    # to it, and "&" inside "2>&1" is indistinguishable from the "&"
+    # background/separator operator. Consume redirect operators and their
+    # targets here — including the "&"+word fd-duplication form (2>&1) and
+    # the plain "> file" form — so neither leaks into a segment as a fake
+    # command token nor its target survives as an orphan segment
+    # (2026-07-15 shogun root cause; same operator pattern as
+    # guard14_db_trust_classify._strip_shell_redirects).
     segments: list[list[str]] = []
     current: list[str] = []
-    for token in tokens:
+    index = 0
+    total = len(tokens)
+    while index < total:
+        token = tokens[index]
+        if _REDIRECT_RE.match(token):
+            index += 1
+            # A bare operator (">", "2>", ...) has its target as a separate
+            # token — either "&"+word (fd-dup, e.g. "2>" "&" "1") or a plain
+            # following word (e.g. "cmd" ">" "out"). An attached-target
+            # token (e.g. ">out", "2>/tmp/x" — no space before the target)
+            # already contains its target; consuming the *next* token too
+            # would eat an unrelated positional argument that follows it.
+            if _BARE_REDIRECT_RE.match(token):
+                if index < total and tokens[index] == "&":
+                    index += 1
+                    if index < total and tokens[index] not in _SEPARATORS:
+                        index += 1
+                elif index < total and tokens[index] not in _SEPARATORS:
+                    index += 1
+            continue
         if token in _SEPARATORS:
             if current:
                 segments.append(current)
             current = []
-        else:
-            current.append(token)
+            index += 1
+            continue
+        current.append(token)
+        index += 1
     if current:
         segments.append(current)
     return segments

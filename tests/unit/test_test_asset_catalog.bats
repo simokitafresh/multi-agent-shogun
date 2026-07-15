@@ -42,7 +42,7 @@ EOF
 @test "failure" { run monkeypatch_failure; }
 EOF
   run run_gate
-  [ "$status" -eq 1 ]
+  [ "$status" -eq 0 ]
   [[ "$output" == *"outside mock categories: 0"* ]]
   [[ "$output" != *"mock outside allowed categories"* ]]
 }

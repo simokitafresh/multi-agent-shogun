@@ -527,16 +527,24 @@ pre_bash_combined_eval_command() {
         return 1
     fi
 
-    # Shared-worktree invariant: `git stash` is never local to the invoking agent.
-    # It snapshots and restores every tracked dirty path by default, including the
-    # live queue/tasks and queue/reports state owned by other agents.  On 2026-07-13
-    # one bare stash rewound five task generations and resurrected three archived
-    # reports.  Ban the whole stash command family (including pop/apply/list/show)
-    # so aliases/options/compound commands cannot create a bypass.  Read-only
-    # inspection remains available through `git log -g refs/stash` and
-    # `git show stash@{N}`; task-scoped preservation must use a scoped commit.
-    if [[ "$command" =~ (^|[[:space:]\;\&\|])git[[:space:]]+stash([[:space:]\;\&\|]|$) ]]; then
-        pre_bash_combined_emit_deny "BLOCKED(GA-239): git stash is forbidden in the shared multi-agent worktree. It can rewind other agents' tracked task/report YAML. Preserve only assigned files with a scoped commit; inspect existing stashes with 'git log -g refs/stash' or 'git show stash@{N}'."
+    # Shared-worktree invariant (GA-239): `git stash` is never local to the
+    # invoking agent — it snapshots/restores every tracked dirty path,
+    # including live queue/tasks and queue/reports state owned by other
+    # agents. On 2026-07-13 one bare stash rewound five task generations and
+    # resurrected three archived reports; on 2026-07-15 a bare stash also
+    # swept 23 tracked files across multiple agents' in-progress diffs in the
+    # main working tree. SSOT lives in git_stash_guard_classify.py/.sh
+    # (cmd_karo_ci_red_remaining_unit_202607151950) — shared with the real
+    # runtime hook .claude/hooks/pre-bash-combined.sh so this legacy
+    # self-test-only entry point cannot silently drift from production
+    # behavior again (that drift is exactly what let the 2026-07-15 incident
+    # happen despite this guard's own tests passing). Mutation subcommands
+    # (bare/push/save/pop/apply/drop/clear/branch) are blocked; read-only
+    # `git stash list`/`git stash show` remain allowed.
+    # shellcheck disable=SC1091
+    source "${project_root}/scripts/lib/git_stash_guard_classify.sh"
+    if [[ "$(git_stash_guard_classify "$command")" == "block" ]]; then
+        pre_bash_combined_emit_deny "BLOCKED(GA-239): git stash is forbidden in the shared multi-agent worktree. It can rewind other agents' tracked task/report YAML. Preserve only assigned files with a scoped commit; inspect existing stashes with 'git stash list'/'git stash show' or 'git log -g refs/stash'."
         return 1
     fi
 
