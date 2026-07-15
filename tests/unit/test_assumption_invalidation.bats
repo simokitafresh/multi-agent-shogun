@@ -15,13 +15,14 @@ setup_file() {
 
 setup() {
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/ai_test.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/scripts/gates" \
+    mkdir -p "$TEST_TMPDIR/scripts/gates" "$TEST_TMPDIR/scripts/lib" \
              "$TEST_TMPDIR/queue/reports" \
              "$TEST_TMPDIR/queue/tasks" \
              "$TEST_TMPDIR/logs"
     # gate_report_format.sh と companion validator を tmpdir にコピー（ログ汚染防止）
     cp "$GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
     cp "$GATE_MAIN_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_report_format_main.py"
+    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_TMPDIR/scripts/lib/report_commit_identity.py"
     cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$TEST_TMPDIR/scripts/gates/"
     cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$TEST_TMPDIR/scripts/gates/"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"

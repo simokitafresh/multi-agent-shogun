@@ -15,6 +15,7 @@ setup() {
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/yaml_atomic.py" "$TEST_ROOT/scripts/lib/yaml_atomic.py"
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/normalize_report.sh" "$TEST_ROOT/scripts/lib/normalize_report.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/review_approval.sh" "$TEST_ROOT/scripts/lib/review_approval.sh"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/report_commit_identity.py" "$TEST_ROOT/scripts/lib/report_commit_identity.py"
     export RFS="$TEST_ROOT/scripts/report_field_set.sh"
     export REPORT="$TEST_ROOT/queue/reports/kagemaru_report_cmd_normhook.yaml"
     export NORMALIZE="$TEST_ROOT/scripts/lib/normalize_report.sh"

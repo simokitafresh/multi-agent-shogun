@@ -18,6 +18,7 @@ deploy_task_setup_file() {
     export SRC_AGENT_CONFIG_SCRIPT="$PROJECT_ROOT/scripts/lib/agent_config.sh"
     export SRC_INJECT_TASK_MODIFIERS="$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
     export SRC_REPORT_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/report_field_set.sh"
+    export SRC_REPORT_COMMIT_IDENTITY="$PROJECT_ROOT/scripts/lib/report_commit_identity.py"
     export SRC_FIREFIGHTING_KEYWORDS_SCRIPT="$PROJECT_ROOT/scripts/lib/firefighting_keywords.sh"
     export SRC_GATE_HOOK_QUALITY_CONTRACT_SCRIPT="$PROJECT_ROOT/scripts/lib/gate_hook_quality_contract.sh"
     export SRC_MODEL_INJECTION_PROFILE_SCRIPT="$PROJECT_ROOT/scripts/lib/model_injection_profile.sh"
@@ -39,6 +40,7 @@ deploy_task_setup_file() {
     [ -f "$SRC_AGENT_CONFIG_SCRIPT" ] || return 1
     [ -f "$SRC_INJECT_TASK_MODIFIERS" ] || return 1
     [ -f "$SRC_REPORT_FIELD_SET_SCRIPT" ] || return 1
+    [ -f "$SRC_REPORT_COMMIT_IDENTITY" ] || return 1
     [ -f "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" ] || return 1
     [ -f "$SRC_MODEL_INJECTION_PROFILE_SCRIPT" ] || return 1
     [ -f "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" ] || return 1
@@ -74,6 +76,7 @@ deploy_task_setup_file() {
     cp "$SRC_AGENT_CONFIG_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/agent_config.sh"
     cp "$SRC_INJECT_TASK_MODIFIERS" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/inject_task_modifiers.py"
     cp "$SRC_REPORT_FIELD_SET_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/report_field_set.sh"
+    cp "$SRC_REPORT_COMMIT_IDENTITY" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/report_commit_identity.py"
     cp "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/firefighting_keywords.sh"
     cp "$SRC_GATE_HOOK_QUALITY_CONTRACT_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/gate_hook_quality_contract.sh"
     cp "$SRC_MODEL_INJECTION_PROFILE_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/model_injection_profile.sh"

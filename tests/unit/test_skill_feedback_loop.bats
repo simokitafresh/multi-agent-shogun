@@ -56,6 +56,7 @@ install_dashboard_update_dependencies() {
     local test_repo="$1"
     mkdir -p "$test_repo/scripts/gates"
     cp "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$test_repo/scripts/lib/review_approval.sh"
+    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$test_repo/scripts/lib/report_commit_identity.py"
     cp "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$test_repo/scripts/gates/gate_report_format.sh"
     cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$test_repo/scripts/gates/gate_report_format_combined.py"
     cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$test_repo/scripts/gates/gate_report_autofix_main.py"

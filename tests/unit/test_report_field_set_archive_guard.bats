@@ -8,6 +8,7 @@ setup() {
     cp "$BATS_TEST_DIRNAME/../../scripts/report_field_set.sh" "$RFS_ARCHIVE_GUARD_ROOT/scripts/report_field_set.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/yaml_field_set.sh" "$RFS_ARCHIVE_GUARD_ROOT/scripts/lib/yaml_field_set.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/yaml_atomic.py" "$RFS_ARCHIVE_GUARD_ROOT/scripts/lib/yaml_atomic.py"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/report_commit_identity.py" "$RFS_ARCHIVE_GUARD_ROOT/scripts/lib/report_commit_identity.py"
     export RFS="$RFS_ARCHIVE_GUARD_ROOT/scripts/report_field_set.sh"
 }
 
