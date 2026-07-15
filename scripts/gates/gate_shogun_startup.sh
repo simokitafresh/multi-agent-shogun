@@ -535,6 +535,12 @@ for entry in entries:
         if not is_unactioned_required and entry.get("posted_by") != agent:
             confirmed = entry.get("confirmed_by") or []
             if agent not in confirmed:
+                # BULLETIN_NOTIFYで宛先を限定した投稿は、そのroleだけが消費者。
+                # 空listは従来どおり全role共有だが、非空listにagentが無ければ
+                # Shogunの未確認在庫へ数えてはならない。
+                notify_targets = entry.get("notify_targets") or []
+                if notify_targets and agent not in notify_targets:
+                    continue
                 rc = entry.get("requires_confirmation", False)
                 if rc:
                     is_for_agent = agent in rc if isinstance(rc, list) else True

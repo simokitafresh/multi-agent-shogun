@@ -1714,6 +1714,28 @@ EOF
     [[ "$output" == *"総合判定: BLOCK"* ]]
 }
 
+@test "bulletin targeted to another role is not counted as shogun unread" {
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
+entries:
+- id: 'blt_gunshi_only'
+  content: |-
+    軍師のみ確認事項
+  posted_by: 'karo'
+  posted_at: '2026-07-15T21:00:00'
+  requires_confirmation: false
+  notify_targets:
+    - 'gunshi'
+  confirmed_by: []
+  status: 'open'
+EOF
+
+    run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"掲示板未確認"* ]]
+    [[ "$output" == *"未確認: 0件"* ]]
+    [[ "$output" != *"blt_gunshi_only by karo"* ]]
+}
+
 @test "bulletin action_required without actioned_by → 総合判定: BLOCK" {
     cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<'EOF'
 entries:
