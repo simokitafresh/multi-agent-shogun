@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-15T21:27:50+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_core_202607152126検分: cmd_complete_gate.sh 22609351d/3cf5486fd/d85d3cb2bをgit showで確認。report summaryのLevel5事前供給、archive command coverage fallback、exact review manifest再検証はいずれも完了gate内部の生成・判定強化。`bash scripts/cmd_complete_gate.sh <cmd_id>`の単一引数、CLEAR/BLOCK exit、codd-fix本文の呼出し順序は不変。 -->
 name: codd-fix
 argument-hint: "[phenomenon]"
 description: |

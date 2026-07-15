@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-15T21:27:50+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_core_202607152126検分: ninja_monitor.sh 494e2c145/7fb06303bをgit showで確認。stale taskのauto-commit ownership除外と、死亡pane復旧時のCLI ready確認・最大3回retry・成否metrics追加。後者はmonitor自動復旧の信頼性強化であり、`shogun_cli_switch.sh`/`switch_cli_mode.sh`の引数、settings→tmux同期、対象paneの`respawn-pane -k`契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_202607151824検分: yaml_field_set.sh 7042b59e9をgit showで確認。indentless sequence field置換時の残存行防止のみで、settings更新CLI・atomic反映・tmux同期/respawn副作用契約は不変。 -->
 <!-- 2026-07-15検分: ninja_monitor.sh 2faecab31はinbox pruning時のmessage_id evidence退避を追加。CLI切替・idle pane respawn・settings同期・respawn-pane -k契約には影響なし。 -->

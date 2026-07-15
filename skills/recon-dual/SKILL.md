@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-15T21:27:50+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_core_202607152126検分: deploy_task.sh 22609351d/6c2eea753/7a8dd1c68をgit showで確認。report summaryのLevel5事前供給、分析cmdの.logを含むreadonly_ref抽出、再注入時のsequence重複除去は内部生成処理。偵察1人目の`--yaml`配備、2人目のkaro-direct配備、通知・衝突guard契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-15T05:58:00+09:00 -->
 <!-- 2026-07-15検分: deploy_task.shはspeed campaign固有report名を保存。recon-dualの2名配備順序・karo-direct併用契約は不変。 -->
 name: recon-dual
