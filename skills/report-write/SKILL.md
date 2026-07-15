@@ -157,6 +157,9 @@ bash scripts/report_field_set.sh "$REPORT" "decision_candidate" "{found: false}"
 ```bash
 bash scripts/gates/gate_report_format.sh "$REPORT"
 ```
+
+<!-- 2026-07-15 cmd_karo_hotfix_skill_refs_ops検分: report_field_set.sh 82d5cac4e/41415be7bをgit showで確認。commit identity共通化とqueue/logs-only no-code-change許可はcommit_hash専用契約で、全フィールド設定CLI・stdin YAML・binary_checks/verdict手順は不変。 -->
+<!-- script_refs_checked_at: 2026-07-15T21:28:00+09:00 -->
 PASS → 家老にinbox_writeで報告完了を通知。
 FAIL → FAIL理由を修正してからStep 3を再実行。
 

@@ -89,6 +89,11 @@ git status --short    # uncommitted変更が残っていないか確認
 COMMIT_HASH=$(git log --format="%H" -1)
 bash scripts/report_field_set.sh "$REPORT" "commit_hash" "$COMMIT_HASH"
 ```
+
+コード変更を伴わず、変更対象がqueue/logsのみで、報告上のcommit不要条件を満たす場合に限り `commit_hash=no-code-change` も許可される。source/config/docsを含む場合や根拠のない指定はBLOCKされる。
+
+<!-- 2026-07-15 cmd_karo_hotfix_skill_refs_ops検分: report_field_set.sh 82d5cac4e/41415be7bをgit showで確認。commit identityを共通validatorへ統合し、40文字hashに加えて厳格なqueue/logs-only no-code-changeを許可する契約変更。上記手順へ反映。 -->
+<!-- script_refs_checked_at: 2026-07-15T21:28:00+09:00 -->
 verdict は `gate_report_format.sh` が binary_checks から自動導出する。commit後の報告追記でも手動記入禁止。
 
 `status: completed` / `done` への最終遷移**前**に、この `commit_hash` を記録せよ。`report_field_set.sh` は完了済みの現行報告を不変として扱い、内容変更をfail-closedでBLOCKする。完了後に訂正が必要になった場合は、正規経路で先に `status` を `revision_requested` へ遷移し、修正・再検証を行う。

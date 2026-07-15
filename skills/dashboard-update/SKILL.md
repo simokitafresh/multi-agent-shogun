@@ -47,6 +47,9 @@ Script refs verified: 2026-07-02 cmd_karo_hotfix_skill_script_refs_202607021234.
 
 Script refs verified: 2026-06-26 cmd_3550. `gate_report_format.sh` 直近変更後も `bash scripts/gates/gate_report_format.sh <report_yaml_path>` の報告YAML検証契約は変更なし。dashboard生成契約 `bash scripts/dashboard_update.sh <cmd_id> [--dry-run]` も変更なし。
 
+<!-- 2026-07-15 cmd_karo_hotfix_skill_refs_ops検分: gate_report_format.sh 4ecef7670をgit showで確認。複数task所有commitのhunkをdirty判定へ含める内部誤検知修正で、report path引数・verdict導出・dashboard更新前検証契約は不変。 -->
+<!-- script_refs_checked_at: 2026-07-15T21:28:00+09:00 -->
+
 <!-- script_refs_checked_at: 2026-07-12T13:20:00+09:00 -->
 
 Script refs verified: 2026-06-20 a16c93387+48204a464. `dashboard_update.sh` 直近変更はLS071統合/Guard18運用データ反映、`gate_report_format.sh` 直近変更は操作的オントロジー/targetフィルタ/スキル強制の内部検査強化。dashboard生成コマンドと報告YAML検証契約は変更なし。

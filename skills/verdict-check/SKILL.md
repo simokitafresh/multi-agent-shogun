@@ -106,6 +106,9 @@ else:
 bash scripts/gates/gate_report_format.sh "$REPORT"
 ```
 
+<!-- 2026-07-15 cmd_karo_hotfix_skill_refs_ops検分: gate_report_format.sh 4ecef7670をgit showで確認。複数task所有commitのhunkをdirty判定へ含める内部誤検知修正で、binary_checks全yes/noからのverdict自動導出・未記入BLOCK・report path引数契約は不変。 -->
+<!-- script_refs_checked_at: 2026-07-15T21:28:00+09:00 -->
+
 `self_gate_check`を直す必要がある場合、`report_field_set.sh "$REPORT" self_gate_check PASS` はBLOCKされる。dict構造を壊さないよう、`self_gate_check.lesson_ref PASS` のように各keyを個別更新する。
 
 ### Step 3: 整合性最終確認

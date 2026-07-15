@@ -163,6 +163,9 @@ v2.18.0+で`codd implement run --language`オプションをローカル確認�
 **C. func cache**: setup_file()で全関数キャッシュ。source 137ms→数ms
 **D. bats --jobs 8**: テスト並列化。CI+run_tests.shに埋込み
 
+<!-- 2026-07-15 cmd_karo_hotfix_skill_refs_ops検分: run_tests.sh dab19eacfをgit showで確認。共有fixture 3 suiteをfile_inner_jobs=1かつexclusive weightへ固定する内部scheduler修正。引数・exit status・通常suite実行契約は不変。 -->
+<!-- script_refs_checked_at: 2026-07-15T21:28:00+09:00 -->
+
 **鉄則: R1実装→テスト全PASS確認→R2実装→テスト全PASS確認。一気にやるな。**
 
 ## Phase 5: 検証（14列台帳のbefore/after比較表を出力して初めて完了）
