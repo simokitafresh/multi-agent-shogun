@@ -173,9 +173,12 @@ PY
 
 @test "restart_watchers flow creates a missing cache before touching watchers" {
     rm -f "$SHOGUN_MEMORY_DB_CACHE_PATH"
+    grep -Fq 'LOCK_FILE="${RESTART_WATCHERS_LOCK_FILE:-/tmp/restart_watchers.lock}"' \
+        "$PROJECT_ROOT/scripts/restart_watchers.sh"
 
     run env \
         RESTART_WATCHERS_WARMUP_ONLY=1 \
+        RESTART_WATCHERS_LOCK_FILE="$TEST_TMPDIR/restart_watchers.lock" \
         SHOGUN_MEMORY_DB_SOURCE_PATH="$TEST_TMPDIR/source.db" \
         SHOGUN_MEMORY_DB_CACHE_PATH="$SHOGUN_MEMORY_DB_CACHE_PATH" \
         bash "$PROJECT_ROOT/scripts/restart_watchers.sh"

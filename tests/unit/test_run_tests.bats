@@ -195,7 +195,8 @@ SH
   cat >"$TMPROOT/bin/bats" <<'SH'
 #!/usr/bin/env bash
 printf '%s\n' "$(basename "$1")" >>"$BATS_START_LOG"
-sleep 0.15
+# Exit immediately so every child may finish before the scheduler reaches
+# wait -n; this reproduces the rc=127 bookkeeping race deterministically.
 printf '1..1\nok 1 pass\n'
 SH
   chmod +x "$TMPROOT/bin/bats"

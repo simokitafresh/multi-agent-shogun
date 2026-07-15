@@ -62,7 +62,7 @@ elif [[ $? -eq 2 ]]; then
 fi
 
 # 並行実行ガード（flock排他）
-LOCK_FILE="/tmp/restart_watchers.lock"
+LOCK_FILE="${RESTART_WATCHERS_LOCK_FILE:-/tmp/restart_watchers.lock}"
 exec 200>"$LOCK_FILE"
 if ! flock -n 200; then
     echo "ERROR: restart_watchers.sh is already running. Aborting."

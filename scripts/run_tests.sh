@@ -218,9 +218,25 @@ run_bats_files_parallel() {
 
     wait_for_one() {
         local finished_pid="" rc=0 pid next=()
-        wait -n -p finished_pid || rc=$?
-        if [ "$rc" -eq 127 ]; then
-            return 0
+        # A very short child may exit before wait -n is entered.  In that
+        # case bash can report 127 even though our bookkeeping still contains
+        # an unwaited PID; returning without removing it spins forever.
+        # Reap an already-exited tracked child explicitly first, then retain
+        # wait -n for the ordinary work-conserving path.
+        for pid in "${pids[@]}"; do
+            if ! kill -0 "$pid" 2>/dev/null; then
+                finished_pid="$pid"
+                wait "$finished_pid" || rc=$?
+                break
+            fi
+        done
+        if [ -z "$finished_pid" ]; then
+            wait -n -p finished_pid || rc=$?
+            if [ "$rc" -eq 127 ] || [ -z "$finished_pid" ]; then
+                finished_pid="${pids[0]}"
+                rc=0
+                wait "$finished_pid" || rc=$?
+            fi
         fi
         [ "$rc" -eq 0 ] || failed=1
         pid_rc["$finished_pid"]="$rc"
