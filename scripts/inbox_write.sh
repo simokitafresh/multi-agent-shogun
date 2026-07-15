@@ -782,7 +782,11 @@ codex_pane_has_delivery_evidence() {
     # Codex keeps the submitted prompt visible while UserPromptSubmit/PostToolUse
     # hooks run.  Waiting only for the later generic "Working" badge causes the
     # same already-arrived prompt to be submitted again.
-    printf '%s\n' "$pane_snapshot" | grep -qE "inbox[0-9]+ — .*queue/tasks/${target}\.yaml|• (Working|Ran |Waiting|Running .*([Hh]ook|UserPromptSubmit|PostToolUse))"
+    # Join visual wraps before matching the submitted prompt.  Codex may also
+    # render hook activity with either the filled or hollow bullet.
+    printf '%s\n' "$pane_snapshot" \
+        | tr '\n' ' ' \
+        | grep -qE "inbox[0-9]+ — .*queue/tasks/${target}\.yaml|[•◦] (Working|Ran |Waiting|Running .*([Hh]ook|UserPromptSubmit|PostToolUse))"
 }
 
 maybe_verify_codex_delivery() {
@@ -1381,6 +1385,18 @@ TARGET="$1"
 CONTENT="$2"
 TYPE="${3:-wake_up}"
 FROM="${4:-unknown}"
+
+# A final report review cannot simultaneously approve the report and predict
+# that its gate will block.  Reject the structured contradiction before any
+# approval lookup or mailbox persistence.  Free-form mentions of "BLOCK" do
+# not match this guard.
+if [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ]; then
+    if printf '%s\n' "$CONTENT" | grep -qiE '(^|[[:space:];,。])verdict[[:space:]]*[:=][[:space:]]*LGTM([[:space:];,。]|$)' \
+        && printf '%s\n' "$CONTENT" | grep -qiE '(^|[[:space:];,。])gate_prediction[[:space:]]*[:=][[:space:]]*BLOCK([[:space:];,。]|$)'; then
+        echo "BLOCK: contradictory report_review_result: verdict LGTM with gate_prediction BLOCK" >&2
+        exit 2
+    fi
+fi
 
 # A LGTM notification may only describe an approval already bound at review
 # time. The report path must be explicit; delayed delivery never hashes anew.

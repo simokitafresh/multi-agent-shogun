@@ -1185,6 +1185,41 @@ EOF
     [ "$(grep -c 'send-keys' "$TMUX_LOG" || true)" -eq 0 ]
 }
 
+@test "task_assigned: wrapped codex prompt and hollow hook bullet are delivery evidence without retry" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+    printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes) echo "shogun:agents.3 testninja" ;;
+  capture-pane)
+    echo "› inbox1 — タスクYAML: ${INBOX_WRITE_ROOT_OVERRIDE}/queue/tasks/"
+    echo "testninja.yaml を読んで作業開始せよ"
+    echo "◦ Running UserPromptSubmit hook"
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" testninja "タスクを読め" task_assigned karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified (prompt/working evidence)"* ]]
+    [[ "$output" != *"codex nudge retry"* ]]
+    [ "$(grep -c 'send-keys' "$TMUX_LOG" || true)" -eq 0 ]
+}
+
 @test "task_assigned: codex ninja delivery verification still warns when truly unverified" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
@@ -1264,6 +1299,26 @@ EOF
     run _run_inbox_write karo "cmd_guard verdict: LGTM report: queue/reports/ninja_report_cmd_guard.yaml" report_review_result gunshi
     [ "$status" -eq 2 ]
     [[ "$output" == *"approval marker missing, stale, or mismatched"* ]]
+}
+
+@test "report_review_result: LGTM plus structured gate_prediction BLOCK is rejected before persistence" {
+    setup_basic_test_env
+    local inbox="$TEST_TMPDIR/queue/inbox/karo.yaml"
+    [ ! -e "$inbox" ]
+    run _run_inbox_write karo "cmd_guard verdict: LGTM; gate_prediction: BLOCK; report: queue/reports/ninja_report_cmd_guard.yaml" report_review_result gunshi
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"contradictory report_review_result"* ]]
+    [ ! -e "$inbox" ]
+}
+
+@test "review notification contradiction guard ignores valid non-contradictory forms" {
+    setup_basic_test_env
+    run _run_inbox_write karo "verdict: FAIL; gate_prediction: BLOCK" report_review_result gunshi
+    [ "$status" -eq 0 ]
+    run _run_inbox_write karo "draft review verdict: APPROVE; gate_prediction: BLOCK" review_result gunshi
+    [ "$status" -eq 0 ]
+    run _run_inbox_write karo "説明文ではBLOCK文字列を扱うが gate_prediction: CLEAR" report_review_result gunshi
+    [ "$status" -eq 0 ]
 }
 
 @test "report_review_result: FAIL does not update placeholder or run cmd_complete_gate" {
