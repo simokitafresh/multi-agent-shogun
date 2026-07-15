@@ -1128,4 +1128,6 @@ WHY=台帳鮮度回復+aliases品質向上、WHAT=対象スクリプトのCoDD�
 - [[cmd-complete-gate-test-speed]] — cmd_complete_gate Unitのhelper抽出を単一走査へ集約し、27 testの書込み隔離と判定契約を維持した実測記録として参照する。
 - [[context-source-commit-set-test-speed]] — Git repository fixtureをsuite単位で生成して各testへ隔離copyする高速化と、5 testの期待値不変を参照する。
 - [[deploy-task-ac-handling-test-speed]] — deploy task AC検証のfixture root漏洩を局所化し、後続testのパス契約を保った速度修行記録を参照する。
+- [[lord-conversation-test-speed]] — lord conversation Unitのcase単位mktemp forkをBATS_TEST_TMPDIR再利用へ置換し、21/21 PASS維持で10.553s→6.675sの実測記録を参照する。
+- [[test-db-capability-launcher-test-speed]] — DB capability launcher Unitの速度改善候補と実測記録を参照する。
 - → [[gunshi_idle_training_rethink_nazenaze_20260516]] 修行再考のなぜなぜ: 修行設計の構造的問題
