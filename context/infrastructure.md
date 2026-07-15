@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_infrastructure_context_freshness_20260715 -->
-<!-- source_commit:dabd3100c reason:durable-three-layer-chain-and-live-hook-self-sync-reviewed evidence:commits-f10a41c28-dabd3100c-tests-47-of-47 -->
+<!-- source_commit:24012543c0ceb184fdef17c877c381a73d9c9aca reason:GA-264-root-fallback-details-and-infra-contracts-reviewed evidence:boundary-dabd3100c-to-24012543c-bats-49-of-49 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
