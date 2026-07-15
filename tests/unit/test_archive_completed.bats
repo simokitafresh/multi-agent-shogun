@@ -17,7 +17,7 @@ setup_file() {
     command -v awk >/dev/null 2>&1 || return 1
     command -v flock >/dev/null 2>&1 || return 1
 
-    mkdir -p "$TEST_TEMPLATE/scripts/lib" "$TEST_TEMPLATE/queue/reports" "$TEST_TEMPLATE/context"
+    mkdir -p "$TEST_TEMPLATE/scripts/lib" "$TEST_TEMPLATE/queue/reports" "$TEST_TEMPLATE/context" "$TEST_TEMPLATE/config"
     ln -s "$SRC_ARCHIVE_SCRIPT" "$TEST_TEMPLATE/scripts/archive_completed.sh"
     ln -s "$SRC_FIELD_GET_SCRIPT" "$TEST_TEMPLATE/scripts/lib/field_get.sh"
     ln -s "$SRC_LOCK_PATH_SCRIPT" "$TEST_TEMPLATE/scripts/lib/lock_path.sh"
@@ -28,6 +28,13 @@ setup_file() {
 exit 0
 EOF
     chmod +x "$TEST_TEMPLATE/scripts/ntfy.sh"
+    cat > "$TEST_TEMPLATE/config/dashboard_template.md" <<'EOF'
+# Dashboard
+<!-- DASHBOARD_AUTO_START -->
+<!-- DASHBOARD_AUTO_END -->
+## 最新更新
+EOF
+    cp "$TEST_TEMPLATE/config/dashboard_template.md" "$TEST_TEMPLATE/dashboard.md"
 }
 
 setup() {
@@ -787,7 +794,7 @@ YAML
     [ -f "$TEST_PROJECT/queue/reports/saizo_report_cmd_999.yaml" ]
 }
 
-@test "dashboard karo archive restores empty dashboard from template before latest-update pruning" {
+@test "dashboard karo archive skips empty dashboard without publishing a replacement" {
     mkdir -p "$TEST_PROJECT/config"
     cat > "$TEST_PROJECT/config/dashboard_template.md" <<'EOF'
 # Dashboard
@@ -800,7 +807,6 @@ EOF
 
     run bash "$TEST_PROJECT/scripts/archive_completed.sh"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"WARN: DATA_QUALITY dashboard.md missing '## 最新更新'; restored empty dashboard"* ]]
-    grep -q '<!-- DASHBOARD_AUTO_START -->' "$TEST_PROJECT/dashboard.md"
-    grep -q '^## 最新更新' "$TEST_PROJECT/dashboard.md"
+    [[ "$output" == *"WARN: DATA_QUALITY karo_section '## 最新更新' not found; archive skipped"* ]]
+    [ ! -s "$TEST_PROJECT/dashboard.md" ]
 }

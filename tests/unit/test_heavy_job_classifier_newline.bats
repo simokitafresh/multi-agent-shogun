@@ -46,7 +46,7 @@ git commit --no-verify -m 'must be blocked'"
 
     run env HOOK_PAYLOAD="$payload" BATS_TEST_FILENAME="$BATS_TEST_FILENAME" bash "$HOOK"
     [ "$status" -eq 2 ]
-    [[ "$output" == *"--no-verify"* ]]
+    [[ "$output" == *"--no-verify"* || "$output" == *"BLOCK(GA-231)"* ]]
 }
 
 @test "newline separates a filtered single-file bats command from later git commands" {

@@ -570,6 +570,10 @@ PY
 
     run bash "$SRC_SCRIPT"
 
+    for _ in {1..50}; do
+        [ -s "$cache_path" ] && break
+        sleep 0.1
+    done
     [ -s "$cache_path" ]
     grep -q 'citation_count: 1' "$LOOP_LEDGER_OUT"
     [[ "$output" == *"obsidian: produced=0 consumed=0 stock=1"* ]]

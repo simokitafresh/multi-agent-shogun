@@ -782,13 +782,14 @@ PY
 }
 
 @test "wiring: cmd_complete_gate, lesson_write, and log_terminal_input call semantic_index_update" {
-    grep -q 'semantic_index_update.sh.*cmd_complete' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    grep -q 'semantic_causal_post_clear.sh' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    grep -q 'semantic_index_update.sh' "$PROJECT_ROOT/scripts/semantic_causal_post_clear.sh"
     grep -q 'CMD_YAML_FILE_ENV' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     grep -q '"origin": cmd_data.get("origin"' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     grep -q '"depends_on": cmd_data.get("depends_on"' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
     grep -q 'semantic_index_update.sh.*lesson' "$PROJECT_ROOT/scripts/lesson_write.sh"
     grep -q 'semantic_index_update.sh.*discussion' "$PROJECT_ROOT/scripts/log_terminal_input.sh"
-    grep -q 'semantic_map_generate.sh' "$PROJECT_ROOT/scripts/cmd_complete_gate.sh"
+    grep -q 'semantic_map_generate.sh' "$PROJECT_ROOT/scripts/semantic_causal_post_clear.sh"
     grep -q 'semantic_map_generate.sh' "$PROJECT_ROOT/scripts/lesson_write.sh"
 }
 
