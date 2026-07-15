@@ -403,19 +403,23 @@ function shell_escape(s,    out) {
 }
 BEGIN {
     nf = split(fields_str, farr, "|")
-    for (i = 1; i <= nf; i++) { found[i] = 0; vals[i] = "" }
+    for (i = 1; i <= nf; i++) { found[i] = 0; min_indent[i] = -1; vals[i] = "" }
 }
 {
     for (i = 1; i <= nf; i++) {
-        if (!found[i]) {
-            pat = "^[[:space:]]*" farr[i] ":[[:space:]]+"
-            if ($0 ~ pat) {
+        pat = "^[[:space:]]*" farr[i] ":[[:space:]]+"
+        if ($0 ~ pat) {
+            match($0, /[^ \t]/)
+            indent = (RSTART > 0) ? RSTART - 1 : length($0)
+            # Match field_get(): prefer the shallowest occurrence instead of
+            # freezing the first nested key (e.g. related_lessons[].title).
+            if (!found[i] || indent < min_indent[i]) {
                 v = $0; sub(pat, "", v); v = trim(v)
                 if (substr(v, 1, 1) != "\"" && substr(v, 1, 1) != "\047") {
                     sub(/[[:space:]]+#.*$/, "", v)
                 }
                 v = trim(unquote(v))
-                vals[i] = v; found[i] = 1
+                vals[i] = v; found[i] = 1; min_indent[i] = indent
             }
         }
     }

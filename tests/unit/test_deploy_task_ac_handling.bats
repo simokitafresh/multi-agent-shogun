@@ -634,7 +634,7 @@ for key in [
 ]:
     assert key in data, key
 assert isinstance(data["result"], dict)
-assert data["result"].get("summary") == "report template structure — 実施・検証結果を本報告へ記録"
+assert data["result"].get("summary") == "cmd_2528 template completeness — 実施・検証結果を本報告へ記録"
 assert list(data["binary_checks"].keys()) == ["AC1", "AC2", "AC3", "commit"], data["binary_checks"].keys()
 print("OK")
 EOF
