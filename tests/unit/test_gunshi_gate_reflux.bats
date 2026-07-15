@@ -34,6 +34,7 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" == *"2 entries updated"* ]]
     [ "$(grep -c 'gate_result: CLEAR' "$REVIEW_LOG")" -eq 2 ]
+    [ "$(grep -c 'gate_synced_at:' "$REVIEW_LOG")" -eq 2 ]
     ! grep -q 'gate_result: null' "$REVIEW_LOG"
 }
 
@@ -106,4 +107,47 @@ YAML
     [ "$status" -eq 0 ]
     [ "$(grep -c 'gate_result: CLEAR' "$REVIEW_LOG")" -eq 2 ]
     ! grep -q 'gate_result: null' "$REVIEW_LOG"
+}
+
+@test "atomic replacement remains inside the review-log flock critical section" {
+    run python3 - "$REFLUX_SCRIPT" <<'PY'
+import sys
+text = open(sys.argv[1], encoding="utf-8").read()
+start = text.index("(\n    flock -w 10 9")
+end = text.index(') 9>"$LOCK_FILE"', start)
+move = text.index('mv "$TMPFILE" "$LOG_FILE"', start)
+assert start < move < end
+assert 'mv "$TMPFILE" "$LOG_FILE"' not in text[end:]
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "reflux preserves gate sync timestamp evidence for every matching entry" {
+    cat > "$REVIEW_LOG" <<'YAML'
+- cmd_id: cmd_sync
+  review_type: draft
+  gate_result: null
+- cmd_id: cmd_sync
+  review_type: report
+  gate_result: null
+YAML
+
+    run env GUNSHI_REVIEW_LOG="$REVIEW_LOG" bash "$REFLUX_SCRIPT" cmd_sync CLEAR
+    [ "$status" -eq 0 ]
+    [ "$(grep -c 'gate_synced_at:' "$REVIEW_LOG")" -eq 2 ]
+    ! grep 'gate_synced_at:' "$REVIEW_LOG" | grep -vqE '[0-9]{4}-[0-9]{2}-[0-9]{2}T'
+}
+
+@test "different final result keeps its original sync timestamp" {
+    cat > "$REVIEW_LOG" <<'YAML'
+- cmd_id: cmd_final
+  review_type: report
+  gate_result: BLOCK
+  gate_synced_at: 2026-01-01T00:00:00+09:00
+YAML
+
+    run env GUNSHI_REVIEW_LOG="$REVIEW_LOG" bash "$REFLUX_SCRIPT" cmd_final CLEAR
+    [ "$status" -eq 0 ]
+    grep -q 'gate_result: BLOCK' "$REVIEW_LOG"
+    grep -q 'gate_synced_at: 2026-01-01T00:00:00+09:00' "$REVIEW_LOG"
 }

@@ -43,8 +43,9 @@ gate CLEAR/BLOCK通知をreview_logに同期し、軍師のgate予測精度を�
 
 ### Step 1: review_log更新
 ```bash
-bash scripts/lib/yaml_field_set.sh logs/gunshi_review_log.yaml "<cmd_id>" gate_result "<gate_result>"
-bash scripts/lib/yaml_field_set.sh logs/gunshi_review_log.yaml "<cmd_id>" gate_synced_at "<ISO 8601>"
+# gunshi_gate_reflux.shで全エントリ(draft+report)のgate_result+gate_synced_atを一括更新する
+# yaml_field_set.shはfirst-matchのみ更新のため、同一cmd_idに2エントリある場合にreportが未同期になる
+bash scripts/gunshi_gate_reflux.sh "<cmd_id>" "<gate_result>"
 ```
 
 ### Step 2: accuracy計算

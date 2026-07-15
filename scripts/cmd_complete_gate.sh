@@ -8000,88 +8000,36 @@ print(json.dumps({
 }, ensure_ascii=False))
 PY
         ); then
-            (bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" cmd_complete "$_semantic_payload" >/dev/null 2>&1 || true) &
-            echo "  queued (async)"
+            _semantic_payload_file="$GATES_DIR/semantic_causal_payload.json"
+            printf '%s\n' "$_semantic_payload" > "${_semantic_payload_file}.tmp.$$"
+            mv "${_semantic_payload_file}.tmp.$$" "$_semantic_payload_file"
+            echo "  payload persisted for durable worker"
         else
             echo "  [WARN] payload build failed (skip)"
         fi
     else
         echo "  [INFO] semantic_index_update.sh not found (skip)"
     fi
-    if [ -f "$SCRIPT_DIR/scripts/semantic_map_generate.sh" ]; then
-        (bash "$SCRIPT_DIR/scripts/semantic_map_generate.sh" >/dev/null 2>&1 || true) &
-        echo "  semantic-map regenerate: queued (async)"
-    else
-        echo "  [INFO] semantic_map_generate.sh not found (skip)"
-    fi
+    echo "  semantic-map regeneration follows index update inside durable worker"
     run_report_memory_semantic_scan || echo "  [WARN] report memory semantic scan failed (non-blocking)"
 
     # ─── Semantic causal traverse（GATE CLEAR時 パルス伝達, cmd_3439） ───
-    # 全体を非同期化: traverse+テスト実行+掲示板はGATE判定に無関係(CLEAR確定後)
-    # 結果はcmd_complete_gate_async.logに記録。FAILがあれば掲示板通知
+    # Long-running affected-node tests are detached, but never best-effort:
+    # the worker owns a per-cmd lock and persists PASS/WARN/FAIL evidence.
     echo ""
     echo "Semantic causal traverse (GATE CLEAR):"
-    if [ -f "$SCRIPT_DIR/scripts/semantic_causal_traverse.sh" ]; then
-        (
-            _traverse_output=$(timeout 20 bash "$SCRIPT_DIR/scripts/semantic_causal_traverse.sh" \
-                --cmd-id "$CMD_ID" \
-                --depth 3 \
-                --format json 2>/dev/null || true)
-            [ -z "$_traverse_output" ] && exit 0
-            _traverse_count=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total',0))" 2>/dev/null || echo "0")
-            _traverse_starts=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(','.join(d.get('start_concepts',[])))" 2>/dev/null || echo "")
-            echo "$(date +%Y-%m-%dT%H:%M:%S) [${CMD_ID}] semantic_traverse: start=[${_traverse_starts}] affected=${_traverse_count}" >> "$LOG_DIR/cmd_complete_gate_async.log"
-            # テスト実行
-            _ts_list=$(echo "$_traverse_output" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-scripts = []
-for node in d.get('affected_nodes', []):
-    for ts in node.get('test_scripts', []):
-        if ts not in scripts:
-            scripts.append(ts)
-print('\n'.join(scripts))
-" 2>/dev/null || echo "")
-            if [ -n "$_ts_list" ]; then
-                _ts_pass=0
-                _ts_fail=0
-                _ts_failures=""
-                while IFS= read -r _ts; do
-                    [ -z "$_ts" ] && continue
-                    _ts_path="$SCRIPT_DIR/$_ts"
-                    [ -f "$_ts_path" ] || continue
-                    if [[ "$_ts" == *.bats ]]; then
-                        if timeout 60 bats "$_ts_path" >/dev/null 2>&1; then
-                            _ts_pass=$((_ts_pass + 1))
-                        else
-                            _ts_fail=$((_ts_fail + 1))
-                            _ts_failures="${_ts_failures} ${_ts}"
-                        fi
-                    else
-                        if timeout 60 bash "$_ts_path" >/dev/null 2>&1; then
-                            _ts_pass=$((_ts_pass + 1))
-                        else
-                            _ts_fail=$((_ts_fail + 1))
-                            _ts_failures="${_ts_failures} ${_ts}"
-                        fi
-                    fi
-                done <<< "$_ts_list"
-                echo "$(date +%Y-%m-%dT%H:%M:%S) [${CMD_ID}] semantic_traverse test_scripts: PASS=${_ts_pass} FAIL=${_ts_fail}" >> "$LOG_DIR/cmd_complete_gate_async.log"
-                if [ "${_ts_fail:-0}" -gt 0 ]; then
-                    BULLETIN_NOTIFY=karo,gunshi timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" \
-                        "system" "[WARN] ${CMD_ID} semantic_traverse: ${_ts_fail} test(s) FAILED:${_ts_failures}" false info >/dev/null 2>&1 || true
-                fi
-            fi
-            # 掲示板通知
-            if [ "${_traverse_count:-0}" -gt 0 ] && [ -n "${_traverse_starts:-}" ]; then
-                _traverse_summary="因果トラバース ${CMD_ID}: 起点[${_traverse_starts}] → 影響${_traverse_count}ノード(depth=3)"
-                BULLETIN_NOTIFY=karo,gunshi timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" \
-                    "$_traverse_summary" false >/dev/null 2>&1 || true
-            fi
-        ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
-        echo "  queued (async)"
+    if [ -x "$SCRIPT_DIR/scripts/semantic_causal_post_clear.sh" ]; then
+        _semantic_pending="$GATES_DIR/semantic_causal_audit.pending"
+        printf 'queued_at=%s\nlauncher_pid=%s\n' "$(date -Iseconds)" "$$" > "${_semantic_pending}.tmp.$$"
+        mv "${_semantic_pending}.tmp.$$" "$_semantic_pending"
+        # nohup alone only ignores SIGHUP; tmux respawn-pane -k terminates the
+        # pane process group.  setsid detaches the durable worker from it.
+        nohup setsid env SHOGUN_HEAVY_JOB_LOCK_HELD=0 \
+            bash "$SCRIPT_DIR/scripts/semantic_causal_post_clear.sh" "$CMD_ID" \
+            >/dev/null 2>&1 </dev/null &
+        echo "  queued (durable async; result=$GATES_DIR/semantic_causal_audit.result)"
     else
-        echo "  SKIP (semantic_causal_traverse.sh not found)"
+        echo "  [WARN] semantic_causal_post_clear.sh not found"
     fi
 
     echo ""
@@ -8195,19 +8143,21 @@ print('\n'.join(scripts))
     (bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once >/dev/null 2>&1 || true) &
     echo "  gist_sync: queued (async)"
 
-    # ntfy_cmd / shogun / karo はCLEAR直後に送信済み。ここでは未送信時だけ補完。
-    send_clear_notifications_once "$CMD_ID" "GATE CLEAR"
-
-    # GATE結果通知を出す前にreview_logへ同期し、/gate-sync手動依存を残さない。
-    # 非同期化: refluxはGATE判定に無関係。review_log更新はyaml_field_set.shのflockで安全
+    # GATE結果通知より先にreview_logへ同期し、/gate-sync手動依存を残さない。
     echo ""
     echo "Gunshi gate_result reflux (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
-        (bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
-        echo "  gunshi_gate_reflux: queued (async)"
+        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1; then
+            echo "  gunshi_gate_reflux: OK"
+        else
+            echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)"
+        fi
     else
         echo "  SKIP (gunshi_gate_reflux.sh not found)"
     fi
+
+    # ntfy_cmd / shogun / karo は未送信時だけ補完。
+    send_clear_notifications_once "$CMD_ID" "GATE CLEAR"
 
     # ─── 掲示板自動投稿（GATE CLEAR時、将軍が/clear後に即把握できるよう） ───
     echo ""
@@ -8637,12 +8587,11 @@ PYEOF
         echo "  OK: no pending lesson_candidates"
     fi
 
-    # ─── Workaround率表示（情報のみ、BLOCKしない。非同期化でGATE速度改善） ───
+    # ─── Workaround率表示（情報のみ、BLOCKしない） ───
     echo ""
     echo "Workaround rate (GATE CLEAR):"
     if [ -x "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" ]; then
-        (bash "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" --last 10 >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
-        echo "  queued (async)"
+        bash "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" --last 10 2>&1 || echo "  [INFO] gate_workaround_rate.sh failed (non-blocking)"
     else
         echo "  SKIP (gate_workaround_rate.sh not found)"
     fi
@@ -8724,8 +8673,11 @@ PYEOF
     echo ""
     echo "Gunshi gate_result reflux (post-GATE CLEAR 2nd run):"
     if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
-        (bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
-        echo "  gunshi_gate_reflux: queued (async)"
+        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1; then
+            echo "  gunshi_gate_reflux: OK"
+        else
+            echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)"
+        fi
     else
         echo "  SKIP (gunshi_gate_reflux.sh not found)"
     fi
