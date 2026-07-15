@@ -2063,3 +2063,23 @@ entries:
   supplementary_cmds: 0
   source: "cmd_complete_gate"
   timestamp: "2026-07-15T13:10:47Z"
+- cmd_id: "cmd_3964"
+  ac_count: 3
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "manual_backfill"
+  timestamp: "2026-07-15T12:08:16Z"
+- cmd_id: "cmd_3956"
+  ac_count: 2
+  gate_result: "CLEAR"
+  karo_rework: "no"
+  gunshi_verdict: "LGTM"
+  ninja_blockers: 0
+  project: "infra"
+  supplementary_cmds: 0
+  source: "manual_backfill"
+  timestamp: "2026-07-15T11:00:00Z"
