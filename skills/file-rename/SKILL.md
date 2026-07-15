@@ -6,6 +6,10 @@ description: |
   TRIGGER: /file-rename、ファイル名整理、Driveリネーム、PDF/画像/ドキュメントの内容確認後リネーム、実体を見て名前を付ける作業
   DO NOT TRIGGER: 内容確認不要の単純mv、コードファイルの一括rename/refactor、Drive移動のみ、ファイル削除、ファイル内容の編集、OCR精度改善単独
 user-invocable: true
+allowed-tools:
+  - Bash
+  - Read
+  - Glob
 ---
 
 # File Rename

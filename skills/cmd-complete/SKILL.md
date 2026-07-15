@@ -10,6 +10,9 @@ description: |
   TRIGGER: /cmd-complete、GATE CLEAR後処理、cmd完了処理
   DO NOT TRIGGER: dashboard単独更新（→/dashboard-update）、lesson-sort（→将軍スキル）、cmd起票（→将軍）
 quality_metric: "当該スキルで完了処理したcmdのcmd_complete_gate.sh初回CLEAR率（logs/gate_metrics.logでCLEAR/BLOCKを集計）"
+allowed-tools:
+  - Bash
+  - Read
 ---
 
 # /cmd-complete — cmd完了処理スキル

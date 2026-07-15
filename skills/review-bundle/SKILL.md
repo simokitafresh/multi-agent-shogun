@@ -8,6 +8,9 @@ description: |
   precheck結果→報告YAML→判定→バンドルYAML構成→review_log追記→inbox_writeの4ステップ連鎖を自動化。
   TRIGGER: /review-bundle、レビュー完了後処理、SG7バンドル、レビュー記録
   DO NOT TRIGGER: レビュー判定そのもの（→手動）、gate_sync（→/gate-sync）、idle分析永続化（→/idle-persist）
+allowed-tools:
+  - Bash
+  - Read
 ---
 
 <!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->

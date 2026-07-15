@@ -7,6 +7,13 @@ description: |
   TRIGGER: /codd-fix、codd fix、事象修正、現象修正、PHENOMENON修正
   DO NOT TRIGGER: 設計書の新規生成のみ（→/codd）、性能リファクタ（→/codd-refactor）、テスト実行のみ、運用YAMLの自動修復
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにcodd-fix手順起因のworkaroundが記録されない割合）"
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
 ---
 
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->

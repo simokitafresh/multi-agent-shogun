@@ -8,6 +8,10 @@ description: |
   TRIGGER: /idle-persist、idle分析永続化、分析結果保存、自走分析記録
   DO NOT TRIGGER: レビュー完了処理（→/review-bundle）、gate同期（→/gate-sync）
 quality_metric: "当該スキル利用後の軍師review精度（logs/gunshi_review_log.yamlで当該分析由来レビューのgate_prediction==gate_resultとなった割合）"
+allowed-tools:
+  - Bash
+  - Read
+  - Write
 ---
 
 <!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->

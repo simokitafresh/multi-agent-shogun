@@ -8,6 +8,9 @@ description: |
   verdictはgate_report_format.shが全bc yesならPASS、1つでもnoならFAILへ自動導出・上書きするため、手動verdict記入は不要。
   TRIGGER: /verdict-check、binary_checks確認、bc判定、bc未記入確認
   DO NOT TRIGGER: 報告YAML全体作成（→/report-write）、commit（→/ninja-commit）
+allowed-tools:
+  - Bash
+  - Read
 ---
 
 <!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->

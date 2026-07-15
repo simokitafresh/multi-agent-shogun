@@ -28,7 +28,12 @@ import sys
 
 skills_dir = os.environ["SKILLS_DIR_ENV"]
 
-what_re = re.compile(r"(What|何をする|スキル|する。)", re.IGNORECASE)
+what_re = re.compile(
+    r"(What|何をする|スキル|する。|"
+    r"tool(?:\s+for)?|workflow|guide|"
+    r"実行|更新|生成|保存|整理|同期|検証|検査|修復|配備|登録|切り替)",
+    re.IGNORECASE,
+)
 when_re = re.compile(r"(When|TRIGGER|いつ使う|時に使用|時に実行|で使う)", re.IGNORECASE)
 not_when_re = re.compile(r"(NOT When|NOT TRIGGER|DO NOT TRIGGER|使用禁止|使わない|発火しない|ではない)", re.IGNORECASE)
 top_key_re = re.compile(r"^[A-Za-z_-]+:")
@@ -66,6 +71,9 @@ def extract_description(frontmatter: str) -> str:
             for follow in lines[idx + 1:]:
                 if top_key_re.match(follow):
                     break
+                if follow == "":
+                    chunks.append("")
+                    continue
                 if follow[:1].isspace():
                     chunks.append(follow.lstrip())
                     continue
@@ -147,7 +155,11 @@ for skill_name, skill_file in entries:
     else:
         print(f"  OK: (3) {word_count}語")
 
-    if "<" in frontmatter or ">" in frontmatter:
+    # script reference freshness markers are HTML comments by contract.  They
+    # may live in legacy frontmatter, but their delimiters are not user-facing
+    # angle-bracket placeholders and must not create a false FAIL.
+    policy_frontmatter = re.sub(r"<!--.*?-->", "", frontmatter, flags=re.DOTALL)
+    if "<" in policy_frontmatter or ">" in policy_frontmatter:
         print("  FAIL: (4) フロントマターに < > を検出")
         has_fail = True
         skill_ok = False

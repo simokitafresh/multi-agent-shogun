@@ -10,6 +10,9 @@ description: |
   全フィールドをreport_field_set.sh経由で書き込み、gate_report_format.shで事前検証する。
   TRIGGER: /report-write、報告YAML作成、報告記入、報告フィールド記入、FILL_THIS修正
   DO NOT TRIGGER: 報告YAMLの読み取り（→Read tool直接）、verdict判定（→/verdict-check）、commit（→/ninja-commit）
+allowed-tools:
+  - Bash
+  - Read
 ---
 
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->

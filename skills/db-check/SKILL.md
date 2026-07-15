@@ -9,6 +9,9 @@ description: |
   DO NOT TRIGGER: DM-Signal以外の本番画面/スクショ/画面確認、DB設計変更（→実装cmd）、GS実行（→run_077）、fullrecalculate（→API直接）
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにDB確認・パリティ手順起因のworkaroundが記録されない割合）"
 allowed_projects: [dm-signal]
+allowed-tools:
+  - Bash
+  - Read
 ---
 
 <!-- script_refs_checked_at: 2026-07-15T03:10:00+09:00 -->

@@ -58,6 +58,9 @@ def extract_description(frontmatter):
             for follow in lines[idx + 1:]:
                 if top_key_re.match(follow):
                     break
+                if follow == "":
+                    chunks.append("")
+                    continue
                 if follow[:1].isspace():
                     chunks.append(follow.lstrip())
                 else:

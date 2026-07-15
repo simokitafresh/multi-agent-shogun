@@ -1,3 +1,14 @@
+---
+name: repo-clean
+description: |
+  【将軍専用】全プロジェクトのgit状態を検査し、内容確認後に安全な修復を行う。
+  TRIGGER: /repo-clean、リポジトリ掃除、未コミット確認、全PJクリーン
+  DO NOT TRIGGER: 個別リポジトリのgit操作、commit（→/ninja-commit）
+allowed-tools:
+  - Bash
+  - Read
+---
+
 # /repo-clean — 全リポジトリクリーンネス検査+修復
 
 【将軍専用】家老・忍者は使用禁止。将軍以外が呼んだ場合は即座に中断せよ。

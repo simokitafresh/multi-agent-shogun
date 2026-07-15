@@ -8,6 +8,13 @@ description: |
   DO NOT TRIGGER: 既存スキルの実行、単発タスクの実装
 argument-hint: "[skill-name]"
 user-invocable: true
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Bash
 ---
 
 # Skill Creator - スキル自動生成

@@ -10,6 +10,9 @@ description: |
   DO NOT TRIGGER: GS実行（→run_077直接実行）、偵察（→偵察cmd）、fullrecalculate（→API直接実行）
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにPF登録順序・パリティ確認起因のworkaroundが記録されない割合）"
 allowed_projects: [dm-signal]
+allowed-tools:
+  - Bash
+  - Read
 ---
 
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->

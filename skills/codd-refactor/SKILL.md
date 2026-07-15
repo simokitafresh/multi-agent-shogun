@@ -10,6 +10,13 @@ description: |
   新規スクリプト作成(CoDDは既存コードのリファクタ向き)、DM-Signal Python(別ワークフロー)
 quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにCoDDリファクタ手順起因のworkaroundが記録されない割合）"
 argument-hint: "[target_script or spec_path]"
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
 ---
 
 # CoDD Refactor Skill
