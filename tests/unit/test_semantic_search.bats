@@ -99,6 +99,12 @@ setup() {
     mkdir -p "$TEST_TMPDIR/docs/semantic-index"
     export SEMANTIC_INDEX_PATH="$TEST_TMPDIR/docs/semantic-index/index.md"
     cp "$SEMANTIC_MASTER_INDEX" "$SEMANTIC_INDEX_PATH"
+    export SEMANTIC_SOURCE_MAP_PATH="$TEST_TMPDIR/context/semantic-map.md"
+    mkdir -p "$TEST_TMPDIR/context"
+    cat > "$SEMANTIC_SOURCE_MAP_PATH" <<'EOF'
+| 概念 | 別名 | 主要ファイル | 外部URL | 教訓 | skills |
+|------|------|------------|---------|------|--------|
+EOF
     export SEMANTIC_CACHE_DIR="$TEST_TMPDIR/cache"
     export SEMANTIC_INDEX_CACHE_DIR="$SEMANTIC_SHARED_INDEX_CACHE_DIR"
     export SEMANTIC_DISABLE_MEMORY_DB_CACHE=1
@@ -108,6 +114,35 @@ setup() {
     export SEMANTIC_DISABLE_CAUSAL=1
     unset SEMANTIC_MEMORY_DB_PATH
     export SEMANTIC_DISABLE_MEMORY_DB=1
+}
+
+@test "NO_MATCH in derived index falls back to source map concept unit" {
+    cat >> "$SEMANTIC_SOURCE_MAP_PATH" <<'EOF'
+| 世代逆転防止 | generation_reversal, stale proof ordering | `scripts/lib/memory_db_cache.sh` | なし | `L1144` | なし |
+EOF
+    export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "generation_reversal"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"## 世代逆転防止 — 世代逆転防止"* ]]
+    [[ "$output" == *"matched: generation_reversal"* ]]
+    [[ "$output" == *"resources:"* ]]
+    [[ "$output" == *"context/semantic-map.md"* ]]
+    [[ "$output" != *"should-not-run"* ]]
+    [ "$(grep -c '^## 世代逆転防止' <<< "$output")" -eq 1 ]
+}
+
+@test "source map fallback ignores partial text in non-concept columns" {
+    cat >> "$SEMANTIC_SOURCE_MAP_PATH" <<'EOF'
+| 別概念 | unrelated alias | `docs/generation_reversal.md` | なし | generation_reversal lesson | なし |
+EOF
+
+    run bash "$PROJECT_ROOT/scripts/semantic_search.sh" "generation_reversal"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"NO_MATCH: generation_reversal"* ]]
+    [[ "$output" != *"## 別概念"* ]]
 }
 
 teardown() {

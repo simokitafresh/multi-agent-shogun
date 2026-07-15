@@ -189,6 +189,77 @@ def parse_index(index_path: Path) -> list:
     return concepts
 
 
+def parse_source_map(source_map_path: Path) -> list:
+    """Parse concept rows from context/semantic-map.md.
+
+    The source map is a compact Markdown table rather than the section-based
+    derived index.  Only the concept and aliases columns participate in
+    matching so references in lesson/resource cells cannot become false hits.
+    """
+    concepts = []
+    for raw_line in source_map_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line.startswith("|") or not line.endswith("|"):
+            continue
+        cells = [cell.strip() for cell in line[1:-1].split("|")]
+        if len(cells) < 2 or cells[0] in {"概念", "------"}:
+            continue
+        label, aliases_cell = cells[:2]
+        if not label:
+            continue
+        concepts.append(
+            {
+                "id": label,
+                "label": label,
+                "aliases": [
+                    item.strip() for item in aliases_cell.split(",") if item.strip()
+                ],
+                "skills": [],
+                "related_concepts": [],
+                "related_lessons": [],
+                "resources": [("file", "`context/semantic-map.md`")],
+            }
+        )
+    return concepts
+
+
+def first_layer_matches(concepts: list, query: str) -> list:
+    """Return concept-unit matches using the first-layer matching contract."""
+    query_fold = query.casefold()
+    matches = []
+    for concept in concepts:
+        terms = [concept["id"], concept["label"], *concept["aliases"]]
+        min_ratio = 0.3 if any('\u3000' <= c <= '\u9fff' or '\u30a0' <= c <= '\u30ff' for c in query) else 0.5
+        matched_terms = [
+            term
+            for term in terms
+            if (
+                not is_single_generic_word_match(query_fold, term.casefold())
+                and (
+                    term.casefold() in query_fold
+                    or (query_fold in term.casefold() and len(query_fold) >= len(term.casefold()) * min_ratio)
+                    or query_words_all_in_term(query_fold, term.casefold())
+                )
+            )
+        ]
+        if matched_terms:
+            matches.append((concept, matched_terms))
+    return matches
+
+
+def print_first_layer_matches(matches: list, concepts: list) -> None:
+    matches.sort(key=lambda item: (min(len(term) for term in item[1]), item[0]["id"]))
+    for idx, (concept, matched_terms) in enumerate(matches, 1):
+        if idx > 1:
+            print("")
+        print(f"## {concept['id']} — {concept['label']}")
+        print(f"matched: {', '.join(matched_terms)}")
+        print(f"aliases: {', '.join(concept['aliases'])}")
+        print_resources(concept)
+        if len(matches) == 1:
+            print_related_concepts(concept, concepts)
+
+
 def load_concepts(index_path: Path) -> list:
     """Load concepts from JSON cache if fresh, otherwise parse and rebuild cache."""
     cache_dir = os.environ.get("SEMANTIC_INDEX_CACHE_DIR")
@@ -917,6 +988,15 @@ def main() -> None:
 
     concepts = load_concepts(index_path)
 
+    if mode == "source-map-first-layer":
+        source_map_path = Path(mode_arg)
+        source_concepts = parse_source_map(source_map_path)
+        matches = first_layer_matches(source_concepts, query)
+        if not matches:
+            sys.exit(1)
+        print_first_layer_matches(matches, source_concepts)
+        return
+
     if mode == "first-layer":
         no_match_mode = mode_arg
         query_fold = query.casefold()
@@ -924,46 +1004,14 @@ def main() -> None:
             if no_match_mode != "silent":
                 print(f"NO_MATCH: {query}")
             sys.exit(1)
-        matches = []
-        for concept in concepts:
-            terms = [concept["id"], concept["label"], *concept["aliases"]]
-            min_ratio = 0.3 if any('\u3000' <= c <= '\u9fff' or '\u30a0' <= c <= '\u30ff' for c in query) else 0.5
-            matched_terms = [
-                term
-                for term in terms
-                if (
-                    not is_single_generic_word_match(query_fold, term.casefold())
-                    and (
-                        term.casefold() in query_fold
-                        or (query_fold in term.casefold() and len(query_fold) >= len(term.casefold()) * min_ratio)
-                        or query_words_all_in_term(query_fold, term.casefold())
-                    )
-                )
-            ]
-            if matched_terms:
-                matches.append((concept, matched_terms))
+        matches = first_layer_matches(concepts, query)
 
         if not matches:
             if no_match_mode != "silent":
                 print(f"NO_MATCH: {query}")
             sys.exit(1)
 
-        matches.sort(
-            key=lambda item: (
-                min(len(term) for term in item[1]),
-                item[0]["id"],
-            )
-        )
-
-        for idx, (concept, matched_terms) in enumerate(matches, 1):
-            if idx > 1:
-                print("")
-            print(f"## {concept['id']} — {concept['label']}")
-            print(f"matched: {', '.join(matched_terms)}")
-            print(f"aliases: {', '.join(concept['aliases'])}")
-            print_resources(concept)
-            if len(matches) == 1:
-                print_related_concepts(concept, concepts)
+        print_first_layer_matches(matches, concepts)
         if os.environ.get("SEMANTIC_DISABLE_MEMORY_DB", "0") != "1":
             db_path = Path(os.environ.get("SEMANTIC_MEMORY_DB_PATH", "data/multi_agent_shogun_memory.db"))
             expansion_limit = int(os.environ.get("SEMANTIC_CONCEPT_EXPANSION_LIMIT", "20"))

@@ -16,6 +16,8 @@ entries; relation_type is rendered as metadata and does not control expansion.
 
 Environment:
   SEMANTIC_INDEX_PATH  Override docs/semantic-index/index.md
+  SEMANTIC_SOURCE_MAP_PATH
+                       Override context/semantic-map.md source fallback
   SEMANTIC_LLM_CMD     Override LLM command (default: claude --print)
   SEMANTIC_DISABLE_LLM Set to 1 to stop after the alias layer
   SEMANTIC_ENABLE_LLM_FALLBACK
@@ -120,6 +122,7 @@ _semantic_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_semantic_self" != /* ]] && _semantic_self="$PWD/$_semantic_self"
 script_dir="${_semantic_self%/scripts/semantic_search.sh}"
 index_path="${SEMANTIC_INDEX_PATH:-$script_dir/docs/semantic-index/index.md}"
+source_map_path="${SEMANTIC_SOURCE_MAP_PATH:-$script_dir/context/semantic-map.md}"
 
 if [ ! -f "$index_path" ]; then
     echo "ERROR: semantic index not found: $index_path" >&2
@@ -219,6 +222,20 @@ emit_search_output() {
 first_layer_search() {
     local no_match_mode="${1:-print}"
     semantic_index_python first-layer "$no_match_mode"
+}
+
+source_map_search() {
+    [ -f "$source_map_path" ] || return 1
+    semantic_index_python "source-map-first-layer" "$source_map_path"
+}
+
+try_source_map_fallback() {
+    local output_file="$1"
+    if source_map_search > "$output_file"; then
+        emit_search_output "$output_file" 0
+        return 0
+    fi
+    return 1
 }
 
 memory_db_search() {
@@ -426,6 +443,11 @@ if [ "$force_llm" = false ]; then
             if [ "$rc" -ne 1 ]; then
                 exit "$rc"
             fi
+            source_output="$(mktemp)"
+            trap 'rm -f "$first_output" "$source_output"' EXIT
+            if try_source_map_fallback "$source_output"; then
+                exit 0
+            fi
             if [ "${SEMANTIC_DISABLE_LLM:-0}" = "1" ]; then
                 memory_output="$(mktemp)"
                 trap 'rm -f "$first_output" "$memory_output"' EXIT
@@ -451,6 +473,11 @@ if [ "$force_llm" = false ]; then
             rc=$?
             if [ "$rc" -ne 1 ]; then
                 exit "$rc"
+            fi
+            source_output="$(mktemp)"
+            trap 'rm -f "$first_output" "$source_output"' EXIT
+            if try_source_map_fallback "$source_output"; then
+                exit 0
             fi
             if [ "${SEMANTIC_DISABLE_LLM:-0}" = "1" ]; then
                 memory_output="$(mktemp)"
