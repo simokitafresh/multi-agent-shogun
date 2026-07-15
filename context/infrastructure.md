@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_infrastructure_context_freshness_20260715 -->
-<!-- source_commit:24012543c0ceb184fdef17c877c381a73d9c9aca reason:GA-264-root-fallback-details-and-infra-contracts-reviewed evidence:boundary-dabd3100c-to-24012543c-bats-49-of-49 -->
+<!-- source_commit:01bcfd5af reason:cmd_karo_hotfix_three_layer_universal_recall_202607160630-reviewed evidence:0of9-to-9of9-auto0of2-to-2of2-hash-54486b88 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
