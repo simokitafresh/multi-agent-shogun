@@ -48,6 +48,29 @@ check_daemon_watchdog_heartbeat() {
     return 1
 }
 
+# shogun_startup_cache_key() — derive the /tmp short-cache filename suffix
+# from a startup root path. Pure function, no side effects: kept standalone
+# so unit tests can pin its collision-avoidance behavior directly.
+#
+# ${key: -48} silently collapses to "" when key is shorter than 48 chars
+# (bash: negative offset < -length is invalid → empty result, not the
+# original string). SCRIPT_DIR is normally well under 48 chars (test
+# tmpdirs, repo paths), so every caller was landing on the SAME empty key
+# → the SAME /tmp cache file. Under parallel bats --jobs 8, N concurrent
+# `run_startup_short_cache` calls race on that shared cache_file's
+# mv-then-cat, and each caller can read back a sibling test's cached
+# output instead of its own (reproduced: 20 concurrent callers on a
+# shared cache path, ~18/20 read back another worker's content).
+# Only truncate when the sanitized key actually exceeds the length bound.
+shogun_startup_cache_key() {
+    local script_dir="$1"
+    local key="${script_dir//[\/: .#*?!]/_}"
+    if [ "${#key}" -gt 48 ]; then
+        key="${key: -48}"
+    fi
+    printf '%s\n' "$key"
+}
+
 run_gate_shogun_startup() {
 local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-}"
 if [ -z "$SCRIPT_DIR" ]; then
@@ -66,8 +89,8 @@ local SHORT_CACHE_TTL="${SHOGUN_STARTUP_SHORT_CACHE_TTL_SEC:-10}"
 if [ -n "${SHOGUN_STARTUP_ROOT:-}" ] && [ -z "${SHOGUN_STARTUP_SHORT_CACHE_TTL_SEC:-}" ]; then
     SHORT_CACHE_TTL=0
 fi
-local STARTUP_CACHE_KEY="${SCRIPT_DIR//[\/: .#*?!]/_}"
-STARTUP_CACHE_KEY="${STARTUP_CACHE_KEY: -48}"
+local STARTUP_CACHE_KEY
+STARTUP_CACHE_KEY="$(shogun_startup_cache_key "$SCRIPT_DIR")"
 local BACKLINK_CACHE_FILE="${SHOGUN_STARTUP_BACKLINK_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_backlink_zero.cache}"
 local THREE_LAYER_CACHE_FILE="${SHOGUN_STARTUP_THREE_LAYER_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_three_layer_health.cache}"
 if [ -z "$LIGHT_SKIP_HEAVY" ]; then

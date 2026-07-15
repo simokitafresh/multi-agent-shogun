@@ -2666,3 +2666,37 @@ YAML
     [[ "$output" == *"未読: 0件"* ]]
     [[ "$output" != *"⚠ inbox未読"* ]]
 }
+
+# 回帰(CI RED cmd_karo_ci_red_startup_gate_202607151950): bash `${key: -48}` は
+# key が48文字未満だと空文字列を返す（負オフセットが文字列長を超えると無効）。
+# SHOGUN_STARTUP_ROOT は bats の TEST_TMPDIR など48文字未満が通常であり、修正前は
+# 全呼び出し元が同一の空 STARTUP_CACHE_KEY に帰着し、同一の /tmp/shogun_startup_*.cache
+# を共有していた。並列 `bats --jobs 8` 下で複数テストが同時に
+# run_startup_short_cache の mv→cat を踏むとレースし、他テストの出力を誤って
+# 読み込んでいた（20並列の直接検証で20件中18件が他ワーカーの内容を誤読）。
+# shogun_startup_cache_key() は48文字を超える場合のみ末尾48文字へ切り詰める。
+@test "cache key: two distinct short SHOGUN_STARTUP_ROOT values do not collide (GA regression, CI RED root cause)" {
+    local key_a key_b
+    key_a="$(shogun_startup_cache_key "/tmp/shogun-regress/root-a")"
+    key_b="$(shogun_startup_cache_key "/tmp/shogun-regress/root-b")"
+    [ -n "$key_a" ]
+    [ -n "$key_b" ]
+    [ "$key_a" != "$key_b" ]
+    [ "$key_a" == "_tmp_shogun-regress_root-a" ]
+    [ "$key_b" == "_tmp_shogun-regress_root-b" ]
+}
+
+@test "cache key: a single short root never derives to an empty key" {
+    local key
+    key="$(shogun_startup_cache_key "/tmp/x")"
+    [ -n "$key" ]
+    [ "$key" == "_tmp_x" ]
+}
+
+@test "cache key: paths over 48 chars are still truncated to the trailing 48 chars" {
+    local long_path key
+    long_path="/this/is/a/very/long/path/that/definitely/exceeds/forty/eight/characters/for/sure"
+    key="$(shogun_startup_cache_key "$long_path")"
+    [ "${#key}" -eq 48 ]
+    [ "$key" == "finitely_exceeds_forty_eight_characters_for_sure" ]
+}
