@@ -86,6 +86,12 @@ order_bats_files_lpt() {
                 }
         }
     ' "$ledger" >"${TMPDIR:-/tmp}/shogun-lpt.$$.tsv"
+    # With an existing ledger but no row for the current commit/fingerprint,
+    # the first awk input is empty.  Plain NR==FNR then remains true for the
+    # second input too and silently consumes every requested test file as
+    # timing metadata, yielding the false success "N files (0 run, 0 cached)".
+    # Keep input 1 structurally non-empty so input 2 is always scheduled.
+    [ -s "${TMPDIR:-/tmp}/shogun-lpt.$$.tsv" ] || printf '\t\n' >"${TMPDIR:-/tmp}/shogun-lpt.$$.tsv"
     awk -F '\t' 'NR==FNR { measured[$1]=$2; next }
         { score=(($0 in measured) ? measured[$0] : 1e12); print score "\t" NR "\t" $0 }
     ' "${TMPDIR:-/tmp}/shogun-lpt.$$.tsv" <(printf '%s\n' "$@") \

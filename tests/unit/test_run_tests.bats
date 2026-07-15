@@ -83,6 +83,22 @@ SH
   [ "$status" -eq 0 ]
 }
 
+@test "non-matching timing cohort preserves every requested file" {
+  printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
+  printf '@test "b" { true; }\n' >"$TMPROOT/tests/unit/b.bats"
+  git -C "$TMPROOT" add tests && git -C "$TMPROOT" commit -qm files
+  fp="$(_source_fp)"; commit="$(git -C "$TMPROOT" rev-parse HEAD)"
+  _write_lpt_ledger stale-fingerprint "$commit" "$TMPROOT/tests/unit/a.bats" 1
+  run env REPO_ROOT="$TMPROOT" TEST_TIMING_LEDGER="$TMPROOT/logs/ledger.tsv" bash -c '
+    source "$1/scripts/run_tests.sh"
+    mapfile -t got < <(order_bats_files_lpt "$2" "$1/tests/unit/a.bats" "$1/tests/unit/b.bats")
+    [ "${#got[@]}" -eq 2 ]
+    [[ " ${got[*]} " == *" $1/tests/unit/a.bats "* ]]
+    [[ " ${got[*]} " == *" $1/tests/unit/b.bats "* ]]
+  ' _ "$TMPROOT" "$fp"
+  [ "$status" -eq 0 ]
+}
+
 @test "work-conserving queue bypasses a weight-8 head when a weight-4 file fits" {
   for name in test_normal_slow test_cmd_save test_normal_short; do printf '@test "x" { true; }\n' >"$TMPROOT/tests/unit/$name.bats"; done
   cat >"$TMPROOT/bin/bats" <<'SH'
