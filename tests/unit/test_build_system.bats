@@ -385,6 +385,30 @@ EOF
     fi
 }
 
+@test "contract: inbox action field propagates to all generated role instructions" {
+    local file
+    local files=(
+        "$PROJECT_ROOT/AGENTS.md"
+        "$OUTPUT_DIR/shogun.md" "$OUTPUT_DIR/karo.md" "$OUTPUT_DIR/gunshi.md" "$OUTPUT_DIR/ashigaru.md"
+        "$OUTPUT_DIR/codex-shogun.md" "$OUTPUT_DIR/codex-karo.md" "$OUTPUT_DIR/codex-gunshi.md" "$OUTPUT_DIR/codex-ashigaru.md"
+        "$OUTPUT_DIR/copilot-shogun.md" "$OUTPUT_DIR/copilot-karo.md" "$OUTPUT_DIR/copilot-gunshi.md" "$OUTPUT_DIR/copilot-ashigaru.md"
+        "$OUTPUT_DIR/kimi-shogun.md" "$OUTPUT_DIR/kimi-karo.md" "$OUTPUT_DIR/kimi-gunshi.md" "$OUTPUT_DIR/kimi-ashigaru.md"
+    )
+    for file in "${files[@]}"; do
+        grep -qF 'bash scripts/inbox_write.sh <target_agent> "<message>" <type> <from> <action>' "$file"
+    done
+}
+
+@test "contract: AGENTS generation preserves exact-ID inbox and latest checkpoint rules" {
+    local file
+    for file in "$PROJECT_ROOT/CLAUDE.md" "$PROJECT_ROOT/AGENTS.md"; do
+        grep -qF 'ID省略・全未読一括既読は禁止' "$file"
+        grep -qF '途中はtry回数を最大化' "$file"
+        grep -qF '求めるのは正しい報告ではなく正しい結果' "$file"
+    done
+    ! grep -qF 'or `bash scripts/inbox_mark_read.sh {your_id}` (all unread)' "$PROJECT_ROOT/AGENTS.md"
+}
+
 # =============================================================================
 # /clear→/new 変換ロジックテスト (AC3: cmd_2468)
 # build_instructions.sh generate_agents_md()の変換ロジック検証

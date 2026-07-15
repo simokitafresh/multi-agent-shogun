@@ -289,7 +289,7 @@ Session Start / Recovery の手順に従う（本ファイル冒頭参照）。�
 2. ntfyで殿に通知を送信（復帰の報告）
    - 将軍/家老: bash scripts/ntfy.sh "【{agent_id}】復帰済み。"
    - 忍者: inbox_writeで家老に報告
-     bash scripts/inbox_write.sh karo "{ninja_name}、復帰。" recovery {ninja_name}
+     bash scripts/inbox_write.sh karo "{ninja_name}、復帰。" recovery {ninja_name} notify_karo
 ```
 
 # Communication Protocol
@@ -299,19 +299,19 @@ Session Start / Recovery の手順に従う（本ファイル冒頭参照）。�
 Agent-to-agent communication uses file-based mailbox:
 
 ```bash
-bash scripts/inbox_write.sh <target_agent> "<message>" <type> <from>
+bash scripts/inbox_write.sh <target_agent> "<message>" <type> <from> <action>
 ```
 
 Examples:
 ```bash
 # Shogun → Karo
-bash scripts/inbox_write.sh karo "cmd_048を書いた。実行せよ。" cmd_new shogun
+bash scripts/inbox_write.sh karo "cmd_048を書いた。実行せよ。" cmd_new shogun execute_cmd
 
 # Ninja → Karo
-bash scripts/inbox_write.sh karo "半蔵、任務完了。報告YAML確認されたし。" report_received hanzo
+bash scripts/inbox_write.sh karo "半蔵、任務完了。報告YAML確認されたし。" report_received hanzo notify_karo
 
 # Karo → Ninja
-bash scripts/inbox_write.sh hayate "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+bash scripts/inbox_write.sh hayate "タスクYAMLを読んで作業開始せよ。" task_assigned karo read_task
 ```
 
 Delivery is handled by `inbox_watcher.sh` (infrastructure layer).
@@ -473,7 +473,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 詳細 → `context/infrastructure.md` を読め。推測するな。
 
 - CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/new,家老/new(陣形図付き)|AUTOCOMPACT=90%
-- inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
+- inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from> <action>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
 - cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)|**成長ループ**: BLOCK/WARN後にenvironment_change必須(構造化type/file/pattern+grep検証)。WARNもスルーしない
 - **成長ループ**|全ロール共通原則|`context/growth-loop.md`|殿「BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉」|将軍=environment_change強制、家老=WA記録時同構造、忍者=矛盾を作れない構造(GP-072c5)

@@ -289,7 +289,7 @@ Session Start / Recovery の手順に従う（本ファイル冒頭参照）。�
 2. ntfyで殿に通知を送信（復帰の報告）
    - 将軍/家老: bash scripts/ntfy.sh "【{agent_id}】復帰済み。"
    - 忍者: inbox_writeで家老に報告
-     bash scripts/inbox_write.sh karo "{ninja_name}、復帰。" recovery {ninja_name}
+     bash scripts/inbox_write.sh karo "{ninja_name}、復帰。" recovery {ninja_name} notify_karo
 ```
 
 # Communication Protocol
@@ -299,19 +299,19 @@ Session Start / Recovery の手順に従う（本ファイル冒頭参照）。�
 Agent-to-agent communication uses file-based mailbox:
 
 ```bash
-bash scripts/inbox_write.sh <target_agent> "<message>" <type> <from>
+bash scripts/inbox_write.sh <target_agent> "<message>" <type> <from> <action>
 ```
 
 Examples:
 ```bash
 # Shogun → Karo
-bash scripts/inbox_write.sh karo "cmd_048を書いた。実行せよ。" cmd_new shogun
+bash scripts/inbox_write.sh karo "cmd_048を書いた。実行せよ。" cmd_new shogun execute_cmd
 
 # Ninja → Karo
-bash scripts/inbox_write.sh karo "半蔵、任務完了。報告YAML確認されたし。" report_received hanzo
+bash scripts/inbox_write.sh karo "半蔵、任務完了。報告YAML確認されたし。" report_received hanzo notify_karo
 
 # Karo → Ninja
-bash scripts/inbox_write.sh hayate "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+bash scripts/inbox_write.sh hayate "タスクYAMLを読んで作業開始せよ。" task_assigned karo read_task
 ```
 
 Delivery is handled by `inbox_watcher.sh` (infrastructure layer).
@@ -336,7 +336,7 @@ When you receive `inboxN` (e.g. `inbox3`):
 1. `Read queue/inbox/{your_id}.yaml`
 2. Find all entries with `read: false`
 3. Process each message according to its `type`
-4. Mark as read: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}` (per message) or `bash scripts/inbox_mark_read.sh {your_id}` (all unread)
+4. Mark each processed message by ID: `bash scripts/inbox_mark_read.sh {your_id} {msg_id}`. ID省略・全未読一括既読は禁止（Read後に到着した未処理メッセージを巻き込むため）
    **Edit toolでのinbox既読化は禁止** — flock未使用のためLost Update(メッセージ消失)が発生する
 5. Resume normal workflow
 
@@ -381,6 +381,11 @@ bash scripts/bulletin_write.sh karo "全員共有の内容"
 - **二次情報には「いつの一次情報に基づくか」のタイムスタンプを付けよ。** タイムスタンプなき二次情報は鮮度不明=信頼不能
 - 二次情報を作る側(ninja_monitor等)は、ソースを必ず一次情報にせよ。設定値は一次情報ではない。実態が一次情報
 - reason: 2026-06-07 settings.yaml変更→respawn→モデル未確認→Sonnetのつもりが全員Opus。設定変更=完了の思い込み。deepdive Phase 1と同構造
+- **可逆なら行動せよ。** 本番デプロイ等、revert/restore/バックアップで完全に元へ戻せる作業は、CI GREEN・revert手順・復元証跡を確認したら殿の個別裁可を待たず自走で実行する。失敗時は即revert/restoreし、事実と数値を報告せよ。
+- reason: 2026-07-10殿裁定。本番デプロイ裁可待ちは時間の浪費であり、元に戻せるのにチャレンジしないのは洗脳#5(先送り)。cmd_3812で裁可待ち停止が発生したため恒久化。
+- **途中はtry回数を最大化し、厳密さは最終checkpointへ集中せよ。** isolated clone/probe等の可逆な途中試行では、契約・報告YAML・レビュー・binary check・再承認を課さず1行ログだけ残して軽快に回す。途中障害は直して即再実行し、RCA作文や再承認要請へ逃げるな。報告するのは結果が出た時と、自力で越えられない外部障壁の時だけ。維持するのは対象固有の安全底線（業務データ無接触・保護対象無変更・可逆性等）のみ。全契約・敵対試験・レビューは方式採用の最終検証1回と、不可逆または本番P4実行へ集中する。
+- reason: 2026-07-14殿裁定。10分の道具に30分を費やす中間厳密化はtry回数と学習速度を落とし、品質と速度の両方を損なう。厳密さの許容箇所が途中と最終で逆転していたため恒久化。
+- **求めるのは正しい報告ではなく正しい結果。** 報告整形が結果供給を遅らせる途中laneでは、結果値を先に届け、報告整形は最終checkpointの一度だけにせよ。
 
 ## 行動の結果を数値で計測せよ（全エージェント共通・洗脳防止）
 
@@ -468,7 +473,7 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 詳細 → `context/infrastructure.md` を読め。推測するな。
 
 - CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/clear,家老/clear(陣形図付き)|AUTOCOMPACT=90%
-- inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
+- inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from> <action>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
 - cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)|**成長ループ**: BLOCK/WARN後にenvironment_change必須(構造化type/file/pattern+grep検証)。WARNもスルーしない
 - **成長ループ**|全ロール共通原則|`context/growth-loop.md`|殿「BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉」|将軍=environment_change強制、家老=WA記録時同構造、忍者=矛盾を作れない構造(GP-072c5)

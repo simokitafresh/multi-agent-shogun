@@ -5,19 +5,19 @@
 Agent-to-agent communication uses file-based mailbox:
 
 ```bash
-bash scripts/inbox_write.sh <target_agent> "<message>" <type> <from>
+bash scripts/inbox_write.sh <target_agent> "<message>" <type> <from> <action>
 ```
 
 Examples:
 ```bash
 # Shogun → Karo
-bash scripts/inbox_write.sh karo "cmd_048を書いた。実行せよ。" cmd_new shogun
+bash scripts/inbox_write.sh karo "cmd_048を書いた。実行せよ。" cmd_new shogun execute_cmd
 
 # Ninja → Karo
 bash scripts/ninja_done.sh hanzo cmd_389
 
 # Karo → Ninja
-bash scripts/inbox_write.sh hayate "タスクYAMLを読んで作業開始せよ。" task_assigned karo
+bash scripts/inbox_write.sh hayate "タスクYAMLを読んで作業開始せよ。" task_assigned karo read_task
 ```
 
 Delivery is handled by `inbox_watcher.sh` (infrastructure layer).
@@ -66,7 +66,7 @@ This is a safety net — even if the wake-up nudge was missed, messages are stil
 ### Sending Messages
 
 ```bash
-bash scripts/inbox_write.sh <target> "<message>" <type> <from>
+bash scripts/inbox_write.sh <target> "<message>" <type> <from> <action>
 ```
 
 **No sleep interval needed.** No delivery confirmation needed. Multiple sends can be done in rapid succession — flock handles concurrency.
