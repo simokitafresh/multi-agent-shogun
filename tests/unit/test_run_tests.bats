@@ -51,6 +51,24 @@ _write_lpt_ledger() {
   [ ! -e "$TMPROOT/logs/ledger.tsv" ]
 }
 
+@test "split-file runner serializes each fixture while retaining the aggregate jobs 8 budget" {
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >"$BATS_ARGS_LOG"
+printf '1..1\nok 1 sample\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$TMPROOT/bats.args" \
+    BATS_CACHE=0 bash -c '
+      source "$1/scripts/run_tests.sh"
+      run_bats_files_parallel "$1/tests/unit/sample.bats"
+    ' _ "$TMPROOT"
+  [ "$status" -eq 0 ]
+  grep -Fq -- '--jobs 1' "$TMPROOT/bats.args"
+  run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; [ "$INNER_JOBS" -eq 1 ] && [ "$MAX_TEST_JOBS" -eq 8 ]' _ "$TMPROOT"
+  [ "$status" -eq 0 ]
+}
+
 @test "matching timing cohort orders measured files by LPT" {
   printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
   printf '@test "b" { true; }\n' >"$TMPROOT/tests/unit/b.bats"
@@ -82,7 +100,7 @@ SH
     "$TMPROOT/tests/unit/test_normal_short.bats" 10
   run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" TEST_TIMING_LEDGER="$TMPROOT/logs/ledger.tsv" \
     BATS_START_LOG="$TMPROOT/start.log" BATS_SCHEDULER_TRACE="$TMPROOT/schedule.tsv" BATS_CACHE=0 \
-    BATS_INNER_JOBS=4 BATS_MAX_TEST_JOBS=8 bash -c '
+    BATS_INNER_JOBS=4 BATS_HEAVY_INNER_JOBS=8 BATS_MAX_TEST_JOBS=8 bash -c '
       source "$1/scripts/run_tests.sh"
       run_bats_files_parallel "$1/tests/unit/test_normal_slow.bats" "$1/tests/unit/test_cmd_save.bats" "$1/tests/unit/test_normal_short.bats"
     ' _ "$TMPROOT"

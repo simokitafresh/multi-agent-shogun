@@ -214,7 +214,7 @@ EOF
 }
 
 @test "deploy_task registers EXIT trap for interrupted nudge delivery" {
-    run grep -F "trap deploy_task_exit_nudge EXIT" "$PROJECT_ROOT/scripts/deploy_task.sh"
+    run grep -F "trap deploy_task_exit_cleanup EXIT" "$PROJECT_ROOT/scripts/deploy_task.sh"
     [ "$status" -eq 0 ]
 }
 

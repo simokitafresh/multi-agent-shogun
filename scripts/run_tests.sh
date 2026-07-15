@@ -14,7 +14,7 @@ set -euo pipefail
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 JOBS="${BATS_JOBS:-8}"
 FILE_JOBS="${BATS_FILE_JOBS:-32}"
-INNER_JOBS="${BATS_INNER_JOBS:-4}"
+INNER_JOBS="${BATS_INNER_JOBS:-1}"
 # A runner may split the suite into many bats roots, but the aggregate number
 # of live tests must still honour the public --jobs 8 contract.  The previous
 # default (128) let a 2-core CI runner launch 64 tests from one "heavy" file
@@ -208,13 +208,13 @@ run_bats_files_parallel() {
         file_weight="$INNER_JOBS"
         case "$(basename "$file")" in
             test_cmd_save.bats|test_gate_shogun_startup.bats|test_semantic_index_update.bats|test_deploy_task_ac_handling.bats)
-                file_inner_jobs="${BATS_HEAVY_INNER_JOBS:-64}"
+                file_inner_jobs="${BATS_HEAVY_INNER_JOBS:-$INNER_JOBS}"
                 file_weight="$file_inner_jobs"
                 ;;
         esac
         case "$(basename "$file")" in
             test_cmd_complete_gate_small_consolidated.bats|test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_insight_write.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats)
-                file_inner_jobs="${BATS_ISOLATED_INNER_JOBS:-8}"
+                file_inner_jobs="${BATS_ISOLATED_INNER_JOBS:-$INNER_JOBS}"
                 file_weight="$MAX_TEST_JOBS"
                 ;;
         esac
