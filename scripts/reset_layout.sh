@@ -16,9 +16,14 @@ cd "$SCRIPT_DIR"
 # オプション解析
 # ═══════════════════════════════════════════════════════════════
 DRY_RUN=false
-if [[ "${1:-}" == "--dry-run" ]]; then
-    DRY_RUN=true
-fi
+TARGET_AGENT=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --dry-run) DRY_RUN=true; shift ;;
+        --agent)   TARGET_AGENT="${2:-}"; shift 2 ;;
+        *)         shift ;;
+    esac
+done
 
 # ═══════════════════════════════════════════════════════════════
 # 並行実行ガード（flock排他）
@@ -253,6 +258,74 @@ log_ok()   { echo "[reset_layout] OK $1"; }
 log_warn() { echo "[reset_layout] WARN $1"; }
 log_err()  { echo "[reset_layout] ERROR $1"; }
 log_dry()  { echo "[DRY-RUN] $1"; }
+
+# ═══════════════════════════════════════════════════════════════
+# --agent <id> モード: 単一エージェントのペインをrespawn
+# 全量復元をスキップし、対象ペインのみrespawn-pane -k+変数+CLI起動
+# ═══════════════════════════════════════════════════════════════
+if [[ -n "$TARGET_AGENT" ]]; then
+    # 対象エージェントのペインを探索
+    target_pane=""
+    target_idx=""
+    while IFS=$'\t' read -r _pi _aid; do
+        if [[ "$_aid" == "$TARGET_AGENT" ]]; then
+            target_pane="$_pi"
+            break
+        fi
+    done < <(tmux list-panes -t "$AGENTS_WINDOW_TARGET" \
+        -F '#{pane_index}	#{@agent_id}' 2>/dev/null)
+
+    if [[ -z "$target_pane" ]]; then
+        log_err "${TARGET_AGENT} のペインが見つかりません"
+        exit 1
+    fi
+
+    # EXPECTED_AGENTSからインデックスを特定(PS1色用)
+    for ((i=0; i<NUM_AGENTS; i++)); do
+        if [[ "${EXPECTED_AGENTS[$i]}" == "$TARGET_AGENT" ]]; then
+            target_idx=$i
+            break
+        fi
+    done
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_dry "--agent ${TARGET_AGENT}: agents.${target_pane} をrespawn予定"
+        exit 0
+    fi
+
+    log "--agent ${TARGET_AGENT}: agents.${target_pane} をrespawn"
+    tmux respawn-pane -k -t "${AGENTS_WINDOW_TARGET}.${target_pane}"
+    tmux clear-history -t "${AGENTS_WINDOW_TARGET}.${target_pane}" 2>/dev/null || true
+    sleep 0.5
+
+    # cd + PS1
+    prompt_color="${PROMPT_COLORS[$target_idx]:-yellow}"
+    prompt_str=$(_generate_prompt "${TARGET_AGENT}" "$prompt_color")
+    tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${target_pane}" "cd \"${SCRIPT_DIR}\" && export PS1='${prompt_str}' && clear" Enter
+    sleep 0.5
+
+    # tmux変数設定
+    cli_t="${_MB_AGENT_TYPE[$TARGET_AGENT]:-claude}"
+    model_display=$(_resolve_model_display "$TARGET_AGENT" "$target_pane")
+    agent_group=$(_resolve_agent_group "$TARGET_AGENT" "$cli_t" "$model_display")
+    bg_color=$(resolve_bg_color "$TARGET_AGENT" "$model_display")
+
+    tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${target_pane}" @agent_id "$TARGET_AGENT"
+    tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${target_pane}" @model_name "$model_display"
+    tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${target_pane}" @agent_group "$agent_group"
+    tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${target_pane}" @agent_cli "$cli_t"
+    tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${target_pane}" @context_pct "--"
+    tmux set-option -p -t "${AGENTS_WINDOW_TARGET}.${target_pane}" @current_task ""
+    tmux select-pane -t "${AGENTS_WINDOW_TARGET}.${target_pane}" -P "bg=${bg_color}"
+    tmux select-pane -t "${AGENTS_WINDOW_TARGET}.${target_pane}" -T "$model_display"
+
+    # CLI起動
+    cli_cmd="${_MB_CLI_CMD[$TARGET_AGENT]}"
+    tmux send-keys -t "${AGENTS_WINDOW_TARGET}.${target_pane}" "$cli_cmd" Enter
+
+    log_ok "${TARGET_AGENT} respawn完了 (pane=${target_pane}, cli=${cli_t}, model=${model_display})"
+    exit 0
+fi
 
 # カウンタ
 swap_count=0
