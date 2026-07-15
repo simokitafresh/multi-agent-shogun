@@ -690,6 +690,9 @@ PROJ
     run bash "$TEST_SCRIPT" --cmd-warnings cmd_938
     [ "$status" -eq 0 ]
     [[ "$output" == *"ALERT: context/infrastructure.md source commits 1件"* ]]
+    local second_sha
+    second_sha="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    [[ "$output" == *"latest: ${second_sha} fix: second infra source change"* ]]
 }
 
 @test "infra scoped contexts do not share root fallback counts" {

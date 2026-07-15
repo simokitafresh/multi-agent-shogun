@@ -614,13 +614,13 @@ def is_root_fallback_source_path(path: str) -> bool:
 
 def _root_fallback_commit_count_since(
     updated_at: date, source_commit: str | None = None
-) -> int:
+) -> tuple[int, list[str]]:
     cmd = [
         "git",
         "-C",
         root,
         "log",
-        "--pretty=format:__CFC_COMMIT__%x00%s",
+        "--pretty=format:__CFC_COMMIT__%x00%h%x00%s",
         "--name-only",
     ]
     if source_commit:
@@ -630,14 +630,16 @@ def _root_fallback_commit_count_since(
 
     result = _run_git_with_bounded_retry(cmd, f"source_commit_count_since: {root}")
     if result is None:
-        return -1
+        return -1, []
 
     count = 0
+    details: list[str] = []
+    current_hash = ""
     current_subject = ""
     changed_paths: list[str] = []
 
     def flush_commit() -> None:
-        nonlocal count, current_subject, changed_paths
+        nonlocal count, current_hash, current_subject, changed_paths
         subject = current_subject.strip()
         if not subject or AUTO_COMMIT_SUBJECT_RE.match(subject):
             return
@@ -648,18 +650,20 @@ def _root_fallback_commit_count_since(
         ]
         if source_paths:
             count += 1
+            if len(details) < 3:
+                details.append(f"{current_hash} {subject}".strip())
 
     for line in result.stdout.splitlines():
         if line.startswith("__CFC_COMMIT__\x00"):
             flush_commit()
-            current_subject = line.split("\x00", 1)[1]
+            _marker, current_hash, current_subject = line.split("\x00", 2)
             changed_paths = []
             continue
         if line.strip():
             changed_paths.append(line.strip())
 
     flush_commit()
-    return count
+    return count, details
 
 
 def load_cited_paths(abs_path: str, dirs: list[str]) -> set[str]:
@@ -719,7 +723,7 @@ def source_commit_summary_since(
     if not repo_path or not os.path.isdir(repo_path):
         return 0, []
     if root_fallback:
-        return _root_fallback_commit_count_since(updated_at, source_commit), []
+        return _root_fallback_commit_count_since(updated_at, source_commit)
 
     cited_dirs = [
         p[len(CITED_PATHSPEC_PREFIX):] for p in pathspecs if p.startswith(CITED_PATHSPEC_PREFIX)
@@ -923,9 +927,9 @@ def batch_source_commit_summaries(
 
         for future in as_completed([*root_futures, *direct_futures]):
             if future in root_futures:
-                count = future.result()
+                count, details = future.result()
                 for key in root_futures[future]:
-                    summaries[key] = (count, [])
+                    summaries[key] = (count, details)
             else:
                 summaries.update(future.result())
     return summaries
