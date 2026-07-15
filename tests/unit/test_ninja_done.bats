@@ -60,6 +60,18 @@ EOF
     [ ! -f "$TEST_ROOT/inbox_write_calls.log" ]
 }
 
+@test "placeholder summary blocks terminal notification" {
+    cat > "$TEST_ROOT/queue/reports/hayate_report_cmd_126.yaml" <<'EOF'
+result:
+  summary: "FILL_THIS"
+EOF
+
+    run bash "$TEST_ROOT/scripts/ninja_done.sh" hayate cmd_126
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"result.summary is empty"* ]]
+    [ ! -f "$TEST_ROOT/inbox_write_calls.log" ]
+}
+
 @test "archived report with block summary is accepted" {
     cat > "$TEST_ROOT/queue/archive/reports/hayate_report_cmd_124_20260416.yaml" <<'EOF'
 result:

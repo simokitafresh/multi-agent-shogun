@@ -133,7 +133,7 @@ summary_is_present() {
     fi
 
     case "$trimmed" in
-        null|'|'|'>'|'|-'|'>-')
+        null|'|'|'>'|'|-'|'>-'|*FILL_THIS*)
             return 1
             ;;
     esac

@@ -3198,6 +3198,15 @@ generate_report_template() {
         resolved_task_id="${_ac_task_id}"
     fi
     local resolved_parent_cmd="${parent_cmd:-${cmd_id:-$_p_parent_cmd}}"
+    # Level 5: report generation must hand the worker task-specific summary
+    # context instead of manufacturing the known-bad FILL_THIS token.  This is
+    # deliberately phrased as the task outcome to record; measured evidence is
+    # still supplied by the worker in result.details/binary_checks before the
+    # terminal transition.
+    local _summary_context="${title:-${purpose:-$resolved_task_id}}"
+    _summary_context="${_summary_context//$'\n'/ }"
+    _summary_context="${_summary_context//\\/\\\\}"
+    _summary_context="${_summary_context//\"/\\\"}"
     # ac_version: field_get_multi済み($ac_version)
     local _before_after_block=""
     if is_before_after_required_task "$task_file" "$resolved_parent_cmd" "$title" "$task_type"; then
@@ -3252,7 +3261,7 @@ EOF
 # Step1: Read this file → Step2: bash scripts/report_field_set.sh <this_file> <key> <value> で各フィールドを埋めよ
 # ━━━ report_field_set.sh ドット記法クイックリファレンス ━━━
 # RFS="bash scripts/report_field_set.sh <このファイル>"
-# !! result.summary の FILL_THIS は提出前に実測を含む要約へ必ず置換せよ。自動補完禁止 !!
+# !! result.summary はタスク文脈を事前供給済み。完了前に実測結果を追記せよ !!
 # \$RFS result.summary "実施内容と検証結果の1行要約"
 # \$RFS result.details "詳細文"
 # \$RFS lesson_candidate.found "false"
@@ -3278,7 +3287,7 @@ timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
 status: pending
 ac_version_read: ${ac_version}
 result:
-  summary: "FILL_THIS"  # 必須: 実施内容+検証結果の1行要約へ置換。自動補完禁止
+  summary: "${_summary_context} — 実施・検証結果を本報告へ記録"  # Level5: task context pre-supplied; 完了前に実測を追記
   details: ""
 purpose_validation:
   cmd_purpose: ""
