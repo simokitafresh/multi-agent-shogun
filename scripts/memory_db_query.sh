@@ -85,7 +85,9 @@ if [ -n "$search_query" ]; then
     # a 622MB 9P full scan while the asynchronous cache refresh is in flight.
     delta_source_path=""
     delta_after_rowid=""
-    if [ "$db_path" = "$source_db_path" ] && [ -s "$cache_db_path" ]; then
+    if [ -s "$cache_db_path" ] && { [ "$source_db_path" -nt "$cache_db_path" ] \
+        || { [ -f "${source_db_path}-wal" ] && [ "${source_db_path}-wal" -nt "$cache_db_path" ]; } \
+        || { [ -f "${source_db_path}-shm" ] && [ "${source_db_path}-shm" -nt "$cache_db_path" ]; }; }; then
         delta_after_rowid="$(python3 - "$cache_db_path" <<'PY' 2>/dev/null || true
 import sqlite3, sys
 with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True) as conn:

@@ -34,8 +34,17 @@ status: pending
 commit_hash: '3333333333333333333333333333333333333333'
 result:
   summary: wip
+purpose_validation:
+  fit: true
+files_modified:
+  - path: scripts/report_field_set.sh
+    change: regression fixture
 lesson_candidate:
   - "legacy lesson entry"
+lessons_useful:
+  - id: L311
+    useful: true
+    reason: terminal readiness contract
 decision_candidate:
   - "legacy decision entry"
 binary_checks:
@@ -113,9 +122,18 @@ status: pending
 commit_hash: '3333333333333333333333333333333333333333'
 result:
   summary: wip
+purpose_validation:
+  fit: true
+files_modified:
+  - path: scripts/report_field_set.sh
+    change: regression fixture
 lesson_candidate:
   found: false
   no_lesson_reason: covered
+lessons_useful:
+  - id: L311
+    useful: true
+    reason: terminal readiness contract
 binary_checks:
   AC1:
     - check: behavior verified
@@ -274,9 +292,18 @@ status: pending
 commit_hash: '3333333333333333333333333333333333333333'
 result:
   summary: wip
+purpose_validation:
+  fit: true
+files_modified:
+  - path: scripts/report_field_set.sh
+    change: regression fixture
 lesson_candidate:
   found: false
   no_lesson_reason: covered
+lessons_useful:
+  - id: L311
+    useful: true
+    reason: terminal readiness contract
 binary_checks:
   AC1:
     - check: behavior verified

@@ -291,6 +291,7 @@ EOF
         "SELECT summary FROM events ORDER BY ts"
     [ "$status" -eq 0 ]
     [ "$output" = "cache wrapper" ]
+    for _ in {1..50}; do [ -s "$TEST_TMPDIR/cache/memory.db" ] && break; sleep 0.1; done
     [ -s "$TEST_TMPDIR/cache/memory.db" ]
 }
 
@@ -310,6 +311,8 @@ EOF
         --db "$TEST_TMPDIR/data/memory.db" --search "sharedstaledeltaneedle"
     [ "$status" -eq 0 ]
     [[ "$output" == *"cache newer"* ]]
+    for _ in {1..50}; do [ -s "$TEST_TMPDIR/cache/memory.db" ] && break; sleep 0.1; done
+    [ -s "$TEST_TMPDIR/cache/memory.db" ]
 
     # A write after cache publication must be visible immediately without a
     # full canonical FTS scan.  Insert through SQLite to model a canonical
