@@ -5598,6 +5598,21 @@ if ! python3 "$SCRIPT_DIR/scripts/lib/parent_cmd_contract.py" "$CMD_ID" --root "
     exit 1
 fi
 
+# The post-CLEAR workflow consumes SG7 as its single information source.
+# Therefore CLEAR must never be published before that exact bundle exists and
+# validates.  Otherwise archive_completed replaces the current report with an
+# archive symlink and /cmd-complete receives an impossible instruction.
+if [ -f "$SCRIPT_DIR/scripts/cmd_complete.sh" ]; then
+    _sg7_bundle="$GATES_DIR/sg7_bundle.json"
+    if [ ! -f "$SCRIPT_DIR/scripts/review_bundle.py" ] \
+        || ! python3 "$SCRIPT_DIR/scripts/review_bundle.py" consume \
+            --cmd "$CMD_ID" --bundle "$_sg7_bundle" --expect-verdict APPROVE >/dev/null; then
+        echo "GATE BLOCK: sg7_bundle_missing_or_invalid"
+        append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\tsg7_bundle_missing_or_invalid"
+        exit 1
+    fi
+fi
+
 # task_type検出
 read -r HAS_RECON HAS_IMPLEMENT <<< "$(detect_task_types "$CMD_ID")"
 
@@ -6040,6 +6055,7 @@ def iter_check_results(value):
         return
     yield ""
 
+candidates = []
 for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
     try:
         with open(path, encoding="utf-8") as f:
@@ -6051,6 +6067,21 @@ for path in sorted(glob.glob(os.path.join(reports_dir, "*.yaml"))):
     if str(report.get("parent_cmd") or "").strip() != cmd_id:
         continue
 
+    # A direct training command may leave an abandoned round template beside
+    # the later submitted report (for example r2 pending written before r1
+    # completed).  Validate the newest filesystem state per worker, not every
+    # historical round filename; lexical r1/r2 order is not submission order.
+    worker = str(report.get("worker_id") or report.get("task_id") or path).strip()
+    candidates.append((os.stat(path).st_mtime_ns, path, worker, report))
+
+latest_by_worker = {}
+for candidate in candidates:
+    key = candidate[2]
+    previous = latest_by_worker.get(key)
+    if previous is None or candidate[:2] > previous[:2]:
+        latest_by_worker[key] = candidate
+
+for _, path, _, report in sorted(latest_by_worker.values(), key=lambda item: item[1]):
     verdict = str(report.get("verdict", "") or "").strip()
     binary_checks = report.get("binary_checks")
     results = list(iter_check_results(binary_checks)) if binary_checks is not None else []
@@ -7986,23 +8017,21 @@ PY
     run_report_memory_semantic_scan || echo "  [WARN] report memory semantic scan failed (non-blocking)"
 
     # ─── Semantic causal traverse（GATE CLEAR時 パルス伝達, cmd_3439） ───
+    # 全体を非同期化: traverse+テスト実行+掲示板はGATE判定に無関係(CLEAR確定後)
+    # 結果はcmd_complete_gate_async.logに記録。FAILがあれば掲示板通知
     echo ""
     echo "Semantic causal traverse (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/semantic_causal_traverse.sh" ]; then
+        (
             _traverse_output=$(timeout 20 bash "$SCRIPT_DIR/scripts/semantic_causal_traverse.sh" \
-            --cmd-id "$CMD_ID" \
-            --depth 3 \
-            --format json 2>/dev/null || true)
-        if [ -n "$_traverse_output" ]; then
+                --cmd-id "$CMD_ID" \
+                --depth 3 \
+                --format json 2>/dev/null || true)
+            [ -z "$_traverse_output" ] && exit 0
             _traverse_count=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('total',0))" 2>/dev/null || echo "0")
             _traverse_starts=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(','.join(d.get('start_concepts',[])))" 2>/dev/null || echo "")
-            _no_test_count=$(echo "$_traverse_output" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('no_test_scripts_count',0))" 2>/dev/null || echo "0")
-            echo "  start_concepts: ${_traverse_starts:-none} | affected: ${_traverse_count} nodes | no_test_scripts: ${_no_test_count}"
-            # フォールバック: 検証スクリプト不在ノードがある場合はWARN
-            if [ "${_no_test_count:-0}" -gt 0 ]; then
-                echo "  [WARN] ${_no_test_count} affected node(s) have no test scripts (skip execution)"
-            fi
-            # ─── Phase3: 影響ノードのtest_scripts実行（cmd_3442） ───
+            echo "$(date +%Y-%m-%dT%H:%M:%S) [${CMD_ID}] semantic_traverse: start=[${_traverse_starts}] affected=${_traverse_count}" >> "$LOG_DIR/cmd_complete_gate_async.log"
+            # テスト実行
             _ts_list=$(echo "$_traverse_output" | python3 -c "
 import sys, json
 d = json.load(sys.stdin)
@@ -8016,50 +8045,41 @@ print('\n'.join(scripts))
             if [ -n "$_ts_list" ]; then
                 _ts_pass=0
                 _ts_fail=0
-                echo "  Executing test_scripts for affected nodes:"
+                _ts_failures=""
                 while IFS= read -r _ts; do
                     [ -z "$_ts" ] && continue
                     _ts_path="$SCRIPT_DIR/$_ts"
-                    if [ ! -f "$_ts_path" ]; then
-                        echo "    [SKIP] $_ts (not found at $_ts_path)"
-                        continue
-                    fi
+                    [ -f "$_ts_path" ] || continue
                     if [[ "$_ts" == *.bats ]]; then
                         if timeout 60 bats "$_ts_path" >/dev/null 2>&1; then
-                            echo "    [PASS] $_ts"
                             _ts_pass=$((_ts_pass + 1))
                         else
-                            echo "    [FAIL] $_ts"
                             _ts_fail=$((_ts_fail + 1))
+                            _ts_failures="${_ts_failures} ${_ts}"
                         fi
                     else
                         if timeout 60 bash "$_ts_path" >/dev/null 2>&1; then
-                            echo "    [PASS] $_ts"
                             _ts_pass=$((_ts_pass + 1))
                         else
-                            echo "    [FAIL] $_ts"
                             _ts_fail=$((_ts_fail + 1))
+                            _ts_failures="${_ts_failures} ${_ts}"
                         fi
                     fi
                 done <<< "$_ts_list"
-                echo "  test_scripts result: PASS=${_ts_pass} FAIL=${_ts_fail}"
+                echo "$(date +%Y-%m-%dT%H:%M:%S) [${CMD_ID}] semantic_traverse test_scripts: PASS=${_ts_pass} FAIL=${_ts_fail}" >> "$LOG_DIR/cmd_complete_gate_async.log"
                 if [ "${_ts_fail:-0}" -gt 0 ]; then
-                    echo "  [WARN] ${_ts_fail} test script(s) FAILED in affected nodes (non-blocking)"
+                    BULLETIN_NOTIFY=karo,gunshi timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" \
+                        "system" "[WARN] ${CMD_ID} semantic_traverse: ${_ts_fail} test(s) FAILED:${_ts_failures}" false info >/dev/null 2>&1 || true
                 fi
-            else
-                echo "  test_scripts: none to execute (all affected nodes have no test scripts)"
             fi
+            # 掲示板通知
             if [ "${_traverse_count:-0}" -gt 0 ] && [ -n "${_traverse_starts:-}" ]; then
                 _traverse_summary="因果トラバース ${CMD_ID}: 起点[${_traverse_starts}] → 影響${_traverse_count}ノード(depth=3)"
-                (BULLETIN_NOTIFY=karo,gunshi timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" \
-                    "$_traverse_summary" false >/dev/null 2>&1 || true) &
-                echo "  bulletin: queued (async)"
-            else
-                echo "  bulletin: SKIP (no start concepts or no affected nodes)"
+                BULLETIN_NOTIFY=karo,gunshi timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" \
+                    "$_traverse_summary" false >/dev/null 2>&1 || true
             fi
-        else
-            echo "  SKIP (traverse returned no output)"
-        fi
+        ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
+        echo "  queued (async)"
     else
         echo "  SKIP (semantic_causal_traverse.sh not found)"
     fi
@@ -8179,14 +8199,12 @@ print('\n'.join(scripts))
     send_clear_notifications_once "$CMD_ID" "GATE CLEAR"
 
     # GATE結果通知を出す前にreview_logへ同期し、/gate-sync手動依存を残さない。
+    # 非同期化: refluxはGATE判定に無関係。review_log更新はyaml_field_set.shのflockで安全
     echo ""
     echo "Gunshi gate_result reflux (GATE CLEAR):"
     if [ -f "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" ]; then
-        if bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" 2>&1; then
-            echo "  gunshi_gate_reflux: OK"
-        else
-            echo "  [INFO] gunshi_gate_reflux: WARN (non-blocking)"
-        fi
+        (bash "$SCRIPT_DIR/scripts/gunshi_gate_reflux.sh" "$CMD_ID" "CLEAR" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
+        echo "  gunshi_gate_reflux: queued (async)"
     else
         echo "  SKIP (gunshi_gate_reflux.sh not found)"
     fi
@@ -8619,11 +8637,12 @@ PYEOF
         echo "  OK: no pending lesson_candidates"
     fi
 
-    # ─── Workaround率表示（情報のみ、BLOCKしない） ───
+    # ─── Workaround率表示（情報のみ、BLOCKしない。非同期化でGATE速度改善） ───
     echo ""
     echo "Workaround rate (GATE CLEAR):"
     if [ -x "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" ]; then
-        bash "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" --last 10 2>&1 || echo "  [INFO] gate_workaround_rate.sh failed (non-blocking)"
+        (bash "$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh" --last 10 >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
+        echo "  queued (async)"
     else
         echo "  SKIP (gate_workaround_rate.sh not found)"
     fi

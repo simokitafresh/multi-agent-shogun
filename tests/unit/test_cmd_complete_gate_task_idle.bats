@@ -209,3 +209,39 @@ EOF
     [[ "$output" == *"hanzo_report_${TEST_CMD_ID}.yaml: verdict=FAIL"* ]]
     [[ "$output" == *"GATE BLOCK"* ]]
 }
+
+@test "no-task parent validation uses newest report mtime per worker not lexical round name" {
+    TEST_CMD_ID="cmd_fixture"
+    stub_cmd_complete_side_effects
+    rm -f "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/"*.done
+    : > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    local stale="$TEST_PROJECT/queue/reports/test_speed_report_${TEST_CMD_ID}_r2.yaml"
+    local submitted="$TEST_PROJECT/queue/reports/test_speed_report_${TEST_CMD_ID}_r1.yaml"
+    cat > "$stale" <<EOF
+worker_id: hanzo
+parent_cmd: $TEST_CMD_ID
+status: pending
+verdict: ""
+binary_checks: {}
+EOF
+    cat > "$submitted" <<EOF
+worker_id: hanzo
+parent_cmd: $TEST_CMD_ID
+status: completed
+verdict: PASS
+binary_checks:
+  commit:
+  - check: git commitが完了したか
+    result: yes
+EOF
+    python3 - "$stale" "$submitted" <<'PY'
+import os, sys
+os.utime(sys.argv[1], ns=(100, 100))
+os.utime(sys.argv[2], ns=(200, 200))
+PY
+
+    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    [[ "$output" == *"$(basename "$submitted"): OK"* ]]
+    [[ "$output" != *"$(basename "$stale"): verdict=MISSING"* ]]
+    [[ "$output" != *"no_task_parent_report:$(basename "$stale")"* ]]
+}

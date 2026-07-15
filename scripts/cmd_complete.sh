@@ -30,7 +30,7 @@ run_step() {
 }
 
 run_status_step() {
-    local output rc=0 archive_hit="" direct_review_gate=""
+    local output rc=0 archive_hit=""
     printf '[cmd_complete] START status_completed\n' >&2
     output="$(bash "$SCRIPT_DIR/gates/gate_yaml_status.sh" "$CMD_ID" 2>&1)" || rc=$?
     printf '%s\n' "$output"
@@ -49,12 +49,15 @@ run_status_step() {
         printf '[cmd_complete] PASS status_completed (archived CLEAR evidence)\n' >&2
         return 0
     fi
-    direct_review_gate="$ROOT_DIR/queue/gates/$CMD_ID/review_gate.done"
+    # Direct karo/training commands have no shogun_to_karo archive entry.
+    # SG7 was consumed with verdict=APPROVE and cmd_complete_gate returned
+    # success earlier in this same wrapper; the correlated CLEAR metric is the
+    # terminal evidence. archive.done is deliberately asynchronous and cannot
+    # be a prerequisite here without a race.
     if [[ "$CMD_ID" =~ ^cmd_(karo|training)_ ]] \
         && [[ -f "$BUNDLE_PATH" ]] \
-        && [[ -f "$direct_review_gate" ]] \
         && awk -v id="$CMD_ID" 'index($0,id) && /CLEAR/ {found=1} END {exit !found}' "$ROOT_DIR/logs/gate_metrics.log"; then
-        printf '[cmd_complete] PASS status_completed (direct SG7/review/CLEAR evidence)\n' >&2
+        printf '[cmd_complete] PASS status_completed (direct SG7/CLEAR evidence)\n' >&2
         return 0
     fi
     printf '[cmd_complete] FAILED status_completed (archive or direct completion evidence incomplete)\n' >&2

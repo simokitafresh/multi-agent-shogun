@@ -135,12 +135,11 @@ SH
     ! grep -q 'dashboard_update.sh' "$CMD_COMPLETE_TEST_LOG"
 }
 
-@test "direct command not-found continues with consumed SG7 formal review and CLEAR" {
+@test "direct command not-found continues with consumed SG7 and correlated CLEAR" {
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/direct.log"
     local cmd=cmd_karo_fixture
     mkdir -p "$FIXTURE/queue/gates/$cmd" "$FIXTURE/logs"
     cp "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
-    : > "$FIXTURE/queue/gates/$cmd/review_gate.done"
     printf '%s CLEAR\n' "$cmd" > "$FIXTURE/logs/gate_metrics.log"
     cat > "$FIXTURE/scripts/gates/gate_yaml_status.sh" <<'SH'
 #!/usr/bin/env bash
@@ -151,16 +150,16 @@ SH
     run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
         bash "$FIXTURE/scripts/cmd_complete.sh" "$cmd"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"direct SG7/review/CLEAR evidence"* ]]
+    [[ "$output" == *"direct SG7/CLEAR evidence"* ]]
     grep -q 'dashboard_update.sh' "$CMD_COMPLETE_TEST_LOG"
 }
 
-@test "direct command not-found stops without formal review evidence" {
+@test "direct command not-found stops without correlated CLEAR" {
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/direct-missing.log"
     local cmd=cmd_karo_fixture
     mkdir -p "$FIXTURE/queue/gates/$cmd" "$FIXTURE/logs"
     cp "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
-    printf '%s CLEAR\n' "$cmd" > "$FIXTURE/logs/gate_metrics.log"
+    : > "$FIXTURE/logs/gate_metrics.log"
     cat > "$FIXTURE/scripts/gates/gate_yaml_status.sh" <<'SH'
 #!/usr/bin/env bash
 printf 'gate_yaml_status.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
@@ -172,4 +171,19 @@ SH
     [ "$status" -ne 0 ]
     [[ "$output" == *"completion evidence incomplete"* ]]
     ! grep -q 'dashboard_update.sh' "$CMD_COMPLETE_TEST_LOG"
+}
+
+@test "completion gate requires a valid SG7 bundle before publishing CLEAR" {
+    local gate="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
+    run python3 - "$gate" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text()
+sg7 = text.index("sg7_bundle_missing_or_invalid")
+required = text.index("# task_type検出")
+assert sg7 < required
+assert 'review_bundle.py" consume' in text[sg7-1200:sg7+1200]
+assert '--expect-verdict APPROVE' in text[sg7-1200:sg7+1200]
+print("PASS: SG7 validation precedes completion gate evaluation")
+PY
+    [ "$status" -eq 0 ]
 }
