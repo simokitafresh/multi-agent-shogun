@@ -75,6 +75,8 @@ SH
   grep -Fq 'BATS_INNER_JOBS=1 \' "$workflow"
   grep -Fq 'BATS_FILE_TIMEOUT_SECONDS=900 \' "$workflow"
   grep -Fq 'timeout-minutes: 45' "$workflow"
+  grep -Fq 'group: test-${{ github.workflow }}-${{ github.ref }}' "$workflow"
+  grep -Fq 'cancel-in-progress: true' "$workflow"
   ! grep -Fq 'BATS_INNER_JOBS=8 \' "$workflow"
   grep -Fq 'bash scripts/run_tests.sh unit' "$workflow"
 }

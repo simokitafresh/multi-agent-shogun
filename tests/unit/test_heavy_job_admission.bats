@@ -311,6 +311,8 @@ print('ok')
     grep -q 'BATS_INNER_JOBS=1' "$workflow"
     grep -q 'BATS_FILE_TIMEOUT_SECONDS=900' "$workflow"
     grep -q 'timeout-minutes: 45' "$workflow"
+    grep -Fq 'group: test-${{ github.workflow }}-${{ github.ref }}' "$workflow"
+    grep -q 'cancel-in-progress: true' "$workflow"
     ! grep -q 'BATS_INNER_JOBS=8' "$workflow"
     grep -q 'BATS_TAP_OUTPUT=test-results/unit.tap' "$workflow"
     grep -q 'bash scripts/run_tests.sh unit' "$workflow"
