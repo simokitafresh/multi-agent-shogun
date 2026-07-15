@@ -24,6 +24,8 @@ _DS_SELF="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_DS_SELF%/scripts/daemon_supervisor.sh}"
 LOG_FILE="${DAEMON_SUPERVISOR_LOG:-$SCRIPT_DIR/logs/daemon_supervisor.log}"
 STATE_DIR="${SHOGUN_STATE_DIR:-${IDLE_FLAG_DIR:-/tmp}}"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/daemon_maintenance_lock.sh"
 
 [[ "${DAEMON_SUPERVISOR_LIB_ONLY:-0}" == "1" ]] || mkdir -p "$SCRIPT_DIR/logs"
 
@@ -220,6 +222,13 @@ ds_supervise_singleton() {
     count="${#pids[@]}"
 
     if (( count == 0 )); then
+        if is_maintenance_active; then
+            ds_log "SKIP: daemon maintenance active; ${label} restart deferred"
+            return 0
+        elif [[ $? -eq 2 ]]; then
+            ds_log "BLOCK: corrupt daemon maintenance marker; ${label} restart refused"
+            return 1
+        fi
         ds_log "MISSING: ${label}; restarting"
         ds_notify "【daemon_supervisor】${label}が0本のため再起動します"
         "$start_func"
@@ -242,6 +251,13 @@ ds_supervise_inbox_watcher() {
     count="${#pids[@]}"
 
     if (( count == 0 )); then
+        if is_maintenance_active; then
+            ds_log "SKIP: daemon maintenance active; inbox_watcher(${agent}) restart deferred"
+            return 0
+        elif [[ $? -eq 2 ]]; then
+            ds_log "BLOCK: corrupt daemon maintenance marker; inbox_watcher(${agent}) restart refused"
+            return 1
+        fi
         ds_log "MISSING: inbox_watcher(${agent}); restarting"
         ds_notify "【daemon_supervisor】inbox_watcher(${agent})が0本のため再起動します"
         ds_start_inbox_watcher "$agent"

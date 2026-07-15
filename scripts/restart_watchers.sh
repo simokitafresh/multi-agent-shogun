@@ -7,6 +7,8 @@
 set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 EXPECTED_WATCHER_COUNT="${EXPECTED_WATCHER_COUNT:-9}"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/daemon_maintenance_lock.sh"
 
 watcher_processes() {
     ps -eo pid=,ppid=,args= 2>/dev/null | awk '
@@ -50,6 +52,14 @@ case "${1:-}" in
         exit 2
         ;;
 esac
+
+if is_maintenance_active; then
+    echo "SKIP: daemon maintenance active (operator=${MAINTENANCE_OPERATOR})"
+    exit 0
+elif [[ $? -eq 2 ]]; then
+    echo "ERROR: daemon maintenance marker is corrupt; refusing restart" >&2
+    exit 1
+fi
 
 # 並行実行ガード（flock排他）
 LOCK_FILE="/tmp/restart_watchers.lock"

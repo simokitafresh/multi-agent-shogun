@@ -19,7 +19,9 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG="$SCRIPT_DIR/logs/daemon_watchdog.log"
-HEARTBEAT_FILE="/tmp/daemon_watchdog_heartbeat"
+HEARTBEAT_FILE="${DAEMON_WATCHDOG_HEARTBEAT_FILE:-/tmp/daemon_watchdog_heartbeat}"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/daemon_maintenance_lock.sh"
 
 # 多重起動防止: 手動実行時も短時間で完了するため内部lockは持たない。
 # 各デーモンの重複防止はPIDファイル/プロセス生存確認に寄せる。
@@ -182,6 +184,13 @@ check_ninja_monitor() {
     fi
 
     if [[ -z "$live_pid" ]]; then
+        if is_maintenance_active; then
+            log "SKIP: daemon maintenance active; ninja_monitor restart deferred"
+            return 0
+        elif [[ $? -eq 2 ]]; then
+            log "BLOCK: corrupt daemon maintenance marker; ninja_monitor restart refused"
+            return 1
+        fi
         if ! check_restart_throttle "ninja_monitor"; then
             log "THROTTLED: ninja_monitor.sh — ${RESTART_THROTTLE_MAX} restarts in ${RESTART_THROTTLE_WINDOW}s, skipping"
             notify "【watchdog/CRITICAL】ninja_monitor.shが再起動ストーム。手動確認必要"
@@ -212,6 +221,13 @@ check_ninja_monitor() {
 # =============================================================================
 check_ntfy_listener() {
     if ! find_live_daemon_pid "[n]tfy_listener\.sh" "ntfy_listener.sh" >/dev/null; then
+        if is_maintenance_active; then
+            log "SKIP: daemon maintenance active; ntfy_listener restart deferred"
+            return 0
+        elif [[ $? -eq 2 ]]; then
+            log "BLOCK: corrupt daemon maintenance marker; ntfy_listener restart refused"
+            return 1
+        fi
         if ! check_restart_throttle "ntfy_listener"; then
             log "THROTTLED: ntfy_listener.sh — ${RESTART_THROTTLE_MAX} restarts in ${RESTART_THROTTLE_WINDOW}s, skipping"
             notify "【watchdog/CRITICAL】ntfy_listener.shが再起動ストーム。手動確認必要"
@@ -333,6 +349,13 @@ _check_inbox_watcher_hang() {
 }
 
 check_inbox_watchers() {
+    if is_maintenance_active; then
+        log "SKIP: daemon maintenance active; inbox_watcher supervision deferred"
+        return 0
+    elif [[ $? -eq 2 ]]; then
+        log "BLOCK: corrupt daemon maintenance marker; inbox_watcher restart refused"
+        return 1
+    fi
     if ! flock -n /tmp/restart_watchers.lock -c ':' 2>/dev/null; then
         log "SKIP: restart_watchers.sh is running; inbox_watcher supervision deferred"
         return 0
