@@ -12,6 +12,9 @@ description: |
 quality_metric: "当該スキルで配備したkaro_directタスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
+<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: deploy_task.sh 336f30b67はpost-deploy delivery evidenceのcapture範囲を30行へ拡張。配備CLI・renudge出口契約は維持。 -->
+
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
 <!-- cmd_3948検分: deploy_task.sh直近差分はtask publication直列化・malformed YAML修復。配備CLI契約不変。 -->
 <!-- 検分: deploy_task.sh 758585318/030d267bb/680edbe74/f5431606f/6cab52d61/880976003/87ef68b76をgit showで確認。履歴mapping、staged continuation、独立recon、配備前source検証、direct品質projection、no-code report契約を強化。CLI引数は不変だが、10分超taskの自然境界契約が追加されたため本文を現行化。 -->

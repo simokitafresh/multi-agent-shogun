@@ -10,6 +10,9 @@ description: |
 quality_metric: "当該スキル同期後の軍師review精度（logs/gunshi_review_log.yamlでgate_prediction==gate_resultとなった割合）"
 ---
 
+<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: yaml_field_set.sh 6dd44d13fはlist item内の後置id探索を追加した内部対応。既存CLI・flock・readback契約は維持。 -->
+
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
 <!-- cmd_3948検分: yaml_field_set.sh直近差分は重複parse削減。field-set引数・atomic更新契約不変。 -->
 <!-- 検分: bulletin_write.sh 96e5f606eとyaml_field_set.sh 386cb6bbeをgit showで確認。通知先inbox root固定とlock_path SSOT化によるrace防止の内部強化。`yaml_field_set.sh <file> <block_id> <field> <value>`、`bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]`、更新→accuracy→必要時投稿の順序は不変。 -->

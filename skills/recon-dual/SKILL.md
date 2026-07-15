@@ -11,6 +11,9 @@ description: |
 quality_metric: "当該スキルで配備した偵察2名タスクのgate通過率（完了時cmd_complete_gate.sh CLEAR割合）"
 ---
 
+<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: deploy_task.sh 336f30b67は配備証跡capture拡張、yaml_field_set.sh 6dd44d13fは後置list id対応。二重配備・YAML更新の既存CLI契約は維持。 -->
+
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
 <!-- cmd_3948検分: deploy_task.sh/yaml_field_set.sh直近差分はpublication直列化・parse削減。二名配備契約不変。 -->
 <!-- 検分: deploy_task.sh 030d267b..87ef68b7(継続配備、独立recon投影、no-code報告契約、事前検証)とyaml_field_set.sh 386cb6bb(lock domain統一)。CLI引数・出口値・1人目→2人目の呼出順序は不変 -->

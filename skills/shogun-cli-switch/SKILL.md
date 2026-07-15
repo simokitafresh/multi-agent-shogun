@@ -12,6 +12,9 @@ description: |
   DO NOT TRIGGER: 同一CLI内の /model 操作（Claude系内でOpus↔Sonnet等）、レイアウト全崩壊（→/reset-layout）
 ---
 
+<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: yaml_field_set.sh 6dd44d13fはlist item内の後置id探索を追加。settings更新・tmux同期・respawnの既存契約は維持。 -->
+
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
 <!-- cmd_3948検分: yaml_field_set.sh/ninja_monitor.sh直近差分はparse削減・terminal再開明示化。切替CLI契約不変。 -->
 <!-- 検分: yaml_field_set.sh 386cb6bb(lock統一)、ninja_monitor.sh 6034dd0d/4a7c6f38/b2a69a65/066d4f06(容量guard、stage保全、終端FAIL dedupe)。CLI切替引数・respawn副作用・設定→実態確認順序は不変 -->

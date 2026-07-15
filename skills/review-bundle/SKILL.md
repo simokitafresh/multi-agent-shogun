@@ -10,6 +10,9 @@ description: |
   DO NOT TRIGGER: レビュー判定そのもの（→手動）、gate_sync（→/gate-sync）、idle分析永続化（→/idle-persist）
 ---
 
+<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: inbox_write.sh 06664edfdは矛盾reviewのBLOCK suffix拡張、yaml_field_set.sh 6dd44d13fは後置list id対応。review通知・記録CLI契約は維持。 -->
+
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
 <!-- cmd_3948検分: yaml_field_set.sh/review_bundle.py直近差分はparse削減・SG7永続化。bundle生成CLI契約不変。 -->
 <!-- 検分: bulletin_write.sh 96e5f606(inbox root固定)、inbox_write.sh 91058358(完了type正規化)、yaml_field_set.sh 386cb6bb(lock統一)。CLI引数・出口値・precheck→記録→通知の順序は不変 -->

@@ -10,6 +10,9 @@ description: |
 quality_metric: "当該スキル利用後の軍師review精度（logs/gunshi_review_log.yamlで当該分析由来レビューのgate_prediction==gate_resultとなった割合）"
 ---
 
+<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: inbox_write.sh 06664edfdはLGTM/BLOCK矛盾検出suffix拡張、yaml_field_set.sh 6dd44d13fは後置list id対応。既存呼出CLIと永続化契約は維持。 -->
+
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
 <!-- cmd_3948検分: yaml_field_set.sh直近差分は重複parse削減。field-set引数・atomic更新契約不変。 -->
 <!-- 検分: bulletin_write.sh 96e5f606e、inbox_write.sh 910583584、yaml_field_set.sh 386cb6bbeをgit showで確認。inbox root固定、忍者完了type正規化、lock_path SSOT化の内部強化。idle分析の保存→掲示板→review_log→家老通知順序と各CLI引数・exit契約は不変。 -->
