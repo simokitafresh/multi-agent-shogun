@@ -17,6 +17,8 @@ _STDERR_FILE="/tmp/_hook_stderr_prepush_$$"
 _HOOK_ARTIFACT_DIR="$REPO_ROOT/logs/hook_artifacts"
 _HOOK_ARTIFACT_ID="$(date +%Y%m%dT%H%M%S)_pre-push_$$"
 _HOOK_ARTIFACT_FILE="$_HOOK_ARTIFACT_DIR/${_HOOK_ARTIFACT_ID}.log"
+_HOOK_STARTED_AT="$(date -Iseconds)"
+_HOOK_SHA256="$(sha256sum "$0" 2>/dev/null | awk '{print $1}')"
 _CHANGED_FILES_FILE="/tmp/_hook_changed_files_prepush_$$"
 _SELECTED_TESTS_FILE="/tmp/_hook_selected_tests_prepush_$$"
 _BATS_OUTPUT_FILE="/tmp/_hook_bats_output_prepush_$$"
@@ -48,7 +50,8 @@ _record_hook_failure() {
             mkdir -p "$REPO_ROOT/logs" "$_HOOK_ARTIFACT_DIR"
             {
                 echo "# pre-push hook failure artifact"
-                echo "timestamp: $(date -Iseconds)"
+                echo "timestamp: $_HOOK_STARTED_AT"
+                echo "hook_sha256: $_HOOK_SHA256"
                 echo "exit_code: $exit_code"
                 echo
                 echo "## changed_files"
@@ -84,6 +87,8 @@ _record_hook_failure() {
             echo "  ninja: $ninja_name" >> "$REPO_ROOT/logs/hook_failures.yaml"
             echo "  exit_code: $exit_code" >> "$REPO_ROOT/logs/hook_failures.yaml"
             echo "  artifact: \"logs/hook_artifacts/${_HOOK_ARTIFACT_ID}.log\"" >> "$REPO_ROOT/logs/hook_failures.yaml"
+            echo "  started_at: \"$_HOOK_STARTED_AT\"" >> "$REPO_ROOT/logs/hook_failures.yaml"
+            echo "  hook_sha256: \"$_HOOK_SHA256\"" >> "$REPO_ROOT/logs/hook_failures.yaml"
             echo "  detail: \"$stderr_summary\"" >> "$REPO_ROOT/logs/hook_failures.yaml"
         ) || true
         # 判定根拠の可視化(LS078): stderrはartifactへ隔離されるため、失敗理由の要点を

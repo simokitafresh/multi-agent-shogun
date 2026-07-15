@@ -559,7 +559,40 @@ check_hook_failures() {
 
     if [ "$current_count" -gt "$last_count" ]; then
         local new_count=$((current_count - last_count))
+        local tracked_hook="$SCRIPT_DIR/.githooks/pre-push"
+        local active_hook="$SCRIPT_DIR/.git/hooks/pre-push"
+        local tracked_hash=""
+        local active_hash=""
+        [ -f "$tracked_hook" ] && tracked_hash=$(sha256sum "$tracked_hook" 2>/dev/null | awk '{print $1}')
+        [ -f "$active_hook" ] && active_hash=$(sha256sum "$active_hook" 2>/dev/null | awk '{print $1}')
+        local classification
+        classification=$(python3 - "$failures_file" "$last_count" "$tracked_hash" "$active_hash" <<'PY'
+import sys, yaml
+path, cursor, tracked, active = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
+rows = yaml.safe_load(open(path, encoding="utf-8")) or []
+if isinstance(rows, dict):
+    rows = rows.get("failures", [])
+rows = rows[cursor:]
+current_hashes = {h for h in (tracked, active) if h}
+current = [r for r in rows if isinstance(r, dict) and r.get("hook_sha256") in current_hashes]
+legacy = [r for r in rows if not isinstance(r, dict) or not r.get("hook_sha256")]
+old = len(rows) - len(current) - len(legacy)
+print(f"{len(current)} {old} {len(legacy)}")
+PY
+)
+        local current_generation_count old_generation_count legacy_count
+        read -r current_generation_count old_generation_count legacy_count <<< "$classification"
+
+        # Failures from an already-running old hook can finish after a fix is
+        # committed. They are evidence, but not a recurrence of the tracked
+        # generation. Advance the cursor without minting a false GA alert.
+        if [ "$current_generation_count" -eq 0 ] && [ "$legacy_count" -eq 0 ]; then
+            echo "$current_count" > "$state_file"
+            echo "OK: ${gate_name} — old generation completions ignored (old=${old_generation_count}, current=0)"
+            return 0
+        fi
         local alert_lines="ALERT: hook失敗 ${new_count}件の新規レコード検知(total: ${current_count})"
+        alert_lines+=" current_generation=${current_generation_count} old_generation=${old_generation_count} legacy=${legacy_count}"
 
         # 最新の失敗レコードを取得（最後の5行）
         local latest_detail

@@ -60,25 +60,23 @@ run_hook() {
         bash -lc 'cd "$TEST_ROOT" && bash "$TEST_ROOT/.githooks/pre-push"' dummy $extra_args
 }
 
-@test "pre-push runs the file-isolated unit runner with timeout 900 and inner jobs 1" {
+@test "pre-push delegates the full suite to CI" {
     run_hook
     [ "$status" -eq 0 ]
-    grep -q '^900 env BATS_CACHE=0 BATS_INNER_JOBS=1 bash .*/scripts/run_tests.sh unit$' "$TEST_ROOT/timeout_calls.log"
-    grep -q '^unit$' "$TEST_ROOT/run_tests_calls.log"
-    [[ "$output" == *"Running unit tests before push..."* ]]
+    [ ! -e "$TEST_ROOT/run_tests_calls.log" ]
+    ! grep -q 'run_tests.sh" unit' "$SOURCE_HOOK"
+    grep -q 'Full unit suite: CI' "$SOURCE_HOOK"
 }
 
 @test "pre-push never bypasses run_tests with a direct parallel bats invocation" {
     ! grep -Eq 'timeout [0-9]+ bats |bats tests/unit/ .*--jobs' "$SOURCE_HOOK"
     grep -q 'run_tests.sh" affected' "$SOURCE_HOOK"
-    grep -q 'run_tests.sh" unit' "$SOURCE_HOOK"
+    ! grep -q 'run_tests.sh" unit' "$SOURCE_HOOK"
 }
 
-@test "pre-push blocks push when bats fails and keeps failing test output" {
-    run_hook "" 1
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"not ok 1 failing test name"* ]]
-    [[ "$output" == *"BLOCKED: unit tests failed. Push aborted."* ]]
+@test "pre-push source has fail-closed handling for affected test failures" {
+    grep -q 'exit "\$_rc"' "$SOURCE_HOOK"
+    grep -q 'cat "\$_BATS_OUTPUT_FILE" >&2' "$SOURCE_HOOK"
 }
 
 @test "pre-push still blocks bare force pushes" {
@@ -94,15 +92,22 @@ run_hook() {
     [ "$status" -eq 0 ]
 }
 
-@test "concurrent pre-push for the same HEAD runs the full suite once and reuses PASS" {
-    cat > "$TEST_ROOT/scripts/run_tests.sh" <<'MOCK'
+@test "pre-push failure records the hook start generation" {
+    mkdir -p "$TEST_ROOT/scripts/gates"
+    cat > "$TEST_ROOT/scripts/gates/gate_no_hardcoded_ninja_list.sh" <<'MOCK'
 #!/usr/bin/env bash
-echo "$*" >> "$TEST_ROOT/run_tests_calls.log"
-if [ "$1" = "unit" ]; then sleep 1; fi
-echo "PASS: isolated runner"
+exit 1
 MOCK
-    chmod +x "$TEST_ROOT/scripts/run_tests.sh"
+    chmod +x "$TEST_ROOT/scripts/gates/gate_no_hardcoded_ninja_list.sh"
+    run_hook
+    [ "$status" -eq 1 ]
+    grep -Eq '^  started_at: "[^"]+"$' "$TEST_ROOT/logs/hook_failures.yaml"
+    recorded=$(awk -F'"' '/hook_sha256:/{print $2; exit}' "$TEST_ROOT/logs/hook_failures.yaml")
+    expected=$(sha256sum "$TEST_ROOT/.githooks/pre-push" | awk '{print $1}')
+    [ "$recorded" = "$expected" ]
+}
 
+@test "concurrent pre-push without changed refs does not invoke a redundant full suite" {
     env TEST_ROOT="$TEST_ROOT" PATH="$TEST_ROOT/mock_bin:$PATH" \
         bash -lc 'cd "$TEST_ROOT" && bash .githooks/pre-push' >"$TEST_ROOT/first.out" 2>&1 &
     first_pid=$!
@@ -112,6 +117,5 @@ MOCK
     wait "$first_pid"
 
     [ "$status" -eq 0 ]
-    [ "$(grep -c '^unit$' "$TEST_ROOT/run_tests_calls.log")" -eq 1 ]
-    [[ "$output" == *"Reusing serialized PASS"* ]]
+    [ ! -e "$TEST_ROOT/run_tests_calls.log" ]
 }

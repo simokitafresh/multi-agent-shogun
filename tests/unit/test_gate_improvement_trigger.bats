@@ -68,8 +68,62 @@ run_trigger() {
     run bash "$PROJECT_ROOT/scripts/gate_improvement_trigger.sh"
 }
 
+hook_hash() {
+    sha256sum "$TEST_TMPDIR/.githooks/pre-push" | awk '{print $1}'
+}
+
+write_hook_failure() {
+    local hash="$1"
+    cat >> "$TEST_TMPDIR/logs/hook_failures.yaml" <<EOF
+- timestamp: 2026-07-16T08:00:00+09:00
+  hook: pre-push
+  hook_sha256: "$hash"
+  detail: fixture
+EOF
+}
+
 inbox_call_count() {
     grep -c '^karo ' "$TEST_TMPDIR/inbox_calls.log" 2>/dev/null || true
+}
+
+@test "old in-flight hook generation is not reported as a post-fix recurrence" {
+    mkdir -p "$TEST_TMPDIR/.githooks" "$TEST_TMPDIR/logs/gate_state"
+    printf '#!/bin/sh\nexit 0\n' > "$TEST_TMPDIR/.githooks/pre-push"
+    echo 0 > "$TEST_TMPDIR/logs/gate_state/gate_improvement_hook_last_count"
+    write_hook_failure "old-generation-hash"
+
+    run_trigger
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"old generation completions ignored (old=1, current=0)"* ]]
+    [[ "$output" != *"SENT: hook_failure"* ]]
+}
+
+@test "failure from tracked hook generation always raises an alert" {
+    mkdir -p "$TEST_TMPDIR/.githooks" "$TEST_TMPDIR/logs/gate_state"
+    printf '#!/bin/sh\nexit 0\n' > "$TEST_TMPDIR/.githooks/pre-push"
+    echo 0 > "$TEST_TMPDIR/logs/gate_state/gate_improvement_hook_last_count"
+    write_hook_failure "$(hook_hash)"
+
+    run_trigger
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SENT: hook_failure"* ]]
+    grep -q 'current_generation=1 old_generation=0 legacy=0' "$TEST_TMPDIR/inbox_calls.log"
+}
+
+@test "failure from installed active hook generation raises an alert during source sync lag" {
+    mkdir -p "$TEST_TMPDIR/.githooks" "$TEST_TMPDIR/.git/hooks" "$TEST_TMPDIR/logs/gate_state"
+    printf '#!/bin/sh\nexit 0\n' > "$TEST_TMPDIR/.githooks/pre-push"
+    printf '#!/bin/sh\nexit 1\n' > "$TEST_TMPDIR/.git/hooks/pre-push"
+    echo 0 > "$TEST_TMPDIR/logs/gate_state/gate_improvement_hook_last_count"
+    write_hook_failure "$(sha256sum "$TEST_TMPDIR/.git/hooks/pre-push" | awk '{print $1}')"
+
+    run_trigger
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SENT: hook_failure"* ]]
+    grep -q 'current_generation=1 old_generation=0 legacy=0' "$TEST_TMPDIR/inbox_calls.log"
 }
 
 @test "same file+alert_type within 24h suppresses ALERT and emits SKIP" {
