@@ -2875,10 +2875,11 @@ generate_report_template() {
     # cmd_1983: 12+ field_get → field_get_multi 1回 (WSL2 subprocess削減)
     # task_id・parent_cmd はパラメータと同名のため上書き前にコピー
     local _p_task_id="$task_id" _p_parent_cmd="$parent_cmd"
-    local report_filename assigned_to subtask_id task_id _ac_task_id parent_cmd cmd_id \
-          ac_version title task_type target_path scout_exempt type scope_mode \
-          purpose command description constraints not_in_scope files_to_modify \
-          files_modified acceptance_criteria
+    local report_filename="" assigned_to="" subtask_id="" task_id="" _ac_task_id="" \
+          parent_cmd="" cmd_id="" ac_version="" title="" task_type="" target_path="" \
+          scout_exempt="" type="" scope_mode="" purpose="" command="" description="" \
+          constraints="" not_in_scope="" files_to_modify="" files_modified="" \
+          acceptance_criteria=""
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
         report_filename assigned_to subtask_id task_id _ac_task_id \
         parent_cmd cmd_id ac_version title task_type target_path scout_exempt \
@@ -2890,7 +2891,7 @@ generate_report_template() {
     # fresh Python process for every report template (the dominant hot path in
     # template-generation tests).
     local _variation_checks_required=false
-    local _variation_text="${title} ${purpose} ${command} ${description} ${target_path} ${files_to_modify} ${files_modified} ${acceptance_criteria} ${constraints} ${not_in_scope}"
+    local _variation_text="${title:-} ${purpose:-} ${command:-} ${description:-} ${target_path:-} ${files_to_modify:-} ${files_modified:-} ${acceptance_criteria:-} ${constraints:-} ${not_in_scope:-}"
     _variation_text="${_variation_text,,}"
     local _variation_task_type="${task_type:-${type:-${scope_mode:-}}}"
     _variation_task_type="${_variation_task_type,,}"
