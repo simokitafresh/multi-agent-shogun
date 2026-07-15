@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-07-15 cmd_training_test_speed_test_test_speed_task_generator__20260715030405 -->
+<!-- last_updated: 2026-07-15 cmd_karo_hotfix_backlinks_zero_202607150647 -->
 # 修行サイクル設計書（殿直伝 2026-03-25）
 
 ## §1 背景と原理
@@ -1116,6 +1116,7 @@ WHY=台帳鮮度回復+aliases品質向上、WHAT=対象スクリプトのCoDD�
 - [[test_semantic_index_update.bats]] — semantic index Unit。実generator契約2件は維持し、既定の全cmd履歴・project registry走査を空fixtureへ束縛して支配項を除く。実装契約は [[semantic_map_generate.sh]] を参照。
 - [[test_semantic_index_update.bats]] fixture follow-up — 固定indexとmock writerは`BATS_FILE_TMPDIR`で一度だけ生成し各testへ複製する。mockの実処理契約は [[insight_write.sh]] と照合する。
 - [[test_report_field_set_validation.bats]] — report field validation Unit。fixtureのworkerは非実在IDに固定し、実運用`queue/tasks/*.yaml`の探索・解析を各testへ混入させない。実装契約は [[report_field_set.sh]] を参照。
+- [[test_report_field_set_terminal_readiness.bats]] — terminal遷移前にcommit証拠・lesson/memory feedbackが揃う契約を検証。前提fixtureは単一起動で準備し、被テスト [[report_field_set.sh]] の呼出し回数を契約境界の2回に限定する。
 - [[test_lesson_write.bats]] — lesson write Unitは共有script/templateを`setup_file`で一度だけ生成し、各test固有のproject pathだけをbuiltinで構築する。heredoc一時ファイルを43件分作らず、実装契約は [[lesson_write.sh]] を参照。
 - [[test_small_workflow_consolidated.bats]] — small workflow UnitはBats固有の`BATS_TEST_TMPDIR`へfixture lifecycleを委ね、各testの`mktemp`と手動`rm`を除く。被テスト契約の例は [[skill_gate_feedback.sh]] と [[skill_usage_metrics.sh]] を参照。
 - [[context-freshness-check-test-speed]] — context freshness Unitはmaster fixture共有と小数秒timeout budgetで、48件の独立性・2試行・fail-closed契約を維持したまま高速化する。実装契約は [[context_freshness_check.sh]] を参照。
