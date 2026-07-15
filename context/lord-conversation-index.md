@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-15 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-15T22:11:26+09:00 -->
+<!-- generated_at: 2026-07-15T23:15:25+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-15T22:11:26+09:00 | terminal | response | cmd_3969 CLEAR同期完了。レビュー依頼待機。 [meta] stop_reason=end_turn
-- 2026-07-15T22:11:09+09:00 | ntfy | outbound | test outside tmux warning
-- 2026-07-15T22:11:08+09:00 | ntfy | outbound | test permission warning
-- 2026-07-15T22:11:00+09:00 | terminal | response | 重複処理完了。レビュー依頼待機。 [meta] stop_reason=end_turn
-- 2026-07-15T22:10:56+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率99% 連勝50
-- 2026-07-15T22:10:19+09:00 | ntfy | outbound | 【INFOバッチ】 2026-07-15 22:04:47|cmd_karo_ci_fix_commit_fixture_202607152031 2026-07-15 22:08:37|cmd_karo_hotfix_skill_ref…
-- 2026-07-15T22:10:04+09:00 | ntfy | outbound | test permission warning
-- 2026-07-15T22:10:04+09:00 | ntfy | outbound | test outside tmux warning
-- 2026-07-15T22:09:27+09:00 | terminal | response | CLEAR同期完了。レビュー依頼待機。 [meta] stop_reason=end_turn
-- 2026-07-15T22:08:55+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率99% 連勝49
+- 2026-07-15T23:15:25+09:00 | terminal | response | hook failure audit LGTM完了。レビュー依頼待機。 [meta] stop_reason=end_turn
+- 2026-07-15T23:14:13+09:00 | ntfy | outbound | 【monitor】将軍CTX:52%。/compactをご検討ください
+- 2026-07-15T23:10:41+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_karo_ci_fix_29388426180 (duration=7320s, median=250.0s, ratio=29.28x, delta=+…
+- 2026-07-15T23:09:07+09:00 | terminal | response | hook failure audit APPROVE完了。レビュー依頼待機。
+- 2026-07-15T23:08:34+09:00 | ntfy | outbound | 【家老】cmd_karo_recon2_ga263_hook_failure_audit_202607152304 初回配備開始 (title=(untitled), ninja=hayate)
+- 2026-07-15T23:07:11+09:00 | ntfy | outbound | test outside tmux warning
+- 2026-07-15T23:07:10+09:00 | ntfy | outbound | test permission warning
+- 2026-07-15T23:03:59+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-263)
+- 2026-07-15T23:01:46+09:00 | ntfy | outbound | CI赤: run 29418255805 Unit Tests (bats)
+- 2026-07-15T22:56:24+09:00 | ntfy | outbound | test outside tmux warning
 
 ## 未解決確認事項
 - 【CLI再起動成功】hayate: CLIバナー/プロンプト確認済み
@@ -42,7 +42,6 @@
 - cmd_3969
 - cmd_3970
 - cmd_3971
-- PD-132
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
