@@ -1497,7 +1497,7 @@ if [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
             done
         fi
     fi
-if [ "$valid_target" -eq 0 ]; then
+    if [ "$valid_target" -eq 0 ]; then
         echo "ERROR: Invalid target agent: '$TARGET'. Allowed: ${ALLOWED_TARGETS:-none}" >&2
         exit 1
     fi
