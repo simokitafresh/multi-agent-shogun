@@ -112,6 +112,10 @@ lesson_done_satisfies_lesson_candidate_registration() {
 }
 
 GATES_DIR="$SCRIPT_DIR/queue/gates/${CMD_ID}"
+CMD_PROJECT=""
+SG7_SPEC_SOURCE=""
+SG7_SPEC_SCOPE=""
+SG7_DIRECT_REPORT_SPEC=false
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 # LOG_DIR/GATE_METRICS_LOG already set above for early CLEAR check
@@ -2991,15 +2995,27 @@ def collect_reference_files() -> tuple[list[tuple[str, str]], list[tuple[str, st
     forward_candidates: list[tuple[str, str]] = []
     reverse_candidates: list[tuple[str, str]] = []
 
-    # CLAUDE.md (root level only) — os.walk全走査を廃止しターゲット絞込み
-    claude_abs = os.path.join(script_dir, "CLAUDE.md")
-    if os.path.isfile(claude_abs):
-        forward_candidates.append(("CLAUDE.md", claude_abs))
-        reverse_candidates.append(("CLAUDE.md", claude_abs))
-
-    # instructions/*.md
-    for abs_path in sorted(_glob.glob(os.path.join(script_dir, "instructions", "*.md"))):
-        rel_path = os.path.relpath(abs_path, script_dir).replace(os.sep, "/")
+    # Documentation wiring is a repository contract.  Enumerate the tracked
+    # instruction graph instead of ambient filesystem files: ignored local
+    # remnants must not create machine-dependent WARNs, while active
+    # generated/roles/common/cli_specific documents must be covered.
+    tracked_proc = git(
+        script_dir,
+        "ls-files",
+        "--",
+        "CLAUDE.md",
+        "instructions/*.md",
+        "instructions/**/*.md",
+    )
+    tracked_docs = sorted(dict.fromkeys(
+        line.strip().replace(os.sep, "/")
+        for line in tracked_proc.stdout.splitlines()
+        if line.strip()
+    )) if tracked_proc.returncode == 0 else []
+    for rel_path in tracked_docs:
+        abs_path = os.path.join(script_dir, rel_path)
+        if not os.path.isfile(abs_path):
+            continue
         forward_candidates.append((rel_path, abs_path))
         reverse_candidates.append((rel_path, abs_path))
 
@@ -3067,7 +3083,7 @@ else:
                         "CHECK",
                         "FORWARD",
                         "WARN",
-                        f"{len(unreferenced)} new scripts/*.sh file(s) have no references in instructions/*.md, CLAUDE.md, or other scripts/*.sh",
+                        f"{len(unreferenced)} new scripts/*.sh file(s) have no references in tracked instructions/**/*.md, CLAUDE.md, or other scripts/*.sh",
                     )
                     for rel_path in unreferenced:
                         emit("DETAIL", "FORWARD", "-", rel_path)
@@ -3195,7 +3211,10 @@ check_scope_drift() {
 
         # target_path を task YAML から取得（単一値またはリスト両対応）
         local target_path
-        target_path=$(awk '
+        if [ "${SG7_DIRECT_REPORT_SPEC:-false}" = "true" ] && [ -n "${SG7_SPEC_SCOPE:-}" ]; then
+            target_path="$SG7_SPEC_SCOPE"
+        else
+            target_path=$(awk '
             /^[[:space:]]+target_path:/ {
                 val = $0; sub(/.*target_path:[[:space:]]*/, "", val)
                 gsub(/^["'"'"']+|["'"'"']+$/, "", val)
@@ -3208,7 +3227,8 @@ check_scope_drift() {
             }
             in_tp && /^[[:space:]]+[^ -]/ { exit }
             in_tp && /^[^ ]/ { exit }
-        ' "$task_file" 2>/dev/null)
+            ' "$task_file" 2>/dev/null)
+        fi
 
         if [ -z "$target_path" ]; then
             echo "  ${ninja_name}: SKIP (target_path not set in task)"
@@ -3217,14 +3237,7 @@ check_scope_drift() {
 
         # files_modified[].path を抽出
         local modified_paths
-        modified_paths=$(awk '
-            /^files_modified:/ { in_fm=1; next }
-            in_fm && /^[^ ]/ { in_fm=0 }
-            in_fm && /^[[:space:]]+path:/ {
-                val=$0; sub(/.*path:[[:space:]]*/, "", val)
-                gsub(/^["'"'"']+|["'"'"']+$/, "", val); print val
-            }
-        ' "$report_file" 2>/dev/null)
+        modified_paths=$(collect_report_files_modified "$report_file")
 
         if [ -z "$modified_paths" ]; then
             echo "  ${ninja_name}: SKIP (files_modified empty or no path entries)"
@@ -3440,12 +3453,7 @@ check_wtf_likelihood() {
 
         # files_modified のパスエントリ数をカウント
         local file_count
-        file_count=$(awk '
-            /^files_modified:/ { in_fm=1; next }
-            in_fm && /^[^ ]/ { in_fm=0 }
-            in_fm && /^[[:space:]]+path:/ { count++ }
-            END { print count+0 }
-        ' "$report_file" 2>/dev/null)
+        file_count=$(collect_report_files_modified "$report_file" | awk 'NF { count++ } END { print count+0 }')
 
         # revert commit数をカウント
         local revert_count=0
@@ -4282,23 +4290,64 @@ collect_git_show_w_files() {
         | sort -u
 }
 
+collect_report_commit_hash() {
+    local report_file="$1"
+
+    REPORT_FILE="$report_file" python3 - <<'PY'
+import os
+import re
+import yaml
+
+try:
+    with open(os.environ["REPORT_FILE"], encoding="utf-8") as handle:
+        report = yaml.safe_load(handle) or {}
+except Exception:
+    raise SystemExit(0)
+
+value = str(report.get("commit_hash") or "").strip()
+if re.fullmatch(r"[0-9a-fA-F]{40}", value):
+    print(value.lower())
+PY
+}
+
+collect_cmd_phase_git_files() {
+    local anchor_hash="$1"
+    local cmd_id="${2:-$CMD_ID}"
+    local hash subject
+    local -A seen_hashes=()
+
+    # The report commit is authoritative even when its subject does not carry
+    # the cmd id.  Older phase commits are included only on the anchor's
+    # ancestry and only with an exact "${cmd_id}:" subject prefix.  This keeps
+    # unrelated HEAD/newer commits and cmd_99/cmd_999 prefix collisions out.
+    while IFS=$'\t' read -r hash subject; do
+        [ -n "$hash" ] || continue
+        if [ "$hash" = "$anchor_hash" ] || [[ "$subject" == "${cmd_id}:"* ]]; then
+            seen_hashes["$hash"]=1
+        fi
+    done < <(git -C "$SCRIPT_DIR" log --format=$'%H\t%s' "$anchor_hash" 2>/dev/null || true)
+
+    for hash in "${!seen_hashes[@]}"; do
+        collect_git_show_w_files "$hash"
+    done | awk 'NF && !seen[$0]++' | sort -u
+}
+
 check_self_grade_commit_file_coverage() {
-    local git_ref="${1:-HEAD}"
     local checked=false
     local warned=false
-    local task_file ninja_name report_file report_files commit_files missing
+    local ninja_name report_file report_files commit_files missing commit_hash
 
-    for task_file in "${MATCHING_TASK_FILES[@]}"; do
-        if [ ! -f "$task_file" ]; then
-            echo "  [WARN] matching task file disappeared, skipping: $task_file"
-            MATCHING_TASK_FILES_SKIPPED_COUNT=$((MATCHING_TASK_FILES_SKIPPED_COUNT + 1))
-            continue
-        fi
-        MATCHING_TASK_FILES_PROCESSED_COUNT=$((MATCHING_TASK_FILES_PROCESSED_COUNT + 1))
-
-        ninja_name=$(basename "$task_file" .yaml)
-        report_file=$(resolve_report_file "$ninja_name")
+    while IFS= read -r report_file; do
         [ -f "$report_file" ] || continue
+        ninja_name=$(REPORT_FILE="$report_file" python3 - <<'PY'
+import os, yaml
+try:
+    data = yaml.safe_load(open(os.environ["REPORT_FILE"], encoding="utf-8")) or {}
+except Exception:
+    data = {}
+print(str(data.get("worker_id") or os.path.basename(os.environ["REPORT_FILE"]).split("_report_", 1)[0]))
+PY
+)
         checked=true
 
         if ! report_has_commit_binary_check_yes "$report_file"; then
@@ -4306,28 +4355,35 @@ check_self_grade_commit_file_coverage() {
             continue
         fi
 
-        report_files=$(collect_parent_cmd_report_files_modified "$CMD_ID" | sort -u)
+        report_files=$(collect_report_files_modified "$report_file" | sort -u)
         if [ -z "$report_files" ]; then
-            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES parent_cmd files_modified empty while binary_checks.commit=yes"
+            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES report files_modified empty while binary_checks.commit=yes"
             warned=true
             continue
         fi
 
-        if ! commit_files=$(collect_git_show_w_files "$git_ref"); then
-            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES git show -w failed (${git_ref})"
+        commit_hash=$(collect_report_commit_hash "$report_file")
+        if [ -z "$commit_hash" ] || ! git -C "$SCRIPT_DIR" cat-file -e "${commit_hash}^{commit}" 2>/dev/null; then
+            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES valid report commit_hash not found"
+            warned=true
+            continue
+        fi
+
+        if ! commit_files=$(collect_cmd_phase_git_files "$commit_hash" "$CMD_ID"); then
+            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES git show -w failed (report commit ${commit_hash})"
             warned=true
             continue
         fi
 
         missing=$(comm -23 <(printf '%s\n' "$report_files") <(printf '%s\n' "$commit_files"))
         if [ -n "$missing" ]; then
-            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES files_modified not in git show -w (${git_ref}):"
+            echo "  [WARN] ${ninja_name}: SELF_GRADE_COMMIT_FILES files_modified not in report commit phase union (${commit_hash}):"
             printf '%s\n' "$missing" | sed 's/^/    - /'
             warned=true
         else
-            echo "  ${ninja_name}: OK (files_modified covered by git show -w ${git_ref})"
+            echo "  ${ninja_name}: OK (files_modified covered by report commit phase union ${commit_hash})"
         fi
-    done
+    done < <(discover_reports_for_cmd "$CMD_ID")
 
     if [ "$checked" = false ]; then
         echo "  (no reports found for this cmd)"
@@ -5083,9 +5139,38 @@ collect_report_modified_files() {
     done | awk 'NF && !seen[$0]++'
 }
 
+load_validated_sg7_context() {
+    local bundle_path="$1"
+    local spec_json="$2"
+
+    CMD_PROJECT=$(SPEC_JSON="$spec_json" python3 -c 'import json,os; print(str(json.loads(os.environ["SPEC_JSON"]).get("project") or "").strip())')
+    SG7_SPEC_SOURCE=$(BUNDLE_PATH="$bundle_path" python3 -c 'import json,os; print(str(json.load(open(os.environ["BUNDLE_PATH"], encoding="utf-8"))["review"].get("cmd_spec_source") or "").strip())')
+    SG7_SPEC_SCOPE=$(SPEC_JSON="$spec_json" python3 - <<'PY'
+import json
+import os
+
+scope = json.loads(os.environ["SPEC_JSON"]).get("scope")
+if isinstance(scope, list):
+    for item in scope:
+        value = str(item or "").strip()
+        if value:
+            print(value)
+PY
+)
+    case "$SG7_SPEC_SOURCE" in
+        queue/reports/*.yaml|queue/archive/reports/*.yaml) SG7_DIRECT_REPORT_SPEC=true ;;
+        *) SG7_DIRECT_REPORT_SPEC=false ;;
+    esac
+}
+
 collect_cmd_command_file_refs() {
     local cmd_id="$1"
     local verified_deps="${2:-}"
+
+    if [ "${SG7_DIRECT_REPORT_SPEC:-false}" = "true" ] && [ -n "${SG7_SPEC_SCOPE:-}" ]; then
+        printf '%s\n' "$SG7_SPEC_SCOPE"
+        return 0
+    fi
 
     CMD_ID_ENV="$cmd_id" YAML_FILE_ENV="$YAML_FILE" SCRIPT_DIR_ENV="$SCRIPT_DIR" VERIFIED_EXISTING_DEPS_ENV="$verified_deps" python3 - <<'PY' 2>/dev/null || true
 import glob
@@ -5719,12 +5804,13 @@ fi
 if [ -f "$SCRIPT_DIR/scripts/cmd_complete.sh" ]; then
     _sg7_bundle="$GATES_DIR/sg7_bundle.json"
     if [ ! -f "$SCRIPT_DIR/scripts/review_bundle.py" ] \
-        || ! python3 "$SCRIPT_DIR/scripts/review_bundle.py" consume \
-            --cmd "$CMD_ID" --bundle "$_sg7_bundle" --expect-verdict APPROVE >/dev/null; then
+        || ! _SG7_SPEC_JSON=$(python3 "$SCRIPT_DIR/scripts/review_bundle.py" consume \
+            --cmd "$CMD_ID" --bundle "$_sg7_bundle" --expect-verdict APPROVE); then
         echo "GATE BLOCK: sg7_bundle_missing_or_invalid"
         append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\tsg7_bundle_missing_or_invalid"
         exit 1
     fi
+    load_validated_sg7_context "$_sg7_bundle" "$_SG7_SPEC_JSON"
 fi
 
 # task_type検出
@@ -5764,6 +5850,9 @@ IFS=$'\t' read -r GATE_TASK_TYPE GATE_MODEL GATE_BLOOM_LEVEL <<< "$(collect_gate
 GATE_INJECTED_LESSONS="$(collect_injected_lessons "$CMD_ID")"
 CMD_TITLE="$(collect_cmd_title "$CMD_ID")"
 CMD_CHANGED_FILES="$(get_cmd_changed_files "$CMD_ID" || true)"
+if [ -z "$CMD_CHANGED_FILES" ] && [ "${SG7_DIRECT_REPORT_SPEC:-false}" = "true" ]; then
+    CMD_CHANGED_FILES="$(collect_report_modified_files || true)"
+fi
 GATE_FIRST_MODEL_METRIC="$(build_first_gate_model_metric)"
 
 # ─── cmd_776 B層: 報告YAML自動正規化（auto-draft前に実行） ───
@@ -7391,8 +7480,7 @@ run_review_quality_check
 # ─── draft教訓存在チェック（プロジェクト関連のdraft未査読をブロック） ───
 level_heading "[L3]" "Draft lesson check:"
 # cmdのprojectを取得
-CMD_PROJECT=""
-if [ -f "$YAML_FILE" ]; then
+if [ -z "$CMD_PROJECT" ] && [ -f "$YAML_FILE" ]; then
     CMD_PROJECT=$(awk -v cmd="${CMD_ID}" '
         /^  [a-zA-Z_].*:$/ { key=$0; gsub(/^[[:space:]]+|:[[:space:]]*$/, "", key); found=(key==cmd) ? 1 : 0; next }
         found && /^    project:/ { sub(/^[[:space:]]*project:[[:space:]]*/, ""); gsub(/["'"'"']/, ""); print; exit }
@@ -7958,7 +8046,7 @@ check_wtf_likelihood
 # Agent self-grade can nod along even when the actual commit does not match the report.
 # Compare reported files against `git show -w --name-only` so formatting-only/no-op claims become visible.
 level_heading "[L2]" "Self-grade commit/files verification:"
-check_self_grade_commit_file_coverage "HEAD"
+check_self_grade_commit_file_coverage
 
 # ─── 軍師verdict事前チェック（cmd_3248: GATE判定前にWARN表示） ───
 # GATE CLEAR後の記録処理(L6585/L6888)とは別。家老がGATE判断前に軍師指摘を把握するためのWARN。

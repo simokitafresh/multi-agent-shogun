@@ -52,6 +52,10 @@ setup_file() {
         printf '\n'
         sed -n '/^collect_git_show_w_files()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^collect_report_commit_hash()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^collect_cmd_phase_git_files()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^check_self_grade_commit_file_coverage()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^is_lessons_useful_empty_warn_task_type()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -68,6 +72,8 @@ setup_file() {
         printf '\n'
         sed -n '/^collect_report_modified_files()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^load_validated_sg7_context()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^collect_cmd_command_file_refs()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^collect_report_verified_existing_deps()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -75,6 +81,12 @@ setup_file() {
         sed -n '/^collect_task_readonly_refs()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^check_command_files_modified_coverage()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^check_scope_drift()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^check_wtf_likelihood()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^check_script_wiring()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^cmd_requires_cdp_production_check()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
@@ -520,7 +532,7 @@ _run_command_files_modified_coverage_with_state() {
 }
 
 _run_self_grade_commit_file_coverage_with_state() {
-    check_self_grade_commit_file_coverage HEAD
+    check_self_grade_commit_file_coverage
     echo "ALL_CLEAR=$ALL_CLEAR"
     echo "BLOCK_REASONS=${BLOCK_REASONS[*]}"
 }
@@ -558,6 +570,8 @@ EOF
 
 _write_self_grade_fixture() {
     local files_modified_block="$1"
+    local commit_hash
+    commit_hash=$(git -C "$TEST_PROJECT" rev-parse HEAD)
 
     export SCRIPT_DIR="$TEST_PROJECT"
     export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
@@ -580,6 +594,7 @@ binary_checks:
   commit:
     - check: git commitが完了したか
       result: yes
+commit_hash: $commit_hash
 EOF
 }
 
@@ -603,7 +618,7 @@ _init_self_grade_git_repo() {
 
     run _run_self_grade_commit_file_coverage_with_state
     [ "$status" -eq 0 ]
-    [[ "$output" == *"SELF_GRADE_COMMIT_FILES files_modified not in git show -w"* ]]
+    [[ "$output" == *"SELF_GRADE_COMMIT_FILES files_modified not in report commit phase union"* ]]
     [[ "$output" == *"scripts/reported_only.sh"* ]]
     [[ "$output" == *"ALL_CLEAR=true"* ]]
     [[ "$output" == *"BLOCK_REASONS="* ]]
@@ -616,7 +631,7 @@ _init_self_grade_git_repo() {
 
     run _run_self_grade_commit_file_coverage_with_state
     [ "$status" -eq 0 ]
-    [[ "$output" == *"OK (files_modified covered by git show -w HEAD)"* ]]
+    [[ "$output" == *"OK (files_modified covered by report commit phase union"* ]]
     [[ "$output" == *"OK (self-grade commit file coverage)"* ]]
     [[ "$output" == *"ALL_CLEAR=true"* ]]
     [[ "$output" == *"BLOCK_REASONS="* ]]
@@ -641,7 +656,7 @@ EOF
 
     run _run_self_grade_commit_file_coverage_with_state
     [ "$status" -eq 0 ]
-    [[ "$output" == *"OK (files_modified covered by git show -w HEAD)"* ]]
+    [[ "$output" == *"OK (files_modified covered by report commit phase union"* ]]
     [[ "$output" == *"OK (self-grade commit file coverage)"* ]]
     [[ "$output" == *"ALL_CLEAR=true"* ]]
 }
@@ -653,7 +668,7 @@ EOF
 
     run _run_self_grade_commit_file_coverage_with_state
     [ "$status" -eq 0 ]
-    [[ "$output" == *"OK (files_modified covered by git show -w HEAD)"* ]]
+    [[ "$output" == *"OK (files_modified covered by report commit phase union"* ]]
     [[ "$output" == *"OK (self-grade commit file coverage)"* ]]
 }
 
@@ -672,6 +687,103 @@ EOF
     run collect_parent_cmd_report_files_modified "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
     [ "$(printf '%s\n' "$output" | grep -c '^scripts/touched.sh$')" -eq 1 ]
+}
+
+@test "self-grade commit/files verification ignores unrelated newer HEAD and uses report commit_hash" {
+    _init_self_grade_git_repo
+    _write_self_grade_fixture "  - path: scripts/touched.sh
+    change: modified"
+
+    printf 'unrelated\n' > "$TEST_PROJECT/unrelated.txt"
+    git -C "$TEST_PROJECT" add unrelated.txt
+    git -C "$TEST_PROJECT" commit -m "unrelated newer head" >/dev/null
+
+    run _run_self_grade_commit_file_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (files_modified covered by report commit phase union"* ]]
+    [[ "$output" != *"unrelated.txt"* ]]
+}
+
+@test "validated direct SG7 context supplies project and exact report scope" {
+    local bundle="$TEST_PROJECT/queue/gates/$TEST_CMD_ID/sg7_bundle.json"
+    mkdir -p "$(dirname "$bundle")"
+    cat > "$bundle" <<EOF
+{"review":{"cmd_spec_source":"queue/reports/sasuke_report_${TEST_CMD_ID}.yaml"}}
+EOF
+
+    load_validated_sg7_context "$bundle" '{"project":"infra","scope":["scripts/a.sh","tests/a.bats"]}'
+
+    [ "$CMD_PROJECT" = "infra" ]
+    [ "$SG7_DIRECT_REPORT_SPEC" = "true" ]
+    [ "$SG7_SPEC_SCOPE" = $'scripts/a.sh\ntests/a.bats' ]
+    run collect_cmd_command_file_refs "$TEST_CMD_ID" ""
+    [ "$status" -eq 0 ]
+    [ "$output" = $'scripts/a.sh\ntests/a.bats' ]
+}
+
+@test "scope drift and WTF parse standard files_modified dash-path entries from direct SG7 scope" {
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    export MATCHING_TASK_FILES_PROCESSED_COUNT=0
+    export MATCHING_TASK_FILES_SKIPPED_COUNT=0
+    export SG7_DIRECT_REPORT_SPEC=true
+    export SG7_SPEC_SCOPE=$'scripts/a.sh\ntests/a.bats'
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  target_path: scripts/a.sh
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+parent_cmd: $TEST_CMD_ID
+files_modified:
+  - path: scripts/a.sh
+    change: modified
+  - path: tests/a.bats
+    change: added
+EOF
+    get_cmd_head_hashes() { :; }
+
+    run check_scope_drift
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (全2件 target_path内)"* ]]
+    [[ "$output" != *"files_modified empty"* ]]
+
+    run check_wtf_likelihood
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK (files=2, revert=0)"* ]]
+}
+
+@test "script wiring scans tracked nested instructions and ignores ambient untracked docs" {
+    git -C "$TEST_PROJECT" init -q
+    git -C "$TEST_PROJECT" config user.email test@example.com
+    git -C "$TEST_PROJECT" config user.name Test
+    mkdir -p "$TEST_PROJECT/instructions/generated" "$TEST_PROJECT/scripts"
+    printf '# tracked\n`scripts/existing.sh`\n' > "$TEST_PROJECT/instructions/generated/codex-karo.md"
+    printf '# ambient\n`scripts/ambient-missing.sh`\n' > "$TEST_PROJECT/instructions/ambient.md"
+    printf '#!/bin/bash\n' > "$TEST_PROJECT/scripts/existing.sh"
+    git -C "$TEST_PROJECT" add instructions/generated/codex-karo.md scripts/existing.sh
+    git -C "$TEST_PROJECT" commit -q -m initial
+
+    run check_script_wiring cmd_no_matching_commit
+    [ "$status" -eq 0 ]
+    [[ "$output" == *$'CHECK\tREVERSE\tOK\tall 1 referenced scripts/*.sh path(s) exist'* ]]
+    [[ "$output" != *"ambient-missing.sh"* ]]
+
+    printf '# tracked\n`scripts/tracked-missing.sh`\n' > "$TEST_PROJECT/instructions/generated/codex-karo.md"
+    git -C "$TEST_PROJECT" add instructions/generated/codex-karo.md
+    git -C "$TEST_PROJECT" commit -q -m tracked-missing
+
+    run check_script_wiring cmd_no_matching_commit
+    [ "$status" -eq 0 ]
+    [[ "$output" == *$'CHECK\tREVERSE\tWARN\t1 referenced scripts/*.sh path(s) do not exist'* ]]
+    [[ "$output" == *"tracked-missing.sh <- instructions/generated/codex-karo.md"* ]]
+    [[ "$output" != *"ambient-missing.sh"* ]]
+}
+
+@test "karo procedures document is tracked so clean clones retain referenced runbook" {
+    run git -C "$PROJECT_ROOT" ls-files --error-unmatch instructions/karo-procedures.md
+    [ "$status" -eq 0 ]
 }
 
 # ─── cmd_karo_hotfix_gate_report_discovery_after_redeploy: task snapshot=0でも
