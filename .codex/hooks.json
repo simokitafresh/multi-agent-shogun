@@ -1,0 +1,73 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-read-tracker.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|exec_command|unified_exec",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-bash-combined.sh",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/pre-write-edit-combined.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/codex_session_start.sh",
+            "timeout": 60,
+            "statusMessage": "Loading shogun session context"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/scripts/hooks/codex_user_prompt_submit.sh",
+            "timeout": 10,
+            "statusMessage": "Loading memory context"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|exec_command|unified_exec",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /mnt/c/tools/multi-agent-shogun/.claude/hooks/post-bash-combined.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

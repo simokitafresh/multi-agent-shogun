@@ -105,7 +105,7 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 - **他者ファイルのcheckout/restore/unstage** — 他者WIPを破壊する。触らずhelperでscope分離する
 - **`git push`** — 忍者はcommitまで。pushは家老の責務
 - **`--no-verify`** — pre-commitフックをスキップするな
-- **`git reset --hard`** — 未commit変更を全て失う。`git stash`を使え
+- **`git reset --hard` / `git stash`** — 共有worktree全体を巻き戻し、他忍者の現task generationとreportを破壊する。指定pathだけを`ninja_scope_commit.sh`でscope限定commitせよ
 - **scope外ファイルのcommit** — .env、credentials.json、他の忍者のファイルに触れるな
 
 ## 注意ポイント

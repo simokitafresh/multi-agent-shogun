@@ -13,7 +13,8 @@
 # Local runtime / sandbox artifacts
 .codex-tmp/
 .codex_tmp/
-.codex/
+.codex/*
+!.codex/hooks.json
 .codd/
 .obsidian/
 .pytest_cache/

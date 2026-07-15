@@ -231,6 +231,14 @@ expect_block "read-only stash subcommand also closed" "git stash list | head -3"
 expect_allow "stash reflog inspection alternative"   "git log -g refs/stash -3"
 expect_allow "stash object inspection alternative"   "git show stash@{0} --stat"
 
+# Codex must route every shell-capable tool name through the same guard.  A
+# Bash-only matcher left exec_command/unified_exec able to create a real stash
+# that rewound five live task pointers on 2026-07-15.
+for codex_shell_tool in Bash exec_command unified_exec; do
+    grep -q '"matcher": "Bash|exec_command|unified_exec"' "$REPO_ROOT/.codex/hooks.json" \
+        || fail "Codex shell matcher missing shared stash guard: $codex_shell_tool"
+done
+
 # ─── Guard 2: yaml dump on operational YAML ───
 # Build test strings dynamically to avoid GP-136 pre-commit false positive
 _yd="yaml.dum"; _yd+="p"
