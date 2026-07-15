@@ -833,6 +833,41 @@ _wait_for_file() {
     [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
 }
 
+@test "report_received: explicit verified linked worktree checks that worktree instead of dirty main" {
+    setup_git_test_env
+    local worktree="$BATS_TEST_TMPDIR/reporter-wt"
+    git -C "$TEST_TMPDIR" worktree add -q -b reporter-wt "$worktree"
+    printf 'echo "main dirty"\n' >> "$TEST_TMPDIR/src/test_file.sh"
+    printf 'echo "reporter committed"\n' >> "$worktree/src/test_file.sh"
+    git -C "$worktree" add src/test_file.sh
+    git -C "$worktree" commit -q -m "reporter worktree change"
+    local commit_hash
+    commit_hash=$(git -C "$worktree" rev-parse HEAD)
+    run bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" commit_hash "$commit_hash"
+    [ "$status" -eq 0 ]
+
+    INBOX_REPORT_WORKTREE_ROOT="$worktree" run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified linked worktree root"* ]]
+}
+
+@test "report_received: arbitrary root and linked-worktree commit mismatch stay blocked" {
+    setup_git_test_env
+    local worktree="$BATS_TEST_TMPDIR/reporter-wt-bad"
+    local foreign="$BATS_TEST_TMPDIR/foreign"
+    git -C "$TEST_TMPDIR" worktree add -q -b reporter-wt-bad "$worktree"
+    mkdir -p "$foreign"
+    git -C "$foreign" init -q
+
+    INBOX_REPORT_WORKTREE_ROOT="$foreign" run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"invalid linked worktree root or report commit mismatch"* ]]
+
+    INBOX_REPORT_WORKTREE_ROOT="$worktree" run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"report commit mismatch"* ]]
+}
+
 @test "report_received: reporter's hunk committed + other ninja's non-overlapping dirty hunk in same file → PASS (AC1)" {
     setup_git_test_env
 
@@ -1114,9 +1149,40 @@ EOF
 
     PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" "testninja" "タスクを読め" "task_assigned" "karo"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"verified (pane working) for testninja"* ]]
+    [[ "$output" == *"verified (prompt/working evidence) for testninja"* ]]
     [[ "$output" != *"codex nudge retry"* ]]
     [[ "$output" != *"remained unverified"* ]]
+}
+
+@test "task_assigned: codex prompt visible during hook is delivery evidence without retry" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+    printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes) echo "shogun:agents.3 testninja" ;;
+  capture-pane) echo "inbox1 — タスクYAML: ${INBOX_WRITE_ROOT_OVERRIDE}/queue/tasks/testninja.yaml を読んで作業開始せよ"; echo "• Running UserPromptSubmit hook" ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" testninja "タスクを読め" task_assigned karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified (prompt/working evidence)"* ]]
+    [[ "$output" != *"codex nudge retry"* ]]
+    [ "$(grep -c 'send-keys' "$TMUX_LOG" || true)" -eq 0 ]
 }
 
 @test "task_assigned: codex ninja delivery verification still warns when truly unverified" {

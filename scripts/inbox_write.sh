@@ -775,6 +775,16 @@ verify_codex_task_delivery() {
     return 1
 }
 
+codex_pane_has_delivery_evidence() {
+    local target="$1"
+    local pane_snapshot="$2"
+
+    # Codex keeps the submitted prompt visible while UserPromptSubmit/PostToolUse
+    # hooks run.  Waiting only for the later generic "Working" badge causes the
+    # same already-arrived prompt to be submitted again.
+    printf '%s\n' "$pane_snapshot" | grep -qE "inbox[0-9]+ — .*queue/tasks/${target}\.yaml|• (Working|Ran |Waiting|Running .*([Hh]ook|UserPromptSubmit|PostToolUse))"
+}
+
 maybe_verify_codex_delivery() {
     local target="$1"
     local msg_id="$2"
@@ -801,8 +811,8 @@ maybe_verify_codex_delivery() {
         if [ -n "$pane_target" ]; then
             local pane_snapshot
             pane_snapshot=$(tmux capture-pane -t "$pane_target" -p -S -5 2>/dev/null || true)
-            if echo "$pane_snapshot" | grep -qE '• (Working|Ran |Waiting)'; then
-                echo "[inbox_write] codex delivery verified (pane working) for ${target}" >&2
+            if codex_pane_has_delivery_evidence "$target" "$pane_snapshot"; then
+                echo "[inbox_write] codex delivery verified (prompt/working evidence) for ${target}" >&2
                 capture_codex_delivery_snapshot "$target" "$pane_target"
                 return 0
             fi
@@ -1793,6 +1803,26 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                             GIT_REPO_DIR="$_proj_path"
                         fi
                     fi
+                fi
+                # A linked-worktree reporter must opt in explicitly.  Accept
+                # only a real worktree of the canonical repo and only when the
+                # report commit is the worktree HEAD; arbitrary paths and stale
+                # or foreign commits remain fail-closed.
+                if [ -n "${INBOX_REPORT_WORKTREE_ROOT:-}" ]; then
+                    _requested_root=$(git -C "$INBOX_REPORT_WORKTREE_ROOT" rev-parse --show-toplevel 2>/dev/null || true)
+                    _canonical_root=$(git -C "$GIT_REPO_DIR" rev-parse --show-toplevel 2>/dev/null || true)
+                    _requested_common=$(git -C "$INBOX_REPORT_WORKTREE_ROOT" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
+                    _canonical_common=$(git -C "$GIT_REPO_DIR" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
+                    _report_commit=$(inbox_yaml_field_get "$FULL_REPORT" "commit_hash" "" 2>/dev/null || true)
+                    _requested_head=$(git -C "$INBOX_REPORT_WORKTREE_ROOT" rev-parse HEAD 2>/dev/null || true)
+                    if [ -z "$_requested_root" ] || [ "$_requested_root" != "$INBOX_REPORT_WORKTREE_ROOT" ] \
+                        || [ -z "$_canonical_root" ] || [ "$_requested_common" != "$_canonical_common" ] \
+                        || ! [[ "$_report_commit" =~ ^[0-9a-fA-F]{40}$ ]] || [ "$_report_commit" != "$_requested_head" ]; then
+                        echo "[git_uncommitted_gate] BLOCKED: invalid linked worktree root or report commit mismatch (ninja: ${FROM})" >&2
+                        exit 1
+                    fi
+                    GIT_REPO_DIR="$_requested_root"
+                    echo "[git_uncommitted_gate] verified linked worktree root: $GIT_REPO_DIR" >&2
                 fi
                 _filtered_check_paths=()
                 while IFS= read -r _candidate_path; do
