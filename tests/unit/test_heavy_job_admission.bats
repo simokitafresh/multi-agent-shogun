@@ -306,9 +306,10 @@ print('ok')
     [ "$status" -eq 0 ]
 }
 
-@test "CI unit lane uses file-isolated runner with jobs 8 and TAP artifact" {
+@test "CI unit lane keeps file internals serial under aggregate jobs 8 and writes TAP artifact" {
     workflow="$ROOT/.github/workflows/test.yml"
-    grep -q 'BATS_INNER_JOBS=8' "$workflow"
+    grep -q 'BATS_INNER_JOBS=1' "$workflow"
+    ! grep -q 'BATS_INNER_JOBS=8' "$workflow"
     grep -q 'BATS_TAP_OUTPUT=test-results/unit.tap' "$workflow"
     grep -q 'bash scripts/run_tests.sh unit' "$workflow"
     ! grep -q 'bats tests/unit/ .*--jobs 8' "$workflow"

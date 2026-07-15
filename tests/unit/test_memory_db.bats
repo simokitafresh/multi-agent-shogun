@@ -748,6 +748,8 @@ PY
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/cache/memory.db"
     export SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=999999999
     export THREE_LAYER_CHAIN_LOG="$TEST_TMPDIR/three_layer_chain_async.log"
+    export THREE_LAYER_CHAIN_STATE_DIR="$TEST_TMPDIR/three_layer_chain_state"
+    mkdir -p "$THREE_LAYER_CHAIN_STATE_DIR"
 
     run bash "$MEMORY_DB_SCRIPT_ROOT/scripts/gates/gate_three_layer_health.sh"
     [ "$status" -eq 0 ]
