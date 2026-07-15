@@ -783,6 +783,21 @@ if not rp or not os.path.exists(rp):
     sys.exit(0)
 with open(rp, encoding='utf-8') as f:
     data = yaml.safe_load(f) or {}
+summary = str((data.get('result') or {}).get('summary', '') or '').strip()
+if not summary or 'FILL_THIS' in summary:
+    print('BLOCK: result.summary が空またはplaceholderのまま terminal化は禁止。実施・検証結果を先に記録せよ', file=sys.stderr)
+    sys.exit(1)
+" || return 1
+                    REPORT_PATH="$REPORT_PATH" python3 -c "
+import os
+import sys
+import yaml
+
+rp = os.environ.get('REPORT_PATH', '')
+if not rp or not os.path.exists(rp):
+    sys.exit(0)
+with open(rp, encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
 bc = data.get('binary_checks', {})
 commit_checks = bc.get('commit') if isinstance(bc, dict) else None
 if not commit_checks:
@@ -818,10 +833,17 @@ if missing:
             if [[ "$dot_key" == "commit_hash" ]]; then
                 local clean_val
                 clean_val="$(echo "$val" | xargs)"
-                if [[ ! "$clean_val" =~ ^[0-9a-f]{40}$ ]]; then
-                    echo "BLOCK: commit_hash は40文字フルhex必須。受信: '$clean_val'" >&2
+                if [[ ! "$clean_val" =~ ^[0-9a-f]{40}$ ]] && ! REPORT_PATH="$REPORT_PATH" PROJECT_ROOT="$SCRIPT_DIR" COMMIT_IDENTITY="$clean_val" python3 - <<'PY'
+import os, pathlib, sys, yaml
+sys.path.insert(0, str(pathlib.Path(os.environ['PROJECT_ROOT']) / 'scripts' / 'lib'))
+from report_commit_identity import valid_commit_identity
+report = yaml.safe_load(open(os.environ['REPORT_PATH'], encoding='utf-8')) or {}
+sys.exit(0 if valid_commit_identity(os.environ['COMMIT_IDENTITY'], report, pathlib.Path(os.environ['PROJECT_ROOT'])) else 1)
+PY
+                then
+                    echo "BLOCK: commit_hash は40文字フルhex、または明示no-commitかつqueue/logsのみのno-code-change必須。受信: '$clean_val'" >&2
                     echo "  正: git rev-parse HEAD で取得した40文字 (例: a1b2c3d4...)" >&2
-                    echo "  誤: 短縮hash(8文字等)、付加文字列、複数hash" >&2
+                    echo "  誤: 短縮hash(8文字等)、根拠なしno-code-change、source/config/docs混在" >&2
                     return 1
                 fi
             fi
@@ -854,8 +876,8 @@ if _pcmd and rp:
 result = data.get('result', {})
 if isinstance(result, dict):
     s = str(result.get('summary', '')).strip()
-    if not s:
-        issues.append('result.summary が空。作業内容を記述せよ')
+    if not s or 'FILL_THIS' in s:
+        issues.append('result.summary が空またはplaceholder。実施・検証結果を記述せよ')
 # GP-072c2: lesson_candidate.found=false requires no_lesson_reason
 lc = data.get('lesson_candidate', {})
 if isinstance(lc, dict) and str(lc.get('found', '')).lower() == 'false':
@@ -1297,8 +1319,10 @@ if [[ "$DOT_KEY" == "verdict" ]] && [[ "$VALUE" == "PASS" || "$VALUE" == "FAIL" 
     # A report that claims commit=yes must remain writable until its immutable
     # commit fingerprint has been recorded.  Otherwise verdict auto-completion
     # makes the immediately-following commit_hash write impossible.
-    if [ -f "$REPORT_PATH" ] && ! REPORT_PATH="$REPORT_PATH" python3 - <<'PY'
-import os, re, sys, yaml
+    if [ -f "$REPORT_PATH" ] && ! REPORT_PATH="$REPORT_PATH" PROJECT_ROOT="$SCRIPT_DIR" python3 - <<'PY'
+import os, pathlib, sys, yaml
+sys.path.insert(0, str(pathlib.Path(os.environ['PROJECT_ROOT']) / 'scripts' / 'lib'))
+from report_commit_identity import valid_commit_identity
 data = yaml.safe_load(open(os.environ['REPORT_PATH'], encoding='utf-8')) or {}
 checks = (data.get('binary_checks') or {}).get('commit')
 if not checks:
@@ -1323,12 +1347,12 @@ def terminal_ready(d):
         and all(isinstance(x, dict) and str(x.get('reason', '')).strip() not in ('', 'FILL_THIS', '未参照') for x in lessons)
         and all(isinstance(x, dict) and str(x.get('reason', '')).strip() for x in memories)
     )
-sys.exit(0 if (not all_yes or (re.fullmatch(r'[0-9a-f]{40}', commit_hash) and terminal_ready(data))) else 1)
+sys.exit(0 if (not all_yes or (valid_commit_identity(commit_hash, data, pathlib.Path(os.environ['PROJECT_ROOT'])) and terminal_ready(data))) else 1)
 PY
     then
         AUTO_COMPLETE_STATUS=0
     fi
-elif [[ "$DOT_KEY" == "commit_hash" ]] && [[ "$VALUE" =~ ^[0-9a-f]{40}$ ]] && [ -f "$REPORT_PATH" ]; then
+elif [[ "$DOT_KEY" == "commit_hash" ]] && { [[ "$VALUE" =~ ^[0-9a-f]{40}$ ]] || [[ "$VALUE" == "no-code-change" ]]; } && [ -f "$REPORT_PATH" ]; then
     # Complete atomically when commit_hash is the final missing prerequisite.
     if REPORT_PATH="$REPORT_PATH" python3 - <<'PY'
 import os, sys, yaml

@@ -45,7 +45,8 @@ if isinstance(checks, dict):
         no_commit_assertion = any(marker in check_text for marker in (
             "実行していない", "commit禁止", "commit不要", "no-commit", "no commit",
         ))
-        no_commit_asserted = no_commit_asserted or no_commit_assertion
+        result_yes = item.get("result") is True or str(item.get("result", "")).strip().lower() == "yes" if isinstance(item, dict) else False
+        no_commit_asserted = no_commit_asserted or (no_commit_assertion and result_yes)
         if isinstance(item, dict) and not no_commit_assertion and (
             item.get("result") is True
             or str(item.get("result", "")).strip().lower() == "yes"
