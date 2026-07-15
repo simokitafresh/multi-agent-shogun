@@ -94,6 +94,50 @@ teardown() {
     [[ "$output" == *"LK002 added"* ]]
 }
 
+@test "lesson_write_karo merges into an existing lesson at the 35-entry capacity" {
+    for i in $(seq 2 35); do
+        printf -- "- id: 'LK%03d'\n  title: 'capacity %03d'\n  detail: 'capacity detail %03d'\n" "$i" "$i" "$i" >> "$TEST_ROOT/projects/infra/lessons_karo.yaml"
+    done
+
+    run bash "$TEST_ROOT/scripts/lesson_write_karo.sh" \
+        "selected PASS is not full-unit PASS" \
+        "selected and full-unit stages must be counted separately; 83 of 83 regression checks passed" \
+        "cmd_ga263" \
+        --origin "[[GA-263]] -> [[selected-pass-full-unit-fail]] -> [[fixture-isolation]]" \
+        --merge-into LK001
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"LK001 merged"* ]]
+    grep -q '^  detail: |$' "$TEST_ROOT/projects/infra/lessons_karo.yaml"
+    run python3 - "$TEST_ROOT/projects/infra/lessons_karo.yaml" <<'PY'
+import sys, yaml
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = yaml.safe_load(fh)
+assert len(data["lessons"]) == 35
+lesson = next(item for item in data["lessons"] if item["id"] == "LK001")
+assert "existing detail for tests" in lesson["detail"]
+assert "83 of 83 regression checks passed" in lesson["detail"]
+assert "[[GA-263]] -> [[selected-pass-full-unit-fail]] -> [[fixture-isolation]]" in lesson["detail"]
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "lesson_write_karo missing merge target fails without changing the ledger" {
+    before=$(sha256sum "$TEST_ROOT/projects/infra/lessons_karo.yaml")
+
+    run bash "$TEST_ROOT/scripts/lesson_write_karo.sh" \
+        "missing merge target" \
+        "this detail must never be published to the role lesson ledger" \
+        "cmd_ga263" \
+        --merge-into LK999
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"target must exist exactly once"* ]]
+    [[ "$output" != *"Lock timeout"* ]]
+    after=$(sha256sum "$TEST_ROOT/projects/infra/lessons_karo.yaml")
+    [ "$before" = "$after" ]
+}
+
 @test "lesson_write_shogun waits on shared lock_path lock" {
     hold_lock_for "$TEST_ROOT/projects/infra/lessons_shogun.yaml" 1
     start=$(date +%s)

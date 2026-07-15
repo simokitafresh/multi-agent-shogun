@@ -331,6 +331,7 @@ v7吸収(2026-05-19):
     v3統合吸収(2026-06-09, cmd_3253):
     - CI表示乖離: ci_status_check.shがlatest runのみ見てin_progress→UNKNOWN→check failed表示(LK001: 修正=latest completed runとlatest runを分離しin_progress→PENDING表示。cmd_2792偵察で根因特定)
     - consolidated testのrun_embedded_testは一時ファイルをtests/unit/配下に生成せよ(LK012: CI --jobs 8並列で/tmp配下だとBATSのPROJECT_ROOT解決が壊れる。cf7adb49で6ファイル修正済み)
+    吸収(2026-07-15, cmd_karo_recon2_ga263_hook_failure_audit_202607152304, origin: [[GA-263]] -> [[selected-pass-full-unit-fail]] -> [[fixture-isolation-and-hook-sync-check]]): GA-263でhook ledger 334/334件を監査。pre-push 247件、fixture広義同型16件（家老11/軍師5）、完全同型1件、FP 0。selected 5件PASS後に全unitでfixture競合・tracked hook drift・semantic worker teardown raceが露呈したため、hookは正しくBLOCKしていた。次回はartifactをselected段とfull-unit段に分け、file内部直列・tracked hook atomic sync・worker result-lastを対応commit 8a80ad7fc/4850af9a9/e437cd0f3/387154d86と回帰試験で確認する。家老再実行83/83 PASS、FAIL 0、SKIP 0。
   source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014, LK015, LK001i, LK012i]
   created_at: '2026-04-24'
   automated: true
