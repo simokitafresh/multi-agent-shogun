@@ -192,3 +192,27 @@ review_manifest_fingerprint() {
         printf '%s:%s\n' "${report#"$root"/}" "$fp"
     done | LC_ALL=C sort | sha256sum | awk '{print $1}'
 }
+
+# Formal approvals are intentionally consumed/archived after CLEAR.  A later
+# cmd_complete_gate --force must still be able to revalidate the immutable
+# reviewed artifact without demanding a second human review.  The marker is
+# sufficient only when all of its structured fields and the current manifest
+# match exactly; a stale/backfilled/placeholder marker remains fail-closed.
+review_gate_manifest_ready() {
+    local cmd_id="$1"; shift
+    local root marker source result reports stored_manifest current_manifest
+    root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+    marker="$root/queue/gates/$cmd_id/review_gate.done"
+    [ -f "$marker" ] || return 1
+    [ "$#" -gt 0 ] || return 1
+    source=$(review_approval_value "$marker" source || true)
+    result=$(review_approval_value "$marker" result || true)
+    reports=$(review_approval_value "$marker" reports || true)
+    stored_manifest=$(review_approval_value "$marker" manifest || true)
+    [ "$source" = "two_phase_review" ] || return 1
+    [ "$result" = "LGTM" ] || return 1
+    [ "$reports" = "$#" ] || return 1
+    [ -n "$stored_manifest" ] || return 1
+    current_manifest=$(review_manifest_fingerprint "$@") || return 1
+    [ "$stored_manifest" = "$current_manifest" ]
+}

@@ -109,6 +109,21 @@ SH
   review_two_phase_ready cmd_test "$REPORT"
 }
 
+@test "consumed approvals remain force-revalidatable only through an exact formal manifest" {
+  manifest=$(review_manifest_fingerprint "$REPORT")
+  cat > "$TMPROOT/queue/gates/cmd_test/review_gate.done" <<EOF
+timestamp: 2026-07-15T21:00:00+09:00
+source: two_phase_review
+result: LGTM
+reports: 1
+manifest: $manifest
+EOF
+
+  review_gate_manifest_ready cmd_test "$REPORT"
+  printf 'changed_after_review: true\n' >> "$REPORT"
+  ! review_gate_manifest_ready cmd_test "$REPORT"
+}
+
 @test "commit_hash missing is fail-closed" {
   printf 'result:\n  summary: ok\n' > "$REPORT"
   ! review_report_fingerprint "$REPORT"

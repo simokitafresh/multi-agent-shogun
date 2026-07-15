@@ -5749,7 +5749,8 @@ if [ "$HAS_IMPLEMENT" = "true" ]; then
         [ -f "$_candidate" ] && _two_phase_reports+=("$_candidate")
     done
     mapfile -t _two_phase_reports < <(printf '%s\n' "${_two_phase_reports[@]}" | LC_ALL=C sort -u)
-    if ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}"; then
+    if ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}" \
+        && ! review_gate_manifest_ready "$CMD_ID" "${_two_phase_reports[@]}"; then
         echo "GATE BLOCK: review_two_phase_pending (every report requires matching gunshi LGTM + karo ACCEPT)"
         append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\treview_two_phase_pending"
         exit 1
@@ -5794,7 +5795,9 @@ echo ""
 
 # Normalization must not mutate an already-approved artifact. Recheck the
 # exact final bytes before any later gate can CLEAR.
-if [ "$HAS_IMPLEMENT" = "true" ] && ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}"; then
+if [ "$HAS_IMPLEMENT" = "true" ] \
+    && ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}" \
+    && ! review_gate_manifest_ready "$CMD_ID" "${_two_phase_reports[@]}"; then
     echo "GATE BLOCK: review_fingerprint_changed_after_normalize"
     append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\treview_fingerprint_changed_after_normalize"
     exit 1
