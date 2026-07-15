@@ -56,7 +56,7 @@ YAML
 }
 approve() {
   REVIEW_APPROVAL_ROOT="$TMPROOT" REVIEW_APPROVAL_NO_TRIGGER=1 \
-    bash "$ROOT/scripts/review_approval.sh" cmd_test "$1" "$2" "$3"
+    bash "$ROOT/scripts/review_approval.sh" cmd_test "$@"
 }
 
 @test "gunshi LGTM alone is not CLEAR" {
@@ -307,6 +307,44 @@ PY
 
   sed -i 's/^commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa$/commit_hash: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/' "$REPORT"
   run approve gunshi LGTM "$REPORT"
+  [ "$status" -eq 0 ]
+}
+
+@test "code task report-only RC accepts changed payload on same implementation commit" {
+  setup_rc_task
+  approve karo RC "$REPORT" report
+  [ "$(cat "$APPROVALS/last_rc_scope")" = report ]
+  [ -f "$APPROVALS/last_rc_report_payload" ]
+  [ ! -e "$APPROVALS/last_rc_commit" ]
+
+  sed -i 's/^status: revision_requested$/status: completed/' "$REPORT"
+  run approve gunshi LGTM "$REPORT"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"report-only payload unchanged since Karo RC"* ]]
+
+  printf 'diagnose_reason: corrected feedback cardinality\n' >> "$REPORT"
+  run approve gunshi LGTM "$REPORT"
+  [ "$status" -eq 0 ]
+  run approve karo ACCEPT "$REPORT"
+  [ "$status" -eq 0 ]
+}
+
+@test "legacy code-task RC requires explicit Gunshi report-scope attestation" {
+  setup_rc_task
+  approve karo RC "$REPORT"
+  rm -f "$APPROVALS/last_rc_scope"
+  sed -i 's/^status: revision_requested$/status: completed/' "$REPORT"
+  printf 'diagnose_reason: corrected feedback cardinality\n' >> "$REPORT"
+
+  run approve gunshi LGTM "$REPORT"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"implementation commit unchanged since Karo RC"* ]]
+
+  run approve gunshi LGTM "$REPORT" report
+  [ "$status" -eq 0 ]
+  [ "$(cat "$APPROVALS/last_rc_scope")" = report ]
+  [ ! -e "$APPROVALS/last_rc_commit" ]
+  run approve karo ACCEPT "$REPORT"
   [ "$status" -eq 0 ]
 }
 

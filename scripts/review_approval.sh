@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
-# Usage: review_approval.sh <cmd_id> <gunshi|karo> <LGTM|ACCEPT|RC> <report_path>
+# Usage: review_approval.sh <cmd_id> <gunshi|karo> <LGTM|ACCEPT|RC> <report_path> [auto|implementation|report]
 set -euo pipefail
 ROOT=${REVIEW_APPROVAL_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
 source "$ROOT/scripts/lib/review_approval.sh"
-[ "$#" -eq 4 ] || { echo "Usage: $0 <cmd_id> <gunshi|karo> <LGTM|ACCEPT|RC> <report_path>" >&2; exit 2; }
-cmd_id=$1; role=$2; result=$3; report=$4
+if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
+  echo "Usage: $0 <cmd_id> <gunshi|karo> <LGTM|ACCEPT|RC> <report_path> [auto|implementation|report]" >&2
+  exit 2
+fi
+cmd_id=$1; role=$2; result=$3; report=$4; requested_scope=${5:-auto}
 case "$role:$result" in gunshi:LGTM|karo:ACCEPT|karo:RC) ;; *) echo "BLOCK: invalid role/result" >&2; exit 2;; esac
+case "$requested_scope" in auto|implementation|report) ;; *) echo "BLOCK: invalid correction scope: $requested_scope" >&2; exit 2;; esac
+[ "$result" = RC ] || [ "$requested_scope" != implementation ] || {
+  echo "BLOCK: implementation scope is only valid when recording Karo RC" >&2
+  exit 2
+}
+[ "$role" = gunshi ] || [ "$requested_scope" != report ] || [ "$result" = RC ] || {
+  echo "BLOCK: only Gunshi LGTM may attest a legacy report-only correction" >&2
+  exit 2
+}
 [[ "$report" = /* ]] || report="$ROOT/$report"
 PROJECT_ROOT="$ROOT" review_validate_report "$cmd_id" "$report" || { echo "BLOCK: invalid cmd/report boundary or parent_cmd mismatch" >&2; exit 2; }
 report=$(realpath "$report")
@@ -36,22 +48,51 @@ dir="$base/reports/$report_key"; mkdir -p "$dir"
 # No-code reviews are content-bound instead and therefore excluded here.
 rejected_commit_file="$dir/last_rc_commit"
 rejected_payload_file="$dir/last_rc_report_payload"
+rc_scope_file="$dir/last_rc_scope"
 current_commit=${fingerprint##*:}
-if [ ! "$role:$result" = "karo:RC" ] && [ -f "$rejected_commit_file" ] \
-  && [ "$current_commit" != "no-code-change" ]; then
+stored_scope=$(head -n 1 "$rc_scope_file" 2>/dev/null || true)
+case "$stored_scope" in implementation|report) ;; *) stored_scope="" ;; esac
+if [ "$result" = RC ]; then
+  if [ "$requested_scope" = auto ]; then
+    [ "$current_commit" = "no-code-change" ] && correction_scope=report || correction_scope=implementation
+  else
+    correction_scope=$requested_scope
+  fi
+elif [ "$requested_scope" = report ]; then
+  # Legacy RC records predate last_rc_scope.  A fresh Gunshi review may
+  # explicitly attest that only the report payload required correction.
+  correction_scope=report
+else
+  correction_scope=${stored_scope:-implementation}
+fi
+if [ ! "$role:$result" = "karo:RC" ] && [ "$correction_scope" = implementation ] \
+  && [ -f "$rejected_commit_file" ] && [ "$current_commit" != "no-code-change" ]; then
   rejected_commit=$(head -n 1 "$rejected_commit_file" 2>/dev/null || true)
   if [ -n "$rejected_commit" ] && [ "$rejected_commit" = "$current_commit" ]; then
     echo "BLOCK: implementation commit unchanged since Karo RC: $current_commit" >&2
     exit 1
   fi
 fi
-if [ ! "$role:$result" = "karo:RC" ] && [ "$current_commit" = "no-code-change" ] \
-  && [ -f "$rejected_payload_file" ]; then
-  rejected_payload=$(head -n 1 "$rejected_payload_file" 2>/dev/null || true)
-  current_payload=$(review_report_payload_hash "$report" 2>/dev/null || true)
-  if [ -z "$current_payload" ] || [ "$current_payload" = "$rejected_payload" ]; then
-    echo "BLOCK: report-only payload unchanged since Karo RC" >&2
-    exit 1
+if [ ! "$role:$result" = "karo:RC" ] && [ "$correction_scope" = report ]; then
+  if [ "$role" = gunshi ]; then
+    if [ -f "$rejected_payload_file" ]; then
+      rejected_payload=$(head -n 1 "$rejected_payload_file" 2>/dev/null || true)
+      current_payload=$(review_report_payload_hash "$report" 2>/dev/null || true)
+      if [ -z "$current_payload" ] || [ "$current_payload" = "$rejected_payload" ]; then
+        echo "BLOCK: report-only payload unchanged since Karo RC" >&2
+        exit 1
+      fi
+    elif [ "$requested_scope" != report ]; then
+      echo "BLOCK: legacy RC lacks report payload; Gunshi must attest correction scope=report" >&2
+      exit 1
+    fi
+  else
+    gunshi_fp=$(review_approval_value "$dir/gunshi.yaml" fingerprint 2>/dev/null || true)
+    gunshi_result=$(review_approval_value "$dir/gunshi.yaml" result 2>/dev/null || true)
+    if [ "$gunshi_result" != LGTM ] || [ "$gunshi_fp" != "$fingerprint" ]; then
+      echo "BLOCK: report-only correction requires current Gunshi LGTM before Karo ACCEPT" >&2
+      exit 1
+    fi
   fi
 fi
 # SG7 used to exist only as a skill instruction: review_bundle.py generate had
@@ -66,7 +107,7 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ -f "$ROOT/scripts/review_bu
 fi
 tmp=$(mktemp "$dir/.${role}.XXXXXX")
 trap 'rm -f "$tmp"' EXIT
-printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" > "$tmp"
+printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" "$correction_scope" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 if [ "$role" = karo ] && [ "$result" = RC ]; then
   # Preserve RC as monotonic command history.  The per-report karo.yaml is
@@ -75,10 +116,14 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
   rework_tmp=$(mktemp "$base/.karo_rework.XXXXXX")
   printf 'timestamp: %s\nsource: formal_karo_rc\n' "$(date -Iseconds)" > "$rework_tmp"
   mv -f "$rework_tmp" "$base/karo_rework.seen"
-  if [ "$current_commit" != "no-code-change" ]; then
+  scope_tmp=$(mktemp "$dir/.last_rc_scope.XXXXXX")
+  printf '%s\n' "$correction_scope" > "$scope_tmp"
+  mv -f "$scope_tmp" "$rc_scope_file"
+  if [ "$correction_scope" = implementation ]; then
     rejected_tmp=$(mktemp "$dir/.last_rc_commit.XXXXXX")
     printf '%s\n' "$current_commit" > "$rejected_tmp"
     mv -f "$rejected_tmp" "$rejected_commit_file"
+    rm -f "$rejected_payload_file"
   else
     rejected_payload=$(review_report_payload_hash "$report") || {
       echo "BLOCK: report-only RC payload hash failed: $report_rel" >&2
@@ -87,6 +132,7 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
     rejected_tmp=$(mktemp "$dir/.last_rc_report_payload.XXXXXX")
     printf '%s\n' "$rejected_payload" > "$rejected_tmp"
     mv -f "$rejected_tmp" "$rejected_payload_file"
+    rm -f "$rejected_commit_file"
   fi
   worker_id=$(python3 - "$report" <<'PY'
 import re, sys, yaml
@@ -141,6 +187,15 @@ PY
     }
   echo "review approval recorded: $cmd_id $role $result fingerprint=$fingerprint"
   exit 0
+fi
+
+# Upgrade a legacy implementation-bound RC only after Gunshi explicitly
+# attests report-only scope and the approval has been durably written.
+if [ "$role:$result" = gunshi:LGTM ] && [ "$requested_scope" = report ]; then
+  scope_tmp=$(mktemp "$dir/.last_rc_scope.XXXXXX")
+  printf 'report\n' > "$scope_tmp"
+  mv -f "$scope_tmp" "$rc_scope_file"
+  rm -f "$rejected_commit_file"
 fi
 
 # A formal report LGTM is operationally relevant to Shogun even before Karo's
