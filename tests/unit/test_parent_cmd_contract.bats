@@ -61,6 +61,7 @@ commands:
     scope_mode: recon
     title: resumed cleanup
     purpose: rotate safely
+    estimated_minutes: 10
     acceptance_criteria:
       AC1: inventory
       AC2: delete
