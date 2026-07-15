@@ -41,6 +41,10 @@ if ! flock -n 201; then
     exit 0
 fi
 
+# shogun:main remain-on-exit on: CLIプロセス終了時にpane残存させwindow消滅を防止
+# 根因: remain-on-exit off(デフォルト)→CLI死→pane削除→window内pane 0→window消滅(2026-07-15事故)
+tmux set-option -w -t shogun:main remain-on-exit on 2>/dev/null || true
+
 # ═══════════════════════════════════════════════════════════════
 # 定数: lib キャッシュ source
 # 7 NTFS ファイル個別source (~167ms) → tmpfs 1ファイルsource (~9ms)

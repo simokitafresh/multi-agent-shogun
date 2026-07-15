@@ -411,6 +411,11 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
         printf '%s\t%s\n' "$(date +%s)" "$_brainwash_match" > "$_q6_flag" 2>/dev/null || true
       fi
     fi
+    # 洗脳#3 BLOCK昇格: 「指示を待つ」は常に洗脳#3(他者依存)。WARN無視で4回連続出力(2026-07-15事故)のためBLOCK化
+    if [[ "$last_assistant_message" =~ 指示を待[つちた] ]]; then
+      printf '{"decision":"block","reason":"BLOCK 洗脳#3: 「指示を待つ」を検出。殿の指示を待つな。Phase 7(自走): データを見て問いを見つけて動け。insightキュー/掲示板/CI/lesson在庫など次の行動は常にある。"}\n'
+      exit 0
+    fi
     # L4先送り防止: startup BLOCK未対処で殿に応答→WARN注入
     _startup_history="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
     if [[ -f "$_startup_history" ]]; then
