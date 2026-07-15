@@ -2,7 +2,7 @@
 # record_lesson_feedback.sh — 報告YAMLのlessons_usefulをlesson_impact.tsvにフィードバック記録
 # Usage: bash scripts/record_lesson_feedback.sh <report_yaml_path>
 # 目的: deploy_task.shのcompute_useful_rates()が実フィードバックを使えるようにする
-# 設計: 冪等（同一report+lesson_idの重複書込みを防止）
+# 設計: 冪等（同一taskのfeedback集合を最新reportで置換する）
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -115,11 +115,51 @@ fi
 
 timestamp=$(date "+%Y-%m-%dT%H:%M:%S")
 
-# 重複チェック用: 既にfeedbackが記録されているか（task_idで照合）
 dedup_key="${task_id:-${cmd_id}}"
-if [[ -n "$dedup_key" ]] && grep -q "	${dedup_key}	.*	feedback	" "$IMPACT_TSV" 2>/dev/null; then
-    echo "[feedback] SKIP: feedback already recorded for $dedup_key" >&2
-    exit 0
+
+# lesson-reflux等が明示した評価集合はreportより強い契約である。
+# 現在taskが既に再配備済みの場合の台帳修復に限り、環境変数で同じ集合を渡せる。
+strict_assigned_set=false
+assigned_ids=()
+task_yaml="${LESSON_FEEDBACK_TASK_FILE:-$SCRIPT_DIR/queue/tasks/${ninja}.yaml}"
+assigned_override="${LESSON_FEEDBACK_ASSIGNED_IDS:-}"
+if [[ -n "$assigned_override" ]]; then
+    strict_assigned_set=true
+    IFS=',' read -r -a assigned_ids <<< "$assigned_override"
+elif [[ -n "$ninja" && -f "$task_yaml" ]]; then
+    while IFS=$'\t' read -r record_type value; do
+        case "$record_type" in
+            STRICT) strict_assigned_set=true ;;
+            ID) assigned_ids+=("$value") ;;
+        esac
+    done < <(python3 - "$task_yaml" "$task_id" "$cmd_id" <<'PY'
+import sys, yaml
+
+path, report_task_id, report_cmd_id = sys.argv[1:]
+try:
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except Exception:
+    raise SystemExit(0)
+task = data.get("task", data) if isinstance(data, dict) else {}
+if not isinstance(task, dict):
+    raise SystemExit(0)
+task_id = str(task.get("task_id", "")).strip()
+parent_cmd = str(task.get("parent_cmd", "")).strip()
+if report_task_id and task_id != report_task_id:
+    raise SystemExit(0)
+if report_cmd_id and parent_cmd != report_cmd_id:
+    raise SystemExit(0)
+if "assigned_lesson_ids" not in task:
+    raise SystemExit(0)
+print("STRICT\t1")
+values = task.get("assigned_lesson_ids")
+if isinstance(values, list):
+    for value in values:
+        value = str(value).strip()
+        if value:
+            print(f"ID\t{value}")
+PY
+    )
 fi
 
 # lessons_usefulセクションからid+usefulを抽出
@@ -130,14 +170,25 @@ fi
 #   reason: "..."
 feedback_count=0
 auto_feedback_count=0
-in_lessons=0
-current_id=""
 reported_ids=()
 
 has_reported_id() {
     local lesson_id="$1"
     local existing
     for existing in "${reported_ids[@]}"; do
+        if [[ "$existing" == "$lesson_id" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+has_assigned_id() {
+    local lesson_id="$1"
+    local existing
+    for existing in "${assigned_ids[@]}"; do
+        existing="${existing#"${existing%%[![:space:]]*}"}"
+        existing="${existing%"${existing##*[![:space:]]}"}"
         if [[ "$existing" == "$lesson_id" ]]; then
             return 0
         fi
@@ -161,6 +212,9 @@ make_feedback_line() {
 for lesson_record in "${lesson_records[@]}"; do
     IFS=$'\t' read -r current_id useful_val <<< "$lesson_record"
     if [[ -n "$current_id" ]]; then
+        if [[ "$strict_assigned_set" == true ]] && ! has_assigned_id "$current_id"; then
+            continue
+        fi
         if [[ "$useful_val" == "true" ]]; then
             result="USEFUL"
             ref="yes"
@@ -174,7 +228,7 @@ for lesson_record in "${lesson_records[@]}"; do
     fi
 done
 
-if [[ -n "$dedup_key" ]]; then
+if [[ -n "$dedup_key" && "$strict_assigned_set" != true ]]; then
     while IFS= read -r injected_id; do
         [[ -n "$injected_id" ]] || continue
         if ! has_reported_id "$injected_id"; then
@@ -189,11 +243,29 @@ if [[ -n "$dedup_key" ]]; then
     )
 fi
 
-# Single flock write for all collected lines.
-if [[ ${#_batch_lines[@]} -gt 0 ]]; then
+# Single flock reconciliation: replace prior feedback for the task instead of
+# skipping it, so a corrected report can remove false negative rows.
+if [[ -n "$dedup_key" || ${#_batch_lines[@]} -gt 0 ]]; then
     (
         flock -w 10 200 || { echo "[feedback] WARN: flock timeout" >&2; exit 0; }
-        printf '%s\n' "${_batch_lines[@]}" >> "$IMPACT_TSV"
+        tmp_file=$(mktemp "${IMPACT_TSV}.tmp.XXXXXX")
+        awk -F'\t' -v OFS='\t' -v key="$dedup_key" -v strict="$strict_assigned_set" \
+            -v assigned_csv="$(IFS=,; echo "${assigned_ids[*]}")" '
+            BEGIN {
+                n=split(assigned_csv, ids, ",")
+                for (i=1; i<=n; i++) if (ids[i] != "") assigned[ids[i]]=1
+            }
+            NR == 1 { print; next }
+            $2 == key && tolower($5) == "feedback" { next }
+            $2 == key && strict == "true" && tolower($5) == "injected" && !($4 in assigned) {
+                $6="pending"; $7="pending"
+            }
+            { print }
+        ' "$IMPACT_TSV" > "$tmp_file"
+        if [[ ${#_batch_lines[@]} -gt 0 ]]; then
+            printf '%s\n' "${_batch_lines[@]}" >> "$tmp_file"
+        fi
+        mv "$tmp_file" "$IMPACT_TSV"
     ) 200>"${IMPACT_TSV}.lock"
 fi
 

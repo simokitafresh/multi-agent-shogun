@@ -818,6 +818,32 @@ PY
     [ "$status" -eq 0 ]
 }
 
+@test "reset_stale_fields removes assigned_lesson_ids before a different command" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old_reflux
+  task_id: cmd_old_reflux_exact
+  assigned_lesson_ids:
+    - L101
+    - L202
+  acceptance_criteria:
+    - id: AC1
+      description: old
+EOF
+
+    DIRECT_MODE=false
+    CMD_ID=cmd_new_normal
+    run reset_stale_fields sasuke
+    [ "$status" -eq 0 ]
+
+    run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {})["task"]
+assert "assigned_lesson_ids" not in task, task
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "deploy_task leaves template unchanged when gate_fail_top3 is absent" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:

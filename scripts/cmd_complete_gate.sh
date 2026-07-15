@@ -2254,6 +2254,66 @@ handle_empty_lessons_useful_check() {
     fi
 }
 
+validate_lesson_feedback_set() {
+    local task_file="$1"
+    local report_file="$2"
+    python3 - "$task_file" "$report_file" <<'PY'
+import sys, yaml
+
+task_data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+report = yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}
+task = task_data.get("task", task_data) if isinstance(task_data, dict) else {}
+if not isinstance(task, dict) or not isinstance(report, dict):
+    print("MISMATCH parse_error")
+    raise SystemExit(1)
+
+strict = "assigned_lesson_ids" in task
+if strict:
+    raw_allowed = task.get("assigned_lesson_ids") or []
+else:
+    raw_allowed = task.get("related_lessons") or []
+
+allowed = []
+for item in raw_allowed if isinstance(raw_allowed, list) else []:
+    value = item.get("id") if isinstance(item, dict) else item
+    value = str(value or "").strip()
+    if value and value not in allowed:
+        allowed.append(value)
+
+reported = []
+duplicates = []
+raw_reported = report.get("lessons_useful")
+if raw_reported is None:
+    raw_reported = report.get("lesson_referenced")
+for item in raw_reported if isinstance(raw_reported, list) else []:
+    value = item.get("id") if isinstance(item, dict) else item
+    value = str(value or "").strip()
+    if not value:
+        continue
+    if value in reported:
+        duplicates.append(value)
+    else:
+        reported.append(value)
+
+extra = sorted(set(reported) - set(allowed))
+missing = sorted(set(allowed) - set(reported)) if strict else []
+duplicates = sorted(set(duplicates))
+if extra or missing or duplicates:
+    print(
+        "MISMATCH "
+        f"mode={'strict' if strict else 'subset'} "
+        f"missing={','.join(missing) or 'none'} "
+        f"extra={','.join(extra) or 'none'} "
+        f"duplicates={','.join(duplicates) or 'none'}"
+    )
+    raise SystemExit(1)
+print(
+    f"OK mode={'strict' if strict else 'subset'} "
+    f"allowed={len(allowed)} reported={len(reported)}"
+)
+PY
+}
+
 # ─── gate_metrics model label helpers ───
 agent_pane_target() {
     local agent_name="$1"
@@ -3699,6 +3759,7 @@ tracked_row_ids = []
 referenced_ids = []
 referenced_by_row_id = {}
 usefulness_by_row_id = {}
+assigned_by_row_id = {}
 
 try:
     task_files = sorted(
@@ -3724,6 +3785,13 @@ for task_path in task_files:
     for row_id in task_row_ids:
         add_unique(tracked_row_ids, row_id)
         referenced_by_row_id.setdefault(row_id, [])
+        if "assigned_lesson_ids" in task:
+            values = task.get("assigned_lesson_ids")
+            assigned_by_row_id[row_id] = set()
+            if isinstance(values, list):
+                assigned_by_row_id[row_id] = {
+                    str(value).strip() for value in values if str(value).strip()
+                }
 
     assigned_to = task.get("assigned_to")
     if isinstance(assigned_to, list):
@@ -3770,10 +3838,14 @@ for ninja in ninjas:
     for row_id in task_row_ids:
         row_refs = referenced_by_row_id.setdefault(row_id, [])
         for ref_id in report_refs:
-            add_unique(row_refs, ref_id)
+            strict_ids = assigned_by_row_id.get(row_id)
+            if strict_ids is None or ref_id in strict_ids:
+                add_unique(row_refs, ref_id)
         row_usefulness = usefulness_by_row_id.setdefault(row_id, {})
         for lesson_id, useful_result in report_usefulness.items():
-            row_usefulness[lesson_id] = useful_result
+            strict_ids = assigned_by_row_id.get(row_id)
+            if strict_ids is None or lesson_id in strict_ids:
+                row_usefulness[lesson_id] = useful_result
 
 if not tracked_row_ids:
     tracked_row_ids.append(cmd_id)
@@ -3814,8 +3886,15 @@ with open(impact_file, "r", newline="", encoding="utf-8") as f:
             if row.get("action") != "withheld":
                 row_refs = referenced_by_row_id.get(row_cmd_id, referenced_ids)
                 lesson_id = row.get("lesson_id")
-                row["referenced"] = "yes" if lesson_id in row_refs else "no"
                 row_usefulness = usefulness_by_row_id.get(row_cmd_id, usefulness_by_row_id.get("__all__", {}))
+                strict_ids = assigned_by_row_id.get(row_cmd_id)
+                if strict_ids is not None and lesson_id not in row_usefulness:
+                    # An explicit assignment set forbids guessing.  Unassigned
+                    # or missing evaluations remain pending rather than being
+                    # invented as NOT_USEFUL.
+                    rows.append({field: row.get(field, "") for field in fieldnames})
+                    continue
+                row["referenced"] = "yes" if lesson_id in row_refs else "no"
                 if lesson_id in row_usefulness:
                     row["result"] = row_usefulness[lesson_id]
                 else:
@@ -6415,7 +6494,13 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
             ' "$report_file" 2>/dev/null)
 
             if [ "$lr_status" = "ok" ]; then
-                echo "  ${ninja_name}: OK (lessons_useful present and non-empty)"
+                if lesson_set_status=$(validate_lesson_feedback_set "$task_file" "$report_file" 2>&1); then
+                    echo "  ${ninja_name}: OK (lessons_useful present and ${lesson_set_status})"
+                else
+                    echo "  [CRITICAL] ${ninja_name}: NG ← lessons_useful評価集合がtask契約と不一致 (${lesson_set_status})"
+                    record_block_reason "${ninja_name}:lesson_feedback_set_mismatch:${lesson_set_status}"
+                    ALL_CLEAR=false
+                fi
             elif [ "$lr_status" = "null" ]; then
                 # cmd_536 AC4: lessons_useful=null(明示的未記入)をBLOCK
                 echo "  [CRITICAL] ${ninja_name}: NG ← lessons_usefulが未記入(null)。教訓の有用性を記入せよ"

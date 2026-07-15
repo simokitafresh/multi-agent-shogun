@@ -58,6 +58,8 @@ setup_file() {
         printf '\n'
         sed -n '/^handle_empty_lessons_useful_check()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^validate_lesson_feedback_set()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^detect_task_types()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^_check_lc_found()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -2335,6 +2337,53 @@ EOF
     [ "${BLOCK_REASONS[0]}" = "sasuke:empty_lessons_useful:related=[L001,L002]" ]
 }
 
+@test "lesson feedback set requires exact assigned IDs and rejects stale extras" {
+    cat > "$TEST_TMPDIR/task.yaml" <<'EOF'
+task:
+  assigned_lesson_ids: [L100, L102]
+  related_lessons:
+    - id: L999
+EOF
+    cat > "$TEST_TMPDIR/report.yaml" <<'EOF'
+lessons_useful:
+  - id: L100
+    useful: true
+  - id: L999
+    useful: false
+EOF
+    run validate_lesson_feedback_set "$TEST_TMPDIR/task.yaml" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"mode=strict"* ]]
+    [[ "$output" == *"missing=L102"* ]]
+    [[ "$output" == *"extra=L999"* ]]
+}
+
+@test "lesson feedback set allows ordinary related lesson subset but rejects extras" {
+    cat > "$TEST_TMPDIR/task.yaml" <<'EOF'
+task:
+  related_lessons:
+    - id: L100
+    - id: L101
+EOF
+    cat > "$TEST_TMPDIR/report.yaml" <<'EOF'
+lessons_useful:
+  - id: L100
+    useful: true
+EOF
+    run validate_lesson_feedback_set "$TEST_TMPDIR/task.yaml" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"mode=subset"* ]]
+
+    cat > "$TEST_TMPDIR/report.yaml" <<'EOF'
+lessons_useful:
+  - id: L404
+    useful: false
+EOF
+    run validate_lesson_feedback_set "$TEST_TMPDIR/task.yaml" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"extra=L404"* ]]
+}
+
 @test "CDP production check skips branch-only dm-signal frontend changes without deploy evidence" {
     export CMD_PROJECT="dm-signal"
     export CMD_CHANGED_FILES=$'backend/app.py\nfrontend/app/dashboard/page.tsx'
@@ -2984,6 +3033,50 @@ EOF
     [ "$status" -eq 0 ]
 
     run grep -F $'subtask_test\tsasuke\tL100\tinjected\tUSEFUL\tyes\tinfra\treview\troutine\t5\t1' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+}
+
+@test "explicit assigned lesson set leaves unassigned and missing feedback pending" {
+    write_cmd_yaml "with_context"
+    write_context_file "2026-03-05"
+
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_id: subtask_strict
+  subtask_id: subtask_strict
+  assigned_to: sasuke
+  task_type: exact
+  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
+  assigned_lesson_ids:
+    - L100
+    - L102
+EOF
+
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+worker_id: sasuke
+task_id: subtask_strict
+parent_cmd: $TEST_CMD_ID
+lessons_useful:
+  - id: L100
+    useful: true
+    reason: assigned
+EOF
+
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level
+2026-03-04T00:00:00	subtask_strict	sasuke	L100	injected	pending	pending	infra	exact	routine
+2026-03-04T00:00:00	subtask_strict	sasuke	L101	injected	pending	pending	infra	exact	routine
+2026-03-04T00:00:00	subtask_strict	sasuke	L102	injected	pending	pending	infra	exact	routine
+EOF
+
+    run update_lesson_impact_tsv "$TEST_CMD_ID" "CLEAR"
+    [ "$status" -eq 0 ]
+    run grep -F $'subtask_strict\tsasuke\tL100\tinjected\tUSEFUL\tyes' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+    run grep -F $'subtask_strict\tsasuke\tL101\tinjected\tpending\tpending' "$TEST_PROJECT/logs/lesson_impact.tsv"
+    [ "$status" -eq 0 ]
+    run grep -F $'subtask_strict\tsasuke\tL102\tinjected\tpending\tpending' "$TEST_PROJECT/logs/lesson_impact.tsv"
     [ "$status" -eq 0 ]
 }
 
