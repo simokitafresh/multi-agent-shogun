@@ -477,6 +477,30 @@ PY
     [ "$status" -eq 1 ]
 }
 
+@test "yaml_field_set: indentless sequenceをscalarへ置換して旧list子行を残さない" {
+    local yaml="$TEST_TMPDIR/indentless_sequence_cleanup.yaml"
+    cat > "$yaml" <<'YAML'
+task:
+  assigned_lesson_ids:
+  - L001
+  - L002
+  status: done
+YAML
+
+    run bash "$YFS" "$yaml" task assigned_lesson_ids null
+    [ "$status" -eq 0 ]
+
+    run python3 - "$yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert task["assigned_lesson_ids"] is None, task
+assert task["status"] == "done", task
+PY
+    [ "$status" -eq 0 ]
+    run grep -c '^  - L00' "$yaml"
+    [ "$output" = "0" ]
+}
+
 @test "yaml_field_set_batch: 置換後に旧継続行を残さず parseable を維持" {
     local yaml="$TEST_TMPDIR/batch_multiline_cleanup.yaml"
     cat > "$yaml" <<'YAML'
