@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
 <!-- last_updated: 2026-07-15 cmd_3908 -->
-<!-- source_commit:e0279aa09a7cc7ee0c132185590808a26b7923a4 reason:cmd3908-correction-path evidence:ops §82 records append-only correction API and deterministic resolver; focused 32/32 and full 2010 PASS SKIP0 -->
+<!-- source_commit:07305b83 reason:GA-261 Compare Returns FoF MTD N/A運用反映 evidence:ops §50へmtd_close=NULL時のLIVE fallback確認手順を反映 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -998,6 +998,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 
 - `compare_returns_bulk`は`PrecomputedRaw(endpoint="compare_returns_bulk", portfolio_id=NULL, params_hash=make_params_hash({}))`の1行に全active PFのtrailing+MTD rawを保持する。保存前に同endpointを削除し、PostgreSQLのNULL unique差分による複数行化を避ける。
 - `/api/compare-returns`はbulk raw fresh hit時、1行lookup後に`visible_ids`でPFを絞って返す。bulk miss/stale時は既存のPF別`compare_returns_trailing` raw lookup/fallback経路を維持する。
+- 2026-07-15 commit `07305b83`: PF別`precomputed_mtd.mtd_close=NULL`はfresh hitとして扱わずLIVE MTDへfallbackする。FoF 78PFが全件N/Aの場合は日付staleだけでなくNULL fresh誤判定を確認する。Standard 24PFの非NULL precompute経路は不変。定義詳細 → `context/dm-signal-core.md` §8.6。
 - metadata/folder/visibility変更時は`compare_returns_trailing`に加えて`compare_returns_bulk`もinvalidateする。これにより可視性変更後のbulk行による非表示PF混入を防ぐ。
 
 ## 因果リンク

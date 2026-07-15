@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_ga256_pgserver_recovery -->
-<!-- source_commit:e0279aa09a7cc7ee0c132185590808a26b7923a4 reason:cmd3908-core-boundary evidence:correction path is documented in ops §82; core index contract unchanged -->
+<!-- source_commit:07305b83 reason:GA-261 FoF MTD NULL fresh判定修正 evidence:core §8.6へNULL precomputeはLIVE fallbackする契約とFoF78/Standard24影響範囲を反映 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -362,6 +362,8 @@ FastAPI 22ルーター/84-88EP | Next.js frontend | 共通: `ApiResponse{success
 `/api/compare-returns` は全visible PF + standalone benchmark(SPY/TQQQ等)のMTD/1M/3M/6M/1Y/3Y/5Y/ALLをclose/open両系列で返す。PF MTDは`backend/app/services/mtd_returns.py`が`/api/mtd`とCompare Returnsの共通SSOTで、Compare Returnsは`build_compare_mtd_values_batch()`でN+1を避ける。page visibilityは`backend/app/services/page_visibility.py`が`settings.hidden_pages`と`global_visibility_settings.hidden_pages`のunionを正とする。根拠: commits `46e1b48c`, `646216d5`, `09796aee`, specs `docs/spec/compare-returns-page.md`。
 
 cmd_3572でMTD事前計算テーブル`precomputed_mtd`、`backend/app/jobs/precompute_mtd.py`、`recalculate_fast.py`末尾連携、API側fresh判定+PF/BM単位fallbackを実装済み。DB DATE→API ISO境界とprecomputed/fallbackパリティは`backend/tests/test_compare_returns_api.py`で検証。根拠: commit `9b3618ae`, spec `docs/spec/compare-returns-mtd-precompute.md`。
+
+2026-07-15 commit `07305b83`: `precomputed_mtd.current_ym`と価格日が一致しても`mtd_close=NULL`ならfreshではない。NULLは計算済み値ではなくbatch算出不能を表すため、`is_precomputed_fresh()`はfalseを返してLIVE計算へfallbackする。これによりFoF 78PFのCompare Returns MTD N/Aを解消し、非NULLのStandard 24PFは従来経路を維持する。
 
 ### §8.7 Fusion API (2026-06-28)
 
