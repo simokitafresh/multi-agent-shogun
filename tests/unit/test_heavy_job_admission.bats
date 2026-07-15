@@ -490,12 +490,26 @@ FAKEEOF
     [ "$r3" = "allow" ]
 }
 
-@test "分類器: bash -cのnested文字列で文面上のstash言及は偽陽性0" {
+@test "分類器: quoted単一引数の説明文(report/commit -m等)は文面上のstash言及でも偽陽性0" {
     source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
-    r1="$(git_stash_guard_classify "bash -c 'echo mentioning git stash push in text'")"
-    r2="$(git_stash_guard_classify "git commit -m \"discussing git stash safety\"")"
+    r1="$(git_stash_guard_classify "git commit -m \"discussing git stash safety\"")"
+    r2="$(git_stash_guard_classify "bash scripts/report_field_set.sh queue/reports/foo.yaml result.summary 'ran git stash safely'")"
     [ "$r1" = "allow" ]
     [ "$r2" = "allow" ]
+}
+
+# 家老RC3(2026-07-15 21:17): 未知wrapper(time/ionice/taskset/chrt/xargs等)を
+# enumerateし続ける代わりに、segment内の全suffixを再帰的に評価する一般fallbackへ
+# 転換した(git_stash_guard_classify.py _segment_blocks)。この設計では、bash -c
+# へ渡すnested文字列は実際にシェルとして再解釈されるため、引用なしの裸文字列
+# "git"/"stash"がその中に現れると実コマンドと区別できず保守的にblockする
+# (「quoted単一引数の説明文」は inbox_write.sh/report_field_set.sh/commit -m
+# のように、文字列全体が1個のtokenのまま非git系コマンドの引数として渡る場合のみ
+# 保護対象。bash -cのnested文字列内で改めてtokenize される裸文字列は対象外)。
+@test "分類器: bash -c nested文字列内の裸文字列git/stashは保守的にblock(未知wrapper一般化の許容トレードオフ)" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    result="$(git_stash_guard_classify "bash -c 'echo mentioning git stash push in text'")"
+    [ "$result" = "block" ]
 }
 
 @test "hook: env/command/bash -cで包んだgit stashもBLOCKする" {
@@ -540,6 +554,55 @@ FAKEEOF
     run _run_hook "timeout 5 git stash"
     [ "$status" -eq 2 ]
     run _run_hook "setsid git stash"
+    [ "$status" -eq 2 ]
+}
+
+# 家老RC3(2026-07-15 21:17): time/ionice/taskset/chrt/xargs経由と
+# git -c alias.NAME=stash NAME(git自体のalias機構)が独立実測で7/7 allowだった。
+# 既知wrapper列挙を止め、segment内の全suffixを再帰評価する一般fallback
+# (未知の起動ラッパーにも対応)+ git -c alias解析(-c alias.NAME=stash NAME /
+# -calias.NAME=stash NAME 双方の形)で根治した。
+@test "分類器: 未知wrapper(time/ionice/taskset/chrt/xargs)経由のgit stashもblockする" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    for cmd in "time git stash" "/usr/bin/time git stash" "ionice git stash" \
+               "taskset -c 0 git stash" "chrt 1 git stash" "xargs git stash"; do
+        result="$(git_stash_guard_classify "$cmd")"
+        [ "$result" = "block" ]
+    done
+}
+
+@test "分類器: 未知wrapperでもgit stash list/showはallowのまま" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    r1="$(git_stash_guard_classify "time git stash list")"
+    r2="$(git_stash_guard_classify "taskset -c 0 git stash show")"
+    [ "$r1" = "allow" ]
+    [ "$r2" = "allow" ]
+}
+
+@test "分類器: git -c alias.NAME=stash NAME(git自体のaliasによるstash迂回)もblockする" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    r1="$(git_stash_guard_classify "git -c alias.x=stash x")"
+    r2="$(git_stash_guard_classify "git -calias.x=stash x")"
+    r3="$(git_stash_guard_classify 'git -c alias.x="stash pop" x')"
+    [ "$r1" = "block" ]
+    [ "$r2" = "block" ]
+    [ "$r3" = "block" ]
+}
+
+@test "分類器: git aliasがstash list/showへ展開する場合はallowのまま" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    r1="$(git_stash_guard_classify "git -c alias.x=stash x list")"
+    r2="$(git_stash_guard_classify 'git -c alias.x="stash list" x')"
+    [ "$r1" = "allow" ]
+    [ "$r2" = "allow" ]
+}
+
+@test "hook: 未知wrapper(time/taskset)とgit alias迂回もBLOCKする" {
+    run _run_hook "time git stash"
+    [ "$status" -eq 2 ]
+    run _run_hook "taskset -c 0 git stash"
+    [ "$status" -eq 2 ]
+    run _run_hook "git -c alias.x=stash x"
     [ "$status" -eq 2 ]
 }
 
