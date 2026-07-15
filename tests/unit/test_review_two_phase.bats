@@ -154,6 +154,43 @@ YAML
   [[ "$fp" == *":no-code-change" ]]
 }
 
+@test "explicit no-commit operational queue and log task ignores unrelated HEAD commit" {
+  cat > "$REPORT" <<'YAML'
+worker_id: ninja
+parent_cmd: cmd_test
+task_type: normal
+status: completed
+commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+files_modified:
+  - {path: queue/insights.yaml, change: consume runtime insight}
+  - {path: logs/loop_ledger.yaml, change: record runtime snapshot}
+  - {path: queue/reports/ninja_report_cmd_test.yaml, change: report evidence}
+binary_checks:
+  commit:
+    - {check: コード変更なしのためexact commit不要, result: yes}
+YAML
+  fp=$(review_report_fingerprint "$REPORT")
+  [[ "$fp" == *":no-code-change" ]]
+}
+
+@test "no-commit assertion cannot hide a mixed source file change" {
+  cat > "$REPORT" <<'YAML'
+worker_id: ninja
+parent_cmd: cmd_test
+task_type: normal
+status: completed
+commit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+files_modified:
+  - {path: queue/insights.yaml, change: consume runtime insight}
+  - {path: scripts/review_approval.sh, change: source change}
+binary_checks:
+  commit:
+    - {check: コード変更なしのためexact commit不要, result: yes}
+YAML
+  fp=$(review_report_fingerprint "$REPORT")
+  [[ "$fp" == *":aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ]]
+}
+
 @test "deployed SCOUT report remains self-contained after task YAML is overwritten" {
   mkdir -p "$TMPROOT/scripts/lib"
   cp "$ROOT/scripts/lib/review_approval.sh" "$TMPROOT/scripts/lib/"

@@ -67,7 +67,31 @@ no_code_files = files_modified == [] or (
     and bool(files_modified)
     and all(reported_path(item) == report_path for item in files_modified)
 )
-if no_code_files and not commit_claimed and (task_type in no_code_task_types or no_commit_asserted):
+
+# Operational queue/log mutations are intentionally uncommitted runtime data.
+# Binding their review to the repository HEAD attributes an unrelated agent's
+# concurrent commit to this task.  Keep the allowance narrow and explicit:
+# every reported path must stay under queue/ or logs/, and the report must
+# affirm that no commit is required.  Any source/config/docs path falls back to
+# the normal 40-hex implementation identity.
+def operational_runtime_path(item):
+    path = reported_path(item)
+    if path is None:
+        return False
+    try:
+        rel = path.relative_to(root)
+    except ValueError:
+        return False
+    return bool(rel.parts) and rel.parts[0] in ("queue", "logs")
+
+operational_runtime_files = (
+    isinstance(files_modified, list)
+    and bool(files_modified)
+    and all(operational_runtime_path(item) for item in files_modified)
+)
+if (no_code_files or operational_runtime_files) and not commit_claimed and (
+    task_type in no_code_task_types or no_commit_asserted
+):
     print("no-code-change")
     raise SystemExit(0)
 
