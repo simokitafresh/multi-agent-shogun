@@ -511,6 +511,57 @@ END {
 ' "$yaml_file"
 }
 
+# List items generated from mapping data do not guarantee that `id` is the
+# first key (for example `- description: ...` followed by `  id: AC1`).
+_yaml_field_set_apply_list_id_anywhere() {
+    local yaml_file="$1" out_file="$2" block_id="$3" field="$4" new_value="$5"
+    YFS_NEW_VALUE="$new_value" python3 - "$yaml_file" "$out_file" "$block_id" "$field" <<'PY'
+import os, re, sys
+src, dst, block_id, field = sys.argv[1:]
+value = os.environ.get("YFS_NEW_VALUE", "")
+lines = open(src, encoding="utf-8").readlines()
+item_re = re.compile(r"^( *)-\s+")
+id_re = re.compile(r"^( *)id:\s*(.*?)\s*(?:#.*)?$")
+inline_id_re = re.compile(r"^( *)-\s+id:\s*(.*?)\s*(?:#.*)?$")
+def unquote(s):
+    s = s.strip()
+    return s[1:-1] if len(s) >= 2 and s[0] == s[-1] and s[0] in "\"'" else s
+def scalar(s):
+    if any(c in s for c in ':#[]{}|>"\n\t\r'):
+        s = s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\t', '\\t').replace('\r', '\\r')
+        return f'"{s}"'
+    return s
+starts = [(i, len(m.group(1))) for i, line in enumerate(lines) if (m := item_re.match(line))]
+matches = []
+for pos, (start, indent) in enumerate(starts):
+    end = next((n for n, ni in starts[pos + 1:] if ni <= indent), len(lines))
+    for line in lines[start:end]:
+        m = id_re.match(line.rstrip('\n'))
+        inline = inline_id_re.match(line.rstrip('\n'))
+        direct_match = m and len(m.group(1)) == indent + 2 and unquote(m.group(2)) == block_id
+        inline_match = inline and len(inline.group(1)) == indent and unquote(inline.group(2)) == block_id
+        if direct_match or inline_match:
+            matches.append((start, end, indent + 2)); break
+if not matches: sys.exit(2)
+if len(matches) != 1:
+    print(f"duplicate_list_id: {block_id} ({len(matches)} matches)", file=sys.stderr); sys.exit(3)
+start, end, direct = matches[0]
+field_re = re.compile(rf"^ {{{direct}}}{re.escape(field)}:\s*")
+replacement = " " * direct + field + ": " + scalar(value) + "\n"
+at = next((i for i in range(start, end) if field_re.match(lines[i])), None)
+if at is None:
+    lines.insert(end, replacement)
+else:
+    stop = at + 1
+    while stop < end:
+        stripped = lines[stop].strip(); indent = len(lines[stop]) - len(lines[stop].lstrip(' '))
+        if stripped and indent <= direct: break
+        stop += 1
+    lines[at:stop] = [replacement]
+with open(dst, "w", encoding="utf-8", newline="") as fh: fh.writelines(lines)
+PY
+}
+
 _yaml_field_set_apply() {
     local yaml_file="$1"
     local out_file="$2"
@@ -535,6 +586,7 @@ function unquote(s) {
     }
     return s
 }
+
 function leading_spaces(line,    i,cnt,c) {
     cnt = 0
     for (i = 1; i <= length(line); i++) {
@@ -995,7 +1047,10 @@ yaml_field_set() {
                 use_root=1
             fi
         else
-            rc=0; _yaml_field_set_apply_map_scalar "$yaml_file" "$tmp_file" "$block_id" "$field" "$yfs_safe_value" || rc=$?
+            rc=0; _yaml_field_set_apply_list_id_anywhere "$yaml_file" "$tmp_file" "$block_id" "$field" "$new_value" || rc=$?
+            if [ "$rc" -eq 2 ]; then
+                rc=0; _yaml_field_set_apply_map_scalar "$yaml_file" "$tmp_file" "$block_id" "$field" "$yfs_safe_value" || rc=$?
+            fi
             if [ "$rc" -eq 2 ]; then
                 rc=0; _yaml_field_set_apply "$yaml_file" "$tmp_file" "$block_id" "$field" "$yfs_safe_value" || rc=$?
             fi

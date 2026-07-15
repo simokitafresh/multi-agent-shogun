@@ -51,6 +51,79 @@ EOF
     [[ "$output" == *"status: pending"* ]]
 }
 
+@test "list item id後置: 同一itemだけを更新しコメントと順序を保持" {
+    cat > "$TEST_TMPDIR/test.yaml" <<'EOF'
+root: keep
+items:
+  # item comment
+  - description: first
+    status: pending
+    id: AC1
+  - id: AC2
+    description: second
+    status: pending
+EOF
+    run bash "$YFS" "$TEST_TMPDIR/test.yaml" AC1 status done
+    [ "$status" -eq 0 ]
+    run python3 - "$TEST_TMPDIR/test.yaml" <<'PY'
+import sys, yaml
+text = open(sys.argv[1], encoding="utf-8").read()
+data = yaml.safe_load(text)
+assert data["root"] == "keep"
+assert data["items"][0] == {"description": "first", "status": "done", "id": "AC1"}
+assert data["items"][1]["status"] == "pending"
+assert "# item comment" in text
+assert text.index("description: first") < text.index("id: AC1")
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "list item id位置variation: ネストlistとmultilineを安全に処理" {
+    cat > "$TEST_TMPDIR/test.yaml" <<'EOF'
+groups:
+  - name: outer
+    children:
+      - description: child
+        detail: |-
+          old line one
+          old line two
+        id: CHILD1
+      - id: CHILD2
+        detail: untouched
+EOF
+    run bash "$YFS" "$TEST_TMPDIR/test.yaml" CHILD1 detail "new line"
+    [ "$status" -eq 0 ]
+    run python3 - "$TEST_TMPDIR/test.yaml" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+children = data["groups"][0]["children"]
+assert children[0]["detail"] == "new line"
+assert children[0]["id"] == "CHILD1"
+assert children[1]["detail"] == "untouched"
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "list item id異常系: 不存在と重複idはbyte不変でfail closed" {
+    cat > "$TEST_TMPDIR/test.yaml" <<'EOF'
+items:
+  - description: first
+    id: DUP
+  - id: DUP
+    description: second
+EOF
+    cp "$TEST_TMPDIR/test.yaml" "$TEST_TMPDIR/before.yaml"
+    run bash "$YFS" "$TEST_TMPDIR/test.yaml" MISSING status done
+    [ "$status" -ne 0 ]
+    run cmp -s "$TEST_TMPDIR/before.yaml" "$TEST_TMPDIR/test.yaml"
+    [ "$status" -eq 0 ]
+    run bash "$YFS" "$TEST_TMPDIR/test.yaml" DUP status done
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"duplicate_list_id"* ]]
+    run cmp -s "$TEST_TMPDIR/before.yaml" "$TEST_TMPDIR/test.yaml"
+    [ "$status" -eq 0 ]
+}
+
 @test "root-level fallback: ブロックID不在時にルートフィールド更新" {
     cat > "$TEST_TMPDIR/test.yaml" <<'EOF'
 status: idle
