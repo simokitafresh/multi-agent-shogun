@@ -10922,3 +10922,87 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - inbox_watcher.shの子プロセス(inotify pollerの( while ... ) &サブシェル)はforkのみでexecしないため/proc/pid/cmdlineが親から継承され、ps上は親と全く同じ起動コマンドラインに見えた。これを見た目だけで新規プロセスの重複起動と誤断定した(cmd_3969初稿)。正しくは/proc/pid/wchanで待機状態(do_wait=子の終了待ち)を確認し、pgrep -Pで実際に子プロセス(sleep/inotifywait等)を持つかを見る必要がある。daemon_supervisor.shのds_inbox_watcher_pids()も同様の理由で「親と同一cmdlineの子」を意図的に除外する設計になっており、既存インフラの重複検知ロジックの有無・正当性を確認せずに「検知漏れ」と決めつけたのも二重の誤り。加えてgrep -c(大文字小文字区別)で「ログ未実装」と誤判定した件(§1)も含め、本cmdの初稿は二次情報(ps出力の見た目、grep結果)を一次情報として扱い、家老RCで3点撤回・1点解釈訂正・1点再計測という大幅修正が必要になった。忍者の計測・調査タスクでは「見た目が一致=同一の意味」と早合点せず、プロセス系の判定はwchan/子プロセス/既存の自動化ロジックの実装有無をコードで裏取りしてから結論すること
+
+### L1044: block scalar fixtureは空行を含む本番形状で検証する
+- **日付**: 2026-07-16
+- **出典**: cmd_karo_hotfix_compact_scalar_writer_202607160620
+- **記録者**: kagemaru
+- **tags**: [infra, testing, deploy, gate]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/yaml_field_set.sh,tests/unit/test_yaml_field_set.bats]
+- **origin**: [[cmd_karo_hotfix_compact_scalar_writer_202607160620]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- **retired**: true
+- **retired_at**: 2026-07-16
+- 単純2行fixtureはPASSしたが本番block本文の空行でskip状態が解除され再FAILした。次回はblock scalarの空行・chomping indicator・後続root keyをvariation checkへ必須追加する。
+
+### L1045: pre-push全量suiteは同一HEADを共有直列化しPASSだけ再利用せよ
+- **日付**: 2026-07-16
+- **出典**: cmd_karo_hotfix_ga270_prepush_hook_defense_202607160716
+- **記録者**: kagemaru
+- **tags**: [infra, testing, gate, cache]
+- **subdomain**: infra
+- **target_files**: [.githooks/pre-push,tests/unit/test_pre_push_hook.bats]
+- **origin**: [[GA-270]] -> [[pre-push_full_suite_concurrency]] -> [[serialized_same_head_pass_cache]]
+- **enforcement**: Level5: repo共有flock + 同一HEAD PASS cache
+- **when**: 同一checkoutで複数pre-pushが同一HEADへ並行起動する時
+- **how**: 共有flockで直列化し、同一HEADの成功だけをcacheして後続へ再利用する
+- **retired**: true
+- **retired_at**: 2026-07-16
+- IF 複数agentまたは自動retryが同一HEADを数秒差でpre-pushする時 THEN repo共有flockでtest laneを直列化し、先行PASSだけを同一HEAD後続へ自動供給する BECAUSE 無制御な全量suite重複起動は正常コードでも双方を900秒timeoutさせる。GA-270で2件同時失敗、横断252件中timeout同型19件。失敗はcacheせず従来通りBLOCKする。
+
+### L1046: 共有hook収束の静的確認は実入口payload parityの証拠にならない
+- **日付**: 2026-07-16
+- **出典**: cmd_karo_hotfix_three_layer_universal_recall_202607160630
+- **記録者**: saizo
+- **tags**: [infra, semantic, testing]
+- **subdomain**: infra
+- **target_files**: [scripts/memory_db_import.py,scripts/memory_visibility.py,scripts/semantic_index.py,scripts/memory_db_knowledge_write.sh,scripts/hooks/prompt_state_inject.sh]
+- **origin**: [[cmd_karo_hotfix_three_layer_universal_recall_202607160630]]
+- **enforcement**: Level5: Claude/Codex各entrypoint isolated parity fixture
+- **when**: 全CLI・全roleの自動注入到達を検証する時
+- **how**: 各実入口を独立fixtureで実行しconcept/raw/causalと出力hashを突合する
+- **retired**: true
+- **retired_at**: 2026-07-16
+- CLIラベルだけ変えて同一関数を反復せず、Claude/Codex各entrypointをisolated fixtureで実行し、source eventのconcept/raw/causal対応と8出力hash一致を測るチェックを次回から必須化する
+
+### L1150: block scalar fixtureは空行を含む本番形状で検証する
+- **日付**: 2026-07-16
+- **出典**: cmd_karo_hotfix_compact_scalar_writer_202607160620
+- **記録者**: kagemaru
+- **tags**: [infra, testing, deploy, gate]
+- **subdomain**: infra
+- **target_files**: [scripts/lib/yaml_field_set.sh,tests/unit/test_yaml_field_set.bats]
+- **origin**: [[cmd_karo_hotfix_compact_scalar_writer_202607160620]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 単純2行fixtureはPASSしたが本番block本文の空行でskip状態が解除され再FAILした。次回はblock scalarの空行・chomping indicator・後続root keyをvariation checkへ必須追加する。
+
+### L1151: pre-push全量suiteは同一HEADを共有直列化しPASSだけ再利用せよ
+- **日付**: 2026-07-16
+- **出典**: cmd_karo_hotfix_ga270_prepush_hook_defense_202607160716
+- **記録者**: kagemaru
+- **tags**: [infra, testing, gate, cache]
+- **subdomain**: infra
+- **target_files**: [.githooks/pre-push,tests/unit/test_pre_push_hook.bats]
+- **origin**: [[GA-270]] -> [[pre-push_full_suite_concurrency]] -> [[serialized_same_head_pass_cache]]
+- **enforcement**: Level5: repo共有flock + 同一HEAD PASS cache
+- **when**: 同一checkoutで複数pre-pushが同一HEADへ並行起動する時
+- **how**: 共有flockで直列化し、同一HEADの成功だけをcacheして後続へ再利用する
+- IF 複数agentまたは自動retryが同一HEADを数秒差でpre-pushする時 THEN repo共有flockでtest laneを直列化し、先行PASSだけを同一HEAD後続へ自動供給する BECAUSE 無制御な全量suite重複起動は正常コードでも双方を900秒timeoutさせる。GA-270で2件同時失敗、横断252件中timeout同型19件。失敗はcacheせず従来通りBLOCKする。
+
+### L1152: 共有hook収束の静的確認は実入口payload parityの証拠にならない
+- **日付**: 2026-07-16
+- **出典**: cmd_karo_hotfix_three_layer_universal_recall_202607160630
+- **記録者**: saizo
+- **tags**: [infra, semantic, testing]
+- **subdomain**: infra
+- **target_files**: [scripts/memory_db_import.py,scripts/memory_visibility.py,scripts/semantic_index.py,scripts/memory_db_knowledge_write.sh,scripts/hooks/prompt_state_inject.sh]
+- **origin**: [[cmd_karo_hotfix_three_layer_universal_recall_202607160630]]
+- **enforcement**: Level5: Claude/Codex各entrypoint isolated parity fixture
+- **when**: 全CLI・全roleの自動注入到達を検証する時
+- **how**: 各実入口を独立fixtureで実行しconcept/raw/causalと出力hashを突合する
+- CLIラベルだけ変えて同一関数を反復せず、Claude/Codex各entrypointをisolated fixtureで実行し、source eventのconcept/raw/causal対応と8出力hash一致を測るチェックを次回から必須化する
