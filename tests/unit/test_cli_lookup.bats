@@ -90,6 +90,13 @@ teardown_file() {
     [ "$output" = "/clear" ]
 }
 
+@test "cli_launch_cmd: autonomous Codex profile bypasses interactive hook trust after external validation" {
+    run env CLI_ADAPTER_SETTINGS="${TEST_TMPDIR_CLI}/settings.yaml" CLI_LOOKUP_PROFILES="$PROJECT_ROOT/config/cli_profiles.yaml" \
+        bash -lc "source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'; cli_launch_cmd hanzo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"--dangerously-bypass-hook-trust"* ]]
+}
+
 @test "cli_lookup: model_nameを表示名へ変換できる" {
     run env CLI_ADAPTER_SETTINGS="${TEST_TMPDIR_CLI}/settings.yaml" CLI_LOOKUP_PROFILES="${TEST_TMPDIR_CLI}/cli_profiles.yaml" \
         bash -lc "source '$PROJECT_ROOT/scripts/lib/cli_lookup.sh'; cli_model_display gunshi"

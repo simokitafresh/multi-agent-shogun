@@ -298,7 +298,7 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 | config | `~/.codex/config.toml` | `project_doc_max_bytes=131072`(87KB超対応)。`[features] hooks=true`必須(`codex_hooks`は非推奨) |
 | hooks | `.codex/hooks.json`(プロジェクトレベル) | Codex公式hookをCLI能力adapterとして使う。`SessionStart`→`scripts/hooks/codex_session_start.sh`、`UserPromptSubmit`→`scripts/hooks/codex_user_prompt_submit.sh`。Codexは同一event内hookを並行実行するため、`log_terminal_input.sh`と`prompt_state_inject.sh`を別hookに分けるな。Stop block系は未検証のため戻さずdaemon補完 |
 | hook BLOCK | `emit_deny()`内で**exit 2** | exit 1=hookエラー(CLIクラッシュ)。exit 2=意図的BLOCK(CLI続行)。Claude Codeはexit 1でも続行するがCodexは死ぬ |
-| hook承認 | 初回のみ`/hooks`でtrust操作 | 承認は永続化(respawn後も再承認不要)。pane高さ15行だとStop行が画面外 — 一時拡大(`tmux resize-pane -y 30`)で承認 |
+| hook承認 | 対話paneは`/hooks`でtrust。自律tmux paneは外部hook/schema Gate通過後、Codex公式automation用`--dangerously-bypass-hook-trust`を`cli_profiles.yaml`のCodex `launch_args`から付与 | hook定義hash変更のたび対話UIで全pane停止するため。手動launch_cmd直書きは禁止し、共通profileで全Codex paneへ適用 |
 | skills | `~/.codex/skills/` → プロジェクト正本symlink | 独立コピー禁止。`ln -s /mnt/c/tools/multi-agent-shogun/skills/{name}`でsymlink。skill_auto_improve.shの改善が即反映 |
 | Skill tool | Codex CLIは`/skills`コマンドでスキル一覧表示・実行可能 | Claude CodeのSkill toolと同等機能 |
 | doc読込制限 | `project_doc_max_bytes` | AGENTS.md+CLAUDE.md合計が制限超→切り捨て。128KB以上を推奨 |

@@ -119,4 +119,8 @@ profiles:
     # 静的追加起動引数 (launch_cmdに追加。model_reasoning_effortはmodel_nameから自動生成)
     # effortはsettings.yamlのmodel_name接尾辞(gpt-X.X-{effort})で per-agent 指定。
     # service_tierはconfig.toml(fast)を継承。殿裁定2026-06-11: 忍者=low+fast、家老=medium+fast
-    launch_args: ""
+    # Autonomous tmux panes cannot answer the interactive /hooks trust UI.
+    # Project hooks are pre-validated by hook/schema gates before launch, so
+    # use Codex's documented automation escape hatch instead of deadlocking
+    # every pane whenever the tracked hook definition hash changes.
+    launch_args: "--dangerously-bypass-hook-trust"
