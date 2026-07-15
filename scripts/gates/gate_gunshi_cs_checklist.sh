@@ -272,6 +272,7 @@ brainwash_missing=""
 cold_category_missing=""
 adversarial_streak_error=""
 bw_no_number_block=""
+bw_no_pattern_block=""
 skill_usage_missing=""
 ops_sim_missing=""
 verified_files_missing=""
@@ -1144,7 +1145,8 @@ _bw_no_pattern=$(tail -200 "$LOG_FILE" 2>/dev/null | awk '
     END { if (total >= 5 && no_pattern > total*0.6) print no_pattern "/" total }
 ')
 if [ -n "$_bw_no_pattern" ]; then
-    echo "WARN(L6-形骸化): brainwash_checkの${_bw_no_pattern}件で8パターン番号なし。具体的にどのパターンを検査したか明記せよ"
+    echo "BLOCK(L6-形骸化): brainwash_checkの${_bw_no_pattern}件で8パターン番号なし。具体的にどのパターンを検査したか明記せよ(#1~#8 yes/noを全件に遡及記入)"
+    bw_no_pattern_block=1
     warn=1
 fi
 
@@ -1350,7 +1352,7 @@ fi
 
 rm -f "$_remediation_tmp"
 _gate_result=PASS; _gate_rc=$warn
-if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ] || [ -n "$cs_empty_block" ] || [ -n "$bw_quality_block" ] || [ -n "$altruism_no_reason_block" ] || [ -n "$remediation_block" ]; then
+if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$bw_no_pattern_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ] || [ -n "$cs_empty_block" ] || [ -n "$bw_quality_block" ] || [ -n "$altruism_no_reason_block" ] || [ -n "$remediation_block" ]; then
     _gate_result=FAIL; _gate_rc=2
 elif [ "$warn" -ne 0 ]; then
     _gate_result=WARN
