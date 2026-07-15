@@ -200,7 +200,14 @@ import sys
 
 command = os.environ.get("COMMAND", "")
 sys.path.insert(0, os.path.join(os.environ["PROJECT_ROOT"], "scripts", "lib"))
-from shell_command_segments import segment_tokens
+try:
+    from shell_command_segments import segment_tokens
+except ModuleNotFoundError:
+    # Isolated hook copies may intentionally omit optional knowledge-query
+    # helpers.  Leave the query empty so command-specific fail-closed guards
+    # (notably GA-231's agent_config check) can still run and emit exit 2.
+    print("")
+    raise SystemExit(0)
 knowledge_roots = ("context", "docs", "projects", "memory")
 infra_roots = ("scripts/gates/", "scripts/hooks/", ".claude/hooks/")
 
@@ -446,6 +453,12 @@ fi
 # -C <path>)+ "commit" subcommandであるかのみを見る。全体解析が失敗した場合のみ、Guard0と同じ
 # 行頭/区切り文字直後の"git"出現有無でfail-closed可否を判定する(個別message allowlist禁止)。
 if [[ -n "${command:-}" && "$command" == *git* && "$command" == *commit* ]]; then
+    # A standalone hook copy may omit both shared parsing and role ontology.
+    # Do not crash in the parser import before GA-231 can express its intended
+    # fail-closed contract with Codex-safe exit 2.
+    if [[ ! -r "$SCRIPT_DIR/scripts/lib/shell_command_segments.py" && ! -r "$SCRIPT_DIR/scripts/lib/agent_config.sh" ]]; then
+        emit_deny "BLOCK(GA-231): agent role config(scripts/lib/agent_config.sh)が欠落。direct git commitをfail-closedで停止"
+    fi
     _guard1_is_git_commit="$(HOOK_PAYLOAD_JSON="$payload" PROJECT_ROOT="$SCRIPT_DIR" python3 - <<'PY'
 import json
 import os

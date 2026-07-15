@@ -471,8 +471,9 @@ def _shell_segments_are_bounded(command: str, segments: list[list[str]]) -> bool
             continue
         if cmd0 in SAFE_NON_DB_CMDS:
             continue
-        if cmd0 in ("bash", "sh") and not _bash_has_inline_code(segment):
-            continue
+        # A shell script is executable capability, not bounded inspection.
+        # When credentials are in scope, an opaque sh/bash operand must stay
+        # fail-closed even without -c; its body is not proven by this command.
         if cmd0 in READ_ONLY_SHELL_CMDS:
             if _segment_is_readonly_safe(cmd0, segment):
                 continue
