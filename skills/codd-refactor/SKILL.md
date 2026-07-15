@@ -1,7 +1,7 @@
 ---
 name: codd-refactor
-<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
-<!-- cmd_3948検分: run_tests.sh直近差分はproduction script speed lane優先。既存CLI契約・品質条件不変。 -->
+<!-- script_refs_checked_at: 2026-07-15T11:38:00+09:00 -->
+<!-- 2026-07-15将軍検分: run_tests.sh b0c6112a9(INNER_JOBS 4→1+HEAVY_INNER_JOBS fallback=CI concurrency fix)。内部並列度調整のみ、呼び出し契約不変。 -->
 description: |
   CoDDパイプラインでbashスクリプトの設計書を生成し、リファクタリング+速度改善を実行するスキル。
   プロファイリング→ボトルネック特定→CoDD spec作成→設計書生成→実装→before/after計測の全工程。

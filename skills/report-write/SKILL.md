@@ -1,6 +1,6 @@
 ---
-<!-- script_refs_checked_at: 2026-07-15T05:58:00+09:00 -->
-<!-- 2026-07-15契約更新: commit=yes報告はcommit_hashと必須証拠が揃うまでterminal statusへ遷移しない。先に全必須欄、最後に40桁commit_hashを記入する。backslash scalarは原文保持される。 -->
+<!-- script_refs_checked_at: 2026-07-15T11:38:00+09:00 -->
+<!-- 2026-07-15将軍検分: report_field_set.sh aa75598cf(lesson_candidate型チェック dict→(dict,list)緩和=内部バリデーション)。呼び出し契約不変。 -->
 name: report-write
 argument-hint: "[report_path]"
 quality_metric: "忍者系: report-write使用後の報告YAML関連WA不発生率(対象報告のうちreport_yaml_format/report_field欠陥なしの割合)"
@@ -179,6 +179,15 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-07-15: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; ...
+- 2026-07-14: gate=gate_report_format result=FAIL executor=tobisaru reason=variation_checks: required cells unfilled: normal_pass, quoted_or_heredoc, linked_worktree, parallel_or_respawn, abnormal_exit; binary_checks.AC1[0].result: 空文字。\"yes\" または \"no...
+
+- 2026-07-14: gate=gate_report_format result=FAIL executor=tobisaru reason=variation_checks: result must be yes/no: normal_pass, quoted_or_heredoc, linked_worktree, parallel_or_respawn, abnormal_exit
+- 2026-07-14: gate=gate_report_format result=FAIL executor=hanzo reason=lessons_useful[0]: missing \"useful\" field; lessons_useful[1]: missing \"useful\" field; lessons_useful[2]: missing \"useful\" field; lessons_useful[3]: missing \"useful\" field
+
+- 2026-07-14: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks: empty dict (must have at least one AC entry); status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; result.summary: FILL_THIS placeholder remaining (must fill ...
+- 2026-07-13: gate=gate_report_format result=FAIL executor=kotaro reason=result.summary: FILL_THIS placeholder remaining (must fill actual summary); commit_hash: 欠落または40文字フルhashでない(binary_checks.commitがyes) — review_approvalの後段BLOCK(review_report_fin...
 
 - 2026-07-12: gate=gate_report_format result=FAIL executor=hayate reason=timestamp: completed/revision_requested report requires a parseable ISO timestamp
 - 2026-07-12: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC1[2].result: 空文字。\"yes\" または \"no\" を記入せよ; ...

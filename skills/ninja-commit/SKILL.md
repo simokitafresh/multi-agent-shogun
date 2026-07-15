@@ -1,6 +1,6 @@
 ---
-<!-- script_refs_checked_at: 2026-07-15T05:58:00+09:00 -->
-<!-- 2026-07-15契約更新: ninja_scope_commit.shはcommit後に同一scopeの重複dirty hunkを検出するとBLOCKする。追加差分をscope commitして収束させる。report_field_set.shはcommit証拠完備までterminal遷移を延期する。 -->
+<!-- script_refs_checked_at: 2026-07-15T11:38:00+09:00 -->
+<!-- 2026-07-15将軍検分: report_field_set.sh aa75598cf(lesson_candidate型チェック dict→(dict,list)緩和=内部バリデーション)。呼び出し契約不変。 -->
 name: ninja-commit
 argument-hint: ""
 description: |

@@ -344,6 +344,8 @@ PD-042反映: DM-signal側24スキルの`allowed-tools`/`argument-hint`/`descrip
 - L821: 本番適用cmd着手時はgit log origin/main..HEADでpush状態を先に確認せよ。前段cmdのGATE CLEAR=push完了ではない（cmd_3704）
 - L812: DM-Signalのgit commitがlefthook pre-commitでBash既定2分timeoutを超える場合、9pスタルと決めずtimeoutを上げて再試行する（cmd_3686）
 - L810: 新規importのトップレベル追加はmixed-commit BLOCKやruff空コミット化を招くため、repo-checksの分割境界を先に確認する（cmd_3684）
+- L900: subprocess moduleはpackage名でなくapp-dirで探索根を固定する（cmd_karo_ci_red_dm_p4_uvicorn_import）
+- L901: 永続helperはchecked-in source同期後に実行する。live PIDだけのhealthy判定とpgserver cleanupのno-opに注意（cmd_karo_ci_fix_ga256_cmd3907）
 
 <!-- lesson-sort 2026-04-27: 40件振り分け(30件移動+5件削除+2件重複除去+3件既存確認)
   §6-7: L634,L636,L357,L261 (L645既存,L637≈L638重複削除)

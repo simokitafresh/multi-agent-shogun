@@ -1,6 +1,6 @@
 ---
-<!-- script_refs_checked_at: 2026-07-15T08:42:00+09:00 -->
-<!-- 2026-07-15検分: semantic_search.sh b05faaaa5はcache helper optional化(standalone契約保全)+NONDEFAULT env注入。検索CLI引数・出力形式・/dream手順は不変。 -->
+<!-- script_refs_checked_at: 2026-07-15T11:38:00+09:00 -->
+<!-- 2026-07-15将軍検分: memory_db_query.sh aa75598cf(delta source検出WAL/SHM freshness対応=内部最適化)。クエリ呼出し契約不変。 -->
 name: dream
 argument-hint: ""
 description: |
