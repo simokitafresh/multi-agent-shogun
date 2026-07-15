@@ -16,6 +16,11 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+_SCRIPT_DIR = str(Path(__file__).resolve().parent)
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+from memory_visibility import targeted_event_visibility_clause
+
 
 def parse_related_concepts_cell(value: str) -> list[dict[str, str]]:
     """Parse related_concepts entries with optional per-edge attributes."""
@@ -630,7 +635,7 @@ def _memory_db_fts_concept_rank_rows_impl(
     target: str = "",
 ) -> tuple[list[dict], int, dict]:
     target = target.strip()
-    target_clause = "AND (e.target = ? OR e.event_type = 'document')" if target else ""
+    target_clause = targeted_event_visibility_clause() if target else ""
     params: list[object] = [fts_query]
     if target:
         params.append(target)

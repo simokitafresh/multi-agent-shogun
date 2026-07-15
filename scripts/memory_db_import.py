@@ -8,11 +8,17 @@ import argparse
 import json
 import re
 import sqlite3
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
 import yaml
+
+_SCRIPT_DIR = str(Path(__file__).resolve().parent)
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
+from memory_visibility import targeted_event_visibility_clause
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -1032,7 +1038,9 @@ def search_events(
     if not normalized_query:
         return []
     target = normalize_text(target)
-    target_clause = "AND (e.target = ? OR e.event_type = 'document')" if target else ""
+    # A blank/NULL target is universal knowledge.  Keep directed events private
+    # to their recipient while documents remain universally searchable.
+    target_clause = targeted_event_visibility_clause() if target else ""
 
     try:
         return _search_events_impl(
@@ -1095,6 +1103,8 @@ def _search_events_impl(
                         e.cmd_id,
                         e.parent_event_id,
                         e.importance,
+                        e.concepts,
+                        e.raw_content,
                         0 AS rank
                     FROM events AS e
                     WHERE {like_clause}
@@ -1135,6 +1145,8 @@ def _search_events_impl(
                     e.cmd_id,
                     e.parent_event_id,
                     e.importance,
+                    e.concepts,
+                    e.raw_content,
                     bm25(events_fts) AS rank
                 FROM events_fts
                 JOIN events AS e ON e.rowid = events_fts.rowid

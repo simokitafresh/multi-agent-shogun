@@ -540,6 +540,7 @@ PY
     mkdir -p "$helper_root/scripts"
     cp "$PROJECT_ROOT/scripts/semantic_search.sh" "$helper_root/scripts/semantic_search.sh"
     cp "$PROJECT_ROOT/scripts/semantic_index.py" "$helper_root/scripts/semantic_index.py"
+    cp "$PROJECT_ROOT/scripts/memory_visibility.py" "$helper_root/scripts/memory_visibility.py"
     cp "$PROJECT_ROOT/scripts/search_log_write.sh" "$helper_root/scripts/search_log_write.sh"
     chmod 0644 "$helper_root/scripts/search_log_write.sh"
     export SEMANTIC_LLM_CMD="bash -c 'echo should-not-run >&2; exit 99'"

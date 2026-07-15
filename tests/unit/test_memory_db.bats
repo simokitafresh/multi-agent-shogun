@@ -204,6 +204,114 @@ EOF
     [[ "$output" != *"karo宛検索対象"* ]]
 }
 
+@test "targeted recall includes universal knowledge without leaking another agent private event" {
+    cat > "$TEST_TMPDIR/archive/2026-07-16.jsonl" <<'EOF'
+{"ts":"2026-07-16T06:00:00+09:00","agent":"system","target":"","direction":"knowledge","summary":"universal recall contract","detail":"universalpayloadneedle original universal payload [[cause]] -> [[effect]]"}
+{"ts":"2026-07-16T06:01:00+09:00","agent":"lord","target":"hayate","direction":"knowledge","summary":"hayate private recall","detail":"privatepayloadneedle private"}
+EOF
+
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    agents=(shogun karo gunshi hayate kagemaru hanzo saizo kotaro tobisaru)
+    universal_hits=0
+    private_leaks=0
+    for agent in "${agents[@]}"; do
+        result="$(python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
+            --db "$TEST_TMPDIR/data/memory.db" --search universalpayloadneedle --target "$agent")"
+        [[ "$result" == *"universal recall contract"* ]] && universal_hits=$((universal_hits + 1))
+        private_result="$(python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
+            --db "$TEST_TMPDIR/data/memory.db" --search privatepayloadneedle --target "$agent")"
+        if [ "$agent" = hayate ]; then
+            [[ "$private_result" == *"hayate private recall"* ]]
+        elif [[ "$private_result" == *"hayate private recall"* ]]; then
+            private_leaks=$((private_leaks + 1))
+        fi
+    done
+    [ "$universal_hits" -eq 9 ]
+    [ "$private_leaks" -eq 0 ]
+}
+
+@test "four roles through Claude and Codex receive identical normalized universal payload" {
+    cat > "$TEST_TMPDIR/archive/2026-07-16.jsonl" <<'EOF'
+{"ts":"2026-07-16T06:10:00+09:00","agent":"system","target":"","direction":"knowledge","summary":"crossclipayloadneedle","detail":"original_payload [[origin]]->[[cause]]->[[result]]"}
+EOF
+    cat > "$TEST_TMPDIR/semantic-map.md" <<'EOF'
+## universal_recall_contract — Universal recall contract
+| 属性 | 値 |
+|------|---|
+| aliases | crossclipayloadneedle |
+EOF
+
+    run python3 "$MEMORY_DB_SCRIPT_ROOT/scripts/memory_db_import.py" \
+        --archive-dir "$TEST_TMPDIR/archive" \
+        --semantic-index "$TEST_TMPDIR/semantic-map.md" \
+        --db "$TEST_TMPDIR/data/memory.db"
+    [ "$status" -eq 0 ]
+
+    cache="$TEST_TMPDIR/data/lord_ruling_cache.db"
+    python3 - "$MEMORY_DB_SCRIPT_ROOT" "$TEST_TMPDIR/data/memory.db" "$cache" <<'PY'
+import importlib.util, sqlite3, sys
+from pathlib import Path
+
+root, source_db, cache = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
+spec = importlib.util.spec_from_file_location("memory_db_import", root / "scripts/memory_db_import.py")
+module = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+spec.loader.exec_module(module)
+rows = module.search_events(source_db, "crossclipayloadneedle", target="saizo")
+assert len(rows) == 1
+row = rows[0]
+assert row["summary"] == "crossclipayloadneedle"
+assert row["raw_content"] == "original_payload [[origin]]->[[cause]]->[[result]]"
+assert "universal_recall_contract" in row["concepts"]
+normalized = (
+    f"concept=universal_recall_contract raw=original_payload "
+    "causal=[[origin]]->[[cause]]->[[result]] universalpayloadneedle"
+)
+with sqlite3.connect(cache) as conn:
+    conn.execute("DELETE FROM lord_rulings")
+    conn.execute("INSERT INTO lord_rulings (event_id, ts, event_type, cmd_id, summary, detail, target) VALUES (?,?,?,?,?,?,?)", (
+        row["id"], "2026-07-16T06:10:00+09:00", "knowledge", "", normalized,
+        "universalpayloadneedle", "",
+    ))
+PY
+
+    outputs="$TEST_TMPDIR/entrypoint_payloads"
+    : > "$outputs"
+    for agent in shogun karo gunshi saizo; do
+        for cli in claude codex; do
+            if [ "$cli" = claude ]; then
+                payload="$(env TMUX_PANE=%99999 PROMPT_STATE_PREFLIGHT_CMD=/bin/true \
+                    PROMPT_STATE_SEMANTIC_SEARCH_CMD=/bin/false PROMPT_STATE_SKILLS_DIR="$TEST_TMPDIR/no_skills" \
+                    PROMPT_STATE_AGENT_ID="$agent" PROMPT_STATE_LORD_RULING_CACHE_PATH="$cache" \
+                    bash "$MEMORY_DB_SCRIPT_ROOT/scripts/hooks/prompt_state_inject.sh" <<<'{"prompt":"universalpayloadneedle"}')"
+            else
+                payload="$(env TMUX_PANE=%99999 PROMPT_STATE_PREFLIGHT_CMD=/bin/true \
+                    PROMPT_STATE_SEMANTIC_SEARCH_CMD=/bin/false PROMPT_STATE_SKILLS_DIR="$TEST_TMPDIR/no_skills" \
+                    PROMPT_STATE_AGENT_ID="$agent" PROMPT_STATE_LORD_RULING_CACHE_PATH="$cache" \
+                    bash "$MEMORY_DB_SCRIPT_ROOT/scripts/hooks/codex_user_prompt_submit.sh" <<<'{"prompt":"universalpayloadneedle"}')"
+            fi
+            normalized="$(PAYLOAD="$payload" python3 - <<'PY'
+import json, os
+ctx=json.loads(os.environ['PAYLOAD'])['hookSpecificOutput']['additionalContext']
+start=ctx.index('--- memory_db_fts5 ---')
+end=ctx.find('\n--- ', start + 5)
+print(ctx[start:end if end >= 0 else None])
+PY
+)"
+            [[ "$normalized" == *"concept=universal_recall_contract"* ]]
+            [[ "$normalized" == *"raw=original_payload"* ]]
+            [[ "$normalized" == *"causal=[[origin]]->[[cause]]->[[result]]"* ]]
+            printf '%s\n' "$normalized" | sha256sum | cut -d' ' -f1 >> "$outputs"
+        done
+    done
+    [ "$(wc -l < "$outputs")" -eq 8 ]
+    [ "$(sort -u "$outputs" | wc -l)" -eq 1 ]
+}
+
 @test "memory_db_import schema CLI emits markdown with event types and samples" {
     cat > "$TEST_TMPDIR/archive/2026-05-22.jsonl" <<'EOF'
 {"ts":"2026-05-22T12:00:00+09:00","agent":"lord","direction":"inbound","summary":"schema sample","detail":"event_type distribution check"}
