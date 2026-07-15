@@ -5467,7 +5467,9 @@ for line in lines:
     stripped = line.lstrip(" ")
     indent = len(line) - len(stripped)
     if skip:
-        if stripped == "" or indent > 2:
+        # task直下のsequence itemは ``  - path: ...`` でindent=2。
+        # indent>2だけを飛ばすと旧itemが残り、再注入のたび重複する。
+        if stripped == "" or indent > 2 or (indent == 2 and stripped.startswith("-")):
             continue
         skip = False
     if indent == 2 and stripped.startswith("readonly_ref:"):

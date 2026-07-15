@@ -451,6 +451,11 @@ PY
     cp "$PROJECT_ROOT/scripts/lib/field_get.sh" "$tmpdir/scripts/lib/field_get.sh"
     cat > "$tmpdir/queue/tasks/hayate.yaml" <<'YAML'
 task:
+  readonly_ref:
+  - path: daemon_supervisor.sh
+    reason: stale partial extraction
+  - path: restart_watchers.sh
+    reason: stale partial extraction
   parent_cmd: cmd_3970
   task_id: cmd_3970_full
   status: assigned
@@ -476,6 +481,8 @@ EOF
 
     run bash "$tmpdir/run_inject.sh"
     [ "$status" -eq 0 ]
+    run bash "$tmpdir/run_inject.sh"
+    [ "$status" -eq 0 ]
 
     python3 - "$tmpdir/queue/tasks/hayate.yaml" <<'PY'
 import sys
@@ -494,6 +501,7 @@ expected = {
 }
 assert expected <= paths, (expected, paths)
 assert 'docs/research/daemon_p4_entry_point_design_20260715.md' not in paths, paths
+assert len(task.get('readonly_ref') or []) == len(expected), task.get('readonly_ref')
 PY
 }
 
