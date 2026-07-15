@@ -30,6 +30,7 @@ commands:
     title: 'テスト用新cmd'
     project: infra
     type: impl
+    estimated_minutes: 10
     purpose: '新しいpurpose'
     acceptance_criteria:
     - 'AC1: テスト'
@@ -539,6 +540,7 @@ setup_file() {
         extract_function reset_stale_fields
         extract_function resolve_cmd_source_path
         extract_function resolve_cmd_to_task
+        extract_function inject_cmd_time_contract
         extract_function inject_cmd_assumptions
     } > "$RESOLVE_FUNCTIONS_FILE"
     [ -s "$RESOLVE_FUNCTIONS_FILE" ] || return 1
@@ -1341,6 +1343,46 @@ PY
     rm -rf "$root"
     [ "$status" -eq 0 ]
     [[ "$output" == *"DEPLOY_DURATION_FIELDS_OK"* ]]
+}
+
+@test "resolve_cmd_to_task replaces stale runtime contract with command SSOT" {
+    local root
+    root="$(mktemp -d "$BATS_TMPDIR/deploy_time_contract.XXXXXX")"
+    prepare_source_fixture "$root"
+    sed -i "/    status: pending/i\\    timeout_minutes: 30" "$root/queue/shogun_to_karo.yaml"
+    sed -i "/  status: completed/i\\  estimated_minutes: 20\n  execution_env:\n    long_runtime_reason: 'old lesson scan'\n    measured_runtime_sec: 1200" "$root/queue/tasks/tobisaru.yaml"
+
+    resolve_fixture_task "$root" "cmd_9999" "tobisaru"
+
+    run python3 - "$root/queue/tasks/tobisaru.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert task["estimated_minutes"] == 10, task
+assert task["timeout_minutes"] == 30, task
+assert "execution_env" not in task, task
+assert "split_decision" not in task, task
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "resolve_cmd_to_task projects structured split and runtime contracts" {
+    local root
+    root="$(mktemp -d "$BATS_TMPDIR/deploy_structured_contract.XXXXXX")"
+    prepare_source_fixture "$root"
+    sed -i 's/    estimated_minutes: 10/    estimated_minutes: 60/' "$root/queue/shogun_to_karo.yaml"
+    sed -i "/    status: pending/i\\    timeout_minutes: 90\n    split_decision:\n      boundary_ac_ids: [AC1]\n      integration_tasks: 1\n      review_round_trips: 0\n    execution_env:\n      long_runtime_reason: 'measured full scan'\n      measured_runtime_sec: 3600" "$root/queue/shogun_to_karo.yaml"
+
+    resolve_fixture_task "$root" "cmd_9999" "tobisaru"
+
+    run python3 - "$root/queue/tasks/tobisaru.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert task["estimated_minutes"] == 60
+assert task["timeout_minutes"] == 90
+assert task["split_decision"] == {"boundary_ac_ids": ["AC1"], "integration_tasks": 1, "review_round_trips": 0}
+assert task["execution_env"] == {"long_runtime_reason": "measured full scan", "measured_runtime_sec": 3600}
+PY
+    [ "$status" -eq 0 ]
 }
 
 @test "reset_stale_fields clears stale cmd scope metadata while preserving scout_exempt" {

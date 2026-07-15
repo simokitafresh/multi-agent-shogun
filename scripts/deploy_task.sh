@@ -981,6 +981,9 @@ STALE_FIELDS = [
     'independence_worktree_required', 'shared_context_embargo',
     # 第16層: cmdで検証済みの前提とstatus固有メタ。新cmdだけを正本にする
     'assumptions', 'cancel_reason', 'cancellation_reason', 'superseded_by',
+    # 第18層: 自然境界/実行時間契約。前cmdの長時間根拠を次cmdへ漏らすと、
+    # source precheck=10分PASS後にtask=20分へ変質して契約が二重化する。
+    'estimated_minutes', 'timeout_minutes', 'split_decision', 'execution_env',
 ]
 # parent_cmdが変わる場合だけacceptance_criteriaをクリアする。
 # 同一cmd再配備では、cmdソース不在時にテンプレートACをfallbackとして保持する。
@@ -1191,7 +1194,6 @@ deploy_task_validate_or_repair_direct_yaml() {
 
     tmp_file="$(mktemp "${task_file}.repair.XXXXXX")" || return 1
     if python3 - "$task_file" "$tmp_file" <<'DIRECT_YAML_REPAIR_PY'; then
-import re
 import sys
 import yaml
 from pathlib import Path
@@ -1405,6 +1407,12 @@ resolve_cmd_to_task() {
     yaml_field_set_batch "$task_file" "task" "${_batch_args[@]}" \
         || { log "FATAL: yaml_field_set_batch failed for resolve_cmd_to_task"; return 1; }
 
+    # Precheckした自然境界契約と忍者が読むtask契約を同一SSOTから投影する。
+    # estimated_minutesだけ検査してtaskへ転記しないと、使い回しYAMLの旧
+    # execution_env/estimated_minutesが残り、配備前PASSと配備後taskが矛盾する。
+    inject_cmd_time_contract "$task_file" "$cmd_id" \
+        || { log "FATAL: time contract injection failed for ${cmd_id}"; return 1; }
+
     # cmd_saveで検証済みのassumptionsを構造保持してtaskへ渡す。
     # sourceに無い場合は何も生成しない（暗黙前提の捏造防止）。
     inject_cmd_assumptions "$task_file" "$cmd_id" \
@@ -1412,6 +1420,104 @@ resolve_cmd_to_task() {
 
     log "resolve_cmd: ${cmd_id} → ninja=${ninja_name}, task_id=${task_id}, project=${project:-none}, type=${task_type}, title=${title}"
     return 0
+}
+
+inject_cmd_time_contract() {
+    local task_file="$1"
+    local cmd_id="$2"
+    local source_path
+    source_path=$(resolve_cmd_source_path "$cmd_id") || return 1
+    python3 - "$task_file" "$source_path" "$cmd_id" <<'TIME_CONTRACT_INJECT_PY'
+import os
+import re
+import sys
+import tempfile
+import yaml
+
+task_path, source_path, cmd_id = sys.argv[1:]
+with open(source_path, encoding="utf-8") as f:
+    source = yaml.safe_load(f) or {}
+entry = (source.get("commands") or {}).get(cmd_id)
+if not isinstance(entry, dict):
+    raise SystemExit(f"command not found: {cmd_id}")
+
+field_order = ("estimated_minutes", "timeout_minutes", "split_decision", "execution_env")
+projection = {key: entry[key] for key in field_order if key in entry}
+if "estimated_minutes" not in projection:
+    raise SystemExit("estimated_minutes missing after source contract precheck")
+
+def scalar(value):
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return str(value).lower()
+    if isinstance(value, (int, float)):
+        return str(value)
+    quote = chr(39)
+    text = str(value)
+    return quote + text.replace(quote, quote + quote) + quote
+
+def emit_field(key, value, indent=2):
+    prefix = " " * indent
+    if isinstance(value, dict):
+        lines = [prefix + key + ":"]
+        for nested_key, nested_value in value.items():
+            if isinstance(nested_value, list):
+                lines.append(prefix + "  " + str(nested_key) + ":")
+                lines.extend(prefix + "  - " + scalar(item) for item in nested_value)
+            else:
+                lines.append(prefix + "  " + str(nested_key) + ": " + scalar(nested_value))
+        return lines
+    if isinstance(value, list):
+        return [prefix + key + ":"] + [prefix + "- " + scalar(item) for item in value]
+    return [prefix + key + ": " + scalar(value)]
+
+with open(task_path, encoding="utf-8") as f:
+    lines = f.read().splitlines()
+
+# Replace rather than append so same-cmd recovery cannot create duplicate keys.
+targets = set(field_order)
+cleaned = []
+skip_indent = None
+for line in lines:
+    stripped = line.lstrip(" ")
+    indent = len(line) - len(stripped)
+    if skip_indent is not None:
+        if not stripped or indent > skip_indent or (indent == skip_indent and stripped.startswith("- ")):
+            continue
+        skip_indent = None
+    if indent == 2 and ":" in stripped and stripped.split(":", 1)[0] in targets:
+        skip_indent = indent
+        continue
+    cleaned.append(line)
+
+insert_at = next((i + 1 for i, line in enumerate(cleaned) if line == "task:"), None)
+if insert_at is None:
+    raise SystemExit("task block missing")
+block = []
+for key in field_order:
+    if key in projection:
+        block.extend(emit_field(key, projection[key]))
+cleaned[insert_at:insert_at] = block
+rendered = "\n".join(cleaned) + "\n"
+parsed = yaml.safe_load(rendered) or {}
+task = parsed.get("task") or {}
+for key, expected in projection.items():
+    if task.get(key) != expected:
+        raise SystemExit(f"projection mismatch: {key}")
+
+fd, tmp = tempfile.mkstemp(dir=os.path.dirname(task_path), suffix=".tmp")
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(rendered)
+    os.replace(tmp, task_path)
+except Exception:
+    try:
+        os.unlink(tmp)
+    except OSError:
+        pass
+    raise
+TIME_CONTRACT_INJECT_PY
 }
 
 # ─── cmd assumptions構造保持注入 ───
