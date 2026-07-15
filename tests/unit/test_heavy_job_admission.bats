@@ -301,6 +301,15 @@ print('ok')
     grep -q 'file_inner_jobs="\$MAX_TEST_JOBS"' "$runner"
 }
 
+@test "shared commit and deploy fixtures are serial inside an exclusive file root" {
+    runner="$ROOT/scripts/run_tests.sh"
+    grep -q 'test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats' "$runner"
+    grep -A3 'test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats)' "$runner" \
+        | grep -q 'file_inner_jobs=1'
+    grep -A3 'test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats)' "$runner" \
+        | grep -q 'file_weight="\$MAX_TEST_JOBS"'
+}
+
 @test "hook: 単一.batsファイル/単一pytest::関数は軽量でBLOCKされない" {
     run _run_hook "bats tests/unit/test_foo.bats"
     [ "$status" -eq 0 ]
@@ -456,6 +465,48 @@ FAKEEOF
     [ "$r1" = "allow" ]
     [ "$r2" = "allow" ]
     [ "$r3" = "allow" ]
+}
+
+# 家老追加RC(2026-07-15 20:40): env/command/先頭代入prefix/bash -cで包むと
+# "seg[0]が文字通りgit"チェックをすり抜けmutationがallowされていた(4/4実測)。
+# env・command・VAR=value代入・bash -c '<nested>'を再帰的に展開してから判定する。
+@test "分類器: env/command/代入prefix/bash -cで包んだgit stashもblockする" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    for cmd in "env git stash" "command git stash" "bash -c 'git stash'" "FOO=bar git stash" \
+               "command env git stash" "FOO=bar env git stash pop" "bash -c 'env git stash pop'" \
+               "env FOO=bar git stash"; do
+        result="$(git_stash_guard_classify "$cmd")"
+        [ "$result" = "block" ]
+    done
+}
+
+@test "分類器: env/command/bash -cで包んだgit stash list/showはallowのまま" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    r1="$(git_stash_guard_classify "env git stash list")"
+    r2="$(git_stash_guard_classify "command git stash show")"
+    r3="$(git_stash_guard_classify "bash -c 'git stash list'")"
+    [ "$r1" = "allow" ]
+    [ "$r2" = "allow" ]
+    [ "$r3" = "allow" ]
+}
+
+@test "分類器: bash -cのnested文字列で文面上のstash言及は偽陽性0" {
+    source "$ROOT/scripts/lib/git_stash_guard_classify.sh"
+    r1="$(git_stash_guard_classify "bash -c 'echo mentioning git stash push in text'")"
+    r2="$(git_stash_guard_classify "git commit -m \"discussing git stash safety\"")"
+    [ "$r1" = "allow" ]
+    [ "$r2" = "allow" ]
+}
+
+@test "hook: env/command/bash -cで包んだgit stashもBLOCKする" {
+    run _run_hook "env git stash"
+    [ "$status" -eq 2 ]
+    run _run_hook "command git stash pop"
+    [ "$status" -eq 2 ]
+    run _run_hook "bash -c 'git stash'"
+    [ "$status" -eq 2 ]
+    run _run_hook "FOO=bar git stash"
+    [ "$status" -eq 2 ]
 }
 
 @test "hook: git stash破壊的形はBLOCKし、list/showは通過する" {

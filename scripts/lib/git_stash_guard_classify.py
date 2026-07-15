@@ -18,6 +18,7 @@ Output: "block" or "allow" on stdout.
 """
 
 import os
+import re
 import sys
 
 from shell_command_segments import segment_tokens
@@ -28,6 +29,15 @@ _READONLY_STASH_SUBCOMMANDS = {"list", "show"}
 # "stash" subcommand token isn't mistaken for an option's value (or vice
 # versa). Mirrors the subset relevant to reaching a subcommand.
 _GIT_GLOBAL_OPTS_WITH_VALUE = {"-C", "--git-dir", "--work-tree", "-c"}
+
+_ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+
+# env options that consume a following value token (GNU/POSIX subset
+# relevant to reaching the wrapped command). All other "-x" tokens before
+# the wrapped command are treated as env's own no-value flags.
+_ENV_VALUE_OPTS = {"-u", "--unset", "-C", "--chdir", "-S", "--split-string"}
+
+_SHELL_DASH_C_PROGS = {"bash", "sh", "zsh", "dash", "ksh"}
 
 
 def _first_positional_index_after_git(args):
@@ -57,6 +67,83 @@ def _next_positional(args, after_index):
     return None
 
 
+def _unwrap_indirection(tokens):
+    """Strip leading VAR=value assignments and env/command wrappers.
+
+    `env git stash`, `command git stash`, and `FOO=bar git stash` all reach
+    the real `git stash` invocation through a launcher the naive "is seg[0]
+    literally 'git'" check never sees. Peel these layers (in any order, any
+    number of times — e.g. `command env git stash`) until the remaining
+    tokens start with the actual program.
+    """
+    tokens = list(tokens)
+    changed = True
+    while changed and tokens:
+        changed = False
+        while tokens and _ASSIGNMENT_RE.match(tokens[0]):
+            tokens.pop(0)
+            changed = True
+        if not tokens:
+            break
+        prog = os.path.basename(tokens[0])
+        if prog == "env":
+            tokens.pop(0)
+            changed = True
+            while tokens:
+                if _ASSIGNMENT_RE.match(tokens[0]):
+                    tokens.pop(0)
+                    continue
+                if tokens[0] in _ENV_VALUE_OPTS:
+                    tokens.pop(0)
+                    if tokens:
+                        tokens.pop(0)
+                    continue
+                if tokens[0].startswith("-"):
+                    tokens.pop(0)
+                    continue
+                break
+        elif prog == "command":
+            tokens.pop(0)
+            changed = True
+            while tokens and tokens[0] in ("-p", "-v", "-V"):
+                tokens.pop(0)
+    return tokens
+
+
+def _segment_blocks(seg):
+    tokens = _unwrap_indirection(seg)
+    if not tokens:
+        return False
+    prog = os.path.basename(tokens[0])
+    args = tokens[1:]
+
+    # `bash -c '...'` (and sh/zsh/dash/ksh) hands an entire nested shell
+    # command as a single string argument. The tokens inside are invisible
+    # to segment-level parsing of the OUTER command, so recurse into them.
+    if prog in _SHELL_DASH_C_PROGS:
+        for index, arg in enumerate(args):
+            if arg == "-c":
+                nested = args[index + 1] if index + 1 < len(args) else None
+                if nested is not None:
+                    return classify(nested) == "block"
+                break
+            if arg.startswith("-") and "c" in arg[1:] and not arg.startswith("--"):
+                # combined short flags, e.g. "-lc" — value is the next token
+                nested = args[index + 1] if index + 1 < len(args) else None
+                if nested is not None:
+                    return classify(nested) == "block"
+                break
+        return False
+
+    if prog != "git":
+        return False
+    subcommand_index = _first_positional_index_after_git(args)
+    if subcommand_index is None or args[subcommand_index] != "stash":
+        return False
+    stash_sub = _next_positional(args, subcommand_index)
+    return stash_sub not in _READONLY_STASH_SUBCOMMANDS
+
+
 def classify(command):
     segs = segment_tokens(command)
     if segs is None:
@@ -64,15 +151,7 @@ def classify(command):
     for seg in segs:
         if not seg:
             continue
-        prog = os.path.basename(seg[0])
-        if prog != "git":
-            continue
-        args = seg[1:]
-        subcommand_index = _first_positional_index_after_git(args)
-        if subcommand_index is None or args[subcommand_index] != "stash":
-            continue
-        stash_sub = _next_positional(args, subcommand_index)
-        if stash_sub not in _READONLY_STASH_SUBCOMMANDS:
+        if _segment_blocks(seg):
             return "block"
     return "allow"
 
