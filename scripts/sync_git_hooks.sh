@@ -93,8 +93,18 @@ is_in_scope() {
 }
 
 uses_hook_source_convention() {
-    git -C "$repo_root" cat-file -e "HEAD:scripts/hooks" 2>/dev/null \
-        || git -C "$repo_root" cat-file -e "HEAD:.githooks" 2>/dev/null
+    local source_rel="$1"
+    case "$source_rel" in
+        scripts/hooks/*)
+            git -C "$repo_root" cat-file -e "HEAD:scripts/hooks" 2>/dev/null
+            ;;
+        .githooks/*)
+            git -C "$repo_root" cat-file -e "HEAD:.githooks" 2>/dev/null
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 resolve_installed_path() {
@@ -108,7 +118,7 @@ sync_one_hook() {
     local installed ref tmp
 
     if ! git -C "$repo_root" cat-file -e "HEAD:$source_rel" 2>/dev/null; then
-        if uses_hook_source_convention; then
+        if uses_hook_source_convention "$source_rel"; then
             echo "BLOCK(GA-222): tracked hook source missing at HEAD: $source_rel (scripts/hooks/ convention is in use — this looks like an anomaly, not an unmanaged repo)" >&2
             return 1
         fi

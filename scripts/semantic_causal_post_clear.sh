@@ -14,6 +14,7 @@ PAYLOAD_FILE="$GATE_DIR/semantic_causal_payload.json"
 SAFE_CMD="${CMD_ID//[^[:alnum:]_.-]/_}"
 LOCK_FILE="/tmp/mas-semantic-causal-${SAFE_CMD}.lock"
 FINALIZED=0
+RESULT_TMP=""
 
 mkdir -p "$GATE_DIR"
 exec 9>"$LOCK_FILE"
@@ -21,9 +22,9 @@ if ! flock -n 9; then
     exit 0
 fi
 
-write_result() {
+prepare_result() {
     local state="$1" reason="$2" affected="$3" pass="$4" fail="$5" missing="$6" no_test="$7"
-    local tmp="${RESULT}.tmp.$$"
+    RESULT_TMP="${RESULT}.tmp.$$"
     {
         printf 'state=%s\n' "$state"
         printf 'reason=%s\n' "$reason"
@@ -33,9 +34,17 @@ write_result() {
         printf 'tests_missing=%s\n' "$missing"
         printf 'nodes_without_tests=%s\n' "$no_test"
         printf 'finished_at=%s\n' "$(date -Iseconds)"
-    } > "$tmp"
-    mv "$tmp" "$RESULT"
+    } > "$RESULT_TMP"
+}
+
+publish_result() {
+    [ -n "$RESULT_TMP" ] && [ -f "$RESULT_TMP" ] || return 1
+    # The result file is the externally observed completion marker.  Clear the
+    # pending marker first and publish result last so consumers may immediately
+    # remove the fixture/directory without racing any later worker file access.
     rm -f "$PENDING"
+    mv "$RESULT_TMP" "$RESULT"
+    RESULT_TMP=""
     FINALIZED=1
 }
 
@@ -48,8 +57,9 @@ notify_warn() {
 finalize_unexpected_exit() {
     local rc=$?
     if [ "$FINALIZED" -eq 0 ]; then
-        write_result FAIL "worker_exit_${rc}" 0 0 1 0 0 || true
+        prepare_result FAIL "worker_exit_${rc}" 0 0 1 0 0 || true
         notify_warn "[WARN] ${CMD_ID} semantic causal audit worker exited unexpectedly (rc=${rc})" || true
+        publish_result || true
     fi
 }
 trap finalize_unexpected_exit EXIT
@@ -61,14 +71,16 @@ printf '%s [%s] semantic causal audit started\n' "$(date -Iseconds)" "$CMD_ID"
 # that index in a separate background job races and can produce a false
 # "start concept not found" result, so index -> map -> traverse is one worker.
 if [ ! -s "$PAYLOAD_FILE" ]; then
-    write_result FAIL semantic_payload_missing 0 0 1 0 0
+    prepare_result FAIL semantic_payload_missing 0 0 1 0 0
     notify_warn "[WARN] ${CMD_ID} semantic causal audit payload is missing"
+    publish_result
     exit 0
 fi
 if ! timeout 30 bash "$SCRIPT_DIR/scripts/semantic_index_update.sh" \
     cmd_complete "$(cat "$PAYLOAD_FILE")"; then
-    write_result FAIL semantic_index_update_failed 0 0 1 0 0
+    prepare_result FAIL semantic_index_update_failed 0 0 1 0 0
     notify_warn "[WARN] ${CMD_ID} semantic index update failed before causal audit"
+    publish_result
     exit 0
 fi
 if [ -f "$SCRIPT_DIR/scripts/semantic_map_generate.sh" ]; then
@@ -79,8 +91,9 @@ fi
 traverse_output="$(timeout 20 bash "$SCRIPT_DIR/scripts/semantic_causal_traverse.sh" \
     --cmd-id "$CMD_ID" --depth 3 --format json 2>/dev/null || true)"
 if [ -z "$traverse_output" ]; then
-    write_result FAIL traverse_no_output 0 0 1 0 0
+    prepare_result FAIL traverse_no_output 0 0 1 0 0
     notify_warn "[WARN] ${CMD_ID} semantic causal audit returned no output"
+    publish_result
     exit 0
 fi
 
@@ -90,8 +103,9 @@ d=json.load(sys.stdin)
 starts=",".join(d.get("start_concepts", [])) or "none"
 print(d.get("total", 0), d.get("no_test_scripts_count", 0), starts)
 ' <<< "$traverse_output" 2>/dev/null)"; then
-    write_result FAIL traverse_invalid_json 0 0 1 0 0
+    prepare_result FAIL traverse_invalid_json 0 0 1 0 0
     notify_warn "[WARN] ${CMD_ID} semantic causal audit returned invalid JSON"
+    publish_result
     exit 0
 fi
 read -r affected no_test starts <<< "$traverse_meta"
@@ -140,7 +154,7 @@ elif [ "$no_test" -gt 0 ]; then
     reason=nodes_without_tests
 fi
 
-write_result "$state" "$reason" "$affected" "$tests_pass" "$tests_fail" "$tests_missing" "$no_test"
+prepare_result "$state" "$reason" "$affected" "$tests_pass" "$tests_fail" "$tests_missing" "$no_test"
 printf '%s [%s] state=%s affected=%s pass=%s fail=%s missing=%s no_test=%s\n' \
     "$(date -Iseconds)" "$CMD_ID" "$state" "$affected" "$tests_pass" "$tests_fail" "$tests_missing" "$no_test"
 
@@ -151,3 +165,4 @@ if [ "$affected" -gt 0 ] && [ "$starts" != none ]; then
     BULLETIN_NOTIFY=karo,gunshi timeout 10 bash "$SCRIPT_DIR/scripts/bulletin_write.sh" \
         system "因果トラバース ${CMD_ID}: 起点[${starts}] → 影響${affected}ノード(depth=3), audit=${state}" false info >/dev/null 2>&1 || true
 fi
+publish_result

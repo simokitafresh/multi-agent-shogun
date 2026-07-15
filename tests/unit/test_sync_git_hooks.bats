@@ -106,6 +106,22 @@ commit_hook_source() {
     [ ! -e "$TEST_ROOT/.git/hooks/pre-commit" ]
 }
 
+@test "a repo using only scripts/hooks is not forced to adopt the separate .githooks convention" {
+    mkdir -p "$TEST_ROOT/scripts/hooks"
+    printf '#!/usr/bin/env bash\necho PRE_COMMIT_ONLY\n' >"$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
+    (
+        cd "$TEST_ROOT"
+        git add scripts/hooks/git-pre-commit.sh
+        git commit -qm pre-commit-only
+    )
+
+    run bash -c "cd '$TEST_ROOT' && bash '$HELPER'"
+
+    [ "$status" -eq 0 ]
+    grep -q PRE_COMMIT_ONLY "$TEST_ROOT/.git/hooks/pre-commit"
+    [ ! -e "$TEST_ROOT/.git/hooks/pre-push" ]
+}
+
 @test "AC1 regression proof: the pre-fix version (commit e1390c602) leaked another agent's uncommitted dirty edit into the live hook" {
     # Embeds the pre-REQUEST_CHANGES sync_git_hooks.sh logic verbatim (as
     # committed in e1390c602) to concretely prove the bug this rewrite fixes,
