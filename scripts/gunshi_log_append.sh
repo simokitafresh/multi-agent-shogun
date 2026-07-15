@@ -81,6 +81,12 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study|consultation)
     fi
 fi
 
+# --- LGTM+BLOCK矛盾チェック(report) --- 今セッション3件連続事故の根治(L4貫通)
+if [[ "$ENTRY" =~ review_type:[[:space:]]*report ]] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]] && echo "$ENTRY" | grep -Pq 'gate_prediction:\s*BLOCK(\s|$|\(|\[|/)'; then
+    echo "BLOCK: verdict=LGTMとgate_prediction=BLOCKの矛盾。BLOCKが予測される報告にLGTMを出すな。FAILに変更するか、BLOCK理由を解消してからLGTMせよ" >&2
+    exit 2
+fi
+
 # --- gate_prediction_reason必須チェック(report) --- GP-259: prediction偽陽性分析の材料を残す
 if [[ "$ENTRY" =~ review_type:[[:space:]]*report ]] && [[ "$ENTRY" =~ gate_prediction:[[:space:]]*(CLEAR|WARN|BLOCK) ]]; then
     if [[ "$ENTRY" != *"gate_prediction_reason:"* ]]; then
