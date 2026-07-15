@@ -2384,6 +2384,23 @@ EOF
     [[ "$output" == *"extra=L404"* ]]
 }
 
+@test "null assigned lesson field falls back to ordinary related lesson subset" {
+    cat > "$TEST_TMPDIR/task.yaml" <<'EOF'
+task:
+  assigned_lesson_ids: null
+  related_lessons:
+    - id: L100
+EOF
+    cat > "$TEST_TMPDIR/report.yaml" <<'EOF'
+lessons_useful:
+  - id: L100
+    useful: true
+EOF
+    run validate_lesson_feedback_set "$TEST_TMPDIR/task.yaml" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"mode=subset"* ]]
+}
+
 @test "CDP production check skips branch-only dm-signal frontend changes without deploy evidence" {
     export CMD_PROJECT="dm-signal"
     export CMD_CHANGED_FILES=$'backend/app.py\nfrontend/app/dashboard/page.tsx'

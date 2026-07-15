@@ -149,15 +149,14 @@ if report_task_id and task_id != report_task_id:
     raise SystemExit(0)
 if report_cmd_id and parent_cmd != report_cmd_id:
     raise SystemExit(0)
-if "assigned_lesson_ids" not in task:
+values = task.get("assigned_lesson_ids")
+if not isinstance(values, list) or not values:
     raise SystemExit(0)
 print("STRICT\t1")
-values = task.get("assigned_lesson_ids")
-if isinstance(values, list):
-    for value in values:
-        value = str(value).strip()
-        if value:
-            print(f"ID\t{value}")
+for value in values:
+    value = str(value).strip()
+    if value:
+        print(f"ID\t{value}")
 PY
     )
 fi

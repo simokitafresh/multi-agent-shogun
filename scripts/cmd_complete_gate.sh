@@ -2267,9 +2267,10 @@ if not isinstance(task, dict) or not isinstance(report, dict):
     print("MISMATCH parse_error")
     raise SystemExit(1)
 
-strict = "assigned_lesson_ids" in task
+assigned_values = task.get("assigned_lesson_ids")
+strict = isinstance(assigned_values, list) and bool(assigned_values)
 if strict:
-    raw_allowed = task.get("assigned_lesson_ids") or []
+    raw_allowed = assigned_values
 else:
     raw_allowed = task.get("related_lessons") or []
 
@@ -3785,13 +3786,11 @@ for task_path in task_files:
     for row_id in task_row_ids:
         add_unique(tracked_row_ids, row_id)
         referenced_by_row_id.setdefault(row_id, [])
-        if "assigned_lesson_ids" in task:
-            values = task.get("assigned_lesson_ids")
-            assigned_by_row_id[row_id] = set()
-            if isinstance(values, list):
-                assigned_by_row_id[row_id] = {
-                    str(value).strip() for value in values if str(value).strip()
-                }
+        values = task.get("assigned_lesson_ids")
+        if isinstance(values, list) and values:
+            assigned_by_row_id[row_id] = {
+                str(value).strip() for value in values if str(value).strip()
+            }
 
     assigned_to = task.get("assigned_to")
     if isinstance(assigned_to, list):
