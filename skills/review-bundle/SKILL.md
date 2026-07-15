@@ -13,11 +13,11 @@ allowed-tools:
   - Read
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_202607151824検分: yaml_field_set.sh 7042b59e9をgit showで確認。indentless sequence置換の内部安全化で、review bundle生成・review_log更新・通知順序およびfield-set CLI/exit契約は不変。 -->
 <!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: inbox_write.sh 06664edfdは矛盾reviewのBLOCK suffix拡張、yaml_field_set.sh 6dd44d13fは後置list id対応。review通知・記録CLI契約は維持。 -->
 
-<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- cmd_3948検分: yaml_field_set.sh/review_bundle.py直近差分はparse削減・SG7永続化。bundle生成CLI契約不変。 -->
 <!-- 検分: bulletin_write.sh 96e5f606(inbox root固定)、inbox_write.sh 91058358(完了type正規化)、yaml_field_set.sh 386cb6bb(lock統一)。CLI引数・出口値・precheck→記録→通知の順序は不変 -->
 <!-- Script refs verified 2026-07-13 shogun復帰時: checked_at以降の変更(yaml_field_set wrapped scalar保持fix de3df4b83, deploy_task parent AC contract dbcb20aa2, ninja_monitor journal+flock 93f8c898e/16f16e699, db_capability_launcher scoped credential 84231a01c)をgit logで確認。全て内部強化で呼出し契約・出口文言不変 -->
@@ -255,7 +255,7 @@ Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は�
 
 Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は引数順序ミス検出ガード追加(contentがagent名ならERROR)。本SKILL.mdのinbox送信・掲示板投稿手順は正しい引数順のため契約に変更なし。
 
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- origin: [[報告未送信]] -> [[手動後処理依存]] -> [[review_approval_fail_closed通知]] -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 

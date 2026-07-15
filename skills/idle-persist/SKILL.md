@@ -14,11 +14,11 @@ allowed-tools:
   - Write
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_202607151824検分: yaml_field_set.sh 7042b59e9をgit showで確認。indentless sequence置換の内部安全化のみで、field-set CLI・atomic更新・idle分析永続化の副作用順序は不変。 -->
 <!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: inbox_write.sh 06664edfdはLGTM/BLOCK矛盾検出suffix拡張、yaml_field_set.sh 6dd44d13fは後置list id対応。既存呼出CLIと永続化契約は維持。 -->
 
-<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- cmd_3948検分: yaml_field_set.sh直近差分は重複parse削減。field-set引数・atomic更新契約不変。 -->
 <!-- 検分: bulletin_write.sh 96e5f606e、inbox_write.sh 910583584、yaml_field_set.sh 386cb6bbeをgit showで確認。inbox root固定、忍者完了type正規化、lock_path SSOT化の内部強化。idle分析の保存→掲示板→review_log→家老通知順序と各CLI引数・exit契約は不変。 -->
 
@@ -123,7 +123,7 @@ Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は�
 
 Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は引数順序ミス検出ガード追加(contentがagent名ならERROR)。本SKILL.mdの掲示板投稿手順は正しい引数順のため契約に変更なし。
 
-<!-- script_refs_checked_at: 2026-07-13T07:55:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 <!-- script参照互換確認 2026-07-12: 参照先(yaml_field_set.sh/deploy_task.sh/ninja_monitor.sh)の直近変更はatomic mv/validate/fail-closed等の内部堅牢化のみでCLI引数・呼出手順の変更なし。本書の手順は現行スクリプトと互換(将軍git log現物確認) -->

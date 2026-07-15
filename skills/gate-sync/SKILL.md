@@ -13,19 +13,19 @@ allowed-tools:
   - Read
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_202607151824検分: yaml_field_set.sh 7042b59e9をgit showで確認。indentless sequence field置換時の旧list行残存を防ぐ内部修正で、位置引数・flock/atomic更新・readback exit契約は不変。 -->
 <!-- 2026-07-15検分: gunshi_gate_reflux.sh ab302df7bは同一cmd_idのdraft/report全件を単一flock区間でatomic置換し、gate_resultとgate_synced_atを同時更新。異なる既確定resultはtimestampごと保持する。 -->
 <!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: yaml_field_set.sh 6dd44d13fはlist item内の後置id探索を追加した内部対応。既存CLI・flock・readback契約は維持。 -->
 
-<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- cmd_3948検分: yaml_field_set.sh直近差分は重複parse削減。field-set引数・atomic更新契約不変。 -->
 <!-- 検分: bulletin_write.sh 96e5f606eとyaml_field_set.sh 386cb6bbeをgit showで確認。通知先inbox root固定とlock_path SSOT化によるrace防止の内部強化。`yaml_field_set.sh <file> <block_id> <field> <value>`、`bulletin_write.sh <posted_by> <content> [requires_confirmation] [action_type]`、更新→accuracy→必要時投稿の順序は不変。 -->
 
 Script refs verified: 2026-07-13 将軍検分. `yaml_field_set.sh` checked_at以降の変更(692b6c8d8)をgit showで確認。post-write検証のyaml.safe_load scalar比較統一+複数行値の安全エスケープ=内部改善。`<file> <block_id> <field> <value>`契約不変。手順書き換え不要。
 <!-- 検分: yaml_field_set.sh 692b6c8d8(cmd_karo_hotfix_yaml_field_set_multiline_verify: post-write検証をawk生テキスト比較からyaml.safe_load後のscalar比較へ統一。複数行/引用符混在値の書込みを1物理行のquoted scalarへ安全にエスケープし、書込み自体は成功しているのに旧検証が偽FAILする問題を解消)。`bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value>`の呼び出し契約・Usageは不変。本SKILL.mdのStep1呼び出し(`<file> "<cmd_id>" gate_result/gate_synced_at "<value>"`)への影響なし -->
 
-<!-- script_refs_checked_at: 2026-07-13T07:55:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 <!-- 検分: bulletin_write.sh 61ad778f4。位置引数契約は不変だが、通知失敗時は3回retry後にfailure logへ記録してexit 1するfail-closed契約へ変更。投稿成功を終了コードで確認し、失敗時は処理完了扱いにしない -->
 
@@ -100,7 +100,7 @@ Script refs verified: 2026-06-28 75aac6a10. `yaml_field_set.sh` 直近変更は�
 
 Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は引数順序ミス検出ガード追加(contentがagent名ならERROR)。本SKILL.mdの呼び出し例は正しい`<posted_by> <content>`順のため投稿契約に変更なし。
 
-<!-- script_refs_checked_at: 2026-07-13T07:55:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 <!-- script参照互換確認 2026-07-12: 参照先(yaml_field_set.sh/deploy_task.sh/ninja_monitor.sh)の直近変更はatomic mv/validate/fail-closed等の内部堅牢化のみでCLI引数・呼出手順の変更なし。本書の手順は現行スクリプトと互換(将軍git log現物確認) -->

@@ -1,7 +1,7 @@
 ---
-<!-- script_refs_checked_at: 2026-07-15T21:27:50+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_core_202607152126検分: deploy_task.sh 22609351d/6c2eea753/7a8dd1c68をgit showで確認。report summaryのLevel5事前供給、分析cmdの.logを含むreadonly_ref抽出、再注入時のsequence重複除去は内部生成処理。偵察1人目の`--yaml`配備、2人目のkaro-direct配備、通知・衝突guard契約は不変。 -->
-<!-- script_refs_checked_at: 2026-07-15T05:58:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- 2026-07-15検分: deploy_task.shはspeed campaign固有report名を保存。recon-dualの2名配備順序・karo-direct併用契約は不変。 -->
 name: recon-dual
 argument-hint: "[cmd_id] [target_scope]"
@@ -16,11 +16,11 @@ allowed-tools:
   - Read
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_202607151824検分: deploy_task.sh 26dd9b29c/9adea0b76/81162392b/7042b59e9とyaml_field_set.sh 7042b59e9をgit showで確認。配備taskのlesson/時間契約投影とindentless sequence置換の内部強化のみ。2名配備順序・CLI引数・重複guard回避・atomic更新契約は不変。 -->
 <!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: deploy_task.sh 336f30b67は配備証跡capture拡張、yaml_field_set.sh 6dd44d13fは後置list id対応。二重配備・YAML更新の既存CLI契約は維持。 -->
 
-<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- cmd_3948検分: deploy_task.sh/yaml_field_set.sh直近差分はpublication直列化・parse削減。二名配備契約不変。 -->
 <!-- 検分: deploy_task.sh 030d267b..87ef68b7(継続配備、独立recon投影、no-code報告契約、事前検証)とyaml_field_set.sh 386cb6bb(lock domain統一)。CLI引数・出口値・1人目→2人目の呼出順序は不変 -->
 <!-- Script refs verified 2026-07-13 shogun復帰時: checked_at以降の変更(yaml_field_set wrapped scalar保持fix de3df4b83, deploy_task parent AC contract dbcb20aa2, ninja_monitor journal+flock 93f8c898e/16f16e699, db_capability_launcher scoped credential 84231a01c)をgit logで確認。全て内部強化で呼出し契約・出口文言不変 -->
@@ -29,7 +29,7 @@ Script refs verified: 2026-07-13 将軍検分. checked_at以降の変更: `deplo
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 Script refs verified: 2026-07-10 cmd_karo_hotfix_skill_ref_freshness_202607101154_normal. `deploy_task.sh` checked_at以降の変更(b458129d1)をgit showで確認。ACに'push'語を含むtask YAMLへ配備時`push_allowed:true`を自動付与する`inject_push_allowed()`を追加(cmd_3820 G2ガードBLOCK再発防止、Level5知識注入)。`deploy_task_apply_task_mutations`内の内部注入チェーン追加のみで、1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の呼び出し契約、safe_inbox_write通知、report template生成は変更なし。recon-dual手順の書き換えは不要。
 
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 Script refs verified: 2026-07-08 cmd_karo_hotfix_skill_refs_202607081021. `deploy_task.sh` checked_at以降の変更(edb26ea1/0c73c7d1/f5f7600d)をgit showで確認。edb26ea1はrecon/scoutタイプreport templateへ`verified_existing_dependency: []`雛形とコメント例を追加(LG037除外宣言用、recon-dualの1人目scoutテンプレートにも及ぶ)。0c73c7d1はtask YAML配備batchに`deployed_at`/`acknowledged_at`/`done_at`/`completed_at`初期化を追加(throughput計測用)。f5f7600dはlesson/semantic/memory-db注入4関数のキャッシュ経路統一による内部性能改善(約140秒→約3秒)のみ。いずれも1人目 `bash scripts/deploy_task.sh <cmd_id> <ninja1> scout` と2人目 `bash scripts/deploy_task.sh --yaml <file> <ninja2>` の呼び出し契約、safe_inbox_write通知は変更なし。recon-dual手順の書き換えは不要。
@@ -124,18 +124,18 @@ Script refs verified: 2026-06-28 b1922e36b+0226e0db5+75aac6a10. `deploy_task.sh`
 
 Script refs verified: 2026-07-07T18:19:00+09:00 (shogun復帰時WARN解消). `deploy_task.sh` 直近変更(88dae4ee5)をgit showで確認。direct/--yamlモードのtarget_path衝突ガードをtask YAML書換え前に先行実行する`deploy_task_guard_direct_yaml_prewrite_collision`追加。衝突BLOCKの判定基準は既存`deploy_task_guard_target_path_collision`のままで、2人目`--yaml`の呼び出し契約・安全境界の扱い(同一file衝突=BLOCK、配備済みにしない)は本文記載の通り変更なし。
 
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 Script refs verified: 2026-07-08 将軍検分. 前回checked_at以降の deploy_task.sh 差分は f5f7600d6(注入cache化)+0c73c7d1c(完了timing/通知)+e191bcf88(EXIT trap fallback報告メタデータ修復)=いずれも内部処理で、配備呼出し契約(引数・重複ガード・karo_direct経路)は不変。
 
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 Script refs verified: 2026-07-09 cmd_karo_hotfix_skill_refs_update_202607091452_saizo. `deploy_task.sh` 前回checked_at以降の変更(bddf2a457/0cb0954e3/14b74c865)をgit showで確認。bddf2a457はproject=dm-signal かつ PF削除/復元/rollback関連purposeの時のみ発火する`inject_dm_signal_pf_operation_guardrails`追加(Level5知識注入の対象追加。scout/`--yaml`いずれの経路でも発火し得るが引数・通知契約には無関係)。0cb0954e3はgate_report_format_learning.yamlのJSON形式prefill_active判定grepバグ修正(内部AUTO-PREFILL発火条件の修正)。14b74c865は`--direct` training(cmd_training_*)専用のtemplate内容検証追加で、recon-dualが使う1人目`<cmd_id> <ninja1> scout`・2人目`--yaml <file> <ninja2>`経路には未到達。1人目正規配備と2人目`--yaml`配備の引数契約、safe_inbox_write通知、report template生成は変更なし。recon-dual手順の書き換えは不要。
 
 <!-- script参照互換確認 2026-07-12: 参照先(yaml_field_set.sh/deploy_task.sh/ninja_monitor.sh)の直近変更はatomic mv/validate/fail-closed等の内部堅牢化のみでCLI引数・呼出手順の変更なし。本書の手順は現行スクリプトと互換(将軍git log現物確認) -->
 
 <!-- 検分: 2026-07-12 shogun起動時gate WARN解消。checked_at以降の差分をgit logで確認 — gate_report_format.sh 8c576d849(AC3 hunk provenance判定=内部判定強化)/memory_db_query.sh 8ce7c5c26(ext4キャッシュ経由=内部速度)/deploy_task.sh 2ecaf21ba+0cc6175e6+5dc9e8423(chunk境界regex誤検知根治+lesson注入絞込+atomic mv=内部)/ninja_scope_commit.sh 42d06b1d5+13f46a918(fail-closed patch commit mode追加+CI fixture=内部)/ninja_monitor.sh b40e13d2c系(dedupe通知+stall FP抑制=内部)。いずれも呼び出し契約・手順・出口文言に変更なし -->
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
