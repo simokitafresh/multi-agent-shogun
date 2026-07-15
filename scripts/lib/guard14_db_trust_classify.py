@@ -171,6 +171,9 @@ SAFE_CREDENTIAL_MODULES = {"dotenv"}
 ESCAPE_MODULES = {"socket", "subprocess", "ctypes", "importlib"}
 ESCAPE_CALLS = {"eval", "exec", "compile", "__import__"}
 READ_ONLY_SHELL_CMDS = {"rg", "grep", "sed", "cat", "head", "tail", "cut", "wc", "find"}
+# gitはVCSツールでありDB接続能力なし。commit message内の.envテキストはファイルアクセスではない。
+# 2026-07-15将軍実証: git commit -m "...text with .env..." がconnection:untrustedに誤判定。
+SAFE_NON_DB_CMDS = {"git", "echo", "printf", "date", "mkdir", "cp", "mv", "ls", "rm", "touch", "chmod", "tmux", "ntfy"}
 ENV_SETUP_SHELL_CMDS = {"source", ".", "export"}
 SAFE_OS_CALLS = {"getenv"}
 # python3 -m <module> で起動される安全なstdlib module。DB接続能力なし。
@@ -448,6 +451,8 @@ def _shell_segments_are_bounded(command: str, segments: list[list[str]]) -> bool
     for segment in segments:
         cmd0 = _segment_cmd0(segment)
         if cmd0 in ENV_SETUP_SHELL_CMDS:
+            continue
+        if cmd0 in SAFE_NON_DB_CMDS:
             continue
         if cmd0 in READ_ONLY_SHELL_CMDS:
             if _segment_is_readonly_safe(cmd0, segment):
