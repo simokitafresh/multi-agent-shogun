@@ -1,7 +1,7 @@
 # CoDD (Coherence-Driven Development) 索引
 
 <!-- last_updated: 2026-07-15 cmd_3948 -->
-<!-- source_commit:266455e7e reason:checked-skill-metadata-only-no-codd-contract-change evidence:git-show-266455e7e-codd-fix-and-codd-refactor-checked-at-only -->
+<!-- source_commit:775dcd4ca reason:checked-skill-metadata-only-no-codd-contract-change evidence:git-show-775dcd4ca-codd-refactor-script-ref-verification-only -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
