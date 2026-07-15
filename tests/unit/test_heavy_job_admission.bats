@@ -224,6 +224,25 @@ print('ok')
     [[ "$output" == *"inner-ok"* ]]
 }
 
+@test "wrapper: durable背景workerへlock FDを継承せずmarker=0再入もself-deadlockしない" {
+    local result="$TMP/background_reentry.result"
+    # cmd_complete_gate -> semantic_causal_post_clear の実事故を再現する。外側の
+    # admission中にdurable workerを背景起動し、workerは独立ジョブとしてmarkerを
+    # 0へ戻して同じadmissionへ再入する。lock FDが継承される旧実装ではworker自身が
+    # 保持するlockを待ち、1秒timeoutしてresultを作れない。
+    bash "$WRAPPER" -- bash -c \
+        "SHOGUN_HEAVY_JOB_LOCK_HELD=0 SHOGUN_HEAVY_JOB_ADMISSION_TIMEOUT=1 bash '$WRAPPER' -- sh -c 'printf inner-ok > \"$result\"' >/dev/null 2>&1 &"
+
+    local waited=0
+    while [ ! -f "$result" ]; do
+        sleep 0.05
+        waited=$((waited + 1))
+        [ "$waited" -le 40 ] || break
+    done
+    [ -f "$result" ]
+    [ "$(cat "$result")" = "inner-ok" ]
+}
+
 @test "wrapper: stale lock残存0(実行後にlockファイルへの排他保持プロセスが残らない)" {
     bash "$WRAPPER" -- echo done
     # lsof/fuserで排他保持プロセスが残っていないことを確認(flockはfd close=解放)

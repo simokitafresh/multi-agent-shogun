@@ -21,7 +21,10 @@
 #     self-deadlockしない(nested呼出しdeadlock対策)。
 set -euo pipefail
 
-LOCK_FILE="${SHOGUN_HEAVY_JOB_LOCK_FILE:-/tmp/shogun_heavy_job_admission.lock}"
+# v2: 2026-07-15、旧lockのFDがdurable背景workerへ継承され、そのworkerが
+# SHOGUN_HEAVY_JOB_LOCK_HELD=0で再入して自己デッドロックした。現在の旧inodeを
+# 自然timeoutへ隔離しつつ、修正済み契約を即時復旧するためlock世代も更新する。
+LOCK_FILE="${SHOGUN_HEAVY_JOB_LOCK_FILE:-/tmp/shogun_heavy_job_admission_v2.lock}"
 # 通常のgolden regression(実測550.82s)を大幅に超える上限。真の無期限だと
 # 万一のlock leak(理論上あり得ないはずだが)でホストが永久停止するため、
 # 実務上「無期限」相当の長さを保ちつつ保険的な上限として3600sを設定する。
@@ -41,4 +44,7 @@ if [[ "${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}" == "1" ]]; then
 fi
 
 export SHOGUN_HEAVY_JOB_LOCK_HELD=1
-exec flock -w "$TIMEOUT" "$LOCK_FILE" "$@"
+# --close(-o): flock親はコマンド終了までlockを保持する一方、実行コマンド側では
+# lock FDを閉じる。これによりコマンドが起動したdurable背景workerがFDを継承して
+# lockを永久保持せず、明示的なmarker=0再入も自己デッドロックしない。
+exec flock --close -w "$TIMEOUT" "$LOCK_FILE" "$@"
