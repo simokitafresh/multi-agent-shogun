@@ -25,6 +25,7 @@ commit messageの説明文)、コマンド位置(segment[0])でなければ一�
 """
 
 import os
+import json
 import re
 import shlex
 import sys
@@ -173,6 +174,14 @@ _ONESHOT_HEAVY_NAME_RE = re.compile(
 
 
 def classify(command):
+    if os.environ.get("HEAVY_JOB_JSON_ESCAPED") == "1":
+        try:
+            # pre-bash-combined extracts the JSON string without decoding its
+            # escapes.  Wrapping it restores newlines/quotes exactly while
+            # preserving a literal ``\\n`` (encoded as ``\\\\n``).
+            command = json.loads(f'"{command}"')
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return "heavy"
     segs = _segments(command)
     if segs is None:
         return "heavy"

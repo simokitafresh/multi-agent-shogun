@@ -974,7 +974,10 @@ if [[ -n "${command:-}" && "$command" != *'heavy_job_admission.sh'* && "$command
     if [[ "$command" == *'bats'* || "$command" == *'pytest'* || "$command" =~ python3?([[:space:]]|$) ]]; then
         # shellcheck disable=SC1091
         source "$SCRIPT_DIR/scripts/lib/heavy_job_classify.sh"
-        if [[ "$(heavy_job_classify "$command")" == "heavy" ]]; then
+        # command is extracted from raw hook JSON above and still contains JSON
+        # escapes (notably \n).  Tell the SSOT classifier to restore the exact
+        # shell text before segmenting it.
+        if [[ "$(HEAVY_JOB_JSON_ESCAPED=1 heavy_job_classify "$command")" == "heavy" ]]; then
             emit_deny "BLOCK(heavy-job-admission): 重量テストジョブ(bats複数ファイル/全量、pytest全量、golden regression等)はhost-wide排他制御が必要。'bash scripts/heavy_job_admission.sh -- <元のコマンド全体>' の形で実行せよ。単一の.batsファイル1つや単一の::テスト関数指定は軽量とみなされ対象外。"
         fi
     fi
