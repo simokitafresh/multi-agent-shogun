@@ -59,13 +59,31 @@ printf '1..1\nok 1 sample\n'
 SH
   chmod +x "$TMPROOT/bin/bats"
   run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$TMPROOT/bats.args" \
-    BATS_CACHE=0 bash -c '
+    BATS_CACHE=0 BATS_INNER_JOBS=1 bash -c '
       source "$1/scripts/run_tests.sh"
       run_bats_files_parallel "$1/tests/unit/sample.bats"
     ' _ "$TMPROOT"
   [ "$status" -eq 0 ]
   grep -Fq -- '--jobs 1' "$TMPROOT/bats.args"
   run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; [ "$INNER_JOBS" -eq 1 ] && [ "$MAX_TEST_JOBS" -eq 8 ]' _ "$TMPROOT"
+  [ "$status" -eq 0 ]
+}
+
+@test "CI pins file-internal jobs to one and leaves aggregate parallelism to run_tests" {
+  workflow="$ROOT/.github/workflows/test.yml"
+
+  grep -Fq 'BATS_INNER_JOBS=1 \' "$workflow"
+  ! grep -Fq 'BATS_INNER_JOBS=8 \' "$workflow"
+  grep -Fq 'bash scripts/run_tests.sh unit' "$workflow"
+}
+
+@test "source mode resolves repo root from run_tests path instead of caller argv zero" {
+  run env -u REPO_ROOT bash -c '
+    cd /
+    source "$1/scripts/run_tests.sh"
+    [ "$REPO_ROOT" = "$1" ]
+  ' _ "$TMPROOT"
+
   [ "$status" -eq 0 ]
 }
 

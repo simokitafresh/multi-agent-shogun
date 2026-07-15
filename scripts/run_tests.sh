@@ -11,7 +11,10 @@ set -euo pipefail
 
 # REPO_ROOT: テスト容易性のため既存環境変数があれば優先する(test_heavy_job_admission.bats
 # がFAIL fixtureをtests/unit/相当のディレクトリに用意しexit code集約を検証する用途)。
-REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
+# This file is intentionally sourceable so scheduler functions can be reused
+# by regression harnesses.  In that mode $0 belongs to the caller (often
+# `bash`), while BASH_SOURCE[0] remains this script's real path.
+REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 JOBS="${BATS_JOBS:-8}"
 FILE_JOBS="${BATS_FILE_JOBS:-32}"
 INNER_JOBS="${BATS_INNER_JOBS:-1}"

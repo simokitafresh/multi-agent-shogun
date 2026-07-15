@@ -56,8 +56,11 @@ jobs:
             echo "::warning::tests/unit directory not found. Skipping unit tests."
             exit 0
           fi
+          # Each bats file owns mutable setup/teardown fixtures. Keep tests
+          # inside a file serial; run_tests.sh still schedules independent
+          # files concurrently under the aggregate eight-test budget.
           BATS_CACHE=0 \
-          BATS_INNER_JOBS=8 \
+          BATS_INNER_JOBS=1 \
           BATS_TAP_OUTPUT=test-results/unit.tap \
             bash scripts/run_tests.sh unit || {
             echo "::error::Unit tests failed"
