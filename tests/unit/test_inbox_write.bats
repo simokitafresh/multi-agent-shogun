@@ -1266,6 +1266,7 @@ EOF
     ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
     ln -sf "$PROJECT_ROOT/scripts/review_approval.sh" "$TEST_TMPDIR/scripts/review_approval.sh"
     ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
+    ln -sf "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_TMPDIR/scripts/lib/report_commit_identity.py"
     ln -sf "$PROJECT_ROOT/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_write.sh"
 
     cat > "$TEST_TMPDIR/scripts/cmd_complete_gate.sh" <<'EOF'
@@ -1295,6 +1296,7 @@ EOF
     setup_git_test_env
     mkdir -p "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/scripts/lib"
     ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
+    ln -sf "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_TMPDIR/scripts/lib/report_commit_identity.py"
     printf 'parent_cmd: cmd_guard\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
     run _run_inbox_write karo "cmd_guard verdict: LGTM report: queue/reports/ninja_report_cmd_guard.yaml" report_review_result gunshi
     [ "$status" -eq 2 ]
@@ -1337,6 +1339,7 @@ EOF
     setup_git_test_env
     mkdir -p "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/scripts/lib"
     ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
+    ln -sf "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_TMPDIR/scripts/lib/report_commit_identity.py"
     ln -sf "$PROJECT_ROOT/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_write.sh"
     printf 'parent_cmd: cmd_guard\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
     REVIEW_APPROVAL_ROOT="$TEST_TMPDIR" REVIEW_APPROVAL_NO_TRIGGER=1 bash "$PROJECT_ROOT/scripts/review_approval.sh" cmd_guard gunshi LGTM "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
