@@ -31,6 +31,63 @@ json_escape() {
     printf '%s' "$value"
 }
 
+memory_timeout_fallback() {
+    local query="$1" db_path="${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}"
+    timeout "${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-5}s" python3 - "$db_path" "$query" <<'PY' >/dev/null 2>&1
+import sqlite3, sys
+
+db_path, query = sys.argv[1:]
+needle = next((part for part in query.split() if part), query[:80])
+with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=0.5) as conn:
+    conn.execute("PRAGMA busy_timeout=500")
+    conn.execute(
+        "SELECT 1 FROM events WHERE summary LIKE ? OR detail LIKE ? LIMIT 1",
+        (f"%{needle}%", f"%{needle}%"),
+    ).fetchone()
+PY
+}
+
+text_index_timeout_fallback() {
+    local query="$1"; shift
+    local fallback_timeout="${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-5}"
+    # In the real checkout, git's tracked-file index gives a bounded scan of
+    # the same canonical paths without repeating rg's filesystem walk on 9P.
+    # Test/isolated roots without a .git directory use the portable reader.
+    if [[ -d "$ROOT/.git" ]]; then
+        local -a relative_paths=() raw_path
+        for raw_path in "$@"; do
+            relative_paths+=("${raw_path#"$ROOT/"}")
+        done
+        local git_rc=0
+        timeout "${fallback_timeout}s" git -C "$ROOT" grep -F -n -- "$query" -- "${relative_paths[@]}" >/dev/null 2>&1 || git_rc=$?
+        [[ "$git_rc" == 1 ]] && git_rc=0
+        return "$git_rc"
+    fi
+    timeout "${fallback_timeout}s" python3 - "$query" "$@" <<'PY' >/dev/null 2>&1
+import os, pathlib, sys
+
+query, *paths = sys.argv[1:]
+needle = next((part for part in query.split() if part), query[:80]).encode()
+files = []
+for raw_path in paths:
+    path = pathlib.Path(raw_path)
+    if path.is_file():
+        files.append(path)
+    elif path.is_dir():
+        for dirpath, _, names in os.walk(path):
+            files.extend(pathlib.Path(dirpath, name) for name in names if name.endswith(".md"))
+    else:
+        raise SystemExit(2)
+if not files:
+    raise SystemExit(2)
+for path in files:
+    with path.open("rb") as handle:
+        while chunk := handle.read(1024 * 1024):
+            if needle in chunk:
+                break
+PY
+}
+
 prompt_from_payload() {
     local payload="$1"
     if command -v jq >/dev/null 2>&1; then
@@ -85,16 +142,17 @@ issue() {
     local memory_rc=0 semantic_rc=0 obsidian_rc=0
     local memory_pid semantic_pid obsidian_pid=""
 
-    ( timeout 5s bash "$ROOT/scripts/memory_db_query.sh" --search "$prompt" >/dev/null 2>&1 ) &
+    local primary_timeout="${THREE_LAYER_PRIMARY_TIMEOUT_SECONDS:-5}"
+    ( timeout "${primary_timeout}s" bash "$ROOT/scripts/memory_db_query.sh" --search "$prompt" >/dev/null 2>&1 ) &
     memory_pid=$!
-    ( timeout 5s bash "$ROOT/scripts/semantic_search.sh" "$prompt" >/dev/null 2>&1 ) &
+    ( timeout "${primary_timeout}s" bash "$ROOT/scripts/semantic_search.sh" "$prompt" >/dev/null 2>&1 ) &
     semantic_pid=$!
     rg_cmd="$(resolve_rg 2>/dev/null || true)"
     if [[ -n "$rg_cmd" ]]; then
         # --no-mmap: WSL2's 9P-backed /mnt/c mount pays a large syscall
         # penalty for mmap'd reads across the ~2600 files under docs/;
         # buffered reads measured ~30% faster here (2026-07-10 benchmark).
-        ( "$rg_cmd" --no-mmap -n --fixed-strings -- "$obsidian_query" "$ROOT/context/semantic-map.md" "$ROOT/docs" >/dev/null 2>&1 ) &
+        ( timeout "${primary_timeout}s" "$rg_cmd" --no-mmap -n --fixed-strings -- "$obsidian_query" "$ROOT/context/semantic-map.md" "$ROOT/docs" >/dev/null 2>&1 ) &
         obsidian_pid=$!
     fi
 
@@ -118,13 +176,23 @@ issue() {
         obsidian_rc=127
     fi
     [[ "$obsidian_rc" == 1 ]] && obsidian_rc=0
-    # Timeout (exit 124) means infrastructure is slow (WSL2 9P cold cache, etc.),
-    # not that the evidence is invalid. Treating timeout as hard failure caused
-    # full-agent deadlock (2026-07-15 05:24: memory_db exit 124 → status=failed
-    # → ALL tools BLOCK'd until 4h TTL expiry). Normalize to 0 like NO_MATCH.
-    [[ "$memory_rc" == 124 ]] && memory_rc=0
-    [[ "$semantic_rc" == 124 ]] && semantic_rc=0
-    [[ "$obsidian_rc" == 124 ]] && obsidian_rc=0
+    # A primary timeout is not proof that a search completed. Fall back to
+    # bounded, read-only access to each layer's real canonical data. Only a
+    # completed fallback becomes rc=0; missing/corrupt data or another timeout
+    # remains non-zero and therefore fail-closed without reviving the old
+    # all-tools deadlock-by-assumption.
+    if [[ "$memory_rc" == 124 ]]; then
+        memory_rc=124
+        memory_timeout_fallback "$prompt" && memory_rc=0 || memory_rc=$?
+    fi
+    if [[ "$semantic_rc" == 124 ]]; then
+        semantic_rc=124
+        text_index_timeout_fallback "$prompt" "$ROOT/docs/semantic-index/index.md" && semantic_rc=0 || semantic_rc=$?
+    fi
+    if [[ "$obsidian_rc" == 124 ]]; then
+        obsidian_rc=124
+        text_index_timeout_fallback "$obsidian_query" "$ROOT/context/semantic-map.md" "$ROOT/docs" && obsidian_rc=0 || obsidian_rc=$?
+    fi
 
     local status=success
     [[ "$memory_rc" == 0 && "$semantic_rc" == 0 && "$obsidian_rc" == 0 ]] || status=failed

@@ -78,6 +78,67 @@ verify() {
     [[ "$output" == *"memory=1"* ]]
 }
 
+make_timeout_root() {
+    local tmp_root="$1"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/docs/fixture" "$tmp_root/bin"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    cp "$ROOT/context/semantic-map.md" "$tmp_root/context/semantic-map.md"
+    cp "$ROOT/docs/semantic-index/index.md" "$tmp_root/docs/semantic-index/index.md"
+    printf 'three layer preflight fixture\n' > "$tmp_root/docs/fixture/causal.md"
+    printf '#!/usr/bin/env bash\nsleep 1\n' > "$tmp_root/scripts/memory_db_query.sh"
+    cp "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
+    printf '#!/usr/bin/env bash\nsleep 1\nexit 124\n' > "$tmp_root/bin/rg"
+    chmod +x "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh" "$tmp_root/bin/rg"
+}
+
+@test "3層primary timeoutは実データfallback完了時のみsuccess" {
+    local tmp_root="$TMP_EVIDENCE/timeout_success"
+    make_timeout_root "$tmp_root"
+    run env PATH="$tmp_root/bin:$PATH" MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.05 THREE_LAYER_FALLBACK_TIMEOUT_SECONDS=1 THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE/timeout_success_evidence" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "three layer preflight fixture"
+    [ "$status" -eq 0 ]
+    run grep -o '"memory_db":"[0-9]*"\|"semantic":"[0-9]*"\|"obsidian":"[0-9]*"\|"status":"[a-z]*"' "$TMP_EVIDENCE/timeout_success_evidence/evidence_${AGENT}__test_${BATS_TEST_NUMBER}.json"
+    [[ "$output" == *'"memory_db":"0"'* ]]
+    [[ "$output" == *'"semantic":"0"'* ]]
+    [[ "$output" == *'"obsidian":"0"'* ]]
+    [[ "$output" == *'"status":"success"'* ]]
+}
+
+@test "memory timeout fallbackのDB欠落はfailed" {
+    local tmp_root="$TMP_EVIDENCE/timeout_memory_fail"
+    make_timeout_root "$tmp_root"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/semantic_search.sh"
+    printf '#!/usr/bin/env bash\nexit 1\n' > "$tmp_root/bin/rg"
+    run env PATH="$tmp_root/bin:$PATH" MEMORY_DB_QUERY_DB="$TMP_EVIDENCE/missing.db" THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.05 THREE_LAYER_FALLBACK_TIMEOUT_SECONDS=1 THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE/timeout_memory_fail_evidence" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "missing memory"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"evidence failed"* ]]
+}
+
+@test "semantic timeout fallbackのindex欠落はfailed" {
+    local tmp_root="$TMP_EVIDENCE/timeout_semantic_fail"
+    make_timeout_root "$tmp_root"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/memory_db_query.sh"
+    printf '#!/usr/bin/env bash\nexit 1\n' > "$tmp_root/bin/rg"
+    rm "$tmp_root/docs/semantic-index/index.md"
+    run env PATH="$tmp_root/bin:$PATH" THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.05 THREE_LAYER_FALLBACK_TIMEOUT_SECONDS=1 THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE/timeout_semantic_fail_evidence" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "missing semantic"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"evidence failed"* ]]
+}
+
+@test "obsidian timeout fallbackのcausal index欠落はfailed" {
+    local tmp_root="$TMP_EVIDENCE/timeout_obsidian_fail"
+    make_timeout_root "$tmp_root"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/memory_db_query.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/semantic_search.sh"
+    rm "$tmp_root/context/semantic-map.md"
+    run env PATH="$tmp_root/bin:$PATH" THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.05 THREE_LAYER_FALLBACK_TIMEOUT_SECONDS=1 THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE/timeout_obsidian_fail_evidence" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "missing obsidian"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"evidence failed"* ]]
+}
+
 @test "証跡なしの変更系BashをBLOCK" {
     run verify Bash "" "touch repo-file"
     [ "$status" -eq 1 ]
