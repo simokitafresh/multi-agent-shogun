@@ -445,6 +445,58 @@ assert '必読' in refs[0]['reason'], refs
 PY
 }
 
+@test "cmd_3970 regression: update-trigger analysis is readonly while design artifact remains writable" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue" "$tmpdir/scripts/lib"
+    cp "$PROJECT_ROOT/scripts/lib/field_get.sh" "$tmpdir/scripts/lib/field_get.sh"
+    cat > "$tmpdir/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_3970
+  task_id: cmd_3970_full
+  status: assigned
+YAML
+    cat > "$tmpdir/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_3970:
+    command: |
+      daemon_supervisor.sh・restart_watchers.shのコード現物を読み、呼出し関係を整理する。一本化の設計案をdocs/research/daemon_p4_entry_point_design_20260715.mdに記録する
+      gist_sync.shと戦況artifact HTMLの更新トリガー・対象・頻度を整理し統合・分離案を記録する。daemon_watchdog.logとninja_monitor.logから復旧速度実測値を抽出しSLA・RTO数値案を算出して同ファイルに追記する
+YAML
+
+    cat > "$tmpdir/run_inject.sh" <<EOF
+#!/usr/bin/env bash
+set -e
+SCRIPT_DIR="$tmpdir"
+source "$tmpdir/scripts/lib/field_get.sh"
+log() { :; }
+$(sed -n '/^inject_readonly_refs()/,/^}/p' "$PROJECT_ROOT/scripts/deploy_task.sh")
+inject_readonly_refs "$tmpdir/queue/tasks/hayate.yaml"
+EOF
+    chmod +x "$tmpdir/run_inject.sh"
+
+    run bash "$tmpdir/run_inject.sh"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir/queue/tasks/hayate.yaml" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding='utf-8') as f:
+    task = yaml.safe_load(f)['task']
+
+paths = {row['path'] for row in task.get('readonly_ref') or []}
+expected = {
+    'daemon_supervisor.sh',
+    'restart_watchers.sh',
+    'gist_sync.sh',
+    'daemon_watchdog.log',
+    'ninja_monitor.log',
+}
+assert expected <= paths, (expected, paths)
+assert 'docs/research/daemon_p4_entry_point_design_20260715.md' not in paths, paths
+PY
+}
+
 @test "db backup controls: DB cmd injects stop_for and backup instructions" {
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue"

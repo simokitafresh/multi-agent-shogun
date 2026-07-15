@@ -5360,12 +5360,12 @@ command = os.environ.get("COMMAND_TEXT_ENV", "")
 pattern = re.compile(
     r"(?<![A-Za-z0-9_./-])"
     r"((?:/mnt/[A-Za-z0-9_.-]+/|(?:[A-Za-z0-9_.-]+/)*)[A-Za-z0-9_.-]+"
-    r"\.(?:sh|py|md|yaml|yml|json|toml|js|ts|tsx|jsx|css|html|sql|csv))"
+    r"\.(?:sh|py|md|yaml|yml|json|toml|js|ts|tsx|jsx|css|html|sql|csv|log))"
     r"(?![A-Za-z0-9_.-])"
 )
 read_markers = (
     "必読", "読む", "読んで", "読み", "確認", "参照", "調査", "精査", "review", "read", "inspect", "refer",
-    "実行", "実行のみ", "変更対象外", "走らせ", "検証", "run", "execute",
+    "実行", "実行のみ", "変更対象外", "走らせ", "検証", "整理", "抽出", "算出", "run", "execute",
 )
 write_markers = (
     "修正", "更新", "変更", "編集", "実装", "追加", "削除", "作成", "反映",
@@ -5374,6 +5374,25 @@ write_markers = (
 
 def marker_pos(text, markers):
     positions = [text.find(marker) for marker in markers if text.find(marker) >= 0]
+    return min(positions) if positions else -1
+
+def write_marker_pos(text):
+    positions = []
+    for marker in write_markers:
+        start = 0
+        while True:
+            pos = text.find(marker, start)
+            if pos < 0:
+                break
+            # 「更新トリガー/頻度」の更新は調査対象を表す名詞であり、
+            # 当該ファイルを更新する動詞ではない。これをwrite扱いすると
+            # 設計・偵察cmdのreadonly_ref注入が漏れ、完了gateが偽BLOCKする。
+            suffix = text[pos + len(marker):]
+            if marker == "更新" and re.match(r"^(?:トリガー|頻度|対象|履歴|時刻|経路|条件|有無|内容|周期|契機|方式|箇所)", suffix):
+                start = pos + len(marker)
+                continue
+            positions.append(pos)
+            break
     return min(positions) if positions else -1
 
 matches = list(pattern.finditer(command))
@@ -5410,7 +5429,7 @@ for idx, match in enumerate(matches):
     read_pos = marker_pos(local, read_markers)
     if read_pos < 0:
         read_pos = marker_pos(sentence, read_markers)
-    write_pos = marker_pos(sentence_tail, write_markers)
+    write_pos = write_marker_pos(sentence_tail)
     next_ref_before_write = idx + 1 < len(matches) and matches[idx + 1].start() < sentence_end and (
         write_pos < 0 or matches[idx + 1].start() - match.end() < write_pos
     )
