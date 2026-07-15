@@ -5110,13 +5110,30 @@ except Exception:
     data = {}
 
 commands = data.get("commands", data.get("cmds", data))
-entry = None
-if isinstance(commands, dict):
-    entry = commands.get(cmd_id)
-elif isinstance(commands, list):
-    for row in commands:
-        if isinstance(row, dict) and str(row.get("id", "")) == cmd_id:
-            entry = row
+def find_entry(payload):
+    command_rows = payload.get("commands", payload.get("cmds", payload)) if isinstance(payload, dict) else payload
+    if isinstance(command_rows, dict):
+        return command_rows.get(cmd_id)
+    if isinstance(command_rows, list):
+        for row in command_rows:
+            if isinstance(row, dict) and str(row.get("id", "")) == cmd_id:
+                return row
+    return None
+
+entry = find_entry(data)
+if not isinstance(entry, dict):
+    # BLOCK後でもarchive_completed/status遷移が先行する経路がある。
+    # active queueだけを見ると再ゲートで元commandが消え、coverage checkが
+    # 「参照なし」と偽SKIPしてCLEARし得るため、archive正本へ必ずfallbackする。
+    archive_glob = os.path.join(script_dir, "queue", "archive", "cmds", f"*{cmd_id}*.yaml")
+    for archived_path in sorted(glob.glob(archive_glob), reverse=True):
+        try:
+            with open(archived_path, encoding="utf-8") as f:
+                archived_data = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+        entry = find_entry(archived_data)
+        if isinstance(entry, dict):
             break
 
 if not isinstance(entry, dict):

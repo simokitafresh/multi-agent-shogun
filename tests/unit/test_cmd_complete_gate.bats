@@ -837,6 +837,24 @@ EOF
     [[ "$output" != *"command_files_modified_mismatch"* ]]
 }
 
+@test "command/files_modified coverage reads archived command instead of false-SKIP after BLOCK archival" {
+    _write_command_coverage_fixture \
+        "scripts/cmd_complete_gate.sh と scripts/archived_missing.sh を修正" \
+        "  - path: scripts/cmd_complete_gate.sh
+    change: modified"
+
+    mkdir -p "$TEST_PROJECT/queue/archive/cmds"
+    mv "$YAML_FILE" "$TEST_PROJECT/queue/archive/cmds/${TEST_CMD_ID}_done.yaml"
+    printf 'commands: {}\n' > "$YAML_FILE"
+
+    run _run_command_files_modified_coverage_with_state
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COMMAND_SCOPE_MISSING"* ]]
+    [[ "$output" == *"missing: scripts/archived_missing.sh"* ]]
+    [[ "$output" == *"ALL_CLEAR=false"* ]]
+    [[ "$output" == *"BLOCK_REASONS=command_files_modified_mismatch"* ]]
+}
+
 @test "command/files_modified coverage blocks when command target is missing from report" {
     _write_command_coverage_fixture \
         "scripts/cmd_complete_gate.sh と scripts/stop_check_inbox.sh を修正" \
