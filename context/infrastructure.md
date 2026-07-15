@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_infrastructure_context_freshness_20260715 -->
-<!-- source_commit:3d2a7d52f reason:post-clear-durable-audit-dashboard-lock-and-skill-contracts-reviewed evidence:commits-91c3bf2dc-ab302df7b-1616a1eb3-3d2a7d52f-tests-177-of-177 -->
+<!-- source_commit:dabd3100c reason:durable-three-layer-chain-and-live-hook-self-sync-reviewed evidence:commits-f10a41c28-dabd3100c-tests-47-of-47 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -22,6 +22,8 @@ SG7レビュー情報はformal Gunshi LGTM時に`review_approval.sh`が`review_b
 家老の完了処理は`scripts/cmd_complete.sh`を単一入口とし、SG7 consume→lesson review→cmd gate→context freshness→品質記録→status証明→dashboard→ntfy→inbox archiveをfail-closedで直列実行する。archive済み番号cmdはarchive・dashboard・gate_metricsのCLEAR三証拠、active/archive statusを持たないdirect cmdは消費済みSG7・formal review gate・gate_metrics CLEARの三証拠が揃う時だけstatus完了扱いとする。将軍startupのQ6実装証拠は現行inboxに加えて自agentの当日/前日archiveを探索し、CI RED通知はGitHub run ID台帳を単一flock区間で判定・送信・追記して同一run再送を抑止する。→ `scripts/cmd_complete.sh` / `scripts/gates/gate_shogun_startup.sh` / `tests/unit/test_cmd_complete_wrapper.bats` / `tests/unit/test_gate_shogun_startup.bats`（cmd_3956、commits `4b696fd5b`, `9b91e40c1`, `96482b4ef`, `9fe3fb9fa`, `e15d1f0cb`）
 
 GATE CLEAR後の因果監査は`semantic_index_update → semantic_map_generate → semantic_causal_traverse`を同一durable workerで直列実行し、`setsid`でpane process groupから分離、cmd別flock、pending/result/logでPASS/WARN/FAILを永続化する。各0.04秒の`gunshi_gate_reflux`とworkaround率は同期維持し、refluxは同一cmd_idの全entryへ`gate_result+gate_synced_at`をlock内atomic置換する。dashboard archive/update/auto publisherも同一lockと同一filesystem renameを使う。→ `scripts/semantic_causal_post_clear.sh` / `scripts/gunshi_gate_reflux.sh` / `scripts/dashboard_update.sh`（commits `91c3bf2dc`, `ab302df7b`, `1616a1eb3`、post-commit 177/177 PASS・SKIP0）
+
+三層知識writeはLayer1成功後、Layer2/3 payloadを先に`logs/three_layer_chain_state/*.pending.json`へatomic永続化し、`setsid+nohup`のworkerがper-event排他でsemantic更新・Obsidianリンク候補・resultを確定する。startup healthは120秒超pending、FAIL result、未解決ERRORをWARNする。Git pre-commitはtracked正本とlive `.git/hooks/pre-commit`をcommit index/HEADから自己同期し、atomic置換後は新live hookを再execするため、`ninja_scope_commit.sh`を通らないdirect commitでもdriftを残さない。→ `scripts/three_layer_knowledge_chain.sh` / `scripts/gates/gate_three_layer_health.sh` / `scripts/hooks/git-pre-commit.sh`（commits `f10a41c28`, `dabd3100c`、関連47/47 PASS・SKIP0）
 
 三層preflightのmemory/semantic読取は、stale検知中も最後にatomic publishされた完全snapshotを返し、refresh childをcommand substitutionの待機対象にしない。`semantic_search.sh`は共有cache helperへ収束する一方、非default DB cacheのsidecar清掃とhelper未同梱時のstandalone alias検索という既存二契約を維持する。修正前は並行writer下10/10 timeout（memory124・semantic124）だったが、修正後は10/10成功、関連Bats 64/64 PASS・SKIP0、実運用のcmd_complete_gate併走中preflightも2.33秒・exit 0。→ `scripts/lib/memory_db_cache.sh` / `scripts/semantic_search.sh` / `tests/unit/test_memory_db_cache_warmup.bats`（cmd_karo_hotfix_preflight_concurrent_writes_202607150705、commits `1c9db0f38`, `b05faaaa5`）
 
@@ -95,7 +97,7 @@ insight解決SSOT・破損復旧(PD-126): `insight_write.sh`の追記前修復�
 完了通知gap検出: `ninja_monitor.sh` に `completion_notify_gap` を追加。軍師LGTM後、grace300sを超えても将軍向けbulletin/shogun inbox/cmd_complete_gate CLEARが無い場合に家老へ通知する。cmd_3780でLGTM 22:53:35→手動bulletin 23:05:58まで12分自動通知ゼロだった穴を封じ、実データで景丸hotfix未達1件を検出・補完（cmd_karo_hotfix_completion_notify_gap_202607082310, tests 38/38 PASS, commit 2734ed518）。
 将軍prompt洗脳注入縮約: `scripts/hooks/prompt_state_inject.sh` は通常時の将軍向けbrainwash注入を単一自問52文字へ縮約し、`stop_check_inbox.sh`由来のQ6検出flagがある時だけ8パターン全文を再注入する。検出時は`gate_fire_log.yaml`と`detector_fp_rate.yaml`へ台帳記録する（cmd_3782, bats 78/78 PASS, commit 851bd946）。
 軍師precheck視点列独立性検証: `gate_gunshi_report_precheck.sh` のSG-PRE32は、報告YAMLのMarkdown成果物を`detect_view_column_degeneracy.py`で走査し、Expanding/WF等の数値列が全データ行で完全一致した場合にWARN(LG049)を出す。cmd_3780のExpanding/WF縮退見逃しを機械検出へ還流（cmd_3781, bats 29/29 PASS, commit 511f226f）。
-三層連鎖自己修復: `scripts/memory_db_knowledge_write.sh`はLayer2全失敗時に最終エラー要点+payload_b64をERROR行へ記録し、次回write時に未解決ERRORを自動repairしてOK行を追記する（cmd_3742, bats 15/15 PASS）。
+三層連鎖自己修復: `scripts/memory_db_knowledge_write.sh`はLayer1後にdurable pendingを先書きし、専用workerがLayer2全失敗時に最終エラー要点+payload_b64とFAIL resultを記録する。次回write時は未解決ERRORを自動repairしてOK行+PASS resultへ更新する（cmd_3742契約継承、commit `f10a41c28`, 関連26/26 PASS）。
 軍師precheck git履歴走査統合: `gate_gunshi_report_precheck.sh`はSG-PRE3/SG-PRE13/SG-PRE19が独立にPARENT_CMD全履歴`git log --grep`走査(numstat/name-only)を最大4回実行しており、同一REPO_ROOT/PROJECT_DIRへの重複走査が軍師レビュー実行時間13.4秒の主要因(PS4行別プロファイルで実測)だった。1回のnumstat走査結果を3チェック間で共有し、name-only相当は3列目(path)から導出する構成へ統合。実測(PROJECT_DIR==REPO_ROOTのno-hash分岐): 8.56s→4.06s(-52.6%)、同一report入力での標準出力diff行数0(等価性実証済み)。bats 54/54 PASS(cmd_3807)。
 → `docs/research/cmd_3807_gunshi_precheck_speedup.md`
 
@@ -784,7 +786,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1148 -->
+<!-- last_synced_lesson: L1149 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1639,6 +1641,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1146: hot queueのprune前にgate証跡をarchiveしsymlink実体lockで直列化せよ（cmd_karo_infra_audit_20260715）
 - L1147: 外部source commitは全split context境界を同一サイクルで更新する（cmd_karo_infra_audit_20260715）
 - L1148: review_logの複数同一ID更新はfirst-match setterを使わない（inbox:msg_20260715_133644_4096166_536e6514）
+- L1149: fire-and-forget品質処理はpending先書きとlive配備自己同期を必須にする（session_20260715）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
