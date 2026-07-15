@@ -173,7 +173,12 @@ ESCAPE_CALLS = {"eval", "exec", "compile", "__import__"}
 READ_ONLY_SHELL_CMDS = {"rg", "grep", "sed", "cat", "head", "tail", "cut", "wc", "find"}
 # gitはVCSツールでありDB接続能力なし。commit message内の.envテキストはファイルアクセスではない。
 # 2026-07-15将軍実証: git commit -m "...text with .env..." がconnection:untrustedに誤判定。
-SAFE_NON_DB_CMDS = {"git", "echo", "printf", "date", "mkdir", "cp", "mv", "ls", "rm", "touch", "chmod", "tmux", "ntfy"}
+SAFE_NON_DB_CMDS = {
+    "git", "echo", "printf", "date", "mkdir", "cp", "mv", "ls", "rm", "touch", "chmod", "tmux", "ntfy",
+    "tr", "sort", "uniq", "awk", "tee", "basename", "dirname", "realpath", "readlink", "stat",
+    "diff", "comm", "paste", "column", "fold", "rev", "od", "xxd", "sha256sum", "md5sum",
+    "true", "false", "test", "sleep", "kill", "pgrep", "pkill", "id", "whoami", "hostname",
+}
 ENV_SETUP_SHELL_CMDS = {"source", ".", "export"}
 SAFE_OS_CALLS = {"getenv"}
 # python3 -m <module> で起動される安全なstdlib module。DB接続能力なし。
