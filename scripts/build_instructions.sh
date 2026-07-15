@@ -21,6 +21,14 @@ DEFAULT_CLI="claude"
 
 mkdir -p "$OUTPUT_DIR"
 
+# Multiple unit roots and hooks may rebuild the shared generated directory at
+# once.  Per-file atomic writes do not make a multi-file generation coherent:
+# an idempotence reader can otherwise observe a mixture of empty/old/new role
+# files.  Serialize the complete generation transaction across processes.
+_build_lock_key="$(printf '%s' "$SCRIPT_DIR" | cksum | awk '{print $1}')"
+exec 9>"${TMPDIR:-/tmp}/shogun-build-instructions-${_build_lock_key}.lock"
+flock -w 60 9 || { echo "ERROR: build_instructions lock timeout" >&2; exit 1; }
+
 echo "=== Instruction File Build System ==="
 echo "Building instruction files..."
 
