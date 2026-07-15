@@ -72,6 +72,10 @@ teardown() { rm -rf "$TEST_ROOT"; }
 
 @test "corrupt marker fails closed" {
     printf 'operator=tester\n' > "$DAEMON_MAINTENANCE_MARKER"
+    run bash "$PROJECT_ROOT/scripts/daemon_maintenance.sh" status
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"maintenance invalid: corrupt marker"* ]]
+
     run bash "$PROJECT_ROOT/scripts/restart_watchers.sh"
     [ "$status" -eq 1 ]
     [[ "$output" == *"corrupt"* ]]

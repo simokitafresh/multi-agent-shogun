@@ -25,8 +25,9 @@ case "${1:-}" in
         if is_maintenance_active; then
             echo "maintenance active: operator=$MAINTENANCE_OPERATOR started_at=$MAINTENANCE_STARTED_AT"
             exit 0
+        else
+            rc=$?
         fi
-        rc=$?
         if (( rc == 2 )); then
             echo "maintenance invalid: corrupt marker" >&2
             exit 2
