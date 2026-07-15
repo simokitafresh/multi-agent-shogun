@@ -264,7 +264,7 @@ PY
     [ "$status" -eq 0 ]
 }
 
-@test "cmd_2832: post-deploy verification can re-nudge when pane still has unread inbox" {
+@test "post-deploy verification suppresses duplicate re-nudge for wrapped prompt delivery evidence" {
     mkdir -p "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/logs"
     cat > "$TEST_PROJECT/queue/inbox/sasuke.yaml" <<'EOF'
 messages:
@@ -280,7 +280,7 @@ EOF
             case "$1" in
                 list-panes) printf "shogun:agents.2\n" ;;
                 show-options) printf "idle\n" ;;
-                capture-pane) printf "ready\n› \n" ;;
+                capture-pane) printf "› inbox1 — task: queue/tasks/\nsasuke.yaml\n◦ Running UserPromptSubmit hook\n" ;;
             esac
         }
         deploy_task_send_direct_renudge() {
@@ -290,10 +290,60 @@ EOF
     '
 
     [ "$status" -eq 0 ]
-    run cat "$TEST_PROJECT/logs/post_deploy_renudge.log"
+    [ ! -f "$TEST_PROJECT/logs/post_deploy_renudge.log" ]
+    grep -q "delivery evidence present" "$TEST_PROJECT/logs/post_deploy_verify.log"
+    grep -q "re-nudge suppressed" "$TEST_PROJECT/logs/post_deploy_verify.log"
+}
+
+@test "post-deploy verification leaves true non-delivery eligible for bounded delayed re-nudge" {
+    mkdir -p "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/logs"
+    printf 'messages:\n- id: msg_1\n  read: false\n' > "$TEST_PROJECT/queue/inbox/sasuke.yaml"
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1" >> "$TEST_PROJECT/logs/post_deploy_missing.log"; }
+        pane_lookup() { echo "shogun:agents.2"; }
+        tmux() { case "$1" in show-options) printf "idle\n" ;; capture-pane) printf "Codex initial screen\n" ;; esac; }
+        deploy_task_send_direct_renudge() { printf "unexpected\n" > "$TEST_PROJECT/logs/unexpected.log"; }
+        deploy_task_post_deploy_verify sasuke
+    '
     [ "$status" -eq 0 ]
-    [ "$output" = "sasuke" ]
-    grep -q "sending direct re-nudge" "$TEST_PROJECT/logs/post_deploy_verify.log"
+    [ ! -f "$TEST_PROJECT/logs/unexpected.log" ]
+    grep -q "bounded delayed re-nudge eligible" "$TEST_PROJECT/logs/post_deploy_missing.log"
+}
+
+@test "delayed re-nudge rechecks pane evidence immediately before send" {
+    mkdir -p "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/logs"
+    printf 'messages:\n- id: msg_1\n  read: false\n' > "$TEST_PROJECT/queue/inbox/sasuke.yaml"
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1" >> "$TEST_PROJECT/logs/delayed.log"; }
+        pane_lookup() { echo "shogun:agents.2"; }
+        tmux() { printf "• Working\n"; }
+        safe_send_keys_atomic() { printf "sent\n" > "$TEST_PROJECT/logs/sent.log"; }
+        deploy_task_send_direct_renudge sasuke
+    '
+    [ "$status" -eq 0 ]
+    [ ! -f "$TEST_PROJECT/logs/sent.log" ]
+    grep -q "delivery evidence present" "$TEST_PROJECT/logs/delayed.log"
+}
+
+@test "delayed re-nudge skips when unread was consumed before send" {
+    mkdir -p "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/logs"
+    printf 'messages:\n- id: msg_1\n  read: true\n' > "$TEST_PROJECT/queue/inbox/sasuke.yaml"
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1" >> "$TEST_PROJECT/logs/delayed_read.log"; }
+        pane_lookup() { echo "shogun:agents.2"; }
+        tmux() { printf "initial screen\n"; }
+        safe_send_keys_atomic() { printf "sent\n" > "$TEST_PROJECT/logs/sent.log"; }
+        deploy_task_send_direct_renudge sasuke
+    '
+    [ "$status" -eq 0 ]
+    [ ! -f "$TEST_PROJECT/logs/sent.log" ]
+    grep -q "no unread messages" "$TEST_PROJECT/logs/delayed_read.log"
 }
 
 @test "cmd_2832: report gawk scan avoids global all-ninja glob" {

@@ -513,7 +513,14 @@ deploy_task_unread_count() {
     case "$count" in
         ''|*[!0-9]*) count=0 ;;
     esac
-    [ "$count" -gt 0 ] && printf '%s\n' "$count" || printf '1\n'
+    printf '%s\n' "$count"
+}
+
+deploy_task_pane_has_delivery_evidence() {
+    local agent_name="$1"
+    local pane_snapshot="$2"
+    printf '%s\n' "$pane_snapshot" | tr '\n' ' ' \
+        | grep -qE "inbox[0-9]+ — .*queue/tasks/${agent_name}\.yaml|[•◦] (Working|Ran |Waiting|Running .*([Hh]ook|UserPromptSubmit|PostToolUse))"
 }
 
 deploy_task_inbox_message_count() {
@@ -608,7 +615,7 @@ deploy_task_guard_task_yaml_syntax() {
 
 deploy_task_send_direct_renudge() {
     local agent_name="$1"
-    local pane_target unread_count
+    local pane_target unread_count capture_tail
 
     pane_target="$(pane_lookup "$agent_name" 2>/dev/null || true)"
     if [ -z "$pane_target" ]; then
@@ -616,11 +623,20 @@ deploy_task_send_direct_renudge() {
         return 0
     fi
 
+    capture_tail=$(tmux capture-pane -t "$pane_target" -p -S -8 2>/dev/null | tail -8 || true)
+    if deploy_task_pane_has_delivery_evidence "$agent_name" "$capture_tail"; then
+        log "${agent_name}: delayed re-nudge skipped (delivery evidence present; unread observed as processing)"
+        return 0
+    fi
+
     unread_count="$(deploy_task_unread_count "$agent_name")"
     case "$unread_count" in
         ''|*[!0-9]*) unread_count=1 ;;
     esac
-    [ "$unread_count" -gt 0 ] 2>/dev/null || unread_count=1
+    if ! [ "$unread_count" -gt 0 ] 2>/dev/null; then
+        log "${agent_name}: delayed re-nudge skipped (no unread messages)"
+        return 0
+    fi
 
     if safe_send_keys_atomic "$pane_target" "inbox${unread_count}" 0.3; then
         log "${agent_name}: delayed direct re-nudge sent (inbox${unread_count})"
@@ -631,7 +647,7 @@ deploy_task_send_direct_renudge() {
 
 deploy_task_post_deploy_verify() {
     local ninja_name="$1"
-    local pane_target unread_count agent_state capture_tail prompt_seen
+    local pane_target unread_count agent_state capture_tail
 
     pane_target="$(pane_lookup "$ninja_name" 2>/dev/null || true)"
     if [ -z "$pane_target" ]; then
@@ -650,15 +666,12 @@ deploy_task_post_deploy_verify() {
         log "POST-DEPLOY VERIFY ${ninja_name} pane: ${line}"
     done <<< "$capture_tail"
 
-    prompt_seen=0
-    if [[ "$capture_tail" == *"›"* ]] || [[ "$capture_tail" == *"❯"* ]]; then
-        prompt_seen=1
-    fi
-    if [ "$unread_count" -gt 0 ] 2>/dev/null && [ "$prompt_seen" -eq 1 ]; then
-        log "POST-DEPLOY VERIFY ${ninja_name}: unread inbox remains while prompt is visible; sending direct re-nudge"
-        deploy_task_send_direct_renudge "$ninja_name"
+    DEPLOY_TASK_DELIVERY_EVIDENCE=0
+    if deploy_task_pane_has_delivery_evidence "$ninja_name" "$capture_tail"; then
+        DEPLOY_TASK_DELIVERY_EVIDENCE=1
+        log "POST-DEPLOY VERIFY ${ninja_name}: delivery evidence present; unread=${unread_count} observed as processing, re-nudge suppressed"
     elif [ "$unread_count" -gt 0 ] 2>/dev/null; then
-        log "POST-DEPLOY VERIFY ${ninja_name}: unread inbox remains; retry proposal if unchanged: bash scripts/deploy_task.sh ${ninja_name} <cmd_id>"
+        log "POST-DEPLOY VERIFY ${ninja_name}: no delivery evidence and unread remains; bounded delayed re-nudge eligible"
     else
         log "POST-DEPLOY VERIFY ${ninja_name}: inbox consumed or no unread messages detected"
     fi
@@ -10314,7 +10327,7 @@ except Exception:
     # 根因: CLI再起動直後、Codex CLIが初期画面表示中にinbox_watcherのnudgeが空振りする
     # AC1修正: CTX=0%条件を撤去。Codexエージェントは常に遅延re-nudge対象
     #          + 配備確認ログをlogs/codex_delivery_log.yamlに記録し到達確認可能に
-    if [ "$(cli_type "$NINJA_NAME")" = "codex" ]; then
+    if [ "$(cli_type "$NINJA_NAME")" = "codex" ] && [ "${DEPLOY_TASK_DELIVERY_EVIDENCE:-0}" != "1" ]; then
         log "${NINJA_NAME}: Codex detected. Scheduling delayed re-nudge in 5s (background, ctx=${ctx_pct}%)"
         # 到達確認ログ: ninja/cmd/ctx/timestamp を記録
         printf '- ninja: %s\n  cmd: %s\n  ctx_pct: %s\n  timestamp: %s\n  renudge: scheduled\n' \
@@ -10327,6 +10340,8 @@ except Exception:
             deploy_task_send_direct_renudge "$_renudge_name"
         ) &
         log "${NINJA_NAME}: re-nudge scheduled (pid=$!)"
+    elif [ "$(cli_type "$NINJA_NAME")" = "codex" ]; then
+        log "${NINJA_NAME}: delayed re-nudge not scheduled (delivery evidence already present)"
     fi
 }
 
