@@ -82,6 +82,38 @@ PY
     [ "$(wc -l < "$TEST_TMPDIR/create.calls")" -eq 1 ]
 }
 
+@test "current cache rejects a delayed warm-up generation before detaching" {
+    cp "$TEST_TMPDIR/source.db" "$SHOGUN_MEMORY_DB_CACHE_PATH"
+    touch "$SHOGUN_MEMORY_DB_CACHE_PATH"
+    setsid() {
+        printf 'detached\n' >"$TEST_TMPDIR/setsid.called"
+    }
+
+    warm_memory_db_cache_async "$PROJECT_ROOT" "$TEST_TMPDIR/source.db"
+
+    [ ! -e "$TEST_TMPDIR/setsid.called" ]
+}
+
+@test "generation lock rejects a competing launcher before either detaches twice" {
+    setsid() {
+        printf 'detached\n' >>"$TEST_TMPDIR/setsid.calls"
+        printf 'entered\n' >"$TEST_TMPDIR/setsid.entered"
+        while [ ! -e "$TEST_TMPDIR/release.setsid" ]; do
+            sleep 0.02
+        done
+    }
+
+    warm_memory_db_cache_async "$PROJECT_ROOT" "$TEST_TMPDIR/source.db" &
+    local first_launcher_pid=$!
+    wait_for_file "$TEST_TMPDIR/setsid.entered"
+
+    warm_memory_db_cache_async "$PROJECT_ROOT" "$TEST_TMPDIR/source.db"
+
+    [ "$(wc -l < "$TEST_TMPDIR/setsid.calls")" -eq 1 ]
+    touch "$TEST_TMPDIR/release.setsid"
+    wait "$first_launcher_pid"
+}
+
 @test "missing cache read starts single-flight refresh and returns source immediately" {
     create_memory_db_cache() {
         printf 'create\n' >> "$TEST_TMPDIR/create.calls"

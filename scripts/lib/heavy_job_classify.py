@@ -21,7 +21,9 @@ commit messageの説明文)、コマンド位置(segment[0])でなければ一�
     fullrecalculate のいずれかを含む場合(DM-Signal重量ワンショット系)。
   - bash run_tests.sh (basename一致): 常に重量(内部で--jobs 8をかけるため)。
 
-出力: 標準出力に "heavy" または "light" の1行のみ。
+出力: 標準出力に "heavy" / "light" / "malformed" の1行のみ。
+引用符不整合などshellとして解析不能なcommandは "malformed"。重量jobとして
+誤案内せず、呼び出し側が構文修正を要求しつつfail-closedにできるよう区別する。
 """
 
 import os
@@ -112,7 +114,7 @@ _ONESHOT_HEAVY_NAME_RE = re.compile(
 def classify(command):
     segs = _segments(command)
     if segs is None:
-        return "heavy"
+        return "malformed"
     for seg in segs:
         if not seg:
             continue

@@ -940,9 +940,16 @@ if [[ -n "${command:-}" && "$command" != *'heavy_job_admission.sh'* && "$command
     if [[ "$command" == *'bats'* || "$command" == *'pytest'* || "$command" =~ python3?([[:space:]]|$) ]]; then
         # shellcheck disable=SC1091
         source "$SCRIPT_DIR/scripts/lib/heavy_job_classify.sh"
-        if [[ "$(heavy_job_classify "$command")" == "heavy" ]]; then
-            emit_deny "BLOCK(heavy-job-admission): 重量テストジョブ(bats複数ファイル/全量、pytest全量、golden regression等)はhost-wide排他制御が必要。'bash scripts/heavy_job_admission.sh -- <元のコマンド全体>' の形で実行せよ。単一の.batsファイル1つや単一の::テスト関数指定は軽量とみなされ対象外。"
-        fi
+        _heavy_job_class="$(heavy_job_classify "$command")"
+        case "$_heavy_job_class" in
+            heavy)
+                emit_deny "BLOCK(heavy-job-admission): 重量テストジョブ(bats複数ファイル/全量、pytest全量、golden regression等)はhost-wide排他制御が必要。'bash scripts/heavy_job_admission.sh -- <元のコマンド全体>' の形で実行せよ。単一の.batsファイル1つや単一の::テスト関数指定は軽量とみなされ対象外。"
+                ;;
+            malformed)
+                emit_deny "BLOCK(shell-syntax): commandの引用符またはshell構文を解析できない。heavy-job wrapperでは解消しないため、まずquote/escapeを修正せよ。"
+                ;;
+        esac
+        unset _heavy_job_class
     fi
 fi
 

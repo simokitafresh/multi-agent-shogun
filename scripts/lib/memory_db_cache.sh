@@ -49,6 +49,15 @@ live_insert.create_memory_db_ext4_cache(db_path)
 PY
 }
 
+memory_db_cache_is_current() {
+    local source_path="$1" cache_path="$2"
+    [ -s "$cache_path" ] || return 1
+    [ "$source_path" -nt "$cache_path" ] && return 1
+    [ -f "${source_path}-wal" ] && [ "${source_path}-wal" -nt "$cache_path" ] && return 1
+    [ -f "${source_path}-shm" ] && [ "${source_path}-shm" -nt "$cache_path" ] && return 1
+    return 0
+}
+
 refresh_memory_db_cache_async() {
     local repo_root="$1"
     local source_path="$2"
@@ -65,23 +74,28 @@ refresh_memory_db_cache_async() {
     # immediately and the actual refresh no longer keeps the substitution
     # alive.  All stdio is detached before forking so no command-substitution
     # pipe remains open in the daemonized child.
-    if command -v setsid >/dev/null 2>&1; then
-        # shellcheck disable=SC2016 # positional args are expanded by bash -c.
-        setsid -f bash -c '
-            flock -n 8 2>/dev/null || exit 0
-            if command -v timeout >/dev/null 2>&1; then
-                timeout -k 1 "$3" bash -c '\''create_memory_db_cache "$1" "$2"'\'' _ "$1" "$2" || true
-            else
-                create_memory_db_cache "$1" "$2" || true
-            fi
-        ' _ "$repo_root" "$source_path" "$timeout_sec" \
-            8>"${cache_path}.refresh.lock" >/dev/null 2>&1 </dev/null
-    else
-        (
-            flock -n 8 2>/dev/null || exit 0
-            create_memory_db_cache "$repo_root" "$source_path" >/dev/null 2>&1 || true
-        ) 8>"${cache_path}.refresh.lock" >/dev/null 2>&1 </dev/null &
-    fi
+    # Acquire the generation lock before detaching.  Acquiring it only inside
+    # the setsid child allowed a delayed second launcher to run after the first
+    # generation had completed: mutual exclusion held, but single-flight did
+    # not.  Re-check freshness under the lock so such a late contender is
+    # discarded instead of copying the same source generation again.
+    (
+        flock -n 8 2>/dev/null || exit 0
+        memory_db_cache_is_current "$source_path" "$cache_path" && exit 0
+        if command -v setsid >/dev/null 2>&1; then
+            # shellcheck disable=SC2016 # positional args are expanded by bash -c.
+            setsid -f bash -c '
+                if command -v timeout >/dev/null 2>&1; then
+                    timeout -k 1 "$3" bash -c '\''create_memory_db_cache "$1" "$2"'\'' _ "$1" "$2" || true
+                else
+                    create_memory_db_cache "$1" "$2" || true
+                fi
+            ' _ "$repo_root" "$source_path" "$timeout_sec" \
+                >/dev/null 2>&1 </dev/null
+        else
+            create_memory_db_cache "$repo_root" "$source_path" >/dev/null 2>&1 &
+        fi
+    ) 8>"${cache_path}.refresh.lock" >/dev/null 2>&1 </dev/null
 }
 
 # warm_memory_db_cache_async <repo_root> <source_path>

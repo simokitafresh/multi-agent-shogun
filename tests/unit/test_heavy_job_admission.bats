@@ -28,6 +28,13 @@ _run_hook() {
     _hook_payload "$1" | TMUX_AGENT_ID=shogun bash "$HOOK"
 }
 
+_malformed_readonly_rg_command() {
+    cat <<'CMD'
+printf 'wait_n_occurrences\n'; rg -n 'wait -n' scripts tests .githooks --glob '*.sh' --glob '*.bats' || true
+printf 'global_tmp_locks\n'; rg -n '(LOCK_FILE|lock_file)=?["'"']?/tmp/|flock[^\n]*/tmp/' scripts .githooks --glob '*.sh' | head -200
+CMD
+}
+
 # --- 分類器(SSOT) — argv位置ベース、部分文字列誤検出禁止 ---
 
 @test "分類器: 単一.batsファイル1つは軽量" {
@@ -73,6 +80,12 @@ EOF
 )\""
     result="$(heavy_job_classify "$cmd")"
     [ "$result" = "light" ]
+}
+
+@test "分類器: quote不整合のread-only rgは重量jobでなくmalformed" {
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    result="$(heavy_job_classify "$(_malformed_readonly_rg_command)")"
+    [ "$result" = "malformed" ]
 }
 
 @test "分類器: 通常のgit/report操作は軽量(偽陽性なし)" {
@@ -368,6 +381,13 @@ print('ok')
 @test "hook: unit配下のbatsグロブを引数にした読み取り専用検索は偽陽性0" {
     run _run_hook "grep -l 'heavy_job' tests/unit/*.bats"
     [ "$status" -eq 0 ]
+}
+
+@test "hook: quote不整合のread-only rgはwrapperを誤案内せず構文BLOCK" {
+    run _run_hook "$(_malformed_readonly_rg_command)"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(shell-syntax)"* ]]
+    [[ "$output" != *"BLOCK(heavy-job-admission)"* ]]
 }
 
 @test "hook: cd + 絶対パスでのDM-Signal golden regression直接実行もBLOCKし、wrapper経由はPASSする" {
