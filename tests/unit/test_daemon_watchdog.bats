@@ -62,3 +62,31 @@ check_daemon_inventory
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
+
+@test "tmux health is silent when list-sessions succeeds" {
+    run bash -lc '
+export DAEMON_WATCHDOG_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/daemon_watchdog.sh"
+tmux() { return 0; }
+log() { printf "unexpected-log"; }
+notify() { printf "unexpected-notify"; }
+check_tmux_health
+'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "tmux health logs notifies and emits ALERT when list-sessions fails" {
+    run bash -lc '
+export DAEMON_WATCHDOG_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/daemon_watchdog.sh"
+tmux() { return 1; }
+log() { printf "LOG:%s\n" "$*"; }
+notify() { printf "NOTIFY:%s\n" "$*"; }
+check_tmux_health
+'
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"LOG:TMUX-HEALTH-ALERT"* ]]
+    [[ "$output" == *"NOTIFY:【watchdog/CRITICAL】"* ]]
+    [[ "$output" == *"TMUX-HEALTH-ALERT:"* ]]
+}

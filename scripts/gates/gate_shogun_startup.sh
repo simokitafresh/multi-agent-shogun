@@ -6,6 +6,48 @@
 
 set -e
 
+check_daemon_watchdog_heartbeat() {
+    local root="$1"
+    local heartbeat_file="${DAEMON_WATCHDOG_HEARTBEAT_FILE:-/tmp/daemon_watchdog_heartbeat}"
+    local max_age="${DAEMON_WATCHDOG_HEARTBEAT_MAX_AGE_SEC:-300}"
+    local now="${DAEMON_WATCHDOG_HEARTBEAT_NOW:-$(date +%s)}"
+    local fire_log="${DAEMON_WATCHDOG_GATE_FIRE_LOG:-$root/logs/gate_fire_log.yaml}"
+    local result="PASS" reason="fresh"
+    local epoch="" age=""
+
+    if [ ! -f "$heartbeat_file" ]; then
+        result="WARN"
+        reason="heartbeat_missing"
+    else
+        epoch="$(head -n 1 "$heartbeat_file" 2>/dev/null || true)"
+        if ! [[ "$epoch" =~ ^[0-9]+$ ]]; then
+            result="WARN"
+            reason="heartbeat_invalid"
+        else
+            age=$(( now - epoch ))
+            (( age < 0 )) && age=0
+            if (( age >= max_age )); then
+                result="WARN"
+                reason="heartbeat_stale_age_${age}s"
+            fi
+        fi
+    fi
+
+    mkdir -p "$(dirname "$fire_log")"
+    (
+        flock -x 200
+        printf -- '- ts: "%s", file: "%s", gate: "daemon_watchdog_heartbeat", result: %s, checks: "max_age=%ss", reasons: "%s"\n' \
+            "$(date -Iseconds)" "$heartbeat_file" "$result" "$max_age" "$reason" >> "$fire_log"
+    ) 200>"${fire_log}.lock"
+
+    if [ "$result" = "PASS" ]; then
+        echo "  OK: daemon_watchdog heartbeat fresh (age=${age}s < ${max_age}s)"
+        return 0
+    fi
+    echo "  WARN: daemon_watchdog ${reason} (threshold=${max_age}s)"
+    return 1
+}
+
 run_gate_shogun_startup() {
 local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-}"
 if [ -z "$SCRIPT_DIR" ]; then
@@ -38,6 +80,11 @@ fi
 
 overall="OK"
 alerts=()
+echo "■ daemon_watchdog heartbeat鮮度"
+if ! check_daemon_watchdog_heartbeat "$SCRIPT_DIR"; then
+    overall="WARN"
+    alerts+=("daemon_watchdog heartbeat停止: cron/crontabを確認せよ")
+fi
 # cmd_3895: the timing ledger is useful only while its writer is alive.  This
 # read-only startup check detects a stopped writer without launching tests.
 echo "■ テスト時間台帳鮮度"

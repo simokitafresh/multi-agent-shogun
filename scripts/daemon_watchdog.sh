@@ -64,6 +64,17 @@ notify() {
     bash "$SCRIPT_DIR/scripts/ntfy.sh" "$1" >/dev/null 2>&1 || true
 }
 
+check_tmux_health() {
+    if tmux list-sessions >/dev/null 2>&1; then
+        return 0
+    fi
+    local message="TMUX-HEALTH-ALERT: tmux list-sessions failed; all agent watchers may be unavailable"
+    log "$message"
+    notify "【watchdog/CRITICAL】tmux server異常。全watcher/monitor停止の可能性あり"
+    printf '%s\n' "$message"
+    return 1
+}
+
 RESTARTED=0
 RESTART_STATE_DIR="${RESTART_STATE_DIR:-/tmp/daemon_watchdog_state}"
 RESTART_THROTTLE_WINDOW=600  # 10 minutes
@@ -434,6 +445,7 @@ check_ninja_monitor
 check_ntfy_listener
 check_inbox_watchers
 check_daemon_inventory
+check_tmux_health || true
 
 # heartbeat更新: 外部から「watchdog自体が動いているか」を検証可能にする
 date +%s > "$HEARTBEAT_FILE"
