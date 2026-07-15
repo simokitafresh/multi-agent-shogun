@@ -424,3 +424,13 @@ YAML
     [ "$output" = "PASS" ]
     [ "$(sha256sum "$TEST_PROJECT/.karo_worktrees/feature/queue/tasks/sasuke.yaml")" = "$before" ]
 }
+
+@test "karo-direct hand-written YAML template includes deploy detector quality contract" {
+    skill="$BATS_TEST_DIRNAME/../../skills/karo-direct/SKILL.md"
+
+    grep -q 'quality_gate:' "$skill"
+    grep -q 'action_conversion:' "$skill"
+    grep -q 'fp_measurement:' "$skill"
+    grep -q 'acceptance_criteria.*BLOCK\|gate/hook.*BLOCK' "$skill"
+    grep -q 'quality_gate.action_conversion.*代替不可' "$skill"
+}

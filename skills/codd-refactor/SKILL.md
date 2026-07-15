@@ -1,6 +1,7 @@
 ---
 name: codd-refactor
-<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T23:24:48+09:00 -->
+<!-- GA-263後検分: run_tests.sh 8a80ad7fc/4850af9a9をgit showと83回帰で確認。source時のrepo rootはBASH_SOURCE基準、affected/fullはfile単位aggregate budget=8・file内部jobs=1へ統一。mode引数・exit契約・14列台帳契約は不変。 -->
 <!-- cmd_karo_hotfix_skill_refs_202607151824検分: run_tests.sh 275d22bafをgit showで確認。LPT cohort空時にも対象fileをscheduleするCI内部配分修正で、run_tests.shの引数・exit・実行対象副作用契約は不変。 -->
 <!-- 2026-07-15将軍検分: run_tests.sh b0c6112a9(INNER_JOBS 4→1+HEAVY_INNER_JOBS fallback=CI concurrency fix)。内部並列度調整のみ、呼び出し契約不変。 -->
 description: |
@@ -161,10 +162,10 @@ v2.18.0+で`codd implement run --language`オプションをローカル確認�
 **A. yaml_field_set_batch**: 1 flock + 1 awk pass で複数フィールド同時更新
 **B. field_get_multi**: 1 awk pass で複数フィールド一括読取
 **C. func cache**: setup_file()で全関数キャッシュ。source 137ms→数ms
-**D. bats --jobs 8**: テスト並列化。CI+run_tests.shに埋込み
+**D. file単位aggregate budget 8 / file内部jobs 1**: 共有fixtureを直列化しつつ、`run_tests.sh`がfile間を最大8並列で配分
 
 <!-- 2026-07-15 cmd_karo_hotfix_skill_refs_ops検分: run_tests.sh dab19eacfをgit showで確認。共有fixture 3 suiteをfile_inner_jobs=1かつexclusive weightへ固定する内部scheduler修正。引数・exit status・通常suite実行契約は不変。 -->
-<!-- script_refs_checked_at: 2026-07-15T21:28:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T23:24:48+09:00 -->
 
 **鉄則: R1実装→テスト全PASS確認→R2実装→テスト全PASS確認。一気にやるな。**
 

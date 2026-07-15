@@ -103,9 +103,16 @@ task:
   acceptance_criteria:
     AC1:
       description: "<AC内容>"
+    AC2:
+      description: "gate/hookの未解消条件が1件でもあればPASSにせずBLOCKとして報告する"
+  quality_gate:
+    action_conversion: "検出した未解消条件はBLOCKへ変換する"
+    fp_measurement: "gate_fire_logまたはdetector_fp_rateでfalse_positive件数を計測する"
   status: assigned
 YAML
 ```
+
+`purpose` / ACにgate・hookの追加/実装/作成を含むと、`deploy_task.sh` は detector quality contractを配備前にfail-closedで検査する。action conversionの判定対象は`command`と`acceptance_criteria`であり、`quality_gate.action_conversion`だけでは代替不可。上記AC2のようにBLOCK/停止/強制をACへ明記し、`quality_gate.fp_measurement`に`false_positive` / `偽陽性` / `detector_fp_rate` / `gate_fire_log`の計測接続を記入する。
 
 **★projectは作業実体で選べ（current_projectに流すな）**: CI修正・gate/hook/context索引・スクリプト修正等のインフラ系作業は、対象ファイルがPJ名を含んでも `project: infra` を指定する。
 判定基準=「変更/調査するのは何のコードか」（例: context/dm-signal-research.mdの鮮度回復=contextインフラ作業→infra）。
@@ -144,7 +151,10 @@ karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）�
 purpose: "CI RED修正 — <テスト名/エラー内容>"
 acceptance_criteria:
   AC1: {description: "該当テストがPASS"}
-  AC2: {description: "既存テストにリグレッションなし"}
+  AC2: {description: "既存テストにリグレッションなし。gate/hook未解消ならBLOCK"}
+quality_gate:
+  action_conversion: "未解消条件はBLOCK"
+  fp_measurement: "gate_fire_logでfalse_positive件数を計測"
 ```
 
 ### recon2
@@ -152,7 +162,10 @@ acceptance_criteria:
 purpose: "偵察補完 — <1人目の偵察結果を受けた追加調査>"
 acceptance_criteria:
   AC1: {description: "1人目の偵察結果と突合し差異を明記"}
-  AC2: {description: "修正対象ファイル・行番号・波及先を明記"}
+  AC2: {description: "修正対象ファイル・行番号・波及先を明記。gate/hook未解消ならBLOCK"}
+quality_gate:
+  action_conversion: "未解消条件はBLOCK"
+  fp_measurement: "detector_fp_rateで偽陽性率を計測"
 ```
 
 ### training（必ず deploy_task.sh --direct 系経路を使え）

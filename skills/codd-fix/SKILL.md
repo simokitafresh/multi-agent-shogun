@@ -1,5 +1,6 @@
 ---
-<!-- script_refs_checked_at: 2026-07-15T21:27:50+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T23:24:48+09:00 -->
+<!-- GA-263後検分: cmd_complete_gate.sh fed0fd5e5をgit showで確認。SG7 project/spec/scopeの直接証拠結合、report files_modified YAML-safe抽出、report commit anchor、tracked docs wiringを追加した内部fail-closed強化。`bash scripts/cmd_complete_gate.sh <cmd_id>`単一引数・CLEAR/BLOCK exit契約は不変。 -->
 <!-- cmd_karo_hotfix_skill_refs_core_202607152126検分: cmd_complete_gate.sh 22609351d/3cf5486fd/d85d3cb2bをgit showで確認。report summaryのLevel5事前供給、archive command coverage fallback、exact review manifest再検証はいずれも完了gate内部の生成・判定強化。`bash scripts/cmd_complete_gate.sh <cmd_id>`の単一引数、CLEAR/BLOCK exit、codd-fix本文の呼出し順序は不変。 -->
 name: codd-fix
 argument-hint: "[phenomenon]"
