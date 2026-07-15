@@ -1435,7 +1435,7 @@ FROM="${4:-unknown}"
 # not match this guard.
 if [ "$TYPE" = "report_review_result" ] && [ "$FROM" = "gunshi" ]; then
     if printf '%s\n' "$CONTENT" | grep -qiE '(^|[[:space:];,。])verdict[[:space:]]*[:=][[:space:]]*LGTM([[:space:];,。]|$)' \
-        && printf '%s\n' "$CONTENT" | grep -qiE '(^|[[:space:];,。])gate_prediction[[:space:]]*[:=][[:space:]]*BLOCK([[:space:];,。]|$)'; then
+        && printf '%s\n' "$CONTENT" | grep -qiE '(^|[[:space:];,。])gate_prediction[[:space:]]*[:=][[:space:]]*BLOCK([[:space:];,。、/(\[（]|$)'; then
         echo "BLOCK: contradictory report_review_result: verdict LGTM with gate_prediction BLOCK" >&2
         exit 2
     fi

@@ -1311,6 +1311,50 @@ EOF
     [ ! -e "$inbox" ]
 }
 
+@test "report_review_result: LGTM plus BLOCK reason suffix variations are rejected before persistence" {
+    setup_basic_test_env
+    local inbox="$TEST_TMPDIR/queue/inbox/karo.yaml"
+    local prediction
+    local -a predictions=(
+        'BLOCK(reason)'
+        'BLOCK[reason]'
+        'BLOCK/reason'
+        'BLOCK、理由'
+        'BLOCK reason'
+        'BLOCK'
+    )
+
+    for prediction in "${predictions[@]}"; do
+        rm -f "$inbox"
+        run _run_inbox_write karo "verdict: LGTM; gate_prediction: $prediction" report_review_result gunshi
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"contradictory report_review_result"* ]]
+        [ ! -e "$inbox" ]
+    done
+}
+
+@test "report_review_result: contradiction guard preserves non-BLOCK values and unrelated BLOCK text" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/scripts/lib"
+    ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
+    ln -sf "$PROJECT_ROOT/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_write.sh"
+    printf 'parent_cmd: cmd_guard\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
+    REVIEW_APPROVAL_ROOT="$TEST_TMPDIR" REVIEW_APPROVAL_NO_TRIGGER=1 bash "$PROJECT_ROOT/scripts/review_approval.sh" cmd_guard gunshi LGTM "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
+    local content
+    local -a contents=(
+        'cmd_guard verdict: LGTM; gate_prediction: BLOCKED; report: queue/reports/ninja_report_cmd_guard.yaml'
+        'cmd_guard verdict: LGTM; gate_prediction: BLOCKER; report: queue/reports/ninja_report_cmd_guard.yaml'
+        'verdict: FAIL; gate_prediction: BLOCK(reason)'
+        'cmd_guard verdict: LGTM; gate_prediction: CLEAR; note: BLOCK appears only in free explanation; report: queue/reports/ninja_report_cmd_guard.yaml'
+    )
+
+    for content in "${contents[@]}"; do
+        run _run_inbox_write karo "$content" report_review_result gunshi
+        [ "$status" -eq 0 ]
+        [[ "$output" != *"contradictory report_review_result"* ]]
+    done
+}
+
 @test "report_revision: terminal task and completed report are blocked before persistence with formal RC command" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
