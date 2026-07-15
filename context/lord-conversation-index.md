@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-16T00:25:02+09:00 -->
+<!-- generated_at: 2026-07-16T01:10:22+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-16T00:25:02+09:00 | terminal | response | AC5個。context freshness GA-264修正。消火禁止(AC3)。 verdict: APPROVE。
-- 2026-07-16T00:21:50+09:00 | ntfy | outbound | 【改善トリガー】context_freshness ALERT (GA-264)
-- 2026-07-16T00:07:11+09:00 | ntfy | outbound | 【monitor】将軍CTX:52%。/compactをご検討ください
-- 2026-07-16T00:05:48+09:00 | ntfy | outbound | test outside tmux warning
-- 2026-07-16T00:05:47+09:00 | ntfy | outbound | test permission warning
-- 2026-07-15T23:36:53+09:00 | ntfy | outbound | test outside tmux warning
-- 2026-07-15T23:36:51+09:00 | ntfy | outbound | test permission warning
-- 2026-07-15T23:36:35+09:00 | ntfy | outbound | 【monitor】将軍CTX:52%。/compactをご検討ください
-- 2026-07-15T23:35:15+09:00 | ntfy | outbound | 【watchdog】ninja_monitor.shを自動再起動しました
-- 2026-07-15T23:34:24+09:00 | ntfy | outbound | 【daemon_supervisor】ninja_monitor.shが2重起動。古いプロセスを停止します
+- 2026-07-16T01:10:21+09:00 | terminal | response | APPROVE完了。レビュー依頼待機。 [meta] stop_reason=end_turn
+- 2026-07-16T01:07:53+09:00 | ntfy | outbound | 【monitor】将軍CTX:53%。/compactをご検討ください
+- 2026-07-16T01:06:56+09:00 | ntfy | outbound | 【改善トリガー】hook_failure ALERT (GA-266)
+- 2026-07-16T01:05:17+09:00 | terminal | response | 全件処理完了。レビュー依頼待機。 [meta] stop_reason=end_turn
+- 2026-07-16T01:04:59+09:00 | terminal | inbound | <task-notification> <task-id>bzahq0dba</task-id> <tool-use-id>toolu_01RtWQi6FCb8ijo4dM8exJcQ</tool-use-id> <output-file…
+- 2026-07-16T01:01:54+09:00 | terminal | response | 全件処理完了。レビュー依頼待機。 [meta] stop_reason=end_turn
+- 2026-07-16T01:00:45+09:00 | ntfy | outbound | test permission warning
+- 2026-07-16T01:00:45+09:00 | ntfy | outbound | test outside tmux warning
+- 2026-07-16T01:00:20+09:00 | ntfy | outbound | 【daemon_supervisor】ninja_monitor.shが2重起動。古いプロセスを停止します
+- 2026-07-16T00:55:56+09:00 | ntfy | outbound | 【daemon_supervisor】ninja_monitor.shが3重起動。古いプロセスを停止します
 
 ## 未解決確認事項
 - 【CLI再起動成功】hayate: CLIバナー/プロンプト確認済み
