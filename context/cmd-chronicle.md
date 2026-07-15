@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-15 -->
+<!-- last_updated: 2026-07-16 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,14 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3383 | 殿指示(2026-06-15)。変わり身BBの名前TrendReversalFilterは本質(トレンドフォロー+ミーンリバージョンのペア戦略)と不一致。FE+BE両方でBB名を本質と一致させるために、影響範囲と依存関係を徹底調査する偵察cmd | dm-signal | 06-15 | TrendReversalFilterの全参照箇所を調査完了 |
-| cmd_3384 | 殿裁定(2026-06-15)。既存四つ目(MultiViewMomentumFilter)はunion(set)で4視点の投票数情報が消失する設計バグ。新BBを実装し、4視点の投票数に比例したウェイトをcontext.final_weightsに書込むことでengine既存伝搬経路(L179)を活用する | dm-signal | 06-15 | WeightedMultiViewMomentumFilte |
-| cmd_3385 | 殿指示(2026-06-15)。新四つ目(WeightedMultiView)BBのGSスクリプトを作成し、1パラメータ組合せで小規模実行してメモリ・時間・パリティを確認する。全探索は道具が動作確認できてから。構成PFは既存7忍法21体のみ(OOM防止。殿指示) | dm-signal | 06-15 | — |
-| cmd_3387 | 殿指示(2026-06-15 道具磨きが先+止まらずに行動)。cmd_3386 smoke結果で日次vs月次の解像度差が28/106不一致を生んだ。殿定義の突合基準(ticker種類・weight・monthly return)に合わせて検証ロジックを月次解像度に修正し、修正後の道具で全探索(6パラメータ組×7525パターン=約2分)を実行する | dm-signal | 06-15 | run_077_weighted_yotsume.pyをmo |
-| cmd_3388 | 殿指示(2026-06-15 取れるまで磨こう)。cmd_3387で月次突合に修正したが57/141不一致が残った。GS月次再構成と本番monthly_returnsの計算パス差異を特定し、GS側を本番と同一の計算パスに修正して不一致0件を達成する | dm-signal | 06-15 | cmd_3387で残った57/141月次不一致の根因はwei |
-| cmd_3389 | 殿指示(2026-06-15 やろう)。cmd_3388 GS全探索結果(45150パターン・0不一致達成)から選出した3モードチャンピオンを本番DBに登録する。BB=WeightedMultiViewMomentumFilter。checklist-shin-v2-registrationに準拠 | dm-signal | 06-15 | 奥義-GS-新四つ目3体を本番DBへhide-first登録 |
-| cmd_3390 | pf_L3加速D PF本番登録(理論パラメータ num=6M den=12M top_n=2) | — | 06-15 | — |
-| cmd_3391 | 殿指示(2026-06-15 作ってくれ)。GS不要の理論設計パラメータで加速D(method=diff)pf_L3 PFを本番登録する。入力=全奥義(pf_L2)群。NHF+AvgUWP重視の構造(加速Dは安定モメンタム維持型を自動選出) | dm-signal | 06-15 | pf_L3-加速D(MomentumAcceleration |
 | cmd_3392 | 変わり身pf_L3近傍5パターン登録+α6指標比較(period 1-4M × select_n 1-3) | — | 06-16 | — |
 | cmd_3393 | 殿指示(2026-06-15 やろう)。NHF最高のNew FoF_4M_copy_copy_copy(変わり身 period=2M select_n=2 NHF=82%)の近傍5パターンを本番登録し、α6指標(特にNHF・AvgUWP)を比較して最適パラメータを特定する | dm-signal | 06-16 | New FoF_4M_copy_copy_copy近傍5パタ |
 | cmd_3395 | startup gate教訓健全度ALERTが3セッション連続BLOCK(2026-06-14〜16)。useful_rate=21.3%(閾値30%)。軍師idle分析(docs/research/gunshi_idle_useful_rate_measurement_fix_20260615.md)でNEVER_USEFUL教訓Top7の共通根因=tag精度不足を特定済み。GS・gate・infra固有教訓がPF登録等の無関係cmdに無差別注入されている。教訓タグを内容に合致する具体タグに変更し、injected>=5かつuseful=0の教訓をwithheldに降格することでS/N比を改善する | infra | 06-16 | — |
