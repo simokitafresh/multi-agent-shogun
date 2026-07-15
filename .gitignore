@@ -274,3 +274,4 @@ tests/unit/_tmp_*.bats
 !docs/requirements/*.md
 !codd/
 !codd/**
+.*_worktrees/
