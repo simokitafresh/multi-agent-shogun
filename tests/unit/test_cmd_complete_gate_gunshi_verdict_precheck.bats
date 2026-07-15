@@ -125,6 +125,39 @@ EOF
     [[ "${lines[2]}" == *"FAIL"* ]]
 }
 
+@test "AC2: earlier FAIL is resolved by later LGTM for the same cmd" {
+    cat > "$REVIEW_LOG" <<'EOF'
+- cmd_id: cmd_306
+  review_type: report
+  verdict: FAIL
+  findings_summary: "status未完了"
+- cmd_id: cmd_306
+  review_type: report
+  verdict: LGTM
+  findings_summary: "status修正済み"
+EOF
+    run python3 "$GV_PRECHECK_PY" cmd_306 "$REVIEW_LOG" "$ARCHIVE_DIR"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "OK" ]]
+}
+
+@test "AC2: FAIL after latest LGTM remains actionable" {
+    cat > "$REVIEW_LOG" <<'EOF'
+- cmd_id: cmd_307
+  review_type: report
+  verdict: LGTM
+  findings_summary: "initial OK"
+- cmd_id: cmd_307
+  review_type: report
+  verdict: FAIL
+  findings_summary: "再発"
+EOF
+    run python3 "$GV_PRECHECK_PY" cmd_307 "$REVIEW_LOG" "$ARCHIVE_DIR"
+    [ "$status" -eq 0 ]
+    [[ "${lines[0]}" == "WARN" ]]
+    [[ "${lines[1]}" == *"再発"* ]]
+}
+
 # ─── AC2: self_study/consultationは対象外 ───
 
 @test "AC2: self_study verdictは対象外" {

@@ -8065,13 +8065,15 @@ review_log = sys.argv[2]
 archive_dir = sys.argv[3]
 
 sources = []
-if os.path.exists(review_log):
-    sources.append(review_log)
 archives = sorted(glob.glob(os.path.join(archive_dir, "gunshi_review_log*.yaml")))
 sources.extend(archives[-2:])
+if os.path.exists(review_log):
+    sources.append(review_log)
 
-# cmd_idに一致する全エントリからverdict + findings_summaryを収集
-fail_verdicts = []
+# Archive is older than the live log and entries are append-ordered within each
+# file.  A later LGTM/APPROVE resolves earlier FAIL/REQUEST_CHANGES; only a
+# failure occurring after the latest success remains actionable.
+events = []
 for src in sources:
     try:
         with open(src, encoding='utf-8') as f:
@@ -8093,11 +8095,19 @@ for src in sources:
         if not vm:
             continue
         v = vm.group(1).strip('"\'')
-        if v in ('FAIL', 'REQUEST_CHANGES'):
-            fs_m = re.search(r'findings_summary:\s*"([^"]*)"', entry)
-            fs = fs_m.group(1) if fs_m else '(findings_summary not found)'
-            rt_label = rt if rt_m else 'unknown'
-            fail_verdicts.append((rt_label, v, fs))
+        fs_m = re.search(r'findings_summary:\s*"([^"]*)"', entry)
+        fs = fs_m.group(1) if fs_m else '(findings_summary not found)'
+        rt_label = rt if rt_m else 'unknown'
+        events.append((rt_label, v, fs))
+
+last_success = max(
+    (idx for idx, (_rt, verdict, _fs) in enumerate(events) if verdict in ('LGTM', 'APPROVE')),
+    default=-1,
+)
+fail_verdicts = [
+    event for idx, event in enumerate(events)
+    if idx > last_success and event[1] in ('FAIL', 'REQUEST_CHANGES')
+]
 
 if fail_verdicts:
     print("WARN")
