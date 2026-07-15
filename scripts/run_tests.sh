@@ -424,7 +424,8 @@ _run_tests_main() {
                 exit 0
             fi
             printf 'Selected %s affected test file(s).\n' "${#selected[@]}"
-            bats "${selected[@]}" --jobs "$JOBS" --timing
+            RUN_TESTS_MODE=affected
+            run_bats_files_parallel "${selected[@]}"
             ;;
         *)
             echo "Usage: bash scripts/run_tests.sh [all|unit|affected|file <path>]" >&2

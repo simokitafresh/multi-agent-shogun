@@ -87,6 +87,31 @@ SH
   [ "$status" -eq 0 ]
 }
 
+@test "affected mode uses the same file-isolated scheduler instead of direct bats jobs" {
+  printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
+  printf '@test "b" { true; }\n' >"$TMPROOT/tests/unit/b.bats"
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$REPO_ROOT/tests/unit/a.bats" "$REPO_ROOT/tests/unit/b.bats"
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$BATS_ARGS_LOG"
+printf '1..1\nok 1 sample\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$TMPROOT/bats.args" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" affected changed.file
+
+  [ "$status" -eq 0 ]
+  [ "$(wc -l <"$TMPROOT/bats.args")" -eq 2 ]
+  [ "$(grep -c -- '--jobs 1' "$TMPROOT/bats.args")" -eq 2 ]
+  ! grep -q -- '--jobs 8' "$TMPROOT/bats.args"
+}
+
 @test "matching timing cohort orders measured files by LPT" {
   printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
   printf '@test "b" { true; }\n' >"$TMPROOT/tests/unit/b.bats"

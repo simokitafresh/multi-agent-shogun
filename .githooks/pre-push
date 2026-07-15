@@ -5,7 +5,14 @@
 # Non-zero exitで logs/hook_failures.yaml に自動記録。
 # 記録部分は || true で防御（記録エラーでhookの動作を阻害しない）。
 
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+_HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ "$(basename "$_HOOK_DIR")" = ".githooks" ]; then
+    # Tracked source invoked directly (tests/manual verification).
+    REPO_ROOT="$(cd "$_HOOK_DIR/.." && pwd)"
+else
+    # Installed copy under .git/hooks.
+    REPO_ROOT="$(cd "$_HOOK_DIR/../.." && pwd)"
+fi
 _STDERR_FILE="/tmp/_hook_stderr_prepush_$$"
 _HOOK_ARTIFACT_DIR="$REPO_ROOT/logs/hook_artifacts"
 _HOOK_ARTIFACT_ID="$(date +%Y%m%dT%H%M%S)_pre-push_$$"
@@ -135,9 +142,10 @@ if [ ${#_changed_files[@]} -gt 0 ]; then
 
     if [ -n "$_selected_tests" ]; then
         echo "[pre-push] Running selected tests (timeout 60s)..." >&2
-        # shellcheck disable=SC2086
         set +e
-        timeout 60 bats $_selected_tests --jobs 8 --timing > "$_BATS_OUTPUT_FILE" 2>&1
+        timeout 60 env BATS_CACHE=0 BATS_INNER_JOBS=1 \
+            bash "$REPO_ROOT/scripts/run_tests.sh" affected "${_changed_files[@]}" \
+            > "$_BATS_OUTPUT_FILE" 2>&1
         _rc=$?
         set -e
         cat "$_BATS_OUTPUT_FILE" >&2
@@ -153,7 +161,8 @@ fi
 echo "Running unit tests before push..."
 echo "Running unit tests before push..." >&2
 set +e
-timeout 300 bats tests/unit/ --jobs 4 --timing > "$_BATS_OUTPUT_FILE" 2>&1
+timeout 900 env BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$REPO_ROOT/scripts/run_tests.sh" unit > "$_BATS_OUTPUT_FILE" 2>&1
 _unit_rc=$?
 set -e
 cat "$_BATS_OUTPUT_FILE" >&2
