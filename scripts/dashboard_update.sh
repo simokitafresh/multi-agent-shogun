@@ -665,7 +665,10 @@ PYEOF
     # GP-078: SKIP_AUTO_SECTION=1の場合は省略（cmd_complete_gate.shがL4060で別途実行するため二重呼出防止）
     if [[ "$DRY_RUN" != true ]] && [[ "${SKIP_AUTO_SECTION:-}" != "1" ]]; then
         refresh_snapshot_before_auto_section || echo "WARN: Step 6.5 snapshot refresh failed（AUTO域は既存snapshot/一次task YAMLで継続）" >&2
-        bash "$SCRIPT_DIR/dashboard_auto_section.sh" || echo "WARN: Step 6.5 dashboard_auto_section.sh失敗（AUTO域は既存値を維持）" >&2
+        if ! DASHBOARD_LOCK_HELD=1 bash "$SCRIPT_DIR/dashboard_auto_section.sh"; then
+            echo "ERROR: Step 6.5 dashboard_auto_section.sh failed" >&2
+            exit 1
+        fi
     fi
 
     # ─── Step 6.7: 要対応セクション安全ネット同期 (pending_decisions → dashboard) ───
@@ -990,11 +993,10 @@ for line in dashboard_text.split('\n'):
             print(f"[WARN] Model mismatch: {ninja_name} — dashboard: {actual_model}, settings.yaml: {expected[ninja_name]}", file=sys.stderr)
 VALIDATE_MODEL_PYEOF
 
-    # (d) 日付チェック
-    # Template v3.0では1行目はテンプレートコメント。実ヘッダは「# 🏯 Dashboard」行
+    # (d) 日付チェック — 現行の機械生成ヘッダを一次対象にする。
     local today
-    today=$(date +%Y-%m-%d)
-    if ! grep -m1 '^# 🏯 Dashboard' "$dashboard" | grep -qF "$today"; then
+    today=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+    if ! grep -m1 '^## 📊 リアルタイム状況' "$dashboard" | grep -qF "$today"; then
         echo "[WARN] Dashboard header date does not match today ($today)" >&2
     fi
 }

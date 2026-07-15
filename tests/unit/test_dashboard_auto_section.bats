@@ -66,6 +66,7 @@ EOF
     [[ "$output" == *"| kagemaru | gpt-test | idle | — | — |"* ]]
     [[ "$output" == *"| 稼働忍者 | 0/2 (—) |"* ]]
     [[ "$output" != *"稼働中 | cmd_999"* ]]
+    [[ "$output" == *"## 📊 リアルタイム状況 ($(TZ=Asia/Tokyo date +%Y-%m-%d) "* ]]
 }
 
 @test "missing DASHBOARD_AUTO_END is repaired before KARO section" {
@@ -126,4 +127,24 @@ EOF
     [ "$(grep -c '^<!-- KARO_SECTION_START -->$' "$TEST_PROJECT/dashboard.md")" -eq 1 ]
     ! grep -Rqs 'No such file or directory' "$BATS_TEST_TMPDIR"/*.log
     [ "$(find "$TEST_PROJECT" -maxdepth 1 -name 'dashboard.md.tmp.*' | wc -l)" -eq 0 ]
+}
+
+@test "all dashboard writers share one lock and archive publishes beside dashboard" {
+    local archive="$PROJECT_ROOT/scripts/archive_completed.sh"
+    local update="$PROJECT_ROOT/scripts/dashboard_update.sh"
+    local auto="$PROJECT_ROOT/scripts/dashboard_auto_section.sh"
+
+    run python3 - "$archive" "$update" "$auto" <<'PY'
+import pathlib, sys
+archive, update, auto = [pathlib.Path(p).read_text() for p in sys.argv[1:]]
+assert '/tmp/mas-dashboard.lock' not in archive
+assert archive.count('200>"${DASHBOARD}.lock"') >= 2
+assert 'mktemp "${DASHBOARD}.archive.XXXXXX"' in archive
+assert 'LOCK_FILE="${DASHBOARD}.lock"' in update
+assert 'DASHBOARD_LOCK_HELD=1 bash "$SCRIPT_DIR/dashboard_auto_section.sh"' in update
+assert 'ERROR: Step 6.5 dashboard_auto_section.sh failed' in update
+assert 'exec 200>"${DASHBOARD}.lock"' in auto
+print('PASS: canonical lock + same-filesystem atomic publish + fail propagation')
+PY
+    [ "$status" -eq 0 ]
 }

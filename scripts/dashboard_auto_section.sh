@@ -65,6 +65,14 @@ GATE_FIRE_LOG="$PROJECT_DIR/logs/gate_fire_log.yaml"
 LESSON_IMPACT_FILE="$PROJECT_DIR/logs/lesson_impact.tsv"
 SKILL_METRICS_SCRIPT="$PROJECT_DIR/scripts/skill_metrics.sh"
 
+# Standalone callers share the same canonical dashboard lock as
+# dashboard_update/archive_completed. dashboard_update already owns it while
+# invoking this script and advertises that fact to avoid self-deadlock.
+if [[ "$DRY_RUN" != true && "${DASHBOARD_LOCK_HELD:-0}" != "1" ]]; then
+    exec 200>"${DASHBOARD}.lock"
+    flock -w 10 200 || { echo "ERROR: dashboard lock timeout: ${DASHBOARD}.lock" >&2; exit 1; }
+fi
+
 # ─── 初回CLEAR率 (gate_fire_logから計算。累積CLEAR率の隣に表示) ───
 compute_first_fire_rate() {
     [[ ! -f "$GATE_FIRE_LOG" ]] && { echo "—"; return; }
@@ -148,6 +156,7 @@ TMP_TITLE_NEEDS="$_TMP_DIR/title_needs"
 trap 'rm -rf "$_TMP_DIR"' EXIT
 
 NOW=$(TZ=Asia/Tokyo date '+%H:%M')
+TODAY=$(TZ=Asia/Tokyo date '+%Y-%m-%d')
 
 # shellcheck source=/dev/null
 source "$(dirname "$SCRIPT_DIR")/scripts/lib/agent_config.sh"
@@ -1008,7 +1017,7 @@ fi
 # ═══════════════════════════════════════════════════════
 {
     echo "$MARKER_START"
-    echo "## 📊 リアルタイム状況 (${NOW} 自動更新)"
+    echo "## 📊 リアルタイム状況 (${TODAY} ${NOW} 自動更新)"
     echo ""
 
     # ─── 忍者配備 ───

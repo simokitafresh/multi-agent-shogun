@@ -1414,60 +1414,34 @@ PY
 # 1.6 dashboard.md KARO_SECTION 最新更新 — 古い更新をアーカイブ（直近3件を残す）
 # ============================================================
 archive_karo_section() {
-    [ -f "$DASHBOARD" ] || return 0
-
     local karo_archive="$ARCHIVE_DIR/dashboard_karo_archive.md"
-    local update_start update_end
-    if ! grep -q '^## 最新更新' "$DASHBOARD" 2>/dev/null; then
-        if [[ -f "$DASHBOARD_TEMPLATE" && ! -s "$DASHBOARD" ]]; then
-            cp "$DASHBOARD_TEMPLATE" "$DASHBOARD"
-            echo "[archive] WARN: DATA_QUALITY dashboard.md missing '## 最新更新'; restored empty dashboard from config/dashboard_template.md"
-        else
-            echo "[archive] WARN: DATA_QUALITY dashboard.md missing '## 最新更新'; karo_section archive skipped"
-        fi
-    fi
-    update_start=$(grep -n '^## 最新更新' "$DASHBOARD" | head -1 | cut -d: -f1 || true)
-
-    if [[ -z "$update_start" ]]; then
-        echo "[archive] WARN: DATA_QUALITY karo_section '## 最新更新' not found after recovery check"
-        return 0
-    fi
-
-    # 次の ## ヘッダ直前までを最新更新セクションとみなす
-    update_end=$(awk -v s="$update_start" '
-        NR > s && /^## / { print NR - 1; found=1; exit }
-        END { if (!found) print NR }
-    ' "$DASHBOARD")
-
-    local -a update_lines
-    mapfile -t update_lines < <(
-        awk -v s="$update_start" -v e="$update_end" '
-            NR > s && NR <= e && /^- \*\*cmd_[^*]*\*\*:/ { print NR }
-        ' "$DASHBOARD"
-    )
-    local total_updates=${#update_lines[@]}
-
-    if [[ $total_updates -le 3 ]]; then
-        echo "[archive] karo_updates: $total_updates entries <= 3, skip"
-        return 0
-    fi
-
-    local -a delete_lines=("${update_lines[@]:3}")
-    local archived_count=${#delete_lines[@]}
-    local delete_csv
-    delete_csv=$(IFS=,; echo "${delete_lines[*]}")
-
-    {
-        echo ""
-        echo "# Archived KARO updates $(date '+%Y-%m-%d %H:%M')"
-        for line_no in "${delete_lines[@]}"; do
-            sed -n "${line_no}p" "$DASHBOARD"
-        done
-    } >> "$karo_archive"
-
-    # dashboard.mdから退避済み行を削除（flock排他）
     (
-        flock -w 10 200 || { echo "[archive] WARN: flock timeout on DASHBOARD"; return 1; }
+        flock -w 10 200 || { echo "[archive] WARN: flock timeout on DASHBOARD"; exit 1; }
+        [ -f "$DASHBOARD" ] || { echo "[archive] ERROR: dashboard missing under lock" >&2; exit 1; }
+        local update_start update_end total_updates archived_count delete_csv tmp_dash
+        local -a update_lines delete_lines
+        update_start=$(grep -n '^## 最新更新' "$DASHBOARD" | head -1 | cut -d: -f1 || true)
+        if [[ -z "$update_start" ]]; then
+            echo "[archive] WARN: DATA_QUALITY karo_section '## 最新更新' not found; archive skipped"
+            exit 0
+        fi
+        update_end=$(awk -v s="$update_start" 'NR > s && /^## / { print NR - 1; found=1; exit } END { if (!found) print NR }' "$DASHBOARD")
+        mapfile -t update_lines < <(awk -v s="$update_start" -v e="$update_end" 'NR > s && NR <= e && /^- \*\*cmd_[^*]*\*\*:/ { print NR }' "$DASHBOARD")
+        total_updates=${#update_lines[@]}
+        if [[ $total_updates -le 3 ]]; then
+            echo "[archive] karo_updates: $total_updates entries <= 3, skip"
+            exit 0
+        fi
+        delete_lines=("${update_lines[@]:3}")
+        archived_count=${#delete_lines[@]}
+        delete_csv=$(IFS=,; echo "${delete_lines[*]}")
+        {
+            echo ""
+            echo "# Archived KARO updates $(date '+%Y-%m-%d %H:%M')"
+            for line_no in "${delete_lines[@]}"; do sed -n "${line_no}p" "$DASHBOARD"; done
+        } >> "$karo_archive"
+        tmp_dash=$(mktemp "${DASHBOARD}.archive.XXXXXX")
+        trap 'rm -f -- "$tmp_dash"' EXIT
         awk -v csv="$delete_csv" '
             BEGIN {
                 n = split(csv, arr, ",")
@@ -1476,55 +1450,46 @@ archive_karo_section() {
                 }
             }
             !(NR in del) { print }
-        ' "$DASHBOARD" > "$TMP/dash_karo_trim.md"
-        mv "$TMP/dash_karo_trim.md" "$DASHBOARD" || { echo "[archive] FATAL: mv failed: karo trim → $DASHBOARD" >&2; exit 1; }
-    ) 200>"/tmp/mas-dashboard.lock"
-
-    echo "[archive] karo_updates: archived=$archived_count kept=3"
+        ' "$DASHBOARD" > "$tmp_dash"
+        mv -f -- "$tmp_dash" "$DASHBOARD" || { echo "[archive] FATAL: atomic publish failed: karo trim" >&2; exit 1; }
+        trap - EXIT
+        echo "[archive] karo_updates: archived=$archived_count kept=3"
+    ) 200>"${DASHBOARD}.lock"
 }
 
 # ============================================================
 # 2. dashboard.md — 古い戦果をアーカイブ（直近N件を残す）
 # ============================================================
 archive_dashboard() {
-    [ -f "$DASHBOARD" ] || return 0
-
-    # 戦果セクションのデータ行を取得（ヘッダ・区切り行を除外）
-    local -a result_lines
-    mapfile -t result_lines < <(grep -n '^| [0-9]' "$DASHBOARD" | cut -d: -f1)
-
-    local total=${#result_lines[@]}
-    if [ "$total" -le "$KEEP_RESULTS" ]; then
-        echo "[archive] dashboard: $total results <= keep=$KEEP_RESULTS, skip"
-        return 0
-    fi
-
-    # KEEP_RESULTS件目の次のデータ行からアーカイブ対象
-    local archive_first_line=${result_lines[$KEEP_RESULTS]}
-    local last_data_line=${result_lines[$((total - 1))]}
-    local archived_count=$((total - KEEP_RESULTS))
-
-    # アーカイブに追記（データ行のみ）
-    {
-        echo ""
-        echo "# Archived $(date '+%Y-%m-%d %H:%M')"
-        sed -n "${archive_first_line},${last_data_line}p" "$DASHBOARD"
-    } >> "$DASH_ARCHIVE"
-
-    # ダッシュボードからアーカイブ済みデータ行を削除（flock排他）
     (
-        flock -w 10 200 || { echo "[archive] WARN: flock timeout on DASHBOARD"; return 1; }
-        # S07修正: mktempで安全なtmp生成 + sed成功確認後にmv
-        local tmp_dash="$TMP/dash_trim.md"
+        flock -w 10 200 || { echo "[archive] WARN: flock timeout on DASHBOARD"; exit 1; }
+        [ -f "$DASHBOARD" ] || { echo "[archive] ERROR: dashboard missing under lock" >&2; exit 1; }
+        local total archive_first_line last_data_line archived_count tmp_dash
+        local -a result_lines
+        mapfile -t result_lines < <(grep -n '^| [0-9]' "$DASHBOARD" | cut -d: -f1)
+        total=${#result_lines[@]}
+        if [ "$total" -le "$KEEP_RESULTS" ]; then
+            echo "[archive] dashboard: $total results <= keep=$KEEP_RESULTS, skip"
+            exit 0
+        fi
+        archive_first_line=${result_lines[$KEEP_RESULTS]}
+        last_data_line=${result_lines[$((total - 1))]}
+        archived_count=$((total - KEEP_RESULTS))
+        {
+            echo ""
+            echo "# Archived $(date '+%Y-%m-%d %H:%M')"
+            sed -n "${archive_first_line},${last_data_line}p" "$DASHBOARD"
+        } >> "$DASH_ARCHIVE"
+        tmp_dash=$(mktemp "${DASHBOARD}.archive.XXXXXX")
+        trap 'rm -f -- "$tmp_dash"' EXIT
         if ! sed "${archive_first_line},${last_data_line}d" "$DASHBOARD" > "$tmp_dash"; then
             echo "[archive] FATAL: sed failed for dashboard trim" >&2
-            rm -f "$tmp_dash"
             exit 1
         fi
-        mv "$tmp_dash" "$DASHBOARD" || { echo "[archive] FATAL: mv failed: $tmp_dash → $DASHBOARD" >&2; exit 1; }
-    ) 200>"/tmp/mas-dashboard.lock"
-
-    echo "[archive] dashboard: archived=$archived_count kept=$KEEP_RESULTS"
+        mv -f -- "$tmp_dash" "$DASHBOARD" || { echo "[archive] FATAL: atomic publish failed: dashboard trim" >&2; exit 1; }
+        trap - EXIT
+        echo "[archive] dashboard: archived=$archived_count kept=$KEEP_RESULTS"
+    ) 200>"${DASHBOARD}.lock"
 }
 
 # ============================================================
