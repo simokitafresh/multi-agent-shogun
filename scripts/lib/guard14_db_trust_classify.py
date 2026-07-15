@@ -173,6 +173,8 @@ ESCAPE_CALLS = {"eval", "exec", "compile", "__import__"}
 READ_ONLY_SHELL_CMDS = {"rg", "grep", "sed", "cat", "head", "tail", "cut", "wc", "find"}
 ENV_SETUP_SHELL_CMDS = {"source", ".", "export"}
 SAFE_OS_CALLS = {"getenv"}
+# python3 -m <module> で起動される安全なstdlib module。DB接続能力なし。
+SAFE_PYTHON_M_MODULES = {"json.tool", "json", "base64", "pprint", "http.server"}
 
 # review_correction(2026-07-12 22:xx, karo RC5): READ_ONLY_SHELL_CMDS が cmd0 の一致だけで
 # 全option/scriptをALLOWしていたため、find -exec系・rg --pre系・sedのe/w系という「read-only
@@ -413,6 +415,25 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
     return saw_http
 
 
+def _python_m_is_safe(tokens: list[str]) -> bool:
+    """python3 -m <module> が既知の安全なstdlibモジュールかを判定する。
+
+    json.tool等のDB接続能力ゼロのstdlibモジュールがcurlパイプライン内で
+    使われた場合にFPを防ぐ(2026-07-15将軍実証: source .env && curl ... | python3 -m json.tool)。
+    """
+    stripped = _strip_env_prefix(tokens)
+    if not stripped or os.path.basename(stripped[0]) not in {"python", "python3", "python.exe"}:
+        return False
+    try:
+        idx = stripped.index("-m")
+    except ValueError:
+        return False
+    if idx + 1 >= len(stripped):
+        return False
+    module = stripped[idx + 1]
+    return module in SAFE_PYTHON_M_MODULES
+
+
 def _shell_segments_are_bounded(command: str, segments: list[list[str]]) -> bool:
     """Allow only explicit env setup, capability-checked read-only inspection, curl, or verified Python.
 
@@ -435,6 +456,8 @@ def _shell_segments_are_bounded(command: str, segments: list[list[str]]) -> bool
         if CURL_CMD_RE.match(cmd0):
             continue
         if _python_inline_code(segment) is not None and _python_http_only_capability(segment):
+            continue
+        if _python_m_is_safe(segment):
             continue
         return False
     return bool(segments)
