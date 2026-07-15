@@ -862,6 +862,7 @@ EOF
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
   cmd_600:
+    estimated_minutes: 10
     acceptance_criteria:
     - 'AC1: New task AC'
     - 'AC2: Second AC'
@@ -1087,6 +1088,7 @@ PY
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
   cmd_1611:
+    estimated_minutes: 10
     project: testproj
     type: impl
     purpose: test nested resolve

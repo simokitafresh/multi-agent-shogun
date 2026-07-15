@@ -1901,6 +1901,7 @@ print('|'.join(ids))
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
   cmd_601:
+    estimated_minutes: 10
     acceptance_criteria:
     - 'AC1: recover broken task yaml'
     project: testproj

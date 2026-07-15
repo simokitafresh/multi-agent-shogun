@@ -230,6 +230,7 @@ EOF
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'EOF'
 commands:
   cmd_new:
+    estimated_minutes: 10
     title: "new task"
     project: dm-signal
     scope_mode: FULL

@@ -205,6 +205,7 @@ YAML
     cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
 commands:
   cmd_2548_pipe:
+    estimated_minutes: 10
     title: "pipe purpose"
     project: infra
     scope_mode: exact

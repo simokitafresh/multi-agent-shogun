@@ -1296,6 +1296,7 @@ EOF
 commands:
   cmd_9999:
     id: cmd_9999
+    estimated_minutes: 10
     title: 'テスト用pipe cmd'
     project: infra
     type: impl
