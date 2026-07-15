@@ -1195,6 +1195,7 @@ deploy_task_validate_or_repair_direct_yaml() {
     tmp_file="$(mktemp "${task_file}.repair.XXXXXX")" || return 1
     if python3 - "$task_file" "$tmp_file" <<'DIRECT_YAML_REPAIR_PY'; then
 import sys
+import re
 import yaml
 from pathlib import Path
 

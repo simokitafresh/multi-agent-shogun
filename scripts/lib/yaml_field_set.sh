@@ -428,7 +428,7 @@ BEGIN {
 
     if (skip_replaced_continuation) {
         if (trimmed == "") next
-        if (indent > field_indent) next
+        if (indent > field_indent || (indent == field_indent && trimmed ~ /^-[[:space:]]/)) next
         skip_replaced_continuation = 0
     }
 
@@ -737,7 +737,7 @@ function flush_block(    i,line,indent_str,field_re,replaced,skip_replaced_conti
         if (skip_replaced_continuation) {
             line_indent = leading_spaces(line)
             line_trimmed = trim(line)
-            if (line_trimmed == "" || line_indent > field_indent) {
+            if (line_trimmed == "" || line_indent > field_indent || (line_indent == field_indent && line_trimmed ~ /^-[[:space:]]/)) {
                 continue
             }
             skip_replaced_continuation = 0
@@ -1288,7 +1288,7 @@ function flush_block(    i,line,indent_str,j,fre,replaced_count) {
             if (line_trimmed == "") {
                 continue
             }
-            if (line_indent > field_indent) {
+            if (line_indent > field_indent || (line_indent == field_indent && line_trimmed ~ /^-[[:space:]]/)) {
                 continue
             }
             skip_replaced_continuation = 0
