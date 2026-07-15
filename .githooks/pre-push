@@ -179,31 +179,9 @@ if [ "$_PREPUSH_CACHE_HIT" -eq 0 ] && [ ${#_changed_files[@]} -gt 0 ]; then
     fi
 fi
 
-# --- Full unit suite safety net ---
-if [ "$_PREPUSH_CACHE_HIT" -eq 0 ]; then
-    echo "Running unit tests before push..."
-    echo "Running unit tests before push..." >&2
-    set +e
-    timeout 900 env BATS_CACHE=0 BATS_INNER_JOBS=1 \
-        bash "$REPO_ROOT/scripts/run_tests.sh" unit > "$_BATS_OUTPUT_FILE" 2>&1
-    _unit_rc=$?
-    set -e
-    cat "$_BATS_OUTPUT_FILE" >&2
-    if [ "$_unit_rc" -eq 124 ]; then
-        echo "BLOCKED: unit tests timed out. Push aborted."
-        echo "BLOCKED: unit tests timed out. Push aborted." >&2
-        exit 1
-    elif [ "$_unit_rc" -ne 0 ]; then
-        cat "$_BATS_OUTPUT_FILE"
-        echo "BLOCKED: unit tests failed. Push aborted."
-        echo "BLOCKED: unit tests failed. Push aborted." >&2
-        exit "$_unit_rc"
-    fi
-    if [ -n "$_PREPUSH_SHA" ]; then
-        printf '%s\n' "$_PREPUSH_SHA" > "${_PREPUSH_PASS_CACHE}.$$"
-        mv "${_PREPUSH_PASS_CACHE}.$$" "$_PREPUSH_PASS_CACHE"
-    fi
-fi
+# --- Full unit suite: CIに委任（殿裁定2026-07-16: CIとの二重チェックは構造的バグ） ---
+# 全量ユニットテストはCI(GitHub Actions)が担当。pre-pushはaffected tests(L165-179)のみ。
+# 旧: timeout 900s full suite → pushタイムアウトで通らない構造的障害
 
 # --- Ontology integrity check (殿裁定2026-06-20: オントロジーは自動実行されて初めて効果が出る) ---
 if [ -x "$REPO_ROOT/scripts/gates/gate_no_hardcoded_ninja_list.sh" ]; then
