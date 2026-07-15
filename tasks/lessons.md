@@ -10818,3 +10818,107 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **then**: 一次コード全フィールドのN/N照合証跡を要求する
 - **because**: 設計上の入力一覧とproduction実注入は一致するとは限らない
 - 入力matrixを設計書の推測から作ると、PrecomputeRawContext 14入力中5入力未注入のような欠落を正しい前提として固定してしまう。dataclass全フィールド、生成元、全consumer builder、global経路を一次コードで全数照合し、母数N中N件を記録する。
+
+### L1036: 共有worktreeではgit stashをCLI全入口で禁止する
+- **日付**: 2026-07-15
+- **出典**: cmd_karo_hotfix_task_pointer_rollback_202607151907
+- **記録者**: hanzo
+- **tags**: [infra,skill,bash,git]
+- **subdomain**: infra
+- **target_files**: [./.gitignore,.codex/hooks.json,scripts/hooks/test_hooks.sh,skills/ninja-commit/SKILL.md]
+- **origin**: [[cmd_karo_hotfix_task_pointer_rollback_202607151907]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- ガード本体が正しくてもtool matcherがClaude Bash限定ならCodex exec経路で共有task 5件が巻き戻る。全shell tool名を同一ガードへ接続し回帰で数える。
+
+### L1037: placeholderは検知器でなく生成源から除去する
+- **日付**: 2026-07-15
+- **出典**: cmd_karo_hotfix_fill_this_202607151848
+- **記録者**: tobisaru
+- **tags**: [infra,deploy-task,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/deploy_task.sh,scripts/ninja_done.sh,scripts/lib/field_get.sh,tests/unit/test_deploy_task_ac_handling.bats,tests/unit/test_ninja_done.bats]
+- **origin**: [[cmd_karo_hotfix_fill_this_202607151848]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- gateが13回正しくBLOCKしても生成テンプレートが規約トークンを配り続ければLevel1反復となる。task文脈を生成時供給し、terminalで残存をBLOCKする二層構造にすると同一FAILを13→0へ下げられる。
+
+### L1038: 運用ログは呼出元とcronで三角測量して本番性を判定する
+- **日付**: 2026-07-15
+- **出典**: cmd_3970
+- **記録者**: hayate
+- **tags**: [infra,deploy,pipeline,testing]
+- **subdomain**: infra
+- **target_files**: [docs/research/daemon_p4_entry_point_design_20260715.md]
+- **origin**: [[cmd_3970]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 時刻が自然でもBats副作用ログがあり得る。次回は実行呼出元件数、scheduler登録、ログproducer testの3点を先に確認する
+
+### L1039: 共有worktreeでgit stash禁止・修正前FAIL再現は隔離コピーでのみ実施
+- **日付**: 2026-07-15
+- **出典**: cmd_karo_ci_red_startup_gate_202607151950
+- **記録者**: kotaro
+- **tags**: [infra,gate,testing,process,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_shogun_startup.sh,tests/unit/test_gate_shogun_startup.bats]
+- **origin**: [[cmd_karo_ci_red_startup_gate_202607151950]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- shellcheck違反が既存コードかを確認する目的でgit stashを実行したところ、共有worktree上の他忍者2名+運用差分23 tracked filesが一括退避され家老の緊急復旧を要した。さらに『修正前FAIL』の証跡取得のため共有ファイルを一時的に旧バグ版へ書き換えたことも家老に即時是正された。教訓: (1)共有リポジトリでgit stash/checkout .等repo全体に作用するコマンドは絶対禁止。特定ファイルの差分確認はgit diff -- <file>で十分 (2)修正前後の挙動比較(regression before/after)は共有ファイルを一切書き換えず、/tmp等の隔離コピーへ複製してから旧版パッチを当てて検証する。今回は隔離コピー+最小standalone bats(setup()で対象関数のみsourceして直接呼ぶ)方式で安全に修正前FAIL/修正後PASSを実証できた
+
+### L1040: respawn成功率は試行回数の逆数ではなくイベント累積で測る
+- **日付**: 2026-07-15
+- **出典**: cmd_3971
+- **記録者**: kagemaru
+- **tags**: [infra,ninja-monitor,frontend]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_respawn_verification.bats]
+- **origin**: [[cmd_3971]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 成功率はflock保護stateの累積successes/totalで算出し、attempts/retries/recovery_secondsを別軸で記録する
+
+### L1041: 実行系ガードの『未知wrapper完全検出』と『任意引数偽陽性0』は原理的に両立不能。argv shapeだけでは実行対象と一般引数を区別できない
+- **日付**: 2026-07-15
+- **出典**: cmd_karo_ci_red_remaining_unit_202607151950
+- **記録者**: saizo
+- **tags**: [infra,testing,db,testing,gate]
+- **subdomain**: infra
+- **target_files**: [tests/unit/test_test_asset_catalog.bats,.claude/hooks/pre-bash-combined.sh,scripts/lib/shell_command_segments.py,tests/unit/test_heavy_job_admission.bats,scripts/lib/git_stash_guard_classify.py]
+- **origin**: [[cmd_karo_ci_red_remaining_unit_202607151950]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- git stash mutation guardの構築で6ラウンド(RC1-RC4)を要した。RC2で個別wrapper名(env/command/nohup/nice/timeout/setsid)を列挙しても、karoが即座にtime/ionice/taskset/chrt/xargs等の別wrapper群でbypassを発見(RC3)。そこで『segment内の全token位置からsuffixを再帰評価する一般fallback』へ転換し未知wrapper検出を実現したが、今度はecho/printf/rg/python3/bash script.sh/inbox_write.shのような通常コマンドへの非実行引数(git/stashという文字列がたまたま検索語やスクリプト引数として渡っただけ)を実コマンドと誤認する偽陽性6/6を独立実測で引き起こした(RC4)。この2つの失敗モードは表裏一体: 『後方に何らかのargvが続く』という構造だけでは、そのプログラムが実際に後続argvを新しいプロセスとして実行するwrapperなのか、単に自分のデータとして消費する一般コマンドなのかを、プログラム名を知らずに判定することは原理的に不可能。最終的にkaro指示の『既知実行wrapperの明示SSOT(単一テーブル)+未知プログラムはfail-open』へ確定し、安全境界(既知13種はblock、未知は疑わしきは通す)をtestで固定した。教訓: 『完全な自動検出』と『偽陽性ゼロ』が同時に要求される場面では、まず両者が原理的に両立可能か(決定不能問題でないか)を先に検証してから設計に着手すべきだった。両立不能なら、境界を明示しどちらを優先するかを早期に確定させる方が、試行錯誤の往復コストを減らせる。
+
+### L1042: 共有fixtureを持つBats fileは内部並列禁止をrunnerへ明示する
+- **日付**: 2026-07-15
+- **出典**: cmd_karo_ci_fix_commit_fixture_202607152031
+- **記録者**: hanzo
+- **tags**: [infra,testing,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh,tests/unit/test_run_tests_commit_fixture_scheduling.bats]
+- **origin**: [[cmd_karo_ci_fix_commit_fixture_202607152031]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 単一bats rootや高速ローカルでは80/80 PASSでも、CIのBATS_INNER_JOBS=8では共有temp repo・ontology・task scaffoldが競合し28件FAILした。次回追加すべきチェックはfile-level runnerでinner_jobsとexclusive weightをtrace検証する二値チェック。
+
+### L1043: psのcmdline一致だけでプロセス重複と断定するな。fork-without-execサブシェルは親と同一cmdlineに見える
+- **日付**: 2026-07-15
+- **出典**: cmd_3969
+- **記録者**: tobisaru
+- **tags**: [infra,recon,bash,inbox]
+- **subdomain**: infra
+- **target_files**: [docs/research/daemon_p3_baseline_20260715.md]
+- **origin**: [[cmd_3969]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- inbox_watcher.shの子プロセス(inotify pollerの( while ... ) &サブシェル)はforkのみでexecしないため/proc/pid/cmdlineが親から継承され、ps上は親と全く同じ起動コマンドラインに見えた。これを見た目だけで新規プロセスの重複起動と誤断定した(cmd_3969初稿)。正しくは/proc/pid/wchanで待機状態(do_wait=子の終了待ち)を確認し、pgrep -Pで実際に子プロセス(sleep/inotifywait等)を持つかを見る必要がある。daemon_supervisor.shのds_inbox_watcher_pids()も同様の理由で「親と同一cmdlineの子」を意図的に除外する設計になっており、既存インフラの重複検知ロジックの有無・正当性を確認せずに「検知漏れ」と決めつけたのも二重の誤り。加えてgrep -c(大文字小文字区別)で「ログ未実装」と誤判定した件(§1)も含め、本cmdの初稿は二次情報(ps出力の見た目、grep結果)を一次情報として扱い、家老RCで3点撤回・1点解釈訂正・1点再計測という大幅修正が必要になった。忍者の計測・調査タスクでは「見た目が一致=同一の意味」と早合点せず、プロセス系の判定はwchan/子プロセス/既存の自動化ロジックの実装有無をコードで裏取りしてから結論すること

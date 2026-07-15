@@ -63,6 +63,12 @@ CMD
     [ "$(heavy_job_classify "python3 -m pytest --help")" = "light" ]
 }
 
+@test "分類器: bats --countは複数ファイルでもテストを実行せず軽量" {
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    [ "$(heavy_job_classify "bats --count tests/unit/test_a.bats tests/unit/test_b.bats")" = "light" ]
+    [ "$(heavy_job_classify "bats -c tests/unit/")" = "light" ]
+}
+
 @test "分類器: pytest全量ディレクトリは重量、単一::テスト関数指定は軽量" {
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
     heavy="$(heavy_job_classify "python3 -m pytest backend/tests")"
@@ -368,6 +374,11 @@ print('ok')
     run _run_hook "bats --version"
     [ "$status" -eq 0 ]
     run _run_hook "python3 -m pytest --version"
+    [ "$status" -eq 0 ]
+}
+
+@test "hook: bats --count複数ファイルはheavy admissionを要求しない" {
+    run _run_hook "bats --count tests/unit/test_a.bats tests/unit/test_b.bats"
     [ "$status" -eq 0 ]
 }
 

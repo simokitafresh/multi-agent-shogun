@@ -1,5 +1,5 @@
 # gunshi idle自走サイクル進捗(殿裁定2026-07-07: 止まらずにサイクルを回し続ける仕組み)
 # Step完了時にyaml_field_set.shで更新する
-last_completed_step: 6
-completed_at: "2026-07-07T13:50:00"
+last_completed_step: 4
+completed_at: "2026-07-16T04:57:39+09:00"
 session_id: "current"

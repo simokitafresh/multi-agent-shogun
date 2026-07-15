@@ -7,10 +7,10 @@ cli:
   agents:
     shogun:
       type: claude
-      model_name: fable-5-xhigh
+      model_name: opus-4-6-high
       role: shogun
       japanese_name: 将軍
-      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model fable --effort xhigh
+      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions --effort high
     karo:
       type: codex
       model_name: gpt-5.6-sol-high
@@ -46,23 +46,26 @@ cli:
       service_tier: default
       launch_cmd: 
     saizo:
-      type: claude
-      model_name: sonnet-5-xhigh
+      type: codex
+      model_name: gpt-5.6-sol-low
       role: ninja
       japanese_name: 才蔵
-      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort xhigh
+      service_tier: default
+      launch_cmd: 
     kotaro:
-      type: claude
-      model_name: sonnet-5-xhigh
+      type: codex
+      model_name: gpt-5.6-sol-low
       role: ninja
       japanese_name: 小太郎
-      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort xhigh
+      service_tier: default
+      launch_cmd: 
     tobisaru:
-      type: claude
-      model_name: sonnet-5-xhigh
+      type: codex
+      model_name: gpt-5.6-sol-low
       role: ninja
       japanese_name: 飛猿
-      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort xhigh
+      service_tier: default
+      launch_cmd: 
 idle_cycle: on
 effort: high
 token_budget:

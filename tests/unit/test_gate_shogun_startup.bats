@@ -338,6 +338,14 @@ setup() {
     export SHOGUN_MEMORY_DB_CACHE_PATH="$TEST_TMPDIR/data/three_layer_health.db"
     export SHOGUN_THREE_LAYER_CACHE_WARN_BYTES=999999999
     export WEEKLY_METRICS_NOW="2099-01-01T00:00:00Z"
+    # Host-health gates must consume per-test fixtures.  Developer WSL hosts
+    # normally have both the daemon heartbeat and /mnt/c, while clean GitHub
+    # Linux runners have neither; inheriting those host facts turns otherwise
+    # hermetic gate assertions into CI-only BLOCK/ALERT results.
+    export DAEMON_WATCHDOG_HEARTBEAT_FILE="$TEST_TMPDIR/daemon_watchdog_heartbeat"
+    export DAEMON_WATCHDOG_HEARTBEAT_NOW=4102444800
+    printf '%s\n' "$DAEMON_WATCHDOG_HEARTBEAT_NOW" > "$DAEMON_WATCHDOG_HEARTBEAT_FILE"
+    export DISK_WATCH_AVAILABLE_KB=104857600
     cat > "$TEST_TMPDIR/crontab" <<EOF
 17 0 * * 1 cd "$TEST_TMPDIR" && "$TEST_TMPDIR/scripts/weekly_metrics_trend.sh" >/dev/null 2>&1 # shogun-weekly-metrics-trend
 EOF
@@ -352,6 +360,9 @@ teardown() {
     unset SHOGUN_MEMORY_DB_CACHE_PATH
     unset SHOGUN_THREE_LAYER_CACHE_WARN_BYTES
     unset WEEKLY_METRICS_NOW
+    unset DAEMON_WATCHDOG_HEARTBEAT_FILE
+    unset DAEMON_WATCHDOG_HEARTBEAT_NOW
+    unset DISK_WATCH_AVAILABLE_KB
 }
 
 # === Test 1: 全項目正常 → 総合判定OK ===

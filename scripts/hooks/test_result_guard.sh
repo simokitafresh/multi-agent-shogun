@@ -49,7 +49,13 @@ def is_test_command(command: str) -> bool:
 
         cmd0 = os.path.basename(tokens[0])
 
-        if cmd0 in {"pytest", "py.test", "bats", "jest"}:
+        if cmd0 == "bats":
+            non_execution = {"-c", "--count", "-h", "--help", "-v", "--version"}
+            if any(token.split("=", 1)[0] in non_execution for token in tokens[1:]):
+                continue
+            return True
+
+        if cmd0 in {"pytest", "py.test", "jest"}:
             return True
 
         if cmd0 in {"python", "python3"} and len(tokens) >= 3 and tokens[1] == "-m" and tokens[2] == "pytest":

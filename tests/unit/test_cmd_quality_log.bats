@@ -93,6 +93,11 @@ EOF
     [ ! -e "$TEST_TMPDIR/logs/archive/cmd_design_quality.yaml" ]
 }
 
+@test "cmd_save custom quality-log override cannot rotate repository operational log" {
+    grep -Fq 'if [[ "$QUALITY_LOG_FILE" == "$PROJECT_DIR/logs/cmd_design_quality.yaml" ]]; then' \
+        "$PROJECT_ROOT/scripts/cmd_save.sh"
+}
+
 @test "direct task AC count falls back to unique parent_cmd task" {
     setup_ac_fixtures
     cat > "$CMD_QUALITY_TASKS_DIR/saizo.yaml" <<'EOF'

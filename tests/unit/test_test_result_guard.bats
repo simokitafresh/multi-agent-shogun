@@ -101,3 +101,16 @@ assert_context_contains() {
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
+
+@test "bats help/count metadata mentioning failed tests stays silent" {
+    local payload
+    payload="$(jq -cn --arg cmd "bats --help" --arg result "--filter-status failed - runs tests that failed" '{tool_name:"Bash", tool_input:{command:$cmd}, tool_result:$result}')"
+    run_hook "$payload"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+
+    payload="$(jq -cn --arg cmd "bats --count tests/unit/test_a.bats tests/unit/test_b.bats" --arg result "4177" '{tool_name:"Bash", tool_input:{command:$cmd}, tool_result:$result}')"
+    run_hook "$payload"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}

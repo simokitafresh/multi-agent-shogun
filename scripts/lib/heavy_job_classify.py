@@ -52,6 +52,7 @@ _BATS_OPTIONS_WITH_VALUE = {
 }
 
 _INFO_ONLY_OPTIONS = {"-h", "--help", "-v", "--version"}
+_BATS_NON_EXECUTION_OPTIONS = _INFO_ONLY_OPTIONS | {"-c", "--count"}
 
 
 def _bats_targets(args):
@@ -72,14 +73,15 @@ def _bats_targets(args):
 
 
 def _is_bats_heavy(args):
+    # These modes never execute a test body, even when passed a directory or
+    # many files.  Admission protects host CPU from concurrent test execution;
+    # making metadata/count probes take the host-wide lock is a false positive.
+    if any(arg.split("=", 1)[0] in _BATS_NON_EXECUTION_OPTIONS for arg in args):
+        return False
     file_args = _bats_targets(args)
     # Metadata/help queries do not execute tests.  Treating `bats --version`
     # like a stdin/full-suite invocation makes a harmless capability probe
     # require the host-wide admission lock (GA-270 false positive).
-    if not file_args and any(
-        arg.split("=", 1)[0] in _INFO_ONLY_OPTIONS for arg in args
-    ):
-        return False
     if len(file_args) != 1:
         return True
     target = file_args[0]

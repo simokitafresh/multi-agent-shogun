@@ -2540,7 +2540,12 @@ log_cmd_save_pass() {
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "PASS" "no" "0" >/dev/null 2>&1 &
         # perf: 非同期化 — yaml_auto_archive.sh は結果に影響しない後処理。
-        bash "$SCRIPT_DIR/yaml_auto_archive.sh" >/dev/null 2>&1 &
+        # A custom quality log is an isolated test/tool target.  Rotating the
+        # repository default in that case leaks across the override boundary
+        # and makes a clean unit run mutate tracked operational logs.
+        if [[ "$QUALITY_LOG_FILE" == "$PROJECT_DIR/logs/cmd_design_quality.yaml" ]]; then
+            bash "$SCRIPT_DIR/yaml_auto_archive.sh" >/dev/null 2>&1 &
+        fi
     fi
 }
 
