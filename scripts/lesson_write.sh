@@ -1321,7 +1321,11 @@ PY
             ') || true
 
             REFLUX_PI="MISSING"
-            REFLUX_RUNBOOK="MISSING"
+            # A repository without a runbook layer cannot be missing a match
+            # inside that layer.  Treat absence of docs/rule/*.md as SKIPPED;
+            # otherwise every English-bearing lesson emits a permanent false
+            # WARN and operators learn to ignore real reflux gaps.
+            REFLUX_RUNBOOK="SKIPPED"
             REFLUX_INSTRUCTIONS="MISSING"
 
             if [ -n "$REFLUX_KEYWORDS" ]; then
@@ -1331,9 +1335,20 @@ PY
                     REFLUX_PI="FOUND"
                 fi
 
-                # (2) Runbook check: docs/rule/*.md
-                if [ -d "$SCRIPT_DIR/docs/rule" ]; then
-                    if find "$SCRIPT_DIR/docs/rule" -name "*.md" -print0 2>/dev/null | xargs -0 -r grep -lqE "$REFLUX_KEYWORDS" 2>/dev/null; then
+                # (2) Runbook check: only a lesson whose declared scope is a
+                # runbook can be missing from the runbook layer.  The mere
+                # existence of an unrelated docs/rule/bash-conventions.md
+                # must not turn every infra lesson into a permanent warning.
+                REFLUX_RUNBOOK_RELEVANT=false
+                if [[ "${TARGET_FILES:-}" == *"docs/rule"* ]] \
+                    || [[ ",${TAGS:-}," == *",runbook,"* ]] \
+                    || [[ "${TITLE} ${DETAIL}" =~ [Rr][Uu][Nn][Bb][Oo][Oo][Kk]|ランブック ]]; then
+                    REFLUX_RUNBOOK_RELEVANT=true
+                fi
+                if [ "$REFLUX_RUNBOOK_RELEVANT" = true ]; then
+                    REFLUX_RUNBOOK="MISSING"
+                    if [ -d "$SCRIPT_DIR/docs/rule" ] \
+                        && find "$SCRIPT_DIR/docs/rule" -name "*.md" -print0 2>/dev/null | xargs -0 -r grep -lqE "$REFLUX_KEYWORDS" 2>/dev/null; then
                         REFLUX_RUNBOOK="FOUND"
                     fi
                 fi

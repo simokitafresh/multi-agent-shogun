@@ -519,3 +519,27 @@ EOF
     [[ "$output" != *"gate"* ]]
     [[ "$output" != *"testing"* ]]
 }
+
+@test "reflux check skips runbook layer when docs/rule has no markdown files" {
+    run_lesson_write testproj "inbox prune lock lesson" "inbox prune lock evidence must remain durable after cleanup" "cmd_817" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"RUNBOOK=SKIPPED"* ]]
+    [[ "$output" != *"RUNBOOK=MISSING"* ]]
+}
+
+@test "reflux check skips an unrelated existing runbook layer" {
+    mkdir -p "$TEST_PROJECT/docs/rule"
+    printf '# Bash conventions\nShell quoting rules.\n' > "$TEST_PROJECT/docs/rule/bash-conventions.md"
+    run_lesson_write testproj "context freshness lesson" "external source commit boundaries remain durable" "cmd_818" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"RUNBOOK=SKIPPED"* ]]
+    [[ "$output" != *"RUNBOOK=MISSING"* ]]
+}
+
+@test "reflux check reports missing for a runbook-scoped lesson" {
+    mkdir -p "$TEST_PROJECT/docs/rule"
+    printf '# Bash conventions\nShell quoting rules.\n' > "$TEST_PROJECT/docs/rule/bash-conventions.md"
+    run_lesson_write testproj "deployment runbook lesson" "deployment runbook must document rollback evidence" "cmd_819" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"RUNBOOK=MISSING"* ]]
+}
