@@ -41,6 +41,12 @@ run_resolver() {
     "$FIXTURE/function.sh"
 }
 
+@test "clean checkout tracks insight_resolve.sh as executable" {
+  run git -C "$REPO_ROOT" ls-files -s scripts/insight_resolve.sh
+  [ "$status" -eq 0 ]
+  [[ "$output" == 100755\ * ]]
+}
+
 @test "declared origin is resolved with complete evidence while follow-up and unrelated stay pending" {
   run run_resolver
   [ "$status" -eq 0 ]

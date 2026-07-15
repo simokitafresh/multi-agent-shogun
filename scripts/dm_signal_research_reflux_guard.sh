@@ -167,8 +167,19 @@ check_repo() {
     local repo="$1" fingerprint recorded rc
     rc=0; is_dm_signal_repo "$repo" || rc=$?
     if ((rc == 2)); then
-        echo "BLOCK(GA-220): DM_SIGNAL_REPO repo identityを解決できない(設定不正の疑い): $DM_SIGNAL_REPO" >&2
-        return 2
+        # A clean CI checkout intentionally has no external DM-Signal clone.
+        # Missing target identity must not block ordinary commits in this
+        # unrelated infra repository.  Keep fail-closed behavior only when
+        # the actual, valid repo has the protected staged surface; then we
+        # cannot prove that it is unrelated to DM-Signal.
+        if ! repo_common_dir "$repo" >/dev/null 2>&1; then
+            return 0
+        fi
+        if has_staged_research "$repo"; then
+            echo "BLOCK(GA-220): DM_SIGNAL_REPO repo identityを解決できないため、対象repoのstaged docs/researchをfail-closed: $DM_SIGNAL_REPO" >&2
+            return 2
+        fi
+        return 0
     fi
     ((rc == 0)) || return 0
     has_staged_research "$repo" || return 0

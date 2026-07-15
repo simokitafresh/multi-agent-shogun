@@ -49,26 +49,16 @@ check_daemon_watchdog_heartbeat() {
 }
 
 # shogun_startup_cache_key() — derive the /tmp short-cache filename suffix
-# from a startup root path. Pure function, no side effects: kept standalone
-# so unit tests can pin its collision-avoidance behavior directly.
+# from the complete startup root identity. Pure function, no side effects:
+# kept standalone so unit tests can pin its collision-avoidance behavior.
 #
-# ${key: -48} silently collapses to "" when key is shorter than 48 chars
-# (bash: negative offset < -length is invalid → empty result, not the
-# original string). SCRIPT_DIR is normally well under 48 chars (test
-# tmpdirs, repo paths), so every caller was landing on the SAME empty key
-# → the SAME /tmp cache file. Under parallel bats --jobs 8, N concurrent
-# `run_startup_short_cache` calls race on that shared cache_file's
-# mv-then-cat, and each caller can read back a sibling test's cached
-# output instead of its own (reproduced: 20 concurrent callers on a
-# shared cache path, ~18/20 read back another worker's content).
-# Only truncate when the sanitized key actually exceeds the length bound.
+# A sanitized/truncated path is not an identity.  In particular bats-core's
+# long per-test tmpdirs can share the same trailing 48 characters on GitHub
+# runners, so otherwise independent startup fixtures read one another's
+# cached gate output.  Hash the complete path and bound only the digest.
 shogun_startup_cache_key() {
     local script_dir="$1"
-    local key="${script_dir//[\/: .#*?!]/_}"
-    if [ "${#key}" -gt 48 ]; then
-        key="${key: -48}"
-    fi
-    printf '%s\n' "$key"
+    printf '%s' "$script_dir" | sha256sum | cut -c1-24
 }
 
 run_gate_shogun_startup() {

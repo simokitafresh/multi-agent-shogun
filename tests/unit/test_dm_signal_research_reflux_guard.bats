@@ -217,6 +217,14 @@ make_split_contexts() {
     [[ "$output" == *"repo identityを解決できない"* ]]
 }
 
+@test "GA-220: clean CIでDM_SIGNAL_REPO clone不在でも無関係repoの通常commitは誤BLOCKしない" {
+    printf 'ordinary\n' >> "$OTHER/README.md"
+    git -C "$OTHER" add README.md
+    run env DM_SIGNAL_REPO="$TMP/does-not-exist" DM_SIGNAL_REFLUX_CONTEXT_FILE="$CTX" \
+        bash "$GUARD" check-command "git -C '$OTHER' commit -m ordinary"
+    [ "$status" -eq 0 ]
+}
+
 @test "GA-220: bare repoを--repoに渡してもクラッシュせず安全に扱う" {
     git init -q --bare "$TMP/bare.git"
     run bash "$GUARD" check --repo "$TMP/bare.git"
