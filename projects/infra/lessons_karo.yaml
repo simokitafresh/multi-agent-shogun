@@ -332,6 +332,7 @@ v7吸収(2026-05-19):
     - CI表示乖離: ci_status_check.shがlatest runのみ見てin_progress→UNKNOWN→check failed表示(LK001: 修正=latest completed runとlatest runを分離しin_progress→PENDING表示。cmd_2792偵察で根因特定)
     - consolidated testのrun_embedded_testは一時ファイルをtests/unit/配下に生成せよ(LK012: CI --jobs 8並列で/tmp配下だとBATSのPROJECT_ROOT解決が壊れる。cf7adb49で6ファイル修正済み)
     吸収(2026-07-15, cmd_karo_recon2_ga263_hook_failure_audit_202607152304, origin: [[GA-263]] -> [[selected-pass-full-unit-fail]] -> [[fixture-isolation-and-hook-sync-check]]): GA-263でhook ledger 334/334件を監査。pre-push 247件、fixture広義同型16件（家老11/軍師5）、完全同型1件、FP 0。selected 5件PASS後に全unitでfixture競合・tracked hook drift・semantic worker teardown raceが露呈したため、hookは正しくBLOCKしていた。次回はartifactをselected段とfull-unit段に分け、file内部直列・tracked hook atomic sync・worker result-lastを対応commit 8a80ad7fc/4850af9a9/e437cd0f3/387154d86と回帰試験で確認する。家老再実行83/83 PASS、FAIL 0、SKIP 0。
+    吸収(2026-07-16, cmd_karo_recon2_ga268_warmup_singleflight_audit_202607160147, origin: [[GA-267]] -> [[short-child未reapとglobal lock]] -> [[scheduler hang]]; [[GA-268]] -> [[setsid後flock取得窓]] -> [[同世代重複生成]]): 吸収(2026-07-16, GA-267/GA-268): 短命childはwait -n前終了を明示reapしSTART/DONE一致を測る。テストdaemonのglobal /tmp lockはfixtureごとに上書き可能にする。flockが同時実行を防いでもdetach後の遅延launcherは先行完了後に同世代を再生成できるため、lock取得とfreshness再判定をdetach前に置く。修正前GA-267 START294/DONE286、GA-268遅延再現create.calls=2。修正後scheduler 12/12、warmup決定論16/16、同時2root 18/18、FAIL0/SKIP0。
   source_ids: [LK001, LK009, LK012, LK025, LK035, LK036, LK044, LK049, LK059, LK063, LK073, LK080, LK009b, LK013, LK014, LK015, LK001i, LK012i]
   created_at: '2026-04-24'
   automated: true
@@ -368,6 +369,7 @@ v7吸収(2026-05-19):
     - 未知task_typeは実装扱いのfail-closedにせよ(未知を素通しにすると検査回避経路になる)
     - gate修正後は対象回帰テスト+所要時間の実測をセットで記録せよ(速度もバグ: 殿厳命2026-07-10)
     - 実装証拠: e34933ff3,70bfa75f4,790504963,f025df5aa,64eb1316a,0a41c0110
+    吸収(2026-07-16, cmd_karo_recon2_ga267_scheduler_rc_audit_202607160130, origin: [[GA-267 addendum]] -> [[shell quote不整合]] -> [[heavy-job偽診断]]): 吸収(2026-07-16, GA-267 addendum): 引用符不整合でshlex解析不能なread-only rgをheavyと分類するとwrapperを誤案内し、根因修正を妨げる。classifierにmalformed三値を追加し、hookはBLOCK(shell-syntax)を返す。修正後admission 58/58 PASS、shellcheck 2/2、FAIL0/SKIP0。
   source_ids: [LK002, LK003, LK004, LK008, LK011, LK013, LK039, LK053, LK074, LK077, LK082, LK083, LK084, LK087, LK090, LK001b, LK011b, LK012b, LK007, LK009, LK010, LK005i]
   created_at: '2026-04-24'
   automated: true
@@ -583,7 +585,9 @@ v7吸収(2026-05-19):
 - id: 'LK009'
   title: 'context_freshness ALERTはroot_fallback有無とtimeout値を必ず数値記録する'
   origin: '[[GA-120_context_freshness_ALERT]] -> [[source_repo_root_fallback_timeout差分]] -> [[google_classroom_saxo_context鮮度判定]]'
-  detail: 'GA-120調査で、低レベルcheck直接は17件ALERTだがgateデフォルトCFC_GIT_TIMEOUT=1ではgit log timeoutによりOKとなった。さらにprojects/google-classroom.yaml不在により外部repoではなくinfra root fallbackを見ていた。次回同種ALERT調査では timeout秒数、root_fallback=true/false、実repo path、commit_count を必ず報告させる。'
+  detail: |
+    GA-120調査で、低レベルcheck直接は17件ALERTだがgateデフォルトCFC_GIT_TIMEOUT=1ではgit log timeoutによりOKとなった。さらにprojects/google-classroom.yaml不在により外部repoではなくinfra root fallbackを見ていた。次回同種ALERT調査では timeout秒数、root_fallback=true/false、実repo path、commit_count を必ず報告させる。
+    吸収(2026-07-16, cmd_karo_hotfix_codd_context_freshness_202607160030, origin: [[GA-264]] -> [[source commit実契約差分]] -> [[本文同期チェック]]): GA-264横展開でsource 786a4ef4aを確認したところ、codd-refactorはfile内部jobs=8からfile間aggregate budget=8/file内部jobs=1へ実契約が変わっていた。次回はsource差分に既存context本文と矛盾する追加削除が1行以上あるかをyes/no判定し、yesなら本文更新後にのみsource_commit境界を進める。修正前codd ALERT=1、本文同期後=0、関連Bats=49/49 PASS、SKIP=0。
   source_cmd: 'cmd_karo_hotfix_ga120_context_freshness_recon_20260623'
   when: 'context_freshness ALERT調査・報告レビュー時'
   how: '報告YAMLの原因欄に timeout秒数/root_fallback有無/repo path/commit_count/source commits を数値で記録し、cache有無だけで判定しない'
