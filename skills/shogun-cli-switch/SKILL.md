@@ -1,5 +1,6 @@
 ---
-<!-- script_refs_checked_at: 2026-07-15T13:46:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_202607151824検分: yaml_field_set.sh 7042b59e9をgit showで確認。indentless sequence field置換時の残存行防止のみで、settings更新CLI・atomic反映・tmux同期/respawn副作用契約は不変。 -->
 <!-- 2026-07-15検分: ninja_monitor.sh 2faecab31はinbox pruning時のmessage_id evidence退避を追加。CLI切替・idle pane respawn・settings同期・respawn-pane -k契約には影響なし。 -->
 name: shogun-cli-switch
 argument-hint: "[status|to-claude|to-codex|pin-2.1.87|unpin-latest] [--agent AGENT] [--scope core|all|csv]"

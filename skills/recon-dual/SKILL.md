@@ -14,7 +14,8 @@ allowed-tools:
   - Read
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_202607151824検分: deploy_task.sh 26dd9b29c/9adea0b76/81162392b/7042b59e9とyaml_field_set.sh 7042b59e9をgit showで確認。配備taskのlesson/時間契約投影とindentless sequence置換の内部強化のみ。2名配備順序・CLI引数・重複guard回避・atomic更新契約は不変。 -->
 <!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: deploy_task.sh 336f30b67は配備証跡capture拡張、yaml_field_set.sh 6dd44d13fは後置list id対応。二重配備・YAML更新の既存CLI契約は維持。 -->
 
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->

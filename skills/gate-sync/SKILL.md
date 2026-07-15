@@ -13,7 +13,8 @@ allowed-tools:
   - Read
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T13:46:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_202607151824検分: yaml_field_set.sh 7042b59e9をgit showで確認。indentless sequence field置換時の旧list行残存を防ぐ内部修正で、位置引数・flock/atomic更新・readback exit契約は不変。 -->
 <!-- 2026-07-15検分: gunshi_gate_reflux.sh ab302df7bは同一cmd_idのdraft/report全件を単一flock区間でatomic置換し、gate_resultとgate_synced_atを同時更新。異なる既確定resultはtimestampごと保持する。 -->
 <!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: yaml_field_set.sh 6dd44d13fはlist item内の後置id探索を追加した内部対応。既存CLI・flock・readback契約は維持。 -->
 

@@ -14,7 +14,8 @@ allowed-tools:
   - Write
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_202607151824検分: yaml_field_set.sh 7042b59e9をgit showで確認。indentless sequence置換の内部安全化のみで、field-set CLI・atomic更新・idle分析永続化の副作用順序は不変。 -->
 <!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: inbox_write.sh 06664edfdはLGTM/BLOCK矛盾検出suffix拡張、yaml_field_set.sh 6dd44d13fは後置list id対応。既存呼出CLIと永続化契約は維持。 -->
 
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->

@@ -15,7 +15,8 @@ allowed-tools:
   - Read
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T12:14:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_202607151824検分: deploy_task.sh 26dd9b29c/9adea0b76/81162392b/7042b59e9をgit showで確認。lesson割当集合、cmd時間契約投影、direct YAML repair import補完の内部強化で、deploy_task.sh引数・重複guard・配備/nudge副作用契約は不変。 -->
 <!-- cmd_karo_hotfix_skill_refs_after_infra_202607151211: deploy_task.sh 336f30b67はpost-deploy delivery evidenceのcapture範囲を30行へ拡張。配備CLI・renudge出口契約は維持。 -->
 
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->

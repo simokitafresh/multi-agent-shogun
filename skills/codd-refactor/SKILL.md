@@ -1,6 +1,7 @@
 ---
 name: codd-refactor
-<!-- script_refs_checked_at: 2026-07-15T11:38:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_202607151824検分: run_tests.sh 275d22bafをgit showで確認。LPT cohort空時にも対象fileをscheduleするCI内部配分修正で、run_tests.shの引数・exit・実行対象副作用契約は不変。 -->
 <!-- 2026-07-15将軍検分: run_tests.sh b0c6112a9(INNER_JOBS 4→1+HEAVY_INNER_JOBS fallback=CI concurrency fix)。内部並列度調整のみ、呼び出し契約不変。 -->
 description: |
   CoDDパイプラインでbashスクリプトの設計書を生成し、リファクタリング+速度改善を実行するスキル。

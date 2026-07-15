@@ -16,7 +16,8 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T13:46:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-15T18:29:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_202607151824検分: cmd_complete_gate.sh 6fc2e2957/ab302df7b/1616a1eb3/26dd9b29c/81162392b/d42c0bcf2をgit showで確認。完了証跡race防止、post-clear監査、専用test認識、Karo CTX計測、lesson feedback集合厳密化/null fallbackはいずれもgate内部強化。単一cmd_id引数・CLEAR/BLOCK exit・後処理副作用順序は不変。 -->
 <!-- 2026-07-15検分: cmd_complete_gate.sh ab302df7b/1616a1eb3はCLEAR後のsemantic auditをdurable worker化し、専用test警告を精密化。`bash scripts/cmd_complete_gate.sh <cmd_id>`の引数・CLEAR/BLOCK exit契約・codd-fix手順は不変。 -->
 <!-- cmd_3948検分: cmd_complete_gate.sh直近差分は承認済test-only commitのcontext reflux除外。呼出し契約不変。 -->
 <!-- 検分: cmd_complete_gate.sh 9018f5287/0c5f0edcc/dd368dee5/edbdb88bc/a48d80420をgit showで確認。insight消費の証跡付き解決、task/project完全一致、context source境界BLOCK、review rework履歴の単調保存を追加したgate内部強化。`bash scripts/cmd_complete_gate.sh <cmd_id>`の単一CMD_ID引数、CLEAR/BLOCK判定とexit契約、codd-fix本文の呼出し順序は不変。 -->
