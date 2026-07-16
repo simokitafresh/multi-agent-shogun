@@ -40,7 +40,7 @@ task:
   quality_gate:
     action_conversion: 正規writerでLevel分類を更新できない、既存フィールドが欠落する、在庫が減らない場合はBLOCK
     fp_measurement: gate_fire_logまたはdetector_fp_rateでfalse_positive件数と修正前後のpromotions在庫を計測する
-  status: in_progress
+  status: done
   stop_for: []
   target_path: scripts/lesson_write_karo.sh
   task_id: cmd_karo_hotfix_lesson_enforcement_writer_202607170704_normal
