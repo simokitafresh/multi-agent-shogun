@@ -466,3 +466,5 @@ exit "$EXIT_CODE"
 # skill-auto-improve:5fbd3c084bc2 自動防止: gate=none Top FAIL「Python exit 1 login_if_needed handle_recaptcha_if_present RuntimeError」count=1 last=2026-06-11. gate_report_format.sh事前実行+FIXヒント修正
 # ### 自動防止ステップ
 # - <!-- skill-auto-improve:267c35ffe8cc --> 自動防止: gate=none のTop FAIL理由「Python exit 1: File "/usr/lib/python3.12/subprocess.py", line 1253, in _check_timeout raise TimeoutExpired( subprocess.TimeoutExpired: Command '['powershell.ex」(count=1, last=2026-06-25T12:39:47+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。
+# ### 自動防止ステップ
+# - <!-- skill-auto-improve:6a5c49b00216 --> 自動防止: gate=none のTop FAIL理由「Python exit 1: File "/usr/lib/python3.12/subprocess.py", line 1955, in _execute_child raise child_exception_type(errno_num, err_msg, err_filename) FileNotFound」(count=4, last=2026-07-16T18:32:59+0900)を避ける。確認: `bash scripts/gates/gate_report_format.sh <report>` を事前実行しFAIL箇所を確認する。修正: gate出力のFIXヒントに従い `report_field_set.sh` で修正後、gateを再実行する。

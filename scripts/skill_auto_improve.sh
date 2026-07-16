@@ -553,7 +553,10 @@ def prevention_line(skill_name, reason, gate, count, last_fail):
 
 def existing_auto_section_insert_index(lines):
     for idx, line in enumerate(lines):
-        if line.strip() != "### 自動防止ステップ":
+        normalized = line.strip()
+        if normalized.startswith("#"):
+            normalized = normalized[1:].lstrip()
+        if normalized != "### 自動防止ステップ":
             continue
         insert = idx + 1
         while insert < len(lines) and not lines[insert].startswith("#"):
@@ -591,9 +594,13 @@ def apply_prevention_steps(skill_path, rows):
         return set()
 
     lines = text.splitlines()
+    is_shell_target = skill_path.suffix == ".sh"
+    if is_shell_target:
+        additions = [f"# {line}" for line in additions]
     auto_idx = existing_auto_section_insert_index(lines)
     if auto_idx is None:
-        block = ["### 自動防止ステップ", *additions, ""]
+        heading = "# ### 自動防止ステップ" if is_shell_target else "### 自動防止ステップ"
+        block = [heading, *additions, ""]
         idx = procedure_insertion_index(lines)
     else:
         block = additions
