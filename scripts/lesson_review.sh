@@ -87,6 +87,14 @@ PYEOF
     exit 0
 fi
 
+# The overwhelmingly common review path has no drafts. Avoid starting Python
+# and parsing the entire (11k+ line) Markdown ledger when the exact metadata
+# token consumed below is absent; any possible draft keeps the canonical parser.
+if ! LC_ALL=C grep -qE '^- \*\*status\*\*:[[:space:]]*draft[[:space:]]*$' "$LESSONS_FILE"; then
+    echo "[lesson_review] No draft lessons found in $LESSONS_FILE"
+    exit 0
+fi
+
 export LESSONS_FILE
 python3 << 'PYEOF'
 import os
