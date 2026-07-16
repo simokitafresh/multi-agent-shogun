@@ -3,7 +3,7 @@
 # PreToolUse hook: block destructive Bash commands (D001-D008).
 set -euo pipefail
 
-payload="$(cat)"
+IFS= read -r -d '' payload || true
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 
 # Fast-path: skip if not Bash tool
