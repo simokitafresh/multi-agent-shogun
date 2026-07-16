@@ -1745,18 +1745,31 @@ entries:
   updated_at: "2026-07-16T20:39:20"
   iteration: 1
 - script_path: scripts/hooks/pre-karo-edit-guard.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: 15
-  before_real_ms: 817
-  after_real_ms: ""
-  real_measurement_command: 50x printf '{"tool_name":"Edit","tool_input":{"file_path":"scripts/hooks/pre-karo-edit-guard.sh"}}'
-    | AGENT_ID=kagemaru bash scripts/hooks/pre-karo-edit-guard.sh; median of 5 runs
-  test_result: bash_n_pass;sandbox_block_conflict_PASS;karo_queue_whitelist_PASS;non_karo_allow_PASS;non_edit_allow_PASS;SKIP=0;before_973_after_817
-  commit: c2750192f
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  before_real_ms: 303.844424
+  after_real_ms: 124.254803
+  real_measurement_command: "AGENT_ID=karo PRE_KARO_EDIT_PROJ_DIR=<fixed-repo> bash scripts/hooks/pre-karo-edit-guard.sh <<< fixed-nonconflict-Edit-payload"
+  test_result: "manual contract 4/4 PASS, FAIL=0, SKIP=0; bash -n PASS"
+  commit: "77d6841804fba6e9c890282c07ef7c3b075a9c8c"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T03:28:04"
   iteration: 1
+  last_good_commit: "f427fd7bad3fbf1c796290d994d18fba864b2ec2"
+  candidate_commit: "77d6841804fba6e9c890282c07ef7c3b075a9c8c"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 303.844424
+  last_good_p95_ms: 354.190778
+  candidate_p50_ms: 124.254803
+  candidate_p95_ms: 146.240436
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2 Linux 6.6.87.1 x86_64; same repo state and payload"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/hooks/pre-mcp-lord-attribution-guard.sh
   status: completed
   before_ms: 14
@@ -2431,21 +2444,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/lib/model_colors.sh
-  status: assigned
+  status: completed
   before_ms: 15
   after_ms: 15
-  before_real_ms: 821
-  after_real_ms: ""
-  real_measurement_command: bash -c 'source scripts/lib/model_colors.sh; for i in
-    {1..5000}; do resolve_bg_color hayate "GPT-5.5 high" >/dev/null; resolve_bg_color
-    karo "Opus 4.6 high" >/dev/null; resolve_bg_color hanzo "Sonnet 4.6 high" >/dev/null;
-    resolve_border_fg_color "GPT-5.5 high" >/dev/null; resolve_border_fg_color "Sonnet
-    4.6 high" >/dev/null; resolve_border_fg_color unknown >/dev/null; done'
-  test_result: bash_n_pass;bats_test_cli_lookup_model_colors_1_pass_0_skip;representative_outputs_match;before_38579_after_821;SKIP=0
-  commit: 521d9fbd7
+  before_real_ms: 640.875
+  after_real_ms: 346.03
+  real_measurement_command: "source \"$FILE\"; resolve_model_display(){ printf \"%s\\n\" \"GPT-5.6 Sol low\"; }; for i in {1..200}; do resolve_bg_color hanzo \"GPT-5.6 Sol low\" >/dev/null; resolve_border_fg_color \"GPT-5.6 Sol low\" >/dev/null; done"
+  test_result: "PASS:14/14"
+  commit: "ea5cd40b810c720901f8edf470c402f17fd8cd0f"
   assigned_to: "hanzo"
-  updated_at: "2026-07-17T03:16:05"
+  updated_at: "2026-07-17T03:23:59"
   iteration: 1
+  last_good_commit: "acf4c469c9e2d1352ddf224ad3d274d2f9887b8c"
+  candidate_commit: "ea5cd40b810c720901f8edf470c402f17fd8cd0f"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 640.875
+  last_good_p95_ms: 678.543
+  candidate_p50_ms: 346.03
+  candidate_p95_ms: 382.682
+  ab_order: "alternating"
+  warmup_each: "2"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux|bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)|heavy_admission=v2"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/lib/model_detect.sh
   status: pending
   before_ms: 15
@@ -3394,16 +3417,30 @@ entries:
   updated_at: "2026-06-08T15:25:24"
   iteration: 1
 - script_path: scripts/switch_project.sh
-  status: pending
+  status: saturated
   before_ms: 19
   after_ms: ''
-  before_real_ms: __BEFORE_REAL_MS__
-  after_real_ms: ""
-  real_measurement_command: ''
-  test_result: baseline_bash_n_exit_0
-  commit: ''
-  assigned_to: ""
-  updated_at: "2026-06-13T00:53:00"
+  before_real_ms: 23.521
+  after_real_ms: 92.033
+  real_measurement_command: "DRY_RUN=1 bash scripts/switch_project.sh infra"
+  test_result: "direct variations PASS=3 FAIL=0 SKIP=0; related bats=0"
+  commit: "77d6841804fba6e9c890282c07ef7c3b075a9c8c"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T03:36:12"
+  last_good_commit: "77d6841804fba6e9c890282c07ef7c3b075a9c8c"
+  candidate_commit: "0250805716d9d44122344de9581960d07917d7e3"
+  ab_samples_per_arm: "20"
+  last_good_p50_ms: 23.521
+  last_good_p95_ms: 28.505
+  candidate_p50_ms: 92.033
+  candidate_p95_ms: 105.114
+  ab_order: "alternating"
+  warmup_each: "3"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux; bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu); awk=GNU Awk 5.2.1, API 3.2, PMA Avon 8-g1, (GNU MPFR 4.2.1, GNU MP 6.3.0); cwd=/mnt/c/tools/multi-agent-shogun"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/sync_lessons.sh
   status: pending
   before_ms: 14
@@ -3593,15 +3630,15 @@ entries:
   updated_at: "2026-07-16T20:39:17"
   commit: "d890eb0cda065cd3cd5daf25ada1ee461593463f"
 - script_path: scripts/switch_project.sh
-  status: pending
+  status: assigned
   before_ms: ''
   after_ms: ''
   before_real_ms: 780
   after_real_ms: ""
   real_measurement_command: DRY_RUN=1 bash scripts/switch_project.sh dm-signal
   test_result: 7/7 PASS SKIP=0 (test_inbox_watcher_health.bats)
-  assigned_to: ""
-  updated_at: "2026-06-13T00:53:00"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T03:31:56"
   commit: 8c69e8666
   iteration: 2
 - script_path: .claude/hooks/posttool-dispatch.sh
