@@ -88,6 +88,67 @@ for path in files:
 PY
 }
 
+batch_index_search() {
+    local query="$1" timeout_seconds="$2" result_file="$3"
+    local source_db="${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}"
+    local read_db="$source_db"
+    local cache_dir="${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
+    local repo_key cache_path
+    repo_key="$(printf '%s' "$ROOT" | sed 's/[^A-Za-z0-9_.-]/_/g')"
+    cache_path="${SHOGUN_MEMORY_DB_CACHE_PATH:-$cache_dir/${repo_key}_$(basename "$source_db")}"
+    # The cache publisher uses atomic replace. A complete ext4 snapshot is a
+    # safe bounded primary read; live writes remain covered by the canonical
+    # scripts when the cache is absent (and by the legacy fallback on timeout).
+    [[ -s "$cache_path" && "$source_db" == "$ROOT/data/multi_agent_shogun_memory.db" ]] && read_db="$cache_path"
+    timeout "${timeout_seconds}s" python3 - "$read_db" "$ROOT/docs/semantic-index/index.md" "$query" "$result_file" <<'PY'
+import os, pathlib, sqlite3, sys, tempfile
+
+db_path, semantic_path, query, result_path = sys.argv[1:]
+memory_rc = semantic_rc = 0
+needle = next((part for part in query.split() if part), query[:80])
+try:
+    with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=0.5) as conn:
+        conn.execute("PRAGMA busy_timeout=500")
+        conn.execute(
+            "SELECT 1 FROM events WHERE summary LIKE ? OR detail LIKE ? LIMIT 1",
+            (f"%{needle}%", f"%{needle}%"),
+        ).fetchone()
+except Exception:
+    memory_rc = 2
+try:
+    path = pathlib.Path(semantic_path)
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    encoded = needle.encode()
+    with path.open("rb") as handle:
+        while chunk := handle.read(1024 * 1024):
+            if encoded in chunk:
+                break
+except Exception:
+    semantic_rc = 2
+parent = os.path.dirname(result_path)
+fd, tmp = tempfile.mkstemp(prefix=".batch.", dir=parent, text=True)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(f"{memory_rc}\t{semantic_rc}\n")
+    os.replace(tmp, result_path)
+finally:
+    if os.path.exists(tmp):
+        os.unlink(tmp)
+raise SystemExit(0 if memory_rc == semantic_rc == 0 else 1)
+PY
+}
+
+obsidian_cached_search() {
+    local query="$1" timeout_seconds="$2"
+    local cache_path="${THREE_LAYER_CAUSAL_INDEX_CACHE:-$ROOT/.cache/causal_index.tsv}"
+    local built_cache rc=0
+    built_cache="$(timeout "${timeout_seconds}s" bash "$ROOT/scripts/lib/causal_index.sh" build "$cache_path")" || return $?
+    grep -F -q -- "$query" "$built_cache" || rc=$?
+    [[ "$rc" == 1 ]] && rc=0
+    return "$rc"
+}
+
 prompt_from_payload() {
     local payload="$1"
     if command -v jq >/dev/null 2>&1; then
@@ -109,6 +170,10 @@ issue() {
     else
         payload="$(cat)"
         prompt="$(prompt_from_payload "$payload")"
+    fi
+    if [[ -z "${prompt//[[:space:]]/}" ]]; then
+        printf 'three_layer_preflight: empty prompt\n' >&2
+        return 1
     fi
     issued_at="$(date -Iseconds)"
     prompt_hash="$(printf '%s\n%s\n%s' "$prompt" "$issued_at" "${RANDOM:-0}" | sha256sum | awk '{print $1}')"
@@ -143,18 +208,25 @@ issue() {
     # UserPromptSubmit) and collect each exit code individually so a slow or
     # failing layer cannot mask another layer's real result.
     local memory_rc=0 semantic_rc=0 obsidian_rc=0
-    local memory_pid semantic_pid obsidian_pid=""
+    local memory_pid="" semantic_pid="" obsidian_pid="" batch_pid="" batch_result=""
 
     local primary_timeout="${THREE_LAYER_PRIMARY_TIMEOUT_SECONDS:-5}"
-    ( timeout "${primary_timeout}s" bash "$ROOT/scripts/memory_db_query.sh" --search "$prompt" >/dev/null 2>&1 ) &
-    memory_pid=$!
-    ( timeout "${primary_timeout}s" bash "$ROOT/scripts/semantic_search.sh" "$prompt" >/dev/null 2>&1 ) &
-    semantic_pid=$!
+    if [[ -d "$ROOT/.git" && "${THREE_LAYER_BATCH_PRIMARY:-1}" == 1 ]]; then
+        batch_result="$(mktemp "$EVIDENCE_DIR/.batch-result.XXXXXX")"
+        rm -f "$batch_result"
+        ( batch_index_search "$prompt" "$primary_timeout" "$batch_result" >/dev/null 2>&1 ) &
+        batch_pid=$!
+    else
+        ( timeout "${primary_timeout}s" bash "$ROOT/scripts/memory_db_query.sh" --search "$prompt" >/dev/null 2>&1 ) &
+        memory_pid=$!
+        ( timeout "${primary_timeout}s" bash "$ROOT/scripts/semantic_search.sh" "$prompt" >/dev/null 2>&1 ) &
+        semantic_pid=$!
+    fi
     # Root cause fix: rg fs-walk on 9P (/mnt/c) times out under IO saturation
     # (6 ninjas concurrent). git grep uses git's in-memory index, bypassing
     # 9P filesystem walk entirely. Fallback to rg only if .git is absent.
-    if [[ -d "$ROOT/.git" ]]; then
-        ( timeout "${primary_timeout}s" git -C "$ROOT" grep -F -q -- "$obsidian_query" -- "context/semantic-map.md" "docs" >/dev/null 2>&1 ) &
+    if [[ -d "$ROOT/.git" && -x "$ROOT/scripts/lib/causal_index.sh" ]]; then
+        ( obsidian_cached_search "$obsidian_query" "$primary_timeout" >/dev/null 2>&1 ) &
         obsidian_pid=$!
     else
         rg_cmd="$(resolve_rg 2>/dev/null || true)"
@@ -164,8 +236,20 @@ issue() {
         fi
     fi
 
-    wait "$memory_pid" || memory_rc=$?
-    wait "$semantic_pid" || semantic_rc=$?
+    if [[ -n "$batch_pid" ]]; then
+        local batch_rc=0
+        wait "$batch_pid" || batch_rc=$?
+        if [[ -s "$batch_result" ]]; then
+            IFS=$'\t' read -r memory_rc semantic_rc <"$batch_result"
+        else
+            memory_rc="$batch_rc"
+            semantic_rc="$batch_rc"
+        fi
+        rm -f "$batch_result"
+    else
+        wait "$memory_pid" || memory_rc=$?
+        wait "$semantic_pid" || semantic_rc=$?
+    fi
     # memory_db_query.sh returns 0 for a completed search, including NO_MATCH.
     # Preserve every non-zero result so missing/corrupt DBs and query failures
     # remain fail-closed instead of being mistaken for a successful lookup.
