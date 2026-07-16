@@ -430,6 +430,7 @@ lessons:
   created_at: '2026-07-10'
   automated: true
   enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=binary_check:/ && ; test=tests/unit/test_cmd_save_research_artifact_reflux.bats'
+  superseded_by: 'LS-A11 (commit 6e1854eb0で4関数のAC区間抽出を修正し、tests/unit/test_cmd_save_research_artifact_reflux.batsでLevel4回帰済み。LS-A11 source_idsにも統合済みのため重複active候補を閉鎖)'
 - id: 'LS088'
   title: 'stop hookの洗脳#3検出パターンに許可求め・判断委任フレーズが欠落'
   origin: '[[LS088]] -> 統合 -> [[LS048]]'
