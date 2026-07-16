@@ -19,6 +19,7 @@ setup() {
     export SPEED_TRAINING_LEDGER="$LEDGER"
     export SHOGUN_STATE_DIR="$TMP_ROOT/state"
     export SPEED_TRAINING_TASK_DIR="$TMP_ROOT/tasks"
+    export GATE_FIRE_LOG_FILE="$TMP_ROOT/gate_fire_log.yaml"
     mkdir -p "$SPEED_TRAINING_TASK_DIR"
     AB_SEQUENCE="L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
     AB_ARGS=(alternating 1 env-fixture-sha256 0 0 CLEAR "$AB_SEQUENCE")
@@ -317,6 +318,80 @@ EOF
         in_target && /candidate_p95_ms: 100/ { p95_seen = 1 }
         END { exit !(status_seen && before_seen && after_seen && command_seen && test_seen && commit_seen && samples_seen && p95_seen) }
     ' "$LEDGER"
+}
+
+@test "record-real batch upserts missing evidence and emits exactly one measurable event" {
+    cat > "$LEDGER" <<'EOF'
+global_status: running
+entries:
+  - script_path: scripts/legacy.sh
+    status: assigned
+    real_measurement_command: old command
+      stale continuation
+EOF
+
+    cmd_record_real scripts/legacy.sh completed good123 cand123 $'bash scripts/legacy.sh --flag\nsecond line' \
+        10 100 120 80 90 $'PASS=1 FAIL=0 SKIP=0\nverified' "${AB_ARGS[@]}" "$LEDGER"
+
+    run python3 - "$LEDGER" "$GATE_FIRE_LOG_FILE" <<'PY'
+import sys, yaml
+entry = yaml.safe_load(open(sys.argv[1]))["entries"][0]
+required = ("last_good_commit", "candidate_commit", "ab_samples_per_arm", "last_good_p50_ms",
+            "last_good_p95_ms", "candidate_p50_ms", "candidate_p95_ms", "ab_order", "warmup_each",
+            "environment_fingerprint", "fail_count", "skip_count", "hook_gate_result", "ab_sequence")
+assert all(entry.get(key) not in (None, "") for key in required)
+assert entry["real_measurement_command"] == "bash scripts/legacy.sh --flag\nsecond line"
+assert entry["test_result"] == "PASS=1 FAIL=0 SKIP=0\nverified"
+assert sum('gate: "script_speed_record_real"' in line for line in open(sys.argv[2])) == 1
+PY
+    [ "$status" -eq 0 ]
+    ! grep -Fq 'stale continuation' "$LEDGER"
+
+    cmd_record_real scripts/legacy.sh completed good123 cand123 $'bash scripts/legacy.sh --flag\nsecond line' \
+        10 100 120 80 90 $'PASS=1 FAIL=0 SKIP=0\nverified' "${AB_ARGS[@]}" "$LEDGER"
+    [ "$(grep -Fc 'gate: "script_speed_record_real"' "$GATE_FIRE_LOG_FILE")" -eq 1 ]
+
+    out="$TMP_ROOT/fp.yaml"
+    run env DETECTOR_FP_ROOT="$PROJECT_ROOT" DETECTOR_FP_GATE_FIRE_LOG="$GATE_FIRE_LOG_FILE" \
+        DETECTOR_FP_CMD_QUALITY_LOG="$TMP_ROOT/quality.yaml" DETECTOR_FP_GATE_ALERTS_LOG="$TMP_ROOT/alerts.yaml" \
+        bash "$PROJECT_ROOT/scripts/detector_fp_rate.sh" --out "$out"
+    [ "$status" -eq 0 ]
+    grep -Fq 'detector: "script_speed_record_real"' "$out"
+}
+
+@test "record-real event failure rolls ledger back without partial commit" {
+    first=$(cmd_next "$LEDGER")
+    original=$(sha256sum "$LEDGER" | cut -d' ' -f1)
+    mkdir -p "$TMP_ROOT/event-is-directory"
+    export GATE_FIRE_LOG_FILE="$TMP_ROOT/event-is-directory"
+
+    run cmd_record_real "$first" completed good123 cand123 "bash help" 10 100 120 80 90 PASS "${AB_ARGS[@]}" "$LEDGER"
+    [ "$status" -ne 0 ]
+    [ "$(sha256sum "$LEDGER" | cut -d' ' -f1)" = "$original" ]
+}
+
+@test "record-real concurrent scripts commit atomically without lost entries" {
+    cat > "$LEDGER" <<'EOF'
+global_status: running
+entries:
+  - script_path: scripts/a.sh
+    status: assigned
+  - script_path: scripts/b.sh
+    status: assigned
+EOF
+    cmd_record_real scripts/a.sh completed good-a cand-a "bash a" 10 100 120 80 90 "PASS A" "${AB_ARGS[@]}" "$LEDGER" &
+    p1=$!
+    cmd_record_real scripts/b.sh completed good-b cand-b "bash b" 10 110 130 70 80 "PASS B" "${AB_ARGS[@]}" "$LEDGER" &
+    p2=$!
+    wait "$p1"
+    wait "$p2"
+    run python3 - "$LEDGER" <<'PY'
+import sys, yaml
+entries = {e["script_path"]: e for e in yaml.safe_load(open(sys.argv[1]))["entries"]}
+assert entries["scripts/a.sh"]["candidate_commit"] == "cand-a"
+assert entries["scripts/b.sh"]["candidate_commit"] == "cand-b"
+PY
+    [ "$status" -eq 0 ]
 }
 
 @test "record-after replaces a multiline result without leaving stale continuation lines" {

@@ -39,6 +39,21 @@ append_selection_event() {
     ) 8>"${log_file}.lock"
 }
 
+append_record_real_event() {
+    local script_path="$1" status="$2" candidate_commit="$3"
+    local log_file="${GATE_FIRE_LOG_FILE:-$SCRIPT_DIR/logs/gate_fire_log.yaml}"
+    mkdir -p "$(dirname "$log_file")"
+    (
+        flock -w 5 8 || exit 1
+        local event_key="script=${script_path};candidate_commit=${candidate_commit}"
+        if [ -f "$log_file" ] && grep -Fq "reasons: \"${event_key};" "$log_file"; then
+            exit 0
+        fi
+        printf -- '- ts: "%s", file: "%s", gate: "script_speed_record_real", result: PASS, checks: "deployment/result", reasons: "%s;ledger_status=%s"\n' \
+            "$(now_iso)" "$script_path" "$event_key" "$status" >> "$log_file"
+    ) 8>"${log_file}.lock"
+}
+
 yaml_quote() {
     local value="$1"
     value="${value//\\/\\\\}"
@@ -226,27 +241,16 @@ PY
         status="saturated"
     fi
     [ -f "$ledger" ] || return 1
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "status" "$status"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "before_real_ms" "$last_p50"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "after_real_ms" "$candidate_p50"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "real_measurement_command" "$real_measurement_command"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "test_result" "$test_result"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "commit" "$([ "$status" = completed ] && printf '%s' "$candidate_commit" || printf '%s' "$last_good_commit")"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "last_good_commit" "$last_good_commit"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "candidate_commit" "$candidate_commit"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "ab_samples_per_arm" "$samples"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "last_good_p50_ms" "$last_p50"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "last_good_p95_ms" "$last_p95"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "candidate_p50_ms" "$candidate_p50"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "candidate_p95_ms" "$candidate_p95"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "ab_order" "$order"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "warmup_each" "$warmup_each"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "environment_fingerprint" "$environment_fingerprint"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "fail_count" "$fail_count"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "skip_count" "$skip_count"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "hook_gate_result" "$hook_gate_result"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "ab_sequence" "$sequence"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "updated_at" "$(now_iso)"
+    with_ledger_lock "$ledger" commit_record_real_unlocked "$ledger" "$script_path" "$status" "$candidate_commit" \
+        status "$status" before_real_ms "$last_p50" after_real_ms "$candidate_p50" \
+        real_measurement_command "$real_measurement_command" test_result "$test_result" \
+        commit "$([ "$status" = completed ] && printf '%s' "$candidate_commit" || printf '%s' "$last_good_commit")" \
+        last_good_commit "$last_good_commit" candidate_commit "$candidate_commit" \
+        ab_samples_per_arm "$samples" last_good_p50_ms "$last_p50" last_good_p95_ms "$last_p95" \
+        candidate_p50_ms "$candidate_p50" candidate_p95_ms "$candidate_p95" ab_order "$order" \
+        warmup_each "$warmup_each" environment_fingerprint "$environment_fingerprint" \
+        fail_count "$fail_count" skip_count "$skip_count" hook_gate_result "$hook_gate_result" \
+        ab_sequence "$sequence" updated_at "$(now_iso)" || return 1
 }
 
 cmd_init_ledger() {
@@ -662,6 +666,102 @@ update_entry_field_unlocked() {
         { print }
     ' "$ledger" > "$tmp"
     publish_ledger_yaml "$tmp" "$ledger"
+}
+
+update_entry_fields_unlocked() {
+    local ledger="$1" script_path="$2"
+    shift 2
+    [ "$#" -gt 0 ] && [ $(( $# % 2 )) -eq 0 ] || return 2
+    local tmp
+    tmp=$(mktemp "${ledger}.XXXXXX")
+    if ! python3 - "$ledger" "$tmp" "$script_path" "$@" <<'PY'
+import json
+import re
+import sys
+import yaml
+
+source, target, script_path, *pairs = sys.argv[1:]
+updates = dict(zip(pairs[::2], pairs[1::2]))
+lines = open(source, encoding="utf-8").read().splitlines(keepends=True)
+entry_re = re.compile(r'^(\s*)-\s+script_path:\s*(.*?)\s*$')
+start = end = None
+indent = "  "
+for index, line in enumerate(lines):
+    match = entry_re.match(line.rstrip("\n"))
+    if not match:
+        continue
+    value = match.group(2)
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+        value = value[1:-1]
+    if start is not None:
+        end = index
+        break
+    if value == script_path:
+        start = index
+        indent = match.group(1) + "  "
+if start is None:
+    raise SystemExit(f"entry not found: {script_path}")
+if end is None:
+    end = len(lines)
+
+block = lines[start:end]
+result = [block[0]]
+seen = set()
+index = 1
+field_re = re.compile(rf'^{re.escape(indent)}([A-Za-z0-9_]+):')
+while index < len(block):
+    match = field_re.match(block[index])
+    if not match:
+        result.append(block[index])
+        index += 1
+        continue
+    field = match.group(1)
+    next_index = index + 1
+    while next_index < len(block) and not field_re.match(block[next_index]):
+        next_index += 1
+    if field in updates:
+        value = updates[field]
+        rendered = value if field == "status" or (field.endswith("_ms") and re.fullmatch(r'\d+(?:\.\d+)?', value)) else json.dumps(value, ensure_ascii=False)
+        result.append(f"{indent}{field}: {rendered}\n")
+        seen.add(field)
+    else:
+        result.extend(block[index:next_index])
+    index = next_index
+for field, value in updates.items():
+    if field in seen:
+        continue
+    rendered = value if field == "status" or (field.endswith("_ms") and re.fullmatch(r'\d+(?:\.\d+)?', value)) else json.dumps(value, ensure_ascii=False)
+    result.append(f"{indent}{field}: {rendered}\n")
+
+candidate = lines[:start] + result + lines[end:]
+open(target, "w", encoding="utf-8").writelines(candidate)
+data = yaml.safe_load(open(target, encoding="utf-8")) or {}
+entry = next((item for item in data.get("entries", []) if item.get("script_path") == script_path), None)
+if entry is None or any(str(entry.get(key, "")) != value for key, value in updates.items()):
+    raise SystemExit("record-real batch read-back verification failed")
+PY
+    then
+        rm -f "$tmp"
+        return 1
+    fi
+    publish_ledger_yaml "$tmp" "$ledger"
+}
+
+commit_record_real_unlocked() {
+    local ledger="$1" script_path="$2" status="$3" candidate_commit="$4"
+    shift 4
+    local backup
+    backup=$(mktemp "${ledger}.rollback.XXXXXX")
+    cp "$ledger" "$backup"
+    if ! update_entry_fields_unlocked "$ledger" "$script_path" "$@"; then
+        rm -f "$backup"
+        return 1
+    fi
+    if ! append_record_real_event "$script_path" "$status" "$candidate_commit"; then
+        mv "$backup" "$ledger"
+        return 1
+    fi
+    rm -f "$backup"
 }
 
 cmd_mark_assigned() {

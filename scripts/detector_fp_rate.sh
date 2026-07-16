@@ -193,6 +193,20 @@ def daemon_watchdog_heartbeat_events():
     return events
 
 
+def script_speed_record_real_events():
+    events = []
+    for e in parse_fire_log(gate_fire_path):
+        if e.get("gate") != "script_speed_record_real":
+            continue
+        events.append({
+            "ts": e.get("ts"), "detector": "script_speed_record_real",
+            "cmd_id": e.get("file") or "script_speed_record_real",
+            "result": e.get("result"), "reason": e.get("reasons") or "",
+            "source": "gate_fire_log",
+        })
+    return events
+
+
 def backup_rotation_summary():
     """Aggregate memory_db_backup_rotation fires (scripts/memory_db_live_insert.py's
     rotate_routine_backups) into their own measurement section. These fires are
@@ -330,6 +344,7 @@ def cmd_save_currently_emits_detector(cmd_id, detector):
 events = (
     cmd_save_events() + escalation_events() + today_history_events()
     + gunshi_cs_events() + skill_script_ref_events() + daemon_watchdog_heartbeat_events()
+    + script_speed_record_real_events()
 )
 events.sort(key=lambda x: parse_ts(x.get("ts")) or dt.datetime.min.replace(tzinfo=dt.timezone.utc))
 
@@ -343,6 +358,12 @@ for cmd_id, cmd_events in by_cmd.items():
     final = cmd_events[-1].get("result")
     emitted = set()
     for e in cmd_events:
+        if e.get("detector") == "script_speed_record_real" and e.get("result") in {"PASS", "CLEAR"}:
+            event_key = (e.get("detector"), e.get("result"))
+            if event_key not in emitted:
+                emitted.add(event_key)
+                rows.append({**e, "outcome": "true_positive"})
+            continue
         if e.get("result") not in {"WARN", "BLOCK", "ALERT"}:
             continue
         if e.get("detector") == "cmd_save:cmd_text_deferral_language" and not deferral_language_still_matches(cmd_id):
