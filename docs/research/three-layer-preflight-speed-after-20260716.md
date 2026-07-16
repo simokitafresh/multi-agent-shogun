@@ -20,9 +20,11 @@
 
 第二巡post-commit 214/254msを固定baselineとした。実行時負荷を含む再測定値はp50/p95=243.5/285ms。区間20回の上位3寄与はsemantic index p50=77ms、memory p50=75.5ms、Obsidian p50=43ms（atomic publish p50=10ms）。
 
-batch/causal方式は変更せず、batch hot pathの`sed`/`basename` subprocessをpure Bashへ置換し、親がwaitしてから読むprivate resultへの子側二重atomic tempを除去した。after 20回はp50/p95=142.5/160ms、timeout=0、superseded=0、三層一致20/20。第三巡は採用。
+batch/causal方式は変更せず、batch hot pathの`sed`/`basename` subprocessをpure Bashへ置換し、親がwaitしてから読むprivate resultへの子側二重atomic tempを除去した。
 
-累積: 1621/4504ms → 981.5/1794ms → 225.5/254ms → 142.5/160ms（p50/p95）。
+RC後の同一環境ABAB交互20回/版では、旧版`00bc9be22`がp50/p95=154/188ms、現版`098fa5a6f`が139/167ms。現版はp50 -15ms、p95 -21msで双方非退行、両群timeout=0、superseded=0、三層一致20/20。第三巡は交互A/B根拠で採用。
+
+累積: 1621/4504ms → 981.5/1794ms → 225.5/254ms → A/B同環境139/167ms（p50/p95）。
 
 ## 層別SLO
 
