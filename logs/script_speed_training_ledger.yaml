@@ -1555,19 +1555,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/gates/gate_p_average_freshness.sh
-  status: pending
+  status: completed
   before_ms: 8
   after_ms: 10
-  before_real_ms: 78
-  after_real_ms: ""
-  real_measurement_command: python perf_counter around bash scripts/gates/gate_p_average_freshness.sh
-    with fake curl, isolated env file, and per-run cache
-  test_result: bash_n_pass;bats tests/unit/test_gate_p_average_freshness.bats 4/4
-    PASS SKIP=0; before median 111.201ms; after median 77.804ms
-  commit: 47842297f
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 41
+  after_real_ms: 24
+  real_measurement_command: "env P_AVERAGE_ENV_FILE=<fixture>/env P_AVERAGE_CACHE_FILE=<fixture>/cache bash <fixture>/active/scripts/gates/gate_p_average_freshness.sh >/dev/null"
+  test_result: "bash -n PASS; bats tests/unit/test_gate_p_average_freshness.bats 11/11 PASS FAIL=0 SKIP=0; safety_removed=0"
+  commit: "fb2d23de409b8f3245412db19113276629197ae0"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T07:16:07"
   iteration: 1
+  last_good_commit: "31a16b4e0c2a25d4ce59f743f1801b11b8aacc0b"
+  candidate_commit: "fb2d23de409b8f3245412db19113276629197ae0"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 41
+  last_good_p95_ms: 83
+  candidate_p50_ms: 24
+  candidate_p95_ms: 33
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2 bash cache-hit fixture; identical active path/env/cache; alternating LC x10"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_pd_sync.sh
   status: pending
   before_ms: 16
@@ -2258,19 +2270,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/inbox_archive.sh
-  status: pending
+  status: saturated
   before_ms: 15
   after_ms: 15
-  before_real_ms: 74
-  after_real_ms: ""
-  real_measurement_command: 'bash scripts/inbox_archive.sh <agent> (controlled test
-    inbox: 2 read + 1 unread, 10-run median)'
-  test_result: '2/2 PASS (fast_path+multiline_fallback); grep subprocess removed+mktemp
-    -d consolidation: 97ms->74ms (-23ms, -24%)'
-  commit: 36acec706
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 539
+  after_real_ms: 589
+  real_measurement_command: "timeout 60 bats tests/unit/test_inbox_archive.bats --filter 'archives read messages'"
+  test_result: "PASS 3/3 FAIL0 SKIP0; candidate rolled back ab1a657cf"
+  commit: "889b373e31aeb595eccce0b70d2f77363369e0c0"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T07:26:23"
   iteration: 1
+  last_good_commit: "889b373e31aeb595eccce0b70d2f77363369e0c0"
+  candidate_commit: "8846c2ebe8484081dd1dd136288960ec4f572242"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 539
+  last_good_p95_ms: 763
+  candidate_p50_ms: 589
+  candidate_p95_ms: 744
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "same WSL2 host; isolated worktrees under same /mnt/c filesystem"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/inbox_mark_read.sh
   status: completed
   before_ms: 14
@@ -3541,7 +3565,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/ralph_loop_closer.sh
-  status: pending
+  status: assigned
   before_ms: 18
   after_ms: ''
   before_real_ms: 73
@@ -3550,8 +3574,8 @@ entries:
     infra title detail cmd_test (31 runs median)
   test_result: bash_n_pass; fixtures no_warn/no_missing/missing_yaml_parse PASS; SKIP=0
   commit: 4a1339d328d814d4aefcd663c435622d349c7a4e
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-17T07:23:14"
   iteration: 1
 - script_path: scripts/ralph_loop_metrics.sh
   status: completed
