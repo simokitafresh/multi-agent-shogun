@@ -33,14 +33,23 @@ resolve_gist_id() {
 
     PROJECTS_YAML="$SCRIPT_DIR/config/projects.yaml"
     if [ -f "$PROJECTS_YAML" ]; then
-        # L034: 固定インデント依存にしない柔軟なパース
-        CURRENT_PJ=$(awk '/^current_project:/{print $2}' "$PROJECTS_YAML")
+        # current_projectと対応gist_urlを1回の読込で解決する。
+        # idより後にcurrent_projectが現れる配置にも対応するためURLをid別に保持する。
+        local -a _project_meta=()
+        mapfile -t _project_meta < <(awk '
+            /^current_project:/ { current=$2 }
+            /^[[:space:]]*- id:/ { id=$NF }
+            /^[[:space:]]*gist_url:/ && id != "" {
+                value=$0
+                sub(/.*gist_url:[[:space:]]*"?/, "", value)
+                sub(/"?[[:space:]]*$/, "", value)
+                urls[id]=value
+            }
+            END { print current; print urls[current] }
+        ' "$PROJECTS_YAML")
+        CURRENT_PJ="${_project_meta[0]:-}"
         if [ -n "$CURRENT_PJ" ]; then
-            # PJブロック内のgist_urlを取得（id:マッチ→次のgist_url:を抽出）
-            GIST_URL=$(awk -v id="$CURRENT_PJ" '
-                /^[[:space:]]*- id:/ { found=($NF == id) }
-                found && /gist_url:/ { gsub(/.*gist_url:[[:space:]]*"?|"?[[:space:]]*$/, ""); print; exit }
-            ' "$PROJECTS_YAML")
+            GIST_URL="${_project_meta[1]:-}"
             if [ -n "$GIST_URL" ]; then
                 # URLから末尾のGIST_IDを抽出（32文字hex）
                 EXTRACTED_ID="${GIST_URL##*/}"
