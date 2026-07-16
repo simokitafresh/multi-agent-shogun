@@ -312,6 +312,8 @@ re_enqueue_completed_unlocked() {
             sub(/"?[[:space:]]*$/, "", path)
             in_target = (path in selected)
             if (in_target) {
+                match($0, /^[[:space:]]*/)
+                field_indent = substr($0, 1, RLENGTH) "  "
                 block = $0 ORS
                 status_seen = before_seen = after_seen = iteration_seen = assigned_seen = updated_seen = 0
                 after_value = ""
@@ -323,29 +325,29 @@ re_enqueue_completed_unlocked() {
         in_target {
             line = $0
             if ($0 ~ /^[[:space:]]+status:/) {
-                line = "    status: pending"
+                line = field_indent "status: pending"
                 status_seen = 1
             } else if ($0 ~ /^[[:space:]]+before_real_ms:/) {
-                line = "    before_real_ms: __BEFORE_REAL_MS__"
+                line = field_indent "before_real_ms: __BEFORE_REAL_MS__"
                 before_seen = 1
             } else if ($0 ~ /^[[:space:]]+after_real_ms:/) {
                 after_value = $0
                 sub(/^.*after_real_ms:[[:space:]]*"?/, "", after_value)
                 sub(/"?[[:space:]]*$/, "", after_value)
-                line = "    after_real_ms: \"\""
+                line = field_indent "after_real_ms: \"\""
                 after_seen = 1
             } else if ($0 ~ /^[[:space:]]+iteration:/) {
                 iteration_value = $0
                 sub(/^.*iteration:[[:space:]]*"?/, "", iteration_value)
                 sub(/"?[[:space:]]*$/, "", iteration_value)
                 if (iteration_value !~ /^[0-9]+$/) iteration_value = 0
-                line = "    iteration: " (iteration_value + 1)
+                line = field_indent "iteration: " (iteration_value + 1)
                 iteration_seen = 1
             } else if ($0 ~ /^[[:space:]]+assigned_to:/) {
-                line = "    assigned_to: \"\""
+                line = field_indent "assigned_to: \"\""
                 assigned_seen = 1
             } else if ($0 ~ /^[[:space:]]+updated_at:/) {
-                line = "    updated_at: \"" now "\""
+                line = field_indent "updated_at: \"" now "\""
                 updated_seen = 1
             }
             block = block line ORS
@@ -361,23 +363,24 @@ re_enqueue_completed_unlocked() {
                 in_target = 0
                 return
             }
-            if (!status_seen) block = block "    status: pending" ORS
-            before_line = "    before_real_ms: " after_value ORS
+            if (!status_seen) block = block field_indent "status: pending" ORS
+            before_line = field_indent "before_real_ms: " after_value ORS
             if (before_seen) {
-                gsub(/    before_real_ms: __BEFORE_REAL_MS__\n/, before_line, block)
+                marker = field_indent "before_real_ms: __BEFORE_REAL_MS__\n"
+                gsub(marker, before_line, block)
             } else {
                 block = block before_line
             }
-            if (!after_seen) block = block "    after_real_ms: \"\"" ORS
-            if (!iteration_seen) block = block "    iteration: 1" ORS
-            if (!assigned_seen) block = block "    assigned_to: \"\"" ORS
-            if (!updated_seen) block = block "    updated_at: \"" now "\"" ORS
+            if (!after_seen) block = block field_indent "after_real_ms: \"\"" ORS
+            if (!iteration_seen) block = block field_indent "iteration: 1" ORS
+            if (!assigned_seen) block = block field_indent "assigned_to: \"\"" ORS
+            if (!updated_seen) block = block field_indent "updated_at: \"" now "\"" ORS
             printf "%s", block
             count++
             in_target = 0
         }
     ' "$ledger" > "$tmp"
-    mv "$tmp" "$ledger"
+    publish_ledger_yaml "$tmp" "$ledger"
     local count
     count=$(wc -l < "$selected" | tr -d ' ')
     rm -f "$selected"
