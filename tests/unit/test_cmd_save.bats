@@ -3235,7 +3235,7 @@ assumptions:
     [ "$status" -eq 0 ]
 }
 
-@test "Check21.1: 数値あり+算出元なし→INFO" {
+@test "Check21.1: 数値あり+算出元なし→BLOCK" {
     CMD_BLOCK_NC='purpose: "数値算出元の提案を追加"
 command: |
   scripts/cmd_save.sh の L3450 近傍へ追加
@@ -3253,9 +3253,9 @@ assumptions:
     export CMD_BLOCK_NC CMD_BLOCK_FOUND CMD_BLOCK_LOADED
     run check_numeric_literal_derivation_source_info
     echo "$output" >&2
-    [[ "$output" == *"INFO: AC/command内に数値リテラルを検出"* ]]
+    [[ "$output" == *"BLOCK: AC/command内に数値リテラルを検出"* ]]
     [[ "$output" == *"算出元コマンド+結果"* ]]
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
 }
 
 @test "Check21.1: 数値なし→スキップ" {

@@ -6443,9 +6443,11 @@ check_numeric_literal_derivation_source_info() {
     numeric_derivation_source_evidence_exists && return 0
 
     first_hit="$(sed -n '1p' <<< "$numeric_hits" | sed -E 's/^[[:space:]-]*(description|check|id|command):[[:space:]]*//; s/^"//; s/"$//' | cut -c1-100)"
-    echo "INFO: AC/command内に数値リテラルを検出。算出元コマンド+結果の記載を推奨(LG020)" >&2
+    record_block_reason "LG020: AC/command内の数値リテラルに算出元コマンド+結果がない。入力データから再計算した一次証跡を記載せよ"
+    echo "BLOCK: AC/command内に数値リテラルを検出したが、算出元コマンド+結果がない(LG020)" >&2
     echo "  → assumptions claim または q5_verified_source に grep/rg/wc等の算出元と結果を記載してください" >&2
     echo "  → ${first_hit}" >&2
+    abort_if_block_immediate || exit 1
 }
 
 count_acceptance_criteria_items() {
@@ -6593,9 +6595,9 @@ check_ac_test_scope() {
 
 check_ac_absolute_literals
 
-# --- Check 21.1: AC/command数値リテラルの算出元記載提案（INFO） ---
+# --- Check 21.1: AC/command数値リテラルの算出元記載強制（BLOCK） ---
 # 起源: LG020 — 数値の算出元未確認により、grep結果の対象を誤認した
-# 目的: 3桁以上整数またはL行番号参照を検出し、算出元コマンド+結果の明記を促す
+# 目的: 3桁以上整数またはL行番号参照を検出し、算出元コマンド+結果がなければ保存を止める
 check_numeric_literal_derivation_source_info
 
 # --- Check 21.2: DB操作cmdのバックアップAC注入提案（WARN） ---
