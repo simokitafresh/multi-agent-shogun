@@ -280,6 +280,7 @@ PY
 
 emit_memory_db_for_knowledge_grep() {
     local query agent_id hash_file now last rows sql query_sql agent_sql like_sql
+    local rows_cache_dir rows_cache_file db_file db_fingerprint cached_fingerprint tmp_cache
 
     case "$command" in
         *grep*|*rg*) ;;
@@ -308,7 +309,25 @@ emit_memory_db_for_knowledge_grep() {
     agent_sql="${agent_id//\'/\'\'}"
     like_sql="%${query_sql}%"
     sql="SELECT ts || ' | ' || substr(summary,1,180) FROM events WHERE agent='lord' AND target='${agent_sql}' AND (summary LIKE '${like_sql}' OR detail LIKE '${like_sql}') ORDER BY ts DESC LIMIT 5;"
-    rows="$(bash "$SCRIPT_DIR/scripts/memory_db_query.sh" "$sql" 2>/dev/null || true)"
+    # The same warm grep is common within one prompt. Cache only while the
+    # SQLite DB/WAL fingerprint is unchanged, so repeated hook invocations do
+    # not repay WSL process+SQLite startup without hiding newly written rows.
+    rows_cache_dir="${PRE_BASH_MEMORY_ROWS_CACHE_DIR:-/tmp/pre_bash_memory_rows_cache}"
+    rows_cache_file="$rows_cache_dir/$(printf '%s' "${agent_id}|${query}" | cksum | awk '{print $1}').rows"
+    db_file="${MEMORY_DB_QUERY_DB:-${SHOGUN_MEMORY_DB:-$SCRIPT_DIR/data/multi_agent_shogun_memory.db}}"
+    db_fingerprint="$(stat -c '%Y:%s' "$db_file" 2>/dev/null || true)|$(stat -c '%Y:%s' "${db_file}-wal" 2>/dev/null || true)"
+    cached_fingerprint="$(sed -n '1p' "$rows_cache_file" 2>/dev/null || true)"
+    if [[ -n "$db_fingerprint" && "$cached_fingerprint" == "$db_fingerprint" ]]; then
+        rows="$(sed '1d' "$rows_cache_file" 2>/dev/null || true)"
+    else
+        rows="$(bash "$SCRIPT_DIR/scripts/memory_db_query.sh" "$sql" 2>/dev/null || true)"
+        mkdir -p "$rows_cache_dir" 2>/dev/null || true
+        tmp_cache="$(mktemp "$rows_cache_dir/.rows.XXXXXX" 2>/dev/null || true)"
+        if [[ -n "$tmp_cache" ]]; then
+            { printf '%s\n' "$db_fingerprint"; printf '%s\n' "$rows"; } > "$tmp_cache"
+            mv "$tmp_cache" "$rows_cache_file" 2>/dev/null || true
+        fi
+    fi
     [[ -z "$rows" ]] && rows="該当なし (agent=lord target=${agent_id})"
     INJECT_QUERY="$query" INJECT_AGENT="$agent_id" INJECT_ROWS="$rows" python3 - <<'PY'
 import json

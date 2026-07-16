@@ -452,6 +452,7 @@ pre_bash_combined_memory_injection_context() {
     local project_root="$2"
     local agent_id="${3:-unknown}"
     local query rows sql query_sql agent_sql like_sql db_script
+    local rows_cache_dir rows_cache_file db_file db_fingerprint cached_fingerprint tmp_cache
 
     case "$command" in
         *grep*|*rg*) ;;
@@ -470,7 +471,22 @@ pre_bash_combined_memory_injection_context() {
     like_sql="%${query_sql}%"
     db_script="$project_root/scripts/memory_db_query.sh"
     sql="SELECT ts || ' | ' || substr(summary,1,180) FROM events WHERE agent='lord' AND target='${agent_sql}' AND (summary LIKE '${like_sql}' OR detail LIKE '${like_sql}') ORDER BY ts DESC LIMIT 5;"
-    rows="$(bash "$db_script" "$sql" 2>/dev/null || true)"
+    rows_cache_dir="${PRE_BASH_MEMORY_ROWS_CACHE_DIR:-/tmp/pre_bash_memory_rows_cache}"
+    rows_cache_file="$rows_cache_dir/$(printf '%s' "${agent_id}|${query}" | cksum | awk '{print $1}').rows"
+    db_file="${MEMORY_DB_QUERY_DB:-${SHOGUN_MEMORY_DB:-$project_root/data/multi_agent_shogun_memory.db}}"
+    db_fingerprint="$(stat -c '%Y:%s' "$db_file" 2>/dev/null || true)|$(stat -c '%Y:%s' "${db_file}-wal" 2>/dev/null || true)"
+    cached_fingerprint="$(sed -n '1p' "$rows_cache_file" 2>/dev/null || true)"
+    if [[ -n "$db_fingerprint" && "$cached_fingerprint" == "$db_fingerprint" ]]; then
+        rows="$(sed '1d' "$rows_cache_file" 2>/dev/null || true)"
+    else
+        rows="$(bash "$db_script" "$sql" 2>/dev/null || true)"
+        mkdir -p "$rows_cache_dir" 2>/dev/null || true
+        tmp_cache="$(mktemp "$rows_cache_dir/.rows.XXXXXX" 2>/dev/null || true)"
+        if [[ -n "$tmp_cache" ]]; then
+            { printf '%s\n' "$db_fingerprint"; printf '%s\n' "$rows"; } > "$tmp_cache"
+            mv "$tmp_cache" "$rows_cache_file" 2>/dev/null || true
+        fi
+    fi
     [[ -z "$rows" ]] && rows="該当なし (agent=lord target=${agent_id})"
     INJECT_QUERY="$query" INJECT_AGENT="$agent_id" INJECT_ROWS="$rows" python3 - <<'PY'
 import json

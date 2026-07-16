@@ -371,6 +371,26 @@ expect_memory_context "grep knowledge path injects same query" "grep -R needle d
 expect_no_memory_context "gate script grep is excluded" "grep -R needle scripts/gates" "saizo"
 expect_no_memory_context "non-knowledge grep is excluded" "rg -n needle scripts" "saizo"
 
+# Warm result cache must be reused only while the DB fingerprint is unchanged.
+cache_dir="$(mktemp -d)"
+first_cache_output="$(PRE_BASH_MEMORY_ROWS_CACHE_DIR="$cache_dir" MEMORY_DB_QUERY_DB="$MEMORY_DB_FILE" pre_bash_combined_eval_command "rg -n freshneedle context/infrastructure.md" "$REPO_ROOT" saizo 2>/dev/null)"
+python3 - "$MEMORY_DB_FILE" <<'PY'
+import sqlite3, sys, time
+db = sqlite3.connect(sys.argv[1])
+db.execute("INSERT INTO events(id,ts,event_type,agent,target,direction,summary,detail) VALUES(?,?,?,?,?,?,?,?)",
+           ("cache-refresh", str(time.time_ns()), "knowledge", "lord", "saizo", "internal", "freshneedle after update", "cache invalidation"))
+db.commit()
+db.close()
+PY
+second_cache_output="$(PRE_BASH_MEMORY_ROWS_CACHE_DIR="$cache_dir" MEMORY_DB_QUERY_DB="$MEMORY_DB_FILE" pre_bash_combined_eval_command "rg -n freshneedle context/infrastructure.md" "$REPO_ROOT" saizo 2>/dev/null)"
+TOTAL=$((TOTAL + 1))
+if [[ "$first_cache_output" != *"freshneedle after update"* && "$second_cache_output" == *"freshneedle after update"* ]]; then
+    PASS=$((PASS + 1))
+else
+    FAIL=$((FAIL + 1))
+    printf '  FAIL [memory row cache invalidation] before=%s after=%s\n' "$first_cache_output" "$second_cache_output"
+fi
+
 # ─── Safe commands (should all pass through) ───
 echo "--- Safe commands (all should ALLOW) ---"
 expect_allow "ls"                     "ls -la"
