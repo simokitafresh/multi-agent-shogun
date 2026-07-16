@@ -53,10 +53,11 @@ _WA_CACHE="/tmp/shogun_wa_rate_cache_${_WA_ROOT_KEY}_${NINJA_FILTER:-all}_${LAST
 _WA_MTIME=$(stat -c%Y "$WA_FILE" 2>/dev/null || echo 0)
 _GATE_MTIME=$(stat -c%Y "$GATE_LOG" 2>/dev/null || echo 0)
 _WA_SELF_MTIME=$(stat -c%Y "${BASH_SOURCE[0]}" 2>/dev/null || echo 0)
-# 一次分母(terminal task/report)のキャッシュ署名: report YAML群のfile:mtime一覧をハッシュ化
+# 一次分母(terminal task/report)のキャッシュ署名。find→sort→xargs stat の
+# 全report多重processを、find自身のpath/mtime出力1回へ統合する。
 _REPORTS_SIG="0"
 if [ -d "$REPORTS_DIR" ]; then
-    _REPORTS_SIG=$(find "$REPORTS_DIR" -maxdepth 2 -name "*.yaml" 2>/dev/null | LC_ALL=C sort | xargs -r stat -c '%n:%Y' 2>/dev/null | cksum | tr ' ' '_')
+    _REPORTS_SIG=$(find "$REPORTS_DIR" -maxdepth 2 -name "*.yaml" -printf '%p:%T@\n' 2>/dev/null | LC_ALL=C sort | cksum | tr ' ' '_')
 fi
 _WA_CACHE_VERSION="5"
 _WA_CACHE_SIG="${_WA_CACHE_VERSION}:${_WA_MTIME}:${_GATE_MTIME}:${_WA_SELF_MTIME}:${_REPORTS_SIG}"
@@ -75,20 +76,39 @@ _REPORT_INDEX="/tmp/shogun_wa_report_index_$$"
 _REPORT_INDEX_RAW="/tmp/shogun_wa_report_index_raw_$$"
 : > "$_REPORT_INDEX_RAW"
 if [ -d "$REPORTS_DIR" ]; then
-    shopt -s nullglob
-    _report_files=("$REPORTS_DIR"/*.yaml "$REPORTS_DIR"/archive/*.yaml)
-    shopt -u nullglob
-    for _rf in "${_report_files[@]}"; do
-        case "$_rf" in *.bak|*.lock) continue ;; esac
-        [ -f "$_rf" ] || continue
-        _worker=$(grep -m1 '^worker_id:' "$_rf" 2>/dev/null | sed -E "s/^worker_id:[[:space:]]*//; s/^['\"]//; s/['\"][[:space:]]*\$//")
-        _cmd=$(grep -m1 '^parent_cmd:' "$_rf" 2>/dev/null | sed -E "s/^parent_cmd:[[:space:]]*//; s/^['\"]//; s/['\"][[:space:]]*\$//")
-        _rstatus=$(grep -m1 '^status:' "$_rf" 2>/dev/null | sed -E "s/^status:[[:space:]]*//; s/^['\"]//; s/['\"][[:space:]]*\$//")
-        [ -n "$_worker" ] && [ -n "$_cmd" ] || continue
-        [ "$_rstatus" = "pending" ] && continue
-        _mtime=$(stat -c%Y "$_rf" 2>/dev/null || echo 0)
-        printf '%s\t%s\t%s\n' "$_mtime" "$_cmd" "$_worker" >> "$_REPORT_INDEX_RAW"
-    done
+    # 旧実装は1 reportにつきgrep/sed各3回+stat 1回を起動していた。
+    # ここでは1 Python processで各fileを一度だけ読み、同じ3 top-level fieldと
+    # mtimeを抽出する。YAML全体の意味解釈は行わず旧grep契約を維持する。
+    python3 - "$REPORTS_DIR" > "$_REPORT_INDEX_RAW" <<'PY'
+import glob
+import os
+import re
+import sys
+
+root = sys.argv[1]
+paths = glob.glob(os.path.join(root, "*.yaml"))
+paths += glob.glob(os.path.join(root, "archive", "*.yaml"))
+field_re = re.compile(r"^(worker_id|parent_cmd|status):\s*(.*?)\s*$")
+for path in paths:
+    if path.endswith((".bak", ".lock")) or not os.path.isfile(path):
+        continue
+    values = {}
+    try:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                match = field_re.match(line.rstrip("\n"))
+                if not match or match.group(1) in values:
+                    continue
+                values[match.group(1)] = match.group(2).strip().strip("'\"")
+                if len(values) == 3:
+                    break
+        worker = values.get("worker_id", "")
+        cmd = values.get("parent_cmd", "")
+        if worker and cmd and values.get("status") != "pending":
+            print(f"{int(os.path.getmtime(path))}\t{cmd}\t{worker}")
+    except OSError:
+        continue
+PY
 fi
 if [ -s "$_REPORT_INDEX_RAW" ]; then
     # 同一cmd_idに複数報告(report archive移動/failed後RC再提出)がある場合はmtime最新を採用
