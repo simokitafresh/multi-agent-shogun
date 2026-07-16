@@ -353,7 +353,7 @@ _cs_write_cache() {
     mv -f -- "$tmp_file" "$cache_file" 2>/dev/null || true
 }
 
-_cs_namespace="$(printf '%s' "$REPO_ROOT" | sha256sum | awk '{print $1}')"
+read -r _cs_namespace _ < <(printf '%s' "$REPO_ROOT" | sha256sum)
 _cs_cache_dir="/tmp/shogun_cs_checklist_cache/${_cs_namespace}"
 mkdir -p "$_cs_cache_dir" 2>/dev/null || true
 _cs_cold_cache="$_cs_cache_dir/cold.cache"
@@ -364,16 +364,9 @@ _cs_cold_key="$(printf '%s\n%s\n' "$_cs_gate_hash" "$_cs_review_hash" | sha256su
 _cs_skill_key="$({
     printf '%s\n%s\n' "$_cs_gate_hash" "$_cs_review_hash"
     _cs_hash_file "$REPO_ROOT/logs/skill_execution_log.yaml"
-    if ! command -v xargs >/dev/null 2>&1; then
-        while IFS= read -r -d '' _cs_input; do
-            _cs_hash_file "$_cs_input"
-        done < <(find "$REPO_ROOT/queue/tasks" "$REPO_ROOT/queue/reports" -maxdepth 1 -type f -print0 2>/dev/null | sort -z)
-    else
-        # One sha256sum process avoids per-file process startup while sorted
-        # paths preserve content-sensitive, order-stable invalidation.
-        find "$REPO_ROOT/queue/tasks" "$REPO_ROOT/queue/reports" -maxdepth 1 -type f -print0 2>/dev/null \
-            | sort -z | xargs -0 -r sha256sum -- 2>/dev/null
-    fi
+    while IFS= read -r -d '' _cs_input; do
+        _cs_hash_file "$_cs_input"
+    done < <(find "$REPO_ROOT/queue/tasks" "$REPO_ROOT/queue/reports" -maxdepth 1 -type f -print0 2>/dev/null | sort -z)
 } | sha256sum | awk '{print $1}')"
 
 if cold_category_missing="$(_cs_read_cache "$_cs_cold_cache" "$_cs_cold_key")"; then
