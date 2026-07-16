@@ -56,17 +56,31 @@ entries:
   updated_at: "2026-06-13T00:19:57"
   iteration: 1
 - script_path: .claude/hooks/post-write-edit-combined.sh
-  status: pending
+  status: saturated
   before_ms: 0
   after_ms: ''
-  before_real_ms: 840
-  after_real_ms: ""
-  real_measurement_command: "printf payload | bash .claude/hooks/post-write-edit-combined.sh >/dev/null"
-  test_result: "bash -n .claude/hooks/post-write-edit-combined.sh && bats tests/unit/test_write_edit_combined_hooks.bats PASS 20/20 SKIP=0"
-  commit: "1bacc0d013a75ffa05ce6113eccd003ae591552d"
-  assigned_to: ""
-  updated_at: "2026-06-13T00:19:57"
+  before_real_ms: 416.009
+  after_real_ms: 534.69
+  real_measurement_command: "printf safe_Edit_hook_payload | bash /dev/fd/3 3<<<\"$ARM_SCRIPT\""
+  test_result: "bats related hooks: PASS=58 FAIL=0 SKIP=0"
+  commit: "1b3d001b4857076f3be37cb63fcea1d2f7896950"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T03:21:54"
   iteration: 1
+  last_good_commit: "1b3d001b4857076f3be37cb63fcea1d2f7896950"
+  candidate_commit: "b1c8a52b61f02ad6c81cc4e0a9d1f8dbe0a6178c"
+  ab_samples_per_arm: "20"
+  last_good_p50_ms: 416.009
+  last_good_p95_ms: 667.126
+  candidate_p50_ms: 534.69
+  candidate_p95_ms: 944.148
+  ab_order: "alternating"
+  warmup_each: "3"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux; bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu); jq=jq-1.7; cwd=/mnt/c/tools/multi-agent-shogun"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: .claude/hooks/pre-write-edit-combined.sh
   status: pending
   before_ms: ''
@@ -1404,18 +1418,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/gates/gate_test_health.sh
-  status: pending
+  status: completed
   before_ms: 18
   after_ms: ''
-  before_real_ms: 867
-  after_real_ms: ""
-  real_measurement_command: bash scripts/gates/gate_test_health.sh 2>/dev/null
-  test_result: bash_n PASS; test_bash_speed_training.bats 8/8 PASS SKIP=0; live output
-    identical
-  commit: 05b9ffe37
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  before_real_ms: 98.105463
+  after_real_ms: 98.042238
+  real_measurement_command: "env TESTS_DIR=<fixture>/tests TEST_TIMING_LEDGER=<fixture>/missing.tsv TEST_ASSET_CATALOG=<fixture>/catalog.tsv TEST_PRODUCTION_ROOT=<fixture> bash scripts/gates/gate_test_health.sh"
+  test_result: "bats related: 18/18 PASS, FAIL=0, SKIP=0"
+  commit: "e02eb4d1d923e97d1b8b9490096bcbbe1bc453df"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T03:14:11"
   iteration: 1
+  last_good_commit: "7e11d37c5"
+  candidate_commit: "e02eb4d1d923e97d1b8b9490096bcbbe1bc453df"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 98.105463
+  last_good_p95_ms: 111.883095
+  candidate_p50_ms: 98.042238
+  candidate_p95_ms: 107.322283
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2 Linux 6.6.87.1 x86_64; Python 3.12.3; same isolated fixture"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_three_layer_health.sh
   status: pending
   before_ms: 17
@@ -2404,7 +2431,7 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/lib/model_colors.sh
-  status: pending
+  status: assigned
   before_ms: 15
   after_ms: 15
   before_real_ms: 821
@@ -2416,8 +2443,8 @@ entries:
     4.6 high" >/dev/null; resolve_border_fg_color unknown >/dev/null; done'
   test_result: bash_n_pass;bats_test_cli_lookup_model_colors_1_pass_0_skip;representative_outputs_match;before_38579_after_821;SKIP=0
   commit: 521d9fbd7
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-17T03:16:05"
   iteration: 1
 - script_path: scripts/lib/model_detect.sh
   status: pending
