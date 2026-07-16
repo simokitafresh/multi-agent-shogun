@@ -78,7 +78,7 @@ case "$payload" in
     *'"Bash"'*)
         HOOK_PAYLOAD="$payload"
         export HOOK_PAYLOAD
-        bash "$ROOT/.claude/hooks/pre-bash-combined.sh" || exit "$?"
+        exec bash "$ROOT/.claude/hooks/pre-bash-combined.sh"
         ;;
     *'"Read"'*)
         source "$ROOT/.claude/hooks/pre-write-read-tracker.sh" <<< "$payload"
