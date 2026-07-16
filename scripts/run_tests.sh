@@ -313,6 +313,9 @@ run_bats_files_parallel() {
                 selected="$idx"; break
             fi
         done
+        # Every remaining file may have become a cache hit in the scan above.
+        # In that case there is no live child to reap and the queue is done.
+        [ "$pending_count" -gt 0 ] || break
         if [ "$selected" -lt 0 ]; then
             wait_for_one
             continue
