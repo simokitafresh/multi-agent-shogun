@@ -50,7 +50,9 @@ cache key, and `cat` on every lookup. A 100-call interval profile measured
 360 ms, 440 ms, and 230 ms respectively. The cache is already invocation/root
 scoped, and identical report bytes imply identical YAML and parent/commit
 inputs, so generation 2 uses the report content hash directly as the filename
-and Bash `read` for cache hits.
+and Bash `read` for cache hits. The entry stores the lexical report path and a
+hit requires both content hash and path equality; identical bytes at another
+path are reparsed because no-code identity can depend on the report path.
 
 | Round | total wall (15 samples) | p50 | p95 |
 |---|---:|---:|---:|

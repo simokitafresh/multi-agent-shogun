@@ -158,3 +158,17 @@ PY
   [ "$third" != "$first" ]
   [ "$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f | wc -l)" -eq 2 ]
 }
+
+@test "review fingerprint cache keeps report path in the cache boundary" {
+  printf '\ncommit_hash: no-code-change\n' >> "$REPORT"
+  local alias_report="$BATS_TEST_TMPDIR/alias.yaml"
+  cp "$REPORT" "$alias_report"
+  source "$ROOT/scripts/lib/review_approval.sh"
+
+  PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT" >/dev/null
+  local entry
+  entry=$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f | head -1)
+  [ "$(head -1 "$entry")" = "$REPORT" ]
+  PROJECT_ROOT="$ROOT" review_report_fingerprint "$alias_report" >/dev/null
+  [ "$(head -1 "$entry")" = "$alias_report" ]
+}

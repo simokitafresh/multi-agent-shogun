@@ -14,18 +14,22 @@ fi
 mkdir -p "$REVIEW_FP_CACHE_DIR"
 
 review_report_fingerprint() {
-    local report="$1" content_hash commit_identity root cache_file cached
+    local report="$1" content_hash commit_identity root cache_file cached_path cached
     [ -f "$report" ] || return 1
     root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
     content_hash=$(sha256sum "$report" | awk '{print $1}') || return 1
     # The cache directory is invocation/root scoped and identical report bytes
-    # imply identical YAML, parent_cmd and commit-identity inputs. Reuse the
-    # content hash directly instead of spawning realpath + a second sha256sum.
+    # imply identical YAML inputs. Reuse the content hash as the filename, but
+    # retain the lexical report path in the entry because no-code identity also
+    # depends on whether files_modified names this exact report. A same-content
+    # different-path lookup must miss rather than inherit the first decision.
     cache_file="$REVIEW_FP_CACHE_DIR/$content_hash"
     if [ -s "$cache_file" ]; then
-        IFS= read -r cached < "$cache_file"
-        printf '%s\n' "$cached"
-        return 0
+        { IFS= read -r cached_path; IFS= read -r cached; } < "$cache_file"
+        if [ "$cached_path" = "$report" ] && [ -n "$cached" ]; then
+            printf '%s\n' "$cached"
+            return 0
+        fi
     fi
     commit_identity=$(python3 - "$report" "$root" <<'PY'
 import pathlib, sys, yaml
@@ -113,7 +117,7 @@ raise SystemExit(1)
 PY
 ) || return 1
     [ -n "$commit_identity" ] || return 1
-    printf '%s:%s\n' "$content_hash" "$commit_identity" > "$cache_file.tmp.$BASHPID"
+    printf '%s\n%s:%s\n' "$report" "$content_hash" "$commit_identity" > "$cache_file.tmp.$BASHPID"
     mv -f "$cache_file.tmp.$BASHPID" "$cache_file"
     printf '%s:%s\n' "$content_hash" "$commit_identity"
 }
