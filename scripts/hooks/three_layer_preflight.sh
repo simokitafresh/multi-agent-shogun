@@ -32,8 +32,9 @@ json_escape() {
 }
 
 memory_timeout_fallback() {
-    local query="$1" db_path="${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}"
-    timeout "${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-10}s" python3 - "$db_path" "$query" <<'PY' >/dev/null 2>&1
+    local query="$1" timeout_seconds="${2:-${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-10}}"
+    local db_path="${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}"
+    timeout "${timeout_seconds}s" python3 - "$db_path" "$query" <<'PY' >/dev/null 2>&1
 import sqlite3, sys
 
 db_path, query = sys.argv[1:]
@@ -48,8 +49,7 @@ PY
 }
 
 text_index_timeout_fallback() {
-    local query="$1"; shift
-    local fallback_timeout="${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-10}"
+    local query="$1" fallback_timeout="$2"; shift 2
     # In the real checkout, git's tracked-file index gives a bounded scan of
     # the same canonical paths without repeating rg's filesystem walk on 9P.
     # Test/isolated roots without a .git directory use the portable reader.
@@ -100,6 +100,9 @@ prompt_from_payload() {
 issue() {
     local prompt_arg="${1:-}"
     local payload prompt prompt_hash issued_at tmp_file rg_cmd
+    local started_ms deadline_ms global_budget_ms="${THREE_LAYER_GLOBAL_BUDGET_MS:-9500}"
+    started_ms="$(date +%s%3N)"
+    deadline_ms=$((started_ms + global_budget_ms))
     mkdir -p "$EVIDENCE_DIR"
     if [[ -n "$prompt_arg" ]]; then
         prompt="$prompt_arg"
@@ -186,21 +189,28 @@ issue() {
     # completed fallback becomes rc=0; missing/corrupt data or another timeout
     # remains non-zero and therefore fail-closed without reviving the old
     # all-tools deadlock-by-assumption.
-    if [[ "$memory_rc" == 124 ]]; then
-        memory_rc=124
-        memory_timeout_fallback "$prompt" && memory_rc=0 || memory_rc=$?
-    fi
-    if [[ "$semantic_rc" == 124 ]]; then
-        semantic_rc=124
-        text_index_timeout_fallback "$prompt" "$ROOT/docs/semantic-index/index.md" && semantic_rc=0 || semantic_rc=$?
-    fi
-    if [[ "$obsidian_rc" == 124 ]]; then
-        obsidian_rc=124
-        text_index_timeout_fallback "$obsidian_query" "$ROOT/context/semantic-map.md" "$ROOT/docs" && obsidian_rc=0 || obsidian_rc=$?
+    # Primary and fallback share one UserPromptSubmit deadline.  Timed-out
+    # layers retry concurrently; the old sequential 5s + 10s + 10s + 10s
+    # path exceeded the hook's fixed 10-second budget and caused the next
+    # prompt to supersede a generation that could never publish in time.
+    local remaining_ms=$((deadline_ms - $(date +%s%3N)))
+    local fallback_seconds fallback_memory_pid="" fallback_semantic_pid="" fallback_obsidian_pid=""
+    if (( remaining_ms > 0 )); then
+        fallback_seconds="$(awk -v ms="$remaining_ms" 'BEGIN { printf "%.3f", ms / 1000 }')"
+        [[ "$memory_rc" == 124 ]] && { memory_timeout_fallback "$prompt" "$fallback_seconds" & fallback_memory_pid=$!; }
+        [[ "$semantic_rc" == 124 ]] && { text_index_timeout_fallback "$prompt" "$fallback_seconds" "$ROOT/docs/semantic-index/index.md" & fallback_semantic_pid=$!; }
+        [[ "$obsidian_rc" == 124 ]] && { text_index_timeout_fallback "$obsidian_query" "$fallback_seconds" "$ROOT/context/semantic-map.md" "$ROOT/docs" & fallback_obsidian_pid=$!; }
+        if [[ -n "$fallback_memory_pid" ]]; then wait "$fallback_memory_pid" && memory_rc=0 || memory_rc=$?; fi
+        if [[ -n "$fallback_semantic_pid" ]]; then wait "$fallback_semantic_pid" && semantic_rc=0 || semantic_rc=$?; fi
+        if [[ -n "$fallback_obsidian_pid" ]]; then wait "$fallback_obsidian_pid" && obsidian_rc=0 || obsidian_rc=$?; fi
     fi
 
     local status=success
     [[ "$memory_rc" == 0 && "$semantic_rc" == 0 && "$obsidian_rc" == 0 ]] || status=failed
+    if [[ "$status" != success ]]; then
+        printf 'three_layer_preflight: %s evidence failed (memory=%s semantic=%s obsidian=%s)\n' "$agent_id" "$memory_rc" "$semantic_rc" "$obsidian_rc" >&2
+        return 1
+    fi
     tmp_file="$(mktemp "$EVIDENCE_DIR/.evidence.XXXXXX")"
     {
         printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","status":"%s"}\n' \
@@ -224,10 +234,6 @@ issue() {
         return 75
     fi
     [[ "$publish_rc" -eq 0 ]] || return "$publish_rc"
-    [[ "$status" == success ]] || {
-        printf 'three_layer_preflight: %s evidence failed (memory=%s semantic=%s obsidian=%s)\n' "$agent_id" "$memory_rc" "$semantic_rc" "$obsidian_rc" >&2
-        return 1
-    }
     printf '%s\n' "$evidence_file"
 }
 

@@ -51,8 +51,7 @@ verify() {
     run env MEMORY_DB_QUERY_DB="$TMP_EVIDENCE/missing-parent/missing.db" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "missing database"
     [ "$status" -ne 0 ]
-    run grep -o '"status":"[a-z]*"' "$EVIDENCE"
-    [ "$output" = '"status":"failed"' ]
+    [ ! -e "$EVIDENCE" ]
 }
 
 @test "壊れたSQLite DBはfail-closed" {
@@ -61,8 +60,7 @@ verify() {
     run env MEMORY_DB_QUERY_DB="$broken_db" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "broken database"
     [ "$status" -ne 0 ]
-    run grep -o '"status":"[a-z]*"' "$EVIDENCE"
-    [ "$output" = '"status":"failed"' ]
+    [ ! -e "$EVIDENCE" ]
 }
 
 @test "memory_db_query exit1 stubはscript存在でもfail-closed" {
@@ -96,9 +94,13 @@ make_timeout_root() {
 @test "3層primary timeoutは実データfallback完了時のみsuccess" {
     local tmp_root="$TMP_EVIDENCE/timeout_success"
     make_timeout_root "$tmp_root"
-    run env PATH="$tmp_root/bin:$PATH" MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.05 THREE_LAYER_FALLBACK_TIMEOUT_SECONDS=1 THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE/timeout_success_evidence" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+    local started elapsed
+    started="$(date +%s%3N)"
+    run env PATH="$tmp_root/bin:$PATH" MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.05 THREE_LAYER_GLOBAL_BUDGET_MS=900 THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE/timeout_success_evidence" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
         bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "three layer preflight fixture"
+    elapsed=$(( $(date +%s%3N) - started ))
     [ "$status" -eq 0 ]
+    [ "$elapsed" -lt 1000 ]
     run grep -o '"memory_db":"[0-9]*"\|"semantic":"[0-9]*"\|"obsidian":"[0-9]*"\|"status":"[a-z]*"' "$TMP_EVIDENCE/timeout_success_evidence/evidence_${AGENT}__test_${BATS_TEST_NUMBER}.json"
     [[ "$output" == *'"memory_db":"0"'* ]]
     [[ "$output" == *'"semantic":"0"'* ]]
@@ -423,7 +425,7 @@ PY
     [ "$status" -eq 1 ]
 }
 
-@test "一層が失敗すれば他二層が成功してもstatusはfailedのまま(並列実行後も個別rc集計)" {
+@test "一層が失敗すれば他二層が成功しても証跡を公開しない" {
     local tmp_root="$TMP_EVIDENCE/one_layer_fail"
     mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/context" "$tmp_root/docs"
     cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
@@ -443,10 +445,6 @@ EOF
     run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="onelayer" TMUX_PANE="%onelayer" \
         bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "one layer fail test"
     [ "$status" -eq 1 ]
-    run grep -o '"status":"[a-z]*"' "$evidence_dir"/evidence_onelayer*.json
-    [ "$output" = '"status":"failed"' ]
-    run grep -o '"memory_db":"[0-9]*"' "$evidence_dir"/evidence_onelayer*.json
-    [ "$output" = '"memory_db":"3"' ]
-    run grep -o '"semantic":"[0-9]*"' "$evidence_dir"/evidence_onelayer*.json
-    [ "$output" = '"semantic":"0"' ]
+    run find "$evidence_dir" -maxdepth 1 -name 'evidence_onelayer*.json' -print
+    [ -z "$output" ]
 }
