@@ -1,6 +1,13 @@
 ---
 name: campaign-lane
-description: Run deterministic, model-independent campaigns over numeric measurements. Use when selecting independent candidates across two or three rounds, preserving best-so-far, rejecting regressions, and stopping on target, budget, or saturation. Do not use for subjective evaluation, dependent candidates, production SEALED work, or fewer than two eligible idle workers.
+description: |
+  WHAT: Select and record independent candidates across two or three rounds of a deterministic numeric campaign while preserving global best-so-far and terminal conditions; it owns campaign state, not worker execution.
+  WHEN: A normalized numeric objective, catalog, measurement ledger, and at least two eligible idle workers exist.
+  TRIGGER: /campaign-lane, campaign lane, speed-optimization campaign, measured candidate selection, multi-round numeric optimization.
+  NOT TRIGGER: One-shot parallel execution (use shard-work), subjective evaluation, dependent candidates, production SEALED work, or fewer than two eligible idle workers.
+allowed-tools:
+  - Bash
+  - Read
 ---
 
 # Campaign Lane

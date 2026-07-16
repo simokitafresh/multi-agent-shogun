@@ -1,6 +1,13 @@
 ---
 name: shard-work
-description: Shard two or more independent manifest items across the currently idle, capability-compatible workers. Use for tests, read-only research, mechanical transforms, or other command-template workloads that need deterministic LPT planning, isolated execution, partial retry, and lossless merge. Do not use for dependent items or when fewer than two eligible workers exist.
+description: |
+  WHAT: Plan, reserve, execute, retry, and losslessly merge one batch of independent manifest items across capability-compatible idle workers; it owns worker execution, not multi-round candidate selection or campaign state.
+  WHEN: At least two independent manifest items and two capability-compatible idle workers exist.
+  TRIGGER: /shard-work, shard work, split independent tests, parallelize manifest, deterministic batch fan-out.
+  NOT TRIGGER: Multi-round numeric optimization (use campaign-lane), dependent items, subjective work without a deterministic command template, or fewer than two eligible workers.
+allowed-tools:
+  - Bash
+  - Read
 ---
 
 # Shard Work
