@@ -513,6 +513,16 @@ read_check_rc() {
 run_check_async ci_red gh run list --repo simokitafresh/multi-agent-shogun --limit 3 --json conclusion,name,headBranch --jq '.[] | select(.headBranch=="main") | .conclusion'
 pid_ci_red=$!
 
+# The three remaining gates are independent read-only probes. Start them before
+# lesson_health (the longest probe), then consume their captured results in the
+# original order below so user-visible ordering and alert semantics stay fixed.
+run_check_async cmd_state bash "$GATES_DIR/gate_cmd_state.sh"
+pid_cmd_state=$!
+run_check_async context_freshness bash "$GATES_DIR/gate_context_freshness.sh"
+pid_context_freshness=$!
+run_check_async p_average_freshness bash "$GATES_DIR/gate_p_average_freshness.sh"
+pid_p_average_freshness=$!
+
 # (1) gate_lesson_health
 # A single lesson_health run can exceed 10s on /mnt/c, so a 5s TTL expires before
 # consecutive trigger invocations can reuse it. Keep this below the 5-minute
@@ -520,13 +530,16 @@ pid_ci_red=$!
 process_gate_cached "lesson_health" 60 "bash $GATES_DIR/gate_lesson_health.sh"
 
 # (2) gate_cmd_state
-process_gate "cmd_state" "bash $GATES_DIR/gate_cmd_state.sh"
+wait "$pid_cmd_state" || true
+evaluate_gate_result "cmd_state" "$(read_check_output cmd_state)" "$(read_check_rc cmd_state)"
 
 # (3) gate_context_freshness (WARN/ALERT両方をトリガー対象 — exit=2もALERT扱い)
-process_gate "context_freshness" "bash $GATES_DIR/gate_context_freshness.sh" "2" "WARN:"
+wait "$pid_context_freshness" || true
+evaluate_gate_result "context_freshness" "$(read_check_output context_freshness)" "$(read_check_rc context_freshness)" "2" "WARN:"
 
 # (4) gate_p_average_freshness
-process_gate "p_average_freshness" "bash $GATES_DIR/gate_p_average_freshness.sh"
+wait "$pid_p_average_freshness" || true
+evaluate_gate_result "p_average_freshness" "$(read_check_output p_average_freshness)" "$(read_check_rc p_average_freshness)"
 
 # (5) CI赤
 wait "$pid_ci_red" || true
