@@ -204,13 +204,15 @@ lessons:
   enforcement_level: 4
 - id: LG018
   title: 提案は行動ではない — proposed GPは自力実行判定→即実行
-  detail: proposed/pending GPを放置せず自力実行可能か判定し即実行。idle Step 6+gate startup Check 9に埋込み済み
+  detail: |
+    proposed/pending GPを放置せず自力実行可能か判定し即実行。idle Step 6+gate startup Check 9に埋込み済み
+    吸収(2026-07-17, cmd_reflux_promotion_202607170713_hanzo, origin: [[cmd_reflux_promotion_202607170713_hanzo]] -> [[LG018]] -> [[proposed_GP_Level5]]): startup gateは毎回idle Step 6を強制表示し、Check 9がlogs/gunshi_gp_tracker.yamlのproposed/pending件数と対象行を列挙して即実装+テストを要求するため、読み飛ばせないLevel5事前コンテキスト提供として昇格する
   source_cmd: gunshi_session_20260406
   origin: '[[gunshi_session_20260406]]'
   created_at: '2026-04-06'
   automated: true
-  enforcement_level: 2
-  enforcement: gunshi.md idle Step 6 + gate_gunshi_startup.sh Check 9
+  enforcement_level: 5
+  enforcement: "Level5(事前コンテキスト提供): gate_gunshi_startup.shが毎起動時にidle Step 6「proposed GP即実行」を強制表示し、Check 9がgunshi_gp_tracker.yamlのproposed/pending件数と対象行を列挙して即実装+テストを要求する"
   when: idle Step 6でproposed/pending GPを走査する時。gate_gunshi_startup.sh Check 9が未実行GPを検知
   how: 自力実行可能→即実装+テスト+完了。不可→家老にinbox_write送信。GPを走査→分類→行動
 - id: LG019
