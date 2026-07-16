@@ -35,24 +35,24 @@ def plan(d):
 def process_start_token(pid):
  try: return pathlib.Path(f"/proc/{pid}/stat").read_text().split()[21]
  except (FileNotFoundError,IndexError,PermissionError): return None
-def reserve_worker(path):
- path.parent.mkdir(parents=True,exist_ok=True); payload={"pid":os.getpid(),"start":process_start_token(os.getpid()),"created":time.time()}
- for _ in range(2):
-  try:
-   fd=os.open(path,os.O_CREAT|os.O_EXCL|os.O_WRONLY); os.write(fd,json.dumps(payload).encode()); os.close(fd); return
-  except FileExistsError:
-   try: owner=json.loads(path.read_text()); pid=int(owner["pid"])
-   except (OSError,ValueError,KeyError,json.JSONDecodeError): pid=-1; owner={}
-   if pid>0 and process_start_token(pid)==str(owner.get("start")): raise RuntimeError(f"worker {path.name} already live-reserved")
-   try: path.unlink()
-   except FileNotFoundError: pass
- raise RuntimeError(f"worker {path.name} reserve recovery failed")
+def reserve_worker(root,worker_id):
+ root.mkdir(parents=True,exist_ok=True); key=hashlib.sha256(worker_id.encode()).hexdigest(); lock_path=root/f"{key}.lock"; owner_path=root/f"{key}.owner.json"
+ fd=os.open(lock_path,os.O_CREAT|os.O_RDWR,0o600)
+ try: fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+ except BlockingIOError: os.close(fd); raise RuntimeError(f"worker {worker_id} already live-reserved")
+ payload={"worker_id":worker_id,"pid":os.getpid(),"start":process_start_token(os.getpid()),"created":time.time()}
+ tmp=root/f".{key}.{os.getpid()}.tmp"; tmp.write_text(json.dumps(payload,sort_keys=True)); os.replace(tmp,owner_path)
+ return fd,owner_path
+def release_worker(lease):
+ fd,owner_path=lease
+ try: owner_path.unlink(missing_ok=True)
+ finally: fcntl.flock(fd,fcntl.LOCK_UN); os.close(fd)
 def item_fingerprint(d,item):
  contract={"version":1,"command":d.get("command"),"timeout":float(d.get("timeout",900)),"item":item}
  return hashlib.sha256(json.dumps(contract,sort_keys=True,separators=(",",":"),default=str).encode()).hexdigest()
 def execute_shard(d,shard,root,prior):
- wid=str(shard["worker"]["id"]); reserve=root/"reserve"/wid; reserve.parent.mkdir(parents=True,exist_ok=True)
- reserve_worker(reserve); results=[]
+ wid=str(shard["worker"]["id"]); reservation_root=pathlib.Path(d.get("reservation_root","/tmp/shogun-shard-worker-leases")).resolve()
+ lease=reserve_worker(reservation_root,wid); results=[]
  try:
   for item in shard["items"]:
    iid=str(item["id"])
@@ -68,9 +68,10 @@ def execute_shard(d,shard,root,prior):
     rc=cp.returncode; status="success" if rc==0 else ("skip" if rc==77 else "fail")
     (paths["output_dir"]/"stdout").write_text(cp.stdout); (paths["output_dir"]/"stderr").write_text(cp.stderr)
    except subprocess.TimeoutExpired as e: status,rc="timeout",124; (paths["output_dir"]/"stderr").write_text(str(e))
+   except OSError as e: status,rc="fail",126; (paths["output_dir"]/"stderr").write_text(f"OSError: {e}")
    except KeyboardInterrupt: status,rc="cancel",130
    results.append({"id":iid,"worker":wid,"status":status,"returncode":rc,"fingerprint":fingerprint,"elapsed_sec":round(time.monotonic()-started,6)})
- finally: reserve.unlink(missing_ok=True)
+ finally: release_worker(lease)
  return results
 def run(d):
  p=plan(d); root=pathlib.Path(d.get("state_dir",".shard-state")).resolve(); root.mkdir(parents=True,exist_ok=True)

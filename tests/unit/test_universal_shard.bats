@@ -102,11 +102,46 @@ PY
 import importlib.util, json, os, pathlib, tempfile
 p=pathlib.Path(os.environ['ROOT'])/'scripts/universal_shard.py'; s=importlib.util.spec_from_file_location('u',p); u=importlib.util.module_from_spec(s); s.loader.exec_module(u)
 with tempfile.TemporaryDirectory() as d:
- p=pathlib.Path(d)/'w'; p.write_text(json.dumps({'pid':99999999,'start':'0'})); u.reserve_worker(p); p.unlink()
- p.write_text(json.dumps({'pid':os.getpid(),'start':u.process_start_token(os.getpid())}))
- try: u.reserve_worker(p); raise AssertionError('live reserve accepted')
+ root=pathlib.Path(d); stale=root/(u.hashlib.sha256(b'w').hexdigest()+'.owner.json'); stale.write_text(json.dumps({'pid':99999999,'start':'0'}))
+ lease=u.reserve_worker(root,'w'); assert json.loads(stale.read_text())['pid']==os.getpid()
+ try: u.reserve_worker(root,'w'); raise AssertionError('live reserve accepted')
  except RuntimeError as e: assert 'live-reserved' in str(e)
+ u.release_worker(lease); lease2=u.reserve_worker(root,'w'); u.release_worker(lease2)
  print('stale_recovered=1 live_double_blocked=1')
 PY
   [ "$status" -eq 0 ]
+}
+
+@test "global lease blocks same worker across different state roots then releases" {
+  run env ROOT="$REPO_ROOT" python3 - <<'PY'
+import importlib.util, os, pathlib, tempfile
+p=pathlib.Path(os.environ['ROOT'])/'scripts/universal_shard.py'; s=importlib.util.spec_from_file_location('u',p); u=importlib.util.module_from_spec(s); s.loader.exec_module(u)
+with tempfile.TemporaryDirectory() as d:
+ leases=pathlib.Path(d)/'global'; first=u.reserve_worker(leases,'shared')
+ try: u.reserve_worker(leases,'shared'); raise AssertionError('cross-state double reserve accepted')
+ except RuntimeError: pass
+ u.release_worker(first); second=u.reserve_worker(leases,'shared'); u.release_worker(second)
+ print('different_state_roots winner=1 blocked=1 post_release=1')
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "format error exits BLOCK without traceback" {
+  manifest="$BATS_TEST_TMPDIR/bad.yaml"
+  cat >"$manifest" <<YAML
+state_dir: $BATS_TEST_TMPDIR/state
+reservation_root: $BATS_TEST_TMPDIR/leases
+max_workers: 2
+command: "echo {unknown_placeholder}"
+items:
+  - {id: a, weight: 1, capability: x}
+  - {id: b, weight: 1, capability: x}
+workers:
+  - {id: A, idle: true, capabilities: [x]}
+  - {id: B, idle: true, capabilities: [x]}
+YAML
+  run "$REPO_ROOT/scripts/shard_work.sh" "$manifest" --run
+  [ "$status" -eq 2 ]
+  [[ "$output" == BLOCK:* ]]
+  [[ "$output" != *Traceback* ]]
 }
