@@ -20,9 +20,10 @@ init_paths() {
 }
 
 usage() {
-    echo "Usage: bash scripts/ninja_done.sh <ninja_name> <parent_cmd>" >&2
-    echo "Example: bash scripts/ninja_done.sh hayate cmd_795" >&2
-    echo "Note: parent_cmd must be cmd_XXX (digits only). task_id like cmd_795_review is invalid." >&2
+    printf '%s\n' \
+        "Usage: bash scripts/ninja_done.sh <ninja_name> <parent_cmd>" \
+        "Example: bash scripts/ninja_done.sh hayate cmd_795" \
+        "Note: parent_cmd must be cmd_XXX (digits only). task_id like cmd_795_review is invalid." >&2
 }
 
 show_help() {
