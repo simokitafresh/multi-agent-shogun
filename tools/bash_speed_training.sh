@@ -679,6 +679,7 @@ import json
 import re
 import sys
 import yaml
+from decimal import Decimal, InvalidOperation
 
 source, target, script_path, *pairs = sys.argv[1:]
 updates = dict(zip(pairs[::2], pairs[1::2]))
@@ -737,7 +738,17 @@ candidate = lines[:start] + result + lines[end:]
 open(target, "w", encoding="utf-8").writelines(candidate)
 data = yaml.safe_load(open(target, encoding="utf-8")) or {}
 entry = next((item for item in data.get("entries", []) if item.get("script_path") == script_path), None)
-if entry is None or any(str(entry.get(key, "")) != value for key, value in updates.items()):
+
+def read_back_matches(key, expected):
+    actual = entry.get(key, "")
+    if key.endswith("_ms"):
+        try:
+            return Decimal(str(actual)) == Decimal(expected)
+        except InvalidOperation:
+            pass
+    return str(actual) == expected
+
+if entry is None or any(not read_back_matches(key, value) for key, value in updates.items()):
     raise SystemExit("record-real batch read-back verification failed")
 PY
     then

@@ -320,6 +320,22 @@ EOF
     ' "$LEDGER"
 }
 
+@test "record-real read-back compares millisecond values numerically when YAML drops trailing zeroes" {
+    first=$(cmd_next "$LEDGER")
+
+    run cmd_record_real "$first" completed good123 cand123 "time bash $first --help" \
+        10 137.597 181.299 120.433 171.820 "bats target PASS SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
+
+    [ "$status" -eq 0 ]
+    run python3 - "$LEDGER" <<'PY'
+import sys, yaml
+entry = yaml.safe_load(open(sys.argv[1]))["entries"][0]
+assert entry["candidate_p95_ms"] == 171.82
+assert entry["status"] == "completed"
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "record-real batch upserts missing evidence and emits exactly one measurable event" {
     cat > "$LEDGER" <<'EOF'
 global_status: running
