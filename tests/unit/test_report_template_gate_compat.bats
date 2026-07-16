@@ -876,6 +876,16 @@ BROKEN
     done
 }
 
+@test "LG055: completed PASS reportでoperational_simulation section欠落をBLOCK" {
+    # Regression: kotaro_report_cmd_reflux_promotion_202607170006_kotaro.yaml
+    # was completed/PASS with operational_simulation=None before this fix.
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report.yaml" "operational_simulation" ""
+    _run_gate "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"operational_simulation: MISSING"* ]]
+}
+
 @test "LG055: operational_simulation result非二値を提出前BLOCK" {
     _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     sed -i 's/^  result: "PASS"$/  result: "yes"/' "$TEST_TMPDIR/report.yaml"
