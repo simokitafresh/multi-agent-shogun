@@ -174,6 +174,20 @@ if [ -n "$EFFECT_REMIND" ]; then
     fi
 fi
 
+# ─── 陣形図 failed/stall忍者検出（殿22:41「家老へナッジせよ」自動化） ───
+NINJA_ALERT=""
+_snapshot="${SCRIPT_DIR}/queue/karo_snapshot.txt"
+if [ -f "$_snapshot" ]; then
+    _failed=$(grep '^ninja|' "$_snapshot" | grep '|failed|' | sed 's/^ninja|\([^|]*\)|.*/\1/' | paste -sd, 2>/dev/null || true)
+    _stall=$(grep '^ninja|' "$_snapshot" | grep '|assigned|.*CTX:0%' | sed 's/^ninja|\([^|]*\)|.*/\1/' | paste -sd, 2>/dev/null || true)
+    if [ -n "$_failed" ] || [ -n "$_stall" ]; then
+        NINJA_ALERT="★陣形図異常: "
+        [ -n "$_failed" ] && NINJA_ALERT="${NINJA_ALERT}failed=[${_failed}] "
+        [ -n "$_stall" ] && NINJA_ALERT="${NINJA_ALERT}stall疑い=[${_stall}] "
+        NINJA_ALERT="${NINJA_ALERT}— 家老へナッジまたはcapture-paneで実態確認せよ"
+    fi
+fi
+
 # 出力組立て
 MSG=""
 if [ "${RECOVERY_STALE:-}" = "1" ]; then
@@ -190,6 +204,9 @@ if [ -n "$EFFECT_REMIND" ]; then
 fi
 if [ -n "$SELF_DRIVE" ]; then
     MSG="${MSG:+${MSG}\\n}${SELF_DRIVE}"
+fi
+if [ -n "$NINJA_ALERT" ]; then
+    MSG="${MSG:+${MSG}\\n}${NINJA_ALERT}"
 fi
 
 [ -n "$MSG" ] && printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$MSG"
