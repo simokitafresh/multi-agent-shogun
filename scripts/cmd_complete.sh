@@ -90,8 +90,7 @@ consume_output="$(run_step sg7_consume python3 "$SCRIPT_DIR/review_bundle.py" \
     exit 1
 }
 printf '%s\n' "$consume_output"
-spec_json="$(printf '%s\n' "$consume_output" | tail -n 1)"
-PROJECT_ID="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["project"])' <<<"$spec_json")"
+PROJECT_ID="$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read().splitlines()[-1])["project"])' <<<"$consume_output")"
 
 run_step lesson_review bash "$SCRIPT_DIR/lesson_review.sh" "$PROJECT_ID"
 
