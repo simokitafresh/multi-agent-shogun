@@ -47,7 +47,7 @@ task:
     measured_ms: 74
     priority_axis: measured runtime fallback
     source: logs/script_speed_training_ledger.yaml
-  status: in_progress
+  status: done
   stop_for: []
   target_path: scripts/inbox_archive.sh
   task_id: cmd_training_speed_inbox_archive_20260717071949_normal
