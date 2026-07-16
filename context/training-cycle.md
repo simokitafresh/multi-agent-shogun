@@ -1130,4 +1130,5 @@ WHY=台帳鮮度回復+aliases品質向上、WHAT=対象スクリプトのCoDD�
 - [[deploy-task-ac-handling-test-speed]] — deploy task AC検証のfixture root漏洩を局所化し、後続testのパス契約を保った速度修行記録を参照する。
 - [[lord-conversation-test-speed]] — lord conversation Unitのcase単位mktemp forkをBATS_TEST_TMPDIR再利用へ置換し、21/21 PASS維持で10.553s→6.675sの実測記録を参照する。
 - [[test-db-capability-launcher-test-speed]] — DB capability launcher Unitの速度改善候補と実測記録を参照する。
+- [[test_gate_report_format_pass_no_improvement.bats]] — PASS_NO_IMPROVEMENT Unitは一時Git fixtureを`BATS_TEST_TMPDIR`へ隔離し、cmd_3264のdirty/commit契約14件を維持したまま9p I/Oを除く。採用判定は [[run_timed_bats.sh]] の同一コマンドbefore/afterで行う。
 - → [[gunshi_idle_training_rethink_nazenaze_20260516]] 修行再考のなぜなぜ: 修行設計の構造的問題

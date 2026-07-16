@@ -202,7 +202,7 @@ EOF
 
 @test "cmd_3264 AC2 target_path fallback uncommitted BLOCKs when files_modified is empty" {
     local worker="cmd3264test"
-    local workdir="$PROJECT_ROOT/.codex_tmp/gate_report_format_cmd3264_test_$$"
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_cmd3264_test"
     local task_path="$workdir/queue/tasks/${worker}.yaml"
     local rpath="$workdir/queue/reports/${worker}_report_cmd_3264.yaml"
     local gate="$workdir/scripts/gates/gate_report_format.sh"
@@ -287,7 +287,7 @@ PY
 
 @test "cmd_3264 AC2 read-only commit-prohibited report does not BLOCK on task YAML dirtiness" {
     local worker="cmd3264readonly"
-    local workdir="$PROJECT_ROOT/.codex_tmp/gate_report_format_cmd3264_readonly_test_$$"
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_cmd3264_readonly_test"
     local task_path="$workdir/queue/tasks/${worker}.yaml"
     local rpath="$workdir/queue/reports/${worker}_report_cmd_3264_readonly.yaml"
     local gate="$workdir/scripts/gates/gate_report_format.sh"
@@ -366,7 +366,7 @@ EOF
 
 @test "cmd_3264 AC2 repo-root target_path ignores unrelated dirty files when files_modified is clean" {
     local worker="cmd3264root"
-    local workdir="$PROJECT_ROOT/.codex_tmp/gate_report_format_cmd3264_root_test_$$"
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_cmd3264_root_test"
     local task_path="$workdir/queue/tasks/${worker}.yaml"
     local rpath="$workdir/queue/reports/${worker}_report_cmd_3264.yaml"
     local gate="$workdir/scripts/gates/gate_report_format.sh"
@@ -447,7 +447,7 @@ EOF
 
 @test "cmd_3264 AC2 shared file target_path ignores unrelated dirty file when files_modified is clean" {
     local worker="cmd3264shared"
-    local workdir="$PROJECT_ROOT/.codex_tmp/gate_report_format_cmd3264_shared_test_$$"
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_cmd3264_shared_test"
     local task_path="$workdir/queue/tasks/${worker}.yaml"
     local rpath="$workdir/queue/reports/${worker}_report_cmd_3264.yaml"
     local gate="$workdir/scripts/gates/gate_report_format.sh"
@@ -531,7 +531,7 @@ EOF
 
 @test "cmd_3264 AC2 files_modified uncommitted BLOCKs even when target_path is clean" {
     local worker="cmd3264files"
-    local workdir="$PROJECT_ROOT/.codex_tmp/gate_report_format_cmd3264_files_test_$$"
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_cmd3264_files_test"
     local task_path="$workdir/queue/tasks/${worker}.yaml"
     local rpath="$workdir/queue/reports/${worker}_report_cmd_3264.yaml"
     local gate="$workdir/scripts/gates/gate_report_format.sh"
@@ -608,7 +608,7 @@ EOF
 
 @test "cmd_3264 AC2 commit_hash allows non-overlapping concurrent dirty hunk in same reported file" {
     local worker="cmd3264nonoverlap"
-    local workdir="$PROJECT_ROOT/.codex_tmp/gate_report_format_cmd3264_nonoverlap_test_$$"
+    local workdir="$BATS_TEST_TMPDIR/gate_report_format_cmd3264_nonoverlap_test"
     local task_path="$workdir/queue/tasks/${worker}.yaml"
     local rpath="$workdir/queue/reports/${worker}_report_cmd_3264.yaml"
     local gate="$workdir/scripts/gates/gate_report_format.sh"
