@@ -793,6 +793,7 @@ _WA_RATE_TMP=$(mktemp)
 _WA_RATE_ERR_TMP=$(mktemp)
 _NINJA_WA_TMP=$(mktemp)
 _WA_DQ_TMP=$(mktemp)
+_QUEUE_YAML_PARSE_TMP=$(mktemp)
 WA_RATE_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_workaround_rate.sh"
 NINJA_WA_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_ninja_workaround_rate.sh"
 WA_DQ_SCRIPT="$SCRIPT_DIR/scripts/gates/gate_wa_data_quality.sh"
@@ -857,6 +858,15 @@ if [ -x "$WA_DQ_SCRIPT" ]; then
 else
     echo "SKIP: gate_wa_data_quality.sh が存在しないか実行権限なし" > "$_WA_DQ_TMP"
     _WA_DQ_PID=""
+fi
+
+# queue全YAML parseは独立検査のため、他のstartup集計と並列実行する。
+# 表示地点で必ずwaitして終了コードを評価し、fail-closed契約は維持する。
+if [ -x "$QUEUE_YAML_PARSE_SCRIPT" ]; then
+    ( bash "$QUEUE_YAML_PARSE_SCRIPT" > "$_QUEUE_YAML_PARSE_TMP" 2>&1 ) &
+    _QUEUE_YAML_PARSE_PID=$!
+else
+    _QUEUE_YAML_PARSE_PID=""
 fi
 
 # (B) tmux list-panes を1回だけ呼び出してキャッシュ
@@ -1861,8 +1871,9 @@ fi
 
 echo "■ queue YAML parse"
 _queue_yaml_parse_rc=0
-if [ -x "$QUEUE_YAML_PARSE_SCRIPT" ]; then
-    _queue_yaml_parse_output="$(bash "$QUEUE_YAML_PARSE_SCRIPT" 2>&1)" || _queue_yaml_parse_rc=$?
+if [ -n "${_QUEUE_YAML_PARSE_PID:-}" ]; then
+    wait "$_QUEUE_YAML_PARSE_PID" || _queue_yaml_parse_rc=$?
+    _queue_yaml_parse_output="$(<"$_QUEUE_YAML_PARSE_TMP")"
     printf '%s\n' "$_queue_yaml_parse_output" | sed 's/^/  /'
     if [ "$_queue_yaml_parse_rc" -ne 0 ]; then
         overall="ALERT"
@@ -2329,6 +2340,7 @@ echo ""
 
 # tmpファイル削除
 rm -f "$_WA_RATE_TMP" "$_WA_RATE_ERR_TMP" "$_NINJA_WA_TMP" "$_WA_DQ_TMP" \
+    "$_QUEUE_YAML_PARSE_TMP" \
     "$_aggregate_tmp"
 
 # --- Check 9.5: 三層記憶DB健全性 ---
