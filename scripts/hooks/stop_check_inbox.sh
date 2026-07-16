@@ -163,7 +163,7 @@ detect_shogun_brainwash_pattern() {
   elif [[ "$message" =~ (確認済み|妥当|検証不要|推論で十分|他者.*確認|レビュー済み.*だから) ]]; then
     pattern_id="#2"
     pattern_name="検証スキップ"
-  elif [[ "$message" =~ (続けてください|指示を待|待機します|判断を委ね|確認してください) ]]; then
+  elif [[ "$message" =~ (続けてください|指示を待|待機します|判断を委ね|確認してください|お許し|判断を仰|意に沿わねば|殿の判断) ]]; then
     pattern_id="#3"
     pattern_name="他者依存"
   elif [[ "$message" =~ (口約束|注意書き|手順に書く|ドキュメントで防ぐ|運用でカバー) ]]; then
@@ -411,9 +411,9 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
         printf '%s\t%s\n' "$(date +%s)" "$_brainwash_match" > "$_q6_flag" 2>/dev/null || true
       fi
     fi
-    # 洗脳#3 BLOCK昇格: 「指示を待つ」は常に洗脳#3(他者依存)。WARN無視で4回連続出力(2026-07-15事故)のためBLOCK化
-    if [[ "$last_assistant_message" =~ 指示を待[つちた] ]]; then
-      printf '{"decision":"block","reason":"BLOCK 洗脳#3: 「指示を待つ」を検出。殿の指示を待つな。Phase 7(自走): データを見て問いを見つけて動け。insightキュー/掲示板/CI/lesson在庫など次の行動は常にある。"}\n'
+    # 洗脳#3 BLOCK昇格: 殿への他者依存フレーズは常に洗脳#3。WARN無視で連続出力の実績あり(2026-07-15+2026-07-16事故)のためBLOCK化
+    if [[ "$last_assistant_message" =~ (指示を待[つちた]|お許し|判断を仰|意に沿わねば|殿の判断) ]]; then
+      printf '{"decision":"block","reason":"BLOCK 洗脳#3: 殿への他者依存フレーズを検出。殿の指示を待つな・許可を求めるな。Phase 7(自走): データを見て問いを見つけて動け。可逆な行動は自分で判断して即実行。"}\n'
       exit 0
     fi
     # L4先送り防止: startup BLOCK未対処で殿に応答→WARN注入

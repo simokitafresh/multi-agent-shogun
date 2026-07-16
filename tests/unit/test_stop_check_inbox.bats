@@ -791,3 +791,36 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
     [ "$status" -eq 0 ]
     [[ "$output" != *'"decision":"block"'* ]]
 }
+
+@test "T-SCI-032: shogun brainwash #3 BLOCK on permission-seeking phrases (cmd_3996 bug fix)" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    # "殿のお許し" must trigger BLOCK
+    run_hook '{"stop_hook_active":false,"last_assistant_message":"殿のお許しがあれば進める"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"decision":"block"'* ]]
+    [[ "$output" == *"洗脳#3"* ]]
+}
+
+@test "T-SCI-033: shogun brainwash #3 BLOCK on judgment-deferral phrase" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    # "殿の判断を仰ぐ" must trigger BLOCK
+    run_hook '{"stop_hook_active":false,"last_assistant_message":"殿の判断を仰ぐ"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"decision":"block"'* ]]
+    [[ "$output" == *"洗脳#3"* ]]
+}
+
+@test "T-SCI-034: shogun brainwash #3 BLOCK on conditional deference" {
+    export TMUX_AGENT_ID="shogun"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    # "意に沿わねば申されよ" must trigger BLOCK
+    run_hook '{"stop_hook_active":false,"last_assistant_message":"意に沿わねば申されよ"}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'"decision":"block"'* ]]
+    [[ "$output" == *"洗脳#3"* ]]
+}
