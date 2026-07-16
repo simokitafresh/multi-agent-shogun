@@ -15,8 +15,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SHOGUN_DIR="$(dirname "$SCRIPT_DIR")"
 # shellcheck source=scripts/lib/project_path.sh
 source "$SHOGUN_DIR/scripts/lib/project_path.sh"
-DM_SIGNAL_PATH="$(get_project_path 'dm-signal')"
-ENV_PATH="${DM_SIGNAL_PATH}/backend/.env"
 BASELINE_DIR="${SHOGUN_DIR}/outputs/baselines"
 
 MODE="${1:-baseline}"
@@ -30,7 +28,13 @@ usage() {
 }
 
 load_database_url() {
+    local project_path
+
     mkdir -p "$BASELINE_DIR"
+
+    project_path="$(get_project_path 'dm-signal')"
+    DM_SIGNAL_PATH="$project_path"
+    ENV_PATH="${DM_SIGNAL_PATH}/backend/.env"
 
     if [[ ! -f "$ENV_PATH" ]]; then
         echo "FAIL: backend/.env not found at ${ENV_PATH}"
