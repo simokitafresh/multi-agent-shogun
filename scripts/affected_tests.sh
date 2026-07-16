@@ -68,12 +68,12 @@ for test_file in "$TEST_DIR"/test_*.bats; do
 done
 
 # L2: テスト内のsource/bash解析（静的grep）
-scan_test_script_references() {
+grep() {
     if command -v rg >/dev/null 2>&1; then
         rg --no-messages --with-filename --only-matching -g 'test_*.bats' \
             '(source|bash|\.) +[^ ]+\.sh' "$TEST_DIR" 2>/dev/null
     else
-        grep -rH -oE '(source|bash|\.) +[^ ]+\.sh' "$TEST_DIR"/test_*.bats 2>/dev/null
+        command grep "$@"
     fi
 }
 
@@ -89,7 +89,7 @@ while IFS= read -r line; do
         [ -n "$rel_path" ] || continue
         TEST_MAP["$rel_path"]+="$test_file "
     done
-done < <(scan_test_script_references)
+done < <(grep -rH -oE '(source|bash|\.) +[^ ]+\.sh' "$TEST_DIR"/test_*.bats 2>/dev/null)
 
 # --- 影響テスト特定 ---
 declare -A AFFECTED_TESTS
