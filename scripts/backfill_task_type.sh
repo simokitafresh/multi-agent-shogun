@@ -53,7 +53,6 @@ export GATE_LOG SETTINGS DEPLOY_LOG NINJA_MONITOR TRACKING ARCHIVE_DIR BACKUP_DI
 python3 << 'PYEOF'
 import os, sys, re, shutil
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
 GATE_LOG = os.environ["GATE_LOG"]
@@ -194,8 +193,6 @@ def parse_archive_reports():
             continue
         # Extract ninja name and cmd from filename
         nm = re.match(r"^([a-z]+)_report.*?(cmd_?(\d+))", fname)
-        if nm and "cmd_" + nm.group(3) not in TARGET_CMD_IDS:
-            continue
         if nm and nm.group(1) in ALL_NINJAS_SET:
             ninja = nm.group(1)
             cmd_id = "cmd_" + nm.group(3)
@@ -224,8 +221,6 @@ def parse_archive_reports():
             if not fname.endswith(".yaml"):
                 continue
             nm = re.match(r"^([a-z]+)_report.*?(cmd_?(\d+))", fname)
-            if nm and "cmd_" + nm.group(3) not in TARGET_CMD_IDS:
-                continue
             if nm and nm.group(1) in ALL_NINJAS_SET:
                 ninja = nm.group(1)
                 cmd_id = "cmd_" + nm.group(3)
@@ -288,8 +283,6 @@ def parse_archive_cmds():
         if not m:
             continue
         cmd_id = m.group(1)
-        if cmd_id not in TARGET_CMD_IDS:
-            continue
         fpath = os.path.join(cmds_dir, fname)
         try:
             with open(fpath, "r") as f:
@@ -436,7 +429,6 @@ with open(GATE_LOG, "r") as f:
 prefill_total = 0
 prefill_already_has = 0
 prefill_needs_backfill = False
-TARGET_CMD_IDS = set()
 for line in lines:
     raw = line.rstrip("\n\r")
     if not raw:
@@ -452,7 +444,7 @@ for line in lines:
         prefill_already_has += 1
     else:
         prefill_needs_backfill = True
-        TARGET_CMD_IDS.add(cmd_id)
+        break
 
 if not prefill_needs_backfill:
     print("Fast path: all non-test entries already have task_type; source scans skipped.")
@@ -470,26 +462,22 @@ if not prefill_needs_backfill:
 
 # Collect all sources
 print("Collecting data from sources...")
-with ThreadPoolExecutor(max_workers=6) as executor:
-    deploy_future = executor.submit(parse_deploy_log)
-    report_future = executor.submit(parse_archive_reports)
-    monitor_future = executor.submit(parse_ninja_monitor)
-    archive_future = executor.submit(parse_archive_cmds)
-    tracking_future = executor.submit(parse_tracking)
-    inbox_future = executor.submit(parse_archive_inbox)
-
-    deploy_types, deploy_ninjas = deploy_future.result()
-    report_types, report_ninjas = report_future.result()
-    monitor_types, monitor_ninjas = monitor_future.result()
-    archive_types, archive_cmd_ninjas = archive_future.result()
-    tracking_ninjas = tracking_future.result()
-    inbox_ninjas = inbox_future.result()
-
+deploy_types, deploy_ninjas = parse_deploy_log()
 print(f"  deploy_task.log: {len(deploy_types)} cmds with type info")
+
+report_types, report_ninjas = parse_archive_reports()
 print(f"  archive/reports: {len(report_types)} cmds with type info")
+
+monitor_types, monitor_ninjas = parse_ninja_monitor()
 print(f"  ninja_monitor.log: {len(monitor_types)} cmds with type info")
+
+archive_types, archive_cmd_ninjas = parse_archive_cmds()
 print(f"  archive/cmds: {len(archive_types)} cmds with type info")
+
+tracking_ninjas = parse_tracking()
 print(f"  lesson_tracking.tsv: {len(tracking_ninjas)} cmds with ninja info")
+
+inbox_ninjas = parse_archive_inbox()
 print(f"  archive/inbox: {len(inbox_ninjas)} cmds with ninja info")
 
 # Merge all type sources (priority: deploy > report > monitor > archive_cmd)
