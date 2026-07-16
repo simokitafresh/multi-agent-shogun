@@ -2514,20 +2514,31 @@ entries:
   updated_at: "2026-07-17T05:17:30"
   iteration: 1
 - script_path: scripts/lesson_write.sh
-  status: pending
+  status: saturated
   before_ms: 18
   after_ms: ''
-  before_real_ms: 81
-  after_real_ms: ""
-  real_measurement_command: LESSON_WRITE_SCRIPT_DIR=<sandbox> bash scripts/lesson_write.sh
-    testprj "Test lesson title measuring write performance" "Detail content for lesson
-    write performance testing measurement" "" hanzo "" --origin "[[cmd_test]] -> [[test]]
-    -> [[result]]"
-  test_result: 'bats tests/unit/test_lesson_write.bats: 32/32 PASS SKIP=0'
-  commit: 84977b690
+  before_real_ms: 584
+  after_real_ms: 628
+  real_measurement_command: "bats tests/unit/test_lesson_write.bats -f ^normal lesson addition$"
+  test_result: "49/49 PASS FAIL=0 SKIP=0; candidate p50/p95 regressed and was rolled back"
+  commit: "46adb949d"
   assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  updated_at: "2026-07-17T06:45:44"
   iteration: 1
+  last_good_commit: "46adb949d"
+  candidate_commit: "7ba7691aaee024aaa97da96ab4dbf091da45121d"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 584
+  last_good_p95_ms: 665
+  candidate_p50_ms: 628
+  candidate_p95_ms: 689
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "same WSL2 host; detached last-good and main candidate; identical bats command; warmup 1/arm"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/lesson_write_karo.sh
   status: completed
   before_ms: 15
