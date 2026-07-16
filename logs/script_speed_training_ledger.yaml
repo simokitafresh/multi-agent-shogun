@@ -2518,18 +2518,25 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/lesson_write_karo.sh
-  status: pending
+  status: completed
   before_ms: 15
-  after_ms: ''
+  after_ms: 78.5
   before_real_ms: 100
-  after_real_ms: ""
-  real_measurement_command: bash scripts/lesson_write_karo.sh 'test title' 'test detail'
-    cmd_test (backup/restore method)
-  test_result: bash -n OK; LK013 added correctly
-  commit: 9c296f81e
+  after_real_ms: 78.5
+  real_measurement_command: "sandbox symlink command: bash <fixed>/current/scripts/lesson_write_karo.sh 'Speed benchmark title' 'Speed benchmark detail content' cmd_speed --role gunshi; warmup 1/arm; alternating A/B 10 samples/arm"
+  test_result: "PASS: bash -n; tests/unit/test_lesson_lock_path.bats 5/5 FAIL=0 SKIP=0; behavior/safety unchanged; last-good p50/p95=84.5/99ms candidate=78.5/94ms"
+  commit: 7784690e4d1f6fd08108b2c5c3e42a574e2e53ab
   assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  updated_at: "2026-07-17T06:12:00+09:00"
   iteration: 1
+  last_good_commit: 9589f95477ba817034db5eb7cefbeece39b920a6
+  candidate_commit: 0c9813ba6
+  adopted_commit: 7784690e4d1f6fd08108b2c5c3e42a574e2e53ab
+  samples_per_arm: 10
+  last_good_p50_ms: 84.5
+  last_good_p95_ms: 99
+  candidate_p50_ms: 78.5
+  candidate_p95_ms: 94
 - script_path: scripts/lesson_write_shogun.sh
   status: pending
   before_ms: 16
