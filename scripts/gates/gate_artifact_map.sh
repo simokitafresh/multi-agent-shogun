@@ -9,7 +9,9 @@
 
 set -euo pipefail
 
-_GAM_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+_GAM_SELF="${BASH_SOURCE[0]}"
+[[ "$_GAM_SELF" != /* ]] && _GAM_SELF="$PWD/$_GAM_SELF"
+_GAM_ROOT="${_GAM_SELF%/scripts/gates/gate_artifact_map.sh}"
 # shellcheck source=scripts/lib/project_path.sh
 if [ -f "${_GAM_ROOT}/scripts/lib/project_path.sh" ]; then
     source "${_GAM_ROOT}/scripts/lib/project_path.sh"
