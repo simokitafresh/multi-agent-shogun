@@ -5,6 +5,11 @@
 
 set -euo pipefail
 
+if [ "${1:-}" = "--help" ]; then
+    echo "Usage: deploy_training.sh <round> <ninja:target> ..."
+    exit 0
+fi
+
 ROUND="${1:?Usage: deploy_training.sh <round> <ninja:target> ...}"
 shift
 
