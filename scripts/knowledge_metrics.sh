@@ -19,8 +19,6 @@ BY_PROJECT_OUTPUT=false
 BY_MODEL_BREAKDOWN_OUTPUT=false
 SETTINGS_FILE="$SCRIPT_DIR/config/settings.yaml"
 
-export LC_ALL=C
-
 # 引数解析
 while [[ $# -gt 0 ]]; do
     case "$1" in
