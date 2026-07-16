@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-16 cmd_karo_hotfix_stale_inbox_nudge_consumption_202607161354 -->
-<!-- source_commit:e9a172bad reason:cmd_karo_hotfix_script_speed_ledger_recovery_202607161952 evidence:speed-ledger-idle-guard-deploy-rollback -->
+<!-- last_updated: 2026-07-16 cmd_karo_hotfix_pytest_speed_adapter_202607161928 -->
+<!-- source_commit:a7de056a6 reason:cmd_karo_hotfix_script_speed_ledger_recovery_202607161952 evidence:five-minute-task-contract-and-tmp-cleanup -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -473,7 +473,7 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 | 修行自動化 | `_handle_training_auto_deploy` | training候補をidle忍者へ自動配備する処理を担う。設計正本は[[training-cycle.md]]。 |
 | bash速度修行 | `tools/bash_speed_training.sh` + `logs/script_speed_training_ledger.yaml` + `_handle_speed_training_auto_deploy` | scripts配下254本を非破壊`bash -n` baselineで台帳化し、pendingがあれば既存training_autoより先にidle忍者へ配備する。停止/再開はledgerの`global_status: running/paused`。 |
 
-**script-speed台帳writer不変量**: init・reserve/assignment・re-enqueue・global-status・結果更新を含む全writerは、同一lockの`flock`保持中に一時YAMLをparse検証し、同一filesystem上のatomic renameでのみ公開する。entry子要素のindentは親entryから相対算出し、Bashの`errexit`挙動に依存せずparse/公開失敗をfail-closedで返す。monitorはtask `idle`確認後にのみreserveし、deploy失敗時は同じ所有者の予約をlock内で`pending`へrollback、成功時だけ`assigned`を維持する。→ `tools/bash_speed_training.sh` / `scripts/ninja_monitor.sh` / `tests/unit/test_bash_speed_training.bats` / `tests/unit/test_ninja_monitor_stall.bats`（commits `a7185f98b`, `e9a172bad`）
+**script-speed台帳writer不変量**: init・reserve/assignment・re-enqueue・global-status・結果更新を含む全writerは、同一lockの`flock`保持中に一時YAMLをparse検証し、同一filesystem上のatomic renameでのみ公開する。entry子要素のindentは親entryから相対算出し、Bashの`errexit`挙動に依存せずparse/公開失敗をfail-closedで返す。monitorはtask `idle`確認後にのみreserveし、deploy失敗時は同じ所有者の予約をlock内で`pending`へrollback、成功時だけ`assigned`を維持する。生成taskは`estimated_minutes: 5`を持ち、非dry-runの成功・失敗とも一時taskを削除する。→ `tools/bash_speed_training.sh` / `scripts/ninja_monitor.sh` / `tests/unit/test_bash_speed_training.bats` / `tests/unit/test_ninja_monitor_stall.bats`（commits `a7185f98b`, `e9a172bad`, `a7de056a6`）
 | 修行計測 | L772 | tracked限定のリンク集計では未tracked対象の改善が見えない。全対象の改善率を計測するにはtracked/untracked両方を含むメトリクスが必要（cmd_training_L1_report_write_20260625_kagemaru） |
 | 健全性監視 | `check_ninja_cli_dead` | 忍者CLI死亡を検知し、pane復旧や通知判断につなげる。 |
 | 健全性監視 | `check_loop_health` | 監視ループ自体の健全性を確認し、停止や劣化を検出する。 |
