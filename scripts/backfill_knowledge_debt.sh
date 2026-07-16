@@ -30,6 +30,7 @@ echo ""
 echo "=== (a) Stale cmd status検出 ==="
 
 stale_count=0
+stale_details=""
 pd_count=0
 pd_ids=""
 
@@ -188,6 +189,7 @@ else
             cmd_status="$field2"
             all_gates="$field3"
             stale_count=$((stale_count + 1))
+            stale_details="${stale_details}  ${cmd_id} | ${cmd_status} | completed\n"
             echo "  STALE: ${cmd_id} | current=${cmd_status} | should_be=completed | gates=[${all_gates}] all done"
 
             if [ "$MODE" = "--execute" ]; then
