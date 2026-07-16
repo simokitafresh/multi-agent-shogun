@@ -384,11 +384,19 @@ prompt_state_semantic_cached_search() {
     mapfile -t cached_meta < <(
       awk 'NR <= 5 { sub(/^[^:]*: /, ""); print } NR == 5 { exit }' "$cache_file" 2>/dev/null
     )
-    cached_hash="${cached_meta[0]:-}"
-    cached_version="${cached_meta[1]:-}"
-    cached_cmd="${cached_meta[2]:-}"
-    cached_timeout="${cached_meta[3]:-}"
-    cached_rc="${cached_meta[4]:-}"
+    if (( ${#cached_meta[@]} == 5 )); then
+      cached_hash="${cached_meta[0]}"
+      cached_version="${cached_meta[1]}"
+      cached_cmd="${cached_meta[2]}"
+      cached_timeout="${cached_meta[3]}"
+      cached_rc="${cached_meta[4]}"
+    else
+      cached_hash="$(sed -n '1s/^prompt_sha256: //p' "$cache_file" 2>/dev/null || true)"
+      cached_version="$(sed -n '2s/^cache_version: //p' "$cache_file" 2>/dev/null || true)"
+      cached_cmd="$(sed -n '3s/^search_cmd: //p' "$cache_file" 2>/dev/null || true)"
+      cached_timeout="$(sed -n '4s/^timeout: //p' "$cache_file" 2>/dev/null || true)"
+      cached_rc="$(sed -n '5s/^rc: //p' "$cache_file" 2>/dev/null || true)"
+    fi
     if [[ "$cached_hash" == "$prompt_hash" && "$cached_version" == "$cache_version" && "$cached_cmd" == "$search_cmd" && "$cached_timeout" == "$timeout_seconds" && "$cached_rc" =~ ^[0-9]+$ ]]; then
       sed '1,/^---$/d' "$cache_file" 2>/dev/null || true
       return "$cached_rc"
@@ -531,11 +539,19 @@ semantic_skill_recommendations() {
         NR == 2 { sub(/^filter_version: /, ""); print hash "\t" $0; exit }
       ' "$cache_file" 2>/dev/null
     )
+    if [[ -z "$cached_hash" || -z "$cached_version" ]]; then
+      cached_hash="$(sed -n '1s/^prompt_sha256: //p' "$cache_file" 2>/dev/null || true)"
+      cached_version="$(sed -n '2s/^filter_version: //p' "$cache_file" 2>/dev/null || true)"
+    fi
     if [[ "$cached_hash" == "$prompt_hash" && "$cached_version" == "$cache_version" ]]; then
       cached_output="$(sed '1,/^---$/d' "$cache_file" 2>/dev/null || true)"
       skills="$(skill_names_from_recommendation_text <<< "$cached_output" || true)"
       record_skill_recommendation_log "$prompt_hash" "$skills" 2>/dev/null || true
-      printf '%s\n' "$cached_output"
+      if [[ -n "$cached_output" ]]; then
+        printf '%s\n' "$cached_output"
+      else
+        sed '1,/^---$/d' "$cache_file" 2>/dev/null || true
+      fi
       return 0
     fi
   fi
