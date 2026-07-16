@@ -97,7 +97,6 @@ from pathlib import Path
 
 
 SQLITE_BUSY_TIMEOUT_MS = 5000
-INT_RE = re.compile(r"^[0-9]+$")
 PROMOTED_LINK_TYPE = "obsidian_promoted_note"
 
 
@@ -112,7 +111,7 @@ def load_state_module(repo_root: Path):
 
 
 def parse_positive_int(value: str, name: str) -> int:
-    if not INT_RE.match(value) or int(value) < 1:
+    if not value.isdigit() or int(value) < 1:
         raise SystemExit(f"obsidian_promote_finalize: invalid {name}: {value}")
     return int(value)
 
