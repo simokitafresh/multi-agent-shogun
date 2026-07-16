@@ -85,10 +85,10 @@ lessons:
   origin: '[[GP-053-060]]'
   created_at: '2026-03-24'
   automated: true
-  enforcement_level: 2
-  enforcement: gunshi.md GP提案テンプレートにdefense_level必須フィールド追加(2026-04-09)
-  when: GP提案を設計する時。defense_levelフィールド記入時
-  how: Level4(フロー内BLOCK)以上を目指す。Level1-2で止めない。GP提案テンプレートにdefense_level必須
+  enforcement_level: 5
+  enforcement: "Level5: deploy_task.sh inject_growth_loop_defenseがgate/hook関連taskへgrowth-loop.md §11のLevel1-6・Level5目標・BLOCK後の環境埋込み原則を自動注入"
+  when: gate/hook・防御階層・成長ループ関連taskの配備時にdeploy_task.shが自動判定
+  how: deploy_task.sh inject_growth_loop_defenseがgrowth-loop.md §11を抽出しtask.growth_loop_defenseへ事前注入する。関連外部PJは除外
 - id: LG011
   title: AC物理検証をdraft review step 0に追加 — 忍者ナビゲーション空振り防止
   detail: 'cmdのACで参照されるファイルパス・行番号・セクション(§)が実在するか自動検証するスクリプト(ac_physical_verify.sh)を実装。draft review時にbash scripts/ac_physical_verify.sh <cmd_id>で忍者ナビゲーションシートを自動生成。cmd_1360のWA=0に事前調査が貢献した実績に基づく。防御階層Level 5(事前コンテキスト提供)の概念化。gunshi.mdのdraft reviewプロトコルにstep 0追加を推奨。'
