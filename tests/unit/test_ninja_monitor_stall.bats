@@ -2061,8 +2061,34 @@ cat "$LOG"
 test ! -e "$TMP_ROOT/inbox_calls.log"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"KARO-PENDING-SKIP-CLOSED-FAIL: cmd_terminal_fail"* ]]
+    [[ "$output" == *"KARO-PENDING-SKIP-CLOSED-BLOCKED: cmd_terminal_fail"* ]]
     [[ "$output" != *"KARO-PENDING-INBOX"* ]]
+}
+
+@test "check_inbox_renudge: completed PASS BLOCKED report is closed" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT"; trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"; STATE_DIR="$TMP_ROOT/state"; LOG="$TMP_ROOT/monitor.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/queue/archive/cmds" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/scripts" "$STATE_DIR"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$SCRIPT_DIR/queue/inbox/gunshi.yaml"
+printf "task:\n  status: failed\n  parent_cmd: cmd_terminal_blocked\n  report_filename: hanzo_report_cmd_terminal_blocked.yaml\n" > "$SCRIPT_DIR/queue/tasks/hanzo.yaml"
+printf "status: completed\nverdict: PASS\nstatus_detail: BLOCKED\n" > "$SCRIPT_DIR/queue/reports/hanzo_report_cmd_terminal_blocked.yaml"
+printf "#!/bin/bash\necho CALLED >> %q\n" "$TMP_ROOT/inbox_calls.log" > "$SCRIPT_DIR/scripts/inbox_write.sh"
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+NINJA_NAMES=(); KARO_PANE="karo"; declare -A RENUDGE_FINGERPRINT RENUDGE_COUNT RENUDGE_LAST_SEND
+log() { echo "$1" >> "$LOG"; }; check_idle() { return 0; }; safe_send_keys_atomic() { return 0; }
+check_inbox_renudge
+cat "$LOG"
+test ! -e "$TMP_ROOT/inbox_calls.log"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"KARO-PENDING-SKIP-CLOSED-BLOCKED: cmd_terminal_blocked"* ]]
 }
 
 @test "check_inbox_renudge: failed completed report with non-FAIL verdict remains pending" {

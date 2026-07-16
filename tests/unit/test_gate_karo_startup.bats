@@ -30,6 +30,7 @@ build_fixture() {
     # Copy the gate script
     cp "$SRC_GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
     cp "$PROJECT_ROOT/scripts/lib/disk_space_watch.sh" "$TEST_TMPDIR/scripts/lib/disk_space_watch.sh"
+    cp "$PROJECT_ROOT/scripts/lib/report_terminal_state.sh" "$TEST_TMPDIR/scripts/lib/report_terminal_state.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_karo_startup.sh"
     cp "$PROJECT_ROOT/scripts/gates/session_alerts_render.sh" "$TEST_TMPDIR/scripts/gates/session_alerts_render.sh"
     chmod +x "$TEST_TMPDIR/scripts/gates/session_alerts_render.sh"
@@ -985,9 +986,29 @@ EOF
 
     run bash "$TEST_GATE"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"CLOSED_FAIL: hanzo task=failed report=completed verdict=FAIL"* ]]
+    [[ "$output" == *"CLOSED_BLOCKED: hanzo task=failed report=completed verdict=FAIL"* ]]
     [[ "$output" == *"OK: failed×report completedの未宣言乖離なし"* ]]
     [[ "$output" != *"ALERT: hanzo task=failed report=completed 乖離"* ]]
+}
+
+@test "failed task with completed PASS BLOCKED report -> closed blocked, no false ALERT" {
+    mkdir -p "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<'YAML'
+task:
+  status: failed
+  report_path: queue/reports/hanzo_report_cmd_test.yaml
+YAML
+    cat > "$TEST_TMPDIR/queue/reports/hanzo_report_cmd_test.yaml" <<'EOF'
+status: completed
+verdict: PASS
+status_detail: BLOCKED
+EOF
+    touch -d "25 minutes ago" "$TEST_TMPDIR/queue/tasks/hanzo.yaml"
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CLOSED_BLOCKED: hanzo task=failed report=completed verdict=PASS status_detail=BLOCKED"* ]]
+    [[ "$output" != *"ALERT: hanzo task=failed report=completed"* ]]
 }
 
 # === Test 10: workarounds傾向表示(workaroundあり) ===

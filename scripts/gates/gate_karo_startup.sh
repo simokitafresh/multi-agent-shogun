@@ -13,6 +13,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh" 2>/dev/null || true
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/gates/session_alerts_render.sh"
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
 _KARO_NINJA_NAMES="$(get_ninja_names 2>/dev/null || echo 'hayate kagemaru hanzo saizo kotaro tobisaru')"
 
 overall="OK"
@@ -2280,8 +2282,10 @@ for ninja in $_KARO_NINJA_NAMES; do
     # is not a state mismatch.  Only success-like/unknown verdicts need the
     # stale mismatch escalation below.
     _frm_report_verdict=$(awk '/^verdict:/ { print $2; exit }' "$_frm_report_full" 2>/dev/null)
-    if [ "$_frm_report_verdict" = "FAIL" ]; then
-        echo "  CLOSED_FAIL: ${ninja} task=failed report=completed verdict=FAIL (report=${_frm_report_rel})"
+    _frm_report_status_detail=$(awk '/^status_detail:/ { print $2; exit }' "$_frm_report_full" 2>/dev/null)
+    _frm_terminal_state=$(report_terminal_state "$_frm_report_full")
+    if [ "$_frm_terminal_state" = "CLOSED_BLOCKED" ]; then
+        echo "  CLOSED_BLOCKED: ${ninja} task=failed report=completed verdict=${_frm_report_verdict:-unknown} status_detail=${_frm_report_status_detail:-unknown} (report=${_frm_report_rel})"
         _frm_wait_count=$((_frm_wait_count + 1))
         continue
     fi

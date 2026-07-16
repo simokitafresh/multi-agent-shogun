@@ -51,6 +51,7 @@ source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"
+source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
 
 # --- CTX profile cache（L4-R?: cli_profile_getサブシェル呼び出し削減） ---
 # update_context_pct ループ内での$(cli_profile_get ...)サブシェル(78ms/回)を排除するグローバルキャッシュ
@@ -5053,8 +5054,10 @@ check_inbox_renudge() {
                             /^verdict:/ && verdict=="" { verdict=$0; sub(/^[^:]*:[[:space:]]*/, "", verdict); gsub(/["'\''[:space:]]/, "", verdict) }
                             END { print status, verdict }
                         ' "$_kreport_path" 2>/dev/null)
-                        if [ "$_kreport_status" = "completed" ] && [ "$_kreport_verdict" = "FAIL" ]; then
-                            log "KARO-PENDING-SKIP-CLOSED-FAIL: $_kpcmd task=failed report=completed verdict=FAIL"
+                        local _kreport_terminal_state
+                        _kreport_terminal_state=$(report_terminal_state "$_kreport_path")
+                        if [ "$_kreport_terminal_state" = "CLOSED_BLOCKED" ]; then
+                            log "KARO-PENDING-SKIP-CLOSED-BLOCKED: $_kpcmd task=failed report=completed verdict=${_kreport_verdict:-unknown}"
                             continue
                         fi
                     fi
