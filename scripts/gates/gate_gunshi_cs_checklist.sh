@@ -353,7 +353,7 @@ _cs_write_cache() {
     mv -f -- "$tmp_file" "$cache_file" 2>/dev/null || true
 }
 
-read -r _cs_namespace _ < <(printf '%s' "$REPO_ROOT" | sha256sum)
+_cs_namespace="$(printf '%s' "$REPO_ROOT" | sha256sum | awk '{print $1}')"
 _cs_cache_dir="/tmp/shogun_cs_checklist_cache/${_cs_namespace}"
 mkdir -p "$_cs_cache_dir" 2>/dev/null || true
 _cs_cold_cache="$_cs_cache_dir/cold.cache"
