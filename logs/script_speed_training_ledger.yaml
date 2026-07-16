@@ -8,16 +8,16 @@ real_measurement_policy: 'Ninja must choose a safe runtime command per script: t
 script_count: 254
 entries:
 - script_path: ".claude/hooks/pre-bash-combined.sh"
-  status: pending
+  status: completed
   before_ms: ''
-  after_ms: ''
-  before_real_ms: 238
-  after_real_ms: ""
-  real_measurement_command: "source scripts/lib/pre_bash_combined_guard.sh; pre_bash_combined_eval_command 'rg -n speed context/infrastructure.md' (20-run avg, warm TTL cache, PRE_BASH_MEMORY_INJECT_DEBOUNCE_SEC=0)"
-  test_result: "bash -n hooks/libs PASS; bash scripts/hooks/test_hooks.sh 90/90 PASS SKIP=0"
-  commit: "pending_commit"
-  assigned_to: ""
-  updated_at: "2026-07-16T19:54:13"
+  after_ms: 102.0
+  before_real_ms: 441.5
+  after_real_ms: 102.0
+  real_measurement_command: "source scripts/lib/pre_bash_combined_guard.sh; PRE_BASH_MEMORY_INJECT_DEBOUNCE_SEC=0 pre_bash_combined_eval_command 'rg -n speed context/infrastructure.md' (20-run avg, warm DB/WAL fingerprint cache)"
+  test_result: "bash -n PASS; bash scripts/hooks/test_hooks.sh 104/104 PASS FAIL=0 SKIP=0; before_avg=441.5ms after_avg=102.0ms improvement=76.9%; safety guards unchanged"
+  commit: "7eeef139f85f3df84d1187272261a9135c4f7b0d"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-16T20:35:12"
   iteration: 2
 - script_path: ".claude/hooks/pretool-dispatch.sh"
   status: pending
@@ -1617,16 +1617,16 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/hooks/prompt_state_inject.sh
-  status: assigned
+  status: completed
   before_ms: 8
-  after_ms: 8
-  before_real_ms: 369.167
-  after_real_ms: ""
-  real_measurement_command: "env PROMPT_STATE_AGENT_ID=saizo PROMPT_STATE_SKILLS_DIR=/tmp/psi_equiv.zPNVDI/skills PROMPT_STATE_SEMANTIC_SEARCH_CMD=/tmp/psi_equiv.zPNVDI/semantic.sh bash scripts/hooks/prompt_state_inject.sh <<< '{\"prompt\":\"報告YAML作成はどう確認する？\"}'"
-  test_result: "normal equivalence yes 596.000->375.000ms; question equivalence yes 451.917->369.167ms; bats tests/unit/test_prompt_state_inject_skill_trigger.bats PASS SKIP=0"
-  commit: "pending"
+  after_ms: 87.433
+  before_real_ms: 125.700
+  after_real_ms: 87.433
+  real_measurement_command: "env PROMPT_STATE_AGENT_ID=hayate_bench PROMPT_STATE_PREFLIGHT_CMD=/bin/true PROMPT_STATE_SKILLS_DIR=/mnt/c/tools/multi-agent-shogun/skills PROMPT_STATE_PROJECTS_YAML=/mnt/c/tools/multi-agent-shogun/config/projects.yaml PROMPT_STATE_SEMANTIC_SEARCH_CMD=/bin/true PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR=/tmp/psi_measure.rKwNye/cache PROMPT_STATE_MEMORY_DB_PATH=/tmp/psi_measure.rKwNye/missing.db PROMPT_STATE_LORD_RULING_CACHE_PATH=/tmp/psi_measure.rKwNye/missing_rulings.db PROMPT_STATE_SKILL_RECOMMEND_LOG_FILE=/tmp/psi_measure.rKwNye/recommend.yaml bash /tmp/psi_measure.rKwNye/scripts/hooks/prompt_state_inject.sh <<< '{\"prompt\":\"報告YAML作成はどう確認する？\"}'"
+  test_result: "same command warm-cache mean 125.700->87.433ms; median 123->85ms; bats 120/120 PASS FAIL=0 SKIP=0"
+  commit: "fde97eb49b21395386c19a1caf32d4210876054e"
   assigned_to: "hayate"
-  updated_at: "2026-07-16T20:18:05"
+  updated_at: "2026-07-16T20:28:03"
   iteration: 2
 - script_path: scripts/hooks/session_end_clear_check.sh
   status: pending
@@ -1642,7 +1642,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/hooks/session_start_inject.sh
-  status: pending
+  status: assigned
   before_ms: 15
   after_ms: 15
   before_real_ms: __BEFORE_REAL_MS__
@@ -1651,8 +1651,8 @@ entries:
     scripts/hooks/session_start_inject.sh; median of 5 runs
   test_result: bash_n_pass;bats_test_session_state_hooks_session_start_inject_5_pass_0_skip;json_valid;agent_context_ok;before_2537_after_1960
   commit: 69af2c093
-  assigned_to: ""
-  updated_at: "2026-07-16T19:54:33"
+  assigned_to: "hayate"
+  updated_at: "2026-07-16T20:34:41"
   iteration: 2
 - script_path: scripts/hooks/stop_check_inbox.sh
   status: pending
