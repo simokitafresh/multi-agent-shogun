@@ -46,6 +46,36 @@ teardown() {
     [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$other_index_before" ]
 }
 
+@test "normal modeは専用indexから対象だけcommitしforeign stageをblob不変で保持する" {
+    printf 'foreign staged\n' >> "$REPO/other.txt"
+    git -C "$REPO" add other.txt
+    foreign_before="$(git -C "$REPO" ls-files -s -- other.txt)"
+    printf 'own unstaged\n' >> "$REPO/own.txt"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m isolated-index -- own.txt"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" diff-tree --no-commit-id --name-only -r HEAD)" = own.txt ]
+    [ "$(git -C "$REPO" diff --cached --name-only)" = other.txt ]
+    [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$foreign_before" ]
+    [ "$(git -C "$REPO" status --porcelain -- own.txt)" = "" ]
+}
+
+@test "normal modeは対象path既存stageをpatch modeへfail-closedする" {
+    printf 'staged owner unknown\n' >> "$REPO/own.txt"
+    git -C "$REPO" add own.txt
+    staged_before="$(git -C "$REPO" ls-files -s -- own.txt)"
+    printf 'additional unstaged\n' >> "$REPO/own.txt"
+    head_before="$(git -C "$REPO" rev-parse HEAD)"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m must-block -- own.txt"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"already has staged content"* ]]
+    [ "$(git -C "$REPO" ls-files -s -- own.txt)" = "$staged_before" ]
+    [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
+}
+
 @test "commit後に同一hunkのdirty差分が残れば報告前にBLOCKする" {
     mkdir -p "$REPO/.git/hooks"
     cat > "$REPO/.git/hooks/post-commit" <<'HOOK'

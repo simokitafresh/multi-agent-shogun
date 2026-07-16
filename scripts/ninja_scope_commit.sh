@@ -186,7 +186,19 @@ PY
     exit 0
 fi
 
-# Path限定addは他者の既存stageを変更しない。--onlyは共有indexの他pathをcommitしない。
+# Normal modeも共有indexをcommit sourceにしない。HEAD由来の専用indexへ
+# 指定scopeだけをaddし、commit objectの入力自体を所有権分離する。
+for scope_path in "${paths[@]}"; do
+    git diff --cached --quiet -- "$scope_path" \
+        || { echo "BLOCK: scope path already has staged content in shared index: $scope_path (use --patch)" >&2; exit 2; }
+done
+
+temp_index="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-index.XXXXXX")"
+rm -f "$temp_index"
+cleanup_normal_index() { rm -f "$temp_index" "$temp_index.lock"; }
+trap cleanup_normal_index EXIT
+export GIT_INDEX_FILE="$temp_index"
+git read-tree HEAD
 git add -- "${paths[@]}"
 
 # GA-222: commit前にgitが実際に発火するhookを正本(scripts/hooks/*.sh)と同期する。
@@ -210,12 +222,26 @@ fi
 if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" ]]; then
     bash "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" check --repo "$repo_root"
 fi
-git commit --only -m "$message" -- "${paths[@]}"
+git commit -m "$message"
 commit_hash="$(git rev-parse HEAD)"
+mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
+unset GIT_INDEX_FILE
+
+# 共有indexは指定scopeだけ新HEADへ追随。他pathのstageはblob/modeとも不変。
+for committed_path in "${committed[@]}"; do
+    if git cat-file -e "HEAD:$committed_path" 2>/dev/null; then
+        new_blob="$(git rev-parse "HEAD:$committed_path")"
+        new_mode="$(git ls-tree HEAD -- "$committed_path" | awk 'NR==1 {print $1}')"
+        git update-index --add --cacheinfo "$new_mode,$new_blob,$committed_path"
+    else
+        git update-index --force-remove -- "$committed_path"
+    fi
+done
+cleanup_normal_index
+trap - EXIT
 
 # 二値postcondition: commit treeは指定scopeのみ、他者stageはそのまま残る。
 # scope_path_is_in_scope(SSOT)で判定することで、正規化ロジックの重複を避ける。
-mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
 for committed_path in "${committed[@]}"; do
     scope_path_is_in_scope "$committed_path" "${paths[@]}" \
         || { echo "FATAL: out-of-scope path entered commit: $committed_path" >&2; exit 1; }
