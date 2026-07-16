@@ -136,7 +136,7 @@ else
 fi
 
 # Run verification (always python3 -S — no yaml import needed)
-echo "$CMD_TEXT" | REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" _PROJECT_DIR="${_PROJECT_DIR:-}" python3 -S -c "
+REPO_ROOT="$REPO_ROOT" CMD_ID="$CMD_ID" _PROJECT_DIR="${_PROJECT_DIR:-}" python3 -S -c "
 import re, os, sys
 
 repo_root = os.environ['REPO_ROOT']
@@ -352,7 +352,7 @@ if missing > 0:
 else:
     print(f'\nRESULT: ALL PATHS VERIFIED')
     sys.exit(0)
-"
+" <<< "$CMD_TEXT"
 
 if [[ "$CMD_ID" == "-" ]]; then
     exit 0
