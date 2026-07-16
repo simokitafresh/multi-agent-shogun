@@ -32,17 +32,31 @@ entries:
   updated_at: "2026-06-13T00:19:57"
   iteration: 1
 - script_path: scripts/gates/gate_loop_health.sh
-  status: pending
+  status: saturated
   before_ms: ''
   after_ms: ''
-  before_real_ms: 600
-  after_real_ms: ""
-  real_measurement_command: "/usr/bin/time -f 'real_ms=%e' bash scripts/gates/gate_loop_health.sh >/tmp/saizo_gate_loop_{before,after}.out"
-  test_result: "bats tests/unit/test_gate_loop_health.bats PASS 6/6 SKIP=0; output_diff_empty"
-  commit: "dc65afd2fb9558f85dde30ca85089085ead88ff5"
-  assigned_to: ""
-  updated_at: "2026-06-13T00:19:57"
+  before_real_ms: 7.625842
+  after_real_ms: 8.0210005
+  real_measurement_command: "bash scripts/gates/gate_loop_health.sh"
+  test_result: "bats tests/unit/test_gate_loop_health.bats PASS 11/11 FAIL=0 SKIP=0; output hash stable per arm; safety lines removed=0"
+  commit: "0eababcd3bc12d7fbaedc31e7134617cb48f665e"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T04:03:53"
   iteration: 1
+  last_good_commit: "0eababcd3bc12d7fbaedc31e7134617cb48f665e"
+  candidate_commit: "ffa95786a57f5f9c01fd39d21fb452ee41ac5cda"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 7.625842
+  last_good_p95_ms: 9.997675
+  candidate_p50_ms: 8.0210005
+  candidate_p95_ms: 10.54546
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux; bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu); cwd=/mnt/c/tools/multi-agent-shogun"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: .claude/hooks/post-shogun-inbox-check.sh
   status: pending
   before_ms: 0
@@ -146,17 +160,31 @@ entries:
   updated_at: "2026-07-16T23:14:45"
   iteration: 1
 - script_path: scripts/api_usage.sh
-  status: pending
+  status: completed
   before_ms: 39
   after_ms: 10
-  before_real_ms: 645
-  after_real_ms: ""
-  real_measurement_command: time bash scripts/api_usage.sh openai (5回平均、本番SQLite)
-  test_result: bats tests/unit/test_usage_status.bats PASS 5/5 SKIP=0
-  commit: e109faba8
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  before_real_ms: 58.621
+  after_real_ms: 52.165
+  real_measurement_command: "bash scripts/api_usage.sh openai"
+  test_result: "bash -n PASS; test_usage_status 6/6 PASS FAIL=0 SKIP=0; production openai PASS; safety removed=0"
+  commit: "e53a087d9d0a3822c11154b76ebba62485031acc"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T03:52:50"
   iteration: 1
+  last_good_commit: "3cb3cccd331d705f3006f0a70cd2e77854f65319"
+  candidate_commit: "e53a087d9d0a3822c11154b76ebba62485031acc"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 58.621
+  last_good_p95_ms: 65.301
+  candidate_p50_ms: 52.165
+  candidate_p95_ms: 57.204
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "HOME-shared|production-state_5.sqlite|WSL2|bash5.2"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/archive_completed.sh
   status: pending
   before_ms: 19
@@ -286,17 +314,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/build_instructions.sh
-  status: pending
+  status: completed
   before_ms: 16
   after_ms: ''
-  before_real_ms: 770
-  after_real_ms: ""
-  real_measurement_command: bash scripts/build_instructions.sh > /dev/null 2>&1
-  test_result: 49/49 PASS SKIP=0
-  commit: 14bb2d773
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  before_real_ms: 198.784544
+  after_real_ms: 192.8183
+  real_measurement_command: "bash scripts/build_instructions.sh in isolated full-tree archive"
+  test_result: "build exit0; hash parity; bash-n PASS; FAIL=0 SKIP=0"
+  commit: "ec94d5eb9400d6722a83b14fcda5e41bd7d73860"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T03:42:51"
   iteration: 1
+  last_good_commit: "91fda714803873574ee3e5e2acd448740dd6b5fe"
+  candidate_commit: "ec94d5eb9400d6722a83b14fcda5e41bd7d73860"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 198.784544
+  last_good_p95_ms: 222.418971
+  candidate_p50_ms: 192.8183
+  candidate_p95_ms: 211.555852
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2-Linux-6.6.87.1-x86_64-isolated-full-tree"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/bulletin_archive.sh
   status: pending
   before_ms: 16
@@ -1720,7 +1762,7 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/hooks/git-pre-commit.sh
-  status: pending
+  status: assigned
   before_ms: 16
   after_ms: 16
   before_real_ms: 590
@@ -1729,8 +1771,8 @@ entries:
     median of 5 runs
   test_result: bash_n_PASS;bats_test_git_pre_commit_9_pass_0_skip;before_650_after_590
   commit: 04a710483761799ed7c9f140615428dc2a3c88be
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-17T03:59:51"
   iteration: 1
 - script_path: scripts/hooks/pre-bash-report-deny.sh
   status: completed
@@ -2870,7 +2912,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/ntfy_batch_flush.sh
-  status: pending
+  status: assigned
   before_ms: 15
   after_ms: ''
   before_real_ms: 576.806
@@ -2879,8 +2921,8 @@ entries:
     done (empty queue, stub ntfy)'
   test_result: bash -n PASS; sandbox empty/nonempty queue functional PASS SKIP=0
   commit: c5a700c2a
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T04:01:00"
   iteration: 1
 - script_path: scripts/ntfy_cmd.sh
   status: pending
