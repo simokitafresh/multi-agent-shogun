@@ -1,11 +1,9 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-16T23:20:35+09:00 -->
+<!-- generated_at: 2026-07-16T23:19:15+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-16T23:20:34+09:00 | terminal | response | 未読0。待機。 [meta] stop_reason=end_turn
-- 2026-07-16T23:20:08+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働4名 CLEAR率99% 連勝109
 - 2026-07-16T23:19:14+09:00 | terminal | response | gate-sync完了。未読0。待機。
 - 2026-07-16T23:18:52+09:00 | ntfy | outbound | test outside tmux warning
 - 2026-07-16T23:18:51+09:00 | ntfy | outbound | test permission warning
@@ -14,6 +12,8 @@
 - 2026-07-16T23:15:26+09:00 | terminal | inbound | いまクリアされても今より強くてニューゲームできるようにせよ
 - 2026-07-16T23:15:23+09:00 | terminal | response | APPROVE完了。未読0。待機。 [meta] stop_reason=end_turn
 - 2026-07-16T23:14:51+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_speed_pipeline_review_gate_gen2_202607162312 初回配備開始 (title=(untitled), ninja=kotaro)
+- 2026-07-16T23:14:30+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_speed_pipeline_inbox_roundtrip_gen2_202607162312 初回配備開始 (title=(untitled), ninja=hanzo)
+- 2026-07-16T23:14:14+09:00 | terminal | response | APPROVE完了。未読0。待機。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
 - 殿、強くてニューゲームの確認結果を報告する。 **環境埋込み完了 — 全て永続化済み:** | # | 成果 | 永続先 | 次の将軍への到達経路 | |---|------|--------|-------------------| | 1 | reflux 3段修正 | 3…

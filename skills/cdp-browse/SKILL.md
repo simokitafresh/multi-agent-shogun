@@ -1,6 +1,6 @@
 ---
 
-<!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 <!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: note_draft.sh現HEAD+作業差分を確認。CDP未応答時は隔離profileをlaunch_browser→cmd.exe fallbackで自動起動し、起動不能/reCAPTCHA未解決はexit 1(FAIL)。末尾のskill-auto-improveコメント追記はexit後で呼出契約・副作用不変。単一Markdown引数/CDP_PORT=9234/PASS・FAIL記録契約を維持。 -->
 name: cdp-browse
 argument-hint: "[url] [screenshot_path]"
@@ -17,10 +17,10 @@ allowed-tools:
   - Grep
 ---
 
-<!-- script_refs_checked_at: 2026-07-16T19:18:13+0900 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 <!-- 2026-07-16再検分: note_draft.sh 31cfcb906/7127ab894/1421d3c92/5a7543ad9。Chrome未起動時のexit 0(SKIP)を廃止し、隔離profileを自動起動、起動不能時はexit 1(FAIL)。■行は個別bulletとして解釈後、<br>で1行改行する。単一Markdown引数とCDP_PORT契約は不変。 -->
 <!-- 検分: note_draft.sh 8e4872513 reCAPTCHA guard内部強化。呼び出し契約 `CDP_PORT=9234 bash scripts/note_draft.sh "<記事.md>"`、PASS/FAIL/SKIPログ契約は不変 -->
-<!-- script_refs_checked_at: 2026-07-16T19:18:13+0900 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 
 Script refs verified: 2026-06-30 a519e6365+dad84ea2c. `note_draft.sh` 直近変更はinvisible reCAPTCHA対応(dispatch_click+quick_url待ち)とコメント形式修正。引数・CDP_PORT・PASS/FAIL/SKIPログの契約変更なし。CDPブラウズ手順・preflight/navigate/screenshotの契約変更なし。
 
@@ -224,4 +224,4 @@ scripts/cdp/cdp_cli.sh screenshot "/tmp/dm-signal-admin.png"
 
 - → [[cdp-severity.md]] CDP計測・canary・ブラウザ実測の異常分類（操作失敗時の重大度判定基準）
 
-<!-- script_refs_checked_at: 2026-07-16T19:18:13+0900 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900

@@ -1,6 +1,6 @@
 ---
 
-<!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 <!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: note_draft.sh現HEAD+作業差分を確認。CDP未応答は隔離profile自動起動、起動不能/reCAPTCHA未解決はexit 1(FAIL)。末尾skill-auto-improve追記はexit後でI/F不変。週報Markdown生成後の単一file引数契約を維持。 -->
 name: weekly-report-writer
 argument-hint: "[week:YYYY-Www]"
@@ -18,10 +18,10 @@ allowed-tools:
   - Write
 ---
 
-<!-- script_refs_checked_at: 2026-07-16T19:17:14+0900 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 <!-- 2026-07-16再検分: note_draft.sh 31cfcb906/7127ab894/1421d3c92/5a7543ad9。Chrome未起動時は隔離profileを自動起動し、起動不能時のみexit 1(FAIL)。■行は個別bulletとして解釈後、<br>で1行改行する。単一Markdown引数とCDP_PORT契約は不変。 -->
 <!-- 検分: note_draft.sh 8e4872513 reCAPTCHA guard内部強化。呼び出し契約 `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`、週報Markdown生成後のnote下書き保存契約は不変 -->
-<!-- script_refs_checked_at: 2026-06-27T14:55:14+0900 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 
 Script refs verified: 2026-06-12. `note_draft.sh` の契約は `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"` のまま。932936059は外部reCAPTCHA画像チャレンジ未解決を運用FAILではなくSKIPとして`skill_execution_log.yaml`へ記録し、exit 0で返す変更。Gate20も同じ外部reCAPTCHAチャレンジ由来の`note-draft`結果をFAIL率分母から除外する。週報Markdown生成後のnote下書き保存呼び出し・Chrome未起動時SKIP・通常PASS/FAILログの契約変更なし。
 Script refs verified: 2026-06-16 cmd_karo_skill_refs_update_20260616. `note_draft.sh` 直近変更(6ac00607e)はshellcheckコメント形式修正(markdown list→shell comment)のみ。引数・CDP_PORT・通常PASS/FAILログの契約変更なし。
@@ -507,7 +507,7 @@ CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 - リンクが本文に出ていない
 - 指数が週間変動になっている
 
-<!-- script_refs_checked_at: 2026-06-27T14:55:14+0900 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 
 Script refs verified: 2026-07-16. `note_draft.sh` はChrome CDP未起動時にPython層のChrome自動起動(launch_browser+cmd.exeフォールバック)へ委ねる。旧Step 0のSKIP(exit 0)は殿裁定2026-07-16で「バグ」と判定され除去。Chrome未起動時もスキルは自動起動を試行し、起動失敗時のみFAIL(exit 1)となる。`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"` の呼び出し契約は変更なし。
 
@@ -518,4 +518,4 @@ Script refs verified: 2026-07-16. `note_draft.sh` はChrome CDP未起動時にPy
 
 Script refs verified: 2026-06-26 af9e4c7b3. `note_draft.sh` 直近変更はMarkdown bold→strong変換の内部修正。週報Markdown生成後の `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"` 呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-27T14:55:14+0900 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900

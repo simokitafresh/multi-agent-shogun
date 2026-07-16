@@ -1,6 +1,6 @@
 ---
 
-<!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 <!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: note_draft.sh現HEAD+作業差分を確認。CDP未応答は隔離profile自動起動、起動不能/reCAPTCHA未解決はexit 1(FAIL)。末尾skill-auto-improve追記はexit後でI/F不変。既存Markdown引数/CDP_PORT契約を維持。 -->
 name: sengoku-writer
 argument-hint: "[topic]"
@@ -23,10 +23,10 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-<!-- script_refs_checked_at: 2026-07-16T19:17:14+0900 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 <!-- 2026-07-16再検分: note_draft.sh 31cfcb906/7127ab894/1421d3c92/5a7543ad9。Chrome未起動時のexit 0(SKIP)を廃止し、隔離profileを自動起動、起動不能時はexit 1(FAIL)。■行は個別bulletとして解釈後、<br>で1行改行する。`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`の引数契約は不変。 -->
 <!-- 検分: note_draft.sh 8e4872513 reCAPTCHA guard内部強化。呼び出し契約 `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`、記事Markdown生成後のnote下書き保存契約は不変 -->
-<!-- script_refs_checked_at: 2026-06-30T12:12:00+0900 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 
 Script refs verified: 2026-06-30 a519e6365+dad84ea2c. `note_draft.sh` 直近変更はinvisible reCAPTCHA対応(dispatch_click+quick_url待ち)とコメント形式修正。戦国記事Markdown生成後のnote下書き保存呼び出し・引数・CDP_PORT・PASS/FAIL/SKIPログの契約変更なし。
 
@@ -271,10 +271,10 @@ Markdown→note.com変換ルール:
 - ProseMirrorエディタがスピナーで停止している場合、`Page.reload` で最大2回リトライする（`wait_for_prosemirror`）
 - 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力し、`skill_execution_log.yaml` にPASS/FAILを記録する
 
-<!-- script_refs_checked_at: 2026-06-27T14:55:14+0900 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 
 Script refs verified: 2026-06-10 e81c63081+ba757a1f7+14aa13952. `note_draft.sh` はChrome CDP未起動時にexit 0(SKIP)で抜ける事前チェック追加(FAIL率汚染防止)、PowerShell失敗時のcmd.exeフォールバック追加、skill-auto-improveコメントのshellcheckエラー除去。Chrome未起動時はStep 6がSKIPされ`skill_execution_log`にSKIP記録される。Markdown生成・保存(Step 1-5)への影響なし。SKILL.md記載の`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`呼び出し契約は変更なし。
 
 Script refs verified: 2026-06-26 af9e4c7b3. `note_draft.sh` 直近変更はMarkdown bold→strong変換の内部修正。戦国記事Markdown生成後のnote下書き保存呼び出し契約は変更なし。
 
-<!-- script_refs_checked_at: 2026-06-27T14:55:14+0900 -->
+<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
