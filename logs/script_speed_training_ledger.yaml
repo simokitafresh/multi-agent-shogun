@@ -1306,21 +1306,31 @@ entries:
   updated_at: "2026-07-16T22:12:22"
   iteration: 1
 - script_path: scripts/gates/gate_knowledge_freshness.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: ''
-  before_real_ms: 190
-  after_real_ms: ""
-  real_measurement_command: env KNOWLEDGE_FRESHNESS_ROOT=$PWD KNOWLEDGE_FRESHNESS_DISABLE_CACHE=1
-    bash scripts/gates/gate_knowledge_freshness.sh >/dev/null (5-run median; HEAD
-    baseline vs current)
-  test_result: bash -n scripts/gates/gate_knowledge_freshness.sh; bats tests/unit/test_gate_small_consolidated.bats
-    --filter test_gate_knowledge_freshness PASS 3/3 SKIP=0; bats tests/unit/test_bash_speed_training.bats
-    PASS 8/8 SKIP=0
-  commit: dbf14f10a
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 179.938
+  after_real_ms: 165.416
+  real_measurement_command: "env KNOWLEDGE_FRESHNESS_ROOT=/mnt/c/tools/multi-agent-shogun KNOWLEDGE_FRESHNESS_TODAY=2026-07-17 KNOWLEDGE_FRESHNESS_DISABLE_CACHE=1 bash /tmp/tobisaru_kf_ab/scripts/gates/gate_knowledge_freshness.sh"
+  test_result: "bats_3_pass_fail0_skip0"
+  commit: "223cb9080c2339046b86493d4c2504f2dfe8bed6"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T05:00:54"
   iteration: 1
+  last_good_commit: "18b08af460e5d3514ace68c495807f2371435199"
+  candidate_commit: "223cb9080c2339046b86493d4c2504f2dfe8bed6"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 179.938
+  last_good_p95_ms: 209.783
+  candidate_p50_ms: 165.416
+  candidate_p95_ms: 208.323
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2;/mnt/c;bash;python3;same-process-sequence"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_lesson_health.sh
   status: saturated
   before_ms: 11
