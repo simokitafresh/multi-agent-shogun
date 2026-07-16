@@ -67,6 +67,8 @@ context freshnessのDM_SIGNAL_CONTEXT_PATHSは、広域共有ディレクトリ(
 
 inbox nudge配達保証: `scripts/inbox_watcher.sh` はINPUT-GUARD保留時に `deferred_nudge` 状態を記録し、送信済みfingerprint/debounceをrollbackする。未読が残る限り次回 `DEFERRED-RETRY` で再注入する。Codex active+busyはqueued messageとして即時送達し、idle promptのANSI dim候補文は未送信入力ではないため安全に送達する。通常色の実入力とClaude/非Codexは従来通り保護する（cmd_3830）。詳細は `docs/research/cmd_3830_nudge_delivery_guarantee.md`。
 
+queued wakeの件数は検知時snapshotではなく送信lock内の現行未読snapshotを正本とする。待機中に未読が0件なら旧`inboxN`を破棄し、複数世代は現行count/fingerprintの1送信へcoalesceする。送信結果は`attempted`/`pasted`/`dedup`を分離し、dedupを`Wake-up sent`と記録しない。修正前18/18→修正後20/20 PASS、古い件数送信0・実paste 1（cmd_karo_hotfix_stale_inbox_nudge_consumption_202607161354、commit `321e74760`）。
+
 全て外部インフラが自動処理。エージェントは何もするな。Codex忍者=/new、Claude忍者=/clear、家老=/clear(陣形図付き)、将軍=殿判断。
 閾値: ソフト50%（外部トリガー）、ハード90%（AUTOCOMPACT）。CLI差異は`config/settings.yaml`参照。
 → `docs/research/infra-details.md` §1
