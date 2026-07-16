@@ -439,3 +439,11 @@ lessons:
   created_at: '2026-07-10'
   automated: true
   enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=binary_check:/ && ; test=tests/unit/test_cmd_save_research_artifact_reflux.bats'
+- id: 'LS088'
+  title: 'stop hookの洗脳#3検出パターンに許可求め・判断委任フレーズが欠落'
+  origin: '[[将軍お許しフレーズすり抜け]] -> [[stop_hook_L166_L415パターン欠落]] -> [[4フレーズBLOCK追加]]'
+  detail: '2026-07-16: 将軍がお許しがあれば・判断を仰ぐと出力→stop hookすり抜け→殿介入。L166+L415に4フレーズ追加しBLOCK化。commit 365b3d7f0。47/47 PASS'
+  source_cmd: 'session_20260716'
+  created_at: '2026-07-16'
+  automated: true
+  enforcement: 'Level5: stop_check_inbox.sh L166+L415で4フレーズBLOCK。T-SCI-032/033/034回帰防護'

@@ -555,3 +555,46 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"RUNBOOK=MISSING"* ]]
 }
+
+@test "shogun lesson_write counts only active entries (superseded excluded)" {
+    local tmp_lessons
+    tmp_lessons="$(mktemp "$BATS_TMPDIR/lessons_shogun.XXXXXX.yaml")"
+    # Generate 34 entries: 30 active + 4 superseded = 34 total
+    printf 'lessons:\n' > "$tmp_lessons"
+    for i in $(seq 1 30); do
+        printf -- "- id: LS%03d\n  title: active %d\n  detail: d\n  created_at: '2026-01-01'\n  automated: true\n  enforcement: 'none'\n" "$i" "$i" >> "$tmp_lessons"
+    done
+    for i in $(seq 31 34); do
+        printf -- "- id: LS%03d\n  title: superseded %d\n  detail: d\n  created_at: '2026-01-01'\n  automated: true\n  enforcement: 'none'\n  superseded_by: 'LS-A01'\n" "$i" "$i" >> "$tmp_lessons"
+    done
+    local total
+    total=$(grep -c '^- id:' "$tmp_lessons")
+    [ "$total" -eq 34 ]
+
+    # lesson_write_shogun.sh should NOT block (30 active < 35 limit)
+    run env LESSONS_SHOGUN_FILE="$tmp_lessons" \
+        bash "$REAL_PROJECT_ROOT/scripts/lesson_write_shogun.sh" \
+        "test lesson title for superseded exclusion" "2026-07-16: superseded entries should not count toward the 35-entry active limit. This is a regression test." "cmd_test" "none"
+    echo "$output" >&2
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"BLOCK"* ]]
+    rm -f "$tmp_lessons"
+}
+
+@test "shogun lesson_write blocks at 35 active entries" {
+    local tmp_lessons
+    tmp_lessons="$(mktemp "$BATS_TMPDIR/lessons_shogun.XXXXXX.yaml")"
+    printf 'lessons:\n' > "$tmp_lessons"
+    for i in $(seq 1 35); do
+        printf -- "- id: LS%03d\n  title: active %d\n  detail: d\n  created_at: '2026-01-01'\n  automated: true\n  enforcement: 'none'\n" "$i" "$i" >> "$tmp_lessons"
+    done
+
+    run env LESSONS_SHOGUN_FILE="$tmp_lessons" \
+        bash "$REAL_PROJECT_ROOT/scripts/lesson_write_shogun.sh" \
+        "test lesson title for active limit block" "2026-07-16: when 35 active entries exist the script must BLOCK. This prevents lesson file unbounded growth." "cmd_test" "none"
+    echo "$output" >&2
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK"* ]]
+    [[ "$output" == *"active 35"* ]]
+    rm -f "$tmp_lessons"
+}

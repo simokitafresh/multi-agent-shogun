@@ -30,7 +30,7 @@ if [ -f "$SCRIPT_DIR/scripts/lib/lock_path.sh" ]; then
 else
     lock_path() { printf '%s.lock' "$1"; }
 fi
-LESSONS_FILE="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
+LESSONS_FILE="${LESSONS_SHOGUN_FILE:-$SCRIPT_DIR/projects/infra/lessons_shogun.yaml}"
 LOCKFILE="$(lock_path "$LESSONS_FILE")"
 
 # --- Mode: --supersedes (古い教訓を非優先化) ---
@@ -127,7 +127,7 @@ if [ "$DETAIL_LEN" -lt 30 ]; then
     exit 1
 fi
 
-LESSONS_FILE="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml"
+LESSONS_FILE="${LESSONS_SHOGUN_FILE:-$SCRIPT_DIR/projects/infra/lessons_shogun.yaml}"
 LOCKFILE="$(lock_path "$LESSONS_FILE")"
 
 # Verify lessons file exists
@@ -137,9 +137,16 @@ if [ ! -f "$LESSONS_FILE" ]; then
 fi
 
 # Entry count gate — 肥大化防止 (v2統合後: 21件→上限35件)
-ENTRY_COUNT=$(grep -c '^- id:' "$LESSONS_FILE" 2>/dev/null || echo 0)
+# superseded_by付きエントリはactiveではないためカウントから除外する
+ENTRY_COUNT=$(python3 -c "
+import yaml, sys
+with open('$LESSONS_FILE') as f:
+    data = yaml.safe_load(f)
+active = [l for l in (data.get('lessons') or []) if not l.get('superseded_by')]
+print(len(active))
+" 2>/dev/null || grep -c '^- id:' "$LESSONS_FILE" 2>/dev/null || echo 0)
 if [ "$ENTRY_COUNT" -ge 35 ]; then
-    echo "BLOCK: lessons_shogun.yaml が ${ENTRY_COUNT}件に到達(上限35件)。" >&2
+    echo "BLOCK: lessons_shogun.yaml が active ${ENTRY_COUNT}件に到達(上限35件)。" >&2
     echo "  新規追加の前に既存教訓を統合・パターン昇格せよ。" >&2
     echo "  個別事故→パターンに昇格し件数を減らしてから再実行。" >&2
     echo "  参考: docs/research/lessons_shogun_v1_archive.md (97件→21件の統合実績)" >&2
