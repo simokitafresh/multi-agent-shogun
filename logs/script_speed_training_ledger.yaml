@@ -1095,8 +1095,22 @@ entries:
   test_result: "34/34 PASS FAIL=0 SKIP=0"
   commit: "012202ac1f5bd43198a7e6a39a0b7d627b390189"
   assigned_to: "saizo"
-  updated_at: "2026-07-17T00:20:34"
+  updated_at: "2026-07-17T01:04:43"
   iteration: 2
+  last_good_commit: "012202ac1f5bd43198a7e6a39a0b7d627b390189"
+  candidate_commit: "40bd53d774c5b6a0f9022604dc3a4cbb7f55928e"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 675
+  last_good_p95_ms: 2610
+  candidate_p50_ms: 685
+  candidate_p95_ms: 1080
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "cwd=/mnt/c/tools/multi-agent-shogun;fs=WSL2-9p;same-temp-status;same-shell-env"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_loop_health.sh
   status: pending
   before_ms: 16
