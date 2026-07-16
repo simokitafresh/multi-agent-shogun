@@ -126,7 +126,8 @@ END {
 }
 ' "$CACHE_FILE" > "$tmp_file"; then
             mv "$tmp_file" "$CACHE_FILE"
-            cat "$meta_file"
+            IFS= read -r meta_output < "$meta_file"
+            printf '%s\n' "$meta_output"
             rm -f "$meta_file"
         else
             rm -f "$tmp_file" "$meta_file"
