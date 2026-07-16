@@ -393,20 +393,21 @@ for raw_path in test_files:
     test_inputs.append((path, text, sorted(set(path_re.findall(text)))))
 
 latest_sha = {}
-if any(refs for _, _, refs in test_inputs):
-    try:
-        history = subprocess.run(
-            ["git", "-C", str(root), "log", "-500", "--format=@@%H", "--name-only", "--", "scripts", "src", "app", "lib"],
-            check=False, capture_output=True, text=True, timeout=10,
-        ).stdout.splitlines()
-        commit = ""
-        for item in history:
-            if item.startswith("@@"):
-                commit = item[2:]
-            elif item and commit:
-                latest_sha.setdefault(item, commit)
-    except (OSError, subprocess.TimeoutExpired):
-        pass
+try:
+    if not any(refs for _, _, refs in test_inputs):
+        raise OSError
+    history = subprocess.run(
+        ["git", "-C", str(root), "log", "-500", "--format=@@%H", "--name-only", "--", "scripts", "src", "app", "lib"],
+        check=False, capture_output=True, text=True, timeout=10,
+    ).stdout.splitlines()
+    commit = ""
+    for item in history:
+        if item.startswith("@@"):
+            commit = item[2:]
+        elif item and commit:
+            latest_sha.setdefault(item, commit)
+except (OSError, subprocess.TimeoutExpired):
+    pass
 
 rows, stale, outside, production_cache = [], [], [], {}
 for path, text, refs in test_inputs:
