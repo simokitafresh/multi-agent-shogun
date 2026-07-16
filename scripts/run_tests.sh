@@ -145,7 +145,7 @@ run_bats_files_parallel() {
     local -a files=("$@")
     local total="${#files[@]}"
     local out_dir pid file failed file_inner_jobs file_weight active_weight running_pids
-    local source_fp cache_key cache_path cached_count launched_count timing_path out manifest stats
+    local source_fp cache_key cache_path cached_count launched_count timing_path out manifest stats suite_started_ns
     local -a pids=()
     local -a all_pids=()
     local -A pid_file=()
@@ -154,6 +154,7 @@ run_bats_files_parallel() {
     local -A pid_cache_path=()
     local -A pid_time=()
     local -A pid_rc=()
+    suite_started_ns="$(date +%s%N)"
 
     # Each file is a separate bats-core root process.  Never let it inherit a
     # caller/previous bats root's transport namespace: bats uses BATS_* state
@@ -410,6 +411,17 @@ run_bats_files_parallel() {
     done
     TEST_TIMING_LEDGER="${TEST_TIMING_LEDGER:-$REPO_ROOT/logs/test_timing_ledger.tsv}" \
       bash "$REPO_ROOT/scripts/test_timing_ledger_write.sh" "$batch"
+    local suite_ended_ns suite_wall_sec sum_file_sec suite_batch
+    suite_ended_ns="$(date +%s%N)"
+    suite_wall_sec="$(awk -v a="$suite_started_ns" -v b="$suite_ended_ns" 'BEGIN {printf "%.3f", (b-a)/1000000000}')"
+    sum_file_sec="$(awk -F '\t' '{s+=$8} END {printf "%.3f", s+0}' "$batch")"
+    suite_batch="$(mktemp "${TMPDIR:-/tmp}/shogun-suite-timing.XXXXXX")"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\tpass\t%s\t%s\n' \
+      "$run_id" "$(basename "$REPO_ROOT")" "$commit_sha" "$mode" "$suite_wall_sec" \
+      "$sum_file_sec" "$total" "$source_fp" "$measured_at" >"$suite_batch"
+    TEST_SUITE_TIMING_LEDGER="${TEST_SUITE_TIMING_LEDGER:-$REPO_ROOT/logs/test_suite_timing_ledger.tsv}" \
+      bash "$REPO_ROOT/scripts/test_suite_timing_ledger_write.sh" "$suite_batch"
+    rm -f "$suite_batch"
     rm -f "$batch"
     rm -f "$manifest" "$stats"
 

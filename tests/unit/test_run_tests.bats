@@ -4,7 +4,9 @@ setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   TMPROOT="$(mktemp -d)"
   mkdir -p "$TMPROOT/scripts" "$TMPROOT/tests/unit" "$TMPROOT/bin" "$TMPROOT/logs"
-  cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/scripts/"
+  cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/test_timing_ledger_write.sh" \
+    "$ROOT/scripts/test_suite_timing_ledger_write.sh" "$ROOT/scripts/universal_shard.py" \
+    "$ROOT/scripts/universal_shard_adapters.py" "$TMPROOT/scripts/"
   printf '@test "sample" { true; }\n' >"$TMPROOT/tests/unit/sample.bats"
   printf '@test "root sample" { true; }\n' >"$TMPROOT/tests/root_sample.bats"
   cat >"$TMPROOT/bin/bats" <<'SH'
@@ -62,6 +64,7 @@ _write_lpt_ledger() {
   [ "$status" -eq 0 ]
   [ "$(wc -l <"$TMPROOT/logs/ledger.tsv")" -eq 2 ]
   awk -F'\t' 'NR==2 {exit !($4=="unit" && $9=="pass" && $11==0 && NF==14)}' "$TMPROOT/logs/ledger.tsv"
+  awk -F'\t' 'NR==1 {exit !($5=="suite_wall_sec" && $6=="sum_file_sec" && NF==10)} NR==2 {exit !(NF==10 && $5>=0 && $6>=0)}' "$TMPROOT/logs/test_suite_timing_ledger.tsv"
 }
 
 @test "file partial path does not update suite ledger" {
