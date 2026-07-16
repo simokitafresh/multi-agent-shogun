@@ -12,10 +12,7 @@
 #   4. Uncommitted operational YAML with Edit tool patterns
 
 set -euo pipefail
-_GATE_SELF="${BASH_SOURCE[0]}"
-[[ "$_GATE_SELF" != /* ]] && _GATE_SELF="$PWD/$_GATE_SELF"
-SCRIPT_DIR="${_GATE_SELF%/scripts/gates/gate_codex_safe_write.sh}"
-unset _GATE_SELF
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 ERRORS=0
 REPORT_PATH="${1:-}"
 
