@@ -40,8 +40,29 @@ teardown() {
     unset LOOP_LEDGER_ROOT LOOP_LEDGER_LESSON_IMPACT LOOP_LEDGER_INSIGHTS_FILE LOOP_LEDGER_DB \
         LOOP_LEDGER_SKILL_RECOMMEND_LOG LOOP_LEDGER_SKILL_EXECUTION_LOG \
         LOOP_LEDGER_REPORT_DIRS LOOP_LEDGER_REPORT_MAX_FILES LOOP_LEDGER_OUT LOOP_LEDGER_NOW LOOP_LEDGER_WINDOW_DAYS \
-        LOOP_LEDGER_STARTUP_ALERT_HISTORY LOOP_LEDGER_GATE_METRICS_LOG
+        LOOP_LEDGER_STARTUP_ALERT_HISTORY LOOP_LEDGER_GATE_METRICS_LOG LOOP_LEDGER_STOCK_INCREASE_GRACE_HOURS
     [ -n "${TEST_TMPDIR:-}" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+}
+
+@test "loop_ledger_update does not alert on stock growth while consumer evidence is fresh" {
+    export LOOP_LEDGER_STOCK_INCREASE_GRACE_HOURS=24
+    cat > "$LOOP_LEDGER_OUT" <<'EOF'
+snapshots:
+- generated_at: "2026-06-19T23:00:00Z"
+  window_days: 14
+  loops:
+    lesson: {produced: 1, consumed: 1, stock: 0, last_consumption_ts: "2026-06-19T23:30:00Z", stalled: false}
+alerts: []
+EOF
+    cat > "$LOOP_LEDGER_LESSON_IMPACT" <<'EOF'
+timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level	score	traversal_depth
+2026-06-19T23:30:00Z	cmd_1	hayate	L001	feedback	USEFUL	yes	infra	full	unknown	0	0
+2026-06-19T23:40:00Z	cmd_2	hayate	L002	injected	USEFUL	yes	infra	full	unknown	0	0
+EOF
+
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"lesson: 在庫超過"* ]]
 }
 
 make_obsidian_db() {

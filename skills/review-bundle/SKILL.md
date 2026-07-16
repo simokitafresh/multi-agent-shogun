@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-16T13:35:00+09:00 -->
+<!-- cmd_karo_hotfix_shogun_startup_four_blocks検分: review_bundle.py直近差分はSG7永続証拠の内部強化。precheck→bundle→review_log→inboxのCLI契約は不変。 -->
 name: review-bundle
 argument-hint: "[cmd_id] [verdict:APPROVE|FAIL] [fail_reason]"
 user-invocable: false

@@ -884,6 +884,7 @@ previous_snapshot = existing_snapshots[-1] if existing_snapshots else None
 previous_loops = previous_snapshot.get("loops", {}) if previous_snapshot else {}
 
 alerts = []
+stock_increase_grace_hours = int(os.environ.get("LOOP_LEDGER_STOCK_INCREASE_GRACE_HOURS", "24"))
 for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill", "throughput"):
     loop = loops[name]
     if loop["stalled"]:
@@ -892,7 +893,17 @@ for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory",
     if isinstance(prev, dict):
         prev_stock = prev.get("stock")
         if isinstance(prev_stock, int) and loop["stock"] > prev_stock:
-            alerts.append(f"{name}: 在庫超過(前回{prev_stock}→今回{loop['stock']})")
+            # New production can legitimately outrun the consumer between adjacent
+            # startup snapshots.  Escalate only after the consumer has had a full
+            # cycle to react; otherwise every newly produced lesson becomes an
+            # immediate false positive despite recent consumption.
+            last_consumption = parse_ts(loop.get("last_consumption_ts"))
+            consumption_age_hours = (
+                max((now - last_consumption).total_seconds(), 0) / 3600
+                if last_consumption is not None else float("inf")
+            )
+            if consumption_age_hours >= stock_increase_grace_hours:
+                alerts.append(f"{name}: 在庫超過(前回{prev_stock}→今回{loop['stock']})")
     if name == "throughput" and isinstance(prev, dict):
         prev_e2e = as_float(prev.get("e2e_median_sec"))
         curr_e2e = as_float(loop.get("e2e_median_sec"))

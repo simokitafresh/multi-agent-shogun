@@ -1,5 +1,7 @@
 ---
 name: cmd-complete
+<!-- script_refs_checked_at: 2026-07-16T13:35:00+09:00 -->
+<!-- cmd_karo_hotfix_shogun_startup_four_blocks検分: review_bundle.py直近差分はSG7証拠生成の内部強化。lesson review→gate→記録→archiveの完了フロー契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
 <!-- cmd_3948検分: review_bundle.py直近差分はSG7永続化と処理順序の内部強化。既存CLI契約・完了フロー不変。 -->
 argument-hint: "[cmd_id]"
