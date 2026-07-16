@@ -11,6 +11,22 @@ codd:
 <!-- scope: multi-agent-shogun conceptual reverse index -->
 <!-- related_concepts format: concept_id or concept_id(relation_type=同義|上位|混同注意|関連). Parsers must keep legacy concept_id entries backward-compatible. -->
 
+## campaign_lane — 台帳駆動攻略 / 応用候補カタログ
+
+| 属性 | 値 |
+|------|---|
+| id | campaign_lane |
+| label | 台帳駆動攻略レーン |
+| aliases | campaign-lane, campaign lane, 台帳駆動攻略, 自走攻略レーン, 応用候補カタログ |
+| related_concepts | shard-work(混同注意), growth_loop(関連) |
+
+| 種別 | パス/参照 |
+|------|-----------|
+| file | `config/campaign_lane_catalog.yaml` — 応用候補の機械可読正本 |
+| file | `docs/research/ledger-driven-campaign-lane-pattern_20260714.md` §6/§8 — 設計・実行入口 |
+| causal | [[ledger-driven-campaign-lane-pattern_20260714]] -> [[campaign-lane]] -> [[shard-work]]との反復/単発境界 |
+| note | shard-workは既知集合の単発分割、campaign-laneは一次台帳から反復選定し飽和まで回す |
+
 ## strong_new_game_completion_contract — 強くてニューゲーム完遂契約
 
 | 属性 | 値 |
