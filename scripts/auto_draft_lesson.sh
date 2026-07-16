@@ -44,7 +44,7 @@ write_skip_lesson_done() {
         gates_dir="$SCRIPT_DIR/queue/gates/${cmd_id}"
         mkdir -p "$gates_dir"
         {
-            echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)"
+            printf 'timestamp: %(%Y-%m-%dT%H:%M:%S)T\n' -1
             echo "source: auto_draft_skip"
             echo "reason: ${reason}"
         } > "$gates_dir/lesson.done"
@@ -317,7 +317,7 @@ PYEOF
             gates_dir="$SCRIPT_DIR/queue/gates/${SOURCE_CMD}"
             mkdir -p "$gates_dir"
             {
-                echo "timestamp: $(date +%Y-%m-%dT%H:%M:%S)"
+                printf 'timestamp: %(%Y-%m-%dT%H:%M:%S)T\n' -1
                 echo "source: lesson_write"
                 echo "note: duplicate_existing (${dup_check#DUP:})"
             } > "$gates_dir/lesson.done"
