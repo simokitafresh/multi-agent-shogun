@@ -69,21 +69,19 @@ def main() -> int:
         # (gate_report_format.sh will detect FAIL from format validation)
         print(f"  [WARN] autofix step failed: {_autofix_out}", file=sys.stderr)
 
-    # Phase 2: format validation — normal stdout (PASS / FAIL: ...)
-    _format_exit = _format.main()
-
-    # Phase 3 & 4: report YAML読込み（task_clarity + LU-COMBO共用、1回のみopen）
+    # Phase 2-5 share the post-autofix report parse.  Autofix may rewrite the
+    # report, so parsing before Phase 1 would validate stale data.
     _run_p3 = os.environ.get("GATE_CLARITY_WARN_DISABLE", "0") != "1"
     _run_p4 = os.environ.get("GATE_LU_COMBO_WARN_DISABLE", "0") != "1"
     _run_p5 = os.environ.get("GATE_REPORT_ENV_INFO_DISABLE", "0") != "1"
     _rd34: dict = {}
-    if _run_p3 or _run_p4 or _run_p5:
-        try:
-            import yaml as _yaml  # already imported via gate_report_format_main
-            with open(report_path, encoding="utf-8") as _f:
-                _rd34 = _yaml.safe_load(_f) or {}
-        except Exception:
-            pass
+    _rd34 = _autofix.LAST_REPORT_DATA
+
+    # Phase 2: format validation — normal stdout (PASS / FAIL: ...)
+    _format_exit = _format.main(_rd34)
+
+    if not isinstance(_rd34, dict):
+        _rd34 = {}
 
     # Phase 3: task_clarity check — integrated here to avoid a 2nd python3 subprocess
     # (replaces the inline python3 heredoc in gate_report_format.sh)

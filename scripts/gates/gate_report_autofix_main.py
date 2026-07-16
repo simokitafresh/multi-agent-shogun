@@ -13,9 +13,12 @@ import yaml
 SafeLoader = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 SafeDumper = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
 DumpAll = getattr(yaml, "dump_all")
+LAST_REPORT_DATA: dict | None = None
 
 
 def main() -> int:
+    global LAST_REPORT_DATA
+    LAST_REPORT_DATA = None
     report_path = sys.argv[1] if len(sys.argv) > 1 else ""
     try:
         with open(report_path, encoding="utf-8") as f:
@@ -28,6 +31,8 @@ def main() -> int:
     if not data or not isinstance(data, dict):
         print("UNFIXABLE: report is empty or not a dict")
         return 1
+
+    LAST_REPORT_DATA = data
 
     fixes: list[str] = []
     digit_key_re = re.compile(r"^\[?\d+\]?$")
@@ -405,6 +410,7 @@ def main() -> int:
                 if data.get(ck) is not None and reloaded.get(ck) is None:
                     raise ValueError(f"yaml.dump lost field: {ck}")
             os.replace(tmp_path, report_path)
+            LAST_REPORT_DATA = reloaded
         except Exception as e:
             try:
                 os.unlink(tmp_path)

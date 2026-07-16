@@ -210,7 +210,7 @@ def _binary_checks_full_cmd(report_path):
     )
 
 
-def main() -> int:
+def main(report_data=None) -> int:
     if len(sys.argv) < 2:
         print("FAIL: report path required")
         return 1
@@ -220,12 +220,15 @@ def main() -> int:
     hints = []
     assigned_acs = set()
 
-    try:
-        with open(report_path, encoding="utf-8") as f:
-            data = yaml.safe_load(f)
-    except Exception as e:
-        print(f"FAIL: YAML parse error: {e}")
-        return 1
+    if report_data is None:
+        try:
+            with open(report_path, encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+        except Exception as e:
+            print(f"FAIL: YAML parse error: {e}")
+            return 1
+    else:
+        data = report_data
 
     if not data or not isinstance(data, dict):
         print("FAIL: report is empty or not a dict")
