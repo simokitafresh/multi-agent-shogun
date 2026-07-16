@@ -59,16 +59,14 @@ check_hardcodes() {
     echo -e "\n${BOLD}=== Check 1: ハードコードgrepスキャン ===${NC}"
 
     # 動的パターン: 全エージェント×非デフォルトCLI種別の直書き検出
-    # settings.yaml/cli_profiles.yamlはexclude_filterで除外済み
     local _all_agents_arr
     read -ra _all_agents_arr <<< "$(get_all_agents)"
     local _agent_patterns=""
     for _agent in "${_all_agents_arr[@]}"; do
         _agent_patterns+="|${_agent}.*codex"
     done
-
-    # 全パターンを単一正規表現に結合（11grep→1grep。WSL2 I/O 11x削減）
     local combined_pattern="(is_codex|${MODEL_FAMILY_TOKEN_GPT}-5\\.|claude-(${MODEL_FAMILY_OPUS}|${MODEL_FAMILY_TOKEN_SONNET}|${MODEL_FAMILY_HAIKU})-[0-9]${_agent_patterns})"
+    local scan_pattern="(${combined_pattern}|source.*cli_lookup\\.sh)"
 
     local found
     found=$(rg -n \
@@ -79,8 +77,15 @@ check_hardcodes() {
         --glob '!scripts/model_switch_preflight.sh' \
         --glob '!instructions/generated/**' \
         --glob '!instructions/cli_specific/**' \
-        "$combined_pattern" \
+        "$scan_pattern" \
         "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/instructions" "$SCRIPT_DIR/config" "$SCRIPT_DIR/context" 2>/dev/null || true)
+    found+=$'\n'"$(rg -n --glob '*.sh' "$scan_pattern" "$SCRIPT_DIR/lib" 2>/dev/null || true)"
+    PREFLIGHT_SCAN_RESULT="$found"
+    local hardcode_found=""
+    while IFS= read -r line; do
+        [[ "$line" =~ $combined_pattern ]] && hardcode_found+="${line}"$'\n'
+    done <<< "$found"
+    found="${hardcode_found%$'\n'}"
 
     if [[ -z "$found" ]]; then
         result_pass "ハードコード 0件"
@@ -235,12 +240,15 @@ check_cli_lookup_usage() {
     local dependent_scripts=()
     local inline_by_script=""
 
-    # git grep 1回でsource検出と旧式inline関数検出を同時に行う（per-file grepを削減）
-    local grep_result
+    # Check 1と共有した1回の走査結果からsource検出と旧式inline関数を分類する。
+    local grep_result="$PREFLIGHT_SCAN_RESULT"
+    if [[ "${PREFLIGHT_FORCE_LEGACY_SCAN:-0}" == "1" ]]; then
     grep_result=$(git -C "$SCRIPT_DIR" grep -n -E 'source.*cli_lookup\.sh|is_codex[[:space:]]*\(\)' -- '*.sh' 2>/dev/null || true)
+    fi
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
         local git_path="${line%%:*}"
+        git_path="${git_path#"$SCRIPT_DIR"/}"
         [[ "$git_path" =~ $exclude_pattern ]] && continue
         if [[ "$line" == *source*cli_lookup.sh* ]]; then
             dependent_scripts+=("$git_path")
