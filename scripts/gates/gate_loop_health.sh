@@ -20,7 +20,7 @@ GATE_LOG_FILE="$LOG_FILE" \
 GATE_WA_FILE="$WORKAROUND_FILE" \
 GATE_REPO_ROOT="$REPO_ROOT" \
 python3 << 'PYEOF'
-import sys, re, os, json, statistics
+import sys, re, os, json, glob, statistics
 from collections import Counter, defaultdict
 
 # Pre-compile patterns (minor speedup)
@@ -478,10 +478,7 @@ _tc_scores = []
 for _rdir in [os.path.join(repo_root, 'queue', 'reports'), os.path.join(repo_root, 'archive', 'reports')]:
     if not os.path.isdir(_rdir):
         continue
-    for _entry in os.scandir(_rdir):
-        if not (_entry.is_file() and '_report_' in _entry.name and _entry.name.endswith('.yaml')):
-            continue
-        _rp = _entry.path
+    for _rp in glob.glob(os.path.join(_rdir, '*_report_*.yaml')):
         try:
             in_task_clarity = False
             with open(_rp, encoding='utf-8', errors='replace') as _rf:
