@@ -602,13 +602,17 @@ echo "■ missed_sg Top3"
 if [ -f "$wa_file" ]; then
     missed_sg_lines=$(awk '
     function flush_entry() {
-        if (entry_started && is_wa && missed_sg != "") counts[missed_sg]++
+        # missed_sg is an unresolved review debt counter.  Once the shared
+        # upstream defence is recorded in resolved_by_cmd, retaining the debt
+        # here makes startup report the same historical miss forever.
+        if (entry_started && is_wa && missed_sg != "" && resolved_by_cmd == "") counts[missed_sg]++
     }
     /^- (cmd_id|cmd|timestamp|category):/ {
         flush_entry()
         entry_started=1
         is_wa=0
         missed_sg=""
+        resolved_by_cmd=""
         next
     }
     /^  workaround:/ {
@@ -621,6 +625,16 @@ if [ -f "$wa_file" ]; then
         sub(/^  missed_sg: */, "", v)
         gsub(/["'"'"' ]/, "", v)
         if (v != "" && v != "null" && v != "none") missed_sg=v
+        next
+    }
+    /^  resolved_by_cmd:/ {
+        v=$0
+        sub(/^  resolved_by_cmd:[[:space:]]*/, "", v)
+        # Missing, empty and whitespace-only values remain unresolved.  Any
+        # non-empty command/reference closes the generic missed_sg debt.
+        gsub(/[[:space:]"'"'"']/, "", v)
+        if (tolower(v) == "null" || tolower(v) == "none" || v == "~") v=""
+        resolved_by_cmd=v
         next
     }
     END {

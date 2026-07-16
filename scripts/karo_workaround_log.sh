@@ -4,6 +4,7 @@
 # Usage:
 #   bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<issue>" "<fix>" [category] [missed_sg]
 #   bash scripts/karo_workaround_log.sh --wa <cmd_id> <ninja_name> "<issue>" "<fix>" [category] [missed_sg] [environment_change]
+#   bash scripts/karo_workaround_log.sh --resolve <cmd_id> <resolved_by_cmd>
 #
 # AC1(cmd_1211): カテゴリ別件数カウント。2件目WARN、3件目以上ALERT(ntfy+insight_write)
 # AC2(cmd_1211): classify_category改善(report_yaml_format/file_disappearance/uncategorized)
@@ -26,6 +27,100 @@ BRAINWASH_CHECK="${KARO_WA_BRAINWASH_CHECK:-}"
 
 # shellcheck source=scripts/lib/known_ninjas.sh
 source "$REPO_ROOT/scripts/lib/known_ninjas.sh"
+
+# --- Resolve mode: close one exact workaround entry atomically ---
+# The log hook deliberately rejects ad-hoc YAML writers.  Resolution therefore
+# belongs to this same canonical, locked write boundary as workaround creation.
+if [[ "${1:-}" == "--resolve" ]]; then
+    if [[ $# -ne 3 ]]; then
+        echo "Usage: bash scripts/karo_workaround_log.sh --resolve <cmd_id> <resolved_by_cmd>" >&2
+        exit 1
+    fi
+    RESOLVE_CMD_ID="$2"
+    RESOLVED_BY_CMD="$3"
+    if [[ -z "${RESOLVE_CMD_ID//[[:space:]]/}" || -z "${RESOLVED_BY_CMD//[[:space:]]/}" ]]; then
+        echo "[resolve] ERROR: cmd_id and resolved_by_cmd must be non-empty" >&2
+        exit 1
+    fi
+    (
+        flock -w 10 200 || { echo "[resolve] ERROR: lock timeout" >&2; exit 1; }
+        python3 - "$LOG_FILE" "$RESOLVE_CMD_ID" "$RESOLVED_BY_CMD" <<'PY'
+import os
+import re
+import sys
+import tempfile
+
+import yaml
+
+path, target_cmd, resolution = sys.argv[1:]
+with open(path, encoding="utf-8") as fh:
+    lines = fh.read().splitlines(keepends=True)
+
+entry_start = re.compile(r"^-\s+[A-Za-z_][A-Za-z0-9_]*:")
+field = re.compile(r"^(\s*)([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)(\r?\n?)$")
+
+
+def scalar(value):
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        value = value[1:-1]
+    return value.strip()
+
+
+starts = [index for index, line in enumerate(lines) if entry_start.match(line)]
+starts.append(len(lines))
+matches = []
+for pos in range(len(starts) - 1):
+    start, end = starts[pos], starts[pos + 1]
+    fields = {}
+    field_lines = {}
+    for index in range(start, end):
+        text = re.sub(r"^-\s+", "  ", lines[index], count=1) if index == start else lines[index]
+        match = field.match(text)
+        if not match:
+            continue
+        fields[match.group(2)] = scalar(match.group(3))
+        field_lines[match.group(2)] = index
+    if fields.get("cmd_id") == target_cmd or fields.get("cmd") == target_cmd:
+        matches.append((start, end, fields, field_lines))
+
+if len(matches) != 1:
+    raise SystemExit(f"[resolve] ERROR: expected exactly one entry for {target_cmd}, found {len(matches)}")
+
+start, end, fields, field_lines = matches[0]
+current = fields.get("resolved_by_cmd", "")
+if current and current != resolution:
+    raise SystemExit(f"[resolve] ERROR: {target_cmd} already resolved by {current}")
+if current == resolution:
+    print(f"[resolve] unchanged=1 cmd_id={target_cmd} resolved_by_cmd={resolution}")
+    raise SystemExit(0)
+
+rendered = "'" + resolution.replace("'", "''") + "'"
+if "resolved_by_cmd" in field_lines:
+    index = field_lines["resolved_by_cmd"]
+    match = field.match(lines[index])
+    indent = match.group(1) if match else "  "
+    newline = match.group(4) if match else "\n"
+    lines[index] = f"{indent}resolved_by_cmd: {rendered}{newline}"
+else:
+    lines.insert(end, f"  resolved_by_cmd: {rendered}\n")
+
+fd, candidate = tempfile.mkstemp(prefix=".karo_workarounds.resolve.", dir=os.path.dirname(path) or ".")
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.writelines(lines)
+    with open(candidate, encoding="utf-8") as fh:
+        yaml.safe_load(fh)
+    os.replace(candidate, path)
+finally:
+    if os.path.exists(candidate):
+        os.unlink(candidate)
+
+print(f"[resolve] updated=1 cmd_id={target_cmd} resolved_by_cmd={resolution}")
+PY
+    ) 200>"$LOCK_FILE"
+    exit $?
+fi
 
 # --- Reclassify mode: update category of existing entries ---
 if [[ "${1:-}" == "--reclassify" ]]; then
