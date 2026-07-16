@@ -364,9 +364,16 @@ _cs_cold_key="$(printf '%s\n%s\n' "$_cs_gate_hash" "$_cs_review_hash" | sha256su
 _cs_skill_key="$({
     printf '%s\n%s\n' "$_cs_gate_hash" "$_cs_review_hash"
     _cs_hash_file "$REPO_ROOT/logs/skill_execution_log.yaml"
-    while IFS= read -r -d '' _cs_input; do
-        _cs_hash_file "$_cs_input"
-    done < <(find "$REPO_ROOT/queue/tasks" "$REPO_ROOT/queue/reports" -maxdepth 1 -type f -print0 2>/dev/null | sort -z)
+    if ! command -v xargs >/dev/null 2>&1; then
+        while IFS= read -r -d '' _cs_input; do
+            _cs_hash_file "$_cs_input"
+        done < <(find "$REPO_ROOT/queue/tasks" "$REPO_ROOT/queue/reports" -maxdepth 1 -type f -print0 2>/dev/null | sort -z)
+    else
+        # One sha256sum process avoids per-file process startup while sorted
+        # paths preserve content-sensitive, order-stable invalidation.
+        find "$REPO_ROOT/queue/tasks" "$REPO_ROOT/queue/reports" -maxdepth 1 -type f -print0 2>/dev/null \
+            | sort -z | xargs -0 -r sha256sum -- 2>/dev/null
+    fi
 } | sha256sum | awk '{print $1}')"
 
 if cold_category_missing="$(_cs_read_cache "$_cs_cold_cache" "$_cs_cold_key")"; then
