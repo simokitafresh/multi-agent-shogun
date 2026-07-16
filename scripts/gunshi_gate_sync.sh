@@ -26,13 +26,23 @@ skipped=0
 extract_gate_results() {
     local file="$1"
     [[ -f "$file" ]] || return 0
-    grep -E 'gate_result: (CLEAR|BLOCK)' "$file" 2>/dev/null | while read -r line; do
-        # パターン: "{cmd_id} gate_result: {CLEAR|BLOCK}" or "{cmd_id} gate_result: {BLOCK} reason=..."
-        local cmd_id gate_result
-        cmd_id=$(echo "$line" | grep -oP '\b(cmd_\S+|karo_\S+)\s+gate_result:' | awk '{print $1}')
-        gate_result=$(echo "$line" | grep -oP 'gate_result: (CLEAR|BLOCK)' | awk '{print $2}')
-        [[ -n "$cmd_id" && -n "$gate_result" ]] && echo "$cmd_id $gate_result"
-    done
+    # パターン: "{cmd_id} gate_result: {CLEAR|BLOCK}" or
+    #           "{cmd_id} gate_result: {BLOCK} reason=..."
+    # 1行ごとのgrep/awkプロセス起動を避け、単一awkで抽出する。
+    awk '
+        /gate_result: (CLEAR|BLOCK)/ {
+            for (i = 1; i <= NF; i++) {
+                cmd_id = $(i-1)
+                gsub(/^[^[:alnum:]_]+/, "", cmd_id)
+                if ($i == "gate_result:" && i > 1 && (substr(cmd_id, 1, 4) == "cmd_" || substr(cmd_id, 1, 5) == "karo_")) {
+                    result = $(i+1)
+                    gsub(/[^[:alpha:]].*$/, "", result)
+                    if (result == "CLEAR" || result == "BLOCK") print cmd_id, result
+                    break
+                }
+            }
+        }
+    ' "$file" 2>/dev/null
 }
 
 # 全ソースからgate_result情報を収集
