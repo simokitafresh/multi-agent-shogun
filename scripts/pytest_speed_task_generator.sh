@@ -18,7 +18,7 @@ usage(){ echo "usage: $0 [--ledger FILE] next|generate|deploy [args]" >&2; exit 
 if [[ ${1:-} == --ledger ]]; then LEDGER=$2; shift 2; fi
 cmd=${1:-}; shift || true
 next_rows(){ python3 - "$LEDGER" "$STATE_ROOT" <<'PY'
-import csv,glob,os,sys,yaml
+import csv,glob,os,subprocess,sys,yaml
 ledger,root=sys.argv[1:]; required={'timestamp','nodeid','duration_sec','outcome','failures','skips'}
 try:
  f=open(ledger,encoding='utf-8',newline=''); r=csv.DictReader(f,delimiter='\t')
@@ -33,8 +33,27 @@ try:
   if node not in latest or key>latest[node][0]: latest[node]=(key,row,dur)
 except OSError as e: raise SystemExit(f'BLOCK: cannot read ledger: {e}')
 busy=set()
-for pat in ('queue/tasks/*.yaml','queue/reports/*.yaml','queue/archive/reports/*.yaml'):
- for path in glob.glob(os.path.join(root,pat)):
+index_path=os.path.join(root,'queue','pytest_speed_nodeids.tsv')
+try:
+ with open(index_path,encoding='utf-8') as index:
+  busy.update(line.rstrip('\n').split('\t',1)[-1] for line in index if line.strip())
+except OSError:
+ pass
+state_dirs=[os.path.join(root,p) for p in ('queue/tasks','queue/reports') if os.path.isdir(os.path.join(root,p))]
+paths=[]
+if state_dirs:
+ try:
+  # Text prefilter only narrows candidates; YAML parsing below remains the authority.
+  # Most archived reports have no target nodeid, so do not deserialize them all.
+  found=subprocess.run(
+   ['rg','-l','--glob','*.yaml',r'^\s*(target_nodeid|nodeid):',*state_dirs],
+   check=False,capture_output=True,text=True,timeout=2,
+  )
+  if found.returncode not in (0,1): raise RuntimeError(found.stderr.strip())
+  paths=[p for p in found.stdout.splitlines() if p]
+ except (FileNotFoundError,subprocess.TimeoutExpired,RuntimeError):
+  paths=[path for pat in ('queue/tasks/*.yaml','queue/reports/*.yaml') for path in glob.glob(os.path.join(root,pat))]
+for path in paths:
   try: data=yaml.safe_load(open(path,encoding='utf-8')) or {}
   except Exception: continue
   if not isinstance(data,dict): continue
@@ -67,6 +86,10 @@ PY
   "$0" --ledger "$LEDGER" generate "$node" "$tmp" >/dev/null
   deploy=${DEPLOY_TASK:-$ROOT/scripts/deploy_task.sh}
   set +e; bash "$deploy" --direct --yaml "$tmp" "$ninja"; rc=$?; set -e
+  if [[ $rc -eq 0 ]]; then
+    mkdir -p "$STATE_ROOT/queue"
+    printf 'deployed\t%s\n' "$node" >>"$STATE_ROOT/queue/pytest_speed_nodeids.tsv"
+  fi
   rm -f "$tmp"; trap - EXIT; exit "$rc";;
  *) usage;;
 esac
