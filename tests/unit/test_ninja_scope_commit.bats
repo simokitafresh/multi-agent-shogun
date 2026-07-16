@@ -61,6 +61,43 @@ teardown() {
     [ "$(git -C "$REPO" status --porcelain -- own.txt)" = "" ]
 }
 
+@test "2並列commitはsubjectとpathを混線させず両親shellが後続へ復帰する" {
+    printf 'alpha change\n' >> "$REPO/own.txt"
+    printf 'beta change\n' >> "$REPO/other.txt"
+    mkdir -p "$REPO/.git/hooks"
+    cat > "$REPO/.git/hooks/pre-commit" <<'HOOK'
+#!/usr/bin/env bash
+sleep 0.2
+HOOK
+    chmod +x "$REPO/.git/hooks/pre-commit"
+
+    (
+        cd "$REPO"
+        bash "$HELPER" -m subject-alpha -- own.txt
+        printf 'alpha-parent-alive\n' > "$REPO/alpha.alive"
+    ) >"$REPO/alpha.out" 2>&1 &
+    alpha_pid=$!
+    (
+        cd "$REPO"
+        bash "$HELPER" -m subject-beta -- other.txt
+        printf 'beta-parent-alive\n' > "$REPO/beta.alive"
+    ) >"$REPO/beta.out" 2>&1 &
+    beta_pid=$!
+
+    wait "$alpha_pid"
+    alpha_rc=$?
+    wait "$beta_pid"
+    beta_rc=$?
+
+    [ "$alpha_rc" -eq 0 ]
+    [ "$beta_rc" -eq 0 ]
+    [ -f "$REPO/alpha.alive" ]
+    [ -f "$REPO/beta.alive" ]
+    [ "$(git -C "$REPO" log -2 --format=%s | sort)" = $'subject-alpha\nsubject-beta' ]
+    [ "$(git -C "$REPO" log --format=%H --grep='^subject-alpha$' -1 | xargs -r git -C "$REPO" diff-tree --no-commit-id --name-only -r)" = own.txt ]
+    [ "$(git -C "$REPO" log --format=%H --grep='^subject-beta$' -1 | xargs -r git -C "$REPO" diff-tree --no-commit-id --name-only -r)" = other.txt ]
+}
+
 @test "normal modeは対象path既存stageをpatch modeへfail-closedする" {
     printf 'staged owner unknown\n' >> "$REPO/own.txt"
     git -C "$REPO" add own.txt

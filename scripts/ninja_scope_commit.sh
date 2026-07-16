@@ -64,6 +64,20 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
     || { echo "BLOCK: not inside a git repository" >&2; exit 2; }
 cd "$repo_root"
 
+# A private GIT_INDEX_FILE isolates each commit tree, but `git commit` still
+# shares COMMIT_EDITMSG, hooks, and the branch ref.  Concurrent callers used to
+# overwrite one another's message and one loser could fail the ref update;
+# callers running with `set -e` then lost their parent shell before its next
+# command.  Serialize the complete transaction in the common git directory so
+# linked worktrees and the main worktree use the same lock.
+git_common_dir="$(git rev-parse --git-common-dir 2>/dev/null)" \
+    || { echo "BLOCK: cannot resolve git common directory" >&2; exit 2; }
+[[ "$git_common_dir" = /* ]] || git_common_dir="$repo_root/$git_common_dir"
+exec {commit_lock_fd}>"$git_common_dir/ninja-scope-commit.lock" \
+    || { echo "BLOCK: cannot open ninja scope commit lock" >&2; exit 2; }
+flock "$commit_lock_fd" \
+    || { echo "BLOCK: cannot acquire ninja scope commit lock" >&2; exit 2; }
+
 # GA-222: scope path正規化はscripts/lib/scope_path.sh(SSOT)に集約する。
 # ここ(commit scopeのバリデーション)とsync_git_hooks.sh(is_in_scope判定)で
 # 別々に正規化ロジックを持つと、片方だけ直して片方が取り残される形で
