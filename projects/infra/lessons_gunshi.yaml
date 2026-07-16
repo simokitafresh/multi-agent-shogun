@@ -365,11 +365,13 @@ lessons:
     waive_ac導入(cmd_1946)時に代替検証を設計しなかったのが根因。
     対策: PRE3にファイル実在チェック追加+GP-202(parent_cmdプレフィックス不一致WARN)。
     一般原理: 手段を免除するとき、目的を達成する代替手段を同時に埋め込め。
+    吸収(2026-07-17, cmd_reflux_promotion_202607170814_hanzo, origin: [[cmd_reflux_promotion_202607170814_hanzo]] -> [[LG029]] -> [[waive_alternative_verification_Level4_BLOCK]]): SG-PRE3がfiles_modified各成果物の実在を確認し、commit経路が免除・不一致でも成果物不在ならERRORSを加算してレビューをBLOCKする。既存の代替検証経路を一次確認し、恒久防御として構造化した。
   source_cmd: cmd_1948_gate_failure
   origin: '[[cmd_1948_gate_failure]]'
   created_at: '2026-04-16'
   automated: true
-  enforcement: PRE3(ファイル実在チェック)+GP-202(プレフィックス不一致WARN)+review_logヘッダ
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK): SG-PRE3がfiles_modified各成果物の実在を確認し、commit検証が免除・不一致でも成果物不在ならERRORSを加算してレビューCLEARを停止する。GP-202のparent_cmd不一致WARNと併用"
   when: waive_ac導入時。手段免除しても目的は免除されない
   how: PRE3ファイル実在チェック+GP-202プレフィックス不一致WARN。代替検証を同時に埋め込む
 - id: LG030
