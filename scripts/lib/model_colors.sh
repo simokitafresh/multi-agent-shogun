@@ -5,17 +5,24 @@
 # モデル表示名を正規化（Codex/Claude表示名 → モデルファミリー）
 _normalize_model_name() {
   local model_display="$1"
-  if declare -F resolve_model_display >/dev/null 2>&1 && [[ -n "${1:-}" && -z "${2:-}" ]]; then
+  local output_var="${2:-}"
+  local normalized_value
+  if declare -F resolve_model_display >/dev/null 2>&1 && [[ -n "${1:-}" ]]; then
     model_display="$(resolve_model_display "$1" 2>/dev/null || printf '%s' "$1")"
   fi
   case "$model_display" in
-    *[Cc]odex*) echo "Codex" ;;
-    [Gg][Pp][Tt]-*) echo "Codex" ;;
-    *[Oo]pus*) echo "Opus" ;;
-    *[Ss]onnet*) echo "Sonnet" ;;
-    *[Hh]aiku*) echo "Haiku" ;;
-    *)           echo "$model_display" ;;
+    *[Cc]odex*) normalized_value="Codex" ;;
+    [Gg][Pp][Tt]-*) normalized_value="Codex" ;;
+    *[Oo]pus*) normalized_value="Opus" ;;
+    *[Ss]onnet*) normalized_value="Sonnet" ;;
+    *[Hh]aiku*) normalized_value="Haiku" ;;
+    *)           normalized_value="$model_display" ;;
   esac
+  if [[ -n "$output_var" ]]; then
+    printf -v "$output_var" '%s' "$normalized_value"
+  else
+    printf '%s\n' "$normalized_value"
+  fi
 }
 
 resolve_bg_color() {
@@ -24,7 +31,9 @@ resolve_bg_color() {
   case "$agent_id" in
     karo|gunshi) echo "#121214" ;;
     *)
-      case "$(_normalize_model_name "$model_display")" in
+      local normalized
+      _normalize_model_name "$model_display" normalized
+      case "$normalized" in
         Codex) echo "#201a1e" ;;   # 深紫系
         Opus) echo "#1a1e28" ;;   # 紺系
         Sonnet) echo "#1a2420" ;;   # 深緑系
@@ -37,7 +46,9 @@ resolve_bg_color() {
 
 resolve_border_fg_color() {
   local model_display="$1"
-  case "$(_normalize_model_name "$model_display")" in
+  local normalized
+  _normalize_model_name "$model_display" normalized
+  case "$normalized" in
     Codex) echo "#a6e3a1" ;;  # 緑
     Opus) echo "#cba6f7" ;;  # 紫
     Sonnet) echo "#89dceb" ;;  # 水色
