@@ -1,5 +1,6 @@
 ---
-<!-- script_refs_checked_at: 2026-07-15T11:38:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T21:33:00+09:00 -->
+<!-- 2026-07-16 cmd_karo_hotfix_parallel_commit_race検分: ninja_scope_commit.shは専用indexに加えgit common-dir単位のflockでCOMMIT_EDITMSG/hooks/HEAD更新を含むcommit transactionを直列化。CLI契約は不変で、並列呼出しでも件名・path scope非混線と親shell復帰を保証する。 -->
 <!-- 2026-07-15将軍検分: report_field_set.sh aa75598cf(lesson_candidate型チェック dict→(dict,list)緩和=内部バリデーション)。呼び出し契約不変。 -->
 name: ninja-commit
 argument-hint: ""
