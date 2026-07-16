@@ -154,9 +154,9 @@ validator: `python3 scripts/validate_campaign_lane_catalog.py`
 
 | readiness | 件数 | 意味 |
 |---|---:|---|
-| ready | 0 | writer→台帳→adapter→task→報告の全辺が接続済み |
-| partial | 10 | 台帳またはwriterはあるが、決定的adapterなどが不足 |
-| blocked | 2 | 外部環境または一次writer未確認 |
+| ready | 2 | writer→台帳→adapter→task→報告の全辺が接続済み |
+| partial | 9 | 台帳またはwriterはあるが、決定的adapterなどが不足 |
+| blocked | 1 | 外部環境または一次writer未確認 |
 
 登録済み12候補:
 
@@ -173,7 +173,7 @@ validator: `python3 scripts/validate_campaign_lane_catalog.py`
 11. 三層記憶候補backlog
 12. 報告gate失敗率
 
-`ready=0`は欠陥の隠蔽ではない。汎用controllerが完成しても、対象固有adapterと通常業務からの自動writerがなければ閉ループは完成していない。次の実装順序はpriorityではなく、実測効果・adapter作成コスト・二値品質契約から決める。
+`ready=2`は script-speed と pytest-speed のwriter→台帳→adapter貫通を実測した値である。残る候補も、対象固有adapterと通常業務からの自動writerが揃うまでreadyへ上げない。
 
 ## §9 テスト証跡
 
@@ -182,7 +182,7 @@ validator: `python3 scripts/validate_campaign_lane_catalog.py`
 | campaign-lane skill validation | 1/1 PASS | frontmatter・構成 |
 | generic controller | 15/15 PASS | priority逆転、累積budget、stale、duplicate、同target R1-R3、並行record、品質FAIL、SEALED |
 | 既存test-speed callback | 22/22 PASS | R2計測4.285/5.196→best 4.285、順序逆転、valid 0件BLOCK、previous best保持 |
-| 応用候補catalog | 12/12 fields PASS | lane_id重複0、ready=0 / partial=10 / blocked=2 |
+| 応用候補catalog | 12/12 fields PASS | lane_id重複0、ready=2 / partial=9 / blocked=1 |
 
 確認コマンド:
 
@@ -211,7 +211,7 @@ last observation: 5.196（観測履歴として別保存）
 
 ## §11 残課題
 
-1. §8候補ごとのadapterを作り、`ready=0`を実測で引き上げる。
+1. §8の残候補ごとのadapterを作り、`ready=2`を実測で引き上げる。
 2. 専用計測runを増やさず、通常業務経路へ自動writerを接続する。
 3. 最初のready候補で、生成→idle配備→改善→record→次round→飽和までを実機貫通させる。
 4. adapterの選定精度とfalse-positive率を計測し、100% FPなら較正または退役する。
