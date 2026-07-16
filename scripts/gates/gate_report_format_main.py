@@ -652,9 +652,16 @@ def main() -> int:
     )
     if _has_integration_path:
         _opsim = data.get("operational_simulation")
-        if not _opsim or not isinstance(_opsim, dict):
+        _opsim_required = ("command", "expected", "actual", "result")
+        _opsim_missing = (
+            list(_opsim_required)
+            if not isinstance(_opsim, dict)
+            else [key for key in _opsim_required if not str(_opsim.get(key) or "").strip()]
+        )
+        if _opsim_missing:
             errors.append(
-                "operational_simulation: MISSING (integration cmd requires "
+                "operational_simulation: MISSING "
+                f"({','.join(_opsim_missing)}; integration cmd requires "
                 "command/expected/actual/result — LG055)"
             )
             hints.append(

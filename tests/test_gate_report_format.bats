@@ -236,6 +236,11 @@ purpose_validation:
   purpose_gap: ""
 files_modified:
   - path: scripts/gates/gate_report_format_main.py
+operational_simulation:
+  command: "bats --filter T-CHC-2 tests/test_gate_report_format.bats"
+  expected: "valid commit hash report passes"
+  actual: "exit 0 and PASS"
+  result: "PASS"
 lesson_candidate:
   found: false
   no_lesson_reason: "既知パターンのため新規教訓なし"
@@ -277,6 +282,11 @@ purpose_validation:
   purpose_gap: ""
 files_modified:
   - path: scripts/gates/gate_report_format_main.py
+operational_simulation:
+  command: "bats --filter T-CHC-2 tests/test_gate_report_format.bats"
+  expected: "valid commit hash report passes"
+  actual: "exit 0 and PASS"
+  result: "PASS"
 lesson_candidate:
   found: false
   no_lesson_reason: "既知パターンのため新規教訓なし"
@@ -402,6 +412,12 @@ with open(path, encoding="utf-8") as f:
     data = yaml.safe_load(f)
 data["result"]["details"] = "修正前パターンの横展開確認を実施。rg 'old_pattern' scripts tests の残存0件を確認。"
 data["files_modified"] = ["scripts/gates/gate_report_format_main.py"]
+data["operational_simulation"] = {
+    "command": "rg 'old_pattern' scripts tests",
+    "expected": "残存0件",
+    "actual": "残存0件",
+    "result": "PASS",
+}
 with open(path, "w", encoding="utf-8") as f:
     yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
 PY
@@ -410,6 +426,43 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
     [[ "$output" != *"LK-A14"* ]]
+}
+
+@test "T-LG055-1: integration report without operational_simulation is BLOCKed" {
+    local report="$TMPDIR_BATS/lg055_missing.yaml"
+    create_valid_report "$report" >/dev/null
+    python3 - "$report" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+data["files_modified"] = [{"path": "scripts/gates/gate_report_format_main.py"}]
+with open(path, "w", encoding="utf-8") as f:
+    yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+PY
+
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"operational_simulation: MISSING"* ]]
+}
+
+@test "T-LG055-2: integration report with incomplete operational_simulation is BLOCKed" {
+    local report="$TMPDIR_BATS/lg055_incomplete.yaml"
+    create_valid_report "$report" >/dev/null
+    python3 - "$report" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+data["files_modified"] = [{"path": "scripts/gates/gate_report_format_main.py"}]
+data["operational_simulation"] = {"command": "bats tests/test_gate_report_format.bats"}
+with open(path, "w", encoding="utf-8") as f:
+    yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+PY
+
+    run bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"expected,actual,result"* ]]
 }
 
 # --- T-006: GP-073 PASS cache hit ---
