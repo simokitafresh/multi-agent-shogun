@@ -65,9 +65,7 @@ if [ -n "$CMD_ID" ] && [[ "$CMD_ID" != cmd_* ]]; then
     exit 1
 fi
 
-mkdir -p "$ARCHIVE_DIR"
-mkdir -p "$ARCHIVE_CMD_DIR"
-mkdir -p "$ARCHIVE_REPORT_DIR"
+mkdir -p "$ARCHIVE_DIR" "$ARCHIVE_CMD_DIR" "$ARCHIVE_REPORT_DIR"
 
 # postcondition用グローバル変数（archive_cmdsが設定）
 _POSTCOND_COMPLETED=0
