@@ -104,7 +104,9 @@ for changed in "${CHANGED_FILES[@]}"; do
     done
 
     # L3: scripts/gates/ 変更→gate関連テスト全体
-    if [[ "$changed" == scripts/gates/* ]]; then
+    if [[ "$changed" == scripts/gates/* ]] &&
+       [[ "$changed" != scripts/gates/gate_report_format_main.py ]] &&
+       [[ "$changed" != scripts/gates/gate_report_format_combined.py ]]; then
         gate_base=$(basename "$changed" .sh)
         for tf in "$TEST_DIR"/test_gate*.bats "$TEST_DIR"/test_"${gate_base}"*.bats; do
             [ -f "$tf" ] && AFFECTED_TESTS["$tf"]=1

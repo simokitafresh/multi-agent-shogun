@@ -227,7 +227,9 @@ for changed in "${CHANGED_FILES[@]}"; do
     # 旧実装は単一gate変更でも test_gate*.bats + test_cmd_complete_gate*.bats を
     # 全選択し、pre-pushが30秒を超えた。startup系テストは子gateをmockするため、
     # 子gate実装変更の検証にはならない。
-    if [[ "$changed" == scripts/gates/* ]]; then
+    if [[ "$changed" == scripts/gates/* ]] &&
+       [[ "$changed" != scripts/gates/gate_report_format_main.py ]] &&
+       [[ "$changed" != scripts/gates/gate_report_format_combined.py ]]; then
         gate_file="${changed##*/}"
         gate_base="${gate_file%.sh}"
 

@@ -45,6 +45,17 @@ setup_file() {
     done
 }
 
+@test "test_select keeps report main and combined at focused 8-file suite" {
+    local changed selected
+    for changed in scripts/gates/gate_report_format_main.py scripts/gates/gate_report_format_combined.py; do
+        selected="$(bash "$TEST_SELECT" "$changed" 2>/dev/null)"
+        [ -n "$selected" ]
+        [ "$(wc -l <<< "$selected")" -eq 8 ]
+        [[ "$selected" == *"tests/unit/test_report_template_gate_compat.bats"* ]]
+        [[ "$selected" != *"tests/unit/test_gate_shogun_startup.bats"* ]]
+    done
+}
+
 @test "test_select explicitly skips skill markdown files without warnings" {
     run bash "$TEST_SELECT" skills/dream/SKILL.md
     [ "$status" -eq 0 ]

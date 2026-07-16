@@ -5,27 +5,27 @@ setup_file() {
     export AFFECTED="$PROJECT_ROOT/scripts/affected_tests.sh"
 }
 
-assert_all_report_contract_fixtures_selected() {
-    local changed="$1" actual expected path
+assert_focused_report_contract_tests_selected() {
+    local changed="$1" actual expected
     actual="$(bash "$AFFECTED" "$changed")"
-    expected="$(grep -rl 'gate_report_format' "$PROJECT_ROOT/tests/unit"/test_*.bats | sort)"
-    while IFS= read -r path; do
-        [ -n "$path" ] || continue
-        [[ "$actual" == *"$path"* ]] || {
-            echo "missing affected test for $changed: $path" >&2
-            return 1
-        }
-    done <<< "$expected"
+    expected="$(bash "$PROJECT_ROOT/scripts/lib/report_contract_test_selector.sh" "$changed")"
+    [ -n "$actual" ]
+    [ "$actual" = "$expected" ]
 }
 
-@test "gate_report_format_main contract change selects every report-gate fixture" {
-    assert_all_report_contract_fixtures_selected scripts/gates/gate_report_format_main.py
+@test "gate_report_format_main contract change selects focused 8-file suite" {
+    assert_focused_report_contract_tests_selected scripts/gates/gate_report_format_main.py
+    [ "$(bash "$AFFECTED" scripts/gates/gate_report_format_main.py | wc -l)" -eq 8 ]
 }
 
-@test "gate_report_format_combined contract change selects every report-gate fixture" {
-    assert_all_report_contract_fixtures_selected scripts/gates/gate_report_format_combined.py
+@test "gate_report_format_combined contract change selects focused 8-file suite" {
+    assert_focused_report_contract_tests_selected scripts/gates/gate_report_format_combined.py
+    [ "$(bash "$AFFECTED" scripts/gates/gate_report_format_combined.py | wc -l)" -eq 8 ]
 }
 
-@test "report template producer change selects every report-gate fixture" {
-    assert_all_report_contract_fixtures_selected scripts/deploy_task.sh
+@test "report template producer change retains deploy-specific tests" {
+    local actual
+    actual="$(bash "$AFFECTED" scripts/deploy_task.sh)"
+    [[ "$actual" == *"tests/unit/test_deploy_task.bats"* ]]
+    [[ "$actual" == *"tests/unit/test_report_template_gate_compat.bats"* ]]
 }
