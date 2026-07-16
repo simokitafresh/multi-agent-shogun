@@ -206,116 +206,11 @@ count_unread_inbox_messages() {
 	    return "$rc"
 	}
 
-	check_ci_red_autodeploy() {
-	    if ! command -v gh >/dev/null 2>&1; then
-	        return 0
-	    fi
-
-	    local ci_json ci_conclusion ci_run_id ci_red_ledger
-	    # timeout既定8s: 本関数はasync(&)実行で回収時に未完了ならdisownされるためgate直列時間に影響しない。
-	    # 0.05sはgh APIレイテンシ(数百ms〜)未満で常に空応答となり、CI RED検知が2026-06-12速度hotfixから
-	    # 無音死していた(2026-07-07実測: CI RED 2連続failureが起動時に一切表示されず)。silent-skip禁止。
-	    ci_json="$(timeout "${SHOGUN_STARTUP_GH_TIMEOUT:-8}" gh run list --repo simokitafresh/multi-agent-shogun --limit 1 --json conclusion,databaseId 2>/dev/null || true)"
-	    [ -n "$ci_json" ] || return 0
-
-	    local _ci_parsed
-	    _ci_parsed="$(python3 - "$ci_json" <<'PY' 2>/dev/null || true
-import json
-import sys
-
-try:
-    runs = json.loads(sys.argv[1])
-except Exception:
-    raise SystemExit(0)
-if isinstance(runs, list) and runs:
-    run = runs[0] or {}
-    print(str(run.get("conclusion") or ""))
-    print(str(run.get("databaseId") or ""))
-PY
-)"
-	    ci_conclusion="$(printf '%s\n' "$_ci_parsed" | sed -n '1p')"
-	    ci_run_id="$(printf '%s\n' "$_ci_parsed" | sed -n '2p')"
-	    # DIGEST用にconclusionを記録(空=in_progress等はunknown扱い。回収はDIGEST生成部)
-	    if [ -n "${_TMP_CI_CONCLUSION:-}" ] && [ -n "$ci_conclusion" ]; then
-	        printf '%s' "$ci_conclusion" > "$_TMP_CI_CONCLUSION" 2>/dev/null || true
-	    fi
-	    [ "$ci_conclusion" = "failure" ] || return 0
-
-	    echo "■ CI RED自動修正配備"
-	    echo "  WARN: 最新CI conclusion=failure${ci_run_id:+ (run_id=${ci_run_id})}"
-	    # run_id単位dedupe: 同一runのci_red_fix再通知を処理済みrun証跡(ledger)で構造防止。
-	    # 起源: 2026-07-15 同一run 29361581880のCI RED通知が10件重複しkaro inbox nudgeループ形成。
-	    # 警報表示(WARN)は毎セッション残す。抑止するのはinbox_write再送のみ=警報抑制ではなく再送dedupe。
-	    # 排他設計: 既送判定→inbox_write→ledger追記を同一flock区間で実行する。
-	    # 判定と追記が別区間だと、並行startup A/Bが両方「未通知」と読んでから両方sendする
-	    # TOCTOU二重送信が残る(2026-07-15家老RC)。区間内で送信成功した場合のみ追記する。
-	    ci_red_ledger="$SCRIPT_DIR/logs/ci_red_notified_runs.tsv"
-	    local _ci_red_msg _ci_send_outcome
-	    _ci_red_msg="CI RED検知: 最新GitHub Actions conclusion=failure${ci_run_id:+ run_id=${ci_run_id}}。gh run view --log-failedで失敗テストを特定し、idle忍者へci_red_fix配備せよ。"
-	    _ci_send_outcome=""
-	    if [ -n "$ci_run_id" ]; then
-	        mkdir -p "$(dirname "$ci_red_ledger")" 2>/dev/null || true
-	        _ci_send_outcome=$(
-	            (
-	                flock -w "${SHOGUN_STARTUP_CI_LOCK_WAIT:-10}" 9 || { echo "lock_timeout"; exit 0; }
-	                if [ -f "$ci_red_ledger" ] && \
-	                    awk -F'\t' -v rid="$ci_run_id" '$1==rid{found=1;exit} END{exit !found}' "$ci_red_ledger" 2>/dev/null; then
-	                    echo "dup"
-	                    exit 0
-	                fi
-	                if timeout "${SHOGUN_STARTUP_INBOX_TIMEOUT:-10}" bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-	                    "$_ci_red_msg" ci_red_fix gate_shogun_startup >/dev/null 2>&1; then
-	                    printf '%s\t%s\n' "$ci_run_id" "$(date '+%Y-%m-%dT%H:%M:%S%z')" >> "$ci_red_ledger"
-	                    echo "sent"
-	                else
-	                    echo "send_fail"
-	                fi
-	            ) 9>>"${ci_red_ledger}.lock"
-	        ) || _ci_send_outcome="send_fail"
-	    fi
-	    if [ -z "$_ci_send_outcome" ]; then
-	        # ci_run_id空(run_id取得不可)のみ従来send。dedupe不能でも警報消失より再送を選ぶ。
-	        # lock_timeoutはここに来ない: ロック外sendはAが送信中にBがtimeout→Bもsendの
-	        # 二重通知を復活させるため禁止(2026-07-15家老追加RC)。ALERT扱い+次回startup再試行。
-	        if timeout "${SHOGUN_STARTUP_INBOX_TIMEOUT:-10}" bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-	            "$_ci_red_msg" ci_red_fix gate_shogun_startup >/dev/null 2>&1; then
-	            _ci_send_outcome="sent"
-	        else
-	            _ci_send_outcome="send_fail"
-	        fi
-	    fi
-	    case "$_ci_send_outcome" in
-	        dup)
-	            echo "  OK: 同一run通知済み(証跡=logs/ci_red_notified_runs.tsv) — ci_red_fix再送を抑止"
-	            if [ "$overall" = "OK" ]; then
-	                overall="WARN"
-	            fi
-	            alerts+=("CI RED自動修正配備: WARN (run ${ci_run_id} 通知済み)")
-	            return 0
-	            ;;
-	        sent)
-	            echo "  ACTION: karoへci_red_fix通知送信"
-	            ;;
-	        lock_timeout)
-	            # ロック取得不可=他startupが処理中の可能性。ロック外sendは二重通知を復活させるため
-	            # inbox送信せずALERTのみ。ledger未追記なので次回startupで自動再試行される。
-	            echo "  ALERT: ci_red dedupe lock取得不可 — inbox送信せず次回startupで再試行"
-	            overall="ALERT"
-	            alerts+=("CI RED自動修正配備: dedupe lock timeout (送信スキップ・次回再試行)")
-	            return 0
-	            ;;
-	        *)
-	            echo "  ALERT: karoへのci_red_fix通知失敗"
-	            overall="ALERT"
-	            alerts+=("CI RED自動修正配備: inbox送信失敗")
-	            return 0
-	            ;;
-	    esac
-	    if [ "$overall" = "OK" ]; then
-	        overall="WARN"
-	    fi
-	    alerts+=("CI RED自動修正配備: WARN")
-	}
+	# check_ci_red_autodeploy: 除去(殿裁定2026-07-16)
+	# CI RED検知→忍者配備は家老の責務。将軍のstartup gateにCI RED検知があると
+	# 将軍にCI対処を誘発する構造的バグ。gate_karo_startup.shへ移設。
+	# 旧実装: L209-318 (110行, gh run list→CI conclusion判定→inbox_write karo ci_red_fix)
+	_placeholder_ci_red_removed() { :; }
 
 	check_shogun_watcher_escalation_env() {
 	    local found=0
@@ -569,10 +464,8 @@ fi
 # 1回の起動で25個のmktemp子processを起動していた。同一呼出内の一時名は
 # 単一のprivate directory配下で一意なため、directoryを1回だけ作り固定名を共有する。
 _TMP_STARTUP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/shogun-startup.XXXXXX")
-_TMP_CI_RED="$_TMP_STARTUP_DIR/ci_red"
-_TMP_CI_CONCLUSION="$_TMP_STARTUP_DIR/ci_conclusion"
-check_ci_red_autodeploy > "$_TMP_CI_RED" 2>&1 &
-_PID_CI_RED=$!
+# CI RED検知は家老の責務(殿裁定2026-07-16)。将軍startup gateから除去済み。
+# 家老startup gate (gate_karo_startup.sh) が検知→忍者配備する。
 
 # --- Gate 0.5: 将軍watcher環境変数 ---
 echo "■ 将軍watcher環境変数"
@@ -4032,29 +3925,7 @@ else
     echo "  SKIP: causal_backlink_counts.sh不在"
 fi
 
-if kill -0 "$_PID_CI_RED" 2>/dev/null; then
-    disown "$_PID_CI_RED" 2>/dev/null || true
-else
-    wait "$_PID_CI_RED" || true
-    _ci_red_output=$(cat "$_TMP_CI_RED" 2>/dev/null)
-    if [ -n "$_ci_red_output" ]; then
-        printf '%s\n' "$_ci_red_output"
-        if printf '%s\n' "$_ci_red_output" | grep -q "ALERT: karoへのci_red_fix通知失敗"; then
-            overall="ALERT"
-            alerts+=("CI RED自動修正配備: inbox送信失敗")
-        elif printf '%s\n' "$_ci_red_output" | grep -q "ALERT: ci_red dedupe lock取得不可"; then
-            # check_ci_red_autodeployはasync subshellのためoverall/alertsが伝播しない。
-            # 出力文字列の再解析でlock_timeout(送信スキップ・次回再試行)を親へ反映する。
-            overall="ALERT"
-            alerts+=("CI RED自動修正配備: dedupe lock timeout (送信スキップ・次回再試行)")
-        elif printf '%s\n' "$_ci_red_output" | grep -q "WARN: 最新CI conclusion=failure"; then
-            if [ "$overall" = "OK" ]; then
-                overall="WARN"
-            fi
-            alerts+=("CI RED自動修正配備: WARN")
-        fi
-    fi
-fi
+# CI RED async回収: 除去(殿裁定2026-07-16。家老の責務)
 
 # --- 三層記憶使用義務リマインダー(殿厳命2026-06-10: 使用しないのはバグ) ---
 echo ""
@@ -4087,10 +3958,7 @@ if [[ "$_d_unpushed" =~ ^[0-9]+$ ]] && [ "$_d_unpushed" -ge "${UNPUSHED_WARN_THR
     echo "  WARN: 未push ${_d_unpushed}件滞留(閾値${UNPUSHED_WARN_THRESHOLD:-30}) — 滞留はCI REDの先送り。CI GREEN確認の上pushせよ(2026-07-07: 129本一括pushでRED露出の実測)"
     alerts+=("未push滞留: ${_d_unpushed}件(RED先送り。CI GREEN確認後にpush)")
 fi
-# CI conclusion表示(check_ci_red_autodeploy async結果の回収。空=取得失敗/in_progress=unknown)
-_d_ci=$(cat "${_TMP_CI_CONCLUSION:-/dev/null}" 2>/dev/null)
-[ -n "$_d_ci" ] || _d_ci="unknown"
-echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} ci=${_d_ci} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
+echo "■ DIGEST: inbox=${_d_inbox} insights=${_d_insights} proposals=${_d_proposals} unpushed=${_d_unpushed} idle_trigger=${IDLE_TRIGGER} judge=${overall}"
 echo ""
 echo "■ 必読: projects/infra/lessons_shogun.yaml（将軍教訓。deepdive前に通読せよ=Step 2.45。superseded_by付きは参考扱い）"
 # 必読ファイル肥大チェック(2026-07-10): Read toolは1回25,000トークン(日本語YAML実測2.22bytes/token≒55KB)が上限。
