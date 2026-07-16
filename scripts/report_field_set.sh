@@ -2278,6 +2278,17 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
         # Normalizing here means that stall path can no longer fire: by the
         # time B層 runs post-approval, the report is already normalized and
         # normalize_report.sh is a byte-identical no-op (idempotent by design).
+        # Non-terminal direct status writes cannot trigger normalization. Skip
+        # the three-process status reread; terminal writes retain the original
+        # inspection and fail-closed normalization path below.
+        _rfs_skip_status_inspection=0
+        if [ "$DOT_KEY" = "status" ]; then
+            case "$VALUE" in
+                completed|done) ;;
+                *) _rfs_skip_status_inspection=1 ;;
+            esac
+        fi
+        if [ "$_rfs_skip_status_inspection" -eq 0 ]; then
         _rfs_tmp_status="$(grep -m1 '^status:' "$tmp_file" 2>/dev/null | sed 's/^status:[[:space:]]*//' | tr -d '\r"'"'"'')"
         case "$_rfs_tmp_status" in
             completed|done)
@@ -2301,6 +2312,7 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
                 fi
                 ;;
         esac
+        fi
 
         if ! mv "$tmp_file" "$REPORT_PATH"; then
             rm -f "$tmp_file"
