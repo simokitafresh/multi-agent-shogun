@@ -41,9 +41,10 @@ lessons:
   origin: '[[cmd_1187]]'
   created_at: '2026-03-21'
   automated: true
-  enforcement: report review SG3(scope)+gate_report_format.sh files_modified×task scope照合
-  when: report review時。gate_report_format.sh+SG3(scope照合)が自動検出
-  how: files_modified×task scope照合で逸脱検出。scope外変更あり→FAIL
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK): scripts/ninja_scope_commit.sh がHEAD由来の専用indexへ宣言scopeだけをaddし、commit後にdiff-tree全pathをscope_path_is_in_scopeで二値検証する。空/root/絶対/../scope、patch内scope外path、foreign partial-stageはcommit前BLOCK。report review SG3+gate_report_format.shの事後照合も維持。回帰: tests/unit/test_ninja_scope_commit.bats。実装: 37819bc575d6cd2d42d512073693a079a8e33daf、並行直列化: 08bf0ca128ad930807798e841bd2e3c6d52e4257。"
+  when: 忍者がscope限定commitを作る時。ninja_scope_commit.shのcommit transaction内で常時強制
+  how: "通常commitを使わずninja_scope_commit.shへ明示pathを渡す。専用indexとcommit後diff-tree検査がscope外混入をBLOCKし、共有indexの他者stageをblob不変で保持する"
 - id: LG005
   title: AC pending矛盾 — status:done報告にAC pending項目があればFAIL
   detail: 忍者がstatus:doneで報告しつつAC pending項目が残存する矛盾パターン。cmd_1199影丸で発見。done報告にpending ACがあれば即FAIL判定し、差し戻すこと。
