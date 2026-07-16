@@ -434,3 +434,11 @@ lessons:
   origin: '[[LS088]] -> 統合 -> [[LS048]]'
   superseded_by: 'LS048 (洗脳対策全サイクル(6)として吸収。stop_check_inbox.sh L166+L415 enforcement維持。active上限31対応 2026-07-16)'
   archived_full_text: 'docs/research/lessons_shogun_a04_a09_detail.md'
+- id: 'LS089'
+  title: 'reflux 3段連鎖バグ — 修正1段ごとに次の障壁が露出する構造'
+  origin: '未指定'
+  detail: 'promotion在庫189停滞の根因修正で3段連鎖バグを体験: (1)delegated判定がpipeline workをブロック→修正→(2)estimated_minutes欠落でTEN_MIN_CONTRACT BLOCK→修正→(3)purpose文のgate+実装共起でQUALITY_CONTRACT FP→修正。deepdive Phase6「動いて初めて次の気づきが生まれる」の3段実証。教訓: 修正後は必ず次の障壁の有無をログで確認せよ。1段修正で完了と断定するな(洗脳#8完了急ぎ)。修正→ログ確認→次の障壁特定→修正のサイクルを障壁ゼロまで回せ。origin: [[promotion在庫188停滞]] -> [[delegated過剰判定]] -> [[estimated_minutes欠落]] -> [[QUALITY_CONTRACT_FP]] -> [[reflux完全復活]]'
+  source_cmd: 'session_20260716'
+  created_at: '2026-07-16'
+  automated: true
+  enforcement: 'Level4: deploy_reflux_auto.logの出力で各段のBLOCK/PASSが機械的に確認可能。startup gateにpromotion消費路直近状態を自動表示(491e63af8)'
