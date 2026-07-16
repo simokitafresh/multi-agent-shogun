@@ -37,7 +37,21 @@ fi
 _REPORT_EXECUTOR="${_REPORT_EXECUTOR:-unknown}"
 
 # --- PASS cache: skip redundant re-checks on unmodified files (GP-073) ---
-_DEFAULT_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+_GATE_SOURCE="${BASH_SOURCE[0]}"
+case "$_GATE_SOURCE" in
+    scripts/gates/gate_report_format.sh)
+        # Hot path: the gate is normally invoked from the repository root.
+        # Avoid spawning a subshell solely to resolve the already-known root.
+        _DEFAULT_REPO_ROOT="$PWD"
+        ;;
+    /*/scripts/gates/gate_report_format.sh)
+        _DEFAULT_REPO_ROOT="${_GATE_SOURCE%/scripts/gates/gate_report_format.sh}"
+        ;;
+    *)
+        # Preserve canonical resolution for unusual relative/symlinked callers.
+        _DEFAULT_REPO_ROOT="$(cd "$(dirname "$_GATE_SOURCE")/../.." && pwd)"
+        ;;
+esac
 REPO_ROOT="${GATE_REPO_ROOT_OVERRIDE:-$_DEFAULT_REPO_ROOT}"
 PASS_CACHE="${GATE_PASS_CACHE_FILE:-$REPO_ROOT/logs/.gate_pass_cache}"
 LEARNING_FILE="${GATE_REPORT_FORMAT_LEARNING_FILE:-$REPO_ROOT/logs/gate_report_format_learning.yaml}"
