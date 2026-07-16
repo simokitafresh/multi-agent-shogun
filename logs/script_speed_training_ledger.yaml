@@ -351,17 +351,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/causal_backlink_counts.sh
-  status: pending
+  status: saturated
   before_ms: 15
   after_ms: ''
-  before_real_ms: 1150
-  after_real_ms: ""
-  real_measurement_command: bash scripts/causal_backlink_counts.sh 2>/dev/null
-  test_result: gate_shogun_startup 52/52 PASS; causal_backlinks 2/2 PASS; SKIP=0
-  commit: 2ee36e66c
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 267.492185
+  after_real_ms: 263.365693
+  real_measurement_command: "CAUSAL_BACKLINK_COUNTS_ROOT=<arm> bash <arm>/scripts/causal_backlink_counts.sh --zero --limit 20"
+  test_result: "bats test_causal_backlink_counts 6/6 PASS; FAIL=0 SKIP=0; safety_removed=0; rollback parity PASS"
+  commit: "a7e6bc766564a9a70eaa1e6d60e360fa511f7e6d"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T02:47:35"
   iteration: 1
+  last_good_commit: "a7e6bc766564a9a70eaa1e6d60e360fa511f7e6d"
+  candidate_commit: "16f19809ebffc2a782ec49783c9c95f3931fb546"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 267.492185
+  last_good_p95_ms: 315.499608
+  candidate_p50_ms: 263.365693
+  candidate_p95_ms: 324.881282
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2-x86_64;bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu);rg=ripgrep 14.1.1 (rev 4649aa9700)"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/causal_backlinks.sh
   status: pending
   before_ms: 14
