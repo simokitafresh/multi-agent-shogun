@@ -8,7 +8,10 @@
 # =============================================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_api_self="${BASH_SOURCE[0]}"
+[[ "$_api_self" != /* ]] && _api_self="$PWD/$_api_self"
+SCRIPT_DIR="${_api_self%/api_usage.sh}"
+unset _api_self
 
 show_usage() {
     echo "Usage: $0 claude|openai" >&2
@@ -97,8 +100,7 @@ format_openai() {
         return
     fi
 
-    local now
-    now=$(date +%s)
+    local now="$EPOCHSECONDS"
     local h5_ago=$((now - 5 * 3600))
     local d1_ago=$((now - 86400))
     local d7_ago=$((now - 7 * 86400))
