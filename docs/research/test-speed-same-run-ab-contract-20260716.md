@@ -16,6 +16,8 @@ identity, FAIL0/SKIP0, and last-good rollback behavior unchanged.
    least 10 measured samples per side.
 5. Store commits, exact command, equal sample count, and p50/p95 in the campaign
    ledger.
+6. Commits must differ, `order` must equal `alternating`, and `warmup_each` must
+   be at least one. When a sequence is supplied it must be exactly L,C repeated.
 
 ## Adoption and stop rules
 

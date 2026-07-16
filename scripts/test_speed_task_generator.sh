@@ -308,6 +308,15 @@ if policy == 'same_run_interleaved_ab':
         ys=sorted(xs); return ys[max(0, math.ceil(.95*len(ys))-1)]
     required=(ab.get('last_good_commit'), ab.get('candidate_commit'), ab.get('command'))
     if any(v in (None, '') for v in required): raise SystemExit('BLOCK:ab_evidence_missing')
+    if required[0] == required[1]: raise SystemExit('BLOCK:ab_commits_identical')
+    if ab.get('order') != 'alternating': raise SystemExit('BLOCK:ab_order_invalid')
+    try: warmup=int(ab.get('warmup_each'))
+    except (TypeError, ValueError): raise SystemExit('BLOCK:ab_warmup_invalid')
+    if warmup < 1: raise SystemExit('BLOCK:ab_warmup_invalid')
+    sequence=ab.get('sequence')
+    if sequence is not None:
+        expected=['L' if i % 2 == 0 else 'C' for i in range(len(base)*2)]
+        if sequence != expected: raise SystemExit('BLOCK:ab_sequence_not_alternating')
     ab_vals=[*required, len(base), statistics.median(base), p95(base), statistics.median(cand), p95(cand)]
 vals=[c.get('campaign_id'), c.get('round_index'), t.get('target_path'), c.get('best_wall'),
       round_best, s.get('approach'), s.get('quality'), s.get('dominant','none'),

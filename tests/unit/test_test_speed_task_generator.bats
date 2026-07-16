@@ -272,6 +272,43 @@ YAML
   done
 }
 
+@test "complete-deploy blocks identical commits invalid order warmup and sequence" {
+  mkdir -p "$TMP/scripts"
+  cp "$ROOT/scripts/test_speed_task_generator.sh" "$TMP/scripts/"
+  task="$TMP/queue/training/ab-validation.yaml"
+  cat > "$task" <<'YAML'
+task:
+  target_path: tests/unit/slow.bats
+  speed_campaign: {campaign_id: ab-validation, round_index: 1, best_wall: 10, baseline_policy: same_run_interleaved_ab, baseline_commit: base}
+YAML
+  report="$TMP/queue/reports/ab-validation.yaml"
+  python3 - "$report" <<'PY'
+import yaml,sys
+d={'commit_hash':'candidate','speed_result':{'last_wall':9,'approach':'cache','quality':'pass'},
+   'test_results':[{'status':'PASS','failures':0,'skips':0,'wall_sec':9}],
+   'speed_ab':{'last_good_commit':'base','candidate_commit':'candidate','command':'run same',
+      'order':'alternating','warmup_each':1,'last_good_samples_ms':[100]*10,
+      'candidate_samples_ms':[99]*10,'sequence':['L','C']*10}}
+yaml.safe_dump(d,open(sys.argv[1],'w'))
+PY
+  for mutation in identical order warmup sequence; do
+    cp "$report" "$report.$mutation"
+    python3 - "$report.$mutation" "$mutation" <<'PY'
+import sys,yaml
+p=sys.argv[1]; k=sys.argv[2]; d=yaml.safe_load(open(p)); a=d['speed_ab']
+if k=='identical': a['candidate_commit']=a['last_good_commit']
+elif k=='order': a['order']='grouped'
+elif k=='warmup': a['warmup_each']=0
+else: a['sequence']=['L','L']*10
+yaml.safe_dump(d,open(p,'w'))
+PY
+    run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_CAMPAIGN_LEDGER="$TMP/logs/$mutation.tsv" \
+      bash "$ROOT/scripts/test_speed_task_generator.sh" complete-deploy hayate "$task" "$report.$mutation"
+    [ "$status" -ne 0 ]; [[ "$output" == *'BLOCK:ab_'* ]]
+    [ ! -e "$TMP/logs/$mutation.tsv" ]
+  done
+}
+
 @test "generator returns no candidate when completed evidence already claims target" {
   printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
   cat > "$TMP/queue/tasks/kotaro.yaml" <<YAML
