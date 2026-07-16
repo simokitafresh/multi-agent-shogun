@@ -813,17 +813,16 @@ entries:
   updated_at: "2026-07-17T00:05:43"
   iteration: 1
 - script_path: scripts/gate_improvement_trigger.sh
-  status: pending
+  status: completed
   before_ms: 8
   after_ms: ''
-  before_real_ms: 1945
-  after_real_ms: ""
-  real_measurement_command: sandbox root with fake gates/inbox/ntfy/gh; 20x bash scripts/gate_improvement_trigger.sh
-  test_result: bash -n PASS; sandbox OK path PASS; ALERT path PASS; WARN extra pattern
-    PASS; SKIP=0
-  commit: d4170a960df36cb04f9427807d8571a592d6b92f
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 381.5
+  after_real_ms: 331.5
+  real_measurement_command: "GATE_IMPROVEMENT_ROOT=$FIXTURE_ROOT GATE_IMPROVEMENT_NOW=1770000000 TMPDIR=$FIXTURE_TMP PATH=$FIXTURE_BIN:$PATH bash <(git show \"$REV\":scripts/gate_improvement_trigger.sh)"
+  test_result: "bats tests/unit/test_gate_improvement_trigger.bats: PASS=11 FAIL=0 SKIP=0; bash-n=CLEAR; safety_removed=0; target_count=11 unchanged"
+  commit: "2238999d5493727bd12815ce2f455f0bfc8640c1"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T00:44:54"
   iteration: 1
 - script_path: scripts/gates/gate_artifact_map.sh
   status: pending
