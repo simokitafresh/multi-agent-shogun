@@ -20,17 +20,31 @@ entries:
   updated_at: "2026-07-16T20:35:12"
   iteration: 2
 - script_path: ".claude/hooks/pretool-dispatch.sh"
-  status: pending
+  status: saturated
   before_ms: ''
   after_ms: ''
-  before_real_ms: 78.678
-  after_real_ms: ""
-  real_measurement_command: "100x Read payload through pretool-dispatch; PRETOOL_STATE_REFRESH_INTERVAL=0 forced update vs PRETOOL_STATE_REFRESH_INTERVAL=10 throttled update; TMPDIR isolated via mktemp -d"
-  test_result: "bash -n .claude/hooks/pretool-dispatch.sh PASS; bats tests/unit/test_hook_dispatchers.bats tests/unit/test_read_tracker_hook.bats tests/unit/test_write_edit_combined_hooks.bats PASS 35/35 SKIP=0; bats tests/unit/test_agent_state.bats PASS 14/14 SKIP=0; bats tests/unit/test_bash_speed_training.bats PASS 15/15 SKIP=0"
-  commit: "fe85a4843"
-  assigned_to: ""
-  updated_at: "2026-06-13T00:19:57"
+  before_real_ms: 44.520735
+  after_real_ms: 50.070125
+  real_measurement_command: "BATS_TEST_FILENAME=synthetic-speed-ab.bats TMUX_PANE=empty; printf Bash true JSON payload to isolated linked-worktree pretool-dispatch.sh"
+  test_result: "bash -n PASS; related bats 89/89 PASS FAIL=0 SKIP=0; safety lines removed=0; candidate p50 regressed so rollback retained last-good"
+  commit: "f89d9072dc706841c314f1d74eeef1587beceb62"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T07:07:04"
   iteration: 1
+  last_good_commit: "f89d9072dc706841c314f1d74eeef1587beceb62"
+  candidate_commit: "702f85427f05be0755200bf8ab113cbcfa86375b"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 44.520735
+  last_good_p95_ms: 62.675688
+  candidate_p50_ms: 50.070125
+  candidate_p95_ms: 55.585494
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64; GNU bash 5.2.21; same cwd/env; isolated linked worktrees"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_loop_health.sh
   status: saturated
   before_ms: ''
@@ -58,17 +72,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: .claude/hooks/post-shogun-inbox-check.sh
-  status: pending
+  status: completed
   before_ms: 0
   after_ms: ''
-  before_real_ms: 86.718
-  after_real_ms: ""
-  real_measurement_command: "50x isolated shogun fixture with unread gate_clear inbox; avg_ms from date +%s%N loop"
-  test_result: "dash_n_pass; posttool_dispatch_bash_n_pass; test_hook_dispatchers_and_bash_speed_training_bats all_23_pass skip_count_0; isolated_output_contract_pass"
-  commit: "5fc3705046cbc28db6131b96446f3c6062ac08ea"
-  assigned_to: ""
-  updated_at: "2026-06-13T00:19:57"
+  before_real_ms: 43.686
+  after_real_ms: 11.554
+  real_measurement_command: "SHOGUN_ROOT=/mnt/c/tools/multi-agent-shogun TMUX_PANE=$TMUX_PANE dash ARM_SCRIPT (remove pane aid/non-shogun caches before each sample)"
+  test_result: "dash-n PASS; injected-root PASS; git-fallback PASS; safety_removed=0; FAIL=0 SKIP=0"
+  commit: "5ed560852e5108f1e788c330a1357be0eaa3bc7f"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-17T06:29:36"
   iteration: 1
+  last_good_commit: "9f47023459318f26e2afeb3ec72ad354ebf28b0e"
+  candidate_commit: "5ed560852e5108f1e788c330a1357be0eaa3bc7f"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 43.686
+  last_good_p95_ms: 61.019
+  candidate_p50_ms: 11.554
+  candidate_p95_ms: 15.574
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2 same host/pane/env; sequential L,C alternating; cache reset each sample"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: .claude/hooks/post-write-edit-combined.sh
   status: saturated
   before_ms: 0
@@ -251,31 +279,57 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/auto_failure_lesson.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: ''
-  before_real_ms: 103
-  after_real_ms: ""
-  real_measurement_command: bash scripts/auto_failure_lesson.sh /tmp/test_report_hanzo.yaml
-  test_result: 3/3 PASS SKIP=0
-  commit: 1458f8d9f
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 6.546
+  after_real_ms: 5.846
+  real_measurement_command: "bash /tmp/tobisaru_afl_ab/scripts/auto_failure_lesson.sh /tmp/tobisaru_afl_ab/report.yaml"
+  test_result: "PASS 5/5 FAIL=0 SKIP=0"
+  commit: "4e83f749d12e37478db83d5e424ab343a8dfce16"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T05:54:04"
   iteration: 1
+  last_good_commit: "f456c1e371405c4a3bd1f25c12670ee212a1923d"
+  candidate_commit: "4e83f749d12e37478db83d5e424ab343a8dfce16"
+  ab_samples_per_arm: "20"
+  last_good_p50_ms: 6.546
+  last_good_p95_ms: 8.842
+  candidate_p50_ms: 5.846
+  candidate_p95_ms: 8.660
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "GNU bash 5.2.21 x86_64; WSL2 6.6.87.1"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/backfill_knowledge_debt.sh
-  status: pending
+  status: saturated
   before_ms: 22
   after_ms: ''
-  before_real_ms: 102
-  after_real_ms: ""
-  real_measurement_command: timeout 20 bash scripts/backfill_knowledge_debt.sh --dry-run
-    >/dev/null
-  test_result: bash -n scripts/backfill_knowledge_debt.sh && dry-run status=0 stale=0
-    pd=35 stderr=0 && bad-arg status=1 SKIP=0
-  commit: decbe54fe
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 67.92552501428872
+  after_real_ms: 69.9836720013991
+  real_measurement_command: "bash scripts/backfill_knowledge_debt.sh --dry-run"
+  test_result: "bash-n PASS; dry-run rc0; candidate rolled back"
+  commit: "4e83f749d"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T05:59:43"
   iteration: 1
+  last_good_commit: "4e83f749d"
+  candidate_commit: "a964f4f9473cc3828ccec8138a9fdbd2876d9c70"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 67.92552501428872
+  last_good_p95_ms: 78.01280298735946
+  candidate_p50_ms: 69.9836720013991
+  candidate_p95_ms: 81.64061899879016
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "worktree-same-host"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/backfill_lesson_target_files.sh
   status: completed
   before_ms: 15
@@ -315,18 +369,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/backfill_task_type.sh
-  status: assigned
+  status: saturated
   before_ms: 16
   after_ms: ''
-  before_real_ms: 180
-  after_real_ms: ""
-  real_measurement_command: bash scripts/backfill_task_type.sh --dry-run >/tmp/backfill_task_type.out
-  test_result: bash -n scripts/backfill_task_type.sh && shellcheck -x scripts/backfill_task_type.sh
-    && bash scripts/backfill_task_type.sh --dry-run PASS SKIP=0
-  commit: c0fe9d964
+  before_real_ms: 79534.999
+  after_real_ms: 15485.997
+  real_measurement_command: "bash .cache/backfill_task_type_ab.sh --dry-run"
+  test_result: "bash -n PASS; dry-run exit0; output_equal=false so candidate rolled back; final FAIL=0 SKIP=0"
+  commit: "58a35a58e61c103eb82f1608892957ab4ff455e9"
   assigned_to: "kagemaru"
-  updated_at: "2026-07-17T05:06:01"
+  updated_at: "2026-07-17T05:32:36"
   iteration: 1
+  last_good_commit: "58a35a58e61c103eb82f1608892957ab4ff455e9"
+  candidate_commit: "c6d62dfa61101d99bb81f7a5a85131242ae11c16"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 79534.999
+  last_good_p95_ms: 95310.735
+  candidate_p50_ms: 15485.997
+  candidate_p95_ms: 22180.273
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux-6.6.87.1-microsoft-standard-WSL2-x86_64-glibc2.39"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/build_instructions.sh
   status: completed
   before_ms: 16
@@ -836,18 +903,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/conversation_retention.sh
-  status: pending
+  status: completed
   before_ms: 8
   after_ms: ''
-  before_real_ms: 91
-  after_real_ms: ""
-  real_measurement_command: 'time bash scripts/conversation_retention.sh <tmpjsonl>
-    <tmpindex> <tmparchive> (10 entries, 8-run avg; empty-JSONL: 90ms->37ms -59%)'
-  test_result: 'bats tests/unit/test_lord_conversation.bats: 17/17 PASS SKIP=0'
-  commit: 26c7811034802dad4eab30e20c7578e8088c0673
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 140.927
+  after_real_ms: 111.374
+  real_measurement_command: "bash /tmp/conversation_retention_ab_hayate/arm.sh /tmp/conversation_retention_ab_hayate/input.jsonl /tmp/conversation_retention_ab_hayate/index.md /tmp/conversation_retention_ab_hayate/archive"
+  test_result: "bash -n PASS; bats tests/unit/test_lord_conversation.bats 21/21 PASS FAIL=0 SKIP=0; safety removals=0"
+  commit: "9f47023459318f26e2afeb3ec72ad354ebf28b0e"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T06:29:13"
   iteration: 1
+  last_good_commit: "3d7a7450586f09171af4c3e45782a6b22bc983f4"
+  candidate_commit: "9f47023459318f26e2afeb3ec72ad354ebf28b0e"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 140.927
+  last_good_p95_ms: 173.048
+  candidate_p50_ms: 111.374
+  candidate_p95_ms: 171.920
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux-6.6.87.1-microsoft-standard-WSL2-x86_64"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/count_bats_skips.sh
   status: pending
   before_ms: 20
@@ -1075,31 +1155,48 @@ entries:
   updated_at: "2026-07-17T00:44:54"
   iteration: 1
 - script_path: scripts/gates/gate_artifact_map.sh
-  status: pending
+  status: completed
   before_ms: 14
-  after_ms: ''
-  before_real_ms: 117
-  after_real_ms: ""
-  real_measurement_command: bash scripts/gates/gate_artifact_map.sh context/l2-okugi-progress.md
-    >/dev/null 2>&1 || true
-  test_result: bash_n_pass;output_diff_empty;before_176_after_117;SKIP=0
-  commit: 6f7bc2982
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  after_ms: 85.0
+  before_real_ms: 103.0
+  after_real_ms: 85.0
+  before_p95_ms: 137
+  after_p95_ms: 105
+  samples_per_arm: 20
+  last_good_commit: "b79575fb05256cff4c9d1dc92ab410e1f02a5e3d"
+  candidate_commit: "3d45b341f8aad8ebc08e09e9e13422334c790369"
+  real_measurement_command: "bash <arm_script> /tmp/gam_fixture.md >/dev/null; warmup then alternating last-good/candidate, date +%s%N elapsed ms"
+  test_result: "test_clear_prep_check.bats 14/14 PASS + behavior fixtures 7/7 PASS; FAIL=0; SKIP=0; removed safety lines=0"
+  commit: "3d45b341f8aad8ebc08e09e9e13422334c790369"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T05:50:00"
   iteration: 1
 - script_path: scripts/gates/gate_autofix_proposal.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: 81
-  before_real_ms: 81
-  after_real_ms: ""
-  real_measurement_command: time bash scripts/gates/gate_autofix_proposal.sh (cold,
-    cache cleared)
-  test_result: bats tests/unit/test_gate_small_consolidated.bats PASS 24/24 SKIP=0
-  commit: a7dd36430
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 32.135
+  after_real_ms: 25.858
+  real_measurement_command: "SHOGUN_STARTUP_ROOT=<repo> GATE_AUTOFIX_MIN_COUNT=999999 GATE_AUTOFIX_CACHE_TTL=300 GATE_AUTOFIX_WINDOW=47 bash ARM_SCRIPT"
+  test_result: "bash-n PASS; output parity PASS; cache-disabled PASS; invalid-TTL safe PASS; safety_removed=0; FAIL=0 SKIP=0"
+  commit: "6a048afb75ee6a6b7b1c6e2858ac6c53743d50fb"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-17T06:48:48"
   iteration: 1
+  last_good_commit: "097cd8b92e922e01c6841104e7236f364d26a5a0"
+  candidate_commit: "6a048afb75ee6a6b7b1c6e2858ac6c53743d50fb"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 32.135
+  last_good_p95_ms: 37.480
+  candidate_p50_ms: 25.858
+  candidate_p95_ms: 29.924
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2 same host/env/log signature; sequential L,C alternating; isolated WINDOW=47 cache keys"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_cmd_state.sh
   status: pending
   before_ms: 9
@@ -1152,21 +1249,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_context_freshness.sh
-  status: pending
+  status: completed
   before_ms: 9
   after_ms: ''
-  before_real_ms: 81
-  after_real_ms: ""
-  real_measurement_command: CONTEXT_FRESHNESS_ROOT=/mnt/c/tools/multi-agent-shogun
-    CONTEXT_FRESHNESS_CHECK_SCRIPT=/mnt/c/tools/multi-agent-shogun/scripts/context_freshness_check.sh
-    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true bash scripts/gates/gate_context_freshness.sh
-    (cache-hit path)
-  test_result: bash -n PASS; bats tests/unit/test_gate_context_freshness.bats tests/unit/test_gate_meta_quality.bats
-    14/14 PASS SKIP=0
-  commit: 3069c31ae
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 1186.774
+  after_real_ms: 79.059
+  real_measurement_command: "CONTEXT_FRESHNESS_ROOT=/tmp/gate_context_freshness_ab_hayate/root CONTEXT_FRESHNESS_CHECK_SCRIPT=/tmp/gate_context_freshness_ab_hayate/root/scripts/context_freshness_check.sh CONTEXT_FRESHNESS_NTFY_SCRIPT=/tmp/gate_context_freshness_ab_hayate/root/scripts/ntfy.sh CONTEXT_FRESHNESS_TODAY=2026-07-17 CONTEXT_FRESHNESS_GATE_CACHE_TTL=300 bash /tmp/gate_context_freshness_ab_hayate/arm.sh"
+  test_result: "bash -n PASS; bats tests/unit/test_gate_context_freshness.bats 11/11 PASS FAIL=0 SKIP=0; safety removals=0"
+  commit: "097cd8b92e922e01c6841104e7236f364d26a5a0"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T06:47:48"
   iteration: 1
+  last_good_commit: "322b51cb26115dc827d2af73d417e3361768fc25"
+  candidate_commit: "097cd8b92e922e01c6841104e7236f364d26a5a0"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 1186.774
+  last_good_p95_ms: 4482.864
+  candidate_p50_ms: 79.059
+  candidate_p95_ms: 111.765
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux-6.6.87.1-microsoft-standard-WSL2-x86_64;200-context-files"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_cycle_health.sh
   status: pending
   before_ms: 17
@@ -1490,34 +1597,57 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/gates/gate_report_autofix.sh
-  status: pending
+  status: completed
   before_ms: 14
   after_ms: ''
-  before_real_ms: 100
-  after_real_ms: ""
-  real_measurement_command: bash scripts/gates/gate_report_autofix.sh queue/reports/saizo_report_cmd_training_speed_gates_gate_ninja_workaround_rate_20260607041835.yaml
-    >/dev/null
-  test_result: bash_n_pass;bats tests/unit/test_gate_report_autofix.bats 21/21 PASS
-    SKIP=0;HEAD_vs_current_NO_FIX_NEEDED_diff_empty
-  commit: 39d799c72
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 82.421
+  after_real_ms: 9.343
+  real_measurement_command: "bash /tmp/tobisaru_gra_ab/scripts/gates/gate_report_autofix.sh /tmp/tobisaru_gra_ab/report.yaml"
+  test_result: "PASS 23/23 FAIL=0 SKIP=0"
+  commit: "d0cdd35bb0d6cc08c03fe7bbab373eac65f225dd"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T06:18:22"
   iteration: 1
+  last_good_commit: "c8831085616a83e50c518e9f75ee112b6faf8c6f"
+  candidate_commit: "d0cdd35bb0d6cc08c03fe7bbab373eac65f225dd"
+  ab_samples_per_arm: "20"
+  last_good_p50_ms: 82.421
+  last_good_p95_ms: 88.650
+  candidate_p50_ms: 9.343
+  candidate_p95_ms: 12.115
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "GNU bash 5.2.21 x86_64; WSL2 6.6.87.1"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_report_format.sh
-  status: pending
+  status: completed
   before_ms: 20
   after_ms: ''
-  before_real_ms: 120
-  after_real_ms: ""
-  real_measurement_command: GATE_NO_LOG=1 GATE_CLARITY_WARN_DISABLE=1 PYTHONDONTWRITEBYTECODE=1
-    bash scripts/gates/gate_report_format.sh <tmp_valid_report>
-  test_result: bash_n PASS; tests/test_gate_report_format.bats 25/25 PASS SKIP=0;
-    tests/unit/test_gate_report_format_pass_no_improvement.bats+test_assumption_invalidation.bats
-    10/10 PASS SKIP=0; tests/unit/test_gate_hot_path_no_sync_io.bats 8/8 PASS SKIP=0
-  commit: 696281e16
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 172.325
+  after_real_ms: 150.447
+  real_measurement_command: "GATE_NO_LOG=1 GATE_SESSION_STATE_DISABLE=1 SKILL_EXECUTION_PASS_LOG_DISABLE=1 GATE_PASS_CACHE_FILE=/tmp/hanzo_gate_nocache bash /tmp/hanzo_gate_active/scripts/gates/gate_report_format.sh /mnt/c/tools/multi-agent-shogun/queue/archive/reports/hanzo_report_cmd_1022_20260324.yaml >/dev/null 2>&1 || test $? -eq 1"
+  test_result: "PASS:26 tests;FAIL=0;SKIP=0"
+  commit: "7526e7a5108a163afe48d8af7276d7c90f7add9b"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-17T05:41:32"
   iteration: 1
+  last_good_commit: "4ecef7670f8515b45c6539f8166d31872ab58e53"
+  candidate_commit: "7526e7a5108a163afe48d8af7276d7c90f7add9b"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 172.325
+  last_good_p95_ms: 208.294
+  candidate_p50_ms: 150.447
+  candidate_p95_ms: 166.154
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "same-host:/tmp worktrees;symlink-selected outside timed interval;WSL2;2026-07-17"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_shogun_memory.sh
   status: pending
   before_ms: 21
@@ -2303,19 +2433,31 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/lesson_confirm.sh
-  status: pending
+  status: saturated
   before_ms: 15
   after_ms: ''
-  before_real_ms: 118
-  after_real_ms: ""
-  real_measurement_command: bash scripts/lesson_confirm.sh infra L999999 (non-existent,
-    10回中央値)
-  test_result: 'smoke test PASS (infra L999999: ERROR not found as expected); cd+pwd+sed
-    removed+CSafeLoader: 137ms->118ms (-19ms, -14%)'
-  commit: 5db4aeed3
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 121.170180500485
+  after_real_ms: 123.80533451505471
+  real_measurement_command: "bash scripts/lesson_confirm.sh infra L999999"
+  test_result: "bash -n PASS; missing lesson contract rc1; candidate rolled back"
+  commit: "7526e7a51"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T05:47:50"
   iteration: 1
+  last_good_commit: "7526e7a51"
+  candidate_commit: "29c662ce743ec60f83e3624c0aeaf878d6c1083a"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 121.170180500485
+  last_good_p95_ms: 134.5746529987082
+  candidate_p50_ms: 123.80533451505471
+  candidate_p95_ms: 141.0287740000058
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "worktree-same-host"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/lesson_delete.sh
   status: pending
   before_ms: 17
@@ -2475,17 +2617,31 @@ entries:
   assigned_to: hanzo
   updated_at: '2026-06-07T08:08:00+09:00'
 - script_path: scripts/lesson_review.sh
-  status: pending
+  status: completed
   before_ms: 16
   after_ms: ''
-  before_real_ms: 85
-  after_real_ms: ""
-  real_measurement_command: bash scripts/lesson_review.sh infra
-  test_result: 'bash -n OK; output verified: No draft lessons found'
-  commit: 3c32af0a8
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 133.012
+  after_real_ms: 41.032
+  real_measurement_command: "bash /tmp/tobisaru_lr_ab/scripts/lesson_review.sh infra"
+  test_result: "PASS 2/2 FAIL=0 SKIP=0"
+  commit: "854816cdd4ac8b3370fbc93ce3155cbc39c60d7c"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T06:31:49"
   iteration: 1
+  last_good_commit: "5ed560852e5108f1e788c330a1357be0eaa3bc7f"
+  candidate_commit: "854816cdd4ac8b3370fbc93ce3155cbc39c60d7c"
+  ab_samples_per_arm: "20"
+  last_good_p50_ms: 133.012
+  last_good_p95_ms: 159.671
+  candidate_p50_ms: 41.032
+  candidate_p95_ms: 56.509
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "GNU bash 5.2.21 x86_64; WSL2 6.6.87.1"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/lesson_status_migration.sh
   status: pending
   before_ms: 16
@@ -2500,19 +2656,31 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/lesson_update_score.sh
-  status: assigned
+  status: completed
   before_ms: 16
   after_ms: ''
-  before_real_ms: 133
-  after_real_ms: ""
-  real_measurement_command: bash scripts/lesson_update_score.sh infra L756 helpful
-    (backup/restore method)
-  test_result: bash -n OK; sandbox inject/helpful PASS; L756 helpful_count incremented
-    in real file
-  commit: 75407d88a
+  before_real_ms: 38.35725849785376
+  after_real_ms: 32.43026249401737
+  real_measurement_command: "bash scripts/lesson_update_score.sh infra L001 helpful"
+  test_result: "bash-n; fixture output/counter parity PASS; FAIL=0 SKIP=0"
+  commit: "dbccd458c05df2fc189b9f90e7541e981b700770"
   assigned_to: "kotaro"
-  updated_at: "2026-07-17T05:17:30"
+  updated_at: "2026-07-17T05:20:51"
   iteration: 1
+  last_good_commit: "e840e342f8bcc6cb241a619fb02abfbedfe422d2"
+  candidate_commit: "dbccd458c05df2fc189b9f90e7541e981b700770"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 38.35725849785376
+  last_good_p95_ms: 43.23275500792079
+  candidate_p50_ms: 32.43026249401737
+  candidate_p95_ms: 35.49304697662592
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux WSL2; identical temp fixture reset outside timing"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/lesson_write.sh
   status: saturated
   before_ms: 18
@@ -2522,8 +2690,8 @@ entries:
   real_measurement_command: "bats tests/unit/test_lesson_write.bats -f ^normal lesson addition$"
   test_result: "49/49 PASS FAIL=0 SKIP=0; candidate p50/p95 regressed and was rolled back"
   commit: "46adb949d"
-  assigned_to: ""
-  updated_at: "2026-07-17T06:45:44"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T06:42:53"
   iteration: 1
   last_good_commit: "46adb949d"
   candidate_commit: "7ba7691aaee024aaa97da96ab4dbf091da45121d"
@@ -3020,17 +3188,31 @@ entries:
   updated_at: "2026-07-16T21:01:12"
   iteration: 1
 - script_path: scripts/memory_recall_control.sh
-  status: pending
+  status: completed
   before_ms: 16
   after_ms: ''
-  before_real_ms: 80
-  after_real_ms: ""
-  real_measurement_command: bash scripts/memory_recall_control.sh --dry-run --db data/multi_agent_shogun_memory.db
-  test_result: bats tests/unit/test_memory_db.bats PASS 40/40 SKIP=0
-  commit: 80822d430
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 68.63057699999999
+  after_real_ms: 65.940098
+  real_measurement_command: "bash $ARM/scripts/memory_recall_control.sh --db $DB --older-than-days 90 --limit 10 --dry-run"
+  test_result: "bash-n+relative+absolute+invalid PASS"
+  commit: "6caeb39e0d7349542f3a3da7e5b4268a129f5c1c"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T06:54:04"
   iteration: 1
+  last_good_commit: "6a048afb75ee6a6b7b1c6e2858ac6c53743d50fb"
+  candidate_commit: "6caeb39e0d7349542f3a3da7e5b4268a129f5c1c"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 68.63057699999999
+  last_good_p95_ms: 84.503672
+  candidate_p50_ms: 65.940098
+  candidate_p95_ms: 72.624563
+  ab_order: "alternating"
+  warmup_each: "2"
+  environment_fingerprint: "WSL2 Linux-6.6.87.1 x86_64; same sqlite fixture; absolute arm paths; strict L,C alternation"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/model_analysis.sh
   status: pending
   before_ms: 16
@@ -3239,19 +3421,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/obsidian_promote_finalize.sh
-  status: pending
+  status: saturated
   before_ms: 16
   after_ms: ''
-  before_real_ms: 120
-  after_real_ms: ""
-  real_measurement_command: bash scripts/obsidian_promote_finalize.sh --dry-run --limit
-    1
-  test_result: bash -n PASS; dry-run output diff PASS; event-id dry-run PASS; missing-db
-    error PASS; after 7-run median 120ms SKIP=0
-  commit: 2474c5720
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 318.49950351170264
+  after_real_ms: 319.09796599939
+  real_measurement_command: "bash scripts/obsidian_promote_finalize.sh --db /mnt/c/tools/multi-agent-shogun/data/multi_agent_shogun_memory.db --dry-run --limit 1"
+  test_result: "bats filtered: 1 PASS, 0 FAIL, 0 SKIP; candidate rolled back"
+  commit: "1fcdf2b0c0221670dd95b807d43e25dfaa42d5d9"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T05:35:24"
   iteration: 1
+  last_good_commit: "1fcdf2b0c0221670dd95b807d43e25dfaa42d5d9"
+  candidate_commit: "5c38e94220437e0428203074dcd8785b7420ae6f"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 318.49950351170264
+  last_good_p95_ms: 442.0894700160716
+  candidate_p50_ms: 319.09796599939
+  candidate_p95_ms: 371.6736260103062
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "worktree-same-host-shared-db-dry-run"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/oneshot/add_injection_count.sh
   status: saturated
   before_ms: 14
@@ -3381,7 +3575,7 @@ entries:
   test_result: "bats_4_pass_fail0_skip0; bash_speed_training_28_pass_fail0_skip0"
   commit: "6851990aabf1b56742f75db2a4c02d7799683ae7"
   assigned_to: "tobisaru"
-  updated_at: "2026-07-17T05:32:43"
+  updated_at: "2026-07-17T05:32:15"
   iteration: 1
   last_good_commit: "5a0d94819e7f1473e0f912130412f5e6cd7c77c7"
   candidate_commit: "6851990aabf1b56742f75db2a4c02d7799683ae7"
@@ -3398,16 +3592,21 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/report_field_set.sh
-  status: pending
+  status: completed
   before_ms: 19
-  after_ms: ''
-  before_real_ms: 122
-  after_real_ms: ""
-  real_measurement_command: "echo '- {check: test, result: yes}' | bash scripts/report_field_set.sh <tmp_report> binary_checks.AC1 - (verdict preset, no auto-verdict, 5 runs median)"
-  test_result: bats 104/104 PASS SKIP=0 (9 test files)
-  commit: 9122ccc41
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  after_ms: 60.5
+  before_real_ms: 65.0
+  after_real_ms: 60.5
+  before_p95_ms: 75
+  after_p95_ms: 71
+  samples_per_arm: 10
+  last_good_commit: "41415be7b2a65c2488dfd1c762132f47c91f2af1"
+  candidate_commit: "ab05776afe9ba1686d1b668229f0d6b16799bfb4"
+  real_measurement_command: "cp /tmp/rfs_source.yaml /tmp/rfs_bench.yaml; bash <arm_script> /tmp/rfs_bench.yaml status pending >/dev/null; alternating last-good/candidate after one warmup, date +%s%N elapsed ms"
+  test_result: "targeted report_field_set bats 168/168 PASS; FAIL=0; SKIP=0; removed safety lines=0"
+  commit: "ab05776afe9ba1686d1b668229f0d6b16799bfb4"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T05:35:00"
   iteration: 1
 - script_path: scripts/report_merge.sh
   status: done
