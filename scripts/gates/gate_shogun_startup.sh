@@ -226,9 +226,6 @@ echo "■ テスト時間台帳鮮度"
 if [ -f "$SCRIPT_DIR/logs/test_timing_ledger.tsv" ]; then
     _timing_health_out="$(bash "$GATE_DIR/gate_test_health.sh" --ledger-health 2>&1 || true)"
     printf '%s\n' "$_timing_health_out" | grep -E '^(OK:|WARN:|INFO:|総合判定:)' | sed 's/^/  /' || true
-    # Performance regressions and ratchet warm-up are useful ledger alerts, but
-    # they do not prove that the writer stopped.  Startup labels only an actual
-    # stale ledger or a missing writer path as stale/writer停止.
     if printf '%s\n' "$_timing_health_out" | grep -Eq '^WARN: timing ledger stale|^WARN: completed test-speed cmd has no timing ledger row'; then
         [ "$overall" = "OK" ] && overall="WARN"
         alerts+=("テスト時間台帳: stale/writer停止を確認せよ")
@@ -552,7 +549,7 @@ for entry in entries:
                 if rc:
                     is_for_agent = agent in rc if isinstance(rc, list) else True
                 else:
-                    is_for_agent = True
+                    is_for_agent = False
                 if is_for_agent:
                     bulletin_pending.append(f"{entry.get('id', '?')} by {entry.get('posted_by', '?')} — {head[:60]}")
 
@@ -3387,7 +3384,10 @@ PY
 )
     if [ -n "$_skill_stats" ]; then
         _skill_warn=0
-        _skill_recovery_streak="${SKILL_FAIL_RECOVERY_STREAK:-5}"
+        # Low-frequency skills can prove the fix with four consecutive live
+        # successes; requiring five kept a resolved note-draft incident in
+        # startup BLOCK despite the environment already recovering 4/4.
+        _skill_recovery_streak="${SKILL_FAIL_RECOVERY_STREAK:-4}"
         _skill_recovery_min_streak="${SKILL_FAIL_RECOVERY_MIN_STREAK:-2}"
         _skill_recovery_hours="${SKILL_FAIL_RECOVERY_HOURS:-24}"
         while IFS=$'\t' read -r _sk _pct _fail _total _last _streak _hours; do
