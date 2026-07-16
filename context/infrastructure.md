@@ -806,7 +806,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1188 -->
+<!-- last_synced_lesson: L1189 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1706,6 +1706,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1186: process substitution前にimmutable cacheを親shellでロードする（cmd_training_speed_hooks_git_pre_commit_20260717035955）
 - L1187: production gate必須化時はintegration fixture helperも同時更新する（cmd_training_speed_dashboard_auto_section_20260717041209）
 - L1188: 同一mkdir -pの連続呼出しは単一processへ束ねる（cmd_training_speed_archive_completed_20260717042353）
+- L1189: 検索出力の区切りを原文と誤認せず生ファイルとparserで確認する（cmd_training_speed_record_lesson_feedback_20260717051908）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
