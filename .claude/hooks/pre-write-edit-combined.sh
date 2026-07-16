@@ -244,25 +244,6 @@ file_path="$(json_string_after "$payload" "file_path")"
 [[ "$tool_name" != "Write" && "$tool_name" != "Edit" && "$tool_name" != "MultiEdit" ]] && exit 0
 [[ -z "$file_path" ]] && exit 0
 
-# Parse the potentially large tool_input at most once, and only on branches
-# that need edit content.  Several guards used to launch jq independently.
-_tool_input_loaded=0
-_tool_new_string=""
-_tool_old_string=""
-_tool_content=""
-_tool_combined_content=""
-load_tool_input_fields() {
-    [[ "$_tool_input_loaded" -eq 0 ]] || return 0
-    eval "$(printf '%s' "$payload" | jq -r '
-        (.tool_input // .toolInput // {}) as $i |
-        "_tool_new_string=" + (($i.new_string // "") | @sh) + "\n" +
-        "_tool_old_string=" + (($i.old_string // "") | @sh) + "\n" +
-        "_tool_content=" + (($i.content // "") | @sh) + "\n" +
-        "_tool_combined_content=" + ([($i.new_string // empty), ($i.content // empty), (($i.edits // [])[]?.new_string // empty)] | join("\n") | @sh)
-    ' 2>/dev/null)" || true
-    _tool_input_loaded=1
-}
-
 # Three-layer pre-action gate: repository mutations require evidence issued by
 # the current UserPromptSubmit. Read tracking and the specialized guards below
 # remain available after this shared prerequisite.
@@ -325,11 +306,10 @@ esac
 if [[ "$file_path" == *'/queue/shogun_to_karo.yaml' ]]; then
     # Guard 0a: リスト形式(- id: cmd_)をBLOCK。正しくは辞書形式(  cmd_XXXX:)
     _stk_content=""
-    load_tool_input_fields
     if [[ "$tool_name" == "Edit" ]]; then
-        _stk_content="$_tool_new_string"
+        _stk_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // ""' 2>/dev/null)" || true
     elif [[ "$tool_name" == "Write" ]]; then
-        _stk_content="$_tool_content"
+        _stk_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .content // ""' 2>/dev/null)" || true
     fi
     if printf '%s' "$_stk_content" | grep -qE '^\s*-\s+id:\s+cmd_'; then
         emit_deny "BLOCK: shogun_to_karo.yamlのcmdはリスト形式(- id: cmd_XXX)禁止。辞書形式(  cmd_XXX:)で書け。archive済みcmd形式を参照せよ。"
@@ -556,8 +536,7 @@ fi
 
 # === Guard 5: lessons.yaml tags直接Edit禁止 (LK052: 同期不整合防止) ===
 if [[ "$tool_name" == "Edit" && "$file_path" == *'/lessons.yaml' ]]; then
-    load_tool_input_fields
-    old_string="$_tool_old_string"
+    old_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .old_string // ""' 2>/dev/null)" || true
     if [[ "$old_string" == *'tags:'* ]]; then
         emit_deny "BLOCKED: lessons.yamlのtags直接Edit禁止。\\nWHY: lessons.md←→lessons.yaml同期不整合が発生する。\\nFIX: bash scripts/lesson_write.sh <project_id> --retag <lesson_id> --new-tags \\\"tag1,tag2\\\""
         exit 2
@@ -569,9 +548,8 @@ fi
 if [[ "$file_path" == *'lessons_shogun.yaml' ]]; then
     _ls_count=$(grep -c '^- id:' "$file_path" 2>/dev/null || echo 0)
     if [ "$_ls_count" -ge 35 ]; then
-        load_tool_input_fields
-        _new_string="$_tool_new_string"
-        _old_string="$_tool_old_string"
+        _new_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // ""' 2>/dev/null)" || true
+        _old_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .old_string // ""' 2>/dev/null)" || true
         _new_ids=$(echo "$_new_string" | grep -c '^- id:' 2>/dev/null || echo 0)
         _old_ids=$(echo "$_old_string" | grep -c '^- id:' 2>/dev/null || echo 0)
         if [ "$_new_ids" -gt "$_old_ids" ]; then
@@ -586,9 +564,8 @@ fi
 if [[ "$file_path" == *'lessons_karo.yaml' ]]; then
     _lk_count=$(grep -c '^- id:' "$file_path" 2>/dev/null || echo 0)
     if [ "$_lk_count" -ge 35 ]; then
-        load_tool_input_fields
-        _new_string="$_tool_new_string"
-        _old_string="$_tool_old_string"
+        _new_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // ""' 2>/dev/null)" || true
+        _old_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .old_string // ""' 2>/dev/null)" || true
         _new_ids=$(echo "$_new_string" | grep -c '^- id:' 2>/dev/null || echo 0)
         _old_ids=$(echo "$_old_string" | grep -c '^- id:' 2>/dev/null || echo 0)
         if [ "$_new_ids" -gt "$_old_ids" ]; then
@@ -603,9 +580,8 @@ fi
 if [[ "$file_path" == *'lessons_gunshi.yaml' ]]; then
     _lg_count=$(grep -c '^- id:' "$file_path" 2>/dev/null || echo 0)
     if [ "$_lg_count" -ge 35 ]; then
-        load_tool_input_fields
-        _new_string="$_tool_new_string"
-        _old_string="$_tool_old_string"
+        _new_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // ""' 2>/dev/null)" || true
+        _old_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .old_string // ""' 2>/dev/null)" || true
         _new_ids=$(echo "$_new_string" | grep -c '^- id:' 2>/dev/null || echo 0)
         _old_ids=$(echo "$_old_string" | grep -c '^- id:' 2>/dev/null || echo 0)
         if [ "$_new_ids" -gt "$_old_ids" ]; then
@@ -625,8 +601,7 @@ fi
 
 # === Guard 11: observations必須リマインダー (review_log新エントリ追記時) ===
 if [[ "$file_path" == *'gunshi_review_log.yaml' ]]; then
-    load_tool_input_fields
-    _new_string="$_tool_new_string"
+    _new_string="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // ""' 2>/dev/null)" || true
     if echo "$_new_string" | grep -q '^\- cmd_id:' && echo "$_new_string" | grep -q 'review_type:' && ! echo "$_new_string" | grep -q 'observations:'; then
         echo "WARN(observations必須): review_logエントリにobservationsなし。最低1つの具体的事実を記載せよ(計測データが深さの唯一の証拠)。" >&2
     fi
@@ -638,8 +613,7 @@ if [[ "$file_path" == *'docs/research/gunshi_'* ]]; then
     if [[ "$_agent_id" == "gunshi" ]]; then
         echo "INFO: 設計書保存検出。数値は全て入力データからwc -l/head実測で再計算せよ。推定値は未実測と明記。" >&2
         # LG028: 計算量推定で内部ループ計上漏れ防止
-        load_tool_input_fields
-        _content="${_tool_new_string:-$_tool_content}"
+        _content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | .new_string // .content // ""' 2>/dev/null)" || true
         if printf '%s' "$_content" | grep -qiE '(秒|ms|WF|combo|ループ|loop|計算量|推定|パターン)'; then
             echo "INFO: 計算量記述検出。外側ループ×内側ループ×単位時間で推定せよ。外側のみの見積もりは過小評価になりやすい。" >&2
         fi
@@ -656,8 +630,7 @@ fi
 
 # === Guard 12b: cmd_save.sh check関数追加時のカタログ同期WARN (cmd_3616) ===
 if [[ "$file_path" == *'scripts/cmd_save.sh' ]]; then
-    load_tool_input_fields
-    _g12b_content="$_tool_combined_content"
+    _g12b_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | [(.new_string // empty), (.content // empty), ((.edits // [])[]?.new_string // empty)] | join("\n")' 2>/dev/null)" || true
     if printf '%s\n' "$_g12b_content" | grep -qE '^(check_[A-Za-z0-9_]+|q[0-9]+_[A-Za-z0-9_]+|[A-Za-z0-9_]*gate[A-Za-z0-9_]*)\(\)[[:space:]]*\{'; then
         _g12b_catalog="${G12B_CATALOG_OVERRIDE:-$SCRIPT_DIR/docs/research/cmd_save_gate_catalog.md}"
         _g12b_missing=""
@@ -680,8 +653,7 @@ unset _g12b_content _g12b_catalog _g12b_missing _g12b_fn
 
 # === Guard 17: config SSOTフィールド変更は許可スクリプト経由必須 (殿裁定2026-06-20) ===
 # 手動Edit禁止。SSOTごとに許可経路を定義し、変更・検証・伝播を一貫実行する。
-load_tool_input_fields
-_write_edit_content="$_tool_combined_content"
+_write_edit_content="$(printf '%s' "$payload" | jq -r '(.tool_input // .toolInput // {}) | [(.new_string // empty), (.content // empty), ((.edits // [])[]?.new_string // empty)] | join("\n")' 2>/dev/null)" || true
 _g17_content="$_write_edit_content"
 if [[ -n "$_g17_content" ]]; then
     _G17_FILES=(
