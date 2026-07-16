@@ -12,6 +12,7 @@ LOOP_LEDGER="${THROUGHPUT_SCAN_LOOP_LEDGER:-$ROOT/logs/loop_ledger.yaml}"
 FP_LEDGER="${THROUGHPUT_SCAN_FP_LEDGER:-$ROOT/logs/detector_fp_rate.yaml}"
 INSIGHTS_FILE="${THROUGHPUT_SCAN_INSIGHTS_FILE:-$ROOT/queue/insights.yaml}"
 INSIGHT_SCRIPT="${THROUGHPUT_SCAN_INSIGHT_SCRIPT:-$ROOT/scripts/insight_write.sh}"
+GATE_METRICS="${THROUGHPUT_SCAN_GATE_METRICS:-$ROOT/logs/gate_metrics.log}"
 DRY_RUN=0
 
 while [[ $# -gt 0 ]]; do
@@ -36,6 +37,10 @@ while [[ $# -gt 0 ]]; do
             INSIGHT_SCRIPT="${2:?--insight-script requires path}"
             shift 2
             ;;
+        --gate-metrics)
+            GATE_METRICS="${2:?--gate-metrics requires path}"
+            shift 2
+            ;;
         *)
             echo "Usage: bash scripts/throughput_scan.sh [--dry-run] [--loop-ledger path] [--fp-ledger path] [--insights path] [--insight-script path]" >&2
             exit 2
@@ -48,9 +53,10 @@ if [[ "$DRY_RUN" != "1" && ! -x "$INSIGHT_SCRIPT" ]]; then
     exit 0
 fi
 
-python3 - "$LOOP_LEDGER" "$FP_LEDGER" "$INSIGHTS_FILE" "$INSIGHT_SCRIPT" "$DRY_RUN" <<'PY'
+python3 - "$LOOP_LEDGER" "$FP_LEDGER" "$INSIGHTS_FILE" "$INSIGHT_SCRIPT" "$DRY_RUN" "$GATE_METRICS" <<'PY'
 import os
 import re
+import statistics
 import subprocess
 import sys
 from pathlib import Path
@@ -61,7 +67,7 @@ except Exception as exc:
     print(f"THROUGHPUT_SCAN_ERROR: PyYAML required: {exc}", file=sys.stderr)
     sys.exit(2)
 
-loop_path, fp_path, insights_path, insight_script, dry_run_raw = sys.argv[1:6]
+loop_path, fp_path, insights_path, insight_script, dry_run_raw, gate_metrics_path = sys.argv[1:7]
 dry_run = dry_run_raw == "1"
 
 FP_RATE_THRESHOLD = float(os.environ.get("THROUGHPUT_SCAN_FP_RATE_THRESHOLD", "50"))
@@ -74,6 +80,11 @@ STAGE_TARGETS = {
     "finalize": "scripts/cmd_complete_gate.sh",
 }
 MEASUREMENT_TARGET = "scripts/loop_ledger_update.sh"
+BASELINE_GENERATED_AT = "2026-07-16T14:32:11Z"
+BASELINE_E2E_SEC = 3213.5
+RATCHET_TARGET_SEC = BASELINE_E2E_SEC / 2.0
+RATCHET_MIN_SAMPLES = 5
+POST_TELEMETRY_START = "2026-07-17T01:46:58"
 
 
 def load_yaml(path):
@@ -252,6 +263,91 @@ def latest_snapshot(data):
     return data if isinstance(data, dict) else {}
 
 
+def metric_pairs(cols):
+    result = {}
+    for field in cols[8:]:
+        for token in field.split():
+            if "=" in token:
+                key, value = token.split("=", 1)
+                result[key] = value
+    return result
+
+
+def throughput_ratchet(loop_data):
+    snapshots = loop_data.get("snapshots") if isinstance(loop_data, dict) else []
+    baseline = next((s for s in snapshots or [] if isinstance(s, dict) and s.get("generated_at") == BASELINE_GENERATED_AT), None)
+    baseline_value = as_float((((baseline or {}).get("loops") or {}).get("throughput") or {}).get("e2e_median_sec"))
+    baseline_ok = baseline_value == BASELINE_E2E_SEC
+    excluded = {"na": 0, "negative": 0, "estimated_backfill": 0, "old_schema": 0, "duplicate_old_revision": 0}
+    rows = []
+    p = Path(gate_metrics_path)
+    if p.is_file():
+        for revision, raw in enumerate(p.read_text(encoding="utf-8", errors="replace").splitlines()):
+            cols = raw.split("\t")
+            if len(cols) < 3 or cols[2].strip().upper() != "CLEAR" or not cols[1].strip():
+                continue
+            rows.append((cols[1].strip(), cols[0].strip(), revision, metric_pairs(cols)))
+
+    latest = {}
+    for row in rows:
+        cmd_id, ts, revision, _ = row
+        previous = latest.get(cmd_id)
+        if previous is not None:
+            excluded["duplicate_old_revision"] += 1
+        if previous is None or (ts, revision) > (previous[1], previous[2]):
+            latest[cmd_id] = row
+
+    valid = []
+    stages = {"deploy": [], "work": [], "finalize": []}
+    for _, ts, _, metrics in latest.values():
+        # The timestamp-SSOT producer became canonical at this boundary. Older
+        # CLEAR rows can contain numerics derived from the legacy schema.
+        if ts < POST_TELEMETRY_START or "missing" not in metrics:
+            excluded["old_schema"] += 1
+            continue
+        if metrics.get("estimated_backfill", "false").lower() in {"1", "true", "yes"}:
+            excluded["estimated_backfill"] += 1
+            continue
+        values = {key: as_float(metrics.get(f"{key}_sec")) for key in ("deploy", "work", "finalize", "e2e")}
+        if metrics.get("missing") != "none" or any(value is None for value in values.values()):
+            excluded["na"] += 1
+            continue
+        if any(value < 0 for value in values.values()):
+            excluded["negative"] += 1
+            continue
+        if values["e2e"] < max(values["deploy"], values["work"], values["finalize"]):
+            excluded["negative"] += 1
+            continue
+        # build_clear_throughput_metric emits deploy=0 only when its resolved
+        # issued_at and deployed_at events are identical; missing=none proves
+        # both source events existed rather than being imputed.
+        valid.append(values["e2e"])
+        for key in stages:
+            stages[key].append(values[key])
+
+    median_e2e = statistics.median(valid) if valid else None
+    ratio = BASELINE_E2E_SEC / median_e2e if median_e2e and median_e2e > 0 else None
+    if not baseline_ok or len(valid) < RATCHET_MIN_SAMPLES:
+        status = "WARMUP"
+    elif median_e2e <= RATCHET_TARGET_SEC and ratio >= 2.0:
+        status = "PASS"
+    else:
+        status = "FAIL"
+    largest_stage = "na"
+    if status == "FAIL":
+        stage_medians = {key: statistics.median(values) for key, values in stages.items()}
+        largest_stage = max(stage_medians, key=stage_medians.get)
+    excluded_text = ",".join(f"{key}:{value}" for key, value in excluded.items())
+    return (
+        "THROUGHPUT_2X_RATCHET: "
+        f"status={status} baseline_source=loop_ledger:{BASELINE_GENERATED_AT} "
+        f"baseline_e2e_sec={BASELINE_E2E_SEC} target_e2e_sec={RATCHET_TARGET_SEC} "
+        f"valid_samples={len(valid)} median_e2e_sec={median_e2e if median_e2e is not None else 'na'} "
+        f"improvement_ratio={ratio if ratio is not None else 'na'} largest_stage={largest_stage} "
+        f"excluded={excluded_text}"
+    )
+
+
 def build_candidates():
     candidates = []
     loop_data = load_yaml(loop_path)
@@ -332,6 +428,8 @@ def build_candidates():
     return candidates
 
 
+loop_data_for_ratchet = load_yaml(loop_path)
+print(throughput_ratchet(loop_data_for_ratchet))
 pending_texts = pending_insight_texts(insights_path)
 queued = 0
 duplicates = 0

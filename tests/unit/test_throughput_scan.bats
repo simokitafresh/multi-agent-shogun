@@ -20,6 +20,23 @@ setup() {
     export THROUGHPUT_SCAN_ROOT="$TEST_TMPDIR"
 }
 
+write_ratchet_baseline() {
+    cat > "$TEST_TMPDIR/logs/loop_ledger.yaml" <<'EOF'
+snapshots:
+- generated_at: "2026-07-16T14:32:11Z"
+  loops:
+    throughput:
+      e2e_median_sec: "3213.5"
+EOF
+    echo 'detectors: []' > "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+}
+
+append_ratchet_row() {
+    local ts="$1" cmd="$2" deploy="$3" work="$4" finalize="$5" e2e="$6" missing="${7:-none}" extra="${8:-}"
+    printf '%s\t%s\tCLEAR\tall_gates_passed\tx\tx\tx\tx\tduration_sec=1\tdeploy_sec=%s work_sec=%s finalize_sec=%s e2e_sec=%s missing=%s %s\n' \
+        "$ts" "$cmd" "$deploy" "$work" "$finalize" "$e2e" "$missing" "$extra" >> "$TEST_TMPDIR/logs/gate_metrics.log"
+}
+
 teardown() {
     unset THROUGHPUT_SCAN_ROOT
     [ -n "${TEST_TMPDIR:-}" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
@@ -259,4 +276,43 @@ EOF
     run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"largest_stage=ambiguous target=scripts/loop_ledger_update.sh measurement_target=tie:deploy,finalize"* ]]
+}
+
+@test "2x ratchet stays WARMUP with four valid post-telemetry commands" {
+    write_ratchet_baseline
+    for n in 1 2 3 4; do append_ratchet_row "2026-07-17T02:0${n}:00" "cmd_$n" 100 500 100 1600; done
+    run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"status=WARMUP"*"target_e2e_sec=1606.75"*"valid_samples=4"* ]]
+}
+
+@test "2x ratchet accepts five samples at the exact 2.0 boundary including an outlier" {
+    write_ratchet_baseline
+    for spec in '1 1500' '2 1606.75' '3 1606.75' '4 1606.75' '5 9999'; do set -- $spec; append_ratchet_row "2026-07-17T02:0$1:00" "cmd_$1" 100 500 100 "$2"; done
+    run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"status=PASS"*"median_e2e_sec=1606.75"*"improvement_ratio=2.0"* ]]
+}
+
+@test "2x ratchet fails five samples above boundary and attributes numeric largest stage" {
+    write_ratchet_baseline
+    for n in 1 2 3 4 5; do append_ratchet_row "2026-07-17T02:0${n}:00" "cmd_$n" 100 1200 300 1607; done
+    run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"status=FAIL"*"median_e2e_sec=1607.0"*"largest_stage=work"* ]]
+}
+
+@test "2x ratchet excludes invalid duplicate legacy and backfill rows with reason counts" {
+    write_ratchet_baseline
+    append_ratchet_row "2026-07-17T02:01:00" cmd_zero 0 500 100 700
+    append_ratchet_row "2026-07-17T02:01:30" cmd_zero_unproved 0 500 100 na missing_issue_ts
+    append_ratchet_row "2026-07-17T02:02:00" cmd_na na 5 5 na missing_issue_ts
+    append_ratchet_row "2026-07-17T02:03:00" cmd_neg -1 5 5 9
+    append_ratchet_row "2026-07-17T02:04:00" cmd_backfill 1 5 5 9 none estimated_backfill=true
+    append_ratchet_row "2026-07-17T01:40:00" cmd_old 1 5 5 9
+    append_ratchet_row "2026-07-17T02:05:00" cmd_dup 1 5 5 9
+    append_ratchet_row "2026-07-17T02:06:00" cmd_dup 1 5 5 10
+    run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"valid_samples=2"*"excluded=na:2,negative:1,estimated_backfill:1,old_schema:1,duplicate_old_revision:1"* ]]
 }
