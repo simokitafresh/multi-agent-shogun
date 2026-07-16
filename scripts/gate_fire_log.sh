@@ -38,7 +38,7 @@ fi
 
 # --- awk 1パス: fail_total + healed + /mnt/c FAILパスを同時計算 ---
 # 出力形式: 1行目="<fail_total> <healed>", 残行=FAILファイルパス
-mapfile -t awk_lines < <(awk -v repo_root="$REPO_ROOT" -v live_report_dir="$LIVE_REPORT_DIR" '
+mapfile -t awk_lines < <(LC_ALL=C awk -v repo_root="$REPO_ROOT" -v live_report_dir="$LIVE_REPORT_DIR" '
 function normalize_path(path) {
     if (path ~ /^\//) return path
     return repo_root "/" path
