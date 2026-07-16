@@ -637,20 +637,13 @@ def main() -> int:
         hints.append("verdictはPASS/FAIL/PASS_NO_IMPROVEMENTの三値のみ。binary_checks全yes→PASS、1つでもno→FAIL、revert多数→PASS_NO_IMPROVEMENT")
         hints.append("FIX COMMAND (verdict): " + _rfs_cmd(report_path, "verdict", "PASS"))
 
-    # ── LG055: integration cmd requires operational_simulation ──
-    # files_modified に scripts/ や .githooks/ を含む場合、operational_simulation
-    # が報告に存在しなければ WARN を出す。根因: gunshi precheck のみが検出し
-    # gate_report_format は素通りしていた（本日5件再発）。
+    # ── LG055: executable reports require operational_simulation ──
+    # 全report templateへLevel5注入し、docs/data-onlyだけを免除する。
     _fm = data.get("files_modified") or []
-    _has_integration_path = any(
-        isinstance(f, dict)
-        and any(
-            p in (f.get("path") or "")
-            for p in ("scripts/", ".githooks/", "scripts/gates/", "scripts/hooks/")
-        )
-        for f in (_fm if isinstance(_fm, list) else [])
-    )
-    if _has_integration_path:
+    _paths = [str(f.get("path") or "") for f in _fm if isinstance(f, dict)] if isinstance(_fm, list) else []
+    _docs_data_prefixes = ("docs/", "context/", "logs/", "queue/", "projects/")
+    _docs_data_only = bool(_paths) and all(path.startswith(_docs_data_prefixes) for path in _paths)
+    if not _docs_data_only:
         _opsim = data.get("operational_simulation")
         _opsim_required = ("command", "expected", "actual", "result")
         _opsim_missing = (
@@ -664,6 +657,9 @@ def main() -> int:
                 f"({','.join(_opsim_missing)}; integration cmd requires "
                 "command/expected/actual/result — LG055)"
             )
+        elif str(_opsim.get("result") or "").strip() not in ("PASS", "FAIL"):
+            errors.append("operational_simulation.result: must be PASS or FAIL")
+            hints.append("FIX (operational_simulation.result): " + _rfs_cmd(report_path, "operational_simulation.result", "PASS"))
             hints.append(
                 "FIX (operational_simulation): "
                 + _rfs_cmd(

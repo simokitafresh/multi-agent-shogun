@@ -121,7 +121,7 @@ operational_simulation:
   command: "bash scripts/gates/gate_report_format.sh queue/reports/test_ninja_report_cmd_test.yaml"
   expected: "filled report satisfies the integration report contract"
   actual: "report structure validation completed"
-  result: "yes"
+  result: "PASS"
 EOF
 }
 
@@ -863,4 +863,34 @@ BROKEN
     _replace_section "$TEST_TMPDIR/report.yaml" "files_modified" $'files_modified:\n  - path: outputs/analysis/cmd_1948_l3_1body_1x1.csv\n    change: modified\n  - path: scripts/oneshot/cmd_1948_nbody_1x1.py\n    change: modified'
     _run_gate "$TEST_TMPDIR/report.yaml"
     [[ "$output" != *"GP-202 WARN"* ]]
+}
+
+@test "LG055: operational_simulation四要素の各欠落を提出前BLOCK" {
+    local key
+    for key in command expected actual result; do
+        _prepare_report "$TEST_TMPDIR/report_${key}.yaml" "filled"
+        sed -i "s/^  ${key}: .*/  ${key}: \"\"/" "$TEST_TMPDIR/report_${key}.yaml"
+        _run_gate "$TEST_TMPDIR/report_${key}.yaml"
+        [ "$status" -eq 1 ]
+        [[ "$output" == *"operational_simulation: MISSING"* ]]
+    done
+}
+
+@test "LG055: operational_simulation result非二値を提出前BLOCK" {
+    _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
+    sed -i 's/^  result: "PASS"$/  result: "yes"/' "$TEST_TMPDIR/report.yaml"
+    _run_gate "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"operational_simulation.result: must be PASS or FAIL"* ]]
+}
+
+@test "LG055: 正常四要素はPASSしdocs data-onlyは空欄でも免除" {
+    _run_gate "$BASE_FILLED_REPORT"
+    [ "$status" -eq 0 ]
+
+    _prepare_report "$TEST_TMPDIR/docs.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/docs.yaml" "files_modified" $'files_modified:\n  - path: docs/research/result.md\n    change: documented'
+    _replace_section "$TEST_TMPDIR/docs.yaml" "operational_simulation" $'operational_simulation:\n  command: ""\n  expected: ""\n  actual: ""\n  result: ""'
+    _run_gate "$TEST_TMPDIR/docs.yaml"
+    [ "$status" -eq 0 ]
 }

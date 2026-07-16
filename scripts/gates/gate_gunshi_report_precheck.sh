@@ -1117,7 +1117,29 @@ if [ "$_pre34_has_integration" = true ]; then
         GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG055:integration_opsim_missing"
     fi
 else
-    echo "  PASS: integrationキーワードなし(対象外)"
+    # report gateと同じ境界: docs/data-only以外は4項目+result二値を必須化。
+    _pre34_contract=$(python3 - "$REPORT_PATH" 2>/dev/null <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+fm = data.get('files_modified') or []
+paths = [str(x.get('path') or '') for x in fm if isinstance(x, dict)] if isinstance(fm, list) else []
+prefixes = ('docs/', 'context/', 'logs/', 'queue/', 'projects/')
+exempt = bool(paths) and all(p.startswith(prefixes) for p in paths)
+ops = data.get('operational_simulation')
+valid = isinstance(ops, dict) and all(str(ops.get(k) or '').strip() for k in ('command','expected','actual','result')) and str(ops.get('result')).strip() in ('PASS','FAIL')
+print(('exempt' if exempt else 'required') + ' ' + ('valid' if valid else 'invalid'))
+PY
+    ) || _pre34_contract="required invalid"
+    if [ "$_pre34_contract" = "exempt invalid" ] || [ "$_pre34_contract" = "exempt valid" ]; then
+        echo "  PASS: docs/data-only operational_simulation免除"
+    elif [ "$_pre34_contract" = "required valid" ]; then
+        echo "  PASS: operational_simulation四要素+result二値"
+    else
+        echo "  ★★★ ERROR(LG055): operational_simulation四要素欠落またはresult不正"
+        ERRORS=$((ERRORS + 1))
+        GATE_PREDICTION="BLOCK"
+        GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG055:opsim_contract_invalid"
+    fi
 fi
 
 echo ""

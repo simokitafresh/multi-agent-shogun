@@ -344,6 +344,18 @@ _setup_git_project() {
     [[ "$output" == *'result: ""  # PASS or FAIL'* ]]
 }
 
+@test "LG055 non-integration taskも同じoperational_simulation構造を事前注入する" {
+    local report_path
+    report_path="$(fixture_report_path non_gitignore)"
+
+    run grep -A4 '^operational_simulation:' "$report_path"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'command: ""'* ]]
+    [[ "$output" == *'expected: ""'* ]]
+    [[ "$output" == *'actual: ""'* ]]
+    [[ "$output" == *'result: ""  # PASS or FAIL'* ]]
+}
+
 @test "研究cmdではcommit checkにwaive_reason付きresult:noを自動注入する" {
     local report_path
     report_path="$(fixture_report_path research)"
