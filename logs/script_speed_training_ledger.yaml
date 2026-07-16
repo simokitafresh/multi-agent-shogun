@@ -940,19 +940,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_codex_safe_write.sh
-  status: pending
+  status: saturated
   before_ms: 17
   after_ms: ''
-  before_real_ms: 1180
-  after_real_ms: ""
-  real_measurement_command: for i in 1 2 3 4 5; do /usr/bin/time -f '%e' bash scripts/gates/gate_codex_safe_write.sh
-    queue/reports/saizo_report_cmd_training_speed_gates_gate_codex_safe_write_20260607002428.yaml
-    >/tmp/gate_codex_safe_write_after2_${i}.out; done (median ms)
-  test_result: bash -n PASS; gate_codex_safe_write PASS; SKIP=0
-  commit: 7707f044ffa9ffb1c3c29cd794b7f3c0edda9c0e
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 571
+  after_real_ms: 1294
+  real_measurement_command: "bash scripts/gates/gate_codex_safe_write.sh"
+  test_result: "PASS"
+  commit: "03d2f0bfd0d504a5234c320b5c8287e44e6008a6"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T02:29:10"
   iteration: 1
+  last_good_commit: "03d2f0bfd0d504a5234c320b5c8287e44e6008a6"
+  candidate_commit: "f68034279032677222851729f09207d8ac859a0e"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 571
+  last_good_p95_ms: 690
+  candidate_p50_ms: 1294
+  candidate_p95_ms: 2836
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux_6.6.87.1-microsoft-standard-WSL2_x86_64_cwd=/mnt/c/tools/multi-agent-shogun_date=20260717"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_context_freshness.sh
   status: pending
   before_ms: 9
@@ -1432,27 +1444,27 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/gates/gate_yaml_status.sh
-  status: completed
+  status: saturated
   before_ms: 17
   after_ms: ''
-  before_real_ms: 16.5
-  after_real_ms: 16
-  real_measurement_command: "bash scripts/gates/gate_yaml_status.sh cmd_3909 --dry-run"
+  before_real_ms: 13
+  after_real_ms: 14
+  real_measurement_command: "bash scripts/gates/gate_yaml_status.sh cmd_fixture"
   test_result: "bats_17_PASS_FAIL0_SKIP0"
   commit: "22a7e0b034fe763c72ea5b83c60dc82b4b069ece"
   assigned_to: "saizo"
-  updated_at: "2026-07-17T02:16:23"
+  updated_at: "2026-07-17T02:21:44"
   iteration: 1
-  last_good_commit: "3c1ba3840911c403531cb00e6b0cca1f910cc474"
-  candidate_commit: "22a7e0b034fe763c72ea5b83c60dc82b4b069ece"
+  last_good_commit: "22a7e0b034fe763c72ea5b83c60dc82b4b069ece"
+  candidate_commit: "80491f2be5fbf2e79cde6f04a930c2cc8b7db30c"
   ab_samples_per_arm: "10"
-  last_good_p50_ms: 16.5
-  last_good_p95_ms: 24
-  candidate_p50_ms: 16
-  candidate_p95_ms: 23
+  last_good_p50_ms: 13
+  last_good_p95_ms: 17
+  candidate_p50_ms: 14
+  candidate_p95_ms: 16
   ab_order: "alternating"
   warmup_each: "1"
-  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux;bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu);fixture_sha=91aeb6438c2438f7363ae46b52e16a181d86d3a9483f85bba04b81627d2d1ab1;repo=/tmp/ext4-worktrees"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux;bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu);fixture=minimal_completed_map;repo=/tmp/ext4-worktrees"
   fail_count: "0"
   skip_count: "0"
   hook_gate_result: "CLEAR"
