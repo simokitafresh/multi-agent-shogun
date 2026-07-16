@@ -32,6 +32,10 @@ source "${_ND_ROOT}/scripts/lib/repo_root.sh"
 source "${_ND_ROOT}/scripts/lib/project_path.sh"
 AUTO_OPS_DIR="$(get_project_path 'auto-ops')"
 readonly AUTO_OPS_DIR
+
+# WSL2でWindows実行ファイル(powershell.exe等)がPATHにない場合の補完。
+# auto-ops cdp_helper.pyがpowershell.exe依存のため必須(殿裁定2026-07-16)。
+export PATH="${PATH}:/mnt/c/Windows/System32/WindowsPowerShell/v1.0:/mnt/c/Windows/System32"
 _REPO_ROOT="$(get_repo_root)"
 
 MD_FILE="$(realpath "$1")"
@@ -39,11 +43,28 @@ MD_FILE="$(realpath "$1")"
 echo "[note_draft] Markdown: ${MD_FILE}"
 echo "[note_draft] CDP port: ${CDP_PORT}"
 
-# ── Step 0: Chrome CDP pre-check (bash layer) ──
-# Chrome未起動時もPython層のChrome自動起動(Step 1)に委ねる。
+# ── Step 0: Chrome CDP pre-check + auto-launch (bash layer) ──
+# Chrome未起動時はbash層で直接起動する(PowerShell不要)。
 # SKIPはバグ(殿裁定2026-07-16): スキルは成果を届けるべきで、前提条件不足時は自分で満たせ。
+# auto-opsのlaunch_browserはPowerShell依存のため、WSL2 PATH問題で失敗する場合がある。
+# bash層でcmd.exeフルパス起動することで環境に依存しない確実な起動を実現。
 if ! curl -s --max-time 3 "http://localhost:${CDP_PORT}/json/version" >/dev/null 2>&1; then
-  echo "[note_draft] Chrome not running on port ${CDP_PORT}. Python layer will auto-launch."
+  echo "[note_draft] Chrome not running on port ${CDP_PORT}. Launching via cmd.exe..."
+  /mnt/c/Windows/System32/cmd.exe /c start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" \
+    "--remote-debugging-port=${CDP_PORT}" "--remote-allow-origins=*" \
+    "--user-data-dir=C:\tmp\cdp-chrome-${CDP_PORT}" "--no-first-run" "--no-default-browser-check" \
+    "about:blank" >/dev/null 2>&1 &
+  for _i in $(seq 10); do
+    sleep 1
+    if curl -s --max-time 2 "http://localhost:${CDP_PORT}/json/version" >/dev/null 2>&1; then
+      echo "[note_draft] Chrome launched successfully on port ${CDP_PORT}."
+      break
+    fi
+  done
+  if ! curl -s --max-time 2 "http://localhost:${CDP_PORT}/json/version" >/dev/null 2>&1; then
+    echo "[note_draft] FAIL: Chrome launch failed on port ${CDP_PORT}."
+    exit 1
+  fi
 fi
 
 # ── Step 1-6: All in one Python script ──
@@ -219,10 +240,12 @@ def fallback_chrome_launch(port):
     print("[note_draft] WARN: launch_browser failed. Trying cmd.exe fallback...")
     try:
         subprocess.Popen(
-            ["cmd.exe", "/c", "start", "", "chrome.exe",
+            ["/mnt/c/Windows/System32/cmd.exe", "/c", "start", "",
+             r"C:\Program Files\Google\Chrome\Application\chrome.exe",
              f"--remote-debugging-port={port}",
              "--no-first-run", "--no-default-browser-check",
-             f"--user-data-dir=C:\\tmp\\note-cdp-profile-{port}"],
+             "--remote-allow-origins=*",
+             f"--user-data-dir=C:\\tmp\\cdp-chrome-{port}"],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
     except Exception as e:
