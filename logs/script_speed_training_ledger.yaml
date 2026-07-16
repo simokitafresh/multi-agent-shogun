@@ -1554,7 +1554,7 @@ entries:
   updated_at: "2026-07-16T19:54:52"
   iteration: 1
 - script_path: scripts/hooks/pre-bash-test-fullrun-guard.sh
-  status: pending
+  status: assigned
   before_ms: 19
   after_ms: ''
   before_real_ms: 28
@@ -1563,8 +1563,8 @@ entries:
     | bash scripts/hooks/pre-bash-test-fullrun-guard.sh >/dev/null 2>&1
   test_result: bash_n_pass;test_hooks_pass;allow_output_diff_empty;block_output_diff_empty;before_34_after_28;SKIP=0
   commit: c64af705d
-  assigned_to: ""
-  updated_at: "2026-07-16T19:54:39"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-16T20:35:45"
   iteration: 1
 - script_path: scripts/hooks/pre-karo-edit-guard.sh
   status: pending
