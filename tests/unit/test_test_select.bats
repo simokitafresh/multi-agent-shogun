@@ -35,6 +35,16 @@ setup_file() {
     [[ "$output" == *"WARN: all changed files have no test mapping"* ]]
 }
 
+@test "test_select shares report contract mappings with affected_tests" {
+    local changed left right
+    for changed in scripts/gates/gate_report_format_main.py scripts/gates/gate_report_format_combined.py scripts/deploy_task.sh; do
+        left="$(bash "$PROJECT_ROOT/scripts/affected_tests.sh" "$changed" 2>/dev/null | sort)"
+        right="$(bash "$TEST_SELECT" "$changed" 2>/dev/null | sort)"
+        [ -n "$left" ]
+        [ "$left" = "$right" ]
+    done
+}
+
 @test "test_select explicitly skips skill markdown files without warnings" {
     run bash "$TEST_SELECT" skills/dream/SKILL.md
     [ "$status" -eq 0 ]

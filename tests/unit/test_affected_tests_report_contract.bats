@@ -22,6 +22,10 @@ assert_all_report_contract_fixtures_selected() {
     assert_all_report_contract_fixtures_selected scripts/gates/gate_report_format_main.py
 }
 
+@test "gate_report_format_combined contract change selects every report-gate fixture" {
+    assert_all_report_contract_fixtures_selected scripts/gates/gate_report_format_combined.py
+}
+
 @test "report template producer change selects every report-gate fixture" {
     assert_all_report_contract_fixtures_selected scripts/deploy_task.sh
 }

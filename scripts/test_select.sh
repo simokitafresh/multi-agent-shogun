@@ -101,6 +101,13 @@ for changed in "${CHANGED_FILES[@]}"; do
     # perf: pre-compute basename once (replaces $(basename "$changed") subshell per key in inner loop)
     ch_base="${changed##*/}"
 
+    while IFS= read -r tf; do
+        if [ -f "$tf" ]; then
+            AFFECTED_TESTS["$tf"]=1
+            matched=1
+        fi
+    done < <(REPO_ROOT="$REPO_ROOT" TEST_DIR="$TEST_DIR" bash "$REPO_ROOT/scripts/lib/report_contract_test_selector.sh" "$changed")
+
     # 変更ファイル自体がテストなら直接追加
     if [[ "$changed" == tests/unit/test_*.bats ]]; then
         full_path="$REPO_ROOT/$changed"

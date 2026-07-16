@@ -113,12 +113,9 @@ for changed in "${CHANGED_FILES[@]}"; do
 
     # Report契約のproducer/validator変更は、ファイル名がgate_report_formatでない
     # 互換fixtureも含め、実際に契約を参照する全テストを選出する。
-    if [[ "$changed" == "scripts/gates/gate_report_format_main.py" ]] ||
-       [[ "$changed" == "scripts/deploy_task.sh" ]]; then
-        while IFS= read -r tf; do
-            [ -f "$tf" ] && AFFECTED_TESTS["$tf"]=1
-        done < <(grep -rl 'gate_report_format' "$TEST_DIR"/test_*.bats 2>/dev/null)
-    fi
+    while IFS= read -r tf; do
+        [ -f "$tf" ] && AFFECTED_TESTS["$tf"]=1
+    done < <(REPO_ROOT="$REPO_ROOT" TEST_DIR="$TEST_DIR" bash "$REPO_ROOT/scripts/lib/report_contract_test_selector.sh" "$changed")
 
     # deploy_task.sh変更→全deploy_taskテスト
     if [[ "$changed" == *deploy_task* ]]; then
