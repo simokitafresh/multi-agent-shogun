@@ -1,7 +1,7 @@
 # 台帳駆動 Campaign Lane 汎用スキル化 — As-Is / To-Be / 5W1H
 
 更新日: 2026-07-16  
-状態: 汎用controller実装済み / 応用候補catalog登録済み / 各候補adapterは未接続  
+状態: 汎用controller実装済み / 応用候補catalog 12件登録済み / script-speed・pytest-speed実経路ready
 参照元: [台帳駆動・自走攻略レーン設計パターン v2.2](https://gist.github.com/simokitafresh/f777582a41c66e95a53d1cc993bc5a1c)
 
 ## §0 結論
@@ -173,7 +173,7 @@ validator: `python3 scripts/validate_campaign_lane_catalog.py`
 11. 三層記憶候補backlog
 12. 報告gate失敗率
 
-`ready=2`は script-speed と pytest-speed のwriter→台帳→adapter貫通を実測した値である。残る候補も、対象固有adapterと通常業務からの自動writerが揃うまでreadyへ上げない。
+`ready=2`は script-speed と pytest-speed のwriter→台帳→adapter→task生成までを実経路で計測した値である。script-speedはさらにidle配備→改善→record→次標的の再配備まで貫通した。残る候補も、対象固有adapterと通常業務からの自動writerが揃うまでreadyへ上げない。
 
 ## §9 テスト証跡
 
@@ -182,6 +182,10 @@ validator: `python3 scripts/validate_campaign_lane_catalog.py`
 | campaign-lane skill validation | 1/1 PASS | frontmatter・構成 |
 | generic controller | 15/15 PASS | priority逆転、累積budget、stale、duplicate、同target R1-R3、並行record、品質FAIL、SEALED |
 | 既存test-speed callback | 22/22 PASS | R2計測4.285/5.196→best 4.285、順序逆転、valid 0件BLOCK、previous best保持 |
+| script-speed adapter | 20/20 PASS | 台帳264件、偽予約32→0、全writer parse+atomic公開、idle guard、deploy失敗rollback、5分task契約、実配備target/owner一致 |
+| script-speed 実campaign | 120/120 PASS | `prompt_state_inject.sh` 125.700→87.433ms（30.5%改善）、record完了後に次標的を自動配備 |
+| pytest-speed writer | 7/7 PASS | 通常pytestからTSV台帳へflock+atomic追記、malformed台帳fail-closed、SKIP/FAIL記録 |
+| pytest-speed adapter | 12/12 PASS | 実`next` 60秒timeout→0.23〜0.85秒、候補11件、generation予約、並行deploy成功1/重複0、失敗rollback |
 | 応用候補catalog | 12/12 fields PASS | lane_id重複0、ready=2 / partial=9 / blocked=1 |
 
 確認コマンド:
@@ -190,6 +194,8 @@ validator: `python3 scripts/validate_campaign_lane_catalog.py`
 python3 /home/simokitafresh/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/campaign-lane
 bats tests/unit/test_campaign_lane.bats
 bats tests/unit/test_test_speed_task_generator.bats
+bats tests/unit/test_bash_speed_training.bats
+bats tests/unit/test_pytest_speed_task_generator.bats
 python3 scripts/validate_campaign_lane_catalog.py
 ```
 
@@ -213,7 +219,7 @@ last observation: 5.196（観測履歴として別保存）
 
 1. §8の残候補ごとのadapterを作り、`ready=2`を実測で引き上げる。
 2. 専用計測runを増やさず、通常業務経路へ自動writerを接続する。
-3. 最初のready候補で、生成→idle配備→改善→record→次round→飽和までを実機貫通させる。
+3. script-speedで貫通済みの生成→idle配備→改善→record→次標的を、pytest-speedでも実機貫通させる。
 4. adapterの選定精度とfalse-positive率を計測し、100% FPなら較正または退役する。
 5. 完了処理・計測経路・選定器のうち最弱リンクを毎cycleで更新する。
 
@@ -226,6 +232,12 @@ last observation: 5.196（観測履歴として別保存）
 - `scripts/validate_campaign_lane_catalog.py`
 - `scripts/test_speed_task_generator.sh`
 - `tests/unit/test_test_speed_task_generator.bats`
+- `tools/bash_speed_training.sh`
+- `tests/unit/test_bash_speed_training.bats`
+- `scripts/pytest_speed_task_generator.sh`
+- `tests/unit/test_pytest_speed_task_generator.bats`
+- `/mnt/c/Python_app/DM-signal/backend/tests/pytest_duration_ledger_plugin.py`
+- `/mnt/c/Python_app/DM-signal/backend/tests/test_pytest_duration_ledger_plugin.py`
 - `docs/research/ledger-driven-campaign-lane-pattern_20260714.md`
 
 ## 因果リンク
