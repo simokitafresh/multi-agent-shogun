@@ -40,14 +40,13 @@ run_embedded_test() {
     [ "$nested_status" -eq 0 ]
 }
 
-@test "restart_watchers kills old watchers and verifies exact normal count" {
+@test "restart_watchers rolls watchers individually and verifies exact normal count" {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     run bash -c '
 set -euo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
-grep -q "stop_existing_watchers" "$PROJECT_ROOT/scripts/restart_watchers.sh"
-grep -q "pkill -TERM -f \"\\[i\\]nbox_watcher\\\\.sh\"" "$PROJECT_ROOT/scripts/restart_watchers.sh"
-grep -q "pkill -KILL -f \"\\[i\\]nbox_watcher\\\\.sh\"" "$PROJECT_ROOT/scripts/restart_watchers.sh"
+grep -q "stop_agent_watcher" "$PROJECT_ROOT/scripts/restart_watchers.sh"
+! grep -q 'pkill .*inbox_watcher' "$PROJECT_ROOT/scripts/restart_watchers.sh"
 grep -q "verify_watcher_count \"\$EXPECTED_WATCHER_COUNT\"" "$PROJECT_ROOT/scripts/restart_watchers.sh"
 grep -q "EXPECTED_WATCHER_COUNT=\"\${EXPECTED_WATCHER_COUNT:-9}\"" "$PROJECT_ROOT/scripts/restart_watchers.sh"
 '

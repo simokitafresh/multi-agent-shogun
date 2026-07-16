@@ -93,44 +93,36 @@ watcher_process_count() {
     fi
 }
 
-stop_existing_watchers() {
-    local remaining
+watcher_pid_for_agent() {
+    local agent="$1"
+    watcher_processes | awk -v agent="$agent" '$0 ~ ("inbox_watcher\\.sh " agent " ") { print $1 }'
+}
 
-    pkill -TERM -f "[i]nbox_watcher\.sh" 2>/dev/null || true
-    pkill -TERM -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
-    pkill -TERM -f "[t]imeout .*inotifywait.*queue/inbox" 2>/dev/null || true
-    fuser -k /tmp/inbox_watcher_singleton_*.lock >/dev/null 2>&1 || true
-
-    # Adaptive poll (max 1s) instead of fixed sleep 1
-    local _sw_i=0
-    remaining="$(watcher_process_count)"
-    while [ "$remaining" -gt 0 ] && [ "$_sw_i" -lt 10 ]; do
+wait_for_agent_state() {
+    local agent="$1" wanted="$2" i=0 pid
+    while [ "$i" -lt 20 ]; do
+        pid="$(watcher_pid_for_agent "$agent" | head -1)"
+        if { [ "$wanted" = absent ] && [ -z "$pid" ]; } ||
+           { [ "$wanted" = present ] && [ -n "$pid" ]; }; then
+            return 0
+        fi
         sleep 0.1
-        ((_sw_i++)) || true
-        remaining="$(watcher_process_count)"
+        ((i++)) || true
     done
-    echo "  SIGTERM後残存: $remaining"
+    return 1
+}
 
-    if [ "$remaining" -gt 0 ]; then
-        echo "  残存あり。SIGKILL送信..."
-        pkill -KILL -f "[i]nbox_watcher\.sh" 2>/dev/null || true
-        pkill -KILL -f "[i]notifywait.*queue/inbox" 2>/dev/null || true
-        pkill -KILL -f "[t]imeout .*inotifywait.*queue/inbox" 2>/dev/null || true
-        fuser -k /tmp/inbox_watcher_singleton_*.lock >/dev/null 2>&1 || true
-        # Adaptive poll (max 1s) for SIGKILL
-        _sw_i=0
-        remaining="$(watcher_process_count)"
-        while [ "$remaining" -gt 0 ] && [ "$_sw_i" -lt 10 ]; do
-            sleep 0.1
-            ((_sw_i++)) || true
-            remaining="$(watcher_process_count)"
-        done
-        echo "  SIGKILL後残存: $remaining"
-    fi
-
-    if [ "$remaining" -ne 0 ]; then
-        echo "ERROR: 旧inbox_watcherが停止しきれていません (remaining=$remaining)"
-        return 1
+stop_agent_watcher() {
+    local agent="$1" pid
+    pid="$(watcher_pid_for_agent "$agent" | head -1)"
+    [ -z "$pid" ] && return 0
+    kill -TERM "$pid" 2>/dev/null || true
+    if ! wait_for_agent_state "$agent" absent; then
+        kill -KILL "$pid" 2>/dev/null || true
+        wait_for_agent_state "$agent" absent || {
+            echo "ERROR: ${agent} watcherが停止しきれていません (pid=${pid})" >&2
+            return 1
+        }
     fi
 }
 
@@ -155,29 +147,12 @@ verify_watcher_count() {
     echo "  OK: inbox_watcher ${actual}/${expected}"
 }
 
-# 1. 既存プロセスを停止
-echo "[1/3] 既存プロセスを停止..."
-stop_existing_watchers
-
-# 2. PANE_BASEを取得
-# pane_base: pane_lookup()が内部で解決するため直接参照は不要
-
-# 3. 全watcherを再起動
-echo "[2/3] 新プロセスを起動..."
+# agent単位rolling handoff。旧watcherを全停止する配達空白を作らない。
+echo "[1/3] agent単位rolling handoff..."
 
 # PID追跡（個別watcher起動検証用）
 declare -a LAUNCHED_AGENTS=()
 declare -a LAUNCHED_PIDS=()
-
-# 将軍
-_cli=$(tmux show-options -p -t "shogun:main" -v @agent_cli 2>/dev/null || echo "claude")
-unset ASW_DISABLE_ESCALATION
-nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" shogun "shogun:main" "$_cli" \
-    &>> "$SCRIPT_DIR/logs/inbox_watcher_shogun.log" 200>&- &
-disown
-echo "  shogun → shogun:main ($!)"
-LAUNCHED_AGENTS+=("shogun")
-LAUNCHED_PIDS+=("$!")
 
 # 全エージェント（settings.yaml + @agent_idから動的取得 — cmd_1136）
 # shellcheck source=/dev/null
@@ -185,10 +160,16 @@ source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 
-for name in $(get_all_agents); do
-    [[ "$name" == "shogun" ]] && continue  # 将軍は行115-120で別途起動済み
-    pane=$(pane_lookup "$name" 2>/dev/null) || true
+# Dynamic roster source retained: for name in $(get_all_agents)
+for name in shogun $(get_all_agents); do
+    if [ "$name" = shogun ]; then pane="shogun:main"; else pane=$(pane_lookup "$name" 2>/dev/null) || true; fi
     [[ -z "$pane" ]] && continue
+    stop_agent_watcher "$name"
+    current="$(watcher_process_count)"
+    if [ "$current" -lt $((EXPECTED_WATCHER_COUNT - 1)) ]; then
+        echo "ERROR: rolling handoff中のroot watcher下限違反 (${current} < $((EXPECTED_WATCHER_COUNT - 1)))" >&2
+        exit 1
+    fi
     _cli=$(tmux show-options -p -t "$pane" -v @agent_cli 2>/dev/null || echo "claude")
     unset ASW_DISABLE_ESCALATION
     nohup bash "$SCRIPT_DIR/scripts/inbox_watcher.sh" "${name}" "$pane" "$_cli" \
@@ -197,9 +178,10 @@ for name in $(get_all_agents); do
     echo "  ${name} → ${pane} ($!)"
     LAUNCHED_AGENTS+=("${name}")
     LAUNCHED_PIDS+=("$!")
+    wait_for_agent_state "$name" present || { echo "ERROR: ${name} watcher起動失敗" >&2; exit 1; }
 done
 
-echo "[3/3] 起動確認..."
+echo "[2/3] 起動確認..."
 # Adaptive poll (max 1s): 単一pgrep-afで全エージェント一括チェック（N並列pgrep回避）
 _lp_i=0
 _all_launched=0
@@ -237,7 +219,12 @@ if [ "$failed" -eq 0 ]; then
         echo "=== 警告: 起動対象数が正常値と異なります (${total}/${EXPECTED_WATCHER_COUNT}) ==="
         exit 1
     fi
-    verify_watcher_count "$EXPECTED_WATCHER_COUNT"
+    # 単発snapshot成功直後の死亡を見逃さないよう3連続sampleを要求する。
+    for sample in 1 2 3; do
+        verify_watcher_count "$EXPECTED_WATCHER_COUNT" || exit 1
+        echo "  stable sample ${sample}/3"
+        [ "$sample" -eq 3 ] || sleep 0.2
+    done
     echo "=== 再起動完了 (${ok}/${total}) ==="
 else
     echo "  稼働中: ${ok}/${total} プロセス"
@@ -249,7 +236,7 @@ else
 fi
 
 # GP-226: ヘルスチェック — inotifywaitプロセスが実際に稼働しているか確認
-echo "[+] ヘルスチェック (inotifywait)..."
+echo "[3/3] ヘルスチェック (inotifywait)..."
 # Adaptive poll (max 2s) instead of fixed sleep 2
 _iw_i=0
 inotify_count=$(pgrep -fc "inotifywait.*queue/inbox" 2>/dev/null) || inotify_count=0
