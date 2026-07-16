@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-16T15:21:00+09:00 -->
+<!-- generated_at: 2026-07-16T15:30:53+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-07-16T15:30:52+09:00 | terminal | response | cmd_publish.shで一括実行(gate検証+pending昇格+委任)。
+- 2026-07-16T15:28:13+09:00 | ntfy | outbound | 【INFOバッチ】 2026-07-16 15:23:25|cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510
+- 2026-07-16T15:24:34+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510 完了
+- 2026-07-16T15:24:16+09:00 | terminal | response | gate-sync完了。本セッション全レビュー(6件)全てGATE CLEAR。未読0。待機。 [meta] stop_reason=end_turn
+- 2026-07-16T15:24:15+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率99% 連勝68
+- 2026-07-16T15:22:52+09:00 | ntfy | outbound | CI赤: run 29475438730 Unit Tests (bats)
+- 2026-07-16T15:22:29+09:00 | terminal | response | 未読0件。待機。
 - 2026-07-16T15:20:59+09:00 | terminal | response | 前セッション裁定「CI修正は忍者配備」はCLAUDE.md + LS-A11に既反映済み ✓ **recovery完了。状況報告。** startup BLOCK 2件を解消した。 **修正前→修正後:** - 将軍教訓: active …
 - 2026-07-16T15:20:48+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_karo_hotfix_compact_scalar_writer_202607160620 (duration=1359s, median=259.0s…
 - 2026-07-16T15:14:47+09:00 | ntfy | outbound | test permission warning
-- 2026-07-16T15:14:47+09:00 | ntfy | outbound | test outside tmux warning
-- 2026-07-16T15:13:29+09:00 | terminal | response | draft review完了。未読inbox=0。待機。 [meta] stop_reason=end_turn
-- 2026-07-16T15:12:48+09:00 | ntfy | outbound | 【INFOバッチ】 2026-07-16 14:58:59|cmd_karo_hotfix_failed_completed_blocked_terminal_202607161446 2026-07-16 15:01:31|cmd_ka…
-- 2026-07-16T15:12:15+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510 初回配備開始 (title=(untitled), ninja=kagemaru)
-- 2026-07-16T15:10:51+09:00 | terminal | response | Q6第三者検証完了。未読inbox=0。待機。 [meta] stop_reason=end_turn
-- 2026-07-16T15:07:02+09:00 | ntfy | outbound | test permission warning
-- 2026-07-16T15:07:02+09:00 | ntfy | outbound | test outside tmux warning
 
 ## 未解決確認事項
 - 前セッション裁定「CI修正は忍者配備」はCLAUDE.md + LS-A11に既反映済み ✓ **recovery完了。状況報告。** startup BLOCK 2件を解消した。 **修正前→修正後:** - 将軍教訓: active 31(BLOCK) → **26(OK)…
