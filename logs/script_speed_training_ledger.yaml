@@ -1750,17 +1750,16 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/inbox_write.sh
-  status: pending
+  status: completed
   before_ms: 10
   after_ms: ''
-  before_real_ms: 17
-  after_real_ms: ""
-  real_measurement_command: INBOX_WRITE_ROOT_OVERRIDE=tmpdir INBOX_WRITE_TEST=1 bash
-    scripts/inbox_write.sh karo test wake_up hanzo
-  test_result: 'bats tests/unit/test_inbox_write.bats: 36/36 PASS SKIP=0'
-  commit: b6a0c60fc
+  before_real_ms: 122.247
+  after_real_ms: 96.584
+  real_measurement_command: "isolated 60-read review fixture, 10 runs/direction; ledger scalar uses karo->gunshi p50; paired metrics in test_result/CoDD"
+  test_result: "gen2 k->g p50/p95 122.247/197.933->96.584/109.643; g->k 83.466/96.482->66.187/78.440; bats 66/66 PASS FAIL=0 SKIP=0; lost_update=0/20"
+  commit: "c3881f03304ecca31d791b02fd9446c43ef8ce79"
   assigned_to: ""
-  updated_at: "2026-06-08T15:24:49"
+  updated_at: "2026-07-16T23:23:05"
   iteration: 1
 - script_path: scripts/insight_resolve.sh
   status: pending
