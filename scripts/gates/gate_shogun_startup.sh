@@ -2397,6 +2397,19 @@ if [ -n "${_PID_LOOP_LEDGER:-}" ]; then
         fi
         _loop_ledger_sig=$(printf '%s\n' "$_loop_ledger_output" | awk '/^ALERT:/' | cksum | awk '{print $1 ":" $2}')
         alerts+=("学習ループ台帳: 空転/在庫超過あり (${_loop_ledger_sig:-unknown})")
+        # promotion在庫超過時: reflux消費路の直近状態を自動表示(自動化ターゲット2026-07-16)
+        if printf '%s\n' "$_loop_ledger_output" | grep -q "promotion.*在庫超過\|ALERT.*promotion"; then
+            _reflux_log="$SCRIPT_DIR/logs/ninja_monitor.log"
+            if [ -f "$_reflux_log" ]; then
+                _reflux_last=$(grep "REFLUX-AUTO-DEPLOY" "$_reflux_log" | tail -3)
+                if [ -n "$_reflux_last" ]; then
+                    echo "  ★ promotion消費路(reflux)直近状態:"
+                    printf '%s\n' "$_reflux_last" | while IFS= read -r _rl; do echo "    $_rl"; done
+                else
+                    echo "  ★ promotion消費路: reflux配備ログなし(消費路が未稼働の可能性)"
+                fi
+            fi
+        fi
     elif [ "$_loop_ledger_rc" -ne 0 ]; then
         overall="ALERT"
         alerts+=("学習ループ台帳: 集計失敗")
