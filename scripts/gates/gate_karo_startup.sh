@@ -1560,6 +1560,95 @@ rm -f "$_phase_guide_1_tmp" "$_phase_guide_2_tmp" "$_session_summary_tmp" "$_bul
 echo "=== 家老起動チェック $(date '+%H:%M:%S') ==="
 echo ""
 
+# --- Check 0.9: CI REDは忍者へ配備済みか ---
+# origin: [[殿裁定20260716_CI修正忍者配備]] -> [[家老D0修正の属人化]] -> [[ci_fix_delegation_guard]]
+# CI RED中も家老の管理操作は必要なためBLOCKで全操作を止めず、ALERT pendingを
+# stop hookへ渡す。task_type+ci_run_idの機械証跡ができるまで完了/idleへ逃げられない。
+if [ "${KARO_STARTUP_SKIP_CI_CHECK:-0}" != "1" ]; then
+    _ci_json="${KARO_STARTUP_CI_JSON:-}"
+    _ci_query_failed=0
+    if [ -z "$_ci_json" ]; then
+        if command -v gh >/dev/null 2>&1; then
+            _ci_json="$(timeout "${KARO_STARTUP_GH_TIMEOUT:-8}" gh run list \
+                --repo "${KARO_STARTUP_CI_REPO:-simokitafresh/multi-agent-shogun}" \
+                --status completed --limit 1 \
+                --json conclusion,databaseId,headSha 2>/dev/null || true)"
+            [ -n "$_ci_json" ] || _ci_query_failed=1
+        fi
+    fi
+
+    if [ "$_ci_query_failed" -eq 1 ]; then
+        echo "■ CI RED忍者配備"
+        echo "  ALERT: GitHub Actions完了run取得失敗 — CI状態を確認できない"
+        overall="ALERT"
+        alerts+=("CI状態取得失敗: 忍者配備要否を判定不能")
+    elif [ -n "$_ci_json" ]; then
+        _ci_parsed="$(python3 - "$_ci_json" <<'PY' 2>/dev/null || true
+import json
+import sys
+
+try:
+    runs = json.loads(sys.argv[1])
+except Exception:
+    raise SystemExit(0)
+if isinstance(runs, list) and runs:
+    run = runs[0] or {}
+    print(str(run.get("conclusion") or ""))
+    print(str(run.get("databaseId") or ""))
+    print(str(run.get("headSha") or ""))
+PY
+)"
+        _ci_conclusion="$(printf '%s\n' "$_ci_parsed" | sed -n '1p')"
+        _ci_run_id="$(printf '%s\n' "$_ci_parsed" | sed -n '2p')"
+        _ci_head_sha="$(printf '%s\n' "$_ci_parsed" | sed -n '3p')"
+
+        if [ "$_ci_conclusion" = "failure" ]; then
+            echo "■ CI RED忍者配備"
+            echo "  WARN: 最新完了CI=failure${_ci_run_id:+ run_id=${_ci_run_id}}${_ci_head_sha:+ sha=${_ci_head_sha:0:9}}"
+            _ci_task_proof="$(python3 - "$SCRIPT_DIR/queue/tasks" "$_ci_run_id" <<'PY' 2>/dev/null || true
+from pathlib import Path
+import sys
+import yaml
+
+tasks_dir = Path(sys.argv[1])
+run_id = sys.argv[2]
+active = {"assigned", "acknowledged", "in_progress", "done"}
+if run_id:
+    for path in sorted(tasks_dir.glob("*.yaml")):
+        try:
+            doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except Exception:
+            continue
+        task = doc.get("task", doc) if isinstance(doc, dict) else {}
+        if not isinstance(task, dict):
+            continue
+        if str(task.get("task_type", "")) != "ci_fix":
+            continue
+        if str(task.get("ci_run_id", "")) != run_id:
+            continue
+        status = str(task.get("status", ""))
+        if status not in active:
+            continue
+        ninja = str(task.get("assigned_to") or path.stem)
+        print(f"{ninja}|{status}|{path.name}")
+        break
+PY
+)"
+            if [ -n "$_ci_task_proof" ]; then
+                IFS='|' read -r _ci_ninja _ci_task_status _ci_task_file <<< "$_ci_task_proof"
+                echo "  OK: 忍者配備証跡 run_id=${_ci_run_id} ninja=${_ci_ninja} status=${_ci_task_status} task=${_ci_task_file}"
+                echo "  RULE: 家老は診断・レビュー・push・CI監視のみ。実装修正は忍者が担当"
+            else
+                echo "  ALERT: run_id=${_ci_run_id:-unknown} のci_fix忍者タスクなし"
+                echo "  ACTION: /karo-directでidle忍者へ task_type=ci_fix, ci_run_id=${_ci_run_id:-unknown} を配備せよ"
+                echo "  PROHIBITED: 家老自身の実装修正・commitで代替するな"
+                overall="ALERT"
+                alerts+=("CI RED未配備: run ${_ci_run_id:-unknown} — 忍者ci_fix配備必須・家老D0修正禁止")
+            fi
+        fi
+    fi
+fi
+
 # --- Check 1: deepdive必読ファイル存在確認 + 強制表示 ---
 echo "■ deepdive必読ファイル"
 REQUIRED_READ="$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md"

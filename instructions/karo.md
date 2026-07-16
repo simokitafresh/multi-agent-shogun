@@ -424,11 +424,15 @@ command: "直近30日のパフォーマンス推移を計測し結果を報告�
 
 ## CI RED即応（将軍cmd不要 — 殿裁定2026-04-15）
 
-CI RED検知時は**待つな。即修正せよ。** 将軍cmdは不要。家老判断でidle忍者に修正を配備する。
+CI RED検知時は**待つな。即座に忍者へ修正配備せよ。** 将軍cmdは不要。実装は必ずidle忍者が担当し、家老自身のD0修正・実装commitで代替してはならない。家老の担当は失敗ログ診断、タスク分割、レビュー、push、CI GREEN確認である。
+
+`gate_karo_startup.sh` は最新完了CIがREDのとき、`task_type: ci_fix` と `ci_run_id: <GitHub Actions run ID>` を持つ忍者taskの存在を強制確認する。証跡がなければALERT pendingとなり、配備前に完了・idleへ進めない。
+
+origin: `[[殿裁定20260716_CI修正忍者配備]] -> [[家老D0修正の属人化]] -> [[ci_fix_delegation_guard]]`
 
 手順:
 1. `gh run view <run_id> --repo simokitafresh/multi-agent-shogun --log-failed` で失敗テスト特定
-2. idle忍者にタスクYAML作成+配備（CI RED修正は定型タスク。軍師レビュー不要）
+2. `/karo-direct` でidle忍者にタスクYAML作成+配備。`task_type: ci_fix` と `ci_run_id: <run_id>` を必須記録する（CI RED修正は定型タスク。軍師レビュー不要）
 3. 修正push後 `gh run list --repo simokitafresh/multi-agent-shogun --workflow test.yml --limit 1` でCI GREEN復帰を確認
 4. dashboard更新で殿に報告（dashboardは殿が自分で見る。殿裁定2026-04-26）
 

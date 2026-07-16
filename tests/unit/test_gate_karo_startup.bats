@@ -239,6 +239,9 @@ setup() {
     # Disk capacity is invariant for these gate-logic tests. Avoid a slow WSL
     # /mnt/c df subprocess per test while preserving the production default.
     export DISK_WATCH_AVAILABLE_KB=104857600
+    # CI delegation has dedicated deterministic cases below. Other startup
+    # tests must not depend on the live GitHub Actions state.
+    export KARO_STARTUP_SKIP_CI_CHECK=1
     export ORIG_PATH="$PATH"
     export PATH="$TEST_TMPDIR/bin:$PATH"
 }
@@ -249,9 +252,70 @@ teardown() {
     unset SHOGUN_THREE_LAYER_CACHE_WARN_BYTES
     unset DISK_WATCH_AVAILABLE_KB
     unset KARO_QUALITY_MISSING_CUTOFF
+    unset KARO_STARTUP_SKIP_CI_CHECK
+    unset KARO_STARTUP_CI_JSON
     # TEST_TMPDIR is below BATS_TEST_TMPDIR and KARO_BASE_FIXTURE is below
     # BATS_FILE_TMPDIR. Bats removes both managed roots, so deleting the same
     # fixture trees here only duplicates filesystem work for every test.
+}
+
+@test "CI RED without ci_fix ninja task raises delegation ALERT" {
+    export KARO_STARTUP_SKIP_CI_CHECK=0
+    export KARO_STARTUP_CI_JSON='[{"conclusion":"failure","databaseId":29460000001,"headSha":"abcdef123456"}]'
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"■ CI RED忍者配備"* ]]
+    [[ "$output" == *"ALERT: run_id=29460000001 のci_fix忍者タスクなし"* ]]
+    [[ "$output" == *"PROHIBITED: 家老自身の実装修正・commitで代替するな"* ]]
+    [[ "$output" == *"総合判定: ALERT"* ]]
+    grep -Fq "CI RED未配備: run 29460000001" "$TEST_TMPDIR/queue/gates/karo_alert_pending.txt"
+}
+
+@test "CI RED with matching ci_run_id ci_fix task accepts ninja delegation proof" {
+    export KARO_STARTUP_SKIP_CI_CHECK=0
+    export KARO_STARTUP_CI_JSON='[{"conclusion":"failure","databaseId":29460000002,"headSha":"abcdef123456"}]'
+    cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<'EOF'
+task:
+  task_type: ci_fix
+  ci_run_id: 29460000002
+  assigned_to: hanzo
+  status: in_progress
+EOF
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: 忍者配備証跡 run_id=29460000002 ninja=hanzo status=in_progress task=hanzo.yaml"* ]]
+    [[ "$output" == *"実装修正は忍者が担当"* ]]
+    [[ "$output" != *"CI RED未配備"* ]]
+    ! grep -Fq "CI RED未配備" "$TEST_TMPDIR/queue/gates/karo_alert_pending.txt" 2>/dev/null
+}
+
+@test "CI RED rejects parent_cmd name alone without explicit ci_run_id contract" {
+    export KARO_STARTUP_SKIP_CI_CHECK=0
+    export KARO_STARTUP_CI_JSON='[{"conclusion":"failure","databaseId":29460000003,"headSha":"abcdef123456"}]'
+    cat > "$TEST_TMPDIR/queue/tasks/hanzo.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_karo_ci_fix_ci29460000003
+  task_type: ci_fix
+  assigned_to: hanzo
+  status: in_progress
+EOF
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT: run_id=29460000003 のci_fix忍者タスクなし"* ]]
+    [[ "$output" == *"task_type=ci_fix, ci_run_id=29460000003"* ]]
+}
+
+@test "CI GREEN requires no delegation task and stays silent" {
+    export KARO_STARTUP_SKIP_CI_CHECK=0
+    export KARO_STARTUP_CI_JSON='[{"conclusion":"success","databaseId":29460000004,"headSha":"abcdef123456"}]'
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"■ CI RED忍者配備"* ]]
+    [[ "$output" != *"CI RED未配備"* ]]
 }
 
 # === Test 1: 全項目正常 → 総合判定OK ===
