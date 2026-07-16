@@ -4205,7 +4205,7 @@ check_ac_file_paths() {
         /^[[:space:]]*acceptance_criteria:/ { in_ac=1; print; next }
         in_ac && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
         in_ac { print }
-    ' || true)
+    ' <<< "$CMD_BLOCK_NC" || true)
     # cmd_reflux_insight_202607081318: 区切り文字"/"の絶対パス誤吸収防止(INS-20260708-130637223-380c)
     # 日本語文中で"A(注記)/B(注記)"のように"/"を列挙区切りに使うと、直前の"/"が
     # 次のパスの先頭に誤結合し「/scripts/foo.sh」のような偽の絶対パスを生成していた

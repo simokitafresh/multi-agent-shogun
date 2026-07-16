@@ -85,7 +85,15 @@ teardown() {
     local CMD_BLOCK="    acceptance_criteria:
       - 'AC1: backend/generators/monthly_returns.py を修正'
     project: test-proj"
-    run bash -c '"$1" "$2" 2>&1' _ "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK"
+    local normal_out="$TEST_TMPDIR/normal.out"
+    local null_out="$TEST_TMPDIR/null.out"
+    local unrelated_out="$TEST_TMPDIR/unrelated.out"
+    bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK" >"$normal_out" 2>&1
+    bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK" </dev/null >"$null_out" 2>&1
+    printf 'unrelated caller stdin\n' | bash "$TEST_TMPDIR/test_func.sh" "$CMD_BLOCK" >"$unrelated_out" 2>&1
+    cmp "$normal_out" "$null_out"
+    cmp "$normal_out" "$unrelated_out"
+    run cat "$normal_out"
     [ "$status" -eq 0 ]
     [[ "$output" == *"親ディレクトリも不在です"* ]]
     [[ "$output" == *"backend/generators/monthly_returns.py"* ]]

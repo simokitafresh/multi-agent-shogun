@@ -6,6 +6,7 @@ setup() {
   mkdir -p "$TMPROOT/scripts" "$TMPROOT/tests/unit" "$TMPROOT/bin" "$TMPROOT/logs"
   cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/scripts/"
   printf '@test "sample" { true; }\n' >"$TMPROOT/tests/unit/sample.bats"
+  printf '@test "root sample" { true; }\n' >"$TMPROOT/tests/root_sample.bats"
   cat >"$TMPROOT/bin/bats" <<'SH'
 #!/usr/bin/env bash
 printf '1..1\nok 1 sample in 5ms\n'
@@ -19,6 +20,25 @@ SH
 }
 
 teardown() { rm -rf "$TMPROOT"; }
+
+@test "default all mode includes both unit and root-level bats files" {
+  export BATS_ARGS_LOG="$TMPROOT/bats.args"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$1" >>"$BATS_ARGS_LOG"
+printf '1..1\nok 1 sample\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$BATS_ARGS_LOG" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh"
+
+  [ "$status" -eq 0 ]
+  grep -Fxq "$TMPROOT/tests/unit/sample.bats" "$BATS_ARGS_LOG"
+  grep -Fxq "$TMPROOT/tests/root_sample.bats" "$BATS_ARGS_LOG"
+  [ "$(wc -l <"$BATS_ARGS_LOG")" -eq 2 ]
+}
 
 _source_fp() {
   git -C "$TMPROOT" ls-files --format='%(objectname)' -- scripts lib tests/helpers ':!scripts/run_tests.sh' \
@@ -124,7 +144,7 @@ SH
   grep -Fq 'group: test-${{ github.workflow }}-${{ github.ref }}' "$workflow"
   grep -Fq 'cancel-in-progress: true' "$workflow"
   ! grep -Fq 'BATS_INNER_JOBS=8 \' "$workflow"
-  grep -Fq 'bash scripts/run_tests.sh unit' "$workflow"
+  grep -Fq 'bash scripts/run_tests.sh all' "$workflow"
 }
 
 @test "split-file runner fails closed with named evidence when a bats file times out" {

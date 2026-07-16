@@ -44,17 +44,7 @@ jobs:
           cmp -s scripts/hooks/git-pre-commit.sh .git/hooks/pre-commit
           cmp -s .githooks/pre-push .git/hooks/pre-push
 
-      - name: Run root-level tests (inbox_write.sh etc.)
-        run: |
-          set -o pipefail
-          mkdir -p test-results
-          if ls tests/*.bats 1>/dev/null 2>&1; then
-            bats tests/*.bats --formatter tap --timing --jobs 8 | tee test-results/root.tap
-          else
-            echo "::warning::No root-level test files found"
-          fi
-
-      - name: Run unit tests
+      - name: Run unit and root-level tests
         run: |
           set -o pipefail
           mkdir -p test-results
@@ -68,9 +58,9 @@ jobs:
           BATS_CACHE=0 \
           BATS_INNER_JOBS=1 \
           BATS_FILE_TIMEOUT_SECONDS=900 \
-          BATS_TAP_OUTPUT=test-results/unit.tap \
-            bash scripts/run_tests.sh unit || {
-            echo "::error::Unit tests failed"
+          BATS_TAP_OUTPUT=test-results/all.tap \
+            bash scripts/run_tests.sh all || {
+            echo "::error::Unit or root-level tests failed"
             exit 1
           }
 
