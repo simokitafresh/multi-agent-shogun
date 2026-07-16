@@ -181,9 +181,35 @@ EOF
     run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"THROUGHPUT_SCAN_DRY_RUN"* ]]
-    [[ "$output" == *"target=scripts/throughput_scan.sh"* ]]
-    [[ "$output" == *"stage_medians=deploy:70.0s,work:120.0s,finalize:60.0s,e2e:250.0s,overhead:30.0%"* ]]
+    [[ "$output" == *"target=scripts/cmd_complete_gate.sh"* ]]
+    [[ "$output" == *"stage_medians=deploy:70.0s,work:120.0s,finalize:60.0s,e2e:250.0s,overhead:30.0%,measured:250.0s,unmeasured_wait:0.0s"* ]]
     [[ "$output" == *"yaml.safe_load(open('$TEST_TMPDIR/logs/loop_ledger.yaml'))"* ]]
-    [[ "$output" != *"target=scripts/cmd_complete_gate.sh"* ]]
+    [[ "$output" != *"target=scripts/throughput_scan.sh"* ]]
     [[ "$output" != *"test -f logs/loop_ledger.yaml && test -f scripts/cmd_complete_gate.sh"* ]]
+}
+
+@test "throughput scan attributes the production 3213.5s measurement gap" {
+    cat > "$TEST_TMPDIR/logs/loop_ledger.yaml" <<'EOF'
+snapshots:
+- loops: {throughput: {e2e_median_sec: 3054.0, overhead_rate_median_pct: 70.0}}
+- loops:
+    throughput: {deploy_median_sec: 256.0, work_median_sec: 448.0, finalize_median_sec: 235.0, e2e_median_sec: 3213.5, overhead_rate_median_pct: 74.1}
+EOF
+    echo 'detectors: []' > "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+    run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"measured:939.0s,unmeasured_wait:2274.5s"* ]]
+    [[ "$output" == *"measurement_gap=unmeasured_wait target=scripts/cmd_complete_gate.sh"* ]]
+}
+
+@test "throughput scan handles missing and outlier stage data without false attribution" {
+    cat > "$TEST_TMPDIR/logs/loop_ledger.yaml" <<'EOF'
+snapshots:
+- loops: {throughput: {e2e_median_sec: 100.0}}
+- loops: {throughput: {e2e_median_sec: 10000.0, deploy_median_sec: null, work_median_sec: 1.0, finalize_median_sec: 1.0}}
+EOF
+    echo 'detectors: []' > "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+    run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"measured:na,unmeasured_wait:na"* ]]
 }

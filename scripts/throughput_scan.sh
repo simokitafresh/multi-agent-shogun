@@ -136,6 +136,12 @@ def fmt_metric(value, suffix=""):
 
 
 def throughput_stage_summary(curr_tp):
+    deploy = as_float(curr_tp.get('deploy_median_sec'))
+    work = as_float(curr_tp.get('work_median_sec'))
+    finalize = as_float(curr_tp.get('finalize_median_sec'))
+    e2e = as_float(curr_tp.get('e2e_median_sec'))
+    measured = None if None in (deploy, work, finalize) else deploy + work + finalize
+    unmeasured = None if e2e is None or measured is None else max(0.0, e2e - measured)
     return (
         "stage_medians="
         f"deploy:{fmt_metric(curr_tp.get('deploy_median_sec'), 's')},"
@@ -143,6 +149,8 @@ def throughput_stage_summary(curr_tp):
         f"finalize:{fmt_metric(curr_tp.get('finalize_median_sec'), 's')},"
         f"e2e:{fmt_metric(curr_tp.get('e2e_median_sec'), 's')},"
         f"overhead:{fmt_metric(curr_tp.get('overhead_rate_median_pct'), '%')}"
+        f",measured:{fmt_metric(measured, 's')}"
+        f",unmeasured_wait:{fmt_metric(unmeasured, 's')}"
     )
 
 
@@ -164,7 +172,10 @@ def throughput_verify(kind):
 def throughput_candidate(kind, priority, msg):
     return {
         "kind": kind,
-        "target": "scripts/throughput_scan.sh",
+        # throughput_scan is only the detector.  Stage timestamps are written by
+        # cmd_complete_gate; attributing an unmeasured interval to this scanner
+        # made the generated fix_known insight self-referential and unactionable.
+        "target": "scripts/cmd_complete_gate.sh",
         "verify": throughput_verify(kind),
         "priority": priority,
         "msg": msg,
@@ -205,7 +216,8 @@ def build_candidates():
                     "THROUGHPUT_FIX_KNOWN throughput_overhead: throughput overhead median worsened "
                     f"prev={prev_overhead}% curr={curr_overhead}% delta={delta}pp. "
                     f"{stage_summary}. "
-                    "INSIGHT_FIX_KNOWN=1 target=scripts/throughput_scan.sh "
+                    "measurement_gap=unmeasured_wait target=scripts/cmd_complete_gate.sh "
+                    "INSIGHT_FIX_KNOWN=1 target=scripts/cmd_complete_gate.sh "
                     f"verify={verify!r} source=S1_loop_ledger"
                 ),
             ))
@@ -221,7 +233,8 @@ def build_candidates():
                     "THROUGHPUT_FIX_KNOWN throughput_e2e: throughput e2e median worsened "
                     f"prev={prev_e2e}s curr={curr_e2e}s delta={delta}s. "
                     f"{stage_summary}. "
-                    "INSIGHT_FIX_KNOWN=1 target=scripts/throughput_scan.sh "
+                    "measurement_gap=unmeasured_wait target=scripts/cmd_complete_gate.sh "
+                    "INSIGHT_FIX_KNOWN=1 target=scripts/cmd_complete_gate.sh "
                     f"verify={verify!r} source=S1_loop_ledger"
                 ),
             ))
