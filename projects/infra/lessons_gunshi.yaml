@@ -52,9 +52,10 @@ lessons:
   origin: '[[cmd_1199]]'
   created_at: '2026-03-21'
   automated: true
-  enforcement: gate_report_format.sh GP-128(verdict↔bc整合性)+status↔pending AC矛盾検出
-  when: "report reviewでstatus:done+AC pending同時検出時。gate_report_format.sh GP-128が自動検出"
-  how: done報告にpending ACあり→FAIL判定。status↔pending AC矛盾を許容しない
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK): scripts/gates/gate_report_format_main.py がterminal verdict PASSのbinary_checksを全件検査し、result空欄は『verdict: PASS but binary_checks contain empty result(s)』でBLOCK。status=pending自体も別経路でBLOCKし、revision_requestedのPASSもcompletedへ戻るまでBLOCK。gate_report_format.shが全report提出経路で強制する。"
+  when: "report提出時。status:done/completedでACのbinary_checks.resultが空、またはstatus:pending/revision_requestedのままterminal verdictを持つと自動BLOCK"
+  how: "全ACのbinary_checks.resultをyes/noで埋め、statusをcompletedにしてgate_report_format.shをPASSさせる。未完ACを残したdone報告は構造的に通らない。"
 - id: LG006
   title: GATEフォーマット不備=報告FAIL必須 — LGTM+注記は消火構造
   detail: gate_report_format.shでBLOCKとなるフォーマット不備(verdict非二値/lessons_useful dict形式/binary_checks string形式/必須フィールド欠落)を報告レビューで検出した場合、注記のみでLGTMとしてはならずFAIL判定を出す。cmd_1242でLGTM+注記→GATE BLOCK→家老workaround発生。根本原因は軍師の顧客認識ズレ(忍者の成果物品質→家老の処理可能性)。LGTMの信頼性=GATE通過保証レベルに引き上げる。
