@@ -386,26 +386,30 @@ spec_re = re.compile(r"test-health:\s*spec-status\s+(active|superseded|removed)"
 mock_re = re.compile(r"\b(?:mock|monkeypatch|patch|stub|fake)(?:_|\b)", re.I)
 category_re = re.compile(r"test-health:\s*mock-category\s+(external-service|destructive-operation|real-time|failure-injection)")
 
-latest_sha = {}
-try:
-    history = subprocess.run(
-        ["git", "-C", str(root), "log", "-500", "--format=@@%H", "--name-only", "--", "scripts", "src", "app", "lib"],
-        check=False, capture_output=True, text=True, timeout=10,
-    ).stdout.splitlines()
-    commit = ""
-    for item in history:
-        if item.startswith("@@"):
-            commit = item[2:]
-        elif item and commit:
-            latest_sha.setdefault(item, commit)
-except (OSError, subprocess.TimeoutExpired):
-    pass
-
-rows, stale, outside, production_cache = [], [], [], {}
+test_inputs = []
 for raw_path in test_files:
     path = pathlib.Path(raw_path)
     text = path.read_text(encoding="utf-8", errors="replace")
-    refs = sorted(set(path_re.findall(text)))
+    test_inputs.append((path, text, sorted(set(path_re.findall(text)))))
+
+latest_sha = {}
+if any(refs for _, _, refs in test_inputs):
+    try:
+        history = subprocess.run(
+            ["git", "-C", str(root), "log", "-500", "--format=@@%H", "--name-only", "--", "scripts", "src", "app", "lib"],
+            check=False, capture_output=True, text=True, timeout=10,
+        ).stdout.splitlines()
+        commit = ""
+        for item in history:
+            if item.startswith("@@"):
+                commit = item[2:]
+            elif item and commit:
+                latest_sha.setdefault(item, commit)
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+rows, stale, outside, production_cache = [], [], [], {}
+for path, text, refs in test_inputs:
     ref_exists = all((root / ref).exists() for ref in refs) if refs else True
     symbols = symbol_re.findall(text)
     production_text = ""
