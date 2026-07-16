@@ -1,0 +1,169 @@
+worker_id: kagemaru
+task_id: cmd_training_speed_capture_clipboard_image_20260717005701_normal
+parent_cmd: cmd_training_speed_capture_clipboard_image_20260717005701
+task_type: speed_training
+timestamp: '2026-07-17T01:04:12+09:00'
+status: completed
+ac_version_read: cd728cce
+result:
+  summary: grep除去候補を同一sandbox交互A/B各10回したがp95 340→398msへ悪化。候補をrollbackしstatus=saturated、last-good
+    707ce207…を保持。3経路PASS・FAIL0・SKIP0。
+  details: 'AC1: historical 1901msは選定専用。last-good=707ce2070ffa77f7f3ddc29f1ecbd5beaf94b232、candidate=ddd9a1b6d9fdc3a2aef98b650db2df8f88240bfcを固定mock環境で実測。AC2:
+    echo|grepをBash patternへ変える候補のみ。bash-n CLEAR、安全行削除0、新関数0。success/IMAGE_NULL/no-fileの3経路PASS、FAIL0、SKIP0。D7=behavior不変refactorで既存専用testなしのためsandbox契約testを実走。AC3:
+    warmup各1、L,C交互各10。L p50/p95=232.5/340ms、C=226/398ms。p95悪化のためrollback commit=47c6a53d51215c4b9c0362cc0362a6cfb8ea5604、record-real
+    saturated、last-good保持。'
+purpose_validation:
+  cmd_purpose: capture_clipboard_imageを安全性・挙動維持で高速化候補検証し、速度基準を満たさなければrollbackして台帳記録する
+  fit: true
+  purpose_gap: ''
+simplicity_check: 外部PowerShell等を削らず、grep 1プロセス除去だけを候補化した。
+assumption_check: 履歴値を採否根拠から除外し、固定mock環境A/Bのp50/p95二値基準で採用判定を完了した。
+task_clarity:
+  score: 100
+  unclear_points: 全条件が明確で、追加確認事項なし。
+  discretion_fills: p95判定基準に従いlast-good復元とsaturated記録を完了した。
+status_detail: DONE
+test_triage: 'in_branch: behavior不変候補。専用test不在のため固定mockで成功/NULL/保存失敗を実走。'
+causal_verification:
+  cause_checked: '1) 台帳1901msはhistorical_only。
+
+    2) git logでlast-good 707ce207を確認。
+
+    3) 現物の追加grep subprocessのみを安全な候補と特定。'
+  design_intent_checked: PowerShell画像取得、NULL判定、保存確認、latest更新、保持期限削除、tmux通知を全維持。
+  evidence: git log/show、bash-n、safe pattern removed 0、mock 3経路、同一環境A/B20標本、record-real、gate_fire_log
+    event。
+  origin: '[[historical_only_1901ms]] -> [[grep_subprocess候補]] -> [[p95悪化]] -> [[rollback_saturated]]'
+files_modified:
+- path: scripts/capture_clipboard_image.sh
+  change: grep除去候補を実装後、p95悪化によりlast-good挙動へrollback
+- path: logs/script_speed_training_ledger.yaml
+  change: A/B証跡とsaturated/last-good保持を記録
+- path: logs/gate_fire_log.yaml
+  change: record-real/result eventを記録
+- path: queue/reports/kagemaru_report_cmd_training_speed_capture_clipboard_image_20260717005701.yaml
+  change: 検証・rollback証跡を記録
+lesson_candidate:
+  found: false
+  no_lesson_reason: p50だけで採用せずp95悪化時rollbackする既存速度修行契約どおりで新規教訓なし。
+  title: ''
+  detail: ''
+  project: infra
+  origin: '[[cmd_training_speed_capture_clipboard_image_20260717005701]] -> [[grep除去候補]]
+    -> [[p95悪化]] -> [[rollback_saturated]]'
+lessons_useful:
+- id: L311
+  useful: true
+  reason: 報告WA防止のためreport_field_set.shとgate_report_formatを使用した。
+memory_references:
+- id: MEM001
+  source: semantic_search
+  query: 'Speed-train scripts/capture_clipboard_image.sh: measure real runtime before,
+    improve safely, run script-specific tests, measure the same command after, and
+    reco'
+  summary: '- file: `scripts/lesson_write.sh`'
+  used: false
+  useful: false
+  reason: lesson lifecycle検索結果であり本速度候補判断には不使用。
+- id: MEM002
+  source: semantic_search
+  query: 'Speed-train scripts/capture_clipboard_image.sh: measure real runtime before,
+    improve safely, run script-specific tests, measure the same command after, and
+    reco'
+  summary: '- file: `scripts/auto_draft_lesson.sh`'
+  used: false
+  useful: false
+  reason: lesson lifecycle検索結果であり本速度候補判断には不使用。
+- id: MEM003
+  source: semantic_search
+  query: 'Speed-train scripts/capture_clipboard_image.sh: measure real runtime before,
+    improve safely, run script-specific tests, measure the same command after, and
+    reco'
+  summary: '- file: `scripts/sync_lessons.sh`'
+  used: false
+  useful: false
+  reason: lesson lifecycle検索結果であり本速度候補判断には不使用。
+skill_candidate:
+  found: false
+decision_candidate:
+  found: false
+knowledge_candidate:
+  found: false
+assumption_invalidation:
+  found: false
+  affected_cmds: []
+  detail: ''
+hook_failures:
+  count: 0
+  details: ''
+post_deploy_evidence:
+  required: false
+  deploy_live_at: ''
+  evidence_run_start_at: ''
+  evidence_run_completed_at: ''
+  run_completed: false
+  source: ''
+operational_simulation:
+  command: CLIP_PATH_FILE=$FIXTURE/clip PATH=$FIXTURE/bin:$PATH POWERSHELL_MODE=ok
+    bash "$SCRIPT_UNDER_TEST"
+  expected: 成功/NULL/保存失敗契約を維持し、候補p50/p95がlast-good以下。不達ならrollback+saturated
+  actual: 3経路PASS、FAIL0、SKIP0。L=232.5/340ms、C=226/398ms。p95悪化でrollback+saturated
+  result: PASS
+binary_checks:
+  AC1:
+  - check: resolve last-good commit and candidate commit, then measure both in the
+      same fixed environment with one identical safe command
+    result: 'yes'
+  - check: historical ledger timing was selection evidence only and did not decide
+      adoption
+    result: 'yes'
+  AC2:
+  - check: all related tests pass with FAIL=0 and SKIP=0; expectations, coverage,
+      and target count are unchanged
+    result: 'yes'
+  - check: safety patterns removed count was zero and no feature thinning occurred
+    result: 'yes'
+  AC3:
+  - check: deployment/result event is appended to gate_fire_log and measurable by
+      detector_fp_rate
+    result: 'yes'
+  AC4:
+  - check: if new functions are added, all test files that source/export -f the parent
+      script have updated mock/export lists
+    result: 'yes'
+  AC5:
+  - check: after warmup, alternate last-good/candidate A/B runs in the same environment
+      for at least 10 samples per arm using the exact same command
+    result: 'yes'
+  AC6:
+  - check: candidate p50 and p95 are both <= last-good and at least one is strictly
+      lower; otherwise rollback candidate, record saturated, and retain last-good
+    result: 'yes'
+  AC7:
+  - check: record-real stores both commits, exact command, samples per arm, both p50/p95
+      pairs and test result; missing evidence, historical-only comparison, or unresolved
+      hook/gate failure is BLOCK
+    result: 'yes'
+  commit:
+  - check: git commitが完了したか(untracked/modified=0)
+    result: 'yes'
+self_gate_check:
+  lesson_ref: PASS
+  lesson_candidate: PASS
+  status_valid: PASS
+  purpose_fit: PASS
+verdict: PASS
+parent_ac_coverage: null
+parent_contract_fingerprint: ''
+test_results:
+- command: bash -n scripts/capture_clipboard_image.sh
+  result: PASS
+  pass: 1
+  fail: 0
+  skip: 0
+- command: fixed mock success/IMAGE_NULL/no-file
+  result: PASS
+  pass: 3
+  fail: 0
+  skip: 0
+commit_hash: ffd2af5f18a289760b87490ca159873cc876ad2c

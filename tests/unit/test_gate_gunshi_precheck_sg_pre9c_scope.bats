@@ -265,6 +265,21 @@ YAML
     [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
 }
 
+@test "SG-PRE9c real kagemaru report is clear and purpose-gap mutation is blocked" {
+    local fixture="$PROJECT_ROOT/tests/fixtures/kagemaru_report_cmd_training_speed_capture_clipboard_image_20260717005701.yaml"
+    run python3 "$ENGINE" --report "$fixture" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+    [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+
+    cp "$fixture" "$TEST_TMPDIR/report.yaml"
+    sed -i "s/^  purpose_gap: ''/  purpose_gap: 'AC2未完了。後で家老が実施する'/" "$TEST_TMPDIR/report.yaml"
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+    [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+}
+
 @test "SG-PRE9 sets BLOCK prediction for waived binary check no" {
     cat > "$TEST_TMPDIR/report.yaml" <<YAML
 ninja: hayate
