@@ -11,7 +11,8 @@ allowed-tools:
   - Read
 ---
 
-<!-- script_refs_checked_at: 2026-07-16T11:15:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T14:52:00+09:00 -->
+<!-- cmd_karo_hotfix_failed_completed_blocked_terminal_202607161446検分: ninja_monitor.sh 3bb11a0a7はfailed taskのcompleted reportを共通report_terminal_state.shでCLOSED_BLOCKED判定し、完結済みBLOCKED偵察への再nudgeを抑止する内部状態分類変更。check_idle、dead pane復旧、cli_launch_cmd、respawn-pane -k、settings→tmux同期、shogun_cli_switch.shのCLI引数契約には影響なし。startup72/72+monitor70/70 PASS、SKIP0。本文変更不要。 -->
 <!-- cmd_karo_hotfix_active_dead_pane_recovery_202607161035検分: ninja_monitor.sh a98021ebcはactive/assigned taskのpane_dead=1をdeploy/stall graceより先に検知し、respawn_dead_agent.shのCLI SSOT・dead-only拒否・flockを再利用して自動復旧する。live pane/idle taskは対象外。既存のCLI切替I/Fは不変だが、死亡pane復旧では手動respawnよりmonitor自動復旧を優先し、capture-pane+task statusで再開を確認する契約を本文へ反映。82/82 PASS、SKIP0。 -->
 <!-- cmd_karo_hotfix_skill_refs_core_202607152126検分: ninja_monitor.sh 494e2c145/7fb06303bをgit showで確認。stale taskのauto-commit ownership除外と、死亡pane復旧時のCLI ready確認・最大3回retry・成否metrics追加。後者はmonitor自動復旧の信頼性強化であり、`shogun_cli_switch.sh`/`switch_cli_mode.sh`の引数、settings→tmux同期、対象paneの`respawn-pane -k`契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-16T07:35:59+09:00 -->
