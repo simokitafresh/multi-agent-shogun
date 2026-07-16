@@ -42,7 +42,8 @@ emit_deny() {
 }
 
 # --- Read hook payload ---
-payload="$(cat)"
+payload=""
+IFS= read -r -d '' payload || true
 if [ -z "${payload//[[:space:]]/}" ]; then
     exit 0
 fi
