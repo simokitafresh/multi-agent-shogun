@@ -678,6 +678,12 @@ uncommitted_count=0
 uncommitted_files=""
 if command -v git &>/dev/null && git -C "$ROOT_DIR" rev-parse --git-dir &>/dev/null; then
   # Staged + unstaged modified + untracked (excluding queue/ logs/ etc.)
+  # WSL2 NTFSでは3回のindex走査より単一statusの方が速い。porcelainは
+  # staged/unstaged/untrackedを同時に保持し、旧3-command経路はfallbackに残す。
+  if uncommitted_files=$(git -C "$ROOT_DIR" status --porcelain=v1 --untracked-files=all -- context/ scripts/ instructions/ config/ CLAUDE.md \
+      | sed -E 's/^...//; s/.* -> //' | sort -u | head -20); then
+    :
+  else
   # WSL2 NTFS最適化: 各ディレクトリを並列git diffで最大3xスループット向上
   _uc_tmp1=$(mktemp); _uc_tmp2=$(mktemp); _uc_tmp3=$(mktemp)
   git -C "$ROOT_DIR" diff HEAD --name-only -- context/ > "$_uc_tmp1" 2>/dev/null &
@@ -686,6 +692,7 @@ if command -v git &>/dev/null && git -C "$ROOT_DIR" rev-parse --git-dir &>/dev/n
   wait
   uncommitted_files=$(cat "$_uc_tmp1" "$_uc_tmp2" "$_uc_tmp3" 2>/dev/null | sort -u | head -20)
   rm -f "$_uc_tmp1" "$_uc_tmp2" "$_uc_tmp3"
+  fi
   uncommitted_count=$(echo "$uncommitted_files" | grep -c '[^ ]' || true)
 fi
 echo "[6.未commit] ${uncommitted_count}件"
@@ -905,12 +912,35 @@ if [ "${session_completed_cmds:-0}" -gt 0 ]; then
   # 報告YAMLからlesson_candidate件数を集計
   lesson_candidates=0
   if [ -d "$ROOT_DIR/queue/reports" ]; then
+    if command -v python3 >/dev/null 2>&1; then
+      # WSL2 /mnt/cでは fileごとの grep+stat subprocess が支配コストになる。
+      # 1 processで同じ「mtime以降のfileにある一致行数」を数え、意味は変えない。
+      lesson_candidates=$(python3 - "$ROOT_DIR/queue/reports" "${session_epoch:-0}" <<'PY'
+import os
+import sys
+
+root, epoch_text = sys.argv[1:3]
+epoch = int(epoch_text or 0)
+count = 0
+for entry in os.scandir(root):
+    try:
+        if not entry.is_file() or entry.stat().st_mtime < epoch:
+            continue
+        with open(entry.path, encoding="utf-8", errors="replace") as stream:
+            count += sum("lesson_candidate" in line for line in stream)
+    except OSError:
+        continue
+print(count)
+PY
+)
+    else
     lesson_candidates=$(grep -rl 'lesson_candidate' "$ROOT_DIR/queue/reports/" 2>/dev/null | while IFS= read -r rfile; do
       rfile_mtime=$(stat -c '%Y' "$rfile" 2>/dev/null || echo 0)
       if [ "${rfile_mtime:-0}" -ge "${session_epoch:-0}" ]; then
         grep -c 'lesson_candidate' "$rfile" 2>/dev/null || echo 0
       fi
     done | awk '{s+=$1}END{print s+0}')
+    fi
   fi
 
   embed_details+=("(e)知見反映: context更新=${context_updates}件, lesson_candidate=${lesson_candidates}件(${session_start_date}以降)")
