@@ -49,9 +49,7 @@ if [ ! -f "$INBOX" ]; then
 fi
 
 ARCHIVE_DIR="$SCRIPT_DIR/archive/inbox"
-# The archive directory exists on the steady-state hot path.  Avoid spawning
-# mkdir for every archive while preserving first-run creation semantics.
-[ -d "$ARCHIVE_DIR" ] || mkdir -p "$ARCHIVE_DIR"
+mkdir -p "$ARCHIVE_DIR"
 
 printf -v DATE_STAMP '%(%Y%m%d)T' -1
 ARCHIVE_FILE="$ARCHIVE_DIR/${AGENT}_${DATE_STAMP}.yaml"
