@@ -837,14 +837,14 @@ maybe_verify_codex_delivery() {
     local msg_id="$2"
     local type="$3"
 
-    [ "$type" = "task_assigned" ] || return 0
+    [ "$type" = "task_assigned" ] || return 2
 
     ensure_cli_lookup_loaded
-    type cli_type >/dev/null 2>&1 || return 0
-    [ "$(cli_type "$target")" = "codex" ] || return 0
+    type cli_type >/dev/null 2>&1 || return 2
+    [ "$(cli_type "$target")" = "codex" ] || return 2
 
     local inbox_file="$SCRIPT_DIR/queue/inbox/${target}.yaml"
-    [ -f "$inbox_file" ] || return 0
+    [ -f "$inbox_file" ] || return 2
 
     local retries="${INBOX_CODEX_NUDGE_RETRIES:-2}"
     local wait_sec="${INBOX_CODEX_VERIFY_WAIT_SEC:-1}"
@@ -896,6 +896,70 @@ maybe_verify_codex_delivery() {
     done
 
     echo "[inbox_write] WARN: codex delivery remained unverified for ${target} after ${retries} retries" >&2
+    return 1
+}
+
+close_async_verifier_inherited_fds() {
+    local fd_path fd
+
+    # A background child launched inside $(...) keeps the substitution pipe
+    # open if any inherited descriptor still references it.  After routing the
+    # worker's standard streams to its evidence log, close every other inherited
+    # descriptor visible through procfs (including Bats/tmux caller internals).
+    for fd_path in "/proc/${BASHPID:-$$}/fd/"*; do
+        fd="${fd_path##*/}"
+        case "$fd" in
+            0|1|2|*[!0-9]*) continue ;;
+        esac
+        eval "exec ${fd}>&-" 2>/dev/null || true
+    done
+}
+
+dispatch_codex_delivery_verification() {
+    local target="$1"
+    local msg_id="$2"
+    local type="$3"
+    local verify_status=0
+
+    # Only deploy_task opts task_assigned into this path.  Persistence above is
+    # still synchronous and flock-protected; only pane delivery verification is
+    # detached from the caller's command-substitution critical path.
+    if [ "$type" = "task_assigned" ] && [ "${INBOX_CODEX_DELIVERY_VERIFY_ASYNC:-0}" = "1" ]; then
+        local verify_log_dir="${INBOX_CODEX_VERIFY_LOG_DIR:-$SCRIPT_DIR/logs/inbox_codex_delivery_verify}"
+        local verify_log="$verify_log_dir/${msg_id}.log"
+        mkdir -p "$verify_log_dir"
+
+        (
+            close_async_verifier_inherited_fds
+            printf '[%s] ASYNC_VERIFY START target=%s msg_id=%s type=%s\n' \
+                "$(date '+%Y-%m-%dT%H:%M:%S')" "$target" "$msg_id" "$type"
+            if maybe_verify_codex_delivery "$target" "$msg_id" "$type"; then
+                verify_status=0
+            else
+                verify_status=$?
+            fi
+            case "$verify_status" in
+                0) printf '[%s] ASYNC_VERIFY SUCCESS target=%s msg_id=%s\n' \
+                       "$(date '+%Y-%m-%dT%H:%M:%S')" "$target" "$msg_id" ;;
+                2) printf '[%s] ASYNC_VERIFY SKIP target=%s msg_id=%s reason=not_codex\n' \
+                       "$(date '+%Y-%m-%dT%H:%M:%S')" "$target" "$msg_id" ;;
+                *) printf '[%s] ASYNC_VERIFY FAILURE target=%s msg_id=%s status=%s\n' \
+                       "$(date '+%Y-%m-%dT%H:%M:%S')" "$target" "$msg_id" "$verify_status" ;;
+            esac
+        ) </dev/null >> "$verify_log" 2>&1 &
+
+        echo "[inbox_write] codex delivery verification queued asynchronously for ${target} (msg_id=${msg_id}, log=${verify_log})" >&2
+        return 0
+    fi
+
+    # Preserve synchronous behavior for every non-opted-in caller/message.
+    if maybe_verify_codex_delivery "$target" "$msg_id" "$type"; then
+        return 0
+    fi
+    verify_status=$?
+    [ "$verify_status" -eq 2 ] && return 0
+    # Delivery verification remains non-fatal after durable inbox persistence.
+    return 0
 }
 
 list_active_ninjas() {
@@ -2159,7 +2223,7 @@ while [ $attempt -lt $max_attempts ]; do
             forward_gunshi_review_result_to_active_ninjas "$CONTENT"
         fi
 
-        maybe_verify_codex_delivery "$TARGET" "$MSG_ID" "$TYPE"
+        dispatch_codex_delivery_verification "$TARGET" "$MSG_ID" "$TYPE"
         exit 0
     else
         # Lock timeout or error

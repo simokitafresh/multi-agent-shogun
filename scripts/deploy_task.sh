@@ -550,7 +550,12 @@ safe_inbox_write() {
     esac
 
     status=0
-    output="$(bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$target" "$message" "$msg_type" "$from" "$action" 2>&1)" || status=$?
+    if [ "$msg_type" = "task_assigned" ] && [ "${DEPLOY_TASK_ASYNC_CODEX_DELIVERY_VERIFY:-1}" = "1" ]; then
+        output="$(INBOX_CODEX_DELIVERY_VERIFY_ASYNC=1 \
+            bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$target" "$message" "$msg_type" "$from" "$action" 2>&1)" || status=$?
+    else
+        output="$(bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$target" "$message" "$msg_type" "$from" "$action" 2>&1)" || status=$?
+    fi
     if [ -n "$output" ]; then
         while IFS= read -r line; do
             log "inbox_write: $line"
