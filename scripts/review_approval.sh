@@ -135,7 +135,7 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ -f "$ROOT/scripts/review_bu
     }
 fi
 tmp=$(mktemp "$dir/.${role}.XXXXXX")
-trap 'rm -f "$tmp"' EXIT
+trap 'rm -f "$tmp" "${REVIEW_FP_CACHE_DIR:?}"/*; rmdir "${REVIEW_FP_CACHE_DIR:?}" 2>/dev/null || true' EXIT
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" "$correction_scope" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 if [ "$role" = karo ] && [ "$result" = RC ]; then

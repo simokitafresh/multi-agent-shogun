@@ -1,11 +1,29 @@
 #!/usr/bin/env bash
 # Fingerprint-bound two-phase review approval storage.
 
+# A single approval transition asks for the same report fingerprint up to three
+# times (record, two-phase readiness, manifest). Command substitutions execute
+# functions in subshells, so an associative array would not survive between
+# those calls. Use an invocation-scoped cache directory inherited by subshells.
+# The content hash is also the fingerprint's first component: any byte change
+# selects a new entry without relying on coarse mtime/size metadata.
+if [ -z "${REVIEW_FP_CACHE_DIR:-}" ]; then
+    REVIEW_FP_CACHE_DIR="${TMPDIR:-/tmp}/review_fp_cache_${BASHPID}_$RANDOM"
+    export REVIEW_FP_CACHE_DIR
+fi
+mkdir -p "$REVIEW_FP_CACHE_DIR"
+
 review_report_fingerprint() {
-    local report="$1" content_hash commit_identity root
+    local report="$1" content_hash commit_identity root cache_key cache_file
     [ -f "$report" ] || return 1
     root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
     content_hash=$(sha256sum "$report" | awk '{print $1}') || return 1
+    cache_key=$(printf '%s:%s' "$(realpath "$report")" "$content_hash" | sha256sum | awk '{print $1}')
+    cache_file="$REVIEW_FP_CACHE_DIR/$cache_key"
+    if [ -s "$cache_file" ]; then
+        cat "$cache_file"
+        return 0
+    fi
     commit_identity=$(python3 - "$report" "$root" <<'PY'
 import pathlib, sys, yaml
 d = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
@@ -92,7 +110,9 @@ raise SystemExit(1)
 PY
 ) || return 1
     [ -n "$commit_identity" ] || return 1
-    printf '%s:%s\n' "$content_hash" "$commit_identity"
+    printf '%s:%s\n' "$content_hash" "$commit_identity" > "$cache_file.tmp.$BASHPID"
+    mv -f "$cache_file.tmp.$BASHPID" "$cache_file"
+    cat "$cache_file"
 }
 
 # RC on a report-only task must require a substantive report correction, not an

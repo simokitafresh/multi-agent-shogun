@@ -142,3 +142,19 @@ PY
   fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT")
   [[ "$fp" == *":no-code-change" ]]
 }
+
+@test "review fingerprint cache reuses unchanged content and invalidates on byte change" {
+  printf '\ncommit_hash: no-code-change\n' >> "$REPORT"
+  source "$ROOT/scripts/lib/review_approval.sh"
+
+  first=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT")
+  [ "$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f | wc -l)" -eq 1 ]
+  second=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT")
+  [ "$second" = "$first" ]
+  [ "$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f | wc -l)" -eq 1 ]
+
+  printf '\nresult: {summary: changed}\n' >> "$REPORT"
+  third=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT")
+  [ "$third" != "$first" ]
+  [ "$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f | wc -l)" -eq 2 ]
+}
