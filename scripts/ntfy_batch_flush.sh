@@ -33,9 +33,10 @@ flush_queue() {
         return 3
     fi
 
-    local payload
+    local payload queued_payload
     payload=$'【INFOバッチ】\n'
-    payload+=$(printf '%s\n' "${queued_lines[@]}")
+    printf -v queued_payload '%s\n' "${queued_lines[@]}"
+    payload+="${queued_payload%$'\n'}"
 
     bash "$NTFY_SCRIPT" "$payload"
     : > "$QUEUE_FILE"
