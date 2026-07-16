@@ -38,13 +38,15 @@ fi
         exit 0
     fi
 
+    IFS= read -r header < "$TSV_FILE"
+
     # アーカイブディレクトリ確保
     archive_dir="${ARCHIVE_FILE%/*}"
     [ -d "$archive_dir" ] || mkdir -p "$archive_dir"
 
     # アーカイブファイルにヘッダーがなければ追加
     if [ ! -f "$ARCHIVE_FILE" ] || [ ! -s "$ARCHIVE_FILE" ]; then
-        head -1 "$TSV_FILE" > "$ARCHIVE_FILE"
+        printf '%s\n' "$header" > "$ARCHIVE_FILE"
     fi
 
     # 退避対象: ヘッダーの次行 〜 (total - KEEP_LINES)行目
@@ -55,7 +57,7 @@ fi
     tsv_dir="${TSV_FILE%/*}"
     tmpfile=$(mktemp "$tsv_dir/.lesson_impact.XXXXXX.tmp")
     trap 'rm -f "$tmpfile"' EXIT
-    head -1 "$TSV_FILE" > "$tmpfile"
+    printf '%s\n' "$header" > "$tmpfile"
     tail -"$KEEP_LINES" "$TSV_FILE" >> "$tmpfile"
     mv -f "$tmpfile" "$TSV_FILE"
     trap - EXIT
