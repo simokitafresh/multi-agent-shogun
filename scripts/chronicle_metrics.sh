@@ -23,13 +23,6 @@ from datetime import date, timedelta
 
 MONTH_RE = re.compile(r"^##\s+(\d{4})-(\d{2})\s*$")
 YEAR_RE = re.compile(r"(\d{4})")
-REVIEW_RE = re.compile(r"(?i)\bre-?review\b|\breview\b|レビュー")
-RECON_RE = re.compile(
-    r"偵察|調査|棚卸し|監査|分析|検証|照合|可否|実現可能性|合議|比較|深掘り|洗い出し|研究"
-)
-IMPL_RE = re.compile(
-    r"(?i)\bimpl\b|\bfix\b|実装|修正|追加|導入|改善|更新|復旧|回復|高速化|最適化|構築|作成|対応|一掃|全緑化|ビルド|リリース"
-)
 
 
 def blankish(value: str) -> bool:
@@ -45,13 +38,19 @@ def infer_type(title: str, key_result: str) -> str:
     if not text:
         return "other"
 
-    if REVIEW_RE.search(text):
+    if re.search(r"(?i)\bre-?review\b|\breview\b|レビュー", text):
         return "review"
 
-    if RECON_RE.search(text):
+    if re.search(
+        r"偵察|調査|棚卸し|監査|分析|検証|照合|可否|実現可能性|合議|比較|深掘り|洗い出し|研究",
+        text,
+    ):
         return "recon"
 
-    if IMPL_RE.search(text):
+    if re.search(
+        r"(?i)\bimpl\b|\bfix\b|実装|修正|追加|導入|改善|更新|復旧|回復|高速化|最適化|構築|作成|対応|一掃|全緑化|ビルド|リリース",
+        text,
+    ):
         return "impl"
 
     return "other"
