@@ -108,18 +108,16 @@ entries:
   updated_at: "2026-06-08T03:50:29"
   iteration: 1
 - script_path: scripts/agent_status.sh
-  status: pending
+  status: completed
   before_ms: 14
-  after_ms: ''
-  before_real_ms: 2800
-  after_real_ms: ""
-  real_measurement_command: /usr/bin/time -f 'REAL_SECONDS=%e' bash -c 'for i in {1..20};
-    do bash scripts/agent_status.sh >/dev/null; done'
-  test_result: bash -n scripts/agent_status.sh && shellcheck -x scripts/agent_status.sh
-    && bats tests/unit/test_agent_state.bats PASS 14/14 SKIP=0
-  commit: e85e3e8c7
-  assigned_to: ""
-  updated_at: "2026-07-16T20:05:02"
+  after_ms: 1280
+  before_real_ms: 1676
+  after_real_ms: 1280
+  real_measurement_command: "for i in {1..20}; do bash scripts/agent_status.sh >/dev/null; done"
+  test_result: "bash-n PASS; shellcheck PASS; bats 14/14 PASS FAIL=0 SKIP=0"
+  commit: "278d5f9eaa55c8094b1d403855336a5bca977fe6"
+  assigned_to: "saizo"
+  updated_at: "2026-07-16T23:14:45"
   iteration: 1
 - script_path: scripts/api_usage.sh
   status: pending
@@ -596,20 +594,19 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/cmd_quality_log.sh
-  status: pending
+  status: completed
   before_ms: 19
-  after_ms: ''
+  after_ms: 1931
   before_real_ms: 3160
   after_real_ms: ""
   real_measurement_command: CMD_QUALITY_LOG_FILE=<tmp>/log.yaml CMD_QUALITY_FAST_METADATA=1
     MEMORY_DB_LIVE_INSERT=<tmp>/missing.py CMD_QUALITY_SOURCE=bench CMD_QUALITY_PROJECT=infra
     bash scripts/cmd_quality_log.sh cmd_bench PASS no 0 'note "quoted" \ slash' (100-run
     total)
-  test_result: bash -n scripts/cmd_quality_log.sh PASS; bats tests/unit/test_cmd_quality_memory_db.bats
-    9/9 PASS SKIP=0; bats tests/unit/test_cmd_save_diagnose.bats 4/4 PASS SKIP=0
-  commit: f61bdd1a609e01c0f8295be5e35590180256c1b2
-  assigned_to: ""
-  updated_at: "2026-07-16T20:04:49"
+  test_result: "bash-n PASS; related bats 28/29 PASS SKIP=0; 1 pre-existing unrelated cmd_save path failure"
+  commit: "635f8a7c53b96cf55d634d779f6c1bed51537352"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-16T22:56:43"
   iteration: 1
 - script_path: scripts/cmd_save.sh
   status: pending
@@ -806,19 +803,16 @@ entries:
   updated_at: "2026-07-16T21:53:28"
   iteration: 1
 - script_path: scripts/gate_fire_log.sh
-  status: pending
+  status: completed
   before_ms: 18
   after_ms: ''
-  before_real_ms: 2523
-  after_real_ms: ""
-  real_measurement_command: for _i in $(seq 1 30); do rm -f /tmp/gate_fire_log_stats_*
-    2>/dev/null || true; GATE_FIRE_LOG_FILE=/tmp/kagemaru_gate_fire_log_speed.yaml
-    bash scripts/gate_fire_log.sh >/dev/null; done
-  test_result: bash -n PASS; bats tests/unit/test_gate_fire_log.bats 6/6 PASS; cold
-    30-run output PASS; SKIP=0
-  commit: 327db17a0
-  assigned_to: ""
-  updated_at: "2026-07-16T20:06:21"
+  before_real_ms: 670.5
+  after_real_ms: 629.5
+  real_measurement_command: "GATE_FIRE_LOG_FILE=\"$PWD/logs/gate_fire_log.yaml\" GATE_FIRE_LOG_REPO_ROOT=\"$PWD\" GATE_FIRE_LOG_LIVE_REPORT_DIR=\"$PWD/queue/reports\" GATE_FIRE_LOG_CACHE_DIR=\"$CACHE\" bash <(git show \"$REV\":scripts/gate_fire_log.sh)"
+  test_result: "bats tests/unit/test_gate_fire_log.bats: PASS=10 FAIL=0 SKIP=0; bash-n=CLEAR"
+  commit: "94bf1ae50e1cf2b8ccb2ca3b1cf29a2507c72b9f"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T00:05:43"
   iteration: 1
 - script_path: scripts/gate_improvement_trigger.sh
   status: pending
@@ -1081,7 +1075,7 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_lesson_health.sh
-  status: pending
+  status: assigned
   before_ms: 11
   after_ms: ''
   before_real_ms: 2260
@@ -1089,8 +1083,8 @@ entries:
   real_measurement_command: "time_gate_lesson_health_full_all_projects_after2"
   test_result: "bats tests/unit/test_gate_lesson_health.bats: 12/12 PASS; output_diff_empty"
   commit: "90c32efdd"
-  assigned_to: ""
-  updated_at: "2026-07-16T20:06:45"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T00:12:58"
   iteration: 2
 - script_path: scripts/gates/gate_loop_health.sh
   status: pending
@@ -1658,7 +1652,7 @@ entries:
   updated_at: "2026-06-13T00:53:00"
   iteration: 2
 - script_path: scripts/hooks/test_hooks.sh
-  status: pending
+  status: assigned
   before_ms: 17
   after_ms: 17
   before_real_ms: 2070
@@ -1666,8 +1660,8 @@ entries:
   real_measurement_command: bash scripts/hooks/test_hooks.sh; median of 5 runs
   test_result: bash_n_PASS;test_hooks_80_pass_0_skip;before_3020_after_2070
   commit: e5d42e65665977b9cd0ab9fddc9d949065fb684c
-  assigned_to: ""
-  updated_at: "2026-07-16T20:06:51"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T00:19:43"
   iteration: 1
 - script_path: scripts/hooks/test_result_guard.sh
   status: pending
@@ -2193,17 +2187,16 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/lib/layout_string.sh
-  status: pending
+  status: saturated
   before_ms: 16
   after_ms: 16
-  before_real_ms: 2704
-  after_real_ms: ""
-  real_measurement_command: mock tmux 240x60; 50x source agent_config+layout_string;
-    generate_layout_string shogun:agents 1; median of 5 runs
-  test_result: bash_n_pass;mock_tmux_output_match_0c8a;python_checksum_removed;before_3668_after_2704;SKIP=0
-  commit: e9de94f33
-  assigned_to: ""
-  updated_at: "2026-07-16T20:06:02"
+  before_real_ms: 957.5
+  after_real_ms: 1200
+  real_measurement_command: "ABAB fixed wrapper: stub tmux width=240 height=72, col1_pct=32, karo_height=36; exact workload=source scripts/lib/layout_string.sh then generate_layout_string 100 times; warmup before alternating 20 samples/arm"
+  test_result: "output_sha_equal=yes; bash_n=PASS; shellcheck=PASS; mapped_tests=0; FAIL=0; SKIP=0; candidate_rolled_back=yes; safety_lines_removed=0"
+  commit: "e9de94f33a0c4acd4323ed4f3f115dc880065d8e"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-16T23:40:59"
   iteration: 1
 - script_path: scripts/lib/lock_path.sh
   status: pending
@@ -2693,17 +2686,17 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/oneshot/add_injection_count.sh
-  status: pending
+  status: saturated
   before_ms: 14
-  after_ms: ''
+  after_ms: 3633
   before_real_ms: 3087.133
   after_real_ms: ""
   real_measurement_command: 'sandbox: 20x bash /tmp/mas_add_injection_after_min/scripts/oneshot/add_injection_count.sh
     with restored lesson YAML fixtures'
-  test_result: bash -n PASS; sandbox injection_count functional PASS SKIP=0
-  commit: 7d08753dc
+  test_result: "bash-n PASS; sandbox functional 2/2 PASS SKIP=0; absolute timing FAIL 3087.133->3633"
+  commit: "dde2f3f9f25646de8906930b947a343e42d59231"
   assigned_to: ""
-  updated_at: "2026-07-16T20:04:53"
+  updated_at: "2026-07-16T23:15:29"
   iteration: 1
 - script_path: scripts/oneshot/backfill_gate_titles.sh
   status: pending
@@ -2800,16 +2793,16 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/ralph_loop_metrics.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: 15
-  before_real_ms: 2460
-  after_real_ms: ""
-  real_measurement_command: bash scripts/ralph_loop_metrics.sh
-  test_result: 'bash -n: PASS; full run exit 0; output identical'
-  commit: 489733f21
-  assigned_to: ""
-  updated_at: "2026-07-16T20:06:40"
+  before_real_ms: 1451
+  after_real_ms: 1167
+  real_measurement_command: "bash scripts/ralph_loop_metrics.sh >/dev/null 2>/dev/null"
+  test_result: "PASS 1/1 FAIL=0 SKIP=0"
+  commit: "5dd02ffbdbc5a3bef2d675ba49bb195e9ecf1a46"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T00:20:00"
   iteration: 1
 - script_path: scripts/record_lesson_feedback.sh
   status: pending
