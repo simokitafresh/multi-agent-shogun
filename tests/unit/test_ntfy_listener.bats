@@ -241,6 +241,15 @@ append_ntfy_inbox "msg-corrupt-1" "1711111111" "recovery test message" "pending"
     ! grep -q "BROKEN LINE" "$INBOX_FILE"
 }
 
+@test "T-NTFY-008: every daemon inbox_write call is bounded by timeout 15" {
+    local total_calls bounded_calls
+    total_calls=$(awk '/inbox_write\.sh/ && $0 !~ /^[[:space:]]*#/ { n++ } END { print n + 0 }' "$LISTENER_SCRIPT")
+    bounded_calls=$(awk '/timeout 15 bash .*inbox_write\.sh/ && $0 !~ /^[[:space:]]*#/ { n++ } END { print n + 0 }' "$LISTENER_SCRIPT")
+
+    [ "$total_calls" -eq 2 ]
+    [ "$bounded_calls" -eq "$total_calls" ]
+}
+
 @test "T-NTFY-007: corrupt backup preserves original broken content" {
     export CORRUPT_DIR_TEST="$TEST_TMPDIR/corrupt2"
     mkdir -p "$CORRUPT_DIR_TEST"

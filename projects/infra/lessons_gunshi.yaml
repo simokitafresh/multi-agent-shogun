@@ -180,9 +180,10 @@ lessons:
   origin: '[[gunshi_infra_audit_20260406]]'
   created_at: '2026-04-06'
   automated: true
-  enforcement: ntfy_listener.sh L349,L424に`timeout 15`適用済み。heartbeat判定をninja_monitor.sh check_ntfy_listener_health()に組込済み
+  enforcement: "Level4(フロー内BLOCK): ntfy_listener.shの全inbox_write.sh呼出しをtimeout 15で包み、tests/unit/test_ntfy_listener.batsのT-NTFY-008が呼出し総数とtimeout保護数の2/2一致をCIで強制する。heartbeat判定はninja_monitor.sh check_ntfy_listener_health()で維持する。"
   when: デーモン(ntfy_listener等)から外部スクリプトを呼ぶ時。WSL2 NTFSのflock/writeがhangしうる
   how: timeout 15 bash script.shで包む。ext4上のheartbeatで偽stale検知を回避
+  enforcement_level: 4
 - id: LG017
   title: lock_path.shのlockファイルは永続蓄積する — 定期cleanupが必要
   detail: |
