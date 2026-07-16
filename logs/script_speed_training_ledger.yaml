@@ -2925,18 +2925,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/ntfy_batch_flush.sh
-  status: assigned
+  status: completed
   before_ms: 15
   after_ms: ''
-  before_real_ms: 576.806
-  after_real_ms: ""
-  real_measurement_command: 'sandbox: for i in {1..100}; do bash /tmp/mas_ntfy_batch_flush_bench_after/scripts/ntfy_batch_flush.sh;
-    done (empty queue, stub ntfy)'
-  test_result: bash -n PASS; sandbox empty/nonempty queue functional PASS SKIP=0
-  commit: c5a700c2a
+  before_real_ms: 22.2005
+  after_real_ms: 20.4925
+  real_measurement_command: "bash <isolated-arm>/scripts/ntfy_batch_flush.sh"
+  test_result: "bash_n_payload_equivalence_FAIL0_SKIP0"
+  commit: "8b3c353210af8adb8e6ea64ebedd2f68e87f9f4a"
   assigned_to: "tobisaru"
-  updated_at: "2026-07-17T04:01:00"
+  updated_at: "2026-07-17T04:06:44"
   iteration: 1
+  last_good_commit: "0eababcd3bc12d7fbaedc31e7134617cb48f665e"
+  candidate_commit: "8b3c353210af8adb8e6ea64ebedd2f68e87f9f4a"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 22.2005
+  last_good_p95_ms: 27.88
+  candidate_p50_ms: 20.4925
+  candidate_p95_ms: 24.271
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2-/tmp-isolated-dev-null-ntfy-mock-20260717"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/ntfy_cmd.sh
   status: pending
   before_ms: 15
