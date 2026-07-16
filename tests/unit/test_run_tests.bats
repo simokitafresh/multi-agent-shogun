@@ -69,6 +69,28 @@ SH
   [ "$status" -eq 0 ]
 }
 
+@test "timing-regressed shared-resource fixtures receive the full aggregate weight" {
+  for name in test_hook_dispatchers test_statusline test_sqlite3_cli_removal test_small_workflow_consolidated test_skill_recommend_metrics; do
+    printf '@test "sample" { true; }\n' >"$TMPROOT/tests/unit/$name.bats"
+  done
+  export BATS_SCHEDULER_TRACE="$TMPROOT/schedule.tsv"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_CACHE=0 \
+    BATS_INNER_JOBS=1 BATS_MAX_TEST_JOBS=8 BATS_SCHEDULER_TRACE="$BATS_SCHEDULER_TRACE" bash -c '
+      source "$1/scripts/run_tests.sh"
+      run_bats_files_parallel "$1/tests/unit/test_hook_dispatchers.bats" \
+        "$1/tests/unit/test_statusline.bats" \
+        "$1/tests/unit/test_sqlite3_cli_removal.bats" \
+        "$1/tests/unit/test_small_workflow_consolidated.bats" \
+        "$1/tests/unit/test_skill_recommend_metrics.bats"
+    ' _ "$TMPROOT"
+
+  [ "$status" -eq 0 ]
+  [ "$(wc -l <"$BATS_SCHEDULER_TRACE")" -eq 5 ]
+  [ "$(awk -F '\t' '$2 == 8 {count++} END {print count+0}' "$BATS_SCHEDULER_TRACE")" -eq 5 ]
+  [ "$(awk -F '\t' '$3 == 0 {count++} END {print count+0}' "$BATS_SCHEDULER_TRACE")" -eq 5 ]
+}
+
 @test "default aggregate budget follows host CPUs and remains capped at eight" {
   cat >"$TMPROOT/bin/nproc" <<'SH'
 #!/usr/bin/env bash
