@@ -184,6 +184,8 @@ PF切替計測実績(CDP): 547.2ms中央値(cmd_2312, 2026-04-26)。旧1008ms(cm
 - L277: 履歴グラフUIは時系列snapshot蓄積と取得窓の両方が揃わないと単月表示へ退化する（cmd_859）
 - L280: 入替推奨UIは候補(candidate)語彙+連続月数条件+Progressive Disclosureで設計せよ（cmd_859）
 - L719: FE表示名変更時は新名優先+旧名fallbackを同時実装せよ（cmd_karo_direct_fe_ptu_fix）
+- L786: ComparisonChart Y軸は純粋関数抽出+動的生成で構造的解消（cmd_3565）
+- L792: スワイプ除外はbutton全体でなくハンドル領域に限定せよ（cmd_3592）
 
 ## 6. デザインシステム
 
@@ -202,6 +204,7 @@ PF切替計測実績(CDP): 547.2ms中央値(cmd_2312, 2026-04-26)。旧1008ms(cm
 - L160: DM-signalの認証はin-memory token store方式。サーバー再起動(Renderデプロイ含む)で全セッション無効化（cmd_527）
 - L226: Admin isCheckingAuth guardを!isAuthenticatedより後に置くと認証復元中にLoginModal誤表示（cmd_753）
 - L227: HttpOnly cookie authをlocalStorage booleanで同期代替するとpublic UIにstale authが残る（cmd_753）
+- L796: 同一タブlocalStorage認証変更はstorage eventで検知できない（cmd_3641）
 
 ## 8. 性能最適化
 
@@ -259,6 +262,8 @@ PF切替計測実績(CDP): 547.2ms中央値(cmd_2312, 2026-04-26)。旧1008ms(cm
 
 - L651: cdp_measure.sh curl CDP check: WSL2でcurlがWindowsローカルポートに接続不可（cmd_2288）
 - L653: cdp_measure baseline比較は生成JSONへの統合確認を必須にする（cmd_2291）
+- L798: 重いページはPAGE_APIS prefetchを空にしページ本体fetchをSSOTにする（cmd_3650）
+- L801: App Router共通chunkはmodule分割だけではhash不変 — 初期レンダー計算量削減が正道（cmd_3659）
 
 ## 9. PWA・テスト・デプロイ
 
@@ -319,24 +324,9 @@ cmd_295 Phase1の全tier hide_portfolio=trueがGlobal変更をブロックして
 L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-signal-ops.md` 教訓索引に記載済み
 - （L340は§4 APIクライアントへ振り分け済）
 - （L650/L651/L653/L656→§8性能最適化、L654/L655→§2.5、L702/L704/L705→§11.5、L719→§5に振り分け済み 2026-06-16）
-- L792: スワイプ除外対象にbutton全体を含めると有効領域が狭まり片方向不具合に見える（cmd_3592）
-- L786: ComparisonChart Y軸: 固定配列目盛は純粋関数抽出+動的生成で構造的解消（cmd_3565）
-- L796: 同一タブlocalStorage認証変更はstorage eventで検知できない（cmd_3641）
-- L798: 重いページはPAGE_APIS prefetchを空にしてページ本体fetchをSSOTにする（cmd_3650）
-- L801: Next App Router共通chunkはapp module分割だけではhash/サイズが変わらない — 初期レンダー計算量削減が正道（cmd_3659）
-- L804: FoF調査では構成定義(component_portfolios)と当月選択結果(signals/fof_component_weights/monthly_trade)を分けて証拠化する（cmd_3676_recon2）
+- （L786/L792→§5、L796→§7、L798/L801→§8に振り分け済み 2026-07-16）
+- （L804/L850/L858/L873/L878/L880→ops/core、L861→research、L865/L867/L868/L890/L902→infraに振り分け済み 2026-07-16）
 <!-- last_synced_lesson: L902 -->
-- L850: 本番への非同期長時間処理(fullrecalculate等)をトリガー後に設計変更指示が届いた場合、走行中処理は中断せず完了を待ち、変更は次回反復から適用する（cmd_3804）
-- L858: パリティ残存乖離の原因は推測せず3点突合(本番/ライブ実行/GS)で必ず切り分けよ（cmd_3816）
-- L861: 非決定性偵察はDB再クエリの前に既存分析成果物(outputs/analysis/*.json)を横断確認せよ（cmd_karo_recon2_cmd3824_mechanism_202607101223）
-- L865: 同一ファイルに他ninjaの未コミット差分が同居する場合はgit apply --cachedで自分のハンクのみ選択commitせよ（cmd_3832）
-- L867: 『無改造コードだからスコープ外』は自分自身のテスト手順の欠陥を見逃す言い訳になり得る。全行完全一致の不変条件下では、まず自分の検証手順そのものを疑え（cmd_karo_hotfix_cmd3825_bulk_parity_zero_202607101725）
-- L868: CI修正前に失敗テストの仕様正当性をgit履歴で確認する（cmd_3834）
-- L873: db.info artifact判定は存在だけでなく由来と実型を検証する（cmd_karo_hotfix_dm_main_seiryu_202607111202）
-- L878: adapterを跨ぐ純粋関数統合ではdate-like入力の型正規化(pd.Timestamp化)を移植先で再実装せよ（cmd_3856）
-- L880: 永続化するset由来の配列は明示sorted()なしでは非決定。telemetry leafは分類し境界をharnessへ反映せよ（cmd_3858）
-- L890: 実装中dirty checkoutはsource identity全量テストを意図どおりBLOCKする（cmd_3880）
-- L902: worktree全量pytestはenv前提をpreflightせよ（cmd_3908）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 

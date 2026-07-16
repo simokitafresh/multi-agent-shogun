@@ -646,6 +646,11 @@ import metrics_research_engine as MRE
 - L857: 既存スクリプトの再利用はexec文字列置換でなく環境変数overrideで差し替える。exec置換はpre-commit S102でBLOCK（cmd_3815）
 - L891: pytest node idは推測せず`--collect-only -q`の実在収集結果から固定する。collected 0は指定ミスのサイン（cmd_3896）
 - L899: subprocessのready待ちloopはtimeout後の無条件継続を禁止し、成功条件を二値assert+child早期exitを即伝播する（cmd_karo_ci_red_dm_p4_uvicorn_29326659277）
+- L804: FoF調査では構成定義(component_portfolios)と当月選択結果(signals/fof_component_weights)を分けて証拠化する（cmd_3676_recon2）
+- L873: db.info artifact判定は存在だけでなく由来と実型を検証する（cmd_karo_hotfix_dm_main_seiryu_202607111202）
+- L880: 永続化するset由来の配列は明示sorted()なしでは非決定（cmd_3858）
+- L900: subprocess moduleはpackage名でなくapp-dirで探索根を固定する（cmd_karo_ci_red_dm_p4_uvicorn_import_29328352201）
+- L901: 永続helperはchecked-in source同期後に実行する（cmd_karo_ci_fix_ga256_cmd3907_fof_golden）
 
 - L819: PF単位の確定イベント実装はrebalance_trigger等のPF別設定を参照せよ。全PF一律の固定日付/件数はハードコードの温床（cmd_3702）
 - L822: MonthlyTradeCalculatorのMockベースdbテストは新規DB問合せ関数追加のたびに複数クラスへ横展開して壊れる（cmd_3710）
