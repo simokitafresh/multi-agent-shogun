@@ -86,6 +86,13 @@ task:
   - 'old deferred item'
   recommended_skills:
   - old-skill
+  files_to_modify:
+  - scripts/old_task.py
+  files_modified:
+  - scripts/gates/old_gate.sh
+  quality_gate:
+    action_conversion: '前cmdのCI未解消条件をBLOCKする'
+    fp_measurement: '前cmdのCI偽陽性を計測する'
   stop_for:
   - 'old stop condition 1'
   - 'old stop condition 2'
@@ -1274,6 +1281,7 @@ EOF
         "$file" \
         target_path progress description started_at \
         constraints engineering_preferences context_files scope context context_hints assigned_scope expected_model_effort pre_deploy_banner_evidence not_in_scope recommended_skills stop_for never_stop_for parallel_ok \
+        files_to_modify files_modified quality_gate \
         AC1 AC2 AC3 acceptance_criteria ac_priority ac_checkpoint \
         command reports_to_read credential_warning context_update type report_template \
         worker_id timestamp

@@ -975,6 +975,9 @@ STALE_FIELDS = [
     # 第15層: cmd固有メタ(karo_direct手動注入/resolve_cmd_to_task転写。前cmdの値が次cmdに残留する)
     'expected_model_effort', 'pre_deploy_banner_evidence',
     'not_in_scope', 'recommended_skills', 'assigned_lesson_ids',
+    # 第15.5層: cmd固有の変更対象・detector品質契約。前cmdの値が残ると
+    # 教訓target filterと忍者の作業scopeを別cmdへ向ける（cmd_3997/3998で連続再現）。
+    'files_to_modify', 'files_modified', 'quality_gate',
     # 第17層: 独立偵察契約。前taskのtrack/base/embargoを次cmdへ漏らさず、
     # --yaml sourceに明示された新契約だけをpublish後に保持する。
     'independence_group', 'independence_track', 'independence_base_commit',
