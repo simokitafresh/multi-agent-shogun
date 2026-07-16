@@ -130,7 +130,18 @@ MOCK
         PREPUSH_CROSS_GENERATION_WAIT_SECONDS=2 bash -lc 'cd "$TEST_ROOT" && bash .githooks/pre-push' \
         >"$TEST_ROOT/waiter.out" 2>&1 &
     waiter=$!
-    sleep 0.2
+    # Synchronize on the observable handoff state instead of assuming the
+    # background hook has reached its first lock timeout after a fixed sleep.
+    handoff_observed=0
+    for _ in $(seq 1 100); do
+        if grep -q 'Superseded holder still active; waiting for safe handoff' \
+                "$TEST_ROOT/waiter.out" 2>/dev/null; then
+            handoff_observed=1
+            break
+        fi
+        sleep 0.02
+    done
+    [ "$handoff_observed" -eq 1 ]
     flock -u 8
     wait "$waiter"
     [ "$?" -eq 0 ]
