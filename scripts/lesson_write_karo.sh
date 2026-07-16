@@ -98,17 +98,10 @@ if [ ! -f "$LESSONS_FILE" ]; then
     exit 1
 fi
 
-TIMESTAMP=$(date "+%Y-%m-%d")
-
-# Entry count gate — 家老台帳のみ肥大化防止 (v2統合後: 22件→上限35件)
-ENTRY_COUNT=$(grep -c '^- id:' "$LESSONS_FILE" 2>/dev/null || echo 0)
-if [ -z "$MERGE_INTO" ] && [ "$LESSON_ROLE" = "karo" ] && [ "$ENTRY_COUNT" -ge 35 ]; then
-    echo "BLOCK: lessons_karo.yaml が ${ENTRY_COUNT}件に到達(上限35件)。" >&2
-    echo "  新規追加の前に既存教訓を統合・パターン昇格せよ。" >&2
-    echo "  個別事故→パターンに昇格し件数を減らしてから再実行。" >&2
-    echo "  参考: docs/research/lessons_karo_v1_archive.md (92件→22件の統合実績)" >&2
-    exit 1
-fi
+# bash builtin avoids a date subprocess on every write.  The capacity check is
+# intentionally performed only after flock below: a pre-lock grep duplicated
+# the authoritative PyYAML check and could never make the concurrent decision.
+printf -v TIMESTAMP '%(%Y-%m-%d)T' -1
 
 # Atomic append with flock (3 retries)
 attempt=0
