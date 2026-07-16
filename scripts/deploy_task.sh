@@ -9435,7 +9435,27 @@ deploy_task_source_contract_precheck() {
         echo "BLOCK: deployment source not found: ${source_file}" >&2
         return 2
     }
-    deploy_task_ten_min_contract_precheck "$source_file" "$cmd_id"
+    deploy_task_ten_min_contract_precheck "$source_file" "$cmd_id" || return $?
+
+    # Level5: derive the shard manifest at the common deployment entrance.
+    # Worker shortage is deferred, never silently collapsed to a single worker.
+    local shard_id shard_output shard_result shard_rc=0
+    local -a shard_args
+    shard_id="${cmd_id:-$(basename "$source_file" .yaml)}"
+    shard_output="$SCRIPT_DIR/queue/shard_manifests/${shard_id}.json"
+    shard_args=("$source_file")
+    if [ -n "$cmd_id" ]; then
+        shard_args+=(--block-id "$cmd_id")
+    fi
+    shard_result="$(python3 "$SCRIPT_DIR/scripts/lib/universal_shard_contract.py" \
+        "${shard_args[@]}" --tasks-dir "$SCRIPT_DIR/queue/tasks" \
+        --output "$shard_output" 2>&1)" || shard_rc=$?
+    if [ "$shard_rc" -ne 0 ]; then
+        log "BLOCK(UNIVERSAL_SHARD): ${shard_result}"
+        echo "$shard_result" >&2
+        return 2
+    fi
+    log "universal_shard: ${shard_result}"
 }
 
 capture_done_redeploy_context() {

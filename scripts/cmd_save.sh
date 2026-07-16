@@ -6197,6 +6197,23 @@ PY
 
 check_long_runtime_execution_env_contract
 
+# --- Check 19.6: role-neutral universal shard entrance (30分単独をfail-closed) ---
+# Save入口でも同じ契約を検証する。manifestの永続生成はdeploy_task入口が担当する。
+check_universal_shard_contract() {
+    local tmp result rc=0
+    tmp="$(mktemp)"
+    printf '%s\n' "$CMD_BLOCK_NC" >"$tmp"
+    result="$(python3 "$SCRIPT_DIR/scripts/lib/universal_shard_contract.py" "$tmp" \
+        --tasks-dir "$SCRIPT_DIR/queue/tasks" 2>&1)" || rc=$?
+    rm -f "$tmp"
+    if [ "$rc" -ne 0 ]; then
+        record_block_reason "$result"
+        return 1
+    fi
+    printf 'PASS(universal_shard=%s)\n' "$result"
+}
+check_universal_shard_contract
+
 # --- Check 20: assumptionsフィールド検査（BLOCK昇格 cmd_1906） ---
 # 起源: cmd_1905 — 暗黙前提を構造的に可視化し、未検証前提がcmdに混入するのを防ぐ
 # 目的: 全cmdにassumptionsがない/未検証前提があるcmdをBLOCKし、暗黙前提の混入を防ぐ（cmd_2157: AC≥3→全cmd）
