@@ -1,6 +1,6 @@
 ---
-<!-- script_refs_checked_at: 2026-07-16T13:35:00+09:00 -->
-<!-- cmd_karo_hotfix_shogun_startup_four_blocks検分: deploy_task.sh直近差分はtask scope契約のfail-closed内部強化。--direct/--yaml配備CLIと重複guard契約は不変。 -->
+<!-- script_refs_checked_at: 2026-07-16T14:00:00+09:00 -->
+<!-- 将軍D0検分: deploy_task.sh 72fc07d15(LG055 operational_simulationテンプレート事前生成)。内部テンプレート追加のみ、--direct/--yaml配備CLIと重複guard契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-15T21:27:50+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_core_202607152126検分: deploy_task.sh 22609351d/6c2eea753/7a8dd1c68をgit showで確認。report summary事前供給、分析cmdのreadonly_ref抽出拡張、readonly_ref再注入の冪等化はいずれも配備内部の文脈生成強化。`--yaml <file> <ninja>`、`--direct <ninja> <cmd_id>`、`--direct --yaml <file> <ninja>`の引数・重複guard・通知契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-15T05:58:00+09:00 -->
