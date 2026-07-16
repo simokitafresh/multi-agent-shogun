@@ -5,7 +5,12 @@
 # cmd_1294(Write/Edit DENY)の防御ギャップ補完。
 set -euo pipefail
 
-IFS= read -r -d '' payload || true
+# Hook JSON is normally one line. Keep that hot path entirely in Bash, while
+# preserving the old complete-input contract for pretty-printed/multiline JSON.
+IFS= read -r payload || true
+while IFS= read -r payload_line; do
+    payload+=$'\n'"$payload_line"
+done
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 
 # Fast-path: skip if not Bash or no report path
