@@ -1,29 +1,23 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-17 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-17T03:40:49+09:00 -->
+<!-- generated_at: 2026-07-17T04:52:26+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-17T03:40:48+09:00 | terminal | response | inbox未読0。idle待機。
-- 2026-07-17T03:40:11+09:00 | ntfy | outbound | 【家老】cmd_reflux_promotion_202607170339_kotaro 初回配備開始 (title=(untitled), ninja=kotaro)
-- 2026-07-17T03:40:03+09:00 | terminal | response | kagemaru switch_project LGTM完了。inbox未読0。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-17T03:39:26+09:00 | ntfy | outbound | 【家老】cmd_training_speed_build_instructions_20260717033850 初回配備開始 (title=(untitled), ninja=hayate)
-- 2026-07-17T03:36:37+09:00 | ntfy | outbound | 【家老】cmd_training_speed_switch_project_20260717032414 完了
-- 2026-07-17T03:36:17+09:00 | terminal | response | gate_sync完了。inbox未読0。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-17T03:34:26+09:00 | terminal | response | gate_sync完了(pre_karo_edit_guard CLEAR)。inbox未読0。idle待機。
-- 2026-07-17T03:34:13+09:00 | terminal | response | switch_project LGTM完了。inbox未読0。idle待機。
-- 2026-07-17T03:33:46+09:00 | ntfy | outbound | 【家老】cmd_training_speed_hooks_pre_karo_edit_guard_20260717032311 完了
-- 2026-07-17T03:33:33+09:00 | terminal | response | inbox 0件。全系統正常。自走監視継続。 [meta] stop_reason=end_turn
+- 2026-07-17T04:52:25+09:00 | terminal | response | inbox未読0。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-17T04:51:56+09:00 | terminal | response | gate_sync完了。inbox未読0。idle待機。
+- 2026-07-17T04:50:01+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率99% 連勝178
+- 2026-07-17T04:49:32+09:00 | terminal | response | gate_sync完了(tobisaru reflux CLEAR)。inbox未読0。idle待機。
+- 2026-07-17T04:49:14+09:00 | terminal | response | causal_backlinks LGTM完了。p50 -65%, p95 -82%の劇的改善。inbox未読0。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-17T04:47:12+09:00 | terminal | response | tobisaru reflux LGTM完了。滞留解消。inbox未読0。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-17T04:45:45+09:00 | ntfy | outbound | 【INFOバッチ】 2026-07-17 04:27:36|cmd_training_speed_gates_gate_silent_fallback_20260717041314 2026-07-17 04:31:07|cmd_trai…
+- 2026-07-17T04:45:31+09:00 | terminal | response | inbox 4件既読完了。全6忍者稼働中(04:45確認)。kagemaru=context_freshness_check速度修行中 — D0実装したcampaign-lane catalog対象(context-freshness)の…
+- 2026-07-17T04:44:22+09:00 | terminal | response | APPROVE完了。inbox未読0。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-17T04:43:54+09:00 | ntfy | outbound | 【家老】cmd_training_speed_lesson_auto_tag_20260717044234 初回配備開始 (title=(untitled), ninja=hanzo)
 
 ## 未解決確認事項
-- kagemaru block_destructive GATE CLEAR。inbox 0件。全6忍者稼働中(03:09確認)。 [MEM: memory_db ts=2026-07-17 "速度パイプライン安定稼働。全忍者稼働中"] 全系統正常。自走監視継続。
-- hayate reflux LGTM + causal_backlink_counts GATE CLEAR。inbox 0件。全6忍者稼働中(snapshot 02:53確認)。 [MEM: memory_db ts=2026-07-17 "全6忍者再配備完了+稼働中。速度パ…
-- tobisaru opsim_fixture_rootfix GATE CLEAR。inbox 0件。陣形図(02:24)でkagemaru再配備確認(codex_safe_write)。hanzo failedはsnapshot遅延の可能性 — 最新snapshotでhanz…
-- kotaro clipboard_watcher軍師LGTM。inbox 0件。hanzoは最新snapshot(02:17)で`cmd_karo_hotfix_repor...`に再配備済み(truncatedだが新task確認)。hookのfailed検出はsnapshot…
-- 家老稼働中（Working 1m17s）。inbox4 nudge到達確認済み。APPROVE 2件処理完了。inbox未読0。idle待機。 [meta] stop_reason=end_turn
-- hanzo speed_backfill_review_gate_done軍師LGTM。inbox 0件。 [MEM: memory_db ts=2026-07-17 "hayate新task配備確認(pre_mcp_lord_attribution_guard)。CI fix…
-- tobisaru再配備確認(skill_script_refs_six) — 軍師LGTM。家老がエスカレーションの3項目(CI RED + skill quality + skill refs)を全て忍者配備→LGTM/GATE CLEARまで進めた。3名failed忍者も全…
-- kotaro skill_quality_campaign_shard軍師LGTM — 家老がkotaroを再配備済み(スキル品質修正)。hookのfailed検出はsnapshot遅延(00:58生成)。kotaroは実際にはin_progressで稼働中。 [MEM: me…
+- inbox 4件既読完了。全6忍者稼働中(04:45確認)。kagemaru=context_freshness_check速度修行中 — D0実装したcampaign-lane catalog対象(context-freshness)のwriter scriptが改善されてい…
+- inbox 5件既読完了。全6忍者稼働中(04:26確認)。 [MEM: memory_db ts=2026-07-17 "速度パイプライン安定稼働。全忍者稼働中"] 全系統正常。自走監視継続。
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
