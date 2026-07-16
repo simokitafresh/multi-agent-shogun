@@ -166,9 +166,7 @@ PY
   source "$ROOT/scripts/lib/review_approval.sh"
 
   PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT" >/dev/null
-  local entry
-  entry=$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f | head -1)
-  [ "$(head -1 "$entry")" = "$REPORT" ]
+  [ "$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f | wc -l)" -eq 1 ]
   PROJECT_ROOT="$ROOT" review_report_fingerprint "$alias_report" >/dev/null
-  [ "$(head -1 "$entry")" = "$alias_report" ]
+  [ "$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f | wc -l)" -eq 2 ]
 }

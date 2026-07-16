@@ -64,3 +64,11 @@ Remaining top intervals are the mandatory report SHA-256, first-call YAML/task
 identity parse, and invocation cache-directory setup. Continue to generation 3
 only if a same-host 15-sample run has p95 > 529.3 ms or profiling identifies a
 single removable interval >= 10% without weakening byte-level invalidation.
+
+### RC2 same-run verdict
+
+Alternating 15+15 runs on the same host compared `cdb7f2393` immediately before
+the path fix with `af0b18ad9`: p50 269.6→271.3 ms (+0.6%), p95 312.9→316.1 ms
+(+1.0%). Generation 2 therefore failed the zero-regression contract. The
+direct-key/builtin-read optimization was reverted; the last-good path+content
+hashed key remains, with the different-path regression test retained.
