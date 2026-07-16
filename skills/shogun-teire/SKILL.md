@@ -47,6 +47,9 @@ Script refs verified: 2026-06-26 364744210+955c2e756. `gate_lesson_health.sh` �
 
 <!-- script_refs_checked_at: 2026-07-02T12:45:00+09:00 -->
 
+<!-- cmd_karo_hotfix_skill_script_refs_six_202607170058検分: gate_lesson_health.sh 40bd53d77のrg列挙高速化はf76a2b104で完全revertされ、最終実装はchecked_at時点と同一。引数、METRIC/WARN/ALERT、exit、棚卸し呼出順序は不変。本文変更不要。 -->
+<!-- script_refs_checked_at: 2026-07-17T01:02:18+09:00 -->
+
 Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `gate_lesson_health.sh` 直近変更(a3a6f8c53/49d5f9c6c/364744210/955c2e756/558ec6e)はactive抽出高速化、空lessons時SSOT skip、useful-rate閾値/スコープ調整、未振り分けID表示の内部判定改善で、`bash scripts/gates/gate_lesson_health.sh` の呼び出し契約とshogun-teire棚卸し手順は変更なし。
 
 # /shogun-teire — 知識基盤の定期棚卸し（8観点監査）

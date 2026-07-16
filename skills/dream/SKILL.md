@@ -41,6 +41,9 @@ Script refs verified: 2026-07-13 将軍検分. `memory_db_query.sh` checked_at�
 
 <!-- script_refs_checked_at: 2026-07-13T07:55:00+09:00 -->
 
+<!-- cmd_karo_hotfix_skill_script_refs_six_202607170058検分: gate_lesson_health.sh 40bd53d77のrg列挙高速化はf76a2b104で完全revertされ、最終差分0。引数なし/PROJECT指定、METRIC/WARN/ALERT、終了値、dream内の呼出順序はいずれも不変。本文変更不要。 -->
+<!-- script_refs_checked_at: 2026-07-17T01:02:18+09:00 -->
+
 Script refs verified: 2026-07-11 shogun起動時gate WARN解消。checked_at以降の変更(review two-phase race fix系/inbox gate trigger detach/report discovery偽BLOCK根治/rg grepフォールバック/memory DB cache atomic recovery)をgit logで確認。いずれも内部強化であり呼び出し契約・出口文言・本文手順に変更なし。
 <!-- 検分: gate_lesson_health.sh 1f0aed8d1(subdomain別context routeをlesson_write.shとSSOT化し、合流済み教訓の偽ALERTを解消)。引数なし実行・ALERT/CLEAR出口・/dream本文手順は不変 -->
 <!-- 検分: gate_lesson_health.sh GA-196で自己修復cmd(reflux/karo_hotfix/ci_fix)を長期useful率健康指標から除外。引数なし全project走査/PROJECT単体走査、METRIC行、WARN/ALERT出力契約は不変 -->

@@ -1,5 +1,8 @@
 ---
 <!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
+
+<!-- cmd_karo_hotfix_skill_script_refs_six_202607170058検分: deploy_task.sh 110c4df67/a9cf189d6/fff17f591をgit show。report metadata内部取得、全report opsim事前注入、task_assigned配達確認の非同期化のみ。1人目通常配備→2人目--yaml配備の引数・順序・重複guard・永続化/通知契約は不変。本文変更不要。 -->
+<!-- script_refs_checked_at: 2026-07-17T01:02:18+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: deploy_task.sh 63a76836dをgit showで確認。legacy lifecycle status制御を通常配備から早期分離した修正で、1人目通常配備→2人目`--yaml`の順序、引数、衝突guard、通知契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 <!-- 2026-07-16再検分: deploy_task.sh 1b23b3c9d/e29f20e3e/00a06e308。各共通配備入口でuniversal shard manifestを自動生成し、生成不能はexit 2でBLOCKする副作用を追加。1人目通常配備→2人目`--yaml`の引数・順序・通知契約は不変。 -->

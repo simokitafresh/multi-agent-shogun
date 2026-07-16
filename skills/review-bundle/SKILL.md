@@ -262,3 +262,6 @@ Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は�
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 <!-- script参照互換確認 2026-07-12: 参照先(yaml_field_set.sh/deploy_task.sh/ninja_monitor.sh)の直近変更はatomic mv/validate/fail-closed等の内部堅牢化のみでCLI引数・呼出手順の変更なし。本書の手順は現行スクリプトと互換(将軍git log現物確認) -->
+
+<!-- cmd_karo_hotfix_skill_script_refs_six_202607170058検分: inbox_write.sh fff17f591はtask_assigned時だけCodex配達確認を非同期化。review_feedback経路は従来どおり永続化後に成功し、位置引数、exit、precheck→bundle→review_log→通知順序は不変。本文変更不要。 -->
+<!-- script_refs_checked_at: 2026-07-17T01:02:18+09:00 -->

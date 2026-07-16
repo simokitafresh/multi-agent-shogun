@@ -1,5 +1,8 @@
 ---
 <!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
+
+<!-- cmd_karo_hotfix_skill_script_refs_six_202607170058検分: deploy_task.sh 110c4df67/a9cf189d6/fff17f591をgit show。report field取得最適化のrevert、operational_simulation全report注入、task_assignedのCodex配達確認非同期化はいずれも内部処理。--direct/--yaml引数、重複guard、task永続化、失敗境界、通知順序は不変。本文変更不要。 -->
+<!-- script_refs_checked_at: 2026-07-17T01:02:18+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: deploy_task.sh 63a76836dをgit showで確認。legacy `status <ninja> idle|done|in_progress`をtask正規化前のstatus-only分岐へ隔離し、既存task誤再配備を防止。karo-directの`--direct`/`--yaml`引数、重複guard、task publication、inbox通知契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 <!-- 2026-07-16再検分: deploy_task.sh 1b23b3c9d/e29f20e3e/00a06e308。共通配備入口でuniversal shard manifestを自動生成し、生成不能はexit 2でBLOCKする副作用を追加。speed_campaign付きtrainingは固有ACを保持する。既存`--yaml`/`--direct`引数・通知契約は不変。 -->
