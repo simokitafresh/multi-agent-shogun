@@ -128,7 +128,7 @@ handle_lesson_health() {
 handle_cmd_state() {
     local output
     local exit_code=0
-    output=$(bash "$GATES_DIR/gate_cmd_state.sh" 2>&1) || exit_code=$?
+    output=$(_gate_cached_run "cmd_state" "$GATES_DIR/gate_cmd_state.sh" 300 2>&1) || exit_code=$?
 
     local state="OK"
     if [ "$exit_code" -eq 1 ]; then
@@ -188,7 +188,7 @@ handle_context_freshness() {
 handle_p_average_freshness() {
     local output
     local exit_code=0
-    output=$(bash "$GATES_DIR/gate_p_average_freshness.sh" 2>&1) || exit_code=$?
+    output=$(_gate_cached_run "p_average_freshness" "$GATES_DIR/gate_p_average_freshness.sh" 300 2>&1) || exit_code=$?
 
     local state="OK"
     if [ "$exit_code" -eq 1 ]; then
