@@ -186,17 +186,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/archive_completed.sh
-  status: assigned
+  status: completed
   before_ms: 19
   after_ms: 362
-  before_real_ms: 362
-  after_real_ms: ""
-  real_measurement_command: time bash scripts/archive_completed.sh
-  test_result: bats tests/unit/test_archive_completed.bats PASS 24/24 SKIP=0
-  commit: 46d24a780
+  before_real_ms: 172.5
+  after_real_ms: 166
+  real_measurement_command: "bash /tmp/hanzo_archive_completed_ab/project/scripts/archive_completed.sh >/dev/null"
+  test_result: "tests/unit/test_archive_completed.bats 25/25 PASS FAIL=0 SKIP=0"
+  commit: "f43ae63c64340b1d5f8dd9db37bade0adb0d9840"
   assigned_to: "hanzo"
-  updated_at: "2026-07-17T04:23:52"
+  updated_at: "2026-07-17T04:28:44"
   iteration: 1
+  last_good_commit: "aac5d0fa2a2bc3c09ee4acc1656c04df1ee88ba0"
+  candidate_commit: "f43ae63c64340b1d5f8dd9db37bade0adb0d9840"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 172.5
+  last_good_p95_ms: 233
+  candidate_p50_ms: 166
+  candidate_p95_ms: 226
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2 isolated fixed fixture heavy_job_admission; L/C copied to identical script path"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/auto_deploy_next.sh
   status: pending
   before_ms: 18
@@ -3047,7 +3061,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/obsidian_promote_candidate.sh
-  status: pending
+  status: assigned
   before_ms: 14
   after_ms: ''
   before_real_ms: 360
@@ -3057,8 +3071,8 @@ entries:
   test_result: bash -n scripts/obsidian_promote_candidate.sh PASS; dry-run PASS; sandbox
     non-dry-run backup/update PASS SKIP=0
   commit: 9c2280f0b
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T04:28:54"
   iteration: 1
 - script_path: scripts/obsidian_promote_finalize.sh
   status: pending
