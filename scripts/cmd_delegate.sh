@@ -299,6 +299,36 @@ cmd_is_archived() {
     [ "${#archived_matches[@]}" -gt 0 ]
 }
 
+validate_estimated_minutes() {
+    local yaml_file="$1"
+    local cmd_id="$2"
+    python3 - "$yaml_file" "$cmd_id" <<'PY'
+import sys
+import yaml
+
+path, cmd_id = sys.argv[1:]
+data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+commands = data.get("commands", data)
+if isinstance(commands, dict):
+    command = commands.get(cmd_id)
+elif isinstance(commands, list):
+    command = next(
+        (item for item in commands if isinstance(item, dict) and str(item.get("id")) == cmd_id),
+        None,
+    )
+else:
+    command = None
+value = command.get("estimated_minutes") if isinstance(command, dict) else None
+if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+    print(
+        f"BLOCK: {cmd_id}.estimated_minutes must be a positive number before delegation "
+        f"(actual={value!r})",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+PY
+}
+
 cmd_state=$(get_cmd_status_and_delegated "$SHOGUN_TO_KARO" "$CMD_ID" 2>/dev/null) || {
     echo "ERROR: cmd_id '$CMD_ID' not found in shogun_to_karo.yaml" >&2
     exit 1
@@ -339,6 +369,11 @@ if [ -f "$KARO_INBOX" ] && inbox_has_cmd_new_for_cmd "$KARO_INBOX" "$CMD_ID"; th
     echo "BLOCK: Refusing to send duplicate. If re-delegation is intended, remove existing inbox entry first." >&2
     exit 1
 fi
+
+# deploy_task.sh's natural-boundary gate requires this field.  Validate it at
+# the earlier delegation boundary so an invalid command can never wake Karo
+# and fail only after review/deployment has begun.
+validate_estimated_minutes "$SHOGUN_TO_KARO" "$CMD_ID" || exit 1
 
 # Step 3: 初回委任前に cmd_save.sh を強制実行
 cmd_save_exit=0

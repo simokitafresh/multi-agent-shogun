@@ -95,6 +95,7 @@ commands:
     priority: high
     status: pending
     purpose: "Test purpose"
+    estimated_minutes: 10
 YAML
 }
 
@@ -198,6 +199,7 @@ commands:
     priority: high
     status: pending
     purpose: "Second purpose"
+    estimated_minutes: 10
 YAML
 }
 
@@ -222,6 +224,7 @@ commands:
     priority: high
     status: pending
     purpose: "New purpose"
+    estimated_minutes: 10
 YAML
 }
 
@@ -246,6 +249,7 @@ commands:
     priority: high
     status: pending
     purpose: "New purpose"
+    estimated_minutes: 10
 YAML
 }
 
@@ -276,6 +280,17 @@ YAML
     [[ "$output" == *"karo"* ]]
     [[ "$output" == *"cmd_new"* ]]
     [[ "$output" == *"shogun"* ]]
+}
+
+@test "cmd_delegate: estimated_minutes欠落はcmd_saveとinboxの前でBLOCK" {
+    create_shogun_yaml_with_pending
+    sed -i '/estimated_minutes:/d' "${TEST_TMP}/queue/shogun_to_karo.yaml"
+
+    run bash "${TEST_TMP}/scripts/cmd_delegate.sh" cmd_100 "cmd_100を書いた。配備せよ。"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"estimated_minutes must be a positive number before delegation"* ]]
+    [ ! -f "${TEST_TMP}/cmd_save_calls.log" ]
+    [ ! -f "${TEST_TMP}/inbox_calls.log" ]
 }
 
 @test "cmd_delegate: 正常委任後にcmd_delegate eventを記憶DBへINSERTする" {
