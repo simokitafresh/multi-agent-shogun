@@ -459,17 +459,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/causal_backlinks.sh
-  status: pending
+  status: completed
   before_ms: 14
   after_ms: ''
-  before_real_ms: 343
-  after_real_ms: ""
-  real_measurement_command: "date +%s%3N around: bash scripts/causal_backlinks.sh セマンティック因果自動化 >/tmp/hanzo_cbl_{before,after}.out (5 runs; before min from 727/..., after min 343)"
-  test_result: "bash -n scripts/causal_backlinks.sh PASS; bats tests/unit/test_semantic_search.bats PASS 28/28 SKIP=0; test_select warns no direct mapping"
-  commit: "3591b3090"
-  assigned_to: ""
-  updated_at: "2026-06-13T00:19:57"
+  before_real_ms: 1511.5
+  after_real_ms: 534.0
+  real_measurement_command: "bash scripts/causal_backlinks.sh L618 >/dev/null"
+  test_result: "bats tests/unit/test_causal_backlinks.bats tests/unit/test_causal_backlink_counts.bats PASS=8 FAIL=0 SKIP=0; output parity 4/4; safety removals=0"
+  commit: "74f08a49de154606bf43195dfa3efce65de10780"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T04:44:00+09:00"
   iteration: 2
+  last_good_commit: "5a786c0699c00e7d2f5373e3de8a0096acd49db8"
+  candidate_commit: "74f08a49de154606bf43195dfa3efce65de10780"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 1511.5
+  last_good_p95_ms: 5492
+  candidate_p50_ms: 534.0
+  candidate_p95_ms: 962
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux WSL2 x86_64; bash 5.2.21; cwd=/mnt/c/tools/multi-agent-shogun"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/cdp/cdp_benchmark.sh
   status: saturated
   before_ms: 14
@@ -784,19 +798,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/context_freshness_check.sh
-  status: pending
+  status: saturated
   before_ms: 9
   after_ms: ''
-  before_real_ms: 280
-  after_real_ms: ""
-  real_measurement_command: CFC_OUTPUT_CACHE_TTL=0 CFC_GIT_TIMEOUT=1 bash scripts/context_freshness_check.sh
-    --cmd-warnings cmd_training_speed_context_freshness_check_20260606234618 >/tmp/cfc_cmd.out
-  test_result: bash -n scripts/context_freshness_check.sh PASS; bats tests/unit/test_context_freshness_check.bats
-    23/23 PASS SKIP=0; bats tests/unit/test_cmd_complete_gate.bats 53/53 PASS SKIP=0
-  commit: 0f03756a40c33fb0452968ebc4d54bcb84ac3c46
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  before_real_ms: 512.914
+  after_real_ms: 527.473
+  real_measurement_command: "CFC_OUTPUT_CACHE_TTL=0 bash .cache/context_freshness_check_ab.sh --cmd-warnings cmd_training_speed_context_freshness_check_20260717044139"
+  test_result: "bats 50/50 PASS FAIL=0 SKIP=0; output_equal=true"
+  commit: "cbff0eb342d528bb2724159de21a075fe5eed348"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T04:49:14"
   iteration: 1
+  last_good_commit: "cbff0eb342d528bb2724159de21a075fe5eed348"
+  candidate_commit: "fc2ad2f7dbbb8a6dfc7f5d9a2f8b805f864660fb"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 512.914
+  last_good_p95_ms: 557.424
+  candidate_p50_ms: 527.473
+  candidate_p95_ms: 664.279
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux-6.6.87.1-microsoft-standard-WSL2-x86_64-glibc2.39"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/conversation_retention.sh
   status: pending
   before_ms: 8
@@ -1188,20 +1214,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_gunshi_cs_checklist.sh
-  status: pending
+  status: saturated
   before_ms: 15
   after_ms: ''
-  before_real_ms: 320
-  after_real_ms: ""
-  real_measurement_command: for i in 1 2 3 4 5; do /usr/bin/time -f '%e' bash scripts/gates/gate_gunshi_cs_checklist.sh
-    >/tmp/gate_gunshi_cs_after_${i}.out 2>/tmp/gate_gunshi_cs_after_${i}.time; cat
-    /tmp/gate_gunshi_cs_after_${i}.time; done
-  test_result: bash -n PASS; bats tests/unit/test_gate_gunshi_cs_checklist.bats PASS
-    12/12 SKIP=0
-  commit: f377fa7f6
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  before_real_ms: 985.6424700119533
+  after_real_ms: 1075.265909486916
+  real_measurement_command: "bash scripts/gates/gate_gunshi_cs_checklist.sh"
+  test_result: "bats tests/unit/test_gate_gunshi_cs_checklist.bats: 41 PASS, 0 FAIL, 0 SKIP; candidate rolled back"
+  commit: "eb5e32929"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T04:50:03"
   iteration: 1
+  last_good_commit: "eb5e32929"
+  candidate_commit: "dc76f064248ae0e6304095c431930f943f44db91"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 985.6424700119533
+  last_good_p95_ms: 1180.4032050131354
+  candidate_p50_ms: 1075.265909486916
+  candidate_p95_ms: 1366.1715950001962
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "worktree-same-host-20260717"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_gunshi_observations.sh
   status: completed
   before_ms: 16
@@ -2153,18 +2190,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/lesson_auto_tag.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: ''
-  before_real_ms: 252
-  after_real_ms: ""
-  real_measurement_command: bash scripts/lesson_auto_tag.sh --dry-run (10回中央値)
-  test_result: 'dry-run smoke test PASS (1535 lessons, all tagged); yaml.CSafeLoader+SCRIPT_DIR
-    bash string: 1105ms->252ms (-853ms, -77%)'
-  commit: b7dc815be
+  before_real_ms: 127
+  after_real_ms: 118.5
+  real_measurement_command: "bash scripts/lesson_auto_tag.sh --dry-run >/dev/null"
+  test_result: "bash -n PASS; output parity PASS; FAIL=0 SKIP=0 TARGETS=2; safety removals=0"
+  commit: "870313d23a843ca56b1ca1464119c4bee2094f11"
   assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  updated_at: "2026-07-17T04:48:57"
   iteration: 1
+  last_good_commit: "1da58ef7c4a749e2639a73840d9cdd6554d65127"
+  candidate_commit: "870313d23a843ca56b1ca1464119c4bee2094f11"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 127
+  last_good_p95_ms: 144
+  candidate_p50_ms: 118.5
+  candidate_p95_ms: 134
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "same-host isolated detached worktrees; heavy_job_admission lock"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/lesson_check.sh
   status: pending
   before_ms: 12
@@ -3061,19 +3111,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/obsidian_promote_candidate.sh
-  status: assigned
+  status: completed
   before_ms: 14
   after_ms: ''
-  before_real_ms: 360
-  after_real_ms: ""
-  real_measurement_command: bash scripts/obsidian_promote_candidate.sh --dry-run --limit
-    5 >/dev/null
-  test_result: bash -n scripts/obsidian_promote_candidate.sh PASS; dry-run PASS; sandbox
-    non-dry-run backup/update PASS SKIP=0
-  commit: 9c2280f0b
+  before_real_ms: 226.3461139955325
+  after_real_ms: 225.10750849323813
+  real_measurement_command: "bash scripts/obsidian_promote_candidate.sh --db /tmp/opcbench.db --dry-run --limit 5"
+  test_result: "bash-n + old/new real-db dry-run output parity: FAIL=0 SKIP=0"
+  commit: "daf253b82ab8938280e886c98fefcd5fd602ed3e"
   assigned_to: "kotaro"
-  updated_at: "2026-07-17T04:28:54"
+  updated_at: "2026-07-17T04:34:47"
   iteration: 1
+  last_good_commit: "93f8c898e39f125448f4d0bd7d4ea21cedb4994e"
+  candidate_commit: "daf253b82ab8938280e886c98fefcd5fd602ed3e"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 226.3461139955325
+  last_good_p95_ms: 269.5913680072408
+  candidate_p50_ms: 225.10750849323813
+  candidate_p95_ms: 229.035255004419
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux WSL2; fixed /tmp/opcbench.db byte copy; stdout suppressed"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/obsidian_promote_finalize.sh
   status: pending
   before_ms: 16
