@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+SCRIPT_DIR="$(readlink -f "${BASH_SOURCE[0]%/*}/../..")"
 ROOT_DIR="${KNOWLEDGE_FRESHNESS_ROOT:-$SCRIPT_DIR}"
 TODAY_OVERRIDE="${KNOWLEDGE_FRESHNESS_TODAY:-}"
 CACHE_TTL="${KNOWLEDGE_FRESHNESS_CACHE_TTL:-2}"
