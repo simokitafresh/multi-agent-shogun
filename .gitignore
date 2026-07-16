@@ -134,6 +134,7 @@ queue/memory_db_live_insert_queue/
 !config/lesson_tags.yaml
 !config/dashboard_template.md
 !config/context_freshness_excludes.txt
+!config/campaign_lane_catalog.yaml
 
 # Templates
 !templates/
