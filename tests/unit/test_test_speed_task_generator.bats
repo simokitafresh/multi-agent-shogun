@@ -23,7 +23,9 @@ YAML
   grep -Fq 'estimated_minutes: 5' "$generated"
   grep -Fq 'min_rounds: 2' "$generated"
   grep -Fq 'max_rounds: 3' "$generated"
-  grep -Fq 'baseline_policy: best_so_far' "$generated"
+  grep -Fq 'baseline_policy: same_run_interleaved_ab' "$generated"
+  grep -Fq 'min_samples_each: 10' "$generated"
+  grep -Fq 'order: alternating' "$generated"
   grep -Fq 'report_filename: "test_speed_report_' "$generated"
   grep -Fq 'action: "complete-deploy"' "$generated"
   grep -Fq 'FAIL0; SKIP0; no expectation relaxation' "$generated"
@@ -246,6 +248,30 @@ YAML
   [[ "$output" == 'STOP:max_rounds' ]]
 }
 
+@test "same-run AB accepts only dual-nonregression with one strict improvement and records evidence" {
+  ledger="$TMP/logs/ab.tsv"
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_TASK_DIR="$TMP/queue/training" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" \
+    bash "$ROOT/scripts/test_speed_task_generator.sh" continue cab 1 t 10 9 cache pass cache 10 0 base cand 9 base cand 'run same' 10 100 120 99 120
+  [ "$status" -eq 0 ]
+  [ "$(awk -F '\t' 'NR==2 {print $8":"$9":"$11":"$12":"$13":"$14":"$15}' "$ledger")" = 'base:cand:10:100:120:99:120' ]
+  [[ "$output" != STOP:* ]]
+}
+
+@test "same-run AB blocks missing evidence and retains last-good on either metric regression" {
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_CAMPAIGN_LEDGER="$TMP/logs/missing.tsv" \
+    bash "$ROOT/scripts/test_speed_task_generator.sh" continue c 1 t 10 9 x pass cache 1 0 base cand 9 base cand '' 9 100 120 99 119
+  [ "$status" -eq 2 ]; [[ "$output" == *'BLOCK:ab_evidence_missing'* ]]
+
+  for metrics in '100 120 99 121' '100 120 101 119' '100 120 100 120'; do
+    set -- $metrics
+    ledger="$TMP/logs/regress-$1-$3.tsv"
+    run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" \
+      bash "$ROOT/scripts/test_speed_task_generator.sh" continue "c$1$3" 1 t 10 9 x pass cache 1 0 base cand 9 base cand same 10 "$1" "$2" "$3" "$4"
+    [ "$status" -eq 0 ]; [[ "$output" == 'STOP:ab_not_improved' ]]
+    [ "$(awk -F '\t' 'NR==2 {print $4}' "$ledger")" = '10.000' ]
+  done
+}
+
 @test "generator returns no candidate when completed evidence already claims target" {
   printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
   cat > "$TMP/queue/tasks/kotaro.yaml" <<YAML
@@ -313,8 +339,8 @@ YAML
   ' _ "$ROOT" "$generated"
   [ "$status" -eq 0 ]
   [ "$(sha256sum "$generated")" = "$before" ]
-  grep -Fq 'purpose: "round 1/3: best_so_far 12.500s' "$generated"
-  grep -Fq 'baseline_policy: best_so_far' "$generated"
+  grep -Fq 'purpose: "round 1/3: last-good commitとcandidate commitを同一環境A/B交互測定' "$generated"
+  grep -Fq 'baseline_policy: same_run_interleaved_ab' "$generated"
   grep -Fq 'quality_contract: "FAIL0; SKIP0;' "$generated"
   ! grep -Fq 'L4修行:' "$generated"
 }

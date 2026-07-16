@@ -129,15 +129,16 @@ next_target() {
 
 append_campaign() {
     local campaign="$1" round="$2" target="$3" best="$4" last="$5" approach="$6" stop="$7"
+    local ab_base="${8:-}" ab_candidate="${9:-}" ab_command="${10:-}" ab_n="${11:-}" ab_base_p50="${12:-}" ab_base_p95="${13:-}" ab_candidate_p50="${14:-}" ab_candidate_p95="${15:-}"
     mkdir -p "$(dirname "$CAMPAIGN_LEDGER")"
     (
         flock 8
         if [ ! -s "$CAMPAIGN_LEDGER" ]; then
-            printf 'campaign_id\tround_index\ttarget_path\tbest_wall\tlast_wall\tapproach\tstop_reason\n' > "$CAMPAIGN_LEDGER"
+            printf 'campaign_id\tround_index\ttarget_path\tbest_wall\tlast_wall\tapproach\tstop_reason\tab_base_commit\tab_candidate_commit\tab_command\tab_samples\tab_base_p50\tab_base_p95\tab_candidate_p50\tab_candidate_p95\n' > "$CAMPAIGN_LEDGER"
         fi
         # monitor callbacks are at-least-once; make each campaign round idempotent.
         awk -F '\t' -v c="$campaign" -v r="$round" 'NR>1 && $1==c && $2==r {found=1} END{exit !found}' "$CAMPAIGN_LEDGER" && exit 0
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$campaign" "$round" "$target" "$best" "$last" "$approach" "$stop" >> "$CAMPAIGN_LEDGER"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$campaign" "$round" "$target" "$best" "$last" "$approach" "$stop" "$ab_base" "$ab_candidate" "$ab_command" "$ab_n" "$ab_base_p50" "$ab_base_p95" "$ab_candidate_p50" "$ab_candidate_p95" >> "$CAMPAIGN_LEDGER"
     ) 8>"${CAMPAIGN_LEDGER}.lock"
 }
 
@@ -159,11 +160,11 @@ task:
   project: infra
   target_path: "$target"
   status: assigned
-  purpose: "round ${round}/${MAX_ROUNDS}: best_so_far ${best}s を基準にunit testを高速化する"
-  command: "支配項を実測し、共有fixture/cache化を優先する。頭打ちなら被テストscript本体へ切り替える。best_so_far=${best}s未満のみ改善として採用し、悪化runはcommitせずlast-goodへ戻す。検証は bash scripts/run_timed_bats.sh $target でFAIL0/SKIP0を強制する。"
+  purpose: "round ${round}/${MAX_ROUNDS}: last-good commitとcandidate commitを同一環境A/B交互測定してunit testを高速化する"
+  command: "支配項を実測し、共有fixture/cache化を優先する。last-good/candidateを同一command・同一環境でwarmup後に各10回以上交互測定し、p50/p95双方が非退行かつ一方strict短縮の場合だけcandidateを採用する。best_so_far=${best}sは選定参考のみ。FAIL/SKIPは即停止。"
   acceptance_criteria:
     - id: AC1
-      description: "best_so_far ${best}sとの比較、変更前後wall秒、支配項を実測し、FAIL=0・SKIP=0で全量完走する"
+      description: "last-good/candidate commitを同一commandでwarmup後各10回以上A/B交互測定し、p50/p95と支配項を実測、FAIL=0・SKIP=0で完走する"
     - id: AC2
       description: "related_lessonsが注入された場合のみ有用性を検証する。round別report/commitを作り、speed_result(last_wall/approach/quality/dominant/elapsed_sec/ctx_percent)を記録する。完了後はmonitor callbackが自動継承する"
   related_lessons: []
@@ -175,8 +176,13 @@ task:
     campaign_budget_sec: $CAMPAIGN_BUDGET_SEC
     elapsed_sec: $elapsed
     best_wall: $best
-    baseline_policy: best_so_far
+    baseline_policy: same_run_interleaved_ab
     baseline_commit: "$baseline_commit"
+    ab_contract:
+      min_samples_each: 10
+      order: alternating
+      warmup_each: 1
+      adoption: "candidate_p50<=last_good_p50 && candidate_p95<=last_good_p95 && (candidate_p50<last_good_p50 || candidate_p95<last_good_p95)"
     ctx_clear_after_round2_at_percent: 70
   completion_callback:
     runner: "scripts/test_speed_task_generator.sh"
@@ -208,19 +214,26 @@ continue_campaign() {
     local best="${4:?best_wall required}" last="${5:?last_wall required}" approach="${6:?approach required}"
     local quality="${7:?quality pass|fail|skip required}" dominant="${8:-none}" elapsed="${9:-0}" ctx="${10:-0}"
     local adopted_best stop next file baseline_commit="${11:-}" result_commit="${12:-}"
-    local observed_last="${13:-$last}"
-    if awk -v b="$best" -v l="$last" 'BEGIN{exit !(l>=b)}' && [ -n "$baseline_commit" ] && \
+    local observed_last="${13:-$last}" ab_base="${14:-}" ab_candidate="${15:-}" ab_command="${16:-}" ab_n="${17:-}" ab_base_p50="${18:-}" ab_base_p95="${19:-}" ab_candidate_p50="${20:-}" ab_candidate_p95="${21:-}"
+    if [ -n "$ab_base" ] || [ -n "$ab_candidate" ]; then
+        [ -n "$ab_base" ] && [ -n "$ab_candidate" ] && [ -n "$ab_command" ] && [ "$ab_n" -ge 10 ] 2>/dev/null || { echo "BLOCK:ab_evidence_missing" >&2; return 2; }
+        if ! awk -v bp50="$ab_base_p50" -v bp95="$ab_base_p95" -v cp50="$ab_candidate_p50" -v cp95="$ab_candidate_p95" 'BEGIN{exit !(cp50<=bp50 && cp95<=bp95 && (cp50<bp50 || cp95<bp95))}'; then
+            stop="ab_not_improved"
+            last="$best"
+        fi
+    fi
+    if [ -z "${14:-}" ] && awk -v b="$best" -v l="$last" 'BEGIN{exit !(l>=b)}' && [ -n "$baseline_commit" ] && \
        [ -n "$result_commit" ] && [ "$baseline_commit" != "$result_commit" ]; then
         echo "BLOCK:deterioration_commit_adopted baseline=$baseline_commit result=$result_commit" >&2
         return 2
     fi
     adopted_best=$(awk -v b="$best" -v l="$last" 'BEGIN { printf "%.3f", (l < b ? l : b) }')
-    stop=""
+    stop="${stop:-}"
     if [ "$quality" != pass ]; then stop="quality_${quality}";
     elif [ "$elapsed" -ge "$CAMPAIGN_BUDGET_SEC" ]; then stop="budget";
     elif [ "$round" -ge "$MAX_ROUNDS" ]; then stop="max_rounds";
     elif [ "$round" -ge "$MIN_ROUNDS" ] && [ "$dominant" = none ]; then stop="no_next_dominant"; fi
-    append_campaign "$campaign" "$round" "$target" "$adopted_best" "$observed_last" "$approach" "$stop"
+    append_campaign "$campaign" "$round" "$target" "$adopted_best" "$observed_last" "$approach" "$stop" "$ab_base" "$ab_candidate" "$ab_command" "$ab_n" "$ab_base_p50" "$ab_base_p95" "$ab_candidate_p50" "$ab_candidate_p95"
     [ -z "$stop" ] || { printf 'STOP:%s\n' "$stop"; return 0; }
     next=$((round + 1))
     file=$(emit_round_task "$campaign" "$next" "$target" "$adopted_best" "$elapsed")
@@ -246,7 +259,7 @@ case "$command_name" in
   complete-deploy)
     ninja="${2:?ninja required}"; task_file="${3:?task file required}"; report_file="${4:?report file required}"
     eval "$(python3 - "$task_file" "$report_file" <<'PY'
-import math, shlex, sys, yaml
+import math, shlex, statistics, sys, yaml
 t=(yaml.safe_load(open(sys.argv[1])) or {}).get('task', {})
 r=yaml.safe_load(open(sys.argv[2])) or {}
 c=t.get('speed_campaign') or {}; s=r.get('speed_result') or {}
@@ -277,12 +290,32 @@ for result in measurement_rows(r.get('test_results')):
 if not valid_walls:
     raise SystemExit('BLOCK:no_valid_test_measurements')
 round_best=min(valid_walls)
+ab=r.get('speed_ab') or {}
+policy=str(c.get('baseline_policy') or '')
+ab_vals=[]
+if policy == 'same_run_interleaved_ab':
+    base=list(ab.get('last_good_samples_ms') or [])
+    cand=list(ab.get('candidate_samples_ms') or [])
+    if len(base) < 10 or len(cand) < 10 or len(base) != len(cand):
+        raise SystemExit('BLOCK:ab_evidence_missing')
+    try:
+        base=[float(x) for x in base]; cand=[float(x) for x in cand]
+    except (TypeError, ValueError):
+        raise SystemExit('BLOCK:ab_evidence_non_numeric')
+    if not all(math.isfinite(x) and x >= 0 for x in base+cand):
+        raise SystemExit('BLOCK:ab_evidence_non_numeric')
+    def p95(xs):
+        ys=sorted(xs); return ys[max(0, math.ceil(.95*len(ys))-1)]
+    required=(ab.get('last_good_commit'), ab.get('candidate_commit'), ab.get('command'))
+    if any(v in (None, '') for v in required): raise SystemExit('BLOCK:ab_evidence_missing')
+    ab_vals=[*required, len(base), statistics.median(base), p95(base), statistics.median(cand), p95(cand)]
 vals=[c.get('campaign_id'), c.get('round_index'), t.get('target_path'), c.get('best_wall'),
       round_best, s.get('approach'), s.get('quality'), s.get('dominant','none'),
       s.get('elapsed_sec', c.get('elapsed_sec',0)), s.get('ctx_percent',0),
       c.get('baseline_commit',''), r.get('commit_hash',''), s.get('last_wall')]
 if any(v in (None, '') for v in vals[:7]): raise SystemExit('missing speed_result callback fields')
 if vals[12] in (None, ''): raise SystemExit('missing speed_result last_wall observation')
+vals.extend(ab_vals)
 print('set -- ' + ' '.join(shlex.quote(str(v)) for v in vals))
 PY
 )"
