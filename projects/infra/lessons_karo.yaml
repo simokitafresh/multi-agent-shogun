@@ -393,7 +393,9 @@ v7吸収(2026-05-19):
   origin: "[[LK052]] -> [[grep残存未確認]] -> [[12体Cash100%事故]] -> [[PD-108]]"
 - id: LK-A15
   title: cmdライフサイクル両端の自動化 — cmd_save.sh pending注入+GATE CLEAR completed自動設定
-  detail: status未設定cmd蓄積の根因を両端自動化で解消。新しい仕組みゼロ。
+  detail: |
+    status未設定cmd蓄積の根因を両端自動化で解消。新しい仕組みゼロ。
+    吸収(2026-07-16, cmd_4000, origin: [[cmd_4000配備BLOCK]] -> [[起票と配備の必須契約不一致]] -> [[委任前estimated_minutes検証]]): cmd_4000でestimated_minutes欠落がcmd_save/委任を通過し、家老のdeploy_taskで初めてBLOCKした。cmd_delegate.shが委任前に正の数値estimated_minutesをfail-closed検証し、欠落時はcmd_save呼出0・inbox送信0にする。修正前33/35→修正後35/35 PASS、SKIP0。commit 2595f4b97。
   source_ids: [LK059]
   created_at: '2026-04-24'
   automated: true
