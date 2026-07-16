@@ -331,6 +331,9 @@ for line in lines:
     elif line.startswith("- "):
         flush_text()
         sections.append({"type": "bullet", "text": line[2:]})
+    elif line.startswith("\u25a0"):
+        flush_text()
+        sections.append({"type": "bullet", "text": line})
     elif line.strip() == "":
         flush_text()
     elif line.startswith(CODE_FENCE):
@@ -371,10 +374,7 @@ for s in sections:
     if s["type"] == "heading":
         flush_acc()
         html_parts.append(f"<h3>{s['text']}</h3>")
-    elif s["type"] == "bullet":
-        flush_acc()
-        html_parts.append(f"<p>{s['text']}</p>")
-    elif s["type"] == "text":
+    elif s["type"] in ("text", "bullet"):
         text_acc.append(s["text"])
     elif s["type"] == "hr":
         flush_acc()
