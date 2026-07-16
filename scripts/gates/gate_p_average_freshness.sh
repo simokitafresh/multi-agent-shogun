@@ -65,10 +65,20 @@ cache_exit_matches_status_line() {
 
 # キャッシュチェック: 6時間以内ならAPI呼出しをスキップ
 if [ -f "$CACHE_FILE" ]; then
-    cache_age=$(( $(date +%s) - $(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0) ))
+    cache_mtime="$(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0)"
+    cache_age=$(( ${EPOCHSECONDS:-$(date +%s)} - cache_mtime ))
     if [ "$cache_age" -lt "$CACHE_TTL_SECONDS" ]; then
-        cached_status_line="$(head -1 "$CACHE_FILE" 2>/dev/null || true)"
-        cached_exit=$(awk -F= '/^exit_code=/{print $2; exit}' "$CACHE_FILE" 2>/dev/null)
+        cached_status_line=""
+        cached_exit=""
+        while IFS= read -r cache_line; do
+            if [ -z "$cached_status_line" ]; then
+                cached_status_line="$cache_line"
+            fi
+            if [[ "$cache_line" == exit_code=* ]]; then
+                cached_exit="${cache_line#exit_code=}"
+                break
+            fi
+        done < "$CACHE_FILE"
         if cache_exit_matches_status_line "$cached_status_line" "${cached_exit:-}"; then
             printf '%s\n' "$cached_status_line"
             exit "$cached_exit"
