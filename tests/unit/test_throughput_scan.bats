@@ -64,6 +64,7 @@ assert any("overhead median worsened" in item["insight"] for item in items)
 assert any("e2e median worsened" in item["insight"] for item in items)
 assert any("detector=cmd_save:check_ac_must_should_mix" in item["insight"] for item in items)
 assert any(item["target_file"] == "scripts/cmd_save.sh" for item in items)
+assert sum(item["target_file"] == "scripts/loop_ledger_update.sh" for item in items) == 2
 PY
 }
 
@@ -181,11 +182,12 @@ EOF
     run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"THROUGHPUT_SCAN_DRY_RUN"* ]]
-    [[ "$output" == *"target=scripts/cmd_complete_gate.sh"* ]]
+    [[ "$output" == *"largest_stage=work target=scripts/loop_ledger_update.sh measurement_target=work_median_sec"* ]]
     [[ "$output" == *"stage_medians=deploy:70.0s,work:120.0s,finalize:60.0s,e2e:250.0s,overhead:30.0%,measured:250.0s,unmeasured_wait:0.0s"* ]]
     [[ "$output" == *"yaml.safe_load(open('$TEST_TMPDIR/logs/loop_ledger.yaml'))"* ]]
     [[ "$output" != *"target=scripts/throughput_scan.sh"* ]]
-    [[ "$output" != *"test -f logs/loop_ledger.yaml && test -f scripts/cmd_complete_gate.sh"* ]]
+    [[ "$output" != *"target=scripts/cmd_complete_gate.sh"* ]]
+    [[ "$output" != *"target=scripts/deploy_task.sh"* ]]
 }
 
 @test "throughput scan attributes the production 3213.5s measurement gap" {
@@ -199,7 +201,7 @@ EOF
     run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"measured:939.0s,unmeasured_wait:2274.5s"* ]]
-    [[ "$output" == *"measurement_gap=unmeasured_wait target=scripts/cmd_complete_gate.sh"* ]]
+    [[ "$output" == *"largest_stage=unmeasured_wait target=scripts/loop_ledger_update.sh measurement_target=unmeasured_wait"* ]]
 }
 
 @test "throughput scan handles missing and outlier stage data without false attribution" {
@@ -212,4 +214,49 @@ EOF
     run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"measured:na,unmeasured_wait:na"* ]]
+    [[ "$output" == *"largest_stage=unmeasured target=scripts/loop_ledger_update.sh measurement_target=missing:deploy_median_sec"* ]]
+}
+
+@test "throughput scan attributes deploy-largest candidates to deploy_task" {
+    cat > "$TEST_TMPDIR/logs/loop_ledger.yaml" <<'EOF'
+snapshots:
+- loops: {throughput: {e2e_median_sec: 100.0, overhead_rate_median_pct: 10.0}}
+- loops:
+    throughput: {deploy_median_sec: 140.0, work_median_sec: 80.0, finalize_median_sec: 30.0, e2e_median_sec: 250.0, overhead_rate_median_pct: 30.0}
+EOF
+    echo 'detectors: []' > "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+
+    run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"largest_stage=deploy target=scripts/deploy_task.sh measurement_target=deploy_median_sec"* ]]
+    [[ "$output" != *"target=scripts/cmd_complete_gate.sh"* ]]
+}
+
+@test "throughput scan attributes finalize-largest candidates to cmd_complete_gate" {
+    cat > "$TEST_TMPDIR/logs/loop_ledger.yaml" <<'EOF'
+snapshots:
+- loops: {throughput: {e2e_median_sec: 100.0, overhead_rate_median_pct: 10.0}}
+- loops:
+    throughput: {deploy_median_sec: 40.0, work_median_sec: 60.0, finalize_median_sec: 150.0, e2e_median_sec: 250.0, overhead_rate_median_pct: 30.0}
+EOF
+    echo 'detectors: []' > "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+
+    run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"largest_stage=finalize target=scripts/cmd_complete_gate.sh measurement_target=finalize_median_sec"* ]]
+    [[ "$output" != *"target=scripts/deploy_task.sh"* ]]
+}
+
+@test "throughput scan routes tied largest stages to measurement instead of guessing" {
+    cat > "$TEST_TMPDIR/logs/loop_ledger.yaml" <<'EOF'
+snapshots:
+- loops: {throughput: {e2e_median_sec: 100.0, overhead_rate_median_pct: 10.0}}
+- loops:
+    throughput: {deploy_median_sec: 100.0, work_median_sec: 20.0, finalize_median_sec: 100.0, e2e_median_sec: 220.0, overhead_rate_median_pct: 30.0}
+EOF
+    echo 'detectors: []' > "$TEST_TMPDIR/logs/detector_fp_rate.yaml"
+
+    run bash "$TEST_TMPDIR/scripts/throughput_scan.sh" --dry-run
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"largest_stage=ambiguous target=scripts/loop_ledger_update.sh measurement_target=tie:deploy,finalize"* ]]
 }

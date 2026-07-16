@@ -69,6 +69,12 @@ FP_FIRES_THRESHOLD = int(os.environ.get("THROUGHPUT_SCAN_FP_FIRES_THRESHOLD", "2
 OVERHEAD_WORSEN_THRESHOLD = float(os.environ.get("THROUGHPUT_SCAN_OVERHEAD_WORSEN_THRESHOLD", "5"))
 E2E_WORSEN_THRESHOLD = float(os.environ.get("THROUGHPUT_SCAN_E2E_WORSEN_THRESHOLD", "60"))
 
+STAGE_TARGETS = {
+    "deploy": "scripts/deploy_task.sh",
+    "finalize": "scripts/cmd_complete_gate.sh",
+}
+MEASUREMENT_TARGET = "scripts/loop_ledger_update.sh"
+
 
 def load_yaml(path):
     p = Path(path)
@@ -154,6 +160,64 @@ def throughput_stage_summary(curr_tp):
     )
 
 
+def throughput_stage_attribution(curr_tp):
+    values = {
+        "deploy": as_float(curr_tp.get("deploy_median_sec")),
+        "work": as_float(curr_tp.get("work_median_sec")),
+        "finalize": as_float(curr_tp.get("finalize_median_sec")),
+    }
+    e2e = as_float(curr_tp.get("e2e_median_sec"))
+    missing = [f"{stage}_median_sec" for stage, value in values.items() if value is None]
+    if e2e is None:
+        missing.append("e2e_median_sec")
+    if missing:
+        return {
+            "stage": "unmeasured",
+            "target": MEASUREMENT_TARGET,
+            "measurement_target": "missing:" + ",".join(missing),
+        }
+
+    measured = sum(values.values())
+    values["unmeasured_wait"] = max(0.0, e2e - measured)
+    largest = max(values.values())
+    winners = [stage for stage, value in values.items() if value == largest]
+
+    # A tie cannot support causal attribution. Keep the candidate actionable by
+    # targeting the measurement producer and naming the ambiguous boundaries.
+    if len(winners) != 1:
+        return {
+            "stage": "ambiguous",
+            "target": MEASUREMENT_TARGET,
+            "measurement_target": "tie:" + ",".join(winners),
+        }
+
+    stage = winners[0]
+    if stage in STAGE_TARGETS:
+        return {
+            "stage": stage,
+            "target": STAGE_TARGETS[stage],
+            "measurement_target": f"{stage}_median_sec",
+        }
+
+    # Work duration belongs to the task/agent, not a single infrastructure
+    # script. An E2E gap has no measured owner at all. Neither may be blamed on
+    # finalize; route both to the measurement producer for finer instrumentation.
+    metric = "work_median_sec" if stage == "work" else "unmeasured_wait"
+    return {
+        "stage": stage,
+        "target": MEASUREMENT_TARGET,
+        "measurement_target": metric,
+    }
+
+
+def throughput_attribution_summary(attribution):
+    return (
+        f"largest_stage={attribution['stage']} "
+        f"target={attribution['target']} "
+        f"measurement_target={attribution['measurement_target']}"
+    )
+
+
 def throughput_verify(kind):
     metric = "overhead_rate_median_pct" if kind == "throughput_overhead" else "e2e_median_sec"
     return (
@@ -169,13 +233,10 @@ def throughput_verify(kind):
     )
 
 
-def throughput_candidate(kind, priority, msg):
+def throughput_candidate(kind, priority, msg, attribution):
     return {
         "kind": kind,
-        # throughput_scan is only the detector.  Stage timestamps are written by
-        # cmd_complete_gate; attributing an unmeasured interval to this scanner
-        # made the generated fix_known insight self-referential and unactionable.
-        "target": "scripts/cmd_complete_gate.sh",
+        "target": attribution["target"],
         "verify": throughput_verify(kind),
         "priority": priority,
         "msg": msg,
@@ -204,6 +265,8 @@ def build_candidates():
     prev_overhead = as_float(prev_tp.get("overhead_rate_median_pct"))
     curr_e2e = as_float(curr_tp.get("e2e_median_sec"))
     prev_e2e = as_float(prev_tp.get("e2e_median_sec"))
+    attribution = throughput_stage_attribution(curr_tp)
+    attribution_summary = throughput_attribution_summary(attribution)
     if prev_overhead is not None and curr_overhead is not None:
         delta = round(curr_overhead - prev_overhead, 1)
         if delta >= OVERHEAD_WORSEN_THRESHOLD:
@@ -216,10 +279,11 @@ def build_candidates():
                     "THROUGHPUT_FIX_KNOWN throughput_overhead: throughput overhead median worsened "
                     f"prev={prev_overhead}% curr={curr_overhead}% delta={delta}pp. "
                     f"{stage_summary}. "
-                    "measurement_gap=unmeasured_wait target=scripts/cmd_complete_gate.sh "
-                    "INSIGHT_FIX_KNOWN=1 target=scripts/cmd_complete_gate.sh "
+                    f"{attribution_summary}. "
+                    f"INSIGHT_FIX_KNOWN=1 target={attribution['target']} "
                     f"verify={verify!r} source=S1_loop_ledger"
                 ),
+                attribution,
             ))
     if prev_e2e is not None and curr_e2e is not None:
         delta = round(curr_e2e - prev_e2e, 1)
@@ -233,10 +297,11 @@ def build_candidates():
                     "THROUGHPUT_FIX_KNOWN throughput_e2e: throughput e2e median worsened "
                     f"prev={prev_e2e}s curr={curr_e2e}s delta={delta}s. "
                     f"{stage_summary}. "
-                    "measurement_gap=unmeasured_wait target=scripts/cmd_complete_gate.sh "
-                    "INSIGHT_FIX_KNOWN=1 target=scripts/cmd_complete_gate.sh "
+                    f"{attribution_summary}. "
+                    f"INSIGHT_FIX_KNOWN=1 target={attribution['target']} "
                     f"verify={verify!r} source=S1_loop_ledger"
                 ),
+                attribution,
             ))
 
     fp_data = load_yaml(fp_path)
