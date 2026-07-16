@@ -860,12 +860,7 @@ fi
 # ─── enforcement phantom検出 (deepdive 2026-05-16: 自己申告vs他覚的検証) ───
 # §3.3: bash while+grep per entryをawk一括処理に統合(cmd_3632)
 _phantom_count=0
-if command -v rg >/dev/null 2>&1; then
-    _find_scripts=$(rg --files "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/.claude/hooks" -g '*.sh' \
-        | sed 's#^.*/##' || true)
-else
 _find_scripts=$(find "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/.claude/hooks" -name "*.sh" -printf '%f\n' 2>/dev/null || true)
-fi
 
 _phantom_output=""
 _phantom_files=()
