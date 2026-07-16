@@ -777,18 +777,16 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/fullrecalculate.sh
-  status: pending
+  status: completed
   before_ms: 20
   after_ms: ''
-  before_real_ms: 2043
-  after_real_ms: ""
-  real_measurement_command: for i in $(seq 1 50); do bash scripts/fullrecalculate.sh
-    __speed_probe__ >/dev/null 2>&1 || true; done
-  test_result: bash -n PASS; invalid usage PASS; diff missing arg PASS; missing baseline
-    PASS; SKIP=0
-  commit: 312d1162bb9a25eb3c16f773070b0fcaff419c02
-  assigned_to: ""
-  updated_at: "2026-07-16T20:06:57"
+  before_real_ms: 54.183
+  after_real_ms: 19.942
+  real_measurement_command: "bash scripts/fullrecalculate.sh __speed_probe__"
+  test_result: "bash_n_PASS;usage_exit1_output_identical;FAIL=0;SKIP=0;safety_removed=0"
+  commit: "71e585d4980c31c2889448e5de58d4b8c720c26d"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T00:36:33"
   iteration: 1
 - script_path: scripts/gate_auto_respond.sh
   status: completed
@@ -1075,16 +1073,16 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_lesson_health.sh
-  status: assigned
+  status: saturated
   before_ms: 11
   after_ms: ''
-  before_real_ms: 2260
-  after_real_ms: ""
-  real_measurement_command: "time_gate_lesson_health_full_all_projects_after2"
-  test_result: "bats tests/unit/test_gate_lesson_health.bats: 12/12 PASS; output_diff_empty"
-  commit: "90c32efdd"
+  before_real_ms: 675
+  after_real_ms: 685
+  real_measurement_command: "env LESSON_EFFECT_NTFY_ENABLED=0 LESSON_EFFECT_STATUS_FILE=/tmp/saizo_glh_status LESSON_EFFECT_NOTIFY_STATE=/tmp/saizo_glh_notify bash scripts/gates/.saizo_glh_ab.sh infra"
+  test_result: "34/34 PASS FAIL=0 SKIP=0"
+  commit: "012202ac1f5bd43198a7e6a39a0b7d627b390189"
   assigned_to: "saizo"
-  updated_at: "2026-07-17T00:12:58"
+  updated_at: "2026-07-17T00:20:34"
   iteration: 2
 - script_path: scripts/gates/gate_loop_health.sh
   status: pending
