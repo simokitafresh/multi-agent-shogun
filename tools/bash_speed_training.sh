@@ -737,6 +737,7 @@ task:
   parent_cmd: ${cmd_id}
   task_id: ${cmd_id}_standard
   task_type: speed_training
+  estimated_minutes: 5
   project: infra
   target_path: ${script_path}
   scout_exempt: true
@@ -793,13 +794,16 @@ cmd_auto_deploy() {
         return 0
     fi
     if bash "$deploy_script" --direct --yaml "$tmp_task" "$ninja" "$cmd_id"; then
+        rm -f "$tmp_task"
         return 0
     else
         local deploy_status=$?
         cmd_rollback_assignment "$script_path" "$ninja" "$ledger" || {
+            rm -f "$tmp_task"
             echo "BLOCK: deploy failed and reservation rollback failed: ${script_path}" >&2
             return 2
         }
+        rm -f "$tmp_task"
         return "$deploy_status"
     fi
 }

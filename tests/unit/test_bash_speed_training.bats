@@ -97,6 +97,7 @@ teardown_file() {
 
     run cmd_auto_deploy hayate "$LEDGER"
     [ "$status" -eq 7 ]
+    [ "$(find "$SHOGUN_STATE_DIR" -maxdepth 1 -name 'speed_training_hayate.*.yaml' | wc -l)" -eq 0 ]
     awk -v first="$first" '
         $0 ~ "script_path: \"" first "\"" { hit=1; next }
         hit && /status:/ { if ($2 != "pending") exit 1; status_ok=1 }
@@ -107,6 +108,7 @@ teardown_file() {
     printf '#!/usr/bin/env bash\nexit 0\n' > "$fake"
     run cmd_auto_deploy hayate "$LEDGER"
     [ "$status" -eq 0 ]
+    [ "$(find "$SHOGUN_STATE_DIR" -maxdepth 1 -name 'speed_training_hayate.*.yaml' | wc -l)" -eq 0 ]
     grep -Fq 'status: assigned' "$LEDGER"
     grep -Fq 'assigned_to: "hayate"' "$LEDGER"
 }
@@ -219,6 +221,7 @@ EOF
     generated_task=$(find "$SHOGUN_STATE_DIR" -type f -name 'speed_training_hayate.*.yaml' | head -n 1)
     [ -n "$generated_task" ]
     grep -Fq 'task_type: speed_training' "$generated_task"
+    grep -Fq 'estimated_minutes: 5' "$generated_task"
     grep -Fq 'purpose: "Speed-train ' "$generated_task"
     grep -Fq 'before_real_ms is measured with a safe runtime command chosen for this script' "$generated_task"
     grep -Fq 'after_real_ms is measured with the same command as before_real_ms' "$generated_task"
