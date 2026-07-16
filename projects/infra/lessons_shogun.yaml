@@ -161,6 +161,7 @@ lessons:
     watcher 2プロセス/agentは正常(親子関係)。pgrep -cfで重複と誤判断するな(cmd_2924)
     symlink変更前にreadlink+設計意図カタログ照合必須(queue/inbox symlink実体化→watcher死亡)
     ループ内外部コマンドforkは単一awk/grepに畳む(cmd_save 36.5s→1.66s、cmd_3806)。特定はPS4=EPOCHREALTIME bash -x
+    CI検知は家老の責務。将軍にCI情報を見せる仕組み=鎖の迂回誘発(殿裁定2026-07-16、cad2fa416で除去)。pre-pushのfull unit suiteもCIとの二重チェック(4cb69edc9で除去)
   source_ids: [LS033, LS037, LS074, LS084, LS086, LS087, LS051, LS066]
   created_at: '2026-04-24'
   automated: true
