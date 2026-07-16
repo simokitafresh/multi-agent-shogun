@@ -28,5 +28,5 @@ mcas_get_token() {
         return 1
     fi
 
-    echo "$token"
+    printf '%s\n' "$token"
 }
