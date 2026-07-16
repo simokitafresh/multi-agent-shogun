@@ -27,11 +27,36 @@ fi
 
 NEW_PROJECT_ID="$1"
 
-# --- config/projects.yaml から情報取得（2 awk pass: grep+awk×4 → awk×2, ~30ms削減） ---
+# --- config/projects.yaml から情報取得（単一awk pass） ---
+OLD_PROJECT_NAME="" NEW_PROJECT_NAME="" NEW_GIST_URL=""
+while IFS=$'\t' read -r _key _val; do
+    case "$_key" in
+        old_id) OLD_PROJECT_ID="$_val" ;;
+        old_name) OLD_PROJECT_NAME="$_val" ;;
+        new_name) NEW_PROJECT_NAME="$_val" ;;
+        new_gist) NEW_GIST_URL="$_val" ;;
+    esac
+done < <(awk -v new_id="$NEW_PROJECT_ID" '
+    /^current_project:/ { old_id = $2 }
+    /^  - id:/ { cur = $3 }
+    cur != "" && /^    name:/ {
+        v = $0; sub(/^[^:]+:[[:space:]]*"?/, "", v); sub(/"[[:space:]]*$/, "", v); gsub(/[[:space:]]+$/, "", v)
+        names[cur] = v
+        if (cur == new_id) printf "new_name\t%s\n", v
+    }
+    cur != "" && cur == new_id && /^    gist_url:/ {
+        v = $0; sub(/^[^:]+:[[:space:]]*"?/, "", v); sub(/"[[:space:]]*$/, "", v); gsub(/[[:space:]]+$/, "", v)
+        printf "new_gist\t%s\n", v
+    }
+    END {
+        if (old_id != "") {
+            printf "old_id\t%s\n", old_id
+            if (old_id in names) printf "old_name\t%s\n", names[old_id]
+        }
+    }
+' "$PROJECTS_YAML")
 
-# Pass 1: current_project のみ取得（単純な1行検索）
-OLD_PROJECT_ID=$(awk '/^current_project:/{print $2; exit}' "$PROJECTS_YAML")
-if [[ -z "$OLD_PROJECT_ID" ]]; then
+if [[ -z "${OLD_PROJECT_ID:-}" ]]; then
     echo "[switch_project] ERROR: current_project not found in $PROJECTS_YAML" >&2
     exit 1
 fi
@@ -40,27 +65,6 @@ if [[ "$NEW_PROJECT_ID" == "$OLD_PROJECT_ID" ]]; then
     echo "[switch_project] SKIP: already on project '$OLD_PROJECT_ID'. No switch needed." >&2
     exit 0
 fi
-
-# Pass 2: OLD名・NEW名・NEW gist_url を1 awk passで一括取得（3 awk → 1 awk）
-OLD_PROJECT_NAME="" NEW_PROJECT_NAME="" NEW_GIST_URL=""
-while IFS=$'\t' read -r _key _val; do
-    case "$_key" in
-        old_name) OLD_PROJECT_NAME="$_val" ;;
-        new_name) NEW_PROJECT_NAME="$_val" ;;
-        new_gist) NEW_GIST_URL="$_val" ;;
-    esac
-done < <(awk -v old_id="$OLD_PROJECT_ID" -v new_id="$NEW_PROJECT_ID" '
-    /^  - id:/ { cur = $3 }
-    cur != "" && /^    name:/ {
-        v = $0; sub(/^[^:]+:[[:space:]]*"?/, "", v); sub(/"[[:space:]]*$/, "", v); gsub(/[[:space:]]+$/, "", v)
-        if (cur == old_id) printf "old_name\t%s\n", v
-        if (cur == new_id) printf "new_name\t%s\n", v
-    }
-    cur != "" && cur == new_id && /^    gist_url:/ {
-        v = $0; sub(/^[^:]+:[[:space:]]*"?/, "", v); sub(/"[[:space:]]*$/, "", v); gsub(/[[:space:]]+$/, "", v)
-        printf "new_gist\t%s\n", v
-    }
-' "$PROJECTS_YAML")
 
 if [[ -z "$NEW_PROJECT_NAME" ]]; then
     echo "[switch_project] ERROR: project '$NEW_PROJECT_ID' not found in $PROJECTS_YAML" >&2
