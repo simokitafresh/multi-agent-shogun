@@ -47,6 +47,32 @@ ENTRY
     [[ "$output" == *"verified_files file:line or file:symbol"* ]]
 }
 
+@test "LG001 blocks existing-implementation claim without git show evidence" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: cmd_lg001_missing_git_show
+  review_type: consultation
+  verdict: REVISE
+  observations: ["対象は既実装と判定"]
+  brainwash_check: "1/1 checked"
+  operational_simulation: {command: "sed -n 1,20p scripts/example.sh", expected: found, actual: found, result: PASS}
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"git show証跡が必須(LG001)"* ]]
+}
+
+@test "LG001 accepts existing-implementation claim with git show evidence" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: cmd_lg001_with_git_show
+  review_type: consultation
+  verdict: REVISE
+  observations: ["対象は既実装と判定"]
+  brainwash_check: "1/1 checked"
+  operational_simulation: {command: "git show HEAD:scripts/example.sh", expected: found, actual: found, result: PASS}
+ENTRY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK"* ]]
+}
+
 teardown() {
     rm -rf "$TEST_ROOT"
 }
