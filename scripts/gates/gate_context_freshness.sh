@@ -207,9 +207,10 @@ warnings_output() {
                 sig_parts+=("missing")
             fi
         done
-        while IFS= read -r path; do
-            sig_parts+=("$(stat -c '%n:%Y:%s' "$path" 2>/dev/null || printf 'missing')")
-        done < <(find "$ROOT_DIR/context" -maxdepth 1 -type f -name '*.md' -print 2>/dev/null | sort)
+        while IFS= read -r path_signature; do
+            sig_parts+=("$path_signature")
+        done < <(find "$ROOT_DIR/context" -maxdepth 1 -type f -name '*.md' \
+            -printf '%p:%T@:%s\n' 2>/dev/null | sort)
         sig_parts+=("git_timeout=${GIT_TIMEOUT}")
         local sig sig_hash
         sig="$(printf '%s|' "${sig_parts[@]}")"
