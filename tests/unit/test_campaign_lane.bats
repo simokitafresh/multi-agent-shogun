@@ -14,15 +14,45 @@ min_rounds: 2
 max_rounds: 3
 budget: 6
 candidates:
-  - {id: a, cost: 1, capability: test, independent: true}
-  - {id: b, cost: 1, capability: test, independent: true}
-  - {id: c, cost: 1, capability: test, independent: true}
+  - {id: a, cost: 1, priority: 1, capability: test, independent: true}
+  - {id: b, cost: 1, priority: 2, capability: test, independent: true}
+  - {id: c, cost: 1, priority: 3, capability: test, independent: true}
 workers:
   - {id: w1, idle: true, capabilities: [test]}
   - {id: w2, idle: true, capabilities: [test]}
   - {id: w3, idle: true, capabilities: [test]}
 YAML
   : > "$TMPROOT/m.jsonl"
+}
+
+@test "selection uses adapter priority descending then stable id" {
+  catalog
+  run python3 "$CTRL" select "$TMPROOT/catalog.yaml" "$TMPROOT/m.jsonl"
+  [ "$status" -eq 0 ]
+  python3 -c 'import json,sys; x=json.loads(sys.argv[1]); assert [i["id"] for i in x["handoff"]["items"]] == ["c","b","a"]' "$output"
+}
+
+@test "cumulative remaining budget must fit at least two items" {
+  catalog
+  sed -i 's/budget: 6/budget: 3/; s/cost: 1/cost: 2/g' "$TMPROOT/catalog.yaml"
+  run python3 "$CTRL" select "$TMPROOT/catalog.yaml" "$TMPROOT/m.jsonl"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *'fewer than two eligible'* ]]
+}
+
+@test "validate rejects duplicate measurement key" {
+  catalog
+  printf '%s\n' '{"target":"a","round":1,"status":"failed"}' '{"target":"a","round":1,"status":"failed"}' > "$TMPROOT/m.jsonl"
+  run python3 "$CTRL" validate "$TMPROOT/catalog.yaml" "$TMPROOT/m.jsonl"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *'duplicate measurement target+round'* ]]
+}
+
+@test "record rejects missing round" {
+  catalog
+  run python3 "$CTRL" record "$TMPROOT/catalog.yaml" "$TMPROOT/m.jsonl" --result '{"target":"a","status":"success","value":9,"cost":1}'
+  [ "$status" -eq 2 ]
+  [[ "$output" == *'round must be positive integer'* ]]
 }
 
 @test "validate and dynamic shard-work handoff" {

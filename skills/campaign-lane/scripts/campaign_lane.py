@@ -37,6 +37,8 @@ def load_catalog(path: str) -> dict:
     for item in candidates:
         if not item.get("id") or not isinstance(item.get("cost"), (int, float)) or item["cost"] < 0:
             raise ContractError("candidate requires id and nonnegative numeric cost")
+        if not isinstance(item.get("priority"), (int, float)):
+            raise ContractError("candidate requires numeric adapter priority")
         if not item.get("independent", False):
             raise ContractError("dependent candidate BLOCK")
         if not item.get("capability"):
@@ -86,6 +88,13 @@ def reject_stale(catalog: dict, rows: list[dict]) -> None:
             raise ContractError(f"stale measurement: {row.get('target')}")
 
 
+def validate_measurements(catalog: dict, rows: list[dict]) -> None:
+    reject_stale(catalog, rows)
+    keys = [(r.get("target"), r.get("round")) for r in rows]
+    if len(keys) != len(set(keys)):
+        raise ContractError("duplicate measurement target+round")
+
+
 def accepted(rows: list[dict]) -> list[dict]:
     return [r for r in rows if r.get("status") == "success" and r.get("quality") != "fail" and isinstance(r.get("value"), (int, float))]
 
@@ -130,7 +139,7 @@ def state(catalog: dict, rows: list[dict]) -> dict:
 
 
 def select(catalog: dict, rows: list[dict]) -> dict:
-    reject_stale(catalog, rows)
+    validate_measurements(catalog, rows)
     if catalog.get("environment") == "production" and catalog.get("sealed") is True:
         return {"status": "BLOCK", "reason": "production SEALED"}
     if catalog.get("evaluation") == "subjective":
@@ -142,15 +151,22 @@ def select(catalog: dict, rows: list[dict]) -> dict:
     attempted = {(r["target"], r["round"]) for r in rows}
     inflight = {(r["target"], r["round"]) for r in rows if r.get("status") == "in_flight"}
     remaining_budget = catalog["budget"] - current["spent"]
-    candidates = [c for c in catalog["candidates"] if (c["id"], next_round) not in attempted and (c["id"], next_round) not in inflight and c["cost"] <= remaining_budget]
+    candidates = sorted(
+        [c for c in catalog["candidates"] if (c["id"], next_round) not in attempted and (c["id"], next_round) not in inflight],
+        key=lambda c: (-c["priority"], c["id"]),
+    )
     workers = [w for w in catalog.get("workers", []) if w.get("idle")]
     eligible = []
     used_workers = []
+    selected_cost = 0.0
     for candidate in candidates:
+        if selected_cost + candidate["cost"] > remaining_budget:
+            continue
         worker = next((w for w in workers if w["id"] not in used_workers and candidate["capability"] in w.get("capabilities", [])), None)
         if worker:
             eligible.append(candidate)
             used_workers.append(worker["id"])
+            selected_cost += candidate["cost"]
     if len(eligible) < 2 or len(used_workers) < 2:
         return {"status": "BLOCK", "reason": "fewer than two eligible independent candidates/workers"}
     n = min(len(eligible), len(used_workers))
@@ -159,6 +175,10 @@ def select(catalog: dict, rows: list[dict]) -> dict:
 
 
 def record(path: str, row: dict, catalog: dict, rows: list[dict]) -> dict:
+    if not isinstance(row.get("target"), str) or not row["target"].strip():
+        raise ContractError("record target must be nonempty")
+    if not isinstance(row.get("round"), int) or isinstance(row.get("round"), bool) or row["round"] <= 0:
+        raise ContractError("record round must be positive integer")
     if row.get("status") not in {"success", "quality_fail", "in_flight", "failed"}:
         raise ContractError("invalid result status")
     if row.get("status") == "success" and not isinstance(row.get("value"), (int, float)):
@@ -197,6 +217,7 @@ def main() -> int:
         catalog = load_catalog(args.catalog)
         rows = load_measurements(args.measurements)
         if args.action == "validate":
+            validate_measurements(catalog, rows)
             output = {"status": "PASS", "measurements": len(rows)}
         elif args.action == "select":
             output = select(catalog, rows)
