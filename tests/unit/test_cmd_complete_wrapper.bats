@@ -107,6 +107,47 @@ SH
     [[ "$output" == *"FAILED dashboard after 2 attempts"* ]]
 }
 
+@test "transient ntfy timeout is retried before inbox archive" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/ntfy-retry.log"
+    cat > "$FIXTURE/scripts/ntfy_cmd.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'ntfy_cmd.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+attempt_file="${CMD_COMPLETE_TEST_LOG}.ntfy-attempt"
+attempt=0
+[ ! -f "$attempt_file" ] || attempt=$(cat "$attempt_file")
+attempt=$((attempt + 1))
+printf '%s\n' "$attempt" > "$attempt_file"
+[ "$attempt" -ge 2 ] || sleep 2
+SH
+    chmod +x "$FIXTURE/scripts/ntfy_cmd.sh"
+
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        CMD_COMPLETE_NTFY_TIMEOUT=1 CMD_COMPLETE_NTFY_RETRY_DELAY=0 \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    [ "$(grep -c '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 2 ]
+    grep -q '^inbox_archive.sh|' "$CMD_COMPLETE_TEST_LOG"
+    [[ "$output" == *"RETRY ntfy after transient failure rc=124"* ]]
+}
+
+@test "persistent ntfy timeout blocks inbox archive after bounded attempts" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/ntfy-timeout.log"
+    cat > "$FIXTURE/scripts/ntfy_cmd.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'ntfy_cmd.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+sleep 2
+SH
+    chmod +x "$FIXTURE/scripts/ntfy_cmd.sh"
+
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        CMD_COMPLETE_NTFY_ATTEMPTS=2 CMD_COMPLETE_NTFY_TIMEOUT=1 CMD_COMPLETE_NTFY_RETRY_DELAY=0 \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 124 ]
+    [ "$(grep -c '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 2 ]
+    ! grep -q '^inbox_archive.sh|' "$CMD_COMPLETE_TEST_LOG"
+    [[ "$output" == *"FAILED ntfy after 2 attempts"* ]]
+}
+
 @test "quoted bundle path remains one argument" {
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/quoted.log"
     local bundle="$FIXTURE/queue/gates/cmd_fixture/sg7 bundle.json"

@@ -117,7 +117,10 @@ run_status_step
 run_step_with_retry dashboard "${CMD_COMPLETE_DASHBOARD_ATTEMPTS:-3}" \
     "${CMD_COMPLETE_DASHBOARD_RETRY_DELAY:-1}" \
     bash "$SCRIPT_DIR/dashboard_update.sh" "$CMD_ID" --bundle "$BUNDLE_PATH"
-run_step ntfy bash "$SCRIPT_DIR/ntfy_cmd.sh" "$CMD_ID" "完了"
+run_step_with_retry ntfy "${CMD_COMPLETE_NTFY_ATTEMPTS:-3}" \
+    "${CMD_COMPLETE_NTFY_RETRY_DELAY:-1}" \
+    timeout "${CMD_COMPLETE_NTFY_TIMEOUT:-25}" \
+    bash "$SCRIPT_DIR/ntfy_cmd.sh" "$CMD_ID" "完了"
 run_step inbox_archive bash "$SCRIPT_DIR/inbox_archive.sh" karo
 
 printf '[cmd_complete] COMPLETE %s\n' "$CMD_ID"
