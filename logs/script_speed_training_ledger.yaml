@@ -94,19 +94,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/affected_tests.sh
-  status: pending
+  status: saturated
   before_ms: 15
   after_ms: ''
-  before_real_ms: 1413
-  after_real_ms: ""
-  real_measurement_command: timeout 20 bash scripts/affected_tests.sh scripts/affected_tests.sh
-    >/dev/null
-  test_result: bash -n scripts/affected_tests.sh && bats tests/unit/test_deploy_task_ac_handling.bats
-    PASS 36/36 SKIP=0
-  commit: 3a9e16f6a
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 225
+  after_real_ms: 274
+  real_measurement_command: "bash scripts/affected_tests.sh scripts/deploy_task.sh"
+  test_result: "PASS_FAIL0_SKIP0"
+  commit: "6fc03a78c427756a86a49826bdd6732031048e42"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T01:58:48"
   iteration: 1
+  last_good_commit: "6fc03a78c427756a86a49826bdd6732031048e42"
+  candidate_commit: "167c7fb62173b63907da7a2cc8feebfa2e98e14e"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 225
+  last_good_p95_ms: 292
+  candidate_p50_ms: 274
+  candidate_p95_ms: 289
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux;bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu);rg=ripgrep 14.1.1 (rev 4649aa9700);repo=/tmp/ext4-worktrees"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/agent_status.sh
   status: completed
   before_ms: 14
@@ -525,19 +537,31 @@ entries:
   updated_at: "2026-07-16T22:06:55"
   iteration: 1
 - script_path: scripts/clipboard_watcher.sh
-  status: pending
+  status: saturated
   before_ms: 32
   after_ms: ''
-  before_real_ms: 1216
-  after_real_ms: ""
-  real_measurement_command: 'direct PS call (no-image path, 5-run avg): powershell.exe
-    -NoProfile → pwsh.exe -NoProfile -NonInteractive'
-  test_result: bash -n PASS; pwsh.exe functional PASS; daemon startup output PASS
-    SKIP=0
-  commit: ad11b7dbb
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 42.227601
+  after_real_ms: 41.054755
+  real_measurement_command: "env PATH=/tmp/kotaro_clipbench_bin:/usr/bin:/bin bash <arm>/scripts/clipboard_watcher.sh"
+  test_result: "bash -n PASS; related_tests=0; FAIL=0 SKIP=0; safety_removed=0; rollback_parity=PASS"
+  commit: "ad11b7dbb"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T02:16:43"
   iteration: 1
+  last_good_commit: "ad11b7dbb"
+  candidate_commit: "ffbf1e5626540fdf27d08cd4cdd154a4e58ae071"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 42.227601
+  last_good_p95_ms: 49.661655
+  candidate_p50_ms: 41.054755
+  candidate_p95_ms: 51.348495
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2-x86_64;bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu);mock-path=/tmp/kotaro_clipbench_bin"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/cmd_absorb.sh
   status: pending
   before_ms: 17
@@ -778,18 +802,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/deploy_training.sh
-  status: pending
+  status: saturated
   before_ms: 29
   after_ms: ''
-  before_real_ms: 1277
-  after_real_ms: ""
-  real_measurement_command: for i in $(seq 1 80); do bash scripts/deploy_training.sh
-    --help >/dev/null 2>&1 || true; done
-  test_result: bash -n scripts/deploy_training.sh PASS; safe --help-loop PASS; SKIP=0
-  commit: f926137d8
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 995.5
+  after_real_ms: 1014.5
+  real_measurement_command: "for i in $(seq 1 80); do bash scripts/deploy_training.sh --help >/dev/null 2>&1 || true; done"
+  test_result: "bash -n PASS; bats tests/unit/test_deploy_training.bats 2/2 PASS"
+  commit: "5fff0c60241b6b4f48585f3ba2473bf4e67372bf"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T02:16:19"
   iteration: 1
+  last_good_commit: "5fff0c60241b6b4f48585f3ba2473bf4e67372bf"
+  candidate_commit: "3c1ba3840911c403531cb00e6b0cca1f910cc474"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 995.5
+  last_good_p95_ms: 1366.0
+  candidate_p50_ms: 1014.5
+  candidate_p95_ms: 1252.0
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux_6.6.87.1-microsoft-standard-WSL2_x86_64_GNU/Linux;bash=GNU_bash,_version_5.2.21(1)-release_(x86_64-pc-linux-gnu)"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/enable_pane_trace.sh
   status: pending
   before_ms: 19
@@ -1395,18 +1432,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/gates/gate_yaml_status.sh
-  status: pending
+  status: completed
   before_ms: 17
   after_ms: ''
-  before_real_ms: 1261
-  after_real_ms: ""
-  real_measurement_command: bash -c 'for i in {1..100}; do bash scripts/gates/gate_yaml_status.sh
-    cmd_missing_for_speed --dry-run >/dev/null 2>&1 || true; done'
-  test_result: bash_n_pass;missing_output_unchanged;fixture_map_list_dry_run_already_ok_pass;SKIP=0
-  commit: 8f9a22c6e
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 16.5
+  after_real_ms: 16
+  real_measurement_command: "bash scripts/gates/gate_yaml_status.sh cmd_3909 --dry-run"
+  test_result: "bats_17_PASS_FAIL0_SKIP0"
+  commit: "22a7e0b034fe763c72ea5b83c60dc82b4b069ece"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T02:16:23"
   iteration: 1
+  last_good_commit: "3c1ba3840911c403531cb00e6b0cca1f910cc474"
+  candidate_commit: "22a7e0b034fe763c72ea5b83c60dc82b4b069ece"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 16.5
+  last_good_p95_ms: 24
+  candidate_p50_ms: 16
+  candidate_p95_ms: 23
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux;bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu);fixture_sha=91aeb6438c2438f7363ae46b52e16a181d86d3a9483f85bba04b81627d2d1ab1;repo=/tmp/ext4-worktrees"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/mark_no_learning.sh
   status: pending
   before_ms: 16
@@ -1434,17 +1484,31 @@ entries:
   updated_at: "2026-07-16T21:36:13"
   iteration: 1
 - script_path: scripts/gist_sync.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: 15
-  before_real_ms: 1277
-  after_real_ms: ""
-  real_measurement_command: time bash scripts/gist_sync.sh --once
-  test_result: bash_n PASS; no batsfile; --once exit0 PASS
-  commit: bec1dc9ec
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 97.0865575
+  after_real_ms: 95.3256345
+  real_measurement_command: "bash /tmp/gist_sync_ab/root/scripts/gist_sync.sh --once"
+  test_result: "tests/unit/test_gist_sync.bats:3_pass_fail0_skip0"
+  commit: "321bcf90eaa71641038b293127e54a888c0e2438"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T02:05:50"
   iteration: 1
+  last_good_commit: "0e457573462763c34cb82e7e90fba17c79cc5b0b"
+  candidate_commit: "321bcf90eaa71641038b293127e54a888c0e2438"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 97.0865575
+  last_good_p95_ms: 130.573956
+  candidate_p50_ms: 95.3256345
+  candidate_p95_ms: 126.213402
+  ab_order: "alternating"
+  warmup_each: "2"
+  environment_fingerprint: "Linux-6.6.87.1-microsoft-standard-WSL2|GNU bash 5.2.21|mock-gh-jq-isolated-root"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gunshi_gate_reflux.sh
   status: pending
   before_ms: 17
