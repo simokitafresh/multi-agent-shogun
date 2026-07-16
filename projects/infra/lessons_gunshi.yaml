@@ -162,9 +162,10 @@ lessons:
   origin: '[[gunshi_infra_audit_20260406]]'
   created_at: '2026-04-06'
   automated: true
-  enforcement: cmd_complete_gate.sh L3384に修正適用済み
+  enforcement: "Level4(フロー内BLOCK): scripts/cmd_complete_gate.shのVercel phase checkはget_cmd_head_hashes(CMD_ID)で直近100 commitのcmd連続窓のみ抽出し、各hashをdiff-treeしてcontext変更を検査する。HEAD~1/auto-commit混同を構造的に排除。"
   when: cmd_complete_gate.shでcontext変更を検出する時。auto-commitとの混同を避ける
-  how: git log --grep=CMD_IDでcmd固有commitのみからcontext変更を検出。HEAD~1は使わない
+  how: get_cmd_head_hashesがsubject/bodyのCMD_ID一致commitを直近100件から連続抽出し、auto-commit choreを除外。Vercel phase checkは抽出hashごとのdiff-tree結果だけをgate_vercel_phaseへ渡す。
+  enforcement_level: 4
 - id: LG016
   title: inbox_write.shをデーモンから呼ぶ時はtimeout必須 — WSL2 NTFS flockがhangする
   detail: |
