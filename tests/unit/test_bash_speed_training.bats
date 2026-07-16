@@ -26,6 +26,39 @@ setup() {
     source "$PROJECT_ROOT/tools/bash_speed_training.sh"
 }
 
+write_multiline_ledger_fixture() {
+    cat > "$LEDGER" <<'EOF'
+global_status: running
+entries:
+- script_path: scripts/ninja_monitor.sh
+  status: assigned
+  before_ms: 24
+  after_ms: 72
+  before_real_ms: 63
+  after_real_ms: 57
+  real_measurement_command: NINJA_MONITOR_LIB_ONLY=1 bash scripts/ninja_monitor.sh
+    (10-run median)
+  test_result: bash -n OK; SCRIPT_DIR correct; tests/unit/test_ninja_monitor_*.bats
+    56/56 PASS SKIP=0; before_63ms_after_57ms; 10pct_reduction
+  commit: 6ddf70e86
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-16T20:49:02"
+  iteration: 1
+- script_path: scripts/next.sh
+  status: pending
+  before_ms: 5
+  after_ms: ""
+  before_real_ms: ""
+  after_real_ms: ""
+  real_measurement_command: ""
+  test_result: "baseline"
+  commit: ""
+  assigned_to: ""
+  updated_at: ""
+  iteration: 0
+EOF
+}
+
 teardown() {
     rm -rf "$TMP_ROOT"
 }
@@ -280,6 +313,53 @@ EOF
         in_target && /commit: "abc123"/ { commit_seen = 1 }
         END { exit !(status_seen && before_seen && after_seen && command_seen && test_seen && commit_seen) }
     ' "$LEDGER"
+}
+
+@test "record-after replaces a multiline result without leaving stale continuation lines" {
+    write_multiline_ledger_fixture
+
+    cmd_record_after scripts/ninja_monitor.sh completed 41 "bats target PASS=72 FAIL=0 SKIP=0" abc789 "$LEDGER"
+
+    run python3 - "$LEDGER" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+target, untouched = data["entries"]
+assert target["script_path"] == "scripts/ninja_monitor.sh"
+assert target["status"] == "completed"
+assert target["after_ms"] == 41
+assert target["test_result"] == "bats target PASS=72 FAIL=0 SKIP=0"
+assert target["commit"] == "abc789"
+assert untouched["script_path"] == "scripts/next.sh"
+assert untouched["test_result"] == "baseline"
+PY
+    [ "$status" -eq 0 ]
+    ! grep -Fq '56/56 PASS SKIP=0' "$LEDGER"
+}
+
+@test "record-real replaces multiline command and result without leaving stale continuation lines" {
+    write_multiline_ledger_fixture
+
+    cmd_record_real scripts/ninja_monitor.sh completed 57 41 \
+        "NINJA_MONITOR_LIB_ONLY=1 bash scripts/ninja_monitor.sh (20-run median)" \
+        "bats target PASS=72 FAIL=0 SKIP=0" abc789 "$LEDGER"
+
+    run python3 - "$LEDGER" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+target, untouched = data["entries"]
+assert target["script_path"] == "scripts/ninja_monitor.sh"
+assert target["status"] == "completed"
+assert target["before_real_ms"] == 57
+assert target["after_real_ms"] == 41
+assert target["real_measurement_command"] == "NINJA_MONITOR_LIB_ONLY=1 bash scripts/ninja_monitor.sh (20-run median)"
+assert target["test_result"] == "bats target PASS=72 FAIL=0 SKIP=0"
+assert target["commit"] == "abc789"
+assert untouched["script_path"] == "scripts/next.sh"
+assert untouched["test_result"] == "baseline"
+PY
+    [ "$status" -eq 0 ]
+    ! grep -Fq '(10-run median)' "$LEDGER"
+    ! grep -Fq '56/56 PASS SKIP=0' "$LEDGER"
 }
 
 @test "record-real completed rejects non-improving runtime" {

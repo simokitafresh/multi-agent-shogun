@@ -585,19 +585,32 @@ update_entry_field_unlocked() {
             gsub(/"/, "\\\"", s)
             return "\"" s "\""
         }
+        skip_old_value {
+            if ($0 ~ /^[[:space:]]*$/) next
+            match($0, /^[[:space:]]*/)
+            if (RLENGTH > old_field_indent_length) next
+            skip_old_value = 0
+        }
         /^[[:space:]]*-[[:space:]]+script_path:/ {
-            in_target = (index($0, "script_path: \"" script_path "\"") > 0 || \
-                         index($0, "script_path: " script_path) > 0)
+            entry_path = $0
+            sub(/^[[:space:]]*-[[:space:]]+script_path:[[:space:]]*/, "", entry_path)
+            sub(/[[:space:]]*$/, "", entry_path)
+            if (entry_path ~ /^".*"$/ || entry_path ~ /^\047.*\047$/) {
+                entry_path = substr(entry_path, 2, length(entry_path) - 2)
+            }
+            in_target = (entry_path == script_path)
             print
             next
         }
         in_target && $0 ~ "^[[:space:]]+" field ":" {
             match($0, /^[[:space:]]+/)
             indent = substr($0, 1, RLENGTH)
+            old_field_indent_length = RLENGTH
             if (value ~ /^[0-9]+([.][0-9]+)?$/ && field ~ /_ms$/) print indent field ": " value
             else if (field == "status" && value ~ /^[A-Za-z0-9_.-]+$/) print indent field ": " value
             else print indent field ": " q(value)
             in_target = 0
+            skip_old_value = 1
             next
         }
         { print }
