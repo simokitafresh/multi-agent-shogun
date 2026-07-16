@@ -40,26 +40,10 @@ echo "[note_draft] Markdown: ${MD_FILE}"
 echo "[note_draft] CDP port: ${CDP_PORT}"
 
 # ── Step 0: Chrome CDP pre-check (bash layer) ──
-# Chrome未起動時はSKIP(exit 0)で抜ける。FAIL率汚染防止。
+# Chrome未起動時もPython層のChrome自動起動(Step 1)に委ねる。
+# SKIPはバグ(殿裁定2026-07-16): スキルは成果を届けるべきで、前提条件不足時は自分で満たせ。
 if ! curl -s --max-time 3 "http://localhost:${CDP_PORT}/json/version" >/dev/null 2>&1; then
-  echo "[note_draft] SKIP: Chrome CDP not reachable on port ${CDP_PORT}. Chrome is not running."
-  # skill_execution_logにSKIP記録
-  SKILL_LOG="${_REPO_ROOT}/logs/skill_execution_log.yaml"
-  AGENT_ID="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE}" -p '#{@agent_id}' 2>/dev/null || echo unknown)}"
-  TS="$(date '+%Y-%m-%dT%H:%M:%S%z')"
-  cat >> "$SKILL_LOG" << LOGEOF
-- ts: "${TS}"
-  skill: "note-draft"
-  executor: "${AGENT_ID}"
-  result: "SKIP"
-  used: "true"
-  stumbling_points: "Chrome CDP not reachable on port ${CDP_PORT}"
-  gate: "none"
-  source: "note_draft.sh"
-  skill_path: "${BASH_SOURCE[0]}"
-LOGEOF
-  echo "[note_draft] Logged to skill_execution_log: SKIP"
-  exit 0
+  echo "[note_draft] Chrome not running on port ${CDP_PORT}. Python layer will auto-launch."
 fi
 
 # ── Step 1-6: All in one Python script ──
