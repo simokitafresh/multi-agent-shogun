@@ -32,6 +32,14 @@ The script validates arguments and routing, computes the inbox path and lock pat
 
 Inputs are CLI arguments, `queue/tasks/`, `queue/inbox/`, report YAMLs, agent config, and tmux pane metadata. Outputs are inbox YAML records, wake-up nudges, duplicate-deployment notifications, report-gate side effects, and logs.
 
+## Review Round-trip SLO and Async Boundary
+
+- SLO: isolated overflow fixtures for both `karo -> gunshi` (`review_draft`) and `gunshi -> karo` (`review_result`) must keep entry-to-persistence p95 below 130ms and must be strictly faster than the recorded before p95.
+- Synchronous boundary: routing guards, message serialization, flock acquisition, durable inbox append, overflow retention, and the observable watcher nudge/delivery check remain mandatory before a delivery is accepted.
+- Asynchronous boundary: memory DB mirroring remains best-effort after durable YAML persistence; it must not delay or replace mailbox persistence.
+- Overflow compaction uses one awk selection/emission pass, preserving every unread record and the newest 30 read records. This replaces the prior awk-to-Bash-array-to-per-record-write reconstruction without changing retention semantics.
+- Regression entry: `tests/unit/test_inbox_write.bats` T-008/T-009/T-010 guard retention and lost updates; `tests/unit/test_inbox_watcher_delivery_latency.bats` guards watcher delivery evidence and latency reporting. The round-trip benchmark protocol and before/after evidence are recorded in `docs/research/cmd_karo_hotfix_speed_pipeline_inbox_roundtrip_202607162255.md`.
+
 ## Cross-References
 
 - [[inbox_write.sh]] is the primary implementation; its header (line 2) declares `semantic-links: [[YAML安全書込み]], [[インフラ設計意図カタログ]]` and line 4 documents the usage interface as `bash scripts/inbox_write.sh <target_agent> <content> [type] [from] [action]`.

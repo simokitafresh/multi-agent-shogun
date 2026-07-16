@@ -981,11 +981,68 @@ inbox_append_message_fast_locked() {
     printf '%s' "$message_block" >> "$inbox_file"
 }
 
+inbox_compact_records_locked() {
+    local inbox_file="$1"
+    local tmp_file
+    tmp_file=$(mktemp "${inbox_file}.XXXXXX.tmp")
+
+    # Keep every unread record and only the newest 30 read records.  Perform
+    # selection and emission in one awk process: the former awk -> bash arrays
+    # -> per-record printf path amplified DrvFs I/O on every overflow write.
+    if ! awk '
+        function save_record() {
+            if (!started) return
+            records[++count] = record
+            reads[count] = read_state
+        }
+        BEGIN { started = 0; record = ""; read_state = "false" }
+        /^messages:[[:space:]]*(\[\])?[[:space:]]*$/ { next }
+        /^- / {
+            save_record()
+            record = $0 "\n"
+            read_state = "false"
+            started = 1
+            next
+        }
+        started {
+            record = record $0 "\n"
+            if ($0 ~ /^  read:[[:space:]]*/) {
+                read_state = $0
+                sub(/^  read:[[:space:]]*/, "", read_state)
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", read_state)
+            }
+        }
+        END {
+            save_record()
+            read_count = 0
+            for (i = 1; i <= count; i++) {
+                if (tolower(reads[i]) == "true") read_count++
+            }
+            first_read_to_keep = read_count > 30 ? read_count - 29 : 1
+            print "messages:"
+            for (i = 1; i <= count; i++) {
+                if (tolower(reads[i]) != "true") printf "%s", records[i]
+            }
+            seen_read = 0
+            for (i = 1; i <= count; i++) {
+                if (tolower(reads[i]) == "true") {
+                    seen_read++
+                    if (seen_read >= first_read_to_keep) printf "%s", records[i]
+                }
+            }
+        }
+    ' "$inbox_file" > "$tmp_file"; then
+        rm -f "$tmp_file"
+        return 1
+    fi
+
+    inbox_replace_file_with_retry "$tmp_file" "$inbox_file"
+}
+
 inbox_append_message_locked() {
     local inbox_file="$1"
     local message_block="$2"
-    local -a unread_records=() read_records=() kept_records=()
-    local i start_idx=0 existing_count=0
+    local existing_count=0
 
     if inbox_is_empty_file "$inbox_file"; then
         printf 'messages:\n%s' "$message_block" > "$inbox_file"
@@ -999,27 +1056,8 @@ inbox_append_message_locked() {
         return 0
     fi
 
-    inbox_collect_records "$inbox_file"
-    INBOX_RECORDS+=("$message_block")
-    INBOX_RECORD_READS+=("false")
-
-    if (( ${#INBOX_RECORDS[@]} > 50 )); then
-        for ((i=0; i<${#INBOX_RECORDS[@]}; i++)); do
-            if [[ "${INBOX_RECORD_READS[$i],,}" == "true" ]]; then
-                read_records+=("${INBOX_RECORDS[$i]}")
-            else
-                unread_records+=("${INBOX_RECORDS[$i]}")
-            fi
-        done
-        if (( ${#read_records[@]} > 30 )); then
-            start_idx=$(( ${#read_records[@]} - 30 ))
-        fi
-        kept_records=("${unread_records[@]}" "${read_records[@]:start_idx}")
-        inbox_write_records "$inbox_file" "${kept_records[@]}"
-        return 0
-    fi
-
-    inbox_write_records "$inbox_file" "${INBOX_RECORDS[@]}"
+    printf '%s' "$message_block" >> "$inbox_file"
+    inbox_compact_records_locked "$inbox_file"
 }
 
 inbox_extract_report_paths() {
