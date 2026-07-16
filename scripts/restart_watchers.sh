@@ -160,8 +160,8 @@ source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 
-# Dynamic roster source retained: for name in $(get_all_agents)
-for name in shogun $(get_all_agents); do
+# get_all_agents includes shogun; consuming it directly prevents duplicate identity handoff.
+for name in $(get_all_agents); do
     if [ "$name" = shogun ]; then pane="shogun:main"; else pane=$(pane_lookup "$name" 2>/dev/null) || true; fi
     [[ -z "$pane" ]] && continue
     stop_agent_watcher "$name"
