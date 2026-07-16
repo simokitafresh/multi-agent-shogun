@@ -2495,17 +2495,16 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/memory_db_init.sh
-  status: pending
+  status: saturated
   before_ms: 13
   after_ms: ''
-  before_real_ms: 219
-  after_real_ms: ""
-  real_measurement_command: bash scripts/memory_db_init.sh --help (5回計測中央値; before=525ms
-    after=219ms)
-  test_result: bash -n pass; bats tests/unit/test_memory_db.bats 40/40 PASS SKIP=0
-  commit: 002e17646
-  assigned_to: ""
-  updated_at: "2026-07-16T19:56:27"
+  before_real_ms: 124
+  after_real_ms: 151
+  real_measurement_command: "bash scripts/memory_db_init.sh --help"
+  test_result: "bash -n PASS; bats incomplete 19/60 before timeout, observed FAIL=0 SKIP=0; candidate regressed 124ms->151ms and reverted"
+  commit: "919928d240f30c09103c4c3fa518bae2b7f939b1"
+  assigned_to: "hayate"
+  updated_at: "2026-07-16T20:52:27"
   iteration: 1
 - script_path: scripts/memory_db_query.sh
   status: pending
