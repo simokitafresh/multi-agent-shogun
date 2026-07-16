@@ -73,9 +73,14 @@ cd "$repo_root"
 git_common_dir="$(git rev-parse --git-common-dir 2>/dev/null)" \
     || { echo "BLOCK: cannot resolve git common directory" >&2; exit 2; }
 [[ "$git_common_dir" = /* ]] || git_common_dir="$repo_root/$git_common_dir"
-exec {commit_lock_fd}>"$git_common_dir/ninja-scope-commit.lock" \
+# WSL2/DrvFs上のflockは不安定なため、repository identityはcommon dirで
+# 共有しつつ実lockはlock_path SSOTでext4側へ写像する。
+# shellcheck source=scripts/lib/lock_path.sh
+source "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/lock_path.sh"
+commit_lock_path="$(lock_path "$git_common_dir/ninja-scope-commit")"
+exec {commit_lock_fd}>"$commit_lock_path" \
     || { echo "BLOCK: cannot open ninja scope commit lock" >&2; exit 2; }
-flock "$commit_lock_fd" \
+flock -w 120 "$commit_lock_fd" \
     || { echo "BLOCK: cannot acquire ninja scope commit lock" >&2; exit 2; }
 
 # GA-222: scope path正規化はscripts/lib/scope_path.sh(SSOT)に集約する。
@@ -202,10 +207,32 @@ fi
 
 # Normal modeも共有indexをcommit sourceにしない。HEAD由来の専用indexへ
 # 指定scopeだけをaddし、commit objectの入力自体を所有権分離する。
+# 共有indexにscope自身が既にstage済みでも、それがprivate indexへaddした
+# worktree blobと完全一致するなら所有内容は同一なので安全に続行できる。
+# partial stage等で両者が異なる場合だけfail-closedする。これにより別workerの
+# unrelated stageを保持したまま、各workerが事前stageした自身のscopeをcommit
+# できる。post-commit更新用に共有index entryをsnapshotしておく。
+shared_index_file="$(git rev-parse --git-path index)"
+[[ "$shared_index_file" = /* ]] || shared_index_file="$repo_root/$shared_index_file"
+declare -A shared_index_before=()
+declare -A shared_scope_entries_before=()
+declare -A shared_scope_staged_before=()
 for scope_path in "${paths[@]}"; do
-    git diff --cached --quiet -- "$scope_path" \
-        || { echo "BLOCK: scope path already has staged content in shared index: $scope_path (use --patch)" >&2; exit 2; }
+    shared_scope_entries_before["$scope_path"]="$(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -- "$scope_path")"
+    if GIT_INDEX_FILE="$shared_index_file" git diff --cached --quiet -- "$scope_path"; then
+        shared_scope_staged_before["$scope_path"]=0
+    else
+        shared_scope_staged_before["$scope_path"]=1
+    fi
 done
+# Per-file snapshot is separate from the scope snapshot because a scope may be
+# a directory.  The post-commit CAS-style check must compare each committed
+# file with its own prior shared-index entry, not a tree/pathspec aggregate.
+while IFS= read -r -d '' index_record; do
+    index_meta="${index_record%%$'\t'*}"
+    index_path="${index_record#*$'\t'}"
+    shared_index_before["$index_path"]="${index_meta% 0}"
+done < <(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -z -- "${paths[@]}")
 
 temp_index="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-index.XXXXXX")"
 rm -f "$temp_index"
@@ -214,6 +241,15 @@ trap cleanup_normal_index EXIT
 export GIT_INDEX_FILE="$temp_index"
 git read-tree HEAD
 git add -- "${paths[@]}"
+
+for scope_path in "${paths[@]}"; do
+    private_entries="$(git ls-files -s -- "$scope_path")"
+    shared_entries="${shared_scope_entries_before[$scope_path]}"
+    if [[ "${shared_scope_staged_before[$scope_path]}" == 1 && "$shared_entries" != "$private_entries" ]]; then
+        echo "BLOCK: scope path has partial/foreign staged content that differs from worktree: $scope_path (use --patch)" >&2
+        exit 2
+    fi
+done
 
 # GA-222: commit前にgitが実際に発火するhookを正本(scripts/hooks/*.sh)と同期する。
 # git add後に呼ぶことで、対象正本がこのcommitのscope内ならstaged(index)版、
@@ -242,12 +278,23 @@ mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
 unset GIT_INDEX_FILE
 
 # 共有indexは指定scopeだけ新HEADへ追随。他pathのstageはblob/modeとも不変。
+# commit中に別processがscopeの共有index entryを書き換えた場合は、その新しい
+# stageを上書きせず保持する。事前stageがprivate entryと同一なら既にnew HEADと
+# 一致するためupdate不要、cleanな旧HEAD entryだけをnew HEADへ進める。
 for committed_path in "${committed[@]}"; do
+    shared_entry_now="$(git ls-files -s -- "$committed_path" | awk '$3 == 0 {print $1 " " $2; exit}')"
+    shared_entry_before="${shared_index_before[$committed_path]-}"
+    if [[ "$shared_entry_now" != "$shared_entry_before" ]]; then
+        echo "WARN: shared index changed concurrently; preserving newer staged entry: $committed_path" >&2
+        continue
+    fi
     if git cat-file -e "HEAD:$committed_path" 2>/dev/null; then
         new_blob="$(git rev-parse "HEAD:$committed_path")"
         new_mode="$(git ls-tree HEAD -- "$committed_path" | awk 'NR==1 {print $1}')"
+        [[ "$shared_entry_now" == "$new_mode $new_blob" ]] && continue
         git update-index --add --cacheinfo "$new_mode,$new_blob,$committed_path"
     else
+        [[ -z "$shared_entry_now" ]] && continue
         git update-index --force-remove -- "$committed_path"
     fi
 done
