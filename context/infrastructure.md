@@ -31,6 +31,8 @@ GATE CLEAR後の因果監査は`semantic_index_update → semantic_map_generate 
 
 Bats直接実行は`run_timed_bats.sh`へ集約し、既存writerの14列台帳へ必ず追記する。速度修行task生成もwrapperを強制し、`gate_test_health.sh`が完了reportと台帳の対象集合差を検知する。夜戦欠測7件をbackfillし、台帳543→551・coverage 7/7・対象24/24 PASS。→ `scripts/run_timed_bats.sh` / `scripts/test_speed_task_generator.sh` / `scripts/gates/gate_test_health.sh`（cmd_3942、commit `7e11d37c5`）
 
+Bats suiteの共有資源fixtureは、個別実行時間ではなくsuite内の同時実行競合でtiming ratchetを誤発火しうる。`run_tests.sh`の既存full aggregate weight分類へ対象fixtureを登録し、総並列度を保ったまま該当fixtureだけを排他実行する。対象5件のBLOCK 5→0、suite wall 32.416→13.700秒（-57.7%）、54/54 PASS・FAIL0・SKIP0。→ `scripts/run_tests.sh` / `tests/unit/test_run_tests.bats`（cmd_karo_ci_fix_timing_budget_ratchet_5files_202607161327、commit `b91b449d6`）
+
 同一CLIが複数入力を受けるBatsでは、互換caseをbatch化してassertionを維持したまま重複初期化だけを減らす。`test_test_select.bats`は`test_select.sh`起動10→5、wall 18.248→8.444秒（53.7%短縮）、5/5 PASS・FAIL0・SKIP0。→ `tests/unit/test_test_select.bats` / `scripts/test_select.sh`（commit `a1ea08648`）
 
 速度修行の連続攻略は`min_rounds=2`・`max_rounds=3`・campaign budget 10分とし、次roundのbaselineは直前値でなく`best_so_far`を継承する。悪化runは採用せず、round別task/commit/reportとledgerの`round_index/best_wall/last_wall/approach/stop_reason`で強くてニューゲームする。→ `docs/research/ledger-driven-campaign-lane-pattern_20260714.md` §6.5（3者合意、v2.1 commit `3f9931302`、実装cmd_3952）
