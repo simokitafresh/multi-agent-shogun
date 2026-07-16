@@ -57,3 +57,10 @@ setup_file() {
     [[ "$output" == *"tests/unit/test_gate_gunshi_cs_checklist.bats"* ]]
     [[ "$output" != *"WARN"* ]]
 }
+
+@test "test_select maps .githooks/pre-push to pre_push_hook test" {
+    run bash "$TEST_SELECT" .githooks/pre-push
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"tests/unit/test_pre_push_hook.bats"* ]]
+    [[ "$output" == *"tests/unit/test_sync_git_hooks.bats"* ]]
+}

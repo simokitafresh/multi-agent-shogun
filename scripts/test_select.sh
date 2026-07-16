@@ -118,6 +118,15 @@ for changed in "${CHANGED_FILES[@]}"; do
         continue
     fi
 
+    # .githooks/* changes need their dedicated tests. L1/L2 auto-mapping only
+    # covers scripts/ and lib/, so .githooks/ requires explicit mapping.
+    if [[ "$changed" == .githooks/* ]]; then
+        hook_base="${ch_base//-/_}"  # pre-push → pre_push
+        add_test_if_exists "$TEST_DIR/test_${hook_base}_hook.bats" \
+                           "$TEST_DIR/test_${hook_base}.bats" \
+                           "$TEST_DIR/test_sync_git_hooks.bats"
+    fi
+
     # context/*.md changes affect context freshness and Vercel-style reference gates.
     # They are documentation, but not test-free: stale metadata or broken links can
     # break startup/completion gates, so select the focused context gate tests.
