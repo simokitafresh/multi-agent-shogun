@@ -120,6 +120,9 @@ DEPLOY_TASK_DRAFT_REVIEW_CMD_ID=""
 DEPLOY_TASK_DRAFT_REVIEW_NINJA=""
 DEPLOY_TASK_DRAFT_REVIEW_TYPE=""
 DEPLOY_TASK_DIRECT_YAML_PREINJECTED=0
+DEPLOY_TASK_ISSUE_ATTEMPT_ID=""
+DEPLOY_TASK_ISSUE_TERMINAL_RECORDED=0
+DEPLOY_TASK_DEPLOY_COMPLETED=0
 
 mkdir -p "$SCRIPT_DIR/logs"
 
@@ -308,6 +311,15 @@ deploy_task_guard_worker_assignment() {
 }
 
 deploy_task_exit_cleanup() {
+    local exit_status=$?
+    if [ -n "${DEPLOY_TASK_ISSUE_ATTEMPT_ID:-}" ] && [ "${DEPLOY_TASK_ISSUE_TERMINAL_RECORDED:-0}" != "1" ]; then
+        if [ "${DEPLOY_TASK_DEPLOY_COMPLETED:-0}" = "1" ]; then
+            deploy_task_append_issue_event "deployed" "exit_0"
+        else
+            deploy_task_append_issue_event "blocked" "exit_${exit_status}"
+        fi
+        DEPLOY_TASK_ISSUE_TERMINAL_RECORDED=1
+    fi
     deploy_task_exit_nudge
     deploy_task_release_ninja_lock
 }
@@ -8595,6 +8607,37 @@ EOF
     log "preflight_gate: ${cmd_id} — artifact事前生成完了"
 }
 
+# ─── issued_at / issue terminal telemetry ───
+deploy_task_append_issue_event() {
+    local result="$1"
+    local reason="$2"
+    local issue_log="$SCRIPT_DIR/logs/deploy_issue_log.yaml"
+    [ -n "${DEPLOY_TASK_ISSUE_ATTEMPT_ID:-}" ] || return 0
+    (
+        flock -w 5 203 || exit 1
+        printf -- '- attempt_id: "%s"\n  cmd_id: "%s"\n  ninja: "%s"\n  result: "%s"\n  reason: "%s"\n  timestamp: "%s"\n' \
+            "$DEPLOY_TASK_ISSUE_ATTEMPT_ID" "${CMD_ID:-}" "${NINJA_NAME:-}" "$result" "$reason" \
+            "$(date '+%Y-%m-%dT%H:%M:%S')" >> "$issue_log"
+    ) 203>"${issue_log}.lock"
+}
+
+record_issued_at_once() {
+    local task_file="$1"
+    local cmd_id="$2"
+    local timestamp="$3"
+    local issued_cmd_id="" issued_at="" existing_cmd="" existing_issued_at=""
+    [ -f "$task_file" ] && [ -n "$cmd_id" ] || return 0
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" issued_cmd_id issued_at 2>/dev/null)" || true
+    existing_cmd="${issued_cmd_id:-}"
+    existing_issued_at="${issued_at:-}"
+    if [ "$existing_cmd" = "$cmd_id" ] && [ -n "$existing_issued_at" ]; then
+        log "[ISSUED_AT] Preserved: ${existing_issued_at} (retry ${cmd_id})"
+        return 0
+    fi
+    yaml_field_set_batch "$task_file" "task" "issued_at=$timestamp" "issued_cmd_id=$cmd_id"
+    log "[ISSUED_AT] Recorded: ${timestamp} (${cmd_id})"
+}
+
 # ─── deployed_at自動記録（cmd_387: 配備タイムスタンプ） ───
 # cmd_1393: Python→bash変換（field_get+yaml_field_set）
 # 再配備時もdeployed_atを最新化する（duration計測の起点を実作業時間に合わせる）
@@ -10145,6 +10188,10 @@ deploy_task_main() {
     local deploy_lock_fd="" deploy_lock_file=""
     local deploy_task_resolved_mutated=0
     task_yaml="$SCRIPT_DIR/queue/tasks/${NINJA_NAME}.yaml"
+    if [ -n "$CMD_ID" ]; then
+        DEPLOY_TASK_ISSUE_ATTEMPT_ID="${CMD_ID}:${NINJA_NAME}:$(date '+%Y%m%dT%H%M%S'):${BASHPID}"
+        deploy_task_append_issue_event "issued" "entry"
+    fi
 
     # A per-command lock cannot protect one ninja from two different commands
     # arriving concurrently.  Hold the worker lock across every task/report
@@ -10220,6 +10267,9 @@ deploy_task_main() {
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi
+    if [ -n "$CMD_ID" ]; then
+        record_issued_at_once "$task_yaml" "$CMD_ID" "$(date '+%Y-%m-%dT%H:%M:%S')" || return 1
+    fi
 
     if [ -n "$CMD_ID" ] && deploy_task_has_pending_own_report "$CMD_ID" "$NINJA_NAME"; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
@@ -10284,6 +10334,7 @@ except Exception:
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                 }
+                record_issued_at_once "$task_yaml" "$CMD_ID" "$(date '+%Y-%m-%dT%H:%M:%S')" || return 1
                 if deploy_task_direct_yaml_is_preinjected "$task_yaml"; then
                     DEPLOY_TASK_DIRECT_YAML_PREINJECTED=1
                 else
@@ -10551,6 +10602,7 @@ except Exception:
     DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
     DEPLOY_TASK_DRAFT_REVIEW_SENT=1
     log "${NINJA_NAME}: deployment complete (type=${TYPE})"
+    DEPLOY_TASK_DEPLOY_COMPLETED=1
     deploy_task_release_ninja_lock
 
     # post-deploy pane verification (自動化×強制: 配備後に忍者が動いているか家老が確認せざるを得ない)
