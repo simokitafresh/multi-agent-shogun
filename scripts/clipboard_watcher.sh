@@ -5,7 +5,7 @@
 
 set -uo pipefail
 
-SCRIPT_DIR="$(cd "${BASH_SOURCE[0]%/*}/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCREENSHOT_DIR="${SCRIPT_DIR}/queue/screenshots"
 LATEST="${SCREENSHOT_DIR}/latest.png"
 POLL_INTERVAL=3
