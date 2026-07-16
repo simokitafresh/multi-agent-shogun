@@ -69,6 +69,10 @@ inbox nudge配達保証: `scripts/inbox_watcher.sh` はINPUT-GUARD保留時に `
 
 queued wakeの件数は検知時snapshotではなく送信lock内の現行未読snapshotを正本とする。待機中に未読が0件なら旧`inboxN`を破棄し、複数世代は現行count/fingerprintの1送信へcoalesceする。送信結果は`attempted`/`pasted`/`dedup`を分離し、dedupを`Wake-up sent`と記録しない。修正前18/18→修正後20/20 PASS、古い件数送信0・実paste 1（cmd_karo_hotfix_stale_inbox_nudge_consumption_202607161354、commit `321e74760`）。
 
+watcher再起動は全9台の一括停止を禁止し、`get_all_agents`の重複なし9 identityをagent単位でrolling handoffする。各交代中のroot watcher下限は8、終端はroot identity 9/9を3連続sampleで確認する。交代gap中の未読は新watcher起動時の`process_unread`再snapshotで回収し、generation dedupeにより欠落0・重複0・delivery 1回を保証する。`--status`もchild pollerを除くroot identityだけを数える。→ `scripts/restart_watchers.sh` / `tests/unit/test_restart_watchers_handoff.bats`（cmd_karo_hotfix_watcher_restart_stable_handoff_202607161446、commits `50f33da8b`, `70b029602`）
+
+failed taskとcompleted reportは文書完成と作業結果を別軸で扱う。`scripts/lib/report_terminal_state.sh`を判定SSOTとし、`verdict=FAIL`または`status_detail=BLOCKED`は`CLOSED_BLOCKED`、成功系verdictだけを`SUCCESS`とする。startup gateとninja_monitorの再nudge判定は同じ分類を使い、完結済みBLOCKED偵察を乖離ALERT/再通知しない一方、真の成功報告との乖離は検出し続ける。偽陽性1→0、startup72/72+monitor70/70 PASS・SKIP0（cmd_karo_hotfix_failed_completed_blocked_terminal_202607161446、commit `3bb11a0a7`）。
+
 全て外部インフラが自動処理。エージェントは何もするな。Codex忍者=/new、Claude忍者=/clear、家老=/clear(陣形図付き)、将軍=殿判断。
 閾値: ソフト50%（外部トリガー）、ハード90%（AUTOCOMPACT）。CLI差異は`config/settings.yaml`参照。
 → `docs/research/infra-details.md` §1
