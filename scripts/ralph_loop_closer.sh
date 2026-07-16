@@ -77,7 +77,7 @@ fi
 
 # Generate YAML-compatible JSON without importing PyYAML on the hot path.
 export PROJECT_ID LESSON_TITLE LESSON_DETAIL SOURCE_CMD LESSON_ID PI_STATUS RUNBOOK_STATUS INSTRUCTIONS_STATUS
-python3 -S << 'PYEOF'
+python3 << 'PYEOF'
 import json
 import os
 import sys
