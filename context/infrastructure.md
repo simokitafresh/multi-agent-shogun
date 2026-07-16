@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-15 cmd_karo_hotfix_infrastructure_context_freshness_20260715 -->
-<!-- source_commit:01bcfd5af reason:cmd_karo_hotfix_three_layer_universal_recall_202607160630-reviewed evidence:0of9-to-9of9-auto0of2-to-2of2-hash-54486b88 -->
+<!-- source_commit:b91b449d6 reason:cmd_karo_ci_fix_timing_budget_ratchet_5files_202607161327 evidence:BLOCK5-to-0_suite32.416-to-13.700s_54of54 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
