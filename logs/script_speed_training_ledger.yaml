@@ -2752,17 +2752,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/log_terminal_response.sh
-  status: assigned
+  status: completed
   before_ms: 7
   after_ms: ''
-  before_real_ms: 374.5
-  after_real_ms: ""
-  real_measurement_command: "sandboxed temp-root transcript_path payload avg20: printf payload | bash scripts/log_terminal_response.sh; before=11.09s/20 after=7.49s/20"
-  test_result: "bash -n scripts/log_terminal_response.sh PASS; bats tests/unit/test_log_terminal.bats PASS 6/6 SKIP=0; response JSONL+memory DB direct check PASS"
-  commit: "b224c274d"
+  before_real_ms: 716.3922505
+  after_real_ms: 690.975708
+  real_measurement_command: "bats --filter T-TL-007 tests/unit/test_log_terminal.bats"
+  test_result: "bash -n PASS; bats tests/unit/test_log_terminal.bats 8/8 PASS FAIL=0 SKIP=0; safety lines removed=0; UTF-8/tool_use contract preserved"
+  commit: "df71605d894a0ef3583fe0cc25bda1331cf7a149"
   assigned_to: "kagemaru"
-  updated_at: "2026-07-17T04:22:29"
+  updated_at: "2026-07-17T04:27:44"
   iteration: 2
+  last_good_commit: "d1ebbfcd0a8938ebe105a570abcede5d4521a130"
+  candidate_commit: "df71605d894a0ef3583fe0cc25bda1331cf7a149"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 716.3922505
+  last_good_p95_ms: 750.827262
+  candidate_p50_ms: 690.975708
+  candidate_p95_ms: 739.493118
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux; bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu); cwd=/mnt/c/tools/multi-agent-shogun"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/lord_conversation_read.sh
   status: pending
   before_ms: 16
