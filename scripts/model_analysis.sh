@@ -136,7 +136,16 @@ if [[ "$MODE" == "summary" ]]; then
         _label="${_label//_/ }"
         _low="${_label//-/ }"
         _low="${_low,,}"
-        ACTIVE_FAM_MAP["$(model_family_from_label "$_label")"]=1
+        if [[ "$_low" == *"$MODEL_FAMILY_TOKEN_OPUS"* && ( "$_low" == *"$MODEL_FAMILY_VERSION_48_DOT"* || "$_low" == *"$MODEL_FAMILY_VERSION_48_SPACE"* ) ]]; then
+            _family="$MODEL_FAMILY_OPUS_48"
+        elif [[ "$_low" == *"$MODEL_FAMILY_TOKEN_OPUS"* && ( "$_low" == *"$MODEL_FAMILY_VERSION_46_DOT"* || "$_low" == *"$MODEL_FAMILY_VERSION_46_SPACE"* ) ]]; then
+            _family="$MODEL_FAMILY_OPUS_46"
+        elif [[ ( "$_low" == *"$MODEL_FAMILY_TOKEN_GPT"* || "$_low" == *"$MODEL_FAMILY_TOKEN_CODEX"* ) && ( "$_low" == *"$MODEL_FAMILY_VERSION_54_DOT"* || "$_low" == *"$MODEL_FAMILY_VERSION_54_SPACE"* || "$_low" == *"$MODEL_FAMILY_VERSION_55_DOT"* || "$_low" == *"$MODEL_FAMILY_VERSION_55_SPACE"* ) ]]; then
+            _family="$MODEL_FAMILY_GPT_5"
+        else
+            _family="${_low// /_}"
+        fi
+        ACTIVE_FAM_MAP["$_family"]=1
     done < <(awk '
     /^    [a-z][a-z_]*:$/ { name=$1; sub(/:$/,"",name); type=""; mn="" }
     /^      type:/ { type=$2 }
