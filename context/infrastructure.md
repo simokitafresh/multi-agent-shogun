@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-16 cmd_karo_hotfix_stale_inbox_nudge_consumption_202607161354 -->
-<!-- source_commit:321e74760 reason:cmd_karo_hotfix_stale_inbox_nudge_consumption_202607161354 evidence:stale-nudge-18to20-old0-paste1 -->
+<!-- source_commit:18ab2c7d4 reason:cmd_karo_hotfix_pytest_speed_adapter_202607161928 evidence:pytest-speed adapter高速抽出・世代再適格化・flock reserve契約を一次commit 18ab2c7d4まで照合済み -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
