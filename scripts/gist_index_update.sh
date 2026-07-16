@@ -23,7 +23,7 @@ log() {
 }
 
 title_key() {
-    printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+    LC_ALL=C printf '%s' "${1,,}"
 }
 
 is_ipynb_title() {
