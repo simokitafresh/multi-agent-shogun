@@ -25,7 +25,7 @@ task_id: cmd_test
 status: completed
 purpose_validation:
   cmd_purpose: "context freshness修正"
-  fit: true
+  fit: false
   purpose_gap: "$purpose_gap"
 binary_checks:
   ac1:
@@ -225,7 +225,10 @@ purpose_validation: {cmd_purpose: 完了目的, fit: true, purpose_gap: なし}
 binary_checks: {AC1: [{check: 完了確認, result: yes}]}
 YAML
         case "$field" in
-            purpose_gap) sed -i 's/purpose_gap: なし/purpose_gap: AC2未完了/' "$TEST_TMPDIR/report.yaml" ;;
+            purpose_gap)
+                sed -i 's/fit: true/fit: false/' "$TEST_TMPDIR/report.yaml"
+                sed -i 's/purpose_gap: なし/purpose_gap: AC2未完了/' "$TEST_TMPDIR/report.yaml"
+                ;;
             task_clarity) sed -i 's/unclear_points: なし/unclear_points: 後で家老が実施/' "$TEST_TMPDIR/report.yaml" ;;
             assumption_check) sed -i 's/assumption_check: なし/assumption_check: 前提確認を保留/' "$TEST_TMPDIR/report.yaml" ;;
         esac
@@ -273,11 +276,46 @@ YAML
     [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
 
     cp "$fixture" "$TEST_TMPDIR/report.yaml"
+    sed -i 's/^  fit: true/  fit: false/' "$TEST_TMPDIR/report.yaml"
     sed -i "s/^  purpose_gap: ''/  purpose_gap: 'AC2未完了。後で家老が実施する'/" "$TEST_TMPDIR/report.yaml"
     run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
     [ "$status" -eq 0 ]
     [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
     [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+}
+
+@test "SG-PRE9c purpose_gap follows purpose_validation fit semantics without weakening clarity checks" {
+    local cases=(
+        "true|採用基準未達のためrollback済み|なし|なし|yes|0"
+        "false|AC2未完了。後で家老が実施する|なし|なし|yes|1"
+        "missing|AC2未完了。後で家老が実施する|なし|なし|yes|1"
+        "str_true|採用基準未達のためrollback済み|なし|なし|yes|0"
+        "str_false|AC2未完了。後で家老が実施する|なし|なし|yes|1"
+        "true|なし|後で家老が実施する|なし|yes|1"
+        "true|なし|なし|前提確認を保留|yes|1"
+        "false|AC2未完了。後で家老が実施する|なし|なし|no|0"
+    )
+    local row fit gap unclear assumption bc expected
+    for row in "${cases[@]}"; do
+        IFS='|' read -r fit gap unclear assumption bc expected <<< "$row"
+        {
+            printf 'status: completed\n'
+            printf 'task_clarity: {score: 100, unclear_points: "%s", discretion_fills: なし}\n' "$unclear"
+            printf 'assumption_check: "%s"\n' "$assumption"
+            printf 'purpose_validation:\n  cmd_purpose: 完了目的\n'
+            case "$fit" in
+                missing) ;;
+                str_true) printf '  fit: "true"\n' ;;
+                str_false) printf '  fit: "false"\n' ;;
+                *) printf '  fit: %s\n' "$fit" ;;
+            esac
+            printf '  purpose_gap: "%s"\n' "$gap"
+            printf 'binary_checks: {AC1: [{check: 完了確認, result: %s}]}\n' "$bc"
+        } > "$TEST_TMPDIR/report.yaml"
+        run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=$expected"* ]]
+    done
 }
 
 @test "SG-PRE9 sets BLOCK prediction for waived binary check no" {

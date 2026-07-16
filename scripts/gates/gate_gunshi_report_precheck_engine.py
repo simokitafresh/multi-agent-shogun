@@ -235,9 +235,21 @@ def main():
     # whole report or purpose_validation: cmd_purpose, not_in_scope and causal
     # history legitimately describe conditional rollback and past failures.
     purpose_validation = report.get('purpose_validation')
+    purpose_fit = (
+        purpose_validation.get('fit')
+        if isinstance(purpose_validation, dict)
+        else None
+    )
+    purpose_fit_is_true = (
+        purpose_fit is True
+        or (
+            isinstance(purpose_fit, str)
+            and purpose_fit.strip().lower() in ('true', 'yes', '1', 'on')
+        )
+    )
     nested_purpose_gap = (
         purpose_validation.get('purpose_gap')
-        if isinstance(purpose_validation, dict)
+        if isinstance(purpose_validation, dict) and not purpose_fit_is_true
         else ''
     )
     clarity_fields = (
