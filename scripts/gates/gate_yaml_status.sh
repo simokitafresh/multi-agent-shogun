@@ -15,9 +15,7 @@ YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 CMD_ID=""
 DRY_RUN=false
 
-if [[ "${1:-}" == cmd_* && $# -eq 1 ]]; then
-    CMD_ID="$1"
-elif [[ "${1:-}" == cmd_* && "${2:-}" == "--dry-run" && $# -eq 2 ]]; then
+if [[ "${1:-}" == cmd_* && "${2:-}" == "--dry-run" && $# -eq 2 ]]; then
     CMD_ID="$1"
     DRY_RUN=true
 else
