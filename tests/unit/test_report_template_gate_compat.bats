@@ -876,14 +876,20 @@ BROKEN
     done
 }
 
-@test "LG055: completed PASS reportでoperational_simulation section欠落をBLOCK" {
-    # Regression: kotaro_report_cmd_reflux_promotion_202607170006_kotaro.yaml
-    # was completed/PASS with operational_simulation=None before this fix.
+@test "LG055: completed PASS implementation reportはopsim欠落BLOCK、report-onlyは免除PASS" {
     _prepare_report "$TEST_TMPDIR/report.yaml" "filled"
     _replace_section "$TEST_TMPDIR/report.yaml" "operational_simulation" ""
     _run_gate "$TEST_TMPDIR/report.yaml"
     [ "$status" -eq 1 ]
     [[ "$output" == *"operational_simulation: MISSING"* ]]
+
+    # Boundary regression: kotaro_report_cmd_reflux_promotion_202607170006_kotaro.yaml
+    # is queue/report-only + no-code-change and was correctly approved without opsim.
+    _prepare_report "$TEST_TMPDIR/report_only.yaml" "filled"
+    _replace_section "$TEST_TMPDIR/report_only.yaml" "files_modified" $'files_modified:\n  - path: queue/reports/kotaro_report_cmd_reflux_promotion_202607170006_kotaro.yaml\n    change: report-only correction'
+    _replace_section "$TEST_TMPDIR/report_only.yaml" "operational_simulation" ""
+    _run_gate "$TEST_TMPDIR/report_only.yaml"
+    [ "$status" -eq 0 ]
 }
 
 @test "LG055: operational_simulation result非二値を提出前BLOCK" {
