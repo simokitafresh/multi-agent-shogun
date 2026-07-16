@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Deterministic role/CLI/model-neutral shard planner and executor."""
-import argparse, fcntl, json, os, pathlib, subprocess, sys, time
+import argparse, fcntl, hashlib, itertools, json, os, pathlib, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yaml
 
@@ -16,10 +16,12 @@ def plan(d):
  if any(not x for x in ids) or len(ids)!=len(set(ids)): raise ValueError("item IDs must be non-empty and unique")
  if any(not x for x in wids) or len(wids)!=len(set(wids)): raise ValueError("worker IDs must be non-empty and unique")
  caps={x.get("capability") for x in items}
- eligible=[w for w in workers if w.get("idle") is True and caps.intersection(w.get("capabilities") or [])]
+ eligible=sorted([w for w in workers if w.get("idle") is True and caps.intersection(w.get("capabilities") or [])],key=lambda x:str(x["id"]))
  n=min(len(eligible),int(d.get("max_workers",len(eligible))))
  if n<2: raise ValueError("N<2: silent single-worker fallback is forbidden")
- bins={str(w["id"]):{"worker":w,"weight":0.0,"items":[]} for w in sorted(eligible,key=lambda x:str(x["id"]))[:n]}
+ selected=next((combo for combo in itertools.combinations(eligible,n) if caps.issubset(set().union(*(set(w.get("capabilities") or []) for w in combo)))),None)
+ if selected is None: raise ValueError("no eligible worker set covers all required capabilities")
+ bins={str(w["id"]):{"worker":w,"weight":0.0,"items":[]} for w in selected}
  for item in sorted(items,key=lambda x:(-float(x.get("weight",0)),str(x["id"]))):
   weight=float(item.get("weight",0)); cap=item.get("capability")
   if weight<=0 or not cap: raise ValueError(f"item {item.get('id')} requires positive weight and capability")
@@ -30,13 +32,32 @@ def plan(d):
  assigned=[str(i["id"]) for b in bins.values() for i in b["items"]]
  if sorted(assigned)!=sorted(ids) or len(assigned)!=len(set(assigned)): raise RuntimeError("assignment invariant failed")
  return {"worker_count":n,"item_count":len(items),"shards":list(bins.values())}
+def process_start_token(pid):
+ try: return pathlib.Path(f"/proc/{pid}/stat").read_text().split()[21]
+ except (FileNotFoundError,IndexError,PermissionError): return None
+def reserve_worker(path):
+ path.parent.mkdir(parents=True,exist_ok=True); payload={"pid":os.getpid(),"start":process_start_token(os.getpid()),"created":time.time()}
+ for _ in range(2):
+  try:
+   fd=os.open(path,os.O_CREAT|os.O_EXCL|os.O_WRONLY); os.write(fd,json.dumps(payload).encode()); os.close(fd); return
+  except FileExistsError:
+   try: owner=json.loads(path.read_text()); pid=int(owner["pid"])
+   except (OSError,ValueError,KeyError,json.JSONDecodeError): pid=-1; owner={}
+   if pid>0 and process_start_token(pid)==str(owner.get("start")): raise RuntimeError(f"worker {path.name} already live-reserved")
+   try: path.unlink()
+   except FileNotFoundError: pass
+ raise RuntimeError(f"worker {path.name} reserve recovery failed")
+def item_fingerprint(d,item):
+ contract={"version":1,"command":d.get("command"),"timeout":float(d.get("timeout",900)),"item":item}
+ return hashlib.sha256(json.dumps(contract,sort_keys=True,separators=(",",":"),default=str).encode()).hexdigest()
 def execute_shard(d,shard,root,prior):
  wid=str(shard["worker"]["id"]); reserve=root/"reserve"/wid; reserve.parent.mkdir(parents=True,exist_ok=True)
- fd=os.open(reserve,os.O_CREAT|os.O_EXCL|os.O_WRONLY); os.close(fd); results=[]
+ reserve_worker(reserve); results=[]
  try:
   for item in shard["items"]:
    iid=str(item["id"])
-   if (prior.get(iid) or {}).get("status")=="success": results.append(prior[iid]); continue
+   fingerprint=item_fingerprint(d,item)
+   if (prior.get(iid) or {}).get("status")=="success" and prior[iid].get("fingerprint")==fingerprint: results.append(prior[iid]); continue
    base=root/"shards"/iid; paths={k:base/k for k in ("workdir","tmpdir","output_dir","cache_dir","timing")}
    for p in paths.values(): p.mkdir(parents=True,exist_ok=True)
    vals={"item_id":iid,"item_path":str(item.get("path","")),"worker_id":wid,**{k:str(v) for k,v in paths.items()}}
@@ -48,7 +69,7 @@ def execute_shard(d,shard,root,prior):
     (paths["output_dir"]/"stdout").write_text(cp.stdout); (paths["output_dir"]/"stderr").write_text(cp.stderr)
    except subprocess.TimeoutExpired as e: status,rc="timeout",124; (paths["output_dir"]/"stderr").write_text(str(e))
    except KeyboardInterrupt: status,rc="cancel",130
-   results.append({"id":iid,"worker":wid,"status":status,"returncode":rc,"elapsed_sec":round(time.monotonic()-started,6)})
+   results.append({"id":iid,"worker":wid,"status":status,"returncode":rc,"fingerprint":fingerprint,"elapsed_sec":round(time.monotonic()-started,6)})
  finally: reserve.unlink(missing_ok=True)
  return results
 def run(d):

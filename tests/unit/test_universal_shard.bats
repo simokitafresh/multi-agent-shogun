@@ -71,3 +71,42 @@ PY
   [ "$status" -eq 0 ]
   [[ "$output" == *"skip=1 timeout=1"* ]]
 }
+
+@test "capability cover avoids prefix false block" {
+  run env ROOT="$REPO_ROOT" python3 - <<'PY'
+import importlib.util, os, pathlib
+p=pathlib.Path(os.environ['ROOT'])/'scripts/universal_shard.py'; s=importlib.util.spec_from_file_location('u',p); u=importlib.util.module_from_spec(s); s.loader.exec_module(u)
+x={'max_workers':2,'items':[{'id':'x','weight':2,'capability':'x'},{'id':'y','weight':1,'capability':'y'}],
+   'workers':[{'id':'A','idle':True,'capabilities':['x']},{'id':'B','idle':True,'capabilities':['x']},{'id':'C','idle':True,'capabilities':['y']}]}
+out=u.plan(x); assert [s['worker']['id'] for s in out['shards']]==['A','C']; print('cover=A,C false_block=0')
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "fingerprint invalidates prior success after payload or command change" {
+  run env ROOT="$REPO_ROOT" python3 - <<'PY'
+import importlib.util, os, pathlib, tempfile
+p=pathlib.Path(os.environ['ROOT'])/'scripts/universal_shard.py'; s=importlib.util.spec_from_file_location('u',p); u=importlib.util.module_from_spec(s); s.loader.exec_module(u)
+with tempfile.TemporaryDirectory() as d:
+ r=pathlib.Path(d); log=r/'log'; x={'max_workers':2,'state_dir':str(r/'s'),'command':f'echo {{item_id}} >> {log}','items':[{'id':'a','weight':1,'capability':'x','path':'v1'},{'id':'b','weight':1,'capability':'x'}],'workers':[{'id':'A','idle':True,'capabilities':['x']},{'id':'B','idle':True,'capabilities':['x']}]}
+ u.run(x); u.run(x); assert len(log.read_text().splitlines())==2
+ x['items'][0]['path']='v2'; u.run(x); assert len(log.read_text().splitlines())==3
+ x['command']=f'echo changed-{{item_id}} >> {log}'; u.run(x); assert len(log.read_text().splitlines())==5
+ print('unchanged_reexec=0 payload_reexec=1 command_reexec=2')
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "stale reserve recovers and live reserve blocks" {
+  run env ROOT="$REPO_ROOT" python3 - <<'PY'
+import importlib.util, json, os, pathlib, tempfile
+p=pathlib.Path(os.environ['ROOT'])/'scripts/universal_shard.py'; s=importlib.util.spec_from_file_location('u',p); u=importlib.util.module_from_spec(s); s.loader.exec_module(u)
+with tempfile.TemporaryDirectory() as d:
+ p=pathlib.Path(d)/'w'; p.write_text(json.dumps({'pid':99999999,'start':'0'})); u.reserve_worker(p); p.unlink()
+ p.write_text(json.dumps({'pid':os.getpid(),'start':u.process_start_token(os.getpid())}))
+ try: u.reserve_worker(p); raise AssertionError('live reserve accepted')
+ except RuntimeError as e: assert 'live-reserved' in str(e)
+ print('stale_recovered=1 live_double_blocked=1')
+PY
+  [ "$status" -eq 0 ]
+}
