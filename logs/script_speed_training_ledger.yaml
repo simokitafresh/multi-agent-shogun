@@ -1542,29 +1542,29 @@ entries:
   updated_at: "2026-06-08T03:50:31"
   iteration: 1
 - script_path: scripts/hooks/pre-bash-report-deny.sh
-  status: pending
+  status: completed
   before_ms: 6
-  after_ms: 4
-  before_real_ms: 10
-  after_real_ms: ""
-  real_measurement_command: echo '' | bash scripts/hooks/pre-bash-report-deny.sh
-  test_result: 9/9 PASS SKIP=0
-  commit: 496b46c26
-  assigned_to: ""
-  updated_at: "2026-07-16T19:54:52"
+  after_ms: 10.4
+  before_real_ms: 29.2
+  after_real_ms: 10.4
+  real_measurement_command: "echo '' | bash scripts/hooks/pre-bash-report-deny.sh (50-run avg)"
+  test_result: "bash -n PASS; bats tests/unit/test_pre_bash_report_deny.bats 11/11 PASS FAIL=0 SKIP=0; empty=29.2ms->10.4ms improvement=64.4%; multiline contract PASS"
+  commit: "42a6b769a33d5d18eba54da142f398c515524a19"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-16T20:47:00"
   iteration: 1
 - script_path: scripts/hooks/pre-bash-test-fullrun-guard.sh
-  status: assigned
+  status: completed
   before_ms: 19
-  after_ms: ''
+  after_ms: 8
   before_real_ms: 28
-  after_real_ms: ""
+  after_real_ms: 8
   real_measurement_command: printf '%s\n' '{"tool_input":{"command":"bats tests/unit/test_inbox.bats"}}'
     | bash scripts/hooks/pre-bash-test-fullrun-guard.sh >/dev/null 2>&1
-  test_result: bash_n_pass;test_hooks_pass;allow_output_diff_empty;block_output_diff_empty;before_34_after_28;SKIP=0
-  commit: c64af705d
+  test_result: "bash_n_pass;allow0_block2_route0;after8ms;SKIP=0"
+  commit: "6b5b4587d4012fead075110533b8b557a3379a57"
   assigned_to: "tobisaru"
-  updated_at: "2026-07-16T20:35:45"
+  updated_at: "2026-07-16T20:39:20"
   iteration: 1
 - script_path: scripts/hooks/pre-karo-edit-guard.sh
   status: pending
@@ -1642,17 +1642,17 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/hooks/session_start_inject.sh
-  status: assigned
+  status: completed
   before_ms: 15
-  after_ms: 15
-  before_real_ms: __BEFORE_REAL_MS__
-  after_real_ms: ""
+  after_ms: 86.433
+  before_real_ms: 114.033
+  after_real_ms: 86.433
   real_measurement_command: 20x printf '{"type":"startup"}' | AGENT_ID=kagemaru bash
     scripts/hooks/session_start_inject.sh; median of 5 runs
-  test_result: bash_n_pass;bats_test_session_state_hooks_session_start_inject_5_pass_0_skip;json_valid;agent_context_ok;before_2537_after_1960
-  commit: 69af2c093
+  test_result: "same startup command 30 runs mean 114.033->86.433ms median 110->81ms; bats 26/26 PASS FAIL=0 SKIP=0; safety removals=0"
+  commit: "d890eb0cda065cd3cd5daf25ada1ee461593463f"
   assigned_to: "hayate"
-  updated_at: "2026-07-16T20:34:41"
+  updated_at: "2026-07-16T20:39:17"
   iteration: 2
 - script_path: scripts/hooks/stop_check_inbox.sh
   status: pending
@@ -3374,16 +3374,16 @@ entries:
   assigned_to: ''
   updated_at: "2026-06-07T21:57:22"
 - script_path: scripts/hooks/session_start_inject.sh
-  status: pending
+  status: completed
   before_ms: ''
-  after_ms: ''
-  before_real_ms: 60
-  after_real_ms: ""
+  after_ms: 86.433
+  before_real_ms: 114.033
+  after_real_ms: 86.433
   real_measurement_command: "before: HEAD copy under .tmp_ssi_before_cmp2 with queue symlink; after: working tree; both 9 runs of AGENT_ID=saizo SessionStart startup payload via /usr/bin/time"
-  test_result: "bash -n PASS; JSON parse PASS; bats tests/unit/test_session_state_hooks.bats 20/20 PASS SKIP=0"
+  test_result: "same startup command 30 runs mean 114.033->86.433ms median 110->81ms; bats 26/26 PASS FAIL=0 SKIP=0; safety removals=0"
   assigned_to: ""
-  updated_at: "2026-07-16T19:54:36"
-  commit: "96f5940f2"
+  updated_at: "2026-07-16T20:39:17"
+  commit: "d890eb0cda065cd3cd5daf25ada1ee461593463f"
 - script_path: scripts/switch_project.sh
   status: pending
   before_ms: ''
