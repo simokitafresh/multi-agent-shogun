@@ -430,6 +430,12 @@ main() {
     local _yaml_dump_violations="" _task_yaml_mixed_violations="" _instructions_changed=false _has_yaml_dump_scan_target=false
     local _staged_file
 
+    # Populate the cache in the parent shell.  The consumers below mostly run
+    # through process substitutions; loading lazily there would repeat the
+    # same `git diff --cached` once per subshell instead of inheriting one
+    # immutable snapshot of the commit index.
+    load_staged_file_cache
+
     warn_test_file_granularity
 
     _task_yaml_mixed_violations="$(collect_task_yaml_mixed_commit_violations)"
