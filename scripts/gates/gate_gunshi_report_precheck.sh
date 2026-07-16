@@ -408,6 +408,9 @@ if [ -n "${FILES_MODIFIED:-}" ]; then
     done <<< "$FILES_MODIFIED"
     if [ "$HOOK_GATE_WARN" -eq 0 ]; then
         echo "  PASS: hook/gate系の大規模削減なし"
+    else
+        echo "  BLOCK: hook/gate系ファイルの50%超削減を検出。テスト結果とCI状態を重点確認するまでレビューCLEAR禁止"
+        ERRORS=$((ERRORS + 1))
     fi
 else
     echo "  SKIP: files_modified不明"
