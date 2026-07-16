@@ -10212,8 +10212,10 @@ deploy_task_main() {
         return 1
     fi
 
-    pre_resolve_status=$(field_get "$task_yaml" "status" "unknown")
-    pre_resolve_cmd=$(field_get "$task_yaml" "parent_cmd" "")
+    local status="" parent_cmd=""
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_yaml" status parent_cmd 2>/dev/null)" || true
+    pre_resolve_status="${status:-unknown}"
+    pre_resolve_cmd="${parent_cmd:-}"
     if [ -n "$CMD_ID" ] && ! deploy_task_guard_worker_assignment "$task_yaml" "$CMD_ID"; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
