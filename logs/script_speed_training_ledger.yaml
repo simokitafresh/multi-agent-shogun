@@ -136,19 +136,31 @@ entries:
   updated_at: "2026-06-13T00:53:00"
   iteration: 2
 - script_path: scripts/ac_physical_verify.sh
-  status: pending
+  status: completed
   before_ms: 17
   after_ms: ''
-  before_real_ms: 68
-  after_real_ms: ""
-  real_measurement_command: printf '%s ' 'AC1 scripts/ac_physical_verify.sh L20' |
-    bash scripts/ac_physical_verify.sh - >/dev/null
-  test_result: bash -n scripts/ac_physical_verify.sh && bats tests/unit/test_ac_physical_verify.bats
-    PASS 2/2 SKIP=0
-  commit: 08cda0186
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 50.5
+  after_real_ms: 48
+  real_measurement_command: "printf 'AC1 scripts/ac_physical_verify.sh L20\\n' | bash scripts/ac_physical_verify.sh - >/dev/null"
+  test_result: "bats tests/unit/test_ac_physical_verify.bats: PASS=2 FAIL=0 SKIP=0"
+  commit: "5bed3c250807e44d099f3a43cac488451aefb23a"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T08:10:58"
   iteration: 1
+  last_good_commit: "e542c6d358e2b936a58ee3526c3115abb1e04436"
+  candidate_commit: "5bed3c250807e44d099f3a43cac488451aefb23a"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 50.5
+  last_good_p95_ms: 79
+  candidate_p50_ms: 48
+  candidate_p95_ms: 62
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2;bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu);python=Python 3.12.3"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/affected_tests.sh
   status: saturated
   before_ms: 15
@@ -766,17 +778,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/cmd_absorb.sh
-  status: pending
+  status: completed
   before_ms: 17
   after_ms: ''
-  before_real_ms: 70
-  after_real_ms: ""
-  real_measurement_command: isolated copy median runtime
-  test_result: bash -n PASS; bats test_cmd_absorb 5/5 PASS SKIP=0
-  commit: 73c055abd
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 1036.139
+  after_real_ms: 1021.468
+  real_measurement_command: "bats tests/unit/test_cmd_absorb.bats (isolated detached worktree per arm)"
+  test_result: "bash -n PASS; test_cmd_absorb 6/6 PASS FAIL=0 SKIP=0; safety lines removed=0"
+  commit: "d1746387f37e7bccd3ed1fb4c32f8e1ca8463550"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-17T08:01:16"
   iteration: 1
+  last_good_commit: "279a9f7f3b971e96c1c12d4a68c48fe0b4014e91"
+  candidate_commit: "d1746387f37e7bccd3ed1fb4c32f8e1ca8463550"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 1036.139
+  last_good_p95_ms: 1210.577
+  candidate_p50_ms: 1021.468
+  candidate_p95_ms: 1103.240
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "same WSL2 host; detached commits; identical bats command; warm cache"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/cmd_complete_gate.sh
   status: pending
   before_ms: 32
@@ -1210,18 +1236,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_codd_regression.sh
-  status: pending
+  status: saturated
   before_ms: 32
   after_ms: ''
-  before_real_ms: 70
-  after_real_ms: ""
-  real_measurement_command: bash scripts/gates/gate_codd_regression.sh docs/research/codd_refactor_registry.md
-  test_result: bash -n PASS; bats tests/unit/test_gate_codd_regression.bats 10/10
-    PASS SKIP=0; output diff old/new PASS
-  commit: a7dd36430
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 391.659
+  after_real_ms: 429.725
+  real_measurement_command: "bash -c 'bash <(git show \"$REV\":scripts/gates/gate_codd_regression.sh) docs/research/codd_refactor_registry.md'"
+  test_result: "bash -n PASS; bats tests/unit/test_gate_codd_regression.bats 10/10 PASS SKIP=0; safety removed=0"
+  commit: "a7dd3643059e54887efd21c7899432ee543192db"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T08:01:23"
   iteration: 1
+  last_good_commit: "a7dd3643059e54887efd21c7899432ee543192db"
+  candidate_commit: "279a9f7f3b971e96c1c12d4a68c48fe0b4014e91"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 391.659
+  last_good_p95_ms: 433.945
+  candidate_p50_ms: 429.725
+  candidate_p95_ms: 509.781
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2 Linux-6.6.87.1 x86_64 python3.12.3 cwd=/mnt/c/tools/multi-agent-shogun"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_codex_safe_write.sh
   status: saturated
   before_ms: 17
@@ -2896,19 +2935,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/lib/mcas_common.sh
-  status: pending
+  status: saturated
   before_ms: 7
   after_ms: ''
-  before_real_ms: 67
-  after_real_ms: ""
-  real_measurement_command: tmp=$(mktemp -d); printf '{"claudeAiOauth":{"accessToken":"tok_new"},"accessToken":"tok_old"}\n'
-    > "$tmp/.credentials.json"; bash -c 'source scripts/lib/mcas_common.sh; mcas_get_token
-    "$1"' _ "$tmp" >/dev/null; rm -rf "$tmp"
-  test_result: bash_n_pass;new_token_ok;legacy_token_ok;missing_token_error_ok;before_112_after_67;SKIP=0
-  commit: 46f09dbe9
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 17.681
+  after_real_ms: 20.227
+  real_measurement_command: "bash -c 'source \"$1\"; mcas_get_token \"$2\"' _ <revision-file> <fixed-fixture-dir> >/dev/null"
+  test_result: "bash_n=PASS;new_token=PASS;legacy_token=PASS;missing_token_error=PASS;FAIL=0;SKIP=0;safety_removed=0;candidate_rolled_back=49b4f38af1dab38566b7fea7a382cf44d441c2b0"
+  commit: "46f09dbe90401ed327c148b2774929acec46c4a8"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T08:17:17"
   iteration: 1
+  last_good_commit: "46f09dbe90401ed327c148b2774929acec46c4a8"
+  candidate_commit: "dffcb2df48015583c7c7ee6c2de393bf1d272d57"
+  ab_samples_per_arm: "15"
+  last_good_p50_ms: 17.681
+  last_good_p95_ms: 23.147
+  candidate_p50_ms: 20.227
+  candidate_p95_ms: 28.680
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64|bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)|jq=jq-1.7"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/lib/model_colors.sh
   status: completed
   before_ms: 15
