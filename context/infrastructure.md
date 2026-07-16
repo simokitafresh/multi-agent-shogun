@@ -39,6 +39,8 @@ Bats suiteの共有資源fixtureは、個別実行時間ではなくsuite内の�
 
 campaign-lane（台帳駆動攻略・応用候補カタログ）の正本は`config/campaign_lane_catalog.yaml`、設計と実行入口は`docs/research/ledger-driven-campaign-lane-pattern_20260714.md` §6/§8。`shard-work`=既知集合の単発分割、`campaign-lane`=台帳実測による反復選定+飽和終端。
 
+1 roundに複数の有効計測がある場合はPASS・FAIL0・SKIP0集合からobjective方向のbestを採用し、`last observation`とは別フィールドで保持する。→ commit `130fa4303`、[[campaign-lane]]
+
 dashboardの`## 🚨要対応`は任意セクションであり、欠落時は同期・postcondition・template検証の全3段でno-op成功にする。存在時の件数照合と破損入力WARNは維持する。→ `scripts/dashboard_update.sh` / `tests/unit/test_skill_feedback_loop.bats`（commit `f2f3f2c48`、関連130/130 PASS・SKIP0）
 
 完了通知欠落監視は、terminal marker後のLGTMだけではcmdを再OPEN扱いにしない。明示RC/revisionまたはactive taskがterminal後に存在する場合だけ新世代と判定し、archive済み同一報告への遅延・重複LGTMによる恒久偽陽性を抑止する。→ `scripts/ninja_monitor.sh` / `tests/unit/test_ninja_monitor_clear_guard.bats`（commit `5efbb3a37`、semantic通知偽陽性3→0、focused 6/6 PASS・SKIP0）
