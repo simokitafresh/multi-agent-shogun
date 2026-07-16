@@ -256,9 +256,9 @@ EOF
     grep -Fq 'task_type: speed_training' "$generated_task"
     grep -Fq 'estimated_minutes: 5' "$generated_task"
     grep -Fq 'purpose: "Speed-train ' "$generated_task"
-    grep -Fq 'before_real_ms is measured with a safe runtime command chosen for this script' "$generated_task"
-    grep -Fq 'after_real_ms is measured with the same command as before_real_ms' "$generated_task"
-    grep -Fq 'bash tools/bash_speed_training.sh record-after' "$generated_task"
+    grep -Fq 'historical ledger timing is selection evidence only' "$generated_task"
+    grep -Fq 'alternate last-good/candidate A/B runs' "$generated_task"
+    grep -Fq 'record-real stores both commits' "$generated_task"
     ! grep -Fq 'L4修行:' "$generated_task"
 
     run env FIELD_GET_NO_LOG=1 bash -c '
@@ -277,9 +277,9 @@ EOF
     [ "$status" -eq 0 ]
     grep -Fq 'task_type: speed_training' "$generated_task"
     grep -Fq 'purpose: "Speed-train ' "$generated_task"
-    grep -Fq 'before_real_ms is measured with a safe runtime command chosen for this script' "$generated_task"
-    grep -Fq 'after_real_ms is measured with the same command as before_real_ms' "$generated_task"
-    grep -Fq 'bash tools/bash_speed_training.sh record-after' "$generated_task"
+    grep -Fq 'historical ledger timing is selection evidence only' "$generated_task"
+    grep -Fq 'alternate last-good/candidate A/B runs' "$generated_task"
+    grep -Fq 'record-real stores both commits' "$generated_task"
     ! grep -Fq 'L4修行:' "$generated_task"
 }
 
@@ -301,7 +301,7 @@ EOF
 @test "record-real writes runtime before and after with measurement command" {
     first=$(cmd_next "$LEDGER")
 
-    cmd_record_real "$first" completed 101 72 "time bash $first --help" "bats target PASS SKIP=0" abc123 "$LEDGER"
+    cmd_record_real "$first" completed good123 cand123 "time bash $first --help" 10 101 140 72 100 "bats target PASS SKIP=0" "$LEDGER"
 
     awk -v script="$first" '
         $0 ~ "script_path: \"" script "\"" { in_target = 1 }
@@ -310,8 +310,10 @@ EOF
         in_target && /after_real_ms: 72/ { after_seen = 1 }
         in_target && /real_measurement_command: "time bash / { command_seen = 1 }
         in_target && /test_result: "bats target PASS SKIP=0"/ { test_seen = 1 }
-        in_target && /commit: "abc123"/ { commit_seen = 1 }
-        END { exit !(status_seen && before_seen && after_seen && command_seen && test_seen && commit_seen) }
+        in_target && /commit: "cand123"/ { commit_seen = 1 }
+        in_target && /ab_samples_per_arm: "?10"?/ { samples_seen = 1 }
+        in_target && /candidate_p95_ms: 100/ { p95_seen = 1 }
+        END { exit !(status_seen && before_seen && after_seen && command_seen && test_seen && commit_seen && samples_seen && p95_seen) }
     ' "$LEDGER"
 }
 
@@ -339,9 +341,9 @@ PY
 @test "record-real replaces multiline command and result without leaving stale continuation lines" {
     write_multiline_ledger_fixture
 
-    cmd_record_real scripts/ninja_monitor.sh completed 57 41 \
-        "NINJA_MONITOR_LIB_ONLY=1 bash scripts/ninja_monitor.sh (20-run median)" \
-        "bats target PASS=72 FAIL=0 SKIP=0" abc789 "$LEDGER"
+    cmd_record_real scripts/ninja_monitor.sh completed good789 abc789 \
+        "NINJA_MONITOR_LIB_ONLY=1 bash scripts/ninja_monitor.sh (20-run alternating A/B)" \
+        10 57 70 41 55 "bats target PASS=72 FAIL=0 SKIP=0" "$LEDGER"
 
     run python3 - "$LEDGER" <<'PY'
 import sys, yaml
@@ -351,7 +353,7 @@ assert target["script_path"] == "scripts/ninja_monitor.sh"
 assert target["status"] == "completed"
 assert target["before_real_ms"] == 57
 assert target["after_real_ms"] == 41
-assert target["real_measurement_command"] == "NINJA_MONITOR_LIB_ONLY=1 bash scripts/ninja_monitor.sh (20-run median)"
+assert target["real_measurement_command"] == "NINJA_MONITOR_LIB_ONLY=1 bash scripts/ninja_monitor.sh (20-run alternating A/B)"
 assert target["test_result"] == "bats target PASS=72 FAIL=0 SKIP=0"
 assert target["commit"] == "abc789"
 assert untouched["script_path"] == "scripts/next.sh"
@@ -365,16 +367,46 @@ PY
 @test "record-real completed rejects non-improving runtime" {
     first=$(cmd_next "$LEDGER")
 
-    run cmd_record_real "$first" completed 101 101 "time bash $first --help" "bats target PASS SKIP=0" abc123 "$LEDGER"
+    run cmd_record_real "$first" completed good123 cand123 "time bash $first --help" 10 101 140 101 140 "bats target PASS SKIP=0" "$LEDGER"
     [ "$status" -eq 2 ]
-    [[ "$output" == *"after_real_ms < before_real_ms"* ]]
+    [[ "$output" == *"strict improvement"* ]]
+}
+
+@test "record-real blocks historical-only evidence and p95 regression" {
+    first=$(cmd_next "$LEDGER")
+
+    run cmd_record_real "$first" completed 101 72 "time bash $first --help" "PASS SKIP=0" old123 "$LEDGER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"complete same-environment A/B evidence"* ]]
+
+    run cmd_record_real "$first" completed good123 bad123 "time bash $first --help" 10 101 120 90 121 "PASS SKIP=0" "$LEDGER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"p95 regression"* ]]
+}
+
+@test "record-real saturated retains last-good and re-enqueue cannot adopt regression" {
+    first=$(cmd_next "$LEDGER")
+
+    cmd_record_real "$first" saturated good123 bad123 "time bash $first --help" 10 101 120 90 121 "PASS SKIP=0" "$LEDGER"
+    run python3 - "$LEDGER" "$first" <<'PY'
+import sys, yaml
+entry = next(e for e in yaml.safe_load(open(sys.argv[1]))["entries"] if e["script_path"] == sys.argv[2])
+assert entry["status"] == "saturated"
+assert entry["commit"] == "good123"
+assert entry["last_good_commit"] == "good123"
+assert entry["candidate_commit"] == "bad123"
+PY
+    [ "$status" -eq 0 ]
+    run cmd_re_enqueue 20 "$LEDGER"
+    [ "$status" -eq 0 ]
+    [ "$output" = "0" ]
 }
 
 @test "re-enqueue returns top completed entries to pending and carries after_real_ms into next before_real_ms" {
     first=$(cmd_next "$LEDGER")
-    cmd_record_real "$first" completed 200 50 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
+    cmd_record_real "$first" completed good123 abc123 "time bash $first --help" 10 200 240 50 80 "PASS SKIP=0" "$LEDGER"
     second=$(cmd_next "$LEDGER")
-    cmd_record_real "$second" completed 300 100 "time bash $second --help" "PASS SKIP=0" def456 "$LEDGER"
+    cmd_record_real "$second" completed good456 def456 "time bash $second --help" 10 300 340 100 140 "PASS SKIP=0" "$LEDGER"
 
     run cmd_re_enqueue 1 "$LEDGER"
     [ "$status" -eq 0 ]
@@ -394,7 +426,7 @@ PY
 
 @test "re-enqueue preserves decimal after_real_ms values" {
     first=$(cmd_next "$LEDGER")
-    cmd_record_real "$first" completed 24.565 16.634 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
+    cmd_record_real "$first" completed good123 abc123 "time bash $first --help" 10 24.565 30 16.634 20 "PASS SKIP=0" "$LEDGER"
 
     run cmd_re_enqueue 1 "$LEDGER"
     [ "$status" -eq 0 ]
@@ -411,9 +443,9 @@ PY
 
 @test "re-enqueue stops at max iteration" {
     first=$(cmd_next "$LEDGER")
-    cmd_record_real "$first" completed 200 100 "time bash $first --help" "PASS SKIP=0" abc123 "$LEDGER"
+    cmd_record_real "$first" completed good123 abc123 "time bash $first --help" 10 200 240 100 140 "PASS SKIP=0" "$LEDGER"
     cmd_re_enqueue 1 "$LEDGER" 1
-    cmd_record_real "$first" completed 100 80 "time bash $first --help" "PASS SKIP=0" def456 "$LEDGER"
+    cmd_record_real "$first" completed abc123 def456 "time bash $first --help" 10 100 140 80 120 "PASS SKIP=0" "$LEDGER"
 
     run cmd_re_enqueue 1 "$LEDGER" 1
     [ "$status" -eq 0 ]

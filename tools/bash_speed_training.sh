@@ -17,7 +17,7 @@ Usage:
   bash tools/bash_speed_training.sh status-count <status> [ledger]
   bash tools/bash_speed_training.sh mark-assigned <script_path> <ninja> [ledger]
   bash tools/bash_speed_training.sh record-after <script_path> <status> <after_ms> <test_result> <commit> [ledger]
-  bash tools/bash_speed_training.sh record-real <script_path> <status> <before_real_ms> <after_real_ms> <real_measurement_command> <test_result> <commit> [ledger]
+  bash tools/bash_speed_training.sh record-real <script_path> <status> <last_good_commit> <candidate_commit> <command> <samples_per_arm> <last_good_p50_ms> <last_good_p95_ms> <candidate_p50_ms> <candidate_p95_ms> <test_result> [ledger]
   bash tools/bash_speed_training.sh re-enqueue [limit] [ledger] [max_iteration]
   bash tools/bash_speed_training.sh auto-deploy <ninja> [ledger]
   bash tools/bash_speed_training.sh reconcile [ledger]
@@ -166,6 +166,13 @@ init_ledger_unlocked() {
             printf '    real_measurement_command: ""\n'
             printf '    test_result: %s\n' "$(yaml_quote "baseline_bash_n_exit_${syntax_status}")"
             printf '    commit: ""\n'
+            printf '    last_good_commit: ""\n'
+            printf '    candidate_commit: ""\n'
+            printf '    ab_samples_per_arm: ""\n'
+            printf '    last_good_p50_ms: ""\n'
+            printf '    last_good_p95_ms: ""\n'
+            printf '    candidate_p50_ms: ""\n'
+            printf '    candidate_p95_ms: ""\n'
             printf '    assigned_to: ""\n'
             printf '    updated_at: ""\n'
             index=$((index + 1))
@@ -180,26 +187,36 @@ init_ledger_unlocked() {
 cmd_record_real() {
     local script_path="${1:-}"
     local status="${2:-}"
-    local before_real_ms="${3:-}"
-    local after_real_ms="${4:-}"
-    local real_measurement_command="${5:-}"
-    local test_result="${6:-}"
-    local commit="${7:-}"
-    local ledger="${8:-$LEDGER}"
-    [ -n "$script_path" ] && [ -n "$status" ] && [ -n "$before_real_ms" ] && [ -n "$after_real_ms" ] && [ -n "$real_measurement_command" ] && [ -n "$test_result" ] && [ -n "$commit" ] || { usage >&2; return 2; }
-    is_non_negative_number "$before_real_ms" || { echo "before_real_ms must be numeric" >&2; return 2; }
-    is_non_negative_number "$after_real_ms" || { echo "after_real_ms must be numeric" >&2; return 2; }
-    if [ "$status" = "completed" ] && ! is_strictly_lower_number "$after_real_ms" "$before_real_ms"; then
-        echo "completed requires after_real_ms < before_real_ms" >&2
-        return 2
+    local last_good_commit="${3:-}" candidate_commit="${4:-}" real_measurement_command="${5:-}"
+    local samples="${6:-}" last_p50="${7:-}" last_p95="${8:-}" candidate_p50="${9:-}" candidate_p95="${10:-}"
+    local test_result="${11:-}" ledger="${12:-$LEDGER}"
+    [ -n "$script_path" ] && [ -n "$status" ] && [ -n "$last_good_commit" ] && [ -n "$candidate_commit" ] && [ -n "$real_measurement_command" ] && [ -n "$samples" ] && [ -n "$last_p50" ] && [ -n "$last_p95" ] && [ -n "$candidate_p50" ] && [ -n "$candidate_p95" ] && [ -n "$test_result" ] || { echo "record-real requires complete same-environment A/B evidence" >&2; return 2; }
+    [[ "$samples" =~ ^[0-9]+$ ]] && [ "$samples" -ge 10 ] || { echo "samples_per_arm must be >= 10" >&2; return 2; }
+    local value
+    for value in "$last_p50" "$last_p95" "$candidate_p50" "$candidate_p95"; do is_non_negative_number "$value" || { echo "A/B percentiles must be numeric" >&2; return 2; }; done
+    if [ "$status" = "completed" ]; then
+        ! is_strictly_lower_number "$last_p50" "$candidate_p50" || { echo "completed blocks candidate p50 regression" >&2; return 2; }
+        ! is_strictly_lower_number "$last_p95" "$candidate_p95" || { echo "completed blocks candidate p95 regression" >&2; return 2; }
+        if ! is_strictly_lower_number "$candidate_p50" "$last_p50" && ! is_strictly_lower_number "$candidate_p95" "$last_p95"; then
+            echo "completed requires strict improvement in p50 or p95" >&2; return 2
+        fi
+    else
+        status="saturated"
     fi
     [ -f "$ledger" ] || return 1
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "status" "$status"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "before_real_ms" "$before_real_ms"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "after_real_ms" "$after_real_ms"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "before_real_ms" "$last_p50"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "after_real_ms" "$candidate_p50"
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "real_measurement_command" "$real_measurement_command"
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "test_result" "$test_result"
-    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "commit" "$commit"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "commit" "$([ "$status" = completed ] && printf '%s' "$candidate_commit" || printf '%s' "$last_good_commit")"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "last_good_commit" "$last_good_commit"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "candidate_commit" "$candidate_commit"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "ab_samples_per_arm" "$samples"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "last_good_p50_ms" "$last_p50"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "last_good_p95_ms" "$last_p95"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "candidate_p50_ms" "$candidate_p50"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "candidate_p95_ms" "$candidate_p95"
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "updated_at" "$(now_iso)"
 }
 
@@ -760,11 +777,12 @@ task:
     measured_ms: ${evidence}
     priority_axis: "${axis}"
     source: "logs/script_speed_training_ledger.yaml"
+    historical_only: true
   acceptance_criteria:
     - id: AC1
       checks:
-        - check: "before_ms bash -n baseline is read from script_speed_training_ledger as syntax-only reference"
-        - check: "before_real_ms is measured with a safe runtime command chosen for this script (time bash script.sh <args>, --help, dry-run, or sandboxed equivalent)"
+        - check: "historical ledger timing is selection evidence only and MUST NOT decide adoption"
+        - check: "resolve last-good commit and candidate commit, then measure both in the same fixed environment with one identical safe command"
     - id: AC2
       checks:
         - check: "implementation improves runtime without reducing behavior or safety; async timeout shortening and other feature thinning (LS081) are forbidden"
@@ -773,9 +791,9 @@ task:
         - check: "all related tests pass with FAIL=0 and SKIP=0; expectations, coverage, and target count are unchanged"
     - id: AC3
       checks:
-        - check: "dominant cost is measured before editing; after_real_ms is measured with the same command as before_real_ms (exact command equality required)"
-        - check: "after_real_ms is strictly lower than before_real_ms"
-        - check: "bash tools/bash_speed_training.sh record-after ${script_path} completed <after_real_ms> \"<test_result>\" <commit> is called; no improvement uses status saturated and is not redeployed"
+        - check: "after warmup, alternate last-good/candidate A/B runs in the same environment for at least 10 samples per arm using the exact same command"
+        - check: "candidate p50 and p95 are both <= last-good and at least one is strictly lower; otherwise rollback candidate, record saturated, and retain last-good"
+        - check: "record-real stores both commits, exact command, samples per arm, both p50/p95 pairs and test result; missing evidence, historical-only comparison, or unresolved hook/gate failure is BLOCK"
         - check: "deployment/result event is appended to gate_fire_log and measurable by detector_fp_rate"
 EOF
 }
