@@ -1,9 +1,12 @@
 #!/bin/dash
 [ -z "$TMUX_PANE" ] && exit 0
-# Derive repo root dynamically via git (no hardcoded path)
+# Prefer the hook-injected root; retain git discovery for standalone use.
+_REPO_ROOT="${SHOGUN_ROOT:-}"
+if [ -z "$_REPO_ROOT" ]; then
 _REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+fi
 [ -z "$_REPO_ROOT" ] && exit 0
-SCRIPT_DIR="${SHOGUN_ROOT:-$_REPO_ROOT}"
+SCRIPT_DIR="$_REPO_ROOT"
 _NON_SHOGUN_CACHE="/tmp/shogun_not_shogun_${TMUX_PANE}"
 [ -e "$_NON_SHOGUN_CACHE" ] && exit 0
 
