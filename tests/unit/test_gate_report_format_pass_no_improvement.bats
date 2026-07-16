@@ -10,6 +10,13 @@ setup_file() {
     [ -f "$GATE_SCRIPT" ] || return 1
     [ -f "$GATE_MAIN_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
+    export MASTER_GATE_FIXTURE="$BATS_FILE_TMPDIR/gate_fixture"
+    mkdir -p "$MASTER_GATE_FIXTURE/scripts/gates" "$MASTER_GATE_FIXTURE/scripts/lib"
+    cp "$GATE_SCRIPT" "$MASTER_GATE_FIXTURE/scripts/gates/gate_report_format.sh"
+    cp "$GATE_MAIN_SCRIPT" "$MASTER_GATE_FIXTURE/scripts/gates/gate_report_format_main.py"
+    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$MASTER_GATE_FIXTURE/scripts/lib/"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$MASTER_GATE_FIXTURE/scripts/gates/"
+    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$MASTER_GATE_FIXTURE/scripts/gates/"
 }
 
 setup() {
@@ -18,11 +25,7 @@ setup() {
              "$TEST_TMPDIR/queue/reports" \
              "$TEST_TMPDIR/queue/tasks" \
              "$TEST_TMPDIR/logs"
-    cp "$GATE_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
-    cp "$GATE_MAIN_SCRIPT" "$TEST_TMPDIR/scripts/gates/gate_report_format_main.py"
-    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_TMPDIR/scripts/lib/report_commit_identity.py"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$TEST_TMPDIR/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$TEST_TMPDIR/scripts/gates/"
+    cp -al "$MASTER_GATE_FIXTURE/." "$TEST_TMPDIR/"
     chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
     export TEST_GATE="$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
 }
@@ -208,11 +211,7 @@ EOF
     local gate="$workdir/scripts/gates/gate_report_format.sh"
     rm -rf "$workdir"
     mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib" "$workdir/queue/reports" "$workdir/queue/tasks" "$workdir/logs" "$workdir/target"
-    cp "$GATE_SCRIPT" "$gate"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$workdir/scripts/lib/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$workdir/scripts/gates/"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
     chmod +x "$gate"
     git -C "$workdir" init -q
     cat > "$task_path" <<EOF
@@ -293,11 +292,7 @@ PY
     local gate="$workdir/scripts/gates/gate_report_format.sh"
     rm -rf "$workdir"
     mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib" "$workdir/queue/reports" "$workdir/queue/tasks" "$workdir/logs" "$workdir/queue/tasks"
-    cp "$GATE_SCRIPT" "$gate"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$workdir/scripts/lib/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$workdir/scripts/gates/"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
     chmod +x "$gate"
     git -C "$workdir" init -q
     mkdir -p "$workdir/queue/tasks"
@@ -372,11 +367,7 @@ EOF
     local gate="$workdir/scripts/gates/gate_report_format.sh"
     rm -rf "$workdir"
     mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib" "$workdir/queue/reports" "$workdir/queue/tasks" "$workdir/logs" "$workdir/context"
-    cp "$GATE_SCRIPT" "$gate"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$workdir/scripts/lib/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$workdir/scripts/gates/"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
     chmod +x "$gate"
     git -C "$workdir" init -q
     cat > "$workdir/context/owned.md" <<EOF
@@ -453,11 +444,7 @@ EOF
     local gate="$workdir/scripts/gates/gate_report_format.sh"
     rm -rf "$workdir"
     mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib" "$workdir/queue/reports" "$workdir/queue/tasks" "$workdir/logs" "$workdir/context"
-    cp "$GATE_SCRIPT" "$gate"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$workdir/scripts/lib/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$workdir/scripts/gates/"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
     chmod +x "$gate"
     git -C "$workdir" init -q
     cat > "$workdir/context/shared.md" <<EOF
@@ -537,11 +524,7 @@ EOF
     local gate="$workdir/scripts/gates/gate_report_format.sh"
     rm -rf "$workdir"
     mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib" "$workdir/queue/reports" "$workdir/queue/tasks" "$workdir/logs" "$workdir/target" "$workdir/context"
-    cp "$GATE_SCRIPT" "$gate"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$workdir/scripts/lib/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$workdir/scripts/gates/"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
     chmod +x "$gate"
     git -C "$workdir" init -q
     echo "clean" > "$workdir/target/clean.txt"
@@ -614,11 +597,7 @@ EOF
     local gate="$workdir/scripts/gates/gate_report_format.sh"
     rm -rf "$workdir"
     mkdir -p "$workdir/scripts/gates" "$workdir/scripts/lib" "$workdir/queue/reports" "$workdir/queue/tasks" "$workdir/logs" "$workdir/context"
-    cp "$GATE_SCRIPT" "$gate"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$workdir/scripts/lib/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_format_combined.py" "$workdir/scripts/gates/"
-    cp "$PROJECT_ROOT/scripts/gates/gate_report_autofix_main.py" "$workdir/scripts/gates/"
+    cp -al "$MASTER_GATE_FIXTURE/." "$workdir/"
     chmod +x "$gate"
     git -C "$workdir" init -q
     cat > "$workdir/context/reported.md" <<'EOF'
