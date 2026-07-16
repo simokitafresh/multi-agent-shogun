@@ -21,7 +21,7 @@ fi
 export SCRIPT_DIR DM_SIGNAL_DIR LESSONS_FILE DRY_RUN
 
 python3 << 'PYEOF'
-import re, subprocess, os, sys
+import concurrent.futures, re, subprocess, os, sys
 
 DM_SIGNAL_DIR = os.environ["DM_SIGNAL_DIR"]
 SCRIPT_DIR = os.environ["SCRIPT_DIR"]
@@ -117,8 +117,15 @@ needed_cmds = {
     for lesson in lessons
     if not lesson["has_tf"] and lesson["source_cmd"] and lesson["tags_idx"] is not None
 }
-for repo_dir in [DM_SIGNAL_DIR, SCRIPT_DIR]:
-    repo_file_cache[repo_dir] = build_repo_file_cache(repo_dir, needed_cmds)
+# The repositories are independent read-only sources.  Their git history
+# scans dominate runtime on /mnt/c, so overlap them without reducing the
+# searched command set, history, timeout, or fail-closed behavior.
+repo_dirs = [DM_SIGNAL_DIR, SCRIPT_DIR]
+with concurrent.futures.ThreadPoolExecutor(max_workers=len(repo_dirs)) as executor:
+    repo_file_cache = dict(zip(
+        repo_dirs,
+        executor.map(lambda repo: build_repo_file_cache(repo, needed_cmds), repo_dirs),
+    ))
 
 for lesson in lessons:
     if lesson["has_tf"]:
