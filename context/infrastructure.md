@@ -39,6 +39,8 @@ Bats suiteの共有資源fixtureは、個別実行時間ではなくsuite内の�
 
 campaign-lane（台帳駆動攻略・応用候補カタログ）の正本は`config/campaign_lane_catalog.yaml`、設計と実行入口は`docs/research/ledger-driven-campaign-lane-pattern_20260714.md` §6/§8。`shard-work`=既知集合の単発分割、`campaign-lane`=台帳実測による反復選定+飽和終端。
 
+pytest-speed adapterは現行task/reportのnodeidだけを高速抽出し、配備時の台帳世代を記録して新計測後に再適格化する。並行deployはnodeid別`flock`で原子reserveし、失敗時は自reservationをrollbackする。→ `docs/research/ledger-driven-campaign-lane-pattern_20260714.md` §6/§8（commits `9c95ecd4a`, `18ab2c7d4`）
+
 1 roundに複数の有効計測がある場合はPASS・FAIL0・SKIP0集合からobjective方向のbestを採用し、`last observation`とは別フィールドで保持する。→ commit `130fa4303`、[[campaign-lane]]
 
 dashboardの`## 🚨要対応`は任意セクションであり、欠落時は同期・postcondition・template検証の全3段でno-op成功にする。存在時の件数照合と破損入力WARNは維持する。→ `scripts/dashboard_update.sh` / `tests/unit/test_skill_feedback_loop.bats`（commit `f2f3f2c48`、関連130/130 PASS・SKIP0）
