@@ -8,7 +8,7 @@ real_measurement_policy: 'Ninja must choose a safe runtime command per script: t
 script_count: 254
 entries:
 - script_path: ".claude/hooks/pre-bash-combined.sh"
-  status: assigned
+  status: pending
   before_ms: ''
   after_ms: ''
   before_real_ms: 238
@@ -16,7 +16,7 @@ entries:
   real_measurement_command: "source scripts/lib/pre_bash_combined_guard.sh; pre_bash_combined_eval_command 'rg -n speed context/infrastructure.md' (20-run avg, warm TTL cache, PRE_BASH_MEMORY_INJECT_DEBOUNCE_SEC=0)"
   test_result: "bash -n hooks/libs PASS; bash scripts/hooks/test_hooks.sh 90/90 PASS SKIP=0"
   commit: "pending_commit"
-  assigned_to: "hayate"
+  assigned_to: ""
   updated_at: "2026-07-16T19:54:13"
   iteration: 2
 - script_path: ".claude/hooks/pretool-dispatch.sh"
@@ -108,7 +108,7 @@ entries:
   updated_at: "2026-06-08T03:50:29"
   iteration: 1
 - script_path: scripts/agent_status.sh
-  status: assigned
+  status: pending
   before_ms: 14
   after_ms: ''
   before_real_ms: 2800
@@ -118,7 +118,7 @@ entries:
   test_result: bash -n scripts/agent_status.sh && shellcheck -x scripts/agent_status.sh
     && bats tests/unit/test_agent_state.bats PASS 14/14 SKIP=0
   commit: e85e3e8c7
-  assigned_to: "tobisaru"
+  assigned_to: ""
   updated_at: "2026-07-16T20:05:02"
   iteration: 1
 - script_path: scripts/api_usage.sh
@@ -199,7 +199,7 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/backfill_lesson_target_files.sh
-  status: assigned
+  status: pending
   before_ms: 15
   after_ms: ''
   before_real_ms: 3661
@@ -209,7 +209,7 @@ entries:
   test_result: bash -n scripts/backfill_lesson_target_files.sh && bash scripts/backfill_lesson_target_files.sh
     --dry-run PASS SKIP=0
   commit: e3eda3d96
-  assigned_to: "kagemaru"
+  assigned_to: ""
   updated_at: "2026-07-16T20:04:39"
   iteration: 1
 - script_path: scripts/backfill_review_gate_done.sh
@@ -490,7 +490,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/clear_prep_check.sh
-  status: assigned
+  status: pending
   before_ms: 21
   after_ms: ''
   before_real_ms: 4941
@@ -498,7 +498,7 @@ entries:
   real_measurement_command: time bash scripts/clear_prep_check.sh
   test_result: PASS(syntax:OK+functional:ALERT_expected)
   commit: db49fe8e7
-  assigned_to: "hanzo"
+  assigned_to: ""
   updated_at: "2026-07-16T20:02:06"
   iteration: 1
 - script_path: scripts/clipboard_watcher.sh
@@ -598,7 +598,7 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/cmd_quality_log.sh
-  status: assigned
+  status: pending
   before_ms: 19
   after_ms: ''
   before_real_ms: 3160
@@ -610,7 +610,7 @@ entries:
   test_result: bash -n scripts/cmd_quality_log.sh PASS; bats tests/unit/test_cmd_quality_memory_db.bats
     9/9 PASS SKIP=0; bats tests/unit/test_cmd_save_diagnose.bats 4/4 PASS SKIP=0
   commit: f61bdd1a609e01c0f8295be5e35590180256c1b2
-  assigned_to: "saizo"
+  assigned_to: ""
   updated_at: "2026-07-16T20:04:49"
   iteration: 1
 - script_path: scripts/cmd_save.sh
@@ -782,7 +782,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/fullrecalculate.sh
-  status: assigned
+  status: pending
   before_ms: 20
   after_ms: ''
   before_real_ms: 2043
@@ -792,11 +792,11 @@ entries:
   test_result: bash -n PASS; invalid usage PASS; diff missing arg PASS; missing baseline
     PASS; SKIP=0
   commit: 312d1162bb9a25eb3c16f773070b0fcaff419c02
-  assigned_to: "tobisaru"
+  assigned_to: ""
   updated_at: "2026-07-16T20:06:57"
   iteration: 1
 - script_path: scripts/gate_auto_respond.sh
-  status: assigned
+  status: pending
   before_ms: 21
   after_ms: ''
   before_real_ms: 5367
@@ -806,11 +806,11 @@ entries:
   test_result: bash -n PASS; sandbox OK-path timing PASS; ALERT idempotency behavior
     PASS; SKIP=0
   commit: dafe3ce81
-  assigned_to: "tobisaru"
+  assigned_to: ""
   updated_at: "2026-07-16T19:58:37"
   iteration: 1
 - script_path: scripts/gate_fire_log.sh
-  status: assigned
+  status: pending
   before_ms: 18
   after_ms: ''
   before_real_ms: 2523
@@ -821,7 +821,7 @@ entries:
   test_result: bash -n PASS; bats tests/unit/test_gate_fire_log.bats 6/6 PASS; cold
     30-run output PASS; SKIP=0
   commit: 327db17a0
-  assigned_to: "kagemaru"
+  assigned_to: ""
   updated_at: "2026-07-16T20:06:21"
   iteration: 1
 - script_path: scripts/gate_improvement_trigger.sh
@@ -1016,7 +1016,7 @@ entries:
   assigned_to: tobisaru
   updated_at: '2026-06-07T00:59:17'
 - script_path: scripts/gates/gate_gunshi_report_precheck.sh
-  status: assigned
+  status: pending
   before_ms: 20
   after_ms: ''
   before_real_ms: 4404
@@ -1025,11 +1025,11 @@ entries:
     reports/hanzo_report_cmd_training_speed_context_freshness_20260529.yaml
   test_result: bats tests/unit/test_sg_pre24_generated_penetration.bats PASS 5/5 SKIP=0
   commit: 8845ac868
-  assigned_to: "tobisaru"
+  assigned_to: ""
   updated_at: "2026-07-16T20:02:38"
   iteration: 1
 - script_path: scripts/gates/gate_gunshi_startup.sh
-  status: assigned
+  status: pending
   before_ms: 20
   after_ms: ''
   before_real_ms: 3494
@@ -1037,7 +1037,7 @@ entries:
   real_measurement_command: "python3: forced-sync median 6478.1ms vs guarded median 3493.6ms, 3 runs each"
   test_result: "bash -n scripts/gates/gate_gunshi_startup.sh; bats tests/unit/test_gate_gunshi_startup_auto_idle_actions.bats; bats tests/unit/test_gate_small_consolidated.bats --filter gate_gunshi_startup|missed_sg PASS"
   commit: "6564e4739"
-  assigned_to: "hanzo"
+  assigned_to: ""
   updated_at: "2026-07-16T20:04:43"
   iteration: 2
 - script_path: scripts/gates/gate_hot_path_no_sync_io.sh
@@ -1054,7 +1054,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/gates/gate_karo_startup.sh
-  status: assigned
+  status: pending
   before_ms: 19
   after_ms: 10
   before_real_ms: 4760
@@ -1067,7 +1067,7 @@ entries:
     SKIP=0; before_real median 6640ms (6.64,3.17,6.68,9.68,6.60); after_real median
     4760ms (3.59,4.76,3.29,5.61,4.79)
   commit: f2b89d522
-  assigned_to: "saizo"
+  assigned_to: ""
   updated_at: "2026-07-16T20:02:11"
   iteration: 1
 - script_path: scripts/gates/gate_knowledge_freshness.sh
@@ -1087,7 +1087,7 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_lesson_health.sh
-  status: assigned
+  status: pending
   before_ms: 11
   after_ms: ''
   before_real_ms: 2260
@@ -1095,7 +1095,7 @@ entries:
   real_measurement_command: "time_gate_lesson_health_full_all_projects_after2"
   test_result: "bats tests/unit/test_gate_lesson_health.bats: 12/12 PASS; output_diff_empty"
   commit: "90c32efdd"
-  assigned_to: "saizo"
+  assigned_to: ""
   updated_at: "2026-07-16T20:06:45"
   iteration: 2
 - script_path: scripts/gates/gate_loop_health.sh
@@ -1127,7 +1127,7 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/gates/gate_memory_db_live_insert_async.sh
-  status: assigned
+  status: pending
   before_ms: 16
   after_ms: ''
   before_real_ms: 20
@@ -1138,7 +1138,7 @@ entries:
     replay rc/output match PASS; TTL disabled full scan rc=1 PASS; no dedicated Bats,
     SKIP 0
   commit: d0fc300c9
-  assigned_to: "saizo"
+  assigned_to: ""
   updated_at: "2026-07-16T19:56:49"
   iteration: 1
 - script_path: scripts/gates/gate_ninja_workaround_rate.sh
@@ -1238,7 +1238,7 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_shogun_startup.sh
-  status: assigned
+  status: pending
   before_ms: 19
   after_ms: ''
   before_real_ms: 5888
@@ -1246,7 +1246,7 @@ entries:
   real_measurement_command: "3-run average with SHOGUN_STARTUP_ROOT=/mnt/c/tools/multi-agent-shogun SHOGUN_STARTUP_LIGHTWEIGHT=1 timeout 60 bash gate_shogun_startup; HEAD vs worktree"
   test_result: "bash -n scripts/gates/gate_shogun_startup.sh PASS; bats tests/unit/test_gate_shogun_startup.bats PASS 63/63 SKIP=0"
   commit: "b52424f7b"
-  assigned_to: "kotaro"
+  assigned_to: ""
   updated_at: "2026-07-16T19:58:25"
   iteration: 3
 - script_path: scripts/gates/gate_silent_fallback.sh
@@ -1397,7 +1397,7 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/gist_index_update.sh
-  status: assigned
+  status: pending
   before_ms: 16
   after_ms: ''
   before_real_ms: 6203
@@ -1406,7 +1406,7 @@ entries:
     --dry-run >/dev/null
   test_result: bash_n_pass;fake_gh_dry_run_output_diff_empty;100run_before_7945_after_6203;SKIP=0
   commit: 0ae3a085e
-  assigned_to: "saizo"
+  assigned_to: ""
   updated_at: "2026-07-16T19:58:22"
   iteration: 1
 - script_path: scripts/gist_sync.sh
@@ -1461,7 +1461,7 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/gunshi_next_action.sh
-  status: assigned
+  status: pending
   before_ms: 18
   after_ms: ''
   before_real_ms: 4463
@@ -1471,11 +1471,11 @@ entries:
   test_result: bash -n PASS; bats tests/unit/test_gunshi_next_action.bats 1/1 PASS
     SKIP=0
   commit: bb4714f30
-  assigned_to: "kotaro"
+  assigned_to: ""
   updated_at: "2026-07-16T20:02:18"
   iteration: 1
 - script_path: scripts/gunshi_review_stats.sh
-  status: assigned
+  status: pending
   before_ms: 24
   after_ms: ''
   before_real_ms: 6273
@@ -1484,7 +1484,7 @@ entries:
     >/dev/null
   test_result: bash_n_pass;real_fixture_output_diff_empty;real_fixture_log_diff_empty;before_8173_after_6273;SKIP=0
   commit: 5d8f1707e
-  assigned_to: "hanzo"
+  assigned_to: ""
   updated_at: "2026-07-16T19:58:19"
   iteration: 1
 - script_path: scripts/health_check.sh
@@ -1542,7 +1542,7 @@ entries:
   updated_at: "2026-06-08T03:50:31"
   iteration: 1
 - script_path: scripts/hooks/pre-bash-report-deny.sh
-  status: assigned
+  status: pending
   before_ms: 6
   after_ms: 4
   before_real_ms: 10
@@ -1550,11 +1550,11 @@ entries:
   real_measurement_command: echo '' | bash scripts/hooks/pre-bash-report-deny.sh
   test_result: 9/9 PASS SKIP=0
   commit: 496b46c26
-  assigned_to: "tobisaru"
+  assigned_to: ""
   updated_at: "2026-07-16T19:54:52"
   iteration: 1
 - script_path: scripts/hooks/pre-bash-test-fullrun-guard.sh
-  status: assigned
+  status: pending
   before_ms: 19
   after_ms: ''
   before_real_ms: 28
@@ -1563,7 +1563,7 @@ entries:
     | bash scripts/hooks/pre-bash-test-fullrun-guard.sh >/dev/null 2>&1
   test_result: bash_n_pass;test_hooks_pass;allow_output_diff_empty;block_output_diff_empty;before_34_after_28;SKIP=0
   commit: c64af705d
-  assigned_to: "kotaro"
+  assigned_to: ""
   updated_at: "2026-07-16T19:54:39"
   iteration: 1
 - script_path: scripts/hooks/pre-karo-edit-guard.sh
@@ -1617,7 +1617,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/hooks/prompt_state_inject.sh
-  status: assigned
+  status: pending
   before_ms: 8
   after_ms: 8
   before_real_ms: 369.167
@@ -1625,7 +1625,7 @@ entries:
   real_measurement_command: "env PROMPT_STATE_AGENT_ID=saizo PROMPT_STATE_SKILLS_DIR=/tmp/psi_equiv.zPNVDI/skills PROMPT_STATE_SEMANTIC_SEARCH_CMD=/tmp/psi_equiv.zPNVDI/semantic.sh bash scripts/hooks/prompt_state_inject.sh <<< '{\"prompt\":\"報告YAML作成はどう確認する？\"}'"
   test_result: "normal equivalence yes 596.000->375.000ms; question equivalence yes 451.917->369.167ms; bats tests/unit/test_prompt_state_inject_skill_trigger.bats PASS SKIP=0"
   commit: "pending"
-  assigned_to: "hayate"
+  assigned_to: ""
   updated_at: "2026-07-16T19:36:45"
   iteration: 2
 - script_path: scripts/hooks/session_end_clear_check.sh
@@ -1642,7 +1642,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/hooks/session_start_inject.sh
-  status: assigned
+  status: pending
   before_ms: 15
   after_ms: 15
   before_real_ms: __BEFORE_REAL_MS__
@@ -1651,7 +1651,7 @@ entries:
     scripts/hooks/session_start_inject.sh; median of 5 runs
   test_result: bash_n_pass;bats_test_session_state_hooks_session_start_inject_5_pass_0_skip;json_valid;agent_context_ok;before_2537_after_1960
   commit: 69af2c093
-  assigned_to: "hanzo"
+  assigned_to: ""
   updated_at: "2026-07-16T19:54:33"
   iteration: 2
 - script_path: scripts/hooks/stop_check_inbox.sh
@@ -1667,7 +1667,7 @@ entries:
   updated_at: "2026-06-13T00:53:00"
   iteration: 2
 - script_path: scripts/hooks/test_hooks.sh
-  status: assigned
+  status: pending
   before_ms: 17
   after_ms: 17
   before_real_ms: 2070
@@ -1675,7 +1675,7 @@ entries:
   real_measurement_command: bash scripts/hooks/test_hooks.sh; median of 5 runs
   test_result: bash_n_PASS;test_hooks_80_pass_0_skip;before_3020_after_2070
   commit: e5d42e65665977b9cd0ab9fddc9d949065fb684c
-  assigned_to: "kotaro"
+  assigned_to: ""
   updated_at: "2026-07-16T20:06:51"
   iteration: 1
 - script_path: scripts/hooks/test_result_guard.sh
@@ -2203,7 +2203,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/lib/layout_string.sh
-  status: assigned
+  status: pending
   before_ms: 16
   after_ms: 16
   before_real_ms: 2704
@@ -2212,7 +2212,7 @@ entries:
     generate_layout_string shogun:agents 1; median of 5 runs
   test_result: bash_n_pass;mock_tmux_output_match_0c8a;python_checksum_removed;before_3668_after_2704;SKIP=0
   commit: e9de94f33
-  assigned_to: "hayate"
+  assigned_to: ""
   updated_at: "2026-07-16T20:06:02"
   iteration: 1
 - script_path: scripts/lib/lock_path.sh
@@ -2314,7 +2314,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/lib/pane_lookup.sh
-  status: assigned
+  status: pending
   before_ms: 15
   after_ms: 15
   before_real_ms: 6366
@@ -2323,7 +2323,7 @@ entries:
     200x pane_lookup hayate/kagemaru/tobisaru; median of 5 runs
   test_result: bash_n_pass;mock_tmux_output_match;test_infra_misc_small_consolidated_pane_lookup_3_pass_0_skip;before_7042_after_6366;SKIP=0
   commit: 472e6f327
-  assigned_to: "hayate"
+  assigned_to: ""
   updated_at: "2026-07-16T19:58:00"
   iteration: 1
 - script_path: scripts/lib/pre_bash_combined_guard.sh
@@ -2495,7 +2495,7 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/memory_db_init.sh
-  status: assigned
+  status: pending
   before_ms: 13
   after_ms: ''
   before_real_ms: 219
@@ -2504,11 +2504,11 @@ entries:
     after=219ms)
   test_result: bash -n pass; bats tests/unit/test_memory_db.bats 40/40 PASS SKIP=0
   commit: 002e17646
-  assigned_to: "hayate"
+  assigned_to: ""
   updated_at: "2026-07-16T19:56:27"
   iteration: 1
 - script_path: scripts/memory_db_query.sh
-  status: assigned
+  status: pending
   before_ms: 16
   after_ms: ''
   before_real_ms: 10
@@ -2518,7 +2518,7 @@ entries:
   test_result: bash_n_pass;bats tests/unit/test_memory_db.bats --filter memory_db_query
     5/5 PASS SKIP=0;before_s=0.02,0.02,0.03,0.02,0.03,0.02,0.03,0.02,0.02,0.01,0.02,0.02,0.03,0.02,0.03;after_s=0.02,0.02,0.01,0.01,0.01,0.02,0.01,0.02,0.01,0.02,0.01,0.02,0.01,0.02,0.01
   commit: 90e2ee15a
-  assigned_to: "kotaro"
+  assigned_to: ""
   updated_at: "2026-07-16T19:56:52"
   iteration: 1
 - script_path: scripts/memory_recall_control.sh
@@ -2573,7 +2573,7 @@ entries:
   updated_at: "2026-06-08T03:50:29"
   iteration: 1
 - script_path: scripts/ninja_monitor.sh
-  status: assigned
+  status: pending
   before_ms: 24
   after_ms: ''
   before_real_ms: 57
@@ -2583,11 +2583,11 @@ entries:
   test_result: bash -n OK; SCRIPT_DIR correct; tests/unit/test_ninja_monitor_*.bats
     56/56 PASS SKIP=0; before_63ms_after_57ms; 10pct_reduction
   commit: 6ddf70e86
-  assigned_to: "hanzo"
+  assigned_to: ""
   updated_at: "2026-07-16T19:56:47"
   iteration: 1
 - script_path: scripts/note_draft.sh
-  status: assigned
+  status: pending
   before_ms: 23
   after_ms: ''
   before_real_ms: 5320
@@ -2597,7 +2597,7 @@ entries:
   test_result: bash -n scripts/note_draft.sh PASS; no-arg usage exit=1; file-not-found
     exit=1; SKIP=0
   commit: 1d2957ccc
-  assigned_to: "hayate"
+  assigned_to: ""
   updated_at: "2026-07-16T20:01:42"
   iteration: 1
 - script_path: scripts/ntfy.sh
@@ -2653,7 +2653,7 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/ntfy_inbox_archive.sh
-  status: assigned
+  status: pending
   before_ms: 17
   after_ms: ''
   before_real_ms: 3796.225
@@ -2662,7 +2662,7 @@ entries:
     >/dev/null; done (empty inbox)'
   test_result: bash -n PASS; sandbox archive functional PASS SKIP=0
   commit: 132648fa0
-  assigned_to: "hayate"
+  assigned_to: ""
   updated_at: "2026-07-16T20:04:22"
   iteration: 1
 - script_path: scripts/ntfy_listener.sh
@@ -2708,7 +2708,7 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/oneshot/add_injection_count.sh
-  status: assigned
+  status: pending
   before_ms: 14
   after_ms: ''
   before_real_ms: 3087.133
@@ -2717,7 +2717,7 @@ entries:
     with restored lesson YAML fixtures'
   test_result: bash -n PASS; sandbox injection_count functional PASS SKIP=0
   commit: 7d08753dc
-  assigned_to: "kotaro"
+  assigned_to: ""
   updated_at: "2026-07-16T20:04:53"
   iteration: 1
 - script_path: scripts/oneshot/backfill_gate_titles.sh
@@ -2815,7 +2815,7 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/ralph_loop_metrics.sh
-  status: assigned
+  status: pending
   before_ms: 15
   after_ms: 15
   before_real_ms: 2460
@@ -2823,7 +2823,7 @@ entries:
   real_measurement_command: bash scripts/ralph_loop_metrics.sh
   test_result: 'bash -n: PASS; full run exit 0; output identical'
   commit: 489733f21
-  assigned_to: "hanzo"
+  assigned_to: ""
   updated_at: "2026-07-16T20:06:40"
   iteration: 1
 - script_path: scripts/record_lesson_feedback.sh
@@ -3374,14 +3374,14 @@ entries:
   assigned_to: ''
   updated_at: "2026-06-07T21:57:22"
 - script_path: scripts/hooks/session_start_inject.sh
-  status: assigned
+  status: pending
   before_ms: ''
   after_ms: ''
   before_real_ms: 60
   after_real_ms: ""
   real_measurement_command: "before: HEAD copy under .tmp_ssi_before_cmp2 with queue symlink; after: working tree; both 9 runs of AGENT_ID=saizo SessionStart startup payload via /usr/bin/time"
   test_result: "bash -n PASS; JSON parse PASS; bats tests/unit/test_session_state_hooks.bats 20/20 PASS SKIP=0"
-  assigned_to: "saizo"
+  assigned_to: ""
   updated_at: "2026-07-16T19:54:36"
   commit: "96f5940f2"
 - script_path: scripts/switch_project.sh
