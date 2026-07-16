@@ -250,7 +250,7 @@ else
     NINJA_BLOCKERS=$(fetch_ninja_blockers)
     AC_COUNT=$(fetch_ac_count)
 fi
-TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+TZ=UTC printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%SZ)T' -1
 
 # --- Append entry with flock ---
 append_status=0
@@ -258,8 +258,10 @@ append_status=0
     flock -w 10 200 || { echo "[cmd_quality_log] Error: Failed to acquire lock" >&2; exit 1; }
 
     # Initialize file if it doesn't exist or is empty
+    initialized_empty=0
     if [[ ! -f "$LOG_FILE" ]] || [[ ! -s "$LOG_FILE" ]]; then
         echo "entries:" > "$LOG_FILE"
+        initialized_empty=1
     else
         # Fix: 'entries: []' is invalid when appending list items — normalize to 'entries:'
         IFS= read -r _first_line < "$LOG_FILE"
@@ -369,28 +371,30 @@ PY
         exit 10
     fi
 
-    entry_indent="$(awk '
+    entry_indent=""
+    if (( initialized_empty == 0 )); then
+        entry_indent="$(awk '
         /^entries:[[:space:]]*$/ { in_entries=1; next }
         in_entries && /^[[:space:]]*-/ {
             match($0, /^[[:space:]]*/)
             print substr($0, RSTART, RLENGTH)
             exit
         }
-    ' "$LOG_FILE")"
+        ' "$LOG_FILE")"
+    fi
     field_indent="${entry_indent}  "
 
-    cat >> "$LOG_FILE" <<EOF
-${entry_indent}- cmd_id: "$CMD_ID"
-${field_indent}ac_count: $AC_COUNT
-${field_indent}gate_result: "$GATE_RESULT"
-${field_indent}karo_rework: "$KARO_REWORK"
-${field_indent}gunshi_verdict: "$GUNSHI_VERDICT"
-${field_indent}ninja_blockers: $NINJA_BLOCKERS
-${field_indent}project: "$PROJECT_ID"
-${field_indent}supplementary_cmds: $SUPPLEMENTARY_CMDS
-${field_indent}source: "$SOURCE_STAGE"
-${field_indent}timestamp: "$TIMESTAMP"
-EOF
+    printf '%s\n' \
+        "${entry_indent}- cmd_id: \"$CMD_ID\"" \
+        "${field_indent}ac_count: $AC_COUNT" \
+        "${field_indent}gate_result: \"$GATE_RESULT\"" \
+        "${field_indent}karo_rework: \"$KARO_REWORK\"" \
+        "${field_indent}gunshi_verdict: \"$GUNSHI_VERDICT\"" \
+        "${field_indent}ninja_blockers: $NINJA_BLOCKERS" \
+        "${field_indent}project: \"$PROJECT_ID\"" \
+        "${field_indent}supplementary_cmds: $SUPPLEMENTARY_CMDS" \
+        "${field_indent}source: \"$SOURCE_STAGE\"" \
+        "${field_indent}timestamp: \"$TIMESTAMP\"" >> "$LOG_FILE"
 
     if [[ -n "$CHECK_NAMES" ]]; then
         escaped_checks="${CHECK_NAMES//\\/\\\\}"
