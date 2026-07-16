@@ -424,3 +424,52 @@ YAML
     [[ "$output" == *"Session State: 検出ロジック該当行"* ]]
     [[ "$output" == *"warn_q5_pair_missing_session_state"* ]]
 }
+
+@test "SIGPIPE regression: large text producers do not feed early-exit consumers" {
+    local fixture="$BATS_TEST_TMPDIR/sigpipe-patterns.sh"
+    # General invariant: under pipefail, no shell-variable producer may feed an
+    # early-closing consumer. Variable-name allowlists would miss renamed data.
+    local pattern='(echo|printf)[^\n|]*\$\{?[A-Za-z_][A-Za-z0-9_]*[^\n|]*\|([[:space:]]*\n){0,2}[[:space:]]*(awk|head|grep[^\n]*(-q|-m1))'
+    cat > "$fixture" <<'SH'
+echo "$CMD_BLOCK_NC" | grep -q FILL_THIS
+printf '%s\n' "$block_text" |
+    awk '/project:/{print; exit}'
+grep -q FILL_THIS <<< "$CMD_BLOCK_NC"
+awk '{ gsub(/x/ <<< "$CMD_BLOCK_NC", ""); print }'
+grep FILL_THIS <<< "$CMD_BLOCK_NC" | head -3
+grep -im1E FILL_THIS <<< "$CMD_BLOCK_NC"
+SH
+
+    run rg -U -n "$pattern" "$fixture"
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | grep -cE '^(1|2):')" -eq 2 ]
+    [[ "$output" != *"grep -q FILL_THIS <<<"* ]]
+
+    run rg -U -n "$pattern" "$SAVE_SCRIPT"
+    [ "$status" -eq 1 ]
+    [ -z "$output" ]
+
+    run rg -n '(sub|gsub)\([^\n]*<<<' "$fixture"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'gsub(/x/ <<<'* ]]
+
+    run rg -n '^[[:space:]]*(sub|gsub)\([^\n]*<<<' "$SAVE_SCRIPT"
+    [ "$status" -eq 1 ]
+    [ -z "$output" ]
+
+    run rg -n 'grep[^\n]*<<<[^\n]*\|[^\n]*head' "$fixture"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'grep FILL_THIS <<<'* ]]
+
+    run rg -n 'grep[^\n]*<<<[^\n]*\|[^\n]*head' "$SAVE_SCRIPT"
+    [ "$status" -eq 1 ]
+    [ -z "$output" ]
+
+    run rg -n 'grep[[:space:]]+-[^[:space:]]*m[0-9][A-Za-z]' "$fixture"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'grep -im1E'* ]]
+
+    run rg -n 'grep[[:space:]]+-[^[:space:]]*m[0-9][A-Za-z]' "$SAVE_SCRIPT"
+    [ "$status" -eq 1 ]
+    [ -z "$output" ]
+}

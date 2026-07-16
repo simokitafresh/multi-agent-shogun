@@ -182,6 +182,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-07-16: gate=gate_report_format result=FAIL executor=tobisaru reason=operational_simulation: MISSING (integration cmd requires command/expected/actual/result — LG055)
 
 - 2026-07-15: gate=gate_report_format result=FAIL executor=saizo reason=binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; ...
 - 2026-07-14: gate=gate_report_format result=FAIL executor=tobisaru reason=variation_checks: required cells unfilled: normal_pass, quoted_or_heredoc, linked_worktree, parallel_or_respawn, abnormal_exit; binary_checks.AC1[0].result: 空文字。\"yes\" または \"no...

@@ -125,6 +125,9 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+- 2026-07-16: gate=gate_report_format result=FAIL executor=hanzo reason=binary_checks.AC2[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or ...
+
+- 2026-07-16: gate=gate_report_format result=FAIL executor=hanzo reason=binary_checks.AC2[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せ...
 - 2026-07-15: gate=gate_report_format result=FAIL executor=hayate reason=status: \"revision_requested\" cannot carry terminal verdict PASS (set status to completed after revisions); LK-A14: 横展開/修正前パターンを扱う報告にはgrep/rg残存0件の一次証跡が必須
 
 - 2026-07-14: gate=gate_report_format result=FAIL executor=hanzo reason=variation_checks: required cells unfilled: normal_pass, quoted_or_heredoc, linked_worktree, parallel_or_respawn, abnormal_exit; memory_references[2].reason: empty (参照した理由を具体的に書け...

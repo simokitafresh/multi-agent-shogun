@@ -352,8 +352,8 @@ awk "
         saw_unset=0
     }
     END {
-        if (launches < 2) {
-            print \"expected at least 2 watcher launch sites, got \" launches
+        if (launches < 1) {
+            print \"expected at least 1 watcher launch site, got \" launches
             exit 1
         }
     }

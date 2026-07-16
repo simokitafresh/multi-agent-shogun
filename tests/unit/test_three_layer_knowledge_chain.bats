@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 
 setup() {
+    exec 8>"$BATS_FILE_TMPDIR/three-layer-chain-fixture.lock"
+    flock -x 8
     export ROOT="$(mktemp -d)"
     mkdir -p "$ROOT/scripts" "$ROOT/state" "$ROOT/logs"
     cp "$BATS_TEST_DIRNAME/../../scripts/three_layer_knowledge_chain.sh" "$ROOT/scripts/"

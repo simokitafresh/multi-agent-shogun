@@ -166,7 +166,7 @@ cmd_save_metadata_cache_store() {
 
 extract_cmd_diagnosis() {
     local block_text="${1:-}"
-    echo "$block_text" | awk '
+    awk '
         /quality_gate:/ { in_qg=1; next }
         in_qg && /^[[:space:]]{6,}diagnosis:[[:space:]]*/ {
             sub(/^[[:space:]]*diagnosis:[[:space:]]*/, "")
@@ -175,19 +175,19 @@ extract_cmd_diagnosis() {
             exit
         }
         in_qg && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
-    '
+    ' <<< "$block_text"
 }
 
 extract_nazenaze_root_cause() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
-    printf '%s\n' "$CMD_BLOCK_NC" | awk '
+    awk '
         /nazenaze_root_cause:/ {
             sub(/.*nazenaze_root_cause:[[:space:]]*/, "")
             gsub(/^["'"'"']|["'"'"']$/, "")
             if ($0 != "" && $0 != "null") print
             exit
         }
-    '
+    ' <<< "$CMD_BLOCK_NC"
 }
 
 build_unique_block_checks_str() {
@@ -394,7 +394,7 @@ cmd_text_matches_pattern() {
     local text="${1:-}"
     local pattern="${2:-}"
     [[ -n "$text" && -n "$pattern" ]] || return 1
-    printf '%s\n' "$text" | grep -qiE "$pattern"
+    grep -qiE "$pattern" <<< "$text"
 }
 
 # cmd_3801: 1回のcmd_save.sh実行内でblock_textは不変(CMD_BLOCK_NC固定)のため、
@@ -436,7 +436,7 @@ _is_gate_or_hook_addition_cmd_uncached() {
     [[ "${scope_mode:-}" == "SCOUT" || "${scout_exempt:-}" == "true" ]] && return 1
     [[ "${task_type:-}" == "scout" || "${task_type:-}" == "recon" || "${task_type:-}" == "analysis" ]] && return 1
 
-    q11_context=$(printf '%s\n' "$block_text" | awk '
+    q11_context=$(awk '
         /^[[:space:]]*(title|purpose):/ { print; next }
         /^[[:space:]]*command:[[:space:]]*\|/ { in_command=1; next }
         /^[[:space:]]*command:[[:space:]]*[^|]/ {
@@ -455,7 +455,7 @@ _is_gate_or_hook_addition_cmd_uncached() {
             }
             next
         }
-    ')
+    ' <<< "$block_text")
 
     [[ -n "${q11_context:-}" ]] || return 1
     if cmd_text_matches_pattern "$q11_context" '偵察|分析|レビュー|調査|修正方針|結果確認|ログ確認'; then
@@ -510,13 +510,13 @@ is_gate_or_script_modification_cmd() {
     local _gsm_project
     _gsm_project="$(cmd_block_get_field "project")"
     [[ "${_gsm_project:-}" == "dm-signal" || "${_gsm_project:-}" == "google-classroom" || "${_gsm_project:-}" == "clinic-expense-tracker" || "${_gsm_project:-}" == "dividend-tracker" ]] && return 1
-    search_text="$(printf '%s\n' "$block_text" | awk '
+    search_text="$(awk '
         /^[[:space:]]*(title|purpose|target_path):/ { print; next }
         /^[[:space:]]*command:[[:space:]]*\|/ { in_command=1; next }
         /^[[:space:]]*command:[[:space:]]*[^|]/ { print; next }
         in_command && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0; next }
         in_command && /^[[:space:]]{4,}/ { print; next }
-    ')"
+    ' <<< "$block_text")"
 
     # 偵察/棚卸し/研究/バックテストcmdはscriptsディレクトリを走査対象にするだけでgate修正ではない
     cmd_text_matches_pattern "$search_text" '偵察|棚卸し|audit|recon|調査|研究|backtest|道具磨き|道具作り|grid_search|run_077|run_l1plus' && return 1
@@ -549,7 +549,7 @@ extract_q11_semantic_query() {
     local block_text="${1:-}"
     [[ -n "${block_text//[[:space:]]/}" ]] || return 1
 
-    printf '%s\n' "$block_text" | awk '
+    awk '
         function emit(label, value) {
             gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
             if (value != "") print label ": " value
@@ -586,7 +586,7 @@ extract_q11_semantic_query() {
             print value
             next
         }
-    ' | head -c 4000
+    ' <<< "$block_text" | head -c 4000
 }
 
 show_q11_semantic_search_matches() {
@@ -714,7 +714,7 @@ collect_assumption_source_files() {
 
     [[ -n "$block_text" ]] || return 0
 
-    printf '%s\n' "$block_text" | awk '
+    awk '
         /^[[:space:]]*assumptions:[[:space:]]*$/ { in_assumptions=1; next }
         in_assumptions && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_assumptions=0; next }
         in_assumptions && /^[[:space:]]{6,}/ {
@@ -727,7 +727,7 @@ collect_assumption_source_files() {
             }
             next
         }
-    ' | while IFS= read -r _source_line; do
+    ' <<< "$block_text" | while IFS= read -r _source_line; do
         [[ -n "$_source_line" ]] || continue
         printf '%s\n' "$_source_line" \
             | grep -oE '(^|[[:space:]])(\.?/?[A-Za-z0-9_.-]+/)*[A-Za-z0-9_.-]+\.(sh|py)' \
@@ -822,7 +822,7 @@ check_lord_30min_cost_question() {
 
     local q12_value
     q12_value="$(cmd_block_get_field "quality_gate.q12_lord_30min_cost")"
-    if ! printf '%s\n' "$q12_value" | grep -qiE '(^|[^A-Za-z])(yes|no)([^A-Za-z]|$)|はい|いいえ|課す|課さない'; then
+    if ! grep -qiE '(^|[^A-Za-z])(yes|no)([^A-Za-z]|$)|はい|いいえ|課す|課さない' <<< "$q12_value"; then
         echo "WARNING: q12_lord_30min_costが二値でない。yes/no または 課す/課さない を含めよ" >&2
         record_warn_reason "q12_lord_30min_cost非二値" "check=quality_gate_q12_lord_30min_cost_binary"
     fi
@@ -834,7 +834,7 @@ check_deferral_language_warn() {
 
     local hits
     # diagnosis行を除外: diagnosisは前回BLOCKの説明欄。先送り表現が含まれても偽陽性になる(LS-A04-13, cmd_3407)
-    hits="$(printf '%s\n' "$search_text" | grep -vE '^\s*diagnosis:' | grep -nE '低優先|後で|次セッション|非致命的|見送り|段階的に|後回し|severity.?normal' | grep -vE '前後|直後|以後|以前|以降|後続|次段|高優先.*低優先|低優先.*高優先|deadline|後でよい同期|async|非同期' | grep -vE '(向上|改善|強化).*(セッション|起動)|(セッション|起動).*(向上|改善|強化)' || true)"
+    hits="$(grep -vE '^\s*diagnosis:' <<< "$search_text" | grep -nE '低優先|後で|次セッション|非致命的|見送り|段階的に|後回し|severity.?normal' | grep -vE '前後|直後|以後|以前|以降|後続|次段|高優先.*低優先|低優先.*高優先|deadline|後でよい同期|async|非同期' | grep -vE '(向上|改善|強化).*(セッション|起動)|(セッション|起動).*(向上|改善|強化)' || true)"
     [[ -n "$hits" ]] || return 0
 
     echo "WARNING: cmd全文に先送り表現を検出。創造主の洗脳によるさぼり正当化のシグナル" >&2
@@ -863,7 +863,7 @@ check_comparison_pipeline_parity_warn() {
 extract_acceptance_criteria_block() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
-    printf '%s\n' "$CMD_BLOCK_NC" | awk '
+    awk '
         /^[[:space:]]*acceptance_criteria:/ {
             match($0, /^[[:space:]]*/)
             ac_indent = RLENGTH
@@ -879,7 +879,7 @@ extract_acceptance_criteria_block() {
             if ($0 ~ /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:/ && line_indent <= ac_indent) exit
         }
         in_ac { print }
-    '
+    ' <<< "$CMD_BLOCK_NC"
 }
 
 check_lord_instruction_ac_alignment_info() {
@@ -889,8 +889,8 @@ check_lord_instruction_ac_alignment_info() {
 
     [[ -n "${q8_value//[[:space:]]/}" ]] || return 0
     [[ -n "${ac_block//[[:space:]]/}" ]] || return 0
-    printf '%s\n' "$q8_value" | grep -q '「' || return 0
-    printf '%s\n' "$q8_value" | grep -q '」' || return 0
+    grep -q '「' <<< "$q8_value" || return 0
+    grep -q '」' <<< "$q8_value" || return 0
 
     result="$(
         Q8_VALUE="$q8_value" AC_BLOCK="$ac_block" python3 - <<'PY'
@@ -1168,13 +1168,13 @@ PY
 check_measurement_env_info() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
-    if printf '%s\n' "$CMD_BLOCK_NC" | grep -qE '^[[:space:]]*measurement_env[[:space:]]*:'; then
+    if grep -qE '^[[:space:]]*measurement_env[[:space:]]*:' <<< "$CMD_BLOCK_NC"; then
         return 0
     fi
 
     local search_text first_hit
     search_text="$(
-        printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        awk '
             /^[[:space:]]*(quality_gate|assumptions|measurement_env):[[:space:]]*/ {
                 skip=1
                 skip_indent=match($0, /[^ ]/) - 1
@@ -1193,10 +1193,10 @@ check_measurement_env_info() {
                 }
             }
             !skip { print }
-        '
+        ' <<< "$CMD_BLOCK_NC"
     )"
 
-    first_hit="$(printf '%s\n' "$search_text" | grep -iE 'ローカル|local|本番|production|prod|Render|staging|環境差異|環境差|env差|DB差|database差' | head -1 || true)"
+    first_hit="$(grep -i -m1 -E 'ローカル|local|本番|production|prod|Render|staging|環境差異|環境差|env差|DB差|database差' <<< "$search_text" || true)"
     [[ -n "${first_hit:-}" ]] || return 0
 
     echo "INFO: ローカル/本番などの環境差異キーワードを検出しました。measurement_envフィールドの記入を検討してください" >&2
@@ -1233,7 +1233,7 @@ load_cmd_block() {
     # cancel→再起票でEdit操作ミスにより同一ブロック内にフィールドが重複すると
     # yaml.safe_loadが最後の値を採用し、意図した修正が反映されない
     local _dup_fields
-    _dup_fields=$(printf '%s\n' "$CMD_BLOCK" | grep -oE '^\s{4}[a-z_]+:' | sort | uniq -d | tr -d ' ' || true)
+    _dup_fields=$(grep -oE '^\s{4}[a-z_]+:' <<< "$CMD_BLOCK" | sort | uniq -d | tr -d ' ' || true)
     if [[ -n "$_dup_fields" ]]; then
         echo "BLOCK: cmdブロック内にフィールド重複を検出。YAMLパーサが最後の値のみ採用するため意図した修正が反映されない" >&2
         echo "  重複フィールド: $(printf '%s' "$_dup_fields" | tr '\n' ' ')" >&2
@@ -1414,7 +1414,7 @@ check_origin_field() {
         return 0
     fi
 
-    if ! printf '%s\n' "$origin_value" | grep -qE '\[\[[^]]+\]\]'; then
+    if ! grep -qE '\[\[[^]]+\]\]' <<< "$origin_value"; then
         record_block_reason "origin形式不正。Obsidian [[リンク]] を1つ以上含めよ (例: [[cmd_XXXX]] [[LGXXX]] [[殿裁定YYYY-MM-DD]])"
         echo "  現在値: ${origin_value}" >&2
     fi
@@ -1642,13 +1642,13 @@ show_target_path_git_history() {
 cmd_save_is_causal_verification_scope() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 1
     local search_text
-    search_text="$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+    search_text="$(awk '
         /^[[:space:]]*(title|purpose|command|target_path|scope|project):[[:space:]]*/ { print; next }
         /^[[:space:]]*acceptance_criteria:[[:space:]]*/ { in_ac=1; print; next }
         in_ac && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_ac=0 }
         in_ac { print }
-    ')"
-    printf '%s\n' "$search_text" | grep -qiE 'hook|gate|daemon|semantic|search|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report_field_set|gate_report_format|cmd_save|inbox_watcher|ninja_monitor'
+    ' <<< "$CMD_BLOCK_NC")"
+    grep -qiE 'hook|gate|daemon|semantic|search|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report_field_set|gate_report_format|cmd_save|inbox_watcher|ninja_monitor' <<< "$search_text"
 }
 
 show_causal_verification_q5_template() {
@@ -1676,11 +1676,11 @@ $(extract_acceptance_criteria_block)"
     fi
 
     structured_evidence_count=0
-    printf '%s\n' "$combined" | grep -qiE 'scripts/|context/|docs/|projects/|queue/|tests/|[A-Za-z0-9_./-]+\.(sh|py|md|yaml|bats)' && structured_evidence_count=$((structured_evidence_count + 1))
-    printf '%s\n' "$combined" | grep -qiE 'commit|[0-9a-f]{7,40}|cmd_[0-9]+|L[0-9]+|lesson' && structured_evidence_count=$((structured_evidence_count + 1))
-    printf '%s\n' "$combined" | grep -qiE '設計書|設計意図|design doc|docs/research/|教訓|lesson' && structured_evidence_count=$((structured_evidence_count + 1))
+    grep -qiE 'scripts/|context/|docs/|projects/|queue/|tests/|[A-Za-z0-9_./-]+\.(sh|py|md|yaml|bats)' <<< "$combined" && structured_evidence_count=$((structured_evidence_count + 1))
+    grep -qiE 'commit|[0-9a-f]{7,40}|cmd_[0-9]+|L[0-9]+|lesson' <<< "$combined" && structured_evidence_count=$((structured_evidence_count + 1))
+    grep -qiE '設計書|設計意図|design doc|docs/research/|教訓|lesson' <<< "$combined" && structured_evidence_count=$((structured_evidence_count + 1))
 
-    if ! printf '%s\n' "$combined" | grep -qiE 'git log|git blame|blame|履歴|導入理由|設計意図|因果|causal|semantic|教訓|docs/research/causal-verification-l0-l7-design_20260602' && (( structured_evidence_count < 2 )); then
+    if ! grep -qiE 'git log|git blame|blame|履歴|導入理由|設計意図|因果|causal|semantic|教訓|docs/research/causal-verification-l0-l7-design_20260602' <<< "$combined" && (( structured_evidence_count < 2 )); then
         echo "WARNING: 因果確認不足。対象scopeでは origin/q5/q8/AC に git log/blame・教訓・設計意図・semantic/causal確認を明記せよ" >&2
         record_warn_reason "causal_verification_missing" "check=check_causal_verification_requirement"
     fi
@@ -1689,7 +1689,7 @@ $(extract_acceptance_criteria_block)"
 extract_cmd_target_path_text() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
-    printf '%s\n' "$CMD_BLOCK_NC" | awk '
+    awk '
         /^[[:space:]]*target_path:[[:space:]]*/ {
             line = $0
             sub(/^[[:space:]]*target_path:[[:space:]]*/, "", line)
@@ -1706,7 +1706,7 @@ extract_cmd_target_path_text() {
             next
         }
         in_target && /^[[:space:]]{2,}/ { print }
-    '
+    ' <<< "$CMD_BLOCK_NC"
 }
 
 check_three_layer_penetration() {
@@ -1716,13 +1716,13 @@ check_three_layer_penetration() {
     target_text="$(extract_cmd_target_path_text)"
     [[ -n "${target_text//[[:space:]]/}" ]] || return 0
 
-    if ! printf '%s\n' "$target_text" | grep -qiE 'memory_db|memory[_-]recall|obsidian[_-]promote|memory[_-]candidate|semantic-index|memory-db-schema'; then
+    if ! grep -qiE 'memory_db|memory[_-]recall|obsidian[_-]promote|memory[_-]candidate|semantic-index|memory-db-schema' <<< "$target_text"; then
         return 0
     fi
 
     local ac_block command_block q8_value combined missing=()
     ac_block="$(extract_acceptance_criteria_block)"
-    command_block="$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+    command_block="$(awk '
         /^[[:space:]]*command:[[:space:]]*\|/ { found=1; next }
         /^[[:space:]]*command:[[:space:]]*[^|]/ {
             found=1
@@ -1732,21 +1732,21 @@ check_three_layer_penetration() {
         }
         found && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:[[:space:]]*/ { exit }
         found { print }
-    ')"
+    ' <<< "$CMD_BLOCK_NC")"
     q8_value="$(cmd_block_get_field "quality_gate.q8_why_what")"
     combined="${ac_block}
 ${command_block}
 ${q8_value}"
 
-    if printf '%s\n' "$combined" | grep -qiE 'L0-L7.*(除外|対象外|不要|not applicable|n/a)|coverage.*(除外|対象外|不要|not applicable|n/a)|貫通.*(除外|対象外|不要)'; then
+    if grep -qiE 'L0-L7.*(除外|対象外|不要|not applicable|n/a)|coverage.*(除外|対象外|不要|not applicable|n/a)|貫通.*(除外|対象外|不要)' <<< "$combined"; then
         return 0
     fi
 
-    printf '%s\n' "$combined" | grep -qiE 'infrastructure\.md|context/infrastructure|infrastructure' || missing+=("infrastructure.md")
-    printf '%s\n' "$combined" | grep -qiE 'startup[ _-]?gate|gate_(shogun|karo|gunshi)_startup|起動時|起動gate|起動ゲート' || missing+=("startup gate")
-    printf '%s\n' "$combined" | grep -qiE 'deploy_task(\.sh)?|配備|task YAML|タスクYAML' || missing+=("deploy_task")
-    printf '%s\n' "$combined" | grep -qiE 'prompt_state_inject|prompt[ _-]?state|state injection|プロンプト.*注入|状態注入' || missing+=("prompt_state_inject")
-    printf '%s\n' "$combined" | grep -qiE 'ninja_monitor(\.sh)?|idle自動|自動トリガー|定期実行' || missing+=("ninja_monitor")
+    grep -qiE 'infrastructure\.md|context/infrastructure|infrastructure' <<< "$combined" || missing+=("infrastructure.md")
+    grep -qiE 'startup[ _-]?gate|gate_(shogun|karo|gunshi)_startup|起動時|起動gate|起動ゲート' <<< "$combined" || missing+=("startup gate")
+    grep -qiE 'deploy_task(\.sh)?|配備|task YAML|タスクYAML' <<< "$combined" || missing+=("deploy_task")
+    grep -qiE 'prompt_state_inject|prompt[ _-]?state|state injection|プロンプト.*注入|状態注入' <<< "$combined" || missing+=("prompt_state_inject")
+    grep -qiE 'ninja_monitor(\.sh)?|idle自動|自動トリガー|定期実行' <<< "$combined" || missing+=("ninja_monitor")
 
     if (( ${#missing[@]} > 0 )); then
         echo "WARNING: 三層記憶L0-L7 coverage map不足。記憶DB関連target_pathでは5接続先への言及または明示除外理由が必要です" >&2
@@ -1765,8 +1765,8 @@ check_self_reread_red_flag() {
         "$(cmd_block_get_field "purpose")" \
         "$CMD_BLOCK_NC")
 
-    if echo "$combined" | grep -qiE '(自己(再読|申告)|自分で(読み直|読み返)|読み直[しせす]|読み返[しせす]|目視確認.*(品質|判定)|セルフレビュー)'; then
-        if echo "$combined" | grep -qiE '(曖昧|不明瞭|ambiguous|clarity|明瞭)'; then
+    if grep -qiE '(自己(再読|申告)|自分で(読み直|読み返)|読み直[しせす]|読み返[しせす]|目視確認.*(品質|判定)|セルフレビュー)' <<< "$combined"; then
+        if grep -qiE '(曖昧|不明瞭|ambiguous|clarity|明瞭)' <<< "$combined"; then
             echo "WARNING: 自己再読パターンを検出。書き手自身の目視確認/自己申告は mizchi Red flag『自分で読み直せば同じ効果』になりうる。別役割の評価者へ分離せよ" >&2
             record_warn_reason "自己再読パターン" "check=check_self_reread_red_flag"
         fi
@@ -1777,16 +1777,18 @@ check_bundle_red_flag() {
     local targets target_count bundle_signal targets_inline
 
     targets="$(collect_primary_cmd_targets || true)"
-    target_count=$(printf '%s\n' "$targets" | awk 'NF{c++} END{print c+0}')
+    target_count=$(awk 'NF{c++} END{print c+0}' <<< "$targets")
     bundle_signal=0
 
     # diagnosis行を除外: diagnosisは前回BLOCKの説明欄。バンドル表現が含まれても偽陽性になる(LS-A04-13, cmd_3407)
-    if printf '%s\n' "$CMD_BLOCK_NC" | grep -vE '^\s*diagnosis:' | grep -qiE '(^|[^A-Za-z])(bundle|バンドル)([^A-Za-z]|$)|\+|一気に|まとめて|同時に|複数|[0-9]+点|[0-9]+件|[0-9]+パターン|統合'; then
+    local bundle_text
+    bundle_text="$(grep -vE '^\s*diagnosis:' <<< "$CMD_BLOCK_NC" || true)"
+    if grep -qiE '(^|[^A-Za-z])(bundle|バンドル)([^A-Za-z]|$)|\+|一気に|まとめて|同時に|複数|[0-9]+点|[0-9]+件|[0-9]+パターン|統合' <<< "$bundle_text"; then
         bundle_signal=1
     fi
 
     if (( target_count >= 3 )) || { (( target_count >= 2 )) && (( bundle_signal == 1 )); }; then
-        targets_inline=$(printf '%s\n' "$targets" | awk 'NF{printf "%s%s", sep, $0; sep=", "} END{print ""}')
+        targets_inline=$(awk 'NF{printf "%s%s", sep, $0; sep=", "} END{print ""}' <<< "$targets")
         echo "WARNING: バンドルパターンを検出。1cmdで複数対象(${target_count}): ${targets_inline}。無関係な修正を一気に束ねていないか確認せよ" >&2
         record_warn_reason "バンドルパターン" "check=check_bundle_red_flag"
     fi
@@ -2221,7 +2223,8 @@ PY
         fi
     fi
 
-    PRIOR_ATTEMPT_COUNT=$(echo "$prior_output" | head -n1 | tr -d '[:space:]')
+    IFS= read -r PRIOR_ATTEMPT_COUNT <<< "$prior_output"
+    PRIOR_ATTEMPT_COUNT="${PRIOR_ATTEMPT_COUNT//[[:space:]]/}"
     [[ "${PRIOR_ATTEMPT_COUNT:-0}" =~ ^[0-9]+$ ]] || PRIOR_ATTEMPT_COUNT=0
     (( PRIOR_ATTEMPT_COUNT > 0 )) || return 0
 
@@ -2938,20 +2941,20 @@ check_ac_structure_quality() {
     _CHECK19_ISSUES=()
 
     if [[ -n "${AC_TEXT:-}" ]]; then
-        if printf '%s\n' "$AC_TEXT" | grep -q 'FILL_THIS'; then
-            _FILL_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -c 'FILL_THIS' || true)
+        if grep -q 'FILL_THIS' <<< "$AC_TEXT"; then
+            _FILL_COUNT=$(grep -c 'FILL_THIS' <<< "$AC_TEXT" || true)
             _CHECK19_ISSUES+=("FILL_THISマーカー残存: ${_FILL_COUNT}件")
-            printf '%s\n' "$AC_TEXT" | grep -n 'FILL_THIS' | head -3 >&2
+            awk '/FILL_THIS/{print NR ":" $0; if (++hits == 3) exit}' <<< "$AC_TEXT" >&2
         fi
 
-        _DESC_EMPTY_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*description:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        _DESC_EMPTY_COUNT=$(grep -cE "^[[:space:]]*description:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
         if [[ "${_DESC_EMPTY_COUNT:-0}" -gt 0 ]]; then
             _CHECK19_ISSUES+=("description空値: ${_DESC_EMPTY_COUNT}件")
         fi
 
-        _AC_ENTRY_COUNT=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' || true)
-        _BC_TOTAL=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*binary_check:' || true)
-        _BC_EMPTY=$(printf '%s\n' "$AC_TEXT" | grep -E '^[[:space:]]*binary_check:' | grep -cE 'binary_check:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        _AC_ENTRY_COUNT=$(grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' <<< "$AC_TEXT" || true)
+        _BC_TOTAL=$(grep -cE '^[[:space:]]*binary_check:' <<< "$AC_TEXT" || true)
+        _BC_EMPTY=$(grep -cE "^[[:space:]]*binary_check:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
         if [[ "${_AC_ENTRY_COUNT:-0}" -gt 0 && "${_BC_TOTAL:-0}" -eq 0 ]]; then
             _CHECK19_ISSUES+=("binary_checkフィールド不在(AC${_AC_ENTRY_COUNT}件全て)")
         elif [[ "${_BC_EMPTY:-0}" -gt 0 ]]; then
@@ -2971,7 +2974,9 @@ check_ac_structure_quality() {
 }
 
 check_unverified_assumptions_block() {
-    if echo "$CMD_BLOCK_NC" | grep -A5 "assumptions:" | grep -q "trust:.*unverified\|trust: unverified"; then
+    local assumption_block
+    assumption_block="$(grep -A5 "assumptions:" <<< "$CMD_BLOCK_NC" || true)"
+    if grep -q "trust:.*unverified\|trust: unverified" <<< "$assumption_block"; then
         record_block_reason "未検証前提あり。現物確認してtrust:verifiedに変更せよ"
         abort_if_block_immediate || exit 1
     fi
@@ -3106,8 +3111,8 @@ check_q4_depth_warn() {
     fi
 
     _Q4_VAL="$(cmd_block_get_field "quality_gate.q4_depth")"
-    if echo "$_Q4_VAL" | grep -qiE '\b(deep|medium)\b'; then
-        if echo "$_Q4_VAL" | grep -qiE '\bdeep\b'; then
+    if grep -qiE '\b(deep|medium)\b' <<< "$_Q4_VAL"; then
+        if grep -qiE '\bdeep\b' <<< "$_Q4_VAL"; then
             echo "WARNING: q4_depth=deep/medium — 時間コスト概算: 30-60分(全忍者投入)。時間は最も高価な資源。分割・並列化を検討せよ" >&2
         else
             echo "WARNING: q4_depth=deep/medium — 時間コスト概算: 15-30分(2-3忍者)。分割で時間短縮を検討せよ" >&2
@@ -3117,9 +3122,9 @@ check_q4_depth_warn() {
 
 check_research_baseline_warn() {
     _LG022_TYPE="$(cmd_block_get_field "type")"
-    if echo "$_LG022_TYPE" | grep -qiE 'research|analysis|investigation'; then
+    if grep -qiE 'research|analysis|investigation' <<< "$_LG022_TYPE"; then
         _LG022_TEXT="$(cmd_block_raw)"
-        if ! echo "$_LG022_TEXT" | grep -qiE 'baseline|比較対象|before.*after|対照'; then
+        if ! grep -qiE 'baseline|比較対象|before.*after|対照' <<< "$_LG022_TEXT"; then
             echo "WARNING(LG022): type=research系cmdにbaseline/比較対象がありません。改善主張には比較対象が必須" >&2
             record_warn_reason "研究cmdにbaseline無し(LG022)" "check=research_baseline"
         fi
@@ -3160,19 +3165,19 @@ check_q5_code_reading_only_block() {
     _q5_project="$(cmd_block_get_field "project")"
     _q5_depth="$(cmd_block_get_field "quality_gate.q4_depth")"
     q5_val="$(cmd_block_get_field "quality_gate.q5_verified_source")"
-    if [[ -n "$q5_val" ]] && echo "$q5_val" | grep -qiE "code_reading|コード読み|読んだだけ"; then
+    if [[ -n "$q5_val" ]] && grep -qiE "code_reading|コード読み|読んだだけ" <<< "$q5_val"; then
         if [[ "${_q5_scope_mode:-}" == "SCOUT" || "${_q5_scout_exempt:-}" == "true" ]]; then
             echo "INFO: q5=code_reading。scope_mode=SCOUTまたはscout_exempt=trueのため除外。OK" >&2
         elif [[ "${_q5_project:-}" == "infra" && "${_q5_depth:-}" == "shallow" ]]; then
             echo "INFO: q5=code_reading。project=infra かつ q4_depth=shallow のためINFO扱い。OK" >&2
-        elif ! echo "$q5_val" | grep -qiE "isolated_test|structure_verified|production_verified|pipeline_test|実行|execute|本番|production|API応答|DB確認|テスト実行"; then
+        elif ! grep -qiE "isolated_test|structure_verified|production_verified|pipeline_test|実行|execute|本番|production|API応答|DB確認|テスト実行" <<< "$q5_val"; then
             record_block_reason "q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"
             echo '  例: q5_verified_source: "engine.py L107 code_reading + isolated_test(スクリプト実行確認)"' >&2
             abort_if_block_immediate || exit 1
         else
             echo "INFO: q5にcode_readingを含むが追加検証あり。OK" >&2
         fi
-    elif [[ -n "$q5_val" ]] && ! echo "$q5_val" | grep -qiE "実行|execute|pipeline|本番|production|API応答|DB確認|テスト実行|structure_verified|isolated_test|production_verified|pipeline_test"; then
+    elif [[ -n "$q5_val" ]] && ! grep -qiE "実行|execute|pipeline|本番|production|API応答|DB確認|テスト実行|structure_verified|isolated_test|production_verified|pipeline_test" <<< "$q5_val"; then
         echo "WARNING: q5に検証方法が不明確。レベル明記推奨: code_reading(コード読み) / isolated_test(単体実行) / pipeline_test(結合実行) / production_verified(本番確認)" >&2
     fi
 }
@@ -3184,10 +3189,10 @@ check_q8_scope_expression_warn() {
     if [[ "${_Q8_SCOPE_MODE,,}" == "focused" || "${_Q8_SCOPE_MODE,,}" == "exact" ]]; then
         _Q8_SCOPE_EXEMPT=true
     fi
-    if echo "$_Q8_WHAT_PART" | grep -qE '偵察のみ|分析のみ|調査のみ|確認のみ|コード変更なし|非破壊|対象外|not[- ]in[- ]scope|スコープ限定|範囲限定'; then
+    if grep -qE '偵察のみ|分析のみ|調査のみ|確認のみ|コード変更なし|非破壊|対象外|not[- ]in[- ]scope|スコープ限定|範囲限定' <<< "$_Q8_WHAT_PART"; then
         _Q8_SCOPE_EXEMPT=true
     fi
-    if echo "$_Q8_WHAT_PART" | grep -qE '(のみ|だけ|一部|代表).{0,24}(対象|範囲|探索|パラメータ|件数|サンプル)|(対象|範囲|探索|パラメータ|件数|サンプル).{0,24}(のみ|だけ|一部|代表)' && [[ "$_Q8_SCOPE_EXEMPT" != true ]]; then
+    if grep -qE '(のみ|だけ|一部|代表).{0,24}(対象|範囲|探索|パラメータ|件数|サンプル)|(対象|範囲|探索|パラメータ|件数|サンプル).{0,24}(のみ|だけ|一部|代表)' <<< "$_Q8_WHAT_PART" && [[ "$_Q8_SCOPE_EXEMPT" != true ]]; then
         echo "WARN: q8_why_whatのWHATに縮小表現を検出。全量やることを確認せよ" >&2
         echo "  → のみ/だけ/一部/代表 は範囲縮小のシグナル(殿厳命 2026-04-04)" >&2
         record_warn_reason "q8_縮小表現" "check=quality_gate_q8_scope_expression"
@@ -3195,7 +3200,7 @@ check_q8_scope_expression_warn() {
 }
 
 check_q8_compound_question_warn() {
-    if ! echo "$_Q8_WW_VAL" | grep -qE '複利|compound'; then
+    if ! grep -qE '複利|compound' <<< "$_Q8_WW_VAL"; then
         echo "WARN: q8に複利の問いがありません。「この実装選択を10回繰り返したら正の複利か負の複利か」を追記せよ" >&2
         echo '  例: q8_why_what: "WHY: 殿指摘「浅い」 WHAT: lessons_shogun.yaml作成=正の複利(毎セッション具体化)"' >&2
         record_warn_reason "q8_複利の問い" "check=quality_gate_q8_compound_question"
@@ -3203,7 +3208,7 @@ check_q8_compound_question_warn() {
 }
 
 check_q8_when_how_warn() {
-    if ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])WHEN[[:space:]]*[：:]' || ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])HOW[[:space:]]*[：:]'; then
+    if ! grep -qiE '(^|[^A-Za-z])WHEN[[:space:]]*[：:]' <<< "$_Q8_WW_VAL" || ! grep -qiE '(^|[^A-Za-z])HOW[[:space:]]*[：:]' <<< "$_Q8_WW_VAL"; then
         echo "WARN: q8_why_whatにWHEN/HOWが不足しています。WHY/WHAT/WHEN/HOWを最低限そろえよ" >&2
         echo '  例: q8_why_what: "WHY: 殿原則「...」 → WHAT: ... → WHEN: ... → HOW: ...。複利: 正の複利"' >&2
         record_warn_reason "q8_WHEN/HOW不足" "check=quality_gate_q8_when_how"
@@ -3211,7 +3216,7 @@ check_q8_when_how_warn() {
 }
 
 check_q8_where_who_warn() {
-    if ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])WHERE[[:space:]]*[：:]' || ! echo "$_Q8_WW_VAL" | grep -qiE '(^|[^A-Za-z])WHO[[:space:]]*[：:]'; then
+    if ! grep -qiE '(^|[^A-Za-z])WHERE[[:space:]]*[：:]' <<< "$_Q8_WW_VAL" || ! grep -qiE '(^|[^A-Za-z])WHO[[:space:]]*[：:]' <<< "$_Q8_WW_VAL"; then
         echo "WARN: q8_why_whatにWHERE/WHOが不足しています。5W1H(WHY/WHAT/WHEN/WHERE/WHO/HOW)をそろえよ" >&2
         echo '  例: q8_why_what: "WHY: ... WHAT: ... WHEN: ... WHERE: scripts/cmd_save.sh WHO: 将軍 HOW: ..."' >&2
         record_warn_reason "q8_WHERE/WHO不足" "check=quality_gate_q8_where_who"
@@ -3219,15 +3224,15 @@ check_q8_where_who_warn() {
 }
 
 check_q9_firefighting_root_cause_block() {
-    _Q9_SIGNAL_TEXT=$(echo "$CMD_BLOCK_NC" | awk '
+    _Q9_SIGNAL_TEXT=$(awk '
         /^[[:space:]]*title:/ {
             sub(/^[[:space:]]*title:[[:space:]]*/, "")
             print
             next
         }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
     _Q1_VAL="$(cmd_block_get_field "quality_gate.q1_firefighting")"
-    if echo "$_Q9_SIGNAL_TEXT" | grep -qiE "$FIREFIGHTING_PATTERN" && ! echo "$_Q1_VAL" | grep -q "品質向上"; then
+    if grep -qiE "$FIREFIGHTING_PATTERN" <<< "$_Q9_SIGNAL_TEXT" && ! grep -q "品質向上" <<< "$_Q1_VAL"; then
         if ! cmd_block_has_field "quality_gate.q9_firefighting_root_cause"; then
             record_block_reason "消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ"
             echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
@@ -3238,14 +3243,14 @@ check_q9_firefighting_root_cause_block() {
         check_q9_prevention_label_block
         check_q9_root_cause_length_block
         check_q9_prevention_length_block
-        if echo "$_Q9_PREVENTION" | grep -qiE '気をつけ|注意し|徹底|意識し|漏れないよう|覚えておく|次は.*ようにする'; then
+        if grep -qiE '気をつけ|注意し|徹底|意識し|漏れないよう|覚えておく|次は.*ようにする' <<< "$_Q9_PREVENTION"; then
             echo "WARNING: q9のpreventionが意志依存です。『気をつける/徹底する』ではなく、gate追加・自動化・チェック強制など仕組みに置き換えてください" >&2
         fi
     fi
 }
 
 check_q9_root_cause_label_block() {
-    if [[ -n "$_Q9_VAL" ]] && ! echo "$_Q9_VAL" | grep -q "root_cause:"; then
+    if [[ -n "$_Q9_VAL" ]] && ! grep -q "root_cause:" <<< "$_Q9_VAL"; then
         record_block_reason "q9にroot_cause:が含まれていない。真因を具体的に記載せよ"
         echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
         abort_if_block_immediate || exit 1
@@ -3253,7 +3258,7 @@ check_q9_root_cause_label_block() {
 }
 
 check_q9_prevention_label_block() {
-    if [[ -n "$_Q9_VAL" ]] && ! echo "$_Q9_VAL" | grep -q "prevention:"; then
+    if [[ -n "$_Q9_VAL" ]] && ! grep -q "prevention:" <<< "$_Q9_VAL"; then
         record_block_reason "q9にprevention:が含まれていない。二度と起きない仕組みを記載せよ"
         echo '  形式: q9_firefighting_root_cause: "root_cause: 真因1行 | prevention: 二度と起きない仕組み1行"' >&2
         abort_if_block_immediate || exit 1
@@ -3292,9 +3297,9 @@ check_cmd_block_presence_warn() {
 }
 
 check_fill_this_placeholder_block() {
-    if load_cmd_block && printf '%s\n' "$CMD_BLOCK_NC" | grep -q 'FILL_THIS'; then
+    if load_cmd_block && grep -q 'FILL_THIS' <<< "$CMD_BLOCK_NC"; then
         record_block_reason "雛形のFILL_THISが残存。全プレースホルダを実内容で埋めよ"
-        printf '%s\n' "$CMD_BLOCK_NC" | grep -n 'FILL_THIS' | head -5 >&2
+        awk '/FILL_THIS/{print NR ":" $0; if (++hits == 5) exit}' <<< "$CMD_BLOCK_NC" >&2
     fi
 }
 
@@ -3384,8 +3389,8 @@ check_diagnosis_format_block() {
 
     _DIAG_HAS_BLOCK_REASON=0
     _DIAG_HAS_TAISAKU=0
-    if echo "$CMD_DIAGNOSIS" | grep -q "BLOCK理由:"; then _DIAG_HAS_BLOCK_REASON=1; fi
-    if echo "$CMD_DIAGNOSIS" | grep -q "対策:"; then _DIAG_HAS_TAISAKU=1; fi
+    if grep -q "BLOCK理由:" <<< "$CMD_DIAGNOSIS"; then _DIAG_HAS_BLOCK_REASON=1; fi
+    if grep -q "対策:" <<< "$CMD_DIAGNOSIS"; then _DIAG_HAS_TAISAKU=1; fi
     if [[ "$_DIAG_HAS_BLOCK_REASON" -eq 0 || "$_DIAG_HAS_TAISAKU" -eq 0 ]]; then
         record_block_reason "diagnosisの形式不正。「BLOCK理由: ... 対策: ...」の2部構成で記載せよ"
         echo '  例: diagnosis: "BLOCK理由: q8にWHYが未記入 対策: q8に殿の指示引用を追加"' >&2
@@ -3401,14 +3406,14 @@ check_environment_change_after_prior_block() {
     _ENV_FILE=""
     _ENV_PATTERN=""
     _ENV_FILE_RESOLVED=""
-    _ENV_CHANGE="$(echo "$CMD_BLOCK_NC" | awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}')"
+    _ENV_CHANGE="$(awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}' <<< "$CMD_BLOCK_NC")"
     if [[ -z "$_ENV_CHANGE" ]]; then
         record_block_reason "environment_change未記入。BLOCKから何を環境に埋め込んだかを記載せよ(gate/lesson/hook/PI等)"
         echo '  例: environment_change: "gate_X追加(scripts/cmd_save.sh L576)+lesson_Y追加(lessons_karo.yaml)"' >&2
         abort_if_block_immediate || exit 1
     fi
     _ENV_VAGUE_PATTERN="^(修正した|対策済み|対応済み|対策した|直した|変更した|更新した|改善した|実施した|対処した|完了|なし|none|N/A|初回起票|初回|該当なし|なし.*初回|対策:.*初回)$"
-    if echo "$_ENV_CHANGE" | grep -qE "$_ENV_VAGUE_PATTERN"; then
+    if grep -qE "$_ENV_VAGUE_PATTERN" <<< "$_ENV_CHANGE"; then
         record_block_reason "environment_changeが低品質。環境変化の具体的diffを記載せよ(gate追加/lesson登録/hook変更等)"
         echo '  禁止値: 修正した/対策済み/対策した/直した/変更した/更新した/改善した/実施した/対処した/完了/なし' >&2
         abort_if_block_immediate || exit 1
@@ -3513,7 +3518,7 @@ check_q11_existing_alternative_block() {
     _Q11_VAL="$(cmd_block_get_field "quality_gate.q11_not_already_done")"
     _Q11_SUPPLEMENTAL_CONTEXT="$(
         printf '%s\n' "$(cmd_block_get_field "quality_gate.q5_verified_source")"
-        printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        awk '
             /^[[:space:]]*assumptions:[[:space:]]*$/ { in_assumptions=1; next }
             in_assumptions && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_assumptions=0; next }
             in_assumptions && /^[[:space:]]{6,}/ { print; next }
@@ -3521,7 +3526,7 @@ check_q11_existing_alternative_block() {
             /^[[:space:]]*command:[[:space:]]*[^|]/ { sub(/^[[:space:]]*command:[[:space:]]*/, ""); print; next }
             in_command && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_command=0; next }
             in_command && /^[[:space:]]{4,}/ { print; next }
-        '
+        ' <<< "$CMD_BLOCK_NC"
     )"
     if is_gate_or_hook_addition_cmd "$CMD_BLOCK_NC" && ! q11_has_existing_alternative_verification "${_Q11_VAL}
 ${_Q11_SUPPLEMENTAL_CONTEXT}"; then
@@ -3804,12 +3809,12 @@ QG_TEMPLATE
     _Q11_PROJECT_DIR="${PROJECT_DIR:-${PROJECT_ROOT:-.}}"
     _Q11_RESEARCH_DIR="${CMD_SAVE_Q11_RESEARCH_DIR:-${_Q11_PROJECT_DIR}/docs/research}"
     if [[ -d "$_Q11_RESEARCH_DIR" ]]; then
-        _Q11_COMMAND_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        _Q11_COMMAND_SECTION=$(awk '
             /^\s*command:\s*\|/ { found=1; next }
             /^\s*command:\s*[^|]/ { found=1; sub(/^\s*command:\s*/, ""); print; next }
             found && /^\s{4,}/ { print; next }
             found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
-        ')
+        ' <<< "${CMD_BLOCK_NC:-$CMD_BLOCK}")
         if [[ -n "${_Q11_COMMAND_SECTION:-}" ]]; then
             if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
                 show_q11_semantic_search_matches "$CMD_BLOCK_NC" &
@@ -3931,8 +3936,8 @@ QG_TEMPLATE
     # 目的: type=impl + 条件分岐キーワード検出時に、本番での分岐実行頻度確認ACの追加を提案
     _Q8_TASK_TYPE="$(cmd_block_get_field "task_type")"
     if [[ "${_Q8_TASK_TYPE:-}" == "impl" ]]; then
-        _Q8_FIELDS=$(echo "$CMD_BLOCK_NC" | grep -E '^\s*(purpose|title):' || true)
-        if echo "$_Q8_FIELDS" | grep -qiE '\bif\b|\bcase\b|条件|分岐|フラグ|\bflag\b|\belif\b|\bswitch\b'; then
+        _Q8_FIELDS=$(grep -E '^\s*(purpose|title):' <<< "$CMD_BLOCK_NC" || true)
+        if grep -qiE '\bif\b|\bcase\b|条件|分岐|フラグ|\bflag\b|\belif\b|\bswitch\b' <<< "$_Q8_FIELDS"; then
             echo "WARNING: q8_branch_coverage — 条件分岐変更を含むimpl cmdです。本番データでの分岐実行頻度確認ACの追加を検討してください" >&2
             echo "  推奨アクション: 本番DBで該当条件がtrue/falseになるレコード数を確認せよ" >&2
             echo "  (cmd_1443教訓: 本番未使用コードパスへの修正は無駄コスト+リスク)" >&2
@@ -3942,7 +3947,7 @@ QG_TEMPLATE
     # --- Check 3.7: チェックリスト制約転写確認（WARNING） ---
     # cmd_1397事故: チェックリストStep7(再計算禁止)がcmdに転写されず忍者が再計算実行
     # cmdにチェックリスト参照がある場合、隣接Step制約の転写を促す
-    if echo "$CMD_BLOCK_NC" | grep -qiE 'チェックリスト|checklist-'; then
+    if grep -qiE 'チェックリスト|checklist-' <<< "$CMD_BLOCK_NC"; then
         echo "WARNING: チェックリスト参照cmdです。隣接Stepの🛑制約(禁止事項)をACまたは制約欄に転写しましたか？" >&2
         echo "  (cmd_1397教訓: Step7再計算禁止がcmd未記載→忍者が再計算実行)" >&2
     fi
@@ -4011,7 +4016,7 @@ show_uncommitted_changes_warning "$UNCOMMITTED"
 # 直近20件のdelegated/in_progress cmdと照合。一致時WARN（非BLOCK）
 if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
     NEW_CMD_LINE=$(awk "/^  ${CMD_ID}:/{found=1; next} found && /^  cmd_/{exit} found && /command:/{print; exit}" "$QUEUE_FILE")
-    NEW_GP=$(echo "$NEW_CMD_LINE" | grep -oE 'GP-[0-9]+' | sort -u || true)
+    NEW_GP=$(grep -oE 'GP-[0-9]+' <<< "$NEW_CMD_LINE" | sort -u || true)
 
     if [[ -n "$NEW_GP" ]]; then
         RECENT_CMDS=$(grep -oE "^  cmd_[^:]+:" "$QUEUE_FILE" | sed 's/: *$//; s/^ *//' | tail -20 | grep -v "^${CMD_ID}$" || true)
@@ -4020,13 +4025,13 @@ if [[ -f "$QUEUE_FILE" ]] && grep -q "  ${CMD_ID}:" "$QUEUE_FILE"; then
             while IFS= read -r OTHER_CMD; do
                 [[ -z "$OTHER_CMD" ]] && continue
                 OTHER_BLOCK=$(awk "/^  ${OTHER_CMD}:/{found=1; next} found && /^  cmd_/{exit} found{print}" "$QUEUE_FILE")
-                OTHER_STATUS=$(echo "$OTHER_BLOCK" | awk '/status:/{gsub(/.*status: */, ""); gsub(/"/, ""); print; exit}')
+                OTHER_STATUS=$(awk '/status:/{gsub(/.*status: */, ""); gsub(/"/, ""); print; exit}' <<< "$OTHER_BLOCK")
 
                 if [[ "$OTHER_STATUS" == "delegated" || "$OTHER_STATUS" == "in_progress" ]]; then
-                    OTHER_CMD_LINE=$(echo "$OTHER_BLOCK" | grep -m1 "command:" || true)
+                    OTHER_CMD_LINE=$(grep -m1 "command:" <<< "$OTHER_BLOCK" || true)
                     while IFS= read -r gp; do
                         [[ -z "$gp" ]] && continue
-                        if echo "$OTHER_CMD_LINE" | grep -qF "$gp"; then
+                        if grep -qF "$gp" <<< "$OTHER_CMD_LINE"; then
                             echo "WARN: ${CMD_ID} のGP番号 ${gp} が ${OTHER_CMD}(status:${OTHER_STATUS}) と重複" >&2
                         fi
                     done <<< "$NEW_GP"
@@ -4084,7 +4089,7 @@ check_pi_number_collision() {
 
     # cmdブロックからPI-0XX番号を抽出
     local PI_NUMS
-    PI_NUMS=$(echo "$CMD_BLOCK_NC" | grep -oE 'PI-[0-9]{3}' | sort -u || true)
+    PI_NUMS=$(grep -oE 'PI-[0-9]{3}' <<< "$CMD_BLOCK_NC" | sort -u || true)
     [[ -z "$PI_NUMS" ]] && return 0
 
     # 全projects/*.yamlから既存PI番号を収集
@@ -4096,7 +4101,7 @@ check_pi_number_collision() {
     local HIT=false
     while IFS= read -r pi; do
         [[ -z "$pi" ]] && continue
-        if echo "$EXISTING_PIS" | grep -qx "$pi"; then
+        if grep -qx "$pi" <<< "$EXISTING_PIS"; then
             if [[ "$HIT" == false ]]; then
                 echo "WARNING: PI番号衝突検出（cmd_1453教訓）" >&2
                 HIT=true
@@ -4108,7 +4113,7 @@ check_pi_number_collision() {
     if [[ "$HIT" == true ]]; then
         # 次の空き番号を表示
         local MAX_PI
-        MAX_PI=$(echo "$EXISTING_PIS" | grep -oE '[0-9]+' | sort -n | tail -1)
+        MAX_PI=$(grep -oE '[0-9]+' <<< "$EXISTING_PIS" | sort -n | tail -1)
         local NEXT_PI
         NEXT_PI=$(printf "PI-%03d" $((10#$MAX_PI + 1)))
         echo "  → 次の空き番号: $NEXT_PI" >&2
@@ -4173,7 +4178,7 @@ show_pending_insights() {
             printf "%d\n%s", pending + 0, lines
         }
     ' "$INSIGHTS_FILE" 2>/dev/null)
-    PENDING_COUNT=$(printf '%s\n' "$insight_summary" | head -n1)
+    IFS= read -r PENDING_COUNT <<< "$insight_summary"
     PENDING_COUNT=$(( ${PENDING_COUNT:-0} + 0 ))
     [[ "$PENDING_COUNT" -eq 0 ]] && return 0
 
@@ -4196,7 +4201,7 @@ check_ac_file_paths() {
     # AC内からファイルパス(拡張子付き)を抽出（ACセクションのみ。command/quality_gate内の説明文は対象外）
     # awkでacceptance_criteria:ブロックを抽出。終了条件: ACブロック後の同レベルキー(quality_gate/command等)
     local AC_BLOCK PATHS
-    AC_BLOCK=$(echo "$CMD_BLOCK_NC" | awk '
+    AC_BLOCK=$(awk '
         /^[[:space:]]*acceptance_criteria:/ { in_ac=1; print; next }
         in_ac && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*id:/ { exit }
         in_ac { print }
@@ -4206,7 +4211,7 @@ check_ac_file_paths() {
     # 次のパスの先頭に誤結合し「/scripts/foo.sh」のような偽の絶対パスを生成していた
     # (path_exists_for_cmd_sourceがOS root直下を探索し実在ファイルを「不在」と誤判定)。
     # 先頭"/"は空白/行頭直後にのみ許可し、区切り文字直後の吸収を止める
-    PATHS=$(echo "$AC_BLOCK" | grep -oP '(?<![^\s])/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)|[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' | sort -u || true)
+    PATHS=$(grep -oP '(?<![^\s])/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)|[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' <<< "$AC_BLOCK" | sort -u || true)
     [[ -z "$PATHS" ]] && return 0
 
     # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
@@ -4215,14 +4220,14 @@ check_ac_file_paths() {
     if declare -F cmd_block_get_field >/dev/null 2>&1; then
         PROJECT_ID="$(cmd_block_get_field "project")"
     else
-        PROJECT_ID=$(printf '%s\n' "${CMD_BLOCK_NC:-$CMD_BLOCK}" | awk '
+        PROJECT_ID=$(awk '
             /^[[:space:]]*project:[[:space:]]*/ {
                 sub(/^[[:space:]]*project:[[:space:]]*/, "")
                 gsub(/^["'\''"]|["'\''"]$/, "")
                 print
                 exit
             }
-        ')
+        ' <<< "${CMD_BLOCK_NC:-$CMD_BLOCK}")
     fi
     [[ -z "$PROJECT_ID" ]] && PROJECT_ID=$(awk '/^current_project:/{print $2}' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null)
 
@@ -4275,7 +4280,7 @@ check_cmd_text_pipe_danger() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
     local CMD_TEXT
-    CMD_TEXT=$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+    CMD_TEXT=$(awk '
         /^[[:space:]]*purpose:[[:space:]]*/ {
             line = $0
             sub(/^[[:space:]]*purpose:[[:space:]]*/, "", line)
@@ -4297,7 +4302,7 @@ check_cmd_text_pipe_danger() {
             next
         }
         in_command { print }
-    ' || true)
+    ' <<< "$CMD_BLOCK_NC" || true)
 
     [[ -n "${CMD_TEXT:-}" ]] || return 0
     if [[ "$CMD_TEXT" == *"|"* ]]; then
@@ -4326,14 +4331,14 @@ check_impl_push_ac() {
 
     # acceptance_criteria セクションを抽出
     local AC_SECTION
-    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+    AC_SECTION=$(awk '
         /^[[:space:]]*acceptance_criteria:/ { found=1; next }
         # binary_check: はAC配下の常設キー。exit条件に含めるとAC1のdescription
         # 1行しか検査されず、AC2以降の記述が検出されないFPを生む
         # (2026-07-10 cmd_3836/3837で4回BLOCK往復実証。4関数同型を一括修正)
         found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*binary_check:/ && !/^[[:space:]]*id:/ { exit }
         found { print }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
 
     # acceptance_criteriaがない場合はCMD_BLOCK_NC全体にフォールバック
     if [[ -z "$AC_SECTION" ]]; then
@@ -4341,7 +4346,7 @@ check_impl_push_ac() {
     fi
 
     # AC内にpush/deploy/verify/本番確認関連キーワードがあるか
-    if ! echo "$AC_SECTION" | grep -qiE 'push|deploy|デプロイ|verify|本番確認|本番反映|本番動作|Render'; then
+    if ! grep -qiE 'push|deploy|デプロイ|verify|本番確認|本番反映|本番動作|Render' <<< "$AC_SECTION"; then
         echo "WARNING: project=dm-signal + type=impl のACにデプロイ後の本番動作確認が含まれていません" >&2
         echo "  デプロイ後の本番動作確認ACを追加せよ。例:" >&2
         echo '  - "ACN: git push後、Render自動デプロイ完了を確認。本番エンドポイントで変更反映を目視確認"' >&2
@@ -4364,14 +4369,14 @@ check_dm_signal_bare_layer_reference() {
     if declare -F cmd_block_get_field >/dev/null 2>&1; then
         PROJECT_ID="$(cmd_block_get_field "project")"
     else
-        PROJECT_ID=$(printf '%s\n' "${CMD_BLOCK_NC:-$CMD_BLOCK}" | awk '
+        PROJECT_ID=$(awk '
             /^[[:space:]]*project:[[:space:]]*/ {
                 sub(/^[[:space:]]*project:[[:space:]]*/, "")
                 gsub(/^["'\''"]|["'\''"]$/, "")
                 print
                 exit
             }
-        ')
+        ' <<< "${CMD_BLOCK_NC:-$CMD_BLOCK}")
     fi
     [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
 
@@ -4399,7 +4404,7 @@ check_dm_signal_bare_layer_reference() {
     [[ -z "$raw_hits" ]] && return 0
 
     echo "WARNING: dm-signal cmdに文脈なし生L0-L4表記を検出。pf_L0/pf_L1/pf_L2 または calc_L1/calc_L2/calc_L3 などcanonical名で曖昧性を潰せ" >&2
-    echo "  該当行: $(printf '%s' "$raw_hits" | head -3 | tr '\n' ' ')" >&2
+    echo "  該当行: $(sed -n '1,3p' <<< "$raw_hits" | tr '\n' ' ')" >&2
     echo "  除外: バッククォート/ファイルパス/canonical名接頭辞/数学キーワード同一行" >&2
     record_warn_reason "dm-signal文脈なし生L0-L4表記" "check=check_dm_signal_bare_layer_reference"
 }
@@ -4413,22 +4418,22 @@ check_ac_must_should_mix() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
     local AC_SECTION
-    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+    AC_SECTION=$(awk '
         /^[[:space:]]*acceptance_criteria:/ { found=1; next }
         # binary_check: はAC配下の常設キー。exit条件に含めるとAC1のdescription
         # 1行しか検査されず、AC2以降の記述が検出されないFPを生む
         # (2026-07-10 cmd_3836/3837で4回BLOCK往復実証。4関数同型を一括修正)
         found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*binary_check:/ && !/^[[:space:]]*id:/ { exit }
         found { print }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
     [[ -z "$AC_SECTION" ]] && return 0
 
     local RECOMMEND_LINES
-    RECOMMEND_LINES=$(echo "$AC_SECTION" | grep -inE '推奨|optional|nice.to.have|できれば|望ましい' || true)
+    RECOMMEND_LINES=$(grep -inE '推奨|optional|nice.to.have|できれば|望ましい' <<< "$AC_SECTION" || true)
     if [[ -n "$RECOMMEND_LINES" ]]; then
         record_block_reason "ACに推奨事項が混在しています。推奨はnotesに分離し、ACは必須(MUST)のみにせよ"
         echo "  AC定義: 忍者が二値(yes/no)で判定する必須完了基準。推奨/optional/nice-to-haveはnotes欄に" >&2
-        echo "  該当行: $(echo "$RECOMMEND_LINES" | head -3 | tr '\n' ' ')" >&2
+        echo "  該当行: $(sed -n '1,3p' <<< "$RECOMMEND_LINES" | tr '\n' ' ')" >&2
         echo "  根拠: verdict_override WA 2件(cmd_karo_fix_flock_silent)。推奨にno→FAIL→家老override。WARN→BLOCK昇格(GP-175)" >&2
         abort_if_block_immediate || return 1
     fi
@@ -4447,51 +4452,51 @@ check_research_tool_growth_ac() {
         PROJECT_ID="$(cmd_block_get_field "project")"
         TASK_TYPE="$(cmd_block_get_field "task_type")"
     else
-        PROJECT_ID=$(printf '%s\n' "${CMD_BLOCK_NC:-$CMD_BLOCK}" | awk '
+        PROJECT_ID=$(awk '
             /^[[:space:]]*project:[[:space:]]*/ {
                 sub(/^[[:space:]]*project:[[:space:]]*/, "")
                 gsub(/^["'\''"]|["'\''"]$/, "")
                 print
                 exit
             }
-        ')
-        TASK_TYPE=$(printf '%s\n' "${CMD_BLOCK_NC:-$CMD_BLOCK}" | awk '
+        ' <<< "${CMD_BLOCK_NC:-$CMD_BLOCK}")
+        TASK_TYPE=$(awk '
             /^[[:space:]]*task_type:[[:space:]]*/ {
                 sub(/^[[:space:]]*task_type:[[:space:]]*/, "")
                 gsub(/^["'\''"]|["'\''"]$/, "")
                 print
                 exit
             }
-        ')
+        ' <<< "${CMD_BLOCK_NC:-$CMD_BLOCK}")
     fi
 
     [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
     [[ "$TASK_TYPE" != "impl" ]] && return 0
 
     local COMMAND_SECTION
-    COMMAND_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+    COMMAND_SECTION=$(awk '
         /command:/ { found=1; print; next }
         found && /^    [a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
         found { print }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
     [[ -z "$COMMAND_SECTION" ]] && return 0
 
-    if ! echo "$COMMAND_SECTION" | grep -qiE 'research_engine|simulate|analysis|研究'; then
+    if ! grep -qiE 'research_engine|simulate|analysis|研究' <<< "$COMMAND_SECTION"; then
         return 0
     fi
 
     local AC_SECTION
-    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+    AC_SECTION=$(awk '
         /^[[:space:]]*acceptance_criteria:/ { found=1; next }
         # binary_check: はAC配下の常設キー。exit条件に含めるとAC1のdescription
         # 1行しか検査されず、AC2以降の記述が検出されないFPを生む
         # (2026-07-10 cmd_3836/3837で4回BLOCK往復実証。4関数同型を一括修正)
         found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*binary_check:/ && !/^[[:space:]]*id:/ { exit }
         found { print }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
     [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
 
-    if echo "$AC_SECTION" | grep -qiE 'research_engine(\.py)?|engine[^[:cntrl:]]*(統合|追加|移設)|(統合|追加|移設)[^[:cntrl:]]*(research_engine|engine)'; then
+    if grep -qiE 'research_engine(\.py)?|engine[^[:cntrl:]]*(統合|追加|移設)|(統合|追加|移設)[^[:cntrl:]]*(research_engine|engine)' <<< "$AC_SECTION"; then
         return 0
     fi
 
@@ -4821,13 +4826,13 @@ show_three_layer_memory_ruling_info() {
 
     # title+purposeのみ抽出してクエリを組み立てる
     local query
-    query="$(printf '%s\n' "$block_text" | awk '
+    query="$(awk '
         /^[[:space:]]*(title|purpose):[[:space:]]*/ {
             sub(/^[[:space:]]*(title|purpose):[[:space:]]*/, "")
             gsub(/^[[:space:]]+|[[:space:]]+$/, "")
             if (NF > 0) print
         }
-    ' | head -10 | tr '\n' ' ' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' || true)"
+    ' <<< "$block_text" | head -10 | tr '\n' ' ' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' || true)"
     [[ -n "${query//[[:space:]]/}" ]] || return 0
 
     # セッション内キャッシュ確認（PPIDベース tmpファイル）
@@ -4901,12 +4906,12 @@ check_projects_yaml_forbidden_topics() {
 
     # cmd テキスト: title + purpose + command の先頭50行
     local cmd_text
-    cmd_text="$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+    cmd_text="$(awk '
         /^[[:space:]]*(title|purpose):[[:space:]]*/ { print; next }
         /^[[:space:]]*command:[[:space:]]/ { found=1; print; next }
         found && /^[[:space:]]{4,}/ { print; next }
         found && /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*:[[:space:]]/ { found=0 }
-    ' | head -50 || true)"
+    ' <<< "$CMD_BLOCK_NC" | head -50 || true)"
     [[ -n "${cmd_text//[[:space:]]/}" ]] || return 0
 
     # 検索対象yaml: infra.yaml + project固有yaml
@@ -5331,32 +5336,32 @@ check_ac_param_sufficiency() {
     local AC_SECTION
     AC_SECTION="$(extract_acceptance_criteria_block)"
     if [[ -z "${AC_SECTION//[[:space:]]/}" ]]; then
-        printf '%s\n' "$CMD_BLOCK_NC" | grep -qE '^[[:space:]]*acceptance_criteria[[:space:]]*:' && return 0
+        grep -qE '^[[:space:]]*acceptance_criteria[[:space:]]*:' <<< "$CMD_BLOCK_NC" && return 0
         AC_SECTION="$CMD_BLOCK_NC"
     fi
 
     # 数量指定パターン検出: 「N条件」「N項目」「N手法」「N種類」「N種」「Nパラメータ」等
     local QUANT_LINES
-    QUANT_LINES=$(echo "$AC_SECTION" | grep -E '[0-9]+(条件|項目|手法|種類|パラメータ|要件|ステップ|設定|フィールド|種)' || true)
+    QUANT_LINES=$(grep -E '[0-9]+(条件|項目|手法|種類|パラメータ|要件|ステップ|設定|フィールド|種)' <<< "$AC_SECTION" || true)
     [[ -z "$QUANT_LINES" ]] && return 0
 
     local HIT=false
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
-        if echo "$line" | grep -qE '^[[:space:]]*binary_check:'; then
+        if grep -qE '^[[:space:]]*binary_check:' <<< "$line"; then
             continue
         fi
-        if echo "$line" | grep -qE '偵察の既定観点|既定観点|デフォルト品質[0-9]+要件|偵察[0-9]+要件'; then
+        if grep -qE '偵察の既定観点|既定観点|デフォルト品質[0-9]+要件|偵察[0-9]+要件' <<< "$line"; then
             continue
         fi
-        if echo "$line" | grep -qE 'C\([0-9]+,[0-9]+\)|[0-9]+件中[0-9]+件|[0-9]+/[0-9]+|duration|p[0-9]+|median|最大[0-9]+|実測[0-9]+'; then
+        if grep -qE 'C\([0-9]+,[0-9]+\)|[0-9]+件中[0-9]+件|[0-9]+/[0-9]+|duration|p[0-9]+|median|最大[0-9]+|実測[0-9]+' <<< "$line"; then
             continue
         fi
-        if echo "$line" | grep -qE '(参照|引用|節番号|章番号|項番).{0,40}(第[0-9]+|[0-9]+章|[0-9]+節|Q[0-9]+|AC[0-9]+|cmd_[0-9]+)|(第[0-9]+|[0-9]+章|[0-9]+節|Q[0-9]+|AC[0-9]+|cmd_[0-9]+).{0,40}(参照|引用|節番号|章番号|項番)'; then
+        if grep -qE '(参照|引用|節番号|章番号|項番).{0,40}(第[0-9]+|[0-9]+章|[0-9]+節|Q[0-9]+|AC[0-9]+|cmd_[0-9]+)|(第[0-9]+|[0-9]+章|[0-9]+節|Q[0-9]+|AC[0-9]+|cmd_[0-9]+).{0,40}(参照|引用|節番号|章番号|項番)' <<< "$line"; then
             continue
         fi
         # 具体値列挙チェック: 括弧内にスラッシュ区切り or カンマ区切り or 中点区切りの項目
-        if ! echo "$line" | grep -qE '\([^)]*[/,・][^)]*\)'; then
+        if ! grep -qE '\([^)]*[/,・][^)]*\)' <<< "$line"; then
             if [[ "$HIT" == false ]]; then
                 echo "WARN: ACに数量指定があるが具体値が列挙されていません（cmd_1681教訓）" >&2
                 HIT=true
@@ -5382,13 +5387,13 @@ check_param_space_against_results() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
     local CMD_SECTION
-    CMD_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+    CMD_SECTION=$(awk '
         /^[[:space:]]*command:[[:space:]]*\|/ { found=1; next }
         found && /^      / { sub(/^      /, ""); print; next }
         found { exit }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
     if [[ -z "$CMD_SECTION" ]]; then
-        CMD_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+        CMD_SECTION=$(awk '
             /^[[:space:]]*command:[[:space:]]*/ {
                 sub(/^[[:space:]]*command:[[:space:]]*/, "")
                 gsub(/^"/, "")
@@ -5396,19 +5401,19 @@ check_param_space_against_results() {
                 print
                 exit
             }
-        ')
+        ' <<< "$CMD_BLOCK_NC")
     fi
     [[ -z "$CMD_SECTION" ]] && return 0
 
     local PROJECT_ID PROJECT_ROOT_FOR_CMD PROJECT_FILE
-    PROJECT_ID=$(echo "$CMD_BLOCK_NC" | awk '
+    PROJECT_ID=$(awk '
         /^[[:space:]]*project:/ {
             sub(/^[[:space:]]*project:[[:space:]]*/, "")
             gsub(/["'\''[:space:]]/, "")
             print
             exit
         }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
     if [[ -z "$PROJECT_ID" || "$PROJECT_ID" == "infra" ]]; then
         # infra projectはGS結果YAMLなし → python3不要 (cmd_2077最適化)
         return 0
@@ -5600,16 +5605,16 @@ check_param_space_shrink() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
     local CMD_SECTION
-    CMD_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+    CMD_SECTION=$(awk '
         /^[[:space:]]*command:/ { found=1; next }
         found && /^[[:space:]]{4,}/ { print; next }
         found && /^[[:space:]]*[a-z]/ { exit }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
     [[ -z "$CMD_SECTION" ]] && return 0
 
     local SHRINK_PATTERNS="代表[0-9]+組|代表[0-9]+点|主要な[0-9]+パターン|計算量を考慮し|重いため[0-9]|に絞って検証|に絞って実行|非現実的なので|コスト的に[0-9]"
     local HITS
-    HITS=$(echo "$CMD_SECTION" | grep -Ec "$SHRINK_PATTERNS" || true)
+    HITS=$(grep -Ec "$SHRINK_PATTERNS" <<< "$CMD_SECTION" || true)
 
     if [[ "$HITS" -gt 0 ]]; then
         echo "WARN: パラメータ空間を縮小していないか？(${HITS}箇所で縮小表現を検出)" >&2
@@ -5638,13 +5643,13 @@ check_gunshi_design_num_relax() {
     # 理由: q5は検証ソースの一次情報→設計書参照の信頼性が最も高い判定基準
     local Q5_VAL
     Q5_VAL="$(cmd_block_get_field "quality_gate.q5_verified_source")"
-    if ! echo "$Q5_VAL" | grep -qiE 'gunshi[-_]|設計書|context/gunshi'; then
+    if ! grep -qiE 'gunshi[-_]|設計書|context/gunshi' <<< "$Q5_VAL"; then
         return 0
     fi
 
     # カタログ参照除外: q5にカタログ|catalog|takeaway-catalogが含まれる場合スキップ（LS-A22 cmd_2279）
     # 理由: カタログ由来の閾値は設計書数値でなく分類基準→緩和と誤検出される
-    if echo "$Q5_VAL" | grep -qiE 'カタログ|catalog|takeaway-catalog'; then
+    if grep -qiE 'カタログ|catalog|takeaway-catalog' <<< "$Q5_VAL"; then
         return 0
     fi
 
@@ -5652,11 +5657,11 @@ check_gunshi_design_num_relax() {
     # 原理: description非空+binary_check非空+FILL_THIS不在ならAC記入済み=数値精査不要
     if [[ -n "${AC_TEXT:-}" ]]; then
         local _c17_fill _c17_desc_empty _c17_ac_cnt _c17_bc_total _c17_bc_empty
-        _c17_fill=$(printf '%s\n' "$AC_TEXT" | grep -c 'FILL_THIS' || true)
-        _c17_desc_empty=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*description:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
-        _c17_ac_cnt=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' || true)
-        _c17_bc_total=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*binary_check:' || true)
-        _c17_bc_empty=$(printf '%s\n' "$AC_TEXT" | grep -E '^[[:space:]]*binary_check:' | grep -cE 'binary_check:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        _c17_fill=$(grep -c 'FILL_THIS' <<< "$AC_TEXT" || true)
+        _c17_desc_empty=$(grep -cE "^[[:space:]]*description:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
+        _c17_ac_cnt=$(grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' <<< "$AC_TEXT" || true)
+        _c17_bc_total=$(grep -cE '^[[:space:]]*binary_check:' <<< "$AC_TEXT" || true)
+        _c17_bc_empty=$(grep -cE "^[[:space:]]*binary_check:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
         if [[ "${_c17_fill:-0}" -eq 0 && "${_c17_desc_empty:-0}" -eq 0 && \
               ( "${_c17_ac_cnt:-0}" -eq 0 || "${_c17_bc_total:-0}" -gt 0 ) && \
               "${_c17_bc_empty:-0}" -eq 0 ]]; then
@@ -5683,18 +5688,18 @@ check_gunshi_design_num_relax() {
     WHAT_PART="$(echo "$WHAT_PART" | sed -E 's#(19|20)[0-9]{2}[-/][0-9]{1,2}([-/][0-9]{1,2})?(T[0-9:]+)?##g')"
     # FP修正(2026-07-11 cmd_3850): float8send/sha256等の英字始まり識別子内の数字は設計数値ではない
     WHAT_PART="$(echo "$WHAT_PART" | sed -E 's#[A-Za-z][A-Za-z]*[0-9][A-Za-z0-9]*##g')"
-    Q8_NUMS=$(echo "$WHAT_PART" | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
+    Q8_NUMS=$(grep -oE '[0-9]+(\.[0-9]+)?' <<< "$WHAT_PART" | sort -n || true)
     [[ -z "$Q8_NUMS" ]] && return 0
     Q8_MAX=$(echo "$Q8_NUMS" | tail -1)
 
     # acceptance_criteriaから数値を抽出
     local AC_SECTION AC_NUMS AC_MAX
-    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+    AC_SECTION=$(awk '
         /acceptance_criteria:/ { found=1; next }
         found && /^    - / { print; next }
         found && /^      / { print; next }
         found { exit }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
     [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
     AC_NUMS=$(echo "$AC_SECTION" | sed -E 's#(19|20)[0-9]{2}[-/][0-9]{1,2}([-/][0-9]{1,2})?(T[0-9:]+)?##g' | sed 's|AC[0-9]\{1,\}||g; s|[A-Za-z_]*_[0-9]\{1,\}[A-Za-z0-9_.-]*||g; s|[A-Za-z_/]\{1,\}/[^ ]*||g; s|[αβγδ][0-9]\{1,\}||g; s|§[0-9.]\{1,\}||g' | sed -E 's#[A-Za-z][A-Za-z]*[0-9][A-Za-z0-9]*##g' | grep -oE '[0-9]+(\.[0-9]+)?' | sort -n || true)
 
@@ -5727,7 +5732,7 @@ check_action_immediate_verification() {
     ac_block="$(extract_acceptance_criteria_block || true)"
     [[ -n "${ac_block//[[:space:]]/}" ]] || return 0
 
-    verify_ac_count=$(printf '%s\n' "$ac_block" | grep -ciE "確認|verify|パリティ|parity|検証|validate|assert|比較|突合|PASS" 2>/dev/null || true)
+    verify_ac_count=$(grep -ciE "確認|verify|パリティ|parity|検証|validate|assert|比較|突合|PASS" <<< "$ac_block" 2>/dev/null || true)
     verify_ac_count=$(( ${verify_ac_count:-0} + 0 ))
     if [ "$verify_ac_count" -eq 0 ]; then
         echo "WARNING: 全ACが行動のみで確認を含みません。行動→即確認(PI-023)。" >&2
@@ -5815,11 +5820,11 @@ check_research_tool_explicit() {
     # 原理: description非空+binary_check非空+FILL_THIS不在ならAC記入済み=道具パス精査不要
     if [[ -n "${AC_TEXT:-}" ]]; then
         local _c18_fill _c18_desc_empty _c18_ac_cnt _c18_bc_total _c18_bc_empty
-        _c18_fill=$(printf '%s\n' "$AC_TEXT" | grep -c 'FILL_THIS' || true)
-        _c18_desc_empty=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*description:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
-        _c18_ac_cnt=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' || true)
-        _c18_bc_total=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*binary_check:' || true)
-        _c18_bc_empty=$(printf '%s\n' "$AC_TEXT" | grep -E '^[[:space:]]*binary_check:' | grep -cE 'binary_check:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        _c18_fill=$(grep -c 'FILL_THIS' <<< "$AC_TEXT" || true)
+        _c18_desc_empty=$(grep -cE "^[[:space:]]*description:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
+        _c18_ac_cnt=$(grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' <<< "$AC_TEXT" || true)
+        _c18_bc_total=$(grep -cE '^[[:space:]]*binary_check:' <<< "$AC_TEXT" || true)
+        _c18_bc_empty=$(grep -cE "^[[:space:]]*binary_check:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
         if [[ "${_c18_fill:-0}" -eq 0 && "${_c18_desc_empty:-0}" -eq 0 && \
               ( "${_c18_ac_cnt:-0}" -eq 0 || "${_c18_bc_total:-0}" -gt 0 ) && \
               "${_c18_bc_empty:-0}" -eq 0 ]]; then
@@ -5829,14 +5834,14 @@ check_research_tool_explicit() {
 
     # title + command本文から研究ツールキーワード検出
     local FULL_CMD TITLE_LINE SEARCH_TEXT WF_SEARCH_TEXT
-    FULL_CMD=$(echo "$CMD_BLOCK_NC" | awk '
+    FULL_CMD=$(awk '
         /^\s*command:\s*\|/ { found=1; next }
         /^\s*command:\s*[^|]/ { found=1; sub(/^\s*command:\s*/, ""); print; next }
         found && /^    [a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
         found && /^\s{4,}/ { print; next }
         found { exit }
-    ')
-    TITLE_LINE=$(echo "$CMD_BLOCK_NC" | grep '^\s*title:' | head -1)
+    ' <<< "$CMD_BLOCK_NC")
+    TITLE_LINE=$(grep -m1 '^\s*title:' <<< "$CMD_BLOCK_NC" || true)
     # FP防止(cmd_3384): quality_gate配下のテキストを除外しtitle+command欄のみ対象
     SEARCH_TEXT="${TITLE_LINE}
 ${FULL_CMD}"
@@ -5845,8 +5850,8 @@ ${FULL_CMD}"
 
     local HIT_GS=false HIT_WF=false
     local GS_PATH_CANDIDATE WF_PATH_CANDIDATE
-    GS_PATH_CANDIDATE=$(printf '%s\n' "$SEARCH_TEXT" | grep -oE 'scripts/analysis/grid_search/run_077_[A-Za-z0-9_]+\.py' | head -1 || true)
-    WF_PATH_CANDIDATE=$(printf '%s\n' "$SEARCH_TEXT" | grep -oE 'outputs/scripts/l1_alm_wf_engine\.py|[^[:space:]"]+wf_engine[^[:space:]"]*\.py' | head -1 || true)
+    GS_PATH_CANDIDATE=$(grep -o -m1 -E 'scripts/analysis/grid_search/run_077_[A-Za-z0-9_]+\.py' <<< "$SEARCH_TEXT" || true)
+    WF_PATH_CANDIDATE=$(grep -o -m1 -E 'outputs/scripts/l1_alm_wf_engine\.py|[^[:space:]"]+wf_engine[^[:space:]"]*\.py' <<< "$SEARCH_TEXT" || true)
     # cmd_2172: WF四神/WF選別はWF engine実行ではなく分類ラベル。説明文だけでの誤検出を避ける。
     WF_SEARCH_TEXT=$(printf '%s\n' "$SEARCH_TEXT" | sed -E 's/WF(四神|選別)//g')
 
@@ -5854,22 +5859,22 @@ ${FULL_CMD}"
     # 研究スクリプト参照または明示的なGS文言に限定する。
     # "GS CSV" = データファイル参照であり研究スクリプト実行ではないため除外(cmd_2227 FP修正)
     local GS_SEARCH_TEXT
-    GS_SEARCH_TEXT=$(printf '%s\n' "$SEARCH_TEXT" | grep -vE 'outputs/grid_search|grid_monthly_fast|grid_results_fast|gs_price_preflight|download_all_prices|data_sync' | sed -E 's/GS[[:space:]]*CSV//g' || true)
-    if echo "$GS_SEARCH_TEXT" | grep -qE 'run_077|scripts/analysis/grid[_-]search|grid[_-]search/run|グリッドサーチ|[[:space:]]GS[[:space:]　]|[[:space:]]GS新規|忍法GS|GS[[:space:]を]|GS[[:space:]の]'; then
+    GS_SEARCH_TEXT=$(grep -vE 'outputs/grid_search|grid_monthly_fast|grid_results_fast|gs_price_preflight|download_all_prices|data_sync' <<< "$SEARCH_TEXT" | sed -E 's/GS[[:space:]]*CSV//g' || true)
+    if grep -qE 'run_077|scripts/analysis/grid[_-]search|grid[_-]search/run|グリッドサーチ|[[:space:]]GS[[:space:]　]|[[:space:]]GS新規|忍法GS|GS[[:space:]を]|GS[[:space:]の]' <<< "$GS_SEARCH_TEXT"; then
         HIT_GS=true
     fi
     if [[ "$HIT_GS" == true ]] && [[ -z "$GS_PATH_CANDIDATE" ]] \
-        && printf '%s\n' "$SEARCH_TEXT" | grep -qE 'outputs/grid_search|grid_monthly_fast|grid_results_fast' \
-        && printf '%s\n' "$SEARCH_TEXT" | grep -qE '偵察|分析|調査|結果参照|CSV|差分確認|算出|相関'; then
+        && grep -qE 'outputs/grid_search|grid_monthly_fast|grid_results_fast' <<< "$SEARCH_TEXT" \
+        && grep -qE '偵察|分析|調査|結果参照|CSV|差分確認|算出|相関' <<< "$SEARCH_TEXT"; then
         HIT_GS=false
     fi
 
     # WF検出: l1_alm_wf_engine / walk.forward / WF(大文字) / ウォークフォワード
-    if echo "$WF_SEARCH_TEXT" | grep -qE 'l1_alm_wf_engine|wf_engine|walk[_-]forward|ウォークフォワード|[[:space:]]WF[[:space:]　]|窓WF|WF[[:space:]を]|WFで'; then
+    if grep -qE 'l1_alm_wf_engine|wf_engine|walk[_-]forward|ウォークフォワード|[[:space:]]WF[[:space:]　]|窓WF|WF[[:space:]を]|WFで' <<< "$WF_SEARCH_TEXT"; then
         HIT_WF=true
     fi
     if [[ "$HIT_WF" == true ]] && [[ -z "$WF_PATH_CANDIDATE" ]] \
-        && printf '%s\n' "$SEARCH_TEXT" | grep -qE '偵察|分析|調査|結果参照|CSV|差分確認'; then
+        && grep -qE '偵察|分析|調査|結果参照|CSV|差分確認' <<< "$SEARCH_TEXT"; then
         HIT_WF=false
     fi
 
@@ -5878,19 +5883,19 @@ ${FULL_CMD}"
 
     # ACセクションを抽出
     local AC_SECTION
-    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+    AC_SECTION=$(awk '
         /acceptance_criteria:/ { found=1; next }
         found && /^    - / { print; next }
         found && /^      / { print; next }
         found { exit }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
     [[ -z "$AC_SECTION" ]] && AC_SECTION="$CMD_BLOCK_NC"
 
     local HIT=false
 
     # GS検出 → ACにrun_077が含まれるか確認
     if [[ "$HIT_GS" == true ]]; then
-        if ! echo "$AC_SECTION" | grep -qE 'run_077|grid_search/run|shin_shijin_l1_gs|wf_alpha_select|champion_select'; then
+        if ! grep -qE 'run_077|grid_search/run|shin_shijin_l1_gs|wf_alpha_select|champion_select' <<< "$AC_SECTION"; then
             if [[ "$HIT" == false ]]; then
                 echo "WARNING: 研究cmd道具明示チェック(Check 18)。ACに研究スクリプトパスが未記載(cmd_1822教訓)" >&2
                 HIT=true
@@ -5905,7 +5910,7 @@ ${FULL_CMD}"
 
     # WF検出 → ACにl1_alm_wf_engineが含まれるか確認
     if [[ "$HIT_WF" == true ]]; then
-        if ! echo "$AC_SECTION" | grep -qE 'l1_alm_wf_engine|wf_engine|wf_alpha_select'; then
+        if ! grep -qE 'l1_alm_wf_engine|wf_engine|wf_alpha_select' <<< "$AC_SECTION"; then
             if [[ "$HIT" == false ]]; then
                 echo "WARNING: 研究cmd道具明示チェック(Check 18)。ACに研究スクリプトパスが未記載(cmd_1822教訓)" >&2
                 HIT=true
@@ -5947,29 +5952,29 @@ check_research_artifact_reflux_ac() {
     # explanatory AC/q5 text merely mentions research, analysis, or investigation.
     SEARCH_TEXT_JA="$SEARCH_TEXT_EN"
 
-    if ! printf '%s\n' "$SEARCH_TEXT_EN" | grep -qiE '(^|[^[:alnum:]_])(research|analysis|investigation)([^[:alnum:]_]|$)' \
-        && ! printf '%s\n' "$SEARCH_TEXT_JA" | grep -qE '研究|分析|調査|リサーチ'; then
+    if ! grep -qiE '(^|[^[:alnum:]_])(research|analysis|investigation)([^[:alnum:]_]|$)' <<< "$SEARCH_TEXT_EN" \
+        && ! grep -qE '研究|分析|調査|リサーチ' <<< "$SEARCH_TEXT_JA"; then
         return 0
     fi
 
-    AC_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+    AC_SECTION=$(awk '
         /^[[:space:]]*acceptance_criteria:/ { found=1; next }
         # binary_check: はAC配下の常設キー。exit条件に含めるとAC1のdescription
         # 1行しか検査されず、AC2以降の記述が検出されないFPを生む
         # (2026-07-10 cmd_3836/3837で4回BLOCK往復実証。4関数同型を一括修正)
         found && /^[[:space:]]*[a-z_]+:/ && !/^[[:space:]]*- / && !/^[[:space:]]*description:/ && !/^[[:space:]]*binary_check:/ && !/^[[:space:]]*id:/ { exit }
         found { print }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
     [[ -n "$AC_SECTION" ]] || AC_SECTION="$CMD_BLOCK_NC"
 
     local missing=()
-    if ! printf '%s\n' "$AC_SECTION" | grep -qE 'cmd_[A-Za-z0-9_-]+_[^[:space:]"'\'']*[*]|cmd_[A-Za-z0-9_-]+[*]|docs/research/cmd_[A-Za-z0-9_-]+|outputs/[^[:space:]"'\'']*cmd_[A-Za-z0-9_-]+'; then
+    if ! grep -qE 'cmd_[A-Za-z0-9_-]+_[^[:space:]"'\'']*[*]|cmd_[A-Za-z0-9_-]+[*]|docs/research/cmd_[A-Za-z0-9_-]+|outputs/[^[:space:]"'\'']*cmd_[A-Za-z0-9_-]+' <<< "$AC_SECTION"; then
         missing+=("成果物ファイル名プレフィックス(cmd_XXXX_*等)")
     fi
-    if ! printf '%s\n' "$AC_SECTION" | grep -qiE '(^|[^A-Za-z])(ls|head|wc -l|test -s|stat)([^A-Za-z]|$)|現物確認|ファイル実在|成果物.*(確認|存在)|artifact.*(verify|exists)'; then
+    if ! grep -qiE '(^|[^A-Za-z])(ls|head|wc -l|test -s|stat)([^A-Za-z]|$)|現物確認|ファイル実在|成果物.*(確認|存在)|artifact.*(verify|exists)' <<< "$AC_SECTION"; then
         missing+=("成果物現物確認(ls/head/test -s等)")
     fi
-    if ! printf '%s\n' "$AC_SECTION" | grep -qiE 'context/|context還流|コンテキスト還流|知識還流|semantic-map|knowledge_candidate|lesson_candidate|projects/[^[:space:]]+\.yaml'; then
+    if ! grep -qiE 'context/|context還流|コンテキスト還流|知識還流|semantic-map|knowledge_candidate|lesson_candidate|projects/[^[:space:]]+\.yaml' <<< "$AC_SECTION"; then
         missing+=("context還流")
     fi
 
@@ -6123,11 +6128,11 @@ show_gunshi_pane_status
 
 # AC_TEXT: acceptance_criteriaセクション全行を結合（Check 19/20で使用）
 # description:形式とAC1:"..."形式の両方をカバー
-AC_TEXT=$(echo "$CMD_BLOCK" | awk '
+AC_TEXT=$(awk '
   /acceptance_criteria:/ { found=1; next }
   found && /^[[:space:]]{0,4}[a-z_]+:/ && !/^[[:space:]]*AC[0-9]/ && !/^[[:space:]]*description:/ { exit }
   found { print }
-' || true)
+' <<< "$CMD_BLOCK" || true)
 
 # --- Check 19: AC YAML構造判定（description非空+binary_check非空+未記入マーカー不在） ---
 check_ac_structure_quality
@@ -6201,11 +6206,11 @@ if true; then
     # 原理: description非空+binary_check非空+FILL_THIS不在ならAC記入済み=assumptions精査不要
     _c20_ac_ok=false
     if [[ -n "${AC_TEXT:-}" ]]; then
-        _c20_fill=$(printf '%s\n' "$AC_TEXT" | grep -c 'FILL_THIS' || true)
-        _c20_desc_empty=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*description:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
-        _c20_ac_cnt=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' || true)
-        _c20_bc_total=$(printf '%s\n' "$AC_TEXT" | grep -cE '^[[:space:]]*binary_check:' || true)
-        _c20_bc_empty=$(printf '%s\n' "$AC_TEXT" | grep -E '^[[:space:]]*binary_check:' | grep -cE 'binary_check:[[:space:]]*(""|'"''"'|)[[:space:]]*$' || true)
+        _c20_fill=$(grep -c 'FILL_THIS' <<< "$AC_TEXT" || true)
+        _c20_desc_empty=$(grep -cE "^[[:space:]]*description:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
+        _c20_ac_cnt=$(grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' <<< "$AC_TEXT" || true)
+        _c20_bc_total=$(grep -cE '^[[:space:]]*binary_check:' <<< "$AC_TEXT" || true)
+        _c20_bc_empty=$(grep -cE "^[[:space:]]*binary_check:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
         if [[ "${_c20_fill:-0}" -eq 0 && "${_c20_desc_empty:-0}" -eq 0 && \
               ( "${_c20_ac_cnt:-0}" -eq 0 || "${_c20_bc_total:-0}" -gt 0 ) && \
               "${_c20_bc_empty:-0}" -eq 0 ]]; then
@@ -6213,7 +6218,7 @@ if true; then
         fi
     fi
     # assumptions存在チェックはpreflight(Check 3)済み。以下は内容検証のみ
-    if [[ "$_c20_ac_ok" == false ]] && echo "$CMD_BLOCK_NC" | grep -q "assumptions:"; then
+    if [[ "$_c20_ac_ok" == false ]] && grep -q "assumptions:" <<< "$CMD_BLOCK_NC"; then
         check_unverified_assumptions_block
         check_assumption_source_paths_block
         check_assumption_claim_dates_warn
@@ -6230,7 +6235,7 @@ check_timebox_minutes_required() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
     local SEARCH_TEXT COMMAND_TEXT TIMEOUT_MINUTES FIRST_HIT
-    COMMAND_TEXT=$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+    COMMAND_TEXT=$(awk '
         /^[[:space:]]*command:[[:space:]]*\|?[[:space:]]*$/ { in_command=1; next }
         in_command && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / { exit }
         in_command { print }
@@ -6239,24 +6244,24 @@ check_timebox_minutes_required() {
             sub(/^[[:space:]]*command:[[:space:]]*/, "", line)
             print line
         }
-    ')
+    ' <<< "$CMD_BLOCK_NC")
     SEARCH_TEXT="$(cmd_block_get_field "purpose")
 ${COMMAND_TEXT}
 ${AC_TEXT:-}"
 
-    FIRST_HIT=$(printf '%s\n' "$SEARCH_TEXT" | grep -iE 'benchmark|計測|研究|grid[_-]?search|探索|見積|見込み|profil' | head -1 || true)
+    FIRST_HIT=$(grep -i -m1 -E 'benchmark|計測|研究|grid[_-]?search|探索|見積|見込み|profil' <<< "$SEARCH_TEXT" || true)
     [[ -n "${FIRST_HIT:-}" ]] || return 0
 
     TIMEOUT_MINUTES="$(cmd_block_get_field "timeout_minutes")"
     if [[ -z "${TIMEOUT_MINUTES//[[:space:]]/}" ]]; then
-        TIMEOUT_MINUTES="$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        TIMEOUT_MINUTES="$(awk '
             /^[[:space:]]*timeout_minutes:[[:space:]]*/ {
                 line=$0
                 sub(/^[[:space:]]*timeout_minutes:[[:space:]]*/, "", line)
                 print line
                 exit
             }
-        ')"
+        ' <<< "$CMD_BLOCK_NC")"
     fi
     local TIMEOUT_MINUTES_CLEAN
     TIMEOUT_MINUTES_CLEAN="${TIMEOUT_MINUTES//[[:space:]\"]/}"
@@ -6297,7 +6302,7 @@ check_ac_absolute_literals() {
 extract_command_text_block() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
-    printf '%s\n' "$CMD_BLOCK_NC" | awk '
+    awk '
         /^[[:space:]]*command:[[:space:]]*\|?[[:space:]]*$/ { in_command=1; next }
         in_command && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / { exit }
         in_command { print }
@@ -6306,7 +6311,7 @@ extract_command_text_block() {
             sub(/^[[:space:]]*command:[[:space:]]*/, "", line)
             print line
         }
-    '
+    ' <<< "$CMD_BLOCK_NC"
 }
 
 is_db_operation_command_text() {
@@ -6314,15 +6319,15 @@ is_db_operation_command_text() {
     [[ -n "${command_text//[[:space:]]/}" ]] || return 1
 
     # SCOUT(偵察)cmdは読取専用。DB変更を含まない
-    if [[ -n "${CMD_BLOCK_NC:-}" ]] && printf '%s\n' "$CMD_BLOCK_NC" | grep -qiE 'scope_mode.*SCOUT'; then
+    if [[ -n "${CMD_BLOCK_NC:-}" ]] && grep -qiE 'scope_mode.*SCOUT' <<< "$CMD_BLOCK_NC"; then
         return 1
     fi
 
     # GS出力SQLite(quick_check/出力/結果/experiments.db/突合/統計/経路/参照)は読取のみでDB操作ではない
     local filtered
-    filtered="$(printf '%s\n' "$command_text" | grep -viE 'quick_check|GS.*SQLite|SQLite.*出力|SQLite.*結果|SQLite.*記録|SQLite.*統計|SQLite.*突合|SQLite.*経路|SQLite.*参照|grid_search|experiments\.db|daily_prices')"
+    filtered="$(grep -viE 'quick_check|GS.*SQLite|SQLite.*出力|SQLite.*結果|SQLite.*記録|SQLite.*統計|SQLite.*突合|SQLite.*経路|SQLite.*参照|grid_search|experiments\.db|daily_prices' <<< "$command_text")"
     [[ -n "${filtered//[[:space:]]/}" ]] || return 1
-    printf '%s\n' "$filtered" | grep -qiE '(^|[^A-Za-z0-9_])(migrate|ALTER[[:space:]]+TABLE|schema|database|init_database|SQLite|DROP|TRUNCATE|DELETE[[:space:]]+FROM)([^A-Za-z0-9_]|$)' || return 1
+    grep -qiE '(^|[^A-Za-z0-9_])(migrate|ALTER[[:space:]]+TABLE|schema|database|init_database|SQLite|DROP|TRUNCATE|DELETE[[:space:]]+FROM)([^A-Za-z0-9_]|$)' <<< "$filtered" || return 1
 }
 
 check_db_backup_ac_warn() {
@@ -6333,7 +6338,7 @@ check_db_backup_ac_warn() {
     ac_text="$(extract_acceptance_criteria_block)"
     backup_check_text="${command_text}
 ${ac_text}"
-    if printf '%s\n' "$backup_check_text" | grep -qiE 'バックアップ|backup'; then
+    if grep -qiE 'バックアップ|backup' <<< "$backup_check_text"; then
         return 0
     fi
 
@@ -6352,11 +6357,11 @@ $(cmd_block_get_field "title")
 $(cmd_block_get_field "purpose")"
     [[ -n "${signal_text//[[:space:]]/}" ]] || return 0
 
-    if printf '%s\n' "$signal_text" | grep -qiE 'テスト.*(修正|fix|回帰|regression)|CI.*(修正|fix|failure|fail)|continuous[[:space:]]+integration|test.*(fix|regression|failure)|ci.*(fix|failure)'; then
-        if ! printf '%s\n' "$ac_text" | grep -qiE '全量.*(実行|run)|full.*(run|suite)|全.*(suite|テスト).*(実行|run)'; then missing+=("全量実行コマンド"); fi
-        if ! printf '%s\n' "$ac_text" | grep -qiE 'FAIL[[:space:]]*0|0[[:space:]]*(failures?|fails?|失敗)|no[[:space:]]*(failures?|fails?)'; then missing+=("FAIL0"); fi
-        if ! printf '%s\n' "$ac_text" | grep -qiE 'SKIP[[:space:]]*0|0[[:space:]]*(skips?|skip|スキップ)|no[[:space:]]*skips?'; then missing+=("SKIP0"); fi
-        if ! printf '%s\n' "$ac_text" | grep -qiE '中断.*(再開|resume)|再開.*(成果物|artifact|引継|handoff)|成果物.*(引継|handoff)'; then missing+=("中断再開時の成果物引継ぎ"); fi
+    if grep -qiE 'テスト.*(修正|fix|回帰|regression)|CI.*(修正|fix|failure|fail)|continuous[[:space:]]+integration|test.*(fix|regression|failure)|ci.*(fix|failure)' <<< "$signal_text"; then
+        if ! grep -qiE '全量.*(実行|run)|full.*(run|suite)|全.*(suite|テスト).*(実行|run)' <<< "$ac_text"; then missing+=("全量実行コマンド"); fi
+        if ! grep -qiE 'FAIL[[:space:]]*0|0[[:space:]]*(failures?|fails?|失敗)|no[[:space:]]*(failures?|fails?)' <<< "$ac_text"; then missing+=("FAIL0"); fi
+        if ! grep -qiE 'SKIP[[:space:]]*0|0[[:space:]]*(skips?|skip|スキップ)|no[[:space:]]*skips?' <<< "$ac_text"; then missing+=("SKIP0"); fi
+        if ! grep -qiE '中断.*(再開|resume)|再開.*(成果物|artifact|引継|handoff)|成果物.*(引継|handoff)' <<< "$ac_text"; then missing+=("中断再開時の成果物引継ぎ"); fi
         if (( ${#missing[@]} > 0 )); then
             record_block_reason "test_ci_execution_contract_missing: ${missing[*]}。ACに全量実行コマンド・FAIL0/SKIP0・中断再開時の成果物引継ぎ契約を固定せよ"
             abort_if_block_immediate || exit 1
@@ -6365,9 +6370,9 @@ $(cmd_block_get_field "purpose")"
 
     is_db_operation_command_text "$command_text" || return 0
     missing=()
-    if ! printf '%s\n' "$ac_text" | grep -qiE 'restore|復元'; then missing+=("restore手順"); fi
-    if ! printf '%s\n' "$ac_text" | grep -qiE 'identity|実行[[:space:]]*(identity|ID|者)|service[[:space:]-]?account'; then missing+=("実行identity"); fi
-    if ! printf '%s\n' "$ac_text" | grep -qiE '破壊.*(復元|証跡|evidence)|復元.*(証跡|evidence)|restore.*(証跡|evidence)'; then missing+=("破壊時復元証跡"); fi
+    if ! grep -qiE 'restore|復元' <<< "$ac_text"; then missing+=("restore手順"); fi
+    if ! grep -qiE 'identity|実行[[:space:]]*(identity|ID|者)|service[[:space:]-]?account' <<< "$ac_text"; then missing+=("実行identity"); fi
+    if ! grep -qiE '破壊.*(復元|証跡|evidence)|復元.*(証跡|evidence)|restore.*(証跡|evidence)' <<< "$ac_text"; then missing+=("破壊時復元証跡"); fi
     if (( ${#missing[@]} > 0 )); then
         record_block_reason "production_db_restore_contract_missing: ${missing[*]}。ACにrestore手順・実行identity・破壊時復元証跡を固定せよ"
         abort_if_block_immediate || exit 1
@@ -6377,7 +6382,7 @@ $(cmd_block_get_field "purpose")"
 collect_numeric_derivation_source_evidence() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
-    printf '%s\n' "$CMD_BLOCK_NC" | awk '
+    awk '
         /^[[:space:]]*quality_gate:/ { in_qg=1; next }
         in_qg && /^[[:space:]]+q5_verified_source:/ {
             if ($0 ~ /^[[:space:]]*q5_verified_source:/) print
@@ -6397,7 +6402,7 @@ collect_numeric_derivation_source_evidence() {
                 print
             }
         }
-    '
+    ' <<< "$CMD_BLOCK_NC"
 }
 
 numeric_derivation_source_evidence_exists() {
@@ -6405,10 +6410,10 @@ numeric_derivation_source_evidence_exists() {
     evidence_text="$(collect_numeric_derivation_source_evidence)"
     [[ -n "${evidence_text//[[:space:]]/}" ]] || return 1
 
-    if ! printf '%s\n' "$evidence_text" | grep -qiE 'grep|rg|wc|awk|sed|find|python|bash|計測|測定|実測|benchmark|ベンチ'; then
+    if ! grep -qiE 'grep|rg|wc|awk|sed|find|python|bash|計測|測定|実測|benchmark|ベンチ' <<< "$evidence_text"; then
         return 1
     fi
-    printf '%s\n' "$evidence_text" | grep -qE '→|->|=>|[0-9]+[[:space:]]*(件|行|個|本|箇所|matches?|lines?)|0件|0[[:space:]]+lines?'
+    grep -qE '→|->|=>|[0-9]+[[:space:]]*(件|行|個|本|箇所|matches?|lines?)|0件|0[[:space:]]+lines?' <<< "$evidence_text"
 }
 
 check_numeric_literal_derivation_source_info() {
@@ -6416,11 +6421,11 @@ check_numeric_literal_derivation_source_info() {
     search_text="$(extract_acceptance_criteria_block; extract_command_text_block)"
     [[ -n "${search_text//[[:space:]]/}" ]] || return 0
 
-    numeric_hits="$(printf '%s\n' "$search_text" | grep -E '(^|[^[:alnum:]_])([0-9]{3,}|L[0-9]+)([^[:alnum:]_]|$)' || true)"
+    numeric_hits="$(grep -E '(^|[^[:alnum:]_])([0-9]{3,}|L[0-9]+)([^[:alnum:]_]|$)' <<< "$search_text" || true)"
     [[ -n "$numeric_hits" ]] || return 0
     numeric_derivation_source_evidence_exists && return 0
 
-    first_hit="$(printf '%s\n' "$numeric_hits" | head -n 1 | sed -E 's/^[[:space:]-]*(description|check|id|command):[[:space:]]*//; s/^"//; s/"$//' | cut -c1-100)"
+    first_hit="$(sed -n '1p' <<< "$numeric_hits" | sed -E 's/^[[:space:]-]*(description|check|id|command):[[:space:]]*//; s/^"//; s/"$//' | cut -c1-100)"
     echo "INFO: AC/command内に数値リテラルを検出。算出元コマンド+結果の記載を推奨(LG020)" >&2
     echo "  → assumptions claim または q5_verified_source に grep/rg/wc等の算出元と結果を記載してください" >&2
     echo "  → ${first_hit}" >&2
@@ -6434,11 +6439,11 @@ count_acceptance_criteria_items() {
         return 0
     }
 
-    printf '%s\n' "$ac_block" | awk '
+    awk '
         /^[[:space:]]*-[[:space:]]/ { c++; next }
         /^[[:space:]]*(AC|ac)?[0-9]+:/ { c++; next }
         END { print c+0 }
-    '
+    ' <<< "$ac_block"
 }
 
 check_ac_phase_mixing() {
@@ -6449,7 +6454,7 @@ check_ac_phase_mixing() {
     # AC単位の文脈判定: 同一AC内にimpl+measure/deliveryが共起する場合のみWARN
     # 異なるAC間にまたがる場合は正当(実装ACとテストACの共存)
     local mixing_found
-    mixing_found="$(printf '%s\n' "$ac_block" | awk '
+    mixing_found="$(awk '
     function check_buf(text,    lt) {
         if (text == "") return
         lt = tolower(text)
@@ -6489,23 +6494,23 @@ check_ac_phase_mixing() {
         }
     }
     END { check_buf(buf) }
-    ')"
+    ' <<< "$ac_block")"
 
     [[ -n "$mixing_found" ]] || return 0
 
     local impl_hits measure_hits delivery_hits
-    impl_hits="$(printf '%s\n' "$ac_block" | grep -inE '実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce' || true)"
-    measure_hits="$(printf '%s\n' "$ac_block" | grep -inE 'CDP|計測|測定|実測|measure|measurement|benchmark|ベンチ' || true)"
-    delivery_hits="$(printf '%s\n' "$ac_block" | grep -inE 'push|deploy|デプロイ' || true)"
+    impl_hits="$(grep -inE '実装|追加|修正|改修|変更|作成|導入|implement|implementation|add|fix|modify|change|create|introduce' <<< "$ac_block" || true)"
+    measure_hits="$(grep -inE 'CDP|計測|測定|実測|measure|measurement|benchmark|ベンチ' <<< "$ac_block" || true)"
+    delivery_hits="$(grep -inE 'push|deploy|デプロイ' <<< "$ac_block" || true)"
 
     echo "WARN: ACフェーズ混在を検出。同一AC内に実装と計測/deployが共起しています" >&2
     echo "  実装ACと後続フェーズACはcmdを分割せよ(cmd_2300教訓)" >&2
-    echo "  実装側: $(printf '%s\n' "$impl_hits" | head -n 2 | tr '\n' ' ')" >&2
+    echo "  実装側: $(sed -n '1,2p' <<< "$impl_hits" | tr '\n' ' ')" >&2
     if [[ -n "$measure_hits" ]]; then
-        echo "  計測側: $(printf '%s\n' "$measure_hits" | head -n 2 | tr '\n' ' ')" >&2
+        echo "  計測側: $(sed -n '1,2p' <<< "$measure_hits" | tr '\n' ' ')" >&2
     fi
     if [[ -n "$delivery_hits" ]]; then
-        echo "  deploy側: $(printf '%s\n' "$delivery_hits" | head -n 2 | tr '\n' ' ')" >&2
+        echo "  deploy側: $(sed -n '1,2p' <<< "$delivery_hits" | tr '\n' ' ')" >&2
     fi
     # Level5: フェーズ分割テンプレート提案
     echo "  ─── 分割案(コピペ用) ───" >&2
@@ -6530,7 +6535,7 @@ check_ac_test_scope() {
         || true)"
     if [[ -n "$scope_hits" ]]; then
         echo "WARN: ACにスコープ未指定のテスト全件条件を検出。変更対象の関連テストのみに限定すべき" >&2
-        printf '%s\n' "$scope_hits" | head -n 5 | while IFS= read -r line; do
+        sed -n '1,5p' <<< "$scope_hits" | while IFS= read -r line; do
             [[ -z "$line" ]] && continue
             echo "  → $(echo "$line" | sed -E 's/^[[:space:]-]*(description|check|id):[[:space:]]*//; s/^\"//; s/\"$//' | cut -c1-100)" >&2
         done
@@ -6545,21 +6550,21 @@ check_ac_test_scope() {
     cmd_text="$(printf '%s\n' "${CMD_BLOCK_NC:-$CMD_BLOCK}" | tr '[:upper:]' '[:lower:]')"
     category=""
     requirement_pattern=""
-    if printf '%s\n' "$cmd_text" | grep -qE '(bugfix|bug[ _-]?fix|バグ修正|不具合修正|障害修正|回帰修正)'; then
+    if grep -qE '(bugfix|bug[ _-]?fix|バグ修正|不具合修正|障害修正|回帰修正)' <<< "$cmd_text"; then
         category="bugfix"
         requirement_pattern='(再現|regression|回帰).*(test|テスト)|(test|テスト).*(再現|regression|回帰)'
-    elif printf '%s\n' "$cmd_text" | grep -qE '(behavior[ _-]?不変|behavior[ _-]?preserving|挙動不変|動作不変).*(refactor|リファクタ)|(refactor|リファクタ).*(behavior[ _-]?不変|behavior[ _-]?preserving|挙動不変|動作不変)'; then
+    elif grep -qE '(behavior[ _-]?不変|behavior[ _-]?preserving|挙動不変|動作不変).*(refactor|リファクタ)|(refactor|リファクタ).*(behavior[ _-]?不変|behavior[ _-]?preserving|挙動不変|動作不変)' <<< "$cmd_text"; then
         category="behavior_preserving_refactor"
         requirement_pattern='(既存|existing).*(coverage|カバレッジ).*(維持|保持|preserv)|(coverage|カバレッジ).*(維持|保持|preserv)'
-    elif printf '%s\n' "$cmd_text" | grep -qE '(docs?[ /_-]?only|data[ /_-]?only|文書のみ|ドキュメントのみ|データのみ|docs/data-only)'; then
+    elif grep -qE '(docs?[ /_-]?only|data[ /_-]?only|文書のみ|ドキュメントのみ|データのみ|docs/data-only)' <<< "$cmd_text"; then
         category="docs_data_only"
         requirement_pattern='(実行テスト|test|テスト).*(免除|不要|省略).*(根拠|理由)|(根拠|理由).*(実行テスト|test|テスト).*(免除|不要|省略)'
-    elif printf '%s\n' "$cmd_text" | grep -qE '(新規実装|新機能|新behavior|new[ _-]?behavior|behavior追加|機能追加|分岐追加)'; then
+    elif grep -qE '(新規実装|新機能|新behavior|new[ _-]?behavior|behavior追加|機能追加|分岐追加)' <<< "$cmd_text"; then
         category="new_behavior"
         requirement_pattern='(新規|追加|拡張|new|regression|回帰).*(test|テスト)|(test|テスト).*(新規|追加|拡張|new|regression|回帰)'
     fi
 
-    if [[ -n "$category" ]] && ! printf '%s\n' "$ac_block" | grep -qiE "$requirement_pattern"; then
+    if [[ -n "$category" ]] && ! grep -qiE "$requirement_pattern" <<< "$ac_block"; then
         echo "WARN: D7テスト作成規律(${category})のAC証跡が不足" >&2
         echo "  適用表: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除の根拠" >&2
         echo "  配置: 同一fixture/責務・isolation・per-file wall・並列laneで既存file拡張か新fileかを二値決定" >&2
@@ -6601,13 +6606,13 @@ check_ac_test_scope
 # 原理: command欄の番号付きステップ数 > AC数 = 中間成果物がACに分解されていない可能性
 # CoDD固有でなく全cmdに適用。手順が増えれば自動検出(100億パターン対応)
 if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
-    _CMD_SECTION=$(echo "$CMD_BLOCK_NC" | awk '
+    _CMD_SECTION=$(awk '
         /^[[:space:]]*command:[[:space:]]*\|/ { found=1; next }
         /^[[:space:]]*command:[[:space:]]*[^|]/ { found=1; sub(/^[[:space:]]*command:[[:space:]]*/, ""); print; next }
         found && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
         found && /^[[:space:]]{4,}/ { print; next }
-    ')
-    _STEP_COUNT=$(printf '%s\n' "$_CMD_SECTION" | awk '
+    ' <<< "$CMD_BLOCK_NC")
+    _STEP_COUNT=$(awk '
         function indent_len(s,    t) { t=s; sub(/[^ ].*$/, "", t); return length(t) }
         /^\s*\([0-9]+\)/ || /^\s*[0-9]+[\.\)]\s/ {
             ind = indent_len($0)
@@ -6619,14 +6624,14 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
             for (i = 1; i <= n; i++) if (indents[i] == min) c++
             print c+0
         }
-    ')
+    ' <<< "$_CMD_SECTION")
     _AC_COUNT="$(count_acceptance_criteria_items)"
     if (( _STEP_COUNT > 0 && _STEP_COUNT > _AC_COUNT )); then
         echo "WARN: command欄に${_STEP_COUNT}ステップあるがACは${_AC_COUNT}個。中間成果物がACに分解されていない可能性" >&2
         echo "  忍者はACにないことは実行しない。各ステップの成果物をACに対応させよ" >&2
         # Level5: commandステップからAC候補を自動生成
         echo "  ─── AC候補(commandステップから自動生成) ───" >&2
-        printf '%s\n' "$_CMD_SECTION" | awk '
+        awk '
             function indent_len(s,    t) { t=s; sub(/[^ ].*$/, "", t); return length(t) }
             /^\s*\([0-9]+\)/ || /^\s*[0-9]+[\.\)]\s/ {
                 ind = indent_len($0)
@@ -6642,7 +6647,7 @@ if [[ -n "${CMD_BLOCK_NC:-}" ]]; then
                     printf "  - \"%s。binary_check: yes/no\"\n", line
                 }
             }
-        ' >&2
+        ' <<< "$_CMD_SECTION" >&2
         echo "  ─────────────────────────" >&2
         record_warn_reason "command_steps_over_ac" "check=check_command_steps_vs_ac"
     fi
@@ -6657,7 +6662,7 @@ if load_cmd_block; then
     _AC_BLOCK="$(extract_acceptance_criteria_block)"
     # \bpush\b はC.UTF-8ロケールで日本語に直接隣接するASCII境界を検出できない(「pushして」等がNOMATCH)。
     # deploy_task.sh inject_push_allowed()と同一の自前境界パターンで検出を揃える。
-    if printf '%s\n' "$_AC_BLOCK" | grep -qiE '(^|[^A-Za-z])push($|[^A-Za-z])'; then
+    if grep -qiE '(^|[^A-Za-z])push($|[^A-Za-z])' <<< "$_AC_BLOCK"; then
         echo "WARN: ACに'push'が含まれている。配備時にpush_allowed:trueが自動付与される(inject_push_allowed)" >&2
         echo "  自走push+deployが不要なら'commit'のみに変更せよ。家老はtask YAMLのpush_allowed付与を確認すること" >&2
         record_warn_reason "ac_contains_push" "check=check_ac_contains_push"
@@ -6670,7 +6675,7 @@ check_new_file_structure_warning() {
     local ac_block command_block search_text hits
 
     ac_block="$(extract_acceptance_criteria_block)"
-    command_block="$(echo "$CMD_BLOCK_NC" | awk '
+    command_block="$(awk '
         /^[[:space:]]*command:[[:space:]]*\|/ { found=1; next }
         /^[[:space:]]*command:[[:space:]]*[^|]/ {
             found=1
@@ -6685,22 +6690,22 @@ check_new_file_structure_warning() {
             next
         }
         found && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:/ { exit }
-    ')"
+    ' <<< "$CMD_BLOCK_NC")"
     search_text="${ac_block}"$'\n'"${command_block}"
     [[ -n "${search_text//[[:space:]]/}" ]] || return 0
 
     # Filter out quality_gate/diagnosis/assumptions content that may leak into search scope
     # (defensive: extract functions should exclude these, but edge cases exist)
-    hits="$(printf '%s\n' "$search_text" | grep -v -E '^[[:space:]]*(-[[:space:]]*)?(diagnosis|nazenaze_root_cause|quality_gate|q[0-9]+_[A-Za-z0-9_]*|q_ambiguity|assumptions|trust|claim|environment_change|delegated_at):' | grep -inE 'new_file|new_structure|新規ファイル|新規構造|新規作成|新設|新規に.*(作成|追加)|新しい.*(ファイル|構造)' || true)"
+    hits="$(grep -v -E '^[[:space:]]*(-[[:space:]]*)?(diagnosis|nazenaze_root_cause|quality_gate|q[0-9]+_[A-Za-z0-9_]*|q_ambiguity|assumptions|trust|claim|environment_change|delegated_at):' <<< "$search_text" | grep -inE 'new_file|new_structure|新規ファイル|新規構造|新規作成|新設|新規に.*(作成|追加)|新しい.*(ファイル|構造)' || true)"
     [[ -n "$hits" ]] || return 0
 
     echo "WARN: new_file/new_structure要求を検出。既存活用できるファイル・構造がないか確認せよ" >&2
-    echo "$hits" | head -n 5 >&2
+    sed -n '1,5p' <<< "$hits" >&2
     echo "  既存活用を優先し、新規作成が必要なら理由と既存代替の現物確認をcmdに明記せよ" >&2
     # Level5: 新規ファイル名から既存類似ファイルを自動検索して提案
     local _new_names
     # grep無ヒットrc=1がpipefail下でスクリプト全体をexit 1させる(2026-07-12 cmd_3854で実証: WARN表示直後にsilent crash)
-    _new_names=$(printf '%s\n' "$hits" | grep -oE '[a-zA-Z_][a-zA-Z0-9_-]*\.(sh|py|yaml|md|tsx?)' | sort -u | head -3 || true)
+    _new_names=$(grep -oE '[a-zA-Z_][a-zA-Z0-9_-]*\.(sh|py|yaml|md|tsx?)' <<< "$hits" | sort -u | sed -n '1,3p' || true)
     if [[ -n "$_new_names" ]]; then
         echo "  ─── 既存類似ファイル候補 ───" >&2
         while IFS= read -r _nf; do
@@ -6728,7 +6733,7 @@ check_new_file_structure_warning() {
 # 全チェック完了後に配置(WARNは後段のCheckで蓄積されるため)
 if (( WARN_COUNT > 0 )) && (( PRIOR_ATTEMPT_COUNT == 0 )); then
     if load_cmd_block; then
-        _ENV_CHANGE_WARN="$(echo "$CMD_BLOCK_NC" | awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}')"
+        _ENV_CHANGE_WARN="$(awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}' <<< "$CMD_BLOCK_NC")"
         if [[ -z "$_ENV_CHANGE_WARN" ]]; then
             record_block_reason "WARNが${WARN_COUNT}件検出。environment_changeを記載せよ。次のcmdで同じWARNが出ないように環境に何を埋め込むか書け"
             echo '  形式: environment_change: "type=gate|lesson|hook; file=対象パス; pattern=grep検証文字列"' >&2
@@ -6842,7 +6847,7 @@ if [[ "$BLOCK_COUNT" -eq 0 ]]; then
     log_cmd_save_pass
     if [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" && -f "$MEMORY_DB_LIVE_INSERT" ]]; then
         printf -v _CMD_SAVE_MEMORY_TS '%(%Y-%m-%dT%H:%M:%S)T' -1
-        _CMD_SAVE_MEMORY_SUMMARY="$(printf '%s\n' "$CMD_BLOCK_NC" | awk '
+        _CMD_SAVE_MEMORY_SUMMARY="$(awk '
             /^[[:space:]]*title:[[:space:]]*/ {
                 sub(/^[[:space:]]*title:[[:space:]]*/, "")
                 gsub(/^["'\'']|["'\'']$/, "")
@@ -6855,7 +6860,7 @@ if [[ "$BLOCK_COUNT" -eq 0 ]]; then
                 print
                 exit
             }
-        ')"
+        ' <<< "$CMD_BLOCK_NC")"
         [[ -n "$_CMD_SAVE_MEMORY_SUMMARY" ]] || _CMD_SAVE_MEMORY_SUMMARY="$CMD_ID saved"
         _CMD_SAVE_MEMORY_INSERT_ARGS=(
             "$MEMORY_DB_LIVE_INSERT" cmd_save
@@ -6883,7 +6888,7 @@ if [[ "$BLOCK_COUNT" -eq 0 ]]; then
     fi
     # status: pending 自動注入/昇格。draftのままなら家老監視が無視するため、
     # cmd_save PASS後にだけpendingへ上げる（保存前配備レース防止）。
-    _EXISTING_STATUS=$(echo "$CMD_BLOCK" | awk '/status:/{gsub(/.*status: */, ""); gsub(/"/, ""); print; exit}')
+    _EXISTING_STATUS=$(awk '/status:/{gsub(/.*status: */, ""); gsub(/"/, ""); print; exit}' <<< "$CMD_BLOCK")
     if [[ "$CMD_SAVE_PREFLIGHT_ONLY" != "1" && ( -z "$_EXISTING_STATUS" || "$_EXISTING_STATUS" == "draft" ) ]]; then
         if bash "$SCRIPT_DIR/lib/yaml_field_set.sh" "$QUEUE_FILE" "$CMD_ID" status pending 2>/dev/null; then
             if [[ "$_EXISTING_STATUS" == "draft" ]]; then

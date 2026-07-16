@@ -25,16 +25,21 @@ run_embedded_test() {
     source_file="${EMBEDDED_BATS_SOURCE_PREFIX}_${cache_key}.bats"
     output_file="$cache_dir/output.tap"
 
-    if [ ! -f "$output_file" ]; then
-        mkdir -p "$cache_dir"
-        if [ -f "$original_path" ]; then
-            source_file="$original_path"
-        else
-            "$content_func" > "$source_file"
+    mkdir -p "$cache_dir"
+    (
+        flock -x 9
+        if [ ! -f "$output_file" ]; then
+            local output_tmp="${output_file}.$$"
+            if [ -f "$original_path" ]; then
+                source_file="$original_path"
+            else
+                "$content_func" > "$source_file"
+            fi
+            env -u BATS_TMPDIR -u BATS_TEST_TMPDIR -u BATS_TEST_NUMBER -u BATS_TEST_FILENAME \
+                bats --tap "$source_file" > "$output_tmp" 2>&1 || true
+            mv "$output_tmp" "$output_file"
         fi
-        env -u BATS_TMPDIR -u BATS_TEST_TMPDIR -u BATS_TEST_NUMBER -u BATS_TEST_FILENAME \
-            bats --tap "$source_file" > "$output_file" 2>&1 || true
-    fi
+    ) 9>"$cache_dir/.lock"
 
     if ! grep -Fq "ok " "$output_file" || ! grep -Fq " ${test_name}" "$output_file"; then
         cat "$output_file" >&2

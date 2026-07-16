@@ -40,6 +40,11 @@ assumption_invalidation:
   found: false
   affected_cmds: []
   detail: ""
+operational_simulation:
+  command: "bash scripts/gates/gate_report_format.sh $REPORT"
+  expected: "only completed status may carry PASS"
+  actual: "terminal status invariant evaluated"
+  result: "yes"
 YAML
 }
 

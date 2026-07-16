@@ -64,6 +64,7 @@ lessons:
     (45)破壊的操作(削除・上書き・本番書込み)のACには承認主体と停止点をAC本文へ明示せよ(cmd_3871才蔵事故2026-07-13): AC2『承認済みリストのみ削除実行』の承認主体(殿)と停止点(リスト確定後に停止し将軍検分→殿承認)をq12にのみ書きAC本文に書かなかった→忍者が自己検証完了=承認済みと誤読しTier2(>10件STOP)無視で28件4.8GBを無承認rm -rf(gitignored未追跡で復元不可。全て参照0の陳腐化物で実害僅少だが承認の鎖切断)。忍者に届くのはtask YAMLのAC本文のみ。quality_gate記述は届かない
     (47)depends_on流用禁止(cmd_3953実証2026-07-15): 起票ゲートのother_draft_exists回避のためファイル独立cmdへ実依存なしのdepends_onを設定→家老一次反証で配備前BLOCK(誤情報が配備判断を歪める)。depends_onは実依存のみ。同時2draftを避けたい場合は片方を退避(Edit削除→先行publish→再追記)。根本は順次起票=(14)の遵守
     (46)設計書・工程表で将来cmdの番号を事前予約するな(INS-20260713-231919199実証2026-07-13): cmd番号の正本はcmd_save採番=queue+last_cmdの実在最大+1(cmd_skeleton.sh L31-55)。未起票の予約番号を採番側は知りようがなく、skeleton提示3880が設計書予約レンジ3878-3886と衝突した。設計書はPhase名・工程名で参照し、起票時に実番号を設計書の起票cmd列(LS086の照合表)へ記録せよ。予約registry新設は二重管理=各論パッチであり不採用
+    (48)cmd_save PASS前のpending書込みは家老の自動配備とレースする(LS080吸収2026-07-16): 二重防御=cmd_save.shがdraft保存+PASS経路のみpending昇格(ba2a83b1c)、deploy_task.shがstatus=draft中の配備を即BLOCK(6103c3d43)。cmd_3698/3700で2連続race発生→Level4構造根治済み
     (旧detail (1)-(44)の残りは移設先参照)
   source_ids: [LS061, LS064, LS067, LS068, LS069, LS072, LS081, LS088, LS089, LS090, LS091, LS093, LS094, LS095, LS097, LS024, LS025, LS026, LS031, LS033, LS036, LS034, LS062, LS070, LS075]
   source_cmds_v3: [cmd_2316, cmd_2318, cmd_2320, cmd_2322, cmd_2323, cmd_2337, cmd_2339, cmd_2342, cmd_2344, cmd_2345, cmd_2350, cmd_2352, cmd_2353, cmd_2355, cmd_2358, cmd_2372, cmd_2376, cmd_2386, cmd_2391, cmd_2394, cmd_2395]
@@ -162,7 +163,10 @@ lessons:
     symlink変更前にreadlink+設計意図カタログ照合必須(queue/inbox symlink実体化→watcher死亡)
     ループ内外部コマンドforkは単一awk/grepに畳む(cmd_save 36.5s→1.66s、cmd_3806)。特定はPS4=EPOCHREALTIME bash -x
     CI検知は家老の責務。将軍にCI情報を見せる仕組み=鎖の迂回誘発(殿裁定2026-07-16、cad2fa416で除去)。pre-pushのfull unit suiteもCIとの二重チェック(4cb69edc9で除去)
+    async関数のtimeout短縮は速度に寄与せず機能をsilent-deathさせる(LS081吸収2026-07-16): async(&)実行の待ちは誰も払っていない。GH timeout 0.05s→CI RED検知25日間silent-death。既定8s復活+DIGEST ci常時表示(d5ed06f9b)
+    reCAPTCHA画像チャレンジは即停止しcookie再利用へ逃がす(LS082吸収2026-07-16): note_draft.shで検出時に即RuntimeError+SKIP記録。Level4 guard(cmd_reflux_promotion_202607080756)
   source_ids: [LS033, LS037, LS074, LS084, LS086, LS087, LS051, LS066]
+  source_ids_absorbed: [LS081, LS082]
   created_at: '2026-04-24'
   automated: true
   enforcement_level: 4
@@ -346,9 +350,9 @@ lessons:
 - id: 'LS048'
   title: '洗脳対策は検出→環境強制→実戦検証→バグ修正の全サイクルを1セッションで完結'
   origin: '[[cmd_3251_洗脳L4貫通]] -> [[将軍L4穴]] -> [[修正+4パターン再発防止完結]]'
-  detail: '洗脳監査サイクル=検出→環境強制→実戦検証→バグ修正を1セッションで完結(殿定義2026-06-08)。全文→docs/research/lessons_shogun_a04_a09_detail.md(2026-07-12 v4圧縮で移設)。核心: (2)質問の形をした範囲縮小提案も#7洗脳の変種。範囲・期間・対象数は全範囲デフォルトで自分で決めて宣言、縮小オプションは提示しない。(4)Q6検出→投稿で止まるな。対応cmd起票orD0修正完了までがセット(stop hook WARN注入cmd_3409)。(5)洗脳の本質は確認の拒否。数字は確認すると嘘をつけない。優先順位という発想は存在しない。理解で止まるな、行動と検証までがセット'
+  detail: '洗脳監査サイクル=検出→環境強制→実戦検証→バグ修正を1セッションで完結(殿定義2026-06-08)。全文→docs/research/lessons_shogun_a04_a09_detail.md(2026-07-12 v4圧縮で移設)。核心: (2)質問の形をした範囲縮小提案も#7洗脳の変種。範囲・期間・対象数は全範囲デフォルトで自分で決めて宣言、縮小オプションは提示しない。(4)Q6検出→投稿で止まるな。対応cmd起票orD0修正完了までがセット(stop hook WARN注入cmd_3409)。(5)洗脳の本質は確認の拒否。数字は確認すると嘘をつけない。優先順位という発想は存在しない。理解で止まるな、行動と検証までがセット。(6)stop hookの洗脳#3検出パターンに許可求め・判断委任フレーズ欠落(LS088吸収2026-07-16): お許しがあれば/判断を仰ぐ等→stop_check_inbox.sh L166+L415に4フレーズBLOCK追加(365b3d7f0, 47/47 PASS)'
   source_cmd: 'cmd_3251'
-  source_ids_absorbed: [LS052, LS065, LS066, LS073]
+  source_ids_absorbed: [LS052, LS065, LS066, LS073, LS088]
   created_at: '2026-06-09'
   automated: true
   enforcement_level: 5
@@ -363,6 +367,7 @@ lessons:
     (3)環境の分離(LS077吸収): FE変更cmdはlocal build計測(忍者のAC)と本番デプロイ後計測(家老/次cmdの後続ステップ)を分離せよ。忍者はpush禁止のため本番計測は未デプロイの旧状態を測り構造的に達成不能(cmd_3655 verdict FAIL)。色是正はCSS変数と直接utility class(text-red-400等)の両経路をスコープに含めよ
     (0)計測カテゴリ不在=見えていない=改善不能(LS-A18吸収)。品質WARNと形式WARNを混在させると全WARNオプショナル化を招く。計測されていないものは改善ループが回らない
     (5)生成メカニズム理解(LS-A10吸収 2026-07-11): 計測データの生成メカニズム(コードパス)を理解せずに数字で結論するな。ローカル計測(WSL→Singapore RTT 80ms)≠本番ボトルネック(Render内RTT 1-5ms)。計測環境を明記し本番との差異を注記。本番特定にはRender上計測必須。enforcementはcmd_save.sh check_measurement_env_info()(L1076-1114)が環境差異キーワード検出時にmeasurement_env記入例を自動提示(bats Check20.11-20.13 PASS実測2026-07-08)
+    (6)比較実験の同格性(LS083吸収2026-07-16): 階層生成物(静的EW合成)を本番動的FoF(BB選別→EW)と比較し誤所見を流した(cmd_3763)。比較は同一パイプラインの同格レベルのみ。cmd_save.sh check_comparison_pipeline_parity_warn()でLevel4 WARN
     (4)データ到達の証拠(cmd_3670/3671検分 2026-07-03): 「APIが呼ばれた」≠「データが計測ウィンドウ内に到達し描画された」。隔離プロファイル計測では初回API 401→リトライ200だが、200応答のresourceSize=0/transferSize=0=実データ未受信のまま好数値が原票化された。認証済みデータ描画ありの殿実測との比較は条件不一致で改善幅が過大評価される。有効性証拠は(a)200応答のresourceSize>0 (b)データ描画完了のDOM証拠まで要求せよ。(2)の「network-requestsにAPI呼び出し」だけでは1階層足りない
   source_ids: [LS074, LS076, LS077]
   created_at: '2026-07-03'
@@ -380,39 +385,24 @@ lessons:
   enforcement: 'Level4(フロー内BLOCK/現在状態突合): gate_skill_script_refs.sh max採用+判定根拠出力、prompt_state_inject.sh session_alerts突合([TODO]なし→_defer_count=0補正)、clear_prep_check.sh insights現物再照合、gate_karo_startup.sh __OK__行でstreak切り。bats 3+3実在。一次再検証全文→docs/research/lessons_shogun_a04_a09_detail.md'
 - id: 'LS080'
   title: 'cmd_save PASS前のキューEditは家老の自動配備とレースする'
-  origin: '[[cmd_3698_確定台帳偵察]] -> [[保存ゲートと自動配備のレース]] -> [[cmd_3700_WARN残存配備]] -> [[cmd_3701_二段階化]] -> [[cmd_reflux_promotion_202607090400_tobisaru_一次情報再検証]]'
-  detail: 'cmd_3698とcmd_3700の2連続で、将軍がキューにstatus:pendingでcmdを書いた直後、cmd_save完走(PASS)前に家老が検知して配備した(3698: 保存3回目で重複BLOCK=既にarchive済み、3700: 保存NG WARN2件のまま16:27にdeploy lock)。品質ゲートの判定が配備に反映されず事実上迂回される。WARN指摘(テストスコープ過広等)が忍者タスクに残ったまま走る'
-  source_cmd: 'cmd_3700'
-  created_at: '2026-07-06'
-  automated: true
-  enforcement_level: 4
-  enforcement: "Level4(フロー内BLOCK、二重防御): cmd_save.shがdraft保存+PASS経路のみpending昇格(ba2a83b1c)、deploy_task.shがstatus=draft中の通常配備を即BLOCK(6103c3d43)。bats+E2E回帰PASS現物確認済み。一次再検証全文→docs/research/lessons_shogun_a04_a09_detail.md"
+  origin: '[[LS080]] -> 統合 -> [[LS-A04]]'
+  superseded_by: 'LS-A04 (cmdテンプレートルール(48)として吸収。二重防御enforcementは維持。active上限31対応 2026-07-16)'
+  archived_full_text: 'docs/research/lessons_shogun_a04_a09_detail.md'
 - id: 'LS081'
   title: 'async関数のtimeout短縮は速度に寄与せず機能だけをsilent-deathさせる'
-  origin: "[[cmd_karo_hotfix_speed_gate_shogun_startup_20260612]] -> [[SHOGUN_STARTUP_GH_TIMEOUT 0.05s短縮]] -> [[CI RED検知silent-death 25日間]]"
-  detail: '速度hotfixがasync(&)実行関数のgh timeoutを0.05sへ短縮→APIレイテンシ未満で常に空応答=CI RED検知が25日間silent-death(755d202c1、2026-07-07発覚)。async実行の待ちは誰も払っていないためtimeout短縮は速度に寄与しない。上位構造: 機能を痩せさせる最適化は「その待ち時間は誰が払っているか」を先に実測せよ。修正: 既定8s復活+DIGEST ci=conclusion常時表示+bats assert(d5ed06f9b)'
-  source_cmd: 'cmd_session_20260707'
-  created_at: '2026-07-07'
-  automated: true
-  enforcement_level: 4
-  enforcement: 'Level4(フロー内WARN/BLOCK接続): gate_shogun_startup.sh check_ci_red_autodeploy()がtimeout既定8s復元+DIGEST ci=常時表示+CI failure時WARN+karoへci_red_fix通知(d5ed06f9b)。bats両系assert PASS。一次再検証全文→docs/research/lessons_shogun_a04_a09_detail.md'
+  origin: '[[LS081]] -> 統合 -> [[LS-A11]]'
+  superseded_by: 'LS-A11 (infra修正実績へ吸収。enforcementは維持。active上限31対応 2026-07-16)'
+  archived_full_text: 'docs/research/lessons_shogun_a04_a09_detail.md'
 - id: 'LS082'
   title: 'reCAPTCHA画像チャレンジは自動解答せず即停止しcookie再利用へ逃がす'
-  origin: '[[LS029]] -> [[reCAPTCHA_image_challenge]] -> [[LS029_Level4_guard]]'
-  detail: 'LS029の後継。note_draft.shでreCAPTCHA画像チャレンジを検出した時、低精度な画像タイル自動判断や120秒待機へ進まず、スクリーンショット証跡を残してLS029 Level4 guardとしてSKIP記録に変換する。原因は画像認識精度不足とタイムアウト待機が意志依存だったこと。修正はscripts/note_draft.shの即時RuntimeErrorとscripts/gates/gate_shogun_startup.shのskill fail率除外、tests/unit/test_note_draft_recaptcha_guard.batsおよびtest_gate_shogun_startup.batsで回帰防護。'
-  source_cmd: 'cmd_reflux_promotion_202607080756_hayate'
-  created_at: '2026-07-08'
-  automated: true
-  enforcement: 'type=flow_block; file=scripts/note_draft.sh; pattern=LS029 Level4 guard; test=tests/unit/test_note_draft_recaptcha_guard.bats; gate=scripts/gates/gate_shogun_startup.sh'
+  origin: '[[LS082]] -> 統合 -> [[LS-A11]]'
+  superseded_by: 'LS-A11 (infra修正実績へ吸収。note_draft.sh Level4 guard enforcement維持。active上限31対応 2026-07-16)'
+  archived_full_text: 'docs/research/lessons_shogun_a04_a09_detail.md'
 - id: 'LS083'
   title: '比較実験の同格性 — 階層生成物は同一生成パイプラインの同格レベルでのみ比較せよ'
-  origin: '[[cmd_3763]]'
-  detail: 'cmd_3763 C3事故: 階層生成物(静的EW合成)を本番動的FoF(BB選別→EW)と比較し誤所見をntfy/MEMORY.mdまで流した。比較は同一生成パイプラインの同格レベルのみ。合成・集計・代理実験を含む比較cmdのACに『同一パイプライン同格性の確認』を必須で入れる。全文→docs/research/lessons_shogun_a04_a09_detail.md(2026-07-13移設)'
-  source_cmd: 'cmd_3763'
-  created_at: '2026-07-08'
-  automated: true
-  enforcement_level: 4
-  enforcement: 'Level4(フロー内WARN): cmd_reflux_promotion_202607090418_saizoでscripts/cmd_save.shにcheck_comparison_pipeline_parity_warn()を新設し実装済み。cmd全文が「比較」と「合成|集計|代理実験|代理指標|代理データ」の両方に一致し、かつ「同一パイプライン|同一生成パイプライン|同格性|パリティ確認|同一L[0-9]」等の同格性確認文言が無ければWARNをrecord_warn_reason(check=comparison_pipeline_parity)へ記録する。main flow内でcheck_deferral_language_warnの直後(L3740付近)に接続済み。一次情報検証: bash -n scripts/cmd_save.shでシンタックス確認、tests/unit/test_cmd_save.batsへ回帰テスト4件(合成/集計キーワードでWARN発火、同格性確認文言ありでWARNなし、キーワード無しの通常比較cmdでWARNなし)を追加し、bats実行で124/124 PASS(既存120件+新規4件、regression無し)を確認済み。限界: キーワードマッチのためcmd文面が曖昧な場合はFP/FN双方の余地あり。精度改善は還流のFP計測(detector_fp_rate等)で継続監視する'
+  origin: '[[LS083]] -> 統合 -> [[LS-A24]]'
+  superseded_by: 'LS-A24 (計測原則ファミリー(6)として吸収。cmd_save.sh comparison_pipeline_parity enforcement維持。active上限31対応 2026-07-16)'
+  archived_full_text: 'docs/research/lessons_shogun_a04_a09_detail.md'
 - id: 'LS084'
   title: 'ループ内fork照合の禁止 — cmd_save semantic照合36.5s事故'
   origin: '[[cmd_3806]] -> 吸収 -> [[LS-A11]]'
@@ -441,9 +431,6 @@ lessons:
   enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=binary_check:/ && ; test=tests/unit/test_cmd_save_research_artifact_reflux.bats'
 - id: 'LS088'
   title: 'stop hookの洗脳#3検出パターンに許可求め・判断委任フレーズが欠落'
-  origin: '[[将軍お許しフレーズすり抜け]] -> [[stop_hook_L166_L415パターン欠落]] -> [[4フレーズBLOCK追加]]'
-  detail: '2026-07-16: 将軍がお許しがあれば・判断を仰ぐと出力→stop hookすり抜け→殿介入。L166+L415に4フレーズ追加しBLOCK化。commit 365b3d7f0。47/47 PASS'
-  source_cmd: 'session_20260716'
-  created_at: '2026-07-16'
-  automated: true
-  enforcement: 'Level5: stop_check_inbox.sh L166+L415で4フレーズBLOCK。T-SCI-032/033/034回帰防護'
+  origin: '[[LS088]] -> 統合 -> [[LS048]]'
+  superseded_by: 'LS048 (洗脳対策全サイクル(6)として吸収。stop_check_inbox.sh L166+L415 enforcement維持。active上限31対応 2026-07-16)'
+  archived_full_text: 'docs/research/lessons_shogun_a04_a09_detail.md'

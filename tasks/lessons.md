@@ -11006,3 +11006,68 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 全CLI・全roleの自動注入到達を検証する時
 - **how**: 各実入口を独立fixtureで実行しconcept/raw/causalと出力hashを突合する
 - CLIラベルだけ変えて同一関数を反復せず、Claude/Codex各entrypointをisolated fixtureで実行し、source eventのconcept/raw/causal対応と8出力hash一致を測るチェックを次回から必須化する
+
+### L1153: grace判定は生存確認の後に置く
+- **日付**: 2026-07-16
+- **出典**: cmd_karo_hotfix_active_dead_pane_recovery_202607161035
+- **記録者**: kagemaru
+- **tags**: [infra,ninja-monitor,frontend,deploy,gate]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor.bats]
+- **origin**: [[cmd_karo_hotfix_active_dead_pane_recovery_202607161035]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 起動直後のgraceを先にreturnするとdead paneまで正常待機として隠す。active task監視ではpane_deadを先に測り、dead-only SSOT復旧のPASS/BLOCK後だけ次サイクルへ進めるチェックを追加すべき。origin: [[hanzo_dead_20260716_103140]] -> [[deploy_grace_precedes_dead_recovery]] -> [[active_dead_pane_auto_respawn]]
+
+### L1154: 差分在庫の即時ALERTにはconsumer猶予が必要
+- **日付**: 2026-07-16
+- **出典**: cmd_karo_hotfix_shogun_startup_four_blocks_202607161329
+- **記録者**: tobisaru
+- **tags**: [infra,gate,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_shogun_startup.sh,scripts/loop_ledger_update.sh,tests/unit/test_loop_ledger_update.bats,skills/cmd-complete/SKILL.md,skills/codd-fix/SKILL.md]
+- **origin**: [[cmd_karo_hotfix_shogun_startup_four_blocks_202607161329]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 前回snapshot比のstock増加だけでは、新規production直後かconsumer停止かを区別できない。last_consumption_tsの鮮度境界を併用し、直近消費済みなら猶予内は発火させない。次回チェック: stock増加時にconsumer ageを二値検証する
+
+### L1155: queued通知は消費ロック内で現行状態へ再解決する
+- **日付**: 2026-07-16
+- **出典**: cmd_karo_hotfix_stale_inbox_nudge_consumption_202607161354
+- **記録者**: hanzo
+- **tags**: [infra,inbox]
+- **subdomain**: infra
+- **target_files**: [scripts/inbox_watcher.sh,tests/unit/test_inbox_watcher_dedup.bats]
+- **origin**: [[cmd_karo_hotfix_stale_inbox_nudge_consumption_202607161354]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- busy中に積まれた通知へ検知時countを埋め込むと消費時にstale表示となる。送信ロック取得後に現行count/fingerprintを再取得し、0なら破棄、同一現行世代は1送信へcoalesceする。結果ログはattempted/dedup/pastedを分離する。
+
+### L1156: 入力契約追加時は既存true-negative fixtureと不完全構造境界を同時更新する
+- **日付**: 2026-07-16
+- **出典**: cmd_karo_ci_fix_29472330522_root_gate_report_format_202607161359
+- **記録者**: hayate
+- **tags**: [infra,gate,git]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_report_format_main.py,tests/test_gate_report_format.bats]
+- **origin**: [[cmd_karo_ci_fix_29472330522_root_gate_report_format_202607161359]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 新しいLG055必須契約を本体へ追加した際、既存PASS fixtureが未追従してCIが2件FAILし、さらにdict存在のみで四要素欠落が通る穴が残った。契約追加commitでは既存PASS fixture全件とmissing/partial/completeの3境界を同一変更で試験すべき
+
+### L1157: 比較入力を読むwriterはpublishだけでなくread→compare→append全区間を排他せよ
+- **日付**: 2026-07-16
+- **出典**: cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510
+- **記録者**: kagemaru
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [scripts/loop_ledger_update.sh,tests/unit/test_loop_ledger_update.bats]
+- **origin**: [[cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- 同一OUT_FILEの2 writerが同じprevious snapshotを読むとatomic writeだけでもlost updateする。変更前8反復で1件再現し、全区間flock後16反復0件を確認。次回は並行writer fixtureを必須チェックへ追加する。

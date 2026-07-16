@@ -63,6 +63,11 @@ assumption_invalidation:
   found: false
   affected_cmds: []
   detail: ""
+operational_simulation:
+  command: "bash scripts/gates/gate_report_format.sh queue/reports/hayate_report_cmd_3630.yaml"
+  expected: "ENV token reporting remains non-blocking"
+  actual: "gate completed with ENV INFO policy applied"
+  result: "yes"
 binary_checks:
   AC1:
     - check: "ENV名INFO表示"

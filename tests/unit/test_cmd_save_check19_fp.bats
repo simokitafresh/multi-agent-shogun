@@ -140,6 +140,34 @@ setup() {
     [[ "$output" == *"description空値"* ]]
 }
 
+@test "C19-TP-002b: description double-quote空値を検出する" {
+    CMD_BLOCK='  title: パリティ確認 本番環境'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_CACHE['project']='dm-signal'
+    CMD_BLOCK_CACHE['scope_mode']=''
+    AC_TEXT='    AC1:
+      description: ""
+      binary_check: "パリティ一致を確認"'
+    export CMD_BLOCK CMD_BLOCK_NC AC_TEXT
+    run check_19_parity_ac
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"description空値"* ]]
+}
+
+@test "C19-TP-002c: description single-quote空値を検出する" {
+    CMD_BLOCK='  title: パリティ確認 本番環境'
+    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_CACHE['project']='dm-signal'
+    CMD_BLOCK_CACHE['scope_mode']=''
+    AC_TEXT="    AC1:
+      description: ''
+      binary_check: \"パリティ一致を確認\""
+    export CMD_BLOCK CMD_BLOCK_NC AC_TEXT
+    run check_19_parity_ac
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"description空値"* ]]
+}
+
 @test "C19-TP-003: binary_checkフィールド不在を検出する" {
     CMD_BLOCK='  title: parity check 本番登録
   project: dm-signal

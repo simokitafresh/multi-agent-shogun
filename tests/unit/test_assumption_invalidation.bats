@@ -64,6 +64,11 @@ skill_candidate:
   found: false
 decision_candidate:
   found: false
+operational_simulation:
+  command: "bash scripts/gates/gate_report_format.sh queue/reports/tobisaru_report_cmd_1433.yaml"
+  expected: "assumption_invalidation found=false is accepted"
+  actual: "assumption_invalidation validation completed"
+  result: "yes"
 ${ai_block}
 hook_failures:
   count: 0

@@ -138,6 +138,22 @@ EOF
     _fixture_project_start
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
+  title: "integration operational simulation contract"
+  task_type: impl
+  parent_cmd: cmd_fixture_integration
+  task_id: cmd_fixture_integration_impl
+  project: infra
+  target_path: "scripts/gates/gate_fixture.sh"
+  acceptance_criteria:
+    - id: AC1
+      description: "実運用入口を実走して期待結果と実値を比較する"
+EOF
+    _build_report_fixture integration_impl
+    _fixture_project_end
+
+    _fixture_project_start
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
   title: "waive_ac field test"
   task_type: impl
   parent_cmd: cmd_fixture_waive
@@ -314,6 +330,18 @@ _setup_git_project() {
     commit_block="$(report_block "$report_path" "commit")"
     [[ "$commit_block" == *'check: git commitが完了したか(untracked/modified=0)'* ]]
     [[ "$commit_block" == *"result: ''"* ]]
+}
+
+@test "LG055 integration taskはoperational_simulation四要素を事前注入する" {
+    local report_path
+    report_path="$(fixture_report_path integration_impl)"
+
+    run grep -A4 '^operational_simulation:' "$report_path"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'command: ""'* ]]
+    [[ "$output" == *'expected: ""'* ]]
+    [[ "$output" == *'actual: ""'* ]]
+    [[ "$output" == *'result: ""  # PASS or FAIL'* ]]
 }
 
 @test "研究cmdではcommit checkにwaive_reason付きresult:noを自動注入する" {
@@ -715,7 +743,7 @@ YAML
     bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" result.summary "テンプレート初期値のgate互換性を確認"
     bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" result.details "lesson_candidate.no_lesson_reasonとlessons_usefulは初期値のまま"
     bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" purpose_validation.cmd_purpose "lesson default compatibility"
-    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" files_modified "scripts/deploy_task.sh"
+    bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" files_modified "docs/lesson-default-fixture.md"
     printf '[{check: "lesson default values pass report gate", result: "yes"}]\n' \
         | bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$report_path" binary_checks.AC1 -
     printf '[{check: "git commit check waived in template compatibility test", result: "yes"}]\n' \

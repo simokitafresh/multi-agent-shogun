@@ -19,6 +19,8 @@ teardown_file() {
 }
 
 setup() {
+    exec 8>"$BATS_FILE_TMPDIR/three-layer-preflight-fixture.lock"
+    flock -x 8
     export ROOT TMP_EVIDENCE AGENT PANE EVIDENCE MEMORY_DB_QUERY_DB
     TMP_EVIDENCE="$(mktemp -d)"
     MEMORY_DB_QUERY_DB="$TMP_EVIDENCE/memory.db"

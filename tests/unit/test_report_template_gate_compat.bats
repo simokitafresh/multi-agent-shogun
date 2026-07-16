@@ -117,6 +117,11 @@ binary_checks:
     - check: "テスト確認2"
       result: "yes"
 verdict: PASS
+operational_simulation:
+  command: "bash scripts/gates/gate_report_format.sh queue/reports/test_ninja_report_cmd_test.yaml"
+  expected: "filled report satisfies the integration report contract"
+  actual: "report structure validation completed"
+  result: "yes"
 EOF
 }
 

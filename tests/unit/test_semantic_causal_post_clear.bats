@@ -1,6 +1,9 @@
 #!/usr/bin/env bats
 
 setup() {
+    unset SHOGUN_HEAVY_JOB_LOCK_HELD
+    exec 8>"$BATS_FILE_TMPDIR/semantic-causal-fixture.lock"
+    flock -x 8
     export ROOT="$(mktemp -d)"
     mkdir -p "$ROOT/scripts" "$ROOT/queue/gates/cmd_test"
     cp "$BATS_TEST_DIRNAME/../../scripts/semantic_causal_post_clear.sh" "$ROOT/scripts/"
