@@ -637,6 +637,35 @@ def main() -> int:
         hints.append("verdictはPASS/FAIL/PASS_NO_IMPROVEMENTの三値のみ。binary_checks全yes→PASS、1つでもno→FAIL、revert多数→PASS_NO_IMPROVEMENT")
         hints.append("FIX COMMAND (verdict): " + _rfs_cmd(report_path, "verdict", "PASS"))
 
+    # ── LG055: integration cmd requires operational_simulation ──
+    # files_modified に scripts/ や .githooks/ を含む場合、operational_simulation
+    # が報告に存在しなければ WARN を出す。根因: gunshi precheck のみが検出し
+    # gate_report_format は素通りしていた（本日5件再発）。
+    _fm = data.get("files_modified") or []
+    _has_integration_path = any(
+        isinstance(f, dict)
+        and any(
+            p in (f.get("path") or "")
+            for p in ("scripts/", ".githooks/", "scripts/gates/", "scripts/hooks/")
+        )
+        for f in (_fm if isinstance(_fm, list) else [])
+    )
+    if _has_integration_path:
+        _opsim = data.get("operational_simulation")
+        if not _opsim or not isinstance(_opsim, dict):
+            errors.append(
+                "operational_simulation: MISSING (integration cmd requires "
+                "command/expected/actual/result — LG055)"
+            )
+            hints.append(
+                "FIX (operational_simulation): "
+                + _rfs_cmd(
+                    report_path,
+                    "operational_simulation.command",
+                    "bats tests/unit/test_xxx.bats",
+                )
+            )
+
     # revision_requested is an editing/unlock state, not a terminal report
     # state.  A successful terminal verdict must only be accepted after the
     # explicit revision round-trip has returned the report to completed.
