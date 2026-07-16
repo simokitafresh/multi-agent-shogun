@@ -24,6 +24,29 @@ setup() {
     printf '# gunshi review log\n' > "$TEST_ROOT/logs/gunshi_review_log.yaml"
 }
 
+@test "all review paths block missing structured operational simulation" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: cmd_missing_opsim
+  review_type: consultation
+  brainwash_check: "1/1 checked"
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"operational_simulation must contain"* ]]
+}
+
+@test "APPROVE blocks without file line or symbol verified evidence" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: cmd_missing_verified
+  review_type: consultation
+  verdict: APPROVE
+  brainwash_check: "1/1 checked"
+  operational_simulation: {command: "true", expected: pass, actual: pass, result: PASS}
+  verified_files: ["mere prose"]
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"verified_files file:line or file:symbol"* ]]
+}
+
 teardown() {
     rm -rf "$TEST_ROOT"
 }
@@ -82,6 +105,8 @@ ENTRY
   verdict: APPROVE
   finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
   brainwash_check: "1/1確認済み 修正前0→修正後1"
+  operational_simulation: {command: "bats test", expected: pass, actual: pass, result: PASS}
+  verified_files: ["tests/example.bats:1"]
   observations:
     - 事実1: テスト実施済み
 ENTRY
@@ -99,6 +124,8 @@ ENTRY
   observations:
     - "test observation"
   brainwash_check: "1/1確認済み 修正前0→修正後1"
+  operational_simulation: {command: "bats test", expected: pass, actual: pass, result: PASS}
+  verified_files: ["tests/example.bats:test_case"]
 ENTRY
     [ "$status" -eq 2 ]
     [[ "$output" == *"finding_categories"* ]]
@@ -113,6 +140,8 @@ ENTRY
   observations:
     - "test observation"
   brainwash_check: "1/1確認済み 修正前0→修正後1"
+  operational_simulation: {command: "bats test", expected: pass, actual: pass, result: PASS}
+  verified_files: ["tests/example.bats:1"]
 ENTRY
     [ "$status" -eq 2 ]
     [[ "$output" == *"adversarial"* ]]
@@ -132,6 +161,8 @@ ENTRY
   observations:
     - "test observation"
   brainwash_check: "1/1確認済み 修正前0→修正後1"
+  operational_simulation: {command: "bats test", expected: pass, actual: pass, result: PASS}
+  verified_files: ["tests/example.bats:test_fc3"]
 ENTRY
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
@@ -176,6 +207,8 @@ ENTRY
   observations:
     - "test observation"
   brainwash_check: "1/1確認済み 修正前0→修正後1"
+  operational_simulation: {command: "bats test", expected: pass, actual: pass, result: PASS}
+  verified_files: ["tests/example.bats:test_ap2"]
 ENTRY
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
@@ -209,6 +242,8 @@ ENTRY
   observations:
     - "test observation"
   brainwash_check: "3件中3件確認、誤BLOCK 0件"
+  operational_simulation: {command: "bats test", expected: pass, actual: pass, result: PASS}
+  verified_files: ["tests/example.bats:t_gate_clear"]
 ENTRY
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]

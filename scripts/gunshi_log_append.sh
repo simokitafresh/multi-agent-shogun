@@ -100,13 +100,32 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*report ]] && [[ "$ENTRY" =~ gate_predi
     fi
 fi
 
-# --- operational_simulation必須(self_study/consultation) --- 先送りWARN 5件遡及: L4貫通
-if [[ "$ENTRY" =~ review_type:[[:space:]]*(self_study|consultation) ]]; then
-    if [[ "$ENTRY" != *"operational_simulation:"* ]]; then
-        echo "BLOCK: operational_simulationが未記入(self_study/consultation)。実運用で何が起きるかのシミュレーション結果を記入せよ(殿指摘2026-05-27)" >&2
-        exit 2
-    fi
-fi
+# --- review evidence contract ---
+# Detection at startup is too late: validate the common append point so an
+# incomplete review can never become an APPROVE/LGTM record.
+python3 - "$ENTRY" <<'PY'
+import re, sys, yaml
+try:
+    parsed = yaml.safe_load(sys.argv[1])
+except Exception as exc:
+    print(f"BLOCK: review entry YAML parse error: {exc}", file=sys.stderr); raise SystemExit(2)
+if not isinstance(parsed, list) or len(parsed) != 1 or not isinstance(parsed[0], dict):
+    print("BLOCK: review entry must be one YAML list item", file=sys.stderr); raise SystemExit(2)
+item = parsed[0]
+review_type = str(item.get("review_type") or "").strip()
+if review_type in {"draft", "report", "self_study", "consultation"}:
+    ops = item.get("operational_simulation")
+    required = {"command", "expected", "actual", "result"}
+    if not isinstance(ops, dict) or not required.issubset(ops) or any(str(ops[k]).strip().lower() in {"", "none", "null", "n/a"} for k in required):
+        print("BLOCK: operational_simulation must contain command/expected/actual/result for every review path", file=sys.stderr); raise SystemExit(2)
+verdict = str(item.get("verdict") or "").strip().upper()
+if verdict in {"APPROVE", "LGTM"}:
+    files = item.get("verified_files")
+    if isinstance(files, str): files = [files]
+    valid = isinstance(files, list) and any(isinstance(v, str) and re.search(r"^[^:\s]+:(?:[1-9][0-9]*|[A-Za-z_][A-Za-z0-9_.-]*)$", v.strip()) for v in files)
+    if not valid:
+        print("BLOCK: APPROVE/LGTM requires verified_files file:line or file:symbol evidence", file=sys.stderr); raise SystemExit(2)
+PY
 
 # Historical reviews are immutable. Retroactive evidence is accepted only as
 # a structured self_study remediation for an exact existing cmd_id.
