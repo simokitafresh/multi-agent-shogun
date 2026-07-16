@@ -132,79 +132,56 @@ fi
 
 [[ -z "$grep_output" ]] && grep_output=""
 
-# --- ブロック解析 ---
+# --- ブロック解析（awk 1プロセス。WSL2上のbash正規表現ループを回避） ---
+analysis_output=$(GSF_LEGIT_RE="$LEGIT_RE" GSF_DATA_RE="$DATA_RE" GSF_ROOT="${DM_SIGNAL_PATH}/" awk '
+function reset_block() { file=""; first=""; legit=0; data=0; data_line="" }
+function update_flags(content) {
+    if (!legit && content ~ legit_re) legit=1
+    if (!data && content ~ data_re) {
+        data=1; data_line=content; sub(/^[[:space:]]+/, "", data_line)
+    }
+}
+function emit_block( rel) {
+    if (file == "") return
+    if (first ~ /#.*except/) { reset_block(); return }
+    total++
+    if (!legit && data) {
+        violations++; rel=file; sub("^" root, "", rel)
+        print "S\t" rel "\t" line_no "\t" data_line
+    }
+    reset_block()
+}
+BEGIN { legit_re=ENVIRON["GSF_LEGIT_RE"]; data_re=ENVIRON["GSF_DATA_RE"]; root=ENVIRON["GSF_ROOT"]; reset_block() }
+$0 == "--" { emit_block(); next }
+{
+    raw=$0
+    if (match(raw, /\.py:[0-9]+:/)) {
+        marker=substr(raw, RSTART + 4, RLENGTH - 5)
+        content=substr(raw, RSTART + RLENGTH)
+        if (index(content, "except Exception")) {
+            emit_block(); file=substr(raw, 1, RSTART + 2); line_no=marker
+            first=content; next
+        }
+    }
+    if (file != "") {
+        if (match(raw, /\.py-[0-9]+-/)) update_flags(substr(raw, RSTART + RLENGTH))
+        else if (match(raw, /\.py:[0-9]+:/)) update_flags(substr(raw, RSTART + RLENGTH))
+        else update_flags(raw)
+    }
+}
+END { emit_block(); print "C\t" total "\t" violations }
+' <<< "$grep_output")
+
 VIOLATIONS=0
 TOTAL_EXCEPT=0
-FLAGGED_FILES=()
-
-cur_file="" cur_line="" cur_first_line=""
-cur_has_legit=false cur_has_data=false cur_data_line=""
-
-_reset_block() {
-    cur_file=""; cur_first_line=""
-    cur_has_legit=false; cur_has_data=false; cur_data_line=""
-}
-
-_update_flags() {
-    local content="$1"
-    if [[ "$cur_has_legit" == false ]] && [[ "$content" =~ $LEGIT_RE ]]; then
-        cur_has_legit=true
+while IFS=$'\t' read -r kind field1 field2 field3; do
+    if [[ "$kind" == "S" ]]; then
+        echo "  SUSPECT: ${field1}:${field2} — except Exception + [${field3}]"
+    elif [[ "$kind" == "C" ]]; then
+        TOTAL_EXCEPT="$field1"
+        VIOLATIONS="$field2"
     fi
-    if [[ "$cur_has_data" == false ]] && [[ "$content" =~ $DATA_RE ]]; then
-        cur_has_data=true
-        cur_data_line="${content#"${content%%[! ]*}"}"  # ltrim spaces
-    fi
-}
-
-emit_block() {
-    [[ -z "$cur_file" ]] && return
-    # コメント行のexceptは除外
-    if [[ "$cur_first_line" == *'#'*'except'* ]]; then
-        _reset_block; return
-    fi
-    TOTAL_EXCEPT=$((TOTAL_EXCEPT + 1))
-    # 正当パターン（raise等）があればスキップ
-    if [[ "$cur_has_legit" == true ]]; then
-        _reset_block; return
-    fi
-    # データ値パターン検出
-    if [[ "$cur_has_data" == true ]]; then
-        VIOLATIONS=$((VIOLATIONS + 1))
-        local relpath="${cur_file#"${DM_SIGNAL_PATH}"/}"
-        echo "  SUSPECT: ${relpath}:${cur_line} — except Exception + [${cur_data_line}]"
-        FLAGGED_FILES+=("${relpath}:${cur_line}")
-    fi
-    _reset_block
-}
-
-while IFS= read -r line || [[ -n "$line" ]]; do
-    if [[ "$line" == "--" ]]; then
-        emit_block; continue
-    fi
-    # match行検出 (filepath:lineno:content)
-    if [[ "$line" =~ ^(.+\.py):([0-9]+):(.*)$ ]]; then
-        matched_content="${BASH_REMATCH[3]}"
-        if [[ "$matched_content" == *"except Exception"* ]]; then
-            emit_block  # 前ブロック処理
-            cur_file="${BASH_REMATCH[1]}"
-            cur_line="${BASH_REMATCH[2]}"
-            cur_first_line="$matched_content"
-            cur_has_legit=false; cur_has_data=false; cur_data_line=""
-            continue
-        fi
-    fi
-    # コンテキスト行: プレフィックス除去してフラグ更新
-    if [[ -n "$cur_file" ]]; then
-        if [[ "$line" =~ ^.+\.py[-][0-9]+[-](.*)$ ]]; then
-            _update_flags "${BASH_REMATCH[1]}"
-        elif [[ "$line" =~ ^.+\.py:[0-9]+:(.*)$ ]]; then
-            _update_flags "${BASH_REMATCH[1]}"
-        else
-            _update_flags "$line"
-        fi
-    fi
-done <<< "$grep_output"
-emit_block  # 最終ブロック処理
+done <<< "$analysis_output"
 
 # --- 結果サマリ ---
 echo ""
