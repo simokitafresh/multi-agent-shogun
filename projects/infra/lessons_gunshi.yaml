@@ -130,9 +130,10 @@ lessons:
   origin: '[[cmd_1494]]'
   created_at: '2026-03-29'
   automated: true
-  enforcement: gate_gunshi_cs_checklist.sh(直近10件チェック)+gate_gunshi_startup.sh Check 7に統合済み
-  when: self_study/consultationエントリをreview_logに追記する時。gate_gunshi_cs_checklist.shが起動時に未記入を検知
-  how: CS1-CS6の6観点を各1行でチェックしcs_checklistフィールドに記録。未記入ならstartup gateがWARN
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK、2026-07-17 cmd_reflux_promotion_202607170532_kotaro): scripts/gunshi_log_append.shの共通append点でself_study/consultationのcs_checklist CS1-CS6全キー・非空をexit 2 BLOCK。tests/unit/test_gunshi_log_append_obs.batsがCS6欠落の非追記と全項目完備の許可を回帰強制。"
+  when: self_study/consultationエントリをreview_logに追記する時。共通append点が未記入を事前BLOCK
+  how: CS1-CS6の6観点を各1行でcs_checklistへ記録。欠落・空値はgunshi_log_append.shがexit 2で拒否
 - id: LG014
   title: 忍者/家老ミスに見える問題はインフラ真因を疑え — 道具が壊れている可能性
   detail: |

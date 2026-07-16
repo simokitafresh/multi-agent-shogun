@@ -128,6 +128,22 @@ if verdict in {"APPROVE", "LGTM"}:
     valid = isinstance(files, list) and any(isinstance(v, str) and re.search(r"^[^:\s]+:(?:[1-9][0-9]*|[A-Za-z_][A-Za-z0-9_.-]*)$", v.strip()) for v in files)
     if not valid:
         print("BLOCK: APPROVE/LGTM requires verified_files file:line or file:symbol evidence", file=sys.stderr); raise SystemExit(2)
+if review_type in {"self_study", "consultation"}:
+    checklist = item.get("cs_checklist")
+    required_cs = {f"CS{i}" for i in range(1, 7)}
+    missing = sorted(
+        key for key in required_cs
+        if not isinstance(checklist, dict)
+        or key not in checklist
+        or str(checklist.get(key, "")).strip().lower() in {"", "none", "null", "n/a"}
+    )
+    if missing:
+        print(
+            "BLOCK: self_study/consultation requires non-empty "
+            f"cs_checklist CS1-CS6 (missing: {','.join(missing)}) (LG013)",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
 PY
 
 # Historical reviews are immutable. Retroactive evidence is accepted only as

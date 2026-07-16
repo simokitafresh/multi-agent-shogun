@@ -68,9 +68,25 @@ ENTRY
   observations: ["対象は既実装と判定"]
   brainwash_check: "1/1 checked"
   operational_simulation: {command: "git show HEAD:scripts/example.sh", expected: found, actual: found, result: PASS}
+  cs_checklist: {CS1: "全量確認", CS2: "自システム検証", CS3: "実コード比較", CS4: "行動変換", CS5: "未検証角度確認", CS6: "因果推論"}
 ENTRY
     [ "$status" -eq 0 ]
     [[ "$output" == *"OK"* ]]
+}
+
+@test "LG013 blocks consultation without complete CS1-CS6 at append time" {
+    run bash "$TEST_ROOT/scripts/gunshi_log_append.sh" <<'ENTRY'
+- cmd_id: cmd_lg013_missing_cs6
+  review_type: consultation
+  verdict: REVISE
+  observations: ["相談を実測"]
+  brainwash_check: "1/1 checked"
+  operational_simulation: {command: "bats tests", expected: pass, actual: pass, result: PASS}
+  cs_checklist: {CS1: "全量確認", CS2: "自システム検証", CS3: "実コード比較", CS4: "行動変換", CS5: "未検証角度確認"}
+ENTRY
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"missing: CS6"* ]]
+    ! grep -q 'cmd_lg013_missing_cs6' "$TEST_ROOT/logs/gunshi_review_log.yaml"
 }
 
 teardown() {
