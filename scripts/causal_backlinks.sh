@@ -92,16 +92,14 @@ RG_COMMON_ARGS=(
 )
 
 run_backlink_search() {
-    local _cbl_path
-
     if [ "$DETAIL" -eq 1 ]; then
-        for _cbl_path in "${existing_search_paths[@]}"; do
-            "$RG_BIN" -n "${RG_COMMON_ARGS[@]}" "$needle" "$_cbl_path" 2>/dev/null || true
-        done | sort -u
+        "$RG_BIN" -n "${RG_COMMON_ARGS[@]}" "$needle" "${existing_search_paths[@]}" 2>/dev/null \
+            | sort -u \
+            || true
     else
-        for _cbl_path in "${existing_search_paths[@]}"; do
-            "$RG_BIN" -l "${RG_COMMON_ARGS[@]}" "$needle" "$_cbl_path" 2>/dev/null || true
-        done | sort -u
+        "$RG_BIN" -l "${RG_COMMON_ARGS[@]}" "$needle" "${existing_search_paths[@]}" 2>/dev/null \
+            | sort -u \
+            || true
     fi
 }
 
