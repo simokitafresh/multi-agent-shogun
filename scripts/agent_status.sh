@@ -24,18 +24,19 @@ STALE_THRESHOLD=600  # 10分（秒）
 
 # AGEを人間可読な形式に変換
 format_age() {
-    local seconds="$1"
+    local seconds="$1" output_var="$2" formatted
     if [ "$seconds" -lt 60 ]; then
-        echo "${seconds}s"
+        formatted="${seconds}s"
     elif [ "$seconds" -lt 3600 ]; then
         local min=$((seconds / 60))
         local sec=$((seconds % 60))
-        echo "${min}m${sec}s"
+        formatted="${min}m${sec}s"
     else
         local hr=$((seconds / 3600))
         local min=$(( (seconds % 3600) / 60 ))
-        echo "${hr}h${min}m"
+        formatted="${hr}h${min}m"
     fi
+    printf -v "$output_var" '%s' "$formatted"
 }
 
 # ヘッダー出力
@@ -83,7 +84,7 @@ for name in "${AGENT_ORDER[@]}"; do
         if [ "$age_seconds" -lt 0 ]; then
             age_seconds=0
         fi
-        age_display=$(format_age "$age_seconds")
+        format_age "$age_seconds" age_display
     fi
 
     # stale検知: active + AGE > 600秒
