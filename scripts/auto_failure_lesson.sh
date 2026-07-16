@@ -10,13 +10,7 @@
 
 set -e
 
-# String ops instead of $(cd ... && pwd) subshell: avoids a subprocess fork
-# on every call (same pattern as scripts/report_field_set.sh SCRIPT_DIR).
-_afl_self="${BASH_SOURCE[0]:-$0}"
-[[ "$_afl_self" != /* ]] && _afl_self="$PWD/$_afl_self"
-SCRIPT_DIR="${_afl_self%/scripts/auto_failure_lesson.sh}"
 REPORT_PATH="${1:-}"
-BULLETIN_SCRIPT="${AUTO_FAILURE_BULLETIN_SCRIPT:-$SCRIPT_DIR/scripts/bulletin_write.sh}"
 
 if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     echo "[auto_failure] Usage: auto_failure_lesson.sh <report_yaml_path>" >&2
@@ -35,11 +29,16 @@ fi
 # to the full Python parse below -- this only short-circuits the unambiguous,
 # overwhelmingly common "not failed" case.
 _afl_status_line=""
-while IFS= read -r _afl_line || [ -n "$_afl_line" ]; do
+_afl_status_found=false
+# Read the small report header in one buffered builtin call.  Operational
+# reports place root metadata (including status) near the top; limiting the
+# speculative fast path keeps large/malformed inputs on the canonical parser.
+mapfile -t -n 64 _afl_head < "$REPORT_PATH"
+for _afl_line in "${_afl_head[@]}"; do
     case "$_afl_line" in
-        status:*) _afl_status_line="$_afl_line"; break ;;
+        status:*) _afl_status_line="$_afl_line"; _afl_status_found=true; break ;;
     esac
-done < "$REPORT_PATH"
+done
 _afl_status_val="${_afl_status_line#status:}"
 # Trim whitespace and an optional matching quote pair via pure bash parameter
 # expansion (no sed subprocess).
@@ -47,10 +46,18 @@ _afl_status_val="${_afl_status_val#"${_afl_status_val%%[![:space:]]*}"}"
 _afl_status_val="${_afl_status_val%"${_afl_status_val##*[![:space:]]}"}"
 _afl_status_val="${_afl_status_val#[\"\']}"
 _afl_status_val="${_afl_status_val%[\"\']}"
-if [ "$_afl_status_val" != "failed" ]; then
+if $_afl_status_found && [ "$_afl_status_val" != "failed" ]; then
     echo "[auto_failure] Skipped: status_not_failed (${_afl_status_val}) (${REPORT_PATH})"
     exit 0
 fi
+
+# Resolve project-relative dependencies only for reports that need canonical
+# parsing/registration.  The dominant non-failed path does not consume them.
+# String ops avoid the $(cd ... && pwd) subprocess used by the old path.
+_afl_self="${BASH_SOURCE[0]:-$0}"
+[[ "$_afl_self" != /* ]] && _afl_self="$PWD/$_afl_self"
+SCRIPT_DIR="${_afl_self%/scripts/auto_failure_lesson.sh}"
+BULLETIN_SCRIPT="${AUTO_FAILURE_BULLETIN_SCRIPT:-$SCRIPT_DIR/scripts/bulletin_write.sh}"
 
 # Extract failure info from report YAML
 export REPORT_PATH SCRIPT_DIR
