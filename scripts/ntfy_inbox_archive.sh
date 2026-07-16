@@ -24,6 +24,12 @@ if [ ! -f "$INBOX" ]; then
     exit 0
 fi
 
+# Empty inbox is the common watcher-startup path. Avoid Python + PyYAML startup
+# when the YAML value is explicitly an empty sequence.
+if grep -Eq '^[[:space:]]*inbox:[[:space:]]*\[[[:space:]]*\][[:space:]]*(#.*)?$' "$INBOX"; then
+    exit 0
+fi
+
 # venv のPython使用（yaml依存）
 PYTHON="$SCRIPT_DIR/.venv/bin/python3"
 if [ ! -f "$PYTHON" ]; then
