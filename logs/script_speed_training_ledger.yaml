@@ -1652,16 +1652,16 @@ entries:
   updated_at: "2026-06-13T00:53:00"
   iteration: 2
 - script_path: scripts/hooks/test_hooks.sh
-  status: assigned
+  status: saturated
   before_ms: 17
-  after_ms: 17
-  before_real_ms: 2070
-  after_real_ms: ""
-  real_measurement_command: bash scripts/hooks/test_hooks.sh; median of 5 runs
-  test_result: bash_n_PASS;test_hooks_80_pass_0_skip;before_3020_after_2070
-  commit: e5d42e65665977b9cd0ab9fddc9d949065fb684c
+  after_ms: 2011.800
+  before_real_ms: 2459.186
+  after_real_ms: 2011.800
+  real_measurement_command: "bash scripts/hooks/test_hooks.sh"
+  test_result: "candidate faster but adoption BLOCKED: record-real missing required new fields; detector event not measurable"
+  commit: "7eeef139f85f3df84d1187272261a9135c4f7b0d"
   assigned_to: "kotaro"
-  updated_at: "2026-07-17T00:19:43"
+  updated_at: "2026-07-17T00:28:56"
   iteration: 1
 - script_path: scripts/hooks/test_result_guard.sh
   status: pending
