@@ -371,7 +371,10 @@ for s in sections:
     if s["type"] == "heading":
         flush_acc()
         html_parts.append(f"<h3>{s['text']}</h3>")
-    elif s["type"] in ("text", "bullet"):
+    elif s["type"] == "bullet":
+        flush_acc()
+        html_parts.append(f"<p>{s['text']}</p>")
+    elif s["type"] == "text":
         text_acc.append(s["text"])
     elif s["type"] == "hr":
         flush_acc()
