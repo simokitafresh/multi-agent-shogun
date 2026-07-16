@@ -78,11 +78,10 @@ done
 python3 - "$script_dir" "$db_path" "$backup_dir" "$limit" "$min_concept_frequency" "$min_links" "$importance" "$dry_run" <<'PY'
 from __future__ import annotations
 
-import importlib.util
+import os
 import re
 import sqlite3
 import sys
-from pathlib import Path
 
 
 SQLITE_BUSY_TIMEOUT_MS = 5000
@@ -90,8 +89,10 @@ INT_RE = re.compile(r"^[0-9]+$")
 NORMAL_STATES = ("raw", "verified")
 
 
-def load_state_module(repo_root: Path):
-    module_path = repo_root / "scripts" / "memory_db_live_insert.py"
+def load_state_module(repo_root: str):
+    import importlib.util
+
+    module_path = os.path.join(repo_root, "scripts", "memory_db_live_insert.py")
     spec = importlib.util.spec_from_file_location("memory_db_live_insert", module_path)
     if spec is None or spec.loader is None:
         raise SystemExit(f"obsidian_promote_candidate: cannot load {module_path}")
@@ -116,8 +117,8 @@ def require_columns(conn: sqlite3.Connection, table: str, columns: set[str]) -> 
 
 
 def main() -> int:
-    repo_root = Path(sys.argv[1])
-    db_path = Path(sys.argv[2])
+    repo_root = sys.argv[1]
+    db_path = sys.argv[2]
     backup_dir = sys.argv[3]
     limit = parse_positive_int(sys.argv[4], "--limit")
     min_concept_frequency = parse_positive_int(sys.argv[5], "--min-concept-frequency")
@@ -125,7 +126,7 @@ def main() -> int:
     importance = sys.argv[7]
     dry_run = sys.argv[8] == "1"
 
-    if not db_path.exists():
+    if not os.path.exists(db_path):
         print(f"obsidian_promote_candidate: database not found: {db_path}", file=sys.stderr)
         return 1
 
