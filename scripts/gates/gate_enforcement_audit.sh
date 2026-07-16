@@ -39,17 +39,13 @@ fi
 
 cache_file="${ENFORCEMENT_AUDIT_CACHE:-/tmp/shogun_gate_enforcement_audit_${UID:-0}.cache}"
 cache_sig=""
-cache_existing=()
 for cache_path in "$CLAUDE_MD" "$ALLOWLIST_FILE" "$USER_SETTINGS" "$PROJECT_SETTINGS" "$PROJECT_LOCAL_SETTINGS"; do
   if [[ -f "$cache_path" ]]; then
-    cache_existing+=("$cache_path")
+    cache_sig+="$cache_path $(stat -c '%Y %s' "$cache_path")"$'\n'
   else
     cache_sig+="$cache_path MISSING"$'\n'
   fi
 done
-if ((${#cache_existing[@]})); then
-  cache_sig+="$(stat -c '%n %Y %s' -- "${cache_existing[@]}")"$'\n'
-fi
 cache_hash="$(printf '%s' "$cache_sig" | sha256sum | awk '{print $1}')"
 
 if [[ -f "$cache_file" ]]; then
