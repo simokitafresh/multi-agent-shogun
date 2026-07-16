@@ -135,11 +135,11 @@
 
 ## §8 応用候補カタログ
 
-機械可読正本は `config/campaign_lane_catalog.yaml`。12候補の判定は **ready=0 / partial=10 / blocked=2**（2026-07-16 caller/CLI一次確認）。readyは「対象列挙・数値優先・10分以内・二値検証」の4条件に加え、通常経路writer→台帳→adapter→報告の全計測経路が存在するものだけとする。`scripts/validate_campaign_lane_catalog.py` が件数・必須field・重複・enum・ready実体を決定的検証する。
+機械可読正本は `config/campaign_lane_catalog.yaml`。12候補の判定は **ready=1 / partial=9 / blocked=2**（2026-07-16 caller/CLI一次再確認）。readyは「対象列挙・数値優先・10分以内・二値検証」の4条件に加え、通常経路writer→台帳→adapter→報告の全計測経路が存在するものだけとする。`scripts/validate_campaign_lane_catalog.py` が件数・必須field・重複・enum・ready実体を決定的検証する。
 
 | 候補 | 一次台帳 / 自動writer | objective / metric | adapter | readiness | 品質契約 / 飽和条件 |
 |---|---|---|---|---|---|
-| 本体スクリプト面攻略 | script_speed_training_ledger / cmd_complete_gate | minimize / after_real_ms | 未実装 | partial | FAIL0・SKIP0 / saturated・budget |
+| 本体スクリプト面攻略 | script_speed_training_ledger / cmd_complete_gate | minimize / after_real_ms | bash_speed_training | ready | FAIL0・SKIP0 / saturated・budget・max rounds |
 | pytest側テスト高速化 | pytest durations / DM-Signal pytest | minimize / duration_sec | 未実装 | blocked | expectation不変 / external blocker |
 | SKILL.md鮮度更新 | gate_skill_script_refs / 同gate | minimize / stale_count | 未実装 | partial | FP0 / stale=0 |
 | context鮮度更新 | context_freshness_check / context gate | minimize / stale_source_count | 未実装 | partial | cache bypass再検証 / stale=0 |
