@@ -34,9 +34,15 @@ try:
 except OSError as e: raise SystemExit(f'BLOCK: cannot read ledger: {e}')
 busy=set()
 index_path=os.path.join(root,'queue','pytest_speed_nodeids.tsv')
+deployed={}
 try:
  with open(index_path,encoding='utf-8') as index:
-  busy.update(line.rstrip('\n').split('\t',1)[-1] for line in index if line.strip())
+  for line in index:
+   parts=line.rstrip('\n').split('\t',2)
+   if len(parts)==3:
+    ts,order,node=parts
+    try: deployed[node]=max(deployed.get(node,('',-1)),(ts,int(order)))
+    except ValueError: pass
 except OSError:
  pass
 state_dirs=[os.path.join(root,p) for p in ('queue/tasks','queue/reports') if os.path.isdir(os.path.join(root,p))]
@@ -63,6 +69,8 @@ for path in paths:
   if status in {'assigned','acknowledged','in_progress','active','completed','done'}:
    for k in ('nodeid','target_nodeid'):
     if obj.get(k): busy.add(str(obj[k]))
+for node,generation in deployed.items():
+ if node in latest and latest[node][0] <= generation: busy.add(node)
 for node,(_,row,dur) in sorted(latest.items(),key=lambda x:(-x[1][2],x[0])):
  if row['outcome'].strip().lower() in {'pass','passed'} and int(row['failures'])==0 and int(row['skips'])==0 and node not in busy: print(f'{dur:g}\t{node}')
 PY
@@ -82,14 +90,29 @@ PY
   echo "$out";;
  deploy)
   ninja=${1:-}; node=${2:-}; [[ -n "$ninja" && -n "$node" ]] || usage
+  mkdir -p "$STATE_ROOT/queue/.pytest_speed_locks"
+  lock_id=$(printf '%s' "$node" | sha256sum | awk '{print $1}')
+  exec 9>"$STATE_ROOT/queue/.pytest_speed_locks/$lock_id.lock"
+  flock 9
   tmp=$(mktemp); rm -f "$tmp"; trap 'rm -f "$tmp"' EXIT
+  # Re-check eligibility while holding the node-specific reservation lock.
   "$0" --ledger "$LEDGER" generate "$node" "$tmp" >/dev/null
   deploy=${DEPLOY_TASK:-$ROOT/scripts/deploy_task.sh}
   set +e; bash "$deploy" --direct --yaml "$tmp" "$ninja"; rc=$?; set -e
   if [[ $rc -eq 0 ]]; then
     mkdir -p "$STATE_ROOT/queue"
-    printf 'deployed\t%s\n' "$node" >>"$STATE_ROOT/queue/pytest_speed_nodeids.tsv"
+    python3 - "$LEDGER" "$STATE_ROOT/queue/pytest_speed_nodeids.tsv" "$node" <<'PY'
+import csv,sys
+ledger,index,node=sys.argv[1:]; latest=None
+with open(ledger,encoding='utf-8',newline='') as f:
+ for order,row in enumerate(csv.DictReader(f,delimiter='\t')):
+  if row.get('nodeid','').strip()==node:
+   key=(row.get('timestamp','').strip(),order)
+   if latest is None or key>latest: latest=key
+if latest is None: raise SystemExit('BLOCK: deployed nodeid generation missing from ledger')
+with open(index,'a',encoding='utf-8') as f: f.write(f'{latest[0]}\t{latest[1]}\t{node}\n')
+PY
   fi
-  rm -f "$tmp"; trap - EXIT; exit "$rc";;
+  rm -f "$tmp"; trap - EXIT; flock -u 9; exit "$rc";;
  *) usage;;
 esac
