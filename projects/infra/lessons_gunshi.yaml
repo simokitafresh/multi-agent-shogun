@@ -217,13 +217,15 @@ lessons:
   how: 自力実行可能→即実装+テスト+完了。不可→家老にinbox_write送信。GPを走査→分類→行動
 - id: LG019
   title: タイムボックス原則 — 見込み不明タスクにtimeout 60先行
-  detail: 完了しない前提でtimeout設定。タイムアウト=計測完了。全研究cmdの速度検証に適用可能。複利効果最大
+  detail: |
+    完了しない前提でtimeout設定。タイムアウト=計測完了。全研究cmdの速度検証に適用可能。複利効果最大
+    吸収(2026-07-17, cmd_reflux_promotion_202607170729_hayate, origin: [[cmd_reflux_promotion_202607170729_hayate]] -> [[LG019]] -> [[timebox_minutes_Level4_BLOCK]]): 完了しない前提でtimeout設定。タイムアウト=計測完了。全研究cmdの速度検証に適用可能。複利効果最大\n吸収(2026-07-17, cmd_reflux_promotion_202607170729_hayate, origin: [[cmd_reflux_promotion_202607170729_hayate]] -> [[LG019]] -> [[timebox_minutes_Level4_BLOCK]]): cmd_save.sh Check 20.5をWARNからBLOCKへ昇格し、計測/研究/見積cmdはtimeout_minutes未記入のまま保存できないLevel4フロー内強制とした。対象/非対象/記入済みの3回帰で固定
   source_cmd: gunshi_session_20260406
   origin: '[[gunshi_session_20260406]]'
   created_at: '2026-04-06'
   automated: true
-  enforcement_level: 2
-  enforcement: cmd_save.sh Check 20.5(timeout_minutes未記入WARN)。cmd_2630でLevel5化済み
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK): cmd_save.sh Check 20.5が計測/研究/見積cmdのtimeout_minutes未記入をBLOCKし、上限なしのcmd保存を禁止する"
   when: 見込み不明タスク開始時。cmd_save.sh Check 20.5がtimeout_minutes未記入でWARN
   how: timeout 60を先行設定。タイムアウト=計測完了として扱い次の判断材料にする
 - id: LG020

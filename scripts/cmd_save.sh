@@ -6245,7 +6245,7 @@ if true; then
     fi
 fi
 
-# --- Check 20.5: 計測/研究cmdのタイムボックス欄要求（WARN） ---
+# --- Check 20.5: 計測/研究cmdのタイムボックス欄要求（BLOCK） ---
 # 起源: LG019 — 研究/計測cmdの実行時間見積がなく、CTX圧迫やOOMを入口で防げない
 # 目的: 時間コスト関連cmdに timeout_minutes を明示させ、無制限の計測・探索を防ぐ
 check_timebox_minutes_required() {
@@ -6287,11 +6287,11 @@ ${AC_TEXT:-}"
         return 0
     fi
 
-    echo "WARNING: 計測/研究/見積cmdにtimeout_minutes未記入(LG019)" >&2
+    echo "BLOCK: 計測/研究/見積cmdにtimeout_minutes未記入(LG019)" >&2
     echo "  → timeout_minutes: <想定実行時間上限(分)> をcmdに記入してください" >&2
     echo "  → 検出行: $(printf '%s' "$FIRST_HIT" | sed -E 's/^[[:space:]-]*(description|check|purpose|command):[[:space:]]*//; s/^\"//; s/\"$//' | cut -c1-100)" >&2
     echo "  check=check_timebox_minutes_required" >&2
-    record_warn_reason "計測研究cmd timeout_minutes未記入" "check=check_timebox_minutes_required"
+    record_block_reason "計測研究cmd timeout_minutes未記入。無制限実行を防ぐため上限を明記せよ"
 }
 
 check_timebox_minutes_required

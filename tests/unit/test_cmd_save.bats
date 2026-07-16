@@ -3170,7 +3170,7 @@ assumptions:
     [ "$status" -eq 0 ]
 }
 
-@test "Check20.5-TB2: 計測キーワードあり+timeout_minutesなし→WARNING" {
+@test "Check20.5-TB2: 計測キーワードあり+timeout_minutesなし→BLOCK" {
     CMD_BLOCK='    purpose: "GS計測の再実行時間を確認する"
     command: |
       grid_search のbenchmarkを実行する
@@ -3188,7 +3188,8 @@ assumptions:
     run check_20_assumptions
     echo "$output" >&2
     [[ "$output" == *"timeout_minutes未記入"* ]]
-    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK:"* ]]
+    [ "$status" -ne 0 ]
 }
 
 @test "Check20.5-TB3: 対象キーワードなし→タイムボックスチェックはスキップ" {
