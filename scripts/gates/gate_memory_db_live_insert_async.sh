@@ -8,6 +8,20 @@ cache_file="${TMPDIR:-/tmp}/gate_memory_db_live_insert_async_${root_key}.cache"
 cache_ttl="${MEMORY_DB_LIVE_INSERT_GATE_CACHE_TTL:-2}"
 
 if [[ "$cache_ttl" =~ ^[0-9]+$ && "$cache_ttl" -gt 0 && -f "$cache_file" ]]; then
+    IFS=' ' read -r _cache_signature _cache_rc cache_expires < "$cache_file" || true
+    printf -v now '%(%s)T' -1
+    if [[ "${cache_expires:-}" =~ ^[0-9]+$ ]] && (( now < cache_expires )); then
+        mapfile -s 1 -t cached_output < "$cache_file"
+        if [ -n "${_cache_rc:-}" ]; then
+            if [ "$_cache_rc" -eq 0 ]; then
+                printf '%s\n' "${cached_output[@]}"
+            else
+                printf '%s\n' "${cached_output[@]}" >&2
+            fi
+            exit "$_cache_rc"
+        fi
+    fi
+
     cache_mtime="$(stat -c '%Y' "$cache_file" 2>/dev/null || printf 0)"
     now="$(date +%s)"
     if (( now - cache_mtime < cache_ttl )); then
@@ -60,8 +74,10 @@ if [ -n "$violations" ]; then
         printf '%s\n' "$violations"
     )"
     if [ -n "$signature" ]; then
+        printf -v cache_expires '%(%s)T' -1
+        cache_expires=$((cache_expires + cache_ttl))
         {
-            printf '%s %s\n' "$signature" 1
+            printf '%s %s %s\n' "$signature" 1 "$cache_expires"
             printf '%s\n' "$output"
         } > "${cache_file}.$$" 2>/dev/null && mv "${cache_file}.$$" "$cache_file" 2>/dev/null || true
     fi
@@ -71,8 +87,10 @@ fi
 
 output="OK: memory_db live inserts use async wrapper"
 if [ -n "$signature" ]; then
+    printf -v cache_expires '%(%s)T' -1
+    cache_expires=$((cache_expires + cache_ttl))
     {
-        printf '%s %s\n' "$signature" 0
+        printf '%s %s %s\n' "$signature" 0 "$cache_expires"
         printf '%s\n' "$output"
     } > "${cache_file}.$$" 2>/dev/null && mv "${cache_file}.$$" "$cache_file" 2>/dev/null || true
 fi
