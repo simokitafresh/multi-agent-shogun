@@ -313,7 +313,10 @@ last_synced: '2026-04-20T00:00:00'
 lessons: []
 EOF
 
-    run bash "$nested_project/scripts/sync_lessons.sh" testproj
+    # This test owns the filesystem-fallback contract, not the mtime cache.
+    # Under slower CI load, creating lessons.md and then lessons.yaml can cross
+    # a one-second stat boundary and legitimately take the unchanged-cache skip.
+    run env FORCE_SYNC=1 bash "$nested_project/scripts/sync_lessons.sh" testproj
     [ "$status" -eq 0 ]
 
     run python3 -c "
