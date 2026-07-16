@@ -4221,6 +4221,39 @@ PY
 # ─── 停滞検知（assigned/acknowledged/in_progress+idle） ───
 # 忍者がタスク受領後にペインがidle状態のまま放置された場合、家老に通知
 # 閾値: assigned=15分, acknowledged=10分, in_progress=20分(progress未更新時)
+_run_dead_pane_recovery() {
+    local agent_name="$1"
+    bash "$SCRIPT_DIR/scripts/respawn_dead_agent.sh" "$agent_name"
+}
+
+# deploy/stall graceは生きているCLIの起動待ちにだけ適用する。
+# active taskのdead paneはgraceより先にSSOT経由で復旧する。
+recover_dead_active_pane() {
+    local agent_name="$1" status="$2" pane_target="$3"
+    case "$status" in
+        assigned|acknowledged|in_progress) ;;
+        *) return 1 ;;
+    esac
+    [ -n "$pane_target" ] || return 1
+
+    local pane_dead
+    pane_dead=$(tmux display-message -t "$pane_target" -p '#{pane_dead}' 2>/dev/null || echo "0")
+    [ "$pane_dead" = "1" ] || return 1
+
+    log "ACTIVE-DEAD-RECOVERY: $agent_name status=$status pane_dead=1 recovery=respawn_dead_agent"
+    if ! _run_dead_pane_recovery "$agent_name"; then
+        log "ACTIVE-DEAD-RECOVERY-BLOCK: $agent_name status=$status pane remained dead or recovery failed"
+        return 2
+    fi
+    pane_dead=$(tmux display-message -t "$pane_target" -p '#{pane_dead}' 2>/dev/null || echo "1")
+    if [ "$pane_dead" != "0" ]; then
+        log "ACTIVE-DEAD-RECOVERY-BLOCK: $agent_name status=$status post_recovery_dead=$pane_dead"
+        return 2
+    fi
+    log "ACTIVE-DEAD-RECOVERY-PASS: $agent_name status=$status pane_dead=0"
+    return 0
+}
+
 check_stall() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
@@ -4268,6 +4301,20 @@ check_stall() {
     if [ -z "$task_id" ]; then
         log "STALL-GHOST: $name has status=${status} but empty task_id — skipping stall detection"
         return
+    fi
+
+    # dead paneはdeploy graceより優先。復旧を試みたサイクルは
+    # PASS/BLOCKのどちらでも後段のgraceへ流さず、次サイクルで再評価する。
+    local stall_pane_target="${PANE_TARGETS[$name]:-}"
+    local dead_recovery_rc
+    if recover_dead_active_pane "$name" "$status" "$stall_pane_target"; then
+        dead_recovery_rc=0
+    else
+        dead_recovery_rc=$?
+    fi
+    if [ "$dead_recovery_rc" -eq 0 ] || [ "$dead_recovery_rc" -eq 2 ]; then
+        unset "STALL_FIRST_SEEN[$name]"
+        return "$dead_recovery_rc"
     fi
 
     # 本番DB排他など、家老が意図的に一時停止した作業を異常STALLと誤認しない。
