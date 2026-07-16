@@ -27,37 +27,34 @@ fi
 
 NEW_PROJECT_ID="$1"
 
-# --- config/projects.yaml から情報取得（Bash組込み単一pass） ---
-OLD_PROJECT_ID="" OLD_PROJECT_NAME="" NEW_PROJECT_NAME="" NEW_GIST_URL="" _cur_project=""
-declare -A _project_names=()
-while IFS= read -r _line; do
-    case "$_line" in
-        current_project:*)
-            OLD_PROJECT_ID="${_line#current_project: }"
-            while [[ "$OLD_PROJECT_ID" == *[[:space:]] ]]; do OLD_PROJECT_ID="${OLD_PROJECT_ID%?}"; done
-            ;;
-        '  - id: '*)
-            _cur_project="${_line#  - id: }"
-            while [[ "$_cur_project" == *[[:space:]] ]]; do _cur_project="${_cur_project%?}"; done
-            ;;
-        '    name: '*)
-            _val="${_line#    name: }"
-            while [[ "$_val" == *[[:space:]] ]]; do _val="${_val%?}"; done
-            _val="${_val%\"}"; _val="${_val#\"}"
-            _project_names["$_cur_project"]="$_val"
-            [[ "$_cur_project" == "$NEW_PROJECT_ID" ]] && NEW_PROJECT_NAME="$_val"
-            ;;
-        '    gist_url: '*)
-            if [[ "$_cur_project" == "$NEW_PROJECT_ID" ]]; then
-                _val="${_line#    gist_url: }"
-                while [[ "$_val" == *[[:space:]] ]]; do _val="${_val%?}"; done
-                _val="${_val%\"}"; NEW_GIST_URL="${_val#\"}"
-            fi
-            ;;
+# --- config/projects.yaml から情報取得（単一awk pass） ---
+OLD_PROJECT_NAME="" NEW_PROJECT_NAME="" NEW_GIST_URL=""
+while IFS=$'\t' read -r _key _val; do
+    case "$_key" in
+        old_id) OLD_PROJECT_ID="$_val" ;;
+        old_name) OLD_PROJECT_NAME="$_val" ;;
+        new_name) NEW_PROJECT_NAME="$_val" ;;
+        new_gist) NEW_GIST_URL="$_val" ;;
     esac
-done < "$PROJECTS_YAML"
-OLD_PROJECT_NAME="${_project_names["$OLD_PROJECT_ID"]:-}"
-unset _project_names _cur_project _line _val
+done < <(awk -v new_id="$NEW_PROJECT_ID" '
+    /^current_project:/ { old_id = $2 }
+    /^  - id:/ { cur = $3 }
+    cur != "" && /^    name:/ {
+        v = $0; sub(/^[^:]+:[[:space:]]*"?/, "", v); sub(/"[[:space:]]*$/, "", v); gsub(/[[:space:]]+$/, "", v)
+        names[cur] = v
+        if (cur == new_id) printf "new_name\t%s\n", v
+    }
+    cur != "" && cur == new_id && /^    gist_url:/ {
+        v = $0; sub(/^[^:]+:[[:space:]]*"?/, "", v); sub(/"[[:space:]]*$/, "", v); gsub(/[[:space:]]+$/, "", v)
+        printf "new_gist\t%s\n", v
+    }
+    END {
+        if (old_id != "") {
+            printf "old_id\t%s\n", old_id
+            if (old_id in names) printf "old_name\t%s\n", names[old_id]
+        }
+    }
+' "$PROJECTS_YAML")
 
 if [[ -z "${OLD_PROJECT_ID:-}" ]]; then
     echo "[switch_project] ERROR: current_project not found in $PROJECTS_YAML" >&2
