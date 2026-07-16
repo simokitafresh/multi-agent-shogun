@@ -14,64 +14,58 @@ SCRIPT_DIR="${_SCRIPT_DIR}/../.."
 [[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
 unset _SELF _SCRIPT_DIR
 
-add_injection_count() {
-    local file="$1"
-    if [ ! -f "$file" ]; then
-        echo "SKIP: $file not found"
-        return 0
-    fi
+infra_file="$SCRIPT_DIR/projects/infra/lessons.yaml"
+dm_file="$SCRIPT_DIR/projects/dm-signal/lessons.yaml"
 
-    local lockfile="${file}.lock"
+(
+    flock -w 10 200 || { echo "ERROR: lock timeout for $infra_file" >&2; exit 1; }
+    flock -w 10 201 || { echo "ERROR: lock timeout for $dm_file" >&2; exit 1; }
 
-    (
-        flock -w 10 200 || { echo "ERROR: lock timeout for $file" >&2; exit 1; }
-
-        PYTHONPATH="$SCRIPT_DIR" python3 << PYEOF
+    PYTHONPATH="$SCRIPT_DIR" python3 - "$infra_file" "$dm_file" <<'PYEOF'
 import yaml, os
+import sys
 from scripts.lib.yaml_atomic import atomic_yaml_write
 
-cache_file = "$file"
+for cache_file in sys.argv[1:]:
+    if not os.path.isfile(cache_file):
+        print(f'SKIP: {cache_file} not found')
+        continue
 
-with open(cache_file, encoding='utf-8') as f:
-    content = f.read()
+    with open(cache_file, encoding='utf-8') as f:
+        content = f.read()
 
-data = yaml.safe_load(content)
-if not data or 'lessons' not in data:
-    print(f'SKIP: No lessons in {cache_file}')
-    raise SystemExit(0)
+    data = yaml.safe_load(content)
+    if not data or 'lessons' not in data:
+        print(f'SKIP: No lessons in {cache_file}')
+        continue
 
-added = 0
-skipped = 0
-for lesson in data['lessons']:
-    if 'injection_count' not in lesson:
-        lesson['injection_count'] = 0
-        added += 1
-    else:
-        skipped += 1
+    added = 0
+    skipped = 0
+    for lesson in data['lessons']:
+        if 'injection_count' not in lesson:
+            lesson['injection_count'] = 0
+            added += 1
+        else:
+            skipped += 1
 
-if added == 0:
-    print(f'OK: {cache_file} — all {skipped} entries already have injection_count')
-    raise SystemExit(0)
+    if added == 0:
+        print(f'OK: {cache_file} — all {skipped} entries already have injection_count')
+        continue
 
 # Preserve header comments
-header_lines = []
-for line in content.split('\n'):
-    if line.startswith('#'):
-        header_lines.append(line)
-    else:
-        break
-header = '\n'.join(header_lines) + '\n' if header_lines else ''
+    header_lines = []
+    for line in content.split('\n'):
+        if line.startswith('#'):
+            header_lines.append(line)
+        else:
+            break
+    header = '\n'.join(header_lines) + '\n' if header_lines else ''
 
-atomic_yaml_write(cache_file, data, header=header, indent=2, sort_keys=False)
+    atomic_yaml_write(cache_file, data, header=header, indent=2, sort_keys=False)
 
-print(f'OK: {cache_file} — added injection_count to {added} entries (skipped {skipped})')
+    print(f'OK: {cache_file} — added injection_count to {added} entries (skipped {skipped})')
 PYEOF
-
-    ) 200>"$lockfile"
-}
+) 200>"${infra_file}.lock" 201>"${dm_file}.lock"
 
 echo "=== injection_count追加 ==="
-add_injection_count "$SCRIPT_DIR/projects/infra/lessons.yaml"
-add_injection_count "$SCRIPT_DIR/projects/dm-signal/lessons.yaml"
-
 echo "=== 完了 ==="
