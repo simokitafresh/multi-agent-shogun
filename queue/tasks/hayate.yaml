@@ -1,74 +1,17 @@
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_priority: AC1 > AC2 > AC3 > AC4 > AC5
   acceptance_criteria:
-  - description: CI artifact/logから全FAILファイル数と各FAIL/timeout数を集計し、共通原因候補を数値化する
+  - description: 現行gate_test_healthでper-file regression 5件とnew/changed budget 11件の全16件を列挙し修正前値を記録する
     id: AC1
-  - description: test_run_tests.batsとdaemon timeoutをclean相当環境で再現し、設定未commit依存・scheduler・FD継承のどれかを二値判定する
+  - description: cache=0・mode=unit・jobs=8の全量suiteを対象縮小なしで完走し、各16ファイルとsuite wallの新baselineを同一runから取得する
     id: AC2
-  - description: 修正対象ファイル・行番号、波及テスト、エッジケース、副作用、適用順序を明記する
+  - description: 実悪化はfixture/共有資源/runnerの根因を修正し、未計測のみの項目は正規台帳writer経路でbaselineへ反映する。閾値緩和・例外追加は禁止する
     id: AC3
-  - description: gate/hookまたはfixtureの未解消条件が1件でもあればPASSにせずBLOCKとして報告する
+  - description: gate_test_healthを再実行してper-file regression BLOCK 5→0、new/changed budget BLOCK 11→0を確認する
     id: AC4
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
-  model_injection_profile:
-    model_label: "GPT 5.6 Sol low"
-    family: "gpt"
-    injection_intensity: "max"
-    protocol: "T5弱LLM構造化プロトコル"
-    report_contract:
-    - "binary_checks全resultをyes/noで記入"
-    - "lessons_useful全reasonを具体記入"
-    - "files_modifiedはrepo相対path形式"
-    - "D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除"
-    extra_scaffold:
-    - "ACごとに実テスト証跡をresult.detailsへ記録"
-    - "報告前にplaceholder残存確認とgate_report_formatを実行"
-  semantic_concepts:
-  - "skill_routing — スキルルーティング:  skills/*/SKILL.md"
-  recommended_skills:
-  - "shogun-cli-switch(CLI死亡/respawn/version/モデル/編成。hensei系5本吸収済み)"
-  - "reset-layout(全ペイン配置復元)"
-  - "shogun-clear-prep(clear前)"
-  - "dream(三層記憶整理)"
-  - "shogun-teire(棚卸し)"
-  - "lesson-sort(教訓整理)"
-  - "switch-project(PJ切替)"
-  - "shogun-pd-sync(裁定反映)"
-  - "cmd-complete(GATE CLEAR後/家老)"
-  - "dashboard-update(ダッシュボード/家老)"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L828: gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr
-      - L529: 並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を
-      - L605: gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_preventio
-      - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
-    ────────────────────────────────────────
-    
-    読み取り専用偵察。ファイル編集・stage・commitは禁止。
-    CI失敗: test_run_tests.bats rc1、test_daemon_maintenance_lock.bats本文5/5後timeout rc124、commit/hook系複数FAIL。
-    run=29435270210 job=87420222173。ローカルpre-pushは294/294 files、4172 PASS、FAIL0、SKIP0。
-    clean checkoutと家老dirty環境の差、fixtureの未追跡依存、hook環境変数、daemon FD残存を一次確認する。
+  - description: 全量unitのPASS・FAIL・SKIPを数値報告し、FAIL1以上またはSKIP1以上ならPASSにせずBLOCKする
+    id: AC5
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -88,50 +31,100 @@ task:
   - AC2
   - AC3
   - AC4
-  parent_cmd: cmd_karo_recon2_ga269_ci_clean_checkout_audit_202607160228
+  - AC5
+  parent_cmd: cmd_karo_ci_fix_timing_ratchet_16files_202607161421
   project: infra
-  purpose: CI run 29435270210でclean checkoutのみ発生したunit失敗群を独立監査し、共通根因と修正対象を二値確定する
+  purpose: timing ratchetの既存悪化5件とbaseline未計測11件を全量uncached計測し、閾値を緩めずBLOCK16件を0へ収束させる
   quality_gate:
-    action_conversion: 未解消のCI clean-checkout差はBLOCKへ変換し、修正対象を具体化する
-    fp_measurement: CI FAILファイル総数とローカルFAIL0との差を数え、false_positiveか実バグかを判定する
+    action_conversion: 未解消条件はBLOCK
+    fp_measurement: gate_fire_logでfalse_positive件数を計測する
   split_decision:
     boundary_ac_ids:
     - AC2
     integration_tasks: 0
     review_round_trips: 1
-  status: failed
+  status: in_progress
   stop_for: []
-  target_path: tests/unit/test_run_tests.bats
-  task_id: cmd_karo_recon2_ga269_ci_clean_checkout_audit_202607160228_normal
-  task_type: recon2
+  target_path:
+  - scripts/run_tests.sh
+  - scripts/gates/gate_test_health.sh
+  - tests/unit
+  - logs/test_timing_ledger.tsv
+  task_id: cmd_karo_ci_fix_timing_ratchet_16files_202607161421_normal
+  task_type: ci_fix
   related_lessons:
-  - id: 'L828'
-    summary: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
-    detail: 'gate_skill_script_refs.shのWARN解消では、WARN行数だけでなく走査SKILL数・script参照数・対象SKILL本数・対象scr'
-  - id: 'L529'
-    summary: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-    detail: '並列配備で複数忍者が同一ブランチで作業する場合、git addが他忍者の変更を巻き込む。git commit --only <担当ファイル>でcommit対象を'
-  - id: 'L605'
-    summary: 'gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_preventio'
-    detail: 'gate_report_format_main.pyのFIXヒント45パターンをskill_auto_improve.shのconcrete_preventio'
+  - id: 'L1042'
+    summary: '単一bats rootや高速ローカルでは80/80 PASSでも、CIのBATS_INNER_JOBS=8では共有temp repo・ontology・task'
+    detail: '単一bats rootや高速ローカルでは80/80 PASSでも、CIのBATS_INNER_JOBS=8では共有temp repo・ontology・task'
+  - id: 'L389'
+    summary: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
+    detail: '検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数'
+  - id: 'L478'
+    summary: 'QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jo'
+    detail: 'QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jo'
   - id: 'L311'
     summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
     wa_category: 'report_yaml_format'
     wa_count: 2
     detail: 'Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はautofix未網羅、RFS未使用(9件)はhook事前防止なし'
-  ac_version: 2edf2958
-  _ac_task_id: cmd_karo_recon2_ga269_ci_clean_checkout_audit_202607160228_normal
+  standard_skills:
+  - "report-write"
+  - "verdict-check"
+  - "ninja-commit"
+  model_injection_profile:
+    model_label: "GPT 5.6 Sol low"
+    family: "gpt"
+    injection_intensity: "max"
+    protocol: "T5弱LLM構造化プロトコル"
+    report_contract:
+    - "binary_checks全resultをyes/noで記入"
+    - "lessons_useful全reasonを具体記入"
+    - "files_modifiedはrepo相対path形式"
+    - "D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除"
+    extra_scaffold:
+    - "ACごとに実テスト証跡をresult.detailsへ記録"
+    - "報告前にplaceholder残存確認とgate_report_formatを実行"
+  semantic_concepts:
+  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh tests/unit/test_deploy_training.bats scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md docs/research/model-comparison-5w1h-20260701.md 全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) docs/research/sonnet5_vs_46_ab_evaluation_20260701.md 5ラウンドA/B/C評価データ scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
+  recommended_skills:
+  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
+  causal_verification:
+    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
+    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
+    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
+    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
+  context_hints:
+  - "context/training-cycle.md"
+  growth_loop_defense:
+  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
+  - "Level1(事後検出): 間違えた後にgateが検出"
+  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
+  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
+  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
+  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
+  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
+  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
+  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
+  description: |-
+    【注入教訓】 必ず確認してから作業開始せよ
+      - L1042: 単一bats rootや高速ローカルでは80/80 PASSでも、CIのBATS_INNER_JOBS=8では共有temp repo・ontology・task
+      - L389: 検証関数がSKIPを返す場合(データ不在等)、SKIP結果が最終判定に反映されないと全SKIP時にPASS判定になる。検証ツールは実際にチェックが実行された件数
+      - L478: QUEUE_FILE/gate_pass_cache/gate_fire_log等のテスト用共有ファイルをsetup_file()で1回のみ生成すると、--jo
+      - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
+    ────────────────────────────────────────
+  ac_version: 59d7d64d
+  _ac_task_id: cmd_karo_ci_fix_timing_ratchet_16files_202607161421_normal
   _ac_worker_id: 
   role_reminder: 忍者hayate。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: hayate_report_cmd_karo_recon2_ga269_ci_clean_checkout_audit_202607160228.yaml
-  report_path: queue/reports/hayate_report_cmd_karo_recon2_ga269_ci_clean_checkout_audit_202607160228.yaml
+  report_filename: hayate_report_cmd_karo_ci_fix_timing_ratchet_16files_202607161421.yaml
+  report_path: queue/reports/hayate_report_cmd_karo_ci_fix_timing_ratchet_16files_202607161421.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 11
-    top_pattern: 'task_redeploy(2件)'
-    breakdown: 'task_redeploy(2件), report_yaml_format(2件), gate_logic_gap(2件), test_fixture_invalid(1件), stale_report(1件), deploy_contract(1件), completion_notify_gap(1件), precommit_legacy_format(1件)'
-    warning: '⚠ 過去11件のworkaround発生。品質に注意'
+    total_workarounds: 10
+    top_pattern: 'report_yaml_format(2件)'
+    breakdown: 'report_yaml_format(2件), gate_logic_gap(2件), test_fixture_invalid(1件), task_redeploy(1件), stale_report(1件), deploy_contract(1件), completion_notify_gap(1件), precommit_legacy_format(1件)'
+    warning: '⚠ report_field_set.sh必ず使用。lessons_usefulはlist形式、dict(0:{},1:{})禁止。verdict二値(PASS/FAIL)厳守'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
       count: 705
@@ -147,5 +140,24 @@ task:
   variation_checks_required: false
   parent_ac_coverage: 
   parent_contract_fingerprint: ''
-  deployed_at: "2026-07-16T02:27:43"
-  acknowledged_at: "2026-07-16T02:28:12"
+  deployed_at: "2026-07-16T14:21:40"
+  acknowledged_at: "2026-07-16T14:21:58"
+  progress: "AC1 PASS: regression 5件 + new/changed 11件 = 16件を列挙。修正前 gate exit=1。次AC前提: cache=0 mode=unit jobs=8、全量対象、scope driftなし。"
+
+  session_state:
+    attempt: 3
+    last_block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    tried_approaches:
+    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+    approach_summary: 'timing ratchetの既存悪化5件とbaseline未計測11件を全量uncached計測し、閾値を緩めずBLOCK16件を0へ収束させる — 実施・検証結果を本報告へ記録'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'timing ratchetの既存悪化5件とbaseline未計測11件を全量uncached計測し、閾値を緩めずBLOCK16件を0へ収束させる — 実施・検証結果を本報告へ記録'
+    - attempt: 2
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'timing ratchetの既存悪化5件とbaseline未計測11件を全量uncached計測し、閾値を緩めずBLOCK16件を0へ収束させる — 実施・検証結果を本報告へ記録'
+    - attempt: 3
+      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\")'
+      approach_summary: 'timing ratchetの既存悪化5件とbaseline未計測11件を全量uncached計測し、閾値を緩めずBLOCK16件を0へ収束させる — 実施・検証結果を本報告へ記録'
+  ci_run_id: 29475438730

@@ -1597,3 +1597,539 @@
   brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 297/297(数値)"
   origin: "[[GA269_clean_checkout]] -> [[監査]] -> [[LGTM]]"
   timestamp: "2026-07-16T02:34:00"
+- cmd_id: self_study_three_layer_v14_upgrade_20260716
+  review_type: self_study
+  verdict: N/A
+  findings_summary: "三層記憶v1.3→v1.4独立検証。穴3件: A=origin付き2.6%(385件中10件)、B=directed0件、C=cache FTS5スケーラビリティ未計測。P1=origin必須化(D0)、P2=baseline計測(観測)、P3=directed(観測)"
+  observations:
+    - "事実1: knowledge 385件中origin付き10件(2.6%)。因果ネットワーク成長率極低"
+    - "事実2: directed knowledge=0/385。全件universal。cache 10855行/9MB。注入上位3件/2.5KB"
+    - "事実3: prompt_state_inject.sh FTS5マッチ上位3件のみ注入。385→1000件スケールでrecall未計測"
+  cs_checklist: "CS1:memory_db_query全量 CS2:自DB計測 CS3:prompt_state_inject実行 CS4:P1 D0提案 CS5:directed未実装の反証あり CS6:origin率→因果欠落→誤適用リスク(因果鎖)"
+  operational_simulation:
+    command: "bash scripts/memory_db_query.sh各種+printf marker|prompt_state_inject.sh"
+    expected: "穴の数値特定と優先順位付け"
+    actual: "3穴特定(origin2.6%/directed0%/cache未計測)。P1即実装、P2-P3観測"
+    result: "PASS"
+  causal_chain: "v1.3(普遍9/9+異CLI2/2)→origin率2.6%=因果欠落→想起時誤適用リスク→knowledge_write origin必須化→因果接続強制"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no(3穴全て数値計測) #7no #8no origin10/385=2.6%/directed0/385=0%/cache3件2.5KB(数値)"
+  origin: "[[三層記憶v1.3]] -> [[origin因果欠落]] -> [[v1.4アップデート候補]]"
+  timestamp: "2026-07-16T08:00:00"
+- cmd_id: cmd_karo_hotfix_ga271_hook_generation_alert_202607160806
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kagemaru.yaml:AC1-AC5"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。GA-271旧世代遅延終了の偽警報根治+hook世代分類Level5防御。AC5個/10分。GA-270連続改善"
+  observations:
+    - "事実1: AC1で真再発vs旧世代遅延をartifact時刻×hook hashで二値分類。AC3でhook開始世代を失敗記録保存"
+    - "事実2: AC4でFP計測(旧世代誤警報0/新世代実失敗1検知)。target_path=gate_improvement_trigger.sh"
+    - "事実3: files_modified 4ファイル指定。L402(冪等性/tmp)、L1151(flock直列化)、L785(hooksPath)の3教訓注入済み"
+  adversarial_review: {required: false, verdict: N/A, reason: "hotfix。AC5個/4ファイル"}
+  ambiguity_points: none
+  causal_chain: "GA-270修正(flock+cache)→旧世代hook遅延終了→gate偽警報→hook世代識別子保存→真再発のみBLOCK"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC5個/4ファイル/10分(数値)"
+  origin: "[[GA-271]] -> [[late_inflight_hook_generation]] -> [[generation_aware_gate_alert]]"
+  timestamp: "2026-07-16T08:08:00"
+- cmd_id: cmd_karo_hotfix_ga271_hook_generation_alert_202607160806
+  review_type: report
+  report_ninja: kagemaru
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_karo_hotfix_ga271_hook_generation_alert_202607160806.yaml:operational_simulation欠落"
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "FAIL: LG055 operational_simulation実走証跡なし。integration系変更(gate_improvement_trigger.sh+pre-push)で実運用シミュレーション必須。数値・AC coverage自体はOK(18/18 PASS, N=0/M=7)"
+  observations:
+    - "事実1: precheck ERRORS=1。LG055: integration ACだがoperational_simulation実走証跡なし"
+    - "事実2: gate_prediction=BLOCK(reason: LG055:integration_opsim_missing)"
+    - "事実3: AC1-5 binary_checks全yes。18/18 PASS。修正前FP7→後0。新世代検知1/1。数値自体は問題なし"
+  adversarial_review: {required: false, verdict: N/A, reason: "4ファイル変更。operational_simulation欠落がFAIL理由"}
+  step3_5_verified: true
+  causal_chain: "gate_improvement_trigger.sh=integration変更→LG055でoperational_simulation必須→報告に証跡なし→GATE BLOCK予測→FAIL"
+  brainwash_check: "#1no(precheck BLOCK予測を無視してLGTMにしない) #2no #3no #4no #5no #6no #7no #8no ERRORS=1/prediction=BLOCK(数値)"
+  origin: "[[GA-271]] -> [[LG055_opsim_missing]] -> [[FAIL]]"
+  timestamp: "2026-07-16T08:20:00"
+- cmd_id: cmd_karo_hotfix_ga273_cross_generation_lock_handoff_202607160825
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/hanzo.yaml:AC1-AC5"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。GA-273世代跨ぎlock handoff根治。AC5でoperational_simulation必須(GA-271 FAIL学習反映)。AC5個/10分/2ファイル"
+  observations:
+    - "事実1: AC3で世代別lock分離禁止を明示(共有資源競合を隠さない)。superseded holder終了→現行hook安全再開"
+    - "事実2: AC5にoperational_simulation必須記録が含まれる(GA-271 FAIL=LG055のフィードバック反映)"
+    - "事実3: GA-270→271→273の連続改善。files_modified 2ファイル(.githooks/pre-push + test)"
+  adversarial_review: {required: false, verdict: N/A, reason: "hotfix 2ファイル。世代別lock分離禁止で安全方向"}
+  ambiguity_points: none
+  causal_chain: "GA-273 20分timeout→superseded holder lock→世代跨ぎhandoff→同一世代single lane維持→CI免疫強化"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC5個/2ファイル/10分(数値)"
+  origin: "[[GA-273]] -> [[cross_generation_lock_holder]] -> [[generation_aware_lock_handoff]]"
+  timestamp: "2026-07-16T08:27:00"
+- cmd_id: cmd_karo_hotfix_ga271_hook_generation_alert_202607160806
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_karo_hotfix_ga271_hook_generation_alert_202607160806.yaml:operational_simulation"
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK(LG055補正後)。operational_simulation追加: 旧世代抑制1+tracked警報1+active警報1=3/3 PASS。18/18全PASS。N=0/M=7。FP7→0"
+  observations:
+    - "事実1: operational_simulation追加。bats --filter 3テスト=旧世代抑制/tracked現行警報/active現行警報。3/3 PASS"
+    - "事実2: precheck ERRORS=0(前回1→0)。gate_prediction=CLEAR(前回BLOCK→CLEAR)"
+    - "事実3: 前回FAIL根因(LG055 opsim欠落)が解消。数値・AC変更なし(18/18, N=0/M=7, FP7→0)"
+  adversarial_review: {required: false, verdict: PASS, reason: "operational_simulation 3/3 PASS。旧世代のみ抑制、現行世代は必ず警報"}
+  step3_5_verified: true
+  causal_chain: "前回FAIL(LG055 opsim欠落)→家老補正→opsim追加3/3 PASS→GATE CLEAR予測→LGTM"
+  brainwash_check: "#1no(前回FAIL根因解消を現物確認) #2no(precheck ERRORS 1→0) #3no #4no #5no #6no #7no #8no 3/3+18/18+ERRORS0(数値)"
+  origin: "[[GA-271]] -> [[LG055_opsim_補正]] -> [[LGTM]]"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
+  timestamp: "2026-07-16T09:10:00"
+- cmd_id: cmd_karo_hotfix_ga273_cross_generation_lock_handoff_202607160825
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - ".githooks/pre-push:holder_identity"
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。世代跨ぎlock handoff。timeout7件全旧世代。修正前1→後0。10/10 PASS。operational_simulation含む"
+  observations:
+    - "事実1: artifact 07:59:21開始→08:19:52 timeout。holder=07:56:57 legacy hook(4cb69edc9以前)。一次証拠照合"
+    - "事実2: serialized timeout 7件(shogun6/karo1)全て旧世代holder跨ぎ。現行世代同士0。stale 0"
+    - "事実3: operational_simulation 3 fixture(旧holder handoff/同一世代single lane/stale fail-closed)各1/1。10/10 PASS"
+  adversarial_review: {required: false, verdict: PASS, reason: "共有lock維持(世代別分離しない)。GA-274 rc=1をhandoffと別分類"}
+  step3_5_verified: true
+  causal_chain: "GA-273 20分timeout→legacy holder無識別→holder identity+二段待機→旧世代handoff+現行自動再開→timeout0"
+  brainwash_check: "#1no #2no(commit 58d42ac3現物確認) #3no #4no #5no #6no #7no #8no 7件全旧世代/修正1→0/10/10(数値)"
+  origin: "[[GA-273]] -> [[cross_generation_lock_holder]] -> [[generation_aware_lock_handoff]]"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
+  timestamp: "2026-07-16T09:12:00"
+- cmd_id: cmd_karo_hotfix_ga275_p_average_dns_freshness_202607160909
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kagemaru.yaml:AC1-AC5"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。GA-275 DNS失敗時のp̄鮮度gate誤分類防止。AC5個/10分/2ファイル。到達性とDB鮮度を分離"
+  observations:
+    - "事実1: AC1でAPI_BASE DNS解決失敗(curl exit 6)を秘密非露出で一次確認。設定/DNS/一時的の二値分類"
+    - "事実2: AC3でDB fresh→到達性WARN(誤ALERT抑止)、stale/unavailable→鮮度ALERTのLevel5防御"
+    - "事実3: AC4でDNS失敗×DB状態3種fixture(fresh/stale/unavailable)各1件実走。AC5にopsim必須"
+  adversarial_review: {required: false, verdict: N/A, reason: "gate修正2ファイル。秘密非露出明示"}
+  ambiguity_points: none
+  causal_chain: "GA-275 DNS失敗→p̄鮮度gate誤分類→到達性とDB鮮度分離→fresh時誤ALERT抑止→正しい行動誘導"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC5個/2ファイル/10分(数値)"
+  origin: "[[GA-275]] -> [[api_dns_failure]] -> [[freshness_reachability_separation]]"
+  timestamp: "2026-07-16T09:14:00"
+- cmd_id: cmd_karo_hotfix_ga275_p_average_dns_freshness_202607160909
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "scripts/gates/gate_p_average_freshness.sh:fallback_exit"
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。DNS失敗×DB鮮度3種fixture 3/3。11/11 PASS。秘密非露出。set-e→fallback_exit補正"
+  observations:
+    - "事実1: DNS失敗+DB fresh=exit2(WARN)/stale=exit1(ALERT)/unavailable=exit1(fail-closed)。3/3一致"
+    - "事実2: operational_simulation記載済み(AC5)。LG055解消。precheck ERRORS=0"
+    - "事実3: 修正前set -e早期終了→修正後fallback_exit明示捕捉。URL秘密非露出(source label+host分離)"
+  adversarial_review: {required: false, verdict: PASS, reason: "gate修正2ファイル。秘密非露出+fail-closed"}
+  step3_5_verified: true
+  causal_chain: "GA-275 curl exit6→DNS=一時的外部障害→DB14日前=fresh→到達性WARNへ正分類→鮮度誤ALERTを抑止"
+  brainwash_check: "#1no #2no(precheck ERRORS=0確認) #3no #4no #5no #6no #7no #8no 3/3+11/11+ERRORS0(数値)"
+  origin: "[[GA-275]] -> [[api_dns_failure]] -> [[freshness_reachability_separation]]"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  timestamp: "2026-07-16T09:18:00"
+- cmd_id: cmd_karo_ci_fix_ci29460778448_prepush_handoff_flake_202607160922
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/hanzo.yaml:AC1-AC5"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。CI fix prepush handoff flake。AC3で20反復20/20要求。sleep増量/assert削除禁止明記。AC5個/10分/2ファイル"
+  observations:
+    - "事実1: CI run 29460778448のtest8 waiter.out欠落。fixture順序競合を二値判定"
+    - "事実2: AC2でsuperseded holderのlock取得を一次同期してからwaiter開始。sleep増量やassert削除で隠さない"
+    - "事実3: AC3で20反復20/20 PASS要求。AC4でCI/WSL差分明記。AC5にopsim+lesson"
+  adversarial_review: {required: false, verdict: N/A, reason: "CI fix 2ファイル。テスト堅牢化方向"}
+  ambiguity_points: none
+  causal_chain: "CI RED→test8 waiter.out欠落→fixture順序競合→lock barrier決定論化→20/20→CI GREEN"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC5個/2ファイル/20反復(数値)"
+  origin: "[[CI-29460778448]] -> [[handoff_fixture_race]] -> [[deterministic_lock_barrier]]"
+  timestamp: "2026-07-16T09:23:00"
+- cmd_id: cmd_karo_ci_fix_ci29460778448_sync_lessons_fallback_202607160922
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/tobisaru.yaml:AC1-AC5"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。CI fix sync_lessons filesystem fallback。20反復要求。assert削除/skip禁止明記。AC5個/10分/2ファイル"
+  observations:
+    - "事実1: test8 line327 status非0。git ls-files空時のfilesystem scan fallback契約維持"
+    - "事実2: AC2でassert削除/CI限定skip禁止明記。AC3で20反復20/20+全体11/11"
+    - "事実3: AC4でCI/WSL差分明記。AC5にopsim+lesson"
+  adversarial_review: {required: false, verdict: N/A, reason: "CI fix 2ファイル。fallback堅牢化方向"}
+  ambiguity_points: none
+  causal_chain: "CI RED→test8 git ls-files空→fallback失敗→契約維持修正→20/20→CI GREEN"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC5個/2ファイル/20反復(数値)"
+  origin: "[[CI-29460778448]] -> [[git_ls_files_empty]] -> [[filesystem_fallback_contract]]"
+  timestamp: "2026-07-16T09:25:00"
+- cmd_id: cmd_karo_ci_fix_ci29460778448_prepush_handoff_flake_202607160922
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "tests/unit/test_pre_push_hook.bats:bounded_poll"
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。固定sleep→observable handoff barrier。20/20+10/10 PASS。本番hook変更なし(テストのみ)"
+  observations:
+    - "事実1: fixture順序競合(waiter.out欠落)をholder lock取得後bounded poll(最大2s/0.02s間隔)で同期"
+    - "事実2: 20/20 PASS(FAIL0/SKIP0)+全suite10/10 PASS。bash -n rc0"
+    - "事実3: files_modified=テスト1ファイルのみ。本番.githooks/pre-push変更なし。operational_simulation記載済み"
+  adversarial_review: {required: false, verdict: PASS, reason: "テストのみ変更。本番hook不変。bounded pollで確定論化"}
+  step3_5_verified: true
+  causal_chain: "CI RED→test8 waiter.out欠落→固定sleep scheduler依存→bounded poll barrier→20/20決定論→CI GREEN"
+  brainwash_check: "#1no #2no(commit ff7043f8現物確認) #3no #4no #5no #6no #7no #8no 20/20+10/10+ERRORS0(数値)"
+  origin: "[[CI-29460778448]] -> [[handoff_fixture_race]] -> [[deterministic_lock_barrier]]"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  timestamp: "2026-07-16T09:28:00"
+- cmd_id: cmd_karo_ci_fix_ci29460778448_sync_lessons_fallback_202607160922
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  verified_files:
+    - "tests/unit/test_sync_lessons.bats:FORCE_SYNC"
+  gate_result: null
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。mtime秒境界flakeをFORCE_SYNC=1で隔離。20/20+11/11 PASS。テスト1ファイルのみ変更"
+  observations:
+    - "事実1: CI test8のmtime秒境界でcache hitし空fixtureが残るflake。FORCE_SYNC=1でfallback契約から隔離"
+    - "事実2: 20/20 PASS(FAIL0/SKIP0)+全体11/11 PASS。本番sync_lessons.sh変更なし"
+    - "事実3: operational_simulation記載済み。precheck ERRORS=0"
+  adversarial_review: {required: false, verdict: PASS, reason: "テストのみ変更。FORCE_SYNC=1は既存環境変数"}
+  step3_5_verified: true
+  causal_chain: "CI RED→test8 mtime境界→cache hit→空fixture→FORCE_SYNC=1隔離→20/20決定論→CI GREEN"
+  brainwash_check: "#1no #2no(commit 7546894確認) #3no #4no #5no #6no #7no #8no 20/20+11/11+ERRORS0(数値)"
+  origin: "[[CI-29460778448]] -> [[mtime_cache_boundary]] -> [[FORCE_SYNC_isolation]]"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  timestamp: "2026-07-16T09:31:00"
+- cmd_id: cmd_karo_hotfix_shogun_wait_reason_auto_release_202607161026
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/hanzo.yaml:AC1-AC5"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T10:59:20+09:00
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。wait_reason dependency自動解除。偽解除+永続先送りの双方BLOCK。AC5個/15分/2ファイル"
+  observations:
+    - "事実1: AC2でdependency接続cmdがactive→待機有効、completed/archive→自動解除。external_input/evidence_gathering互換維持"
+    - "事実2: AC3で4種回帰(active/completed/不存在/非dependency)。偽解除と永続先送りの双方BLOCK"
+    - "事実3: quality_gateにactive誤解除0/1+completed見逃し0/1の二重FP計測"
+  adversarial_review: {required: false, verdict: N/A, reason: "startup gate修正2ファイル。先送り防止方向"}
+  ambiguity_points: none
+  causal_chain: "将軍Q6洗脳#5→stale dependency wait_reason→先送り正当化→自動解除+BLOCK→先送り構造的不可能化"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC5個/2ファイル/15分(数値)"
+  origin: "[[shogun_Q6_20260716]] -> [[stale_dependency_wait_reason]] -> [[dependency_completion_auto_release]]"
+  timestamp: "2026-07-16T10:27:00"
+- cmd_id: cmd_karo_hotfix_active_dead_pane_recovery_202607161035
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/kagemaru.yaml:AC1-AC5"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T10:53:32+09:00
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。dead pane自動復旧。4分岐fixture(dead+active/assigned/live+active/dead+idle)。live誤respawn0/2。AC5個/10分/2ファイル"
+  observations:
+    - "事実1: 一次証拠=ninja_monitor.log 10:31:17 STALL-DEPLOY-GRACE。pane_dead=1/status=0/task=in_progress"
+    - "事実2: AC2でlive pane絶対非respawn+SSOT resolver使用。AC3で4分岐fixture"
+    - "事実3: quality_gateでlive誤respawn0/2+dead見逃し0/1の二重FP計測"
+  adversarial_review: {required: false, verdict: N/A, reason: "ninja_monitor修正2ファイル。live pane保護方向"}
+  ambiguity_points: none
+  causal_chain: "hanzo dead pane→deploy grace先行→復旧不能→dead判定をgrace上位へ→SSOT resolver自動respawn→task継続"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC5個/2ファイル/4分岐(数値)"
+  origin: "[[hanzo_dead_20260716]] -> [[deploy_grace_precedes_dead_recovery]] -> [[active_dead_pane_auto_respawn]]"
+  timestamp: "2026-07-16T10:35:00"
+- cmd_id: cmd_karo_hotfix_active_dead_pane_recovery_202607161035
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "scripts/ninja_monitor.sh:dead_pane_recovery"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T10:53:32+09:00
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK(LG055補正後)。dead active recovery=1/grace=0/post-dead=0。live active=0/grace=1。新規7/7+既存75/75 PASS"
+  observations:
+    - "事実1: operational_simulation追加。dead active: calls=1 grace=0 post-dead=0。live active: calls=0 grace=1。統合2/2 PASS"
+    - "事実2: precheck ERRORS=0(前回1→0)。gate_prediction=CLEAR"
+    - "事実3: 新規7/7+既存75/75=82/82 PASS。live誤respawn0/2。dead見逃し0/1"
+  adversarial_review: {required: false, verdict: PASS, reason: "live pane誤respawn0/2。dead+activeのみ復旧"}
+  step3_5_verified: true
+  causal_chain: "前回FAIL(LG055)→opsim追加→dead/live 4分岐fixtureで分離証明→LGTM"
+  brainwash_check: "#1no #2no(precheck ERRORS 1→0確認) #3no #4no #5no #6no #7no #8no 82/82+0/2+0/1+ERRORS0(数値)"
+  origin: "[[hanzo_dead_20260716]] -> [[deploy_grace_precedes_dead_recovery]] -> [[active_dead_pane_auto_respawn]]"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  timestamp: "2026-07-16T10:47:00"
+- cmd_id: cmd_karo_hotfix_shogun_wait_reason_auto_release_202607161026
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "scripts/gates/gate_shogun_startup.sh:dependency_auto_release"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T10:59:20+09:00
+  finding_categories: [assumptions, numbers, premortem, adversarial]
+  findings_summary: "4観点OK。dependency自動解除。active誤解除0/2、completed見逃し0/3。110 Bats PASS。fail-closed維持"
+  observations:
+    - "事実1: bulletin current+archive14日分からUnicode安定キーで宣言解析。active=WAIT/terminal=BLOCK"
+    - "事実2: 変更前自動解除0→後3件RELEASED。active誤解除0/2+completed見逃し0/3+別カテゴリ誤抑制0/2"
+    - "事実3: 110 Bats PASS(SKIP0)。fail-closed維持。external_input/evidence_gathering不変"
+  adversarial_review: {required: false, verdict: PASS, reason: "未宣言/missing/terminalは即BLOCK。active dependencyのみ一時WAIT"}
+  step3_5_verified: true
+  causal_chain: "将軍Q6洗脳#5→stale wait_reason→永続先送り→dependency状態を一次YAML判定→completed/archive自動解除→先送り不可能化"
+  brainwash_check: "#1no #2no(precheck ERRORS=0) #3no #4no #5no #6no #7no #8no 110/110+0/2+0/3+0/2(数値)"
+  origin: "[[shogun_Q6_20260716]] -> [[stale_dependency_wait_reason]] -> [[dependency_completion_auto_release]]"
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  timestamp: "2026-07-16T10:53:00"
+- cmd_id: cmd_3996
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_3996"
+  gate_result: null
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。freeze後SIGNAL CHANGE ALERT 3PF偵察。AC3個/15分。read-only DB。assumptions明示"
+  observations:
+    - "事実1: freeze三段GATE CLEAR+341,799行凍結前提。ntfy_inbox.yamlで3件/3PF一次確認"
+    - "事実2: AC1=change_log、AC2=ledger被覆、AC3=type/hide判定。q11でrg+semantic確認済み"
+    - "事実3: quality_gate全項目記入。read-only。scope_mode=RECON"
+  adversarial_review: {required: false, verdict: N/A, reason: "偵察cmd。read-only"}
+  ambiguity_points: none
+  causal_chain: "freeze CLOSED→3PF変更継続→3テーブル突合→freeze盲点特定→不変性保証強化"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC3個/15分(数値)"
+  origin: "[[freeze_CLOSED_20260715]] -> [[3PF_signal_change]] -> [[freeze盲点偵察]]"
+  timestamp: "2026-07-16T11:07:00"
+- cmd_id: cmd_4000
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4000"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T13:19:28+09:00
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。gate_alerts閉鎖自動化。cmd完了時にimprovement_done自動更新。AC2個/30分。監査穴6→偵察→実装の因果連鎖"
+  observations:
+    - "事実1: rg improvement_done scripts/→2件(読取り+記録のみ)。true化コード0件が根因"
+    - "事実2: AC2でgate対象含むcmd→更新/無関係→非更新の2種テスト。全量FAIL0/SKIP0要求"
+    - "事実3: q8複利=全cmd完了時に自動閉鎖→閉鎖率単調増加。q12可逆(1 revert)"
+  adversarial_review: {required: false, verdict: N/A, reason: "閉鎖フロー追加方向。AC2で誤閉鎖テスト"}
+  ambiguity_points: none
+  causal_chain: "監査穴6(閉鎖0%)→cmd_3998偵察(276件分類)→cmd_4000(閉鎖自動化)→免疫系検知→閉鎖ループ完成"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC2個/30分/276件(数値)"
+  origin: "[[軍師監査穴6]] -> [[cmd_3998偵察]] -> [[cmd_4000閉鎖自動化]]"
+  timestamp: "2026-07-16T13:09:00"
+- cmd_id: cmd_3997
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_3997"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T13:14:54+09:00
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。ledger drift alert DB永続化。1行撤去+テスト追加。AC2個/15分。assumptions 3件+source現物確認"
+  observations:
+    - "事実1: L240 is_new_insert_ledger_drift除外フィルタ撤去。DB_FIELDSに含まれないため自動除去で重複キーなし"
+    - "事実2: 家老注意の既存テストcount==0→AC2で既存PASS+新規テスト追加を要求。整合する設計"
+    - "事実3: q10でfreeze後3件/日=DB容量影響軽微。q12で可逆(1 git revert)"
+  adversarial_review: {required: false, verdict: N/A, reason: "1行撤去+テスト追加。可逆"}
+  ambiguity_points: none
+  causal_chain: "cmd_3996偵察→非永続化発見→L240フィルタ撤去→全drift DB記録→事後追跡可能化"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC2個/1行撤去/15分(数値)"
+  origin: "[[cmd_3996_偵察]] -> [[new_insert_ledger_drift非永続化]] -> [[フィルタ撤去DB永続化]]"
+  timestamp: "2026-07-16T12:40:00"
+- cmd_id: cmd_karo_hotfix_watcher_restart_stable_handoff_202607161446
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/restart_watchers.sh:150"
+    - "scripts/restart_watchers.sh:222"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T15:02:02+09:00
+  confidence: MEDIUM
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。既存rolling handoff上の強化。AC4個/10分/1ファイル+テスト。AC2が既存実装との差分を暗黙前提としているためMEDIUM"
+  observations:
+    - "事実1: git show HEAD~1で既存rolling handoff(L150)+3連続sample(L222)を確認。AC2は新規実装ではなく既存強化"
+    - "事実2: AC3(resnapshot/replay)は未実装の新機能。AC4のsingleton lockも新規"
+    - "事実3: L323教訓(expected vs actual watcher count乖離)がrelated_lessonsに注入済み。AC4のroot identity判定はこの教訓の構造的対処"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "hotfix 1ファイル+テスト。配達安定方向。可逆"
+  ambiguity_points: none
+  causal_chain: "全停止配達空白→rolling handoff存在するが不十分→AC1再現→AC2強化→AC3未読保全→配達欠落ゼロ化"
+  brainwash_check: "#1no(AC4個確認) #2no(git show HEAD~1で既存confirmed) #8no(MEDIUM判定で早期終了回避) 検証:restart_watchers.sh L150,222の2箇所"
+  timestamp: "2026-07-16T14:55:00+09:00"
+- cmd_id: cmd_karo_hotfix_failed_completed_blocked_terminal_202607161446
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/gates/gate_karo_startup.sh:2258"
+    - "scripts/gates/gate_karo_startup.sh:2286"
+    - "scripts/lib/report_terminal_state.sh:1"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T15:00:28+09:00
+  confidence: MEDIUM
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。偽ALERT根治。report_terminal_state.sh未commit新機能。AC4のSSoT共有範囲がオープンエンドのためMEDIUM"
+  observations:
+    - "事実1: report_terminal_state.sh git log履歴なし=未commit。AC2の成果物として新規作成予定"
+    - "事実2: gate_karo_startup.sh L2286-2290でCLOSED_BLOCKED分岐が既にworking treeに存在。lib化がスコープ"
+    - "事実3: AC1のfixture化で変更前ALERT 1件を決定論的に再現する設計。偽陽性1→0の数値証明がAC3で要求"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偽ALERT根治方向。gate判定の精度向上。可逆(1 revert)"
+  ambiguity_points: none
+  causal_chain: "偵察BLOCKED→task=failed+report=completed→偽ALERT→terminal state判定導入→偽陽性0化"
+  brainwash_check: "#1no(AC4個確認) #2no(git logで未commit確認) #8no(MEDIUM判定) 検証:gate_karo_startup.sh L2258,2286+report_terminal_state.sh全22行"
+  timestamp: "2026-07-16T14:56:00+09:00"
+- cmd_id: cmd_karo_hotfix_watcher_restart_stable_handoff_202607161446
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  verified_files:
+    - "scripts/restart_watchers.sh:150"
+    - "scripts/restart_watchers.sh:222"
+    - "queue/reports/kagemaru_report_cmd_karo_hotfix_watcher_restart_stable_handoff_202607161446.yaml:132"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T15:02:02+09:00
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  confidence: MEDIUM
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。51/51 PASS SKIP0。before=9→0,after=min8/final9/3samples。replay delivery=1 missing=0 dup=0。家老敵対レビュー反映済み"
+  observations:
+    - "事実1: test_results 3件合計 handoff6+status3+consolidated42=51/51 PASS, SKIP0。shellcheck PASS"
+    - "事実2: result.details before=9→0, after=min8/final9/3samples。get_all_agents count=9 unique=9"
+    - "事実3: AC3 replay delivery tmux paste=1, missing=0, duplicate=0。gap中未読generation_1のexactly-once証明"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "hotfix 3ファイル。配達安定方向。可逆"
+  ambiguity_points: none
+  causal_chain: "一括停止→9→0配達空白→rolling handoff+3sample+replay→51/51 PASS→配達欠落根治"
+  brainwash_check: "#1no(51/51数値確認) #2no(precheck ERRORS=0確認) #3no #4no #5no #6no #7no #8no(MEDIUM判定) 検証:3テストファイル合計51件"
+  step3_5_verified: true
+  hole_action: none
+  timestamp: "2026-07-16T15:00:00+09:00"
+- cmd_id: cmd_karo_hotfix_failed_completed_blocked_terminal_202607161446
+  review_type: report
+  verdict: LGTM
+  report_ninja: hanzo
+  verified_files:
+    - "scripts/lib/report_terminal_state.sh:1"
+    - "scripts/gates/gate_karo_startup.sh:2286"
+    - "queue/reports/hanzo_report_cmd_karo_hotfix_failed_completed_blocked_terminal_202607161446.yaml:132"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T15:00:28+09:00
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  confidence: MEDIUM
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。142/142 PASS SKIP0。偽陽性1→0、真陽性1→1。SSOT lib化(report_terminal_state.sh)でgate+monitor統合"
+  observations:
+    - "事実1: startup 72/72 + monitor 70/70 = 142/142 PASS, SKIP0。bash -n 3ファイルPASS"
+    - "事実2: operational_simulation偽陽性1→0、真陽性1→1。PASS+BLOCKED fixture化で変更前ALERT再現"
+    - "事実3: files_modified 5ファイル。report_terminal_state.sh新規(SSOT)、gate+monitorが共通分類器を使用"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "偽ALERT根治方向。gate精度向上。可逆(1 revert)"
+  ambiguity_points: none
+  causal_chain: "failed+completed偽ALERT→status_detail未解釈→CLOSED_BLOCKED共通分類→FP1→0+TP維持"
+  brainwash_check: "#1no(142/142数値確認) #2no(precheck ERRORS=0) #3no #4no #5no #6no #7no #8no(MEDIUM判定) 検証:2テストファイル合計142件"
+  step3_5_verified: true
+  hole_action: none
+  timestamp: "2026-07-16T15:01:00+09:00"
+- cmd_id: cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "scripts/loop_ledger_update.sh:1044"
+    - "scripts/loop_ledger_update.sh:22"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T15:25:09+09:00
+  confidence: MEDIUM
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
+  findings_summary: "6観点OK。L1044 write_textにflock/atomic replace不在を現物確認。AC4個/10分/1ファイル。並行16反復で偽ALERT0証明。MEDIUM=16反復の統計的十分性は保証なし"
+  observations:
+    - "事実1: L1044 out_path.write_text()にflock/atomic replaceなし。並行writerで競合する構造を現物確認"
+    - "事実2: L958教訓(emit方式)とL1154教訓(stock増加判定)がrelated_lessonsに注入済み"
+    - "事実3: AC3の16反復は決定論fixture(2並行writer強制)であり確率的検出ではない。十分性は反復回数でなくfixture設計に依存"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "hotfix 1ファイル+テスト。並行安全化方向。可逆"
+  ambiguity_points: none
+  causal_chain: "並行startup→write_text競合→snapshot消失/偽在庫差分→flock+atomic publish→消失0/偽ALERT0"
+  brainwash_check: "#1no(AC4個確認) #2no(L1044現物確認) #3no #4no #5no #6no #7no #8no(MEDIUM判定) 検証:loop_ledger_update.sh L1044,L22の2箇所"
+  timestamp: "2026-07-16T15:13:00+09:00"
+- cmd_id: cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510
+  review_type: report
+  verdict: LGTM
+  report_ninja: kagemaru
+  verified_files:
+    - "scripts/loop_ledger_update.sh:1044"
+    - "queue/reports/kagemaru_report_cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510.yaml:103"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-16T15:25:09+09:00
+  gate_prediction: CLEAR
+  gate_prediction_reason: "lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
+  confidence: MEDIUM
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。18/18 PASS SKIP0。before lost 1/8→after 0/16。flock+atomic replace。lesson_candidate有(read→compare→append全区間排他)"
+  observations:
+    - "事実1: test_results 18/18 PASS, SKIP0。変更前lost 1/8→変更後0/16, parse 0/16, false alert 0/16"
+    - "事実2: lesson_candidate: 比較入力を読むwriterはpublishだけでなくread→compare→append全区間を排他せよ。再利用可能な具体知見"
+    - "事実3: simplicity_check: 既存flock+Python標準tempfile/os.replaceのみ。独自同期機構なし"
+  adversarial_review:
+    required: false
+    verdict: N/A
+    reason: "hotfix 2ファイル。並行安全化方向。可逆"
+  ambiguity_points: none
+  causal_chain: "並行writer→同一previous snapshot読取→lost update→全区間flock+atomic→lost 0/parse 0/偽ALERT 0"
+  brainwash_check: "#1no(18/18数値確認) #2no(precheck ERRORS=0) #3no #4no #5no #6no #7no #8no(MEDIUM判定) 検証:before 1/8→after 0/16の4数値"
+  step3_5_verified: true
+  hole_action: none
+  timestamp: "2026-07-16T15:21:00+09:00"

@@ -1,18 +1,15 @@
 task:
   ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3 > AC4 > AC5
+  ac_priority: AC1 > AC2 > AC3 > AC4
   acceptance_criteria:
-  - description: GA-264のlast_updated/source_commit境界後のcommit hash・subject・変更pathを全件列挙し、直接原因と根本原因を一次情報でQ1回答する
+  - description: 同一OUT_FILEへ2並行writerを決定論実行し、変更前のlost snapshot、YAML中間状態、または同一入力からの偽在庫差分を数値再現する
     id: AC1
-  - description: 同カテゴリのcontext freshness対象を全件横断計測し、真陽性・偽陽性・未判定の件数とQ2横展開候補を報告する
+  - description: read previous→compare→append snapshot→publishの全区間を同一flockで直列化し、同一directoryの一時fileからatomic replaceする
     id: AC2
-  - description: Q3防御層をcontext実質更新またはcontext_freshness_check.sh+回帰testへ実装し、last_updatedだけを進める消火で終わらせない
+  - description: 2並行writerを最低16反復し、YAML parse失敗0・snapshot消失0・偽ALERT0、かつ実在庫増加fixtureの真ALERT維持を証明する
     id: AC3
-  - description: cache無効のcontext freshness gateで元GA-264が0件、関連Batsが全PASS・SKIP 0、未解消gate/hook条件があればPASSにせずBLOCKとして報告する
+  - description: startup gateとの呼出し契約とexit 0/1を維持し、対象テストPASS・SKIP0、未解消gate/hookが1件でもあればPASSにせずBLOCKとして報告する
     id: AC4
-  - description: 次回追加すべき二値チェックをlesson_candidateへorigin [[GA-264]] -> [[context-freshness-trigger-gap]] -> [[defense-layer]] 形式で記録する
-    id: AC5
-  command: GA-264をcache無効の実gateで再現し、未解消ALERTまたはgate/hook品質条件が1件でも残ればBLOCKとして報告する
   engineering_preferences:
   - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
   - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
@@ -21,11 +18,7 @@ task:
   - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
   - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
   - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  estimated_minutes: 15
-  files_modified:
-  - context/infrastructure.md
-  - scripts/context_freshness_check.sh
-  - tests/unit/test_context_freshness_check.bats
+  estimated_minutes: 10
   never_stop_for:
   - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
   - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
@@ -36,33 +29,27 @@ task:
   - AC2
   - AC3
   - AC4
-  - AC5
-  parent_cmd: cmd_karo_hotfix_ga264_context_freshness_202607160022
+  parent_cmd: cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510
   project: infra
-  purpose: GA-264 infrastructure.md鮮度ALERTの真因を一次commitで特定し、context反映または検知トリガー修正まで実装して再発を防ぐ
+  purpose: loop_ledgerの並行startup書込みでsnapshot消失・偽在庫差分が生じる競合を排他とatomic publishで根治する
   quality_gate:
-    action_conversion: 検出した未解消条件はBLOCKへ変換する
-    fp_measurement: context freshness実gateのfalse_positive件数を修正前後で計測する
-  split_decision:
-    boundary_ac_ids:
-    - AC3
-    integration_tasks: 0
-    review_round_trips: 1
-  status: failed
+    action_conversion: 未解消条件はBLOCKへ変換し、alert履歴削除や閾値引上げで消火しない
+    fp_measurement: concurrent fixtureでfalse_positive・lost_update・parse_failureをbefore→after計測する
+  status: idle
   stop_for: []
-  target_path: context/infrastructure.md
-  task_id: cmd_karo_hotfix_ga264_context_freshness_202607160022_normal
+  target_path: scripts/loop_ledger_update.sh
+  task_id: cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510_normal
   task_type: hotfix
   related_lessons:
-  - id: 'L825'
-    summary: 'GA-099の4対象はlast_updated後のsource commit増加をgateが検出したが、cmd完了時にどのcontextを更新すべきかを必須化す'
-    detail: 'GA-099の4対象はlast_updated後のsource commit増加をgateが検出したが、cmd完了時にどのcontextを更新すべきかを必須化す'
-  - id: 'L470'
-    summary: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
-    detail: '`context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj'
-  - id: 'L848'
-    summary: 'source commits N件だけのALERTでは、担当者が毎回git logから再調査する。ALERT行に非auto commitのhash/subjec'
-    detail: 'source commits N件だけのALERTでは、担当者が毎回git logから再調査する。ALERT行に非auto commitのhash/subjec'
+  - id: 'L958'
+    summary: 'weekly_metrics_trend.shのemit方式(alertsキーを1行、値の[]を次の行に別途出力)を踏襲してlogs/loop_ledger.y'
+    detail: 'weekly_metrics_trend.shのemit方式(alertsキーを1行、値の[]を次の行に別途出力)を踏襲してlogs/loop_ledger.y'
+  - id: 'L963'
+    summary: 'テストfixtureや最小環境で補助DBが存在しないケースまでクエリ失敗ALERTにすると、本来検証したいWARN集約を覆って回帰テストが誤FAILする。存在し'
+    detail: 'テストfixtureや最小環境で補助DBが存在しないケースまでクエリ失敗ALERTにすると、本来検証したいWARN集約を覆って回帰テストが誤FAILする。存在し'
+  - id: 'L1154'
+    summary: '前回snapshot比のstock増加だけでは、新規production直後かconsumer停止かを区別できない。last_consumption_tsの鮮度'
+    detail: '前回snapshot比のstock増加だけでは、新規production直後かconsumer停止かを区別できない。last_consumption_tsの鮮度'
   - id: 'L311'
     summary: '130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa'
     wa_category: 'report_yaml_format'
@@ -85,15 +72,6 @@ task:
     extra_scaffold:
     - "ACごとに実テスト証跡をresult.detailsへ記録"
     - "報告前にplaceholder残存確認とgate_report_formatを実行"
-  semantic_concepts:
-  - "agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md CLIモデル指定とコンテキスト scripts/deploy_task.sh tests/unit/test_deploy_training.bats scripts/ninja_monitor.sh scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh docs/research/claude-code-version-runbook.md docs/research/model-comparison-5w1h-20260701.md 全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) docs/research/sonnet5_vs_46_ab_evaluation_20260701.md 5ラウンドA/B/C評価データ scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応) .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)"
-  recommended_skills:
-  - "shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
   context_hints:
   - "context/training-cycle.md"
   growth_loop_defense:
@@ -108,29 +86,29 @@ task:
   - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
   description: |-
     【注入教訓】 必ず確認してから作業開始せよ
-      - L825: GA-099の4対象はlast_updated後のsource commit増加をgateが検出したが、cmd完了時にどのcontextを更新すべきかを必須化す
-      - L470: `context_freshness_check.sh --dashboard-warnings` は直近completed cmdがあるactive proj
-      - L848: source commits N件だけのALERTでは、担当者が毎回git logから再調査する。ALERT行に非auto commitのhash/subjec
+      - L958: weekly_metrics_trend.shのemit方式(alertsキーを1行、値の[]を次の行に別途出力)を踏襲してlogs/loop_ledger.y
+      - L963: テストfixtureや最小環境で補助DBが存在しないケースまでクエリ失敗ALERTにすると、本来検証したいWARN集約を覆って回帰テストが誤FAILする。存在し
+      - L1154: 前回snapshot比のstock増加だけでは、新規production直後かconsumer停止かを区別できない。last_consumption_tsの鮮度
       - L311: 130件中79件WA(60.8%)。Top1=report_yaml_format(41WA): lessons_useful dict→list(16件)はa
     ────────────────────────────────────────
-  ac_version: 59d7d64d
-  _ac_task_id: cmd_karo_hotfix_ga264_context_freshness_202607160022_normal
+  ac_version: 2edf2958
+  _ac_task_id: cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510_normal
   _ac_worker_id: 
   role_reminder: 忍者kagemaru。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kagemaru_report_cmd_karo_hotfix_ga264_context_freshness_202607160022.yaml
-  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_ga264_context_freshness_202607160022.yaml
+  report_filename: kagemaru_report_cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510.yaml
+  report_path: queue/reports/kagemaru_report_cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510.yaml
   bloom_level: 
   ninja_weak_points:
     source: 'karo_workarounds.yaml'
-    total_workarounds: 8
-    top_pattern: 'deploy_contract(2件)'
-    breakdown: 'deploy_contract(2件), gate_logic_gap(2件), report_yaml_format(2件), task_redeploy(1件), review_bundle_missing(1件)'
-    warning: '⚠ 過去8件のworkaround発生。品質に注意'
+    total_workarounds: 6
+    top_pattern: 'gate_logic_gap(2件)'
+    breakdown: 'gate_logic_gap(2件), report_yaml_format(2件), deploy_contract(1件), review_bundle_missing(1件)'
+    warning: '⚠ 過去6件のworkaround発生。品質に注意'
     gate_fail_top3:
     - pattern: 'bc_result_empty'
-      count: 1374
+      count: 1376
     - pattern: 'verdict_invalid'
-      count: 259
+      count: 261
     - pattern: 'status_pending'
       count: 237
     gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止; verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 完了後にstatusを"completed"に更新。"pending"のまま報告禁止'
@@ -141,9 +119,8 @@ task:
     - reason: 'purpose_validation_fit_false'
       count: 4
       hint: 'purpose_validation.fitがfalse。cmd目的と作業内容の乖離を確認'
-  variation_checks_required: true
+  variation_checks_required: false
   parent_ac_coverage: 
   parent_contract_fingerprint: ''
-  deployed_at: "2026-07-16T00:23:52"
-  acknowledged_at: "2026-07-16T00:24:17"
-  progress: AC1-AC5 measured; infrastructure 0, Bats 49/49, codd BLOCK 1; report FAIL valid
+  deployed_at: "2026-07-16T15:11:18"
+  acknowledged_at: "2026-07-16T15:12:13"
