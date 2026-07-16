@@ -3621,8 +3621,8 @@ _handle_reflux_auto_deploy() {
         ;;
       promotion)
         target_path=$(_reflux_promotion_target_path "$first_promotion")
-        purpose="還流在庫自動消化: 恒久防御未到達の昇格候補 ${first_promotion} を確認し、Level4以上の実装・gate・task注入などへ昇格する"
-        ac1="昇格候補 ${first_promotion} を一次情報で確認し、恒久防御(Level4以上)へ引き上げる実装またはdecision_candidateへ整理する"
+        purpose="還流在庫自動消化: 恒久防御未到達の昇格候補 ${first_promotion} を確認し、Level4以上の防御層・配備注入などへ昇格する"
+        ac1="昇格候補 ${first_promotion} を一次情報で確認し、恒久防御(Level4以上)へ引き上げるか、decision_candidateへ整理する"
         ;;
       *)
         unset "REFLUX_IDLE_FIRST_SEEN[$name]"
