@@ -10084,23 +10084,25 @@ deploy_task_apply_task_mutations() {
     # This is deliberately after every mutation path, including preinjected
     # YAML and report/context injectors.  A L4 direct-training task is not
     # deployable until its final on-disk AC schema is the canonical mapping.
-    local canonical_training_parent_cmd
-    canonical_training_parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    local canonical_training_parent_cmd canonical_training_task_type parent_cmd task_type
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" parent_cmd task_type 2>/dev/null)" || true
+    canonical_training_parent_cmd="${parent_cmd:-}"
+    canonical_training_task_type="${task_type:-normal}"
     if [[ "$canonical_training_parent_cmd" =~ ^cmd_training_L4_ ]] \
-        && [ "$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "normal" 2>/dev/null || true)" = "normal" ]; then
+        && [ "$canonical_training_task_type" = "normal" ]; then
         inject_direct_training_template "$task_file" "$canonical_training_parent_cmd" || return 1
     fi
 
-    local task_id parent_cmd project _ac_task_id
+    local task_id parent_cmd project _ac_task_id report_filename
     deploy_task_guard_task_yaml_syntax "post_injection_pre_report_template" "$task_file" "$ninja_name" || return 1
 
-    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" task_id _ac_task_id parent_cmd project 2>/dev/null)" || true
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" task_id _ac_task_id parent_cmd project report_filename 2>/dev/null)" || true
     # task_id空なら_ac_task_idをfallback(家老が_ac_task_idを直接設定するケース)
     if [ -z "${task_id:-}" ]; then
         task_id="${_ac_task_id:-}"
     fi
     generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project"
-    inject_parent_contract "$task_file" "$SCRIPT_DIR/queue/reports/$(FIELD_GET_NO_LOG=1 field_get "$task_file" report_filename "" 2>/dev/null)" "$ninja_name" \
+    inject_parent_contract "$task_file" "$SCRIPT_DIR/queue/reports/${report_filename:-}" "$ninja_name" \
         || { log "FATAL: parent contract injection failed"; return 1; }
     inject_done_redeploy_hints "$task_file" || true
 }

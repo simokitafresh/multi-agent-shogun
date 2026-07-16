@@ -265,6 +265,28 @@ PY
     [ "$status" -eq 0 ]
 }
 
+@test "deploy mutation final reads batch canonical and report metadata fields" {
+    run python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import re
+import sys
+
+script = open(sys.argv[1], encoding="utf-8").read()
+start = script.index("deploy_task_apply_task_mutations() {")
+end = script.index("\n# ═══════════════════════════════════════\n# メイン処理", start)
+body = script[start:end]
+
+assert re.search(
+    r'field_get_multi "\$task_file" parent_cmd task_type', body
+), "canonical training fields must use one YAML scan"
+assert re.search(
+    r'field_get_multi "\$task_file" task_id _ac_task_id parent_cmd project report_filename',
+    body,
+), "report metadata must be included in the existing final YAML scan"
+assert 'field_get "$task_file" report_filename' not in body
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "post-deploy verification suppresses duplicate re-nudge for wrapped prompt delivery evidence" {
     mkdir -p "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/logs"
     cat > "$TEST_PROJECT/queue/inbox/sasuke.yaml" <<'EOF'
