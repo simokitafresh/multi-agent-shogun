@@ -7,6 +7,24 @@ _ci_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="$(cd "${_ci_self%/scripts/lib/causal_index.sh}" && pwd)"
 DEFAULT_CACHE="$SCRIPT_DIR/.cache/causal_index.tsv"
 
+# Resolve rg binary: PATH → ~/.local/bin → /usr/bin fallback
+# Root cause: .bashrc non-interactive guard (line 6-9) hides ~/.local/bin
+# from hook subprocesses. This mirrors three_layer_preflight.sh resolve_rg().
+_ci_resolve_rg() {
+    local rg_cmd
+    rg_cmd="$(command -v rg 2>/dev/null || true)"
+    if [[ -n "$rg_cmd" ]]; then
+        printf '%s' "$rg_cmd"
+    elif [[ -x "$HOME/.local/bin/rg" ]]; then
+        printf '%s' "$HOME/.local/bin/rg"
+    elif [[ -x /usr/bin/rg ]]; then
+        printf '%s' /usr/bin/rg
+    else
+        return 1
+    fi
+}
+_CI_RG="$(_ci_resolve_rg)" || { echo "causal_index: rg not found" >&2; exit 1; }
+
 usage() {
     cat <<'EOF'
 Usage:
@@ -43,7 +61,7 @@ build_index() {
     fi
     tmp="$(mktemp "${cache}.tmp.XXXXXX")"
 
-    rg --hidden --no-heading --line-number --glob '!.git/**' --glob '!node_modules/**' \
+    "$_CI_RG" --hidden --no-heading --line-number --glob '!.git/**' --glob '!node_modules/**' \
         --glob '!logs/**' --glob '!data/**' --glob '!.cache/**' \
         '\[\[[^\[\]]+\]\]' "$SCRIPT_DIR" \
         | awk -v root="$SCRIPT_DIR/" '
