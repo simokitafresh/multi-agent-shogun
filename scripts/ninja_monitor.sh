@@ -3016,7 +3016,9 @@ _handle_auto_clear() {
 }
 
 _training_pipeline_has_work() {
-    grep -qE '^\s+status:\s+(pending|new|delegated)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null
+    # delegated=家老委任済み=忍者free。refluxブロックは pending|new のみ。
+    # 旧: delegated含む→全忍者reflux 7日間停止(promotion在庫188件停滞の根因。殿裁定2026-07-16)
+    grep -qE '^\s+status:\s+(pending|new)' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null
 }
 
 _retrospective_recurrence_rate() {
