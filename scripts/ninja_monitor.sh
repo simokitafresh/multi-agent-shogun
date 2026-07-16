@@ -36,7 +36,6 @@ SCRIPT_DIR="${_NM_SELF%/scripts/ninja_monitor.sh}"
 LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
 TRAINING_EFFECT_LOG="$SCRIPT_DIR/logs/training_effect.log"  # 修行before/after FAIL率比較ログ (cmd_2767)
 STATE_DIR="${SHOGUN_STATE_DIR:-/tmp}"
-source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/pane_lookup.sh"
 source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
@@ -49,7 +48,6 @@ source "$SCRIPT_DIR/lib/cli_adapter.sh"
 
 source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
-source "$SCRIPT_DIR/scripts/lib/agent_config.sh"
 source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"
 source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
 
