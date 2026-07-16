@@ -236,6 +236,63 @@ fi
 declare -A shared_index_before=()
 declare -A shared_scope_entries_before=()
 declare -A shared_scope_staged_before=()
+temp_index="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-index.XXXXXX")"
+rm -f "$temp_index"
+cleanup_normal_index() { rm -f "$temp_index" "$temp_index.lock"; }
+trap cleanup_normal_index EXIT
+export GIT_INDEX_FILE="$temp_index"
+git read-tree HEAD
+git add -- "${paths[@]}"
+
+# GA-282: task YAML is live orchestration state, not implementation source.
+# A caller can legitimately arrive with both paths already staged and pass both
+# to this helper (lesson writers and report finalization are common examples).
+# Raw `git add` is stopped earlier by GA-228, while GA-408 correctly remains a
+# fail-closed pre-commit boundary.  This helper uses a private index, so split
+# the two ownership domains here before hooks run: implementation commits omit
+# task YAML, task-only commits remain valid, and the shared index is untouched.
+is_task_yaml_commit_path() {
+    local candidate="${1:-}"
+    [[ "$candidate" == queue/tasks/*.yaml ]]
+}
+
+is_operational_yaml_commit_path() {
+    local candidate="${1:-}"
+    [[ "$candidate" == queue/*.yaml || "$candidate" == queue/**/*.yaml || "$candidate" == logs/*.yaml ]]
+}
+
+mapfile -t private_commit_paths < <(git diff --cached --name-only --diff-filter=ACMR)
+has_task_yaml=false
+has_implementation=false
+task_yaml_paths=()
+for candidate_path in "${private_commit_paths[@]}"; do
+    if is_task_yaml_commit_path "$candidate_path"; then
+        has_task_yaml=true
+        task_yaml_paths+=("$candidate_path")
+    elif ! is_operational_yaml_commit_path "$candidate_path"; then
+        has_implementation=true
+    fi
+done
+
+if [[ "$has_task_yaml" == true && "$has_implementation" == true ]]; then
+    for task_yaml_path in "${task_yaml_paths[@]}"; do
+        if git cat-file -e "HEAD:$task_yaml_path" 2>/dev/null; then
+            git reset -q HEAD -- "$task_yaml_path"
+        else
+            git update-index --force-remove -- "$task_yaml_path"
+        fi
+        printf 'INFO(GA-282): separated live task YAML from implementation commit: %s\n' "$task_yaml_path" >&2
+    done
+fi
+
+requested_paths=("${paths[@]}")
+mapfile -t paths < <(git diff --cached --name-only --diff-filter=ACMR)
+((${#paths[@]} > 0)) \
+    || { echo "BLOCK: scope produced an empty private index after task-YAML separation" >&2; exit 2; }
+
+# Snapshot only the effective commit paths.  A separated task YAML may remain
+# staged by another worker in the shared index; excluding it here is what keeps
+# that foreign stage byte-for-byte intact instead of treating it as our scope.
 for scope_path in "${paths[@]}"; do
     shared_scope_entries_before["$scope_path"]="$(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -- "$scope_path")"
     if GIT_INDEX_FILE="$shared_index_file" git diff --cached --quiet -- "$scope_path"; then
@@ -252,14 +309,6 @@ while IFS= read -r -d '' index_record; do
     index_path="${index_record#*$'\t'}"
     shared_index_before["$index_path"]="${index_meta% 0}"
 done < <(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -z -- "${paths[@]}")
-
-temp_index="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-index.XXXXXX")"
-rm -f "$temp_index"
-cleanup_normal_index() { rm -f "$temp_index" "$temp_index.lock"; }
-trap cleanup_normal_index EXIT
-export GIT_INDEX_FILE="$temp_index"
-git read-tree HEAD
-git add -- "${paths[@]}"
 
 for scope_path in "${paths[@]}"; do
     private_entries="$(git ls-files -s -- "$scope_path")"
@@ -310,7 +359,7 @@ trap - EXIT
 # 二値postcondition: commit treeは指定scopeのみ、他者stageはそのまま残る。
 # scope_path_is_in_scope(SSOT)で判定することで、正規化ロジックの重複を避ける。
 for committed_path in "${committed[@]}"; do
-    scope_path_is_in_scope "$committed_path" "${paths[@]}" \
+    scope_path_is_in_scope "$committed_path" "${requested_paths[@]}" \
         || { echo "FATAL: out-of-scope path entered commit: $committed_path" >&2; exit 1; }
 done
 

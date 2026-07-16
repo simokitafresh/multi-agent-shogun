@@ -20,6 +20,36 @@ teardown() {
     rm -rf "$REPO"
 }
 
+make_ga282_fixture() {
+    mkdir -p "$REPO/queue/tasks" "$REPO/projects/infra"
+    printf 'task: base\n' > "$REPO/queue/tasks/hayate.yaml"
+    printf 'lesson: base\n' > "$REPO/projects/infra/lessons_gunshi.yaml"
+    printf 'lesson2: base\n' > "$REPO/projects/infra/lessons_karo.yaml"
+    git -C "$REPO" add queue/tasks/hayate.yaml projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml
+    git -C "$REPO" commit -qm ga282-base
+}
+
+install_ga282_boundary_hook() {
+    mkdir -p "$REPO/.git/hooks"
+    cat > "$REPO/.git/hooks/pre-commit" <<'HOOK'
+#!/usr/bin/env bash
+set -euo pipefail
+mapfile -t staged < <(git diff --cached --name-only)
+printf '%s\n' "${staged[@]}" > .git/ga282-hook-seen
+has_task=false
+has_impl=false
+for path in "${staged[@]}"; do
+    [[ "$path" == queue/tasks/*.yaml ]] && has_task=true
+    [[ "$path" == projects/* || "$path" == scripts/* || "$path" == tests/* || "$path" == context/* ]] && has_impl=true
+done
+if [[ "$has_task" == true && "$has_impl" == true ]]; then
+    echo 'BLOCKED: queue/tasks/*.yaml cannot be committed with implementation files (GA-408)' >&2
+    exit 1
+fi
+HOOK
+    chmod +x "$REPO/.git/hooks/pre-commit"
+}
+
 @test "修正前: 通常commitは事前stage済み他者fileも含め2件commitする" {
     printf 'other change\n' >> "$REPO/other.txt"
     git -C "$REPO" add other.txt
@@ -115,6 +145,76 @@ HOOK
     [ "$status" -eq 0 ]
     [ "$(git -C "$REPO" diff-tree --no-commit-id --name-only -r HEAD)" = own.txt ]
     [ "$(git -C "$REPO" status --porcelain -- own.txt)" = "" ]
+}
+
+@test "GA-282 mixed stageはtask YAMLを分離しimplementationだけcommit、foreign task stageを保持する" {
+    make_ga282_fixture
+    install_ga282_boundary_hook
+    printf 'task: assigned\n' > "$REPO/queue/tasks/hayate.yaml"
+    printf 'lesson: fixed\n' > "$REPO/projects/infra/lessons_gunshi.yaml"
+    git -C "$REPO" add queue/tasks/hayate.yaml projects/infra/lessons_gunshi.yaml
+    task_index_before="$(git -C "$REPO" ls-files -s -- queue/tasks/hayate.yaml)"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m ga282-mixed -- queue/tasks/hayate.yaml projects/infra/lessons_gunshi.yaml"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO(GA-282): separated live task YAML"* ]]
+    [ "$(git -C "$REPO" diff-tree --no-commit-id --name-only -r HEAD)" = projects/infra/lessons_gunshi.yaml ]
+    [ "$(git -C "$REPO" show HEAD:projects/infra/lessons_gunshi.yaml)" = 'lesson: fixed' ]
+    [ "$(git -C "$REPO" diff --cached --name-only)" = queue/tasks/hayate.yaml ]
+    [ "$(git -C "$REPO" ls-files -s -- queue/tasks/hayate.yaml)" = "$task_index_before" ]
+    [ "$(cat "$REPO/.git/ga282-hook-seen")" = projects/infra/lessons_gunshi.yaml ]
+}
+
+@test "GA-282 task-only commitは分離せずpre-commit境界を通過する" {
+    make_ga282_fixture
+    install_ga282_boundary_hook
+    printf 'task: completed\n' > "$REPO/queue/tasks/hayate.yaml"
+    git -C "$REPO" add queue/tasks/hayate.yaml
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m ga282-task-only -- queue/tasks/hayate.yaml"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"INFO(GA-282)"* ]]
+    [ "$(git -C "$REPO" diff-tree --no-commit-id --name-only -r HEAD)" = queue/tasks/hayate.yaml ]
+    [ "$(cat "$REPO/.git/ga282-hook-seen")" = queue/tasks/hayate.yaml ]
+}
+
+@test "GA-282 implementation-only commitは実装欠落なしで従来通りcommitする" {
+    make_ga282_fixture
+    install_ga282_boundary_hook
+    printf 'lesson: implementation-only\n' > "$REPO/projects/infra/lessons_gunshi.yaml"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m ga282-implementation-only -- projects/infra/lessons_gunshi.yaml"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" diff-tree --no-commit-id --name-only -r HEAD)" = projects/infra/lessons_gunshi.yaml ]
+    [ "$(git -C "$REPO" show HEAD:projects/infra/lessons_gunshi.yaml)" = 'lesson: implementation-only' ]
+}
+
+@test "GA-282 parallel mixed workersは実装2commitを分離しtask stageをblob不変で保持する" {
+    make_ga282_fixture
+    install_ga282_boundary_hook
+    printf 'task: running\n' > "$REPO/queue/tasks/hayate.yaml"
+    printf 'lesson: worker-a\n' > "$REPO/projects/infra/lessons_gunshi.yaml"
+    printf 'lesson2: worker-b\n' > "$REPO/projects/infra/lessons_karo.yaml"
+    git -C "$REPO" add queue/tasks/hayate.yaml projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml
+    task_index_before="$(git -C "$REPO" ls-files -s -- queue/tasks/hayate.yaml)"
+
+    (cd "$REPO" && bash "$HELPER" -m ga282-worker-a -- queue/tasks/hayate.yaml projects/infra/lessons_gunshi.yaml) >"$REPO/a.out" 2>&1 &
+    a_pid=$!
+    (cd "$REPO" && bash "$HELPER" -m ga282-worker-b -- queue/tasks/hayate.yaml projects/infra/lessons_karo.yaml) >"$REPO/b.out" 2>&1 &
+    b_pid=$!
+    wait "$a_pid"; a_rc=$?
+    wait "$b_pid"; b_rc=$?
+
+    [ "$a_rc" -eq 0 ]
+    [ "$b_rc" -eq 0 ]
+    [ "$(git -C "$REPO" log -2 --format=%s | sort)" = $'ga282-worker-a\nga282-worker-b' ]
+    [ "$(git -C "$REPO" log --format=%H --grep='^ga282-worker-a$' -1 | xargs -r git -C "$REPO" diff-tree --no-commit-id --name-only -r)" = projects/infra/lessons_gunshi.yaml ]
+    [ "$(git -C "$REPO" log --format=%H --grep='^ga282-worker-b$' -1 | xargs -r git -C "$REPO" diff-tree --no-commit-id --name-only -r)" = projects/infra/lessons_karo.yaml ]
+    [ "$(git -C "$REPO" diff --cached --name-only)" = queue/tasks/hayate.yaml ]
+    [ "$(git -C "$REPO" ls-files -s -- queue/tasks/hayate.yaml)" = "$task_index_before" ]
 }
 
 @test "normal modeはpartial stageとworktree不一致をfail-closedしindexを保持する" {
