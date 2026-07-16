@@ -3330,17 +3330,31 @@ entries:
   updated_at: "2026-07-17T00:20:00"
   iteration: 1
 - script_path: scripts/record_lesson_feedback.sh
-  status: assigned
+  status: completed
   before_ms: 17
   after_ms: ''
-  before_real_ms: 128
-  after_real_ms: ""
-  real_measurement_command: time bash scripts/record_lesson_feedback.sh <report_file>
-  test_result: 3/3 PASS (SKIP=0)
-  commit: 035c317d0
+  before_real_ms: 137.597
+  after_real_ms: 120.433
+  real_measurement_command: "cp /tmp/tobisaru_rlf_ab/base.tsv /tmp/tobisaru_rlf_ab/logs/lesson_impact.tsv && bash /tmp/tobisaru_rlf_ab/scripts/record_lesson_feedback.sh /tmp/tobisaru_rlf_ab/report.yaml"
+  test_result: "bats_4_pass_fail0_skip0; bash_speed_training_28_pass_fail0_skip0"
+  commit: "6851990aabf1b56742f75db2a4c02d7799683ae7"
   assigned_to: "tobisaru"
-  updated_at: "2026-07-17T05:19:07"
+  updated_at: "2026-07-17T05:32:43"
   iteration: 1
+  last_good_commit: "5a0d94819e7f1473e0f912130412f5e6cd7c77c7"
+  candidate_commit: "6851990aabf1b56742f75db2a4c02d7799683ae7"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 137.597
+  last_good_p95_ms: 181.299
+  candidate_p50_ms: 120.433
+  candidate_p95_ms: 171.820
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2;/mnt/c;fixed-fixture;bash;awk;flock"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/report_field_set.sh
   status: pending
   before_ms: 19
