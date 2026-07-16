@@ -98,6 +98,8 @@ failed taskとcompleted reportは文書完成と作業結果を別軸で扱う�
 想起ファネル台帳: `scripts/loop_ledger_update.sh`のmemoryチャネルは`search_logs`をproduced、将軍回答の`[MEM:]`引用タグをconsumedとして集計し、検索継続・引用ゼロの空転を検知する（cmd_3735, produced=7872/consumed=147実測）。
 報告テンプレM3: `deploy_task.sh`は報告YAMLへ`memory_references`欄を自動生成し、`report_field_set.sh`/`gate_report_format_main.py`が欄の記入と条件付き検査を担う（cmd_3739）。
 引用有効性回収M4: `scripts/loop_ledger_update.sh`のmemoryチャネルは`memory_references.useful`を集計し、`reflux_targets`で無関係引用のsource別還流候補を出力する（cmd_3740, evaluated=8/useful=1/rate=12.5%/reflux_targets=2実測）。
+
+学習ループ台帳のsnapshot更新は、previous読取→差分判定→append→publishの全区間を`OUT_FILE.lock`の同一flockで直列化し、出力先と同じdirectoryの一時fileをfsync後`os.replace`する。書込みだけのlockでは2つのstartup gateが同じpreviousを読みlost updateするため不十分。修正前8反復でsnapshot消失1件、修正後16反復でparse失敗0・消失0・偽ALERT0、実在庫増加の真ALERT/exit 1維持、関連18/18 PASS・SKIP0。→ `scripts/loop_ledger_update.sh` / `tests/unit/test_loop_ledger_update.bats`（cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510、commit `7678bd69b`）
 可搬想起M6: `scripts/portable_loop_bootstrap.sh`は`recall_inject.sh`を生成し、hookなしCLIでもイベント文脈からsemantic/memory一致を注入テキスト化できる（cmd_3741, bats 4/4 PASS）。
 報告WA構造根絶(PD-056): report_yaml_format系WAの防御突破点3系統を偵察特定(cmd_3749)し、記入層=`deploy_task.sh`/`report_field_set.sh`へ既存依存宣言の記入導線+型検証(cmd_3750)、監視層=`ninja_monitor.sh`へactive+idle滞留のdone前報告評価+報告修正/未commit再通知(cmd_3751, ACTIVE-IDLE-REPORT-EVAL)を実装。家老手動補正へ流れる経路を構造で回収（2026-07-08全CLEAR）。
 偵察no-commit契約(PD-125): `deploy_task.sh`はrecon/recon2/scout/コード変更禁止taskでもcommit checkを省略せず、「stage/commit未実行=yes」を報告テンプレへ自動投影する。impl/hotfix/ci_fixはcommit必須を維持。偽BLOCK 1/1→0/1、局所53/53 PASS・SKIP0、commit `880976003cce017170f0db9d19b254e6377dc3b6`、GATE CLEAR（cmd_karo_hotfix_recon_report_commit_contract_202607140443）。
@@ -795,7 +797,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1156 -->
+<!-- last_synced_lesson: L1157 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1663,6 +1665,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1154: 差分在庫の即時ALERTにはconsumer猶予が必要（cmd_karo_hotfix_shogun_startup_four_blocks_202607161329）
 - L1155: queued通知は消費ロック内で現行状態へ再解決する（cmd_karo_hotfix_stale_inbox_nudge_consumption_202607161354）
 - L1156: 入力契約追加時は既存true-negative fixtureと不完全構造境界を同時更新する（cmd_karo_ci_fix_29472330522_root_gate_report_format_202607161359）
+- L1157: 比較入力を読むwriterはpublishだけでなくread→compare→append全区間を排他せよ（cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
