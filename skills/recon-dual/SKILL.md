@@ -1,5 +1,6 @@
 ---
 <!-- script_refs_checked_at: 2026-07-16T19:17:36+0900 -->
+<!-- 2026-07-16再検分: deploy_task.sh 1b23b3c9d/e29f20e3e/00a06e308。各共通配備入口でuniversal shard manifestを自動生成し、生成不能はexit 2でBLOCKする副作用を追加。1人目通常配備→2人目`--yaml`の引数・順序・通知契約は不変。 -->
 <!-- 将軍D0検分: deploy_task.sh 72fc07d15(LG055 operational_simulationテンプレート事前生成)。通常配備+2人目karo-directの順序契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T19:17:36+0900 -->
 <!-- cmd_karo_hotfix_skill_refs_core_202607152126検分: deploy_task.sh 22609351d/6c2eea753/7a8dd1c68をgit showで確認。report summaryのLevel5事前供給、分析cmdの.logを含むreadonly_ref抽出、再注入時のsequence重複除去は内部生成処理。偵察1人目の`--yaml`配備、2人目のkaro-direct配備、通知・衝突guard契約は不変。 -->

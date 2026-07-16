@@ -1,5 +1,6 @@
 ---
 <!-- script_refs_checked_at: 2026-07-16T19:17:36+0900 -->
+<!-- 2026-07-16再検分: deploy_task.sh 1b23b3c9d/e29f20e3e/00a06e308。共通配備入口でuniversal shard manifestを自動生成し、生成不能はexit 2でBLOCKする副作用を追加。speed_campaign付きtrainingは固有ACを保持する。既存`--yaml`/`--direct`引数・通知契約は不変。 -->
 <!-- 将軍D0検分: deploy_task.sh 72fc07d15(LG055 operational_simulationテンプレート事前生成)。内部テンプレート追加のみ、--direct/--yaml配備CLIと重複guard契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T19:17:36+0900 -->
 <!-- cmd_karo_hotfix_skill_refs_core_202607152126検分: deploy_task.sh 22609351d/6c2eea753/7a8dd1c68をgit showで確認。report summary事前供給、分析cmdのreadonly_ref抽出拡張、readonly_ref再注入の冪等化はいずれも配備内部の文脈生成強化。`--yaml <file> <ninja>`、`--direct <ninja> <cmd_id>`、`--direct --yaml <file> <ninja>`の引数・重複guard・通知契約は不変。 -->

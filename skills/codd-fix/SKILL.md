@@ -1,5 +1,6 @@
 ---
 <!-- script_refs_checked_at: 2026-07-16T19:17:45+0900 -->
+<!-- 2026-07-16再検分: cmd_complete_gate.sh da6641aeb。CMD_ID lock競合時の偽成功exit 0を廃止し、terminal CLEAR/BLOCK未確定としてEX_TEMPFAIL(exit 75)へ変更。単一cmd_id引数とterminal CLEAR/BLOCK契約は不変。 -->
 <!-- cmd_karo_hotfix_shogun_startup_four_blocks検分: cmd_complete_gate.sh/test_select.sh直近差分は証拠結合と.githooks選択の内部強化。単一phenomenon入力とfix workflow契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T19:17:45+0900 -->
 <!-- GA-263後検分: cmd_complete_gate.sh fed0fd5e5をgit showで確認。SG7 project/spec/scopeの直接証拠結合、report files_modified YAML-safe抽出、report commit anchor、tracked docs wiringを追加した内部fail-closed強化。`bash scripts/cmd_complete_gate.sh <cmd_id>`単一引数・CLEAR/BLOCK exit契約は不変。 -->

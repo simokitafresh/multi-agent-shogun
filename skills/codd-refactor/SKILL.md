@@ -1,6 +1,7 @@
 ---
 name: codd-refactor
 <!-- script_refs_checked_at: 2026-07-16T19:17:45+0900 -->
+<!-- 2026-07-16再検分: run_tests.sh 71ce264b0。file別timingに加えsuite wall/sum_file_secをtest_suite_timing_ledger.tsvへ記録する副作用を追加。mode引数・test選択・終了status契約は不変。 -->
 <!-- cmd_karo_hotfix_shogun_startup_four_blocks検分: run_tests.shの現行差分はstateful Bats 5本のfile-isolated scheduling追加、test_select.shは.githooks明示mapping追加。mode/exit/計測契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T19:17:45+0900 -->
 <!-- GA-263後検分: run_tests.sh 8a80ad7fc/4850af9a9をgit showと83回帰で確認。source時のrepo rootはBASH_SOURCE基準、affected/fullはfile単位aggregate budget=8・file内部jobs=1へ統一。mode引数・exit契約・14列台帳契約は不変。 -->

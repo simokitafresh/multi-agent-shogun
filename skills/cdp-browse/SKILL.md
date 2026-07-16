@@ -15,6 +15,7 @@ allowed-tools:
 ---
 
 <!-- script_refs_checked_at: 2026-07-16T19:18:13+0900 -->
+<!-- 2026-07-16再検分: note_draft.sh 31cfcb906/7127ab894/1421d3c92/5a7543ad9。Chrome未起動時のexit 0(SKIP)を廃止し、隔離profileを自動起動、起動不能時はexit 1(FAIL)。■行は個別bulletとして解釈後、<br>で1行改行する。単一Markdown引数とCDP_PORT契約は不変。 -->
 <!-- 検分: note_draft.sh 8e4872513 reCAPTCHA guard内部強化。呼び出し契約 `CDP_PORT=9234 bash scripts/note_draft.sh "<記事.md>"`、PASS/FAIL/SKIPログ契約は不変 -->
 <!-- script_refs_checked_at: 2026-07-16T19:18:13+0900 -->
 
