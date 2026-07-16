@@ -103,6 +103,7 @@ failed taskとcompleted reportは文書完成と作業結果を別軸で扱う�
 
 想起ファネル台帳: `scripts/loop_ledger_update.sh`のmemoryチャネルは`search_logs`をproduced、将軍回答の`[MEM:]`引用タグをconsumedとして集計し、検索継続・引用ゼロの空転を検知する（cmd_3735, produced=7872/consumed=147実測）。
 報告テンプレM3: `deploy_task.sh`は報告YAMLへ`memory_references`欄を自動生成し、`report_field_set.sh`/`gate_report_format_main.py`が欄の記入と条件付き検査を担う（cmd_3739）。
+報告実走契約(LG055): 実装報告は`deploy_task.sh`が`operational_simulation` 4項目を入口自動生成し、`gate_report_format_main.py`/`gate_gunshi_report_precheck.sh`が欠落・不正resultをBLOCKする。queue/report-onlyは実装なしのため免除し、実装欠落BLOCK+report-only PASSの境界を97/97+1/1 PASSで固定（cmd_karo_hotfix_report_opsim_contract_202607170003、commits `c3f63bf7e`, `012202ac1`）。因果: [[LG055_8回手戻り]] -> [[テンプレート不在が根因]] -> [[operational_simulation二層防御]]。
 引用有効性回収M4: `scripts/loop_ledger_update.sh`のmemoryチャネルは`memory_references.useful`を集計し、`reflux_targets`で無関係引用のsource別還流候補を出力する（cmd_3740, evaluated=8/useful=1/rate=12.5%/reflux_targets=2実測）。
 
 学習ループ台帳のsnapshot更新は、previous読取→差分判定→append→publishの全区間を`OUT_FILE.lock`の同一flockで直列化し、出力先と同じdirectoryの一時fileをfsync後`os.replace`する。書込みだけのlockでは2つのstartup gateが同じpreviousを読みlost updateするため不十分。修正前8反復でsnapshot消失1件、修正後16反復でparse失敗0・消失0・偽ALERT0、実在庫増加の真ALERT/exit 1維持、関連18/18 PASS・SKIP0。→ `scripts/loop_ledger_update.sh` / `tests/unit/test_loop_ledger_update.bats`（cmd_karo_hotfix_loop_ledger_concurrent_snapshot_202607161510、commit `7678bd69b`）
