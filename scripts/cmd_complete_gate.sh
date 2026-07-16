@@ -702,6 +702,7 @@ build_clear_throughput_metric() {
     python3 - "${MATCHING_TASK_FILES[@]}" <<'PY'
 import os
 import sys
+import glob
 from datetime import datetime
 
 import yaml
@@ -710,6 +711,7 @@ cmd_id = os.environ["CMD_ID_ENV"]
 yaml_file = os.environ["YAML_FILE_ENV"]
 clear_ts_raw = os.environ["CLEAR_TS_ENV"]
 task_files = sys.argv[1:]
+root_dir = os.path.dirname(os.path.dirname(yaml_file))
 
 
 def parse_iso(raw):
@@ -754,7 +756,6 @@ except Exception:
     issue_ts = None
 
 if issue_ts is None:
-    root_dir = os.path.dirname(os.path.dirname(yaml_file))
     for rel in ("logs/cmd_design_quality.yaml", "logs/archive/cmd_design_quality.yaml"):
         path = os.path.join(root_dir, rel)
         try:
@@ -791,9 +792,57 @@ for path in task_files:
     ack_values.append(parse_iso(task.get("acknowledged_at")))
     done_values.append(parse_iso(task.get("done_at") or task.get("completed_at")))
 
-deploy_ts = max((v for v in deploy_values if v is not None), default=None)
+# Direct cmds have no shogun command entry. Their durable issue/deploy event is
+# the task_assigned inbox message written after the task YAML is published.
+# Read both live and archived inboxes so task rotation cannot erase telemetry.
+assigned_values = []
+for path in glob.glob(os.path.join(root_dir, "queue/inbox/*.yaml")) + glob.glob(os.path.join(root_dir, "archive/inbox/*.yaml")):
+    try:
+        with open(path, encoding="utf-8") as f:
+            inbox_data = yaml.safe_load(f) or {}
+    except Exception:
+        continue
+    messages = inbox_data.get("messages", inbox_data) if isinstance(inbox_data, dict) else inbox_data
+    if not isinstance(messages, list):
+        continue
+    for message in messages:
+        if not isinstance(message, dict) or message.get("type") != "task_assigned":
+            continue
+        content = str(message.get("content") or "")
+        if cmd_id not in content:
+            continue
+        ts = parse_iso(message.get("timestamp"))
+        if ts is not None:
+            assigned_values.append(ts)
+
+# Report timestamps are the durable done event. Include archives and choose the
+# latest valid completion/revision for duplicate reports of the same cmd.
+report_done_values = []
+report_patterns = (
+    os.path.join(root_dir, "queue/reports/*.yaml"),
+    os.path.join(root_dir, "archive/reports/**/*.yaml"),
+)
+for pattern in report_patterns:
+    for path in glob.glob(pattern, recursive=True):
+        try:
+            with open(path, encoding="utf-8") as f:
+                report = yaml.safe_load(f) or {}
+        except Exception:
+            continue
+        if not isinstance(report, dict) or str(report.get("parent_cmd") or "").strip() != cmd_id:
+            continue
+        if str(report.get("status") or "").strip() not in {"completed", "done", "revision_requested"}:
+            continue
+        ts = parse_iso(report.get("timestamp"))
+        if ts is not None:
+            report_done_values.append(ts)
+
+assigned_ts = min(assigned_values, default=None)
+if issue_ts is None:
+    issue_ts = assigned_ts
+deploy_ts = max((v for v in deploy_values if v is not None), default=assigned_ts)
 ack_ts = min((v for v in ack_values if v is not None), default=None)
-done_ts = max((v for v in done_values if v is not None), default=None)
+done_ts = max((v for v in done_values + report_done_values if v is not None), default=None)
 clear_ts = parse_iso(clear_ts_raw)
 
 deploy_sec = sec(issue_ts, deploy_ts)

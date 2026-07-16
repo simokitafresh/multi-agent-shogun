@@ -234,6 +234,97 @@ EOF
     [[ "$output" == *"missing=none"* ]]
 }
 
+@test "build_clear_throughput_metric resolves direct cmd from assigned inbox task ack and report done" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/inbox" "$TEST_PROJECT/queue/reports"
+    printf 'commands: {}\n' > "$YAML_FILE"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  deployed_at: ''
+  acknowledged_at: '2026-07-08T09:02:00'
+EOF
+    cat > "$TEST_PROJECT/queue/inbox/sasuke.yaml" <<EOF
+messages:
+  - type: task_assigned
+    timestamp: '2026-07-08T09:01:00'
+    content: 'task assigned: $TEST_CMD_ID'
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+status: completed
+timestamp: '2026-07-08T09:07:00'
+EOF
+
+    run build_clear_throughput_metric "2026-07-08T09:10:00"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"deploy_sec=0 work_sec=300 finalize_sec=180 e2e_sec=540 missing=none"* ]]
+}
+
+@test "build_clear_throughput_metric preserves reversed timestamp reasons without clamping" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports"
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    delegated_at: '2026-07-08T09:05:00'
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  deployed_at: '2026-07-08T09:01:00'
+  acknowledged_at: '2026-07-08T09:02:00'
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+status: completed
+timestamp: '2026-07-08T09:07:00'
+EOF
+
+    run build_clear_throughput_metric "2026-07-08T09:10:00"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"deploy_sec=na"* ]]
+    [[ "$output" == *"invalid_deploy_sec"* ]]
+    [[ "$output" != *"deploy_sec=0"* ]]
+}
+
+@test "build_clear_throughput_metric selects latest duplicate report done event" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports"
+    cat > "$YAML_FILE" <<EOF
+commands:
+  $TEST_CMD_ID:
+    delegated_at: '2026-07-08T09:00:00'
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  deployed_at: '2026-07-08T09:01:00'
+  acknowledged_at: '2026-07-08T09:02:00'
+EOF
+    for pair in early:06 late:08; do
+        name="${pair%%:*}"; minute="${pair##*:}"
+        cat > "$TEST_PROJECT/queue/reports/${name}_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+status: completed
+timestamp: '2026-07-08T09:${minute}:00'
+EOF
+    done
+
+    run build_clear_throughput_metric "2026-07-08T09:10:00"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"work_sec=360 finalize_sec=120 e2e_sec=600 missing=none"* ]]
+}
+
 @test "build_clear_duration_metric uses acknowledged_at and done_at for nested and flat task YAML" {
     source "$GATE_HELPERS_FILE"
     export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml" "$TEST_PROJECT/queue/tasks/hanzo.yaml")
