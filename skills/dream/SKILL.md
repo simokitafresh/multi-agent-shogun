@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: memory_db_query.sh 54f40b34dをgit showで確認。no-arg usage出力を外部catからbuiltin printfへ等価置換した速度改善のみ。SQL/search引数、pipe区切り出力、cache recovery、read-only契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-15T11:38:00+09:00 -->
 <!-- 2026-07-15将軍検分: memory_db_query.sh aa75598cf(delta source検出WAL/SHM freshness対応=内部最適化)。クエリ呼出し契約不変。 -->
 name: dream

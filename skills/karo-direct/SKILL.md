@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: deploy_task.sh 63a76836dをgit showで確認。legacy `status <ninja> idle|done|in_progress`をtask正規化前のstatus-only分岐へ隔離し、既存task誤再配備を防止。karo-directの`--direct`/`--yaml`引数、重複guard、task publication、inbox通知契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-16T19:17:36+0900 -->
 <!-- 2026-07-16再検分: deploy_task.sh 1b23b3c9d/e29f20e3e/00a06e308。共通配備入口でuniversal shard manifestを自動生成し、生成不能はexit 2でBLOCKする副作用を追加。speed_campaign付きtrainingは固有ACを保持する。既存`--yaml`/`--direct`引数・通知契約は不変。 -->
 <!-- 将軍D0検分: deploy_task.sh 72fc07d15(LG055 operational_simulationテンプレート事前生成)。内部テンプレート追加のみ、--direct/--yaml配備CLIと重複guard契約は不変。 -->

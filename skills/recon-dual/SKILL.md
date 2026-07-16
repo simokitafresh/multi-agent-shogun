@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: deploy_task.sh 63a76836dをgit showで確認。legacy lifecycle status制御を通常配備から早期分離した修正で、1人目通常配備→2人目`--yaml`の順序、引数、衝突guard、通知契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-16T19:17:36+0900 -->
 <!-- 2026-07-16再検分: deploy_task.sh 1b23b3c9d/e29f20e3e/00a06e308。各共通配備入口でuniversal shard manifestを自動生成し、生成不能はexit 2でBLOCKする副作用を追加。1人目通常配備→2人目`--yaml`の引数・順序・通知契約は不変。 -->
 <!-- 将軍D0検分: deploy_task.sh 72fc07d15(LG055 operational_simulationテンプレート事前生成)。通常配備+2人目karo-directの順序契約は不変。 -->

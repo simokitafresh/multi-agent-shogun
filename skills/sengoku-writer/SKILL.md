@@ -1,4 +1,7 @@
 ---
+
+<!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: note_draft.sh現HEAD+作業差分を確認。CDP未応答は隔離profile自動起動、起動不能/reCAPTCHA未解決はexit 1(FAIL)。末尾skill-auto-improve追記はexit後でI/F不変。既存Markdown引数/CDP_PORT契約を維持。 -->
 name: sengoku-writer
 argument-hint: "[topic]"
 quality_metric: "将軍系: sengoku-writer起点cmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"
@@ -256,7 +259,7 @@ CDP経由でnote.comに下書き保存する。実行は共通ヘルパー `scri
 CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 ```
 
-内部では `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは `/tmp/note_recaptcha_challenge.png` を撮影して、ブラウザ上で解決されるまで最大120秒待機する。外部reCAPTCHAチャレンジが解決されずログイン完了できない場合はSKIPとして記録し、exit 0で終了する。これは人間/外部サービス待ちであり、Gate20のスキルFAIL率からも除外される。
+内部では `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。CDP未応答時は隔離profile付きChromeを自動起動する。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは `/tmp/note_recaptcha_challenge.png` を撮影して最大120秒待機する。Chrome起動不能またはreCAPTCHA未解決はSKIPせずFAIL(exit 1)として記録する。
 
 Markdown→note.com変換ルール:
 - `# タイトル` → titleのtextareaに設定（本文に含めない）。`#` が無い場合は最初の `##` をfallback titleに使う

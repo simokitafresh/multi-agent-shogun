@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: ninja_monitor.sh 348d1df9c/2a09dc71c/e9a172bad/432d78e71c/7b5a87837をgit showで確認。reflux/speed配備のidle・estimated_minutes・rollback/QUALITY_CONTRACT修正と重複source削除であり、CLI切替、settings→tmux同期、dead/idle pane respawn-pane -k、cli_launch_cmd契約は不変。本文変更不要。 -->
 name: shogun-cli-switch
 description: |
   multi-agent-shogun のCLI種別(Claude⇔Codex)とClaude Code version運用を切り替える。全ロールが殿の指示のもとに使用可能。

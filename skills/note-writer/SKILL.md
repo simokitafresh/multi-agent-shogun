@@ -1,4 +1,7 @@
 ---
+
+<!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: note_draft.sh現HEAD+作業差分を確認。CDP未応答は隔離profile自動起動、起動不能/reCAPTCHA未解決はexit 1(FAIL)。末尾skill-auto-improve追記はexit後でI/F不変。`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`を維持。 -->
 name: note-writer
 argument-hint: "[topic|draft_path]"
 description: |
@@ -186,7 +189,7 @@ CDP経由でnote.comに下書き保存する。実行は共通ヘルパー `scri
 CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 ```
 
-内部では `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。bash層でChrome CDP事前チェック(Step 0)を行い、CDP_PORTに応答がなければSKIP(exit 0)で抜ける(FAIL率汚染防止)。Chrome起動時は `launch_browser`(PowerShell)を試行し、失敗時は `cmd.exe` フォールバックで隔離プロファイル付きChrome起動を試みる。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは `/tmp/note_recaptcha_challenge.png` を撮影して、ブラウザ上で解決されるまで最大120秒待機する。外部reCAPTCHAチャレンジが解決されずログイン完了できない場合はSKIPとして記録し、exit 0で終了する。これは人間/外部サービス待ちであり、Gate20のスキルFAIL率からも除外される。
+内部では `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。CDP_PORTに応答がなければ `launch_browser`(PowerShell)→`cmd.exe` fallbackで隔離プロファイル付きChromeを自動起動する。起動不能はFAIL(exit 1)。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは `/tmp/note_recaptcha_challenge.png` を撮影して最大120秒待機する。未解決ならFAIL(exit 1)として記録する。
 
 Markdown→note.com変換ルール:
 - `# タイトル` → titleのtextareaに設定（本文に含めない）。`#` が無い場合は最初の `##` をfallback titleに使う

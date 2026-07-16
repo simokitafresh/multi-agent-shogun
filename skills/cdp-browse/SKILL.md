@@ -1,4 +1,7 @@
 ---
+
+<!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
+<!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: note_draft.sh現HEAD+作業差分を確認。CDP未応答時は隔離profileをlaunch_browser→cmd.exe fallbackで自動起動し、起動不能/reCAPTCHA未解決はexit 1(FAIL)。末尾のskill-auto-improveコメント追記はexit後で呼出契約・副作用不変。単一Markdown引数/CDP_PORT=9234/PASS・FAIL記録契約を維持。 -->
 name: cdp-browse
 argument-hint: "[url] [screenshot_path]"
 description: |
@@ -109,7 +112,7 @@ note.com下書き保存では、共通ヘルパー `scripts/note_draft.sh` を�
 CDP_PORT=9234 bash scripts/note_draft.sh "<記事.md>"
 ```
 
-`note_draft.sh` は `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。bash層でChrome CDP事前チェック(Step 0)を行い、CDP_PORTに応答がなければSKIP(exit 0)で抜ける(FAIL率汚染防止)。Chrome起動時は `launch_browser`(PowerShell)を試行し、失敗時は `cmd.exe` フォールバックで隔離プロファイル付きChrome起動を試みる。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` でログインし、reCAPTCHA画像チャレンジが出た場合は `/tmp/note_recaptcha_challenge.png` を出力して最大120秒待つ。外部reCAPTCHAチャレンジが解決されずログイン完了できない場合はSKIPとして記録し、exit 0で終了する。これは人間/外部サービス待ちであり、Gate20のスキルFAIL率からも除外される。ProseMirrorエディタがスピナーで停止している場合は `Page.reload` で最大2回リトライする。本文挿入は `.ProseMirror.note-common-styles__textnote-body` → `div.ProseMirror` → `div[contenteditable]` の3段fallbackでエディタを検出する。下書き保存の成果はnote.comエディタ上のドラフトで、スクリプトは最終URLを `[note_draft] Done: ...` に出し、`skill_execution_log.yaml` にPASS/FAIL/SKIPを記録する。
+`note_draft.sh` は `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。CDP_PORTに応答がなければ `launch_browser`(PowerShell)を試行し、失敗時は `cmd.exe` フォールバックで隔離プロファイル付きChromeを自動起動する。起動不能はSKIPせずFAIL(exit 1)。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` でログインし、reCAPTCHA画像チャレンジが出た場合は `/tmp/note_recaptcha_challenge.png` を出力して最大120秒待つ。解決されずログイン完了できない場合もFAIL(exit 1)として記録する。ProseMirrorエディタがスピナーで停止している場合は `Page.reload` で最大2回リトライする。本文挿入は `.ProseMirror.note-common-styles__textnote-body` → `div.ProseMirror` → `div[contenteditable]` の3段fallbackでエディタを検出する。下書き保存の成果はnote.comエディタ上のドラフトで、スクリプトは最終URLを `[note_draft] Done: ...` に出し、`skill_execution_log.yaml` にPASS/FAILを記録する。
 
 ## cdp_cli.sh不可時の直接WS操作
 
