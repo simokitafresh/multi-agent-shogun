@@ -154,6 +154,8 @@
 
 `shard-work`は既知集合を一度だけ分割・回収する単発実行、`campaign-lane`は台帳の実測から次targetを反復選定し、best_so_farと飽和条件で継続・停止する閉ループである。
 
+origin: [[ledger-driven-campaign-lane-pattern_20260714]] -> [[campaign-lane]] -> [[shard-work]]との反復/単発境界
+
 ## §9 三層学習ループとの対応
 
 - 第一層（個）: 忍者の二値報告（改善なしも数値で正直に）＝飽和信号の源泉
