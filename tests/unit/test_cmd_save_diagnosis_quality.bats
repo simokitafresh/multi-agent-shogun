@@ -165,6 +165,22 @@ run_warn_save() {
         bash "$SAVE_SCRIPT" cmd_warntest
 }
 
+run_warn_save_from_external_cwd() {
+    run env \
+        CMD_SAVE_QUEUE_FILE="$TEST_QUEUE" \
+        CMD_SAVE_ARCHIVE_CMD_DIR="$TEST_ARCHIVE_DIR" \
+        CMD_QUALITY_LOG_FILE="$TEST_QUALITY_LOG" \
+        CMD_SAVE_LOCK_FILE="$TEST_LOCK" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_PREFLIGHT_AUTOLEARN" \
+        CMD_SAVE_LAST_CMD_FILE="$TEST_LAST_CMD" \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_SHOGUN_LESSONS" \
+        CMD_SAVE_LORD_CONVERSATION_FILE="$TEST_LORD_CONVERSATION" \
+        CMD_SAVE_CMD_CHRONICLE_FILE="$TEST_CMD_CHRONICLE" \
+        CMD_SAVE_INSIGHTS_FILE="$TEST_INSIGHTS" \
+        CMD_QUALITY_FAST_METADATA=1 \
+        bash -c 'cd "$1" && exec bash "$2" cmd_warntest' _ "$TEST_TMPDIR" "$SAVE_SCRIPT"
+}
+
 write_q5_pair_cmd() {
     cat > "$TEST_QUEUE" <<'YAML'
 commands:
@@ -282,6 +298,16 @@ run_q5_pair_save() {
 }
 
 # --- AC2: WARN累計昇格 ---
+
+@test "CI regression: universal shard helper resolves once from repo root for external cwd" {
+    write_warn_cmd
+    run_warn_save_from_external_cwd
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS(universal_shard="* ]]
+    [[ "$output" != *"scripts/scripts/lib/universal_shard_contract.py"* ]]
+}
 
 @test "AC2-1: 同一WARNが1回目はWARNのまま(BLOCKなし)" {
     write_warn_cmd

@@ -6203,8 +6203,8 @@ check_universal_shard_contract() {
     local tmp result rc=0
     tmp="$(mktemp)"
     printf '%s\n' "$CMD_BLOCK_NC" >"$tmp"
-    result="$(python3 "$SCRIPT_DIR/scripts/lib/universal_shard_contract.py" "$tmp" \
-        --tasks-dir "$SCRIPT_DIR/queue/tasks" 2>&1)" || rc=$?
+    result="$(python3 "$PROJECT_DIR/scripts/lib/universal_shard_contract.py" "$tmp" \
+        --tasks-dir "$PROJECT_DIR/queue/tasks" 2>&1)" || rc=$?
     rm -f "$tmp"
     if [ "$rc" -ne 0 ]; then
         record_block_reason "$result"
