@@ -1,5 +1,5 @@
 ---
-<!-- script_refs_checked_at: 2026-07-16T21:33:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T23:53:10+0900
 <!-- 2026-07-16 cmd_karo_hotfix_parallel_commit_race検分: ninja_scope_commit.shは専用indexに加えgit common-dir単位のflockでCOMMIT_EDITMSG/hooks/HEAD更新を含むcommit transactionを直列化。CLI契約は不変で、並列呼出しでも件名・path scope非混線と親shell復帰を保証する。 -->
 <!-- 2026-07-15将軍検分: report_field_set.sh aa75598cf(lesson_candidate型チェック dict→(dict,list)緩和=内部バリデーション)。呼び出し契約不変。 -->
 name: ninja-commit
@@ -16,7 +16,7 @@ allowed-tools:
   - Read
 ---
 
-<!-- script_refs_checked_at: 2026-07-15T03:25:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T23:53:10+0900
 <!-- cmd_3948検分: report_field_set.sh直近差分はsummary placeholder入口BLOCK。commit_hash記録契約不変。 -->
 <!-- 検分: report_field_set.sh cd0411247d(書込み入口でresult.summary placeholderをBLOCK)。CLI引数、commit_hash記録、completed前記録順、出口契約は不変 -->
 
@@ -94,7 +94,7 @@ bash scripts/report_field_set.sh "$REPORT" "commit_hash" "$COMMIT_HASH"
 コード変更を伴わず、変更対象がqueue/logsのみで、報告上のcommit不要条件を満たす場合に限り `commit_hash=no-code-change` も許可される。source/config/docsを含む場合や根拠のない指定はBLOCKされる。
 
 <!-- 2026-07-15 cmd_karo_hotfix_skill_refs_ops検分: report_field_set.sh 82d5cac4e/41415be7bをgit showで確認。commit identityを共通validatorへ統合し、40文字hashに加えて厳格なqueue/logs-only no-code-changeを許可する契約変更。上記手順へ反映。 -->
-<!-- script_refs_checked_at: 2026-07-15T21:28:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T23:53:10+0900
 verdict は `gate_report_format.sh` が binary_checks から自動導出する。commit後の報告追記でも手動記入禁止。
 
 `status: completed` / `done` への最終遷移**前**に、この `commit_hash` を記録せよ。`report_field_set.sh` は完了済みの現行報告を不変として扱い、内容変更をfail-closedでBLOCKする。完了後に訂正が必要になった場合は、正規経路で先に `status` を `revision_requested` へ遷移し、修正・再検証を行う。
@@ -138,8 +138,8 @@ Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_fi
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パスを検出し、個別dict変換する。ninja-commitのcommit_hash記録手順への影響なし。
 Script refs verified: 2026-06-09 06f5a0856. `report_field_set.sh` にlessons_useful全体上書きBLOCKガード追加(既存件数>新件数で拒否)。ninja-commitはcommit_hash記録のみで影響なし。
 
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T23:53:10+0900
+<!-- script_refs_checked_at: 2026-07-16T23:53:10+0900
 
 Script refs verified: 2026-07-02 cmd_karo_hotfix_shogun_startup_memory_skill_refs_20260702010546. `report_field_set.sh` 直近変更(281349be)はresult系書込み高速化で、`bash scripts/report_field_set.sh "$REPORT" <field> <value>` の呼び出し契約と報告YAML構造検証は変更なし。
 
@@ -147,7 +147,7 @@ Script refs verified: 2026-06-20 efb4b9c02. `report_field_set.sh` 直近変更�
 
 Script refs verified: 2026-06-26 b12637002. `report_field_set.sh` 直近変更はstatus=completed済み報告へのcommit前フィールド書込みをBLOCKするガード追加。ninja-commitはcommit後にcommit_hashを記録するため、commit前にstatus completedになることはなく影響なし。
 
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T23:53:10+0900
 
 <!-- 検分: 2026-07-12 shogun起動時gate WARN解消。checked_at以降の差分をgit logで確認 — gate_report_format.sh 8c576d849(AC3 hunk provenance判定=内部判定強化)/memory_db_query.sh 8ce7c5c26(ext4キャッシュ経由=内部速度)/deploy_task.sh 2ecaf21ba+0cc6175e6+5dc9e8423(chunk境界regex誤検知根治+lesson注入絞込+atomic mv=内部)/ninja_scope_commit.sh 42d06b1d5+13f46a918(fail-closed patch commit mode追加+CI fixture=内部)/ninja_monitor.sh b40e13d2c系(dedupe通知+stall FP抑制=内部)。いずれも呼び出し契約・手順・出口文言に変更なし -->
-<!-- script_refs_checked_at: 2026-07-13T07:50:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T23:53:10+0900

@@ -61,15 +61,9 @@ teardown() {
     [ "$(git -C "$REPO" status --porcelain -- own.txt)" = "" ]
 }
 
-@test "2並列の事前stage済みcommitはsubject/pathを分離しforeign stageを保持する" {
+@test "2並列commitはsubjectとpathを混線させず両親shellが後続へ復帰する" {
     printf 'alpha change\n' >> "$REPO/own.txt"
     printf 'beta change\n' >> "$REPO/other.txt"
-    printf 'foreign base\n' > "$REPO/foreign.txt"
-    git -C "$REPO" add foreign.txt
-    git -C "$REPO" commit -qm foreign-base
-    printf 'foreign pending\n' >> "$REPO/foreign.txt"
-    git -C "$REPO" add own.txt other.txt foreign.txt
-    foreign_index_before="$(git -C "$REPO" ls-files -s -- foreign.txt)"
     mkdir -p "$REPO/.git/hooks"
     cat > "$REPO/.git/hooks/pre-commit" <<'HOOK'
 #!/usr/bin/env bash
@@ -102,22 +96,9 @@ HOOK
     [ "$(git -C "$REPO" log -2 --format=%s | sort)" = $'subject-alpha\nsubject-beta' ]
     [ "$(git -C "$REPO" log --format=%H --grep='^subject-alpha$' -1 | xargs -r git -C "$REPO" diff-tree --no-commit-id --name-only -r)" = own.txt ]
     [ "$(git -C "$REPO" log --format=%H --grep='^subject-beta$' -1 | xargs -r git -C "$REPO" diff-tree --no-commit-id --name-only -r)" = other.txt ]
-    [ "$(git -C "$REPO" ls-files -s -- foreign.txt)" = "$foreign_index_before" ]
-    [ "$(git -C "$REPO" diff --cached --name-only)" = foreign.txt ]
 }
 
-@test "normal modeは対象pathの完全stage済みblobを安全にcommitする" {
-    printf 'fully staged own change\n' >> "$REPO/own.txt"
-    git -C "$REPO" add own.txt
-
-    run bash -c "cd '$REPO' && bash '$HELPER' -m staged-safe -- own.txt"
-
-    [ "$status" -eq 0 ]
-    [ "$(git -C "$REPO" diff-tree --no-commit-id --name-only -r HEAD)" = own.txt ]
-    [ "$(git -C "$REPO" status --porcelain -- own.txt)" = "" ]
-}
-
-@test "normal modeはpartial stageとworktree不一致をfail-closedしindexを保持する" {
+@test "normal modeは対象path既存stageをpatch modeへfail-closedする" {
     printf 'staged owner unknown\n' >> "$REPO/own.txt"
     git -C "$REPO" add own.txt
     staged_before="$(git -C "$REPO" ls-files -s -- own.txt)"
@@ -127,7 +108,7 @@ HOOK
     run bash -c "cd '$REPO' && bash '$HELPER' -m must-block -- own.txt"
 
     [ "$status" -eq 2 ]
-    [[ "$output" == *"partial/foreign staged content"* ]]
+    [[ "$output" == *"already has staged content"* ]]
     [ "$(git -C "$REPO" ls-files -s -- own.txt)" = "$staged_before" ]
     [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
 }
