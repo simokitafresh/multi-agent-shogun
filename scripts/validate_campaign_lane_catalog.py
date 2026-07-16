@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 from collections import Counter
 from pathlib import Path
-import sys, yaml
+import os, sys, yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-def resource_exists(value):
+PROJECTS_CONFIG = Path(os.environ.get("CAMPAIGN_PROJECTS_CONFIG", REPO_ROOT / "config/projects.yaml"))
+
+def resource_exists(value, allow_generated=False):
     value = str(value)
     generated = value.startswith("generated:")
+    if generated and not allow_generated:
+        return False
     if generated:
         value = value[len("generated:"):]
     if not value.startswith("project:"):
@@ -16,7 +20,7 @@ def resource_exists(value):
     project_id, sep, relative = project_ref.partition("/")
     if not sep or not relative:
         return False
-    projects = yaml.safe_load((REPO_ROOT / "config/projects.yaml").read_text(encoding="utf-8")) or {}
+    projects = yaml.safe_load(PROJECTS_CONFIG.read_text(encoding="utf-8")) or {}
     entries = projects.get("projects", projects)
     if isinstance(entries, list):
         entry = next((x for x in entries if isinstance(x, dict) and x.get("id") == project_id), {})
@@ -24,7 +28,12 @@ def resource_exists(value):
         entry = entries.get(project_id, {}) if isinstance(entries, dict) else {}
     base = entry.get("path") if isinstance(entry, dict) else None
     target = Path(base) / relative if base else None
-    return bool(target and ((target.parent.exists() if generated else target.exists())))
+    if not target:
+        return False
+    if generated:
+        stable_ancestor = Path(base) / Path(relative).parts[0]
+        return stable_ancestor.exists()
+    return target.exists()
 
 path = Path(sys.argv[1]) if len(sys.argv) > 1 else REPO_ROOT / "config/campaign_lane_catalog.yaml"
 data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
@@ -43,7 +52,7 @@ for i, lane in enumerate(lanes):
     if not lane.get("stop_conditions"): errors.append(f"lanes[{i}] empty stop_conditions")
     if lane.get("readiness") == "ready":
         for key in ("measurement_source", "writer", "adapter"):
-            if not resource_exists(lane.get(key, "")): errors.append(f"lanes[{i}] ready missing {key}")
+            if not resource_exists(lane.get(key, ""), allow_generated=(key == "measurement_source")): errors.append(f"lanes[{i}] ready missing {key}")
 if errors:
     print("CATALOG_FAIL", *errors, sep="\n")
     raise SystemExit(1)
