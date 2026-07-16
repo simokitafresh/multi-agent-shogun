@@ -333,7 +333,7 @@ print('ok')
     [ "$status" -eq 0 ]
 }
 
-@test "CI unit lane keeps file internals serial under aggregate jobs 8 and writes TAP artifact" {
+@test "CI all lane integrates root and unit tests with serial file internals and TAP artifact" {
     workflow="$ROOT/.github/workflows/test.yml"
     grep -q 'BATS_INNER_JOBS=1' "$workflow"
     grep -q 'BATS_FILE_TIMEOUT_SECONDS=900' "$workflow"
@@ -341,8 +341,10 @@ print('ok')
     grep -Fq 'group: test-${{ github.workflow }}-${{ github.ref }}' "$workflow"
     grep -q 'cancel-in-progress: true' "$workflow"
     ! grep -q 'BATS_INNER_JOBS=8' "$workflow"
-    grep -q 'BATS_TAP_OUTPUT=test-results/unit.tap' "$workflow"
-    grep -q 'bash scripts/run_tests.sh unit' "$workflow"
+    grep -q 'BATS_TAP_OUTPUT=test-results/all.tap' "$workflow"
+    grep -q 'bash scripts/run_tests.sh all' "$workflow"
+    grep -q 'find "$REPO_ROOT/tests/unit" -maxdepth 1' "$ROOT/scripts/run_tests.sh"
+    grep -q 'find "$REPO_ROOT/tests" -maxdepth 1' "$ROOT/scripts/run_tests.sh"
     ! grep -q 'bats tests/unit/ .*--jobs 8' "$workflow"
 }
 
