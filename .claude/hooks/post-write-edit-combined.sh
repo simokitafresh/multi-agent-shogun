@@ -118,15 +118,8 @@ if [[ "$file_path" == *'CLAUDE.md'* || "$file_path" == *'instructions/'* || "$fi
     _has_task_deny=false
     _has_report_deny=false
     # Detect deny patterns across all hook files
-    _deny_matches="$(grep -hE 'queue/(tasks|reports)/.*deny' "$_hook_dir"/*.sh 2>/dev/null || true)"
-    [[ "$_deny_matches" == *queue/tasks/* ]] && _has_task_deny=true
-    [[ "$_deny_matches" == *queue/reports/* ]] && _has_report_deny=true
-    if [[ "$_has_task_deny" == false ]]; then
     grep -ql "queue/tasks/.*deny" "$_hook_dir"/*.sh 2>/dev/null && _has_task_deny=true
-    fi
-    if [[ "$_has_report_deny" == false ]]; then
     grep -ql "queue/reports/.*deny" "$_hook_dir"/*.sh 2>/dev/null && _has_report_deny=true
-    fi
 
     if [[ "$_has_task_deny" == true || "$_has_report_deny" == true ]]; then
         # Collect instruction files to scan
