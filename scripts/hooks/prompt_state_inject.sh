@@ -370,6 +370,7 @@ prompt_state_semantic_cached_search() {
   local cached_cmd
   local cached_timeout
   local cached_rc
+  local -a cached_meta
   local result
   local rc
 
@@ -380,11 +381,14 @@ prompt_state_semantic_cached_search() {
   cache_file="/tmp/prompt_state_semantic_cache_${agent_id//[^A-Za-z0-9_.-]/_}_${prompt_hash}"
 
   if [[ -f "$cache_file" ]]; then
-    cached_hash="$(sed -n '1s/^prompt_sha256: //p' "$cache_file" 2>/dev/null || true)"
-    cached_version="$(sed -n '2s/^cache_version: //p' "$cache_file" 2>/dev/null || true)"
-    cached_cmd="$(sed -n '3s/^search_cmd: //p' "$cache_file" 2>/dev/null || true)"
-    cached_timeout="$(sed -n '4s/^timeout: //p' "$cache_file" 2>/dev/null || true)"
-    cached_rc="$(sed -n '5s/^rc: //p' "$cache_file" 2>/dev/null || true)"
+    mapfile -t cached_meta < <(
+      awk 'NR <= 5 { sub(/^[^:]*: /, ""); print } NR == 5 { exit }' "$cache_file" 2>/dev/null
+    )
+    cached_hash="${cached_meta[0]:-}"
+    cached_version="${cached_meta[1]:-}"
+    cached_cmd="${cached_meta[2]:-}"
+    cached_timeout="${cached_meta[3]:-}"
+    cached_rc="${cached_meta[4]:-}"
     if [[ "$cached_hash" == "$prompt_hash" && "$cached_version" == "$cache_version" && "$cached_cmd" == "$search_cmd" && "$cached_timeout" == "$timeout_seconds" && "$cached_rc" =~ ^[0-9]+$ ]]; then
       sed '1,/^---$/d' "$cache_file" 2>/dev/null || true
       return "$cached_rc"
@@ -500,6 +504,7 @@ semantic_skill_recommendations() {
   local prompt_hash
   local cached_hash
   local cached_version
+  local cached_output
   local semantic_result
   local semantic_rc
   local skills
@@ -512,20 +517,25 @@ semantic_skill_recommendations() {
   cache_dir="${PROMPT_STATE_SKILL_RECOMMEND_CACHE_DIR:-/tmp/skill_recommend_cache}"
   [[ -d "$cache_dir" ]] || mkdir -p "$cache_dir"
   cache_file="$cache_dir/prompt_state_${agent_id//[^A-Za-z0-9_.-]/_}"
-  prompt_hash="$(
+  read -r prompt_hash _ < <(
     {
       printf 'prompt=%s\n' "$prompt_text"
       printf 'skills_dir=%s\n' "${PROMPT_STATE_SKILLS_DIR:-$SCRIPT_DIR/skills}"
       printf 'semantic_cmd=%s\n' "${PROMPT_STATE_SEMANTIC_SEARCH_CMD:-$SCRIPT_DIR/scripts/semantic_search.sh}"
-    } | sha256sum | awk '{print $1}'
-  )"
+    } | sha256sum
+  )
   if [[ -f "$cache_file" ]]; then
-    cached_hash="$(sed -n '1s/^prompt_sha256: //p' "$cache_file" 2>/dev/null || true)"
-    cached_version="$(sed -n '2s/^filter_version: //p' "$cache_file" 2>/dev/null || true)"
+    IFS=$'\t' read -r cached_hash cached_version < <(
+      awk '
+        NR == 1 { sub(/^prompt_sha256: /, ""); hash=$0 }
+        NR == 2 { sub(/^filter_version: /, ""); print hash "\t" $0; exit }
+      ' "$cache_file" 2>/dev/null
+    )
     if [[ "$cached_hash" == "$prompt_hash" && "$cached_version" == "$cache_version" ]]; then
-      skills="$(sed '1,/^---$/d' "$cache_file" 2>/dev/null | skill_names_from_recommendation_text || true)"
+      cached_output="$(sed '1,/^---$/d' "$cache_file" 2>/dev/null || true)"
+      skills="$(skill_names_from_recommendation_text <<< "$cached_output" || true)"
       record_skill_recommendation_log "$prompt_hash" "$skills" 2>/dev/null || true
-      sed '1,/^---$/d' "$cache_file" 2>/dev/null || true
+      printf '%s\n' "$cached_output"
       return 0
     fi
   fi
