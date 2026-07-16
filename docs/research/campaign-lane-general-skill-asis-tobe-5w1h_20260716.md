@@ -244,5 +244,7 @@ last observation: 5.196（観測履歴として別保存）
 
 `[[ledger-driven-campaign-lane-pattern_20260714]] -> [[campaign-lane]] -> [[shard-work]] -> [[adaptive-idle-workers]]`
 
+`[[fixture-only false ready]] -> [[real-path readiness gate]] -> [[campaign-lane ready]]`
+
 
 origin: [[家老自走cmd_20260716]]
