@@ -2706,17 +2706,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/model_switch_preflight.sh
-  status: assigned
+  status: completed
   before_ms: 17
   after_ms: ''
-  before_real_ms: 900
-  after_real_ms: ""
-  real_measurement_command: bash scripts/model_switch_preflight.sh
-  test_result: bash -n PASS; bats tests/unit/test_cli_lookup.bats PASS SKIP=0
-  commit: 6ddc50343
+  before_real_ms: 336.93
+  after_real_ms: 211.743
+  real_measurement_command: "bash scripts/model_switch_preflight.sh tobisaru >/dev/null 2>&1"
+  test_result: "bats 2/2 PASS; FAIL=0; SKIP=0; bash-n PASS; safety_removed=0"
+  commit: "a17c03325103189b9819fb37a421552836353c5c"
   assigned_to: "tobisaru"
-  updated_at: "2026-07-17T02:52:14"
+  updated_at: "2026-07-17T03:05:54"
   iteration: 1
+  last_good_commit: "24991301a4f2757a4348d124ff94aa352c1599dc"
+  candidate_commit: "a17c03325103189b9819fb37a421552836353c5c"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 336.93
+  last_good_p95_ms: 484.226
+  candidate_p50_ms: 211.743
+  candidate_p95_ms: 246.502
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2 Linux-6.6.87.1 x86_64 glibc2.39; same detached worktree parent; warmup=1/arm"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/ninja_done.sh
   status: completed
   before_ms: 17
