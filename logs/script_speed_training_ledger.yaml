@@ -209,18 +209,31 @@ entries:
   updated_at: "2026-07-16T22:36:02"
   iteration: 1
 - script_path: scripts/backfill_review_gate_done.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: ''
-  before_real_ms: 1850
-  after_real_ms: ""
-  real_measurement_command: sandbox copied script with 120 archive gate dirs and 80
-    copied report YAMLs; timeout 20 bash temp/scripts/backfill_review_gate_done.sh
-  test_result: bash_n_exit_0; sandbox_exit_0_count_120_SKIP_0
-  commit: d2b5fff00
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 469.5
+  after_real_ms: 36.5
+  real_measurement_command: "cd <isolated_fixture_root> && bash scripts/backfill_review_gate_done.sh"
+  test_result: "tests/unit/test_backfill_review_gate_done.bats 4/4 PASS FAIL=0 SKIP=0; linked worktree 4/4 PASS"
+  commit: "038f37132f500441a2db7a500860f10c489186e3"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-17T01:15:53"
   iteration: 1
+  last_good_commit: "d2b5fff005d75b68ad4bae62f257ebe57b444248"
+  candidate_commit: "038f37132f500441a2db7a500860f10c489186e3"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 469.5
+  last_good_p95_ms: 497
+  candidate_p50_ms: 36.5
+  candidate_p95_ms: 39
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2; /tmp fixture; 120 identical pending report YAMLs; alternating L/C; date-ns wall"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/backfill_task_type.sh
   status: pending
   before_ms: 16
