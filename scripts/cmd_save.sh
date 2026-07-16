@@ -6296,6 +6296,38 @@ ${AC_TEXT:-}"
 
 check_timebox_minutes_required
 
+# --- Check 20.6: スケーラビリティ見積の内部ループ計上（BLOCK） ---
+# 起源: LG028 — per_combo固定値だけで見積り、関数内部の反復を落として実測が10倍外れた
+# 目的: 外側件数だけの見積を保存させず、外側×内側×単位時間の積を入口で強制する
+check_scalability_internal_loop_estimate() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    local command_text search_text estimate_lines evidence_text first_hit
+    command_text="$(extract_command_text_block)"
+    search_text="$(cmd_block_get_field "purpose")
+${command_text}
+${AC_TEXT:-}"
+    estimate_lines="$(grep -iE 'スケーラビリティ|scalab|計算時間.*(推定|見積)|実行時間.*(推定|見積)|runtime.*estim|per[_ -]?combo' <<< "$search_text" || true)"
+    [[ -n "${estimate_lines:-}" ]] || return 0
+
+    evidence_text="${search_text}
+$(collect_numeric_derivation_source_evidence)"
+    if grep -qiE '外側|outer|combo|組合せ|組み合わせ' <<< "$evidence_text" &&
+       grep -qiE '内側|内部ループ|inner|反復|iteration|回[/ ]?(combo|組合せ|組み合わせ)' <<< "$evidence_text" &&
+       grep -qiE '単位時間|1回|per[_ -]?(iteration|call)|ms|ミリ秒|秒[/ ]?回' <<< "$evidence_text"; then
+        return 0
+    fi
+
+    first_hit="$(sed -n '1p' <<< "$estimate_lines" | sed -E 's/^[[:space:]-]*(description|check|purpose|command):[[:space:]]*//; s/^"//; s/"$//' | cut -c1-100)"
+    echo "BLOCK: スケーラビリティ見積に内部ループ計上証跡がない(LG028)" >&2
+    echo "  → 外側回数 × 内側回数 × 単位時間を、関数内部まで追跡して明記してください" >&2
+    echo "  → 検出行: ${first_hit}" >&2
+    record_block_reason "LG028: スケーラビリティ見積に外側回数×内側回数×単位時間の証跡がない"
+    abort_if_block_immediate || exit 1
+}
+
+check_scalability_internal_loop_estimate
+
 # --- Check 21: ACの数値絶対値WARN検出（informational — WARN_COUNTに加算しない） ---
 # 起源: cmd_1910事故 — ACに「テスト数=118」のような固定値を記載し、並行cmdで即陳腐化
 # 目的: AC description内の絶対値パターンを検出し、相対条件への書換えを促す
