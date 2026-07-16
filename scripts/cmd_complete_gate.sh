@@ -8058,6 +8058,17 @@ check_safety_pattern_removal
 
 # ─── cmd_2273: 4新検証（scope drift / review staleness / partial completion / WTF） ───
 check_command_files_modified_coverage
+
+# LS086: a design handoff table is a flow contract, not documentation.  Scan
+# only the approved changed-file scope; unrelated historical designs cannot
+# block the current command.
+echo ""
+level_heading "[L4]" "Design implementation-command handoff (LS086):"
+mapfile -t _ls086_changed_files < <(printf '%s\n' "$CMD_CHANGED_FILES" | awk 'NF' | sort -u)
+if ! bash "$SCRIPT_DIR/scripts/gates/gate_design_cmd_handoff.sh" "${_ls086_changed_files[@]}"; then
+    ALL_CLEAR=false
+    record_block_reason "design_cmd_handoff_missing"
+fi
 check_scope_drift
 check_review_staleness
 check_partial_completion

@@ -420,7 +420,8 @@ lessons:
   source_cmd: 'cmd_3819'
   created_at: '2026-07-10'
   automated: true
-  enforcement: '設計書テンプレのPhase表に『起票cmd』列を必須化(gs-parity/precompute設計書は反映済みの形式)。将軍の設計書クローズ手順に照合ステップを組込み'
+  enforcement: "Level4 フロー内BLOCK: scripts/cmd_complete_gate.sh が承認済み files_modified の設計書を scripts/gates/gate_design_cmd_handoff.sh へ渡し、Phase/手順表の起票cmdが空・未起票・理由なし保留なら design_cmd_handoff_missing で完了をBLOCK。test=tests/unit/test_gate_design_cmd_handoff.bats"
+  enforcement_level: 4
 - id: 'LS087'
   title: 'gate検査のAC区間抽出はAC配下常設キーをexit条件に含めるな'
   origin: '[[cmd_session_20260710]]'
