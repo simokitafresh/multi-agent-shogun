@@ -33,7 +33,7 @@ json_escape() {
 
 memory_timeout_fallback() {
     local query="$1" db_path="${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}"
-    timeout "${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-5}s" python3 - "$db_path" "$query" <<'PY' >/dev/null 2>&1
+    timeout "${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-10}s" python3 - "$db_path" "$query" <<'PY' >/dev/null 2>&1
 import sqlite3, sys
 
 db_path, query = sys.argv[1:]
@@ -49,7 +49,7 @@ PY
 
 text_index_timeout_fallback() {
     local query="$1"; shift
-    local fallback_timeout="${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-5}"
+    local fallback_timeout="${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-10}"
     # In the real checkout, git's tracked-file index gives a bounded scan of
     # the same canonical paths without repeating rg's filesystem walk on 9P.
     # Test/isolated roots without a .git directory use the portable reader.
@@ -147,13 +147,18 @@ issue() {
     memory_pid=$!
     ( timeout "${primary_timeout}s" bash "$ROOT/scripts/semantic_search.sh" "$prompt" >/dev/null 2>&1 ) &
     semantic_pid=$!
-    rg_cmd="$(resolve_rg 2>/dev/null || true)"
-    if [[ -n "$rg_cmd" ]]; then
-        # --no-mmap: WSL2's 9P-backed /mnt/c mount pays a large syscall
-        # penalty for mmap'd reads across the ~2600 files under docs/;
-        # buffered reads measured ~30% faster here (2026-07-10 benchmark).
-        ( timeout "${primary_timeout}s" "$rg_cmd" --no-mmap -n --fixed-strings -- "$obsidian_query" "$ROOT/context/semantic-map.md" "$ROOT/docs" >/dev/null 2>&1 ) &
+    # Root cause fix: rg fs-walk on 9P (/mnt/c) times out under IO saturation
+    # (6 ninjas concurrent). git grep uses git's in-memory index, bypassing
+    # 9P filesystem walk entirely. Fallback to rg only if .git is absent.
+    if [[ -d "$ROOT/.git" ]]; then
+        ( timeout "${primary_timeout}s" git -C "$ROOT" grep -F -q -- "$obsidian_query" -- "context/semantic-map.md" "docs" >/dev/null 2>&1 ) &
         obsidian_pid=$!
+    else
+        rg_cmd="$(resolve_rg 2>/dev/null || true)"
+        if [[ -n "$rg_cmd" ]]; then
+            ( timeout "${primary_timeout}s" "$rg_cmd" --no-mmap -n --fixed-strings -- "$obsidian_query" "$ROOT/context/semantic-map.md" "$ROOT/docs" >/dev/null 2>&1 ) &
+            obsidian_pid=$!
+        fi
     fi
 
     wait "$memory_pid" || memory_rc=$?
