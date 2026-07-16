@@ -796,7 +796,7 @@ entries:
   updated_at: "2026-06-08T03:50:28"
   iteration: 1
 - script_path: scripts/gate_auto_respond.sh
-  status: pending
+  status: assigned
   before_ms: 21
   after_ms: ''
   before_real_ms: 5367
@@ -806,8 +806,8 @@ entries:
   test_result: bash -n PASS; sandbox OK-path timing PASS; ALERT idempotency behavior
     PASS; SKIP=0
   commit: dafe3ce81
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:28"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-16T19:58:37"
   iteration: 1
 - script_path: scripts/gate_fire_log.sh
   status: pending
@@ -1238,7 +1238,7 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_shogun_startup.sh
-  status: pending
+  status: assigned
   before_ms: 19
   after_ms: ''
   before_real_ms: 5888
@@ -1246,8 +1246,8 @@ entries:
   real_measurement_command: "3-run average with SHOGUN_STARTUP_ROOT=/mnt/c/tools/multi-agent-shogun SHOGUN_STARTUP_LIGHTWEIGHT=1 timeout 60 bash gate_shogun_startup; HEAD vs worktree"
   test_result: "bash -n scripts/gates/gate_shogun_startup.sh PASS; bats tests/unit/test_gate_shogun_startup.bats PASS 63/63 SKIP=0"
   commit: "b52424f7b"
-  assigned_to: ""
-  updated_at: "2026-06-13T00:53:00"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-16T19:58:25"
   iteration: 3
 - script_path: scripts/gates/gate_silent_fallback.sh
   status: pending
@@ -1397,7 +1397,7 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/gist_index_update.sh
-  status: pending
+  status: assigned
   before_ms: 16
   after_ms: ''
   before_real_ms: 6203
@@ -1406,8 +1406,8 @@ entries:
     --dry-run >/dev/null
   test_result: bash_n_pass;fake_gh_dry_run_output_diff_empty;100run_before_7945_after_6203;SKIP=0
   commit: 0ae3a085e
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:28"
+  assigned_to: "saizo"
+  updated_at: "2026-07-16T19:58:22"
   iteration: 1
 - script_path: scripts/gist_sync.sh
   status: pending
@@ -1475,7 +1475,7 @@ entries:
   updated_at: "2026-06-08T03:50:28"
   iteration: 1
 - script_path: scripts/gunshi_review_stats.sh
-  status: pending
+  status: assigned
   before_ms: 24
   after_ms: ''
   before_real_ms: 6273
@@ -1484,8 +1484,8 @@ entries:
     >/dev/null
   test_result: bash_n_pass;real_fixture_output_diff_empty;real_fixture_log_diff_empty;before_8173_after_6273;SKIP=0
   commit: 5d8f1707e
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:28"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-16T19:58:19"
   iteration: 1
 - script_path: scripts/health_check.sh
   status: pending
