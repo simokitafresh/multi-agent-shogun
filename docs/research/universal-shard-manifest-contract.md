@@ -11,3 +11,5 @@ Required top-level fields are `items`, `workers`, `max_workers`, `command`, and 
 - Entry: `scripts/shard_work.sh MANIFEST --plan|--run`.
 
 Command placeholders: `{item_id}`, `{item_path}`, `{worker_id}`, `{workdir}`, `{tmpdir}`, `{output_dir}`, `{cache_dir}`.
+
+origin: [[家老自走cmd_20260716]]

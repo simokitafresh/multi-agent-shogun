@@ -15,7 +15,7 @@ allowed-tools:
   - Write
 ---
 
-<!-- script_refs_checked_at: 2026-07-08T08:36:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T19:17:14+0900 -->
 <!-- 検分: note_draft.sh 8e4872513 reCAPTCHA guard内部強化。呼び出し契約 `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`、週報Markdown生成後のnote下書き保存契約は不変 -->
 <!-- script_refs_checked_at: 2026-06-27T14:55:14+0900 -->
 
@@ -505,7 +505,7 @@ CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 
 <!-- script_refs_checked_at: 2026-06-27T14:55:14+0900 -->
 
-Script refs verified: 2026-06-10 e81c63081+ba757a1f7+14aa13952. `note_draft.sh` はChrome CDP未起動時にexit 0(SKIP)で抜ける事前チェック追加(FAIL率汚染防止)、PowerShell失敗時のcmd.exeフォールバック追加、shellcheckエラー除去。Chrome未起動時はStep 8がSKIPされ`skill_execution_log`にSKIP記録される。Markdown生成(Step 1-7)への影響なし。SKILL.md記載の`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`呼び出し契約は変更なし。
+Script refs verified: 2026-07-16. `note_draft.sh` はChrome CDP未起動時にPython層のChrome自動起動(launch_browser+cmd.exeフォールバック)へ委ねる。旧Step 0のSKIP(exit 0)は殿裁定2026-07-16で「バグ」と判定され除去。Chrome未起動時もスキルは自動起動を試行し、起動失敗時のみFAIL(exit 1)となる。`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"` の呼び出し契約は変更なし。
 
 ## 関連スキル
 

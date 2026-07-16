@@ -20,7 +20,7 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-<!-- script_refs_checked_at: 2026-07-08T08:36:00+09:00 -->
+<!-- script_refs_checked_at: 2026-07-16T19:17:14+0900 -->
 <!-- 検分: note_draft.sh 8e4872513 reCAPTCHA guard内部強化。呼び出し契約 `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`、記事Markdown生成後のnote下書き保存契約は不変 -->
 <!-- script_refs_checked_at: 2026-06-30T12:12:00+0900 -->
 
