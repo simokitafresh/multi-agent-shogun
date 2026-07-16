@@ -6,6 +6,128 @@
 
 set -e
 
+# A dependency wait is valid only while its connected cmd is still active.
+# Declaration channel (machine-readable): existing bulletin entries containing
+# `wait_reason=dependency(cmd_1234)` and the exact startup alert key.  This
+# reuses bulletin_write.sh ownership/lifecycle instead of creating a new SSOT.
+# external_input/evidence_gathering keep their existing handling; this resolver
+# deliberately consumes only dependency declarations.  Missing, unknown, or
+# completed commands fail closed by leaving the alert in the startup BLOCK set.
+resolve_dependency_wait_reasons() {
+    local root="$1"
+    local declaration_file="${SHOGUN_WAIT_REASON_FILE:-$root/queue/bulletin_board.yaml}"
+    local declaration_archive_dir="${SHOGUN_WAIT_REASON_ARCHIVE_DIR:-$root/queue/archive}"
+    local command_file="${SHOGUN_COMMAND_FILE:-$root/queue/shogun_to_karo.yaml}"
+    local archive_dir="${SHOGUN_COMMAND_ARCHIVE_DIR:-$root/queue/archive/cmds}"
+    local resolved_file="${4:-}"
+    shift 4 || true
+
+    python3 - "$declaration_file" "$declaration_archive_dir" "$command_file" "$archive_dir" "$resolved_file" "$@" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+import yaml
+
+declaration_path, declaration_archive_path, command_path, archive_path, resolved_path, *alerts = sys.argv[1:]
+active_statuses = {"pending", "assigned", "acknowledged", "in_progress", "active", "blocked", "review"}
+terminal_statuses = {"completed", "complete", "done", "archived", "cancelled", "failed"}
+
+def load_yaml(path):
+    try:
+        return yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return {}
+
+def walk(value):
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from walk(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from walk(child)
+
+def command_status(cmd_id):
+    data = load_yaml(command_path)
+    for item in walk(data):
+        item_id = str(item.get("id") or item.get("cmd_id") or "").strip()
+        if item_id == cmd_id:
+            return str(item.get("status") or "").strip().lower() or "unknown"
+    archive_dir = Path(archive_path)
+    if archive_dir.is_dir():
+        matches = list(archive_dir.glob(f"{cmd_id}_*.yaml")) + list(archive_dir.glob(f"{cmd_id}.yaml"))
+        if matches:
+            return "archived"
+    return "missing"
+
+declaration_texts = []
+# Read a bounded recent archive window so a valid declaration remains visible
+# after bulletin rotation.  Current bulletin is appended last and therefore
+# wins over archived declarations for the same alert.
+declaration_sources = []
+archive_root = Path(declaration_archive_path)
+if archive_root.is_dir():
+    declaration_sources.extend(sorted(archive_root.glob("bulletin_*.yaml"))[-14:])
+declaration_sources.append(Path(declaration_path))
+for source in declaration_sources:
+    for item in walk(load_yaml(source)):
+        content = str(item.get("content") or item.get("summary") or "").strip()
+        if content:
+            declaration_texts.append(content)
+
+by_alert = {}
+def stable_alert_key(alert):
+    category = re.split(r"[:：—]", alert, maxsplit=1)[0].strip().lower()
+    return re.sub(r"[^\w]+", "_", category, flags=re.UNICODE).strip("_")
+
+for alert in alerts:
+    for content in reversed(declaration_texts):
+        match = re.search(r"wait_reason\s*=\s*dependency\s*\(\s*(cmd_[A-Za-z0-9_-]+)\s*\)", content)
+        declared_key = re.search(r'''wait_alert\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s]+))''', content)
+        declared_value = next((part for part in declared_key.groups() if part is not None), "") if declared_key else ""
+        key_matches = declared_key and declared_value.strip().lower() == stable_alert_key(alert)
+        if match and (key_matches or alert in content):
+            by_alert[alert] = match.group(1)
+            break
+
+kept = []
+resolved = []
+for alert in alerts:
+    cmd_id = by_alert.get(alert)
+    if not cmd_id:
+        kept.append(alert)
+        continue
+    status = command_status(cmd_id)
+    if status in active_statuses:
+        resolved.append(f"ACTIVE\t{alert}\t{cmd_id}\t{status}\t{stable_alert_key(alert)}")
+        continue
+    # Terminal, missing, and unknown states all auto-release the wait and put
+    # the unresolved alert back into the normal immediate-BLOCK path.
+    kept.append(alert)
+    classification = "RELEASED" if status in terminal_statuses or status in {"archived", "missing"} else "INVALID"
+    resolved.append(f"{classification}\t{alert}\t{cmd_id}\t{status}")
+
+if resolved_path:
+    Path(resolved_path).write_text("\n".join(resolved) + ("\n" if resolved else ""), encoding="utf-8")
+for alert in kept:
+    print(alert)
+PY
+}
+
+print_dependency_wait_declaration() {
+    local alert="$1"
+    local key
+    key=$(python3 - "$alert" <<'PY'
+import re
+import sys
+category = re.split(r"[:：—]", sys.argv[1], maxsplit=1)[0].strip().lower()
+print(re.sub(r"[^\w]+", "_", category, flags=re.UNICODE).strip("_"))
+PY
+)
+    printf '  宣言例: wait_alert="%s" wait_reason=dependency(cmd_XXXX)\n' "$key"
+}
+
 check_daemon_watchdog_heartbeat() {
     local root="$1"
     local heartbeat_file="${DAEMON_WATCHDOG_HEARTBEAT_FILE:-/tmp/daemon_watchdog_heartbeat}"
@@ -3801,6 +3923,24 @@ for score, cmd_id, title in candidates[:3]:
 PY
 }
 if [ "${#alerts[@]}" -gt 0 ]; then
+    _dependency_wait_result="$_TMP_STARTUP_DIR/dependency_wait_result"
+    mapfile -t alerts < <(resolve_dependency_wait_reasons "$SCRIPT_DIR" "" "" "$_dependency_wait_result" "${alerts[@]}")
+    if [ -s "$_dependency_wait_result" ]; then
+        while IFS=$'\t' read -r _wait_state _wait_alert _wait_cmd _wait_cmd_status _wait_key; do
+            case "$_wait_state" in
+                ACTIVE)
+                    echo "  WAIT: ${_wait_alert} — wait_alert=\"${_wait_key}\" wait_reason=dependency(${_wait_cmd}) status=${_wait_cmd_status}"
+                    ;;
+                RELEASED|INVALID)
+                    echo "  BLOCK再開: ${_wait_alert} — dependency_cmd=${_wait_cmd} status=${_wait_cmd_status} (wait_reason自動解除)"
+                    ;;
+            esac
+        done < "$_dependency_wait_result"
+    fi
+    unset _dependency_wait_result _wait_state _wait_alert _wait_cmd _wait_cmd_status _wait_key
+
+fi
+if [ "${#alerts[@]}" -gt 0 ]; then
     mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
     _streak_result=$(python3 - "$STARTUP_ALERT_HISTORY" "${STARTUP_WARN_STREAK_THRESHOLD}" "${STARTUP_WARN_STREAK_MIN_GAP_SEC:-600}" "${alerts[@]}" <<'PY' 2>/dev/null || true
 import sys
@@ -3881,6 +4021,7 @@ PY
             [ -n "$_streak_key" ] || continue
             echo "  BLOCK: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続"
             echo "  先送り判断検出: ${STARTUP_WARN_STREAK_THRESHOLD}セッション連続で未解消。今処理するか、wait_reason(external_input/evidence_gathering/dependency)を宣言して既存cmdへ接続せよ。"
+            print_dependency_wait_declaration "$_streak_key"
             show_startup_streak_cmd_proposals "$_streak_key" | sed 's/^/  /'
             echo "  ⚠ 根因確認(L0-L7貫通必須): 上記類似cmdの対処履歴を参照し回答せよ"
             echo "    Q: このBLOCKの根因は何か。表面的対処(WARN消し・先送り)ではないか？"

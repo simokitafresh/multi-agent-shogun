@@ -2550,3 +2550,183 @@ YAML
     [ "${#key_b}" -eq 24 ]
     [ "$key_a" != "$key_b" ]
 }
+
+@test "dependency wait: active connected cmd suppresses the matching startup alert" {
+    cat > "$TEST_TMPDIR/waits.yaml" <<'YAML'
+entries:
+  - id: blt_active
+    content: "lesson health unresolved wait_reason=dependency(cmd_active)"
+YAML
+    cat > "$TEST_TMPDIR/commands.yaml" <<'YAML'
+commands:
+  - id: cmd_active
+    status: in_progress
+YAML
+    local result_file="$TEST_TMPDIR/result.tsv"
+    run env SHOGUN_WAIT_REASON_FILE="$TEST_TMPDIR/waits.yaml" \
+        SHOGUN_COMMAND_FILE="$TEST_TMPDIR/commands.yaml" \
+        SHOGUN_COMMAND_ARCHIVE_DIR="$TEST_TMPDIR/archive" \
+        bash -c 'source "$1"; resolve_dependency_wait_reasons "$2" "" "" "$3" "lesson health unresolved"' \
+        _ "$SRC_GATE_SCRIPT" "$TEST_TMPDIR" "$result_file"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+    grep -Fq $'ACTIVE\tlesson health unresolved\tcmd_active\tin_progress' "$result_file"
+}
+
+@test "dependency wait: completed connected cmd auto-releases and restores BLOCK input" {
+    cat > "$TEST_TMPDIR/waits.yaml" <<'YAML'
+entries:
+  - id: blt_done
+    content: "lesson health unresolved wait_reason=dependency(cmd_done)"
+YAML
+    cat > "$TEST_TMPDIR/commands.yaml" <<'YAML'
+commands:
+  - id: cmd_done
+    status: completed
+YAML
+    local result_file="$TEST_TMPDIR/result.tsv"
+    run env SHOGUN_WAIT_REASON_FILE="$TEST_TMPDIR/waits.yaml" \
+        SHOGUN_COMMAND_FILE="$TEST_TMPDIR/commands.yaml" \
+        SHOGUN_COMMAND_ARCHIVE_DIR="$TEST_TMPDIR/archive" \
+        bash -c 'source "$1"; resolve_dependency_wait_reasons "$2" "" "" "$3" "lesson health unresolved"' \
+        _ "$SRC_GATE_SCRIPT" "$TEST_TMPDIR" "$result_file"
+    [ "$status" -eq 0 ]
+    [ "$output" = "lesson health unresolved" ]
+    grep -Fq $'RELEASED\tlesson health unresolved\tcmd_done\tcompleted' "$result_file"
+}
+
+@test "dependency wait: missing connected cmd fails closed and restores BLOCK input" {
+    cat > "$TEST_TMPDIR/waits.yaml" <<'YAML'
+entries:
+  - id: blt_missing
+    content: "lesson health unresolved wait_reason=dependency(cmd_missing)"
+YAML
+    printf '%s\n' 'commands: []' > "$TEST_TMPDIR/commands.yaml"
+    local result_file="$TEST_TMPDIR/result.tsv"
+    run env SHOGUN_WAIT_REASON_FILE="$TEST_TMPDIR/waits.yaml" \
+        SHOGUN_COMMAND_FILE="$TEST_TMPDIR/commands.yaml" \
+        SHOGUN_COMMAND_ARCHIVE_DIR="$TEST_TMPDIR/archive" \
+        bash -c 'source "$1"; resolve_dependency_wait_reasons "$2" "" "" "$3" "lesson health unresolved"' \
+        _ "$SRC_GATE_SCRIPT" "$TEST_TMPDIR" "$result_file"
+    [ "$status" -eq 0 ]
+    [ "$output" = "lesson health unresolved" ]
+    grep -Fq $'RELEASED\tlesson health unresolved\tcmd_missing\tmissing' "$result_file"
+}
+
+@test "dependency wait: archive-only connected cmd auto-releases and restores BLOCK input" {
+    cat > "$TEST_TMPDIR/waits.yaml" <<'YAML'
+entries:
+  - id: blt_archived
+    content: "lesson health unresolved wait_reason=dependency(cmd_archived)"
+YAML
+    printf '%s\n' 'commands: []' > "$TEST_TMPDIR/commands.yaml"
+    mkdir -p "$TEST_TMPDIR/archive"
+    printf '%s\n' 'id: cmd_archived' 'status: completed' > "$TEST_TMPDIR/archive/cmd_archived_20260716.yaml"
+    local result_file="$TEST_TMPDIR/result.tsv"
+    run env SHOGUN_WAIT_REASON_FILE="$TEST_TMPDIR/waits.yaml" \
+        SHOGUN_COMMAND_FILE="$TEST_TMPDIR/commands.yaml" \
+        SHOGUN_COMMAND_ARCHIVE_DIR="$TEST_TMPDIR/archive" \
+        bash -c 'source "$1"; resolve_dependency_wait_reasons "$2" "" "" "$3" "lesson health unresolved"' \
+        _ "$SRC_GATE_SCRIPT" "$TEST_TMPDIR" "$result_file"
+    [ "$status" -eq 0 ]
+    [ "$output" = "lesson health unresolved" ]
+    grep -Fq $'RELEASED\tlesson health unresolved\tcmd_archived\tarchived' "$result_file"
+}
+
+@test "dependency wait: archived bulletin declaration and archived cmd integrate as RELEASED" {
+    printf '%s\n' 'entries: []' > "$TEST_TMPDIR/waits.yaml"
+    mkdir -p "$TEST_TMPDIR/bulletin-archive" "$TEST_TMPDIR/cmd-archive"
+    cat > "$TEST_TMPDIR/bulletin-archive/bulletin_20260710.yaml" <<'YAML'
+entries:
+  - id: blt_20260709_231547_e41065
+    content: "startup parity follow-up wait_reason=dependency(cmd_3803)"
+YAML
+    printf '%s\n' 'commands: []' > "$TEST_TMPDIR/commands.yaml"
+    cat > "$TEST_TMPDIR/cmd-archive/cmd_3803_completed_20260709.yaml" <<'YAML'
+commands:
+  cmd_3803:
+    id: cmd_3803
+    status: completed
+YAML
+    local result_file="$TEST_TMPDIR/result.tsv"
+    run env SHOGUN_WAIT_REASON_FILE="$TEST_TMPDIR/waits.yaml" \
+        SHOGUN_WAIT_REASON_ARCHIVE_DIR="$TEST_TMPDIR/bulletin-archive" \
+        SHOGUN_COMMAND_FILE="$TEST_TMPDIR/commands.yaml" \
+        SHOGUN_COMMAND_ARCHIVE_DIR="$TEST_TMPDIR/cmd-archive" \
+        bash -c 'source "$1"; resolve_dependency_wait_reasons "$2" "" "" "$3" "startup parity follow-up"' \
+        _ "$SRC_GATE_SCRIPT" "$TEST_TMPDIR" "$result_file"
+    [ "$status" -eq 0 ]
+    [ "$output" = "startup parity follow-up" ]
+    grep -Fq $'RELEASED\tstartup parity follow-up\tcmd_3803\tarchived' "$result_file"
+}
+
+@test "dependency wait: non-dependency reason does not alter existing alert contract" {
+    cat > "$TEST_TMPDIR/waits.yaml" <<'YAML'
+entries:
+  - id: blt_external
+    content: "lesson health unresolved wait_reason=external_input"
+YAML
+    cat > "$TEST_TMPDIR/commands.yaml" <<'YAML'
+commands:
+  - id: cmd_active
+    status: in_progress
+YAML
+    local result_file="$TEST_TMPDIR/result.tsv"
+    run env SHOGUN_WAIT_REASON_FILE="$TEST_TMPDIR/waits.yaml" \
+        SHOGUN_COMMAND_FILE="$TEST_TMPDIR/commands.yaml" \
+        bash -c 'source "$1"; resolve_dependency_wait_reasons "$2" "" "" "$3" "lesson health unresolved"' \
+        _ "$SRC_GATE_SCRIPT" "$TEST_TMPDIR" "$result_file"
+    [ "$status" -eq 0 ]
+    [ "$output" = "lesson health unresolved" ]
+    [ ! -s "$result_file" ]
+}
+
+@test "dependency wait: stable wait_alert key survives dynamic count changes" {
+    cat > "$TEST_TMPDIR/waits.yaml" <<'YAML'
+entries:
+  - content: "wait_alert=inbox_unread wait_reason=dependency(cmd_active)"
+YAML
+    cat > "$TEST_TMPDIR/commands.yaml" <<'YAML'
+commands:
+  - id: cmd_active
+    status: in_progress
+YAML
+    run env SHOGUN_WAIT_REASON_FILE="$TEST_TMPDIR/waits.yaml" \
+        SHOGUN_WAIT_REASON_ARCHIVE_DIR="$TEST_TMPDIR/no-archive" \
+        SHOGUN_COMMAND_FILE="$TEST_TMPDIR/commands.yaml" \
+        bash -c 'source "$1"; resolve_dependency_wait_reasons "$2" "" "" "$3" "inbox unread: 2件" "lesson health: 1件"' \
+        _ "$SRC_GATE_SCRIPT" "$TEST_TMPDIR" "$TEST_TMPDIR/result.tsv"
+    [ "$status" -eq 0 ]
+    [ "$output" = "lesson health: 1件" ]
+    grep -Fq $'ACTIVE\tinbox unread: 2件\tcmd_active\tin_progress\tinbox_unread' "$TEST_TMPDIR/result.tsv"
+    ! grep -Fq $'ACTIVE\tlesson health: 1件' "$TEST_TMPDIR/result.tsv"
+}
+
+
+@test "dependency wait: quoted Unicode stable key survives Japanese count changes" {
+    cat > "$TEST_TMPDIR/waits.yaml" <<'YAML'
+entries:
+  - content: 'wait_alert="掲示板未確認" wait_reason=dependency(cmd_active)'
+YAML
+    cat > "$TEST_TMPDIR/commands.yaml" <<'YAML'
+commands:
+  - id: cmd_active
+    status: in_progress
+YAML
+    run env SHOGUN_WAIT_REASON_FILE="$TEST_TMPDIR/waits.yaml" \
+        SHOGUN_WAIT_REASON_ARCHIVE_DIR="$TEST_TMPDIR/no-archive" \
+        SHOGUN_COMMAND_FILE="$TEST_TMPDIR/commands.yaml" \
+        bash -c 'source "$1"; resolve_dependency_wait_reasons "$2" "" "" "$3" "掲示板未確認: 2件" "学習ループ台帳: 1件"' \
+        _ "$SRC_GATE_SCRIPT" "$TEST_TMPDIR" "$TEST_TMPDIR/result.tsv"
+    [ "$status" -eq 0 ]
+    [ "$output" = "学習ループ台帳: 1件" ]
+    grep -Fq $'ACTIVE\t掲示板未確認: 2件\tcmd_active\tin_progress\t掲示板未確認' "$TEST_TMPDIR/result.tsv"
+    ! grep -Fq $'ACTIVE\t学習ループ台帳: 1件' "$TEST_TMPDIR/result.tsv"
+}
+
+@test "dependency wait: initial BLOCK action prints copyable Unicode declaration" {
+    run bash -c 'source "$1"; print_dependency_wait_declaration "掲示板未確認: 3件"' \
+        _ "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" = '  宣言例: wait_alert="掲示板未確認" wait_reason=dependency(cmd_XXXX)' ]
+}
