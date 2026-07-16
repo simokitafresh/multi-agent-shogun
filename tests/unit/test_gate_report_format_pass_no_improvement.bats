@@ -72,7 +72,7 @@ operational_simulation:
   command: "bash scripts/gates/gate_report_format.sh queue/reports/tobisaru_report_cmd_2072.yaml"
   expected: "verdict follows binary-check improvement outcome"
   actual: "PASS or PASS_NO_IMPROVEMENT derived as expected"
-  result: "yes"
+  result: "PASS"
 EOF
 }
 
@@ -258,7 +258,7 @@ operational_simulation:
   command: "bash scripts/gates/gate_report_format.sh queue/reports/tobisaru_report_cmd_2072.yaml"
   expected: "PASS_NO_IMPROVEMENT is accepted for ninja reports"
   actual: "verdict validation completed"
-  result: "yes"
+  result: "PASS"
 EOF
 
     run env GATE_NO_LOG=1 SKILL_EXECUTION_PASS_LOG_DISABLE=1 GATE_PASS_CACHE_FILE="$workdir/pass_cache" bash "$gate" "$rpath"
@@ -728,7 +728,7 @@ operational_simulation:
   command: "bash scripts/gates/gate_report_format.sh queue/reports/tobisaru_report_cmd_2072.yaml"
   expected: "PASS_NO_IMPROVEMENT is accepted for ninja reports"
   actual: "verdict validation completed"
-  result: "yes"
+  result: "PASS"
 EOF
 
     run bash "$TEST_GATE" "$rpath"
