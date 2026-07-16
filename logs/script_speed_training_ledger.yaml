@@ -804,18 +804,31 @@ entries:
   updated_at: "2026-06-08T03:50:31"
   iteration: 1
 - script_path: scripts/dashboard_update.sh
-  status: assigned
+  status: saturated
   before_ms: 22
   after_ms: ''
-  before_real_ms: 1000
-  after_real_ms: ""
-  real_measurement_command: time bash scripts/dashboard_update.sh cmd_training_speed_count_gate_metrics_20260606235031
-    --dry-run
-  test_result: dry_run_output_verified_SKIP_0
-  commit: f987505270f0c6c91edebd3991fd0fc0c02291ea
+  before_real_ms: 23.5
+  after_real_ms: 25
+  real_measurement_command: "env SKILL_EXECUTION_LOG_DISABLE=1 SKIP_AUTO_SECTION=1 bash scripts/dashboard_update.sh --dry-run >/dev/null"
+  test_result: "bash-n PASS; dashboard_postclear 2/2 PASS; dashboard_update filter 13/13 PASS; FAIL=0 SKIP=0"
+  commit: "f2f3f2c485d49ca7e1e48a20440c652847e280b6"
   assigned_to: "saizo"
-  updated_at: "2026-07-17T02:51:00"
+  updated_at: "2026-07-17T03:55:01"
   iteration: 1
+  last_good_commit: "f2f3f2c485d49ca7e1e48a20440c652847e280b6"
+  candidate_commit: "91c3bf2dc390c288c1e14c69fbc783a70859b57f"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 23.5
+  last_good_p95_ms: 29
+  candidate_p50_ms: 25
+  candidate_p95_ms: 29
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "sha256:repo-worktree-same-host-20260717"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/decision_write.sh
   status: pending
   before_ms: 24
