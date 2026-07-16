@@ -8,6 +8,9 @@
 | CI除去環境埋込み確認 | 前セッション殿裁定(CI検知=家老責務)の強ニュー化完了を一次確認 | startup gateにCI表示なし確認済み。cad2fa416+4cb69edc9+271124e84全push済み、LS-A11吸収+記憶DB三層貫通 | [[殿裁定20260716_CI_RED家老責務]] -> [[gate_shogun_startup除去]] -> [[LS-A11吸収]] |
 | lesson-sort 21件 | FE教訓索引17件+dm-signal2件+database2件の振り分け | 8ファイル編集。FE§5/§7/§8内部5件+ops§32/§12/§42へ8件+infra5件+research1件+core2件 | [[教訓索引肥大55KB]] -> [[カテゴリ横断振り分け]] -> [[lesson_sort_20260716]] |
 | cmd_3996偵察 | freeze後SIGNAL CHANGE ALERT 3PF/日の原因特定 | 前提反証: signal_change_log date=2026-07-15は0行。3件はin-memory alertでDB insert除外。**freeze正常、実データ変更ゼロ** | [[ledger_bound_freeze_CLOSED]] -> [[SIGNAL_CHANGE_ALERT_in_memory_only]] -> [[DB変更ゼロ確認]] |
+| cmd_3997配備 | ledger drift alert DB永続化(in-memory除外フィルタ撤去) | 半蔵実装中(CTX:17%) | [[cmd_3996偵察_前提反証]] -> [[in_memory_alert_DB非永続]] -> [[フィルタ撤去永続化]] |
+| cmd_3998配備 | gate_alerts閉鎖ライフサイクル偵察(275件中閉鎖率1.5%) | 家老配備待ち | [[軍師独立監査_gate品質6穴]] -> [[gate_alerts閉鎖率0%]] -> [[内訳偵察]] |
+| 洗脳#3 stop hook修正 | 殿指示「バグの根因を修正せよ」→ 許可求めフレーズ4種のBLOCK化 | `365b3d7f0` pushed。47/47 PASS。hookが自分の出力を即BLOCK=本番動作一次証拠 | [[将軍お許しフレーズすり抜け]] -> [[stop_hook_L166_L415パターン欠落]] -> [[4フレーズBLOCK追加]] |
 
 ## 2026-06-30
 
