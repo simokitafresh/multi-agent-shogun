@@ -5,7 +5,7 @@
 # 設計: 冪等（同一taskのfeedback集合を最新reportで置換する）
 
 set -euo pipefail
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(readlink -f "${BASH_SOURCE[0]%/*}/..")"
 IMPACT_TSV="$SCRIPT_DIR/logs/lesson_impact.tsv"
 IMPACT_HEADER=$'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore\ttraversal_depth'
 
