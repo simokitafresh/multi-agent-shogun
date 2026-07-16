@@ -77,7 +77,7 @@ if [ ! -f "$DECISIONS_FILE" ]; then
     } > "$DECISIONS_FILE"
 fi
 
-TIMESTAMP=$(date "+%Y-%m-%d")
+printf -v TIMESTAMP '%(%Y-%m-%d)T' -1
 
 # Atomic append with flock (3 retries)
 attempt=0
@@ -90,7 +90,7 @@ while [ $attempt -lt $max_attempts ]; do
         # Find max numeric ID from ### D{N}: pattern using awk
         max_id=$(awk 'BEGIN{max=0} /^### D[0-9]+:/{n=$2; sub(/^D/,"",n); sub(/:$/,"",n); if (n+0>max) max=n+0} END{print max}' "$DECISIONS_FILE")
         new_id=$((max_id + 1))
-        new_id_str=$(printf 'D%03d' "$new_id")
+        printf -v new_id_str 'D%03d' "$new_id"
 
         # Build and append entry
         {
