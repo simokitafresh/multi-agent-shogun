@@ -341,6 +341,36 @@ SCRIPT
     ! grep -q "\[review_context_push\]" "$TEST_INBOX_DIR/gunshi.yaml"
 }
 
+@test "review_draft collects memory and semantic context concurrently" {
+    setup_basic_test_env
+    export REVIEW_CONTEXT_ORDER_LOG="$TEST_TMPDIR/review_context_order.log"
+    cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo memory_start >> "$REVIEW_CONTEXT_ORDER_LOG"
+sleep 0.25
+echo memory_end >> "$REVIEW_CONTEXT_ORDER_LOG"
+echo "parallel memory hit"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_query.sh"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo semantic_start >> "$REVIEW_CONTEXT_ORDER_LOG"
+sleep 0.25
+echo semantic_end >> "$REVIEW_CONTEXT_ORDER_LOG"
+echo "parallel semantic hit"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+
+    run bash "$TEST_INBOX_WRITE" "gunshi" "draft cmd_parallel_context review" "review_draft" "karo" "review_request"
+
+    [ "$status" -eq 0 ]
+    [[ "$(sed -n '1,2p' "$REVIEW_CONTEXT_ORDER_LOG")" == *"memory_start"* ]]
+    [[ "$(sed -n '1,2p' "$REVIEW_CONTEXT_ORDER_LOG")" == *"semantic_start"* ]]
+    ! sed -n '1,2p' "$REVIEW_CONTEXT_ORDER_LOG" | grep -q '_end$'
+    grep -q "parallel memory hit" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "parallel semantic hit" "$TEST_INBOX_DIR/gunshi.yaml"
+}
+
 @test "report_review builds context query from report YAML" {
     setup_basic_test_env
     cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'

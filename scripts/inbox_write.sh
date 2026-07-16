@@ -984,7 +984,10 @@ inbox_append_message_fast_locked() {
 inbox_compact_records_locked() {
     local inbox_file="$1"
     local tmp_file
-    tmp_file=$(mktemp "${inbox_file}.XXXXXX.tmp")
+    # The caller already holds the per-inbox exclusive flock, so a
+    # process-local name is collision-free for this mailbox. Avoid spawning
+    # mktemp on the overflow hot path while retaining same-directory atomic mv.
+    printf -v tmp_file '%s.%s.%04x%04x.tmp' "$inbox_file" "$$" "$RANDOM" "$RANDOM"
 
     # Keep every unread record and only the newest 30 read records.  Perform
     # selection and emission in one awk process: the former awk -> bash arrays
@@ -1411,25 +1414,44 @@ inbox_collect_review_memory_context() {
     local query="$1"
     local timeout_sec="${INBOX_REVIEW_CONTEXT_TIMEOUT_SEC:-5}"
     local memory_output="" semantic_output=""
+    local context_tmp_dir="" memory_tmp="" semantic_tmp=""
+    local memory_pid="" semantic_pid=""
 
     [ -n "${query//[[:space:]]/}" ] || return 0
+    if [ ! -x "$SCRIPT_DIR/scripts/memory_db_query.sh" ] \
+        && [ ! -x "$SCRIPT_DIR/scripts/semantic_search.sh" ]; then
+        return 0
+    fi
+
+    context_tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/inbox_review_context.XXXXXX")
+    memory_tmp="$context_tmp_dir/memory"
+    semantic_tmp="$context_tmp_dir/semantic"
 
     if [ -x "$SCRIPT_DIR/scripts/memory_db_query.sh" ]; then
-        memory_output=$(
+        (
             MEMORY_DB_QUERY_LIMIT="${INBOX_REVIEW_CONTEXT_MEMORY_LIMIT:-3}" \
                 timeout "$timeout_sec" bash "$SCRIPT_DIR/scripts/memory_db_query.sh" --search "$query" 2>/dev/null \
                 | inbox_truncate_lines 4 1000
-        ) || memory_output=""
+        ) > "$memory_tmp" || true &
+        memory_pid=$!
     fi
 
     if [ -x "$SCRIPT_DIR/scripts/semantic_search.sh" ]; then
-        semantic_output=$(
+        (
             SEMANTIC_DISABLE_LLM=1 \
             SEMANTIC_DISABLE_CAUSAL=1 \
                 timeout "$timeout_sec" bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$query" 2>/dev/null \
                 | inbox_truncate_lines 5 1200
-        ) || semantic_output=""
+        ) > "$semantic_tmp" || true &
+        semantic_pid=$!
     fi
+
+    [ -z "$memory_pid" ] || wait "$memory_pid" || true
+    [ -z "$semantic_pid" ] || wait "$semantic_pid" || true
+    [ ! -f "$memory_tmp" ] || IFS= read -r -d '' memory_output < "$memory_tmp" || true
+    [ ! -f "$semantic_tmp" ] || IFS= read -r -d '' semantic_output < "$semantic_tmp" || true
+    rm -f "$memory_tmp" "$semantic_tmp"
+    rmdir "$context_tmp_dir" 2>/dev/null || true
 
     if [ -z "$memory_output" ] && [ -z "$semantic_output" ]; then
         return 0

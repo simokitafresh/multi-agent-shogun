@@ -39,6 +39,8 @@ Inputs are CLI arguments, `queue/tasks/`, `queue/inbox/`, report YAMLs, agent co
 - Asynchronous boundary: memory DB mirroring remains best-effort after durable YAML persistence; it must not delay or replace mailbox persistence.
 - Overflow compaction uses one awk selection/emission pass, preserving every unread record and the newest 30 read records. This replaces the prior awk-to-Bash-array-to-per-record-write reconstruction without changing retention semantics.
 - Regression entry: `tests/unit/test_inbox_write.bats` T-008/T-009/T-010 guard retention and lost updates; `tests/unit/test_inbox_watcher_delivery_latency.bats` guards watcher delivery evidence and latency reporting. The round-trip benchmark protocol and before/after evidence are recorded in `docs/research/cmd_karo_hotfix_speed_pipeline_inbox_roundtrip_202607162255.md`.
+- Generation 2: independent memory DB and semantic review-context lookups execute concurrently under their existing bounded timeouts, then merge in deterministic memory-before-semantic order. When neither helper exists (isolated fixture), the path returns before allocating temporary resources. Overflow temporary names are generated with Bash builtins inside the per-inbox flock and still use the existing same-directory atomic replace/retry boundary.
+- Generation 2 continuation condition: continue only when a same-fixture ten-run p95 exceeds 110ms or a residual interval contributes at least 10% of p50. Current top residual intervals are context query construction/search, one-pass awk overflow selection, and atomic replace/lock filesystem I/O.
 
 ## Cross-References
 
