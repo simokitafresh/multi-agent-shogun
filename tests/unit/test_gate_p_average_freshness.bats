@@ -83,8 +83,12 @@ EOF
     [[ "$output" == *"API_BASE DNS解決失敗 (HTTP 000, curl_exit=6, elapsed=0.001s)"* ]]
     [[ "$output" == *"DNS/API_BASEを先に確認"* ]]
     [[ "$output" == *"サーバ到達性・cold sleep・バッチ鮮度はAPI到達後"* ]]
+    [[ "$output" == *"api_base_source: P_AVERAGE_API_BASE"* ]]
+    [[ "$output" == *"resolved_host: example.test"* ]]
     [[ "$output" == *"getent hosts example.test"* ]]
+    [[ "$output" != *"https://example.test"* ]]
     [[ "$output" == *"curl_error: curl: (6) Could not resolve host: missing.example"* ]]
+    [[ "$output" == *"db_fallback: unavailable_or_empty"* ]]
 }
 
 @test "DNS failure uses DB fallback to separate API reachability from stale p-average" {

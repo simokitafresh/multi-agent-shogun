@@ -40,7 +40,13 @@ else
     _DM_PATH="$(get_project_path 'dm-signal')"
 fi
 ENV_FILE="${P_AVERAGE_ENV_FILE:-${_DM_PATH}/backend/.env}"
-API_BASE="${P_AVERAGE_API_BASE:-https://dm-signal-backend.onrender.com}"
+if [ -n "${P_AVERAGE_API_BASE:-}" ]; then
+    API_BASE="$P_AVERAGE_API_BASE"
+    API_BASE_SOURCE="P_AVERAGE_API_BASE"
+else
+    API_BASE="https://dm-signal-backend.onrender.com"
+    API_BASE_SOURCE="built-in default"
+fi
 CACHE_FILE="${P_AVERAGE_CACHE_FILE:-/tmp/gate_p_average_cache.txt}"
 CURL_BIN="${P_AVERAGE_CURL_BIN:-curl}"
 CACHE_TTL_SECONDS=21600  # 6時間キャッシュ(p̄は月次更新のため十分)
@@ -233,14 +239,16 @@ if [ "$curl_exit" -ne 0 ]; then
         6:*)
             echo "ALERT: p̄鮮度: API_BASE DNS解決失敗 (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
             echo "  diagnosis: curl_exit=6 はホスト名を解決できない状態。DNS/API_BASEを先に確認し、サーバ到達性・cold sleep・バッチ鮮度はAPI到達後に確認せよ"
-            echo "  action: API_BASE=${API_BASE} host=${api_host}。getent hosts ${api_host} と P_AVERAGE_API_BASE/backend/.env の参照先を確認せよ"
+            echo "  api_base_source: ${API_BASE_SOURCE}"
+            echo "  resolved_host: ${api_host}"
+            echo "  action: getent hosts ${api_host} と P_AVERAGE_API_BASE/backend/.env の参照先を確認せよ"
             if [ -n "$curl_err" ]; then
                 echo "  curl_error: ${curl_err}"
             fi
             db_fallback_result="$(db_freshness_fallback || true)"
             IFS=$'\t' read -r db_status db_calculated_at db_days_ago db_counts <<< "$db_fallback_result"
-            classify_db_fallback_on_dns_failure "$db_status" "$db_calculated_at" "$db_days_ago" "$db_counts"
-            fallback_exit=$?
+            fallback_exit=0
+            classify_db_fallback_on_dns_failure "$db_status" "$db_calculated_at" "$db_days_ago" "$db_counts" || fallback_exit=$?
             if [ "$fallback_exit" -eq 2 ]; then
                 exit 2
             fi
