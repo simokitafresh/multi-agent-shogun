@@ -494,6 +494,33 @@ FAKEEOF
     [[ "$output" == *"PASS:"* ]]
 }
 
+@test "run_tests.sh: 全cache-hit集合は空pidsをwaitせずexit0" {
+    local fake_dir="$TMP/fake_bats" marker="$TMP/fake-bats-started"
+    mkdir -p "$fake_dir"
+    cat > "$fake_dir/bats" <<FAKEEOF
+#!/usr/bin/env bash
+touch "$marker"
+exit 99
+FAKEEOF
+    chmod +x "$fake_dir/bats"
+
+    run env REPO_ROOT="$ROOT" TEST_TIMING_LEDGER="$TMP/timing-cache.tsv" \
+        BATS_CACHE=1 BATS_CACHE_DIR="$TMP/cache" BATS_SOURCE_FINGERPRINT=all-cache \
+        PATH="$fake_dir:$PATH" bash -c '
+            set -euo pipefail
+            source "$1/scripts/run_tests.sh"
+            mkdir -p "$BATS_CACHE_DIR"
+            for file in /tmp/test_cached_a.bats /tmp/test_cached_b.bats; do
+                touch "$BATS_CACHE_DIR/$(bats_cache_key "$file" "$INNER_JOBS" "$BATS_SOURCE_FINGERPRINT").pass"
+            done
+            run_bats_files_parallel /tmp/test_cached_a.bats /tmp/test_cached_b.bats
+        ' _ "$ROOT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: 2 bats file(s) (0 run, 2 cached)"* ]]
+    [[ "$output" != *"unbound variable"* ]]
+    [ ! -e "$marker" ]
+}
+
 # --- Guard 18: git stash mutation block (共有worktree保護) ---
 # cmd_karo_ci_red_remaining_unit_202607151950: 2026-07-15 20:27実例 — bareの
 # `git stash`が共有main working treeのtracked 23 files(複数忍者+運用差分)を一括退避した事故。
