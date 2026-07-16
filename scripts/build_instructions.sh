@@ -78,13 +78,19 @@ get_profile_types() {
 select_profile_type() {
     local preferred_type="$1"
     local profile_types="$2"
+    local profile_type
+    local fallback=""
 
-    if printf '%s\n' "$profile_types" | grep -qx "$preferred_type"; then
-        printf '%s\n' "$preferred_type"
-        return 0
-    fi
-
-    printf '%s\n' "$profile_types" | grep -vx "$DEFAULT_CLI" | head -1
+    while IFS= read -r profile_type; do
+        if [[ "$profile_type" == "$preferred_type" ]]; then
+            printf '%s\n' "$preferred_type"
+            return 0
+        fi
+        if [[ -z "$fallback" && "$profile_type" != "$DEFAULT_CLI" ]]; then
+            fallback="$profile_type"
+        fi
+    done <<< "$profile_types"
+    printf '%s\n' "$fallback"
 }
 
 # Codex uses /new instead of /clear for session reset.
@@ -252,9 +258,9 @@ done
 
 # CLI types not yet in cli_profiles.yaml (temporary — remove when profiles added)
 for cli_type in copilot kimi; do
-    if echo "$PROFILE_TYPES" | grep -q "^${cli_type}$"; then
-        continue
-    fi
+    case $'\n'"$PROFILE_TYPES"$'\n' in
+        *$'\n'"$cli_type"$'\n'*) continue ;;
+    esac
     for role in $ROLES; do
         start_build_job "instruction ${cli_type}/${role}" \
             build_instruction_file "$cli_type" "$role" "${cli_type}-${role}.md"
