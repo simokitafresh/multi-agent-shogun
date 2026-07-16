@@ -192,6 +192,7 @@ lessons:
     機能障害はないが/tmpのinode消費が増加し続ける。
     修正: ninja_monitor.shにrun_lock_cleanup()追加(1h周期、60min超lockを削除)。
     初回実行で10,268件を即削除。
+    吸収(2026-07-17, cmd_reflux_promotion_202607170646_tobisaru, origin: [[cmd_reflux_promotion_202607170646_tobisaru]] -> [[LG017]] -> [[lock_cleanup_Level4]]): Level4(フロー内BLOCK): ninja_monitor.shの毎サイクルrun_lock_cleanup呼出しと、tests/unit/test_ninja_monitor_stall.batsの回帰が60分超shogun_lock/auto_deploy lockのみ削除し新規・無関係lockを保持する契約をCIで強制する。2026-07-17実測は/tmp/shogun_lock全69件、60分超24件。
   source_cmd: gunshi_infra_audit_20260406
   origin: '[[gunshi_infra_audit_20260406]]'
   created_at: '2026-04-06'
