@@ -264,8 +264,7 @@ if review_all_reports_ready "$cmd_id" "${reports[@]}"; then
       trigger_proc_dispatched() {
         local stat_file="/proc/$1/stat" state pgrp
         [ -r "$stat_file" ] || return 1
-        state=$(awk '{print $3}' "$stat_file" 2>/dev/null)
-        pgrp=$(awk '{print $5}' "$stat_file" 2>/dev/null)
+        read -r state pgrp < <(awk '{print $3, $5}' "$stat_file" 2>/dev/null)
         [ -n "$state" ] && [ "$state" != "Z" ] && [ -n "$pgrp" ] && [ "$pgrp" = "$1" ]
       }
       trigger_alive=0

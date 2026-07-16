@@ -7,9 +7,10 @@
 # those calls. Use an invocation-scoped cache directory inherited by subshells.
 # The content hash is also the fingerprint's first component: any byte change
 # selects a new entry without relying on coarse mtime/size metadata.
-if [ -z "${REVIEW_FP_CACHE_DIR:-}" ]; then
+if [ -z "${REVIEW_FP_CACHE_DIR:-}" ] || [ "${REVIEW_FP_CACHE_OWNER_PID:-}" != "$BASHPID" ]; then
     REVIEW_FP_CACHE_DIR="${TMPDIR:-/tmp}/review_fp_cache_${BASHPID}_$RANDOM"
-    export REVIEW_FP_CACHE_DIR
+    REVIEW_FP_CACHE_OWNER_PID="$BASHPID"
+    export REVIEW_FP_CACHE_DIR REVIEW_FP_CACHE_OWNER_PID
 fi
 mkdir -p "$REVIEW_FP_CACHE_DIR"
 
