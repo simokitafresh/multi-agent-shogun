@@ -154,9 +154,13 @@ if [[ -z "$payload" ]]; then
   exit 0
 fi
 
-source_type="$(_session_start_json_get ".type" "unknown")" || {
-  exit 0
-}
+if [[ "$payload" =~ \"type\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
+  source_type="${BASH_REMATCH[1]:-unknown}"
+else
+  source_type="$(_session_start_json_get ".type" "unknown")" || {
+    exit 0
+  }
+fi
 
 # --- Get agent_id from environment or tmux ---
 agent_id="${AGENT_ID:-}"
