@@ -9,12 +9,15 @@
 
 set -euo pipefail
 
-_self="${BASH_SOURCE[0]}"
-SCRIPT_DIR="${_self%/*}"
-[[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
-REPO_ROOT="${SCRIPT_DIR%/scripts/gates}"
-
-REGISTRY="${1:-$REPO_ROOT/docs/research/codd_refactor_registry.md}"
+if [ "$#" -gt 0 ]; then
+    REGISTRY="$1"
+else
+    _self="${BASH_SOURCE[0]}"
+    SCRIPT_DIR="${_self%/*}"
+    [[ "$SCRIPT_DIR" != /* ]] && SCRIPT_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+    REPO_ROOT="${SCRIPT_DIR%/scripts/gates}"
+    REGISTRY="$REPO_ROOT/docs/research/codd_refactor_registry.md"
+fi
 LAST_N=10  # 最新N件をチェック
 
 if [ ! -f "$REGISTRY" ]; then
