@@ -5,8 +5,11 @@
 set -euo pipefail
 
 _self="${BASH_SOURCE[0]}"
-script_dir="${_self%/scripts/memory_recall_control.sh}"
-[[ "$script_dir" != /* ]] && script_dir="$(cd "$script_dir" && pwd)"
+if [[ "$_self" == /*/scripts/memory_recall_control.sh ]]; then
+    script_dir="${_self%/scripts/memory_recall_control.sh}"
+else
+    script_dir="$(cd "$(dirname "$_self")/.." && pwd)"
+fi
 db_path="$script_dir/data/multi_agent_shogun_memory.db"
 backup_dir=""
 older_than_days=90
