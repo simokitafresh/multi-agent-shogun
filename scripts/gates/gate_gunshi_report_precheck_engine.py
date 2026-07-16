@@ -231,28 +231,27 @@ def main():
     all_reported_checks_yes = bool(bc_result_values) and all(
         res in ('yes', 'pass', 'true', 'ok') for res in bc_result_values
     )
+    # SG-PRE9c is a structured completion-clarity check. Do not flatten the
+    # whole report or purpose_validation: cmd_purpose, not_in_scope and causal
+    # history legitimately describe conditional rollback and past failures.
+    purpose_validation = report.get('purpose_validation')
+    nested_purpose_gap = (
+        purpose_validation.get('purpose_gap')
+        if isinstance(purpose_validation, dict)
+        else ''
+    )
+    clarity_fields = (
+        report.get('task_clarity'),
+        report.get('unclear_points'),       # legacy top-level field
+        report.get('discretion_fills'),     # legacy top-level field
+        report.get('assumption_check'),
+        nested_purpose_gap,
+        report.get('purpose_gap'),          # legacy top-level field
+    )
     _clarity_parts = []
-    # assumption_checkはAC前提の明瞭性確認であり、「scope外」等の境界言及は正当。
-    # 矛盾語検出対象から除外(FP防止: cmd_ga141で実証)
-    for key in (
-        'task_clarity',
-        'unclear_points',
-        'discretion_fills',
-        'purpose_validation',
-        'purpose_gap',
-    ):
-        raw = report.get(key)
-        # purpose_validation内のpurpose_gapが「なし」始まりなら除外(FP防止)
-        # 「CI設定無効化は未実施」等のnot_in_scope不実施報告は矛盾ではない
-        if key == 'purpose_validation' and isinstance(raw, dict):
-            pg = str(raw.get('purpose_gap', '') or '').strip()
-            if pg.startswith('なし'):
-                # purpose_gapを除外し、残りのフィールドだけフラット化
-                filtered = {k: v for k, v in raw.items() if k != 'purpose_gap'}
-                _clarity_parts.append(_flatten_text(filtered))
-                continue
+    for raw in clarity_fields:
         val = _flatten_text(raw)
-        if key == 'purpose_gap' and val.strip().startswith('なし'):
+        if val.strip().startswith('なし'):
             continue
         _clarity_parts.append(val)
     clarity_text = ' '.join(_clarity_parts)

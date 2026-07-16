@@ -191,6 +191,80 @@ YAML
     [[ "$output" == *"未完了"* ]]
 }
 
+@test "SG-PRE9c ignores conditional rollback and historical causes in purpose fields" {
+    cat > "$TEST_TMPDIR/report.yaml" <<'YAML'
+status: completed
+task_clarity:
+  score: 100
+  unclear_points: なし
+  discretion_fills: なし
+assumption_check: なし
+purpose_validation:
+  cmd_purpose: "速度基準未達ならrollbackして台帳へ記録する"
+  fit: true
+  purpose_gap: なし
+not_in_scope:
+  - "過去の未達原因の全面修正は対象外"
+binary_checks:
+  AC1:
+    - check: 条件分岐を検証
+      result: yes
+YAML
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+}
+
+@test "SG-PRE9c detects unfinished purpose gap task clarity and assumption fields" {
+    for field in purpose_gap task_clarity assumption_check; do
+        cat > "$TEST_TMPDIR/report.yaml" <<'YAML'
+status: completed
+task_clarity: {score: 100, unclear_points: なし, discretion_fills: なし}
+assumption_check: なし
+purpose_validation: {cmd_purpose: 完了目的, fit: true, purpose_gap: なし}
+binary_checks: {AC1: [{check: 完了確認, result: yes}]}
+YAML
+        case "$field" in
+            purpose_gap) sed -i 's/purpose_gap: なし/purpose_gap: AC2未完了/' "$TEST_TMPDIR/report.yaml" ;;
+            task_clarity) sed -i 's/unclear_points: なし/unclear_points: 後で家老が実施/' "$TEST_TMPDIR/report.yaml" ;;
+            assumption_check) sed -i 's/assumption_check: なし/assumption_check: 前提確認を保留/' "$TEST_TMPDIR/report.yaml" ;;
+        esac
+        run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+    done
+}
+
+@test "SG-PRE9c skips empty reports and reports containing binary no" {
+    printf 'status: completed\n' > "$TEST_TMPDIR/report.yaml"
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+
+    _write_report "AC2未完了。"
+    sed -i 's/result: yes/result: no/' "$TEST_TMPDIR/report.yaml"
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+}
+
+@test "SG-PRE9c keeps English conditional purpose out but detects English TODO in clarity" {
+    cat > "$TEST_TMPDIR/report.yaml" <<'YAML'
+status: completed
+task_clarity: {score: 100, unclear_points: none, discretion_fills: none}
+assumption_check: none
+purpose_validation:
+  cmd_purpose: "rollback only if the performance threshold is unmet"
+  fit: true
+  purpose_gap: none
+binary_checks: {AC1: [{check: complete, result: yes}]}
+YAML
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+
+    sed -i 's/unclear_points: none/unclear_points: "TODO: defer this work"/' "$TEST_TMPDIR/report.yaml"
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+}
+
 @test "SG-PRE9 sets BLOCK prediction for waived binary check no" {
     cat > "$TEST_TMPDIR/report.yaml" <<YAML
 ninja: hayate
