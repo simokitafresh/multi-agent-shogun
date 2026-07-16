@@ -3257,6 +3257,21 @@ variation_checks:
 EOF
 )
     fi
+    # LG055 Level5: integration cmd には operational_simulation テンプレートを
+    # 事前生成し、忍者がフィールドの存在を知らない手戻りを構造的に防止する。
+    # 判定条件は files_to_modify/files_modified/target_path に scripts/ .githooks/ を含むか。
+    local _opsim_block=""
+    local _opsim_text="${files_to_modify:-} ${files_modified:-} ${target_path:-}"
+    if [[ "$_opsim_text" =~ scripts/|\.githooks/|scripts/gates/|scripts/hooks/ ]]; then
+        _opsim_block=$(cat <<'EOF'
+operational_simulation:
+  command: ""  # 実走コマンド(bats / bash / curl 等)
+  expected: ""  # 期待結果
+  actual: ""  # 実際の結果
+  result: ""  # PASS or FAIL
+EOF
+)
+    fi
 
     cat > "$report_file" <<EOF
 # !! トップレベル構造を維持せよ。report: で包むな !!
@@ -3361,6 +3376,7 @@ post_deploy_evidence:
   evidence_run_completed_at: ""  # UTC推奨。例: 2026-06-12T02:10:00Z
   run_completed: false
   source: ""  # timing-history id / Render log timestamp / DB queryなど一次証跡
+${_opsim_block}
 ${_variation_checks_block}
 binary_checks: {}  # AC完了ごとに ACN: [{check: "確認内容", result: "yes/no"}] を記入
 # ⚠ result値は "yes" or "no" のみ。true/false/PASS/FAIL/OK等はBLOCKされる
