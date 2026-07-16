@@ -94,16 +94,18 @@ batch_index_search() {
     local read_db="$source_db"
     local cache_dir="${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
     local repo_key cache_path
-    repo_key="$(printf '%s' "$ROOT" | sed 's/[^A-Za-z0-9_.-]/_/g')"
-    cache_path="${SHOGUN_MEMORY_DB_CACHE_PATH:-$cache_dir/${repo_key}_$(basename "$source_db")}"
+    # ROOT is an absolute POSIX path; slash is the only character that needs
+    # normalization in supported checkouts. Keep this hot path in-shell.
+    repo_key="${ROOT//\//_}"
+    cache_path="${SHOGUN_MEMORY_DB_CACHE_PATH:-$cache_dir/${repo_key}_${source_db##*/}}"
     # The cache publisher uses atomic replace. A complete ext4 snapshot is a
     # safe bounded primary read; live writes remain covered by the canonical
     # scripts when the cache is absent (and by the legacy fallback on timeout).
     [[ -s "$cache_path" && "$source_db" == "$ROOT/data/multi_agent_shogun_memory.db" ]] && read_db="$cache_path"
-    timeout "${timeout_seconds}s" python3 - "$read_db" "$ROOT/docs/semantic-index/index.md" "$query" "$result_file" <<'PY'
-import os, pathlib, sqlite3, sys, tempfile
+    timeout "${timeout_seconds}s" python3 - "$read_db" "$ROOT/docs/semantic-index/index.md" "$query" <<'PY' >"$result_file"
+import pathlib, sqlite3, sys
 
-db_path, semantic_path, query, result_path = sys.argv[1:]
+db_path, semantic_path, query = sys.argv[1:]
 memory_rc = semantic_rc = 0
 needle = next((part for part in query.split() if part), query[:80])
 try:
@@ -126,15 +128,7 @@ try:
                 break
 except Exception:
     semantic_rc = 2
-parent = os.path.dirname(result_path)
-fd, tmp = tempfile.mkstemp(prefix=".batch.", dir=parent, text=True)
-try:
-    with os.fdopen(fd, "w", encoding="utf-8") as handle:
-        handle.write(f"{memory_rc}\t{semantic_rc}\n")
-    os.replace(tmp, result_path)
-finally:
-    if os.path.exists(tmp):
-        os.unlink(tmp)
+print(f"{memory_rc}\t{semantic_rc}")
 raise SystemExit(0 if memory_rc == semantic_rc == 0 else 1)
 PY
 }
@@ -213,7 +207,6 @@ issue() {
     local primary_timeout="${THREE_LAYER_PRIMARY_TIMEOUT_SECONDS:-5}"
     if [[ -d "$ROOT/.git" && "${THREE_LAYER_BATCH_PRIMARY:-1}" == 1 ]]; then
         batch_result="$(mktemp "$EVIDENCE_DIR/.batch-result.XXXXXX")"
-        rm -f "$batch_result"
         ( batch_index_search "$prompt" "$primary_timeout" "$batch_result" >/dev/null 2>&1 ) &
         batch_pid=$!
     else

@@ -16,6 +16,14 @@
 
 第2巡20回raw: 206, 209, 212, 214, 216, 216, 220, 222, 223, 224, 227, 229, 235, 235, 239, 239, 244, 246, 254, 354ms。
 
+## 第三巡（gen3）
+
+第二巡post-commit 214/254msを固定baselineとした。実行時負荷を含む再測定値はp50/p95=243.5/285ms。区間20回の上位3寄与はsemantic index p50=77ms、memory p50=75.5ms、Obsidian p50=43ms（atomic publish p50=10ms）。
+
+batch/causal方式は変更せず、batch hot pathの`sed`/`basename` subprocessをpure Bashへ置換し、親がwaitしてから読むprivate resultへの子側二重atomic tempを除去した。after 20回はp50/p95=142.5/160ms、timeout=0、superseded=0、三層一致20/20。第三巡は採用。
+
+累積: 1621/4504ms → 981.5/1794ms → 225.5/254ms → 142.5/160ms（p50/p95）。
+
 ## 層別SLO
 
 - warm総wall: p50 < 500ms、p95 < 1000ms。
