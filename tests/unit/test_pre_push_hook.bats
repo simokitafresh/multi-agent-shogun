@@ -119,3 +119,48 @@ MOCK
     [ "$status" -eq 0 ]
     [ ! -e "$TEST_ROOT/run_tests_calls.log" ]
 }
+
+@test "superseded holder hands the shared lane to the current hook" {
+    mkdir -p "$TEST_ROOT/logs"
+    exec 8>"$TEST_ROOT/logs/prepush_test.lock"
+    flock 8
+    printf 'pid=%s\nstarted_at=2026-07-16T07:59:21+09:00\nhook_sha256=old-generation\n' "$$" \
+        >"$TEST_ROOT/logs/prepush_test.lock.holder"
+    env TEST_ROOT="$TEST_ROOT" PATH="$TEST_ROOT/mock_bin:$PATH" PREPUSH_LOCK_WAIT_SECONDS=0.1 \
+        PREPUSH_CROSS_GENERATION_WAIT_SECONDS=2 bash -lc 'cd "$TEST_ROOT" && bash .githooks/pre-push' \
+        >"$TEST_ROOT/waiter.out" 2>&1 &
+    waiter=$!
+    sleep 0.2
+    flock -u 8
+    wait "$waiter"
+    [ "$?" -eq 0 ]
+    grep -q 'Superseded holder still active; waiting for safe handoff' "$TEST_ROOT/waiter.out"
+}
+
+@test "same-generation parallel holder remains a single fail-closed lane" {
+    mkdir -p "$TEST_ROOT/logs"
+    exec 8>"$TEST_ROOT/logs/prepush_test.lock"
+    flock 8
+    current_sha=$(sha256sum "$TEST_ROOT/.githooks/pre-push" | awk '{print $1}')
+    printf 'pid=%s\nstarted_at=2026-07-16T08:00:00+09:00\nhook_sha256=%s\n' "$$" "$current_sha" \
+        >"$TEST_ROOT/logs/prepush_test.lock.holder"
+    run env TEST_ROOT="$TEST_ROOT" PATH="$TEST_ROOT/mock_bin:$PATH" PREPUSH_LOCK_WAIT_SECONDS=0.1 \
+        bash -lc 'cd "$TEST_ROOT" && bash .githooks/pre-push'
+    flock -u 8
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"same-generation serialized test lane"* ]]
+}
+
+@test "stale holder fails closed with its identity" {
+    mkdir -p "$TEST_ROOT/logs"
+    exec 8>"$TEST_ROOT/logs/prepush_test.lock"
+    flock 8
+    printf 'pid=99999999\nstarted_at=2026-07-16T08:00:00+09:00\nhook_sha256=old-generation\n' \
+        >"$TEST_ROOT/logs/prepush_test.lock.holder"
+    run env TEST_ROOT="$TEST_ROOT" PATH="$TEST_ROOT/mock_bin:$PATH" PREPUSH_LOCK_WAIT_SECONDS=0.1 \
+        bash -lc 'cd "$TEST_ROOT" && bash .githooks/pre-push'
+    flock -u 8
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"stale/abnormal"* ]]
+    [[ "$output" == *"pid=99999999"* ]]
+}

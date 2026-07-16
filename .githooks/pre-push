@@ -24,6 +24,10 @@ _SELECTED_TESTS_FILE="/tmp/_hook_selected_tests_prepush_$$"
 _BATS_OUTPUT_FILE="/tmp/_hook_bats_output_prepush_$$"
 _PREPUSH_LOCK_FILE="$REPO_ROOT/logs/prepush_test.lock"
 _PREPUSH_PASS_CACHE="$REPO_ROOT/logs/prepush_test_pass.sha"
+_PREPUSH_LOCK_META="$REPO_ROOT/logs/prepush_test.lock.holder"
+_PREPUSH_LOCK_WAIT_SECONDS="${PREPUSH_LOCK_WAIT_SECONDS:-1200}"
+_PREPUSH_CROSS_GENERATION_WAIT_SECONDS="${PREPUSH_CROSS_GENERATION_WAIT_SECONDS:-1200}"
+_PREPUSH_LOCK_OWNED=0
 
 for _arg in "$@"; do
     if [ "$_arg" = "--force" ] || [ "$_arg" = "-f" ]; then
@@ -101,6 +105,10 @@ _record_hook_failure() {
     fi
     rm -f "$_STDERR_FILE" 2>/dev/null
     rm -f "$_CHANGED_FILES_FILE" "$_SELECTED_TESTS_FILE" "$_BATS_OUTPUT_FILE" 2>/dev/null
+    if [ "$_PREPUSH_LOCK_OWNED" -eq 1 ] && [ -r "$_PREPUSH_LOCK_META" ] \
+            && grep -qx "pid=$$" "$_PREPUSH_LOCK_META" 2>/dev/null; then
+        rm -f "$_PREPUSH_LOCK_META" 2>/dev/null
+    fi
 }
 trap '_ec=$?; _record_hook_failure $_ec; exit $_ec' EXIT
 
@@ -114,10 +122,37 @@ exec 2>"$_STDERR_FILE"
 # commit.  A changed commit never reuses the cache, and failures are not cached.
 mkdir -p "$REPO_ROOT/logs"
 exec 9>"$_PREPUSH_LOCK_FILE"
-if ! flock -w 1200 9; then
-    echo "[pre-push] BLOCK: timed out waiting for the serialized test lane." >&2
-    exit 1
+if ! flock -w "$_PREPUSH_LOCK_WAIT_SECONDS" 9; then
+    _holder_pid="$(awk -F= '$1=="pid"{print $2}' "$_PREPUSH_LOCK_META" 2>/dev/null)"
+    _holder_started="$(awk -F= '$1=="started_at"{sub(/^[^=]*=/,""); print}' "$_PREPUSH_LOCK_META" 2>/dev/null)"
+    _holder_sha="$(awk -F= '$1=="hook_sha256"{print $2}' "$_PREPUSH_LOCK_META" 2>/dev/null)"
+    _holder_identity="pid=${_holder_pid:-unknown} started_at=${_holder_started:-unknown} hook_sha256=${_holder_sha:-unknown}"
+    if ! [[ "$_holder_pid" =~ ^[0-9]+$ ]] || ! kill -0 "$_holder_pid" 2>/dev/null \
+            || [ -z "$_holder_started" ] || [ -z "$_holder_sha" ]; then
+        echo "[pre-push] BLOCK: stale/abnormal serialized test lane holder (${_holder_identity})."
+        echo "[pre-push] BLOCK: stale/abnormal serialized test lane holder (${_holder_identity})." >&2
+        exit 1
+    fi
+    if [ "$_holder_sha" = "$_HOOK_SHA256" ]; then
+        echo "[pre-push] BLOCK: timed out waiting for same-generation serialized test lane (${_holder_identity})."
+        echo "[pre-push] BLOCK: timed out waiting for same-generation serialized test lane (${_holder_identity})." >&2
+        exit 1
+    fi
+    echo "[pre-push] Superseded holder still active; waiting for safe handoff (${_holder_identity})."
+    echo "[pre-push] Superseded holder still active; waiting for safe handoff (${_holder_identity})." >&2
+    if ! flock -w "$_PREPUSH_CROSS_GENERATION_WAIT_SECONDS" 9; then
+        echo "[pre-push] BLOCK: cross-generation handoff timed out (${_holder_identity})." >&2
+        exit 1
+    fi
 fi
+_PREPUSH_LOCK_OWNED=1
+_meta_tmp="${_PREPUSH_LOCK_META}.$$"
+{
+    echo "pid=$$"
+    echo "started_at=$_HOOK_STARTED_AT"
+    echo "hook_sha256=$_HOOK_SHA256"
+} > "$_meta_tmp"
+mv -f "$_meta_tmp" "$_PREPUSH_LOCK_META"
 _PREPUSH_SHA="$(git rev-parse HEAD 2>/dev/null || true)"
 _PREPUSH_CACHE_HIT=0
 if [ -n "$_PREPUSH_SHA" ] && [ -r "$_PREPUSH_PASS_CACHE" ] \
