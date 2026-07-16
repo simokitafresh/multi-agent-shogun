@@ -76,6 +76,13 @@ _write_report_paths() {
     } > "$TEST_TMPDIR/$report_rel"
 }
 
+_set_report_commit_hash() {
+    local ninja="$1"
+    local commit_hash="$2"
+    local report_rel="queue/reports/${ninja}_report.yaml"
+    printf 'commit_hash: %s\n' "$commit_hash" >> "$TEST_TMPDIR/$report_rel"
+}
+
 @test "own commit present in unreflected backlog -> BLOCK (return 1)" {
     _write_task hayate dm-signal
     MATCHING_TASK_FILES=("$TEST_TMPDIR/queue/tasks/hayate.yaml")
@@ -127,6 +134,32 @@ context/dm-signal-core.md	0568b016	cmd_3873: add immutable recalculation input b
 OUT
 '
     run check_context_freshness_own_commit "cmd_3999_totally_unrelated"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"BLOCK"* ]]
+}
+
+@test "reviewed commit hash in backlog blocks even when commit subject does not contain cmd id" {
+    _write_task hayate infra
+    _write_report_paths hayate scripts/codd/generate.py
+    _set_report_commit_hash hayate c5d6e965e1234567890abcdef1234567890abcd
+    MATCHING_TASK_FILES=("$TEST_TMPDIR/queue/tasks/hayate.yaml")
+    _write_mock_check_script '
+echo -e "context/codd.md\tc5d6e965e\tfix: resolve generic skill contract"
+'
+    run check_context_freshness_own_commit "cmd_skill_contract"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"context/codd.md"* ]]
+}
+
+@test "unrelated backlog hash does not false-block a reviewed generic-subject commit" {
+    _write_task hayate infra
+    _write_report_paths hayate scripts/codd/generate.py
+    _set_report_commit_hash hayate aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    MATCHING_TASK_FILES=("$TEST_TMPDIR/queue/tasks/hayate.yaml")
+    _write_mock_check_script '
+echo -e "context/codd.md\tbbbbbbbbb\tfix: unrelated generic skill contract"
+'
+    run check_context_freshness_own_commit "cmd_skill_contract"
     [ "$status" -eq 0 ]
     [[ "$output" != *"BLOCK"* ]]
 }

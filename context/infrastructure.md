@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-16 cmd_karo_hotfix_script_speed_ledger_recovery_202607161952 -->
-<!-- source_commit:a7de056a6 reason:cmd_karo_hotfix_script_speed_ledger_recovery_202607161952 evidence:five-minute-task-contract-and-tmp-cleanup -->
+<!-- source_commit:7784690e4 reason:infra-source-backlog-reviewed-lesson-writer-speed-contract-unchanged evidence:git-show-0c9813ba6-636647b33-7784690e4-and-existing-lesson-write-contract-remains -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`

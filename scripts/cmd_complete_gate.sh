@@ -5967,6 +5967,12 @@ check_context_freshness_own_commit() {
     # not force meaningless core/ops context edits for tests, but keep the
     # existing fail-closed behavior when even one source path is present.
     local _all_reports_test_only=1 _saw_reported_path=0
+    # The reviewed report is the commit identity SSOT.  Commit subjects are a
+    # useful human-readable correlation key, but they are not contractual:
+    # ordinary fixes may legitimately use "fix:" instead of "${cmd_id}:".
+    # Keep every reviewed commit hash so an unreflected source commit cannot
+    # evade the completion gate merely because its subject is generic.
+    local -A _reported_commit_hashes=()
     local _scope_tf _scope_report _scope_path
     if declare -p MATCHING_TASK_FILES >/dev/null 2>&1; then
         for _scope_tf in "${MATCHING_TASK_FILES[@]}"; do
@@ -5982,6 +5988,19 @@ check_context_freshness_own_commit() {
             [ -n "$_scope_report" ] || { _all_reports_test_only=0; break; }
             [[ "$_scope_report" = /* ]] || _scope_report="$SCRIPT_DIR/$_scope_report"
             [ -f "$_scope_report" ] || { _all_reports_test_only=0; break; }
+
+            local _scope_commit_hash
+            _scope_commit_hash=$(awk '
+                /^commit_hash:/ {
+                    sub(/^commit_hash:[[:space:]]*/, "")
+                    gsub(/^["'"'"']|["'"'"']$/, "")
+                    print
+                    exit
+                }
+            ' "$_scope_report" 2>/dev/null)
+            if [[ "$_scope_commit_hash" =~ ^[0-9a-f]{7,40}$ ]]; then
+                _reported_commit_hashes["$_scope_commit_hash"]=1
+            fi
 
             while IFS= read -r _scope_path; do
                 [ -n "$_scope_path" ] || continue
@@ -6057,8 +6076,16 @@ check_context_freshness_own_commit() {
             echo "  [WARN] context freshness check未確定(timeout/returncode): ${failed_paths}(project=${_proj_id})。BLOCK判定には使用しない"
         fi
 
-        local own_hits
-        own_hits=$(echo "$commit_list" | awk -F'\t' -v cmd="${cmd_id}:" 'index($3, cmd) == 1 {print}')
+        local own_hits subject_hits hash_hits _reported_hash
+        subject_hits=$(echo "$commit_list" | awk -F'\t' -v cmd="${cmd_id}:" 'index($3, cmd) == 1 {print}')
+        hash_hits=""
+        for _reported_hash in "${!_reported_commit_hashes[@]}"; do
+            hash_hits+=$(echo "$commit_list" | awk -F'\t' -v hash="$_reported_hash" '
+                index(hash, $2) == 1 || index($2, hash) == 1 {print}
+            ')
+            hash_hits+=$'\n'
+        done
+        own_hits=$(printf '%s\n%s\n' "$subject_hits" "$hash_hits" | awk 'NF && !seen[$0]++')
         if [ -n "$own_hits" ]; then
             echo "  own commit found in unreflected split context backlog (project=${_proj_id}):"
             while IFS=$'\t' read -r _rel_path _hash _subject; do
