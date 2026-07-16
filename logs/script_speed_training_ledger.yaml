@@ -1302,20 +1302,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/gates/gate_diagnose_check.sh
-  status: pending
+  status: saturated
   before_ms: 16
   after_ms: ''
-  before_real_ms: 70
-  after_real_ms: ""
-  real_measurement_command: env GATE_FIRE_LOG_FILE=/tmp/gate_diagnose_speed_kagemaru/gate_fire_log.yaml
-    GATE_SESSION_STATE_TASK_DIR=/tmp/gate_diagnose_speed_kagemaru/tasks bash scripts/gates/gate_diagnose_check.sh
-    /tmp/gate_diagnose_speed_kagemaru/report.yaml 'binary_checks fail'
-  test_result: bash -n PASS; bats tests/unit/test_gate_diagnose_check.bats 9/9 PASS
-    SKIP=0
-  commit: 9328887eb
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 24.295
+  after_real_ms: 20.124
+  real_measurement_command: "bash <ARM>/scripts/gates/gate_diagnose_check.sh <FIXED_REPORT> bench_reason"
+  test_result: "bats tests/unit/test_gate_diagnose_check.bats: PASS=9 FAIL=0 SKIP=0"
+  commit: "204af7a8c755ec11418c91436ee84d9c90baae5f"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T07:39:40"
   iteration: 1
+  last_good_commit: "204af7a8c755ec11418c91436ee84d9c90baae5f"
+  candidate_commit: "c68e03db94782a2456ae5dc8be1af6d6f7672b75"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 24.295
+  last_good_p95_ms: 30.462
+  candidate_p50_ms: 20.124
+  candidate_p95_ms: 31.631
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64;cwd=/mnt/c/tools/multi-agent-shogun;bash=5.2.21(1)-release"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_enforcement_audit.sh
   status: saturated
   before_ms: 18
@@ -3238,18 +3249,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/model_analysis.sh
-  status: pending
+  status: completed
   before_ms: 16
   after_ms: ''
-  before_real_ms: 70
-  after_real_ms: ""
-  real_measurement_command: bash scripts/model_analysis.sh --summary
-  test_result: bash -n PASS; summary diff PASS; json+compare smoke PASS; test_dynamic_model_routing
-    7/7 PASS SKIP=0; model_analysis label regression 1/1 PASS SKIP=0
-  commit: 1cc893fd9
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 209.5
+  after_real_ms: 193.5
+  real_measurement_command: "bash scripts/model_analysis.sh --summary >/dev/null"
+  test_result: "bash-n PASS; bats model_analysis 1/1 PASS; output diff 0"
+  commit: "204af7a8c755ec11418c91436ee84d9c90baae5f"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T07:39:43"
   iteration: 1
+  last_good_commit: "ad4272334b80d732a755fd4d8257819865de7315"
+  candidate_commit: "204af7a8c755ec11418c91436ee84d9c90baae5f"
+  ab_samples_per_arm: "20"
+  last_good_p50_ms: 209.5
+  last_good_p95_ms: 251
+  candidate_p50_ms: 193.5
+  candidate_p95_ms: 227
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux; bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu); awk=GNU Awk 5.2.1, API 3.2, PMA Avon 8-g1, (GNU MPFR 4.2.1, GNU MP 6.3.0); gate_log_sha=deebc539bf32320f8d1c3456a510f5fb6735301e36d209bd268b9ebf9240f903"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/model_switch_preflight.sh
   status: completed
   before_ms: 17
@@ -3565,18 +3589,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/ralph_loop_closer.sh
-  status: assigned
+  status: saturated
   before_ms: 18
   after_ms: ''
-  before_real_ms: 73
-  after_real_ms: ""
-  real_measurement_command: printf WARN+REFLUX_CHECK MISSING fixture | bash scripts/ralph_loop_closer.sh
-    infra title detail cmd_test (31 runs median)
-  test_result: bash_n_pass; fixtures no_warn/no_missing/missing_yaml_parse PASS; SKIP=0
-  commit: 4a1339d328d814d4aefcd663c435622d349c7a4e
+  before_real_ms: 224.483
+  after_real_ms: 214.894
+  real_measurement_command: "printf fixed_reflux_payload | bash /dev/fd/3 infra title detail cmd 3< <(git show COMMIT:scripts/ralph_loop_closer.sh)"
+  test_result: "bash-n+4-behavior-cases PASS=4 FAIL=0 SKIP=0"
+  commit: "ab1a657cf270c7f4baee185985aa87b1a739b703"
   assigned_to: "hanzo"
-  updated_at: "2026-07-17T07:23:14"
+  updated_at: "2026-07-17T07:29:24"
   iteration: 1
+  last_good_commit: "ab1a657cf270c7f4baee185985aa87b1a739b703"
+  candidate_commit: "7d99bf1302965eab6ef60b4f57159c28283b5434"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 224.483
+  last_good_p95_ms: 296.901
+  candidate_p50_ms: 214.894
+  candidate_p95_ms: 310.536
+  ab_order: "alternating"
+  warmup_each: "2"
+  environment_fingerprint: "WSL2 bash same-worktree git-show process-substitution"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/ralph_loop_metrics.sh
   status: completed
   before_ms: 15
