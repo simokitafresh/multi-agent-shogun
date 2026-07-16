@@ -50,7 +50,7 @@ fi
   }
 
   CONV_JSONL="$JSONL_PATH" CONV_INDEX="$INDEX_PATH" CONV_ARCHIVE_DIR="$ARCHIVE_DIR" \
-    python3 - <<'PY'
+    python3 -S - <<'PY'
 import json
 import os
 import re
