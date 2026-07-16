@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-16 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-16T14:18:01+09:00 -->
+<!-- generated_at: 2026-07-16T14:22:42+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-07-16T14:22:41+09:00 | terminal | response | APPROVE完了。未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-16T14:21:44+09:00 | ntfy | outbound | 【家老】cmd_karo_ci_fix_timing_ratchet_16files_202607161421 初回配備開始 (title=(untitled), ninja=hayate)
+- 2026-07-16T14:19:23+09:00 | terminal | response | 未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-16T14:19:05+09:00 | ntfy | outbound | 【watchdog】inbox_watcher(shogun)を自動再起動しました
+- 2026-07-16T14:18:01+09:00 | ntfy | outbound | test permission warning
+- 2026-07-16T14:18:01+09:00 | ntfy | outbound | test outside tmux warning
 - 2026-07-16T14:18:00+09:00 | terminal | response | 家老にtiming ratchet状況を通知済み(CTX:74%で稼働中)。 今セッションの全将軍D0アクションが完了。note記事gistは殿に共有済み、フィードバック待ち。家老が台帳再計測と影丸skill refs再配備を自走で処理す…
 - 2026-07-16T14:16:51+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率99% 連勝65
 - 2026-07-16T14:15:10+09:00 | ntfy | outbound | test outside tmux warning
 - 2026-07-16T14:15:09+09:00 | ntfy | outbound | test permission warning
-- 2026-07-16T14:14:38+09:00 | terminal | response | GATE CLEAR: stale inbox nudge consumption(半蔵)。残りはCI gate_report_format(疾風done、GATE判定待ち)のみ。 家老自走cmdの今セッション全体状況: | cmd | …
-- 2026-07-16T14:14:37+09:00 | terminal | response | 未読0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-16T14:14:26+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率99% 連勝64
-- 2026-07-16T14:09:59+09:00 | terminal | response | 既読処理完了。家老自走の残りGATE CLEAR(stale inbox nudge + CI gate_report_format)を待ちつつ、note記事gistの殿フィードバックに備える。 自走継続 — obsidian candi…
-- 2026-07-16T14:09:41+09:00 | terminal | response | ledger drift GATE CLEAR同期完了。未読0件。idle待機。
-- 2026-07-16T14:09:35+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率99% 連勝63
 
 ## 未解決確認事項
 - 既読処理完了。家老自走の残りGATE CLEAR(stale inbox nudge + CI gate_report_format)を待ちつつ、note記事gistの殿フィードバックに備える。 自走継続 — obsidian candidate 7件の状態を確認し、三層貫通の…
