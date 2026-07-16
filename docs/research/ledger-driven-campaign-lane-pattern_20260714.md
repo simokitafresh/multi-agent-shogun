@@ -135,17 +135,17 @@
 
 ## §8 応用候補カタログ
 
-機械可読正本は `config/campaign_lane_catalog.yaml`。12候補の判定は **ready=2 / partial=8 / blocked=2**（2026-07-16一次確認）。readyは「対象列挙・数値優先・10分以内・二値検証」の4条件に加え、通常経路writer→台帳→adapter→報告の全計測経路が存在するものだけとする。
+機械可読正本は `config/campaign_lane_catalog.yaml`。12候補の判定は **ready=0 / partial=10 / blocked=2**（2026-07-16 caller/CLI一次確認）。readyは「対象列挙・数値優先・10分以内・二値検証」の4条件に加え、通常経路writer→台帳→adapter→報告の全計測経路が存在するものだけとする。`scripts/validate_campaign_lane_catalog.py` が件数・必須field・重複・enum・ready実体を決定的検証する。
 
 | 候補 | 一次台帳 / 自動writer | objective / metric | adapter | readiness | 品質契約 / 飽和条件 |
 |---|---|---|---|---|---|
-| 本体スクリプト面攻略 | script_speed_training_ledger / cmd_complete_gate | minimize / after_real_ms | test_speed_task_generator | ready | FAIL0・SKIP0 / saturated・budget |
+| 本体スクリプト面攻略 | script_speed_training_ledger / cmd_complete_gate | minimize / after_real_ms | 未実装 | partial | FAIL0・SKIP0 / saturated・budget |
 | pytest側テスト高速化 | pytest durations / DM-Signal pytest | minimize / duration_sec | 未実装 | blocked | expectation不変 / external blocker |
 | SKILL.md鮮度更新 | gate_skill_script_refs / 同gate | minimize / stale_count | 未実装 | partial | FP0 / stale=0 |
 | context鮮度更新 | context_freshness_check / context gate | minimize / stale_source_count | 未実装 | partial | cache bypass再検証 / stale=0 |
 | backlinks=0の因果リンク接続 | causal_backlink_counts / startup gate | minimize / zero_backlink_count | 未実装 | partial | 直接link+引用 / safe linkなし |
 | insightキュー消化 | queue/insights / insight_write | minimize / pending_count | insight_resolve(fix_knownのみ) | partial | priority順 / unsupported |
-| detector FP削減 | detector_fp_rate / detector_fp_rate | minimize / fp_rate | throughput_scan | ready | TP保持・FP0 / no samples |
+| detector FP削減 | detector_fp_rate / detector_fp_rate | minimize / fp_rate | 未実装 | partial | TP保持・FP0 / no samples |
 | 教訓未処理backlog消化 | infra lessons / lesson_write | minimize / draft_count | 未実装 | partial | origin保持 / judgment required |
 | 家老workaround率削減 | karo_workarounds / workaround_log | minimize / workaround_rate | throughput_scan | partial | Level5化 / sample不足 |
 | CI runtime回帰削減 | Actions timing / Actions通常run | minimize / wall_sec | 未実装 | blocked | GREEN・SKIP0 / external blocker |
@@ -155,6 +155,8 @@
 `shard-work`は既知集合を一度だけ分割・回収する単発実行、`campaign-lane`は台帳の実測から次targetを反復選定し、best_so_farと飽和条件で継続・停止する閉ループである。
 
 origin: [[ledger-driven-campaign-lane-pattern_20260714]] -> [[campaign-lane]] -> [[shard-work]]との反復/単発境界
+
+schema境界: 本catalogはlane候補の静的メタデータ（計測源・writer・adapter・契約・readiness）だけを持つ。skill runtime catalog/controllerは実行時引数・状態遷移・callbackを所有し、本catalogの`adapter`が実入口として確定した後に接続する。両schemaを混ぜない。
 
 ## §9 三層学習ループとの対応
 
