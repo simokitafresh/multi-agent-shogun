@@ -82,6 +82,48 @@ esac
 conflicting_ninjas=""
 edit_basename="$(basename "$file_path")"
 
+# Hot path: parse all task states and the cmd ledger in one process.  Keep the
+# shell implementation below as a fail-safe fallback if Python is unavailable
+# or the operational files cannot be read.
+if command -v python3 >/dev/null 2>&1; then
+    if fast_conflicts="$(python3 - "$TASKS_DIR" "${PROJ_DIR}/queue/shogun_to_karo.yaml" "$edit_basename" <<'PY'
+import pathlib, re, sys
+
+tasks_dir, cmd_path, target = map(pathlib.Path, sys.argv[1:])
+target = str(target)
+try:
+    cmd_text = cmd_path.read_text(encoding="utf-8")
+    if target not in cmd_text:
+        raise SystemExit(0)
+    found = []
+    active = {"assigned", "acknowledged", "in_progress"}
+    allowed = {"hayate", "kagemaru", "hanzo", "saizo", "kotaro", "tobisaru"}
+    for task_path in tasks_dir.glob("*.yaml"):
+        ninja = task_path.stem
+        if ninja not in allowed:
+            continue
+        text = task_path.read_text(encoding="utf-8")
+        status_match = re.search(r"^\s*status:\s*['\"]?([^'\"\s]+)", text, re.M)
+        cmd_match = re.search(r"^\s*parent_cmd:\s*['\"]?([^'\"\s]+)", text, re.M)
+        if not status_match or status_match.group(1) not in active or not cmd_match:
+            continue
+        status, cmd_id = status_match.group(1), cmd_match.group(1)
+        block = re.search(rf"^  {re.escape(cmd_id)}:.*?(?=^  cmd_|\Z)", cmd_text, re.M | re.S)
+        if block and target in block.group(0):
+            found.append(f"{ninja}({status},{cmd_id})")
+    print(" ".join(found), end=" " if found else "")
+except (OSError, UnicodeError):
+    raise SystemExit(1)
+PY
+)"; then
+        if [ -z "$fast_conflicts" ]; then
+            exit 0
+        fi
+        emit_deny "BLOCK: ファイル衝突検出。${edit_basename}は忍者(${fast_conflicts})のcmd変更対象。忍者完了後に編集するか、cmdで忍者に指示せよ。[pre-karo-edit-guard]"
+        exit 2
+    fi
+fi
+
 for task_yaml in "$TASKS_DIR"/*.yaml; do
     [ -f "$task_yaml" ] || continue
     ninja_name="$(basename "$task_yaml" .yaml)"
