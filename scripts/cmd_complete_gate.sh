@@ -159,8 +159,13 @@ PY
 CMD_GATE_LOCK_FILE="$(lock_path "$GATES_DIR/cmd_complete_gate.lock")"
 exec 209>"$CMD_GATE_LOCK_FILE"
 if ! flock -n 209; then
-    echo "[gate] ${CMD_ID}: cmd_complete_gate already running (CMD_ID lock)"
-    exit 0
+    echo "[gate] ${CMD_ID}: cmd_complete_gate busy; terminal CLEAR/BLOCK is not established (CMD_ID lock)" >&2
+    # A coordinator lock collision is not a terminal gate result.  Returning
+    # success here made callers publish quality-log CLEAR/status/dashboard/ntfy
+    # while the lock holder was still evaluating the command.  EX_TEMPFAIL
+    # keeps wrappers fail-closed; they may retry only after observing a real
+    # terminal CLEAR/BLOCK record from the lock holder.
+    exit 75
 fi
 
 classify_missing_report_status() {

@@ -12,3 +12,13 @@ description: Shard two or more independent manifest items across the currently i
 5. A later run preserves successful shards and retries only failed, skipped, timed-out, or cancelled shards.
 
 The command supports placeholders `{item_id}`, `{item_path}`, `{worker_id}`, `{workdir}`, `{tmpdir}`, `{output_dir}`, and `{cache_dir}`. `N < 2`, duplicate IDs, missing items, duplicate assignment, or role/CLI/model policy fields are hard errors.
+
+Positive rule: with at least two independent items and at least two eligible
+workers, automatically shard with `N = min(eligible workers, max_workers)`.
+Never fix N by role, CLI, LLM, or model name, and never silently fall back to one
+worker when N is below two. Reason: fixed identity branches waste available
+capacity and make the same work graph behave differently across backends.
+
+A coordinator lock collision is non-terminal: retry or return an explicit BLOCK,
+and continue only after the same operation records terminal success or failure.
+Reason: `busy` proves ownership, not successful completion.

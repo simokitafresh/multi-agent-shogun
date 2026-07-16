@@ -53,6 +53,25 @@ SH
     ! grep -q 'dashboard_update.sh' "$CMD_COMPLETE_TEST_LOG"
 }
 
+@test "busy gate is non-terminal and wrapper publishes no completion side effects" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/busy.log"
+    cat > "$FIXTURE/scripts/cmd_complete_gate.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'cmd_complete_gate.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+echo 'cmd_complete_gate busy; terminal CLEAR/BLOCK is not established' >&2
+exit 75
+SH
+    chmod +x "$FIXTURE/scripts/cmd_complete_gate.sh"
+
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+
+    [ "$status" -eq 75 ]
+    [[ "$output" == *"FAILED cmd_complete_gate"* ]]
+    [ "$(grep -c '^cmd_complete_gate.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 1 ]
+    ! grep -Eq '^(cmd_quality_log|gate_yaml_status|dashboard_update|ntfy_cmd|inbox_archive)\.sh\|' "$CMD_COMPLETE_TEST_LOG"
+}
+
 @test "transient dashboard lock failure is retried before later steps" {
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/dashboard-retry.log"
     cat > "$FIXTURE/scripts/dashboard_update.sh" <<'SH'

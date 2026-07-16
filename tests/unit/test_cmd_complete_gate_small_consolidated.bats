@@ -62,7 +62,7 @@ EOF
 }
 
 content_test_cmd_complete_gate_locking() {
-    base64 -d <<'EOF'
+    base64 -d <<'EOF' | sed -e '0,/cmd_complete_gate exits 0 when same CMD_ID lock is already held/s//cmd_complete_gate returns retryable nonzero when same CMD_ID lock is already held/' -e '0,/\[ "\$status" -eq 0 \]/s//[ "$status" -eq 75 ]/' -e '0,/cmd_complete_gate already running (CMD_ID lock)/s//cmd_complete_gate busy; terminal CLEAR\/BLOCK is not established (CMD_ID lock)/'
 IyEvdXNyL2Jpbi9lbnYgYmF0cwoKbG9hZCAnLi4vaGVscGVycy9jbWRfZ2F0ZV9zY2FmZm9sZCcK
 CnNldHVwX2ZpbGUoKSB7CiAgICBjbWRfZ2F0ZV9zZXR1cF9maWxlCn0KCnNldHVwKCkgewogICAg
 Y21kX2dhdGVfc2NhZmZvbGQgImNtZF9nYXRlX2xvY2siCiAgICBleHBvcnQgU0NSSVBUX0RJUj0i
@@ -99,8 +99,8 @@ EOF
     run_embedded_test 'tests/unit/test_cmd_complete_gate_auto_failure_lesson.bats' 'PASS path auto_draft_lesson.sh call remains before GATE CLEAR/BLOCK decision' content_test_cmd_complete_gate_auto_failure_lesson
 }
 
-@test 'test_cmd_complete_gate_locking.bats :: cmd_complete_gate exits 0 when same CMD_ID lock is already held' {
-    run_embedded_test 'tests/unit/test_cmd_complete_gate_locking.bats' 'cmd_complete_gate exits 0 when same CMD_ID lock is already held' content_test_cmd_complete_gate_locking
+@test 'test_cmd_complete_gate_locking.bats :: cmd_complete_gate returns retryable nonzero when same CMD_ID lock is already held' {
+    run_embedded_test 'tests/unit/test_cmd_complete_gate_locking.bats' 'cmd_complete_gate returns retryable nonzero when same CMD_ID lock is already held' content_test_cmd_complete_gate_locking
 }
 
 @test 'test_cmd_complete_gate_locking.bats :: cmd_complete_gate still allows single already-cleared early exit' {

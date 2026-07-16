@@ -673,6 +673,16 @@ date "+%Y-%m-%d %H:%M"       # For dashboard.md
 date "+%Y-%m-%dT%H:%M:%S"    # For YAML (ISO 8601)
 ```
 
+## Coordinator Lock Is Non-Terminal
+
+**Positive rule:** A coordinator lock collision must return a retryable non-zero
+or an explicit BLOCK. A wrapper may advance only after the coordinator has
+recorded a terminal CLEAR or BLOCK for the same command.
+
+**Reason:** `already running` proves only that another process owns the lock; it
+does not prove success. Treating busy as exit 0 can publish quality-log CLEAR,
+status, dashboard, and notifications before gate evaluation has finished.
+
 ## `[RED]` Test Naming Rule
 
 未実装機能のテストケースには名前に `[RED]` を付与し、実装完了後に `[RED]` を除去する。SKIP=FAIL ポリシーのため、`[RED]` テストは skip ではなく fail させること。
