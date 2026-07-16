@@ -68,15 +68,6 @@ for test_file in "$TEST_DIR"/test_*.bats; do
 done
 
 # L2: テスト内のsource/bash解析（静的grep）
-grep() {
-    if command -v rg >/dev/null 2>&1; then
-        rg --no-messages --with-filename --only-matching -g 'test_*.bats' \
-            '(source|bash|\.) +[^ ]+\.sh' "$TEST_DIR" 2>/dev/null
-    else
-        command grep "$@"
-    fi
-}
-
 while IFS= read -r line; do
     test_file="${line%%:*}"
     match="${line#*:}"
