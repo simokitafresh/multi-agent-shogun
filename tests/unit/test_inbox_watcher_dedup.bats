@@ -853,3 +853,83 @@ echo "INPUT_GUARD_ALLOWED_CLAUDE_NBSP_PROMPT=yes"
     [ "$status" -eq 0 ]
     [[ "$output" == *"INPUT_GUARD_ALLOWED_CLAUDE_NBSP_PROMPT=yes"* ]]
 }
+
+@test "T-IWD-013: stale queued wake converges to zero unread without pasting old inbox count" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" saizo dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+get_effective_cli_type() { echo codex; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 0; }
+get_unread_info() { printf "0\tfalse\t-\t-\tfalse\tnone\n"; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+tmux() {
+    case "$1" in
+        display-message) echo idle ;;
+        set-buffer|paste-buffer|send-keys) echo "$1 $*" >> "$TMP_ROOT/tmux.log" ;;
+        set-option) : ;;
+        *) : ;;
+    esac
+}
+send_wakeup 1 false stale_fp normal true 2>"$TMP_ROOT/stderr.log"
+[ ! -s "$TMP_ROOT/tmux.log" ]
+grep -q "SEND-RESULT.*attempted" "$TMP_ROOT/stderr.log"
+grep -q "SEND-RESULT.*dedup.*current_count=0" "$TMP_ROOT/stderr.log"
+! grep -q "Wake-up sent" "$TMP_ROOT/stderr.log"
+echo "STALE_ZERO_CONVERGED=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"STALE_ZERO_CONVERGED=yes"* ]]
+}
+
+@test "T-IWD-014: queued wake generations coalesce to current count and log pasted versus dedup" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"
+touch "$TMP_ROOT/tmux.log"
+export SHOGUN_STATE_DIR="$TMP_ROOT/state"
+export INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" saizo dummy-pane
+unset INBOX_WATCHER_LIB_ONLY
+get_effective_cli_type() { echo codex; }
+agent_has_self_watch() { return 1; }
+check_agent_busy() { return 0; }
+get_unread_info() { printf "2\tfalse\tcurrent_fp\t-\tfalse\thigh\n"; }
+sleep() { :; }
+timeout() { shift; "$@"; }
+tmux() {
+    case "$1" in
+        display-message)
+            case "${*: -1}" in *pane_in_mode*) echo 0 ;; *) echo idle ;; esac
+            ;;
+        set-buffer|paste-buffer|send-keys) echo "$1 $*" >> "$TMP_ROOT/tmux.log" ;;
+        set-option) : ;;
+        *) : ;;
+    esac
+}
+send_wakeup 1 false stale_fp_1 normal true 2>"$TMP_ROOT/first.err"
+rm -f "$DEBOUNCE_FILE"
+send_wakeup 2 false stale_fp_2 normal true 2>"$TMP_ROOT/second.err"
+[ "$(grep -c "^paste-buffer " "$TMP_ROOT/tmux.log")" = "1" ]
+grep -q "inbox2" "$TMP_ROOT/tmux.log"
+! grep -q "inbox1" "$TMP_ROOT/tmux.log"
+grep -q "SEND-RESULT.*pasted.*current_count=2" "$TMP_ROOT/first.err"
+grep -q "SEND-RESULT.*dedup.*current_count=2" "$TMP_ROOT/second.err"
+! grep -q "Wake-up sent" "$TMP_ROOT/second.err"
+echo "CURRENT_GENERATION_COALESCED=yes"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CURRENT_GENERATION_COALESCED=yes"* ]]
+}

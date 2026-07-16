@@ -691,6 +691,7 @@ send_wakeup() {
     local has_task_assigned="${2:-false}"
     local current_fp="${3:-}"
     local priority="${4:-normal}"
+    local resnapshot_before_send="${5:-false}"
     ensure_current_pane_target || return 1
     if [ "${ASW_DISABLE_ESCALATION:-0}" = "1" ]; then
         echo "[$(date)] [SKIP] Escalation disabled for $AGENT_ID (nudge: inbox${unread_count})" >&2
@@ -921,14 +922,38 @@ send_wakeup() {
         fi
     fi
 
-    # Send nudge via paste-buffer + Enter (atomic lock)
+    # Send nudge via paste-buffer + Enter (atomic lock). The inbox may have
+    # changed while this wake waited behind a busy Codex turn or another sender.
+    # Re-snapshot under the send lock so stale generations coalesce on the
+    # current unread fingerprint/count instead of pasting old inboxN values.
     # Note: Pre-clear Enter was removed — idle flag guarantees empty prompt,
     # and Enter risked submitting partial input in race conditions.
     local lock
     lock="${STATE_DIR}/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
-    local send_rc=0
+    local send_rc=0 send_result_file send_result send_outcome sent_count sent_fp
+    send_result_file="${STATE_DIR}/inbox_watcher_send_result_${AGENT_ID}_${BASHPID}"
+    echo "[$(date)] [SEND-RESULT] attempted agent=$AGENT_ID observed_count=$unread_count fingerprint=$current_fp" >&2
     (
         flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; exit 1; }
+        if [ "$resnapshot_before_send" = "true" ]; then
+            local live_info live_count live_has_specials live_fp live_specials_b64 live_has_task live_priority
+            live_info=$(get_unread_info)
+            IFS=$'\t' read -r live_count live_has_specials live_fp live_specials_b64 live_has_task live_priority <<< "$live_info"
+            live_count="${live_count:-0}"
+            live_fp="${live_fp:--}"
+            live_has_task="${live_has_task:-false}"
+            if [ "$live_count" -eq 0 ] 2>/dev/null; then
+                printf 'coalesced-empty\t0\t-\n' > "$send_result_file"
+                exit 0
+            fi
+            unread_count="$live_count"
+            current_fp="$live_fp"
+            nudge="inbox${unread_count}"
+            if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$live_has_task" == "true" ]]; then
+                nudge="${nudge} — 前taskの情報は無効。queue/tasks/${AGENT_ID}.yaml を最初から読み直して作業開始せよ"
+            fi
+        fi
+
         local sent_token=""
         if [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
             local safe_fp sent_token sent_mtime sent_elapsed
@@ -939,6 +964,7 @@ send_wakeup() {
                 sent_elapsed=$(( EPOCHSECONDS - sent_mtime ))
                 if [ "$sent_elapsed" -lt "$DEBOUNCE_SEC" ]; then
                     echo "[$(date)] [SEND-DEDUPE] Skipping duplicate send for $AGENT_ID fingerprint $current_fp" >&2
+                    printf 'dedup\t%s\t%s\n' "$unread_count" "$current_fp" > "$send_result_file"
                     exit 0
                 fi
                 : > "$sent_token"
@@ -971,12 +997,37 @@ send_wakeup() {
             echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
             exit 1
         fi
+        printf 'pasted\t%s\t%s\n' "$unread_count" "$current_fp" > "$send_result_file"
     ) 200>"$lock" || send_rc=$?
     if [ "$send_rc" -eq 2 ]; then
         return 2
     elif [ "$send_rc" -ne 0 ]; then
+        rm -f "$send_result_file"
         return 1
     fi
+
+    send_result=$(cat "$send_result_file" 2>/dev/null || true)
+    rm -f "$send_result_file"
+    IFS=$'\t' read -r send_outcome sent_count sent_fp <<< "$send_result"
+    case "$send_outcome" in
+        dedup)
+            echo "[$(date)] [SEND-RESULT] dedup agent=$AGENT_ID current_count=$sent_count fingerprint=$sent_fp" >&2
+            return 0
+            ;;
+        coalesced-empty)
+            echo "[$(date)] [SEND-RESULT] dedup agent=$AGENT_ID current_count=0 fingerprint=- reason=no-unread" >&2
+            return 0
+            ;;
+        pasted)
+            unread_count="$sent_count"
+            current_fp="$sent_fp"
+            echo "[$(date)] [SEND-RESULT] pasted agent=$AGENT_ID current_count=$sent_count fingerprint=$sent_fp" >&2
+            ;;
+        *)
+            echo "[$(date)] WARNING: missing send result for $AGENT_ID" >&2
+            return 1
+            ;;
+    esac
 
     clear_deferred_nudge
 
@@ -1100,7 +1151,7 @@ process_unread() {
     # Send wake-up nudge for normal messages (fingerprint dedup)
     if [ "$normal_count" -gt 0 ] 2>/dev/null; then
         local wake_rc=0
-        send_wakeup "$normal_count" "$has_task_assigned" "$_current_fp" "$priority" || wake_rc=$?
+        send_wakeup "$normal_count" "$has_task_assigned" "$_current_fp" "$priority" true || wake_rc=$?
         if [ "$wake_rc" -eq 2 ]; then
             echo "[$(date)] [WAKE-DEFER] Deferred nudge for $AGENT_ID (busy gating)" >&2
         fi
