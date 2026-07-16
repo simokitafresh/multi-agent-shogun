@@ -88,6 +88,29 @@ teardown_file() {
     grep -Fq 'assigned_to: "hayate"' "$LEDGER"
 }
 
+@test "failed deploy rolls reservation back while successful deploy keeps assignment" {
+    fake="$TMP_ROOT/deploy.sh"
+    printf '#!/usr/bin/env bash\nexit 7\n' > "$fake"
+    chmod +x "$fake"
+    export SPEED_TRAINING_DEPLOY_SCRIPT="$fake"
+    first=$(cmd_next "$LEDGER")
+
+    run cmd_auto_deploy hayate "$LEDGER"
+    [ "$status" -eq 7 ]
+    awk -v first="$first" '
+        $0 ~ "script_path: \"" first "\"" { hit=1; next }
+        hit && /status:/ { if ($2 != "pending") exit 1; status_ok=1 }
+        hit && /assigned_to:/ { if ($2 != "\"\"") exit 1; owner_ok=1; exit }
+        END { exit !(status_ok && owner_ok) }
+    ' "$LEDGER"
+
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$fake"
+    run cmd_auto_deploy hayate "$LEDGER"
+    [ "$status" -eq 0 ]
+    grep -Fq 'status: assigned' "$LEDGER"
+    grep -Fq 'assigned_to: "hayate"' "$LEDGER"
+}
+
 @test "assignment preserves ledger indentation and concurrent reservations remain parseable" {
     compact="$TMP_ROOT/compact.yaml"
     cat > "$compact" <<'EOF'

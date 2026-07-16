@@ -616,6 +616,47 @@ cmd_mark_assigned() {
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "updated_at" "$(now_iso)"
 }
 
+rollback_assignment_unlocked() {
+    local ledger="$1" script_path="$2" ninja="$3" tmp
+    tmp=$(mktemp "${ledger}.XXXXXX")
+    awk -v script_path="$script_path" -v ninja="$ninja" '
+        /^[[:space:]]*-[[:space:]]+script_path:/ {
+            flush()
+            target = (index($0, "script_path: \"" script_path "\"") > 0 || index($0, "script_path: " script_path) > 0)
+            in_block = 1; block = $0 ORS; next
+        }
+        in_block {
+            block = block $0 ORS
+            if (target && /^[[:space:]]+status:[[:space:]]*assigned[[:space:]]*$/) status_assigned = 1
+            if (target && /^[[:space:]]+assigned_to:/ && (index($0, "\"" ninja "\"") > 0 || index($0, ": " ninja) > 0)) owner_match = 1
+            next
+        }
+        { print }
+        END { flush() }
+        function flush(  n,i,line,lines) {
+            if (block == "") return
+            if (target && status_assigned && owner_match) {
+                n = split(block, lines, ORS)
+                for (i = 1; i <= n; i++) {
+                    line = lines[i]
+                    if (line ~ /^[[:space:]]+status:[[:space:]]*assigned[[:space:]]*$/) sub(/status:[[:space:]]*assigned/, "status: pending", line)
+                    else if (line ~ /^[[:space:]]+assigned_to:/) sub(/assigned_to:.*/, "assigned_to: \"\"", line)
+                    if (i < n || line != "") print line
+                }
+            } else printf "%s", block
+            block = ""; in_block = target = status_assigned = owner_match = 0
+        }
+    ' "$ledger" > "$tmp"
+    publish_ledger_yaml "$tmp" "$ledger"
+}
+
+cmd_rollback_assignment() {
+    local script_path="${1:-}" ninja="${2:-}" ledger="${3:-$LEDGER}"
+    [ -n "$script_path" ] && [ -n "$ninja" ] || { usage >&2; return 2; }
+    [ -f "$ledger" ] || return 1
+    with_ledger_lock "$ledger" rollback_assignment_unlocked "$ledger" "$script_path" "$ninja"
+}
+
 cmd_record_after() {
     local script_path="${1:-}"
     local status="${2:-}"
@@ -746,12 +787,21 @@ cmd_auto_deploy() {
     tmp_task=$(mktemp "${STATE_DIR}/speed_training_${ninja}.XXXXXX.yaml")
     write_training_task "$tmp_task" "$cmd_id" "$script_path"
     append_selection_event PASS "target=${script_path} event=deploy ninja=${ninja}"
-    deploy_script="$SCRIPT_DIR/scripts/deploy_task.sh"
+    deploy_script="${SPEED_TRAINING_DEPLOY_SCRIPT:-$SCRIPT_DIR/scripts/deploy_task.sh}"
     if [ "${SPEED_TRAINING_DRY_RUN:-0}" = "1" ]; then
         printf 'DRY_RUN deploy_task --direct --yaml %s %s %s\n' "$tmp_task" "$ninja" "$cmd_id"
         return 0
     fi
-    bash "$deploy_script" --direct --yaml "$tmp_task" "$ninja" "$cmd_id"
+    if bash "$deploy_script" --direct --yaml "$tmp_task" "$ninja" "$cmd_id"; then
+        return 0
+    else
+        local deploy_status=$?
+        cmd_rollback_assignment "$script_path" "$ninja" "$ledger" || {
+            echo "BLOCK: deploy failed and reservation rollback failed: ${script_path}" >&2
+            return 2
+        }
+        return "$deploy_status"
+    fi
 }
 
 main() {
@@ -765,6 +815,7 @@ main() {
         status-count) cmd_status_count "$@" ;;
         set-global-status) cmd_set_global_status "$@" ;;
         mark-assigned) cmd_mark_assigned "$@" ;;
+        rollback-assignment) cmd_rollback_assignment "$@" ;;
         record-after) cmd_record_after "$@" ;;
         record-real) cmd_record_real "$@" ;;
         auto-deploy) cmd_auto_deploy "$@" ;;

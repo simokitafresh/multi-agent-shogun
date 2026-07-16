@@ -302,6 +302,29 @@ cat "$LOG"
     [[ "$output" == *"SPEED-TRAINING-AUTO-PAUSE"* ]]
 }
 
+@test "speed training auto-deploy never calls helper for in_progress or failed task" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT/idle-guard"; mkdir -p "$TMP_ROOT/queue/tasks" "$TMP_ROOT/tools"
+SCRIPT_DIR="$TMP_ROOT"
+SPEED_TRAINING_LEDGER="$TMP_ROOT/ledger.yaml"
+printf "#!/usr/bin/env bash\\necho called >> %s/helper.calls\\n" "$TMP_ROOT" > "$TMP_ROOT/tools/bash_speed_training.sh"
+chmod +x "$TMP_ROOT/tools/bash_speed_training.sh"
+log() { :; }
+yaml_field_get() { awk "/^[[:space:]]*status:/ {print \\$2; exit}" "$1"; }
+for state in in_progress failed; do
+  printf "task:\\n  status: %s\\n" "$state" > "$TMP_ROOT/queue/tasks/hayate.yaml"
+  ! _handle_speed_training_auto_deploy hayate 0
+done
+[ ! -e "$TMP_ROOT/helper.calls" ]
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "check_stall: same ninja x task re-notifies after 5-minute debounce" {
     run bash -lc '
 set -euo pipefail

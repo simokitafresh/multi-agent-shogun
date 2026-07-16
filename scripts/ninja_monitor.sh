@@ -1486,6 +1486,9 @@ can_send_clear_with_report_gate() {
     [ -f "$task_file" ] || return 0
 
     local task_status
+    # Reservation mutates the shared ledger before deploy_task runs.  Gate on
+    # the worker's primary task state first so a busy/failed worker can never
+    # create a false assignment that later requires reconciliation.
     task_status=$(yaml_field_get "$task_file" "status")
     # done以外: 報告ゲート対象外
     [ "$task_status" = "done" ] || return 0
