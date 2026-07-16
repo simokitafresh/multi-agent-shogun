@@ -952,18 +952,29 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/decision_write.sh
-  status: pending
+  status: completed
   before_ms: 24
-  after_ms: ''
+  after_ms: 22.5
   before_real_ms: 85
-  after_real_ms: ""
-  real_measurement_command: time bash scripts/decision_write.sh bench-tmp cmd_bench
-    Title Decision Rationale Alt
-  test_result: functional 3/3 PASS (D001-D003順序・フィールド省略・空CMD_ID)
-  commit: cacd9967b00b465ef0c40ede27450dd1efdb1739
+  after_real_ms: 22.5
+  real_measurement_command: "fixed sandbox symlink: bash <fixed>/current/scripts/decision_write.sh bench cmd_bench Title Decision Rationale Alt; warmup 1/arm; alternating A/B 10 samples/arm"
+  test_result: "PASS: bash -n; functional 3/3 (D001-D003 order, optional fields, empty CMD_ID); FAIL=0 SKIP=0; safety lines removed=0"
+  commit: 0a7b645ea475e7eb1f7b68b8bfcd3b21fa8871d6
   assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  updated_at: "2026-07-17T06:39:00+09:00"
   iteration: 1
+  last_good_commit: 854816cdd4ac8b3370fbc93ce3155cbc39c60d7c
+  candidate_commit: 0a7b645ea475e7eb1f7b68b8bfcd3b21fa8871d6
+  samples_per_arm: 10
+  last_good_p50_ms: 24.5
+  last_good_p95_ms: 30
+  candidate_p50_ms: 22.5
+  candidate_p95_ms: 28
+  ab_order: alternating
+  warmup_each: 1
+  fail_count: 0
+  skip_count: 0
+  hook_gate_result: CLEAR
 - script_path: scripts/deploy_task.sh
   status: pending
   before_ms: 47
