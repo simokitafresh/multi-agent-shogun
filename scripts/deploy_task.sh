@@ -1336,6 +1336,53 @@ resolve_cmd_source_path() {
     return 1
 }
 
+# LK-A22 Level5: depends_onをcmd単位の停止条件として扱わず、配備判断に必要な
+# 現cmdのACと依存先の状態・目的をその場で供給する。依存要否そのものは自然言語
+# 判断を含むためBLOCKせず、並列可能なACを家老が切り出せる一次情報を表示する。
+emit_depends_on_ac_context() {
+    local stk="$1" cmd_id="$2" depends_on="$3"
+    python3 - "$stk" "$cmd_id" "$depends_on" >&2 <<'PY'
+import re
+import sys
+
+import yaml
+
+path, cmd_id, depends_on = sys.argv[1:4]
+with open(path, encoding="utf-8") as fh:
+    doc = yaml.safe_load(fh) or {}
+commands = doc.get("commands") if isinstance(doc, dict) else {}
+commands = commands if isinstance(commands, dict) else {}
+current = commands.get(cmd_id) if isinstance(commands.get(cmd_id), dict) else {}
+
+dep_ids = re.findall(r"cmd_[0-9A-Za-z_-]+", depends_on)
+if not dep_ids:
+    return_code = 0
+else:
+    print(f"WARN: depends_on={depends_on} 検出。AC単位で依存要否を判定し、並列可能なACは先に配備せよ。(LK-A22 Level5)")
+    criteria = current.get("acceptance_criteria") or []
+    if isinstance(criteria, dict):
+        criteria = [f"{key}: {value}" for key, value in criteria.items()]
+    print("  current_acceptance_criteria:")
+    if isinstance(criteria, list) and criteria:
+        for index, item in enumerate(criteria, 1):
+            if isinstance(item, dict):
+                label = item.get("id") or f"AC{index}"
+                text = item.get("description") or item.get("check") or item
+            else:
+                label, text = f"AC{index}", item
+            print(f"    - {label}: {text}")
+    else:
+        print("    - (ACなし。cmd正本を確認せよ)")
+    print("  dependency_context:")
+    for dep_id in dep_ids:
+        dep = commands.get(dep_id)
+        if isinstance(dep, dict):
+            print(f"    - {dep_id}: status={dep.get('status', 'unknown')} purpose={dep.get('purpose', '(purposeなし)')}")
+        else:
+            print(f"    - {dep_id}: cmd正本内に未検出（archive/reopenedを確認せよ）")
+PY
+}
+
 # ─── cmd_id→task YAML自動解決（なぜなぜL5根因対策: 家老の手動ステップ排除） ───
 # cmd_id指定時、shogun_to_karo.yamlからメタデータを取得しtask YAMLの中核フィールドを自動設定。
 # これにより「task YAML更新 → deploy_task.sh」の2ステップが原子的操作になる。
@@ -1413,9 +1460,9 @@ resolve_cmd_to_task() {
     unset _rv _rv_k _rv_v
     [ -z "$task_type" ] && task_type="impl"
 
-    # LK054: depends_on検出時にAC単位依存分析を促すWARN
-    if [ -n "$_depends_on" ]; then
-        echo "WARN: depends_on=${_depends_on} 検出。全ACが依存先に本当に依存するか？並列可能なACはないか？(LK054)" >&2
+    # LK-A22 Level5: 実依存がある時だけACと依存先コンテキストを自動供給する。
+    if [[ "$_depends_on" =~ cmd_[0-9A-Za-z_-]+ ]]; then
+        emit_depends_on_ac_context "$stk" "$cmd_id" "$_depends_on"
     fi
 
     local task_id="${cmd_id}_${task_type}"

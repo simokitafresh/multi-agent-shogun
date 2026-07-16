@@ -546,6 +546,7 @@ setup_file() {
     {
         extract_function reset_stale_fields
         extract_function resolve_cmd_source_path
+        extract_function emit_depends_on_ac_context
         extract_function resolve_cmd_to_task
         extract_function inject_cmd_time_contract
         extract_function inject_cmd_assumptions
@@ -583,6 +584,42 @@ with open(task_file, "w", encoding="utf-8") as f:
     f.write(raw)
 PY
     resolve_fixture_task "$NESTED_RESOLVED_FIXTURE_ROOT" "cmd_9999" "tobisaru"
+}
+
+@test "LK-A22 Level5: depends_on deploy displays current ACs and dependency context" {
+    local root
+    root="$(mktemp -d "$BATS_TMPDIR/depends_context.XXXXXX")"
+    prepare_source_fixture "$root"
+    python3 - "$root/queue/shogun_to_karo.yaml" <<'PY'
+import sys, yaml
+path = sys.argv[1]
+data = yaml.safe_load(open(path))
+data['commands']['cmd_9998'] = {
+    'id': 'cmd_9998', 'status': 'in_progress', 'purpose': '依存先の準備を完了する'
+}
+data['commands']['cmd_9999']['depends_on'] = 'cmd_9998'
+with open(path, 'w') as f:
+    yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+PY
+
+    run resolve_fixture_task "$root" "cmd_9999" "tobisaru"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"LK-A22 Level5"* ]]
+    [[ "$output" == *"AC1: AC1: テスト"* ]]
+    [[ "$output" == *"cmd_9998: status=in_progress purpose=依存先の準備を完了する"* ]]
+    rm -rf "$root"
+}
+
+@test "LK-A22 Level5: depends_on none emits no dependency warning" {
+    local root
+    root="$(mktemp -d "$BATS_TMPDIR/depends_none.XXXXXX")"
+    prepare_source_fixture "$root"
+    sed -i "/    timestamp:/i\\    depends_on: none" "$root/queue/shogun_to_karo.yaml"
+
+    run resolve_fixture_task "$root" "cmd_9999" "tobisaru"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"LK-A22 Level5"* ]]
+    rm -rf "$root"
 }
 
 teardown_file() {
