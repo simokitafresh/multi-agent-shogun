@@ -122,10 +122,9 @@ if RG_AVAILABLE:
     # Launch all subprocesses concurrently
     RG_SEARCH_ARGS = ["rg", "-n", "-o", combined_pattern]
     try:
-        p_targets = subprocess.Popen(
-            ["rg", "--files", "context", "docs/research", "skills"],
-            text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-        )
+        p_ctx    = subprocess.Popen(["rg", "--files", "context",      "-g", "*.md"],      text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        p_docs   = subprocess.Popen(["rg", "--files", "docs/research", "-g", "*.md"],     text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        p_skills = subprocess.Popen(["rg", "--files", "skills",        "-g", "SKILL.md"], text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         p_srch_ctx    = subprocess.Popen(RG_SEARCH_ARGS + ["context"],           text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         p_srch_docs   = subprocess.Popen(RG_SEARCH_ARGS + ["docs/research"],    text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         p_srch_skills = subprocess.Popen(RG_SEARCH_ARGS + ["skills"],           text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
@@ -133,14 +132,13 @@ if RG_AVAILABLE:
         p_srch_mem    = subprocess.Popen(RG_SEARCH_ARGS + ["--no-ignore", "memory"],             text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         p_srch_inst   = subprocess.Popen(RG_SEARCH_ARGS + ["--no-ignore", "instructions"],       text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
     except OSError:
-        p_targets = p_srch_ctx = p_srch_docs = p_srch_skills = None
+        p_ctx = p_docs = p_skills = p_srch_ctx = p_srch_docs = p_srch_skills = None
         p_srch_semidx = p_srch_mem = p_srch_inst = None
 
     # Gather rg_files results
-    target_files = _collect(p_targets)
-    out_ctx    = [f for f in target_files if f.startswith("context/") and f.endswith(".md")]
-    out_docs   = [f for f in target_files if f.startswith("docs/research/") and f.endswith(".md")]
-    out_skills = [f for f in target_files if f.startswith("skills/") and f.endswith("/SKILL.md")]
+    out_ctx    = _collect(p_ctx)
+    out_docs   = _collect(p_docs)
+    out_skills = _collect(p_skills)
     targets = sorted(dict.fromkeys(out_ctx + out_docs + out_skills))
 
     # Gather search results (merge from 6 parallel searches)
