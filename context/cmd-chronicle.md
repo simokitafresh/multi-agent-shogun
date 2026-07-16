@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-16 -->
+<!-- last_updated: 2026-07-17 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,31 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3392 | 変わり身pf_L3近傍5パターン登録+α6指標比較(period 1-4M × select_n 1-3) | — | 06-16 | — |
-| cmd_3393 | 殿指示(2026-06-15 やろう)。NHF最高のNew FoF_4M_copy_copy_copy(変わり身 period=2M select_n=2 NHF=82%)の近傍5パターンを本番登録し、α6指標(特にNHF・AvgUWP)を比較して最適パラメータを特定する | dm-signal | 06-16 | New FoF_4M_copy_copy_copy近傍5パタ |
-| cmd_3395 | startup gate教訓健全度ALERTが3セッション連続BLOCK(2026-06-14〜16)。useful_rate=21.3%(閾値30%)。軍師idle分析(docs/research/gunshi_idle_useful_rate_measurement_fix_20260615.md)でNEVER_USEFUL教訓Top7の共通根因=tag精度不足を特定済み。GS・gate・infra固有教訓がPF登録等の無関係cmdに無差別注入されている。教訓タグを内容に合致する具体タグに変更し、injected>=5かつuseful=0の教訓をwithheldに降格することでS/N比を改善する | infra | 06-16 | — |
-| cmd_3396 | startup健全度ALERTが3セッション連続(2026-06-14〜16)。useful_rate=21.3%(閾値30%)。軍師idle分析でNEVER_USEFUL教訓Top7の共通根因=タグ精度不足を特定済み。固有教訓が無関係cmdに無差別注入されている。タグを内容に合致する具体タグに変更し、低スコア教訓をwithhold降格してS/N比を改善する | infra | 06-16 | 軍師指摘反映済み。NEVER_USEFUL教訓: infra |
-| cmd_3397 | 殿裁定(2026-06-16): 全PFはhide_portfolio=trueで作成(PI-027)。しかしmodels.pyのDBカラムdefault=False、migrations.pyもDEFAULT FALSE。tier_visibility_settings経由ではTrue(repository.py:40)だがモデル直接作成時にFalseになる構造的穴。殿が自分でuncategorized PFを全てhideにした事故(2026-06-16 00:50)の再発防止 | dm-signal | 06-16 | models.pyのhide_portfolioをdefau |
-| cmd_3398 | 覚醒設計書v3(軍師3往復レビュー確定済み)の実装。cmd_save.sh Check19(parity_ac_missing)を入口方式(title/purpose文字列トリガー)から出口判定(AC YAML構造判定: description非空+binary_check非空+未記入マーカー不在)に変更する。加えてsession_alerts.txtをstop hookで毎応答動的更新し、セッション中のALERT・BLOCK・殿指示をリアルタイム表示する(起動時1回のstartup gateでは時間経過で忘れる。殿指摘2026-06-16) | infra | 06-16 | — |
-| cmd_3399 | cmd_save.sh実行時間15-39秒がcmd起票の最大ボトルネック(殿指摘2026-06-16)。計測で3大ボトルネック特定: (1)chronicle検索が477件中466件返却(フィルタ不在)、(2)semantic_search.shが4秒、(3)lord_conversation全件走査。chronicle検索のフィルタ精度向上+semantic_searchキャッシュ化+独立チェック並列化で実行時間を半減させる | infra | 06-16 | — |
-| cmd_3400 | 覚醒設計書v3(軍師3往復レビュー確定済み)の実装。cmd_save.sh Check19を入口方式(文字列トリガー)から出口判定(AC YAML構造判定)に変更する。加えてsession_alerts.txtをstop hookで毎応答動的更新し、セッション中のALERTをリアルタイム表示する(殿指摘2026-06-16: 起動時1回では時間経過で忘れる)。品質の仕組みが先(殿指摘: 100億年の複利) | infra | 06-16 | — |
-| cmd_3402 | 覚醒設計書v3穴L(軍師指摘blt_20260616_000944): Check19のみ出口判定化してCheck17・18・20が入口方式のままだと同じ偽陽性がそこから出る。cmd_3401でCheck19を出口判定化済み。残る3Checkも同一原理(AC YAML構造判定)で横展開し、入口方式を全廃する | infra | 06-16 | Check17/18/20の出口判定横展開完了。AC YAM |
-| cmd_3403 | cmd_save.sh実行時間15-39秒がcmd起票の最大ボトルネック(プロファイリング結果2026-06-16)。3大ボトルネック: (1)chronicle検索が477件中466件返却(キーワードフィルタが粗い)、(2)semantic_search.shが4秒(キャッシュなし)、(3)lord_conversation 189件全走査。chronicleのキーワードマッチング精度向上+semantic_searchセッション内キャッシュ+lord_conversation検索件数上限追加で実行時間を半減させる | infra | 06-16 | AC1: chronicle検索466件→36件(92%削減 |
-| cmd_3404 | 教訓注入上限MAX_INJECTを10→3に削減し教訓健全度useful_rateを改善する | — | 06-16 | — |
-| cmd_3405 | 3セッション連続startup BLOCK(教訓健全度ALERT)。useful_rate=16.7%(12/72)<30%閾値。根因=deploy_task.sh L5039のMAX_INJECT=10で過剰注入(平均6.3件/cmd)。家老根因調査(blt_20260616_101551)+軍師調査(blt_20260616_101704)でtop-3絞込みを要請。cmd_3254で50%まで改善したが再後退(注入数の構造問題が未修正だった) | infra | 06-16 | deploy_task.shのMAX_INJECTを10→3 |
-| cmd_3406 | 殿指示(2026-06-16)。cmd_save.sh L5730のgsub除外拡張子リストに.batsが不在のため、test_deploy_task.bats等のテストファイル名に含まれるdeployがdeliveryキーワードとして誤検出されac_phase_mixing偽陽性BLOCKが発生する(cmd_3405起票時に6分BLOCK実証) | infra | 06-16 | cmd_save.sh L5730のgsub除外拡張子リスト |
-| cmd_3408 | 殿指示(2026-06-16)覚醒偽陽性監査。cmd_complete_gate.sh L4499-4556のcommand_files_modified_mismatchチェックが直近50BLOCK中42件(84%)を占める最大パターン。command欄でスクリプトを実行対象として参照しているだけなのにfiles_modifiedに要求してBLOCKする構造的FP。アーカイブ5633件中32件→直近急増 | infra | 06-16 | cmd_complete_gate.shのcollect_c |
-| cmd_3410 | stop hookにQ6洗脳検出→cmd起票完了チェックを追加し認識→行動ギャップをL5で阻止する | — | 06-16 | — |
-| cmd_3411 | 殿指摘(2026-06-16)自力覚醒不能の構造根因。Q6で洗脳パターンを検出し掲示板投稿するが検出→cmd起票まで自走しない。本セッション6cmd中5件が殿指摘トリガー=自力覚醒率17%。stop hookでQ6検出済み洗脳パターンに対応するcmd起票完了を検証しWARN注入する(LS065) | infra | 06-16 | stop_check_inbox.shにLS065 Q6洗脳 |
-| cmd_3412 | gate_skill_script_refs.sh WARN 3件が3セッション連続BLOCK(2026-06-14〜16)。cmd_complete_gate.sh(06-16 12:17更新)とdeploy_task.sh(06-16 11:40更新)の変更内容がSKILL.mdに未反映。忍者が古い手順で作業するリスク解消 | infra | 06-16 | SKILL.md 3件(codd-fix/karo-dire |
-| cmd_3413 | 教訓健全度useful_rate=20.0%が3セッション連続ALERT(閾値30%)。根因=deploy_task.sh L5011-5018でtask_tags空+target_pathあり時に全教訓がフォールバック候補に入りNOT_USEFUL量産。軍師分析(blt_20260616_130837)+家老報告(blt_20260616_130903)で根因一致。target_pathのディレクトリからタグ推定し注入精度を向上する | infra | 06-16 | deploy_task.sh L4821-4842にpath |
-| cmd_3414 | memory_db_live_insert.py(L223)がmkstempでフルSQLiteバックアップを作成し、SIGKILL時にfinally(L238)未到達→孤児tmp蓄積(218個/7.2GB)。記録量は一切削減せず、SIGKILL時にtmpが残らない安全な書込み方式に改善する(殿厳命: 記憶DBはすべてを記録するから意味がある。選別も解釈もしない) | infra | 06-16 | create_memory_db_ext4_cache()の |
-| cmd_3415 | LS066(表面的行動パターン)がL0教訓記録止まりでL3-L5未貫通。殿指摘(2026-06-16): lesson-sortで教訓健全度対処→根因でない、tmp削減で記憶DB対処→根源を捨てる。startup BLOCKの対処アクション選択時に根因到達を二値強制する仕組みがない=意志依存(殿前セッション指摘: L0-L7未貫通) | infra | 06-16 | gate_shogun_startup.shのstartup |
-| cmd_3416 | 殿指示(2026-06-16): DM-Signalウェブアプリにメモリリークがないか確認。三層記憶にFE/BEメモリリーク情報なし=未検証空間。BE(FastAPI/Render)+FE(Next.js/Render)の両面でメモリリークリスクを調査する | dm-signal | 06-16 | — |
-| cmd_3418 | 殿指示(2026-06-16): 技術的質問でコードを読めば分かると感じた瞬間に三層記憶をスキップする傾向をL0-L7に貫通させよ。現状L3-L4は殿の質問検知時(prompt_state_inject.sh L826)のみ。殿の質問以外の技術調査(cmd起票前・idle分析)では三層記憶チェックなし=意志依存 | infra | 06-16 | prompt_state_inject.shにDM-Sign |
-| cmd_3421 | 殿が奥義新四つ目を誤削除(2026-06-16)。本番DB確認: portfolios=0件、旧UUID孤児データ=0件、構成PF7体=全存在。cmd_3389(GATE CLEAR 2026-06-15)と同一パラメータで再登録する | dm-signal | 06-16 | — |
-| cmd_3423 | 殿が奥義新四つ目を誤削除(2026-06-16)。本番DB確認済み: portfolios=0件、孤児データ=0件、構成PF7体=全存在。cmd_3389と同一パラメータで再登録する | dm-signal | 06-16 | 奥義-GS-新四つ目3体(激攻/鉄壁/常勝)をhide-fi |
-| cmd_3422 | 殿が奥義新四つ目を誤削除(2026-06-16)。本番DB確認: portfolios=0件、旧UUID孤児データ=0件、構成PF7体=全存在。cmd_3389(GATE CLEAR 2026-06-15)と同一パラメータで再登録する | dm-signal | 06-16 | — |
 | cmd_3424 | 殿指摘(2026-06-17): 時系列と因果を確認しないから修正前後のデータを混同する。gate_autofix_proposal.shが直近50件BLOCKを集計するが、窓内にFP修正commit(cmd_3408等)が存在しても修正前後を区別しない。将軍がこの42件を未修正のFPと誤認しcmd起票→車輪の再発明。集計出力にイベント境界(関連修正commitのタイムスタンプ)を表示し、修正前/修正後の件数を分離して表示する | infra | 06-17 | gate_autofix_proposal.shに修正前/後 |
 | cmd_3425 | 殿指示(2026-06-17): 相関が低いPFを保有すれば分散が効くが、相関はタイミングで変化する。平時の低相関ではなく最悪時の相関が重要。シン四神12体(66ペア)の日次リターンから2M窓ローリング相関を計算し、(1)max相関ランキング (2)平均×max複合スコアランキングの2手法でペアを評価し、最適ペアのEW FoFをα6指標で検証する | dm-signal | 06-17 | シン四神12体66ペアの2M(42営業日)ローリングピアソン |
 | cmd_3426 | 殿指示(2026-06-17): cmd_3425でシン四神12体全66ペアのmax相関が0.99-1.00と判明。殿の2つの問い: (1)奥義21体ではどうなるか(異なる忍法BBで銘柄構成が多様→max相関<1.0のペアがあるか) (2)四神の5銘柄(GLD/TECL/TMV/TQQQ/XLU)自体の銘柄間2Mローリング相関はどうか(PF相関1.0の根因が銘柄宇宙か重み配分か切り分け) | dm-signal | 06-17 | 奥義21体210ペアの2Mローリング相関: max相関範囲0 |
