@@ -218,7 +218,8 @@ check_stale_lessons() {
     for project_dir in "$SCRIPT_DIR"/projects/*/; do
         [ -d "$project_dir" ] || continue
         local project_id
-        project_id=$(basename "$project_dir")
+        project_id="${project_dir%/}"
+        project_id="${project_id##*/}"
 
         # config/projects.yamlからproject pathを取得
         local project_path=""
