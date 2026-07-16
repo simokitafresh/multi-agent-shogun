@@ -460,6 +460,32 @@ EOF
     grep -c '^- generated_at:' "$LOOP_LEDGER_OUT" | grep -q '^2$'
 }
 
+@test "loop_ledger_update serializes concurrent snapshot read compare append and atomic publish" {
+    export LOOP_LEDGER_STOCK_INCREASE_GRACE_HOURS=24
+    local iterations=16
+    local parse_failures=0
+    local lost_snapshots=0
+    local false_alerts=0
+
+    for i in $(seq 1 "$iterations"); do
+        local out="$TEST_TMPDIR/logs/concurrent-$i.yaml"
+        LOOP_LEDGER_OUT="$out" LOOP_LEDGER_NOW="2026-06-20T00:00:00Z" bash "$SRC_SCRIPT" >"$TEST_TMPDIR/writer-a-$i.log" 2>&1 &
+        local p1=$!
+        LOOP_LEDGER_OUT="$out" LOOP_LEDGER_NOW="2026-06-20T00:00:01Z" bash "$SRC_SCRIPT" >"$TEST_TMPDIR/writer-b-$i.log" 2>&1 &
+        local p2=$!
+        wait "$p1"
+        wait "$p2"
+
+        python3 -c 'import sys, yaml; yaml.safe_load(open(sys.argv[1]))' "$out" || parse_failures=$((parse_failures + 1))
+        [ "$(grep -c '^- generated_at:' "$out")" -eq 2 ] || lost_snapshots=$((lost_snapshots + 1))
+        [ "$(grep -c '^alerts: \[\]$' "$out")" -eq 1 ] || false_alerts=$((false_alerts + 1))
+    done
+
+    [ "$parse_failures" -eq 0 ]
+    [ "$lost_snapshots" -eq 0 ]
+    [ "$false_alerts" -eq 0 ]
+}
+
 @test "loop_ledger_update handles missing source files gracefully" {
     run bash "$SRC_SCRIPT"
     [ "$status" -eq 0 ]
