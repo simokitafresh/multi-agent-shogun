@@ -15,6 +15,16 @@ setup() {
   run python3 -c "import json; r=json.load(open('$T/queue/gates/cmd_3931/sg7_bundle.json'))['review']; assert r['cmd_spec_summary']=={'acceptance_criteria_count':2,'scope':['unrelated-runtime'],'project':'infra'}; assert r['dashboard_line']=='- **cmd_3931**: 完了。SG7 bundle SSOT complete'; assert 'karo_attention' not in r"
   [ "$status" -eq 0 ]
 }
+@test "target_path is the scope boundary when optional not_in_scope is absent" {
+  python3 - "$T/queue/shogun_to_karo.yaml" <<'PY'
+from pathlib import Path
+p = Path(__import__('sys').argv[1])
+p.write_text(p.read_text().replace('    not_in_scope: [unrelated-runtime]\n', '    target_path: scripts/review_approval.sh\n'))
+PY
+  run python3 "$T/scripts/review_bundle.py" --root "$T" generate --cmd cmd_3931 --verdict APPROVE --report queue/reports/hayate_report_cmd_3931.yaml
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"scope": "scripts/review_approval.sh"'* ]]
+}
 @test "notify blocks before approval, succeeds after marker, and blocks stale report" {
   python3 "$T/scripts/review_bundle.py" --root "$T" generate --cmd cmd_3931 --verdict APPROVE --report queue/reports/hayate_report_cmd_3931.yaml >/dev/null
   run python3 "$T/scripts/review_bundle.py" --root "$T" notify --cmd cmd_3931 --bundle queue/gates/cmd_3931/sg7_bundle.json

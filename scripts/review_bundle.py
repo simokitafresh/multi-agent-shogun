@@ -47,6 +47,11 @@ def summary(command):
     ac = command.get("acceptance_criteria")
     if not isinstance(ac, (list, dict)) or not ac: raise ValueError("cmd spec acceptance_criteria is missing")
     scope = command.get("not_in_scope")
+    if scope in (None, "", [], {}): scope = command.get("scope")
+    # Current numbered commands use target_path as their executable scope
+    # boundary.  Requiring the optional not_in_scope prose here made valid
+    # commands fail only after implementation, at SG7 generation time.
+    if scope in (None, "", [], {}): scope = command.get("target_path")
     if scope in (None, "", [], {}): scope = command.get("command")
     if scope in (None, "", [], {}): raise ValueError("cmd spec scope is missing")
     project = str(command.get("project") or "").strip()

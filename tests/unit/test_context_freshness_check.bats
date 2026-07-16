@@ -203,6 +203,27 @@ STKYAML
     [[ "$output" == *"source commits"* ]]
 }
 
+@test "GA-276 dashboard ignores unpushed local commit while cmd mode detects it" {
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+    _create_shogun_to_karo "cmd_901" "dm-signal"
+
+    # Shared completed boundary.  The next commit represents a ninja's local
+    # implementation before cmd_complete_gate/context reflux.
+    git -C "$TEST_TMPDIR" update-ref refs/remotes/origin/main HEAD
+    _create_source_commit "src/dm_signal.py" "cmd_901: local implementation"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"source commits"* ]]
+    [[ "$output" != *"cmd_901: local implementation"* ]]
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_901
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT:"* ]]
+    [[ "$output" == *"cmd_901: local implementation"* ]]
+}
+
 @test "root fallback ignores context-only commits" {
     _create_context "context/dm-signal.md" "$TODAY"
     _create_context "context/dm-signal-core.md" "$TODAY"

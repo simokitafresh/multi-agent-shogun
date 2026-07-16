@@ -585,6 +585,47 @@ def _run_git_with_bounded_retry(cmd: list[str], label: str) -> subprocess.Comple
     return None
 
 
+_SOURCE_TIP_CACHE: dict[str, str] = {}
+
+
+def source_tip_ref(repo_path: str) -> str:
+    """Return the revision boundary appropriate for the current check mode.
+
+    The always-on dashboard/gate must only inspect the shared completed
+    boundary.  Looking at local HEAD there observes a ninja's commit before
+    cmd_complete_gate has had the chance to require context reflux and emits a
+    false-positive GA alert (GA-276).  Per-command modes deliberately keep
+    HEAD so the completion gate still sees and blocks an unreflected own
+    commit.
+    """
+    cached = _SOURCE_TIP_CACHE.get(repo_path)
+    if cached:
+        return cached
+
+    candidates: list[str] = []
+    override = os.environ.get("CFC_DASHBOARD_SOURCE_TIP", "").strip()
+    if mode == "--dashboard-warnings":
+        candidates = [override] if override else ["origin/main", "origin/master"]
+
+    for candidate in candidates:
+        try:
+            result = subprocess.run(
+                ["git", "-C", repo_path, "rev-parse", "--verify", "--quiet", candidate],
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=min(_GIT_TIMEOUT, 5),
+            )
+        except Exception:
+            continue
+        if result.returncode == 0:
+            _SOURCE_TIP_CACHE[repo_path] = candidate
+            return candidate
+
+    _SOURCE_TIP_CACHE[repo_path] = "HEAD"
+    return "HEAD"
+
+
 def source_repo_for_context(project_id: str, rel_path: str) -> tuple[str, list[str], bool]:
     project_path = PROJECT_PATHS.get(project_id, "")
     base = os.path.basename(rel_path)
@@ -623,10 +664,12 @@ def _root_fallback_commit_count_since(
         "--pretty=format:__CFC_COMMIT__%x00%h%x00%s",
         "--name-only",
     ]
+    tip_ref = source_tip_ref(root)
     if source_commit:
-        cmd.insert(4, f"{source_commit}..HEAD")
+        cmd.insert(4, f"{source_commit}..{tip_ref}")
     else:
-        cmd.insert(4, f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00")
+        cmd.insert(4, tip_ref)
+        cmd.insert(5, f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00")
 
     result = _run_git_with_bounded_retry(cmd, f"source_commit_count_since: {root}")
     if result is None:
@@ -732,7 +775,8 @@ def source_commit_summary_since(
     git_pathspecs = [*plain_pathspecs, *cited_dirs]
     cited_files = load_cited_paths(abs_path, cited_dirs) if cited_dirs else set()
 
-    revision = f"{source_commit}..HEAD" if source_commit else None
+    tip_ref = source_tip_ref(repo_path)
+    revision = f"{source_commit}..{tip_ref}" if source_commit else tip_ref
     cmd = [
         "git",
         "-C",
@@ -741,9 +785,8 @@ def source_commit_summary_since(
         "--pretty=format:__CFC_C__%x00%h%x00%s",
         "--name-only",
     ]
-    if revision:
-        cmd.append(revision)
-    else:
+    cmd.append(revision)
+    if not source_commit:
         cmd.append(f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00")
     if git_pathspecs:
         cmd.extend(["--", *git_pathspecs])
@@ -801,7 +844,7 @@ def _run_grouped_git_log(
     ]
     if revision:
         cmd.append(revision)
-    elif since_date is not None:
+    if since_date is not None:
         cmd.append(f"--since={(since_date + timedelta(days=1)).isoformat()} 00:00:00")
     if pathspecs:
         cmd.extend(["--", *pathspecs])
@@ -844,7 +887,8 @@ def _compute_direct_group(
     project直下context)は元のsource_commit_summary_sinceと同じくフィルタ無しで
     全コミットを対象にする。"""
     repo_path, source_commit, since_date = key
-    revision = f"{source_commit}..HEAD" if source_commit else None
+    tip_ref = source_tip_ref(repo_path)
+    revision = f"{source_commit}..{tip_ref}" if source_commit else tip_ref
     has_unfiltered_member = any(
         not plain_pathspecs and not cited_dirs
         for _pid, _rp, plain_pathspecs, cited_dirs, _cf in members
