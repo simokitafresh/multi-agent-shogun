@@ -44,7 +44,7 @@ import sys
 last_text = ""
 last_stop = ""
 with open(sys.argv[1], encoding="utf-8") as fh:
-    for raw in fh:
+    for raw in reversed(fh.readlines()):
         try:
             obj = json.loads(raw)
         except json.JSONDecodeError:
@@ -61,6 +61,7 @@ with open(sys.argv[1], encoding="utf-8") as fh:
         if texts:
             last_text = "\n".join(texts)
             last_stop = message.get("stop_reason") or obj.get("stop_reason") or ""
+            break
 if last_text:
     print(last_text)
     if last_stop:
