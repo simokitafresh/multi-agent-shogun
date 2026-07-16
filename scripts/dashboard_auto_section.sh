@@ -158,7 +158,8 @@ TMP_SKILL_METRICS="$_TMP_DIR/skill_metrics"
 TMP_TITLE_NEEDS="$_TMP_DIR/title_needs"
 trap 'rm -rf "$_TMP_DIR"' EXIT
 
-read -r NOW TODAY < <(TZ=Asia/Tokyo date '+%H:%M %Y-%m-%d')
+NOW=$(TZ=Asia/Tokyo date '+%H:%M')
+TODAY=$(TZ=Asia/Tokyo date '+%Y-%m-%d')
 
 # shellcheck source=/dev/null
 source "$(dirname "$SCRIPT_DIR")/scripts/lib/agent_config.sh"
