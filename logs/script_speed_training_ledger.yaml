@@ -315,7 +315,7 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/backfill_task_type.sh
-  status: pending
+  status: assigned
   before_ms: 16
   after_ms: ''
   before_real_ms: 180
@@ -324,8 +324,8 @@ entries:
   test_result: bash -n scripts/backfill_task_type.sh && shellcheck -x scripts/backfill_task_type.sh
     && bash scripts/backfill_task_type.sh --dry-run PASS SKIP=0
   commit: c0fe9d964
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T05:06:01"
   iteration: 1
 - script_path: scripts/build_instructions.sh
   status: completed
@@ -608,19 +608,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/chronicle_metrics.sh
-  status: pending
+  status: saturated
   before_ms: 25
   after_ms: ''
-  before_real_ms: 230
-  after_real_ms: ""
-  real_measurement_command: for i in 1 2 3 4 5; do /usr/bin/time -f '%e' bash scripts/chronicle_metrics.sh
-    >/tmp/chronicle_metrics.out; done (median ms)
-  test_result: bash -n PASS; output diff none; bats test_chronicle_metrics 2/2 PASS
-    SKIP=0
-  commit: ba0699103
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  before_real_ms: 198.08420099434443
+  after_real_ms: 199.71151700883638
+  real_measurement_command: "bash scripts/chronicle_metrics.sh"
+  test_result: "bash-n; output parity; bats consolidated 34/34 PASS SKIP=0; candidate rolled back"
+  commit: "ba06991033e39974fc8577a997f86a2d8ef6769b"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T05:01:25"
   iteration: 1
+  last_good_commit: "ba06991033e39974fc8577a997f86a2d8ef6769b"
+  candidate_commit: "18b08af460e5d3514ace68c495807f2371435199"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 198.08420099434443
+  last_good_p95_ms: 244.38018901855685
+  candidate_p50_ms: 199.71151700883638
+  candidate_p95_ms: 229.09936401993036
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux WSL2; identical context/archive symlinks; stdout suppressed"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/ci_status_check.sh
   status: pending
   before_ms: 11
@@ -1614,18 +1626,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gates/gate_vercel_phase.sh
-  status: pending
+  status: completed
   before_ms: 19
   after_ms: ''
-  before_real_ms: 147
-  after_real_ms: ""
-  real_measurement_command: bash scripts/gates/gate_vercel_phase.sh context/infrastructure.md
-  test_result: bash_n PASS; tests/unit/test_gate_vercel_phase.bats 8/8 PASS SKIP=0;
-    scoped context/infrastructure.md PASS; full scan pre-existing broken ref context/growth-loop.md
-  commit: a39e6c663
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 123.96023550536484
+  after_real_ms: 123.37473549996503
+  real_measurement_command: "bash scripts/gates/gate_vercel_phase.sh context/training-cycle.md"
+  test_result: "bats tests/unit/test_gate_vercel_phase.bats: 13 PASS, 0 FAIL, 0 SKIP"
+  commit: "4cbd37ce8a5d5eccac7a1ee24cbff90f2d7e7adf"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T05:19:54"
   iteration: 1
+  last_good_commit: "aee10b78d5742e1695b154c6fa841f6bc6c02bd4"
+  candidate_commit: "4cbd37ce8a5d5eccac7a1ee24cbff90f2d7e7adf"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 123.96023550536484
+  last_good_p95_ms: 233.4766380081419
+  candidate_p50_ms: 123.37473549996503
+  candidate_p95_ms: 196.846031001769
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "worktree-same-host-20260717"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_wa_data_quality.sh
   status: pending
   before_ms: 19
@@ -2187,18 +2212,31 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/knowledge_metrics.sh
-  status: pending
+  status: saturated
   before_ms: 16
   after_ms: 148
-  before_real_ms: 148
-  after_real_ms: ""
-  real_measurement_command: time bash scripts/knowledge_metrics.sh
-  test_result: bash -n SYNTAX OK; bash scripts/knowledge_metrics.sh (default/--json/--by-project/--by-model/--model/--since/--threshold/--time)
-    全モード exit 0
-  commit: f671f9771
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 444.5
+  after_real_ms: 456.0
+  real_measurement_command: "bash scripts/knowledge_metrics.sh --json >/dev/null"
+  test_result: "bash -n PASS; 8 modes exit 0; JSON output parity; FAIL=0 SKIP=0; candidate rolled back because p50 regressed"
+  commit: "aee10b78d5742e1695b154c6fa841f6bc6c02bd4"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T05:16:00+09:00"
   iteration: 1
+  last_good_commit: "729635be5c4635b759e9c32d6426d626d52d343d"
+  candidate_commit: "dff096b23e5957274c78f6165baa641e5c6e0a30"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 444.5
+  last_good_p95_ms: 3180
+  candidate_p50_ms: 456.0
+  candidate_p95_ms: 566
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux WSL2 x86_64; bash 5.2.21; cwd=/mnt/c/tools/multi-agent-shogun"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/lesson_auto_tag.sh
   status: completed
   before_ms: 15
@@ -2438,7 +2476,7 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/lesson_update_score.sh
-  status: pending
+  status: assigned
   before_ms: 16
   after_ms: ''
   before_real_ms: 133
@@ -2448,8 +2486,8 @@ entries:
   test_result: bash -n OK; sandbox inject/helpful PASS; L756 helpful_count incremented
     in real file
   commit: 75407d88a
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T05:17:30"
   iteration: 1
 - script_path: scripts/lesson_write.sh
   status: pending
@@ -2812,19 +2850,31 @@ entries:
   assigned_to: tobisaru
   updated_at: '2026-06-07T10:02:30'
 - script_path: scripts/log_terminal_input.sh
-  status: pending
+  status: completed
   before_ms: 6
   after_ms: ''
-  before_real_ms: 153
-  after_real_ms: ""
-  real_measurement_command: echo '{"prompt":"bench test quick"}' | env LORD_CONVERSATION_DB=/tmp/test.db
-    bash scripts/log_terminal_input.sh
-  test_result: bash -n scripts/log_terminal_input.sh && bats tests/unit/test_log_terminal.bats
-    PASS 6/6 SKIP=0
-  commit: f8e00def7
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 199.877
+  after_real_ms: 183.59
+  real_measurement_command: "fixed fixture printf JSON pipe bash log_terminal_input with mock tmux no-op semantic updater absent DB"
+  test_result: "bats_test_log_terminal PASS8_FAIL0_SKIP0"
+  commit: "6a17cb53131c629cd88a8bfdd0052401df87b265"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-17T05:17:33"
   iteration: 1
+  last_good_commit: "bf9185b322c943a73476a3a5e3aa0cdbd526c3b6"
+  candidate_commit: "6a17cb53131c629cd88a8bfdd0052401df87b265"
+  ab_samples_per_arm: "20"
+  last_good_p50_ms: 199.877
+  last_good_p95_ms: 224.325
+  candidate_p50_ms: 183.59
+  candidate_p95_ms: 212.679
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2_same_host_heavy_job_admission_v2_fixed_fixture_strict_LC"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/log_terminal_response.sh
   status: completed
   before_ms: 7
@@ -3280,7 +3330,7 @@ entries:
   updated_at: "2026-07-17T00:20:00"
   iteration: 1
 - script_path: scripts/record_lesson_feedback.sh
-  status: pending
+  status: assigned
   before_ms: 17
   after_ms: ''
   before_real_ms: 128
@@ -3288,8 +3338,8 @@ entries:
   real_measurement_command: time bash scripts/record_lesson_feedback.sh <report_file>
   test_result: 3/3 PASS (SKIP=0)
   commit: 035c317d0
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T05:19:07"
   iteration: 1
 - script_path: scripts/report_field_set.sh
   status: pending
