@@ -20,6 +20,8 @@ setup() {
     export SHOGUN_STATE_DIR="$TMP_ROOT/state"
     export SPEED_TRAINING_TASK_DIR="$TMP_ROOT/tasks"
     mkdir -p "$SPEED_TRAINING_TASK_DIR"
+    AB_SEQUENCE="L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
+    AB_ARGS=(alternating 1 env-fixture-sha256 0 0 CLEAR "$AB_SEQUENCE")
 
     # Source the CLI once per test so repeated subcommand assertions exercise
     # the same functions without paying a fresh Bash startup for every call.
@@ -301,7 +303,7 @@ EOF
 @test "record-real writes runtime before and after with measurement command" {
     first=$(cmd_next "$LEDGER")
 
-    cmd_record_real "$first" completed good123 cand123 "time bash $first --help" 10 101 140 72 100 "bats target PASS SKIP=0" "$LEDGER"
+    cmd_record_real "$first" completed good123 cand123 "time bash $first --help" 10 101 140 72 100 "bats target PASS SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
 
     awk -v script="$first" '
         $0 ~ "script_path: \"" script "\"" { in_target = 1 }
@@ -343,7 +345,7 @@ PY
 
     cmd_record_real scripts/ninja_monitor.sh completed good789 abc789 \
         "NINJA_MONITOR_LIB_ONLY=1 bash scripts/ninja_monitor.sh (20-run alternating A/B)" \
-        10 57 70 41 55 "bats target PASS=72 FAIL=0 SKIP=0" "$LEDGER"
+        10 57 70 41 55 "bats target PASS=72 FAIL=0 SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
 
     run python3 - "$LEDGER" <<'PY'
 import sys, yaml
@@ -367,7 +369,7 @@ PY
 @test "record-real completed rejects non-improving runtime" {
     first=$(cmd_next "$LEDGER")
 
-    run cmd_record_real "$first" completed good123 cand123 "time bash $first --help" 10 101 140 101 140 "bats target PASS SKIP=0" "$LEDGER"
+    run cmd_record_real "$first" completed good123 cand123 "time bash $first --help" 10 101 140 101 140 "bats target PASS SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
     [ "$status" -eq 2 ]
     [[ "$output" == *"strict improvement"* ]]
 }
@@ -379,15 +381,51 @@ PY
     [ "$status" -eq 2 ]
     [[ "$output" == *"complete same-environment A/B evidence"* ]]
 
-    run cmd_record_real "$first" completed good123 bad123 "time bash $first --help" 10 101 120 90 121 "PASS SKIP=0" "$LEDGER"
+    run cmd_record_real "$first" completed good123 bad123 "time bash $first --help" 10 101 120 90 121 "PASS SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
     [ "$status" -eq 2 ]
     [[ "$output" == *"p95 regression"* ]]
+}
+
+@test "record-real rejects invalid A/B identity order environment and quality before ledger mutation" {
+    first=$(cmd_next "$LEDGER")
+    original=$(sha256sum "$LEDGER" | cut -d' ' -f1)
+    base=("$first" completed good123 cand123 "time bash $first --help" 10 101 120 90 110 "PASS SKIP=0")
+
+    run cmd_record_real "${base[@]:0:3}" good123 "${base[@]:4}" "${AB_ARGS[@]}" "$LEDGER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"must differ"* ]]
+    [ "$(sha256sum "$LEDGER" | cut -d' ' -f1)" = "$original" ]
+
+    run cmd_record_real "${base[@]}" grouped 1 env-fixture-sha256 0 0 CLEAR "$AB_SEQUENCE" "$LEDGER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"ab_order must be alternating"* ]]
+
+    run cmd_record_real "${base[@]}" alternating 1 '' 0 0 CLEAR "$AB_SEQUENCE" "$LEDGER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"environment_fingerprint is required"* ]]
+
+    run cmd_record_real "${base[@]}" alternating 1 env-fixture-sha256 1 0 CLEAR "$AB_SEQUENCE" "$LEDGER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"FAIL=0 and SKIP=0"* ]]
+
+    run cmd_record_real "${base[@]}" alternating 1 env-fixture-sha256 0 1 CLEAR "$AB_SEQUENCE" "$LEDGER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"FAIL=0 and SKIP=0"* ]]
+
+    run cmd_record_real "${base[@]}" alternating 1 env-fixture-sha256 0 0 BLOCK "$AB_SEQUENCE" "$LEDGER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"hook/gate result must be CLEAR"* ]]
+
+    run cmd_record_real "${base[@]}" alternating 1 env-fixture-sha256 0 0 CLEAR 'L,L,C,C' "$LEDGER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"sequence must alternate"* ]]
+    [ "$(sha256sum "$LEDGER" | cut -d' ' -f1)" = "$original" ]
 }
 
 @test "record-real saturated retains last-good and re-enqueue cannot adopt regression" {
     first=$(cmd_next "$LEDGER")
 
-    cmd_record_real "$first" saturated good123 bad123 "time bash $first --help" 10 101 120 90 121 "PASS SKIP=0" "$LEDGER"
+    cmd_record_real "$first" saturated good123 bad123 "time bash $first --help" 10 101 120 90 121 "PASS SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
     run python3 - "$LEDGER" "$first" <<'PY'
 import sys, yaml
 entry = next(e for e in yaml.safe_load(open(sys.argv[1]))["entries"] if e["script_path"] == sys.argv[2])
@@ -404,9 +442,9 @@ PY
 
 @test "re-enqueue returns top completed entries to pending and carries after_real_ms into next before_real_ms" {
     first=$(cmd_next "$LEDGER")
-    cmd_record_real "$first" completed good123 abc123 "time bash $first --help" 10 200 240 50 80 "PASS SKIP=0" "$LEDGER"
+    cmd_record_real "$first" completed good123 abc123 "time bash $first --help" 10 200 240 50 80 "PASS SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
     second=$(cmd_next "$LEDGER")
-    cmd_record_real "$second" completed good456 def456 "time bash $second --help" 10 300 340 100 140 "PASS SKIP=0" "$LEDGER"
+    cmd_record_real "$second" completed good456 def456 "time bash $second --help" 10 300 340 100 140 "PASS SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
 
     run cmd_re_enqueue 1 "$LEDGER"
     [ "$status" -eq 0 ]
@@ -426,7 +464,7 @@ PY
 
 @test "re-enqueue preserves decimal after_real_ms values" {
     first=$(cmd_next "$LEDGER")
-    cmd_record_real "$first" completed good123 abc123 "time bash $first --help" 10 24.565 30 16.634 20 "PASS SKIP=0" "$LEDGER"
+    cmd_record_real "$first" completed good123 abc123 "time bash $first --help" 10 24.565 30 16.634 20 "PASS SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
 
     run cmd_re_enqueue 1 "$LEDGER"
     [ "$status" -eq 0 ]
@@ -443,9 +481,9 @@ PY
 
 @test "re-enqueue stops at max iteration" {
     first=$(cmd_next "$LEDGER")
-    cmd_record_real "$first" completed good123 abc123 "time bash $first --help" 10 200 240 100 140 "PASS SKIP=0" "$LEDGER"
+    cmd_record_real "$first" completed good123 abc123 "time bash $first --help" 10 200 240 100 140 "PASS SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
     cmd_re_enqueue 1 "$LEDGER" 1
-    cmd_record_real "$first" completed abc123 def456 "time bash $first --help" 10 100 140 80 120 "PASS SKIP=0" "$LEDGER"
+    cmd_record_real "$first" completed abc123 def456 "time bash $first --help" 10 100 140 80 120 "PASS SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
 
     run cmd_re_enqueue 1 "$LEDGER" 1
     [ "$status" -eq 0 ]

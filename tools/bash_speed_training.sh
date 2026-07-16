@@ -17,7 +17,7 @@ Usage:
   bash tools/bash_speed_training.sh status-count <status> [ledger]
   bash tools/bash_speed_training.sh mark-assigned <script_path> <ninja> [ledger]
   bash tools/bash_speed_training.sh record-after <script_path> <status> <after_ms> <test_result> <commit> [ledger]
-  bash tools/bash_speed_training.sh record-real <script_path> <status> <last_good_commit> <candidate_commit> <command> <samples_per_arm> <last_good_p50_ms> <last_good_p95_ms> <candidate_p50_ms> <candidate_p95_ms> <test_result> [ledger]
+  bash tools/bash_speed_training.sh record-real <script_path> <status> <last_good_commit> <candidate_commit> <command> <samples_per_arm> <last_good_p50_ms> <last_good_p95_ms> <candidate_p50_ms> <candidate_p95_ms> <test_result> <alternating> <warmup_each> <environment_fingerprint> <fail_count> <skip_count> <hook_gate_result> <sequence> [ledger]
   bash tools/bash_speed_training.sh re-enqueue [limit] [ledger] [max_iteration]
   bash tools/bash_speed_training.sh auto-deploy <ninja> [ledger]
   bash tools/bash_speed_training.sh reconcile [ledger]
@@ -173,6 +173,13 @@ init_ledger_unlocked() {
             printf '    last_good_p95_ms: ""\n'
             printf '    candidate_p50_ms: ""\n'
             printf '    candidate_p95_ms: ""\n'
+            printf '    ab_order: ""\n'
+            printf '    warmup_each: ""\n'
+            printf '    environment_fingerprint: ""\n'
+            printf '    fail_count: ""\n'
+            printf '    skip_count: ""\n'
+            printf '    hook_gate_result: ""\n'
+            printf '    ab_sequence: ""\n'
             printf '    assigned_to: ""\n'
             printf '    updated_at: ""\n'
             index=$((index + 1))
@@ -189,9 +196,24 @@ cmd_record_real() {
     local status="${2:-}"
     local last_good_commit="${3:-}" candidate_commit="${4:-}" real_measurement_command="${5:-}"
     local samples="${6:-}" last_p50="${7:-}" last_p95="${8:-}" candidate_p50="${9:-}" candidate_p95="${10:-}"
-    local test_result="${11:-}" ledger="${12:-$LEDGER}"
+    local test_result="${11:-}" order="${12:-}" warmup_each="${13:-}" environment_fingerprint="${14:-}"
+    local fail_count="${15:-}" skip_count="${16:-}" hook_gate_result="${17:-}" sequence="${18:-}" ledger="${19:-$LEDGER}"
     [ -n "$script_path" ] && [ -n "$status" ] && [ -n "$last_good_commit" ] && [ -n "$candidate_commit" ] && [ -n "$real_measurement_command" ] && [ -n "$samples" ] && [ -n "$last_p50" ] && [ -n "$last_p95" ] && [ -n "$candidate_p50" ] && [ -n "$candidate_p95" ] && [ -n "$test_result" ] || { echo "record-real requires complete same-environment A/B evidence" >&2; return 2; }
     [[ "$samples" =~ ^[0-9]+$ ]] && [ "$samples" -ge 10 ] || { echo "samples_per_arm must be >= 10" >&2; return 2; }
+    [ "$status" = completed ] || [ "$status" = saturated ] || { echo "status must be completed or saturated" >&2; return 2; }
+    [ "$last_good_commit" != "$candidate_commit" ] || { echo "last_good_commit and candidate_commit must differ" >&2; return 2; }
+    [ "$order" = alternating ] || { echo "ab_order must be alternating" >&2; return 2; }
+    [[ "$warmup_each" =~ ^[0-9]+$ ]] && [ "$warmup_each" -ge 1 ] || { echo "warmup_each must be >= 1" >&2; return 2; }
+    [ -n "$environment_fingerprint" ] || { echo "environment_fingerprint is required" >&2; return 2; }
+    [ "$fail_count" = 0 ] && [ "$skip_count" = 0 ] || { echo "quality evidence requires FAIL=0 and SKIP=0" >&2; return 2; }
+    [ "$hook_gate_result" = CLEAR ] || { echo "hook/gate result must be CLEAR" >&2; return 2; }
+    python3 - "$sequence" "$samples" <<'PY' || { echo "sequence must alternate L/C with samples_per_arm observations each" >&2; return 2; }
+import sys
+items = sys.argv[1].split(',')
+n = int(sys.argv[2])
+assert len(items) == n * 2 and items.count('L') == n and items.count('C') == n
+assert all(a != b and {a, b} == {'L', 'C'} for a, b in zip(items, items[1:]))
+PY
     local value
     for value in "$last_p50" "$last_p95" "$candidate_p50" "$candidate_p95"; do is_non_negative_number "$value" || { echo "A/B percentiles must be numeric" >&2; return 2; }; done
     if [ "$status" = "completed" ]; then
@@ -217,6 +239,13 @@ cmd_record_real() {
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "last_good_p95_ms" "$last_p95"
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "candidate_p50_ms" "$candidate_p50"
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "candidate_p95_ms" "$candidate_p95"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "ab_order" "$order"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "warmup_each" "$warmup_each"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "environment_fingerprint" "$environment_fingerprint"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "fail_count" "$fail_count"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "skip_count" "$skip_count"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "hook_gate_result" "$hook_gate_result"
+    with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "ab_sequence" "$sequence"
     with_ledger_lock "$ledger" update_entry_field_unlocked "$ledger" "$script_path" "updated_at" "$(now_iso)"
 }
 
