@@ -25,6 +25,28 @@ fi
 
 fast_no_fix_needed() {
     local report_path="$1"
+    local raw
+    raw=$'\n'"$(<"$report_path")"$'\n'
+
+    # Level-5 canonical reports have stable root/container shapes. Recognize
+    # that exact no-fix shape with Bash builtins before paying WSL process
+    # startup for mawk. Any absent/ambiguous marker falls through to the
+    # original exhaustive classifier below, preserving fail-closed behavior.
+    if [[ "$raw" == *$'\nworker_id: '?*$'\n'* ]] &&
+       [[ "$raw" == *$'\nparent_cmd: '?*$'\n'* ]] &&
+       [[ "$raw" == *$'\nlessons_useful:\n- id:'* || "$raw" == *$'\nlessons_useful:\n  - id:'* || "$raw" == *$'\nlessons_useful: []\n'* ]] &&
+       [[ "$raw" == *$'\nfiles_modified:\n- path:'* || "$raw" == *$'\nfiles_modified:\n  - path:'* || "$raw" == *$'\nfiles_modified: []\n'* ]] &&
+       [[ "$raw" == *$'\nlesson_candidate:\n  found:'* ]] &&
+       [[ "$raw" == *$'\nknowledge_candidate:\n  found:'* ]] &&
+       [[ "$raw" == *$'\nbinary_checks:\n  '* ]] &&
+       [[ "$raw" == *$'\nverdict: PASS\n'* || "$raw" == *$'\nverdict: FAIL\n'* || "$raw" == *$'\nverdict: PASS_NO_IMPROVEMENT\n'* || "$raw" == *$'\nverdict: \n'* ]] &&
+       [[ "$raw" != *$'\nreport:'* ]] &&
+       [[ "$raw" != *'UNKNOWN_'* ]] &&
+       [[ ! "$raw" =~ id:[[:space:]]*(UNKNOWN|None|null) ]] &&
+       [[ "$raw" != *$'\n    check:'* ]]; then
+        return 0
+    fi
+
     local awk_bin
     if [ -x /usr/bin/mawk ]; then
         awk_bin=/usr/bin/mawk
