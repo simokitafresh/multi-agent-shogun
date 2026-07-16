@@ -208,16 +208,16 @@ echo ""
 
 # ─── Guard 1: --no-verify + hook bypass (G3) ───
 echo "--- Guard 1: --no-verify + bypass detection ---"
-expect_block_bg "git commit --no-verify"              "git commit --no-verify -m 'test'"
-expect_block_bg "git commit -n (short alias)"          "git commit -n -m 'test'"
-expect_block_bg "git push --no-verify"                 "git push --no-verify origin feature"
-expect_block_bg "git merge --no-verify"                "git merge --no-verify feature-branch"
-expect_block_bg "git rebase --no-verify"               "git rebase --no-verify main"
-expect_block_bg "git cherry-pick --no-verify"          "git cherry-pick --no-verify abc1234"
-expect_block_bg "HUSKY=0 bypass"                       "HUSKY=0 git commit -m 'test'"
-expect_allow_bg "git commit (normal)"                  "git commit -m 'test message'"
-expect_allow_bg "git log -n 5 (not commit)"            "git log -n 5"
-expect_allow_bg "git push (normal)"                    "git push origin feature"
+expect_block "git commit --no-verify"              "git commit --no-verify -m 'test'"
+expect_block "git commit -n (short alias)"          "git commit -n -m 'test'"
+expect_block "git push --no-verify"                 "git push --no-verify origin feature"
+expect_block "git merge --no-verify"                "git merge --no-verify feature-branch"
+expect_block "git rebase --no-verify"               "git rebase --no-verify main"
+expect_block "git cherry-pick --no-verify"          "git cherry-pick --no-verify abc1234"
+expect_block "HUSKY=0 bypass"                       "HUSKY=0 git commit -m 'test'"
+expect_allow "git commit (normal)"                  "git commit -m 'test message'"
+expect_allow "git log -n 5 (not commit)"            "git log -n 5"
+expect_allow "git push (normal)"                    "git push origin feature"
 
 # Shared worktree: stash mutates every tracked dirty path, including live task
 # generations owned by other agents.  Mutation subcommands (bare/push/save/
@@ -226,16 +226,15 @@ expect_allow_bg "git push (normal)"                    "git push origin feature"
 # git_stash_guard_classify.py/.sh, shared with the real runtime hook
 # .claude/hooks/pre-bash-combined.sh so this legacy self-test entry point
 # cannot silently drift from production behavior again).
-expect_block_bg "shared worktree bare stash"            "git stash"
-expect_block_bg "shared worktree stash push"            "git stash push -m 'temporary'"
-expect_block_bg "shared worktree stash pop"             "git stash pop"
-expect_block_bg "shared worktree stash apply"           "git stash apply stash@{0}"
-expect_block_bg "compound command stash"                "cd /tmp && git stash --include-untracked"
-expect_allow_bg "read-only stash list is allowed"       "git stash list | head -3"
-expect_allow_bg "read-only stash show is allowed"       "git stash show -p stash@{0}"
-expect_allow_bg "stash reflog inspection alternative"   "git log -g refs/stash -3"
-expect_allow_bg "stash object inspection alternative"   "git show stash@{0} --stat"
-wait_parallel_expectations
+expect_block "shared worktree bare stash"            "git stash"
+expect_block "shared worktree stash push"            "git stash push -m 'temporary'"
+expect_block "shared worktree stash pop"             "git stash pop"
+expect_block "shared worktree stash apply"           "git stash apply stash@{0}"
+expect_block "compound command stash"                "cd /tmp && git stash --include-untracked"
+expect_allow "read-only stash list is allowed"       "git stash list | head -3"
+expect_allow "read-only stash show is allowed"       "git stash show -p stash@{0}"
+expect_allow "stash reflog inspection alternative"   "git log -g refs/stash -3"
+expect_allow "stash object inspection alternative"   "git show stash@{0} --stat"
 
 # Codex must route every shell-capable tool name through the same guard.  A
 # Bash-only matcher left exec_command/unified_exec able to create a real stash
