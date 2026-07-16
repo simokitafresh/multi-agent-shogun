@@ -153,7 +153,7 @@ for project in active_projects:
         continue
 
     if mode == "dry-run":
-        lessons = list(_iter_lessons_fast(lessons_path))
+        lessons = _iter_lessons_fast(lessons_path)
         lessons_data = None
     else:
         with open(lessons_path, "r", encoding="utf-8") as f:
@@ -161,12 +161,10 @@ for project in active_projects:
         # L063: lessons.yamlはdict構造。data.get("lessons",[]) でアクセス
         lessons = lessons_data.get("lessons", [])
 
-    if not lessons:
-        print(f"[SKIP] {pid}: no lessons found")
-        continue
-
     modified = False
+    project_lesson_count = 0
     for lesson in lessons:
+        project_lesson_count += 1
         lid = lesson.get("id", "?")
         total_lessons += 1
 
@@ -197,6 +195,10 @@ for project in active_projects:
         else:
             lesson["tags"] = matched_tags
             modified = True
+
+    if project_lesson_count == 0:
+        print(f"[SKIP] {pid}: no lessons found")
+        continue
 
     if mode == "apply" and modified:
         header_lines = []
