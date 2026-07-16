@@ -42,3 +42,23 @@ Karo–Gunshi review-boundary SLO for this three-fingerprint fixture: p95 <= 750
 3. Content-hash-keyed, invocation-only reuse removes duplication while preserving the original byte-level invalidation boundary.
 
 Origin: [[review approval repeated YAML parse]] -> [[content hash invocation cache]] -> [[faster Karo Gunshi handoff]]
+
+## Generation 2: cache-hit subprocess removal
+
+The first-round cache still spawned `realpath`, a second `sha256sum` for the
+cache key, and `cat` on every lookup. A 100-call interval profile measured
+360 ms, 440 ms, and 230 ms respectively. The cache is already invocation/root
+scoped, and identical report bytes imply identical YAML and parent/commit
+inputs, so generation 2 uses the report content hash directly as the filename
+and Bash `read` for cache hits.
+
+| Round | total wall (15 samples) | p50 | p95 |
+|---|---:|---:|---:|
+| Generation 1 official baseline | 6,798.7 ms | 492.0 ms | 598.9 ms |
+| Generation 2 | 6,538.4 ms | 437.7 ms | 529.3 ms |
+| Cumulative from pre-cache | 16,723.9 → 6,538.4 ms | 1,212.2 → 437.7 ms | 1,443.2 → 529.3 ms |
+
+Remaining top intervals are the mandatory report SHA-256, first-call YAML/task
+identity parse, and invocation cache-directory setup. Continue to generation 3
+only if a same-host 15-sample run has p95 > 529.3 ms or profiling identifies a
+single removable interval >= 10% without weakening byte-level invalidation.

@@ -14,14 +14,17 @@ fi
 mkdir -p "$REVIEW_FP_CACHE_DIR"
 
 review_report_fingerprint() {
-    local report="$1" content_hash commit_identity root cache_key cache_file
+    local report="$1" content_hash commit_identity root cache_file cached
     [ -f "$report" ] || return 1
     root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
     content_hash=$(sha256sum "$report" | awk '{print $1}') || return 1
-    cache_key=$(printf '%s:%s' "$(realpath "$report")" "$content_hash" | sha256sum | awk '{print $1}')
-    cache_file="$REVIEW_FP_CACHE_DIR/$cache_key"
+    # The cache directory is invocation/root scoped and identical report bytes
+    # imply identical YAML, parent_cmd and commit-identity inputs. Reuse the
+    # content hash directly instead of spawning realpath + a second sha256sum.
+    cache_file="$REVIEW_FP_CACHE_DIR/$content_hash"
     if [ -s "$cache_file" ]; then
-        cat "$cache_file"
+        IFS= read -r cached < "$cache_file"
+        printf '%s\n' "$cached"
         return 0
     fi
     commit_identity=$(python3 - "$report" "$root" <<'PY'
@@ -112,7 +115,7 @@ PY
     [ -n "$commit_identity" ] || return 1
     printf '%s:%s\n' "$content_hash" "$commit_identity" > "$cache_file.tmp.$BASHPID"
     mv -f "$cache_file.tmp.$BASHPID" "$cache_file"
-    cat "$cache_file"
+    printf '%s:%s\n' "$content_hash" "$commit_identity"
 }
 
 # RC on a report-only task must require a substantive report correction, not an
