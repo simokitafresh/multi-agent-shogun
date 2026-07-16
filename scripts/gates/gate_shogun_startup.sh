@@ -205,6 +205,15 @@ local STARTUP_CACHE_KEY
 STARTUP_CACHE_KEY="$(shogun_startup_cache_key "$SCRIPT_DIR")"
 local BACKLINK_CACHE_FILE="${SHOGUN_STARTUP_BACKLINK_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_backlink_zero.cache}"
 local THREE_LAYER_CACHE_FILE="${SHOGUN_STARTUP_THREE_LAYER_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_three_layer_health.cache}"
+local THREE_LAYER_CACHE_TTL="${SHOGUN_STARTUP_THREE_LAYER_CACHE_TTL_SEC:-300}"
+local LOOP_LEDGER_CACHE_FILE="${SHOGUN_STARTUP_LOOP_LEDGER_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_loop_ledger.cache}"
+local LOOP_LEDGER_CACHE_TTL="${SHOGUN_STARTUP_LOOP_LEDGER_CACHE_TTL_SEC:-300}"
+local TIMING_HEALTH_CACHE_FILE="${SHOGUN_STARTUP_TIMING_HEALTH_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_timing_health.cache}"
+local TIMING_HEALTH_CACHE_TTL="${SHOGUN_STARTUP_TIMING_HEALTH_CACHE_TTL_SEC:-300}"
+local LOOP_HEALTH_CACHE_FILE="${SHOGUN_STARTUP_LOOP_HEALTH_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_loop_health.cache}"
+local LESSON_HEALTH_CACHE_FILE="${SHOGUN_STARTUP_LESSON_HEALTH_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_lesson_health.cache}"
+local ENFORCEMENT_CACHE_FILE="${SHOGUN_STARTUP_ENFORCEMENT_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_enforcement.cache}"
+local STARTUP_HEAVY_CACHE_TTL="${SHOGUN_STARTUP_HEAVY_CACHE_TTL_SEC:-300}"
 if [ -z "$LIGHT_SKIP_HEAVY" ]; then
     if [ -n "${SHOGUN_STARTUP_ROOT:-}" ]; then
         LIGHT_SKIP_HEAVY=0
@@ -224,7 +233,12 @@ fi
 # read-only startup check detects a stopped writer without launching tests.
 echo "■ テスト時間台帳鮮度"
 if [ -f "$SCRIPT_DIR/logs/test_timing_ledger.tsv" ]; then
+    if [ "$TIMING_HEALTH_CACHE_TTL" -gt 0 ]; then
+        _timing_health_out="$(run_startup_short_cache "$TIMING_HEALTH_CACHE_FILE" "$TIMING_HEALTH_CACHE_TTL" \
+            bash "$GATE_DIR/gate_test_health.sh" --ledger-health 2>&1 || true)"
+    else
     _timing_health_out="$(bash "$GATE_DIR/gate_test_health.sh" --ledger-health 2>&1 || true)"
+    fi
     printf '%s\n' "$_timing_health_out" | grep -E '^(OK:|WARN:|INFO:|総合判定:)' | sed 's/^/  /' || true
     if printf '%s\n' "$_timing_health_out" | grep -Eq '^WARN: timing ledger stale|^WARN: completed test-speed cmd has no timing ledger row'; then
         [ "$overall" = "OK" ] && overall="WARN"
@@ -612,11 +626,14 @@ _TMP_ENFORCE_LEVEL="$_TMP_STARTUP_DIR/enforce_level"
 	"$GATE_DIR/gate_cmd_state.sh" > "$_TMP_G3" 2>&1 &
 	_PID_G3=$!
 	if [ "$LIGHT_MODE" != "1" ] || [ "$LIGHT_SKIP_HEAVY" != "1" ]; then
-	    bash "$GATE_DIR/gate_loop_health.sh" > "$_TMP_G12" 2>&1 &
+	    run_startup_short_cache "$LOOP_HEALTH_CACHE_FILE" "$STARTUP_HEAVY_CACHE_TTL" \
+	        bash "$GATE_DIR/gate_loop_health.sh" > "$_TMP_G12" 2>&1 &
 	    _PID_G12=$!
-	    bash "$GATE_DIR/gate_lesson_health.sh" > "$_TMP_G13" 2>&1 &
+	    run_startup_short_cache "$LESSON_HEALTH_CACHE_FILE" "$STARTUP_HEAVY_CACHE_TTL" \
+	        bash "$GATE_DIR/gate_lesson_health.sh" > "$_TMP_G13" 2>&1 &
 	    _PID_G13=$!
-	    bash "$GATE_DIR/gate_lesson_enforcement_level.sh" > "$_TMP_ENFORCE_LEVEL" 2>&1 &
+	    run_startup_short_cache "$ENFORCEMENT_CACHE_FILE" "$STARTUP_HEAVY_CACHE_TTL" \
+	        bash "$GATE_DIR/gate_lesson_enforcement_level.sh" > "$_TMP_ENFORCE_LEVEL" 2>&1 &
 	    _PID_ENFORCE_LEVEL=$!
 	else
 	    _PID_G12=""
@@ -666,7 +683,8 @@ EOF
 	fi
 	_LOOP_LEDGER_SCRIPT="$SCRIPT_DIR/scripts/loop_ledger_update.sh"
 	if [ -x "$_LOOP_LEDGER_SCRIPT" ]; then
-	    bash "$_LOOP_LEDGER_SCRIPT" > "$_TMP_LOOP_LEDGER" 2>&1 &
+	    run_startup_short_cache "$LOOP_LEDGER_CACHE_FILE" "$LOOP_LEDGER_CACHE_TTL" \
+	        bash "$_LOOP_LEDGER_SCRIPT" > "$_TMP_LOOP_LEDGER" 2>&1 &
 	    _PID_LOOP_LEDGER=$!
 	else
 	    _PID_LOOP_LEDGER=""
@@ -777,7 +795,7 @@ else
 fi
 if [ -x "$GATE_DIR/gate_three_layer_health.sh" ]; then
     (
-        run_startup_short_cache "$THREE_LAYER_CACHE_FILE" "$SHORT_CACHE_TTL" \
+        run_startup_short_cache "$THREE_LAYER_CACHE_FILE" "$THREE_LAYER_CACHE_TTL" \
             bash "$GATE_DIR/gate_three_layer_health.sh" > "$_TMP_THREE_LAYER" 2>&1
         printf '%s\n' "$?" > "$_TMP_THREE_LAYER_STATUS"
     ) &
