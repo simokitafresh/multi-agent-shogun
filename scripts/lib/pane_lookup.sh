@@ -29,6 +29,9 @@ unset _pl_self
 # pane_lookup() 側も防御的に ensure して、将来の呼出順変更でも空配列のまま落ちないようにする。
 _PANE_LOOKUP_INITIALIZED=0
 declare -A _PANE_LOOKUP_MAP=()
+declare -A _PANE_LOOKUP_LIVE_MAP=()
+_PANE_LOOKUP_LIVE_CACHE_US=0
+_PANE_LOOKUP_LIVE_CACHE_TTL_US=100000
 # shellcheck disable=SC2034
 PANE_LOOKUP_AGENT_ORDER=()
 
@@ -64,13 +67,29 @@ pane_lookup() {
 
     # Source 1: tmux @agent_id (実際のpane配置を直接参照 — 常に正確)
     if command -v tmux >/dev/null 2>&1; then
+        local _pl_now_raw="${EPOCHREALTIME:-0}"
+        local _pl_now_us="${_pl_now_raw/./}"
+        _pl_now_us="${_pl_now_us:0:16}"
         local pane_index pane_agent
-        while read -r pane_index pane_agent; do
-            if [[ "$pane_agent" == "$name" ]]; then
-                echo "shogun:agents.${pane_index}"
+        if (( _pl_now_us - _PANE_LOOKUP_LIVE_CACHE_US < _PANE_LOOKUP_LIVE_CACHE_TTL_US )); then
+            if [[ -n "${_PANE_LOOKUP_LIVE_MAP[$name]:-}" ]]; then
+                echo "${_PANE_LOOKUP_LIVE_MAP[$name]}"
                 return 0
             fi
+            local _pl_cached_static="${_PANE_LOOKUP_MAP[$name]:-}"
+            [[ -n "$_pl_cached_static" ]] && echo "$_pl_cached_static"
+            [[ -n "$_pl_cached_static" ]]
+            return
+        fi
+        _PANE_LOOKUP_LIVE_MAP=()
+        while read -r pane_index pane_agent; do
+            [[ -n "$pane_agent" ]] && _PANE_LOOKUP_LIVE_MAP[$pane_agent]="shogun:agents.${pane_index}"
         done < <(tmux list-panes -t shogun:agents -F '#{pane_index} #{@agent_id}' 2>/dev/null)
+        _PANE_LOOKUP_LIVE_CACHE_US=$_pl_now_us
+        if [[ -n "${_PANE_LOOKUP_LIVE_MAP[$name]:-}" ]]; then
+            echo "${_PANE_LOOKUP_LIVE_MAP[$name]}"
+            return 0
+        fi
     fi
 
     # Source 2: 静的フォールバック (tmux未起動時)
