@@ -2,17 +2,38 @@
 
 setup() { REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"; }
 
-@test "before fixture proves no role-neutral variable-N entrypoint" {
+@test "common task and cmd entrances invoke role-neutral variable-N contract" {
   run env ROOT="$REPO_ROOT" python3 - <<'PY'
 import os, pathlib
 r=pathlib.Path(os.environ['ROOT'])
-legacy=[r/'scripts/run_tests.sh', r/'scripts/deploy_task.sh']
-assert all(p.exists() for p in legacy)
-assert all('shard_work.sh' not in p.read_text(errors='ignore') for p in legacy)
-print('before_common_entry=0 fixed_or_manual_entrypoints=2')
+callers=[r/'scripts/cmd_save.sh', r/'scripts/deploy_task.sh']
+assert all('universal_shard_contract.py' in p.read_text(errors='ignore') for p in callers)
+print('before_common_entry=0 after_common_entry=2')
 PY
   [ "$status" -eq 0 ]
-  [[ "$output" == *"before_common_entry=0"* ]]
+  [[ "$output" == *"after_common_entry=2"* ]]
+}
+
+@test "entrance generates manifest and plan run for 2 4 6 workers without serial false positives" {
+  run env ROOT="$REPO_ROOT" TMPROOT="$BATS_TEST_TMPDIR" python3 - <<'PY'
+import importlib.util, json, os, pathlib, subprocess, yaml
+r=pathlib.Path(os.environ['ROOT']); tmp=pathlib.Path(os.environ['TMPROOT'])
+contract=r/'scripts/lib/universal_shard_contract.py'; core=r/'scripts/universal_shard.py'
+s=importlib.util.spec_from_file_location('c',contract); c=importlib.util.module_from_spec(s); s.loader.exec_module(c)
+u_spec=importlib.util.spec_from_file_location('u',core); u=importlib.util.module_from_spec(u_spec); u_spec.loader.exec_module(u)
+task={'estimated_minutes':30,'parallel_ok':[f'AC{i}' for i in range(1,7)],'acceptance_criteria':[{'id':f'AC{i}','description':f'work {i}'} for i in range(1,7)]}
+for n in (2,4,6):
+ workers=[{'id':f'w{i}','idle':True,'capabilities':['task']} for i in range(n)]
+ m=c.build(task,workers,f'case-{n}'); assert m['status']=='manifest' and m['max_workers']==n
+ assert u.plan(m)['worker_count']==n; out=u.run({**m,'state_dir':str(tmp/f's{n}')}); assert out['counts']['success']==6
+serial=c.build({**task,'serial_dependency_evidence':'exclusive production DB transaction'},[], 'serial')
+short=c.build({**task,'estimated_minutes':29},[], 'short')
+deferred=c.build(task,[{'id':'w','idle':True,'capabilities':['task']}], 'few')
+assert serial['status']=='serial' and short['status']=='not_required' and deferred['status']=='deferred'
+print('idle_cells=3 plan_run_success=18 false_positive=0')
+PY
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"false_positive=0"* ]]
 }
 
 @test "callers and backend metadata share one manifest contract" {
@@ -127,6 +148,7 @@ PY
 }
 
 @test "format error exits BLOCK without traceback" {
+  [ "$(git -C "$REPO_ROOT" ls-files -s scripts/shard_work.sh | awk '{print $1}')" = 100755 ]
   manifest="$BATS_TEST_TMPDIR/bad.yaml"
   cat >"$manifest" <<YAML
 state_dir: $BATS_TEST_TMPDIR/state
