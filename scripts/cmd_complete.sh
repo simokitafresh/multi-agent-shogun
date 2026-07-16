@@ -75,8 +75,7 @@ run_status_step() {
     # success earlier in this same wrapper; the correlated CLEAR metric is the
     # terminal evidence. archive.done is deliberately asynchronous and cannot
     # be a prerequisite here without a race.
-    if [[ "$CMD_ID" =~ ^cmd_(karo|training)_ ]] \
-        && [[ -f "$BUNDLE_PATH" ]] \
+    if [[ -f "$BUNDLE_PATH" ]] \
         && awk -v id="$CMD_ID" 'index($0,id) && /CLEAR/ {found=1} END {exit !found}' "$ROOT_DIR/logs/gate_metrics.log"; then
         printf '[cmd_complete] PASS status_completed (direct SG7/CLEAR evidence)\n' >&2
         return 0
