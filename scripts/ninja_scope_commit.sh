@@ -83,6 +83,32 @@ exec {commit_lock_fd}>"$commit_lock_path" \
 flock -w 120 "$commit_lock_fd" \
     || { echo "BLOCK: cannot acquire ninja scope commit lock" >&2; exit 2; }
 
+# The lock serializes this helper, but a direct `git add` does not participate
+# in it.  Keep the real shared-index path and update entries with a compare
+# against the snapshot taken before the commit.  This is the common boundary
+# for patch and normal mode: a foreign stage is preserved, never reset merely
+# because HEAD advanced.
+shared_index_file="$(git rev-parse --git-path index)"
+[[ "$shared_index_file" = /* ]] || shared_index_file="$repo_root/$shared_index_file"
+
+advance_shared_index_entry() {
+    local path="$1" expected_entry="$2" current_entry new_blob new_mode
+    current_entry="$(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -- "$path" | awk '$3 == 0 {print $1 " " $2; exit}')"
+    if [[ "$current_entry" != "$expected_entry" ]]; then
+        echo "WARN: shared index changed concurrently; preserving newer staged entry: $path" >&2
+        return 0
+    fi
+    if git cat-file -e "HEAD:$path" 2>/dev/null; then
+        new_blob="$(git rev-parse "HEAD:$path")"
+        new_mode="$(git ls-tree HEAD -- "$path" | awk 'NR==1 {print $1}')"
+        [[ "$current_entry" == "$new_mode $new_blob" ]] && return 0
+        GIT_INDEX_FILE="$shared_index_file" git update-index --add --cacheinfo "$new_mode,$new_blob,$path"
+    else
+        [[ -z "$current_entry" ]] && return 0
+        GIT_INDEX_FILE="$shared_index_file" git update-index --force-remove -- "$path"
+    fi
+}
+
 # GA-222: scope path正規化はscripts/lib/scope_path.sh(SSOT)に集約する。
 # ここ(commit scopeのバリデーション)とsync_git_hooks.sh(is_in_scope判定)で
 # 別々に正規化ロジックを持つと、片方だけ直して片方が取り残される形で
@@ -125,6 +151,7 @@ if [[ -n "$patch_file" ]]; then
     shared_index_blob="$(git ls-files -s -- "$scope_path" | awk 'NR==1 {print $2}')"
     [[ "${shared_index_blob:-0000000000000000000000000000000000000000}" == "$head_blob" ]] \
         || { echo "BLOCK: scope path already has staged content in shared index: $scope_path" >&2; exit 2; }
+    shared_index_entry_before="$(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -- "$scope_path" | awk '$3 == 0 {print $1 " " $2; exit}')"
 
     mapfile -t patch_paths < <(git apply --numstat -- "$patch_file" 2>/dev/null | awk '{print $3}')
     ((${#patch_paths[@]} > 0)) \
@@ -194,13 +221,7 @@ PY
     # HEAD更新後、共有indexの対象pathだけを新HEADへ追随させる。他pathのstageは
     # 一切変更せず、対象pathが旧HEAD由来の逆差分として残るindex汚染を防ぐ。
     unset GIT_INDEX_FILE
-    if git cat-file -e "HEAD:$scope_path" 2>/dev/null; then
-        new_blob="$(git rev-parse "HEAD:$scope_path")"
-        new_mode="$(git ls-tree HEAD -- "$scope_path" | awk 'NR==1 {print $1}')"
-        git update-index --add --cacheinfo "$new_mode,$new_blob,$scope_path"
-    else
-        git update-index --force-remove -- "$scope_path"
-    fi
+    advance_shared_index_entry "$scope_path" "$shared_index_entry_before"
     git rev-parse HEAD
     exit 0
 fi
@@ -212,8 +233,6 @@ fi
 # partial stage等で両者が異なる場合だけfail-closedする。これにより別workerの
 # unrelated stageを保持したまま、各workerが事前stageした自身のscopeをcommit
 # できる。post-commit更新用に共有index entryをsnapshotしておく。
-shared_index_file="$(git rev-parse --git-path index)"
-[[ "$shared_index_file" = /* ]] || shared_index_file="$repo_root/$shared_index_file"
 declare -A shared_index_before=()
 declare -A shared_scope_entries_before=()
 declare -A shared_scope_staged_before=()
@@ -282,21 +301,8 @@ unset GIT_INDEX_FILE
 # stageを上書きせず保持する。事前stageがprivate entryと同一なら既にnew HEADと
 # 一致するためupdate不要、cleanな旧HEAD entryだけをnew HEADへ進める。
 for committed_path in "${committed[@]}"; do
-    shared_entry_now="$(git ls-files -s -- "$committed_path" | awk '$3 == 0 {print $1 " " $2; exit}')"
     shared_entry_before="${shared_index_before[$committed_path]-}"
-    if [[ "$shared_entry_now" != "$shared_entry_before" ]]; then
-        echo "WARN: shared index changed concurrently; preserving newer staged entry: $committed_path" >&2
-        continue
-    fi
-    if git cat-file -e "HEAD:$committed_path" 2>/dev/null; then
-        new_blob="$(git rev-parse "HEAD:$committed_path")"
-        new_mode="$(git ls-tree HEAD -- "$committed_path" | awk 'NR==1 {print $1}')"
-        [[ "$shared_entry_now" == "$new_mode $new_blob" ]] && continue
-        git update-index --add --cacheinfo "$new_mode,$new_blob,$committed_path"
-    else
-        [[ -z "$shared_entry_now" ]] && continue
-        git update-index --force-remove -- "$committed_path"
-    fi
+    advance_shared_index_entry "$committed_path" "$shared_entry_before"
 done
 cleanup_normal_index
 trap - EXIT

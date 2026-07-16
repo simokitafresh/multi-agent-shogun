@@ -231,6 +231,51 @@ make_own_patch() {
     [ "$(git -C "$REPO" diff --cached --name-only)" = other.txt ]
 }
 
+@test "patch mode commit後の直接git add競合はforeign stageを上書きしない" {
+    make_shared_fixture; make_own_patch
+    base_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+    mkdir -p "$REPO/.git/hooks"
+    cat > "$REPO/.git/hooks/post-commit" <<'HOOK'
+#!/usr/bin/env bash
+printf 'foreign-after-commit\n' >> shared.txt
+unset GIT_INDEX_FILE
+git add shared.txt
+HOOK
+    chmod +x "$REPO/.git/hooks/post-commit"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m patch-cas --patch '$REPO/own.patch' --base-blob '$base_blob' -- shared.txt"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"preserving newer staged entry"* ]]
+    [ "$(git -C "$REPO" show :shared.txt | tail -1)" = foreign-after-commit ]
+    [ "$(git -C "$REPO" show HEAD:shared.txt | grep -c -- '-own')" -eq 5 ]
+    [ "$(git -C "$REPO" diff-tree --no-commit-id --name-only -r HEAD)" = shared.txt ]
+}
+
+@test "旧HEAD blobがshared indexに残るMM状態は後続patchをBLOCKし内容を保持する" {
+    make_shared_fixture; make_own_patch
+    old_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+    base_blob="$old_blob"
+    run bash -c "cd '$REPO' && bash '$HELPER' -m first --patch '$REPO/own.patch' --base-blob '$base_blob' -- shared.txt"
+    [ "$status" -eq 0 ]
+
+    # 隔離fixtureで事故状態を構成: HEADは新blob、indexだけ旧HEAD、worktreeはforeign hunk。
+    git -C "$REPO" update-index --cacheinfo "100644,$old_blob,shared.txt"
+    printf 'foreign-worktree\n' >> "$REPO/shared.txt"
+    stale_entry="$(git -C "$REPO" ls-files -s -- shared.txt)"
+    head_before="$(git -C "$REPO" rev-parse HEAD)"
+    printf '%s\n' 'diff --git a/shared.txt b/shared.txt' '--- a/shared.txt' '+++ b/shared.txt' \
+        '@@ -1 +1 @@' '-base-01-own' '+next-owner' > "$REPO/next.patch"
+    new_base="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m must-block-stale --patch '$REPO/next.patch' --base-blob '$new_base' -- shared.txt"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"already has staged content"* ]]
+    [ "$(git -C "$REPO" ls-files -s -- shared.txt)" = "$stale_entry" ]
+    [ "$(tail -1 "$REPO/shared.txt")" = foreign-worktree ]
+    [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
+}
+
 @test "patch modeはbase blob不一致をcommit前にBLOCKする" {
     make_shared_fixture; make_own_patch
     run bash -c "cd '$REPO' && bash '$HELPER' -m stale --patch '$REPO/own.patch' --base-blob 0000000000000000000000000000000000000000 -- shared.txt"
