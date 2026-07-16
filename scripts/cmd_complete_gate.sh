@@ -4277,6 +4277,22 @@ collect_parent_cmd_report_files_modified() {
     done < <(discover_reports_for_cmd "$cmd_id") | awk 'NF && !seen[$0]++'
 }
 
+# Close only alerts whose concrete gate/check implementation appears in the
+# completed command's report files_modified.  The helper owns flock + atomic
+# replace so concurrent alert recording cannot be lost.
+close_resolved_gate_alerts() {
+    local cmd_id="${1:-$CMD_ID}"
+    local alerts_file="${GATE_ALERTS_FILE:-$LOG_DIR/gate_alerts.yaml}"
+    local helper="$SCRIPT_DIR/scripts/lib/close_gate_alerts.py"
+    local -a changed_files=()
+
+    [ -f "$helper" ] || return 0
+    mapfile -t changed_files < <(collect_parent_cmd_report_files_modified "$cmd_id")
+    [ "${#changed_files[@]}" -gt 0 ] || return 0
+
+    python3 "$helper" --alerts "$alerts_file" --cmd-id "$cmd_id" -- "${changed_files[@]}"
+}
+
 has_parent_cmd_report() {
     local cmd_id="${1:-$CMD_ID}"
     [ -n "$(discover_reports_for_cmd "$cmd_id")" ]
@@ -8169,6 +8185,11 @@ if [ "$ALL_CLEAR" = true ]; then
         echo "  [INFO] update_status failed (non-blocking)"
     fi
     send_clear_notifications_once "$CMD_ID" "GATE CLEAR immediate"
+    if closed_alert_count=$(close_resolved_gate_alerts "$CMD_ID" 2>>"$LOG_DIR/cmd_complete_gate_stderr.log"); then
+        echo "Gate alert closure: ${closed_alert_count:-0} alert(s) closed"
+    else
+        echo "  [WARN] gate alert closure failed (non-blocking)"
+    fi
     (update_karo_workaround_resolutions "$CMD_ID" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [WARN] karo workaround resolution update failed (non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
     echo "Karo workaround resolution update: queued (async)"
     (append_changelog "$CMD_ID" >/dev/null 2>&1 || true) &
