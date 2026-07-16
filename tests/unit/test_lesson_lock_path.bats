@@ -138,6 +138,71 @@ PY
     [ "$before" = "$after" ]
 }
 
+@test "lesson_write_karo atomically updates enforcement metadata while preserving existing fields" {
+    before_other=$(python3 - "$TEST_ROOT/projects/infra/lessons_karo.yaml" <<'PY'
+import sys, yaml
+data=yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+print(repr(data["lessons"][0]["title"]))
+PY
+)
+    run bash "$TEST_ROOT/scripts/lesson_write_karo.sh" \
+        "promote existing lesson" \
+        "record the enforcement promotion through the canonical writer" \
+        "cmd_promote" --merge-into LK001 \
+        --enforcement "Level4(フロー内BLOCK): canonical writer contract" \
+        --enforcement-level 4
+    [ "$status" -eq 0 ]
+    run python3 - "$TEST_ROOT/projects/infra/lessons_karo.yaml" <<'PY'
+import sys, yaml
+data=yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+assert len(data["lessons"]) == 1
+x=data["lessons"][0]
+assert x["id"] == "LK001"
+assert x["title"] == "existing karo lesson"
+assert x["origin"] == "[[cmd_001]]"
+assert "existing detail for tests" in x["detail"]
+assert x["enforcement"].startswith("Level4")
+assert x["enforcement_level"] == 4
+PY
+    [ "$status" -eq 0 ]
+    [ "$before_other" = "'existing karo lesson'" ]
+}
+
+@test "lesson_write_karo rejects invalid enforcement level without changing ledger" {
+    before=$(sha256sum "$TEST_ROOT/projects/infra/lessons_karo.yaml")
+    run bash "$TEST_ROOT/scripts/lesson_write_karo.sh" \
+        "invalid promotion" "invalid promotion must not publish" cmd_bad \
+        --merge-into LK001 --enforcement-level 7
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"1〜6"* ]]
+    after=$(sha256sum "$TEST_ROOT/projects/infra/lessons_karo.yaml")
+    [ "$before" = "$after" ]
+}
+
+@test "lesson_write_karo serializes concurrent enforcement updates without losing merge notes" {
+    bash "$TEST_ROOT/scripts/lesson_write_karo.sh" "concurrent one" \
+        "first concurrent merge note must remain after both writers finish" cmd_one \
+        --merge-into LK001 --enforcement-level 4 &
+    p1=$!
+    bash "$TEST_ROOT/scripts/lesson_write_karo.sh" "concurrent two" \
+        "second concurrent merge note must remain after both writers finish" cmd_two \
+        --merge-into LK001 --enforcement "Level5: concurrent canonical context" &
+    p2=$!
+    wait "$p1"
+    wait "$p2"
+    run python3 - "$TEST_ROOT/projects/infra/lessons_karo.yaml" <<'PY'
+import sys, yaml
+data=yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+assert len(data["lessons"]) == 1
+x=data["lessons"][0]
+assert "first concurrent merge note" in x["detail"]
+assert "second concurrent merge note" in x["detail"]
+assert x["enforcement_level"] == 4
+assert x["enforcement"].startswith("Level5")
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "lesson_write_shogun waits on shared lock_path lock" {
     hold_lock_for "$TEST_ROOT/projects/infra/lessons_shogun.yaml" 1
     start=$(date +%s)

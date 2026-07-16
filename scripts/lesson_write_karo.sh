@@ -1,7 +1,7 @@
 #!/bin/bash
 # semantic-links: [[教訓ライフサイクル管理]]
 # lesson_write_karo.sh — 家老専用教訓追記（排他ロック付き）
-# Usage: bash scripts/lesson_write_karo.sh "タイトル" "詳細" cmd_XXX ["発動条件"] ["実行手順"] [--origin "[[cmd_XXX]]"] [--role karo|gunshi] [--merge-into LK-A01]
+# Usage: bash scripts/lesson_write_karo.sh "タイトル" "詳細" cmd_XXX ["発動条件"] ["実行手順"] [--origin "[[cmd_XXX]]"] [--role karo|gunshi] [--merge-into LK-A01] [--enforcement "Level4: ..."] [--enforcement-level 4]
 # → projects/infra/lessons_{role}.yaml に追記（default: karo）
 
 set -e
@@ -25,6 +25,8 @@ HOW_ACTION="$DETAIL"
 ORIGIN=""
 LESSON_ROLE="karo"
 MERGE_INTO=""
+ENFORCEMENT=""
+ENFORCEMENT_LEVEL=""
 _positional=0
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -48,6 +50,14 @@ while [ $# -gt 0 ]; do
             MERGE_INTO="${2:-}"
             shift 2
             ;;
+        --enforcement)
+            ENFORCEMENT="${2:-}"
+            shift 2
+            ;;
+        --enforcement-level)
+            ENFORCEMENT_LEVEL="${2:-}"
+            shift 2
+            ;;
         *)
             _positional=$((_positional + 1))
             if [ "$_positional" -eq 1 ]; then
@@ -67,6 +77,11 @@ case "$LESSON_ROLE" in
         exit 1
         ;;
 esac
+
+if [ -n "$ENFORCEMENT_LEVEL" ] && ! [[ "$ENFORCEMENT_LEVEL" =~ ^[1-6]$ ]]; then
+    echo "ERROR: --enforcement-level は1〜6を指定せよ: $ENFORCEMENT_LEVEL" >&2
+    exit 1
+fi
 
 if [ -z "$ORIGIN" ]; then
     if [[ "$SOURCE_CMD" =~ ^cmd_ ]]; then
@@ -112,9 +127,10 @@ while [ $attempt -lt $max_attempts ]; do
         flock -w 10 200 || exit 75
 
         export LESSONS_FILE TIMESTAMP TITLE DETAIL SOURCE_CMD ORIGIN LESSON_ROLE MERGE_INTO
+        export ENFORCEMENT ENFORCEMENT_LEVEL
         export WHEN_COND HOW_ACTION
         python3 << 'PYEOF'
-import os, re, stat, sys, tempfile
+import json, os, re, stat, sys, tempfile
 import yaml
 from difflib import SequenceMatcher
 
@@ -128,6 +144,8 @@ source_cmd = os.environ.get("SOURCE_CMD", "")
 origin = os.environ.get("ORIGIN", "未指定")
 lesson_role = os.environ.get("LESSON_ROLE", "karo")
 merge_into = os.environ.get("MERGE_INTO", "")
+enforcement = os.environ.get("ENFORCEMENT", "")
+enforcement_level = os.environ.get("ENFORCEMENT_LEVEL", "")
 when_cond = os.environ.get("WHEN_COND", "")
 how_action = os.environ.get("HOW_ACTION", "")
 
@@ -195,6 +213,30 @@ if merge_into:
     replacement.extend(f"    {line}\n" for line in new_detail.split("\n"))
     lines[detail_start:detail_end] = replacement
 
+    # Optional structured enforcement update.  Operate only on the selected
+    # raw item so unrelated lessons and existing fields remain byte-identical.
+    # The whole candidate is parsed and verified before atomic publication.
+    def replace_or_append_scalar(field, value):
+        nonlocal_end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("- id:")), len(lines))
+        field_re = re.compile(rf"^  {re.escape(field)}:\s*")
+        indexes = [i for i in range(start + 1, nonlocal_end) if field_re.match(lines[i])]
+        if len(indexes) > 1:
+            print(f"ERROR: duplicate {field} fields in {merge_into}", file=sys.stderr)
+            sys.exit(1)
+        # JSON strings are valid YAML scalars and avoid forbidden YAML dump
+        # round-tripping of the operational ledger.
+        rendered = json.dumps(value, ensure_ascii=False)
+        new_line = f"  {field}: {rendered}\n"
+        if indexes:
+            lines[indexes[0]] = new_line
+        else:
+            lines.insert(nonlocal_end, new_line)
+
+    if enforcement:
+        replace_or_append_scalar("enforcement", enforcement)
+    if enforcement_level:
+        replace_or_append_scalar("enforcement_level", int(enforcement_level))
+
     target_dir = os.path.dirname(lessons_file) or "."
     fd, candidate = tempfile.mkstemp(prefix=".lesson_merge_", dir=target_dir)
     try:
@@ -209,6 +251,13 @@ if merge_into:
         candidate_detail = str(candidate_matches[0].get("detail", "")).rstrip() if len(candidate_matches) == 1 else ""
         if len(candidate_matches) != 1 or candidate_detail != new_detail:
             print(f"ERROR: --merge-into candidate verification failed: {merge_into}", file=sys.stderr)
+            sys.exit(1)
+        candidate_lesson = candidate_matches[0]
+        if enforcement and candidate_lesson.get("enforcement") != enforcement:
+            print(f"ERROR: enforcement candidate verification failed: {merge_into}", file=sys.stderr)
+            sys.exit(1)
+        if enforcement_level and candidate_lesson.get("enforcement_level") != int(enforcement_level):
+            print(f"ERROR: enforcement_level candidate verification failed: {merge_into}", file=sys.stderr)
             sys.exit(1)
         os.replace(candidate, lessons_file)
     finally:
