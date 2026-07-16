@@ -1762,18 +1762,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/hooks/git-pre-commit.sh
-  status: assigned
+  status: completed
   before_ms: 16
   after_ms: 16
-  before_real_ms: 590
-  after_real_ms: ""
-  real_measurement_command: time bash scripts/hooks/git-pre-commit.sh (no staged files);
-    median of 5 runs
-  test_result: bash_n_PASS;bats_test_git_pre_commit_9_pass_0_skip;before_650_after_590
-  commit: 04a710483761799ed7c9f140615428dc2a3c88be
+  before_real_ms: 851.5
+  after_real_ms: 252.5
+  real_measurement_command: "SEMANTIC_HOOK_SYNC=1 bash /tmp/hanzo_git_pre_commit_ab/run.sh >/dev/null"
+  test_result: "tests/unit/test_git_pre_commit.bats 21/21 PASS FAIL=0 SKIP=0"
+  commit: "149cbb725dbaf145f14debc4b52eca812cc25c19"
   assigned_to: "hanzo"
-  updated_at: "2026-07-17T03:59:51"
+  updated_at: "2026-07-17T04:04:53"
   iteration: 1
+  last_good_commit: "ade543c82949a13b2d29c0409ae740c7578819d0"
+  candidate_commit: "149cbb725dbaf145f14debc4b52eca812cc25c19"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 851.5
+  last_good_p95_ms: 1972
+  candidate_p50_ms: 252.5
+  candidate_p95_ms: 310
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "WSL2 same repo same process heavy_job_admission; L/C copied to identical run.sh path"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/hooks/pre-bash-report-deny.sh
   status: completed
   before_ms: 6
