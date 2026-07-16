@@ -524,6 +524,8 @@ Rolling Returns summary tableは`3_months`/`6_months`/`1_year`/`2_years`/`3_year
 | L018 | RULE10: シグナル判定はClose、リターン記録はOpenを厳守 | — |
 | L002 | ブロック名は`BlockType` enum値で統一する | — |
 | L001 | `pipeline_config`テンプレートのパラメータ名はコードと1:1一致必須 | — |
+| L878 | adapterを跨ぐ純粋関数統合ではdate-like入力の型正規化(pd.Timestamp化)を移植先で再実装せよ | cmd_3856 |
+| L003 | 調整済み時系列は全期間再取得必須、複数repo横断で同ロジック全箇所修正 | cmd_3685 |
 
 ### 19.7 trade-rule突合・SSOT（cmd_766-770）
 

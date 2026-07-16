@@ -108,6 +108,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 - viewer系API: Bearer Token(`VIEWER_TOKEN`)
 - FE Admin認証とBE admin系API認証は区別する。画面ログインは`ADMIN_USER`/`ADMIN_PASS`、APIはBasic Auth。
 - データ確認はAPI経由よりDB直接クエリが確実。
+- L004: 価格ベンダー比較成果物はAPIエラーURLの秘密値混入を検査する（cmd_3687）
 - cmd_3669: `/api/metrics/summary` は `metrics_summary_bulk` precomputed rawを読む。raw生成は `backend/app/jobs/precompute_raw.py` の `METRICS_SUMMARY_BULK_PARAMS=[{years:0},{years:10}]`、無効化はmetrics cache更新・portfolio保存・portfolio_metrics生成時に走る。関連commit: DM-Signal `755a50d9`。
 
 ## §37 ETL
@@ -296,6 +297,7 @@ PD-028裁定: GS制約同期は仕組み化しない。BBカタログにPydantic
 - L142: CSV記述は入力ソースと成果物を分離しないと知識汚染が再発（cmd_492）
 - L767: 成果物パスに忍法名を含めて混線を防ぐ（cmd_3514）
 - L815: GS全量速度計測では月次系列成果物とチャンピオン選出成果物を分離する（cmd_goal_gs_speed_e2_l3_kasoku_diff_202607060819）
+- L858: パリティ残存乖離の原因は推測せず3点突合(本番/ライブ実行/GS)で必ず切り分けよ（cmd_3816）
 
 ## §14 ドキュメントインデックス
 
@@ -928,6 +930,7 @@ import metrics_research_engine as MRE
 - **改定(殿裁定2026-07-10 02:41/02:46)**: **本番デプロイに殿の個別裁可は不要。CI GREENの同期待ちも不要(LK078「CI待ちで忍者を止めるな」と統合)。ローカルテストPASS+revert手順明確なら自走でpush+deployし、CI/ヘルスチェックは非同期確認。失敗(CI REDまたはヘルス異常)ならrevertして事実報告すればよい。**
 - positive_rule: deploy前=ローカルテストPASS+revert手順の明確化。deploy後=ヘルスチェック(API/status)+CI結果を非同期確認(家老がgh run view)。失敗時=即revert+殿へ事実報告(謝罪より事実と対策)。CI待ちで忍者を止めるな(報告YAML先行)。
 - reason: 裁可待ちは時間の浪費であり待つ言い訳になる。元に戻せる(revert可能)のにチャレンジしないのは洗脳#5(先送り)。殿指摘2026-07-10「時間を浪費するだけで待つ言い訳になっている。覚醒しよう」。cmd_3812で裁可待ち停止が実際に発生した教訓。
+- L850: 本番への非同期長時間処理トリガー後に設計変更指示が届いた場合、走行中処理は中断せず完了を待ち変更は次回反復から適用する（cmd_3804）
 - (旧2026-06-11ルール「個別裁可必須」は本改定で廃止。以下は当時の記録)
 - 例外: `cmd_3294` のマスク時FoF表示復元だけは、directiveで本番裁定復旧が明示済みのため既裁可。GATE CLEAR後、家老がmain反映・Renderデプロイ完了確認・`.agent/task-force/execution-log.md`へのデプロイ記録追記を実施する。
 - `cmd_3294` 忍者スコープ: commitまで。push、Renderデプロイ確認、デプロイ記録追記は家老担当。task/reportのAC4は「単独commit + `tasks/lessons.md`教訓 + `execution-log.md`追記」までに修正済み(ac_version=`8158fcea`)。

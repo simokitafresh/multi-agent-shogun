@@ -90,8 +90,7 @@ Yahoo Finance(yfinance) + FRED API → 正規化 → PostgreSQL(Supabase) UPSERT
 ## 教訓索引（自動追記）
 
 - （L001-L002は振り分け済 → §4 Render構成(L001), §5 DM-Signalとの関係(L002)）
-- L003: 調整済み時系列は全期間再取得必須、複数repo横断で同ロジック全箇所修正（cmd_3685）
-- L004: 価格ベンダー比較成果物はAPIエラーURLの秘密値混入を検査する（cmd_3687）
+- （L003→core§19.6、L004→ops§36に振り分け済み 2026-07-16）
 <!-- last_synced_lesson: L004 -->
 
 ---
