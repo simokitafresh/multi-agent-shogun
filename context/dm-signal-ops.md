@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-15 cmd_3908 -->
-<!-- source_commit:07305b83 reason:GA-261 Compare Returns FoF MTD N/A運用反映 evidence:ops §50へmtd_close=NULL時のLIVE fallback確認手順を反映 -->
+<!-- last_updated: 2026-07-16 cmd_3997 -->
+<!-- source_commit:f4d94ab48bd65536631037dbfbe16bdd380827a9 reason:cmd_3997 ledger drift監査永続化 evidence:ops §81へ旧方式から新版への時系列と運用simulation 12/12を反映 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1276,11 +1276,12 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 因果リンク: [[07-14_23FoF月間保有上書き]] -> [[cmd_3905_bounded_restore]] -> [[7/1確定値161行復元]]
 - L897: 本番bounded restoreは実project pathでのlauncher貫通試験を事前要求する。unit PASSだけではroot結合不整合を見逃す（cmd_3905）
 
-## §81 新規Signal INSERTのledger drift通知契約 (cmd_karo_hotfix_signal_insert_ledger_drift_alert_202607141340, 2026-07-14)
+## §81 新規Signal INSERTのledger drift監査契約 (cmd_3997, 2026-07-16)
 
-- 確定域ledgerで矯正された新規`signals` INSERTは、旧Signal行がなくてもrun-level `SIGNAL CHANGE ALERT`へ1件として可視化する。synthetic entryは通知collector専用であり、架空の`old_holding_signal`を`signal_change_log`へINSERTしない。
-- ledger一致INSERT・ledger未被覆pending・既存UPDATEのchange-log契約・cleanup経路は不変。回帰70/70 PASS、FAIL 0、SKIP 0。一次根拠=`/mnt/c/Python_app/DM-signal` commit `05a45d83`、`backend/app/jobs/flush/signal_flush.py::_collect_new_insert_ledger_drift_alerts`。
-- 因果リンク: [[2026-07-14_23FoF新規INSERT]] -> [[existing_is_Noneでchange_log除外]] -> [[ledger_drift通知0件]] -> [[run_level_ALERT橋渡し]]
+- 旧方式(2026-07-14, `05a45d83`)は新規`signals` INSERTの確定域ledger driftをrun-level `SIGNAL CHANGE ALERT`へ載せたが、synthetic entryをDBから除外したため事後に3PFを復元できなかった。
+- 新方式(2026-07-16, `f4d94ab4`)は同じsynthetic entryを`signal_change_log`へ1行永続化する。`old_holding_signal=proposed`、`new_holding_signal=ledger`、`date`はDB date型、内部フラグ`is_new_insert_ledger_drift`は永続化しない。同一payload再実行はSignal 1行・監査1行を維持し監査増分0。
+- ledger一致INSERT・ledger未被覆pending・既存UPDATE・cleanup経路は不変。回帰76/76 PASS、運用simulation 12/12 PASS、FAIL 0、SKIP 0。
+- 因果リンク: [[2026-07-14_run_level_ALERT橋渡し]] -> [[alert_payload非永続で事後追跡不能]] -> [[cmd_3997_signal_change_log永続化]]
 
 ## §82 確定域holding_signal correction event運用 (cmd_3908, 2026-07-15)
 

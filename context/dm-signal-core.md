@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-15 cmd_karo_hotfix_ga256_pgserver_recovery -->
-<!-- source_commit:07305b83 reason:GA-261 FoF MTD NULL fresh判定修正 evidence:core §8.6へNULL precomputeはLIVE fallbackする契約とFoF78/Standard24影響範囲を反映 -->
+<!-- last_updated: 2026-07-16 cmd_3997 -->
+<!-- source_commit:f4d94ab48bd65536631037dbfbe16bdd380827a9 reason:cmd_3997 ledger drift監査永続化 evidence:core §21の旧通知専用契約をDB永続+冪等契約へ更新 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -601,7 +601,8 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - 2026-07-08 cmd_3753: PF復元R1完了。`portfolio_archive`(FKなし`portfolio_id`+payload JSON+deleted/restored metadata)を追加し、`PortfolioRepository.delete_by_id`直前でportfolio/folder階層/`signal_decision_ledger`/`month_start_signal_input_snapshots`を同一transaction退避。archive INSERT失敗時は削除rollback。対象commit: `/mnt/c/Python_app/DM-signal` `f6404d70`。
 - 2026-07-10 cmd_3810: Monthly Trade FoF表示で`display_ticker_weights`変更時、`calculated_return_open/close`・`matched_weight`・`missing_tickers`を表示weightsと同一基盤で再計算するよう統一(`_sync_entry_calculation_to_display_weights`)。旧実装は表示weightsだけ差し替え、計算returnは別ソースのweightsを参照し不整合だった。`matched_weight`判定も厳密等価(`!= 1.0`)から浮動小数点許容(`abs(matched_weight-1.0)>1e-9`)へ修正。対象commit: `/mnt/c/Python_app/DM-signal` `67bdffc8`。
 - 2026-07-10 cmd_3812: `monthly_returns.py::_generate_monthly_returns`に`signal_decision_ledger`のband確定weight(`decision_ticker_weights`)優先ロジックを追加。台帳にband weightがあれば通常計算weightより優先使用し(`_normalize_ledger_ticker_weights`)、価格キャッシュ対象tickerにも台帳weightのtickerを含める。台帳のband weightsがMonthly Returns生成時に上書きされていた問題への対処。対象commit: `/mnt/c/Python_app/DM-signal` `8fc49267`。
-- 2026-07-14 cmd_karo_hotfix_signal_insert_ledger_drift_alert_202607141340: 新規`signals` INSERTは旧値がないため通常の`signal_change_log`対象外だが、確定域ledgerとのdriftはrun-level `SIGNAL CHANGE ALERT`へ必ず載せる。架空の旧値をDB永続化せず、既存UPDATE・ledger一致INSERT・未被覆pendingの契約を維持する。対象commit: `/mnt/c/Python_app/DM-signal` `05a45d83`、回帰=`backend/tests/test_signal_decision_ledger_guard.py`。
+- 2026-07-14 cmd_karo_hotfix_signal_insert_ledger_drift_alert_202607141340: 新規`signals` INSERTの確定域ledger driftをrun-level `SIGNAL CHANGE ALERT`へ載せたが、当初は`signal_change_log`から除外していた。この旧方式は事後追跡不能を生んだため、2026-07-16 cmd_3997で廃止。
+- 2026-07-16 cmd_3997: 新規INSERTのledger drift synthetic entryも`signal_change_log`へ1行永続化する。`date`はDB投入前に`date`型へ正規化し、内部キー`is_new_insert_ledger_drift`はDB field filterで除去する。同一payload再実行は監査ログ増分0。対象commit: `/mnt/c/Python_app/DM-signal` `f4d94ab4`、回帰76/76 PASS・運用simulation 12/12 PASS・SKIP 0。
 
 ## §22 CI/テスト基盤 2026-05更新 (cmd_2652〜2660)
 

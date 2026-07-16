@@ -588,6 +588,7 @@ v7吸収(2026-05-19):
   detail: |
     GA-120調査で、低レベルcheck直接は17件ALERTだがgateデフォルトCFC_GIT_TIMEOUT=1ではgit log timeoutによりOKとなった。さらにprojects/google-classroom.yaml不在により外部repoではなくinfra root fallbackを見ていた。次回同種ALERT調査では timeout秒数、root_fallback=true/false、実repo path、commit_count を必ず報告させる。
     吸収(2026-07-16, cmd_karo_hotfix_codd_context_freshness_202607160030, origin: [[GA-264]] -> [[source commit実契約差分]] -> [[本文同期チェック]]): GA-264横展開でsource 786a4ef4aを確認したところ、codd-refactorはfile内部jobs=8からfile間aggregate budget=8/file内部jobs=1へ実契約が変わっていた。次回はsource差分に既存context本文と矛盾する追加削除が1行以上あるかをyes/no判定し、yesなら本文更新後にのみsource_commit境界を進める。修正前codd ALERT=1、本文同期後=0、関連Bats=49/49 PASS、SKIP=0。
+    吸収(2026-07-16, cmd_3997, origin: [[GA-276]] -> [[進行中commitの共有済み誤認]] -> [[global_cmd鮮度境界分離]]): dashboard/startupのglobal鮮度監視がローカルHEADを見ると、忍者commit直後かつcmd_complete_gate前の未還流変更を誤ALERTにする。globalはorigin/mainまたはorigin/masterの共有完了境界、cmd-warnings/cmd-commit-listはHEADを使う。修正前4 ALERT→修正後2 ALERT、dm-signal-core/ops誤検知2件消失。回帰67/67 PASS・SKIP0。
   source_cmd: 'cmd_karo_hotfix_ga120_context_freshness_recon_20260623'
   when: 'context_freshness ALERT調査・報告レビュー時'
   how: '報告YAMLの原因欄に timeout秒数/root_fallback有無/repo path/commit_count/source commits を数値で記録し、cache有無だけで判定しない'
