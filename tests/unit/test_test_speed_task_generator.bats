@@ -76,6 +76,8 @@ YAML
 status: completed
 commit_hash: same
 speed_result: {last_wall: 9, approach: cache, quality: pass, dominant: cache, elapsed_sec: 10, ctx_percent: 10}
+test_results:
+  - {status: PASS, failures: 0, skips: 0, wall_sec: 9}
 YAML
   run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_TASK_DIR="$TMP/queue/training" TEST_SPEED_CAMPAIGN_LEDGER="$TMP/logs/campaign.tsv" \
     bash "$ROOT/scripts/test_speed_task_generator.sh" complete-deploy hayate "$task1" "$report1"
@@ -87,6 +89,91 @@ YAML
   [ "$(sed -n 's/^[[:space:]]*status:[[:space:]]*//p' "$TMP/queue/tasks/hayate.yaml" | head -1)" = assigned ]
   [ "$r2_report" != r1.yaml ]
   [ -f "$report1" ]
+}
+
+@test "complete-deploy derives order-independent round best from valid R2 measurements" {
+  mkdir -p "$TMP/scripts"
+  cp "$ROOT/scripts/test_speed_task_generator.sh" "$TMP/scripts/"
+  cat > "$TMP/scripts/deploy_task.sh" <<'SH'
+#!/usr/bin/env bash
+cp "$3" "$SHOGUN_REPO_ROOT/deployed.yaml"
+SH
+  chmod +x "$TMP/scripts/deploy_task.sh"
+  task="$TMP/queue/training/r2.yaml"
+  cat > "$task" <<'YAML'
+task:
+  target_path: tests/unit/slow.bats
+  speed_campaign:
+    campaign_id: camp-r2
+    round_index: 2
+    best_wall: 10
+    elapsed_sec: 10
+    baseline_commit: same
+YAML
+
+  for order in normal reversed; do
+    report="$TMP/queue/reports/$order.yaml"
+    if [ "$order" = normal ]; then walls='[4.285, 5.196]'; else walls='[5.196, 4.285]'; fi
+    python3 - "$report" "$walls" <<'PY'
+import sys, yaml
+walls=yaml.safe_load(sys.argv[2])
+data={
+  'commit_hash': 'same',
+  'speed_result': {'last_wall': 5.196, 'approach': 'fixture', 'quality': 'pass', 'dominant': 'cache', 'elapsed_sec': 20, 'ctx_percent': 10},
+  'test_results': [
+    {'status': 'PASS', 'failures': 0, 'skips': 0, 'wall_sec': walls[0]},
+    {'status': 'PASS', 'failures': 0, 'skips': 0, 'wall_sec': walls[1]},
+    {'status': 'FAIL', 'failures': 0, 'skips': 0, 'wall_sec': 1},
+    {'status': 'PASS', 'failures': 1, 'skips': 0, 'wall_sec': 2},
+    {'status': 'PASS', 'failures': 0, 'skips': 1, 'wall_sec': 3},
+    {'status': 'PASS', 'failures': 0, 'skips': 0, 'wall_sec': 'not-a-number'},
+  ],
+}
+with open(sys.argv[1], 'w') as fh: yaml.safe_dump(data, fh)
+PY
+    ledger="$TMP/logs/campaign-$order.tsv"
+    run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_TASK_DIR="$TMP/queue/training" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" \
+      bash "$ROOT/scripts/test_speed_task_generator.sh" complete-deploy hayate "$task" "$report"
+    [ "$status" -eq 0 ]
+    grep -Fq 'best_wall: 4.285' "$TMP/deployed.yaml"
+    [ "$(awk -F '\t' '$1=="camp-r2" && $2==2 {print $4 ":" $5}' "$ledger")" = '4.285:5.196' ]
+  done
+}
+
+@test "complete-deploy blocks when no quality-valid numeric measurement exists" {
+  task="$TMP/queue/training/invalid-r2.yaml"
+  cat > "$task" <<'YAML'
+task:
+  target_path: tests/unit/slow.bats
+  speed_campaign: {campaign_id: invalid, round_index: 2, best_wall: 10, baseline_commit: same}
+YAML
+  report="$TMP/queue/reports/invalid-r2.yaml"
+  cat > "$report" <<'YAML'
+commit_hash: same
+speed_result: {last_wall: 5.196, approach: fixture, quality: pass}
+test_results:
+  - {status: FAIL, failures: 0, skips: 0, wall_sec: 4.285}
+  - {status: PASS, failures: 0, skips: 0, wall_sec: nope}
+YAML
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_CAMPAIGN_LEDGER="$TMP/logs/invalid.tsv" \
+    bash "$ROOT/scripts/test_speed_task_generator.sh" complete-deploy hayate "$task" "$report"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *'BLOCK:no_valid_test_measurements'* ]]
+  [ ! -e "$TMP/logs/invalid.tsv" ]
+}
+
+@test "round best preserves a faster previous best and existing campaign stop contracts" {
+  ledger="$TMP/logs/previous-best.tsv"
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_TASK_DIR="$TMP/queue/training" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" \
+    bash "$ROOT/scripts/test_speed_task_generator.sh" continue camp-prev 1 tests/unit/slow.bats 4.000 4.285 fixture pass cache 20 0 same same 5.196
+  [ "$status" -eq 0 ]
+  r2=$(printf '%s\n' "$output" | tail -n 1)
+  grep -Fq 'round_index: 2' "$r2"
+  grep -Fq 'min_rounds: 2' "$r2"
+  grep -Fq 'max_rounds: 3' "$r2"
+  grep -Fq 'campaign_budget_sec: 600' "$r2"
+  grep -Fq 'best_wall: 4.000' "$r2"
+  [ "$(awk -F '\t' '$1=="camp-prev" {print $4 ":" $5}' "$ledger")" = '4.000:5.196' ]
 }
 
 @test "production deploy contract normalizes arbitrary direct YAML report metadata" {

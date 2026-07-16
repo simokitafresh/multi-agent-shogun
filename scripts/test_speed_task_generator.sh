@@ -208,6 +208,7 @@ continue_campaign() {
     local best="${4:?best_wall required}" last="${5:?last_wall required}" approach="${6:?approach required}"
     local quality="${7:?quality pass|fail|skip required}" dominant="${8:-none}" elapsed="${9:-0}" ctx="${10:-0}"
     local adopted_best stop next file baseline_commit="${11:-}" result_commit="${12:-}"
+    local observed_last="${13:-$last}"
     if awk -v b="$best" -v l="$last" 'BEGIN{exit !(l>=b)}' && [ -n "$baseline_commit" ] && \
        [ -n "$result_commit" ] && [ "$baseline_commit" != "$result_commit" ]; then
         echo "BLOCK:deterioration_commit_adopted baseline=$baseline_commit result=$result_commit" >&2
@@ -219,7 +220,7 @@ continue_campaign() {
     elif [ "$elapsed" -ge "$CAMPAIGN_BUDGET_SEC" ]; then stop="budget";
     elif [ "$round" -ge "$MAX_ROUNDS" ]; then stop="max_rounds";
     elif [ "$round" -ge "$MIN_ROUNDS" ] && [ "$dominant" = none ]; then stop="no_next_dominant"; fi
-    append_campaign "$campaign" "$round" "$target" "$adopted_best" "$last" "$approach" "$stop"
+    append_campaign "$campaign" "$round" "$target" "$adopted_best" "$observed_last" "$approach" "$stop"
     [ -z "$stop" ] || { printf 'STOP:%s\n' "$stop"; return 0; }
     next=$((round + 1))
     file=$(emit_round_task "$campaign" "$next" "$target" "$adopted_best" "$elapsed")
@@ -245,15 +246,43 @@ case "$command_name" in
   complete-deploy)
     ninja="${2:?ninja required}"; task_file="${3:?task file required}"; report_file="${4:?report file required}"
     eval "$(python3 - "$task_file" "$report_file" <<'PY'
-import shlex, sys, yaml
+import math, shlex, sys, yaml
 t=(yaml.safe_load(open(sys.argv[1])) or {}).get('task', {})
 r=yaml.safe_load(open(sys.argv[2])) or {}
 c=t.get('speed_campaign') or {}; s=r.get('speed_result') or {}
+
+def measurement_rows(value):
+    if isinstance(value, list):
+        return value
+    if isinstance(value, dict):
+        if 'wall_sec' in value:
+            return [value]
+        return [item for item in value.values() if isinstance(item, dict)]
+    return []
+
+valid_walls=[]
+for result in measurement_rows(r.get('test_results')):
+    status=str(result.get('status', '')).strip().lower()
+    failures=result.get('failures', result.get('failed'))
+    skips=result.get('skips', result.get('skipped'))
+    wall=result.get('wall_sec')
+    try:
+        wall=float(wall)
+        failures=int(failures)
+        skips=int(skips)
+    except (TypeError, ValueError, OverflowError):
+        continue
+    if status == 'pass' and failures == 0 and skips == 0 and math.isfinite(wall) and wall >= 0:
+        valid_walls.append(wall)
+if not valid_walls:
+    raise SystemExit('BLOCK:no_valid_test_measurements')
+round_best=min(valid_walls)
 vals=[c.get('campaign_id'), c.get('round_index'), t.get('target_path'), c.get('best_wall'),
-      s.get('last_wall'), s.get('approach'), s.get('quality'), s.get('dominant','none'),
+      round_best, s.get('approach'), s.get('quality'), s.get('dominant','none'),
       s.get('elapsed_sec', c.get('elapsed_sec',0)), s.get('ctx_percent',0),
-      c.get('baseline_commit',''), r.get('commit_hash','')]
+      c.get('baseline_commit',''), r.get('commit_hash',''), s.get('last_wall')]
 if any(v in (None, '') for v in vals[:7]): raise SystemExit('missing speed_result callback fields')
+if vals[12] in (None, ''): raise SystemExit('missing speed_result last_wall observation')
 print('set -- ' + ' '.join(shlex.quote(str(v)) for v in vals))
 PY
 )"
