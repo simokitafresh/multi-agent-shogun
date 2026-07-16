@@ -76,6 +76,12 @@ d.update({
     "files_modified": ["tests/unit/test_skill_feedback_loop.bats"],
     "lesson_candidate": {"found": False, "no_lesson_reason": "既存fixture依存の追随確認"},
     "lessons_useful": [{"id": "L659", "useful": True, "reason": "fixture依存追随の既知教訓"}],
+    "operational_simulation": {
+        "command": "bash scripts/dashboard_update.sh fixture --dry-run",
+        "expected": "dashboard fixture path completes with the declared result",
+        "actual": "fixture report supplies integration evidence for production gate validation",
+        "result": "PASS",
+    },
     "binary_checks": {"AC1": [{"check": "dashboard fixture report validates with production gate", "result": "yes"}]},
     "assumption_invalidation": {"found": False, "affected_cmds": [], "detail": ""},
     "verdict": "PASS",
