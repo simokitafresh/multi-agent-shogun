@@ -1460,17 +1460,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/gunshi_gate_sync.sh
-  status: pending
+  status: saturated
   before_ms: 14
   after_ms: ''
-  before_real_ms: 1531
-  after_real_ms: ""
-  real_measurement_command: bash scripts/gunshi_gate_sync.sh --dry-run >/dev/null
-  test_result: bash_n_pass;dry_run_output_diff_empty;before_1907_after_1531;SKIP=0
-  commit: d121a3ad3
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 12636.389
+  after_real_ms: 12270.779
+  real_measurement_command: "bash scripts/gunshi_gate_sync.sh --dry-run"
+  test_result: "PASS"
+  commit: "d8484ba0146cbbcf72b550bd50274e18f5dee8f7"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T01:34:59"
   iteration: 1
+  last_good_commit: "d8484ba0146cbbcf72b550bd50274e18f5dee8f7"
+  candidate_commit: "b949f639d9e1afc1bc8733c507eb34186c9b837f"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 12636.389
+  last_good_p95_ms: 18172.939
+  candidate_p50_ms: 12270.779
+  candidate_p95_ms: 22111.738
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "7fe7af287050f0ad25aec00b81bb00739e49d3eaffa478d5a6ea8af7d3a7dba5"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gunshi_log_append.sh
   status: pending
   before_ms: 16
@@ -1603,18 +1617,31 @@ entries:
   updated_at: "2026-06-08T03:50:31"
   iteration: 1
 - script_path: scripts/hooks/pre-mcp-lord-attribution-guard.sh
-  status: pending
+  status: completed
   before_ms: 14
   after_ms: 14
-  before_real_ms: 1547
-  after_real_ms: ""
-  real_measurement_command: 50x printf '{"tool_name":"mcp__memory__add_observations","tool_input":{"observations":[{"entityName":"Lord","contents":["通常メモ"]}]}}'
-    | bash scripts/hooks/pre-mcp-lord-attribution-guard.sh; median of 7 runs
-  test_result: bash_n_pass;spot_checks_non_target_normal_cited_warn_block_PASS;SKIP=0;before_4104.770_after_1547.238
-  commit: ce5a550d8
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 960.793
+  after_real_ms: 834.53
+  real_measurement_command: "50x fixed add_observations normal payload | bash /tmp/hayate_hook_under_test.sh"
+  test_result: "bash_n_PASS;functional_non_target_normal_cited_warn_block_5/5_PASS;FAIL=0;SKIP=0;safety_removed=0"
+  commit: "bc04704dcbcfb0aa5c0fc1bc68cf4adb95da8cac"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T01:21:41"
   iteration: 1
+  last_good_commit: "ce5a550d81"
+  candidate_commit: "bc04704dcbcfb0aa5c0fc1bc68cf4adb95da8cac"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 960.793
+  last_good_p95_ms: 2137.461
+  candidate_p50_ms: 834.53
+  candidate_p95_ms: 1540.189
+  ab_order: "alternating"
+  warmup_each: "20"
+  environment_fingerprint: "Linux-WSL2_bash5.2_jq1.7_cpu16"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/hooks/pre-write-report-deny.sh
   status: pending
   before_ms: 15
@@ -1742,18 +1769,17 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/inbox_mark_read.sh
-  status: pending
+  status: completed
   before_ms: 14
   after_ms: ''
   before_real_ms: 40
   after_real_ms: ""
   real_measurement_command: bash scripts/inbox_mark_read.sh tobisaru <msg_id> (real
     unread msg, cold run, 174-line inbox, 5 runs median)
-  test_result: bats tests/unit/test_inbox_mark_read.bats 9/10 PASS SKIP=0 (test9 pre-existing
-    FAIL)
-  commit: 0003b448280d3a580dc9f2a14087e7557263aa64
+  test_result: "reconciled"
+  commit: "68f57021d"
   assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  updated_at: "2026-07-17T01:24:38"
   iteration: 1
 - script_path: scripts/inbox_prune.sh
   status: pending
@@ -2578,19 +2604,31 @@ entries:
   updated_at: "2026-06-08T03:50:29"
   iteration: 1
 - script_path: scripts/ninja_done.sh
-  status: pending
+  status: completed
   before_ms: 17
   after_ms: ''
-  before_real_ms: 1421.877
-  after_real_ms: ""
-  real_measurement_command: for i in {1..100}; do bash scripts/ninja_done.sh --help
-    >/dev/null; done
-  test_result: bash -n scripts/ninja_done.sh PASS; bats tests/unit/test_ninja_done.bats
-    PASS 5/5 SKIP=0
-  commit: 3513b9d5e
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 6.759316
+  after_real_ms: 6.556125
+  real_measurement_command: "bash /tmp/ninja_done_ab.sh --help"
+  test_result: "tests/unit/test_ninja_done.bats:6_pass_fail0_skip0"
+  commit: "d8484ba0146cbbcf72b550bd50274e18f5dee8f7"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T01:25:55"
   iteration: 1
+  last_good_commit: "bc04704dcbcfb0aa5c0fc1bc68cf4adb95da8cac"
+  candidate_commit: "d8484ba0146cbbcf72b550bd50274e18f5dee8f7"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 6.759316
+  last_good_p95_ms: 8.20512
+  candidate_p50_ms: 6.556125
+  candidate_p95_ms: 7.866493
+  ab_order: "alternating"
+  warmup_each: "2"
+  environment_fingerprint: "Linux-6.6.87.1-microsoft-standard-WSL2|GNU bash 5.2.21(1)-release|same_fixed_path"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/ninja_monitor.sh
   status: completed
   before_ms: 24
@@ -2617,17 +2655,16 @@ entries:
   updated_at: "2026-07-16T22:19:12"
   iteration: 1
 - script_path: scripts/ntfy.sh
-  status: pending
+  status: completed
   before_ms: 18
   after_ms: ''
   before_real_ms: 19.501
   after_real_ms: ""
   real_measurement_command: bash scripts/ntfy.sh
-  test_result: bash -n PASS; noarg/empty usage PASS; bats test_ntfy_auth + test_cmd_1408_defensive_coding
-    21/21 PASS SKIP=0
-  commit: be85d24ef
+  test_result: "reconciled"
+  commit: "68f57021d"
   assigned_to: ""
-  updated_at: "2026-06-08T15:24:49"
+  updated_at: "2026-07-17T01:24:41"
   iteration: 1
 - script_path: scripts/ntfy_batch.sh
   status: pending
@@ -2924,16 +2961,16 @@ entries:
   assigned_to: kotaro
   updated_at: '2026-06-07T16:12:46'
 - script_path: scripts/restart_watchers.sh
-  status: pending
+  status: completed
   before_ms: 17
   after_ms: ''
   before_real_ms: 780
   after_real_ms: ""
   real_measurement_command: "sync && time bash scripts/restart_watchers.sh"
-  test_result: "7/7 PASS SKIP=0 (test_inbox_watcher_health.bats)"
-  commit: 8c69e8666
+  test_result: "reconciled"
+  commit: "68f57021d"
   assigned_to: ""
-  updated_at: "2026-06-08T03:50:31"
+  updated_at: "2026-07-17T01:24:43"
   iteration: 1
 - script_path: scripts/review_gate.sh
   status: completed
@@ -3367,16 +3404,16 @@ entries:
   assigned_to: ''
   updated_at: "2026-06-07T21:57:16"
 - script_path: scripts/yaml_check_opus.sh
-  status: pending
+  status: completed
   before_ms: 18
   after_ms: 67
   before_real_ms: 67
   after_real_ms: ""
   real_measurement_command: sync && time bash scripts/yaml_check_opus.sh queue/tasks/saizo.yaml
-  test_result: affected 41/41 PASS SKIP=0
-  commit: '0333a5c96'
+  test_result: "reconciled"
+  commit: "0333a5c96"
   assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  updated_at: "2026-07-17T01:24:46"
   iteration: 1
 - script_path: scripts/yaml_log_rotate.sh
   status: completed
