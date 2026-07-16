@@ -5,6 +5,7 @@
 
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
+| reflux配備3段バグ修正 | promotion在庫189停滞の根因修正(殿「いまやろう」起点) | 第1段=delegated除外(`348d1df9c`)、第2段=estimated_minutes欠落(`2a09dc71c`)、第3段=purpose文gate+実装共起FP(`432d78e71`)。startup gate診断追加(`491e63af8`)。7日間停止→3障壁除去→自動配備復活 | [[promotion在庫188停滞]] -> [[delegated過剰判定]] -> [[estimated_minutes欠落]] -> [[QUALITY_CONTRACT_FP]] -> [[reflux完全復活]] |
 | CI除去環境埋込み確認 | 前セッション殿裁定(CI検知=家老責務)の強ニュー化完了を一次確認 | startup gateにCI表示なし確認済み。cad2fa416+4cb69edc9+271124e84全push済み、LS-A11吸収+記憶DB三層貫通 | [[殿裁定20260716_CI_RED家老責務]] -> [[gate_shogun_startup除去]] -> [[LS-A11吸収]] |
 | lesson-sort 21件 | FE教訓索引17件+dm-signal2件+database2件の振り分け | 8ファイル編集。FE§5/§7/§8内部5件+ops§32/§12/§42へ8件+infra5件+research1件+core2件 | [[教訓索引肥大55KB]] -> [[カテゴリ横断振り分け]] -> [[lesson_sort_20260716]] |
 | cmd_3996偵察 | freeze後SIGNAL CHANGE ALERT 3PF/日の原因特定 | 前提反証: signal_change_log date=2026-07-15は0行。3件はin-memory alertでDB insert除外。**freeze正常、実データ変更ゼロ** | [[ledger_bound_freeze_CLOSED]] -> [[SIGNAL_CHANGE_ALERT_in_memory_only]] -> [[DB変更ゼロ確認]] |
