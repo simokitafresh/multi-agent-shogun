@@ -49,9 +49,52 @@ parse_args_in_isolation() {
         # shellcheck disable=SC1090
         source "$TEST_PROJECT/scripts/deploy_task.sh"
         parse_deploy_task_args "$@"
-        printf 'ninja=%s yaml=%s cmd=%s direct=%s\n' \
-            "$NINJA_NAME" "$YAML_FILE" "$CMD_ID" "$DIRECT_MODE"
+        printf 'ninja=%s yaml=%s cmd=%s direct=%s message=%s type=%s from=%s\n' \
+            "$NINJA_NAME" "$YAML_FILE" "$CMD_ID" "$DIRECT_MODE" "$MESSAGE" "$TYPE" "$FROM"
     )
+}
+
+write_legacy_failed_task() {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old_failed
+  cmd_id: cmd_old_failed
+  task_id: cmd_old_failed_impl
+  task_type: impl
+  status: failed
+  command: "旧failed taskを再実行してはならない"
+  legacy_marker: preserve-me
+  acceptance_criteria:
+    AC1:
+      description: "旧ACも再注入してはならない"
+EOF
+}
+
+run_legacy_status_control() {
+    local control_status="$1"
+    run bash -c '
+        set -euo pipefail
+        project="$1"
+        control_status="$2"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { :; }
+        resolve_pane() { echo "test-pane"; }
+        get_ctx_pct() { echo 0; }
+        check_idle() { return 0; }
+        normalize_task_yaml() { echo "unexpected normalization" >&2; return 91; }
+        repair_training_parent_cmd_from_cmd_id() { echo "unexpected repair" >&2; return 92; }
+        deploy_task_guard_target_path_collision() { echo "unexpected collision check" >&2; return 93; }
+        deploy_task_apply_task_mutations() { echo "unexpected task injection" >&2; return 94; }
+        bash() {
+            if [[ "${1:-}" == */inbox_write.sh ]]; then
+                printf "%s|%s|%s|%s|%s\n" "$2" "$3" "$4" "$5" "$6" > "$project/status_notice.log"
+                return 0
+            fi
+            command bash "$@"
+        }
+        deploy_task_main sasuke status "$control_status" karo
+    ' _ "$TEST_PROJECT" "$control_status"
 }
 
 @test "ninja --yaml file is rejected with exit 2 before queue publication" {
@@ -90,4 +133,45 @@ parse_args_in_isolation() {
     [[ "$output" == *"cmd=cmd_4242"* ]]
     [[ "$output" == *"direct=false"* ]]
     [ "$(fixture_digest)" = "$before" ]
+}
+
+@test "legacy status controls preserve message and bypass task deployment for all lifecycle states" {
+    local control_status
+
+    for control_status in idle done in_progress; do
+        write_legacy_failed_task
+
+        run parse_args_in_isolation sasuke status "$control_status" karo
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"cmd= direct=false message=status type=$control_status from=karo"* ]]
+        [[ "$output" != *"タスクYAML:"* ]]
+
+        run_legacy_status_control "$control_status"
+        [ "$status" -eq 0 ]
+        [[ "$output" != *"unexpected"* ]]
+
+        run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" "$control_status" <<'PY'
+import sys
+import yaml
+
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert task == {
+    "parent_cmd": "cmd_old_failed",
+    "cmd_id": "cmd_old_failed",
+    "task_id": "cmd_old_failed_impl",
+    "task_type": "impl",
+    "status": sys.argv[2],
+    "command": "旧failed taskを再実行してはならない",
+    "legacy_marker": "preserve-me",
+    "acceptance_criteria": {
+        "AC1": {"description": "旧ACも再注入してはならない"},
+    },
+}
+PY
+        [ "$status" -eq 0 ]
+
+        run cat "$TEST_PROJECT/status_notice.log"
+        [ "$status" -eq 0 ]
+        [ "$output" = "sasuke|status|$control_status|karo|status_update" ]
+    done
 }

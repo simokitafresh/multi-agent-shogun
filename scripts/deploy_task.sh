@@ -837,7 +837,11 @@ parse_deploy_task_args() {
     fi
 
     # Codex忍者はDM-Signal CWDで起動→CLAUDE.mdの相対パスが解決不能(2026-04-28殿指示)
-    MESSAGE="${MESSAGE} — タスクYAML: ${SCRIPT_DIR}/queue/tasks/${NINJA_NAME}.yaml を読んで作業開始せよ"
+    # legacy status controlはtask配備ではない。MESSAGEを書き換えるとmainの制御分岐を
+    # 外れて既存taskを通常配備として再処理するため、suffixを付けず原形を保つ。
+    if ! { [ "$MESSAGE" = "status" ] && [[ "$TYPE" =~ ^(idle|done|in_progress)$ ]]; }; then
+        MESSAGE="${MESSAGE} — タスクYAML: ${SCRIPT_DIR}/queue/tasks/${NINJA_NAME}.yaml を読んで作業開始せよ"
+    fi
 }
 
 deploy_task_validate_cli_target() {
@@ -10143,6 +10147,30 @@ deploy_task_main() {
     # mutation and the durable task_start notification (GA-257).
     deploy_task_acquire_ninja_lock "$NINJA_NAME" || return 1
 
+    # Legacy lifecycle control is status-only, not a deployment.  Handle it
+    # before normalization, stale-field repair, collision checks, or context
+    # injection so an old failed task cannot be republished accidentally.
+    if [ "$MESSAGE" = "status" ] && [[ "$TYPE" =~ ^(idle|done|in_progress)$ ]]; then
+        task_status=$(field_get "$task_yaml" "status" "unknown")
+        if [ "$TYPE" = "in_progress" ] && [ "$task_status" = "in_progress" ]; then
+            current_cmd=$(field_get "$task_yaml" "parent_cmd" "")
+            log "BLOCK: ${NINJA_NAME} is in_progress on ${current_cmd:-unknown}. 前タスク完了を待て。"
+            echo "BLOCK: ${NINJA_NAME} は ${current_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
+            deploy_task_release_ninja_lock
+            return 1
+        fi
+        yaml_field_set "$task_yaml" "task" "status" "$TYPE"
+        log "status_update: ${task_status} → ${TYPE}"
+        verify_status=$(field_get "$task_yaml" "status" "")
+        if [ "$verify_status" != "$TYPE" ]; then
+            log "WARN: status更新検証失敗: 期待=${TYPE}, 実際=${verify_status}"
+        fi
+        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" "status_update"
+        log "${NINJA_NAME}: status control complete (type=${TYPE})"
+        deploy_task_release_ninja_lock
+        return 0
+    fi
+
     normalize_task_yaml "$task_yaml" || true
     if [ "$DIRECT_MODE" != true ]; then
         repair_training_parent_cmd_from_cmd_id "$task_yaml" || return $?
@@ -10325,36 +10353,6 @@ except Exception:
 
     task_status=$(field_get "$task_yaml" "status" "unknown")
     log "${NINJA_NAME}: CTX=${ctx_pct}%, idle=${is_idle}, task_status=${task_status}, pane=${pane_target}"
-
-    if [ "$MESSAGE" = "status" ] && { [ "$TYPE" = "idle" ] || [ "$TYPE" = "done" ]; }; then
-        yaml_field_set "$task_yaml" "task" "status" "$TYPE"
-        log "status_update: ${task_status} → ${TYPE}"
-        verify_status=$(field_get "$task_yaml" "status" "")
-        if [ "$verify_status" != "$TYPE" ]; then
-            log "WARN: status更新検証失敗: 期待=${TYPE}, 実際=${verify_status}"
-        fi
-        bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" "status_update"
-        log "${NINJA_NAME}: deployment complete (type=${TYPE})"
-        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
-        deploy_task_release_ninja_lock
-        return 0
-    fi
-
-    if [ "$MESSAGE" = "status" ] && [ "$TYPE" = "in_progress" ]; then
-        if [ "$task_status" = "in_progress" ]; then
-            current_cmd=$(field_get "$task_yaml" "parent_cmd" "")
-            log "BLOCK: ${NINJA_NAME} is in_progress on ${current_cmd:-unknown}. 前タスク完了を待て。"
-            echo "BLOCK: ${NINJA_NAME} は ${current_cmd:-unknown} を実行中。二重配備禁止(GP-069)。" >&2
-            deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
-            return 1
-        fi
-        yaml_field_set "$task_yaml" "task" "status" "in_progress"
-        log "status_update: ${task_status} → in_progress"
-        verify_status=$(field_get "$task_yaml" "status" "")
-        if [ "$verify_status" != "in_progress" ]; then
-            log "WARN: status更新検証失敗: 期待=in_progress, 実際=${verify_status}"
-        fi
-    fi
 
     if [ "$task_status" = "in_progress" ] && [ "$TYPE" != "in_progress" ]; then
         current_cmd=$(field_get "$task_yaml" "parent_cmd" "")
