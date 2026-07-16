@@ -74,14 +74,8 @@ try:
     lessons_file = os.environ["LESSONS_FILE"]
     lesson_id_raw = os.environ["LESSON_ID"]
 
-    # Parse numeric part for matching
-    m_id = re.match(r'L(\d+)', lesson_id_raw)
-    if not m_id:
-        print(f'ERROR: Invalid lesson ID format: {lesson_id_raw}', file=sys.stderr)
-        _write_exit(1)
-        sys.exit(0)  # Exit 0 from python so flock doesn't retry (L022)
-
-    target_num = int(m_id.group(1))
+    # Bash normalization above already validates the numeric suffix.
+    target_num = int(lesson_id_raw[1:])
 
     with open(lessons_file, encoding='utf-8') as f:
         content = f.read()
