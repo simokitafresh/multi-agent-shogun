@@ -192,6 +192,46 @@ YAML
   [ "$status" -ne 0 ]
 }
 
+@test "candidate scan warns and continues across malformed and non-dict YAML" {
+  printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  printf -- '- scalar-root\n' > "$TMP/queue/tasks/scalar.yaml"
+  printf 'task: [not, a, mapping]\n' > "$TMP/queue/tasks/list-task.yaml"
+  printf 'task: {broken\n' > "$TMP/queue/reports/broken.yaml"
+  cat > "$TMP/queue/tasks/other.yaml" <<'YAML'
+task:
+  target_path: tests/unit/other.bats
+  status: in_progress
+YAML
+
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_TIMING_LEDGER="$TMP/logs/test_timing_ledger.tsv" bash "$ROOT/scripts/test_speed_task_generator.sh" next
+  [ "$status" -eq 0 ]
+  [[ "$output" == *$'12.500\ttests/unit/slow.bats'* ]]
+  [[ "$output" == *'invalid entries count=2'* ]]
+  [[ "$output" == *'invalid entries count=1'* ]]
+  [[ "$output" != *Traceback* ]]
+}
+
+@test "direct template injection preserves generated test-speed contract byte-for-byte" {
+  printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_TIMING_LEDGER="$TMP/logs/test_timing_ledger.tsv" TEST_SPEED_TASK_DIR="$TMP/queue/training" bash "$ROOT/scripts/test_speed_task_generator.sh" generate
+  [ "$status" -eq 0 ]
+  generated="$output"
+  before=$(sha256sum "$generated")
+
+  run env DEPLOY_TASK_LIB_ONLY=1 bash -c '
+    set -euo pipefail
+    source "$1/scripts/deploy_task.sh"
+    log() { :; }
+    inject_direct_training_template "$2" cmd_training_test_speed_fixture
+  ' _ "$ROOT" "$generated"
+  [ "$status" -eq 0 ]
+  [ "$(sha256sum "$generated")" = "$before" ]
+  grep -Fq 'purpose: "round 1/3: best_so_far 12.500s' "$generated"
+  grep -Fq 'baseline_policy: best_so_far' "$generated"
+  grep -Fq 'quality_contract: "FAIL0; SKIP0;' "$generated"
+  ! grep -Fq 'L4修行:' "$generated"
+}
+
 @test "canonical absolute and relative active targets remain claimed" {
   printf 'r\tx\tc\tunit\tbats\ttests/unit/slow.bats\t2\t12.5\tpass\t0\n' >> "$TMP/logs/test_timing_ledger.tsv"
   for task_status in assigned acknowledged in_progress; do

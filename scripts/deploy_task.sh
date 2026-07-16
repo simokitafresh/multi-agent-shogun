@@ -2139,6 +2139,13 @@ inject_direct_training_template() {
     fi
     local task_type
     task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    # test_speed_task_generator owns a purpose/AC/quality/multi-round contract.
+    # Its task_type is the shared `training` value, so identify it by the
+    # speed_campaign marker instead of widening the exemption to all training.
+    if grep -Eq '^  speed_campaign:[[:space:]]*' "$task_file"; then
+        log "direct_mode: preserve test-speed campaign contract for ${cmd_id}"
+        return 0
+    fi
     # The fixed five-AC template belongs only to direct L4 implementation
     # tasks.  A task already typed `training` owns its lesson-scoring ACs;
     # overwriting those after mutation suppresses related_lessons injection.

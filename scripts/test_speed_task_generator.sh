@@ -50,12 +50,26 @@ def canonical(value):
 def documents(directory):
     if not directory.is_dir():
         return
+    malformed = 0
     for path in directory.rglob("*.yaml"):
         try:
-            data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        except (OSError, yaml.YAMLError):
+            raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except (OSError, yaml.YAMLError) as exc:
+            malformed += 1
+            print(f"WARN: candidate scan skipped malformed YAML path={path} error={type(exc).__name__}", file=sys.stderr)
             continue
-        yield data.get("task", data), path
+        if not isinstance(raw, dict):
+            malformed += 1
+            print(f"WARN: candidate scan skipped non-dict YAML path={path} root={type(raw).__name__}", file=sys.stderr)
+            continue
+        data = raw.get("task", raw)
+        if not isinstance(data, dict):
+            malformed += 1
+            print(f"WARN: candidate scan skipped non-dict task path={path} root={type(data).__name__}", file=sys.stderr)
+            continue
+        yield data, path
+    if malformed:
+        print(f"WARN: candidate scan continued after invalid entries count={malformed} directory={directory}", file=sys.stderr)
 
 wanted = canonical(target)
 tasks = []
