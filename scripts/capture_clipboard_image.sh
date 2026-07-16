@@ -42,7 +42,7 @@ exit 0
 PS_EXIT=${PS_EXIT:-0}
 
 # 結果判定
-if [ "$PS_EXIT" -ne 0 ] || echo "$PS_RESULT" | grep -q "IMAGE_NULL"; then
+if [ "$PS_EXIT" -ne 0 ] || [[ "$PS_RESULT" == *"IMAGE_NULL"* ]]; then
     tmux display-message "Screenshot: クリップボードに画像がありません"
     exit 1
 fi
