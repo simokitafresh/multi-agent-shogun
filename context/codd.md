@@ -1,6 +1,6 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-07-15 cmd_3948 -->
+<!-- last_updated: 2026-07-17 cmd_karo_hotfix_context_freshness_ga281_202607170612 -->
 <!-- source_commit:3370147d1 reason:codd-refactor-script-contract-reinspection-recorded evidence:git-show-3370147d1-and-context-codd-reference-boundary-updated -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
