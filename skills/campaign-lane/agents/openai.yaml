@@ -1,0 +1,4 @@
+interface:
+  display_name: "Campaign Lane"
+  short_description: "Run deterministic multi-round numeric campaigns"
+  default_prompt: "Use $campaign-lane to select, shard, and evaluate numeric campaign candidates."
