@@ -169,19 +169,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/auto_draft_lesson.sh
-  status: pending
+  status: completed
   before_ms: 17
   after_ms: ''
-  before_real_ms: 1180
-  after_real_ms: ""
-  real_measurement_command: 'sandboxed_not_found_skip_50x: tmp copy of scripts/auto_draft_lesson.sh
-    with found_false report; /usr/bin/time loop 50'
-  test_result: bash -n scripts/auto_draft_lesson.sh && shellcheck -x scripts/auto_draft_lesson.sh
-    && bats tests/unit/test_auto_draft_lesson.bats PASS 4/4 SKIP=0
-  commit: 554ea80bd
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 33.5
+  after_real_ms: 24
+  real_measurement_command: "bash scripts/auto_draft_lesson.sh report.yaml"
+  test_result: "bats_5_PASS_FAIL0_SKIP0"
+  commit: "d62d297b5ca0511ea1afd701722856becfb67478"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T02:35:36"
   iteration: 1
+  last_good_commit: "4c21e11006aff7f866359d993cf4bf71c0805e3f"
+  candidate_commit: "d62d297b5ca0511ea1afd701722856becfb67478"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 33.5
+  last_good_p95_ms: 49
+  candidate_p50_ms: 24
+  candidate_p95_ms: 41
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux;bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu);fixture=found_false_relative_report;repo=/tmp/ext4-worktrees"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/auto_failure_lesson.sh
   status: pending
   before_ms: 15
@@ -778,7 +790,7 @@ entries:
   updated_at: "2026-06-08T03:50:31"
   iteration: 1
 - script_path: scripts/dashboard_update.sh
-  status: pending
+  status: assigned
   before_ms: 22
   after_ms: ''
   before_real_ms: 1000
@@ -787,8 +799,8 @@ entries:
     --dry-run
   test_result: dry_run_output_verified_SKIP_0
   commit: f987505270f0c6c91edebd3991fd0fc0c02291ea
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T02:51:00"
   iteration: 1
 - script_path: scripts/decision_write.sh
   status: pending
@@ -1642,19 +1654,31 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/hooks/block_destructive.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: 15
-  before_real_ms: 1102
-  after_real_ms: ""
-  real_measurement_command: 20x printf '{"tool_name":"Bash","tool_input":{"command":"rm
-    -rf /tmp/kagemaru_speed_probe"}}' | bash scripts/hooks/block_destructive.sh; median
-    of 5 runs
-  test_result: bash_n_pass;direct_D001_D009_representative_PASS;safe_allow_PASS;project_rm_allow_PASS;SKIP=0;before_1353_after_1102
-  commit: be966c9ce
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 83.321
+  after_real_ms: 78.982
+  real_measurement_command: "printf safe_hook_payload | bash /dev/fd/3 3<<<\"$ARM_SCRIPT\""
+  test_result: "bats tests/test_block_destructive.bats: PASS=17 FAIL=0 SKIP=0"
+  commit: "ee1a3ae98412891c016282876d30db64950d2918"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T03:00:13"
   iteration: 1
+  last_good_commit: "2be7e1608a3d005e7682a88b7ee16226b9f24fe7"
+  candidate_commit: "ee1a3ae98412891c016282876d30db64950d2918"
+  ab_samples_per_arm: "20"
+  last_good_p50_ms: 83.321
+  last_good_p95_ms: 90.371
+  candidate_p50_ms: 78.982
+  candidate_p95_ms: 88.585
+  ab_order: "alternating"
+  warmup_each: "3"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux; bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu); python=Python 3.12.3; cwd=/mnt/c/tools/multi-agent-shogun"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/hooks/git-pre-commit.sh
   status: pending
   before_ms: 16
@@ -2682,7 +2706,7 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/model_switch_preflight.sh
-  status: pending
+  status: assigned
   before_ms: 17
   after_ms: ''
   before_real_ms: 900
@@ -2690,8 +2714,8 @@ entries:
   real_measurement_command: bash scripts/model_switch_preflight.sh
   test_result: bash -n PASS; bats tests/unit/test_cli_lookup.bats PASS SKIP=0
   commit: 6ddc50343
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  assigned_to: "tobisaru"
+  updated_at: "2026-07-17T02:52:14"
   iteration: 1
 - script_path: scripts/ninja_done.sh
   status: completed
