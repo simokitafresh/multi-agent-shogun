@@ -300,17 +300,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/capture_clipboard_image.sh
-  status: pending
+  status: saturated
   before_ms: 25
   after_ms: ''
-  before_real_ms: 1901
-  after_real_ms: ""
-  real_measurement_command: bash scripts/capture_clipboard_image.sh
-  test_result: syntax_ok_SKIP_0_no_dedicated_tests
-  commit: 707ce2070
-  assigned_to: ""
-  updated_at: "2026-06-08T03:50:29"
+  before_real_ms: 232.5
+  after_real_ms: 226
+  real_measurement_command: "CLIP_PATH_FILE=$FIXTURE/clip PATH=$FIXTURE/bin:$PATH POWERSHELL_MODE=ok bash \"$SCRIPT_UNDER_TEST\""
+  test_result: "bash-n=CLEAR; sandbox success/null/no-file PASS=3 FAIL=0 SKIP=0; safety_removed=0; test_count=3"
+  commit: "707ce2070ffa77f7f3ddc29f1ecbd5beaf94b232"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T01:02:49"
   iteration: 1
+  last_good_commit: "707ce2070ffa77f7f3ddc29f1ecbd5beaf94b232"
+  candidate_commit: "ddd9a1b6d9fdc3a2aef98b650db2df8f88240bfc"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 232.5
+  last_good_p95_ms: 340
+  candidate_p50_ms: 226
+  candidate_p95_ms: 398
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "ede7d435aff64f32f72f3f394a25bcd042f15719430747efd65968333246c8b2"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/causal_backlink_counts.sh
   status: pending
   before_ms: 15
