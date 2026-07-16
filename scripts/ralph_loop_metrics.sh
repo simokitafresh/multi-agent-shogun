@@ -71,7 +71,7 @@ echo "  教訓: $(wc -l < "$TMP/lessons.tsv")件抽出" >&2
 
 # --- (B) レポートverdict: cmd_num|verdict ---
 # grep一発でバッチ抽出 → sedでcmd番号+verdict解析
-grep -rH "^verdict:" "$REPORTS_DIR"/ 2>/dev/null \
+rg --no-heading --with-filename "^verdict:" "$REPORTS_DIR"/ 2>/dev/null \
     | sed -E 's|^.*/[a-z_]+_report_cmd_([0-9]+)[^:]*:verdict: *(.*)$|\1\|\2|' \
     | sed "s/[\"']//g" \
     > "$TMP/verdicts.tsv" 2>/dev/null || true
