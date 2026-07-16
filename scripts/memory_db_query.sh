@@ -5,13 +5,12 @@
 set -euo pipefail
 
 usage() {
-    cat <<'EOF' >&2
-Usage: memory_db_query.sh [--db PATH] [--target AGENT] --search QUERY
-       memory_db_query.sh [--db PATH] SQL
-
-Runs SQL through Python sqlite3 and prints sqlite3 CLI-style list output:
-pipe-separated fields, no headers, NULL as an empty field.
-EOF
+    printf '%s\n' \
+        'Usage: memory_db_query.sh [--db PATH] [--target AGENT] --search QUERY' \
+        '       memory_db_query.sh [--db PATH] SQL' \
+        '' \
+        'Runs SQL through Python sqlite3 and prints sqlite3 CLI-style list output:' \
+        'pipe-separated fields, no headers, NULL as an empty field.' >&2
 }
 
 if [ "$#" -eq 0 ]; then
