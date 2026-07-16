@@ -110,6 +110,23 @@ with_ledger_lock() {
     ) 9>"$lock"
 }
 
+publish_ledger_yaml() {
+    local tmp="$1"
+    local ledger="$2"
+    if ! python3 - "$tmp" <<'PY'
+import sys, yaml
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = yaml.safe_load(handle)
+if not isinstance(data, dict) or not isinstance(data.get("entries"), list):
+    raise SystemExit("ledger must contain an entries list")
+PY
+    then
+        rm -f "$tmp"
+        return 1
+    fi
+    mv "$tmp" "$ledger"
+}
+
 ledger_global_status() {
     local ledger="$1"
     awk -F': *' '$1 == "global_status" { gsub(/["'\'']/, "", $2); print $2; exit }' "$ledger" 2>/dev/null
@@ -154,7 +171,7 @@ init_ledger_unlocked() {
             index=$((index + 1))
         done
     } > "$tmp"
-    mv "$tmp" "$ledger"
+    publish_ledger_yaml "$tmp" "$ledger"
     rm -f "$result_dir"/*
     rmdir "$result_dir"
     trap - RETURN
@@ -452,6 +469,8 @@ PY
             sub(/"?[[:space:]]*$/, "", path)
             in_target = (reserved == 0 && path == wanted)
             if (in_target) {
+                match($0, /^[[:space:]]*/)
+                field_indent = substr($0, 1, RLENGTH) "  "
                 block = $0 ORS
                 status_seen = assigned_seen = updated_seen = 0
                 pending_target = 0
@@ -463,7 +482,7 @@ PY
         in_target {
             line = $0
             if ($0 ~ /^[[:space:]]+status:[[:space:]]*pending[[:space:]]*$/) {
-                line = "    status: assigned"
+                line = field_indent "status: assigned"
                 pending_target = 1
                 status_seen = 1
             } else if ($0 ~ /^[[:space:]]+status:/) {
@@ -473,10 +492,10 @@ PY
                 print
                 next
             } else if ($0 ~ /^[[:space:]]+assigned_to:/) {
-                line = "    assigned_to: \"" ninja "\""
+                line = field_indent "assigned_to: \"" ninja "\""
                 assigned_seen = 1
             } else if ($0 ~ /^[[:space:]]+updated_at:/) {
-                line = "    updated_at: \"" now "\""
+                line = field_indent "updated_at: \"" now "\""
                 updated_seen = 1
             }
             block = block line ORS
@@ -488,8 +507,8 @@ PY
         }
         function emit_pending() {
             if (pending_target) {
-                if (!assigned_seen) block = block "    assigned_to: \"" ninja "\"" ORS
-                if (!updated_seen) block = block "    updated_at: \"" now "\"" ORS
+                if (!assigned_seen) block = block field_indent "assigned_to: \"" ninja "\"" ORS
+                if (!updated_seen) block = block field_indent "updated_at: \"" now "\"" ORS
                 printf "%s", block
                 print path > reserved_file
                 reserved = 1
@@ -499,7 +518,7 @@ PY
         }
     ' "$ledger" > "$tmp"
     rm -f "${tmp}.active"
-    mv "$tmp" "$ledger"
+    publish_ledger_yaml "$tmp" "$ledger"
 }
 
 cmd_reserve_next() {
@@ -535,7 +554,7 @@ set_global_status_unlocked() {
             if (!done) print "global_status: " new_status
         }
     ' "$ledger" > "$tmp"
-    mv "$tmp" "$ledger"
+    publish_ledger_yaml "$tmp" "$ledger"
 }
 
 cmd_set_global_status() {
@@ -580,7 +599,7 @@ update_entry_field_unlocked() {
         }
         { print }
     ' "$ledger" > "$tmp"
-    mv "$tmp" "$ledger"
+    publish_ledger_yaml "$tmp" "$ledger"
 }
 
 cmd_mark_assigned() {

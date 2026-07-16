@@ -88,6 +88,43 @@ teardown_file() {
     grep -Fq 'assigned_to: "hayate"' "$LEDGER"
 }
 
+@test "assignment preserves ledger indentation and concurrent reservations remain parseable" {
+    compact="$TMP_ROOT/compact.yaml"
+    cat > "$compact" <<'EOF'
+global_status: running
+entries:
+- script_path: scripts/a.sh
+  status: pending
+  before_ms: 2
+  assigned_to: ""
+  updated_at: ""
+- script_path: scripts/b.sh
+  status: pending
+  before_ms: 1
+  assigned_to: ""
+  updated_at: ""
+EOF
+    cmd_reserve_next hayate "$compact" > "$TMP_ROOT/one" &
+    p1=$!
+    cmd_reserve_next kagemaru "$compact" > "$TMP_ROOT/two" &
+    p2=$!
+    wait "$p1"
+    wait "$p2"
+
+    run python3 -c 'import sys,yaml; d=yaml.safe_load(open(sys.argv[1])); assert len(d["entries"]) == 2; assert sum(e["status"] == "assigned" for e in d["entries"]) == 2' "$compact"
+    [ "$status" -eq 0 ]
+}
+
+@test "malformed writer output is rejected before replacing the ledger" {
+    original=$(sha256sum "$LEDGER" | cut -d' ' -f1)
+    bad="$TMP_ROOT/bad.yaml"
+    printf 'entries:\n- script_path: ok\n  status: [\n' > "$bad"
+
+    run publish_ledger_yaml "$bad" "$LEDGER"
+    [ "$status" -ne 0 ]
+    [ "$(sha256sum "$LEDGER" | cut -d' ' -f1)" = "$original" ]
+}
+
 @test "auto-deploy skips scripts already active in task yaml" {
     first=$(cmd_next "$LEDGER")
     cat > "$SPEED_TRAINING_TASK_DIR/hayate.yaml" <<EOF
