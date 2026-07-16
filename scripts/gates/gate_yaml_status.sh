@@ -15,12 +15,17 @@ YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 CMD_ID=""
 DRY_RUN=false
 
-for arg in "$@"; do
-    case "$arg" in
-        --dry-run) DRY_RUN=true ;;
-        cmd_*) CMD_ID="$arg" ;;
-    esac
-done
+if [[ "${1:-}" == cmd_* && "${2:-}" == "--dry-run" && $# -eq 2 ]]; then
+    CMD_ID="$1"
+    DRY_RUN=true
+else
+    for arg in "$@"; do
+        case "$arg" in
+            --dry-run) DRY_RUN=true ;;
+            cmd_*) CMD_ID="$arg" ;;
+        esac
+    done
+fi
 
 if [ -z "$CMD_ID" ]; then
     echo "Usage: gate_yaml_status.sh <cmd_id> [--dry-run]" >&2
