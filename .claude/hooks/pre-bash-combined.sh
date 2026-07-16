@@ -780,9 +780,10 @@ if [[ "$command" =~ sed[[:space:]]+-i.*gate_result.*gunshi_review_log\.yaml || "
 fi
 
 # Guard 9b: inbox_writeのmodel_switch type BLOCK (殿裁定2026-06-20: スキル100%使用の仕組み)
-# respawn-paneは正規操作（殿指摘2026-06-21: pane殺す→起動が正道）。BLOCKしない
-# model_switchのみBLOCK対象（inbox_write経由のmodel切替を防止）
-if [[ "$command" =~ model_switch ]] && [[ ! "$command" =~ ninja_monitor|reset_layout|shogun-cli-switch|gate_|startup|yaml_field_set|switch_cli_mode|memory_db_query|inbox_write|semantic_search|send-keys ]]; then
+# cmd ID・report path・検索語に同じsubstringが含まれるだけでは操作ではない。
+# inbox_write.shの独立type tokenとして指定された場合だけBLOCKする。
+if [[ "$command" == *inbox_write.sh* ]] &&
+   [[ "$command" =~ (^|[[:space:]\"\047=])model_switch([[:space:]\"\047\|\;\&]|$) ]]; then
     emit_deny "BLOCKED: model_switchはスキル経由で実行せよ (殿裁定: スキル無視はバグ)"
 fi
 
