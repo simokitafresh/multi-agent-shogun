@@ -6198,7 +6198,7 @@ PY
 check_long_runtime_execution_env_contract
 
 # --- Check 19.6: role-neutral universal shard entrance (30分単独をfail-closed) ---
-# Save入口でも同じ契約を検証する。manifestの永続生成はdeploy_task入口が担当する。
+# Save入口でも同じ契約を自動検証する。manifestの永続生成はdeploy_task入口が担当する。
 check_universal_shard_contract() {
     local tmp result rc=0
     tmp="$(mktemp)"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a role-neutral shard manifest from a cmd/task contract.
+"""Generate an automatic role-neutral shard manifest from a cmd/task contract.
 
 The entrance is deliberately data-only: callers provide the task YAML and this
 module derives items and currently idle workers without role/CLI/model policy.

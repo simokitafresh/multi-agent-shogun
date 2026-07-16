@@ -9437,7 +9437,7 @@ deploy_task_source_contract_precheck() {
     }
     deploy_task_ten_min_contract_precheck "$source_file" "$cmd_id" || return $?
 
-    # Level5: derive the shard manifest at the common deployment entrance.
+    # Level5: automatically derive the shard manifest at the common deployment entrance.
     # Worker shortage is deferred, never silently collapsed to a single worker.
     local shard_id shard_output shard_result shard_rc=0
     local -a shard_args
