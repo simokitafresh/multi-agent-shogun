@@ -19,7 +19,7 @@ Read a catalog YAML and measurement JSONL. Validate both before selection. Catal
 
 ## Judge
 
-Run `python3 scripts/campaign_lane.py validate CATALOG MEASUREMENTS`, then `select`. Preserve the global best accepted value across all rounds. A later value is an improvement only against that best, never merely against the previous round. Reject stale measurements, duplicate targets, in-flight targets, and `quality_fail` results. Stop only after the minimum rounds, except explicit target or budget exhaustion; never exceed three rounds.
+Run `python3 skills/campaign-lane/scripts/campaign_lane.py validate CATALOG MEASUREMENTS`, then `select`. Preserve the global best accepted value across all rounds. A later value is an improvement only against that best, never merely against the previous round. Reject measurements older than catalog `measurement_not_before`, duplicate `(target, round)` keys, same-round in-flight targets, and `quality_fail` results. Stop only after the minimum rounds, except explicit target or budget exhaustion; never exceed three rounds.
 
 ## Write
 

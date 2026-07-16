@@ -34,12 +34,43 @@ YAML
   [[ "$output" == *'"n": 3'* && "$output" == *'"skill": "shard-work"'* ]]
 }
 
-@test "duplicate target and in-flight target are blocked" {
+@test "duplicate target-round and same-round in-flight are blocked" {
   catalog
   echo '{"target":"a","round":1,"status":"in_flight"}' > "$TMPROOT/m.jsonl"
   run python3 "$CTRL" record "$TMPROOT/catalog.yaml" "$TMPROOT/m.jsonl" --result '{"target":"a","round":1,"status":"success","value":9,"cost":1}'
   [ "$status" -eq 2 ]
-  [[ "$output" == *'duplicate or in-flight target'* ]]
+  [[ "$output" == *'duplicate or same-round in-flight target'* ]]
+}
+
+@test "same target can be measured in rounds one through three" {
+  catalog
+  for round in 1 2 3; do
+    run python3 "$CTRL" record "$TMPROOT/catalog.yaml" "$TMPROOT/m.jsonl" --result "{\"target\":\"a\",\"round\":$round,\"status\":\"success\",\"value\":$((11-round)),\"cost\":1}"
+    [ "$status" -eq 0 ]
+  done
+  [ "$(wc -l < "$TMPROOT/m.jsonl")" -eq 3 ]
+}
+
+@test "stale timestamp is blocked" {
+  catalog
+  printf '\nmeasurement_not_before: 2026-07-16T10:00:00Z\n' >> "$TMPROOT/catalog.yaml"
+  run python3 "$CTRL" record "$TMPROOT/catalog.yaml" "$TMPROOT/m.jsonl" --result '{"target":"a","round":1,"status":"success","value":9,"cost":1,"measured_at":"2026-07-16T09:59:59Z"}'
+  [ "$status" -eq 2 ]
+  [[ "$output" == *'stale measurement'* ]]
+}
+
+@test "concurrent duplicate record permits exactly one append" {
+  catalog
+  result='{"target":"a","round":1,"status":"success","value":9,"cost":1}'
+  python3 "$CTRL" record "$TMPROOT/catalog.yaml" "$TMPROOT/m.jsonl" --result "$result" > "$TMPROOT/o1" & p1=$!
+  python3 "$CTRL" record "$TMPROOT/catalog.yaml" "$TMPROOT/m.jsonl" --result "$result" > "$TMPROOT/o2" & p2=$!
+  set +e
+  wait "$p1"; s1=$?
+  wait "$p2"; s2=$?
+  set -e
+  [ $((s1 + s2)) -eq 2 ]
+  [ "$(wc -l < "$TMPROOT/m.jsonl")" -eq 1 ]
+  grep -h -c 'duplicate or same-round' "$TMPROOT/o1" "$TMPROOT/o2" | awk '{s+=$1} END {exit !(s==1)}'
 }
 
 @test "stale and malformed measurements fail closed" {

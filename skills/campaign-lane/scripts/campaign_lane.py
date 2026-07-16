@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import math
 import os
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
@@ -60,6 +62,30 @@ def load_measurements(path: str) -> list[dict]:
     return rows
 
 
+def parse_time(value: str) -> datetime:
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            raise ContractError("measurement timestamp requires timezone")
+        return value
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except (AttributeError, TypeError, ValueError) as exc:
+        raise ContractError("measurement timestamp must be ISO-8601") from exc
+    if parsed.tzinfo is None:
+        raise ContractError("measurement timestamp requires timezone")
+    return parsed
+
+
+def reject_stale(catalog: dict, rows: list[dict]) -> None:
+    boundary = catalog.get("measurement_not_before")
+    if not boundary:
+        return
+    minimum = parse_time(boundary)
+    for row in rows:
+        if not row.get("measured_at") or parse_time(row["measured_at"]) < minimum:
+            raise ContractError(f"stale measurement: {row.get('target')}")
+
+
 def accepted(rows: list[dict]) -> list[dict]:
     return [r for r in rows if r.get("status") == "success" and r.get("quality") != "fail" and isinstance(r.get("value"), (int, float))]
 
@@ -104,6 +130,7 @@ def state(catalog: dict, rows: list[dict]) -> dict:
 
 
 def select(catalog: dict, rows: list[dict]) -> dict:
+    reject_stale(catalog, rows)
     if catalog.get("environment") == "production" and catalog.get("sealed") is True:
         return {"status": "BLOCK", "reason": "production SEALED"}
     if catalog.get("evaluation") == "subjective":
@@ -111,10 +138,11 @@ def select(catalog: dict, rows: list[dict]) -> dict:
     current = state(catalog, rows)
     if current["terminal"]:
         return {"status": "STOP", **current}
-    attempted = {r["target"] for r in rows}
-    inflight = {r["target"] for r in rows if r.get("status") == "in_flight"}
+    next_round = current["rounds"] + 1
+    attempted = {(r["target"], r["round"]) for r in rows}
+    inflight = {(r["target"], r["round"]) for r in rows if r.get("status") == "in_flight"}
     remaining_budget = catalog["budget"] - current["spent"]
-    candidates = [c for c in catalog["candidates"] if c["id"] not in attempted and c["id"] not in inflight and c["cost"] <= remaining_budget]
+    candidates = [c for c in catalog["candidates"] if (c["id"], next_round) not in attempted and (c["id"], next_round) not in inflight and c["cost"] <= remaining_budget]
     workers = [w for w in catalog.get("workers", []) if w.get("idle")]
     eligible = []
     used_workers = []
@@ -127,24 +155,34 @@ def select(catalog: dict, rows: list[dict]) -> dict:
         return {"status": "BLOCK", "reason": "fewer than two eligible independent candidates/workers"}
     n = min(len(eligible), len(used_workers))
     items = eligible[:n]
-    return {"status": "HANDOFF", "round": current["rounds"] + 1, "best_so_far": current["best_so_far"], "handoff": {"skill": "shard-work", "n": n, "items": items, "workers": used_workers[:n]}}
+    return {"status": "HANDOFF", "round": next_round, "best_so_far": current["best_so_far"], "handoff": {"skill": "shard-work", "n": n, "items": items, "workers": used_workers[:n]}}
 
 
 def record(path: str, row: dict, catalog: dict, rows: list[dict]) -> dict:
-    if row.get("target") in {r["target"] for r in rows}:
-        raise ContractError("duplicate or in-flight target")
     if row.get("status") not in {"success", "quality_fail", "in_flight", "failed"}:
         raise ContractError("invalid result status")
     if row.get("status") == "success" and not isinstance(row.get("value"), (int, float)):
         raise ContractError("success requires numeric value")
-    row["quality"] = "fail" if row["status"] == "quality_fail" else row.get("quality", "pass")
-    row["improved"] = row["status"] == "success" and row["quality"] != "fail" and improves(catalog, row["value"], best_value(catalog, rows))
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    with p.open("a") as handle:
+    with p.open("a+") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        handle.seek(0)
+        locked_rows = []
+        for line in handle:
+            if line.strip():
+                locked_rows.append(json.loads(line))
+        key = (row.get("target"), row.get("round"))
+        if key in {(r.get("target"), r.get("round")) for r in locked_rows}:
+            raise ContractError("duplicate or same-round in-flight target")
+        reject_stale(catalog, [row])
+        row["quality"] = "fail" if row["status"] == "quality_fail" else row.get("quality", "pass")
+        row["improved"] = row["status"] == "success" and row["quality"] != "fail" and improves(catalog, row["value"], best_value(catalog, locked_rows))
+        handle.seek(0, os.SEEK_END)
         handle.write(json.dumps(row, sort_keys=True) + "\n")
         handle.flush()
         os.fsync(handle.fileno())
+        fcntl.flock(handle, fcntl.LOCK_UN)
     return row
 
 
