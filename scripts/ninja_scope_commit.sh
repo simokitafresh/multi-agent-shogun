@@ -97,21 +97,102 @@ flock -w 120 "$commit_lock_fd" \
 lock_acquired_epoch_ms="$(date +%s%3N)"
 lock_wait_ms=$((lock_acquired_epoch_ms - lock_requested_epoch_ms))
 
+# Phase telemetry starts at lock acquisition so the sum of the seven bounded
+# phases explains the complete transaction wall time (lock wait is reported
+# separately).  Keep this in shell state: external telemetry/log writers would
+# add I/O to the path whose stalls this instrumentation must diagnose.
+declare -A phase_wall_ms=() phase_rc=()
+phase_order=(read_tree add scope_sync guard git_commit advance_shared_index post_check)
+current_phase="read_tree"
+phase_started_epoch_ms="$lock_acquired_epoch_ms"
+terminal_event_emitted=false
+telemetry_overhead_us=0
+telemetry_clock_calls=0
+
+epoch_ms() {
+    local output_var="$1" before="$EPOCHREALTIME" after before_us after_us sec frac value
+    sec="${before%.*}"
+    frac="${before#*.}000000"
+    frac="${frac:0:6}"
+    value=$((10#$sec * 1000 + 10#$frac / 1000))
+    printf -v "$output_var" '%s' "$value"
+    after="$EPOCHREALTIME"
+    before_us=$((10#${before%.*} * 1000000 + 10#$frac))
+    frac="${after#*.}000000"
+    frac="${frac:0:6}"
+    after_us=$((10#${after%.*} * 1000000 + 10#$frac))
+    telemetry_overhead_us=$((telemetry_overhead_us + after_us - before_us))
+    telemetry_clock_calls=$((telemetry_clock_calls + 1))
+}
+
+finish_phase() {
+    local rc="${1:-0}" finished
+    epoch_ms finished
+    phase_wall_ms["$current_phase"]=$((finished - phase_started_epoch_ms))
+    phase_rc["$current_phase"]="$rc"
+}
+
+begin_phase() {
+    current_phase="$1"
+    epoch_ms phase_started_epoch_ms
+}
+
+phase_fields() {
+    local phase
+    for phase in "${phase_order[@]}"; do
+        [[ -v "phase_wall_ms[$phase]" ]] || continue
+        printf ' phase_%s_ms=%s phase_%s_rc=%s' \
+            "$phase" "${phase_wall_ms[$phase]}" "$phase" "${phase_rc[$phase]}"
+    done
+}
+
+publish_terminal_failure() {
+    local rc="${1:-1}" finished phase sum=0 total unattributed
+    [[ "$terminal_event_emitted" == false && "$rc" -ne 0 ]] || return 0
+    if [[ ! -v "phase_wall_ms[$current_phase]" ]]; then
+        finish_phase "$rc"
+    fi
+    epoch_ms finished
+    for phase in "${phase_order[@]}"; do sum=$((sum + ${phase_wall_ms[$phase]:-0})); done
+    total=$((finished - lock_acquired_epoch_ms))
+    unattributed=$((total - sum))
+    printf 'event=failed lock_wait_ms=%s acquired_at=%s finished_at=%s last_phase=%s rc=%s phase_total_ms=%s phase_unattributed_ms=%s telemetry_overhead_ms=%s telemetry_clock_calls=%s' \
+        "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished" "$current_phase" "$rc" "$sum" "$unattributed" "$(((telemetry_overhead_us + 999) / 1000))" "$telemetry_clock_calls" >&2
+    phase_fields >&2
+    printf '\n' >&2
+    terminal_event_emitted=true
+}
+trap 'publish_terminal_failure "$?"' EXIT
+
 # A successful return is one terminal contract: the commit object exists, the
 # published branch/HEAD ref resolves to that object, all post-checks finished,
 # and only then is completion made observable.  Metadata goes to stderr so
 # stdout remains the stable, single-line commit-hash API used by callers.
 publish_terminal_success() {
-    local terminal_hash="$1" finished_epoch_ms
+    local terminal_hash="$1" finished_epoch_ms sum=0 total unattributed
     [[ "$terminal_hash" =~ ^[0-9a-f]{40}$ ]] \
         || { echo "BLOCK: invalid terminal commit hash" >&2; return 1; }
     git cat-file -e "${terminal_hash}^{commit}" 2>/dev/null \
         || { echo "BLOCK: terminal commit object disappeared: $terminal_hash" >&2; return 1; }
     [[ "$(git rev-parse HEAD)" == "$terminal_hash" ]] \
         || { echo "BLOCK: terminal ref does not publish commit: $terminal_hash" >&2; return 1; }
-    finished_epoch_ms="$(date +%s%3N)"
-    printf 'event=completed lock_wait_ms=%s acquired_at=%s finished_at=%s commit_hash=%s\n' \
-        "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished_epoch_ms" "$terminal_hash" >&2
+    finish_phase 0
+    local phase
+    for phase in "${phase_order[@]}"; do
+        if [[ ! -v "phase_wall_ms[$phase]" ]]; then
+            phase_wall_ms["$phase"]=0
+            phase_rc["$phase"]=0
+        fi
+    done
+    epoch_ms finished_epoch_ms
+    for phase in "${phase_order[@]}"; do sum=$((sum + ${phase_wall_ms[$phase]:-0})); done
+    total=$((finished_epoch_ms - lock_acquired_epoch_ms))
+    unattributed=$((total - sum))
+    printf 'event=completed lock_wait_ms=%s acquired_at=%s finished_at=%s commit_hash=%s phase_total_ms=%s phase_unattributed_ms=%s telemetry_overhead_ms=%s telemetry_clock_calls=%s' \
+        "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished_epoch_ms" "$terminal_hash" "$sum" "$unattributed" "$(((telemetry_overhead_us + 999) / 1000))" "$telemetry_clock_calls" >&2
+    phase_fields >&2
+    printf '\n' >&2
+    terminal_event_emitted=true
     printf '%s\n' "$terminal_hash"
 }
 
@@ -202,6 +283,7 @@ if [[ "$repair_index" == true ]]; then
     [[ ! -e "$shared_index_lock" ]] \
         || { echo "BLOCK: shared index lock remained after repair: $shared_index_lock" >&2; exit 1; }
     publish_terminal_success "$(git rev-parse HEAD)"
+    trap - EXIT
     exit 0
 fi
 
@@ -235,7 +317,7 @@ if [[ -n "$patch_file" ]]; then
 
     temp_index="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-index.XXXXXX")"
     rm -f "$temp_index"
-    cleanup_patch_index() { rm -f "$temp_index" "$temp_index.lock"; }
+    cleanup_patch_index() { local rc=$?; rm -f "$temp_index" "$temp_index.lock"; publish_terminal_failure "$rc"; }
     trap cleanup_patch_index EXIT
     export GIT_INDEX_FILE="$temp_index"
     git read-tree HEAD
@@ -300,6 +382,7 @@ PY
     [[ ! -e "$shared_index_lock" ]] \
         || { echo "BLOCK: shared index lock remained after commit: $shared_index_lock" >&2; exit 1; }
     publish_terminal_success "$commit_hash"
+    trap - EXIT
     exit 0
 fi
 
@@ -315,15 +398,19 @@ declare -A shared_scope_entries_before=()
 declare -A shared_scope_staged_before=()
 temp_index="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-index.XXXXXX")"
 rm -f "$temp_index"
-cleanup_normal_index() { rm -f "$temp_index" "$temp_index.lock"; }
+cleanup_normal_index() { local rc=$?; rm -f "$temp_index" "$temp_index.lock"; publish_terminal_failure "$rc"; }
 trap cleanup_normal_index EXIT
 export GIT_INDEX_FILE="$temp_index"
 git read-tree HEAD
+finish_phase 0
+begin_phase add
 # The private index is already bounded to the caller's explicit scope.  Force
 # only those pathspecs so newly generated owned files remain committable even
 # when the fixed checkout intentionally carries a broad `.gitignore` (for
 # example `*`).  Never force-add a discovered or repository-wide path.
 git add -f -- "${paths[@]}"
+finish_phase 0
+begin_phase scope_sync
 
 # GA-282: task YAML is live orchestration state, not implementation source.
 # A caller can legitimately arrive with both paths already staged and pass both
@@ -412,6 +499,8 @@ if [[ -f "$repo_root/scripts/sync_git_hooks.sh" ]]; then
     bash "$repo_root/scripts/sync_git_hooks.sh" "${sync_args[@]}" \
         || { echo "BLOCK(GA-222): git hook sync failed — commit aborted" >&2; exit 1; }
 fi
+finish_phase 0
+begin_phase guard
 # GA-222と同じ理由(script冒頭コメント参照): 呼び出し時のcwdは対象repo
 # ($repo_root、DM-Signal等)になり得るため、"$repo_root/../multi-agent-shogun"の
 # 相対推測や"/mnt/c/tools/multi-agent-shogun"のWSL2固定パスはCI runner等の
@@ -421,9 +510,13 @@ fi
 if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" ]]; then
     bash "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" check --repo "$repo_root"
 fi
+finish_phase 0
+begin_phase git_commit
 git commit -m "$message" >&2
 commit_hash="$(git rev-parse HEAD)"
 mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
+finish_phase 0
+begin_phase advance_shared_index
 unset GIT_INDEX_FILE
 
 # 共有indexは指定scopeだけ新HEADへ追随。他pathのstageはblob/modeとも不変。
@@ -434,6 +527,8 @@ for committed_path in "${committed[@]}"; do
     shared_entry_before="${shared_index_before[$committed_path]-}"
     advance_shared_index_entry "$committed_path" "$shared_entry_before"
 done
+finish_phase 0
+begin_phase post_check
 cleanup_normal_index
 trap - EXIT
 
@@ -472,3 +567,4 @@ fi
     || { echo "BLOCK: shared index lock remained after commit: $shared_index_lock" >&2; exit 1; }
 
 publish_terminal_success "$commit_hash"
+trap - EXIT

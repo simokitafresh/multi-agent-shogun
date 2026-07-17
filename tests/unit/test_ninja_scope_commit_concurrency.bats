@@ -35,7 +35,7 @@ teardown() {
         [[ "$hash" =~ ^[0-9a-f]{40}$ ]]
         [ "$(wc -l < "$REPO/$worker.stdout")" -eq 1 ]
         git -C "$REPO" cat-file -e "${hash}^{commit}"
-        grep -Eq "^event=completed lock_wait_ms=[0-9]+ acquired_at=[0-9]+ finished_at=[0-9]+ commit_hash=$hash$" "$REPO/$worker.stderr"
+        grep -Eq "^event=completed lock_wait_ms=[0-9]+ acquired_at=[0-9]+ finished_at=[0-9]+ commit_hash=$hash .*phase_read_tree_ms=" "$REPO/$worker.stderr"
         [ "$(grep -c '^event=completed ' "$REPO/$worker.stderr")" -eq 1 ]
     done
     [ "$(git -C "$REPO" status --short -- a.txt b.txt)" = "" ]
@@ -73,6 +73,29 @@ teardown() {
     run bash -c 'cd "$1" && bash "$2" -m blocked -- a.txt 2>&1' _ "$REPO" "$HELPER"
     [ "$status" -ne 0 ]
     [[ "$output" != *"event=completed"* ]]
+    [[ "$output" == *"event=failed"* ]]
+    [[ "$output" == *"last_phase=git_commit"* ]]
+}
+
+@test "slow pre-commitはgit_commit phaseだけに局所化される" {
+    mkdir -p "$REPO/.git/hooks"
+    printf '#!/usr/bin/env bash\nsleep 0.7\n' > "$REPO/.git/hooks/pre-commit"
+    chmod +x "$REPO/.git/hooks/pre-commit"
+    printf 'slow hook\n' >> "$REPO/a.txt"
+
+    run bash -c 'cd "$1" && bash "$2" -m slow-hook -- a.txt 2>&1' _ "$REPO" "$HELPER"
+    [ "$status" -eq 0 ]
+    event="$(printf '%s\n' "$output" | grep '^event=completed ')"
+    EVENT="$event" python3 - <<'PY'
+import os, re
+fields = dict(re.findall(r"([a-z0-9_]+)=([^ ]+)", os.environ["EVENT"]))
+git_commit_ms = int(fields["phase_git_commit_ms"])
+assert git_commit_ms >= 600
+assert abs(int(fields["phase_unattributed_ms"])) <= 200
+assert int(fields["telemetry_overhead_ms"]) <= 50
+for phase in ("read_tree", "add", "scope_sync", "guard", "advance_shared_index", "post_check"):
+    assert int(fields[f"phase_{phase}_ms"]) < git_commit_ms, (phase, fields[f"phase_{phase}_ms"])
+PY
 }
 
 @test "repair-index converges residual MM without changing unrelated shared index" {
@@ -90,7 +113,7 @@ teardown() {
     [[ "$output" =~ ^[0-9a-f]{40}$ ]]
     [ "$(git -C "$REPO" status --short -- a.txt)" = "" ]
     [ "$(git -C "$REPO" ls-files -s -- b.txt)" = "$foreign_before" ]
-    grep -Eq "^event=completed .*commit_hash=$output$" "$REPO/repair.err"
+    grep -Eq "^event=completed .*commit_hash=$output .*phase_post_check_ms=" "$REPO/repair.err"
 }
 
 @test "repair-index blocks when worktree differs from HEAD" {

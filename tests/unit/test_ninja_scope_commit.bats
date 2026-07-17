@@ -92,6 +92,34 @@ HOOK
     [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$other_index_before" ]
 }
 
+@test "terminal eventは7 phaseを一意に記録し合計誤差200ms以下・計測overhead 50ms以下" {
+    printf 'timed change\n' >> "$REPO/own.txt"
+
+    run bash -c 'cd "$1" && bash "$2" -m timed -- own.txt 2>&1' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    event="$(printf '%s\n' "$output" | grep '^event=completed ')"
+    [ -n "$event" ]
+    EVENT="$event" python3 - <<'PY'
+import os, re
+
+fields = dict(re.findall(r"([a-z0-9_]+)=([^ ]+)", os.environ["EVENT"]))
+phases = (
+    "read_tree", "add", "scope_sync", "guard", "git_commit",
+    "advance_shared_index", "post_check",
+)
+for phase in phases:
+    assert f"phase_{phase}_ms" in fields, phase
+    assert fields[f"phase_{phase}_rc"] == "0", phase
+assert sum(int(fields[f"phase_{phase}_ms"]) for phase in phases) == int(fields["phase_total_ms"])
+assert abs(int(fields["phase_unattributed_ms"])) <= 200
+assert int(fields["telemetry_overhead_ms"]) <= 50
+measured = [key for key in fields if key.startswith("phase_") and key.endswith("_ms")
+            and key not in {"phase_total_ms", "phase_unattributed_ms"}]
+assert len(measured) == 7, measured
+PY
+}
+
 @test "normal modeは専用indexから対象だけcommitしforeign stageをblob不変で保持する" {
     printf 'foreign staged\n' >> "$REPO/other.txt"
     git -C "$REPO" add other.txt
