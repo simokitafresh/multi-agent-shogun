@@ -1,9 +1,10 @@
 # Campaign Lane残課題 解決設計書
 
-- status: REVIEWED_APPROVED
+- status: PARALLEL_PLAN_REVIEWED_APPROVED
 - date: 2026-07-17
 - owner: karo
 - reviewers: gunshi（計測・品質・失敗モード）, shogun（目的・優先順位・完了条件）
+- reviewed_payload_sha256: `62d0c58bdca6fab1d36561d85bedb43a9be761d3463bdefcca6353582739fcf3`
 - source: `campaign-lane-general-skill-asis-tobe-5w1h_20260716.md` §11
 - scope: §11の残課題6件。inbox Phase Aの採用済みbatch ACKを起点に、未解決部分をreadyへ到達させる。
 - non-goals: 品質契約の緩和、人判断の自動化、依存候補の同一round投入、専用計測runの常態化。
@@ -24,7 +25,7 @@ P3 pytest live campaign貫通
 P4 adapter精度較正・退役
 ```
 
-P0/P1は全laneの前提であり並列化しない。P2の4 adapterは互いに独立なため、各候補の入出力契約を凍結後にcampaignで並列化できる。P3はpytest writerとP0を前提にする。P4は通常業務で十分な採否標本が蓄積してから実行する。
+P0とP1の共通契約までは直列で凍結する。その後はP1 inbox、P2の4 adapter、P3 pytestを「共通ファイルを編集しない6 shard」として動的に並列化する。各shardは固有実装・固有test・機械可読な結果だけを返し、catalog接続は統合checkpointで一度だけ行う。P4は通常業務で十分な採否標本が蓄積してから実行する。
 
 ## §2 現状と完了定義
 
@@ -164,18 +165,121 @@ retired --新fixtureでTP>=3かつFP=0--> calibrating
 
 退役は履歴削除ではなくadapterを停止し、reason codeと最後のcohortを残す。成功例だけでprecisionを計算しない。
 
-## §5 実装順序と並列境界
+## §5 忍者並列実装パッケージ
 
-| Step | 実装物 | 前提 | 並列可否 |
-|---|---|---|---|
-| 1 | fixed-SHA checkpoint | なし | 単独。全後続の品質底線 |
-| 2 | outcome ledger + normal writer helper | Step 1 | 単独。schema凍結 |
-| 3 | inbox episode writer/adapter | Step 2 | 単独。ID契約競合を避ける |
-| 4 | partial 4 adapter | Step 2 | 4本並列可。共通ファイル編集は禁止 |
-| 5 | pytest live 2 round | Step 1, 2 | partial adapterと並列可 |
-| 6 | precision集計・状態遷移 | Step 3〜5の標本 | 単独 |
+### §5.1 Critical pathとwave DAG
 
-campaignへ投入するのは、前提が揃い、互いの入力・SSOT・対象ファイルを変えない候補だけ。独立候補2件が無ければserialへ黙ってfallbackせずBLOCKする。
+```text
+S0 契約凍結（1忍者）
+   fixed-SHA checkpoint + outcome ledger helper + adapter SDK + contract fingerprint
+                              │
+                              ▼
+F1 独立実装fan-out（ready shardを2〜6忍者へ動的配備）
+   ├─ I1 inbox-drain writer/adapter
+   ├─ A1 context-freshness adapter
+   ├─ A2 insight-queue adapter
+   ├─ A3 lesson-backlog adapter
+   ├─ A4 memory-candidates adapter
+   └─ T1 pytest live-chain harness
+                              │
+                              ▼
+S1 統合checkpoint（1忍者）
+   item ID順commit取込 → scope/contract検証 → catalog一括接続 → target/full test
+                              │
+                              ▼
+F2 campaign実測（独立candidateをshard-workで2〜N並列）
+                              │
+                              ▼
+S2 precision集計・状態遷移（1忍者）
+```
+
+S0/S1/S2は共有SSOTを変更するため直列、F1/F2だけを並列にする。F1開始条件はS0のfixed SHA、contract fingerprint、対象path、固有test commandが確定していること。依存が残るitemを同一waveへ入れず、ready itemまたは適合idle workerが2未満ならserialへ黙ってfallbackせずBLOCKする。
+
+### §5.2 1 shardの完結契約
+
+各itemは配備前に次のフィールドを固定する。worker名・CLI名・LLM名は契約へ入れず、実行時のidle/capabilityだけで割り当てる。
+
+| Field | 二値契約 |
+|---|---|
+| `id` | wave内で一意かつ再実行しても不変 |
+| `weight` | 正数。一次見積り（対象file数+test数+外部fixture数）から算出 |
+| `capability` | `shell-gate` / `adapter` / `pytest-live` の作業能力だけを表す |
+| `contract_fingerprint` | S0のschema・helper・SDK SHAから生成し、実行時不一致ならBLOCK |
+| `owned_paths` | itemだけが変更できる実装・test path。wave内の積集合は空 |
+| `read_only_paths` | 参照可、変更不可の共通契約・既存SSOT |
+| `test_command` | 当該itemだけのFAIL 0 / SKIP 0を返すコマンド |
+| `result_path` | `output_dir/result.json`。commit SHA、files、test数、FAIL、SKIP、elapsedを必須化 |
+
+忍者は`owned_paths`外を変更せず、共通helper/catalogの不足を見つけた場合は勝手に補修せず`result.json.reason_code=blocked_dependency`、process exit non-zeroで返す。universal shard coreのstatusへ未対応の第6状態を追加せず、`merged.json`上は`fail`として保存する。家老はこのreason codeだけをS0修正へ戻し、fingerprintを更新して全未完了itemを再計画する。これにより、並列中の共通契約ドリフトを禁止する。
+
+### §5.3 排他的file ownership
+
+以下は実装時の提案pathであり、S0で存在・命名を確定してからF1へ渡す。
+
+| Item | owned_paths | read_only/shared |
+|---|---|---|
+| I1 inbox-drain | `skills/campaign-lane/adapters/inbox_drain.py`, `tests/unit/test_campaign_inbox_drain.py` | watcher、inbox ACK、ledger helper |
+| A1 context-freshness | `skills/campaign-lane/adapters/context_freshness.py`, `tests/unit/test_campaign_context_freshness.py` | `scripts/context_freshness_check.sh` |
+| A2 insight-queue | `skills/campaign-lane/adapters/insight_queue.py`, `tests/unit/test_campaign_insight_queue.py` | insight SSOT/既存resolve script |
+| A3 lesson-backlog | `skills/campaign-lane/adapters/lesson_backlog.py`, `tests/unit/test_campaign_lesson_backlog.py` | lesson SSOT/`lesson_write.sh` |
+| A4 memory-candidates | `skills/campaign-lane/adapters/memory_candidates.py`, `tests/unit/test_campaign_memory_candidates.py` | 三層記憶writer/semantic index |
+| T1 pytest-live | `skills/campaign-lane/adapters/pytest_live.py`, `tests/unit/test_campaign_pytest_live.py` | pytest timing ledger/task generator |
+
+F1中は全忍者が次を編集禁止とする: catalog、outcome ledger helper、adapter SDK、既存SSOT writer、他itemのowned path。共通catalogへの6回の並行追記は行わず、各itemの`result.json`をS1がitem ID順に一括接続する。ownership重複検査が1件でも検出したmanifestは配備前にBLOCKする。
+
+### §5.4 shard-work manifest生成契約
+
+manifestは配備直前の一次状態から家老が生成する。`workers`はその時点のidleかつcapability適合者だけをsnapshot化し、固定の忍者名や固定人数を設計へ埋め込まない。`N=min(eligible workers,max_workers)`、N<2はBLOCKする。下例の`max_workers: 6`はready item数による上限であり、6人固定を意味しない。
+
+```yaml
+items:
+  - id: I1-inbox-drain
+    weight: 5
+    capability: adapter
+    path: skills/campaign-lane/adapters/inbox_drain.py
+    contract_fingerprint: <S0_SHA256>
+    owned_paths: [<implementation>, <unit_test>]
+  - id: A1-context-freshness
+    weight: 3
+    capability: adapter
+    path: skills/campaign-lane/adapters/context_freshness.py
+    contract_fingerprint: <S0_SHA256>
+    owned_paths: [<implementation>, <unit_test>]
+  # A2, A3, A4, T1も同じ契約。依存itemは含めない。
+workers: <runtime idle/capability snapshot>
+max_workers: 6
+command: >-
+  bash scripts/campaign_lane_shard_item.sh
+  {item_id} {item_path} {worker_id} {workdir} {output_dir}
+state_dir: queue/shard_state/campaign-lane-residual-<S0_SHA>
+timeout: 1800
+```
+
+実行順は必ず`shard_work.sh MANIFEST --plan`→計画のexactly-once/coverage/ownership検証→`--run`。universal shard coreが渡す`workdir`は隔離directoryであってsource checkoutではないため、`campaign_lane_shard_item.sh`は作業開始前にS0 fixed SHAをそこへmaterializeし、`HEAD == S0 SHA`かつdirty 0を検証する。source展開に失敗したitemは実装を始めず`fail(reason_code=source_materialize_failed)`とする。同一workerのlive予約競合、coordinator競合、capability全体未充足も成功扱いせずBLOCKする。`merged.json`は実行結果の完全性証拠であり、品質PASSの証拠ではない。
+
+### §5.5 retry・統合・品質checkpoint
+
+1. `success`かつ同一fingerprintのitemは保持し、core既定の`fail|skip|timeout|cancel`だけを再配備する。`blocked_dependency`は`fail`のreason codeとして扱う。
+2. retryで成功itemを再実行しない。item契約またはcommandが変わった場合だけfingerprintを変え、影響itemを再実行する。
+3. S1はclean integration branchへitem ID昇順でcommitを取り込み、各commitで`owned_paths`外diff 0と固有test FAIL 0 / SKIP 0を確認する。
+4. conflictが1件でも起きたら場当たり的に解消せず、ownershipまたは共通契約の欠陥としてF1を停止しS0へ戻す。
+5. 全item取込後にcatalogを1commitで接続し、adapter契約test→対象test→全量test→fixed-SHA CIの順で通す。
+6. partial successは保存するがwave完了とは呼ばない。`expected == actual`、missing 0、duplicate 0、全item success、FAIL 0、SKIP 0でのみF2へ進む。
+
+### §5.6 並列化そのものの計測
+
+速度改善は実装機能だけでなく実装lane自体もbefore/afterを残す。
+
+| Metric | 定義 | 合格条件 |
+|---|---|---|
+| wall speedup | `(Σ shard_elapsed + integration_elapsed) / (fanout_elapsed + integration_elapsed)` | 2 worker時`>1.3x`、4以上時`>2.0x` |
+| dispatch latency | manifest確定→全選択worker開始のp95 | ≤10秒 |
+| coordination overhead | `(fanout_elapsed - max(shard_elapsed)) / fanout_elapsed` | ≤20% |
+| assignment integrity | missing / duplicate / capability mismatch / live double-reservation | 全て0 |
+| merge integrity | conflict / owned_paths外変更 / contract mismatch | 全て0 |
+| retry efficiency | 成功済みitemの不要再実行数 | 0 |
+
+比較対象のserial equivalentは各shardの実測elapsed合計に同一integration checkpointの実測elapsedを1回だけ加え、推定工数を使わない。並列側も同じintegration elapsedを1回だけ含め、fan-outだけを置換した同一仕事量で比較する。適合workerが少ない日は合格閾値を緩めず、Nと実測値をそのまま記録する。
 
 ## §6 最終Acceptance Criteria
 
@@ -187,27 +291,35 @@ campaignへ投入するのは、前提が揃い、互いの入力・SSOT・対�
 6. adapter精度がlaneごとに可視化され、100% FP adapterがactiveに残らない。
 7. fixed-SHA checkpointが別SHA GREEN・dirty PASS・SKIP 1を全てBLOCKする。
 8. 全required CI GREEN、FAIL 0、SKIP 0。未達が1件でもあれば「残課題解決済み」と記載しない。
+9. F1 manifestのitem coverage 100%、missing/duplicate/ownership重複/capability mismatch 0。
+10. retryは失敗itemだけを対象とし、同一fingerprintの成功item再実行0。
+11. S1統合conflict 0、owned_paths外diff 0、catalog接続commit 1件。
+12. 並列実装before/afterが§5.6の全指標を満たす。満たさなければ機能実装がPASSでも並列化成果は未達とする。
 
 ## §7 Review依頼
 
 ### 軍師
 
-- 指標定義に観測バイアスや分母誤りがないか。
-- FP/FN定義と退役閾値が品質低下を隠さないか。
-- inbox episode境界・競合・loss検知に抜けがないか。
-- 敵対fixtureとrollback条件が十分か。
+- F1の6 itemが実際に独立で、hidden dependencyや共有SSOT競合がないか。
+- ownership、fingerprint、retry、S1 checkpointが部分失敗や品質低下を隠さないか。
+- §5.6のspeedup/overhead分母と閾値に観測バイアスがないか。
+- `merged.json`完全性と実装品質を混同しないgateになっているか。
 
 ### 将軍
 
-- 解く順序が「正しい結果を最短で供給」に一致するか。
-- WHATと完了条件が明確で、HOWの過剰拘束になっていないか。
-- 人判断を必要とするlaneを自動化し過ぎていないか。
-- 残課題6件を完了と呼べる最終ACに穴がないか。
+- S0→F1→S1→F2→S2が最短critical pathで、直列化/過剰並列化がないか。
+- worker割当が人数・名前・CLI/LLMに固定されず、ready workへ追随するか。
+- WHATと二値完了条件が忍者の裁量を奪い過ぎず、統合事故を防ぐ十分条件か。
+- 残課題6件と「並列実装の速度成果」の双方を完了と呼べる最終ACか。
 
 ## §8 Review履歴
 
 - 2026-07-17 軍師: APPROVE。指標、FP/FN退役、episode競合、敵対fixtureの4観点OK。INFO「μ/λの移動窓が未定義」を受け、§4.2へwarm-up 10秒後の固定60秒window定義を追加。
 - 2026-07-17 将軍: APPROVE。P0→P4の依存順、§2/§6の二値完了条件、人判断BLOCK境界、最終AC8項目を確認し穴なし。軍師INFO反映後の§4.2も確認済み。
+- 2026-07-17 忍者並列実装計画・初回レビュー: 両者APPROVEだったが、将軍回答が旧Step/AC1-8、軍師回答がAC9-11までを参照し、現物SHAとの不一致を検出したため採用せず再レビューへ戻した。
+- 2026-07-17 軍師・固定SHA再レビュー: APPROVE。AC12とwall speedup分母の誤読を訂正し、hidden dependency、ownership、fingerprint、partial retry、`merged.json`と品質gateの分離を確認。
+- 2026-07-17 将軍・固定SHA再レビュー: SHA `7e0beba7...`一致でAPPROVE。S0→F1→S1→F2→S2、runtime worker割当、AC1-12を確認。
+- 2026-07-17 最終差分: universal shard実装契約との照合で、S0 SHA materialize、unsupported status排除、max_workersの意味、同一仕事量speedup式を追加。payload SHA `62d0c58b...`に対し、軍師は実装安全性4点、将軍は構造・AC非破壊6点を別々にAPPROVE。
 
 ## 因果リンク
 
