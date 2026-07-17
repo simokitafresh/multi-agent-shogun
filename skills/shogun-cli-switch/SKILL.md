@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T04:48:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_final_pair_202607180446検分: ninja_monitor.sh b89606cd6はreport通知済み判定をreport/task/parent_cmdのexact identity照合へ強化し、既読report_receivedの偽陽性反復を防止。CLI切替I/F、settings→tmux同期、dead/idle pane respawn、cli_launch_cmd契約には影響なし。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T04:24:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_hotfix_shogun_cli_switch_refs_202607180425検分: ninja_monitor.sh ed5a31258/30cb653ddはforeign-dirty還流候補のfingerprint付き延期ledger追加と、読取専用走査のyaml.safe_dump→json.dumps置換。いずれもreflux inventory内部変更で、CLI切替I/F、settings→tmux同期、dead/idle pane respawn、cli_launch_cmd契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->

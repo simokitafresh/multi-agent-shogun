@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T04:48:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_final_pair_202607180446検分: ninja_scope_commit.sh afd88ea13はsingle-flight receipt再利用時にcommit存在・HEAD祖先・対象scopeのHEAD差分/unstaged/stagedが全て収束していることを再検証するfail-closed強化。CLI、対象path限定、成功時40桁hash出力、report commit_hash記録契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_hotfix_skill_refs_freshness_batch検分: ninja_scope_commit.sh 2f7805b8/85d83497/5f63ad8eはphase telemetry、immutable snapshot、single-flight receiptを追加。CLIとstdoutの40桁hash契約は維持し、同一run再実行はreceipt hashを返す。report_field_set.sh 7c2a802e/cebb4ba2/4dafc13fのbatch/atomic serializerはcommit_hash単一setter契約に影響なし。 -->
 <!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
