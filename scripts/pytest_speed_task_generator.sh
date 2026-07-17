@@ -99,7 +99,7 @@ PY
   flock 9
   tmp=$(mktemp); rm -f "$tmp"; trap 'rm -f "$tmp"' EXIT
   # Re-check eligibility while holding the node-specific reservation lock.
-  "$0" --ledger "$LEDGER" generate "$node" "$tmp" >/dev/null
+  bash "$0" --ledger "$LEDGER" generate "$node" "$tmp" >/dev/null
   deploy=${DEPLOY_TASK:-$ROOT/scripts/deploy_task.sh}
   set +e; bash "$deploy" --direct --yaml "$tmp" "$ninja"; rc=$?; set -e
   if [[ $rc -eq 0 ]]; then
