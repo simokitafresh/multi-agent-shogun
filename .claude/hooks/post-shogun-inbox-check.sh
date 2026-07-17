@@ -205,6 +205,14 @@ fi
 if [ -n "$EFFECT_REMIND" ]; then
     MSG="${MSG:+${MSG}\\n}${EFFECT_REMIND}"
 fi
+# escalation未対処検出(Q6自動化ターゲット: 洗脳#5先送り防止)
+ESCALATION_UNREAD=0
+if [ -f "$INBOX" ]; then
+    ESCALATION_UNREAD=$(awk '/type:.*escalation/{esc=1; next} esc && /read: false/{n++; esc=0; next} /read:/{esc=0} END{print n+0}' "$INBOX")
+fi
+if [ "$ESCALATION_UNREAD" -gt 0 ]; then
+    MSG="${MSG:+${MSG}\\n}⚠ 未対処エスカレーション${ESCALATION_UNREAD}件 — 即時行動せよ(洗脳#5先送り防止)"
+fi
 if [ -n "$SELF_DRIVE" ]; then
     MSG="${MSG:+${MSG}\\n}${SELF_DRIVE}"
 fi
