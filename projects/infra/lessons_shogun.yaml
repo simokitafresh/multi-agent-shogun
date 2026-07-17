@@ -446,7 +446,7 @@ lessons:
   enforcement: 'Level4: deploy_reflux_auto.logの出力で各段のBLOCK/PASSが機械的に確認可能。startup gateにpromotion消費路直近状態を自動表示(491e63af8)'
 - id: 'LS090'
   title: 'escalation未対処WARN hook — Q6自動化ターゲットのLevel4実装'
-  origin: '未指定'
+  origin: '[[Q6洗脳#5_CI_RED先送り]] -> [[escalation_handler_gap_grep0件]] -> [[post-shogun-inbox-check_WARN注入]]'
   detail: 'Q6で洗脳#5(escalation先送り)を検出→自動化ターゲット=escalation handler不在を特定→post-shogun-inbox-check.shにtype:escalation+read:false検出WARN注入を実装(79c60e0c6)。awkバグ(escフラグ未リセット)を初回テストで検出し修正。行動→検証→commitの3ステップを1サイクルで完結'
   source_cmd: 'session_20260717'
   created_at: '2026-07-17'
