@@ -908,15 +908,50 @@ fi
 # ─── SG-PRE27: verify系関数evidence検出(LG040: 検証関数は単体実行で検証せよ) ───
 # cmd_3275: verify_sheets()がranges配列バグで常時Falseなのにevidence「一致確認」記載。
 # 関数呼出形に限定した有界パターン(LG039: 無制限マッチの貪欲FP防止)
+_sg_pre27_check() {
+    local report_path="$1"
+    local verify_fns simulation_block command_block actual_value fn fn_name missing=0
+    verify_fns=$(grep -oE '\b(verify|validate|readback|parity)_[a-z_]{1,40}\(' "$report_path" 2>/dev/null | sort -u | head -5 || true)
+    if [ -z "$verify_fns" ]; then
+        echo "  PASS: verify系関数evidenceなし(対象外確認済み)"
+        return 0
+    fi
+
+    echo "  INFO: 報告に検証関数の呼出evidenceあり:"
+    printf '%s\n' "$verify_fns" | while IFS= read -r fn; do
+        [ -n "$fn" ] && echo "    - ${fn})"
+    done
+    simulation_block=$(awk '/^operational_simulation:/{found=1; next} found && /^[^[:space:]#]/{exit} found{print}' "$report_path" 2>/dev/null || true)
+    command_block=$(printf '%s\n' "$simulation_block" | awk '/^  command:/{found=1; print; next} found && /^  [a-zA-Z_][a-zA-Z0-9_]*:/{exit} found{print}')
+
+    while IFS= read -r fn; do
+        [ -n "$fn" ] || continue
+        fn_name=${fn%\(}
+        if ! printf '%s\n' "$command_block" | grep -Fq "$fn_name"; then
+            echo "  BLOCK(LG040): operational_simulation.commandに${fn_name}の単体実行証跡がない"
+            missing=1
+        fi
+    done <<< "$verify_fns"
+    actual_value=$(printf '%s\n' "$simulation_block" | sed -n 's/^  actual:[[:space:]]*//p' | head -1)
+    actual_value=$(printf '%s' "$actual_value" | sed 's/[[:space:]]*#.*$//; s/^[[:space:]"'"'']*//; s/[[:space:]"'"'']*$//')
+    if [ -z "$actual_value" ]; then
+        echo "  BLOCK(LG040): operational_simulation.actualに戻り値の実測がない"
+        missing=1
+    fi
+    if ! printf '%s\n' "$simulation_block" | grep -Eq "^  result:[[:space:]]*['\"]?PASS(['\"]?[[:space:]]*(#.*)?)?$"; then
+        echo "  BLOCK(LG040): operational_simulation.resultがPASSではない"
+        missing=1
+    fi
+    if [ "$missing" -ne 0 ]; then
+        echo "  ★ evidenceの『一致確認』だけでは関数が動く証明にならない(cmd_3275実証)"
+        return 2
+    fi
+    echo "  PASS(LG040): 検証関数を単体実行したcommand・戻り値・PASS証跡あり"
+}
 echo ""
 echo "■ SG-PRE27: verify系関数evidence検出(LG040)"
-_verify_fns=$(grep -oE '\b(verify|validate|readback|parity)_[a-z_]{1,40}\(' "$REPORT_PATH" 2>/dev/null | sort -u | head -5 || true)
-if [ -n "$_verify_fns" ]; then
-    echo "  INFO: 報告に検証関数の呼出evidenceあり:"
-    printf '%s\n' "$_verify_fns" | while IFS= read -r _fn; do if [ -n "$_fn" ]; then echo "    - ${_fn})"; fi; done
-    echo "  ★ LG040: 当該関数を自分で単体実行し戻り値を確認せよ。evidenceの「一致確認」は関数が動く証明ではない(cmd_3275実証)"
-else
-    echo "  OK: verify系関数evidenceなし(対象外確認済み)"
+if ! _sg_pre27_check "$REPORT_PATH"; then
+    ERRORS=$((ERRORS + 1))
 fi
 
 # ─── SG-PRE28: 正直報告×AC本旨照合リマインダー(LG044: 正直報告はAC未達の免罪符ではない) ───
