@@ -79,7 +79,7 @@ else
     printf '%s\n' "$_INBOX_STAMP" > "$_UNREAD_META" 2>/dev/null
 fi
 
-# 殿の直近指示を取得(LS055: 100億回従う原理的保証)
+# 殿の未回答直近指示を取得(LS055: 最新指示を保持しつつPostToolUse注入を有界化)
 LORD_CONV="${SHOGUN_LORD_CONV_PATH:-${SCRIPT_DIR}/queue/lord_conversation.jsonl}"
 LORD_LAST=""
 if [ -f "$LORD_CONV" ]; then
@@ -87,34 +87,57 @@ if [ -f "$LORD_CONV" ]; then
     _LORD_CACHE="/tmp/shogun_lord_last_${TMUX_PANE}"
     _LORD_META="${_LORD_CACHE}.meta"
     _LORD_CACHED_STAMP=""
+    _LORD_PENDING_NOW="${SHOGUN_LORD_PENDING_NOW:-$(date +%s 2>/dev/null)}"
+    _LORD_PENDING_TTL="${SHOGUN_LORD_PENDING_TTL_SEC:-3600}"
+    _LORD_CACHE_KEY="${_LORD_STAMP}|$((_LORD_PENDING_NOW / 60))|${_LORD_PENDING_TTL}"
     [ -r "$_LORD_META" ] && { IFS= read -r _LORD_CACHED_STAMP; } < "$_LORD_META"
-    if [ -r "$_LORD_CACHE" ] && [ "$_LORD_CACHED_STAMP" = "$_LORD_STAMP" ]; then
+    if [ -r "$_LORD_CACHE" ] && [ "$_LORD_CACHED_STAMP" = "$_LORD_CACHE_KEY" ]; then
         { IFS= read -r LORD_LAST; } < "$_LORD_CACHE"
     else
-        LORD_LAST=$(tail -100 "$LORD_CONV" 2>/dev/null | awk '
-    function json_value(line, key,    s, prefix) {
-        s = line
-        prefix = "\"" key "\"[[:space:]]*:[[:space:]]*\""
-        if (match(s, prefix)) {
-            s = substr(s, RSTART + RLENGTH)
-            if (match(s, /"/)) return substr(s, 1, RSTART - 1)
-        }
-        return ""
-    }
-    /"direction"[[:space:]]*:[[:space:]]*"inbound"/{
-        agent_val = json_value($0, "agent")
-        if (agent_val != "lord" && agent_val != "") next
-        ts_raw = json_value($0, "ts")
-        summary = json_value($0, "summary")
-        target = json_value($0, "target")
-        if (target != "" && target != "shogun") next
-        if(summary) { ts=substr(ts_raw,12,5); lines[++n] = ts " " substr(summary,1,70) }
-    }END{
-        start = (n > 5) ? n - 4 : 1
-        for(i=start; i<=n; i++) printf "%s | ", lines[i]
-    }' 2>/dev/null)
+        LORD_LAST=$(tail -200 "$LORD_CONV" 2>/dev/null | \
+            SHOGUN_LORD_PENDING_TTL_SEC="$_LORD_PENDING_TTL" \
+            SHOGUN_LORD_PENDING_NOW="$_LORD_PENDING_NOW" python3 -c '
+import datetime as dt, json, os, sys, time
+
+ttl = max(0, int(os.environ.get("SHOGUN_LORD_PENDING_TTL_SEC", "3600")))
+now_raw = os.environ.get("SHOGUN_LORD_PENDING_NOW", "").strip()
+now = float(now_raw) if now_raw else time.time()
+pending = []
+for raw in sys.stdin:
+    try:
+        event = json.loads(raw)
+    except (TypeError, ValueError):
+        continue
+    direction = str(event.get("direction") or "")
+    agent = str(event.get("agent") or "")
+    target = str(event.get("target") or "")
+    if direction == "response" and agent == "shogun" and target == "lord":
+        pending.clear()
+        continue
+    if direction != "inbound" or agent not in {"", "lord"} or target not in {"", "shogun"}:
+        continue
+    summary = " ".join(str(event.get("summary") or "").split())
+    if not summary:
+        continue
+    ts_raw = str(event.get("ts") or "")
+    try:
+        stamp = dt.datetime.fromisoformat(ts_raw.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        continue
+    pending.append((stamp, ts_raw, summary))
+
+seen = set(); selected = []
+for stamp, ts_raw, summary in reversed(pending):
+    key = summary.casefold()
+    if now - stamp > ttl or key in seen:
+        continue
+    seen.add(key); selected.append((ts_raw, summary))
+    if len(selected) == 3:
+        break
+print(" | ".join(f"{ts[11:16]} {summary[:70]}" for ts, summary in selected), end="")
+' 2>/dev/null)
         printf '%s\n' "$LORD_LAST" > "$_LORD_CACHE" 2>/dev/null
-        printf '%s\n' "$_LORD_STAMP" > "$_LORD_META" 2>/dev/null
+        printf '%s\n' "$_LORD_CACHE_KEY" > "$_LORD_META" 2>/dev/null
     fi
 fi
 
