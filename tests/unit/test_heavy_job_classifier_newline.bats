@@ -4,6 +4,11 @@ setup() {
     ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
     HOOK="$ROOT/.claude/hooks/pre-bash-combined.sh"
+    export TEST_TIMING_LEDGER="$BATS_TEST_TMPDIR/timing.tsv"
+    printf 'run_id\trepo\tcommit_sha\tsuite_root\trunner\ttest_file\ttest_id_count\twall_sec\tstatus\tskip_count\tcache_hit\tsource_fingerprint\tmeasured_at\tresource_tags\n' >"$TEST_TIMING_LEDGER"
+    printf 'fixture\trepo\tHEAD\tdirect\tbats\t%s\t1\t1.000\tpass\t0\t0\t%s\t%s\tmode=direct;jobs=1\n' \
+      "$BATS_TEST_FILENAME" "$(sha256sum "$BATS_TEST_FILENAME" | awk '{print $1}')" \
+      "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"$TEST_TIMING_LEDGER"
 }
 
 @test "production hook decodes JSON escaped newlines before heavy classification" {
@@ -50,7 +55,7 @@ git commit --no-verify -m 'must be blocked'"
 }
 
 @test "newline separates a filtered single-file bats command from later git commands" {
-    command="bats tests/unit/test_ninja_monitor_clear_guard.bats --filter 'memory DB report_received'
+    command="bats $BATS_TEST_FILENAME --filter 'newline separates'
 bash -n scripts/ninja_monitor.sh
 git add scripts/ninja_monitor.sh
 git commit -m 'fix infra'"

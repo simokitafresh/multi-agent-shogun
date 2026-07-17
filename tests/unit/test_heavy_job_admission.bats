@@ -17,6 +17,23 @@ setup() {
     # their own explicit IDs and must not inherit the suite's outer identity.
     unset SHOGUN_HEAVY_JOB_RUN_ID
     OUT="$TMP/timeline.log"
+    export TEST_TIMING_LEDGER="$TMP/timing.tsv"
+    printf 'run_id\trepo\tcommit_sha\tsuite_root\trunner\ttest_file\ttest_id_count\twall_sec\tstatus\tskip_count\tcache_hit\tsource_fingerprint\tmeasured_at\tresource_tags\n' >"$TEST_TIMING_LEDGER"
+}
+
+_timing_row() {
+    local file="$1" wall="$2" fingerprint="${3:-}"
+    [ -n "$fingerprint" ] || fingerprint="$(sha256sum "$file" | awk '{print $1}')"
+    printf 'fixture\trepo\tHEAD\tdirect\tbats\t%s\t1\t%s\tpass\t0\t0\t%s\t%s\tmode=direct;jobs=1\n' \
+      "$file" "$wall" "$fingerprint" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >>"$TEST_TIMING_LEDGER"
+}
+
+_quick_fixture() {
+    local name="$1" file
+    file="$TMP/$name"
+    printf '@test "quick" { true; }\n' >"$file"
+    _timing_row "$file" 1.000
+    printf '%s\n' "$file"
 }
 
 teardown() {
@@ -41,9 +58,29 @@ CMD
 # --- 分類器(SSOT) — argv位置ベース、部分文字列誤検出禁止 ---
 
 @test "分類器: 単一.batsファイル1つは軽量" {
+    local fixture="$TMP/test_foo.bats"
+    printf '@test "quick" { true; }\n' >"$fixture"
+    _timing_row "$fixture" 9.999
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
-    result="$(heavy_job_classify "bats tests/unit/test_foo.bats")"
+    result="$(heavy_job_classify "bats $fixture")"
     [ "$result" = "light" ]
+}
+
+@test "分類器: 実測10秒超の単一.batsをtimed-heavyへ昇格" {
+    local fixture="$TMP/test_campaign_lane_shard_item.bats"
+    printf '@test "slow" { true; }\n' >"$fixture"
+    _timing_row "$fixture" 29.840
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    [ "$(heavy_job_classify "bats $fixture")" = "heavy" ]
+}
+
+@test "分類器: ledger欠損・fingerprint不一致はfail-closedでheavy" {
+    local fixture="$TMP/test_unknown.bats"
+    printf '@test "unknown" { true; }\n' >"$fixture"
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    [ "$(heavy_job_classify "bats $fixture")" = "heavy" ]
+    _timing_row "$fixture" 1.000 deadbeef
+    [ "$(heavy_job_classify "bats $fixture")" = "heavy" ]
 }
 
 @test "分類器: bats全量ディレクトリは重量" {
@@ -116,14 +153,16 @@ EOF
 }
 
 @test "分類器: semicolonで順次実行する単一bats群は各segmentを独立判定する" {
+    local a="$(_quick_fixture a.bats)" b="$(_quick_fixture b.bats)" c="$(_quick_fixture c.bats)"
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
-    result="$(heavy_job_classify "bats tests/unit/test_a.bats; bats tests/unit/test_b.bats; bats tests/unit/test_c.bats")"
+    result="$(heavy_job_classify "bats $a; bats $b; bats $c")"
     [ "$result" = "light" ]
 }
 
 @test "分類器: 単一batsのfilter値は第二の対象ファイルに数えない" {
+    local fixture="$(_quick_fixture filtered.bats)"
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
-    result="$(heavy_job_classify "bats tests/unit/test_a.bats --filter 'specific test name'")"
+    result="$(heavy_job_classify "bats $fixture --filter 'specific test name'")"
     [ "$result" = "light" ]
 }
 
@@ -140,8 +179,9 @@ PY"
 # shlexで"2>"+"&"+"1"にトークン化され、"2>"が単一ファイル指定segmentへ残存し
 # 第二の対象ファイルとして誤カウントされていた(shell_command_segments.py root cause)。
 @test "分類器: 単一.batsファイル1つに末尾2>&1が付いても軽量" {
+    local fixture="$(_quick_fixture redirected.bats)"
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
-    result="$(heavy_job_classify "bats tests/unit/test_foo.bats 2>&1")"
+    result="$(heavy_job_classify "bats $fixture 2>&1")"
     [ "$result" = "light" ]
 }
 
@@ -390,7 +430,8 @@ print('ok')
 }
 
 @test "hook: 単一.batsファイル/単一pytest::関数は軽量でBLOCKされない" {
-    run _run_hook "bats tests/unit/test_foo.bats"
+    local fixture="$(_quick_fixture hook-quick.bats)"
+    run _run_hook "bats $fixture"
     [ "$status" -eq 0 ]
     run _run_hook "python3 -m pytest backend/tests/test_foo.py::test_bar"
     [ "$status" -eq 0 ]

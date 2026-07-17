@@ -29,6 +29,10 @@ commit messageの説明文)、コマンド位置(segment[0])でなければ一�
 import os
 import re
 import sys
+import csv
+import hashlib
+from datetime import datetime, timezone
+from pathlib import Path
 from shell_command_segments import segment_tokens
 
 
@@ -72,6 +76,61 @@ def _bats_targets(args):
     return targets
 
 
+_TIMED_HEAVY_SECONDS = float(os.environ.get("HEAVY_JOB_TIMED_THRESHOLD_SECONDS", "10"))
+_LEDGER_MAX_AGE_SECONDS = int(os.environ.get("HEAVY_JOB_LEDGER_MAX_AGE_SECONDS", "604800"))
+
+
+def _file_sha256(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _trusted_bats_wall_seconds(target):
+    """Return latest trustworthy serial timing, or None (fail-closed boundary)."""
+    root = Path(os.environ.get("SHOGUN_REPO_ROOT", Path(__file__).resolve().parents[2]))
+    target_path = Path(target)
+    if not target_path.is_absolute():
+        target_path = Path.cwd() / target_path
+    target_path = target_path.resolve()
+    ledger = Path(os.environ.get("TEST_TIMING_LEDGER", root / "logs/test_timing_ledger.tsv"))
+    if not target_path.is_file() or not ledger.is_file():
+        return None
+    fingerprint = _file_sha256(target_path)
+    latest = None
+    try:
+        with ledger.open(newline="", encoding="utf-8") as handle:
+            for row in csv.DictReader(handle, delimiter="\t"):
+                try:
+                    row_path = Path(row["test_file"])
+                    if not row_path.is_absolute():
+                        row_path = root / row_path
+                    measured = datetime.fromisoformat(row["measured_at"].replace("Z", "+00:00"))
+                    tags = dict(
+                        part.split("=", 1) for part in row["resource_tags"].split(";") if "=" in part
+                    )
+                    trusted = (
+                        row_path.resolve() == target_path
+                        and row["runner"] == "bats"
+                        and row["status"] == "pass"
+                        and row["skip_count"] == "0"
+                        and row["cache_hit"] == "0"
+                        and row["source_fingerprint"] == fingerprint
+                        and tags.get("jobs") == "1"
+                        and (datetime.now(timezone.utc) - measured).total_seconds()
+                        <= _LEDGER_MAX_AGE_SECONDS
+                    )
+                    if trusted and (latest is None or measured > latest[0]):
+                        latest = (measured, float(row["wall_sec"]))
+                except (KeyError, ValueError, OSError):
+                    continue
+    except OSError:
+        return None
+    return None if latest is None else latest[1]
+
+
 def _is_bats_heavy(args):
     # These modes never execute a test body, even when passed a directory or
     # many files.  Admission protects host CPU from concurrent test execution;
@@ -97,7 +156,11 @@ def _is_bats_heavy(args):
         return True
     if target.endswith("/"):
         return True
-    return False
+    # A single file is light only with a current, content-identical, successful
+    # serial measurement below the threshold. Missing/stale/mismatched evidence
+    # fails closed so an unmeasured 29.84s file cannot bypass admission again.
+    wall_seconds = _trusted_bats_wall_seconds(target)
+    return wall_seconds is None or wall_seconds > _TIMED_HEAVY_SECONDS
 
 
 _PYTEST_HEAVY_NAME_RE = re.compile(r"(^|/)tests?($|/)")
