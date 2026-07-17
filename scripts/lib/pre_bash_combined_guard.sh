@@ -557,11 +557,13 @@ pre_bash_combined_eval_command() {
     # happen despite this guard's own tests passing). Mutation subcommands
     # (bare/push/save/pop/apply/drop/clear/branch) are blocked; read-only
     # `git stash list`/`git stash show` remain allowed.
-    # shellcheck disable=SC1091
-    source "${project_root}/scripts/lib/git_stash_guard_classify.sh"
-    if [[ "$(git_stash_guard_classify "$command")" == "block" ]]; then
-        pre_bash_combined_emit_deny "BLOCKED(GA-239): git stash is forbidden in the shared multi-agent worktree. It can rewind other agents' tracked task/report YAML. Preserve only assigned files with a scoped commit; inspect existing stashes with 'git stash list'/'git stash show' or 'git log -g refs/stash'."
-        return 1
+    if [[ "$command" == *'git stash'* ]]; then
+        # shellcheck disable=SC1091
+        source "${project_root}/scripts/lib/git_stash_guard_classify.sh"
+        if [[ "$(git_stash_guard_classify "$command")" == "block" ]]; then
+            pre_bash_combined_emit_deny "BLOCKED(GA-239): git stash is forbidden in the shared multi-agent worktree. It can rewind other agents' tracked task/report YAML. Preserve only assigned files with a scoped commit; inspect existing stashes with 'git stash list'/'git stash show' or 'git log -g refs/stash'."
+            return 1
+        fi
     fi
 
     if [[ "$command" == *'yaml.dump'* || "$command" == *'yaml.safe_dump'* ]]; then
