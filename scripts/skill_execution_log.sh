@@ -3,6 +3,7 @@
 # skill_execution_log.sh — skill execution outcome log.
 # Usage:
 #   bash scripts/skill_execution_log.sh summary
+#   bash scripts/skill_execution_log.sh source-summary
 #   bash scripts/skill_execution_log.sh <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path] [used]
 
 set -euo pipefail
@@ -13,7 +14,7 @@ REPO_ROOT="${SHOGUN_REPO_ROOT:-${_self%/scripts/skill_execution_log.sh}}"
 LOG_FILE="${SKILL_EXECUTION_LOG_FILE:-$REPO_ROOT/logs/skill_execution_log.yaml}"
 
 usage() {
-    echo "Usage: $0 summary | <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path] [used]" >&2
+    echo "Usage: $0 summary | source-summary | <skill> <executor> <result> <stumbling_points> [gate] [source] [skill_path] [used]" >&2
 }
 
 _yaml_val=""
@@ -48,6 +49,134 @@ normalize_skill_source() {
 }
 
 skill="${1:-}"
+if [ "$skill" = "source-summary" ]; then
+    if [ "${2:-}" ]; then
+        usage
+        exit 2
+    fi
+    python3 - "$LOG_FILE" <<'PY'
+import re
+import sys
+from collections import defaultdict
+
+import yaml
+
+path = sys.argv[1]
+
+def scalar(raw):
+    value = str(raw or "").strip()
+    if value.startswith('"') and value.endswith('"'):
+        return value[1:-1].replace("\\n", "\n").replace('\\"', '"').replace("\\\\", "\\")
+    if value.startswith("'") and value.endswith("'"):
+        return value[1:-1].replace("''", "'")
+    return value
+
+def load_lenient(log_path):
+    entries, current = [], None
+    try:
+        lines = open(log_path, encoding="utf-8", errors="replace").read().splitlines()
+    except FileNotFoundError:
+        return entries
+    for line in lines:
+        if line.startswith("- "):
+            if isinstance(current, dict):
+                entries.append(current)
+            current = {}
+            rest = line[2:]
+            if ":" in rest:
+                key, value = rest.split(":", 1)
+                current[key.strip()] = scalar(value)
+        elif current is not None and line.startswith("  ") and ":" in line:
+            key, value = line.strip().split(":", 1)
+            current[key.strip()] = scalar(value)
+    if isinstance(current, dict):
+        entries.append(current)
+    return entries
+
+try:
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+    entries = data.get("executions") or []
+except (FileNotFoundError, yaml.YAMLError, AttributeError):
+    entries = load_lenient(path)
+
+def cmd_id(entry):
+    for text in (str(entry.get("source") or ""), str(entry.get("stumbling_points") or "")):
+        match = re.search(r"\bcmd=([^ \t]+)", text)
+        if match:
+            return match.group(1).strip().strip('"')
+    source = str(entry.get("source") or "").strip().strip('"')
+    if source.startswith("cmd_"):
+        return source.split()[0]
+    match = re.search(r"(?:^|\s)(cmd_[A-Za-z0-9_-]+)(?:\s|$)", source)
+    return match.group(1) if match else ""
+
+def excluded(entry):
+    if str(entry.get("used", True)).strip().lower() == "false":
+        return True
+    command = cmd_id(entry)
+    if command.startswith(("cmd_test_", "cmd_training_speed_")):
+        return True
+    skill_name = str(entry.get("skill") or "").strip()
+    if skill_name == "dashboard-update":
+        if command in ("", "<empty>") or command.startswith("-"):
+            return True
+        if command.startswith("cmd_"):
+            full = re.match(r"^cmd_\d+$", command) or re.search(r"_\d{8,}(?:_|$)", command)
+            if not full:
+                return True
+    stumbling = str(entry.get("stumbling_points") or "")
+    if skill_name == "note-draft" and re.search(
+        r"reCAPTCHA challenge was not so|reCAPTCHA challenge was not solved|External reCAPTCHA challenge|reCAPTCHA image challenge blocked|LS029 Level4 guard",
+        stumbling, re.I,
+    ):
+        return True
+    return False
+
+by_skill = defaultdict(list)
+for index, entry in enumerate(entries):
+    if not isinstance(entry, dict):
+        continue
+    skill_name = str(entry.get("skill") or "").strip()
+    result = str(entry.get("result") or "").strip().upper()
+    if skill_name and result in ("PASS", "FAIL"):
+        item = dict(entry)
+        item["_index"] = index
+        by_skill[skill_name].append(item)
+
+print("skill\tfail_rate\tfail_count\ttotal\tsuccess_streak\tlast_result\tlast_ts")
+for skill_name in sorted(by_skill):
+    recent = by_skill[skill_name][-50:]
+    latest = {}
+    empty_seq = 0
+    for entry in recent:
+        source = str(entry.get("source") or "").strip()
+        # An absent source cannot safely identify a retry, so it remains one attempt.
+        if not source:
+            empty_seq += 1
+            source = f"__empty_source_{empty_seq}"
+        latest[source] = entry
+    final = sorted(
+        (item for item in latest.values()
+         if str(item.get("used", True)).strip().lower() != "false"),
+        key=lambda item: item["_index"],
+    )
+    # Benchmark/training and malformed invocation exclusions remain observable in
+    # the source denominator, but can never become unresolved operational FAILs.
+    effective = ["PASS" if excluded(item) else str(item.get("result") or "").upper() for item in final]
+    fail = sum(result == "FAIL" for result in effective)
+    total = len(final)
+    streak = 0
+    for result in reversed(effective):
+        if result != "PASS":
+            break
+        streak += 1
+    last = final[-1] if final else {}
+    last_result = effective[-1] if effective else ""
+    rate = int(round(100 * fail / total)) if total else 0
+    print(f"{skill_name}\t{rate}\t{fail}\t{total}\t{streak}\t{last_result}\t{last.get('ts', '')}")
+PY
+    exit 0
+fi
 if [ "$skill" = "summary" ]; then
     if [ "${2:-}" ]; then
         usage
