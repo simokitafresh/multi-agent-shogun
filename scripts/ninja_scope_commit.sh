@@ -80,8 +80,29 @@ source "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/lock_path.sh"
 commit_lock_path="$(lock_path "$git_common_dir/ninja-scope-commit")"
 exec {commit_lock_fd}>"$commit_lock_path" \
     || { echo "BLOCK: cannot open ninja scope commit lock" >&2; exit 2; }
+lock_requested_epoch_ms="$(date +%s%3N)"
 flock -w 120 "$commit_lock_fd" \
     || { echo "BLOCK: cannot acquire ninja scope commit lock" >&2; exit 2; }
+lock_acquired_epoch_ms="$(date +%s%3N)"
+lock_wait_ms=$((lock_acquired_epoch_ms - lock_requested_epoch_ms))
+
+# A successful return is one terminal contract: the commit object exists, the
+# published branch/HEAD ref resolves to that object, all post-checks finished,
+# and only then is completion made observable.  Metadata goes to stderr so
+# stdout remains the stable, single-line commit-hash API used by callers.
+publish_terminal_success() {
+    local terminal_hash="$1" finished_epoch_ms
+    [[ "$terminal_hash" =~ ^[0-9a-f]{40}$ ]] \
+        || { echo "BLOCK: invalid terminal commit hash" >&2; return 1; }
+    git cat-file -e "${terminal_hash}^{commit}" 2>/dev/null \
+        || { echo "BLOCK: terminal commit object disappeared: $terminal_hash" >&2; return 1; }
+    [[ "$(git rev-parse HEAD)" == "$terminal_hash" ]] \
+        || { echo "BLOCK: terminal ref does not publish commit: $terminal_hash" >&2; return 1; }
+    finished_epoch_ms="$(date +%s%3N)"
+    printf 'event=completed lock_wait_ms=%s acquired_at=%s finished_at=%s commit_hash=%s\n' \
+        "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished_epoch_ms" "$terminal_hash" >&2
+    printf '%s\n' "$terminal_hash"
+}
 
 # The lock serializes this helper, but a direct `git add` does not participate
 # in it.  Keep the real shared-index path and update entries with a compare
@@ -229,12 +250,17 @@ if not expected or expected != actual:
     print(f'actual changes={actual!r}', file=sys.stderr)
     raise SystemExit(1)
 PY
-    git commit -m "$message"
+    git commit -m "$message" >&2
+    commit_hash="$(git rev-parse HEAD)"
     # HEAD更新後、共有indexの対象pathだけを新HEADへ追随させる。他pathのstageは
     # 一切変更せず、対象pathが旧HEAD由来の逆差分として残るindex汚染を防ぐ。
     unset GIT_INDEX_FILE
     advance_shared_index_entry "$scope_path" "$shared_index_entry_before"
-    git rev-parse HEAD
+    cleanup_patch_index
+    trap - EXIT
+    [[ ! -e "$shared_index_lock" ]] \
+        || { echo "BLOCK: shared index lock remained after commit: $shared_index_lock" >&2; exit 1; }
+    publish_terminal_success "$commit_hash"
     exit 0
 fi
 
@@ -356,7 +382,7 @@ fi
 if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" ]]; then
     bash "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" check --repo "$repo_root"
 fi
-git commit -m "$message"
+git commit -m "$message" >&2
 commit_hash="$(git rev-parse HEAD)"
 mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
 unset GIT_INDEX_FILE
@@ -406,4 +432,4 @@ fi
 [[ ! -e "$shared_index_lock" ]] \
     || { echo "BLOCK: shared index lock remained after commit: $shared_index_lock" >&2; exit 1; }
 
-printf '%s\n' "$commit_hash"
+publish_terminal_success "$commit_hash"
