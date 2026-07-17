@@ -313,8 +313,21 @@ if [[ -f "$singleflight_receipt" ]]; then
     receipt_key="$(awk -F= '$1 == "key" {print $2; exit}' "$singleflight_receipt")"
     receipt_rc="$(awk -F= '$1 == "rc" {print $2; exit}' "$singleflight_receipt")"
     receipt_hash="$(awk -F= '$1 == "commit_hash" {print $2; exit}' "$singleflight_receipt")"
+    # A receipt is only a cache of a previously proven terminal state.  It is
+    # not itself proof that the current ref/index/worktree still publish that
+    # state: a later failed ref/index advance can leave the same worktree bytes
+    # (and therefore the same key) beside a stale receipt.  Followers must
+    # re-establish the complete scoped terminal invariant before returning 0.
+    receipt_scope_converged=false
     if [[ "$receipt_key" == "$singleflight_key" && "$receipt_rc" == 0 && "$receipt_hash" =~ ^[0-9a-f]{40}$ ]] && \
-       git cat-file -e "${receipt_hash}^{commit}" 2>/dev/null; then
+       git cat-file -e "${receipt_hash}^{commit}" 2>/dev/null && \
+       git merge-base --is-ancestor "$receipt_hash" HEAD 2>/dev/null && \
+       git diff --quiet "$receipt_hash" HEAD -- "${paths[@]}" && \
+       git diff --quiet -- "${paths[@]}" && \
+       git diff --cached --quiet -- "${paths[@]}"; then
+        receipt_scope_converged=true
+    fi
+    if [[ "$receipt_scope_converged" == true ]]; then
         singleflight_role="follower"
         printf 'event=terminal_receipt role=follower key=%s rc=0 commit_hash=%s receipt=%s\n' \
             "$singleflight_key" "$receipt_hash" "$singleflight_receipt" >&2
@@ -323,7 +336,7 @@ if [[ -f "$singleflight_receipt" ]]; then
         trap - EXIT
         exit 0
     fi
-    echo "BLOCK: invalid single-flight receipt: $singleflight_receipt" >&2
+    echo "BLOCK: single-flight receipt does not match current scoped HEAD/index/worktree: $singleflight_receipt" >&2
     exit 2
 fi
 

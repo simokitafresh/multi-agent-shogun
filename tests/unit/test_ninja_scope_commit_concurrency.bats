@@ -171,3 +171,26 @@ PY
     [ "$hash_a" != "$hash_b" ]
     [ "$(git -C "$REPO" log --format=%s --grep='^shared-message$' | wc -l)" -eq 2 ]
 }
+
+@test "terminal receipt fails closed when commit is not published and scope remains staged" {
+    printf 'receipt-owner\n' >> "$REPO/a.txt"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_RUN_ID=stale-receipt-run bash "$2" -m stale-receipt -- a.txt 2>receipt-owner.err' _ "$REPO" "$HELPER"
+    [ "$status" -eq 0 ]
+    receipt_hash="$output"
+    [[ "$receipt_hash" =~ ^[0-9a-f]{40}$ ]]
+
+    # Reproduce the observed interrupted publication: receipt/object and the
+    # new bytes remain, but HEAD is moved back so the scope is staged M.
+    git -C "$REPO" update-ref HEAD "${receipt_hash}^"
+    [ "$(git -C "$REPO" status --short -- a.txt)" = 'M  a.txt' ]
+    before_count="$(git -C "$REPO" rev-list --all --count)"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_RUN_ID=stale-receipt-run bash "$2" -m stale-receipt -- a.txt 2>&1' _ "$REPO" "$HELPER"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"receipt does not match current scoped HEAD/index/worktree"* ]]
+    [[ "$output" != *"role=follower"* ]]
+    [ "$(git -C "$REPO" status --short -- a.txt)" = 'M  a.txt' ]
+    [ "$(git -C "$REPO" rev-list --all --count)" -eq "$before_count" ]
+}
