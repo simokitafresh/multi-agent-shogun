@@ -1587,15 +1587,17 @@ PY
     else
         report_epoch=""
     fi
-    if ! [[ "$report_epoch" =~ ^[0-9]+$ ]]; then
-        # Legacy reports may lack a timestamp. Their mutable mtime is not a
-        # completion boundary because report_field_set/gate updates it later.
-        # Use the current deployment boundary instead, preserving old archives
-        # without allowing notifications from a prior deployment to match.
-        local task_deployed_at
-        task_deployed_at=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "deployed_at" "" 2>/dev/null || true)
-        report_epoch=$(_ninja_monitor_timestamp_epoch "$task_deployed_at") || report_epoch=""
-        [[ "$report_epoch" =~ ^[0-9]+$ ]] || report_epoch=0
+    # Report timestamps are mutable during review/revision.  An exact-identity
+    # report_received can legitimately predate the final report rewrite, so the
+    # immutable deployment generation is the acceptance boundary.  This also
+    # rejects notifications from a previous deployment.
+    local task_deployed_at deployed_epoch
+    task_deployed_at=$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${name}.yaml" "deployed_at" "" 2>/dev/null || true)
+    deployed_epoch=$(_ninja_monitor_timestamp_epoch "$task_deployed_at") || deployed_epoch=""
+    if [[ "$deployed_epoch" =~ ^[0-9]+$ ]]; then
+        report_epoch="$deployed_epoch"
+    elif ! [[ "$report_epoch" =~ ^[0-9]+$ ]]; then
+        report_epoch=0
     fi
     inbox_sources=("$SCRIPT_DIR/queue/inbox/karo.yaml")
 
@@ -1866,6 +1868,38 @@ _failed_task_needs_karo_notice() {
     fi
     # GATE CLEAR済み(gate_metrics.log)なら通知不要
     if awk -F '\t' -v cmd="$parent_cmd" '$2 == cmd && $3 == "CLEAR" { found=1; exit } END { exit(found ? 0 : 1) }' "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null; then
+        return 1
+    fi
+    # Durable report_received means karo has already accepted this exact task
+    # generation into its workflow, even if gunshi_review_log is not written
+    # yet or a replacement Track is already being deployed. Do not emit a late
+    # failed_task_respawned false positive for work already acknowledged.
+    local failed_task_id failed_deployed_at
+    failed_task_id=$(yaml_field_get "$task_file" "task_id")
+    failed_deployed_at=$(yaml_field_get "$task_file" "deployed_at")
+    if python3 - "$name" "$parent_cmd" "$failed_task_id" "$failed_deployed_at" \
+        "$SCRIPT_DIR/queue/inbox/karo.yaml" "$SCRIPT_DIR/archive/inbox" <<'PY' 2>/dev/null
+import datetime as dt, glob, os, re, sys, yaml
+name, parent, task, deployed, hot, archive = sys.argv[1:]
+def epoch(v):
+    try:
+        x=dt.datetime.fromisoformat(str(v).replace('Z','+00:00'))
+        if x.tzinfo is None: x=x.replace(tzinfo=dt.datetime.now().astimezone().tzinfo)
+        return x.timestamp()
+    except Exception: return 0
+boundary=epoch(deployed)
+ids=[x for x in (parent, task) if x]
+for path in [hot, *glob.glob(os.path.join(archive, 'karo_*.yaml'))]:
+    try: msgs=(yaml.safe_load(open(path, encoding='utf-8')) or {}).get('messages', [])
+    except Exception: continue
+    for msg in msgs if isinstance(msgs, list) else []:
+        if not isinstance(msg, dict) or msg.get('type') != 'report_received' or msg.get('from') != name: continue
+        text='\n'.join(str(msg.get(k,'')) for k in ('content','task_id','parent_cmd','report','report_path'))
+        if not any(re.search(r'(?<![A-Za-z0-9_])'+re.escape(x)+r'(?![A-Za-z0-9_])', text) for x in ids): continue
+        if epoch(msg.get('timestamp')) >= boundary - 10: raise SystemExit(0)
+raise SystemExit(1)
+PY
+    then
         return 1
     fi
     # 軍師review済みなら通知不要

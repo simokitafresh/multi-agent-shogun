@@ -898,6 +898,70 @@ echo "PASS: repeated false positives 2 -> $count"
     [[ "$output" == *"PASS: repeated false positives 2 -> 0"* ]]
 }
 
+@test "report_gate: processed identity remains valid after later report revision timestamp" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$BATS_TEST_TMPDIR"; LOG="$SCRIPT_DIR/log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts"
+cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<YAML
+task:
+  status: done
+  task_id: cmd_live_exact
+  parent_cmd: cmd_live
+  deployed_at: "2026-07-18T08:00:00+09:00"
+  report_filename: kagemaru_report_cmd_live.yaml
+YAML
+cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_live.yaml" <<YAML
+worker_id: kagemaru
+task_id: cmd_live_exact
+parent_cmd: cmd_live
+timestamp: "2026-07-18T08:11:00+09:00"
+verdict: PASS
+YAML
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<YAML
+messages:
+- content: "parent=cmd_live task=cmd_live_exact report=queue/reports/kagemaru_report_cmd_live.yaml"
+  from: kagemaru
+  read: true
+  timestamp: "2026-07-18T08:02:52+09:00"
+  type: report_received
+YAML
+log(){ echo "$1" >> "$LOG"; }; notify_karo_throttled(){ echo NOTIFY >> "$LOG"; }
+can_send_clear_with_report_gate kagemaru live
+! grep -q NOTIFY "$LOG"
+'
+    [ "$status" -eq 0 ]
+}
+
+@test "failed respawn notice is suppressed after exact report_received was processed" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$BATS_TEST_TMPDIR"; mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/archive/inbox" "$SCRIPT_DIR/logs"
+cat > "$SCRIPT_DIR/queue/tasks/hanzo.yaml" <<YAML
+task:
+  status: failed
+  task_id: cmd_failed_exact
+  parent_cmd: cmd_failed
+  deployed_at: "2026-07-18T08:00:00+09:00"
+YAML
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<YAML
+messages:
+- content: "parent=cmd_failed task=cmd_failed_exact report=queue/reports/hanzo_report_cmd_failed.yaml"
+  from: hanzo
+  read: true
+  timestamp: "2026-07-18T08:02:52+09:00"
+  type: report_received
+YAML
+: > "$SCRIPT_DIR/logs/gate_metrics.log"
+! _failed_task_needs_karo_notice hanzo
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "report_gate: near-match identity remains a true missing notification" {
     run bash -lc '
 set -eo pipefail
