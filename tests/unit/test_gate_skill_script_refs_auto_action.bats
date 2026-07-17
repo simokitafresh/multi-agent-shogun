@@ -18,9 +18,50 @@ setup() {
   run env SKILL_REF_DISABLE_CACHE=1 SKILL_REF_DIRS=skills SKILL_REF_HASH_STATE="$ROOT/logs/state.json" SKILL_REF_RECORD_VERIFIED=1 bash "$ROOT/scripts/gates/gate_skill_script_refs.sh" "$ROOT"
   [ "$status" -eq 0 ]
 
-  printf '# changed\n' >> "$ROOT/scripts/demo.sh"
+  printf 'echo changed-contract\n' >> "$ROOT/scripts/demo.sh"
   run env SKILL_REF_DISABLE_CACHE=1 SKILL_REF_DIRS=skills SKILL_REF_HASH_STATE="$ROOT/logs/state.json" bash "$ROOT/scripts/gates/gate_skill_script_refs.sh" "$ROOT"
   [ "$status" -eq 2 ]
+}
+
+@test "mtime-only and internal-only changes do not invalidate verified contract" {
+  run env SKILL_REF_DISABLE_CACHE=1 SKILL_REF_DIRS=skills SKILL_REF_HASH_STATE="$ROOT/logs/state.json" SKILL_REF_RECORD_VERIFIED=1 bash "$ROOT/scripts/gates/gate_skill_script_refs.sh" "$ROOT"
+  [ "$status" -eq 0 ]
+  touch -d '2026-01-03' "$ROOT/scripts/demo.sh"
+  run env SKILL_REF_DISABLE_CACHE=1 SKILL_REF_DIRS=skills SKILL_REF_HASH_STATE="$ROOT/logs/state.json" bash "$ROOT/scripts/gates/gate_skill_script_refs.sh" "$ROOT"
+  [ "$status" -eq 0 ]
+  printf 'internal_value=true\n' >> "$ROOT/scripts/demo.sh"
+  run env SKILL_REF_DISABLE_CACHE=1 SKILL_REF_DIRS=skills SKILL_REF_HASH_STATE="$ROOT/logs/state.json" bash "$ROOT/scripts/gates/gate_skill_script_refs.sh" "$ROOT"
+  [ "$status" -eq 0 ]
+}
+
+@test "CLI exit and side-effect contract changes require one deduplicated action" {
+  run env SKILL_REF_DISABLE_CACHE=1 SKILL_REF_DIRS=skills SKILL_REF_HASH_STATE="$ROOT/logs/state.json" SKILL_REF_RECORD_VERIFIED=1 bash "$ROOT/scripts/gates/gate_skill_script_refs.sh" "$ROOT"
+  [ "$status" -eq 0 ]
+  printf 'echo changed-contract\nexit 7\ntouch "$1"\n' >> "$ROOT/scripts/demo.sh"
+  run env SKILL_REF_DISABLE_CACHE=1 SKILL_REF_DIRS=skills SKILL_REF_HASH_STATE="$ROOT/logs/state.json" bash "$ROOT/scripts/gates/gate_skill_script_refs.sh" "$ROOT"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"required=1, deduped=0"* ]]
+  run env SKILL_REF_DISABLE_CACHE=1 SKILL_REF_DIRS=skills SKILL_REF_HASH_STATE="$ROOT/logs/state.json" bash "$ROOT/scripts/gates/gate_skill_script_refs.sh" "$ROOT"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"required=0, deduped=1"* ]]
+}
+
+@test "corrupt contract hash state is a BLOCK" {
+  printf '{broken' > "$ROOT/logs/state.json"
+  run env SKILL_REF_DISABLE_CACHE=1 SKILL_REF_DIRS=skills SKILL_REF_HASH_STATE="$ROOT/logs/state.json" bash "$ROOT/scripts/gates/gate_skill_script_refs.sh" "$ROOT"
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"state is corrupt"* ]]
+}
+
+@test "concurrent verified writers preserve valid atomic hash state" {
+  env SKILL_REF_DISABLE_CACHE=1 SKILL_REF_DIRS=skills SKILL_REF_HASH_STATE="$ROOT/logs/state.json" SKILL_REF_RECORD_VERIFIED=1 bash "$ROOT/scripts/gates/gate_skill_script_refs.sh" "$ROOT" >/dev/null &
+  p1=$!
+  env SKILL_REF_DISABLE_CACHE=1 SKILL_REF_DIRS=skills SKILL_REF_HASH_STATE="$ROOT/logs/state.json" SKILL_REF_RECORD_VERIFIED=1 bash "$ROOT/scripts/gates/gate_skill_script_refs.sh" "$ROOT" >/dev/null &
+  p2=$!
+  wait "$p1"
+  wait "$p2"
+  run python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert len(d["references"]) == 1' "$ROOT/logs/state.json"
+  [ "$status" -eq 0 ]
 }
 
 @test "missing script is a BLOCK" {

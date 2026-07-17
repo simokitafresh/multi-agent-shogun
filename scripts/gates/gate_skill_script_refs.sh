@@ -36,15 +36,40 @@ hash_state_path = Path(os.environ.get(
 ))
 record_verified = os.environ.get("SKILL_REF_RECORD_VERIFIED", "0") == "1"
 
+hash_state_path.parent.mkdir(parents=True, exist_ok=True)
+state_lock = (hash_state_path.parent / (hash_state_path.name + ".lock")).open("a+")
+fcntl.flock(state_lock.fileno(), fcntl.LOCK_EX)
+state_corrupt = False
 try:
     hash_state = json.loads(hash_state_path.read_text(encoding="utf-8"))
-except (FileNotFoundError, json.JSONDecodeError, OSError):
+except FileNotFoundError:
     hash_state = {"references": {}}
+except (json.JSONDecodeError, OSError):
+    hash_state = {"references": {}}
+    state_corrupt = True
 if not isinstance(hash_state, dict) or not isinstance(hash_state.get("references"), dict):
     hash_state = {"references": {}}
+    state_corrupt = True
 
-def file_sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+contract_line_re = re.compile(
+    r"(?:usage:|argument-hint|\$\{?[#@*0-9]|getopts|argparse|add_argument|sys\.argv|"
+    r"\b(?:exit|return|sys\.exit)\b|\b(?:echo|printf|print)\b|"
+    r"\b(?:rm|mv|cp|install|touch|mkdir|chmod|chown)\b|"
+    r"os\.(?:replace|rename|remove|unlink|mkdir)|(?:write_text|write_bytes)|"
+    r"open\s*\([^\n]*(?:['\"](?:a|w|x)[+b]?['\"])|atomic[_a-z]*write)",
+    re.I,
+)
+
+def contract_sha256(path: Path) -> str:
+    """Hash the externally observable CLI/exit/output/side-effect surface."""
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    surface = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if contract_line_re.search(line):
+            surface.append(re.sub(r"\s+", " ", line))
+    payload = "\n".join(surface).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 command_ref_re = re.compile(
     r"(?:^|[\s`(])(?:bash|sh|python3?|node|ruby|perl)\s+"
@@ -196,6 +221,8 @@ missing_example_paths: list[tuple[str, str, str]] = []
 unverified_side_effect_examples: list[str] = []
 total_refs = 0
 skills_with_refs = 0
+state_dirty = False
+actions_required = 0
 
 for skill_file in skill_files:
     try:
@@ -225,14 +252,16 @@ for skill_file in skill_files:
             missing.append((display_skill, ref, str(resolved)))
             continue
         state_key = f"{display_skill}::{ref}"
-        current_hash = file_sha256(resolved) if resolved.is_file() else ""
-        verified_hash = str(hash_state["references"].get(state_key, {}).get("sha256", ""))
+        current_hash = contract_sha256(resolved) if resolved.is_file() else ""
+        entry = hash_state["references"].get(state_key, {})
+        verified_hash = str(entry.get("contract_sha256", entry.get("sha256", "")))
         if record_verified and current_hash:
             hash_state["references"][state_key] = {
-                "sha256": current_hash,
+                "contract_sha256": current_hash,
                 "verified_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
             }
             verified_hash = current_hash
+            state_dirty = True
         if resolved.is_file() and current_hash != verified_hash and resolved.stat().st_mtime > skill_freshness_time + 1:
             # 判定根拠を明示: 採用基準(checked_atコメント最新値かmtimeか)が見えないと
             # 「更新したのに直らない」の原因調査が毎回ゼロからになる(2026-07-02 3セッション先送りの教訓)
@@ -240,9 +269,14 @@ for skill_file in skill_files:
             baseline_iso = datetime.fromtimestamp(skill_freshness_time, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
             script_iso = datetime.fromtimestamp(resolved.stat().st_mtime, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
             stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved), baseline_src, baseline_iso, script_iso))
+            if str(entry.get("last_action_contract_sha256", "")) != current_hash:
+                entry = dict(entry)
+                entry["last_action_contract_sha256"] = current_hash
+                hash_state["references"][state_key] = entry
+                actions_required += 1
+                state_dirty = True
 
-if record_verified:
-    hash_state_path.parent.mkdir(parents=True, exist_ok=True)
+if state_dirty:
     tmp = hash_state_path.with_suffix(hash_state_path.suffix + f".{os.getpid()}.tmp")
     tmp.write_text(json.dumps(hash_state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     os.replace(tmp, hash_state_path)
@@ -252,6 +286,11 @@ print(
     f"走査: {len(skill_files)} SKILL.md / script参照 {total_refs}件 / "
     f"参照あり {skills_with_refs}件 / roots={','.join(str(p.relative_to(repo_root)) if p.is_relative_to(repo_root) else str(p) for p in scan_roots)}"
 )
+print(f"契約hash action: required={actions_required}, deduped={max(0, len(stale) - actions_required)}")
+
+if state_corrupt:
+    print(f"BLOCK: contract hash state is corrupt: {hash_state_path}")
+    sys.exit(3)
 
 if missing:
     print("=== 参照先不在 ===")
