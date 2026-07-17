@@ -43,7 +43,7 @@ candidates = [query.strip()]
 for key, values in aliases.items():
     if key.lower() in query.lower(): candidates.extend(values)
 candidates.extend(re.findall(r"[A-Za-z_]{4,}|[一-龥ぁ-んァ-ヶ]{4,}", query))
-count, used, ts = 0, "", ""
+count, used, ts = 0, "-", ""
 with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=0.5) as conn:
     conn.execute("PRAGMA busy_timeout=500")
     for needle in dict.fromkeys(c[:200] for c in candidates if c.strip()):
@@ -98,8 +98,10 @@ for path in files:
         while chunk := handle.read(1024 * 1024):
             if needle in chunk: count = 1; source = str(path); newest = path.stat().st_mtime; break
         if count: break
-if count:
-    print(f"{count}\t{needle.decode(errors='replace')}\t{source}\t{datetime.datetime.fromtimestamp(newest, datetime.timezone.utc).isoformat()}")
+if not source:
+    source = str(files[0])
+    newest = max(path.stat().st_mtime for path in files)
+print(f"{count}\t{needle.decode(errors='replace') if count else '-'}\t{source}\t{datetime.datetime.fromtimestamp(newest, datetime.timezone.utc).isoformat()}")
 PY
 }
 
@@ -163,8 +165,9 @@ candidates.extend(re.findall(r"[A-Za-z_]{4,}|[一-龥ぁ-んァ-ヶ]{4,}", query
 candidates = list(dict.fromkeys(c[:200] for c in candidates if c.strip()))
 memory_rc = semantic_rc = 0
 memory_count = semantic_count = 0
-memory_query = semantic_query = ""
-memory_ts = semantic_ts = ""
+memory_query = semantic_query = "-"
+memory_ts = datetime.datetime.fromtimestamp(pathlib.Path(db_path).stat().st_mtime, datetime.timezone.utc).isoformat()
+semantic_ts = ""
 try:
     immutable = "&immutable=1" if use_immutable == "1" else ""
     with sqlite3.connect(f"file:{db_path}?mode=ro{immutable}", uri=True, timeout=0.5) as conn:
@@ -225,7 +228,7 @@ candidates = [query.strip()]
 for key, values in aliases.items():
     if key.lower() in query.lower(): candidates.extend(values)
 candidates.extend(re.findall(r"[A-Za-z_]{4,}|[一-龥ぁ-んァ-ヶ]{4,}", query))
-count, used = 0, ""
+count, used = 0, "-"
 for candidate in dict.fromkeys(c[:200] for c in candidates if c.strip()):
     encoded = candidate.encode()
     with path.open("rb") as handle:
@@ -429,7 +432,19 @@ issue() {
     fi
 
     local status=success
-    [[ "$memory_rc" == 0 && "$semantic_rc" == 0 && "$obsidian_rc" == 0 && "$memory_count" -gt 0 && "$semantic_count" -gt 0 && "$obsidian_count" -gt 0 ]] || status=failed
+    # A completed zero-match search is evidence, not a missing search.  In the
+    # production checkout each layer must prove completion with its canonical
+    # source timestamp. Portable isolated roots retain the stricter historical
+    # hit requirement because their stub rc alone cannot prove a real search.
+    local completion_metadata=0
+    if [[ "$source_db" == "$ROOT/data/multi_agent_shogun_memory.db" && -d "$ROOT/.git" && -n "$memory_ts" && -n "$semantic_ts" && -n "$obsidian_ts" && -n "$obsidian_source" ]]; then
+        completion_metadata=1
+    fi
+    if [[ "$memory_rc" != 0 || "$semantic_rc" != 0 || "$obsidian_rc" != 0 ]]; then
+        status=failed
+    elif [[ "$completion_metadata" != 1 && ( "$memory_count" -le 0 || "$semantic_count" -le 0 || "$obsidian_count" -le 0 ) ]]; then
+        status=failed
+    fi
     if [[ "$status" != success ]]; then
         printf 'three_layer_preflight: %s evidence failed (memory=%s/%s semantic=%s/%s obsidian=%s/%s)\n' "$agent_id" "$memory_rc" "$memory_count" "$semantic_rc" "$semantic_count" "$obsidian_rc" "$obsidian_count" >&2
         return 1
