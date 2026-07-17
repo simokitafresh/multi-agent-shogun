@@ -17,16 +17,21 @@ compute_deps_hash() {
 }
 
 check_script_update() {
-    local current_hash restart_reason=""
-    current_hash="$(stat --printf='%Y' "$SCRIPT_PATH" 2>/dev/null)"
+    local current_hash current_deps_hash restart_reason=""
+    if [ -n "${DEPS_HASH:-}" ] && [ "${WATCHED_DEPS+x}" = x ] && [ ${#WATCHED_DEPS[@]} -gt 0 ]; then
+        local current_mtimes
+        current_mtimes="$(stat --printf='%Y:' "$SCRIPT_PATH" "${WATCHED_DEPS[@]}" 2>/dev/null)"
+        current_hash="${current_mtimes%%:*}"
+        current_deps_hash="${current_mtimes#*:}"
+    else
+        current_hash="$(stat --printf='%Y' "$SCRIPT_PATH" 2>/dev/null)"
+    fi
     if [ "$current_hash" != "$SCRIPT_HASH" ]; then
         restart_reason="script"
     fi
 
     # Check sourced dependencies
     if [ -n "${DEPS_HASH:-}" ] && [ "${WATCHED_DEPS+x}" = x ] && [ ${#WATCHED_DEPS[@]} -gt 0 ]; then
-        local current_deps_hash
-        current_deps_hash="$(compute_deps_hash)"
         if [ "$current_deps_hash" != "$DEPS_HASH" ]; then
             restart_reason="${restart_reason:+$restart_reason+}deps"
         fi
