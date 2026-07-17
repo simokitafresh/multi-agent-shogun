@@ -27,6 +27,7 @@
 | cmd_3997配備 | ledger drift alert DB永続化(in-memory除外フィルタ撤去) | 半蔵実装中(CTX:17%) | [[cmd_3996偵察_前提反証]] -> [[in_memory_alert_DB非永続]] -> [[フィルタ撤去永続化]] |
 | cmd_3998配備 | gate_alerts閉鎖ライフサイクル偵察(275件中閉鎖率1.5%) | 家老配備待ち | [[軍師独立監査_gate品質6穴]] -> [[gate_alerts閉鎖率0%]] -> [[内訳偵察]] |
 | 洗脳#3 stop hook修正 | 殿指示「バグの根因を修正せよ」→ 許可求めフレーズ4種のBLOCK化 | `365b3d7f0` pushed。47/47 PASS。hookが自分の出力を即BLOCK=本番動作一次証拠 | [[将軍お許しフレーズすり抜け]] -> [[stop_hook_L166_L415パターン欠落]] -> [[4フレーズBLOCK追加]] |
+| 速度改善CoDD設計書群 | campaign-lane汎用化+3 preflight/deploy速度改善+AB同一run契約の設計書5件 | [[campaign-lane-general-skill-asis-tobe-5w1h_20260716]] controller実装済み/応用12件。[[deploy-task-pipeline-speed-codd-20260716]] 配備パイプライン。[[three-layer-preflight-speed-before-20260716]]→[[three-layer-preflight-speed-after-20260716]] batch_index_search一括化。[[test-speed-same-run-ab-contract-20260716]] baseline=best_so_far継承 | [[スループット第一原則]] -> [[速度攻略レーン基盤]] -> [[CoDD設計書5件]] |
 
 ## 2026-06-30
 
