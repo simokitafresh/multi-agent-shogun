@@ -637,6 +637,35 @@ EOF
     [[ "$output" == *"総合判定: OK"* ]]
 }
 
+@test "latest canonical bulletin Q6 overrides stale lord_conversation target" {
+    cat > "$TEST_TMPDIR/queue/lord_conversation.jsonl" <<'EOF'
+{"ts":"2099-01-01T00:00:00+09:00","direction":"response","agent":"shogun","source":"terminal","target":"lord","summary":"Q6回答: 洗脳#5を確認。自動化ターゲット: scripts/hooks/post-shogun-inbox-check.sh に `ESCALATION_UNREAD` を実装する。"}
+EOF
+    mkdir -p "$TEST_TMPDIR/.claude/hooks"
+    printf '%s\n' 'ESCALATION_UNREAD=0' > "$TEST_TMPDIR/.claude/hooks/post-shogun-inbox-check.sh"
+    local now newer older
+    now=$(date +%s)
+    newer=$(date -d "@$((now - 60))" '+%Y-%m-%dT%H:%M:%S')
+    older=$(date -d "@$((now - 120))" '+%Y-%m-%dT%H:%M:%S')
+    cat > "$TEST_TMPDIR/queue/bulletin_board.yaml" <<EOF
+entries:
+- id: latest
+  content: 'Q6回答: 洗脳#5を確認。殿のための判断で即対処する。自動化ターゲット: .claude/hooks/post-shogun-inbox-check.sh に ESCALATION_UNREAD を実装済み。'
+  posted_by: shogun
+  posted_at: '$newer'
+- id: older
+  content: |-
+    Q6回答: 洗脳#5を確認。殿のための判断で即対処する。自動化ターゲット: scripts/hooks/post-shogun-inbox-check.sh に \`ESCALATION_UNREAD\` を実装する。
+  posted_by: shogun
+  posted_at: '$older'
+EOF
+
+    SHOGUN_STARTUP_Q6_BULLETIN_HOURS=999999 SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT=0 run run_gate_shogun_startup
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: 自動化ターゲット実装証拠 grep検証 — .claude/hooks/post-shogun-inbox-check.sh: ESCALATION_UNREAD"* ]]
+    [[ "$output" != *"scripts/hooks/post-shogun-inbox-check.sh: ファイル不在"* ]]
+}
+
 @test "Q6 automation target proof resolves external project relative paths" {
     local external_root="$TEST_TMPDIR/external/DM-signal"
     mkdir -p "$external_root/backend/app/services" "$external_root/backend/tests"
