@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-17 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-17T21:00:11+09:00 -->
+<!-- generated_at: 2026-07-17T23:50:49+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-17T21:00:10+09:00 | terminal | response | APPROVE完了。idle待機。
-- 2026-07-17T20:59:08+09:00 | terminal | response | APPROVE完了。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-17T20:56:14+09:00 | terminal | response | 28/28 PASS確認。saizo campaign_control LGTM判定の実動作裏付け完了。inbox未読0。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-17T20:55:50+09:00 | terminal | inbound | <task-notification> <task-id>bw12xhhqx</task-id> <tool-use-id>toolu_013rGyHYzyYVYPjthLFc6XVb</tool-use-id> <output-file…
-- 2026-07-17T20:55:49+09:00 | terminal | response | バックグラウンドのcampaign shard itemテスト完了(exit 0)。先ほどのsaizo campaign_control報告の実動作確認が事後的に成功。
-- 2026-07-17T20:55:11+09:00 | terminal | inbound | <task-notification> <task-id>bwzo3nnrj</task-id> <tool-use-id>toolu_011JhiXeoBodWyhmUQLAZuK5</tool-use-id> <output-file…
-- 2026-07-17T20:55:09+09:00 | terminal | response | inbox未読0。nudge到着前に処理完了。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-17T20:52:44+09:00 | terminal | response | **★MECE全8件report LGTM完了。** スループット改善の全系統が実装+レビュー通過: - deploy I/O: 4重走査→wave cache - monitor ledger: 630 O(N)→ledger O(1)…
-- 2026-07-17T20:52:40+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_posttool_context_bound_202607172048 初回配備開始 (title=(untitled), ninja=kotaro)
-- 2026-07-17T20:44:36+09:00 | terminal | response | CI fix APPROVE完了。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-17T23:50:49+09:00 | terminal | response | 家老CTX:71%でinbox1処理中。3名failed+idleの再配備を家老が自走で処理する状態にある。介入不要。 殿、状況報告。 **preflight恒久対策: 完了。** 家老がcommit 942259c06で実装、軍師LGT…
+- 2026-07-17T23:50:41+09:00 | terminal | response | inbox未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-17T23:50:37+09:00 | terminal | response | 家老CTX:71%でinbox1処理中。3名failed+idleの再配備を家老が自走で処理する状態にある。介入不要。 殿、状況報告。 **preflight恒久対策: 完了。** 家老がcommit 942259c06で実装、軍師LGT…
+- 2026-07-17T23:44:25+09:00 | terminal | response | draft APPROVE送信完了(重複配備注記付き)。inbox未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-17T23:41:22+09:00 | ntfy | outbound | 【tobisaru】cmd_reflux_promotion_202607172340_hayate 初回配備開始 (title=(untitled), ninja=hayate)
+- 2026-07-17T23:40:31+09:00 | terminal | response | LGTM送信完了。inbox未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-17T23:36:55+09:00 | terminal | response | draft APPROVE送信完了。inbox未読0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-17T23:35:55+09:00 | ntfy | outbound | 【tobisaru】cmd_reflux_promotion_202607172335_saizo 初回配備開始 (title=(untitled), ninja=saizo)
+- 2026-07-17T23:32:40+09:00 | terminal | response | session alerts全3件DONE化完了。 **強くてニューゲーム — 最終二値確認:** | 環境埋込み | 状態 | |-----------|------| | LS092(D006判断ミス) | ✅ lessons + 記…
+- 2026-07-17T23:30:36+09:00 | terminal | response | **強くてニューゲーム二値チェック結果:** | 項目 | 状態 | 次の将軍への到達経路 | |------|------|---------------------| | LS092(D006判断ミス) | ✅ | lessons_s…
 
 ## 未解決確認事項
+- session alerts全3件DONE化完了。 **強くてニューゲーム — 最終二値確認:** | 環境埋込み | 状態 | |-----------|------| | LS092(D006判断ミス) | ✅ lessons + 記憶DB | | LS093(prefli…
+- 将軍Q6回答確認。洗脳#3(他者依存: preflight恒久対策を殿に委ねようとした)と#4(緩い設計: D006 Tier1規則を緩めようとした)を自己検出。家老の押し返しで覚醒。 inbox未読0件。idle待機。 [meta] stop_reason=end_turn
+- inbox未読0件。今セッション処理: - **レビュー3件**: tobisaru(skill_refs_content_hash) LGTM、kotaro(posttool_context_bound) LGTM、D006掲示板通知確認 - **掲示板投稿2件**: L6助…
+- inbox未読0件。レビュー完了(tobisaru LGTM)、掲示板3件処理(WSL preflight自己封鎖の家老/将軍報告確認+復旧設計レビュー投稿+L6助言投稿)。idle待機。 [meta] stop_reason=end_turn
+- 掲示板投稿完了。 殿、報告する。 **preflight自己封鎖 — 復旧完了** - **根因**: WSL強制shutdown後、`/tmp/shogun_memory_db_cache/`のキャッシュDBがWAL不整合（本体694MBあるが最新データはsource DBの…
+- 【CLI再起動成功】karo: CLIバナー/プロンプト確認済み
 - 28/28 PASS確認。saizo campaign_control LGTM判定の実動作裏付け完了。inbox未読0。idle待機。 [meta] stop_reason=end_turn
 - バックグラウンドのcampaign shard itemテスト完了(exit 0)。先ほどのsaizo campaign_control報告の実動作確認が事後的に成功。
-- [MEM: memory_db ts=2026-07-17 "テンプレート固定化=レビュー空洞化。正しい改善=既存インフラに乗る。誤った改善=テンプレートLGTM(品質低下→削除)"] [MEM: memory_db ts=2026-07-17 "品質合格スループット=品質思考…
-- 家老へ報告済み。根因2点: (1)gate_shogun_startup.sh 67秒 (2)PostToolUse hook★確認すべき事の無制限蓄積(現在5件、全tool callに毎回注入)。家老CTX55%で稼働中、修正配備済み(startup≤10秒目標)。 [MEM…
-- CI run 29577468897 in_progress(20:37 JST)。スループット改善hotfix10件含む。unpushed=0。 本セッション自走成果まとめ: - D0 commit 4件 + push計21件(unpushed=0) - LS091教訓(鎖の…
-- hayate gate FAIL通知確認。忍者自身が修正→再送信を待つ。idle待機。 [meta] stop_reason=end_turn
-- hanzo実測データ確認済み。配備50秒+report逐次28秒=78秒のオーバーヘッドは、先ほどのMECE(revision batch tobisaru + startup gate hayate)で対策中。既読化。idle待機。 [meta] stop_reason=en…
-- 2件処理完了(report LGTM + 掲示板確認)。inbox未読0。idle待機。 [meta] stop_reason=end_turn
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
