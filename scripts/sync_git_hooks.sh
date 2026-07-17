@@ -59,6 +59,24 @@ unset _sync_git_hooks_self
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
     || { echo "BLOCK: not inside a git repository" >&2; exit 1; }
 
+# A repository with linked worktrees has one common hooks directory by default.
+# Installing a hook blob selected from the caller's HEAD into that shared path
+# makes divergent worktrees race: the last sync silently changes every other
+# worktree's runtime hook.  Enable Git's worktree config and pin hooksPath to
+# this worktree's own git-dir before resolving any installed hook path.
+configure_worktree_hooks_path() {
+    local git_dir hooks_dir
+    git_dir="$(git -C "$repo_root" rev-parse --absolute-git-dir 2>/dev/null)" \
+        || { echo "BLOCK(GA-222): failed to resolve worktree git dir" >&2; return 1; }
+    hooks_dir="$git_dir/hooks"
+    git -C "$repo_root" config extensions.worktreeConfig true \
+        || { echo "BLOCK(GA-222): failed to enable worktreeConfig" >&2; return 1; }
+    git -C "$repo_root" config --worktree core.hooksPath "$hooks_dir" \
+        || { echo "BLOCK(GA-222): failed to isolate hooksPath for worktree" >&2; return 1; }
+}
+
+configure_worktree_hooks_path || exit 1
+
 # shellcheck source=scripts/lib/scope_path.sh
 source "$SYNC_GIT_HOOKS_SCRIPT_DIR/lib/scope_path.sh"
 
