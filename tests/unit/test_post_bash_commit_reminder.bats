@@ -94,3 +94,12 @@ EOF
     [[ "$output" == *'scope_fallback:task_owned_paths_missing_or_invalid'* ]]
     [[ "$output" == *'other1.txt'* ]]
 }
+
+@test "linked worktree resolves HEAD blobs without false warning" {
+    local linked="$ROOT/linked"
+    git -C "$REPO" worktree add -q --detach "$linked" HEAD
+    sed -i "s|path: \"$REPO\"|path: \"$linked\"|" "$ROOT/config/projects.yaml"
+    run_hook
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
