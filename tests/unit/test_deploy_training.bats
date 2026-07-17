@@ -5,11 +5,12 @@ setup_file() {
 }
 
 @test "deploy_training rejects help without touching operational YAML" {
-    before="$(sha256sum "$BATS_TEST_DIRNAME/../../queue/shogun_to_karo.yaml")"
+    operational_yaml="$BATS_TEST_DIRNAME/../../queue/shogun_to_karo.yaml"
+    before="$(if [[ -e "$operational_yaml" ]]; then sha256sum "$operational_yaml"; else printf 'absent'; fi)"
     run bash "$SCRIPT" --help
     [ "$status" -eq 1 ]
     [[ "$output" == *"ERROR: ninja:target pairs required"* ]]
-    after="$(sha256sum "$BATS_TEST_DIRNAME/../../queue/shogun_to_karo.yaml")"
+    after="$(if [[ -e "$operational_yaml" ]]; then sha256sum "$operational_yaml"; else printf 'absent'; fi)"
     [ "$before" = "$after" ]
 }
 
