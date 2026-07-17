@@ -607,12 +607,13 @@ lessons:
     cmd_3666で軍師がpytest5+Jest1 PASSを根拠にLGTMしたが、家老追加検証の `npm run build` でNext.js App Routerの型検査が失敗した。
     原因は `frontend/app/monthly-returns/page.tsx` に契約テスト用の任意named export `QUICK_MONTHLY_MONTHS` / `DEFAULT_MONTHLY_MONTHS` を追加したこと。App Routerのpage.tsxはPageとして許可されたexport以外を受け付けない。
     component/Jest単位では検出できないNext build固有制約があるため、files_modifiedにfrontend配下、特にapp/page系が含まれるレビューではbuild PASSを確認条件に含める。
+    吸収(2026-07-17, cmd_reflux_promotion_202607171322_kagemaru, origin: [[cmd_3666_LGTM撤回]] -> [[page_tsx_named_export制約見落とし]] -> [[SG-PRE29_Level4_BLOCK]]): SG-PRE29をWARNリマインダーからLevel4 BLOCKへ昇格。files_modifiedのfrontend/app/ts/tsx変更を検出し、result/test_results/operational_simulation内にnpm run build/next build実行とPASS実測がなければレビューprecheckを停止する。失敗・成否不明・証拠外の教訓文言は通さない。5境界テストで固定。
   source_cmd: cmd_3666
   origin: '[[cmd_3666_LGTM撤回]] -> [[page_tsx_named_export制約見落とし]] -> [[Next_build必須化]]'
   created_at: '2026-07-02'
   automated: true
-  enforcement_level: 3
-  enforcement: 'SG-PRE29(gate_gunshi_report_precheck.sh)がfiles_modifiedにfrontend/tsx/ts含む場合にnpm run build/next build確認WARN表示。D0実装(軍師commit)'
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK): gate_gunshi_report_precheck.shのSG-PRE29がfrontend/app/ts/tsx変更時、result/test_results/operational_simulation内のnpm run build/next build PASS実測を必須化。欠落・失敗・成否不明はERRORS加算+GATE_PREDICTION=BLOCK。tests/unit/test_gate_gunshi_precheck_sg_pre29.bats 5境界で固定"
   when: report reviewでfiles_modifiedにfrontend配下、特に `frontend/app/**/page.tsx` が含まれる時
   how: pytest/JestのPASSだけでLGTMしない。`npm run build` または同等のNext build/type validationがPASSしていることをtest_resultsで確認する。page.tsxに定数を置く必要がある場合は別moduleへ分離されているか確認する
 - id: LG046

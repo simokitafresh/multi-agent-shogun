@@ -967,27 +967,37 @@ else
     echo "  PASS: 正直報告フラグなし(通常レビュー)"
 fi
 
-# ─── SG-PRE29: FE変更時Next build確認リマインダー(LG045: pytest/JestだけではApp Router制約を検出できない) ───
+# ─── SG-PRE29: FE変更時Next build確認BLOCK(LG045: pytest/JestだけではApp Router制約を検出できない) ───
+_sg_pre29_check() {
+    local report_path="$1" fm_block fe_files evidence
+    fm_block=$(awk '/^files_modified:/{found=1; next} found && /^[^[:space:]#]/{exit} found{print}' "$report_path" 2>/dev/null || true)
+    fe_files=$(printf '%s\n' "$fm_block" | grep -Ei '(^|/)(frontend|app)/|\.tsx([^[:alnum:]_]|$)|\.ts([^[:alnum:]_]|$)' | grep -v '^[[:space:]]*#' || true)
+    if [ -z "$fe_files" ]; then
+        echo "  PASS: frontend変更なし(対象外)"
+        return 0
+    fi
+
+    evidence=$(awk '/^(result|test_results|operational_simulation):/{found=1} found && /^[^[:space:]#]/ && $0 !~ /^(result|test_results|operational_simulation):/{found=0} found{print}' "$report_path" 2>/dev/null | tr '\n' ' ' || true)
+    if ! printf '%s\n' "$evidence" | grep -qiE 'npm[[:space:]]+run[[:space:]]+build|next[[:space:]]+build'; then
+        echo "  BLOCK(LG045): frontend変更あり。npm run build/next buildの実行証跡がない"
+        return 2
+    fi
+    if printf '%s\n' "$evidence" | grep -qiE 'build.{0,80}(FAIL|failed|error)|(FAIL|failed|error).{0,80}build'; then
+        echo "  BLOCK(LG045): Next build失敗証跡あり。LGTM不可"
+        return 2
+    fi
+    if ! printf '%s\n' "$evidence" | grep -qiE 'build.{0,80}(PASS|passed|succeeded|success)|(PASS|passed|succeeded|success).{0,80}build'; then
+        echo "  BLOCK(LG045): Next build言及はあるがPASS実測がない"
+        return 2
+    fi
+    echo "  PASS(LG045): frontend変更あり+Next build PASS実測あり"
+}
 echo ""
 echo "■ SG-PRE29: FE変更×Next build確認(LG045)"
-_fe_files=$(grep -A50 'files_modified:' "$REPORT_PATH" 2>/dev/null | grep -E 'frontend/|\.tsx|\.ts' | grep -v '#' || true)
-if [ -n "$_fe_files" ]; then
-    _has_build_mention=$(grep -ci 'npm run build\|next build' "$REPORT_PATH" 2>/dev/null || true)
-    _has_build_fail=$(grep -ci 'build.*\(FAIL\|failed\|error\)\|\(FAIL\|failed\|error\).*build' "$REPORT_PATH" 2>/dev/null || true)
-    _has_build_pass=$(grep -ci 'build.*\(PASS\|passed\|succeeded\|success\)\|\(PASS\|passed\|succeeded\|success\).*build' "$REPORT_PATH" 2>/dev/null || true)
-    if [ "${_has_build_mention:-0}" -eq 0 ]; then
-        echo "  WARN: files_modifiedにfrontend配下あり。npm run build/next build確認が報告に見当たらない"
-        echo "  ★ LG045: pytest/JestだけではApp Router page export制約を検出できない。build確認せよ"
-    elif [ "${_has_build_fail:-0}" -gt 0 ]; then
-        echo "  WARN: build失敗記載あり(FAIL/failed/error)。build PASSを確認せよ"
-        echo "  ★ LG045: build失敗報告はLGTM不可"
-    elif [ "${_has_build_pass:-0}" -gt 0 ]; then
-        echo "  PASS: frontend変更あり+build PASS記載あり"
-    else
-        echo "  INFO: build言及あるが成否不明。PASS/succeeded/FAIL/failed語を確認せよ"
-    fi
-else
-    echo "  PASS: frontend変更なし(対象外)"
+if ! _sg_pre29_check "$REPORT_PATH"; then
+    ERRORS=$((ERRORS + 1))
+    GATE_PREDICTION="BLOCK"
+    GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG045:next_build_pass_missing"
 fi
 
 # ─── SG-PRE30: daemon lib-only再利用時グローバル変数列挙リマインド(LG046) ───
