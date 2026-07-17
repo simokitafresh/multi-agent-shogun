@@ -31,6 +31,10 @@ import re
 import sys
 import csv
 import hashlib
+import json
+import tempfile
+import fcntl
+import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from shell_command_segments import segment_tokens
@@ -78,6 +82,7 @@ def _bats_targets(args):
 
 _TIMED_HEAVY_SECONDS = float(os.environ.get("HEAVY_JOB_TIMED_THRESHOLD_SECONDS", "10"))
 _LEDGER_MAX_AGE_SECONDS = int(os.environ.get("HEAVY_JOB_LEDGER_MAX_AGE_SECONDS", "604800"))
+_INDEX_SCHEMA = 1
 
 
 def _file_sha256(path):
@@ -86,6 +91,153 @@ def _file_sha256(path):
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _ledger_identity(ledger):
+    stat = ledger.stat()
+    return {"path": str(ledger.resolve()), "mtime_ns": stat.st_mtime_ns, "size": stat.st_size}
+
+
+def _index_paths(ledger):
+    cache_root = Path(
+        os.environ.get(
+            "HEAVY_JOB_INDEX_CACHE_DIR",
+            Path(tempfile.gettempdir()) / f"shogun-heavy-timing-index-{os.getuid()}",
+        )
+    )
+    cache_root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    key = hashlib.sha256(str(ledger.resolve()).encode()).hexdigest()
+    return cache_root / f"{key}.json", cache_root / f"{key}.lock"
+
+
+def _shell_stat_identity(path):
+    return subprocess.check_output(
+        ("stat", "-c", "%y:%s", str(path)), text=True, stderr=subprocess.DEVNULL
+    ).strip()
+
+
+def _publish_decision_cache(command, result):
+    """Publish a shell-readable fast-path only for one concrete bats file."""
+    segs = _segments(command)
+    if not segs or len(segs) != 1 or os.path.basename(segs[0][0]) != "bats":
+        return
+    targets = _bats_targets(segs[0][1:])
+    if len(targets) != 1 or "*" in targets[0] or targets[0].endswith("/"):
+        return
+    root = Path(os.environ.get("SHOGUN_REPO_ROOT", Path(__file__).resolve().parents[2]))
+    target = Path(targets[0])
+    if not target.is_absolute():
+        target = Path.cwd() / target
+    ledger = Path(os.environ.get("TEST_TIMING_LEDGER", root / "logs/test_timing_ledger.tsv"))
+    if not target.is_file() or not ledger.is_file():
+        return
+    cache_path, _ = _index_paths(ledger)
+    checksum = subprocess.check_output(("cksum",), input=command, text=True).split()
+    decision_path = cache_path.parent / f"decision-{checksum[0]}-{checksum[1]}.tsv"
+    payload = "\t".join(
+        (
+            result,
+            str(ledger.resolve()),
+            _shell_stat_identity(ledger),
+            str(target.resolve()),
+            _shell_stat_identity(target),
+            command,
+        )
+    ) + "\n"
+    fd, tmp_name = tempfile.mkstemp(prefix=decision_path.name, dir=decision_path.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_name, decision_path)
+    finally:
+        try:
+            os.unlink(tmp_name)
+        except FileNotFoundError:
+            pass
+
+
+def _read_index(cache_path, identity):
+    try:
+        with cache_path.open(encoding="utf-8") as handle:
+            data = json.load(handle)
+        if (
+            data.get("schema") != _INDEX_SCHEMA
+            or data.get("ledger") != identity
+            or not isinstance(data.get("files"), dict)
+        ):
+            return None
+        return data["files"]
+    except (OSError, ValueError, TypeError):
+        return None
+
+
+def _build_index(ledger, root):
+    files = {}
+    with ledger.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle, delimiter="\t"):
+            try:
+                tags = dict(
+                    part.split("=", 1)
+                    for part in row["resource_tags"].split(";")
+                    if "=" in part
+                )
+                if not (
+                    row["runner"] == "bats"
+                    and row["status"] == "pass"
+                    and row["skip_count"] == "0"
+                    and row["cache_hit"] == "0"
+                    and tags.get("jobs") == "1"
+                ):
+                    continue
+                row_path = Path(row["test_file"])
+                if not row_path.is_absolute():
+                    row_path = root / row_path
+                key = str(row_path.resolve())
+                measured = datetime.fromisoformat(row["measured_at"].replace("Z", "+00:00"))
+                old = files.get(key)
+                # Append order is the writer's tie-breaker when two rows share
+                # one-second measured_at precision; the later row is newest.
+                if old is None or measured.isoformat() >= old["measured_at"]:
+                    files[key] = {
+                        "measured_at": measured.isoformat(),
+                        "wall_sec": float(row["wall_sec"]),
+                        "source_fingerprint": row["source_fingerprint"],
+                    }
+            except (KeyError, ValueError, OSError):
+                continue
+    return files
+
+
+def _timing_index(ledger, root):
+    """Return ext4-backed O(1) index; rebuild atomically after ledger mutation."""
+    identity = _ledger_identity(ledger)
+    cache_path, lock_path = _index_paths(ledger)
+    cached = _read_index(cache_path, identity)
+    if cached is not None:
+        return cached
+    with lock_path.open("a+") as lock_handle:
+        fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        identity = _ledger_identity(ledger)
+        cached = _read_index(cache_path, identity)
+        if cached is not None:
+            return cached
+        files = _build_index(ledger, root)
+        payload = {"schema": _INDEX_SCHEMA, "ledger": identity, "files": files}
+        fd, tmp_name = tempfile.mkstemp(prefix=cache_path.name, dir=cache_path.parent)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump(payload, handle, separators=(",", ":"), sort_keys=True)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(tmp_name, cache_path)
+        finally:
+            try:
+                os.unlink(tmp_name)
+            except FileNotFoundError:
+                pass
+        return files
 
 
 def _trusted_bats_wall_seconds(target):
@@ -98,37 +250,16 @@ def _trusted_bats_wall_seconds(target):
     ledger = Path(os.environ.get("TEST_TIMING_LEDGER", root / "logs/test_timing_ledger.tsv"))
     if not target_path.is_file() or not ledger.is_file():
         return None
-    fingerprint = _file_sha256(target_path)
-    latest = None
     try:
-        with ledger.open(newline="", encoding="utf-8") as handle:
-            for row in csv.DictReader(handle, delimiter="\t"):
-                try:
-                    row_path = Path(row["test_file"])
-                    if not row_path.is_absolute():
-                        row_path = root / row_path
-                    measured = datetime.fromisoformat(row["measured_at"].replace("Z", "+00:00"))
-                    tags = dict(
-                        part.split("=", 1) for part in row["resource_tags"].split(";") if "=" in part
-                    )
-                    trusted = (
-                        row_path.resolve() == target_path
-                        and row["runner"] == "bats"
-                        and row["status"] == "pass"
-                        and row["skip_count"] == "0"
-                        and row["cache_hit"] == "0"
-                        and row["source_fingerprint"] == fingerprint
-                        and tags.get("jobs") == "1"
-                        and (datetime.now(timezone.utc) - measured).total_seconds()
-                        <= _LEDGER_MAX_AGE_SECONDS
-                    )
-                    if trusted and (latest is None or measured > latest[0]):
-                        latest = (measured, float(row["wall_sec"]))
-                except (KeyError, ValueError, OSError):
-                    continue
-    except OSError:
+        row = _timing_index(ledger, root).get(str(target_path))
+        if row is None or row["source_fingerprint"] != _file_sha256(target_path):
+            return None
+        measured = datetime.fromisoformat(row["measured_at"])
+        if (datetime.now(timezone.utc) - measured).total_seconds() > _LEDGER_MAX_AGE_SECONDS:
+            return None
+        return float(row["wall_sec"])
+    except (OSError, ValueError, KeyError, TypeError):
         return None
-    return None if latest is None else latest[1]
 
 
 def _is_bats_heavy(args):
@@ -252,7 +383,12 @@ def main():
             command = sys.argv[1]
         else:
             command = sys.stdin.read()
-    print(classify(command))
+    result = classify(command)
+    try:
+        _publish_decision_cache(command, result)
+    except OSError:
+        pass
+    print(result)
 
 
 if __name__ == "__main__":

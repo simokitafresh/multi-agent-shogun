@@ -26,7 +26,24 @@ heavy_job_maybe_relevant() {
 heavy_job_classify() {
     local command="$1"
     if heavy_job_maybe_relevant "$command"; then
-        local script_dir
+        local script_dir cache_root cache_crc cache_len decision_file
+        cache_root="${HEAVY_JOB_INDEX_CACHE_DIR:-${TMPDIR:-/tmp}/shogun-heavy-timing-index-${UID}}"
+        read -r cache_crc cache_len _ < <(printf '%s' "$command" | cksum)
+        decision_file="$cache_root/decision-$cache_crc-$cache_len.tsv"
+        if [[ -r "$decision_file" ]]; then
+            local cached_result ledger_path ledger_identity target_path target_identity cached_command
+            local -a live_identities=()
+            IFS=$'\t' read -r cached_result ledger_path ledger_identity target_path target_identity cached_command <"$decision_file" || true
+            mapfile -t live_identities < <(stat -c '%y:%s' "$ledger_path" "$target_path" 2>/dev/null)
+            if [[ "$cached_result" == heavy || "$cached_result" == light ]] && \
+               [[ "$cached_command" == "$command" ]] && \
+               [[ -f "$ledger_path" && -f "$target_path" ]] && \
+               [[ "${live_identities[0]:-}" == "$ledger_identity" ]] && \
+               [[ "${live_identities[1]:-}" == "$target_identity" ]]; then
+                printf '%s\n' "$cached_result"
+                return 0
+            fi
+        fi
         script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
         HEAVY_JOB_COMMAND="$command" python3 -S "${script_dir}/lib/heavy_job_classify.py" 2>/dev/null || echo "heavy"
     else

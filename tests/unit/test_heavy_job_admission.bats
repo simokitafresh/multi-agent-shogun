@@ -83,6 +83,19 @@ CMD
     [ "$(heavy_job_classify "bats $fixture")" = "heavy" ]
 }
 
+@test "分類器: ext4索引cache破損とwriter更新を検知して原子的に再構築" {
+    local fixture="$TMP/test-cache-refresh.bats" cache_dir="$TMP/index-cache"
+    printf '@test "cache" { true; }\n' >"$fixture"
+    _timing_row "$fixture" 1.000
+    export HEAVY_JOB_INDEX_CACHE_DIR="$cache_dir"
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    [ "$(heavy_job_classify "bats $fixture")" = "light" ]
+    printf 'corrupt' >"$(find "$cache_dir" -name '*.json' -print -quit)"
+    [ "$(heavy_job_classify "bats $fixture")" = "light" ]
+    _timing_row "$fixture" 29.840
+    [ "$(heavy_job_classify "bats $fixture")" = "heavy" ]
+}
+
 @test "分類器: bats全量ディレクトリは重量" {
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
     result="$(heavy_job_classify "bats tests/unit/")"
