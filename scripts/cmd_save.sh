@@ -6656,6 +6656,21 @@ check_ac_phase_mixing
 # 目的: スコープ未指定のテスト全件条件を検出し、変更対象の関連テストのみへの限定を促す
 check_ac_test_scope
 
+# --- Check 21.7: Tier1 UNCONDITIONAL規則の例外追記検出（WARN） ---
+# 起源: LS092 (cmd_karo_ci_fix_29574746129) — D006趣旨解釈で例外追記→家老拒否
+# 目的: Tier1(D001-D009)はUNCONDITIONAL。例外/緩和/除外の共起を検出し代替手段を促す
+check_tier1_exception_warn() {
+    [[ -z "${CMD_BLOCK_NC:-}" ]] && return
+    local tier1_re='D00[1-9]'
+    local exception_re='例外|除外|緩和|スコープ追記|趣旨解釈|適用外|対象外|上書き|exemption|exception|override'
+    if echo "$CMD_BLOCK_NC" | grep -qE "$tier1_re" && \
+       echo "$CMD_BLOCK_NC" | grep -qE "$exception_re"; then
+        echo "WARNING: Tier1 UNCONDITIONAL規則(D001-D009)の例外追記を検出。趣旨解釈で緩めてはならない。代替手段(timeout等)で解決せよ(LS092)" >&2
+        record_warn_reason "tier1_unconditional_exception" "check=check_tier1_exception_warn"
+    fi
+}
+check_tier1_exception_warn
+
 # --- Check 22: command欄ステップ数 vs AC数の不整合検出（WARN） ---
 # 起源: cmd_1953-1958でcommand欄に(1)(2)(3)(4)の4ステップを書いたがAC2個→忍者がspec/設計書をスキップ
 # 原理: command欄の番号付きステップ数 > AC数 = 中間成果物がACに分解されていない可能性

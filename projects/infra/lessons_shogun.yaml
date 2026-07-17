@@ -149,8 +149,7 @@ lessons:
   automated: true
   enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)+post-bash-combined.sh cmd_publish hook(cmd_2898)'
 
-- id: 'LS-A10'
-  superseded_by: 'LS-A24 (計測原則ファミリーへ統合。detail(5)として全文吸収 2026-07-11。active上限31対応)'
+
 - id: LS-A11
   title: infra修正実績 — バグはenforcement(hook/gate)で修正済み
   origin: '[[cmd_1946]] + session_20260422'
@@ -253,8 +252,7 @@ lessons:
   automated: true
   enforcement: 'cmd_save.sh Session State(GP-201)+report_field_set.sh GP-072c5(bc:no→verdict:PASS BLOCK)+context/codd.md+prompt_state_inject.sh(概念→スキル推奨L1)+deploy_task.sh(inject_semantic_concepts L4)+gunshi Guard9(L2)'
 
-- id: 'LS-A18'
-  superseded_by: 'LS-A24 (計測原則ファミリーへ統合(要点は(0)として吸収済み)。active上限31対応)'
+
 - id: LS-A19
   title: 原理3則 — 車輪/各論パッチ/無知の知
   origin: '[[cmd_1908]] [[cmd_1903]] + dialogue_alm_finite_time_20260404 + dialogue_heuristics_system2_20260401'
@@ -298,15 +296,7 @@ lessons:
 # === LS023-LS035統合完了 (2026-04-29) ===
 # 13件→LS-A04(18-25追記,9件)＋LS-A22(3-7追記,4件)に吸収完了
 # source_cmds: cmd_2339-cmd_2369
-- id: 'LS029'
-  title: '画像認識精度+reCAPTCHA教訓: MECEに全ブロック判断し殿に確認を取れ'
-  origin: '[[cmd_session_20260510]]'
-  detail: 'reCAPTCHA画像チャレンジは精度が構造的に低くタイムアウトする。MECEに全ブロック判断し殿に確認を取れ。全文→docs/research/lessons_shogun_a04_a09_detail.md'
-  source_cmd: 'cmd_session_20260510'
-  created_at: '2026-05-11'
-  automated: true
-  enforcement: '意志依存(gate/hookなし)。今後のCDP画像判定タスクで精度向上が必要'
-  superseded_by: 'LS082 (note_draft.shでreCAPTCHA画像チャレンジ即時停止+cookie再利用導線をLevel4実装)'
+
 - id: 'LS036'
   title: 'CoDDはbrownfield逆生成が正解。greenfield generateは遅い'
   origin: '[[cmd_2850]] -> [[cmd_2891_修行CoDD導入で30分超過]] -> [[context/training-cycle.md §28_brownfield限定制定2026-05-19]]'
@@ -377,18 +367,6 @@ lessons:
   automated: true
   enforcement_level: 4
   enforcement: 'Level4(フロー内BLOCK/現在状態突合): gate_skill_script_refs.sh max採用+判定根拠出力、prompt_state_inject.sh session_alerts突合([TODO]なし→_defer_count=0補正)、clear_prep_check.sh insights現物再照合、gate_karo_startup.sh __OK__行でstreak切り。bats 3+3実在。一次再検証全文→docs/research/lessons_shogun_a04_a09_detail.md'
-- id: 'LS080'
-  superseded_by: 'LS-A04 (cmdテンプレートルール(48)として吸収 2026-07-16)'
-- id: 'LS081'
-  superseded_by: 'LS-A11 (infra修正実績へ吸収 2026-07-16)'
-- id: 'LS082'
-  superseded_by: 'LS-A11 (infra修正実績へ吸収 2026-07-16)'
-- id: 'LS083'
-  superseded_by: 'LS-A24 (計測原則ファミリー(6)として吸収 2026-07-16)'
-- id: 'LS084'
-  superseded_by: 'LS-A11 (infra修正実績へ吸収 2026-07-10)'
-- id: 'LS085'
-  superseded_by: 'CLAUDE.md恒久ルール「可逆なら行動せよ」+ LS-A08(8) (2026-07-10)'
 - id: 'LS086'
   title: '設計書クローズ時の実装cmd未起票チェック — 設計書完成で満足する先送り'
   origin: '[[殿実装確認20260710_0720_0724]] -> [[設計書完成で先送り2連発]] -> [[LS086クローズ時起票照合]]'
@@ -398,10 +376,6 @@ lessons:
   automated: true
   enforcement: "Level4 フロー内BLOCK: scripts/cmd_complete_gate.sh が承認済み files_modified の設計書を scripts/gates/gate_design_cmd_handoff.sh へ渡し、Phase/手順表の起票cmdが空・未起票・理由なし保留なら design_cmd_handoff_missing で完了をBLOCK。test=tests/unit/test_gate_design_cmd_handoff.bats"
   enforcement_level: 4
-- id: 'LS087'
-  superseded_by: 'LS-A11 (commit 6e1854eb0 AC区間抽出修正+Level4回帰済み)'
-- id: 'LS088'
-  superseded_by: 'LS048 (洗脳対策全サイクル(6)として吸収 2026-07-16)'
 - id: 'LS089'
   title: 'reflux 3段連鎖バグ — 修正1段ごとに次の障壁が露出する構造'
   origin: "[[promotion在庫188停滞]] -> [[delegated過剰判定]] -> [[estimated_minutes欠落]] -> [[QUALITY_CONTRACT_FP]] -> [[reflux完全復活]]"
@@ -427,3 +401,20 @@ lessons:
   created_at: '2026-07-17'
   automated: true
   enforcement: 'Level4: 将軍教訓通読(startup Step4)で鎖の原理関連(LS-A11/LS-A07)を読了後、D0実装前にgrep対象教訓との矛盾がないか自問を強制。自動化未達(hook/gate追加なし)=意志依存。次の自動化候補: cmd_save.sh environment_change実装時にLS-A11 keyword(家老の責務/鎖の迂回)との自動照合'
+- id: 'LS092'
+  title: 'D006 Tier1 UNCONDITIONAL規則を趣旨解釈で緩めた判断ミス'
+  origin: '[[cmd_karo_ci_fix_29574746129]]'
+  detail: '事故: 影丸がrun_tests.shのkill -TERM/-KILLでD006検出→正当failed停止。将軍がD006の趣旨(他エージェント破壊防止)を根拠に例外スコープ追記を家老に指示。家老がD006はUNCONDITIONALであり将軍含む全員が上書き不能と正当拒否。原因: deepdive_causal_tracing Phase2-3と同構造=原則の文字面vs趣旨の判断で趣旨解釈を優先し、UNCONDITIONAL明記を無視。Tier1規則は因果をたどって緩める対象ではなく、改定が必要な安全規則。対策: timeoutコマンド(D006リスト外)で代替実装。'
+  source_cmd: 'cmd_karo_ci_fix_29574746129'
+  created_at: '2026-07-17'
+  automated: true
+  enforcement: 'Level4: cmd_save.sh check_tier1_exception_warn()がD001-D009+例外/緩和キーワード共起をWARN。tests/unit/test_cmd_save.bats Check21.7(2/2 PASS)'
+  enforcement_level: 4
+- id: 'LS093'
+  title: 'preflight自己封鎖: cache stale時のデッドロック構造'
+  origin: '[[WSL_shutdown]] -> [[cache_WAL不整合]] -> [[preflight自己封鎖]] -> [[inbox処理不能]]'
+  detail: '事故: WSL強制shutdown後、/tmp/shogun_memory_db_cache/のキャッシュDBがWAL不整合(本体694MBあるが最新データはsource WALのみ)。batch_index_searchがcache参照→events 0件→三層全count>0必須で全封鎖。Edit/Write/Bash(変更系)全不能→inbox_mark_read/bulletin_write/inbox_write全実行不能。原因: cache miss時のsource DBフォールバック未実装。復旧: Agent tool(pretool-dispatch case文外)経由でcache削除→source直接参照→issue成功。教訓: 防御機構自体のfail-closedが制御面(inbox/bulletin)まで封鎖すると復旧不能になる。恒久対策: cache graceful fallback(家老配備指示済み)。'
+  source_cmd: 'preflight_selflock'
+  created_at: '2026-07-17'
+  automated: true
+  enforcement: 'automated:false — cache miss graceful fallbackは忍者実装待ち。Agent tool recovery pathは文書化のみ(掲示板blt_225659)'

@@ -1,5 +1,11 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-17 session_shogun_startup -->
+<!-- last_updated: 2026-07-18 session_shogun_startup -->
+
+## 2026-07-18
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| 将軍復帰+D0自走 | /clear後の起動完遂+startup BLOCK根因確認+D0改善 | deepdive追体験完了、Q6投稿(洗脳#4:LS-A11適用失敗)。inbox2件処理。actionable4件closed。lessons肥大化対処(55609→53903bytes、superseded_by11件物理削除)。startup BLOCK4件根因確認+wait_reason宣言。origin不備0件確認 | [[ラルフループ]] -> [[superseded_by物理削除]] -> [[lessons肥大化ALERT解消]] |
 
 ## 2026-07-17
 
