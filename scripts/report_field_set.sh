@@ -15,6 +15,104 @@
 
 set -e
 
+# Batch lane: one process, one flock and one atomic replace for a complete report
+# transition. Input is a YAML mapping of dot-notation field names to values.
+# This is intentionally a separate, fail-closed lane: partial writes are never
+# committed when validation fails.
+if [ "${1:-}" = "--batch" ]; then
+    [ "$#" -eq 2 ] || { echo "Usage: report_field_set.sh --batch <report_path> < fields.yaml" >&2; exit 1; }
+    _rfs_batch_report="$2"
+    _rfs_batch_payload="$(cat)"
+    [[ "$_rfs_batch_report" = /* ]] || _rfs_batch_report="$PWD/$_rfs_batch_report"
+    _rfs_batch_lock="${_rfs_batch_report}.lock"
+    mkdir -p "${_rfs_batch_report%/*}"
+    exec 200>"$_rfs_batch_lock"
+    flock -w 5 200 || { echo "BLOCK: batch report lock timeout" >&2; exit 1; }
+    RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" <<'PY'
+import hashlib, os, pathlib, re, sys, tempfile, yaml
+
+path = pathlib.Path(sys.argv[1])
+updates = yaml.safe_load(os.environ.get("RFS_BATCH_PAYLOAD", ""))
+if not isinstance(updates, dict) or not updates:
+    raise SystemExit("BLOCK: batch input must be a non-empty YAML mapping")
+data = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
+if not isinstance(data, dict):
+    raise SystemExit("BLOCK: report must be a YAML mapping")
+old_status = str(data.get("status", "")).strip()
+if old_status in {"completed", "done"} and updates.get("status") != "revision_requested":
+    raise SystemExit("BLOCK: completed report is immutable; batch must first transition to revision_requested")
+
+def set_dot(root, dotted, value):
+    keys = dotted.replace("[", ".").replace("]", "").split(".")
+    cur = root
+    for key in keys[:-1]:
+        if key.isdigit():
+            idx = int(key)
+            if not isinstance(cur, list) or idx >= len(cur):
+                raise ValueError(f"invalid list path: {dotted}")
+            cur = cur[idx]
+        else:
+            if not isinstance(cur, dict):
+                raise ValueError(f"invalid mapping path: {dotted}")
+            cur = cur.setdefault(key, {})
+    last = keys[-1]
+    if last.isdigit():
+        idx = int(last)
+        if not isinstance(cur, list) or idx >= len(cur):
+            raise ValueError(f"invalid list path: {dotted}")
+        cur[idx] = value
+    else:
+        if not isinstance(cur, dict):
+            raise ValueError(f"invalid mapping path: {dotted}")
+        cur[last] = value
+
+try:
+    for key, value in updates.items():
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError("batch field names must be non-empty strings")
+        if key.startswith("binary_checks.") and key.endswith(".result") and isinstance(value, bool):
+            value = "yes" if value else "no"
+        set_dot(data, key, value)
+except ValueError as exc:
+    raise SystemExit(f"BLOCK: {exc}")
+
+bc = data.get("binary_checks")
+results = []
+if isinstance(bc, dict):
+    for checks in bc.values():
+        if isinstance(checks, list):
+            results.extend(str((item or {}).get("result", "")).strip().lower() for item in checks if isinstance(item, dict))
+bad = [value for value in results if value not in {"yes", "no"}]
+if bad:
+    raise SystemExit("BLOCK: binary_checks results must all be yes/no")
+if results:
+    data["verdict"] = "PASS" if all(value == "yes" for value in results) else "FAIL"
+    if any(value == "no" for value in results):
+        data["status"] = "failed"
+
+terminal = str(data.get("status", "")).strip() in {"completed", "done"}
+if terminal:
+    required = ("worker_id", "parent_cmd", "ac_version_read", "binary_checks", "files_modified", "lessons_useful", "lesson_candidate")
+    missing = [key for key in required if data.get(key) in (None, "", [], {})]
+    if missing:
+        raise SystemExit("BLOCK: terminal readiness missing: " + ",".join(missing))
+    commit = str(data.get("commit_hash", "")).strip()
+    if not re.fullmatch(r"[0-9a-f]{40}|no-code-change", commit):
+        raise SystemExit("BLOCK: terminal readiness requires valid commit_hash")
+
+text = yaml.safe_dump(data, allow_unicode=True, sort_keys=False)
+fd, tmp = tempfile.mkstemp(prefix=path.name + ".batch.", dir=path.parent)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(text); handle.flush(); os.fsync(handle.fileno())
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp): os.unlink(tmp)
+print("BATCH_OK fields={} fingerprint={}".format(len(updates), hashlib.sha256(text.encode()).hexdigest()))
+PY
+    exit $?
+fi
+
 if [ "$#" -lt 2 ]; then
     echo "Usage: bash scripts/report_field_set.sh <report_path> <dot.notation.key> <value>" >&2
     echo "  value が '-' ならstdinから読む。空文字列は ''(YAML空文字)として書込み。" >&2

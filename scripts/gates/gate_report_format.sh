@@ -15,6 +15,19 @@ if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     exit 1
 fi
 
+# A caller that just validated/notified this exact content may pass the
+# fingerprint back. Exact content identity makes a second Python gate run
+# redundant; a mismatch falls through to the full gate.
+_GATE_FP_CACHE="${GATE_FINGERPRINT_CACHE_FILE:-${REPORT_PATH}.validated_fingerprints}"
+if [ -n "${GATE_VALIDATED_FINGERPRINT:-}" ]; then
+    _gate_current_fingerprint="$(sha256sum "$REPORT_PATH" | awk '{print $1}')"
+    if [ "$_gate_current_fingerprint" = "$GATE_VALIDATED_FINGERPRINT" ] &&
+       [ -f "$_GATE_FP_CACHE" ] && grep -qxF "$GATE_VALIDATED_FINGERPRINT" "$_GATE_FP_CACHE"; then
+        echo "PASS (fingerprint reuse)"
+        exit 0
+    fi
+fi
+
 # executor帰属: 報告YAMLのworker_idを読取り(CLI非依存)
 _REPORT_EXECUTOR="${AGENT_ID:-}"
 if [ -z "$_REPORT_EXECUTOR" ]; then
@@ -564,6 +577,9 @@ case "$_CANON" in
 esac
 
 if [ "$RESULT_IS_PASS" -eq 1 ]; then
+    _gate_validated_fp="$(sha256sum "$REPORT_PATH" | awk '{print $1}')"
+    { grep -vxF "$_gate_validated_fp" "$_GATE_FP_CACHE" 2>/dev/null || true; echo "$_gate_validated_fp"; } > "${_GATE_FP_CACHE}.tmp.$$"
+    mv "${_GATE_FP_CACHE}.tmp.$$" "$_GATE_FP_CACHE" 2>/dev/null || true
     # WSL2最適化: gate_fire_log書込みをバックグラウンド化（ログは判定に影響しない）
     (
         flock -w 5 200 2>/dev/null
