@@ -20,6 +20,8 @@ MAX_LINES=2500
 if [ "${1:-}" = "--batch" ]; then
     python3 -c '
 import subprocess, sys, yaml
+sys.path.insert(0, sys.argv[2])
+from scripts.lib.yaml_atomic import yaml_text
 items = yaml.safe_load(sys.stdin.read())
 if not isinstance(items, list) or not items:
     print("BLOCK: --batch requires a non-empty YAML list", file=sys.stderr); raise SystemExit(2)
@@ -27,13 +29,13 @@ for index, item in enumerate(items):
     if not isinstance(item, dict):
         print(f"BLOCK: batch review_entry[{index}] must be a mapping", file=sys.stderr); raise SystemExit(2)
     env = dict(__import__("os").environ); env["GUNSHI_VALIDATE_ONLY"] = "1"
-    completed = subprocess.run(["bash", sys.argv[1]], input=yaml.safe_dump([item], allow_unicode=True, sort_keys=False), text=True, env=env)
+    completed = subprocess.run(["bash", sys.argv[1]], input=yaml_text([item], allow_unicode=True, sort_keys=False), text=True, env=env)
     if completed.returncode: raise SystemExit(completed.returncode)
 for item in items:
-    completed = subprocess.run(["bash", sys.argv[1]], input=yaml.safe_dump([item], allow_unicode=True, sort_keys=False), text=True)
+    completed = subprocess.run(["bash", sys.argv[1]], input=yaml_text([item], allow_unicode=True, sort_keys=False), text=True)
     if completed.returncode: raise SystemExit(completed.returncode)
 print(f"OK: batch appended {len(items)} review entries")
-' "$0"
+' "$0" "$SCRIPT_DIR"
     exit $?
 fi
 
