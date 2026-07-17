@@ -660,6 +660,24 @@ fi
     [[ "$output" == *"PASS: no task YAML → passes Stage 1"* ]]
 }
 
+@test "failed task bypasses 600 second clear debounce" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T="$BATS_TEST_TMPDIR"; SCRIPT_DIR="$T"; LOG="$T/log"
+mkdir -p "$T/queue/tasks"; printf "task:\n  status: failed\n" > "$T/queue/tasks/saizo.yaml"
+declare -A PANE_TARGETS LAST_CLEARED CLEAR_SKIP_COUNT POST_CLEAR_PENDING
+PANE_TARGETS[saizo]="pane"; LAST_CLEARED[saizo]="$EPOCHSECONDS"
+log(){ echo "$1" >> "$LOG"; }; tmux(){ :; }; get_context_pct(){ echo 50; }
+cli_type(){ echo codex; }; cli_profile_get(){ echo 600; }
+can_send_clear_with_report_gate(){ return 0; }; safe_send_clear(){ echo CLEAR >> "$LOG"; }
+_handle_auto_clear saizo "$EPOCHSECONDS"
+grep -q FAILED-RESPAWN-IMMEDIATE "$LOG"; grep -q CLEAR "$LOG"; ! grep -q CLEAR-DEBOUNCE "$LOG"
+'
+    [ "$status" -eq 0 ]
+}
+
 # verdict非空チェック: report存在+verdict空→return 1(clearブロック)
 @test "report_gate: verdict empty blocks clear" {
     run bash -lc '

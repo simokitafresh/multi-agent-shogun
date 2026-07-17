@@ -1759,16 +1759,27 @@ notify_karo_throttled() {
     local message="$3"
     local stamp_file="${STATE_DIR:-/tmp}/.notify_${notify_type}_${name}"
     local cooldown="${NINJA_MONITOR_NOTIFY_COOLDOWN:-1800}"
+    local fingerprint acknowledged_at prior_fp prior_ack prior_epoch now
+    fingerprint=$(printf '%s\t%s\t%s' "$notify_type" "$name" "$message" | cksum | awk '{print $1 ":" $2}')
+    acknowledged_at=""
+    if [ -f "$SCRIPT_DIR/queue/tasks/${name}.yaml" ]; then
+        acknowledged_at=$(awk '/^[[:space:]]*acknowledged_at:/{sub(/^[^:]*:[[:space:]]*/,""); gsub(/"/,""); print; exit}' "$SCRIPT_DIR/queue/tasks/${name}.yaml" 2>/dev/null || true)
+    fi
+    now=$EPOCHSECONDS
 
-    if auto_commit_timestamp_recent "$stamp_file" "$cooldown"; then
-        log "NOTIFY-THROTTLED: $notify_type for $name suppressed (within ${cooldown}s)"
-        return 0
+    if [ -f "$stamp_file" ]; then
+        IFS=$'\t' read -r prior_fp prior_ack prior_epoch < "$stamp_file" || true
+        if [ "$prior_fp" = "$fingerprint" ] && [ "$prior_ack" = "$acknowledged_at" ] &&
+           [[ "$prior_epoch" =~ ^[0-9]+$ ]] && [ $((now - prior_epoch)) -lt "$cooldown" ]; then
+            log "NOTIFY-THROTTLED: $notify_type for $name suppressed fingerprint=$fingerprint acknowledged_at=${acknowledged_at:-none}"
+            return 0
+        fi
     fi
     if ! bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" "$notify_type" ninja_monitor >> "$LOG" 2>&1; then
         log "WARN: inbox_write $notify_type failed for $name"
         return 0
     fi
-    write_auto_commit_timestamp "$stamp_file"
+    printf '%s\t%s\t%s\n' "$fingerprint" "$acknowledged_at" "$now" > "$stamp_file"
 }
 
 # ─── karo通知の永続retry outbox (cmd_karo_hotfix_failed_report_clear_notify_gap AC3) ───
@@ -2898,9 +2909,8 @@ _handle_deploy_stall() {
         STALL_COUNT[$stall_count_key]=$((${STALL_COUNT[$stall_count_key]:-0} + 1))
         local count=${STALL_COUNT[$stall_count_key]}
         if [ "$count" -ge 2 ]; then
-            bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-              "【STALL-ESCALATE】${name}が${stall_id}で${count}回STALL。差し替え必須。" \
-              stall_escalate ninja_monitor >> "$LOG" 2>&1
+            notify_karo_throttled stall_escalate "$name" \
+              "【STALL-ESCALATE】${name}が${stall_id}で${count}回STALL。差し替え必須。"
         fi
     else
         log "DEPLOY-STALL-WAIT: $name $task_status+idle ${elapsed}s < ${effective_debounce}s"
@@ -3023,6 +3033,14 @@ _handle_auto_clear() {
     # CLI種別に応じたデバウンス（cli_profiles.yaml参照）
     local effective_debounce
     effective_debounce=$(cli_profile_get "$agent_id" "clear_debounce")
+
+    # A failed task is terminal from the worker's point of view. Treat it as
+    # no-task for recovery latency. The active-status preflight below still
+    # closes the race with a concurrently published revision/redeployment.
+    if [ "$_ac_task_status" = "failed" ]; then
+        effective_debounce=0
+        log "FAILED-RESPAWN-IMMEDIATE: $name failed task treated as no-task (clear_debounce=0)"
+    fi
 
     if [ "$clear_elapsed" -ge "$effective_debounce" ]; then
         if ! can_send_clear_with_report_gate "$name" "AUTO-CLEAR"; then
@@ -4724,7 +4742,7 @@ check_stall() {
         if [ "$stall_count" -ge "$STALL_ESCALATE_THRESHOLD" ]; then
             local escalate_message
             escalate_message=$(append_pane_excerpt "【STALL-ESCALATE】${name}が${task_id}で${stall_count}回STALL。差し替え必須。" "$target")
-            send_inbox_message karo "$escalate_message" stall_escalate
+            notify_karo_throttled stall_escalate "$name" "$escalate_message"
         fi
 
         if [ "$status" = "in_progress" ]; then
