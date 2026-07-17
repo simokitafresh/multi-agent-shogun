@@ -74,6 +74,8 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, timedelta
 import glob
+import hashlib
+import json
 import os
 import re
 import subprocess
@@ -849,6 +851,51 @@ def _run_grouped_git_log(
     if pathspecs:
         cmd.extend(["--", *pathspecs])
 
+    # GA-286: dashboard rendering invokes this checker repeatedly, while a 9p
+    # git log may consume the full 10s + 60s retry budget.  Persist only
+    # successful history snapshots on ext4 (/tmp by default).  The key binds
+    # the repository, resolved revision boundary, date range and pathspecs, so
+    # a new commit cannot reuse stale history.  Corrupt/missing snapshots are
+    # cache misses; git failures remain fail-closed and are never cached.
+    cache_dir = os.environ.get("CFC_HISTORY_CACHE_DIR", "/tmp/cfc-history-v1")
+    try:
+        boundary = subprocess.run(
+            ["git", "-C", repo_path, "rev-parse", revision or "HEAD"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=min(_GIT_TIMEOUT, 5),
+        ).stdout.strip()
+    except Exception:
+        boundary = ""
+    fingerprint = json.dumps(
+        {
+            "repo": os.path.realpath(repo_path),
+            "revision": revision,
+            "boundary": boundary,
+            "since": since_date.isoformat() if since_date else None,
+            "pathspecs": sorted(pathspecs),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    cache_path = os.path.join(
+        cache_dir, hashlib.sha256(fingerprint.encode()).hexdigest() + ".json"
+    )
+    if boundary:
+        try:
+            with open(cache_path, encoding="utf-8") as cached_file:
+                cached = json.load(cached_file)
+            if cached.get("fingerprint") == fingerprint and isinstance(cached.get("commits"), list):
+                return [
+                    (str(item[0]), str(item[1]), [str(path) for path in item[2]])
+                    for item in cached["commits"]
+                    if isinstance(item, list) and len(item) == 3 and isinstance(item[2], list)
+                ]
+        except (OSError, ValueError, TypeError, KeyError):
+            pass
+
     result = _run_git_with_bounded_retry(cmd, f"grouped git log: {repo_path}")
     if result is None:
         return None
@@ -872,6 +919,20 @@ def _run_grouped_git_log(
         if line.strip():
             changed_paths.append(line.strip())
     flush()
+    if boundary:
+        try:
+            os.makedirs(cache_dir, mode=0o700, exist_ok=True)
+            temp_path = f"{cache_path}.{os.getpid()}.tmp"
+            with open(temp_path, "w", encoding="utf-8") as cache_file:
+                json.dump({"fingerprint": fingerprint, "commits": commits}, cache_file)
+                cache_file.flush()
+                os.fsync(cache_file.fileno())
+            os.replace(temp_path, cache_path)
+        except OSError:
+            try:
+                os.unlink(temp_path)
+            except (OSError, UnboundLocalError):
+                pass
     return commits
 
 

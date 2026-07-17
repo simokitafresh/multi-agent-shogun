@@ -61,12 +61,77 @@ setup() {
     export CONTEXT_FRESHNESS_EXCLUDE_LIST="$TEST_TMPDIR/config/context_freshness_excludes.txt"
     export CFC_OUTPUT_CACHE_TTL=0
     export CFC_REQUIRE_SOURCE_COMMIT=0
+    export CFC_HISTORY_CACHE_DIR="$TEST_TMPDIR/history-cache"
 
 }
 
 teardown() {
     unset CFC_OUTPUT_CACHE_TTL
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
+}
+
+@test "GA-286 history cache reuses success, invalidates on commit, and ignores corruption" {
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+    _create_source_commit "src/dm_signal.py" "test: first source update"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source commits"* ]]
+    [ "$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' | wc -l)" -ge 1 ]
+
+    local cache_file
+    cache_file="$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' | head -1)"
+    printf '{broken' > "$cache_file"
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source commits"* ]]
+
+    local before_count
+    before_count="$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' | wc -l)"
+    _create_source_commit "src/dm_signal.py" "test: second source update"
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"2 source commits"* ]]
+    [ "$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' | wc -l)" -gt "$before_count" ]
+}
+
+@test "GA-286 history cache warm lookup bypasses failing git log and stays fail-closed when cold" {
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+    _create_source_commit "src/dm_signal.py" "test: cacheable source update"
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+
+    mkdir -p "$TEST_TMPDIR/fake-bin"
+    local real_git
+    real_git="$(command -v git)"
+    cat > "$TEST_TMPDIR/fake-bin/git" <<EOF
+#!/usr/bin/env bash
+if [[ " \$* " == *" log "* ]]; then exit 91; fi
+exec "$real_git" "\$@"
+EOF
+    chmod +x "$TEST_TMPDIR/fake-bin/git"
+
+    PATH="$TEST_TMPDIR/fake-bin:$PATH" run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source commits"* ]]
+
+    local max_ms=0 start_ns elapsed_ms
+    for _ in {1..10}; do
+        start_ns="$(date +%s%N)"
+        PATH="$TEST_TMPDIR/fake-bin:$PATH" bash "$TEST_SCRIPT" --dashboard-warnings >/dev/null
+        elapsed_ms=$(( ($(date +%s%N) - start_ns) / 1000000 ))
+        [ "$elapsed_ms" -gt "$max_ms" ] && max_ms="$elapsed_ms"
+    done
+    # With ten samples the maximum is a conservative upper bound for p95.
+    [ "$max_ms" -le 500 ]
+
+    rm -f "$CFC_HISTORY_CACHE_DIR"/*.json
+    PATH="$TEST_TMPDIR/fake-bin:$PATH" CFC_GIT_TIMEOUT=0.1 CFC_GIT_RETRY_TIMEOUT=0.1 \
+        run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SOURCE_CHECK_FAILED"* ]]
 }
 
 # ── Helper: create context file with last_updated ──
