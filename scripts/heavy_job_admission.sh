@@ -29,6 +29,11 @@ LOCK_FILE="${SHOGUN_HEAVY_JOB_LOCK_FILE:-/tmp/shogun_heavy_job_admission_v2.lock
 # 万一のlock leak(理論上あり得ないはずだが)でホストが永久停止するため、
 # 実務上「無期限」相当の長さを保ちつつ保険的な上限として3600sを設定する。
 TIMEOUT="${SHOGUN_HEAVY_JOB_ADMISSION_TIMEOUT:-3600}"
+# A leader may exit after detaching a descendant.  Admission must not wait on
+# that process group forever: bounded failure releases the lock and makes the
+# lifecycle defect observable to the caller/CI instead of producing a silent
+# tail.  This does not signal unrelated processes or broaden cleanup scope.
+DRAIN_TIMEOUT="${SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT:-10}"
 
 if [[ "${1:-}" == "--" ]]; then
     shift
@@ -68,7 +73,12 @@ ADMISSION_FD="$admission_fd" RUN_FD="${run_fd:-}" setsid bash -c '
 leader_pid=$!
 rc=0
 wait "$leader_pid" || rc=$?
+drain_started=$SECONDS
 while kill -0 -- "-$leader_pid" 2>/dev/null; do
+    if (( SECONDS - drain_started >= DRAIN_TIMEOUT )); then
+        echo "BLOCK: heavy job process group -${leader_pid} did not drain within ${DRAIN_TIMEOUT}s" >&2
+        exit 124
+    fi
     sleep 0.05
 done
 exit "$rc"

@@ -80,10 +80,26 @@ run_daemon_isolated() {
     [[ "$output" == *"restart deferred"* ]]
 
     export DAEMON_WATCHDOG_HEARTBEAT_FILE="$TEST_ROOT/heartbeat"
-    unset DAEMON_WATCHDOG_LIB_ONLY DAEMON_SUPERVISOR_LIB_ONLY
-    run_daemon_isolated bash "$PROJECT_ROOT/scripts/daemon_watchdog.sh"
+    # Never execute the production entrypoint in a unit fixture.  Its normal
+    # path may nohup durable daemons; stubbing only their inputs still lets a
+    # newly-added supervision branch escape the bats process tree.  Source the
+    # library and exercise the maintenance decisions explicitly, then publish
+    # the heartbeat which is the only entrypoint-side contract asserted here.
+    export DAEMON_WATCHDOG_LIB_ONLY=1
+    run_daemon_isolated bash -c '
+        source "$1/scripts/daemon_watchdog.sh"
+        check_ninja_monitor
+        check_ntfy_listener
+        check_inbox_watchers
+        date +%s > "$DAEMON_WATCHDOG_HEARTBEAT_FILE"
+    ' _ "$PROJECT_ROOT"
     [ "$status" -eq 0 ]
     [ -s "$DAEMON_WATCHDOG_HEARTBEAT_FILE" ]
+}
+
+@test "fixtureはproduction watchdog entrypointを直接実行しない" {
+    run grep -n 'bash "\$PROJECT_ROOT/scripts/daemon_watchdog.sh"' "$BATS_TEST_FILENAME"
+    [ "$status" -eq 1 ]
 }
 
 @test "marker absent preserves normal decision path for all three entry points" {

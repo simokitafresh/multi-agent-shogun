@@ -55,6 +55,21 @@ printf 'global_tmp_locks\n'; rg -n '(LOCK_FILE|lock_file)=?["'"']?/tmp/|flock[^\
 CMD
 }
 
+@test "leader終了後のprocess group drainは有限deadlineでfail-closed" {
+    local started="$TMP/detached.started" child_pid begin end
+    begin="$(date +%s)"
+    run env SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT=1 \
+        bash "$WRAPPER" -- bash -c 'sleep 2 & echo $! > "$1"' _ "$started"
+    end="$(date +%s)"
+    [ "$status" -eq 124 ]
+    [[ "$output" == *"did not drain within 1s"* ]]
+    [ $((end - begin)) -lt 10 ]
+    [ -e "$started" ]
+    child_pid="$(cat "$started")"
+    sleep 1.2
+    [ ! -e "/proc/$child_pid" ]
+}
+
 # --- 分類器(SSOT) — argv位置ベース、部分文字列誤検出禁止 ---
 
 @test "分類器: 単一.batsファイル1つは軽量" {
