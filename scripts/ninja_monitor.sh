@@ -3486,6 +3486,11 @@ _reflux_promotion_backfill_and_check() {
     ledger_ids=$(_reflux_promotion_completed_ids)
     extra=$(comm -13 <(printf '%s\n' "$scanned" | sed '/^$/d' | sort -u) <(printf '%s\n' "$ledger_ids" | sed '/^$/d' | sort -u))
     [ -z "$extra" ] || { printf 'BLOCK ledger_extra=%s\n' "$(printf '%s' "$extra" | tr '\n' ',')"; return 1; }
+    # Full report reconciliation is a migration/repair operation, not part of
+    # the inventory hot path.  Publish the marker only after a zero-diff check;
+    # normal completions are appended event-by-event by
+    # _reflux_promotion_record_completion.
+    : > "${REFLUX_PROMOTION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_completed.tsv}.reconciled-v1"
     printf 'PASS scanned=%s ledger=%s diff=0\n' "$(printf '%s\n' "$scanned" | sed '/^$/d' | wc -l)" "$(printf '%s\n' "$ledger_ids" | sed '/^$/d' | wc -l)"
 }
 
@@ -3498,12 +3503,11 @@ _reflux_promotion_inventory() {
     [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=20
     [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=20
 
-    # The ledger can already exist while a ninja-completed task bypassed the
-    # AUTO-DONE transition.  Reconcile completed PASS reports before every
-    # selection; otherwise the hot ledger lookup perpetually reselects the
-    # missing lesson.  Any mismatch blocks dispatch instead of publishing a
-    # candidate from inconsistent state.
-    if ! _reflux_promotion_backfill_and_check >/dev/null; then
+    # Reconcile legacy ledgers exactly once.  Re-scanning every completed
+    # report here made the monitor's hot inventory lookup O(report history).
+    # After migration, check_and_update_done_task is the event-driven writer.
+    local reconcile_marker="${REFLUX_PROMOTION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_completed.tsv}.reconciled-v1"
+    if [ ! -e "$reconcile_marker" ] && ! _reflux_promotion_backfill_and_check >/dev/null; then
         printf '0\t-\tledger-inconsistent\n'
         return 1
     fi
@@ -3515,7 +3519,15 @@ _reflux_promotion_inventory() {
 
     cache_file="$cache_dir/reflux_promotion_inventory.raw"
     sig_file="${cache_file}.sig"
-    current_sig=$(find "$SCRIPT_DIR/projects" -type f \( -name 'lessons.yaml' -o -name 'lessons_shogun.yaml' -o -name 'lessons_karo.yaml' -o -name 'lessons_gunshi.yaml' \) -printf '%p:%T@:%s\n' 2>/dev/null | sort | sha256sum | awk '{print $1}')
+    if [ -d "$SCRIPT_DIR/projects" ]; then
+        current_sig=$(find "$SCRIPT_DIR/projects" -type f \( -name 'lessons.yaml' -o -name 'lessons_shogun.yaml' -o -name 'lessons_karo.yaml' -o -name 'lessons_gunshi.yaml' \) -printf '%p:%T@:%s\n' 2>/dev/null | sort | sha256sum | awk '{print $1}')
+    else
+        # An isolated fixture (or a fresh installation before project
+        # materialization) legitimately has no lesson tree yet.  Hash the
+        # empty inventory without invoking find on a missing root: under a
+        # set -euo pipefail caller, find rc=1 would otherwise abort dispatch.
+        current_sig=$(printf '' | sha256sum | awk '{print $1}')
+    fi
     cached_sig=$(cat "$sig_file" 2>/dev/null || true)
     if [ -n "$current_sig" ] && [ "$current_sig" = "$cached_sig" ] && [ -r "$cache_file" ]; then
         output=$(cat "$cache_file")
