@@ -184,6 +184,10 @@ files_modified:
 binary_checks:
   commit:
     - {check: コード変更なしのためexact commit不要, result: yes}
+no_code_change_evidence:
+  before_tree: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  after_tree: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  tree_unchanged: true
 YAML
   fp=$(review_report_fingerprint "$REPORT")
   [[ "$fp" == *":no-code-change" ]]

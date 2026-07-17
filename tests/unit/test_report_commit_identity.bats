@@ -18,6 +18,10 @@ files_modified:
 binary_checks:
   commit:
     - {check: 運用データのみのためcommit不要, result: yes}
+no_code_change_evidence:
+  before_tree: 1111111111111111111111111111111111111111
+  after_tree: 1111111111111111111111111111111111111111
+  tree_unchanged: true
 YAML
 }
 
@@ -38,6 +42,10 @@ files_modified:
 binary_checks:
   commit:
     - {check: gitignore管理データのためcommit不要, result: yes}
+no_code_change_evidence:
+  before_tree: 2222222222222222222222222222222222222222
+  after_tree: 2222222222222222222222222222222222222222
+  tree_unchanged: true
 YAML
 
   run bash "$ROOT/scripts/report_field_set.sh" "$REPORT" commit_hash no-code-change
@@ -91,6 +99,11 @@ def report(path):
     return {
         "files_modified": [{"path": path, "change": "knowledge"}],
         "binary_checks": {"commit": [{"check": "commit不要", "result": "yes"}]},
+        "no_code_change_evidence": {
+            "before_tree": "3" * 40,
+            "after_tree": "3" * 40,
+            "tree_unchanged": True,
+        },
     }
 
 ignored = permits_no_code_identity(report("projects/ignored.yaml"), root)
