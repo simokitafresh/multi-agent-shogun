@@ -1337,7 +1337,7 @@ if _archive_dir and _archive_dir.is_dir():
         _af = _archive_dir / f"bulletin_{_d.strftime('%Y%m%d')}.yaml"
         if _af.is_file():
             _bulletin_files.append(_af)
-if not (found_answer and found_automation_target) and _bulletin_files:
+if _bulletin_files:
     import os
     try:
         _hours = int(os.environ.get("SHOGUN_STARTUP_Q6_BULLETIN_HOURS", "24"))
@@ -1361,7 +1361,13 @@ if not (found_answer and found_automation_target) and _bulletin_files:
             if meta and not raw.startswith("    "):
                 key, value = meta.group(1), meta.group(2).strip().strip("'\"")
                 if key == "content":
-                    in_content = True
+                    # yaml_field_set.shは単一行contentをquoted scalarへ正規化する。
+                    # block scalarだけを読むと専用setterで修正した最新Q6を無視する。
+                    if value not in ("", "|", "|-", ">", ">-"):
+                        current["content"].append(value)
+                        in_content = False
+                    else:
+                        in_content = True
                 else:
                     in_content = False
                     if key in ("posted_by", "posted_at"):
@@ -1373,6 +1379,10 @@ if not (found_answer and found_automation_target) and _bulletin_files:
         if current:
             bulletin_entries.append(current)
             current = None
+    # 掲示板がQ6回答の正規チャネルなので、lord_conversationに古い回答が
+    # 残っていても最新の将軍投稿を優先する。archiveは追記順のため、
+    # ファイル順のままでは当日最古のQ6を拾ってしまう。
+    bulletin_entries.sort(key=lambda entry: str(entry.get("posted_at", "")), reverse=True)
     for entry in bulletin_entries:
         if entry.get("posted_by") != "shogun":
             continue
