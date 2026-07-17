@@ -7,6 +7,53 @@
 
 set -e
 
+# Same-session, content-addressed evidence for mandated recovery reads.  Marking
+# is explicit and happens only after the read; a byte change always invalidates.
+gunshi_recovery_session_key() {
+    printf '%s' "${GUNSHI_RECOVERY_SESSION_ID:-${TMUX_PANE:-standalone}}" | sha256sum | awk '{print $1}'
+}
+gunshi_recovery_cache_file() {
+    local path="$1" key
+    key=$(printf '%s' "$(realpath "$path")" | sha256sum | awk '{print $1}')
+    printf '%s/%s/%s' "${GUNSHI_RECOVERY_CACHE_DIR:-${TMPDIR:-/tmp}/shogun-gunshi-recovery}" "$(gunshi_recovery_session_key)" "$key"
+}
+gunshi_recovery_content_status() {
+    local path="$1" marker current stored
+    [ -f "$path" ] || return 2
+    marker=$(gunshi_recovery_cache_file "$path")
+    current=$(sha256sum "$path" | awk '{print $1}')
+    stored=$(head -n 1 "$marker" 2>/dev/null || true)
+    [ "$stored" = "$current" ]
+}
+gunshi_recovery_content_mark() {
+    local path="$1" marker current tmp
+    [ -f "$path" ] || return 2
+    marker=$(gunshi_recovery_cache_file "$path")
+    current=$(sha256sum "$path" | awk '{print $1}')
+    mkdir -p "$(dirname "$marker")"
+    tmp="$marker.tmp.$BASHPID"
+    printf '%s\n' "$current" >"$tmp"
+    mv -f "$tmp" "$marker"
+}
+
+if [ "${1:-}" = "--recovery-cache-check" ]; then
+    shift
+    for _recovery_path in "$@"; do
+        if gunshi_recovery_content_status "$_recovery_path"; then
+            printf 'CACHED %s\n' "$_recovery_path"
+        else
+            printf 'READ_REQUIRED %s\n' "$_recovery_path"
+        fi
+    done
+    exit 0
+fi
+if [ "${1:-}" = "--recovery-cache-mark" ]; then
+    shift
+    [ "$#" -gt 0 ] || { echo "BLOCK: recovery cache mark requires paths" >&2; exit 2; }
+    for _recovery_path in "$@"; do gunshi_recovery_content_mark "$_recovery_path"; done
+    exit 0
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 AUTO_IDLE_ACTIONS_FILE="$SCRIPT_DIR/queue/auto_idle_actions.txt"
 # shellcheck source=/dev/null

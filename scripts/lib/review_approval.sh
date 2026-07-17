@@ -150,7 +150,48 @@ review_report_key() {
     printf '%s' "$report" | sha256sum | awk '{print $1}'
 }
 
-review_validate_cmd_id() { [[ "$1" =~ ^cmd_[A-Za-z0-9_]+$ ]]; }
+review_validate_cmd_id() { [[ "$1" =~ ^cmd_[A-Za-z0-9_]+$ || "$1" =~ ^campaign_lane_[A-Za-z0-9._-]+$ ]]; }
+
+review_validate_campaign_shard() {
+    local cmd_id="$1" report="$2" root item_id
+    root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+    [[ "$cmd_id" =~ ^campaign_lane_(.+)$ ]] || return 1
+    item_id="${BASH_REMATCH[1]}"
+    python3 - "$root" "$item_id" "$report" <<'PY'
+import json, pathlib, sys, yaml
+root, item_id, report_path = pathlib.Path(sys.argv[1]), sys.argv[2], pathlib.Path(sys.argv[3]).resolve()
+report = yaml.safe_load(report_path.read_text(encoding="utf-8")) or {}
+matches = []
+for manifest_path in (root / "queue" / "campaign_lane").glob("*/manifest.yaml"):
+    manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8")) or {}
+    for item in manifest.get("items") or []:
+        if isinstance(item, dict) and str(item.get("id")) == item_id:
+            state_dir = pathlib.Path(str(manifest.get("state_dir") or ""))
+            if not state_dir.is_absolute():
+                state_dir = root / state_dir
+            result_path = state_dir / "shards" / item_id / "output_dir" / "result.json"
+            try:
+                result = json.loads(result_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if str(result.get("commit_sha")) == str(report.get("commit_hash")):
+                matches.append((item, result))
+if len(matches) != 1:
+    raise SystemExit(1)
+item, result = matches[0]
+contract = str(item.get("contract_fingerprint") or "")
+if len(contract) != 64 or any(c not in "0123456789abcdef" for c in contract):
+    raise SystemExit(1)
+if result.get("status") != "success" or int(result.get("fail_count", -1)) != 0 or int(result.get("skip_count", -1)) != 0:
+    raise SystemExit(1)
+if str(result.get("item_id")) != item_id or str(result.get("commit_sha")) != str(report.get("commit_hash")):
+    raise SystemExit(1)
+if str(report.get("parent_contract_fingerprint") or contract) != contract:
+    raise SystemExit(1)
+if str(report.get("parent_cmd") or "") not in ("", "campaign_lane_" + item_id):
+    raise SystemExit(1)
+PY
+}
 
 review_validate_report() {
     local cmd_id="$1" report="$2" root reports_dir resolved parent
@@ -166,7 +207,11 @@ d = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
 print(d.get('parent_cmd', ''))
 PY
 )
-    [ "$parent" = "$cmd_id" ]
+    if [[ "$cmd_id" =~ ^campaign_lane_ ]]; then
+        review_validate_campaign_shard "$cmd_id" "$resolved"
+    else
+        [ "$parent" = "$cmd_id" ]
+    fi
 }
 
 review_approval_value() {
