@@ -3,7 +3,19 @@
 setup() {
     export REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
     export GH_CMD="$BATS_TEST_TMPDIR/fake_gh_gist_index_update.sh"
-    cp "$REPO_ROOT/tests/fixtures/fake_gh_gist_index_update.sh" "$GH_CMD"
+    cat > "$GH_CMD" <<'FAKE_GH'
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" != "gist" || "${2:-}" != "list" ]]; then
+    printf 'unexpected arguments: %s\n' "$*" >&2
+    exit 2
+fi
+
+for i in $(seq 1 100); do
+    printf 'gist-%03d\tResearch Report %03d\tfile.md\tpublic\t2026-07-16T12:00:00Z\n' "$i" "$i"
+done
+FAKE_GH
     chmod 0644 "$GH_CMD"
 }
 
