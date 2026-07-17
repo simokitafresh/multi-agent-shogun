@@ -3448,7 +3448,7 @@ _reflux_promotion_deferred_suppressed() {
     ledger="${REFLUX_PROMOTION_DEFERRED_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_deferred.tsv}"
     lock="${ledger}.lock"
     report_match=$(python3 - "$SCRIPT_DIR" "$lesson_id" 2>/dev/null <<'PY'
-import glob, os, re, sys, yaml
+import glob, json, os, re, sys, yaml
 root, lesson = sys.argv[1:]
 for path in glob.glob(os.path.join(root, "queue/reports/*.yaml")) + glob.glob(os.path.join(root, "archive/reports/**/*.yaml"), recursive=True):
     try:
@@ -3462,7 +3462,10 @@ for path in glob.glob(os.path.join(root, "queue/reports/*.yaml")) + glob.glob(os
     dc = d.get("decision_candidate") or {}
     if not isinstance(dc, dict) or dc.get("found") is not True:
         continue
-    text = yaml.safe_dump(d, allow_unicode=True)
+    # This is a read-only keyword scan, so JSON provides the same recursive
+    # textual projection without invoking a YAML serializer in a shell-owned
+    # operational script.
+    text = json.dumps(d, ensure_ascii=False, default=str)
     if lesson in text and re.search(r"foreign[ _-]?dirty", text, re.I):
         print(path); break
 PY
