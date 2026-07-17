@@ -1238,17 +1238,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_cmd_state.sh
-  status: pending
+  status: completed
   before_ms: 9
   after_ms: ''
-  before_real_ms: 55
-  after_real_ms: ""
-  real_measurement_command: bash scripts/gates/gate_cmd_state.sh
-  test_result: bash -n PASS; bats tests/unit/test_cmd_delegate.bats 33/33 PASS SKIP=0
-  commit: b5c3167ed
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 28.044
+  after_real_ms: 20.110
+  real_measurement_command: "bash \"$TARGET\" >/dev/null"
+  test_result: "tests/unit/test_cmd_delegate.bats: 35/35 passed, FAIL=0 SKIP=0"
+  commit: "b541410f6a4d69ebb9abd9605a8dfeb213953216"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T10:46:02"
   iteration: 1
+  last_good_commit: "aebd54618c7e81ea50661c9feb6a6001dd5621e5"
+  candidate_commit: "b541410f6a4d69ebb9abd9605a8dfeb213953216"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 28.044
+  last_good_p95_ms: 35.442
+  candidate_p50_ms: 20.110
+  candidate_p95_ms: 31.177
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "same mktemp parent; identical fixture+dependency; bash subprocess; WSL2"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_codd_regression.sh
   status: saturated
   before_ms: 32
@@ -1407,19 +1421,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_field_get.sh
-  status: pending
+  status: saturated
   before_ms: 15
   after_ms: ''
-  before_real_ms: 54
-  after_real_ms: ""
-  real_measurement_command: bash scripts/gates/gate_field_get.sh >/dev/null (7-run
-    median)
-  test_result: bash -n PASS; gate_field_get PASS 8/8; field_get self-test 16/16 PASS;
-    bats tests/unit/test_field_get.bats 15/15 PASS, SKIP=0
-  commit: 8efc1263ce072a0376c92f53b40f832df3a2f8c0
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 47
+  after_real_ms: 51.5
+  real_measurement_command: "isolated fixture: bash scripts/gates/gate_field_get.sh >/dev/null"
+  test_result: "gate 8/8; field_get bats 15/15; FAIL=0 SKIP=0; safety_removed=0"
+  commit: "96c517ad633c4c1ba328dc2cb1e9073ef22678bc"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T10:53:56"
   iteration: 1
+  last_good_commit: "96c517ad633c4c1ba328dc2cb1e9073ef22678bc"
+  candidate_commit: "efcba87575cff6c39db1646992e0d169f5cf4f43"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 47
+  last_good_p95_ms: 92
+  candidate_p50_ms: 51.5
+  candidate_p95_ms: 97
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "same-host:/tmp fixture;WSL2;2026-07-17"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_gunshi_cs_checklist.sh
   status: saturated
   before_ms: 15
@@ -2439,19 +2465,31 @@ entries:
   updated_at: "2026-06-08T15:25:23"
   iteration: 1
 - script_path: scripts/insight_write.sh
-  status: pending
+  status: completed
   before_ms: 6
   after_ms: ''
-  before_real_ms: 54
-  after_real_ms: ""
-  real_measurement_command: INSIGHTS_FILE=/tmp/test.yaml bash scripts/insight_write.sh
-    msg medium test (20回中央値)
-  test_result: '15/15 PASS (test_insight_write.bats); redundant date+grep+printf|head/tail
-    subprocesses removed: 57ms->54ms (-3ms, -5%)'
-  commit: 5f60667ec
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 115.2476705
+  after_real_ms: 101.1033185
+  real_measurement_command: "printf 'insights:\\n' > /tmp/hanzo_insight_ab.yaml; INSIGHTS_FILE=/tmp/hanzo_insight_ab.yaml INSIGHT_SOURCE_REPEAT_THRESHOLD=0 bash scripts/insight_write.sh 'benchmark insight' medium benchmark >/dev/null"
+  test_result: "bash -n PASS; test_insight_write.bats PASS=29 FAIL=0 SKIP=0; removed_safety_lines=0"
+  commit: "96c517ad633c4c1ba328dc2cb1e9073ef22678bc"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-17T10:51:23"
   iteration: 1
+  last_good_commit: "b541410f6a4d69ebb9abd9605a8dfeb213953216"
+  candidate_commit: "96c517ad633c4c1ba328dc2cb1e9073ef22678bc"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 115.2476705
+  last_good_p95_ms: 125.1211255
+  candidate_p50_ms: 101.1033185
+  candidate_p95_ms: 111.96755905
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "28b442d7efe5ce9aacb58105e0d5f8e53a53fd9f713256bb649a2dfdccb24be4"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/karo_workaround_log.sh
   status: pending
   before_ms: 16
@@ -3613,18 +3651,31 @@ entries:
   updated_at: "2026-07-16T23:15:29"
   iteration: 1
 - script_path: scripts/oneshot/backfill_gate_titles.sh
-  status: pending
+  status: completed
   before_ms: 15
   after_ms: ''
-  before_real_ms: 55
-  after_real_ms: ""
-  real_measurement_command: /usr/bin/time -f 'REAL_S=%e' bash scripts/oneshot/backfill_gate_titles.sh
-    (NF8=0 no-op path)
-  test_result: bash -n PASS; NF8=0 early-exit output correct; SKIP=0
-  commit: 0597d0462
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 39.172
+  after_real_ms: 26.443
+  real_measurement_command: "bash /tmp/kagemaru-bgt-ab.tdilUD/current/scripts/oneshot/backfill_gate_titles.sh"
+  test_result: "PASS"
+  commit: "2eaeb849bfe1d3d0824eda85eebf181454cc75fc"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T10:35:02"
   iteration: 1
+  last_good_commit: "93a5a158254e5e33ad808f0f138474769a05808d"
+  candidate_commit: "2eaeb849bfe1d3d0824eda85eebf181454cc75fc"
+  ab_samples_per_arm: "15"
+  last_good_p50_ms: 39.172
+  last_good_p95_ms: 89.629
+  candidate_p50_ms: 26.443
+  candidate_p95_ms: 50.642
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux; bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu); awk=GNU Awk 5.2.1, API 3.2, PMA Avon 8-g1, (GNU MPFR 4.2.1, GNU MP 6.3.0)"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/oneshot/reset_harmful_counts.sh
   status: completed
   before_ms: 14
