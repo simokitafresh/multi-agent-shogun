@@ -205,7 +205,7 @@ JSON
 }
 
 @test "preflight自身のissue経路はPASS" {
-    run issue_with_fixtures "preflight test"
+    run issue_with_fixtures <<< '{"prompt":"preflight test"}'
     [ "$status" -eq 0 ]
     [ -s "$EVIDENCE" ]
 }
