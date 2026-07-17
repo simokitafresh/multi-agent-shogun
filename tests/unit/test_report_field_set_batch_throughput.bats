@@ -85,3 +85,17 @@ teardown() { rm -rf "$TMPDIR_CASE"; }
   run env GATE_FINGERPRINT_CACHE_FILE="$TMPDIR_CASE/fingerprints" GATE_VALIDATED_FINGERPRINT="$fp" GATE_NO_LOG=1 bash "$ROOT/scripts/gates/gate_report_format.sh" "$REPORT"
   [[ "$output" != *"fingerprint reuse"* ]]
 }
+
+@test "report-write skill makes one batch transaction the canonical completion path" {
+  run python3 - "$ROOT/skills/report-write/SKILL.md" <<'PY'
+from pathlib import Path
+import sys
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+step2 = text.split("### Step 2:", 1)[1].split("### Step 3:", 1)[0]
+assert 'report_field_set.sh --batch "$REPORT"' in step2
+assert 'commit_hash:' in step2 and 'status: completed' in step2
+assert step2.count('bash scripts/report_field_set.sh "$REPORT"') == 0
+assert "revision_requested" in step2
+PY
+  [ "$status" -eq 0 ]
+}

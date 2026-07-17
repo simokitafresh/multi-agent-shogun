@@ -97,65 +97,51 @@ PY
 report_path="queue/reports/{ninja_name}_report_{cmd_id}.yaml"
 ```
 
-### Step 2: 必須フィールドを記入（report_field_set.sh経由）
+### Step 2: 全フィールドを単一batch transactionで記入
 
-**記入順序を守れ。verdict は手動記入禁止。**
+**約45フィールドを先に完全なYAML mappingへ集約し、setterは1回だけ呼ぶ。**
+`commit_hash`、全`binary_checks`、`origin`、診断結果を含む必須値が揃う前に
+`status: completed`を公開してはならない。`verdict`はpayloadへ書かず、batchが
+binary checksから自動導出する。
 
 ```bash
 REPORT="queue/reports/{ninja_name}_report_{cmd_id}.yaml"
+PAYLOAD="$(mktemp)"
+trap 'rm -f "$PAYLOAD"' EXIT
 
-# 1. 基本情報
-bash scripts/report_field_set.sh "$REPORT" worker_id "{ninja_name}"
-bash scripts/report_field_set.sh "$REPORT" task_id "{task_id}"
-bash scripts/report_field_set.sh "$REPORT" parent_cmd "{cmd_id}"
-bash scripts/report_field_set.sh "$REPORT" status "completed"
-bash scripts/report_field_set.sh "$REPORT" timestamp "$(date -Iseconds)"
+# apply_patch等でPAYLOADを作成するか、下記形のmappingを生成する。
+# キーはreport_field_set.shのdot notation。構造値はYAMLのlist/dictで渡す。
+printf '%s\n' \
+  'worker_id: {ninja_name}' \
+  'task_id: {task_id}' \
+  'parent_cmd: {cmd_id}' \
+  'timestamp: {ISO-8601 timestamp}' \
+  'ac_version_read: {ac_hash}' \
+  'commit_hash: {40-hex commit hash}' \
+  'result.summary: {実測を含む要約}' \
+  'purpose_validation.fit: true' \
+  'files_modified: [{path: path/to/file, change: 変更内容}]' \
+  'lessons_useful: [{id: L123, useful: true, reason: 使用理由}]' \
+  'lesson_candidate: {found: false, no_lesson_reason: 新規教訓なしの具体理由}' \
+  'lesson_candidate.origin: "[[cmd_xxx]] -> [[原因]] -> [[結果]]"' \
+  'binary_checks.AC1[0].result: yes' \
+  'skill_candidate: {found: false}' \
+  'decision_candidate: {found: false}' \
+  'status: completed' > "$PAYLOAD"
 
-# 2. AC検証結果（AC1から順に）
-bash scripts/report_field_set.sh "$REPORT" ac_version_read "{ac_hash}"
-bash scripts/report_field_set.sh "$REPORT" result.AC1.status "PASS"
-bash scripts/report_field_set.sh "$REPORT" result.AC1.evidence "検証方法と結果"
-
-# 3. binary_checks（各ACごと）
-bash scripts/report_field_set.sh "$REPORT" "binary_checks.AC1[0].check" "ACの条件"
-bash scripts/report_field_set.sh "$REPORT" "binary_checks.AC1[0].result" "yes"
-
-# 4. purpose_validation
-bash scripts/report_field_set.sh "$REPORT" purpose_validation "目的に合致"
-
-# 5. files_modified
-bash scripts/report_field_set.sh "$REPORT" files_modified "[file1.py, file2.sh]"
-
-# 6. result.summary
-# ★テンプレート初期値FILL_THISは規約トークン。実測を含む実値へ手動置換必須。自動補完禁止。
-bash scripts/report_field_set.sh "$REPORT" result.summary "作業結果の1行要約"
-
-# 7. assumption_invalidation
-bash scripts/report_field_set.sh "$REPORT" assumption_invalidation "none"
-
-# 8. lessons_useful（注入済み教訓のうち有用だったもの）
-# ★ 全体上書きは既存件数より少ない場合BLOCKされる(06f5a0856)。
-#    テンプレート注入済み教訓が消えるため。個別書込みを推奨:
-#    bash scripts/report_field_set.sh "$REPORT" "lessons_useful.0.useful" "true"
-#    bash scripts/report_field_set.sh "$REPORT" "lessons_useful.0.feedback" "具体的に何が役立ったか"
-# 全体書込みする場合はテンプレート注入済み件数以上のリストを渡すこと。
-bash scripts/report_field_set.sh "$REPORT" "lessons_useful" "[{id: L123, useful: true, feedback: '具体的に何が役立ったか'}]"
-
-# 9. lesson_candidate（新たな発見）
-bash scripts/report_field_set.sh "$REPORT" "lesson_candidate" "{found: false, no_lesson_reason: '既知の手順で完了。新発見なし'}"
-# または found: trueの場合:
-# bash scripts/report_field_set.sh "$REPORT" "lesson_candidate" "{found: true, title: '発見タイトル', detail: '詳細'}"
-# originだけ追記/自動継承する場合:
-bash scripts/report_field_set.sh "$REPORT" origin
-
-# 10. skill_candidate（3回以上同じ手順を実行していたら）
-bash scripts/report_field_set.sh "$REPORT" "skill_candidate" "{found: false}"
-
-# 11. decision_candidate（判断が必要な事項）
-bash scripts/report_field_set.sh "$REPORT" "decision_candidate" "{found: false}"
-
-# 12. verdict は gate_report_format.sh が自動導出する。忍者は手動記入禁止。
+# 1 process・1 flock・1 YAML load/save・1 atomic replace。
+bash scripts/report_field_set.sh --batch "$REPORT" < "$PAYLOAD"
+rm -f "$PAYLOAD"
+trap - EXIT
 ```
+
+batchは全更新を検証してからatomic replaceする。必須値不足、不正なbinary result、
+不正commit hashではbyte不変のままBLOCKする。単一フィールドCLIは非terminal報告の
+診断的な局所補正に限り使用できるが、通常の完成フローでは使用しない。
+
+completed報告を修正する場合も、`status: revision_requested`、修正値、全binary
+checksを同じpayloadへ含めて`--batch`を1回だけ実行する。中間の
+`revision_requested`は公開されず、検証成功時だけcompletedへ原子的に再公開される。
 
 ### Step 3: 事前検証
 ```bash
