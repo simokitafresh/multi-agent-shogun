@@ -22,7 +22,13 @@ run_embedded_test() {
             tmp_result="$(mktemp "$cache_dir/${cache_key}.tap.XXXXXX")"
             "$content_func" > "$unique_path"
             nested_rc=0
+            # The consolidated fixture owns every gate input. A pre-push caller may
+            # carry startup/autofix overrides, so nested Bats must start clean.
             env -u BATS_TMPDIR -u BATS_TEST_TMPDIR -u BATS_TEST_NUMBER -u BATS_TEST_FILENAME \
+                -u SHOGUN_STARTUP_ROOT -u GATE_AUTOFIX_FIX_LOG \
+                -u GATE_AUTOFIX_WINDOW -u GATE_AUTOFIX_MIN_COUNT \
+                -u GATE_AUTOFIX_CACHE_TTL -u GATE_AUTOFIX_DISABLE_CACHE \
+                -u GATE_AUTOFIX_FIX_SINCE \
                 bats "$unique_path" > "$tmp_result" 2>&1 || nested_rc=$?
             printf '# nested_rc=%s\n' "$nested_rc" >> "$tmp_result"
             rm -f "$unique_path"
@@ -796,6 +802,10 @@ EOF
 }
 
 @test 'test_gate_autofix_proposal.bats :: gate_autofix_proposal skips ninja-unread gated patterns and emits valid proposals' {
+    # Regression: hook/startup overrides belong to the parent, never the embedded fixture.
+    export SHOGUN_STARTUP_ROOT=/tmp/hostile-parent-root
+    export GATE_AUTOFIX_FIX_LOG='2099-04-25T10:03:30 fix: draft_lessons report_format FP'
+    export GATE_AUTOFIX_WINDOW=1 GATE_AUTOFIX_MIN_COUNT=99 GATE_AUTOFIX_CACHE_TTL=999
     run_embedded_test 'tests/unit/test_gate_autofix_proposal.bats' 'gate_autofix_proposal skips ninja-unread gated patterns and emits valid proposals' content_test_gate_autofix_proposal
 }
 
@@ -944,6 +954,10 @@ EOF
 }
 
 @test 'test_gate_autofix_proposal.bats :: AC1: event boundary splits before/after counts when fix commit exists in window' {
+    # Exercise the second embedded source under the same hostile parent contract.
+    export SHOGUN_STARTUP_ROOT=/tmp/hostile-parent-root
+    export GATE_AUTOFIX_FIX_LOG='2099-04-25T10:03:30 fix: draft_lessons FP'
+    export GATE_AUTOFIX_WINDOW=1 GATE_AUTOFIX_MIN_COUNT=99 GATE_AUTOFIX_CACHE_TTL=999
     run_embedded_test 'tests/unit/test_gate_autofix_proposal.bats' 'AC1: event boundary splits before/after counts when fix commit exists in window' content_test_gate_autofix_proposal_boundary
 }
 
