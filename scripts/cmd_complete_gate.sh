@@ -6028,6 +6028,7 @@ check_context_freshness_own_commit() {
         _all_reports_test_only=0
     fi
     if [ "$_all_reports_test_only" -eq 1 ] && [ "$_saw_reported_path" -eq 1 ]; then
+        echo "  CONTEXT_NON_REFLECTION_BOUNDARY project=all reason=test_only approved_files_modified=test_only"
         echo "  [INFO] context freshness own-commit check skipped: approved files_modified are test-only"
         return 0
     fi
@@ -6090,6 +6091,11 @@ check_context_freshness_own_commit() {
             echo "  own commit found in unreflected split context backlog (project=${_proj_id}):"
             while IFS=$'\t' read -r _rel_path _hash _subject; do
                 [ -n "$_rel_path" ] || continue
+                # Level5 input: emit a stable, machine-readable update candidate before
+                # blocking.  The next actor receives the exact context/hash pair instead
+                # of having to rediscover it from the dashboard-wide backlog.
+                printf '  CONTEXT_UPDATE_CANDIDATE project=%s context=%s source_commit=%s reason=own_reviewed_commit\n' \
+                    "$_proj_id" "$_rel_path" "$_hash"
                 echo "    - ${_rel_path} (${_hash}: ${_subject})"
             done <<< "$own_hits"
             _any_block=1

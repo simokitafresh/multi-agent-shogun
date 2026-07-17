@@ -96,6 +96,8 @@ OUT
     [ "$status" -eq 1 ]
     [[ "$output" == *"context/dm-signal-core.md"* ]]
     [[ "$output" == *"context/dm-signal-ops.md"* ]]
+    [[ "$output" == *"CONTEXT_UPDATE_CANDIDATE project=dm-signal context=context/dm-signal-core.md source_commit=0568b016 reason=own_reviewed_commit"* ]]
+    [[ "$output" == *"CONTEXT_UPDATE_CANDIDATE project=dm-signal context=context/dm-signal-ops.md source_commit=0568b016 reason=own_reviewed_commit"* ]]
 }
 
 @test "approved report with test-only files skips context reflux BLOCK" {
@@ -111,6 +113,8 @@ OUT
     run check_context_freshness_own_commit "cmd_test_only"
     [ "$status" -eq 0 ]
     [[ "$output" == *"approved files_modified are test-only"* ]]
+    [[ "$output" == *"CONTEXT_NON_REFLECTION_BOUNDARY project=all reason=test_only approved_files_modified=test_only"* ]]
+    [[ "$output" != *"CONTEXT_UPDATE_CANDIDATE"* ]]
 }
 
 @test "approved report containing source path still blocks context reflux" {
