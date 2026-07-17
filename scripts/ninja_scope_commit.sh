@@ -126,6 +126,9 @@ phase_started_epoch_ms="$lock_acquired_epoch_ms"
 terminal_event_emitted=false
 telemetry_overhead_us=0
 telemetry_clock_calls=0
+singleflight_receipt=""
+singleflight_key=""
+singleflight_role="owner"
 
 epoch_ms() {
     local output_var="$1" before="$EPOCHREALTIME" after before_us after_us sec frac value
@@ -187,7 +190,7 @@ trap 'publish_terminal_failure "$?"' EXIT
 # and only then is completion made observable.  Metadata goes to stderr so
 # stdout remains the stable, single-line commit-hash API used by callers.
 publish_terminal_success() {
-    local terminal_hash="$1" finished_epoch_ms sum=0 total unattributed
+    local terminal_hash="$1" finished_epoch_ms sum=0 total unattributed receipt_tmp
     [[ "$terminal_hash" =~ ^[0-9a-f]{40}$ ]] \
         || { echo "BLOCK: invalid terminal commit hash" >&2; return 1; }
     git cat-file -e "${terminal_hash}^{commit}" 2>/dev/null \
@@ -210,6 +213,14 @@ publish_terminal_success() {
         "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished_epoch_ms" "$terminal_hash" "$sum" "$unattributed" "$(((telemetry_overhead_us + 999) / 1000))" "$telemetry_clock_calls" >&2
     phase_fields >&2
     printf '\n' >&2
+    if [[ -n "$singleflight_receipt" ]]; then
+        receipt_tmp="${singleflight_receipt}.tmp.$$"
+        printf 'version=1\nkey=%s\nrc=0\ncommit_hash=%s\nfinished_at=%s\n' \
+            "$singleflight_key" "$terminal_hash" "$finished_epoch_ms" > "$receipt_tmp"
+        mv -f -- "$receipt_tmp" "$singleflight_receipt"
+        printf 'event=terminal_receipt role=%s key=%s rc=0 commit_hash=%s receipt=%s\n' \
+            "$singleflight_role" "$singleflight_key" "$terminal_hash" "$singleflight_receipt" >&2
+    fi
     terminal_event_emitted=true
     printf '%s\n' "$terminal_hash"
 }
@@ -267,14 +278,63 @@ for path in "$@"; do
     # root相当に解決されるpath(空/"."/".."単体等)を全てfail-closedし、
     # 理由をstderrへ書く(このtry/exitはその理由をそのまま伝播させる)。
     normalized="$(scope_path_normalize "$path")" || exit 2
-    if [[ -z "$patch_file" && "$repair_index" == false ]]; then
-        [[ -e "$normalized" || -L "$normalized" ]] \
-            || { echo "BLOCK: scope path does not exist: $normalized" >&2; exit 2; }
-        [[ -n "$(git status --porcelain --ignored -- "$normalized")" ]] \
-            || { echo "BLOCK: scope path has no changes: $normalized" >&2; exit 2; }
-    fi
     paths+=("$normalized")
 done
+
+# Idempotent single-flight boundary.  The repository lock above serializes
+# ref/COMMIT_EDITMSG updates, but serialization alone makes followers retry the
+# same commit after the owner has already advanced HEAD.  Key the invocation by
+# explicit run identity, message/mode, normalized paths, and the current
+# worktree bytes.  The bytes keep a later edit from reusing a stale receipt;
+# NINJA_SCOPE_COMMIT_RUN_ID lets orchestrators distinguish separate tasks that
+# intentionally use the same message and paths.
+singleflight_run_id="${NINJA_SCOPE_COMMIT_RUN_ID:-${message:-repair-index}}"
+singleflight_material="run=$singleflight_run_id
+message=$message
+patch=$patch_file
+base=$base_blob
+repair=$repair_index"
+for scope_path in "${paths[@]}"; do
+    if [[ -f "$scope_path" || -L "$scope_path" ]]; then
+        scope_fingerprint="$(git hash-object -- "$scope_path" 2>/dev/null || printf missing)"
+    elif [[ -d "$scope_path" ]]; then
+        scope_fingerprint="$(find "$scope_path" -type f -print0 2>/dev/null | sort -z | xargs -0 -r git hash-object -- 2>/dev/null | sha256sum | awk '{print $1}')"
+    else
+        scope_fingerprint="missing"
+    fi
+    singleflight_material+=$'\n'"path=$scope_path blob=$scope_fingerprint"
+done
+singleflight_key="$(printf '%s' "$singleflight_material" | sha256sum | awk '{print $1}')"
+singleflight_dir="$(lock_path "$git_common_dir/ninja-scope-receipts")"
+mkdir -p -- "$singleflight_dir"
+singleflight_receipt="$singleflight_dir/$singleflight_key.receipt"
+
+if [[ -f "$singleflight_receipt" ]]; then
+    receipt_key="$(awk -F= '$1 == "key" {print $2; exit}' "$singleflight_receipt")"
+    receipt_rc="$(awk -F= '$1 == "rc" {print $2; exit}' "$singleflight_receipt")"
+    receipt_hash="$(awk -F= '$1 == "commit_hash" {print $2; exit}' "$singleflight_receipt")"
+    if [[ "$receipt_key" == "$singleflight_key" && "$receipt_rc" == 0 && "$receipt_hash" =~ ^[0-9a-f]{40}$ ]] && \
+       git cat-file -e "${receipt_hash}^{commit}" 2>/dev/null; then
+        singleflight_role="follower"
+        printf 'event=terminal_receipt role=follower key=%s rc=0 commit_hash=%s receipt=%s\n' \
+            "$singleflight_key" "$receipt_hash" "$singleflight_receipt" >&2
+        terminal_event_emitted=true
+        printf '%s\n' "$receipt_hash"
+        trap - EXIT
+        exit 0
+    fi
+    echo "BLOCK: invalid single-flight receipt: $singleflight_receipt" >&2
+    exit 2
+fi
+
+if [[ -z "$patch_file" && "$repair_index" == false ]]; then
+    for scope_path in "${paths[@]}"; do
+        [[ -e "$scope_path" || -L "$scope_path" ]] \
+            || { echo "BLOCK: scope path does not exist: $scope_path" >&2; exit 2; }
+        [[ -n "$(git status --porcelain --ignored -- "$scope_path")" ]] \
+            || { echo "BLOCK: scope path has no changes: $scope_path" >&2; exit 2; }
+    done
+fi
 
 # Repair the proven residual state where worktree bytes already equal HEAD but
 # the shared index alone contains an older blob (porcelain MM, `git diff HEAD`

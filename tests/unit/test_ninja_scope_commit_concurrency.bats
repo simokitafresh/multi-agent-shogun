@@ -125,3 +125,49 @@ PY
     [[ "$output" == *"repair would hide worktree content differing from HEAD"* ]]
     [[ "$output" != *"event=completed"* ]]
 }
+
+@test "6 parallel identical invocations single-flight to one commit and six terminal receipts" {
+    printf 'single-flight\n' >> "$REPO/a.txt"
+    mkdir -p "$REPO/.git/hooks"
+    printf '#!/usr/bin/env bash\nsleep 0.5\n' > "$REPO/.git/hooks/pre-commit"
+    chmod +x "$REPO/.git/hooks/pre-commit"
+    initial_count="$(git -C "$REPO" rev-list --count HEAD)"
+
+    pids=()
+    for worker in 1 2 3 4 5 6; do
+        (
+            cd "$REPO"
+            NINJA_SCOPE_COMMIT_RUN_ID=fixture-run-1 bash "$HELPER" -m same-invocation -- a.txt
+        ) >"$REPO/sf-$worker.out" 2>"$REPO/sf-$worker.err" &
+        pids+=("$!")
+    done
+    for pid in "${pids[@]}"; do
+        wait "$pid"
+        ! kill -0 "$pid" 2>/dev/null
+    done
+
+    [ "$(( $(git -C "$REPO" rev-list --count HEAD) - initial_count ))" -eq 1 ]
+    [ "$(git -C "$REPO" log --format=%s --grep='^same-invocation$' | wc -l)" -eq 1 ]
+    for worker in 1 2 3 4 5 6; do
+        [[ "$(cat "$REPO/sf-$worker.out")" =~ ^[0-9a-f]{40}$ ]]
+        [ "$(grep -c '^event=terminal_receipt ' "$REPO/sf-$worker.err")" -eq 1 ]
+    done
+    [ "$(grep -h '^event=terminal_receipt role=owner ' "$REPO"/sf-*.err | wc -l)" -eq 1 ]
+    [ "$(grep -h '^event=terminal_receipt role=follower ' "$REPO"/sf-*.err | wc -l)" -eq 5 ]
+    [ -z "$(git -C "$REPO" status --porcelain -- a.txt)" ]
+}
+
+@test "different run or path is not falsely deduplicated" {
+    printf 'run-a\n' >> "$REPO/a.txt"
+    printf 'run-b\n' >> "$REPO/b.txt"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_RUN_ID=task-a bash "$2" -m shared-message -- a.txt' _ "$REPO" "$HELPER"
+    [ "$status" -eq 0 ]
+    hash_a="$output"
+    run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_RUN_ID=task-b bash "$2" -m shared-message -- b.txt' _ "$REPO" "$HELPER"
+    [ "$status" -eq 0 ]
+    hash_b="$output"
+
+    [ "$hash_a" != "$hash_b" ]
+    [ "$(git -C "$REPO" log --format=%s --grep='^shared-message$' | wc -l)" -eq 2 ]
+}
