@@ -320,12 +320,20 @@ emit_memory_db_for_knowledge_grep() {
     if [[ -n "$db_fingerprint" && "$cached_fingerprint" == "$db_fingerprint" ]]; then
         rows="$(sed '1d' "$rows_cache_file" 2>/dev/null || true)"
     else
-        rows="$(timeout "${PRE_BASH_MEMORY_DB_TIMEOUT_SEC:-5}" bash "$SCRIPT_DIR/scripts/memory_db_query.sh" "$sql" 2>/dev/null || true)"
-        mkdir -p "$rows_cache_dir" 2>/dev/null || true
-        tmp_cache="$(mktemp "$rows_cache_dir/.rows.XXXXXX" 2>/dev/null || true)"
-        if [[ -n "$tmp_cache" ]]; then
-            { printf '%s\n' "$db_fingerprint"; printf '%s\n' "$rows"; } > "$tmp_cache"
-            mv "$tmp_cache" "$rows_cache_file" 2>/dev/null || true
+        local _db_rc=0
+        rows="$(timeout "${PRE_BASH_MEMORY_DB_TIMEOUT_SEC:-5}" bash "$SCRIPT_DIR/scripts/memory_db_query.sh" "$sql" 2>/dev/null)" || _db_rc=$?
+        # Only publish cache on success (rc=0). Timeout (rc=124) or error
+        # leaves last-known-good cache intact to avoid cache poisoning.
+        if [[ $_db_rc -eq 0 ]]; then
+            mkdir -p "$rows_cache_dir" 2>/dev/null || true
+            tmp_cache="$(mktemp "$rows_cache_dir/.rows.XXXXXX" 2>/dev/null || true)"
+            if [[ -n "$tmp_cache" ]]; then
+                { printf '%s\n' "$db_fingerprint"; printf '%s\n' "$rows"; } > "$tmp_cache"
+                mv "$tmp_cache" "$rows_cache_file" 2>/dev/null || true
+            fi
+        elif [[ -r "$rows_cache_file" ]]; then
+            # Fall back to last-known-good cache on timeout/error
+            rows="$(sed '1d' "$rows_cache_file" 2>/dev/null || true)"
         fi
     fi
     [[ -z "$rows" ]] && rows="該当なし (agent=lord target=${agent_id})"
