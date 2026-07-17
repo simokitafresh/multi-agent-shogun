@@ -220,14 +220,24 @@ run_bats_files_parallel() {
     wait_for_one() {
         local finished_pid="" rc=0 pid next=()
         # A very short child may exit before wait -n is entered.  In that
-        # case wait -n can report 127 while bookkeeping still contains an
-        # unwaited PID.  Fall back to waiting for the first tracked child so
-        # the scheduler always makes progress without probing or signalling.
-        wait -n -p finished_pid "${pids[@]}" || rc=$?
-        if [ "$rc" -eq 127 ] || [ -z "$finished_pid" ]; then
-            finished_pid="${pids[0]}"
-            rc=0
-            wait "$finished_pid" || rc=$?
+        # case bash can report 127 even though our bookkeeping still contains
+        # an unwaited PID; returning without removing it spins forever.
+        # Reap an already-exited tracked child explicitly first, then retain
+        # wait -n for the ordinary work-conserving path.
+        for pid in "${pids[@]}"; do
+            if ! kill -0 "$pid" 2>/dev/null; then
+                finished_pid="$pid"
+                wait "$finished_pid" || rc=$?
+                break
+            fi
+        done
+        if [ -z "$finished_pid" ]; then
+            wait -n -p finished_pid || rc=$?
+            if [ "$rc" -eq 127 ] || [ -z "$finished_pid" ]; then
+                finished_pid="${pids[0]}"
+                rc=0
+                wait "$finished_pid" || rc=$?
+            fi
         fi
         [ "$rc" -eq 0 ] || failed=1
         pid_rc["$finished_pid"]="$rc"
@@ -308,13 +318,6 @@ run_bats_files_parallel() {
         [ "$pending_count" -gt 0 ] || break
         if [ "$selected" -lt 0 ]; then
             wait_for_one
-            if [ "$failed" -ne 0 ]; then
-                # Close the queue immediately, but let already-admitted light
-                # files finish under their existing per-file timeout.  Heavy
-                # files consume the full budget and therefore never overlap.
-                pending_count=0
-                break
-            fi
             continue
         fi
         file="${queued_files[$selected]}"
