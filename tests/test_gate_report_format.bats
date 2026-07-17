@@ -241,6 +241,10 @@ purpose_validation:
   purpose_gap: ""
 files_modified:
   - path: scripts/gates/gate_report_format_main.py
+causal_verification:
+  cause_checked: regression fixture for commit identity
+  design_intent_checked: exercise the production gate path
+  evidence: "rg -n gate_report_format_main scripts --glob '!tests/**'; non-test caller count: 1"
 operational_simulation:
   command: "bats --filter T-CHC-2 tests/test_gate_report_format.bats"
   expected: "valid commit hash report passes"
@@ -287,6 +291,10 @@ purpose_validation:
   purpose_gap: ""
 files_modified:
   - path: scripts/gates/gate_report_format_main.py
+causal_verification:
+  cause_checked: regression fixture for valid commit identity
+  design_intent_checked: exercise the production gate path
+  evidence: "rg -n gate_report_format_main scripts --glob '!tests/**'; non-test caller count: 1"
 operational_simulation:
   command: "bats --filter T-CHC-2 tests/test_gate_report_format.bats"
   expected: "valid commit hash report passes"
@@ -417,6 +425,11 @@ with open(path, encoding="utf-8") as f:
     data = yaml.safe_load(f)
 data["result"]["details"] = "修正前パターンの横展開確認を実施。rg 'old_pattern' scripts tests の残存0件を確認。"
 data["files_modified"] = ["scripts/gates/gate_report_format_main.py"]
+data["causal_verification"] = {
+    "cause_checked": "regression fixture for residual sweep",
+    "design_intent_checked": "exercise the production gate path",
+    "evidence": "rg -n gate_report_format_main scripts --glob '!tests/**'; non-test caller count: 1",
+}
 data["operational_simulation"] = {
     "command": "rg 'old_pattern' scripts tests",
     "expected": "残存0件",

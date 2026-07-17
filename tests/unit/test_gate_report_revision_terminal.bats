@@ -24,6 +24,10 @@ purpose_validation:
 files_modified:
   - path: scripts/gates/gate_report_format_main.py
     change: enforce terminal status invariant
+causal_verification:
+  cause_checked: regression fixture for terminal status
+  design_intent_checked: preserve the production gate path
+  evidence: "rg -n gate_report_format_main scripts --glob '!tests/**'; non-test caller count: 1"
 lesson_candidate:
   found: false
   no_lesson_reason: regression fixture

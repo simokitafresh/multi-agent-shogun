@@ -57,7 +57,7 @@ lessons_useful:
 causal_verification:
   cause_checked: "git logとsemantic_search確認"
   design_intent_checked: "INFOのみでBLOCKしない"
-  evidence: "bounded test"
+  evidence: "rg -n gate_report_format_combined scripts --glob '!tests/**'; non-test caller count: 1"
   origin: "[[GA-154]] -> [[ENV変数計測条件]] -> [[precheck INFO表示]]"
 assumption_invalidation:
   found: false

@@ -53,6 +53,10 @@ purpose_validation:
   purpose_gap: ""
 files_modified:
   - scripts/gates/gate_report_format_cmd_2072.sh
+causal_verification:
+  cause_checked: regression fixture for report verdict handling
+  design_intent_checked: exercise the production gate path
+  evidence: "rg -n gate_report_format scripts --glob '!tests/**'; non-test caller count: 1"
 lesson_candidate:
   found: false
   no_lesson_reason: "テスト用の報告であるため新規教訓なし"
@@ -706,6 +710,10 @@ purpose_validation:
   purpose_gap: ""
 files_modified:
   - scripts/gates/gate_report_format_cmd_2072.sh
+causal_verification:
+  cause_checked: regression fixture for report verdict handling
+  design_intent_checked: exercise the production gate path
+  evidence: "rg -n gate_report_format scripts --glob '!tests/**'; non-test caller count: 1"
 lesson_candidate:
   found: false
   no_lesson_reason: "テスト用の報告であるため新規教訓なし"
