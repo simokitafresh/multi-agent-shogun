@@ -75,7 +75,15 @@ def operational_files_only(report: dict[str, Any], root: pathlib.Path) -> bool:
 
 
 def permits_no_code_identity(report: dict[str, Any], root: pathlib.Path) -> bool:
-    return explicit_no_commit(report) and operational_files_only(report, root)
+    evidence = report.get("no_code_change_evidence")
+    evidence_valid = (
+        isinstance(evidence, dict)
+        and evidence.get("tree_unchanged") is True
+        and bool(FULL_HASH_RE.fullmatch(str(evidence.get("before_tree") or "").strip()))
+        and str(evidence.get("before_tree") or "").strip()
+        == str(evidence.get("after_tree") or "").strip()
+    )
+    return evidence_valid and explicit_no_commit(report) and operational_files_only(report, root)
 
 
 def valid_commit_identity(value: Any, report: dict[str, Any], root: pathlib.Path) -> bool:

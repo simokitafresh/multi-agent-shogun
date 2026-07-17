@@ -358,6 +358,13 @@ deploy_task_guard_worker_assignment() {
 
 deploy_task_exit_cleanup() {
     local exit_status=$?
+    local finished_us wall_ms
+    if [ -n "${DEPLOY_TASK_STARTED_US:-}" ]; then
+        finished_us="${EPOCHREALTIME/./}"
+        finished_us="${finished_us:0:16}"
+        wall_ms=$(((finished_us - DEPLOY_TASK_STARTED_US + 999) / 1000))
+        log "DEPLOY_RECEIPT result=$([ "$exit_status" -eq 0 ] && echo success || echo blocked) rc=${exit_status} wall_ms=${wall_ms} phase=${DEPLOY_TASK_PHASE:-unknown}"
+    fi
     if [ -n "${DEPLOY_TASK_ISSUE_ATTEMPT_ID:-}" ] && [ "${DEPLOY_TASK_ISSUE_TERMINAL_RECORDED:-0}" != "1" ]; then
         if [ "${DEPLOY_TASK_DEPLOY_COMPLETED:-0}" = "1" ]; then
             deploy_task_append_issue_event "deployed" "exit_0"
@@ -8527,7 +8534,19 @@ if approach_summary:
     pf_lines.append(f'  approach_summary: {_sq(approach_summary)}')
 if isinstance(prior_attempts, list) and prior_attempts:
     pf_lines.append('  prior_attempts:')
-    for item in prior_attempts[-3:]:
+    unique_attempts = []
+    seen_reasons = set()
+    for item in reversed(prior_attempts):
+        if not isinstance(item, dict):
+            continue
+        reason_key = _one_line(item.get('block_reason', '')).casefold()
+        if reason_key in seen_reasons:
+            continue
+        seen_reasons.add(reason_key)
+        unique_attempts.append(item)
+        if len(unique_attempts) == 3:
+            break
+    for item in reversed(unique_attempts):
         if not isinstance(item, dict):
             continue
         pf_lines.append(f"  - attempt: {int(item.get('attempt', 0) or 0)}")
@@ -10325,8 +10344,12 @@ deploy_task_apply_task_mutations() {
 # メイン処理
 # ═══════════════════════════════════════
 deploy_task_main() {
+    DEPLOY_TASK_STARTED_US="${EPOCHREALTIME/./}"
+    DEPLOY_TASK_STARTED_US="${DEPLOY_TASK_STARTED_US:0:16}"
+    DEPLOY_TASK_PHASE=parse_args
     deploy_task_start_deadline
     parse_deploy_task_args "$@"
+    DEPLOY_TASK_PHASE=preflight
     deploy_task_check_deadline "after_parse_args" || return $?
     cleanup_none_task_files
     deploy_task_validate_cli_target "$NINJA_NAME" "$@" || return 1
@@ -10728,6 +10751,7 @@ except Exception:
         return 2
     }
 
+    DEPLOY_TASK_PHASE=task_mutations
     deploy_task_apply_task_mutations "$NINJA_NAME" || {
         DEPLOY_TASK_EXIT_NUDGE_ARMED=0
         DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
@@ -10741,6 +10765,7 @@ except Exception:
         deploy_lock_fd=""
     fi
 
+    DEPLOY_TASK_PHASE=delivery
     if [ "$ctx_pct" -le 0 ] 2>/dev/null; then
         log "${NINJA_NAME}: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)"
         safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" "task_start"
@@ -10755,6 +10780,7 @@ except Exception:
     DEPLOY_TASK_EXIT_NUDGE_SENT=1
     DEPLOY_TASK_EXIT_NUDGE_ARMED=0
 
+    DEPLOY_TASK_PHASE=post_delivery
     notify_initial_deploy_ntfy_once "$task_yaml" "$NINJA_NAME" || true
     record_deployed_at "$task_yaml" "$(date '+%Y-%m-%dT%H:%M:%S')" || true
     preflight_gate_artifacts "$task_yaml" || true

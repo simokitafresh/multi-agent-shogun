@@ -501,6 +501,28 @@ except ValueError:
     raise SystemExit(1)
 if not tokens:
     raise SystemExit(1)
+
+# Normalize measurement/environment wrappers before applying the same command
+# allowlist.  Only option/value forms without shell grammar are accepted.
+while tokens:
+    base = os.path.basename(tokens[0])
+    if base in {"time", "gtime"}:
+        tokens = tokens[1:]
+        while tokens and tokens[0].startswith("-"):
+            option = tokens.pop(0)
+            if option in {"-o", "--output", "-f", "--format"}:
+                if not tokens:
+                    raise SystemExit(1)
+                tokens.pop(0)
+        continue
+    if base == "env":
+        tokens = tokens[1:]
+        while tokens and (tokens[0] == "-i" or tokens[0].startswith("--unset=") or "=" in tokens[0] and not tokens[0].startswith("/")):
+            tokens.pop(0)
+        continue
+    break
+if not tokens:
+    raise SystemExit(1)
 base = os.path.basename(tokens[0])
 if base in {"cat", "head", "tail", "ls", "pwd", "printf", "rg", "grep"}:
     raise SystemExit(0)
