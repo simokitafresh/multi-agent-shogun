@@ -1,0 +1,25 @@
+task:
+  task_id: placeholder
+  _ac_task_id: placeholder
+  parent_cmd: placeholder
+  cmd_id: placeholder
+  task_type: full
+  project: infra
+  assigned_to: placeholder
+  status: assigned
+  purpose: placeholder
+  description: placeholder
+  target_path: placeholder
+  workdir: placeholder
+  fixed_sha: placeholder
+  owned_paths_json: '[]'
+  implementation_path: placeholder
+  test_path: placeholder
+  report_path: placeholder
+  report_filename: placeholder
+  estimated_minutes: 30
+  acceptance_criteria:
+    - id: AC1
+      description: 隔離workdir内の固有実装と固有testだけを変更し、FAIL0 SKIP0で完了する
+      checks:
+        - check: owned path外diff0かつoperational_simulationがTOTAL正数・FAIL0・SKIP0・PASS

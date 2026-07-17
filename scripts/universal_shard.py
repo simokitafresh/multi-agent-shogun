@@ -61,7 +61,7 @@ def execute_shard(d,shard,root,prior):
    base=root/"shards"/iid; paths={k:base/k for k in ("workdir","tmpdir","output_dir","cache_dir","timing")}
    for p in paths.values(): p.mkdir(parents=True,exist_ok=True)
    vals={"item_id":iid,"item_path":str(item.get("path","")),"worker_id":wid,**{k:str(v) for k,v in paths.items()}}
-   env=os.environ.copy(); env.update({"TMPDIR":str(paths["tmpdir"]),"SHARD_ITEM_ID":iid,"SHARD_WORKER_ID":wid,"SHARD_OUTPUT_DIR":str(paths["output_dir"]),"SHARD_CACHE_DIR":str(paths["cache_dir"]),"SHARD_TIMING_DIR":str(paths["timing"])})
+   env=os.environ.copy(); env.update({"TMPDIR":str(paths["tmpdir"]),"SHARD_ITEM_ID":iid,"SHARD_WORKER_ID":wid,"SHARD_OUTPUT_DIR":str(paths["output_dir"]),"SHARD_CACHE_DIR":str(paths["cache_dir"]),"SHARD_TIMING_DIR":str(paths["timing"]),"SHARD_ITEM_JSON":json.dumps(item,sort_keys=True,separators=(",",":"))})
    started=time.monotonic(); status="success"; rc=0
    try:
     cp=subprocess.run(str(d["command"]).format(**vals),shell=True,cwd=paths["workdir"],env=env,text=True,capture_output=True,timeout=float(d.get("timeout",900)))
