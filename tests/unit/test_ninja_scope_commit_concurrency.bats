@@ -194,3 +194,18 @@ PY
     [ "$(git -C "$REPO" status --short -- a.txt)" = 'M  a.txt' ]
     [ "$(git -C "$REPO" rev-list --all --count)" -eq "$before_count" ]
 }
+
+@test "20 sequential adversarial writers preserve one-parent history and index convergence" {
+    for iteration in $(seq 1 20); do
+        path=a.txt
+        (( iteration % 2 == 0 )) && path=b.txt
+        parent="$(git -C "$REPO" rev-parse HEAD)"
+        printf 'iteration-%s\n' "$iteration" >> "$REPO/$path"
+        run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_RUN_ID="adversarial-$3" bash "$2" -m "writer-$3" -- "$4" 2>"writer-$3.err"' _ "$REPO" "$HELPER" "$iteration" "$path"
+        [ "$status" -eq 0 ]
+        [[ "$output" =~ ^[0-9a-f]{40}$ ]]
+        [ "$(git -C "$REPO" show -s --format=%P "$output")" = "$parent" ]
+        [ -z "$(git -C "$REPO" status --porcelain -- a.txt b.txt)" ]
+        [ "$(git -C "$REPO" rev-parse "HEAD:$path")" = "$(git -C "$REPO" ls-files -s -- "$path" | awk '{print $2}')" ]
+    done
+}

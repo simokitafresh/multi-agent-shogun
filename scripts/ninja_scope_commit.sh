@@ -115,6 +115,33 @@ flock -w 120 "$commit_lock_fd" \
 lock_acquired_epoch_ms="$(date +%s%3N)"
 lock_wait_ms=$((lock_acquired_epoch_ms - lock_requested_epoch_ms))
 
+# The private index isolates tree contents only.  Repository operation state
+# (MERGE_HEAD, rebase state and CHERRY_PICK_HEAD) lives in the common git dir
+# and changes the parent/author semantics of `git commit`.  Never inherit that
+# ambient state into a scoped commit.  Capture HEAD under the common-dir lock;
+# every commit path must still observe this exact generation immediately before
+# publishing and must produce exactly one parent pointing at it.
+transaction_head="$(git rev-parse HEAD)"
+for operation_state in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply; do
+    operation_path="$(git rev-parse --git-path "$operation_state")"
+    [[ ! -e "$operation_path" ]] \
+        || { echo "BLOCK: repository operation state is active: $operation_state" >&2; exit 2; }
+done
+
+assert_head_generation() {
+    local current_head
+    current_head="$(git rev-parse HEAD)"
+    [[ "$current_head" == "$transaction_head" ]] \
+        || { echo "BLOCK: HEAD generation changed during scoped transaction (expected $transaction_head, got $current_head)" >&2; return 2; }
+}
+
+assert_single_parent_commit() {
+    local commit_hash="$1" parents
+    parents="$(git show -s --format=%P "$commit_hash")"
+    [[ "$parents" == "$transaction_head" ]] \
+        || { echo "BLOCK: scoped commit parent invariant violated (expected sole parent $transaction_head, got ${parents:-<none>})" >&2; return 1; }
+}
+
 # Phase telemetry starts at lock acquisition so the sum of the seven bounded
 # phases explains the complete transaction wall time (lock wait is reported
 # separately).  Keep this in shell state: external telemetry/log writers would
@@ -472,8 +499,10 @@ PY
     # explicit zero/near-zero phase so both modes publish one identical schema.
     finish_phase 0
     begin_phase git_commit
+    assert_head_generation
     git commit -m "$message" >&2
     commit_hash="$(git rev-parse HEAD)"
+    assert_single_parent_commit "$commit_hash"
     # HEAD更新後、共有indexの対象pathだけを新HEADへ追随させる。他pathのstageは
     # 一切変更せず、対象pathが旧HEAD由来の逆差分として残るindex汚染を防ぐ。
     finish_phase 0
@@ -617,8 +646,10 @@ if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" ]];
 fi
 finish_phase 0
 begin_phase git_commit
+assert_head_generation
 git commit -m "$message" >&2
 commit_hash="$(git rev-parse HEAD)"
+assert_single_parent_commit "$commit_hash"
 mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
 finish_phase 0
 begin_phase advance_shared_index

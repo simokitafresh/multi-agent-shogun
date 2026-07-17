@@ -79,6 +79,61 @@ HOOK
     [ "$(printf '%s\n' "$output" | wc -l)" -eq 2 ]
 }
 
+@test "ambient merge state is blocked before scoped commit and HEAD remains unchanged" {
+    git -C "$REPO" checkout -qb side
+    printf 'side\n' >> "$REPO/other.txt"
+    git -C "$REPO" add other.txt
+    git -C "$REPO" commit -qm side
+    git -C "$REPO" checkout -q master
+    printf 'main\n' >> "$REPO/own.txt"
+    git -C "$REPO" add own.txt
+    git -C "$REPO" commit -qm main
+    git -C "$REPO" merge --no-commit --no-ff side
+    head_before="$(git -C "$REPO" rev-parse HEAD)"
+    printf 'scoped\n' >> "$REPO/own.txt"
+
+    run bash -c 'cd "$1" && bash "$2" -m must-block-merge -- own.txt' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"repository operation state is active: MERGE_HEAD"* ]]
+    [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
+    [ "$(git -C "$REPO" rev-parse -q --verify MERGE_HEAD)" != "" ]
+}
+
+@test "cherry-pick and rebase ambient states are fail-closed without false success" {
+    head_before="$(git -C "$REPO" rev-parse HEAD)"
+    printf 'scoped\n' >> "$REPO/own.txt"
+    for state in CHERRY_PICK_HEAD rebase-merge rebase-apply; do
+        state_path="$(git -C "$REPO" rev-parse --git-path "$state")"
+        [[ "$state_path" = /* ]] || state_path="$REPO/$state_path"
+        if [[ "$state" == rebase-* ]]; then
+            mkdir -p "$state_path"
+        else
+            printf '%s\n' "$head_before" > "$state_path"
+        fi
+        run bash -c 'cd "$1" && bash "$2" -m must-block-operation -- own.txt' _ "$REPO" "$HELPER"
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"repository operation state is active: $state"* ]]
+        [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
+        if [[ "$state" == rebase-* ]]; then
+            rmdir "$state_path"
+        else
+            rm -f "$state_path"
+        fi
+    done
+}
+
+@test "normal scoped commit has exactly the captured HEAD as its sole parent" {
+    parent="$(git -C "$REPO" rev-parse HEAD)"
+    printf 'single-parent\n' >> "$REPO/own.txt"
+
+    run bash -c 'cd "$1" && bash "$2" -m single-parent -- own.txt 2>single-parent.err' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" show -s --format=%P "$output")" = "$parent" ]
+    [ "$(git -C "$REPO" show -s --format=%P "$output" | wc -w)" -eq 1 ]
+}
+
 @test "helperは対象1件だけcommitし他者stage1件を保持する" {
     printf 'other change\n' >> "$REPO/other.txt"
     git -C "$REPO" add other.txt
