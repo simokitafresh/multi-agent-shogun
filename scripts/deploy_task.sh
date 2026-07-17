@@ -3164,12 +3164,12 @@ generate_report_template() {
           parent_cmd="" cmd_id="" ac_version="" title="" task_type="" target_path="" \
           scout_exempt="" type="" scope_mode="" purpose="" command="" description="" \
           constraints="" not_in_scope="" files_to_modify="" files_modified="" \
-          acceptance_criteria=""
+          owned_paths="" acceptance_criteria=""
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
         report_filename assigned_to subtask_id task_id _ac_task_id \
         parent_cmd cmd_id ac_version title task_type target_path scout_exempt \
         type scope_mode purpose command description constraints not_in_scope \
-        files_to_modify files_modified acceptance_criteria 2>/dev/null)" || true
+        files_to_modify files_modified owned_paths acceptance_criteria 2>/dev/null)" || true
 
     # Reuse values already parsed by field_get_multi above.  Calling
     # is_enforcement_variation_contract_task here reparsed the same YAML in a
@@ -3391,6 +3391,38 @@ operational_simulation:
 EOF
 )
 
+    # Commit requirement is derived from structured task metadata.  Free-text
+    # claims such as "no-code" are not authority to waive a code-task commit.
+    local _commit_required=true _commit_reason="code_or_unclassified_task"
+    local _commit_task_type="${task_type:-${type:-${scope_mode:-unknown}}}"
+    _commit_task_type="${_commit_task_type,,}"
+    local _commit_planned_paths="${target_path} ${files_to_modify} ${files_modified} ${owned_paths}"
+    local _commit_has_code_path=false
+    if printf '%s\n' "$_commit_planned_paths" | grep -Eqi \
+        '(scripts/|src/|tests/|app/|lib/|[[:alnum:]_./-]+\.(sh|bash|py|js|jsx|ts|tsx|go|rs|java|kt|rb|php|c|cc|cpp|h|hpp)([^[:alnum:]_]|$))'; then
+        _commit_has_code_path=true
+    fi
+    if [[ "$_commit_task_type" =~ ^(no[_-]?code|decision|decision_candidate|data[_-]?readonly|readonly|read_only|recon|recon2|scout)$ ]] \
+        && [ "$_commit_has_code_path" = false ]; then
+        _commit_required=false
+        _commit_reason="allowed_no_code_task_type_and_no_code_scope"
+    elif [ "$_commit_has_code_path" = true ]; then
+        _commit_reason="implementation_path_present"
+    fi
+    local _commit_paths_evidence="$_commit_planned_paths"
+    _commit_paths_evidence="${_commit_paths_evidence//$'\n'/ }"
+    _commit_paths_evidence="${_commit_paths_evidence//\/\\}"
+    _commit_paths_evidence="${_commit_paths_evidence//\"/\\\"}"
+    local _commit_contract_block
+    _commit_contract_block=$(cat <<EOF
+commit_contract:
+  required: ${_commit_required}
+  reason: "${_commit_reason}"
+  task_type: "${_commit_task_type}"
+  planned_paths: "${_commit_paths_evidence}"
+EOF
+)
+
     cat > "$report_file" <<EOF
 # !! トップレベル構造を維持せよ。report: で包むな !!
 # !! report_field_set.sh で各フィールドを設定せよ。直接Edit/Write禁止 !!
@@ -3442,6 +3474,7 @@ status_detail: ""  # DONE / WITH_CONCERNS / BLOCKED / NEEDS_CONTEXT
 test_triage: ""  # in_branch / pre_existing / unknown
 ${_before_after_block}
 ${_causal_verification_block}
+${_commit_contract_block}
 files_modified:
   - path: ""  # 変更ファイルパスを記入。説明文ではなく repo-root 相対パス
     change: ""  # 変更内容を1文で記入
@@ -3787,12 +3820,9 @@ PY_MEMORY_REFS
     # cmd_1983: field_get_multiで一括取得済み → task_type変数を直接使用
     local _deploy_task_type="${task_type}"
     local _commit_bc=""
-    local _commit_contract_text="${command} ${constraints} ${not_in_scope} ${title}"
-    if [[ "${_deploy_task_type,,}" =~ ^(recon|recon2|scout)$ ]] \
-        || printf '%s\n' "$_commit_contract_text" | grep -qiE \
-            '(コード|ソース|ファイル).*(変更|修正|編集).*(禁止|不可)|(変更|修正|編集).*(禁止|不可).*(コード|ソース|ファイル)|no[ _-]*code[ _-]*change|read[ _-]*only'; then
+    if [ "$_commit_required" = false ]; then
         _commit_bc='  commit:
-  - check: "stage/commitを実行していない"
+  - check: "commit N/A証跡(commit_contract.required=false/reason/task_type/planned_paths)を確認"
     result: ""  # yes or no'
     else
         _commit_bc="  commit:
@@ -3861,7 +3891,7 @@ PY_MEMORY_REFS
             _cmd_queue_text="${_cmd_queue_text} $(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$_p_parent_cmd" "not_in_scope" 2>/dev/null || true)"
             _cmd_text="${_cmd_text} ${_cmd_queue_text}"
         fi
-        if echo "$_cmd_text" | grep -qiE 'commit.*禁止|commit一切禁止|コミット.*禁止|コミット一切禁止|将軍.*(commit|コミット|push|プッシュ)|登録.*のみ.*commit'; then
+        if [ "$_commit_has_code_path" = false ] && echo "$_cmd_text" | grep -qiE 'commit.*禁止|commit一切禁止|コミット.*禁止|コミット一切禁止|将軍.*(commit|コミット|push|プッシュ)|登録.*のみ.*commit'; then
             _commit_bc=""
             log "binary_checks: commit check skipped (cmd constraint: commit禁止)"
         fi
