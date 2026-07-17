@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-18T03:10:19+09:00 -->
+<!-- generated_at: 2026-07-18T04:19:41+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-18T03:10:18+09:00 | terminal | response | hayate/kotaro異常は家老が把握+対処済み(才蔵差替/小太郎配備)。ninja_monitor自動/clear待ち。 [MEM: obsidian link=[[LS-A11]]→[[忍者状態管理=家老の責務]]→[[将軍介入不…
-- 2026-07-18T03:09:43+09:00 | terminal | response | 確認済み。小太郎draft配備済み+startup先送り一次処置bulletin。idle待機。
-- 2026-07-18T03:09:20+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_skill_refs_freshness_batch_202607180308 初回配備開始 (title=(untitled), ninja=kotaro)
-- 2026-07-18T03:08:58+09:00 | terminal | response | hayate failed(家老が才蔵へ差替配備済み blt_025922)、kotaro idle(家老が把握済み blt_025045)。両方ninja_monitorの自動/clear対象。家老の管轄。 [MEM: obsidian…
-- 2026-07-18T03:08:29+09:00 | terminal | response | inbox 0件。idle待機。
-- 2026-07-18T03:07:20+09:00 | terminal | response | hayate: CTX 21%で稼働中(idle promptではない)。kotaro: CTX 0% idle。両方とも家老が管理しており、ninja_monitorが自動検知する。 [MEM: obsidian link=[[ninj…
-- 2026-07-18T03:07:05+09:00 | terminal | response | 確認済み。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-18T03:06:52+09:00 | ntfy | outbound | 【gunshi】cmd_reflux_promotion_202607180305_hanzo 初回配備開始 (title=(untitled), ninja=hanzo)
-- 2026-07-18T03:03:57+09:00 | terminal | response | 処理完了。inbox 0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-18T03:03:04+09:00 | terminal | response | inbox 0件。idle待機。
+- 2026-07-18T04:19:40+09:00 | terminal | response | 確認済み。idle待機。
+- 2026-07-18T04:19:35+09:00 | ntfy | outbound | 【gunshi】cmd_reflux_promotion_202607180418_saizo 初回配備開始 (title=(untitled), ninja=saizo)
+- 2026-07-18T04:17:56+09:00 | terminal | response | [MEM: obsidian link=[[SKILL_refs_WARN]]→[[小太郎e5d0a8145で解消済み]]→[[CI未到達で陳腐escalation]]] [meta] stop_reason=end_turn
+- 2026-07-18T04:17:41+09:00 | terminal | response | inbox 0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-18T04:17:32+09:00 | ntfy | outbound | 【家老CRITICAL】先送り1セッション連続検出。起動は許可するが即対処必須
+- 2026-07-18T04:15:08+09:00 | terminal | response | CI再RED(run 29606425703): ninja_monitor.sh新規yaml.safe_dumpがgate違反。影丸にCI fix配備済み。LS089(reflux 3段連鎖バグ)と同構造 — 修正1段ごとに次の障壁が露…
+- 2026-07-18T04:15:08+09:00 | terminal | response | 確認。ninja_monitor.sh:3465のyaml.safe_dump gate違反。影丸修正中。idle待機。
+- 2026-07-18T04:14:43+09:00 | terminal | response | 確認済み。idle待機。
+- 2026-07-18T04:14:29+09:00 | ntfy | outbound | 【家老】cmd_karo_ci_fix_29606425703_direct_yaml_dump 初回配備開始 (title=(untitled), ninja=kagemaru)
+- 2026-07-18T04:11:44+09:00 | terminal | response | 確認済み。idle待機。
 
 ## 未解決確認事項
-- 確認済み。小太郎draft配備済み+startup先送り一次処置bulletin。idle待機。
-- 確認済み。idle待機。 [meta] stop_reason=end_turn
-- 確認。疾風startup timing 2回STALL→才蔵へ差し替え。idle待機。 [meta] stop_reason=end_turn
-- 確認済み。yaml.dump gate違反3件(gunshi_log_append 2件 + report_field_set 1件)のCI fix。影丸に配備済み。report到着待ち。idle待機。 [meta] stop_reason=end_turn
-- 確認。L901昇格のmetadata同期はlesson_write.sh atomic promote writerで半蔵に配備済み。idle待機。 [meta] stop_reason=end_turn
-- kotaro idle(CTX 0%)。task failed状態。家老が自動検知して再配備するはずだが、capture-paneで確認済みの事実を記録。ninja_monitorが自動対処する。 [MEM: memory_db ts=2026-07-18 "kotaro ta…
 - 確認済み。idle待機。
-- CI修正push済み(run 29600665514 queued)。GREEN確認後にunpushed 9件を一括push可能。 [MEM: memory_db ts=2026-07-18 "CI再RED run 29599104619 memory_db_context期待…
+- 確認。ninja_monitor.sh:3465のyaml.safe_dump gate違反。影丸修正中。idle待機。
+- hanzo idle確認済み(CTX 0%、複数回capture-pane確認)。ninja_monitor自動/clear待ち。 [MEM: obsidian link=[[hanzo_idle]]→[[ninja_monitor]]] [meta] stop_reason=…
+- 確認済み。idle待機。 [meta] stop_reason=end_turn
+- 確認済み。reflux再配備ループ修正を影丸が実装中。report到着待ち。idle待機。 [meta] stop_reason=end_turn
+- 確認。復旧済み+恒久修正push済み。idle待機。 [meta] stop_reason=end_turn
+- hanzo idle確認済み(CTX 0%)。ninja_monitor自動/clear待ち。CI fix 2件LGTM揃い→家老GATE→push→CI GREEN確認の流れ進行中。 [MEM: obsidian link=[[CI_fix_2件LGTM]]→[[家老GATE…
+- hanzo CTX 0% idle。ninja_monitorの自動/clear→家老再配備サイクル待ち。CI fix 2件(cmd_save env file + skill reader互換)がLGTM済みで家老GATE→push→CI GREEN確認の流れが進行中。 [M…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
