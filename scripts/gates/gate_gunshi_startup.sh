@@ -56,6 +56,19 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 AUTO_IDLE_ACTIONS_FILE="$SCRIPT_DIR/queue/auto_idle_actions.txt"
+
+echo "■ recovery content-hash index"
+for _recovery_required in \
+    "$SCRIPT_DIR/instructions/generated/codex-gunshi.md" \
+    "$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml" \
+    "$SCRIPT_DIR/memory/deepdive_why_chain_20260321.md"; do
+    if gunshi_recovery_content_status "$_recovery_required"; then
+        echo "  CACHED: ${_recovery_required#"$SCRIPT_DIR"/}（同一session・同一hash。再読不要）"
+    else
+        echo "  READ_REQUIRED: ${_recovery_required#"$SCRIPT_DIR"/}（読了後 --recovery-cache-mark）"
+    fi
+done
+echo ""
 # shellcheck source=/dev/null
 if [ -f "$SCRIPT_DIR/scripts/gates/session_alerts_render.sh" ]; then
     source "$SCRIPT_DIR/scripts/gates/session_alerts_render.sh"
