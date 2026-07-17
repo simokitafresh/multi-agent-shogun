@@ -146,6 +146,7 @@ REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=${REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD:-600}     
 REFLUX_AUTO_DEPLOY_COOLDOWN=${REFLUX_AUTO_DEPLOY_COOLDOWN:-3600}                 # 還流在庫自動配備: 忍者別クールダウン（秒）
 REFLUX_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/shogun_reflux_auto_deploy"
 REFLUX_PROMOTION_LEDGER="${REFLUX_PROMOTION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_completed.tsv}"
+REFLUX_PROMOTION_DEFERRED_LEDGER="${REFLUX_PROMOTION_DEFERRED_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_deferred.tsv}"
 REFLUX_BACKLINK_SCAN_LIMIT=${REFLUX_BACKLINK_SCAN_LIMIT:-50}                     # backlinksゼロ在庫の1回あたり確認上限
 REFLUX_BACKLINK_TIMEOUT=${REFLUX_BACKLINK_TIMEOUT:-20}                           # backlinksゼロ確認のtimeout秒
 SPEED_TRAINING_LEDGER="${SPEED_TRAINING_LEDGER:-$SCRIPT_DIR/logs/script_speed_training_ledger.yaml}"
@@ -3432,6 +3433,56 @@ _reflux_promotion_completed_ids() {
     awk -F '\t' 'NF >= 2 && $2 != "lesson_id" { print $2 }' "$ledger" | sort -u
 }
 
+# A terminal promotion may deliberately stop at the foreign-dirty guard and
+# publish a decision_candidate.  That is neither a completed promotion nor a
+# permanently pending item: suppress it only while the guarded target/cache
+# fingerprint is unchanged.  The TSV is durable and flocked so concurrent
+# inventories converge on one reservation.
+_reflux_promotion_deferred_suppressed() {
+    local candidate="$1" lesson_id source target cache ledger lock fingerprint report_match old_fp
+    lesson_id=$(printf '%s\n' "$candidate" | sed -n 's/^\[[^]]*\] \([A-Za-z0-9_-]*\).*/\1/p')
+    [ -n "$lesson_id" ] || return 1
+    source=$(printf '%s\n' "$candidate" | sed -n 's/^\[\([^]]*\)\].*/\1/p')
+    target=$(_reflux_promotion_target_path "$candidate")
+    cache="$SCRIPT_DIR/tasks/lessons.md"
+    ledger="${REFLUX_PROMOTION_DEFERRED_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_deferred.tsv}"
+    lock="${ledger}.lock"
+    report_match=$(python3 - "$SCRIPT_DIR" "$lesson_id" 2>/dev/null <<'PY'
+import glob, os, re, sys, yaml
+root, lesson = sys.argv[1:]
+for path in glob.glob(os.path.join(root, "queue/reports/*.yaml")) + glob.glob(os.path.join(root, "archive/reports/**/*.yaml"), recursive=True):
+    try:
+        d = yaml.safe_load(open(path, encoding="utf-8")) or {}
+    except Exception:
+        continue
+    if not str(d.get("parent_cmd") or "").startswith("cmd_reflux_promotion_"):
+        continue
+    if str(d.get("status") or "").lower() not in {"completed", "done", "failed"}:
+        continue
+    dc = d.get("decision_candidate") or {}
+    if not isinstance(dc, dict) or dc.get("found") is not True:
+        continue
+    text = yaml.safe_dump(d, allow_unicode=True)
+    if lesson in text and re.search(r"foreign[ _-]?dirty", text, re.I):
+        print(path); break
+PY
+)
+    [ -n "$report_match" ] || return 1
+    fingerprint=$({ for p in "$SCRIPT_DIR/$target" "$cache"; do if [ -e "$p" ]; then sha256sum "$p"; else printf 'missing  %s\n' "$p"; fi; done; } | sha256sum | awk '{print $1}')
+    mkdir -p "$(dirname "$ledger")"
+    {
+        flock -x -w 5 200 || return 1
+        [ -s "$ledger" ] || printf 'deferred_at\tlesson_id\tfingerprint\ttarget\treport\n' > "$ledger"
+        old_fp=$(awk -F '\t' -v id="$lesson_id" '$2==id {fp=$3} END{print fp}' "$ledger")
+        if [ -z "$old_fp" ]; then
+            printf '%s\t%s\t%s\t%s\t%s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" "$lesson_id" "$fingerprint" "$target" "${report_match#"$SCRIPT_DIR"/}" >> "$ledger"
+            return 0
+        fi
+        [ "$old_fp" = "$fingerprint" ] && return 0
+        return 2
+    } 200>"$lock"
+}
+
 _reflux_promotion_record_completion() {
     local report_file="$1"
     local ledger="${REFLUX_PROMOTION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_completed.tsv}"
@@ -3497,7 +3548,7 @@ _reflux_promotion_backfill_and_check() {
 _reflux_promotion_inventory() {
     local helper="$SCRIPT_DIR/scripts/gates/gate_lesson_enforcement_level.sh"
     local timeout_sec="${REFLUX_PROMOTION_TIMEOUT:-20}"
-    local output status count first_item candidates_list pd_ids completed_ids cand cand_id completed_skipped=0
+    local output status count first_item candidates_list pd_ids completed_ids cand cand_id completed_skipped=0 deferred_rc=1
     local cache_dir="${STATE_DIR:-$SCRIPT_DIR/.cache}" cache_file sig_file current_sig cached_sig
 
     [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=20
@@ -3567,7 +3618,14 @@ _reflux_promotion_inventory() {
             if [ -n "$cand_id" ] && [ -n "$pd_ids" ] && printf '%s\n' "$pd_ids" | grep -qxF "$cand_id"; then
                 continue
             fi
-            if [ -n "$cand_id" ] && [ -n "$completed_ids" ] && printf '%s\n' "$completed_ids" | grep -qxF "$cand_id"; then
+            deferred_rc=1
+            if _reflux_promotion_deferred_suppressed "$cand"; then
+                completed_skipped=$((completed_skipped + 1))
+                continue
+            else
+                deferred_rc=$?
+            fi
+            if [ "$deferred_rc" -ne 2 ] && [ -n "$cand_id" ] && [ -n "$completed_ids" ] && printf '%s\n' "$completed_ids" | grep -qxF "$cand_id"; then
                 completed_skipped=$((completed_skipped + 1))
                 continue
             fi

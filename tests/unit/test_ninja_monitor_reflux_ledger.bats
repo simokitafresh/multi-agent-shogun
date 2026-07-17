@@ -7,6 +7,45 @@ setup() {
 }
 teardown() { rm -rf "$TMP"; }
 
+@test "foreign-dirty decision defers until target fingerprint changes" {
+  mkdir -p "$TMP/scripts/gates" "$TMP/projects/dm-signal" "$TMP/tasks" "$TMP/state"
+  cat > "$TMP/scripts/gates/gate_lesson_enforcement_level.sh" <<'EOF'
+#!/usr/bin/env bash
+echo '##ENFORCEMENT_LEVEL_BELOW4_COUNT##'; echo 1; echo '=== 昇格候補一覧'; echo '  - [dm-signal] L900 guarded'
+EOF
+  chmod +x "$TMP/scripts/gates/gate_lesson_enforcement_level.sh"
+  echo lesson-v1 > "$TMP/projects/dm-signal/lessons.yaml"
+  echo cache-v1 > "$TMP/tasks/lessons.md"
+  cat > "$TMP/queue/reports/kagemaru_report_cmd_reflux_promotion_fixture.yaml" <<'EOF'
+parent_cmd: cmd_reflux_promotion_fixture
+status: completed
+verdict: PASS
+result: {summary: "L900 foreign dirty cacheで停止"}
+decision_candidate: {found: true, title: "L900 foreign dirty解消待ち"}
+binary_checks: {AC1: [{check: "昇格候補 L900", result: yes}]}
+EOF
+  run bash -c 'export NINJA_MONITOR_LIB_ONLY=1; source "$1/scripts/ninja_monitor.sh"; SCRIPT_DIR="$2"; STATE_DIR="$2/state"; REFLUX_PROMOTION_LEDGER="$2/logs/completed.tsv"; REFLUX_PROMOTION_DEFERRED_LEDGER="$2/logs/deferred.tsv"; _reflux_promotion_inventory; _reflux_promotion_inventory; grep -c $'"'"'\tL900\t'"'"' "$2/logs/deferred.tsv"' _ "$ROOT" "$TMP"
+  [ "$status" -eq 0 ]; [ "$(printf '%s\n' "$output" | grep -c $'^0\t-\tok$')" -eq 2 ]; [ "${output##*$'\n'}" = 1 ]
+  echo cache-v2 > "$TMP/tasks/lessons.md"
+  run bash -c 'export NINJA_MONITOR_LIB_ONLY=1; source "$1/scripts/ninja_monitor.sh"; SCRIPT_DIR="$2"; STATE_DIR="$2/state"; REFLUX_PROMOTION_LEDGER="$2/logs/completed.tsv"; REFLUX_PROMOTION_DEFERRED_LEDGER="$2/logs/deferred.tsv"; _reflux_promotion_inventory' _ "$ROOT" "$TMP"
+  [ "$status" -eq 0 ]; [[ "$output" == $'1\t[dm-signal] L900 guarded\tok' ]]
+}
+
+@test "four parallel inventories create one deferred row and suppress one lesson" {
+  mkdir -p "$TMP/scripts/gates" "$TMP/projects/dm-signal" "$TMP/tasks" "$TMP/state"
+  printf '#!/usr/bin/env bash\necho "##ENFORCEMENT_LEVEL_BELOW4_COUNT##"; echo 1; echo "=== 昇格候補一覧"; echo "  - [dm-signal] L900 guarded"\n' > "$TMP/scripts/gates/gate_lesson_enforcement_level.sh"; chmod +x "$TMP/scripts/gates/gate_lesson_enforcement_level.sh"
+  echo lesson > "$TMP/projects/dm-signal/lessons.yaml"; echo cache > "$TMP/tasks/lessons.md"
+  cat > "$TMP/queue/reports/kagemaru_report_cmd_reflux_promotion_fixture.yaml" <<'EOF'
+parent_cmd: cmd_reflux_promotion_fixture
+status: failed
+verdict: FAIL
+result: {summary: "L900 foreign-dirty cache"}
+decision_candidate: {found: true, title: blocked}
+EOF
+  run bash -c 'export NINJA_MONITOR_LIB_ONLY=1; source "$1/scripts/ninja_monitor.sh"; SCRIPT_DIR="$2"; STATE_DIR="$2/state"; REFLUX_PROMOTION_LEDGER="$2/logs/completed.tsv"; REFLUX_PROMOTION_DEFERRED_LEDGER="$2/logs/deferred.tsv"; for _ in 1 2 3 4; do _reflux_promotion_inventory & done; wait; grep -c $'"'"'\tL900\t'"'"' "$2/logs/deferred.tsv"' _ "$ROOT" "$TMP"
+  [ "$status" -eq 0 ]; [ "$(printf '%s\n' "$output" | grep -c $'^0\t-\tok$')" -eq 4 ]; [ "${output##*$'\n'}" = 1 ]
+}
+
 @test "completion append is idempotent and hot lookup avoids report parsing" {
   cat > "$TMP/queue/reports/hayate_report_cmd_reflux_promotion_x.yaml" <<'EOF'
 parent_cmd: cmd_reflux_promotion_x
@@ -102,4 +141,18 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *$'0\t-\tok'* ]]
   [ "${output##*$'\n'}" = 1 ]
+}
+
+@test "warm inventory never rescans completed reports after one-time reconciliation" {
+  mkdir -p "$TMP/scripts/gates" "$TMP/projects/infra" "$TMP/state"
+  cat > "$TMP/scripts/gates/gate_lesson_enforcement_level.sh" <<'EOF'
+#!/usr/bin/env bash
+echo '##ENFORCEMENT_LEVEL_BELOW4_COUNT##'; echo 0; echo '=== 昇格候補一覧'
+EOF
+  chmod +x "$TMP/scripts/gates/gate_lesson_enforcement_level.sh"
+  echo 'lessons: []' > "$TMP/projects/infra/lessons_shogun.yaml"
+  printf 'completed_at\tlesson_id\treport\n' > "$TMP/logs/ledger.tsv"
+  run bash -c 'export NINJA_MONITOR_LIB_ONLY=1; source "$1/scripts/ninja_monitor.sh"; SCRIPT_DIR="$2"; STATE_DIR="$2/state"; REFLUX_PROMOTION_LEDGER="$2/logs/ledger.tsv"; _reflux_promotion_inventory >/dev/null; _reflux_promotion_scan_completed_ids() { echo unexpected-rescan; return 99; }; for _ in 1 2 3 4; do _reflux_promotion_inventory; done' _ "$ROOT" "$TMP"
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | grep -c $'^0\t-\tok$')" -eq 4 ]
 }
