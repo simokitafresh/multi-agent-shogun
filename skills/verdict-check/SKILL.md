@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
+<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: gate_report_format.sh 7526e7a51はroot解決subshell回避のhot-path内部最適化。binary_checks全yes/noからのverdict自動導出・未記入BLOCK・report path引数契約は不変。 -->
 name: verdict-check
 argument-hint: "[report_path]"
 quality_metric: "忍者系: verdict-check使用後のverdict不整合WA不発生率(対象報告のうちverdict_override/binary_checks矛盾なしの割合)"
