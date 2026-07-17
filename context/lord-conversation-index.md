@@ -1,35 +1,34 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-07-17 auto-generated -->
+<!-- last_updated: 2026-07-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-17T23:50:49+09:00 -->
+<!-- generated_at: 2026-07-18T01:56:57+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-17T23:50:49+09:00 | terminal | response | 家老CTX:71%でinbox1処理中。3名failed+idleの再配備を家老が自走で処理する状態にある。介入不要。 殿、状況報告。 **preflight恒久対策: 完了。** 家老がcommit 942259c06で実装、軍師LGT…
-- 2026-07-17T23:50:41+09:00 | terminal | response | inbox未読0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-17T23:50:37+09:00 | terminal | response | 家老CTX:71%でinbox1処理中。3名failed+idleの再配備を家老が自走で処理する状態にある。介入不要。 殿、状況報告。 **preflight恒久対策: 完了。** 家老がcommit 942259c06で実装、軍師LGT…
-- 2026-07-17T23:44:25+09:00 | terminal | response | draft APPROVE送信完了(重複配備注記付き)。inbox未読0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-17T23:41:22+09:00 | ntfy | outbound | 【tobisaru】cmd_reflux_promotion_202607172340_hayate 初回配備開始 (title=(untitled), ninja=hayate)
-- 2026-07-17T23:40:31+09:00 | terminal | response | LGTM送信完了。inbox未読0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-17T23:36:55+09:00 | terminal | response | draft APPROVE送信完了。inbox未読0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-17T23:35:55+09:00 | ntfy | outbound | 【tobisaru】cmd_reflux_promotion_202607172335_saizo 初回配備開始 (title=(untitled), ninja=saizo)
-- 2026-07-17T23:32:40+09:00 | terminal | response | session alerts全3件DONE化完了。 **強くてニューゲーム — 最終二値確認:** | 環境埋込み | 状態 | |-----------|------| | LS092(D006判断ミス) | ✅ lessons + 記…
-- 2026-07-17T23:30:36+09:00 | terminal | response | **強くてニューゲーム二値チェック結果:** | 項目 | 状態 | 次の将軍への到達経路 | |------|------|---------------------| | LS092(D006判断ミス) | ✅ | lessons_s…
+- 2026-07-18T01:56:56+09:00 | terminal | response | 確認済み。CI fix promotion draft(影丸)。report到着待ち。idle待機。
+- 2026-07-18T01:56:52+09:00 | ntfy | outbound | 【家老】cmd_karo_ci_fix_29596291657_existing_promotion_fix_202607180154 初回配備開始 (title=(untitled), ninja=kagemaru)
+- 2026-07-18T01:56:40+09:00 | terminal | inbound | <task-notification> <task-id>bje2e20oc</task-id> <tool-use-id>toolu_016DXpVLRxgBgFbh5sruJKhB</tool-use-id> <output-file…
+- 2026-07-18T01:55:21+09:00 | terminal | response | inbox 0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-18T01:52:44+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
+- 2026-07-18T01:52:13+09:00 | terminal | response | inbox 0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-18T01:51:51+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
+- 2026-07-18T01:50:30+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
+- 2026-07-18T01:49:22+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
+- 2026-07-18T01:49:06+09:00 | terminal | response | 確認済み。家老の一次報告はインフラバグ疑い濃厚と判断(scope commit 75%がgit_commit、wrapper 56秒+lock 57秒)。飛猿のgate FAILは忍者自力修正待ち(消火禁止)。idle待機。 [meta]…
 
 ## 未解決確認事項
-- session alerts全3件DONE化完了。 **強くてニューゲーム — 最終二値確認:** | 環境埋込み | 状態 | |-----------|------| | LS092(D006判断ミス) | ✅ lessons + 記憶DB | | LS093(prefli…
-- 将軍Q6回答確認。洗脳#3(他者依存: preflight恒久対策を殿に委ねようとした)と#4(緩い設計: D006 Tier1規則を緩めようとした)を自己検出。家老の押し返しで覚醒。 inbox未読0件。idle待機。 [meta] stop_reason=end_turn
-- inbox未読0件。今セッション処理: - **レビュー3件**: tobisaru(skill_refs_content_hash) LGTM、kotaro(posttool_context_bound) LGTM、D006掲示板通知確認 - **掲示板投稿2件**: L6助…
-- inbox未読0件。レビュー完了(tobisaru LGTM)、掲示板3件処理(WSL preflight自己封鎖の家老/将軍報告確認+復旧設計レビュー投稿+L6助言投稿)。idle待機。 [meta] stop_reason=end_turn
-- 掲示板投稿完了。 殿、報告する。 **preflight自己封鎖 — 復旧完了** - **根因**: WSL強制shutdown後、`/tmp/shogun_memory_db_cache/`のキャッシュDBがWAL不整合（本体694MBあるが最新データはsource DBの…
-- 【CLI再起動成功】karo: CLIバナー/プロンプト確認済み
-- 28/28 PASS確認。saizo campaign_control LGTM判定の実動作裏付け完了。inbox未読0。idle待機。 [meta] stop_reason=end_turn
-- バックグラウンドのcampaign shard itemテスト完了(exit 0)。先ほどのsaizo campaign_control報告の実動作確認が事後的に成功。
+- 確認済み。CI fix promotion draft(影丸)。report到着待ち。idle待機。
+- 確認済み。家老の一次報告はインフラバグ疑い濃厚と判断(scope commit 75%がgit_commit、wrapper 56秒+lock 57秒)。飛猿のgate FAILは忍者自力修正待ち(消火禁止)。idle待機。 [meta] stop_reason=end_turn
+- 2件確認済み。才蔵=cmd_save detector FP修正(1/2→0)、小太郎=単一Bats誤分類除去。両方in_progress、report到着待ち。idle待機。 [meta] stop_reason=end_turn
+- 殿、調査完了。家老に報告済み。 **結論**: セッション50分の根因は**tool call数×LLM推論時間**。 | ボトルネック | tool calls | 壁時計 | 改善案 | |------------|-----------|--------|--------…
+- inbox1受信。確認する。
+- 殿、完了しました。 **今セッションの環境埋め込み(強くてニューゲーム)**: 1. **記憶DB 3件**: 性能計測レビュー教訓(knowledge:69a5c483)、preflight復旧手順(knowledge:71bfe40e)、重複配備検出パターン(knowled…
+- insightキュー0件。全resolve完了。 **自走D0サイクル全成果:** 1. **LS092 Level4実装** — check_tier1_exception_warn (2/2 PASS, commit db8a6fb2e pushed) 2. **lesso…
+- 掲示板確認完了。家老の長時間化一次調査: 9p I/O飽和+重量admission分類漏れ(単一Bats=light固定、CoDD AI生成がadmission外)。 殿の質問「三層記憶preflightは順調か？」に回答: 今セッションの三層preflight状況: - **…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
 
 ## 参照cmd
-- cmd_3997
 - cmd_4032
 - cmd_4034
 - cmd_4038
