@@ -26,7 +26,9 @@ for file in "${TARGET_FILES[@]}"; do
     total_count=${total_count:-0}
     nonzero_before=${nonzero_before:-0}
 
-    perl -i -pe 's/^(\s*harmful_count:\s*)\d+\s*$/${1}0/' "$file"
+    if [ "$nonzero_before" -ne 0 ]; then
+        perl -i -pe 's/^(\s*harmful_count:\s*)\d+\s*$/${1}0/' "$file"
+    fi
 
     nonzero_after=$(rg -c '^[[:space:]]*harmful_count:[[:space:]]*[1-9][0-9]*' "$file" 2>/dev/null || true)
     nonzero_after=${nonzero_after:-0}
