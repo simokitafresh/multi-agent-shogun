@@ -273,6 +273,7 @@ OPT一覧(1-15):
 - L177: 本番404切り分けはopenapi.json実測でデプロイ未反映を即時判定できる（cmd_553）
 - L178: 本番404調査はopenapi実測で『ルート未登録』を先に確定すると切り分けが最短になる（cmd_553）
 - L179: 新サービスのimport文とrequirements.txtの突合確認をデプロイ前チェックに含めるべき（cmd_554）
+- L903: 配備target pathはgit HEADで存在確認してから実装する（cmd_karo_hotfix_ledger_drift_alert_persistence_202607161356）
 - L180: render.yaml cronジョブ追加時envVars sync:falseのシークレットはRenderダッシュボード手動設定が必要（cmd_554）
 - L190: 集計要件でrole分離が必要ならイベント記録時点で識別子を保存しないと後段SQLでは復元不能（cmd_574）
 - L202: Render Static Siteのheaders.pathはrootと配下階層を別globで覆わねば全txtを捕捉できぬ（cmd_643）

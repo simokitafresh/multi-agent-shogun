@@ -334,7 +334,7 @@ GA-189で`dm-signal.md`が「source commits 3件」ALERTしたが、**内容更�
 - （L851-L876は振り分け済 2026-07-12 /lesson-sort → ops§12(L851:matched_weight=sum比較), ops§9(L870:run不変値subprocess再取得禁止), ops§32(L857:env override差替え), research教訓索引(L874:オラクル機能的意味先検証)。L852はPI候補節に既存。L876はL1049と根重複+heredoc断定未検証のため非活性化を家老へ依頼済み。新規PIなし）
 - （L887-L899は振り分け済 2026-07-14 /lesson-sort → research教訓索引(L887:非階層container敵対fixture), ops§76(L888:全量前preflight=既存本文とマージ), ops§32(L891:pytest node id実在収集固定/L899:subprocess ready timeout無条件継続禁止), ops§80(L897:bounded restore launcher貫通試験)。新規PIなし(全て手順・テスト教訓)）
 - （L900/L901→ops§32に振り分け済み 2026-07-16）
-- L903: 配備target pathはgit HEADで存在確認してから実装する（cmd_karo_hotfix_ledger_drift_alert_persistence_202607161356）
+- （L903→ops§9に振り分け済み 2026-07-17）
 
 ## §34 GS D1価格入力パリティ (cmd_3793, 2026-07-09)
 
