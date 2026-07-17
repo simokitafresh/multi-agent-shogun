@@ -9,7 +9,8 @@ if [[ -n $LEDGER_ARG ]]; then
 elif [[ -n ${PYTEST_TIMING_LEDGER:-} ]]; then
   LEDGER=$PYTEST_TIMING_LEDGER
 else
-  DM_ROOT=$(python3 - "$ROOT/config/projects.yaml" <<'PY'
+  PROJECTS_CONFIG=${CAMPAIGN_PROJECTS_CONFIG:-$ROOT/config/projects.yaml}
+  DM_ROOT=$(python3 - "$PROJECTS_CONFIG" <<'PY'
 import sys,yaml
 for item in (yaml.safe_load(open(sys.argv[1],encoding='utf-8')) or {}).get('projects',[]):
     if item.get('id')=='dm-signal': print(item['path']); break
@@ -17,6 +18,10 @@ else: raise SystemExit('BLOCK: dm-signal missing from config/projects.yaml')
 PY
   )
   LEDGER="$DM_ROOT/backend/.pytest_cache/pytest_timing_ledger.tsv"
+  if [[ ! -f $LEDGER ]]; then
+    echo 'BLOCK: default pytest timing ledger unavailable; use --ledger or PYTEST_TIMING_LEDGER' >&2
+    exit 1
+  fi
 fi
 usage(){ echo "usage: $0 [--ledger FILE] next|generate|deploy [args]" >&2; exit 2; }
 cmd=${1:-}; shift || true
