@@ -1025,3 +1025,34 @@ with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
 assert task["target_path"] == "docs/isolated.md", task.get("target_path")
 PY
 }
+@test "inject_target_path_check records git HEAD and last commit evidence" {
+  local tracked
+  tracked=$(realpath "$BATS_TEST_DIRNAME/../../scripts/deploy_task.sh")
+  local untracked="$BATS_TEST_TMPDIR/untracked-target.txt"
+  printf 'untracked\n' > "$untracked"
+
+  local task="$BATS_TEST_TMPDIR/task.yaml"
+  cat > "$task" <<YAML
+task:
+  project: ''
+  target_path:
+  - $tracked
+  - $untracked
+YAML
+
+  run bash -c '
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$1/scripts/deploy_task.sh"
+    inject_target_path_check "$2"
+  ' _ "$TEST_PROJECT" "$task"
+  if [ "$status" -ne 0 ]; then
+    printf '%s\n' "$output" >&3
+  fi
+  [ "$status" -eq 0 ]
+  run grep -F 'deploy_task.sh:worktree=yes,head=yes,last_commit=' "$task"
+  [ "$status" -eq 0 ]
+  run grep -F 'untracked-target.txt:worktree=yes,head=no,last_commit=none' "$task"
+  [ "$status" -eq 0 ]
+  run grep -F 'target_path_head_warning:' "$task"
+  [ "$status" -eq 0 ]
+}
