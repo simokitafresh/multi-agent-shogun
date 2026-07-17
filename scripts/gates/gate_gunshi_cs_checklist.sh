@@ -989,8 +989,9 @@ fi
 # --- LG034: 低ROI/対応不要の言語検出 ---
 _lg034_hits=$(grep -n '低ROI\|対応不要\|コスト>効果で見送り\|効果が薄い\|優先度低' "$LOG_FILE" 2>/dev/null | grep -v '^#' | head -5)
 if [ -n "$_lg034_hits" ]; then
-    echo "WARN(LG034): 「低ROI/対応不要」表現検出。全件対応が前提、順番を付けて全部やれ:"
+    echo "BLOCK(LG034): 「低ROI/対応不要」表現検出。全件対応が前提、順番を付けて全部やれ:"
     printf '%s\n' "$_lg034_hits" | head -3
+    lg034_block=1
     warn=1
 fi
 
@@ -1352,7 +1353,7 @@ fi
 
 rm -f "$_remediation_tmp"
 _gate_result=PASS; _gate_rc=$warn
-if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$bw_no_pattern_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ] || [ -n "$cs_empty_block" ] || [ -n "$bw_quality_block" ] || [ -n "$altruism_no_reason_block" ] || [ -n "$remediation_block" ]; then
+if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$bw_no_pattern_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ] || [ -n "$cs_empty_block" ] || [ -n "$bw_quality_block" ] || [ -n "$altruism_no_reason_block" ] || [ -n "$remediation_block" ] || [ -n "$lg034_block" ]; then
     _gate_result=FAIL; _gate_rc=2
 elif [ "$warn" -ne 0 ]; then
     _gate_result=WARN

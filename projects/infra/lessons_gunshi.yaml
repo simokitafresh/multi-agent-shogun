@@ -437,12 +437,13 @@ lessons:
   detail: |
     パラメータ空間縮小禁止(CLAUDE.md)と同根。tmux/wsl2のみ修正し他を低ROIで放置→殿指摘「一部対処は穴を残す」。
     作業量を理由にスコープを縮小する構造的弱点。なぜなぜ7回で根因特定(2026-05-07)。
+    吸収(2026-07-17, cmd_reflux_promotion_202607170954_hayate, origin: [[cmd_reflux_promotion_202607170954_hayate]] -> [[LG034]] -> [[low_roi_deferral_Level4_BLOCK]]): 既存gate_gunshi_cs_checklist.shのLG034語彙検出をWARN(rc=1)からBLOCK(rc=2)へ昇格し、低ROI・対応不要・効果が薄い・優先度低による残件保留をフロー内で停止する。tests/unit/test_gate_gunshi_cs_checklist.batsで該当表現がexit 2になることを回帰保証する。
   source_cmd: gunshi_nazenaze_20260507
   origin: '[[gunshi_nazenaze_20260507]]'
   created_at: '2026-05-07'
   automated: true
-  enforcement_level: 2
-  enforcement: review_logヘッダ+idle自走Step全件完了判定時に「残件を低ROIで放置していないか」自問追加
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK): gate_gunshi_cs_checklist.shが低ROI/対応不要/効果が薄い/優先度低を検出したらexit 2で停止し、全件に順番を付けるまで通さない。test_gate_gunshi_cs_checklist.batsでBLOCKを回帰保証"
   when: 分析結果を低ROI/対応不要と分類しようとした時
   how: 全件に順番を付けて全部やる。やらないなら不要理由を明示して削除。保留禁止
 - id: LG035

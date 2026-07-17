@@ -1602,3 +1602,20 @@ YAML
     [ "$status" -eq 2 ]
     [[ "$output" == *"BLOCK(remediation)"* ]]
 }
+
+@test "LG034 low-ROI deferral language is blocked" {
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_lg034_deferral
+  review_type: draft
+  verdict: APPROVE
+  observations:
+    - "一部は低ROIなので対応不要とする"
+    - "残件は優先度低として保留する"
+  timestamp: "2026-07-17T00:00:00"
+YAML
+
+    run bash "$TEST_GATE"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(LG034)"* ]]
+    [[ "$output" == *"全件対応が前提、順番を付けて全部やれ"* ]]
+}
