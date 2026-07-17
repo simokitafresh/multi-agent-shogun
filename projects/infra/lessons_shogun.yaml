@@ -150,10 +150,7 @@ lessons:
   enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)+post-bash-combined.sh cmd_publish hook(cmd_2898)'
 
 - id: 'LS-A10'
-  title: 計測は仕組みを理解してから — 数字の生成メカニズムを先に理解
-  origin: '[[LS-A10]] -> 統合 -> [[LS-A24]]'
   superseded_by: 'LS-A24 (計測原則ファミリーへ統合。detail(5)として全文吸収 2026-07-11。active上限31対応)'
-  archived_full_text: 'docs/research/lessons_shogun_v1_archive.md (2026-07-11退避)'
 - id: LS-A11
   title: infra修正実績 — バグはenforcement(hook/gate)で修正済み
   origin: '[[cmd_1946]] + session_20260422'
@@ -257,10 +254,7 @@ lessons:
   enforcement: 'cmd_save.sh Session State(GP-201)+report_field_set.sh GP-072c5(bc:no→verdict:PASS BLOCK)+context/codd.md+prompt_state_inject.sh(概念→スキル推奨L1)+deploy_task.sh(inject_semantic_concepts L4)+gunshi Guard9(L2)'
 
 - id: 'LS-A18'
-  title: 計測されていないものは改善ループが回らない
-  origin: '[[LS-A18]] -> 統合 -> [[LS-A24]]'
   superseded_by: 'LS-A24 (計測原則ファミリーへ統合(要点は(0)として吸収済み)。active上限31対応)'
-  archived_full_text: 'docs/research/lessons_shogun_v1_archive.md (2026-07-11退避)'
 - id: LS-A19
   title: 原理3則 — 車輪/各論パッチ/無知の知
   origin: '[[cmd_1908]] [[cmd_1903]] + dialogue_alm_finite_time_20260404 + dialogue_heuristics_system2_20260401'
@@ -384,35 +378,17 @@ lessons:
   enforcement_level: 4
   enforcement: 'Level4(フロー内BLOCK/現在状態突合): gate_skill_script_refs.sh max採用+判定根拠出力、prompt_state_inject.sh session_alerts突合([TODO]なし→_defer_count=0補正)、clear_prep_check.sh insights現物再照合、gate_karo_startup.sh __OK__行でstreak切り。bats 3+3実在。一次再検証全文→docs/research/lessons_shogun_a04_a09_detail.md'
 - id: 'LS080'
-  title: 'cmd_save PASS前のキューEditは家老の自動配備とレースする'
-  origin: '[[LS080]] -> 統合 -> [[LS-A04]]'
-  superseded_by: 'LS-A04 (cmdテンプレートルール(48)として吸収。二重防御enforcementは維持。active上限31対応 2026-07-16)'
-  archived_full_text: 'docs/research/lessons_shogun_a04_a09_detail.md'
+  superseded_by: 'LS-A04 (cmdテンプレートルール(48)として吸収 2026-07-16)'
 - id: 'LS081'
-  title: 'async関数のtimeout短縮は速度に寄与せず機能だけをsilent-deathさせる'
-  origin: '[[LS081]] -> 統合 -> [[LS-A11]]'
-  superseded_by: 'LS-A11 (infra修正実績へ吸収。enforcementは維持。active上限31対応 2026-07-16)'
-  archived_full_text: 'docs/research/lessons_shogun_a04_a09_detail.md'
+  superseded_by: 'LS-A11 (infra修正実績へ吸収 2026-07-16)'
 - id: 'LS082'
-  title: 'reCAPTCHA画像チャレンジは自動解答せず即停止しcookie再利用へ逃がす'
-  origin: '[[LS082]] -> 統合 -> [[LS-A11]]'
-  superseded_by: 'LS-A11 (infra修正実績へ吸収。note_draft.sh Level4 guard enforcement維持。active上限31対応 2026-07-16)'
-  archived_full_text: 'docs/research/lessons_shogun_a04_a09_detail.md'
+  superseded_by: 'LS-A11 (infra修正実績へ吸収 2026-07-16)'
 - id: 'LS083'
-  title: '比較実験の同格性 — 階層生成物は同一生成パイプラインの同格レベルでのみ比較せよ'
-  origin: '[[LS083]] -> 統合 -> [[LS-A24]]'
-  superseded_by: 'LS-A24 (計測原則ファミリー(6)として吸収。cmd_save.sh comparison_pipeline_parity enforcement維持。active上限31対応 2026-07-16)'
-  archived_full_text: 'docs/research/lessons_shogun_a04_a09_detail.md'
+  superseded_by: 'LS-A24 (計測原則ファミリー(6)として吸収 2026-07-16)'
 - id: 'LS084'
-  title: 'ループ内fork照合の禁止 — cmd_save semantic照合36.5s事故'
-  origin: '[[cmd_3806]] -> 吸収 -> [[LS-A11]]'
-  superseded_by: 'LS-A11 infra修正実績へ吸収(active上限対応 2026-07-10)'
-  archived_full_text: 'docs/research/lessons_shogun_v1_archive.md (2026-07-11退避)'
+  superseded_by: 'LS-A11 (infra修正実績へ吸収 2026-07-10)'
 - id: 'LS085'
-  title: '可逆行動の裁可待ち禁止 — 元に戻せるものに行動しないのは洗脳'
-  origin: '[[殿裁定20260710_可逆なら行動せよ]] -> 恒久化 -> [[LS-A08]]'
-  superseded_by: 'CLAUDE.md恒久ルール「可逆なら行動せよ」(2026-07-10反映済み) + LS-A08(8)待ちの合理性テスト。原文はCLAUDE.md/dm-signal-ops §42が正本(active上限31対応 2026-07-10)'
-  archived_full_text: 'docs/research/lessons_shogun_v1_archive.md (2026-07-11退避)'
+  superseded_by: 'CLAUDE.md恒久ルール「可逆なら行動せよ」+ LS-A08(8) (2026-07-10)'
 - id: 'LS086'
   title: '設計書クローズ時の実装cmd未起票チェック — 設計書完成で満足する先送り'
   origin: '[[殿実装確認20260710_0720_0724]] -> [[設計書完成で先送り2連発]] -> [[LS086クローズ時起票照合]]'
@@ -423,19 +399,9 @@ lessons:
   enforcement: "Level4 フロー内BLOCK: scripts/cmd_complete_gate.sh が承認済み files_modified の設計書を scripts/gates/gate_design_cmd_handoff.sh へ渡し、Phase/手順表の起票cmdが空・未起票・理由なし保留なら design_cmd_handoff_missing で完了をBLOCK。test=tests/unit/test_gate_design_cmd_handoff.bats"
   enforcement_level: 4
 - id: 'LS087'
-  title: 'gate検査のAC区間抽出はAC配下常設キーをexit条件に含めるな'
-  origin: '[[cmd_session_20260710]]'
-  detail: 'check_research_artifact_reflux_ac等4関数のawk AC区間抽出がbinary_check:(小文字キー)でexitし、AC1のdescription 1行のみ検査→AC2以降の記述が恒常的に未検出(LS078真実の在処不一致の変種: 書き手はAC全体に書くが読み手は1行しか見ない)。cmd_3836/3837で4回BLOCK往復。修正=exit条件からbinary_check:除外(4箇所一括、commit 6e1854eb0)+回帰テスト追加。横展開: AC配下を走査するawk/grepを新設する際はAC実データ(description+binary_check複数AC)でセクション抽出を実測せよ'
-  source_cmd: 'cmd_session_20260710'
-  created_at: '2026-07-10'
-  automated: true
-  enforcement: 'type=gate; file=scripts/cmd_save.sh; pattern=binary_check:/ && ; test=tests/unit/test_cmd_save_research_artifact_reflux.bats'
-  superseded_by: 'LS-A11 (commit 6e1854eb0で4関数のAC区間抽出を修正し、tests/unit/test_cmd_save_research_artifact_reflux.batsでLevel4回帰済み。LS-A11 source_idsにも統合済みのため重複active候補を閉鎖)'
+  superseded_by: 'LS-A11 (commit 6e1854eb0 AC区間抽出修正+Level4回帰済み)'
 - id: 'LS088'
-  title: 'stop hookの洗脳#3検出パターンに許可求め・判断委任フレーズが欠落'
-  origin: '[[LS088]] -> 統合 -> [[LS048]]'
-  superseded_by: 'LS048 (洗脳対策全サイクル(6)として吸収。stop_check_inbox.sh L166+L415 enforcement維持。active上限31対応 2026-07-16)'
-  archived_full_text: 'docs/research/lessons_shogun_a04_a09_detail.md'
+  superseded_by: 'LS048 (洗脳対策全サイクル(6)として吸収 2026-07-16)'
 - id: 'LS089'
   title: 'reflux 3段連鎖バグ — 修正1段ごとに次の障壁が露出する構造'
   origin: "[[promotion在庫188停滞]] -> [[delegated過剰判定]] -> [[estimated_minutes欠落]] -> [[QUALITY_CONTRACT_FP]] -> [[reflux完全復活]]"
