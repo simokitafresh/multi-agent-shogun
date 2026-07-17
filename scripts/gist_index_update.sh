@@ -106,7 +106,11 @@ main() {
     fi
 
     local raw_list
-    raw_list="$("$GH_CMD" gist list --limit 100)"
+    if command -v "$GH_CMD" >/dev/null 2>&1; then
+        raw_list="$("$GH_CMD" gist list --limit 100)"
+    else
+        raw_list="$(bash "$GH_CMD" gist list --limit 100)"
+    fi
 
     declare -A seen_titles=()
     declare -A category_rows=()

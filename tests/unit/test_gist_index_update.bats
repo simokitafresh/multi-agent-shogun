@@ -2,7 +2,9 @@
 
 setup() {
     export REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
-    export GH_CMD="$REPO_ROOT/tests/fixtures/fake_gh_gist_index_update.sh"
+    export GH_CMD="$BATS_TEST_TMPDIR/fake_gh_gist_index_update.sh"
+    cp "$REPO_ROOT/tests/fixtures/fake_gh_gist_index_update.sh" "$GH_CMD"
+    chmod 0644 "$GH_CMD"
 }
 
 @test "title normalization preserves ASCII lowercase behavior" {
