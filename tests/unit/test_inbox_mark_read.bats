@@ -292,6 +292,43 @@ YAML
     [ "$(_get_read_status hayate msg_002)" = "true" ]
 }
 
+@test "batch ACK marks only snapshot IDs and preserves later unread message" {
+    _create_inbox hayate
+
+    run bash "$TEST_SCRIPT" hayate msg_001 msg_001 msg_003 msg_missing
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Marked 1 message"* ]]
+    [ "$(_get_read_status hayate msg_001)" = "true" ]
+    [ "$(_get_read_status hayate msg_002)" = "false" ]
+    [ "$(_get_read_status hayate msg_003)" = "true" ]
+}
+
+@test "batch ACK confirms every selected bulletin notification" {
+    cat > "$TEST_ROOT/queue/inbox/saizo.yaml" <<'YAML'
+messages:
+- id: msg_blt_1
+  type: bulletin_notify
+  content: '掲示板新規投稿(blt_test_001): 確認せよ'
+  read: false
+- id: msg_blt_2
+  type: bulletin_notify
+  content: '掲示板新規投稿(blt_test_002): 確認せよ'
+  read: false
+YAML
+    cat > "$TEST_ROOT/queue/bulletin_board.yaml" <<'YAML'
+entries:
+- id: 'blt_test_001'
+  confirmed_by: []
+- id: 'blt_test_002'
+  confirmed_by: []
+YAML
+
+    run bash "$TEST_SCRIPT" saizo msg_blt_1 msg_blt_2
+    [ "$status" -eq 0 ]
+    [[ "$(_get_confirmed_by blt_test_001)" == *"saizo"* ]]
+    [[ "$(_get_confirmed_by blt_test_002)" == *"saizo"* ]]
+}
+
 @test "mark-read records acknowledged_at on active task when empty" {
     _create_inbox hanzo
     mkdir -p "$TEST_ROOT/queue/tasks"

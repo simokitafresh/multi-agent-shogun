@@ -2,7 +2,7 @@
 # semantic-links: [[YAML安全書込み]], [[inbox処理規律]]
 # inbox_mark_read.sh — inboxメッセージの既読化（排他ロック＋アトミック書込み）
 # Usage: bash scripts/inbox_mark_read.sh <agent_id> <msg_id...>
-#   msg_id指定: そのメッセージのみ read:true に変更（複数指定可。1件ずつ逐次処理）
+#   msg_id指定: 明示されたメッセージだけを1回のflock+atomic rewriteでread:trueに変更
 #   msg_id省略: 未読がある場合はBLOCK（処理していない別件を既読化する事故を防ぐ）
 #   環境変数による全件既読化も禁止。Read後に到着した別件を巻き込むため。
 #
@@ -18,20 +18,10 @@ _imr_self="${BASH_SOURCE[0]}"
 SCRIPT_DIR="${_imr_self%/scripts/inbox_mark_read.sh}"
 unset _imr_self
 
-# 複数msg_id対応(2026-07-07 軍師発見バグ: $3以降が無視され1件しかmarkされない):
-# 3個以上の引数は1件ずつ自己呼出しへ分解し、既存の単一msg_idロジック(flock/awk/bulletin連携)を変更しない
-if [ $# -gt 2 ]; then
-    _imr_agent="$1"
-    shift
-    _imr_rc=0
-    for _imr_mid in "$@"; do
-        bash "${BASH_SOURCE[0]}" "$_imr_agent" "$_imr_mid" || _imr_rc=$?
-    done
-    exit "$_imr_rc"
-fi
-
 AGENT_ID="$1"
-MSG_ID="${2:-}"
+shift || true
+MSG_IDS=("$@")
+MSG_ID="${MSG_IDS[0]:-}"
 
 if [ -z "$AGENT_ID" ]; then
     echo "Usage: inbox_mark_read.sh <agent_id> <msg_id...>" >&2
@@ -109,8 +99,8 @@ CONFIRM_LIST_FILE=""
 
 extract_bulletin_confirms() {
     local inbox_file="$1"
-    local msg_filter="${2:-}"
-    awk -v msg_filter="$msg_filter" '
+    local msg_filter_file="${2:-}"
+    awk -v msg_filter_file="$msg_filter_file" '
         function trim(v) {
             gsub(/^[ \t'\''"]+/, "", v)
             gsub(/[ \t'\''"]+$/, "", v)
@@ -126,7 +116,7 @@ extract_bulletin_confirms() {
             if (current_id == "" || current_type != "bulletin_notify" || current_read != "false") {
                 return
             }
-            if (msg_filter != "" && current_id != msg_filter) {
+            if (filter_count > 0 && !(current_id in filters)) {
                 return
             }
             content = current_content
@@ -137,7 +127,14 @@ extract_bulletin_confirms() {
                 }
             }
         }
-        BEGIN { reset_msg() }
+        BEGIN {
+            reset_msg()
+            while ((getline filter_id < msg_filter_file) > 0) {
+                filters[filter_id]=1
+                filter_count++
+            }
+            close(msg_filter_file)
+        }
         /^[[:space:]]*-[[:space:]]*/ {
             maybe_emit()
             reset_msg()
@@ -213,6 +210,8 @@ max_attempts=3
 
 while [ $attempt -lt $max_attempts ]; do
     CONFIRM_LIST_FILE="/tmp/.imr_bulletin_$$"
+    ID_LIST_FILE="/tmp/.imr_ids_$$"
+    printf '%s\n' "${MSG_IDS[@]}" | awk 'NF && !seen[$0]++' > "$ID_LIST_FILE"
     if (
         flock -w 5 200 || exit 1
 
@@ -231,7 +230,7 @@ while [ $attempt -lt $max_attempts ]; do
         _tmp="${_inbox_dir}/.imr_$$.tmp"
 
         if grep -q "type:[[:space:]]*['\"]*bulletin_notify['\"]*[[:space:]]*$" "$INBOX" 2>/dev/null; then
-            extract_bulletin_confirms "$INBOX" "$MSG_ID" > "$CONFIRM_LIST_FILE"
+            extract_bulletin_confirms "$INBOX" "$ID_LIST_FILE" > "$CONFIRM_LIST_FILE"
         else
             : > "$CONFIRM_LIST_FILE"
         fi
@@ -244,8 +243,13 @@ while [ $attempt -lt $max_attempts ]; do
         else
             # Mark specific msg_id: stateful awk pass (no python3)
             _cnt_file="/tmp/.imr_cnt_$$"
-            awk -v msg_id="$MSG_ID" -v cnt_file="$_cnt_file" '
-                BEGIN { changed=0; current_id="" }
+            awk -v id_file="$ID_LIST_FILE" -v cnt_file="$_cnt_file" '
+                BEGIN {
+                    changed=0
+                    current_id=""
+                    while ((getline wanted_id < id_file) > 0) wanted[wanted_id]=1
+                    close(id_file)
+                }
                 {
                     stripped=$0
                     gsub(/^[[:space:]]+/,"",stripped)
@@ -266,7 +270,7 @@ while [ $attempt -lt $max_attempts ]; do
                         gsub(/^[ \t'"'"'"]*/,"",current_id)
                         gsub(/[ \t'"'"'"]*$/,"",current_id)
                     } else if ($0 ~ /^  read:[[:space:]]*false[[:space:]]*$/ && current_id!="") {
-                        if (msg_id=="" || current_id==msg_id) {
+                        if (current_id in wanted) {
                             sub(/read:[[:space:]]*false[[:space:]]*$/,"read: true")
                             changed++
                         }
@@ -299,9 +303,10 @@ while [ $attempt -lt $max_attempts ]; do
             confirm_bulletin_reads "${_bulletin_entries[@]}"
         fi
         rm -f "$CONFIRM_LIST_FILE"
+        rm -f "$ID_LIST_FILE"
         exit 0
     else
-        rm -f "$CONFIRM_LIST_FILE"
+        rm -f "$CONFIRM_LIST_FILE" "$ID_LIST_FILE"
         attempt=$((attempt + 1))
         if [ $attempt -lt $max_attempts ]; then
             echo "[inbox_mark_read] Lock timeout (attempt $attempt/$max_attempts), retrying..." >&2
