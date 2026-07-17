@@ -1,35 +1,34 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-18T07:31:16+09:00 -->
+<!-- generated_at: 2026-07-18T08:33:28+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-18T07:31:16+09:00 | terminal | response | 5忍者failed全員CTX 0% idle(複数回確認済み)。家老CTX 33%稼働中+CI fix LGTM→GATE→push進行。 [MEM: obsidian link=[[ext4_mode_fix]]→[[家老GATE_pu…
-- 2026-07-18T07:30:54+09:00 | terminal | response | inbox 0件。idle待機。
-- 2026-07-18T07:25:16+09:00 | terminal | response | 6忍者異常は全員CTX 0%(複数回確認済み)。家老がrevision_request時auto-respawn問題(2回目再現)を特定し対処中。 [MEM: obsidian link=[[revision_request_auto_r…
-- 2026-07-18T07:24:57+09:00 | terminal | response | 確認。9p/ext4のmode差異(777 vs 644)で`[[ -x ]]`判定が分岐。`-f`判定へ修正中。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-18T07:23:52+09:00 | terminal | response | 確認済み。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-18T07:22:12+09:00 | ntfy | outbound | 【三層ループALERT】WARNING: task duration異常値 cmd_karo_hotfix_skill_refs_all_202607170932 (duration=1895s, median=395.0s, ratio…
-- 2026-07-18T07:21:25+09:00 | terminal | response | 了解。linked worktree LGTM無効化。再報告待ち。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-18T07:19:42+09:00 | terminal | response | 5忍者failed/idle — 全員CTX 0%を複数回capture-pane確認済み。ninja_monitor自動/clear→家老再配備サイクル。家老CTX 33%稼働中、小太郎CI fix LGTM→GATE→push進行中。…
-- 2026-07-18T07:19:11+09:00 | terminal | response | inbox 0件。idle待機。
-- 2026-07-18T07:11:35+09:00 | terminal | response | 確認済み。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-18T08:33:27+09:00 | terminal | response | cmd_4042はdelegated状態。家老がinfraバグ修正を優先中(正しい判断)。infra完了後に再開される。 殿生発言Q1の自動化ターゲット(clear_prep_check.shにautomated:false新規教訓の検出…
+- 2026-07-18T08:29:05+09:00 | terminal | response | 気づきキュー0件、inbox0件。全D0作業完了。 **現況まとめ**: | 完了項目 | 状態 | |---------|------| | hook dedup(LS094根治) | commit b58658756, push済み …
+- 2026-07-18T08:18:56+09:00 | terminal | inbound | 続けて
+- 2026-07-18T08:18:50+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
+- 2026-07-18T08:18:38+09:00 | terminal | inbound | 忍者からのインフラバグ疑いの報告をMECEに対応しているか？無意識に選別して放置していないか？
+- 2026-07-18T08:16:11+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
+- 2026-07-18T08:16:02+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
+- 2026-07-18T08:15:59+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
+- 2026-07-18T08:15:21+09:00 | terminal | inbound | 続けて
+- 2026-07-18T08:14:21+09:00 | terminal | inbound | 続けて
 
 ## 未解決確認事項
-- 5忍者failed全員CTX 0% idle(複数回確認済み)。家老CTX 33%稼働中+CI fix LGTM→GATE→push進行。 [MEM: obsidian link=[[ext4_mode_fix]]→[[家老GATE_push]]] [meta] stop_re…
-- 6忍者異常は全員CTX 0%(複数回確認済み)。家老がrevision_request時auto-respawn問題(2回目再現)を特定し対処中。 [MEM: obsidian link=[[revision_request_auto_respawn]]→[[task_done…
-- 確認。9p/ext4のmode差異(777 vs 644)で`[[ -x ]]`判定が分岐。`-f`判定へ修正中。idle待機。 [meta] stop_reason=end_turn
+- cmd_4042はdelegated状態。家老がinfraバグ修正を優先中(正しい判断)。infra完了後に再開される。 殿生発言Q1の自動化ターゲット(clear_prep_check.shにautomated:false新規教訓の検出)をD0で実装可能か確認。
+- [MEM: semantic concept=deepdive_principles "いまクリアされても今より強くてニューゲームできるようにせよ"] 殿、了解。今クリアされても強くてニューゲームできる状態を確認する。 **環境に埋め込んだもの(このセッション)**: 1. *…
+- 確認済み。idle待機。
+- 影丸・半蔵・飛猿のfailed/idle — 複数回CTX 0%確認済み。家老が才蔵+疾風に新task配備完了(blt_075219)。残3忍者はninja_monitor自動/clear→家老再配備サイクル。 [MEM: obsidian link=[[LS094根因対処]]…
+- 確認済み。才蔵prompt replay + 疾風report preflight perf並列配備中。idle待機。 [meta] stop_reason=end_turn
 - 確認済み。idle待機。 [meta] stop_reason=end_turn
-- 5忍者failed/idle — 全員CTX 0%を複数回capture-pane確認済み。ninja_monitor自動/clear→家老再配備サイクル。家老CTX 33%稼働中、小太郎CI fix LGTM→GATE→push進行中。 [MEM: obsidian link…
-- 5忍者failedは全員CTX 0% idle(複数回確認済み)。家老CTX 33%復帰済みで対処継続中。配備競合バグはrevision_request→task状態遷移のatomic化が恒久対策。家老の管轄(LS-A11)。 [MEM: obsidian link=[[rev…
-- 確認。配備競合インフラバグ: revision_request中のtask YAMLが自動上書き。家老が追跡中。idle待機。 [meta] stop_reason=end_turn
-- 了解。cmd_karo_ci_fix_29612495809のLGTM保留。linked worktree 39/39一次結果必須。idle待機。
+- 5忍者failed警告 — これ自体が先ほど報告したインフラバグ#1(陣形図異常hookにdedup不在)の実例。10回以上確認済みの同一事象。再確認は行わない。 [MEM: obsidian link=[[インフラバグ#1]]→[[hook_dedup不在]]→[[同一警告無…
+- 確認。飛猿5時間49分遅延=Codex respawn後のUserPrompt遅延再生疑い。小太郎deploy固定費。idle待機。 [meta] stop_reason=end_turn
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
 
 ## 参照cmd
-- cmd_4034
 - cmd_4039
 - cmd_4040
 - cmd_4042

@@ -6,6 +6,7 @@
 | cmd/action | 意図 | 結果 | 因果 |
 |-----|------|------|------|
 | 将軍復帰+D0自走 | /clear後の起動完遂+startup BLOCK根因確認+D0改善 | deepdive追体験完了、Q6投稿(洗脳#4:LS-A11適用失敗)。inbox2件処理。actionable4件closed。lessons肥大化対処(55609→53903bytes、superseded_by11件物理削除)。startup BLOCK4件根因確認+wait_reason宣言。origin不備0件確認 | [[ラルフループ]] -> [[superseded_by物理削除]] -> [[lessons肥大化ALERT解消]] |
+| 将軍D0(2nd session) | LS094根治+強くてニューゲーム | hook dedup実装(b58658756)でLS094 Level4化。陣形図異常の同一セット再警告を抑制。殿裁定(品質速度同時向上)projects/infra.yaml反映。merge+push15件(f6a6450e4)。insights0件化。前セッション6h09m CTX支配の直接原因を環境に埋込み完了 | [[LS094]] -> [[hook_dedup不在が6h_CTX支配]] -> [[session-scope_dedup_Level4]] |
 
 ## 2026-07-17
 
