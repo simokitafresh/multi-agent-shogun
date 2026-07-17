@@ -2429,9 +2429,6 @@ check_and_update_done_task() {
         END { print pc "|" s "|" (ti!=""?ti:ai) }
     ' "$task_file")
     [ -z "$task_parent_cmd" ] && return 1
-    # cmd_1262: 既にdoneなら即リターン（AUTO-DONE重複書込み+通知嵐を根絶）
-    [ "$task_status" = "done" ] && return 0
-
     # 新形式({ninja}_report_{cmd}.yaml)優先で一致報告を探索。旧形式も許容。
     report_file=$(find_matching_report_file "$name") || return 1
 
@@ -2446,6 +2443,17 @@ check_and_update_done_task() {
     # task_id一致チェック（同一cmd内のWave間誤マッチ防止）
     report_task_id=$(yaml_field_get "$report_file" "task_id")
     [ -n "$task_id" ] && [ -n "$report_task_id" ] && [ "$task_id" != "$report_task_id" ] && return 1
+
+    # cmd_1262の重複AUTO-DONE防止はdone taskを報告探索前にreturnしていたため、
+    # 忍者が先にdoneへ更新する正常経路でpromotion ledger writerが一度も起動しなかった。
+    # parent_cmd/task_id一致を確認後に冪等writerのみ実行し、状態更新は引き続き省略する。
+    if [ "$task_status" = "done" ]; then
+        _reflux_promotion_record_completion "$report_file" || {
+            log "REFLUX-LEDGER-BLOCK: failed to reconcile done task report $(basename "$report_file")"
+            return 1
+        }
+        return 0
+    fi
 
     # cmd_karo_hotfix_report_notify_inprogress_guard: 再配備(deployed_at)より前のreportは
     # 前回試行の残骸。in_progress再開後にまだ新しい報告が届いていないだけなのに、
@@ -3489,6 +3497,16 @@ _reflux_promotion_inventory() {
 
     [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=20
     [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=20
+
+    # The ledger can already exist while a ninja-completed task bypassed the
+    # AUTO-DONE transition.  Reconcile completed PASS reports before every
+    # selection; otherwise the hot ledger lookup perpetually reselects the
+    # missing lesson.  Any mismatch blocks dispatch instead of publishing a
+    # candidate from inconsistent state.
+    if ! _reflux_promotion_backfill_and_check >/dev/null; then
+        printf '0\t-\tledger-inconsistent\n'
+        return 1
+    fi
 
     if [ ! -r "$helper" ]; then
         printf '0\t-\tmissing-helper\n'
