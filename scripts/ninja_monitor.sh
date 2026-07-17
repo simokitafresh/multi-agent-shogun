@@ -145,6 +145,7 @@ TRAINING_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/shogun_training_auto_deploy"
 REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=${REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD:-600}       # 還流在庫自動配備: idle継続しきい値（秒）
 REFLUX_AUTO_DEPLOY_COOLDOWN=${REFLUX_AUTO_DEPLOY_COOLDOWN:-3600}                 # 還流在庫自動配備: 忍者別クールダウン（秒）
 REFLUX_AUTO_DEPLOY_STATE_PREFIX="$STATE_DIR/shogun_reflux_auto_deploy"
+REFLUX_PROMOTION_LEDGER="${REFLUX_PROMOTION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_completed.tsv}"
 REFLUX_BACKLINK_SCAN_LIMIT=${REFLUX_BACKLINK_SCAN_LIMIT:-50}                     # backlinksゼロ在庫の1回あたり確認上限
 REFLUX_BACKLINK_TIMEOUT=${REFLUX_BACKLINK_TIMEOUT:-20}                           # backlinksゼロ確認のtimeout秒
 SPEED_TRAINING_LEDGER="${SPEED_TRAINING_LEDGER:-$SCRIPT_DIR/logs/script_speed_training_ledger.yaml}"
@@ -2508,6 +2509,13 @@ check_and_update_done_task() {
                 return 1
             fi
             log "AUTO-DONE: $name task auto-updated to done (report=$(basename "$report_file"), parent_cmd=$report_parent_cmd, status=$report_status)"
+            _reflux_promotion_record_completion "$report_file" || {
+                log "REFLUX-LEDGER-BLOCK: failed to record $(basename "$report_file")"
+                return 1
+            }
+            # task YAML is the primary state source. Publish its transition in
+            # the same event path instead of waiting for the next monitor cycle.
+            write_karo_snapshot
             return 0
             ;;
         *)
@@ -3347,7 +3355,7 @@ PY
 # enforcement inventory redispatches the same lesson until that metadata is
 # repaired.  Require both completed status and PASS verdict; drafts and failed
 # promotions must remain selectable.
-_reflux_promotion_completed_ids() {
+_reflux_promotion_scan_completed_ids() {
     python3 - "$SCRIPT_DIR" 2>/dev/null <<'PY'
 import glob
 import os
@@ -3395,10 +3403,89 @@ for lesson_id in sorted(completed):
 PY
 }
 
+_reflux_promotion_completed_ids() {
+    local ledger="${REFLUX_PROMOTION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_completed.tsv}"
+    if [ ! -e "$ledger" ]; then
+        local lock_file="${ledger}.lock" timestamp id scanned
+        mkdir -p "$(dirname "$ledger")"
+        {
+            flock -x -w 5 200 || return 1
+            if [ ! -e "$ledger" ]; then
+                scanned=$(_reflux_promotion_scan_completed_ids)
+                printf 'completed_at\tlesson_id\treport\n' > "$ledger"
+                printf -v timestamp '%(%Y-%m-%dT%H:%M:%S)T' -1
+                while IFS= read -r id; do
+                    [ -n "$id" ] && printf '%s\t%s\tbackfill\n' "$timestamp" "$id" >> "$ledger"
+                done <<< "$scanned"
+            fi
+        } 200>"$lock_file"
+    fi
+    [ -r "$ledger" ] || return 0
+    awk -F '\t' 'NF >= 2 && $2 != "lesson_id" { print $2 }' "$ledger" | sort -u
+}
+
+_reflux_promotion_record_completion() {
+    local report_file="$1"
+    local ledger="${REFLUX_PROMOTION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_completed.tsv}"
+    local lock_file="${ledger}.lock" lesson_ids timestamp report_rel lesson_id
+    [ -r "$report_file" ] || return 1
+    lesson_ids=$(python3 - "$report_file" 2>/dev/null <<'PY'
+import re, sys, yaml
+p=sys.argv[1]
+d=yaml.safe_load(open(p, encoding="utf-8")) or {}
+if not str(d.get("parent_cmd") or "").startswith("cmd_reflux_promotion_"): raise SystemExit(0)
+if str(d.get("status") or "").lower() not in {"completed","done","success"}: raise SystemExit(0)
+if str(d.get("verdict") or "").upper() not in {"PASS","PASS_NO_IMPROVEMENT"}: raise SystemExit(0)
+token=r'(?:LS|LK|LG|L)-?[A-Za-z]?[0-9]+'
+rx=re.compile(r'(?:^|昇格候補\s+(?:\[[^]]+\]\s+)?)(%s)(?![0-9A-Za-z])' % token)
+result=d.get("result") if isinstance(d.get("result"),dict) else {}
+values=[result.get("summary")]
+for entries in (d.get("binary_checks") or {}).values():
+    if isinstance(entries,list): values += [x.get("check") for x in entries if isinstance(x,dict)]
+print("\n".join(sorted({m for v in values if isinstance(v,str) for m in rx.findall(v)})))
+PY
+)
+    [ -n "$lesson_ids" ] || return 0
+    mkdir -p "$(dirname "$ledger")"
+    printf -v timestamp '%(%Y-%m-%dT%H:%M:%S)T' -1
+    report_rel="${report_file#"$SCRIPT_DIR"/}"
+    {
+        flock -x -w 5 200 || return 1
+        [ -s "$ledger" ] || printf 'completed_at\tlesson_id\treport\n' >> "$ledger"
+        while IFS= read -r lesson_id; do
+            [ -n "$lesson_id" ] || continue
+            if ! awk -F '\t' -v id="$lesson_id" '$2 == id { found=1 } END { exit !found }' "$ledger"; then
+                printf '%s\t%s\t%s\n' "$timestamp" "$lesson_id" "$report_rel" >> "$ledger"
+            fi
+        done <<< "$lesson_ids"
+    } 200>"$lock_file"
+}
+
+_reflux_promotion_backfill_and_check() {
+    local scanned ledger_ids missing extra id
+    scanned=$(_reflux_promotion_scan_completed_ids)
+    ledger_ids=$(_reflux_promotion_completed_ids)
+    missing=$(comm -23 <(printf '%s\n' "$scanned" | sed '/^$/d' | sort -u) <(printf '%s\n' "$ledger_ids" | sed '/^$/d' | sort -u))
+    if [ -n "$missing" ]; then
+        while IFS= read -r id; do
+            [ -n "$id" ] || continue
+            local timestamp ledger="${REFLUX_PROMOTION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_completed.tsv}"
+            printf -v timestamp '%(%Y-%m-%dT%H:%M:%S)T' -1
+            mkdir -p "$(dirname "$ledger")"
+            { flock -x -w 5 200 || return 1; [ -s "$ledger" ] || printf 'completed_at\tlesson_id\treport\n' >> "$ledger"; awk -F '\t' -v x="$id" '$2==x{f=1} END{exit !f}' "$ledger" || printf '%s\t%s\t%s\n' "$timestamp" "$id" backfill >> "$ledger"; } 200>"${ledger}.lock"
+        done <<< "$missing"
+    fi
+    ledger_ids=$(_reflux_promotion_completed_ids)
+    extra=$(comm -13 <(printf '%s\n' "$scanned" | sed '/^$/d' | sort -u) <(printf '%s\n' "$ledger_ids" | sed '/^$/d' | sort -u))
+    [ -z "$extra" ] || { printf 'BLOCK ledger_extra=%s\n' "$(printf '%s' "$extra" | tr '\n' ',')"; return 1; }
+    printf 'PASS scanned=%s ledger=%s diff=0\n' "$(printf '%s\n' "$scanned" | sed '/^$/d' | wc -l)" "$(printf '%s\n' "$ledger_ids" | sed '/^$/d' | wc -l)"
+}
+
 _reflux_promotion_inventory() {
     local helper="$SCRIPT_DIR/scripts/gates/gate_lesson_enforcement_level.sh"
     local timeout_sec="${REFLUX_PROMOTION_TIMEOUT:-20}"
     local output status count first_item candidates_list pd_ids completed_ids cand cand_id completed_skipped=0
+    local cache_dir="${STATE_DIR:-$SCRIPT_DIR/.cache}" cache_file sig_file current_sig cached_sig
 
     [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=20
     [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=20
@@ -3408,12 +3495,26 @@ _reflux_promotion_inventory() {
         return 0
     fi
 
-    if command -v timeout >/dev/null 2>&1; then
-        output=$(LESSON_ENFORCEMENT_ROOT="$SCRIPT_DIR" timeout "$timeout_sec" bash "$helper" 2>/dev/null)
-        status=$?
+    cache_file="$cache_dir/reflux_promotion_inventory.raw"
+    sig_file="${cache_file}.sig"
+    current_sig=$(find "$SCRIPT_DIR/projects" -type f \( -name 'lessons.yaml' -o -name 'lessons_shogun.yaml' -o -name 'lessons_karo.yaml' -o -name 'lessons_gunshi.yaml' \) -printf '%p:%T@:%s\n' 2>/dev/null | sort | sha256sum | awk '{print $1}')
+    cached_sig=$(cat "$sig_file" 2>/dev/null || true)
+    if [ -n "$current_sig" ] && [ "$current_sig" = "$cached_sig" ] && [ -r "$cache_file" ]; then
+        output=$(cat "$cache_file")
+        status=0
     else
-        output=$(LESSON_ENFORCEMENT_ROOT="$SCRIPT_DIR" bash "$helper" 2>/dev/null)
-        status=$?
+        if command -v timeout >/dev/null 2>&1; then
+            output=$(LESSON_ENFORCEMENT_ROOT="$SCRIPT_DIR" timeout "$timeout_sec" bash "$helper" 2>/dev/null)
+            status=$?
+        else
+            output=$(LESSON_ENFORCEMENT_ROOT="$SCRIPT_DIR" bash "$helper" 2>/dev/null)
+            status=$?
+        fi
+        if [ "$status" -eq 0 ]; then
+            mkdir -p "$cache_dir"
+            printf '%s\n' "$output" > "$cache_file"
+            printf '%s\n' "$current_sig" > "$sig_file"
+        fi
     fi
 
     if [ "$status" -ne 0 ]; then
@@ -5774,7 +5875,9 @@ write_karo_snapshot() {
                             fi
                         fi
                         _snapshot_status[$name]="${status:-}"
-                        echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}|CTX:${_ctx}|M:${_model_short}"
+                        local _task_source_ts
+                        _task_source_ts=$(date -r "$task_file" '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo unknown)
+                        echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}|CTX:${_ctx}|M:${_model_short}|SRC:${_task_source_ts}"
                     else
                         _snapshot_status[$name]=""
                         echo "ninja|${name}|none|idle|none|CTX:${_ctx}|M:${_model_short}"
