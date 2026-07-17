@@ -25,6 +25,11 @@ ac_version_read: abc12345
 commit_hash: 0123456789abcdef0123456789abcdef01234567
 result:
   summary: "テスト報告"
+operational_simulation:
+  command: "bash tests/unit/test_gp190_waive_reason.bats"
+  expected: "報告フォーマット判定が期待どおりになる"
+  actual: "期待どおりの終了コードを返した"
+  result: "PASS"
 purpose_validation:
   cmd_purpose: "テスト"
   fit: true

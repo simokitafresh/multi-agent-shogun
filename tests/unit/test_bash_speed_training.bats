@@ -327,9 +327,10 @@ EOF
         10 137.597 181.299 120.433 171.820 "bats target PASS SKIP=0" "${AB_ARGS[@]}" "$LEDGER"
 
     [ "$status" -eq 0 ]
-    run python3 - "$LEDGER" <<'PY'
+run python3 - "$LEDGER" "$first" <<'PY'
 import sys, yaml
-entry = yaml.safe_load(open(sys.argv[1]))["entries"][0]
+entries = yaml.safe_load(open(sys.argv[1]))["entries"]
+entry = next(item for item in entries if item["script_path"] == sys.argv[2])
 assert entry["candidate_p95_ms"] == 171.82
 assert entry["status"] == "completed"
 PY

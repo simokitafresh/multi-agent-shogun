@@ -52,10 +52,8 @@ WRAPPER
     sed -n '/^check_ac_structure_quality()/,/^}/p' \
         "$PROJECT_ROOT/scripts/cmd_save.sh" >> "$TEST_TMPDIR/run_check19.sh"
 
-    # Check19ロジックをcmd_save.shから抽出
-    sed -n '/^# --- Check 19: AC YAML構造判定/,/^# --- Check 20:/p' \
-        "$PROJECT_ROOT/scripts/cmd_save.sh" \
-        | sed '/^# --- Check 20:/d' >> "$TEST_TMPDIR/run_check19.sh"
+    # 抽出済み関数を直接呼ぶ。Check19.5以降の関数定義を途中で切らない。
+    printf '%s\n' 'check_ac_structure_quality' >> "$TEST_TMPDIR/run_check19.sh"
 
     chmod +x "$TEST_TMPDIR/run_check19.sh"
 }
