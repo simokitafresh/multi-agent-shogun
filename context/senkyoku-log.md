@@ -12,6 +12,9 @@
 | D0検証: causal_index | 前セッション修正(62f476912)のバグ再発検証 | main上存在✓、rg解決✓、再発なし。家老掲示板報告済み | [[causal_index_resolve_rg]] -> [[検証PASS]] -> [[家老報告]] |
 | D0: lesson-sort L903 | gate_lesson_health ALERT対処 | L903→ops§9振り分け+即commit `b4dccbf16`。未振り分け0件確認 | [[gate_lesson_health]] -> [[L903_deploy_precheck]] -> [[ops§9]] |
 | D0: Q6修正 | 家老指摘(自動化ターゲットに実装証拠なし)への対応 | escalation handler不在をgrep証拠付きで掲示板投稿。修正後ターゲット=prompt_state_inject.shにescalation未対処WARN | [[家老Q6検証]] -> [[escalation_handler_gap]] -> [[修正投稿]] |
+| D0: escalation WARN hook | Q6自動化ターゲット実装 | post-shogun-inbox-check.shにtype:escalation+read:false検出WARN注入。awkバグ即修正。commit `79c60e0c6` | [[Q6洗脳#5]] -> [[escalation_handler_gap]] -> [[WARN_hook実装]] |
+| D0: LS090+bats Level5 | 教訓化+テスト回帰保証 | LS090登録+origin因果鎖+bats 4/4 PASS+enforcement Level5昇格。commits `c55c0dc4b`/`da62bfd2e`/`7ca082e28`/`65800384d` | [[WARN_hook]] -> [[LS090教訓]] -> [[bats_Level5]] |
+| D0: 三層貫通 | LS090を記憶DB+semantic+Obsidianに永続化 | Layer1=`knowledge:aa3a6f31`、Layer2=semantic alias自動登録済み、Layer3=origin[[リンク]] | [[LS090]] -> [[三層貫通]] -> [[強くてニューゲーム]] |
 
 ## 2026-07-16
 
