@@ -1,5 +1,14 @@
 # 戦局日誌 (Campaign Log)
-<!-- last_updated: 2026-07-16 session_recovery -->
+<!-- last_updated: 2026-07-17 session_shogun_startup -->
+
+## 2026-07-17
+
+| cmd/action | 意図 | 結果 | 因果 |
+|-----|------|------|------|
+| 将軍復帰+deepdive追体験 | /clear後の起動手順完遂 | deepdive 2本全Phase追体験完了、Q6掲示板投稿(洗脳#5:CI RED先送り)、軍師第三者検証待ち | [[ラルフループ]] -> [[deepdive追体験]] -> [[Q6洗脳検出]] |
+| CI RED対処確認 | run 29543642389(Unit Tests bats失敗)の一次確認 | 家老が自走で飛蔵に`cmd_karo_ci_fix_29543642389`配備済み。将軍cmd不要(殿裁定2026-07-16準拠) | [[CI_RED_run_29543642389]] -> [[家老自走配備]] -> [[飛蔵修正中]] |
+| SKILL.md batch更新指示 | 家老エスカレーション(skill_script_refs WARN 1セッション連続)対処 | 家老に/karo-direct配備指示送信。insights 25件が同一パターン(script更新→checked_at stale) | [[修行サイクルscript更新]] -> [[SKILL.md_checked_at_stale]] -> [[家老karo_direct配備]] |
+| idle自走分析 | Score Matrix+Design Diversity Map+WA分析+insights分類 | BLOCK率0%, WA率0%, insights68件(25 skill_refs/22 semantic/17 l6_horizontal)。システム安定自走中 | [[idle自走トリガー]] -> [[品質指標全健全]] -> [[insights構造的パターン特定]] |
 
 ## 2026-07-16
 
