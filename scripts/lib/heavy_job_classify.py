@@ -287,11 +287,11 @@ def _is_bats_heavy(args):
         return True
     if target.endswith("/"):
         return True
-    # A single file is light only with a current, content-identical, successful
-    # serial measurement below the threshold. Missing/stale/mismatched evidence
-    # fails closed so an unmeasured 29.84s file cannot bypass admission again.
-    wall_seconds = _trusted_bats_wall_seconds(target)
-    return wall_seconds is None or wall_seconds > _TIMED_HEAVY_SECONDS
+    # Admission is based on invocation breadth, not historical wall time.  A
+    # single concrete .bats file (with or without --filter) is the documented
+    # lightweight unit of work.  Promoting that invocation from timing-ledger
+    # state made PreTool first allow it and then demand a second wrapper run.
+    return not target.endswith(".bats")
 
 
 _PYTEST_HEAVY_NAME_RE = re.compile(r"(^|/)tests?($|/)")

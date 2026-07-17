@@ -66,34 +66,34 @@ CMD
     [ "$result" = "light" ]
 }
 
-@test "分類器: 実測10秒超の単一.batsをtimed-heavyへ昇格" {
+@test "分類器: 実測10秒超でも単一.batsは呼出幅が1なので軽量" {
     local fixture="$TMP/test_campaign_lane_shard_item.bats"
     printf '@test "slow" { true; }\n' >"$fixture"
     _timing_row "$fixture" 29.840
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
-    [ "$(heavy_job_classify "bats $fixture")" = "heavy" ]
+    [ "$(heavy_job_classify "bats $fixture")" = "light" ]
 }
 
-@test "分類器: ledger欠損・fingerprint不一致はfail-closedでheavy" {
+@test "分類器: ledger欠損・fingerprint不一致でも単一.batsは軽量" {
     local fixture="$TMP/test_unknown.bats"
     printf '@test "unknown" { true; }\n' >"$fixture"
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
-    [ "$(heavy_job_classify "bats $fixture")" = "heavy" ]
+    [ "$(heavy_job_classify "bats $fixture")" = "light" ]
     _timing_row "$fixture" 1.000 deadbeef
-    [ "$(heavy_job_classify "bats $fixture")" = "heavy" ]
+    [ "$(heavy_job_classify "bats $fixture")" = "light" ]
 }
 
-@test "分類器: ext4索引cache破損とwriter更新を検知して原子的に再構築" {
+@test "分類器: 単一.bats判定はtiming indexの破損・更新に依存しない" {
     local fixture="$TMP/test-cache-refresh.bats" cache_dir="$TMP/index-cache"
     printf '@test "cache" { true; }\n' >"$fixture"
     _timing_row "$fixture" 1.000
     export HEAVY_JOB_INDEX_CACHE_DIR="$cache_dir"
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
-    [ "$(heavy_job_classify "bats $fixture")" = "light" ]
-    printf 'corrupt' >"$(find "$cache_dir" -name '*.json' -print -quit)"
+    mkdir -p "$cache_dir"
+    printf 'corrupt' >"$cache_dir/stale.json"
     [ "$(heavy_job_classify "bats $fixture")" = "light" ]
     _timing_row "$fixture" 29.840
-    [ "$(heavy_job_classify "bats $fixture")" = "heavy" ]
+    [ "$(heavy_job_classify "bats $fixture")" = "light" ]
 }
 
 @test "分類器: bats全量ディレクトリは重量" {
@@ -177,6 +177,33 @@ EOF
     source "$ROOT/scripts/lib/heavy_job_classify.sh"
     result="$(heavy_job_classify "bats $fixture --filter 'specific test name'")"
     [ "$result" = "light" ]
+}
+
+@test "分類器: 実行commandだけを分類する表はFP=0 FN=0" {
+    local fixture="$(_quick_fixture matrix.bats)" command expected actual
+    source "$ROOT/scripts/lib/heavy_job_classify.sh"
+    local -a cases=(
+        "bats $fixture|light"
+        "bats '$fixture'|light"
+        "bats --filter 'one test' $fixture|light"
+        "printf '%s\\n' 'bats tests/unit/a.bats tests/unit/b.bats'|light"
+        "python3 - <<'PY'
+print('bats tests/unit/a.bats tests/unit/b.bats')
+PY|light"
+        "echo before && bats $fixture|light"
+        "bats tests/unit/a.bats tests/unit/b.bats|heavy"
+        "bats tests/unit/|heavy"
+    )
+    local fp=0 fn=0
+    for row in "${cases[@]}"; do
+        command="${row%|*}"
+        expected="${row##*|}"
+        actual="$(heavy_job_classify "$command")"
+        if [ "$expected" = light ] && [ "$actual" = heavy ]; then fp=$((fp + 1)); fi
+        if [ "$expected" = heavy ] && [ "$actual" = light ]; then fn=$((fn + 1)); fi
+    done
+    [ "$fp" -eq 0 ]
+    [ "$fn" -eq 0 ]
 }
 
 @test "分類器: chained read commandのpython heredoc本文に重量語があっても軽量" {
