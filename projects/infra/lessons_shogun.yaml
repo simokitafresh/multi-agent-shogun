@@ -451,4 +451,5 @@ lessons:
   source_cmd: 'session_20260717'
   created_at: '2026-07-17'
   automated: true
-  enforcement: 'Level4: type=hook; file=.claude/hooks/post-shogun-inbox-check.sh; pattern=escalation_unread。PostToolUseごとにescalation未対処をWARN表示'
+  enforcement_level: 5
+  enforcement: 'Level5: type=hook+test; file=.claude/hooks/post-shogun-inbox-check.sh; pattern=escalation_unread; test=tests/unit/test_post_shogun_escalation_warn.bats(4/4 PASS)。PostToolUseごとにescalation未対処をWARN表示'
