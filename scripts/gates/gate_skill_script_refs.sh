@@ -27,6 +27,8 @@ import sys
 import fcntl
 import hashlib
 import json
+import subprocess
+import atexit
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -60,9 +62,8 @@ contract_line_re = re.compile(
     re.I,
 )
 
-def contract_sha256(path: Path) -> str:
+def contract_sha256_text(text: str) -> str:
     """Hash the externally observable CLI/exit/output/side-effect surface."""
-    text = path.read_text(encoding="utf-8", errors="ignore")
     surface = []
     for raw in text.splitlines():
         line = raw.strip()
@@ -70,6 +71,10 @@ def contract_sha256(path: Path) -> str:
             surface.append(re.sub(r"\s+", " ", line))
     payload = "\n".join(surface).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
+
+
+def contract_sha256(path: Path) -> str:
+    return contract_sha256_text(path.read_text(encoding="utf-8", errors="ignore"))
 
 command_ref_re = re.compile(
     r"(?:^|[\s`(])(?:bash|sh|python3?|node|ruby|perl)\s+"
@@ -175,14 +180,14 @@ def example_path_exists(raw: str) -> tuple[bool, Path]:
     return False, resolved
 
 
-def parse_checked_at_epoch(text: str) -> float | None:
+def parse_checked_at(text: str) -> datetime | None:
     # SKILL.mdの更新慣行は先頭への新コメント追記で、古い履歴コメントが下部に残る。
     # 最新(max)を採用しないと末尾の古いコメントで恒常WARN化する(INS-20260702-204807)。
     matches = checked_at_re.findall(text)
     if not matches:
         return None
 
-    epochs: list[float] = []
+    parsed_values: list[datetime] = []
     for raw in matches:
         normalized = raw.strip().replace("Z", "+00:00")
         if " " in normalized and "T" not in normalized:
@@ -195,9 +200,104 @@ def parse_checked_at_epoch(text: str) -> float | None:
 
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
-        epochs.append(parsed.timestamp())
+        parsed_values.append(parsed)
 
-    return max(epochs) if epochs else None
+    return max(parsed_values) if parsed_values else None
+
+
+def git_checkout_available() -> bool:
+    try:
+        subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "--git-dir"],
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        return True
+    except (OSError, subprocess.CalledProcessError):
+        return False
+
+
+git_available = git_checkout_available()
+git_baseline_cache: dict[tuple[str, str], str | None] = {}
+git_snapshot_cache: dict[str, str | None] = {}
+cat_file_process: subprocess.Popen[bytes] | None = None
+
+
+def close_cat_file() -> None:
+    global cat_file_process
+    if cat_file_process is not None:
+        try:
+            if cat_file_process.stdin:
+                cat_file_process.stdin.close()
+            cat_file_process.wait(timeout=2)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+
+
+atexit.register(close_cat_file)
+
+
+def git_snapshot_before(checked_iso: str) -> str | None:
+    if checked_iso in git_snapshot_cache:
+        return git_snapshot_cache[checked_iso]
+    commit: str | None = None
+    if git_available:
+        try:
+            commit = subprocess.run(
+                ["git", "-C", str(repo_root), "rev-list", "-1", f"--before={checked_iso}", "HEAD"],
+                check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            ).stdout.strip() or None
+        except (OSError, subprocess.CalledProcessError):
+            pass
+    git_snapshot_cache[checked_iso] = commit
+    return commit
+
+
+def cat_file_blob(object_name: str) -> str | None:
+    global cat_file_process
+    try:
+        if cat_file_process is None:
+            cat_file_process = subprocess.Popen(
+                ["git", "-C", str(repo_root), "cat-file", "--batch"],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            )
+        assert cat_file_process.stdin is not None and cat_file_process.stdout is not None
+        cat_file_process.stdin.write(object_name.encode("utf-8") + b"\n")
+        cat_file_process.stdin.flush()
+        header = cat_file_process.stdout.readline().decode("utf-8", errors="replace").strip()
+        if header.endswith(" missing"):
+            return None
+        parts = header.rsplit(" ", 2)
+        if len(parts) != 3 or parts[1] != "blob":
+            return None
+        size = int(parts[2])
+        payload = cat_file_process.stdout.read(size)
+        cat_file_process.stdout.read(1)
+        return payload.decode("utf-8", errors="ignore")
+    except (OSError, ValueError, BrokenPipeError):
+        return None
+
+
+def git_contract_baseline(path: Path, checked_at: datetime) -> str | None:
+    """Return the contract hash from the last blob committed before checked_at."""
+    try:
+        rel = str(path.resolve().relative_to(repo_root))
+    except ValueError:
+        return None
+    checked_iso = checked_at.astimezone(timezone.utc).isoformat()
+    key = (rel, checked_iso)
+    if key in git_baseline_cache:
+        return git_baseline_cache[key]
+    result: str | None = None
+    if git_available:
+        try:
+            commit = git_snapshot_before(checked_iso)
+            if commit:
+                blob = cat_file_blob(f"{commit}:{rel}")
+                result = contract_sha256_text(blob) if blob is not None else None
+        except (OSError, subprocess.CalledProcessError):
+            result = None
+    git_baseline_cache[key] = result
+    return result
 
 
 raw_roots = os.environ.get("SKILL_REF_DIRS", "skills:.claude/skills:.codex/skills")
@@ -235,7 +335,8 @@ for skill_file in skill_files:
     if refs:
         skills_with_refs += 1
     total_refs += len(refs)
-    checked_at_epoch = parse_checked_at_epoch(text)
+    checked_at = parse_checked_at(text)
+    checked_at_epoch = checked_at.timestamp() if checked_at is not None else None
     skill_freshness_time = checked_at_epoch if checked_at_epoch is not None else skill_file.stat().st_mtime
 
     display_skill = str(skill_file.relative_to(repo_root))
@@ -262,10 +363,21 @@ for skill_file in skill_files:
             }
             verified_hash = current_hash
             state_dirty = True
-        if resolved.is_file() and current_hash != verified_hash and resolved.stat().st_mtime > skill_freshness_time + 1:
+        git_baseline = git_contract_baseline(resolved, checked_at) if checked_at is not None else None
+        baseline_hashes = {value for value in (verified_hash, git_baseline) if value}
+        contract_changed = bool(baseline_hashes) and current_hash not in baseline_hashes
+        mtime_fallback_changed = (
+            not baseline_hashes and resolved.stat().st_mtime > skill_freshness_time + 1
+        )
+        if resolved.is_file() and (contract_changed or mtime_fallback_changed):
             # 判定根拠を明示: 採用基準(checked_atコメント最新値かmtimeか)が見えないと
             # 「更新したのに直らない」の原因調査が毎回ゼロからになる(2026-07-02 3セッション先送りの教訓)
-            baseline_src = "checked_at" if checked_at_epoch is not None else "SKILL.md mtime"
+            baseline_src = (
+                "verified contract hash" if verified_hash else
+                "checked_at Git contract hash" if git_baseline else
+                "checked_at mtime fallback" if checked_at_epoch is not None else
+                "SKILL.md mtime fallback"
+            )
             baseline_iso = datetime.fromtimestamp(skill_freshness_time, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
             script_iso = datetime.fromtimestamp(resolved.stat().st_mtime, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
             stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved), baseline_src, baseline_iso, script_iso))
