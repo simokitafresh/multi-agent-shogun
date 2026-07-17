@@ -131,6 +131,52 @@ log() {
     echo "[DEPLOY] $1" >&2
 }
 
+# One immutable read snapshot is shared by every deploy in the same wave.  The
+# source digest invalidates stale entries; target_key keeps filtered/query
+# results isolated between workers.  Only a cache miss takes the short lock --
+# consumers never hold a ninja/cmd mutation lock while doing the heavy read.
+deploy_task_wave_cache() {
+    local namespace="$1" target_key="$2" source_list="$3"
+    shift 3
+    local cache_root="${DEPLOY_TASK_WAVE_CACHE_DIR:-/tmp/deploy_task_wave_cache}"
+    local source_fp key cache_file lock_file tmp_file source
+    mkdir -p "$cache_root"
+    source_fp="$({
+        while IFS= read -r source; do
+            [ -n "$source" ] || continue
+            if [ -f "$source" ]; then
+                sha256sum "$source"
+            else
+                printf 'missing  %s\n' "$source"
+            fi
+        done <<< "$source_list"
+    } | sha256sum | cut -d' ' -f1)"
+    key="$(printf '%s\0%s\0%s' "$namespace" "$source_fp" "$target_key" | sha256sum | cut -d' ' -f1)"
+    cache_file="$cache_root/${namespace}_${key}.snapshot"
+    lock_file="$cache_file.lock"
+    if [ ! -f "$cache_file" ]; then
+        exec {wave_cache_fd}>"$lock_file"
+        flock -w "${DEPLOY_TASK_WAVE_CACHE_LOCK_TIMEOUT:-30}" "$wave_cache_fd" || return 1
+        if [ ! -f "$cache_file" ]; then
+            tmp_file=$(mktemp "$cache_root/.${namespace}.${key}.XXXXXX")
+            if "$@" > "$tmp_file"; then
+                mv "$tmp_file" "$cache_file"
+                log "wave_cache: miss namespace=${namespace} source_fp=${source_fp} target_key=${target_key}"
+            else
+                rm -f "$tmp_file"
+                flock -u "$wave_cache_fd"
+                eval "exec ${wave_cache_fd}>&-"
+                return 1
+            fi
+        fi
+        flock -u "$wave_cache_fd"
+        eval "exec ${wave_cache_fd}>&-"
+    else
+        log "wave_cache: hit namespace=${namespace} source_fp=${source_fp} target_key=${target_key}"
+    fi
+    cat "$cache_file"
+}
+
 warn_three_layer_candidate_backlog() {
     local db_path="${SHOGUN_MEMORY_DB:-$SCRIPT_DIR/data/multi_agent_shogun_memory.db}"
     local warn_threshold="${SHOGUN_THREE_LAYER_CANDIDATE_WARN_THRESHOLD:-10}"
@@ -4447,7 +4493,8 @@ inject_semantic_concepts() {
     # semantic_search.sh でマッチする概念+ファイル+スキルを取得
     # cmd_3758: 同一purposeで2回呼んでいた(matches用+recommended_skills用)のを1回のraw出力共有に統合
     local semantic_raw
-    semantic_raw=$(SEMANTIC_DISABLE_LLM=1 timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null)
+    semantic_raw=$(deploy_task_wave_cache semantic "$purpose|$target_path" "$index_path" \
+        env SEMANTIC_DISABLE_LLM=1 timeout 5 bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$purpose" 2>/dev/null) || semantic_raw=""
 
     local matches
     matches=$(printf '%s\n' "$semantic_raw" | awk '
@@ -4611,6 +4658,7 @@ inject_memory_db_context() {
 
     local query_script="$SCRIPT_DIR/scripts/memory_db_query.sh"
     [ -f "$query_script" ] || { log "inject_memory_db_context: query script not found"; return 0; }
+    local db_path="${SHOGUN_MEMORY_DB:-$SCRIPT_DIR/data/multi_agent_shogun_memory.db}"
 
     # purposeからキーワード抽出
     local purpose
@@ -4631,7 +4679,8 @@ inject_memory_db_context() {
         fi
         combined_sql="${combined_sql}SELECT ts || ' | ' || substr(summary,1,100) FROM events WHERE summary LIKE '%${kw_esc}%' AND event_type IN ('conversation','knowledge','ruling') ORDER BY ts DESC LIMIT 2"
     done
-    result=$(bash "$query_script" "$combined_sql" 2>/dev/null)
+    result=$(deploy_task_wave_cache memory "$keywords|$combined_sql" "$db_path" \
+        bash "$query_script" "$combined_sql" 2>/dev/null) || result=""
     [ -n "$result" ] || { log "inject_memory_db_context: no hits for: $keywords"; return 0; }
 
     # task YAMLに memory_db_context フィールドとして注入
@@ -5989,6 +6038,7 @@ try:
 
     # GP-080: 教訓キャッシュ (/tmp/deploy_lesson_cache_{project}_{mtime}.json)
     # YAML解析は遅い(WSL2+大ファイル)。mtimeが同じなら/tmpのJSONキャッシュを使う
+    import fcntl
     import hashlib
     import json
 
@@ -5997,12 +6047,16 @@ try:
         if not os.path.exists(yaml_path):
             return []
         try:
-            mtime = os.path.getmtime(yaml_path)
+            with open(yaml_path, 'rb') as source:
+                source_bytes = source.read()
         except OSError:
             return []
-        cache_key = hashlib.md5(yaml_path.encode()).hexdigest()[:12]
+        source_fp = hashlib.sha256(source_bytes).hexdigest()
+        cache_key = hashlib.sha256((yaml_path + '\0' + source_fp).encode()).hexdigest()[:24]
         _cache_dir = os.environ.get('DEPLOY_LESSON_CACHE_DIR', '/tmp')
-        cache_path = f'{_cache_dir}/deploy_lesson_cache_{cache_key}_{mtime}.json'
+        os.makedirs(_cache_dir, exist_ok=True)
+        cache_path = f'{_cache_dir}/deploy_lesson_cache_{cache_key}.json'
+        lock_path = cache_path + '.lock'
         # キャッシュヒット
         if os.path.exists(cache_path):
             try:
@@ -6010,14 +6064,20 @@ try:
                     return json.load(cf)
             except Exception:
                 pass
-        # キャッシュミス: YAML解析 → JSONキャッシュ保存
+        # 同一waveの同時missは1 workerだけが解析し、他workerはsnapshotを読む。
         try:
-            with open(yaml_path) as f:
-                data = yaml.load(f, Loader=yaml.SafeLoader)
-            lessons = data.get('lessons', []) if data else []
-            with open(cache_path, 'w') as cf:
-                json.dump(lessons, cf)
-            return lessons
+            with open(lock_path, 'w') as lock_f:
+                fcntl.flock(lock_f, fcntl.LOCK_EX)
+                if os.path.exists(cache_path):
+                    with open(cache_path) as cf:
+                        return json.load(cf)
+                data = yaml.load(source_bytes.decode('utf-8'), Loader=yaml.SafeLoader)
+                lessons = data.get('lessons', []) if data else []
+                fd, tmp_path = tempfile.mkstemp(dir=_cache_dir, prefix='.lesson_snapshot.', suffix='.json')
+                with os.fdopen(fd, 'w') as cf:
+                    json.dump(lessons, cf)
+                os.replace(tmp_path, cache_path)
+                return lessons
         except Exception:
             return []
 
