@@ -6,7 +6,11 @@
 
 set -eu
 
-payload="$(cat 2>/dev/null || true)"
+if [ -n "${HOOK_PAYLOAD+x}" ]; then
+    payload="$HOOK_PAYLOAD"
+else
+    payload="$(cat 2>/dev/null || true)"
+fi
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
 
 # Fast-path: skip if not Bash or no inbox_write+report_received keywords
@@ -84,6 +88,8 @@ try:
         task_data = yaml.safe_load(f)
     task = task_data.get("task", task_data) if isinstance(task_data, dict) else {}
     project = task.get("project", "")
+    owned_paths = task.get("owned_paths")
+    report_path_value = task.get("report_path", "")
 except Exception:
     raise SystemExit(0)
 
@@ -112,41 +118,97 @@ except Exception:
 if not project_path or not os.path.isdir(project_path):
     raise SystemExit(0)
 
-# uncommitted変更チェック
-try:
-    unstaged = subprocess.run(
-        ["git", "diff", "--name-only"],
-        capture_output=True, text=True, cwd=project_path, timeout=5
+def git(*args):
+    return subprocess.run(
+        ["git", "-C", project_path, *args], capture_output=True,
+        text=True, timeout=5
     )
-    staged = subprocess.run(
-        ["git", "diff", "--cached", "--name-only"],
-        capture_output=True, text=True, cwd=project_path, timeout=5
-    )
-except Exception:
-    raise SystemExit(0)
 
-uncommitted = set()
-if unstaged.returncode == 0 and unstaged.stdout.strip():
-    uncommitted.update(unstaged.stdout.strip().splitlines())
-if staged.returncode == 0 and staged.stdout.strip():
-    uncommitted.update(staged.stdout.strip().splitlines())
 
-# 運用ファイル除外（logs, queue等はshogun repoのため通常該当しない）
-filtered = [f for f in uncommitted if not any(
-    f.startswith(p) for p in ("logs/", "queue/", "node_modules/", ".next/", "__pycache__/")
-) and not f.endswith((".log", ".pyc"))]
+def global_fallback(reason):
+    """Fail safe only when task/report scope cannot be established."""
+    result = git("status", "--porcelain", "--untracked-files=no")
+    if result.returncode != 0:
+        return [], [f"scope_fallback_failed:{reason}"]
+    paths = []
+    for line in result.stdout.splitlines():
+        path = line[3:].strip() if len(line) >= 4 else ""
+        if path and not any(path.startswith(p) for p in (
+            "logs/", "queue/", "node_modules/", ".next/", "__pycache__/"
+        )) and not path.endswith((".log", ".pyc")):
+            paths.append(path)
+    paths = sorted(set(paths))
+    return paths, ([f"scope_fallback:{reason}"] if paths else [])
 
-if not filtered:
+
+issues = []
+filtered = []
+scope_ready = isinstance(owned_paths, list) and bool(owned_paths) and all(
+    isinstance(path, str) and path.strip() and not os.path.isabs(path)
+    for path in owned_paths
+)
+report_path = report_path_value
+if report_path and not os.path.isabs(report_path):
+    report_path = os.path.join(script_dir, report_path)
+
+report = None
+if report_path and os.path.isfile(report_path):
+    try:
+        with open(report_path) as f:
+            report = yaml.safe_load(f)
+    except Exception:
+        report = None
+
+if not scope_ready:
+    filtered, issues = global_fallback("task_owned_paths_missing_or_invalid")
+elif not isinstance(report, dict):
+    filtered, issues = global_fallback("report_missing_or_invalid")
+else:
+    owned_paths = list(dict.fromkeys(path.strip() for path in owned_paths))
+    status = git("status", "--porcelain", "--untracked-files=all", "--", *owned_paths)
+    if status.returncode != 0:
+        filtered, issues = global_fallback("owned_status_failed")
+    else:
+        filtered = sorted({
+            line[3:].strip() for line in status.stdout.splitlines()
+            if len(line) >= 4 and line[3:].strip()
+        })
+        if filtered:
+            issues.append("owned_paths_uncommitted")
+
+        commit_hash = str(report.get("commit_hash") or "").strip()
+        if len(commit_hash) != 40 or any(c not in "0123456789abcdefABCDEF" for c in commit_hash):
+            issues.append("report_commit_hash_missing_or_invalid")
+        else:
+            commit = git("rev-parse", "--verify", f"{commit_hash}^{{commit}}")
+            if commit.returncode != 0:
+                issues.append("report_commit_not_found")
+            else:
+                mismatched = []
+                for path in owned_paths:
+                    head_blob = git("rev-parse", f"HEAD:{path}")
+                    report_blob = git("rev-parse", f"{commit_hash}:{path}")
+                    if (head_blob.returncode != 0 or report_blob.returncode != 0
+                            or head_blob.stdout.strip() != report_blob.stdout.strip()):
+                        mismatched.append(path)
+                if mismatched:
+                    filtered.extend(mismatched)
+                    filtered = sorted(set(filtered))
+                    issues.append("head_report_blob_mismatch")
+
+if not issues:
     raise SystemExit(0)
 
 msg = (
     f"\n⚠ COMMIT MISSING 警告 ⚠\n"
-    f"プロジェクト {project} ({project_path}) にuncommitted変更あり:\n"
+    f"プロジェクト {project} ({project_path}) の任務scope整合性に問題あり:\n"
 )
 for f in sorted(filtered)[:10]:
     msg += f"  - {f}\n"
 if len(filtered) > 10:
     msg += f"  ... +{len(filtered) - 10} files\n"
+for issue in issues:
+    msg += f"  reason: {issue}\n"
 msg += (
     "\n報告を提出する前に、自分の任務scope内ファイルだけをcommitせよ:\n"
     f"  cd {project_path} && git add <scope内file...> && git commit -m 'feat: <cmd_id> <summary>'\n"

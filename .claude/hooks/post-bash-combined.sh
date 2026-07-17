@@ -273,75 +273,33 @@ if [[ "$payload" == *'inbox_write'* && "$payload" == *'report_received'* ]]; the
     SCRIPT_DIR="${_post_bash_self%/.claude/hooks/post-bash-combined.sh}"
     unset _post_bash_self
 
-    command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
-    if [[ -n "$command" && "$command" == *'inbox_write'* && "$command" == *'report_received'* ]]; then
+    if [[ -x "$SCRIPT_DIR/.claude/hooks/post-bash-commit-reminder.sh" ]]; then
+        HOOK_PAYLOAD="$payload" bash "$SCRIPT_DIR/.claude/hooks/post-bash-commit-reminder.sh"
+    else
+        # Standalone helper is part of the production checkout.  Minimal
+        # fail-safe keeps isolated/older hook bundles functional and clearly
+        # labels that task scope could not be established.
+        command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
         ninja_name=""
         if [[ "$command" =~ report_received[[:space:]]+([a-z_]+) ]]; then
             ninja_name="${BASH_REMATCH[1]}"
         fi
-
-        if [[ -n "$ninja_name" ]]; then
-            task_path="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
-            if [[ -f "$task_path" ]]; then
-                project="$(awk '
-                    /^task:[[:space:]]*$/ { in_task=1; next }
-                    in_task && /^[^[:space:]]/ { exit }
-                    in_task && /^[[:space:]]+project:[[:space:]]*/ {
-                        sub(/^[[:space:]]+project:[[:space:]]*/, "")
-                        gsub(/^["'\''"]|["'\''"]$/, "")
-                        print
-                        exit
-                    }
-                ' "$task_path" 2>/dev/null || true)"
-
-                if [[ -n "$project" ]]; then
-                    projects_path="$SCRIPT_DIR/config/projects.yaml"
-                    project_path="$(awk -v target="$project" '
-                        /^projects:[[:space:]]*$/ { in_projects=1; next }
-                        in_projects && /^[^[:space:]]/ { exit }
-                        in_projects && /^[[:space:]]+-[[:space:]]id:[[:space:]]*/ {
-                            current=$0
-                            sub(/^[[:space:]]+-[[:space:]]id:[[:space:]]*/, "", current)
-                            gsub(/^["'\''"]|["'\''"]$/, "", current)
-                            next
-                        }
-                        in_projects && current == target && /^[[:space:]]+path:[[:space:]]*/ {
-                            sub(/^[[:space:]]+path:[[:space:]]*/, "")
-                            gsub(/^["'\''"]|["'\''"]$/, "")
-                            print
-                            exit
-                        }
-                    ' "$projects_path" 2>/dev/null || true)"
-
-                    if [[ -n "$project_path" && -d "$project_path" ]]; then
-                        status_output="$(git -C "$project_path" status --porcelain --untracked-files=no 2>/dev/null || true)"
-                        filtered_files="$(printf '%s\n' "$status_output" | awk '
-                            length($0) >= 4 {
-                                path=substr($0,4)
-                                if (path ~ /^logs\// || path ~ /^queue\// || path ~ /^node_modules\// || path ~ /^\.next\// || path ~ /^__pycache__\//) next
-                                if (path ~ /\.(log|pyc)$/) next
-                                print path
-                            }
-                        ' | sort -u)"
-
-                        if [[ -n "$filtered_files" ]]; then
-                            msg=$'\n'"⚠ COMMIT MISSING 警告 ⚠"$'\n'"プロジェクト ${project} (${project_path}) にuncommitted変更あり:"$'\n'
-                            count=0
-                            while IFS= read -r f; do
-                                [[ -n "$f" ]] || continue
-                                count=$((count + 1))
-                                if (( count <= 10 )); then
-                                    msg+="  - ${f}"$'\n'
-                                fi
-                            done <<< "$filtered_files"
-                            if (( count > 10 )); then
-                                msg+="  ... +$((count - 10)) files"$'\n'
-                            fi
-                            msg+=$'\n'"報告を提出する前に、自分の任務scope内ファイルだけをcommitせよ:"$'\n'"  cd ${project_path} && git add <scope内file...> && git commit -m 'feat: <cmd_id> <summary>'"$'\n'$'\n'"scope外/他忍者担当の変更はstageせず、家老へ報告せよ。commit漏れはcmd_complete_gateでBLOCKされ家老の手動対応(WA)が発生する。"
-                            printf '%s' "$msg" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
-                        fi
-                    fi
-                fi
+        task_path="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+        project="$(awk '/^[[:space:]]+project:/{sub(/^[[:space:]]+project:[[:space:]]*/,""); gsub(/^["'\''"]|["'\''"]$/,""); print; exit}' "$task_path" 2>/dev/null || true)"
+        project_path="$(awk -v target="$project" '
+            /^[[:space:]]+-[[:space:]]id:/ { current=$0; sub(/^.*id:[[:space:]]*/,"",current); gsub(/^["'\''"]|["'\''"]$/, "", current); next }
+            current == target && /^[[:space:]]+path:/ { sub(/^.*path:[[:space:]]*/,""); gsub(/^["'\''"]|["'\''"]$/,""); print; exit }
+        ' "$SCRIPT_DIR/config/projects.yaml" 2>/dev/null || true)"
+        if [[ -d "$project_path" ]]; then
+            filtered_files="$(git -C "$project_path" status --porcelain --untracked-files=no 2>/dev/null | cut -c4- | sort -u)"
+            if [[ -n "$filtered_files" ]]; then
+                msg=$'\n⚠ COMMIT MISSING 警告 ⚠\n'"プロジェクト ${project} (${project_path}) の任務scope整合性に問題あり:"$'\n'
+                msg+="$(printf '%s\n' "$filtered_files" | sed 's/^/  - /')"$'\n'
+                msg+="  reason: scope_fallback:standalone_scope_helper_missing"$'\n\n'
+                msg+="報告を提出する前に、自分の任務scope内ファイルだけをcommitせよ:"$'\n'
+                msg+="  cd ${project_path} && git add <scope内file...> && git commit -m 'feat: <cmd_id> <summary>'"$'\n\n'
+                msg+="scope外/他忍者担当の変更はstageせず、家老へ報告せよ。commit漏れはcmd_complete_gateでBLOCKされ家老の手動対応(WA)が発生する。"
+                printf '%s' "$msg" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
             fi
         fi
     fi
