@@ -148,7 +148,8 @@ batch_index_search() {
     memory_cache_is_healthy "$source_db" "$cache_path" "$boot_id" && read_db="$cache_path"
     local use_immutable=0
     [[ "$read_db" == "$cache_path" ]] && use_immutable=1
-    timeout "${timeout_seconds}s" python3 - "$read_db" "$ROOT/docs/semantic-index/index.md" "$query" "$use_immutable" <<'PY' >"$result_file"
+    local semantic_index="${THREE_LAYER_SEMANTIC_INDEX:-$ROOT/docs/semantic-index/index.md}"
+    timeout "${timeout_seconds}s" python3 - "$read_db" "$semantic_index" "$query" "$use_immutable" <<'PY' >"$result_file"
 import datetime, pathlib, re, sqlite3, sys
 
 db_path, semantic_path, query, use_immutable = sys.argv[1:]
@@ -210,8 +211,10 @@ obsidian_cached_search() {
         # Serve the last atomic snapshot first. TTL maintenance is detached
         # and single-flight, so cache freshness never enters UserPromptSubmit
         # latency and a slow refresh cannot erase usable evidence.
-        setsid -f flock -n "${cache_path}.refresh.lock" \
-            bash "$ROOT/scripts/lib/causal_index.sh" build "$cache_path" >/dev/null 2>&1 </dev/null
+        if [[ "${THREE_LAYER_CAUSAL_REFRESH_DISABLED:-0}" != 1 ]]; then
+            setsid -f flock -n "${cache_path}.refresh.lock" \
+                bash "$ROOT/scripts/lib/causal_index.sh" build "$cache_path" >/dev/null 2>&1 </dev/null
+        fi
     else
         built_cache="$(timeout "${timeout_seconds}s" bash "$ROOT/scripts/lib/causal_index.sh" build "$cache_path")" || rc=$?
         if [[ "$rc" != 0 || ! -s "$built_cache" ]]; then
@@ -390,7 +393,8 @@ issue() {
     # normalize when the index file is actually present, so a genuinely
     # broken checkout still fails closed. Same reasoning as the Obsidian
     # layer below.
-    [[ "$semantic_rc" == 1 && -f "$ROOT/docs/semantic-index/index.md" ]] && semantic_rc=0
+    local semantic_index="${THREE_LAYER_SEMANTIC_INDEX:-$ROOT/docs/semantic-index/index.md}"
+    [[ "$semantic_rc" == 1 && -f "$semantic_index" ]] && semantic_rc=0
     # Obsidian's causal index is the repository's [[link]] graph. rg exit 1
     # means no match, which is still a completed search; exit 2 is a failure.
     if [[ -n "$obsidian_pid" ]]; then
@@ -424,7 +428,7 @@ issue() {
     if (( remaining_ms > 0 )); then
         fallback_seconds="$(awk -v ms="$remaining_ms" 'BEGIN { printf "%.3f", ms / 1000 }')"
         [[ "$memory_rc" == 124 ]] && { fallback_memory_result="$(mktemp "$EVIDENCE_DIR/.memory-fallback.XXXXXX")"; memory_timeout_fallback "$prompt" "$fallback_seconds" "$fallback_memory_result" & fallback_memory_pid=$!; }
-        [[ "$semantic_rc" == 124 ]] && { fallback_semantic_result="$(mktemp "$EVIDENCE_DIR/.semantic-fallback.XXXXXX")"; text_index_timeout_fallback "$prompt" "$fallback_seconds" "$fallback_semantic_result" "$ROOT/docs/semantic-index/index.md" & fallback_semantic_pid=$!; }
+        [[ "$semantic_rc" == 124 ]] && { fallback_semantic_result="$(mktemp "$EVIDENCE_DIR/.semantic-fallback.XXXXXX")"; text_index_timeout_fallback "$prompt" "$fallback_seconds" "$fallback_semantic_result" "$semantic_index" & fallback_semantic_pid=$!; }
         [[ "$obsidian_rc" == 124 ]] && { fallback_obsidian_result="$(mktemp "$EVIDENCE_DIR/.obsidian-fallback.XXXXXX")"; text_index_timeout_fallback "$obsidian_query" "$fallback_seconds" "$fallback_obsidian_result" "$ROOT/context/semantic-map.md" "$ROOT/docs" & fallback_obsidian_pid=$!; }
         if [[ -n "$fallback_memory_pid" ]]; then wait "$fallback_memory_pid" && memory_rc=0 || memory_rc=$?; [[ -s "$fallback_memory_result" ]] && IFS=$'\t' read -r memory_count memory_query _memory_source memory_ts <"$fallback_memory_result"; rm -f "$fallback_memory_result"; fi
         if [[ -n "$fallback_semantic_pid" ]]; then wait "$fallback_semantic_pid" && semantic_rc=0 || semantic_rc=$?; [[ -s "$fallback_semantic_result" ]] && IFS=$'\t' read -r semantic_count semantic_query _semantic_source semantic_ts <"$fallback_semantic_result"; rm -f "$fallback_semantic_result"; fi
@@ -454,7 +458,7 @@ issue() {
         printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","memory_count":"%s","semantic_count":"%s","obsidian_count":"%s","memory_source":"%s","semantic_source":"%s","obsidian_source":"%s","memory_timestamp":"%s","semantic_timestamp":"%s","obsidian_timestamp":"%s","memory_query":"%s","semantic_query":"%s","obsidian_query":"%s","status":"%s"}\n' \
             "$(json_escape "$agent_id")" "$(json_escape "$pane_id")" "$prompt_hash" "$nonce" "$issued_at" \
             "$memory_rc" "$semantic_rc" "$obsidian_rc" "$memory_count" "$semantic_count" "$obsidian_count" \
-            "$(json_escape "${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}")" "$(json_escape "$ROOT/docs/semantic-index/index.md")" "$(json_escape "$obsidian_source")" \
+            "$(json_escape "${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}")" "$(json_escape "$semantic_index")" "$(json_escape "$obsidian_source")" \
             "$(json_escape "$memory_ts")" "$(json_escape "$semantic_ts")" "$(json_escape "$obsidian_ts")" \
             "$(json_escape "$memory_query")" "$(json_escape "$semantic_query")" "$(json_escape "$obsidian_used_query")" "$status"
     } >"$tmp_file"

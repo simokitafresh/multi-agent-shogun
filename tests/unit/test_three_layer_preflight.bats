@@ -28,6 +28,10 @@ setup() {
     AGENT="kagemaru"
     PANE="%test_${BATS_TEST_NUMBER}"
     EVIDENCE="$TMP_EVIDENCE/evidence_${AGENT}__test_${BATS_TEST_NUMBER}.json"
+    THREE_LAYER_SEMANTIC_FIXTURE="$TMP_EVIDENCE/semantic-index.md"
+    THREE_LAYER_CAUSAL_FIXTURE="$TMP_EVIDENCE/causal-index.tsv"
+    printf '%s\n' 'fixture preflight line wal_live_event' > "$THREE_LAYER_SEMANTIC_FIXTURE"
+    printf '%s\t%s\n' 'fixture preflight line wal_live_event' "$THREE_LAYER_SEMANTIC_FIXTURE" > "$THREE_LAYER_CAUSAL_FIXTURE"
 }
 
 teardown() {
@@ -37,6 +41,16 @@ teardown() {
 verify() {
     env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" verify "$@"
+}
+
+issue_with_fixtures() {
+    env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" \
+        THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" \
+        THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" \
+        THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "$@"
 }
 
 @test "有効なSQLite DBでも全層NO_MATCHはfail-closed" {
@@ -191,8 +205,7 @@ JSON
 }
 
 @test "preflight自身のissue経路はPASS" {
-    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
-        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue <<< '{"prompt":"preflight test"}'
+    run issue_with_fixtures "preflight test"
     [ "$status" -eq 0 ]
     [ -s "$EVIDENCE" ]
 }
@@ -204,8 +217,7 @@ JSON
     local -a issue_pids=()
     local success_count=0 superseded_count=0 other_count=0 rc
     for i in 1 2 3 4; do
-        env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
-            bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "fixture parallel generation $i" >>"$log" 2>&1 &
+        issue_with_fixtures "fixture parallel generation $i" >>"$log" 2>&1 &
         issue_pids+=("$!")
     done
     local verify_rc i pid
@@ -368,8 +380,7 @@ PY
 }
 
 @test "prompt引数でstdin欠落を回復" {
-    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
-        /bin/bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "fixture recovered prompt" </dev/null
+    run issue_with_fixtures "fixture recovered prompt" </dev/null
     [ "$status" -eq 0 ]
     [ -s "$EVIDENCE" ]
     run verify Write "$ROOT/context/infrastructure.md" ""
@@ -403,8 +414,7 @@ PY
     # error, not "no match"), failing the whole evidence record even when
     # memory/semantic succeeded. Recurred 3x on 2026-07-10 and locked
     # agents out of every tool for the evidence TTL.
-    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
-        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "$(printf 'line one about the codebase\nline two more detail\nline three')"
+    run issue_with_fixtures "$(printf 'line one about the codebase\nline two more detail\nline three')"
     [ "$status" -eq 0 ]
     [ -s "$EVIDENCE" ]
     run grep -o '"obsidian":"[0-9]*"' "$EVIDENCE"
@@ -601,7 +611,7 @@ PY
     for _ in 1 2 3 4 5; do [ -e "$ready" ] && break; sleep 0.1; done
     [ -e "$ready" ]
     local evidence_dir="$TMP_EVIDENCE/external_wal_evidence"
-    run env MEMORY_DB_QUERY_DB="$external_db" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="externalwal" TMUX_PANE="%externalwal" \
+    run env MEMORY_DB_QUERY_DB="$external_db" THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="externalwal" TMUX_PANE="%externalwal" \
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "wal_live_event fixture"
     wait "$writer"
     [ "$status" -eq 0 ]
