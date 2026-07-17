@@ -6,7 +6,8 @@ AGENT_ID="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null |
 [ -n "$AGENT_ID" ] && [ "$AGENT_ID" != "unknown" ] || exit 0
 
 # 入力テキスト取得（stdin JSON の .prompt フィールドから）
-INPUT="$(jq -r '.prompt // ""' 2>/dev/null || true)"
+PAYLOAD="$(cat 2>/dev/null || true)"
+INPUT="$(jq -r '.prompt // ""' 2>/dev/null <<<"$PAYLOAD" || true)"
 [ -n "$INPUT" ] || exit 0
 
 # スラッシュコマンド除外
@@ -24,6 +25,8 @@ unset _log_terminal_input_self
 source "$SCRIPT_DIR/lib/lord_conversation.sh"
 export LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 export LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
+export LORD_CONVERSATION_SOURCE_EVENT_ID
+LORD_CONVERSATION_SOURCE_EVENT_ID="$(jq -r '.source_event_id // .event_id // .prompt_id // .id // ""' 2>/dev/null <<<"$PAYLOAD" || true)"
 
 append_lord_conversation "$INPUT" "inbound" "lord" "terminal" "$AGENT_ID"
 

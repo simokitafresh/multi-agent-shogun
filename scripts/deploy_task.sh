@@ -10758,6 +10758,15 @@ except Exception:
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     }
+    # Publication identity (active status + deployed_at) must become visible
+    # under the same per-ninja/deploy lock.  Previously deployed_at was written
+    # after lock release and inbox delivery, allowing revision/respawn to see an
+    # active task with the prior generation and allowing an interrupted deploy
+    # to emit a task nudge before its generation existed.
+    record_deployed_at "$task_yaml" "$(date '+%Y-%m-%dT%H:%M:%S')" || {
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 1
+    }
     deploy_task_check_deadline "after_task_mutations" || return $?
 
     if [ -n "$deploy_lock_fd" ]; then
@@ -10782,7 +10791,6 @@ except Exception:
 
     DEPLOY_TASK_PHASE=post_delivery
     notify_initial_deploy_ntfy_once "$task_yaml" "$NINJA_NAME" || true
-    record_deployed_at "$task_yaml" "$(date '+%Y-%m-%dT%H:%M:%S')" || true
     preflight_gate_artifacts "$task_yaml" || true
 
     local rr_pointer_file rr_lock_file

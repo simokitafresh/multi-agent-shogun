@@ -243,6 +243,48 @@ if [[ "$timestamp" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
   timestamp="${BASH_REMATCH[1]}${BASH_REMATCH[2]}:${BASH_REMATCH[3]}"
 fi
 
+# Runtime prompt identity / replay fence. log_terminal_input.sh runs before this
+# hook and publishes a stable source_event_id to lord_conversation.jsonl.  A
+# source event is consumable once across pane generations; delayed replay after
+# respawn exits 2 before SessionContext is injected again.
+prompt_state_source_event_id="${PROMPT_STATE_SOURCE_EVENT_ID:-}"
+prompt_state_received_ts="${PROMPT_STATE_RECEIVED_TS:-}"
+prompt_state_lord_file="${PROMPT_STATE_LORD_CONVERSATION_FILE:-$SCRIPT_DIR/queue/lord_conversation.jsonl}"
+if [[ -z "$prompt_state_source_event_id" && "$prompt_is_inbox_nudge" -eq 0 && -f "$prompt_state_lord_file" ]]; then
+  prompt_state_identity="$({ PROMPT_TEXT="$prompt_text" TARGET_AGENT="$agent_id" python3 - "$prompt_state_lord_file" <<'PY'
+import json, os, sys
+needle=os.environ.get("PROMPT_TEXT", "").strip(); target=os.environ.get("TARGET_AGENT", "")
+match={}
+for raw in open(sys.argv[1], encoding="utf-8", errors="replace"):
+    try: row=json.loads(raw)
+    except Exception: continue
+    if row.get("direction") == "inbound" and row.get("detail", "").strip() == needle and row.get("target", "") == target:
+        match=row
+print(str(match.get("source_event_id", "")) + "\t" + str(match.get("ts", "")))
+PY
+  } 2>/dev/null || true)"
+  IFS=$'\t' read -r prompt_state_source_event_id prompt_state_received_ts <<<"$prompt_state_identity"
+fi
+if [[ -n "$prompt_state_source_event_id" ]]; then
+  prompt_state_pane_generation="${PROMPT_STATE_PANE_GENERATION:-}"
+  if [[ -z "$prompt_state_pane_generation" && -n "${TMUX_PANE:-}" ]]; then
+    prompt_state_pane_generation="$(tmux display-message -t "$TMUX_PANE" -p '#{pane_start_time}' 2>/dev/null || true)"
+  fi
+  prompt_state_pane_generation="${prompt_state_pane_generation:-unknown}"
+  prompt_state_send_ts="${PROMPT_STATE_SEND_TS:-${prompt_state_received_ts:-$timestamp}}"
+  prompt_state_ledger="${PROMPT_STATE_CONSUMED_LEDGER:-$SCRIPT_DIR/logs/prompt_consumed_ledger.tsv}"
+  mkdir -p "$(dirname "$prompt_state_ledger")"
+  exec 218>"${prompt_state_ledger}.lock"
+  flock -w 5 218 || { prompt_state_wait_preflight; exit 2; }
+  if [[ -f "$prompt_state_ledger" ]] && awk -F '\t' -v id="$prompt_state_source_event_id" '$1==id{found=1} END{exit !found}' "$prompt_state_ledger"; then
+    printf 'BLOCK: prompt source_event_id already consumed; delayed replay suppressed (%s)\n' "$prompt_state_source_event_id" >&2
+    prompt_state_wait_preflight
+    exit 2
+  fi
+  printf '%s\t%s\t%s\t%s\t%s\n' "$prompt_state_source_event_id" "${prompt_state_received_ts:-$timestamp}" "$prompt_state_send_ts" "$prompt_state_pane_generation" "$timestamp" >> "$prompt_state_ledger"
+  flock -u 218
+fi
+
 count_lord_responses() {
   local lord_conversation_file="$1"
   [[ -f "$lord_conversation_file" ]] || {

@@ -22,6 +22,7 @@ append_lord_conversation() {
   local db_path="${LORD_CONVERSATION_DB:-}"
   local semantic_index_path="${SEMANTIC_INDEX_PATH:-}"
   local insight_write_path="${LORD_CONVERSATION_INSIGHT_WRITE:-}"
+  local source_event_id="${LORD_CONVERSATION_SOURCE_EVENT_ID:-}"
 
   case "$direction" in
     ""|*[!a-z_]*)
@@ -68,12 +69,14 @@ append_lord_conversation() {
     CONV_DB_PATH="$db_path" \
     CONV_SEMANTIC_INDEX_PATH="$semantic_index_path" \
     CONV_INSIGHT_WRITE_PATH="$insight_write_path" \
+    CONV_SOURCE_EVENT_ID="$source_event_id" \
     python3 - <<'PY'
 import json
 import os
 import re
 import subprocess
 import tempfile
+import hashlib
 from pathlib import Path
 
 MAX_ENTRIES = 500
@@ -87,6 +90,7 @@ agent = os.environ["CONV_AGENT"]
 source = os.environ.get("CONV_SOURCE", "ntfy") or "ntfy"
 target = os.environ.get("CONV_TARGET", "")
 message = os.environ["CONV_MESSAGE"]
+source_event_id = os.environ.get("CONV_SOURCE_EVENT_ID", "").strip()
 db_path = Path(os.environ.get("CONV_DB_PATH", ""))
 semantic_index_path = Path(os.environ.get("CONV_SEMANTIC_INDEX_PATH", ""))
 insight_write_path = Path(os.environ.get("CONV_INSIGHT_WRITE_PATH", ""))
@@ -276,7 +280,7 @@ def append_memory_db_entry(entry: dict, event_index: int) -> None:
         ).encode("utf-8")
     ).hexdigest()[:16]
     session_id = Path(path).stem
-    event_id = f"conversation:{session_id}:live:{event_hash}"
+    event_id = normalize_text(entry.get("source_event_id", "")) or f"conversation:{session_id}:live:{event_hash}"
     entry_agent = normalize_text(entry.get("agent", ""))
     entry_direction = normalize_text(entry.get("direction", ""))
     entry_summary = normalize_text(entry.get("summary", ""))
@@ -414,7 +418,16 @@ normalized_message = normalize_text(message)
 if not normalized_message:
     raise SystemExit(0)
 
+if not source_event_id:
+    identity_parts = [source, direction, agent, target, normalized_message]
+    if not (source == "terminal" and direction == "inbound"):
+        identity_parts.append(timestamp)
+    source_event_id = "source:" + hashlib.sha256(
+        "\x1f".join(identity_parts).encode("utf-8")
+    ).hexdigest()
+
 entry = {
+    "source_event_id": source_event_id,
     "ts": timestamp,
     "source": source,
     "direction": direction,
