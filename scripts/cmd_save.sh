@@ -3472,8 +3472,8 @@ check_environment_change_chain_of_command_warn() {
     local shogun_scope_pattern='(clear_prep|gate_shogun|stop_check_inbox|shogun_startup|prompt_state_inject|post-shogun)'
     local karo_scope_keywords='(CI[_ ]?(RED|GREEN|status|check|結果)|gh[_ ]run|test[_ ]?(result|fail|pass|結果)|忍者[_ ]?(状態|status))'
 
-    if echo "$_ENV_FILE" | grep -qiE "$shogun_scope_pattern" && \
-       echo "$_ENV_CHANGE" | grep -qiE "$karo_scope_keywords"; then
+    if grep -qiE "$shogun_scope_pattern" <<< "$_ENV_FILE" && \
+       grep -qiE "$karo_scope_keywords" <<< "$_ENV_CHANGE"; then
         echo "WARN: LS091 environment_change鎖の原理照合" >&2
         echo "  将軍スコープファイル(${_ENV_FILE})に家老スコープ情報を追加しようとしている" >&2
         echo "  LS-A11: CI検知は家老の責務。将軍にCI情報を見せる仕組み=鎖の迂回誘発" >&2
@@ -3694,6 +3694,7 @@ check_diagnosis_format_block
 # 殿指摘: WARNもスルーするな。WARNされたら次のCMDでBLOCKされないように成長せよ。
 # 条件: PRIOR_ATTEMPT_COUNT > 0 = 過去にBLOCKされた実績がある
 # ★ WARN_COUNT > 0 のケースは全チェック完了後(L2594付近)で処理(WARNは後段で蓄積されるため)
+_ENV_FILE=""
 check_environment_change_after_prior_block
 check_environment_change_chain_of_command_warn
 
@@ -6689,8 +6690,8 @@ check_tier1_exception_warn() {
     [[ -z "${CMD_BLOCK_NC:-}" ]] && return
     local tier1_re='D00[1-9]'
     local exception_re='例外|除外|緩和|スコープ追記|趣旨解釈|適用外|対象外|上書き|exemption|exception|override'
-    if echo "$CMD_BLOCK_NC" | grep -qE "$tier1_re" && \
-       echo "$CMD_BLOCK_NC" | grep -qE "$exception_re"; then
+    if grep -qE "$tier1_re" <<< "$CMD_BLOCK_NC" && \
+       grep -qE "$exception_re" <<< "$CMD_BLOCK_NC"; then
         echo "WARNING: Tier1 UNCONDITIONAL規則(D001-D009)の例外追記を検出。趣旨解釈で緩めてはならない。代替手段(timeout等)で解決せよ(LS092)" >&2
         record_warn_reason "tier1_unconditional_exception" "check=check_tier1_exception_warn"
     fi
