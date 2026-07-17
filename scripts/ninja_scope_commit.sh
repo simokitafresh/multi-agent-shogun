@@ -91,6 +91,18 @@ flock -w 120 "$commit_lock_fd" \
 shared_index_file="$(git rev-parse --git-path index)"
 [[ "$shared_index_file" = /* ]] || shared_index_file="$repo_root/$shared_index_file"
 
+# A killed git process may leave index.lock behind.  Under the repository-wide
+# helper lock it cannot belong to another scoped commit.  Remove it only when
+# the OS confirms that no process has the file open; otherwise fail closed.
+shared_index_lock="${shared_index_file}.lock"
+if [[ -e "$shared_index_lock" ]]; then
+    if command -v fuser >/dev/null 2>&1 && fuser "$shared_index_lock" >/dev/null 2>&1; then
+        echo "BLOCK: active shared index lock: $shared_index_lock" >&2
+        exit 2
+    fi
+    rm -f -- "$shared_index_lock"
+fi
+
 advance_shared_index_entry() {
     local path="$1" expected_entry="$2" current_entry new_blob new_mode
     current_entry="$(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -- "$path" | awk '$3 == 0 {print $1 " " $2; exit}')"
@@ -386,5 +398,8 @@ if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/report_commit_nonoverlap_filter.sh"
         fi
     fi
 fi
+
+[[ ! -e "$shared_index_lock" ]] \
+    || { echo "BLOCK: shared index lock remained after commit: $shared_index_lock" >&2; exit 1; }
 
 printf '%s\n' "$commit_hash"

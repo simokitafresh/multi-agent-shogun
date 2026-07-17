@@ -43,8 +43,32 @@ if [[ "${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}" == "1" ]]; then
     exec "$@"
 fi
 
+run_id="${SHOGUN_HEAVY_JOB_RUN_ID:-}"
+if [[ -n "$run_id" ]]; then
+    run_key="$(printf '%s' "$run_id" | sha256sum | awk '{print $1}')"
+    run_lock="${SHOGUN_HEAVY_JOB_RUN_LOCK_DIR:-/tmp}/shogun-heavy-run-${run_key}.lock"
+    exec {run_fd}>"$run_lock"
+    flock -n "$run_fd" || { echo "BLOCK: duplicate heavy run id: $run_id" >&2; exit 2; }
+fi
+
+exec {admission_fd}>"$LOCK_FILE"
+flock -w "$TIMEOUT" "$admission_fd" \
+    || { echo "BLOCK: heavy job admission timeout after ${TIMEOUT}s" >&2; exit 2; }
+
+# A shell can return while a background descendant is still doing the real
+# work.  Run each top-level job in its own session and retain both admission
+# locks until the complete process group drains.  Closing the lock descriptors
+# in the child preserves the durable-worker re-entry contract.
 export SHOGUN_HEAVY_JOB_LOCK_HELD=1
-# --close(-o): flock親はコマンド終了までlockを保持する一方、実行コマンド側では
-# lock FDを閉じる。これによりコマンドが起動したdurable背景workerがFDを継承して
-# lockを永久保持せず、明示的なmarker=0再入も自己デッドロックしない。
-exec flock --close -w "$TIMEOUT" "$LOCK_FILE" "$@"
+ADMISSION_FD="$admission_fd" RUN_FD="${run_fd:-}" setsid bash -c '
+    eval "exec ${ADMISSION_FD}>&-"
+    [[ -z "$RUN_FD" ]] || eval "exec ${RUN_FD}>&-"
+    exec "$@"
+' _ "$@" &
+leader_pid=$!
+rc=0
+wait "$leader_pid" || rc=$?
+while kill -0 -- "-$leader_pid" 2>/dev/null; do
+    sleep 0.05
+done
+exit "$rc"

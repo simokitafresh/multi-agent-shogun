@@ -13,6 +13,9 @@ setup() {
     # re-entrancy marker must not leak into wrapper unit tests, which exercise
     # independent top-level contenders rather than a nested child job.
     unset SHOGUN_HEAVY_JOB_LOCK_HELD
+    # The suite itself may be protected by a run-id guard. Unit contenders use
+    # their own explicit IDs and must not inherit the suite's outer identity.
+    unset SHOGUN_HEAVY_JOB_RUN_ID
     OUT="$TMP/timeline.log"
 }
 
@@ -251,6 +254,27 @@ print('ok')
     [[ "$output" == *"inner-ok"* ]]
 }
 
+@test "wrapper: parent exit後も同じprocess groupの子孫がdrainするまで返らない" {
+    marker="$TMP/descendant.done"
+    started="$(date +%s%N)"
+    bash "$WRAPPER" -- bash -c "(sleep 0.25; printf done > '$marker') &"
+    ended="$(date +%s%N)"
+    [ -f "$marker" ]
+    [ $((ended - started)) -ge 200000000 ]
+}
+
+@test "wrapper: 同一run idの重複起動は待機でなくBLOCKする" {
+    release="$TMP/run.release"
+    SHOGUN_HEAVY_JOB_RUN_ID=same bash "$WRAPPER" -- bash -c "while [ ! -e '$release' ]; do sleep 0.02; done" &
+    holder=$!
+    sleep 0.08
+    run env SHOGUN_HEAVY_JOB_RUN_ID=same bash "$WRAPPER" -- true
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"duplicate heavy run id"* ]]
+    touch "$release"
+    wait "$holder"
+}
+
 @test "wrapper: durable背景workerへlock FDを継承せずmarker=0再入もself-deadlockしない" {
     local result="$TMP/background_reentry.result"
     # cmd_complete_gate -> semantic_causal_post_clear の実事故を再現する。外側の
@@ -258,7 +282,7 @@ print('ok')
     # 0へ戻して同じadmissionへ再入する。lock FDが継承される旧実装ではworker自身が
     # 保持するlockを待ち、1秒timeoutしてresultを作れない。
     bash "$WRAPPER" -- bash -c \
-        "SHOGUN_HEAVY_JOB_LOCK_HELD=0 SHOGUN_HEAVY_JOB_ADMISSION_TIMEOUT=1 bash '$WRAPPER' -- sh -c 'printf inner-ok > \"$result\"' >/dev/null 2>&1 &"
+        "setsid -f env SHOGUN_HEAVY_JOB_LOCK_HELD=0 SHOGUN_HEAVY_JOB_ADMISSION_TIMEOUT=1 bash '$WRAPPER' -- sh -c 'printf inner-ok > \"$result\"' >/dev/null 2>&1"
 
     local waited=0
     while [ ! -f "$result" ]; do

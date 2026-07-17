@@ -442,6 +442,15 @@ HOOK
     [[ "$output" == *"commit scope is empty"* ]]
 }
 
+@test "stale shared index.lock is removed inside commit transaction" {
+    printf 'own change\n' >> "$REPO/own.txt"
+    : > "$REPO/.git/index.lock"
+    run bash -c "cd '$REPO' && bash '$HELPER' -m stale-lock -- own.txt"
+    [ "$status" -eq 0 ]
+    [ ! -e "$REPO/.git/index.lock" ]
+    [ -z "$(git -C "$REPO" status --porcelain -- own.txt)" ]
+}
+
 @test "存在しないpathはBLOCKする" {
     run bash -c "cd '$REPO' && bash '$HELPER' -m missing -- absent.txt"
     [ "$status" -eq 2 ]

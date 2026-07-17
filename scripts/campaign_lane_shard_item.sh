@@ -117,8 +117,17 @@ if [[ ! "$FIXED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
 fi
 mkdir -p "$output_dir" || exit 1
 
+retry_failed=0
+if [[ -f "$result_path" ]] && python3 - "$result_path" <<'PY' 2>/dev/null
+import json, sys
+raise SystemExit(0 if json.load(open(sys.argv[1], encoding="utf-8")).get("status") == "fail" else 1)
+PY
+then
+    retry_failed=1
+fi
+
 # universal_shard creates workdir beforehand. materialize accepts an existing empty dir.
-if ! CAMPAIGN_ROOT="$ROOT" CAMPAIGN_SOURCE="$SOURCE_REPO" CAMPAIGN_WORKDIR="$workdir" CAMPAIGN_SHA="$FIXED_SHA" python3 - <<'PY'
+if ! CAMPAIGN_ROOT="$ROOT" CAMPAIGN_SOURCE="$SOURCE_REPO" CAMPAIGN_WORKDIR="$workdir" CAMPAIGN_SHA="$FIXED_SHA" CAMPAIGN_RETRY_FAILED="$retry_failed" python3 - <<'PY'
 import os, sys
 from pathlib import Path
 root = Path(os.environ["CAMPAIGN_ROOT"])
@@ -129,6 +138,7 @@ materialize(
     os.environ["CAMPAIGN_WORKDIR"],
     os.environ["CAMPAIGN_SHA"],
     os.environ.get("CAMPAIGN_LANE_CHECKOUT_ROOT", "/tmp/multi-agent-shogun-campaign-checkouts"),
+    retry_failed=os.environ.get("CAMPAIGN_RETRY_FAILED") == "1",
 )
 PY
 then

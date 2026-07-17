@@ -189,6 +189,40 @@ PY
   reason_is source_materialize_failed
 }
 
+@test "failed shard retry replaces only logical workdir and materializes a fresh checkout" {
+  make_deployer pass
+  mkdir -p "$TMPROOT/out"
+  printf '{"status":"fail","reason_code":"deploy_failed"}\n' > "$TMPROOT/out/result.json"
+  stale="$TMPROOT/stale-checkout"
+  mkdir -p "$stale"
+  printf stale > "$stale/evidence"
+  ln -s "$stale" "$TMPROOT/work"
+
+  run_bridge
+
+  [ "$status" -eq 0 ]
+  [ -f "$stale/evidence" ]
+  [ -L "$TMPROOT/work" ]
+  [ "$(readlink -f "$TMPROOT/work")" != "$stale" ]
+  reason_is report_terminal_pass
+}
+
+@test "failed pre-ext4 full clone is atomically quarantined before retry" {
+  make_deployer pass
+  mkdir -p "$TMPROOT/out" "$TMPROOT/work"
+  printf '{"status":"fail","reason_code":"source_materialize_failed"}\n' > "$TMPROOT/out/result.json"
+  printf old-evidence > "$TMPROOT/work/evidence"
+
+  run_bridge
+
+  [ "$status" -eq 0 ]
+  [ -L "$TMPROOT/work" ]
+  quarantine=("$TMPROOT"/work.failed-*)
+  [ "${#quarantine[@]}" -eq 1 ]
+  [ "$(cat "${quarantine[0]}/evidence")" = old-evidence ]
+  reason_is report_terminal_pass
+}
+
 @test "invalid missing parent path fails before deploy" {
   make_deployer pass
   run env SHARD_ITEM_JSON="$(base_item_json missing/path/new.py)" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
