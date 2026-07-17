@@ -3024,6 +3024,14 @@ _handle_auto_clear() {
     local effective_debounce
     effective_debounce=$(cli_profile_get "$agent_id" "clear_debounce")
 
+    # A failed task is terminal from the worker's point of view. Treat it as
+    # no-task for recovery latency. The active-status preflight below still
+    # closes the race with a concurrently published revision/redeployment.
+    if [ "$_ac_task_status" = "failed" ]; then
+        effective_debounce=0
+        log "FAILED-RESPAWN-IMMEDIATE: $name failed task treated as no-task (clear_debounce=0)"
+    fi
+
     if [ "$clear_elapsed" -ge "$effective_debounce" ]; then
         if ! can_send_clear_with_report_gate "$name" "AUTO-CLEAR"; then
             log "AUTO-CLEAR-BLOCKED: $name done but report missing, keep context"

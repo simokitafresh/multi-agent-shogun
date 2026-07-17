@@ -172,6 +172,25 @@ fingerprint_unread_ids() {
     fi
 }
 
+# Exact task_assigned retries for one published task generation must not become
+# new prompts merely because inbox_write allocated another message id.
+task_publication_fingerprint() {
+    local task_file="${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml"
+    [ -f "$task_file" ] || return 1
+    local identity
+    identity=$(awk '
+        /^[[:space:]]*(task_id|_ac_task_id|deployed_at):/ {
+            line=$0; sub(/^[^:]*:[[:space:]]*/, "", line); gsub(/["[:space:]]/, "", line)
+            if ($1 ~ /task_id:/ && task_id == "") task_id=line
+            else if ($1 ~ /_ac_task_id:/ && task_id == "") task_id=line
+            else if ($1 ~ /deployed_at:/) deployed_at=line
+        }
+        END { if (task_id != "" && deployed_at != "") print task_id "@" deployed_at }
+    ' "$task_file")
+    [ -n "$identity" ] || return 1
+    printf 'task-%s\n' "$(printf '%s' "$identity" | sha256sum | awk '{print $1}')"
+}
+
 get_unread_info() {
     # Fast path: skip Python3 startup (~40ms) when no unread messages exist
     if ! grep -qF 'read: false' "$INBOX" 2>/dev/null; then
@@ -948,6 +967,9 @@ send_wakeup() {
             fi
             unread_count="$live_count"
             current_fp="$live_fp"
+            if [ "$live_has_task" = "true" ]; then
+                current_fp=$(task_publication_fingerprint 2>/dev/null || printf '%s' "$live_fp")
+            fi
             nudge="inbox${unread_count}"
             if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$live_has_task" == "true" ]]; then
                 nudge="${nudge} — 前taskの情報は無効。queue/tasks/${AGENT_ID}.yaml を最初から読み直して作業開始せよ"
