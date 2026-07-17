@@ -92,3 +92,23 @@ assert 'git commitが完了したか' in d['binary_checks']['commit'][0]['check'
 PY
   [ "$status" -eq 0 ]
 }
+
+@test "no-code identity requires matching tree evidence" {
+  run python3 - "$PROJECT_ROOT" <<'PY'
+import pathlib, sys
+sys.path.insert(0, str(pathlib.Path(sys.argv[1]) / 'scripts' / 'lib'))
+from report_commit_identity import valid_commit_identity
+root = pathlib.Path(sys.argv[1])
+tree = 'a' * 40
+report = {
+  'files_modified': ['queue/tasks/sasuke.yaml'],
+  'binary_checks': {'commit': [{'check': 'commit不要', 'result': 'yes'}]},
+}
+assert not valid_commit_identity('no-code-change', report, root)
+report['no_code_change_evidence'] = {'before_tree': tree, 'after_tree': tree, 'tree_unchanged': True}
+assert valid_commit_identity('no-code-change', report, root)
+report['no_code_change_evidence']['after_tree'] = 'b' * 40
+assert not valid_commit_identity('no-code-change', report, root)
+PY
+  [ "$status" -eq 0 ]
+}
