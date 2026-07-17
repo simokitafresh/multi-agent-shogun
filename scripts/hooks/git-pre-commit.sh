@@ -99,6 +99,10 @@ staged_file_exists() {
     return 1
 }
 
+# Self-sync runs before failure-log plumbing is initialized, but it is still a
+# fail-closed terminal step and must publish the same truthful receipt.
+trap '_ec=$?; precommit_terminal_receipt "$_ec"; exit "$_ec"' EXIT
+
 # The tracked hook is the SSOT, while Git executes an untracked copy under
 # .git/hooks.  ninja_scope_commit.sh syncs that copy explicitly, but direct
 # `git commit` callers are also valid and previously left the live hook stale.
@@ -123,6 +127,7 @@ if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_g
             _sync_args+=(--scope-path scripts/hooks/git-pre-commit.sh)
         fi
         bash "$REPO_ROOT/scripts/sync_git_hooks.sh" "${_sync_args[@]}" || {
+            precommit_step_end 1
             echo "BLOCK(GA-222): live pre-commit hook self-sync failed" >&2
             exit 1
         }
@@ -542,6 +547,7 @@ main() {
     if [[ "$_instructions_changed" == "true" ]]; then
         echo "instructions/*.md staged — checking generated/ sync..."
         if ! bash "$REPO_ROOT/scripts/build_instructions.sh" > /dev/null 2>&1; then
+            precommit_step_end 1
             echo "BLOCKED: build_instructions.sh failed" >&2
             exit 1
         fi

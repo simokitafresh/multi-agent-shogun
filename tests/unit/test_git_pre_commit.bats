@@ -308,6 +308,29 @@ EOF
 
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCKED: build_instructions.sh failed"* ]]
+    [ "$(grep -c 'PRECOMMIT_RECEIPT ' <<<"$output")" -eq 1 ]
+    [[ "$output" == *"result=blocked rc=1"* ]]
+    [[ "$output" == *"instruction_sync_rc=1"* ]]
+}
+
+@test "self-sync failure publishes one blocked receipt with self_sync rc1" {
+    cp "$TEST_ROOT/scripts/hooks/git-pre-commit.sh" "$TEST_ROOT/.git/hooks/pre-commit"
+    chmod +x "$TEST_ROOT/.git/hooks/pre-commit"
+    cat > "$TEST_ROOT/scripts/sync_git_hooks.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+    chmod +x "$TEST_ROOT/scripts/sync_git_hooks.sh"
+    printf '\nprint("trigger")\n' >> "$TEST_ROOT/tool.py"
+    (cd "$TEST_ROOT" && git add tool.py)
+
+    run bash -c 'cd "$1" && COMMAND_ID=self-sync-failure .git/hooks/pre-commit' -- "$TEST_ROOT"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK(GA-222): live pre-commit hook self-sync failed"* ]]
+    [ "$(grep -c 'PRECOMMIT_RECEIPT ' <<<"$output")" -eq 1 ]
+    [[ "$output" == *"command_id=self-sync-failure result=blocked rc=1"* ]]
+    [[ "$output" == *"self_sync_rc=1"* ]]
 }
 
 @test "GA-222: does not commit unrelated dirty generated content from another source pair" {
@@ -383,6 +406,8 @@ EOF
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCKED: queue/tasks/*.yaml cannot be committed with implementation files"* ]]
     [[ "$output" == *"scripts/lib/context_helper.sh"* ]]
+    [ "$(grep -c 'PRECOMMIT_RECEIPT ' <<<"$output")" -eq 1 ]
+    [[ "$output" == *"task_scope_rc=1"* ]]
 }
 
 @test "allows queue task yaml only commit" {
