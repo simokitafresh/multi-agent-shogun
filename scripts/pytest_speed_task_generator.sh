@@ -2,7 +2,11 @@
 set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 STATE_ROOT=${PYTEST_SPEED_STATE_ROOT:-$ROOT}
-if [[ -n ${PYTEST_TIMING_LEDGER:-} ]]; then
+LEDGER_ARG=
+if [[ ${1:-} == --ledger ]]; then LEDGER_ARG=$2; shift 2; fi
+if [[ -n $LEDGER_ARG ]]; then
+  LEDGER=$LEDGER_ARG
+elif [[ -n ${PYTEST_TIMING_LEDGER:-} ]]; then
   LEDGER=$PYTEST_TIMING_LEDGER
 else
   DM_ROOT=$(python3 - "$ROOT/config/projects.yaml" <<'PY'
@@ -15,7 +19,6 @@ PY
   LEDGER="$DM_ROOT/backend/.pytest_cache/pytest_timing_ledger.tsv"
 fi
 usage(){ echo "usage: $0 [--ledger FILE] next|generate|deploy [args]" >&2; exit 2; }
-if [[ ${1:-} == --ledger ]]; then LEDGER=$2; shift 2; fi
 cmd=${1:-}; shift || true
 next_rows(){ python3 - "$LEDGER" "$STATE_ROOT" <<'PY'
 import csv,glob,os,subprocess,sys,yaml

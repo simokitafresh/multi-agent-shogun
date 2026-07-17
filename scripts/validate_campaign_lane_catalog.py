@@ -15,6 +15,11 @@ def resource_exists(value, allow_generated=False):
     if generated:
         value = value[len("generated:"):]
     if not value.startswith("project:"):
+        # Runtime-generated repo resources are valid before their first writer run.
+        # The generated: marker is the explicit catalog contract for that absence.
+        if generated:
+            relative = Path(value)
+            return not relative.is_absolute() and ".." not in relative.parts
         return (REPO_ROOT / value).exists()
     project_ref = value[len("project:"):]
     project_id, sep, relative = project_ref.partition("/")
