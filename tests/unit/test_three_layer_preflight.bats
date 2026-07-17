@@ -39,12 +39,11 @@ verify() {
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" verify "$@"
 }
 
-@test "有効なSQLite DBのNO_MATCHは成功" {
+@test "有効なSQLite DBでも全層NO_MATCHはfail-closed" {
     run env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "definitely-absent-memory-query"
-    [ "$status" -eq 0 ]
-    run grep -o '"memory_db":"[0-9]*"' "$EVIDENCE"
-    [ "$output" = '"memory_db":"0"' ]
+    [ "$status" -ne 0 ]
+    [ ! -e "$EVIDENCE" ]
 }
 
 @test "欠落SQLite DBはfail-closed" {
@@ -106,6 +105,15 @@ make_timeout_root() {
     [[ "$output" == *'"semantic":"0"'* ]]
     [[ "$output" == *'"obsidian":"0"'* ]]
     [[ "$output" == *'"status":"success"'* ]]
+    run python3 - "$TMP_EVIDENCE/timeout_success_evidence/evidence_${AGENT}__test_${BATS_TEST_NUMBER}.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+for layer in ("memory", "semantic", "obsidian"):
+    assert int(data[f"{layer}_count"]) > 0
+    assert data[f"{layer}_source"]
+    assert data[f"{layer}_timestamp"]
+PY
+    [ "$status" -eq 0 ]
 }
 
 @test "memory timeout fallbackのDB欠落はfailed" {
@@ -197,7 +205,7 @@ JSON
     local success_count=0 superseded_count=0 other_count=0 rc
     for i in 1 2 3 4; do
         env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
-            bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "parallel generation $i" >>"$log" 2>&1 &
+            bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "fixture parallel generation $i" >>"$log" 2>&1 &
         issue_pids+=("$!")
     done
     local verify_rc i pid
@@ -361,7 +369,7 @@ PY
 
 @test "prompt引数でstdin欠落を回復" {
     run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
-        /bin/bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "recovered prompt" </dev/null
+        /bin/bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "fixture recovered prompt" </dev/null
     [ "$status" -eq 0 ]
     [ -s "$EVIDENCE" ]
     run verify Write "$ROOT/context/infrastructure.md" ""
@@ -447,4 +455,148 @@ EOF
     [ "$status" -eq 1 ]
     run find "$evidence_dir" -maxdepth 1 -name 'evidence_onelayer*.json' -print
     [ -z "$output" ]
+}
+
+@test "cold TTL refresh timeoutはparse可能なstale causal cacheからmetadataを復元" {
+    local tmp_root="$TMP_EVIDENCE/stale_causal"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/.git"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/memory_db_query.sh"
+    cp "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
+    printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$2"\nexit 124\n' > "$tmp_root/scripts/lib/causal_index.sh"
+    chmod +x "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh" "$tmp_root/scripts/lib/causal_index.sh"
+    printf 'fixture\tdocs/fixture.md\n' > "$tmp_root/stale.tsv"
+    : > "$tmp_root/docs/semantic-index/index.md"
+    local evidence_dir="$TMP_EVIDENCE/stale_causal_evidence"
+    run env THREE_LAYER_BATCH_PRIMARY=0 THREE_LAYER_PRIMARY_TIMEOUT_SECONDS=0.05 THREE_LAYER_GLOBAL_BUDGET_MS=900 THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="stale" TMUX_PANE="%stale" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "fixture"
+    echo "$output" >&3
+    [ "$status" -eq 0 ]
+    run python3 - "$evidence_dir/evidence_stale__stale.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert int(data["obsidian_count"]) == 1
+assert data["obsidian_source"].endswith("stale.tsv")
+assert data["obsidian_timestamp"]
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "evidence失敗中も限定inbox bulletin repairのみ許可し一般変更はBLOCK" {
+    printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"124","status":"failed"}\n' "$AGENT" "$PANE" > "$EVIDENCE"
+    printf 'n\n' > "$EVIDENCE.current"
+    run verify Bash "" "bash scripts/inbox_mark_read.sh hanzo msg_1"
+    [ "$status" -eq 0 ]
+    run verify Bash "" "bash scripts/inbox_write.sh karo notice feedback hanzo inspect"
+    [ "$status" -eq 0 ]
+    run verify Bash "" "bash scripts/bulletin_write.sh hanzo notice"
+    [ "$status" -eq 0 ]
+    run verify Bash "" "bash scripts/lib/causal_index.sh build /tmp/causal.tsv"
+    [ "$status" -eq 0 ]
+    run verify Bash "" "touch repo-file"
+    [ "$status" -eq 1 ]
+}
+
+@test "WAL sidecar許容でもempty immutable mainは拒否し既存refresh lockとsingle-flight" {
+    local tmp_root="$TMP_EVIDENCE/wal_cache" cache="$TMP_EVIDENCE/wal_cache.db"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/data" "$tmp_root/.git"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    cp "$ROOT/scripts/lib/memory_db_cache.sh" "$tmp_root/scripts/lib/memory_db_cache.sh"
+    cp "$ROOT/scripts/memory_db_live_insert.py" "$tmp_root/scripts/memory_db_live_insert.py"
+    cp "$THREE_LAYER_DB_FIXTURE" "$tmp_root/data/multi_agent_shogun_memory.db"
+    cp "$THREE_LAYER_DB_FIXTURE" "$cache"
+    python3 - "$cache" <<'PY'
+import sqlite3, sys
+with sqlite3.connect(sys.argv[1]) as conn:
+    conn.execute("DELETE FROM events")
+PY
+    printf '%s\n' "$(cat /proc/sys/kernel/random/boot_id 2>/dev/null || printf unknown)" > "$cache.boot_id"
+    : > "$cache-wal"
+    : > "$cache-shm"
+    printf 'fixture\n' > "$tmp_root/docs/semantic-index/index.md"
+    printf 'fixture\tdocs/fixture.md\n' > "$tmp_root/stale.tsv"
+    printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$2"\nexit 124\n' > "$tmp_root/scripts/lib/causal_index.sh"
+    chmod +x "$tmp_root/scripts/lib/causal_index.sh"
+    exec 9>"$cache.refresh.lock"
+    flock -x 9
+    local evidence_dir="$TMP_EVIDENCE/wal_cache_evidence"
+    run env SHOGUN_MEMORY_DB_CACHE_PATH="$cache" THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="wal" TMUX_PANE="%wal" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "fixture"
+    [ "$status" -eq 0 ]
+    run python3 - "$evidence_dir/evidence_wal__wal.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert int(data["memory_count"]) > 0
+assert data["status"] == "success"
+PY
+    [ "$status" -eq 0 ]
+    run python3 - "$cache" <<'PY'
+import sqlite3, sys
+with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True) as conn:
+    assert conn.execute("SELECT COUNT(*) FROM events").fetchone()[0] == 0
+PY
+    [ "$status" -eq 0 ]
+    flock -u 9
+}
+
+@test "外部source DBはimmutableにせず未checkpoint WAL eventを検索" {
+    local external_db="$TMP_EVIDENCE/external-wal.db" ready="$TMP_EVIDENCE/external-wal.ready"
+    cp "$THREE_LAYER_DB_FIXTURE" "$external_db"
+    python3 - "$external_db" "$ready" <<'PY' &
+import pathlib, sqlite3, sys, time
+db, ready = sys.argv[1:]
+conn = sqlite3.connect(db)
+conn.execute("PRAGMA journal_mode=WAL")
+conn.execute("PRAGMA wal_autocheckpoint=0")
+conn.execute("INSERT INTO events(id, ts, agent, direction, summary, detail, source_file) VALUES(?,?,?,?,?,?,?)", ("wal-live", "2026-07-17T23:00:00+09:00", "test", "internal", "wal_live_event", "wal_live_event", "fixture"))
+rowid = conn.execute("SELECT rowid FROM events WHERE id='wal-live'").fetchone()[0]
+conn.execute("INSERT INTO events_fts(rowid, summary, detail) VALUES(?,?,?)", (rowid, "wal_live_event", "wal_live_event"))
+conn.commit()
+pathlib.Path(ready).touch()
+time.sleep(5)
+conn.close()
+PY
+    local writer=$!
+    for _ in 1 2 3 4 5; do [ -e "$ready" ] && break; sleep 0.1; done
+    [ -e "$ready" ]
+    local evidence_dir="$TMP_EVIDENCE/external_wal_evidence"
+    run env MEMORY_DB_QUERY_DB="$external_db" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="externalwal" TMUX_PANE="%externalwal" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "wal_live_event fixture"
+    wait "$writer"
+    [ "$status" -eq 0 ]
+    run python3 - "$evidence_dir/evidence_externalwal__externalwal.json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert int(data["memory_count"]) >= 1
+assert data["memory_query"] == "wal_live_event"
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "並行issueのdetached causal refreshはbuild完了までsingle-flight" {
+    local tmp_root="$TMP_EVIDENCE/causal_singleflight" counter="$TMP_EVIDENCE/causal-build.count"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/.git"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/memory_db_query.sh"
+    cp "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
+    cat > "$tmp_root/scripts/lib/causal_index.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '1\n' >> "$CAUSAL_BUILD_COUNTER"
+sleep 1
+printf '%s\n' "$2"
+EOF
+    chmod +x "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh" "$tmp_root/scripts/lib/causal_index.sh"
+    printf 'fixture\tdocs/fixture.md\n' > "$tmp_root/stale.tsv"
+    : > "$tmp_root/docs/semantic-index/index.md"
+    local evidence_dir="$TMP_EVIDENCE/causal_singleflight_evidence"
+    env CAUSAL_BUILD_COUNTER="$counter" THREE_LAYER_BATCH_PRIMARY=0 THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="causalsf" TMUX_PANE="%causalsf" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "fixture" >/dev/null &
+    local p1=$!
+    env CAUSAL_BUILD_COUNTER="$counter" THREE_LAYER_BATCH_PRIMARY=0 THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="causalsf" TMUX_PANE="%causalsf" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "fixture" >/dev/null &
+    local p2=$!
+    wait "$p1" || true
+    wait "$p2" || true
+    sleep 1.2
+    [ "$(wc -l < "$counter")" -eq 1 ]
 }
