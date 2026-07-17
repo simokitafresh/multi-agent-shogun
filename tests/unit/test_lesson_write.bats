@@ -347,6 +347,85 @@ EOF
     [[ "$output" == *"--target-files"* ]]
     [[ "$output" == *"--source-marker"* ]]
     [[ "$output" == *"--origin"* ]]
+    [[ "$output" == *"--promote"* ]]
+}
+
+# ============================================================
+# 6b. Existing lesson promotion (SSOT -> generated cache)
+# ============================================================
+
+@test "promote exact ID atomically updates enforcement only" {
+    before_count=$(grep -c '^### L' "$EXT_PROJECT/tasks/lessons.md")
+    run_lesson_write testproj --promote L001 --enforcement "Level5: task context injection"
+    [ "$status" -eq 0 ]
+    [ "$(grep -c '^### L' "$EXT_PROJECT/tasks/lessons.md")" -eq "$before_count" ]
+    [ "$(grep -c '^### L001:' "$EXT_PROJECT/tasks/lessons.md")" -eq 1 ]
+    [ "$(grep -cF -- '- **enforcement**: Level5: task context injection' "$EXT_PROJECT/tasks/lessons.md")" -eq 1 ]
+}
+
+@test "promote missing ID fails without modifying SSOT" {
+    before=$(sha256sum "$EXT_PROJECT/tasks/lessons.md")
+    run_lesson_write testproj --promote L999 --enforcement "Level5: missing"
+    [ "$status" -eq 1 ]
+    [ "$(sha256sum "$EXT_PROJECT/tasks/lessons.md")" = "$before" ]
+}
+
+@test "promote duplicate ID fails without modifying SSOT" {
+    cat "$LESSONS_TEMPLATE" >> "$EXT_PROJECT/tasks/lessons.md"
+    before=$(sha256sum "$EXT_PROJECT/tasks/lessons.md")
+    run_lesson_write testproj --promote L001 --enforcement "Level5: duplicate"
+    [ "$status" -eq 1 ]
+    [ "$(sha256sum "$EXT_PROJECT/tasks/lessons.md")" = "$before" ]
+}
+
+@test "promote malformed SSOT fails without partial write" {
+    printf '\377\376\000' > "$EXT_PROJECT/tasks/lessons.md"
+    before=$(sha256sum "$EXT_PROJECT/tasks/lessons.md")
+    run_lesson_write testproj --promote L001 --enforcement "Level5: malformed"
+    [ "$status" -ne 0 ]
+    [ "$(sha256sum "$EXT_PROJECT/tasks/lessons.md")" = "$before" ]
+}
+
+@test "concurrent promote serializes and leaves one complete metadata line" {
+    LESSON_WRITE_SCRIPT_DIR="$TEST_PROJECT" LESSON_WRITE_SKIP_SYNC=1 bash "$SHARED_DIR/scripts/lesson_write.sh" testproj --promote L001 --enforcement "Level5: first" &
+    p1=$!
+    LESSON_WRITE_SCRIPT_DIR="$TEST_PROJECT" LESSON_WRITE_SKIP_SYNC=1 bash "$SHARED_DIR/scripts/lesson_write.sh" testproj --promote L001 --enforcement "Level5: second" &
+    p2=$!
+    wait "$p1"; wait "$p2"
+    [ "$(grep -cF -- '- **enforcement**: Level5:' "$EXT_PROJECT/tasks/lessons.md")" -eq 1 ]
+}
+
+@test "promote syncs flow and block enforcement into generated cache" {
+    cp "$SHARED_DIR/scripts/sync_lessons.sh" "$BATS_TEST_TMPDIR/sync_lessons.backup"
+    cat > "$SHARED_DIR/scripts/sync_lessons.sh" <<'EOF'
+#!/bin/bash
+set -e
+root="${LESSON_WRITE_SCRIPT_DIR:?}"
+mkdir -p "$root/projects/testproj"
+cp "$root/../extproj/tasks/lessons.md" "$root/projects/testproj/lessons.yaml"
+EOF
+    chmod +x "$SHARED_DIR/scripts/sync_lessons.sh"
+    LESSON_WRITE_SCRIPT_DIR="$TEST_PROJECT" LESSON_WRITE_SYNC_MODE=sync run bash "$SHARED_DIR/scripts/lesson_write.sh" testproj --promote L001 --enforcement "Level4: flow BLOCK"
+    cp "$BATS_TEST_TMPDIR/sync_lessons.backup" "$SHARED_DIR/scripts/sync_lessons.sh"
+    chmod +x "$SHARED_DIR/scripts/sync_lessons.sh"
+    [ "$status" -eq 0 ]
+    run grep -F -- '- **enforcement**: Level4: flow BLOCK' "$TEST_PROJECT/projects/testproj/lessons.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "promote refuses foreign dirty generated cache without SSOT change" {
+    git -C "$TEST_PROJECT" init -q
+    git -C "$TEST_PROJECT" config user.email test@example.com
+    git -C "$TEST_PROJECT" config user.name test
+    printf 'baseline\n' > "$TEST_PROJECT/projects/testproj/lessons.yaml"
+    git -C "$TEST_PROJECT" add projects/testproj/lessons.yaml
+    git -C "$TEST_PROJECT" commit -qm baseline
+    printf 'foreign\n' >> "$TEST_PROJECT/projects/testproj/lessons.yaml"
+    before=$(sha256sum "$EXT_PROJECT/tasks/lessons.md")
+    run_lesson_write testproj --promote L001 --enforcement "Level5: blocked"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"foreign dirty"* ]]
+    [ "$(sha256sum "$EXT_PROJECT/tasks/lessons.md")" = "$before" ]
 }
 
 @test "draft status is written when --status draft specified" {

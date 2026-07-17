@@ -353,6 +353,7 @@ HOW_ACTION=""
 RETIRE_ID=""
 RETAG_ID=""
 RETAG_TAGS=""
+PROMOTE_ID=""
 SUBDOMAIN=""
 TARGET_FILES=""
 SOURCE_MARKER=""
@@ -381,6 +382,8 @@ Options:
   --if "condition" --then "action" --because "reason"
   --retire <lesson_id>
   --retag <lesson_id> --new-tags "tag1,tag2"
+  --promote <lesson_id> --enforcement "Level5: ..."
+                          SSOT上の既存IDをexact一致で原子的に昇格しcacheを再同期
 EOF
 }
 
@@ -452,6 +455,10 @@ while [ $# -gt 0 ]; do
             ;;
         --retag)
             RETAG_ID="${2:-}"
+            shift 2
+            ;;
+        --promote)
+            PROMOTE_ID="${2:-}"
             shift 2
             ;;
         --new-tags)
@@ -537,6 +544,99 @@ require_origin_value() {
     fi
     printf '%s\n' "$resolved_origin"
 }
+
+# ─── Promote mode: atomically update one existing SSOT lesson, then sync cache ───
+if [ -n "$PROMOTE_ID" ]; then
+    if [ -z "$PROJECT_ID" ] || [ -z "$ENFORCEMENT" ] || [ "$ENFORCEMENT" = "未自動化" ]; then
+        echo "Usage: lesson_write.sh <project_id> --promote <lesson_id> --enforcement \"Level5: ...\"" >&2
+        exit 1
+    fi
+    if [[ "$PROJECT_ID" == cmd_* ]]; then
+        echo "ERROR: 第1引数はproject_id（例: infra, dm-signal）。cmd_idではない。" >&2
+        exit 1
+    fi
+    if [[ ! "$PROMOTE_ID" =~ ^L[0-9]+$ ]]; then
+        echo "ERROR: --promote requires an exact lesson ID such as L901" >&2
+        exit 1
+    fi
+
+    PROJECT_PATH=$(resolve_project_path "$PROJECT_ID")
+    [ -n "$PROJECT_PATH" ] || { echo "ERROR: Project '$PROJECT_ID' not found in config/projects.yaml" >&2; exit 1; }
+    LESSONS_FILE="$PROJECT_PATH/tasks/lessons.md"
+    [ -f "$LESSONS_FILE" ] || { echo "ERROR: $LESSONS_FILE not found." >&2; exit 1; }
+    LOCKFILE="$(lock_path "$LESSONS_FILE")"
+    CACHE_FILE="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons.yaml"
+
+    # sync_lessons.sh regenerates CACHE_FILE. Never overwrite unrelated work
+    # already present there; the caller must reconcile that dirty cache first.
+    if [ -e "$CACHE_FILE" ] && git -C "$SCRIPT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        _lw_cache_rel="${CACHE_FILE#"$SCRIPT_DIR"/}"
+        if git -C "$SCRIPT_DIR" ls-files --error-unmatch -- "$_lw_cache_rel" >/dev/null 2>&1 \
+            && ! git -C "$SCRIPT_DIR" diff --quiet -- "$_lw_cache_rel"; then
+            echo "ERROR: generated cache has foreign dirty changes: $_lw_cache_rel" >&2
+            exit 1
+        fi
+    fi
+
+    (
+        flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
+        LESSONS_FILE_ENV="$LESSONS_FILE" PROMOTE_ID_ENV="$PROMOTE_ID" \
+        ENFORCEMENT_ENV="$ENFORCEMENT" python3 <<'PROMOTEPY'
+import os
+import re
+import stat
+import tempfile
+
+path = os.environ["LESSONS_FILE_ENV"]
+lesson_id = os.environ["PROMOTE_ID_ENV"]
+enforcement = os.environ["ENFORCEMENT_ENV"]
+with open(path, encoding="utf-8") as fh:
+    content = fh.read()
+
+heading = re.compile(rf"^### {re.escape(lesson_id)}\s*[:：].*$", re.MULTILINE)
+matches = list(heading.finditer(content))
+if len(matches) != 1:
+    state = "not found" if not matches else f"duplicate ({len(matches)} matches)"
+    raise SystemExit(f"ERROR: exact lesson ID {lesson_id} {state} in {path}")
+
+start = matches[0].start()
+next_heading = re.search(r"^### L[0-9]+\s*[:：]", content[matches[0].end():], re.MULTILINE)
+end = matches[0].end() + next_heading.start() if next_heading else len(content)
+block = content[start:end]
+line = f"- **enforcement**: {enforcement}"
+metadata = re.compile(r"^- \*\*enforcement\*\*:[^\n]*$", re.MULTILINE)
+if len(metadata.findall(block)) > 1:
+    raise SystemExit(f"ERROR: duplicate enforcement metadata for {lesson_id}")
+if metadata.search(block):
+    block = metadata.sub(line, block, count=1)
+else:
+    heading_end = block.find("\n")
+    block = block[:heading_end + 1] + line + "\n" + block[heading_end + 1:]
+updated = content[:start] + block + content[end:]
+
+mode = stat.S_IMODE(os.stat(path).st_mode)
+directory = os.path.dirname(path) or "."
+fd, tmp = tempfile.mkstemp(prefix=".lesson-promote.", dir=directory, text=True)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(updated)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.chmod(tmp, mode)
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp):
+        os.unlink(tmp)
+print(f"{lesson_id} promoted in {path}")
+PROMOTEPY
+    ) 200>"$LOCKFILE"
+
+    if [ "${LESSON_WRITE_SKIP_SYNC:-0}" != "1" ]; then
+        LESSON_WRITE_SYNC_MODE=sync bash "$SCRIPT_DIR/scripts/sync_lessons.sh" "$PROJECT_ID"
+    fi
+    echo "[lesson_write] $PROMOTE_ID promoted and cache synchronized"
+    exit 0
+fi
 
 write_project_yaml_lesson() {
     local lessons_yaml="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons.yaml"
