@@ -255,6 +255,14 @@ STARTUP_CACHE_KEY="$(shogun_startup_cache_key "$SCRIPT_DIR")"
 local BACKLINK_CACHE_FILE="${SHOGUN_STARTUP_BACKLINK_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_backlink_zero.cache}"
 local THREE_LAYER_CACHE_FILE="${SHOGUN_STARTUP_THREE_LAYER_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_three_layer_health.cache}"
 local THREE_LAYER_CACHE_TTL="${SHOGUN_STARTUP_THREE_LAYER_CACHE_TTL_SEC:-300}"
+local THREE_LAYER_HEALTH_INPUT_DB
+if [ -n "${SHOGUN_MEMORY_DB_CACHE_PATH:-}" ]; then
+    THREE_LAYER_HEALTH_INPUT_DB="$SHOGUN_MEMORY_DB_CACHE_PATH"
+else
+    local _three_layer_cache_dir="${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}"
+    local _three_layer_repo_key="${SCRIPT_DIR//[^A-Za-z0-9_.-]/_}"
+    THREE_LAYER_HEALTH_INPUT_DB="${_three_layer_cache_dir}/${_three_layer_repo_key}_multi_agent_shogun_memory.db"
+fi
 local LOOP_LEDGER_CACHE_FILE="${SHOGUN_STARTUP_LOOP_LEDGER_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_loop_ledger.cache}"
 local LOOP_LEDGER_CACHE_TTL="${SHOGUN_STARTUP_LOOP_LEDGER_CACHE_TTL_SEC:-300}"
 local TIMING_HEALTH_CACHE_FILE="${SHOGUN_STARTUP_TIMING_HEALTH_CACHE:-/tmp/shogun_startup_${STARTUP_CACHE_KEY}_timing_health.cache}"
@@ -283,8 +291,11 @@ fi
 echo "■ テスト時間台帳鮮度"
 if [ -f "$SCRIPT_DIR/logs/test_timing_ledger.tsv" ]; then
     if [ "$TIMING_HEALTH_CACHE_TTL" -gt 0 ]; then
+        # --ledger-health consumes only the ledger/report inputs.  Point its
+        # eager test discovery at the gate directory so startup does not scan
+        # every bats file before reaching the ledger-only early exit.
         _timing_health_out="$(SHOGUN_STARTUP_CHECK_NAME=timing_health SHOGUN_STARTUP_CACHE_INPUTS="$SCRIPT_DIR/logs/test_timing_ledger.tsv:$GATE_DIR/gate_test_health.sh" run_startup_short_cache "$TIMING_HEALTH_CACHE_FILE" "$TIMING_HEALTH_CACHE_TTL" \
-            bash "$GATE_DIR/gate_test_health.sh" --ledger-health 2>&1 || true)"
+            env TESTS_DIR="$GATE_DIR" bash "$GATE_DIR/gate_test_health.sh" --ledger-health </dev/null 2>&1 || true)"
     else
     _timing_health_out="$(bash "$GATE_DIR/gate_test_health.sh" --ledger-health 2>&1 || true)"
     fi
@@ -819,7 +830,10 @@ else
 fi
 if [ -x "$GATE_DIR/gate_three_layer_health.sh" ]; then
     (
-        SHOGUN_STARTUP_CHECK_NAME=three_layer SHOGUN_STARTUP_CACHE_INPUTS="$SCRIPT_DIR/data/multi_agent_shogun_memory.db:$SCRIPT_DIR/context/semantic-map.md:$GATE_DIR/gate_three_layer_health.sh" run_startup_short_cache "$THREE_LAYER_CACHE_FILE" "$THREE_LAYER_CACHE_TTL" \
+        # gate_three_layer_health reads the /tmp query cache, not the source
+        # DB.  Keying on the source DB invalidated this expensive check for
+        # every search-log append even while its actual query input was fixed.
+        SHOGUN_STARTUP_CHECK_NAME=three_layer SHOGUN_STARTUP_CACHE_INPUTS="$THREE_LAYER_HEALTH_INPUT_DB:$SCRIPT_DIR/logs/three_layer_chain_async.log:$GATE_DIR/gate_three_layer_health.sh" run_startup_short_cache "$THREE_LAYER_CACHE_FILE" "$THREE_LAYER_CACHE_TTL" \
             bash "$GATE_DIR/gate_three_layer_health.sh" > "$_TMP_THREE_LAYER" 2>&1
         printf '%s\n' "$?" > "$_TMP_THREE_LAYER_STATUS"
     ) &
