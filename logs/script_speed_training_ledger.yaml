@@ -124,17 +124,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: .claude/hooks/pre-write-edit-combined.sh
-  status: pending
+  status: saturated
   before_ms: ''
   after_ms: ''
-  before_real_ms: 66
-  after_real_ms: ""
-  real_measurement_command: "8-run p50 isolated Edit payload for queue cmd checklist path; temp files for autolearn/cmd_design_quality; stdout discarded"
-  test_result: "bash -n .claude/hooks/pre-write-edit-combined.sh PASS; bats tests/unit/test_write_edit_combined_hooks.bats PASS 20/20 SKIP=0; jq JSON parse PASS"
-  commit: "b495e2d02"
-  assigned_to: ""
-  updated_at: "2026-06-13T00:53:00"
+  before_real_ms: 52.171
+  after_real_ms: 52.465
+  real_measurement_command: "printf payload | env BATS_TEST_FILENAME=bench PRE_WRITE_SCRIPT_DIR_OVERRIDE=$PWD bash <arm>/pre-write-edit-combined.sh"
+  test_result: "bash -n PASS; test_write_edit_combined_hooks 57/57 PASS; three_layer_preflight 33/33 PASS; FAIL=0 SKIP=0"
+  commit: "b0f89cbb5fe7bfb322b8a9cf3c65fe406219f7ac"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T08:36:15"
   iteration: 2
+  last_good_commit: "b0f89cbb5fe7bfb322b8a9cf3c65fe406219f7ac"
+  candidate_commit: "9e8c01f415edbc9a1c5f1ebe16e26ff168592a5e"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 52.171
+  last_good_p95_ms: 88.291
+  candidate_p50_ms: 52.465
+  candidate_p95_ms: 80.803
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux-6.6.87.1-microsoft-standard-WSL2-x86_64-glibc2.39"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/ac_physical_verify.sh
   status: completed
   before_ms: 17
@@ -1711,17 +1725,31 @@ entries:
   hook_gate_result: "CLEAR"
   ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_shogun_memory.sh
-  status: pending
+  status: saturated
   before_ms: 21
   after_ms: ''
-  before_real_ms: 61
-  after_real_ms: ""
-  real_measurement_command: time bash scripts/gates/gate_shogun_memory.sh
-  test_result: 'bats tests/unit/test_gate_shogun_memory.bats: 4 passed, 0 skipped'
-  commit: 2081139cb
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 50
+  after_real_ms: 50.5
+  real_measurement_command: "fixture gate full scan; SHOGUN_MEMORY_* env bash gate.sh >/dev/null"
+  test_result: "bats tests/unit/test_gate_shogun_memory.bats: 6 PASS FAIL=0 SKIP=0; safety_removed=0"
+  commit: "27aada91947393ce98ddddaaa1acba49ead35633"
+  assigned_to: "saizo"
+  updated_at: "2026-07-17T10:13:39"
   iteration: 1
+  last_good_commit: "27aada91947393ce98ddddaaa1acba49ead35633"
+  candidate_commit: "bf31419268be45f9e9f4233f20a402dd1817a0e6"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 50
+  last_good_p95_ms: 52
+  candidate_p50_ms: 50.5
+  candidate_p95_ms: 57
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "same-host:/tmp fixture;WSL2;alternating;2026-07-17"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/gates/gate_shogun_startup.sh
   status: saturated
   before_ms: 19
@@ -2665,18 +2693,31 @@ entries:
   updated_at: "2026-06-08T15:24:49"
   iteration: 1
 - script_path: scripts/lesson_impact_rotate.sh
-  status: pending
+  status: saturated
   before_ms: 14
   after_ms: ''
-  before_real_ms: 65
-  after_real_ms: ""
-  real_measurement_command: cp /tmp/lesson_impact_backup.tsv logs/lesson_impact.tsv
-    && bash scripts/lesson_impact_rotate.sh
-  test_result: bash -n OK; no unit tests for this script
-  commit: 7645c8b46
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 372.777
+  after_real_ms: 393.176
+  real_measurement_command: "bats tests/unit/test_lesson_impact_rotate.bats (isolated git-archive arm)"
+  test_result: "bash -n PASS; related bats 3/3 PASS FAIL=0 SKIP=0; safety lines removed=0; candidate regressed and rollback c35a075f retained last-good"
+  commit: "51e238b40fb2165bc1642a7f41211f1724cf3a49"
+  assigned_to: "hanzo"
+  updated_at: "2026-07-17T08:59:27"
   iteration: 1
+  last_good_commit: "51e238b40fb2165bc1642a7f41211f1724cf3a49"
+  candidate_commit: "4a70432cf969fd0871e02b649ac2fc6e2ab5dfe5"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 372.777
+  last_good_p95_ms: 599.357
+  candidate_p50_ms: 393.176
+  candidate_p95_ms: 660.347
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "same WSL2 host; isolated git archives; identical bats command; warmup 1/arm"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/lesson_merge.sh
   status: completed
   before_ms: 16
@@ -3055,18 +3096,31 @@ entries:
   updated_at: "2026-07-16T21:06:20"
   iteration: 1
 - script_path: scripts/lib/pre_bash_combined_guard.sh
-  status: pending
+  status: completed
   before_ms: 17
   after_ms: ''
-  before_real_ms: 63
-  after_real_ms: ""
-  real_measurement_command: source scripts/lib/pre_bash_combined_guard.sh; pre_bash_combined_eval_command
-    'git reset --hard HEAD' "/mnt/c/tools/multi-agent-shogun" saizo >/dev/null
-  test_result: bash_n_pass;scripts/hooks/test_hooks.sh 80/80 PASS SKIP=0;before_ms_values=87,103,118,73,92;after_ms_values=77,74,59,63,60
-  commit: 3127f0e44b46b1038ceb637f05d0625645b99cbe
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 9.817
+  after_real_ms: 6.818
+  real_measurement_command: "source \"$TARGET\"; pre_bash_combined_eval_command \"echo ok\" \"$PWD\" hayate >/dev/null"
+  test_result: "scripts/hooks/test_hooks.sh: 104/104 passed, FAIL=0 SKIP=0"
+  commit: "04cbdb1f9608a0dec2241c13583bfd4156566fcf"
+  assigned_to: "hayate"
+  updated_at: "2026-07-17T09:21:12"
   iteration: 1
+  last_good_commit: "acf2039fe1fb665ef2bc3db3f826f4ee9828278d"
+  candidate_commit: "04cbdb1f9608a0dec2241c13583bfd4156566fcf"
+  ab_samples_per_arm: "10"
+  last_good_p50_ms: 9.817
+  last_good_p95_ms: 19.179
+  candidate_p50_ms: 6.818
+  candidate_p95_ms: 14.112
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "same mktemp directory; bash subprocess; WSL2; strict L,C sequence"
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/lib/safe_rm.sh
   status: pending
   before_ms: 16
@@ -3081,7 +3135,7 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/lib/script_update.sh
-  status: pending
+  status: assigned
   before_ms: 15
   after_ms: ''
   before_real_ms: 56
@@ -3093,8 +3147,8 @@ entries:
     >/dev/null' (5-run median)
   test_result: bash_n_pass;callers_bash_n_pass;functional_basic_pass;deps_hash_match_pass;test_ntfy_ack_bats_8_pass_0_skip;test_bash_speed_training_bats_15_pass_0_skip;tap_skip_lines_0_for_both;before_median_130ms;after_median_56ms
   commit: e9a84f134
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  assigned_to: "kotaro"
+  updated_at: "2026-07-17T10:11:34"
   iteration: 1
 - script_path: scripts/lib/text_utils.sh
   status: completed
@@ -3572,18 +3626,31 @@ entries:
   updated_at: "2026-06-08T15:24:48"
   iteration: 1
 - script_path: scripts/oneshot/reset_harmful_counts.sh
-  status: pending
+  status: completed
   before_ms: 14
   after_ms: 11
-  before_real_ms: 61
-  after_real_ms: ""
-  real_measurement_command: 'bash $TMP/scripts/oneshot/reset_harmful_counts.sh (sandbox:
-    tempdir+copy, 10-run median)'
-  test_result: bash_n_pass_動作確認OK
-  commit: 7412596bf
-  assigned_to: ""
-  updated_at: "2026-06-08T15:24:48"
+  before_real_ms: 115
+  after_real_ms: 50
+  real_measurement_command: "bash /tmp/kagemaru-rhc-ab.lwkQhz/current/scripts/oneshot/reset_harmful_counts.sh"
+  test_result: "PASS"
+  commit: "a6269902aa4f1cc9310d60161c85debbc6ab736f"
+  assigned_to: "kagemaru"
+  updated_at: "2026-07-17T09:33:04"
   iteration: 1
+  last_good_commit: "5857808df0b1d92df27c9f8bd4a54b51944357b1"
+  candidate_commit: "a6269902aa4f1cc9310d60161c85debbc6ab736f"
+  ab_samples_per_arm: "12"
+  last_good_p50_ms: 115
+  last_good_p95_ms: 150
+  candidate_p50_ms: 50
+  candidate_p95_ms: 110
+  ab_order: "alternating"
+  warmup_each: "1"
+  environment_fingerprint: "Linux 6.6.87.1-microsoft-standard-WSL2 x86_64 GNU/Linux; bash=GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu); rg=ripgrep 14.1.1 (rev 4649aa9700); perl="
+  fail_count: "0"
+  skip_count: "0"
+  hook_gate_result: "CLEAR"
+  ab_sequence: "L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C,L,C"
 - script_path: scripts/parity_check.sh
   status: pending
   before_ms: 14
