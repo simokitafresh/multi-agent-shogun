@@ -427,4 +427,5 @@ lessons:
   source_cmd: 'session_20260718_0742'
   created_at: '2026-07-18'
   automated: true
-  enforcement: 'automated:false — 自動化ターゲット: (1)陣形図異常hookにsession-scope confirmed_failed dedup (2)escalation acknowledged_at+再発火抑制 (3)将軍宛inbox通知のaction_required/escalationのみ即時化+info系バッチ化'
+  enforcement: 'Level4: (1)陣形図異常hookにsession-scope dedup実装済み(b58658756, post-shogun-inbox-check.sh L209-221, /tmp/shogun_snapshot_alert_dedup)。同一failed/stallセット再警告抑制、セット変化時のみ再警告。残: (2)escalation acknowledged_at+再発火抑制 (3)info系通知バッチ化 — 家老配備要'
+  enforcement_level: 4
