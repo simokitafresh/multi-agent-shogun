@@ -722,7 +722,8 @@ def load_throughput_loop(path):
     finalize = []
     e2e = []
     overhead_rates = []
-    for _, metrics in rows:
+    samples = []
+    for cmd_id, (row_ts, metrics) in sorted(latest.items()):
         d = parse_num(metrics.get("deploy_sec"))
         w = parse_num(metrics.get("work_sec"))
         f = parse_num(metrics.get("finalize_sec"))
@@ -737,6 +738,10 @@ def load_throughput_loop(path):
             e2e.append(e)
         if e is not None and w is not None and e > 0:
             overhead_rates.append(max((e - w) / e * 100.0, 0.0))
+        samples.append({
+            "cmd_id": cmd_id, "ts": iso(row_ts), "deploy_sec": d,
+            "work_sec": w, "finalize_sec": f, "e2e_sec": e,
+        })
     last_ts = max_ts([ts for ts, _ in rows])
     completed = len(rows)
     return {
@@ -750,6 +755,7 @@ def load_throughput_loop(path):
         "deploy_median_sec": round1(median(deploy)),
         "work_median_sec": round1(median(work)),
         "finalize_median_sec": round1(median(finalize)),
+        "samples": samples,
     }
 
 
@@ -913,12 +919,26 @@ for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory",
             if consumption_age_hours >= stock_increase_grace_hours:
                 alerts.append(f"{name}: 在庫超過(前回{prev_stock}→今回{loop['stock']})")
     if name == "throughput" and isinstance(prev, dict):
-        prev_e2e = as_float(prev.get("e2e_median_sec"))
-        curr_e2e = as_float(loop.get("e2e_median_sec"))
+        # Adjacent rolling-window snapshots can have different cmd populations.
+        # Compare only the same cmd cohort; aggregate-to-aggregate comparison
+        # turns harmless population growth into a regression (GA-284).
+        prev_samples = {str(x.get("cmd_id")): x for x in (prev.get("samples") or []) if isinstance(x, dict) and x.get("cmd_id")}
+        curr_samples = {str(x.get("cmd_id")): x for x in (loop.get("samples") or []) if isinstance(x, dict) and x.get("cmd_id")}
+        common_ids = sorted(set(prev_samples) & set(curr_samples))
+        prev_e2e = median([as_float(prev_samples[x].get("e2e_sec")) for x in common_ids]) if common_ids else None
+        curr_e2e = median([as_float(curr_samples[x].get("e2e_sec")) for x in common_ids]) if common_ids else None
         if prev_e2e is not None and curr_e2e is not None and curr_e2e > prev_e2e:
             alerts.append(f"throughput: E2E中央値悪化(前回{prev_e2e}→今回{curr_e2e}秒)")
-        prev_overhead = as_float(prev.get("overhead_rate_median_pct"))
-        curr_overhead = as_float(loop.get("overhead_rate_median_pct"))
+        def cohort_overhead(sample_map):
+            values = []
+            for cmd_id in common_ids:
+                e = as_float(sample_map[cmd_id].get("e2e_sec"))
+                w = as_float(sample_map[cmd_id].get("work_sec"))
+                if e is not None and w is not None and e > 0:
+                    values.append(max((e - w) / e * 100.0, 0.0))
+            return median(values)
+        prev_overhead = round1(cohort_overhead(prev_samples)) if common_ids else None
+        curr_overhead = round1(cohort_overhead(curr_samples)) if common_ids else None
         if prev_overhead is not None and curr_overhead is not None and curr_overhead > prev_overhead:
             alerts.append(f"throughput: オーバーヘッド率悪化(前回{prev_overhead}→今回{curr_overhead}%)")
 
@@ -998,6 +1018,16 @@ def emit_snapshot(generated_at, window_days, loops, warn_backlog=None):
             lines.append(f"      deploy_median_sec: {q(loop.get('deploy_median_sec'))}")
             lines.append(f"      work_median_sec: {q(loop.get('work_median_sec'))}")
             lines.append(f"      finalize_median_sec: {q(loop.get('finalize_median_sec'))}")
+            samples = [x for x in (loop.get("samples") or []) if isinstance(x, dict)]
+            lines.append("      samples:")
+            if samples:
+                for sample in samples:
+                    lines.append(f"        - cmd_id: {q(sample.get('cmd_id'))}")
+                    lines.append(f"          ts: {q(sample.get('ts'))}")
+                    for field in ("deploy_sec", "work_sec", "finalize_sec", "e2e_sec"):
+                        lines.append(f"          {field}: {q(sample.get(field))}")
+            else:
+                lines[-1] = "      samples: []"
     if warn_backlog is not None:
         lines.append("  warn_backlog:")
         lines.append(f"    produced: {int(warn_backlog.get('produced', 0) or 0)}")

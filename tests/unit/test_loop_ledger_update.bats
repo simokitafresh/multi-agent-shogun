@@ -160,7 +160,16 @@ snapshots:
     obsidian: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
     memory: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
     skill: {produced: 0, consumed: 0, stock: 0, last_consumption_ts: null, stalled: false}
-    throughput: {produced: 1, consumed: 1, stock: 0, last_consumption_ts: "2026-06-19T00:00:00Z", stalled: false, e2e_median_sec: "500.0", overhead_rate_median_pct: "20.0"}
+    throughput:
+      produced: 1
+      consumed: 1
+      stock: 0
+      last_consumption_ts: "2026-06-19T00:00:00Z"
+      stalled: false
+      e2e_median_sec: "500.0"
+      overhead_rate_median_pct: "20.0"
+      samples:
+        - {cmd_id: cmd_2, ts: "2026-06-19T00:00:00Z", deploy_sec: 100, work_sec: 400, finalize_sec: 100, e2e_sec: 500}
 alerts: []
 EOF
     cat > "$LOOP_LEDGER_GATE_METRICS_LOG" <<'EOF'
@@ -172,6 +181,30 @@ EOF
     [[ "$output" == *"ALERT: throughput: E2E中央値悪化(前回500.0→今回1200.0秒)"* ]]
     [[ "$output" == *"ALERT: throughput: オーバーヘッド率悪化(前回20.0→今回58.3%)"* ]]
     grep -q 'throughput: E2E中央値悪化' "$LOOP_LEDGER_OUT"
+}
+
+@test "loop_ledger_update does not compare different throughput populations" {
+    sed -n '1,/alerts: \[\]/p' "$LOOP_LEDGER_OUT" >/dev/null 2>&1 || true
+    cat > "$LOOP_LEDGER_OUT" <<'EOF'
+snapshots:
+- generated_at: "2026-06-19T00:00:00Z"
+  window_days: 14
+  loops:
+    throughput:
+      produced: 1
+      consumed: 1
+      stock: 0
+      last_consumption_ts: "2026-06-19T00:00:00Z"
+      stalled: false
+      e2e_median_sec: "500.0"
+      overhead_rate_median_pct: "20.0"
+      samples: [{cmd_id: cmd_old, ts: "2026-06-19T00:00:00Z", work_sec: 400, e2e_sec: 500}]
+alerts: []
+EOF
+    echo '2026-06-19T01:00:00	cmd_new	CLEAR	all_gates_passed	full	GPT	unknown	L001	title	duration_sec=500 deploy_sec=200 work_sec=500 finalize_sec=300 e2e_sec=1200 missing=none' > "$LOOP_LEDGER_GATE_METRICS_LOG"
+    run bash "$SRC_SCRIPT"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"throughput: E2E中央値悪化"* ]]
 }
 
 @test "loop_ledger_update computes produced/consumed/stock across all 6 loops and detects semantic stall" {
