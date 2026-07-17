@@ -7516,26 +7516,20 @@ inject_target_path_check() {
         return 0
     fi
 
-    # target_pathフィールドを取得
-    local target_path
-    target_path=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "target_path" "")
-    if [ -z "$target_path" ]; then
-        return 0
-    fi
-
-    # リスト形式の場合: "- /path1\n- /path2" → 各行のパスを抽出
-    # 文字列形式の場合: そのまま使用
+    # target_pathをYAML型のまま取得。field_getは配列をcomma文字列へ潰すため使わない。
     local -a paths=()
-    if echo "$target_path" | grep -q '^- '; then
-        while IFS= read -r line; do
-            local p="${line#- }"
-            p="${p#[[:space:]]}"
-            p="${p%[[:space:]]}"
-            [ -n "$p" ] && paths+=("$p")
-        done <<< "$target_path"
-    else
-        paths+=("$target_path")
-    fi
+    mapfile -t paths < <(python3 - "$task_file" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+value = (data.get("task") or {}).get("target_path")
+if isinstance(value, str) and value.strip():
+    print(value.strip())
+elif isinstance(value, list):
+    for item in value:
+        if str(item).strip():
+            print(str(item).strip())
+PY
+    )
 
     [ ${#paths[@]} -eq 0 ] && return 0
 
@@ -7546,8 +7540,9 @@ inject_target_path_check() {
         project_path=$(grep -m1 '^\s*path:' "$SCRIPT_DIR/projects/${project_id}.yaml" 2>/dev/null | sed 's/.*path:[[:space:]]*//' | tr -d "'" | tr -d '"')
     fi
 
-    # 存在しないパスを検出(SCRIPT_DIR→project_pathの2段解決)
-    local -a missing=()
+    # 存在しないパスと、作業ツリーにはあるがHEADにはないパスを分けて検出する。
+    # L903: 旧pathのまま新規ファイルを作る重複実装を、配備時のLevel5コンテキスト注入で防ぐ。
+    local -a missing=() untracked_in_head=() git_evidence=()
     for p in "${paths[@]}"; do
         local resolved="$p"
         if [[ "$p" != /* ]]; then
@@ -7557,8 +7552,38 @@ inject_target_path_check() {
                 resolved="$project_path/$p"
             fi
         fi
-        [ ! -e "$resolved" ] && missing+=("$p")
+        if [ ! -e "$resolved" ]; then
+            missing+=("$p")
+            git_evidence+=("${p}:worktree=no,head=no,last_commit=none")
+            continue
+        fi
+
+        local repo_root="" repo_relative="" last_commit=""
+        repo_root=$(git -C "$(dirname "$resolved")" rev-parse --show-toplevel 2>/dev/null || true)
+        if [ -n "$repo_root" ]; then
+            repo_relative=$(realpath --relative-to="$repo_root" "$resolved" 2>/dev/null || true)
+        fi
+        if [ -z "$repo_root" ] || [ -z "$repo_relative" ] \
+            || ! git -C "$repo_root" cat-file -e "HEAD:${repo_relative}" 2>/dev/null; then
+            untracked_in_head+=("$p")
+            git_evidence+=("${p}:worktree=yes,head=no,last_commit=none")
+            continue
+        fi
+        last_commit=$(git -C "$repo_root" log -1 --format='%H' -- "$repo_relative" 2>/dev/null || true)
+        git_evidence+=("${p}:worktree=yes,head=yes,last_commit=${last_commit:-none}")
     done
+
+    local evidence_text
+    evidence_text=$(IFS=';'; echo "${git_evidence[*]}")
+    yaml_field_set "$task_file" "task" "target_path_git_preflight" "$evidence_text"
+
+    if [ ${#untracked_in_head[@]} -gt 0 ]; then
+        local untracked_str
+        untracked_str=$(IFS=', '; echo "${untracked_in_head[*]}")
+        yaml_field_set "$task_file" "task" "target_path_head_warning" \
+            "⚠ target_pathがgit HEADに存在しない: ${untracked_str}。実装前に旧pathと同事象の直近commitを確認せよ"
+        log "[INJECT_TARGET_PATH] WARN: target_path absent from git HEAD: ${untracked_str}"
+    fi
 
     [ ${#missing[@]} -eq 0 ] && return 0
 
