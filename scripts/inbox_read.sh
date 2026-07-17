@@ -35,21 +35,18 @@ fi
 if [[ "$mode" == "--triage" ]]; then
   # Parse before emitting anything: malformed operational YAML must fail closed
   # and must never create a read receipt.
-  python3 -S - "$inbox_file" <<'PY'
+  python3 - "$inbox_file" <<'PY'
 import datetime as dt
 import hashlib
 import os
 import sys
 
-# -S avoids user-site startup work on this latency-sensitive path.  PyYAML is
-# an OS package in the shared infra runtime, so expose that package directory.
-sys.path.append("/usr/lib/python3/dist-packages")
 import yaml
 
 path = sys.argv[1]
 try:
     with open(path, encoding="utf-8") as fh:
-        document = yaml.load(fh, Loader=yaml.CSafeLoader)
+        document = yaml.safe_load(fh)
 except (OSError, yaml.YAMLError) as exc:
     print(f"ERROR: malformed inbox YAML: {exc}", file=sys.stderr)
     raise SystemExit(1)
@@ -117,10 +114,9 @@ for level, _, _, message in indexed:
 
 # One compact snapshot first; the complete original document follows unchanged
 # so IDs/content and the established read-side contract remain lossless.
-dump_options = {"Dumper": yaml.CSafeDumper, "sort_keys": False, "allow_unicode": True}
-sys.stdout.write(yaml.dump({"triage_snapshot": headers}, **dump_options))
+sys.stdout.write(yaml.safe_dump({"triage_snapshot": headers}, sort_keys=False, allow_unicode=True))
 sys.stdout.write("---\n")
-sys.stdout.write(yaml.dump(document, **dump_options))
+sys.stdout.write(yaml.safe_dump(document, sort_keys=False, allow_unicode=True))
 PY
 else
   cat -- "$inbox_file"
