@@ -22,6 +22,7 @@ deploy_task_setup_file() {
     export SRC_FIREFIGHTING_KEYWORDS_SCRIPT="$PROJECT_ROOT/scripts/lib/firefighting_keywords.sh"
     export SRC_GATE_HOOK_QUALITY_CONTRACT_SCRIPT="$PROJECT_ROOT/scripts/lib/gate_hook_quality_contract.sh"
     export SRC_MODEL_INJECTION_PROFILE_SCRIPT="$PROJECT_ROOT/scripts/lib/model_injection_profile.sh"
+    export SRC_UNIVERSAL_SHARD_CONTRACT="$PROJECT_ROOT/scripts/lib/universal_shard_contract.py"
     export SRC_DASHBOARD_AUTO_SECTION_SCRIPT="$PROJECT_ROOT/scripts/dashboard_auto_section.sh"
     export SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT="$PROJECT_ROOT/scripts/semantic_alias_quality.sh"
     export SRC_MARKDOWN_LINK_COUNTS_SCRIPT="$PROJECT_ROOT/scripts/markdown_link_counts.sh"
@@ -43,6 +44,7 @@ deploy_task_setup_file() {
     [ -f "$SRC_REPORT_COMMIT_IDENTITY" ] || return 1
     [ -f "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" ] || return 1
     [ -f "$SRC_MODEL_INJECTION_PROFILE_SCRIPT" ] || return 1
+    [ -f "$SRC_UNIVERSAL_SHARD_CONTRACT" ] || return 1
     [ -f "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" ] || return 1
     [ -f "$SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT" ] || return 1
     [ -f "$SRC_MARKDOWN_LINK_COUNTS_SCRIPT" ] || return 1
@@ -80,6 +82,7 @@ deploy_task_setup_file() {
     cp "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/firefighting_keywords.sh"
     cp "$SRC_GATE_HOOK_QUALITY_CONTRACT_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/gate_hook_quality_contract.sh"
     cp "$SRC_MODEL_INJECTION_PROFILE_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/model_injection_profile.sh"
+    cp "$SRC_UNIVERSAL_SHARD_CONTRACT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/universal_shard_contract.py"
     cp "$SRC_DASHBOARD_AUTO_SECTION_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/dashboard_auto_section.sh"
     cp "$SRC_SEMANTIC_ALIAS_QUALITY_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/semantic_alias_quality.sh"
     cp "$SRC_MARKDOWN_LINK_COUNTS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/markdown_link_counts.sh"

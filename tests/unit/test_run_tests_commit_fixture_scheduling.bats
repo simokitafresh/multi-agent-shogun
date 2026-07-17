@@ -4,7 +4,10 @@ setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   TMPROOT="$(mktemp -d)"
   mkdir -p "$TMPROOT/scripts" "$TMPROOT/tests/unit" "$TMPROOT/bin" "$TMPROOT/logs"
-  cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/test_timing_ledger_write.sh" "$TMPROOT/scripts/"
+  cp "$ROOT/scripts/run_tests.sh" \
+    "$ROOT/scripts/test_timing_ledger_write.sh" \
+    "$ROOT/scripts/test_suite_timing_ledger_write.sh" \
+    "$TMPROOT/scripts/"
   for name in \
     test_gate_shogun_startup \
     test_heavy_job_admission \

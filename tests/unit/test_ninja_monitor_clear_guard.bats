@@ -1317,7 +1317,7 @@ fi
     [[ "$output" == *"PASS: PSTREE-OVERRIDE logged"* ]]
 }
 
-@test "training auto deploy: delegated pipeline work blocks training deployment" {
+@test "training auto deploy: delegated is free while pending pipeline work blocks training deployment" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -1337,14 +1337,20 @@ cat > "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<INNEREOF
 INNEREOF
 
 if _training_pipeline_has_work; then
-    echo "PASS: delegated pipeline work detected"
+    echo "FAIL: delegated pipeline work blocked training"
+    exit 1
+fi
+
+sed -i "s/status: delegated/status: pending/" "$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+if _training_pipeline_has_work; then
+    echo "PASS: delegated is free and pending pipeline work is detected"
 else
-    echo "FAIL: delegated pipeline work was ignored"
+    echo "FAIL: pending pipeline work was ignored"
     exit 1
 fi
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: delegated pipeline work detected"* ]]
+    [[ "$output" == *"PASS: delegated is free and pending pipeline work is detected"* ]]
 }
 
 # AC1: Codex idle + no_task → debounce経過後はsafe_send_clearを呼ぶ
