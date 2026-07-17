@@ -8,6 +8,7 @@
 | 将軍復帰+deepdive追体験 | /clear後の起動手順完遂 | deepdive 2本全Phase追体験完了、Q6掲示板投稿(洗脳#5:CI RED先送り)、軍師第三者検証待ち | [[ラルフループ]] -> [[deepdive追体験]] -> [[Q6洗脳検出]] |
 | CI RED対処確認 | run 29543642389(Unit Tests bats失敗)の一次確認 | 家老が自走で飛蔵に`cmd_karo_ci_fix_29543642389`配備済み。将軍cmd不要(殿裁定2026-07-16準拠) | [[CI_RED_run_29543642389]] -> [[家老自走配備]] -> [[飛蔵修正中]] |
 | SKILL.md batch更新指示 | 家老エスカレーション(skill_script_refs WARN 1セッション連続)対処 | 家老に/karo-direct配備指示送信。insights 25件が同一パターン(script更新→checked_at stale) | [[修行サイクルscript更新]] -> [[SKILL.md_checked_at_stale]] -> [[家老karo_direct配備]] |
+| D0自走サイクル(殿指示12:59) | startup BLOCK 3→0解消+backlinks=0 5件解消 | commit `05c1c1fdc`(Q6 bulletin最新投稿優先+LG034 FP修正+dream SKILL.md)+`fe40e65c7`(backlinks因果接続)。掲示板actioned_by 4件 | [[殿D0指示]] -> [[startup_BLOCK解消]] -> [[backlinks修行完了]] -> [[ラルフループ環境蓄積]] |
 | idle自走分析 | Score Matrix+Design Diversity Map+WA分析+insights分類 | BLOCK率0%, WA率0%, insights68件(25 skill_refs/22 semantic/17 l6_horizontal)。システム安定自走中 | [[idle自走トリガー]] -> [[品質指標全健全]] -> [[insights構造的パターン特定]] |
 | D0検証: causal_index | 前セッション修正(62f476912)のバグ再発検証 | main上存在✓、rg解決✓、再発なし。家老掲示板報告済み | [[causal_index_resolve_rg]] -> [[検証PASS]] -> [[家老報告]] |
 | D0: lesson-sort L903 | gate_lesson_health ALERT対処 | L903→ops§9振り分け+即commit `b4dccbf16`。未振り分け0件確認 | [[gate_lesson_health]] -> [[L903_deploy_precheck]] -> [[ops§9]] |
