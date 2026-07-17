@@ -633,16 +633,13 @@ lessons:
   how: 対象関数内の `$VAR` / `${VAR}` / 連想配列参照を機械列挙し、daemon初期化ブロック外でも初期化されるか、`${VAR:-}` / fallback を持つか突合する。部分列挙や目視だけでLGTMしない
 - id: LG047
   title: yaml_field_set.shの新ブロックID追加はbegin/is_boundary/flushを三点同期せよ
-  detail: |
-    cmd_idパターン追加でbegin_targetのみ修正し、is_boundary未反映で家老RC、さらにflush_blockのblock_len=1ケース未反映でRC2となり、3commitを要した。
-    YAMLブロック認識の新IDパターンは開始判定だけでなく境界判定と1行ブロックflushにも同時に反映しないと、対象ブロック破壊や書込漏れが発生する。
-    テスト3件追加で29/29 PASSまで回帰防止済み。
+  detail: "cmd_idパターン追加でbegin_targetのみ修正し、is_boundary未反映で家老RC、さらにflush_blockのblock_len=1ケース未反映でRC2となり、3commitを要した。\nYAMLブロック認識の新IDパターンは開始判定だけでなく境界判定と1行ブロックflushにも同時に反映しないと、対象ブロック破壊や書込漏れが発生する。\nテスト3件追加で29/29 PASSまで回帰防止済み。\n吸収(2026-07-17, cmd_reflux_promotion_202607171353_hanzo, origin: [[yaml_field_set_cmd_id_bug]] -> [[begin_target不足]] -> [[is_boundary+flush_block漏れ]] -> [[LG047_Level4_BLOCK]]): gate_yaml_field_set_block_sync.shが全3 begin_target/is_boundaryのID集合一致と2 flush実装を静的照合し、抽出した全IDの単一行block更新を実走する。pre-commit入口でyaml_field_set.sh変更時にBLOCKし、専用4境界+既存48回帰で固定。"
   source_cmd: cmd_3707
   origin: '[[yaml_field_set_cmd_id_bug]] -> [[begin_target不足]] -> [[is_boundary+flush_block漏れ]]'
   created_at: '2026-07-06'
   automated: true
-  enforcement_level: 3
-  enforcement: yaml_field_set.shの該当変更時にbegin_target/is_boundary/flush_blockをgrepで三点照合し、block_len=1回帰テストを追加する
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK): gate_yaml_field_set_block_sync.shがbegin_target/is_boundary全3実装のID集合差分とflush実装数を静的照合し、全IDの単一行block flushを実走。run_precommit_checks.shがyaml_field_set.sh変更時に必須実行し、tests/unit/test_gate_yaml_field_set_block_sync.batsの4境界をCI固定"
   when: yaml_field_set.shで新しいブロックIDパターン、境界条件、flush条件を追加・変更する時
   how: begin_target(3箇所)+is_boundary(3箇所)+flush_block(block_len=1ケース)を同時にgrep確認し、単一行ブロックを含む回帰テストを実行する
 - id: LG048
