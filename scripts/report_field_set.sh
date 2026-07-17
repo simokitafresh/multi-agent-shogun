@@ -89,6 +89,11 @@ if results:
     data["verdict"] = "PASS" if all(value == "yes" for value in results) else "FAIL"
     if any(value == "no" for value in results):
         data["status"] = "failed"
+    elif old_status in {"completed", "done"} and updates.get("status") == "revision_requested":
+        # A completed report revision is an explicit, single-transaction lane:
+        # unlock, apply every field, derive the verdict, then republish terminal.
+        # The intermediate revision_requested state must never reach readers.
+        data["status"] = "completed"
 
 terminal = str(data.get("status", "")).strip() in {"completed", "done"}
 if terminal:

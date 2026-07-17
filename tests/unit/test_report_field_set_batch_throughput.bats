@@ -21,12 +21,16 @@ YAML
 teardown() { rm -rf "$TMPDIR_CASE"; }
 
 @test "batch applies many fields with one atomic transition" {
-  run bash -c 'for i in $(seq 1 40); do echo "result.details.f$i: value$i"; done; echo "binary_checks.AC1[0].result: yes"; done_marker=true' _
+  run bash -c 'for i in $(seq 1 49); do echo "result.details.f$i: value$i"; done; echo "binary_checks.AC1[0].result: yes"; done_marker=true' _
   payload="$output"
+  start_ns="$(date +%s%N)"
   run bash -c 'printf "%s\n" "$3" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT" "$payload"
+  elapsed_ms="$(( ($(date +%s%N) - start_ns) / 1000000 ))"
   [ "$status" -eq 0 ]
-  [[ "$output" == BATCH_OK*fields=41* ]]
-  run python3 -c 'import yaml,sys; d=yaml.safe_load(open(sys.argv[1])); assert len(d["result"]["details"])==40; assert d["verdict"]=="PASS"' "$REPORT"
+  echo "BATCH_METRIC fields=50 elapsed_ms=$elapsed_ms atomic_publish=1" >&3
+  [ "$elapsed_ms" -lt 1000 ]
+  [[ "$output" == BATCH_OK*fields=50* ]]
+  run python3 -c 'import yaml,sys; d=yaml.safe_load(open(sys.argv[1])); assert len(d["result"]["details"])==49; assert d["verdict"]=="PASS"' "$REPORT"
   [ "$status" -eq 0 ]
 }
 
@@ -40,6 +44,33 @@ teardown() { rm -rf "$TMPDIR_CASE"; }
 @test "terminal readiness blocks incomplete completed report without mutation" {
   before="$(sha256sum "$REPORT" | awk '{print $1}')"
   run bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\ncommit_hash: bad\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
+  [ "$status" -ne 0 ]
+  [ "$(sha256sum "$REPORT" | awk '{print $1}')" = "$before" ]
+}
+
+@test "completed revision batch unlocks and republishes terminal once" {
+  sed -i "s/status: pending/status: completed/; s/result: ''/result: yes/; \$a verdict: PASS" "$REPORT"
+  before_inode="$(stat -c %i "$REPORT")"
+  run bash -c 'printf "status: revision_requested\nresult.summary: revised once\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == BATCH_OK*fields=3* ]]
+  [ "$(stat -c %i "$REPORT")" != "$before_inode" ]
+  run python3 -c 'import yaml,sys; d=yaml.safe_load(open(sys.argv[1])); assert d["status"]=="completed"; assert d["verdict"]=="PASS"; assert d["result"]["summary"]=="revised once"' "$REPORT"
+  [ "$status" -eq 0 ]
+}
+
+@test "completed batch without explicit revision remains immutable" {
+  sed -i "s/status: pending/status: completed/; s/result: ''/result: yes/; \$a verdict: PASS" "$REPORT"
+  before="$(sha256sum "$REPORT" | awk '{print $1}')"
+  run bash -c 'printf "result.summary: forbidden\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
+  [ "$status" -ne 0 ]
+  [ "$(sha256sum "$REPORT" | awk '{print $1}')" = "$before" ]
+}
+
+@test "failed completed revision batch rolls back every field" {
+  sed -i "s/status: pending/status: completed/; s/result: ''/result: yes/; \$a verdict: PASS" "$REPORT"
+  before="$(sha256sum "$REPORT" | awk '{print $1}')"
+  run bash -c 'printf "status: revision_requested\nresult.summary: must rollback\nbinary_checks.AC1[0].result: maybe\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
   [ "$status" -ne 0 ]
   [ "$(sha256sum "$REPORT" | awk '{print $1}')" = "$before" ]
 }
