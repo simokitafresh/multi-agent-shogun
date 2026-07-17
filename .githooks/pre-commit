@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-npx --yes lefthook run pre-commit --no-auto-install "$@"
+bash "$(git rev-parse --show-toplevel)/scripts/run_precommit_checks.sh" "$@"
