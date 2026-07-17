@@ -67,28 +67,46 @@ item_top="${item_path%%/*}"
 if [[ "$item_top" == "$item_path" || ! -d "$SOURCE_REPO/$item_top" ]]; then
     fail invalid_item_path
 fi
-owned_abs_json="$(SHARD_ITEM_JSON="${SHARD_ITEM_JSON:-}" ITEM_PATH="$item_path" WORKDIR="$workdir" SOURCE_REPO="$SOURCE_REPO" python3 - 2>/dev/null <<'PY'
+item_contract_json="$(SHARD_ITEM_JSON="${SHARD_ITEM_JSON:-}" ITEM_PATH="$item_path" WORKDIR="$workdir" SOURCE_REPO="$SOURCE_REPO" python3 - 2>/dev/null <<'PY'
 import json, os
 item = json.loads(os.environ["SHARD_ITEM_JSON"])
 paths = item.get("owned_paths")
 if not isinstance(paths, list) or len(paths) != 2 or len(paths) != len(set(paths)) or os.environ["ITEM_PATH"] not in paths:
-    raise SystemExit(1)
+    raise SystemExit(2)
 root = os.path.realpath(os.environ["SOURCE_REPO"])
 work = os.path.realpath(os.environ["WORKDIR"])
 out = []
 for value in paths:
     if not isinstance(value, str) or not value or os.path.isabs(value) or value in {".", ".."} or value.startswith("../") or "/../" in value or value.endswith("/.."):
-        raise SystemExit(1)
+        raise SystemExit(2)
     top = value.split("/", 1)[0]
     if not os.path.isdir(os.path.join(root, top)):
-        raise SystemExit(1)
+        raise SystemExit(2)
     absolute = os.path.realpath(os.path.join(work, value))
     if os.path.commonpath([work, absolute]) != work:
         raise SystemExit(1)
     out.append(absolute)
-print(json.dumps(out, separators=(",", ":")))
+read_only = item.get("read_only_paths")
+if not isinstance(read_only, list) or not read_only or len(read_only) != len(set(read_only)):
+    raise SystemExit(3)
+for value in read_only:
+    if not isinstance(value, str) or not value or os.path.isabs(value) or value in {".", ".."} or value.startswith("../") or "/../" in value or value.endswith("/.."):
+        raise SystemExit(3)
+    if value in paths:
+        raise SystemExit(3)
+test_command = item.get("test_command")
+fingerprint = item.get("contract_fingerprint")
+if not isinstance(test_command, str) or not test_command.strip() or not isinstance(fingerprint, str) or len(fingerprint) != 64 or any(c not in "0123456789abcdef" for c in fingerprint):
+    raise SystemExit(3)
+print(json.dumps({"owned": out, "read_only": read_only, "test_command": test_command, "fingerprint": fingerprint}, separators=(",", ":")))
 PY
-)" || fail invalid_owned_paths
+)"
+contract_parse_rc=$?
+if (( contract_parse_rc != 0 )); then
+    (( contract_parse_rc == 2 )) && fail invalid_owned_paths
+    fail invalid_item_contract
+fi
+owned_abs_json="$(ITEM_CONTRACT_JSON="$item_contract_json" python3 -c 'import json,os; print(json.dumps(json.loads(os.environ["ITEM_CONTRACT_JSON"])["owned"], separators=(",",":")))')"
 if ! [[ "$WAIT_SEC" =~ ^[0-9]+$ ]] || (( WAIT_SEC < 1 )); then
     fail invalid_timeout
 fi
@@ -113,6 +131,27 @@ fi
 observed_sha="$(git -C "$workdir" rev-parse HEAD 2>/dev/null || true)"
 [[ "$observed_sha" == "$FIXED_SHA" ]] || fail wrong_sha
 [[ -z "$(git -C "$workdir" status --porcelain 2>/dev/null)" ]] || fail dirty_worktree
+if ! ITEM_CONTRACT_JSON="$item_contract_json" WORKDIR="$workdir" python3 - <<'PY'
+import json, os
+item = json.loads(os.environ["ITEM_CONTRACT_JSON"])
+work = os.path.realpath(os.environ["WORKDIR"])
+for value in item["read_only"]:
+    path = os.path.realpath(os.path.join(work, value))
+    if os.path.commonpath([work, path]) != work or not os.path.isfile(path):
+        raise SystemExit(1)
+PY
+then
+    fail read_only_path_missing
+fi
+observed_fingerprint="$(PYTHONDONTWRITEBYTECODE=1 CAMPAIGN_WORKDIR="$workdir" python3 - <<'PY'
+import os, sys
+sys.path.insert(0, os.path.join(os.environ["CAMPAIGN_WORKDIR"], "skills/campaign-lane"))
+from scripts.contracts import contract_fingerprint
+print(contract_fingerprint())
+PY
+)" || fail contract_fingerprint_unavailable
+expected_fingerprint="$(ITEM_CONTRACT_JSON="$item_contract_json" python3 -c 'import json,os; print(json.loads(os.environ["ITEM_CONTRACT_JSON"])["fingerprint"])')"
+[[ "$expected_fingerprint" =~ ^[0-9a-f]{64}$ && "$observed_fingerprint" == "$expected_fingerprint" ]] || fail contract_fingerprint_mismatch
 task_path="$output_dir/task.yaml"
 report_path="${CAMPAIGN_LANE_REPORT_PATH:-$output_dir/report.yaml}"
 cp "$ROOT/templates/campaign_lane_shard_task.yaml" "$task_path" || fail task_template_copy_failed
@@ -127,9 +166,14 @@ bash "$field_set" "$task_path" task project infra || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task assigned_to "$worker_id" || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task status assigned || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task purpose "campaign lane shard ${item_id}を隔離workdir内の固有ownershipだけで完結する" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task description "${workdir}内だけを編集・commitし、owned path外diff 0を確認する。報告operational_simulation.actualへ厳密形式 TOTAL=N FAIL=0 SKIP=0、resultへPASSを記録する" || fail task_yaml_write_failed
+bash "$field_set" "$task_path" task description "${workdir}内だけを編集・commitし、owned path外diff 0を確認する。owned_paths_json/read_only_paths_jsonはcanonical JSON listとしてparseする。報告operational_simulation.actualへ厳密形式 TOTAL=N FAIL=0 SKIP=0、resultへPASSを記録する" || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task target_path "$workdir/$item_path" || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task owned_paths_json "$owned_abs_json" || fail task_yaml_write_failed
+bash "$field_set" "$task_path" task contract_fingerprint "$expected_fingerprint" || fail task_yaml_write_failed
+read_only_json="$(ITEM_CONTRACT_JSON="$item_contract_json" python3 -c 'import json,os; print(json.dumps(json.loads(os.environ["ITEM_CONTRACT_JSON"])["read_only"], separators=(",",":")))')"
+test_command="$(ITEM_CONTRACT_JSON="$item_contract_json" python3 -c 'import json,os; print(json.loads(os.environ["ITEM_CONTRACT_JSON"])["test_command"])')"
+bash "$field_set" "$task_path" task read_only_paths_json "$read_only_json" || fail task_yaml_write_failed
+bash "$field_set" "$task_path" task test_command "$test_command" || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task implementation_path "$workdir/$item_path" || fail task_yaml_write_failed
 test_path="$(OWNED_ABS_JSON="$owned_abs_json" ITEM_ABS="$workdir/$item_path" python3 - <<'PY'
 import json, os

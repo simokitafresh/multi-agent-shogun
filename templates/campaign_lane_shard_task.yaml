@@ -13,6 +13,8 @@ task:
   workdir: placeholder
   fixed_sha: placeholder
   owned_paths_json: '[]'
+  read_only_paths_json: '[]'
+  test_command: placeholder
   implementation_path: placeholder
   test_path: placeholder
   report_path: placeholder

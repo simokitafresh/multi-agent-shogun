@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 from typing import Any
 
 
@@ -22,7 +23,17 @@ def canonical_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
 
 
-def contract_fingerprint() -> str:
-    payload = {"adapter": ADAPTER_SCHEMA, "outcome": OUTCOME_SCHEMA, "version": 1}
-    return hashlib.sha256(canonical_json(payload).encode()).hexdigest()
+def _file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
+
+def contract_fingerprint() -> str:
+    scripts = Path(__file__).resolve().parent
+    payload = {
+        "adapter": ADAPTER_SCHEMA,
+        "outcome": OUTCOME_SCHEMA,
+        "version": 1,
+        "helper_sha": _file_sha256(scripts / "outcome_ledger.py"),
+        "sdk_sha": _file_sha256(scripts / "adapter_sdk.py"),
+    }
+    return hashlib.sha256(canonical_json(payload).encode()).hexdigest()

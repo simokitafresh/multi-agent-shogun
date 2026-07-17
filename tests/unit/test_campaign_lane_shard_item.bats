@@ -5,12 +5,13 @@ setup() {
   TMPROOT="$BATS_TEST_TMPDIR/case"
   mkdir -p "$TMPROOT/bin" "$TMPROOT/out"
   SOURCE="$TMPROOT/source"
-  mkdir -p "$SOURCE/skills/campaign-lane" "$SOURCE/tests/unit"
+  mkdir -p "$SOURCE/skills/campaign-lane/scripts" "$SOURCE/tests/unit"
   git init -q "$SOURCE"
   git -C "$SOURCE" config user.email test@example.invalid
   git -C "$SOURCE" config user.name test
   printf base >"$SOURCE/skills/campaign-lane/base"
-  git -C "$SOURCE" add skills/campaign-lane/base
+  cp "$ROOT/skills/campaign-lane/scripts/"{__init__.py,contracts.py,adapter_sdk.py,outcome_ledger.py} "$SOURCE/skills/campaign-lane/scripts/"
+  git -C "$SOURCE" add skills/campaign-lane/base skills/campaign-lane/scripts
   git -C "$SOURCE" commit -qm fixture
   FIXED_SHA="$(git -C "$SOURCE" rev-parse HEAD)"
 }
@@ -51,8 +52,15 @@ SH
   export TEST_MODE="$mode"
 }
 
+base_item_json() {
+  local path="${1:-skills/campaign-lane/adapters/new.py}"
+  local fingerprint
+  fingerprint="$(PYTHONPATH="$SOURCE/skills/campaign-lane" python3 -c 'from scripts.contracts import contract_fingerprint; print(contract_fingerprint())')"
+  printf '{"id":"item","path":"%s","owned_paths":["%s","tests/unit/test_new.py"],"read_only_paths":["skills/campaign-lane/scripts/contracts.py"],"test_command":"pytest -q tests/unit/test_new.py","contract_fingerprint":"%s"}' "$path" "$path" "$fingerprint"
+}
+
 run_bridge() {
-  item_json='{"id":"item","path":"skills/campaign-lane/adapters/new.py","owned_paths":["skills/campaign-lane/adapters/new.py","tests/unit/test_new.py"]}'
+  item_json="$(base_item_json)"
   run env SHARD_ITEM_JSON="$item_json" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
     CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
@@ -83,12 +91,87 @@ assert isinstance(task['acceptance_criteria'], list)
 owned=json.loads(task['owned_paths_json']); assert len(owned)==2
 assert os.path.commonpath([work, os.path.realpath(task['target_path'])]) == work
 assert {task['implementation_path'], task['test_path']} == set(owned)
+read_only=json.loads(task['read_only_paths_json'])
+assert read_only == ['skills/campaign-lane/scripts/contracts.py']
+assert set(read_only).isdisjoint({'skills/campaign-lane/adapters/new.py', 'tests/unit/test_new.py'})
+assert all(os.path.isfile(os.path.join(work, path)) for path in read_only)
+assert task['test_command'] == 'pytest -q tests/unit/test_new.py'
+assert len(task['contract_fingerprint']) == 64
 PY
+}
+
+@test "fingerprint mismatch blocks before deploy" {
+  make_deployer pass
+  fingerprint="$(printf stale | sha256sum | cut -d' ' -f1)"
+  item_json="{\"id\":\"item\",\"path\":\"skills/campaign-lane/adapters/new.py\",\"owned_paths\":[\"skills/campaign-lane/adapters/new.py\",\"tests/unit/test_new.py\"],\"read_only_paths\":[\"skills/campaign-lane/scripts/contracts.py\"],\"test_command\":\"pytest -q tests/unit/test_new.py\",\"contract_fingerprint\":\"$fingerprint\"}"
+  run env SHARD_ITEM_JSON="$item_json" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
+    "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
+  [ "$status" -ne 0 ]
+  reason_is contract_fingerprint_mismatch
+}
+
+@test "helper and SDK SHA drift each block before deploy" {
+  make_deployer pass
+  original_fingerprint="$(PYTHONPATH="$SOURCE/skills/campaign-lane" python3 -c 'from scripts.contracts import contract_fingerprint; print(contract_fingerprint())')"
+  for changed in outcome_ledger.py adapter_sdk.py
+  do
+    git -C "$SOURCE" checkout -q "$FIXED_SHA" -- skills/campaign-lane/scripts/outcome_ledger.py skills/campaign-lane/scripts/adapter_sdk.py
+    printf '\n# drift\n' >>"$SOURCE/skills/campaign-lane/scripts/$changed"
+    git -C "$SOURCE" add skills/campaign-lane/scripts/outcome_ledger.py skills/campaign-lane/scripts/adapter_sdk.py
+    git -C "$SOURCE" commit -qm "drift $changed"
+    drift_sha="$(git -C "$SOURCE" rev-parse HEAD)"
+    other=adapter_sdk.py; [ "$changed" = adapter_sdk.py ] && other=outcome_ledger.py
+    [ "$(git -C "$SOURCE" show "$drift_sha:skills/campaign-lane/scripts/$other" | sha256sum)" = "$(git -C "$SOURCE" show "$FIXED_SHA:skills/campaign-lane/scripts/$other" | sha256sum)" ]
+    item_json="$(base_item_json)"
+    item_json="$(ITEM_JSON="$item_json" ORIGINAL="$original_fingerprint" python3 -c 'import json,os; d=json.loads(os.environ["ITEM_JSON"]); d["contract_fingerprint"]=os.environ["ORIGINAL"]; print(json.dumps(d,separators=(",",":")))')"
+    out="$TMPROOT/drift-${changed%.py}"
+    run env SHARD_ITEM_JSON="$item_json" CAMPAIGN_LANE_FIXED_SHA="$drift_sha" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
+      "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work-${changed%.py}" "$out"
+    [ "$status" -ne 0 ]
+    python3 - "$out/result.json" <<'PY'
+import json,sys
+assert json.load(open(sys.argv[1]))['reason_code'] == 'contract_fingerprint_mismatch'
+PY
+  done
+}
+
+@test "missing or malformed required item contract is rejected distinctly" {
+  for item_json in \
+    '{"path":"skills/campaign-lane/adapters/new.py","owned_paths":["skills/campaign-lane/adapters/new.py","tests/unit/test_new.py"],"test_command":"pytest -q x","contract_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}' \
+    '{"path":"skills/campaign-lane/adapters/new.py","owned_paths":["skills/campaign-lane/adapters/new.py","tests/unit/test_new.py"],"read_only_paths":[],"test_command":"pytest -q x","contract_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}' \
+    '{"path":"skills/campaign-lane/adapters/new.py","owned_paths":["skills/campaign-lane/adapters/new.py","tests/unit/test_new.py"],"read_only_paths":["skills/campaign-lane/scripts/contracts.py"],"test_command":"","contract_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}' \
+    '{"path":"skills/campaign-lane/adapters/new.py","owned_paths":["skills/campaign-lane/adapters/new.py","tests/unit/test_new.py"],"read_only_paths":["skills/campaign-lane/scripts/contracts.py"],"test_command":"pytest -q x","contract_fingerprint":"bad"}'
+  do
+    out="$TMPROOT/invalid-$RANDOM"
+    run env SHARD_ITEM_JSON="$item_json" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" \
+      "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work-$RANDOM" "$out"
+    [ "$status" -ne 0 ]
+    reason_is_at="$out/result.json"
+    python3 - "$reason_is_at" <<'PY'
+import json,sys
+assert json.load(open(sys.argv[1]))['reason_code'] == 'invalid_item_contract'
+PY
+  done
+}
+
+@test "read-only existence is checked at fixed checkout not dirty source" {
+  printf newer >"$SOURCE/untracked-newer"
+  make_deployer pass
+  item_json="$(base_item_json)"
+  item_json="$(ITEM_JSON="$item_json" python3 - <<'PY'
+import json,os
+d=json.loads(os.environ['ITEM_JSON']); d['read_only_paths']=['untracked-newer']; print(json.dumps(d,separators=(',',':')))
+PY
+)"
+  run env SHARD_ITEM_JSON="$item_json" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
+    "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
+  [ "$status" -ne 0 ]
+  reason_is read_only_path_missing
 }
 
 @test "wrong fixed SHA fails closed with result" {
   make_deployer pass
-  run env SHARD_ITEM_JSON='{"path":"skills/campaign-lane/adapters/new.py","owned_paths":["skills/campaign-lane/adapters/new.py","tests/unit/test_new.py"]}' CAMPAIGN_LANE_FIXED_SHA=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
+  run env SHARD_ITEM_JSON="$(base_item_json)" CAMPAIGN_LANE_FIXED_SHA=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
   [ "$status" -ne 0 ]
   reason_is source_materialize_failed
@@ -100,7 +183,7 @@ PY
   git -C "$TMPROOT/work" checkout -q --detach "$FIXED_SHA"
   printf dirty >>"$TMPROOT/work/skills/campaign-lane/base"
   make_deployer pass
-  run env SHARD_ITEM_JSON='{"path":"skills/campaign-lane/adapters/new.py","owned_paths":["skills/campaign-lane/adapters/new.py","tests/unit/test_new.py"]}' CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
+  run env SHARD_ITEM_JSON="$(base_item_json)" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
   [ "$status" -ne 0 ]
   reason_is source_materialize_failed
@@ -108,7 +191,7 @@ PY
 
 @test "invalid missing parent path fails before deploy" {
   make_deployer pass
-  run env SHARD_ITEM_JSON='{"path":"missing/path/new.py","owned_paths":["missing/path/new.py","tests/unit/test_new.py"]}' CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
+  run env SHARD_ITEM_JSON="$(base_item_json missing/path/new.py)" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item missing/path/new.py worker "$TMPROOT/work" "$TMPROOT/out"
   [ "$status" -ne 0 ]
   reason_is invalid_item_path

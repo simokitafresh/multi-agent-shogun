@@ -64,6 +64,20 @@ def test_adapter_schema_and_fingerprint_are_deterministic():
     assert len(contract_fingerprint()) == 64
 
 
+def test_contract_fingerprint_changes_with_helper_or_sdk(monkeypatch):
+    import scripts.contracts as contracts
+
+    original = contracts._file_sha256
+    baseline = contracts.contract_fingerprint()
+    monkeypatch.setattr(contracts, "_file_sha256", lambda path: "f" * 64 if path.name == "outcome_ledger.py" else original(path))
+    helper_changed = contracts.contract_fingerprint()
+    monkeypatch.setattr(contracts, "_file_sha256", lambda path: "e" * 64 if path.name == "adapter_sdk.py" else original(path))
+    sdk_changed = contracts.contract_fingerprint()
+    assert helper_changed != baseline
+    assert sdk_changed != baseline
+    assert helper_changed != sdk_changed
+
+
 def test_materialize_exact_sha_and_fail_closed(tmp_path):
     source = tmp_path / "source"
     source.mkdir()
