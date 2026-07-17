@@ -13,14 +13,30 @@ run_startup_short_cache() {
     shift 2
 
     local rc_file="${cache_file}.rc"
-    local now mtime age tmp rc
+    local hash_file="${cache_file}.hash"
+    local timing_file="${SHOGUN_STARTUP_TIMING_FILE:-}"
+    local check_name="${SHOGUN_STARTUP_CHECK_NAME:-$(basename "$cache_file")}" input_spec="${SHOGUN_STARTUP_CACHE_INPUTS:-}"
+    local now mtime age tmp rc started_ms ended_ms duration_ms input_hash cached_hash cache_hit=0
+    started_ms=$(date +%s%3N)
+    if [ -n "$input_spec" ]; then
+        input_hash=$(printf '%s\n' "$input_spec" | tr ':' '\n' | while IFS= read -r input; do
+            [ -e "$input" ] && sha256sum "$input" || printf 'MISSING  %s\n' "$input"
+        done | sha256sum | awk '{print $1}')
+    else
+        input_hash="no-input-contract"
+    fi
+    cached_hash=$(cat "$hash_file" 2>/dev/null || true)
     now=$(date +%s)
     if [ "${ttl:-0}" -gt 0 ] && [ -f "$cache_file" ] && [ -f "$rc_file" ]; then
         mtime=$(stat -c %Y "$cache_file" 2>/dev/null || echo 0)
         age=$((now - mtime))
-        if [ "$age" -lt "$ttl" ]; then
+        if [ "$age" -lt "$ttl" ] && [ "$cached_hash" = "$input_hash" ]; then
+            cache_hit=1
             cat "$cache_file"
-            return "$(cat "$rc_file" 2>/dev/null || echo 1)"
+            rc=$(cat "$rc_file" 2>/dev/null || echo 1)
+            ended_ms=$(date +%s%3N); duration_ms=$((ended_ms - started_ms))
+            [ -z "$timing_file" ] || printf '%s\t%s\t%s\t%s\n' "$check_name" "$duration_ms" "$cache_hit" "$input_hash" >> "$timing_file"
+            return "$rc"
         fi
     fi
 
@@ -29,9 +45,13 @@ run_startup_short_cache() {
     rc=$?
     mkdir -p "$(dirname "$cache_file")"
     printf '%s\n' "$rc" > "${tmp}.rc"
+    printf '%s\n' "$input_hash" > "${tmp}.hash"
     mv "$tmp" "$cache_file"
     mv "${tmp}.rc" "$rc_file"
+    mv "${tmp}.hash" "$hash_file"
     cat "$cache_file"
+    ended_ms=$(date +%s%3N); duration_ms=$((ended_ms - started_ms))
+    [ -z "$timing_file" ] || printf '%s\t%s\t%s\t%s\n' "$check_name" "$duration_ms" "$cache_hit" "$input_hash" >> "$timing_file"
     return "$rc"
 }
 
@@ -263,7 +283,7 @@ fi
 echo "■ テスト時間台帳鮮度"
 if [ -f "$SCRIPT_DIR/logs/test_timing_ledger.tsv" ]; then
     if [ "$TIMING_HEALTH_CACHE_TTL" -gt 0 ]; then
-        _timing_health_out="$(run_startup_short_cache "$TIMING_HEALTH_CACHE_FILE" "$TIMING_HEALTH_CACHE_TTL" \
+        _timing_health_out="$(SHOGUN_STARTUP_CHECK_NAME=timing_health SHOGUN_STARTUP_CACHE_INPUTS="$SCRIPT_DIR/logs/test_timing_ledger.tsv:$GATE_DIR/gate_test_health.sh" run_startup_short_cache "$TIMING_HEALTH_CACHE_FILE" "$TIMING_HEALTH_CACHE_TTL" \
             bash "$GATE_DIR/gate_test_health.sh" --ledger-health 2>&1 || true)"
     else
     _timing_health_out="$(bash "$GATE_DIR/gate_test_health.sh" --ledger-health 2>&1 || true)"
@@ -618,6 +638,9 @@ _TMP_GATE4_YAML="$_TMP_STARTUP_DIR/gate4_yaml" _TMP_SEMANTIC_NO_MATCH="$_TMP_STA
 _TMP_SKILL_REC="$_TMP_STARTUP_DIR/skill_rec" _TMP_SKILL_USAGE="$_TMP_STARTUP_DIR/skill_usage"
 _TMP_WEEKLY_METRICS="$_TMP_STARTUP_DIR/weekly_metrics" _TMP_LOOP_LEDGER="$_TMP_STARTUP_DIR/loop_ledger"
 _TMP_ENFORCE_LEVEL="$_TMP_STARTUP_DIR/enforce_level"
+	SHOGUN_STARTUP_TIMING_FILE="${SHOGUN_STARTUP_TIMING_FILE:-$_TMP_STARTUP_DIR/check_timings.tsv}"
+	export SHOGUN_STARTUP_TIMING_FILE
+	printf 'check\tduration_ms\tcache_hit\tinput_hash\n' > "$SHOGUN_STARTUP_TIMING_FILE"
 	trap 'rm -f "$_TMP_STARTUP_DIR"/* 2>/dev/null || true; rmdir "$_TMP_STARTUP_DIR" 2>/dev/null || true' EXIT
 	STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
 	"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
@@ -627,13 +650,13 @@ _TMP_ENFORCE_LEVEL="$_TMP_STARTUP_DIR/enforce_level"
 	"$GATE_DIR/gate_cmd_state.sh" > "$_TMP_G3" 2>&1 &
 	_PID_G3=$!
 	if [ "$LIGHT_MODE" != "1" ] || [ "$LIGHT_SKIP_HEAVY" != "1" ]; then
-	    run_startup_short_cache "$LOOP_HEALTH_CACHE_FILE" "$STARTUP_HEAVY_CACHE_TTL" \
+	    SHOGUN_STARTUP_CHECK_NAME=loop_health SHOGUN_STARTUP_CACHE_INPUTS="$SCRIPT_DIR/logs/gate_fire_log.yaml:$GATE_DIR/gate_loop_health.sh" run_startup_short_cache "$LOOP_HEALTH_CACHE_FILE" "$STARTUP_HEAVY_CACHE_TTL" \
 	        bash "$GATE_DIR/gate_loop_health.sh" > "$_TMP_G12" 2>&1 &
 	    _PID_G12=$!
-	    run_startup_short_cache "$LESSON_HEALTH_CACHE_FILE" "$STARTUP_HEAVY_CACHE_TTL" \
+	    SHOGUN_STARTUP_CHECK_NAME=lesson_health SHOGUN_STARTUP_CACHE_INPUTS="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml:$SCRIPT_DIR/projects/infra/lessons_karo.yaml:$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml:$GATE_DIR/gate_lesson_health.sh" run_startup_short_cache "$LESSON_HEALTH_CACHE_FILE" "$STARTUP_HEAVY_CACHE_TTL" \
 	        bash "$GATE_DIR/gate_lesson_health.sh" > "$_TMP_G13" 2>&1 &
 	    _PID_G13=$!
-	    run_startup_short_cache "$ENFORCEMENT_CACHE_FILE" "$STARTUP_HEAVY_CACHE_TTL" \
+	    SHOGUN_STARTUP_CHECK_NAME=enforcement_level SHOGUN_STARTUP_CACHE_INPUTS="$SCRIPT_DIR/projects/infra/lessons_shogun.yaml:$SCRIPT_DIR/projects/infra/lessons_karo.yaml:$SCRIPT_DIR/projects/infra/lessons_gunshi.yaml:$GATE_DIR/gate_lesson_enforcement_level.sh" run_startup_short_cache "$ENFORCEMENT_CACHE_FILE" "$STARTUP_HEAVY_CACHE_TTL" \
 	        bash "$GATE_DIR/gate_lesson_enforcement_level.sh" > "$_TMP_ENFORCE_LEVEL" 2>&1 &
 	    _PID_ENFORCE_LEVEL=$!
 	else
@@ -787,7 +810,7 @@ _backlink_counts_script="$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
 if [ -f "$_backlink_counts_script" ]; then
     (
         CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" \
-            run_startup_short_cache "$BACKLINK_CACHE_FILE" "$SHORT_CACHE_TTL" \
+            SHOGUN_STARTUP_CHECK_NAME=backlink_zero SHOGUN_STARTUP_CACHE_INPUTS="$SCRIPT_DIR/context/semantic-map.md:$_backlink_counts_script" run_startup_short_cache "$BACKLINK_CACHE_FILE" "$SHORT_CACHE_TTL" \
                 bash "$_backlink_counts_script" --zero --limit 5
     ) > "$_TMP_BACKLINK_ZERO" 2>/dev/null || true &
     _PID_BACKLINK_ZERO=$!
@@ -796,7 +819,7 @@ else
 fi
 if [ -x "$GATE_DIR/gate_three_layer_health.sh" ]; then
     (
-        run_startup_short_cache "$THREE_LAYER_CACHE_FILE" "$THREE_LAYER_CACHE_TTL" \
+        SHOGUN_STARTUP_CHECK_NAME=three_layer SHOGUN_STARTUP_CACHE_INPUTS="$SCRIPT_DIR/data/multi_agent_shogun_memory.db:$SCRIPT_DIR/context/semantic-map.md:$GATE_DIR/gate_three_layer_health.sh" run_startup_short_cache "$THREE_LAYER_CACHE_FILE" "$THREE_LAYER_CACHE_TTL" \
             bash "$GATE_DIR/gate_three_layer_health.sh" > "$_TMP_THREE_LAYER" 2>&1
         printf '%s\n' "$?" > "$_TMP_THREE_LAYER_STATUS"
     ) &
@@ -4094,6 +4117,13 @@ if [ -n "$_deferred_holes" ]; then
     printf '%s\n' "$_deferred_holes"
 else
     echo "  INFO: 解析失敗"
+fi
+
+echo "■ startup check timings"
+if [ -s "$SHOGUN_STARTUP_TIMING_FILE" ]; then
+    awk -F '\t' 'NR>1 {printf "  TIMING check=%s duration_ms=%s cache_hit=%s input_hash=%s\n", $1,$2,$3,$4}' "$SHOGUN_STARTUP_TIMING_FILE" | sort
+else
+    echo "  TIMING unavailable"
 fi
 
 echo "■ backlinks=0 修行候補"
