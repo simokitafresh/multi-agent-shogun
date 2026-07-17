@@ -53,6 +53,22 @@ jq -Rr --arg agent_id "$agent_id" '
         (($entry.target // "") | tostring) == $agent_id
         or (($entry.agent // "") | tostring) == $agent_id
       )
-      | $line
+      # Codex unified-exec continuations retain session_id until a terminal
+      # exit_code is observed.  Do not let a generic "completed" label on an
+      # intermediate envelope masquerade as process completion.
+      | if (($entry.session_id // "") | tostring | length) > 0 then
+          $entry + {
+            execution_state: (
+              if (($entry.exit_code? != null)
+                  or (($entry.detail // "") | tostring | test("(^|[[:space:]])exit[_ -]?code[=: ]+[0-9]+"; "i")))
+              then "finished"
+              else "running"
+              end
+            )
+          }
+          | tojson
+        else
+          $line
+        end
     end
 ' "$conversation_file" | tail -n "$limit"

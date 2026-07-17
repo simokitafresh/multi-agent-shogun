@@ -1127,6 +1127,30 @@ inbox_append_message_locked() {
     inbox_compact_records_locked "$inbox_file"
 }
 
+# Return success when the same sender/content pair is already pending.  This is
+# deliberately evaluated while holding the inbox flock: concurrent writers must
+# converge on one durable entry instead of both passing a pre-lock check.
+inbox_pending_duplicate_locked() {
+    local inbox_file="$1"
+    local sender="$2"
+    local content="$3"
+    [ -s "$inbox_file" ] || return 1
+    INBOX_DEDUPE_FILE="$inbox_file" INBOX_DEDUPE_FROM="$sender" \
+        INBOX_DEDUPE_CONTENT="$content" python3 - <<'PY'
+import os, sys, yaml
+try:
+    data = yaml.safe_load(open(os.environ["INBOX_DEDUPE_FILE"], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    sys.exit(1)
+for message in data.get("messages") or []:
+    if not isinstance(message, dict) or message.get("read") is not False:
+        continue
+    if str(message.get("from", "")) == os.environ["INBOX_DEDUPE_FROM"] and str(message.get("content", "")) == os.environ["INBOX_DEDUPE_CONTENT"]:
+        sys.exit(0)
+sys.exit(1)
+PY
+}
+
 inbox_extract_report_paths() {
     local report_path="$1"
     [[ -f "$report_path" ]] || return 0
@@ -2099,7 +2123,8 @@ else
 fi
 
 while [ $attempt -lt $max_attempts ]; do
-    if (
+    _persist_rc=0
+    (
         flock -w 5 200 || exit 1
 
         # Initialize inbox under the same flock that protects message append.
@@ -2107,9 +2132,16 @@ while [ $attempt -lt $max_attempts ]; do
             printf 'messages: []\n' > "$INBOX"
         fi
 
+        if inbox_pending_duplicate_locked "$INBOX" "$FROM" "$CONTENT"; then
+            exit 20
+        fi
         inbox_append_message_locked "$INBOX" "$_msg_block" || exit 1
 
-    ) 200>"$LOCKFILE"; then
+    ) 200>"$LOCKFILE" || _persist_rc=$?
+    if [ "$_persist_rc" -eq 20 ]; then
+        echo "[inbox_write] pending duplicate suppressed: target=${TARGET} from=${FROM}" >&2
+        exit 0
+    elif [ "$_persist_rc" -eq 0 ]; then
         # Success — inbox message persisted
         if [ "${INBOX_WRITE_SYNC_MEMORY_DB:-0}" = "1" ] || [[ "$SCRIPT_DIR" != /mnt/c/* && "$SCRIPT_DIR" != /mnt/d/* ]]; then
             if ! record_inbox_event_to_memory_db 2>/dev/null; then
