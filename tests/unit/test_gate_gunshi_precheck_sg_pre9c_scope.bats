@@ -318,6 +318,62 @@ YAML
     done
 }
 
+@test "SG-PRE28 blocks honest concern with all yes when AC evidence mapping is absent" {
+    cat > "$TEST_TMPDIR/report.yaml" <<'YAML'
+status: completed
+status_detail: WITH_CONCERNS
+assumption_invalidation: {found: true, detail: runtime前提が崩れた}
+binary_checks:
+  AC1: [{check: module breakdown完了, result: yes}]
+  AC2: [{check: size ratio完了, result: yes}]
+YAML
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"HONEST_REPORT_FLAG=1"* ]]
+    [[ "$output" == *"AC_EVIDENCE_MAPPING_MISSING=1"* ]]
+    [[ "$output" == *"AC_EVIDENCE_MAPPING_MISSING_KEYS=AC1,AC2"* ]]
+    [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+}
+
+@test "SG-PRE28 accepts honest concern only with one-to-one evidence for every non-commit AC" {
+    cat > "$TEST_TMPDIR/report.yaml" <<'YAML'
+status: completed
+decision_candidate: {found: true, detail: bootup悪化の後続判断が必要}
+binary_checks:
+  AC1: [{check: module breakdown完了, result: yes}]
+  AC2: [{check: size ratio完了, result: yes}]
+  commit: [{check: commit完了, result: yes}]
+ac_evidence_mapping:
+  AC1: result.detailsのmodule表5行、合計7023KB
+  AC2: result.detailsの構成比100.0%集計
+YAML
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"HONEST_REPORT_FLAG=1"* ]]
+    [[ "$output" == *"AC_EVIDENCE_MAPPING_MISSING=0"* ]]
+    [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+}
+
+@test "SG-PRE28 blocks a partial mapping but does not duplicate binary no handling" {
+    cat > "$TEST_TMPDIR/report.yaml" <<'YAML'
+status: completed
+assumption_invalidation: {found: true, detail: 前提崩壊}
+binary_checks:
+  AC1: [{check: first, result: yes}]
+  AC2: [{check: second, result: yes}]
+ac_evidence_mapping: {AC1: result.detailsの証拠}
+YAML
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [[ "$output" == *"AC_EVIDENCE_MAPPING_MISSING_KEYS=AC2"* ]]
+    [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+
+    sed -i 's/result: yes}/result: no}/' "$TEST_TMPDIR/report.yaml"
+    run python3 "$ENGINE" --report "$TEST_TMPDIR/report.yaml" --tasks-dir "$TEST_TMPDIR/tasks"
+    [[ "$output" == *"AC_EVIDENCE_MAPPING_MISSING=0"* ]]
+    [[ "$output" == *"BC_HAS_NO=1"* ]]
+    [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+}
+
 @test "SG-PRE9 sets BLOCK prediction for waived binary check no" {
     cat > "$TEST_TMPDIR/report.yaml" <<YAML
 ninja: hayate

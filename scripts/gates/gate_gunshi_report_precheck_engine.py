@@ -35,6 +35,9 @@ def main():
         'BC_NO_ITEMS': '',
         'BC_YES_CLARITY_CONTRADICTION': '0',
         'BC_YES_CLARITY_TERMS': '',
+        'HONEST_REPORT_FLAG': '0',
+        'AC_EVIDENCE_MAPPING_MISSING': '0',
+        'AC_EVIDENCE_MAPPING_MISSING_KEYS': '',
         'TEST_TRIAGE': '',
         'HAS_LESSON_CANDIDATE': '0',
         'VARIATION_CHECKS_REQUIRED': '0',
@@ -231,6 +234,42 @@ def main():
     all_reported_checks_yes = bool(bc_result_values) and all(
         res in ('yes', 'pass', 'true', 'ok') for res in bc_result_values
     )
+
+    # ── 2b2. 正直報告 × AC evidence 1:1 mapping (LG044) ────────────────
+    # assumption/decision/WITH_CONCERNS は懸念を正直に残すための良い信号だが、
+    # それ自体はAC充足の証拠ではない。全ACをyesとする場合だけ、各ACの本旨を
+    # 独立した evidence mapping で説明させる。binary no は既存SG-PRE9がBLOCKする。
+    assumption_invalidation = report.get('assumption_invalidation')
+    decision_candidate = report.get('decision_candidate')
+
+    def _structured_found(value: object) -> bool:
+        if not isinstance(value, dict):
+            return False
+        raw = value.get('found', False)
+        return raw is True or str(raw).strip().lower() in ('true', 'yes', '1', 'on')
+
+    status_detail = str(report.get('status_detail', '') or '').strip().upper()
+    honest_report_flag = (
+        _structured_found(assumption_invalidation)
+        or _structured_found(decision_candidate)
+        or status_detail in ('WITH_CONCERNS', 'PARTIAL', 'INCOMPLETE')
+    )
+    result['HONEST_REPORT_FLAG'] = '1' if honest_report_flag else '0'
+
+    evidence_mapping = report.get('ac_evidence_mapping')
+    if honest_report_flag and all_reported_checks_yes:
+        expected_ac_keys = [
+            str(key) for key, checks in report_bc.items()
+            if str(key).lower() != 'commit' and isinstance(checks, list) and checks
+        ] if isinstance(report_bc, dict) else []
+        missing_mapping = []
+        for ac_key in expected_ac_keys:
+            value = evidence_mapping.get(ac_key) if isinstance(evidence_mapping, dict) else None
+            if not _flatten_text(value).strip():
+                missing_mapping.append(ac_key)
+        if missing_mapping:
+            result['AC_EVIDENCE_MAPPING_MISSING'] = '1'
+            result['AC_EVIDENCE_MAPPING_MISSING_KEYS'] = ','.join(missing_mapping)
     # SG-PRE9c is a structured completion-clarity check. Do not flatten the
     # whole report or purpose_validation: cmd_purpose, not_in_scope and causal
     # history legitimately describe conditional rollback and past failures.
@@ -561,6 +600,12 @@ def main():
     if result.get('BC_YES_CLARITY_CONTRADICTION') == '1':
         gate_pred = 'BLOCK'
         gate_pred_reasons.append('binary_checks yes×task_clarity矛盾(LG043)')
+    if result.get('AC_EVIDENCE_MAPPING_MISSING') == '1':
+        gate_pred = 'BLOCK'
+        gate_pred_reasons.append(
+            '正直報告あり×AC evidence mapping欠落(LG044):'
+            + result.get('AC_EVIDENCE_MAPPING_MISSING_KEYS', '')
+        )
     if has_lc:
         # lesson_candidate有のみではWARNにしない(直近5/5件CLEAR=FP率高)
         # draft_lessonsの実件数によるWARN判定はbash側L977-982で実施
