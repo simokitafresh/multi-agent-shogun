@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-17 cmd_karo_hotfix_context_freshness_ga281_202607170612 -->
-<!-- source_commit:7784690e4 reason:infra-source-backlog-reviewed-lesson-writer-speed-contract-unchanged evidence:git-show-0c9813ba6-636647b33-7784690e4-and-existing-lesson-write-contract-remains -->
+<!-- source_commit:89ebc48a37047951ad4754548d1437dfd77fb127 reason:ga285-context-update-candidate-contract evidence:evidence-cmd-complete-candidate-and-non-reflection-boundary -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
