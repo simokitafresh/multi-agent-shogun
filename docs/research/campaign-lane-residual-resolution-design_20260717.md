@@ -1,13 +1,32 @@
 # Campaign Lane残課題 解決設計書
 
-- status: PARALLEL_PLAN_REVIEWED_APPROVED
+- status: IMPLEMENTATION_IN_PROGRESS_F1_READY
+- plan_review_status: PARALLEL_PLAN_REVIEWED_APPROVED
 - date: 2026-07-17
 - owner: karo
 - reviewers: gunshi（計測・品質・失敗モード）, shogun（目的・優先順位・完了条件）
-- reviewed_payload_sha256: `62d0c58bdca6fab1d36561d85bedb43a9be761d3463bdefcca6353582739fcf3`
+- reviewed_payload_sha256: `62d0c58bdca6fab1d36561d85bedb43a9be761d3463bdefcca6353582739fcf3`（設計レビュー対象。以下の進捗追記前）
 - source: `campaign-lane-general-skill-asis-tobe-5w1h_20260716.md` §11
 - scope: §11の残課題6件。inbox Phase Aの採用済みbatch ACKを起点に、未解決部分をreadyへ到達させる。
 - non-goals: 品質契約の緩和、人判断の自動化、依存候補の同一round投入、専用計測runの常態化。
+
+## §0 実装進捗（2026-07-17T18:06:00+09:00）
+
+結論: **残課題6件の解決は未完了**。F1投入前の基盤3段（S0/S0b/S0c）はすべてGATE CLEARし、S0cのcmd-complete全工程も完了した。次は追加設計や先行hardeningを挟まず、同一fingerprintのruntime manifestでF1の6 adapterを並列実装する。
+
+| Checkpoint | 現在状態 | 実装証拠 | 二値計測 | GATE / 次条件 |
+|---|---|---|---|---|
+| S0 共通契約凍結 | **CLEAR** | 実装`1653a44a3`、固定SHA`9192bf61ada7bb3c44ceecf5cf86599df0b8ec81` | S0 pytest 9/9 + 既存Bats 15/15 = **24/24 PASS**, FAIL 0, SKIP 0 | `cmd_4034` GATE CLEAR（15:58:21） |
+| S0b shard lifecycle bridge | **CLEAR** | `eaccaa6173d53c94b6d57af46a72f588d9cf55a8`。materialize→deploy→report→result、terminal HEAD/dirty/scope検証 | bridge 17/17 + universal 7/7 + lane 15/15 + S0 9/9 + bash構文1/1 = **49/49 PASS**, FAIL 0, SKIP 0 | `cmd_4039` GATE CLEAR（17:16:13）、cmd-complete全工程PASS |
+| S0c fingerprint最終補修 | **CLEAR** | 固定SHA`799370d1b968724862cee6ae9f1d05a822298c1e`。schema+helper SHA+SDK SHA、runtime mismatch BLOCK、`test_command`/`read_only_paths_json` task接続 | S0 10/10 + bridge 21/21 + universal 7/7 + lane 15/15 = **53/53 PASS**, FAIL 0, SKIP 0。runtime fingerprint=`5e5cbdf07ee17a947ea7d3e14d489498d1c7dd3eee57e85323a10e689d735eb5` | `cmd_4040` GATE CLEAR、軍師SG7 LGTM、家老ACCEPT、cmd-complete全工程PASS |
+| F1 6 adapter並列実装 | **READY_TO_START** | I1/A1/A2/A3/A4/T1のownership設計済み | 未計測 | 同一fingerprint、runtime idle worker N≥2、`shard-work --plan` coverage 100%・競合0を確認して即開始 |
+| S1 統合checkpoint | **NOT_STARTED** | item ID昇順統合設計済み | 未計測 | F1 coverage 100%、missing/duplicate/conflict 0が開始条件 |
+| F2 live campaign計測 | **NOT_STARTED** | 計測契約のみ | before/after未取得 | S1 fixed-SHA CI GREEN後 |
+| S2 精度較正・最終AC | **NOT_STARTED** | precision/FP退役契約のみ | TP/FP/FN/TN未取得 | laneごと20件以上、AC1-12全PASSが必要 |
+
+現時点で未達の最終証拠は、F1の実並列speedup/dispatch/overhead、6残課題のbefore/after、fixed-SHA required CI GREEN、live 2 round、lane別20件以上のprecision、最終AC1-12である。したがって「残課題解決済み」「CI GREEN」「速度改善達成」とはまだ記載しない。
+
+次の一手は、CLEARした固定SHAとfingerprintでruntime manifestを生成し、`shard-work --plan`のcoverage/ownership/N≥2確認後にF1を開始することである。
 
 ## §1 結論
 
@@ -330,3 +349,9 @@ timeout: 1800
 `[[成功例だけの台帳]] -> [[adapter FP不可視]] -> [[precision較正]] -> [[100% FP退役]]`
 
 origin: `[[campaign-lane §11残課題]] -> [[軍師・将軍協議]] -> [[campaign-lane residual resolution design]]`
+
+## 因果リンク
+
+- ← [[campaign-lane-general-skill-asis-tobe-5w1h_20260716]] §11残課題が起点
+- → [[growth-loop]] campaign-laneの品質合格スループット向上
+- → [[infrastructure]] infra platform上のcampaign制御面

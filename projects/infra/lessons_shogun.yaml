@@ -420,3 +420,11 @@ lessons:
   automated: true
   enforcement: "Level4: scripts/hooks/three_layer_preflight.sh memory_cache_is_healthy() rejects previous-boot/schema-invalid/zero-event immutable cache and batch_index_search() falls back to source DB; tests/unit/test_three_layer_preflight.bats stale-empty-cache + external-WAL-source 2/2 PASS (commit 942259c06351507b1acfa1ee18268a4e76fd5de5)"
   enforcement_level: 4
+- id: 'LS094'
+  title: '将軍inbox処理ループCTX支配 — hook dedup不在で6h09m環境埋込み0件'
+  origin: '未指定'
+  detail: 'セッション01:33-07:42=6h09m。recovery45分+inbox処理ループ5h20m。成果物=backlinks3件のみでLevel4環境埋込み0件。根因4点: (1)陣形図異常hookにsession-scope dedup不在=同一忍者CTX0%を10回以上capture-pane再確認 (2)session_alerts外部再生成がDONE化と競合=Write失敗3回+無限TODO再生成 (3)escalation自動発火にACK機構不在=同一SKILL refs WARN 4回escalation (4)bulletin_notify粒度過細=軍師LGTMごとに将軍3 tool call×30秒。将軍のCTXが制御面消費に支配され戦略的作業(環境埋込み)に到達できなかった。LS-A11(CI検知は家老の責務)の拡張: info系通知も将軍CTXを消費する構造は鎖の迂回と同等の害。'
+  source_cmd: 'session_20260718_0742'
+  created_at: '2026-07-18'
+  automated: true
+  enforcement: 'automated:false — 自動化ターゲット: (1)陣形図異常hookにsession-scope confirmed_failed dedup (2)escalation acknowledged_at+再発火抑制 (3)将軍宛inbox通知のaction_required/escalationのみ即時化+info系バッチ化'
