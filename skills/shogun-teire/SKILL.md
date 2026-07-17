@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
+<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: gate_yaml_status.sh 22a7e0b03/80491f2be/03d2f0bfdは標準引数fast-path後にone-arg回帰をrollback、knowledge_metrics.sh dff096b23/aee10b78dはLC_ALL候補を試験後rollback。監査引数・出力契約は不変。 -->
 name: shogun-teire
 argument-hint: ""
 quality_metric: "将軍系: 棚卸しcmdのcmd_save.shチェック通過率(q1-q4 BLOCKなしで保存できた割合)"

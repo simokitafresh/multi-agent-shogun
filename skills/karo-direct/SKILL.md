@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
+<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: deploy_task.sh 14e62013d/630386f4d/242df2ee4/fff17f591/a9cf189d6はlesson注入Level5、telemetry/read batch/delivery detach、opsim contract強化。karo_direct配備引数・重複guard回避契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
 
 <!-- cmd_karo_hotfix_skill_script_refs_six_202607170058検分: deploy_task.sh 110c4df67/a9cf189d6/fff17f591をgit show。report field取得最適化のrevert、operational_simulation全report注入、task_assignedのCodex配達確認非同期化はいずれも内部処理。--direct/--yaml引数、重複guard、task永続化、失敗境界、通知順序は不変。本文変更不要。 -->

@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
+<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: cmd_complete_gate.sh 567c8710cはcontext freshnessをreport commit hashでも相関するfail-closed強化、test_select.sh 68bda0869/fa403eb51はreport contract対象を共有8-file selectorへ集約。codd-fixのCLI/完了gate呼出契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T23:53:24+0900
 <!-- 2026-07-16再検分: cmd_complete_gate.sh da6641aeb。CMD_ID lock競合時の偽成功exit 0を廃止し、terminal CLEAR/BLOCK未確定としてEX_TEMPFAIL(exit 75)へ変更。単一cmd_id引数とterminal CLEAR/BLOCK契約は不変。 -->
 <!-- cmd_karo_hotfix_shogun_startup_four_blocks検分: cmd_complete_gate.sh/test_select.sh直近差分は証拠結合と.githooks選択の内部強化。単一phenomenon入力とfix workflow契約は不変。 -->

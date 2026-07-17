@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
+<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: run_tests.sh f24b0747bはcached queue枯渇時処理、test_select.sh 68bda0869/fa403eb51はreport contract selector共通化。mode引数・test選択・終了status契約は不変。 -->
 name: codd-refactor
 <!-- script_refs_checked_at: 2026-07-16T19:17:45+0900 -->
 <!-- 2026-07-16再検分: run_tests.sh 71ce264b0。file別timingに加えsuite wall/sum_file_secをtest_suite_timing_ledger.tsvへ記録する副作用を追加。mode引数・test選択・終了status契約は不変。 -->

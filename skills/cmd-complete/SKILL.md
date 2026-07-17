@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
+<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: gate_context_freshness.sh 097cd8b92はcontext cache署名のstat subprocessをfind -printfへ集約、lesson_review.sh 854816cddはdraft 0件fast-path追加。cmd-completeの引数・実行順・判定契約は不変。 -->
 name: cmd-complete
 <!-- script_refs_checked_at: 2026-07-16T13:35:00+09:00 -->
 <!-- cmd_karo_hotfix_shogun_startup_four_blocks検分: review_bundle.py直近差分はSG7証拠生成の内部強化。lesson review→gate→記録→archiveの完了フロー契約は不変。 -->
