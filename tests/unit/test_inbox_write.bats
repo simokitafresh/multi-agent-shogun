@@ -965,7 +965,59 @@ EOF
     [ "$status" -eq 1 ]
     [[ "$output" == *"binary_checksにnoがあるため報告完了を差戻し"* ]]
     [[ "$output" == *"AC1[1]: AC1が未完了であることを確認"* ]]
-    [[ "$output" == *"bash scripts/inbox_write.sh karo \"報告完了\" report_received testninja"* ]]
+    [[ "$output" == *"task_failedで家老へ報告せよ"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
+@test "task_failed: FAIL report and failed task deliver exactly once without retry" {
+    setup_git_test_env
+
+    python3 - "$TEST_TMPDIR" <<'PY'
+import pathlib, yaml, sys
+root = pathlib.Path(sys.argv[1])
+task_path = root / "queue/tasks/testninja.yaml"
+report_path = root / "queue/reports/testninja_report_cmd_test_001.yaml"
+task = yaml.safe_load(task_path.read_text())
+task["task"]["status"] = "failed"
+task_path.write_text(yaml.safe_dump(task, allow_unicode=True, sort_keys=False))
+report = yaml.safe_load(report_path.read_text())
+report["verdict"] = "FAIL"
+report["binary_checks"]["AC1"][0].update(check="AC1未達を実測", result="no")
+report_path.write_text(yaml.safe_dump(report, allow_unicode=True, sort_keys=False))
+PY
+
+    run _run_inbox_write karo "未達報告" task_failed testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified failure report"* ]]
+    [ "$(grep -c "^- content: '未達報告'" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+
+    run _run_inbox_write karo "未達報告" task_failed testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"pending duplicate suppressed"* ]]
+    [ "$(grep -c "^- content: '未達報告'" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+}
+
+@test "task_failed: PASS report is blocked" {
+    setup_git_test_env
+    run _run_inbox_write karo "不正失敗報告" task_failed testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"requires report verdict=FAIL"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
+@test "task_failed: FAIL report with non-failed task is blocked" {
+    setup_git_test_env
+    python3 - "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'PY'
+import yaml, sys
+path = sys.argv[1]
+data = yaml.safe_load(open(path))
+data["verdict"] = "FAIL"
+data["binary_checks"]["AC1"][0].update(check="AC1未達を実測", result="no")
+yaml.safe_dump(data, open(path, "w"), allow_unicode=True, sort_keys=False)
+PY
+    run _run_inbox_write karo "不正失敗報告" task_failed testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"requires task status=failed"* ]]
     [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
 }
 

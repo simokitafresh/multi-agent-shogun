@@ -11,7 +11,7 @@
 #   task_supplement      — タスク補足通知（家老/軍師→忍者）
 #   task_cancel          — タスク取消通知（家老→忍者）
 #   cmd_new              — 新cmd通知（将軍→家老）
-#   report_received/report_submitted/task_done/report_completed/report_done/report_ready
+#   report_received/report_submitted/task_done/report_completed/report_done/report_ready/task_failed
 #                        — 忍者報告完了通知（忍者→家老）※報告YAML検証+auto-done hookあり
 #   uncommitted_block    — 未commitブロック通知
 #   review_draft         — draft cmdレビュー依頼（家老→軍師）
@@ -677,7 +677,7 @@ inbox_review_log_has_lgtm() {
 
 inbox_type_triggers_report_completion() {
     case "$1" in
-        report_received|report_submitted|task_done|report_completed|report_done|report_ready)
+        report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed)
             return 0
             ;;
     esac
@@ -1955,11 +1955,19 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                         exit 1
                     fi
 
-                    # Phase 2.5: フォーマットPASSでもverdict=FAILなら完了通知を通さない。
+                    # Phase 2.5: フォーマットPASSでもverdict=FAILなら成功完了通知を通さない。
                     # gate_report_format.shはbinary_checksからverdictを自動導出するため、
-                    # ここでFAIL報告を局所BLOCKしないとcmd_complete_gateまで進んでから差戻しになる。
+                    # 正直な失敗報告は task_failed だけを正規入口とし、task側もfailedであることを要求する。
                     FAIL_DETAILS="$(report_yaml_fail_details "$FULL_REPORT" 2>/dev/null || true)"
                     if [ -n "$FAIL_DETAILS" ]; then
+                        if [ "$TYPE" = "task_failed" ]; then
+                            TASK_STATUS=$(inbox_yaml_field_get "$TASK_YAML" "status" "")
+                            if [ "$TASK_STATUS" != "failed" ]; then
+                                echo "[report_format_gate] BLOCKED: task_failed requires task status=failed (actual: ${TASK_STATUS:-missing})" >&2
+                                exit 1
+                            fi
+                            echo "[report_format_gate] verified failure report: verdict=FAIL, task status=failed (ninja: ${FROM})" >&2
+                        else
                         echo "" >&2
                         echo "==============================" >&2
                         echo "[report_format_gate] BLOCKED: binary_checksにnoがあるため報告完了を差戻し (ninja: ${FROM})" >&2
@@ -1968,10 +1976,14 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                             [ -n "$_fail_line" ] && echo "  $_fail_line" >&2
                         done <<< "$FAIL_DETAILS"
                         echo "" >&2
-                        echo "[report_format_gate] no項目を修正してbinary_checksをyesにするか、未達ならtaskをfailedとして家老へ報告せよ" >&2
+                        echo "[report_format_gate] no項目を修正してbinary_checksをyesにするか、未達ならtaskをfailedとしてtask_failedで家老へ報告せよ" >&2
                         echo "[report_format_gate] 修正例: bash scripts/report_field_set.sh $REPORT_PATH binary_checks.AC1.0.result yes" >&2
                         echo "[report_format_gate] 修正後に再送信せよ: bash scripts/inbox_write.sh karo \"報告完了\" report_received ${FROM}" >&2
                         echo "==============================" >&2
+                        exit 1
+                        fi
+                    elif [ "$TYPE" = "task_failed" ]; then
+                        echo "[report_format_gate] BLOCKED: task_failed requires report verdict=FAIL with binary_checks result=no" >&2
                         exit 1
                     fi
                 else
