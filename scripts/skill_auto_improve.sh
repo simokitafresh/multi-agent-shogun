@@ -175,7 +175,11 @@ def _load_entries_lenient(path):
 def load_entries(path):
     try:
         stat = Path(path).stat()
-        cache_key = (stat.st_mtime_ns, stat.st_size)
+        # mtime+size alone aliases rapid same-size fixture/legacy-log rewrites
+        # (notably on /mnt/c), returning entries from the previous file body.
+        # ctime changes with the rewrite and keeps the cache fail-closed without
+        # hashing the entire production log on every reader invocation.
+        cache_key = (stat.st_mtime_ns, stat.st_ctime_ns, stat.st_size)
     except FileNotFoundError:
         return []
     cache_file = _cache_path(path)
@@ -666,14 +670,14 @@ for skill, events in events_by_skill.items():
     elif logged_path:
         stats[skill]["path"] = logged_path
 
-print("skill | recent_total | recent_fails | fail_rate_pct | rank | fail_count | last_fail | gate | top_fail_reason")
+print("skill | rank | fail_count | last_fail | gate | top_fail_reason")
 apply_plan = defaultdict(list)
 for skill in sorted(stats):
     total = stats[skill]["total"]
     fails = stats[skill]["fails"]
     fail_rate = (100.0 * fails / total) if total else 0.0
     if fail_rate <= fail_rate_threshold:
-        print(f"{skill} | {total} | {fails} | {fail_rate:.1f} | - | 0 | - | - | BELOW_THRESHOLD")
+        print(f"{skill} | - | 0 | - | - | BELOW_THRESHOLD")
         continue
     top_rows = sorted(stats[skill]["counter"].items(), key=lambda kv: (-kv[1], kv[0]))[:top_n]
     for rank, (reason, count) in enumerate(top_rows, start=1):
@@ -689,7 +693,7 @@ for skill in sorted(stats):
             "fail_rate_pct": round(fail_rate, 1),
         }
         print(
-            f"{skill} | {total} | {fails} | {fail_rate:.1f} | {rank} | {count} | {row['last_fail']} | {row['gate']} | {shorten(reason, 220)}"
+            f"{skill} | {rank} | {count} | {row['last_fail']} | {row['gate']} | {shorten(reason, 220)}"
         )
         apply_plan[skill].append(row)
 
