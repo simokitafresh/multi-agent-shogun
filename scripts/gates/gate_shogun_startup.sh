@@ -3566,6 +3566,17 @@ for pct, fail, total, skill, last, streak, hours in rows[:5]:
     print(f"{skill}\t{pct}\t{fail}\t{total}\t{last}\t{streak}\t{hours}")
 PY
 )
+    # Canonical aggregation collapses retries by source before computing the
+    # unresolved rate.  Keep the legacy parser above temporarily as a fallback
+    # only; Gate20 decisions and output use skill_execution_log.sh source-summary.
+    _skill_source_summary=$(SKILL_EXECUTION_LOG_FILE="$_skill_exec_log" \
+        bash "$SCRIPT_DIR/scripts/skill_execution_log.sh" source-summary 2>/dev/null || true)
+    if [ -n "$_skill_source_summary" ]; then
+        _skill_stats=$(printf '%s\n' "$_skill_source_summary" | awk -F '\t' '
+            NR == 1 { next }
+            NF >= 7 { printf "%s\t%s\t%s\t%s\t%s\t%s\t999999\n", $1,$2,$3,$4,$7,$5 }
+        ')
+    fi
     if [ -n "$_skill_stats" ]; then
         _skill_warn=0
         # Low-frequency skills can prove the fix with four consecutive live
