@@ -2886,6 +2886,8 @@ for item in lessons:
     if not isinstance(item, dict):
         continue
     lesson_id = str(item.get("id") or "?")
+    if item.get("superseded_by"):
+        continue
     if "origin" not in item:
         missing.append(lesson_id)
         continue
