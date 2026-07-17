@@ -17,6 +17,14 @@ workdir="${4:-}"
 output_dir="${5:-}"
 result_path="${output_dir:-/nonexistent}/result.json"
 started_epoch="$(date +%s)"
+declare -A stage_started stage_duration
+
+stage_start() { stage_started["$1"]="$(date +%s)"; }
+stage_stop() {
+    local name="$1" now
+    now="$(date +%s)"
+    stage_duration["$name"]=$(( now - ${stage_started[$name]:-$now} ))
+}
 
 write_result() {
     local status="$1" reason="$2" report_path="${3:-}" commit_sha="${4:-}"
@@ -25,7 +33,8 @@ write_result() {
     RESULT_STATUS="$status" RESULT_REASON="$reason" RESULT_REPORT="$report_path" \
       RESULT_COMMIT="$commit_sha" RESULT_PATH="$result_path" RESULT_ITEM="$item_id" \
       RESULT_WORKER="$worker_id" RESULT_STARTED="$started_epoch" RESULT_FIXED_SHA="$FIXED_SHA" \
-      RESULT_FILES="$files_json" RESULT_TESTS="$test_count" RESULT_FAIL="$fail_count" RESULT_SKIP="$skip_count" python3 - <<'PY'
+      RESULT_FILES="$files_json" RESULT_TESTS="$test_count" RESULT_FAIL="$fail_count" RESULT_SKIP="$skip_count" \
+      RESULT_STAGES="${stage_duration_json:-}" RESULT_ESTIMATED_SEC="${estimated_sec:-600}" python3 - <<'PY'
 import json, os, time
 payload = {
     "item_id": os.environ["RESULT_ITEM"],
@@ -40,7 +49,10 @@ payload = {
     "skip_count": int(os.environ["RESULT_SKIP"]),
     "report_path": os.environ["RESULT_REPORT"],
     "elapsed_sec": max(0, int(time.time()) - int(os.environ["RESULT_STARTED"])),
+    "stage_duration_sec": json.loads(os.environ["RESULT_STAGES"] or "{}"),
 }
+payload["estimated_sec"] = int(os.environ["RESULT_ESTIMATED_SEC"])
+payload["estimated_exceeded"] = payload["elapsed_sec"] > payload["estimated_sec"]
 path = os.environ["RESULT_PATH"]
 tmp = path + ".tmp"
 with open(tmp, "w", encoding="utf-8") as handle:
@@ -126,6 +138,21 @@ then
     retry_failed=1
 fi
 
+# Each retry is a new immutable attempt.  The coordinator-facing result.json
+# remains the latest SSOT, while the previous result/report/task evidence is
+# retained under attempts/ before a new deploy can observe it.
+attempt=1
+if (( retry_failed )); then
+    attempts_dir="$output_dir/attempts"
+    mkdir -p "$attempts_dir" || fail attempt_archive_failed
+    attempt=$(( $(find "$attempts_dir" -mindepth 1 -maxdepth 1 -type d -name 'attempt-*' 2>/dev/null | wc -l) + 2 ))
+    previous_dir="$(printf '%s/attempt-%03d' "$attempts_dir" $((attempt - 1)))"
+    mkdir -p "$previous_dir" || fail attempt_archive_failed
+    for evidence in result.json task.yaml report.yaml; do
+        [[ -f "$output_dir/$evidence" ]] && cp -p "$output_dir/$evidence" "$previous_dir/$evidence"
+    done
+fi
+
 # A retry may be launched with the failed workdir as the coordinator's cwd.
 # Quarantining that directory while it is our cwd leaves later Python imports
 # attached to the renamed DrvFs inode (Errno 95).  Move control execution to
@@ -133,6 +160,7 @@ fi
 cd "$ROOT" || fail coordinator_cwd_unavailable
 
 # universal_shard creates workdir beforehand. materialize accepts an existing empty dir.
+stage_start materialize
 if ! CAMPAIGN_ROOT="$ROOT" CAMPAIGN_SOURCE="$SOURCE_REPO" CAMPAIGN_WORKDIR="$workdir" CAMPAIGN_SHA="$FIXED_SHA" CAMPAIGN_RETRY_FAILED="$retry_failed" python3 - <<'PY'
 import os, sys
 from pathlib import Path
@@ -150,6 +178,7 @@ PY
 then
     fail source_materialize_failed
 fi
+stage_stop materialize
 
 observed_sha="$(git -C "$workdir" rev-parse HEAD 2>/dev/null || true)"
 [[ "$observed_sha" == "$FIXED_SHA" ]] || fail wrong_sha
@@ -179,7 +208,7 @@ task_path="$output_dir/task.yaml"
 report_path="${CAMPAIGN_LANE_REPORT_PATH:-$output_dir/report.yaml}"
 cp "$ROOT/templates/campaign_lane_shard_task.yaml" "$task_path" || fail task_template_copy_failed
 field_set="$ROOT/scripts/lib/yaml_field_set.sh"
-task_key="campaign_lane_${item_id}"
+task_key="campaign_lane_${item_id}_attempt_${attempt}"
 bash "$field_set" "$task_path" task task_id "$task_key" || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task _ac_task_id "$task_key" || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task parent_cmd "$task_key" || fail task_yaml_write_failed
@@ -209,11 +238,15 @@ bash "$field_set" "$task_path" task fixed_sha "$FIXED_SHA" || fail task_yaml_wri
 bash "$field_set" "$task_path" task report_path "$report_path" || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task report_filename "$(basename "$report_path")" || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task estimated_minutes 10 || fail task_yaml_write_failed
+bash "$field_set" "$task_path" task campaign_attempt "$attempt" || fail task_yaml_write_failed
+bash "$field_set" "$task_path" task canonical_root "${SHOGUN_ROOT:-$ROOT}" || fail task_yaml_write_failed
 
 deploy_cmd="${CAMPAIGN_LANE_DEPLOY_CMD:-bash $ROOT/scripts/deploy_task.sh --direct --yaml}"
-if ! bash -c 'exec "$@"' _ $deploy_cmd "$task_path" "$worker_id"; then
+stage_start deploy
+if ! SHOGUN_ROOT="${SHOGUN_ROOT:-$ROOT}" bash -c 'exec "$@"' _ $deploy_cmd "$task_path" "$worker_id"; then
     fail deploy_failed "$report_path"
 fi
+stage_stop deploy
 
 # deploy_task owns the durable ninja report naming contract and may rewrite
 # task.report_path from the campaign-local placeholder to queue/reports/....
@@ -231,6 +264,7 @@ PY
 report_path="$canonical_report_path"
 
 deadline=$(( $(date +%s) + WAIT_SEC ))
+stage_start report_wait
 while (( $(date +%s) < deadline )); do
     if [[ -f "$report_path" ]]; then
         terminal="$(OWNED_ABS_JSON="$owned_abs_json" WORKDIR="$workdir" FIXED_SHA="$FIXED_SHA" python3 - "$report_path" <<'PY' 2>/dev/null || true
@@ -271,6 +305,17 @@ PY
 )"
         if [[ "$terminal" == PASS\|* ]]; then
             IFS='|' read -r _ reason commit_sha files_json test_count fail_count skip_count <<<"$terminal"
+            stage_stop report_wait
+            stage_duration_json="$(MATERIALIZE="${stage_duration[materialize]:-0}" DEPLOY="${stage_duration[deploy]:-0}" REPORT_WAIT="${stage_duration[report_wait]:-0}" python3 - "$report_path" <<'PY'
+import json, os, sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+reported = data.get("stage_duration_sec") or {}
+payload = {"materialize": int(os.environ["MATERIALIZE"]), "deploy": int(os.environ["DEPLOY"]), "report_wait": int(os.environ["REPORT_WAIT"])}
+for name in ("test", "commit"):
+    payload[name] = int(reported.get(name, 0))
+print(json.dumps(payload, separators=(",", ":")))
+PY
+)"
             write_result success "$reason" "$report_path" "$commit_sha" "$files_json" "$test_count" "$fail_count" "$skip_count"
             exit 0
         elif [[ "$terminal" == FAIL\|* ]]; then

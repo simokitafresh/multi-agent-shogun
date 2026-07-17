@@ -33,7 +33,7 @@ git -C "$workdir" add "${implementation#$workdir/}" "${test_path#$workdir/}"
 git -C "$workdir" commit -qm shard
 head="$(git -C "$workdir" rev-parse HEAD)"
 case "${TEST_MODE}" in
-  pass) printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\noperational_simulation: {command: bats test, expected: FAIL0 SKIP0, actual: "TOTAL=3 FAIL=0 SKIP=0", result: PASS}\n' "$head" >"$report_path" ;;
+  pass) printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\nstage_duration_sec: {test: 2, commit: 1}\noperational_simulation: {command: bats test, expected: FAIL0 SKIP0, actual: "TOTAL=3 FAIL=0 SKIP=0", result: PASS}\n' "$head" >"$report_path" ;;
   fail) printf 'status: failed\nverdict: FAIL\n' >"$report_path" ;;
   metrics_missing) printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\noperational_simulation: {result: PASS}\n' "$head" >"$report_path" ;;
   fail_count) printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\noperational_simulation: {actual: "TOTAL=3 FAIL=1 SKIP=0", result: PASS}\n' "$head" >"$report_path" ;;
@@ -240,6 +240,37 @@ PY
   [ -L "$TMPROOT/work" ]
   [ "$(readlink -f "$TMPROOT/work")" != "$stale" ]
   reason_is report_terminal_pass
+  [ -f "$TMPROOT/out/attempts/attempt-001/result.json" ]
+  python3 - "$TMPROOT/out/task.yaml" "$TMPROOT/out/result.json" <<'PY'
+import json,sys,yaml
+t=yaml.safe_load(open(sys.argv[1]))['task']; r=json.load(open(sys.argv[2]))
+assert t['campaign_attempt'] == 2
+assert t['task_id'].endswith('_attempt_2')
+assert set(r['stage_duration_sec']) == {'materialize','deploy','test','commit','report_wait'}
+assert r['stage_duration_sec']['test'] == 2 and r['stage_duration_sec']['commit'] == 1
+assert isinstance(r['estimated_exceeded'], bool)
+PY
+}
+
+@test "retry preserves three terminal reports as separate attempts and redeploys all three" {
+  make_deployer pass
+  for n in 1 2 3; do
+    mkdir -p "$TMPROOT/out"
+    printf '{"status":"fail","reason_code":"deploy_failed"}\n' > "$TMPROOT/out/result.json"
+    printf 'status: failed\nverdict: FAIL\nattempt: %s\n' "$n" > "$TMPROOT/out/report.yaml"
+    run_bridge
+    [ "$status" -eq 0 ]
+  done
+  [ "$(find "$TMPROOT/out/attempts" -name report.yaml | wc -l)" -eq 3 ]
+  [ "$(python3 -c 'import yaml; print(yaml.safe_load(open("'"$TMPROOT"'/out/task.yaml"))["task"]["campaign_attempt"])')" -eq 4 ]
+}
+
+@test "canonical control root is exported instead of isolated checkout queue" {
+  make_deployer pass
+  run env SHARD_ITEM_JSON="$(base_item_json)" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" SHOGUN_ROOT="$ROOT" CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 \
+    "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
+  [ "$status" -eq 0 ]
+  [ "$(python3 -c 'import yaml; print(yaml.safe_load(open("'"$TMPROOT"'/out/task.yaml"))["task"]["canonical_root"])')" = "$ROOT" ]
 }
 
 @test "failed pre-ext4 full clone is atomically quarantined before retry" {
