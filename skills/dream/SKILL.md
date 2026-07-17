@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-17T10:26:00+09:00 -->
+<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: gate_shogun_memory.shはmtime 10:13:07へ更新されたがworktree/HEAD blobはいずれも315be6b729294219bbf3a5a5f9ca6c6d3ceeadaeで差分0。引数なし健全度検査、WARN/BLOCK出口、dream Phase 1の呼出契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: memory_db_query.sh 54f40b34dをgit showで確認。no-arg usage出力を外部catからbuiltin printfへ等価置換した速度改善のみ。SQL/search引数、pipe区切り出力、cache recovery、read-only契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-15T11:38:00+09:00 -->
