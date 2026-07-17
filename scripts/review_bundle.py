@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Generate and validate the SG7 completion bundle used by Gunshi and Karo."""
 from __future__ import annotations
-import argparse, fcntl, glob, hashlib, json, os, subprocess, sys
+import argparse, fcntl, glob, hashlib, json, os, subprocess, sys, time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 import yaml
@@ -142,11 +143,74 @@ def consume(args):
     if gates not in path.parents or path.name != "sg7_bundle.json": raise ValueError("bundle must be queue/gates/<cmd>/sg7_bundle.json")
     review = validate(load(path), args.cmd, args.expect_verdict); print(json.dumps(review["cmd_spec_summary"], ensure_ascii=False, sort_keys=True)); return 0
 
+def _batch_precheck(root, item):
+    started = time.monotonic()
+    na = item.get("precheck_na")
+    if na is not None:
+        if not isinstance(na, dict) or not str(na.get("reason") or "").strip() or not str(na.get("evidence") or "").strip():
+            raise ValueError("precheck_na requires non-empty reason and evidence")
+        return {"status": "N/A", "reason": str(na["reason"]), "evidence": str(na["evidence"]), "duration_ms": round((time.monotonic() - started) * 1000)}
+    report = str(item["report"])
+    proc = subprocess.run(
+        ["bash", str(root / "scripts/gates/gate_gunshi_report_precheck.sh"), report],
+        cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
+    evidence = proc.stdout.strip()
+    if proc.returncode != 0:
+        raise ValueError(f"precheck failed cmd={item['cmd']}: {evidence[-500:]}")
+    return {"status": "PASS", "reason": "all checks passed", "evidence": evidence, "duration_ms": round((time.monotonic() - started) * 1000)}
+
+def _batch_generate(root, item, precheck):
+    argv = argparse.Namespace(root=str(root), cmd=str(item["cmd"]), verdict=str(item["verdict"]).upper(),
+                              report=str(item["report"]), fail_reason=item.get("fail_reason"), allow_archived=False)
+    generate(argv)
+    path = root / f"queue/gates/{item['cmd']}/sg7_bundle.json"
+    bundle = load(path); bundle["review"]["precheck"] = precheck; atomic_json(path, bundle)
+    return path
+
+def batch(args):
+    root = Path(args.root).resolve(); manifest = load(args.manifest)
+    items = manifest.get("reviews") if isinstance(manifest, dict) else manifest
+    if not isinstance(items, list) or not items or len(items) > args.max_workers:
+        raise ValueError(f"manifest reviews must contain 1..{args.max_workers} items")
+    required = {"cmd", "report", "verdict", "review_entry"}
+    for item in items:
+        if not isinstance(item, dict) or not required.issubset(item): raise ValueError("each review requires cmd/report/verdict/review_entry")
+        if str(item["verdict"]).upper() not in {"APPROVE", "FAIL"}: raise ValueError("batch verdict must be APPROVE or FAIL")
+        if not isinstance(item["review_entry"], dict): raise ValueError("review_entry must be a mapping")
+    cmds = [str(x["cmd"]) for x in items]; reports = [str(x["report"]) for x in items]
+    if len(set(cmds)) != len(cmds) or len(set(reports)) != len(reports): raise ValueError("batch cmd/report values must be unique")
+
+    wall_started = time.monotonic()
+    with ThreadPoolExecutor(max_workers=min(args.max_workers, len(items))) as pool:
+        prechecks = list(pool.map(lambda x: _batch_precheck(root, x), items))
+    # No durable review/log/inbox mutation occurs until every precheck passes.
+    with ThreadPoolExecutor(max_workers=min(args.max_workers, len(items))) as pool:
+        paths = list(pool.map(lambda pair: _batch_generate(root, pair[0], pair[1]), zip(items, prechecks)))
+    entries = yaml.safe_dump([x["review_entry"] for x in items], allow_unicode=True, sort_keys=False)
+    subprocess.run(["bash", str(root / "scripts/gunshi_log_append.sh"), "--batch"], cwd=root, input=entries, text=True, check=True)
+
+    def finish(pair):
+        item, path = pair; verdict = str(item["verdict"]).upper()
+        if verdict == "APPROVE":
+            subprocess.run(["bash", str(root / "scripts/review_approval.sh"), str(item["cmd"]), "gunshi", "LGTM", str(item["report"])], cwd=root, check=True)
+            notify(argparse.Namespace(root=str(root), cmd=str(item["cmd"]), bundle=str(path)))
+        else:
+            message = f"{item['cmd']} review FAIL. report: {item['report']} reason: {item.get('fail_reason') or 'quality evidence mismatch'}"
+            subprocess.run(["bash", str(root / "scripts/inbox_write.sh"), "karo", message, "report_review_result", "gunshi"], cwd=root, check=True)
+    with ThreadPoolExecutor(max_workers=min(args.max_workers, len(items))) as pool:
+        list(pool.map(finish, zip(items, paths)))
+    durations = [x["duration_ms"] for x in prechecks]
+    result = {"total": len(items), "fail": 0, "skip": 0, "wall_ms": round((time.monotonic() - wall_started) * 1000), "p95_report_ms": max(durations)}
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True)); return 0
+
 def build_parser():
     p = argparse.ArgumentParser(); p.add_argument("--root", default=str(Path(__file__).resolve().parents[1])); subs = p.add_subparsers(dest="action", required=True)
     g = subs.add_parser("generate"); g.add_argument("--cmd", required=True); g.add_argument("--verdict", required=True, choices=("APPROVE", "FAIL")); g.add_argument("--report", required=True); g.add_argument("--fail-reason"); g.add_argument("--allow-archived", action="store_true"); g.set_defaults(func=generate)
     n = subs.add_parser("notify"); n.add_argument("--cmd", required=True); n.add_argument("--bundle", required=True); n.set_defaults(func=notify)
-    c = subs.add_parser("consume"); c.add_argument("--cmd", required=True); c.add_argument("--bundle", required=True); c.add_argument("--expect-verdict", choices=("APPROVE", "FAIL")); c.set_defaults(func=consume); return p
+    c = subs.add_parser("consume"); c.add_argument("--cmd", required=True); c.add_argument("--bundle", required=True); c.add_argument("--expect-verdict", choices=("APPROVE", "FAIL")); c.set_defaults(func=consume)
+    b = subs.add_parser("batch"); b.add_argument("--manifest", required=True); b.add_argument("--max-workers", type=int, default=5); b.set_defaults(func=batch)
+    return p
 
 def main():
     args = build_parser().parse_args()

@@ -15,6 +15,28 @@ LOG_FILE="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
 MAX_LINES=2500
 
+# Batch入口は各entryを既存の厳格な単件validatorへ通す。共有logへの書込みは
+# 単件側のflockで直列化されるため、並行precheck/notifyと組み合わせてもlost updateしない。
+if [ "${1:-}" = "--batch" ]; then
+    python3 -c '
+import subprocess, sys, yaml
+items = yaml.safe_load(sys.stdin.read())
+if not isinstance(items, list) or not items:
+    print("BLOCK: --batch requires a non-empty YAML list", file=sys.stderr); raise SystemExit(2)
+for index, item in enumerate(items):
+    if not isinstance(item, dict):
+        print(f"BLOCK: batch review_entry[{index}] must be a mapping", file=sys.stderr); raise SystemExit(2)
+    env = dict(__import__("os").environ); env["GUNSHI_VALIDATE_ONLY"] = "1"
+    completed = subprocess.run(["bash", sys.argv[1]], input=yaml.safe_dump([item], allow_unicode=True, sort_keys=False), text=True, env=env)
+    if completed.returncode: raise SystemExit(completed.returncode)
+for item in items:
+    completed = subprocess.run(["bash", sys.argv[1]], input=yaml.safe_dump([item], allow_unicode=True, sort_keys=False), text=True)
+    if completed.returncode: raise SystemExit(completed.returncode)
+print(f"OK: batch appended {len(items)} review entries")
+' "$0"
+    exit $?
+fi
+
 if [ ! -f "$LOG_FILE" ]; then
     echo "ERROR: $LOG_FILE not found" >&2
     exit 1
@@ -171,6 +193,11 @@ bad_evidence = not isinstance(evidence, list) or not evidence or any(not isinsta
 if item.get("review_type") != "self_study" or target not in known or bad_fields or bad_evidence:
     print(f"BLOCK: invalid remediation target/fields/evidence: {target or '<empty>'}", file=sys.stderr); raise SystemExit(2)
 PY
+fi
+
+if [ "${GUNSHI_VALIDATE_ONLY:-0}" = "1" ]; then
+    echo "OK: review entry validated"
+    exit 0
 fi
 
 # Append to log file (flock for safety)
