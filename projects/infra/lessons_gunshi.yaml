@@ -476,12 +476,13 @@ lessons:
     cmd_3167/cmd_3168で2連続BLOCK。cmd本文のcommand欄に `gate_skill_script_refs.sh` など実行だけのスクリプト参照があると、cmd_complete_gateがcommand_files_modified_mismatchとしてfiles_modified記載を要求した。
     軍師draftレビューでは、command欄のファイル参照を「変更対象」「既存依存の検証対象」「実行のみ」の3種に分類してから承認せよ。実行のみならcmd本文側で「実行のみ・変更対象外」と明記させ、files_modifiedに入れない。
     LG036は変更対象同士の1対1突合、本教訓は実行参照を変更対象から除外する前段の分類である。
+    吸収(2026-07-17, cmd_reflux_promotion_202607171007_kagemaru, origin: [[cmd_reflux_promotion_202607171007_kagemaru]] -> [[LG037]] -> [[execution_only_ref_Level4_filter]]): cmd_complete_gate.shのcommand/files_modified coverageが実行語彙・exec prefix・verified_existing_dependencyを照合対象から自動除外し、真の変更対象漏れだけをBLOCKするLevel4防御へ昇格済み。test_cmd_complete_gate.batsのLG037専用回帰テスト群で偽陽性除外と真陽性維持を強制する。
   source_cmd: cmd_3167
   origin: '[[cmd_3167 BLOCK]] -> [[command欄実行参照]] -> [[gate files_modified_mismatch]]'
   created_at: '2026-06-04'
   automated: true
-  enforcement_level: 3
-  enforcement: draft review時にcommand欄のファイル参照を変更対象/既存依存/実行のみへ分類し、実行のみは変更対象外と明記させる
+  enforcement_level: 4
+  enforcement: 'Level4(フロー内BLOCK): cmd_complete_gate.shがcommand欄参照を変更対象/既存依存/実行のみへ機械分類し、実行語彙・exec prefix・verified_existing_dependencyはfiles_modified照合から除外し、真の変更対象漏れのみcommand_files_modified_mismatchでBLOCK。test_cmd_complete_gate.batsで回帰保証'
   when: draft reviewでcmd command欄にスクリプトパスが出ている時
   how: 各参照ファイルを分類する。変更対象はfiles_modifiedへ、既存依存はverified_existing_dependencyへ、実行のみはcmd本文に「実行のみ・変更対象外」と明記させる
 - id: LG038
