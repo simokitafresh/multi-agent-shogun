@@ -651,10 +651,10 @@ lessons:
   origin: '[[cmd_3700_LGTM見落とし]] -> [[将軍疑義_306=102×3]] -> [[意味検算未実施]]'
   created_at: '2026-07-06'
   automated: true
-  enforcement_level: 3
-  enforcement: gate_gunshi_report_precheck.sh SG-PRE31がresultブロック内のN×M一致パターンを自動検出しINFOリマインド表示。5テストPASS(test_gate_gunshi_precheck_sg_pre31.bats)
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK、2026-07-17 cmd_reflux_promotion_202607171412_tobisaru): gate_gunshi_report_precheck.sh SG-PRE31がresultブロック内のN×M一致を検出した場合、semantic_validationのclassification_axis/recount/actual/result:PASSが揃うまでBLOCK。tests/unit/test_gate_gunshi_precheck_sg_pre31.batsが証跡なしBLOCK・完全証跡PASS・不完全証跡BLOCKを回帰強制。"
   when: report reviewのSG-PRE31自動実行時。resultブロック内の数値にN×M=C関係が検出された時
-  how: SG-PRE31がINFO表示→分類軸(rebalance_trigger、PF種別、日付、event_type等)ごとの内訳を再計算し、仕様上その分布になる理由を確認する
+  how: 分類軸(rebalance_trigger、PF種別、日付、event_type等)ごとの内訳を再計算し、reportのsemantic_validationにclassification_axis/recount/actual/result:PASSを記録してSG-PRE31を通す
 - id: LG049
   title: SG-PRE9cの未確認/未解決は文脈で判定せよ — 偵察の調査状態語をAC未達語にするな
   detail: |

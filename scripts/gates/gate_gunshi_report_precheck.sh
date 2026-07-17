@@ -1041,7 +1041,7 @@ if ! _sg_pre30_check "$REPORT_PATH"; then
     GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG046:global_enumeration_evidence_missing"
 fi
 
-# ─── SG-PRE31: N×M一致パターン意味検算リマインド(LG048: きれいな数値一致は意味検算のサイン) ───
+# ─── SG-PRE31: N×M一致パターン意味検算BLOCK(LG048: きれいな数値一致は意味検算のサイン) ───
 _sg_pre31_check() {
     local report_path="$1"
     # resultブロックから数値を抽出（整数のみ、10以上の値）
@@ -1081,11 +1081,45 @@ _sg_pre31_check() {
     done <<< "$_nums"
     if [ "$_found" -eq 0 ]; then
         echo "  PASS: N×M一致パターンなし"
+        return 0
     fi
+
+    # 数値一致の検知だけでは意味検算にならない。分類軸・内訳再計算・結果を
+    # semantic_validationとして構造化し、レビューフロー内でfail-closedに強制する。
+    local _semantic_block
+    _semantic_block=$(awk '/^semantic_validation:/{found=1; next} found && /^[^[:space:]#]/{exit} found{print}' "$report_path" 2>/dev/null || true)
+    if [ -z "$_semantic_block" ]; then
+        echo "  BLOCK(LG048): N×M一致を検出したがsemantic_validation証跡がない"
+        echo "  → classification_axis / recount / actual / result: PASSを記録せよ"
+        return 2
+    fi
+    if ! printf '%s\n' "$_semantic_block" | grep -Eq '^  classification_axis:[[:space:]]*[^[:space:]#]'; then
+        echo "  BLOCK(LG048): semantic_validation.classification_axisがない"
+        return 2
+    fi
+    if ! printf '%s\n' "$_semantic_block" | grep -Eq '^  recount:[[:space:]]*[^[:space:]#]'; then
+        echo "  BLOCK(LG048): semantic_validation.recountがない"
+        return 2
+    fi
+    if ! printf '%s\n' "$_semantic_block" | grep -Eq '^  actual:[[:space:]]*[^[:space:]#]'; then
+        echo "  BLOCK(LG048): semantic_validation.actualに分類別内訳の実測がない"
+        return 2
+    fi
+    local _semantic_result
+    _semantic_result=$(printf '%s\n' "$_semantic_block" | sed -n 's/^  result:[[:space:]]*//p' | head -1 | sed 's/[[:space:]]*#.*$//; s/^[[:space:]"]*//; s/[[:space:]"]*$//')
+    if [ "$_semantic_result" != "PASS" ]; then
+        echo "  BLOCK(LG048): semantic_validation.resultがPASSではない"
+        return 2
+    fi
+    echo "  PASS(LG048): N×M一致+分類軸別内訳の再計算証跡あり"
 }
 echo ""
 echo "■ SG-PRE31: N×M意味検算(LG048)"
-_sg_pre31_check "$REPORT_PATH"
+if ! _sg_pre31_check "$REPORT_PATH"; then
+    ERRORS=$((ERRORS + 1))
+    GATE_PREDICTION="BLOCK"
+    GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG048:semantic_validation_missing"
+fi
 
 # ─── SG-PRE32: 視点列間の全行一致検出(LG049: 独立視点の縮退検出) ───
 # 関数化: テストから呼出し可能にする

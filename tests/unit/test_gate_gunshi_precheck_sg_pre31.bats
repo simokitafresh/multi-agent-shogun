@@ -13,7 +13,7 @@ teardown() {
     rm -f "$TEST_REPORT"
 }
 
-@test "SG-PRE31: N×M match (102×3=306) triggers INFO" {
+@test "SG-PRE31: N×M match without semantic validation is BLOCK" {
     cat > "$TEST_REPORT" << 'EOF'
 cmd_id: cmd_test_pre31_match
 result:
@@ -21,8 +21,9 @@ result:
   details: "全306件が正常。102ポートフォリオ各3日"
 EOF
     run _sg_pre31_check "$TEST_REPORT"
+    [ "$status" -eq 2 ]
     [[ "$output" == *"INFO(LG048)"* ]]
-    [[ "$output" == *"意味検算"* ]]
+    [[ "$output" == *"BLOCK(LG048)"* ]]
 }
 
 @test "SG-PRE31: no N×M match shows PASS" {
@@ -61,7 +62,7 @@ EOF
     [[ "$output" == *"SKIP"* ]]
 }
 
-@test "SG-PRE31: large N×M match (50×20=1000) triggers INFO" {
+@test "SG-PRE31: N×M match with complete semantic validation passes" {
     cat > "$TEST_REPORT" << 'EOF'
 cmd_id: cmd_test_pre31_large
 result:
@@ -69,7 +70,28 @@ result:
   total: 1000
   per_stock: 20
   stocks: 50
+semantic_validation:
+  classification_axis: "PF種別×期間"
+  recount: "PF種別ごとに行を再集計"
+  actual: "50銘柄それぞれに20期間が存在"
+  result: PASS
 EOF
     run _sg_pre31_check "$TEST_REPORT"
+    [ "$status" -eq 0 ]
     [[ "$output" == *"INFO(LG048)"* ]]
+    [[ "$output" == *"PASS(LG048)"* ]]
+}
+
+@test "SG-PRE31: partial semantic validation remains BLOCK" {
+    cat > "$TEST_REPORT" << 'EOF'
+result:
+  summary: "102 PF × 3日 = 306件"
+semantic_validation:
+  classification_axis: "rebalance_trigger"
+  recount: "trigger別に再集計"
+  actual: "102 PF"
+EOF
+    run _sg_pre31_check "$TEST_REPORT"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"resultがPASSではない"* ]]
 }
