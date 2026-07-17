@@ -1,6 +1,6 @@
 ---
-<!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
-<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: gate_context_freshness.sh 097cd8b92はcontext cache署名のstat subprocessをfind -printfへ集約、lesson_review.sh 854816cddはdraft 0件fast-path追加。cmd-completeの引数・実行順・判定契約は不変。 -->
+<!-- script_refs_checked_at: 2026-07-17T10:08:00+09:00 -->
+<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: gate_context_freshness.sh 097cd8b92はcache署名のstat subprocess集約、e79f9b60aはgit timeout/retryを30秒にbounded化し確認失敗をALERTからBLOCKへ分離、lesson_review.sh 854816cddはdraft 0件fast-path追加。cmd-completeの引数・実行順は不変、freshness失敗の出口表示はBLOCKへ更新されたが本スキルのCLEAR後フローに変更なし。 -->
 name: cmd-complete
 <!-- script_refs_checked_at: 2026-07-16T13:35:00+09:00 -->
 <!-- cmd_karo_hotfix_shogun_startup_four_blocks検分: review_bundle.py直近差分はSG7証拠生成の内部強化。lesson review→gate→記録→archiveの完了フロー契約は不変。 -->
