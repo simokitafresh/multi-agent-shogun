@@ -2,6 +2,7 @@
 
 setup_file() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  [ "$(git -C "$ROOT" ls-files --stage scripts/campaign_lane_shard_item.sh | cut -d' ' -f1)" = 100755 ]
   SHARED_SOURCE="$BATS_FILE_TMPDIR/source-fixture"
   mkdir -p "$SHARED_SOURCE/skills/campaign-lane/scripts" "$SHARED_SOURCE/tests/unit"
   git init -q "$SHARED_SOURCE"
