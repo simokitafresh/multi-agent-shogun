@@ -1000,7 +1000,7 @@ if ! _sg_pre29_check "$REPORT_PATH"; then
     GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG045:next_build_pass_missing"
 fi
 
-# ─── SG-PRE30: daemon lib-only再利用時グローバル変数列挙リマインド(LG046) ───
+# ─── SG-PRE30: daemon lib-only再利用時グローバル変数列挙BLOCK(LG046) ───
 # 関数化: テストから呼出し可能にする
 _sg_pre30_check() {
     local report_path="$1"
@@ -1012,17 +1012,34 @@ _sg_pre30_check() {
     local _lib_only_mention
     _lib_only_mention=$(grep -ciE 'LIB_ONLY|source.*\.sh|lib.only' "$report_path" 2>/dev/null || true)
     if [ -n "$_daemon_files" ] || [ "${_lib_only_mention:-0}" -gt 0 ]; then
-        echo "  INFO: daemonスクリプト変更またはlib-only/source再利用を検出"
-        echo "  ★ LG046: 対象関数のグローバル変数を grep -oE '\$[A-Z_][A-Z0-9_]*|\$\{[A-Z_][A-Z0-9_]*' で機械列挙し、"
-        echo "    daemon初期化ブロック外でも初期化されるか/\${VAR:-}を持つか突合せよ"
-        echo "    部分列挙や目視でLGTMしない(bb140170d hotfix 2本の再発防止)"
+        local _simulation _command _actual
+        _simulation=$(awk '/^operational_simulation:/{found=1; next} found && /^[^[:space:]#]/{exit} found{print}' "$report_path" 2>/dev/null || true)
+        _command=$(printf '%s\n' "$_simulation" | sed -n 's/^  command:[[:space:]]*//p' | head -1)
+        _actual=$(printf '%s\n' "$_simulation" | sed -n 's/^  actual:[[:space:]]*//p' | head -1)
+        if ! printf '%s\n' "$_command" | grep -qE "grep.*(-oE|-Eo).*[A-Z_]"; then
+            echo "  BLOCK(LG046): daemon/lib-only変更あり。operational_simulation.commandに参照グローバルの機械列挙コマンドがない"
+            return 2
+        fi
+        if ! printf '%s' "$_actual" | grep -q '[^[:space:]"'"'"']'; then
+            echo "  BLOCK(LG046): operational_simulation.actualに列挙したグローバル変数の実測がない"
+            return 2
+        fi
+        if ! printf '%s\n' "$_simulation" | grep -Eq "^  result:[[:space:]]*['\"]?PASS(['\"]?[[:space:]]*(#.*)?)?$"; then
+            echo "  BLOCK(LG046): 初期化場所/lib-only時の値を突合したPASS証拠がない"
+            return 2
+        fi
+        echo "  PASS(LG046): 参照グローバルの機械列挙・実測・初期化突合PASSあり"
     else
         echo "  PASS: daemon/lib-only変更なし(対象外)"
     fi
 }
 echo ""
 echo "■ SG-PRE30: daemon lib-only再利用(LG046)"
-_sg_pre30_check "$REPORT_PATH"
+if ! _sg_pre30_check "$REPORT_PATH"; then
+    ERRORS=$((ERRORS + 1))
+    GATE_PREDICTION="BLOCK"
+    GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG046:global_enumeration_evidence_missing"
+fi
 
 # ─── SG-PRE31: N×M一致パターン意味検算リマインド(LG048: きれいな数値一致は意味検算のサイン) ───
 _sg_pre31_check() {

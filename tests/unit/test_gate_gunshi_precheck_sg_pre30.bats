@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# SG-PRE30: daemon lib-only再利用リマインド(LG046)の回帰テスト
+# SG-PRE30: daemon lib-only再利用時の機械列挙BLOCK(LG046)回帰テスト
 # 本体の_sg_pre30_check関数をsourceして直接呼び出す(ロジック複製排除)
 
 setup() {
@@ -14,7 +14,7 @@ teardown() {
     rm -f "$TEST_REPORT"
 }
 
-@test "SG-PRE30: daemon script in files_modified triggers INFO" {
+@test "SG-PRE30: daemon script without enumeration evidence is blocked" {
     cat > "$TEST_REPORT" << 'EOF'
 cmd_id: cmd_test_pre30_daemon
 files_modified:
@@ -24,12 +24,11 @@ result:
   summary: "ninja_monitor修正"
 EOF
     run _sg_pre30_check "$TEST_REPORT"
-    [[ "$output" == *"INFO"* ]]
-    [[ "$output" == *"LG046"* ]]
-    [[ "$output" == *"機械列挙"* ]]
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(LG046)"* ]]
 }
 
-@test "SG-PRE30: ntfy_listener in files_modified triggers INFO" {
+@test "SG-PRE30: ntfy_listener without evidence is blocked" {
     cat > "$TEST_REPORT" << 'EOF'
 cmd_id: cmd_test_pre30_ntfy
 files_modified:
@@ -38,11 +37,10 @@ result:
   summary: "ntfy修正"
 EOF
     run _sg_pre30_check "$TEST_REPORT"
-    [[ "$output" == *"INFO"* ]]
-    [[ "$output" == *"LG046"* ]]
+    [ "$status" -eq 2 ]
 }
 
-@test "SG-PRE30: inbox_watcher in files_modified triggers INFO" {
+@test "SG-PRE30: inbox_watcher without evidence is blocked" {
     cat > "$TEST_REPORT" << 'EOF'
 cmd_id: cmd_test_pre30_watcher
 files_modified:
@@ -51,10 +49,10 @@ result:
   summary: "watcher修正"
 EOF
     run _sg_pre30_check "$TEST_REPORT"
-    [[ "$output" == *"INFO"* ]]
+    [ "$status" -eq 2 ]
 }
 
-@test "SG-PRE30: LIB_ONLY mention in report triggers INFO" {
+@test "SG-PRE30: LIB_ONLY mention without evidence is blocked" {
     cat > "$TEST_REPORT" << 'EOF'
 cmd_id: cmd_test_pre30_libonly
 files_modified:
@@ -63,8 +61,7 @@ result:
   summary: "NINJA_MONITOR_LIB_ONLY=1でsource再利用"
 EOF
     run _sg_pre30_check "$TEST_REPORT"
-    [[ "$output" == *"INFO"* ]]
-    [[ "$output" == *"LG046"* ]]
+    [ "$status" -eq 2 ]
 }
 
 @test "SG-PRE30: no daemon/lib-only shows PASS" {
@@ -78,20 +75,25 @@ result:
 EOF
     run _sg_pre30_check "$TEST_REPORT"
     [[ "$output" == *"PASS"* ]]
-    [[ "$output" != *"INFO"* ]]
+    [ "$status" -eq 0 ]
 }
 
-@test "SG-PRE30: no garbled characters in INFO output" {
+@test "SG-PRE30: complete enumeration evidence passes" {
     cat > "$TEST_REPORT" << 'EOF'
 cmd_id: cmd_test_pre30_chars
 files_modified:
   - scripts/ninja_monitor.sh
 result:
   summary: "daemon関数修正"
+operational_simulation:
+  command: "sed -n '/target_fn()/,/^}/p' scripts/ninja_monitor.sh | grep -oE '\$[A-Z_][A-Z0-9_]*|\$\{[A-Z_][A-Z0-9_]*' | sort -u"
+  expected: "全参照グローバルを列挙し、lib-only時の初期化を突合"
+  actual: "$KARO_PANE $PANE_TARGETS $GUNSHI_PANE"
+  result: PASS
 EOF
     run _sg_pre30_check "$TEST_REPORT"
-    [[ "$output" == *"機械列挙"* ]]
-    [[ "$output" == *"再発防止"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS(LG046)"* ]]
     [[ "$output" != *"��"* ]]
 }
 
@@ -106,7 +108,7 @@ result:
 EOF
     run _sg_pre30_check "$TEST_REPORT"
     [[ "$output" == *"PASS"* ]]
-    [[ "$output" != *"INFO"* ]]
+    [ "$status" -eq 0 ]
 }
 
 @test "SG-PRE30: daemon keyword in unrelated field after files_modified does NOT trigger" {
@@ -123,5 +125,35 @@ result:
 EOF
     run _sg_pre30_check "$TEST_REPORT"
     [[ "$output" == *"PASS"* ]]
-    [[ "$output" != *"INFO"* ]]
+    [ "$status" -eq 0 ]
+}
+
+@test "SG-PRE30: enumeration command without actual result is blocked" {
+    cat > "$TEST_REPORT" << 'EOF'
+files_modified:
+  - scripts/ninja_monitor.sh
+operational_simulation:
+  command: "grep -oE '\$[A-Z_][A-Z0-9_]*' scripts/ninja_monitor.sh"
+  expected: "globals listed"
+  actual: ""
+  result: PASS
+EOF
+    run _sg_pre30_check "$TEST_REPORT"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"actual"* ]]
+}
+
+@test "SG-PRE30: enumeration with failed initialization comparison is blocked" {
+    cat > "$TEST_REPORT" << 'EOF'
+files_modified:
+  - scripts/inbox_watcher.sh
+operational_simulation:
+  command: "grep -oE '\$[A-Z_][A-Z0-9_]*' scripts/inbox_watcher.sh"
+  expected: "globals initialized"
+  actual: "$SCRIPT_DIR"
+  result: FAIL
+EOF
+    run _sg_pre30_check "$TEST_REPORT"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"PASS証拠"* ]]
 }
