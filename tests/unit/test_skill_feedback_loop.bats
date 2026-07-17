@@ -207,6 +207,45 @@ EOF
     [[ "${#lines[@]}" -eq 1 ]]
 }
 
+@test "skill_execution_log source-summary collapses retries and preserves exclusions" {
+    cat > "$TEST_SKILL_LOG" <<'EOF'
+executions:
+- {ts: "01", skill: "report-write", result: "FAIL", source: "cmd_100"}
+- {ts: "02", skill: "report-write", result: "PASS", source: "cmd_100"}
+- {ts: "03", skill: "report-write", result: "PASS", source: "cmd_200"}
+- {ts: "04", skill: "report-write", result: "FAIL", source: "cmd_200"}
+- {ts: "05", skill: "report-write", result: "FAIL", source: "cmd_300"}
+- {ts: "06", skill: "report-write", result: "PASS", source: "cmd_400"}
+- {ts: "07", skill: "report-write", result: "FAIL", source: ""}
+- {ts: "08", skill: "report-write", result: "PASS", source: ""}
+- {ts: "09", skill: "report-write", result: "FAIL", used: false, source: "cmd_500"}
+- {ts: "10", skill: "report-write", result: "FAIL", source: "cmd_test_fixture"}
+- {ts: "11", skill: "report-write", result: "FAIL", source: "cmd_training_speed_fixture"}
+EOF
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$SKILL_LOG_SCRIPT" source-summary
+    [ "$status" -eq 0 ]
+    [[ "${lines[0]}" == $'skill\tfail_rate\tfail_count\ttotal\tsuccess_streak\tlast_result\tlast_ts' ]]
+    [[ "${lines[1]}" == $'report-write\t38\t3\t8\t3\tPASS\t11' ]]
+}
+
+@test "skill_execution_log source-summary tolerates malformed legacy log" {
+    cat > "$TEST_SKILL_LOG" <<'EOF'
+executions:
+- ts: "01"
+  skill: "report-write"
+  result: "FAIL"
+  source: "cmd_100"
+  stumbling_points: "legacy "quote"
+- ts: "02"
+  skill: "report-write"
+  result: "PASS"
+  source: "cmd_100"
+EOF
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$SKILL_LOG_SCRIPT" source-summary
+    [ "$status" -eq 0 ]
+    [[ "${lines[1]}" == $'report-write\t0\t0\t1\t1\tPASS\t02' ]]
+}
+
 @test "skill log readers tolerate legacy unescaped traceback quotes" {
     cat > "$TEST_SKILL_LOG" <<'EOF'
 executions:
