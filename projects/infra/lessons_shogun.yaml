@@ -419,3 +419,11 @@ lessons:
   automated: true
   enforcement_level: 5
   enforcement: 'Level5: type=hook+test; file=.claude/hooks/post-shogun-inbox-check.sh; pattern=escalation_unread; test=tests/unit/test_post_shogun_escalation_warn.bats(4/4 PASS)。PostToolUseごとにescalation未対処をWARN表示'
+- id: 'LS091'
+  title: 'LS-A11適用失敗 — 自動化ターゲット選定時にも鎖の原理を照合せよ'
+  origin: '未指定'
+  detail: 'Q6回答で自動化ターゲットをclear_prep_check.shへのCI GREEN確認追加と定め実装→殿に即却下された。LS-A11(CI検知は家老の責務。将軍にCI情報を見せる仕組み=鎖の迂回誘発)を20分前に通読していたのに適用しなかった。deepdive_causal_tracing Phase3と同構造: 教訓を暗記したがパターンマッチで適用し、自分の新提案がその教訓に抵触するか照合しなかった。自動化ターゲット選定時は既存教訓(特にLS-A11鎖の原理+LS-A07gate迂回禁止)との整合を因果でたどってから実装せよ。'
+  source_cmd: 'session_20260717_1914'
+  created_at: '2026-07-17'
+  automated: true
+  enforcement: 'Level4: 将軍教訓通読(startup Step4)で鎖の原理関連(LS-A11/LS-A07)を読了後、D0実装前にgrep対象教訓との矛盾がないか自問を強制。自動化未達(hook/gate追加なし)=意志依存。次の自動化候補: cmd_save.sh environment_change実装時にLS-A11 keyword(家老の責務/鎖の迂回)との自動照合'
