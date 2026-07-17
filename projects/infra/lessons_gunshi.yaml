@@ -691,12 +691,13 @@ lessons:
     GA-222系列で軍師はコード単体・専用fixtureの正しさを確認して5回連続LGTMしたが、呼出しフローの原子性、dirty入力、実運用callerの実在性を検証せず家老RCとなった。
     cmd_karo_hotfix_inbox_gate_trigger_durable_202607111406では、trigger_cmd_complete_gate_backgroundをsetsid化してunit 53/53 PASSまで進めた後、非test callerが0件と判明した。
     正解はdead codeの耐久化ではなく、未使用関数46行と専用fixture42行の計88行削除だった。gate/hook/dispatcher変更ではテスト結果より先に定義・testを除くcaller数を一次計測する。
+    吸収(2026-07-17, cmd_reflux_promotion_202607171453_hanzo, origin: [[GA-222_5連続LGTM撤回]] -> [[実運用caller検証欠如]] -> [[gate_report_format_LG051_BLOCK]]): gate/hook/dispatcher変更をfiles_modifiedから機械判定し、causal_verificationに非test caller数の一次証跡がなければ報告GATEをBLOCKするLevel4防御へ昇格。caller=0なら強化せず削除または正本経路統合を要求する。
   source_cmd: cmd_karo_hotfix_inbox_gate_trigger_durable_202607111406
   origin: '[[GA-222_5連続LGTM撤回]] -> [[実運用caller検証欠如]] -> [[dead_code耐久化誤承認]]'
   created_at: '2026-07-11'
   automated: true
-  enforcement_level: 3
-  enforcement: instructions/roles/gunshi_role.mdの事前検死へ非test caller数の必須計測を追加し、build_instructions.shでClaude/Codex軍師instructions 2/2へ生成。caller=0ならLGTM禁止
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK): gate_report_format_main.pyがfiles_modifiedのgate/hook/dispatcher変更を検出し、causal_verificationに定義・test/fixtureを除外した非test caller数の一次証跡がなければBLOCK。caller=0なら強化せず削除または正本経路統合を要求。tests/unit/test_gate_report_format_lg051.pyでスコープとfail-closed契約をCI固定"
   when: scripts/hooks/gates/dispatcher関数の追加・変更・耐久化を含むdraft/report review時
   how: 定義行とtest/fixtureを除外して全repoのcaller数をrgで数値化する。0なら専用テストPASSでもdead codeとして削除または正本経路統合を要求し、強化を承認しない
 - id: 'LG052'

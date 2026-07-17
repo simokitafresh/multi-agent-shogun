@@ -910,3 +910,11 @@ BROKEN
     _run_gate "$TEST_TMPDIR/docs.yaml"
     [ "$status" -eq 0 ]
 }
+@test "LG051: gate/hook/dispatcher reports require numeric non-test caller evidence" {
+    run grep -F 'LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須' \
+        "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py"
+    [ "$status" -eq 0 ]
+    run grep -F 'N=0なら強化せず削除または正本経路へ統合せよ' \
+        "$PROJECT_ROOT/scripts/gates/gate_report_format_main.py"
+    [ "$status" -eq 0 ]
+}

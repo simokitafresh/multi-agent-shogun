@@ -673,6 +673,37 @@ def main(report_data=None) -> int:
                 )
             )
 
+    # LG051 Level4: gate/hook/dispatcher の変更は、専用テストが通るだけでは
+    # dead code の耐久化を防げない。レビューへ進む前に、定義・test/fixtureを
+    # 除外した実運用 caller 数の一次計測を報告へ強制する。
+    _fm_paths = []
+    for _entry in _fm if isinstance(_fm, list) else [_fm]:
+        _path = _entry.get("path", "") if isinstance(_entry, dict) else str(_entry)
+        if _path:
+            _fm_paths.append(_path)
+    _caller_scope = any(
+        re.search(r"(?:^|/)(?:hooks?|gates?|dispatchers?)(?:/|[^/]*$)", _path, re.I)
+        for _path in _fm_paths
+    )
+    if _caller_scope:
+        _cv = data.get("causal_verification") or {}
+        _caller_evidence = " ".join(
+            str(_cv.get(_key, "") or "")
+            for _key in ("cause_checked", "design_intent_checked", "evidence")
+        ) if isinstance(_cv, dict) else ""
+        if not re.search(
+            r"(?:non[-_ ]?test|非test|実運用)\s*caller(?:\s*(?:数|count)|s|_count)?\s*[:=]\s*\d+",
+            _caller_evidence,
+            re.I,
+        ):
+            errors.append(
+                "LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須"
+            )
+            hints.append(
+                "FIX (LG051): causal_verification.evidenceへ、定義行とtest/fixtureを除外した"
+                "rgコマンドと `non-test caller count: N` を記録せよ。N=0なら強化せず削除または正本経路へ統合せよ"
+            )
+
     # revision_requested is an editing/unlock state, not a terminal report
     # state.  A successful terminal verdict must only be accepted after the
     # explicit revision round-trip has returned the report to completed.
