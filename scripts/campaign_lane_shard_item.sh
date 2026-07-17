@@ -74,7 +74,9 @@ paths = item.get("owned_paths")
 if not isinstance(paths, list) or len(paths) != 2 or len(paths) != len(set(paths)) or os.environ["ITEM_PATH"] not in paths:
     raise SystemExit(2)
 root = os.path.realpath(os.environ["SOURCE_REPO"])
-work = os.path.realpath(os.environ["WORKDIR"])
+# Ownership is expressed through the durable logical workdir.  The checkout
+# may be materialized behind that path on ext4 after this contract is parsed.
+work = os.path.abspath(os.environ["WORKDIR"])
 out = []
 for value in paths:
     if not isinstance(value, str) or not value or os.path.isabs(value) or value in {".", ".."} or value.startswith("../") or "/../" in value or value.endswith("/.."):
@@ -82,7 +84,7 @@ for value in paths:
     top = value.split("/", 1)[0]
     if not os.path.isdir(os.path.join(root, top)):
         raise SystemExit(2)
-    absolute = os.path.realpath(os.path.join(work, value))
+    absolute = os.path.abspath(os.path.join(work, value))
     if os.path.commonpath([work, absolute]) != work:
         raise SystemExit(1)
     out.append(absolute)
@@ -122,7 +124,12 @@ from pathlib import Path
 root = Path(os.environ["CAMPAIGN_ROOT"])
 sys.path.insert(0, str(root / "skills/campaign-lane"))
 from scripts.materialize import materialize
-materialize(os.environ["CAMPAIGN_SOURCE"], os.environ["CAMPAIGN_WORKDIR"], os.environ["CAMPAIGN_SHA"])
+materialize(
+    os.environ["CAMPAIGN_SOURCE"],
+    os.environ["CAMPAIGN_WORKDIR"],
+    os.environ["CAMPAIGN_SHA"],
+    os.environ.get("CAMPAIGN_LANE_CHECKOUT_ROOT", "/tmp/multi-agent-shogun-campaign-checkouts"),
+)
 PY
 then
     fail source_materialize_failed
@@ -177,7 +184,7 @@ bash "$field_set" "$task_path" task test_command "$test_command" || fail task_ya
 bash "$field_set" "$task_path" task implementation_path "$workdir/$item_path" || fail task_yaml_write_failed
 test_path="$(OWNED_ABS_JSON="$owned_abs_json" ITEM_ABS="$workdir/$item_path" python3 - <<'PY'
 import json, os
-print(next(path for path in json.loads(os.environ["OWNED_ABS_JSON"]) if path != os.path.realpath(os.environ["ITEM_ABS"])))
+print(next(path for path in json.loads(os.environ["OWNED_ABS_JSON"]) if path != os.path.abspath(os.environ["ITEM_ABS"])))
 PY
 )" || fail invalid_owned_paths
 bash "$field_set" "$task_path" task test_path "$test_path" || fail task_yaml_write_failed
@@ -185,7 +192,7 @@ bash "$field_set" "$task_path" task workdir "$workdir" || fail task_yaml_write_f
 bash "$field_set" "$task_path" task fixed_sha "$FIXED_SHA" || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task report_path "$report_path" || fail task_yaml_write_failed
 bash "$field_set" "$task_path" task report_filename "$(basename "$report_path")" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task estimated_minutes 30 || fail task_yaml_write_failed
+bash "$field_set" "$task_path" task estimated_minutes 10 || fail task_yaml_write_failed
 
 deploy_cmd="${CAMPAIGN_LANE_DEPLOY_CMD:-bash $ROOT/scripts/deploy_task.sh --direct --yaml}"
 if ! bash -c 'exec "$@"' _ $deploy_cmd "$task_path" "$worker_id"; then
@@ -204,7 +211,7 @@ summary = data.get("result") or {}
 commit_sha = str(data.get("commit_hash") or (summary.get("commit_sha") if isinstance(summary, dict) else "") or "")
 files = data.get("files_modified") or []
 files = [x.get("path", "") if isinstance(x, dict) else str(x) for x in files]
-owned = set(json.loads(os.environ["OWNED_ABS_JSON"]))
+owned = {os.path.realpath(path) for path in json.loads(os.environ["OWNED_ABS_JSON"])}
 workdir = os.environ["WORKDIR"]
 reported_abs = {os.path.realpath(x if os.path.isabs(x) else os.path.join(workdir, x)) for x in files}
 head = subprocess.run(["git", "-C", workdir, "rev-parse", "HEAD"], text=True, capture_output=True).stdout.strip()

@@ -92,3 +92,25 @@ def test_materialize_exact_sha_and_fail_closed(tmp_path):
     assert result == {"status": "success", "fixed_sha": sha, "dirty": 0}
     with pytest.raises(MaterializeError):
         materialize(source, tmp_path / "bad", "f" * 40)
+
+
+def test_materialize_can_keep_logical_state_path_while_checkout_uses_scratch(tmp_path):
+    source = tmp_path / "source-scratch"
+    source.mkdir()
+    subprocess.run(["git", "init", "-q", str(source)], check=True)
+    subprocess.run(["git", "-C", str(source), "config", "user.email", "test@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(source), "config", "user.name", "test"], check=True)
+    (source / "tracked").write_text("ok")
+    subprocess.run(["git", "-C", str(source), "add", "tracked"], check=True)
+    subprocess.run(["git", "-C", str(source), "commit", "-qm", "fixture"], check=True)
+    sha = subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip()
+    logical = tmp_path / "durable" / "workdir"
+    scratch = tmp_path / "ext4-scratch"
+
+    result = materialize(source, logical, sha, scratch)
+
+    assert result == {"status": "success", "fixed_sha": sha, "dirty": 0}
+    assert logical.is_symlink()
+    assert logical.resolve().parent == scratch.resolve()
+    assert subprocess.check_output(["git", "-C", str(logical), "rev-parse", "HEAD"], text=True).strip() == sha
+    assert not subprocess.check_output(["git", "-C", str(logical), "status", "--porcelain"], text=True).strip()
