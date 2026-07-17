@@ -136,6 +136,11 @@ by_skill = defaultdict(list)
 for index, entry in enumerate(entries):
     if not isinstance(entry, dict):
         continue
+    # Non-executed/inferred records are outside the aggregation contract.  Drop
+    # them before the last-50 window and source collapse so they cannot evict a
+    # real attempt or overwrite its final result for the same source.
+    if str(entry.get("used", True)).strip().lower() == "false":
+        continue
     skill_name = str(entry.get("skill") or "").strip()
     result = str(entry.get("result") or "").strip().upper()
     if skill_name and result in ("PASS", "FAIL"):
@@ -155,11 +160,7 @@ for skill_name in sorted(by_skill):
             empty_seq += 1
             source = f"__empty_source_{empty_seq}"
         latest[source] = entry
-    final = sorted(
-        (item for item in latest.values()
-         if str(item.get("used", True)).strip().lower() != "false"),
-        key=lambda item: item["_index"],
-    )
+    final = sorted(latest.values(), key=lambda item: item["_index"])
     # Benchmark/training and malformed invocation exclusions remain observable in
     # the source denominator, but can never become unresolved operational FAILs.
     effective = ["PASS" if excluded(item) else str(item.get("result") or "").upper() for item in final]
