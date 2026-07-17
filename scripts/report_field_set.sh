@@ -23,13 +23,18 @@ if [ "${1:-}" = "--batch" ]; then
     [ "$#" -eq 2 ] || { echo "Usage: report_field_set.sh --batch <report_path> < fields.yaml" >&2; exit 1; }
     _rfs_batch_report="$2"
     _rfs_batch_payload="$(cat)"
+    _rfs_batch_self="${BASH_SOURCE[0]:-$0}"
+    [[ "$_rfs_batch_self" != /* ]] && _rfs_batch_self="$PWD/$_rfs_batch_self"
+    _rfs_batch_root="${_rfs_batch_self%/scripts/report_field_set.sh}"
     [[ "$_rfs_batch_report" = /* ]] || _rfs_batch_report="$PWD/$_rfs_batch_report"
     _rfs_batch_lock="${_rfs_batch_report}.lock"
     mkdir -p "${_rfs_batch_report%/*}"
     exec 200>"$_rfs_batch_lock"
     flock -w 5 200 || { echo "BLOCK: batch report lock timeout" >&2; exit 1; }
-    RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" <<'PY'
+    RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
 import hashlib, os, pathlib, re, sys, tempfile, yaml
+sys.path.insert(0, sys.argv[2])
+from scripts.lib.yaml_atomic import yaml_text
 
 path = pathlib.Path(sys.argv[1])
 updates = yaml.safe_load(os.environ.get("RFS_BATCH_PAYLOAD", ""))
@@ -105,7 +110,7 @@ if terminal:
     if not re.fullmatch(r"[0-9a-f]{40}|no-code-change", commit):
         raise SystemExit("BLOCK: terminal readiness requires valid commit_hash")
 
-text = yaml.safe_dump(data, allow_unicode=True, sort_keys=False)
+text = yaml_text(data, allow_unicode=True, sort_keys=False)
 fd, tmp = tempfile.mkstemp(prefix=path.name + ".batch.", dir=path.parent)
 try:
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
