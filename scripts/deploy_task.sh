@@ -4709,8 +4709,14 @@ inject_memory_db_context() {
         fi
         combined_sql="${combined_sql}SELECT ts || ' | ' || substr(summary,1,100) FROM events WHERE summary LIKE '%${kw_esc}%' AND event_type IN ('conversation','knowledge','ruling') ORDER BY ts DESC LIMIT 2"
     done
-    result=$(deploy_task_wave_cache memory "$keywords|$combined_sql" "$db_path" \
-        bash "$query_script" "$combined_sql" 2>/dev/null) || result=""
+    if declare -F deploy_task_wave_cache >/dev/null 2>&1; then
+        result=$(deploy_task_wave_cache memory "$keywords|$combined_sql" "$db_path" \
+            bash "$query_script" "$combined_sql" 2>/dev/null) || result=""
+    else
+        # Keep this function usable by isolated callers/tests that source only it.
+        # The normal deploy path always defines deploy_task_wave_cache above.
+        result=$(bash "$query_script" "$combined_sql" 2>/dev/null) || result=""
+    fi
     [ -n "$result" ] || { log "inject_memory_db_context: no hits for: $keywords"; return 0; }
 
     # task YAMLに memory_db_context フィールドとして注入
