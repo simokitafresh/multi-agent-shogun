@@ -42,6 +42,18 @@ case "${TEST_MODE}" in
   missing_owned) printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}]\noperational_simulation: {actual: "TOTAL=3 FAIL=0 SKIP=0", result: PASS}\n' "$head" >"$report_path" ;;
   dirty) printf dirty >>"$implementation"; printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\noperational_simulation: {actual: "TOTAL=3 FAIL=0 SKIP=0", result: PASS}\n' "$head" >"$report_path" ;;
   scope_extra) printf extra >"$workdir/extra.txt"; git -C "$workdir" add extra.txt; git -C "$workdir" commit -qm extra; head="$(git -C "$workdir" rev-parse HEAD)"; printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\noperational_simulation: {actual: "TOTAL=3 FAIL=0 SKIP=0", result: PASS}\n' "$head" >"$report_path" ;;
+  canonical_redirect)
+    canonical="$(dirname "$report_path")/canonical-report.yaml"
+    python3 - "$task_path" "$canonical" <<'PY'
+import sys, yaml
+path, canonical = sys.argv[1:]
+data = yaml.safe_load(open(path, encoding='utf-8'))
+data['task']['report_path'] = canonical
+with open(path, 'w', encoding='utf-8') as stream:
+    yaml.safe_dump(data, stream, allow_unicode=True, sort_keys=False)
+PY
+    printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\noperational_simulation: {actual: "TOTAL=3 FAIL=0 SKIP=0", result: PASS}\n' "$head" >"$canonical"
+    ;;
   crash) exit 9 ;;
   timeout) : ;;
 esac
@@ -88,6 +100,19 @@ PY
   [ "$status" -eq 0 ]
   [ "$(git -C "$TMPROOT/work" config --local user.name)" = "Campaign Source" ]
   [ "$(git -C "$TMPROOT/work" config --local user.email)" = campaign@example.invalid ]
+}
+
+@test "deploy rewritten canonical report path completes without stale placeholder wait" {
+  make_deployer canonical_redirect
+  start=$SECONDS
+
+  run_bridge
+
+  elapsed=$((SECONDS - start))
+  [ "$status" -eq 0 ]
+  [ "$elapsed" -lt 10 ]
+  [ ! -e "$TMPROOT/out/report.yaml" ]
+  reason_is report_terminal_pass
 }
 
 @test "generated task preserves list AC and typed ownership scalars" {
