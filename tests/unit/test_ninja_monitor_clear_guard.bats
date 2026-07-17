@@ -756,7 +756,7 @@ INNEREOF
 now="$(date "+%Y-%m-%dT%H:%M:%S")"
 cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<INNEREOF
 messages:
-- content: "kagemaru、任務完了。報告YAML確認されたし。"
+- content: "kagemaru、cmd_test_verdict任務完了。報告YAML確認されたし。"
   from: kagemaru
   id: msg_test
   read: false
@@ -834,6 +834,92 @@ grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS: missing report_received → return 1 (blocked)"* ]]
+}
+
+@test "report_gate: read exact-identity notification prevents repeated false missing alerts" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$BATS_TEST_TMPDIR"; LOG="$SCRIPT_DIR/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts"
+touch "$LOG"
+cat > "$SCRIPT_DIR/queue/tasks/kotaro.yaml" <<YAML
+task:
+  status: done
+  task_id: cmd_reflux_promotion_202607180352_kotaro_exact
+  parent_cmd: cmd_reflux_promotion_202607180352_kotaro
+  report_filename: kotaro_report_cmd_reflux_promotion_202607180352_kotaro.yaml
+YAML
+cat > "$SCRIPT_DIR/queue/reports/kotaro_report_cmd_reflux_promotion_202607180352_kotaro.yaml" <<YAML
+worker_id: kotaro
+task_id: cmd_reflux_promotion_202607180352_kotaro_exact
+parent_cmd: cmd_reflux_promotion_202607180352_kotaro
+timestamp: "2026-07-18T03:59:30+09:00"
+verdict: PASS
+YAML
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<YAML
+messages:
+- content: "小太郎、cmd_reflux_promotion_202607180352_kotaro完了。報告YAML PASS。"
+  from: kotaro
+  read: true
+  timestamp: "2026-07-18T03:59:37+09:00"
+  type: report_received
+YAML
+log() { echo "$1" >> "$LOG"; }
+notify_karo_throttled() { echo "NOTIFY:$*" >> "$LOG"; }
+can_send_clear_with_report_gate kotaro first
+can_send_clear_with_report_gate kotaro second
+count=$(grep -c "report_notification_missing" "$LOG" 2>/dev/null || true)
+[ "$count" -eq 0 ]
+echo "PASS: repeated false positives 2 -> $count"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: repeated false positives 2 -> 0"* ]]
+}
+
+@test "report_gate: near-match identity remains a true missing notification" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$BATS_TEST_TMPDIR"; LOG="$SCRIPT_DIR/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts"
+cat > "$SCRIPT_DIR/queue/tasks/kotaro.yaml" <<YAML
+task:
+  status: done
+  parent_cmd: cmd_exact
+  report_filename: kotaro_report_cmd_exact.yaml
+YAML
+cat > "$SCRIPT_DIR/queue/reports/kotaro_report_cmd_exact.yaml" <<YAML
+worker_id: kotaro
+task_id: cmd_exact_task
+parent_cmd: cmd_exact
+timestamp: "2026-07-18T04:00:00+09:00"
+verdict: PASS
+YAML
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<YAML
+messages:
+- content: "小太郎、cmd_exact_old完了。"
+  from: kotaro
+  read: true
+  timestamp: "2026-07-18T04:00:05+09:00"
+  type: report_received
+YAML
+log() { echo "$1" >> "$LOG"; }
+notify_karo_throttled() { echo "NOTIFY:$*" >> "$LOG"; }
+rc=0; can_send_clear_with_report_gate kotaro test || rc=$?
+[ "$rc" -eq 1 ]
+count=$(grep -c "report_notification_missing" "$LOG")
+[ "$count" -eq 1 ]
+echo "PASS: true missing notifications=$count"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: true missing notifications=1"* ]]
 }
 
 @test "report_gate: archived report_received after report timestamp allows clear even when report mtime changed later" {
@@ -928,6 +1014,7 @@ task:
 YAML
 cat > "$SCRIPT_DIR/queue/reports/kagemaru_report_cmd_memory_fallback.yaml" <<YAML
 worker_id: kagemaru
+parent_cmd: cmd_memory_fallback
 timestamp: "2026-07-15T12:00:00+09:00"
 verdict: PASS
 YAML
@@ -938,7 +1025,7 @@ db = sqlite3.connect(sys.argv[1])
 db.execute("CREATE TABLE events (ts TEXT, event_type TEXT, agent TEXT, target TEXT, detail TEXT, raw_content TEXT)")
 db.execute("INSERT INTO events VALUES (?,?,?,?,?,?)", (
     "2026-07-15T12:00:05+09:00", "inbox", "kagemaru", "karo",
-    "type: report_received\\nfrom: kagemaru\\ntarget: karo", "completed"))
+    "type: report_received\\nfrom: kagemaru\\ntarget: karo", "cmd_memory_fallback completed"))
 db.commit()
 PY
 log() { echo "$1" >> "$LOG"; }
@@ -975,6 +1062,7 @@ touch -d "2026-07-12T22:54:00+09:00" "$SCRIPT_DIR/queue/reports/legacy.yaml"
 cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<YAML
 messages:
 - from: kagemaru
+  content: "legacy.yaml completed"
   type: report_received
   timestamp: "2026-07-12T22:41:00+09:00"
 YAML
@@ -1588,7 +1676,7 @@ YAML
 now="$(date "+%Y-%m-%dT%H:%M:%S")"
 cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<YAML
 messages:
-- content: "hayate、任務完了。報告YAML確認されたし。"
+- content: "hayate、cmd_test任務完了。報告YAML確認されたし。"
   from: hayate
   id: msg_test
   read: false

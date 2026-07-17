@@ -1604,9 +1604,16 @@ PY
     shopt -u nullglob
     inbox_sources+=("${archive_sources[@]}")
 
-    if python3 - "$name" "$report_epoch" "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" "${inbox_sources[@]}" <<'PY'
+    local report_identity task_identity parent_identity
+    report_identity=$(basename "$report_file")
+    task_identity=$(yaml_field_get "$report_file" "task_id" "" 2>/dev/null || true)
+    parent_identity=$(yaml_field_get "$report_file" "parent_cmd" "" 2>/dev/null || true)
+
+    if python3 - "$name" "$report_epoch" "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" \
+        "$report_identity" "$task_identity" "$parent_identity" "${inbox_sources[@]}" <<'PY'
 import datetime as _dt
 import os
+import re
 import sqlite3
 import sys
 
@@ -1618,7 +1625,19 @@ try:
 except Exception:
     report_epoch = 0
 memory_db = sys.argv[3]
-sources = sys.argv[4:]
+identities = tuple(value for value in sys.argv[4:7] if value)
+sources = sys.argv[7:]
+
+
+def _has_exact_identity(msg):
+    # report_received content predates structured identity fields, so accept
+    # either an explicit field or a token-delimited identity in its content.
+    haystack = "\n".join(str(msg.get(key, "")) for key in
+                          ("report", "report_path", "report_filename",
+                           "task_id", "parent_cmd", "content"))
+    return any(re.search(r"(?<![A-Za-z0-9_])" + re.escape(identity) +
+                         r"(?![A-Za-z0-9_])", haystack)
+               for identity in identities)
 
 
 def _timestamp_epoch(value):
@@ -1654,6 +1673,8 @@ for source in sources:
             continue
         if str(msg.get("from", "")) != name:
             continue
+        if not _has_exact_identity(msg):
+            continue
         msg_epoch = _timestamp_epoch(msg.get("timestamp"))
         if msg_epoch is None:
             continue
@@ -1679,6 +1700,10 @@ if os.path.isfile(memory_db):
         for ts, detail, raw_content in rows:
             evidence = f"{detail or ''}\n{raw_content or ''}"
             if "type: report_received" not in evidence:
+                continue
+            if not any(re.search(r"(?<![A-Za-z0-9_])" + re.escape(identity) +
+                                 r"(?![A-Za-z0-9_])", evidence)
+                       for identity in identities):
                 continue
             msg_epoch = _timestamp_epoch(ts)
             if msg_epoch is not None and (report_epoch == 0 or msg_epoch >= report_epoch - 10):
