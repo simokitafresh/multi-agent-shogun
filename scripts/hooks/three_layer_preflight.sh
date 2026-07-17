@@ -112,7 +112,11 @@ memory_cache_is_healthy() {
 import sqlite3, sys
 with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro&immutable=1", uri=True, timeout=0.2) as conn:
     tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-    if "events" not in tables or conn.execute("SELECT 1 FROM events LIMIT 1").fetchone() is None:
+    required = {"events", "events_fts"}
+    if not required.issubset(tables):
+        raise SystemExit(1)
+    row = conn.execute("SELECT rowid FROM events_fts LIMIT 1").fetchone()
+    if row is None or conn.execute("SELECT 1 FROM events WHERE rowid=?", row).fetchone() is None:
         raise SystemExit(1)
 PY
 }

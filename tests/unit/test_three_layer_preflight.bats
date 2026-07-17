@@ -539,6 +539,47 @@ PY
     flock -u 9
 }
 
+@test "ext4 FTS5 snapshotは複数語CJKを20回安定検索する" {
+    local tmp_root="$TMP_EVIDENCE/fts20" cache="$TMP_EVIDENCE/fts20-cache.db"
+    local evidence_dir="$TMP_EVIDENCE/fts20-evidence" boot_id
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/data" "$tmp_root/.git"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    cp "$ROOT/scripts/lib/memory_db_cache.sh" "$tmp_root/scripts/lib/memory_db_cache.sh"
+    cp "$ROOT/scripts/memory_db_live_insert.py" "$tmp_root/scripts/memory_db_live_insert.py"
+    cp "$THREE_LAYER_DB_FIXTURE" "$tmp_root/data/multi_agent_shogun_memory.db"
+    cp "$THREE_LAYER_DB_FIXTURE" "$cache"
+    boot_id="$(cat /proc/sys/kernel/random/boot_id 2>/dev/null || printf unknown)"
+    printf '%s\n' "$boot_id" > "$cache.boot_id"
+    printf '三層 記憶 preflight fixture\n' > "$tmp_root/docs/semantic-index/index.md"
+    printf '三層 記憶 preflight fixture\tdocs/fixture.md\n' > "$tmp_root/stale.tsv"
+    printf '#!/usr/bin/env bash\nprintf "%%s\\n" "$2"\n' > "$tmp_root/scripts/lib/causal_index.sh"
+    chmod +x "$tmp_root/scripts/lib/causal_index.sh"
+
+    local successes=0 memory_124=0 i rc evidence
+    for i in $(seq 1 20); do
+        rc=0
+        env SHOGUN_MEMORY_DB_CACHE_PATH="$cache" THREE_LAYER_CAUSAL_INDEX_CACHE="$tmp_root/stale.tsv" THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="fts$i" TMUX_PANE="%fts$i" \
+            bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "三層 記憶 preflight fixture" >/dev/null 2>&1 || rc=$?
+        if [ "$rc" -eq 0 ]; then
+            successes=$((successes + 1))
+            evidence="$evidence_dir/evidence_fts${i}__fts${i}.json"
+            python3 - "$evidence" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["memory_db"] == "0"
+assert int(data["memory_count"]) == 1
+assert data["memory_query"]
+assert data["memory_timestamp"]
+PY
+        elif [ "$rc" -eq 124 ]; then
+            memory_124=$((memory_124 + 1))
+        fi
+    done
+    [ "$successes" -eq 20 ]
+    [ "$memory_124" -eq 0 ]
+
+}
+
 @test "外部source DBはimmutableにせず未checkpoint WAL eventを検索" {
     local external_db="$TMP_EVIDENCE/external-wal.db" ready="$TMP_EVIDENCE/external-wal.ready"
     cp "$THREE_LAYER_DB_FIXTURE" "$external_db"
