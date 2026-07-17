@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
+<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: report_field_set.sh ab05776afは非terminal status書込み時の冗長status再読込を省略。terminal normalization、field CLI、型検証、verdict自動導出契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-15T11:38:00+09:00 -->
 <!-- 2026-07-15将軍検分: report_field_set.sh aa75598cf(lesson_candidate型チェック dict→(dict,list)緩和=内部バリデーション)。呼び出し契約不変。 -->
 name: report-write
