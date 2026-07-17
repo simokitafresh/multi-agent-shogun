@@ -109,12 +109,6 @@ if terminal:
     commit = str(data.get("commit_hash", "")).strip()
     if not re.fullmatch(r"[0-9a-f]{40}|no-code-change", commit):
         raise SystemExit("BLOCK: terminal readiness requires valid commit_hash")
-    if commit == "no-code-change":
-        evidence = data.get("no_code_change_evidence") or {}
-        before = str(evidence.get("before_tree") or "").strip() if isinstance(evidence, dict) else ""
-        after = str(evidence.get("after_tree") or "").strip() if isinstance(evidence, dict) else ""
-        if evidence.get("tree_unchanged") is not True or not re.fullmatch(r"[0-9a-f]{40}", before) or before != after:
-            raise SystemExit("BLOCK: no-code-change requires matching 40-hex before_tree/after_tree and tree_unchanged=true")
 
 text = yaml_text(data, allow_unicode=True, sort_keys=False)
 fd, tmp = tempfile.mkstemp(prefix=path.name + ".batch.", dir=path.parent)

@@ -207,10 +207,20 @@ if [ -f "$_snapshot" ]; then
     _failed=$(grep '^ninja|' "$_snapshot" | grep '|failed|' | sed 's/^ninja|\([^|]*\)|.*/\1/' | paste -sd, 2>/dev/null || true)
     _stall=$(grep '^ninja|' "$_snapshot" | grep '|assigned|.*CTX:0%' | sed 's/^ninja|\([^|]*\)|.*/\1/' | paste -sd, 2>/dev/null || true)
     if [ -n "$_failed" ] || [ -n "$_stall" ]; then
-        NINJA_ALERT="★陣形図異常: "
-        [ -n "$_failed" ] && NINJA_ALERT="${NINJA_ALERT}failed=[${_failed}] "
-        [ -n "$_stall" ] && NINJA_ALERT="${NINJA_ALERT}stall疑い=[${_stall}] "
-        NINJA_ALERT="${NINJA_ALERT}— 家老へナッジまたはcapture-paneで実態確認せよ"
+        # Session-scope dedup: only alert when failed/stall set changes (LS094)
+        _dedup_file="/tmp/shogun_snapshot_alert_dedup"
+        _current_set="f=${_failed}|s=${_stall}"
+        _prev_set=""
+        [ -f "$_dedup_file" ] && _prev_set=$(cat "$_dedup_file" 2>/dev/null || true)
+        if [ "$_current_set" = "$_prev_set" ]; then
+            NINJA_ALERT=""
+        else
+            echo "$_current_set" > "$_dedup_file"
+            NINJA_ALERT="★陣形図異常: "
+            [ -n "$_failed" ] && NINJA_ALERT="${NINJA_ALERT}failed=[${_failed}] "
+            [ -n "$_stall" ] && NINJA_ALERT="${NINJA_ALERT}stall疑い=[${_stall}] "
+            NINJA_ALERT="${NINJA_ALERT}— 家老へナッジまたはcapture-paneで実態確認せよ"
+        fi
     fi
 fi
 

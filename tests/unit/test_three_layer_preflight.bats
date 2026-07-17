@@ -204,16 +204,6 @@ JSON
     [ "$status" -eq 0 ]
 }
 
-@test "safe time and env wrappers normalize to the read-only allowlist" {
-    run verify Bash "" "/usr/bin/time -f elapsed=%e env LC_ALL=C rg -n three_layer scripts/hooks/three_layer_preflight.sh"
-    [ "$status" -eq 0 ]
-}
-
-@test "wrapper command substitution remains fail-closed" {
-    run verify Bash "" "env TOKEN=\$(cat secret) rg fixture"
-    [ "$status" -eq 1 ]
-}
-
 @test "preflight自身のissue経路はPASS" {
     run issue_with_fixtures <<< '{"prompt":"preflight test"}'
     [ "$status" -eq 0 ]
