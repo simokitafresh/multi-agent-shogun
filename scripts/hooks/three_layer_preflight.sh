@@ -358,7 +358,7 @@ issue() {
     # Root cause fix: rg fs-walk on 9P (/mnt/c) times out under IO saturation
     # (6 ninjas concurrent). git grep uses git's in-memory index, bypassing
     # 9P filesystem walk entirely. Fallback to rg only if .git is absent.
-    if is_git_checkout && [[ -x "$ROOT/scripts/lib/causal_index.sh" ]]; then
+    if is_git_checkout && [[ -f "$ROOT/scripts/lib/causal_index.sh" ]]; then
         obsidian_result="$(mktemp "$EVIDENCE_DIR/.obsidian-result.XXXXXX")"
         ( obsidian_cached_search "$obsidian_query" "$obsidian_timeout" "$obsidian_result" >/dev/null 2>&1 ) &
         obsidian_pid=$!

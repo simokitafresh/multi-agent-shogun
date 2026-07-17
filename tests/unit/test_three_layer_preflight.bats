@@ -217,7 +217,8 @@ JSON
     printf 'gitdir: /tmp/fixture-worktree.git\n' > "$tmp_root/.git"
     printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/bin/git"
     printf '#!/usr/bin/env bash\nexit 1\n' > "$tmp_root/scripts/lib/causal_index.sh"
-    chmod +x "$tmp_root/bin/git" "$tmp_root/scripts/lib/causal_index.sh"
+    chmod +x "$tmp_root/bin/git"
+    chmod 0644 "$tmp_root/scripts/lib/causal_index.sh"
     run env PATH="$tmp_root/bin:$PATH" MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" \
         THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" \
         THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" \
