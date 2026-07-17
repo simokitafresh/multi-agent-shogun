@@ -423,12 +423,13 @@ lessons:
   detail: |
     bulletin_write.shに既にinbox通知機能があったのに確認せず「読む側の強制がない」と提案した。
     想像するな確認せよ原則の再適用。GP提案前にgrep/Readで既存実装を現物確認。
+    吸収(2026-07-17, cmd_reflux_promotion_202607170901_kotaro, origin: [[cmd_reflux_promotion_202607170901_kotaro]] -> [[LG033]] -> [[q11_existing_alternative_Level4_BLOCK]]): LG023/LG032と同根であることを一次確認。scripts/cmd_save.sh Q11は新規gate/hook起票時にq11_not_already_doneへ既存代替のgrep/rg現物確認を要求し、未記入なら保存をBLOCKする。tests/unit/test_cmd_save.bats Check1-5が根拠なしBLOCKと根拠ありCLEARを回帰保証するため、LG033を既存Level4防御へ統合し、新規hookは追加しない。
   source_cmd: GP-208
   origin: '[[GP-208]]'
   created_at: '2026-04-17'
   automated: true
-  enforcement_level: 2
-  enforcement: GP提案前に既存実装grep確認をgunshi.md SGプロトコルに追加
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK): cmd_save.sh Q11が新規gate/hook起票時に既存代替のgrep/rg現物確認を必須化し、未記入ならcmd保存を停止する。LG023/LG032の既存防御へ統合し、新規強制機構は作らない"
   when: GP提案やエラー報告で仕組みがないと結論しようとした時
   how: grep/Readで既存実装を現物確認してから結論。確認前の不在断定禁止
 - id: LG034
