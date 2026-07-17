@@ -209,37 +209,78 @@ report_path="${CAMPAIGN_LANE_REPORT_PATH:-$output_dir/report.yaml}"
 cp "$ROOT/templates/campaign_lane_shard_task.yaml" "$task_path" || fail task_template_copy_failed
 field_set="$ROOT/scripts/lib/yaml_field_set.sh"
 task_key="campaign_lane_${item_id}_attempt_${attempt}"
-bash "$field_set" "$task_path" task task_id "$task_key" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task _ac_task_id "$task_key" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task parent_cmd "$task_key" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task cmd_id "$task_key" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task task_type full || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task project infra || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task assigned_to "$worker_id" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task status assigned || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task purpose "campaign lane shard ${item_id}を隔離workdir内の固有ownershipだけで完結する" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task description "${workdir}内だけを編集・commitし、owned path外diff 0を確認する。owned_paths_json/read_only_paths_jsonはcanonical JSON listとしてparseする。報告operational_simulation.actualへ厳密形式 TOTAL=N FAIL=0 SKIP=0、resultへPASSを記録する" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task target_path "$workdir/$item_path" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task owned_paths_json "$owned_abs_json" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task contract_fingerprint "$expected_fingerprint" || fail task_yaml_write_failed
 read_only_json="$(ITEM_CONTRACT_JSON="$item_contract_json" python3 -c 'import json,os; print(json.dumps(json.loads(os.environ["ITEM_CONTRACT_JSON"])["read_only"], separators=(",",":")))')"
 test_command="$(ITEM_CONTRACT_JSON="$item_contract_json" python3 -c 'import json,os; print(json.loads(os.environ["ITEM_CONTRACT_JSON"])["test_command"])')"
-bash "$field_set" "$task_path" task read_only_paths_json "$read_only_json" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task test_command "$test_command" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task implementation_path "$workdir/$item_path" || fail task_yaml_write_failed
 test_path="$(OWNED_ABS_JSON="$owned_abs_json" ITEM_ABS="$workdir/$item_path" python3 - <<'PY'
 import json, os
 print(next(path for path in json.loads(os.environ["OWNED_ABS_JSON"]) if path != os.path.abspath(os.environ["ITEM_ABS"])))
 PY
 )" || fail invalid_owned_paths
-bash "$field_set" "$task_path" task test_path "$test_path" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task workdir "$workdir" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task fixed_sha "$FIXED_SHA" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task report_path "$report_path" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task report_filename "$(basename "$report_path")" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task estimated_minutes 10 || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task campaign_attempt "$attempt" || fail task_yaml_write_failed
-bash "$field_set" "$task_path" task canonical_root "${SHOGUN_ROOT:-$ROOT}" || fail task_yaml_write_failed
+# One lock/parse/atomic replace for the generated task.  The former 19 CLI
+# invocations dominated the 28-case fixture and multiplied YAML subprocesses.
+if ! source "$field_set"; then
+    fail task_yaml_write_failed
+fi
+# yaml_field_set_batch's generic verifier starts one YAML parser per field.
+# This task has a fixed schema, so defer those scalar checks and verify the
+# complete generated task in one parse immediately after the atomic write.
+_yaml_field_set_verify_parsed() { return 0; }
+if ! yaml_field_set_batch "$task_path" task \
+    "task_id=$task_key" \
+    "_ac_task_id=$task_key" \
+    "parent_cmd=$task_key" \
+    "cmd_id=$task_key" \
+    "task_type=full" \
+    "project=infra" \
+    "assigned_to=$worker_id" \
+    "status=assigned" \
+    "purpose=campaign lane shard ${item_id}を隔離workdir内の固有ownershipだけで完結する" \
+    "description=${workdir}内だけを編集・commitし、owned path外diff 0を確認する。owned_paths_json/read_only_paths_jsonはcanonical JSON listとしてparseする。報告operational_simulation.actualへ厳密形式 TOTAL=N FAIL=0 SKIP=0、resultへPASSを記録する" \
+    "target_path=$workdir/$item_path" \
+    "owned_paths_json=$owned_abs_json" \
+    "contract_fingerprint=$expected_fingerprint" \
+    "read_only_paths_json=$read_only_json" \
+    "test_command=$test_command" \
+    "implementation_path=$workdir/$item_path" \
+    "test_path=$test_path" \
+    "workdir=$workdir" \
+    "fixed_sha=$FIXED_SHA" \
+    "report_path=$report_path" \
+    "report_filename=$(basename "$report_path")" \
+    "estimated_minutes=10" \
+    "campaign_attempt=$attempt" \
+    "canonical_root=${SHOGUN_ROOT:-$ROOT}"
+then
+    fail task_yaml_write_failed
+fi
+if ! TASK_PATH="$task_path" TASK_KEY="$task_key" WORKER_ID="$worker_id" \
+    WORKDIR="$workdir" ITEM_PATH="$item_path" OWNED_JSON="$owned_abs_json" \
+    FINGERPRINT="$expected_fingerprint" READ_ONLY_JSON="$read_only_json" \
+    TEST_COMMAND="$test_command" TEST_PATH="$test_path" FIXED_SHA_ENV="$FIXED_SHA" \
+    REPORT_PATH_ENV="$report_path" ATTEMPT_ENV="$attempt" CANONICAL_ROOT="${SHOGUN_ROOT:-$ROOT}" \
+    python3 - <<'PY'
+import json, os, yaml
+t = (yaml.safe_load(open(os.environ["TASK_PATH"], encoding="utf-8")) or {}).get("task") or {}
+key = os.environ["TASK_KEY"]
+expected = {
+    "task_id": key, "_ac_task_id": key, "parent_cmd": key, "cmd_id": key,
+    "task_type": "full", "project": "infra", "assigned_to": os.environ["WORKER_ID"],
+    "status": "assigned", "target_path": os.path.join(os.environ["WORKDIR"], os.environ["ITEM_PATH"]),
+    "owned_paths_json": os.environ["OWNED_JSON"], "contract_fingerprint": os.environ["FINGERPRINT"],
+    "read_only_paths_json": os.environ["READ_ONLY_JSON"], "test_command": os.environ["TEST_COMMAND"],
+    "implementation_path": os.path.join(os.environ["WORKDIR"], os.environ["ITEM_PATH"]),
+    "test_path": os.environ["TEST_PATH"], "workdir": os.environ["WORKDIR"],
+    "fixed_sha": os.environ["FIXED_SHA_ENV"], "report_path": os.environ["REPORT_PATH_ENV"],
+    "report_filename": os.path.basename(os.environ["REPORT_PATH_ENV"]),
+    "estimated_minutes": 10, "campaign_attempt": int(os.environ["ATTEMPT_ENV"]),
+    "canonical_root": os.environ["CANONICAL_ROOT"],
+}
+if any(t.get(field) != value for field, value in expected.items()):
+    raise SystemExit(1)
+PY
+then
+    fail task_yaml_write_failed
+fi
 
 deploy_cmd="${CAMPAIGN_LANE_DEPLOY_CMD:-bash $ROOT/scripts/deploy_task.sh --direct --yaml}"
 stage_start deploy

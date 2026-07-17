@@ -1,19 +1,29 @@
 #!/usr/bin/env bats
 
+setup_file() {
+  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  SHARED_SOURCE="$BATS_FILE_TMPDIR/source-fixture"
+  mkdir -p "$SHARED_SOURCE/skills/campaign-lane/scripts" "$SHARED_SOURCE/tests/unit"
+  git init -q "$SHARED_SOURCE"
+  git -C "$SHARED_SOURCE" config user.email test@example.invalid
+  git -C "$SHARED_SOURCE" config user.name test
+  printf base >"$SHARED_SOURCE/skills/campaign-lane/base"
+  : >"$SHARED_SOURCE/tests/unit/.keep"
+  cp "$ROOT/skills/campaign-lane/scripts/"{__init__.py,contracts.py,adapter_sdk.py,outcome_ledger.py} "$SHARED_SOURCE/skills/campaign-lane/scripts/"
+  git -C "$SHARED_SOURCE" add skills/campaign-lane/base skills/campaign-lane/scripts tests/unit/.keep
+  git -C "$SHARED_SOURCE" commit -qm fixture
+}
+
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   TMPROOT="$BATS_TEST_TMPDIR/case"
   mkdir -p "$TMPROOT/bin" "$TMPROOT/out"
   SOURCE="$TMPROOT/source"
-  mkdir -p "$SOURCE/skills/campaign-lane/scripts" "$SOURCE/tests/unit"
-  git init -q "$SOURCE"
+  git clone -q --shared "$BATS_FILE_TMPDIR/source-fixture" "$SOURCE"
   git -C "$SOURCE" config user.email test@example.invalid
   git -C "$SOURCE" config user.name test
-  printf base >"$SOURCE/skills/campaign-lane/base"
-  cp "$ROOT/skills/campaign-lane/scripts/"{__init__.py,contracts.py,adapter_sdk.py,outcome_ledger.py} "$SOURCE/skills/campaign-lane/scripts/"
-  git -C "$SOURCE" add skills/campaign-lane/base skills/campaign-lane/scripts
-  git -C "$SOURCE" commit -qm fixture
   FIXED_SHA="$(git -C "$SOURCE" rev-parse HEAD)"
+  export CAMPAIGN_LANE_CHECKOUT_ROOT="$TMPROOT/scratch"
 }
 
 make_deployer() {
