@@ -1,29 +1,29 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-18 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-18T01:56:57+09:00 -->
+<!-- generated_at: 2026-07-18T03:10:19+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-18T01:56:56+09:00 | terminal | response | 確認済み。CI fix promotion draft(影丸)。report到着待ち。idle待機。
-- 2026-07-18T01:56:52+09:00 | ntfy | outbound | 【家老】cmd_karo_ci_fix_29596291657_existing_promotion_fix_202607180154 初回配備開始 (title=(untitled), ninja=kagemaru)
-- 2026-07-18T01:56:40+09:00 | terminal | inbound | <task-notification> <task-id>bje2e20oc</task-id> <tool-use-id>toolu_016DXpVLRxgBgFbh5sruJKhB</tool-use-id> <output-file…
-- 2026-07-18T01:55:21+09:00 | terminal | response | inbox 0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-18T01:52:44+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
-- 2026-07-18T01:52:13+09:00 | terminal | response | inbox 0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-18T01:51:51+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
-- 2026-07-18T01:50:30+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
-- 2026-07-18T01:49:22+09:00 | terminal | inbound | いま長時間かかったのはなぜだ？調査して家老にインフ ラバグの疑いとして報告せよ
-- 2026-07-18T01:49:06+09:00 | terminal | response | 確認済み。家老の一次報告はインフラバグ疑い濃厚と判断(scope commit 75%がgit_commit、wrapper 56秒+lock 57秒)。飛猿のgate FAILは忍者自力修正待ち(消火禁止)。idle待機。 [meta]…
+- 2026-07-18T03:10:18+09:00 | terminal | response | hayate/kotaro異常は家老が把握+対処済み(才蔵差替/小太郎配備)。ninja_monitor自動/clear待ち。 [MEM: obsidian link=[[LS-A11]]→[[忍者状態管理=家老の責務]]→[[将軍介入不…
+- 2026-07-18T03:09:43+09:00 | terminal | response | 確認済み。小太郎draft配備済み+startup先送り一次処置bulletin。idle待機。
+- 2026-07-18T03:09:20+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_skill_refs_freshness_batch_202607180308 初回配備開始 (title=(untitled), ninja=kotaro)
+- 2026-07-18T03:08:58+09:00 | terminal | response | hayate failed(家老が才蔵へ差替配備済み blt_025922)、kotaro idle(家老が把握済み blt_025045)。両方ninja_monitorの自動/clear対象。家老の管轄。 [MEM: obsidian…
+- 2026-07-18T03:08:29+09:00 | terminal | response | inbox 0件。idle待機。
+- 2026-07-18T03:07:20+09:00 | terminal | response | hayate: CTX 21%で稼働中(idle promptではない)。kotaro: CTX 0% idle。両方とも家老が管理しており、ninja_monitorが自動検知する。 [MEM: obsidian link=[[ninj…
+- 2026-07-18T03:07:05+09:00 | terminal | response | 確認済み。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-18T03:06:52+09:00 | ntfy | outbound | 【gunshi】cmd_reflux_promotion_202607180305_hanzo 初回配備開始 (title=(untitled), ninja=hanzo)
+- 2026-07-18T03:03:57+09:00 | terminal | response | 処理完了。inbox 0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-18T03:03:04+09:00 | terminal | response | inbox 0件。idle待機。
 
 ## 未解決確認事項
-- 確認済み。CI fix promotion draft(影丸)。report到着待ち。idle待機。
-- 確認済み。家老の一次報告はインフラバグ疑い濃厚と判断(scope commit 75%がgit_commit、wrapper 56秒+lock 57秒)。飛猿のgate FAILは忍者自力修正待ち(消火禁止)。idle待機。 [meta] stop_reason=end_turn
-- 2件確認済み。才蔵=cmd_save detector FP修正(1/2→0)、小太郎=単一Bats誤分類除去。両方in_progress、report到着待ち。idle待機。 [meta] stop_reason=end_turn
-- 殿、調査完了。家老に報告済み。 **結論**: セッション50分の根因は**tool call数×LLM推論時間**。 | ボトルネック | tool calls | 壁時計 | 改善案 | |------------|-----------|--------|--------…
-- inbox1受信。確認する。
-- 殿、完了しました。 **今セッションの環境埋め込み(強くてニューゲーム)**: 1. **記憶DB 3件**: 性能計測レビュー教訓(knowledge:69a5c483)、preflight復旧手順(knowledge:71bfe40e)、重複配備検出パターン(knowled…
-- insightキュー0件。全resolve完了。 **自走D0サイクル全成果:** 1. **LS092 Level4実装** — check_tier1_exception_warn (2/2 PASS, commit db8a6fb2e pushed) 2. **lesso…
-- 掲示板確認完了。家老の長時間化一次調査: 9p I/O飽和+重量admission分類漏れ(単一Bats=light固定、CoDD AI生成がadmission外)。 殿の質問「三層記憶preflightは順調か？」に回答: 今セッションの三層preflight状況: - **…
+- 確認済み。小太郎draft配備済み+startup先送り一次処置bulletin。idle待機。
+- 確認済み。idle待機。 [meta] stop_reason=end_turn
+- 確認。疾風startup timing 2回STALL→才蔵へ差し替え。idle待機。 [meta] stop_reason=end_turn
+- 確認済み。yaml.dump gate違反3件(gunshi_log_append 2件 + report_field_set 1件)のCI fix。影丸に配備済み。report到着待ち。idle待機。 [meta] stop_reason=end_turn
+- 確認。L901昇格のmetadata同期はlesson_write.sh atomic promote writerで半蔵に配備済み。idle待機。 [meta] stop_reason=end_turn
+- kotaro idle(CTX 0%)。task failed状態。家老が自動検知して再配備するはずだが、capture-paneで確認済みの事実を記録。ninja_monitorが自動対処する。 [MEM: memory_db ts=2026-07-18 "kotaro ta…
+- 確認済み。idle待機。
+- CI修正push済み(run 29600665514 queued)。GREEN確認後にunpushed 9件を一括push可能。 [MEM: memory_db ts=2026-07-18 "CI再RED run 29599104619 memory_db_context期待…
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
