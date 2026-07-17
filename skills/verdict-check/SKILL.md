@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
+<!-- 2026-07-18検分: gate_report_format.sh 7c2a802eはfingerprint reuse追加。不一致full gate、verdict/未記入BLOCK契約不変。 -->
 <!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
 <!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: gate_report_format.sh 7526e7a51はroot解決subshell回避のhot-path内部最適化。binary_checks全yes/noからのverdict自動導出・未記入BLOCK・report path引数契約は不変。 -->
 name: verdict-check
@@ -127,6 +129,9 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+
+- 2026-07-17: gate=gate_report_format result=FAIL executor=kotaro reason=LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須; status: \"revision_requested\" cannot carry terminal verdict PASS (set status to completed after revisions)
+- 2026-07-17: gate=gate_report_format result=FAIL executor=kotaro reason=binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); LG051: gate/hook/dispatcher変更には非t...
 
 - 2026-07-17: gate=gate_report_format result=FAIL executor=hayate reason=binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; ...
 - 2026-07-16: gate=gate_report_format result=FAIL executor=kagemaru reason=binary_checks: empty dict (must have at least one AC entry); status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or ...

@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
+<!-- 2026-07-18検分: run_tests.sh ad583f31はparallel cooperative fail-fast化。mode/選択は不変、失敗後の未投入queueを閉じ、投入済みlightのみ完走する。 -->
 <!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
 <!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: run_tests.sh f24b0747bはcached queue枯渇時処理、test_select.sh 68bda0869/fa403eb51はreport contract selector共通化。mode引数・test選択・終了status契約は不変。 -->
 name: codd-refactor

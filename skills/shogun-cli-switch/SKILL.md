@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
+<!-- 2026-07-18検分: ninja_monitor.sh 4a122414/68847eb9/1be952b4はreflux ledgerをevent-driven化+legacy一回reconcile。CLI切替/respawn契約不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
 <!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: ninja_monitor.sh 348d1df9c/2a09dc71c/e9a172bad/432d78e71c/7b5a87837をgit showで確認。reflux/speed配備のidle・estimated_minutes・rollback/QUALITY_CONTRACT修正と重複source削除であり、CLI切替、settings→tmux同期、dead/idle pane respawn-pane -k、cli_launch_cmd契約は不変。本文変更不要。 -->
 name: shogun-cli-switch

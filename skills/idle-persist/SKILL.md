@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
+<!-- 2026-07-18検分: inbox_write.sh 62d7fd20は同一from/content未読pendingをflock内抑止しexit 0。位置引数不変。 -->
 name: idle-persist
 argument-hint: "[topic] [summary]"
 user-invocable: false

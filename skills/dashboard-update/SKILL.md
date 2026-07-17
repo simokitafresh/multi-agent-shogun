@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
+<!-- 2026-07-18検分: gate_report_format.sh 7c2a802eはfingerprint reuse追加。不一致はfull gate、既存判定契約不変。 -->
 <!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
 <!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: dashboard_update.shはHEAD差分なし(mtimeのみ)、gate_report_format.sh 7526e7a51はroot解決subshell回避のhot-path内部最適化。dashboard生成/検証の呼出契約は不変。 -->
 name: dashboard-update

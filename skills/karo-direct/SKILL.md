@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
+<!-- 2026-07-18検分: deploy_task.sh 30748a92/1c69c22eはwave cache+構造化commit_contract追加。CLI不変、免除判定fail-closed強化。 -->
 <!-- script_refs_checked_at: 2026-07-17T18:23:00+09:00 -->
 <!-- 2026-07-17 cmd_karo_hotfix_skill_refs_202607171819検分: deploy_task.sh 06cd5ddf1はtarget_pathをYAML型のまま解釈し、git HEAD存在証跡(target_path_git_preflight)と未追跡警告をtaskへ事前注入するLevel5強化。--direct/--yaml引数、重複guard、task公開、inbox通知契約は不変。 -->
 <!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: deploy_task.sh 14e62013d/630386f4d/242df2ee4/fff17f591/a9cf189d6はlesson注入Level5、telemetry/read batch/delivery detach、opsim contract強化。karo_direct配備引数・重複guard回避契約は不変。 -->

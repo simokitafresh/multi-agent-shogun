@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
+<!-- 2026-07-18検分: ninja_scope_commit.sh ef9c8849/22a14d07/ea11789a/b3716c04はignored owned path/retry/terminal index整合追加。CLI不変、残差はfail-closed。report_field_set batchとも整合。 -->
 <!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
 <!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: ninja_scope_commit.sh 0919291b7/3d7a74505/138332265はprivate index競合保護とlive task YAML分離、report_field_set.sh ab05776afは非terminal status scan省略。scope限定commit CLI・report commit_hash記録契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T23:53:10+0900

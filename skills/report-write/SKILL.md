@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
+<!-- 2026-07-18検分: report_field_set.sh 7c2a802e/cebb4ba2は--batch追加。1 flock+atomic replace、bc/terminal/commitをfail-closed検証。従来field CLI不変。 -->
 <!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
 <!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: report_field_set.sh ab05776afは非terminal status書込み時の冗長status再読込を省略。terminal normalization、field CLI、型検証、verdict自動導出契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-15T11:38:00+09:00 -->
@@ -184,6 +186,11 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+
+- 2026-07-17: gate=gate_report_format result=FAIL executor=hayate reason=variation_checks: required cells unfilled: normal_pass, quoted_or_heredoc, linked_worktree, parallel_or_respawn, abnormal_exit; LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須
+- 2026-07-17: gate=gate_report_format result=FAIL executor=hanzo reason=LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須
+
+- 2026-07-17: gate=gate_report_format result=FAIL executor=hanzo reason=operational_simulation.result: must be PASS or FAIL
 - 2026-07-17: gate=gate_report_format result=FAIL executor=kotaro reason=memory_references[1]: missing \"id\" field; memory_references[1]: missing \"source\" field; memory_references[1]: missing \"query\" field; memory_references[1]: missing \"used\"...
 
 - 2026-07-16: gate=gate_report_format result=FAIL executor=hanzo reason=timestamp: completed/revision_requested report requires a parseable ISO timestamp; operational_simulation: MISSING (command,expected,actual,result; integration cmd requires comm...
