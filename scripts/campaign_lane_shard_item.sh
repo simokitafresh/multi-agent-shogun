@@ -126,6 +126,12 @@ then
     retry_failed=1
 fi
 
+# A retry may be launched with the failed workdir as the coordinator's cwd.
+# Quarantining that directory while it is our cwd leaves later Python imports
+# attached to the renamed DrvFs inode (Errno 95).  Move control execution to
+# the immutable coordinator root before materialize can rename the workdir.
+cd "$ROOT" || fail coordinator_cwd_unavailable
+
 # universal_shard creates workdir beforehand. materialize accepts an existing empty dir.
 if ! CAMPAIGN_ROOT="$ROOT" CAMPAIGN_SOURCE="$SOURCE_REPO" CAMPAIGN_WORKDIR="$workdir" CAMPAIGN_SHA="$FIXED_SHA" CAMPAIGN_RETRY_FAILED="$retry_failed" python3 - <<'PY'
 import os, sys

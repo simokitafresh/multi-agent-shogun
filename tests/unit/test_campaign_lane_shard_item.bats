@@ -223,6 +223,19 @@ PY
   reason_is report_terminal_pass
 }
 
+@test "retry launched from failed workdir detaches cwd before quarantine" {
+  make_deployer pass
+  mkdir -p "$TMPROOT/out" "$TMPROOT/work"
+  printf '{"status":"fail","reason_code":"source_materialize_failed"}\n' > "$TMPROOT/out/result.json"
+  item_json="$(base_item_json)"
+
+  run bash -c "cd '$TMPROOT/work' && exec env SHARD_ITEM_JSON='$item_json' CAMPAIGN_LANE_FIXED_SHA='$FIXED_SHA' CAMPAIGN_LANE_SOURCE_REPO='$SOURCE' CAMPAIGN_LANE_DEPLOY_CMD='$TMPROOT/bin/deploy' CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 '$ROOT/scripts/campaign_lane_shard_item.sh' item skills/campaign-lane/adapters/new.py worker '$TMPROOT/work' '$TMPROOT/out'"
+
+  [ "$status" -eq 0 ]
+  [ -L "$TMPROOT/work" ]
+  reason_is report_terminal_pass
+}
+
 @test "invalid missing parent path fails before deploy" {
   make_deployer pass
   run env SHARD_ITEM_JSON="$(base_item_json missing/path/new.py)" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
