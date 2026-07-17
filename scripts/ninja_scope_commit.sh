@@ -10,7 +10,25 @@ set -euo pipefail
 # (BASH_SOURCEが相対pathの場合、後のcdでPWD基準の解決が狂うため)。
 _ninja_scope_commit_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_ninja_scope_commit_self" = /* ]] || _ninja_scope_commit_self="$PWD/$_ninja_scope_commit_self"
-NINJA_SCOPE_COMMIT_SCRIPT_DIR="$(cd "$(dirname "$_ninja_scope_commit_self")" && pwd)"
+if [[ -z "${NINJA_SCOPE_COMMIT_SNAPSHOT_ACTIVE:-}" ]]; then
+    _ninja_scope_commit_original_dir="$(cd "$(dirname "$_ninja_scope_commit_self")" && pwd)"
+    _ninja_scope_commit_snapshot="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-commit.XXXXXX")"
+    cp -- "$_ninja_scope_commit_self" "$_ninja_scope_commit_snapshot"
+    chmod 700 "$_ninja_scope_commit_snapshot"
+    exec env \
+        NINJA_SCOPE_COMMIT_SNAPSHOT_ACTIVE=1 \
+        NINJA_SCOPE_COMMIT_ORIGINAL_DIR="$_ninja_scope_commit_original_dir" \
+        NINJA_SCOPE_COMMIT_SNAPSHOT_PATH="$_ninja_scope_commit_snapshot" \
+        bash "$_ninja_scope_commit_snapshot" "$@"
+fi
+NINJA_SCOPE_COMMIT_SCRIPT_DIR="${NINJA_SCOPE_COMMIT_ORIGINAL_DIR:?snapshot original directory missing}"
+# The child shell already has the immutable file open.  Unlink its pathname so
+# every exit path, including signals and fail-closed guards, leaves no temp
+# artifact while the current process continues reading the same inode.
+rm -f -- "${NINJA_SCOPE_COMMIT_SNAPSHOT_PATH:?snapshot path missing}"
+if [[ -n "${NINJA_SCOPE_COMMIT_TEST_AFTER_SNAPSHOT_DELAY:-}" ]]; then
+    sleep "$NINJA_SCOPE_COMMIT_TEST_AFTER_SNAPSHOT_DELAY"
+fi
 unset _ninja_scope_commit_self
 
 usage() {
@@ -321,9 +339,13 @@ if [[ -n "$patch_file" ]]; then
     trap cleanup_patch_index EXIT
     export GIT_INDEX_FILE="$temp_index"
     git read-tree HEAD
+    finish_phase 0
+    begin_phase add
     git apply --cached --check -- "$patch_file" \
         || { echo "BLOCK: patch does not apply cleanly to the declared base" >&2; exit 2; }
     git apply --cached -- "$patch_file"
+    finish_phase 0
+    begin_phase scope_sync
     [[ -n "$(git diff --cached --name-only)" ]] \
         || { echo "BLOCK: patch produced an empty index diff" >&2; exit 2; }
     [[ "$(git diff --cached --name-only)" == "$scope_path" ]] \
@@ -371,12 +393,22 @@ if not expected or expected != actual:
     print(f'actual changes={actual!r}', file=sys.stderr)
     raise SystemExit(1)
 PY
+    finish_phase 0
+    begin_phase guard
+    # Patch validation above is the patch-mode guard boundary.  Keep an
+    # explicit zero/near-zero phase so both modes publish one identical schema.
+    finish_phase 0
+    begin_phase git_commit
     git commit -m "$message" >&2
     commit_hash="$(git rev-parse HEAD)"
     # HEAD更新後、共有indexの対象pathだけを新HEADへ追随させる。他pathのstageは
     # 一切変更せず、対象pathが旧HEAD由来の逆差分として残るindex汚染を防ぐ。
+    finish_phase 0
+    begin_phase advance_shared_index
     unset GIT_INDEX_FILE
     advance_shared_index_entry "$scope_path" "$shared_index_entry_before"
+    finish_phase 0
+    begin_phase post_check
     cleanup_patch_index
     trap - EXIT
     [[ ! -e "$shared_index_lock" ]] \

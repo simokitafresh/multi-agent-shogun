@@ -120,6 +120,49 @@ assert len(measured) == 7, measured
 PY
 }
 
+@test "patch terminal eventも7 phaseを一意に記録し誤帰属しない" {
+    make_shared_fixture; make_own_patch
+    base_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m patch-phases --patch '$REPO/own.patch' --base-blob '$base_blob' -- shared.txt"
+    [ "$status" -eq 0 ]
+    terminal="$(printf '%s\n' "$output" | grep 'event=completed' | tail -1)"
+    python3 - "$terminal" <<'PY'
+import sys
+fields = dict(item.split("=", 1) for item in sys.argv[1].split() if "=" in item)
+phases = ["read_tree", "add", "scope_sync", "guard", "git_commit", "advance_shared_index", "post_check"]
+assert all(fields.get(f"phase_{p}_rc") == "0" for p in phases), fields
+assert len([k for k in fields if k.startswith("phase_") and k.endswith("_rc")]) == 7, fields
+assert sum(int(fields[f"phase_{p}_ms"]) for p in phases) == int(fields["phase_total_ms"])
+assert abs(int(fields["phase_unattributed_ms"])) <= 200, fields
+assert int(fields["telemetry_overhead_ms"]) <= 50, fields
+PY
+}
+
+@test "実行中helper本体の書換え後も起動時snapshotでcommitとshared indexを完遂する" {
+    printf 'before\n' > "$REPO/self-mutation.txt"
+    git -C "$REPO" add self-mutation.txt
+    git -C "$REPO" commit -qm base-self-mutation
+    printf 'after\n' > "$REPO/self-mutation.txt"
+    mkdir -p "$REPO/helper/scripts/lib"
+    helper_copy="$REPO/helper/scripts/ninja_scope_commit.sh"
+    cp "$HELPER" "$helper_copy"
+    cp "$(dirname "$HELPER")/lib/lock_path.sh" "$REPO/helper/scripts/lib/"
+    cp "$(dirname "$HELPER")/lib/scope_path.sh" "$REPO/helper/scripts/lib/"
+    cp "$(dirname "$HELPER")/lib/report_commit_nonoverlap_filter.sh" "$REPO/helper/scripts/lib/"
+
+    ( sleep 0.2; printf '\nexit 2 # injected after immutable snapshot\n' >> "$helper_copy" ) &
+    mutator_pid=$!
+    run bash -c "cd '$REPO' && NINJA_SCOPE_COMMIT_TEST_AFTER_SNAPSHOT_DELAY=0.5 bash '$helper_copy' -m self-snapshot -- self-mutation.txt"
+    run_status="$status"
+    wait "$mutator_pid" || true
+
+    [ "$run_status" -eq 0 ]
+    [ "$(git -C "$REPO" show HEAD:self-mutation.txt)" = "after" ]
+    [ -z "$(git -C "$REPO" status --porcelain -- self-mutation.txt)" ]
+    [[ "$output" == *"event=completed"* ]]
+}
+
 @test "normal modeは専用indexから対象だけcommitしforeign stageをblob不変で保持する" {
     printf 'foreign staged\n' >> "$REPO/other.txt"
     git -C "$REPO" add other.txt
