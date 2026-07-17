@@ -160,6 +160,28 @@ _run_check() {
     [[ "$output" == *"WARN_COUNT=0"* ]]
 }
 
+@test "cmd_4006回帰: scoped descriptionの派生binary_checkだけを再判定しない" {
+    _set_cmd_block_nc "    acceptance_criteria:
+      AC1:
+        description: '変更対象の関連テスト(tests/unit/test_gate_improvement_trigger.bats)がFAIL 0, SKIP 0でPASSする'
+        binary_check: 'test_gate_improvement_trigger.bats FAIL 0 SKIP 0 + regression test 2件PASSか'"
+    _run_check
+    echo "$output" >&2
+    [[ "$output" != *"WARN: ACにスコープ未指定のテスト全件条件を検出"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
+@test "境界: binary_checkが広くても主descriptionにテスト条件がなければ派生要約としてWARNしない" {
+    _set_cmd_block_nc "    acceptance_criteria:
+      AC1:
+        description: '修正を実装する'
+        binary_check: '全テストPASSか'"
+    _run_check
+    echo "$output" >&2
+    [[ "$output" != *"WARN: ACにスコープ未指定のテスト全件条件を検出"* ]]
+    [[ "$output" == *"WARN_COUNT=0"* ]]
+}
+
 @test "テスト条件を含まないACはWARNしない" {
     _set_cmd_block_nc "    acceptance_criteria:
     - id: AC1
