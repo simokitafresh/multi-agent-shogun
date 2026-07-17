@@ -79,6 +79,26 @@ run_hook() {
     grep -q 'cat "\$_BATS_OUTPUT_FILE" >&2' "$SOURCE_HOOK"
 }
 
+@test "pre-push clears hook git environment before nested fixture repositories" {
+    mkdir -p "$TEST_ROOT/fixture" "$TEST_ROOT/scripts/gates"
+    git -C "$TEST_ROOT/fixture" init -q
+    cat > "$TEST_ROOT/scripts/gates/gate_no_hardcoded_ninja_list.sh" <<'MOCK'
+#!/usr/bin/env bash
+[ -z "${GIT_DIR:-}" ]
+[ -z "${GIT_WORK_TREE:-}" ]
+[ "$(git -C "$TEST_ROOT/fixture" rev-parse --show-toplevel)" = "$TEST_ROOT/fixture" ]
+MOCK
+    chmod +x "$TEST_ROOT/scripts/gates/gate_no_hardcoded_ninja_list.sh"
+
+    run env TEST_ROOT="$TEST_ROOT" PATH="$TEST_ROOT/mock_bin:$PATH" \
+        GIT_DIR="$TEST_ROOT/.git" GIT_WORK_TREE="$TEST_ROOT" \
+        bash -lc 'cd "$TEST_ROOT" && bash "$TEST_ROOT/.githooks/pre-push"'
+
+    [ "$status" -eq 0 ]
+    grep -q 'git rev-parse --show-toplevel' "$SOURCE_HOOK"
+    grep -q 'git rev-parse --local-env-vars' "$SOURCE_HOOK"
+}
+
 @test "pre-push still blocks bare force pushes" {
     run env TEST_ROOT="$TEST_ROOT" PATH="$TEST_ROOT/mock_bin:$PATH" \
         "$TEST_ROOT/run_hook.sh" --force
