@@ -210,6 +210,24 @@ JSON
     [ -s "$EVIDENCE" ]
 }
 
+@test "linked worktreeの.git fileでもGit checkout経路を使う" {
+    local tmp_root="$TMP_EVIDENCE/linked-worktree" evidence_dir="$TMP_EVIDENCE/linked-evidence"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/bin"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    printf 'gitdir: /tmp/fixture-worktree.git\n' > "$tmp_root/.git"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/bin/git"
+    printf '#!/usr/bin/env bash\nexit 1\n' > "$tmp_root/scripts/lib/causal_index.sh"
+    chmod +x "$tmp_root/bin/git" "$tmp_root/scripts/lib/causal_index.sh"
+    run env PATH="$tmp_root/bin:$PATH" MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" \
+        THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" \
+        THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" \
+        THREE_LAYER_AGENT_ID="linked" TMUX_PANE="%linked" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "fixture"
+    [ "$status" -eq 0 ]
+    [ -s "$evidence_dir/evidence_linked__linked.json" ]
+}
+
 @test "同一paneの並行issueは固有tempで世代整合しverify可能" {
     local log="$TMP_EVIDENCE/parallel.log" verify_log="$TMP_EVIDENCE/verify.log"
     : > "$log"
@@ -470,6 +488,7 @@ EOF
 @test "cold TTL refresh timeoutはparse可能なstale causal cacheからmetadataを復元" {
     local tmp_root="$TMP_EVIDENCE/stale_causal"
     mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/.git"
+    git -C "$tmp_root" init -q
     cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
     printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/memory_db_query.sh"
     cp "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
@@ -510,6 +529,7 @@ PY
 @test "WAL sidecar許容でもempty immutable mainは拒否し既存refresh lockとsingle-flight" {
     local tmp_root="$TMP_EVIDENCE/wal_cache" cache="$TMP_EVIDENCE/wal_cache.db"
     mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/data" "$tmp_root/.git"
+    git -C "$tmp_root" init -q
     cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
     cp "$ROOT/scripts/lib/memory_db_cache.sh" "$tmp_root/scripts/lib/memory_db_cache.sh"
     cp "$ROOT/scripts/memory_db_live_insert.py" "$tmp_root/scripts/memory_db_live_insert.py"
@@ -553,6 +573,7 @@ PY
     local tmp_root="$TMP_EVIDENCE/fts20" cache="$TMP_EVIDENCE/fts20-cache.db"
     local evidence_dir="$TMP_EVIDENCE/fts20-evidence" boot_id
     mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/data" "$tmp_root/.git"
+    git -C "$tmp_root" init -q
     cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
     cp "$ROOT/scripts/lib/memory_db_cache.sh" "$tmp_root/scripts/lib/memory_db_cache.sh"
     cp "$ROOT/scripts/memory_db_live_insert.py" "$tmp_root/scripts/memory_db_live_insert.py"
@@ -627,6 +648,7 @@ PY
 @test "並行issueのdetached causal refreshはbuild完了までsingle-flight" {
     local tmp_root="$TMP_EVIDENCE/causal_singleflight" counter="$TMP_EVIDENCE/causal-build.count"
     mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/.git"
+    git -C "$tmp_root" init -q
     cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
     printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/memory_db_query.sh"
     cp "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"

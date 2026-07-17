@@ -31,6 +31,10 @@ json_escape() {
     printf '%s' "$value"
 }
 
+is_git_checkout() {
+    git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1
+}
+
 memory_timeout_fallback() {
     local query="$1" timeout_seconds="${2:-${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-10}}" result_file="${3:-/dev/null}"
     local db_path="${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}"
@@ -59,7 +63,7 @@ text_index_timeout_fallback() {
     # In the real checkout, git's tracked-file index gives a bounded scan of
     # the same canonical paths without repeating rg's filesystem walk on 9P.
     # Test/isolated roots without a .git directory use the portable reader.
-    if [[ -d "$ROOT/.git" ]]; then
+    if is_git_checkout; then
         local -a relative_paths=() raw_path
         for raw_path in "$@"; do
             relative_paths+=("${raw_path#"$ROOT/"}")
@@ -282,7 +286,7 @@ issue() {
     [[ -s "$causal_cache" ]] || cold_cache=1
     local source_db="${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}" memory_cache boot_id memory_cache_cold=0
     boot_id="$(cat /proc/sys/kernel/random/boot_id 2>/dev/null || printf unknown)"
-    if [[ -d "$ROOT/.git" && -f "$ROOT/scripts/memory_db_live_insert.py" ]]; then
+    if is_git_checkout && [[ -f "$ROOT/scripts/memory_db_live_insert.py" ]]; then
         memory_cache="$(resolve_memory_cache_path "$source_db")"
         memory_cache_is_healthy "$source_db" "$memory_cache" "$boot_id" || memory_cache_cold=1
         [[ "$memory_cache_cold" == 1 && "$source_db" == "$ROOT/data/multi_agent_shogun_memory.db" ]] && prewarm_memory_cache_async "$source_db" "$memory_cache" "$boot_id"
@@ -341,7 +345,7 @@ issue() {
     [[ "$memory_cache_cold" == 1 && -z "${THREE_LAYER_PRIMARY_TIMEOUT_SECONDS+x}" ]] && primary_timeout="${THREE_LAYER_COLD_CACHE_TIMEOUT_SECONDS:-7}"
     obsidian_timeout="$primary_timeout"
     [[ "$cold_cache" == 1 ]] && obsidian_timeout="${THREE_LAYER_COLD_CACHE_TIMEOUT_SECONDS:-7}"
-    if [[ -d "$ROOT/.git" && "${THREE_LAYER_BATCH_PRIMARY:-1}" == 1 ]]; then
+    if is_git_checkout && [[ "${THREE_LAYER_BATCH_PRIMARY:-1}" == 1 ]]; then
         batch_result="$(mktemp "$EVIDENCE_DIR/.batch-result.XXXXXX")"
         ( batch_index_search "$prompt" "$primary_timeout" "$batch_result" >/dev/null 2>&1 ) &
         batch_pid=$!
@@ -354,7 +358,7 @@ issue() {
     # Root cause fix: rg fs-walk on 9P (/mnt/c) times out under IO saturation
     # (6 ninjas concurrent). git grep uses git's in-memory index, bypassing
     # 9P filesystem walk entirely. Fallback to rg only if .git is absent.
-    if [[ -d "$ROOT/.git" && -x "$ROOT/scripts/lib/causal_index.sh" ]]; then
+    if is_git_checkout && [[ -x "$ROOT/scripts/lib/causal_index.sh" ]]; then
         obsidian_result="$(mktemp "$EVIDENCE_DIR/.obsidian-result.XXXXXX")"
         ( obsidian_cached_search "$obsidian_query" "$obsidian_timeout" "$obsidian_result" >/dev/null 2>&1 ) &
         obsidian_pid=$!
@@ -407,7 +411,7 @@ issue() {
         obsidian_rc=127
     fi
     [[ "$obsidian_rc" == 1 ]] && obsidian_rc=0
-    if [[ "$obsidian_rc" == 0 && "$obsidian_count" -eq 0 && ! -d "$ROOT/.git" ]]; then
+    if [[ "$obsidian_rc" == 0 && "$obsidian_count" -eq 0 ]] && ! is_git_checkout; then
         obsidian_count=1
         obsidian_used_query="$obsidian_query"
         obsidian_source="$ROOT/context/semantic-map.md"
@@ -441,7 +445,7 @@ issue() {
     # source timestamp. Portable isolated roots retain the stricter historical
     # hit requirement because their stub rc alone cannot prove a real search.
     local completion_metadata=0
-    if [[ "$source_db" == "$ROOT/data/multi_agent_shogun_memory.db" && -d "$ROOT/.git" && -n "$memory_ts" && -n "$semantic_ts" && -n "$obsidian_ts" && -n "$obsidian_source" ]]; then
+    if [[ "$source_db" == "$ROOT/data/multi_agent_shogun_memory.db" && -n "$memory_ts" && -n "$semantic_ts" && -n "$obsidian_ts" && -n "$obsidian_source" ]] && is_git_checkout; then
         completion_metadata=1
     fi
     if [[ "$memory_rc" != 0 || "$semantic_rc" != 0 || "$obsidian_rc" != 0 ]]; then
