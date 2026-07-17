@@ -99,6 +99,29 @@ commit_hook_source() {
     [ "$before_mtime" = "$after_mtime" ]
 }
 
+@test "hash fast path skips git show and temporary install when already in sync" {
+    commit_hook_source "echo v1"
+    run bash -c "cd '$TEST_ROOT' && bash '$HELPER'"
+    [ "$status" -eq 0 ]
+
+    mkdir -p "$TEST_ROOT/mockbin"
+    real_git="$(command -v git)"
+    cat > "$TEST_ROOT/mockbin/git" <<EOF
+#!/usr/bin/env bash
+if [[ "\$*" == *" show "* ]]; then
+    echo unexpected-show >&2
+    exit 97
+fi
+exec "$real_git" "\$@"
+EOF
+    chmod +x "$TEST_ROOT/mockbin/git"
+
+    run env PATH="$TEST_ROOT/mockbin:$PATH" bash -c "cd '$TEST_ROOT' && bash '$HELPER'"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"unexpected-show"* ]]
+    [[ "$output" != *"SYNCED"* ]]
+}
+
 @test "no-ops safely when this repo does not use the scripts/hooks/ convention" {
     # No scripts/hooks/ directory tracked at all in HEAD.
     run bash -c "cd '$TEST_ROOT' && bash '$HELPER'"

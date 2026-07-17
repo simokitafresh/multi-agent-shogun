@@ -115,7 +115,7 @@ resolve_installed_path() {
 
 sync_one_hook() {
     local hook_name="$1" source_rel="$2"
-    local installed ref tmp
+    local installed ref tmp source_blob installed_blob
 
     if ! git -C "$repo_root" cat-file -e "HEAD:$source_rel" 2>/dev/null; then
         if uses_hook_source_convention "$source_rel"; then
@@ -132,6 +132,15 @@ sync_one_hook() {
         ref=":$source_rel"       # 今回のcommitで確定させる、まさに今stageされた内容
     else
         ref="HEAD:$source_rel"   # 他者のworking tree/staged編集を信用せず、直近commit済みの内容のみ使う
+    fi
+
+    # Hash一致時はgit show・tmp作成・cmpを一切行わない。refはHEAD/indexのgit
+    # objectだけを指すため、working treeの他者WIPを混入させないGA-222契約も維持する。
+    source_blob="$(git -C "$repo_root" rev-parse "$ref" 2>/dev/null)" \
+        || { echo "BLOCK(GA-222): failed to resolve blob $ref for $hook_name" >&2; return 1; }
+    if [[ -f "$installed" && -x "$installed" ]]; then
+        installed_blob="$(git -C "$repo_root" hash-object -- "$installed" 2>/dev/null || true)"
+        [[ -n "$installed_blob" && "$installed_blob" == "$source_blob" ]] && return 0
     fi
 
     mkdir -p "$(dirname "$installed")" 2>/dev/null || true
