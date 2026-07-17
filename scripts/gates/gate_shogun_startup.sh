@@ -35,7 +35,7 @@ run_startup_short_cache() {
             cat "$cache_file"
             rc=$(cat "$rc_file" 2>/dev/null || echo 1)
             ended_ms=$(date +%s%3N); duration_ms=$((ended_ms - started_ms))
-            [ -z "$timing_file" ] || printf '%s\t%s\t%s\t%s\n' "$check_name" "$duration_ms" "$cache_hit" "$input_hash" >> "$timing_file"
+            [ -z "$timing_file" ] || printf '%s\t%s\t%s\tcache:hit=%s,input=%s\n' "$check_name" "$duration_ms" "$rc" "$cache_hit" "$input_hash" >> "$timing_file"
             return "$rc"
         fi
     fi
@@ -51,7 +51,7 @@ run_startup_short_cache() {
     mv "${tmp}.hash" "$hash_file"
     cat "$cache_file"
     ended_ms=$(date +%s%3N); duration_ms=$((ended_ms - started_ms))
-    [ -z "$timing_file" ] || printf '%s\t%s\t%s\t%s\n' "$check_name" "$duration_ms" "$cache_hit" "$input_hash" >> "$timing_file"
+    [ -z "$timing_file" ] || printf '%s\t%s\t%s\tcache:hit=%s,input=%s\n' "$check_name" "$duration_ms" "$rc" "$cache_hit" "$input_hash" >> "$timing_file"
     return "$rc"
 }
 
@@ -232,7 +232,93 @@ shogun_startup_cache_key() {
     printf '%s' "$script_dir" | sha256sum | cut -c1-24
 }
 
-run_gate_shogun_startup() {
+# Every logical startup check is introduced by an "■" heading.  Keep the
+# timing boundary at that existing contract so newly added checks cannot be
+# silently omitted from telemetry.  The final three "■" lines are recovery
+# guidance/digest, not checks; they are deliberately excluded.
+startup_timing_is_check() {
+    case "$1" in
+        DIGEST:*|"必読: projects/infra/lessons_shogun.yaml"*|"必読: memory/deepdive_why_chain_20260321.md"*) return 1 ;;
+        *) return 0 ;;
+    esac
+}
+
+startup_timing_close_check() {
+    [ -n "${_STARTUP_TIMING_ACTIVE:-}" ] || return 0
+    local ended_ms rc=0
+    ended_ms=$(date +%s%3N)
+    if [ -n "${_STARTUP_TIMING_FORCED_RC:-}" ]; then
+        rc="$_STARTUP_TIMING_FORCED_RC"
+        _STARTUP_TIMING_FORCED_RC=""
+    elif [ "${#alerts[@]}" -gt "${_STARTUP_TIMING_BASELINE_ALERTS:-0}" ]; then
+        case "${overall:-OK}" in
+            BLOCK|ALERT) rc=2 ;;
+            *) rc=1 ;;
+        esac
+    elif [ "${overall:-OK}" != "${_STARTUP_TIMING_BASELINE:-OK}" ]; then
+        case "${overall:-OK}" in
+            BLOCK|ALERT) rc=2 ;;
+            WARN) rc=1 ;;
+        esac
+    fi
+    printf '%s\t%s\t%s\t%s\n' "$_STARTUP_TIMING_ACTIVE" \
+        "$((ended_ms - _STARTUP_TIMING_STARTED_MS))" "$rc" "section" >> "$SHOGUN_STARTUP_TIMING_FILE"
+    _STARTUP_TIMING_ACTIVE=""
+}
+
+startup_timing_begin_check() {
+    local check_name="$1"
+    startup_timing_is_check "$check_name" || return 0
+    [ "${_STARTUP_TIMING_ACTIVE:-}" != "$check_name" ] || return 0
+    startup_timing_close_check
+    _STARTUP_TIMING_ACTIVE="$check_name"
+    _STARTUP_TIMING_STARTED_MS=$(date +%s%3N)
+    _STARTUP_TIMING_BASELINE="${overall:-OK}"
+    _STARTUP_TIMING_BASELINE_ALERTS="${#alerts[@]}"
+}
+
+startup_timing_summary() {
+    local ledger="$1" total_ms="$2"
+    awk -F '\t' -v total_ms="$total_ms" '
+        NR == 1 { next }
+        $4 == "section" { count[$1]++; duration[$1]+=$2; rc[$1]=$3; measured+=$2 }
+        END {
+            unique=0; duplicate=0
+            for (name in count) { unique++; if (count[name] > 1) duplicate += count[name]-1 }
+            missing=59-unique; if (missing < 0) missing=0
+            delta=(total_ms > 0 ? ((measured-total_ms < 0 ? total_ms-measured : measured-total_ms)*100/total_ms) : 0)
+            printf "  TIMING_COVERAGE measured=%d total=59 duplicate=%d missing=%d measured_ms=%d total_ms=%d delta_pct=%.2f\n", unique, duplicate, missing, measured, total_ms, delta
+            for (name in duration) printf "%012d\t%s\t%d\n", duration[name], name, rc[name]
+        }
+    ' "$ledger" | {
+        IFS= read -r coverage || true
+        printf '%s\n' "$coverage"
+        sort -rn | head -n 5 | awk -F '\t' '{printf "  TIMING_TOP rank=%d check=%s wall_ms=%d rc=%d\n", NR,$2,$1+0,$3}'
+    }
+}
+
+startup_timing_flush_partial() {
+    [ "${_STARTUP_TIMING_FINALIZED:-0}" != "1" ] || return 0
+    startup_timing_close_check
+    local now_ms
+    now_ms=$(date +%s%3N)
+    builtin echo "■ startup check timings (partial)"
+    if [ -s "${SHOGUN_STARTUP_TIMING_FILE:-}" ]; then
+        awk -F '\t' 'NR>1 {printf "  TIMING check=%s duration_ms=%s rc=%s source=%s\n", $1,$2,$3,$4}' "$SHOGUN_STARTUP_TIMING_FILE" | sort
+        startup_timing_summary "$SHOGUN_STARTUP_TIMING_FILE" "$((now_ms - _STARTUP_GATE_STARTED_MS))"
+    else
+        echo "  TIMING unavailable"
+    fi
+    _STARTUP_TIMING_FINALIZED=1
+}
+
+startup_timing_signal_exit() {
+    _STARTUP_TIMING_FORCED_RC=124
+    startup_timing_flush_partial
+    exit 124
+}
+
+run_gate_shogun_startup() (
 local SCRIPT_DIR="${SHOGUN_STARTUP_ROOT:-}"
 if [ -z "$SCRIPT_DIR" ]; then
     local _gss_self="${BASH_SOURCE[0]}"
@@ -243,6 +329,31 @@ if [ -z "$SCRIPT_DIR" ]; then
     [ -n "$SCRIPT_DIR" ] || SCRIPT_DIR="."
 fi
 local GATE_DIR="$SCRIPT_DIR/scripts/gates"
+local _STARTUP_GATE_STARTED_MS
+_STARTUP_GATE_STARTED_MS=$(date +%s%3N)
+SHOGUN_STARTUP_TIMING_FILE="${SHOGUN_STARTUP_TIMING_FILE:-$(mktemp "${TMPDIR:-/tmp}/shogun-startup-timing.XXXXXX")}"
+export SHOGUN_STARTUP_TIMING_FILE
+printf 'check\tduration_ms\trc\tinput_hash\n' > "$SHOGUN_STARTUP_TIMING_FILE"
+local _STARTUP_TIMING_ACTIVE="" _STARTUP_TIMING_STARTED_MS=0 _STARTUP_TIMING_BASELINE="OK" _STARTUP_TIMING_BASELINE_ALERTS=0
+local _STARTUP_TIMING_FORCED_RC=""
+local _STARTUP_TIMING_FINALIZED=0
+local _STARTUP_TIMING_OWNER_BASHPID="$BASHPID"
+trap 'startup_timing_flush_partial' EXIT
+trap 'startup_timing_signal_exit' HUP INT TERM
+# Preserve all existing output and decisions.  Heading interception only adds
+# a timing boundary, so success/WARN/ALERT paths share exactly one wrapper.
+echo() {
+    if [ "$BASHPID" != "$_STARTUP_TIMING_OWNER_BASHPID" ]; then
+        builtin echo "$@"
+        return
+    fi
+    if [ "${1:-}" = "${1#■ }" ]; then
+        builtin echo "$@"
+        return
+    fi
+    startup_timing_begin_check "${1#■ }"
+    builtin echo "$@"
+}
 local LIGHT_MODE="${SHOGUN_STARTUP_LIGHTWEIGHT:-0}"
 local LIGHT_SKIP_HEAVY="${SHOGUN_STARTUP_SKIP_HEAVY_LIGHTWEIGHT:-}"
 local YAML_AUTO_ARCHIVE="$SCRIPT_DIR/scripts/yaml_auto_archive.sh"
@@ -649,10 +760,10 @@ _TMP_GATE4_YAML="$_TMP_STARTUP_DIR/gate4_yaml" _TMP_SEMANTIC_NO_MATCH="$_TMP_STA
 _TMP_SKILL_REC="$_TMP_STARTUP_DIR/skill_rec" _TMP_SKILL_USAGE="$_TMP_STARTUP_DIR/skill_usage"
 _TMP_WEEKLY_METRICS="$_TMP_STARTUP_DIR/weekly_metrics" _TMP_LOOP_LEDGER="$_TMP_STARTUP_DIR/loop_ledger"
 _TMP_ENFORCE_LEVEL="$_TMP_STARTUP_DIR/enforce_level"
-	SHOGUN_STARTUP_TIMING_FILE="${SHOGUN_STARTUP_TIMING_FILE:-$_TMP_STARTUP_DIR/check_timings.tsv}"
-	export SHOGUN_STARTUP_TIMING_FILE
-	printf 'check\tduration_ms\tcache_hit\tinput_hash\n' > "$SHOGUN_STARTUP_TIMING_FILE"
-	trap 'rm -f "$_TMP_STARTUP_DIR"/* 2>/dev/null || true; rmdir "$_TMP_STARTUP_DIR" 2>/dev/null || true' EXIT
+	# Timing ledger is initialized before the first check; do not truncate it
+	# here or the daemon/timing-health measurements disappear.
+	trap 'startup_timing_flush_partial; rm -f "$_TMP_STARTUP_DIR"/* 2>/dev/null || true; rmdir "$_TMP_STARTUP_DIR" 2>/dev/null || true' EXIT
+	trap 'startup_timing_signal_exit' HUP INT TERM
 	STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/shogun_startup_alert_history.tsv"
 	"$GATE_DIR/gate_shogun_memory.sh" > "$_TMP_G1" 2>&1 &
 	_PID_G1=$!
@@ -1019,6 +1130,7 @@ else
     alerts+=("セマンティクスインデックス鮮度: index不在")
 fi
 wait "$_PID_SEMANTIC_NO_MATCH" || true
+startup_timing_begin_check "セマンティックNO_MATCH計測"
 cat "$_TMP_SEMANTIC_NO_MATCH"
 
 # --- Gate 3: cmd委任状態 (Step 2.6) ---
@@ -1474,6 +1586,7 @@ fi
 # 結論を知っていることが追体験を殺す(2026-04-07殿指摘)。
 # 読んだだけでは不十分。各Phaseを今の自分に重ねて自問したかを検証する。
 # gateは補助。追体験が主体。追体験が正しく動けば間違いは自然に避けられる。
+startup_timing_begin_check "追体験検証モード判定"
 if [ "$LIGHT_MODE" = "1" ] && [ "$LIGHT_SKIP_HEAVY" = "1" ]; then
 echo "■ 追体験検証（CLAUDE.md Step 2.56 — 省略厳禁）"
 echo "  SKIP(lightweight)"
@@ -2544,6 +2657,7 @@ fi
 
 proposal_total=$((log_proposals))
 _d_proposals=$proposal_total
+startup_timing_begin_check "未処理PROPOSAL"
 if [ "$proposal_total" -gt 0 ]; then
     echo "■ 未処理PROPOSAL"
     gp_list_suffix=""
@@ -2602,6 +2716,7 @@ END { emit() }
             printf '%s\t%s\n' "$(( (_gp_now_epoch - _gp_epoch) / 86400 ))" "$_gp_id"
         fi
     done | sort -rn | awk 'BEGIN{count=0} {count++; rows[count]=$2 ":" $1 "日"} END{if(count){print "__TOTAL__\t" count; for(i=1;i<=count && i<=5;i++) print rows[i]}}')
+    startup_timing_begin_check "GP proposal滞留"
     if [ -n "$stale_gp" ]; then
         stale_gp_count=$(printf '%s\n' "$stale_gp" | awk -F'\t' '$1=="__TOTAL__"{print $2; found=1} END{if(!found) print 0}')
         echo "■ GP proposal滞留"
@@ -3266,6 +3381,7 @@ elif [ -n "$_scripts_status" ]; then
         esac
     done <<< "$_scripts_status"
 fi
+startup_timing_begin_check "scripts/未コミット変更"
 if [ ${#_scripts_dirty[@]} -gt 0 ]; then
     _sd_count=${#_scripts_dirty[@]}
     echo "■ scripts/未コミット変更"
@@ -4133,13 +4249,6 @@ else
     echo "  INFO: 解析失敗"
 fi
 
-echo "■ startup check timings"
-if [ -s "$SHOGUN_STARTUP_TIMING_FILE" ]; then
-    awk -F '\t' 'NR>1 {printf "  TIMING check=%s duration_ms=%s cache_hit=%s input_hash=%s\n", $1,$2,$3,$4}' "$SHOGUN_STARTUP_TIMING_FILE" | sort
-else
-    echo "  TIMING unavailable"
-fi
-
 echo "■ backlinks=0 修行候補"
 if [ -f "$_backlink_counts_script" ]; then
     [ -n "$_PID_BACKLINK_ZERO" ] && wait "$_PID_BACKLINK_ZERO" || true
@@ -4166,6 +4275,18 @@ echo "  (1) bash scripts/memory_db_query.sh \"SELECT ts,substr(summary,1,80) FRO
 echo "  (2) bash scripts/semantic_search.sh \"キーワード\""
 echo "  (3) 回答に[MEM: memory_db ts=YYYY-MM-DD]タグで引用"
 echo "  理解を出力するな。使え。contextファイル更新だけでは三層貫通ではない"
+
+echo "■ startup check timings"
+startup_timing_close_check
+if [ -s "$SHOGUN_STARTUP_TIMING_FILE" ]; then
+    awk -F '\t' 'NR>1 {printf "  TIMING check=%s duration_ms=%s rc=%s source=%s\n", $1,$2,$3,$4}' "$SHOGUN_STARTUP_TIMING_FILE" | sort
+    _startup_gate_now_ms=$(date +%s%3N)
+    startup_timing_summary "$SHOGUN_STARTUP_TIMING_FILE" "$((_startup_gate_now_ms - _STARTUP_GATE_STARTED_MS))"
+    _STARTUP_TIMING_FINALIZED=1
+else
+    echo "  TIMING unavailable"
+    _STARTUP_TIMING_FINALIZED=1
+fi
 
 echo ""
 # Later checks may assign WARN/ALERT directly; disk danger is an overriding invariant.
@@ -4339,7 +4460,7 @@ PY
         unset _deferred_message _deferred_dup_status _deferred_lock
     fi
 fi
-}
+)
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${SHOGUN_STARTUP_LIB_ONLY:-0}" != "1" ]]; then
     run_gate_shogun_startup "$@"
