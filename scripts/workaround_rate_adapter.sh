@@ -35,7 +35,9 @@ cmd_status() {
     local targets
     targets=$(_get_wa_targets)
     local count=0
-    [ -n "$targets" ] && count=$(echo "$targets" | wc -l)
+    if [ -n "$targets" ]; then
+        count=$(echo "$targets" | wc -l)
+    fi
     echo "recurring_wa_count: $count"
     if [ "$count" -gt 0 ]; then
         echo "targets:"

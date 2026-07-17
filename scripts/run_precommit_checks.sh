@@ -139,6 +139,7 @@ if [ "${#js_files[@]}" -gt 0 ]; then
 fi
 
 if [ "${#shell_files[@]}" -gt 0 ]; then
+    bash "$ROOT_DIR/scripts/gates/gate_set_e_short_circuit.sh" "${shell_files[@]}"
     if ! command -v shellcheck >/dev/null 2>&1; then
         echo "ERROR: shellcheck not found. Install it before committing shell scripts." >&2
         exit 1

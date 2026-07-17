@@ -160,6 +160,9 @@ jobs:
             echo "::warning::scripts/ directory not found"
           fi
 
+      - name: Block set -e test-and short-circuit regressions (LG041)
+        run: bash scripts/gates/gate_set_e_short_circuit.sh
+
   e2e-tests:
     name: E2E Tests
     needs: [unit-tests, shellcheck]
