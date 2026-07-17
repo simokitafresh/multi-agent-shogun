@@ -68,7 +68,7 @@ _reflux_select_kind 35 - 12 - 192 -
 setup() {
     export TEST_TMPDIR
     TEST_TMPDIR="$(mktemp -d "$BATS_TMPDIR/reflux_promotion.XXXXXX")"
-    mkdir -p "$TEST_TMPDIR/scripts/gates" "$TEST_TMPDIR/queue" "$TEST_TMPDIR/projects/infra"
+    mkdir -p "$TEST_TMPDIR/scripts/gates" "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/projects/infra"
     cp "$PROJECT_ROOT/scripts/gates/gate_lesson_enforcement_level.sh" "$TEST_TMPDIR/scripts/gates/"
 
     cat > "$TEST_TMPDIR/projects/infra/lessons_shogun.yaml" <<'EOF'
@@ -87,6 +87,58 @@ EOF
     cat > "$TEST_TMPDIR/projects/infra/lessons_gunshi.yaml" <<'EOF'
 lessons: []
 EOF
+}
+
+@test "_reflux_promotion_inventory: completed PASSは1回だけ消費し次点を選ぶ" {
+    for n in 1 2 3; do
+        cat > "$TEST_TMPDIR/queue/reports/hayate_report_cmd_reflux_promotion_fixture_${n}.yaml" <<EOF
+parent_cmd: cmd_reflux_promotion_fixture_${n}
+status: completed
+verdict: PASS
+result:
+  summary: LS-A16をLevel5へ昇格済み
+binary_checks:
+  AC1:
+  - check: 昇格候補 LS-A16 の恒久防御を確認
+    result: yes
+EOF
+    done
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="'"$TEST_TMPDIR"'"
+_reflux_promotion_inventory
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == "1"$'\t'*"LS-A99"* ]]
+    [[ "$output" != *"LS-A16"* ]]
+}
+
+@test "_reflux_promotion_inventory: failedと未完了は消費せずfalse-positive skip 0" {
+    cat > "$TEST_TMPDIR/queue/reports/hayate_report_cmd_reflux_promotion_failed.yaml" <<'EOF'
+parent_cmd: cmd_reflux_promotion_failed
+status: completed
+verdict: FAIL
+result: {summary: LS-A16は未完了}
+EOF
+    cat > "$TEST_TMPDIR/queue/reports/hayate_report_cmd_reflux_promotion_draft.yaml" <<'EOF'
+parent_cmd: cmd_reflux_promotion_draft
+status: in_progress
+verdict: PASS
+result: {summary: LS-A99は作業中}
+EOF
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="'"$TEST_TMPDIR"'"
+_reflux_promotion_inventory
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == "2"$'\t'*"LS-A16"* ]]
 }
 
 teardown() {

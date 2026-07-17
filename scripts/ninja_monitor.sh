@@ -3342,10 +3342,63 @@ for i in sorted(ids):
 PY
 }
 
+# Completed promotion reports are the durable consumption ledger.  Lesson
+# metadata can lag a valid Level4/5 implementation, so relying only on the
+# enforcement inventory redispatches the same lesson until that metadata is
+# repaired.  Require both completed status and PASS verdict; drafts and failed
+# promotions must remain selectable.
+_reflux_promotion_completed_ids() {
+    python3 - "$SCRIPT_DIR" 2>/dev/null <<'PY'
+import glob
+import os
+import re
+import sys
+
+import yaml
+
+root = sys.argv[1]
+paths = glob.glob(os.path.join(root, "queue", "reports", "*.yaml"))
+paths += glob.glob(os.path.join(root, "archive", "reports", "**", "*.yaml"), recursive=True)
+id_token = r'(?:LS|LK|LG|L)-?[A-Za-z]?[0-9]+'
+target_re = re.compile(r'(?:^|昇格候補\s+(?:\[[^]]+\]\s+)?)(%s)(?![0-9A-Za-z])' % id_token)
+completed = set()
+for path in paths:
+    try:
+        with open(path, encoding="utf-8") as fh:
+            report = yaml.safe_load(fh) or {}
+    except Exception:
+        continue
+    if not isinstance(report, dict):
+        continue
+    parent = str(report.get("parent_cmd") or "")
+    if not parent.startswith("cmd_reflux_promotion_"):
+        continue
+    if str(report.get("status") or "").lower() not in {"completed", "done"}:
+        continue
+    if str(report.get("verdict") or "").upper() not in {"PASS", "PASS_NO_IMPROVEMENT"}:
+        continue
+    # Generated promotion reports retain the selected lesson in purpose,
+    # summary, details, or AC checks.  Restrict extraction to those fields so
+    # unrelated lessons_useful references cannot consume inventory.
+    result = report.get("result") if isinstance(report.get("result"), dict) else {}
+    fields = [result.get("summary")]
+    checks = report.get("binary_checks") or {}
+    if isinstance(checks, dict):
+        for entries in checks.values():
+            if isinstance(entries, list):
+                fields.extend(e.get("check") for e in entries if isinstance(e, dict))
+    for value in fields:
+        if isinstance(value, str):
+            completed.update(target_re.findall(value))
+for lesson_id in sorted(completed):
+    print(lesson_id)
+PY
+}
+
 _reflux_promotion_inventory() {
     local helper="$SCRIPT_DIR/scripts/gates/gate_lesson_enforcement_level.sh"
     local timeout_sec="${REFLUX_PROMOTION_TIMEOUT:-20}"
-    local output status count first_item candidates_list pd_ids cand cand_id
+    local output status count first_item candidates_list pd_ids completed_ids cand cand_id completed_skipped=0
 
     [[ "$timeout_sec" =~ ^[0-9]+$ ]] || timeout_sec=20
     [ "$timeout_sec" -gt 0 ] 2>/dev/null || timeout_sec=20
@@ -3373,6 +3426,7 @@ _reflux_promotion_inventory() {
 
     candidates_list=$(printf '%s\n' "$output" | awk '/^=== 昇格候補一覧/{p=1; next} p && /^  - / { sub(/^  - /, ""); print }')
     pd_ids=$(_reflux_promotion_pending_pd_ids)
+    completed_ids=$(_reflux_promotion_completed_ids)
 
     first_item="-"
     if [ -n "$candidates_list" ]; then
@@ -3382,12 +3436,18 @@ _reflux_promotion_inventory() {
             if [ -n "$cand_id" ] && [ -n "$pd_ids" ] && printf '%s\n' "$pd_ids" | grep -qxF "$cand_id"; then
                 continue
             fi
+            if [ -n "$cand_id" ] && [ -n "$completed_ids" ] && printf '%s\n' "$completed_ids" | grep -qxF "$cand_id"; then
+                completed_skipped=$((completed_skipped + 1))
+                continue
+            fi
             first_item="$cand"
             break
         done <<< "$candidates_list"
     fi
 
     [ -n "$first_item" ] || first_item="-"
+    count=$((count - completed_skipped))
+    [ "$count" -ge 0 ] || count=0
     printf '%s\t%s\tok\n' "$count" "$first_item"
 }
 
