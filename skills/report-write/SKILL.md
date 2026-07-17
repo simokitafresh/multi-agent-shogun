@@ -184,6 +184,10 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-07-17: gate=gate_report_format result=FAIL executor=kotaro reason=memory_references[1]: missing \"id\" field; memory_references[1]: missing \"source\" field; memory_references[1]: missing \"query\" field; memory_references[1]: missing \"used\"...
+
+- 2026-07-16: gate=gate_report_format result=FAIL executor=hanzo reason=timestamp: completed/revision_requested report requires a parseable ISO timestamp; operational_simulation: MISSING (command,expected,actual,result; integration cmd requires comm...
+- 2026-07-16: gate=gate_report_format result=FAIL executor=tobisaru reason=timestamp: completed/revision_requested report requires a parseable ISO timestamp; LK-A14: 横展開/修正前パターンを扱う報告にはgrep/rg残存0件の一次証跡が必須
 
 - 2026-07-16: gate=gate_report_format result=FAIL executor=hayate reason=operational_simulation: MISSING (command,expected,actual,result; integration cmd requires command/expected/actual/result — LG055)
 - 2026-07-16: gate=gate_report_format result=FAIL executor=tobisaru reason=operational_simulation: MISSING (integration cmd requires command/expected/actual/result — LG055)
