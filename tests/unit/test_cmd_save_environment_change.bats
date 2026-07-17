@@ -261,3 +261,38 @@ SH
     [ "$status" -ne 0 ]
     [[ "$output" == *"environment_changeが非構造化"* ]]
 }
+
+# --- LS091: environment_change鎖の原理照合テスト ---
+
+run_chain_check() {
+    local warn_output=""
+    record_warn_reason() { echo "WARN_RECORDED: $1 $2" >&2; }
+    export -f record_warn_reason
+    eval "$(sed -n '/^check_environment_change_chain_of_command_warn()/,/^}/p' "$SAVE_SCRIPT")"
+    run check_environment_change_chain_of_command_warn
+}
+
+@test "LS091-1: 将軍スコープファイル+CI KEYWORDでWARN" {
+    _ENV_FILE="scripts/hooks/clear_prep_check.sh"
+    _ENV_CHANGE="type=gate; file=scripts/hooks/clear_prep_check.sh; pattern=CI_GREEN_check"
+    run_chain_check
+    echo "$output" >&2
+    [[ "$output" == *"LS091"* ]]
+    [[ "$output" == *"chain_bypass"* ]]
+}
+
+@test "LS091-2: 家老スコープファイルはWARNなし(FP防止)" {
+    _ENV_FILE="scripts/deploy_task.sh"
+    _ENV_CHANGE="type=gate; file=scripts/deploy_task.sh; pattern=CI_RED_check"
+    run_chain_check
+    echo "$output" >&2
+    [[ "$output" != *"LS091"* ]]
+}
+
+@test "LS091-3: 将軍ファイルでもCI無関係ならWARNなし(FP防止)" {
+    _ENV_FILE="scripts/gates/gate_shogun_startup.sh"
+    _ENV_CHANGE="type=gate; file=scripts/gates/gate_shogun_startup.sh; pattern=backlink_check"
+    run_chain_check
+    echo "$output" >&2
+    [[ "$output" != *"LS091"* ]]
+}

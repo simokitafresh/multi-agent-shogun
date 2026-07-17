@@ -3461,6 +3461,27 @@ check_environment_change_after_prior_block() {
 }
 
 
+# --- Check 3.6a: environment_change鎖の原理照合（LS091, D006趣旨解釈事故 2026-07-17） ---
+# 目的: environment_changeが将軍スコープファイルに家老スコープ情報を追加しようとするとき
+#        LS-A11(鎖の原理: CI検知は家老の責務)との矛盾をWARN。
+# 起源: LS091 — 将軍がclear_prep_check.shへCI GREEN確認追加を提案→殿即却下。
+#        LS-A11を20分前に通読していたのに照合せず。causal_tracing Phase3再現。
+check_environment_change_chain_of_command_warn() {
+    [[ -n "$_ENV_FILE" ]] || return 0
+
+    local shogun_scope_pattern='(clear_prep|gate_shogun|stop_check_inbox|shogun_startup|prompt_state_inject|post-shogun)'
+    local karo_scope_keywords='(CI[_ ]?(RED|GREEN|status|check|結果)|gh[_ ]run|test[_ ]?(result|fail|pass|結果)|忍者[_ ]?(状態|status))'
+
+    if echo "$_ENV_FILE" | grep -qiE "$shogun_scope_pattern" && \
+       echo "$_ENV_CHANGE" | grep -qiE "$karo_scope_keywords"; then
+        echo "WARN: LS091 environment_change鎖の原理照合" >&2
+        echo "  将軍スコープファイル(${_ENV_FILE})に家老スコープ情報を追加しようとしている" >&2
+        echo "  LS-A11: CI検知は家老の責務。将軍にCI情報を見せる仕組み=鎖の迂回誘発" >&2
+        echo "  因果確認: この情報は本当に将軍に必要か？家老経由で届くべきではないか？" >&2
+        record_warn_reason "environment_change_chain_bypass" "check=check_environment_change_chain_of_command LS091"
+    fi
+}
+
 check_required_quality_gate_keys_block() {
     MISSING_KEYS=()
     MISSING_HINTS=()
@@ -3674,6 +3695,7 @@ check_diagnosis_format_block
 # 条件: PRIOR_ATTEMPT_COUNT > 0 = 過去にBLOCKされた実績がある
 # ★ WARN_COUNT > 0 のケースは全チェック完了後(L2594付近)で処理(WARNは後段で蓄積されるため)
 check_environment_change_after_prior_block
+check_environment_change_chain_of_command_warn
 
 # --- Check 3: quality_gateフィールド検査 ---
 # cmdブロック内にquality_gate（q1_firefighting, q2_learning, q3_next_quality）があるか検査
