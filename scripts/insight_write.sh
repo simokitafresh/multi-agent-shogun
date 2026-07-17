@@ -391,7 +391,10 @@ print('fix_known_verified' if fix_known == 'true' and verification_status == 'pa
 PYEOF
 ) || { echo "ERROR: insight write failed" >&2; exit 1; }
 
-  result="${raw_result%%$'\n'*}"
+  # Parse the fixed three-line Python result once with a Bash builtin.  The
+  # escalation path previously started printf+sed twice for lines 2 and 3.
+  mapfile -t _raw_result_lines <<< "$raw_result"
+  result="${_raw_result_lines[0]}"
   echo "$result"
 
   if [[ "$result" == INS-* && -f "$MEMORY_DB_LIVE_INSERT" ]]; then
@@ -420,8 +423,8 @@ PYEOF
   # do not remain buried in queue/insights.yaml. Keep this out of the write path:
   # bulletin failures must not break normal insight recording.
   if [[ "$result" == INS-* ]]; then
-    repeat_count="$(printf '%s\n' "$raw_result" | sed -n '2p')"
-    escalation_mode="$(printf '%s\n' "$raw_result" | sed -n '3p')"
+    repeat_count="${_raw_result_lines[1]:-0}"
+    escalation_mode="${_raw_result_lines[2]:-threshold}"
     if [[ "$escalation_mode" == "fix_known_verified" && -f "$BULLETIN_SCRIPT" ]]; then
       _fix_summary="${msg//$'\n'/ }"
       _fix_summary="${_fix_summary//$'\r'/ }"
