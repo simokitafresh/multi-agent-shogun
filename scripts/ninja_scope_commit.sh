@@ -14,12 +14,13 @@ NINJA_SCOPE_COMMIT_SCRIPT_DIR="$(cd "$(dirname "$_ninja_scope_commit_self")" && 
 unset _ninja_scope_commit_self
 
 usage() {
-    echo "Usage: bash scripts/ninja_scope_commit.sh -m <message> [--patch <file> --base-blob <hash>] -- <path> [path ...]" >&2
+    echo "Usage: bash scripts/ninja_scope_commit.sh [-m <message>] [--repair-index | --patch <file> --base-blob <hash>] -- <path> [path ...]" >&2
 }
 
 message=""
 patch_file=""
 base_blob=""
+repair_index=false
 while (($#)); do
     case "$1" in
         -m|--message)
@@ -37,6 +38,10 @@ while (($#)); do
             base_blob="$2"
             shift 2
             ;;
+        --repair-index)
+            repair_index=true
+            shift
+            ;;
         --)
             shift
             break
@@ -49,8 +54,14 @@ while (($#)); do
     esac
 done
 
-[[ -n "$message" ]] || { echo "BLOCK: commit message is required" >&2; exit 2; }
+if [[ "$repair_index" == false ]]; then
+    [[ -n "$message" ]] || { echo "BLOCK: commit message is required" >&2; exit 2; }
+fi
 (($# > 0)) || { echo "BLOCK: commit scope is empty" >&2; exit 2; }
+if [[ "$repair_index" == true && ( -n "$patch_file" || -n "$base_blob" ) ]]; then
+    echo "BLOCK: --repair-index cannot be combined with patch mode" >&2
+    exit 2
+fi
 if [[ -n "$patch_file" || -n "$base_blob" ]]; then
     [[ -n "$patch_file" && -n "$base_blob" ]] \
         || { echo "BLOCK: --patch and --base-blob must be used together" >&2; exit 2; }
@@ -157,7 +168,7 @@ for path in "$@"; do
     # root相当に解決されるpath(空/"."/".."単体等)を全てfail-closedし、
     # 理由をstderrへ書く(このtry/exitはその理由をそのまま伝播させる)。
     normalized="$(scope_path_normalize "$path")" || exit 2
-    if [[ -z "$patch_file" ]]; then
+    if [[ -z "$patch_file" && "$repair_index" == false ]]; then
         [[ -e "$normalized" || -L "$normalized" ]] \
             || { echo "BLOCK: scope path does not exist: $normalized" >&2; exit 2; }
         [[ -n "$(git status --porcelain --ignored -- "$normalized")" ]] \
@@ -165,6 +176,34 @@ for path in "$@"; do
     fi
     paths+=("$normalized")
 done
+
+# Repair the proven residual state where worktree bytes already equal HEAD but
+# the shared index alone contains an older blob (porcelain MM, `git diff HEAD`
+# empty).  This is deliberately path-bounded and runs under the same common-dir
+# transaction lock.  It never resets or rewrites unrelated index entries.
+if [[ "$repair_index" == true ]]; then
+    for scope_path in "${paths[@]}"; do
+        [[ -f "$scope_path" || -L "$scope_path" ]] \
+            || { echo "BLOCK: repair path must be an existing tracked file: $scope_path" >&2; exit 2; }
+        git cat-file -e "HEAD:$scope_path" 2>/dev/null \
+            || { echo "BLOCK: repair path is not tracked in HEAD: $scope_path" >&2; exit 2; }
+        head_blob="$(git rev-parse "HEAD:$scope_path")"
+        worktree_blob="$(git hash-object -- "$scope_path")"
+        [[ "$worktree_blob" == "$head_blob" ]] \
+            || { echo "BLOCK: repair would hide worktree content differing from HEAD: $scope_path" >&2; exit 2; }
+    done
+    for scope_path in "${paths[@]}"; do
+        head_blob="$(git rev-parse "HEAD:$scope_path")"
+        head_mode="$(git ls-tree HEAD -- "$scope_path" | awk 'NR==1 {print $1}')"
+        GIT_INDEX_FILE="$shared_index_file" git update-index --add --cacheinfo "$head_mode,$head_blob,$scope_path"
+    done
+    [[ -z "$(git status --porcelain -- "${paths[@]}")" ]] \
+        || { echo "BLOCK: scoped index repair did not converge to clean state" >&2; exit 1; }
+    [[ ! -e "$shared_index_lock" ]] \
+        || { echo "BLOCK: shared index lock remained after repair: $shared_index_lock" >&2; exit 1; }
+    publish_terminal_success "$(git rev-parse HEAD)"
+    exit 0
+fi
 
 # 同一pathに複数agentのhunkが混在する場合の非対話入口。共有index/working treeを
 # sourceにせず、HEADから作った専用indexへ明示patchだけを適用してcommitする。

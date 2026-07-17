@@ -74,3 +74,31 @@ teardown() {
     [ "$status" -ne 0 ]
     [[ "$output" != *"event=completed"* ]]
 }
+
+@test "repair-index converges residual MM without changing unrelated shared index" {
+    printf 'staged-old-a\n' > "$REPO/a.txt"
+    printf 'foreign-b\n' >> "$REPO/b.txt"
+    git -C "$REPO" add a.txt b.txt
+    foreign_before="$(git -C "$REPO" ls-files -s -- b.txt)"
+    git -C "$REPO" show HEAD:a.txt > "$REPO/a.txt"
+    [ "$(git -C "$REPO" status --short -- a.txt)" = 'MM a.txt' ]
+    git -C "$REPO" diff HEAD --quiet -- a.txt
+
+    run bash -c 'cd "$1" && bash "$2" --repair-index -- a.txt 2>repair.err' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ ^[0-9a-f]{40}$ ]]
+    [ "$(git -C "$REPO" status --short -- a.txt)" = "" ]
+    [ "$(git -C "$REPO" ls-files -s -- b.txt)" = "$foreign_before" ]
+    grep -Eq "^event=completed .*commit_hash=$output$" "$REPO/repair.err"
+}
+
+@test "repair-index blocks when worktree differs from HEAD" {
+    printf 'real-worktree-change\n' >> "$REPO/a.txt"
+
+    run bash -c 'cd "$1" && bash "$2" --repair-index -- a.txt 2>&1' _ "$REPO" "$HELPER"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"repair would hide worktree content differing from HEAD"* ]]
+    [[ "$output" != *"event=completed"* ]]
+}
