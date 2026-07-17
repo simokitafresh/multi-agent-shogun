@@ -246,6 +246,17 @@ EOF
     [[ "${lines[1]}" == $'report-write\t0\t0\t1\t1\tPASS\t02' ]]
 }
 
+@test "skill_execution_log source-summary applies the last-50 boundary before source collapse" {
+    printf 'executions:\n' > "$TEST_SKILL_LOG"
+    printf '%s\n' '- {ts: "00", skill: "report-write", result: "FAIL", source: "outside"}' >> "$TEST_SKILL_LOG"
+    for i in $(seq 1 50); do
+        printf -- '- {ts: "%02d", skill: "report-write", result: "PASS", source: "inside_%02d"}\n' "$i" "$i" >> "$TEST_SKILL_LOG"
+    done
+    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$SKILL_LOG_SCRIPT" source-summary
+    [ "$status" -eq 0 ]
+    [[ "${lines[1]}" == $'report-write\t0\t0\t50\t50\tPASS\t50' ]]
+}
+
 @test "skill log readers tolerate legacy unescaped traceback quotes" {
     cat > "$TEST_SKILL_LOG" <<'EOF'
 executions:
