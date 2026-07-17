@@ -370,8 +370,10 @@ OLDSCRIPT
     [ "$original_sum" = "$new_sum" ]
 }
 
-@test "GA-222 AC4: resolves and syncs the shared hooks path correctly from a linked git worktree" {
-    commit_hook_source "echo FROM_MAIN_WORKTREE"
+@test "GA-222 AC4: stale and new linked worktrees keep isolated hooks in either sync order" {
+    commit_hook_source "echo STALE_MAIN_HOOK"
+    printf '#!/usr/bin/env bash\necho STALE_MAIN_HOOK\n' > "$TEST_ROOT/.githooks/pre-push"
+    (cd "$TEST_ROOT" && git add .githooks/pre-push && git commit -qm stale-main-hook)
     WORKTREE="$(mktemp -d "$BATS_TMPDIR/sync_git_hooks_wt.XXXXXX")"
     rmdir "$WORKTREE"
     current_branch="$(cd "$TEST_ROOT" && git rev-parse --abbrev-ref HEAD)"
@@ -385,13 +387,36 @@ OLDSCRIPT
     mkdir -p "$WORKTREE/scripts/lib"
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/scope_path.sh" "$WORKTREE/scripts/lib/scope_path.sh"
 
-    run bash -c "cd '$WORKTREE' && bash '$HELPER'"
+    # Advance only the linked branch. Main remains intentionally stale.
+    printf '#!/usr/bin/env bash\necho NEW_LINKED_HOOK\n' > "$WORKTREE/.githooks/pre-push"
+    (cd "$WORKTREE" && git add .githooks/pre-push && git commit -qm new-linked-hook)
 
+    main_hook="$TEST_ROOT/.git/hooks/pre-push"
+    linked_git_dir="$(git -C "$WORKTREE" rev-parse --absolute-git-dir)"
+    linked_hook="$linked_git_dir/hooks/pre-push"
+
+    # New then stale: syncing main must not downgrade the linked runtime hook.
+    run bash -c "cd '$WORKTREE' && bash '$HELPER'"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"SYNCED"* ]]
-    # Hooks are shared across worktrees in the common .git dir, not per-worktree.
-    run cat "$TEST_ROOT/.git/hooks/pre-commit"
-    [[ "$output" == *"FROM_MAIN_WORKTREE"* ]]
+    grep -q NEW_LINKED_HOOK "$linked_hook"
+    linked_before="$(sha256sum "$linked_hook" | awk '{print $1}')"
+
+    run bash -c "cd '$TEST_ROOT' && bash '$HELPER'"
+    [ "$status" -eq 0 ]
+    grep -q STALE_MAIN_HOOK "$main_hook"
+    grep -q NEW_LINKED_HOOK "$linked_hook"
+    [ "$linked_before" = "$(sha256sum "$linked_hook" | awk '{print $1}')" ]
+
+    # Stale then new: syncing linked must not upgrade/change main either.
+    main_before="$(sha256sum "$main_hook" | awk '{print $1}')"
+    run bash -c "cd '$WORKTREE' && bash '$HELPER'"
+    [ "$status" -eq 0 ]
+    grep -q NEW_LINKED_HOOK "$linked_hook"
+    grep -q STALE_MAIN_HOOK "$main_hook"
+    [ "$main_before" = "$(sha256sum "$main_hook" | awk '{print $1}')" ]
+
+    [ "$(git -C "$TEST_ROOT" config --worktree core.hooksPath)" = "$TEST_ROOT/.git/hooks" ]
+    [ "$(git -C "$WORKTREE" config --worktree core.hooksPath)" = "$linked_git_dir/hooks" ]
 
     (cd "$TEST_ROOT" && git worktree remove --force "$WORKTREE" 2>/dev/null || true)
 }
