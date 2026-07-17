@@ -195,3 +195,53 @@ MOCK
     [[ "$output" == *"stale/abnormal"* ]]
     [[ "$output" == *"pid=99999999"* ]]
 }
+
+@test "common installed hook stays inside the pushing linked worktree" {
+    primary="$TEST_ROOT/primary"
+    linked="$TEST_ROOT/linked"
+    mkdir -p "$primary"
+    git -C "$primary" init -q
+    git -C "$primary" config user.email primary@example.invalid
+    git -C "$primary" config user.name Primary
+    mkdir -p "$primary/.githooks" "$primary/scripts"
+    cp "$SOURCE_HOOK" "$primary/.githooks/pre-push"
+    cp "$SOURCE_HOOK" "$primary/.git/hooks/pre-push"
+    chmod +x "$primary/.git/hooks/pre-push"
+    printf fixture > "$primary/tracked.txt"
+    git -C "$primary" add .githooks/pre-push tracked.txt
+    git -C "$primary" commit -qm fixture
+    git -C "$primary" worktree add -q -b linked-test "$linked"
+
+    # Make the tracked and common installed copies observably different.  The
+    # installed copy is the active path for a linked-worktree push.
+    printf '\n# stale installed generation\n' >> "$primary/.git/hooks/pre-push"
+    mkdir -p "$linked/scripts"
+    cat > "$linked/scripts/test_select.sh" <<'MOCK'
+#!/usr/bin/env bash
+exit 0
+MOCK
+    chmod +x "$linked/scripts/test_select.sh"
+
+    primary_config_before=$(sha256sum "$primary/.git/config" | awk '{print $1}')
+    primary_head_before=$(git -C "$primary" rev-parse HEAD)
+    primary_index_before=$(sha256sum "$primary/.git/index" | awk '{print $1}')
+    linked_git_dir=$(git -C "$linked" rev-parse --git-dir)
+    linked_config_before=$(sha256sum "$linked_git_dir/config.worktree" 2>/dev/null | awk '{print $1}')
+    linked_head_before=$(git -C "$linked" rev-parse HEAD)
+    linked_index_before=$(sha256sum "$linked_git_dir/index" | awk '{print $1}')
+
+    run env PATH="$TEST_ROOT/mock_bin:$PATH" bash -lc \
+        'cd "$1" && bash "$2"' _ "$linked" "$primary/.git/hooks/pre-push"
+    [ "$status" -eq 0 ]
+
+    [ "$(sha256sum "$primary/.git/config" | awk '{print $1}')" = "$primary_config_before" ]
+    [ "$(git -C "$primary" rev-parse HEAD)" = "$primary_head_before" ]
+    [ "$(sha256sum "$primary/.git/index" | awk '{print $1}')" = "$primary_index_before" ]
+    [ "$(sha256sum "$linked_git_dir/config.worktree" 2>/dev/null | awk '{print $1}')" = "$linked_config_before" ]
+    [ "$(git -C "$linked" rev-parse HEAD)" = "$linked_head_before" ]
+    [ "$(sha256sum "$linked_git_dir/index" | awk '{print $1}')" = "$linked_index_before" ]
+    [ -d "$linked/logs" ]
+    [ ! -d "$primary/logs" ]
+    [ "$(git -C "$primary" config --local --get core.bare || true)" != true ]
+    [ "$(git -C "$primary" config --local --get user.name)" = Primary ]
+}

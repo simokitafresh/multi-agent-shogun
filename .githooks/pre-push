@@ -6,14 +6,14 @@
 # 記録部分は || true で防御（記録エラーでhookの動作を阻害しない）。
 
 _HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
-if [ "$(basename "$_HOOK_DIR")" = ".githooks" ]; then
-    # Tracked source invoked directly (tests/manual verification).
-    REPO_ROOT="$(cd "$_HOOK_DIR/.." && pwd)"
-else
-    # Installed hooks live in the common git dir.  In a linked worktree,
-    # walking up from .git/hooks resolves the primary checkout, not the
-    # worktree that is actually being pushed.
-    REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || cd "$_HOOK_DIR/../.." && pwd)"
+# A linked worktree executes hooks from the common git dir.  Deriving the work
+# tree from the hook's pathname therefore points at the primary checkout and
+# lets fixture/test operations escape into it.  Git's invocation cwd is the
+# authoritative worktree for both tracked and installed hook copies.
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -z "$REPO_ROOT" ] || [ ! -d "$REPO_ROOT" ]; then
+    echo "[pre-push] BLOCK: cannot resolve the pushing worktree." >&2
+    exit 1
 fi
 # Git exports repository-local variables to hooks.  If they leak into Bats,
 # fixture commands such as `git -C "$tmpdir" init/commit` still operate on the
