@@ -19,6 +19,7 @@ teardown() {
     unset CONTEXT_FRESHNESS_ROOT CONTEXT_FRESHNESS_CHECK_SCRIPT CONTEXT_FRESHNESS_NTFY_SCRIPT
     unset CONTEXT_FRESHNESS_TODAY CONTEXT_FRESHNESS_GATE_DISABLE_CACHE CONTEXT_FRESHNESS_GATE_CACHE_TTL
     unset CONTEXT_FRESHNESS_ALERT_STATE_DIR CONTEXT_FRESHNESS_ALERT_NOW CONTEXT_FRESHNESS_ALERT_DEBOUNCE_SECONDS
+    unset CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT
 }
 
 write_context_file() {
@@ -218,7 +219,7 @@ SH
     [[ "$output" == *"--- 総合判定: OK ---"* ]]
 }
 
-@test "GA-245: source commit check failure (git timeout) is surfaced as ALERT, not silently OK" {
+@test "GA-283: source commit check failure is explicit BLOCK, distinct from stale ALERT" {
     # Adversarial fixture: context_freshness_check.sh reports a check failure
     # (git log timed out / returned non-zero) for a file updated within the
     # last 7 days. Before the GA-238 fix, gate_context_freshness.sh only
@@ -245,10 +246,27 @@ SH
     run_gate
 
     [ "$status" -eq 1 ]
-    [[ "$output" == *"ALERT: uncertain.md (source commit確認失敗"* ]]
-    [[ "$output" == *"ALERT見逃しの可能性あり"* ]]
+    [[ "$output" == *"BLOCK: uncertain.md (source commit確認失敗"* ]]
+    [[ "$output" == *"鮮度判定不能"* ]]
     [[ "$output" != *"OK: uncertain.md"* ]]
-    [[ "$output" == *"--- 総合判定: ALERT ---"* ]]
+    [[ "$output" == *"--- 総合判定: BLOCK ---"* ]]
+    [[ "$output" == *"個別文書のlast_updatedは変更せず"* ]]
+}
+
+@test "GA-283: gate timeout also bounds checker retry timeout" {
+    cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s|%s|%s\n' "$CFC_GIT_TIMEOUT" "$CFC_GIT_RETRY_TIMEOUT" "$CFC_GIT_MAX_WORKERS" > "$TEST_TMPDIR/budgets.log"
+echo 'WARN: context/uncertain.md source commit check failed since last_updated=2026-05-10。timeout/returncodeを確認せよ'
+SH
+    chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
+    write_context_file context/uncertain.md 2026-05-10
+
+    CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT=0.25 run_gate
+
+    [ "$status" -eq 1 ]
+    [ "$(cat "$TEST_TMPDIR/budgets.log")" = "0.25|0.25|4" ]
+    [[ "$output" == *"--- 総合判定: BLOCK ---"* ]]
 }
 
 @test "GA-238: a real ALERT for the same path still wins over a check-failed WARN line" {

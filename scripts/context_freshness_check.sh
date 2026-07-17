@@ -959,7 +959,11 @@ def batch_source_commit_summaries(
             (project_id, rel_path, plain_pathspecs, cited_dirs, cited_files)
         )
 
-    with ThreadPoolExecutor(max_workers=16) as executor:
+    # GA-283: /mnt/c (9p) saturates when all context git logs start at once;
+    # 16-way fan-out made three otherwise valid source checks hit the timeout.
+    # Keep concurrency bounded and configurable for small/ext4 test fixtures.
+    max_workers = max(1, int(os.environ.get("CFC_GIT_MAX_WORKERS", "4")))
+    with ThreadPoolExecutor(max_workers=min(max_workers, 16)) as executor:
         root_futures = {
             executor.submit(_root_fallback_commit_count_since, updated_at, source_commit): keys
             for (updated_at, source_commit), keys in root_fallback_groups.items()

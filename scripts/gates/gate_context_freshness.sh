@@ -37,9 +37,13 @@ ALERT_STATE_DIR="${CONTEXT_FRESHNESS_ALERT_STATE_DIR:-/tmp/gate_context_freshnes
 # 側のgit呼出し集約(GA-245)と組み合わせ、実測に安全マージンを載せた値へ適正化する。
 # 単純延長ではなく、それでも取得失敗した場合はfail-closedでALERT(exit 1)遮断する
 # (check_failed_paths分岐、GA-245で WARN→ALERT に格上げ済み)。
-GIT_TIMEOUT="${CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT:-10}"
+# GA-283: 9p上の集約git logは10秒を超える実測がある。各試行を30秒に
+# bounded化し、成功結果は入力signature付きcacheで再利用する。明示指定時は
+# retryも同値へ束縛し、下位の60秒fallbackがgate予算を破ることを防ぐ。
+GIT_TIMEOUT="${CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT:-30}"
 
 HAS_ALERT=0
+HAS_BLOCK=0
 HAS_WARN=0
 ALERT_LIST=()
 STALE_TEMPLATE_ROWS=()
@@ -234,11 +238,18 @@ warnings_output() {
     local _min_sc="${CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS:-1}"
     if [[ -n "$cache_file" ]]; then
         local tmp_cache="${cache_file}.$$"
-        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" bash "$CHECK_SCRIPT" --dashboard-warnings > "$tmp_cache" 2>/dev/null
+        # The gate timeout is a total per-attempt budget, not merely the first
+        # attempt.  Without forwarding the retry budget the checker falls back
+        # to 60s, so e.g. GIT_TIMEOUT=1 can still block for 61s (GA-283).
+        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
+            CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" \
+            bash "$CHECK_SCRIPT" --dashboard-warnings > "$tmp_cache" 2>/dev/null
         mv "$tmp_cache" "$cache_file"
         cat "$cache_file"
     else
-        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" bash "$CHECK_SCRIPT" --dashboard-warnings 2>/dev/null
+        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
+            CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" \
+            bash "$CHECK_SCRIPT" --dashboard-warnings 2>/dev/null
     fi
 }
 
@@ -319,16 +330,13 @@ for rel_path in "${target_rel_paths[@]}"; do
         HAS_ALERT=1
         ALERT_LIST+=("${basename_file}(source更新)")
     elif [[ -n "${check_failed_paths[$rel_path]:-}" ]]; then
-        # GA-245 fail-closed強化: GA-238はWARNで可視化するに留めていたが、取得失敗
-        # (git timeout/returncode異常)はALERT見逃しの可能性を否定できない未確認状態
-        # であり、days_agoベースのOK/WARN分類へ落とさず遮断(ALERT/exit 1)する。
-        # timeout自体の削減はcontext_freshness_check.sh側のgit呼出し集約で対応済み
-        # (GA-245)であり、それでも取得失敗する場合は真に異常(disk/git破損等)とみなす。
+        # A timeout means freshness is unknown, not stale. Keep it fail-closed
+        # while distinguishing detector failure (BLOCK) from a verified source
+        # change (ALERT), so operators cannot "fix" it by touching timestamps.
         emit_actionable \
-            "ALERT: ${basename_file} (source commit確認失敗: timeout/returncode。last_updated=${last_updated}, ${days_ago}日前、ALERT見逃しの可能性あり)" \
-            "${basename_file} のsource commit確認がgit timeout/returncode異常で失敗した。CONTEXT_FRESHNESS_GATE_GIT_TIMEOUTを一時的に緩めて再実行するか、一次情報(git log)で手動確認せよ。"
-        HAS_ALERT=1
-        ALERT_LIST+=("${basename_file}(確認失敗)")
+            "BLOCK: ${basename_file} (source commit確認失敗: timeout/returncode。last_updated=${last_updated}, ${days_ago}日前、鮮度判定不能)" \
+            "${basename_file} のsource commit確認がgit timeout/returncode異常で失敗した。個別文書のlast_updatedは変更せず、検査環境を復旧して再実行せよ。"
+        HAS_BLOCK=1
     elif [[ "$days_ago" -gt 14 ]]; then
         emit_actionable \
             "WARN: ${basename_file} (${days_ago}日前更新、ソース変更なし)" \
@@ -349,7 +357,10 @@ if [[ "$HAS_ALERT" -gt 0 && "${#ALERT_LIST[@]}" -gt 0 && -f "$NTFY_SCRIPT" ]]; t
     notify_context_alert "$alert_summary"
 fi
 
-if [[ "$HAS_ALERT" -gt 0 ]]; then
+if [[ "$HAS_BLOCK" -gt 0 ]]; then
+    echo "--- 総合判定: BLOCK ---"
+    exit 1
+elif [[ "$HAS_ALERT" -gt 0 ]]; then
     emit_update_cmd_templates
     echo "--- 総合判定: ALERT ---"
     exit 1
