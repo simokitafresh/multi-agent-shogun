@@ -29,8 +29,6 @@ PY
 report_path="${fields[0]}"; workdir="${fields[1]}"; implementation="${fields[2]}"; test_path="${fields[3]}"
 mkdir -p "$(dirname "$implementation")" "$(dirname "$test_path")"
 printf impl >"$implementation"; printf test >"$test_path"
-git -C "$workdir" config user.email test@example.invalid
-git -C "$workdir" config user.name test
 git -C "$workdir" add "${implementation#$workdir/}" "${test_path#$workdir/}"
 git -C "$workdir" commit -qm shard
 head="$(git -C "$workdir" rev-parse HEAD)"
@@ -78,6 +76,18 @@ PY
   run_bridge
   [ "$status" -eq 0 ]
   reason_is report_terminal_pass
+}
+
+@test "materialized checkout inherits source local commit identity" {
+  make_deployer pass
+  git -C "$SOURCE" config user.name "Campaign Source"
+  git -C "$SOURCE" config user.email campaign@example.invalid
+
+  run_bridge
+
+  [ "$status" -eq 0 ]
+  [ "$(git -C "$TMPROOT/work" config --local user.name)" = "Campaign Source" ]
+  [ "$(git -C "$TMPROOT/work" config --local user.email)" = campaign@example.invalid ]
 }
 
 @test "generated task preserves list AC and typed ownership scalars" {

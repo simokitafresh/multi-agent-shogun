@@ -139,7 +139,7 @@ for path in "$@"; do
     if [[ -z "$patch_file" ]]; then
         [[ -e "$normalized" || -L "$normalized" ]] \
             || { echo "BLOCK: scope path does not exist: $normalized" >&2; exit 2; }
-        [[ -n "$(git status --porcelain -- "$normalized")" ]] \
+        [[ -n "$(git status --porcelain --ignored -- "$normalized")" ]] \
             || { echo "BLOCK: scope path has no changes: $normalized" >&2; exit 2; }
     fi
     paths+=("$normalized")
@@ -254,7 +254,11 @@ cleanup_normal_index() { rm -f "$temp_index" "$temp_index.lock"; }
 trap cleanup_normal_index EXIT
 export GIT_INDEX_FILE="$temp_index"
 git read-tree HEAD
-git add -- "${paths[@]}"
+# The private index is already bounded to the caller's explicit scope.  Force
+# only those pathspecs so newly generated owned files remain committable even
+# when the fixed checkout intentionally carries a broad `.gitignore` (for
+# example `*`).  Never force-add a discovered or repository-wide path.
+git add -f -- "${paths[@]}"
 
 # GA-282: task YAML is live orchestration state, not implementation source.
 # A caller can legitimately arrive with both paths already staged and pass both

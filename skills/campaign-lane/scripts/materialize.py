@@ -70,6 +70,18 @@ def materialize(
     if result.returncode:
         raise MaterializeError(result.stderr.strip() or "clone failed")
     _git(target, "checkout", "--detach", fixed_sha)
+    # `git clone` does not inherit repository-local author identity.  Campaign
+    # workers commit inside the isolated checkout, so copy only the two
+    # identity keys from the trusted source repository when present.
+    for key in ("user.name", "user.email"):
+        value = subprocess.run(
+            ["git", "-C", str(source), "config", "--local", "--get", key],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if value.returncode == 0 and value.stdout.rstrip("\n"):
+            _git(target, "config", "--local", key, value.stdout.rstrip("\n"))
     head = _git(target, "rev-parse", "HEAD")
     dirty = _git(target, "status", "--porcelain")
     if head != fixed_sha or dirty:

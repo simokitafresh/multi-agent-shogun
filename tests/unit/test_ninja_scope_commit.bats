@@ -16,6 +16,22 @@ setup() {
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/scope_path.sh" "$REPO/scripts/lib/scope_path.sh"
 }
 
+@test "explicit ignored new scope is committed without force-staging ignored files outside scope" {
+    printf '*\n' > "$REPO/.gitignore"
+    git -C "$REPO" add -f .gitignore
+    git -C "$REPO" commit -qm ignore-all
+    printf owned > "$REPO/owned.txt"
+    printf foreign > "$REPO/foreign.txt"
+
+    run bash -c 'cd "$1" && exec bash "$2" -m "ignored owned" -- owned.txt' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" show --format= --name-only HEAD)" = "owned.txt" ]
+    [ "$(git -C "$REPO" show HEAD:owned.txt)" = owned ]
+    ! git -C "$REPO" ls-tree -r --name-only HEAD | grep -qx foreign.txt
+    git -C "$REPO" check-ignore -q foreign.txt
+}
+
 teardown() {
     rm -rf "$REPO"
 }
