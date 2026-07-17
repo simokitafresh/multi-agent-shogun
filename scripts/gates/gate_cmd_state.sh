@@ -48,40 +48,50 @@ if ! grep -q '^[[:space:]][[:space:]]*status:[[:space:]]*pending' "$SHOGUN_TO_KA
     exit 0
 fi
 
-# Extract all cmd IDs with status=pending
-# Parse YAML: find "- id: cmd_XXX" blocks and check their status field
-mapfile -t CMD_IDS < <(
+# Extract pending cmd IDs and delegated_at in one pass.  Keeping the value
+# beside the ID avoids sourcing the general YAML mutation library and then
+# rescanning the same file once per pending command.
+mapfile -t CMD_ROWS < <(
     awk '
+    function flush() {
+        if (current_id != "" && status == "pending") {
+            print current_id "\t" delegated_at
+        }
+    }
     /^[[:space:]]*- id: cmd_/ {
+        flush()
         sub(/^[[:space:]]*- id:[[:space:]]*/, "")
         sub(/[[:space:]]*$/, "")
         current_id = $0
+        status = ""
+        delegated_at = ""
+        next
     }
-    /^[[:space:]]+status:[[:space:]]*pending/ {
-        if (current_id != "") {
-            print current_id
-            current_id = ""
-        }
+    current_id != "" && /^[[:space:]]+status:[[:space:]]*/ {
+        status = $0
+        sub(/^[[:space:]]+status:[[:space:]]*/, "", status)
+        sub(/[[:space:]]*$/, "", status)
+        next
     }
-    /^[[:space:]]*- id:/ && !/cmd_/ { current_id = "" }
+    current_id != "" && /^[[:space:]]+delegated_at:[[:space:]]*/ {
+        delegated_at = $0
+        sub(/^[[:space:]]+delegated_at:[[:space:]]*/, "", delegated_at)
+        sub(/[[:space:]]*$/, "", delegated_at)
+    }
+    /^[[:space:]]*- id:/ && !/cmd_/ { flush(); current_id = ""; status = ""; delegated_at = "" }
+    END { flush() }
     ' "$SHOGUN_TO_KARO"
 )
 
-if [ ${#CMD_IDS[@]} -eq 0 ]; then
+if [ ${#CMD_ROWS[@]} -eq 0 ]; then
     echo "OK: pending cmd なし"
     echo "--- 総合判定: OK ---"
     exit 0
 fi
 
-# pending cmds がある場合のみ yaml_field_set.sh をロード
-# shellcheck disable=SC1091
-source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
-
-for cmd_id in "${CMD_IDS[@]}"; do
+for cmd_row in "${CMD_ROWS[@]}"; do
+    IFS=$'\t' read -r cmd_id delegated_at <<< "$cmd_row"
     CHECKED=$((CHECKED + 1))
-
-    # Check delegated_at field
-    delegated_at=$(_yaml_field_get_in_block "$SHOGUN_TO_KARO" "$cmd_id" "delegated_at" 2>/dev/null) || true
 
     if [ -n "$delegated_at" ]; then
         echo "OK: $cmd_id — 委任済み($delegated_at)。再送不要。"
