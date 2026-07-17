@@ -3097,14 +3097,15 @@ check_negative_claim_grep_evidence_warn() {
     if [[ -z "${_ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP//[[:space:]]/}" ]]; then
         return 0
     fi
-    echo "WARNING: 否定的前提キーワードを検出しました。assumptions claimにgrep/rg反証結果を記載してください" >&2
+    echo "BLOCK: 否定的前提キーワードを検出しました。assumptions claimに全探索範囲と各範囲のgrep/rg反証結果を記載してください" >&2
     echo "  対象キーワード: 未実装 / 存在しない / 仕組みがない / 未対応" >&2
-    echo "  例: claim: \"2026-05-10時点で grep -rn 'pattern' scripts/ → 0件\"" >&2
+    echo "  例: claim: \"2026-05-10時点で探索範囲=scripts/,tests/。rg 'pattern' scripts/ → 0件、rg 'pattern' tests/ → 0件\"" >&2
     while IFS= read -r _assump_claim; do
         [[ -z "$_assump_claim" ]] && continue
         echo "  - $_assump_claim" >&2
     done <<< "$_ASSUMP_NEGATIVE_CLAIMS_MISSING_GREP"
-    record_warn_reason "否定的前提claimにgrep反証結果なし" "check=assumptions_negative_claim_grep_evidence"
+    record_block_reason "否定的前提claimに全探索範囲のgrep反証結果なし"
+    abort_if_block_immediate || return 1
 }
 
 check_bulletin_count_grep_evidence_warn() {

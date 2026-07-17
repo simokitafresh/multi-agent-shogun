@@ -2907,7 +2907,7 @@ assumptions:
     [ "$status" -eq 0 ]
 }
 
-@test "Check20.8: 否定的assumptions.claimあり+grep証跡なし→WARNING" {
+@test "Check20.8: 否定的assumptions.claimあり+grep証跡なし→BLOCK" {
     CMD_BLOCK='purpose: "入口防止を追加"
 description: AC1
 description: AC2
@@ -2923,7 +2923,7 @@ assumptions:
     run check_20_assumptions
     echo "$output" >&2
     [[ "$output" == *"否定的前提キーワードを検出"* ]]
-    [ "$status" -eq 0 ]
+    [ "$status" -ne 0 ]
 }
 
 @test "Check20.9: 否定的前提キーワードなし→スキップ" {
@@ -2985,7 +2985,7 @@ assumptions:
     [ "$status" -eq 0 ]
 }
 
-@test "Check20.10c: assumptions.claim内の否定語はgrep証跡なしならWARNING" {
+@test "Check20.10c: assumptions.claim内の否定語はgrep証跡なしならBLOCK" {
     CMD_BLOCK='purpose: "入口防止を追加"
 description: AC1
 description: AC2
@@ -3001,7 +3001,7 @@ assumptions:
     run check_20_assumptions
     echo "$output" >&2
     [[ "$output" == *"否定的前提キーワードを検出"* ]]
-    [ "$status" -eq 0 ]
+    [ "$status" -ne 0 ]
 }
 
 @test "Check20.11: 環境差異キーワードあり+measurement_envなし→INFO" {

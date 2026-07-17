@@ -561,12 +561,13 @@ lessons:
     再発(2026-07-04): kagemaru RCで代替target 2件を提示したが、配備中の全忍者target走査を省略し、hanzo/saizoとの新衝突候補を同一ターンで訂正した。
     同日再発(2026-07-04): kotaro報告をFAIL判定する際、dirty差分断片を「忍者のrepro汚染」と断定したが、
     由来3段追跡(出力文字列→記録先→書き手)を省略した。実際はlord_conversation殿発言+saizo lesson文の正規absorbであり、家老反証後に撤回した。
+    吸収(2026-07-17, cmd_reflux_promotion_202607171230_hayate, origin: [[cmd_3282誤断定]] -> [[1箇所実測+推論]] -> [[cmd_save Check20 BLOCK]]): cmd_save Check20がassumptions内の否定的存在主張について全探索範囲と各範囲のrg/grep反証証跡欠落をBLOCKする。境界6件で証跡あり/否定語なし/q11除外を許可し、証跡なし2件をBLOCK固定した。
   source_cmd: cmd_3282
   origin: '[[cmd_3282 RC誤断定+cmd_3281残件誤判定]] -> [[1箇所実測+推論の代用]] -> [[全範囲実測原則]] -> [[2026-07-02 幻ポインタ二規約混在]] -> [[2026-07-04 代替案衝突見落とし+FAIL誤断定撤回]]'
   created_at: '2026-06-11'
   automated: true
-  enforcement_level: 2
-  enforcement: 'review_logヘッダ追記候補+本教訓のstartup自動ロード。2件とも軍師自己検出→自己訂正済み(第二層ループ機能の実証)。2026-07-02再発分はMEMORY.md L5に参照規約明記+本教訓に既知探索範囲(auto-dir)を追記。2026-07-04再発分は代替案提示/FAIL判定のwhenを追加'
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK): cmd_save.sh Check20がassumptions内の否定的存在主張を検出し、全探索範囲と各範囲のgrep/rg反証証跡がなければBLOCK。tests/unit/test_cmd_save.bats Check20.7-10cの6境界で証跡あり/否定語なし/q11除外PASS、証跡なし2件BLOCKをCI固定"
   when: レビュー・分析で「存在しない」「〜が発生源」等の存在/否定主張を書く時。代替リソース/targetを提案する時。他者の成果物をFAIL判定する時。特にMEMORY.md/context由来の `memory/*.md` パスの存否を判定する時
   how: 探索範囲(repo/ディレクトリ/コード経路)を列挙→各範囲を自分のls/grep/git showで実測→全範囲埋まってから主張する。代替案提示時は配備中の全task YAML/target_pathをgrep走査する。FAIL判定時は「出力文字列→記録先→書き手」の由来3段を追跡する。`memory/*.md` はauto-dir(`~/.claude/projects/.../memory/`)とproject dir(`/mnt/c/.../memory/`)の両方をlsで確認せよ
 - id: LG043
