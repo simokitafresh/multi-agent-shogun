@@ -15,6 +15,16 @@ if [ -z "$REPO_ROOT" ] || [ ! -d "$REPO_ROOT" ]; then
     echo "[pre-push] BLOCK: cannot resolve the pushing worktree." >&2
     exit 1
 fi
+# Git exports repository-local variables to hooks.  If they leak into Bats,
+# fixture commands such as `git -C "$tmpdir" init/commit` still operate on the
+# push repository and can commit/delete its real files.  Resolve REPO_ROOT
+# first, then clear the local environment before invoking any child Git repo.
+_GIT_LOCAL_ENV_VARS="$(git rev-parse --local-env-vars 2>/dev/null || true)"
+if [ -n "$_GIT_LOCAL_ENV_VARS" ]; then
+    # shellcheck disable=SC2086 # variable names are emitted by git itself
+    unset $_GIT_LOCAL_ENV_VARS
+fi
+unset _GIT_LOCAL_ENV_VARS
 _STDERR_FILE="/tmp/_hook_stderr_prepush_$$"
 _HOOK_ARTIFACT_DIR="$REPO_ROOT/logs/hook_artifacts"
 _HOOK_ARTIFACT_ID="$(date +%Y%m%dT%H%M%S)_pre-push_$$"
