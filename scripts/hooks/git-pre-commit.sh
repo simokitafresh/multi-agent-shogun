@@ -14,6 +14,46 @@ if [[ -z "$REPO_ROOT" ]]; then
     unset _git_pre_commit_self
 fi
 
+# One monotonic-in-process clock and one terminal receipt make every commit
+# diagnosable without adding external telemetry I/O to this hot path.
+declare -A _PRECOMMIT_STEP_MS=() _PRECOMMIT_STEP_RC=()
+_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast instruction_sync semantic)
+_PRECOMMIT_COMMAND_ID="${NINJA_COMMIT_COMMAND_ID:-${COMMAND_ID:-precommit-$$}}"
+_PRECOMMIT_STARTED_US="${EPOCHREALTIME/./}"
+_PRECOMMIT_TERMINAL_EMITTED=false
+
+precommit_epoch_us() {
+    local value="${EPOCHREALTIME/./}"
+    printf -v "$1" '%s' "${value:0:16}"
+}
+
+precommit_step_begin() {
+    _PRECOMMIT_CURRENT_STEP="$1"
+    precommit_epoch_us _PRECOMMIT_STEP_STARTED_US
+}
+
+precommit_step_end() {
+    local rc="${1:-0}" finished_us
+    precommit_epoch_us finished_us
+    _PRECOMMIT_STEP_MS["$_PRECOMMIT_CURRENT_STEP"]=$(((finished_us - _PRECOMMIT_STEP_STARTED_US + 999) / 1000))
+    _PRECOMMIT_STEP_RC["$_PRECOMMIT_CURRENT_STEP"]="$rc"
+}
+
+precommit_terminal_receipt() {
+    local rc="${1:-0}" finished_us total_ms step
+    [[ "$_PRECOMMIT_TERMINAL_EMITTED" == false ]] || return 0
+    precommit_epoch_us finished_us
+    total_ms=$(((finished_us - _PRECOMMIT_STARTED_US + 999) / 1000))
+    printf 'PRECOMMIT_RECEIPT command_id=%s result=%s rc=%s wall_ms=%s' \
+        "$_PRECOMMIT_COMMAND_ID" "$([[ "$rc" -eq 0 ]] && echo success || echo blocked)" "$rc" "$total_ms" >&2
+    for step in "${_PRECOMMIT_STEP_ORDER[@]}"; do
+        printf ' %s_ms=%s %s_rc=%s' "$step" "${_PRECOMMIT_STEP_MS[$step]:-0}" \
+            "$step" "${_PRECOMMIT_STEP_RC[$step]:-0}" >&2
+    done
+    printf '\n' >&2
+    _PRECOMMIT_TERMINAL_EMITTED=true
+}
+
 # The staged snapshot is shared by self-sync and every downstream check.  Keep
 # this before self-sync so the hook never pays a second git diff --cached scan.
 declare -a _STAGED_FILES=()
@@ -49,11 +89,25 @@ list_added_test_files() {
     printf '%s\n' "${_ADDED_TEST_FILES[@]}"
 }
 
+staged_file_exists() {
+    local wanted="${1:-}" staged_file
+    [[ -n "$wanted" ]] || return 1
+    load_staged_file_cache
+    for staged_file in "${_STAGED_FILES[@]}"; do
+        [[ "$staged_file" == "$wanted" ]] && return 0
+    done
+    return 1
+}
+
 # The tracked hook is the SSOT, while Git executes an untracked copy under
 # .git/hooks.  ninja_scope_commit.sh syncs that copy explicitly, but direct
 # `git commit` callers are also valid and previously left the live hook stale.
 # A live hook therefore reconciles itself from the commit index (when this
 # commit includes the SSOT) or HEAD, then re-execs the atomically replaced copy.
+precommit_step_begin self_sync
+# Populate the parent-shell snapshot even when this tracked source is invoked
+# directly (tests and diagnostics); live-hook self-sync reuses the same data.
+load_staged_file_cache
 if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_git_hooks.sh" ]]; then
     _installed_hook="$(git -C "$REPO_ROOT" rev-parse --git-path hooks/pre-commit 2>/dev/null || true)"
     [[ "$_installed_hook" = /* ]] || _installed_hook="$REPO_ROOT/$_installed_hook"
@@ -62,7 +116,10 @@ if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_g
     if [[ -e "$_installed_hook" && "$_running_hook" -ef "$_installed_hook" ]]; then
         _hook_hash_before="$(sha256sum "$_installed_hook" | awk '{print $1}')"
         _sync_args=()
-        if list_staged_files | grep -Fxq scripts/hooks/git-pre-commit.sh; then
+        # Do not put the cache loader on the left side of a pipeline: Bash
+        # would populate the array in a subshell and main() would rescan the
+        # DrvFS index.  This parent-shell lookup is both exact and persistent.
+        if staged_file_exists scripts/hooks/git-pre-commit.sh; then
             _sync_args+=(--scope-path scripts/hooks/git-pre-commit.sh)
         fi
         bash "$REPO_ROOT/scripts/sync_git_hooks.sh" "${_sync_args[@]}" || {
@@ -76,6 +133,7 @@ if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_g
         unset _installed_hook _running_hook _hook_hash_before _hook_hash_after _sync_args
     fi
 fi
+precommit_step_end 0
 _STDERR_FILE="/tmp/_hook_stderr_precommit_$$"
 
 is_semantic_propagation_file() {
@@ -436,18 +494,25 @@ main() {
     # through process substitutions; loading lazily there would repeat the
     # same `git diff --cached` once per subshell instead of inheriting one
     # immutable snapshot of the commit index.
+    precommit_step_begin staged_snapshot
     load_staged_file_cache
+    precommit_step_end 0
 
+    precommit_step_begin test_granularity
     warn_test_file_granularity
+    precommit_step_end 0
 
+    precommit_step_begin task_scope
     _task_yaml_mixed_violations="$(collect_task_yaml_mixed_commit_violations)"
 
     if [[ -n "$_task_yaml_mixed_violations" ]]; then
+        precommit_step_end 1
         echo "BLOCKED: queue/tasks/*.yaml cannot be committed with implementation files (GA-408)" >&2
         echo "Commit task/status YAML separately from scripts/lib/context/docs/tests changes." >&2
         echo "$_task_yaml_mixed_violations" >&2
         exit 1
     fi
+    precommit_step_end 0
 
     while IFS= read -r _staged_file; do
         [[ -n "$_staged_file" ]] || continue
@@ -459,17 +524,21 @@ main() {
         fi
     done < <(list_staged_files)
 
+    precommit_step_begin yaml_ast
     if [[ "$_has_yaml_dump_scan_target" == "true" ]]; then
         _yaml_dump_violations="$(collect_yaml_dump_violations)"
     fi
 
     if [[ -n "$_yaml_dump_violations" ]]; then
+        precommit_step_end 1
         echo "BLOCKED: yaml.dump/yaml.safe_dump detected in staged files (GP-136)" >&2
         echo "Data loss risk on operational YAML. Use yaml_field_set.sh instead." >&2
         echo "$_yaml_dump_violations" >&2
         exit 1
     fi
+    precommit_step_end 0
 
+    precommit_step_begin instruction_sync
     if [[ "$_instructions_changed" == "true" ]]; then
         echo "instructions/*.md staged — checking generated/ sync..."
         if ! bash "$REPO_ROOT/scripts/build_instructions.sh" > /dev/null 2>&1; then
@@ -484,8 +553,11 @@ main() {
             echo "  OK: generated instructions in sync."
         fi
     fi
+    precommit_step_end 0
 
+    precommit_step_begin semantic
     run_semantic_propagation_for_staged_files
+    precommit_step_end "$?"
 }
 
 # --- Failure recording trap (cmd_1117) ---
@@ -516,7 +588,7 @@ _record_hook_failure() {
 }
 _ec=0
 # shellcheck disable=SC2154  # _ec is assigned in the trap string before use
-trap '_ec=$?; _record_hook_failure "$_ec"; exit "$_ec"' EXIT
+trap '_ec=$?; precommit_terminal_receipt "$_ec"; _record_hook_failure "$_ec"; exit "$_ec"' EXIT
 
 # Capture stderr for failure recording while still showing on terminal
 exec 2> >(tee "$_STDERR_FILE" >&2)

@@ -111,6 +111,9 @@ EOF
 
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCKED: yaml.dump/yaml.safe_dump detected in staged files"* ]]
+    [ "$(grep -c 'PRECOMMIT_RECEIPT ' <<<"$output")" -eq 1 ]
+    [[ "$output" == *"result=blocked rc=1"* ]]
+    [[ "$output" == *"yaml_ast_rc=1"* ]]
     grep -q "hook: pre-commit" "$TEST_ROOT/logs/hook_failures.yaml"
 }
 
@@ -156,6 +159,10 @@ EOF
     run_hook
 
     [ "$status" -eq 0 ]
+    [ "$(grep -c 'PRECOMMIT_RECEIPT ' <<<"$output")" -eq 1 ]
+    [[ "$output" == *"result=success rc=0"* ]]
+    [[ "$output" == *"staged_snapshot_ms="* ]]
+    [[ "$output" == *"semantic_rc=0"* ]]
 }
 
 @test "GP-136 blocks all operational YAML write sinks and reports targets" {
