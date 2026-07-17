@@ -1,7 +1,7 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-07-17 cmd_karo_hotfix_context_freshness_ga281_202607170612 -->
-<!-- source_commit:3370147d1 reason:codd-refactor-script-contract-reinspection-recorded evidence:git-show-3370147d1-and-context-codd-reference-boundary-updated -->
+<!-- last_updated: 2026-07-18 cmd_karo_hotfix_ga288_context_freshness_codd -->
+<!-- source_commit:e22a319e8 reason:ga288-codd-source-contract-reviewed evidence:git-log-3370147d1..e22a319e8-and-targeted-regression -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
@@ -79,6 +79,14 @@
 | `/home/simokitafresh/.codd-venv/bin/codd --version` | `codd, version 2.19.0` | §1/§2/§5のローカルCLI前提は維持 |
 | `/home/simokitafresh/.codd-venv/bin/codd --help` | `drift`, `fixup-drift`, `propagate-from`, `qc`, `require`, `restore`, `watch`を含む | 2026-07-01記載の現行コマンド体系と矛盾なし |
 | `git log --since=2026-07-01 -- context/codd.md scripts/gates/gate_context_freshness.sh scripts/context_freshness_check.sh` | context本体更新はGA-154のみ。以後はcontext freshness gate品質/重複mapping修正 | CoDD本文へ追記すべき新仕様なし。今回GA-203は日数WARNの再確認 |
+
+### 2026-07-18 GA-288 鮮度防御
+
+| 確認 | 結果 | 判断 |
+|------|------|------|
+| `git log 3370147d1..e22a319e8 -- skills/codd skills/codd-refactor scripts/codd scripts/codd_` | source commit 2件 (`0da0dccb9`, `e22a319e8`) | script参照契約の再検分であり本文のCoDD操作体系は不変 |
+| source変更commit時の索引追随 | pre-commitに対応する強制なし | CoDD sourceと本索引を同一commitへstageするLevel4防御を追加 |
+| 同一commit反映の鮮度判定 | source pathだけをgit log対象にしていた | sourceと本索引が同一commitなら反映済みとして除外し、次の未反映source変更だけをALERTする |
 
 ## §3 核心原理 (記事#1-#5)
 

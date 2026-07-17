@@ -589,3 +589,25 @@ EOF
     grep -q 'projects/infra.yaml' "$TEST_ROOT/logs/semantic_index_update.calls"
     grep -q '^semantic_map_generate$' "$TEST_ROOT/logs/semantic_map_generate.calls"
 }
+
+@test "GA-288 blocks CoDD source change without codd context evidence" {
+    mkdir -p "$TEST_ROOT/skills/codd"
+    printf '# skill\n' > "$TEST_ROOT/skills/codd/SKILL.md"
+    (cd "$TEST_ROOT" && git add skills/codd/SKILL.md)
+
+    run_hook
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK(GA-288): CoDD source change requires staged context/codd.md freshness evidence"* ]]
+}
+
+@test "GA-288 allows CoDD source and codd context evidence in one commit" {
+    mkdir -p "$TEST_ROOT/skills/codd"
+    printf '# skill\n' > "$TEST_ROOT/skills/codd/SKILL.md"
+    printf '# CoDD index\n' > "$TEST_ROOT/context/codd.md"
+    (cd "$TEST_ROOT" && git add skills/codd/SKILL.md context/codd.md)
+
+    run_hook
+
+    [ "$status" -eq 0 ]
+}

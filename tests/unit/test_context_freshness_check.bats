@@ -573,6 +573,36 @@ EOF
     [[ "$output" == *"ALERT: context/dm-signal-core.md source commits 1件"* ]]
 }
 
+@test "GA-288 source commit that updates infra context in same commit is reflected" {
+    mkdir -p "$TEST_TMPDIR/skills/codd"
+    printf 'v1\n' > "$TEST_TMPDIR/skills/codd/SKILL.md"
+    git -C "$TEST_TMPDIR" add skills/codd/SKILL.md
+    git -C "$TEST_TMPDIR" commit -q -m "feature: initial codd source"
+    local boundary
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+
+    _create_context "context/codd.md" "$TODAY"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/codd.md"
+    git -C "$TEST_TMPDIR" add context/codd.md
+    git -C "$TEST_TMPDIR" commit -q -m "docs: establish codd boundary"
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/source_commit:[0-9a-f]*/source_commit:${boundary}/" "$TEST_TMPDIR/context/codd.md"
+    git -C "$TEST_TMPDIR" add context/codd.md
+    git -C "$TEST_TMPDIR" commit -q -m "docs: advance exact boundary"
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/source_commit:[0-9a-f]*/source_commit:${boundary}/" "$TEST_TMPDIR/context/codd.md"
+
+    printf 'v2\n' >> "$TEST_TMPDIR/skills/codd/SKILL.md"
+    printf '\nreflected source change\n' >> "$TEST_TMPDIR/context/codd.md"
+    git -C "$TEST_TMPDIR" add skills/codd/SKILL.md context/codd.md
+    git -C "$TEST_TMPDIR" commit -q -m "feature: reflected codd source"
+    _create_archive_cmd "cmd_ga288_fixture" "infra"
+
+    CFC_OUTPUT_CACHE_TTL=0 run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"context/codd.md source commits"* ]]
+}
+
 @test "GA-245 registered context without source_commit fails fast before git log" {
     mkdir -p "$TEST_TMPDIR/scripts/config"
     cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"

@@ -959,6 +959,7 @@ def _compute_direct_group(
     else:
         union_pathspecs = sorted(
             {p for _pid, _rp, plain, cited, _cf in members for p in (*plain, *cited)}
+            | {rel_path for project_id, rel_path, *_ in members if project_id == "infra"}
         )
 
     commits = _run_grouped_git_log(repo_path, revision, since_date, union_pathspecs)
@@ -971,6 +972,12 @@ def _compute_direct_group(
         count = 0
         details: list[str] = []
         for commit_hash, subject, changed_paths in commits:
+            # An infra source commit that also updates its context index is
+            # already reflected.  Including each infra context path in the
+            # grouped log above lets this remain one git call while avoiding
+            # the perpetual post-commit alert that GA-288 exposed.
+            if project_id == "infra" and rel_path in changed_paths:
+                continue
             if not no_filter and not _commit_touches_relevant_path(
                 changed_paths, plain_pathspecs, cited_dirs, cited_files
             ):

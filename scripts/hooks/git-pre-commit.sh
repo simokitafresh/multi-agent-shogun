@@ -208,6 +208,31 @@ run_semantic_propagation_for_staged_files() {
     ) &
 }
 
+is_codd_context_source_file() {
+    local file="${1:-}"
+    case "$file" in
+        scripts/codd*|skills/codd/*|skills/codd-refactor/*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+check_codd_context_freshness_pair() {
+    local file has_source=false
+    while IFS= read -r file; do
+        [[ -n "$file" ]] || continue
+        if is_codd_context_source_file "$file"; then
+            has_source=true
+            break
+        fi
+    done < <(list_staged_files)
+    [[ "$has_source" == "true" ]] || return 0
+    if ! staged_file_exists context/codd.md; then
+        echo "BLOCK(GA-288): CoDD source change requires staged context/codd.md freshness evidence" >&2
+        echo "  action: inspect the source diff, update context/codd.md, and stage both in one commit" >&2
+        return 1
+    fi
+}
+
 infer_test_group_prefix() {
     local base="${1:-}"
     case "$base" in
@@ -558,6 +583,13 @@ main() {
         else
             echo "  OK: generated instructions in sync."
         fi
+    fi
+    precommit_step_end 0
+
+    precommit_step_begin codd_context_freshness
+    if ! check_codd_context_freshness_pair; then
+        precommit_step_end 1
+        exit 1
     fi
     precommit_step_end 0
 
