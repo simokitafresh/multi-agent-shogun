@@ -20,6 +20,9 @@ escalation_state="${SKILL_AUTO_IMPROVE_STATE_JSON:-$REPO_ROOT/logs/skill_auto_im
 bulletin_script="${SKILL_AUTO_IMPROVE_BULLETIN_SCRIPT:-$REPO_ROOT/scripts/bulletin_write.sh}"
 bulletin_posted_by="${SKILL_AUTO_IMPROVE_POSTED_BY:-karo}"
 training_task_generator="${SKILL_AUTO_IMPROVE_TRAINING_GENERATOR:-$REPO_ROOT/scripts/training_task_generator.sh}"
+action_queue="${SKILL_AUTO_IMPROVE_ACTION_QUEUE:-$REPO_ROOT/logs/skill_auto_improve_actions.json}"
+recent_window="${SKILL_AUTO_IMPROVE_RECENT_WINDOW:-50}"
+fail_rate_threshold="${SKILL_AUTO_IMPROVE_FAIL_RATE_THRESHOLD:-10}"
 
 # An invocation that replaces production inputs/state is an isolated run (tests,
 # fixtures, diagnostics).  Default production side effects must not escape that
@@ -58,7 +61,7 @@ while [ "$#" -gt 0 ]; do
     esac
 done
 
-python3 - "$LOG_FILE" "$SKILLS_DIRS" "$top_n" "$apply" "$skill_filter" "$REPO_ROOT" "$unchanged_threshold" "$escalation_state" "$bulletin_script" "$bulletin_posted_by" "$training_task_generator" <<'PY'
+python3 - "$LOG_FILE" "$SKILLS_DIRS" "$top_n" "$apply" "$skill_filter" "$REPO_ROOT" "$unchanged_threshold" "$escalation_state" "$bulletin_script" "$bulletin_posted_by" "$training_task_generator" "$action_queue" "$recent_window" "$fail_rate_threshold" <<'PY'
 import hashlib
 import json
 import os
@@ -72,7 +75,7 @@ from pathlib import Path
 
 import yaml
 
-log_file, skills_dirs, top_n_raw, apply_raw, skill_filter, repo_root, unchanged_threshold_raw, escalation_state_raw, bulletin_script, bulletin_posted_by, training_task_generator_script = sys.argv[1:12]
+log_file, skills_dirs, top_n_raw, apply_raw, skill_filter, repo_root, unchanged_threshold_raw, escalation_state_raw, bulletin_script, bulletin_posted_by, training_task_generator_script, action_queue_raw, recent_window_raw, fail_rate_threshold_raw = sys.argv[1:15]
 
 # CSafeLoader: 7.7x faster than Python SafeLoader for large YAML files.
 # Falls back to SafeLoader if C extension is unavailable.
@@ -116,6 +119,12 @@ if unchanged_threshold < 1:
     raise SystemExit(2)
 apply_changes = apply_raw.lower() == "true"
 escalation_state_path = Path(escalation_state_raw)
+action_queue_path = Path(action_queue_raw)
+recent_window = int(recent_window_raw)
+fail_rate_threshold = float(fail_rate_threshold_raw)
+if recent_window < 1 or not (0 <= fail_rate_threshold <= 100):
+    print("recent window must be >=1 and fail-rate threshold must be 0..100", file=sys.stderr)
+    raise SystemExit(2)
 
 
 def _cache_path(log_path):
@@ -615,8 +624,9 @@ def apply_prevention_steps(skill_path, rows):
     return added_markers
 
 
-stats = defaultdict(lambda: {"counter": Counter(), "last": {}, "gate": {}, "path": ""})
+stats = defaultdict(lambda: {"counter": Counter(), "last": {}, "gate": {}, "path": "", "total": 0, "fails": 0})
 latest_pass = {}
+events_by_skill = defaultdict(list)
 for entry in load_entries(log_file):
     if str(entry.get("used", True)).strip().lower() == "false":
         continue
@@ -628,13 +638,19 @@ for entry in load_entries(log_file):
         continue
     result = str(entry.get("result", "")).strip().upper()
     ts = str(entry.get("ts") or "").strip()
+    if result not in {"PASS", "FAIL"}:
+        continue
+    events_by_skill[skill].append((entry, gate_name, result, ts))
+
+for skill, events in events_by_skill.items():
+  for entry, gate_name, result, ts in events[-recent_window:]:
+    stats[skill]["total"] += 1
     if result == "PASS":
         pass_key = (skill, gate_name)
         if ts >= latest_pass.get(pass_key, ""):
             latest_pass[pass_key] = ts
         continue
-    if result != "FAIL":
-        continue
+    stats[skill]["fails"] += 1
     reason = normalize_reason(entry.get("stumbling_points"))
     if not reason:
         continue
@@ -650,9 +666,15 @@ for entry in load_entries(log_file):
     elif logged_path:
         stats[skill]["path"] = logged_path
 
-print("skill | rank | fail_count | last_fail | gate | top_fail_reason")
+print("skill | recent_total | recent_fails | fail_rate_pct | rank | fail_count | last_fail | gate | top_fail_reason")
 apply_plan = defaultdict(list)
 for skill in sorted(stats):
+    total = stats[skill]["total"]
+    fails = stats[skill]["fails"]
+    fail_rate = (100.0 * fails / total) if total else 0.0
+    if fail_rate <= fail_rate_threshold:
+        print(f"{skill} | {total} | {fails} | {fail_rate:.1f} | - | 0 | - | - | BELOW_THRESHOLD")
+        continue
     top_rows = sorted(stats[skill]["counter"].items(), key=lambda kv: (-kv[1], kv[0]))[:top_n]
     for rank, (reason, count) in enumerate(top_rows, start=1):
         row = {
@@ -662,9 +684,12 @@ for skill in sorted(stats):
             "last_fail": stats[skill]["last"].get(reason, ""),
             "gate": stats[skill]["gate"].get(reason, ""),
             "reason": reason,
+            "recent_total": total,
+            "recent_fails": fails,
+            "fail_rate_pct": round(fail_rate, 1),
         }
         print(
-            f"{skill} | {rank} | {count} | {row['last_fail']} | {row['gate']} | {shorten(reason, 220)}"
+            f"{skill} | {total} | {fails} | {fail_rate:.1f} | {rank} | {count} | {row['last_fail']} | {row['gate']} | {shorten(reason, 220)}"
         )
         apply_plan[skill].append(row)
 
@@ -673,6 +698,13 @@ if not apply_changes:
 
 updated = 0
 escalation_state = load_escalation_state(escalation_state_path)
+try:
+    action_data = json.loads(action_queue_path.read_text(encoding="utf-8"))
+except (FileNotFoundError, json.JSONDecodeError, OSError):
+    action_data = {"actions": []}
+if not isinstance(action_data, dict) or not isinstance(action_data.get("actions"), list):
+    action_data = {"actions": []}
+existing_action_keys = {str(a.get("key")) for a in action_data["actions"] if isinstance(a, dict)}
 cleared_code_fix = 0
 for key, entry in escalation_state.get("patterns", {}).items():
     if not isinstance(entry, dict) or entry.get("classification") != "code_fix_required":
@@ -704,6 +736,17 @@ for skill, rows in apply_plan.items():
         print(f"UNCHANGED: {path}")
     for row in rows:
         key = escalation_key(row)
+        if key not in existing_action_keys:
+            action_data["actions"].append({
+                "key": key, "skill": row["skill"], "gate": row.get("gate") or "unknown_gate",
+                "reason": row["reason"], "recent_total": row["recent_total"],
+                "recent_fails": row["recent_fails"], "fail_rate_pct": row["fail_rate_pct"],
+                "status": "pending", "created_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+            })
+            existing_action_keys.add(key)
+            print(f"ACTION_QUEUED: {row['skill']} key={key} fail_rate={row['fail_rate_pct']}%")
+        else:
+            print(f"ACTION_DEDUPED: {row['skill']} key={key}")
         entry = escalation_state["patterns"].setdefault(key, {})
         if is_code_fix_cleared(entry, row.get("last_fail") or ""):
             # Keep the current CLEAR marker for this run, but ensure stale
@@ -777,5 +820,10 @@ for skill, rows in apply_plan.items():
                 request_training_task(row, int(entry["unchanged_streak"]), entry)
 
 save_escalation_state(escalation_state_path, escalation_state)
+action_queue_path.parent.mkdir(parents=True, exist_ok=True)
+fd, action_tmp = tempfile.mkstemp(dir=str(action_queue_path.parent), prefix=f".{action_queue_path.name}.", suffix=".tmp")
+os.close(fd)
+Path(action_tmp).write_text(json.dumps(action_data, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+os.replace(action_tmp, action_queue_path)
 print(f"updated_skills={updated} cleared_code_fix={cleared_code_fix} generated_at={datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}")
 PY

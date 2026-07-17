@@ -12,7 +12,7 @@
 #   (D) Verify static file paths in fenced examples exist.
 #   (E) Require a dated execution marker for examples declared side-effecting.
 #
-# Exit code: 0=PASS, 2=WARN (missing or stale references)
+# Exit code: 0=PASS, 2=review required, 3=missing reference BLOCK
 set -euo pipefail
 
 REPO_ROOT="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
@@ -25,10 +25,26 @@ import os
 import re
 import sys
 import fcntl
+import hashlib
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
 repo_root = Path(os.environ["SKILL_REF_REPO_ROOT"]).resolve()
+hash_state_path = Path(os.environ.get(
+    "SKILL_REF_HASH_STATE", repo_root / "logs/skill_script_refs_verified.json"
+))
+record_verified = os.environ.get("SKILL_REF_RECORD_VERIFIED", "0") == "1"
+
+try:
+    hash_state = json.loads(hash_state_path.read_text(encoding="utf-8"))
+except (FileNotFoundError, json.JSONDecodeError, OSError):
+    hash_state = {"references": {}}
+if not isinstance(hash_state, dict) or not isinstance(hash_state.get("references"), dict):
+    hash_state = {"references": {}}
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 command_ref_re = re.compile(
     r"(?:^|[\s`(])(?:bash|sh|python3?|node|ruby|perl)\s+"
@@ -208,13 +224,28 @@ for skill_file in skill_files:
         if not resolved.exists():
             missing.append((display_skill, ref, str(resolved)))
             continue
-        if resolved.is_file() and resolved.stat().st_mtime > skill_freshness_time + 1:
+        state_key = f"{display_skill}::{ref}"
+        current_hash = file_sha256(resolved) if resolved.is_file() else ""
+        verified_hash = str(hash_state["references"].get(state_key, {}).get("sha256", ""))
+        if record_verified and current_hash:
+            hash_state["references"][state_key] = {
+                "sha256": current_hash,
+                "verified_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+            }
+            verified_hash = current_hash
+        if resolved.is_file() and current_hash != verified_hash and resolved.stat().st_mtime > skill_freshness_time + 1:
             # 判定根拠を明示: 採用基準(checked_atコメント最新値かmtimeか)が見えないと
             # 「更新したのに直らない」の原因調査が毎回ゼロからになる(2026-07-02 3セッション先送りの教訓)
             baseline_src = "checked_at" if checked_at_epoch is not None else "SKILL.md mtime"
             baseline_iso = datetime.fromtimestamp(skill_freshness_time, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
             script_iso = datetime.fromtimestamp(resolved.stat().st_mtime, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
             stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved), baseline_src, baseline_iso, script_iso))
+
+if record_verified:
+    hash_state_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = hash_state_path.with_suffix(hash_state_path.suffix + f".{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(hash_state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    os.replace(tmp, hash_state_path)
 
 print("=== SKILL.md script reference check ===")
 print(
@@ -274,7 +305,10 @@ if missing or stale or missing_example_paths or unverified_side_effect_examples:
         )
         handle.flush()
         fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-    print("--- 総合判定: WARN ---")
+    if missing:
+        print("--- 総合判定: BLOCK ---")
+        sys.exit(3)
+    print("--- 総合判定: REVIEW_REQUIRED ---")
     sys.exit(2)
 
 print("--- 総合判定: PASS ---")
