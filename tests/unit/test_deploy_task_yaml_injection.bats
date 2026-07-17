@@ -767,6 +767,42 @@ assert '【LS-A16 本番パリティ必須】' not in task['description'], task
 PY
 }
 
+@test "L896: DM-Signal restore task receives post-snapshot diagnostic artifact contract" {
+    tmpdir="$(mktemp -d)"
+    task_file="$tmpdir/task.yaml"
+    cat > "$task_file" <<'YAML'
+task:
+  parent_cmd: cmd_restore_signal
+  project: dm-signal
+  task_id: cmd_restore_signal_impl
+  status: assigned
+  purpose: "restore-lockedでholding_signalを復元する"
+  acceptance_criteria:
+  - id: AC1
+    description: "復元が完了する"
+YAML
+
+    run env DEPLOY_TASK_LIB_ONLY=1 TASK_FILE_ENV="$task_file" PROJECT_ROOT_ENV="$PROJECT_ROOT" bash -c '
+        source "$PROJECT_ROOT_ENV/scripts/deploy_task.sh"
+        inject_dm_signal_pf_operation_guardrails "$TASK_FILE_ENV"
+    '
+    [ "$status" -eq 0 ]
+
+    python3 - "$task_file" <<'PY'
+import sys
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as stream:
+    task = yaml.safe_load(stream)["task"]
+
+guards = task["dm_signal_pf_operation_guardrails"]
+artifact = [item for item in guards if "post-snapshot artifact" in item]
+assert len(artifact) == 1, guards
+for term in ("run_id/source/input provenance", "row_count", "hash", "restore後"):
+    assert term in artifact[0], artifact[0]
+PY
+}
+
 # ── cmd_karo_hotfix_split_ac_modifier_scope_202607131307 回帰テスト ──
 # Origin: cmd_3873実配備で、assigned_acs=[AC1,AC2]の分割taskへ
 # inject_lsa16_production_parity_controls/inject_parity_target_date_acが

@@ -5043,6 +5043,7 @@ ${command_text}"
     inject_block="${inject_block}"$'\n'"${indent}- \"restore-all後はHTTP応答やDB recalculation_statusがstaleでも、/admin/recalculate-status running=false、active数、holding_signal/monthly_returns生成数、API/FEを一次確認して判定する。\""
     inject_block="${inject_block}"$'\n'"${indent}- \"WSL実行ではLinux python3を使う。Windows venv pythonをWSLから起動しない。CSV成果物はLFへ正規化し git diff --check を通す。\""
     inject_block="${inject_block}"$'\n'"${indent}- \"開始前後に active_total、新PFlive数、archive restored/unrestored数、holding_signal数、monthly_returns数、API件数、FE HTTP status を数値で記録する。\""
+    inject_block="${inject_block}"$'\n'"${indent}- \"restore-locked実行前にsignal_change_log等の診断履歴をpost-snapshot artifactへ保存する。artifactにはrun_id/source/input provenance、row_count、hashを含め、restore後に同じ値を照合する。\""
 
     insert_task_block_before_description "$tmp_file" "$inject_block"
     _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
