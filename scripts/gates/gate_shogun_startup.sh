@@ -6,6 +6,35 @@
 
 set -e
 
+# Defined before the timing-ledger section, the first cache caller.
+run_startup_short_cache() {
+    local cache_file="$1"
+    local ttl="$2"
+    shift 2
+
+    local rc_file="${cache_file}.rc"
+    local now mtime age tmp rc
+    now=$(date +%s)
+    if [ "${ttl:-0}" -gt 0 ] && [ -f "$cache_file" ] && [ -f "$rc_file" ]; then
+        mtime=$(stat -c %Y "$cache_file" 2>/dev/null || echo 0)
+        age=$((now - mtime))
+        if [ "$age" -lt "$ttl" ]; then
+            cat "$cache_file"
+            return "$(cat "$rc_file" 2>/dev/null || echo 1)"
+        fi
+    fi
+
+    tmp=$(mktemp)
+    "$@" > "$tmp" 2>&1
+    rc=$?
+    mkdir -p "$(dirname "$cache_file")"
+    printf '%s\n' "$rc" > "${tmp}.rc"
+    mv "$tmp" "$cache_file"
+    mv "${tmp}.rc" "$rc_file"
+    cat "$cache_file"
+    return "$rc"
+}
+
 # A dependency wait is valid only while its connected cmd is still active.
 # Declaration channel (machine-readable): existing bulletin entries containing
 # `wait_reason=dependency(cmd_1234)` and the exact startup alert key.  This
@@ -310,34 +339,6 @@ count_unread_inbox_messages() {
         }
     ' "$inbox_file" 2>/dev/null || echo 0
 }
-
-	run_startup_short_cache() {
-	    local cache_file="$1"
-	    local ttl="$2"
-	    shift 2
-
-	    local rc_file="${cache_file}.rc"
-	    local now mtime age tmp rc
-	    now=$(date +%s)
-	    if [ "${ttl:-0}" -gt 0 ] && [ -f "$cache_file" ] && [ -f "$rc_file" ]; then
-	        mtime=$(stat -c %Y "$cache_file" 2>/dev/null || echo 0)
-	        age=$((now - mtime))
-	        if [ "$age" -lt "$ttl" ]; then
-	            cat "$cache_file"
-	            return "$(cat "$rc_file" 2>/dev/null || echo 1)"
-	        fi
-	    fi
-
-	    tmp=$(mktemp)
-	    "$@" > "$tmp" 2>&1
-	    rc=$?
-	    mkdir -p "$(dirname "$cache_file")"
-	    printf '%s\n' "$rc" > "${tmp}.rc"
-	    mv "$tmp" "$cache_file"
-	    mv "${tmp}.rc" "$rc_file"
-	    cat "$cache_file"
-	    return "$rc"
-	}
 
 	# check_ci_red_autodeploy: 除去(殿裁定2026-07-16)
 	# CI RED検知→忍者配備は家老の責務。将軍のstartup gateにCI RED検知があると
