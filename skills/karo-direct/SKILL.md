@@ -1,4 +1,8 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T04:36:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_deploy_pair検分: deploy_task.sh 6f1f32c57はDM-Signal restore対象taskへ診断履歴post-snapshot artifact契約を事前注入するLevel5文脈強化。対象taskの内容には条件付き副作用が増えるが、karo_directの--direct/--yaml CLI、重複guard、task公開・通知・失敗出口は不変。 -->
+<!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_freshness_batch検分: deploy_task.sh 30748a921/1c69c22ea/680ce7d76/06cd5ddfはwave cache、構造化commit契約、孤立caller fallback、target HEAD preflightを追加。karo_direct配備CLI・重複guard回避・失敗出口は不変。 -->
 <!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
 <!-- 2026-07-18検分: deploy_task.sh 30748a92/1c69c22eはwave cache+構造化commit_contract追加。CLI不変、免除判定fail-closed強化。 -->
 <!-- script_refs_checked_at: 2026-07-17T18:23:00+09:00 -->
