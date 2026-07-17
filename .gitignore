@@ -228,10 +228,6 @@ queue/ntfy_batch_queue.txt
 !skills/
 !skills/*/
 !skills/*/SKILL.md
-!skills/campaign-lane/scripts/
-!skills/campaign-lane/scripts/*.py
-!skills/campaign-lane/tests/
-!skills/campaign-lane/tests/*.py
 
 # Tests
 !tests/
