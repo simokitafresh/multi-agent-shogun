@@ -987,7 +987,7 @@ if [ -n "$skill_usage_missing" ]; then
 fi
 
 # --- LG034: 低ROI/対応不要の言語検出 ---
-_lg034_hits=$(grep -n '低ROI\|対応不要\|コスト>効果で見送り\|効果が薄い\|優先度低' "$LOG_FILE" 2>/dev/null | grep -v '^#' | grep -v 'LG034' | grep -v 'causal_chain:' | grep -v '- "事実' | head -5)
+_lg034_hits=$(grep -n '低ROI\|対応不要\|コスト>効果で見送り\|効果が薄い\|優先度低' "$LOG_FILE" 2>/dev/null | grep -v '^#' | grep -v 'LG034' | grep -v 'causal_chain:' | grep -vF -- '- "事実' | head -5)
 if [ -n "$_lg034_hits" ]; then
     echo "BLOCK(LG034): 「低ROI/対応不要」表現検出。全件対応が前提、順番を付けて全部やれ:"
     printf '%s\n' "$_lg034_hits" | head -3
