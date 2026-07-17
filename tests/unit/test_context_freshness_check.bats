@@ -71,9 +71,15 @@ teardown() {
 }
 
 @test "GA-286 history cache reuses success, invalidates on commit, and ignores corruption" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo" "$TEST_TMPDIR/projects"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
     _create_context "context/dm-signal.md" "$STALE_DATE"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
-    _create_source_commit "src/dm_signal.py" "test: first source update"
+    _create_source_commit "docs/rule/db-operations-runbook.md" "test: first source update" "$source_repo"
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
@@ -89,17 +95,23 @@ teardown() {
 
     local before_count
     before_count="$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' | wc -l)"
-    _create_source_commit "src/dm_signal.py" "test: second source update"
+    _create_source_commit "docs/rule/db-operations-runbook.md" "test: second source update" "$source_repo"
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
-    [[ "$output" == *"2 source commits"* ]]
+    [[ "$output" == *"source commits 2件"* ]]
     [ "$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' | wc -l)" -gt "$before_count" ]
 }
 
 @test "GA-286 history cache warm lookup bypasses failing git log and stays fail-closed when cold" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo" "$TEST_TMPDIR/projects"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
     _create_context "context/dm-signal.md" "$STALE_DATE"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
-    _create_source_commit "src/dm_signal.py" "test: cacheable source update"
+    _create_source_commit "docs/rule/db-operations-runbook.md" "test: cacheable source update" "$source_repo"
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
 
@@ -131,7 +143,7 @@ EOF
     PATH="$TEST_TMPDIR/fake-bin:$PATH" CFC_GIT_TIMEOUT=0.1 CFC_GIT_RETRY_TIMEOUT=0.1 \
         run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
-    [[ "$output" == *"SOURCE_CHECK_FAILED"* ]]
+    [[ "$output" == *"source commit check failed"* ]]
 }
 
 # ── Helper: create context file with last_updated ──
@@ -149,14 +161,14 @@ _create_context() {
 }
 
 _create_source_commit() {
-    local rel_path="${1:-src/source.txt}" subject="${2:-test: source project changed}"
-    local abs_path="$TEST_TMPDIR/$rel_path"
+    local rel_path="${1:-src/source.txt}" subject="${2:-test: source project changed}" repo="${3:-$TEST_TMPDIR}"
+    local abs_path="$repo/$rel_path"
     mkdir -p "$(dirname "$abs_path")"
     printf 'source update\n' >> "$abs_path"
-    git -C "$TEST_TMPDIR" add "$rel_path"
+    git -C "$repo" add "$rel_path"
     GIT_AUTHOR_DATE="${TODAY}T00:00:00+09:00" \
     GIT_COMMITTER_DATE="${TODAY}T00:00:00+09:00" \
-        git -C "$TEST_TMPDIR" commit -q -m "$subject"
+        git -C "$repo" commit -q -m "$subject"
 }
 
 # ── Helper: create archive cmd entry ──
