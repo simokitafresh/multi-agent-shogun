@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_freshness_batch検分: ninja_scope_commit.sh 2f7805b8/85d83497/5f63ad8eはphase telemetry、immutable snapshot、single-flight receiptを追加。CLIとstdoutの40桁hash契約は維持し、同一run再実行はreceipt hashを返す。report_field_set.sh 7c2a802e/cebb4ba2/4dafc13fのbatch/atomic serializerはcommit_hash単一setter契約に影響なし。 -->
 <!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
 <!-- 2026-07-18検分: ninja_scope_commit.sh ef9c8849/22a14d07/ea11789a/b3716c04はignored owned path/retry/terminal index整合追加。CLI不変、残差はfail-closed。report_field_set batchとも整合。 -->
 <!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
@@ -70,6 +72,8 @@ bash scripts/ninja_scope_commit.sh \
 ```
 
 helperは指定pathだけをaddし、`git commit --only -- <paths>`でcommitする。共有indexにある他者stageは変更もcommitもしない。空scope・存在しないpathはBLOCKし、pre-commit hookは通常どおり実行する。
+
+同一run・message・mode・scope・worktree bytesで再実行した場合、helperはsingle-flight receiptを検証し、重複commitを作らず既存の40桁commit hashをstdoutへ返す。別タスクで同じmessage/pathを意図的に使うオーケストレータは `NINJA_SCOPE_COMMIT_RUN_ID` をタスク固有値にする。不正・消失receiptはfail-closedでBLOCKされる。
 
 忍者の直接`git commit`はGuard GA-231がfail-closedでBLOCKする。commitは必ずこのhelper経由にする。これにより別忍者が先にstageしたファイルを同じcommitへ吸収する経路を入口で閉じる。
 

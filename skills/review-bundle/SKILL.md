@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_freshness_batch検分: inbox_write.sh 62d7fd208/13fe555edはpending重複抑止とtask_failed専用検証を追加。review_feedback通知の位置引数、review_log後の永続化、副作用順序、失敗出口は不変。 -->
 <!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
 <!-- 2026-07-18検分: review_bundle.py 7d9f246eはbatch manifest追加し全precheck前のdurable mutationを禁止。inbox_write 62d7fd20はpending重複抑止。既存CLI不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T23:40:33+0900

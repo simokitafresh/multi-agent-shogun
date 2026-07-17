@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_freshness_batch検分: cmd_complete_gate.sh 89ebc48a3はcontext更新候補の機械可読出力を追加。単一cmd_id引数、CLEAR/BLOCK出口、codd-fix手順の契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
 <!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: cmd_complete_gate.sh 567c8710cはcontext freshnessをreport commit hashでも相関するfail-closed強化、test_select.sh 68bda0869/fa403eb51はreport contract対象を共有8-file selectorへ集約。codd-fixのCLI/完了gate呼出契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T23:53:24+0900

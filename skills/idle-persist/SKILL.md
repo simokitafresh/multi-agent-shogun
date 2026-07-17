@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_freshness_batch検分: inbox_write.sh 62d7fd208/13fe555edはpending重複抑止とtask_failed検証を追加。idle分析保存後の既存通知引数・永続化・失敗出口契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
 <!-- 2026-07-18検分: inbox_write.sh 62d7fd20は同一from/content未読pendingをflock内抑止しexit 0。位置引数不変。 -->
 name: idle-persist

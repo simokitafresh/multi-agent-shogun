@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_freshness_batch検分: report_field_set.sh 7c2a802e/cebb4ba2/4dafc13fは単一batch transaction、completed revision原子再公開、共通atomic serializerを追加。本文の--batch手順・verdict自動導出・fail-closed契約は現行scriptと一致。 -->
 <!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
 <!-- 2026-07-18検分: report_field_set.sh 7c2a802e/cebb4ba2は--batch追加。1 flock+atomic replace、bc/terminal/commitをfail-closed検証。従来field CLI不変。 -->
 <!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->

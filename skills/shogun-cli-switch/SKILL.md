@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_freshness_batch検分: ninja_monitor.sh 4a122414/68847eb9/1be952b4/3ac5de57はreflux ledgerのevent化・reconcile・isolated inventory保全。CLI切替、idle/dead pane respawn、settings→tmux同期契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
 <!-- 2026-07-18検分: ninja_monitor.sh 4a122414/68847eb9/1be952b4はreflux ledgerをevent-driven化+legacy一回reconcile。CLI切替/respawn契約不変。 -->
 <!-- script_refs_checked_at: 2026-07-16T21:35:00+09:00 -->
