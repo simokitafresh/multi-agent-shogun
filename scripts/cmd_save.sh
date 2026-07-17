@@ -882,6 +882,24 @@ extract_acceptance_criteria_block() {
     ' <<< "$CMD_BLOCK_NC"
 }
 
+# Keep command extraction with the other block parsers.  Several checks run
+# before the lower helper section is reached, so defining this lazily below a
+# caller makes a clean shell exit 127 in CI.
+extract_command_text_block() {
+    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+
+    awk '
+        /^[[:space:]]*command:[[:space:]]*\|?[[:space:]]*$/ { in_command=1; next }
+        in_command && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / { exit }
+        in_command { print }
+        /^[[:space:]]*command:[[:space:]]*[^|]/ {
+            line=$0
+            sub(/^[[:space:]]*command:[[:space:]]*/, "", line)
+            print line
+        }
+    ' <<< "$CMD_BLOCK_NC"
+}
+
 check_lord_instruction_ac_alignment_info() {
     local q8_value="${1:-}"
     local ac_block="${2:-}"
@@ -6346,21 +6364,6 @@ check_ac_absolute_literals() {
         [[ -z "$line" ]] && continue
         echo "  → $(echo "$line" | sed -E 's/^[[:space:]-]*description:[[:space:]]*//; s/^\"//; s/\"$//' | cut -c1-100)" >&2
     done <<< "$ABSOLUTE_HITS"
-}
-
-extract_command_text_block() {
-    [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
-
-    awk '
-        /^[[:space:]]*command:[[:space:]]*\|?[[:space:]]*$/ { in_command=1; next }
-        in_command && /^[[:space:]]{4}[a-zA-Z_][a-zA-Z0-9_]*:/ && !/^[[:space:]]*- / { exit }
-        in_command { print }
-        /^[[:space:]]*command:[[:space:]]*[^|]/ {
-            line=$0
-            sub(/^[[:space:]]*command:[[:space:]]*/, "", line)
-            print line
-        }
-    ' <<< "$CMD_BLOCK_NC"
 }
 
 is_db_operation_command_text() {

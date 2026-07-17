@@ -645,7 +645,8 @@ def main(report_data=None) -> int:
     _fm = data.get("files_modified") or []
     _paths = [str(f.get("path") or "") for f in _fm if isinstance(f, dict)] if isinstance(_fm, list) else []
     _docs_data_prefixes = ("docs/", "context/", "logs/", "queue/", "projects/")
-    _docs_data_only = bool(_paths) and all(path.startswith(_docs_data_prefixes) for path in _paths)
+    _no_code_recon = data.get("task_type") in ("recon", "scout") and not _paths
+    _docs_data_only = _no_code_recon or (bool(_paths) and all(path.startswith(_docs_data_prefixes) for path in _paths))
     if not _docs_data_only:
         _opsim = data.get("operational_simulation")
         _opsim_required = ("command", "expected", "actual", "result")

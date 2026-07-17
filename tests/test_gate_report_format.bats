@@ -50,6 +50,11 @@ assumption_invalidation:
   found: false
   affected_cmds: []
   detail: ""
+operational_simulation:
+  command: "bats tests/test_gate_report_format.bats"
+  expected: "fixture report satisfies the executable-report contract"
+  actual: "fixture report validation executed"
+  result: "PASS"
 result:
   summary: "テスト結果のサマリ"
 verdict: PASS
@@ -437,6 +442,7 @@ path = sys.argv[1]
 with open(path, encoding="utf-8") as f:
     data = yaml.safe_load(f)
 data["files_modified"] = [{"path": "scripts/gates/gate_report_format_main.py"}]
+data.pop("operational_simulation", None)
 with open(path, "w", encoding="utf-8") as f:
     yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
 PY
@@ -614,6 +620,11 @@ assumption_invalidation:
   found: false
   affected_cmds: []
   detail: ""
+operational_simulation:
+  command: "bash scripts/gates/gate_report_autofix.sh"
+  expected: "autofixed report passes format validation"
+  actual: "autofix and format validation executed"
+  result: "PASS"
 result:
   summary: "テスト結果のサマリ"
 verdict: PASS
