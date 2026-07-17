@@ -661,12 +661,13 @@ lessons:
     cmd_3772系の偵察レビューで、task_clarity/discretion_fillsに出た「本番パスワード未確認」「detector分類ロジックの未解決/未確認」をSG-PRE9cがAC未達成語として誤検知した。
     偵察・調査・切り分け・detector設計の文脈では未確認/未解決は状態記述や分類語であり、binary_checks yesとの矛盾とは限らない。
     一方で「後で」「家老実施」「未完了」「保留」等が同居する場合は実未達として検出を維持する。
+    吸収(2026-07-17, cmd_reflux_promotion_202607171423_kagemaru, origin: [[cmd_3772_viewer_auth偵察]] -> [[SG-PRE9c設計用語誤検知]] -> [[SG-PRE9c_Level4_BLOCK]]): 一次コード再検分で、調査・偵察・分類文脈の未確認/未解決は偽陽性として除外しつつ、後で・家老実施・未実施・未完了・保留等の委譲語が同居すればBC_YES_CLARITY_CONTRADICTION=1となり、shell側SG-PRE9cがERRORS加算してレビュー継続を拒否するLevel4防御を確認。17境界テストで偽陽性抑制と真陽性維持を固定した。
   source_cmd: cmd_3772_viewer_auth偵察
   origin: '[[cmd_3772_viewer_auth偵察]] -> [[SG-PRE9c設計用語誤検知]] -> [[偽陽性2件]]'
   created_at: '2026-07-08'
   automated: true
-  enforcement_level: 3
-  enforcement: gate_gunshi_report_precheck_engine.pyが未確認/未解決を偵察・調査・切り分け・detector設計文脈ではFP扱いし、委譲/未完了語が同居する場合だけBLOCK継続。test_gate_gunshi_precheck_sg_pre9c_scope.batsで回帰固定
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK): gate_gunshi_report_precheck_engine.pyが調査・偵察・分類文脈の未確認/未解決を偽陽性として除外し、委譲・未完了語が同居する場合はBC_YES_CLARITY_CONTRADICTION=1を返す。gate_gunshi_report_precheck.sh SG-PRE9cがERRORS加算してレビュー継続を拒否。tests/unit/test_gate_gunshi_precheck_sg_pre9c_scope.batsの17境界でFP抑制と真陽性維持をCI固定"
   when: report reviewでtask_clarity/discretion_fillsに未確認/未解決が出た時
   how: まず文脈が調査状態・分類語か、AC未達/委譲かを分ける。偵察の状態記述ならLGTM判定をSG-PRE9cだけで止めず、別AC証跡で判定する
 - id: LG050
