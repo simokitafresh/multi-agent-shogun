@@ -18,6 +18,9 @@ set -euo pipefail
 REPO_ROOT="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 
 run_check() {
+local attempt=0 check_code
+while :; do
+set +e
 SKILL_REF_REPO_ROOT="$REPO_ROOT" python3 - <<'PY'
 from __future__ import annotations
 
@@ -29,6 +32,7 @@ import hashlib
 import json
 import subprocess
 import atexit
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -40,18 +44,40 @@ record_verified = os.environ.get("SKILL_REF_RECORD_VERIFIED", "0") == "1"
 
 hash_state_path.parent.mkdir(parents=True, exist_ok=True)
 state_lock = (hash_state_path.parent / (hash_state_path.name + ".lock")).open("a+")
-fcntl.flock(state_lock.fileno(), fcntl.LOCK_EX)
+
+def acquire_state_lock(timeout_seconds: float = 10.0) -> None:
+    deadline = time.monotonic() + timeout_seconds
+    while True:
+        try:
+            fcntl.flock(state_lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                print(f"BLOCK: contract hash state lock timeout ({timeout_seconds:g}s): {state_lock.name}")
+                sys.exit(3)
+            time.sleep(0.05)
+
+
+def read_state_bytes() -> bytes | None:
+    try:
+        return hash_state_path.read_bytes()
+    except FileNotFoundError:
+        return None
+
+
+acquire_state_lock()
+state_snapshot = read_state_bytes()
 state_corrupt = False
 try:
-    hash_state = json.loads(hash_state_path.read_text(encoding="utf-8"))
-except FileNotFoundError:
-    hash_state = {"references": {}}
-except (json.JSONDecodeError, OSError):
+    hash_state = json.loads(state_snapshot.decode("utf-8")) if state_snapshot is not None else {"references": {}}
+except (UnicodeDecodeError, json.JSONDecodeError, OSError):
     hash_state = {"references": {}}
     state_corrupt = True
 if not isinstance(hash_state, dict) or not isinstance(hash_state.get("references"), dict):
     hash_state = {"references": {}}
     state_corrupt = True
+state_generation = hashlib.sha256(state_snapshot).hexdigest() if state_snapshot is not None else "missing"
+fcntl.flock(state_lock.fileno(), fcntl.LOCK_UN)
 
 contract_line_re = re.compile(
     r"(?:usage:|argument-hint|\$\{?[#@*0-9]|getopts|argparse|add_argument|sys\.argv|"
@@ -389,9 +415,17 @@ for skill_file in skill_files:
                 state_dirty = True
 
 if state_dirty:
+    acquire_state_lock()
+    publish_snapshot = read_state_bytes()
+    publish_generation = hashlib.sha256(publish_snapshot).hexdigest() if publish_snapshot is not None else "missing"
+    if publish_generation != state_generation:
+        fcntl.flock(state_lock.fileno(), fcntl.LOCK_UN)
+        # Re-run the complete scan once; stale decisions are never published.
+        sys.exit(75)
     tmp = hash_state_path.with_suffix(hash_state_path.suffix + f".{os.getpid()}.tmp")
     tmp.write_text(json.dumps(hash_state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     os.replace(tmp, hash_state_path)
+    fcntl.flock(state_lock.fileno(), fcntl.LOCK_UN)
 
 print("=== SKILL.md script reference check ===")
 print(
@@ -464,6 +498,17 @@ if missing or stale or missing_example_paths or unverified_side_effect_examples:
 
 print("--- 総合判定: PASS ---")
 PY
+check_code=$?
+set -e
+if [ "$check_code" -ne 75 ]; then
+    return "$check_code"
+fi
+if [ "$attempt" -ge 1 ]; then
+    printf '%s\n' 'BLOCK: contract hash state generation changed twice; refusing stale publish'
+    return 3
+fi
+attempt=$((attempt + 1))
+done
 }
 
 CACHE_TTL_SECONDS="${SKILL_REF_CACHE_TTL_SECONDS:-30}"
