@@ -591,10 +591,13 @@ v7吸収(2026-05-19):
     GA-120調査で、低レベルcheck直接は17件ALERTだがgateデフォルトCFC_GIT_TIMEOUT=1ではgit log timeoutによりOKとなった。さらにprojects/google-classroom.yaml不在により外部repoではなくinfra root fallbackを見ていた。次回同種ALERT調査では timeout秒数、root_fallback=true/false、実repo path、commit_count を必ず報告させる。
     吸収(2026-07-16, cmd_karo_hotfix_codd_context_freshness_202607160030, origin: [[GA-264]] -> [[source commit実契約差分]] -> [[本文同期チェック]]): GA-264横展開でsource 786a4ef4aを確認したところ、codd-refactorはfile内部jobs=8からfile間aggregate budget=8/file内部jobs=1へ実契約が変わっていた。次回はsource差分に既存context本文と矛盾する追加削除が1行以上あるかをyes/no判定し、yesなら本文更新後にのみsource_commit境界を進める。修正前codd ALERT=1、本文同期後=0、関連Bats=49/49 PASS、SKIP=0。
     吸収(2026-07-16, cmd_3997, origin: [[GA-276]] -> [[進行中commitの共有済み誤認]] -> [[global_cmd鮮度境界分離]]): dashboard/startupのglobal鮮度監視がローカルHEADを見ると、忍者commit直後かつcmd_complete_gate前の未還流変更を誤ALERTにする。globalはorigin/mainまたはorigin/masterの共有完了境界、cmd-warnings/cmd-commit-listはHEADを使う。修正前4 ALERT→修正後2 ALERT、dm-signal-core/ops誤検知2件消失。回帰67/67 PASS・SKIP0。
+    吸収(2026-07-19, cmd_karo_hotfix_ga301_context_freshness_timeout_202607190431, origin: [[GA-301]] -> [[async_snapshot_miss_first_run]] -> [[bounded_sync_snapshot_consumption]]): GA-301でgateがasync refresh要求直後のNoneを消費しcodd.mdを偽BLOCK。producer予算を渡すだけでは結果契約にならない。gateのcache有無2経路へCFC_HISTORY_REFRESH_SYNC=1を強制し、空cache 8/8 rebuilt、codd BLOCK 1→0、source_commit一次照合を維持。次回追加チェック: new source tip+empty cacheの初回実行で対象BLOCK0を二値検証する。
   source_cmd: 'cmd_karo_hotfix_ga120_context_freshness_recon_20260623'
   when: 'context_freshness ALERT調査・報告レビュー時'
   how: '報告YAMLの原因欄に timeout秒数/root_fallback有無/repo path/commit_count/source commits を数値で記録し、cache有無だけで判定しない'
   created_at: '2026-06-23'
+  enforcement: "Level4: gate呼出2経路でCFC_HISTORY_REFRESH_SYNC=1を強制し、empty-cache初回BLOCK0をテスト"
+  enforcement_level: 4
 - id: 'LK010'
   title: 'AUTO-VOIDはsubtask_idを優先して分割taskを守る'
   origin: '[[cmd_3515]] -> [[AUTO-VOID_subtask_id無視]] -> [[kagemaru_L0_task誤void]]'
