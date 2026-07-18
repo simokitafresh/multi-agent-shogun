@@ -140,7 +140,7 @@ ToBe達成時の自動成長速度: 同じ壁時計時間で試行回数3-5倍(d
 
 実装:
 - **トリガー**: 忍者がreport_received(メイン報告)をinbox_write.shで送信した時点で、自動的に振り返りプロンプトを同一忍者へ送信する。家老の手動介入不要(家老のCTX/時間を浪費しない)
-- **収集**: 振り返り報告は蓄積する。家老が逐次反応すると本業(C1修正のGATE判定等)が遅延するため、バッチ処理を検討(家老と相談中)
+- **収集(家老案A採用)**: `queue/retro/`にappend-only蓄積。家老nudgeは送らない(逐次反応を構造的に防止)。batch_readyは「未処理6件」or「最古30分」or「C1最終checkpoint直前」の最初の境界で1回だけ生成。event_id/parent_report_idでexactly-once dedup。家老はbatch 1件としてMECE分類→既存issueへmerge→新規issueのみ台帳追記。即時割込み例外はdata loss/security/CI RED/destructive safetyの4種のみ
 - **ACやreport templateには混ぜない**(分離原則)
 - C1のbaseline計測(§8 Step 1)のN≧5サンプルもこの経路で自動蓄積される
 
@@ -150,9 +150,9 @@ ToBe達成時の自動成長速度: 同じ壁時計時間で試行回数3-5倍(d
 
 | Wave | 指標 | before(p50/p95, N) | after(p50/p95, N) | delta | PASS |
 |------|------|-------------------|------------------|-------|------|
-| 1(C1) | deploy wall | p50=31.5s / p95=235.0s (N=20) | — | — | — |
-| 1(C1) | commit wall | ≈82s (N=1, **要N≧5再計測**) | — | — | — |
-| 1(C1) | scope逸脱 | (要計測: worktree 81, stale 28) | — | — | — |
+| 1(C1) | deploy wall | p50=41.0s / p95=235.0s (N=20) | — | — | — |
+| 1(C1) | commit wall | p50=9.974s / p95=14.384s (N=5) | p50=1.940s / p95=2.120s (N=5, 疾風) | **-80%** | **PASS** (目標p50<10s) |
+| 1(C1) | scope逸脱 | worktree 82, stale-prunable 28 | — | — | — |
 
 ## §10 凍結状態(2026-07-18 12:30時点)
 
