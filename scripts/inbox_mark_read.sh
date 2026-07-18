@@ -15,7 +15,7 @@ set -e
 # SCRIPT_DIR: string ops instead of $(cd) subshell (~5ms savings on WSL2)
 _imr_self="${BASH_SOURCE[0]}"
 [[ "$_imr_self" != /* ]] && _imr_self="$PWD/$_imr_self"
-SCRIPT_DIR="${_imr_self%/scripts/inbox_mark_read.sh}"
+SCRIPT_DIR="${INBOX_MARK_READ_ROOT_OVERRIDE:-${_imr_self%/scripts/inbox_mark_read.sh}}"
 unset _imr_self
 
 AGENT_ID="$1"

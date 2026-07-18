@@ -36,6 +36,7 @@ set -e
 # SCRIPT_DIR/SELF_SCRIPT_PATH: string ops instead of dirname/basename/cd subshells (~5ms savings on WSL2)
 _iw_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_iw_self" != /* ]] && _iw_self="$PWD/$_iw_self"
+INBOX_WRITE_INSTALL_ROOT="${_iw_self%/scripts/inbox_write.sh}"
 SCRIPT_DIR="${INBOX_WRITE_ROOT_OVERRIDE:-${_iw_self%/scripts/inbox_write.sh}}"
 SELF_SCRIPT_PATH="$_iw_self"
 NINJA_NAMES=""
@@ -2346,10 +2347,32 @@ while [ $attempt -lt $max_attempts ]; do
             record_inbox_event_to_memory_db >/dev/null 2>&1 &
         fi
 
+        # A ninja completion is a durable lifecycle event, but Karo cannot act
+        # on it until Gunshi has reviewed the exact report generation.  Leaving
+        # the parent event unread while dispatching the child in background
+        # woke Karo once before review and again after LGTM.  Preserve the
+        # parent-first ordering, synchronously persist the fingerprint-bound
+        # review child, then acknowledge only this exact parent message.  If
+        # child persistence fails the parent deliberately stays unread so the
+        # failure remains visible and retryable.
+        INBOX_REVIEW_CHILD_DELIVERED=0
+        if [ "$TARGET" = "karo" ] && inbox_type_triggers_report_completion "$TYPE" \
+           && [ -n "${_structured_candidate:-}" ] && [ -f "$_structured_candidate" ] \
+           && [ -n "${STRUCTURED_PARENT_CMD:-}" ]; then
+            if inbox_deliver_report_review_generation "$FROM" "$_structured_candidate" \
+                "$STRUCTURED_PARENT_CMD" "$STRUCTURED_REPORT_FINGERPRINT"; then
+                INBOX_MARK_READ_ROOT_OVERRIDE="$SCRIPT_DIR" \
+                    bash "$INBOX_WRITE_INSTALL_ROOT/scripts/inbox_mark_read.sh" karo "$MSG_ID" >/dev/null
+                INBOX_REVIEW_CHILD_DELIVERED=1
+            else
+                echo "[inbox_write] WARN: review child persistence failed; parent remains unread: id=$MSG_ID" >&2
+            fi
+        fi
+
         # Review delivery is a child event of the durable report event, not an
         # auto-done side effect. Completed/auto-read parents must still create
         # (or repair) the fingerprint-specific child review exactly once.
-        if [ "$TYPE" = "report_received" ] && [ -n "${_structured_candidate:-}" ] \
+        if [ "$INBOX_REVIEW_CHILD_DELIVERED" -eq 0 ] && [ "$TYPE" = "report_received" ] && [ -n "${_structured_candidate:-}" ] \
            && [ -f "$_structured_candidate" ] && [ -n "${STRUCTURED_PARENT_CMD:-}" ]; then
             ( inbox_deliver_report_review_generation "$FROM" "$_structured_candidate" "$STRUCTURED_PARENT_CMD" "$STRUCTURED_REPORT_FINGERPRINT" ) \
                 </dev/null >/dev/null 2>&1 &
@@ -2404,7 +2427,7 @@ while [ $attempt -lt $max_attempts ]; do
                         echo "[inbox_write] auto-done BLOCKED: report YAML not found: ${REPORT_FILENAME:-unknown} (ninja: $FROM)" >&2
                     else
                         _parent_cmd=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
-                        if [ -n "$_parent_cmd" ] && [ -n "$REPORT_FULL_PATH" ] && [ -f "$REPORT_FULL_PATH" ] && [ -f "$SCRIPT_DIR/scripts/lib/gunshi_notify.sh" ]; then
+                        if [ "${INBOX_REVIEW_CHILD_DELIVERED:-0}" -eq 0 ] && [ -n "$_parent_cmd" ] && [ -n "$REPORT_FULL_PATH" ] && [ -f "$REPORT_FULL_PATH" ] && [ -f "$SCRIPT_DIR/scripts/lib/gunshi_notify.sh" ]; then
                             # shellcheck disable=SC2034  # PROJECT_ROOT is used by sourced gunshi_notify.sh
                             PROJECT_ROOT="$SCRIPT_DIR"
                             # shellcheck source=/dev/null

@@ -873,6 +873,11 @@ _wait_for_file() {
 
     # Verify message was delivered to inbox
     [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+    # The durable parent is acknowledged only after the fingerprint-bound
+    # Gunshi child exists, so Karo is not interrupted before review readiness.
+    grep -q "^  read: true" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    [ -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ]
+    grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 }
 
 @test "report_received: explicit verified linked worktree checks that worktree instead of dirty main" {
