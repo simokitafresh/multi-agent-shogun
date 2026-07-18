@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-19 cmd_karo_hotfix_ga299_context_source_boundary_202607190158 -->
-<!-- source_commit:e6c6a121382a453be42d678532231ff2b90b4033 reason:ga299-reviewed-exact-boundary evidence:post-ga295-infra-source-classified -->
+<!-- last_updated: 2026-07-19 cmd_karo_hotfix_ga300_context_freshness_sources_202607190222 -->
+<!-- source_commit:f7602c7fa6e3e85d7924d300eed23b371b291779 reason:ga300-reviewed-exact-boundary evidence:test-lifecycle-contract-classified -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -19,6 +19,10 @@ context freshnessの`source_commit`境界はinfra root fallbackにも適用す�
 
 pre-commitのCoDD metadata境界は正本metadataが存在する対象だけを検査し、metadata欠落を別契約へ誤分類しない。stall fixtureのprocess-group drainはtest harness後処理のみで本番scheduler挙動を変更しない。→ `scripts/hooks/git-pre-commit.sh` / `tests/unit/test_git_pre_commit.bats` / `tests/unit/test_ninja_monitor_stall.bats`（GA-298、GA-299再分類）
 CI fixtureの直近契約は、campaign aggregate再入をBLOCKし、campaign fixture契約を同期し、receipt checkpoint rootをactive boundaryへ隔離する。→ `b3a8be4a4` / `d6a3cc8ca` / `f713cf329`（cmd_karo_ci_fix_29649090790_campaign_reentry_202607190011、cmd_karo_ci_fix_29649090790_campaign_contract_sync_202607190026、cmd_karo_ci_fix_29649090790_receipt_active_boundary_202607190044）
+
+新規testは既定transientとし、PASS・FAIL0・SKIP0の対象別receiptが揃った時だけcommit直前に未追跡testを削除する。永続化は`test_necessity`の防御対象・重複根拠・fixture/deprecated否定を満たす場合に限り、既存重複testは1行の`regression_justification`を必須とする。test path分類は`tests` path component、`.bats/.spec.js/.test.js`、または`test_*.py|sh`だけを対象とし、`contest`・`test-plan`・`test_timing`を誤分類しない。tracked test、receipt欠落/FAIL/SKIP、並行HEAD変化、production scope消失は削除前にBLOCKする。→ `scripts/deploy_task.sh` / `scripts/ninja_scope_commit.sh` / `skills/ninja-commit/SKILL.md`（commits `44fbe59a5`, `89672a069`, `f7602c7fa`）
+
+GA-300再分類: `ff52b26b3` は`codd-refactor`の参照鮮度注記のみでinfra契約変更なし。`44fbe59a5`の新規test必要性入口、`89672a069`のpath境界FP修正、`f7602c7fa`のtransient既定・commit前fail-closed削除は上記へ実内容反映。
 
 cmd完了時のown-commit freshness判定は、未反映commitをBLOCKする前に`CONTEXT_UPDATE_CANDIDATE project=<id> context=<path> source_commit=<hash> reason=own_reviewed_commit`を機械可読出力し、更新対象を自動供給する。承認済み変更がtest-onlyの場合だけ`CONTEXT_NON_REFLECTION_BOUNDARY ... reason=test_only`を出して正当な非反映境界を保持する。→ `scripts/cmd_complete_gate.sh` / `tests/unit/test_cmd_complete_gate_context_freshness_block.bats`（GA-285）
 
