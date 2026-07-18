@@ -2443,7 +2443,8 @@ EOF
         deploy_task_guard_target_path_collision '$TEST_PROJECT/queue/tasks/kagemaru.yaml' kagemaru
     "
     [ "$status" -eq 1 ]
-    [[ "$output" == *"BLOCK: target_path collision with hayate"* ]]
+    [[ "$output" == *"BLOCK: reserved path collision with hayate"* ]]
+    [[ "$output" == *"scripts/shared.sh"* ]]
 
     deploy_task_teardown
 }
@@ -2479,7 +2480,8 @@ EOF
         deploy_task_guard_direct_yaml_prewrite_collision '$TEST_PROJECT/tmp_direct.yaml' kagemaru
     "
     [ "$status" -eq 1 ]
-    [[ "$output" == *"BLOCK: target_path collision with hayate"* ]]
+    [[ "$output" == *"BLOCK: reserved path collision with hayate"* ]]
+    [[ "$output" == *"scripts/shared.sh"* ]]
     run bash -lc "
         source '$TEST_PROJECT/scripts/lib/field_get.sh'
         field_get '$TEST_PROJECT/queue/tasks/kagemaru.yaml' status ''
