@@ -1,4 +1,39 @@
 #!/bin/bash
+
+# C6-02: Keep the result of the command's target checks distinct from the
+# repository-wide workflow result.  This small pure evaluator is also exposed
+# to fixtures so the fail-closed truth table cannot drift with gh output.
+evaluate_ci_readiness_json() {
+    python3 -c '
+import json, sys
+d=json.load(sys.stdin)
+t=d.get("target_result")
+w=d.get("workflow_result")
+expected=str(d.get("expected_head_sha") or "")
+if not isinstance(t, dict) or not isinstance(w, dict):
+    print("BLOCK: typed target_result/workflow_result required")
+    raise SystemExit(1)
+for name, value in (("target_result", t), ("workflow_result", w)):
+    if not isinstance(value.get("conclusion"), str) or not isinstance(value.get("head_sha"), str):
+        print(f"BLOCK: {name} conclusion/head_sha type invalid")
+        raise SystemExit(1)
+if not expected or t["head_sha"] != expected or w["head_sha"] != expected:
+    print("BLOCK: head SHA mismatch")
+    raise SystemExit(1)
+if t["conclusion"] != "success":
+    print("BLOCK: target_result is not GREEN")
+    raise SystemExit(1)
+if w["conclusion"] != "success":
+    print("BLOCK: workflow_result is not GREEN")
+    raise SystemExit(1)
+print("READY: target_result=GREEN workflow_result=GREEN head_sha=" + expected)
+' 
+}
+
+if [ "${CMD_COMPLETE_GATE_CI_EVAL_ONLY:-0}" = "1" ]; then
+    evaluate_ci_readiness_json
+    exit $?
+fi
 # cmd_complete_gate.sh — cmd完了時の全ゲートフラグ確認スクリプト（ディレクトリ方式）
 # Usage: bash scripts/cmd_complete_gate.sh <cmd_id>
 # Exit 0: GATE CLEAR (全ゲートdone、または緊急override)
@@ -8037,26 +8072,32 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
 done
 
 if [ "$CI_PUSH_DETECTED" = true ]; then
-    (
-        if command -v gh >/dev/null 2>&1; then
-            ci_result=$(gh run list --repo simokitafresh/multi-agent-shogun --workflow test.yml --branch main --limit 1 --json conclusion,databaseId 2>/dev/null || true)
-            if [ -n "$ci_result" ]; then
-                ci_conclusion=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then .[0].conclusion // "" else "" end' 2>/dev/null)
-                ci_run_id=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then .[0].databaseId // "" else "" end' 2>/dev/null)
-                case "$ci_conclusion" in
-                    success) echo "[async][ci] OK (CI green, run ${ci_run_id})" ;;
-                    failure) echo "[async][ci] WARN: CI赤 (run ${ci_run_id})" ;;
-                    "") echo "[async][ci] INFO: CI結果取得不可（進行中またはデータなし）" ;;
-                    *) echo "[async][ci] INFO: CI結果=${ci_conclusion} (run ${ci_run_id})" ;;
-                esac
-            else
-                echo "[async][ci] SKIP (gh run list returned empty)"
-            fi
-        else
-            echo "[async][ci] SKIP (gh CLI not available)"
-        fi
-    ) >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 &
-    echo "  queued (async)"
+    ci_result="${CMD_COMPLETE_GATE_CI_RUN_JSON:-}"
+    if [ -z "$ci_result" ] && command -v gh >/dev/null 2>&1; then
+        ci_result=$(timeout 15 gh run list --repo simokitafresh/multi-agent-shogun \
+            --workflow test.yml --branch main --limit 1 \
+            --json conclusion,databaseId,headSha 2>/dev/null || true)
+    fi
+    expected_head=$(git -C "$SCRIPT_DIR" rev-parse HEAD 2>/dev/null || true)
+    ci_fields=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then [.[0].conclusion // "", (.[0].databaseId // "" | tostring), .[0].headSha // ""] | @tsv else "" end' 2>/dev/null || true)
+    IFS=$'\t' read -r ci_conclusion ci_run_id ci_head_sha <<< "$ci_fields"
+    target_conclusion=success
+    for task_file in "${MATCHING_TASK_FILES[@]}"; do
+        ninja_name=$(basename "$task_file" .yaml)
+        report_file=$(resolve_report_file "$ninja_name")
+        [ "$(FIELD_GET_NO_LOG=1 field_get "$report_file" verdict "")" = "PASS" ] || target_conclusion=failure
+    done
+    ci_decision_json=$(jq -cn \
+        --arg expected "$expected_head" --arg target "$target_conclusion" \
+        --arg workflow "$ci_conclusion" --arg sha "$ci_head_sha" \
+        '{expected_head_sha:$expected,target_result:{conclusion:$target,head_sha:$expected},workflow_result:{conclusion:$workflow,head_sha:$sha}}')
+    if ci_decision=$(printf '%s' "$ci_decision_json" | evaluate_ci_readiness_json 2>&1); then
+        echo "  OK: ${ci_decision} run=${ci_run_id}"
+    else
+        echo "  [CRITICAL] ${ci_decision}${ci_run_id:+ run=${ci_run_id}}"
+        record_block_reason "ci_readiness:${ci_decision}"
+        ALL_CLEAR=false
+    fi
 else
     echo "  SKIP (no push detected in reports)"
 fi
