@@ -476,7 +476,7 @@ print('ok')
 
 @test "shared hook git daemon and startup fixtures are exclusive file roots" {
     runner="$ROOT/scripts/run_tests.sh"
-    fixture_contract='test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats'
+    fixture_contract='test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats|test_campaign_lane_shard_item.bats'
     grep -Fq "$fixture_contract" "$runner"
     grep -F -A3 "${fixture_contract})" "$runner" \
         | grep -q 'file_inner_jobs=1'
