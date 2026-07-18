@@ -815,7 +815,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1204 -->
+<!-- last_synced_lesson: L1207 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1733,6 +1733,9 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1202: 常駐daemon隔離fixtureはsource依存と契約markerを同時追随する（cmd_karo_ci_fix_29630959241_watcher_handoff_202607181348）
 - L1203: history snapshot consumerは検証済み世代だけ読む（cmd_karo_hotfix_ga291_context_freshness_202607181628）
 - L1204: 再帰runnerの内部マーカーを環境変数で継承させない（cmd_karo_ci_fix_29637087888_terminal_receipt）
+- L1205: WSLの見かけ上実行可をLinux契約に持ち込まない（cmd_karo_ci_fix_29635359839_full_deploy_harness）
+- L1206: consumer高速化後もproducer timeoutを実測上限へ揃える（cmd_karo_hotfix_ga292_context_freshness_git_timeout_202607181715）
+- L1207: 正規test入口でreceiptを強制する（cmd_karo_run_tests_atomic_receipt_202607181608）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
@@ -2049,3 +2052,7 @@ load average最大40.05/8コア。全量backend/tests(206ファイル)合計455.
 ## `/mnt/c`残量の事前検知（cmd_3875）
 
 df計測SSOT=`scripts/lib/disk_space_watch.sh`。将軍/家老startupは警告域でALERT、危険域で総合BLOCK、`ninja_monitor.sh`は家老へ`disk_space_alert`通知して`gate_fire_log`へ記録する。既定50GB/20GB、環境変数で調整可能。動作証跡 → `docs/research/cmd_3875_disk_watch.md`
+
+## 防御機構スループット棚卸し（cmd_4059）
+
+最終checkpointは維持し、毎tool・毎prompt・毎commitの同期枝を計測可能化して非同期化/差分化するのが最優先。現物189項目の全数台帳と上位候補 → `docs/research/gate_hook_inventory_20260718.md`
