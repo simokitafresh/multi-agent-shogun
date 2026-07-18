@@ -1,5 +1,9 @@
 # Ninja Detailed Procedures
 
+## Default-delete test procedure
+
+実装testは作成→PASS→即削除を既定とする。永続化は具体的不変量を宣言するcontractだけである（positive_rule）。消費済みtestを残すと保守費・fixture・実行時間が増え、境界所有が曖昧になる（reason）。提出前に次を全て二値確認せよ: (1)削除diffまたは`test_necessity`全件非空、(2)宣言率N/N、(3)契約混入0、(4)境界内回帰リスク受容、(5)tests/純減時`deletion_justification`非空、(6)削除fixture被参照0、(7)永続regressionの`regression_justification`非空かつrace testはPASS後contract外なら停止・削除。origin: `[[殿裁定_default_delete_test_20260719]] -> [[default_delete_test_policy]] -> [[忍者検証手順]]`
+
 > 詳細手順・テンプレート。中核ルールは `instructions/ashigaru.md` を参照。
 
 ## Task YAML更新手順

@@ -601,6 +601,20 @@ System manages ALL white-collar work, not just self-improvement. Project folders
 
 # Test Rules (all agents)
 
+## Default-delete test policy
+
+- **positive_rule**: 実装用testは作成し、PASSを確認した同一タスク内で即削除する。永続化できるのは、守る具体的不変量を `test_necessity` に宣言したcontract testだけとする。
+- **reason**: 実装時に価値を消費済みのtestを残すと、保守対象・fixture・実行時間が増え、境界の所有者が曖昧になるため。
+- **二値防御（穴1-7）**:
+  1. 削除diff: 新規/変更testは最終diffで0件、または全件に非空の`test_necessity`がある。
+  2. 宣言率: 永続test数Nに対する`test_necessity`宣言数がN/Nである。
+  3. 契約混入0: `test_necessity`は具体的不変量を1つだけ記し、実装手順・一時fixture・内部構造の契約混入が0件である。
+  4. 境界内回帰リスク受容: contract化しない境界内の回帰リスクは実装責任として受容し、testを保険として残さない。
+  5. 既存test削除: tests/パスの純減には非空の`deletion_justification`があり、削除fixtureの非test参照が0件である。
+  6. fixture被参照0: 削除前に削除対象fixtureへの全参照を検索し、残存参照0件を証明する。
+  7. regression/race: 永続regression testには非空の`regression_justification`と具体的不変量が必要。並列/race検証は競合を再現してPASS後、永続contract条件を満たさなければ停止して削除する。
+- origin: `[[殿裁定_default_delete_test_20260719]] -> [[default_delete_test_policy]] -> [[全PJ共通契約]]`
+
 1. **SKIP = FAIL**: テスト報告でSKIP数が1以上なら「テスト未完了」扱い。「完了」と報告してはならない。
 2. **Preflight check**: テスト実行前に前提条件（依存ツール、エージェント稼働状態等）を確認。満たせないなら実行せず報告。
 3. **E2Eテストは家老が担当**: 全エージェント操作権限を持つ家老がE2Eを実行。忍者はユニットテストのみ。
