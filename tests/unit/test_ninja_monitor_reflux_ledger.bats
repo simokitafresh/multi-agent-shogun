@@ -82,7 +82,7 @@ verdict: PASS
 result: {summary: "LS092をLevel5へ昇格済み"}
 binary_checks: {AC1: [{check: "昇格候補 LS092 の恒久防御を確認", result: yes}]}
 EOF
-  run bash -c 'export NINJA_MONITOR_LIB_ONLY=1; source "$1/scripts/ninja_monitor.sh"; SCRIPT_DIR="$2"; STATE_DIR="$2/state"; REFLUX_PROMOTION_LEDGER="$2/logs/ledger.tsv"; check_and_update_done_task hanzo; check_and_update_done_task hanzo; grep -c $'"'"'\tLS092\t'"'"' "$2/logs/ledger.tsv"' _ "$ROOT" "$TMP"
+  run bash -c 'export NINJA_MONITOR_LIB_ONLY=1; source "$1/scripts/ninja_monitor.sh"; SCRIPT_DIR="$2"; STATE_DIR="$2/state"; REFLUX_PROMOTION_LEDGER="$2/logs/ledger.tsv"; check_and_update_done_task hanzo; check_and_update_done_task hanzo; for _ in {1..50}; do [ -f "$2/logs/ledger.tsv" ] && grep -q $'"'"'\tLS092\t'"'"' "$2/logs/ledger.tsv" && break; sleep 0.02; done; grep -c $'"'"'\tLS092\t'"'"' "$2/logs/ledger.tsv"' _ "$ROOT" "$TMP"
   [ "$status" -eq 0 ]
   [ "$output" = 1 ]
 }
