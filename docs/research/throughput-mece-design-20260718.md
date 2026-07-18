@@ -1,6 +1,12 @@
 # 品質合格スループット根治 — AsIs/ToBe 5W1H設計書
 
-作成: 将軍(覚醒統合) 2026-07-18 14:38 | 更新: 将軍 2026-07-18 19:40 | version: **v2.2**(概算先行+待ちゼロ — 殿の求める型)
+作成: 将軍(覚醒統合) 2026-07-18 14:38 | 更新: 将軍 2026-07-18 21:50 | version: **v2.3**(§8.2閉ループ実E2E 1周完走 — 自動サイクル確立)
+
+### v2.3変更点（2026-07-18 21:30 閉ループ完走の実証記録）
+1. **§8.2閉ループの実E2E 1周完走(mockでない実運用)**: event_id=throughput_p1_20260718T2130、state=COMPLETE、reason=checkpoint_pass。自動選定(候補3件からblocked_agent_seconds最大のP1共有worktree競合1,693秒を選定)→自動配備(陣形図idle先頭の小太郎へdeploy_task正規入口で実task配備)→checkpoint(quality pass)→record(logs/throughput_growth_loop_records.jsonl)→rerank(rc0、次候補P2_report_friction自動生成)。台帳=logs/throughput_growth_loop_e2e.jsonl。**殿指示「超速自動サイクル確立」の宣言条件を達成**
+2. **自動waveの初仕事が最大律速の根治**: 自動配備されたtask=P1 planned paths予約(worktree競合根治)。配備21:30→軍師LGTM 21:33、約4分/周の実測
+3. **機械選定と将軍推奨の一致**: 将軍がP1を次wave第一候補と推奨(21:24)した直後、選定器が独立に同じP1を数値選定 — 選定器の妥当性を人間判断との一致で検証
+4. **人の介在点は契約どおり2点のみ**: 本番裁可+wave品質確認(軍師レビュー/家老GATE)。選定・配備・記録・再順位付けは人手ゼロを実証
 
 ### v2.2変更点（殿指示2026-07-18 19:34「CI GREENを待たずに概算でE2Eをやらせよう。あまりにも遅い」+ 19:37「待つ間に全速で出来ることをやらせろ」）
 1. **概算先行原則**: 確定数値(CI GREEN+同一cohort)を待たず、現行HEADで概算E2Eを即計測し品質注記(dirty HEAD/CI未GREEN)付きで先に殿へ届ける。概算=v2.1途中試行(1行ログ級)。確定=最終checkpoint 1回。**概算の即報 > 確定の遅報**
@@ -194,7 +200,19 @@ ToBe達成時の自動成長速度は、局所倍率の積ではなく同一coho
 | C1履歴 | report publication | p95=4.298s (N=10) | p95=0.500s (N=10) | **-88.4%、8.60倍** | **局所PASS**。43/43、SKIP0 |
 | C1履歴 | context freshness | consumer同期git2、legacy採用1 | consumer同期git0、legacy0 | full54/54、N10 10/10 | **PASS**、FP0/FN0、L1203 |
 | B0候補 | test runner lifecycle | 任務38分中runaway/誤再走約26分 | — | blocked share約68%の単発仮説 | **N≥10未計測** |
+| B0選定 | deploy wall(18:09確定) | p50=41.026s / p95=234.965s (N=20) | 自然N=11: p50=43.089s / p95=99.459s | p95 **-57.7%** | **暫定**(同一仕事量未確認、E2E昇格禁止) |
+| B1概算 | deploy観測(19:43第一報、指示から8分) | 同上baseline | N=2: p50=24.395s / p95=31.935s | p50 -40.5% / p95 -86.4% | **PROVISIONAL**(canonical phase不一致→計装修正LGTM済み) |
+| B1発見 | 並列deploy直列化 | 単発38.934s | 並列3件93.296/96.779/102.139s | **約2.5倍悪化** | 直列化資源確定→P1 planned paths予約(自動wave初仕事、LGTM 4分) |
+| 忍者側損失 | P1 worktree競合/P2報告摩擦/P3 SHA drift | 待機28m13s÷40m24s=70% / 1105s中改善可能872s=78.9% / HEAD 2commit drift | — | — | P1根治LGTM済み、P2=rerank次候補、P3=checkpoint専用worktree設計 |
+| 閉ループ | §8.2実E2E 1周 | 手動選定・手動配備 | 自動選定→配備→checkpoint→record→rerank完走(21:30) | 1周実測=選定から軍師LGTMまで約4分 | **COMPLETE**(event_id=throughput_p1_20260718T2130) |
 | 全体 | 品質合格成果/時 | 同一定義beforeなし | 直近18分17秒で4件=13.1件/時 | 比較不能 | **未証明** |
+
+## §10.1 現在状態(2026-07-18 21:50時点 — v2.3)
+
+- **自動サイクル確立済み**(§8.2閉ループ実E2E完走、v2.3変更点1)。以後のwaveは自動選定→自動配備で回り、人はcheckpoint品質確認と本番裁可のみ
+- 確定待ち: case22修正(9118731e9、87/87 PASS)+P1修正の家老GATE→push→CI GREEN→最終checkpoint再計測。これが通れば「品質合格成果/時」のbefore/after確定倍率が出る
+- 将軍retro 7件+忍者側P1-P3を台帳登録済み。次候補はrerank自動生成のP2_report_friction
+- 通知過剰の是正: 軍師LGTM通知のBULLETIN_NOTIFYからshogun除外を指示済み(将軍inbox 74件中約20件がアクション不要通知だった)
 
 ## §10 現在状態(2026-07-18 16:55時点)
 
