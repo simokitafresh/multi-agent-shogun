@@ -161,8 +161,9 @@ lessons:
     CI検知は家老の責務。将軍にCI情報を見せる仕組み=鎖の迂回誘発(殿裁定2026-07-16、cad2fa416で除去)。pre-pushのfull unit suiteもCIとの二重チェック(4cb69edc9で除去)
     async関数のtimeout短縮は速度に寄与せず機能をsilent-deathさせる(LS081吸収2026-07-16): async(&)実行の待ちは誰も払っていない。GH timeout 0.05s→CI RED検知25日間silent-death。既定8s復活+DIGEST ci常時表示(d5ed06f9b)
     reCAPTCHA画像チャレンジは即停止しcookie再利用へ逃がす(LS082吸収2026-07-16): note_draft.shで検出時に即RuntimeError+SKIP記録。Level4 guard(cmd_reflux_promotion_202607080756)
+    陣形図異常hookにsession-scope dedup不在で将軍inbox処理が6h09m制御面消費に支配された(LS094吸収2026-07-18): 同一failed/stallセットの再警告を抑制しセット変化時のみ再警告。/tmp/shogun_snapshot_alert_dedup実装(b58658756, .claude/hooks/post-shogun-inbox-check.sh L209-221)。残: escalation acknowledged_at+再発火抑制、info系通知バッチ化
   source_ids: [LS033, LS037, LS074, LS084, LS086, LS087, LS051, LS066]
-  source_ids_absorbed: [LS081, LS082]
+  source_ids_absorbed: [LS081, LS082, LS094]
   created_at: '2026-04-24'
   automated: true
   enforcement_level: 4
@@ -420,18 +421,9 @@ lessons:
   automated: true
   enforcement: "Level4: scripts/hooks/three_layer_preflight.sh memory_cache_is_healthy() rejects previous-boot/schema-invalid/zero-event immutable cache and batch_index_search() falls back to source DB; tests/unit/test_three_layer_preflight.bats stale-empty-cache + external-WAL-source 2/2 PASS (commit 942259c06351507b1acfa1ee18268a4e76fd5de5)"
   enforcement_level: 4
-- id: 'LS094'
-  title: '将軍inbox処理ループCTX支配 — hook dedup不在で6h09m環境埋込み0件'
-  origin: '未指定'
-  detail: 'セッション01:33-07:42=6h09m。recovery45分+inbox処理ループ5h20m。成果物=backlinks3件のみでLevel4環境埋込み0件。根因4点: (1)陣形図異常hookにsession-scope dedup不在=同一忍者CTX0%を10回以上capture-pane再確認 (2)session_alerts外部再生成がDONE化と競合=Write失敗3回+無限TODO再生成 (3)escalation自動発火にACK機構不在=同一SKILL refs WARN 4回escalation (4)bulletin_notify粒度過細=軍師LGTMごとに将軍3 tool call×30秒。将軍のCTXが制御面消費に支配され戦略的作業(環境埋込み)に到達できなかった。LS-A11(CI検知は家老の責務)の拡張: info系通知も将軍CTXを消費する構造は鎖の迂回と同等の害。'
-  source_cmd: 'session_20260718_0742'
-  created_at: '2026-07-18'
-  automated: true
-  enforcement: 'Level4: (1)陣形図異常hookにsession-scope dedup実装済み(b58658756, post-shogun-inbox-check.sh L209-221, /tmp/shogun_snapshot_alert_dedup)。同一failed/stallセット再警告抑制、セット変化時のみ再警告。残: (2)escalation acknowledged_at+再発火抑制 (3)info系通知バッチ化 — 家老配備要'
-  enforcement_level: 4
 - id: 'LS095'
   title: '分離原則 — メインtaskと振り返りを混ぜるな'
-  origin: '未指定'
+  origin: '[[殿裁定_分離原則_20260718]] -> [[AC自動注入否定]] -> [[retro_prompt分離実装_2f6203c98]]'
   detail: '殿裁定2026-07-18: 同時に全部やらせるのは効率がいいようで原理原則に反する。メインtask完了後に別途振り返りを実施し、メインの高速高回転を維持する。将軍が提案したAC自動注入は誤り(メインtaskを遅くする)。正解=report_received送信で自動トリガー→忍者に別プロンプト送信(inbox_write.sh 2f6203c98実装済み)。殿のプロンプト原文: この作業で時間がかかった原因を分析し、利他の精神で調査を行いインフラバグの疑いとして家老に報告せよ'
   source_cmd: 'session_20260718'
   created_at: '2026-07-18'
