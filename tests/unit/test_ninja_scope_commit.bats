@@ -167,6 +167,29 @@ HOOK
     [ -z "$(git -C "$REPO" status --porcelain -- own.txt)" ]
 }
 
+@test "stdout欠落後はrun id terminal ledgerからcomplete commitを回復しduplicateを作らない" {
+    printf 'ledger recovery\n' >> "$REPO/own.txt"
+    run_id="terminal-ledger-$BATS_TEST_NUMBER"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_RUN_ID="$3" bash "$2" -m ledger-recovery -- own.txt >/dev/null' _ "$REPO" "$HELPER" "$run_id"
+    [ "$status" -eq 0 ]
+    head_after_first="$(git -C "$REPO" rev-parse HEAD)"
+    ledger="$(printf '%s\n' "$output" | sed -n 's/.* ledger=\([^ ]*\).*/\1/p' | tail -1)"
+    [ -s "$ledger" ]
+    grep -qx "run_id=$run_id" "$ledger"
+    grep -qx "commit_hash=$head_after_first" "$ledger"
+    grep -qx 'rc=0' "$ledger"
+    grep -qx 'phase=complete' "$ledger"
+    grep -qx 'status_clean=true' "$ledger"
+    grep -qx "head_generation=$head_after_first" "$ledger"
+    grep -qx 'complete=true' "$ledger"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_RUN_ID="$3" bash "$2" -m ledger-recovery -- own.txt' _ "$REPO" "$HELPER" "$run_id"
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | tail -1)" = "$head_after_first" ]
+    [ "$(git -C "$REPO" rev-list --count HEAD)" -eq 2 ]
+}
+
 @test "normal commit appends maintenance.auto=false and preserves caller config" {
     printf 'maintenance lane\n' >> "$REPO/own.txt"
     mkdir -p "$REPO/.git/hooks"
@@ -718,6 +741,12 @@ HOOK
     [ -s "$receipt" ]
     grep -qx "commit_hash=$hash" "$receipt"
     grep -qx 'rc=1' "$receipt"
+    ledger="$(printf '%s\n' "$output" | sed -n 's/.* ledger=\([^ ]*\).*/\1/p' | tail -1)"
+    [ -s "$ledger" ]
+    grep -qx "commit_hash=$hash" "$ledger"
+    grep -qx 'rc=1' "$ledger"
+    grep -qx 'phase=advance_shared_index' "$ledger"
+    grep -qx 'complete=false' "$ledger"
 }
 
 @test "存在しないpathはBLOCKする" {

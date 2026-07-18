@@ -204,6 +204,28 @@ telemetry_clock_calls=0
 singleflight_receipt=""
 singleflight_key=""
 singleflight_role="owner"
+terminal_run_id="${NINJA_SCOPE_COMMIT_RUN_ID:-${message:-repair-index}}"
+terminal_ledger_dir="$(lock_path "$git_common_dir/ninja-scope-terminal-ledger")"
+mkdir -p -- "$terminal_ledger_dir"
+terminal_run_key="$(printf '%s' "$repo_root:$terminal_run_id" | sha256sum | awk '{print $1}')"
+terminal_ledger="$terminal_ledger_dir/$terminal_run_key.ledger"
+
+write_terminal_ledger() {
+    local rc="$1" commit_hash="${2:-}" complete="$3" phase="$4"
+    local tmp head_generation status_clean=false scope_args=()
+    head_generation="$(git rev-parse HEAD 2>/dev/null || printf unavailable)"
+    if declare -p paths >/dev/null 2>&1 && ((${#paths[@]} > 0)); then
+        scope_args=(-- "${paths[@]}")
+        if git diff --quiet "${scope_args[@]}" && git diff --cached --quiet "${scope_args[@]}"; then
+            status_clean=true
+        fi
+    fi
+    [[ "$commit_hash" =~ ^[0-9a-f]{40}$ ]] || commit_hash=none
+    tmp="${terminal_ledger}.tmp.$$"
+    printf 'version=1\nrun_id=%s\ncommit_hash=%s\nrc=%s\nphase=%s\nstatus_clean=%s\nhead_generation=%s\ncomplete=%s\n' \
+        "$terminal_run_id" "$commit_hash" "$rc" "$phase" "$status_clean" "$head_generation" "$complete" > "$tmp"
+    mv -f -- "$tmp" "$terminal_ledger"
+}
 
 epoch_ms() {
     local output_var="$1" before="$EPOCHREALTIME" after before_us after_us sec frac value
@@ -256,6 +278,9 @@ publish_terminal_failure() {
         "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished" "$current_phase" "$rc" "${published_commit_hash:-none}" "$sum" "$unattributed" "$(((telemetry_overhead_us + 999) / 1000))" "$telemetry_clock_calls" >&2
     phase_fields >&2
     printf '\n' >&2
+    write_terminal_ledger "$rc" "$published_commit_hash" false "$current_phase"
+    printf 'event=terminal_ledger run_id=%s rc=%s commit_hash=%s complete=false ledger=%s\n' \
+        "$terminal_run_id" "$rc" "${published_commit_hash:-none}" "$terminal_ledger" >&2
     if [[ -n "$singleflight_receipt" && -n "$published_commit_hash" ]]; then
         receipt_tmp="${singleflight_receipt}.tmp.$$"
         printf 'version=2\nkey=%s\nrc=%s\ncommit_hash=%s\nfinished_at=%s\nlast_phase=%s\n' \
@@ -305,7 +330,10 @@ publish_terminal_success() {
             "$singleflight_key" "$terminal_hash" "$finished_epoch_ms" "$completed_event" > "$receipt_tmp"
         mv -f -- "$receipt_tmp" "$singleflight_receipt"
     fi
+    write_terminal_ledger 0 "$terminal_hash" true complete
     printf '%s\n' "$completed_event" >&2
+    printf 'event=terminal_ledger run_id=%s rc=0 commit_hash=%s complete=true ledger=%s\n' \
+        "$terminal_run_id" "$terminal_hash" "$terminal_ledger" >&2
     if [[ -n "$singleflight_receipt" ]]; then
         printf 'event=terminal_receipt role=%s key=%s rc=0 commit_hash=%s receipt=%s\n' \
             "$singleflight_role" "$singleflight_key" "$terminal_hash" "$singleflight_receipt" >&2
@@ -390,7 +418,7 @@ done
 # worktree bytes.  The bytes keep a later edit from reusing a stale receipt;
 # NINJA_SCOPE_COMMIT_RUN_ID lets orchestrators distinguish separate tasks that
 # intentionally use the same message and paths.
-singleflight_run_id="${NINJA_SCOPE_COMMIT_RUN_ID:-${message:-repair-index}}"
+singleflight_run_id="$terminal_run_id"
 singleflight_material="run=$singleflight_run_id
 message=$message
 patch=$patch_file
@@ -432,7 +460,11 @@ if [[ -f "$singleflight_receipt" ]]; then
     fi
     if [[ "$receipt_scope_converged" == true ]]; then
         singleflight_role="follower"
+        published_commit_hash="$receipt_hash"
+        write_terminal_ledger 0 "$receipt_hash" true complete
         [[ "$receipt_completed_event" == event=completed\ * ]] && printf '%s\n' "$receipt_completed_event" >&2
+        printf 'event=terminal_ledger run_id=%s rc=0 commit_hash=%s complete=true ledger=%s\n' \
+            "$terminal_run_id" "$receipt_hash" "$terminal_ledger" >&2
         printf 'event=terminal_receipt role=follower key=%s rc=0 commit_hash=%s receipt=%s\n' \
             "$singleflight_key" "$receipt_hash" "$singleflight_receipt" >&2
         terminal_event_emitted=true
