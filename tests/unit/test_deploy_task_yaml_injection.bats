@@ -803,6 +803,54 @@ for term in ("run_id/source/input provenance", "row_count", "hash", "restore後"
 PY
 }
 
+@test "L877: DM-Signal golden-baseline task receives manifest and ignored archive contract" {
+    tmpdir="$(mktemp -d)"
+    task_file="$tmpdir/task.yaml"
+    cat > "$task_file" <<'YAML'
+task:
+  project: dm-signal
+  purpose: "100MB超のgolden-baselineを生成してexact回帰する"
+  status: assigned
+YAML
+
+    run env DEPLOY_TASK_LIB_ONLY=1 TASK_FILE_ENV="$task_file" PROJECT_ROOT_ENV="$PROJECT_ROOT" bash -c '
+        source "$PROJECT_ROOT_ENV/scripts/deploy_task.sh"
+        inject_dm_signal_golden_baseline_contract "$TASK_FILE_ENV"
+    '
+    [ "$status" -eq 0 ]
+    python3 - "$task_file" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+contract = task["golden_baseline_contract"]
+assert len(contract) == 3, contract
+text = " ".join(contract)
+for term in ("gitignore", "canonical hash", "row_count", "schema/version", "archive相対path", "二値検証"):
+    assert term in text, (term, contract)
+PY
+}
+
+@test "L877: unrelated DM-Signal task does not receive golden-baseline contract" {
+    tmpdir="$(mktemp -d)"
+    task_file="$tmpdir/task.yaml"
+    cat > "$task_file" <<'YAML'
+task:
+  project: dm-signal
+  purpose: "通常のAPI回帰テストを実行する"
+  status: assigned
+YAML
+
+    run env DEPLOY_TASK_LIB_ONLY=1 TASK_FILE_ENV="$task_file" PROJECT_ROOT_ENV="$PROJECT_ROOT" bash -c '
+        source "$PROJECT_ROOT_ENV/scripts/deploy_task.sh"
+        inject_dm_signal_golden_baseline_contract "$TASK_FILE_ENV"
+    '
+    [ "$status" -eq 0 ]
+    python3 - "$task_file" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+assert "golden_baseline_contract" not in task, task
+PY
+}
+
 # ── cmd_karo_hotfix_split_ac_modifier_scope_202607131307 回帰テスト ──
 # Origin: cmd_3873実配備で、assigned_acs=[AC1,AC2]の分割taskへ
 # inject_lsa16_production_parity_controls/inject_parity_target_date_acが

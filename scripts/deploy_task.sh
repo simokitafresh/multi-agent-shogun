@@ -5111,6 +5111,33 @@ ${command_text}"
     log "inject_dm_signal_pf_operation_guardrails: injected"
 }
 
+# L877 Level5: 巨大golden-baselineを扱うDM-Signal taskへ、GitHub上限を
+# 越える前にmanifest/archive二層契約を事前供給する。
+inject_dm_signal_golden_baseline_contract() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+
+    local project purpose command_text title haystack tmp_file inject_block indent="  "
+    project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
+    [ "$project" = "dm-signal" ] || return 0
+    purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "" 2>/dev/null || true)
+    command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "" 2>/dev/null || true)
+    title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null || true)
+    haystack="$title $purpose $command_text"
+    printf '%s\n' "$haystack" | grep -Eqi 'golden[-_ ]?baseline|golden[-_ ]?data' || return 0
+
+    inject_block="${indent}golden_baseline_contract:"
+    inject_block="${inject_block}"$'\n'"${indent}- \"100MB超のrow payload本体はgit管理せず、gitignore済みoutputs/analysis/cmd_* archiveへ保存する。\""
+    inject_block="${inject_block}"$'\n'"${indent}- \"git管理する小manifestにはcanonical hash、row_count、schema/version、archive相対pathを含める。\""
+    inject_block="${inject_block}"$'\n'"${indent}- \"テストでmanifestとarchiveのcanonical hash、row_count、schema/version一致を二値検証する。\""
+
+    tmp_file=$(mktemp "${task_file}.XXXXXX")
+    cp "$task_file" "$tmp_file"
+    insert_task_block_before_description "$tmp_file" "$inject_block"
+    _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
+    log "inject_dm_signal_golden_baseline_contract: L877 Level5 contract injected"
+}
+
 # ─── context hints注入（purpose/project/task_typeから必読contextをLevel5化） ───
 # R2残件: 重要contextをタスクYAMLに強制注入し、忍者の能動検索依存をなくす。
 inject_context_hints() {
@@ -10312,6 +10339,7 @@ deploy_task_apply_task_mutations() {
         inject_causal_links "$task_file" || true      # Level5: 全忍者にcmd origin因果リンクを自動提供(cmd_2822)
         inject_causal_verification_template "$task_file" || true  # Level5: infra変更前の因果確認をCLI非依存で注入
         inject_dm_signal_pf_operation_guardrails "$task_file" || true  # Level5: PF削除/復元/rollback前提知識を自動注入(cmd_3786)
+        inject_dm_signal_golden_baseline_contract "$task_file" || true  # Level5: L877巨大golden-baseline二層契約
         inject_context_hints "$task_file" || true  # Level5: purpose/project/task_typeから必読contextを強制提供
         inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
         inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)
