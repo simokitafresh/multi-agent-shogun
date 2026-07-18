@@ -10,6 +10,19 @@ set -euo pipefail
 
 REPORT_PATH="$1"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+source "${REPO_ROOT}/scripts/lib/defense_overhead_writer.sh"
+GUNSHI_PRECHECK_STARTED_US="${EPOCHREALTIME/./}"
+GUNSHI_PRECHECK_STARTED_US="${GUNSHI_PRECHECK_STARTED_US:0:16}"
+gunshi_precheck_overhead_exit() {
+    local rc=$? finished_us wall_ms verdict
+    finished_us="${EPOCHREALTIME/./}"; finished_us="${finished_us:0:16}"
+    wall_ms=$(((finished_us - GUNSHI_PRECHECK_STARTED_US + 999) / 1000))
+    verdict="$([ "$rc" -eq 0 ] && echo PASS || echo FAIL)"
+    defense_overhead_write_async gate_gunshi_report_precheck full_precheck "$wall_ms" "$verdict" \
+        "gunshi-precheck:$$:${GUNSHI_PRECHECK_STARTED_US}" || true
+}
+trap gunshi_precheck_overhead_exit EXIT
 # shellcheck source=scripts/lib/project_path.sh
 source "${REPO_ROOT}/scripts/lib/project_path.sh"
 DM_SIGNAL_PATH="$(get_project_path 'dm-signal')"

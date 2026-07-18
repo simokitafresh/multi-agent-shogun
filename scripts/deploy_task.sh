@@ -21,6 +21,8 @@ set -euo pipefail
 _dt_self="${BASH_SOURCE[0]}"
 [[ "$_dt_self" != /* ]] && _dt_self="$PWD/$_dt_self"
 SCRIPT_DIR="${_dt_self%/scripts/deploy_task.sh}"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+source "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh"
 unset _dt_self
 LOG="$SCRIPT_DIR/logs/deploy_task.log"
 
@@ -411,6 +413,9 @@ deploy_task_exit_cleanup() {
             residual_pct=0
         fi
         log "DEPLOY_RECEIPT result=$([ "$exit_status" -eq 0 ] && echo success || echo blocked) rc=${exit_status} wall_ms=${wall_ms} phase=${DEPLOY_TASK_PHASE:-unknown} phase_sum_ms=${DEPLOY_TASK_WALL_PHASE_SUM_MS} residual_ms=${residual_ms} residual_bp=${residual_pct} max_phase=${DEPLOY_TASK_WALL_PHASE_MAX_NAME} max_phase_ms=${DEPLOY_TASK_WALL_PHASE_MAX_MS}"
+        defense_overhead_write_async deploy_task deploy_total "$wall_ms" \
+            "$([ "$exit_status" -eq 0 ] && echo PASS || echo FAIL)" \
+            "deploy:${DEPLOY_TASK_ISSUE_ATTEMPT_ID:-$$}:${DEPLOY_TASK_STARTED_US}" || true
     fi
     if [ -n "${DEPLOY_TASK_ISSUE_ATTEMPT_ID:-}" ] && [ "${DEPLOY_TASK_ISSUE_TERMINAL_RECORDED:-0}" != "1" ]; then
         if [ "${DEPLOY_TASK_DEPLOY_COMPLETED:-0}" = "1" ]; then
