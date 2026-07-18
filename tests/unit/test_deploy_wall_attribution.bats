@@ -6,6 +6,17 @@ setup() {
   mkdir -p "$OUT"
 }
 
+@test "deploy writer preserves canonical terminal phase order without duplicate" {
+  python3 - "$ROOT/scripts/deploy_task.sh" <<'PY'
+import re, sys
+text = open(sys.argv[1]).read()
+main = text[text.index('deploy_task_main() {'):]
+phases = re.findall(r'deploy_task_wall_phase_checkpoint (parse_args|task_mutations|delivery|post_verify|post_delivery)\b', main)
+assert phases == ['parse_args', 'task_mutations', 'delivery', 'post_verify', 'post_delivery'], phases
+assert main.index('deploy_task_post_deploy_verify "$NINJA_NAME"') < main.index('notify_initial_deploy_ntfy_once "$task_yaml"'), 'post_verify must precede post_delivery'
+PY
+}
+
 fixture() {
   local total="$1" body="$2" file="$BATS_TEST_TMPDIR/$total.log"
   printf '%b\nDEPLOY_RECEIPT result=success rc=0 wall_ms=%s phase=post_delivery\n' "$body" "$total" >"$file"

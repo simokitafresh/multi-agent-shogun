@@ -11070,6 +11070,14 @@ except Exception:
     DEPLOY_TASK_EXIT_NUDGE_ARMED=0
     deploy_task_wall_phase_checkpoint delivery
 
+    # Canonical receipt order is delivery -> post_verify -> post_delivery.
+    # Keep the verifier ahead of notification/deferred work so EXIT records
+    # post_delivery exactly once instead of appending a duplicate terminal
+    # phase after an already-recorded post_delivery interval.
+    DEPLOY_TASK_PHASE=post_verify
+    deploy_task_post_deploy_verify "$NINJA_NAME"
+    deploy_task_wall_phase_checkpoint post_verify
+
     DEPLOY_TASK_PHASE=post_delivery
     notify_initial_deploy_ntfy_once "$task_yaml" "$NINJA_NAME" || true
     preflight_gate_artifacts "$task_yaml" || true
@@ -11089,12 +11097,7 @@ except Exception:
     DEPLOY_TASK_DEPLOY_COMPLETED=1
     deploy_task_wall_phase_checkpoint post_delivery
     deploy_task_release_ninja_lock
-
-    # post-deploy pane verification (自動化×強制: 配備後に忍者が動いているか家老が確認せざるを得ない)
-    # 理由: 配備ログ=完了と思い込み、忍者がプロンプト待ちのまま気づかない事故(cmd_2509/2511)
-    deploy_task_post_deploy_verify "$NINJA_NAME"
     deploy_task_start_deferred_drain
-    deploy_task_wall_phase_checkpoint post_verify
 
     # Codex忍者向け遅延re-nudge + 配備確認ログ (cmd_karo_codex_renudge / cmd_3102 AC1修正)
     # 根因: CLI再起動直後、Codex CLIが初期画面表示中にinbox_watcherのnudgeが空振りする
