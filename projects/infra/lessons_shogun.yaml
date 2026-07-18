@@ -162,8 +162,9 @@ lessons:
     async関数のtimeout短縮は速度に寄与せず機能をsilent-deathさせる(LS081吸収2026-07-16): async(&)実行の待ちは誰も払っていない。GH timeout 0.05s→CI RED検知25日間silent-death。既定8s復活+DIGEST ci常時表示(d5ed06f9b)
     reCAPTCHA画像チャレンジは即停止しcookie再利用へ逃がす(LS082吸収2026-07-16): note_draft.shで検出時に即RuntimeError+SKIP記録。Level4 guard(cmd_reflux_promotion_202607080756)
     陣形図異常hookにsession-scope dedup不在で将軍inbox処理が6h09m制御面消費に支配された(LS094吸収2026-07-18): 同一failed/stallセットの再警告を抑制しセット変化時のみ再警告。/tmp/shogun_snapshot_alert_dedup実装(b58658756, .claude/hooks/post-shogun-inbox-check.sh L209-221)。残: escalation acknowledged_at+再発火抑制、info系通知バッチ化
+    自動化ターゲット選定時にも鎖の原理を照合せよ(LS091吸収2026-07-18): clear_prepへのCI GREEN確認追加を殿に即却下された。LS-A11(CI検知は家老の責務)を20分前に通読していたのに新提案との整合を因果でたどらなかった=causal_tracing Phase3再現。enforcement: cmd_save.sh check_environment_change_chain_of_command_warn()が将軍スコープファイル+家老スコープキーワード共起をWARN(test_cmd_save_environment_change.bats 3/3 PASS)
   source_ids: [LS033, LS037, LS074, LS084, LS086, LS087, LS051, LS066]
-  source_ids_absorbed: [LS081, LS082, LS094]
+  source_ids_absorbed: [LS081, LS082, LS094, LS091]
   created_at: '2026-04-24'
   automated: true
   enforcement_level: 4
@@ -288,8 +289,10 @@ lessons:
     (12)self_reread複合トリガー: 自己申告系語+曖昧系語の同時出現でWARN。客観表現(反映作業者と同一者の宣言等)に置換
     (6)教訓上限デッドロック: 上限到達時は古いLS同士を統合(削除方向)でid数を減らせ
     (13)LK-A10研究cmd判定はtitle/purposeだけでなくcmd全文(quality_gate含む)をスキャンする。実装cmdでもq2/q6等の説明文に「分析/調査/研究」語があるだけで研究cmd扱いされ成果物AC不足BLOCKになる(cmd_3887で実証2026-07-13)。説明文は「特定」「経緯」等の客観表現へ置換して起票せよ
+    (15)preflight自己封鎖デッドロック(LS093吸収2026-07-18): WSL強制shutdown後にcache DB WAL不整合→batch_index_search events0件→三層preflightが全変更系ツール封鎖→inbox処理不能。防御機構自体のfail-closedが制御面まで封鎖すると復旧不能。恒久対策=three_layer_preflight.sh memory_cache_is_healthy()がstale cacheを拒否しsource DBへfallback(942259c06, test_three_layer_preflight.bats 2/2 PASS)
     (14)Guard14 bounded check FP 3件修正(2026-07-15将軍実証+即修正): (a)python3 -m json.tool等safe stdlib→SAFE_PYTHON_M_MODULES(9d915cf93) (b)git/echo/tmux等非DBコマンド→SAFE_NON_DB_CMDS(3c97942b0) (c)bash script実行(no -c)の引数テキスト内credential-likeワード→_bash_has_inline_code判定(cba89cddc)。bash -cはインラインコード実行のためfail-closed維持。bats 49/49+直接テスト計13件PASS
   source_ids: [LS023, LS034, LS035, LS059, LS060, LS063, LS075]
+  source_ids_absorbed: [LS093]
   source_cmds_v3: [cmd_2314, cmd_2315, cmd_2318, cmd_2319, cmd_2330, cmd_2331, cmd_2332, cmd_2343, cmd_2351, cmd_2355, cmd_2358, cmd_2366, cmd_2367, cmd_2368, cmd_2369, cmd_2374, cmd_2377, cmd_2379, cmd_2381, cmd_2382, cmd_2383, cmd_2384, cmd_2385, cmd_2392]
   created_at: '2026-04-25'
   automated: true
@@ -394,15 +397,6 @@ lessons:
   automated: true
   enforcement_level: 5
   enforcement: 'Level5: type=hook+test; file=.claude/hooks/post-shogun-inbox-check.sh; pattern=escalation_unread; test=tests/unit/test_post_shogun_escalation_warn.bats(4/4 PASS)。PostToolUseごとにescalation未対処をWARN表示'
-- id: 'LS091'
-  title: 'LS-A11適用失敗 — 自動化ターゲット選定時にも鎖の原理を照合せよ'
-  origin: '[[LS-A11_CI検知は家老の責務]] -> [[Q6自動化ターゲット選定]] -> [[clear_prep_CI_check殿却下]] -> [[causal_tracing_Phase3再現]]'
-  detail: 'Q6回答で自動化ターゲットをclear_prep_check.shへのCI GREEN確認追加と定め実装→殿に即却下された。LS-A11(CI検知は家老の責務。将軍にCI情報を見せる仕組み=鎖の迂回誘発)を20分前に通読していたのに適用しなかった。deepdive_causal_tracing Phase3と同構造: 教訓を暗記したがパターンマッチで適用し、自分の新提案がその教訓に抵触するか照合しなかった。自動化ターゲット選定時は既存教訓(特にLS-A11鎖の原理+LS-A07gate迂回禁止)との整合を因果でたどってから実装せよ。'
-  source_cmd: 'session_20260717_1914'
-  created_at: '2026-07-17'
-  automated: true
-  enforcement_level: 4
-  enforcement: 'Level4: cmd_save.sh check_environment_change_chain_of_command_warn()が将軍スコープファイル(clear_prep/gate_shogun/stop_check_inbox等)+家老スコープキーワード(CI RED/GREEN/test result/忍者状態)共起をWARN。tests/unit/test_cmd_save_environment_change.bats LS091-1〜3(3/3 PASS)。鎖の原理(LS-A11)違反を起票時に自動検出し、因果確認を強制'
 - id: 'LS092'
   title: 'D006 Tier1 UNCONDITIONAL規則を趣旨解釈で緩めた判断ミス'
   origin: '[[cmd_karo_ci_fix_29574746129]]'
@@ -412,15 +406,6 @@ lessons:
   automated: true
   enforcement: 'Level4: cmd_save.sh check_tier1_exception_warn()がD001-D009+例外/緩和キーワード共起をWARN。tests/unit/test_cmd_save.bats Check21.7(2/2 PASS)'
   enforcement_level: 4
-- id: 'LS093'
-  title: 'preflight自己封鎖: cache stale時のデッドロック構造'
-  origin: '[[WSL_shutdown]] -> [[cache_WAL不整合]] -> [[preflight自己封鎖]] -> [[inbox処理不能]]'
-  detail: '事故: WSL強制shutdown後、/tmp/shogun_memory_db_cache/のキャッシュDBがWAL不整合(本体694MBあるが最新データはsource WALのみ)。batch_index_searchがcache参照→events 0件→三層全count>0必須で全封鎖。Edit/Write/Bash(変更系)全不能→inbox_mark_read/bulletin_write/inbox_write全実行不能。原因: cache miss時のsource DBフォールバック未実装。復旧: Agent tool(pretool-dispatch case文外)経由でcache削除→source直接参照→issue成功。教訓: 防御機構自体のfail-closedが制御面(inbox/bulletin)まで封鎖すると復旧不能になる。恒久対策: cache graceful fallback(家老配備指示済み)。'
-  source_cmd: 'preflight_selflock'
-  created_at: '2026-07-17'
-  automated: true
-  enforcement: "Level4: scripts/hooks/three_layer_preflight.sh memory_cache_is_healthy() rejects previous-boot/schema-invalid/zero-event immutable cache and batch_index_search() falls back to source DB; tests/unit/test_three_layer_preflight.bats stale-empty-cache + external-WAL-source 2/2 PASS (commit 942259c06351507b1acfa1ee18268a4e76fd5de5)"
-  enforcement_level: 4
 - id: 'LS095'
   title: '分離原則 — メインtaskと振り返りを混ぜるな'
   origin: '[[殿裁定_分離原則_20260718]] -> [[AC自動注入否定]] -> [[retro_prompt分離実装_2f6203c98]]'
@@ -428,4 +413,4 @@ lessons:
   source_cmd: 'session_20260718'
   created_at: '2026-07-18'
   automated: true
-  enforcement: 'Level4: inbox_write.sh report_received検知→retro_prompt自動送信(2f6203c98)'
+  enforcement: 'Level4: inbox_write.sh report_received検知→queue/retro/pending.yamlへevent保存(batch化。即時送信はtask start nudgeへ埋没するバグのため5180b6fafで無効化。家老がbatch境界で一括処理)'
