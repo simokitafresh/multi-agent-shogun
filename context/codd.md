@@ -1,7 +1,7 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-07-18 cmd_karo_hotfix_ga288_context_freshness_codd -->
-<!-- source_commit:e22a319e8 reason:ga288-codd-source-contract-reviewed evidence:git-log-3370147d1..e22a319e8-and-targeted-regression -->
+<!-- last_updated: 2026-07-19 cmd_karo_hotfix_ga299_context_source_boundary_202607190158 -->
+<!-- source_commit:81b1ea6d94774e4c49ad4715c1f32e5f1789665c reason:ga299-reviewed-exact-boundary evidence:post-ga288-codd-source-classified -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
@@ -87,6 +87,8 @@
 | `git log 3370147d1..e22a319e8 -- skills/codd skills/codd-refactor scripts/codd scripts/codd_` | source commit 2件 (`0da0dccb9`, `e22a319e8`) | script参照契約の再検分であり本文のCoDD操作体系は不変 |
 | source変更commit時の索引追随 | pre-commitに対応する強制なし | CoDD sourceと本索引を同一commitへstageするLevel4防御を追加 |
 | 同一commit反映の鮮度判定 | source pathだけをgit log対象にしていた | sourceと本索引が同一commitなら反映済みとして除外し、次の未反映source変更だけをALERTする |
+
+GA-299再分類: `81b1ea6d9` は `codd-refactor` の参照済みテスト契約注記のみで、CoDDのCLI・操作体系・副作用に実内容変更なし。
 
 ## §3 核心原理 (記事#1-#5)
 

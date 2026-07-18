@@ -1,4 +1,5 @@
-<!-- last_updated: 2026-07-18 -->
+<!-- last_updated: 2026-07-19 cmd_karo_hotfix_ga299_context_source_boundary_202607190158 -->
+<!-- source_commit:6ca18b295ac6656014f09d91905b5113a9bd8501 reason:ga299-reviewed-exact-boundary evidence:memory-db-schema-generator-preserves-marker -->
 
 # Memory DB Schema
 

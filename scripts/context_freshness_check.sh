@@ -917,17 +917,19 @@ def _run_grouped_git_log(
                 ref = head[5:]
             elif not tip.startswith("refs/"):
                 candidates = [f"refs/heads/{tip}", f"refs/remotes/{tip}", f"refs/tags/{tip}"]
-                ref = next((item for item in candidates if os.path.isfile(os.path.join(common, item))), tip)
+                ref = next((item for item in candidates if os.path.isfile(os.path.join(common, item))), "")
             loose = os.path.join(common, ref)
-            if os.path.isfile(loose):
+            if ref and os.path.isfile(loose):
                 oid = open(loose, encoding="ascii").read().strip()
                 return oid if re.fullmatch(r"[0-9a-f]{40}", oid) else ""
             packed = os.path.join(common, "packed-refs")
             if os.path.isfile(packed):
+                packed_candidates = [ref] if ref else candidates
                 with open(packed, encoding="ascii", errors="ignore") as stream:
                     for line in stream:
                         fields = line.rstrip().split(" ", 1)
-                        if len(fields) == 2 and fields[1] == ref and re.fullmatch(r"[0-9a-f]{40}", fields[0]):
+                        if (len(fields) == 2 and fields[1] in packed_candidates
+                                and re.fullmatch(r"[0-9a-f]{40}", fields[0])):
                             return fields[0]
         except OSError:
             return ""

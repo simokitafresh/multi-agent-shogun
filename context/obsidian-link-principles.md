@@ -1,5 +1,5 @@
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga245_source_commit_lifecycle_202607131954 -->
-<!-- source_commit:abe55194e2c2d9e5f2fa8c16b04a6b806b419ba0 reason:full-audit-boundary evidence:migration-commit-70-tests -->
+<!-- last_updated: 2026-07-19 cmd_karo_hotfix_ga299_context_source_boundary_202607190158 -->
+<!-- source_commit:3b778381995556e9f59a3df02e18ee311af72e2a reason:ga299-reviewed-exact-boundary evidence:semantic-obsidian-source-classified -->
 # Obsidianリンク×セマンティクスインデックス 分離原則
 
 <!-- created: 2026-05-22 | origin: 殿×将軍×軍師 対話で確立 -->

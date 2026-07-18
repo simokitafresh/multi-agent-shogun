@@ -722,6 +722,34 @@ EOF
     [ ! -e "$TEST_TMPDIR/git-calls.log" ]
 }
 
+@test "GA-299 schema regeneration preserves exact source_commit boundary" {
+    local schema_doc="$TEST_TMPDIR/context/memory-db-schema.md"
+    mkdir -p "$(dirname "$schema_doc")"
+    cat > "$schema_doc" <<'EOF'
+<!-- last_updated: 2026-07-18 -->
+<!-- source_commit:abe55194e2c2d9e5f2fa8c16b04a6b806b419ba0 reason:reviewed evidence:test -->
+# Memory DB Schema
+EOF
+
+    run python3 - "$PROJECT_ROOT/scripts/memory_db_import.py" "$schema_doc" <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+spec = importlib.util.spec_from_file_location("memory_db_import", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+path = pathlib.Path(sys.argv[2])
+generated = "<!-- last_updated: 2026-07-19 -->\n\n# Memory DB Schema\n"
+path.write_text(module.preserve_schema_source_boundary(path, generated), encoding="utf-8")
+print(path.read_text(encoding="utf-8"), end="")
+PY
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source_commit:abe55194e2c2d9e5f2fa8c16b04a6b806b419ba0"* ]]
+    [ "$(grep -c 'source_commit:' "$schema_doc")" -eq 1 ]
+}
+
 @test "GA-245 registered and enforced context sets are exact" {
     run python3 - "$SRC_SCRIPT" "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" <<'PY'
 import ast, re, sys

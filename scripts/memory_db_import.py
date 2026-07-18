@@ -1384,7 +1384,27 @@ def default_lord_ruling_cache_path(db_path: Path) -> Path:
 
 def write_schema_markdown(db_path: Path, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(schema_markdown(db_path), encoding="utf-8")
+    output_path.write_text(
+        preserve_schema_source_boundary(output_path, schema_markdown(db_path)),
+        encoding="utf-8",
+    )
+
+
+def preserve_schema_source_boundary(output_path: Path, markdown: str) -> str:
+    """Keep the reviewed exact-revision marker across generated schema refreshes."""
+    if not output_path.exists():
+        return markdown
+    marker = re.search(
+        r"^<!-- source_commit:[0-9a-f]{7,40}(?: [^\n]*)? -->$",
+        output_path.read_text(encoding="utf-8", errors="replace"),
+        re.MULTILINE,
+    )
+    if marker is None or "source_commit:" in markdown:
+        return markdown
+    lines = markdown.splitlines()
+    insert_at = 1 if lines and lines[0].startswith("<!-- last_updated:") else 0
+    lines.insert(insert_at, marker.group(0))
+    return "\n".join(lines).rstrip() + "\n"
 
 
 def build_db(
@@ -1787,7 +1807,10 @@ def main() -> int:
             output_path = None
         if output_path is not None:
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(markdown, encoding="utf-8")
+            output_path.write_text(
+                preserve_schema_source_boundary(output_path, markdown),
+                encoding="utf-8",
+            )
         print(markdown, end="")
         return 0
     if args.backfill_concepts:
