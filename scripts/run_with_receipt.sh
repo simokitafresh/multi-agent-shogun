@@ -106,7 +106,11 @@ PY
 on_signal() {
     signal_name="$1"
     shift
-    [[ -z "$child_pid" ]] || kill -TERM "$child_pid" 2>/dev/null || true
+    # COMMAND owns a dedicated session/process group (see launch below), so a
+    # signal cannot leave grandchildren doing work after the receipt runner
+    # has published its terminal state.  Scope TERM to that command group;
+    # never signal the caller's/heavy admission's process group.
+    [[ -z "$child_pid" ]] || kill -TERM -- "-$child_pid" 2>/dev/null || true
     wait "$child_pid" 2>/dev/null || true
     head -c "$max_bytes" "$raw" > "$artifact_tmp"
     write_receipt 128 false "$signal_name" "$@"
@@ -117,7 +121,10 @@ trap 'on_signal TERM "$@"' TERM
 trap 'on_signal INT "$@"' INT
 trap 'rm -f "$raw" "$artifact_tmp"' EXIT
 
-"$@" > "$raw" 2>&1 &
+# Keep COMMAND and all of its descendants in a group owned by this invocation.
+# This makes signal cleanup complete without broadening the signal boundary to
+# the receipt runner, its caller, or an enclosing heavy-job admission group.
+setsid -- "$@" > "$raw" 2>&1 &
 child_pid=$!
 wait "$child_pid"
 rc=$?

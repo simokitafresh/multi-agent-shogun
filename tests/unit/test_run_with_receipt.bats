@@ -56,7 +56,10 @@ PY
 }
 
 @test "TERM during command atomically publishes incomplete receipt" {
-    bash "$RUNNER" --receipt "$RECEIPT" -- bash -c 'echo started; sleep 10' > "$BATS_TEST_TMPDIR/term.out" 2>&1 &
+    command_pgid_file="$BATS_TEST_TMPDIR/command.pgid"
+    bash "$RUNNER" --receipt "$RECEIPT" -- bash -c \
+        "echo \"\$BASHPID\" > '$command_pgid_file'; echo started; sleep 10" \
+        > "$BATS_TEST_TMPDIR/term.out" 2>&1 &
     pid=$!
     for _ in {1..50}; do [[ -s "$BATS_TEST_TMPDIR/term.out" ]] && break; sleep 0.02; done
     kill -TERM "$pid"
@@ -65,6 +68,10 @@ PY
     [ "$(field complete)" = false ]
     [ "$(field result)" = FAIL ]
     [ "$(field signal)" = TERM ]
+    # The command shell and its sleep descendant run in a dedicated process
+    # group.  Publishing the receipt must leave that group with zero live work.
+    command_pgid="$(cat "$command_pgid_file")"
+    ! ps -e -o pgid=,stat= | awk -v pgid="$command_pgid" '$1 == pgid && $2 !~ /^Z/ { found=1 } END { exit !found }'
 }
 
 @test "help embeds receipt usage and required fields" {
