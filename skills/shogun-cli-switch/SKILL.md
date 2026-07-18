@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T14:08:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_batch_b検分: ninja_monitor.sh 5be953b8/b5865875/edb0645a/046e8750/f955d556/e42ffe0c/8dd728a2/483a94ce/a7e7f42cをgit log/show。通知generation dedupe、failed即復帰、task-state fast path、reflux promotion原子予約を確認。CLI切替I/F、settings→tmux同期、dead/idle pane respawn、cli_launch_cmd契約は不変で本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T04:48:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_hotfix_skill_refs_final_pair_202607180446検分: ninja_monitor.sh b89606cd6はreport通知済み判定をreport/task/parent_cmdのexact identity照合へ強化し、既読report_receivedの偽陽性反復を防止。CLI切替I/F、settings→tmux同期、dead/idle pane respawn、cli_launch_cmd契約には影響なし。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T04:24:00+09:00 -->

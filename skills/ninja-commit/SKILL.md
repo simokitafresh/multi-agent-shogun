@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T14:08:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_batch_b検分: ninja_scope_commit.sh afd88ea1/2fed7545/c909aa60をgit log/show。receipt再利用時scope収束検証、HEAD+shared-index世代原子確認、`maintenance.auto=false`分離を追加。scope限定CLI、fail-closed、成功時40桁hash stdout、report commit_hash記録契約は不変で本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T04:48:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_hotfix_skill_refs_final_pair_202607180446検分: ninja_scope_commit.sh afd88ea13はsingle-flight receipt再利用時にcommit存在・HEAD祖先・対象scopeのHEAD差分/unstaged/stagedが全て収束していることを再検証するfail-closed強化。CLI、対象path限定、成功時40桁hash出力、report commit_hash記録契約は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->

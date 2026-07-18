@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T14:08:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_batch_b検分: deploy_task.sh 73e12f31/c10949d8/3a305a0f/d5b4e3fa/b8131106/4948a4a2/a9647608/b8583338/fb619776/eb378791/c8cf9081をgit log/show。report identity v2・no-code commit契約・L877注入、履歴/cleanup遅延化とstale report同期archive復帰を確認。`--direct`/`--yaml`引数、重複guard、task公開・通知・失敗出口は不変で本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T04:36:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_hotfix_skill_refs_deploy_pair検分: deploy_task.sh 6f1f32c57はDM-Signal restore対象taskへ診断履歴post-snapshot artifact契約を事前注入するLevel5文脈強化。対象taskの内容には条件付き副作用が増えるが、karo_directの--direct/--yaml CLI、重複guard、task公開・通知・失敗出口は不変。 -->
 <!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->
