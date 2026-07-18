@@ -481,7 +481,12 @@ _run_tests_main() {
     # 同一ロックの傘下に入る)。file <path>単発実行は軽量とみなしadmission対象外。
     if [[ "${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}" != "1" && "${1:-}" != "file" ]]; then
         local _self="${BASH_SOURCE[0]:-$0}"
-        exec bash "$(dirname "$_self")/heavy_job_admission.sh" -- bash "$_self" "$@"
+        # This function is entered behind the public receipt wrapper.  Keep
+        # that inner identity across the admission re-exec; otherwise the
+        # admitted process is mistaken for a second public invocation and
+        # publishes a duplicate terminal receipt for the same run.
+        exec bash "$(dirname "$_self")/heavy_job_admission.sh" -- \
+            bash "$_self" --receipt-inner "$@"
     fi
 
     guard_fixture_symlink_write_through

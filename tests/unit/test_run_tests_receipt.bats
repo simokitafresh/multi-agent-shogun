@@ -5,7 +5,26 @@ setup() {
   mkdir -p "$ROOT/scripts" "$ROOT/tests/unit" "$ROOT/logs"
   cp "$BATS_TEST_DIRNAME/../../scripts/run_tests.sh" "$ROOT/scripts/run_tests.sh"
   cp "$BATS_TEST_DIRNAME/../../scripts/run_with_receipt.sh" "$ROOT/scripts/run_with_receipt.sh"
+  cp "$BATS_TEST_DIRNAME/../../scripts/test_timing_ledger_write.sh" "$ROOT/scripts/test_timing_ledger_write.sh"
+  cp "$BATS_TEST_DIRNAME/../../scripts/test_suite_timing_ledger_write.sh" "$ROOT/scripts/test_suite_timing_ledger_write.sh"
+  printf '%s\n' '#!/usr/bin/env bash' '[[ "${1:-}" != "--" ]] || shift' \
+    'SHOGUN_HEAVY_JOB_LOCK_HELD=1 exec "$@"' > "$ROOT/scripts/heavy_job_admission.sh"
+  git -C "$ROOT" init -q
+  git -C "$ROOT" add scripts tests
+  git -C "$ROOT" -c user.name=test -c user.email=test@example.com commit -qm fixture
   RECEIPT="$ROOT/logs/result.json"
+}
+
+@test "admission re-exec preserves receipt-inner and publishes exactly one receipt" {
+  make_bats pass
+  receipt_dir="$ROOT/logs/test_receipts"
+  run env REPO_ROOT="$ROOT" RUN_TESTS_RECEIPT_DIR="$receipt_dir" \
+    BATS_CACHE=0 SHOGUN_HEAVY_JOB_LOCK_FILE="$ROOT/heavy.lock" \
+    bash "$ROOT/scripts/run_tests.sh" unit
+  [ "$status" -eq 0 ] || printf '%s\n' "$output" >&3
+  [ "$status" -eq 0 ]
+  [ "$(find "$receipt_dir" -maxdepth 1 -name '*.json' -type f | wc -l)" -eq 1 ]
+  [ "$(grep -c 'TEST_RECEIPT_PASS' <<<"$output")" -eq 1 ]
 }
 
 make_bats() {
