@@ -7,6 +7,10 @@ load '../helpers/deploy_task_scaffold'
 
 setup_file() {
     deploy_task_setup_file
+    # deploy_task.sh sources this library at load time.  Keep the shared
+    # template complete so every per-test fixture receives the same dependency.
+    cp "$PROJECT_ROOT/scripts/lib/defense_overhead_writer.sh" \
+        "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/defense_overhead_writer.sh"
 }
 
 setup() {
@@ -98,6 +102,23 @@ EOF
     run run_yaml_freshness_check "$yaml_file" "$TEST_GIT_ROOT"
     [ "$status" -eq 0 ]
     [[ "$output" != *"[DEPLOY] WARN:"* ]]
+}
+
+@test "HEADに存在しない新規targetはhistory walkせず5秒未満でskipする" {
+    setup_git_fixture
+    make_script_commit "scripts/existing.sh" "$(date -u -d '2 hours ago' '+%Y-%m-%dT%H:%M:%SZ')"
+    local yaml_file="$TEST_GIT_ROOT/new_target_task.yaml"
+    cat > "$yaml_file" <<'EOF'
+task:
+  command: "bash scripts/throughput_growth_loop.sh を新規作成せよ"
+EOF
+    local started ended
+    started="$(date +%s%N)"
+    run run_yaml_freshness_check "$yaml_file" "$TEST_GIT_ROOT"
+    ended="$(date +%s%N)"
+    [ "$status" -eq 0 ]
+    [ $(((ended-started)/1000000)) -lt 5000 ]
+    [[ "$output" != *"WARN:"* ]]
 }
 
 @test "Codex delayed re-nudge sends inboxN directly without inbox_write" {
@@ -262,6 +283,28 @@ PY
     [ "$status" -eq 0 ]
 
     run grep -F "TIMEOUT: deploy_task_main exceeded" "$PROJECT_ROOT/scripts/deploy_task.sh"
+    [ "$status" -eq 0 ]
+}
+
+@test "deploy mutation final reads batch canonical and report metadata fields" {
+    run python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import re
+import sys
+
+script = open(sys.argv[1], encoding="utf-8").read()
+start = script.index("deploy_task_apply_task_mutations() {")
+end = script.index("\n# ═══════════════════════════════════════\n# メイン処理", start)
+body = script[start:end]
+
+assert re.search(
+    r'field_get_multi "\$task_file" parent_cmd task_type', body
+), "canonical training fields must use one YAML scan"
+assert re.search(
+    r'field_get_multi "\$task_file" task_id _ac_task_id parent_cmd project report_filename',
+    body,
+), "report metadata must be included in the existing final YAML scan"
+assert 'field_get "$task_file" report_filename' not in body
+PY
     [ "$status" -eq 0 ]
 }
 

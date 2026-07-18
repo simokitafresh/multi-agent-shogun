@@ -1418,6 +1418,12 @@ check_yaml_freshness() {
     while IFS= read -r script_path; do
         [ -z "$script_path" ] && continue
 
+        # A command may intentionally name the new file this task will create.
+        # On /mnt/c, walking history for that absent path can enter Git's slow
+        # D-state path.  HEAD blob existence is the bounded boundary: absent
+        # targets have no freshness provenance to inspect.
+        git -C "$git_root" cat-file -e "HEAD:${script_path}" 2>/dev/null || continue
+
         # git log で最新commit時刻とhashを取得
         local commit_iso commit_hash commit_epoch
         commit_iso=$(git -C "$git_root" log -1 --format="%aI" -- "$script_path" 2>/dev/null || true)
