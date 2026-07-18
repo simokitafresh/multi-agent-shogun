@@ -96,6 +96,82 @@ fixture_report_path() {
     printf '%s\n' "$TEMPLATE_FIXTURE_ROOT/$1.yaml"
 }
 
+@test "new report template is atomically published without legacy normalize subprocess" {
+    _fixture_project_start
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'YAML'
+task:
+  assigned_to: sasuke
+  parent_cmd: cmd_atomic_report_publish
+  task_id: cmd_atomic_report_publish_impl
+  project: infra
+  ac_version: abcdef12
+  acceptance_criteria:
+    - id: AC1
+      description: "complete atomic report"
+YAML
+
+    (
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$TEST_PROJECT/scripts/deploy_task.sh"
+        log() { :; }
+        generate_report_template sasuke cmd_atomic_report_publish_impl cmd_atomic_report_publish infra
+    )
+
+    local report="$TEST_PROJECT/queue/reports/sasuke_report_cmd_atomic_report_publish.yaml"
+    [ -f "$report" ]
+    ! sed -n '/^generate_report_template()/,/^ensure_report_template_completeness()/p' "$PROJECT_ROOT/scripts/deploy_task.sh" \
+        | grep -q 'normalize_report.sh'
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name '*.publish.*' | wc -l)" -eq 0 ]
+    python3 - "$report" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1]))
+assert d['parent_cmd'] == 'cmd_atomic_report_publish'
+assert set(d['binary_checks']) == {'AC1', 'commit'}
+assert isinstance(d['lesson_candidate'], dict)
+assert isinstance(d['decision_candidate'], dict)
+assert isinstance(d['skill_candidate'], dict)
+PY
+    grep -Fq 'queue/reports/sasuke_report_cmd_atomic_report_publish.yaml' "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    _fixture_project_end
+}
+
+@test "report publication cold warm N10 stays below three second p95 with one report per run" {
+    _fixture_project_start
+    local timings="$TEST_TMPDIR/report_publication_ms"
+    : > "$timings"
+    local i start end
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$TEST_PROJECT/scripts/deploy_task.sh"
+    log() { :; }
+    for i in $(seq 1 10); do
+        cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<YAML
+task:
+  assigned_to: sasuke
+  parent_cmd: cmd_report_p95_${i}
+  task_id: cmd_report_p95_${i}_impl
+  project: infra
+  ac_version: abcdef12
+  acceptance_criteria:
+    - id: AC1
+      description: "report publication ${i}"
+YAML
+        start=$(date +%s%N)
+        generate_report_template sasuke "cmd_report_p95_${i}_impl" "cmd_report_p95_${i}" infra
+        end=$(date +%s%N)
+        echo $(((end-start)/1000000)) >> "$timings"
+        [ -f "$TEST_PROJECT/queue/reports/sasuke_report_cmd_report_p95_${i}.yaml" ]
+    done
+    local p95
+    p95=$(sort -n "$timings" | sed -n '10p')
+    echo "report_publication_n10_p95_ms=$p95" >&3
+    [ "$p95" -lt 3000 ] || { echo "p95 threshold failed: ${p95}ms" >&2; false; }
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name 'sasuke_report_cmd_report_p95_*.yaml' | wc -l)" -eq 1 ]
+    [ "$(find "$TEST_PROJECT/archive/reports/stale" -maxdepth 1 -name 'sasuke_report_cmd_report_p95_*.yaml' | wc -l)" -eq 9 ]
+    [ "$(find "$TEST_PROJECT/queue/reports" "$TEST_PROJECT/archive/reports/stale" -maxdepth 1 -name 'sasuke_report_cmd_report_p95_*.yaml' | wc -l)" -eq 10 ]
+    [ "$(find "$TEST_PROJECT/queue/reports" -maxdepth 1 -name '*.publish.*' | wc -l)" -eq 0 ]
+    _fixture_project_end
+}
+
 report_block() {
     local report_file="$1"
     local block_name="$2"

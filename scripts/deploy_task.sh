@@ -3283,6 +3283,38 @@ report_lesson_ids_for_task() {
     ' "$task_file" 2>/dev/null
 }
 
+# Publish the three report metadata fields in one parse and one rename.  Values
+# are machine-generated safe scalars (UUID/version/repo-relative path).
+deploy_task_publish_report_metadata() {
+    local task_file="$1" report_id="$2" version="$3" report_path="$4" variation="${5:-false}"
+    local tmp="${task_file}.report-meta.$$"
+    awk -v rid="$report_id" -v ver="$version" -v rpath="$report_path" -v variation="$variation" '
+        BEGIN { in_task=0; seen_id=seen_ver=seen_path=seen_variation=0 }
+        /^task:[[:space:]]*$/ { in_task=1; print; next }
+        in_task && /^[^[:space:]#][^:]*:/ {
+            if (rid != "" && !seen_id) print "  report_id: " rid
+            if (rid != "" && !seen_ver) print "  report_identity_version: " ver
+            if (!seen_path) print "  report_path: " rpath
+            if (!seen_variation) print "  variation_checks_required: " variation
+            in_task=0
+        }
+        in_task && /^  report_id:/ { if (rid != "") print "  report_id: " rid; else print; seen_id=1; next }
+        in_task && /^  report_identity_version:/ { if (rid != "") print "  report_identity_version: " ver; else print; seen_ver=1; next }
+        in_task && /^  report_path:/ { print "  report_path: " rpath; seen_path=1; next }
+        in_task && /^  variation_checks_required:/ { print "  variation_checks_required: " variation; seen_variation=1; next }
+        { print }
+        END {
+            if (in_task) {
+                if (rid != "" && !seen_id) print "  report_id: " rid
+                if (rid != "" && !seen_ver) print "  report_identity_version: " ver
+                if (!seen_path) print "  report_path: " rpath
+                if (!seen_variation) print "  variation_checks_required: " variation
+            }
+        }
+    ' "$task_file" > "$tmp" || { rm -f "$tmp"; return 1; }
+    mv "$tmp" "$task_file"
+}
+
 generate_report_template() {
     local ninja_name="$1"
     local task_id="$2"
@@ -3320,9 +3352,6 @@ generate_report_template() {
         && [[ "$_variation_text" =~ scripts/|\.sh([^[:alnum:]_]|$)|\.py([^[:alnum:]_]|$)|コード変更|コード修正|実装|修正|implement|fix([^[:alnum:]_]|$) ]] \
         && [[ ! "$_variation_text" =~ docs?[[:space:]_-]?only|documentation[[:space:]_-]?only|教訓のみ|fixtureのみ|索引のみ|docsのみ ]]; then
         _variation_checks_required=true
-        yaml_field_set "$task_file" "task" "variation_checks_required" "true"
-    else
-        yaml_field_set "$task_file" "task" "variation_checks_required" "false"
     fi
 
     # report_filenameフィールドを優先参照（cmd_412: 命名ミスマッチ根治）
@@ -3460,21 +3489,21 @@ generate_report_template() {
     if [ -f "$report_file" ]; then
         log "report_template: already exists, skipping (${report_file})"
         report_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "report_id" "" 2>/dev/null || true)
-        if [ -n "$report_id" ]; then
-            yaml_field_set "$task_file" "task" "report_id" "$report_id" || return 1
-            yaml_field_set "$task_file" "task" "report_identity_version" "$report_identity_version" || return 1
-        fi
         ensure_report_template_completeness "$report_file" "$task_file"
-        yaml_field_set "$task_file" "task" "report_path" "$report_rel_path"
+        deploy_task_publish_report_metadata "$task_file" "$report_id" "$report_identity_version" "$report_rel_path" "$_variation_checks_required" || return 1
         printf '%s\n' "$report_rel_path" > "${_active_report_index}.tmp"
         mv "${_active_report_index}.tmp" "$_active_report_index"
         log "report_path: set (${report_rel_path})"
         return 0
     fi
 
-    report_id=$(python3 "$SCRIPT_DIR/scripts/lib/report_unique_identity.py" new --path "$report_rel_path" --root "$SCRIPT_DIR") || return 1
-    yaml_field_set "$task_file" "task" "report_id" "$report_id" || return 1
-    yaml_field_set "$task_file" "task" "report_identity_version" "$report_identity_version" || return 1
+    # `new` in report_unique_identity.py is only uuid.uuid4().  Read the
+    # kernel UUID source directly to avoid a Python+PyYAML cold start on every
+    # deployment while preserving the exact rpt-<uuid> identity contract.
+    local _report_uuid=""
+    IFS= read -r _report_uuid < /proc/sys/kernel/random/uuid || return 1
+    [[ "$_report_uuid" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$ ]] || return 1
+    report_id="rpt-${_report_uuid}"
 
     # タスクYAMLから自動記入値を取得（cmd_532: 機械的フィールド自動記入）
     # cmd_1983: field_get_multiで一括取得済み → 変数参照のみ
@@ -3593,7 +3622,12 @@ commit_contract:
 EOF
 )
 
-    cat > "$report_file" <<EOF
+    # Build the complete canonical template off-path.  Readers must observe
+    # either no report or one complete report; never a partially appended
+    # template.  New templates already emit candidate fields as mappings, so
+    # the legacy normalize_report subprocess would only rescan the file.
+    local _report_publish_file="${report_file}.publish.$$"
+    cat > "$_report_publish_file" <<EOF
 # !! トップレベル構造を維持せよ。report: で包むな !!
 # !! report_field_set.sh で各フィールドを設定せよ。直接Edit/Write禁止 !!
 # Step1: Read this file → Step2: bash scripts/report_field_set.sh <this_file> <key> <value> で各フィールドを埋めよ
@@ -3718,6 +3752,8 @@ verdict: ""
 # □ status: completed に変更したか
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 EOF
+    local _report_final_file="$report_file"
+    report_file="$_report_publish_file"
 
     # cmd_1131+cmd_1393: related_lessonsが存在する場合、lessons_usefulを記入用雛形に差替え（Python→bash/awk）
     local _lu_ids
@@ -4523,12 +4559,18 @@ RECON_EOF
         log "report_template: added implementation_readiness (recon/scout)"
     fi
 
-    # cmd_776 C層: テンプレ生成後にnormalize_report.shで正規化を保証
-    if [[ "${DEPLOY_TASK_SKIP_REPORT_NORMALIZE:-0}" != "1" ]] && bash "$SCRIPT_DIR/scripts/lib/normalize_report.sh" "$report_file" >/dev/null 2>&1; then
-        log "report_template: normalized (C層 auto-fix applied)"
-    fi
+    # Canonical new templates contain all three candidate mappings by
+    # construction.  Structural sentinels catch truncated generation without
+    # paying for a second YAML parser process on the hot path.
+    grep -q '^lesson_candidate:' "$report_file" \
+        && grep -q '^decision_candidate:' "$report_file" \
+        && grep -q '^skill_candidate:' "$report_file" \
+        && grep -q '^binary_checks:' "$report_file" \
+        || { rm -f "$report_file"; return 1; }
+    mv "$report_file" "$_report_final_file" || return 1
+    report_file="$_report_final_file"
 
-    yaml_field_set "$task_file" "task" "report_path" "$report_rel_path"
+    deploy_task_publish_report_metadata "$task_file" "$report_id" "$report_identity_version" "$report_rel_path" "$_variation_checks_required" || return 1
     printf '%s\n' "$report_rel_path" > "${_active_report_index}.tmp"
     mv "${_active_report_index}.tmp" "$_active_report_index"
     log "report_path: set (${report_rel_path})"
