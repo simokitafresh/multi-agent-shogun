@@ -2329,6 +2329,15 @@ while [ $attempt -lt $max_attempts ]; do
             record_inbox_event_to_memory_db >/dev/null 2>&1 &
         fi
 
+        # Review delivery is a child event of the durable report event, not an
+        # auto-done side effect. Completed/auto-read parents must still create
+        # (or repair) the fingerprint-specific child review exactly once.
+        if [ "$TYPE" = "report_received" ] && [ -n "${_structured_candidate:-}" ] \
+           && [ -f "$_structured_candidate" ] && [ -n "${STRUCTURED_PARENT_CMD:-}" ]; then
+            ( inbox_deliver_report_review_generation "$FROM" "$_structured_candidate" "$STRUCTURED_PARENT_CMD" "$STRUCTURED_REPORT_FINGERPRINT" ) \
+                </dev/null >/dev/null 2>&1 &
+        fi
+
         # Hook: canonical report-completion types from ninja → auto-update task YAML to done
         if [ "$INBOX_COMPLETED_DUPLICATE" -eq 0 ] && inbox_type_triggers_report_completion "$TYPE"; then
             ensure_agent_config_loaded
