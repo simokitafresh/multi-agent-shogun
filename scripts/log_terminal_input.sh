@@ -27,6 +27,21 @@ PAYLOAD_TARGETS="$(jq -r '[.target_agent, .target, .pane_agent_id, .agent_id] | 
 PAYLOAD_TARGET_COUNT="$(printf '%s\n' "$PAYLOAD_TARGETS" | awk 'NF{n++} END{print n+0}')"
 PAYLOAD_TARGET="$(printf '%s\n' "$PAYLOAD_TARGETS" | awk 'NF{print; exit}')"
 SOURCE_EVENT_ID="$(jq -r '.source_event_id // .event_id // .prompt_id // .id // ""' 2>/dev/null <<<"$PAYLOAD" || true)"
+ACTIVE_AGENT_ID="$AGENT_ID"
+CLIENT_ACTIVITY="$(tmux display-message -t "$TMUX_PANE" -p '#{client_activity}' 2>/dev/null || true)"
+
+# Codex's real UserPromptSubmit contract is the minimal {prompt} payload.  In
+# that contract the attached tmux client's selected pane is the only routing
+# identity shared by all concurrently-fired pane hooks.
+if [ "$PAYLOAD_TARGET_COUNT" -eq 0 ] && [ -n "$ACTIVE_AGENT_ID" ] && [ "$ACTIVE_AGENT_ID" != "unknown" ]; then
+    PAYLOAD_TARGET="$ACTIVE_AGENT_ID"
+    PAYLOAD_TARGET_COUNT=1
+fi
+if [ -z "$SOURCE_EVENT_ID" ] && [ "$PAYLOAD_TARGET_COUNT" -eq 1 ]; then
+    # The event identity must be pane-independent.  Including PAYLOAD_TARGET
+    # lets the same prompt mint one id per pane and bypass the durable ledger.
+    SOURCE_EVENT_ID="terminal:$(printf '%s\037%s' "$CLIENT_ACTIVITY" "$INPUT" | sha256sum | awk '{print $1}')"
+fi
 
 _route_diag() {
     local reason="$1"

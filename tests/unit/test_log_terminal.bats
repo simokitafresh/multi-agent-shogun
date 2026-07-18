@@ -29,7 +29,11 @@ setup() {
     cat > "$MOCK_BIN/tmux" <<'STUB'
 #!/usr/bin/env bash
 if [[ "$*" == *"display-message"* ]]; then
-    echo "${MOCK_AGENT_ID:-shogun}"
+    if [[ "$*" == *"client_activity"* ]]; then
+        echo "${MOCK_CLIENT_ACTIVITY:-1700000000}"
+    else
+        echo "${MOCK_AGENT_ID:-shogun}"
+    fi
     exit 0
 fi
 if [[ "$*" == *"capture-pane"* ]]; then
@@ -257,8 +261,8 @@ PY
     grep -q 'cross_pane_target_mismatch' "$TEST_TMPDIR/logs/lord_conversation_route_rejects.jsonl"
 }
 
-@test "T-TL-010: missing or conflicting payload identity is quarantined" {
-    run bash -c 'echo "{\"prompt\":\"identity missing\",\"source_event_id\":\"evt-route-2\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+@test "T-TL-010: conflicting payload identity is quarantined" {
+    run bash -c 'echo "{\"prompt\":\"identity conflict\",\"target_agent\":\"shogun\",\"pane_agent_id\":\"karo\",\"source_event_id\":\"evt-route-2\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
     [ "$status" -eq 0 ]
     [ ! -f "$TEST_LORD_CONV" ]
     grep -q 'missing_or_conflicting_payload_target' "$TEST_TMPDIR/logs/lord_conversation_route_rejects.jsonl"
@@ -278,19 +282,52 @@ PY
 @test "T-TL-012: three-agent concurrent adversarial delivery records exactly one event" {
     run bash -c '
       for agent in shogun karo gunshi; do
-        (export MOCK_AGENT_ID="$agent"; printf "{\"prompt\":\"concurrent once\",\"target_agent\":\"%s\",\"source_event_id\":\"evt-concurrent\"}\n" "$agent" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh") &
+        (export MOCK_AGENT_ID="$agent"; printf "{\"prompt\":\"concurrent once\"}\n" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh") &
       done
       wait
     '
     [ "$status" -eq 0 ]
     [ "$(wc -l < "$TEST_LORD_CONV")" -eq 1 ]
-    [ "$(awk -F '\t' '$1=="evt-concurrent"{n++} END{print n+0}' "$TEST_TMPDIR/queue/lord_conversation_consumed.tsv")" -eq 1 ]
+    [ "$(wc -l < "$TEST_TMPDIR/queue/lord_conversation_consumed.tsv")" -eq 1 ]
     run python3 - "$TEST_LORD_CONV" <<'PY'
 import json, sys
 rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8") if line.strip()]
 assert len(rows) == 1
 assert rows[0]["target"] in {"shogun", "karo", "gunshi"}
-assert rows[0]["source_event_id"] == "evt-concurrent"
+assert rows[0]["source_event_id"].startswith("terminal:")
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "T-TL-014: minimal payload routes once to each executing pane without reject" {
+    for agent in karo shogun gunshi; do
+        export MOCK_AGENT_ID="$agent"
+        export MOCK_CLIENT_ACTIVITY="170000000${#agent}"
+        run bash -c 'printf "{\"prompt\":\"minimal %s\"}\n" "$MOCK_AGENT_ID" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+        [ "$status" -eq 0 ]
+    done
+    run python3 - "$TEST_LORD_CONV" <<'PY'
+import json, sys
+rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8") if line.strip()]
+assert len(rows) == 3
+assert {row["target"] for row in rows} == {"karo", "shogun", "gunshi"}
+assert len({row["source_event_id"] for row in rows}) == 3
+PY
+    [ "$status" -eq 0 ]
+    [ ! -s "$TEST_TMPDIR/logs/lord_conversation_route_rejects.jsonl" ]
+}
+
+@test "T-TL-013: real minimal Codex payload records selected pane exactly once" {
+    export MOCK_AGENT_ID="karo"
+    export MOCK_ACTIVE_AGENT_ID="karo"
+    run bash -c 'echo "{\"prompt\":\"実戦shadow入力\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    [ "$status" -eq 0 ]
+    run python3 - "$TEST_LORD_CONV" <<'PY'
+import json, sys
+rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8") if line.strip()]
+assert len(rows) == 1
+assert rows[0]["target"] == "karo"
+assert rows[0]["detail"] == "実戦shadow入力"
 PY
     [ "$status" -eq 0 ]
 }
