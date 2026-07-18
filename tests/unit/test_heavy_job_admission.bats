@@ -180,7 +180,7 @@ SH
     run env PATH="$fakebin:$PATH" SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT=1 \
         bash "$WRAPPER" -- true
     [ "$status" -eq 124 ]
-    [[ "$output" == *"DRAIN_MEMBER pid=103 ppid=1 pgid="*" stat=S elapsed=7 comm=worker"* ]]
+    [[ "$output" == *"DRAIN_MEMBER pid=103 ppid=1 pgid="*" stat=S elapsed=7 comm=worker origin=unknown"* ]]
     [[ "$output" != *"unrelated"* ]]
     [[ "$output" != *"zombie"* ]]
     [[ "$output" != *"argv="* ]]
