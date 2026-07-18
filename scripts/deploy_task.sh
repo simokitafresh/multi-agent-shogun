@@ -10647,6 +10647,68 @@ deploy_task_apply_task_mutations() {
     log "TASK_MUTATION_SUMMARY report_scans=${DEPLOY_TASK_REPORT_SCAN_COUNT:-0}"
 }
 
+# CI RED startup verification joins the active task to the failed Actions run
+# by task_type=ci_fix + ci_run_id.  Reject an incomplete join key while the
+# caller-owned source YAML is still the only artifact: no task/report/inbox
+# publication has happened at this point.
+deploy_task_ci_fix_run_id_precheck() {
+    local source_file="$1"
+    local result
+
+    local rc
+    if result=$(python3 - "$source_file" <<'PY'
+import re
+import sys
+import yaml
+
+path = sys.argv[1]
+try:
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except Exception as exc:
+    print(f"yaml_error:{exc}")
+    raise SystemExit(2)
+
+task = data.get("task", data)
+if not isinstance(task, dict):
+    print("task_mapping_missing")
+    raise SystemExit(2)
+
+task_type = str(task.get("task_type") or "").strip().lower()
+if task_type != "ci_fix":
+    print("not_ci_fix")
+    raise SystemExit(0)
+
+run_id = task.get("ci_run_id")
+value = "" if run_id is None else str(run_id).strip()
+if not re.fullmatch(r"[1-9][0-9]*", value):
+    print("invalid_ci_run_id")
+    raise SystemExit(1)
+
+print(f"ci_fix_run_id={value}")
+PY
+    ); then
+        rc=0
+    else
+        rc=$?
+    fi
+    case "$rc" in
+        0)
+            [ "$result" = "not_ci_fix" ] || log "ci_fix_contract: PASS ${result}"
+            return 0
+            ;;
+        1)
+            log "BLOCK: task_type=ci_fix requires ci_run_id as a positive integer before publication"
+            echo "BLOCK: task_type=ci_fix requires ci_run_id as a positive integer (>0); missing, empty, zero, or non-numeric values are forbidden." >&2
+            return 1
+            ;;
+        *)
+            log "BLOCK: ci_fix contract source parse failed (${result:-unknown})"
+            echo "BLOCK: unable to validate ci_fix ci_run_id in ${source_file}: ${result:-unknown}" >&2
+            return 1
+            ;;
+    esac
+}
+
 # ═══════════════════════════════════════
 # メイン処理
 # ═══════════════════════════════════════
@@ -10812,6 +10874,10 @@ except Exception:
                 [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_source_contract_precheck "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 2
+                }
+                deploy_task_ci_fix_run_id_precheck "$YAML_FILE" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 1
                 }
                 deploy_task_direct_quality_contract_precheck "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"

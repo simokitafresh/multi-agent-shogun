@@ -6,6 +6,46 @@ setup_file() {
     python3 -c "import yaml" 2>/dev/null || return 1
 }
 
+@test "ci_fix source requires a positive ci_run_id before publication" {
+    tmpdir="$(mktemp -d)"
+    for value in missing empty text zero positive non_ci; do
+        file="$tmpdir/$value.yaml"
+        case "$value" in
+            missing) printf 'task:\n  task_type: ci_fix\n' > "$file" ;;
+            empty) printf 'task:\n  task_type: ci_fix\n  ci_run_id: ""\n' > "$file" ;;
+            text) printf 'task:\n  task_type: ci_fix\n  ci_run_id: abc\n' > "$file" ;;
+            zero) printf 'task:\n  task_type: ci_fix\n  ci_run_id: 0\n' > "$file" ;;
+            positive) printf 'task:\n  task_type: ci_fix\n  ci_run_id: 29648245683\n' > "$file" ;;
+            non_ci) printf 'task:\n  task_type: hotfix\n' > "$file" ;;
+        esac
+    done
+
+    for value in missing empty text zero; do
+        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_run_id_precheck '$tmpdir/'\"$value\"'.yaml'"
+        [ "$status" -eq 1 ]
+        [[ "$output" == *"BLOCK: task_type=ci_fix requires ci_run_id as a positive integer"* ]]
+    done
+
+    for value in positive non_ci; do
+        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_run_id_precheck '$tmpdir/'\"$value\"'.yaml'"
+        [ "$status" -eq 0 ]
+    done
+}
+
+@test "ci_fix run id guard is ordered before direct YAML task publication" {
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+
+script = open(sys.argv[1], encoding="utf-8").read()
+main = script[script.index("deploy_task_main() {"):]
+guard = main.index('deploy_task_ci_fix_run_id_precheck "$YAML_FILE"')
+publish = main.index('deploy_task_direct_yaml_publish "$task_yaml" "$YAML_FILE"')
+report = main.index('deploy_task_apply_task_mutations "$NINJA_NAME"')
+delivery = main.index('safe_inbox_write "$NINJA_NAME"')
+assert guard < publish < report < delivery, (guard, publish, report, delivery)
+PY
+}
+
 @test "cmd_3855: L159 is not blanket-injected into every recon task" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import sys

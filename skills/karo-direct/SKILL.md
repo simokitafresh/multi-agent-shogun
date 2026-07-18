@@ -120,6 +120,7 @@ cat > /tmp/karo_direct_task.yaml << 'YAML'
 task:
   parent_cmd: cmd_karo_<task_type>_<timestamp>
   task_type: <task_type>
+  ci_run_id: <positive GitHub Actions run id>  # task_type=ci_fix時は必須。他タイプでは省略
   project: <project>
   purpose: <purpose>
   estimated_minutes: <positive number>
@@ -171,6 +172,7 @@ karo_snapshot.txtの該当忍者行を更新（ninja_monitorが自動検知）�
 
 ### ci_fix
 ```yaml
+ci_run_id: <positive GitHub Actions run id>
 purpose: "CI RED修正 — <テスト名/エラー内容>"
 acceptance_criteria:
   AC1: {description: "該当テストがPASS"}
@@ -208,6 +210,7 @@ bash scripts/deploy_task.sh --direct --yaml queue/training/<generated_task>.yaml
 ## 制約
 - training タイプは `deploy_task.sh --direct`単独、または`queue/training`のauto-generated完全AC YAMLに限り`deploy_task.sh --direct --yaml <yaml_file> <ninja_name>`を使う。`/tmp`手製YAMLは禁止（AC未注入を引き起こす。cmd_training_L4_r16事故実証済み）
 - ci_fix/recon2/hotfix タイプは `/tmp` に一時YAMLを作り、必ず `bash scripts/deploy_task.sh --yaml /tmp/karo_direct_task.yaml <ninja_name>` で配備する。直接 `cp` 禁止（stale field reset、parent_cmd/task_id/status設定、注入チェーン、report template生成、safe_inbox_write通知を迂回するため）
+- ci_fix タイプは失敗runの正整数 `ci_run_id` を一時YAMLへ必ず設定する。欠落・空・0・非数値は `deploy_task.sh` がtask/report/inbox公開前にBLOCKする。
 - `/tmp` YAMLには `parent_cmd: cmd_karo_<task_type>_<簡潔な説明>` を入れる。`--yaml` はこの値を配備cmdとして読む。
 - 再配備前に対象忍者の既存reportを確認する。`deploy_task.sh` がpending own report / completed peer reportをBLOCKした場合は、cmd_complete_gate完了または別忍者選定まで配備済み扱いにしない。
 - 複数行ACやdescriptionはdeploy_task.shの手動YAML構築でindent保持される。YAML注入後に `python3 -c "import yaml; yaml.safe_load(open('queue/tasks/<ninja>.yaml'))"` で構文確認する。
