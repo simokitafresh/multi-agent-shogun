@@ -1762,7 +1762,13 @@ notify_karo_throttled() {
     local stamp_file="${STATE_DIR:-/tmp}/.notify_${notify_type}_${name}"
     local cooldown="${NINJA_MONITOR_NOTIFY_COOLDOWN:-1800}"
     local fingerprint acknowledged_at prior_fp prior_ack prior_epoch now
-    fingerprint=$(printf '%s\t%s\t%s' "$notify_type" "$name" "$message" | cksum | awk '{print $1 ":" $2}')
+    if [ "$notify_type" = "completion_notify_gap" ]; then
+        # name carries cmd + immutable LGTM epoch for this notification type.
+        # Exclude mutable grace wording so repeated monitor cycles dedupe.
+        fingerprint=$(printf '%s\t%s' "$notify_type" "$name" | cksum | awk '{print $1 ":" $2}')
+    else
+        fingerprint=$(printf '%s\t%s\t%s' "$notify_type" "$name" "$message" | cksum | awk '{print $1 ":" $2}')
+    fi
     acknowledged_at=""
     if [ -f "$SCRIPT_DIR/queue/tasks/${name}.yaml" ]; then
         acknowledged_at=$(awk '/^[[:space:]]*acknowledged_at:/{sub(/^[^:]*:[[:space:]]*/,""); gsub(/"/,""); print; exit}' "$SCRIPT_DIR/queue/tasks/${name}.yaml" 2>/dev/null || true)
@@ -1770,7 +1776,7 @@ notify_karo_throttled() {
     now=$EPOCHSECONDS
 
     if [ -f "$stamp_file" ]; then
-        IFS=$'\t' read -r prior_fp prior_ack prior_epoch < "$stamp_file" || true
+        IFS='|' read -r prior_fp prior_ack prior_epoch < "$stamp_file" || true
         if [ "$prior_fp" = "$fingerprint" ] && [ "$prior_ack" = "$acknowledged_at" ] &&
            [[ "$prior_epoch" =~ ^[0-9]+$ ]] && [ $((now - prior_epoch)) -lt "$cooldown" ]; then
             log "NOTIFY-THROTTLED: $notify_type for $name suppressed fingerprint=$fingerprint acknowledged_at=${acknowledged_at:-none}"
@@ -1781,7 +1787,9 @@ notify_karo_throttled() {
         log "WARN: inbox_write $notify_type failed for $name"
         return 0
     fi
-    printf '%s\t%s\t%s\n' "$fingerprint" "$acknowledged_at" "$now" > "$stamp_file"
+    # Use a non-whitespace delimiter: read collapses adjacent tab IFS fields,
+    # which shifted an empty acknowledged_at into prior_ack and broke dedupe.
+    printf '%s|%s|%s\n' "$fingerprint" "$acknowledged_at" "$now" > "$stamp_file"
 }
 
 # ─── karo通知の永続retry outbox (cmd_karo_hotfix_failed_report_clear_notify_gap AC3) ───
@@ -2300,17 +2308,20 @@ for cmd_id, ts in lgtm_events:
         continue
     if now - ts < grace:
         continue
-    print(cmd_id)
+    # Carry the immutable LGTM event timestamp into the throttle identity.
+    # The human-facing message contains mutable grace wording, while a later
+    # RC -> LGTM is a distinct generation that must notify exactly once.
+    print(f"{cmd_id}\t{int(ts)}")
 PY
 )
 
     [ -z "$pending" ] && return 0
 
-    local cmd_id
-    while IFS= read -r cmd_id; do
+    local cmd_id lgtm_generation
+    while IFS=$'\t' read -r cmd_id lgtm_generation; do
         [ -z "$cmd_id" ] && continue
         log "KARO-COMPLETION-NOTIFY-GAP: LGTM received for ${cmd_id} but no bulletin/shogun notification within ${grace}s"
-        notify_karo_throttled completion_notify_gap "$cmd_id" "【自動検知】軍師LGTM(${cmd_id})受領後${grace}秒超過してもbulletin/将軍inboxに完了通知なし。cmd_complete_gate実行またはbulletin_write.shでの通知を確認せよ。"
+        notify_karo_throttled completion_notify_gap "${cmd_id}_${lgtm_generation}" "【自動検知】軍師LGTM(${cmd_id})受領後${grace}秒超過してもbulletin/将軍inboxに完了通知なし。cmd_complete_gate実行またはbulletin_write.shでの通知を確認せよ。"
     done <<< "$pending"
 }
 

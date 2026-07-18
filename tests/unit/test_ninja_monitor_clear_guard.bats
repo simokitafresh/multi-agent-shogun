@@ -168,6 +168,27 @@ test "$(grep -c INBOX_CALLED "$LOG")" -eq 1
     [ "$status" -eq 0 ]
 }
 
+@test "completion_notify_gap: a later REOPEN LGTM generation notifies once again" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T=$BATS_TEST_TMPDIR; SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
+mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_reopened" "$T/scripts" "$STATE_DIR"
+clear=$(date -d "-900 seconds" -Iseconds); rc1=$(date -d "-800 seconds" -Iseconds); lgtm1=$(date -d "-700 seconds" -Iseconds); rc2=$(date -d "-600 seconds" -Iseconds); lgtm2=$(date -d "-500 seconds" -Iseconds)
+printf "messages:\n- content: \"cmd_reopened verdict: RC\"\n  timestamp: \"%s\"\n  type: review_feedback\n- content: \"cmd_reopened verdict: LGTM\"\n  timestamp: \"%s\"\n  type: review_feedback\n" "$rc1" "$lgtm1" > "$T/queue/inbox/karo.yaml"
+printf "messages: []\n" > "$T/queue/inbox/shogun.yaml"; printf "entries: []\n" > "$T/queue/bulletin_board.yaml"
+printf "#!/bin/bash\necho INBOX_CALLED >> \"$LOG\"\n" > "$T/scripts/inbox_write.sh"; chmod +x "$T/scripts/inbox_write.sh"
+printf "GATE CLEAR: cmd完了許可\n" > "$T/queue/gates/cmd_reopened/cmd_complete_gate.trigger.log"; touch -d "$clear" "$T/queue/gates/cmd_reopened/cmd_complete_gate.trigger.log"
+log() { echo "$1" >> "$LOG"; }; NINJA_MONITOR_LGTM_NOTIFY_GRACE=1 check_karo_completion_notify_gap
+printf "messages:\n- content: \"cmd_reopened verdict: RC\"\n  timestamp: \"%s\"\n  type: review_feedback\n- content: \"cmd_reopened verdict: LGTM\"\n  timestamp: \"%s\"\n  type: review_feedback\n" "$rc2" "$lgtm2" > "$T/queue/inbox/karo.yaml"
+NINJA_MONITOR_LGTM_NOTIFY_GRACE=1 check_karo_completion_notify_gap
+NINJA_MONITOR_LGTM_NOTIFY_GRACE=1 check_karo_completion_notify_gap
+test "$(grep -c INBOX_CALLED "$LOG")" -eq 2
+'
+    [ "$status" -eq 0 ]
+}
+
 @test "auto_commit: regular commit excludes context markdown and batches context separately" {
     run bash -lc '
 set -eo pipefail
