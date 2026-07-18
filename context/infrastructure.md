@@ -815,7 +815,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1203 -->
+<!-- last_synced_lesson: L1204 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1732,6 +1732,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1201: 正しさcheckpointのmutationを性能目的で遅延しない（cmd_karo_ci_fix_29630423279_gp105_stale_report_202607181325）
 - L1202: 常駐daemon隔離fixtureはsource依存と契約markerを同時追随する（cmd_karo_ci_fix_29630959241_watcher_handoff_202607181348）
 - L1203: history snapshot consumerは検証済み世代だけ読む（cmd_karo_hotfix_ga291_context_freshness_202607181628）
+- L1204: 再帰runnerの内部マーカーを環境変数で継承させない（cmd_karo_ci_fix_29637087888_terminal_receipt）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

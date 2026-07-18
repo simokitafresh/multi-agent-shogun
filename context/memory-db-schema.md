@@ -1,5 +1,4 @@
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga245_source_commit_lifecycle_202607131954 -->
-<!-- source_commit:abe55194e2c2d9e5f2fa8c16b04a6b806b419ba0 reason:full-audit-boundary evidence:migration-commit-70-tests -->
+<!-- last_updated: 2026-07-18 -->
 
 # Memory DB Schema
 
@@ -10,13 +9,13 @@
 
 | type | name | rows | columns |
 | --- | --- | --- | --- |
-| table | event_concepts | 230188 | event_id, concept_name, relevance_score |
-| table | event_links | 18952 | source_event_id, target_concept, link_type |
-| table | event_state_transitions | 3916 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
-| table | events | 151186 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
-| table | events_fts | 151186 | summary, detail |
-| table | search_logs | 27087 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
-| view | conversations | 51939 | ts, agent, direction, summary, detail, session_id |
+| table | event_concepts | 281133 | event_id, concept_name, relevance_score |
+| table | event_links | 22828 | source_event_id, target_concept, link_type |
+| table | event_state_transitions | 4372 | id, event_id, from_state, to_state, reason, actor, transitioned_at |
+| table | events | 198406 | id, ts, event_type, agent, target, direction, summary, detail, session_id, cmd_id, concepts, source_file, parent_event_id, importance, confidence, freshness, source_type, state, o… |
+| table | events_fts | 198406 | summary, detail |
+| table | search_logs | 39382 | id, ts, caller, agent_id, query, hit_count, no_match, elapsed_ms, exit_code, created_at |
+| view | conversations | 57076 | ts, agent, direction, summary, detail, session_id |
 | index | idx_event_concepts_concept_name |  |  |
 | index | idx_event_links_source_event_id |  |  |
 | index | idx_event_links_target_concept |  |  |
@@ -35,21 +34,21 @@
 
 | event_type | count |
 | --- | --- |
-| conversation | 51939 |
-| report | 34630 |
-| inbox | 21757 |
-| insight | 10834 |
+| report | 62931 |
+| conversation | 57076 |
+| inbox | 29513 |
+| insight | 12237 |
 | cmd_archive | 9513 |
-| bulletin | 7259 |
-| cmd_quality | 4638 |
-| gate | 4314 |
+| bulletin | 8476 |
+| gate | 6414 |
+| cmd_quality | 5354 |
 | skill_execution | 2961 |
-| cmd_save | 1918 |
-| cmd_delegate | 628 |
-| lesson | 421 |
-| knowledge | 298 |
+| cmd_save | 2148 |
+| cmd_delegate | 690 |
+| lesson | 562 |
+| knowledge | 437 |
 | pending_decision | 49 |
-| workaround | 24 |
+| workaround | 46 |
 | project | 2 |
 | infrastructure_state | 1 |
 
