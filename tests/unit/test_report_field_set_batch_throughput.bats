@@ -9,7 +9,7 @@ worker_id: hanzo
 parent_cmd: cmd_test
 ac_version_read: abc
 status: pending
-commit_hash: no-code-change
+commit_hash: '0000000000000000000000000000000000000000'
 files_modified: [queue/reports/test.yaml]
 lessons_useful: [{id: L625, useful: true, reason: covered}]
 lesson_candidate: {found: false, no_lesson_reason: covered}
