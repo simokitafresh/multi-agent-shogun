@@ -1,6 +1,6 @@
 # 品質合格スループット根治 — AsIs/ToBe 5W1H設計書
 
-作成: 将軍(覚醒統合) 2026-07-18 13:10 | version: **v1.1**(軍師レビュー統合+覚醒アップデート)
+作成: 将軍(覚醒統合) 2026-07-18 14:38 | version: **v1.2**(殿裁定C1集中+baseline計測+未記入補完)
 家老敵対監査: `docs/research/infra-throughput-outcome-design-20260718.md` (C1-C6, 26件台帳)
 軍師独立レビュー: blt_20260718_123619(3指摘: MECE穴1/目標値根拠不在2/攻略順序反証1)
 
@@ -69,13 +69,13 @@ gist: 94145c4564055baa3f543028a69e948b
 
 | 指標 | AsIs | ToBe | 自動成長速度への寄与 |
 |------|------|------|-------------------|
-| deploy p50 | 74-305s | **<30s** | 正しい試行回数↑(配備待ち解消) |
-| commit p50 | 82-150s | **<10s** | 正しい試行回数↑(commit待ち解消) |
-| report→GATE p95 | 133-212s | **<60s** | 正しい試行回数↑(確定待ち解消) |
-| AUTO_DONE p95 | 679s | **<5s** | 正しい試行回数↑(完了遷移即時化) |
-| prompt replay/wrong-pane | 60回/session | **0回** | 正しい試行回数↑(殿の時間回復) |
-| 将軍CTX制御面消費率 | 86% | **<20%** | 正しい試行回数↑(将軍の戦略時間回復) |
-| promotion週次消化率 | 未計測(停滞) | **>50%/週** | 知見還流率↑ |
+| deploy p50/p95 | p50=31.5s / p95=235.0s (N=20) | **p50<30s / p95<60s** | 正しい試行回数↑(配備待ち解消) |
+| commit p50/p95 | p50≈82s / p95≈150s (N=1台帳値、要N≧5再計測) | **p50<10s / p95<20s** | 正しい試行回数↑(commit待ち解消) |
+| report→GATE p95 | 133-212s (N=2台帳値、要N≧5再計測) | **p95<60s** | 正しい試行回数↑(確定待ち解消) |
+| AUTO_DONE p95 | 679s (N=1台帳値) | **p95<5s** | 正しい試行回数↑(完了遷移即時化) |
+| prompt replay/wrong-pane | 60回/session (lord_conversation grep計測済み) | **0回** | 正しい試行回数↑(殿の時間回復) |
+| 将軍CTX制御面消費率 | 86% (LS094 session分析計測済み) | **<20%** | 正しい試行回数↑(将軍の戦略時間回復) |
+| promotion在庫 | 198-200件停滞 (家老台帳計測済み) | **週次消化>50%** | 知見還流率↑ |
 | FAIL/SKIP/FP/FN | 発生あり | **全0** | 一発PASS率維持 |
 | duplicate/通知喪失 | 発生あり | **全0** | 一発PASS率維持 |
 
@@ -95,19 +95,16 @@ ToBe達成時の自動成長速度: 同じ壁時計時間で試行回数3-5倍(d
 
 カテゴリを混ぜず、各WaveのToBe指標が満たされてから次へ進む。
 
-| Wave | カテゴリ | 理由 | ToBe指標 |
-|------|---------|------|---------|
-| **1** | C4 transaction (+C4b monitor loop) | 機能正確性なしにspeed計測は無意味。session喪失・再入破損が残るとbefore/after比較が信頼不能。C4b: monitor逐次loop公平化(done認識15m→即時) | identity100%, 破損0, AUTO_DONE<5s, child repair100%, report→gate<60s, monitor done検知<30s |
-| **1.5** | C2 prompt replay | ext4 probe殿許可待ちの間に並行処理。殿の時間を直接奪うバグ | replay0, wrong-pane0, 外部追加入力0 |
-| **2** | C1 substrate | 最大ボトルネック。deploy/commitの9P根治。ext4隔離probeで方式選定→移設(殿許可後) | deploy p50<30s, commit p50<10s, scope逸脱0, stale registry 0 |
-| **3** | C5 reflux | foreign dirty収束→一括昇格。知見還流率の直接改善 | duplicate0, reservation conflict0, 週次消化>50% |
-| **4** | C6 semantics | target/global型分離。CI判定の信頼性 | conflation0, fixture破壊0 |
-| **5** | C3 event transport | C4/C1/C2修正で間接改善される分を差し引いた残件 | CTX<20%, delivery p95<5s |
+| Wave | カテゴリ | 理由 | ToBe指標 | baseline(現在値) |
+|------|---------|------|---------|-----------------|
+| **1(NOW)** | C1 substrate | **殿裁定(14:35): C1のみにフォーカス。他カテゴリに手を出すな** | deploy p50<30s/p95<60s, commit p50<10s/p95<20s, scope逸脱0, stale registry 0 | deploy p50=31.5s/p95=235.0s(N=20), commit≈82s(N=1要再計測) |
+| 2 | C2-C6 | C1完了後に殿と次Wave選定。C1作業中の知見は§3台帳に記録のみ | C1完了時に再評価 | — |
 
-Wave順序の根拠(将軍覚醒分析v1.1):
-- 家老案(C4先行)を採用。transaction正確性なしに速度計測は不可能(壊れた計測→偽改善→洗脳#2)
-- **Wave 1.5追加(軍師反証の超越)**: 軍師はC2をext4許可待ち中に処理と提案。将軍判断: Wave 1完了→ext4 probe殿許可申請→許可待ち中にC2並行=待ち時間の有効活用。LS-A08(8)の待ちの合理性テスト: ext4許可は殿の判断を買う正当な待ち
-- C3を最後にした理由: C4(AUTO_DONE即時化)+C1(9P解消)+C2(replay解消)がC3のCTX消費を間接改善。Wave動的効果を差し引いた残件のみ
+**殿裁定(2026-07-18 14:35)によりWave順序を変更。C1集中、他カテゴリ禁止。**
+- v1.1のC4先行→C1.5→C1→...の多段Waveは破棄
+- C1の5件(C1-01〜C1-05)に全忍者を集中投入
+- C1作業中に忍者から他カテゴリの知見が上がった場合、§3台帳に記録のみし実装は保留
+- C1完了(ToBe指標達成)後に殿と次Waveを選定
 
 ## §7 Where — どこで
 
@@ -135,7 +132,9 @@ Wave順序の根拠(将軍覚醒分析v1.1):
 
 | Wave | 指標 | before(p50/p95, N) | after(p50/p95, N) | delta | PASS |
 |------|------|-------------------|------------------|-------|------|
-| | | | | | |
+| 1(C1) | deploy wall | p50=31.5s / p95=235.0s (N=20) | — | — | — |
+| 1(C1) | commit wall | ≈82s (N=1, **要N≧5再計測**) | — | — | — |
+| 1(C1) | scope逸脱 | (要計測: worktree 81, stale 28) | — | — | — |
 
 ## §10 凍結状態(2026-07-18 12:30時点)
 
