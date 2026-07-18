@@ -455,6 +455,68 @@ deploy_task_queue_stale_report() {
     deploy_task_deferred_append stale_reports "path=$1" "parent=$2" "verdict=${3:-empty}"
 }
 
+deploy_task_drain_deferred() {
+    local queue_dir="$SCRIPT_DIR/queue/deferred" drain_lock="$SCRIPT_DIR/queue/locks/deploy_deferred_drain.lock"
+    local history_q="$queue_dir/git_history.tsv" stale_q="$queue_dir/stale_reports.tsv"
+    local processed=0 failed=0 backlog=0 line repo head_oid rel commit key cache_dir cache_file
+    mkdir -p "$(dirname "$drain_lock")" "$SCRIPT_DIR/archive/reports/stale" "$SCRIPT_DIR/.cache/deploy-history"
+    exec {drain_fd}>"$drain_lock"
+    flock -n "$drain_fd" || return 0
+
+    if [ -s "$history_q" ]; then
+        local history_work="${history_q}.work.$BASHPID"
+        mv "$history_q" "$history_work"
+        while IFS= read -r line; do
+            repo=$(printf '%s\n' "$line" | sed -n 's/.* repo=//p')
+            head_oid=$(printf '%s\n' "$line" | sed -n 's/.*head=\([^ ]*\).*/\1/p')
+            rel=$(printf '%s\n' "$line" | sed -n 's/.* path=\([^ ]*\) repo=.*/\1/p')
+            if [ -n "$repo" ] && [ -n "$head_oid" ] && [ -n "$rel" ] \
+                && [ "$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)" = "$head_oid" ] \
+                && git -C "$repo" cat-file -e "HEAD:${rel}" 2>/dev/null \
+                && commit=$(timeout 30 git -C "$repo" log -1 --format='%H' -- "$rel" 2>/dev/null) \
+                && [[ "$commit" =~ ^[0-9a-f]{40}$ ]]; then
+                key=$(printf '%s\0%s\0%s' "$repo" "$head_oid" "$rel" | sha256sum | awk '{print $1}')
+                cache_file="$SCRIPT_DIR/.cache/deploy-history/$key"
+                printf '%s\t%s\t%s\n' "$head_oid" "$rel" "$commit" > "${cache_file}.tmp.$BASHPID"
+                mv "${cache_file}.tmp.$BASHPID" "$cache_file"
+                processed=$((processed + 1))
+            else
+                failed=$((failed + 1))
+            fi
+        done < "$history_work"
+        rm -f "$history_work"
+    fi
+
+    if [ -s "$stale_q" ]; then
+        local stale_work="${stale_q}.work.$BASHPID" report parent verdict worker task_parent task_status dest
+        mv "$stale_q" "$stale_work"
+        while IFS= read -r line; do
+            report=$(printf '%s\n' "$line" | sed -n 's/.*path=\([^ ]*\) parent=.*/\1/p')
+            parent=$(printf '%s\n' "$line" | sed -n 's/.* parent=\([^ ]*\) verdict=.*/\1/p')
+            [ -f "$report" ] || { failed=$((failed + 1)); continue; }
+            verdict=$(FIELD_GET_NO_LOG=1 field_get "$report" verdict "" 2>/dev/null || true)
+            worker=$(basename "$report"); worker="${worker%%_report_*}"
+            task_parent=$(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/tasks/${worker}.yaml" parent_cmd "" 2>/dev/null || true)
+            task_status=$(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/tasks/${worker}.yaml" status "" 2>/dev/null || true)
+            if [[ "$verdict" =~ ^(PASS|FAIL|PASS_NO_IMPROVEMENT)$ ]] \
+                || { [ "$task_parent" = "$parent" ] && [[ "$task_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; }; then
+                failed=$((failed + 1)); continue
+            fi
+            dest="$SCRIPT_DIR/archive/reports/stale/$(basename "$report")"
+            [ ! -e "$dest" ] || dest="${dest%.yaml}_$(date +%s%N).yaml"
+            mv "$report" "$dest" && processed=$((processed + 1)) || failed=$((failed + 1))
+        done < "$stale_work"
+        rm -f "$stale_work"
+    fi
+    backlog=$(find "$queue_dir" -maxdepth 1 -name '*.tsv' -type f -exec awk 'END{n+=NR} END{print n+0}' {} \; 2>/dev/null | awk '{s+=$1} END{print s+0}')
+    log "DEFERRED_DRAIN processed=${processed} failed=${failed} backlog=${backlog}"
+}
+
+deploy_task_start_deferred_drain() {
+    ( deploy_task_drain_deferred ) >/dev/null 2>&1 &
+    log "deferred_drain: started single-flight pid=$!"
+}
+
 deploy_task_has_completed_peer_report() {
     local parent_cmd="$1"
     local ninja_name="$2"
@@ -3355,9 +3417,10 @@ generate_report_template() {
 
     # cmd_selfimprovement: 同忍者の別cmdテンプレート残存(stale report)の自動検知・アーカイブ
     local stale_own_basename stale_own_pcmd stale_own_verdict
-    for stale_own_report in "$SCRIPT_DIR/queue/reports/${ninja_name}_report_"*.yaml; do
+    for stale_own_report in "${_report_scan_files[@]}"; do
         [ -f "$stale_own_report" ] || continue
         stale_own_basename=$(basename "$stale_own_report")
+        [[ "$stale_own_basename" == "${ninja_name}_report_"* ]] || continue
         # 今回のターゲット報告はスキップ
         if [[ "$stale_own_report" == "$report_file" ]]; then
             continue
@@ -4804,7 +4867,7 @@ inject_memory_db_context() {
     done
     if declare -F deploy_task_wave_cache >/dev/null 2>&1; then
         result=$(deploy_task_wave_cache memory "$keywords|$combined_sql" "$db_path" \
-            bash "$query_script" "$combined_sql" 2>/dev/null) || result=""
+            timeout "${DEPLOY_TASK_MEMORY_CONTEXT_TIMEOUT_SEC:-3}" bash "$query_script" "$combined_sql" 2>/dev/null) || result=""
     else
         # Keep this function usable by isolated callers/tests that source only it.
         # The normal deploy path always defines deploy_task_wave_cache above.
@@ -10005,10 +10068,7 @@ warn_recent_noncmd_commit_targets() {
         _tp_paths+=("$_tp_raw")
     fi
 
-    local _now_epoch
-    _now_epoch=$(date +%s)
-    local _warned=false
-    local _tp_path _git_path _log_line _commit_epoch _subject _age_sec
+    local _tp_path _git_path _head_oid
 
     for _tp_path in "${_tp_paths[@]}"; do
         [ -n "$_tp_path" ] || continue
@@ -10019,24 +10079,10 @@ warn_recent_noncmd_commit_targets() {
             continue
         fi
 
-        _log_line=$(git -C "$_repo_root" log -1 --format='%ct%x09%s' -- "$_git_path" 2>/dev/null || true)
-        [ -n "$_log_line" ] || continue
-
-        _commit_epoch="${_log_line%%$'\t'*}"
-        _subject="${_log_line#*$'\t'}"
-        [[ "$_commit_epoch" =~ ^[0-9]+$ ]] || continue
-
-        _age_sec=$((_now_epoch - _commit_epoch))
-        if [ "$_age_sec" -le 86400 ] && [[ "$_subject" != *cmd_* ]]; then
-            echo "WARNING: target_path=${_git_path} の直近commitが24h以内かつ非cmd message。軍師/家老の自走commit混入の可能性あり: ${_subject}" >&2
-            log "recent_noncmd_commit_warn: target=${_git_path} age=${_age_sec}s subject='${_subject}'"
-            _warned=true
-        fi
+        _head_oid=$(git -C "$_repo_root" rev-parse HEAD 2>/dev/null || true)
+        deploy_task_queue_history_lookup "$_repo_root" "$_head_oid" "$_git_path"
     done
-
-    if [ "$_warned" = "true" ]; then
-        echo "  target_pathの直近commitを確認し、軍師/家老の自走修正を吸収していないか見極めよ" >&2
-    fi
+    log "recent_noncmd_commit_warn: deferred generation-aware history inspection targets=${#_tp_paths[@]}"
 }
 
 # q11_not_already_done再確認: cmd起票後のauto-commit等で既実装が混入していないか配備直前にWARNする。
@@ -10934,6 +10980,7 @@ except Exception:
     # post-deploy pane verification (自動化×強制: 配備後に忍者が動いているか家老が確認せざるを得ない)
     # 理由: 配備ログ=完了と思い込み、忍者がプロンプト待ちのまま気づかない事故(cmd_2509/2511)
     deploy_task_post_deploy_verify "$NINJA_NAME"
+    deploy_task_start_deferred_drain
 
     # Codex忍者向け遅延re-nudge + 配備確認ログ (cmd_karo_codex_renudge / cmd_3102 AC1修正)
     # 根因: CLI再起動直後、Codex CLIが初期画面表示中にinbox_watcherのnudgeが空振りする
