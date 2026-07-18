@@ -474,7 +474,25 @@ _run_tests_main() {
             ;;
         file)
             shift
-            bats "$@" --jobs "$JOBS" --timing
+            # file mode is commonly invoked from a bats regression suite. Do
+            # not let the nested bats root inherit the outer root's formatter
+            # transport: otherwise nested TAP is counted as outer tests and
+            # bats reports "Executed N instead of expected M tests" even when
+            # both roots completed successfully.
+            env \
+                -u BATS_ROOT_PID \
+                -u BATS_RUN_TMPDIR \
+                -u BATS_SUITE_TMPDIR \
+                -u BATS_FILE_TMPDIR \
+                -u BATS_TEST_TMPDIR \
+                -u BATS_TEST_FILENAME \
+                -u BATS_TEST_NAME \
+                -u BATS_TEST_NUMBER \
+                -u BATS_SUITE_TEST_NUMBER \
+                -u BATS_TEST_FILE_NUMBER \
+                -u BATS_OUT \
+                -u BATS_TAP_OUTPUT \
+                bats "$@" --jobs "$JOBS" --timing 3>&-
             ;;
         affected)
             shift || true
