@@ -48,6 +48,32 @@ _run_hook() {
     _hook_payload "$1" | TMUX_AGENT_ID=shogun bash "$HOOK"
 }
 
+_exclusive_fixture_contract() {
+    local runner="$1" block fixture
+    local -a required=(
+        test_gate_shogun_startup.bats
+        test_heavy_job_admission.bats
+        test_daemon_maintenance_lock.bats
+        test_heavy_job_classifier_newline.bats
+        test_cmd_complete_insight_consumption.bats
+        test_pending_approval.bats
+        test_pre_bash_guard1_git_commit_tokenizer.bats
+        test_ninja_scope_commit.bats
+        test_deploy_task_template_generation.bats
+    )
+    block="$(awk '
+        /These fixture suites exercise process-wide hooks/ { capture=1 }
+        capture { print }
+        capture && /^[[:space:]]*esac[[:space:]]*$/ { exit }
+    ' "$runner")"
+    [ -n "$block" ] || return 1
+    for fixture in "${required[@]}"; do
+        [[ "$block" == *"$fixture"* ]] || return 1
+    done
+    grep -Eq '^[[:space:]]*file_inner_jobs=1[[:space:]]*$' <<<"$block" || return 1
+    grep -Eq '^[[:space:]]*file_weight="\$MAX_TEST_JOBS"[[:space:]]*$' <<<"$block"
+}
+
 _malformed_readonly_rg_command() {
     cat <<'CMD'
 printf 'wait_n_occurrences\n'; rg -n 'wait -n' scripts tests .githooks --glob '*.sh' --glob '*.bats' || true
@@ -476,12 +502,27 @@ print('ok')
 
 @test "shared hook git daemon and startup fixtures are exclusive file roots" {
     runner="$ROOT/scripts/run_tests.sh"
-    fixture_contract='test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats|test_campaign_lane_shard_item.bats'
-    grep -Fq "$fixture_contract" "$runner"
-    grep -F -A3 "${fixture_contract})" "$runner" \
-        | grep -q 'file_inner_jobs=1'
-    grep -F -A3 "${fixture_contract})" "$runner" \
-        | grep -q 'file_weight="\$MAX_TEST_JOBS"'
+    _exclusive_fixture_contract "$runner"
+}
+
+@test "exclusive fixture contract ignores arm order and additional fixtures" {
+    local runner="$TMP/run_tests.sh"
+    cp "$ROOT/scripts/run_tests.sh" "$runner"
+    sed -i 's/test_gate_shogun_startup\.bats|test_heavy_job_admission\.bats/test_unknown_future_fixture.bats|test_heavy_job_admission.bats|test_gate_shogun_startup.bats/' "$runner"
+    _exclusive_fixture_contract "$runner"
+}
+
+@test "exclusive fixture contract fails closed when a required fixture or assignment is missing" {
+    local runner="$TMP/run_tests.sh"
+    cp "$ROOT/scripts/run_tests.sh" "$runner"
+    sed -i 's/test_pending_approval\.bats|//' "$runner"
+    run _exclusive_fixture_contract "$runner"
+    [ "$status" -ne 0 ]
+
+    cp "$ROOT/scripts/run_tests.sh" "$runner"
+    sed -i '/These fixture suites exercise process-wide hooks/,/^[[:space:]]*esac[[:space:]]*$/ s/file_weight="\$MAX_TEST_JOBS"/file_weight="\$INNER_JOBS"/' "$runner"
+    run _exclusive_fixture_contract "$runner"
+    [ "$status" -ne 0 ]
 }
 
 @test "hook: 単一.batsファイル/単一pytest::関数は軽量でBLOCKされない" {
