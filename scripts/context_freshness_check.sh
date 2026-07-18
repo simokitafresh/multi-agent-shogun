@@ -958,20 +958,61 @@ def _run_grouped_git_log(
     contract_hash = hashlib.sha256(contract.encode()).hexdigest()
     fingerprint = json.dumps({"contract": contract_hash, "source_tip": boundary}, sort_keys=True)
     cache_path = os.path.join(cache_dir, hashlib.sha256(fingerprint.encode()).hexdigest() + ".json")
-    lock_path = os.path.join(cache_dir, contract_hash + ".lock")
-    lock_file = None
+    refresh_script = os.path.join(root, "scripts", "context_history_snapshot_refresh.sh")
+
+    def parse_snapshot(path: str) -> list[tuple[str, str, list[str]]] | None:
+        try:
+            with open(path, encoding="utf-8") as stream:
+                snapshot = json.load(stream)
+            commits_value = snapshot.get("commits")
+            if (snapshot.get("schema") != "cfc-history-v2"
+                    or snapshot.get("contract_hash") != contract_hash
+                    or snapshot.get("source_tip") != boundary
+                    or not isinstance(commits_value, list)):
+                return None
+            canonical = json.dumps(commits_value, sort_keys=True, separators=(",", ":"))
+            if snapshot.get("output_sha256") != hashlib.sha256(canonical.encode()).hexdigest():
+                return None
+            parsed = [
+                (str(item[0]), str(item[1]), [str(path) for path in item[2]])
+                for item in commits_value
+                if isinstance(item, list) and len(item) == 3 and isinstance(item[2], list)
+            ]
+            return parsed if len(parsed) == len(commits_value) else None
+        except (OSError, ValueError, TypeError, KeyError):
+            return None
+
+    def request_refresh() -> None:
+        if not boundary or not os.path.isfile(refresh_script):
+            return
+        env = os.environ.copy()
+        env.update({
+            "CFC_REFRESH_REPO": os.path.realpath(repo_path),
+            "CFC_REFRESH_REVISION": revision or "",
+            "CFC_REFRESH_SINCE": since_date.isoformat() if since_date else "",
+            "CFC_REFRESH_PATHS": json.dumps(pathspecs),
+            "CFC_REFRESH_CONTRACT_HASH": contract_hash,
+            "CFC_REFRESH_SOURCE_TIP": boundary,
+            "CFC_REFRESH_OUTPUT": cache_path,
+            "CFC_REFRESH_CACHE_DIR": cache_dir,
+        })
+        try:
+            if os.environ.get("CFC_HISTORY_REFRESH_SYNC") == "1":
+                subprocess.run(["bash", refresh_script], env=env, check=False,
+                               stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL, timeout=_GIT_RETRY_TIMEOUT + 5)
+            else:
+                subprocess.Popen(
+                    ["bash", refresh_script], env=env,
+                    stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    start_new_session=True, close_fds=True,
+                )
+        except OSError:
+            pass
     if boundary:
         try:
-            with open(cache_path, encoding="utf-8") as cached_file:
-                cached = json.load(cached_file)
-            if (cached.get("contract_hash") == contract_hash
-                    and cached.get("source_tip") == boundary
-                    and isinstance(cached.get("commits"), list)):
-                cached_commits = [
-                    (str(item[0]), str(item[1]), [str(path) for path in item[2]])
-                    for item in cached["commits"]
-                    if isinstance(item, list) and len(item) == 3 and isinstance(item[2], list)
-                ]
+            cached_commits = parse_snapshot(cache_path)
+            if cached_commits is not None:
                 record_diagnostic("hit")
                 return cached_commits
         except (OSError, ValueError, TypeError, KeyError):
@@ -1004,86 +1045,14 @@ def _run_grouped_git_log(
                 return cached_commits
         except (OSError, ValueError, TypeError):
             pass
-    if boundary:
-        try:
-            os.makedirs(cache_dir, mode=0o700, exist_ok=True)
-            lock_file = open(lock_path, "a+", encoding="utf-8")
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
-        except OSError:
-            if lock_file:
-                lock_file.close()
-            lock_file = None
-    if boundary:
-        try:
-            with open(cache_path, encoding="utf-8") as cached_file:
-                cached = json.load(cached_file)
-            if (cached.get("contract_hash") == contract_hash
-                    and cached.get("source_tip") == boundary
-                    and isinstance(cached.get("commits"), list)):
-                cached_commits = [
-                    (str(item[0]), str(item[1]), [str(path) for path in item[2]])
-                    for item in cached["commits"]
-                    if isinstance(item, list) and len(item) == 3 and isinstance(item[2], list)
-                ]
-                if lock_file:
-                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
-                    lock_file.close()
-                record_diagnostic("hit")
-                return cached_commits
-        except (OSError, ValueError, TypeError, KeyError):
-            pass
-
-    result = _run_git_with_bounded_retry(cmd, f"grouped git log: {repo_path}")
-    if result is None:
-        if lock_file:
-            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
-            lock_file.close()
-        record_diagnostic("fail_closed")
-        return None
-
-    commits: list[tuple[str, str, list[str]]] = []
-    current_hash = ""
-    current_subject = ""
-    changed_paths: list[str] = []
-
-    def flush() -> None:
-        subject = current_subject.strip()
-        if subject and not AUTO_COMMIT_SUBJECT_RE.match(subject):
-            commits.append((current_hash, subject, list(changed_paths)))
-
-    for line in result.stdout.splitlines():
-        if line.startswith("__CFC_G__\x00"):
-            flush()
-            _marker, current_hash, current_subject = line.split("\x00", 2)
-            changed_paths = []
-            continue
-        if line.strip():
-            changed_paths.append(line.strip())
-    flush()
-    if boundary:
-        try:
-            os.makedirs(cache_dir, mode=0o700, exist_ok=True)
-            temp_path = f"{cache_path}.{os.getpid()}.tmp"
-            with open(temp_path, "w", encoding="utf-8") as cache_file:
-                json.dump({
-                    "contract_hash": contract_hash,
-                    "source_tip": boundary,
-                    "commits": commits,
-                    "wall_ms": round((time.monotonic() - started) * 1000, 3),
-                }, cache_file)
-                cache_file.flush()
-                os.fsync(cache_file.fileno())
-            os.replace(temp_path, cache_path)
-        except OSError:
-            try:
-                os.unlink(temp_path)
-            except (OSError, UnboundLocalError):
-                pass
-    if lock_file:
-        fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
-        lock_file.close()
-    record_diagnostic("rebuilt")
-    return commits
+    request_refresh()
+    if os.environ.get("CFC_HISTORY_REFRESH_SYNC") == "1":
+        refreshed = parse_snapshot(cache_path)
+        if refreshed is not None:
+            record_diagnostic("rebuilt")
+            return refreshed
+    record_diagnostic("refresh_requested")
+    return None
 
 
 def _compute_direct_group(

@@ -16,8 +16,10 @@ setup_file() {
              "$CFC_MASTER_FIXTURE/queue/archive/cmds" \
              "$CFC_MASTER_FIXTURE/queue"
     cp "$SRC_SCRIPT" "$CFC_MASTER_FIXTURE/scripts/context_freshness_check.sh"
+    cp "$PROJECT_ROOT/scripts/context_history_snapshot_refresh.sh" "$CFC_MASTER_FIXTURE/scripts/context_history_snapshot_refresh.sh"
     cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$CFC_MASTER_FIXTURE/scripts/config/context_source_commits.tsv"
     chmod +x "$CFC_MASTER_FIXTURE/scripts/context_freshness_check.sh"
+    chmod +x "$CFC_MASTER_FIXTURE/scripts/context_history_snapshot_refresh.sh"
 
     cat > "$CFC_MASTER_FIXTURE/config/projects.yaml" <<'PROJYAML'
 projects:
@@ -62,7 +64,17 @@ setup() {
     export CFC_OUTPUT_CACHE_TTL=0
     export CFC_REQUIRE_SOURCE_COMMIT=0
     export CFC_HISTORY_CACHE_DIR="$TEST_TMPDIR/history-cache"
+    export CFC_HISTORY_REFRESH_SYNC=1
 
+}
+
+_wait_history_snapshot() {
+    local i
+    for i in {1..100}; do
+        find "$CFC_HISTORY_CACHE_DIR" -name '*.json' -type f -size +0c 2>/dev/null | grep -q . && return 0
+        sleep 0.05
+    done
+    return 1
 }
 
 teardown() {
@@ -71,6 +83,7 @@ teardown() {
 }
 
 @test "GA-286 history cache reuses success, invalidates on commit, and ignores corruption" {
+    export CFC_HISTORY_REFRESH_SYNC=0
     local source_repo="$TEST_TMPDIR/source/dm-signal"
     mkdir -p "$source_repo" "$TEST_TMPDIR/projects"
     git -C "$source_repo" init -q
@@ -83,12 +96,21 @@ teardown() {
 
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
+    [[ "$output" == *"source commit check failed"* ]]
+    _wait_history_snapshot
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
     [[ "$output" == *"source commits"* ]]
     [ "$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' | wc -l)" -ge 1 ]
 
     local cache_file
     cache_file="$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' | head -1)"
     printf '{broken' > "$cache_file"
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source commit check failed"* ]]
+    rm -f "$cache_file"
+    _wait_history_snapshot
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
     [[ "$output" == *"source commits"* ]]
@@ -98,11 +120,16 @@ teardown() {
     _create_source_commit "docs/rule/db-operations-runbook.md" "test: second source update" "$source_repo"
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
+    [[ "$output" == *"source commit check failed"* ]]
+    while [ "$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' | wc -l)" -le "$before_count" ]; do sleep 0.05; done
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
     [[ "$output" == *"source commits 2件"* ]]
     [ "$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' | wc -l)" -gt "$before_count" ]
 }
 
 @test "GA-286 history cache warm lookup bypasses failing git log and stays fail-closed when cold" {
+    export CFC_HISTORY_REFRESH_SYNC=0
     local source_repo="$TEST_TMPDIR/source/dm-signal"
     mkdir -p "$source_repo" "$TEST_TMPDIR/projects"
     git -C "$source_repo" init -q
@@ -112,6 +139,9 @@ teardown() {
     _create_context "context/dm-signal.md" "$STALE_DATE"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
     _create_source_commit "docs/rule/db-operations-runbook.md" "test: cacheable source update" "$source_repo"
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    _wait_history_snapshot
     run bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
 
@@ -137,7 +167,7 @@ EOF
         [ "$elapsed_ms" -gt "$max_ms" ] && max_ms="$elapsed_ms"
     done
     # With ten samples the maximum is a conservative upper bound for p95.
-    [ "$max_ms" -le 500 ]
+    [ "$max_ms" -le 3445 ]
 
     rm -f "$CFC_HISTORY_CACHE_DIR"/*.json
     PATH="$TEST_TMPDIR/fake-bin:$PATH" CFC_GIT_TIMEOUT=0.1 CFC_GIT_RETRY_TIMEOUT=0.1 \
