@@ -7,6 +7,34 @@ setup() {
 
 teardown() { rm -r "$TMPROOT"; }
 
+@test "worktree registry plan is exact and large reconcile requires approval" {
+  repo="$TMPROOT/repo"
+  git init -q "$repo"
+  git -C "$repo" config user.name test
+  git -C "$repo" config user.email test@example.com
+  echo base > "$repo/base"
+  git -C "$repo" add base
+  git -C "$repo" commit -qm base
+  for n in $(seq 1 11); do
+    path="$TMPROOT/stale-$n"
+    git -C "$repo" worktree add -q --detach "$path" HEAD
+    rm -r "$path"
+  done
+  tool="$BATS_TEST_DIRNAME/../../skills/campaign-lane/scripts/materialize.py"
+  run python3 "$tool" registry-plan "$repo"
+  [ "$status" -eq 0 ]
+  python3 -c 'import json,sys; x=json.loads(sys.argv[1]); assert x["stale_count"] == 11 and x["duplicate_count"] == 0 and len(x["stale_paths"]) == 11' "$output"
+  run python3 "$tool" registry-reconcile "$repo"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"approval required for 11"* ]]
+  run python3 "$tool" registry-plan "$repo"
+  python3 -c 'import json,sys; assert json.loads(sys.argv[1])["stale_count"] == 11' "$output"
+  run python3 "$tool" registry-reconcile "$repo" --approve-count 11
+  [ "$status" -eq 0 ]
+  run python3 "$tool" registry-plan "$repo"
+  python3 -c 'import json,sys; x=json.loads(sys.argv[1]); assert x["stale_count"] == 0 and x["duplicate_count"] == 0' "$output"
+}
+
 catalog() {
   cat > "$TMPROOT/catalog.yaml" <<'YAML'
 objective: minimize
