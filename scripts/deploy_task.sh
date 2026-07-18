@@ -421,6 +421,40 @@ deploy_task_mutation_phase() {
     return "$rc"
 }
 
+# Record slow provenance/housekeeping work durably without delaying delivery.
+# A consumer must revalidate HEAD/path or report state before acting on a row.
+deploy_task_deferred_append() {
+    local queue_name="$1"
+    shift
+    local queue_dir="$SCRIPT_DIR/queue/deferred"
+    local queue_file="$queue_dir/${queue_name}.tsv"
+    mkdir -p "$queue_dir"
+    (
+        flock -x 9
+        printf '%s\t%s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$*" >> "$queue_file"
+    ) 9>"${queue_file}.lock"
+}
+
+deploy_task_queue_history_lookup() {
+    deploy_task_deferred_append git_history "head=$2" "path=$3" "repo=$1"
+}
+
+deploy_task_history_cache_get() {
+    local repo_root="$1" head_oid="$2" repo_relative="$3"
+    local cache_dir="$SCRIPT_DIR/.cache/deploy-history" key cache_file cached_head cached_path cached_commit
+    key=$(printf '%s\0%s\0%s' "$repo_root" "$head_oid" "$repo_relative" | sha256sum | awk '{print $1}')
+    cache_file="$cache_dir/$key"
+    [ -f "$cache_file" ] || return 1
+    IFS=$'\t' read -r cached_head cached_path cached_commit < "$cache_file" || return 1
+    [ "$cached_head" = "$head_oid" ] && [ "$cached_path" = "$repo_relative" ] \
+        && [[ "$cached_commit" =~ ^[0-9a-f]{40}$ ]] || return 1
+    printf '%s\n' "$cached_commit"
+}
+
+deploy_task_queue_stale_report() {
+    deploy_task_deferred_append stale_reports "path=$1" "parent=$2" "verdict=${3:-empty}"
+}
+
 deploy_task_has_completed_peer_report() {
     local parent_cmd="$1"
     local ninja_name="$2"
@@ -3313,9 +3347,8 @@ generate_report_template() {
             if [[ -n "$_other_verdict" && "$_other_verdict" != "null" && "$_other_verdict" != '""' ]]; then
                 log "report_template: PROTECTED other ninja report (${stale_basename}, verdict=${_other_verdict})"
             else
-                mkdir -p "$SCRIPT_DIR/archive/reports/stale"
-                mv "$stale_report" "$SCRIPT_DIR/archive/reports/stale/"
-                log "report_template: stale other ninja template archived (${stale_basename}, reassignment detected)"
+                deploy_task_queue_stale_report "$stale_report" "$_p_parent_cmd" ""
+                log "report_template: stale other ninja template deferred (${stale_basename}, reassignment detected)"
             fi
         done
     fi
@@ -3342,9 +3375,8 @@ generate_report_template() {
             continue
         fi
         # verdict空のテンプレート → staleアーカイブ
-        mkdir -p "$SCRIPT_DIR/archive/reports/stale"
-        mv "$stale_own_report" "$SCRIPT_DIR/archive/reports/stale/"
-        log "report_template: stale own report archived (${stale_own_basename}, old_cmd=${stale_own_pcmd})"
+        deploy_task_queue_stale_report "$stale_own_report" "$stale_own_pcmd" ""
+        log "report_template: stale own report deferred (${stale_own_basename}, old_cmd=${stale_own_pcmd})"
     done
 
     # 冪等性: 既存テンプレートがあればスキップ（L060: 上書き防止）
@@ -7743,7 +7775,7 @@ PY
             continue
         fi
 
-        local repo_root="" repo_relative="" last_commit=""
+        local repo_root="" repo_relative="" head_oid="" last_commit=""
         repo_root=$(git -C "$(dirname "$resolved")" rev-parse --show-toplevel 2>/dev/null || true)
         if [ -n "$repo_root" ]; then
             repo_relative=$(realpath --relative-to="$repo_root" "$resolved" 2>/dev/null || true)
@@ -7754,8 +7786,15 @@ PY
             git_evidence+=("${p}:worktree=yes,head=no,last_commit=none")
             continue
         fi
-        last_commit=$(git -C "$repo_root" log -1 --format='%H' -- "$repo_relative" 2>/dev/null || true)
-        git_evidence+=("${p}:worktree=yes,head=yes,last_commit=${last_commit:-none}")
+        # Blob existence is the synchronous safety boundary. A history walk is
+        # provenance only; concurrent 9P git-log traffic must not block delivery.
+        head_oid=$(git -C "$repo_root" rev-parse HEAD 2>/dev/null || true)
+        if last_commit=$(deploy_task_history_cache_get "$repo_root" "$head_oid" "$repo_relative"); then
+            git_evidence+=("${p}:worktree=yes,head=yes,last_commit=${last_commit}")
+        else
+            deploy_task_queue_history_lookup "$repo_root" "$head_oid" "$repo_relative"
+            git_evidence+=("${p}:worktree=yes,head=yes,last_commit=pending@${head_oid:-unknown}")
+        fi
     done
 
     local evidence_text
