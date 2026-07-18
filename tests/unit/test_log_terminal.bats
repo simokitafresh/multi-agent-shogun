@@ -287,14 +287,10 @@ PY
     [ "$(awk -F '\t' '$1=="evt-once"{n++} END{print n+0}' "$TEST_TMPDIR/queue/lord_conversation_consumed.tsv")" -eq 1 ]
 }
 
-@test "T-TL-012: three-agent concurrent adversarial delivery records exactly one event" {
-    export MOCK_SELECTED_AGENT="karo"
-    run bash -c '
-      for agent in shogun karo gunshi; do
-        (export MOCK_AGENT_ID="$agent"; printf "{\"prompt\":\"concurrent once\"}\n" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh") &
-      done
-      wait
-    '
+@test "T-TL-012: minimal payload uses hook pane even when UI selected pane differs" {
+    export MOCK_AGENT_ID="karo"
+    export MOCK_SELECTED_AGENT="gunshi"
+    run bash -c 'echo "{\"prompt\":\"hook-local once\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
     [ "$status" -eq 0 ]
     [ "$(wc -l < "$TEST_LORD_CONV")" -eq 1 ]
     [ "$(wc -l < "$TEST_TMPDIR/queue/lord_conversation_consumed.tsv")" -eq 1 ]
@@ -327,16 +323,16 @@ PY
     [ ! -s "$TEST_TMPDIR/logs/lord_conversation_route_rejects.jsonl" ]
 }
 
-@test "T-TL-015: conflicting newest clients quarantine minimal payload" {
+@test "T-TL-015: ambiguous UI clients do not suppress hook-local minimal payload" {
     export MOCK_AGENT_ID="karo"
     export MOCK_CLIENT_ROWS='1700000100|karo\n1700000100|shogun'
     run bash -c 'echo "{\"prompt\":\"ambiguous client\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
     [ "$status" -eq 0 ]
-    [ ! -f "$TEST_LORD_CONV" ]
-    grep -q 'missing_or_conflicting_active_client' "$TEST_TMPDIR/logs/lord_conversation_route_rejects.jsonl"
+    grep -q '"target": "karo"' "$TEST_LORD_CONV"
+    [ ! -s "$TEST_TMPDIR/logs/lord_conversation_route_rejects.jsonl" ]
 }
 
-@test "T-TL-013: real minimal Codex payload records selected pane exactly once" {
+@test "T-TL-013: real minimal Codex payload records hook pane exactly once" {
     export MOCK_AGENT_ID="karo"
     export MOCK_ACTIVE_AGENT_ID="karo"
     run bash -c 'echo "{\"prompt\":\"実戦shadow入力\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'

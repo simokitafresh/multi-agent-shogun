@@ -28,38 +28,20 @@ PAYLOAD_TARGET_COUNT="$(printf '%s\n' "$PAYLOAD_TARGETS" | awk 'NF{n++} END{prin
 PAYLOAD_TARGET="$(printf '%s\n' "$PAYLOAD_TARGETS" | awk 'NF{print; exit}')"
 SOURCE_EVENT_ID="$(jq -r '.source_event_id // .event_id // .prompt_id // .id // ""' 2>/dev/null <<<"$PAYLOAD" || true)"
 ACTIVE_AGENT_ID="$AGENT_ID"
-CLIENT_ACTIVITY=""
 MINIMAL_PAYLOAD=0
 
-# Codex's real UserPromptSubmit contract is the minimal {prompt} payload.  In
-# that contract the attached tmux client's selected pane is the only routing
-# identity shared by all concurrently-fired pane hooks.
+# Codex runs UserPromptSubmit inside the CLI process which received the input.
+# The attached UI client's selected pane is unrelated (and may point at a
+# different agent), so the hook execution pane is the minimal payload SSOT.
 if [ "$PAYLOAD_TARGET_COUNT" -eq 0 ]; then
     MINIMAL_PAYLOAD=1
-    SESSION_NAME="$(tmux display-message -t "$TMUX_PANE" -p '#{session_name}' 2>/dev/null || true)"
-    CLIENT_ROUTE="$(tmux list-clients -t "$SESSION_NAME" -F '#{client_activity}|#{@agent_id}' 2>/dev/null | awk -F '|' '
-        $1 ~ /^[0-9]+$/ && $2 != "" && $2 != "unknown" {
-            activity=$1+0
-            if (!found || activity > max) { max=activity; agent=$2; conflict=0; found=1 }
-            else if (activity == max && $2 != agent) { conflict=1 }
-        }
-        END {
-            if (found && !conflict) print max "|" agent
-            else if (conflict) print "CONFLICT|"
-        }
-    ')"
-    CLIENT_ACTIVITY="${CLIENT_ROUTE%%|*}"
-    PAYLOAD_TARGET="${CLIENT_ROUTE#*|}"
-    if [ -z "$CLIENT_ROUTE" ] || [ "$CLIENT_ACTIVITY" = "CONFLICT" ] || [ -z "$PAYLOAD_TARGET" ]; then
-        PAYLOAD_TARGET_COUNT=0
-    else
-        PAYLOAD_TARGET_COUNT=1
-    fi
+    PAYLOAD_TARGET="$ACTIVE_AGENT_ID"
+    PAYLOAD_TARGET_COUNT=1
 fi
 if [ -z "$SOURCE_EVENT_ID" ] && [ "$PAYLOAD_TARGET_COUNT" -eq 1 ]; then
-    # The event identity must be pane-independent.  Including PAYLOAD_TARGET
-    # lets the same prompt mint one id per pane and bypass the durable ledger.
-    SOURCE_EVENT_ID="terminal:$(printf '%s\037%s' "$CLIENT_ACTIVITY" "$INPUT" | sha256sum | awk '{print $1}')"
+    # Minimal payload has no upstream retry identity.  Mint an invocation id;
+    # explicit payload ids still retain durable cross-process idempotency.
+    SOURCE_EVENT_ID="terminal:$(printf '%s\037%s\037%s' "$TMUX_PANE" "$EPOCHREALTIME" "$INPUT" | sha256sum | awk '{print $1}')"
 fi
 
 _route_diag() {
@@ -76,14 +58,10 @@ _route_diag() {
 }
 
 if [ "$PAYLOAD_TARGET_COUNT" -ne 1 ]; then
-    _route_diag "$([ "$MINIMAL_PAYLOAD" -eq 1 ] && echo missing_or_conflicting_active_client || echo missing_or_conflicting_payload_target)"
+    _route_diag "missing_or_conflicting_payload_target"
     exit 0
 fi
 if [ "$PAYLOAD_TARGET" != "$AGENT_ID" ]; then
-    # A minimal Codex event is observed by multiple pane hooks.  Only the pane
-    # selected by the newest attached client is eligible; other hooks are not
-    # route rejects and must remain silent.
-    [ "$MINIMAL_PAYLOAD" -eq 1 ] && exit 0
     _route_diag "cross_pane_target_mismatch"
     exit 0
 fi
