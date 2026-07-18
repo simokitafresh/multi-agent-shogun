@@ -50,22 +50,27 @@ def resolve(path: str, root: str) -> tuple[str, int]:
 
 
 def reject_reuse(path: str, root: str, report_id: str) -> None:
-    current = Path(path).resolve(strict=False)
     root_path = Path(root).resolve(strict=False)
-    matches = []
-    for directory in (root_path / "queue/reports", root_path / "queue/archive/reports"):
-        if not directory.is_dir():
-            continue
-        for candidate in directory.glob("*.yaml"):
-            if candidate.resolve(strict=False) == current:
-                continue
-            try:
-                if str(load(str(candidate)).get("report_id") or "").strip() == report_id:
-                    matches.append(canonical_path(str(candidate), root))
-            except (OSError, ValueError, yaml.YAMLError):
-                continue
-    if matches:
-        raise ValueError(f"report_id reused by another report: {matches[0]}")
+    owner = canonical_path(path, root)
+    # Archive movement is lifecycle state, not a new identity owner.
+    if owner.startswith("queue/archive/reports/"):
+        owner = "queue/reports/" + owner.rsplit("/", 1)[-1]
+    registry = root_path / "queue/report-identity-registry"
+    registry.mkdir(parents=True, exist_ok=True)
+    claim = registry / (hashlib.sha256(report_id.encode()).hexdigest() + ".path")
+    payload = (owner + "\n").encode()
+    try:
+        fd = os.open(claim, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        existing = claim.read_text(encoding="utf-8").strip()
+        if existing != owner:
+            raise ValueError(f"report_id reused by another report: {existing}")
+        return
+    try:
+        os.write(fd, payload)
+        os.fsync(fd)
+    finally:
+        os.close(fd)
 
 
 def main() -> int:

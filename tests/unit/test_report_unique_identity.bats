@@ -53,6 +53,13 @@ YAML
 
 @test "archive move retains explicit v2 identity" {
     printf 'report_id: rpt-fixed\nreport_identity_version: 2\n' > "$ROOT/queue/reports/a.yaml"
+    cat > "$ROOT/queue/tasks/ninja.yaml" <<'YAML'
+task:
+  report_id: rpt-fixed
+  report_identity_version: 2
+YAML
+    run python3 "$HELPER" verify --root "$ROOT" --path "$ROOT/queue/reports/a.yaml" --task "$ROOT/queue/tasks/ninja.yaml"
+    [ "$status" -eq 0 ]
     mv "$ROOT/queue/reports/a.yaml" "$ROOT/queue/archive/reports/a.yaml"
     run python3 "$HELPER" resolve --root "$ROOT" --path "$ROOT/queue/archive/reports/a.yaml"
     [ "$status" -eq 0 ]
@@ -68,6 +75,8 @@ task:
   report_identity_version: 2
 YAML
     run python3 "$HELPER" verify --root "$ROOT" --path "$ROOT/queue/reports/a.yaml" --task "$ROOT/queue/tasks/ninja.yaml"
+    [ "$status" -eq 0 ]
+    run python3 "$HELPER" verify --root "$ROOT" --path "$ROOT/queue/reports/b.yaml" --task "$ROOT/queue/tasks/ninja.yaml"
     [ "$status" -eq 2 ]
     [[ "$output" == *reused* ]]
 }
