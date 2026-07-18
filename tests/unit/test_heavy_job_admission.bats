@@ -147,6 +147,21 @@ SH
     [[ "$output" == *"did not drain within 1s"* ]]
 }
 
+@test "process snapshot失敗はdrain済みにせずdeadlineでfail-closed" {
+    local fakebin="$TMP/fakebin"
+    mkdir -p "$fakebin"
+    cat > "$fakebin/ps" <<'SH'
+#!/usr/bin/env bash
+exit 1
+SH
+    chmod +x "$fakebin/ps"
+
+    run env PATH="$fakebin:$PATH" SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT=1 \
+        bash "$WRAPPER" -- true
+    [ "$status" -eq 124 ]
+    [[ "$output" == *"did not drain within 1s"* ]]
+}
+
 # --- 分類器(SSOT) — argv位置ベース、部分文字列誤検出禁止 ---
 
 @test "分類器: 単一.batsファイル1つは軽量" {

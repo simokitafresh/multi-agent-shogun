@@ -41,11 +41,18 @@ DRAIN_TIMEOUT="${SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT:-10}"
 process_group_has_live_member() {
     local target_pgid="$1"
     local member_pgid member_stat
+    local snapshot
 
+    # Process-substitution status is not propagated to the parent shell.  Take
+    # the snapshot explicitly so a ps failure cannot look like an empty/drained
+    # group and release admission early.
+    if ! snapshot="$(SHOGUN_HEAVY_JOB_DRAIN_PGID="$target_pgid" ps -e -o pgid=,stat=)"; then
+        return 0
+    fi
     while read -r member_pgid member_stat; do
         [[ "$member_pgid" == "$target_pgid" ]] || continue
         [[ "$member_stat" == Z* ]] || return 0
-    done < <(SHOGUN_HEAVY_JOB_DRAIN_PGID="$target_pgid" ps -e -o pgid=,stat=)
+    done <<< "$snapshot"
     return 1
 }
 
