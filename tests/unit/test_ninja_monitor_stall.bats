@@ -39,6 +39,32 @@ EOF
     export PATH="$TEST_BIN:$PATH"
 }
 
+@test "C4-07 report state cohort separates awaiting evidence and PASS terminal" {
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+tmp="'"$BATS_TEST_TMPDIR"'/c4-07"; mkdir -p "$tmp"
+awaiting=0; terminal=0; pending=0; started=$(date +%s%3N)
+for i in $(seq 1 12); do
+  report="$tmp/r$i.yaml"
+  case $((i % 3)) in
+    1) printf "status: completed\nverdict: PASS\npost_deploy_evidence:\n  required: true\n  run_completed: false\n" > "$report" ;;
+    2) printf "status: completed\nverdict: PASS\npost_deploy_evidence:\n  required: false\n  run_completed: false\n" > "$report" ;;
+    0) printf "status: pending\nverdict: empty\npost_deploy_evidence:\n  required: false\n  run_completed: false\n" > "$report" ;;
+  esac
+  state=$(report_monitor_state "$report")
+  case "$state" in awaiting_evidence) awaiting=$((awaiting+1));; pass_terminal) terminal=$((terminal+1));; report_pending) pending=$((pending+1));; *) exit 1;; esac
+done
+elapsed=$(( $(date +%s%3N) - started ))
+printf "awaiting=%s terminal=%s pending=%s wall_ms=%s\n" "$awaiting" "$terminal" "$pending" "$elapsed"
+[ "$awaiting" -eq 4 ] && [ "$terminal" -eq 4 ] && [ "$pending" -eq 4 ] && [ "$elapsed" -lt 5000 ]
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == awaiting=4\ terminal=4\ pending=4* ]]
+}
+
 @test "fast path returns before ten-second maintenance job" {
     run bash -lc '
 set -euo pipefail

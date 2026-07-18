@@ -2492,6 +2492,31 @@ print(int(value.timestamp()))
 PY
 }
 
+# Report lifecycle state used by both AUTO-DONE and STALL detection.
+# A completed PASS can still be legitimately waiting for post-deploy evidence;
+# that is forward progress, not a pending report or an idle worker stall.
+report_monitor_state() {
+    local report_file="$1"
+    [ -f "$report_file" ] || { printf 'missing\n'; return 1; }
+    awk '
+        BEGIN { status=""; verdict=""; in_post=0; required="false"; completed="false" }
+        /^status:[[:space:]]*/ && status=="" { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["[:space:]]|\047/,"",v); status=tolower(v) }
+        /^verdict:[[:space:]]*/ && verdict=="" { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["[:space:]]|\047/,"",v); verdict=toupper(v) }
+        /^post_deploy_evidence:[[:space:]]*$/ { in_post=1; next }
+        in_post && /^[^[:space:]#][^:]*:/ { in_post=0 }
+        in_post && /^[[:space:]]+required:[[:space:]]*/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["[:space:]]|\047/,"",v); required=tolower(v) }
+        in_post && /^[[:space:]]+run_completed:[[:space:]]*/ { v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["[:space:]]|\047/,"",v); completed=tolower(v) }
+        END {
+            terminal = (status=="done" || status=="completed" || status=="success")
+            req = (required=="true" || required=="yes" || required=="1")
+            ran = (completed=="true" || completed=="yes" || completed=="1")
+            if (terminal && verdict=="PASS" && req && !ran) print "awaiting_evidence"
+            else if (terminal && verdict=="PASS") print "pass_terminal"
+            else print "report_pending"
+        }
+    ' "$report_file"
+}
+
 # ─── AC1: 報告YAML完了判定 + タスクYAML自動done更新 ───
 # 報告YAMLのparent_cmdがタスクと一致し、status=doneなら自動更新
 # 戻り値: 0=完了済み(auto-done実行), 1=未完了
@@ -2556,6 +2581,12 @@ check_and_update_done_task() {
     # 報告のstatus確認（done/completed/success を完了とみなす）
     local report_status
     report_status=$(yaml_field_get "$report_file" "status")
+    local monitor_state
+    monitor_state=$(report_monitor_state "$report_file" 2>/dev/null || printf 'report_pending')
+    if [ "$monitor_state" = "awaiting_evidence" ]; then
+        log "AUTO-DONE-AWAITING-EVIDENCE: $name report=$(basename "$report_file") remains active until post-deploy evidence completes"
+        return 1
+    fi
     case "$report_status" in
         done|completed|success)
             # 完了確認 — タスクYAMLをdoneに自動更新（flock排他制御）
@@ -4757,6 +4788,30 @@ check_stall() {
         return
     fi
 
+    # Evidence wait is an explicit progressing state.  Keep the task active,
+    # clear any prior stall clock, and do not run the pending-report gate.
+    # Conversely, an already-qualified PASS terminal converges immediately
+    # through the existing fingerprint/task-id checked AUTO-DONE transaction.
+    local active_report active_report_state
+    active_report=$(find_matching_report_file "$name" 2>/dev/null || true)
+    if [ -n "$active_report" ] && [ -f "$active_report" ]; then
+        active_report_state=$(report_monitor_state "$active_report" 2>/dev/null || printf 'report_pending')
+        case "$active_report_state" in
+            awaiting_evidence)
+                unset "STALL_FIRST_SEEN[$name]"
+                log "STALL-AWAITING-EVIDENCE: $name task=$task_id report=$(basename "$active_report") progressing=true"
+                return
+                ;;
+            pass_terminal)
+                if check_and_update_done_task "$name"; then
+                    unset "STALL_FIRST_SEEN[$name]"
+                    log "STALL-PASS-AUTO-DONE: $name task=$task_id report=$(basename "$active_report")"
+                    return
+                fi
+                ;;
+        esac
+    fi
+
     # dead paneはdeploy graceより優先。復旧を試みたサイクルは
     # PASS/BLOCKのどちらでも後段のgraceへ流さず、次サイクルで再評価する。
     local stall_pane_target="${PANE_TARGETS[$name]:-}"
@@ -4836,6 +4891,22 @@ check_stall() {
         unset "STALL_FIRST_SEEN[$name]"
         log "STALL-ACTIVE-COMPUTE: $name pane=$target has progressing background process"
         return
+    fi
+
+    # in_progress without any progress timestamp is not evidence of forward
+    # motion.  The old path waited the full in_progress_stall_min before the
+    # first recovery nudge (cmd_4043: about 29 minutes idle).  Re-send once on
+    # first idle observation; a current progress timestamp, evidence wait, or
+    # active background compute has already returned above.
+    if [ "$status" = "in_progress" ] && [ -z "$last_progress" ]; then
+        local no_progress_key="${name}:${task_id}:initial_no_progress"
+        if [ "${ACTIVE_IDLE_RECOVERY_SENT[$no_progress_key]:-}" != "1" ]; then
+            ACTIVE_IDLE_RECOVERY_SENT[$no_progress_key]="1"
+            send_inbox_message "$name" "in_progressだがprogress_updated_at未記録のidleを検知。task YAMLを再確認し、作業再開またはprogress更新せよ。" task_assigned
+            log "STALL-NO-PROGRESS-RESEND: $name task=$task_id first_idle=true"
+        else
+            log "STALL-NO-PROGRESS-RESEND-SKIP: $name task=$task_id duplicate"
+        fi
     fi
 
     # idle状態 → 停滞追跡開始 or 経過確認
