@@ -171,12 +171,16 @@ create_and_publish_scoped_commit() {
     # CAS.  The repository-wide flock keeps index/ref convergence in the same
     # transaction while update-ref is the sole publication point.
     env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
-        git hook run pre-commit >&2
-    tree_hash="$(git write-tree)"
-    commit_hash="$(printf '%s\n' "$message" | git commit-tree "$tree_hash" -p "$transaction_head")"
+        git hook run --ignore-missing pre-commit >&2 \
+        || { echo "BLOCK: pre-commit hook rejected scoped commit" >&2; return 1; }
+    tree_hash="$(git write-tree)" \
+        || { echo "BLOCK: failed to write scoped commit tree" >&2; return 1; }
+    commit_hash="$(printf '%s\n' "$message" | git commit-tree "$tree_hash" -p "$transaction_head")" \
+        || { echo "BLOCK: failed to create scoped commit object" >&2; return 1; }
     [[ "$commit_hash" =~ ^[0-9a-f]{40}$ ]] \
         || { echo "BLOCK: commit-tree did not return a 40hex object" >&2; return 1; }
-    git update-ref -m "$message" HEAD "$commit_hash" "$transaction_head"
+    git update-ref -m "$message" HEAD "$commit_hash" "$transaction_head" \
+        || { echo "BLOCK: failed to publish scoped commit ref" >&2; return 1; }
     # Preserve the observable post-commit contract for repository automation.
     # It runs only after the CAS publication, matching porcelain ordering.
     local post_commit_hook

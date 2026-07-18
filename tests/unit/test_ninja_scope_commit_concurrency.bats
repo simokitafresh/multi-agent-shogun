@@ -69,12 +69,16 @@ teardown() {
     printf '#!/usr/bin/env bash\nexit 1\n' > "$REPO/.git/hooks/pre-commit"
     chmod +x "$REPO/.git/hooks/pre-commit"
     printf 'blocked\n' >> "$REPO/a.txt"
+    head_before="$(git -C "$REPO" rev-parse HEAD)"
 
     run bash -c 'cd "$1" && bash "$2" -m blocked -- a.txt 2>&1' _ "$REPO" "$HELPER"
     [ "$status" -ne 0 ]
+    [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
     [[ "$output" != *"event=completed"* ]]
+    [[ "$output" != *"event=terminal_receipt"* ]]
     [[ "$output" == *"event=failed"* ]]
     [[ "$output" == *"last_phase=git_commit"* ]]
+    [ "$(printf '%s\n' "$output" | grep -c '^event=failed ')" -eq 1 ]
 }
 
 @test "slow pre-commitはgit_commit phaseだけに局所化される" {
