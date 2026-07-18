@@ -134,6 +134,31 @@ EOF
     [[ "$output" != *"PASS_NO_IMPROVEMENT"* ]]
 }
 
+@test "same report generation validates once and byte change forces full validation" {
+    local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_2072.yaml"
+    local cache="$TEST_TMPDIR/logs/fingerprints"
+    _write_base_pni_report "$rpath" "binary_checks:
+  AC1:
+    - check: テスト全PASS
+      result: yes"
+
+    run env GATE_FAST_EXIT=1 GATE_NO_LOG=1 GATE_FINGERPRINT_CACHE_FILE="$cache" bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    local fp
+    fp=$(sha256sum "$rpath" | awk '{print $1}')
+    [ "$(grep -cFx "$fp" "$cache")" -eq 1 ]
+
+    run env GATE_VALIDATED_FINGERPRINT="$fp" GATE_FINGERPRINT_CACHE_FILE="$cache" bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS (fingerprint reuse)"* ]]
+
+    printf '\n# changed generation\n' >> "$rpath"
+    run env GATE_VALIDATED_FINGERPRINT="$fp" GATE_FAST_EXIT=1 GATE_NO_LOG=1 GATE_FINGERPRINT_CACHE_FILE="$cache" bash "$TEST_GATE" "$rpath"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"fingerprint reuse"* ]]
+    [ "$(find "$TEST_TMPDIR/logs" -name fingerprints -type f | wc -l)" -eq 1 ]
+}
+
 @test "memory_references absence remains gate-compatible" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_2072.yaml"
     _write_base_pni_report "$rpath" "binary_checks:

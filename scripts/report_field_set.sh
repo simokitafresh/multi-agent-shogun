@@ -101,6 +101,11 @@ if results:
         data["status"] = "completed"
 
 terminal = str(data.get("status", "")).strip() in {"completed", "done"}
+# operational_simulation is the author-entered test evidence SSOT.  Keep the
+# legacy test_results consumer compatible without a second hand-written copy.
+opsim = data.get("operational_simulation")
+if isinstance(opsim, dict) and all(str(opsim.get(key) or "").strip() for key in ("command", "expected", "actual", "result")):
+    data["test_results"] = dict(opsim)
 if terminal:
     required = ("worker_id", "parent_cmd", "ac_version_read", "binary_checks", "files_modified", "lessons_useful", "lesson_candidate")
     missing = [key for key in required if data.get(key) in (None, "", [], {})]

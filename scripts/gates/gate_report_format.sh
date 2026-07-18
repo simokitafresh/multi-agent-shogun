@@ -542,6 +542,16 @@ if [ "$CONTAMINATION_BLOCK" -eq 1 ]; then
     RESULT_IS_PASS=0
 fi
 
+# Persist the exact validated content generation before fast/no-log exits.
+if [ "$RESULT_IS_PASS" -eq 1 ]; then
+    _gate_validated_fp="$(sha256sum "$REPORT_PATH" | awk '{print $1}')"
+    (
+        flock -w 5 200 2>/dev/null || exit 0
+        { grep -vxF "$_gate_validated_fp" "$_GATE_FP_CACHE" 2>/dev/null || true; echo "$_gate_validated_fp"; } > "${_GATE_FP_CACHE}.tmp.$$"
+        mv "${_GATE_FP_CACHE}.tmp.$$" "$_GATE_FP_CACHE"
+    ) 200>"${_GATE_FP_CACHE}.lock"
+fi
+
 # Test/unit fast path: callers that only need stdout + exit code can bypass cache/log/session-state work.
 if [[ "${GATE_FAST_EXIT:-0}" = "1" ]]; then
     [ "$RESULT_IS_PASS" -eq 1 ] && exit 0 || exit 1
@@ -577,9 +587,6 @@ case "$_CANON" in
 esac
 
 if [ "$RESULT_IS_PASS" -eq 1 ]; then
-    _gate_validated_fp="$(sha256sum "$REPORT_PATH" | awk '{print $1}')"
-    { grep -vxF "$_gate_validated_fp" "$_GATE_FP_CACHE" 2>/dev/null || true; echo "$_gate_validated_fp"; } > "${_GATE_FP_CACHE}.tmp.$$"
-    mv "${_GATE_FP_CACHE}.tmp.$$" "$_GATE_FP_CACHE" 2>/dev/null || true
     # WSL2最適化: gate_fire_log書込みをバックグラウンド化（ログは判定に影響しない）
     (
         flock -w 5 200 2>/dev/null

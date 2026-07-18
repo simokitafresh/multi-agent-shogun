@@ -20,6 +20,9 @@ def _reported_path(item: Any) -> str:
 
 
 def explicit_no_commit(report: dict[str, Any]) -> bool:
+    contract = report.get("commit_contract")
+    if isinstance(contract, dict) and contract.get("required") is False:
+        return True
     checks = report.get("binary_checks") or {}
     items = checks.get("commit", []) if isinstance(checks, dict) else []
     if not isinstance(items, list):

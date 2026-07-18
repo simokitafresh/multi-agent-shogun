@@ -31,6 +31,50 @@ YAML
   grep -q '^commit_hash: no-code-change$' "$REPORT"
 }
 
+@test "commit contract required false is the no-code SSOT without free-text marker" {
+  sed -i 's/運用データのみのためcommit不要/運用データ処理を確認/' "$REPORT"
+  printf '\ncommit_contract:\n  required: false\n  reason: allowed_no_code_task_type_and_no_code_scope\n' >> "$REPORT"
+  run bash "$ROOT/scripts/report_field_set.sh" "$REPORT" commit_hash no-code-change
+  [ "$status" -eq 0 ]
+}
+
+@test "commit contract false remains fail-closed for mixed source" {
+  sed -i 's#logs/loop_ledger.yaml#scripts/report_field_set.sh#' "$REPORT"
+  printf '\ncommit_contract:\n  required: false\n  reason: forged\n' >> "$REPORT"
+  run bash "$ROOT/scripts/report_field_set.sh" "$REPORT" commit_hash no-code-change
+  [ "$status" -ne 0 ]
+}
+
+@test "seventeen valid contract reports do not require unrelated HEAD" {
+  local i
+  for i in $(seq 1 17); do
+    base_report
+    sed -i 's/運用データのみのためcommit不要/運用データ処理を確認/' "$REPORT"
+    printf '\ncommit_contract:\n  required: false\n  reason: fixture_%s\n' "$i" >> "$REPORT"
+    run bash "$ROOT/scripts/report_field_set.sh" "$REPORT" commit_hash no-code-change
+    [ "$status" -eq 0 ]
+    run python3 "$ROOT/scripts/gates/gate_report_format_main.py" "$REPORT"
+    [[ "$output" != *"commit_hash: 'no-code-change'"* ]]
+  done
+}
+
+@test "batch derives legacy test_results from operational simulation SSOT" {
+  cat >> "$REPORT" <<'YAML'
+operational_simulation:
+  command: bats fixture.bats
+  expected: PASS
+  actual: 1/1 PASS
+  result: PASS
+YAML
+  printf 'result.details: fixture\nbinary_checks.commit[0].result: "yes"\n' | bash "$ROOT/scripts/report_field_set.sh" --batch "$REPORT"
+  run python3 - "$REPORT" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1]))
+assert d['test_results'] == d['operational_simulation']
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "all three consumers accept ignored projects knowledge with explicit no-commit" {
   cat > "$REPORT" <<'YAML'
 worker_id: hanzo
