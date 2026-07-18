@@ -74,12 +74,14 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, timedelta
 import glob
+import fcntl
 import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
+import time
 
 root = sys.argv[1]
 mode = sys.argv[2]
@@ -546,13 +548,16 @@ def build_missing_source_commit_warning(rel_path: str) -> str:
 _GIT_TIMEOUT: float = float(os.environ.get("CFC_GIT_TIMEOUT", "10"))
 _GIT_RETRY_TIMEOUT: float = float(os.environ.get("CFC_GIT_RETRY_TIMEOUT", "60"))
 _GIT_ATTEMPTS: int = 2
+_GIT_SUBPROCESS_COUNT: int = 0
 
 
 def _run_git_with_bounded_retry(cmd: list[str], label: str) -> subprocess.CompletedProcess[str] | None:
     """Run git with bounded 10s/60s budgets; persistent failure stays fail-closed."""
+    global _GIT_SUBPROCESS_COUNT
     for attempt in range(1, _GIT_ATTEMPTS + 1):
         timeout_seconds = _GIT_TIMEOUT if attempt == 1 else _GIT_RETRY_TIMEOUT
         try:
+            _GIT_SUBPROCESS_COUNT += 1
             result = subprocess.run(
                 cmd,
                 check=False,
@@ -609,7 +614,31 @@ def source_tip_ref(repo_path: str) -> str:
     if mode == "--dashboard-warnings":
         candidates = [override] if override else ["origin/main", "origin/master"]
 
-    for candidate in candidates:
+    def ref_exists_without_git(candidate: str) -> bool:
+        dotgit = os.path.join(repo_path, ".git")
+        try:
+            gitdir = dotgit
+            if os.path.isfile(dotgit):
+                marker = open(dotgit, encoding="utf-8").read().strip()
+                if not marker.startswith("gitdir:"):
+                    return False
+                gitdir = os.path.realpath(os.path.join(repo_path, marker[7:].strip()))
+            common = gitdir
+            marker_path = os.path.join(gitdir, "commondir")
+            if os.path.isfile(marker_path):
+                common = os.path.realpath(os.path.join(gitdir, open(marker_path, encoding="utf-8").read().strip()))
+            refs = [f"refs/remotes/{candidate}", f"refs/heads/{candidate}"]
+            if any(os.path.isfile(os.path.join(common, ref)) for ref in refs):
+                return True
+            packed = os.path.join(common, "packed-refs")
+            if os.path.isfile(packed):
+                text = open(packed, encoding="ascii", errors="ignore").read()
+                return any(f" {ref}\n" in text for ref in refs)
+        except OSError:
+            return False
+        return False
+
+    for candidate in [item for item in candidates if override or ref_exists_without_git(item)]:
         try:
             result = subprocess.run(
                 ["git", "-C", repo_path, "rev-parse", "--verify", "--quiet", candidate],
@@ -658,36 +687,17 @@ def is_root_fallback_source_path(path: str) -> bool:
 def _root_fallback_commit_count_since(
     updated_at: date, source_commit: str | None = None
 ) -> tuple[int, list[str]]:
-    cmd = [
-        "git",
-        "-C",
-        root,
-        "log",
-        "--pretty=format:__CFC_COMMIT__%x00%h%x00%s",
-        "--name-only",
-    ]
     tip_ref = source_tip_ref(root)
-    if source_commit:
-        cmd.insert(4, f"{source_commit}..{tip_ref}")
-    else:
-        cmd.insert(4, tip_ref)
-        cmd.insert(5, f"--since={(updated_at + timedelta(days=1)).isoformat()} 00:00:00")
-
-    result = _run_git_with_bounded_retry(cmd, f"source_commit_count_since: {root}")
-    if result is None:
+    revision = f"{source_commit}..{tip_ref}" if source_commit else tip_ref
+    commits = _run_grouped_git_log(
+        root, revision, None if source_commit else updated_at, []
+    )
+    if commits is None:
         return -1, []
 
     count = 0
     details: list[str] = []
-    current_hash = ""
-    current_subject = ""
-    changed_paths: list[str] = []
-
-    def flush_commit() -> None:
-        nonlocal count, current_hash, current_subject, changed_paths
-        subject = current_subject.strip()
-        if not subject or AUTO_COMMIT_SUBJECT_RE.match(subject):
-            return
+    for current_hash, subject, changed_paths in commits:
         source_paths = [
             path.strip()
             for path in changed_paths
@@ -697,17 +707,6 @@ def _root_fallback_commit_count_since(
             count += 1
             if len(details) < 3:
                 details.append(f"{current_hash} {subject}".strip())
-
-    for line in result.stdout.splitlines():
-        if line.startswith("__CFC_COMMIT__\x00"):
-            flush_commit()
-            _marker, current_hash, current_subject = line.split("\x00", 2)
-            changed_paths = []
-            continue
-        if line.strip():
-            changed_paths.append(line.strip())
-
-    flush_commit()
     return count, details
 
 
@@ -858,46 +857,188 @@ def _run_grouped_git_log(
     # a new commit cannot reuse stale history.  Corrupt/missing snapshots are
     # cache misses; git failures remain fail-closed and are never cached.
     cache_dir = os.environ.get("CFC_HISTORY_CACHE_DIR", "/tmp/cfc-history-v1")
-    try:
-        boundary = subprocess.run(
-            ["git", "-C", repo_path, "rev-parse", revision or "HEAD"],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-            timeout=min(_GIT_TIMEOUT, 5),
-        ).stdout.strip()
-    except Exception:
-        boundary = ""
-    fingerprint = json.dumps(
+
+    def resolve_tip_without_git(repo: str, rev: str | None) -> str:
+        """Resolve the positive end of a revision from Git's files.
+
+        This is deliberately a read-only fallback for 9p stalls.  It supports
+        normal repositories, linked worktrees, loose refs and packed refs.
+        Failure returns an empty string, preserving fail-closed behaviour.
+        """
+        tip = (rev or "HEAD").rsplit("..", 1)[-1]
+        dotgit = os.path.join(repo, ".git")
+        try:
+            if os.path.isfile(dotgit):
+                marker = open(dotgit, encoding="utf-8").read().strip()
+                if not marker.startswith("gitdir:"):
+                    return ""
+                gitdir = os.path.realpath(os.path.join(repo, marker[7:].strip()))
+            else:
+                gitdir = os.path.realpath(dotgit)
+            common = gitdir
+            common_marker = os.path.join(gitdir, "commondir")
+            if os.path.isfile(common_marker):
+                common = os.path.realpath(
+                    os.path.join(gitdir, open(common_marker, encoding="utf-8").read().strip())
+                )
+            ref = tip
+            if tip == "HEAD":
+                head = open(os.path.join(gitdir, "HEAD"), encoding="utf-8").read().strip()
+                if re.fullmatch(r"[0-9a-f]{40}", head):
+                    return head
+                if not head.startswith("ref: "):
+                    return ""
+                ref = head[5:]
+            elif not tip.startswith("refs/"):
+                candidates = [f"refs/heads/{tip}", f"refs/remotes/{tip}", f"refs/tags/{tip}"]
+                ref = next((item for item in candidates if os.path.isfile(os.path.join(common, item))), tip)
+            loose = os.path.join(common, ref)
+            if os.path.isfile(loose):
+                oid = open(loose, encoding="ascii").read().strip()
+                return oid if re.fullmatch(r"[0-9a-f]{40}", oid) else ""
+            packed = os.path.join(common, "packed-refs")
+            if os.path.isfile(packed):
+                with open(packed, encoding="ascii", errors="ignore") as stream:
+                    for line in stream:
+                        fields = line.rstrip().split(" ", 1)
+                        if len(fields) == 2 and fields[1] == ref and re.fullmatch(r"[0-9a-f]{40}", fields[0]):
+                            return fields[0]
+        except OSError:
+            return ""
+        return ""
+
+    started = time.monotonic()
+    subprocess_before = _GIT_SUBPROCESS_COUNT
+
+    def record_diagnostic(cache_result: str) -> None:
+        diagnostic_path = os.environ.get("CFC_GIT_DIAGNOSTICS_FILE", "")
+        if not diagnostic_path:
+            return
+        record = {
+            "repo": os.path.realpath(repo_path),
+            "revision": revision,
+            "pathspecs": sorted(pathspecs),
+            "source_tip": boundary,
+            "workers": max(1, int(os.environ.get("CFC_GIT_MAX_WORKERS", "4"))),
+            "git_subprocesses": _GIT_SUBPROCESS_COUNT - subprocess_before,
+            "wall_ms": round((time.monotonic() - started) * 1000, 3),
+            "cache": cache_result,
+        }
+        try:
+            with open(diagnostic_path, "a", encoding="utf-8") as stream:
+                stream.write(json.dumps(record, sort_keys=True) + "\n")
+        except OSError:
+            pass
+    # The loose/packed ref is the same source-tip contract as rev-parse but
+    # avoids spawning git on 9p.  Fall back to git only for expressions the
+    # direct resolver cannot represent.
+    boundary = resolve_tip_without_git(repo_path, revision)
+    if not boundary:
+        try:
+            boundary = subprocess.run(
+                ["git", "-C", repo_path, "rev-parse", revision or "HEAD"],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=min(_GIT_TIMEOUT, 5),
+            ).stdout.strip()
+        except Exception:
+            boundary = ""
+    contract = json.dumps(
         {
             "repo": os.path.realpath(repo_path),
             "revision": revision,
-            "boundary": boundary,
             "since": since_date.isoformat() if since_date else None,
             "pathspecs": sorted(pathspecs),
         },
         sort_keys=True,
         separators=(",", ":"),
     )
-    cache_path = os.path.join(
-        cache_dir, hashlib.sha256(fingerprint.encode()).hexdigest() + ".json"
-    )
+    contract_hash = hashlib.sha256(contract.encode()).hexdigest()
+    fingerprint = json.dumps({"contract": contract_hash, "source_tip": boundary}, sort_keys=True)
+    cache_path = os.path.join(cache_dir, hashlib.sha256(fingerprint.encode()).hexdigest() + ".json")
+    lock_path = os.path.join(cache_dir, contract_hash + ".lock")
+    lock_file = None
     if boundary:
         try:
             with open(cache_path, encoding="utf-8") as cached_file:
                 cached = json.load(cached_file)
-            if cached.get("fingerprint") == fingerprint and isinstance(cached.get("commits"), list):
-                return [
+            if (cached.get("contract_hash") == contract_hash
+                    and cached.get("source_tip") == boundary
+                    and isinstance(cached.get("commits"), list)):
+                cached_commits = [
                     (str(item[0]), str(item[1]), [str(path) for path in item[2]])
                     for item in cached["commits"]
                     if isinstance(item, list) and len(item) == 3 and isinstance(item[2], list)
                 ]
+                record_diagnostic("hit")
+                return cached_commits
+        except (OSError, ValueError, TypeError, KeyError):
+            pass
+        # GA-286 snapshots predate the explicit contract_hash fields.  Adopt
+        # them only after parsing and matching every contract component and
+        # the source tip; this avoids a cold 10s+60s rebuild during upgrade.
+        try:
+            expected_legacy = {
+                "repo": os.path.realpath(repo_path),
+                "revision": revision,
+                "boundary": boundary,
+                "since": since_date.isoformat() if since_date else None,
+                "pathspecs": sorted(pathspecs),
+            }
+            for legacy_path in glob.glob(os.path.join(cache_dir, "*.json")):
+                with open(legacy_path, encoding="utf-8") as legacy_file:
+                    legacy = json.load(legacy_file)
+                legacy_fingerprint = legacy.get("fingerprint")
+                if not isinstance(legacy_fingerprint, str) or json.loads(legacy_fingerprint) != expected_legacy:
+                    continue
+                if not isinstance(legacy.get("commits"), list):
+                    continue
+                cached_commits = [
+                    (str(item[0]), str(item[1]), [str(path) for path in item[2]])
+                    for item in legacy["commits"]
+                    if isinstance(item, list) and len(item) == 3 and isinstance(item[2], list)
+                ]
+                record_diagnostic("legacy_hit")
+                return cached_commits
+        except (OSError, ValueError, TypeError):
+            pass
+    if boundary:
+        try:
+            os.makedirs(cache_dir, mode=0o700, exist_ok=True)
+            lock_file = open(lock_path, "a+", encoding="utf-8")
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        except OSError:
+            if lock_file:
+                lock_file.close()
+            lock_file = None
+    if boundary:
+        try:
+            with open(cache_path, encoding="utf-8") as cached_file:
+                cached = json.load(cached_file)
+            if (cached.get("contract_hash") == contract_hash
+                    and cached.get("source_tip") == boundary
+                    and isinstance(cached.get("commits"), list)):
+                cached_commits = [
+                    (str(item[0]), str(item[1]), [str(path) for path in item[2]])
+                    for item in cached["commits"]
+                    if isinstance(item, list) and len(item) == 3 and isinstance(item[2], list)
+                ]
+                if lock_file:
+                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+                    lock_file.close()
+                record_diagnostic("hit")
+                return cached_commits
         except (OSError, ValueError, TypeError, KeyError):
             pass
 
     result = _run_git_with_bounded_retry(cmd, f"grouped git log: {repo_path}")
     if result is None:
+        if lock_file:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            lock_file.close()
+        record_diagnostic("fail_closed")
         return None
 
     commits: list[tuple[str, str, list[str]]] = []
@@ -924,7 +1065,12 @@ def _run_grouped_git_log(
             os.makedirs(cache_dir, mode=0o700, exist_ok=True)
             temp_path = f"{cache_path}.{os.getpid()}.tmp"
             with open(temp_path, "w", encoding="utf-8") as cache_file:
-                json.dump({"fingerprint": fingerprint, "commits": commits}, cache_file)
+                json.dump({
+                    "contract_hash": contract_hash,
+                    "source_tip": boundary,
+                    "commits": commits,
+                    "wall_ms": round((time.monotonic() - started) * 1000, 3),
+                }, cache_file)
                 cache_file.flush()
                 os.fsync(cache_file.fileno())
             os.replace(temp_path, cache_path)
@@ -933,6 +1079,10 @@ def _run_grouped_git_log(
                 os.unlink(temp_path)
             except (OSError, UnboundLocalError):
                 pass
+    if lock_file:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+        lock_file.close()
+    record_diagnostic("rebuilt")
     return commits
 
 
