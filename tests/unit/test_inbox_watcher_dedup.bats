@@ -145,6 +145,7 @@ ln -s "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$TMP_ROOT/root/scripts/lib/lock_
 ln -s "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$TMP_ROOT/root/scripts/lib/cli_lookup.sh"
 ln -s "$PROJECT_ROOT/scripts/lib/tmux_utils.sh" "$TMP_ROOT/root/scripts/lib/tmux_utils.sh"
 ln -s "$PROJECT_ROOT/scripts/lib/script_update.sh" "$TMP_ROOT/root/scripts/lib/script_update.sh"
+ln -s "$PROJECT_ROOT/scripts/lib/inbox_nudge_policy.sh" "$TMP_ROOT/root/scripts/lib/inbox_nudge_policy.sh"
 ln -s "$PROJECT_ROOT/lib/agent_state.sh" "$TMP_ROOT/root/lib/agent_state.sh"
 ln -s "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$TMP_ROOT/root/scripts/inbox_watcher.sh"
 
@@ -570,6 +571,7 @@ ln -s "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$TMP_ROOT/root/scripts/lib/lock_
 ln -s "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$TMP_ROOT/root/scripts/lib/cli_lookup.sh"
 ln -s "$PROJECT_ROOT/scripts/lib/tmux_utils.sh" "$TMP_ROOT/root/scripts/lib/tmux_utils.sh"
 ln -s "$PROJECT_ROOT/scripts/lib/script_update.sh" "$TMP_ROOT/root/scripts/lib/script_update.sh"
+ln -s "$PROJECT_ROOT/scripts/lib/inbox_nudge_policy.sh" "$TMP_ROOT/root/scripts/lib/inbox_nudge_policy.sh"
 ln -s "$PROJECT_ROOT/lib/agent_state.sh" "$TMP_ROOT/root/lib/agent_state.sh"
 ln -s "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$TMP_ROOT/root/scripts/inbox_watcher.sh"
 
@@ -919,6 +921,7 @@ tmux() {
         *) : ;;
     esac
 }
+
 send_wakeup 1 false stale_fp_1 normal true 2>"$TMP_ROOT/first.err"
 rm -f "$DEBOUNCE_FILE"
 send_wakeup 2 false stale_fp_2 normal true 2>"$TMP_ROOT/second.err"
@@ -932,4 +935,33 @@ echo "CURRENT_GENERATION_COALESCED=yes"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"CURRENT_GENERATION_COALESCED=yes"* ]]
+}
+
+@test "T-IWD-015: delivered high-priority fingerprint keeps one durable lease until ACK" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; TMP_ROOT="$(mktemp -d)"; trap "rm -rf \"$TMP_ROOT\"" EXIT
+mkdir -p "$TMP_ROOT/state"; : > "$TMP_ROOT/tmux.log"
+export SHOGUN_STATE_DIR="$TMP_ROOT/state" INBOX_WATCHER_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/inbox_watcher.sh" hayate dummy-pane; unset INBOX_WATCHER_LIB_ONLY
+get_effective_cli_type() { echo codex; }; agent_has_self_watch() { return 1; }; check_agent_busy() { return 1; }; sleep() { :; }; timeout() { shift; "$@"; }
+tmux() { case "$1" in display-message) [[ "${*: -1}" == *pane_in_mode* ]] && echo 0 || echo active;; set-buffer|paste-buffer|send-keys) echo "$1 $*" >> "$TMP_ROOT/tmux.log";; set-option) :;; esac; }
+fp="$(printf msg_20260718_085223 | sha256sum | cut -d " " -f1)"; printf "%s" "$(( $(date +%s) - 612 ))" > "$FIRST_UNREAD_SEEN"
+for _ in 1 2 3 4 5 6 7 8 9; do rm -f "$DEBOUNCE_FILE" "$FINGERPRINT_FILE"; send_wakeup 1 false "$fp" high; done
+[ "$(grep -c "^paste-buffer " "$TMP_ROOT/tmux.log")" = 1 ]; [ "$(grep -c "^send-keys " "$TMP_ROOT/tmux.log")" = 1 ]
+rm -f "$STATE_DIR"/inbox_watcher_sent_hayate_*; new_fp="$(printf msg_after_ack | sha256sum | cut -d " " -f1)"
+rm -f "$DEBOUNCE_FILE" "$FINGERPRINT_FILE"; send_wakeup 1 false "$new_fp" high
+[ "$(grep -c "^paste-buffer " "$TMP_ROOT/tmux.log")" = 2 ]; echo "DELIVERY=1 ABORT=0 DUPLICATE=0 ACK_TP=1 FP=0 FN=0"
+'
+    [ "$status" -eq 0 ]; [[ "$output" == *"DELIVERY=1 ABORT=0 DUPLICATE=0 ACK_TP=1 FP=0 FN=0"* ]]
+}
+
+@test "T-IWD-016: watcher and monitor share 600 second and five attempt policy" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; source "$PROJECT_ROOT/scripts/lib/inbox_nudge_policy.sh"
+[ "$INBOX_RENUDGE_BACKOFF_SEC" = 600 ]; [ "$INBOX_RENUDGE_MAX_ATTEMPTS" = 5 ]
+grep -q "INBOX_RENUDGE_BACKOFF_SEC" "$PROJECT_ROOT/scripts/inbox_watcher.sh"; grep -q "INBOX_RENUDGE_BACKOFF_SEC" "$PROJECT_ROOT/scripts/ninja_monitor.sh"; echo POLICY_SSOT=yes
+'
+    [ "$status" -eq 0 ]; [[ "$output" == *"POLICY_SSOT=yes"* ]]
 }

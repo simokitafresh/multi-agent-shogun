@@ -79,7 +79,9 @@ fi
 DEBOUNCE_SEC="${NUDGE_COOLDOWN_SEC:-30}"
 DEBOUNCE_FILE="${STATE_DIR}/inbox_watcher_last_nudge_${AGENT_ID}"
 FINGERPRINT_FILE="${STATE_DIR}/inbox_watcher_fingerprint_${AGENT_ID}"
-BACKOFF_SEC="${BACKOFF_SEC:-120}"  # 2 minutes — safety net re-notification for stale unread (was 600)
+source "$SCRIPT_DIR/scripts/lib/inbox_nudge_policy.sh"
+BACKOFF_SEC="${BACKOFF_SEC:-$INBOX_RENUDGE_BACKOFF_SEC}"
+MAX_RENUDGE="${MAX_RENUDGE:-$INBOX_RENUDGE_MAX_ATTEMPTS}"
 STATE_LOCK_FILE="${STATE_DIR}/inbox_watcher_state_${AGENT_ID}.lock"
 SINGLETON_LOCK_FILE="${STATE_DIR}/inbox_watcher_singleton_${AGENT_ID}.lock"
 DEFERRED_NUDGE_FILE="${STATE_DIR}/inbox_watcher_deferred_nudge_${AGENT_ID}"
@@ -897,13 +899,6 @@ send_wakeup() {
             fi
 
             _unread_age=$(get_first_unread_age)
-            if priority_deadline_reached "$priority" "$_unread_age"; then
-                touch "$FINGERPRINT_FILE"
-                printf '%s' "$_now" > "$DEBOUNCE_FILE"
-                printf 'send\t[PRIORITY-DEADLINE] %s unread age %ss reached deadline for %s\n' "$priority" "$_unread_age" "$AGENT_ID" > "$atomic_result_file"
-                exit 0
-            fi
-
             printf 'skip\t[FP-SAME] Same unread set (age %ss), waiting for backoff for %s\n' "$_fp_age" "$AGENT_ID" > "$atomic_result_file"
         ) 201>"$STATE_LOCK_FILE"; then
             echo "[$(date)] WARNING: atomic wakeup state update failed for $AGENT_ID" >&2
@@ -982,14 +977,9 @@ send_wakeup() {
             safe_fp="${current_fp//[^A-Za-z0-9_.-]/_}"
             sent_token="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${safe_fp}"
             if ! ( set -C; : > "$sent_token" ) 2>/dev/null; then
-                sent_mtime=$(stat -c %Y "$sent_token" 2>/dev/null || echo 0)
-                sent_elapsed=$(( EPOCHSECONDS - sent_mtime ))
-                if [ "$sent_elapsed" -lt "$DEBOUNCE_SEC" ]; then
-                    echo "[$(date)] [SEND-DEDUPE] Skipping duplicate send for $AGENT_ID fingerprint $current_fp" >&2
-                    printf 'dedup\t%s\t%s\n' "$unread_count" "$current_fp" > "$send_result_file"
-                    exit 0
-                fi
-                : > "$sent_token"
+                echo "[$(date)] [SEND-LEASE] Skipping delivered fingerprint for $AGENT_ID until ACK/set change: $current_fp" >&2
+                printf 'dedup\t%s\t%s\n' "$unread_count" "$current_fp" > "$send_result_file"
+                exit 0
             fi
         fi
         # Force-exit copy-mode if active (mouse scroll → copy-mode → nudge配信失敗を防止)

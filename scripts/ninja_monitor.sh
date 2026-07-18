@@ -748,8 +748,9 @@ for name in "${NINJA_NAMES[@]}"; do
     PREV_STATE[$name]="idle"
 done
 
-MAX_RENUDGE=5               # 未読再nudge上限回数（同一未読状態に対して）
-RENUDGE_BACKOFF=600         # 低頻度バックオフ再通知間隔（10分=600秒）— 同一fingerprint時の安全網
+source "$SCRIPT_DIR/scripts/lib/inbox_nudge_policy.sh"
+MAX_RENUDGE="$INBOX_RENUDGE_MAX_ATTEMPTS"
+RENUDGE_BACKOFF="$INBOX_RENUDGE_BACKOFF_SEC"
 STALL_RENOTIFY_DEBOUNCE=300 # 同一ninja×taskのSTALL再通知デバウンス（5分）
 STALL_ESCALATE_THRESHOLD=2  # 同一taskでのstall_escalate発火閾値
 KARO_CLEAR_DEBOUNCE=120     # 家老/clear再送信抑制（2分）— /clear復帰~30秒のため
@@ -5542,6 +5543,17 @@ check_inbox_renudge() {
         local current_fp
         current_fp=$(get_unread_fingerprint "$inbox_file")
         local prev_fp="${RENUDGE_FINGERPRINT[$name]:-}"
+
+        # inbox_watcher owns the durable delivery lease.  Once a generation was
+        # pasted, monitor must not create a second delivery path until ACK/set change.
+        local watcher_fp="" sent_token=""
+        IFS= read -r watcher_fp < "${SHOGUN_STATE_DIR:-/tmp}/inbox_watcher_fingerprint_${name}" 2>/dev/null || true
+        sent_token="${SHOGUN_STATE_DIR:-/tmp}/inbox_watcher_sent_${name}_${watcher_fp//[^A-Za-z0-9_.-]/_}"
+        if [ -n "$watcher_fp" ] && [ -e "$sent_token" ]; then
+            RENUDGE_FINGERPRINT[$name]="$current_fp"
+            RENUDGE_COUNT[$name]=1
+            continue
+        fi
 
         # ─── 状態遷移判定 (cmd_255) ───
         if [ "$current_fp" != "$prev_fp" ]; then
