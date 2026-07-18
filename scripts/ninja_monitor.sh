@@ -1776,6 +1776,69 @@ notify_karo_throttled() {
     fi
     now=$EPOCHSECONDS
 
+    # A report identity is immutable, so this notification is an event rather
+    # than a recurring condition.  The generic cooldown below intentionally
+    # re-alerts unresolved conditions, but doing that here recreated the same
+    # report_notification_missing every 30 minutes after Karo had read it.
+    # Consult durable delivery evidence before the process-local stamp: inbox
+    # archival, agent scan order, and monitor restarts must not create another
+    # notification for the same report identity.
+    if [ "$notify_type" = "report_notification_missing" ]; then
+        local -a notify_sources
+        notify_sources=("$SCRIPT_DIR/queue/inbox/karo.yaml")
+        shopt -s nullglob
+        notify_sources+=("$SCRIPT_DIR/archive/inbox/karo_"*.yaml)
+        shopt -u nullglob
+        if python3 - "$message" "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" "${notify_sources[@]}" <<'PY'
+import os
+import sqlite3
+import sys
+
+import yaml
+
+message, memory_db, *sources = sys.argv[1:]
+for source in sources:
+    if not os.path.isfile(source):
+        continue
+    try:
+        data = yaml.safe_load(open(source, encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    for item in data.get("messages", []) if isinstance(data, dict) else ():
+        if (isinstance(item, dict)
+                and item.get("type") == "report_notification_missing"
+                and item.get("from") == "ninja_monitor"
+                and item.get("content") == message):
+            raise SystemExit(0)
+
+if os.path.isfile(memory_db):
+    try:
+        conn = sqlite3.connect(f"file:{memory_db}?mode=ro", uri=True)
+        rows = conn.execute(
+            """SELECT detail, raw_content FROM events
+               WHERE event_type = 'inbox' AND agent = 'ninja_monitor'
+                 AND target = 'karo'
+               ORDER BY ts DESC""")
+        for detail, raw_content in rows:
+            evidence = f"{detail or ''}\n{raw_content or ''}"
+            if ("type: report_notification_missing" in evidence
+                    and message in evidence):
+                raise SystemExit(0)
+    except (OSError, sqlite3.Error):
+        pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+raise SystemExit(1)
+PY
+        then
+            log "NOTIFY-EXACTLY-ONCE: $notify_type for $name suppressed durable identity"
+            return 0
+        fi
+    fi
+
     if [ -f "$stamp_file" ]; then
         IFS='|' read -r prior_fp prior_ack prior_epoch < "$stamp_file" || true
         if [ "$prior_fp" = "$fingerprint" ] && [ "$prior_ack" = "$acknowledged_at" ] &&
