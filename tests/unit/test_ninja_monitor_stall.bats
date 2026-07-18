@@ -2713,11 +2713,19 @@ unset NINJA_MONITOR_LIB_ONLY
 TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT"
 trap "rm -rf \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs"
+STATE_DIR="$TMP_ROOT/state"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/scripts" "$STATE_DIR"
 
 declare -A STALL_FIRST_SEEN STALL_NOTIFIED STALL_COUNT PANE_TARGETS
 TEST_LOG="$(mktemp)"
 TEST_MESSAGES="$(mktemp)"
+export TEST_MESSAGES
+
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+echo "$1|$3|$2|${4:-ninja_monitor}" >> "$TEST_MESSAGES"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
 
 cat > "$SCRIPT_DIR/queue/tasks/kagemaru.yaml" <<'"'"'EOF'"'"'
 task:
