@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T22:46:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_ci_fix_skill_refs_latest_202607182242検分: inbox_write.sh b30219e4845ec08bd46c616ad62d6a19269d990dはtask完了後retro triggerをretro_write.sh enqueue-triggerへ正規化し、helper欠落時exit 2を追加。review-bundleのreview_feedback経路、review_log後の永続化、副作用順序、位置引数、失敗exit契約には到達せず、本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T14:08:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_hotfix_skill_refs_batch_a検分: inbox_write.sh 3a305a0f5..1b6df4e4cはreport lifecycle通知を世代fingerprint別exactly-once化し、不足review子eventをretryでrepair。review_feedbackの位置引数、review_log後の永続化、副作用順序、失敗exit契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->

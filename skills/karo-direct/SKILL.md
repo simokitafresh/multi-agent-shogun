@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T22:46:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_ci_fix_skill_refs_latest_202607182242検分: deploy_task.sh 0b1265d78b63d59102daa5816a4159f593ec6e36はplanned_pathsにscripts/coddまたはskills/codd系を含むtaskへcontext/codd.mdをLevel5注入する。--direct/--yaml CLI、重複guard、task原子公開、通知、失敗exit契約は不変。条件一致時のtask context副作用のみ拡張され、本文手順変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T21:58:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_ci_fix_skill_refs_deploy_pair_202607182153検分: deploy_task.sh eef20f23f/1f248cde4/8be72a421/765997873/11c325097/7acd9d27d/e7415f9dc/94f2a21e1をgit log/show。no-code N/A証跡、wave cache bounded identity、report template原子公開、配備wall/防御telemetry、post_verify順序正規化、absent target履歴walk回避、planned_pathsを含む予約衝突BLOCKを追加。`--yaml`/`--direct`/`--direct --yaml` CLI、task公開・通知・失敗出口は不変。新たにplanned_paths同一fileもactive peerとの安全衝突境界となり、BLOCK時は配備済み扱いにしない。 -->
 <!-- script_refs_checked_at: 2026-07-18T14:08:00+09:00 -->

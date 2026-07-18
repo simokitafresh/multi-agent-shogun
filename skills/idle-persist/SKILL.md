@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T22:46:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_ci_fix_skill_refs_latest_202607182242検分: inbox_write.sh b30219e4845ec08bd46c616ad62d6a19269d990dはtask完了後retro triggerをpending.yaml直書きからretro_write.sh enqueue-triggerへ移し、helper欠落をexit 2でBLOCKする。idle-persistが送るgunshi_lesson_candidate経路の位置引数・永続化・通知・失敗exit契約には到達せず、本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T14:08:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_hotfix_skill_refs_batch_a検分: inbox_write.sh 3a305a0f5..1b6df4e4cはreport lifecycleにcanonical identity/fingerprint、flock内exactly-once、review子event repairを追加。gunshi_lesson_candidateの位置引数・永続化・exit契約は非report経路のため不変。 -->
 <!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->
