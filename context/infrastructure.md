@@ -816,7 +816,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1209 -->
+<!-- last_synced_lesson: L1210 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1739,6 +1739,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1207: 正規test入口でreceiptを強制する（cmd_karo_run_tests_atomic_receipt_202607181608）
 - L1208: 実行契約の候補判定にprose全文grepを使わない（cmd_karo_hotfix_lg046_candidate_fp_202607181909）
 - L1209: 列挙契約は完全一致でなく必須部分集合と意味代入を検証する（cmd_karo_ci_fix_29649090790_ga294_semantic_fixture_contract_202607190032）
+- L1210: context鮮度境界は日付でなく本文反映証拠で分類する（cmd_karo_gate_fix_ga295_context_freshness_trigger_202607190044）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
