@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# test_necessity: ninja scope commitは他者stageを混入せず、指定scopeだけを原子的にcommitする。
 
 setup() {
     REPO="$(mktemp -d "$BATS_TMPDIR/ninja_scope_commit.XXXXXX")"
@@ -51,6 +52,7 @@ fail: 0
 skip: 0
 test_paths: [tests/test_transient.bats]
 YAML
+    printf 'source_head: %s\n' "$(git -C "$REPO" rev-parse HEAD)" >> "$REPO/receipt.yaml"
     run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m transient -- own.txt tests/test_transient.bats' _ "$REPO" "$HELPER"
     [ "$status" -eq 0 ]
     [ ! -e "$REPO/tests/test_transient.bats" ]
@@ -67,6 +69,37 @@ YAML
     [ -f "$REPO/tests/test_transient.bats" ]
 }
 
+@test "envなしでもreceipt HEAD後の並行test変更をBLOCKしproduction-only変更は許可する" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf 'change\n' >> "$REPO/own.txt"; printf proof > "$REPO/tests/test_transient.bats"
+    printf 'task:\n  planned_paths: [own.txt, tests/test_transient.bats]\n' > "$REPO/queue/tasks/hayate.yaml"
+    source_head="$(git -C "$REPO" rev-parse HEAD)"
+    printf 'status: complete\npass: true\nfail: 0\nskip: 0\ntest_paths: [tests/test_transient.bats]\nsource_head: %s\n' "$source_head" > "$REPO/receipt.yaml"
+    printf 'parallel production\n' >> "$REPO/other.txt"; git -C "$REPO" add other.txt; git -C "$REPO" commit -qm parallel-production
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m production-drift -- own.txt tests/test_transient.bats' _ "$REPO" "$HELPER"
+    [ "$status" -eq 0 ]
+
+    printf 'next\n' >> "$REPO/own.txt"; printf proof > "$REPO/tests/test_transient.bats"
+    source_head="$(git -C "$REPO" rev-parse HEAD)"
+    printf 'status: complete\npass: true\nfail: 0\nskip: 0\ntest_paths: [tests/test_transient.bats]\nsource_head: %s\n' "$source_head" > "$REPO/receipt.yaml"
+    printf tracked > "$REPO/tests/test_parallel.bats"; git -C "$REPO" add tests/test_parallel.bats; git -C "$REPO" commit -qm parallel-test
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m test-drift -- own.txt tests/test_transient.bats' _ "$REPO" "$HELPER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"concurrent HEAD test change"* ]]
+    [ -f "$REPO/tests/test_transient.bats" ]
+}
+
+@test "transient削除はHEAD証跡欠落をfail closedする" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf 'change\n' >> "$REPO/own.txt"; printf proof > "$REPO/tests/test_transient.bats"
+    printf 'task:\n  planned_paths: [own.txt, tests/test_transient.bats]\n' > "$REPO/queue/tasks/hayate.yaml"
+    printf 'status: complete\npass: true\nfail: 0\nskip: 0\ntest_paths: [tests/test_transient.bats]\n' > "$REPO/receipt.yaml"
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m missing-head -- own.txt tests/test_transient.bats' _ "$REPO" "$HELPER"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"HEAD evidence missing"* ]]
+    [ -f "$REPO/tests/test_transient.bats" ]
+}
+
 @test "existing test net deletion requires justification and concurrent HEAD drift blocks" {
     mkdir -p "$REPO/tests" "$REPO/queue/tasks"
     printf 'one\ntwo\n' > "$REPO/tests/test_contract.bats"; git -C "$REPO" add tests/test_contract.bats; git -C "$REPO" commit -qm test-base
@@ -75,8 +108,10 @@ YAML
     run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m shrink -- tests/test_contract.bats' _ "$REPO" "$HELPER"
     [ "$status" -eq 2 ]; [[ "$output" == *deletion_justification* ]]
     printf 'task:\n  deletion_justification: obsolete duplicate assertion\n  planned_paths: [tests/test_contract.bats]\n' > "$REPO/queue/tasks/hayate.yaml"
-    run bash -c 'cd "$1" && NINJA_SCOPE_EXPECTED_HEAD=0000000000000000000000000000000000000000 NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m shrink -- tests/test_contract.bats' _ "$REPO" "$HELPER"
-    [ "$status" -eq 2 ]; [[ "$output" == *"concurrent HEAD change"* ]]
+    expected_head="$(git -C "$REPO" rev-parse HEAD)"
+    printf parallel > "$REPO/tests/test_parallel.bats"; git -C "$REPO" add tests/test_parallel.bats; git -C "$REPO" commit -qm parallel-test-change
+    run bash -c 'cd "$1" && NINJA_SCOPE_EXPECTED_HEAD="$3" NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m shrink -- tests/test_contract.bats' _ "$REPO" "$HELPER" "$expected_head"
+    [ "$status" -eq 2 ]; [[ "$output" == *"concurrent HEAD test change"* ]]
 }
 
 make_ga282_fixture() {
