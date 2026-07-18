@@ -1698,6 +1698,23 @@ if [ -z "$TARGET" ] || [ -z "$CONTENT" ]; then
     exit 1
 fi
 
+# Retro results use a dedicated append-only transport.  Normal results never
+# enter karo's inbox one-by-one; retro_write emits one batch-ready event at the
+# six-result boundary (or an explicit final checkpoint). Safety severities are
+# the only immediate exception.
+if [ "$TYPE" = "retro_result" ] && [ "$TARGET" = "karo" ]; then
+    _retro_parent=$(printf '%s' "$CONTENT" | grep -oE 'parent_report_id=[^[:space:]]+' | head -1 | cut -d= -f2- || true)
+    _retro_deployed=$(printf '%s' "$CONTENT" | grep -oE 'deployed_at=[^[:space:]]+' | head -1 | cut -d= -f2- || true)
+    _retro_done=$(printf '%s' "$CONTENT" | grep -oE 'done_at=[^[:space:]]+' | head -1 | cut -d= -f2- || true)
+    _retro_report=$(printf '%s' "$CONTENT" | grep -oE 'report_at=[^[:space:]]+' | head -1 | cut -d= -f2- || true)
+    _retro_commit=$(printf '%s' "$CONTENT" | grep -oE 'commit_at=[^[:space:]]+' | head -1 | cut -d= -f2- || true)
+    _retro_severity=$(printf '%s' "$CONTENT" | grep -oE 'severity=[^[:space:]]+' | head -1 | cut -d= -f2- || true)
+    [ -n "$_retro_parent" ] && [ -n "$_retro_deployed" ] || { echo "BLOCK: malformed retro_result" >&2; exit 2; }
+    bash "$SCRIPT_DIR/scripts/retro_write.sh" submit "$FROM" "$_retro_parent" "$_retro_deployed" \
+        "${_retro_done:--}" "${_retro_report:--}" "${_retro_commit:--}" "${_retro_severity:-normal}" "$CONTENT"
+    exit 0
+fi
+
 if [[ "$TARGET" == cmd_* ]]; then
     echo "ERROR: 第1引数はtarget_agent（例: karo, hanzo）。cmd_idではない。" >&2
     usage >&2

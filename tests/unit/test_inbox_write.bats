@@ -135,6 +135,18 @@ setup() {
     init_test_env
 }
 
+@test "retro_result is diverted from karo inbox into append-only retro queue" {
+    setup_basic_test_env
+    ln -s "$PROJECT_ROOT/scripts/retro_write.sh" "$TEST_TMPDIR/scripts/retro_write.sh"
+    run bash "$TEST_INBOX_WRITE" karo \
+      "parent_report_id=rpt-1 deployed_at=2026-07-18T15:00:00+09:00 done_at=2026-07-18T15:08:31+09:00 severity=normal" \
+      retro_result testninja append_retro
+    [ "$status" -eq 0 ]
+    [ ! -e "$TEST_INBOX_DIR/karo.yaml" ]
+    [ "$(wc -l < "$TEST_TMPDIR/queue/retro/events.jsonl")" -eq 1 ]
+    grep -q '"duration_seconds": 511' "$TEST_TMPDIR/queue/retro/events.jsonl"
+}
+
 # =============================================================================
 # T-001: 引数バリデーション — target未指定でexit 1
 # =============================================================================
