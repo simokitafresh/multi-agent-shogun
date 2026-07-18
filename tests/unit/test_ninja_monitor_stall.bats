@@ -73,12 +73,21 @@ source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 NINJA_NAMES=(hanzo)
 MARK="'"$BATS_TEST_TMPDIR"'/detected"
-check_and_update_done_task() { printf detected > "$MARK"; (sleep 10) & }
+check_and_update_done_task() {
+    printf detected > "$MARK"
+    (sleep 10) &
+    maintenance_pid=$!
+}
 start=$EPOCHREALTIME
 monitor_task_state_fast_path
 elapsed=$(awk -v s="$start" -v e="$EPOCHREALTIME" "BEGIN { print e-s }")
 test -f "$MARK"
 awk -v e="$elapsed" "BEGIN { exit !(e < 5) }"
+# The latency assertion above must observe the asynchronous return, while the
+# fixture itself must still own and reap its synthetic maintenance child.
+# Otherwise bats can PASS and orphan the ten-second sleep into the aggregate
+# runner process group and race the finite 10s admission drain.
+wait "$maintenance_pid"
 '
     [ "$status" -eq 0 ]
 }
