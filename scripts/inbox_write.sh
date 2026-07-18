@@ -927,9 +927,25 @@ maybe_verify_codex_delivery() {
             fi
         fi
 
-        sleep "$wait_sec"
+        # Preserve the one-second retry deadline, but do not impose it as a
+        # fixed cost after delivery has already become observable.  Most Codex
+        # acknowledgements land inside that window; differential checks let
+        # the verifier finish at the first evidence while keeping retry count,
+        # persistence, and message identity unchanged.
+        local delivered=0 wait_tick
+        if [ "$wait_sec" = "0" ]; then
+            verify_codex_task_delivery "$target" "$msg_id" && delivered=1
+        else
+            for wait_tick in 1 2 3 4 5; do
+                sleep 0.2
+                if verify_codex_task_delivery "$target" "$msg_id"; then
+                    delivered=1
+                    break
+                fi
+            done
+        fi
 
-        if verify_codex_task_delivery "$target" "$msg_id"; then
+        if [ "$delivered" -eq 1 ]; then
             if [ "$attempt" -eq 0 ]; then
                 echo "[inbox_write] codex delivery verified for ${target}" >&2
             else
