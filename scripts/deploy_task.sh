@@ -3416,8 +3416,9 @@ generate_report_template() {
             if [[ -n "$_other_verdict" && "$_other_verdict" != "null" && "$_other_verdict" != '""' ]]; then
                 log "report_template: PROTECTED other ninja report (${stale_basename}, verdict=${_other_verdict})"
             else
-                deploy_task_queue_stale_report "$stale_report" "$_p_parent_cmd" ""
-                log "report_template: stale other ninja template deferred (${stale_basename}, reassignment detected)"
+                mkdir -p "$SCRIPT_DIR/archive/reports/stale"
+                mv "$stale_report" "$SCRIPT_DIR/archive/reports/stale/"
+                log "report_template: stale other ninja template archived (${stale_basename}, reassignment detected)"
             fi
         done
     fi
@@ -3445,8 +3446,9 @@ generate_report_template() {
             continue
         fi
         # verdict空のテンプレート → staleアーカイブ
-        deploy_task_queue_stale_report "$stale_own_report" "$stale_own_pcmd" ""
-        log "report_template: stale own report deferred (${stale_own_basename}, old_cmd=${stale_own_pcmd})"
+        mkdir -p "$SCRIPT_DIR/archive/reports/stale"
+        mv "$stale_own_report" "$SCRIPT_DIR/archive/reports/stale/"
+        log "report_template: stale own report archived (${stale_own_basename}, old_cmd=${stale_own_pcmd})"
     done
 
     # 冪等性: 既存テンプレートがあればスキップ（L060: 上書き防止）
