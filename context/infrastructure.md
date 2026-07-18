@@ -817,6 +817,11 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | 入力ロス調査 | [[android-ssh-input-loss-investigation]] |
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
+## テスト方針（全PJ共通・殿裁定2026-07-19）
+
+- **default-delete原則**: 実装時テストは作成→PASS→即削除。永続化は防御対象宣言(守る不変量)付き契約テストのみ。穴7件の二値手当込み → `docs/research/test-default-delete-rule_20260719.md`(正本)
+- push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
+
 ## Infra教訓索引
 <!-- last_synced_lesson: L1210 -->
 
