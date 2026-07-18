@@ -6,6 +6,7 @@ setup_file() {
     export INPUT_SCRIPT="$PROJECT_ROOT/scripts/log_terminal_input.sh"
     export RESPONSE_SCRIPT="$PROJECT_ROOT/scripts/log_terminal_response.sh"
     export LORD_CONV_LIB="$PROJECT_ROOT/lib/lord_conversation.sh"
+    export CODEX_PROMPT_ADAPTER="$PROJECT_ROOT/scripts/hooks/codex_user_prompt_submit.sh"
     [ -f "$INPUT_SCRIPT" ] || return 1
     [ -f "$RESPONSE_SCRIPT" ] || return 1
     [ -f "$LORD_CONV_LIB" ] || return 1
@@ -345,4 +346,66 @@ assert rows[0]["target"] == "karo"
 assert rows[0]["detail"] == "実戦shadow入力"
 PY
     [ "$status" -eq 0 ]
+}
+
+@test "T-TL-016: Codex identity audit is privacy-safe one-shot and self-disarms" {
+    mkdir -p "$TEST_TMPDIR/scripts/hooks" "$TEST_TMPDIR/logs"
+    ln -s "$CODEX_PROMPT_ADAPTER" "$TEST_TMPDIR/scripts/hooks/codex_user_prompt_submit.sh"
+    rm -f "$TEST_TMPDIR/scripts/log_terminal_input.sh"
+    cat > "$TEST_TMPDIR/scripts/log_terminal_input.sh" <<'STUB'
+#!/usr/bin/env bash
+cat >/dev/null
+STUB
+    cat > "$TEST_TMPDIR/scripts/hooks/prompt_state_inject.sh" <<'STUB'
+#!/usr/bin/env bash
+cat >/dev/null
+STUB
+    chmod +x "$TEST_TMPDIR/scripts/log_terminal_input.sh" "$TEST_TMPDIR/scripts/hooks/prompt_state_inject.sh"
+    export CODEX_PROMPT_AUDIT_ARM="$TEST_TMPDIR/logs/audit.arm"
+    export CODEX_PROMPT_AUDIT_LOG="$TEST_TMPDIR/logs/audit.jsonl"
+    : > "$CODEX_PROMPT_AUDIT_ARM"
+
+    run bash -c 'printf "%s\n" '\''{"prompt":"SECRET-AUDIT-BODY","session_id":"session-1","turn_id":"turn-7","hook_event_name":"UserPromptSubmit"}'\'' | bash "$CODEX_PROMPT_ADAPTER"'
+    [ "$status" -eq 0 ]
+    [ ! -e "$CODEX_PROMPT_AUDIT_ARM" ]
+    [ "$(wc -l < "$CODEX_PROMPT_AUDIT_LOG")" -eq 1 ]
+    ! grep -q 'SECRET-AUDIT-BODY' "$CODEX_PROMPT_AUDIT_LOG"
+    grep -q '"key":"turn_id","value":"turn-7"' "$CODEX_PROMPT_AUDIT_LOG"
+    grep -q '"prompt_present":true' "$CODEX_PROMPT_AUDIT_LOG"
+
+    run bash -c 'printf "%s\n" '\''{"prompt":"SECOND","session_id":"session-1","turn_id":"turn-8"}'\'' | bash "$CODEX_PROMPT_ADAPTER"'
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$CODEX_PROMPT_AUDIT_LOG")" -eq 1 ]
+}
+
+@test "T-TL-017: Codex turn_id dedupes retry and preserves identical later turn" {
+    export MOCK_AGENT_ID="karo"
+    for _attempt in 1 2 3; do
+        run bash -c 'printf "%s\n" '\''{"prompt":"same words","turn_id":"turn-stable-1"}'\'' | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+        [ "$status" -eq 0 ]
+    done
+    [ "$(wc -l < "$TEST_LORD_CONV")" -eq 1 ]
+    [ "$(awk -F '\t' '$1=="turn-stable-1"{n++} END{print n+0}' "$TEST_TMPDIR/queue/lord_conversation_consumed.tsv")" -eq 1 ]
+
+    run bash -c 'printf "%s\n" '\''{"prompt":"same words","turn_id":"turn-stable-2"}'\'' | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$TEST_LORD_CONV")" -eq 2 ]
+    [ "$(awk -F '\t' '$1 ~ /^turn-stable-/{n++} END{print n+0}' "$TEST_TMPDIR/queue/lord_conversation_consumed.tsv")" -eq 2 ]
+}
+
+@test "T-TL-018: one targeted turn survives three-pane parallel fanout and replay once" {
+    run bash -c '
+      for agent in karo shogun gunshi; do
+        MOCK_AGENT_ID="$agent" bash "$TEST_TMPDIR/scripts/log_terminal_input.sh" <<<'\''{"prompt":"parallel once","target_agent":"karo","turn_id":"turn-fanout-1"}'\'' &
+      done
+      wait
+    '
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$TEST_LORD_CONV")" -eq 1 ]
+    [ "$(awk -F '\t' '$1=="turn-fanout-1"{n++} END{print n+0}' "$TEST_TMPDIR/queue/lord_conversation_consumed.tsv")" -eq 1 ]
+
+    export MOCK_AGENT_ID="karo"
+    run bash -c 'printf "%s\n" '\''{"prompt":"parallel once","target_agent":"karo","turn_id":"turn-fanout-1"}'\'' | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$TEST_LORD_CONV")" -eq 1 ]
 }

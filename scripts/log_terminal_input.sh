@@ -26,7 +26,9 @@ unset _log_terminal_input_self
 PAYLOAD_TARGETS="$(jq -r '[.target_agent, .target, .pane_agent_id, .agent_id] | map(select(type == "string" and length > 0)) | unique | .[]' 2>/dev/null <<<"$PAYLOAD" || true)"
 PAYLOAD_TARGET_COUNT="$(printf '%s\n' "$PAYLOAD_TARGETS" | awk 'NF{n++} END{print n+0}')"
 PAYLOAD_TARGET="$(printf '%s\n' "$PAYLOAD_TARGETS" | awk 'NF{print; exit}')"
-SOURCE_EVENT_ID="$(jq -r '.source_event_id // .event_id // .prompt_id // .id // ""' 2>/dev/null <<<"$PAYLOAD" || true)"
+# turn_id is the Codex upstream identity for one real user turn.  It remains
+# stable across fanout/retry/replay and differs for legitimate later turns.
+SOURCE_EVENT_ID="$(jq -r '.source_event_id // .event_id // .prompt_id // .turn_id // .id // ""' 2>/dev/null <<<"$PAYLOAD" || true)"
 ACTIVE_AGENT_ID="$AGENT_ID"
 MINIMAL_PAYLOAD=0
 
