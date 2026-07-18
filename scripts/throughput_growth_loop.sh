@@ -30,36 +30,53 @@ mkdir -p "${ledger%/*}"
 exec 9>>"$ledger.lock"
 flock -x 9
 
-append() { printf '%s\n' "$1" >>"$ledger"; }
-if grep -Fq '"event_id":"'"$event_id"'"' "$ledger" 2>/dev/null; then
-  append '{"event_id":"'"$event_id"'","state":"BLOCK","reason":"duplicate"}'
-  echo "BLOCK duplicate"; exit 0
-fi
-if [[ "$idle" != yes ]]; then
-  append '{"event_id":"'"$event_id"'","state":"BLOCK","reason":"no_idle_worker"}'
-  echo "BLOCK no_idle_worker"; exit 0
-fi
-if [[ "$production" != no ]]; then
-  append '{"event_id":"'"$event_id"'","state":"BLOCK","reason":"production_or_irreversible"}'
-  echo "BLOCK production_or_irreversible"; exit 0
-fi
-
 tmpdir=$(mktemp -d "${ledger%/*}/.throughput-loop.XXXXXX")
 trap 'find "$tmpdir" -maxdepth 1 -type f -delete; rmdir "$tmpdir"' EXIT
-"$observe" "$event" "$tmpdir/observed.json"
-"$select" "$tmpdir/observed.json" "$tmpdir/selected.json"
-python3 - "$tmpdir/selected.json" <<'PY'
+append() { printf '%s\n' "$1" >>"$ledger"; }
+current_event_id=$event_id
+current_event=$event
+completed=0
+while :; do
+  if grep -Fq '"event_id":"'"$current_event_id"'"' "$ledger" 2>/dev/null; then
+    append '{"event_id":"'"$current_event_id"'","state":"BLOCK","reason":"duplicate"}'
+    echo "BLOCK duplicate"; exit 0
+  fi
+  if [[ "$idle" != yes ]]; then
+    append '{"event_id":"'"$current_event_id"'","state":"BLOCK","reason":"no_idle_worker"}'
+    echo "BLOCK no_idle_worker"; exit 0
+  fi
+  if [[ "$production" != no ]]; then
+    append '{"event_id":"'"$current_event_id"'","state":"BLOCK","reason":"production_or_irreversible"}'
+    echo "BLOCK production_or_irreversible"; exit 0
+  fi
+
+  "$observe" "$current_event" "$tmpdir/observed.json"
+  "$select" "$tmpdir/observed.json" "$tmpdir/selected.json"
+  python3 - "$tmpdir/selected.json" <<'PY'
 import json,sys
 d=json.load(open(sys.argv[1]))
 if not d.get("candidate_id") or float(d.get("blocked_agent_seconds", 0)) <= 0:
     raise SystemExit("BLOCK invalid_selection")
 PY
-"$deploy" "$tmpdir/selected.json" "$tmpdir/deployed.json"
-if ! "$checkpoint" "$tmpdir/deployed.json" "$tmpdir/checkpoint.json"; then
-  append '{"event_id":"'"$event_id"'","state":"BLOCK","reason":"checkpoint_fail"}'
-  echo "BLOCK checkpoint_fail"; exit 0
-fi
-"$record" "$tmpdir/checkpoint.json" "$tmpdir/recorded.json"
-"$rerank" "$tmpdir/recorded.json" "$tmpdir/reranked.json"
-append '{"event_id":"'"$event_id"'","state":"COMPLETE","reason":"checkpoint_pass"}'
-echo "COMPLETE event_id=$event_id"
+  "$deploy" "$tmpdir/selected.json" "$tmpdir/deployed.json"
+  if ! "$checkpoint" "$tmpdir/deployed.json" "$tmpdir/checkpoint.json"; then
+    append '{"event_id":"'"$current_event_id"'","state":"BLOCK","reason":"checkpoint_fail"}'
+    echo "BLOCK checkpoint_fail"; exit 0
+  fi
+  "$record" "$tmpdir/checkpoint.json" "$tmpdir/recorded.json"
+  "$rerank" "$tmpdir/recorded.json" "$tmpdir/reranked.json"
+  append '{"event_id":"'"$current_event_id"'","state":"COMPLETE","reason":"checkpoint_pass"}'
+  echo "COMPLETE event_id=$current_event_id"
+  completed=$((completed + 1))
+
+  next_event_id=$(python3 - "$tmpdir/reranked.json" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1]))
+print(d.get("next") or d.get("next_candidate_id") or "")
+PY
+)
+  [[ -n "$next_event_id" ]] || break
+  cp "$tmpdir/reranked.json" "$tmpdir/next-event.json"
+  current_event_id=$next_event_id
+  current_event=$tmpdir/next-event.json
+done
