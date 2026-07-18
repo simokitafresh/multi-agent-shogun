@@ -78,6 +78,35 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "SG-PRE30: non-daemon source path in prose does not false-positive" {
+    cat > "$TEST_REPORT" << 'EOF'
+files_modified:
+  - path: tests/unit/test_gate_single_check_consolidated.bats
+    change: "gate regression fixture"
+causal_verification:
+  cause_checked: "offending source is .claude/hooks/pre-bash-combined.sh"
+operational_simulation:
+  command: "bats tests/unit/test_gate_single_check_consolidated.bats"
+  actual: "12 tests, 0 failures"
+  result: PASS
+EOF
+    run _sg_pre30_check "$TEST_REPORT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"対象外"* ]]
+}
+
+@test "SG-PRE30: bare LIB_ONLY prose without an assignment is not a contract" {
+    cat > "$TEST_REPORT" << 'EOF'
+files_modified:
+  - path: docs/research/analysis.md
+result:
+  summary: "LIB_ONLY契約の調査のみ。実行・変更なし"
+EOF
+    run _sg_pre30_check "$TEST_REPORT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"対象外"* ]]
+}
+
 @test "SG-PRE30: complete enumeration evidence passes" {
     cat > "$TEST_REPORT" << 'EOF'
 cmd_id: cmd_test_pre30_chars
