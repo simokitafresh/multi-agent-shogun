@@ -201,6 +201,7 @@ teardown() {
     ln -s "$PROJECT_ROOT/scripts/lib/tmux_utils.sh" "$root/scripts/lib/tmux_utils.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/script_update.sh" "$root/scripts/lib/script_update.sh"
     ln -s "$PROJECT_ROOT/lib/agent_state.sh" "$root/lib/agent_state.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/inbox_nudge_policy.sh" "$root/scripts/lib/inbox_nudge_policy.sh"
     ln -s "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$root/scripts/inbox_watcher.sh"
     cat > "$real_inbox/test_agent.yaml" <<'YAML'
 messages:
@@ -227,6 +228,7 @@ YAML
     ln -s "$PROJECT_ROOT/scripts/lib/tmux_utils.sh" "$root/scripts/lib/tmux_utils.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/script_update.sh" "$root/scripts/lib/script_update.sh"
     ln -s "$PROJECT_ROOT/lib/agent_state.sh" "$root/lib/agent_state.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/inbox_nudge_policy.sh" "$root/scripts/lib/inbox_nudge_policy.sh"
     ln -s "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$root/scripts/inbox_watcher.sh"
 
     run bash -c "INBOX_WATCHER_LIB_ONLY=1 source '$root/scripts/inbox_watcher.sh' test_agent dummy-pane"
