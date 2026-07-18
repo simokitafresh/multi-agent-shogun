@@ -1,4 +1,6 @@
 #!/usr/bin/env bats
+# test_necessity: CI completion must bind workflow SHA to the shared origin branch boundary and fail closed when that boundary is absent; violation is BLOCK.
+# regression_justification: The existing completion-gate suite did not cover a dirty shared worktree whose local HEAD diverged from the pushed origin/main boundary.
 # test_cmd_complete_gate.bats - cmd_complete_gate.sh partial unit tests
 # Optimized: gate全体実行をやめ、重い責務を関数/局所フェーズ単位で直接検証する
 
@@ -3564,4 +3566,53 @@ assert '&& !is_gate_auto_draft' in block
 assert 'is_draft && is_own' in block
 PY
     [ "$status" -eq 0 ]
+}
+
+@test "CI expected head uses origin main when local HEAD diverges" {
+    local repo="$BATS_TEST_TMPDIR/ci-main-boundary"
+    git init -q "$repo"
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    echo shared > "$repo/state"
+    git -C "$repo" add state
+    git -C "$repo" commit -qm shared
+    local shared_head
+    shared_head="$(git -C "$repo" rev-parse HEAD)"
+    git -C "$repo" update-ref refs/remotes/origin/main "$shared_head"
+    echo local >> "$repo/state"
+    git -C "$repo" commit -qam local
+
+    run env CMD_COMPLETE_GATE_CI_EXPECTED_HEAD_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" bash "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$shared_head" ]
+    [ "$output" != "$(git -C "$repo" rev-parse HEAD)" ]
+}
+
+@test "CI expected head falls back to origin master" {
+    local repo="$BATS_TEST_TMPDIR/ci-master-boundary"
+    git init -q "$repo"
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    echo shared > "$repo/state"
+    git -C "$repo" add state
+    git -C "$repo" commit -qm shared
+    local shared_head
+    shared_head="$(git -C "$repo" rev-parse HEAD)"
+    git -C "$repo" update-ref refs/remotes/origin/master "$shared_head"
+
+    run env CMD_COMPLETE_GATE_CI_EXPECTED_HEAD_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" bash "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$shared_head" ]
+}
+
+@test "CI expected head is empty when remote boundary is missing" {
+    local repo="$BATS_TEST_TMPDIR/ci-missing-boundary"
+    git init -q "$repo"
+
+    run env CMD_COMPLETE_GATE_CI_EXPECTED_HEAD_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" bash "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 }
