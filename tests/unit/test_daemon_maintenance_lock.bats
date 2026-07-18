@@ -70,12 +70,12 @@ run_daemon_isolated() {
     [[ "$output" == *"SKIP: daemon maintenance active"* ]]
 
     export DAEMON_WATCHDOG_LIB_ONLY=1
-    run_daemon_isolated bash -c 'source "$1/scripts/daemon_watchdog.sh"; pid_file_has_live_daemon(){ return 1; }; find_live_daemon_pid(){ return 1; }; log(){ echo "$*"; }; check_ninja_monitor' _ "$PROJECT_ROOT"
+    run_daemon_isolated bash -c 'DAEMON_WATCHDOG_LIB_ONLY=1 source "$1/scripts/daemon_watchdog.sh"; pid_file_has_live_daemon(){ return 1; }; find_live_daemon_pid(){ return 1; }; log(){ echo "$*"; }; check_ninja_monitor' _ "$PROJECT_ROOT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"restart deferred"* ]]
 
     export DAEMON_SUPERVISOR_LIB_ONLY=1
-    run_daemon_isolated bash -c 'source "$1/scripts/daemon_supervisor.sh"; ds_log(){ echo "$*"; }; ds_inbox_watcher_pids(){ return 0; }; ds_start_inbox_watcher(){ echo RESTARTED; }; ds_supervise_inbox_watcher test' _ "$PROJECT_ROOT"
+    run_daemon_isolated bash -c 'DAEMON_SUPERVISOR_LIB_ONLY=1 source "$1/scripts/daemon_supervisor.sh"; ds_log(){ echo "$*"; }; ds_inbox_watcher_pids(){ return 0; }; ds_start_inbox_watcher(){ echo RESTARTED; }; ds_supervise_inbox_watcher test' _ "$PROJECT_ROOT"
     [ "$status" -eq 0 ]
     [[ "$output" != *"RESTARTED"* ]]
     [[ "$output" == *"restart deferred"* ]]
@@ -88,7 +88,7 @@ run_daemon_isolated() {
     # the heartbeat which is the only entrypoint-side contract asserted here.
     export DAEMON_WATCHDOG_LIB_ONLY=1
     run_daemon_isolated bash -c '
-        source "$1/scripts/daemon_watchdog.sh"
+        DAEMON_WATCHDOG_LIB_ONLY=1 source "$1/scripts/daemon_watchdog.sh"
         check_ninja_monitor
         check_ntfy_listener
         check_inbox_watchers
@@ -98,9 +98,18 @@ run_daemon_isolated() {
     [ -s "$DAEMON_WATCHDOG_HEARTBEAT_FILE" ]
 }
 
-@test "fixtureはproduction watchdog entrypointを直接実行しない" {
-    run grep -n 'bash "\$PROJECT_ROOT/scripts/daemon_watchdog.sh"' "$BATS_TEST_FILENAME"
-    [ "$status" -eq 1 ]
+@test "fixtureはproduction daemon entrypointを実行せず全sourceをlib-onlyにする" {
+    run bash -c '
+        if grep -Eq '\''bash "\$PROJECT_ROOT/scripts/daemon_(watchdog|supervisor)\.sh"'\'' "$1"; then
+            exit 1
+        fi
+        awk '\''
+            /source "\$1\/scripts\/daemon_watchdog\.sh"/ && $0 !~ /DAEMON_WATCHDOG_LIB_ONLY=1 source/ { bad=1 }
+            /source "\$1\/scripts\/daemon_supervisor\.sh"/ && $0 !~ /DAEMON_SUPERVISOR_LIB_ONLY=1 source/ { bad=1 }
+            END { exit bad }
+        '\'' "$1"
+    ' _ "$BATS_TEST_FILENAME"
+    [ "$status" -eq 0 ]
 }
 
 @test "marker absent preserves normal decision path for all three entry points" {
@@ -110,9 +119,9 @@ run_daemon_isolated() {
     run_daemon_isolated env RESTART_WATCHERS_WARMUP_ONLY=1 bash "$PROJECT_ROOT/scripts/restart_watchers.sh"
     [ "$status" -eq 0 ]
     [[ "$output" != *"SKIP: daemon maintenance"* ]]
-    run_daemon_isolated bash -c 'source "$1/scripts/daemon_watchdog.sh"; is_maintenance_active' _ "$PROJECT_ROOT"
+    run_daemon_isolated bash -c 'DAEMON_WATCHDOG_LIB_ONLY=1 source "$1/scripts/daemon_watchdog.sh"; is_maintenance_active' _ "$PROJECT_ROOT"
     [ "$status" -eq 1 ]
-    run_daemon_isolated bash -c 'source "$1/scripts/daemon_supervisor.sh"; is_maintenance_active' _ "$PROJECT_ROOT"
+    run_daemon_isolated bash -c 'DAEMON_SUPERVISOR_LIB_ONLY=1 source "$1/scripts/daemon_supervisor.sh"; is_maintenance_active' _ "$PROJECT_ROOT"
     [ "$status" -eq 1 ]
 }
 
