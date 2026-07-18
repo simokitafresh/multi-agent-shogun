@@ -59,6 +59,16 @@ wait_for_lines() {
   [ "$(wc -l < "$MARKER")" -eq 1 ]
 }
 
+@test "default dispatch returns only after caller process group is empty" {
+  caller_pgid="$(ps -o pgid= -p $$ | tr -d ' ')"
+  bash "$TEST_ROOT/scripts/ntfy.sh" boundary-message
+  dispatch_status=$?
+  [ "$dispatch_status" -eq 0 ]
+  residual="$(ps -e -o pgid=,comm= | awk -v pgid="$caller_pgid" '$1 == pgid && ($2 == "ntfy.sh" || $2 == "curl") { print }')"
+  [ -z "$residual" ]
+  wait_for_lines 1 || { cat "$NTFY_ASYNC_STDERR" >&2; return 1; }
+}
+
 @test "sync mode executes exactly once without recursive dispatch" {
   run env NTFY_SYNC=1 bash "$TEST_ROOT/scripts/ntfy.sh" sync-message
   [ "$status" -eq 0 ]

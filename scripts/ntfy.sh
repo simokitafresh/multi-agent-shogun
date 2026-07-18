@@ -15,6 +15,18 @@ if [ "${1-}" = "" ]; then
     exit 1
 fi
 
+# The async launcher waits for this worker-side acknowledgement before
+# returning.  Writing it from the re-entered process proves that setsid has
+# completed (requesting setsid alone is racy: the caller can return first).
+if [ "${_NTFY_ASYNC_WORKER:-0}" = "1" ] && [ -n "${_NTFY_ASYNC_READY_FILE:-}" ]; then
+  _ntfy_worker_sid="$(ps -o sid= -p $$ 2>/dev/null | tr -d ' ')"
+  _ntfy_worker_pgid="$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')"
+  if [ -n "$_ntfy_worker_sid" ] && [ "$_ntfy_worker_sid" = "$_ntfy_worker_pgid" ]; then
+    printf '%s %s %s\n' "$$" "$_ntfy_worker_sid" "$_ntfy_worker_pgid" > "$_NTFY_ASYNC_READY_FILE"
+  fi
+  unset _ntfy_worker_sid _ntfy_worker_pgid
+fi
+
 # Validate caller agent_id (warn-only; do not block send)
 # Deferred to background dispatch below (async default path) since the tmux
 # subprocess fork it needs is otherwise wasted foreground latency on every
@@ -259,6 +271,19 @@ fi
 # Re-entering this script keeps the synchronous implementation as the single
 # send path; the private marker prevents recursive async dispatch.
 _ntfy_async_stderr="${NTFY_ASYNC_STDERR:-/dev/null}"
-setsid env _NTFY_ASYNC_WORKER=1 "$BASH" "$SCRIPT_DIR/scripts/ntfy.sh" "$MSG" \
+_ntfy_async_ready="$(mktemp "${TMPDIR:-/tmp}/shogun-ntfy-ready.XXXXXX")" || exit 1
+rm -f "$_ntfy_async_ready"
+setsid env _NTFY_ASYNC_WORKER=1 _NTFY_ASYNC_READY_FILE="$_ntfy_async_ready" \
+  "$BASH" "$SCRIPT_DIR/scripts/ntfy.sh" "$MSG" \
   </dev/null >/dev/null 2>>"$_ntfy_async_stderr" &
+_ntfy_async_pid=$!
+_ntfy_ready_deadline=$((SECONDS + 2))
+while [ ! -s "$_ntfy_async_ready" ]; do
+  if ! kill -0 "$_ntfy_async_pid" 2>/dev/null || (( SECONDS >= _ntfy_ready_deadline )); then
+    rm -f "$_ntfy_async_ready"
+    echo "ERROR: ntfy async worker failed session handshake" >&2
+    exit 1
+  fi
+done
+rm -f "$_ntfy_async_ready"
 exit 0
