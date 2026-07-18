@@ -85,7 +85,7 @@ base_item_json() {
 run_bridge() {
   item_json="$(base_item_json)"
   run env SHARD_ITEM_JSON="$item_json" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
-    CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 \
+    CAMPAIGN_LANE_WAIT_SEC="${CAMPAIGN_LANE_WAIT_SEC:-5}" CAMPAIGN_LANE_POLL_SEC=0.1 \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
 }
 
@@ -349,6 +349,7 @@ PY
 
 @test "report timeout fails closed" {
   make_deployer timeout
+  export CAMPAIGN_LANE_WAIT_SEC=1
   run_bridge
   [ "$status" -ne 0 ]
   reason_is report_timeout
