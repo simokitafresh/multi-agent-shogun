@@ -57,3 +57,29 @@ submit() {
   [ "$(wc -l < "$RETRO_ROOT_OVERRIDE/queue/retro/events.jsonl")" -eq 6 ]
   [ "$(wc -l < "$RETRO_ROOT_OVERRIDE/notifications")" -eq 1 ]
 }
+
+@test "legacy empty prompts migrate to identity tombstones without notification storm" {
+  mkdir -p "$RETRO_ROOT_OVERRIDE/queue/retro"
+  for i in $(seq 1 63); do
+    printf '%s\n' "- ninja: n$i" "  triggered_at: 2026-07-18T15:00:00+09:00" "  parent_msg: msg-$i" "  status: pending" >> "$RETRO_ROOT_OVERRIDE/queue/retro/pending.yaml"
+  done
+  bash "$RETRO_ROOT_OVERRIDE/scripts/retro_write.sh" enqueue-trigger n64 msg-64 2026-07-18T15:00:00+09:00
+  [ ! -s "$RETRO_ROOT_OVERRIDE/queue/retro/pending.yaml" ]
+  [ "$(wc -l < "$RETRO_ROOT_OVERRIDE/queue/retro/events.jsonl")" -eq 1 ]
+  grep -q '"migrated_count": 63' "$RETRO_ROOT_OVERRIDE/queue/retro/events.jsonl"
+  [ ! -e "$RETRO_ROOT_OVERRIDE/notifications" ]
+  bash "$RETRO_ROOT_OVERRIDE/scripts/retro_write.sh" final-checkpoint
+  [ ! -e "$RETRO_ROOT_OVERRIDE/notifications" ]
+  [ "$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["legacy_tombstones"]))' "$RETRO_ROOT_OVERRIDE/queue/retro/state.json")" -eq 64 ]
+}
+
+@test "empty trigger duplicate and parallel submissions become tombstones without notifications" {
+  for i in $(seq 1 6); do
+    bash "$RETRO_ROOT_OVERRIDE/scripts/retro_write.sh" enqueue-trigger n$i msg-$i 2026-07-18T15:00:00+09:00 &
+  done
+  wait
+  bash "$RETRO_ROOT_OVERRIDE/scripts/retro_write.sh" enqueue-trigger n1 msg-1 2026-07-18T15:00:00+09:00
+  [ ! -e "$RETRO_ROOT_OVERRIDE/queue/retro/events.jsonl" ]
+  [ ! -e "$RETRO_ROOT_OVERRIDE/notifications" ]
+  [ "$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1]))["legacy_tombstones"]))' "$RETRO_ROOT_OVERRIDE/queue/retro/state.json")" -eq 6 ]
+}

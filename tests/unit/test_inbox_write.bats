@@ -823,6 +823,7 @@ setup_git_test_env() {
     # CoW clone so git-heavy cases retain full isolation without recopying the
     # repository fixture; fall back to an ordinary copy where unsupported.
     cp -a --reflink=auto "$GIT_TEMPLATE_DIR/." "$TEST_TMPDIR/"
+    cp "$PROJECT_ROOT/scripts/retro_write.sh" "$TEST_TMPDIR/scripts/retro_write.sh"
 }
 
 # Wrapper to capture stderr in bats output
@@ -878,6 +879,9 @@ _wait_for_file() {
     grep -q "^  read: true" "$TEST_TMPDIR/queue/inbox/karo.yaml"
     [ -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ]
     grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    [ ! -s "$TEST_TMPDIR/queue/retro/pending.yaml" ]
+    [ ! -e "$TEST_TMPDIR/queue/retro/events.jsonl" ]
+    grep -q 'legacy_tombstones' "$TEST_TMPDIR/queue/retro/state.json"
 }
 
 @test "report_received: explicit verified linked worktree checks that worktree instead of dirty main" {

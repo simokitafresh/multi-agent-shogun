@@ -2522,10 +2522,13 @@ while [ $attempt -lt $max_attempts ]; do
                 if [ "$FROM" = "$_rn" ]; then
                     _retro_dir="$SCRIPT_DIR/queue/retro"
                     mkdir -p "$_retro_dir"
-                    _retro_prompt="この作業で時間がかかった原因を分析し、利他の精神で調査を行いインフラバグの疑いとして家老に報告せよ"
-                    printf '%s\n' "- ninja: $FROM" "  triggered_at: $(date -Iseconds)" "  parent_msg: $MSG_ID" "  status: pending" >> "$_retro_dir/pending.yaml"
-                    # 即時inbox送信は無効化(バグ: task_startに埋没し振り返り未実行。queue/retro/pending.yamlのバッチ処理へ移行)
-                    # bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$FROM" "$_retro_prompt" retro_prompt system read_and_analyze 2>/dev/null &
+                    if [ -f "$SCRIPT_DIR/scripts/retro_write.sh" ]; then
+                        bash "$SCRIPT_DIR/scripts/retro_write.sh" enqueue-trigger \
+                            "$FROM" "$MSG_ID" "$(date -Iseconds)" normal
+                    elif [ "${INBOX_WRITE_TEST:-}" != "1" ]; then
+                        echo "BLOCK: retro_write.sh missing; refusing unmanaged retro trigger" >&2
+                        exit 2
+                    fi
                     break
                 fi
             done
