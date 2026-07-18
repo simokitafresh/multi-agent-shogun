@@ -77,8 +77,8 @@ YAML
 
   printf 'task:\n  planned_paths: [tests/unit/test_never_existing_contract.bats]\n' > "$task"
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"transient=tests/unit/test_never_existing_contract.bats"* ]]
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"omits transient deletion evidence: tests/unit/test_never_existing_contract.bats"* ]]
 
   cat > "$task" <<'YAML'
 task:
@@ -110,8 +110,8 @@ YAML
   for path in tests/unit/test_new.bats tests/test_new.sh test_new.py; do
     printf 'task:\n  planned_paths: [%s]\n' "$path" > "$task"
     run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"transient=$path"* ]]
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"omits transient deletion evidence: $path"* ]]
   done
 }
 
