@@ -8025,6 +8025,63 @@ PY
     disown 2>/dev/null || true
 }
 
+# New tests are expensive permanent defenses.  Require one compact, reviewable
+# necessity record before publication; existing-test edits and testless tasks
+# remain outside this contract.
+deploy_task_test_necessity_precheck() {
+    local task_file="$1"
+    python3 - "$SCRIPT_DIR" "$task_file" <<'PY'
+import os, re, subprocess, sys, yaml
+
+repo, task_file = sys.argv[1:3]
+data = yaml.safe_load(open(task_file, encoding="utf-8")) or {}
+task = data.get("task", data)
+paths = task.get("planned_paths") or []
+if isinstance(paths, str):
+    paths = [paths]
+
+def is_test(path):
+    path = str(path).strip()
+    base = os.path.basename(path)
+    return bool(path and ("/test" in path or base.startswith("test_") or base.endswith((".bats", ".spec.js", ".test.js"))))
+
+new_tests = []
+for path in paths:
+    path = str(path).strip()
+    if not is_test(path):
+        continue
+    exists = subprocess.run(
+        ["git", "-C", repo, "cat-file", "-e", f"HEAD:{path}"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    ).returncode == 0
+    if not exists:
+        new_tests.append(path)
+
+if not new_tests:
+    raise SystemExit(0)
+
+necessity = task.get("test_necessity")
+errors = []
+if not isinstance(necessity, dict):
+    errors.append("test_necessity mapping missing")
+    necessity = {}
+target = str(necessity.get("defense_target", "")).strip()
+evidence = str(necessity.get("overlap_evidence", "")).strip()
+if not target or "\n" in target:
+    errors.append("defense_target must be one non-empty line")
+if not evidence:
+    errors.append("overlap_evidence missing")
+for key in ("overlaps_existing", "fixture_self_reference", "deprecated_mechanism"):
+    if necessity.get(key) is not False:
+        errors.append(f"{key} must be false")
+if errors:
+    print("BLOCK: new test necessity contract failed: " + "; ".join(errors), file=sys.stderr)
+    print("BLOCK_TESTS=" + ",".join(new_tests), file=sys.stderr)
+    raise SystemExit(1)
+print("PASS: test_necessity new_tests=" + ",".join(new_tests))
+PY
+}
+
 deploy_task_guard_target_path_collision() {
     local task_file="$1"
     local ninja_name="$2"
@@ -10634,6 +10691,7 @@ deploy_task_apply_task_mutations() {
 
     local task_id parent_cmd project _ac_task_id report_filename
     deploy_task_guard_task_yaml_syntax "post_injection_pre_report_template" "$task_file" "$ninja_name" || return 1
+    deploy_task_test_necessity_precheck "$task_file" || return 1
 
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" task_id _ac_task_id parent_cmd project report_filename 2>/dev/null)" || true
     # task_id空なら_ac_task_idをfallback(家老が_ac_task_idを直接設定するケース)

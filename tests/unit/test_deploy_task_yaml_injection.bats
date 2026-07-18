@@ -6,6 +6,48 @@ setup_file() {
     python3 -c "import yaml" 2>/dev/null || return 1
 }
 
+@test "new test requires non-duplicate non-self-referential necessity while controls pass" {
+    tmpdir="$(mktemp -d)"
+    git -C "$tmpdir" init -q
+    git -C "$tmpdir" config user.email test@example.com
+    git -C "$tmpdir" config user.name test
+    mkdir -p "$tmpdir/tests"
+    printf 'old\n' > "$tmpdir/tests/test_existing.bats"
+    git -C "$tmpdir" add . && git -C "$tmpdir" commit -qm base
+    check="$tmpdir/check.sh"
+    sed "s|local task_file=\"\$1\"|local task_file=\"\$1\"; SCRIPT_DIR='$tmpdir'|" /dev/null >/dev/null
+
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'" 2>/dev/null
+    [ "$status" -ne 0 ]
+
+    cat > "$tmpdir/task.yaml" <<'YAML'
+task:
+  planned_paths: [tests/test_new.bats]
+  test_necessity:
+    defense_target: deploy entry rejects nonsense tests
+    overlap_evidence: rg existing tests found no equivalent contract
+    overlaps_existing: false
+    fixture_self_reference: false
+    deprecated_mechanism: false
+YAML
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
+    [ "$status" -eq 0 ]
+
+    for mutation in 'overlaps_existing: true' 'fixture_self_reference: true' 'deprecated_mechanism: true'; do
+      sed -i -E "s/(overlaps_existing|fixture_self_reference|deprecated_mechanism): (false|true)/\1: false/g" "$tmpdir/task.yaml"
+      key="${mutation%%:*}"; sed -i "s/$key: false/$mutation/" "$tmpdir/task.yaml"
+      run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
+      [ "$status" -ne 0 ]
+    done
+
+    printf 'task:\n  planned_paths: [tests/test_existing.bats]\n' > "$tmpdir/task.yaml"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
+    [ "$status" -eq 0 ]
+    printf 'task:\n  planned_paths: [scripts/foo.sh]\n' > "$tmpdir/task.yaml"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
+    [ "$status" -eq 0 ]
+}
+
 @test "ci_fix source requires a positive ci_run_id before publication" {
     tmpdir="$(mktemp -d)"
     for value in missing empty text zero positive non_ci; do

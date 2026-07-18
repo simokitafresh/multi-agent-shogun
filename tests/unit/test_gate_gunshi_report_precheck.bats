@@ -68,3 +68,35 @@ YAML
   [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
   [[ "$output" == *"BC_YES_CLARITY_TERMS="*"保留"* ]]
 }
+
+@test "SG-PRE35 blocks unclassified new test and accepts necessity plus control groups" {
+  gate="$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh"
+  task="$TMP_DIR/tasks/kagemaru.yaml"
+  printf 'worker_id: kagemaru\nparent_cmd: cmd_fixture\n' > "$TMP_DIR/report.yaml"
+
+  printf 'task:\n  planned_paths: [tests/unit/test_never_existing_contract.bats]\n' > "$task"
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"BLOCK: new test necessity contract failed"* ]]
+
+  cat > "$task" <<'YAML'
+task:
+  planned_paths: [tests/unit/test_never_existing_contract.bats, scripts/deploy_task.sh]
+  test_necessity:
+    defense_target: deployment rejects tests without unique production defense
+    overlap_evidence: existing tests and added commit paths have no equivalent assertion
+    overlaps_existing: false
+    fixture_self_reference: false
+    deprecated_mechanism: false
+YAML
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PASS: test_necessity"* ]]
+
+  printf 'task:\n  planned_paths: [tests/unit/test_gate_gunshi_report_precheck.bats]\n' > "$task"
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -eq 0 ]
+  printf 'task:\n  planned_paths: [scripts/deploy_task.sh]\n' > "$task"
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -eq 0 ]
+}
