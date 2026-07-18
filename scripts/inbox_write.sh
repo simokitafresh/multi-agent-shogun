@@ -645,6 +645,20 @@ inbox_report_fingerprint() {
     printf '%s' "$fallback_identity" | sha256sum | awk '{print $1}'
 }
 
+inbox_report_revision_fingerprint() {
+    local event_type="$1" action="$2" content="$3"
+    [ "$event_type" = "report_revision" ] || { printf '%s' ''; return 0; }
+    printf '%s\0%s' "$action" "$content" | sha256sum | awk '{print $1}'
+}
+
+inbox_deliver_report_review_generation() {
+    local ninja="$1" report_path="$2" parent_cmd="$3" fingerprint="$4"
+    local report_base="${report_path##*/}"
+    bash "$SELF_SCRIPT_PATH" gunshi \
+        "${ninja}報告完了。レビュー依頼: ${parent_cmd} report=${report_base}" \
+        report_review karo notify_gunshi >/dev/null 2>&1
+}
+
 inbox_extract_cmd_id_for_completion_guard() {
     local content="$1"
     local cmd_id="" report_path=""
@@ -1188,12 +1202,12 @@ PY
 # state and ignores retry text/timestamps. Caller holds the inbox flock, making
 # check+append one transaction for concurrent writers.
 inbox_report_event_duplicate_locked() {
-    local inbox_file="$1" target="$2" event_type="$3" sender="$4" report_id="$5" identity_version="$6" report_fingerprint="$7"
+    local inbox_file="$1" target="$2" event_type="$3" sender="$4" report_id="$5" identity_version="$6" report_fingerprint="$7" revision_fingerprint="${8:-}"
     [ -s "$inbox_file" ] || return 1
     INBOX_EVENT_FILE="$inbox_file" INBOX_EVENT_TARGET="$target" \
     INBOX_EVENT_TYPE="$event_type" INBOX_EVENT_FROM="$sender" \
     INBOX_EVENT_REPORT_ID="$report_id" INBOX_EVENT_VERSION="$identity_version" \
-    INBOX_EVENT_FINGERPRINT="$report_fingerprint" python3 - <<'PY'
+    INBOX_EVENT_FINGERPRINT="$report_fingerprint" INBOX_EVENT_REVISION_FINGERPRINT="$revision_fingerprint" python3 - <<'PY'
 import os, sys, yaml
 try:
     data = yaml.safe_load(open(os.environ["INBOX_EVENT_FILE"], encoding="utf-8")) or {}
@@ -1203,6 +1217,7 @@ wanted = (
     os.environ["INBOX_EVENT_TYPE"], os.environ["INBOX_EVENT_FROM"],
     os.environ["INBOX_EVENT_REPORT_ID"], os.environ["INBOX_EVENT_VERSION"],
     os.environ["INBOX_EVENT_FINGERPRINT"],
+    os.environ["INBOX_EVENT_REVISION_FINGERPRINT"],
 )
 for message in data.get("messages") or []:
     if not isinstance(message, dict):
@@ -1211,6 +1226,7 @@ for message in data.get("messages") or []:
         str(message.get("type", "")), str(message.get("from", "")),
         str(message.get("report_id", "")), str(message.get("report_identity_version", "")),
         str(message.get("report_fingerprint", "")),
+        str(message.get("revision_request_fingerprint", "")),
     )
     if actual == wanted:
         print(str(message.get("id", "")))
@@ -1939,6 +1955,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                 [ -n "$STRUCTURED_TASK_ID" ] || STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$FULL_REPORT" "task_id" "")
                 [ -n "$STRUCTURED_PARENT_CMD" ] || STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$FULL_REPORT" "parent_cmd" "")
                 STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$FULL_REPORT" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
+                STRUCTURED_REVISION_FINGERPRINT=$(inbox_report_revision_fingerprint "$TYPE" "$ACTION" "$CONTENT")
 
                 # Retry fast path: once an event is durable, do not rerun the
                 # expensive report gate or downstream notification chain.
@@ -1947,10 +1964,13 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                 _early_event_id=$(
                     {
                         flock -w 5 201 || exit 1
-                        inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION" "$STRUCTURED_REPORT_FINGERPRINT"
+                        inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION" "$STRUCTURED_REPORT_FINGERPRINT" "$STRUCTURED_REVISION_FINGERPRINT"
                     } 201>"$LOCKFILE" || true
                 )
                 if [ -n "$_early_event_id" ]; then
+                    if [ "$TYPE" = "report_received" ] && [ -n "${FULL_REPORT:-}" ] && [ -n "${STRUCTURED_PARENT_CMD:-}" ]; then
+                        inbox_deliver_report_review_generation "$FROM" "$FULL_REPORT" "$STRUCTURED_PARENT_CMD" "$STRUCTURED_REPORT_FINGERPRINT" || true
+                    fi
                     printf 'DUPLICATE_MSG_ID=%s\n' "$_early_event_id"
                     exit 0
                 fi
@@ -2210,6 +2230,7 @@ fi
 
 _identity_fields=()
 STRUCTURED_REPORT_FINGERPRINT=""
+STRUCTURED_REVISION_FINGERPRINT=""
 case "$TYPE" in
     report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed)
         if [ -z "${STRUCTURED_REPORT_ID:-}" ]; then
@@ -2248,7 +2269,8 @@ case "$TYPE" in
             STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$_structured_candidate" "task_id" "")
             STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$_structured_candidate" "parent_cmd" "")
             STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$_structured_candidate" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
-            _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_fingerprint "$STRUCTURED_REPORT_FINGERPRINT" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
+            STRUCTURED_REVISION_FINGERPRINT=$(inbox_report_revision_fingerprint "$TYPE" "$ACTION" "$CONTENT")
+            _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_fingerprint "$STRUCTURED_REPORT_FINGERPRINT" revision_request_fingerprint "$STRUCTURED_REVISION_FINGERPRINT" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
         fi
         ;;
 esac
@@ -2283,7 +2305,7 @@ while [ $attempt -lt $max_attempts ]; do
         fi
 
         if inbox_type_is_report_lifecycle "$TYPE" && [ -n "${STRUCTURED_REPORT_ID:-}" ]; then
-            _existing_event_id=$(inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION" "$STRUCTURED_REPORT_FINGERPRINT") || _existing_event_id=""
+            _existing_event_id=$(inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION" "$STRUCTURED_REPORT_FINGERPRINT" "$STRUCTURED_REVISION_FINGERPRINT") || _existing_event_id=""
             if [ -n "$_existing_event_id" ]; then
                 printf 'DUPLICATE_MSG_ID=%s\n' "$_existing_event_id"
                 exit 20
@@ -2360,11 +2382,10 @@ while [ $attempt -lt $max_attempts ]; do
                             # shellcheck disable=SC2034  # PROJECT_ROOT is used by sourced gunshi_notify.sh
                             PROJECT_ROOT="$SCRIPT_DIR"
                             # shellcheck source=/dev/null
-                            source "$SCRIPT_DIR/scripts/lib/gunshi_notify.sh"
-                            # Persistence is already durable. Review routing must
-                            # not retain caller pipes or turn report_received
-                            # into a synchronous multi-hop transaction.
-                            ( notify_gunshi_for_report "$FROM" "$REPORT_FULL_PATH" "$_parent_cmd" ) \
+                            # Persistence is already durable. Child review uses
+                            # the same report fingerprint key, so retries repair
+                            # a missing child and suppress an existing child.
+                            ( inbox_deliver_report_review_generation "$FROM" "$REPORT_FULL_PATH" "$_parent_cmd" "$STRUCTURED_REPORT_FINGERPRINT" ) \
                                 </dev/null >/dev/null 2>&1 &
                         fi
 

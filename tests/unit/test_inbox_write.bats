@@ -1083,11 +1083,6 @@ YAML
     grep -q "cmd_test_001" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
     grep -q "testninja" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 
-    for attempt in $(seq 1 50); do
-        [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ] && break
-        sleep 0.1
-    done
-    [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ]
 }
 
 @test "report_received v2 persists structured identity and blocks mismatch" {
@@ -1240,10 +1235,51 @@ parent_cmd: cmd_revision
 YAML
     INBOX_WRITE_TEST=1 run _run_inbox_write testninja "revision one" report_revision karo
     [ "$status" -eq 0 ]
-    INBOX_WRITE_TEST=1 run _run_inbox_write testninja "revision retry changed" report_revision karo
+    INBOX_WRITE_TEST=1 run _run_inbox_write testninja "revision one" report_revision karo
     [ "$status" -eq 0 ]
     [[ "$output" == *DUPLICATE_MSG_ID=* ]]
     [ "$(grep -c "report_id: 'rpt-revision-fixed'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write testninja "revision two" report_revision karo
+    [ "$status" -eq 0 ]
+    [[ "$output" != *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-revision-fixed'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 2 ]
+}
+
+@test "report_received retry repairs one missing fingerprint-specific gunshi review" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-review-repair
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-review-repair
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m review-repair
+
+    run _run_inbox_write karo "report A" report_received testninja
+    [ "$status" -eq 0 ]
+    local attempt
+    for attempt in $(seq 1 50); do
+        grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null && break
+        sleep 0.1
+    done
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+
+    printf 'messages: []\n' > "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    run _run_inbox_write karo "report A retry" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+
+    run _run_inbox_write karo "report A retry again" report_received testninja
+    [ "$status" -eq 0 ]
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
 }
 
 @test "rpt-42363aca 09:42:57 09:43:34 09:44:36 retry shadow stores once" {
@@ -1289,11 +1325,6 @@ YAML
     done
     grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
     grep -q "^  status: done" "$TEST_TMPDIR/queue/tasks/testninja.yaml"
-    for attempt in $(seq 1 50); do
-        [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ] && break
-        sleep 0.1
-    done
-    [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ]
 }
 
 @test "task_assigned: codex ninja delivery verification retries up to 2 times" {
