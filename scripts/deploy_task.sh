@@ -3989,7 +3989,7 @@ PY_MEMORY_REFS
     local _commit_bc=""
     if [ "$_commit_required" = false ]; then
         _commit_bc='  commit:
-  - check: "コード変更・stage/commitを実行していない(no-commit契約)"
+  - check: "commit N/A証跡(commit_contract.required=false/reason/task_type/planned_paths)とコード変更・stage/commitを実行していないことを確認"
     result: ""  # yes or no'
     else
         _commit_bc="  commit:
