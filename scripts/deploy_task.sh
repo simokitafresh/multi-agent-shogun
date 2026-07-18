@@ -3561,7 +3561,11 @@ EOF
         '(scripts/|src/|tests/|app/|lib/|[[:alnum:]_./-]+\.(sh|bash|py|js|jsx|ts|tsx|go|rs|java|kt|rb|php|c|cc|cpp|h|hpp)([^[:alnum:]_]|$))'; then
         _commit_has_code_path=true
     fi
-    if [[ "$_commit_task_type" =~ ^(no[_-]?code|decision|decision_candidate|data[_-]?readonly|readonly|read_only|recon|recon2|scout)$ ]] \
+    local _commit_scope_text="${constraints} ${not_in_scope}"
+    if echo "$_commit_scope_text" | grep -qiE 'コード変更.*禁止|変更.*禁止.*(調査|報告)|no[[:space:]_-]?code|read[[:space:]_-]?only'; then
+        _commit_required=false
+        _commit_reason="explicit_no_code_scope"
+    elif [[ "$_commit_task_type" =~ ^(no[_-]?code|decision|decision_candidate|data[_-]?readonly|readonly|read_only|recon|recon2|scout)$ ]] \
         && [ "$_commit_has_code_path" = false ]; then
         _commit_required=false
         _commit_reason="allowed_no_code_task_type_and_no_code_scope"
@@ -3983,7 +3987,7 @@ PY_MEMORY_REFS
     local _commit_bc=""
     if [ "$_commit_required" = false ]; then
         _commit_bc='  commit:
-  - check: "commit N/A証跡(commit_contract.required=false/reason/task_type/planned_paths)を確認"
+  - check: "コード変更・stage/commitを実行していない(no-commit契約)"
     result: ""  # yes or no'
     else
         _commit_bc="  commit:
@@ -4052,7 +4056,7 @@ PY_MEMORY_REFS
             _cmd_queue_text="${_cmd_queue_text} $(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$_p_parent_cmd" "not_in_scope" 2>/dev/null || true)"
             _cmd_text="${_cmd_text} ${_cmd_queue_text}"
         fi
-        if [ "$_commit_has_code_path" = false ] && echo "$_cmd_text" | grep -qiE 'commit.*禁止|commit一切禁止|コミット.*禁止|コミット一切禁止|将軍.*(commit|コミット|push|プッシュ)|登録.*のみ.*commit'; then
+        if echo "$_cmd_text" | grep -qiE 'commit.*禁止|commit一切禁止|コミット.*禁止|コミット一切禁止|将軍.*(commit|コミット|push|プッシュ)|登録.*のみ.*commit'; then
             _commit_bc=""
             log "binary_checks: commit check skipped (cmd constraint: commit禁止)"
         fi
