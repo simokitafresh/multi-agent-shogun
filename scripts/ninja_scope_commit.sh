@@ -179,8 +179,13 @@ create_and_publish_scoped_commit() {
     git update-ref -m "$message" HEAD "$commit_hash" "$transaction_head"
     # Preserve the observable post-commit contract for repository automation.
     # It runs only after the CAS publication, matching porcelain ordering.
-    env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
-        git hook run post-commit >&2
+    local post_commit_hook
+    post_commit_hook="$(git rev-parse --git-path hooks/post-commit)"
+    if [[ -x "$post_commit_hook" ]]; then
+        env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
+            git hook run post-commit >&2 \
+            || { echo "BLOCK: post-commit hook failed after ref publication" >&2; return 1; }
+    fi
     printf '%s\n' "$commit_hash"
 }
 
