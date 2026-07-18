@@ -30,8 +30,22 @@ print("READY: target_result=GREEN workflow_result=GREEN head_sha=" + expected)
 ' 
 }
 
+# CI is shared at the pushed branch boundary, not at a dirty/shared
+# worktree's local HEAD.  Missing remote refs deliberately resolve to empty;
+# evaluate_ci_readiness_json then fails closed on that empty expectation.
+resolve_ci_expected_head() {
+    local repo_dir="$1"
+    git -C "$repo_dir" rev-parse --verify refs/remotes/origin/main 2>/dev/null \
+        || git -C "$repo_dir" rev-parse --verify refs/remotes/origin/master 2>/dev/null \
+        || true
+}
+
 if [ "${CMD_COMPLETE_GATE_CI_EVAL_ONLY:-0}" = "1" ]; then
     evaluate_ci_readiness_json
+    exit $?
+fi
+if [ "${CMD_COMPLETE_GATE_CI_EXPECTED_HEAD_ONLY:-0}" = "1" ]; then
+    resolve_ci_expected_head "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$PWD}"
     exit $?
 fi
 # cmd_complete_gate.sh — cmd完了時の全ゲートフラグ確認スクリプト（ディレクトリ方式）
@@ -8078,7 +8092,7 @@ if [ "$CI_PUSH_DETECTED" = true ]; then
             --workflow test.yml --branch main --limit 1 \
             --json conclusion,databaseId,headSha 2>/dev/null || true)
     fi
-    expected_head=$(git -C "$SCRIPT_DIR" rev-parse HEAD 2>/dev/null || true)
+    expected_head=$(resolve_ci_expected_head "$SCRIPT_DIR")
     ci_fields=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then [.[0].conclusion // "", (.[0].databaseId // "" | tostring), .[0].headSha // ""] | @tsv else "" end' 2>/dev/null || true)
     IFS=$'\t' read -r ci_conclusion ci_run_id ci_head_sha <<< "$ci_fields"
     target_conclusion=success
