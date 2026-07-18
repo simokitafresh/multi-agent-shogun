@@ -1,6 +1,10 @@
 #!/usr/bin/env bats
 
 setup() {
+  # The outer affected/unit runner exports this aggregate-root marker.  Each
+  # fixture below creates a fresh repository and intentionally exercises a new
+  # checkpoint root, so it must not inherit the outer process boundary.
+  unset RUN_TESTS_ACTIVE
   ROOT="$BATS_TEST_TMPDIR/root"
   mkdir -p "$ROOT/scripts" "$ROOT/tests/unit" "$ROOT/logs"
   cp "$BATS_TEST_DIRNAME/../../scripts/run_tests.sh" "$ROOT/scripts/run_tests.sh"
