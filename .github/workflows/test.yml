@@ -73,6 +73,37 @@ jobs:
           fi
           echo "All tests executed (0 skips)"
 
+      - name: Report bounded test failure evidence
+        if: failure()
+        run: |
+          receipt="$(find logs/test_receipts -maxdepth 1 -type f -name '*.json' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -n 1 | cut -d' ' -f2-)"
+          if [ -z "$receipt" ]; then
+            echo "::error::No test receipt JSON found after unit-test failure"
+            exit 1
+          fi
+          artifact="$(python3 - "$receipt" <<'PY'
+          import json, sys
+          data = json.load(open(sys.argv[1], encoding="utf-8"))
+          print(data.get("artifact", ""))
+          PY
+          )"
+          if [ -z "$artifact" ] || [ ! -f "$artifact" ]; then
+            echo "::error::Receipt output artifact is missing"
+            exit 1
+          fi
+          python3 - "$receipt" <<'PY'
+          import json, sys
+          data = json.load(open(sys.argv[1], encoding="utf-8"))
+          safe = {key: data.get(key) for key in (
+              "version", "complete", "result", "rc", "duration_ms",
+              "declared_test_count", "observed_test_count", "skip_count",
+          )}
+          print("TEST_RECEIPT_SUMMARY " + json.dumps(safe, sort_keys=True))
+          PY
+          echo "TEST_RECEIPT_OUTPUT_TAIL_BEGIN"
+          tail -n 120 "$artifact"
+          echo "TEST_RECEIPT_OUTPUT_TAIL_END"
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v7
@@ -80,6 +111,16 @@ jobs:
           name: unit-test-results
           path: test-results/*.tap
           if-no-files-found: ignore
+
+      - name: Upload test receipts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-receipts
+          path: |
+            logs/test_receipts/*.json
+            logs/test_receipts/*.output
+          if-no-files-found: error
 
   build-check:
     name: Build Instructions Check

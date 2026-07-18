@@ -191,6 +191,56 @@ SH
   grep -Fq 'bash scripts/run_tests.sh all' "$workflow"
 }
 
+@test "CI failure evidence is bounded and receipts are always uploaded" {
+  workflow="$ROOT/.github/workflows/test.yml"
+
+  grep -Fq -- '- name: Report bounded test failure evidence' "$workflow"
+  grep -Fq 'if: failure()' "$workflow"
+  grep -Fq 'tail -n 120 "$artifact"' "$workflow"
+  grep -Fq '"version", "complete", "result", "rc", "duration_ms"' "$workflow"
+  ! grep -Fq 'cat "$artifact"' "$workflow"
+  grep -Fq -- '- name: Upload test receipts' "$workflow"
+  grep -Fq 'if: always()' "$workflow"
+  grep -Fq 'logs/test_receipts/*.json' "$workflow"
+  grep -Fq 'logs/test_receipts/*.output' "$workflow"
+  grep -Fq 'if-no-files-found: error' "$workflow"
+  grep -Fq -- '- name: Verify zero SKIPs (SKIP=FAIL policy)' "$workflow"
+  grep -Fq 'path: test-results/*.tap' "$workflow"
+}
+
+@test "CI failure evidence reports the latest receipt and fails closed when absent" {
+  workflow="$ROOT/.github/workflows/test.yml"
+  python3 - "$workflow" "$TMPROOT/diagnose.sh" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+steps = data["jobs"]["unit-tests"]["steps"]
+script = next(step["run"] for step in steps if step.get("name") == "Report bounded test failure evidence")
+open(sys.argv[2], "w", encoding="utf-8").write(script)
+PY
+  mkdir -p "$TMPROOT/logs/test_receipts"
+  printf 'old\n' >"$TMPROOT/logs/test_receipts/old.output"
+  printf '%s\n' {1..121} >"$TMPROOT/logs/test_receipts/latest.output"
+  python3 - "$TMPROOT/logs/test_receipts/latest.json" "$TMPROOT/logs/test_receipts/latest.output" <<'PY'
+import json, sys
+json.dump({"version": 1, "complete": False, "result": "FAIL", "rc": 1,
+           "duration_ms": 7, "declared_test_count": 2, "observed_test_count": 1,
+           "skip_count": 0, "artifact": sys.argv[2], "command": ["secret-command"]},
+          open(sys.argv[1], "w", encoding="utf-8"))
+PY
+
+  run bash -c 'cd "$1" && bash diagnose.sh' _ "$TMPROOT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'TEST_RECEIPT_SUMMARY'* ]]
+  [[ "$output" == *$'\n2\n'* ]]
+  [[ "$output" != *$'\n1\n'* ]]
+  [[ "$output" != *'secret-command'* ]]
+
+  rm "$TMPROOT/logs/test_receipts/latest.json" "$TMPROOT/logs/test_receipts/latest.output"
+  run bash -c 'cd "$1" && bash diagnose.sh' _ "$TMPROOT"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *'No test receipt JSON found'* ]]
+}
+
 @test "split-file runner fails closed with named evidence when a bats file times out" {
   cat >"$TMPROOT/bin/bats" <<'SH'
 #!/usr/bin/env bash
