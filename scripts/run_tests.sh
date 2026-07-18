@@ -494,6 +494,20 @@ _run_tests_main() {
             bash "$_self" --receipt-inner "$@"
     fi
 
+    # A full/unit/affected runner is a checkpoint root, never a reusable test
+    # helper.  Bats fixtures, hooks, or campaign deployers spawned below this
+    # point inherit RUN_TESTS_ACTIVE; allowing one of them to start another
+    # aggregate scheduler duplicates TAP plans/counts and may leave the nested
+    # admission process group alive after the outer root has completed.  File
+    # mode remains the explicit bounded primitive for focused nested checks.
+    if [[ "${RUN_TESTS_ACTIVE:-0}" == "1" && "${1:-}" != "file" ]]; then
+        echo "BLOCK: nested aggregate run_tests invocation (${1:-all}); use file mode for focused child checks" >&2
+        return 2
+    fi
+    if [[ "${1:-all}" != "file" ]]; then
+        export RUN_TESTS_ACTIVE=1
+    fi
+
     guard_fixture_symlink_write_through
     sweep_stale_embedded_test_tmp
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env bats
 
 setup() {
+  # This file deliberately launches isolated aggregate runner fixtures.  They
+  # are new checkpoint roots, not accidental children of the outer CI runner.
+  unset RUN_TESTS_ACTIVE
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   TMPROOT="$(mktemp -d)"
   mkdir -p "$TMPROOT/scripts" "$TMPROOT/tests/unit" "$TMPROOT/bin" "$TMPROOT/logs"
@@ -19,6 +22,17 @@ SH
   git -C "$TMPROOT" config user.name test
   git -C "$TMPROOT" add scripts tests
   git -C "$TMPROOT" commit -qm init
+}
+
+@test "nested aggregate runner fails closed while focused file mode remains allowed" {
+  run env RUN_TESTS_ACTIVE=1 SHOGUN_HEAVY_JOB_LOCK_HELD=1 REPO_ROOT="$TMPROOT" \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner all
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: nested aggregate run_tests invocation"* ]]
+
+  run env RUN_TESTS_ACTIVE=1 SHOGUN_HEAVY_JOB_LOCK_HELD=1 REPO_ROOT="$TMPROOT" PATH="$TMPROOT/bin:$PATH" \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner file "$TMPROOT/tests/unit/sample.bats"
+  [ "$status" -eq 0 ]
 }
 
 teardown() { rm -rf "$TMPROOT"; }
