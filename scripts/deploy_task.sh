@@ -8044,6 +8044,11 @@ def normalize(path):
         path = os.path.join(script_dir, path)
     return os.path.normpath(path)
 
+def reserved_paths(task):
+    # target_path is the primary scope, while planned_paths records every file
+    # the task expects to touch.  Both are one reservation contract.
+    return paths_from(task.get('target_path')) + paths_from(task.get('planned_paths'))
+
 def split_file_targets(paths):
     file_targets = set()
     dir_targets = set()
@@ -8051,14 +8056,16 @@ def split_file_targets(paths):
         norm = normalize(path)
         if not norm:
             continue
-        if os.path.isfile(norm):
-            file_targets.add(norm)
-        elif os.path.isdir(norm):
+        if os.path.isdir(norm):
             dir_targets.add(norm)
+        else:
+            # A planned file need not exist yet.  Reserving it before creation
+            # prevents two active tasks from concurrently creating/editing it.
+            file_targets.add(norm)
     return file_targets, dir_targets
 
 current_task = load_task(task_file)
-current_files, current_dirs = split_file_targets(paths_from(current_task.get('target_path')))
+current_files, current_dirs = split_file_targets(reserved_paths(current_task))
 if not current_files and not current_dirs:
     sys.exit(0)
 
@@ -8076,7 +8083,7 @@ for name in sorted(os.listdir(task_dir)) if os.path.isdir(task_dir) else []:
     status = str(peer_task.get('status') or '').strip()
     if status not in active_statuses:
         continue
-    peer_files, peer_dirs = split_file_targets(paths_from(peer_task.get('target_path')))
+    peer_files, peer_dirs = split_file_targets(reserved_paths(peer_task))
     file_overlap = sorted(current_files & peer_files)
     dir_overlap = sorted(current_dirs & peer_dirs)
     if file_overlap:
@@ -8094,7 +8101,7 @@ for peer_ninja, status, parent_cmd, overlap in dir_infos:
 if collisions:
     for peer_ninja, status, parent_cmd, overlap in collisions:
         print(
-            f'BLOCK: target_path collision with {peer_ninja} '
+            f'BLOCK: reserved path collision with {peer_ninja} '
             f'(status={status}, parent_cmd={parent_cmd or "unknown"}): {", ".join(overlap)}',
             file=sys.stderr,
         )

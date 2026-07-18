@@ -117,6 +117,67 @@ EOF
     [[ "$output" != *"WARN:"* ]]
 }
 
+run_path_collision_guard() {
+    local task_file="$1" ninja_name="$2"
+    run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; deploy_task_guard_target_path_collision "$2" "$3"' _ "$TEST_PROJECT" "$task_file" "$ninja_name"
+}
+
+write_collision_task() {
+    local ninja="$1" status="$2" target="$3" planned="$4"
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+    cat > "$TEST_PROJECT/queue/tasks/${ninja}.yaml" <<EOF
+task:
+  parent_cmd: cmd_${ninja}
+  status: ${status}
+  target_path: ${target}
+  planned_paths:
+  - ${planned}
+EOF
+}
+
+@test "active tasks with different target_path BLOCK on normalized planned_paths overlap" {
+    write_collision_task sasuke in_progress scripts/a.sh tests/unit/shared.bats
+    write_collision_task hanzo assigned scripts/b.sh ./tests/unit/../unit/shared.bats
+
+    run_path_collision_guard "$TEST_PROJECT/queue/tasks/hanzo.yaml" hanzo
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: reserved path collision with sasuke"* ]]
+    [[ "$output" == *"tests/unit/shared.bats"* ]]
+}
+
+@test "terminal planned_paths release reservation and disjoint active paths pass" {
+    local state
+    for state in done failed idle; do
+        write_collision_task sasuke "$state" scripts/a.sh tests/unit/shared.bats
+        write_collision_task hanzo assigned scripts/b.sh tests/unit/shared.bats
+        run_path_collision_guard "$TEST_PROJECT/queue/tasks/hanzo.yaml" hanzo
+        [ "$status" -eq 0 ]
+    done
+
+    write_collision_task sasuke in_progress scripts/a.sh tests/unit/other.bats
+    write_collision_task hanzo assigned scripts/b.sh tests/unit/shared.bats
+    run_path_collision_guard "$TEST_PROJECT/queue/tasks/hanzo.yaml" hanzo
+    [ "$status" -eq 0 ]
+}
+
+@test "direct prewrite guard BLOCK leaves existing task YAML byte-identical" {
+    write_collision_task sasuke in_progress scripts/a.sh tests/unit/shared.bats
+    write_collision_task hanzo idle scripts/existing.sh tests/unit/existing.bats
+    local before candidate
+    before="$(sha256sum "$TEST_PROJECT/queue/tasks/hanzo.yaml" | awk '{print $1}')"
+    candidate="$BATS_TEST_TMPDIR/direct-candidate.yaml"
+    cat > "$candidate" <<'EOF'
+task:
+  target_path: scripts/b.sh
+  planned_paths:
+  - tests/unit/shared.bats
+EOF
+
+    run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; DIRECT_MODE=true; deploy_task_guard_direct_yaml_prewrite_collision "$2" hanzo' _ "$TEST_PROJECT" "$candidate"
+    [ "$status" -eq 1 ]
+    [ "$(sha256sum "$TEST_PROJECT/queue/tasks/hanzo.yaml" | awk '{print $1}')" = "$before" ]
+}
+
 @test "Codex delayed re-nudge sends inboxN directly without inbox_write" {
     mkdir -p "$TEST_PROJECT/queue/inbox"
     cat > "$TEST_PROJECT/queue/inbox/sasuke.yaml" <<'EOF'
