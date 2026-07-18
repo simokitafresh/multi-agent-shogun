@@ -1299,6 +1299,37 @@ YAML
     [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
 }
 
+@test "completion aliases converge on one review per report fingerprint across ten deliveries" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-two-route-review
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-two-route-review
+report_identity_version: 2
+task_id: cmd_two_route_normal
+parent_cmd: cmd_two_route
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m two-route-review
+
+    local i event_type
+    for i in $(seq 1 10); do
+        if (( i % 2 )); then event_type=report_received; else event_type=report_submitted; fi
+        run _run_inbox_write karo "route-$i" "$event_type" testninja
+        [ "$status" -eq 0 ]
+    done
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+
+    printf '\nsemantic_generation: 2\n' >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+    run _run_inbox_write karo "new generation" report_received testninja
+    [ "$status" -eq 0 ]
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+    [ "$(grep "^  report_fingerprint:" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" | sort -u | wc -l)" -eq 2 ]
+}
+
 @test "rpt-42363aca 09:42:57 09:43:34 09:44:36 retry shadow stores once" {
     setup_git_test_env
     local report="queue/reports/testninja_report_cmd_test_001.yaml"
