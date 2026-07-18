@@ -15,16 +15,38 @@ CAMPAIGN_BUDGET_SEC=600
 test_hygiene_evaluate() {
     local inventory="${TEST_HYGIENE_INVENTORY:-$ROOT/docs/research/ci-test-elimination-inventory-20260719.csv}"
     local push_wall="${TEST_HYGIENE_PUSH_WALL_SEC:-0}" new_tests="${TEST_HYGIENE_NEW_TESTS_7D:-0}"
+    local hygiene_root="${TEST_HYGIENE_ROOT:-$ROOT}" new_list="${TEST_HYGIENE_NEW_TEST_LIST:-}"
     [ -r "$inventory" ] || { echo "BLOCK:test_hygiene_inventory_missing" >&2; return 2; }
-    python3 - "$inventory" "$push_wall" "$new_tests" <<'PY'
-import csv, json, sys
-path, wall_raw, new_raw = sys.argv[1:]
+    python3 - "$inventory" "$push_wall" "$new_tests" "$hygiene_root" "$new_list" <<'PY'
+import csv, json, os, re, subprocess, sys
+path, wall_raw, new_raw, root, new_list = sys.argv[1:]
 rows = list(csv.DictReader(open(path, encoding="utf-8", newline="")))
-total = len(rows)
-undeclared = [r for r in rows if r.get("classification") != "push-maintain"]
+present = [r for r in rows if os.path.isfile(os.path.join(root, r.get("test_file", "")))]
+undeclared = [r for r in present if r.get("classification") != "push-maintain"]
 fail_zero = [r for r in undeclared if r.get("fail_30d") in {"0", "zero", "fail0"}]
 wall = float(wall_raw); new_tests = int(new_raw)
-declaration_rate = (total - len(undeclared)) * 100.0 / total if total else 0.0
+files = sorted({r.get("test_file", "") for r in present if r.get("test_file")})
+if new_list:
+    try: recent_files = set(open(new_list, encoding="utf-8").read().splitlines())
+    except OSError: recent_files = set()
+else:
+    try:
+        out = subprocess.run(["git", "-C", root, "log", "--since=7.days", "--diff-filter=A", "--name-only", "--format="],
+                             check=True, capture_output=True, text=True, timeout=3).stdout
+        recent_files = {line for line in out.splitlines() if line.startswith("tests/")}
+    except Exception: recent_files = set()
+quality_pass = 0
+for rel in sorted(set(files) & recent_files):
+    try: text = open(f"{root}/{rel}", encoding="utf-8").read()
+    except OSError: continue
+    match = re.search(r"(?m)^# test_necessity:\s*(\S.*)$", text)
+    if not match: continue
+    claim = match.group(1).strip()
+    # A filename, generic quality word, or short label is a formal declaration,
+    # not an invariant. Require subject + enforced behavior + failure boundary.
+    if len(claim) >= 30 and re.search(r"(BLOCK|FAIL|SKIP|exactly|原子的|混入|重複|欠落|不変量|恒久化)", claim):
+        quality_pass += 1
+declaration_rate = quality_pass * 100.0 / new_tests if new_tests else 0.0
 fail_zero_rate = len(fail_zero) * 100.0 / len(undeclared) if undeclared else 0.0
 reasons = []
 if wall > 170: reasons.append("push_wall_gt_170")
@@ -33,7 +55,8 @@ if new_tests > 50: reasons.append("new_tests_gt_50_per_week")
 if declaration_rate > 30: reasons.append("declaration_rate_gt_30")
 print(json.dumps({"trigger": bool(reasons), "reasons": reasons, "push_wall_sec": wall,
  "fail_zero_rate": round(fail_zero_rate, 3), "new_tests_7d": new_tests,
- "declaration_rate": round(declaration_rate, 3), "undeclared_cases": len(undeclared)}, sort_keys=True))
+ "declaration_rate": round(declaration_rate, 3), "declaration_quality_pass_files": quality_pass,
+ "present_inventory_files": len(files), "undeclared_present": len(undeclared)}, sort_keys=True))
 PY
 }
 
@@ -284,9 +307,12 @@ print(str(json.loads(sys.argv[1])["trigger"]).lower())
 PY
     tmp=$(mktemp); trap 'rm -f "$tmp"' EXIT
     python3 - "$tmp" "$metrics" <<'PY'
-import json,sys
+import datetime,json,sys
 out,metrics=sys.argv[1:]
-task={"task":{"project":"infra","task_type":"test_hygiene","status":"assigned",
+stamp=datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M%S")
+task_id=f"cmd_training_test_hygiene_{stamp}"
+task={"task":{"parent_cmd":task_id,"task_id":task_id,"project":"infra","task_type":"test_hygiene","status":"assigned",
+ "report_filename":f"test_hygiene_report_{task_id}.yaml","report_path":f"queue/reports/test_hygiene_report_{task_id}.yaml",
  "purpose":"Remove undeclared permanent tests selected by measured hygiene thresholds",
  "hygiene_metrics":json.loads(metrics),"acceptance_criteria":[
  {"id":"AC1","description":"Every retained test has a concrete test_necessity invariant"},
@@ -294,7 +320,7 @@ task={"task":{"project":"infra","task_type":"test_hygiene","status":"assigned",
 with open(out,"w",encoding="utf-8") as f:
  json.dump(task,f,ensure_ascii=False,sort_keys=True,indent=2); f.write("\n")
 PY
-    bash "$ROOT/scripts/deploy_task.sh" --direct --yaml "$tmp" "$ninja"
+    "${DEPLOY_TASK:-$ROOT/scripts/deploy_task.sh}" --direct --yaml "$tmp" "$ninja"
     ;;
   next) next_target ;;
   generate) generate ;;
