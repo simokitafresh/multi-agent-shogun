@@ -656,6 +656,70 @@ HOOK
     [ -z "$(git -C "$REPO" status --porcelain -- own.txt)" ]
 }
 
+@test "foreign active index lock after HEAD publication is retried and foreign stage is preserved" {
+    printf 'own change\n' >> "$REPO/own.txt"
+    printf 'foreign change\n' >> "$REPO/other.txt"
+    mkdir -p "$REPO/.git/hooks"
+cat > "$REPO/.git/hooks/post-commit" <<'HOOK'
+#!/usr/bin/env bash
+(
+    cp .git/index .git/foreign-index
+    GIT_INDEX_FILE=.git/foreign-index git add other.txt
+    mv .git/foreign-index .git/index.lock
+    exec 9>>.git/index.lock
+    sleep 0.15
+    mv .git/index.lock .git/index
+) </dev/null >.git/foreign-writer.log 2>&1 &
+for _ in $(seq 1 100); do
+    [[ -e .git/index.lock ]] && exit 0
+    sleep 0.01
+done
+exit 1
+HOOK
+    chmod +x "$REPO/.git/hooks/post-commit"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_INDEX_RETRY_ATTEMPTS=100 NINJA_SCOPE_COMMIT_INDEX_RETRY_DELAY=0.01 bash "$2" -m foreign-lock -- own.txt' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    hash="$(printf '%s\n' "$output" | tail -1)"
+    [[ "$hash" =~ ^[0-9a-f]{40}$ ]]
+    [ "$(git -C "$REPO" diff --cached --name-only)" = other.txt ]
+    [ -z "$(git -C "$REPO" status --porcelain -- own.txt)" ]
+    [[ "$output" == *"event=terminal_receipt"* ]]
+}
+
+@test "foreign active index lock retry exhaustion emits durable commit receipt" {
+    printf 'own change\n' >> "$REPO/own.txt"
+    mkdir -p "$REPO/.git/hooks"
+    cat > "$REPO/.git/hooks/post-commit" <<'HOOK'
+#!/usr/bin/env bash
+(
+    exec 9>.git/index.lock
+    sleep 1
+    rm -f .git/index.lock
+) </dev/null >.git/foreign-writer.log 2>&1 &
+for _ in $(seq 1 100); do
+    [[ -e .git/index.lock ]] && exit 0
+    sleep 0.01
+done
+exit 1
+HOOK
+    chmod +x "$REPO/.git/hooks/post-commit"
+    run_id="foreign-timeout-$BATS_TEST_NUMBER"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_RUN_ID="$3" NINJA_SCOPE_COMMIT_INDEX_RETRY_ATTEMPTS=2 NINJA_SCOPE_COMMIT_INDEX_RETRY_DELAY=0.01 bash "$2" -m foreign-timeout -- own.txt' _ "$REPO" "$HELPER" "$run_id"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK: shared index did not converge after 2 attempts"* ]]
+    event="$(printf '%s\n' "$output" | grep '^event=failed ')"
+    hash="$(printf '%s\n' "$event" | sed -n 's/.* commit_hash=\([0-9a-f]\{40\}\).*/\1/p')"
+    [[ "$hash" =~ ^[0-9a-f]{40}$ ]]
+    receipt="$(printf '%s\n' "$output" | sed -n 's/.* receipt=\([^ ]*\).*/\1/p' | tail -1)"
+    [ -s "$receipt" ]
+    grep -qx "commit_hash=$hash" "$receipt"
+    grep -qx 'rc=1' "$receipt"
+}
+
 @test "存在しないpathはBLOCKする" {
     run bash -c "cd '$REPO' && bash '$HELPER' -m missing -- absent.txt"
     [ "$status" -eq 2 ]

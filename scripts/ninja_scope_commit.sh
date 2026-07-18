@@ -198,6 +198,7 @@ phase_order=(read_tree add scope_sync guard git_commit advance_shared_index post
 current_phase="read_tree"
 phase_started_epoch_ms="$lock_acquired_epoch_ms"
 terminal_event_emitted=false
+published_commit_hash=""
 telemetry_overhead_us=0
 telemetry_clock_calls=0
 singleflight_receipt=""
@@ -251,10 +252,18 @@ publish_terminal_failure() {
     for phase in "${phase_order[@]}"; do sum=$((sum + ${phase_wall_ms[$phase]:-0})); done
     total=$((finished - lock_acquired_epoch_ms))
     unattributed=$((total - sum))
-    printf 'event=failed lock_wait_ms=%s acquired_at=%s finished_at=%s last_phase=%s rc=%s phase_total_ms=%s phase_unattributed_ms=%s telemetry_overhead_ms=%s telemetry_clock_calls=%s' \
-        "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished" "$current_phase" "$rc" "$sum" "$unattributed" "$(((telemetry_overhead_us + 999) / 1000))" "$telemetry_clock_calls" >&2
+    printf 'event=failed lock_wait_ms=%s acquired_at=%s finished_at=%s last_phase=%s rc=%s commit_hash=%s phase_total_ms=%s phase_unattributed_ms=%s telemetry_overhead_ms=%s telemetry_clock_calls=%s' \
+        "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished" "$current_phase" "$rc" "${published_commit_hash:-none}" "$sum" "$unattributed" "$(((telemetry_overhead_us + 999) / 1000))" "$telemetry_clock_calls" >&2
     phase_fields >&2
     printf '\n' >&2
+    if [[ -n "$singleflight_receipt" && -n "$published_commit_hash" ]]; then
+        receipt_tmp="${singleflight_receipt}.tmp.$$"
+        printf 'version=2\nkey=%s\nrc=%s\ncommit_hash=%s\nfinished_at=%s\nlast_phase=%s\n' \
+            "$singleflight_key" "$rc" "$published_commit_hash" "$finished" "$current_phase" > "$receipt_tmp"
+        mv -f -- "$receipt_tmp" "$singleflight_receipt"
+        printf 'event=terminal_receipt role=%s key=%s rc=%s commit_hash=%s receipt=%s\n' \
+            "$singleflight_role" "$singleflight_key" "$rc" "$published_commit_hash" "$singleflight_receipt" >&2
+    fi
     terminal_event_emitted=true
 }
 trap 'publish_terminal_failure "$?"' EXIT
@@ -326,21 +335,34 @@ if [[ -e "$shared_index_lock" ]]; then
 fi
 
 advance_shared_index_entry() {
-    local path="$1" expected_entry="$2" current_entry new_blob new_mode
-    current_entry="$(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -- "$path" | awk '$3 == 0 {print $1 " " $2; exit}')"
-    if [[ "$current_entry" != "$expected_entry" ]]; then
-        echo "WARN: shared index changed concurrently; preserving newer staged entry: $path" >&2
-        return 0
-    fi
-    if git cat-file -e "HEAD:$path" 2>/dev/null; then
-        new_blob="$(git rev-parse "HEAD:$path")"
-        new_mode="$(git ls-tree HEAD -- "$path" | awk 'NR==1 {print $1}')"
-        [[ "$current_entry" == "$new_mode $new_blob" ]] && return 0
-        GIT_INDEX_FILE="$shared_index_file" git update-index --add --cacheinfo "$new_mode,$new_blob,$path"
-    else
-        [[ -z "$current_entry" ]] && return 0
-        GIT_INDEX_FILE="$shared_index_file" git update-index --force-remove -- "$path"
-    fi
+    local path="$1" expected_entry="$2" current_entry new_blob new_mode attempt
+    local attempts="${NINJA_SCOPE_COMMIT_INDEX_RETRY_ATTEMPTS:-50}"
+    local delay="${NINJA_SCOPE_COMMIT_INDEX_RETRY_DELAY:-0.02}"
+    [[ "$attempts" =~ ^[1-9][0-9]*$ ]] \
+        || { echo "BLOCK: index retry attempts must be a positive integer" >&2; return 2; }
+    for ((attempt=1; attempt<=attempts; attempt++)); do
+        current_entry="$(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -- "$path" | awk '$3 == 0 {print $1 " " $2; exit}')"
+        if [[ "$current_entry" != "$expected_entry" ]]; then
+            echo "WARN: shared index changed concurrently; preserving newer staged entry: $path" >&2
+            return 0
+        fi
+        if git cat-file -e "HEAD:$path" 2>/dev/null; then
+            new_blob="$(git rev-parse "HEAD:$path")"
+            new_mode="$(git ls-tree HEAD -- "$path" | awk 'NR==1 {print $1}')"
+            [[ "$current_entry" == "$new_mode $new_blob" ]] && return 0
+            if GIT_INDEX_FILE="$shared_index_file" git update-index --add --cacheinfo "$new_mode,$new_blob,$path" 2>/dev/null; then
+                return 0
+            fi
+        else
+            [[ -z "$current_entry" ]] && return 0
+            if GIT_INDEX_FILE="$shared_index_file" git update-index --force-remove -- "$path" 2>/dev/null; then
+                return 0
+            fi
+        fi
+        ((attempt < attempts)) && sleep "$delay"
+    done
+    echo "BLOCK: shared index did not converge after $attempts attempts: $path" >&2
+    return 1
 }
 
 # GA-222: scope path正規化はscripts/lib/scope_path.sh(SSOT)に集約する。
@@ -556,6 +578,7 @@ PY
     begin_phase git_commit
     assert_head_generation
     commit_hash="$(create_and_publish_scoped_commit)"
+    published_commit_hash="$commit_hash"
     assert_single_parent_commit "$commit_hash"
     # HEAD更新後、共有indexの対象pathだけを新HEADへ追随させる。他pathのstageは
     # 一切変更せず、対象pathが旧HEAD由来の逆差分として残るindex汚染を防ぐ。
@@ -702,6 +725,7 @@ finish_phase 0
 begin_phase git_commit
 assert_head_generation
 commit_hash="$(create_and_publish_scoped_commit)"
+published_commit_hash="$commit_hash"
 assert_single_parent_commit "$commit_hash"
 mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
 finish_phase 0
