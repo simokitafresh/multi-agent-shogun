@@ -186,6 +186,8 @@ ToBe達成時の自動成長速度は、局所倍率の積ではなく同一coho
 - **収集(家老案A採用)**: `queue/retro/`にappend-only蓄積。家老nudgeは送らない(逐次反応を構造的に防止)。batch_readyは「未処理6件」or「最古30分」or「C1最終checkpoint直前」の最初の境界で1回だけ生成。event_id/parent_report_idでexactly-once dedup。家老はbatch 1件としてMECE分類→既存issueへmerge→新規issueのみ台帳追記。即時割込み例外はdata loss/security/CI RED/destructive safetyの4種のみ
 - **ACやreport templateには混ぜない**(分離原則)
 - C1のbaseline計測(§8 Step 1)のN≧5サンプルもこの経路で自動蓄積される
+- **信号純度改良(2026-07-18 21:14将軍承認・blt_20260718_211411)**: 無条件全件enqueueは正常task(見積内完了)まで調査負債化させた(pending 53件実測、戸毘猿9分16秒=見積62%の正常taskも対象化)。enqueue条件を二値閾値へ限定 — `elapsed>estimated` または `blocked-agent-seconds上位` のみ。identityでexactly-once、timestamp欠損はslow扱いせず`measurement_missing`へ分離。既存pending 53件は閾値適用で棚卸し
+- **実績**: 本日の律速発見の主要部(test runner 26分/38分、precommit 113s/150s=75%、P1 worktree待機70%、P2報告摩擦78.9%)は全て本経路の忍者直後分析由来。retro出力はB0台帳→blocked-agent-seconds順位付け→§8.2自動閉ループの選定材料へ直結し、自動改善サイクルの入力センサーとして機能している(殿発案2026-07-18 15:02採用)
 
 横断品質保証: 全Waveを通じてFAIL=0/SKIP=0/FP=0/FN=0/duplicate=0/通知喪失=0/安全境界低下=0。速度目標だけでPASSにしない。
 
