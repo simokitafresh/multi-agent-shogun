@@ -14,10 +14,15 @@ if [[ -z "$REPO_ROOT" ]]; then
     unset _git_pre_commit_self
 fi
 
+# Timing persistence is best-effort and must never participate in the
+# synchronous allow/BLOCK decision.
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+source "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh"
+
 # One monotonic-in-process clock and one terminal receipt make every commit
 # diagnosable without adding external telemetry I/O to this hot path.
 declare -A _PRECOMMIT_STEP_MS=() _PRECOMMIT_STEP_RC=()
-_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast instruction_sync semantic)
+_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast instruction_sync codd_context_freshness semantic)
 _PRECOMMIT_COMMAND_ID="${NINJA_COMMIT_COMMAND_ID:-${COMMAND_ID:-precommit-$$}}"
 _PRECOMMIT_STARTED_US="${EPOCHREALTIME/./}"
 _PRECOMMIT_TERMINAL_EMITTED=false
@@ -40,7 +45,8 @@ precommit_step_end() {
 }
 
 precommit_terminal_receipt() {
-    local rc="${1:-0}" finished_us total_ms step
+    local rc="${1:-0}" finished_us total_ms step step_rc step_verdict
+    local -a timing_events=()
     [[ "$_PRECOMMIT_TERMINAL_EMITTED" == false ]] || return 0
     precommit_epoch_us finished_us
     total_ms=$(((finished_us - _PRECOMMIT_STARTED_US + 999) / 1000))
@@ -49,7 +55,14 @@ precommit_terminal_receipt() {
     for step in "${_PRECOMMIT_STEP_ORDER[@]}"; do
         printf ' %s_ms=%s %s_rc=%s' "$step" "${_PRECOMMIT_STEP_MS[$step]:-0}" \
             "$step" "${_PRECOMMIT_STEP_RC[$step]:-0}" >&2
+        if [[ -v "_PRECOMMIT_STEP_RC[$step]" ]]; then
+            step_rc="${_PRECOMMIT_STEP_RC[$step]}"
+            step_verdict="$([[ "$step_rc" -eq 0 ]] && echo PASS || echo BLOCK)"
+            timing_events+=(git_pre_commit "$step" "${_PRECOMMIT_STEP_MS[$step]}" \
+                "$step_verdict" "${_PRECOMMIT_COMMAND_ID}-${step}")
+        fi
     done
+    defense_overhead_write_batch_async "${timing_events[@]}" || true
     printf '\n' >&2
     _PRECOMMIT_TERMINAL_EMITTED=true
 }

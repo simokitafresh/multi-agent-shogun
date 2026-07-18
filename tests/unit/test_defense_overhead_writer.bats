@@ -46,9 +46,25 @@ PY
   [ "$status" -eq 0 ] && [ "$output" = preserved ]
 }
 
+@test "batch async writer emits complete unique events through one caller" {
+  defense_overhead_write_batch_async test one 1 PASS batch-1 test two 2 BLOCK batch-2
+  for _ in $(seq 1 100); do
+    [ -f "$DEFENSE_OVERHEAD_LEDGER" ] && [ "$(wc -l < "$DEFENSE_OVERHEAD_LEDGER")" -eq 2 ] && break
+    sleep 0.02
+  done
+  python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
+import json, sys
+rows=[json.loads(x) for x in open(sys.argv[1])]
+assert len(rows)==2 and {r['event_id'] for r in rows}=={'batch-1','batch-2'}
+assert {r['verdict'] for r in rows}=={'PASS','BLOCK'}
+PY
+}
+
 @test "production callers source and invoke the common async writer" {
   run grep -c 'defense_overhead_write_async' scripts/deploy_task.sh
   [ "$status" -eq 0 ] && [ "$output" -ge 1 ]
   run grep -c 'defense_overhead_write_async' scripts/gates/gate_gunshi_report_precheck.sh
+  [ "$status" -eq 0 ] && [ "$output" -ge 1 ]
+  run grep -c 'defense_overhead_write_batch_async' scripts/hooks/git-pre-commit.sh
   [ "$status" -eq 0 ] && [ "$output" -ge 1 ]
 }

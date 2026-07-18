@@ -47,3 +47,17 @@ defense_overhead_write_async() {
     ( defense_overhead_write "$@" ) >/dev/null 2>&1 &
     return 0
 }
+
+# Submit multiple five-field events through one detached subshell so hot-path
+# callers pay one fork regardless of the number of timing checkpoints.
+defense_overhead_write_batch_async() {
+    [ "${DEFENSE_OVERHEAD_ENABLED:-1}" = "1" ] || return 0
+    [ $(( $# % 5 )) -eq 0 ] || return 0
+    (
+        while [ "$#" -ge 5 ]; do
+            defense_overhead_write "$1" "$2" "$3" "$4" "$5" || true
+            shift 5
+        done
+    ) >/dev/null 2>&1 &
+    return 0
+}

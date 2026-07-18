@@ -17,6 +17,7 @@ setup() {
         "$TEST_ROOT/queue/tasks" "$TEST_ROOT/queue/reports" "$TEST_ROOT/logs"
 
     cp "$SOURCE_HOOK" "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
+    cp "$PROJECT_ROOT/scripts/lib/defense_overhead_writer.sh" "$TEST_ROOT/scripts/lib/defense_overhead_writer.sh"
     chmod +x "$TEST_ROOT/scripts/hooks/git-pre-commit.sh"
 
     cat > "$TEST_ROOT/scripts/build_instructions.sh" <<'EOF'
@@ -89,11 +90,27 @@ EOF
 }
 
 teardown() {
-    [ -n "${TEST_ROOT:-}" ] && [ -d "$TEST_ROOT" ] && rm -rf "$TEST_ROOT"
+    [ -n "${TEST_ROOT:-}" ] && [ -d "$TEST_ROOT" ] || return 0
+    local attempt
+    for attempt in $(seq 1 50); do
+        rm -rf "$TEST_ROOT" 2>/dev/null && return 0
+        sleep 0.02
+    done
+    return 1
 }
 
 run_hook() {
-    run bash -c 'cd "$1" && SEMANTIC_HOOK_SYNC=1 bash scripts/hooks/git-pre-commit.sh' -- "$TEST_ROOT"
+    run bash -c 'cd "$1" && COMMAND_ID="${COMMAND_ID:-test-precommit}" DEFENSE_OVERHEAD_LEDGER="${DEFENSE_OVERHEAD_LEDGER:-$1/logs/defense_overhead.jsonl}" SEMANTIC_HOOK_SYNC=1 bash scripts/hooks/git-pre-commit.sh' -- "$TEST_ROOT"
+}
+
+wait_for_defense_events() {
+    local expected="$1" attempt count=0
+    for attempt in $(seq 1 100); do
+        count=$(wc -l < "$TEST_ROOT/logs/defense_overhead.jsonl" 2>/dev/null || printf '0')
+        [ "$count" -ge "$expected" ] && return 0
+        sleep 0.02
+    done
+    return 1
 }
 
 @test "blocks yaml dump in staged python additions and records hook failure" {
@@ -163,6 +180,44 @@ EOF
     [[ "$output" == *"result=success rc=0"* ]]
     [[ "$output" == *"staged_snapshot_ms="* ]]
     [[ "$output" == *"semantic_rc=0"* ]]
+}
+
+@test "successful hook writes one complete unique event for every executed timing step" {
+    printf '\nprint("timed")\n' >> "$TEST_ROOT/tool.py"
+    (cd "$TEST_ROOT" && git add tool.py)
+
+    COMMAND_ID=timed-success run_hook
+
+    [ "$status" -eq 0 ]
+    wait_for_defense_events 8
+    python3 - "$TEST_ROOT/logs/defense_overhead.jsonl" <<'PY'
+import json, sys
+rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8")]
+assert len(rows) == 8
+assert len({row["event_id"] for row in rows}) == 8
+assert {row["check_id"] for row in rows} == {
+    "self_sync", "staged_snapshot", "test_granularity", "task_scope",
+    "yaml_ast", "instruction_sync", "codd_context_freshness", "semantic",
+}
+assert all(set(row) == {"timestamp", "source", "check_id", "wall_ms", "verdict", "event_id"} for row in rows)
+assert all(row["source"] == "git_pre_commit" and row["verdict"] == "PASS" for row in rows)
+PY
+}
+
+@test "writer failure cannot change synchronous PASS or BLOCK decisions" {
+    printf '\nprint("pass despite writer")\n' >> "$TEST_ROOT/tool.py"
+    (cd "$TEST_ROOT" && git add tool.py)
+    DEFENSE_OVERHEAD_LEDGER=/proc/forbidden/events.jsonl run_hook
+    [ "$status" -eq 0 ]
+
+    cat >> "$TEST_ROOT/tool.py" <<'PY'
+import yaml
+yaml.safe_dump({}, open("queue/tasks/blocked.yaml", "w"))
+PY
+    (cd "$TEST_ROOT" && git add tool.py)
+    DEFENSE_OVERHEAD_LEDGER=/proc/forbidden/events.jsonl run_hook
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCKED: yaml.dump/yaml.safe_dump detected in staged files"* ]]
 }
 
 @test "GP-136 blocks all operational YAML write sinks and reports targets" {
