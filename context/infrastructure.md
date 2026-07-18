@@ -813,7 +813,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 | pane表示制限 | Claude CLI v2.1.201が`alternate_on=1`(alternate screen buffer)を使用。`capture-pane -S -500`で画面内の行しか取得できず、Androidアプリのpane遡りが不可能。pinned 2.1.87(`alternate_on=0`)とCodexは正常。回避策: pinned版維持 or `tmux set -g terminal-overrides "xterm*:smcup@:rmcup@"`(未検証)。調査: 2026-07-07 [[LS081_alternate_screen]] |
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1198 -->
+<!-- last_synced_lesson: L1202 -->
 
 - L795: 外部repo commitをsplit contextへ自動分類して鮮度gateの事後検出を減らす（cmd_karo_hotfix_context_freshness_ga160_202607020443）
 - L829: 外部repo(DM-signal等)への新規Pythonスクリプト作成時、sys.path等に絶対パス(/mnt/c/...)を直書きするとGuard16(操作的オントロジー)がBLOCKする。プロジェクト相対解決で書け（cmd_3763）
@@ -1723,6 +1723,10 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1196: shard終端は報告でなくworkdir実体を再検証（cmd_4039）
 - L1197: retry dedupeはcontentでなくdomain event identityをflock内で比較する（cmd_karo_hotfix_report_event_idempotency_202607181004）
 - L1198: fixture symlinkへstubを書かず隔離先を外してから生成する（cmd_karo_hotfix_prompt_event_identity_replay_202607181120）
+- L1199: fixture依存は機能導入commitから無関係commitで剥がさない（cmd_karo_ci_fix_29629302314_deploy_ac_handling_202607181252）
+- L1200: 隔離source fixtureは必須依存追加へ追随させる（cmd_karo_ci_fix_29629984325_send_wakeup_symlink_202607181312）
+- L1201: 正しさcheckpointのmutationを性能目的で遅延しない（cmd_karo_ci_fix_29630423279_gp105_stale_report_202607181325）
+- L1202: 常駐daemon隔離fixtureはsource依存と契約markerを同時追随する（cmd_karo_ci_fix_29630959241_watcher_handoff_202607181348）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
