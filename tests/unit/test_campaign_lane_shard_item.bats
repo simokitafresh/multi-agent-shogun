@@ -47,6 +47,7 @@ case "${TEST_MODE}" in
   pass) printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\nstage_duration_sec: {test: 2, commit: 1}\noperational_simulation: {command: bats test, expected: FAIL0 SKIP0, actual: "TOTAL=3 FAIL=0 SKIP=0", result: PASS}\n' "$head" >"$report_path" ;;
   fail) printf 'status: failed\nverdict: FAIL\n' >"$report_path" ;;
   metrics_missing) printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\noperational_simulation: {result: PASS}\n' "$head" >"$report_path" ;;
+  metrics_missing_with_bad_commit) printf 'status: completed\nverdict: PASS\ncommit_hash: 0123456789012345678901234567890123456789\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\noperational_simulation: {result: PASS}\n' >"$report_path" ;;
   fail_count) printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\noperational_simulation: {actual: "TOTAL=3 FAIL=1 SKIP=0", result: PASS}\n' "$head" >"$report_path" ;;
   skip_count) printf 'status: completed\nverdict: PASS\ncommit_hash: %s\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\noperational_simulation: {actual: "TOTAL=3 FAIL=0 SKIP=1", result: PASS}\n' "$head" >"$report_path" ;;
   fake_commit) printf 'status: completed\nverdict: PASS\ncommit_hash: 0123456789012345678901234567890123456789\nfiles_modified: [{path: skills/campaign-lane/adapters/new.py}, {path: tests/unit/test_new.py}]\noperational_simulation: {actual: "TOTAL=3 FAIL=0 SKIP=0", result: PASS}\n' >"$report_path" ;;
@@ -368,6 +369,13 @@ PY
 
 @test "missing standard operational metrics fails closed" {
   make_deployer metrics_missing
+  run_bridge
+  [ "$status" -ne 0 ]
+  reason_is report_metrics_missing
+}
+
+@test "missing metrics classification precedes other terminal validation failures" {
+  make_deployer metrics_missing_with_bad_commit
   run_bridge
   [ "$status" -ne 0 ]
   reason_is report_metrics_missing

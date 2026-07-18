@@ -334,14 +334,16 @@ tests, fails, skips = (map(int, match.groups()) if match else (None, None, None)
 extra = "|".join([commit_sha, json.dumps(files, separators=(",", ":")), str(tests or 0), str(fails or 0), str(skips or 0)])
 if status in {"failed", "revision_requested"} or verdict == "FAIL":
     print("FAIL|report_terminal_fail|" + extra)
+elif status in {"completed", "done"} and verdict == "PASS" and not (
+    sim_result == "PASS" and tests is not None and fails == 0 and skips == 0
+):
+    print("FAIL|report_metrics_missing|" + extra)
 elif status in {"completed", "done"} and verdict == "PASS" and not commit_ok:
     print("FAIL|terminal_commit_mismatch|" + extra)
 elif status in {"completed", "done"} and verdict == "PASS" and not scope_ok:
     print("FAIL|terminal_scope_mismatch|" + extra)
 elif status in {"completed", "done"} and verdict == "PASS" and sim_result == "PASS" and tests is not None and fails == 0 and skips == 0:
     print("PASS|report_terminal_pass|" + extra)
-elif status in {"completed", "done"} and verdict == "PASS":
-    print("FAIL|report_metrics_missing|" + extra)
 PY
 )"
         if [[ "$terminal" == PASS\|* ]]; then
