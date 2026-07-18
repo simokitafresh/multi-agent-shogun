@@ -2,13 +2,13 @@
 
 作成: saizo / 2026-07-19  
 対象HEAD: `d34039c250edd6f322cc8029aaa6401cb00480bf`  
-origin: [[cmd_karo_recon_ci_test_elimination_202607190143]] -> [[CI全件常時実行]] -> [[push最小境界とnightly分離]]
+origin: [[cmd_karo_recon_ci_test_elimination_202607190143]] -> [[CI全件常時実行]] -> [[殿裁定_default_delete_test_20260719]] -> [[実装test即削除と宣言contract永続化]]
 
 ## §1 結論
 
 現行の一次母集団は指示時点の4,740件ではなく、最新timing ledgerで **365 test files / 4,922 cases**。4,740との差は **+182** で、探索対象を縮小せず4,922件を分類した。全件台帳は `docs/research/ci-test-elimination-inventory-20260719.csv`（4,923行、header除外4,922、SHA-256 `c58c594239e6f1a28f9c24b37144f9234476b6029f3554deb7dccfc9c1e1260e`）。
 
-保守的な実装前分類は **削除0 / nightly降格4,435 / push維持487**。削除0の理由は、GitHub Actions run単位の成否は取得できたが「各caseの過去30日FAIL」を完全帰属できる正規台帳がないため。30日FAIL0を証明できないcaseを削除へ送らず、nightlyへ保持した。
+最終方針は **実装testを作成→PASS確認→同一task内で即削除し、宣言付きcontractだけを永続化する default-delete**。旧 `削除0 / nightly降格4,435 / push維持487` は偵察時点の観測結果であり、現在推奨ではない。30日観察queue/nightlyを恒久運用にせず、永続test総量を増やさない。
 
 ## §2 一次データと算出方法
 
@@ -24,7 +24,7 @@ origin: [[cmd_karo_recon_ci_test_elimination_202607190143]] -> [[CI全件常時�
 
 30日FAILはrun単位では多数確認できる一方、caseへの完全帰属が不能なため全caseを `unknown_not_attributed` とした。この未知をFAIL0へ読み替えない。fixture自己参照はfile名および先頭4,000文字の `fixture/mock/legacy/deprecated/obsolete/scaffold` 検出、廃止済み機構は裏付け不足のため全件no、重複契約も敵対比較未完のためunknownとした。
 
-## §3 三分類契約と全件結果
+## §3 旧方式の観測結果（最終方針ではない）
 
 | 分類 | 二値条件 | 件数 | 推定sum-file wall |
 |---|---|---:|---:|
@@ -34,7 +34,7 @@ origin: [[cmd_karo_recon_ci_test_elimination_202607190143]] -> [[CI全件常時�
 
 分類済み4,922 = 母集団4,922、未分類0。分類不能を削除へ送った件数0。`fail_30d=unknown` 4,922件はすべて維持またはnightlyへ残した。
 
-## §4 trigger・timeout・artifact・失敗導線
+## §4 旧階層化案の観測値（最終方針ではない）
 
 | lane | trigger | 内容 | timeout | artifact | FAIL導線 |
 |---|---|---|---:|---|---|
@@ -74,11 +74,9 @@ P2の `1105s中必要158s、改善可能872s=78.9%` と、本案の総wall上限
 - 重複契約判定FP: 重複を自動推定せず全件unknownにしたため、削除へ誤送信0/4,922。重複検出recallは未測定。
 - fixture語を含むだけで削除しない。fixture自己参照フラグは説明属性であり、分類条件単独には使用していない。
 
-## §8 実装前checkpoint
+## §8 旧実装前checkpoint（殿裁定によりsuperseded）
 
-二値判定: **階層化推薦=PASS、テスト削除推薦=BLOCK**。
-
-次工程は、(1) Actions artifactから30日case failure ledgerを作る、(2) contract→test逆引き台帳を機械生成する、(3) 487境界+affectedを固定SHAで3回測りp95≤180s・SKIP0・防御空白0を確認する、の順。これが揃うまでworkflow/test file/test caseの削除は実施しない。
+旧二値判定は **階層化推薦=PASS、テスト削除推薦=BLOCK** だったが、これは最終方針ではない。現在は §11 の default-delete 契約を適用し、実装testのPASS直後削除を標準とする。
 
 ## §9 軍師FAIL後の30日FAIL帰属全走査
 
@@ -95,7 +93,7 @@ P2の `1105s中必要158s、改善可能872s=78.9%` と、本案の総wall上限
 
 取得不能理由は、TAPが複数fileを連結しcase identityにsource fileを保持しないこと、Actions failed logは失敗したfile/caseしか列挙せず成功実行の分母をcase別30日台帳にしないこと、過去commitは変更事実であり実行成否ではないこと。このため59 filesは「FAIL0」ではなく「失敗帰属なし・変更なし」に限定する。
 
-実装推薦は二段階。(1) 即時にpush487 + affected、nightly残りを実装して大幅wall削減。(2) 59 filesをnightlyで30日連続実行し、case identity/source file/result/source SHAをappend-only ledgerへ保存。30日FAIL0かつcontract逆引き重複または廃止済み証明が成立したものだけ物理削除する。これにより目的の大幅淘汰へ進みつつ、absenceをFAIL0へ偽変換しない。
+この二段階案は裁定前の経緯としてのみ保存する。30日nightly観察を最終方針にはせず、現在の実装判断は §11 の二値契約へ一本化する。
 
 ## §10 AC evidence mapping
 
@@ -108,3 +106,21 @@ P2の `1105s中必要158s、改善可能872s=78.9%` と、本案の総wall上限
 | AC5 | §5 case -90.1%、wall -79.2〜-85.3%、P2 78.9%との差0.3pt | yes |
 | AC6 | §6 防御5/5、fallback5/5、空白0。帰属不能は削除せず59 files追加計測集合 | yes |
 | AC7 | bulletin `blt_20260719_014828_534be0`、コード/workflow/test削除0 | yes |
+
+## §11 最終default-delete契約
+
+時系列ナビゲーション: **旧方式**=全test永続+push/nightly階層化 → **問題**=一時的な実装検証まで恒久資産化され、実行時間・保守対象・重複防御が増殖 → **最終方針**=実装testは作成→PASS→即削除、宣言付きcontractのみ永続。根拠は [[殿裁定_default_delete_test_20260719]]。
+
+適用単位は1 taskのcommit直前checkpoint。下表はすべて入力・判定・BLOCK条件を持ち、7項目中1項目でも判定不能または不成立ならcommitをBLOCKする。
+
+| ID | 二値仕様 | 入力 | PASS判定 | BLOCK条件 |
+|---|---|---|---|---|
+| 穴1 | 削除diff/contract混入0 | `git diff --name-status`、taskのtest paths、宣言contract paths | transient実装testが削除diffにあり、削除対象が宣言付きcontractに0件混入 | test削除diffなし、または宣言付きcontractが1件以上混入 |
+| 穴2 | 宣言率30%超でtest-hygiene停止 | 変更test全件、各testの永続理由宣言数、宣言率=`宣言付き永続test/変更test` | 宣言率≤30%、または30%超を検知してcommit前に停止 | 宣言率>30%のまま停止せずcommitへ進む、分母/分子が取得不能 |
+| 穴3 | 境界内回帰リスク受容とincident昇格 | 変更境界、既存contract、実装test PASS receipt、incident有無 | 境界内は一時test削除後の回帰リスクを明示受容し、実incident発生時だけ永続contract候補へ昇格 | 予測不安だけでtestを永続化、またはincident発生を昇格せず放置 |
+| 穴4 | 既存test純減deletion_justification | HEAD前後のtracked test数、削除対象ごとの`deletion_justification` | tracked test数が純減し、全削除対象に重複/契約消滅/fixture廃止のいずれかを一次証拠付きで宣言 | 純減0以下、理由なし、理由とdiff不一致 |
+| 穴5 | fixture/helper被参照0 | 削除対象fixture/helper symbol/path、production+test全scopeの参照検索 | 削除後の被参照件数=0 | 参照1件以上、検索scope欠落、動的参照が判定不能 |
+| 穴6 | overlap時regression_justification免除 | 新旧testの防御contract ID、入力境界、期待結果 | 3項目が同一で完全overlapなら新testの`regression_justification`を免除し、一時testを削除 | overlap不完全なのに免除、または完全overlapなのに重複testを永続化 |
+| 穴7 | commit直前race検知停止 | PASS receiptのsource SHA/test hash、現在のsource SHA/test hash、削除diff | 全hash一致かつ削除diff存在 | PASS後にsource/testが変化、hash取得不能、削除diff消失なら即停止して再test |
+
+永続を許可する「宣言付きcontract」は、`contract_id`、守る本番不変量、入力境界、期待結果、owner、既存contractとの非重複根拠を持つものだけ。実装testのPASS receiptは証跡として報告へ残すが、test file自体は同一taskで削除する。例外追加は行わず、incident昇格も上記宣言を満たした場合だけ永続化する。
