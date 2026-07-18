@@ -700,6 +700,14 @@ inbox_type_is_ninja_report_notification() {
     [ "$1" = "report_notification_missing" ]
 }
 
+inbox_type_is_report_lifecycle() {
+    inbox_type_triggers_report_completion "$1" && return 0
+    case "$1" in
+        report_review|report_review_result|report_revision) return 0 ;;
+    esac
+    return 1
+}
+
 inbox_should_auto_read_completed_notification() {
     local target="$1"
     local type="$2"
@@ -1157,6 +1165,39 @@ for message in data.get("messages") or []:
     if not isinstance(message, dict) or message.get("read") is not False:
         continue
     if str(message.get("from", "")) == os.environ["INBOX_DEDUPE_FROM"] and str(message.get("content", "")) == os.environ["INBOX_DEDUPE_CONTENT"]:
+        sys.exit(0)
+sys.exit(1)
+PY
+}
+
+# Print the existing message id when a canonical report lifecycle event was
+# already persisted. Unlike the legacy pending content dedupe this spans read
+# state and ignores retry text/timestamps. Caller holds the inbox flock, making
+# check+append one transaction for concurrent writers.
+inbox_report_event_duplicate_locked() {
+    local inbox_file="$1" target="$2" event_type="$3" sender="$4" report_id="$5" identity_version="$6"
+    [ -s "$inbox_file" ] || return 1
+    INBOX_EVENT_FILE="$inbox_file" INBOX_EVENT_TARGET="$target" \
+    INBOX_EVENT_TYPE="$event_type" INBOX_EVENT_FROM="$sender" \
+    INBOX_EVENT_REPORT_ID="$report_id" INBOX_EVENT_VERSION="$identity_version" python3 - <<'PY'
+import os, sys, yaml
+try:
+    data = yaml.safe_load(open(os.environ["INBOX_EVENT_FILE"], encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    sys.exit(1)
+wanted = (
+    os.environ["INBOX_EVENT_TYPE"], os.environ["INBOX_EVENT_FROM"],
+    os.environ["INBOX_EVENT_REPORT_ID"], os.environ["INBOX_EVENT_VERSION"],
+)
+for message in data.get("messages") or []:
+    if not isinstance(message, dict):
+        continue
+    actual = (
+        str(message.get("type", "")), str(message.get("from", "")),
+        str(message.get("report_id", "")), str(message.get("report_identity_version", "")),
+    )
+    if actual == wanted:
+        print(str(message.get("id", "")))
         sys.exit(0)
 sys.exit(1)
 PY
@@ -2138,11 +2179,22 @@ fi
 _identity_fields=()
 case "$TYPE" in
     report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed)
-        [ -n "${STRUCTURED_REPORT_ID:-}" ] || { echo "BLOCK: report notification missing structured report identity" >&2; exit 1; }
+        if [ -z "${STRUCTURED_REPORT_ID:-}" ]; then
+            _structured_candidate=$(inbox_extract_report_path_from_content "$CONTENT")
+            [ -n "$_structured_candidate" ] || { echo "BLOCK: report notification missing structured report identity" >&2; exit 1; }
+            _REPORT_IDENTITY=$(python3 "$SCRIPT_DIR/scripts/lib/report_unique_identity.py" fallback --path "$_structured_candidate" --root "$SCRIPT_DIR") || exit 1
+            IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
+            STRUCTURED_TASK_ID=$(printf '%s' "$CONTENT" | grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 || true)
+            STRUCTURED_PARENT_CMD="$STRUCTURED_TASK_ID"
+        fi
         _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
         ;;
-    report_review|report_review_result)
+    report_review|report_review_result|report_revision)
         _structured_candidate=$(inbox_extract_report_path_from_content "$CONTENT")
+        if [ -z "$_structured_candidate" ] && [ "$TYPE" = "report_revision" ] && [ -f "$SCRIPT_DIR/queue/tasks/${TARGET}.yaml" ]; then
+            _revision_rel=$(inbox_yaml_field_get "$SCRIPT_DIR/queue/tasks/${TARGET}.yaml" "report_path" "")
+            [ -n "$_revision_rel" ] && _structured_candidate="$SCRIPT_DIR/$_revision_rel"
+        fi
         if [ -n "$_structured_candidate" ] && [ -f "$_structured_candidate" ]; then
             _REPORT_IDENTITY=$(inbox_resolve_report_identity "$_structured_candidate") || exit 1
             IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
@@ -2182,7 +2234,13 @@ while [ $attempt -lt $max_attempts ]; do
             printf 'messages: []\n' > "$INBOX"
         fi
 
-        if inbox_pending_duplicate_locked "$INBOX" "$FROM" "$CONTENT"; then
+        if inbox_type_is_report_lifecycle "$TYPE" && [ -n "${STRUCTURED_REPORT_ID:-}" ]; then
+            _existing_event_id=$(inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION") || _existing_event_id=""
+            if [ -n "$_existing_event_id" ]; then
+                printf 'DUPLICATE_MSG_ID=%s\n' "$_existing_event_id"
+                exit 20
+            fi
+        elif inbox_pending_duplicate_locked "$INBOX" "$FROM" "$CONTENT"; then
             exit 20
         fi
         inbox_append_message_locked "$INBOX" "$_msg_block" || exit 1

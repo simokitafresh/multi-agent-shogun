@@ -1109,6 +1109,97 @@ YAML
     [[ "$output" == *mismatched* ]]
 }
 
+@test "report lifecycle canonical event key is exactly once under 20 parallel writers" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/queue/inbox"
+    : > "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+report_id: rpt-parallel-fixed
+report_identity_version: 2
+task_id: cmd_parallel_normal
+parent_cmd: cmd_parallel
+YAML
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    local pids=()
+    for i in $(seq 1 20); do
+        INBOX_WRITE_TEST=1 INBOX_WRITE_ROOT_OVERRIDE="$TEST_TMPDIR" \
+          bash "$TEST_INBOX_WRITE" gunshi "retry-$i report=$report" report_review karo >"$BATS_TEST_TMPDIR/w$i.out" 2>&1 &
+        pids+=("$!")
+    done
+    local failures=0 pid
+    for pid in "${pids[@]}"; do wait "$pid" || failures=$((failures + 1)); done
+    [ "$failures" -eq 0 ]
+    [ "$(grep -c "^- " "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+    [ "$(grep -c "report_id: 'rpt-parallel-fixed'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+    [ "$(grep -l 'DUPLICATE_MSG_ID=' "$BATS_TEST_TMPDIR"/w*.out | wc -l)" -eq 19 ]
+}
+
+@test "report event key preserves distinct type sender and report identity" {
+    setup_git_test_env
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+report_id: rpt-generation-a
+report_identity_version: 2
+task_id: cmd_generation_a
+parent_cmd: cmd_generation
+YAML
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "first report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "other sender report=$report" report_review shogun
+    [ "$status" -eq 0 ]
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "other type report=$report" report_review_result karo
+    [ "$status" -eq 0 ]
+    [ "$(grep -c "^- " "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 3 ]
+}
+
+@test "report_revision resolves target task identity and suppresses only exact retries" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-revision-fixed
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+report_id: rpt-revision-fixed
+report_identity_version: 2
+task_id: cmd_revision_normal
+parent_cmd: cmd_revision
+YAML
+    INBOX_WRITE_TEST=1 run _run_inbox_write testninja "revision one" report_revision karo
+    [ "$status" -eq 0 ]
+    INBOX_WRITE_TEST=1 run _run_inbox_write testninja "revision retry changed" report_revision karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-revision-fixed'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+}
+
+@test "rpt-42363aca 09:42:57 09:43:34 09:44:36 retry shadow stores once" {
+    setup_git_test_env
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+report_id: rpt-42363aca-48e5-4968-a3e3-25c350e51b77
+report_identity_version: 2
+task_id: cmd_shadow_normal
+parent_cmd: cmd_shadow
+YAML
+    local stamp
+    for stamp in 09:42:57 09:43:34 09:44:36; do
+        INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "background retry $stamp report=$report" report_review karo
+        [ "$status" -eq 0 ]
+    done
+    [ "$(grep -c "report_id: 'rpt-42363aca-48e5-4968-a3e3-25c350e51b77'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+}
+
+@test "legacy fallback report identity uses the same exactly-once event contract" {
+    setup_git_test_env
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "legacy first report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "legacy retry changed text report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'legacy-" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+}
+
 @test "report_submitted alias: validates report, auto-sends gunshi review, and marks task done" {
     setup_git_test_env
     mkdir -p "$TEST_TMPDIR/scripts"

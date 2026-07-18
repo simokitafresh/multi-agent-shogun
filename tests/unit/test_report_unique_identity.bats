@@ -18,6 +18,12 @@ setup() {
     [ "$id_a" != "$id_b" ]
 }
 
+@test "fallback resolves a referenced legacy path even before the file exists" {
+    run python3 "$HELPER" fallback --root "$ROOT" --path "$ROOT/queue/reports/missing.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == legacy-*$'\t'1$'\t'queue/reports/missing.yaml ]]
+}
+
 @test "v2 task and report require one matching immutable id" {
     cat > "$ROOT/queue/reports/a.yaml" <<'YAML'
 report_id: rpt-fixed

@@ -70,7 +70,7 @@ def reject_reuse(path: str, root: str, report_id: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("new", "resolve", "verify"))
+    parser.add_argument("command", choices=("new", "fallback", "resolve", "verify"))
     parser.add_argument("--path", required=True)
     parser.add_argument("--root", default=os.getcwd())
     parser.add_argument("--task")
@@ -78,6 +78,9 @@ def main() -> int:
 
     if args.command == "new":
         print(f"rpt-{uuid.uuid4()}")
+        return 0
+    if args.command == "fallback":
+        print(f"{fallback_id(args.path, args.root)}\t1\t{canonical_path(args.path, args.root)}")
         return 0
 
     report_id, version = resolve(args.path, args.root)
