@@ -6,10 +6,12 @@
 evaluate_ci_readiness_json() {
     python3 -c '
 import json, sys
+from datetime import datetime, timezone
 d=json.load(sys.stdin)
 t=d.get("target_result")
 w=d.get("workflow_result")
 expected=str(d.get("expected_head_sha") or "")
+reviewed_at=d.get("reviewed_at")
 if not isinstance(t, dict) or not isinstance(w, dict):
     print("BLOCK: typed target_result/workflow_result required")
     raise SystemExit(1)
@@ -17,6 +19,21 @@ for name, value in (("target_result", t), ("workflow_result", w)):
     if not isinstance(value.get("conclusion"), str) or not isinstance(value.get("head_sha"), str):
         print(f"BLOCK: {name} conclusion/head_sha type invalid")
         raise SystemExit(1)
+if not isinstance(reviewed_at, str) or not isinstance(w.get("created_at"), str):
+    print("BLOCK: reviewed_at/workflow_result.created_at type invalid")
+    raise SystemExit(1)
+def parse_aware(value, name):
+    try:
+        parsed=datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        print(f"BLOCK: {name} datetime parse failed")
+        raise SystemExit(1)
+    if parsed.tzinfo is None:
+        print(f"BLOCK: {name} timezone missing")
+        raise SystemExit(1)
+    return parsed.astimezone(timezone.utc)
+reviewed=parse_aware(reviewed_at, "reviewed_at")
+created=parse_aware(w["created_at"], "workflow_result.created_at")
 if not expected or t["head_sha"] != expected or w["head_sha"] != expected:
     print("BLOCK: head SHA mismatch")
     raise SystemExit(1)
@@ -26,7 +43,10 @@ if t["conclusion"] != "success":
 if w["conclusion"] != "success":
     print("BLOCK: workflow_result is not GREEN")
     raise SystemExit(1)
-print("READY: target_result=GREEN workflow_result=GREEN head_sha=" + expected)
+if created < reviewed:
+    print("BLOCK: workflow run predates SG7 review")
+    raise SystemExit(1)
+print("READY: target_result=GREEN workflow_result=GREEN fresh_after_review head_sha=" + expected)
 ' 
 }
 
@@ -165,6 +185,7 @@ CMD_PROJECT=""
 SG7_SPEC_SOURCE=""
 SG7_SPEC_SCOPE=""
 SG7_DIRECT_REPORT_SPEC=false
+SG7_REVIEWED_AT=""
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 TASKS_DIR="$SCRIPT_DIR/queue/tasks"
 # LOG_DIR/GATE_METRICS_LOG already set above for early CLEAR check
@@ -5243,6 +5264,7 @@ load_validated_sg7_context() {
 
     CMD_PROJECT=$(SPEC_JSON="$spec_json" python3 -c 'import json,os; print(str(json.loads(os.environ["SPEC_JSON"]).get("project") or "").strip())')
     SG7_SPEC_SOURCE=$(BUNDLE_PATH="$bundle_path" python3 -c 'import json,os; print(str(json.load(open(os.environ["BUNDLE_PATH"], encoding="utf-8"))["review"].get("cmd_spec_source") or "").strip())')
+    SG7_REVIEWED_AT=$(BUNDLE_PATH="$bundle_path" python3 -c 'import json,os; print(str(json.load(open(os.environ["BUNDLE_PATH"], encoding="utf-8"))["review"].get("reviewed_at") or "").strip())')
     SG7_SPEC_SCOPE=$(SPEC_JSON="$spec_json" python3 - <<'PY'
 import json
 import os
@@ -8090,21 +8112,24 @@ if [ "$CI_PUSH_DETECTED" = true ]; then
     if [ -z "$ci_result" ] && command -v gh >/dev/null 2>&1; then
         ci_result=$(timeout 15 gh run list --repo simokitafresh/multi-agent-shogun \
             --workflow test.yml --branch main --limit 1 \
-            --json conclusion,databaseId,headSha 2>/dev/null || true)
+            --json conclusion,createdAt,databaseId,headSha 2>/dev/null || true)
     fi
     expected_head=$(resolve_ci_expected_head "$SCRIPT_DIR")
-    ci_fields=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then [.[0].conclusion // "", (.[0].databaseId // "" | tostring), .[0].headSha // ""] | @tsv else "" end' 2>/dev/null || true)
-    IFS=$'\t' read -r ci_conclusion ci_run_id ci_head_sha <<< "$ci_fields"
+    ci_run_id=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then (.[0].databaseId // "" | tostring) else "" end' 2>/dev/null || true)
     target_conclusion=success
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
         ninja_name=$(basename "$task_file" .yaml)
         report_file=$(resolve_report_file "$ninja_name")
         [ "$(FIELD_GET_NO_LOG=1 field_get "$report_file" verdict "")" = "PASS" ] || target_conclusion=failure
     done
-    ci_decision_json=$(jq -cn \
-        --arg expected "$expected_head" --arg target "$target_conclusion" \
-        --arg workflow "$ci_conclusion" --arg sha "$ci_head_sha" \
-        '{expected_head_sha:$expected,target_result:{conclusion:$target,head_sha:$expected},workflow_result:{conclusion:$workflow,head_sha:$sha}}')
+    ci_decision_json=$(printf '%s' "$ci_result" | jq -c \
+        --arg expected "$expected_head" --arg target "$target_conclusion" --arg reviewed "$SG7_REVIEWED_AT" \
+        'if type == "array" and length > 0 and (.[0] | type) == "object" then
+           {expected_head_sha:$expected, reviewed_at:$reviewed,
+            target_result:{conclusion:$target,head_sha:$expected},
+            workflow_result:{conclusion:.[0].conclusion,head_sha:.[0].headSha,created_at:.[0].createdAt}}
+         else {expected_head_sha:$expected,reviewed_at:$reviewed,target_result:{conclusion:$target,head_sha:$expected},workflow_result:null} end' \
+        2>/dev/null || printf '{}')
     if ci_decision=$(printf '%s' "$ci_decision_json" | evaluate_ci_readiness_json 2>&1); then
         echo "  OK: ${ci_decision} run=${ci_run_id}"
     else
