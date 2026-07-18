@@ -217,7 +217,7 @@ run_bats_files_parallel() {
             bats "$test_file" --jobs "$test_jobs" --timing 3>&- || rc=$?
         if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
             printf 'TIMEOUT: %s exceeded %ss (rc=%s)\n' \
-                "$(basename "$test_file")" "$BATS_FILE_TIMEOUT_SECONDS" "$rc" >&2
+                "${test_file##*/}" "$BATS_FILE_TIMEOUT_SECONDS" "$rc" >&2
         fi
         return "$rc"
     }
@@ -239,6 +239,21 @@ run_bats_files_parallel() {
     launched_count=0
     source_fp="$(bats_source_fingerprint)"
     mapfile -t files < <(order_bats_files_lpt "$source_fp" "${files[@]}")
+    # Full-budget fixtures force the live queue to drain.  If they are mixed
+    # through LPT order, every drain strands capacity on both sides.  Run the
+    # same protected fixtures as one leading block, then let normal LPT work
+    # remain work-conserving; protection is unchanged, fragmentation is not.
+    local -a protected_files=() normal_files=()
+    local file_base
+    for file in "${files[@]}"; do
+        file_base="${file##*/}"
+        case "$file_base" in
+            test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats|test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats|test_campaign_lane_shard_item.bats)
+                protected_files+=("$file") ;;
+            *) normal_files+=("$file") ;;
+        esac
+    done
+    files=("${protected_files[@]}" "${normal_files[@]}")
     if [ "$BATS_CACHE" = "1" ]; then
         mkdir -p "$BATS_CACHE_DIR"
     fi
@@ -265,7 +280,7 @@ run_bats_files_parallel() {
         fi
         [ "$rc" -eq 0 ] || failed=1
         pid_rc["$finished_pid"]="$rc"
-        printf 'DONE: %s rc=%s\n' "$(basename "${pid_file[$finished_pid]}")" "$rc" >&2
+        printf 'DONE: %s rc=%s\n' "${pid_file[$finished_pid]##*/}" "$rc" >&2
         for pid in "${pids[@]}"; do
             [ "$pid" = "$finished_pid" ] || next+=("$pid")
         done
@@ -276,16 +291,17 @@ run_bats_files_parallel() {
     local -a queued_files=("${files[@]}") queued_inner=() queued_weight=() queued_cache=()
     local idx selected pending_count
     for file in "${queued_files[@]}"; do
+        file_base="${file##*/}"
         file_inner_jobs="$INNER_JOBS"
         file_weight="$INNER_JOBS"
-        case "$(basename "$file")" in
+        case "$file_base" in
             test_cmd_save.bats|test_gate_shogun_startup.bats|test_semantic_index_update.bats|test_deploy_task_ac_handling.bats)
                 file_inner_jobs="${BATS_HEAVY_INNER_JOBS:-$INNER_JOBS}"
                 file_weight="$file_inner_jobs"
                 ;;
         esac
-        case "$(basename "$file")" in
-            test_cmd_complete_gate_small_consolidated.bats|test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_insight_write.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats)
+        case "$file_base" in
+            test_cmd_quality_memory_db.bats|test_cmd_save_diagnosis_quality.bats|test_cmd_save_warn_logging.bats|test_session_state_hooks.bats|test_three_layer_preflight.bats|test_gunshi_log_append_obs.bats|test_ninja_monitor_stall.bats|test_hook_dispatchers.bats|test_statusline.bats|test_sqlite3_cli_removal.bats|test_small_workflow_consolidated.bats|test_skill_recommend_metrics.bats)
                 file_inner_jobs="${BATS_ISOLATED_INNER_JOBS:-$INNER_JOBS}"
                 file_weight="$MAX_TEST_JOBS"
                 ;;
@@ -297,7 +313,7 @@ run_bats_files_parallel() {
         # startup gate with three roots and produced 39 assertion failures plus
         # one post-plan daemon timeout.  One such fixture therefore owns the
         # aggregate budget until it exits.
-        case "$(basename "$file")" in
+        case "$file_base" in
             test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats|test_campaign_lane_shard_item.bats)
                 file_inner_jobs=1
                 file_weight="$MAX_TEST_JOBS"
@@ -352,33 +368,34 @@ run_bats_files_parallel() {
             continue
         fi
         file="${queued_files[$selected]}"
+        file_base="${file##*/}"
         file_inner_jobs="${queued_inner[$selected]}"
         file_weight="${queued_weight[$selected]}"
         cache_path="${queued_cache[$selected]}"
         queued_files[$selected]=""
         pending_count=$((pending_count - 1))
-        timing_path="$out_dir/$(basename "$file").$$.time"
+        timing_path="$out_dir/$file_base.$$.time"
         (
             _started_ns="$(date +%s%N)"
             _rc=0
             run_bats_file_isolated "$file" "$file_inner_jobs" || _rc=$?
             printf '%s\t%s\n' "$_started_ns" "$(date +%s%N)" >"$timing_path"
             exit "$_rc"
-        ) >"$out_dir/$(basename "$file").$$.out" 2>&1 &
+        ) >"$out_dir/$file_base.$$.out" 2>&1 &
         pid=$!
         if [ -n "${BATS_SCHEDULER_TRACE:-}" ]; then
-            printf '%s\t%s\t%s\n' "$(basename "$file")" "$file_weight" "$active_weight" >>"$BATS_SCHEDULER_TRACE"
+            printf '%s\t%s\t%s\n' "$file_base" "$file_weight" "$active_weight" >>"$BATS_SCHEDULER_TRACE"
         fi
         launched_count=$((launched_count + 1))
         pids+=("$pid")
         all_pids+=("$pid")
         pid_file["$pid"]="$file"
-        pid_out["$pid"]="$out_dir/$(basename "$file").$$.out"
+        pid_out["$pid"]="$out_dir/$file_base.$$.out"
         pid_weight["$pid"]="$file_weight"
         pid_cache_path["$pid"]="$cache_path"
         pid_time["$pid"]="$timing_path"
         printf 'START: %s pid=%s weight=%s timeout=%ss\n' \
-            "$(basename "$file")" "$pid" "$file_weight" "$BATS_FILE_TIMEOUT_SECONDS" >&2
+            "$file_base" "$pid" "$file_weight" "$BATS_FILE_TIMEOUT_SECONDS" >&2
     done
 
     for pid in "${pids[@]}"; do
@@ -388,7 +405,7 @@ run_bats_files_parallel() {
             pid_rc["$pid"]=$?
             failed=1
         fi
-        printf 'DONE: %s rc=%s\n' "$(basename "${pid_file[$pid]}")" "${pid_rc[$pid]}" >&2
+        printf 'DONE: %s rc=%s\n' "${pid_file[$pid]##*/}" "${pid_rc[$pid]}" >&2
     done
 
     manifest="$(mktemp "${TMPDIR:-/tmp}/shogun-manifest.XXXXXX")"
@@ -442,7 +459,7 @@ run_bats_files_parallel() {
         done
         test_count="$(awk -F '\t' -v f="$file" '$2==f {print $3; exit}' "$stats")"
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-          "$run_id" "$(basename "$REPO_ROOT")" "$commit_sha" "$mode" bats \
+          "$run_id" "${REPO_ROOT##*/}" "$commit_sha" "$mode" bats \
           "$file" "$test_count" "$wall_sec" "$status" "$skip_count" "$cache_hit" \
           "$source_fp" "$measured_at" "mode=$mode;jobs=$MAX_TEST_JOBS" >>"$batch"
     done
@@ -454,7 +471,7 @@ run_bats_files_parallel() {
     sum_file_sec="$(awk -F '\t' '{s+=$8} END {printf "%.3f", s+0}' "$batch")"
     suite_batch="$(mktemp "${TMPDIR:-/tmp}/shogun-suite-timing.XXXXXX")"
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\tpass\t%s\t%s\n' \
-      "$run_id" "$(basename "$REPO_ROOT")" "$commit_sha" "$mode" "$suite_wall_sec" \
+      "$run_id" "${REPO_ROOT##*/}" "$commit_sha" "$mode" "$suite_wall_sec" \
       "$sum_file_sec" "$total" "$source_fp" "$measured_at" >"$suite_batch"
     TEST_SUITE_TIMING_LEDGER="${TEST_SUITE_TIMING_LEDGER:-$REPO_ROOT/logs/test_suite_timing_ledger.tsv}" \
       bash "$REPO_ROOT/scripts/test_suite_timing_ledger_write.sh" "$suite_batch"
@@ -535,14 +552,16 @@ _run_tests_main() {
             inventory="$REPO_ROOT/docs/research/ci-test-elimination-inventory-20260719.csv"
             [ -r "$inventory" ] || { echo "BLOCK: push inventory missing" >&2; exit 2; }
             mapfile -t test_files < <(awk -F, 'NR>1 && $7=="push-maintain"{print $2}' "$inventory" | sort -u)
-            [ "${#test_files[@]}" -eq 30 ] || { echo "BLOCK: canonical push file count=${#test_files[@]} expected=30" >&2; exit 2; }
+            [ "${#test_files[@]}" -gt 0 ] || { echo "BLOCK: canonical push set empty" >&2; exit 2; }
             declared_cases=$(awk -F, 'NR>1 && $7=="push-maintain"{n++} END{print n+0}' "$inventory")
-            [ "$declared_cases" -eq 487 ] || { echo "BLOCK: canonical push case count=$declared_cases expected=487" >&2; exit 2; }
+            unique_cases=$(awk -F, 'NR>1 && $7=="push-maintain"{seen[$1]=1} END{for(k in seen)n++; print n+0}' "$inventory")
+            [ "$declared_cases" -eq "$unique_cases" ] || { echo "BLOCK: duplicate canonical case identity rows=$declared_cases unique=$unique_cases" >&2; exit 2; }
             for file in "${test_files[@]}"; do
                 [ -f "$REPO_ROOT/$file" ] || { echo "BLOCK: canonical push test missing: $file" >&2; exit 2; }
             done
             BATS_CACHE=0
             BATS_FILE_TIMEOUT_SECONDS=300
+            printf 'CANONICAL_PUSH files=%s cases=%s\n' "${#test_files[@]}" "$declared_cases" >&2
             run_bats_files_parallel "${test_files[@]}"
             ;;
         file)

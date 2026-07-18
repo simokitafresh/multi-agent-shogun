@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# test_necessity: karo workaround ledger must atomically and idempotently resolve exact entries, fail closed on blank/conflicting resolution and missing brainwash evidence, trigger root-signature immunity at N=3, and preserve primary logging when memory DB is unavailable.
 # test_karo_workaround_validation.bats — cmd_1542 + cmd_karo_env_change_gate 単体テスト
 # AC1: validate_ninja_id() — ninja_id有効性チェック
 # AC2: root_cause最小長+null/empty拒否
@@ -103,6 +104,54 @@ teardown() {
     [ "$status" -eq 0 ]
     run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
     [ "$status" -ne 0 ]
+}
+
+@test "resolve mode atomically closes one exact entry and is idempotent" {
+    log="$TEST_DIR/logs/karo_workarounds.yaml"
+    cat > "$log" <<'YAML'
+- cmd_id: cmd_target
+  ninja: hayate
+  workaround: true
+  missed_sg: operational_simulation_missing
+  resolved_by_cmd: ''
+- cmd_id: cmd_other
+  ninja: hanzo
+  workaround: true
+  missed_sg: operational_simulation_missing
+  resolved_by_cmd: ''
+YAML
+
+    run bash "$TEST_SCRIPT" --resolve cmd_target shared_upstream_defence
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"updated=1"* ]]
+    run python3 - "$log" <<'PY'
+import sys, yaml
+rows = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+assert rows[0]["resolved_by_cmd"] == "shared_upstream_defence"
+assert rows[1]["resolved_by_cmd"] == ""
+PY
+    [ "$status" -eq 0 ]
+
+    run bash "$TEST_SCRIPT" --resolve cmd_target shared_upstream_defence
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"unchanged=1"* ]]
+}
+
+@test "resolve mode rejects whitespace resolution and conflicting overwrite" {
+    log="$TEST_DIR/logs/karo_workarounds.yaml"
+    cat > "$log" <<'YAML'
+- cmd_id: cmd_target
+  ninja: hayate
+  workaround: true
+  missed_sg: operational_simulation_missing
+  resolved_by_cmd: existing_defence
+YAML
+
+    run bash "$TEST_SCRIPT" --resolve cmd_target "   "
+    [ "$status" -ne 0 ]
+    run bash "$TEST_SCRIPT" --resolve cmd_target different_defence
+    [ "$status" -ne 0 ]
+    grep -q "resolved_by_cmd: existing_defence" "$log"
 }
 
 @test "event schema backfill adds manual defaults to every legacy entry" {

@@ -1,0 +1,1942 @@
+#!/usr/bin/env bats
+# test_necessity: inbox_writeはflock下でmessage identityをexactly-once永続化し、並行送信でも既存書状の欠落・重複を起こさない。
+# test_inbox_write.bats — inbox_write.sh ユニットテスト
+# T-001 ~ T-012: リグレッションテスト仕様書実装
+# Git uncommitted check: report_received時のコミット漏れ検知
+# cmd_1565: tests/版(T-001~T-012) + tests/unit/版(git uncommitted)を統合
+#
+# テスト構成:
+#   T-001~T-002: 引数バリデーション
+#   T-003~T-004: 正常書き込み（新規/追記）
+#   T-005: メッセージID一意性
+#   T-006~T-007: デフォルト値（type/from）
+#   T-008~T-009: Overflow Protection（50件制限）
+#   T-010: flock競合時のリトライ
+#   T-011: 特殊文字のエスケープ処理
+#   T-012: inbox初期化（ディレクトリ自動作成）
+#   Git uncommitted check tests (report_received)
+
+# --- セットアップ ---
+
+setup_file() {
+    export PROJECT_ROOT
+    PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    export INBOX_WRITE_SCRIPT="$PROJECT_ROOT/scripts/inbox_write.sh"
+    export GIT_TEMPLATE_DIR
+    GIT_TEMPLATE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/inbox_write_git_template.XXXXXX")"
+
+    # スクリプト存在確認（前提条件）
+    [ -f "$INBOX_WRITE_SCRIPT" ] || return 1
+
+    # python3 + PyYAML存在確認
+    python3 -c "import yaml" 2>/dev/null || return 1
+
+    mkdir -p "$GIT_TEMPLATE_DIR/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
+    # 選択的コピー: inbox_write.shが使うファイルのみ (NTFS→tmpfs コスト削減)
+    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py; do
+        cp "$PROJECT_ROOT/scripts/lib/$_lib_f" "$GIT_TEMPLATE_DIR/scripts/lib/$_lib_f"
+    done
+
+    git -C "$GIT_TEMPLATE_DIR" init -q
+    git -C "$GIT_TEMPLATE_DIR" config user.name "test"
+    git -C "$GIT_TEMPLATE_DIR" config user.email "test@test.com"
+
+    cat > "$GIT_TEMPLATE_DIR/scripts/lib/agent_config.sh" << 'MOCK'
+get_ninja_names() { echo "testninja"; }
+get_allowed_targets() { echo "karo shogun testninja gunshi"; }
+get_commander_names() { echo "shogun karo gunshi"; }
+is_commander_role() { case " $(get_commander_names) " in *" $1 "*) return 0 ;; esac; return 1; }
+get_commander_inbox_path() { is_commander_role "$1" || return 1; echo "${INBOX_WRITE_ROOT_OVERRIDE}/queue/inbox/${1}.yaml"; }
+MOCK
+
+    printf '#!/bin/bash\necho "NO-FIX-NEEDED"\n' > "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_autofix.sh"
+    chmod +x "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_autofix.sh"
+    printf '#!/bin/bash\necho "PASS: all checks passed"\n' > "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_format.sh"
+    chmod +x "$GIT_TEMPLATE_DIR/scripts/gates/gate_report_format.sh"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$GIT_TEMPLATE_DIR/scripts/memory_db_live_insert.py"
+
+    cat > "$GIT_TEMPLATE_DIR/queue/tasks/testninja.yaml" << 'YAML'
+task:
+  status: in_progress
+  parent_cmd: cmd_test_001
+  target_path: src/test_file.sh
+  report_path: queue/reports/testninja_report_cmd_test_001.yaml
+  report_filename: testninja_report_cmd_test_001.yaml
+YAML
+
+    cat > "$GIT_TEMPLATE_DIR/queue/reports/testninja_report_cmd_test_001.yaml" << 'YAML'
+verdict: PASS
+files_modified:
+  - path: src/test_file.sh
+    change: modified
+binary_checks:
+  AC1:
+    - check: test check
+      result: PASS
+lesson_candidate:
+  found: false
+  no_lesson_reason: no lesson
+result:
+  summary: implementation complete
+YAML
+
+    echo '#!/bin/bash' > "$GIT_TEMPLATE_DIR/src/test_file.sh"
+    # another_file.sh を事前コミット: T-017がgit add+commitをスキップできる
+    echo '#!/bin/bash' > "$GIT_TEMPLATE_DIR/src/another_file.sh"
+    git -C "$GIT_TEMPLATE_DIR" add -A
+    git -C "$GIT_TEMPLATE_DIR" commit -q -m "initial"
+
+    # T-008用フィクスチャ: 既読60件 (python3不要)
+    # printf -- で先頭の"-"がオプションと解釈されるのを防ぐ
+    {
+        printf 'messages:\n'
+        for _i in $(seq 0 59); do
+            printf -- "- content: '既読メッセージ %d'\n  from: 'test_sender'\n  id: 'msg_old_%03d'\n  read: true\n  timestamp: '2026-01-01T%02d:00:00'\n  type: 'test_type'\n" "$_i" "$_i" "$_i"
+        done
+    } > "$GIT_TEMPLATE_DIR/inbox_overflow_all_read.yaml"
+
+    # T-009用フィクスチャ: 未読20件 + 既読40件 (python3不要)
+    {
+        printf 'messages:\n'
+        for _i in $(seq 0 19); do
+            printf -- "- content: '未読メッセージ %d'\n  from: 'test_sender'\n  id: 'msg_unread_%03d'\n  read: false\n  timestamp: '2026-01-01T%02d:00:00'\n  type: 'test_type'\n" "$_i" "$_i" "$_i"
+        done
+        for _i in $(seq 0 39); do
+            printf -- "- content: '既読メッセージ %d'\n  from: 'test_sender'\n  id: 'msg_read_%03d'\n  read: true\n  timestamp: '2026-01-01T%02d:00:00'\n  type: 'test_type'\n" "$_i" "$_i" "$_i"
+        done
+    } > "$GIT_TEMPLATE_DIR/inbox_overflow_mixed.yaml"
+}
+
+teardown_file() {
+    [ -n "${GIT_TEMPLATE_DIR:-}" ] && [ -d "$GIT_TEMPLATE_DIR" ] && rm -rf "$GIT_TEMPLATE_DIR"
+}
+
+init_test_env() {
+    export TEST_TMPDIR="$BATS_TEST_TMPDIR/work"
+    mkdir -p "$TEST_TMPDIR"
+    export INBOX_WRITE_ROOT_OVERRIDE="$TEST_TMPDIR"
+    export TEST_INBOX_WRITE="$PROJECT_ROOT/scripts/inbox_write.sh"
+}
+
+setup_basic_test_env() {
+    export INBOX_WRITE_TEST=1
+    export TEST_INBOX_DIR="$TEST_TMPDIR/queue/inbox"
+    mkdir -p "$TEST_INBOX_DIR" "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_100:
+    status: delegated
+YAML
+    if [ ! -L "$TEST_TMPDIR/scripts/lib" ]; then
+        ln -s "$PROJECT_ROOT/scripts/lib" "$TEST_TMPDIR/scripts/lib"
+    fi
+}
+
+setup() {
+    init_test_env
+}
+
+@test "retro_result is diverted from karo inbox into append-only retro queue" {
+    setup_basic_test_env
+    ln -s "$PROJECT_ROOT/scripts/retro_write.sh" "$TEST_TMPDIR/scripts/retro_write.sh"
+    run bash "$TEST_INBOX_WRITE" karo \
+      "parent_report_id=rpt-1 deployed_at=2026-07-18T15:00:00+09:00 done_at=2026-07-18T15:08:31+09:00 severity=normal" \
+      retro_result testninja append_retro
+    [ "$status" -eq 0 ]
+    [ ! -e "$TEST_INBOX_DIR/karo.yaml" ]
+    [ "$(wc -l < "$TEST_TMPDIR/queue/retro/events.jsonl")" -eq 1 ]
+    grep -q '"duration_seconds": 511' "$TEST_TMPDIR/queue/retro/events.jsonl"
+}
+
+# =============================================================================
+# T-001: 引数バリデーション — target未指定でexit 1
+# =============================================================================
+
+@test "T-001: no arguments → exit 1 with Usage message" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "Usage" ]]
+}
+
+# =============================================================================
+# T-002: 引数バリデーション — content未指定でexit 1
+# =============================================================================
+
+@test "T-002: only target, no content → exit 1" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent"
+    [ "$status" -eq 1 ]
+    [[ "$output" =~ "Usage" ]]
+}
+
+# =============================================================================
+# T-003: 正常書き込み — 新規inboxファイル作成
+# =============================================================================
+
+@test "T-003: normal write to new inbox file → messages array with correct fields" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent" "cmd_100 テストメッセージ" "cmd_new" "shogun"
+    [ "$status" -eq 0 ]
+
+    # YAMLファイルが作成されていることを確認
+    [ -f "$TEST_INBOX_DIR/test_agent.yaml" ]
+
+    # grep検証 (python3不要)
+    [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 1 ]]
+    grep -q "^- content: 'cmd_100 テストメッセージ'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'shogun'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -qE "^  id: 'msg_" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  type: 'cmd_new'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  read: false" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  timestamp: " "$TEST_INBOX_DIR/test_agent.yaml"
+}
+
+@test "T-003c: queue/inbox symlink writes to real target and uses real lock path" {
+    setup_basic_test_env
+    local real_inbox_dir="$TEST_TMPDIR/real_inbox"
+    rm -rf "$TEST_TMPDIR/queue/inbox"
+    mkdir -p "$real_inbox_dir"
+    ln -s "$real_inbox_dir" "$TEST_TMPDIR/queue/inbox"
+
+    run bash "$TEST_INBOX_WRITE" "test_agent" "symlink message" "wake_up" "karo"
+    [ "$status" -eq 0 ]
+
+    [ -f "$real_inbox_dir/test_agent.yaml" ]
+    [ -f "$TEST_TMPDIR/queue/inbox/test_agent.yaml" ]
+    grep -q "^- content: 'symlink message'" "$real_inbox_dir/test_agent.yaml"
+    [ -e "$real_inbox_dir/test_agent.yaml.lock" ]
+}
+
+@test "T-003b: shogun cmd_new without cmd_id is blocked with LS-A07 guidance" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent" "配備せよ" "cmd_new" "shogun"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"[cmd_new_gate] BLOCKED: shogun cmd_new にcmd_idが含まれていない"* ]]
+    [[ "$output" == *"LS-A07: gate迂回禁止"* ]]
+    [[ "$output" == *"bash scripts/cmd_publish.sh cmd_XXXX"* ]]
+    [ ! -f "$TEST_INBOX_DIR/test_agent.yaml" ]
+}
+
+# =============================================================================
+# T-004: 正常書き込み — 既存inboxへの追記
+# =============================================================================
+
+@test "T-004: append to existing inbox → preserves existing messages, adds new one" {
+    setup_basic_test_env
+    # 1件目の書き込み
+    bash "$TEST_INBOX_WRITE" "test_agent" "メッセージ1" "type1" "sender1"
+
+    # 2件目の書き込み
+    run bash "$TEST_INBOX_WRITE" "test_agent" "メッセージ2" "type2" "sender2"
+    [ "$status" -eq 0 ]
+
+    # grep検証 (python3不要)
+    [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 2 ]]
+    # 順序検証: メッセージ1が先頭
+    _l1=$(grep -n "^- content: 'メッセージ1'" "$TEST_INBOX_DIR/test_agent.yaml" | cut -d: -f1)
+    _l2=$(grep -n "^- content: 'メッセージ2'" "$TEST_INBOX_DIR/test_agent.yaml" | cut -d: -f1)
+    [[ "$_l1" -lt "$_l2" ]]
+}
+
+# =============================================================================
+# T-005: メッセージID一意性
+# =============================================================================
+
+@test "T-005: message ID uniqueness → 2 rapid writes produce different IDs" {
+    setup_basic_test_env
+    # 2回連続書き込み
+    bash "$TEST_INBOX_WRITE" "test_agent" "メッセージA"
+    bash "$TEST_INBOX_WRITE" "test_agent" "メッセージB"
+
+    # grep検証 (python3不要): IDが2つあり、ユニークであること
+    [[ "$(grep -c "^  id: " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 2 ]]
+    [[ "$(grep "^  id: " "$TEST_INBOX_DIR/test_agent.yaml" | sort -u | wc -l)" -eq 2 ]]
+}
+
+# =============================================================================
+# T-006: デフォルト値 — type未指定でwake_up
+# =============================================================================
+
+@test "T-006: type/from default values → type=wake_up, from=unknown when not specified" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent" "デフォルトテスト"
+    [ "$status" -eq 0 ]
+
+    # grep検証 (python3不要)
+    grep -q "^  type: 'wake_up'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'unknown'" "$TEST_INBOX_DIR/test_agent.yaml"
+}
+
+# =============================================================================
+# T-007: カスタムtype/from指定
+# =============================================================================
+
+@test "T-007: custom type/from → 4th and 5th args set type and from correctly" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent" "カスタムメッセージ" "custom_type" "custom_sender"
+    [ "$status" -eq 0 ]
+
+    # grep検証 (python3不要)
+    grep -q "^  type: 'custom_type'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'custom_sender'" "$TEST_INBOX_DIR/test_agent.yaml"
+}
+
+@test "T-007a: action argument provided → action field is persisted in YAML" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent" "アクション付き" "custom_type" "custom_sender" "notify_karo"
+    [ "$status" -eq 0 ]
+
+    # grep検証 (python3不要)
+    grep -q "^- action: 'notify_karo'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  type: 'custom_type'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'custom_sender'" "$TEST_INBOX_DIR/test_agent.yaml"
+}
+
+@test "T-007b: action omitted → backward compatible write with WARN and no action field" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent" "アクションなし" "custom_type" "custom_sender"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: action omitted"* ]]
+
+    # grep検証 (python3不要): actionフィールドが存在しないこと
+    ! grep -qE "^[-]? action: " "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  type: 'custom_type'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'custom_sender'" "$TEST_INBOX_DIR/test_agent.yaml"
+}
+
+@test "review_draft attaches memory and semantic context before delivery" {
+    setup_basic_test_env
+    cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo "2026-07-07|cmd_3737|レビュー想起: 過去教訓あり"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_query.sh"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo "matched: [[レビュー想起がpull型依存]]"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+    mkdir -p "$TEST_TMPDIR/queue"
+    cat > "$TEST_TMPDIR/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_3737:
+    purpose: "レビュー依頼へ関連知識をpush型添付する"
+    project: infra
+    acceptance_criteria:
+      - "添付内容が届く"
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "gunshi" "draft cmd_3737 レビュー依頼。" "review_draft" "karo" "review_request"
+    [ "$status" -eq 0 ]
+    grep -q "\[review_context_push\]" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "レビュー想起: 過去教訓あり" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "レビュー想起がpull型依存" "$TEST_INBOX_DIR/gunshi.yaml"
+}
+
+@test "review_draft context search failure is fail-soft and preserves delivery" {
+    setup_basic_test_env
+    cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+exit 42
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_query.sh"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+exit 43
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+
+    run bash "$TEST_INBOX_WRITE" "gunshi" "draft cmd_3737 レビュー依頼。" "review_draft" "karo" "review_request"
+    [ "$status" -eq 0 ]
+    grep -q "^- action: 'review_request'" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "draft cmd_3737 レビュー依頼。" "$TEST_INBOX_DIR/gunshi.yaml"
+    ! grep -q "\[review_context_push\]" "$TEST_INBOX_DIR/gunshi.yaml"
+}
+
+@test "review_draft collects memory and semantic context concurrently" {
+    setup_basic_test_env
+    export REVIEW_CONTEXT_ORDER_LOG="$TEST_TMPDIR/review_context_order.log"
+    cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo memory_start >> "$REVIEW_CONTEXT_ORDER_LOG"
+sleep 0.25
+echo memory_end >> "$REVIEW_CONTEXT_ORDER_LOG"
+echo "parallel memory hit"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_query.sh"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo semantic_start >> "$REVIEW_CONTEXT_ORDER_LOG"
+sleep 0.25
+echo semantic_end >> "$REVIEW_CONTEXT_ORDER_LOG"
+echo "parallel semantic hit"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+
+    run bash "$TEST_INBOX_WRITE" "gunshi" "draft cmd_parallel_context review" "review_draft" "karo" "review_request"
+
+    [ "$status" -eq 0 ]
+    [[ "$(sed -n '1,2p' "$REVIEW_CONTEXT_ORDER_LOG")" == *"memory_start"* ]]
+    [[ "$(sed -n '1,2p' "$REVIEW_CONTEXT_ORDER_LOG")" == *"semantic_start"* ]]
+    ! sed -n '1,2p' "$REVIEW_CONTEXT_ORDER_LOG" | grep -q '_end$'
+    grep -q "parallel memory hit" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "parallel semantic hit" "$TEST_INBOX_DIR/gunshi.yaml"
+}
+
+@test "report_review builds context query from report YAML" {
+    setup_basic_test_env
+    cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+printf 'query=%s\n' "$*"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_query.sh"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+exit 0
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+    mkdir -p "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_3737.yaml" <<'YAML'
+parent_cmd: cmd_3737
+result:
+  summary: "報告レビュー対象の要約"
+files_modified:
+  - path: scripts/inbox_write.sh
+    change: modified
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "gunshi" "testninja報告完了。レビュー依頼: cmd_3737 report=testninja_report_cmd_3737.yaml" "report_review" "karo"
+    [ "$status" -eq 0 ]
+    grep -q "\[review_context_push\]" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "報告レビュー対象の要約" "$TEST_INBOX_DIR/gunshi.yaml"
+    grep -q "scripts/inbox_write.sh" "$TEST_INBOX_DIR/gunshi.yaml"
+}
+
+@test "review context truncation preserves UTF-8 YAML validity" {
+    setup_basic_test_env
+    cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo "memory hit"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_query.sh"
+    cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'SCRIPT'
+#!/usr/bin/env bash
+echo "semantic hit"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"
+
+    long_japanese=$(printf '三層記憶引用検証%.0s' {1..140})
+    run bash "$TEST_INBOX_WRITE" "gunshi" "draft cmd_3737 レビュー依頼。${long_japanese}" "review_draft" "karo" "review_request"
+    [ "$status" -eq 0 ]
+    python3 - "$TEST_INBOX_DIR/gunshi.yaml" <<'PY'
+import sys
+import yaml
+
+path = sys.argv[1]
+with open(path, "rb") as f:
+    raw = f.read()
+raw.decode("utf-8")
+with open(path, encoding="utf-8") as f:
+    yaml.safe_load(f)
+PY
+}
+
+@test "memory DB live insert: inbox write appends event_type=inbox after YAML persistence" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/data"
+    cp "$PROJECT_ROOT/scripts/memory_db_live_insert.py" "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
+
+    python3 <<EOF
+import sqlite3
+
+conn = sqlite3.connect("$TEST_TMPDIR/data/multi_agent_shogun_memory.db")
+conn.execute("""
+CREATE TABLE events (
+    id TEXT PRIMARY KEY,
+    ts TEXT,
+    event_type TEXT,
+    agent TEXT,
+    target TEXT,
+    direction TEXT,
+    summary TEXT,
+    detail TEXT,
+    session_id TEXT,
+    cmd_id TEXT,
+    concepts TEXT,
+    source_file TEXT,
+    parent_event_id INTEGER,
+    importance TEXT
+)
+""")
+conn.execute("CREATE VIRTUAL TABLE events_fts USING fts5(summary, detail, content='events', content_rowid='rowid')")
+conn.commit()
+conn.close()
+EOF
+
+    run bash "$TEST_INBOX_WRITE" "test_agent" "cmd_2985 記憶DB投入" "task_assigned" "karo" "notify"
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_INBOX_DIR/test_agent.yaml" ]
+
+    python3 <<EOF
+import sqlite3
+
+conn = sqlite3.connect("$TEST_TMPDIR/data/multi_agent_shogun_memory.db")
+row = conn.execute("""
+SELECT event_type, agent, target, direction, summary, detail, source_file, importance
+FROM events
+""").fetchone()
+assert row == (
+    "inbox",
+    "karo",
+    "test_agent",
+    "task_assigned",
+    "cmd_2985 記憶DB投入",
+    "cmd_2985 記憶DB投入\ntype: task_assigned\naction: notify\nfrom: karo\ntarget: test_agent",
+    "$TEST_INBOX_DIR/test_agent.yaml",
+    "high",
+), row
+fts_count = conn.execute("SELECT COUNT(*) FROM events_fts").fetchone()[0]
+assert fts_count == 1, fts_count
+EOF
+}
+
+@test "memory DB live insert: DB failure is non-fatal and preserves inbox write" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/scripts"
+    cat > "$TEST_TMPDIR/scripts/memory_db_live_insert.py" <<'PY'
+#!/usr/bin/env python3
+raise SystemExit(7)
+PY
+    chmod +x "$TEST_TMPDIR/scripts/memory_db_live_insert.py"
+
+    run bash "$TEST_INBOX_WRITE" "test_agent" "DB失敗でもinbox成功" "wake_up" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"memory DB inbox insert failed"* ]]
+    [ -f "$TEST_INBOX_DIR/test_agent.yaml" ]
+    grep -q "DB失敗でもinbox成功" "$TEST_INBOX_DIR/test_agent.yaml"
+}
+
+@test "task_new_gate: shogun direct task_new is blocked before inbox write" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "karo" "直接作業指示" "task_new" "shogun"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"task_new_gate"* ]]
+    [[ "$output" == *"BLOCKED"* ]]
+    [[ "$output" == *"cmd_save.sh"* ]]
+    [ ! -f "$TEST_INBOX_DIR/karo.yaml" ]
+}
+
+@test "task_new_gate: karo task_new remains allowed" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" "test_agent" "正規作業指示" "task_new" "karo"
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_INBOX_DIR/test_agent.yaml" ]
+    grep -q "^  type: 'task_new'" "$TEST_INBOX_DIR/test_agent.yaml"
+    grep -q "^  from: 'karo'" "$TEST_INBOX_DIR/test_agent.yaml"
+}
+
+@test "completed report_review_result to karo is auto-read and does not re-trigger gate" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/scripts"
+    printf '2026-06-20T01:00:00\tcmd_9999\tCLEAR\tall_gates_passed\timpl\tunknown\tunknown\tnone\t\n' > "$TEST_TMPDIR/logs/gate_metrics.log"
+    cat > "$TEST_TMPDIR/scripts/cmd_complete_gate.sh" <<'SCRIPT'
+#!/bin/bash
+echo "gate should not run" >> "$INBOX_WRITE_GATE_SENTINEL"
+SCRIPT
+    chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
+    export INBOX_WRITE_GATE_SENTINEL="$TEST_TMPDIR/gate_ran"
+
+    run bash "$TEST_INBOX_WRITE" "karo" "cmd_9999 報告レビュー。verdict: LGTM。" "report_review_result" "gunshi"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"requires explicit queue/reports path"* ]]
+    [ ! -e "$INBOX_WRITE_GATE_SENTINEL" ]
+}
+
+@test "completed report_received to karo is auto-read and skips auto-done side effects" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/logs"
+    printf '2026-06-20T01:00:00\tcmd_9998\tCLEAR\tall_gates_passed\thotfix\tunknown\tunknown\tnone\t\n' > "$TEST_TMPDIR/logs/gate_metrics.log"
+
+    run bash "$TEST_INBOX_WRITE" "karo" "tobisaru、cmd_9998報告完了。報告: queue/reports/tobisaru_report_cmd_9998.yaml" "report_received" "tobisaru"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"auto-read completed notification"* ]]
+    grep -q "^  read: true" "$TEST_INBOX_DIR/karo.yaml"
+}
+
+@test "reviewed ninja report notification to karo is auto-read even before gate clear" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/logs"
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_9997
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "karo" "tobisaru、cmd_9997報告完了。報告: queue/reports/tobisaru_report_cmd_9997.yaml" "report_received" "tobisaru"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"auto-read completed notification"* ]]
+    grep -q "^  read: true" "$TEST_INBOX_DIR/karo.yaml"
+}
+
+@test "report_review_result is not auto-read from review_log alone because it carries gate side effects" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/logs" "$TEST_TMPDIR/scripts"
+    cat > "$TEST_TMPDIR/logs/gunshi_review_log.yaml" <<'YAML'
+- cmd_id: cmd_9996
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "karo" "cmd_9996 tobisaru報告レビュー。verdict: LGTM。" "report_review_result" "gunshi"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"requires explicit queue/reports path"* ]]
+    ! [[ "$output" == *"auto-read completed notification"* ]]
+    [ ! -e "$TEST_INBOX_DIR/karo.yaml" ]
+}
+
+# =============================================================================
+# T-008: Overflow Protection — 50件超で古い既読を削除
+# =============================================================================
+
+@test "T-008: overflow protection at 50 messages → oldest read messages removed" {
+    setup_basic_test_env
+    # 既読60件フィクスチャをコピー (python3不要)
+    mkdir -p "$TEST_INBOX_DIR"
+    cp "$GIT_TEMPLATE_DIR/inbox_overflow_all_read.yaml" "$TEST_INBOX_DIR/test_agent.yaml"
+
+    # 新規メッセージ1件書き込み
+    run bash "$TEST_INBOX_WRITE" "test_agent" "新規メッセージ"
+    [ "$status" -eq 0 ]
+
+    # grep検証: 50件以下 + 新規メッセージ存在 (python3不要)
+    [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -le 50 ]]
+    grep -q "新規メッセージ" "$TEST_INBOX_DIR/test_agent.yaml"
+}
+
+# =============================================================================
+# T-009: Overflow Protection — 未読メッセージは削除されない
+# =============================================================================
+
+@test "T-009: overflow preserves unread → unread messages are NOT removed even when over 50" {
+    setup_basic_test_env
+    # 未読20件+既読40件フィクスチャをコピー (python3不要)
+    mkdir -p "$TEST_INBOX_DIR"
+    cp "$GIT_TEMPLATE_DIR/inbox_overflow_mixed.yaml" "$TEST_INBOX_DIR/test_agent.yaml"
+
+    # 新規メッセージ1件書き込み（未読20→21件になる）
+    run bash "$TEST_INBOX_WRITE" "test_agent" "新規未読"
+    [ "$status" -eq 0 ]
+
+    # grep検証: 未読21件が保持される (python3不要)
+    # overflow保護は既読のみ削除するため、未読21件(元20+新1)が全て残る
+    [[ "$(grep -c "^  read: false" "$TEST_INBOX_DIR/test_agent.yaml")" -eq 21 ]]
+}
+
+@test "mv failure during overflow rewrite is retried and preserves message" {
+    setup_basic_test_env
+    mkdir -p "$TEST_INBOX_DIR" "$TEST_TMPDIR/bin"
+    cp "$GIT_TEMPLATE_DIR/inbox_overflow_all_read.yaml" "$TEST_INBOX_DIR/test_agent.yaml"
+
+    cat > "$TEST_TMPDIR/bin/mv" <<'SCRIPT_EOF'
+#!/bin/bash
+dest="${@: -1}"
+if [[ "$dest" == *"/queue/inbox/test_agent.yaml" && ! -f "${FAKE_MV_STATE}" ]]; then
+    touch "${FAKE_MV_STATE}"
+    exit 1
+fi
+exec /usr/bin/mv "$@"
+SCRIPT_EOF
+    chmod +x "$TEST_TMPDIR/bin/mv"
+
+    export FAKE_MV_STATE="$TEST_TMPDIR/mv_failed_once"
+    export PATH="$TEST_TMPDIR/bin:$PATH"
+    export INBOX_WRITE_MV_RETRIES=2
+    export INBOX_WRITE_MV_RETRY_SLEEP=0.01
+
+    run bash "$TEST_INBOX_WRITE" "test_agent" "mv retry message"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: mv failed"* ]]
+    grep -q "mv retry message" "$TEST_INBOX_DIR/test_agent.yaml"
+    [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 31 ]]
+}
+
+# =============================================================================
+# T-010: flock競合時のリトライ（並行書き込みテスト）
+# =============================================================================
+
+@test "T-010: concurrent writes (flock test) → 8 parallel writes all succeed, no data loss" {
+    setup_basic_test_env
+    # 並行書き込み用のスクリプトを作成
+    cat > "$TEST_TMPDIR/parallel_write.sh" <<'SCRIPT_EOF'
+#!/bin/bash
+INBOX_WRITE="$1"
+AGENT="$2"
+ID="$3"
+bash "$INBOX_WRITE" "$AGENT" "並行メッセージ $ID" "concurrent" "writer_$ID" 2>/dev/null
+SCRIPT_EOF
+    chmod +x "$TEST_TMPDIR/parallel_write.sh"
+
+    for attempt in 1 2 3; do
+        rm -f "$TEST_INBOX_DIR/test_agent.yaml"
+
+        # 8個の並行書き込みプロセスを起動
+        for i in {1..8}; do
+            "$TEST_TMPDIR/parallel_write.sh" "$TEST_INBOX_WRITE" "test_agent" "$i" &
+        done
+
+        # 全プロセスの完了を待つ
+        wait
+
+        # grep検証: 8件 + ユニークID (python3不要)
+        if [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 8 ]] \
+           && [[ "$(grep "^  id: " "$TEST_INBOX_DIR/test_agent.yaml" | sort -u | wc -l)" -eq 8 ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# =============================================================================
+# T-011: 特殊文字のエスケープ処理
+# =============================================================================
+
+@test "T-011: special characters in content → YAML special chars handled safely" {
+    setup_basic_test_env
+    # YAML特殊文字を含むメッセージ
+    SPECIAL_CONTENT="引用符: \"test\" と 'test'
+改行を含む
+コロン: key: value
+ブレース: {key: value}
+配列: [1, 2, 3]"
+
+    run bash "$TEST_INBOX_WRITE" "test_agent" "$SPECIAL_CONTENT"
+    [ "$status" -eq 0 ]
+
+    # 検証: 特殊文字が正しく保存・復元されること
+    python3 <<EOF
+import yaml
+
+with open('$TEST_INBOX_DIR/test_agent.yaml') as f:
+    data = yaml.safe_load(f)
+
+msg = data['messages'][0]
+
+expected_content = '''引用符: "test" と 'test'
+改行を含む
+コロン: key: value
+ブレース: {key: value}
+配列: [1, 2, 3]'''
+
+assert msg['content'] == expected_content, f'Content mismatch: {msg["content"]}'
+
+print('T-011: PASS')
+EOF
+}
+
+# =============================================================================
+# T-012: inbox初期化 — ディレクトリ自動作成
+# =============================================================================
+
+@test "T-012: auto-create inbox directory → missing queue/inbox/ directory is created" {
+    setup_basic_test_env
+    # queue/inbox/ ディレクトリを削除
+    rm -rf "$TEST_INBOX_DIR"
+
+    # ディレクトリが存在しないことを確認
+    [ ! -d "$TEST_INBOX_DIR" ]
+
+    # メッセージ書き込み
+    run bash "$TEST_INBOX_WRITE" "test_agent" "自動作成テスト"
+    [ "$status" -eq 0 ]
+
+    # ディレクトリとファイルが作成されていることを確認
+    [ -d "$TEST_INBOX_DIR" ]
+    [ -f "$TEST_INBOX_DIR/test_agent.yaml" ]
+
+    # grep検証 (python3不要): 1件のメッセージ
+    [[ "$(grep -c "^- " "$TEST_INBOX_DIR/test_agent.yaml")" -eq 1 ]]
+}
+
+@test "task_assigned: duplicate active parent_cmd in peer ninja → BLOCKED and notifies karo" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+  parent_cmd: cmd_dup_001
+YAML
+    cat > "$TEST_TMPDIR/queue/tasks/otherninja.yaml" <<'YAML'
+task:
+  status: in_progress
+  parent_cmd: cmd_dup_001
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "testninja" "タスクを読め" "task_assigned" "karo"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"duplicate_deploy_gate"* ]]
+    [[ "$output" == *"parent_cmd=cmd_dup_001 target=testninja"* ]]
+    [[ "$output" == *"duplicate=otherninja status=in_progress"* ]]
+
+    [ ! -f "$TEST_TMPDIR/queue/inbox/testninja.yaml" ]
+    [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+    grep -q "^  type: 'deploy_blocked'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "duplicates=otherninja(status=in_progress)" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+}
+
+@test "task_assigned: completed peer parent_cmd does not block" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks"
+
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+  parent_cmd: cmd_dup_002
+YAML
+    cat > "$TEST_TMPDIR/queue/tasks/otherninja.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_dup_002
+YAML
+
+    run bash "$TEST_INBOX_WRITE" "testninja" "タスクを読め" "task_assigned" "karo"
+    [ "$status" -eq 0 ]
+    [ -f "$TEST_TMPDIR/queue/inbox/testninja.yaml" ]
+    grep -q "^  type: 'task_assigned'" "$TEST_TMPDIR/queue/inbox/testninja.yaml"
+}
+
+# ============================================================
+# Git uncommitted check tests (merged from tests/unit/ cmd_cycle_001)
+# ============================================================
+
+# Helper: set up git repo + mocks for report_received tests
+setup_git_test_env() {
+    # report_received requires NINJA_NAMES from agent_config.sh
+    # Unset INBOX_WRITE_TEST so the script sources agent_config.sh
+    unset INBOX_WRITE_TEST
+
+    rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/src" "$TEST_TMPDIR/.git"
+    # The template is immutable and both paths normally live on /tmp. Prefer a
+    # CoW clone so git-heavy cases retain full isolation without recopying the
+    # repository fixture; fall back to an ordinary copy where unsupported.
+    cp -a --reflink=auto "$GIT_TEMPLATE_DIR/." "$TEST_TMPDIR/"
+    cp "$PROJECT_ROOT/scripts/retro_write.sh" "$TEST_TMPDIR/scripts/retro_write.sh"
+}
+
+# Wrapper to capture stderr in bats output
+_run_inbox_write() {
+    bash "$TEST_INBOX_WRITE" "$@" 2>&1
+}
+
+_wait_for_file() {
+    local path="$1"
+    local _attempt
+    for _attempt in {1..100}; do
+        [ -f "$path" ] && return 0
+        sleep 0.02
+    done
+    return 1
+}
+
+@test "report_received: uncommitted changes in files_modified → BLOCKED" {
+    setup_git_test_env
+
+    # Modify file WITHOUT committing
+    echo 'echo "modified"' >> "$TEST_TMPDIR/src/test_file.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"git_uncommitted_gate"* ]]
+    [[ "$output" == *"BLOCKED"* ]]
+}
+
+@test "report_received: scout_exempt true skips git_uncommitted_gate" {
+    setup_git_test_env
+
+    sed -i '/parent_cmd:/a\  scout_exempt: true' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    echo 'echo "modified"' >> "$TEST_TMPDIR/src/test_file.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"git_uncommitted_gate"* ]]
+    [[ "$output" == *"SKIP: scout_exempt=true"* ]]
+}
+
+@test "report_received: all files committed → no BLOCK" {
+    setup_git_test_env
+
+    # All files committed — clean working tree
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+
+    # Verify message was delivered to inbox
+    [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+    # The durable parent is acknowledged only after the fingerprint-bound
+    # Gunshi child exists, so Karo is not interrupted before review readiness.
+    grep -q "^  read: true" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    [ -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ]
+    grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    [ ! -s "$TEST_TMPDIR/queue/retro/pending.yaml" ]
+    [ ! -e "$TEST_TMPDIR/queue/retro/events.jsonl" ]
+    grep -q 'legacy_tombstones' "$TEST_TMPDIR/queue/retro/state.json"
+}
+
+@test "report_received: explicit verified linked worktree checks that worktree instead of dirty main" {
+    setup_git_test_env
+    local worktree="$BATS_TEST_TMPDIR/reporter-wt"
+    git -C "$TEST_TMPDIR" worktree add -q -b reporter-wt "$worktree"
+    printf 'echo "main dirty"\n' >> "$TEST_TMPDIR/src/test_file.sh"
+    printf 'echo "reporter committed"\n' >> "$worktree/src/test_file.sh"
+    git -C "$worktree" add src/test_file.sh
+    git -C "$worktree" commit -q -m "reporter worktree change"
+    local commit_hash
+    commit_hash=$(git -C "$worktree" rev-parse HEAD)
+    run bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" commit_hash "$commit_hash"
+    [ "$status" -eq 0 ]
+
+    INBOX_REPORT_WORKTREE_ROOT="$worktree" run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified linked worktree root"* ]]
+}
+
+@test "report_received: arbitrary root and linked-worktree commit mismatch stay blocked" {
+    setup_git_test_env
+    local worktree="$BATS_TEST_TMPDIR/reporter-wt-bad"
+    local foreign="$BATS_TEST_TMPDIR/foreign"
+    git -C "$TEST_TMPDIR" worktree add -q -b reporter-wt-bad "$worktree"
+    mkdir -p "$foreign"
+    git -C "$foreign" init -q
+
+    INBOX_REPORT_WORKTREE_ROOT="$foreign" run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"invalid linked worktree root or report commit mismatch"* ]]
+
+    INBOX_REPORT_WORKTREE_ROOT="$worktree" run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"report commit mismatch"* ]]
+}
+
+@test "report_received: reporter's hunk committed + other ninja's non-overlapping dirty hunk in same file → PASS (AC1)" {
+    setup_git_test_env
+
+    # 報告者(testninja)自身の変更: line2を追加してcommitし、commit_hashを報告YAMLに記録
+    printf 'echo "reporter own change"\n' >> "$TEST_TMPDIR/src/test_file.sh"
+    git -C "$TEST_TMPDIR" add src/test_file.sh
+    git -C "$TEST_TMPDIR" commit -q -m "testninja: own change"
+    local commit_hash
+    commit_hash=$(git -C "$TEST_TMPDIR" rev-parse HEAD)
+    run bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" commit_hash "$commit_hash"
+    [ "$status" -eq 0 ]
+
+    # 他忍者のWIP: 同一ファイルの別行(非重複hunk)に未commit変更を残す
+    printf 'echo "other ninja wip"\n' >> "$TEST_TMPDIR/src/test_file.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"uncommitted non-overlapping diff"* ]]
+    [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
+@test "report_received: reporter's own uncommitted hunk overlapping committed range in same file → BLOCKED (AC2)" {
+    setup_git_test_env
+
+    # 報告者(testninja)がline2を変更してcommitし、commit_hashを報告YAMLに記録
+    printf 'echo "line2"\n' >> "$TEST_TMPDIR/src/test_file.sh"
+    git -C "$TEST_TMPDIR" add src/test_file.sh
+    git -C "$TEST_TMPDIR" commit -q -m "testninja: baseline line2"
+    sed -i 's/line2/line2-updated/' "$TEST_TMPDIR/src/test_file.sh"
+    git -C "$TEST_TMPDIR" add src/test_file.sh
+    git -C "$TEST_TMPDIR" commit -q -m "testninja: update line2"
+    local commit_hash
+    commit_hash=$(git -C "$TEST_TMPDIR" rev-parse HEAD)
+    run bash "$PROJECT_ROOT/scripts/report_field_set.sh" "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" commit_hash "$commit_hash"
+    [ "$status" -eq 0 ]
+
+    # 報告者自身の未commit hunk: commit済み範囲(line2)と重なる箇所にさらに変更を残す
+    # (他者WIPに偽装してcommit漏れを通さないことを確認)
+    sed -i 's/line2-updated/line2-updated-more/' "$TEST_TMPDIR/src/test_file.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"git_uncommitted_gate"* ]]
+    [[ "$output" == *"BLOCKED"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
+@test "report_received: verdict FAIL from binary_checks no → BLOCKED before inbox write" {
+    setup_git_test_env
+
+    python3 <<EOF
+import yaml
+
+path = "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+with open(path, encoding="utf-8") as f:
+    data = yaml.safe_load(f)
+data["verdict"] = "FAIL"
+data["binary_checks"]["AC1"][0]["check"] = "AC1が未完了であることを確認"
+data["binary_checks"]["AC1"][0]["result"] = "no"
+with open(path, "w", encoding="utf-8") as f:
+    yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+EOF
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"binary_checksにnoがあるため報告完了を差戻し"* ]]
+    [[ "$output" == *"AC1[1]: AC1が未完了であることを確認"* ]]
+    [[ "$output" == *"task_failedで家老へ報告せよ"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
+@test "task_failed: FAIL report and failed task deliver exactly once without retry" {
+    setup_git_test_env
+
+    python3 - "$TEST_TMPDIR" <<'PY'
+import pathlib, yaml, sys
+root = pathlib.Path(sys.argv[1])
+task_path = root / "queue/tasks/testninja.yaml"
+report_path = root / "queue/reports/testninja_report_cmd_test_001.yaml"
+task = yaml.safe_load(task_path.read_text())
+task["task"]["status"] = "failed"
+task_path.write_text(yaml.safe_dump(task, allow_unicode=True, sort_keys=False))
+report = yaml.safe_load(report_path.read_text())
+report["verdict"] = "FAIL"
+report["binary_checks"]["AC1"][0].update(check="AC1未達を実測", result="no")
+report_path.write_text(yaml.safe_dump(report, allow_unicode=True, sort_keys=False))
+PY
+
+    run _run_inbox_write karo "未達報告" task_failed testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified failure report"* ]]
+    [ "$(grep -c "^- content: '未達報告'" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+
+    run _run_inbox_write karo "未達報告" task_failed testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "^- content: '未達報告'" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+}
+
+@test "task_failed: PASS report is blocked" {
+    setup_git_test_env
+    run _run_inbox_write karo "不正失敗報告" task_failed testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"requires report verdict=FAIL"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
+@test "task_failed: FAIL report with non-failed task is blocked" {
+    setup_git_test_env
+    python3 - "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'PY'
+import yaml, sys
+path = sys.argv[1]
+data = yaml.safe_load(open(path))
+data["verdict"] = "FAIL"
+data["binary_checks"]["AC1"][0].update(check="AC1未達を実測", result="no")
+yaml.safe_dump(data, open(path, "w"), allow_unicode=True, sort_keys=False)
+PY
+    run _run_inbox_write karo "不正失敗報告" task_failed testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"requires task status=failed"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
+@test "report_received: only files_modified checked, not whole repo" {
+    setup_git_test_env
+
+    # another_file.shはテンプレートで既にコミット済み: git add+commit不要
+    # Modify another_file.sh (NOT in files_modified) without committing
+    echo 'echo modified' >> "$TEST_TMPDIR/src/another_file.sh"
+
+    # src/test_file.sh is clean, src/another_file.sh is dirty but not in check scope
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+}
+
+@test "report_received: files_modified dict list from report_field_set is checked without target_path fallback" {
+    setup_git_test_env
+
+    cat > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+verdict: PASS
+files_modified:
+- change: modified
+  path: src/test_file.sh
+binary_checks:
+  AC1:
+    - check: test check
+      result: PASS
+lesson_candidate:
+  found: false
+  no_lesson_reason: no lesson
+result:
+  summary: implementation complete
+YAML
+
+    echo 'echo modified' >> "$TEST_TMPDIR/src/another_file.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"git_uncommitted_gate"* ]]
+    [[ "$output" != *"BLOCKED"* ]]
+}
+
+@test "report_received: auto-sends report_review to gunshi" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/scripts"
+    ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+    echo 'status: completed' >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+
+    # Review routing is asynchronous and intentionally silent; durable inbox
+    # state and the notification marker are the delivery contract.
+    local attempt
+    for attempt in $(seq 1 50); do
+        grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null && break
+        sleep 0.1
+    done
+    [ -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ]
+    [[ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -ge 1 ]]
+    grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    grep -q "^  from: 'karo'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    grep -q "cmd_test_001" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    grep -q "testninja" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+
+}
+
+@test "report_received v2 persists structured identity and blocks mismatch" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-v2-fixed
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+report_id: rpt-v2-fixed
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m identity
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    grep -q "report_id: 'rpt-v2-fixed'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "report_identity_version: '2'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "task_id: 'cmd_test_001_normal'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "parent_cmd: 'cmd_test_001'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+
+    sed -i 's/rpt-v2-fixed/rpt-reused/' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    run _run_inbox_write karo "別revision" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *mismatched* ]]
+}
+
+@test "report_received fast path does not let a pre-fingerprint event suppress a revised report" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-fast-revision
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-fast-revision
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    mkdir -p "$TEST_TMPDIR/queue/inbox"
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- content: 'old reviewed report'
+  from: 'testninja'
+  id: 'msg_old_without_fingerprint'
+  read: true
+  timestamp: '2026-07-18T10:00:00'
+  type: 'report_received'
+  report_id: 'rpt-fast-revision'
+  report_identity_version: '2'
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m revised-report
+
+    run _run_inbox_write karo "revised report" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" != *DUPLICATE_MSG_ID=msg_old_without_fingerprint* ]]
+    [ "$(grep -c "report_id: 'rpt-fast-revision'" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 2 ]
+    [ "$(grep -c "report_fingerprint:" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+}
+
+@test "report lifecycle canonical event key is exactly once under 20 parallel writers" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/queue/inbox"
+    : > "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+report_id: rpt-parallel-fixed
+report_identity_version: 2
+task_id: cmd_parallel_normal
+parent_cmd: cmd_parallel
+YAML
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    local pids=()
+    for i in $(seq 1 20); do
+        INBOX_WRITE_TEST=1 INBOX_WRITE_ROOT_OVERRIDE="$TEST_TMPDIR" \
+          bash "$TEST_INBOX_WRITE" gunshi "retry-$i report=$report" report_review karo >"$BATS_TEST_TMPDIR/w$i.out" 2>&1 &
+        pids+=("$!")
+    done
+    local failures=0 pid
+    for pid in "${pids[@]}"; do wait "$pid" || failures=$((failures + 1)); done
+    [ "$failures" -eq 0 ]
+    [ "$(grep -c "^- " "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+    [ "$(grep -c "report_id: 'rpt-parallel-fixed'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+    [ "$(grep -l 'DUPLICATE_MSG_ID=' "$BATS_TEST_TMPDIR"/w*.out | wc -l)" -eq 19 ]
+}
+
+@test "report event key preserves distinct type sender and report identity" {
+    setup_git_test_env
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+report_id: rpt-generation-a
+report_identity_version: 2
+task_id: cmd_generation_a
+parent_cmd: cmd_generation
+YAML
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "first report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "other sender report=$report" report_review shogun
+    [ "$status" -eq 0 ]
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "other type report=$report" report_review_result karo
+    [ "$status" -eq 0 ]
+    [ "$(grep -c "^- " "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 3 ]
+}
+
+@test "report review persists a new event for a changed formal report fingerprint and dedupes its retry" {
+    setup_git_test_env
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    cat >> "$TEST_TMPDIR/$report" <<'YAML'
+report_id: rpt-revision-generation
+report_identity_version: 2
+task_id: cmd_revision_generation_normal
+parent_cmd: cmd_revision_generation
+status: completed
+YAML
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "initial report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    local first_id
+    first_id="$(grep -m1 "^  id:" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")"
+
+    sed -i 's/status: completed/status: revision_requested/' "$TEST_TMPDIR/$report"
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "revised report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    [[ "$output" != *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-revision-generation'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+    [ "$(grep -c "report_fingerprint:" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "same revised retry report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-revision-generation'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+    [ -n "$first_id" ]
+}
+
+@test "report_revision resolves target task identity and suppresses only exact retries" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-revision-fixed
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+report_id: rpt-revision-fixed
+report_identity_version: 2
+task_id: cmd_revision_normal
+parent_cmd: cmd_revision
+YAML
+    INBOX_WRITE_TEST=1 run _run_inbox_write testninja "revision one" report_revision karo
+    [ "$status" -eq 0 ]
+    INBOX_WRITE_TEST=1 run _run_inbox_write testninja "revision one" report_revision karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-revision-fixed'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 1 ]
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write testninja "revision two" report_revision karo
+    [ "$status" -eq 0 ]
+    [[ "$output" != *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-revision-fixed'" "$TEST_TMPDIR/queue/inbox/testninja.yaml")" -eq 2 ]
+}
+
+@test "report_received retry repairs one missing fingerprint-specific gunshi review" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-review-repair
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-review-repair
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m review-repair
+
+    run _run_inbox_write karo "report A" report_received testninja
+    [ "$status" -eq 0 ]
+    local attempt
+    for attempt in $(seq 1 50); do
+        grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null && break
+        sleep 0.1
+    done
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+
+    printf 'messages: []\n' > "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    run _run_inbox_write karo "report A retry" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+
+    run _run_inbox_write karo "report A retry again" report_received testninja
+    [ "$status" -eq 0 ]
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+}
+
+@test "completion aliases converge on one review per report fingerprint across ten deliveries" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-two-route-review
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-two-route-review
+report_identity_version: 2
+task_id: cmd_two_route_normal
+parent_cmd: cmd_two_route
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m two-route-review
+
+    local i event_type
+    for i in $(seq 1 10); do
+        if (( i % 2 )); then event_type=report_received; else event_type=report_submitted; fi
+        run _run_inbox_write karo "route-$i" "$event_type" testninja
+        [ "$status" -eq 0 ]
+    done
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+
+    printf '\nsemantic_generation: 2\n' >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+    run _run_inbox_write karo "new generation" report_received testninja
+    [ "$status" -eq 0 ]
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+    [ "$(grep "^  report_fingerprint:" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" | sort -u | wc -l)" -eq 2 ]
+}
+
+@test "rpt-42363aca 09:42:57 09:43:34 09:44:36 retry shadow stores once" {
+    setup_git_test_env
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+report_id: rpt-42363aca-48e5-4968-a3e3-25c350e51b77
+report_identity_version: 2
+task_id: cmd_shadow_normal
+parent_cmd: cmd_shadow
+YAML
+    local stamp
+    for stamp in 09:42:57 09:43:34 09:44:36; do
+        INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "background retry $stamp report=$report" report_review karo
+        [ "$status" -eq 0 ]
+    done
+    [ "$(grep -c "report_id: 'rpt-42363aca-48e5-4968-a3e3-25c350e51b77'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+}
+
+@test "legacy fallback report identity uses the same exactly-once event contract" {
+    setup_git_test_env
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "legacy first report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "legacy retry changed text report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'legacy-" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+}
+
+@test "report_submitted alias: validates report, auto-sends gunshi review, and marks task done" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/scripts"
+    ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+    echo 'status: completed' >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+
+    run _run_inbox_write karo "cmd_test_001 完了" report_submitted testninja
+    [ "$status" -eq 0 ]
+    local attempt
+    for attempt in $(seq 1 50); do
+        grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null && break
+        sleep 0.1
+    done
+    grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    grep -q "^  status: done" "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    python3 - "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'PY'
+import datetime as dt
+import sys
+import yaml
+
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+done_at = task.get("done_at")
+completed_at = task.get("completed_at")
+assert done_at == completed_at
+dt.datetime.fromisoformat(str(done_at))
+PY
+}
+
+@test "task_assigned: codex ninja delivery verification retries up to 2 times" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+YAML
+
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    export TMUX_SEND_COUNT_FILE="$TEST_TMPDIR/tmux_send_count"
+    export TEST_TASK_FILE="$TEST_TMPDIR/queue/tasks/testninja.yaml"
+
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes)
+    echo "shogun:agents.3 testninja"
+    ;;
+  send-keys)
+    if [[ "$*" == *" Enter"* ]]; then
+      count=0
+      [ -f "$TMUX_SEND_COUNT_FILE" ] && count=$(cat "$TMUX_SEND_COUNT_FILE")
+      count=$((count + 1))
+      echo "$count" > "$TMUX_SEND_COUNT_FILE"
+      if [ "$count" -ge 2 ]; then
+        # sedでstatus更新 (python3不要): task YAMLは"  status: assigned"の1フィールドのみ
+        sed -i 's/  status: assigned/  status: acknowledged/' "$TEST_TASK_FILE"
+      fi
+    fi
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" "testninja" "タスクを読め" "task_assigned" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified after retry 2/2"* ]]
+
+    grep -q "set-buffer -b nudge_testninja" "$TMUX_LOG"
+    [ "$(cat "$TMUX_SEND_COUNT_FILE")" -eq 2 ]
+
+    # grep検証 (python3不要)
+    grep -q "  status: acknowledged" "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+}
+
+@test "task_assigned: codex non-ninja delivery verification uses inbox read only" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/bin"
+
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    gunshi:
+      type: codex
+YAML
+
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    export TEST_INBOX_FILE="$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes)
+    echo "shogun:agents.2 gunshi"
+    ;;
+  send-keys)
+    if [[ "$*" == *" Enter"* ]]; then
+      sed -i 's/read: false/read: true/' "$TEST_INBOX_FILE"
+    fi
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" "gunshi" "レビュー開始" "task_assigned" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified after retry 1/2"* ]]
+    [[ "$output" != *"remained unverified"* ]]
+
+    [ ! -f "$TEST_TMPDIR/queue/tasks/gunshi.yaml" ]
+    grep -q "read: true" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+}
+
+@test "task_assigned: codex ninja delivery verification accepts initial working pane" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+YAML
+
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes)
+    echo "shogun:agents.3 testninja"
+    ;;
+  capture-pane)
+    echo "• Working"
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" "testninja" "タスクを読め" "task_assigned" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified (prompt/working evidence) for testninja"* ]]
+    [[ "$output" != *"codex nudge retry"* ]]
+    [[ "$output" != *"remained unverified"* ]]
+}
+
+@test "task_assigned: codex prompt visible during hook is delivery evidence without retry" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+    printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes) echo "shogun:agents.3 testninja" ;;
+  capture-pane) echo "inbox1 — タスクYAML: ${INBOX_WRITE_ROOT_OVERRIDE}/queue/tasks/testninja.yaml を読んで作業開始せよ"; echo "• Running UserPromptSubmit hook" ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" testninja "タスクを読め" task_assigned karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified (prompt/working evidence)"* ]]
+    [[ "$output" != *"codex nudge retry"* ]]
+    [ "$(grep -c 'send-keys' "$TMUX_LOG" || true)" -eq 0 ]
+}
+
+@test "task_assigned: wrapped codex prompt and hollow hook bullet are delivery evidence without retry" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+    printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes) echo "shogun:agents.3 testninja" ;;
+  capture-pane)
+    echo "› inbox1 — タスクYAML: ${INBOX_WRITE_ROOT_OVERRIDE}/queue/tasks/"
+    echo "testninja.yaml を読んで作業開始せよ"
+    echo "◦ Running UserPromptSubmit hook"
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" testninja "タスクを読め" task_assigned karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"verified (prompt/working evidence)"* ]]
+    [[ "$output" != *"codex nudge retry"* ]]
+    [ "$(grep -c 'send-keys' "$TMUX_LOG" || true)" -eq 0 ]
+}
+
+@test "task_assigned: codex ninja delivery verification still warns when truly unverified" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+YAML
+
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes)
+    echo "shogun:agents.3 testninja"
+    ;;
+  capture-pane)
+    echo "›"
+    ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 INBOX_CODEX_NUDGE_RETRIES=0 run bash "$TEST_INBOX_WRITE" "testninja" "タスクを読め" "task_assigned" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: codex delivery remained unverified for testninja after 0 retries"* ]]
+}
+
+@test "report_review_result: LGTM is provisional and does not start cmd_complete_gate" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate" "$TEST_TMPDIR/queue/reports"
+    ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+    ln -sf "$PROJECT_ROOT/scripts/review_approval.sh" "$TEST_TMPDIR/scripts/review_approval.sh"
+    ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
+    ln -sf "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_TMPDIR/scripts/lib/report_commit_identity.py"
+    ln -sf "$PROJECT_ROOT/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_write.sh"
+
+    cat > "$TEST_TMPDIR/scripts/cmd_complete_gate.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$1" > "$INBOX_WRITE_BG_LOG"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
+    export INBOX_WRITE_BG_LOG="$TEST_TMPDIR/cmd_complete_gate.log"
+    printf 'parent_cmd: cmd_karo_auto_review_gate\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
+
+    cat > "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done" <<'EOF'
+timestamp: 2026-04-21T13:00:00
+source: deploy_preflight
+note: placeholder
+EOF
+
+    REVIEW_APPROVAL_ROOT="$TEST_TMPDIR" REVIEW_APPROVAL_NO_TRIGGER=1 bash "$PROJECT_ROOT/scripts/review_approval.sh" cmd_karo_auto_review_gate gunshi LGTM "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
+    run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: LGTM。report: queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml" report_review_result gunshi
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"provisional gunshi LGTM recorded"* ]]
+    [ ! -e "$INBOX_WRITE_BG_LOG" ]
+    grep -q '^source: deploy_preflight$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done"
+    [ -d "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_approvals" ]
+}
+
+@test "report_review_result: LGTM without review-time marker is blocked" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/scripts/lib"
+    ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
+    ln -sf "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_TMPDIR/scripts/lib/report_commit_identity.py"
+    printf 'parent_cmd: cmd_guard\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
+    run _run_inbox_write karo "cmd_guard verdict: LGTM report: queue/reports/ninja_report_cmd_guard.yaml" report_review_result gunshi
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"approval marker missing, stale, or mismatched"* ]]
+}
+
+@test "report_review_result: LGTM plus structured gate_prediction BLOCK is rejected before persistence" {
+    setup_basic_test_env
+    local inbox="$TEST_TMPDIR/queue/inbox/karo.yaml"
+    [ ! -e "$inbox" ]
+    run _run_inbox_write karo "cmd_guard verdict: LGTM; gate_prediction: BLOCK; report: queue/reports/ninja_report_cmd_guard.yaml" report_review_result gunshi
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"contradictory report_review_result"* ]]
+    [ ! -e "$inbox" ]
+}
+
+@test "report_review_result: LGTM plus BLOCK reason suffix variations are rejected before persistence" {
+    setup_basic_test_env
+    local inbox="$TEST_TMPDIR/queue/inbox/karo.yaml"
+    local prediction
+    local -a predictions=(
+        'BLOCK(reason)'
+        'BLOCK[reason]'
+        'BLOCK/reason'
+        'BLOCK、理由'
+        'BLOCK reason'
+        'BLOCK'
+    )
+
+    for prediction in "${predictions[@]}"; do
+        rm -f "$inbox"
+        run _run_inbox_write karo "verdict: LGTM; gate_prediction: $prediction" report_review_result gunshi
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"contradictory report_review_result"* ]]
+        [ ! -e "$inbox" ]
+    done
+}
+
+@test "report_review_result: contradiction guard preserves non-BLOCK values and unrelated BLOCK text" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/queue/reports" "$TEST_TMPDIR/scripts/lib"
+    ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_TMPDIR/scripts/lib/review_approval.sh"
+    ln -sf "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_TMPDIR/scripts/lib/report_commit_identity.py"
+    ln -sf "$PROJECT_ROOT/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_write.sh"
+    printf 'parent_cmd: cmd_guard\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
+    REVIEW_APPROVAL_ROOT="$TEST_TMPDIR" REVIEW_APPROVAL_NO_TRIGGER=1 bash "$PROJECT_ROOT/scripts/review_approval.sh" cmd_guard gunshi LGTM "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
+    local content
+    local -a contents=(
+        'cmd_guard verdict: LGTM; gate_prediction: BLOCKED; report: queue/reports/ninja_report_cmd_guard.yaml'
+        'cmd_guard verdict: LGTM; gate_prediction: BLOCKER; report: queue/reports/ninja_report_cmd_guard.yaml'
+        'verdict: FAIL; gate_prediction: BLOCK(reason)'
+        'cmd_guard verdict: LGTM; gate_prediction: CLEAR; note: BLOCK appears only in free explanation; report: queue/reports/ninja_report_cmd_guard.yaml'
+    )
+
+    for content in "${contents[@]}"; do
+        run _run_inbox_write karo "$content" report_review_result gunshi
+        [ "$status" -eq 0 ]
+        [[ "$output" != *"contradictory report_review_result"* ]]
+    done
+}
+
+@test "report_revision: terminal task and completed report are blocked before persistence with formal RC command" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_terminal_revision
+  report_path: queue/reports/testninja_report_cmd_terminal_revision.yaml
+YAML
+    printf 'status: completed\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_terminal_revision.yaml"
+
+    run _run_inbox_write testninja "修正せよ" report_revision karo
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"requires formal RC reopen"* ]]
+    [[ "$output" == *"bash scripts/review_approval.sh cmd_terminal_revision karo RC"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/inbox/testninja.yaml" ]
+}
+
+@test "report_revision: formal RC reopened state and normal notification classes remain allowed" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/reports"
+    cat > "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  status: assigned
+  parent_cmd: cmd_formal_revision
+  report_path: queue/reports/testninja_report_cmd_formal_revision.yaml
+YAML
+    printf 'status: revision_requested\n' > "$TEST_TMPDIR/queue/reports/testninja_report_cmd_formal_revision.yaml"
+
+    run _run_inbox_write testninja "正式RC後の修正" report_revision karo
+    [ "$status" -eq 0 ]
+    run _run_inbox_write testninja "再開せよ" task_reopened karo
+    [ "$status" -eq 0 ]
+    run _run_inbox_write testninja "通常レビュー" report_review karo
+    [ "$status" -eq 0 ]
+    run _run_inbox_write karo "非忍者宛revision" report_revision gunshi
+    [ "$status" -eq 0 ]
+}
+
+@test "review notification contradiction guard ignores valid non-contradictory forms" {
+    setup_basic_test_env
+    run _run_inbox_write karo "verdict: FAIL; gate_prediction: BLOCK" report_review_result gunshi
+    [ "$status" -eq 0 ]
+    run _run_inbox_write karo "draft review verdict: APPROVE; gate_prediction: BLOCK" review_result gunshi
+    [ "$status" -eq 0 ]
+    run _run_inbox_write karo "説明文ではBLOCK文字列を扱うが gate_prediction: CLEAR" report_review_result gunshi
+    [ "$status" -eq 0 ]
+}
+
+@test "report_review_result: FAIL does not update placeholder or run cmd_complete_gate" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate"
+    ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+
+    cat > "$TEST_TMPDIR/scripts/cmd_complete_gate.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$1" > "$INBOX_WRITE_BG_LOG"
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/cmd_complete_gate.sh"
+    export INBOX_WRITE_BG_LOG="$TEST_TMPDIR/cmd_complete_gate.log"
+
+    cat > "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done" <<'EOF'
+timestamp: 2026-04-21T13:00:00
+source: deploy_preflight
+note: placeholder
+EOF
+
+    run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: FAIL。" report_review_result gunshi
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"review_gate.done updated"* ]]
+    [[ "$output" != *"cmd_complete_gate.sh started in background"* ]]
+
+    grep -q '^source: deploy_preflight$' "$TEST_TMPDIR/queue/gates/cmd_karo_auto_review_gate/review_gate.done"
+    [ ! -f "$INBOX_WRITE_BG_LOG" ]
+}
+
+@test "review_result: forwarded to active ninjas only as task_supplement" {
+    rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks"
+    # GIT_TEMPLATE_DIR (tmpfs) から コピー: NTFS→tmpfs を回避 (~105ms削減)
+    cp -a "$GIT_TEMPLATE_DIR/scripts/lib" "$TEST_TMPDIR/scripts/lib"
+    unset INBOX_WRITE_TEST
+
+    cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
+get_ninja_names() { echo "ninja_a ninja_b ninja_c"; }
+get_allowed_targets() { echo "karo shogun gunshi ninja_a ninja_b ninja_c"; }
+get_commander_names() { echo "shogun karo gunshi"; }
+is_commander_role() { case " $(get_commander_names) " in *" $1 "*) return 0 ;; esac; return 1; }
+get_commander_inbox_path() { is_commander_role "$1" || return 1; echo "${INBOX_WRITE_ROOT_OVERRIDE}/queue/inbox/${1}.yaml"; }
+MOCK
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_a.yaml" <<'YAML'
+task:
+  status: assigned
+YAML
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_b.yaml" <<'YAML'
+task:
+  status: in_progress
+YAML
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_c.yaml" <<'YAML'
+task:
+  status: idle
+YAML
+
+    run _run_inbox_write karo "verdict: FAIL cmd_999 要確認" review_result gunshi
+    [ "$status" -eq 0 ]
+
+    # grep検証 (python3不要)
+    grep -q "^  type: 'review_result'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    for _ninja in ninja_a ninja_b; do
+        [[ "$(grep -c "^- " "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml")" -eq 1 ]]
+        grep -q "^  from: 'gunshi'" "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml"
+        grep -q "^  type: 'task_supplement'" "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml"
+        grep -q "軍師レビュー補足: verdict: FAIL cmd_999 要確認" "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml"
+    done
+    [ ! -f "$TEST_TMPDIR/queue/inbox/ninja_c.yaml" ]
+}
+
+@test "task_supplement: not forwarded again to avoid recursive fanout" {
+    rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks"
+    # GIT_TEMPLATE_DIR (tmpfs) から コピー: NTFS→tmpfs を回避 (~105ms削減)
+    cp -a "$GIT_TEMPLATE_DIR/scripts/lib" "$TEST_TMPDIR/scripts/lib"
+    unset INBOX_WRITE_TEST
+
+    cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
+get_ninja_names() { echo "ninja_a ninja_b"; }
+get_allowed_targets() { echo "karo shogun gunshi ninja_a ninja_b"; }
+get_commander_names() { echo "shogun karo gunshi"; }
+is_commander_role() { case " $(get_commander_names) " in *" $1 "*) return 0 ;; esac; return 1; }
+get_commander_inbox_path() { is_commander_role "$1" || return 1; echo "${INBOX_WRITE_ROOT_OVERRIDE}/queue/inbox/${1}.yaml"; }
+MOCK
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_a.yaml" <<'YAML'
+task:
+  status: in_progress
+YAML
+
+    run _run_inbox_write karo "軍師レビュー補足: 既存補足" task_supplement gunshi
+    [ "$status" -eq 0 ]
+
+    # grep検証 (python3不要)
+    grep -q "^  type: 'task_supplement'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    [ ! -f "$TEST_TMPDIR/queue/inbox/ninja_a.yaml" ]
+    [ ! -f "$TEST_TMPDIR/queue/inbox/ninja_b.yaml" ]
+}
+
+@test "report_received: report moved to archive (no symlink) → archive fallback succeeds" {
+    setup_git_test_env
+
+    # archive_completed.sh移動後にsymlink作成失敗したケースをシミュレート:
+    # queue/reports/からqueue/archive/reports/へ移動(シムリンク無し)
+    mkdir -p "$TEST_TMPDIR/queue/archive/reports"
+    mv "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" \
+       "$TEST_TMPDIR/queue/archive/reports/testninja_report_cmd_test_001_20260425.yaml"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"archive fallback"* ]]
+}
+
+@test "filesystem fast-path: known ninja target succeeds without sourcing agent_config" {
+    rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
+    mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/inbox"
+    unset INBOX_WRITE_TEST
+
+    cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
+echo "agent_config should not be sourced on filesystem fast-path" >&2
+return 99
+MOCK
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_fast.yaml" <<'YAML'
+task:
+  status: assigned
+YAML
+
+    run _run_inbox_write ninja_fast "fast path ok" wake_up karo
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"agent_config should not be sourced"* ]]
+    [ -f "$TEST_TMPDIR/queue/inbox/ninja_fast.yaml" ]
+}
+
+@test "filesystem fast-path: ninja sender to shogun is blocked without agent_config" {
+    rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
+    mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks"
+    unset INBOX_WRITE_TEST
+
+    cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
+echo "agent_config should not be sourced on filesystem fast-path" >&2
+return 99
+MOCK
+
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_fast.yaml" <<'YAML'
+task:
+  status: in_progress
+YAML
+
+    run _run_inbox_write shogun "relay forbidden" wake_up ninja_fast
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Ninja cannot send inbox to shogun directly"* ]]
+    [[ "$output" != *"agent_config should not be sourced"* ]]
+}
