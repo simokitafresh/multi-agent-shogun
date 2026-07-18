@@ -1049,10 +1049,51 @@ YAML
     printf '%s\n' "$output" >&3
   fi
   [ "$status" -eq 0 ]
-  run grep -F 'deploy_task.sh:worktree=yes,head=yes,last_commit=' "$task"
+  run grep -F 'deploy_task.sh:worktree=yes,head=yes,last_commit=pending@' "$task"
   [ "$status" -eq 0 ]
   run grep -F 'untracked-target.txt:worktree=yes,head=no,last_commit=none' "$task"
   [ "$status" -eq 0 ]
   run grep -F 'target_path_head_warning:' "$task"
   [ "$status" -eq 0 ]
+}
+
+@test "target history cold miss is deferred while HEAD safety remains synchronous" {
+  local tracked task
+  tracked=$(realpath "$BATS_TEST_DIRNAME/../../scripts/deploy_task.sh")
+  task="$BATS_TEST_TMPDIR/task-history.yaml"
+  cat > "$task" <<YAML
+task:
+  project: ''
+  target_path: $tracked
+YAML
+  run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; inject_target_path_check "$2"' _ "$TEST_PROJECT" "$task"
+  [ "$status" -eq 0 ]
+  grep -Fq 'last_commit=pending@' "$task"
+  grep -Fq 'path=scripts/deploy_task.sh' "$TEST_PROJECT/queue/deferred/git_history.tsv"
+}
+
+@test "stale report cleanup queue preserves source until revalidation" {
+  local report="$TEST_PROJECT/queue/reports/sasuke_report_cmd_old.yaml"
+  mkdir -p "$(dirname "$report")"
+  printf 'parent_cmd: cmd_old\nstatus: pending\nverdict: ""\n' > "$report"
+  run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; deploy_task_queue_stale_report "$2" cmd_old ""' _ "$TEST_PROJECT" "$report"
+  [ "$status" -eq 0 ]
+  [ -f "$report" ]
+  grep -Fq "path=$report" "$TEST_PROJECT/queue/deferred/stale_reports.tsv"
+}
+
+@test "history cache accepts only exact HEAD and path generation" {
+  local repo head rel key cache
+  repo=$(git -C "$PROJECT_ROOT" rev-parse --show-toplevel)
+  head=$(git -C "$repo" rev-parse HEAD)
+  rel=scripts/deploy_task.sh
+  key=$(printf '%s\0%s\0%s' "$repo" "$head" "$rel" | sha256sum | awk '{print $1}')
+  cache="$TEST_PROJECT/.cache/deploy-history/$key"
+  mkdir -p "$(dirname "$cache")"
+  printf '%s\t%s\t%s\n' "$head" "$rel" 0123456789012345678901234567890123456789 > "$cache"
+  run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; deploy_task_history_cache_get "$2" "$3" "$4"' _ "$TEST_PROJECT" "$repo" "$head" "$rel"
+  [ "$status" -eq 0 ]
+  [ "$output" = 0123456789012345678901234567890123456789 ]
+  run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; deploy_task_history_cache_get "$2" "$3" "$4"' _ "$TEST_PROJECT" "$repo" 0000000000000000000000000000000000000000 "$rel"
+  [ "$status" -ne 0 ]
 }
