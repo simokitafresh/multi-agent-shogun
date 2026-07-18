@@ -1,4 +1,8 @@
 ---
+<!-- script_refs_checked_at: 2026-07-19T02:13:00+09:00 -->
+<!-- 2026-07-19 GA-298修正後再検分: 直前検分2026-07-19T01:26:00+09:00以降のrun_tests.sh commitは0件（最新b3a8be4a4、2026-07-19T00:17:38+09:00）。現HEAD同期でmtimeのみ進んだため、公開mode/receipt/all cache/aggregate再入/失敗exit/14列台帳の契約変更なし。 -->
+<!-- script_refs_checked_at: 2026-07-19T01:26:00+09:00 -->
+<!-- 2026-07-19 cmd_karo_hotfix_skill_refs_codd_refactor_202607190121検分: run_tests.sh 108451a3f..b3a8be4a4の全7差分をgit log/showで確認。公開実行は耐久receiptを生成・検証し、allは明示指定なしならcacheを無効化、集約runnerの再入はexit 2でBLOCKして子実行をfile modeへ限定する。公開mode引数(all/unit/affected/file)、test選択、失敗exit、14列台帳契約は維持され、Phase 1/5の通常runner再利用・専用計測run禁止方針に本文変更は不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
 <!-- 2026-07-18検分: run_tests.sh ad583f31はparallel cooperative fail-fast化。mode/選択は不変、失敗後の未投入queueを閉じ、投入済みlightのみ完走する。 -->
 <!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
