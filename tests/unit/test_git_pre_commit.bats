@@ -666,3 +666,42 @@ EOF
 
     [ "$status" -eq 0 ]
 }
+
+@test "GA-298 allows script inspection metadata-only change without codd context" {
+    mkdir -p "$TEST_ROOT/skills/codd-refactor"
+    printf '%s\n' '---' 'name: codd-refactor' > "$TEST_ROOT/skills/codd-refactor/SKILL.md"
+    (cd "$TEST_ROOT" && git add skills/codd-refactor/SKILL.md && git commit -qm fixture)
+    sed -i '1a<!-- script_refs_checked_at: 2026-07-19T01:26:00+09:00 -->\n<!-- 2026-07-19検分: runner差分を確認。公開mode契約は不変、本文変更不要。 -->' "$TEST_ROOT/skills/codd-refactor/SKILL.md"
+    (cd "$TEST_ROOT" && git add skills/codd-refactor/SKILL.md)
+
+    run_hook
+
+    [ "$status" -eq 0 ]
+}
+
+@test "GA-298 blocks mixed inspection metadata and substantive skill change" {
+    mkdir -p "$TEST_ROOT/skills/codd-refactor"
+    printf '%s\n' '---' 'name: codd-refactor' > "$TEST_ROOT/skills/codd-refactor/SKILL.md"
+    (cd "$TEST_ROOT" && git add skills/codd-refactor/SKILL.md && git commit -qm fixture)
+    sed -i '1a<!-- script_refs_checked_at: 2026-07-19T01:26:00+09:00 -->\nnew-contract: changed' "$TEST_ROOT/skills/codd-refactor/SKILL.md"
+    (cd "$TEST_ROOT" && git add skills/codd-refactor/SKILL.md)
+
+    run_hook
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK(GA-288): CoDD source change requires staged context/codd.md freshness evidence"* ]]
+}
+
+@test "GA-298 blocks deleted or renamed CoDD skill without codd context" {
+    mkdir -p "$TEST_ROOT/skills/codd-refactor"
+    printf '%s\n' '---' 'name: codd-refactor' > "$TEST_ROOT/skills/codd-refactor/SKILL.md"
+    (cd "$TEST_ROOT" && git add skills/codd-refactor/SKILL.md && git commit -qm fixture)
+    (cd "$TEST_ROOT" && git rm -q skills/codd-refactor/SKILL.md)
+    run_hook
+    [ "$status" -eq 1 ]
+
+    (cd "$TEST_ROOT" && git reset -q HEAD^ -- . && git checkout -q HEAD -- skills/codd-refactor/SKILL.md)
+    (cd "$TEST_ROOT" && git mv skills/codd-refactor/SKILL.md skills/codd-refactor/RENAMED.md)
+    run_hook
+    [ "$status" -eq 1 ]
+}

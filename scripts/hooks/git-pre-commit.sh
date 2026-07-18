@@ -71,6 +71,7 @@ precommit_terminal_receipt() {
 # this before self-sync so the hook never pays a second git diff --cached scan.
 declare -a _STAGED_FILES=()
 declare -a _ADDED_TEST_FILES=()
+declare -A _STAGED_FILE_STATUS=()
 _STAGED_FILES_LOADED=false
 
 load_staged_file_cache() {
@@ -84,10 +85,11 @@ load_staged_file_cache() {
         path="${path_b:-$path_a}"
         [[ -n "$path" ]] || continue
         _STAGED_FILES+=("$path")
+        _STAGED_FILE_STATUS["$path"]="$status"
         if [[ "$status" == A* && "$path" == tests/unit/test_*.bats ]]; then
             _ADDED_TEST_FILES+=("$path")
         fi
-    done < <(git diff --cached --name-status --diff-filter=ACMR 2>/dev/null)
+    done < <(git diff --cached --name-status --diff-filter=ACMRD 2>/dev/null)
 }
 
 list_staged_files() {
@@ -229,11 +231,43 @@ is_codd_context_source_file() {
     esac
 }
 
+is_codd_inspection_metadata_only_change() {
+    local file="${1:-}" status line content saw_change=false
+    status="${_STAGED_FILE_STATUS[$file]:-}"
+
+    # A new/deleted/renamed source contract is substantive even if its current
+    # text happens to contain only inspection comments.  Unknown status also
+    # fails closed instead of silently weakening the freshness pair.
+    [[ "$status" == M* ]] || return 1
+    case "$file" in
+        skills/codd/SKILL.md|skills/codd-refactor/SKILL.md) ;;
+        *) return 1 ;;
+    esac
+
+    while IFS= read -r line; do
+        case "$line" in
+            '+++'*|'---'*|'@@'*) continue ;;
+            '+'*|'-'*)
+                saw_change=true
+                content="${line:1}"
+                if [[ "$content" =~ ^[[:space:]]*\<!--[[:space:]]*script_refs_checked_at:[[:space:]]*[^[:space:]].*--\>[[:space:]]*$ ]]; then
+                    continue
+                fi
+                if [[ "$content" =~ ^[[:space:]]*\<!--[[:space:]]*.*(検分|Script[[:space:]]refs[[:space:]]verified:).*(契約|contract|本文|変更|差分|不変|維持).*(--\>)[[:space:]]*$ ]]; then
+                    continue
+                fi
+                return 1
+                ;;
+        esac
+    done < <(git diff --cached --no-ext-diff --unified=0 -- "$file" 2>/dev/null)
+    [[ "$saw_change" == "true" ]]
+}
+
 check_codd_context_freshness_pair() {
     local file has_source=false
     while IFS= read -r file; do
         [[ -n "$file" ]] || continue
-        if is_codd_context_source_file "$file"; then
+        if is_codd_context_source_file "$file" && ! is_codd_inspection_metadata_only_change "$file"; then
             has_source=true
             break
         fi
