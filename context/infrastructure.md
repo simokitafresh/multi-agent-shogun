@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-17 cmd_karo_hotfix_context_freshness_ga281_202607170612 -->
-<!-- source_commit:89ebc48a37047951ad4754548d1437dfd77fb127 reason:ga285-context-update-candidate-contract evidence:evidence-cmd-complete-candidate-and-non-reflection-boundary -->
+<!-- source_commit:0fd87ed81ee3105cb9f4f5ce75f7024ba58884ba reason:skill-script-refs-revalidated evidence:skill-ref-gate-8-to-0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -18,6 +18,8 @@ daemon watchdogは個別health checkに加え、`inbox_watcher.sh>=9`・`ninja_m
 context freshnessの`source_commit`境界はinfra root fallbackにも適用し、同日のcontext更新より前のsource commitを再ALERTしない。境界後のsource commitだけを検出し、ALERTには直近3件のhash・subjectを同梱して再調査なしで更新対象へ到達させる。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124、GA-264）
 
 cmd完了時のown-commit freshness判定は、未反映commitをBLOCKする前に`CONTEXT_UPDATE_CANDIDATE project=<id> context=<path> source_commit=<hash> reason=own_reviewed_commit`を機械可読出力し、更新対象を自動供給する。承認済み変更がtest-onlyの場合だけ`CONTEXT_NON_REFLECTION_BOUNDARY ... reason=test_only`を出して正当な非反映境界を保持する。→ `scripts/cmd_complete_gate.sh` / `tests/unit/test_cmd_complete_gate_context_freshness_block.bats`（GA-285）
+
+8スキル（dashboard-update / idle-persist / review-bundle / verdict-check / karo-direct / ninja-commit / recon-dual / shogun-cli-switch）の対応script参照契約を再同期し、skill-ref gate WARN 8→0、validator 8/8 PASS・SKIP0を確認。→ commits `c4a654742`, `0fd87ed81`（cmd_karo_hotfix_skill_refs_batch_a/b_20260718140219）
 
 SG7レビュー情報はformal Gunshi LGTM時に`review_approval.sh`が`review_bundle.py generate`を原子的に実行して永続化する。GATE後に報告がarchiveされても、`dashboard_update.sh --bundle`はfingerprint済みbundleをSSOTとして再検証せず消費する。archive済みdirect/training報告の復旧時だけ`review_bundle.py generate --allow-archived`を使う。→ `scripts/review_approval.sh` / `scripts/review_bundle.py` / `scripts/dashboard_update.sh`（cmd_3932根治、commits `d2c108a9f`, `b52d88702`）
 
