@@ -632,6 +632,19 @@ inbox_resolve_report_identity() {
     fi
 }
 
+inbox_report_fingerprint() {
+    local report_path="$1" fallback_identity="${2:-}"
+    if [ -f "$report_path" ]; then
+        sha256sum "$report_path" | awk '{print $1}'
+        return 0
+    fi
+    # Compatibility for already-archived/missing legacy notifications: they
+    # have no formal revision payload, so identity itself is the sole stable
+    # generation. A present report always uses its content fingerprint.
+    [ -n "$fallback_identity" ] || return 1
+    printf '%s' "$fallback_identity" | sha256sum | awk '{print $1}'
+}
+
 inbox_extract_cmd_id_for_completion_guard() {
     local content="$1"
     local cmd_id="" report_path=""
@@ -1175,11 +1188,12 @@ PY
 # state and ignores retry text/timestamps. Caller holds the inbox flock, making
 # check+append one transaction for concurrent writers.
 inbox_report_event_duplicate_locked() {
-    local inbox_file="$1" target="$2" event_type="$3" sender="$4" report_id="$5" identity_version="$6"
+    local inbox_file="$1" target="$2" event_type="$3" sender="$4" report_id="$5" identity_version="$6" report_fingerprint="$7"
     [ -s "$inbox_file" ] || return 1
     INBOX_EVENT_FILE="$inbox_file" INBOX_EVENT_TARGET="$target" \
     INBOX_EVENT_TYPE="$event_type" INBOX_EVENT_FROM="$sender" \
-    INBOX_EVENT_REPORT_ID="$report_id" INBOX_EVENT_VERSION="$identity_version" python3 - <<'PY'
+    INBOX_EVENT_REPORT_ID="$report_id" INBOX_EVENT_VERSION="$identity_version" \
+    INBOX_EVENT_FINGERPRINT="$report_fingerprint" python3 - <<'PY'
 import os, sys, yaml
 try:
     data = yaml.safe_load(open(os.environ["INBOX_EVENT_FILE"], encoding="utf-8")) or {}
@@ -1188,6 +1202,7 @@ except (OSError, yaml.YAMLError):
 wanted = (
     os.environ["INBOX_EVENT_TYPE"], os.environ["INBOX_EVENT_FROM"],
     os.environ["INBOX_EVENT_REPORT_ID"], os.environ["INBOX_EVENT_VERSION"],
+    os.environ["INBOX_EVENT_FINGERPRINT"],
 )
 for message in data.get("messages") or []:
     if not isinstance(message, dict):
@@ -1195,6 +1210,7 @@ for message in data.get("messages") or []:
     actual = (
         str(message.get("type", "")), str(message.get("from", "")),
         str(message.get("report_id", "")), str(message.get("report_identity_version", "")),
+        str(message.get("report_fingerprint", "")),
     )
     if actual == wanted:
         print(str(message.get("id", "")))
@@ -2192,6 +2208,7 @@ if inbox_should_auto_read_completed_notification "$TARGET" "$TYPE" "$CONTENT" "$
 fi
 
 _identity_fields=()
+STRUCTURED_REPORT_FINGERPRINT=""
 case "$TYPE" in
     report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed)
         if [ -z "${STRUCTURED_REPORT_ID:-}" ]; then
@@ -2202,7 +2219,12 @@ case "$TYPE" in
             STRUCTURED_TASK_ID=$(printf '%s' "$CONTENT" | grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 || true)
             STRUCTURED_PARENT_CMD="$STRUCTURED_TASK_ID"
         fi
-        _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
+        if [ -z "${_structured_candidate:-}" ]; then
+            _structured_candidate="$STRUCTURED_REPORT_PATH"
+            [[ "$_structured_candidate" = /* ]] || _structured_candidate="$SCRIPT_DIR/$_structured_candidate"
+        fi
+        STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$_structured_candidate" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
+        _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_fingerprint "$STRUCTURED_REPORT_FINGERPRINT" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
         ;;
     report_review|report_review_result|report_revision)
         _structured_candidate=$(inbox_extract_report_path_from_content "$CONTENT")
@@ -2215,7 +2237,8 @@ case "$TYPE" in
             IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
             STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$_structured_candidate" "task_id" "")
             STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$_structured_candidate" "parent_cmd" "")
-            _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
+            STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$_structured_candidate" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
+            _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_fingerprint "$STRUCTURED_REPORT_FINGERPRINT" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
         fi
         ;;
 esac
@@ -2250,7 +2273,7 @@ while [ $attempt -lt $max_attempts ]; do
         fi
 
         if inbox_type_is_report_lifecycle "$TYPE" && [ -n "${STRUCTURED_REPORT_ID:-}" ]; then
-            _existing_event_id=$(inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION") || _existing_event_id=""
+            _existing_event_id=$(inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION" "$STRUCTURED_REPORT_FINGERPRINT") || _existing_event_id=""
             if [ -n "$_existing_event_id" ]; then
                 printf 'DUPLICATE_MSG_ID=%s\n' "$_existing_event_id"
                 exit 20

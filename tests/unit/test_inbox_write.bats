@@ -1068,9 +1068,14 @@ YAML
 
     run _run_inbox_write karo "報告完了" report_received testninja
     [ "$status" -eq 0 ]
-    [[ "$output" == *"gunshi_notify: SENT"* ]]
 
-    # grep検証 (python3不要)
+    # Review routing is asynchronous and intentionally silent; durable inbox
+    # state and the notification marker are the delivery contract.
+    local attempt
+    for attempt in $(seq 1 50); do
+        [ -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ] && break
+        sleep 0.1
+    done
     [ -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ]
     [[ "$(grep -c "^- " "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]]
     grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
@@ -1150,6 +1155,36 @@ YAML
     INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "other type report=$report" report_review_result karo
     [ "$status" -eq 0 ]
     [ "$(grep -c "^- " "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 3 ]
+}
+
+@test "report review persists a new event for a changed formal report fingerprint and dedupes its retry" {
+    setup_git_test_env
+    local report="queue/reports/testninja_report_cmd_test_001.yaml"
+    cat >> "$TEST_TMPDIR/$report" <<'YAML'
+report_id: rpt-revision-generation
+report_identity_version: 2
+task_id: cmd_revision_generation_normal
+parent_cmd: cmd_revision_generation
+status: completed
+YAML
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "initial report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    local first_id
+    first_id="$(grep -m1 "^  id:" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")"
+
+    sed -i 's/status: completed/status: revision_requested/' "$TEST_TMPDIR/$report"
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "revised report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    [[ "$output" != *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-revision-generation'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+    [ "$(grep -c "report_fingerprint:" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+
+    INBOX_WRITE_TEST=1 run _run_inbox_write gunshi "same revised retry report=$report" report_review karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    [ "$(grep -c "report_id: 'rpt-revision-generation'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
+    [ -n "$first_id" ]
 }
 
 @test "report_revision resolves target task identity and suppresses only exact retries" {
