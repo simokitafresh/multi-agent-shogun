@@ -36,6 +36,11 @@ fi
 MAX_TEST_JOBS="${BATS_MAX_TEST_JOBS:-$_detected_test_cpus}"
 unset _detected_test_cpus
 BATS_FILE_TIMEOUT_SECONDS="${BATS_FILE_TIMEOUT_SECONDS:-900}"
+if [[ -v BATS_CACHE ]]; then
+    BATS_CACHE_EXPLICIT=1
+else
+    BATS_CACHE_EXPLICIT=0
+fi
 BATS_CACHE="${BATS_CACHE:-1}"
 BATS_CACHE_DIR="${BATS_CACHE_DIR:-$REPO_ROOT/.cache/bats}"
 
@@ -292,7 +297,7 @@ run_bats_files_parallel() {
         # one post-plan daemon timeout.  One such fixture therefore owns the
         # aggregate budget until it exits.
         case "$(basename "$file")" in
-            test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats)
+            test_gate_shogun_startup.bats|test_heavy_job_admission.bats|test_daemon_maintenance_lock.bats|test_heavy_job_classifier_newline.bats|test_cmd_complete_insight_consumption.bats|test_pending_approval.bats|test_pre_bash_guard1_git_commit_tokenizer.bats|test_ninja_scope_commit.bats|test_deploy_task_template_generation.bats|test_campaign_lane_shard_item.bats)
                 file_inner_jobs=1
                 file_weight="$MAX_TEST_JOBS"
                 ;;
@@ -495,6 +500,10 @@ _run_tests_main() {
     case "${1:-all}" in
         all)
             RUN_TESTS_MODE=all
+            # A full checkpoint must execute every selected file. Reusing
+            # per-file pass cache here silently turns a warm "all" run into
+            # an affected subset while still reporting the full file count.
+            [ "$BATS_CACHE_EXPLICIT" -eq 1 ] || BATS_CACHE=0
             mapfile -t test_files < <(
                 find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print
                 find "$REPO_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print

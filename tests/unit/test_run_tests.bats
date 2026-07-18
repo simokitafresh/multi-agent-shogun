@@ -32,7 +32,7 @@ printf '1..1\nok 1 sample\n'
 SH
   chmod +x "$TMPROOT/bin/bats"
 
-  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$BATS_ARGS_LOG" \
+  run env -u BATS_CACHE PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$BATS_ARGS_LOG" \
     SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
     bash "$TMPROOT/scripts/run_tests.sh"
 
@@ -40,6 +40,32 @@ SH
   grep -Fxq "$TMPROOT/tests/unit/sample.bats" "$BATS_ARGS_LOG"
   grep -Fxq "$TMPROOT/tests/root_sample.bats" "$BATS_ARGS_LOG"
   [ "$(wc -l <"$BATS_ARGS_LOG")" -eq 2 ]
+}
+
+@test "default all mode executes every file without pass cache reuse" {
+  mkdir -p "$TMPROOT/.cache/bats"
+  export BATS_ARGS_LOG="$TMPROOT/bats.args"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$1" >>"$BATS_ARGS_LOG"
+printf '1..1\nok 1 sample\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$BATS_ARGS_LOG" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_INNER_JOBS=1 bash "$TMPROOT/scripts/run_tests.sh" all
+
+  [ "$status" -eq 0 ]
+  [ "$(wc -l <"$BATS_ARGS_LOG")" -eq 2 ]
+  [ "$(find "$TMPROOT/.cache/bats" -type f | wc -l)" -eq 0 ]
+}
+
+@test "non-all modes retain pass cache default" {
+  run env -u BATS_CACHE REPO_ROOT="$TMPROOT" bash -c '
+    source "$1/scripts/run_tests.sh"
+    [ "$BATS_CACHE" -eq 1 ] && [ "$BATS_CACHE_EXPLICIT" -eq 0 ]
+  ' _ "$TMPROOT"
+  [ "$status" -eq 0 ]
 }
 
 _source_fp() {
@@ -112,6 +138,21 @@ SH
   [ "$(wc -l <"$BATS_SCHEDULER_TRACE")" -eq 5 ]
   [ "$(awk -F '\t' '$2 == 8 {count++} END {print count+0}' "$BATS_SCHEDULER_TRACE")" -eq 5 ]
   [ "$(awk -F '\t' '$3 == 0 {count++} END {print count+0}' "$BATS_SCHEDULER_TRACE")" -eq 5 ]
+}
+
+@test "campaign shard fixture exclusively owns scheduler budget" {
+  printf '@test "sample" { true; }\n' >"$TMPROOT/tests/unit/test_campaign_lane_shard_item.bats"
+  export BATS_SCHEDULER_TRACE="$TMPROOT/schedule.tsv"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_CACHE=0 \
+    BATS_INNER_JOBS=1 BATS_MAX_TEST_JOBS=8 BATS_SCHEDULER_TRACE="$BATS_SCHEDULER_TRACE" bash -c '
+      source "$1/scripts/run_tests.sh"
+      run_bats_files_parallel "$1/tests/unit/sample.bats" \
+        "$1/tests/unit/test_campaign_lane_shard_item.bats"
+  ' _ "$TMPROOT"
+
+  [ "$status" -eq 0 ]
+  awk -F '\t' '$1=="test_campaign_lane_shard_item.bats" {found=1; if ($2!=8 || $3!=0) bad=1} END {exit !(found && !bad)}' "$BATS_SCHEDULER_TRACE"
 }
 
 @test "default aggregate budget follows host CPUs and remains capped at eight" {
