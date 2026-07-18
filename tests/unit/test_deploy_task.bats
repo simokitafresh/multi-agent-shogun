@@ -1097,3 +1097,42 @@ YAML
   run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; deploy_task_history_cache_get "$2" "$3" "$4"' _ "$TEST_PROJECT" "$repo" 0000000000000000000000000000000000000000 "$rel"
   [ "$status" -ne 0 ]
 }
+
+@test "deferred consumer revalidates generation then drains history and stale report" {
+  local repo head rel report task key cache
+  repo="$BATS_TEST_TMPDIR/drain-repo"
+  git init -q "$repo"
+  git -C "$repo" config user.name test
+  git -C "$repo" config user.email test@example.com
+  printf 'x\n' > "$repo/tracked.txt"
+  git -C "$repo" add tracked.txt
+  git -C "$repo" commit -qm init
+  head=$(git -C "$repo" rev-parse HEAD)
+  rel=tracked.txt
+  report="$TEST_PROJECT/queue/reports/sasuke_report_cmd_old.yaml"
+  task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+  mkdir -p "$(dirname "$report")" "$(dirname "$task")"
+  printf 'parent_cmd: cmd_old\nstatus: pending\nverdict: ""\n' > "$report"
+  printf 'task:\n  parent_cmd: cmd_new\n  status: idle\n' > "$task"
+  run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; deploy_task_queue_history_lookup "$2" "$3" "$4"; deploy_task_queue_stale_report "$5" cmd_old ""; deploy_task_drain_deferred' _ "$TEST_PROJECT" "$repo" "$head" "$rel" "$report"
+  [ "$status" -eq 0 ]
+  key=$(printf '%s\0%s\0%s' "$repo" "$head" "$rel" | sha256sum | awk '{print $1}')
+  cache="$TEST_PROJECT/.cache/deploy-history/$key"
+  [ -s "$cache" ]
+  [ ! -f "$report" ]
+  [ -f "$TEST_PROJECT/archive/reports/stale/$(basename "$report")" ]
+}
+
+@test "deferred consumer preserves active and completed reports" {
+  local active completed
+  active="$TEST_PROJECT/queue/reports/sasuke_report_cmd_active.yaml"
+  completed="$TEST_PROJECT/queue/reports/sasuke_report_cmd_done.yaml"
+  mkdir -p "$TEST_PROJECT/queue/reports" "$TEST_PROJECT/queue/tasks"
+  printf 'parent_cmd: cmd_active\nstatus: pending\nverdict: ""\n' > "$active"
+  printf 'parent_cmd: cmd_done\nstatus: completed\nverdict: PASS\n' > "$completed"
+  printf 'task:\n  parent_cmd: cmd_active\n  status: in_progress\n' > "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+  run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; deploy_task_queue_stale_report "$2" cmd_active ""; deploy_task_queue_stale_report "$3" cmd_done PASS; deploy_task_drain_deferred' _ "$TEST_PROJECT" "$active" "$completed"
+  [ "$status" -eq 0 ]
+  [ -f "$active" ]
+  [ -f "$completed" ]
+}
