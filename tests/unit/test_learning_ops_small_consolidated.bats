@@ -30,7 +30,7 @@ run_embedded_test() {
         # registered source-context dependency. Inject the tracked registry into
         # the generated throwaway fixture without weakening the production check.
         if grep -q 'SRC_CONTEXT_FRESHNESS_SCRIPT' "$fixture_build"; then
-            sed -i '/cp "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT\/scripts\/context_freshness_check.sh"/a\    mkdir -p "$TEST_PROJECT/scripts/config"\n    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_PROJECT/scripts/config/context_source_commits.tsv"' "$fixture_build"
+            sed -i '/cp "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT\/scripts\/context_freshness_check.sh"/a\    mkdir -p "$TEST_PROJECT/scripts/config"\n    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_PROJECT/scripts/config/context_source_commits.tsv"\n    cp "$PROJECT_ROOT/scripts/context_history_snapshot_refresh.sh" "$TEST_PROJECT/scripts/context_history_snapshot_refresh.sh"\n    export CFC_HISTORY_REFRESH_SYNC=1' "$fixture_build"
         fi
         mv "$fixture_build" "$fixture_cache"
     fi
