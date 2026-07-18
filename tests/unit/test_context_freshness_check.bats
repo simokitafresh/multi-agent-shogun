@@ -9,7 +9,11 @@ setup_file() {
     [ -f "$SRC_SCRIPT" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 
-    export CFC_MASTER_FIXTURE="$BATS_FILE_TMPDIR/master"
+    # BATS_FILE_TMPDIR can be shared when two full-suite invocations overlap.
+    # Give each file invocation its own immutable source fixture so counter,
+    # cache, and git state never leak across concurrently running suites.
+    CFC_MASTER_FIXTURE="$(mktemp -d "$BATS_FILE_TMPDIR/cfc-master.XXXXXX")"
+    export CFC_MASTER_FIXTURE
     mkdir -p "$CFC_MASTER_FIXTURE/scripts/config" \
              "$CFC_MASTER_FIXTURE/config" \
              "$CFC_MASTER_FIXTURE/context" \
@@ -939,7 +943,7 @@ PROJ
     [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
 }
 
-@test "GA-253 transient git timeout retries once and preserves the source freshness result" {
+@test "GA-291 producer uses its bounded timeout once without consumer git retry" {
     _create_context "context/codd.md" "$STALE_DATE"
     _create_source_commit "scripts/codd/generate.py" "test: codd source changed"
     _create_shogun_to_karo "cmd_934" "infra"
@@ -965,7 +969,7 @@ SH
       CFC_GIT_TIMEOUT=0.1 CFC_GIT_RETRY_TIMEOUT=0.3 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
 
     [ "$status" -eq 0 ]
-    [ "$(cat "$counter_file")" -ge 2 ]
+    [ "$(cat "$counter_file")" -eq 1 ]
     [[ "$output" == *"ALERT: context/codd.md source commits 1件"* ]]
     [[ "$output" != *"source commit check failed"* ]]
 }
@@ -995,7 +999,7 @@ SH
       CFC_GIT_TIMEOUT=0.1 CFC_GIT_RETRY_TIMEOUT=0.1 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
 
     [ "$status" -eq 0 ]
-    [ "$(cat "$counter_file")" -eq 2 ]
+    [ "$(cat "$counter_file")" -eq 1 ]
     [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
 }
 
@@ -1024,7 +1028,7 @@ SH
       CFC_GIT_TIMEOUT=1 CFC_GIT_RETRY_TIMEOUT=3 run bash "$TEST_SCRIPT" --cmd-warnings cmd_934
 
     [ "$status" -eq 0 ]
-    [ "$(cat "$counter_file")" -eq 2 ]
+    [ "$(cat "$counter_file")" -eq 1 ]
     [[ "$output" == *"WARN: context/codd.md source commit check failed"* ]]
 }
 
@@ -1137,6 +1141,11 @@ PROJ
     _create_context "context/dm-signal.md" "$STALE_DATE"
     _create_source_commit "src/dm_signal.py"
     _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+
+    # Build the immutable history generation first.  This test owns output
+    # cache publication concurrency; cold producer locking is covered by the
+    # GA-286/GA-291 history-cache tests above.
+    CFC_OUTPUT_CACHE_TTL=0 bash "$TEST_SCRIPT" --dashboard-warnings >/dev/null
 
     CFC_OUTPUT_CACHE_TTL=5 bash "$TEST_SCRIPT" --dashboard-warnings > "$TEST_TMPDIR/out1.txt" 2>"$TEST_TMPDIR/err1.txt" &
     local pid1=$!
