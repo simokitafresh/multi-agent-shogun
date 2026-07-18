@@ -527,6 +527,10 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 | レビュー連携 | `forward_gunshi_review_result_to_active_ninjas` | 軍師レビュー結果を該当する稼働中忍者へ転送する。 |
 | 件数確認 | `inbox_message_count` | inbox内メッセージ総数を数え、配送・既読化検証に使う。 |
 
+Canonical report identity v2: 新規reportは配備世代UUIDをtask/report双方へ保存し、legacyはcanonical relative path SHA-256で読取時解決する。報告通知は`report_id/report_path/task_id/parent_cmd`を構造化伝搬し、v2欠落・不一致・別path再利用はBLOCKする（live 289/289 resolved・unique、duplicate 0、9/9 PASS・SKIP 0）。→ `scripts/lib/report_unique_identity.py` / `scripts/deploy_task.sh` / `scripts/inbox_write.sh` / `tests/unit/test_report_unique_identity.bats`（commit `3a305a0f5`）
+
+No-code report identity: `commit_contract.required=false`かつtree不変を証明した報告はcommit identityをN/Aとし、code変更は従来どおりfull hashでfail-closedにする。同一generationのfull validationはfingerprint出口で1回に固定し、偽BLOCK 17→0・正当BLOCK漏れ0・検証2→1、31/31 PASS・SKIP 0。→ `scripts/lib/report_commit_identity.py` / `scripts/gates/gate_report_format.sh` / `scripts/report_field_set.sh`（commit `e7ab41112`）
+
 ### cmd_save.sh: 品質ゲート補助（5件）
 
 | カテゴリ | 関数 | 1行説明 |
@@ -543,6 +547,7 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 ## ninja_monitor.sh
 
 idle検知+コンテキストリセット送信（Codex=/new, Claude=/clear）、is_task_deployed二重チェック、STALE-TASK検出、CLEAR_DEBOUNCE=300s、karo_snapshot自動生成、状態遷移検知(cmd_255)。
+karo_snapshot/task completionのfast pathはpane待機・reflux・auto-commit等の重いmaintenanceより前に実行し、`task_status`と`runtime_state`を別列で発行する。done認識15分09秒+再巡回7分15秒の逐次loopを分離し、10秒maintenance敵対fixtureを含む3/3 PASS・SKIP 0。→ `scripts/ninja_monitor.sh` / `tests/unit/test_ninja_monitor_stall.bats` / `tests/unit/test_ninja_monitor_reflux_ledger.bats`（commit `8dd728a22`）
 karo_snapshotは重いmaintenance/gate処理より前に早期発行し、temp file + mvでatomic publishする。古い表示残り/監視詰まりの再発防止はL851を参照。
 実装正本は[[ninja_monitor.sh]]。修行自動配備の設計根拠は[[training-cycle.md]]、詳細仕様は[[infra-details.md]] §3を参照。
 プルーン網羅検証(cmd_3744): `tests/unit/test_ninja_monitor_training_auto.bats` が `ninja_monitor.sh` の常駐連想配列を `_cleanup_stale_keys` のプルーン対象または理由付き除外へ分類し、未登録配列追加の境界入力でexit 1を確認する。個別リーク後追いではなく、配列追加時の漏れをCIで検出する。
