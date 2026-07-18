@@ -20,6 +20,7 @@ SH
   export MARKER PATH="$TEST_ROOT/bin:$PATH" NTFY_ENDPOINT=http://127.0.0.1/mock
   export NTFY_MIN_INTERVAL_SECONDS=0 NTFY_STATE_DIR="$TEST_ROOT/state" TMUX='' TMUX_PANE=''
   export NTFY_ASYNC_STDERR="$TEST_ROOT/worker.err"
+  export NTFY_ASYNC_EVIDENCE_FILE="$TEST_ROOT/worker.evidence"
 }
 
 teardown() {
@@ -64,8 +65,10 @@ wait_for_lines() {
   bash "$TEST_ROOT/scripts/ntfy.sh" boundary-message
   dispatch_status=$?
   [ "$dispatch_status" -eq 0 ]
-  residual="$(ps -e -o pgid=,comm= | awk -v pgid="$caller_pgid" '$1 == pgid && ($2 == "ntfy.sh" || $2 == "curl") { print }')"
-  [ -z "$residual" ]
+  read -r worker_pid worker_sid worker_pgid < "$NTFY_ASYNC_EVIDENCE_FILE"
+  [ "$worker_sid" = "$worker_pgid" ]
+  [ "$worker_pgid" != "$caller_pgid" ]
+  [ "$(ps -p "$worker_pid" -o pgid= | tr -d ' ')" = "$worker_pgid" ]
   wait_for_lines 1 || { cat "$NTFY_ASYNC_STDERR" >&2; return 1; }
 }
 

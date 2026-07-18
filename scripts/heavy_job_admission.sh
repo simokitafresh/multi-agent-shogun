@@ -67,12 +67,24 @@ report_live_process_group_members() {
         echo "DRAIN_MEMBER_UNAVAILABLE pgid=${target_pgid} reason=ps_failed" >&2
         return 0
     fi
-    awk -v target="$target_pgid" -v limit="$DRAIN_MEMBER_LIMIT" '
-        $3 == target && $4 !~ /^Z/ && emitted < limit {
-            printf "DRAIN_MEMBER pid=%s ppid=%s pgid=%s stat=%s elapsed=%s comm=%s\n", $1, $2, $3, $4, $5, $6
-            emitted++
+    while read -r member_pid member_ppid member_pgid member_stat member_elapsed member_comm; do
+        [[ "$member_pgid" == "$target_pgid" && "$member_stat" != Z* ]] || continue
+        member_origin="unknown"
+        if [[ "$member_comm" == "bash" && -r "/proc/$member_pid/cmdline" ]]; then
+            mapfile -d '' -t member_argv < "/proc/$member_pid/cmdline" || true
+            member_origin="${member_argv[1]:-unknown}"
+            member_origin="${member_origin##*/}"
+            [[ "$member_origin" =~ ^[[:alnum:]_.-]{1,64}$ ]] || member_origin="unknown"
+        fi
+        printf 'DRAIN_MEMBER pid=%s ppid=%s pgid=%s stat=%s elapsed=%s comm=%s origin=%s\n' \
+            "$member_pid" "$member_ppid" "$member_pgid" "$member_stat" "$member_elapsed" "$member_comm" "$member_origin" >&2
+        emitted=$(( ${emitted:-0} + 1 ))
+        (( emitted < DRAIN_MEMBER_LIMIT )) || break
+    done < <(awk -v target="$target_pgid" '
+        $3 == target && $4 !~ /^Z/ {
+            print $1, $2, $3, $4, $5, $6
         }
-    ' <<< "$snapshot" >&2
+    ' <<< "$snapshot")
 }
 
 if [[ "${1:-}" == "--" ]]; then

@@ -23,6 +23,9 @@ if [ "${_NTFY_ASYNC_WORKER:-0}" = "1" ] && [ -n "${_NTFY_ASYNC_READY_FILE:-}" ];
   _ntfy_worker_pgid="$(ps -o pgid= -p $$ 2>/dev/null | tr -d ' ')"
   if [ -n "$_ntfy_worker_sid" ] && [ "$_ntfy_worker_sid" = "$_ntfy_worker_pgid" ]; then
     printf '%s %s %s\n' "$$" "$_ntfy_worker_sid" "$_ntfy_worker_pgid" > "$_NTFY_ASYNC_READY_FILE"
+    if [ -n "${NTFY_ASYNC_EVIDENCE_FILE:-}" ]; then
+      printf '%s %s %s\n' "$$" "$_ntfy_worker_sid" "$_ntfy_worker_pgid" > "$NTFY_ASYNC_EVIDENCE_FILE"
+    fi
   fi
   unset _ntfy_worker_sid _ntfy_worker_pgid
 fi
@@ -279,7 +282,7 @@ setsid env _NTFY_ASYNC_WORKER=1 _NTFY_ASYNC_READY_FILE="$_ntfy_async_ready" \
 _ntfy_async_pid=$!
 _ntfy_ready_deadline=$((SECONDS + 2))
 while [ ! -s "$_ntfy_async_ready" ]; do
-  if ! kill -0 "$_ntfy_async_pid" 2>/dev/null || (( SECONDS >= _ntfy_ready_deadline )); then
+  if [ -z "$(ps -p "$_ntfy_async_pid" -o pid= 2>/dev/null)" ] || (( SECONDS >= _ntfy_ready_deadline )); then
     rm -f "$_ntfy_async_ready"
     echo "ERROR: ntfy async worker failed session handshake" >&2
     exit 1
