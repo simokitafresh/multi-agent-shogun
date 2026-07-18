@@ -1922,6 +1922,21 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                 STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
                 [ -n "$STRUCTURED_TASK_ID" ] || STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$FULL_REPORT" "task_id" "")
                 [ -n "$STRUCTURED_PARENT_CMD" ] || STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$FULL_REPORT" "parent_cmd" "")
+
+                # Retry fast path: once an event is durable, do not rerun the
+                # expensive report gate or downstream notification chain.
+                # Concurrent first writers still converge at the authoritative
+                # check+append transaction below.
+                _early_event_id=$(
+                    {
+                        flock -w 5 201 || exit 1
+                        inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION"
+                    } 201>"$LOCKFILE" || true
+                )
+                if [ -n "$_early_event_id" ]; then
+                    printf 'DUPLICATE_MSG_ID=%s\n' "$_early_event_id"
+                    exit 0
+                fi
             fi
 
             if [ -n "$FULL_REPORT" ]; then
@@ -2313,7 +2328,11 @@ while [ $attempt -lt $max_attempts ]; do
                             PROJECT_ROOT="$SCRIPT_DIR"
                             # shellcheck source=/dev/null
                             source "$SCRIPT_DIR/scripts/lib/gunshi_notify.sh"
-                            notify_gunshi_for_report "$FROM" "$REPORT_FULL_PATH" "$_parent_cmd"
+                            # Persistence is already durable. Review routing must
+                            # not retain caller pipes or turn report_received
+                            # into a synchronous multi-hop transaction.
+                            ( notify_gunshi_for_report "$FROM" "$REPORT_FULL_PATH" "$_parent_cmd" ) \
+                                </dev/null >/dev/null 2>&1 &
                         fi
 
                         # Check current status — don't overwrite terminal states
