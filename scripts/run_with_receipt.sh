@@ -18,7 +18,7 @@ Validates schema, artifact hash, rc, completeness, TAP counts, and SKIP=0.
 EOF
 }
 
-receipt="" artifact="" max_bytes=1048576 declared="" verify=""
+receipt="" artifact="" max_bytes=1048576 declared="" verify="" summary_only=false
 while (($#)); do
     case "$1" in
         --receipt) receipt="${2:-}"; shift 2 ;;
@@ -26,6 +26,7 @@ while (($#)); do
         --max-bytes) max_bytes="${2:-}"; shift 2 ;;
         --declared-test-count) declared="${2:-}"; shift 2 ;;
         --verify-receipt) verify="${2:-}"; shift 2 ;;
+        --summary-only) summary_only=true; shift ;;
         --help|-h) usage; exit 0 ;;
         --) shift; break ;;
         *) printf 'ERROR: unknown option: %s\n' "$1" >&2; usage >&2; exit 2 ;;
@@ -78,7 +79,7 @@ write_receipt() {
     duration=$((ended_ms - started_ms))
     observed="$(grep -Ec '^(ok|not ok)([[:space:]]|$)' "$artifact_tmp" 2>/dev/null || true)"
     skips="$(grep -Eic '^ok .*#[[:space:]]*skip([[:space:]]|$)' "$artifact_tmp" 2>/dev/null || true)"
-    plan="$(sed -nE 's/^1\.\.([0-9]+)([[:space:]].*)?$/\1/p' "$artifact_tmp" | tail -n 1)"
+    plan="$(sed -nE 's/^1\.\.([0-9]+)([[:space:]].*)?$/\1/p' "$artifact_tmp" | awk '{s+=$1} END{print s+0}')"
     [[ -n "$declared" ]] || declared="${plan:-0}"
     if [[ "$complete" == true && "$declared" -gt 0 && "$observed" -ne "$declared" ]]; then complete=false; fi
     if [[ "$complete" == true && "$rc" -eq 0 && "$skips" -eq 0 ]]; then result=PASS; else result=FAIL; fi
@@ -121,7 +122,11 @@ wait "$child_pid"
 rc=$?
 child_pid=""
 head -c "$max_bytes" "$raw" > "$artifact_tmp"
-cat "$artifact_tmp"
+if [[ "$summary_only" == true ]]; then
+    printf 'RECEIPT_WRITTEN %s artifact=%s\n' "$receipt" "$artifact" >&2
+else
+    cat "$artifact_tmp"
+fi
 complete=true
 write_receipt "$rc" "$complete" "" "$@"
 rm -f "$raw"

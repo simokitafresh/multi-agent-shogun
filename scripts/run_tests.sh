@@ -364,6 +364,9 @@ run_bats_files_parallel() {
         printf '%s\t%s\t%s\t%s\t0\n' "$pid" "${pid_file[$pid]}" "${pid_out[$pid]}" "${pid_time[$pid]}" >>"$manifest"
     done
     aggregate_bats_outputs "$manifest" "$stats"
+    if [ -n "${BATS_TAP_OUTPUT:-}" ] && [ -f "$BATS_TAP_OUTPUT" ]; then
+        cat "$BATS_TAP_OUTPUT"
+    fi
 
     if [ "$failed" -ne 0 ]; then
         echo "One or more bats files failed:" >&2
@@ -492,5 +495,30 @@ _run_tests_main() {
 }
 
 if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
-    _run_tests_main "$@"
+    if [[ "${RUN_TESTS_RECEIPT_INNER:-0}" == "1" ]]; then
+        _run_tests_main "$@"
+    else
+        _receipt_dir="${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}"
+        mkdir -p "$_receipt_dir"
+        _receipt="${RUN_TESTS_RECEIPT_PATH:-$_receipt_dir/run_tests_$(date -u +%Y%m%dT%H%M%S)_$$.json}"
+        _tap="${_receipt%.json}.tap"
+        set +e
+        BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
+            --summary-only --receipt "$_receipt" -- \
+            env RUN_TESTS_RECEIPT_INNER=1 BATS_TAP_OUTPUT="$_tap" bash "${BASH_SOURCE[0]}" "$@"
+        _rc=$?
+        set -e
+        if ! bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null; then
+            printf 'TEST_RECEIPT_FAIL path=%s\n' "$_receipt" >&2
+            exit 1
+        fi
+        python3 - "$_receipt" <<'PY'
+import json, sys
+with open(sys.argv[1]) as fh: d=json.load(fh)
+print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={}".format(
+    sys.argv[1], d["rc"], d["observed_test_count"], d["declared_test_count"],
+    d["skip_count"], d["output_sha256"], d["duration_ms"]))
+PY
+        exit "$_rc"
+    fi
 fi
