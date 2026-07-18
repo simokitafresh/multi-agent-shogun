@@ -28,7 +28,7 @@ if since:
     cmd.append(f"--since={(date.fromisoformat(since) + timedelta(days=1)).isoformat()} 00:00:00")
 if pathspecs:
     cmd.extend(["--", *pathspecs])
-result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, timeout=float(os.environ.get("CFC_GIT_RETRY_TIMEOUT", "60")))
+result = subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, timeout=float(os.environ.get("CFC_GIT_RETRY_TIMEOUT", "360")))
 commits, current_hash, current_subject, paths = [], "", "", []
 def flush():
     if current_subject.strip():

@@ -269,6 +269,19 @@ SH
     [[ "$output" == *"--- 総合判定: BLOCK ---"* ]]
 }
 
+@test "GA-292: default producer budget covers measured 326 second history ceiling" {
+    cat > "$TEST_TMPDIR/scripts/context_freshness_check.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s|%s\n' "$CFC_GIT_TIMEOUT" "$CFC_GIT_RETRY_TIMEOUT" > "$TEST_TMPDIR/budgets.log"
+SH
+    chmod +x "$TEST_TMPDIR/scripts/context_freshness_check.sh"
+
+    run_gate
+
+    [ "$status" -eq 0 ]
+    [ "$(cat "$TEST_TMPDIR/budgets.log")" = "360|360" ]
+}
+
 @test "GA-238: a real ALERT for the same path still wins over a check-failed WARN line" {
     # Guards against a naive fix that would make check_failed_paths override
     # a genuine ALERT line for the same rel_path (e.g. duplicate/out-of-order

@@ -37,10 +37,11 @@ ALERT_STATE_DIR="${CONTEXT_FRESHNESS_ALERT_STATE_DIR:-/tmp/gate_context_freshnes
 # 側のgit呼出し集約(GA-245)と組み合わせ、実測に安全マージンを載せた値へ適正化する。
 # 単純延長ではなく、それでも取得失敗した場合はfail-closedでALERT(exit 1)遮断する
 # (check_failed_paths分岐、GA-245で WARN→ALERT に格上げ済み)。
-# GA-283: 9p上の集約git logは10秒を超える実測がある。各試行を30秒に
-# bounded化し、成功結果は入力signature付きcacheで再利用する。明示指定時は
-# retryも同値へ束縛し、下位の60秒fallbackがgate予算を破ることを防ぐ。
-GIT_TIMEOUT="${CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT:-30}"
+# GA-292: snapshot producerのgit history走査は同じ9p上の履歴I/Oを使い、B0候補で
+# 絶対時間326秒を実測した。旧30秒をproducerにも転送すると4 grouped query全てが
+# timeoutし、内容が新鮮でも判定不能BLOCKになった。360秒は実測上限+10%余裕の
+# bounded budgetであり、consumerはsnapshot hitならgit subprocess 0件のまま。
+GIT_TIMEOUT="${CONTEXT_FRESHNESS_GATE_GIT_TIMEOUT:-360}"
 
 HAS_ALERT=0
 HAS_BLOCK=0
