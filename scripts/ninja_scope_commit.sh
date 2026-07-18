@@ -422,9 +422,35 @@ done
 # closed without deleting anything.
 transient_task_file="${NINJA_SCOPE_TASK_FILE:-}"
 transient_receipt_file="${NINJA_TEST_RECEIPT:-}"
-if [[ -n "${NINJA_SCOPE_EXPECTED_HEAD:-}" && "$(git rev-parse HEAD)" != "$NINJA_SCOPE_EXPECTED_HEAD" ]]; then
-    echo "BLOCK: concurrent HEAD change detected before test deletion/commit" >&2
-    exit 2
+verification_head="${NINJA_SCOPE_EXPECTED_HEAD:-}"
+if [[ -z "$verification_head" && -n "$transient_receipt_file" && -f "$transient_receipt_file" ]]; then
+    verification_head="$(python3 - "$transient_receipt_file" <<'PY'
+import sys, yaml
+d=yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+print(d.get('source_head') or d.get('source_commit') or d.get('head') or '')
+PY
+)"
+fi
+if [[ -z "$verification_head" && -n "$transient_task_file" && -f "$transient_task_file" ]]; then
+    verification_head="$(python3 - "$transient_task_file" <<'PY'
+import sys, yaml
+d=yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}; t=d.get('task', d)
+print(t.get('deployed_head') or t.get('source_head') or t.get('source_commit') or '')
+PY
+)"
+fi
+if [[ -n "$verification_head" ]]; then
+    [[ "$verification_head" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "${verification_head}^{commit}" 2>/dev/null \
+        || { echo "BLOCK: test verification HEAD evidence is invalid: ${verification_head:-<missing>}" >&2; exit 2; }
+    if [[ "$verification_head" != "$transaction_head" ]]; then
+        mapfile -t concurrent_test_changes < <(git diff --name-only "$verification_head" "$transaction_head" -- | awk '
+            $0 ~ /^tests\// || $0 ~ /\.bats$/ || $0 ~ /(^|\/)test_[^/]+$/ || $0 ~ /\.(spec|test)\.js$/ {print}
+        ')
+        if ((${#concurrent_test_changes[@]})); then
+            printf 'BLOCK: concurrent HEAD test change detected before test deletion/commit: %s\n' "${concurrent_test_changes[*]}" >&2
+            exit 2
+        fi
+    fi
 fi
 if [[ -n "$transient_task_file" && -f "$transient_task_file" ]]; then
     deletion_justification="$(python3 - "$transient_task_file" <<'PY'
@@ -459,6 +485,7 @@ for p in t.get('planned_paths') or []:
 PY
 )
     if ((${#transient_tests[@]})); then
+        [[ -n "$verification_head" ]] || { echo "BLOCK: test verification HEAD evidence missing before transient deletion" >&2; exit 2; }
         [[ -n "$transient_receipt_file" && -f "$transient_receipt_file" ]] || { echo "BLOCK: transient test receipt missing" >&2; exit 2; }
         python3 - "$transient_receipt_file" "${transient_tests[@]}" <<'PY' || exit 2
 import sys, yaml

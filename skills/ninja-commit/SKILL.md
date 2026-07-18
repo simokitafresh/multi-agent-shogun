@@ -80,6 +80,10 @@ bash scripts/ninja_scope_commit.sh \
 `skip: 0`・対象`test_paths`を持つ`NINJA_TEST_RECEIPT`を渡す。helperは削除候補diffを
 表示し、未追跡transient testだけを削除してproduction scopeをcommitする。receipt
 欠落/FAIL/SKIP、tracked test、production scope不在は削除前にBLOCKする。
+receiptには検証時の40桁`source_head`を必須記録する。helperは任意envに依存せず
+receipt（またはtaskの配備HEAD証跡）から検証基点を導出し、commit開始時HEADまでに
+別commit由来のtest変更/削除があれば自動BLOCKする。HEAD証跡欠落時は削除しない。
+production-onlyの並行commitはtest証拠を無効化しないため許可する。
 
 helperは指定pathだけをaddし、`git commit --only -- <paths>`でcommitする。共有indexにある他者stageは変更もcommitもしない。空scope・存在しないpathはBLOCKし、pre-commit hookは通常どおり実行する。
 
