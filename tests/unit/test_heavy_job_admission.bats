@@ -162,6 +162,33 @@ SH
     [[ "$output" == *"did not drain within 1s"* ]]
 }
 
+@test "drain timeout診断は対象PGIDのlive memberだけをbounded安全fieldで出す" {
+    local fakebin="$TMP/fakebin"
+    mkdir -p "$fakebin"
+    cat > "$fakebin/ps" <<'SH'
+#!/usr/bin/env bash
+if [[ "$*" == *"pid="* ]]; then
+    printf '101 1 999999 S 9 unrelated\n'
+    printf '102 1 %s Z 8 zombie\n' "$SHOGUN_HEAVY_JOB_DRAIN_PGID"
+    printf '103 1 %s S 7 worker\n' "$SHOGUN_HEAVY_JOB_DRAIN_PGID"
+else
+    printf '%s S\n' "$SHOGUN_HEAVY_JOB_DRAIN_PGID"
+fi
+SH
+    chmod +x "$fakebin/ps"
+
+    run env PATH="$fakebin:$PATH" SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT=1 \
+        bash "$WRAPPER" -- true
+    [ "$status" -eq 124 ]
+    [[ "$output" == *"DRAIN_MEMBER pid=103 ppid=1 pgid="*" stat=S elapsed=7 comm=worker"* ]]
+    [[ "$output" != *"unrelated"* ]]
+    [[ "$output" != *"zombie"* ]]
+    [[ "$output" != *"argv="* ]]
+    [[ "$output" != *"env="* ]]
+    [[ "$output" != *"cwd="* ]]
+    [ "$(grep -c '^DRAIN_MEMBER ' <<< "$output")" -eq 1 ]
+}
+
 # --- 分類器(SSOT) — argv位置ベース、部分文字列誤検出禁止 ---
 
 @test "分類器: 単一.batsファイル1つは軽量" {
