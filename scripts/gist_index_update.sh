@@ -199,8 +199,9 @@ main() {
         return 0
     fi
 
-    "$GH_CMD" gist edit "$GIST_INDEX_ID" --filename "$GIST_INDEX_FILENAME" "$tmpfile"
-    log "updated gist ${GIST_INDEX_ID} (${GIST_INDEX_FILENAME})"
+    GH_CMD="$GH_CMD" bash "$(dirname "${BASH_SOURCE[0]}")/gist_verified_write.sh" \
+        "$GIST_INDEX_ID" "$GIST_INDEX_FILENAME" "$tmpfile"
+    log "updated and verified gist ${GIST_INDEX_ID} (${GIST_INDEX_FILENAME})"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
