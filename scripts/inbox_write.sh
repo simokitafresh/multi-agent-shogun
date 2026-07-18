@@ -1938,6 +1938,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                 STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
                 [ -n "$STRUCTURED_TASK_ID" ] || STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$FULL_REPORT" "task_id" "")
                 [ -n "$STRUCTURED_PARENT_CMD" ] || STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$FULL_REPORT" "parent_cmd" "")
+                STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$FULL_REPORT" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
 
                 # Retry fast path: once an event is durable, do not rerun the
                 # expensive report gate or downstream notification chain.
@@ -1946,7 +1947,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                 _early_event_id=$(
                     {
                         flock -w 5 201 || exit 1
-                        inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION"
+                        inbox_report_event_duplicate_locked "$INBOX" "$TARGET" "$TYPE" "$FROM" "$STRUCTURED_REPORT_ID" "$STRUCTURED_REPORT_VERSION" "$STRUCTURED_REPORT_FINGERPRINT"
                     } 201>"$LOCKFILE" || true
                 )
                 if [ -n "$_early_event_id" ]; then
@@ -2213,11 +2214,20 @@ case "$TYPE" in
     report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed)
         if [ -z "${STRUCTURED_REPORT_ID:-}" ]; then
             _structured_candidate=$(inbox_extract_report_path_from_content "$CONTENT")
+            if [ -z "$_structured_candidate" ] && [ -n "${FULL_REPORT:-}" ] && [ -f "$FULL_REPORT" ]; then
+                _structured_candidate="$FULL_REPORT"
+                _REPORT_IDENTITY=$(inbox_resolve_report_identity "$_structured_candidate" "${TASK_YAML:-}") || exit 1
+                IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
+                STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$_structured_candidate" "task_id" "")
+                STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$_structured_candidate" "parent_cmd" "")
+            fi
             [ -n "$_structured_candidate" ] || { echo "BLOCK: report notification missing structured report identity" >&2; exit 1; }
-            _REPORT_IDENTITY=$(python3 "$SCRIPT_DIR/scripts/lib/report_unique_identity.py" fallback --path "$_structured_candidate" --root "$SCRIPT_DIR") || exit 1
-            IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
-            STRUCTURED_TASK_ID=$(printf '%s' "$CONTENT" | grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 || true)
-            STRUCTURED_PARENT_CMD="$STRUCTURED_TASK_ID"
+            if [ -z "${STRUCTURED_REPORT_ID:-}" ]; then
+                _REPORT_IDENTITY=$(python3 "$SCRIPT_DIR/scripts/lib/report_unique_identity.py" fallback --path "$_structured_candidate" --root "$SCRIPT_DIR") || exit 1
+                IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
+                STRUCTURED_TASK_ID=$(printf '%s' "$CONTENT" | grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 || true)
+                STRUCTURED_PARENT_CMD="$STRUCTURED_TASK_ID"
+            fi
         fi
         if [ -z "${_structured_candidate:-}" ]; then
             _structured_candidate="$STRUCTURED_REPORT_PATH"

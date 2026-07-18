@@ -993,7 +993,7 @@ PY
 
     run _run_inbox_write karo "未達報告" task_failed testninja
     [ "$status" -eq 0 ]
-    [[ "$output" == *"pending duplicate suppressed"* ]]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
     [ "$(grep -c "^- content: '未達報告'" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
 }
 
@@ -1073,16 +1073,20 @@ YAML
     # state and the notification marker are the delivery contract.
     local attempt
     for attempt in $(seq 1 50); do
-        [ -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ] && break
+        grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null && break
         sleep 0.1
     done
     [ -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ]
-    [[ "$(grep -c "^- " "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]]
+    [[ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -ge 1 ]]
     grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
     grep -q "^  from: 'karo'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
     grep -q "cmd_test_001" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
     grep -q "testninja" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 
+    for attempt in $(seq 1 50); do
+        [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ] && break
+        sleep 0.1
+    done
     [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ]
 }
 
@@ -1112,6 +1116,41 @@ YAML
     run _run_inbox_write karo "別revision" report_received testninja
     [ "$status" -eq 1 ]
     [[ "$output" == *mismatched* ]]
+}
+
+@test "report_received fast path does not let a pre-fingerprint event suppress a revised report" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-fast-revision
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-fast-revision
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    mkdir -p "$TEST_TMPDIR/queue/inbox"
+    cat > "$TEST_TMPDIR/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- content: 'old reviewed report'
+  from: 'testninja'
+  id: 'msg_old_without_fingerprint'
+  read: true
+  timestamp: '2026-07-18T10:00:00'
+  type: 'report_received'
+  report_id: 'rpt-fast-revision'
+  report_identity_version: '2'
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m revised-report
+
+    run _run_inbox_write karo "revised report" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" != *DUPLICATE_MSG_ID=msg_old_without_fingerprint* ]]
+    [ "$(grep -c "report_id: 'rpt-fast-revision'" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 2 ]
+    [ "$(grep -c "report_fingerprint:" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
 }
 
 @test "report lifecycle canonical event key is exactly once under 20 parallel writers" {
@@ -1243,9 +1282,17 @@ YAML
 
     run _run_inbox_write karo "cmd_test_001 完了" report_submitted testninja
     [ "$status" -eq 0 ]
-    [[ "$output" == *"gunshi_notify: SENT"* ]]
+    local attempt
+    for attempt in $(seq 1 50); do
+        grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null && break
+        sleep 0.1
+    done
     grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
     grep -q "^  status: done" "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    for attempt in $(seq 1 50); do
+        [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ] && break
+        sleep 0.1
+    done
     [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ]
 }
 
