@@ -2445,6 +2445,21 @@ while [ $attempt -lt $max_attempts ]; do
             forward_gunshi_review_result_to_active_ninjas "$CONTENT"
         fi
 
+        # 忍者report_received後の振り返り自動トリガー(殿裁定2026-07-18: 分離原則)
+        if [ "$TYPE" = "report_received" ] && [ "$TARGET" = "karo" ]; then
+            _ninja_names_retro=$(get_ninja_names 2>/dev/null || true)
+            for _rn in $_ninja_names_retro; do
+                if [ "$FROM" = "$_rn" ]; then
+                    _retro_dir="$SCRIPT_DIR/queue/retro"
+                    mkdir -p "$_retro_dir"
+                    _retro_prompt="この作業で時間がかかった原因を分析し、利他の精神で調査を行いインフラバグの疑いとして家老に報告せよ"
+                    printf '%s\n' "- ninja: $FROM" "  triggered_at: $(date -Iseconds)" "  parent_msg: $MSG_ID" "  status: pending" >> "$_retro_dir/pending.yaml"
+                    bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$FROM" "$_retro_prompt" retro_prompt system read_and_analyze 2>/dev/null &
+                    break
+                fi
+            done
+        fi
+
         dispatch_codex_delivery_verification "$TARGET" "$MSG_ID" "$TYPE"
         exit 0
     else
