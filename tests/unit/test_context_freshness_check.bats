@@ -79,6 +79,24 @@ _wait_history_snapshot() {
 
 teardown() {
     unset CFC_OUTPUT_CACHE_TTL
+    # Async history refresh may still hold/create its ext4 snapshot while the
+    # test body has already returned.  Drain the bounded producer lock before
+    # deleting the fixture; otherwise teardown races os.replace and reports a
+    # false test failure (Directory not empty).
+    if [ -n "${CFC_HISTORY_CACHE_DIR:-}" ] && [ -d "$CFC_HISTORY_CACHE_DIR" ]; then
+        for _ in {1..100}; do
+            active=0
+            for lock in "$CFC_HISTORY_CACHE_DIR"/*.lock; do
+                [ -e "$lock" ] || continue
+                if command -v fuser >/dev/null 2>&1 && fuser "$lock" >/dev/null 2>&1; then
+                    active=1
+                    break
+                fi
+            done
+            [ "$active" -eq 0 ] && break
+            sleep 0.02
+        done
+    fi
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
 
@@ -172,6 +190,42 @@ EOF
     rm -f "$CFC_HISTORY_CACHE_DIR"/*.json
     PATH="$TEST_TMPDIR/fake-bin:$PATH" CFC_GIT_TIMEOUT=0.1 CFC_GIT_RETRY_TIMEOUT=0.1 \
         run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source commit check failed"* ]]
+}
+
+@test "GA-291 warm snapshot consumer performs zero git subprocesses and rejects corrupt generation" {
+    export CFC_HISTORY_REFRESH_SYNC=1
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo" "$TEST_TMPDIR/projects"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email test@example.invalid
+    git -C "$source_repo" config user.name test
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
+    _create_context "context/dm-signal.md" "$STALE_DATE"
+    _create_archive_cmd "cmd_900" "dm-signal" "completed" "$TODAY"
+    _create_source_commit "docs/rule/db-operations-runbook.md" "test: source update" "$source_repo"
+
+    run bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    _wait_history_snapshot
+
+    mkdir -p "$TEST_TMPDIR/no-git"
+    cat > "$TEST_TMPDIR/no-git/git" <<'GIT'
+#!/usr/bin/env bash
+echo called >> "${CFC_GIT_CALL_LOG:?}"
+exit 91
+GIT
+    chmod +x "$TEST_TMPDIR/no-git/git"
+    export CFC_GIT_CALL_LOG="$TEST_TMPDIR/git-calls"
+    run env PATH="$TEST_TMPDIR/no-git:$PATH" bash "$TEST_SCRIPT" --dashboard-warnings
+    [ "$status" -eq 0 ]
+    [ ! -e "$CFC_GIT_CALL_LOG" ]
+    [[ "$output" == *"source commits"* ]]
+
+    snapshot="$(find "$CFC_HISTORY_CACHE_DIR" -name '*.json' -type f | head -1)"
+    printf '{corrupt' > "$snapshot"
+    run env PATH="$TEST_TMPDIR/no-git:$PATH" CFC_HISTORY_REFRESH_SYNC=0 bash "$TEST_SCRIPT" --dashboard-warnings
     [ "$status" -eq 0 ]
     [[ "$output" == *"source commit check failed"* ]]
 }

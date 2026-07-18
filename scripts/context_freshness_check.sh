@@ -638,20 +638,15 @@ def source_tip_ref(repo_path: str) -> str:
             return False
         return False
 
-    for candidate in [item for item in candidates if override or ref_exists_without_git(item)]:
-        try:
-            result = subprocess.run(
-                ["git", "-C", repo_path, "rev-parse", "--verify", "--quiet", candidate],
-                check=False,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                timeout=min(_GIT_TIMEOUT, 5),
-            )
-        except Exception:
-            continue
-        if result.returncode == 0:
-            _SOURCE_TIP_CACHE[repo_path] = candidate
-            return candidate
+    for candidate in [item for item in candidates if ref_exists_without_git(item)]:
+        # The loose/packed ref existence check above is the freshness
+        # boundary.  Re-verifying it with `git rev-parse` puts the consumer hot
+        # path back on synchronous 9p history I/O and can turn a valid snapshot
+        # hit into GA-291 timeout/returncode=1.  The producer validates the
+        # revision while building the next snapshot; consumers stay syscall
+        # only and fail closed when no ref can be resolved.
+        _SOURCE_TIP_CACHE[repo_path] = candidate
+        return candidate
 
     _SOURCE_TIP_CACHE[repo_path] = "HEAD"
     return "HEAD"
@@ -929,22 +924,10 @@ def _run_grouped_git_log(
                 stream.write(json.dumps(record, sort_keys=True) + "\n")
         except OSError:
             pass
-    # The loose/packed ref is the same source-tip contract as rev-parse but
-    # avoids spawning git on 9p.  Fall back to git only for expressions the
-    # direct resolver cannot represent.
+    # The loose/packed ref is the complete consumer source-tip contract.
+    # Never fall back to synchronous git here: missing/unsupported boundaries
+    # are unknown freshness and must request no snapshot / return fail-closed.
     boundary = resolve_tip_without_git(repo_path, revision)
-    if not boundary:
-        try:
-            boundary = subprocess.run(
-                ["git", "-C", repo_path, "rev-parse", revision or "HEAD"],
-                check=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-                text=True,
-                timeout=min(_GIT_TIMEOUT, 5),
-            ).stdout.strip()
-        except Exception:
-            boundary = ""
     contract = json.dumps(
         {
             "repo": os.path.realpath(repo_path),
@@ -1017,34 +1000,9 @@ def _run_grouped_git_log(
                 return cached_commits
         except (OSError, ValueError, TypeError, KeyError):
             pass
-        # GA-286 snapshots predate the explicit contract_hash fields.  Adopt
-        # them only after parsing and matching every contract component and
-        # the source tip; this avoids a cold 10s+60s rebuild during upgrade.
-        try:
-            expected_legacy = {
-                "repo": os.path.realpath(repo_path),
-                "revision": revision,
-                "boundary": boundary,
-                "since": since_date.isoformat() if since_date else None,
-                "pathspecs": sorted(pathspecs),
-            }
-            for legacy_path in glob.glob(os.path.join(cache_dir, "*.json")):
-                with open(legacy_path, encoding="utf-8") as legacy_file:
-                    legacy = json.load(legacy_file)
-                legacy_fingerprint = legacy.get("fingerprint")
-                if not isinstance(legacy_fingerprint, str) or json.loads(legacy_fingerprint) != expected_legacy:
-                    continue
-                if not isinstance(legacy.get("commits"), list):
-                    continue
-                cached_commits = [
-                    (str(item[0]), str(item[1]), [str(path) for path in item[2]])
-                    for item in legacy["commits"]
-                    if isinstance(item, list) and len(item) == 3 and isinstance(item[2], list)
-                ]
-                record_diagnostic("legacy_hit")
-                return cached_commits
-        except (OSError, ValueError, TypeError):
-            pass
+        # Legacy snapshots lack the v2 content hash and generation tuple.
+        # Treat every one as a miss; adopting one can silently mix a stale or
+        # partially-written generation into a current source-tip decision.
     request_refresh()
     if os.environ.get("CFC_HISTORY_REFRESH_SYNC") == "1":
         refreshed = parse_snapshot(cache_path)
