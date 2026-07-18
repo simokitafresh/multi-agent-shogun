@@ -1,0 +1,104 @@
+# =============================================================================
+# MCAS プロジェクト核心知識
+# =============================================================================
+# 用途: 将軍/家老がcompact復帰時に読み込む。核心ルールと偵察知見
+# 詳細コンテキスト: context/mcas.md
+# 更新日: 2026-02-25
+
+project:
+  id: mcas
+  name: "Multi-Claude Account Switcher"
+  path: "/mnt/c/Python_app/multi-claude-account-switcher"
+  repo: "https://github.com/simokitafresh/multi-claude-account-switcher"
+  description: "複数Claude Max Planアカウントのusageリアルタイム監視+切替ツール"
+
+# =============================================================================
+# (a) Usage API仕様（cmd_313偵察結果）
+# =============================================================================
+usage_api:
+  endpoint: "GET https://api.anthropic.com/api/oauth/usage"
+  auth: "Bearer {accessToken}"
+  headers:
+    - "anthropic-beta: oauth-2025-04-20"
+  response_fields:
+    five_hour: "5時間ウィンドウ使用率(%)"
+    seven_day: "7日間ウィンドウ使用率(%)"
+    extra_usage: "追加使用量"
+  properties:
+    read_only: true
+    credit_consumption: false
+    rate_limit: "1分間隔5回ポーリング全200OK確認済み(cmd_314)。レート制限なし"
+    response_time: "5.35秒平均（WSL2→API間レイテンシ）"
+    seven_day_sonnet: "Sonnet専用7日間使用率"
+
+profile_api:
+  endpoint: "GET https://api.anthropic.com/api/oauth/profile"
+  auth: "Bearer {accessToken}"
+  response_fields:
+    account_name: "アカウント名"
+    plan: "プラン名(Pro/Max5/Max20)"
+    rate_limit_tier: "レート制限ティア"
+
+# =============================================================================
+# (b) 認証・マルチアカウント管理
+# =============================================================================
+auth:
+  credentials_path: "~/.claude/.credentials.json"
+  token_fields:
+    access_token: "claudeAiOauth.accessToken"
+    refresh_token: "claudeAiOauth.refreshToken"
+  multi_account_method: "CLAUDE_CONFIG_DIR=~/.claude-{name} で完全分離（最も堅牢）"
+  risk: "OAuthリフレッシュ競合（9並列CLI時に注意）"
+
+# =============================================================================
+# (c) アカウント情報
+# =============================================================================
+accounts:
+  - name: "primary"
+    email: "karasuyama3387@gmail.com"
+    plan: "Max"
+  - name: "secondary"
+    email: "未設定"
+    plan: "Max"
+
+# =============================================================================
+# (d) レートリミットカウント方式（cmd_316偵察完了）
+# =============================================================================
+rate_limit_counting:
+  method: "APIコスト等価（ドル換算）"
+  evidence: "Opus/Sonnet 5x消費比 = API価格比($15/$3)"
+  formula: "消費 = Σ(uncached_input × input_price + output × output_price) / 時間枠予算"
+  thinking_tokens: "output扱い（高額側）。budget=31999"
+  cache_read: "非課金"
+  bucket_structure: "All Models共通枠 + Sonnet Only枠（二重バケット）"
+  model_cost_ratio:
+    opus: "5x (Sonnet比)"
+    haiku: "0.3x (Sonnet比)"
+    opus_4_6_vs_4_5: "20-30%増（GitHub#23706）"
+  optimization_priority:
+    - "thinking budget削減（8000 or OFF）"
+    - "モデルミックス（Opus→複雑のみ、Sonnet→通常、Haiku→調査）"
+    - "CLAUDE.md軽量化（500行以下）"
+    - "MCP tool search有効化"
+  unknown:
+    - "各プラン・時間枠の具体的ドル予算額"
+    - "tool use自動リトライのカウント有無"
+    - "cache_creation_tokensの扱い"
+  research_docs:
+    - "docs/research/cmd_316_rate_limit_analysis.md"
+    - "docs/research/cmd_316_rate_limit_consumption.md"
+
+# =============================================================================
+# (e) 技術スタック（予定）
+# =============================================================================
+tech_stack:
+  language: "Shell script (bash) + Python"
+  runtime: "WSL2 + tmux"
+  monitoring: "curl + jq でUsage API定期ポーリング"
+  display: "tmuxステータスバー or ntfy通知 or 専用ペイン"
+test_policy:
+  policy: "実装testは作成→PASS→即削除。永続化は具体的不変量のtest_necessity宣言付きcontractのみ"
+  positive_rule: "削除diffまたは宣言全件、宣言率N/N、契約混入0、境界内回帰リスク受容、deletion_justification非空、fixture被参照0、regression_justification非空、race PASS後contract外test削除を全て二値確認する"
+  reason: "消費済みtestの保守費・fixture・実行時間と境界所有の曖昧化を防ぐ"
+  holes_1_7: [deletion_diff, declaration_rate, contract_contamination_zero, boundary_regression_risk_accepted, deletion_justification, fixture_reference_zero, regression_justification_and_race_stop]
+  origin: "[[殿裁定_default_delete_test_20260719]] -> [[default_delete_test_policy]] -> [[全PJ共通契約]]"

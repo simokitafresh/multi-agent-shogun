@@ -1,0 +1,90 @@
+# KJ Partshift Checker — パートタイムシフト見える化MVP
+# 核心知識。忍者配備時に自動ロードされる
+id: kj-partshift
+name: "KJ Partshift Checker"
+path: "/mnt/c/Python_app/kj-partshift-checker"
+repo: "https://github.com/simokitafresh/kj-partshift-checker"
+status: active
+
+# === 技術スタック ===
+tech_stack:
+  backend: "FastAPI"
+  template: "Jinja2"
+  dynamic: "HTMX"
+  css: "TailwindCSS (CDN)"
+  db: "SQLite"
+  hosting: "Render (Singapore, Starter Plan)"
+  disk: "/data/shifts.db (Persistent Disk)"
+
+# === アーキテクチャ ===
+architecture:
+  pattern: "Layered Architecture"
+  layers:
+    - "Routers (app/routers/) — HTTPリクエスト処理、認証"
+    - "Services (app/services/) — ビジネスロジック、稼働日判定、楽観ロック"
+    - "Repositories (app/repositories/) — CRUD、SQL実行"
+    - "Database — SQLite永続化"
+
+# === DB設計 ===
+db_tables:
+  shifts: "id, date, start_time, end_time, name, updated_at, version(楽観ロック)"
+  closures: "date(PK), label"
+  members: "id, name(UNIQUE), is_active, is_retired, created_at"
+
+# === 認証 ===
+auth:
+  method: "Basic認証"
+  scope: "管理機能のみ(CRUD/休診日/設定)。閲覧は認証不要"
+  env_vars: ["BASIC_AUTH_USER", "BASIC_AUTH_PASSWORD"]
+
+# === 稼働日ルール ===
+business_rules:
+  working_days: "月火木金土(水日休み)"
+  shift_time_range: "09:00-21:00"
+
+# === 未着手課題 (future-001.md) ===
+open_issues:
+  - id: F042
+    title: "セッションベース認証への変更"
+    priority: high
+    note: "Basic認証のログアウト不完全問題"
+  - id: F041
+    title: "実環境での速度向上"
+    priority: medium
+    note: "Tailwindローカルビルド等残り施策あり"
+  - id: F040
+    title: "シフト表示簡素化(枠の入れ子解消)"
+    priority: medium
+  - id: F027
+    title: "モバイルスワイプでの月移動"
+    priority: medium
+  - id: F023
+    title: "シフト視認性改善(メンバー別色分け)"
+    priority: medium
+  - id: F018
+    title: "シフト重複チェック機能"
+    priority: medium
+  - id: F019
+    title: "データエクスポート機能(CSV)"
+    priority: low
+  - id: F021
+    title: "月間シフト集計表示"
+    priority: low
+  - id: F014
+    title: "PWA対応"
+    priority: low
+
+# === Render設定 ===
+render:
+  region: "Singapore"
+  plan: "Starter"
+  build_command: "pip install -r requirements.txt"
+  start_command: "uvicorn main:app --host 0.0.0.0 --port $PORT"
+  disk_mount: "/data"
+  env_vars: ["DATABASE_PATH=/data/shifts.db", "BASIC_AUTH_USER", "BASIC_AUTH_PASSWORD"]
+test_policy:
+  policy: "実装testは作成→PASS→即削除。永続化は具体的不変量のtest_necessity宣言付きcontractのみ"
+  positive_rule: "削除diffまたは宣言全件、宣言率N/N、契約混入0、境界内回帰リスク受容、deletion_justification非空、fixture被参照0、regression_justification非空、race PASS後contract外test削除を全て二値確認する"
+  reason: "消費済みtestの保守費・fixture・実行時間と境界所有の曖昧化を防ぐ"
+  holes_1_7: [deletion_diff, declaration_rate, contract_contamination_zero, boundary_regression_risk_accepted, deletion_justification, fixture_reference_zero, regression_justification_and_race_stop]
+  origin: "[[殿裁定_default_delete_test_20260719]] -> [[default_delete_test_policy]] -> [[全PJ共通契約]]"

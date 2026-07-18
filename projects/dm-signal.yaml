@@ -1,0 +1,171 @@
+# DM-Signal 核心知識索引 (圧縮版 2026-04-26 cmd_2295)
+# 正規ソース: docs/rule/trade-rule.md | 詳細: context/dm-signal.md | Saxoトレード基盤: context/saxo-trade-engine.md
+
+project:
+  id: dm-signal
+  name: DM-Signal
+  path: /mnt/c/Python_app/DM-signal
+  description: "保有シグナル＆バックテストビューワー。FoF=乗り換え戦略。Tier=料金プラン(上位ほど多くのPF/シグナルにアクセス)"
+
+visibility_philosophy:
+  product_essence: "保有シグナル(今何を持つべきか)が最も価値のある情報。バックテスト結果は餌(課金動機)"
+  vis_L2_hide_pf: "PFの存在自体を隠す。このTierでは見せないPFを丸ごと非表示(404)"
+  vis_L3_mask_signal: "保有シグナルを隠しバックテストは見せる。PFの凄さを見せて上位Tier誘導"
+  vis_L4_mask_components: "保有シグナルは公開するが構成ticker(=戦略のレシピ/銘柄プール)を隠す。知的財産保護"
+  matrix: "docs/research/cmd_2596_visibility_matrix.md"
+  deployment_constraint: "Codex(GPT)2名のみ(殿指示2026-04-12)"
+
+engineering_preferences:
+  - "prefer trade-rule.md / RULE01-11一致 over ローカル解釈。RULE05/06/08/11を先に照合せよ"
+  - "prefer 実API diff全数値フィールド完全一致検証 over 数学的等価推測"
+  - "prefer 本番selection block正規判定 over 事前選別・近道ロジック。選抜条件を前段で勝手に削るな"
+  - "prefer FoF展開+holding_signal+signal_date規則 over 前月末/当月シグナルの短絡理解"
+  - "prefer PostgreSQL直読/直書き+UPSERT+本番コードパス over SQLite/DELETE+INSERT分離"
+  - "prefer explicit/minimal diff over clever abstraction。SSOT整合性+SKIP=FAILの検証義務は削るな"
+  - "prefer cmd仕様パラメータ値 over 知識辞書/論文/独自判断。矛盾→decision_candidate報告"
+  - "prefer .npyキャッシュorpd.read_csv(usecols) over 全量読み。GS CSV=944Kパターン(1.1GB+)"
+  - "prefer 均等保有(1/N) over 個別ウェイト指定。L2/奥義/合成PFでウェイトをハードコードするな"
+  - "prefer L2 universeは各方式3目的のみ over 6目的混合。シン/ALM等の方式ごとに3目的構成を保て"
+  - "prefer 全候補実装・検証 over 事前選別。計算量を理由に候補を削るな"
+  - "prefer 検証日+検証方法+出典の明記 over 結論だけの記録。検証トレーサビリティを残せ"
+
+trade_rules:
+  source: "docs/rule/trade-rule.md"  # Level 0 SSOT。RULE01-11。例外なし
+  calculation_integrity: "signals/returns/metrics全PF×全期間で許容誤差ゼロ必須。BE変更ACに実API diff検証を含めよ"
+  detail: "→ docs/research/dm_signal_trade_rules_full.md (RULE01-11詳細・誤解集・SSOT階層・GS用語)"
+
+database:
+  host: "singapore-postgres.render.com"
+  connection: "backend/.env の DATABASE_URL"
+  rules: ["PostgreSQL経由必須", "SQLite=本番外・書込禁止", "UPSERT維持必須(DELETE+INSERT禁止)", "本番コードパス統一"]
+  detail: "→ projects/dm-signal/database-detail.yaml (テーブルスキーマ・排他制御・よくある間違い)"
+
+pipeline:
+  standard_flow: "MomentumFilter → AbsoluteMomentumFilter → SafeHavenSwitch → EqualWeight"
+  absolute_momentum_band: "reference_asset modeはthreshold_band指定時に三状態(pass/band/fail)。bandは相対選択資産50%+safe_haven_asset50%。未指定PFは従来二値判定のまま不変(cmd_3707)"
+  detail: "→ projects/dm-signal/pipeline-blocks.yaml (11 selection + 4 terminal blocks。tiebreak含む)"
+
+shijin:  # L0: 4体×3モード=12体
+  detail: "→ projects/dm-signal/shijin-design.yaml (設計原理・DNA制約・SM01-21・指標哲学)"
+  objectives: {shin: "CAGR/NHF/MaxDD", alm: "MRU/calmar/UWP"}
+  members:
+    - {name: "青龍(Seiryu)", uuid: "f8d70415-24f2-4b1a-a603-d0e86155255a", family: DM2}
+    - {name: "朱雀(Suzaku)", uuid: "c55a7f68-6569-4abb-8df5-9acf3dc8e061", family: DM3}
+    - {name: "白虎(Byakko)", uuid: "212e9eee-6acc-4f25-8a41-ea9fdf34a4e1", family: DM6}
+    - {name: "玄武(Genbu)",  uuid: "8650d48d-c60d-46de-b827-c4d38f276e37", family: "DM7+"}
+
+naming_convention:  # (k) L0/L1/L2定義
+  method_codes: {シン: "GS全期間in-sample champion固定(WFは選別に使わない。殿裁定2026-07-06)", ALM: "ディスコン(殿裁定2026-05-10)", wfシン: "WF生成シンBB系列(検証用。選別には不使用)", wfALM: "ディスコン"}
+  price_source: "EODHD生値+自前調整(2026-07-05本番移行完了)。設計書→database repo docs/price-data-source-plan.md"
+  L0_format: "{方式}{四神名}-{モード}  例: シン青龍-激攻 / ALM青龍-激攻"
+  L1_format: "{方式}{忍法名}-{モード}  例: シン加速D-激攻 / wfシン加速D-激攻"
+  L2_format: "奥義-{系統コード}-{忍法名}-{モード}  SSS=シン×シン×シン / ASS=ALM×シン×シン"
+  max_production: 100体
+  protected: "殿の個人PF(standard21体+FoF13体)は削除・変更禁止"
+  detail: "→ projects/dm-signal/naming-portfolios.yaml (チャンピオン/パラメータ表/保護リスト全量)"
+
+production_invariants:  # (PI) 上位5件 (全28件→ docs/research/dm_signal_pi_full.md)
+  detail: "→ docs/research/dm_signal_pi_full.md (PI-001〜PI-028全文。PI-028=GS-本番DTB3暦解像度差のband境界フリップ 2026-07-08追加)"
+  entries:
+    - {id: PI-001, fact: "時間解像度原理: 全ての日次シグナル比較では日次差異を保持し、月次dedupで潰さない"}
+    - {id: PI-002, fact: "信頼境界原理: 全ての本番判断ではSQLiteを真実とせず、PostgreSQLをSSOTとして再検証する"}
+    - {id: PI-003, fact: "構成スキーマ完全性原理: 全てのstandard PF config JSONはpipeline_configを必須とし、NoneでCashフォールバックさせない"}
+    - {id: PI-004, fact: "信頼境界原理: 全てのGS成果物は本番投入前にPydanticスキーマで再検証する"}
+    - {id: PI-005, fact: "全期間・全下流検証原理: 任意の新規PF登録後はportfolio_id指定なしfull recalculate一発で下流全体を再生成する"}
+    - {id: PI-027, fact: "公開信頼境界原理: 全PFはhide_portfolio=trueで作成し、検証完了後に殿承認を得るまで公開しない"}
+    - id: PI-P01
+      fact: "信頼境界原理: データが境界を越える全ての箇所(GS→本番、SQLite/CSV→PostgreSQL、SQL直接→ORM/Pydantic、外部API→分析)では、越えた先の本番ルールで再検証する"
+      covers: [PI-002, PI-004, PI-006, PI-007, PI-013, PI-014, PI-020, PI-026]
+      production_ground: "本番SSOT=PostgreSQL/PipelineEngine/Pydantic。根拠: database.rules、context/dm-signal-core.md §2、backend/app/db/models.py、backend/app/schemas/models.py、backend/app/storage/repository.py、docs/research/dm_signal_pi_full.md PI-020/PI-026"
+    - id: PI-P02
+      fact: "時間解像度原理: シグナル・リターン・価格データの全ての比較/再計算では、日次/営業日/Open-Close/native系列/full historyの解像度を保持し、月次dedupや異種系列混合で潰さない"
+      covers: [PI-001, PI-008, PI-009, PI-010, PI-017, PI-024]
+      production_ground: "根拠: docs/rule/trade-rule.md RULE01-11、backend/app/services/return_calculator.py、backend/app/services/price_ratio_calculator.py、docs/research/dm_signal_pi_full.md PI-001/008/009/010/017/024"
+    - id: PI-P03
+      fact: "全期間・全下流検証原理: 任意の本番DB変更・PF登録・上流処理変更では、部分成功や局所再計算で完了扱いせず、full recalculate、既存PF不変、下流生成物、パリティを即時に確認する"
+      covers: [PI-005, PI-015, PI-019, PI-021, PI-023, PI-025]
+      production_ground: "根拠: context/dm-signal-core.md §1.5、context/dm-signal-ops.md §6-7、backend/app/jobs/recalculate_fast.py、backend/app/jobs/recalculate_fof.py、backend/app/storage/repository.py"
+    - id: PI-P04
+      fact: "構成スキーマ完全性原理: 任意のPF config/pipeline_config/block parametersは、書込成功ではなく本番読込・Pydantic・処理側制約を通過して初めて有効とみなす"
+      covers: [PI-003, PI-011, PI-012, PI-013]
+      production_ground: "根拠: backend/app/schemas/models.py Portfolio.validate_portfolio_type、backend/app/storage/repository.py、backend/app/services/pipeline/blocks/equal_weight.py、backend/app/services/pipeline/blocks/momentum_acceleration_filter.py、backend/tests/test_portfolio_repository_skip_invalid.py"
+    - id: PI-P05
+      fact: "失敗可視化原理: 全ての本番計算・分析・同期処理では、例外や欠損をCash/0/SPY/Trueなどの既定値で隠さず、None+logger.error/raiseまたは個別検証で止める"
+      covers: [PI-015, PI-018, PI-025]
+      production_ground: "根拠: context/dm-signal-core.md PI-018/PI-019、backend/app/jobs/recalculate_fast.py、backend/app/jobs/recalculate_fof.py、backend/app/storage/repository.py、docs/research/dm_signal_pi_full.md PI-015/018/025"
+    - id: PI-P06
+      fact: "保有シグナル確定原理: 決定済み期間のholding_signalはsignal_decision_ledgerをSSOTとし、月中の再計算・同期・価格更新で上書きしない"
+      covers: [PI-001, PI-002, PI-005, PI-015, PI-018]
+      production_ground: "cmd_3704で本番signal_decision_ledger初期102件挿入、sync-standard/sync-fof後checksum不変、CRITICAL drift 2件のガード発火を確認。根拠: docs/design/signal-decision-ledger-design.md、context/dm-signal-core.md §21"
+    - id: PI-P07
+      fact: "門番バンド原理: AbsoluteMomentumFilter reference_asset modeでthreshold_bandを指定したPFのみ三状態判定を使い、band内は選択資産50%+safe haven50%としてweightsを伝搬する。未指定PFの既存出力は不変"
+      covers: [PI-P03, PI-P04, PI-P05]
+      production_ground: "cmd_3707でbackend/app/services/pipeline/blocks/absolute_momentum.py、safe_haven_switch.py、recalculate_fast.pyに実装。engine/vectorized双方の47テストPASS。根拠: docs/research/cmd_3705_absolute_momentum_band_study.md、context/dm-signal-core.md §4"
+    - id: PI-P08
+      fact: "環境能力実測原理: Render等managed環境固有の権限・接続・可用性を使う方式は、一般仕様やlocal clone成功を能力証明とせず、environment identity付きactual preview/isolated往復artifactを入口で検証してから後段実装・全数試験へ進む"
+      covers: [PI-P01, PI-P05]
+      production_ground: "cmd_karo_fence_v1427_nologin_rc3_202607140653はRender actual capability artifact 0件を検出し、production mutation 0・retry 0・SKIP 0のまま後続5群をfail-closed BLOCK。根拠: L893、context/dm-signal-ops.md §75、queue/reports/hanzo_report_cmd_karo_fence_v1427_nologin_rc3_202607140653.yaml"
+
+db_schema_quick_ref:  # (h) 主要3テーブル (全7テーブル詳細→ docs/research/dm_signal_db_schema.md)
+  detail: "→ docs/research/dm_signal_db_schema.md"
+  portfolios:     {pk: "id", columns: "id,name,type,config,folder_id,created_at,updated_at,hide_portfolio,hide_signal,is_active"}
+  signals:        {pk: "portfolio_id,date", columns: "portfolio_id,date,signal,holding_signal,momentum_data,created_at"}
+  monthly_returns: {pk: "portfolio_id,year_month", columns: "portfolio_id,year_month,cumulative_return,cumulative_return_open,monthly_return,monthly_return_open,benchmark_*,in_market,holding_signal"}
+
+api:
+  total_endpoints: "84-88"
+  response_wrapper: "ApiResponse{success,data,error,message}"
+  auth: {admin: "Basic Auth(ADMIN_API_KEY)", viewer: "Bearer Token(VIEWER_TOKEN)"}
+  detail: "→ projects/dm-signal/api-endpoints.yaml"
+
+production:
+  hosts: {fe: "dm-signal-frontend.onrender.com", be: "dm-signal-backend.onrender.com"}
+  detail: "→ projects/dm-signal/recalculate-phases.yaml + key-files.yaml + asset-inventory.yaml (cron/warnings含む)"
+
+tier_plan_mapping:  # note.comメンバーシッププランとDB viewer_tiersの対応 (殿裁定2026-05-10)
+  note_url: "https://note.com/membership/settings/manage"
+  membership_name: "人生を変えるデュアルモメンタム投資"
+  plans:
+    - {note_plan: "ベーシックプラン", price: "¥1,000/月 初月無料", public: true, db_tier: "Basic"}
+    - {note_plan: "アドオン 裏・Ave7", price: "¥2,000/月", public: false, db_tier: "AddOn"}
+    - {note_plan: "スタンダードプラン（古参スペシャル）", price: "¥4,000/月", public: false, db_tier: "Standard"}
+    - {note_plan: "スタンダードプラン", price: "¥8,000/月", public: true, db_tier: "NewStandard"}
+    - {note_plan: "ドクタープレミアムプラン 完全招待制", price: "¥20,000/月 初月無料", public: false, db_tier: "premium"}
+    - {note_plan: "プレミアムプラン 劇薬DMシリーズ", price: "¥30,000/月", public: false, db_tier: null}
+  note: "StandardとNewStandardの名前が直感と逆。Standard(旧)=古参¥4,000、NewStandard(新)=¥8,000"
+
+alpha_6_metrics:  # α6指標定義 (殿裁定2026-05-10: UWP→Avg UWP変更)
+  metrics: ["CAGR", "NHF", "MaxDD", "MRU", "Calmar", "Avg UWP"]
+  note: "旧定義はUWP(最大水面下期間)。Avg UWP(平均水面下期間)に変更。平均的な回復速度が実用的"
+
+new_bb_design:  # 殿裁定2026-06-15
+  weighted_multi_view:
+    name: "WeightedMultiViewMomentumFilter (新四つ目)"
+    status: "design_confirmed"
+    problem: "既存四つ目はunion(set)で4視点の重複投票情報が消失。全視点選出も1視点選出も同ウェイト"
+    solution: "投票数カウント→weight=投票数/Σ全PF投票数で正規化。context.final_weightsに書込み(engine L179が自動伝搬)"
+    params: "base_period_months(6/9/12), top_n(1-5) — 既存四つ目と同じ"
+    key_decisions:
+      - "正規化=Σ投票数(4×top_nはタイブレークで破綻)"
+      - "engine/EqualWeight改修不要(ward_two_stage_ewが前例)"
+      - "SafeHaven=Cashはナンセンス(殿検証済み。L0で既使用のBBに執着しない)"
+    l3_candidates: "追い風★★★(L2 CAGR+34pp/Calmar+3.7) + 加速R★★★(Calmar+3.8/MaxDD-15pp)"
+    gist: "a2fc55635a61f5ff0f9c4c221ee0e9f9"
+    confirmed_at: "2026-06-15"
+
+forbidden_topics:  # 殿裁定2026-05-10
+  - topic: "ALM"
+    rule: "殿が明示的に言わない限り話題に出すな。ALMはディスコン"
+
+alm_integration:
+  status: "discontinued"
+  detail: "→ context/dm-signal-ops.md §31 (ALM浄化完了2026-04-25。ディスコン・殿裁定2026-05-10)"
+tool_polishing_flow: 軍師設計書→/goal修行配備→ラルフループ(殿裁定2026-07-06)
+parity_timing: 本番パリティ確認はfullrecalculate完了(480s)待ち必須。GS計算=並列OK/本番適用=直列必須(殿裁定2026-07-06)
+gs_source_type: 'local_sqlite統一(殿裁定2026-07-06 06:55)。リモートSupabase(db)はGSに不要。前段GS出力SQLiteが次段入力のローカル完結構造'
+test_policy:
+  policy: "実装testは作成→PASS→即削除。永続化は具体的不変量のtest_necessity宣言付きcontractのみ"
+  positive_rule: "削除diffまたは宣言全件、宣言率N/N、契約混入0、境界内回帰リスク受容、deletion_justification非空、fixture被参照0、regression_justification非空、race PASS後contract外test削除を全て二値確認する"
+  reason: "消費済みtestの保守費・fixture・実行時間と境界所有の曖昧化を防ぐ"
+  holes_1_7: [deletion_diff, declaration_rate, contract_contamination_zero, boundary_regression_risk_accepted, deletion_justification, fixture_reference_zero, regression_justification_and_race_stop]
+  origin: "[[殿裁定_default_delete_test_20260719]] -> [[default_delete_test_policy]] -> [[全PJ共通契約]]"

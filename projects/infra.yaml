@@ -1,0 +1,163 @@
+# =============================================================================
+# Infra プロジェクト核心知識
+# =============================================================================
+# 用途: 将軍/家老がcompact復帰時に読み込む。マルチエージェントインフラの核心ルール
+# 詳細コンテキスト: context/infrastructure.md
+# 更新日: 2026-03-06
+
+project:
+  id: infra
+  name: "Multi-Agent Infrastructure"
+  path: "/mnt/c/tools/multi-agent-shogun"
+  description: "Claude Code + Codex + tmux マルチエージェント並行開発基盤。戦国軍制ヒエラルキー。"
+
+# =============================================================================
+# (a-0) Engineering Preferences (gstack知見適用 — cmd_927)
+# =============================================================================
+# PJ固有の判断基準。レビュー・偵察での推薦はこの基準にマッピングせよ。
+
+engineering_preferences:
+  - "prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ"
+  - "prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ"
+  - "prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集"
+  - "prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集"
+  - "prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変"
+  - "prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順"
+  - "prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する"
+
+# =============================================================================
+# (a) CLI種別とエージェント対応
+# =============================================================================
+cli_agents:
+  assignment_resolution:
+    ssot:
+      cli_common_defaults: "config/cli_profiles.yaml profiles.<cli_type>.*"
+      per_agent_selection: "config/settings.yaml cli.agents.*"
+    resolver: "scripts/lib/cli_lookup.sh cli_launch_cmd()"
+    apply_flow: "shogun-cli-switch → settings更新/tmux変数同期 → respawn"
+    runtime_verification:
+      rule: "反映結果はsettings YAML parse・tmux vars・capture banner・process treeで一次確認する（SSOTではなく検証証拠）"
+      settings_parse: "python3でconfig/settings.yamlをparseし対象agentのtype/model_nameを確認"
+      tmux_vars: "tmux display-messageで@agent_cli/@model_nameを確認"
+      capture_banner: "tmux capture-paneで実CLI/実モデルbannerを確認"
+      process_tree: "pane_pid起点のps --forestで実processを確認"
+    note: "本ファイルにagent固定所属を重複保持しない。CLI切替後の実態を静的配列から推測しない"
+  claude:
+    autoload: "CLAUDE.md"
+    clear_command: "/clear"
+    model_switch: "/model {name}"
+    prompt_pattern: "❯"
+    ctx_pattern: "CTX:{pct}%"
+  codex:
+    autoload: "AGENTS.md"
+    clear_command: "/new"  # NOT /clear
+    model_switch: null  # TUI only, no send-keys support
+    prompt_pattern: "›"
+    ctx_pattern: "{pct}% context left"
+
+# =============================================================================
+# (b) 通信プロトコル要約
+# =============================================================================
+communication:
+  method: "YAML mailbox (inbox_write.sh → inbox_watcher.sh → send-keys nudge)"
+  rule_top_down: "将軍→家老: inbox_write"
+  rule_bottom_up: "家老→将軍: dashboard.mdのみ(inbox禁止)"
+  rule_ninja: "忍者→家老: report YAML + inbox_write"
+  wakeup: "inbox_watcher.sh が inotifywait で検知 → nudge(inboxN) を send-keys"
+  unread_counter: "cmd_188: @inbox_unread で未読件数を保持。nudge欠落時も inboxN 相当を復元できる"
+  read_protocol: "cmd_189: 既読化は inbox_mark_read.sh (flock+atomic write) のみ。Edit tool 直接編集は禁止"
+  auto_nudge_idle_karo: "cmd_191: pending cmd がある限り、ninja_monitor が idle 家老へ自動 re-nudge する"
+
+# =============================================================================
+# (c) コンテキスト管理
+# =============================================================================
+context_management:
+  autocompact: "90% (CLAUDE_AUTOCOMPACT_PCT_OVERRIDE)"
+  ninja_monitor: "idle+タスクなし → 無条件/clear(codexは/new)"
+  karo_compact: "CTX>50%タスク境界でcompact"
+  task_status_acknowledged: "cmd_181: assigned→acknowledged→in_progress を明文化。ゴースト配備防止の入口状態"
+  pane_recovery: "cmd_183: tmuxペイン消失を監視し自動再配備。remain-on-exit=on で異常可視化を維持"
+  known_issues:
+    - "CLAUDE.md更新しても稼働中エージェントには即反映されない"
+    - "auto-/clearループ: CTX>50%忍者にタスク配備→idle検知→/clear→復帰でCTX増→再/clear"
+    - "cmd_192: grep -c || echo 0 は 0件時に '0\\n0' 混入バグを起こす。件数取得はawk系に統一する"
+
+# =============================================================================
+# (d) 知識読み込み経路
+# =============================================================================
+knowledge_loading:
+  shogun:
+    session_start: "Memory MCP → instructions/shogun.md → config/projects.yaml → projects/{id}.yaml → context/{project}.md(要約)"
+    compaction: "同上"
+  karo:
+    session_start: "instructions/karo.md → config/projects.yaml → projects/{id}.yaml → projects/{id}/lessons.yaml → context/{project}.md"
+    compaction: "同上"
+  ninja_claude:
+    clear_recovery: "CLAUDE.md → task YAML → project:{id}なら3ファイル読込"
+    session_start: "instructions/ashigaru.md → task YAML → project知識"
+  ninja_codex:
+    clear_recovery: "AGENTS.md → task YAML → project:{id}なら3ファイル読込"
+    session_start: "codex-ashigaru.md → task YAML → project知識"
+    note: "AGENTS.mdとCLAUDE.mdは同一内容(build_instructions.shで同期)"
+
+# =============================================================================
+# (d-2) 殿裁定 (未実装/温め中を含む)
+# =============================================================================
+lord_rulings:
+  - id: LR-INFRA-001
+    ruling: "三層記憶にも会話がすぐ続けられるように貫通させよ"
+    date: "2026-06-09"
+    context: "マルチノード環境(Mac+Windows)検討中。GitHub同期でコードは動くが三層記憶DB(SQLite)はローカルファイル。/clear跨ぎの会話継続性を三層記憶で保証する"
+    status: "温め中"
+    design_doc: "docs/research/multinode_portable_environment_20260609.md"
+    next_action: "Phase 2(将軍システムの/mnt/c依存を環境変数化)がマルチノード前提。classroomのmini PC(Phase 0)が先行"
+  - id: LR-INFRA-002
+    ruling: "Loop Engineering Phase 3残り3件(#3 FE検証/#13 maker-checker/#16 MCP Connector)は実装停止"
+    date: "2026-06-27"
+    context: "Phase 1全4件D0完了、Phase 2全4件GATE CLEAR(cmd_3548-3553)、Phase 3は2件GATE CLEAR(cmd_3554-3555)+3件停止で区切り"
+    status: "停止"
+    next_action: "再開は殿指示時のみ"
+
+# =============================================================================
+# (e) Production Invariants (本番不変量)
+# =============================================================================
+# cmd起票前に確認。PIに抵触するACは設計段階で排除すること。
+production_invariants:
+  last_updated: "2026-07-15"
+  entries:
+    - id: PI-INFRA-001
+      fact: "scripts/lib/配下のライブラリ関数でwhile readループの変数名はプレフィックス付き(_XX_)を使用すること"
+      implication: "bashの動的スコープにより、while read変数名が呼出元のlocal変数と同名だと値が上書きされ、意図しない動作になる。ライブラリ関数は多数のスクリプトから呼ばれるため衝突リスクが高い"
+      source: "L263 (cmd_1136)"
+      verified_file: "scripts/lib/agent_config.sh"
+    - id: PI-INFRA-002
+      fact: "計測指標の分母にスキップ対象(recon/scout等の意図的除外タスク)が混入していないか検証せよ。分母定義変更時は上流の分類精度(task_type判定等)も合わせて確認すること"
+      implication: "分母に意図的スキップ対象が含まれると指標が実態より低く出る。また上流のtask_type分類が不正確(unknown混在等)だとフィルタが不完全になり、除外漏れが発生する"
+      source: "L276 (cmd_1168)"
+      verified_file: "scripts/cmd_quality_log.sh"
+    - id: PI-INFRA-003
+      fact: "テスト高速化は、不要テスト削除/統合→元スクリプト高速化→テスト側改善の順で着手すること"
+      implication: "テスト側の細工から始めると過剰・重複テストやrun_saveフル実行のような根本的な無駄が残り、効果の薄い高速化に時間を使う。長すぎるテストはまず実行不要な重複・過剰統合を消してから、必要なら元スクリプトとテスト側を改善する"
+      source: "L743 (cmd_3149)"
+      verified_file: "tasks/lessons.md"
+    - id: PI-INFRA-004
+      fact: "settings.yaml cli.agents.*.service_tierは現在消費のみ(cli_lookup.sh L385)で動的writerなし。将来writerを追加する場合、cli_profiles.yaml defaults.agents.*.service_tierにデフォルト値を追加し、shutsujin_departure.shに復帰ロジックを追加すること(2層SSOT化)"
+      implication: "動的writerを追加してservice_tier 2層SSOT化を怠ると、tmux再起動時にservice_tierが手動設定値のまま復帰せず意図しないtier(課金)で稼働する"
+      source: "cmd_3484 (2026-06-21) docs/research/cmd_3484_ssot_dynamic_defaults_audit.md L55"
+      verified_file: "scripts/lib/cli_lookup.sh"
+    - id: PI-INFRA-005
+      fact: "同一IDが複数entryに存在する運用ログの同期にfirst-match setterを使わない。全matching entryのresultとsynced_atを同一flock区間でatomic更新すること"
+      implication: "draft/report等の後続entryが未同期のまま残るとaccuracy/CS gateが偽BLOCKする。resultだけ更新してsynced_atを落とす、またはlock解放後にmvすると、鮮度証拠欠落とlost updateを起こす"
+      source: "L1148 (inbox:msg_20260715_133644_4096166_536e6514, commit ab302df7b)"
+      verified_file: "scripts/gunshi_gate_reflux.sh"
+ruling_session_start_hook: '殿裁定(2026-05-12): 旧裁定(2026-04-12 /clear後gate自動実行禁止)は前提条件変更により解除。根因=/clear誤発火頻度が改善済み(debounce 300-600秒+report_gate+safe_send_clear)。SessionStart hookでのstartup gate自動実行を許可'
+ruling_campaign_lane_generic: '殿裁定(2026-07-16): 台帳駆動campaign laneをテスト速度専用にせず汎用スキル化する。§8応用候補は機械可読catalog(config/campaign_lane_catalog.yaml)でobjective・一次台帳・writer・adapter・品質契約・停止条件・readinessを持ち、既存idle配備/shard-workへ接続する。既存完成lane(tools/bash_speed_training.sh等)はreadyとして再利用し、missing扱い禁止。pytest速度はcmd_3896の--durations=10を土台にwriter+adapterだけを接続する'
+ruling_quality_throughput: '殿裁定(2026-07-17): 品質合格スループット=固定品質契約を満たす完了件数/壁時計時間。知識は全員がいつでも検索・自動取得できる単一正本へ置く。役職間の前提差=スループットバグ。考える時間と品質基準は削らず、待機・I/O・ロック競合・重複ゲート・報告整形・再配備摩擦をbefore/afterで除去し高速学習ループを複利化する。三層event=knowledge:36b034b777fad86e'
+ruling_quality_speed_simultaneous: '殿裁定(2026-07-18): スループット向上がバグ・検査省略・偽陰性・対象縮小で生じるのはナンセンス。品質向上と速度向上を同時に実現し自動成長を加速する。評価式=自動成長速度=正しい試行回数×一発PASS率×知見還流率。速度改善はFP/FN/SKIP/通知喪失/安全境界低下が0であることと短縮時間が次サイクルの試行増へ接続することを二値検証する。三層event=knowledge:8e315be525187f4a'
+ruling_block_freeze_infra_bug: '殿裁定(2026-05-20): 将軍がBLOCK/WARN後にフリーズする=インフラバグ。将軍の問題ではなく環境の甘さ。目的=BLOCKやWARNで決して止まらない。止まった報告(ntfy等)は矛盾=止まることを前提にしている。PostToolUse hookでcmd_publish.sh+cmd_save.sh exit 1検知→即修正強制注入で止まる余地ゼロにする。真因は確認していないこと。想像せずに確認せよ、それだけ。enforcement: .claude/hooks/post-bash-combined.sh L11+L31'
+test_policy:
+  policy: "実装testは作成→PASS→即削除。永続化は具体的不変量のtest_necessity宣言付きcontractのみ"
+  positive_rule: "削除diffまたは宣言全件、宣言率N/N、契約混入0、境界内回帰リスク受容、deletion_justification非空、fixture被参照0、regression_justification非空、race PASS後contract外test削除を全て二値確認する"
+  reason: "消費済みtestの保守費・fixture・実行時間と境界所有の曖昧化を防ぐ"
+  holes_1_7: [deletion_diff, declaration_rate, contract_contamination_zero, boundary_regression_risk_accepted, deletion_justification, fixture_reference_zero, regression_justification_and_race_stop]
+  origin: "[[殿裁定_default_delete_test_20260719]] -> [[default_delete_test_policy]] -> [[全PJ共通契約]]"
