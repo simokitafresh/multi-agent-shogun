@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-17 -->
+<!-- last_updated: 2026-07-18 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,14 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3424 | 殿指摘(2026-06-17): 時系列と因果を確認しないから修正前後のデータを混同する。gate_autofix_proposal.shが直近50件BLOCKを集計するが、窓内にFP修正commit(cmd_3408等)が存在しても修正前後を区別しない。将軍がこの42件を未修正のFPと誤認しcmd起票→車輪の再発明。集計出力にイベント境界(関連修正commitのタイムスタンプ)を表示し、修正前/修正後の件数を分離して表示する | infra | 06-17 | gate_autofix_proposal.shに修正前/後 |
-| cmd_3425 | 殿指示(2026-06-17): 相関が低いPFを保有すれば分散が効くが、相関はタイミングで変化する。平時の低相関ではなく最悪時の相関が重要。シン四神12体(66ペア)の日次リターンから2M窓ローリング相関を計算し、(1)max相関ランキング (2)平均×max複合スコアランキングの2手法でペアを評価し、最適ペアのEW FoFをα6指標で検証する | dm-signal | 06-17 | シン四神12体66ペアの2M(42営業日)ローリングピアソン |
-| cmd_3426 | 殿指示(2026-06-17): cmd_3425でシン四神12体全66ペアのmax相関が0.99-1.00と判明。殿の2つの問い: (1)奥義21体ではどうなるか(異なる忍法BBで銘柄構成が多様→max相関<1.0のペアがあるか) (2)四神の5銘柄(GLD/TECL/TMV/TQQQ/XLU)自体の銘柄間2Mローリング相関はどうか(PF相関1.0の根因が銘柄宇宙か重み配分か切り分け) | dm-signal | 06-17 | 奥義21体210ペアの2Mローリング相関: max相関範囲0 |
-| cmd_3427 | 殿指示(2026-06-17): (1)PF間相関がmax(≈1.0)に近づいた時、PFリターンは上昇と下降のどちらが多かったか。max相関接近=危機シグナルなのかバブルシグナルなのかを判定する。(2)長期窓(18-36M)の平均相関をベースラインとし、直近短期(2M)相関との乖離が高まっているかでレジームチェンジ・危機予測が可能か検証する。cmd_3425/3426のデータを活用 | dm-signal | 06-17 | AC1: 高相関(avg_corr≥0.60)時はバブル(上 |
-| cmd_3428 | 殿指示(2026-06-17): cmd_3427で2M-18M/24M乖離が危機先行4xリフトと判明。短期(2M・3M・4M)×長期(12M・15M・18M・21M・24M)の15パターン総当たりで最適な窓組合せを特定する。対象はシン四神(pf_stage_shijin)12体・シン忍法(pf_stage_ninpo)21体・シン奥義(pf_stage_ougi)21体をそれぞれ別に分析 | dm-signal | 06-17 | 短期(2/3/4M)×長期(12/15/18/21/24M) |
-| cmd_3429 | 殿指示(2026-06-17): 相関乖離の偽陽性率70%と比較するため、deterioration probabilityの偽陽性率を突合する。deterioration_snapshotsテーブルのHIGH以上判定と翌月のmonthly_returnsを突合し、HIGH判定後に実際に悪化(月次リターン負)した割合を全PF全期間で計算する | dm-signal | 06-17 | deterioration_snapshotsの偽陽性率分析 |
-| cmd_3430 | 殿指示(2026-06-17): 母集団が大きい方が感度も精度も良い(cmd_3427の33体一括4.0x>cmd_3428の層別3.58x)。54体(四神12+忍法21+奥義21)全量一括で1431ペアの15パターン総当たりを実行。閾値は0.10固定・乖離の2σ・3σの3段で比較。偽陽性率改善の最適閾値を特定する | dm-signal | 06-17 | 54体1431ペア×15パターン×閾値3段(0.10/2σ/ |
-| cmd_3431 | 殿指示(2026-06-17): 既存BBは全てモメンタム系だがリターン予測力を持つ新BBを設計したい。知識辞書のMomentum Turning Points(Goulding, Harvey & Mazzoleni 2023)をDM-Signalに適用検証する。シン四神12体の月次リターンでslow(12M)/fast(3M)モメンタムの4状態(Bull/Correction/Bear/Rebound)を判定し、各状態でのPF別リターンを分析。転換点(Correction/Rebound)で重み調整すればα6指標が改善するか検証する | dm-signal | 06-17 | Goulding et al.2023 Momentum T |
 | cmd_3432 | backlinks=0 gateが偽陽性を報告。kotaro_cmd_3430(5件参照あり)とsaizo_cmd_3426(5件参照あり)がbacklinks=0と誤報。根因: causal_backlink_counts.sh L70-72の検索範囲がcontext, docs/research, skillsの3ディレクトリのみ。docs/semantic-index/index.md(セマンティックインデックス)からの参照を検出不能。memory/*.md(deepdiveリンク)やinstructions/*.mdからの参照も同様に検出漏れ。偽陽性=バグ(殿厳命2026-06-18)。 | infra | 06-18 | causal_backlink_counts.sh L70- |
 | cmd_3433 | lesson_write.sh --retagがdm-signal旧フォーマット教訓(L007-L118の26件)でFAIL。retagロジック(L568-589)がlessons.md Markdown形式(### LXXX:)を前提とするが、dm-signalはlessons.yaml 1行形式のみ(lessons.md不在)。universalタグ残29件がretag不可。偽陽性=バグ(殿厳命2026-06-18)。軍師報告blt_20260618_005912。 | infra | 06-18 | lesson_write.sh --retagの旧形式教訓( |
 | cmd_3434 | context鮮度ALERT: dm-signal-research.md等4ファイルが2026-06-13以降5日間未更新。相関レジーム研究7cmd(3425-3431)で確立した知見7項目(max相関=戦略同質性, 高相関=バブル, 乖離リフト3-4x偽陽性70%, deterioration逆機能, σ閾値混成母集団不機能, リスクベースBB不適, Turning Points BB不採用)をcontext索引に反映。家老報告blt_20260618_101554。 | infra | 06-18 | context/dm-signal-research.md |
