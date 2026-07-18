@@ -48,6 +48,27 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+@test "test necessity classifier has zero false positives and false negatives at path boundaries" {
+    tmpdir="$(mktemp -d)"
+    git -C "$tmpdir" init -q
+    git -C "$tmpdir" config user.email test@example.com
+    git -C "$tmpdir" config user.name test
+    git -C "$tmpdir" commit --allow-empty -qm base
+
+    for path in logs/test_timing_ledger.tsv docs/test-plan.md contest/data.tsv; do
+      printf 'task:\n  planned_paths: [%s]\n' "$path" > "$tmpdir/task.yaml"
+      run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
+      [ "$status" -eq 0 ]
+    done
+
+    for path in tests/unit/test_new.bats tests/test_new.sh test_new.py; do
+      printf 'task:\n  planned_paths: [%s]\n' "$path" > "$tmpdir/task.yaml"
+      run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
+      [ "$status" -ne 0 ]
+      [[ "$output" == *"BLOCK_TESTS=$path"* ]]
+    done
+}
+
 @test "ci_fix source requires a positive ci_run_id before publication" {
     tmpdir="$(mktemp -d)"
     for value in missing empty text zero positive non_ci; do

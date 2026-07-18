@@ -8032,6 +8032,7 @@ deploy_task_test_necessity_precheck() {
     local task_file="$1"
     python3 - "$SCRIPT_DIR" "$task_file" <<'PY'
 import os, re, subprocess, sys, yaml
+from pathlib import PurePosixPath
 
 repo, task_file = sys.argv[1:3]
 data = yaml.safe_load(open(task_file, encoding="utf-8")) or {}
@@ -8042,8 +8043,17 @@ if isinstance(paths, str):
 
 def is_test(path):
     path = str(path).strip()
-    base = os.path.basename(path)
-    return bool(path and ("/test" in path or base.startswith("test_") or base.endswith((".bats", ".spec.js", ".test.js"))))
+    if not path:
+        return False
+    normalized = path.replace("\\", "/")
+    parts = PurePosixPath(normalized).parts
+    base = parts[-1] if parts else ""
+    test_stem_extension = base.startswith("test_") and base.endswith((".py", ".sh"))
+    return bool(
+        "tests" in parts
+        or test_stem_extension
+        or base.endswith((".bats", ".spec.js", ".test.js"))
+    )
 
 new_tests = []
 for path in paths:

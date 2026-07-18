@@ -99,4 +99,17 @@ YAML
   printf 'task:\n  planned_paths: [scripts/deploy_task.sh]\n' > "$task"
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -eq 0 ]
+
+  for path in logs/test_timing_ledger.tsv docs/test-plan.md contest/data.tsv; do
+    printf 'task:\n  planned_paths: [%s]\n' "$path" > "$task"
+    run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+    [ "$status" -eq 0 ]
+  done
+
+  for path in tests/unit/test_new.bats tests/test_new.sh test_new.py; do
+    printf 'task:\n  planned_paths: [%s]\n' "$path" > "$task"
+    run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK_TESTS=$path"* ]]
+  done
 }
