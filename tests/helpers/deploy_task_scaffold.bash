@@ -171,6 +171,35 @@ deploy_task_scaffold() {
     fi
 }
 
+# Canonical fixture contract for full deploy benchmarks.  Keep every durable
+# output inside TEST_PROJECT so a benchmark cannot accidentally inspect or
+# mutate the live queue.
+full_deploy_e2e_setup() {
+    deploy_task_scaffold "full_deploy_e2e"
+    export FULL_DEPLOY_E2E_DIR="$TEST_TMPDIR/full_deploy_e2e"
+    export FULL_DEPLOY_E2E_RESULTS="$FULL_DEPLOY_E2E_DIR/results.tsv"
+    export FULL_DEPLOY_E2E_TELEMETRY="$FULL_DEPLOY_E2E_DIR/phase.telemetry"
+    export FULL_DEPLOY_E2E_GATE_LOG="$TEST_PROJECT/logs/gates.log"
+    mkdir -p "$FULL_DEPLOY_E2E_DIR" "$TEST_PROJECT/archive/reports"
+    : > "$FULL_DEPLOY_E2E_RESULTS"
+    : > "$FULL_DEPLOY_E2E_TELEMETRY"
+    : > "$FULL_DEPLOY_E2E_GATE_LOG"
+
+    local required
+    for required in \
+        "$TEST_PROJECT/queue/tasks" \
+        "$TEST_PROJECT/queue/inbox" \
+        "$TEST_PROJECT/queue/reports" \
+        "$TEST_PROJECT/archive/reports" \
+        "$FULL_DEPLOY_E2E_GATE_LOG" \
+        "$FULL_DEPLOY_E2E_TELEMETRY"; do
+        [ -e "$required" ] || {
+            echo "BLOCK: missing full deploy fixture: $required" >&2
+            return 2
+        }
+    done
+}
+
 deploy_task_teardown() {
     [ -n "$TEST_TMPDIR" ] && [ -d "$TEST_TMPDIR" ] && rm -rf "$TEST_TMPDIR"
 }
