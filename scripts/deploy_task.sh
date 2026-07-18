@@ -455,6 +455,15 @@ deploy_task_queue_stale_report() {
     deploy_task_deferred_append stale_reports "path=$1" "parent=$2" "verdict=${3:-empty}"
 }
 
+deploy_task_rotate_deferred_queue() {
+    local queue_file="$1" work_file="$2"
+    (
+        flock -x 9
+        [ -s "$queue_file" ] || exit 1
+        mv "$queue_file" "$work_file"
+    ) 9>"${queue_file}.lock"
+}
+
 deploy_task_drain_deferred() {
     local queue_dir="$SCRIPT_DIR/queue/deferred" drain_lock="$SCRIPT_DIR/queue/locks/deploy_deferred_drain.lock"
     local history_q="$queue_dir/git_history.tsv" stale_q="$queue_dir/stale_reports.tsv"
@@ -463,9 +472,8 @@ deploy_task_drain_deferred() {
     exec {drain_fd}>"$drain_lock"
     flock -n "$drain_fd" || return 0
 
-    if [ -s "$history_q" ]; then
-        local history_work="${history_q}.work.$BASHPID"
-        mv "$history_q" "$history_work"
+    local history_work="${history_q}.work.$BASHPID"
+    if deploy_task_rotate_deferred_queue "$history_q" "$history_work"; then
         while IFS= read -r line; do
             repo=$(printf '%s\n' "$line" | sed -n 's/.* repo=//p')
             head_oid=$(printf '%s\n' "$line" | sed -n 's/.*head=\([^ ]*\).*/\1/p')
@@ -487,9 +495,8 @@ deploy_task_drain_deferred() {
         rm -f "$history_work"
     fi
 
-    if [ -s "$stale_q" ]; then
-        local stale_work="${stale_q}.work.$BASHPID" report parent verdict worker task_parent task_status dest
-        mv "$stale_q" "$stale_work"
+    local stale_work="${stale_q}.work.$BASHPID" report parent verdict worker task_parent task_status dest
+    if deploy_task_rotate_deferred_queue "$stale_q" "$stale_work"; then
         while IFS= read -r line; do
             report=$(printf '%s\n' "$line" | sed -n 's/.*path=\([^ ]*\) parent=.*/\1/p')
             parent=$(printf '%s\n' "$line" | sed -n 's/.* parent=\([^ ]*\) verdict=.*/\1/p')
