@@ -5352,18 +5352,29 @@ inject_context_hints() {
     local task_file="$1"
     [ -f "$task_file" ] || return 0
 
-    local project task_type title purpose command_text haystack
+    local project task_type title purpose command_text planned_paths haystack
     project=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "project" "" 2>/dev/null || true)
     task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
     title=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "title" "" 2>/dev/null || true)
     purpose=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "purpose" "" 2>/dev/null || true)
     command_text=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "command" "" 2>/dev/null || true)
+    planned_paths=$(python3 - "$task_file" <<'PY' 2>/dev/null || true
+import sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+value = task.get("planned_paths", [])
+if isinstance(value, str):
+    print(value)
+elif isinstance(value, list):
+    print("\n".join(str(item) for item in value))
+PY
+)
 
     haystack="${project}
 ${task_type}
 ${title}
 ${purpose}
-${command_text}"
+${command_text}
+${planned_paths}"
 
     local -a hints=()
     local is_dm_signal=false
@@ -5380,6 +5391,13 @@ ${command_text}"
     fi
     if [ "$project" = "infra" ] || [ "$task_type" = "training" ] || grep -Eqi 'training-cycle|修行|L[1-4]|訓練|idle' <<< "$haystack"; then
         hints+=("context/training-cycle.md")
+    fi
+    # GA-293 / L288: the pre-commit hook correctly requires CoDD source and
+    # its freshness index in one commit.  Supply that contract at deployment
+    # time whenever the task scope names a CoDD source path, so the first
+    # commit does not have to discover it through a Level4 BLOCK.
+    if printf '%s\n' "$planned_paths" | grep -Eqi 'scripts/codd|skills/codd/|skills/codd-refactor/'; then
+        hints+=("context/codd.md")
     fi
 
     [ ${#hints[@]} -gt 0 ] || return 0

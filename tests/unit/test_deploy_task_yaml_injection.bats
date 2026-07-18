@@ -220,6 +220,44 @@ PY
     [ "$status" -ne 0 ]
 }
 
+@test "GA-293 injects codd freshness context only for CoDD planned paths" {
+    tmpdir="$(mktemp -d)"
+    codd_task="$tmpdir/codd.yaml"
+    plain_task="$tmpdir/plain.yaml"
+    cat > "$codd_task" <<'YAML'
+task:
+  project: infra
+  task_type: ci_fix
+  planned_paths:
+  - skills/codd-refactor/SKILL.md
+YAML
+    cat > "$plain_task" <<'YAML'
+task:
+  project: other
+  task_type: ci_fix
+  planned_paths:
+  - scripts/unrelated.sh
+YAML
+
+    run bash -lc "
+        set -e
+        export DEPLOY_TASK_LIB_ONLY=1
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        inject_context_hints '$codd_task'
+        inject_context_hints '$plain_task'
+    "
+    [ "$status" -eq 0 ]
+
+    run python3 - "$codd_task" "$plain_task" <<'PY'
+import sys, yaml
+codd = yaml.safe_load(open(sys.argv[1]))['task']
+plain = yaml.safe_load(open(sys.argv[2]))['task']
+assert 'context/codd.md' in codd['context_hints'], codd
+assert 'context/codd.md' not in plain.get('context_hints', []), plain
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "direct --yaml preinjected fast path preserves injected metadata and skips heavy reinjection block" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import sys
