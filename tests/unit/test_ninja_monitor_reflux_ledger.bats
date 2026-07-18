@@ -156,3 +156,40 @@ EOF
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | grep -c $'^0\t-\tok$')" -eq 4 ]
 }
+
+@test "four parallel promotion monitors reserve one lesson while another lesson remains selectable" {
+  mkdir -p "$TMP/queue/tasks" "$TMP/state"
+  run bash -c '
+    export NINJA_MONITOR_LIB_ONLY=1; source "$1/scripts/ninja_monitor.sh"
+    SCRIPT_DIR="$2"; STATE_DIR="$2/state"
+    REFLUX_PROMOTION_RESERVATION_LEDGER="$2/logs/reservations.tsv"
+    for n in hayate kagemaru hanzo saizo; do
+      (_reflux_promotion_try_reserve "[dm-signal] L901 race" "$n" && echo dispatch >> "$2/dispatch.log") &
+    done
+    wait
+    _reflux_promotion_try_reserve "[dm-signal] L902 independent" kotaro
+    printf "dispatch_total=%s duplicate_dispatch=%s false_positive=%s\n" \
+      "$(wc -l < "$2/dispatch.log")" \
+      "$(( $(wc -l < "$2/dispatch.log") - 1 ))" \
+      "$(( $(awk -F "\\t" '\''$2=="L902"{n++} END{print n+0}'\'' "$2/logs/reservations.tsv") == 1 ? 0 : 1 ))"
+  ' _ "$ROOT" "$TMP"
+  [ "$status" -eq 0 ]
+  [ "$output" = "dispatch_total=1 duplicate_dispatch=0 false_positive=0" ]
+}
+
+@test "completion ledger race blocks redispatch and safely releases reservation row" {
+  mkdir -p "$TMP/queue/tasks" "$TMP/state"
+  run bash -c '
+    export NINJA_MONITOR_LIB_ONLY=1; source "$1/scripts/ninja_monitor.sh"
+    SCRIPT_DIR="$2"; STATE_DIR="$2/state"
+    REFLUX_PROMOTION_LEDGER="$2/logs/completed.tsv"
+    REFLUX_PROMOTION_RESERVATION_LEDGER="$2/logs/reservations.tsv"
+    _reflux_promotion_try_reserve "[dm-signal] L901 race" hayate
+    printf "completed_at\\tlesson_id\\treport\\nnow\\tL901\\tfixture\\n" > "$2/logs/completed.tsv"
+    if _reflux_promotion_try_reserve "[dm-signal] L901 race" saizo; then exit 9; fi
+    rows=$(awk -F "\\t" '\''$2=="L901"{n++} END{print n+0}'\'' "$2/logs/reservations.tsv")
+    printf "redispatch=0 reservation_rows=%s\n" "$rows"
+  ' _ "$ROOT" "$TMP"
+  [ "$status" -eq 0 ]
+  [ "$output" = "redispatch=0 reservation_rows=0" ]
+}

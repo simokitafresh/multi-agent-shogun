@@ -3749,6 +3749,97 @@ _reflux_promotion_target_path() {
     esac
 }
 
+# Atomically claim a promotion lesson at the dispatch boundary.  Inventory is
+# intentionally read-only and can race with the event-driven completion writer;
+# this lease closes that gap without coupling unrelated lesson IDs.
+_reflux_promotion_try_reserve() {
+    local candidate="$1" owner="$2"
+    local lesson_id ledger
+    lesson_id=$(printf '%s\n' "$candidate" | sed -n 's/^\[[^]]*\] \([A-Za-z0-9_-]*\).*/\1/p')
+    [ -n "$lesson_id" ] || return 1
+    ledger="${REFLUX_PROMOTION_RESERVATION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_reservations.tsv}"
+    mkdir -p "$(dirname "$ledger")"
+    REFLUX_PROMOTION_LEDGER="${REFLUX_PROMOTION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_completed.tsv}" \
+    REFLUX_PROMOTION_DEFERRED_LEDGER="${REFLUX_PROMOTION_DEFERRED_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_deferred.tsv}" \
+    python3 - "$SCRIPT_DIR" "$ledger" "$lesson_id" "$owner" <<'PY'
+import fcntl, glob, os, re, sys
+import yaml
+
+root, ledger, lesson_id, owner = sys.argv[1:]
+lock_path = ledger + ".lock"
+id_re = re.compile(r"(?<![0-9A-Za-z-])" + re.escape(lesson_id) + r"(?![0-9A-Za-z])")
+
+def load(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            doc = yaml.safe_load(fh) or {}
+    except Exception:
+        return {}
+    if isinstance(doc, dict) and isinstance(doc.get("task"), dict):
+        return doc["task"]
+    return doc if isinstance(doc, dict) else {}
+
+def contains_id(doc):
+    return bool(id_re.search(str(doc)))
+
+def ledger_has(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return any(len(row.split("\t")) > 1 and row.split("\t")[1] == lesson_id for row in fh)
+    except OSError:
+        return False
+
+os.makedirs(os.path.dirname(ledger), exist_ok=True)
+with open(lock_path, "a+", encoding="utf-8") as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    terminal = any(ledger_has(path) for path in (
+        os.environ.get("REFLUX_PROMOTION_LEDGER", os.path.join(root, "logs/reflux_promotion_completed.tsv")),
+        os.environ.get("REFLUX_PROMOTION_DEFERRED_LEDGER", os.path.join(root, "logs/reflux_promotion_deferred.tsv")),
+    ))
+    blocked = terminal
+    for path in glob.glob(os.path.join(root, "queue/tasks/*.yaml")):
+        doc = load(path)
+        if str(doc.get("status") or "") in {"assigned", "acknowledged", "in_progress"} and contains_id(doc):
+            blocked = True
+    for path in glob.glob(os.path.join(root, "queue/reports/*.yaml")) + glob.glob(os.path.join(root, "archive/reports/**/*.yaml"), recursive=True):
+        doc = load(path)
+        if str(doc.get("parent_cmd") or "").startswith("cmd_reflux_promotion_") and contains_id(doc):
+            blocked = True
+    rows = []
+    try:
+        with open(ledger, encoding="utf-8") as fh:
+            rows = [row.rstrip("\n") for row in fh if row.strip()]
+    except OSError:
+        pass
+    # Terminal ledgers are the safe release condition; otherwise a live lease
+    # remains blocking even if task/report publication is temporarily delayed.
+    active = [r for r in rows if len(r.split("\t")) > 1 and not (terminal and r.split("\t")[1] == lesson_id)]
+    if any(len(r.split("\t")) > 1 and r.split("\t")[1] == lesson_id for r in active):
+        blocked = True
+    if blocked:
+        if active != rows:
+            with open(ledger, "w", encoding="utf-8") as fh:
+                fh.write("\n".join(active) + ("\n" if active else ""))
+        raise SystemExit(1)
+    from datetime import datetime
+    active.append(f"{datetime.now().isoformat(timespec='seconds')}\t{lesson_id}\t{owner}")
+    with open(ledger, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(active) + "\n")
+PY
+}
+
+_reflux_promotion_release_reservation() {
+    local candidate="$1" owner="$2" lesson_id ledger tmp
+    lesson_id=$(printf '%s\n' "$candidate" | sed -n 's/^\[[^]]*\] \([A-Za-z0-9_-]*\).*/\1/p')
+    [ -n "$lesson_id" ] || return 0
+    ledger="${REFLUX_PROMOTION_RESERVATION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_reservations.tsv}"
+    [ -e "$ledger" ] || return 0
+    tmp="${ledger}.tmp.$$"
+    { flock -x -w 5 200 || return 1
+      awk -F '\t' -v id="$lesson_id" -v who="$owner" '!(NF>=3 && $2==id && $3==who)' "$ledger" > "$tmp" && mv "$tmp" "$ledger"
+    } 200>"${ledger}.lock"
+}
+
 _reflux_inventory_snapshot() {
     local insights_file="${1:-$SCRIPT_DIR/queue/insights.yaml}"
     local insight_count first_insight backlink_count first_backlink backlink_status promotion_count first_promotion promotion_status total
@@ -4031,6 +4122,12 @@ EOF
         return 1
     fi
 
+    if [ "$kind" = "promotion" ] && ! _reflux_promotion_try_reserve "$first_promotion" "$name"; then
+        rm -f "$tmp_task"
+        log "REFLUX-AUTO-SKIP: $name lesson already reserved/active/terminal: ${first_promotion}"
+        return 1
+    fi
+
     log "REFLUX-AUTO-DEPLOY: $name cmd=${cmd_id} kind=${kind} target=${target_path}"
     if bash "$deploy_script" --direct --yaml "$tmp_task" "$name" "$cmd_id" >> "$SCRIPT_DIR/logs/deploy_reflux_auto.log" 2>&1; then
         rm -f "$tmp_task"
@@ -4055,6 +4152,7 @@ EOF
             log "REFLUX-AUTO-ROLLBACK: $name partial task reset after deploy failure cmd=${cmd_id}"
         fi
     fi
+    [ "$kind" != "promotion" ] || _reflux_promotion_release_reservation "$first_promotion" "$name" || true
     log "REFLUX-AUTO-DEPLOY-FAIL: $name cmd=${cmd_id} kind=${kind} (non-blocking)"
     return 1
 }
