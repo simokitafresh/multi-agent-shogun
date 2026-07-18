@@ -612,7 +612,7 @@ System manages ALL white-collar work, not just self-improvement. Project folders
   4. 境界内回帰リスク受容: contract化しない境界内の回帰リスクは実装責任として受容し、testを保険として残さない。
   5. 既存test削除: tests/パスの純減には非空の`deletion_justification`があり、削除fixtureの非test参照が0件である。
   6. fixture被参照0: 削除前に削除対象fixtureへの全参照を検索し、残存参照0件を証明する。
-  7. regression/race: 永続regression testには非空の`regression_justification`と具体的不変量が必要。並列/race検証は競合を再現してPASS後、永続contract条件を満たさなければ停止して削除する。
+  7. regression/race: `overlaps_existing=true`の永続regression testには非空の`regression_justification`と具体的不変量が必要。commit直前にtests差分を再取得し、他commit由来の削除競合を1件でも検出したら停止する。
 - origin: `[[殿裁定_default_delete_test_20260719]] -> [[default_delete_test_policy]] -> [[全PJ共通契約]]`
 
 1. **SKIP = FAIL**: テスト報告でSKIP数が1以上なら「テスト未完了」扱い。「完了」と報告してはならない。
