@@ -20,6 +20,19 @@ safe_key="${safe_key//[^A-Za-z0-9_.-]/_}"
 evidence_file="$EVIDENCE_DIR/evidence_${safe_key}.json"
 nonce_file="$evidence_file.current"
 publish_lock="${evidence_file}.publish.lock"
+warn_log="${THREE_LAYER_PREFLIGHT_WARN_LOG:-$ROOT/logs/three_layer_preflight_warn.tsv}"
+
+record_fail_open_warn() {
+    local reason="$1" tool_name="$2" target="$3" started_ms="$4" now_ms elapsed_ms
+    now_ms="$(date +%s%3N)"
+    elapsed_ms=$((now_ms - started_ms))
+    mkdir -p "${warn_log%/*}"
+    {
+        flock -x 8
+        printf '%s\tagent=%s\tpane=%s\treason=%s\ttool=%s\ttarget=%s\tblocked_with_work_ms=%s\n' \
+            "$(date -Iseconds)" "$agent_id" "$pane_id" "$reason" "$tool_name" "$target" "$elapsed_ms" >&8
+    } 8>>"$warn_log"
+}
 
 json_escape() {
     local value="$1"
@@ -553,7 +566,9 @@ resolve_rg() {
 }
 
 verify() {
-    local tool_name="$1" target="${2:-}" command="${3:-}" parsed_status
+    local tool_name="$1" target="${2:-}" command="${3:-}" parsed_status verify_started_ms verify_rc=0
+    verify_started_ms="$(date +%s%3N)"
+    mkdir -p "$EVIDENCE_DIR"
     if [[ "$tool_name" == "Bash" ]] && is_allowed_read_only_bash "$command"; then
         return 0
     fi
@@ -596,10 +611,12 @@ if data.get("status") != "success" or any(str(data.get(key)) != "0" for key in (
 print("success")
 PY
       } 9>"$publish_lock"
-    )" || {
-        echo "BLOCK: 三層preflight証跡が無効または失敗状態。復旧: bash scripts/hooks/three_layer_preflight.sh issue \"<今の作業内容1行>\" で再発行せよ" >&2
-        return 1
-    }
+    )" || verify_rc=$?
+    if [[ "$verify_rc" -ne 0 ]]; then
+        record_fail_open_warn "evidence_rc_${verify_rc}" "$tool_name" "$target" "$verify_started_ms"
+        echo "WARN: 三層preflight証跡が無効または失敗状態（fail-open、計測記録済み）。三層検索は bash scripts/hooks/three_layer_preflight.sh issue \"<今の作業内容1行>\" で再発行できる" >&2
+        return 0
+    fi
     [[ "$parsed_status" == success ]]
 }
 

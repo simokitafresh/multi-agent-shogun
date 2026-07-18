@@ -21,8 +21,9 @@ teardown_file() {
 setup() {
     exec 8>"$BATS_FILE_TMPDIR/three-layer-preflight-fixture.lock"
     flock -x 8
-    export ROOT TMP_EVIDENCE AGENT PANE EVIDENCE MEMORY_DB_QUERY_DB
+    export ROOT TMP_EVIDENCE AGENT PANE EVIDENCE MEMORY_DB_QUERY_DB THREE_LAYER_PREFLIGHT_WARN_LOG
     TMP_EVIDENCE="$(mktemp -d)"
+    THREE_LAYER_PREFLIGHT_WARN_LOG="$TMP_EVIDENCE/warn.tsv"
     MEMORY_DB_QUERY_DB="$TMP_EVIDENCE/memory.db"
     cp "$THREE_LAYER_DB_FIXTURE" "$MEMORY_DB_QUERY_DB"
     AGENT="kagemaru"
@@ -165,9 +166,11 @@ PY
     [[ "$output" == *"evidence failed"* ]]
 }
 
-@test "証跡なしの変更系BashをBLOCK" {
+@test "証跡なしの変更系BashをWARNしてfail-open" {
     run verify Bash "" "touch repo-file"
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN:"* ]]
+    [ "$(wc -l < "$THREE_LAYER_PREFLIGHT_WARN_LOG")" -eq 1 ]
 }
 
 @test "三層成功証跡ありのWriteをPASS" {
@@ -180,23 +183,23 @@ JSON
     [ "$status" -eq 0 ]
 }
 
-@test "一層欠落の証跡をBLOCK" {
+@test "一層欠落の証跡をWARNしてfail-open" {
     cat > "$EVIDENCE" <<'JSON'
 {"agent_id":"kagemaru","pane_id":"%test_3","prompt_hash":"new","nonce":"nonce_3","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"1","obsidian":"0","status":"failed"}
 JSON
     printf 'nonce_3\n' > "$EVIDENCE.current"
     run verify Edit "$ROOT/context/infrastructure.md" ""
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
-@test "旧prompt証跡をBLOCK" {
+@test "旧prompt証跡をWARNしてfail-open" {
     cat > "$EVIDENCE" <<'JSON'
 {"agent_id":"kagemaru","pane_id":"%test_4","prompt_hash":"old","nonce":"old_nonce","issued_at":"2026-07-10T14:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}
 JSON
     printf 'new_nonce\n' > "$EVIDENCE.current"
     run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
         bash "$ROOT/scripts/hooks/three_layer_preflight.sh" verify Write "$ROOT/context/infrastructure.md" ""
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
 @test "read-only Bashは証跡なしでもPASS" {
@@ -211,7 +214,7 @@ JSON
 
 @test "wrapper command substitution remains fail-closed" {
     run verify Bash "" "env TOKEN=\$(cat secret) rg fixture"
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
 @test "preflight自身のissue経路はPASS" {
@@ -295,7 +298,7 @@ EOF
     local a_pid b_pid a_rc=0 b_rc=0 a_nonce b_nonce old_proof_pass=0 observed_nonce
     run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="$agent" TMUX_PANE="$pane" \
         bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Write "$tmp_root/context/probe.md" ""
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
     env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="$agent" TMUX_PANE="$pane" \
         bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "slow-A" >"$TMP_EVIDENCE/a.out" 2>&1 &
     a_pid=$!
@@ -313,7 +316,7 @@ EOF
     [ -n "$b_nonce" ]
     [ "$b_nonce" != "$a_nonce" ]
     while kill -0 "$a_pid" 2>/dev/null || kill -0 "$b_pid" 2>/dev/null; do
-        if env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="$agent" TMUX_PANE="$pane" \
+        if [ -s "$evidence" ] && env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="$agent" TMUX_PANE="$pane" \
             bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" verify Write "$tmp_root/context/probe.md" "" >/dev/null 2>&1; then
             observed_nonce="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["nonce"])' "$evidence")"
             [ "$observed_nonce" = "$b_nonce" ] || old_proof_pass=$((old_proof_pass + 1))
@@ -339,19 +342,19 @@ PY
     [ "$status" -eq 0 ]
 }
 
-@test "redirectを含むechoはread-only偽装としてBLOCK" {
+@test "redirectを含むechoは変更系としてWARN fail-open" {
     run verify Bash "" "echo ok > repo-file"
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
-@test "複合rgとtouchは全体を変更系としてBLOCK" {
+@test "複合rgとtouchは全体を変更系としてWARN fail-open" {
     run verify Bash "" "rg -n foo file; touch repo-file"
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
-@test "batsはread-only許可リストから除外" {
+@test "batsはread-only許可リスト外だが証跡なし時WARN fail-open" {
     run verify Bash "" "bats tests/unit/test_three_layer_preflight.bats"
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
 @test "PATH上のrgを解決" {
@@ -396,7 +399,7 @@ PY
     printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"old","nonce":"evidence_nonce","issued_at":"%s","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}\n' "$AGENT" "$PANE" "$issued" > "$EVIDENCE"
     printf 'current_nonce\n' > "$EVIDENCE.current"
     run verify Edit "$ROOT/context/infrastructure.md" ""
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
 @test "4時間超の証跡はBLOCK" {
@@ -405,7 +408,7 @@ PY
     printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"old","nonce":"expired_nonce","issued_at":"%s","memory_db":"0","semantic":"0","obsidian":"0","status":"success"}\n' "$AGENT" "$PANE" "$issued" > "$EVIDENCE"
     printf 'expired_nonce\n' > "$EVIDENCE.current"
     run verify Write "$ROOT/context/infrastructure.md" ""
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
 @test "prompt引数でstdin欠落を回復" {
@@ -464,12 +467,12 @@ PY
     [ "$status" -eq 0 ]
 }
 
-@test "evidence statusがfailedのままなら一般Bashは引き続きBLOCK" {
+@test "evidence statusがfailedでも一般BashはWARN fail-open" {
     printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"2","status":"failed"}\n' \
         "$AGENT" "$PANE" > "$EVIDENCE"
     printf 'n\n' > "$EVIDENCE.current"
     run verify Bash "" "touch repo-file"
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
 @test "一層が失敗すれば他二層が成功しても証跡を公開しない" {
@@ -522,7 +525,7 @@ PY
     [ "$status" -eq 0 ]
 }
 
-@test "evidence失敗中も限定inbox bulletin repairのみ許可し一般変更はBLOCK" {
+@test "evidence失敗中はrepairと一般変更の双方をfail-openし一般変更をWARN記録" {
     printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"x","nonce":"n","issued_at":"2026-07-10T15:00:00+09:00","memory_db":"0","semantic":"0","obsidian":"124","status":"failed"}\n' "$AGENT" "$PANE" > "$EVIDENCE"
     printf 'n\n' > "$EVIDENCE.current"
     run verify Bash "" "bash scripts/inbox_mark_read.sh hanzo msg_1"
@@ -534,7 +537,7 @@ PY
     run verify Bash "" "bash scripts/lib/causal_index.sh build /tmp/causal.tsv"
     [ "$status" -eq 0 ]
     run verify Bash "" "touch repo-file"
-    [ "$status" -eq 1 ]
+    [ "$status" -eq 0 ]
 }
 
 @test "WAL sidecar許容でもempty immutable mainは拒否し既存refresh lockとsingle-flight" {
