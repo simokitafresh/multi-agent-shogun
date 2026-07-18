@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T21:58:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_ci_fix_skill_refs_deploy_pair_202607182153検分: deploy_task.sh eef20f23f/1f248cde4/8be72a421/765997873/11c325097/7acd9d27d/e7415f9dc/94f2a21e1をgit log/show。no-code N/A証跡、wave cache bounded identity、report template原子公開、配備wall/防御telemetry、post_verify順序正規化、absent target履歴walk回避、planned_pathsを含む予約衝突BLOCKを追加。2 Trackの配備CLI・独立性・通知・失敗出口は不変。target_pathだけでなくplanned_paths同一fileもactive peerとの安全衝突境界となり、BLOCK時は2人目を配備済み扱いにしない。 -->
 <!-- script_refs_checked_at: 2026-07-18T14:08:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_hotfix_skill_refs_batch_b検分: deploy_task.sh 73e12f31/c10949d8/3a305a0f/d5b4e3fa/b8131106/4948a4a2/a9647608/b8583338/fb619776/eb378791/c8cf9081をgit log/show。report identity/no-code契約、配備control-plane bounded化、stale report同期archive復帰はいずれも共通配備内部の強化。recon1=`--yaml`、recon2=`--direct --yaml`の順序・重複guard・通知・失敗出口は不変で本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-18T04:36:00+09:00 -->
