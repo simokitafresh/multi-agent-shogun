@@ -19,7 +19,7 @@ EOF
 }
 
 @test "canonical cold3 warm3 emits durable N6 summary" {
-    run "$BENCH" --project "$TEST_PROJECT" --runner "$FAKE" --output "$FULL_DEPLOY_E2E_RESULTS"
+    run bash "$BENCH" --project "$TEST_PROJECT" --runner "$FAKE" --output "$FULL_DEPLOY_E2E_RESULTS"
     [ "$status" -eq 0 ]
     [ "$(grep -c $'^\([1-6]\)\t' "$FULL_DEPLOY_E2E_RESULTS")" -eq 6 ]
     grep -q $'^SUMMARY\tN6\t.*\tPASS$' "$FULL_DEPLOY_E2E_RESULTS"
@@ -29,7 +29,7 @@ EOF
 
 @test "missing fixture blocks before runner" {
     rm "$TEST_PROJECT/logs/gates.log"
-    run "$BENCH" --project "$TEST_PROJECT" --runner "$FAKE" --output "$FULL_DEPLOY_E2E_RESULTS"
+    run bash "$BENCH" --project "$TEST_PROJECT" --runner "$FAKE" --output "$FULL_DEPLOY_E2E_RESULTS"
     [ "$status" -eq 2 ]
     [[ "$output" == *"BLOCK: missing fixture"* ]]
 }
@@ -37,7 +37,7 @@ EOF
 @test "detects lost duplicate stale and telemetry failures" {
     sed -i '/printf --/d; /queue\/reports/d; /phase=/d' "$FAKE"
     printf 'touch "$PROJECT_ROOT/archive/reports/stale_${run}.yaml"\n' >> "$FAKE"
-    run "$BENCH" --project "$TEST_PROJECT" --runner "$FAKE" --output "$FULL_DEPLOY_E2E_RESULTS" --runs 1 --cold-runs 1
+    run bash "$BENCH" --project "$TEST_PROJECT" --runner "$FAKE" --output "$FULL_DEPLOY_E2E_RESULTS" --runs 1 --cold-runs 1
     [ "$status" -eq 1 ]
     grep -q $'^1\t.*\t0\t0\t0\t0\t0\t1\tFAIL$' "$FULL_DEPLOY_E2E_RESULTS"
 
@@ -49,7 +49,7 @@ printf 'y\n' > "$PROJECT_ROOT/queue/reports/b"
 printf 'phase=x cache=x subprocess=x\n' >> "$3"
 EOF
     chmod +x "$FAKE"
-    run "$BENCH" --project "$TEST_PROJECT" --runner "$FAKE" --output "$FULL_DEPLOY_E2E_RESULTS" --runs 1 --cold-runs 1
+    run bash "$BENCH" --project "$TEST_PROJECT" --runner "$FAKE" --output "$FULL_DEPLOY_E2E_RESULTS" --runs 1 --cold-runs 1
     [ "$status" -eq 1 ]
     grep -q $'^SUMMARY\tN1\t.*\t1\tFAIL$' "$FULL_DEPLOY_E2E_RESULTS"
 }
