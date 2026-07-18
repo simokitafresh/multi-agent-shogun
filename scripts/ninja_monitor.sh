@@ -2531,8 +2531,10 @@ check_and_update_done_task() {
     # 忍者が先にdoneへ更新する正常経路でpromotion ledger writerが一度も起動しなかった。
     # parent_cmd/task_id一致を確認後に冪等writerのみ実行し、状態更新は引き続き省略する。
     if [ "$task_status" = "done" ]; then
-        (_reflux_promotion_record_completion "$report_file" || \
-            log "REFLUX-LEDGER-BLOCK: failed to reconcile done task report $(basename "$report_file")") &
+        _reflux_promotion_record_completion "$report_file" || {
+            log "REFLUX-LEDGER-BLOCK: failed to reconcile done task report $(basename "$report_file")"
+            return 1
+        }
         return 0
     fi
 
@@ -2598,21 +2600,19 @@ check_and_update_done_task() {
                 return 1
             fi
             log "AUTO-DONE: $name task auto-updated to done (report=$(basename "$report_file"), parent_cmd=$report_parent_cmd, status=$report_status)"
-            (_reflux_promotion_record_completion "$report_file" || \
-                log "REFLUX-LEDGER-BLOCK: failed to record $(basename "$report_file")") &
+            _reflux_promotion_record_completion "$report_file" || {
+                log "REFLUX-LEDGER-BLOCK: failed to record $(basename "$report_file")"
+                return 1
+            }
+            # task YAML is the primary state source. Publish its transition in
+            # the same event path instead of waiting for the next monitor cycle.
+            write_karo_snapshot
             return 0
             ;;
         *)
             return 1
             ;;
     esac
-}
-
-monitor_task_state_fast_path() {
-    local name
-    for name in "${NINJA_NAMES[@]}"; do
-        check_and_update_done_task "$name" >/dev/null 2>&1 || true
-    done
 }
 
 # ─── 案E: タスク配備済み判定（二重チェック: YAML + ペイン実態 + 報告YAML） ───
@@ -6047,29 +6047,28 @@ write_karo_snapshot() {
                             /^[ \t]*project:/ && p=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); p=v }
                             END { print t "|" s "|" p }
                         ' "$task_file")
-                        local runtime_state="idle"
                         # CLI死亡判定: pane_current_commandがbash/zshならdead (cmd_1851)
                         if [ -n "$_pane_target" ]; then
                             local _pane_cmd
                             _pane_cmd=$(tmux display-message -t "$_pane_target" -p '#{pane_current_command}' 2>/dev/null || true)
                             case "$_pane_cmd" in
-                                bash|zsh|sh) runtime_state="dead" ;;
+                                bash|zsh|sh) status="dead" ;;
                             esac
                         fi
                         # snapshot実態乖離補正: task YAMLがidle/completedだがCTX>0%ならcapture-paneで実態確認
                         # Codex CLIはhook未発火で@agent_stateが更新されず、snapshotが古いstatusを表示し続ける問題の根治
                         local _ctx_num_snap="${_ctx%\%}"
                         if [[ "$status" =~ ^(idle|completed|done)$ ]] && [ -n "$_ctx_num_snap" ] && [ "$_ctx_num_snap" != "?" ] && [ "$_ctx_num_snap" -gt 0 ] 2>/dev/null; then
-                            if [ -n "$_pane_target" ] && check_agent_busy "$_pane_target" "$name"; then
-                                runtime_state="busy"
+                            if [ -n "$_pane_target" ] && ! check_agent_busy "$_pane_target" "$name"; then
+                                :  # pane confirms idle — status unchanged
+                            else
+                                status="in_progress"
                             fi
-                        elif [[ "$status" =~ ^(assigned|acknowledged|in_progress|pending)$ ]]; then
-                            runtime_state="busy"
                         fi
                         _snapshot_status[$name]="${status:-}"
                         local _task_source_ts
                         _task_source_ts=$(date -r "$task_file" '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo unknown)
-                        echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}|CTX:${_ctx}|M:${_model_short}|SRC:${_task_source_ts}|TASK:${status:-idle}|RUNTIME:${runtime_state}"
+                        echo "ninja|${name}|${task_id:-none}|${status:-idle}|${project:-none}|CTX:${_ctx}|M:${_model_short}|SRC:${_task_source_ts}"
                     else
                         _snapshot_status[$name]=""
                         echo "ninja|${name}|none|idle|none|CTX:${_ctx}|M:${_model_short}"
@@ -7384,9 +7383,6 @@ _NM_START_MTIME="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
 
 while true; do
     cycle=$((cycle + 1))
-
-    # Primary task state is observed before pane waits and maintenance.
-    monitor_task_state_fast_path
 
     # ─── hot-reload: スクリプト更新検知で自動再起動 (2026-06-26) ───
     # commit後も旧コードで稼働し続けるバグの根治。10分ごとにmtimeチェック

@@ -39,34 +39,6 @@ EOF
     export PATH="$TEST_BIN:$PATH"
 }
 
-@test "fast path returns before ten-second maintenance job" {
-    run bash -lc '
-set -euo pipefail
-export NINJA_MONITOR_LIB_ONLY=1
-source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
-unset NINJA_MONITOR_LIB_ONLY
-NINJA_NAMES=(hanzo)
-MARK="'"$BATS_TEST_TMPDIR"'/detected"
-check_and_update_done_task() { printf detected > "$MARK"; (sleep 10) & }
-start=$EPOCHREALTIME
-monitor_task_state_fast_path
-elapsed=$(awk -v s="$start" -v e="$EPOCHREALTIME" "BEGIN { print e-s }")
-test -f "$MARK"
-awk -v e="$elapsed" "BEGIN { exit !(e < 5) }"
-'
-    [ "$status" -eq 0 ]
-}
-
-@test "snapshot keeps task done while publishing runtime busy separately" {
-    run bash -lc '
-set -euo pipefail
-src="'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
-grep -q "TASK:\${status:-idle}|RUNTIME:\${runtime_state}" "$src"
-! sed -n "/local runtime_state=/,/snapshot_status/p" "$src" | grep -q "status=\"in_progress\""
-'
-    [ "$status" -eq 0 ]
-}
-
 @test "active background compute is fail-closed to the pane process tree" {
     run bash -lc '
 set -euo pipefail
