@@ -1136,3 +1136,22 @@ YAML
   [ -f "$active" ]
   [ -f "$completed" ]
 }
+
+@test "parallel append and drain rotation loses zero deferred items" {
+  run bash -c '
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$1/scripts/deploy_task.sh"
+    total=40
+    for i in $(seq 1 "$total"); do
+      deploy_task_queue_stale_report "$TEST_PROJECT/queue/reports/missing_${i}.yaml" "cmd_${i}" "" &
+    done
+    deploy_task_drain_deferred &
+    wait
+    deploy_task_drain_deferred
+    skipped=$(sed -n "s/.*DEFERRED_DRAIN processed=[0-9]* skipped=\([0-9]*\) failed=[0-9]* backlog=[0-9]*/\1/p" "$TEST_PROJECT/logs/deploy_task.log" | awk "{s+=\$1} END{print s+0}")
+    backlog=$(find "$TEST_PROJECT/queue/deferred" -maxdepth 1 -name "*.tsv" -type f -exec awk "END{print NR}" {} \; | awk "{s+=\$1} END{print s+0}")
+    printf "enqueued=%s skipped=%s backlog=%s lost=%s\n" "$total" "$skipped" "$backlog" "$((total-skipped-backlog))"
+  ' _ "$TEST_PROJECT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"enqueued=40 skipped=40 backlog=0 lost=0"* ]]
+}
