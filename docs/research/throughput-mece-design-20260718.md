@@ -1,8 +1,15 @@
 # 品質合格スループット根治 — AsIs/ToBe 5W1H設計書
 
-作成: 将軍(覚醒統合) 2026-07-18 12:40 | version: **v1.0**
+作成: 将軍(覚醒統合) 2026-07-18 13:10 | version: **v1.1**(軍師レビュー統合+覚醒アップデート)
 家老敵対監査: `docs/research/infra-throughput-outcome-design-20260718.md` (C1-C6, 26件台帳)
-軍師独立レビュー: 待ち(blt_123517)
+軍師独立レビュー: blt_20260718_123619(3指摘: MECE穴1/目標値根拠不在2/攻略順序反証1)
+
+### v1.1変更点(覚醒アップデート — 家老+軍師を超える)
+1. **MECE穴修正**: monitor逐次loop構造をC4-07から独立させC4サブカテゴリ「C4b: monitor loop fairness」に昇格。根拠: done認識15m09s遅延はtransaction正確性(C4)の一部だが、逐次loop構造は他C4件と修正手段が異なる(ninja_monitor.shのループ公平化)。家老台帳C4-07と紐付け
+2. **baseline計測義務化**: §8 HowのStep 1を「Wave開始"前"にN≧5 baseline計測必須。before値なしにWave開始禁止」に強化。軍師指摘(C4/C5 before値不在)の根治。家老のn=1単発値も将軍の(要計測)もbaselineとして不十分
+3. **Wave順序最適化**: Wave 1(C4)とWave 2(C1 ext4 probe)の間にWave 1.5(C2 prompt replay)を挿入。根拠: ext4 probeは殿の明示許可が必要(家老報告blt_111806)で待ちが発生する。その待ち時間にC2(殿の時間を直接奪うバグ)を並行処理。待ちの合理性テスト(LS-A08(8)): ext4許可待ちは殿の判断を買う正当な待ち。C2はその間に処理可能な独立カテゴリ
+4. **覚醒なぜなぜ(家老を超える点)**: 家老の分類規則「最初に破れた不変量をprimary」は正しいが、**不変量自体の定義が暗黙**。§2に各カテゴリの不変量を明示追記(例: C1=「git操作p95<Ns」、C4=「transaction exactly-once+atomic」)。不変量が明示されていなければ「破れた」の判定が属人的になる
+5. **覚醒なぜなぜ(軍師を超える点)**: 軍師の評価式マッピング(試行回数=C1+C3、PASS率=C4+C2、還流率=C5)は静的。**各Waveの完了が他要素にも波及する動的効果**を追記(例: C4修正→AUTO_DONE短縮→試行回数↑+PASS率↑の両方に寄与)
 gist: 94145c4564055baa3f543028a69e948b
 
 ## §0 発端 — 殿の言葉
@@ -90,15 +97,17 @@ ToBe達成時の自動成長速度: 同じ壁時計時間で試行回数3-5倍(d
 
 | Wave | カテゴリ | 理由 | ToBe指標 |
 |------|---------|------|---------|
-| **1** | C4 transaction | 機能正確性なしにspeed計測は無意味。session喪失・再入破損が残るとbefore/after比較が信頼不能 | identity100%, 破損0, AUTO_DONE<5s, child repair100%, report→gate<60s |
-| **2** | C1 substrate | 最大ボトルネック。deploy/commitの9P根治。ext4隔離probeで方式選定→移設 | deploy p50<30s, commit p50<10s, scope逸脱0, stale registry 0 |
+| **1** | C4 transaction (+C4b monitor loop) | 機能正確性なしにspeed計測は無意味。session喪失・再入破損が残るとbefore/after比較が信頼不能。C4b: monitor逐次loop公平化(done認識15m→即時) | identity100%, 破損0, AUTO_DONE<5s, child repair100%, report→gate<60s, monitor done検知<30s |
+| **1.5** | C2 prompt replay | ext4 probe殿許可待ちの間に並行処理。殿の時間を直接奪うバグ | replay0, wrong-pane0, 外部追加入力0 |
+| **2** | C1 substrate | 最大ボトルネック。deploy/commitの9P根治。ext4隔離probeで方式選定→移設(殿許可後) | deploy p50<30s, commit p50<10s, scope逸脱0, stale registry 0 |
 | **3** | C5 reflux | foreign dirty収束→一括昇格。知見還流率の直接改善 | duplicate0, reservation conflict0, 週次消化>50% |
 | **4** | C6 semantics | target/global型分離。CI判定の信頼性 | conflation0, fixture破壊0 |
-| **5** | C2/C3 | prompt identity・event transport。C4/C1修正で間接改善される分を差し引いた残件 | replay0, wrong-pane0, CTX<20% |
+| **5** | C3 event transport | C4/C1/C2修正で間接改善される分を差し引いた残件 | CTX<20%, delivery p95<5s |
 
-Wave順序の根拠(将軍覚醒分析):
-- 家老案(C4先行)を採用。将軍v0.1のC1先行は「速度が先」の直感だが、transaction正確性なしに速度計測は不可能(壊れた計測→偽改善→洗脳#2)
-- C2/C3を最後にした理由: C4修正(event-driven AUTO_DONE)とC1修正(9P解消)がC3の制御面CTX消費を間接的に改善する。残件のみをWave 5で処理
+Wave順序の根拠(将軍覚醒分析v1.1):
+- 家老案(C4先行)を採用。transaction正確性なしに速度計測は不可能(壊れた計測→偽改善→洗脳#2)
+- **Wave 1.5追加(軍師反証の超越)**: 軍師はC2をext4許可待ち中に処理と提案。将軍判断: Wave 1完了→ext4 probe殿許可申請→許可待ち中にC2並行=待ち時間の有効活用。LS-A08(8)の待ちの合理性テスト: ext4許可は殿の判断を買う正当な待ち
+- C3を最後にした理由: C4(AUTO_DONE即時化)+C1(9P解消)+C2(replay解消)がC3のCTX消費を間接改善。Wave動的効果を差し引いた残件のみ
 
 ## §7 Where — どこで
 
@@ -113,7 +122,7 @@ Wave順序の根拠(将軍覚醒分析):
 ## §8 How — どうやって
 
 各Wave内の手順:
-1. **baseline計測**(N≧5でp50/p95。n=1の単発値をbaselineにしない)
+1. **baseline計測**(N≧5でp50/p95。n=1の単発値をbaselineにしない。**before値なしにWave開始禁止**)
 2. **忍者配備**(カテゴリ内の未修正件に集中。他カテゴリに手を出さない)
 3. **修正→テスト→GATE**(途中は可逆試行回数最大化、最終checkpointでのみ全契約)
 4. **after計測**(同一条件でN≧5)
