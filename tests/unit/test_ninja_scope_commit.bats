@@ -134,6 +134,20 @@ HOOK
     [ "$(git -C "$REPO" show -s --format=%P "$output" | wc -w)" -eq 1 ]
 }
 
+@test "scoped commit publishes through commit-tree and update-ref without git commit porcelain" {
+    printf 'bounded publication\n' >> "$REPO/own.txt"
+    trace="$REPO/trace.json"
+
+    run bash -c 'cd "$1" && GIT_TRACE2_EVENT="$3" bash "$2" -m bounded-publish -- own.txt' _ "$REPO" "$HELPER" "$trace"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"event=terminal_receipt"* ]]
+    [ "$(printf '%s\n' "$output" | tail -1)" = "$(git -C "$REPO" rev-parse HEAD)" ]
+    [ "$(grep -c '"name":"commit"' "$trace" || true)" -eq 0 ]
+    [ "$(grep -c '"name":"commit-tree"' "$trace" || true)" -eq 1 ]
+    [ "$(grep -c '"name":"update-ref"' "$trace" || true)" -eq 1 ]
+}
+
 @test "normal commit appends maintenance.auto=false and preserves caller config" {
     printf 'maintenance lane\n' >> "$REPO/own.txt"
     mkdir -p "$REPO/.git/hooks"
@@ -150,7 +164,7 @@ HOOK
     [ "$status" -eq 0 ]
     [ "$(git -C "$REPO" show --format= --name-only HEAD)" = own.txt ]
     [ "$(grep -c 'maintenance run --auto' "$trace" || true)" -eq 0 ]
-    [ "$(grep -c '\"event\":\"cmd_name\".*\"name\":\"commit\"' "$trace" || true)" -eq 1 ]
+    [ "$(grep -c '\"event\":\"cmd_name\".*\"name\":\"commit-tree\"' "$trace" || true)" -eq 1 ]
 }
 
 @test "invalid caller config count fails closed before commit" {

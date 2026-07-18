@@ -156,14 +156,32 @@ assert_single_parent_commit() {
 # Append (rather than replace) one command-scoped config entry so caller-supplied
 # GIT_CONFIG_COUNT contracts remain intact.  Invalid ambient config is a hard
 # BLOCK: silently dropping it would change hook/commit behaviour.
-git_commit_without_auto_maintenance() {
+create_and_publish_scoped_commit() {
     local config_count="${GIT_CONFIG_COUNT:-0}" config_key config_value
     [[ "$config_count" =~ ^[0-9]+$ ]] \
         || { echo "BLOCK: GIT_CONFIG_COUNT must be a non-negative integer" >&2; return 2; }
     config_key="GIT_CONFIG_KEY_${config_count}=maintenance.auto"
     config_value="GIT_CONFIG_VALUE_${config_count}=false"
+    local tree_hash commit_hash
+    # `git commit` refreshes the whole index/worktree even when GIT_INDEX_FILE
+    # contains only a bounded scope.  On DrvFS that reintroduces an O(repo)
+    # lstat walk and, if the caller disappears after ref publication, permits a
+    # committed-but-no-receipt false success.  Run the safety hook against the
+    # private index, construct the object, then publish HEAD with an old-value
+    # CAS.  The repository-wide flock keeps index/ref convergence in the same
+    # transaction while update-ref is the sole publication point.
     env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
-        git commit -m "$message" >&2
+        git hook run pre-commit >&2
+    tree_hash="$(git write-tree)"
+    commit_hash="$(printf '%s\n' "$message" | git commit-tree "$tree_hash" -p "$transaction_head")"
+    [[ "$commit_hash" =~ ^[0-9a-f]{40}$ ]] \
+        || { echo "BLOCK: commit-tree did not return a 40hex object" >&2; return 1; }
+    git update-ref -m "$message" HEAD "$commit_hash" "$transaction_head"
+    # Preserve the observable post-commit contract for repository automation.
+    # It runs only after the CAS publication, matching porcelain ordering.
+    env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
+        git hook run post-commit >&2
+    printf '%s\n' "$commit_hash"
 }
 
 # Phase telemetry starts at lock acquisition so the sum of the seven bounded
@@ -524,8 +542,7 @@ PY
     finish_phase 0
     begin_phase git_commit
     assert_head_generation
-    git_commit_without_auto_maintenance
-    commit_hash="$(git rev-parse HEAD)"
+    commit_hash="$(create_and_publish_scoped_commit)"
     assert_single_parent_commit "$commit_hash"
     # HEAD更新後、共有indexの対象pathだけを新HEADへ追随させる。他pathのstageは
     # 一切変更せず、対象pathが旧HEAD由来の逆差分として残るindex汚染を防ぐ。
@@ -671,8 +688,7 @@ fi
 finish_phase 0
 begin_phase git_commit
 assert_head_generation
-git_commit_without_auto_maintenance
-commit_hash="$(git rev-parse HEAD)"
+commit_hash="$(create_and_publish_scoped_commit)"
 assert_single_parent_commit "$commit_hash"
 mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
 finish_phase 0
