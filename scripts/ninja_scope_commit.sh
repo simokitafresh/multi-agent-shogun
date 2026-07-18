@@ -415,6 +415,79 @@ for path in "$@"; do
     paths+=("$normalized")
 done
 
+# Transient tests are proof artifacts, not contract code.  Immediately before
+# the commit boundary, require a complete primary receipt and remove only
+# untracked transient tests explicitly listed by the current task.  Tracked
+# files, undeclared paths, failed/skipped tests, and missing receipts fail
+# closed without deleting anything.
+transient_task_file="${NINJA_SCOPE_TASK_FILE:-}"
+transient_receipt_file="${NINJA_TEST_RECEIPT:-}"
+if [[ -n "${NINJA_SCOPE_EXPECTED_HEAD:-}" && "$(git rev-parse HEAD)" != "$NINJA_SCOPE_EXPECTED_HEAD" ]]; then
+    echo "BLOCK: concurrent HEAD change detected before test deletion/commit" >&2
+    exit 2
+fi
+if [[ -n "$transient_task_file" && -f "$transient_task_file" ]]; then
+    deletion_justification="$(python3 - "$transient_task_file" <<'PY'
+import sys,yaml
+d=yaml.safe_load(open(sys.argv[1],encoding='utf-8')) or {}; print((d.get('task',d).get('deletion_justification') or '').strip())
+PY
+)"
+    for scope_path in "${paths[@]}"; do
+        if git cat-file -e "HEAD:$scope_path" 2>/dev/null && [[ "$scope_path" == tests/* || "$scope_path" == *.bats || "${scope_path##*/}" == test_* ]]; then
+            read -r added deleted < <(git diff --numstat -- "$scope_path" | awk 'NR==1{print $1,$2}')
+            added=${added:-0}; deleted=${deleted:-0}
+            if ((deleted > added)) && [[ -z "$deletion_justification" ]]; then
+                echo "BLOCK: existing test net deletion requires deletion_justification: $scope_path" >&2; exit 2
+            fi
+            if [[ ! -e "$scope_path" ]]; then
+                base="${scope_path##*/}"
+                if git grep -l -F "$base" HEAD -- ':!'"$scope_path" | grep -q .; then
+                    echo "BLOCK: deleted test/helper remains referenced by shared fixture: $scope_path" >&2; exit 2
+                fi
+            fi
+        fi
+    done
+    mapfile -t transient_tests < <(python3 - "$transient_task_file" <<'PY'
+import subprocess, sys, yaml
+d=yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+t=d.get('task', d); n=t.get('test_necessity')
+for p in t.get('planned_paths') or []:
+    p=str(p)
+    is_test='/tests/' in f'/{p}' or p.startswith('tests/') or p.endswith(('.bats','.spec.js','.test.js')) or p.rsplit('/',1)[-1].startswith('test_')
+    if is_test and not isinstance(n, dict) and subprocess.run(['git','cat-file','-e',f'HEAD:{p}'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode != 0:
+        print(p)
+PY
+)
+    if ((${#transient_tests[@]})); then
+        [[ -n "$transient_receipt_file" && -f "$transient_receipt_file" ]] || { echo "BLOCK: transient test receipt missing" >&2; exit 2; }
+        python3 - "$transient_receipt_file" "${transient_tests[@]}" <<'PY' || exit 2
+import sys, yaml
+d=yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+tests=sys.argv[2:]
+ok=d.get('status') == 'complete' and d.get('pass') is True and d.get('fail') == 0 and d.get('skip') == 0
+covered=set(map(str,d.get('test_paths') or []))
+if not ok or not set(tests) <= covered:
+    print('BLOCK: transient test receipt must prove complete PASS, FAIL0, SKIP0 for every candidate', file=sys.stderr); raise SystemExit(2)
+PY
+        for transient in "${transient_tests[@]}"; do
+            git ls-files --error-unmatch -- "$transient" >/dev/null 2>&1 && { echo "BLOCK: transient deletion target is tracked: $transient" >&2; exit 2; }
+            [[ -f "$transient" ]] || { echo "BLOCK: transient deletion target missing: $transient" >&2; exit 2; }
+        done
+        printf 'TRANSIENT_DELETE_CANDIDATES=%s\n' "$(IFS=,; echo "${transient_tests[*]}")" >&2
+        for transient in "${transient_tests[@]}"; do
+            git diff --no-index -- /dev/null "$transient" >&2 || [[ $? -eq 1 ]]
+            rm -- "$transient"
+        done
+        kept=()
+        for scope_path in "${paths[@]}"; do
+            skip=false; for transient in "${transient_tests[@]}"; do [[ "$scope_path" == "$transient" ]] && skip=true; done
+            [[ "$skip" == false ]] && kept+=("$scope_path")
+        done
+        paths=("${kept[@]}")
+        ((${#paths[@]})) || { echo "BLOCK: no production scope remains after transient test deletion" >&2; exit 2; }
+    fi
+fi
+
 # Idempotent single-flight boundary.  The repository lock above serializes
 # ref/COMMIT_EDITMSG updates, but serialization alone makes followers retry the
 # same commit after the owner has already advanced HEAD.  Key the invocation by

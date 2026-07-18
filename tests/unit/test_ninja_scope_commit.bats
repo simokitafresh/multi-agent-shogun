@@ -36,6 +36,49 @@ teardown() {
     rm -rf "$REPO"
 }
 
+@test "transient PASS receipt deletes only untracked test and commits production scope" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf 'change\n' >> "$REPO/own.txt"
+    printf 'proof\n' > "$REPO/tests/test_transient.bats"
+    cat > "$REPO/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  planned_paths: [own.txt, tests/test_transient.bats]
+YAML
+    cat > "$REPO/receipt.yaml" <<'YAML'
+status: complete
+pass: true
+fail: 0
+skip: 0
+test_paths: [tests/test_transient.bats]
+YAML
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m transient -- own.txt tests/test_transient.bats' _ "$REPO" "$HELPER"
+    [ "$status" -eq 0 ]
+    [ ! -e "$REPO/tests/test_transient.bats" ]
+    [ "$(git -C "$REPO" show --format= --name-only HEAD)" = own.txt ]
+}
+
+@test "transient FAIL receipt blocks before deletion" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf 'change\n' >> "$REPO/own.txt"; printf proof > "$REPO/tests/test_transient.bats"
+    printf 'task:\n  planned_paths: [own.txt, tests/test_transient.bats]\n' > "$REPO/queue/tasks/hayate.yaml"
+    printf 'status: complete\npass: false\nfail: 1\nskip: 0\ntest_paths: [tests/test_transient.bats]\n' > "$REPO/receipt.yaml"
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m transient -- own.txt tests/test_transient.bats' _ "$REPO" "$HELPER"
+    [ "$status" -eq 2 ]
+    [ -f "$REPO/tests/test_transient.bats" ]
+}
+
+@test "existing test net deletion requires justification and concurrent HEAD drift blocks" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf 'one\ntwo\n' > "$REPO/tests/test_contract.bats"; git -C "$REPO" add tests/test_contract.bats; git -C "$REPO" commit -qm test-base
+    printf 'one\n' > "$REPO/tests/test_contract.bats"
+    printf 'task:\n  planned_paths: [tests/test_contract.bats]\n' > "$REPO/queue/tasks/hayate.yaml"
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m shrink -- tests/test_contract.bats' _ "$REPO" "$HELPER"
+    [ "$status" -eq 2 ]; [[ "$output" == *deletion_justification* ]]
+    printf 'task:\n  deletion_justification: obsolete duplicate assertion\n  planned_paths: [tests/test_contract.bats]\n' > "$REPO/queue/tasks/hayate.yaml"
+    run bash -c 'cd "$1" && NINJA_SCOPE_EXPECTED_HEAD=0000000000000000000000000000000000000000 NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m shrink -- tests/test_contract.bats' _ "$REPO" "$HELPER"
+    [ "$status" -eq 2 ]; [[ "$output" == *"concurrent HEAD change"* ]]
+}
+
 make_ga282_fixture() {
     mkdir -p "$REPO/queue/tasks" "$REPO/projects/infra"
     printf 'task: base\n' > "$REPO/queue/tasks/hayate.yaml"

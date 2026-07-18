@@ -8071,24 +8071,34 @@ if not new_tests:
     raise SystemExit(0)
 
 necessity = task.get("test_necessity")
-errors = []
+# A new test is transient by default: it may be used to prove the change, but
+# it is not silently promoted into the permanent suite.  Only a complete
+# defense declaration opts it into persistent lifecycle.
 if not isinstance(necessity, dict):
-    errors.append("test_necessity mapping missing")
-    necessity = {}
+    print("PASS: test_lifecycle=transient new_tests=" + ",".join(new_tests))
+    raise SystemExit(0)
+errors = []
 target = str(necessity.get("defense_target", "")).strip()
 evidence = str(necessity.get("overlap_evidence", "")).strip()
 if not target or "\n" in target:
     errors.append("defense_target must be one non-empty line")
 if not evidence:
     errors.append("overlap_evidence missing")
-for key in ("overlaps_existing", "fixture_self_reference", "deprecated_mechanism"):
+overlap = necessity.get("overlaps_existing")
+regression = str(necessity.get("regression_justification", "")).strip()
+if overlap is True:
+    if not regression or "\n" in regression or len(regression) < 12:
+        errors.append("overlaps_existing=true requires one-line regression_justification")
+elif overlap is not False:
+    errors.append("overlaps_existing must be false or justified true")
+for key in ("fixture_self_reference", "deprecated_mechanism"):
     if necessity.get(key) is not False:
         errors.append(f"{key} must be false")
 if errors:
     print("BLOCK: new test necessity contract failed: " + "; ".join(errors), file=sys.stderr)
     print("BLOCK_TESTS=" + ",".join(new_tests), file=sys.stderr)
     raise SystemExit(1)
-print("PASS: test_necessity new_tests=" + ",".join(new_tests))
+print("PASS: test_lifecycle=persistent test_necessity new_tests=" + ",".join(new_tests))
 PY
 }
 

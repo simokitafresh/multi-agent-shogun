@@ -40,6 +40,10 @@ YAML
       [ "$status" -ne 0 ]
     done
 
+    sed -i -E 's/(fixture_self_reference|deprecated_mechanism): true/\1: false/; s/overlaps_existing: false/overlaps_existing: true\n    regression_justification: regression reproduces an intentional legacy boundary/' "$tmpdir/task.yaml"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
+    [ "$status" -eq 0 ]
+
     printf 'task:\n  planned_paths: [tests/test_existing.bats]\n' > "$tmpdir/task.yaml"
     run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
     [ "$status" -eq 0 ]
@@ -64,8 +68,8 @@ YAML
     for path in tests/unit/test_new.bats tests/test_new.sh test_new.py; do
       printf 'task:\n  planned_paths: [%s]\n' "$path" > "$tmpdir/task.yaml"
       run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
-      [ "$status" -ne 0 ]
-      [[ "$output" == *"BLOCK_TESTS=$path"* ]]
+      [ "$status" -eq 0 ]
+      [[ "$output" == *"test_lifecycle=transient"* ]]
     done
 }
 

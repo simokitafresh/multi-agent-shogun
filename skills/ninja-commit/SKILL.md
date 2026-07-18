@@ -75,6 +75,12 @@ bash scripts/ninja_scope_commit.sh \
   <file1> <file2> ...
 ```
 
+新規testに有効な`test_necessity`がない場合はtransientである。commit前に
+`NINJA_SCOPE_TASK_FILE`と、`status: complete`・`pass: true`・`fail: 0`・
+`skip: 0`・対象`test_paths`を持つ`NINJA_TEST_RECEIPT`を渡す。helperは削除候補diffを
+表示し、未追跡transient testだけを削除してproduction scopeをcommitする。receipt
+欠落/FAIL/SKIP、tracked test、production scope不在は削除前にBLOCKする。
+
 helperは指定pathだけをaddし、`git commit --only -- <paths>`でcommitする。共有indexにある他者stageは変更もcommitもしない。空scope・存在しないpathはBLOCKし、pre-commit hookは通常どおり実行する。
 
 同一run・message・mode・scope・worktree bytesで再実行した場合、helperはsingle-flight receiptを検証し、重複commitを作らず既存の40桁commit hashをstdoutへ返す。別タスクで同じmessage/pathを意図的に使うオーケストレータは `NINJA_SCOPE_COMMIT_RUN_ID` をタスク固有値にする。不正・消失receiptはfail-closedでBLOCKされる。

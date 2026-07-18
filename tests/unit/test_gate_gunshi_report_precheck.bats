@@ -76,8 +76,8 @@ YAML
 
   printf 'task:\n  planned_paths: [tests/unit/test_never_existing_contract.bats]\n' > "$task"
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"BLOCK: new test necessity contract failed"* ]]
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"test_lifecycle=transient"* ]]
 
   cat > "$task" <<'YAML'
 task:
@@ -91,7 +91,7 @@ task:
 YAML
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"PASS: test_necessity"* ]]
+  [[ "$output" == *"test_lifecycle=persistent test_necessity"* ]]
 
   printf 'task:\n  planned_paths: [tests/unit/test_gate_gunshi_report_precheck.bats]\n' > "$task"
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
@@ -109,7 +109,7 @@ YAML
   for path in tests/unit/test_new.bats tests/test_new.sh test_new.py; do
     printf 'task:\n  planned_paths: [%s]\n' "$path" > "$task"
     run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"BLOCK_TESTS=$path"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"test_lifecycle=transient"* ]]
   done
 }
