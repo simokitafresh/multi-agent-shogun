@@ -458,7 +458,7 @@ deploy_task_queue_stale_report() {
 deploy_task_drain_deferred() {
     local queue_dir="$SCRIPT_DIR/queue/deferred" drain_lock="$SCRIPT_DIR/queue/locks/deploy_deferred_drain.lock"
     local history_q="$queue_dir/git_history.tsv" stale_q="$queue_dir/stale_reports.tsv"
-    local processed=0 failed=0 backlog=0 line repo head_oid rel commit key cache_dir cache_file
+    local processed=0 skipped=0 failed=0 backlog=0 line repo head_oid rel commit key cache_dir cache_file
     mkdir -p "$(dirname "$drain_lock")" "$SCRIPT_DIR/archive/reports/stale" "$SCRIPT_DIR/.cache/deploy-history"
     exec {drain_fd}>"$drain_lock"
     flock -n "$drain_fd" || return 0
@@ -481,7 +481,7 @@ deploy_task_drain_deferred() {
                 mv "${cache_file}.tmp.$BASHPID" "$cache_file"
                 processed=$((processed + 1))
             else
-                failed=$((failed + 1))
+                skipped=$((skipped + 1))
             fi
         done < "$history_work"
         rm -f "$history_work"
@@ -493,14 +493,14 @@ deploy_task_drain_deferred() {
         while IFS= read -r line; do
             report=$(printf '%s\n' "$line" | sed -n 's/.*path=\([^ ]*\) parent=.*/\1/p')
             parent=$(printf '%s\n' "$line" | sed -n 's/.* parent=\([^ ]*\) verdict=.*/\1/p')
-            [ -f "$report" ] || { failed=$((failed + 1)); continue; }
+            [ -f "$report" ] || { skipped=$((skipped + 1)); continue; }
             verdict=$(FIELD_GET_NO_LOG=1 field_get "$report" verdict "" 2>/dev/null || true)
             worker=$(basename "$report"); worker="${worker%%_report_*}"
             task_parent=$(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/tasks/${worker}.yaml" parent_cmd "" 2>/dev/null || true)
             task_status=$(FIELD_GET_NO_LOG=1 field_get "$SCRIPT_DIR/queue/tasks/${worker}.yaml" status "" 2>/dev/null || true)
             if [[ "$verdict" =~ ^(PASS|FAIL|PASS_NO_IMPROVEMENT)$ ]] \
                 || { [ "$task_parent" = "$parent" ] && [[ "$task_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; }; then
-                failed=$((failed + 1)); continue
+                skipped=$((skipped + 1)); continue
             fi
             dest="$SCRIPT_DIR/archive/reports/stale/$(basename "$report")"
             [ ! -e "$dest" ] || dest="${dest%.yaml}_$(date +%s%N).yaml"
@@ -509,7 +509,7 @@ deploy_task_drain_deferred() {
         rm -f "$stale_work"
     fi
     backlog=$(find "$queue_dir" -maxdepth 1 -name '*.tsv' -type f -exec awk 'END{n+=NR} END{print n+0}' {} \; 2>/dev/null | awk '{s+=$1} END{print s+0}')
-    log "DEFERRED_DRAIN processed=${processed} failed=${failed} backlog=${backlog}"
+    log "DEFERRED_DRAIN processed=${processed} skipped=${skipped} failed=${failed} backlog=${backlog}"
 }
 
 deploy_task_start_deferred_drain() {
