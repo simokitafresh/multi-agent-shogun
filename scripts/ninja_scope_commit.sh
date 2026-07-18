@@ -480,7 +480,12 @@ PY
         done
         kept=()
         for scope_path in "${paths[@]}"; do
-            skip=false; for transient in "${transient_tests[@]}"; do [[ "$scope_path" == "$transient" ]] && skip=true; done
+            skip=false
+            for transient in "${transient_tests[@]}"; do
+                if [[ "$scope_path" == "$transient" ]]; then
+                    skip=true
+                fi
+            done
             [[ "$skip" == false ]] && kept+=("$scope_path")
         done
         paths=("${kept[@]}")
