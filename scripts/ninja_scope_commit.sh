@@ -264,7 +264,7 @@ trap 'publish_terminal_failure "$?"' EXIT
 # and only then is completion made observable.  Metadata goes to stderr so
 # stdout remains the stable, single-line commit-hash API used by callers.
 publish_terminal_success() {
-    local terminal_hash="$1" finished_epoch_ms sum=0 total unattributed receipt_tmp
+    local terminal_hash="$1" finished_epoch_ms sum=0 total unattributed receipt_tmp completed_event
     [[ "$terminal_hash" =~ ^[0-9a-f]{40}$ ]] \
         || { echo "BLOCK: invalid terminal commit hash" >&2; return 1; }
     git cat-file -e "${terminal_hash}^{commit}" 2>/dev/null \
@@ -283,15 +283,21 @@ publish_terminal_success() {
     for phase in "${phase_order[@]}"; do sum=$((sum + ${phase_wall_ms[$phase]:-0})); done
     total=$((finished_epoch_ms - lock_acquired_epoch_ms))
     unattributed=$((total - sum))
-    printf 'event=completed lock_wait_ms=%s acquired_at=%s finished_at=%s commit_hash=%s phase_total_ms=%s phase_unattributed_ms=%s telemetry_overhead_ms=%s telemetry_clock_calls=%s' \
-        "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished_epoch_ms" "$terminal_hash" "$sum" "$unattributed" "$(((telemetry_overhead_us + 999) / 1000))" "$telemetry_clock_calls" >&2
-    phase_fields >&2
-    printf '\n' >&2
+    printf -v completed_event 'event=completed lock_wait_ms=%s acquired_at=%s finished_at=%s commit_hash=%s phase_total_ms=%s phase_unattributed_ms=%s telemetry_overhead_ms=%s telemetry_clock_calls=%s' \
+        "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished_epoch_ms" "$terminal_hash" "$sum" "$unattributed" "$(((telemetry_overhead_us + 999) / 1000))" "$telemetry_clock_calls"
+    completed_event+="$(phase_fields)"
+    # Persist the complete terminal contract before publishing any success
+    # bytes to the caller.  A PTY/session disconnect after HEAD publication can
+    # therefore reconnect with the same run id and recover hash + telemetry
+    # instead of falling through to a misleading no-change BLOCK.
     if [[ -n "$singleflight_receipt" ]]; then
         receipt_tmp="${singleflight_receipt}.tmp.$$"
-        printf 'version=1\nkey=%s\nrc=0\ncommit_hash=%s\nfinished_at=%s\n' \
-            "$singleflight_key" "$terminal_hash" "$finished_epoch_ms" > "$receipt_tmp"
+        printf 'version=2\nkey=%s\nrc=0\ncommit_hash=%s\nfinished_at=%s\ncompleted_event=%s\n' \
+            "$singleflight_key" "$terminal_hash" "$finished_epoch_ms" "$completed_event" > "$receipt_tmp"
         mv -f -- "$receipt_tmp" "$singleflight_receipt"
+    fi
+    printf '%s\n' "$completed_event" >&2
+    if [[ -n "$singleflight_receipt" ]]; then
         printf 'event=terminal_receipt role=%s key=%s rc=0 commit_hash=%s receipt=%s\n' \
             "$singleflight_role" "$singleflight_key" "$terminal_hash" "$singleflight_receipt" >&2
     fi
@@ -387,6 +393,7 @@ if [[ -f "$singleflight_receipt" ]]; then
     receipt_key="$(awk -F= '$1 == "key" {print $2; exit}' "$singleflight_receipt")"
     receipt_rc="$(awk -F= '$1 == "rc" {print $2; exit}' "$singleflight_receipt")"
     receipt_hash="$(awk -F= '$1 == "commit_hash" {print $2; exit}' "$singleflight_receipt")"
+    receipt_completed_event="$(sed -n 's/^completed_event=//p' "$singleflight_receipt" | head -1)"
     # A receipt is only a cache of a previously proven terminal state.  It is
     # not itself proof that the current ref/index/worktree still publish that
     # state: a later failed ref/index advance can leave the same worktree bytes
@@ -403,6 +410,7 @@ if [[ -f "$singleflight_receipt" ]]; then
     fi
     if [[ "$receipt_scope_converged" == true ]]; then
         singleflight_role="follower"
+        [[ "$receipt_completed_event" == event=completed\ * ]] && printf '%s\n' "$receipt_completed_event" >&2
         printf 'event=terminal_receipt role=follower key=%s rc=0 commit_hash=%s receipt=%s\n' \
             "$singleflight_key" "$receipt_hash" "$singleflight_receipt" >&2
         terminal_event_emitted=true

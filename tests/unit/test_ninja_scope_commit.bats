@@ -148,6 +148,25 @@ HOOK
     [ "$(grep -c '"name":"update-ref"' "$trace" || true)" -eq 1 ]
 }
 
+@test "commit済みoutput消失後のno-change再照会はdurable receiptからhashと同一telemetryを返す" {
+    printf 'recoverable publication\n' >> "$REPO/own.txt"
+    run_id="receipt-reconnect-$BATS_TEST_NUMBER"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_RUN_ID="$3" bash "$2" -m reconnect -- own.txt' _ "$REPO" "$HELPER" "$run_id"
+    [ "$status" -eq 0 ]
+    owner_hash="$(printf '%s\n' "$output" | tail -1)"
+    owner_event="$(printf '%s\n' "$output" | grep '^event=completed ')"
+    [[ "$owner_hash" =~ ^[0-9a-f]{40}$ ]]
+    [[ "$owner_event" == *"commit_hash=$owner_hash"* ]]
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_COMMIT_RUN_ID="$3" bash "$2" -m reconnect -- own.txt' _ "$REPO" "$HELPER" "$run_id"
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | tail -1)" = "$owner_hash" ]
+    [ "$(printf '%s\n' "$output" | grep '^event=completed ')" = "$owner_event" ]
+    [[ "$output" == *"event=terminal_receipt role=follower"* ]]
+    [ -z "$(git -C "$REPO" status --porcelain -- own.txt)" ]
+}
+
 @test "normal commit appends maintenance.auto=false and preserves caller config" {
     printf 'maintenance lane\n' >> "$REPO/own.txt"
     mkdir -p "$REPO/.git/hooks"
