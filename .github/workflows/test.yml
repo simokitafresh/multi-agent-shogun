@@ -15,7 +15,7 @@ jobs:
   unit-tests:
     name: Unit Tests (bats)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 5
 
     steps:
       - name: Checkout code
@@ -57,9 +57,9 @@ jobs:
           # to the detected CPU count, with eight as the hard ceiling.
           BATS_CACHE=0 \
           BATS_INNER_JOBS=1 \
-          BATS_FILE_TIMEOUT_SECONDS=900 \
+          BATS_FILE_TIMEOUT_SECONDS=300 \
           BATS_TAP_OUTPUT=test-results/all.tap \
-            bash scripts/run_tests.sh all || {
+            bash scripts/run_tests.sh push || {
             echo "::error::Unit or root-level tests failed"
             exit 1
           }

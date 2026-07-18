@@ -6,6 +6,7 @@
 #   bash scripts/run_tests.sh              # unit + top-level 全量
 #   bash scripts/run_tests.sh unit         # unit のみ
 #   bash scripts/run_tests.sh affected     # git diffから影響テストのみ
+#   bash scripts/run_tests.sh push         # test_necessity宣言済みCI境界のみ
 #   bash scripts/run_tests.sh file <path>  # 特定ファイル
 set -euo pipefail
 
@@ -529,6 +530,21 @@ _run_tests_main() {
             mapfile -t test_files < <(find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
             run_bats_files_parallel "${test_files[@]}"
             ;;
+        push)
+            RUN_TESTS_MODE=push
+            inventory="$REPO_ROOT/docs/research/ci-test-elimination-inventory-20260719.csv"
+            [ -r "$inventory" ] || { echo "BLOCK: push inventory missing" >&2; exit 2; }
+            mapfile -t test_files < <(awk -F, 'NR>1 && $7=="push-maintain"{print $2}' "$inventory" | sort -u)
+            [ "${#test_files[@]}" -eq 30 ] || { echo "BLOCK: canonical push file count=${#test_files[@]} expected=30" >&2; exit 2; }
+            declared_cases=$(awk -F, 'NR>1 && $7=="push-maintain"{n++} END{print n+0}' "$inventory")
+            [ "$declared_cases" -eq 487 ] || { echo "BLOCK: canonical push case count=$declared_cases expected=487" >&2; exit 2; }
+            for file in "${test_files[@]}"; do
+                [ -f "$REPO_ROOT/$file" ] || { echo "BLOCK: canonical push test missing: $file" >&2; exit 2; }
+            done
+            BATS_CACHE=0
+            BATS_FILE_TIMEOUT_SECONDS=300
+            run_bats_files_parallel "${test_files[@]}"
+            ;;
         file)
             shift
             # file mode is commonly invoked from a bats regression suite. Do
@@ -563,7 +579,7 @@ _run_tests_main() {
             run_bats_files_parallel "${selected[@]}"
             ;;
         *)
-            echo "Usage: bash scripts/run_tests.sh [all|unit|affected|file <path>]" >&2
+            echo "Usage: bash scripts/run_tests.sh [all|unit|push|affected|file <path>]" >&2
             exit 1
             ;;
     esac
@@ -574,6 +590,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         shift
         _run_tests_main "$@"
     else
+        _requested_tap="${BATS_TAP_OUTPUT:-}"
         _receipt_dir="${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}"
         mkdir -p "$_receipt_dir"
         _receipt="${RUN_TESTS_RECEIPT_PATH:-$_receipt_dir/run_tests_$(date -u +%Y%m%dT%H%M%S)_$$.json}"
@@ -587,6 +604,20 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         if ! bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null; then
             printf 'TEST_RECEIPT_FAIL path=%s\n' "$_receipt" >&2
             exit 1
+        fi
+        if [ -n "$_requested_tap" ]; then
+            mkdir -p "$(dirname "$_requested_tap")"
+            _tap_source="$_tap"
+            if [ ! -s "$_tap_source" ]; then
+                _tap_source=$(python3 - "$_receipt" <<'PY'
+import json,sys
+print(json.load(open(sys.argv[1], encoding="utf-8")).get("artifact", ""))
+PY
+)
+            fi
+            [ -n "$_tap_source" ] && [ -s "$_tap_source" ] || { printf 'TEST_TAP_FAIL internal TAP/artifact missing\n' >&2; exit 1; }
+            cp "$_tap_source" "$_requested_tap"
+            [ -s "$_requested_tap" ] || { printf 'TEST_TAP_FAIL requested TAP missing: %s\n' "$_requested_tap" >&2; exit 1; }
         fi
         python3 - "$_receipt" <<'PY'
 import json, sys
