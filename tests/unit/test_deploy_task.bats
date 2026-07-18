@@ -7,10 +7,6 @@ load '../helpers/deploy_task_scaffold'
 
 setup_file() {
     deploy_task_setup_file
-    # deploy_task.sh sources this library at load time.  Keep the shared
-    # template complete so every per-test fixture receives the same dependency.
-    cp "$PROJECT_ROOT/scripts/lib/defense_overhead_writer.sh" \
-        "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/defense_overhead_writer.sh"
 }
 
 setup() {
