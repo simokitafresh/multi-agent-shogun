@@ -8030,16 +8030,23 @@ PY
 # remain outside this contract.
 deploy_task_test_necessity_precheck() {
     local task_file="$1"
-    python3 - "$SCRIPT_DIR" "$task_file" <<'PY'
+    local report_file="${2:-}"
+    python3 - "$SCRIPT_DIR" "$task_file" "$report_file" <<'PY'
 import os, re, subprocess, sys, yaml
 from pathlib import PurePosixPath
 
-repo, task_file = sys.argv[1:3]
+repo, task_file, report_file = sys.argv[1:4]
 data = yaml.safe_load(open(task_file, encoding="utf-8")) or {}
 task = data.get("task", data)
 paths = task.get("planned_paths") or []
 if isinstance(paths, str):
     paths = [paths]
+report = {}
+if report_file and os.path.isfile(report_file):
+    report = yaml.safe_load(open(report_file, encoding="utf-8")) or {}
+    if "files_modified" in report or "transient_tests_deleted" in report:
+        paths = [x.get("path") for x in report.get("files_modified") or [] if isinstance(x, dict) and x.get("path")]
+        paths += [str(x) for x in report.get("transient_tests_deleted") or []]
 
 def is_test(path):
     path = str(path).strip()
@@ -8074,31 +8081,42 @@ necessity = task.get("test_necessity")
 # A new test is transient by default: it may be used to prove the change, but
 # it is not silently promoted into the permanent suite.  Only a complete
 # defense declaration opts it into persistent lifecycle.
-if not isinstance(necessity, dict):
-    print("PASS: test_lifecycle=transient new_tests=" + ",".join(new_tests))
-    raise SystemExit(0)
+entries = necessity if isinstance(necessity, list) else ([dict(necessity, path=new_tests[0])] if isinstance(necessity, dict) and len(new_tests) == 1 else [])
+by_path = {str(x.get("path", "")).strip(): x for x in entries if isinstance(x, dict)}
 errors = []
-target = str(necessity.get("defense_target", "")).strip()
-evidence = str(necessity.get("overlap_evidence", "")).strip()
-if not target or "\n" in target:
-    errors.append("defense_target must be one non-empty line")
-if not evidence:
-    errors.append("overlap_evidence missing")
-overlap = necessity.get("overlaps_existing")
-regression = str(necessity.get("regression_justification", "")).strip()
-if overlap is True:
-    if not regression or "\n" in regression or len(regression) < 12:
-        errors.append("overlaps_existing=true requires one-line regression_justification")
-elif overlap is not False:
-    errors.append("overlaps_existing must be false or justified true")
-for key in ("fixture_self_reference", "deprecated_mechanism"):
-    if necessity.get(key) is not False:
-        errors.append(f"{key} must be false")
+for path, entry in by_path.items():
+    if path not in new_tests:
+        errors.append(f"test_necessity path is not an actual new test: {path}")
+        continue
+    target = str(entry.get("defense_target", "")).strip()
+    evidence = str(entry.get("overlap_evidence", "")).strip()
+    if not target or "\n" in target:
+        errors.append(f"{path}: defense_target must be one non-empty line")
+    if not evidence:
+        errors.append(f"{path}: overlap_evidence missing")
+    overlap = entry.get("overlaps_existing")
+    regression = str(entry.get("regression_justification", "")).strip()
+    if overlap is True:
+        if not regression or "\n" in regression or len(regression) < 12:
+            errors.append(f"{path}: overlaps_existing=true requires one-line regression_justification")
+    elif overlap is not False:
+        errors.append(f"{path}: overlaps_existing must be false or justified true")
+    for key in ("fixture_self_reference", "deprecated_mechanism"):
+        if entry.get(key) is not False:
+            errors.append(f"{path}: {key} must be false")
 if errors:
     print("BLOCK: new test necessity contract failed: " + "; ".join(errors), file=sys.stderr)
     print("BLOCK_TESTS=" + ",".join(new_tests), file=sys.stderr)
     raise SystemExit(1)
-print("PASS: test_lifecycle=persistent test_necessity new_tests=" + ",".join(new_tests))
+persistent = [p for p in new_tests if p in by_path]
+transient = [p for p in new_tests if p not in by_path]
+if report:
+    deleted = set(map(str, report.get("transient_tests_deleted") or []))
+    missing = [p for p in transient if p not in deleted]
+    if missing:
+        print("BLOCK: report omits transient deletion evidence: " + ",".join(missing), file=sys.stderr)
+        raise SystemExit(1)
+print("PASS: test_lifecycle actual_new_tests=" + ",".join(new_tests) + " persistent=" + ",".join(persistent) + " transient=" + ",".join(transient) + " contract_contamination=0")
 PY
 }
 

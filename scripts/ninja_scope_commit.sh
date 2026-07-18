@@ -473,14 +473,21 @@ PY
             fi
         fi
     done
-    mapfile -t transient_tests < <(python3 - "$transient_task_file" <<'PY'
+    mapfile -t transient_tests < <(python3 - "$transient_task_file" "${paths[@]}" <<'PY'
 import subprocess, sys, yaml
 d=yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
-t=d.get('task', d); n=t.get('test_necessity')
-for p in t.get('planned_paths') or []:
+t=d.get('task', d); n=t.get('test_necessity'); scope=sys.argv[2:]
+declared=set()
+if isinstance(n, list):
+    declared={str(x.get('path','')).strip() for x in n if isinstance(x,dict)}
+elif isinstance(n, dict) and len(scope) == 1:
+    # Backward-compatible single-test declaration.  It can never authorize a
+    # second path; multi-test persistence requires explicit path entries.
+    declared={scope[0]}
+for p in scope:
     p=str(p)
     is_test='/tests/' in f'/{p}' or p.startswith('tests/') or p.endswith(('.bats','.spec.js','.test.js')) or p.rsplit('/',1)[-1].startswith('test_')
-    if is_test and not isinstance(n, dict) and subprocess.run(['git','cat-file','-e',f'HEAD:{p}'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode != 0:
+    if is_test and p not in declared and subprocess.run(['git','cat-file','-e',f'HEAD:{p}'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode != 0:
         print(p)
 PY
 )

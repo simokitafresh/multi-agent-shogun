@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 # Regression tests for deploy_task.sh manual YAML injection.
+# test_necessity: deploy_taskは新規testの自己参照・重複・抽象的necessityをBLOCKし、具体的不変量だけを恒久化する。
 
 setup_file() {
     export PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
@@ -69,8 +70,36 @@ YAML
       printf 'task:\n  planned_paths: [%s]\n' "$path" > "$tmpdir/task.yaml"
       run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
       [ "$status" -eq 0 ]
-      [[ "$output" == *"test_lifecycle=transient"* ]]
+      [[ "$output" == *"transient=$path"* ]]
     done
+}
+
+@test "multiple new tests require independent path declarations" {
+    tmpdir="$(mktemp -d)"
+    git -C "$tmpdir" init -q
+    git -C "$tmpdir" config user.email test@example.com
+    git -C "$tmpdir" config user.name test
+    git -C "$tmpdir" commit --allow-empty -qm base
+    cat > "$tmpdir/task.yaml" <<'YAML'
+task:
+  planned_paths: [tests/test_one.bats, tests/test_two.bats]
+  test_necessity:
+    - path: tests/test_one.bats
+      defense_target: first independent invariant remains enforced
+      overlap_evidence: no equivalent first-path assertion
+      overlaps_existing: false
+      fixture_self_reference: false
+      deprecated_mechanism: false
+YAML
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"persistent=tests/test_one.bats"* ]]
+    [[ "$output" == *"transient=tests/test_two.bats"* ]]
+    sed -i '/deprecated_mechanism: false/a\    - path: tests/test_two.bats\n      defense_target: second independent invariant remains enforced\n      overlap_evidence: no equivalent second-path assertion\n      overlaps_existing: false\n      fixture_self_reference: false\n      deprecated_mechanism: false' "$tmpdir/task.yaml"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_test_necessity_precheck '$tmpdir/task.yaml'"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"persistent=tests/test_one.bats,tests/test_two.bats"* ]]
+    [[ "$output" == *"transient="* ]]
 }
 
 @test "ci_fix source requires a positive ci_run_id before publication" {

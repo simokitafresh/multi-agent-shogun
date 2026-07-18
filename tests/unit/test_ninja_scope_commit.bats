@@ -100,6 +100,31 @@ YAML
     [ -f "$REPO/tests/test_transient.bats" ]
 }
 
+@test "実CLI scopeの未計画新testを分類しpath宣言1件は別testを永続化しない" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf 'change\n' >> "$REPO/own.txt"
+    printf persistent > "$REPO/tests/test_persistent.bats"
+    printf transient > "$REPO/tests/test_unplanned.bats"
+    cat > "$REPO/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  planned_paths: [own.txt]
+  test_necessity:
+    - path: tests/test_persistent.bats
+      defense_target: persistent scope ownership remains atomic
+      overlap_evidence: no equivalent contract exists
+      overlaps_existing: false
+      fixture_self_reference: false
+      deprecated_mechanism: false
+YAML
+    head="$(git -C "$REPO" rev-parse HEAD)"
+    printf 'status: complete\npass: true\nfail: 0\nskip: 0\ntest_paths: [tests/test_unplanned.bats]\nsource_head: %s\n' "$head" > "$REPO/receipt.yaml"
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m actual-scope -- own.txt tests/test_persistent.bats tests/test_unplanned.bats' _ "$REPO" "$HELPER"
+    [ "$status" -eq 0 ]
+    [ -f "$REPO/tests/test_persistent.bats" ]
+    [ ! -e "$REPO/tests/test_unplanned.bats" ]
+    git -C "$REPO" cat-file -e HEAD:tests/test_persistent.bats
+}
+
 @test "existing test net deletion requires justification and concurrent HEAD drift blocks" {
     mkdir -p "$REPO/tests" "$REPO/queue/tasks"
     printf 'one\ntwo\n' > "$REPO/tests/test_contract.bats"; git -C "$REPO" add tests/test_contract.bats; git -C "$REPO" commit -qm test-base
