@@ -56,7 +56,7 @@ _ntfy_detect_agent_id() {
   fi
   unset _tmux_agent_output _tmux_agent_status
 }
-if [ "${NTFY_SYNC:-0}" = "1" ]; then
+if [ "${NTFY_SYNC:-0}" = "1" ] || [ "${_NTFY_ASYNC_WORKER:-0}" = "1" ]; then
   _ntfy_detect_agent_id
 fi
 
@@ -246,7 +246,7 @@ send_with_retry() {
   return 1
 }
 
-if [ "${NTFY_SYNC:-0}" = "1" ]; then
+if [ "${NTFY_SYNC:-0}" = "1" ] || [ "${_NTFY_ASYNC_WORKER:-0}" = "1" ]; then
   (
     flock -w 30 200 || { echo "ERROR: ntfy throttle lock timeout" >&2; exit 1; }
     send_with_retry "$MSG"
@@ -254,10 +254,11 @@ if [ "${NTFY_SYNC:-0}" = "1" ]; then
   exit $?
 fi
 
-# Default mode: fire-and-forget
-(
-  flock -w 30 200 || { echo "ERROR: ntfy throttle lock timeout" >&2; exit 1; }
-  _ntfy_detect_agent_id
-  send_with_retry "$MSG"
-) 200>"$NTFY_LOCK_FILE" &
+# Default mode: fire-and-forget.  The worker must not inherit the caller's
+# process group: heavy-job admission drains that group after the caller exits.
+# Re-entering this script keeps the synchronous implementation as the single
+# send path; the private marker prevents recursive async dispatch.
+_ntfy_async_stderr="${NTFY_ASYNC_STDERR:-/dev/null}"
+setsid env _NTFY_ASYNC_WORKER=1 "$BASH" "$SCRIPT_DIR/scripts/ntfy.sh" "$MSG" \
+  </dev/null >/dev/null 2>>"$_ntfy_async_stderr" &
 exit 0
