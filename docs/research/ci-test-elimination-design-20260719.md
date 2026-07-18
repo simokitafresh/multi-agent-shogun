@@ -80,3 +80,31 @@ P2の `1105s中必要158s、改善可能872s=78.9%` と、本案の総wall上限
 
 次工程は、(1) Actions artifactから30日case failure ledgerを作る、(2) contract→test逆引き台帳を機械生成する、(3) 487境界+affectedを固定SHAで3回測りp95≤180s・SKIP0・防御空白0を確認する、の順。これが揃うまでworkflow/test file/test caseの削除は実施しない。
 
+## §9 軍師FAIL後の30日FAIL帰属全走査
+
+取得範囲をActions run一覧で止めず、GitHub failed log 70/70、local receipt JSON 110/110、local output 110/110、30日test/workflow関連commit 1,203件へ拡張した。file別正本は `docs/research/ci-test-failure-attribution-20260719.csv`（365 files、SHA-256 `fc15fd7ecd8c78380c21c8cd1e1b7f927ebb5ead7db2821c42c5e1dcd20cb7bf`）。
+
+| 帰属集合 | files | cases | 扱い |
+|---|---:|---:|---|
+| GitHub/local failed logにfile名帰属 | 26 | inventoryで逆引き | 維持またはnightly。削除不可 |
+| 30日git変更あり、failed log帰属なし | 306 | inventoryで逆引き | absenceをFAIL0とみなさずnightly |
+| failed log帰属なし、30日git変更なし | 59 | inventoryで逆引き | **追加計測後の削除候補集合** |
+| 即時削除可能 | 0 | 0 | case別実行分母と意味的重複/廃止証明が同時に揃う対象なし |
+
+現行365 filesの完全同一content hash重複は0。廃止語を含み、かつfailed帰属/30日変更がない4 filesを精読したが、`test_cmd_save_q7_branch`はlegacy filenameだけ、`test_cmd_save_memory_ruling`は廃止workflowへの言及禁止契約、`test_lesson_merge`はdeprecation機能そのもの、`test_ntfy_ack`はremoved auto-ACKの非回帰境界だった。4/4とも廃止済みfixtureではなく現役防御で、即時削除集合へ入れない。
+
+取得不能理由は、TAPが複数fileを連結しcase identityにsource fileを保持しないこと、Actions failed logは失敗したfile/caseしか列挙せず成功実行の分母をcase別30日台帳にしないこと、過去commitは変更事実であり実行成否ではないこと。このため59 filesは「FAIL0」ではなく「失敗帰属なし・変更なし」に限定する。
+
+実装推薦は二段階。(1) 即時にpush487 + affected、nightly残りを実装して大幅wall削減。(2) 59 filesをnightlyで30日連続実行し、case identity/source file/result/source SHAをappend-only ledgerへ保存。30日FAIL0かつcontract逆引き重複または廃止済み証明が成立したものだけ物理削除する。これにより目的の大幅淘汰へ進みつつ、absenceをFAIL0へ偽変換しない。
+
+## §10 AC evidence mapping
+
+| AC | 証拠 | 二値結果 |
+|---|---|---|
+| AC1 | timing run `20260718T164341.1019233`: 365 files / 4,922 cases、inventory 4,922/4,922 | yes |
+| AC2 | case inventory 12属性、file attribution 365行、GitHub logs 70/70 + local receipt/output 110/110 + commits 1,203 | yes |
+| AC3 | push487/nightly4,435/delete0、即時削除0・追加計測59 filesを分離 | yes |
+| AC4 | §4 push/nightly/release trigger・timeout・artifact・FAIL導線、push120-170s | yes |
+| AC5 | §5 case -90.1%、wall -79.2〜-85.3%、P2 78.9%との差0.3pt | yes |
+| AC6 | §6 防御5/5、fallback5/5、空白0。帰属不能は削除せず59 files追加計測集合 | yes |
+| AC7 | bulletin `blt_20260719_014828_534be0`、コード/workflow/test削除0 | yes |
