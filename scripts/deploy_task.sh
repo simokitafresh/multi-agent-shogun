@@ -401,6 +401,26 @@ deploy_task_check_deadline() {
     return 0
 }
 
+# Emit one machine-readable timing record for every task-mutation subphase.
+# Keep this in bash so profiling the control plane does not add another Python
+# process to the path being measured.
+deploy_task_mutation_phase() {
+    local phase="$1"
+    shift
+    local started_us finished_us wall_ms rc report_scans_before report_scans_after
+    started_us="${EPOCHREALTIME/./}"
+    started_us="${started_us:0:16}"
+    report_scans_before="${DEPLOY_TASK_REPORT_SCAN_COUNT:-0}"
+    "$@"
+    rc=$?
+    finished_us="${EPOCHREALTIME/./}"
+    finished_us="${finished_us:0:16}"
+    wall_ms=$(((finished_us - started_us + 999) / 1000))
+    report_scans_after="${DEPLOY_TASK_REPORT_SCAN_COUNT:-0}"
+    log "TASK_MUTATION_PHASE phase=${phase} wall_ms=${wall_ms} rc=${rc} subprocesses=0 report_scans=$((report_scans_after - report_scans_before))"
+    return "$rc"
+}
+
 deploy_task_has_completed_peer_report() {
     local parent_cmd="$1"
     local ninja_name="$2"
@@ -3220,10 +3240,24 @@ generate_report_template() {
     # 同一parent_cmd分は他忍者の完了報告を誤archiveしないために必要。
     declare -A _rpt_verdict _rpt_pcmd
     local _gawk_output _scan_report _report_scan_files=()
-    for _scan_report in "$SCRIPT_DIR/queue/reports/${ninja_name}_report_"*.yaml; do
-        [ -f "$_scan_report" ] || continue
-        _report_scan_files+=("$_scan_report")
-    done
+    local _active_report_index="$SCRIPT_DIR/queue/reports/.deploy_active_${ninja_name}"
+    local _indexed_report=""
+    if [ -f "$_active_report_index" ]; then
+        IFS= read -r _indexed_report < "$_active_report_index" || true
+        case "$_indexed_report" in
+            queue/reports/${ninja_name}_report_*.yaml)
+                _indexed_report="$SCRIPT_DIR/$_indexed_report"
+                [ -f "$_indexed_report" ] && _report_scan_files+=("$_indexed_report")
+                ;;
+        esac
+    else
+        # One-time migration for installations created before the pointer.
+        # Subsequent deploys inspect only the prior active generation.
+        for _scan_report in "$SCRIPT_DIR/queue/reports/${ninja_name}_report_"*.yaml; do
+            [ -f "$_scan_report" ] || continue
+            _report_scan_files+=("$_scan_report")
+        done
+    fi
     if [[ -n "$_p_parent_cmd" && "$_p_parent_cmd" == cmd_* ]]; then
         for _scan_report in "$SCRIPT_DIR/queue/reports/"*"_report_${_p_parent_cmd}.yaml"; do
             [ -f "$_scan_report" ] || continue
@@ -3234,6 +3268,7 @@ generate_report_template() {
         done
     fi
     if [ "${#_report_scan_files[@]}" -gt 0 ]; then
+        DEPLOY_TASK_REPORT_SCAN_COUNT=$(( ${DEPLOY_TASK_REPORT_SCAN_COUNT:-0} + ${#_report_scan_files[@]} ))
         _gawk_output=$(gawk '
         BEGINFILE { pcmd=""; verd="" }
         /^parent_cmd:/ { sub(/^parent_cmd:[[:space:]]*/, ""); sub(/^["'"'"']/, ""); sub(/["'"'"']$/, ""); sub(/[[:space:]]*$/, ""); pcmd=$0 }
@@ -3322,6 +3357,8 @@ generate_report_template() {
         fi
         ensure_report_template_completeness "$report_file" "$task_file"
         yaml_field_set "$task_file" "task" "report_path" "$report_rel_path"
+        printf '%s\n' "$report_rel_path" > "${_active_report_index}.tmp"
+        mv "${_active_report_index}.tmp" "$_active_report_index"
         log "report_path: set (${report_rel_path})"
         return 0
     fi
@@ -4379,6 +4416,8 @@ RECON_EOF
     fi
 
     yaml_field_set "$task_file" "task" "report_path" "$report_rel_path"
+    printf '%s\n' "$report_rel_path" > "${_active_report_index}.tmp"
+    mv "${_active_report_index}.tmp" "$_active_report_index"
     log "report_path: set (${report_rel_path})"
     log "report_template: generated (${report_file})"
 }
@@ -10205,8 +10244,9 @@ deploy_task_apply_task_mutations() {
         task_status="assigned"
     fi
 
-    check_entrance_gate "$task_file"
-    check_scout_gate "$task_file"
+    DEPLOY_TASK_REPORT_SCAN_COUNT=0
+    deploy_task_mutation_phase entrance_gates check_entrance_gate "$task_file" || return $?
+    deploy_task_mutation_phase scout_gate check_scout_gate "$task_file" || return $?
 
     inject_task_id "$task_file" || true
     infer_ac_assigned_from_chunk_task_id "$task_file" || true
@@ -10255,7 +10295,7 @@ deploy_task_apply_task_mutations() {
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" = "1" ]; then
         log "direct_mode: preinjected task YAML detected; skipping heavy context/lesson/semantic reinjection"
     else
-        inject_task_modifiers "$task_file" || true
+        deploy_task_mutation_phase task_modifiers inject_task_modifiers "$task_file" || true
         inject_session_state_hints "$task_file" || true  # GP-198
         inject_codd_failure_history "$task_file" || true  # GP-201
         inject_engineering_preferences "$task_file" || true
@@ -10263,12 +10303,12 @@ deploy_task_apply_task_mutations() {
 
         # related_lessons+description注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
         # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
-        inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons" "$task_file" "$ninja_name"
+        deploy_task_mutation_phase related_lessons inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons" "$task_file" "$ninja_name"
         inject_workaround_pattern_lessons "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_workaround_pattern_lessons" "$task_file" "$ninja_name"
         inject_standard_skills "$task_file" || true  # Level5: 全taskに常時使用スキルを明示(cmd_2737)
         inject_model_injection_profile "$task_file" "$ninja_name" || true  # cmd_3727: モデル階層別注入強度
-        inject_semantic_concepts "$task_file" || true  # Level5: 全忍者にセマンティクス概念+ファイル自動提供
-        inject_memory_db_context "$task_file" || true  # Level5: 三層記憶先行知識注入(殿厳命2026-06-10)
+        deploy_task_mutation_phase semantic_context inject_semantic_concepts "$task_file" || true  # Level5
+        deploy_task_mutation_phase memory_context inject_memory_db_context "$task_file" || true  # Level5
         inject_causal_links "$task_file" || true      # Level5: 全忍者にcmd origin因果リンクを自動提供(cmd_2822)
         inject_causal_verification_template "$task_file" || true  # Level5: infra変更前の因果確認をCLI非依存で注入
         inject_dm_signal_pf_operation_guardrails "$task_file" || true  # Level5: PF削除/復元/rollback前提知識を自動注入(cmd_3786)
@@ -10349,10 +10389,11 @@ deploy_task_apply_task_mutations() {
     if [ -z "${task_id:-}" ]; then
         task_id="${_ac_task_id:-}"
     fi
-    generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project"
+    deploy_task_mutation_phase report_publication generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project" || return $?
     inject_parent_contract "$task_file" "$SCRIPT_DIR/queue/reports/${report_filename:-}" "$ninja_name" \
         || { log "FATAL: parent contract injection failed"; return 1; }
     inject_done_redeploy_hints "$task_file" || true
+    log "TASK_MUTATION_SUMMARY report_scans=${DEPLOY_TASK_REPORT_SCAN_COUNT:-0}"
 }
 
 # ═══════════════════════════════════════
