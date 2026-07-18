@@ -74,6 +74,7 @@ signal_name=""
 
 write_receipt() {
     local rc="$1" complete="$2" signal_value="$3"
+    shift 3
     local ended_ms duration observed skips plan result sha receipt_tmp
     ended_ms="$(date +%s%3N)"
     duration=$((ended_ms - started_ms))

@@ -495,7 +495,8 @@ _run_tests_main() {
 }
 
 if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
-    if [[ "${RUN_TESTS_RECEIPT_INNER:-0}" == "1" ]]; then
+    if [[ "${1:-}" == "--receipt-inner" ]]; then
+        shift
         _run_tests_main "$@"
     else
         _receipt_dir="${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}"
@@ -505,7 +506,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         set +e
         BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
             --summary-only --receipt "$_receipt" -- \
-            env RUN_TESTS_RECEIPT_INNER=1 BATS_TAP_OUTPUT="$_tap" bash "${BASH_SOURCE[0]}" "$@"
+            env BATS_TAP_OUTPUT="$_tap" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
         _rc=$?
         set -e
         if ! bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null; then
