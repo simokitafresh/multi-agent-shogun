@@ -1,7 +1,7 @@
 # CoDD (Coherence-Driven Development) 索引
 
-<!-- last_updated: 2026-07-19 cmd_karo_hotfix_ga299_context_source_boundary_202607190158 -->
-<!-- source_commit:81b1ea6d94774e4c49ad4715c1f32e5f1789665c reason:ga299-reviewed-exact-boundary evidence:post-ga288-codd-source-classified -->
+<!-- last_updated: 2026-07-19 cmd_karo_hotfix_ga300_context_freshness_sources_202607190222 -->
+<!-- source_commit:ff52b26b30071724509f1eb6a54b5ac5b3fd73c2 reason:ga300-reviewed-exact-boundary evidence:codd-refactor-run-tests-contract-rechecked -->
 <!-- staleness_triggers: codd --version変更時, GP-199/201実装時, /codd-refactorスキル更新時 -->
 <!-- verify: ローカル版数/公開repo観測版数/§4 GP-198/200/201記述が最新か -->
 
@@ -89,6 +89,8 @@
 | 同一commit反映の鮮度判定 | source pathだけをgit log対象にしていた | sourceと本索引が同一commitなら反映済みとして除外し、次の未反映source変更だけをALERTする |
 
 GA-299再分類: `81b1ea6d9` は `codd-refactor` の参照済みテスト契約注記のみで、CoDDのCLI・操作体系・副作用に実内容変更なし。
+
+GA-300再分類: `ff52b26b3` は `run_tests.sh` の参照鮮度再検分（境界後の対象commit 0件）だけで、CoDDのCLI・操作体系・副作用に実内容変更なし。
 
 ## §3 核心原理 (記事#1-#5)
 
