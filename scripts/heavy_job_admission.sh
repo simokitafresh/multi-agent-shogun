@@ -37,6 +37,7 @@ TIMEOUT="${SHOGUN_HEAVY_JOB_ADMISSION_TIMEOUT:-3600}"
 # Drain therefore means "a non-zombie member remains", not merely kill -0.
 # This does not signal unrelated processes or broaden cleanup scope.
 DRAIN_TIMEOUT="${SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT:-10}"
+DRAIN_MEMBER_LIMIT="${SHOGUN_HEAVY_JOB_DRAIN_MEMBER_LIMIT:-20}"
 
 process_group_has_live_member() {
     local target_pgid="$1"
@@ -54,6 +55,24 @@ process_group_has_live_member() {
         [[ "$member_stat" == Z* ]] || return 0
     done <<< "$snapshot"
     return 1
+}
+
+report_live_process_group_members() {
+    local target_pgid="$1"
+    local snapshot
+
+    # Keep timeout diagnostics bounded and non-sensitive.  In particular, do
+    # not expose argv, environment, or cwd; comm is the executable basename.
+    if ! snapshot="$(SHOGUN_HEAVY_JOB_DRAIN_PGID="$target_pgid" ps -e -o pid=,ppid=,pgid=,stat=,etimes=,comm=)"; then
+        echo "DRAIN_MEMBER_UNAVAILABLE pgid=${target_pgid} reason=ps_failed" >&2
+        return 0
+    fi
+    awk -v target="$target_pgid" -v limit="$DRAIN_MEMBER_LIMIT" '
+        $3 == target && $4 !~ /^Z/ && emitted < limit {
+            printf "DRAIN_MEMBER pid=%s ppid=%s pgid=%s stat=%s elapsed=%s comm=%s\n", $1, $2, $3, $4, $5, $6
+            emitted++
+        }
+    ' <<< "$snapshot" >&2
 }
 
 if [[ "${1:-}" == "--" ]]; then
@@ -98,6 +117,7 @@ drain_started=$SECONDS
 while process_group_has_live_member "$leader_pid"; do
     if (( SECONDS - drain_started >= DRAIN_TIMEOUT )); then
         echo "BLOCK: heavy job process group -${leader_pid} did not drain within ${DRAIN_TIMEOUT}s" >&2
+        report_live_process_group_members "$leader_pid"
         exit 124
     fi
     sleep 0.05
