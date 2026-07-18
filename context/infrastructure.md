@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-17 cmd_karo_hotfix_context_freshness_ga281_202607170612 -->
-<!-- source_commit:0fd87ed81ee3105cb9f4f5ce75f7024ba58884ba reason:skill-script-refs-revalidated evidence:skill-ref-gate-8-to-0 -->
+<!-- last_updated: 2026-07-19 cmd_karo_gate_fix_ga295_context_freshness_trigger_202607190044 -->
+<!-- source_commit:f713cf32984c602425ebaaced5a4b3b5289761cc reason:ga295-reflection-classified evidence:stale3-to0-adversarial-fixtures55-skip0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -16,6 +16,7 @@
 daemon watchdogは個別health checkに加え、`inbox_watcher.sh>=9`・`ninja_monitor.sh`・`ntfy_listener.sh`・`usage_statusbar_loop.sh`・`gist_sync.sh`のprocess inventoryを1 snapshotで監査し、不足classごとにWARNする。消滅PIDの`/proc/<pid>/cmdline` raceは無音で扱い、inbox unread countは読取異常時も単一整数へ正規化する。P0は本番実走error 0で完了。次段は副作用のある`restart_watchers --status`修正(P1a-1)と全daemon共通maintenance lock(P1a-2)を分離し、既存watchdogの600秒/3回throttleと重複するbackoffは追加しない。→ `scripts/daemon_watchdog.sh` / `tests/unit/test_daemon_watchdog.bats` / `docs/research/daemon-inventory-asis-tobe-5w1h_20260715.md`（cmd_3951、commit `4bf8858c0`、R2最終inventory v1.3 `2afc5d9a1`）
 
 context freshnessの`source_commit`境界はinfra root fallbackにも適用する。境界後commitは、context自身を変更した・lesson-only・本文がhash/cmd IDを明示した場合だけ反映済みと分類し、それ以外は日付をbumpしてもALERTへ残す。ALERTには直近3件のhash・subjectを同梱する。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124、GA-264、GA-295）
+CI fixtureの直近契約は、campaign aggregate再入をBLOCKし、campaign fixture契約を同期し、receipt checkpoint rootをactive boundaryへ隔離する。→ `b3a8be4a4` / `d6a3cc8ca` / `f713cf329`（cmd_karo_ci_fix_29649090790_campaign_reentry_202607190011、cmd_karo_ci_fix_29649090790_campaign_contract_sync_202607190026、cmd_karo_ci_fix_29649090790_receipt_active_boundary_202607190044）
 
 cmd完了時のown-commit freshness判定は、未反映commitをBLOCKする前に`CONTEXT_UPDATE_CANDIDATE project=<id> context=<path> source_commit=<hash> reason=own_reviewed_commit`を機械可読出力し、更新対象を自動供給する。承認済み変更がtest-onlyの場合だけ`CONTEXT_NON_REFLECTION_BOUNDARY ... reason=test_only`を出して正当な非反映境界を保持する。→ `scripts/cmd_complete_gate.sh` / `tests/unit/test_cmd_complete_gate_context_freshness_block.bats`（GA-285）
 

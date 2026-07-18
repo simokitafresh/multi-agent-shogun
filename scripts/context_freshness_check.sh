@@ -679,6 +679,35 @@ def is_root_fallback_source_path(path: str) -> bool:
     return True
 
 
+LESSON_ONLY_SOURCE_PATHS = {"tasks/lessons.md"}
+CMD_ID_RE = re.compile(r"\bcmd_[A-Za-z0-9_]+\b")
+
+
+def commit_is_reflected_or_lesson_only(
+    rel_path: str, commit_hash: str, subject: str, changed_paths: list[str]
+) -> bool:
+    """Exclude only commits carrying machine-checkable reflection evidence.
+
+    A context-writing commit is reflected by definition.  A lesson-only commit
+    is consumed by lesson_write's indexed context route and must not make the
+    implementation freshness lane noisy.  Every other commit stays stale unless
+    the context body names its hash or cmd id; dates and subjects alone are not
+    accepted as proof.
+    """
+    normalized = {path.strip().lstrip("./") for path in changed_paths if path.strip()}
+    if rel_path in normalized:
+        return True
+    relevant = {path for path in normalized if is_root_fallback_source_path(path)}
+    if relevant and relevant <= LESSON_ONLY_SOURCE_PATHS:
+        return True
+    try:
+        text = open(os.path.join(root, rel_path), encoding="utf-8", errors="ignore").read()
+    except OSError:
+        return False
+    tokens = {commit_hash, *CMD_ID_RE.findall(subject)}
+    return any(token and token in text for token in tokens)
+
+
 def _root_fallback_commit_count_since(
     updated_at: date, source_commit: str | None = None
 ) -> tuple[int, list[str]]:
@@ -698,7 +727,9 @@ def _root_fallback_commit_count_since(
             for path in changed_paths
             if is_root_fallback_source_path(path)
         ]
-        if source_paths:
+        if source_paths and not commit_is_reflected_or_lesson_only(
+            "context/infrastructure.md", current_hash, subject, changed_paths
+        ):
             count += 1
             if len(details) < 3:
                 details.append(f"{current_hash} {subject}".strip())
@@ -1057,6 +1088,10 @@ def _compute_direct_group(
                 continue
             if not no_filter and not _commit_touches_relevant_path(
                 changed_paths, plain_pathspecs, cited_dirs, cited_files
+            ):
+                continue
+            if commit_is_reflected_or_lesson_only(
+                rel_path, commit_hash, subject, changed_paths
             ):
                 continue
             count += 1

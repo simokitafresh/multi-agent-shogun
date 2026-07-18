@@ -911,6 +911,32 @@ PROJ
     [[ "$output" == *"latest: ${second_sha} fix: second infra source change"* ]]
 }
 
+@test "GA-295 reflected, lesson-only, stale, and missing-source fixtures stay exact" {
+    _create_context "context/infrastructure.md" "$TODAY"
+    _create_source_commit "scripts/reflected.sh" "cmd_995_reflected: implementation"
+    local boundary
+    boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    sed -i "1s/ -->/ source_commit:${boundary} -->/" "$TEST_TMPDIR/context/infrastructure.md"
+
+    _create_source_commit "tasks/lessons.md" "cmd_995_lesson: lesson only"
+    _create_source_commit "scripts/already_indexed.sh" "cmd_995_indexed: implementation"
+    printf '\n- reflected proof: cmd_995_indexed\n' >> "$TEST_TMPDIR/context/infrastructure.md"
+    _create_source_commit "scripts/stale.sh" "cmd_995_stale: implementation"
+    _create_shogun_to_karo "cmd_995" "infra"
+
+    run bash "$TEST_SCRIPT" --cmd-warnings cmd_995
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"source commits 1件"* ]]
+    [[ "$output" == *"cmd_995_stale: implementation"* ]]
+    [[ "$output" != *"cmd_995_lesson"* ]]
+    [[ "$output" != *"cmd_995_indexed"* ]]
+
+    sed -i '1s/ source_commit:[0-9a-f]*//' "$TEST_TMPDIR/context/infrastructure.md"
+    CFC_REQUIRE_SOURCE_COMMIT=1 run bash "$TEST_SCRIPT" --cmd-warnings cmd_995
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MISSING_SOURCE_COMMIT"* ]]
+}
+
 @test "infra scoped contexts do not share root fallback counts" {
     _create_context "context/codd.md" "$STALE_DATE"
     _create_context "context/obsidian-link-principles.md" "$STALE_DATE"
