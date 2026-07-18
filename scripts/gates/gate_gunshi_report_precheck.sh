@@ -47,7 +47,7 @@ eval "$(python3 "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py"
 if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE35" ]; then
     echo ""
     echo "■ SG-PRE35: 新規テスト必要性契約"
-    DEPLOY_TASK_LIB_ONLY=1 bash -c 'source "$1/scripts/deploy_task.sh"; deploy_task_test_necessity_precheck "$2"' _ "$REPO_ROOT" "${TASK_FILE:-/nonexistent}"
+    DEPLOY_TASK_LIB_ONLY=1 bash -c 'source "$1/scripts/deploy_task.sh"; deploy_task_test_necessity_precheck "$2" "$3"' _ "$REPO_ROOT" "${TASK_FILE:-/nonexistent}" "$REPORT_PATH"
     exit $?
 fi
 
@@ -262,7 +262,7 @@ fi
 # ─── SG-PRE35: new-test necessity contract ───
 echo ""
 echo "■ SG-PRE35: 新規テスト必要性契約"
-if DEPLOY_TASK_LIB_ONLY=1 bash -c 'source "$1/scripts/deploy_task.sh"; deploy_task_test_necessity_precheck "$2"' _ "$REPO_ROOT" "${TASK_FILE:-/nonexistent}"; then
+if DEPLOY_TASK_LIB_ONLY=1 bash -c 'source "$1/scripts/deploy_task.sh"; deploy_task_test_necessity_precheck "$2" "$3"' _ "$REPO_ROOT" "${TASK_FILE:-/nonexistent}" "$REPORT_PATH"; then
     echo "  PASS: 新規testは必要性契約済み、または既存test変更/テストなし"
 else
     echo "  ERROR: taskの新規test必要性契約が未解消"

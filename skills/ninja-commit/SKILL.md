@@ -84,6 +84,10 @@ receiptには検証時の40桁`source_head`を必須記録する。helperは任�
 receipt（またはtaskの配備HEAD証跡）から検証基点を導出し、commit開始時HEADまでに
 別commit由来のtest変更/削除があれば自動BLOCKする。HEAD証跡欠落時は削除しない。
 production-onlyの並行commitはtest証拠を無効化しないため許可する。
+分類対象の正本はtaskの`planned_paths`ではなくhelperへ渡した実CLI scopeである。
+複数の新規testを永続化する場合、`test_necessity`をpath付きentryのlistとし、各pathに
+具体的不変量・overlap evidence・fixture/deprecated判定を個別宣言する。未宣言pathは
+別pathの宣言を流用せずtransientとして扱い、報告の`transient_tests_deleted`へ記録する。
 
 helperは指定pathだけをaddし、`git commit --only -- <paths>`でcommitする。共有indexにある他者stageは変更もcommitもしない。空scope・存在しないpathはBLOCKし、pre-commit hookは通常どおり実行する。
 

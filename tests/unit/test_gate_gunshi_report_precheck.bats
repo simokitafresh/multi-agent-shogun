@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# test_necessity: 軍師precheckは報告のbinary contract欠落と不正な完了判定をレビュー前にBLOCKする。
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -77,7 +78,7 @@ YAML
   printf 'task:\n  planned_paths: [tests/unit/test_never_existing_contract.bats]\n' > "$task"
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"test_lifecycle=transient"* ]]
+  [[ "$output" == *"transient=tests/unit/test_never_existing_contract.bats"* ]]
 
   cat > "$task" <<'YAML'
 task:
@@ -91,7 +92,7 @@ task:
 YAML
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"test_lifecycle=persistent test_necessity"* ]]
+  [[ "$output" == *"persistent=tests/unit/test_never_existing_contract.bats"* ]]
 
   printf 'task:\n  planned_paths: [tests/unit/test_gate_gunshi_report_precheck.bats]\n' > "$task"
   run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
@@ -110,6 +111,38 @@ YAML
     printf 'task:\n  planned_paths: [%s]\n' "$path" > "$task"
     run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"test_lifecycle=transient"* ]]
+    [[ "$output" == *"transient=$path"* ]]
   done
+}
+
+@test "SG-PRE35 uses report actual scope and requires path declarations or transient deletion evidence" {
+  gate="$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh"
+  task="$TMP_DIR/tasks/kagemaru.yaml"
+  cat > "$task" <<'YAML'
+task:
+  planned_paths: [scripts/only_planned.sh]
+  test_necessity:
+    - path: tests/unit/test_actual_persistent.bats
+      defense_target: actual persistent boundary remains enforced
+      overlap_evidence: no equivalent assertion in the current suite
+      overlaps_existing: false
+      fixture_self_reference: false
+      deprecated_mechanism: false
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+files_modified:
+  - {path: tests/unit/test_actual_persistent.bats, change: contract}
+  - {path: tests/unit/test_actual_transient.bats, change: proof}
+transient_tests_deleted: [tests/unit/test_actual_transient.bats]
+YAML
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"persistent=tests/unit/test_actual_persistent.bats"* ]]
+  [[ "$output" == *"transient=tests/unit/test_actual_transient.bats"* ]]
+  sed -i '/transient_tests_deleted:/d' "$TMP_DIR/report.yaml"
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE35 GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"omits transient deletion evidence"* ]]
 }
