@@ -134,6 +134,80 @@ existing lifecycle SSOT: `docs/research/infra-throughput-mece-20260717.md`
 - `queue/reports/kagemaru_report_cmd_karo_hotfix_prompt_event_identity_replay_202607181120.yaml`
 - `queue/reports/hanzo_report_cmd_karo_hotfix_deploy_305s_control_plane_202607181110.yaml`
 
+## 8. B1 deploy wall同一cohort E2E再計測契約
+
+B0のN=20をそのままbeforeと呼ばない。B1前後を同一queryで再抽出し、仕事量同一性とsource timestampを先に固定してから速度を比較する。正本の目的関数・wave手順は `docs/research/throughput-mece-design-20260718.md` §8-9、本節はその再現可能な比較契約である。
+
+### 8.1 固定field集合とevent identity
+
+1行を1 deploy transactionとし、以下を欠く行はcohortへ入れず `invalid_schema` へ数える。
+
+| field | 固定規則 |
+|---|---|
+| `event_id` | `deploy_receipt:<cmd_id>:<task_id>:<attempt>`。4要素一致を同一eventとし、重複はFAIL |
+| `source_started_at/source_ended_at` | event開始とreceipt終了のUTC ISO-8601。window判定はstarted_atで統一 |
+| `source_file/source_line_start/source_line_end` | `logs/deploy_task.log` の一次証跡位置 |
+| `git_sha/environment_id` | 実行時SHAと環境。環境は `WSL2:/mnt/c:shogun:2` 固定 |
+| `cmd_id/task_id/task_type` | before/afterで `task_type` 構成比を完全一致 |
+| `phase_set` | `parse_args,task_mutations,delivery,post_verify,post_delivery`。欠落・余分・順序逆転はFAIL |
+| `wall_ms/blocked_agents` | receipt総wallと仕事があり前進不能だったagent数。積をblocked-agent-seconds化 |
+| `terminal_result/quality_result` | 両方PASSかつFAIL/SKIPなしだけを品質合格成果とする |
+
+除外は `warmup=true`、運用者cancel、destructive safety停止、CI REDによるpush保留、`idle_no_work`、window境界跨ぎに限定する。timeout、retry、異常終了、品質FAIL/SKIPは除外せず分母へ残す。外れ値は除去禁止。並行負荷は `concurrency` で層別し、before/afterの `task_type×concurrency` セル件数を完全一致させる。
+
+### 8.2 同一queryと二値判定
+
+抽出器が生成するcanonical TSV（上記fieldに加え `concurrency,fp,fn,skip`）へ、次の同一コマンドをbefore/after各N20以上で実行する。3 timestampは実行前に固定する。
+
+```bash
+COHORT_TSV="artifacts/b1-deploy-wall/cohort.tsv"
+BEFORE_START="2026-07-18T00:00:00Z"
+CUTOVER="REPLACE_WITH_CI_GREEN_UTC"
+AFTER_END="REPLACE_WITH_AFTER_WINDOW_UTC"
+python3 - "$COHORT_TSV" "$BEFORE_START" "$CUTOVER" "$AFTER_END" <<'PY'
+import csv, datetime as dt, json, math, sys
+path, before_start, cutover, after_end = sys.argv[1:]
+parse = lambda s: dt.datetime.fromisoformat(s.replace("Z", "+00:00"))
+b0, cut, a1 = map(parse, (before_start, cutover, after_end))
+rows = list(csv.DictReader(open(path, newline=""), delimiter="\t"))
+required = {"event_id","source_started_at","source_ended_at","source_file","source_line_start","source_line_end","git_sha","environment_id","cmd_id","task_id","task_type","phase_set","wall_ms","blocked_agents","concurrency","terminal_result","quality_result","fp","fn","skip"}
+assert rows and required <= set(rows[0]), f"missing fields: {sorted(required-set(rows[0]))}"
+assert len({r["event_id"] for r in rows}) == len(rows), "duplicate event_id"
+expected = "parse_args,task_mutations,delivery,post_verify,post_delivery"
+for r in rows:
+    assert r["phase_set"] == expected, f"phase_set mismatch: {r['event_id']}"
+    t, e = parse(r["source_started_at"]), parse(r["source_ended_at"])
+    assert t < e and r["environment_id"] == "WSL2:/mnt/c:shogun:2"
+    r["window"] = "before" if b0 <= t < cut else "after" if cut <= t < a1 else "out"
+cohorts = {w:[r for r in rows if r["window"] == w] for w in ("before","after")}
+assert all(len(v) >= 20 for v in cohorts.values()), {k:len(v) for k,v in cohorts.items()}
+cells = lambda rs: sorted((r["task_type"], r["concurrency"]) for r in rs)
+assert cells(cohorts["before"]) == cells(cohorts["after"]), "mixed workload cells"
+def pct(xs,p):
+    xs=sorted(xs); return xs[math.ceil(p*len(xs))-1]
+def summarize(rs):
+    wall=[int(r["wall_ms"])/1000 for r in rs]
+    good=sum(r["terminal_result"] == r["quality_result"] == "PASS" and int(r["skip"]) == 0 for r in rs)
+    hours=(max(parse(r["source_ended_at"]) for r in rs)-min(parse(r["source_started_at"]) for r in rs)).total_seconds()/3600
+    return {"n":len(rs),"p50_s":pct(wall,.50),"p95_s":pct(wall,.95),"blocked_agent_seconds":sum(int(r["wall_ms"])*int(r["blocked_agents"])/1000 for r in rs),"quality_pass_per_hour":good/hours,"fail":sum(r["terminal_result"]!="PASS" or r["quality_result"]!="PASS" for r in rs),"skip":sum(int(r["skip"]) for r in rs),"fp":sum(int(r["fp"]) for r in rs),"fn":sum(int(r["fn"]) for r in rs)}
+out={w:summarize(rs) for w,rs in cohorts.items()}
+out["pass"]=(out["after"]["p95_s"] <= .8*out["before"]["p95_s"] and out["after"]["blocked_agent_seconds"] <= .8*out["before"]["blocked_agent_seconds"] and out["after"]["quality_pass_per_hour"] >= 1.2*out["before"]["quality_pass_per_hour"] and all(out[w][k] == 0 for w in ("before","after") for k in ("fail","skip","fp","fn")))
+print(json.dumps(out,ensure_ascii=False,sort_keys=True))
+raise SystemExit(0 if out["pass"] else 1)
+PY
+```
+
+出力はbefore/after各 `N,p50,p95,blocked-agent-seconds,品質合格成果/時,FAIL,SKIP,FP,FN`。PASS条件はp95とblocked-agent-secondsが各20%以上減、品質合格成果/時1.20倍以上、FAIL/SKIP/FP/FN全0のANDである。
+
+### 8.3 fail-closed順序
+
+1. required CI GREENのUTCを `CUTOVER` として固定し、B1 SHA・log inode/size・query SHA256を記録する。
+2. beforeを同じ抽出器で再生成し、N>=20、identity重複0、schema不正0、phase不一致0を確認する。
+3. after N>=20まで通常業務を継続する。専用配備で件数を作らない。
+4. cohort不足、SHA/window混在、外れ値除去、`task_type×concurrency` 不一致は即FAIL。少ない側の無作為抽出は禁止し、同一セルの自然蓄積を待つ。
+5. GREEN後に上記コマンドを実行し、PASS時だけ正本§9へbefore/after/deltaを昇格する。
+
+
 ## 因果リンク
 
 - `[[L901_6重配備]] -> [[非原子reservation]] -> [[atomic_promotion_reservation]]`
