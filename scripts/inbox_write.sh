@@ -621,6 +621,17 @@ inbox_extract_parent_cmd_from_report() {
     inbox_yaml_field_get "$report_path" "parent_cmd" ""
 }
 
+inbox_resolve_report_identity() {
+    local report_path="$1" task_path="${2:-}"
+    local helper="$SCRIPT_DIR/scripts/lib/report_unique_identity.py"
+    [ -f "$report_path" ] || return 1
+    if [ -n "$task_path" ] && [ -f "$task_path" ]; then
+        python3 "$helper" verify --path "$report_path" --task "$task_path" --root "$SCRIPT_DIR"
+    else
+        python3 "$helper" resolve --path "$report_path" --root "$SCRIPT_DIR"
+    fi
+}
+
 inbox_extract_cmd_id_for_completion_guard() {
     local content="$1"
     local cmd_id="" report_path=""
@@ -1863,6 +1874,15 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                 fi
             fi
 
+            if [ -n "${FULL_REPORT:-}" ] && [ -f "$FULL_REPORT" ]; then
+                _REPORT_IDENTITY=$(inbox_resolve_report_identity "$FULL_REPORT" "$TASK_YAML") || exit 1
+                IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
+                STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$TASK_YAML" "task_id" "")
+                STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
+                [ -n "$STRUCTURED_TASK_ID" ] || STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$FULL_REPORT" "task_id" "")
+                [ -n "$STRUCTURED_PARENT_CMD" ] || STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$FULL_REPORT" "parent_cmd" "")
+            fi
+
             if [ -n "$FULL_REPORT" ]; then
                 # archive fallback: FULL_REPORTが見つからない場合→queue/archive/reports/を検索
                 # (archive_completed.shがreportを移動した後にsymlink作成失敗した場合に発生)
@@ -2115,6 +2135,24 @@ if inbox_should_auto_read_completed_notification "$TARGET" "$TYPE" "$CONTENT" "$
     echo "[inbox_write] auto-read completed notification: target=${TARGET} type=${TYPE} cmd=${INBOX_AUTO_READ_COMPLETED_CMD}" >&2
 fi
 
+_identity_fields=()
+case "$TYPE" in
+    report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed)
+        [ -n "${STRUCTURED_REPORT_ID:-}" ] || { echo "BLOCK: report notification missing structured report identity" >&2; exit 1; }
+        _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
+        ;;
+    report_review|report_review_result)
+        _structured_candidate=$(inbox_extract_report_path_from_content "$CONTENT")
+        if [ -n "$_structured_candidate" ] && [ -f "$_structured_candidate" ]; then
+            _REPORT_IDENTITY=$(inbox_resolve_report_identity "$_structured_candidate") || exit 1
+            IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
+            STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$_structured_candidate" "task_id" "")
+            STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$_structured_candidate" "parent_cmd" "")
+            _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
+        fi
+        ;;
+esac
+
 if [ -n "$ACTION" ]; then
     _msg_block="$(inbox_build_message_block \
         action "$ACTION" \
@@ -2123,7 +2161,7 @@ if [ -n "$ACTION" ]; then
         id "$MSG_ID" \
         read "$MESSAGE_READ_STATE" \
         timestamp "$TIMESTAMP" \
-        type "$TYPE")"$'\n'
+        type "$TYPE" "${_identity_fields[@]}")"$'\n'
 else
     _msg_block="$(inbox_build_message_block \
         content "$CONTENT" \
@@ -2131,7 +2169,7 @@ else
         id "$MSG_ID" \
         read "$MESSAGE_READ_STATE" \
         timestamp "$TIMESTAMP" \
-        type "$TYPE")"$'\n'
+        type "$TYPE" "${_identity_fields[@]}")"$'\n'
 fi
 
 while [ $attempt -lt $max_attempts ]; do

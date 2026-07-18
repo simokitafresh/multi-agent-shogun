@@ -32,7 +32,7 @@ setup_file() {
 
     mkdir -p "$GIT_TEMPLATE_DIR/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
     # 選択的コピー: inbox_write.shが使うファイルのみ (NTFS→tmpfs コスト削減)
-    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh; do
+    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py; do
         cp "$PROJECT_ROOT/scripts/lib/$_lib_f" "$GIT_TEMPLATE_DIR/scripts/lib/$_lib_f"
     done
 
@@ -1079,6 +1079,34 @@ YAML
     grep -q "testninja" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 
     [ -f "$TEST_TMPDIR/queue/gates/cmd_test_001/gunshi_report_review_notify_testninja.done" ]
+}
+
+@test "report_received v2 persists structured identity and blocks mismatch" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-v2-fixed
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+report_id: rpt-v2-fixed
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m identity
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    grep -q "report_id: 'rpt-v2-fixed'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "report_identity_version: '2'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "task_id: 'cmd_test_001_normal'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    grep -q "parent_cmd: 'cmd_test_001'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+
+    sed -i 's/rpt-v2-fixed/rpt-reused/' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    run _run_inbox_write karo "別revision" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *mismatched* ]]
 }
 
 @test "report_submitted alias: validates report, auto-sends gunshi review, and marks task done" {

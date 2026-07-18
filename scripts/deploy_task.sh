@@ -3209,6 +3209,10 @@ generate_report_template() {
     fi
     report_rel_path="queue/reports/$(basename "$report_file")"
 
+    # v2 identity is minted once per new deployment generation. Legacy reports
+    # remain read-only and continue through the deterministic fallback path.
+    local report_id="" report_identity_version="2"
+
     mkdir -p "$SCRIPT_DIR/queue/reports"
 
     # GP-084改: gawk BEGINFILE/ENDFILE一括でverdict+parent_cmdを抽出（field_get逐次→一括化）
@@ -3311,11 +3315,20 @@ generate_report_template() {
     # 冪等性: 既存テンプレートがあればスキップ（L060: 上書き防止）
     if [ -f "$report_file" ]; then
         log "report_template: already exists, skipping (${report_file})"
+        report_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "report_id" "" 2>/dev/null || true)
+        if [ -n "$report_id" ]; then
+            yaml_field_set "$task_file" "task" "report_id" "$report_id" || return 1
+            yaml_field_set "$task_file" "task" "report_identity_version" "$report_identity_version" || return 1
+        fi
         ensure_report_template_completeness "$report_file" "$task_file"
         yaml_field_set "$task_file" "task" "report_path" "$report_rel_path"
         log "report_path: set (${report_rel_path})"
         return 0
     fi
+
+    report_id=$(python3 "$SCRIPT_DIR/scripts/lib/report_unique_identity.py" new --path "$report_rel_path" --root "$SCRIPT_DIR") || return 1
+    yaml_field_set "$task_file" "task" "report_id" "$report_id" || return 1
+    yaml_field_set "$task_file" "task" "report_identity_version" "$report_identity_version" || return 1
 
     # タスクYAMLから自動記入値を取得（cmd_532: 機械的フィールド自動記入）
     # cmd_1983: field_get_multiで一括取得済み → 変数参照のみ
@@ -3455,6 +3468,8 @@ EOF
 # 4. PASS確認後: inbox_writeで家老に報告
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 worker_id: ${worker_id}
+report_id: ${report_id}
+report_identity_version: ${report_identity_version}
 task_id: ${resolved_task_id}
 parent_cmd: ${resolved_parent_cmd}
 task_type: ${task_type}
