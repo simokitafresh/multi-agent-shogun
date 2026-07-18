@@ -12,6 +12,31 @@ MIN_ROUNDS=2
 MAX_ROUNDS=3
 CAMPAIGN_BUDGET_SEC=600
 
+test_hygiene_evaluate() {
+    local inventory="${TEST_HYGIENE_INVENTORY:-$ROOT/docs/research/ci-test-elimination-inventory-20260719.csv}"
+    local push_wall="${TEST_HYGIENE_PUSH_WALL_SEC:-0}" new_tests="${TEST_HYGIENE_NEW_TESTS_7D:-0}"
+    [ -r "$inventory" ] || { echo "BLOCK:test_hygiene_inventory_missing" >&2; return 2; }
+    python3 - "$inventory" "$push_wall" "$new_tests" <<'PY'
+import csv, json, sys
+path, wall_raw, new_raw = sys.argv[1:]
+rows = list(csv.DictReader(open(path, encoding="utf-8", newline="")))
+total = len(rows)
+undeclared = [r for r in rows if r.get("classification") != "push-maintain"]
+fail_zero = [r for r in undeclared if r.get("fail_30d") in {"0", "zero", "fail0"}]
+wall = float(wall_raw); new_tests = int(new_raw)
+declaration_rate = (total - len(undeclared)) * 100.0 / total if total else 0.0
+fail_zero_rate = len(fail_zero) * 100.0 / len(undeclared) if undeclared else 0.0
+reasons = []
+if wall > 170: reasons.append("push_wall_gt_170")
+if fail_zero_rate > 20: reasons.append("fail0_ratio_gt_20")
+if new_tests > 50: reasons.append("new_tests_gt_50_per_week")
+if declaration_rate > 30: reasons.append("declaration_rate_gt_30")
+print(json.dumps({"trigger": bool(reasons), "reasons": reasons, "push_wall_sec": wall,
+ "fail_zero_rate": round(fail_zero_rate, 3), "new_tests_7d": new_tests,
+ "declaration_rate": round(declaration_rate, 3), "undeclared_cases": len(undeclared)}, sort_keys=True))
+PY
+}
+
 # PD-132 pause is shared by the script-speed and test-speed lanes.  Only an
 # explicit running state reopens generation/deployment; missing or malformed
 # state is fail-closed so an incomplete recovery cannot create new work.
@@ -249,6 +274,28 @@ case "$command_name" in
 esac
 
 case "$command_name" in
+  hygiene-evaluate) test_hygiene_evaluate ;;
+  hygiene-deploy)
+    ninja="${2:?ninja required}"
+    metrics=$(test_hygiene_evaluate)
+    python3 - "$metrics" <<'PY' | grep -qx true || { echo "NO_CANDIDATE"; exit 1; }
+import json,sys
+print(str(json.loads(sys.argv[1])["trigger"]).lower())
+PY
+    tmp=$(mktemp); trap 'rm -f "$tmp"' EXIT
+    python3 - "$tmp" "$metrics" <<'PY'
+import json,sys
+out,metrics=sys.argv[1:]
+task={"task":{"project":"infra","task_type":"test_hygiene","status":"assigned",
+ "purpose":"Remove undeclared permanent tests selected by measured hygiene thresholds",
+ "hygiene_metrics":json.loads(metrics),"acceptance_criteria":[
+ {"id":"AC1","description":"Every retained test has a concrete test_necessity invariant"},
+ {"id":"AC2","description":"Undeclared tests are removed with contract-test overlap 0 and SKIP 0"}]}}
+with open(out,"w",encoding="utf-8") as f:
+ json.dump(task,f,ensure_ascii=False,sort_keys=True,indent=2); f.write("\n")
+PY
+    bash "$ROOT/scripts/deploy_task.sh" --direct --yaml "$tmp" "$ninja"
+    ;;
   next) next_target ;;
   generate) generate ;;
   deploy)
