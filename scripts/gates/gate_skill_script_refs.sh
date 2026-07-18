@@ -499,8 +499,10 @@ if missing or stale or missing_example_paths or unverified_side_effect_examples:
 print("--- 総合判定: PASS ---")
 PY
 check_code=$?
-set -e
 if [ "$check_code" -ne 75 ]; then
+    # The caller owns errexit.  Re-enabling it here makes a legitimate
+    # REVIEW_REQUIRED/BLOCK return terminate the cache wrapper before it can
+    # publish the captured diagnostics.
     return "$check_code"
 fi
 if [ "$attempt" -ge 1 ]; then
