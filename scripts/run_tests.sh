@@ -54,6 +54,34 @@ sweep_stale_embedded_test_tmp() {
     find "$dir" -maxdepth 1 -type f -name '_tmp_*.bats' -mmin +"$ttl_minutes" -delete 2>/dev/null || true
 }
 
+# A throwaway fixture must never retain a live path back into the checkout.
+# The dangerous shape is an untracked symlink below tests/ whose resolved
+# target is a tracked file in this repository: a test redirection/cp then
+# mutates the source checkout instead of its isolated fixture.  Tracked
+# symlinks are an explicit repository contract (normally read-only), while a
+# regular copy and a broken link cannot write through to a tracked source.
+guard_fixture_symlink_write_through() {
+    local tests_root="$REPO_ROOT/tests" link resolved relative
+    [ -d "$tests_root" ] || return 0
+    while IFS= read -r -d '' link; do
+        # Repository-owned links are intentional, reviewable fixtures.
+        relative="${link#"$REPO_ROOT"/}"
+        git -C "$REPO_ROOT" ls-files --error-unmatch -- "$relative" >/dev/null 2>&1 && continue
+        resolved="$(readlink -f -- "$link" 2>/dev/null || true)"
+        [ -n "$resolved" ] || continue
+        case "$resolved" in
+            "$REPO_ROOT"/*) ;;
+            *) continue ;;
+        esac
+        relative="${resolved#"$REPO_ROOT"/}"
+        if git -C "$REPO_ROOT" ls-files --error-unmatch -- "$relative" >/dev/null 2>&1; then
+            printf 'BLOCK: untracked test fixture symlink resolves to tracked source: %s -> %s\n' \
+                "${link#"$REPO_ROOT"/}" "$relative" >&2
+            return 2
+        fi
+    done < <(find "$tests_root" -type l -print0 2>/dev/null)
+}
+
 bats_source_fingerprint() {
     if [ -n "${BATS_SOURCE_FINGERPRINT:-}" ]; then
         printf '%s\n' "$BATS_SOURCE_FINGERPRINT"
@@ -456,6 +484,7 @@ _run_tests_main() {
         exec bash "$(dirname "$_self")/heavy_job_admission.sh" -- bash "$_self" "$@"
     fi
 
+    guard_fixture_symlink_write_through
     sweep_stale_embedded_test_tmp
 
     case "${1:-all}" in
