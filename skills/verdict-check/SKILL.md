@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T14:08:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_batch_a検分: gate_report_format.sh e7ab41112はPASS report fingerprintをfast/no-log exit前にflock下で保存する内部耐久化。binary_checks全yes/noからのverdict自動導出、未記入BLOCK、report path引数・失敗exit契約は不変。既存未commit注意ポイント2件を保持。 -->
 <!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
 <!-- 2026-07-18検分: gate_report_format.sh 7c2a802eはfingerprint reuse追加。不一致full gate、verdict/未記入BLOCK契約不変。 -->
 <!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
@@ -129,6 +131,9 @@ bash scripts/gates/gate_report_format.sh "$REPORT"
 - **verdict を Edit toolで直接書くな** — 独立フィールドとして扱うほど矛盾の温床になる
 
 ## 注意ポイント
+
+- 2026-07-18: gate=gate_report_format result=FAIL executor=hayate reason=commit_hash: 'no-code-change' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ; status: \"revision_requested\" cannot carry terminal verdict PASS (set status to completed after...
+- 2026-07-18: gate=gate_report_format result=FAIL executor=tobisaru reason=commit_hash: 'no-code-change' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ; commit_hash: 欠落または40文字フルhashでない(binary_checks.commitがyes) — review_approvalの後段BLOCK(review_repor...
 
 - 2026-07-17: gate=gate_report_format result=FAIL executor=kotaro reason=LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須; status: \"revision_requested\" cannot carry terminal verdict PASS (set status to completed after revisions)
 - 2026-07-17: gate=gate_report_format result=FAIL executor=kotaro reason=binary_checks.AC4[1].result: 空文字。\"yes\" または \"no\" を記入せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); LG051: gate/hook/dispatcher変更には非t...

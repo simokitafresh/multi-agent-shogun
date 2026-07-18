@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T14:08:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_batch_a検分: gate_report_format.sh e7ab41112はPASS report fingerprint保存をfast/no-log exit前へ移しflock+atomic replace化。dashboard前検証のpath引数、判定、失敗exit契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
 <!-- 2026-07-18検分: gate_report_format.sh 7c2a802eはfingerprint reuse追加。不一致はfull gate、既存判定契約不変。 -->
 <!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->

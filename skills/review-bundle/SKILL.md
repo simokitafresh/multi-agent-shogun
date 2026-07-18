@@ -1,4 +1,6 @@
 ---
+<!-- script_refs_checked_at: 2026-07-18T14:08:00+09:00 -->
+<!-- 2026-07-18 cmd_karo_hotfix_skill_refs_batch_a検分: inbox_write.sh 3a305a0f5..1b6df4e4cはreport lifecycle通知を世代fingerprint別exactly-once化し、不足review子eventをretryでrepair。review_feedbackの位置引数、review_log後の永続化、副作用順序、失敗exit契約は不変。 -->
 <!-- script_refs_checked_at: 2026-07-18T03:18:00+09:00 -->
 <!-- 2026-07-18 cmd_karo_hotfix_skill_refs_freshness_batch検分: inbox_write.sh 62d7fd208/13fe555edはpending重複抑止とtask_failed専用検証を追加。review_feedback通知の位置引数、review_log後の永続化、副作用順序、失敗出口は不変。 -->
 <!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
