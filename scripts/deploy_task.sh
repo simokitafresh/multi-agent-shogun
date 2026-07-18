@@ -315,6 +315,35 @@ deploy_task_release_lock() {
 DEPLOY_TASK_NINJA_LOCK_FD=""
 DEPLOY_TASK_NINJA_LOCK_FILE=""
 
+# Account for the whole serial deploy wall without spawning a profiler.  Each
+# checkpoint closes the preceding interval; EXIT closes the final interval so
+# the receipt can expose any still-unaccounted overhead explicitly.
+DEPLOY_TASK_WALL_PHASE_LAST_US=""
+DEPLOY_TASK_WALL_PHASE_SUM_MS=0
+DEPLOY_TASK_WALL_PHASE_MAX_MS=0
+DEPLOY_TASK_WALL_PHASE_MAX_NAME="none"
+
+deploy_task_wall_phase_checkpoint() {
+    local phase="$1" now_us wall_ms start_ms end_ms
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    if [ -n "${DEPLOY_TASK_WALL_PHASE_LAST_US:-}" ]; then
+        wall_ms=$(((now_us - DEPLOY_TASK_WALL_PHASE_LAST_US + 999) / 1000))
+        DEPLOY_TASK_WALL_PHASE_SUM_MS=$((DEPLOY_TASK_WALL_PHASE_SUM_MS + wall_ms))
+        if [ "$wall_ms" -gt "${DEPLOY_TASK_WALL_PHASE_MAX_MS:-0}" ]; then
+            DEPLOY_TASK_WALL_PHASE_MAX_MS="$wall_ms"
+            DEPLOY_TASK_WALL_PHASE_MAX_NAME="$phase"
+        fi
+        start_ms=$(((DEPLOY_TASK_WALL_PHASE_LAST_US - DEPLOY_TASK_STARTED_US) / 1000))
+        end_ms=$(((now_us - DEPLOY_TASK_STARTED_US) / 1000))
+        # One append carries both interval and duration contracts.  log() opens
+        # the shared 9P file, so two rows doubled the largest profiler-only
+        # subphase in isolated trials without adding information.
+        log "DEPLOY_WALL_EVENT name=${phase} start_ms=${start_ms} end_ms=${end_ms} DEPLOY_WALL_PHASE phase=${phase} wall_ms=${wall_ms}"
+    fi
+    DEPLOY_TASK_WALL_PHASE_LAST_US="$now_us"
+}
+
 deploy_task_acquire_ninja_lock() {
     local ninja_name="$1"
     local timeout_sec="${DEPLOY_TASK_NINJA_LOCK_TIMEOUT_SEC:-300}"
@@ -363,12 +392,25 @@ deploy_task_guard_worker_assignment() {
 
 deploy_task_exit_cleanup() {
     local exit_status=$?
-    local finished_us wall_ms
+    local finished_us wall_ms residual_ms residual_pct finalize_ms
     if [ -n "${DEPLOY_TASK_STARTED_US:-}" ]; then
+        deploy_task_wall_phase_checkpoint "${DEPLOY_TASK_PHASE:-unknown}"
         finished_us="${EPOCHREALTIME/./}"
         finished_us="${finished_us:0:16}"
+        # The final checkpoint writes its own two telemetry rows. Include that
+        # bounded writer cost in the sum before freezing the receipt wall;
+        # otherwise short isolated runs misleadingly report >10% residual.
+        finalize_ms=$(((finished_us - DEPLOY_TASK_WALL_PHASE_LAST_US + 999) / 1000))
+        DEPLOY_TASK_WALL_PHASE_SUM_MS=$((DEPLOY_TASK_WALL_PHASE_SUM_MS + finalize_ms))
         wall_ms=$(((finished_us - DEPLOY_TASK_STARTED_US + 999) / 1000))
-        log "DEPLOY_RECEIPT result=$([ "$exit_status" -eq 0 ] && echo success || echo blocked) rc=${exit_status} wall_ms=${wall_ms} phase=${DEPLOY_TASK_PHASE:-unknown}"
+        residual_ms=$((wall_ms - DEPLOY_TASK_WALL_PHASE_SUM_MS))
+        [ "$residual_ms" -ge 0 ] || residual_ms=0
+        if [ "$wall_ms" -gt 0 ]; then
+            residual_pct=$((residual_ms * 10000 / wall_ms))
+        else
+            residual_pct=0
+        fi
+        log "DEPLOY_RECEIPT result=$([ "$exit_status" -eq 0 ] && echo success || echo blocked) rc=${exit_status} wall_ms=${wall_ms} phase=${DEPLOY_TASK_PHASE:-unknown} phase_sum_ms=${DEPLOY_TASK_WALL_PHASE_SUM_MS} residual_ms=${residual_ms} residual_bp=${residual_pct} max_phase=${DEPLOY_TASK_WALL_PHASE_MAX_NAME} max_phase_ms=${DEPLOY_TASK_WALL_PHASE_MAX_MS}"
     fi
     if [ -n "${DEPLOY_TASK_ISSUE_ATTEMPT_ID:-}" ] && [ "${DEPLOY_TASK_ISSUE_TERMINAL_RECORDED:-0}" != "1" ]; then
         if [ "${DEPLOY_TASK_DEPLOY_COMPLETED:-0}" = "1" ]; then
@@ -10576,8 +10618,10 @@ deploy_task_main() {
     DEPLOY_TASK_STARTED_US="${EPOCHREALTIME/./}"
     DEPLOY_TASK_STARTED_US="${DEPLOY_TASK_STARTED_US:0:16}"
     DEPLOY_TASK_PHASE=parse_args
+    DEPLOY_TASK_WALL_PHASE_LAST_US="$DEPLOY_TASK_STARTED_US"
     deploy_task_start_deadline
     parse_deploy_task_args "$@"
+    deploy_task_wall_phase_checkpoint parse_args
     DEPLOY_TASK_PHASE=preflight
     deploy_task_check_deadline "after_parse_args" || return $?
     cleanup_none_task_files
@@ -10981,6 +11025,7 @@ except Exception:
     }
 
     DEPLOY_TASK_PHASE=task_mutations
+    deploy_task_wall_phase_checkpoint preflight
     deploy_task_apply_task_mutations "$NINJA_NAME" || {
         DEPLOY_TASK_EXIT_NUDGE_ARMED=0
         DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
@@ -10996,6 +11041,7 @@ except Exception:
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     }
+    deploy_task_wall_phase_checkpoint task_mutations
     deploy_task_check_deadline "after_task_mutations" || return $?
 
     if [ -n "$deploy_lock_fd" ]; then
@@ -11017,6 +11063,7 @@ except Exception:
     deploy_task_check_deadline "after_inbox_write" || return $?
     DEPLOY_TASK_EXIT_NUDGE_SENT=1
     DEPLOY_TASK_EXIT_NUDGE_ARMED=0
+    deploy_task_wall_phase_checkpoint delivery
 
     DEPLOY_TASK_PHASE=post_delivery
     notify_initial_deploy_ntfy_once "$task_yaml" "$NINJA_NAME" || true
@@ -11035,12 +11082,14 @@ except Exception:
     DEPLOY_TASK_DRAFT_REVIEW_SENT=1
     log "${NINJA_NAME}: deployment complete (type=${TYPE})"
     DEPLOY_TASK_DEPLOY_COMPLETED=1
+    deploy_task_wall_phase_checkpoint post_delivery
     deploy_task_release_ninja_lock
 
     # post-deploy pane verification (自動化×強制: 配備後に忍者が動いているか家老が確認せざるを得ない)
     # 理由: 配備ログ=完了と思い込み、忍者がプロンプト待ちのまま気づかない事故(cmd_2509/2511)
     deploy_task_post_deploy_verify "$NINJA_NAME"
     deploy_task_start_deferred_drain
+    deploy_task_wall_phase_checkpoint post_verify
 
     # Codex忍者向け遅延re-nudge + 配備確認ログ (cmd_karo_codex_renudge / cmd_3102 AC1修正)
     # 根因: CLI再起動直後、Codex CLIが初期画面表示中にinbox_watcherのnudgeが空振りする
