@@ -89,6 +89,13 @@ if [[ -n "$patch_file" || -n "$base_blob" ]]; then
         || { echo "BLOCK: --base-blob must be a full 40-hex object id" >&2; exit 2; }
 fi
 
+# Git itself reads command-scope config on the first repository probe.  Reject
+# malformed ambient state before that probe so the helper owns a stable,
+# actionable fail-closed diagnostic instead of leaking a version-specific Git
+# error from `rev-parse`.
+[[ "${GIT_CONFIG_COUNT:-0}" =~ ^[0-9]+$ ]] \
+    || { echo "BLOCK: GIT_CONFIG_COUNT must be a non-negative integer" >&2; exit 2; }
+
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
     || { echo "BLOCK: not inside a git repository" >&2; exit 2; }
 cd "$repo_root"
@@ -140,6 +147,23 @@ assert_single_parent_commit() {
     parents="$(git show -s --format=%P "$commit_hash")"
     [[ "$parents" == "$transaction_head" ]] \
         || { echo "BLOCK: scoped commit parent invariant violated (expected sole parent $transaction_head, got ${parents:-<none>})" >&2; return 1; }
+}
+
+# A scoped commit holds the repository-wide transaction lock until its ref,
+# shared-index entry and postconditions have converged.  Git may otherwise run
+# `maintenance run --auto` as a child of `git commit`; on WSL/DrvFS that child
+# can block in p9_client_rpc and keep every scoped committer behind this lock.
+# Append (rather than replace) one command-scoped config entry so caller-supplied
+# GIT_CONFIG_COUNT contracts remain intact.  Invalid ambient config is a hard
+# BLOCK: silently dropping it would change hook/commit behaviour.
+git_commit_without_auto_maintenance() {
+    local config_count="${GIT_CONFIG_COUNT:-0}" config_key config_value
+    [[ "$config_count" =~ ^[0-9]+$ ]] \
+        || { echo "BLOCK: GIT_CONFIG_COUNT must be a non-negative integer" >&2; return 2; }
+    config_key="GIT_CONFIG_KEY_${config_count}=maintenance.auto"
+    config_value="GIT_CONFIG_VALUE_${config_count}=false"
+    env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
+        git commit -m "$message" >&2
 }
 
 # Phase telemetry starts at lock acquisition so the sum of the seven bounded
@@ -500,7 +524,7 @@ PY
     finish_phase 0
     begin_phase git_commit
     assert_head_generation
-    git commit -m "$message" >&2
+    git_commit_without_auto_maintenance
     commit_hash="$(git rev-parse HEAD)"
     assert_single_parent_commit "$commit_hash"
     # HEAD更新後、共有indexの対象pathだけを新HEADへ追随させる。他pathのstageは
@@ -647,7 +671,7 @@ fi
 finish_phase 0
 begin_phase git_commit
 assert_head_generation
-git commit -m "$message" >&2
+git_commit_without_auto_maintenance
 commit_hash="$(git rev-parse HEAD)"
 assert_single_parent_commit "$commit_hash"
 mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)

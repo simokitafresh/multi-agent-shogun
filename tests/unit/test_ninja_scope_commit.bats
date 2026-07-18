@@ -134,6 +134,36 @@ HOOK
     [ "$(git -C "$REPO" show -s --format=%P "$output" | wc -w)" -eq 1 ]
 }
 
+@test "normal commit appends maintenance.auto=false and preserves caller config" {
+    printf 'maintenance lane\n' >> "$REPO/own.txt"
+    mkdir -p "$REPO/.git/hooks"
+    cat > "$REPO/.git/hooks/pre-commit" <<'HOOK'
+#!/usr/bin/env bash
+test "$(git config --bool maintenance.auto)" = false
+test "$(git config scoped.fixture)" = preserved
+HOOK
+    chmod +x "$REPO/.git/hooks/pre-commit"
+    trace="$REPO/trace.json"
+
+    run bash -c 'cd "$1" && GIT_TRACE2_EVENT="$3" GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=scoped.fixture GIT_CONFIG_VALUE_0=preserved bash "$2" -m maintenance-isolated -- own.txt' _ "$REPO" "$HELPER" "$trace"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" show --format= --name-only HEAD)" = own.txt ]
+    [ "$(grep -c 'maintenance run --auto' "$trace" || true)" -eq 0 ]
+    [ "$(grep -c '\"event\":\"cmd_name\".*\"name\":\"commit\"' "$trace" || true)" -eq 1 ]
+}
+
+@test "invalid caller config count fails closed before commit" {
+    head_before="$(git -C "$REPO" rev-parse HEAD)"
+    printf 'must not commit\n' >> "$REPO/own.txt"
+
+    run bash -c 'cd "$1" && GIT_CONFIG_COUNT=invalid bash "$2" -m invalid-config -- own.txt' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"GIT_CONFIG_COUNT must be a non-negative integer"* ]]
+    [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
+}
+
 @test "helperは対象1件だけcommitし他者stage1件を保持する" {
     printf 'other change\n' >> "$REPO/other.txt"
     git -C "$REPO" add other.txt
