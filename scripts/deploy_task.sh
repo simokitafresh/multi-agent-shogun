@@ -132,7 +132,7 @@ log() {
 }
 
 # One immutable read snapshot is shared by every deploy in the same wave.  The
-# source digest invalidates stale entries; target_key keeps filtered/query
+# source identity invalidates stale entries; target_key keeps filtered/query
 # results isolated between workers.  Only a cache miss takes the short lock --
 # consumers never hold a ninja/cmd mutation lock while doing the heavy read.
 deploy_task_wave_cache() {
@@ -145,7 +145,12 @@ deploy_task_wave_cache() {
         while IFS= read -r source; do
             [ -n "$source" ] || continue
             if [ -f "$source" ]; then
-                sha256sum "$source"
+                # Hashing the whole memory DB on shared 9P storage took up to
+                # 58s per deployment, before the bounded query even started.
+                # Nanosecond mtime/ctime + size + inode/device is a bounded
+                # snapshot identity: any atomic replacement or in-place write
+                # invalidates the wave cache without rereading the full file.
+                stat --printf='%d:%i:%s:%y:%z  %n\n' "$source"
             else
                 printf 'missing  %s\n' "$source"
             fi
