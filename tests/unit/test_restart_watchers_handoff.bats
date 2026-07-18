@@ -29,7 +29,7 @@ setup() {
     ! grep -q 'fuser -k /tmp/inbox_watcher_singleton_' "$SCRIPT"
     grep -Fq 'exec 209>"$SINGLETON_LOCK_FILE"' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
     grep -Fq 'process_unread' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
-    grep -Fq 'SEND-DEDUPE' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+    grep -Fq 'SEND-LEASE' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
 }
 
 @test "startup resnapshot delivers a gap arrival exactly once" {
@@ -38,7 +38,7 @@ set -euo pipefail
 root="'"$PROJECT_ROOT"'"
 tmp="$(mktemp -d)"; trap "rm -rf \"$tmp\"" EXIT
 mkdir -p "$tmp/root/scripts/lib" "$tmp/root/lib" "$tmp/root/queue/inbox" "$tmp/state"
-for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh; do ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"; done
+for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh inbox_nudge_policy.sh; do ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"; done
 ln -s "$root/lib/agent_state.sh" "$tmp/root/lib/agent_state.sh"
 ln -s "$root/scripts/inbox_watcher.sh" "$tmp/root/scripts/inbox_watcher.sh"
 agent=handoff_fixture
