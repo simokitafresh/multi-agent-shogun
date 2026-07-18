@@ -36,6 +36,14 @@ if [[ "$*" == *"display-message"* ]]; then
     fi
     exit 0
 fi
+if [[ "$*" == *"list-clients"* ]]; then
+    if [ -n "${MOCK_CLIENT_ROWS:-}" ]; then
+        printf '%b\n' "$MOCK_CLIENT_ROWS"
+    else
+        printf '%s|%s\n' "${MOCK_CLIENT_ACTIVITY:-1700000000}" "${MOCK_SELECTED_AGENT:-${MOCK_AGENT_ID:-shogun}}"
+    fi
+    exit 0
+fi
 if [[ "$*" == *"capture-pane"* ]]; then
     echo "${MOCK_CAPTURE_OUTPUT:-}"
     exit 0
@@ -280,6 +288,7 @@ PY
 }
 
 @test "T-TL-012: three-agent concurrent adversarial delivery records exactly one event" {
+    export MOCK_SELECTED_AGENT="karo"
     run bash -c '
       for agent in shogun karo gunshi; do
         (export MOCK_AGENT_ID="$agent"; printf "{\"prompt\":\"concurrent once\"}\n" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh") &
@@ -293,7 +302,7 @@ PY
 import json, sys
 rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8") if line.strip()]
 assert len(rows) == 1
-assert rows[0]["target"] in {"shogun", "karo", "gunshi"}
+assert rows[0]["target"] == "karo"
 assert rows[0]["source_event_id"].startswith("terminal:")
 PY
     [ "$status" -eq 0 ]
@@ -302,6 +311,7 @@ PY
 @test "T-TL-014: minimal payload routes once to each executing pane without reject" {
     for agent in karo shogun gunshi; do
         export MOCK_AGENT_ID="$agent"
+        export MOCK_SELECTED_AGENT="$agent"
         export MOCK_CLIENT_ACTIVITY="170000000${#agent}"
         run bash -c 'printf "{\"prompt\":\"minimal %s\"}\n" "$MOCK_AGENT_ID" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
         [ "$status" -eq 0 ]
@@ -315,6 +325,15 @@ assert len({row["source_event_id"] for row in rows}) == 3
 PY
     [ "$status" -eq 0 ]
     [ ! -s "$TEST_TMPDIR/logs/lord_conversation_route_rejects.jsonl" ]
+}
+
+@test "T-TL-015: conflicting newest clients quarantine minimal payload" {
+    export MOCK_AGENT_ID="karo"
+    export MOCK_CLIENT_ROWS='1700000100|karo\n1700000100|shogun'
+    run bash -c 'echo "{\"prompt\":\"ambiguous client\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    [ "$status" -eq 0 ]
+    [ ! -f "$TEST_LORD_CONV" ]
+    grep -q 'missing_or_conflicting_active_client' "$TEST_TMPDIR/logs/lord_conversation_route_rejects.jsonl"
 }
 
 @test "T-TL-013: real minimal Codex payload records selected pane exactly once" {
