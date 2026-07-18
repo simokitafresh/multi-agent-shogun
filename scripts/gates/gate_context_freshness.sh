@@ -242,13 +242,17 @@ warnings_output() {
         # The gate timeout is a total per-attempt budget, not merely the first
         # attempt.  Without forwarding the retry budget the checker falls back
         # to 60s, so e.g. GIT_TIMEOUT=1 can still block for 61s (GA-283).
-        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
+        # A gate decision cannot consume an asynchronously-produced snapshot on
+        # its first run.  Rebuild a cache miss within this bounded gate budget so
+        # a new source tip is checked now instead of emitting one false BLOCK and
+        # only becoming usable on the next invocation (GA-301).
+        CFC_HISTORY_REFRESH_SYNC=1 CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
             CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" \
             bash "$CHECK_SCRIPT" --dashboard-warnings > "$tmp_cache" 2>/dev/null
         mv "$tmp_cache" "$cache_file"
         cat "$cache_file"
     else
-        CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
+        CFC_HISTORY_REFRESH_SYNC=1 CFC_GIT_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_RETRY_TIMEOUT="$GIT_TIMEOUT" CFC_GIT_MAX_WORKERS="${CONTEXT_FRESHNESS_GATE_GIT_MAX_WORKERS:-4}" \
             CONTEXT_FRESHNESS_MIN_SOURCE_COMMITS="$_min_sc" \
             bash "$CHECK_SCRIPT" --dashboard-warnings 2>/dev/null
     fi
