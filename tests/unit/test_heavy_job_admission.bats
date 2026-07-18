@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Leader termination triggers finite deadline drain that fails closed; violation is BLOCK.
+# test_necessity: Admission waits for live process-group work, ignores terminated zombie members, and fails closed at a finite deadline.
 # cmd_karo_hotfix_heavy_job_admission_202607121348
 # 同一8コアWSL2ホスト上でbats全量/pytest全量/DM-Signal golden regressionが無調停で
 # 並走しCPUオーバーサブスクリプションでwall時間を増幅する構造バグの根治を検証する。
@@ -95,6 +95,56 @@ CMD
     child_pid="$(cat "$started")"
     sleep 1.2
     [ ! -e "/proc/$child_pid" ]
+}
+
+@test "GitHub runner型: 終了済みzombieだけのprocess groupはdrain済みとして扱う" {
+    local fakebin="$TMP/fakebin" begin end
+    mkdir -p "$fakebin"
+    cat > "$fakebin/ps" <<'SH'
+#!/usr/bin/env bash
+printf '%s Z\n' "$SHOGUN_HEAVY_JOB_DRAIN_PGID"
+SH
+    chmod +x "$fakebin/ps"
+
+    begin="$(date +%s%N)"
+    run env PATH="$fakebin:$PATH" \
+        SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT=1 \
+        bash "$WRAPPER" -- true
+    end="$(date +%s%N)"
+
+    [ "$status" -eq 0 ]
+    [ $((end - begin)) -lt 1000000000 ]
+}
+
+@test "drain判定は対象PGIDの非zombieだけを待ち別groupを無視する" {
+    local fakebin="$TMP/fakebin"
+    mkdir -p "$fakebin"
+    cat > "$fakebin/ps" <<'SH'
+#!/usr/bin/env bash
+printf '999999 S\n'
+printf '%s Z\n' "$SHOGUN_HEAVY_JOB_DRAIN_PGID"
+SH
+    chmod +x "$fakebin/ps"
+
+    run env PATH="$fakebin:$PATH" \
+        SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT=1 \
+        bash "$WRAPPER" -- true
+    [ "$status" -eq 0 ]
+}
+
+@test "drain判定は対象PGIDのlive memberをdeadlineまで待ってBLOCKする" {
+    local fakebin="$TMP/fakebin"
+    mkdir -p "$fakebin"
+    cat > "$fakebin/ps" <<'SH'
+#!/usr/bin/env bash
+printf '%s S\n' "$SHOGUN_HEAVY_JOB_DRAIN_PGID"
+SH
+    chmod +x "$fakebin/ps"
+
+    run env PATH="$fakebin:$PATH" SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT=1 \
+        bash "$WRAPPER" -- true
+    [ "$status" -eq 124 ]
+    [[ "$output" == *"did not drain within 1s"* ]]
 }
 
 # --- 分類器(SSOT) — argv位置ベース、部分文字列誤検出禁止 ---

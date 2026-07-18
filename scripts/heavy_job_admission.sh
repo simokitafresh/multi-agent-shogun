@@ -32,8 +32,22 @@ TIMEOUT="${SHOGUN_HEAVY_JOB_ADMISSION_TIMEOUT:-3600}"
 # A leader may exit after detaching a descendant.  Admission must not wait on
 # that process group forever: bounded failure releases the lock and makes the
 # lifecycle defect observable to the caller/CI instead of producing a silent
-# tail.  This does not signal unrelated processes or broaden cleanup scope.
+# tail.  A zombie is already terminated and cannot do work, but kill(2) still
+# reports its process group as existing on runners whose init has not reaped it.
+# Drain therefore means "a non-zombie member remains", not merely kill -0.
+# This does not signal unrelated processes or broaden cleanup scope.
 DRAIN_TIMEOUT="${SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT:-10}"
+
+process_group_has_live_member() {
+    local target_pgid="$1"
+    local member_pgid member_stat
+
+    while read -r member_pgid member_stat; do
+        [[ "$member_pgid" == "$target_pgid" ]] || continue
+        [[ "$member_stat" == Z* ]] || return 0
+    done < <(SHOGUN_HEAVY_JOB_DRAIN_PGID="$target_pgid" ps -e -o pgid=,stat=)
+    return 1
+}
 
 if [[ "${1:-}" == "--" ]]; then
     shift
@@ -74,7 +88,7 @@ leader_pid=$!
 rc=0
 wait "$leader_pid" || rc=$?
 drain_started=$SECONDS
-while kill -0 -- "-$leader_pid" 2>/dev/null; do
+while process_group_has_live_member "$leader_pid"; do
     if (( SECONDS - drain_started >= DRAIN_TIMEOUT )); then
         echo "BLOCK: heavy job process group -${leader_pid} did not drain within ${DRAIN_TIMEOUT}s" >&2
         exit 124
