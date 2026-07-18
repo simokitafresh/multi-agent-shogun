@@ -2558,6 +2558,9 @@ check_and_update_done_task() {
     if [ "$task_status" = "done" ]; then
         (_reflux_promotion_record_completion "$report_file" || \
             log "REFLUX-LEDGER-BLOCK: failed to reconcile done task report $(basename "$report_file")") &
+        # The task/report lifecycle is already terminal.  Publish that state
+        # immediately instead of waiting for the next monitor-cycle snapshot.
+        write_karo_snapshot
         return 0
     fi
 
@@ -2631,6 +2634,7 @@ check_and_update_done_task() {
             log "AUTO-DONE: $name task auto-updated to done (report=$(basename "$report_file"), parent_cmd=$report_parent_cmd, status=$report_status)"
             (_reflux_promotion_record_completion "$report_file" || \
                 log "REFLUX-LEDGER-BLOCK: failed to record $(basename "$report_file")") &
+            write_karo_snapshot
             return 0
             ;;
         *)
