@@ -2471,7 +2471,8 @@ while [ $attempt -lt $max_attempts ]; do
                     mkdir -p "$_retro_dir"
                     _retro_prompt="この作業で時間がかかった原因を分析し、利他の精神で調査を行いインフラバグの疑いとして家老に報告せよ"
                     printf '%s\n' "- ninja: $FROM" "  triggered_at: $(date -Iseconds)" "  parent_msg: $MSG_ID" "  status: pending" >> "$_retro_dir/pending.yaml"
-                    bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$FROM" "$_retro_prompt" retro_prompt system read_and_analyze 2>/dev/null &
+                    # 即時inbox送信は無効化(バグ: task_startに埋没し振り返り未実行。queue/retro/pending.yamlのバッチ処理へ移行)
+                    # bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$FROM" "$_retro_prompt" retro_prompt system read_and_analyze 2>/dev/null &
                     break
                 fi
             done
