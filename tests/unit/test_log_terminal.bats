@@ -61,7 +61,7 @@ teardown() {
 }
 
 @test "T-TL-003: normal input is recorded in lord_conversation.jsonl" {
-    run bash -c 'echo "{\"prompt\":\"dm-signalの進捗を教えてくれ\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    run bash -c 'echo "{\"prompt\":\"dm-signalの進捗を教えてくれ\",\"target_agent\":\"shogun\",\"source_event_id\":\"evt-normal-1\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
     [ "$status" -eq 0 ]
 
     [ -f "$TEST_LORD_CONV" ]
@@ -197,7 +197,7 @@ PY
         --archive-dir "$TEST_TMPDIR/archive" \
         --db "$TEST_TMPDIR/data/multi_agent_shogun_memory.db" >/dev/null
 
-    run bash -c 'echo "{\"prompt\":\"家老に直接確認する\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    run bash -c 'echo "{\"prompt\":\"家老に直接確認する\",\"target_agent\":\"karo\",\"source_event_id\":\"evt-karo-1\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
     [ "$status" -eq 0 ]
 
     readarray -t result < <(python3 - "$TEST_LORD_CONV" "$TEST_TMPDIR/data/multi_agent_shogun_memory.db" <<'PY'
@@ -230,7 +230,7 @@ PY
 @test "T-TL-006: lord input to gunshi pane is recorded with target" {
     export MOCK_AGENT_ID="gunshi"
 
-    run bash -c 'echo "{\"prompt\":\"軍師に直接確認する\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    run bash -c 'echo "{\"prompt\":\"軍師に直接確認する\",\"target_agent\":\"gunshi\",\"source_event_id\":\"evt-gunshi-1\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
     [ "$status" -eq 0 ]
 
     readarray -t result < <(python3 - <<PY
@@ -247,4 +247,50 @@ PY
     [ "${result[1]}" = "gunshi" ]
     [ "${result[2]}" = "inbound" ]
     echo "${result[3]}" | grep -q "軍師"
+}
+
+@test "T-TL-009: explicit target mismatch is quarantined and not recorded" {
+    export MOCK_AGENT_ID="shogun"
+    run bash -c 'echo "{\"prompt\":\"家老だけへ\",\"target_agent\":\"karo\",\"source_event_id\":\"evt-route-1\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    [ "$status" -eq 0 ]
+    [ ! -f "$TEST_LORD_CONV" ]
+    grep -q 'cross_pane_target_mismatch' "$TEST_TMPDIR/logs/lord_conversation_route_rejects.jsonl"
+}
+
+@test "T-TL-010: missing or conflicting payload identity is quarantined" {
+    run bash -c 'echo "{\"prompt\":\"identity missing\",\"source_event_id\":\"evt-route-2\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    [ "$status" -eq 0 ]
+    [ ! -f "$TEST_LORD_CONV" ]
+    grep -q 'missing_or_conflicting_payload_target' "$TEST_TMPDIR/logs/lord_conversation_route_rejects.jsonl"
+}
+
+@test "T-TL-011: one source event is durably consumed by one target only" {
+    export MOCK_AGENT_ID="karo"
+    run bash -c 'echo "{\"prompt\":\"once only\",\"target_agent\":\"karo\",\"source_event_id\":\"evt-once\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    [ "$status" -eq 0 ]
+    export MOCK_AGENT_ID="shogun"
+    run bash -c 'echo "{\"prompt\":\"once only\",\"target_agent\":\"shogun\",\"source_event_id\":\"evt-once\"}" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh"'
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$TEST_LORD_CONV")" -eq 1 ]
+    [ "$(awk -F '\t' '$1=="evt-once"{n++} END{print n+0}' "$TEST_TMPDIR/queue/lord_conversation_consumed.tsv")" -eq 1 ]
+}
+
+@test "T-TL-012: three-agent concurrent adversarial delivery records exactly one event" {
+    run bash -c '
+      for agent in shogun karo gunshi; do
+        (export MOCK_AGENT_ID="$agent"; printf "{\"prompt\":\"concurrent once\",\"target_agent\":\"%s\",\"source_event_id\":\"evt-concurrent\"}\n" "$agent" | bash "$TEST_TMPDIR/scripts/log_terminal_input.sh") &
+      done
+      wait
+    '
+    [ "$status" -eq 0 ]
+    [ "$(wc -l < "$TEST_LORD_CONV")" -eq 1 ]
+    [ "$(awk -F '\t' '$1=="evt-concurrent"{n++} END{print n+0}' "$TEST_TMPDIR/queue/lord_conversation_consumed.tsv")" -eq 1 ]
+    run python3 - "$TEST_LORD_CONV" <<'PY'
+import json, sys
+rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8") if line.strip()]
+assert len(rows) == 1
+assert rows[0]["target"] in {"shogun", "karo", "gunshi"}
+assert rows[0]["source_event_id"] == "evt-concurrent"
+PY
+    [ "$status" -eq 0 ]
 }

@@ -16,17 +16,52 @@ INPUT="$(jq -r '.prompt // ""' 2>/dev/null <<<"$PAYLOAD" || true)"
 # nudge除外（inbox1, inbox3等）
 [[ "$INPUT" != inbox* ]] || exit 0
 
-# lord_conversation.sh読込・環境変数設定
 _log_terminal_input_self="${BASH_SOURCE[0]}"
 [[ "$_log_terminal_input_self" != /* ]] && _log_terminal_input_self="$PWD/$_log_terminal_input_self"
 SCRIPT_DIR="${_log_terminal_input_self%/scripts/log_terminal_input.sh}"
 unset _log_terminal_input_self
+
+# A prompt may be delivered to several CLI hook processes.  The payload identity,
+# not the process which happened to receive it, is therefore the routing SSOT.
+PAYLOAD_TARGETS="$(jq -r '[.target_agent, .target, .pane_agent_id, .agent_id] | map(select(type == "string" and length > 0)) | unique | .[]' 2>/dev/null <<<"$PAYLOAD" || true)"
+PAYLOAD_TARGET_COUNT="$(printf '%s\n' "$PAYLOAD_TARGETS" | awk 'NF{n++} END{print n+0}')"
+PAYLOAD_TARGET="$(printf '%s\n' "$PAYLOAD_TARGETS" | awk 'NF{print; exit}')"
+SOURCE_EVENT_ID="$(jq -r '.source_event_id // .event_id // .prompt_id // .id // ""' 2>/dev/null <<<"$PAYLOAD" || true)"
+
+_route_diag() {
+    local reason="$1"
+    local diag="$SCRIPT_DIR/logs/lord_conversation_route_rejects.jsonl"
+    mkdir -p "${diag%/*}"
+    (
+        flock -w 2 200 || exit 0
+        jq -cn --arg ts "$(date -Iseconds)" --arg reason "$reason" \
+            --arg pane_agent "$AGENT_ID" --arg payload_target "$PAYLOAD_TARGET" \
+            --arg source_event_id "$SOURCE_EVENT_ID" \
+            '{ts:$ts,reason:$reason,pane_agent:$pane_agent,payload_target:$payload_target,source_event_id:$source_event_id}' >>"$diag"
+    ) 200>"${diag}.lock"
+}
+
+if [ "$PAYLOAD_TARGET_COUNT" -ne 1 ]; then
+    _route_diag "missing_or_conflicting_payload_target"
+    exit 0
+fi
+if [ "$PAYLOAD_TARGET" != "$AGENT_ID" ]; then
+    _route_diag "cross_pane_target_mismatch"
+    exit 0
+fi
+if [ -z "$SOURCE_EVENT_ID" ]; then
+    _route_diag "missing_source_event_id"
+    exit 0
+fi
+
+# lord_conversation.sh読込・環境変数設定
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/lord_conversation.sh"
 export LORD_CONVERSATION="$SCRIPT_DIR/queue/lord_conversation.jsonl"
 export LORD_CONVERSATION_LOCK="${LORD_CONVERSATION}.lock"
 export LORD_CONVERSATION_SOURCE_EVENT_ID
-LORD_CONVERSATION_SOURCE_EVENT_ID="$(jq -r '.source_event_id // .event_id // .prompt_id // .id // ""' 2>/dev/null <<<"$PAYLOAD" || true)"
+LORD_CONVERSATION_SOURCE_EVENT_ID="$SOURCE_EVENT_ID"
+export LORD_CONVERSATION_CONSUMED_LEDGER="$SCRIPT_DIR/queue/lord_conversation_consumed.tsv"
 
 append_lord_conversation "$INPUT" "inbound" "lord" "terminal" "$AGENT_ID"
 

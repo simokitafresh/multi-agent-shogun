@@ -23,6 +23,7 @@ append_lord_conversation() {
   local semantic_index_path="${SEMANTIC_INDEX_PATH:-}"
   local insight_write_path="${LORD_CONVERSATION_INSIGHT_WRITE:-}"
   local source_event_id="${LORD_CONVERSATION_SOURCE_EVENT_ID:-}"
+  local consumed_ledger="${LORD_CONVERSATION_CONSUMED_LEDGER:-}"
 
   case "$direction" in
     ""|*[!a-z_]*)
@@ -70,6 +71,7 @@ append_lord_conversation() {
     CONV_SEMANTIC_INDEX_PATH="$semantic_index_path" \
     CONV_INSIGHT_WRITE_PATH="$insight_write_path" \
     CONV_SOURCE_EVENT_ID="$source_event_id" \
+    CONV_CONSUMED_LEDGER="$consumed_ledger" \
     python3 - <<'PY'
 import json
 import os
@@ -91,6 +93,8 @@ source = os.environ.get("CONV_SOURCE", "ntfy") or "ntfy"
 target = os.environ.get("CONV_TARGET", "")
 message = os.environ["CONV_MESSAGE"]
 source_event_id = os.environ.get("CONV_SOURCE_EVENT_ID", "").strip()
+consumed_ledger_raw = os.environ.get("CONV_CONSUMED_LEDGER", "").strip()
+consumed_ledger = Path(consumed_ledger_raw) if consumed_ledger_raw else None
 db_path = Path(os.environ.get("CONV_DB_PATH", ""))
 semantic_index_path = Path(os.environ.get("CONV_SEMANTIC_INDEX_PATH", ""))
 insight_write_path = Path(os.environ.get("CONV_INSIGHT_WRITE_PATH", ""))
@@ -425,6 +429,21 @@ if not source_event_id:
     source_event_id = "source:" + hashlib.sha256(
         "\x1f".join(identity_parts).encode("utf-8")
     ).hexdigest()
+
+# The conversation lock also guards the durable consumed ledger, making the
+# check and publication one transaction across concurrently-running panes.
+if consumed_ledger is not None:
+    consumed_ledger.parent.mkdir(parents=True, exist_ok=True)
+    consumed = {}
+    if consumed_ledger.exists():
+        for raw in consumed_ledger.read_text(encoding="utf-8", errors="replace").splitlines():
+            parts = raw.split("\t", 2)
+            if len(parts) >= 2:
+                consumed[parts[0]] = parts[1]
+    if source_event_id in consumed:
+        raise SystemExit(0)
+    with consumed_ledger.open("a", encoding="utf-8") as ledger_file:
+        ledger_file.write(f"{source_event_id}\t{target}\t{timestamp}\n")
 
 entry = {
     "source_event_id": source_event_id,
