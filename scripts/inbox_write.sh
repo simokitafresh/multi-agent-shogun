@@ -2424,8 +2424,22 @@ while [ $attempt -lt $max_attempts ]; do
                                 # Outer flock on same lockfile via different fd = self-deadlock
                                 # on WSL2/DrvFs (POSIX flock treats different open file descriptions
                                 # independently; same-process exclusive vs exclusive = blocked).
-                                if ! bash "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh" "$TASK_YAML" task status "done" 2>/dev/null; then
-                                    echo "[inbox_write] auto-done: task status更新失敗（非致命的。メッセージ送信は成功済み）" >&2
+                                # statusだけを先にdoneへ変えると、ninja_monitorは
+                                # done taskを早期returnし、done_at/completed_atを永久に
+                                # 記録できない。3フィールドを同一flock・同一atomic publishで
+                                # 更新し、E2E throughputのterminal境界を欠損させない。
+                                _auto_done_ts=$(date '+%Y-%m-%dT%H:%M:%S')
+                                _auto_done_done_at=$(inbox_yaml_field_get "$TASK_YAML" "done_at" "")
+                                _auto_done_completed_at=$(inbox_yaml_field_get "$TASK_YAML" "completed_at" "")
+                                _auto_done_updates=("status=done")
+                                [ -n "$_auto_done_done_at" ] || _auto_done_updates+=("done_at=$_auto_done_ts")
+                                [ -n "$_auto_done_completed_at" ] || _auto_done_updates+=("completed_at=$_auto_done_ts")
+                                if ! (
+                                    # shellcheck source=/dev/null
+                                    source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+                                    yaml_field_set_batch "$TASK_YAML" task "${_auto_done_updates[@]}"
+                                ) 2>/dev/null; then
+                                    echo "[inbox_write] auto-done: task status/timestamp更新失敗（非致命的。メッセージ送信は成功済み）" >&2
                                 fi
                                 ;;
                         esac

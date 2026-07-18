@@ -1337,6 +1337,17 @@ YAML
     done
     grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
     grep -q "^  status: done" "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    python3 - "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'PY'
+import datetime as dt
+import sys
+import yaml
+
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+done_at = task.get("done_at")
+completed_at = task.get("completed_at")
+assert done_at == completed_at
+dt.datetime.fromisoformat(str(done_at))
+PY
 }
 
 @test "task_assigned: codex ninja delivery verification retries up to 2 times" {
