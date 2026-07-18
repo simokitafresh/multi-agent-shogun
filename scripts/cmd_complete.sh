@@ -16,6 +16,99 @@ ROOT_DIR="${CMD_COMPLETE_ROOT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 BUNDLE_PATH="${2:-queue/gates/${CMD_ID}/sg7_bundle.json}"
 [[ "$BUNDLE_PATH" = /* ]] || BUNDLE_PATH="$ROOT_DIR/$BUNDLE_PATH"
 
+CHECKPOINT_DIR="${CMD_COMPLETE_CHECKPOINT_DIR:-$ROOT_DIR/queue/gates/$CMD_ID}"
+CHECKPOINT_PATH="$CHECKPOINT_DIR/completion_checkpoint.json"
+CHECKPOINT_LOCK="$CHECKPOINT_DIR/completion_checkpoint.lock"
+mkdir -p "$CHECKPOINT_DIR"
+exec 9>"$CHECKPOINT_LOCK"
+flock 9
+
+[[ -f "$BUNDLE_PATH" ]] || { printf '[cmd_complete] FAILED bundle missing: %s\n' "$BUNDLE_PATH" >&2; exit 1; }
+BUNDLE_FINGERPRINT="$(sha256sum "$BUNDLE_PATH" | awk '{print $1}')"
+STEP_ORDER=(sg7_consume lesson_review cmd_complete_gate quality_log status_completed dashboard ntfy inbox_archive)
+
+checkpoint_init() {
+    python3 - "$CHECKPOINT_PATH" "$CMD_ID" "$BUNDLE_FINGERPRINT" "${STEP_ORDER[@]}" <<'PY'
+import json, os, sys, tempfile
+path, cmd_id, fingerprint, *order = sys.argv[1:]
+data = None
+if os.path.exists(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"[cmd_complete] FAILED corrupt checkpoint: {exc}")
+    required = {"version", "cmd_id", "bundle_fingerprint", "completed", "project"}
+    if set(data) != required or data["version"] != 1 or data["cmd_id"] != cmd_id:
+        raise SystemExit("[cmd_complete] FAILED invalid checkpoint identity/schema")
+    completed = data["completed"]
+    if not isinstance(completed, list) or completed != order[:len(completed)]:
+        raise SystemExit("[cmd_complete] FAILED checkpoint step order/prefix invalid")
+if data is None or data["bundle_fingerprint"] != fingerprint:
+    data = {"version": 1, "cmd_id": cmd_id, "bundle_fingerprint": fingerprint,
+            "completed": [], "project": ""}
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=".completion_checkpoint.", dir=os.path.dirname(path))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, sort_keys=True)
+            fh.write("\n")
+            fh.flush(); os.fsync(fh.fileno())
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp): os.unlink(tmp)
+PY
+}
+
+checkpoint_has() {
+    python3 - "$CHECKPOINT_PATH" "$1" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as fh: data = json.load(fh)
+raise SystemExit(0 if sys.argv[2] in data["completed"] else 1)
+PY
+}
+
+checkpoint_project() {
+    python3 - "$CHECKPOINT_PATH" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as fh: print(json.load(fh)["project"])
+PY
+}
+
+checkpoint_mark() {
+    local step="$1" project="${2:-}"
+    python3 - "$CHECKPOINT_PATH" "$step" "$project" "${STEP_ORDER[@]}" <<'PY'
+import json, os, sys, tempfile
+path, step, project, *order = sys.argv[1:]
+with open(path, encoding="utf-8") as fh: data = json.load(fh)
+expected = order[len(data["completed"])] if len(data["completed"]) < len(order) else None
+if step != expected:
+    raise SystemExit(f"[cmd_complete] FAILED checkpoint step leap: expected={expected} actual={step}")
+data["completed"].append(step)
+if project: data["project"] = project
+fd, tmp = tempfile.mkstemp(prefix=".completion_checkpoint.", dir=os.path.dirname(path))
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp): os.unlink(tmp)
+PY
+}
+
+run_checkpointed() {
+    local name="$1"
+    shift
+    if checkpoint_has "$name"; then
+        printf '[cmd_complete] SKIP %s checkpoint_verified\n' "$name" >&2
+        return 0
+    fi
+    run_step "$name" "$@"
+    checkpoint_mark "$name"
+}
+
+checkpoint_init
+
 run_step() {
     local name="$1"
     shift
@@ -84,15 +177,22 @@ run_status_step() {
     return "$rc"
 }
 
-consume_output="$(run_step sg7_consume python3 "$SCRIPT_DIR/review_bundle.py" \
-    --root "$ROOT_DIR" consume --cmd "$CMD_ID" --bundle "$BUNDLE_PATH" --expect-verdict APPROVE)" || {
-    printf '%s\n' "$consume_output" >&2
-    exit 1
-}
-printf '%s\n' "$consume_output"
-PROJECT_ID="$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read().splitlines()[-1])["project"])' <<<"$consume_output")"
+if checkpoint_has sg7_consume; then
+    printf '[cmd_complete] SKIP sg7_consume checkpoint_verified\n' >&2
+    PROJECT_ID="$(checkpoint_project)"
+else
+    consume_output="$(run_step sg7_consume python3 "$SCRIPT_DIR/review_bundle.py" \
+        --root "$ROOT_DIR" consume --cmd "$CMD_ID" --bundle "$BUNDLE_PATH" --expect-verdict APPROVE)" || {
+        printf '%s\n' "$consume_output" >&2
+        exit 1
+    }
+    printf '%s\n' "$consume_output"
+    PROJECT_ID="$(python3 -c 'import json,sys; print(json.loads(sys.stdin.read().splitlines()[-1])["project"])' <<<"$consume_output")"
+    checkpoint_mark sg7_consume "$PROJECT_ID"
+fi
+[[ -n "$PROJECT_ID" ]] || { printf '[cmd_complete] FAILED checkpoint project missing\n' >&2; exit 1; }
 
-run_step lesson_review bash "$SCRIPT_DIR/lesson_review.sh" "$PROJECT_ID"
+run_checkpointed lesson_review bash "$SCRIPT_DIR/lesson_review.sh" "$PROJECT_ID"
 
 if [[ -n "${CMD_COMPLETE_WORKAROUND_NINJA:-}" ]]; then
     run_step workaround_log bash "$SCRIPT_DIR/karo_workaround_log.sh" "$CMD_ID" \
@@ -100,26 +200,41 @@ if [[ -n "${CMD_COMPLETE_WORKAROUND_NINJA:-}" ]]; then
         "${CMD_COMPLETE_WORKAROUND_METHOD:?}"
 fi
 
-run_step cmd_complete_gate bash "$SCRIPT_DIR/cmd_complete_gate.sh" "$CMD_ID"
+run_checkpointed cmd_complete_gate bash "$SCRIPT_DIR/cmd_complete_gate.sh" "$CMD_ID"
 # cmd_complete_gate performs the fail-closed, command-correlated freshness
 # check before CLEAR. Do not run the dashboard-wide freshness monitor here:
 # an unrelated commit after another context's source_commit would otherwise
 # permanently block this already-reviewed command. The global monitor remains
 # active in its dashboard/startup callers; completion uses the narrower check.
-run_step quality_log bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" CLEAR \
+run_checkpointed quality_log bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" CLEAR \
     "${CMD_COMPLETE_KARO_REWORK:-no}" "${CMD_COMPLETE_SUPPLEMENTARY_CMDS:-0}"
-run_status_step
+if checkpoint_has status_completed; then
+    printf '[cmd_complete] SKIP status_completed checkpoint_verified\n' >&2
+else
+    run_status_step
+    checkpoint_mark status_completed
+fi
 # dashboard_update has its own 10s flock wait, but several independently
 # completed commands can legitimately queue behind one writer.  A single lock
 # timeout is transient, while publishing later steps without dashboard is not;
 # bounded retry keeps the sequence fail-closed without requiring manual reruns.
-run_step_with_retry dashboard "${CMD_COMPLETE_DASHBOARD_ATTEMPTS:-3}" \
-    "${CMD_COMPLETE_DASHBOARD_RETRY_DELAY:-1}" \
-    bash "$SCRIPT_DIR/dashboard_update.sh" "$CMD_ID" --bundle "$BUNDLE_PATH"
-run_step_with_retry ntfy "${CMD_COMPLETE_NTFY_ATTEMPTS:-3}" \
-    "${CMD_COMPLETE_NTFY_RETRY_DELAY:-1}" \
-    timeout "${CMD_COMPLETE_NTFY_TIMEOUT:-25}" \
-    bash "$SCRIPT_DIR/ntfy_cmd.sh" "$CMD_ID" "完了"
-run_step inbox_archive bash "$SCRIPT_DIR/inbox_archive.sh" karo
+if checkpoint_has dashboard; then
+    printf '[cmd_complete] SKIP dashboard checkpoint_verified\n' >&2
+else
+    run_step_with_retry dashboard "${CMD_COMPLETE_DASHBOARD_ATTEMPTS:-3}" \
+        "${CMD_COMPLETE_DASHBOARD_RETRY_DELAY:-1}" \
+        bash "$SCRIPT_DIR/dashboard_update.sh" "$CMD_ID" --bundle "$BUNDLE_PATH"
+    checkpoint_mark dashboard
+fi
+if checkpoint_has ntfy; then
+    printf '[cmd_complete] SKIP ntfy checkpoint_verified\n' >&2
+else
+    run_step_with_retry ntfy "${CMD_COMPLETE_NTFY_ATTEMPTS:-3}" \
+        "${CMD_COMPLETE_NTFY_RETRY_DELAY:-1}" \
+        timeout "${CMD_COMPLETE_NTFY_TIMEOUT:-25}" \
+        bash "$SCRIPT_DIR/ntfy_cmd.sh" "$CMD_ID" "完了"
+    checkpoint_mark ntfy
+fi
+run_checkpointed inbox_archive bash "$SCRIPT_DIR/inbox_archive.sh" karo
 
 printf '[cmd_complete] COMPLETE %s\n' "$CMD_ID"

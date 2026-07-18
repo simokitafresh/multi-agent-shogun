@@ -168,7 +168,7 @@ SH
     [ "$(wc -l < "$CMD_COMPLETE_TEST_LOG")" -eq 7 ]
 }
 
-@test "parallel invocations keep complete independent ordered flows" {
+@test "parallel invocations serialize one durable ordered flow" {
     local log_a="$BATS_TEST_TMPDIR/parallel-a.log" log_b="$BATS_TEST_TMPDIR/parallel-b.log"
     env CMD_COMPLETE_TEST_LOG="$log_a" CMD_COMPLETE_ROOT_DIR="$FIXTURE" \
         CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture &
@@ -178,8 +178,10 @@ SH
     local pid_b=$!
     wait "$pid_a"
     wait "$pid_b"
-    [ "$(wc -l < "$log_a")" -eq 7 ]
-    [ "$(wc -l < "$log_b")" -eq 7 ]
+    local total=0
+    [[ -f "$log_a" ]] && total=$((total + $(wc -l < "$log_a")))
+    [[ -f "$log_b" ]] && total=$((total + $(wc -l < "$log_b")))
+    [ "$total" -eq 7 ]
 }
 
 @test "unrelated dashboard-wide freshness ALERT cannot block command completion" {
@@ -263,7 +265,7 @@ SH
     run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
         bash "$FIXTURE/scripts/cmd_complete.sh" "$cmd" "$FIXTURE/queue/gates/$cmd/missing.json"
     [ "$status" -ne 0 ]
-    [[ "$output" == *"completion evidence incomplete"* ]]
+    [[ "$output" == *"FAILED bundle missing"* ]]
     ! grep -q 'dashboard_update.sh' "$CMD_COMPLETE_TEST_LOG"
 }
 
