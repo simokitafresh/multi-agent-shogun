@@ -1046,7 +1046,10 @@ if not valid:
         _yfs_self="${BASH_SOURCE[0]:-$0}"
         [[ "$_yfs_self" != /* ]] && _yfs_self="$PWD/$_yfs_self"
         _yfs_report_setter="${_yfs_self%/lib/yaml_field_set.sh}/report_field_set.sh"
-        if [ ! -x "$_yfs_report_setter" ]; then
+        # Invoke the writer explicitly through bash below, so executable mode is
+        # not part of its runtime contract.  Git checkouts that preserve the
+        # tracked 100644 mode must work exactly like a developer worktree.
+        if [ ! -f "$_yfs_report_setter" ]; then
             echo "FATAL: yaml_field_set: structural writer not found: $_yfs_report_setter" >&2
             return 1
         fi
