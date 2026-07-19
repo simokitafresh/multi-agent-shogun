@@ -1014,19 +1014,30 @@ yaml_field_set() {
         return 1
     fi
 
-    # cmd_4088: test_necessity is a typed lifecycle contract, never a scalar.
+    # Typed lifecycle fields are never scalars.  The ordinary awk lane
     # The ordinary awk lane deliberately quotes JSON/YAML punctuation to keep
-    # scalar writes safe; using it for this field therefore turned a list into
-    # a string and blocked ninja_scope_commit only after all implementation
-    # work had finished.  Route this one known structured task field through
+    # scalar writes safe; using it for these fields therefore turns a list into
+    # a string and blocks scope/commit checks only after implementation ends.
+    # Route known structured task fields through
     # the existing flocked/atomic structural writer.  Invalid scalar input is
     # rejected before any write, so callers cannot silently corrupt the type.
-    if [ "$block_id" = "task" ] && [ "$field" = "test_necessity" ]; then
-        if ! YFS_STRUCTURED_VALUE="$new_value" python3 -c '
+    local _yfs_structured_type=""
+    if [ "$block_id" = "task" ]; then
+        case "$field" in
+            test_necessity) _yfs_structured_type="list_or_mapping" ;;
+            planned_paths)  _yfs_structured_type="list" ;;
+        esac
+    fi
+    if [ -n "$_yfs_structured_type" ]; then
+        if ! YFS_STRUCTURED_VALUE="$new_value" YFS_STRUCTURED_TYPE="$_yfs_structured_type" YFS_STRUCTURED_FIELD="$field" python3 -c '
 import os, sys, yaml
 value = yaml.safe_load(os.environ.get("YFS_STRUCTURED_VALUE", ""))
-if not isinstance(value, (list, dict)):
-    print("BLOCK: task.test_necessity must be a YAML list or mapping", file=sys.stderr)
+kind = os.environ["YFS_STRUCTURED_TYPE"]
+field = os.environ["YFS_STRUCTURED_FIELD"]
+valid = isinstance(value, list) if kind == "list" else isinstance(value, (list, dict))
+if not valid:
+    expected = "a YAML list" if kind == "list" else "a YAML list or mapping"
+    print(f"BLOCK: task.{field} must be {expected}", file=sys.stderr)
     raise SystemExit(2)
 '; then
             return 2
@@ -1039,7 +1050,7 @@ if not isinstance(value, (list, dict)):
             echo "FATAL: yaml_field_set: structural writer not found: $_yfs_report_setter" >&2
             return 1
         fi
-        printf '%s\n' "$new_value" | bash "$_yfs_report_setter" "$yaml_file" task.test_necessity -
+        printf '%s\n' "$new_value" | bash "$_yfs_report_setter" "$yaml_file" "task.${field}" -
         return $?
     fi
 

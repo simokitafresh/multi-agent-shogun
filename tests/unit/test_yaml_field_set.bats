@@ -74,6 +74,43 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "task planned_paths: flow-list入力をscalar化せず構造listとしてatomic保存する" {
+    local yaml="$TEST_TMPDIR/task_planned_paths.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: done
+  planned_paths: old-path
+EOF
+    local payload='[backend/app/main.py, backend/tests/test_api.py]'
+
+    run bash "$YFS" "$yaml" task planned_paths "$payload"
+    [ "$status" -eq 0 ]
+    run python3 - "$yaml" <<'PY'
+import sys, yaml
+value = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]["planned_paths"]
+assert value == ["backend/app/main.py", "backend/tests/test_api.py"], value
+print("PLANNED_PATHS_LIST_OK=1 ENTRIES=2")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PLANNED_PATHS_LIST_OK=1 ENTRIES=2"* ]]
+}
+
+@test "task planned_paths: scalar入力はbyte-identical fail closedする" {
+    local yaml="$TEST_TMPDIR/task_planned_paths_scalar.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: done
+  planned_paths: [backend/app/main.py]
+EOF
+    cp "$yaml" "$yaml.before"
+
+    run bash "$YFS" "$yaml" task planned_paths "backend/app/main.py"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"task.planned_paths must be a YAML list"* ]]
+    run cmp -s "$yaml.before" "$yaml"
+    [ "$status" -eq 0 ]
+}
+
 @test "list item id block: 既存フィールド値の更新" {
     cat > "$TEST_TMPDIR/test.yaml" <<'EOF'
 - id: AC1
