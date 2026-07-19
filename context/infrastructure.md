@@ -837,7 +837,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1246 -->
+<!-- last_synced_lesson: L1247 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1797,6 +1797,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1244: retro回答追跡は配送event_id単位で未回答を検知し、回答到着まで次task配備holdへ接続する（cmd_karo_retro_answer_tracking_202607200324）
 - L1245: terminal eventとprompt deliveryを同一時刻と見なさない（cmd_karo_retro_answer_tracking_202607200324）
 - L1246: 生成instructionsはcommon正本への追記が必要（cmd_karo_experiment_first_three_layers_2026072040）
+- L1247: source依存追加時はwrapper fixtureの依存閉包も同時更新する（cmd_karo_ci_fix_29699666303_cmd_complete_fixture_202607200455）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
