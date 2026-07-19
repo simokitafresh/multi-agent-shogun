@@ -837,7 +837,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1237 -->
+<!-- last_synced_lesson: L1240 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1788,6 +1788,9 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1235: multi-round callback境界はpending世代・schema・enum・report identityを一契約で守る（speed_campaign_R1_R2）
 - L1236: 速度候補は履歴台帳ではなくworktreeとbaseline HEADの存在で配備可否を決める（cmd_karo_hotfix_test_speed_stale_target_202607200052）
 - L1237: tracked deletion commit helperはDを全phaseで一貫保持せよ（cmd_4093）
+- L1238: active HOME全走査は並行cache書込みで偽FAILになる（cmd_karo_e2_ci_clean_repro_harness_202607200248）
+- L1239: 世代dedupは成功作用後にのみcommitする（cmd_karo_e1_structural_autodeploy_202607200305）
+- L1240: 自動ackは永続化成功をcommit pointにする（cmd_karo_info_digest_autoack_202607200316）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
