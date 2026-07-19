@@ -1086,7 +1086,27 @@ send_wakeup() {
 
 
 # ─── Process cycle ───
+record_info_autoack_gate() {
+    local result="$1" detail="$2" gate_log="${INBOX_INFO_GATE_LOG:-$SCRIPT_DIR/logs/gate_fire_log.yaml}"
+    detail="${detail//\"/_}"
+    mkdir -p "${gate_log%/*}"
+    { flock 9; printf '%s\n' "- ts: \"$(date -Iseconds)\", gate: inbox_info_digest_autoack, result: ${result}, detail: \"${detail}\"" >&9; } 9>>"$gate_log"
+}
+
 process_unread() {
+    # Persist judgment-free informational messages before acknowledging them.
+    # Failure is fail-closed: messages remain unread and enter the normal nudge path.
+    local auto_info_output="" auto_info_rc=0
+    auto_info_output=$(bash "$SCRIPT_DIR/scripts/inbox_mark_read.sh" "$AGENT_ID" --auto-info 2>&1) || auto_info_rc=$?
+    if [ "$auto_info_rc" -ne 0 ]; then
+        record_info_autoack_gate BLOCK "agent=${AGENT_ID} rc=${auto_info_rc} digest_failed=1 auto_ack=0"
+        echo "[$(date)] [BLOCK] info digest auto-ack failed for $AGENT_ID; leaving unread" >&2
+    elif [[ "$auto_info_output" != *"eligible=0"* ]]; then
+        local auto_ack_count=0
+        auto_ack_count=$(printf '%s\n' "$auto_info_output" | sed -n 's/.*Marked \([0-9][0-9]*\) message.*/\1/p' | tail -1)
+        auto_ack_count="${auto_ack_count:-0}"
+        record_info_autoack_gate PASS "agent=${AGENT_ID} digest_success=${auto_ack_count} auto_ack=${auto_ack_count} false_positive=0"
+    fi
     # Single parser call: TAB-separated "count \t has_specials \t fingerprint \t specials_b64 \t has_task_assigned \t priority"
     local raw_info
     raw_info=$(get_unread_info)

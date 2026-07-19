@@ -18,6 +18,68 @@
 
 # --- セットアップ ---
 
+@test "info auto-ack digests safe types and preserves work types" {
+    root="$BATS_TEST_TMPDIR/autoack"
+    mkdir -p "$root/scripts/lib" "$root/queue/inbox" "$root/logs"
+    cp "$PROJECT_ROOT/scripts/inbox_mark_read.sh" "$root/scripts/inbox_mark_read.sh"
+    cp "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$root/scripts/lib/lock_path.sh"
+    python3 - "$root/queue/inbox/alpha.yaml" <<'PY'
+import sys,yaml
+safe=['info','gate_clear','heartbeat','status_update','retro_answer','low']
+work=['task_assigned','task_supplement','verify_request','cmd_new','escalation','recovery','report_received','task_failed']
+msgs=[]
+for i,t in enumerate(safe+work):
+    msgs.append({'id':f'm{i}','from':'sender','type':t,'timestamp':'2026-07-20T00:00:00','content':f'body-{t}','read':False})
+yaml.safe_dump({'messages':msgs},open(sys.argv[1],'w'),sort_keys=False,allow_unicode=True)
+PY
+    run env INBOX_MARK_READ_ROOT_OVERRIDE="$root" bash "$root/scripts/inbox_mark_read.sh" alpha --auto-info
+    [ "$status" -eq 0 ]
+    run python3 - "$root/queue/inbox/alpha.yaml" "$root/logs/inbox_info_digest.jsonl" <<'PY'
+import json,sys,yaml
+d=yaml.safe_load(open(sys.argv[1])); safe=d['messages'][:6]; work=d['messages'][6:]
+rows=[json.loads(x) for x in open(sys.argv[2])]
+assert len(rows)==6 and all(m['read'] for m in safe) and all(not m['read'] for m in work)
+assert all(set(r)=={'msg_id','from','type','timestamp','content'} for r in rows)
+print('digest=6 auto_ack=6 work_unread=8 false_positive=0 nudge_eligible=8')
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "info auto-ack is idempotent and lock failure leaves unread" {
+    root="$BATS_TEST_TMPDIR/autoack-fail"
+    mkdir -p "$root/scripts/lib" "$root/queue/inbox" "$root/logs"
+    cp "$PROJECT_ROOT/scripts/inbox_mark_read.sh" "$root/scripts/inbox_mark_read.sh"
+    cp "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$root/scripts/lib/lock_path.sh"
+    printf 'messages:\n- id: m1\n  from: sender\n  type: info\n  timestamp: 2026-07-20T00:00:00\n  content: body\n  read: false\n' > "$root/queue/inbox/alpha.yaml"
+    env INBOX_MARK_READ_ROOT_OVERRIDE="$root" bash "$root/scripts/inbox_mark_read.sh" alpha --auto-info
+    env INBOX_MARK_READ_ROOT_OVERRIDE="$root" bash "$root/scripts/inbox_mark_read.sh" alpha --auto-info
+    [ "$(wc -l < "$root/logs/inbox_info_digest.jsonl")" -eq 1 ]
+    sed -i 's/read: true/read: false/' "$root/queue/inbox/alpha.yaml"
+    exec 8>>"$root/logs/inbox_info_digest.jsonl"; flock 8
+    run env INBOX_MARK_READ_ROOT_OVERRIDE="$root" bash "$root/scripts/inbox_mark_read.sh" alpha --auto-info
+    flock -u 8
+    [ "$status" -ne 0 ]
+    grep -q 'read: false' "$root/queue/inbox/alpha.yaml"
+    sed -i '/  content:/d' "$root/queue/inbox/alpha.yaml"
+    run env INBOX_MARK_READ_ROOT_OVERRIDE="$root" bash "$root/scripts/inbox_mark_read.sh" alpha --auto-info
+    [ "$status" -ne 0 ]
+    grep -q 'read: false' "$root/queue/inbox/alpha.yaml"
+}
+
+@test "info auto-ack gate telemetry records finite PASS and BLOCK counters" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" STATE="$BATS_TEST_TMPDIR/state" bash -c '
+        set -- alpha pane
+        export INBOX_WATCHER_LIB_ONLY=1 SHOGUN_STATE_DIR="$STATE"
+        source "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+        INBOX_INFO_GATE_LOG="$STATE/gate.yaml"
+        record_info_autoack_gate PASS "digest_success=6 auto_ack=6 false_positive=0 nudge=0 wall_ms=12"
+        record_info_autoack_gate BLOCK "digest_failed=1 auto_ack=0 false_positive=0 nudge=1 wall_ms=3"
+        grep -q "result: PASS.*digest_success=6" "$STATE/gate.yaml"
+        grep -q "result: BLOCK.*digest_failed=1" "$STATE/gate.yaml"
+    '
+    [ "$status" -eq 0 ]
+}
+
 setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"

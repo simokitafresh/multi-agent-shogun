@@ -20,6 +20,11 @@ unset _imr_self
 
 AGENT_ID="$1"
 shift || true
+AUTO_INFO_MODE=false
+if [ "${1:-}" = "--auto-info" ]; then
+    AUTO_INFO_MODE=true
+    shift
+fi
 MSG_IDS=("$@")
 MSG_ID="${MSG_IDS[0]:-}"
 
@@ -96,6 +101,63 @@ resolve_inbox_file_path() {
 INBOX="$(resolve_inbox_file_path "$INBOX")"
 LOCKFILE="$(lock_path "$INBOX")"
 CONFIRM_LIST_FILE=""
+
+auto_digest_info_messages() {
+    local digest="${INBOX_INFO_DIGEST_FILE:-$SCRIPT_DIR/logs/inbox_info_digest.jsonl}"
+    local ids_file="/tmp/.imr_auto_info_ids_$$"
+    mkdir -p "${digest%/*}"
+    python3 - "$INBOX" "$digest" >"$ids_file" <<'PY' || return $?
+import fcntl, json, os, sys, yaml
+inbox, digest = sys.argv[1:]
+allowed = {"low", "info", "gate_clear", "heartbeat", "status_update", "retro_answer"}
+try:
+    data = yaml.safe_load(open(inbox, encoding="utf-8")) or {}
+except Exception as exc:
+    print(f"BLOCK: inbox parse failed: {exc}", file=sys.stderr)
+    raise SystemExit(2)
+eligible = []
+for msg in data.get("messages", []):
+    if not isinstance(msg, dict) or msg.get("read") is True or msg.get("type") not in allowed:
+        continue
+    required = ("id", "from", "type", "timestamp", "content")
+    if any(msg.get(k) in (None, "") for k in required):
+        print(f"BLOCK: classified info message missing required fields id={msg.get('id','')}", file=sys.stderr)
+        raise SystemExit(2)
+    eligible.append(msg)
+if not eligible:
+    raise SystemExit(0)
+os.makedirs(os.path.dirname(digest), exist_ok=True)
+with open(digest, "a+", encoding="utf-8") as out:
+    try:
+        fcntl.flock(out.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        print("BLOCK: info digest lock busy", file=sys.stderr)
+        raise SystemExit(3)
+    out.seek(0)
+    seen = set()
+    for line in out:
+        try: seen.add(str(json.loads(line)["msg_id"]))
+        except Exception: continue
+    for msg in eligible:
+        msg_id = str(msg["id"])
+        if msg_id not in seen:
+            record = {"msg_id": msg_id, "from": str(msg["from"]), "type": str(msg["type"]),
+                      "timestamp": str(msg["timestamp"]), "content": str(msg["content"])}
+            out.write(json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n")
+            seen.add(msg_id)
+    out.flush(); os.fsync(out.fileno())
+for msg in eligible:
+    print(msg["id"])
+PY
+    mapfile -t MSG_IDS < "$ids_file"
+    MSG_ID="${MSG_IDS[0]:-}"
+    [ -n "$MSG_ID" ] || return 0
+}
+
+if [ "$AUTO_INFO_MODE" = true ]; then
+    auto_digest_info_messages || exit $?
+    [ -n "$MSG_ID" ] || { echo "[inbox_mark_read] auto-info eligible=0"; exit 0; }
+fi
 
 extract_bulletin_confirms() {
     local inbox_file="$1"
