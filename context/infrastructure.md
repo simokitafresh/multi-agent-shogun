@@ -503,6 +503,8 @@ cmd_2775偵察でcontext未記載だった238関数のうち、他エージェ�
 
 **terminal report publish不変量(cmd_karo_hotfix_report_publish_review_ready_202607191728, 2026-07-19)**: `report_field_set.sh --batch`が`status=completed`をatomic公開した時点で、同一report fingerprintのcanonical completion parentと軍師review childを同期永続化する。atomic replace直後のpane dead/respawn窓はcompleted report自体をdurable outboxとし、`setsid+nohup`でpane process groupから分離したfast reconcilerが5秒以内に再送、`ninja_monitor.sh`はactive taskだけを後段修復する。`inbox_write.sh`のfingerprint transactionへ全retryを収束させ、steady terminalはpublisher 0とする。一次実測: report→notify中央値82.4秒→isolated p50 0.271秒/p95 0.302秒、failpoint復旧0.419秒、FP0/FN0/SKIP0、live inbox delta 0。→ `scripts/report_field_set.sh` / `scripts/ninja_monitor.sh` / `tests/unit/test_report_field_set_batch_throughput.bats` / `tests/unit/test_ninja_monitor_report_notify_alias.bats`
 
+**二相review latency境界(cmd_karo_hotfix_review_gate_arrival_coalescing_202607191755, 2026-07-19)**: SG7生成→review中央値74.1秒は人のLGTM/ACCEPT判断を含むため、system待ちと分離して扱う。isolated全順序実測では両承認到着→triggerは正常397–899ms・逆順434–686ms・同時367–569ms、各trigger 1、同一承認retry後も1、revisionは片側新承認で旧count維持・両側新fingerprint承認後のみ次世代trigger、FP0/FN0/SKIP0・live write 0。既存のflock + fingerprint-bound approvals + manifest noclobber triggerで5秒SLOを満たすためsystem側の追加実装は不要であり、Karo ACCEPTを自動生成して人判断待ちを隠してはならない。→ `scripts/review_approval.sh` / `scripts/lib/review_approval.sh` / `scripts/cmd_complete_gate.sh`
+
 **pending_work通知の世代dedupe不変量(cmd_karo_hotfix_pending_work_generation_dedupe, 2026-07-12)**: 上記のdone/failed両対象化後、`check_inbox_renudge`のKARO-PENDING通知は`RENUDGE_LAST_SEND[karo]`の120秒in-memoryスロットルのみで抑止しており、同一pending集合(worker+task_id+parent_cmd+status+report内容が全て不変)が続く限り2分周期で同一通知が再送され続けた(実運転RC、fixture再現で修正前10/10cycle通知)。修正: pending集合全体のcanonical世代fingerprintを`$STATE_DIR/karo_pending_work_notice.tsv`へ永続化し、同一世代はmonitor cycle・inbox既読化・monitor再起動を跨いで通知1回に抑える(修正後1/10cycle)。集合変化・report内容変化・0件化後の同一世代再出現(軍師review/GATE CLEARで一度解消→RC/reopen)はいずれも新世代として即時再通知する。判定(`_karo_pending_work_already_notified`)は副作用なしの比較のみとし、確定(`_karo_pending_work_mark_notified`)は`notify_karo_durable`が成功(direct成功またはoutbox永続化成功、戻り値0)を返した後にのみatomic tmp+mvで行う。先書きするとdirect失敗+outbox永続化失敗の場合に通知が永久に失われたまま抑止され続けるため、この順序を厳守する。
 
 ### deploy_task.sh: 注入・ゲート・配備制御（20件）
@@ -835,7 +837,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1227 -->
+<!-- last_synced_lesson: L1228 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1776,6 +1778,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1225: 比較境界は両辺を同一fixtureで型正規化する（cmd_karo_ci_red_29676034794_deploy_fixture_202607191515）
 - L1226: 工程内訳は完全観測同一コホートで比較する（cmd_4085）
 - L1227: durable workerはpane process groupから分離する（cmd_karo_hotfix_report_publish_review_ready_202607191728）
+- L1228: README記述とtracked計器を分離して成熟度を測る（cmd_4086）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
