@@ -666,3 +666,25 @@ _setup_guard19_repo() {
     [ "$status" -eq 0 ]
     [[ "$output" == *'same day duplicate fix'* ]]
 }
+
+@test "Guard 19: linked worktree preserves overlap detection" {
+    local repo linked gfl
+    repo="$(_setup_guard19_repo)"
+    linked="$TMP_DIR/guard19_linked"
+    git -C "$repo" worktree add -q -b guard19-linked "$linked"
+    gfl="$TMP_DIR/gate_fire_log_linked.yaml"
+    printf '#!/bin/bash\necho v2\n' > "$linked/scripts/target.sh"
+    git -C "$linked" add scripts/target.sh
+    GIT_AUTHOR_DATE="2026-03-05T02:31:00" GIT_COMMITTER_DATE="2026-03-05T02:31:00" \
+        git -C "$linked" commit -q -m "linked same day fix" >/dev/null
+    printf '#!/bin/bash\necho dirty\n' > "$linked/scripts/target.sh"
+    _mark_read_for_current_agent "$linked/scripts/target.sh"
+
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" GUARD19_GIT_ROOT_OVERRIDE="$3" GUARD19_TODAY_OVERRIDE="$4" GATE_FIRE_LOG_FILE="$5" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$linked"'/scripts/target.sh","old_string":"dirty","new_string":"v3"}}' \
+        "$PRE_HOOK" "$linked" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'linked same day fix'* ]]
+    grep -q 'commits_today=1; uncommitted=yes' "$gfl"
+}

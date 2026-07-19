@@ -905,7 +905,7 @@ guard19_scripts_today_history() {
     rel="$target"
     [[ "$rel" == "$git_root/"* ]] && rel="${rel#"$git_root/"}"
     [[ "$rel" == scripts/* ]] || return 0
-    [[ -d "$git_root/.git" ]] || return 0
+    [[ "$(timeout 2s git -C "$git_root" rev-parse --is-inside-work-tree 2>/dev/null || true)" == "true" ]] || return 0
 
     today_date="${GUARD19_TODAY_OVERRIDE:-$(date '+%Y-%m-%d')}"
     today_start="${today_date}T00:00:00"
