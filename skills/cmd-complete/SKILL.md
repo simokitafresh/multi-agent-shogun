@@ -118,6 +118,10 @@ bash scripts/ntfy_cmd.sh <cmd_id> "完了"
 bash scripts/inbox_archive.sh karo
 ```
 
+wrapperはarchive直前に、対象cmdと内容が完全一致する未読`skill_hint`のIDだけを
+`inbox_mark_read.sh`で個別既読化する。無関係な未読は保存し、完了後のhint残留による
+2回目のarchiveを不要にする。
+
 ## BLOCK時の手順
 - Step 3でBLOCK → BLOCK理由を確認し修正。修正後Step 3から再実行
 - 新しいinbox nudgeが来ても上記Step 1-8を先に完了する（CTX膨張防止）

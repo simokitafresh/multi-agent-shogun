@@ -10,11 +10,37 @@ setup() {
 import json
 print(json.dumps({"acceptance_criteria_count": 2, "scope": ["scripts"], "project": "infra"}))
 PY
-    for name in lesson_review.sh cmd_complete_gate.sh cmd_quality_log.sh dashboard_update.sh ntfy_cmd.sh inbox_archive.sh karo_workaround_log.sh; do
+    for name in lesson_review.sh cmd_complete_gate.sh cmd_quality_log.sh dashboard_update.sh ntfy_cmd.sh inbox_mark_read.sh inbox_archive.sh karo_workaround_log.sh; do
         make_stub "$FIXTURE/scripts/$name" "$name"
     done
     make_stub "$FIXTURE/scripts/gates/gate_context_freshness.sh" gate_context_freshness.sh
     make_stub "$FIXTURE/scripts/gates/gate_yaml_status.sh" gate_yaml_status.sh
+}
+
+# test_necessity: cmd-complete must consume only its own CLEAR skill hint before the terminal inbox archive.
+@test "completion acknowledges its matching skill hint before archive and preserves unrelated unread" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/hint-ack.log"
+    mkdir -p "$FIXTURE/queue/inbox"
+    cat > "$FIXTURE/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- content: 'GATE CLEAR — cmd_fixture 完了。/cmd-complete スキルで完了処理を実行せよ。'
+  from: cmd_complete_gate
+  id: msg_matching
+  read: false
+  type: skill_hint
+- content: '別件を処理せよ。'
+  from: shogun
+  id: msg_unrelated
+  read: false
+  type: cmd_new
+YAML
+
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    grep -q '^inbox_mark_read.sh|karo msg_matching$' "$CMD_COMPLETE_TEST_LOG"
+    ! grep -q 'msg_unrelated' "$CMD_COMPLETE_TEST_LOG"
+    [ "$(grep -n -E '^(inbox_mark_read|inbox_archive)\.sh\|' "$CMD_COMPLETE_TEST_LOG" | cut -d: -f2-)" = $'inbox_mark_read.sh|karo msg_matching\ninbox_archive.sh|karo' ]
 }
 
 make_stub() {

@@ -177,6 +177,41 @@ run_status_step() {
     return "$rc"
 }
 
+archive_inbox_after_completion_hint() {
+    local inbox_path="$ROOT_DIR/queue/inbox/karo.yaml"
+    local hint_id
+    local -a hint_ids=()
+
+    if [[ -f "$inbox_path" ]]; then
+        mapfile -t hint_ids < <(python3 - "$inbox_path" "$CMD_ID" <<'PY'
+import sys
+import yaml
+
+path, cmd_id = sys.argv[1:]
+with open(path, encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+messages = data.get("messages", []) if isinstance(data, dict) else []
+expected = f"GATE CLEAR — {cmd_id} 完了。/cmd-complete スキルで完了処理を実行せよ。"
+for message in messages:
+    if not isinstance(message, dict):
+        continue
+    if message.get("type") != "skill_hint" or message.get("read") is not False:
+        continue
+    if str(message.get("content") or "") != expected:
+        continue
+    message_id = str(message.get("id") or "")
+    if message_id:
+        print(message_id)
+PY
+        )
+    fi
+
+    for hint_id in "${hint_ids[@]}"; do
+        bash "$SCRIPT_DIR/inbox_mark_read.sh" karo "$hint_id"
+    done
+    bash "$SCRIPT_DIR/inbox_archive.sh" karo
+}
+
 if checkpoint_has sg7_consume; then
     printf '[cmd_complete] SKIP sg7_consume checkpoint_verified\n' >&2
     PROJECT_ID="$(checkpoint_project)"
@@ -235,6 +270,6 @@ else
         bash "$SCRIPT_DIR/ntfy_cmd.sh" "$CMD_ID" "完了"
     checkpoint_mark ntfy
 fi
-run_checkpointed inbox_archive bash "$SCRIPT_DIR/inbox_archive.sh" karo
+run_checkpointed inbox_archive archive_inbox_after_completion_hint
 
 printf '[cmd_complete] COMPLETE %s\n' "$CMD_ID"
