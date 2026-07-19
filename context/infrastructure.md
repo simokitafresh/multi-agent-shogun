@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-19 cmd_karo_hotfix_ga300_context_freshness_sources_202607190222 -->
-<!-- source_commit:f7602c7fa6e3e85d7924d300eed23b371b291779 reason:ga300-reviewed-exact-boundary evidence:test-lifecycle-contract-classified -->
+<!-- source_commit:1ee1399d096d7964013197629401f52ce53fac8c reason:ga303-template-boundary-contract evidence:pre_alert=1; contract_test=1/1; last_updated_only_forbidden -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
