@@ -7663,7 +7663,7 @@ check_karo_idle_cycle() {
     done
 
     # 全条件成立: deployを遮断した同一境界内で家老へ通知する。
-    log "KARO-IDLE-CYCLE: All ${ninja_total} ninjas idle/completed/done + pipeline empty → nudging karo"
+    # 送信様ログは配送+durable epoch更新の成功後だけ記録する。
     # 子プロセスにはlock FDを継承させない。親shellは通知完了まで保持する。
     deliver_karo_idle_nudge_with_cooldown "$now" bash -c '
         read -ra inherited_idle_fds <<< "$1"
