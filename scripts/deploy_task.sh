@@ -10805,6 +10805,94 @@ PY
     esac
 }
 
+# D006 is an unconditional safety boundary.  Reject task sources that require
+# signalling an external process before reset_stale_fields can publish the
+# source into queue/tasks or create a report/inbox event.  Explanations of the
+# prohibition remain valid input; the guard targets executable/imperative
+# requirements, not the words themselves.
+deploy_task_destructive_signal_precheck() {
+    local source_file="$1" cmd_id="${2:-}"
+    python3 - "$source_file" "$cmd_id" <<'PY'
+import re
+import sys
+
+import yaml
+
+path, cmd_id = sys.argv[1:3]
+try:
+    raw = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except Exception as exc:
+    print(f"BLOCK: destructive signal preflight could not parse source: {exc}", file=sys.stderr)
+    raise SystemExit(2)
+
+source = raw.get("commands", raw)
+if cmd_id:
+    if isinstance(source, dict) and cmd_id in source:
+        task = source[cmd_id]
+    elif isinstance(source, list):
+        task = next((item for item in source if isinstance(item, dict) and item.get("id") == cmd_id), {})
+    else:
+        task = raw.get("task", raw)
+else:
+    task = raw.get("task", raw)
+if not isinstance(task, dict):
+    raise SystemExit(0)
+
+def flatten_acs(value):
+    if isinstance(value, dict):
+        values = value.values()
+    elif isinstance(value, list):
+        values = value
+    else:
+        values = [value]
+    out = []
+    for value in values:
+        if isinstance(value, dict):
+            for key in ("description", "command", "check", "criteria", "title"):
+                if value.get(key):
+                    out.append(str(value[key]))
+            for check in value.get("checks", []) if isinstance(value.get("checks"), list) else []:
+                out.append(str(check.get("check", "") if isinstance(check, dict) else check))
+        elif value:
+            out.append(str(value))
+    return out
+
+texts = [str(task.get(key) or "") for key in ("purpose", "command")]
+texts.extend(flatten_acs(task.get("acceptance_criteria") or task.get("ac") or []))
+
+safe_explanation = re.compile(
+    r"D006|禁止|禁則|違反|遮断|BLOCK|ブロック|検出|発火|参照|説明|例示|"
+    r"要求.{0,12}(?:場合|なら)|(?:使うな|実行するな|してはならない)", re.I
+)
+shell_signal = re.compile(
+    r"(?:^|[;&|`]|\$\(|\b(?:sudo|env|timeout)\s+)(?:\s*)(?:kill|pkill|killall)\b", re.I
+)
+imperative_signal = re.compile(
+    r"(?:外部|別|他の|対象)?(?:プロセス|daemon|デーモン|PID|pane|ペイン).{0,30}"
+    r"(?:kill|pkill|killall|signal|シグナル|終了させ|停止させ).{0,20}"
+    r"(?:実行|送信|行う|せよ|すること|故障注入)", re.I
+)
+process_kill_fault = re.compile(
+    r"(?:process[ _-]?kill|プロセスkill).{0,20}(?:故障注入|実行|行う|せよ)", re.I
+)
+
+violations = []
+for text in texts:
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or safe_explanation.search(line):
+            continue
+        if shell_signal.search(line) or imperative_signal.search(line) or process_kill_fault.search(line):
+            violations.append(line)
+
+if violations:
+    print("BLOCK: D006違反の外部プロセスsignal要求を配備前に検出。", file=sys.stderr)
+    print("positive_rule: phase永続保存後に対象プロセス自身が非0終了するテスト専用failpointを使え。", file=sys.stderr)
+    print(f"evidence: {violations[0]}", file=sys.stderr)
+    raise SystemExit(2)
+PY
+}
+
 # ═══════════════════════════════════════
 # メイン処理
 # ═══════════════════════════════════════
@@ -10975,6 +11063,10 @@ except Exception:
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                 }
+                deploy_task_destructive_signal_precheck "$YAML_FILE" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 2
+                }
                 deploy_task_direct_quality_contract_precheck "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
@@ -10986,6 +11078,10 @@ except Exception:
                     return 2
                 }
                 [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_source_contract_precheck "$cmd_source_file" "$CMD_ID" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 2
+                }
+                deploy_task_destructive_signal_precheck "$cmd_source_file" "$CMD_ID" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 2
                 }

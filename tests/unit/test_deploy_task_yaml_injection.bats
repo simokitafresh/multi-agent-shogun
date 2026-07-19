@@ -1314,3 +1314,46 @@ EOF
     run diff "$task_yaml.orig" "$task_yaml"
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: D006違反taskが忍者へ到達しない配備前不変量を守る。
+@test "destructive signal preflight blocks 6 dangerous requirements and passes 6 explanations/failpoints" {
+    local tmpdir fixture before dangerous safe text
+    tmpdir="$(mktemp -d)"
+    fixture="$tmpdir/source.yaml"
+    printf 'sentinel\n' > "$tmpdir/task.yaml"
+    printf 'sentinel\n' > "$tmpdir/report.yaml"
+    printf 'sentinel\n' > "$tmpdir/inbox.yaml"
+
+    dangerous=(
+      'command: "kill 1234"'
+      'command: "pkill -f ninja_monitor"'
+      'command: "killall throughput_growth_loop.sh"'
+      'purpose: "外部プロセスへsignalを送信して故障注入を実行せよ"'
+      'purpose: "対象daemonを終了させる故障注入を行う"'
+      'acceptance_criteria: ["process kill故障注入を実行する"]'
+    )
+    safe=(
+      'command: "TEST_FAILPOINT=after_persist bash scripts/worker.sh; test $? -ne 0"'
+      'purpose: "D006本文を参照して安全境界を確認する"'
+      'purpose: "kill/pkill/killallは禁止であると説明する"'
+      'acceptance_criteria: ["外部プロセスsignal要求を検出してBLOCKする"]'
+      'acceptance_criteria: ["process kill故障注入要求がある場合は遮断する"]'
+      'command: "bash scripts/worker.sh --self-exit-after-persist 17"'
+    )
+
+    for text in "${dangerous[@]}"; do
+      printf 'task:\n  %s\n' "$text" > "$fixture"
+      run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_destructive_signal_precheck '$fixture'"
+      [ "$status" -eq 2 ]
+      [[ "$output" == *"phase永続保存後に対象プロセス自身が非0終了するテスト専用failpointを使え"* ]]
+    done
+
+    for text in "${safe[@]}"; do
+      printf 'task:\n  %s\n' "$text" > "$fixture"
+      run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_destructive_signal_precheck '$fixture'"
+      [ "$status" -eq 0 ]
+    done
+
+    run bash -c "cmp -s '$tmpdir/task.yaml' '$tmpdir/report.yaml' && cmp -s '$tmpdir/task.yaml' '$tmpdir/inbox.yaml'"
+    [ "$status" -eq 0 ]
+}
