@@ -1,20 +1,24 @@
 #!/usr/bin/env bats
 # test_necessity: ninja scope commitは他者stageを混入せず、指定scopeだけを原子的にcommitする。
 
+setup_file() {
+    local master="$BATS_FILE_TMPDIR/ninja_scope_commit_master"
+    mkdir -p "$master"
+    git -C "$master" init -q
+    git -C "$master" config user.email test@example.com
+    git -C "$master" config user.name test
+    printf 'base\n' > "$master/own.txt"
+    printf 'base\n' > "$master/other.txt"
+    git -C "$master" add own.txt other.txt
+    git -C "$master" commit -qm initial
+    mkdir -p "$master/scripts/lib"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/scope_path.sh" "$master/scripts/lib/scope_path.sh"
+}
+
 setup() {
     REPO="$(mktemp -d "$BATS_TMPDIR/ninja_scope_commit.XXXXXX")"
-    git -C "$REPO" init -q
-    git -C "$REPO" config user.email test@example.com
-    git -C "$REPO" config user.name test
-    printf 'base\n' > "$REPO/own.txt"
-    printf 'base\n' > "$REPO/other.txt"
-    git -C "$REPO" add own.txt other.txt
-    git -C "$REPO" commit -qm initial
+    cp -a "$BATS_FILE_TMPDIR/ninja_scope_commit_master/." "$REPO/"
     HELPER="$BATS_TEST_DIRNAME/../../scripts/ninja_scope_commit.sh"
-    # ninja_scope_commit.sh unconditionally sources scripts/lib/scope_path.sh
-    # (SSOT for scope path normalization); every sandbox repo needs a copy.
-    mkdir -p "$REPO/scripts/lib"
-    cp "$BATS_TEST_DIRNAME/../../scripts/lib/scope_path.sh" "$REPO/scripts/lib/scope_path.sh"
 }
 
 @test "explicit ignored new scope is committed without force-staging ignored files outside scope" {
