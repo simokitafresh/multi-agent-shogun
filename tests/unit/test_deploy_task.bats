@@ -10,6 +10,26 @@ setup_file() {
     deploy_task_setup_file
 }
 
+# test_necessity: 全taskが殿の実験ファースト原文と一次確認の適用形をLevel5で受け取る不変量を守る。
+@test "all tasks receive experiment-first principle exactly once" {
+    local task="$BATS_TEST_TMPDIR/experiment-first-task.yaml"
+    printf 'task:\n  parent_cmd: cmd_test\n  status: assigned\n' > "$task"
+    run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; inject_experiment_first_principle "$2"; inject_experiment_first_principle "$2"' _ "$TEST_PROJECT" "$task"
+    [ "$status" -eq 0 ]
+    run env TASK_FILE="$task" python3 - <<'PY'
+import os
+import yaml
+with open(os.environ['TASK_FILE'], encoding='utf-8') as f:
+    values = (yaml.safe_load(f) or {})['task'].get('experiment_first_principle', [])
+original = '殿の原文: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』'
+assert values.count(original) == 1, values
+assert len(values) == 2, values
+for required in ('仮説を頭で絞らず', '並列に全て試せ', '想像で結論せず', '一次結果を確認'):
+    assert required in values[1], values
+PY
+    [ "$status" -eq 0 ]
+}
+
 setup() {
     deploy_task_scaffold "deploy_yaml_freshness"
 }
