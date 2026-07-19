@@ -143,12 +143,12 @@ attempt=0
 [ ! -f "$attempt_file" ] || attempt=$(cat "$attempt_file")
 attempt=$((attempt + 1))
 printf '%s\n' "$attempt" > "$attempt_file"
-[ "$attempt" -ge 2 ] || sleep 2
+[ "$attempt" -ge 2 ] || sleep 0.2
 SH
     chmod +x "$FIXTURE/scripts/ntfy_cmd.sh"
 
     run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
-        CMD_COMPLETE_NTFY_TIMEOUT=1 CMD_COMPLETE_NTFY_RETRY_DELAY=0 \
+        CMD_COMPLETE_NTFY_TIMEOUT=0.1 CMD_COMPLETE_NTFY_RETRY_DELAY=0 \
         bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
     [ "$status" -eq 0 ]
     [ "$(grep -c '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 2 ]
@@ -161,12 +161,12 @@ SH
     cat > "$FIXTURE/scripts/ntfy_cmd.sh" <<'SH'
 #!/usr/bin/env bash
 printf 'ntfy_cmd.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
-sleep 2
+sleep 0.2
 SH
     chmod +x "$FIXTURE/scripts/ntfy_cmd.sh"
 
     run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
-        CMD_COMPLETE_NTFY_ATTEMPTS=2 CMD_COMPLETE_NTFY_TIMEOUT=1 CMD_COMPLETE_NTFY_RETRY_DELAY=0 \
+        CMD_COMPLETE_NTFY_ATTEMPTS=2 CMD_COMPLETE_NTFY_TIMEOUT=0.1 CMD_COMPLETE_NTFY_RETRY_DELAY=0 \
         bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
     [ "$status" -eq 124 ]
     [ "$(grep -c '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 2 ]
