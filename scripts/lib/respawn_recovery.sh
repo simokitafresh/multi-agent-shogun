@@ -20,6 +20,22 @@ respawn_recovery_ready() {
     [ "$ctx" = 0 ] || return 1
 }
 
+# respawn-paneの成功直後はCLIバナー/CTX表示がまだ描画されていないことがある。
+# 単発判定でその正常な起動窓をrespawn失敗へ誤変換せず、期限内だけ再確認する。
+respawn_recovery_wait_ready() {
+    local pane="$1"
+    local attempts="${RESPAWN_RECOVERY_READY_ATTEMPTS:-10}"
+    local delay="${RESPAWN_RECOVERY_READY_DELAY_SECONDS:-1}"
+    local attempt
+
+    [[ "$attempts" =~ ^[1-9][0-9]*$ ]] || attempts=10
+    for ((attempt = 1; attempt <= attempts; attempt++)); do
+        respawn_recovery_ready "$pane" && return 0
+        [ "$attempt" -lt "$attempts" ] && sleep "$delay"
+    done
+    return 1
+}
+
 respawn_recovery_generation() {
     local pane="$1" pid stat starttime
     local tmux_bin="${RESPAWN_RECOVERY_TMUX_BIN:-tmux}" proc_root="${RESPAWN_RECOVERY_PROC_ROOT:-/proc}"

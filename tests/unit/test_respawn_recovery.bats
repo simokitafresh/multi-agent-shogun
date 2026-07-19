@@ -149,3 +149,40 @@ SH
   run grep -n 'leaving unread for retry' "$repo/scripts/inbox_watcher.sh"
   [ "$status" -eq 0 ]
 }
+
+@test "ready handshake retries transient startup and fails after its bounded deadline" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  mkdir -p "$root/proc/404"
+  printf '404 (delayed fixture) S 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 444 0\n' > "$root/proc/404/stat"
+  printf '0\n' > "$root/captures"
+  cat > "$root/tmux-delayed" <<'SH'
+#!/usr/bin/env bash
+case "$1:$*" in
+  display-message:*pane_dead*) printf '0\n' ;;
+  display-message:*) printf '404\n' ;;
+  capture-pane:*)
+    count=$(<"$FIXTURE_CAPTURE_COUNT")
+    count=$((count + 1))
+    printf '%s\n' "$count" > "$FIXTURE_CAPTURE_COUNT"
+    if [ "$count" -ge "${FIXTURE_READY_ON:-3}" ]; then
+      printf 'OpenAI Codex CTX:0%%\n'
+    else
+      printf 'starting\n'
+    fi
+    ;;
+esac
+SH
+  chmod +x "$root/tmux-delayed"
+  export RESPAWN_RECOVERY_TMUX_BIN="$root/tmux-delayed" RESPAWN_RECOVERY_PROC_ROOT="$root/proc"
+  export FIXTURE_CAPTURE_COUNT="$root/captures" RESPAWN_RECOVERY_READY_ATTEMPTS=3 RESPAWN_RECOVERY_READY_DELAY_SECONDS=0
+
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_wait_ready pane' _ "$repo"
+  [ "$status" -eq 0 ]
+  [ "$(<"$root/captures")" -eq 3 ]
+
+  printf '0\n' > "$root/captures"
+  export FIXTURE_READY_ON=4
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_wait_ready pane' _ "$repo"
+  [ "$status" -ne 0 ]
+  [ "$(<"$root/captures")" -eq 3 ]
+}

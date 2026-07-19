@@ -119,6 +119,34 @@ run_recovery_case() {
     [[ "$output" == *"ACTIVE-DEAD-RECOVERY-BLOCK"* ]]
 }
 
+@test "verified failed task respawn generation is durable and suppresses repeated clear" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+        cat > "$SCRIPT_DIR/queue/tasks/alpha.yaml" <<EOF
+task:
+  task_id: failed_fixture
+  parent_cmd: cmd_parent
+  deployed_at: 2026-07-20T00:00:00+09:00
+  status: failed
+EOF
+        first=1
+        _failed_task_respawn_completed alpha && first=0
+        _mark_failed_task_respawn_completed alpha
+        second=0
+        _failed_task_respawn_completed alpha || second=1
+        sed -i "s/00:00:00/00:01:00/" "$SCRIPT_DIR/queue/tasks/alpha.yaml"
+        third=1
+        _failed_task_respawn_completed alpha && third=0
+        printf "before=%s same_generation=%s new_generation=%s\n" "$first" "$second" "$third"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"before=1 same_generation=0 new_generation=1"* ]]
+}
+
 run_check_stall_order_case() {
     local fixture_dead="$1"
     run env PROJECT_ROOT="$PROJECT_ROOT" FIXTURE_DEAD="$fixture_dead" bash -c '

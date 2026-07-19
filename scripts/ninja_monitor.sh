@@ -1249,7 +1249,7 @@ safe_send_clear() {
                 _fsc_respawn_ok=0
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
             }
-            if [ "$_fsc_respawn_ok" -eq 1 ] && respawn_recovery_ready "$pane"; then
+            if [ "$_fsc_respawn_ok" -eq 1 ] && respawn_recovery_wait_ready "$pane"; then
                 _generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
                 [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-codex || _fsc_respawn_ok=0
             else
@@ -1258,6 +1258,12 @@ safe_send_clear() {
             _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
             # config.toml復元(SSOT: cli_lookup.sh codex_config_restore)
             codex_config_restore
+            if [ "$_fsc_respawn_ok" -ne 1 ]; then
+                log "CODEX-RESPAWN-VERIFY-FAIL: $agent_name ready handshake timed out; retry=next_cycle"
+                return 1
+            fi
+            [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${agent_name}.yaml" "status")" = "failed" ] && \
+                _mark_failed_task_respawn_completed "$agent_name"
             # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。Androidアプリが前セッション残像を表示するためクリア(殿実測2026-07-08)
             tmux clear-history -t "$pane" 2>/dev/null || true
             tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
@@ -1287,13 +1293,19 @@ safe_send_clear() {
         log "RESPAWN-FALLBACK: $agent_name respawn failed, trying /clear"
         safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
     }
-    if [ "$_fsc_respawn_ok" -eq 1 ] && respawn_recovery_ready "$pane"; then
+    if [ "$_fsc_respawn_ok" -eq 1 ] && respawn_recovery_wait_ready "$pane"; then
         _generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
         [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-claude || _fsc_respawn_ok=0
     else
         _fsc_respawn_ok=0
     fi
     _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
+    if [ "$_fsc_respawn_ok" -ne 1 ]; then
+        log "RESPAWN-VERIFY-FAIL: $agent_name ready handshake timed out; retry=next_cycle"
+        return 1
+    fi
+    [ "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/${agent_name}.yaml" "status")" = "failed" ] && \
+        _mark_failed_task_respawn_completed "$agent_name"
     # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。Androidアプリが前セッション残像を表示するためクリア(殿実測2026-07-08)
     tmux clear-history -t "$pane" 2>/dev/null || true
     tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
@@ -2049,6 +2061,37 @@ _failed_respawn_generation_fingerprint() {
     parent_cmd=$(yaml_field_get "$task_file" "parent_cmd")
     deployed_at=$(yaml_field_get "$task_file" "deployed_at")
     printf '%s|%s|%s' "$task_id" "$parent_cmd" "$deployed_at" | md5sum | cut -d' ' -f1
+}
+
+_failed_respawn_completed_marker_file() {
+    local agent_name="$1"
+    mkdir -p "$STATE_DIR" 2>/dev/null || true
+    printf '%s/failed_respawn_completed_%s.fp\n' "$STATE_DIR" "$agent_name"
+}
+
+# 同じfailed task世代を一度正常にrespawnした後は、次周期以降に再度kill/respawnしない。
+# 旧世代との移行中は既存notice markerのsuccessも完了証跡として認める。
+_failed_task_respawn_completed() {
+    local agent_name="$1"
+    local current_fp marker_file stored_fp notice_file notice_fp notice_outcomes
+    current_fp=$(_failed_respawn_generation_fingerprint "$agent_name")
+    marker_file=$(_failed_respawn_completed_marker_file "$agent_name")
+    stored_fp=""
+    [ -f "$marker_file" ] && read -r stored_fp < "$marker_file" || true
+    [ "$stored_fp" = "$current_fp" ] && return 0
+
+    notice_file=$(_failed_respawn_notice_marker_file "$agent_name")
+    notice_fp=""
+    notice_outcomes=""
+    [ -f "$notice_file" ] && IFS=$'\t' read -r notice_fp notice_outcomes < "$notice_file" || true
+    [ "$notice_fp" = "$current_fp" ] && [[ ",$notice_outcomes," == *,success,* ]]
+}
+
+_mark_failed_task_respawn_completed() {
+    local agent_name="$1" marker_file current_fp
+    marker_file=$(_failed_respawn_completed_marker_file "$agent_name")
+    current_fp=$(_failed_respawn_generation_fingerprint "$agent_name")
+    printf '%s\n' "$current_fp" > "$marker_file"
 }
 
 # 既に同一世代+同一outcomeで通知済みならtrue(0)。未通知なら記録してfalse(1)を返す
@@ -3221,6 +3264,10 @@ _handle_auto_clear() {
     # no-task for recovery latency. The active-status preflight below still
     # closes the race with a concurrently published revision/redeployment.
     if [ "$_ac_task_status" = "failed" ]; then
+        if _failed_task_respawn_completed "$name"; then
+            log "FAILED-RESPAWN-DEDUPE: $name failed task generation already recovered, skipping repeated respawn"
+            return
+        fi
         effective_debounce=0
         log "FAILED-RESPAWN-IMMEDIATE: $name failed task treated as no-task (clear_debounce=0)"
     fi

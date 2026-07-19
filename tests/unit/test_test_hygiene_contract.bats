@@ -36,22 +36,21 @@ setup() {
   grep -q '^1\.\.1$' "$tap"
 }
 
-@test "hygiene-deploy emits complete identity and invokes direct deploy contract" {
+@test "hygiene-deploy emits complete identity and invokes canonical yaml deploy contract" {
   stub="$BATS_TEST_TMPDIR/deploy-stub"
   capture="$BATS_TEST_TMPDIR/capture"
   cat > "$stub" <<'SH'
 #!/usr/bin/env bash
 printf '%s\n' "$@" > "$DEPLOY_CAPTURE.args"
-cp "$3" "$DEPLOY_CAPTURE.task"
+cp "$2" "$DEPLOY_CAPTURE.task"
 SH
   chmod +x "$stub"
   run env TEST_HYGIENE_ROOT="$BATS_TEST_TMPDIR" TEST_HYGIENE_INVENTORY="$INVENTORY" TEST_HYGIENE_PUSH_WALL_SEC=171 \
     DEPLOY_TASK="$stub" DEPLOY_CAPTURE="$capture" \
     bash "$ROOT/scripts/test_speed_task_generator.sh" hygiene-deploy hanzo
   [ "$status" -eq 0 ]
-  [ "$(sed -n '1p' "$capture.args")" = --direct ]
-  [ "$(sed -n '2p' "$capture.args")" = --yaml ]
-  [ "$(sed -n '4p' "$capture.args")" = hanzo ]
+  [ "$(sed -n '1p' "$capture.args")" = --yaml ]
+  [ "$(sed -n '3p' "$capture.args")" = hanzo ]
   python3 - "$capture.task" <<'PY'
 import json,sys
 t=json.load(open(sys.argv[1]))['task']
