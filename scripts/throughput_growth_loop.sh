@@ -2,6 +2,94 @@
 # Connect existing observe/select/deploy/checkpoint/record/rerank CLIs.
 set -euo pipefail
 
+promote_hidden_infra() {
+  local defense= retro= bulletin= gate= ready_ledger= output=
+  shift
+  while (($#)); do
+    case "$1" in
+      --defense-overhead) defense=${2:-}; shift 2;;
+      --retro-events) retro=${2:-}; shift 2;;
+      --bulletin-notify-failures) bulletin=${2:-}; shift 2;;
+      --gate-fire-log) gate=${2:-}; shift 2;;
+      --ready-ledger) ready_ledger=${2:-}; shift 2;;
+      --output) output=${2:-}; shift 2;;
+      *) echo "BLOCK hidden_infra_unknown_arg=$1" >&2; return 3;;
+    esac
+  done
+  for value in "$defense" "$retro" "$bulletin" "$gate" "$ready_ledger" "$output"; do
+    [[ -n "$value" ]] || { echo "BLOCK hidden_infra_missing_arg" >&2; return 3; }
+  done
+  for source in "$defense" "$retro" "$bulletin" "$gate"; do
+    [[ -f "$source" ]] || { echo "BLOCK hidden_infra_source_missing=$source" >&2; return 3; }
+  done
+  mkdir -p "${ready_ledger%/*}" "${output%/*}"
+  exec 8>>"$ready_ledger.lock"
+  flock -x 8
+  python3 - "$defense" "$retro" "$bulletin" "$gate" "$ready_ledger" "$output" <<'PY'
+import hashlib,json,os,sys,time
+
+def rows(path):
+    text=open(path,encoding="utf-8").read()
+    if not text.strip(): return []
+    try:
+        value=json.loads(text)
+        return value if isinstance(value,list) else value.get("events",[value])
+    except json.JSONDecodeError:
+        out=[]
+        for line in text.splitlines():
+            line=line.strip()
+            if not line or line.startswith(("#","---")): continue
+            try: out.append(json.loads(line.lstrip("- ")))
+            except json.JSONDecodeError: continue
+        return out
+
+paths=dict(zip(("defense_overhead","retro_event","bulletin_notify_failure","gate_fire"),sys.argv[1:5]))
+ledger,output=sys.argv[5:7]
+cost={"shogun":5,"karo":3,"gunshi":2,"ninja":1}
+candidates=[]
+for source,path in paths.items():
+    for row in rows(path):
+        wall=float(row.get("wall_ms",row.get("duration_ms",0)) or 0)
+        retries=int(row.get("retries",row.get("retry_count",0)) or 0)
+        fp=bool(row.get("false_positive",False))
+        silent=bool(row.get("silent_failure",False)) or str(row.get("status","")).lower() in {"silent","failed","failure"}
+        abnormal=(wall>=1000 or retries>0 or fp or silent)
+        if not abnormal: continue
+        cause=str(row.get("root_cause") or row.get("reason") or row.get("gate") or row.get("operation") or "unknown")
+        role=str(row.get("role") or row.get("actor") or "ninja").lower()
+        frequency=int(row.get("frequency",row.get("count",1)) or 1)
+        signature=hashlib.sha256(f"{source}|{cause}".encode()).hexdigest()
+        candidates.append({"schema_version":1,"source":source,"root_cause":cause,"root_cause_signature":signature,
+          "frequency":frequency,"handling_cost":cost.get(role,1),"priority":frequency*cost.get(role,1),
+          "signals":{"wall_ms":wall,"retries":retries,"false_positive":fp,"silent_failure":silent}})
+processed=set()
+if os.path.exists(ledger):
+    for line in open(ledger,encoding="utf-8"):
+        try: processed.add(json.loads(line)["root_cause_signature"])
+        except (json.JSONDecodeError,KeyError): pass
+unique={c["root_cause_signature"]:c for c in candidates if c["root_cause_signature"] not in processed}
+ordered=sorted(unique.values(),key=lambda c:(-c["priority"],c["root_cause_signature"]))
+if not ordered:
+    print("BLOCK hidden_infra_no_unprocessed_candidate")
+    raise SystemExit(4)
+event_id="hidden-infra-"+hashlib.sha256("|".join(c["root_cause_signature"] for c in ordered).encode()).hexdigest()[:16]
+event={"event_id":event_id,"lane":"hidden-infra-bug","state":"READY","candidate_id":ordered[0]["root_cause_signature"],"candidates":ordered,"created_at":time.time()}
+tmp=output+f".tmp.{os.getpid()}"
+with open(tmp,"w",encoding="utf-8") as f:
+    json.dump(event,f,separators=(",",":")); f.flush(); os.fsync(f.fileno())
+os.replace(tmp,output)
+with open(ledger,"a",encoding="utf-8") as f:
+    for c in ordered: f.write(json.dumps({"event_id":event_id,"root_cause_signature":c["root_cause_signature"]},separators=(",",":"))+"\n")
+    f.flush(); os.fsync(f.fileno())
+print(f"READY event_id={event_id} candidates={len(ordered)}")
+PY
+}
+
+if [[ "${1:-}" == --promote-hidden-infra ]]; then
+  promote_hidden_infra "$@"
+  exit $?
+fi
+
 usage() {
   echo "usage: throughput_growth_loop.sh --event-id ID --ledger PATH --event PATH --observe CMD --select CMD --deploy CMD --checkpoint CMD --record CMD --rerank CMD [--idle yes|no] [--production yes|no]" >&2
   exit 2
