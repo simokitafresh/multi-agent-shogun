@@ -7567,7 +7567,32 @@ check_karo_idle_cycle() {
         return
     fi
 
-    # 全条件成立: 家老に改善サイクル起動を通知
+    # Snapshot確認後にdeployが成立し得るため、通知直前は全ninjaのdeploy lockを
+    # 同時保持してlive task YAMLを再検証する。1つでもbusyなら次cycleへ送る。
+    local name task_status lock_file lock_fd
+    local -a idle_cycle_lock_fds=()
+    mkdir -p "$SCRIPT_DIR/queue/locks"
+    for name in "${NINJA_NAMES[@]}"; do
+        lock_file="$SCRIPT_DIR/queue/locks/deploy_ninja_${name}.lock"
+        exec {lock_fd}>"$lock_file"
+        if ! flock -n "$lock_fd"; then
+            log "KARO-IDLE-CYCLE-SKIP: deploy lock busy agent=$name"
+            return
+        fi
+        idle_cycle_lock_fds+=("$lock_fd")
+    done
+    for name in "${NINJA_NAMES[@]}"; do
+        task_status=$(awk '/^[[:space:]]+status:[[:space:]]*/ {print $2; exit}' "$SCRIPT_DIR/queue/tasks/${name}.yaml" 2>/dev/null || true)
+        case "$task_status" in
+            idle|completed|done) ;;
+            *)
+                log "KARO-IDLE-CYCLE-SKIP: live task active agent=$name status=${task_status:-missing}"
+                return
+                ;;
+        esac
+    done
+
+    # 全条件成立: deployを遮断した同一境界内で家老へ通知する。
     log "KARO-IDLE-CYCLE: All ${ninja_total} ninjas idle/completed/done + pipeline empty → nudging karo"
     if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "全忍者idle+パイプライン空。改善サイクルを回せ。" karo_idle_cycle ninja_monitor >> "$LOG" 2>&1; then
         LAST_KARO_IDLE_NUDGE=$now

@@ -151,3 +151,34 @@ EOF
     '
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: idle snapshot後のdeployと家老通知を同一agent lock境界で直列化し、active task存在時の偽idle通知を防ぐ不変量を守る。
+@test "karo idle-cycle revalidates live tasks under every deploy lock before notifying" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; LOG="$BATS_TEST_TMPDIR/monitor.log"
+        NINJA_NAMES=(alpha beta); LAST_KARO_IDLE_NUDGE=0; KARO_IDLE_COOLDOWN=0
+        mkdir -p "$SCRIPT_DIR/config" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/locks" "$SCRIPT_DIR/scripts"
+        printf "idle_cycle: on\n" >"$SCRIPT_DIR/config/settings.yaml"; : >"$LOG"
+        printf "task:\n  status: idle\n" >"$SCRIPT_DIR/queue/tasks/alpha.yaml"
+        printf "task:\n  status: idle\n" >"$SCRIPT_DIR/queue/tasks/beta.yaml"
+        get_idle_pipeline_state() { printf "2|0|0\n"; }
+        cat >"$SCRIPT_DIR/scripts/inbox_write.sh" <<"SH"
+#!/usr/bin/env bash
+printf "notify\n" >>"$SCRIPT_DIR/notifications"
+SH
+        export SCRIPT_DIR; chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+
+        # snapshot取得後に配備が成立した敵対ケース: 修正前は1通知、修正後は0通知。
+        bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/queue/tasks/beta.yaml" task status assigned
+        check_karo_idle_cycle
+        [ ! -e "$SCRIPT_DIR/notifications" ]
+
+        # 真の全idleは1通知。次cycle再評価でlost=0、1 cycle内duplicate=0。
+        bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/queue/tasks/beta.yaml" task status idle
+        check_karo_idle_cycle
+        [ "$(wc -l <"$SCRIPT_DIR/notifications")" -eq 1 ]
+        python3 -c "import yaml; [yaml.safe_load(open(p)) for p in [\"$SCRIPT_DIR/queue/tasks/alpha.yaml\", \"$SCRIPT_DIR/queue/tasks/beta.yaml\"]]"
+    '
+    [ "$status" -eq 0 ]
+}
