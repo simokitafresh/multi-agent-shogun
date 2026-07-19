@@ -452,7 +452,7 @@ if [[ -f "$INBOX_WRITE" ]]; then
                 INBOX_WRITE_TEST="${BULLETIN_INBOX_WRITE_TEST:-}" \
                 bash "$INBOX_WRITE" "$target" \
                 "掲示板新規投稿($ENTRY_ID): ${CONTENT}" \
-                bulletin_notify "$POSTED_BY" bulletin_notify; then
+                bulletin_notify bulletin_write bulletin_notify; then
                 if ! pgrep -f "inbox_watcher.sh ${target}" >/dev/null 2>&1; then
                     echo "[bulletin_write] WARN: inbox_watcher not running for ${target} — nudge may be lost" >&2
                 fi
