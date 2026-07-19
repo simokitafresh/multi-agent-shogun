@@ -151,8 +151,8 @@ REFLUX_PROMOTION_DEFERRED_LEDGER="${REFLUX_PROMOTION_DEFERRED_LEDGER:-$SCRIPT_DI
 REFLUX_BACKLINK_SCAN_LIMIT=${REFLUX_BACKLINK_SCAN_LIMIT:-50}                     # backlinksゼロ在庫の1回あたり確認上限
 REFLUX_BACKLINK_TIMEOUT=${REFLUX_BACKLINK_TIMEOUT:-20}                           # backlinksゼロ確認のtimeout秒
 SPEED_TRAINING_LEDGER="${SPEED_TRAINING_LEDGER:-$SCRIPT_DIR/logs/script_speed_training_ledger.yaml}"
-KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
-LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
+KARO_IDLE_COOLDOWN=${KARO_IDLE_COOLDOWN:-1800}   # 家老idle自走サイクルクールダウン（秒）— 30分
+KARO_IDLE_NUDGE_STATE_FILE=${KARO_IDLE_NUDGE_STATE_FILE:-$STATE_DIR/shogun_karo_idle_nudge.last}
 SHOGUN_IDLE_ANALYSIS_COOLDOWN=3600  # 将軍idle分析triggerクールダウン（秒）— 60分
 _SHOGUN_IDLE_TRIGGER_STATE="/tmp/.shogun_idle_trigger_last"
 LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER=$(cat "$_SHOGUN_IDLE_TRIGGER_STATE" 2>/dev/null || echo 0) # 将軍idle分析trigger最終通知時刻（epoch秒）— ファイル永続化でrespawn跨ぎ
@@ -7545,6 +7545,62 @@ get_idle_pipeline_state() {
     echo "${ninja_total:-0}|${active_count:-0}|${pending_count:-0}"
 }
 
+# Durable cooldown transaction for karo idle-cycle delivery.  The state lock
+# covers read, decision, delivery, and the successful-delivery epoch update so
+# hot reloads, daemon respawns, and concurrent monitor processes share exactly
+# one cooldown generation.
+deliver_karo_idle_nudge_with_cooldown() {
+    local now="${1:?now epoch required}"
+    shift
+    local state_file="${KARO_IDLE_NUDGE_STATE_FILE:-${STATE_DIR:-/tmp}/shogun_karo_idle_nudge.last}"
+    local cooldown="${KARO_IDLE_COOLDOWN:-1800}"
+    local state_dir lock_file lock_fd last_epoch tmp_file
+    state_dir="${state_file%/*}"
+    lock_file="${state_file}.lock"
+    mkdir -p "$state_dir" || {
+        log "WARN: KARO-IDLE-CYCLE cannot create cooldown state dir: $state_dir"
+        return 1
+    }
+    exec {lock_fd}>"$lock_file" || return 1
+    flock "$lock_fd" || { exec {lock_fd}>&-; return 1; }
+
+    if [ -e "$state_file" ] && [ ! -f "$state_file" ]; then
+        log "WARN: KARO-IDLE-CYCLE cooldown state is not a regular file: $state_file"
+        exec {lock_fd}>&-
+        return 1
+    fi
+    last_epoch="$(cat "$state_file" 2>/dev/null || true)"
+    if [ -e "$state_file" ] && { [[ ! "$last_epoch" =~ ^[0-9]+$ ]] || [ "$last_epoch" -gt "$now" ]; }; then
+        log "WARN: KARO-IDLE-CYCLE invalid cooldown epoch '${last_epoch:-empty}'; repairing to $now and suppressing this cycle"
+        tmp_file="${state_file}.tmp.$$"
+        if ! printf '%s\n' "$now" > "$tmp_file" || ! mv -f "$tmp_file" "$state_file"; then
+            rm -f "$tmp_file"
+            exec {lock_fd}>&-
+            return 1
+        fi
+        exec {lock_fd}>&-
+        return 2
+    fi
+    if [[ "$last_epoch" =~ ^[0-9]+$ ]] && [ $((now - last_epoch)) -lt "$cooldown" ]; then
+        exec {lock_fd}>&-
+        return 2
+    fi
+
+    if "$@"; then
+        tmp_file="${state_file}.tmp.$$"
+        if ! printf '%s\n' "$now" > "$tmp_file" || ! mv -f "$tmp_file" "$state_file"; then
+            rm -f "$tmp_file"
+            log "ERROR: KARO-IDLE-CYCLE delivery succeeded but cooldown state update failed"
+            exec {lock_fd}>&-
+            return 1
+        fi
+        exec {lock_fd}>&-
+        return 0
+    fi
+    exec {lock_fd}>&-
+    return 1
+}
+
 # ═══ 家老idle自走サイクル起動チェック (cmd_1498) ═══
 # 全忍者idle/completed/done + パイプライン空 → 家老に改善サイクル起動を通知
 check_karo_idle_cycle() {
@@ -7570,13 +7626,9 @@ check_karo_idle_cycle() {
         return
     fi
 
-    # クールダウンチェック（30分）
+    # durable cooldown transactionへ渡す判定epoch
     local now
     now=$EPOCHSECONDS
-    local elapsed=$(( now - LAST_KARO_IDLE_NUDGE ))
-    if [ "$elapsed" -lt "$KARO_IDLE_COOLDOWN" ]; then
-        return
-    fi
 
     # Snapshot確認後にdeployが成立し得るため、通知直前は全ninjaのdeploy lockを
     # 同時保持してlive task YAMLを再検証する。1つでもbusyなら次cycleへ送る。
@@ -7613,15 +7665,17 @@ check_karo_idle_cycle() {
     # 全条件成立: deployを遮断した同一境界内で家老へ通知する。
     log "KARO-IDLE-CYCLE: All ${ninja_total} ninjas idle/completed/done + pipeline empty → nudging karo"
     # 子プロセスにはlock FDを継承させない。親shellは通知完了まで保持する。
-    if (
-        for held_fd in "${idle_cycle_lock_fds[@]}"; do
+    deliver_karo_idle_nudge_with_cooldown "$now" bash -c '
+        read -ra inherited_idle_fds <<< "$1"
+        for held_fd in "${inherited_idle_fds[@]}"; do
             exec {held_fd}>&-
         done
-        exec bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "全忍者idle+パイプライン空。改善サイクルを回せ。" karo_idle_cycle ninja_monitor
-    ) >> "$LOG" 2>&1; then
-        LAST_KARO_IDLE_NUDGE=$now
+        exec bash "$2/scripts/inbox_write.sh" karo "全忍者idle+パイプライン空。改善サイクルを回せ。" karo_idle_cycle ninja_monitor
+    ' _ "${idle_cycle_lock_fds[*]}" "$SCRIPT_DIR" >> "$LOG" 2>&1
+    local delivery_rc=$?
+    if [ "$delivery_rc" -eq 0 ]; then
         log "KARO-IDLE-CYCLE: Sent improvement cycle nudge to karo"
-    else
+    elif [ "$delivery_rc" -eq 1 ]; then
         log "ERROR: KARO-IDLE-CYCLE inbox_write failed"
     fi
     for held_fd in "${idle_cycle_lock_fds[@]}"; do
