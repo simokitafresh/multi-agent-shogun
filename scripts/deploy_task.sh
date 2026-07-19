@@ -93,19 +93,6 @@ if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; the
         echo "ERROR: Unknown ninja: $_dt_early_target" >&2
         exit 1
     fi
-    for _dt_retro_hold in "$SCRIPT_DIR"/queue/retro/verbatim_awaiting_answer/*.event; do
-        [ -f "$_dt_retro_hold" ] || continue
-        if [ "$(sed -n '1p' "$_dt_retro_hold")" = "$_dt_early_target" ]; then
-            _dt_retro_event_id=$(sed -n '2p' "$_dt_retro_hold")
-            if [ -n "$_dt_retro_event_id" ] && grep -qF "$_dt_retro_event_id" "$SCRIPT_DIR/queue/inbox/karo.yaml" 2>/dev/null \
-                && grep -B8 -A8 -F "$_dt_retro_event_id" "$SCRIPT_DIR/queue/inbox/karo.yaml" | grep -q "type: 'retro_answer'"; then
-                rm -f "$_dt_retro_hold"
-                continue
-            fi
-            echo "BLOCK: $_dt_early_target has an unanswered terminal retrospective; next task deployment is held" >&2
-            exit 2
-        fi
-    done
     unset _dt_early_target
 fi
 
@@ -396,6 +383,25 @@ deploy_task_release_ninja_lock() {
     deploy_task_release_lock "$DEPLOY_TASK_NINJA_LOCK_FD" "$DEPLOY_TASK_NINJA_LOCK_FILE"
     DEPLOY_TASK_NINJA_LOCK_FD=""
     DEPLOY_TASK_NINJA_LOCK_FILE=""
+}
+
+deploy_task_guard_retro_answer_hold() {
+    local ninja_name="$1" hold event_id
+    # Caller must hold the per-ninja deploy lock. This closes the race between
+    # monitor publishing the hold and a concurrent deployment transaction.
+    [ -n "${DEPLOY_TASK_NINJA_LOCK_FD:-}" ] || { echo "BLOCK: retro hold guard requires ninja deploy lock" >&2; return 2; }
+    for hold in "$SCRIPT_DIR"/queue/retro/verbatim_awaiting_answer/*.event; do
+        [ -f "$hold" ] || continue
+        [ "$(sed -n '1p' "$hold")" = "$ninja_name" ] || continue
+        event_id=$(sed -n '2p' "$hold")
+        if [ -n "$event_id" ] && grep -qF "$event_id" "$SCRIPT_DIR/queue/inbox/karo.yaml" 2>/dev/null \
+            && grep -B8 -A8 -F "$event_id" "$SCRIPT_DIR/queue/inbox/karo.yaml" | grep -q "type: 'retro_answer'"; then
+            rm -f "$hold"
+            continue
+        fi
+        echo "BLOCK: $ninja_name has an unanswered terminal retrospective; next task deployment is held" >&2
+        return 2
+    done
 }
 
 deploy_task_guard_worker_assignment() {
@@ -11201,6 +11207,10 @@ deploy_task_main() {
     # arriving concurrently.  Hold the worker lock across every task/report
     # mutation and the durable task_start notification (GA-257).
     deploy_task_acquire_ninja_lock "$NINJA_NAME" || return 1
+    if ! deploy_task_guard_retro_answer_hold "$NINJA_NAME"; then
+        deploy_task_release_ninja_lock
+        return 2
+    fi
 
     # Legacy lifecycle control is status-only, not a deployment.  Handle it
     # before normalization, stale-field repair, collision checks, or context
