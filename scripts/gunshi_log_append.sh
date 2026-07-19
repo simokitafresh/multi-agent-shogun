@@ -103,6 +103,11 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study|consultation)
         echo "BLOCK: brainwash_checkに数値がない。修正前→修正後の数値、またはN件中N件確認の形式で記載せよ(LG027横展開)" >&2
         exit 2
     fi
+    # --- 8パターン番号強制(2026-07-20 D0): #Nno/#Nyes形式が最低1つ必要 ---
+    if ! echo "$BC_LINE" | grep -qP '#[1-8](no|yes)'; then
+        echo "BLOCK: brainwash_checkに8パターン番号(#1~#8 yes/no)がない。具体的にどのパターンを検査したか明記せよ" >&2
+        exit 2
+    fi
 fi
 
 # --- LGTM+BLOCK矛盾チェック(report) --- 今セッション3件連続事故の根治(L4貫通)
