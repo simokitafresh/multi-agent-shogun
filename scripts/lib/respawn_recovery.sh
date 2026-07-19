@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Persist exactly one recovery nudge for an active task after verified respawn.
+respawn_recovery_notify() {
+    local root="$1" agent="$2" generation="$3" source="${4:-respawn}" content="${5:-}"
+    local task_file="$root/queue/tasks/${agent}.yaml"
+    local state_dir="${RESPAWN_RECOVERY_STATE_DIR:-$root/.cache/respawn-recovery}"
+    local values status parent task_id marker
+    [ -n "$generation" ] && [ "$generation" != "unknown" ] || return 1
+    if [ -n "$content" ] && [[ "$content" =~ [\`\$\|\;\&\<\>] ]]; then content=""; fi
+    if [ -f "$task_file" ]; then
+      values=$(python3 - "$task_file" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+t = d.get("task", d) if isinstance(d, dict) else {}
+print(t.get("status") or "")
+print(t.get("parent_cmd") or "")
+print(t.get("task_id") or "")
+PY
+      ) || return 1
+    else
+      values=$'\n\n'
+    fi
+    status=$(printf '%s\n' "$values" | sed -n '1p')
+    parent=$(printf '%s\n' "$values" | sed -n '2p')
+    task_id=$(printf '%s\n' "$values" | sed -n '3p')
+    case "$status" in
+      assigned|acknowledged|in_progress) [ -n "$parent" ] && [ -n "$task_id" ] || return 1 ;;
+      *) [ -n "$content" ] || return 0; parent=""; task_id="" ;;
+    esac
+    mkdir -p "$state_dir"
+    marker="$state_dir/${agent}.$(printf '%s' "$generation" | sha256sum | cut -d' ' -f1).sent"
+    exec 219>"${marker}.lock"
+    flock -w 5 219 || return 1
+    [ ! -e "$marker" ] || return 0
+    if [ -n "$parent" ]; then
+      message="respawn復帰。既存taskを継続せよ。parent_cmd=${parent} task_id=${task_id} source=${source}"
+      [ -z "$content" ] || message="${message} 補足: ${content}"
+    else
+      message="$content"
+    fi
+    bash "$root/scripts/inbox_write.sh" "$agent" "$message" \
+        recovery ninja_monitor continue_same_task || return 1
+    : > "$marker"
+}

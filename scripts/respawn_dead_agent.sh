@@ -6,6 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=/dev/null
 source "$ROOT/scripts/lib/agent_config.sh"
+source "$ROOT/scripts/lib/respawn_recovery.sh"
 
 is_configured_ninja() {
     local candidate="${1:-}"
@@ -73,8 +74,13 @@ tmux set-option -p -t "$pane" @current_task "$task_state"
 for _ in {1..20}; do
     sleep 0.25
     dead="$(tmux display-message -t "$pane" -p '#{pane_dead}' 2>/dev/null || echo 1)"
-    [[ "$dead" == "0" ]] && break
+    if [[ "$dead" == "0" ]] && tmux capture-pane -t "$pane" -p -J -S -80 2>/dev/null | grep -qE 'Claude Code|OpenAI Codex|Codex CLI|❯|›'; then
+        break
+    fi
 done
-[[ "$dead" == "0" ]] || { echo "FAIL: $agent pane remained dead" >&2; exit 1; }
+[[ "$dead" == "0" ]] && tmux capture-pane -t "$pane" -p -J -S -80 2>/dev/null | grep -qE 'Claude Code|OpenAI Codex|Codex CLI|❯|›' || { echo "FAIL: $agent CLI not ready" >&2; exit 1; }
 current="$(tmux display-message -t "$pane" -p '#{pane_current_command}')"
+generation="$(tmux display-message -t "$pane" -p '#{pane_start_time}' 2>/dev/null || true)"
+[ -n "$generation" ] || { echo "FAIL: respawn generation unavailable" >&2; exit 1; }
+respawn_recovery_notify "$ROOT" "$agent" "$generation" dead-pane
 echo "PASS: agent=$agent pane=$pane dead=0 current=$current"

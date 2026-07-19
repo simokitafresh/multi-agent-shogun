@@ -50,6 +50,7 @@ source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"
 source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
+source "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
 
 # --- CTX profile cache（L4-R?: cli_profile_getサブシェル呼び出し削減） ---
 # update_context_pct ループ内での$(cli_profile_get ...)サブシェル(78ms/回)を排除するグローバルキャッシュ
@@ -1247,6 +1248,12 @@ safe_send_clear() {
                 _fsc_respawn_ok=0
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
             }
+            if [ "$_fsc_respawn_ok" -eq 1 ] && _wait_for_cli_ready "$pane" "$agent_name"; then
+                _generation=$(tmux display-message -t "$pane" -p '#{pane_start_time}' 2>/dev/null || true)
+                [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-codex || _fsc_respawn_ok=0
+            else
+                _fsc_respawn_ok=0
+            fi
             _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
             # config.toml復元(SSOT: cli_lookup.sh codex_config_restore)
             codex_config_restore
@@ -1277,6 +1284,12 @@ safe_send_clear() {
         log "RESPAWN-FALLBACK: $agent_name respawn failed, trying /clear"
         safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
     }
+    if [ "$_fsc_respawn_ok" -eq 1 ] && _wait_for_cli_ready "$pane" "$agent_name"; then
+        _generation=$(tmux display-message -t "$pane" -p '#{pane_start_time}' 2>/dev/null || true)
+        [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-claude || _fsc_respawn_ok=0
+    else
+        _fsc_respawn_ok=0
+    fi
     _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
     # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。Androidアプリが前セッション残像を表示するためクリア(殿実測2026-07-08)
     tmux clear-history -t "$pane" 2>/dev/null || true
@@ -6528,7 +6541,12 @@ check_ninja_cli_dead() {
                 tmux set-option -t "$_pane_target_bg" -p @agent_id "$_name_bg" 2>/dev/null || true
             fi
             if [ "$_respawn_rc" -eq 0 ]; then
-                bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動成功】${_name_bg}: CLIバナー/プロンプト確認済み" 2>/dev/null || true
+                _generation=$(tmux display-message -t "$_pane_target_bg" -p '#{pane_start_time}' 2>/dev/null || true)
+                if [ -n "$_generation" ] && respawn_recovery_notify "$_script_dir_bg" "$_name_bg" "$_generation" cli-dead; then
+                    bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動成功】${_name_bg}: CLIバナー/プロンプト確認済み" 2>/dev/null || true
+                else
+                    _respawn_rc=1
+                fi
             else
                 bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動失敗】${_name_bg}: 3回の起動確認に失敗。手動確認が必要。" 2>/dev/null || true
             fi

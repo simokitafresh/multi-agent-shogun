@@ -31,6 +31,7 @@ source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+source "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
 
 AGENT_ID="$1"
 PANE_TARGET="$2"
@@ -1111,15 +1112,27 @@ process_unread() {
                     # バックグラウンドshellが残っている場合でも/clearを強制送信する。
                     echo "[$(date)] [CLEAR-FORCE] clear_command received for $AGENT_ID — bypassing busy gating" >&2
 
-                    if ! send_cli_command "/clear"; then
+                    recovery_content="$special_content"
+                    if [ -n "$recovery_content" ] && [[ "$recovery_content" =~ [\`\$\|\;\&\<\>] ]]; then
+                        echo "[$(date)] [SECURITY] clear_command content rejected (shell metacharacters): ${recovery_content:0:80}" >&2
+                        recovery_content=""
+                    fi
+
+                    launch=$(cli_launch_cmd "$AGENT_ID" 2>/dev/null || true)
+                    if [ -z "$launch" ] || ! tmux respawn-pane -k -t "$PANE_TARGET" "cd '$SCRIPT_DIR' && exec $launch" 2>/dev/null; then
                         special_ok=false
-                    elif [ -n "$special_content" ]; then
-                        # Whitelist: only plain text (no shell metacharacters or CLI commands beyond safe content)
-                        # Allow: alphanumeric, Japanese, whitespace, basic punctuation, newlines
-                        # Reject: backticks, $(), pipe, semicolon, &&, || etc.
-                        if [[ "$special_content" =~ [\`\$\|\;\&\<\>] ]]; then
-                            echo "[$(date)] [SECURITY] clear_command content rejected (shell metacharacters): ${special_content:0:80}" >&2
-                        elif ! send_cli_command "$special_content"; then
+                    else
+                        ready=0
+                        for _ in {1..30}; do
+                            if tmux capture-pane -t "$PANE_TARGET" -p -J -S -80 2>/dev/null | grep -qE 'Claude Code|OpenAI Codex|Codex CLI|❯|›'; then ready=1; break; fi
+                            sleep 1
+                        done
+                        if [ "$ready" -eq 1 ]; then
+                            generation=$(tmux display-message -t "$PANE_TARGET" -p '#{pane_start_time}' 2>/dev/null || true)
+                            if [ -z "$generation" ] || ! respawn_recovery_notify "$SCRIPT_DIR" "$AGENT_ID" "$generation" clear-command "$recovery_content"; then
+                                special_ok=false
+                            fi
+                        else
                             special_ok=false
                         fi
                     fi
