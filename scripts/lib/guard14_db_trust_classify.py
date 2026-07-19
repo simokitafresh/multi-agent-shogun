@@ -319,6 +319,12 @@ def _segment_has_db_marker(tokens: list[str]) -> bool:
     if DB_ENV_VAR_RE.search(text):
         return True
     if CONNECT_CALL_RE.search(text):
+        # websockets.connect(...) shares the generic DB-driver spelling.  Exclude
+        # it only after the Python AST capability proof binds that exact call to
+        # a literal wss:// first argument; dynamic/aliased opaque calls remain DB
+        # candidates and fail closed.
+        if _python_inline_code(tokens) is not None and _python_http_only_capability(tokens):
+            return False
         return True
     if CREATE_ENGINE_RE.search(text):
         return True
@@ -371,9 +377,36 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
     except (SyntaxError, ValueError):
         return False
     saw_network = False
+    websocket_module_aliases = {"websocket": "websocket", "websockets": "websockets"}
+    websocket_call_aliases: dict[str, str] = {}
+    for import_node in ast.walk(tree):
+        if isinstance(import_node, ast.Import):
+            for alias in import_node.names:
+                if alias.name in WEBSOCKET_MODULES:
+                    websocket_module_aliases[alias.asname or alias.name] = alias.name
+        elif isinstance(import_node, ast.ImportFrom) and import_node.module in WEBSOCKET_MODULES:
+            expected_call = "create_connection" if import_node.module == "websocket" else "connect"
+            for alias in import_node.names:
+                if alias.name == expected_call:
+                    websocket_call_aliases[alias.asname or alias.name] = import_node.module
+
+    def websocket_call_has_literal_wss(call: ast.Call, module: str) -> bool:
+        endpoint: ast.expr | None = call.args[0] if call.args else None
+        if endpoint is None:
+            keyword_name = "url" if module == "websocket" else "uri"
+            endpoint = next((kw.value for kw in call.keywords if kw.arg == keyword_name), None)
+        return bool(
+            isinstance(endpoint, ast.Constant)
+            and isinstance(endpoint.value, str)
+            and endpoint.value.startswith("wss://")
+        )
+
     # REPL-style snippets often reference already-available standard/HTTP modules without
     # an import in the same -c string; these roots still have known bounded capability.
-    trusted_roots = {"Path", "os", "json", "requests", "httpx", "urllib", "websocket", "websockets"}
+    trusted_roots = {
+        "Path", "os", "json", "requests", "httpx", "urllib",
+        *websocket_module_aliases, *websocket_call_aliases,
+    }
     for node in ast.walk(tree):
         if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.NamedExpr)):
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
@@ -411,11 +444,14 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
                     dotted = ".".join(reversed(chain))
                     if dotted.startswith(("requests.", "httpx.", "urllib.request.")):
                         saw_network = True
-                    elif dotted in {"websocket.create_connection", "websockets.connect"}:
-                        # These are explicit WebSocket clients, not DB drivers.  Require a
-                        # literal secure-WebSocket endpoint so an imported module/alias
-                        # cannot turn an unresolved generic connect call into an allow.
-                        if "wss://" not in code:
+                    elif cur.id in websocket_module_aliases:
+                        websocket_module = websocket_module_aliases[cur.id]
+                        expected_call = "create_connection" if websocket_module == "websocket" else "connect"
+                        if node.func.attr != expected_call:
+                            return False
+                        # Bind the proof to this call's first AST argument.  A dynamic
+                        # endpoint plus an unrelated "wss://" string must stay blocked.
+                        if not websocket_call_has_literal_wss(node, websocket_module):
                             return False
                         saw_network = True
                     elif dotted == "os.getenv" or dotted.startswith("os.environ.get"):
@@ -424,10 +460,15 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
                         return False
                     elif cur.id not in trusted_roots:
                         return False
-            elif isinstance(node.func, ast.Name) and node.func.id not in trusted_roots:
-                # Builtins are ordinary data processing; imported/assigned opaque executors are not.
-                if node.func.id not in {"open", "print", "len", "str", "bytes", "dict", "list", "set", "tuple", "int", "float", "bool"}:
-                    return False
+            elif isinstance(node.func, ast.Name):
+                if node.func.id in websocket_call_aliases:
+                    if not websocket_call_has_literal_wss(node, websocket_call_aliases[node.func.id]):
+                        return False
+                    saw_network = True
+                elif node.func.id not in trusted_roots:
+                    # Builtins are ordinary data processing; imported/assigned opaque executors are not.
+                    if node.func.id not in {"open", "print", "len", "str", "bytes", "dict", "list", "set", "tuple", "int", "float", "bool"}:
+                        return False
     return saw_network
 
 
