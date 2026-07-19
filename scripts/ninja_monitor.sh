@@ -1249,7 +1249,7 @@ safe_send_clear() {
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
             }
             if [ "$_fsc_respawn_ok" -eq 1 ] && _wait_for_cli_ready "$pane" "$agent_name"; then
-                _generation=$(tmux display-message -t "$pane" -p '#{pane_start_time}' 2>/dev/null || true)
+                _generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
                 [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-codex || _fsc_respawn_ok=0
             else
                 _fsc_respawn_ok=0
@@ -1285,7 +1285,7 @@ safe_send_clear() {
         safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
     }
     if [ "$_fsc_respawn_ok" -eq 1 ] && _wait_for_cli_ready "$pane" "$agent_name"; then
-        _generation=$(tmux display-message -t "$pane" -p '#{pane_start_time}' 2>/dev/null || true)
+        _generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
         [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-claude || _fsc_respawn_ok=0
     else
         _fsc_respawn_ok=0
@@ -6541,7 +6541,7 @@ check_ninja_cli_dead() {
                 tmux set-option -t "$_pane_target_bg" -p @agent_id "$_name_bg" 2>/dev/null || true
             fi
             if [ "$_respawn_rc" -eq 0 ]; then
-                _generation=$(tmux display-message -t "$_pane_target_bg" -p '#{pane_start_time}' 2>/dev/null || true)
+                _generation=$(respawn_recovery_generation "$_pane_target_bg" 2>/dev/null || true)
                 if [ -n "$_generation" ] && respawn_recovery_notify "$_script_dir_bg" "$_name_bg" "$_generation" cli-dead; then
                     bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動成功】${_name_bg}: CLIバナー/プロンプト確認済み" 2>/dev/null || true
                 else
