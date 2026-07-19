@@ -347,6 +347,7 @@ skill_files = sorted(
 )
 missing: list[tuple[str, str, str]] = []
 stale: list[tuple[str, str, str]] = []
+deduped_stale = 0
 missing_example_paths: list[tuple[str, str, str]] = []
 unverified_side_effect_examples: list[str] = []
 total_refs = 0
@@ -410,13 +411,15 @@ for skill_file in skill_files:
             )
             baseline_iso = datetime.fromtimestamp(skill_freshness_time, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
             script_iso = datetime.fromtimestamp(resolved.stat().st_mtime, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
-            stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved), baseline_src, baseline_iso, script_iso))
             if str(entry.get("last_action_contract_sha256", "")) != current_hash:
+                stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved), baseline_src, baseline_iso, script_iso))
                 entry = dict(entry)
                 entry["last_action_contract_sha256"] = current_hash
                 hash_state["references"][state_key] = entry
                 actions_required += 1
                 state_dirty = True
+            else:
+                deduped_stale += 1
 
 if state_dirty:
     acquire_state_lock()
@@ -436,7 +439,7 @@ print(
     f"走査: {len(skill_files)} SKILL.md / script参照 {total_refs}件 / "
     f"参照あり {skills_with_refs}件 / roots={','.join(str(p.relative_to(repo_root)) if p.is_relative_to(repo_root) else str(p) for p in scan_roots)}"
 )
-print(f"契約hash action: required={actions_required}, deduped={max(0, len(stale) - actions_required)}")
+print(f"契約hash action: required={actions_required}, deduped={deduped_stale}")
 
 if state_corrupt:
     print(f"BLOCK: contract hash state is corrupt: {hash_state_path}")

@@ -48,6 +48,9 @@ establish_verified() {
   sed -i 's/--name VALUE/--name VALUE --force/' "$FIXTURE/scripts/demo.sh"
   run_gate; [ "$status" -eq 2 ]
   [ "$(grep -c 'WARN: .*demo.sh' <<<"$output")" -eq 1 ]
+  run_gate; [ "$status" -eq 0 ]
+  [ "$(grep -c 'WARN: .*demo.sh' <<<"$output")" -eq 0 ]
+  [[ "$output" == *"required=0, deduped=1"* ]]
 }
 
 @test "non-max SKILL and verified state changes invalidate TTL cache" {
