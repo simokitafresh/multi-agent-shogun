@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-19 cmd_karo_hotfix_ga300_context_freshness_sources_202607190222 -->
-<!-- source_commit:1ee1399d096d7964013197629401f52ce53fac8c reason:ga303-template-boundary-contract evidence:pre_alert=1; contract_test=1/1; last_updated_only_forbidden -->
+<!-- source_commit:42e6ea06852a367b359b4bbbeb1cd143797d5f77 reason:cmd_karo_retro_answer_tracking_202607200324 idle retro delivery and answer hold evidence:context/infrastructure.md now records L1243-L1244 for enqueue/idle mark-delivered and event_id answer tracking; source commit reflects reviewed implementation -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -837,7 +837,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1241 -->
+<!-- last_synced_lesson: L1246 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1792,6 +1792,11 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1239: 世代dedupは成功作用後にのみcommitする（cmd_karo_e1_structural_autodeploy_202607200305）
 - L1240: 自動ackは永続化成功をcommit pointにする（cmd_karo_info_digest_autoack_202607200316）
 - L1241: isolated fixtureはsource対象のruntime dependency closureを同期する（cmd_karo_ci_fix_29698428058_202607200322）
+- L1242: read+mark複合操作はmutation正本を再利用して別lockで直列化する（cmd_karo_inbox_drain_single_command_2026072040）
+- L1243: failed/BLOCK終端のretro配送はenqueueとidle mark-deliveredを分離し、成功様ログをdurable配送後だけ記録する（cmd_karo_retro_answer_tracking_202607200324）
+- L1244: retro回答追跡は配送event_id単位で未回答を検知し、回答到着まで次task配備holdへ接続する（cmd_karo_retro_answer_tracking_202607200324）
+- L1245: terminal eventとprompt deliveryを同一時刻と見なさない（cmd_karo_retro_answer_tracking_202607200324）
+- L1246: 生成instructionsはcommon正本への追記が必要（cmd_karo_experiment_first_three_layers_2026072040）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
