@@ -14,6 +14,8 @@ setup_file() {
   cp "$ROOT/skills/campaign-lane/scripts/"{__init__.py,contracts.py,adapter_sdk.py,outcome_ledger.py} "$SHARED_SOURCE/skills/campaign-lane/scripts/"
   git -C "$SHARED_SOURCE" add skills/campaign-lane/base skills/campaign-lane/scripts tests/unit/.keep
   git -C "$SHARED_SOURCE" commit -qm fixture
+  FIXTURE_FINGERPRINT="$(PYTHONPATH="$SHARED_SOURCE/skills/campaign-lane" python3 -c 'from scripts.contracts import contract_fingerprint; print(contract_fingerprint())')"
+  export FIXTURE_FINGERPRINT
 }
 
 setup() {
@@ -77,9 +79,7 @@ SH
 
 base_item_json() {
   local path="${1:-skills/campaign-lane/adapters/new.py}"
-  local fingerprint
-  fingerprint="$(PYTHONPATH="$SOURCE/skills/campaign-lane" python3 -c 'from scripts.contracts import contract_fingerprint; print(contract_fingerprint())')"
-  printf '{"id":"item","path":"%s","owned_paths":["%s","tests/unit/test_new.py"],"read_only_paths":["skills/campaign-lane/scripts/contracts.py"],"test_command":"pytest -q tests/unit/test_new.py","contract_fingerprint":"%s"}' "$path" "$path" "$fingerprint"
+  printf '{"id":"item","path":"%s","owned_paths":["%s","tests/unit/test_new.py"],"read_only_paths":["skills/campaign-lane/scripts/contracts.py"],"test_command":"pytest -q tests/unit/test_new.py","contract_fingerprint":"%s"}' "$path" "$path" "$FIXTURE_FINGERPRINT"
 }
 
 run_bridge() {
