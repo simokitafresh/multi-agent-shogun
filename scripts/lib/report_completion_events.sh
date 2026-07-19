@@ -2,7 +2,9 @@
 # test_necessity: report completion aliases must remain one shared contract for
 # inbox acceptance and durable monitor evidence checks.
 
-readonly REPORT_COMPLETION_EVENT_TYPES="report_received report_submitted task_done report_completed report_done report_ready"
+if ! declare -p REPORT_COMPLETION_EVENT_TYPES >/dev/null 2>&1; then
+    readonly REPORT_COMPLETION_EVENT_TYPES="report_received report_submitted task_done report_completed report_done report_ready"
+fi
 
 report_completion_event_type() {
     local candidate="$1" event
