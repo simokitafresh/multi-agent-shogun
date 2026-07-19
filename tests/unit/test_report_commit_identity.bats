@@ -83,7 +83,7 @@ parent_cmd: cmd_test
 task_type: normal
 status: pending
 files_modified:
-  - {path: projects/infra.yaml, change: core knowledge}
+  - {path: projects/private-runtime.yaml, change: ignored project knowledge}
 binary_checks:
   commit:
     - {check: gitignore管理データのためcommit不要, result: yes}

@@ -5,6 +5,11 @@
 
 setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    mkdir -p "$BATS_TEST_TMPDIR/scripts/lib"
+    ln -sf "$PROJECT_ROOT/scripts/lib/report_completion_events.sh" \
+        "$BATS_TEST_TMPDIR/scripts/lib/report_completion_events.sh"
+    ln -sf "$PROJECT_ROOT/scripts/lib/respawn_recovery.sh" \
+        "$BATS_TEST_TMPDIR/scripts/lib/respawn_recovery.sh"
 }
 
 @test "completion_notify_gap: later RC report and active task suppress reopened commands" {
@@ -1702,6 +1707,9 @@ tmux() {
     echo ""
 }
 export -f tmux
+respawn_recovery_wait_ready() { return 0; }
+respawn_recovery_generation() { echo "123:456"; }
+respawn_recovery_notify() { return 0; }
 
 safe_send_clear "shogun:2.3" "hayate" "TEST"
 
@@ -1752,6 +1760,9 @@ tmux() {
     echo ""
 }
 export -f tmux
+respawn_recovery_wait_ready() { return 0; }
+respawn_recovery_generation() { echo "123:456"; }
+respawn_recovery_notify() { return 0; }
 
 cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
 task:
@@ -1857,6 +1868,9 @@ tmux() {
     echo ""
 }
 export -f tmux
+respawn_recovery_wait_ready() { return 0; }
+respawn_recovery_generation() { echo "123:456"; }
+respawn_recovery_notify() { return 0; }
 
 safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR"
 
@@ -1921,7 +1935,8 @@ tmux() {
 }
 export -f tmux
 
-safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR"
+RESPAWN_RC=0
+safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR" || RESPAWN_RC=$?
 
 cat "$LOG"
 if [ -f "$TMP_ROOT/inbox_calls.log" ]; then
@@ -1931,14 +1946,12 @@ fi
 test "$(grep -c "RESPAWN-ATTEMPTED:respawn-pane" "$LOG")" -eq 1
 test "$(grep -c "CODEX-RESPAWN-FALLBACK: kagemaru respawn failed" "$LOG")" -eq 1
 test "$(grep -c "failed_task_respawn_failed" "$TMP_ROOT/inbox_calls.log")" -eq 1
-if grep -q "CLEAR-BLOCKED" "$LOG"; then
-    cat "$LOG"
-    exit 1
-fi
-echo "PASS: failed respawn attempted and failure notified, not blocked"
+test "$RESPAWN_RC" -eq 1
+grep -q "CODEX-RESPAWN-VERIFY-FAIL: kagemaru ready handshake timed out; retry=next_cycle" "$LOG"
+echo "PASS: failed respawn attempted, notified, and scheduled for retry"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"PASS: failed respawn attempted and failure notified, not blocked"* ]]
+    [[ "$output" == *"PASS: failed respawn attempted, notified, and scheduled for retry"* ]]
 }
 
 @test "safe_send_clear failed task already gate-cleared sends no duplicate notification" {
@@ -1989,6 +2002,9 @@ tmux() {
     echo ""
 }
 export -f tmux
+respawn_recovery_wait_ready() { return 0; }
+respawn_recovery_generation() { echo "123:456"; }
+respawn_recovery_notify() { return 0; }
 
 safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR"
 
@@ -2164,6 +2180,9 @@ tmux() {
     echo ""
 }
 export -f tmux
+respawn_recovery_wait_ready() { return 0; }
+respawn_recovery_generation() { echo "123:456"; }
+respawn_recovery_notify() { return 0; }
 
 # 同一世代(deployed_at不変)で3回respawnされても通知は1件のみ
 safe_send_clear "shogun:2.4" "kagemaru" "AUTO-CLEAR"
@@ -2232,6 +2251,9 @@ tmux() {
     echo ""
 }
 export -f tmux
+respawn_recovery_wait_ready() { return 0; }
+respawn_recovery_generation() { echo "123:456"; }
+respawn_recovery_notify() { return 0; }
 
 safe_send_clear "shogun:2.3" "hayate" "TEST"
 
@@ -2324,6 +2346,9 @@ tmux() {
     return 0
 }
 export -f tmux
+respawn_recovery_wait_ready() { return 0; }
+respawn_recovery_generation() { echo "123:456"; }
+respawn_recovery_notify() { return 0; }
 
 safe_send_clear "shogun:2.3" "hayate" "TEST-FIRST"
 BLOCKED=0
@@ -2387,6 +2412,9 @@ tmux() {
     return 0
 }
 export -f tmux
+respawn_recovery_wait_ready() { return 0; }
+respawn_recovery_generation() { echo "123:456"; }
+respawn_recovery_notify() { return 0; }
 
 safe_send_clear "shogun:2.3" "hayate" "AUTO-CLEAR"
 safe_send_clear "shogun:2.3" "hayate" "AUTO-CLEAR"

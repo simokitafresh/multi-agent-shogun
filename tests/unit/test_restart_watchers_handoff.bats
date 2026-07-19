@@ -39,7 +39,7 @@ set -euo pipefail
 root="'"$PROJECT_ROOT"'"
 tmp="$(mktemp -d)"; trap "rm -rf \"$tmp\"" EXIT
 mkdir -p "$tmp/root/scripts/lib" "$tmp/root/lib" "$tmp/root/queue/inbox" "$tmp/state"
-for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh inbox_nudge_policy.sh; do ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"; done
+for f in lock_path.sh cli_lookup.sh tmux_utils.sh script_update.sh inbox_nudge_policy.sh respawn_recovery.sh; do ln -s "$root/scripts/lib/$f" "$tmp/root/scripts/lib/$f"; done
 ln -s "$root/lib/agent_state.sh" "$tmp/root/lib/agent_state.sh"
 ln -s "$root/scripts/inbox_watcher.sh" "$tmp/root/scripts/inbox_watcher.sh"
 agent=handoff_fixture
