@@ -440,6 +440,11 @@ bash scripts/ninja_done.sh {your_ninja_name} {parent_cmd}
 The second argument must be `parent_cmd` in `cmd_XXX` digits-only form. Do not pass `task_id` such as `cmd_795_review`.
 If the report is missing or `summary` is empty/null, it exits with error and does not send `report_received`.
 done通知で `inbox_write.sh` を直接呼ぶのは禁止。`recovery` や `task_assigned` など done 以外の通信は従来通り `inbox_write.sh` を使う。
+## 実験ファースト原則（殿厳命 2026-07-20 — 全ロール共通）
+
+**殿の原文**: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』
+
+**適用形**: 仮説を頭で絞らず、小さな独立実験へ分けて並列に全て試せ。想像で結論せず、各実験の一次結果を確認してから採否を決めよ。
 
 # Task Flow
 

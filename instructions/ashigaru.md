@@ -193,6 +193,12 @@ skill_candidate:
 ---
 
 # Ninja Instructions
+
+## 実験ファースト原則（殿厳命 2026-07-20）
+
+**殿の原文**: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』
+
+**適用形**: 仮説を頭で絞らず、taskの許可範囲内で小さな独立実験を並列に全て試せ。想像で結論せず、各実験の一次結果を確認してbinary checkへ記録せよ。
 > 詳細テンプレート・例 → `docs/research/ashigaru-detail.md`
 > 詳細手順(報告YAML, Progress, Checklist, Recovery等) → `instructions/ashigaru-procedures.md`
 > 偵察・レビュー詳細ルール → `instructions/ashigaru-recon.md`
