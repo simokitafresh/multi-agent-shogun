@@ -714,13 +714,12 @@ inbox_review_log_has_lgtm() {
     ' "$review_log"
 }
 
+# shellcheck source=scripts/lib/report_completion_events.sh
+source "$SCRIPT_DIR/scripts/lib/report_completion_events.sh"
+
 inbox_type_triggers_report_completion() {
-    case "$1" in
-        report_received|report_submitted|task_done|report_completed|report_done|report_ready|task_failed)
-            return 0
-            ;;
-    esac
-    return 1
+    report_completion_event_type "$1" && return 0
+    [ "$1" = "task_failed" ]
 }
 
 inbox_type_is_ninja_report_notification() {

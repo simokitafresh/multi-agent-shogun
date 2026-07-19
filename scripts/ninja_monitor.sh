@@ -1628,7 +1628,13 @@ PY
     task_identity=$(yaml_field_get "$report_file" "task_id" "" 2>/dev/null || true)
     parent_identity=$(yaml_field_get "$report_file" "parent_cmd" "" 2>/dev/null || true)
 
+    # shellcheck source=scripts/lib/report_completion_events.sh
+    source "$SCRIPT_DIR/scripts/lib/report_completion_events.sh"
+    local completion_event_types
+    completion_event_types="$REPORT_COMPLETION_EVENT_TYPES"
+
     if python3 - "$name" "$report_epoch" "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" \
+        "$completion_event_types" \
         "$report_identity" "$task_identity" "$parent_identity" "${inbox_sources[@]}" <<'PY'
 import datetime as _dt
 import os
@@ -1644,8 +1650,9 @@ try:
 except Exception:
     report_epoch = 0
 memory_db = sys.argv[3]
-identities = tuple(value for value in sys.argv[4:7] if value)
-sources = sys.argv[7:]
+completion_types = frozenset(sys.argv[4].split())
+identities = tuple(value for value in sys.argv[5:8] if value)
+sources = sys.argv[8:]
 
 
 def _has_exact_identity(msg):
@@ -1688,7 +1695,7 @@ for source in sources:
     for msg in messages:
         if not isinstance(msg, dict):
             continue
-        if str(msg.get("type", "")) != "report_received":
+        if str(msg.get("type", "")) not in completion_types:
             continue
         if str(msg.get("from", "")) != name:
             continue
@@ -1711,14 +1718,12 @@ if os.path.isfile(memory_db):
         rows = conn.execute(
             """SELECT ts, detail, raw_content FROM events
                WHERE event_type = 'inbox' AND agent = ? AND target = 'karo'
-                 AND (instr(coalesce(detail, ''), 'type: report_received') > 0
-                      OR instr(coalesce(raw_content, ''), 'type: report_received') > 0)
                ORDER BY ts DESC""",
             (name,),
         )
         for ts, detail, raw_content in rows:
             evidence = f"{detail or ''}\n{raw_content or ''}"
-            if "type: report_received" not in evidence:
+            if not any(f"type: {event_type}" in evidence for event_type in completion_types):
                 continue
             if not any(re.search(r"(?<![A-Za-z0-9_])" + re.escape(identity) +
                                  r"(?![A-Za-z0-9_])", evidence)
@@ -1965,10 +1970,16 @@ _failed_task_needs_karo_notice() {
     local failed_task_id failed_deployed_at
     failed_task_id=$(yaml_field_get "$task_file" "task_id")
     failed_deployed_at=$(yaml_field_get "$task_file" "deployed_at")
+    # Use the same completion-event contract as inbox acceptance and the clear
+    # gate; a valid alias is durable acknowledgement of this task generation.
+    # shellcheck source=scripts/lib/report_completion_events.sh
+    source "$SCRIPT_DIR/scripts/lib/report_completion_events.sh"
     if python3 - "$name" "$parent_cmd" "$failed_task_id" "$failed_deployed_at" \
+        "$REPORT_COMPLETION_EVENT_TYPES" \
         "$SCRIPT_DIR/queue/inbox/karo.yaml" "$SCRIPT_DIR/archive/inbox" <<'PY' 2>/dev/null
 import datetime as dt, glob, os, re, sys, yaml
-name, parent, task, deployed, hot, archive = sys.argv[1:]
+name, parent, task, deployed, completion_event_types, hot, archive = sys.argv[1:]
+completion_types=set(completion_event_types.split())
 def epoch(v):
     try:
         x=dt.datetime.fromisoformat(str(v).replace('Z','+00:00'))
@@ -1981,7 +1992,7 @@ for path in [hot, *glob.glob(os.path.join(archive, 'karo_*.yaml'))]:
     try: msgs=(yaml.safe_load(open(path, encoding='utf-8')) or {}).get('messages', [])
     except Exception: continue
     for msg in msgs if isinstance(msgs, list) else []:
-        if not isinstance(msg, dict) or msg.get('type') != 'report_received' or msg.get('from') != name: continue
+        if not isinstance(msg, dict) or msg.get('type') not in completion_types or msg.get('from') != name: continue
         text='\n'.join(str(msg.get(k,'')) for k in ('content','task_id','parent_cmd','report','report_path'))
         if not any(re.search(r'(?<![A-Za-z0-9_])'+re.escape(x)+r'(?![A-Za-z0-9_])', text) for x in ids): continue
         if epoch(msg.get('timestamp')) >= boundary - 10: raise SystemExit(0)
