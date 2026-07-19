@@ -837,7 +837,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1230 -->
+<!-- last_synced_lesson: L1231 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1781,6 +1781,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1228: README記述とtracked計器を分離して成熟度を測る（cmd_4086）
 - L1229: 共有tree全checksumをhot-path計測へ混ぜない（cmd_karo_hotfix_notify_sg7_latency_split_202607191853）
 - L1230: 能力ALLOWはコード全文markerでなくcall引数ASTへ拘束する（cmd_karo_hotfix_guard14_wss_false_positive_202607191909）
+- L1231: 明示interpreter起動ではexecute bitを前提にしない（cmd_karo_ci_fix_yaml_field_set_execbit_202607192220）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
