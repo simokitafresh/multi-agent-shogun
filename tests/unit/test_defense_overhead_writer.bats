@@ -103,6 +103,15 @@ PY
   chmod +x "$DEFENSE_OVERHEAD_REPO_ROOT/scripts/insight_write.sh"
   SELF_RETRO_FIX_KNOWN_THRESHOLD=2 self_retro_write ninja_report cmd_one 1 '{"write":1}' repeated cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
   SELF_RETRO_FIX_KNOWN_THRESHOLD=2 self_retro_write ninja_report cmd_two 1 '{"write":1}' repeated cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
+  SELF_RETRO_FIX_KNOWN_THRESHOLD=2 self_retro_write ninja_report cmd_three 1 '{"write":1}' singleton cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
   run grep -c '^true|' "$TEST_TMP/insight.calls"
   [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
+  run python3 - "$SELF_RETRO_LEDGER" <<'PY'
+import json,sys
+r=[json.loads(x) for x in open(sys.argv[1])]
+assert len(r)==3
+assert sum(x['cause_class']=='repeated' for x in r)==2
+assert sum(x['cause_class']=='singleton' for x in r)==1
+PY
+  [ "$status" -eq 0 ]
 }
