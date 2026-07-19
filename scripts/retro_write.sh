@@ -158,3 +158,17 @@ for kind, payload in payloads:
                     kind, "retro_batcher", "review_retro_batch"], check=True)
 print("STORED" if args[0] == "submit" else "CHECKPOINT")
 PY
+
+if [ "${1:-}" = submit ]; then
+    # Ninja report terminal: retro transport remains authoritative; deep
+    # telemetry is detached and cannot delay report delivery.
+    # shellcheck source=scripts/lib/defense_overhead_writer.sh
+    source "$ROOT/scripts/lib/defense_overhead_writer.sh"
+    _retro_task="$(printf '%s' "${9:-}" | grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 || true)"
+    [ -n "$_retro_task" ] || _retro_task="${3:-}"
+    [[ "$_retro_task" == cmd_* ]] || _retro_task="cmd_retro_${_retro_task//[^A-Za-z0-9_]/_}"
+    self_retro_write_async ninja_report "$_retro_task" 0 '{"report_transport":0}' \
+      report_completion "report accepted by append-only retro transport" \
+      "aggregate repeated report completion causes into fix_known" \
+      "event_id duplicate count remains 0" "[[ninja_report]] -> [[retro_transport]] -> [[fix_known]]"
+fi

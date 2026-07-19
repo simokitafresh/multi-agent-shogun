@@ -124,6 +124,7 @@ def generate(args):
     print(relative); print(json.dumps(spec, ensure_ascii=False, sort_keys=True)); return 0
 
 def notify(args):
+    started = time.monotonic()
     root = Path(args.root).resolve(); path = Path(args.bundle)
     if not path.is_absolute(): path = root / path
     path = path.resolve(); gates = (root / "queue/gates").resolve()
@@ -142,7 +143,15 @@ PROJECT_ROOT="{root}" review_two_phase_ready_gunshi "{args.cmd}" "{report}"
     spec = review["cmd_spec_summary"]; relative = str(path.relative_to(root))
     message = f"{args.cmd} SG7 bundle. verdict: LGTM. report: {review['report']} bundle: {relative} cmd_spec_summary: acceptance_criteria_count={spec['acceptance_criteria_count']}, scope={json.dumps(spec['scope'], ensure_ascii=False, separators=(',', ':'))}, project={spec['project']}"
     subprocess.run(["bash", str(root / "scripts/inbox_write.sh"), "karo", message, "report_review_result", "gunshi"], cwd=root, check=True)
+    _emit_self_retro(root, "gunshi_review_bundle", args.cmd, round((time.monotonic()-started)*1000), "review_notify")
     print(message); return 0
+
+def _emit_self_retro(root, endpoint, cmd_id, wall_ms, cause_class):
+    script = root / "scripts/lib/defense_overhead_writer.sh"
+    payload = f'''source "{script}"
+self_retro_write_async {endpoint} {cmd_id} {wall_ms} '{{"review_bundle":{wall_ms}}}' {cause_class} "review bundle generated and delivered" "reduce dominant review phase while preserving SG7 validation" "delivery succeeds and duplicate event count is 0" "[[review_bundle]] -> [[review_delivery]] -> [[fix_known]]"
+'''
+    subprocess.run(["bash", "-c", payload], cwd=root, check=False)
 
 def consume(args):
     root = Path(args.root).resolve(); path = Path(args.bundle)

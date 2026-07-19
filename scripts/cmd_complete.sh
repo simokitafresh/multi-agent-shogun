@@ -13,6 +13,9 @@ fi
 SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_DIR="${CMD_COMPLETE_SCRIPT_DIR:-$SELF_DIR}"
 ROOT_DIR="${CMD_COMPLETE_ROOT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+source "$ROOT_DIR/scripts/lib/defense_overhead_writer.sh"
+CMD_COMPLETE_STARTED_MS="$(date +%s%3N)"
 BUNDLE_PATH="${2:-queue/gates/${CMD_ID}/sg7_bundle.json}"
 [[ "$BUNDLE_PATH" = /* ]] || BUNDLE_PATH="$ROOT_DIR/$BUNDLE_PATH"
 
@@ -273,3 +276,9 @@ fi
 run_checkpointed inbox_archive archive_inbox_after_completion_hint
 
 printf '[cmd_complete] COMPLETE %s\n' "$CMD_ID"
+CMD_COMPLETE_WALL_MS=$(( $(date +%s%3N) - CMD_COMPLETE_STARTED_MS ))
+self_retro_write_async karo_cmd_complete "$CMD_ID" "$CMD_COMPLETE_WALL_MS" \
+  "{\"completion_total\":${CMD_COMPLETE_WALL_MS}}" completion_pipeline \
+  "SG7 consume through archive completed" "reduce dominant completion phase without weakening checkpoints" \
+  "all ordered checkpoints complete and duplicate event count is 0" \
+  "[[cmd_complete]] -> [[completion_pipeline]] -> [[fix_known]]"

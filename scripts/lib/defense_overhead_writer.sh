@@ -61,3 +61,52 @@ defense_overhead_write_batch_async() {
     ) >/dev/null 2>&1 &
     return 0
 }
+
+# Deep post-terminal retrospective.  This deliberately has its own append-only
+# ledger so the stable defense_overhead.jsonl schema remains backward compatible.
+self_retro_write() {
+    local endpoint="${1:-}" task_id="${2:-}" wall_ms="${3:-}" phase_ms_json="${4:-}"
+    local cause_class="${5:-}" cause_structure="${6:-}" improvement="${7:-}"
+    local binary_criterion="${8:-}" origin="${9:-}"
+    local ledger="${SELF_RETRO_LEDGER:-${DEFENSE_OVERHEAD_REPO_ROOT}/logs/self_retro.jsonl}"
+    local lock_file="${ledger}.lock" line event_id
+    [[ "$endpoint" =~ ^(ninja_report|karo_cmd_complete|gunshi_review_bundle|shogun_gate_clear)$ ]] || return 2
+    [[ "$task_id" =~ ^cmd_[A-Za-z0-9_]+$ ]] || return 2
+    [[ "$wall_ms" =~ ^[0-9]+$ ]] || return 2
+    [ -d "$(dirname "$ledger")" ] || return 3
+    line="$(python3 - "$endpoint" "$task_id" "$wall_ms" "$phase_ms_json" "$cause_class" "$cause_structure" "$improvement" "$binary_criterion" "$origin" <<'PY'
+import datetime, hashlib, json, sys
+endpoint, task_id, wall_ms, phases, cause_class, cause, improvement, criterion, origin = sys.argv[1:]
+try: phases = json.loads(phases)
+except (TypeError, ValueError): raise SystemExit(2)
+if not isinstance(phases, dict) or not phases or any(not isinstance(v, int) or isinstance(v, bool) or v < 0 for v in phases.values()): raise SystemExit(2)
+if not all(x.strip() for x in (cause_class, cause, improvement, criterion, origin)): raise SystemExit(2)
+event_id = hashlib.sha256((endpoint + "\0" + task_id).encode()).hexdigest()
+print(json.dumps({"timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(), "event_id": event_id,
+ "endpoint": endpoint, "task_id": task_id, "wall_ms": int(wall_ms), "phase_ms": phases,
+ "cause_class": cause_class, "cause_structure": cause, "improvement_candidate": improvement,
+ "binary_criterion": criterion, "origin": origin}, ensure_ascii=False, separators=(",", ":")))
+PY
+    )" || return 2
+    event_id="$(printf '%s' "$line" | sed -n 's/.*"event_id":"\([^"]*\)".*/\1/p')"
+    exec {SELF_RETRO_FD}>>"$lock_file" || return 3
+    flock -w "${SELF_RETRO_LOCK_TIMEOUT:-1}" "$SELF_RETRO_FD" || { eval "exec ${SELF_RETRO_FD}>&-"; return 3; }
+    if [ -f "$ledger" ] && grep -Fq "\"event_id\":\"${event_id}\"" "$ledger"; then
+        flock -u "$SELF_RETRO_FD"; eval "exec ${SELF_RETRO_FD}>&-"; return 4
+    fi
+    printf '%s\n' "$line" >>"$ledger" || { flock -u "$SELF_RETRO_FD"; eval "exec ${SELF_RETRO_FD}>&-"; return 3; }
+    flock -u "$SELF_RETRO_FD"; eval "exec ${SELF_RETRO_FD}>&-"
+    local repeats
+    repeats="$(grep -Fc "\"cause_class\":\"${cause_class}\"" "$ledger" 2>/dev/null || true)"
+    if [ "${repeats:-0}" -ge "${SELF_RETRO_FIX_KNOWN_THRESHOLD:-3}" ] && [ -x "${DEFENSE_OVERHEAD_REPO_ROOT}/scripts/insight_write.sh" ]; then
+        INSIGHT_FIX_KNOWN=true INSIGHT_TARGET_FILE="$ledger" INSIGHT_VERIFY_COMMAND="grep -Fq '$event_id' '$ledger'" \
+          bash "${DEFENSE_OVERHEAD_REPO_ROOT}/scripts/insight_write.sh" \
+          "self-retro dominant cause=${cause_class}; candidate=${improvement}; criterion=${binary_criterion}" high self_retro >/dev/null 2>&1 || true
+    fi
+}
+
+self_retro_write_async() {
+    local endpoint="${1:-}" task_id="${2:-}" wall_ms="${3:-}"
+    ( self_retro_write "$@" || defense_overhead_write self_retro "${endpoint}" "${wall_ms:-0}" WARN "self-retro-fallback-${task_id}-${endpoint}" || true ) >/dev/null 2>&1 &
+    return 0
+}

@@ -69,3 +69,40 @@ PY
   run grep -c 'defense_overhead_write_batch_async' scripts/hooks/git-pre-commit.sh
   [ "$status" -eq 0 ] && [ "$output" -ge 1 ]
 }
+
+@test "deep self-retro is idempotent, backward compatible, and falls back without blocking" {
+  export SELF_RETRO_LEDGER="$TEST_TMP/self-retro.jsonl"
+  run self_retro_write ninja_report cmd_unit 12 '{"write":7,"delivery":5}' report_completion cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
+  [ "$status" -eq 0 ]
+  run self_retro_write ninja_report cmd_unit 12 '{"write":7,"delivery":5}' report_completion cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
+  [ "$status" -eq 4 ]
+  python3 - "$SELF_RETRO_LEDGER" <<'PY'
+import json,sys
+r=[json.loads(x) for x in open(sys.argv[1])]
+assert len(r)==1 and r[0]['phase_ms']=={'write':7,'delivery':5}
+assert all(r[0][k] for k in ('cause_structure','improvement_candidate','binary_criterion','origin'))
+PY
+  [ ! -e "$DEFENSE_OVERHEAD_LEDGER" ]
+  SELF_RETRO_LEDGER=/proc/forbidden/events.jsonl
+  run self_retro_write_async ninja_report cmd_fallback 9 '{"write":9}' delivery_missing cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
+  [ "$status" -eq 0 ]
+}
+
+@test "all four terminal endpoints invoke detached deep self-retro" {
+  run grep -c 'self_retro_write_async ninja_report' scripts/retro_write.sh; [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
+  run grep -c 'self_retro_write_async karo_cmd_complete' scripts/cmd_complete.sh; [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
+  run grep -c 'gunshi_review_bundle' scripts/review_bundle.py; [ "$status" -eq 0 ] && [ "$output" -ge 1 ]
+  run grep -c 'self_retro_write_async shogun_gate_clear' scripts/cmd_complete_gate.sh; [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
+}
+
+@test "dominant cause promotes a verified fix_known candidate" {
+  export SELF_RETRO_LEDGER="$TEST_TMP/self-retro.jsonl"
+  export DEFENSE_OVERHEAD_REPO_ROOT="$TEST_TMP/root"
+  mkdir -p "$DEFENSE_OVERHEAD_REPO_ROOT/scripts"
+  printf '#!/bin/bash\nprintf "%%s|%%s|%%s\\n" "$INSIGHT_FIX_KNOWN" "$INSIGHT_TARGET_FILE" "$INSIGHT_VERIFY_COMMAND" >>"%s"\n' "$TEST_TMP/insight.calls" >"$DEFENSE_OVERHEAD_REPO_ROOT/scripts/insight_write.sh"
+  chmod +x "$DEFENSE_OVERHEAD_REPO_ROOT/scripts/insight_write.sh"
+  SELF_RETRO_FIX_KNOWN_THRESHOLD=2 self_retro_write ninja_report cmd_one 1 '{"write":1}' repeated cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
+  SELF_RETRO_FIX_KNOWN_THRESHOLD=2 self_retro_write ninja_report cmd_two 1 '{"write":1}' repeated cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
+  run grep -c '^true|' "$TEST_TMP/insight.calls"
+  [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
+}
