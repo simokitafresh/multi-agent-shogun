@@ -247,8 +247,51 @@ PY
     printf '%s\n' "$SCRIPT_DIR"
 }
 
+push_task_repositories() {
+    local task_file repo upstream_ref head_sha upstream_sha
+    local -a repos=()
+    local -A seen_repos=()
+
+    for task_file in "$@"; do
+        [ -f "$task_file" ] || continue
+        repo=$(resolve_task_repo_dir "$task_file") || continue
+        [ -n "$repo" ] || continue
+        if [[ ! "${seen_repos[$repo]+_}" ]]; then
+            seen_repos["$repo"]=1
+            repos+=("$repo")
+        fi
+    done
+
+    # Commands without task files are platform-owned lifecycle operations.
+    if [ "${#repos[@]}" -eq 0 ]; then
+        repos=("$SCRIPT_DIR")
+    fi
+
+    for repo in "${repos[@]}"; do
+        if [ "${CMD_COMPLETE_GATE_PUSH_DRY_RUN:-0}" = "1" ]; then
+            echo "  git push: DRY_RUN ($repo)"
+            continue
+        fi
+
+        upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
+        head_sha=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
+        upstream_sha=$(git -C "$repo" rev-parse '@{upstream}' 2>/dev/null || true)
+        if [ -n "$upstream_ref" ] && [ -n "$head_sha" ] && [ "$head_sha" = "$upstream_sha" ]; then
+            echo "  git push: SKIP ($repo already up-to-date with ${upstream_ref})"
+        elif git -C "$repo" push 2>&1; then
+            echo "  git push: OK ($repo)"
+        else
+            echo "  [INFO] git push: WARN ($repo push failed, non-blocking)"
+        fi
+    done
+}
+
 if [ "${CMD_COMPLETE_GATE_TASK_REPO_ONLY:-0}" = "1" ]; then
     resolve_task_repo_dir "${CMD_COMPLETE_GATE_TASK_FILE:?task file required}"
+    exit 0
+fi
+if [ "${CMD_COMPLETE_GATE_PUSH_REPOS_ONLY:-0}" = "1" ]; then
+    CMD_COMPLETE_GATE_PUSH_DRY_RUN=1 push_task_repositories "${CMD_COMPLETE_GATE_TASK_FILE:?task file required}"
     exit 0
 fi
 if [ -f "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh" ]; then
@@ -6489,11 +6532,7 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───
     echo ""
     echo "Git push (post-GATE CLEAR - emergency override):"
-    if git -C "$SCRIPT_DIR" push 2>&1; then
-        echo "  git push: OK"
-    else
-        echo "  [INFO] git push: WARN (push failed, non-blocking)"
-    fi
+    push_task_repositories "${MATCHING_TASK_FILES[@]}"
 
     # ─── Gunshi gate_result reflux 2回目（GATE CLEAR後 最終ステップ, cmd_3370, emergency override） ───
     echo ""
@@ -9204,14 +9243,7 @@ PYEOF
     # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───
     echo ""
     echo "Git push (post-GATE CLEAR):"
-    upstream_ref=$(git -C "$SCRIPT_DIR" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
-    if [ -n "$upstream_ref" ] && [ "$(git -C "$SCRIPT_DIR" rev-parse HEAD 2>/dev/null || true)" = "$(git -C "$SCRIPT_DIR" rev-parse '@{upstream}' 2>/dev/null || true)" ]; then
-        echo "  git push: SKIP (already up-to-date with ${upstream_ref})"
-    elif git -C "$SCRIPT_DIR" push 2>&1; then
-        echo "  git push: OK"
-    else
-        echo "  [INFO] git push: WARN (push failed, non-blocking)"
-    fi
+    push_task_repositories "${MATCHING_TASK_FILES[@]}"
 
     # cmd_1337: ダッシュボード自動更新（GATE CLEAR時のみ、バックグラウンド実行）
     (bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
