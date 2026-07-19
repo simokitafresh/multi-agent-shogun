@@ -117,6 +117,7 @@ BLOCK_COUNT=0
 CMD_BLOCK_LOADED=0
 CMD_BLOCK_FOUND=0
 CMD_BLOCK_CACHE_LOADED=0
+CMD_BLOCK_PROJECT=""
 declare -a BLOCK_REASONS=()
 declare -a WARN_REASONS=()
 declare -a BLOCK_CHECKS=()
@@ -420,7 +421,7 @@ _is_gate_or_hook_addition_cmd_uncached() {
 
     # FP防止: 外部PJ(dm-signal等)のPython hook/gateはinfra gate/hookではない
     local project_field
-    project_field="$(cmd_block_get_field "project")"
+    project_field="$CMD_BLOCK_PROJECT"
     [[ "${project_field:-}" == "dm-signal" || "${project_field:-}" == "google-classroom" || "${project_field:-}" == "clinic-expense-tracker" || "${project_field:-}" == "dividend-tracker" ]] && return 1
     local q11_context=""
     local q11_value=""
@@ -508,7 +509,7 @@ is_gate_or_script_modification_cmd() {
 
     # FP防止: 外部PJ(dm-signal等)のPythonコードはinfra gate/scriptではない
     local _gsm_project
-    _gsm_project="$(cmd_block_get_field "project")"
+    _gsm_project="$CMD_BLOCK_PROJECT"
     [[ "${_gsm_project:-}" == "dm-signal" || "${_gsm_project:-}" == "google-classroom" || "${_gsm_project:-}" == "clinic-expense-tracker" || "${_gsm_project:-}" == "dividend-tracker" ]] && return 1
     search_text="$(awk '
         /^[[:space:]]*(title|purpose|target_path):/ { print; next }
@@ -2467,7 +2468,7 @@ log_cmd_save_block() {
         CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
         CMD_QUALITY_SOURCE="cmd_save" \
         CMD_QUALITY_DIAGNOSIS="$CMD_DIAGNOSIS" \
-        CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_PROJECT="$CMD_BLOCK_PROJECT" \
         CMD_QUALITY_CHECK_NAMES="$check_names" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1
@@ -2476,7 +2477,7 @@ log_cmd_save_block() {
         CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
         CMD_QUALITY_SOURCE="cmd_save" \
         CMD_QUALITY_DIAGNOSIS="$CMD_DIAGNOSIS" \
-        CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_PROJECT="$CMD_BLOCK_PROJECT" \
         CMD_QUALITY_CHECK_NAMES="$check_names" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "BLOCK" "no" "0" "$block_reason" >/dev/null 2>&1 &
@@ -2513,7 +2514,7 @@ log_cmd_save_warns() {
     local warn_note
     local warn_check_name
     local _project
-    _project="$(cmd_block_get_field "project" 2>/dev/null || true)"
+    _project="$CMD_BLOCK_PROJECT"
     for warn_note in "${WARN_REASONS[@]}"; do
         warn_check_name="$(warn_note_check_name "$warn_note")"
         if [[ "${CMD_SAVE_SYNC_QUALITY_LOG:-0}" == "1" ]]; then
@@ -2547,7 +2548,7 @@ log_cmd_save_pass() {
         CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
         CMD_QUALITY_SOURCE="cmd_save" \
         CMD_QUALITY_DIAGNOSIS="" \
-        CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_PROJECT="$CMD_BLOCK_PROJECT" \
         CMD_QUALITY_BLOCK_DURATION="$BLOCK_DURATION_MINUTES" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "PASS" "no" "0" >/dev/null 2>&1
@@ -2556,7 +2557,7 @@ log_cmd_save_pass() {
         CMD_QUALITY_LOG_FILE="$QUALITY_LOG_FILE" \
         CMD_QUALITY_SOURCE="cmd_save" \
         CMD_QUALITY_DIAGNOSIS="" \
-        CMD_QUALITY_PROJECT="$(cmd_block_get_field "project" 2>/dev/null || true)" \
+        CMD_QUALITY_PROJECT="$CMD_BLOCK_PROJECT" \
         CMD_QUALITY_BLOCK_DURATION="$BLOCK_DURATION_MINUTES" \
         CMD_QUALITY_FAST_METADATA=1 \
         bash "$SCRIPT_DIR/cmd_quality_log.sh" "$CMD_ID" "PASS" "no" "0" >/dev/null 2>&1 &
@@ -2579,7 +2580,7 @@ count_same_warn_pattern() {
     }
     local current_project
     local scan_file
-    current_project="$(cmd_block_get_field "project" 2>/dev/null || true)"
+    current_project="$CMD_BLOCK_PROJECT"
     scan_file="$(make_quality_log_scan_file)" || {
         echo 0
         return 0
@@ -3001,7 +3002,7 @@ check_unverified_assumptions_block() {
 }
 
 check_assumption_source_paths_block() {
-    _ASSUMP_PROJECT_ID="$(cmd_block_get_field "project")"
+    _ASSUMP_PROJECT_ID="$CMD_BLOCK_PROJECT"
     [[ -z "${_ASSUMP_PROJECT_ID:-}" ]] && _ASSUMP_PROJECT_ID=$(awk '/^current_project:/{print $2}' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null || true)
     if [[ -n "${_ASSUMP_PROJECT_ID:-}" ]]; then
         _ASSUMP_PROJECT_WD=$(awk -v id="$_ASSUMP_PROJECT_ID" '
@@ -3159,7 +3160,7 @@ check_q6_not_hiding_warn() {
 }
 
 check_q7_definition_verified_warn() {
-    _Q7_PROJECT="$(cmd_block_get_field "project")"
+    _Q7_PROJECT="$CMD_BLOCK_PROJECT"
     _Q7_TASK_TYPE="$(cmd_block_get_field "task_type")"
     if ! cmd_block_has_field "quality_gate.q7_definition_verified"; then
         if [[ "${_Q7_PROJECT:-}" != "dm-signal" || "${_Q7_TASK_TYPE:-}" != "impl" ]]; then
@@ -3181,7 +3182,7 @@ check_q10_knowledge_boundary_warn() {
 check_q5_code_reading_only_block() {
     _q5_scope_mode="$(cmd_block_get_field "scope_mode")"
     _q5_scout_exempt="$(cmd_block_get_field "scout_exempt")"
-    _q5_project="$(cmd_block_get_field "project")"
+    _q5_project="$CMD_BLOCK_PROJECT"
     _q5_depth="$(cmd_block_get_field "quality_gate.q4_depth")"
     q5_val="$(cmd_block_get_field "quality_gate.q5_verified_source")"
     if [[ -n "$q5_val" ]] && grep -qiE "code_reading|コード読み|読んだだけ" <<< "$q5_val"; then
@@ -3514,7 +3515,7 @@ check_required_quality_gate_keys_block() {
         MISSING_HINTS+=('  q11_not_already_done: "未達成。確認方法と結果を記載"')
     fi
 
-    _PF_PROJECT="$(cmd_block_get_field "project")"
+    _PF_PROJECT="$CMD_BLOCK_PROJECT"
     _PF_TASK_TYPE="$(cmd_block_get_field "task_type")"
     if [[ "${_PF_PROJECT:-}" == "dm-signal" && "${_PF_TASK_TYPE:-}" == "impl" ]]; then
         if ! cmd_block_has_field "quality_gate.q7_definition_verified"; then
@@ -3648,6 +3649,14 @@ fi
 
 # --- Check 1: cmdブロック存在確認 ---
 check_cmd_block_presence_warn
+
+# The command block is immutable for one cmd_save invocation. Project was the
+# hottest repeated lookup (20 callers); cache it before any project-aware check
+# so those callers avoid Bash command-substitution while preserving check order.
+if load_cmd_block; then
+    load_cmd_block_cache || true
+    CMD_BLOCK_PROJECT="${CMD_BLOCK_CACHE[project]-}"
+fi
 
 # --- Check 1.05: 雛形FILL_THIS残存BLOCK ---
 # 起源: cmd_skeleton.sh導入(2026-06-10殿指示「劣化LLMでもスムーズ起票」)。
@@ -4260,7 +4269,7 @@ check_ac_file_paths() {
     # 単体抽出テストでも動くよう、helper未ロード時はブロック本文から直接拾う。
     local PROJECT_ID PROJECT_WD
     if declare -F cmd_block_get_field >/dev/null 2>&1; then
-        PROJECT_ID="$(cmd_block_get_field "project")"
+        PROJECT_ID="$CMD_BLOCK_PROJECT"
     else
         PROJECT_ID=$(awk '
             /^[[:space:]]*project:[[:space:]]*/ {
@@ -4363,7 +4372,7 @@ check_impl_push_ac() {
 
     # project取得
     local PROJECT_ID
-    PROJECT_ID="$(cmd_block_get_field "project")"
+    PROJECT_ID="$CMD_BLOCK_PROJECT"
     [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
 
     # task_type取得
@@ -4409,7 +4418,7 @@ check_dm_signal_bare_layer_reference() {
 
     local PROJECT_ID
     if declare -F cmd_block_get_field >/dev/null 2>&1; then
-        PROJECT_ID="$(cmd_block_get_field "project")"
+        PROJECT_ID="$CMD_BLOCK_PROJECT"
     else
         PROJECT_ID=$(awk '
             /^[[:space:]]*project:[[:space:]]*/ {
@@ -4491,7 +4500,7 @@ check_research_tool_growth_ac() {
 
     local PROJECT_ID TASK_TYPE
     if declare -F cmd_block_get_field >/dev/null 2>&1; then
-        PROJECT_ID="$(cmd_block_get_field "project")"
+        PROJECT_ID="$CMD_BLOCK_PROJECT"
         TASK_TYPE="$(cmd_block_get_field "task_type")"
     else
         PROJECT_ID=$(awk '
@@ -4944,7 +4953,7 @@ check_projects_yaml_forbidden_topics() {
     [[ -z "${CMD_BLOCK:-}" ]] && return 0
 
     local project_id
-    project_id="$(cmd_block_get_field "project" "")"
+    project_id="$CMD_BLOCK_PROJECT"
 
     # cmd テキスト: title + purpose + command の先頭50行
     local cmd_text
@@ -5271,7 +5280,7 @@ emit_ac_param_candidate_hints() {
     CMD_SAVE_AC_LINE="$ac_line" \
     CMD_SAVE_CMD_BLOCK="${CMD_BLOCK_NC:-}" \
     CMD_SAVE_PROJECT_DIR="$PROJECT_DIR" \
-    CMD_SAVE_PROJECT_ID="$(cmd_block_get_field "project" "")" \
+    CMD_SAVE_PROJECT_ID="$CMD_BLOCK_PROJECT" \
     python3 - <<'PY' >&2 || true
 import os
 import re
@@ -5855,7 +5864,7 @@ check_research_tool_explicit() {
 
     # project=dm-signalのみ対象
     local PROJECT_ID
-    PROJECT_ID="$(cmd_block_get_field "project")"
+    PROJECT_ID="$CMD_BLOCK_PROJECT"
     [[ "$PROJECT_ID" != "dm-signal" ]] && return 0
 
     # 出口判定: AC YAML構造が適切なら本Check18をスキップ（覚醒設計書v3 cmd_3402）
@@ -5981,7 +5990,7 @@ check_research_artifact_reflux_ac() {
 
     local TASK_TYPE PROJECT_ID SEARCH_TEXT_EN SEARCH_TEXT_JA AC_SECTION
     TASK_TYPE="$(cmd_block_get_field "type")"
-    PROJECT_ID="$(cmd_block_get_field "project")"
+    PROJECT_ID="$CMD_BLOCK_PROJECT"
     # English classifier terms are intentionally limited to semantic header fields.
     # Scanning the whole command made artifact/design paths such as
     # docs/research/... classify ordinary implementation commands as research.
