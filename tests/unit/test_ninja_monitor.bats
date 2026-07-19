@@ -163,8 +163,11 @@ EOF
         printf "task:\n  status: idle\n" >"$SCRIPT_DIR/queue/tasks/alpha.yaml"
         printf "task:\n  status: idle\n" >"$SCRIPT_DIR/queue/tasks/beta.yaml"
         get_idle_pipeline_state() { printf "2|0|0\n"; }
-        cat >"$SCRIPT_DIR/scripts/inbox_write.sh" <<"SH"
+cat >"$SCRIPT_DIR/scripts/inbox_write.sh" <<"SH"
 #!/usr/bin/env bash
+if find "/proc/$$/fd" -type l -lname "*/deploy_ninja_*.lock" -print -quit | grep -q .; then
+    printf "leaked-fd\n" >>"$SCRIPT_DIR/child_fd_leaks"
+fi
 printf "notify\n" >>"$SCRIPT_DIR/notifications"
 SH
         export SCRIPT_DIR; chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
@@ -174,10 +177,20 @@ SH
         check_karo_idle_cycle
         [ ! -e "$SCRIPT_DIR/notifications" ]
 
-        # 真の全idleは1通知。次cycle再評価でlost=0、1 cycle内duplicate=0。
+        # 途中のlock取得失敗でも、それ以前に取得したFDを全て解放する。
         bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/queue/tasks/beta.yaml" task status idle
+        flock "$SCRIPT_DIR/queue/locks/deploy_ninja_beta.lock" -c "sleep 1" & holder=$!; sleep 0.1
+        check_karo_idle_cycle
+        flock -n "$SCRIPT_DIR/queue/locks/deploy_ninja_alpha.lock" -c true
+        wait "$holder"
+
+        # 真の全idleは1通知。次cycle再評価でlost=0、1 cycle内duplicate=0。
         check_karo_idle_cycle
         [ "$(wc -l <"$SCRIPT_DIR/notifications")" -eq 1 ]
+        [ ! -e "$SCRIPT_DIR/child_fd_leaks" ]
+        for agent in alpha beta; do
+            flock -n "$SCRIPT_DIR/queue/locks/deploy_ninja_${agent}.lock" -c true
+        done
         python3 -c "import yaml; [yaml.safe_load(open(p)) for p in [\"$SCRIPT_DIR/queue/tasks/alpha.yaml\", \"$SCRIPT_DIR/queue/tasks/beta.yaml\"]]"
     '
     [ "$status" -eq 0 ]

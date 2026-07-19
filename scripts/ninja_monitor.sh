@@ -7569,7 +7569,7 @@ check_karo_idle_cycle() {
 
     # Snapshot確認後にdeployが成立し得るため、通知直前は全ninjaのdeploy lockを
     # 同時保持してlive task YAMLを再検証する。1つでもbusyなら次cycleへ送る。
-    local name task_status lock_file lock_fd
+    local name task_status lock_file lock_fd held_fd
     local -a idle_cycle_lock_fds=()
     mkdir -p "$SCRIPT_DIR/queue/locks"
     for name in "${NINJA_NAMES[@]}"; do
@@ -7577,6 +7577,10 @@ check_karo_idle_cycle() {
         exec {lock_fd}>"$lock_file"
         if ! flock -n "$lock_fd"; then
             log "KARO-IDLE-CYCLE-SKIP: deploy lock busy agent=$name"
+            exec {lock_fd}>&-
+            for held_fd in "${idle_cycle_lock_fds[@]}"; do
+                exec {held_fd}>&-
+            done
             return
         fi
         idle_cycle_lock_fds+=("$lock_fd")
@@ -7587,6 +7591,9 @@ check_karo_idle_cycle() {
             idle|completed|done) ;;
             *)
                 log "KARO-IDLE-CYCLE-SKIP: live task active agent=$name status=${task_status:-missing}"
+                for held_fd in "${idle_cycle_lock_fds[@]}"; do
+                    exec {held_fd}>&-
+                done
                 return
                 ;;
         esac
@@ -7594,12 +7601,21 @@ check_karo_idle_cycle() {
 
     # 全条件成立: deployを遮断した同一境界内で家老へ通知する。
     log "KARO-IDLE-CYCLE: All ${ninja_total} ninjas idle/completed/done + pipeline empty → nudging karo"
-    if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "全忍者idle+パイプライン空。改善サイクルを回せ。" karo_idle_cycle ninja_monitor >> "$LOG" 2>&1; then
+    # 子プロセスにはlock FDを継承させない。親shellは通知完了まで保持する。
+    if (
+        for held_fd in "${idle_cycle_lock_fds[@]}"; do
+            exec {held_fd}>&-
+        done
+        exec bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "全忍者idle+パイプライン空。改善サイクルを回せ。" karo_idle_cycle ninja_monitor
+    ) >> "$LOG" 2>&1; then
         LAST_KARO_IDLE_NUDGE=$now
         log "KARO-IDLE-CYCLE: Sent improvement cycle nudge to karo"
     else
         log "ERROR: KARO-IDLE-CYCLE inbox_write failed"
     fi
+    for held_fd in "${idle_cycle_lock_fds[@]}"; do
+        exec {held_fd}>&-
+    done
 }
 
 # Existing monitor idle edge is the single trigger; no new daemon/poll loop.
