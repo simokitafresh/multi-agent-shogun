@@ -41,7 +41,7 @@ wait_for_log_text() {
     return 1
 }
 
-@test "clear recovery: codex clear_command maps to /new and completes task" {
+@test "clear recovery: codex clear_command respawns and completes task" {
     local pane
     pane="$(pane_target 1)"
     local task_file="$E2E_QUEUE/queue/tasks/sasuke.yaml"
@@ -52,6 +52,7 @@ task:
   assigned_to: sasuke
   parent_cmd: cmd_e2e_clear
   subtask_id: subtask_e2e_clear
+  task_id: subtask_e2e_clear
   report_filename: sasuke_report_cmd_e2e_clear.yaml
   status: assigned
 YAML
@@ -66,8 +67,8 @@ YAML
 
     wait_for_yaml_value "$task_file" "task.status" "done" 45
     wait_for_file "$E2E_QUEUE/queue/reports/sasuke_report_cmd_e2e_clear.yaml" 15
-    wait_for_log_text "$log_file" "Sending CLI command to sasuke (codex): /new" 15
-    wait_for_pane_text "$pane" "/new received" 15
+    wait_for_log_text "$log_file" "clear_command verified: sasuke generation=" 15
+    wait_for_pane_text "$pane" "Codex CLI" 15
 
     stop_inbox_watcher "$watcher_pid"
 }

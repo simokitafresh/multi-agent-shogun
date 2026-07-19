@@ -23,7 +23,7 @@ teardown() {
     teardown_e2e_session
 }
 
-@test "busy guard: clear_command does not complete while codex pane is still busy" {
+@test "busy guard: clear_command respawns a busy codex pane and resumes exactly once" {
     local pane
     pane="$(pane_target 1)"
     local task_file="$E2E_QUEUE/queue/tasks/sasuke.yaml"
@@ -36,6 +36,7 @@ task:
   assigned_to: sasuke
   parent_cmd: cmd_e2e_busy
   subtask_id: subtask_e2e_busy
+  task_id: subtask_e2e_busy
   report_filename: sasuke_report_cmd_e2e_busy.yaml
   status: assigned
 YAML
@@ -46,12 +47,11 @@ YAML
     run bash "$E2E_QUEUE/scripts/inbox_write.sh" "sasuke" "/clear" "clear_command" "karo"
     [ "$status" -eq 0 ]
 
-    sleep 2
-    assert_yaml_field "$task_file" "task.status" "assigned"
-    [ ! -f "$E2E_QUEUE/queue/reports/sasuke_report_cmd_e2e_busy.yaml" ]
-
     wait_for_yaml_value "$task_file" "task.status" "done" 30
     wait_for_file "$E2E_QUEUE/queue/reports/sasuke_report_cmd_e2e_busy.yaml" 15
+    run grep -c "codex mock completed task" "$task_file"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
 
     stop_inbox_watcher "$watcher_pid"
 }

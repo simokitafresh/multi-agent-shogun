@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 claude_startup_banner() {
-    echo "Claude Code (mock)"
+    echo "Claude Code (mock) Context 0% used"
 }
 
 claude_handle_clear() {

@@ -137,6 +137,11 @@ case "$CLI_TYPE" in
 esac
 set_agent_state idle
 log "READY"
+# A respawned real agent executes session recovery and resumes an already
+# assigned task without requiring a second wake-up. Keep the mock lifecycle
+# faithful to that boundary; initial test setup has no task yet, so this is
+# inert until a clear/dead-pane recovery generation starts.
+process_task_if_available
 
 while IFS= read -r line; do
     line="${line%$'\r'}"
