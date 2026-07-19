@@ -827,7 +827,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1212 -->
+<!-- last_synced_lesson: L1213 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1753,6 +1753,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1210: context鮮度境界は日付でなく本文反映証拠で分類する（cmd_karo_gate_fix_ga295_context_freshness_trigger_202607190044）
 - L1211: immutable eventへ時限cooldownを使わない（cmd_karo_hotfix_report_notification_missing_recurrence_202607190811）
 - L1212: 共有CI完了境界はlocal HEADではなくremote tracking refへ結ぶ（cmd_karo_hotfix_ci_readiness_remote_head_boundary_202607190832）
+- L1213: CI GREENはレビュー時刻境界にも束縛する（cmd_karo_hotfix_ci_readiness_run_freshness_202607190854）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
