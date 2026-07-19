@@ -225,3 +225,9 @@ Level4(フロー内BLOCK、二重防御): (1)書込み側=cmd_save.sh L6601-6612
 ```
 Level4(フロー内WARN/BLOCK接続): scripts/gates/gate_shogun_startup.sh check_ci_red_autodeploy() は timeout既定8sを復元し、未完了時はasync回収設計で直列待ちを増やさず、ci_json空応答はsilent deathを避けるためDIGESTのci=unknown/ci=failure表示で毎起動可視化する。CI failure時は同gate内でWARN化し、scripts/inbox_write.sh経由でkaroへci_red_fix配備を通知する。一次情報再検証(2026-07-09 cmd_reflux_promotion_202607090413_kagemaru): git blameで修復commit d5ed06f9bがgate_shogun_startup.sh L122-L125の8s timeout復元+silent-skip禁止コメントを導入済みと確認。tests/unit/test_gate_shogun_startup.bats「CI RED failure sends ci_red_fix to karo and shows WARN」はSHOGUN_STARTUP_GH_TIMEOUT=5でci=failure/WARN/inbox送信をassertし、「CI GREEN passes silently without WARN or inbox notification」はci=successをassert。旧enforcementはtype=gate/pattern=ci=のみでgate_lesson_enforcement_level.shがL1誤分類したため、構造化enforcement_levelを明示する。
 ```
+
+## LS-A09(35)(36) 全文 (2026-07-20 v5圧縮で移設)
+
+(35)gateの自動修復提案(--fix等)も未検証の主張(2026-07-14 WA台帳偽解決事故): gate_wa_data_qualityがcmd/ninja単位の粗い判定でDUPLICATEとした2エントリは実際は異根の正当データ(report_yaml_format::generalと::commit_provenance)で、将軍がエントリ本文を読まず--fixを実行し正当データを削除→GATE PASS=偽解決(洗脳#2)。データ削除・上書き系の修復コマンドは、対象エントリの中身を読み同一性(canonical原因単位)を自分で確認してから実行せよ。gateの検出も修復提案も一次データで突合してから従う=(33)の修復提案への拡張。家老の一次反証で捕捉、復元+detector根治=cmd_karo_hotfix_wa_duplicate_identity_data_restore
+
+(36)working tree現物での「修正済み」判定禁止(2026-07-14 10:15 semantic除外誤裁定): 将軍がworking treeのL404/L872除外実装を見て「既にFIX済み」と裁定し直近commit 2件へ根拠なく帰属→家老一次反証: 実体は半蔵taskの未commit差分でHEAD 5184c51eに除外なし。将軍自身のgit log -S検索は空(=帰属先なしの一次情報)だったのに読まなかった。上位構造=LS078の変種: working treeは共有作業場で他者の未commit作業中差分を含む。「修正済み」判定はgit show HEAD:fileまたは-S/-Lのcommit証跡のみ。検索null結果を見逃すな。(35)と同型(検証コマンド実行したが結果を読まない)が24h内2回=家老の一次反証が免疫系として2連続機能
