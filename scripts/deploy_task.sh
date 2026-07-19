@@ -46,6 +46,16 @@ deploy_task_guard_yaml_arg_order() {
     return 0
 }
 
+deploy_task_guard_direct_yaml_misuse() {
+    [ "${1:-}" = "--direct" ] || return 0
+    local direct_cmd="${3:-}"
+    if [[ "$direct_cmd" == */* || "$direct_cmd" == *.yaml || "$direct_cmd" == *.yml ]]; then
+        echo "BLOCK: --direct expects a cmd_id, not a YAML path. Use: deploy_task.sh --yaml <file> <ninja>" >&2
+        return 2
+    fi
+    return 0
+}
+
 deploy_task_early_target_from_args() {
     local first="${1:-}"
     shift || true
@@ -73,6 +83,7 @@ deploy_task_early_target_known() {
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
     deploy_task_guard_yaml_arg_order "$@" || exit $?
+    deploy_task_guard_direct_yaml_misuse "$@" || exit $?
     _dt_early_target="$(deploy_task_early_target_from_args "$@")"
     if [ -z "$_dt_early_target" ] || [ "${_dt_early_target,,}" = "none" ] || [[ "$_dt_early_target" == cmd_* ]]; then
         echo "ERROR: ninja_name is required and must be a configured agent, not '${_dt_early_target:-empty}'." >&2
@@ -1030,6 +1041,7 @@ cleanup_none_task_files() {
 
 parse_deploy_task_args() {
     deploy_task_guard_yaml_arg_order "$@" || exit $?
+    deploy_task_guard_direct_yaml_misuse "$@" || exit $?
     DIRECT_MODE=false
     NINJA_NAME=""
     CMD_ID=""
@@ -3373,7 +3385,7 @@ generate_report_template() {
     local task_id="$2"
     local parent_cmd="$3"
     local project="$4"
-    local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+    local task_file="${5:-$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml}"
     local report_file=""
     local report_rel_path=""
 
@@ -5755,24 +5767,30 @@ if not key_lines:
     print('[INJECT_GLD] WARN: no key lines extracted from §11', file=sys.stderr)
     sys.exit(0)
 
-# 既存の growth_loop_defense を除去
+# 既存の growth_loop_defense をYAML node境界で除去する。
+# quote/styleに依存した行regexは正規化後のsingle-quote listを孤立させるため禁止。
 with open(task_file, encoding='utf-8') as f:
     raw = f.read()
 
 raw_lines = raw.split('\n')
-new_lines = []
-skip = False
-for line in raw_lines:
-    if line.startswith('  growth_loop_defense:'):
-        skip = True
-        continue
-    if skip:
-        if re.match(r'  - "', line):
-            continue
-        else:
-            skip = False
-    if not skip:
-        new_lines.append(line)
+new_lines = raw_lines
+try:
+    root_node = yaml.compose(raw)
+    task_node = root_node
+    if isinstance(root_node, yaml.MappingNode):
+        for key_node, value_node in root_node.value:
+            if key_node.value == 'task':
+                task_node = value_node
+                break
+    if isinstance(task_node, yaml.MappingNode):
+        for key_node, value_node in task_node.value:
+            if key_node.value == 'growth_loop_defense':
+                start = key_node.start_mark.line
+                end = value_node.end_mark.line
+                new_lines = raw_lines[:start] + raw_lines[end:]
+                break
+except yaml.YAMLError:
+    sys.exit(1)
 
 inject_lines = ['  growth_loop_defense:']
 for kl in key_lines:
@@ -10578,8 +10596,41 @@ notify_initial_deploy_ntfy_once() {
 
 deploy_task_apply_task_mutations() {
     local ninja_name="${1:-$NINJA_NAME}"
-    local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+    local task_file="${2:-$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml}"
     local task_status
+
+    # 全injectorを同一dirの作業copyへ適用し、全validation PASS後に1回だけ公開する。
+    # 後段FAIL時は実taskのbytes/SHAを不変に保つ。
+    if [ "${DEPLOY_TASK_MUTATION_CANDIDATE:-0}" != "1" ]; then
+        local mutation_candidate
+        mutation_candidate=$(mktemp "${task_file}.mutation.XXXXXX") || return 1
+        if ! cp -p -- "$task_file" "$mutation_candidate"; then
+            rm -f "$mutation_candidate"
+            return 1
+        fi
+        if ! DEPLOY_TASK_MUTATION_CANDIDATE=1 deploy_task_apply_task_mutations "$ninja_name" "$mutation_candidate"; then
+            rm -f "$mutation_candidate"
+            return 1
+        fi
+        if [ "${DEPLOY_TASK_TEST_FAIL_AFTER_MUTATIONS:-0}" = "1" ]; then
+            rm -f "$mutation_candidate"
+            return 1
+        fi
+        if ! deploy_task_guard_task_yaml_syntax "mutation_candidate_pre_publish" "$mutation_candidate" "$ninja_name"; then
+            rm -f "$mutation_candidate"
+            return 1
+        fi
+        if ! mv -f -- "$mutation_candidate" "$task_file"; then
+            rm -f "$mutation_candidate"
+            return 1
+        fi
+        return 0
+    fi
+
+    if [ "${DEPLOY_TASK_TEST_MUTATE_AND_FAIL:-0}" = "1" ]; then
+        printf '\n  test_partial_mutation: true\n' >>"$task_file"
+        return 1
+    fi
 
     task_status=$(field_get "$task_file" "status" "unknown")
 
@@ -10736,7 +10787,7 @@ deploy_task_apply_task_mutations() {
     if [ -z "${task_id:-}" ]; then
         task_id="${_ac_task_id:-}"
     fi
-    deploy_task_mutation_phase report_publication generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project" || return $?
+    deploy_task_mutation_phase report_publication generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project" "$task_file" || return $?
     inject_parent_contract "$task_file" "$SCRIPT_DIR/queue/reports/${report_filename:-}" "$ninja_name" \
         || { log "FATAL: parent contract injection failed"; return 1; }
     inject_done_redeploy_hints "$task_file" || true

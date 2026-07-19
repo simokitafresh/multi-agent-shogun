@@ -1380,3 +1380,59 @@ YAML
     [ "$status" -eq 0 ]
     [[ "$output" != *"NameError"* ]]
 }
+
+# test_necessity: growth_loop_defense再注入は既存listのquote/styleに依存せずYAMLキー全体を置換し、孤立要素を残さない不変量を守る。
+@test "growth loop defense replaces single-quoted lists by YAML node boundary" {
+    tmpdir="$(mktemp -d)"
+    for style in single plain block; do
+        task_file="$tmpdir/$style.yaml"
+        case "$style" in
+          single) old_value="  - 'old one'" ;;
+          plain) old_value="  - old-one" ;;
+          block) old_value="  - |\n    old block" ;;
+        esac
+        printf '%s\n' 'task:' '  purpose: gate hook defense' '  project: infra' '  growth_loop_defense:' >"$task_file"
+        printf '%b\n' "$old_value" >>"$task_file"
+        printf '%s\n' '  description: gate task' >>"$task_file"
+        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; inject_growth_loop_defense '$task_file'; inject_growth_loop_defense '$task_file'; python3 -c \"import yaml; d=yaml.safe_load(open('$task_file'))['task']; assert 'growth_loop_defense' in d; assert len(d['growth_loop_defense']) >= 1; assert not any('old' in str(x) for x in d['growth_loop_defense'])\""
+        [ "$status" -eq 0 ]
+        run python3 -c "import yaml; yaml.safe_load(open('$task_file'))"
+        [ "$status" -eq 0 ]
+        run grep -c "old one\|old-one\|old block" "$task_file"
+        [ "$status" -eq 1 ]
+    done
+}
+
+# test_necessity: mutation途中の後段FAILでは作業copyだけを破棄し、公開済taskのSHA/bytesを不変に保つ不変量を守る。
+@test "task mutation failure leaves original task SHA unchanged" {
+    tmpdir="$(mktemp -d)"; task_file="$tmpdir/task.yaml"
+    cat >"$task_file" <<'YAML'
+task:
+  status: assigned
+  task_id: atomic-fixture
+  parent_cmd: cmd_atomic_fixture
+  project: infra
+YAML
+    before="$(sha256sum "$task_file" | awk '{print $1}')"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_TEST_MUTATE_AND_FAIL=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_apply_task_mutations hayate '$task_file'"
+    [ "$status" -ne 0 ]
+    after="$(sha256sum "$task_file" | awk '{print $1}')"
+    [ "$before" = "$after" ]
+    run bash -c "compgen -G '${task_file}.mutation.*'"
+    [ "$status" -ne 0 ]
+}
+
+# test_necessity: --directへYAML pathを誤投入した場合、task/report/inbox publication前にBLOCKし正規--yaml構文を提示する不変量を守る。
+@test "direct mode rejects YAML path cmd before publication" {
+    task="$PROJECT_ROOT/queue/tasks/hayate.yaml"
+    inbox="$PROJECT_ROOT/queue/inbox/hayate.yaml"
+    task_sha_before="$(sha256sum "$task" | awk '{print $1}')"
+    reports_before="$(find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f -name 'hayate_report_*' | wc -l)"
+    assigned_before="$(grep -c "type: task_assigned" "$inbox" 2>/dev/null || true)"
+    run bash "$PROJECT_ROOT/scripts/deploy_task.sh" --direct hayate .cache/task.yaml
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Use: deploy_task.sh --yaml <file> <ninja>"* ]]
+    [ "$task_sha_before" = "$(sha256sum "$task" | awk '{print $1}')" ]
+    [ "$reports_before" -eq "$(find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f -name 'hayate_report_*' | wc -l)" ]
+    [ "$assigned_before" -eq "$(grep -c "type: task_assigned" "$inbox" 2>/dev/null || true)" ]
+}
