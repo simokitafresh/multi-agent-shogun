@@ -203,6 +203,16 @@ YAML
   [ "$(awk -F '\t' '$1=="camp-prev" {print $4 ":" $5}' "$ledger")" = '4.000:5.196' ]
 }
 
+# test_necessity: floating-point campaign elapsed time must stop cleanly at the budget without shell integer errors.
+@test "floating elapsed seconds are compared numerically for campaign budget" {
+  ledger="$TMP/logs/float-budget.tsv"
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_TASK_DIR="$TMP/queue/training" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" \
+    bash "$ROOT/scripts/test_speed_task_generator.sh" continue camp-float-budget 1 tests/unit/slow.bats 10 9 fixture pass cache 600.5 0 same same 9
+  [ "$status" -eq 0 ]
+  [ "$output" = 'STOP:budget' ]
+  [ "$(awk -F '\t' '$1=="camp-float-budget" {print $7}' "$ledger")" = budget ]
+}
+
 @test "production deploy contract normalizes arbitrary direct YAML report metadata" {
   task="$TMP/queue/training/arbitrary.yaml"
   cat > "$task" <<'YAML'

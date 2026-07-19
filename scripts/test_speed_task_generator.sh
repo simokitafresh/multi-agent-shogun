@@ -320,7 +320,7 @@ continue_campaign() {
     adopted_best=$(awk -v b="$best" -v l="$last" 'BEGIN { printf "%.3f", (l < b ? l : b) }')
     stop="${stop:-}"
     if [ "$quality" != pass ]; then stop="quality_${quality}";
-    elif [ "$elapsed" -ge "$CAMPAIGN_BUDGET_SEC" ]; then stop="budget";
+    elif awk -v e="$elapsed" -v b="$CAMPAIGN_BUDGET_SEC" 'BEGIN{exit !(e>=b)}'; then stop="budget";
     elif [ "$round" -ge "$MAX_ROUNDS" ]; then stop="max_rounds";
     elif [ "$round" -ge "$MIN_ROUNDS" ] && [ "$dominant" = none ]; then stop="no_next_dominant"; fi
     append_campaign "$campaign" "$round" "$target" "$adopted_best" "$observed_last" "$approach" "$stop" "$ab_base" "$ab_candidate" "$ab_command" "$ab_n" "$ab_base_p50" "$ab_base_p95" "$ab_candidate_p50" "$ab_candidate_p95"
