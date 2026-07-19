@@ -837,7 +837,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1240 -->
+<!-- last_synced_lesson: L1241 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1791,6 +1791,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1238: active HOME全走査は並行cache書込みで偽FAILになる（cmd_karo_e2_ci_clean_repro_harness_202607200248）
 - L1239: 世代dedupは成功作用後にのみcommitする（cmd_karo_e1_structural_autodeploy_202607200305）
 - L1240: 自動ackは永続化成功をcommit pointにする（cmd_karo_info_digest_autoack_202607200316）
+- L1241: isolated fixtureはsource対象のruntime dependency closureを同期する（cmd_karo_ci_fix_29698428058_202607200322）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
