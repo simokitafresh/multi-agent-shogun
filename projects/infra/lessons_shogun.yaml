@@ -414,3 +414,11 @@ lessons:
   created_at: '2026-07-18'
   automated: true
   enforcement: 'Level4: inbox_write.sh report_received検知→queue/retro/pending.yamlへevent保存(batch化。即時送信はtask start nudgeへ埋没するバグのため5180b6fafで無効化。家老がbatch境界で一括処理)'
+- id: 'LS096'
+  title: '検知器が同一結論を繰り返すなら情報価値ゼロ=粒度バグ'
+  origin: '[[殿指摘_12回目は正常か_20260719]] -> [[gate_skill_script_refs粒度バグ]] -> [[interface限定hash根治_ad68ba783]]'
+  detail: 'skill refs WARNが12回連続で『script更新→契約不変確認→PASS』と同一結論に人間確認を要求。将軍は11回目まで『正当な発火』と評価したが殿の『12回目は正常か？』で粒度バグと再判定。真因=契約hashがscript全体hashでCLI interfaceに限定されていなかった。教訓: 発火が設計どおりでも、N回連続で同じ結論に人手を要求する検知器は情報価値ゼロ=粒度バグとして根治対象。判定基準=発火結果の分散が0なら検知粒度を疑え。根治実績=interface限定hash化でbefore12回/24分→after WARN0(commit ad68ba783)'
+  source_cmd: 'session_20260719_1304'
+  created_at: '2026-07-19'
+  automated: true
+  enforcement: 'Level4: 台帳=defense_overhead.jsonl 12/12登録+回帰テスト(内部変更WARN0/usage変更WARN1)で構造固定済み'
