@@ -681,3 +681,25 @@ EOF
     [[ "$output" == *"active 35"* ]]
     rm -f "$tmp_lessons"
 }
+
+@test "role lesson append persists explicit enforcement metadata" {
+    # test_necessity: role lesson startup injection depends on append preserving
+    # both enforcement fields; silently dropping them weakens future reviews.
+    local role_root="$BATS_TEST_TMPDIR/role-root"
+    mkdir -p "$role_root/scripts/lib" "$role_root/projects/infra"
+    cp "$REAL_PROJECT_ROOT/scripts/lesson_write_karo.sh" "$role_root/scripts/lesson_write_karo.sh"
+    cp "$REAL_PROJECT_ROOT/scripts/lib/lock_path.sh" "$role_root/scripts/lib/lock_path.sh"
+    printf 'lessons:\n- id: LG001\n  title: seed\n  detail: seed detail\n' > "$role_root/projects/infra/lessons_gunshi.yaml"
+
+    run bash "$role_root/scripts/lesson_write_karo.sh" \
+        "explicit enforcement contract" \
+        "new role lessons must preserve structured enforcement metadata" \
+        "cmd_test" \
+        --role gunshi \
+        --enforcement "Level5: startup context injection" \
+        --enforcement-level 5
+    [ "$status" -eq 0 ]
+
+    run python3 -c "import yaml; x=yaml.safe_load(open('$role_root/projects/infra/lessons_gunshi.yaml'))['lessons'][-1]; assert x['enforcement']=='Level5: startup context injection'; assert x['enforcement_level']==5"
+    [ "$status" -eq 0 ]
+}

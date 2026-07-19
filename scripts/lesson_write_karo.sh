@@ -320,6 +320,10 @@ with open(lessons_file, 'a', encoding='utf-8') as f:
     f.write(f'  when: {_sv(when_cond)}\n')
     f.write(f'  how: {_sv(how_action)}\n')
     f.write(f'  created_at: {_sv(timestamp)}\n')
+    if enforcement:
+        f.write(f'  enforcement: {_sv(enforcement)}\n')
+    if enforcement_level:
+        f.write(f'  enforcement_level: {int(enforcement_level)}\n')
 
 print(f'{new_id_str} added to {lessons_file}')
 PYEOF

@@ -716,3 +716,15 @@ lessons:
   when: '新しいhook、gate、guard、dispatcher検知ロジックを含むdraft review時'
   how: '過去の実運用FPを3件以上選び、各々を境界・引用・否定・複数ブロックの少なくとも1種へ変形したfixtureを作る。全件で非BLOCKを実測できなければ承認しない'
   created_at: '2026-07-13'
+- id: 'LG061'
+  title: 'テスト全数PASSをロジック正確性の証明にするな'
+  origin: '[[cmd_4088_LGTM見落とし]] -> [[cmd_4091_SSE_assert見落とし]] -> [[テスト数≠ロジック正確性]]'
+  detail: |
+    cmd_4088では57件PASS後もorder=dに対するrows[-1]の最古日選択とHTTPStatusError経由のsecret露出を初回LGTMで見落とし、cmd_4091では70/70+11/11 PASS後もheartbeat・bounded queue・connection cap・CORSの直接assertが0件だった。テスト数は品質の代理指標にすぎず、AC各条件とテスト関数の対応、および主要ロジック現物の照合がなければLGTMしてはならない。
+    吸収(2026-07-20, cmd_4091, origin: [[cmd_4088_LGTM見落とし]] -> [[cmd_4091_SSE_assert見落とし]] -> [[テスト数≠ロジック正確性]]): 構造化enforcement付与: startup自動注入でAC↔test関数と主要ロジック現物照合を次回LGTM前に必須化する。
+  source_cmd: 'cmd_4091'
+  when: '実装reportをLGTM判定する前、特に全テストPASS件数が根拠に含まれる時'
+  how: 'ACの各条件に対応するテスト関数名をgrepで照合し、選択式・例外処理・境界値の主要ロジックをgit show現物で最低1箇所確認する。対応assert 0件または現物未照合ならLGTMしない'
+  created_at: '2026-07-20'
+  enforcement: "Level5: projects/infra/lessons_gunshi.yamlを軍師startupで自動ロードし、LGTM前のAC↔test関数と主要ロジック現物照合を事前注入"
+  enforcement_level: 5
