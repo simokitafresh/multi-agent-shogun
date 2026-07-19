@@ -17,7 +17,7 @@
 |---|------|-----------|------|------|
 | S1 | finalize段短縮 | loop_ledger段階別中央値(finalize 403s) | **稼働中** | 内訳=report→notify 82.4s+SG7→review 74.1sで61.8% → `finalize-stage-breakdown-20260719.md` |
 | S2 | 検知器の粒度・FP根治 | defense_overhead.jsonl(1,730件)+detector_fp_rate.yaml | 計器完備・未ループ化 | skill refs 12回/24分→0の型(LS096)を全検知器へ横展開。人手確認時間を直接削る |
-| S3 | テスト実行時間・test資産淘汰 | test_suite_timing_ledger.tsv等+default-delete政策(殿裁定2026-07-19 02:09) | 政策裁定済み | 宣言率>30%でtest-hygiene lane発火の受動計測も設計済み |
+| S3 | テスト実行時間・test資産淘汰 | test_suite_timing_ledger.tsv等+default-delete政策(殿裁定2026-07-19 02:09) | **稼働中**(殿裁定2026-07-20 00:05開始+PD-132解除) | 設計正本→`s3-test-speed-asis-tobe-5w1h_20260720.md`。A=スクリプト速度修行multi-round自走/B=在庫sweep |
 | S4 | deploy/work段overhead | loop_ledger(deploy 60s/work 311s) | S1の次弾 | 注入蓄積(deploy_task 1s→140s問題)の系譜 |
 | S5 | startup gate実行時間 | TIMING 59項目(最大check=loop_ledger 15.5s) | 計器あり・未ループ化 | 起動毎24s。全エージェント×毎セッションで複利 |
 | S6 | insight滞留在庫 | promotion消化路+aging計測 | 半自動 | batch消化のみ→消化速度の計測・改善 |
@@ -42,7 +42,7 @@
 | P4 | database（株式DB） | Render cron 2件+`/healthz`+36 tests | 即候補 | cron成功率・鮮度・欠損率を台帳化 |
 | P5 | kj-role-count | daily backup cron+`backup.py`+health+8 tests | 即候補 | 定期restoreで件数一致と所要時間を記録 |
 | P6 | Simple-OCR | backup/restore test+17 tests+OCR log DB | 即候補 | 復元成功率・件数一致・所要時間を台帳化 |
-| P7 | rebalancer | CI+6 tests+health+Playwright | 即候補 | CI時間と価格更新成功率を台帳化 |
+| P7 | rebalancer | CI+6 tests+health+Playwright | 即候補 | Alpaca IEXは18/18購読可、無料枠30 symbols/connection、31で405。push表示+EODHD確定値の二層化候補 → `docs/research/cmd_4087_rebalancer_realtime_recon.md` |
 | P8 | dm-fusion/mcas/milk | build/lintまたは計器なし | 計器先行 | 隔離fixture+最小contract+CI |
 | P9 | auto-ops/kj-partshift/kj-toilet | 8/13/9 tracked tests | 候補 | 業務結果の件数・重複・遅延台帳を先行 |
 
