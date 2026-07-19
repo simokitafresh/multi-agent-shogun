@@ -90,3 +90,20 @@ YAML
   run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_generation pane' _ "$repo"
   [ "$output" = "202:222" ]
 }
+
+@test "inbox watcher dependency hash reloads when respawn helper changes" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  grep -q 'scripts/lib/respawn_recovery.sh' "$repo/scripts/inbox_watcher.sh"
+  cp "$repo/scripts/lib/respawn_recovery.sh" "$root/dep"
+  run bash -c '
+    source "$1/scripts/lib/script_update.sh"
+    SCRIPT_PATH=/bin/true; SCRIPT_HASH=$(stat -c %Y /bin/true)
+    WATCHED_DEPS=("$2/dep"); DEPS_HASH=$(compute_deps_hash)
+    STARTUP_TIME=0; MIN_UPTIME=0
+    touch -d "2030-01-01" "$2/dep"
+    exec() { printf "RELOADED:%s\n" "$*"; }
+    check_script_update watcher pane
+  ' _ "$repo" "$root"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RELOADED:/bin/true watcher pane"* ]]
+}

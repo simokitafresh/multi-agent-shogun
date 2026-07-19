@@ -104,6 +104,7 @@ STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
 WATCHED_DEPS=(
     "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+    "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
     "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
     "$SCRIPT_DIR/lib/agent_state.sh"
 )
