@@ -1,9 +1,11 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-19 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-19T14:28:17+09:00 -->
+<!-- generated_at: 2026-07-19T14:30:05+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-07-19T14:30:04+09:00 | terminal | response | 承知。/shogun-clear-prepの型で状態を環境へ埋め込みます [MEM: memory_db ts=2026-07-18T15:36 同指示の反復=殿の恒常要求]。 [meta] stop_reason=tool_use
+- 2026-07-19T14:29:28+09:00 | ntfy | outbound | 【将軍】強くてニューゲーム準備完了。PD:0 cmd:pending0 🚨:0 掲示板5件委任済み
 - 2026-07-19T14:28:15+09:00 | terminal | response | draft review完了。未読0件。inbox待機中。
 - 2026-07-19T14:26:20+09:00 | terminal | inbound | 今クリアされても今より強くてニューゲームできるようにせよ
 - 2026-07-19T14:25:51+09:00 | terminal | response | 殿、inbox処理完了です。内容はSSOT化根治の完了詳細報告 — 先のGATE CLEARの数値裏付けです [MEM: obsidian link=[[blt_20260719_142520_7b5ea0]]]: - **実装(comm…
@@ -12,8 +14,6 @@
 - 2026-07-19T14:24:54+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働0名 CLEAR率97% 連勝20
 - 2026-07-19T14:24:47+09:00 | terminal | response | 殿、inbox処理完了です。内容はGATE CLEAR通知 — **report notify alias SSOT化(疾風)が完了確定**しました [MEM: obsidian link=[[blt_20260719_142216_8b…
 - 2026-07-19T14:22:42+09:00 | terminal | response | 殿、inbox処理完了です。**report notify alias SSOT化(疾風)がLGTM到達**、家老のACCEPT/GATE判定待ちです [MEM: obsidian link=[[blt_20260719_142216_8…
-- 2026-07-19T14:22:30+09:00 | terminal | response | hayate report_notify_alias報告: 7/7 PASS、偽発火1→0、exactly-once。
-- 2026-07-19T14:19:35+09:00 | ntfy | outbound | 【monitor】将軍CTX:76%。/compactをご検討ください
 
 ## 未解決確認事項
 - 殿、inbox処理完了です。**skill refs粒度根治のlive最終確認が完走しました** [MEM: obsidian link=[[blt_20260719_135428_db8dfb]]]: - **live通常経路の実測**: direct cached RC0/…
