@@ -1429,6 +1429,7 @@ YAML
     task_sha_before="$(sha256sum "$task" | awk '{print $1}')"
     reports_before="$(find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f -name 'hayate_report_*' | wc -l)"
     assigned_before="$(grep -c "type: task_assigned" "$inbox" 2>/dev/null || true)"
+    assigned_before="${assigned_before:-0}"
     run bash "$PROJECT_ROOT/scripts/deploy_task.sh" --direct hayate .cache/task.yaml
     [ "$status" -ne 0 ]
     [[ "$output" == *"Use: deploy_task.sh --yaml <file> <ninja>"* ]]
