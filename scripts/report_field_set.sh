@@ -131,7 +131,45 @@ finally:
     if os.path.exists(tmp): os.unlink(tmp)
 print("BATCH_OK fields={} fingerprint={}".format(len(updates), hashlib.sha256(text.encode()).hexdigest()))
 PY
-    exit $?
+    _rfs_batch_rc=$?
+    if [ "$_rfs_batch_rc" -eq 0 ]; then
+        if [ "${RFS_FAIL_AFTER_ATOMIC_REPLACE:-0}" = "1" ]; then
+            echo "FAILPOINT: terminal bytes persisted before lifecycle publish" >&2
+            exit 86
+        fi
+        _rfs_batch_status=$(python3 - "$_rfs_batch_report" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(data.get("status", "")))
+PY
+)
+        if [ "$_rfs_batch_status" = "completed" ] || [ "$_rfs_batch_status" = "done" ]; then
+            _rfs_batch_worker=$(python3 - "$_rfs_batch_report" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(data.get("worker_id", "")))
+PY
+)
+            _rfs_batch_parent=$(python3 - "$_rfs_batch_report" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(data.get("parent_cmd", "")))
+PY
+)
+            [ -n "$_rfs_batch_worker" ] && [ -n "$_rfs_batch_parent" ] || {
+                echo "BLOCK: terminal report lacks worker_id/parent_cmd for durable publish" >&2
+                exit 1
+            }
+            # The completed report is the durable outbox. Publishing here binds
+            # the canonical parent and review child to the exact persisted bytes;
+            # inbox_write owns fingerprint dedupe and the atomic task-done edge.
+            _rfs_inbox_write="${RFS_INBOX_WRITE_PATH:-$_rfs_batch_root/scripts/inbox_write.sh}"
+            bash "$_rfs_inbox_write" karo \
+                "${_rfs_batch_worker}報告完了。report=$(basename "$_rfs_batch_report") parent_cmd=${_rfs_batch_parent}" \
+                report_received "$_rfs_batch_worker" notify_karo
+        fi
+    fi
+    exit "$_rfs_batch_rc"
 fi
 
 if [ "$#" -lt 2 ]; then
