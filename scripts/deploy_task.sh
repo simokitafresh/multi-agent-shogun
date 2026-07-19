@@ -403,6 +403,57 @@ deploy_task_guard_worker_assignment() {
     esac
 }
 
+deploy_task_yaml_transaction_begin() {
+    local task_file="$1" source_file="$2" ninja_name="$3" parent_cmd="$4"
+    local report_filename
+    DEPLOY_TASK_YAML_TX_DIR=$(mktemp -d) || return 1
+    DEPLOY_TASK_YAML_TX_TASK="$task_file"
+    cp -p -- "$task_file" "$DEPLOY_TASK_YAML_TX_DIR/task.before" || return 1
+    report_filename=$(FIELD_GET_NO_LOG=1 field_get "$source_file" report_filename "" 2>/dev/null || true)
+    [ -n "$report_filename" ] || report_filename="${ninja_name}_report_${parent_cmd}.yaml"
+    DEPLOY_TASK_YAML_TX_REPORT="$SCRIPT_DIR/queue/reports/$report_filename"
+    if [ -f "$DEPLOY_TASK_YAML_TX_REPORT" ]; then
+        cp -p -- "$DEPLOY_TASK_YAML_TX_REPORT" "$DEPLOY_TASK_YAML_TX_DIR/report.before" || return 1
+        DEPLOY_TASK_YAML_TX_REPORT_EXISTED=1
+    else
+        DEPLOY_TASK_YAML_TX_REPORT_EXISTED=0
+    fi
+    DEPLOY_TASK_YAML_TX_ARMED=1
+}
+
+deploy_task_yaml_transaction_rollback() {
+    [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" = "1" ] || return 0
+    DEPLOY_TASK_EXIT_NUDGE_ARMED=0
+    DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
+    cp -p -- "$DEPLOY_TASK_YAML_TX_DIR/task.before" "${DEPLOY_TASK_YAML_TX_TASK}.rollback"
+    mv -f -- "${DEPLOY_TASK_YAML_TX_TASK}.rollback" "$DEPLOY_TASK_YAML_TX_TASK"
+    if [ "${DEPLOY_TASK_YAML_TX_REPORT_EXISTED:-0}" = "1" ]; then
+        cp -p -- "$DEPLOY_TASK_YAML_TX_DIR/report.before" "${DEPLOY_TASK_YAML_TX_REPORT}.rollback"
+        mv -f -- "${DEPLOY_TASK_YAML_TX_REPORT}.rollback" "$DEPLOY_TASK_YAML_TX_REPORT"
+    elif [ -f "${DEPLOY_TASK_YAML_TX_REPORT:-}" ]; then
+        rm -f -- "$DEPLOY_TASK_YAML_TX_REPORT"
+    fi
+    log "YAML-TRANSACTION: rollback restored task/report; inbox publication=0"
+    DEPLOY_TASK_YAML_TX_ARMED=0
+    DEPLOY_TASK_YAML_TX_ISSUED_AT=""
+    DEPLOY_TASK_YAML_TX_ISSUED_CMD=""
+    rm -f -- "$DEPLOY_TASK_YAML_TX_DIR/task.before" "$DEPLOY_TASK_YAML_TX_DIR/report.before"
+    rmdir -- "$DEPLOY_TASK_YAML_TX_DIR" 2>/dev/null || true
+}
+
+deploy_task_yaml_transaction_commit() {
+    [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" = "1" ] || return 0
+    DEPLOY_TASK_YAML_TX_ARMED=0
+    rm -f -- "$DEPLOY_TASK_YAML_TX_DIR/task.before" "$DEPLOY_TASK_YAML_TX_DIR/report.before"
+    rmdir -- "$DEPLOY_TASK_YAML_TX_DIR" 2>/dev/null || true
+    if [ -n "${DEPLOY_TASK_YAML_TX_ISSUED_AT:-}" ]; then
+        log "[ISSUED_AT] Recorded: ${DEPLOY_TASK_YAML_TX_ISSUED_AT} (${DEPLOY_TASK_YAML_TX_ISSUED_CMD})"
+    fi
+    DEPLOY_TASK_YAML_TX_ISSUED_AT=""
+    DEPLOY_TASK_YAML_TX_ISSUED_CMD=""
+    log "YAML-TRANSACTION: committed task/report with delivery"
+}
+
 deploy_task_exit_cleanup() {
     local exit_status=$?
     local finished_us wall_ms residual_ms residual_pct finalize_ms
@@ -435,6 +486,9 @@ deploy_task_exit_cleanup() {
             deploy_task_append_issue_event "blocked" "exit_${exit_status}"
         fi
         DEPLOY_TASK_ISSUE_TERMINAL_RECORDED=1
+    fi
+    if [ "$exit_status" -ne 0 ]; then
+        deploy_task_yaml_transaction_rollback || true
     fi
     deploy_task_exit_nudge
     deploy_task_release_ninja_lock
@@ -9259,6 +9313,11 @@ record_issued_at_once() {
     if ! yaml_field_set_batch "$task_file" "task" "issued_at=$timestamp" "issued_cmd_id=$cmd_id"; then
         return 1
     fi
+    if [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" = "1" ]; then
+        DEPLOY_TASK_YAML_TX_ISSUED_AT="$timestamp"
+        DEPLOY_TASK_YAML_TX_ISSUED_CMD="$cmd_id"
+        return 0
+    fi
     log "[ISSUED_AT] Recorded: ${timestamp} (${cmd_id})"
 }
 
@@ -10985,6 +11044,9 @@ deploy_task_main() {
     DEPLOY_TASK_DRAFT_REVIEW_CMD_ID=""
     DEPLOY_TASK_DRAFT_REVIEW_NINJA=""
     DEPLOY_TASK_DRAFT_REVIEW_TYPE=""
+    DEPLOY_TASK_YAML_TX_ARMED=0
+    DEPLOY_TASK_YAML_TX_ISSUED_AT=""
+    DEPLOY_TASK_YAML_TX_ISSUED_CMD=""
     trap deploy_task_exit_cleanup EXIT
 
     local pane_target ctx_pct
@@ -11124,6 +11186,10 @@ except Exception:
             # Validation-before-mutation: syntax, natural-boundary and required
             # source contracts must all pass while the current task is untouched.
             if [ "$DIRECT_MODE" = true ] && [ -n "$YAML_FILE" ]; then
+                deploy_task_yaml_transaction_begin "$task_yaml" "$YAML_FILE" "$NINJA_NAME" "$CMD_ID" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 1
+                }
                 [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_source_contract_precheck "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 2
@@ -11166,6 +11232,7 @@ except Exception:
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                 }
+                _STALE_RESET_DONE=1
                 record_issued_at_once "$task_yaml" "$CMD_ID" "$(date '+%Y-%m-%dT%H:%M:%S')" || return 1
                 if deploy_task_direct_yaml_is_preinjected "$task_yaml"; then
                     DEPLOY_TASK_DIRECT_YAML_PREINJECTED=1
@@ -11430,6 +11497,7 @@ except Exception:
     deploy_task_check_deadline "after_inbox_write" || return $?
     DEPLOY_TASK_EXIT_NUDGE_SENT=1
     DEPLOY_TASK_EXIT_NUDGE_ARMED=0
+    deploy_task_yaml_transaction_commit
     deploy_task_wall_phase_checkpoint delivery
 
     # Canonical receipt order is delivery -> post_verify -> post_delivery.

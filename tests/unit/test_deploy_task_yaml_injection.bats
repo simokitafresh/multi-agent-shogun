@@ -1465,3 +1465,35 @@ PY
     run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; log(){ :; }; deploy_task_direct_yaml_publish '$dest' '$source_yaml'; python3 -c \"import yaml; yaml.safe_load(open('$dest'))\""
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: --yaml full transactionの任意後段FAILでtask/reportを旧bytesへ戻し、新規reportとinbox publicationを残さない不変量を守る。
+@test "yaml transaction rollback restores task and report bytes" {
+    tmpdir="$(mktemp -d)"; mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue/reports" "$tmpdir/queue/inbox"
+    task="$tmpdir/queue/tasks/hayate.yaml"; source_yaml="$tmpdir/source.yaml"
+    report="$tmpdir/queue/reports/hayate_report_cmd_tx.yaml"
+    printf 'task:\n  status: idle\n  parent_cmd: cmd_old\n' >"$task"
+    printf 'task:\n  status: assigned\n  parent_cmd: cmd_tx\n  report_filename: hayate_report_cmd_tx.yaml\n' >"$source_yaml"
+    printf 'status: pending\nparent_cmd: cmd_tx\n' >"$report"
+    printf 'messages: []\n' >"$tmpdir/queue/inbox/hayate.yaml"
+    task_before="$(sha256sum "$task" | awk '{print $1}')"; report_before="$(sha256sum "$report" | awk '{print $1}')"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; log(){ printf '%s\\n' \"\$*\" >>'$tmpdir/log'; }; yaml_field_set_batch(){ printf '\\n  issued_at: now\\n' >>\"\$1\"; }; deploy_task_yaml_transaction_begin '$task' '$source_yaml' hayate cmd_tx; record_issued_at_once '$task' cmd_tx now; printf 'broken-report\\n' >'$report'; deploy_task_yaml_transaction_rollback"
+    [ "$status" -eq 0 ]
+    [ "$task_before" = "$(sha256sum "$task" | awk '{print $1}')" ]
+    [ "$report_before" = "$(sha256sum "$report" | awk '{print $1}')" ]
+    run grep -c '\[ISSUED_AT\] Recorded' "$tmpdir/log"
+    [ "$status" -ne 0 ]
+    [ "$(grep -c 'type: task_assigned' "$tmpdir/queue/inbox/hayate.yaml" || true)" -eq 0 ]
+}
+
+# test_necessity: --yaml transactionで元reportが存在しない場合、FAIL時に途中生成reportを削除しtask SHAを保持する不変量を守る。
+@test "yaml transaction rollback removes newly staged report" {
+    tmpdir="$(mktemp -d)"; mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue/reports"
+    task="$tmpdir/queue/tasks/hayate.yaml"; source_yaml="$tmpdir/source.yaml"; report="$tmpdir/queue/reports/hayate_report_cmd_new.yaml"
+    printf 'task:\n  status: idle\n' >"$task"
+    printf 'task:\n  parent_cmd: cmd_new\n  report_filename: hayate_report_cmd_new.yaml\n' >"$source_yaml"
+    before="$(sha256sum "$task" | awk '{print $1}')"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; log(){ :; }; deploy_task_yaml_transaction_begin '$task' '$source_yaml' hayate cmd_new; printf 'changed\\n' >'$task'; printf 'new-report\\n' >'$report'; deploy_task_yaml_transaction_rollback"
+    [ "$status" -eq 0 ]
+    [ "$before" = "$(sha256sum "$task" | awk '{print $1}')" ]
+    [ ! -e "$report" ]
+}
