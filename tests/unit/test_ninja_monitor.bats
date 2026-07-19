@@ -214,3 +214,20 @@ SH
     '
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: 旧monitorのexecからlock FDを継承しても、mtime一致の新process startupで無条件解放する不変量を守る。
+@test "startup closes deploy lock fds inherited from stale monitor even when mtime is current" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        root="$BATS_TEST_TMPDIR/root"; mkdir -p "$root/queue/locks"
+        exec {fd_a}>"$root/queue/locks/deploy_ninja_alpha.lock"; flock -n "$fd_a"
+        exec {fd_b}>"$root/queue/locks/deploy_ninja_beta.lock"; flock -n "$fd_b"
+        _NM_SCRIPT_PATH="$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        _NM_START_MTIME="$(stat -c %Y "$_NM_SCRIPT_PATH")"
+        close_inherited_deploy_lock_fds
+        reload_ninja_monitor_if_updated
+        flock -n "$root/queue/locks/deploy_ninja_alpha.lock" -c true
+        flock -n "$root/queue/locks/deploy_ninja_beta.lock" -c true
+    '
+    [ "$status" -eq 0 ]
+}

@@ -7624,12 +7624,8 @@ _ninja_monitor_hot_reload_exec() {
     exec bash "$1"
 }
 
-reload_ninja_monitor_if_updated() {
-    local current_mtime fd_path fd_target inherited_fd
-    current_mtime="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
-    [ "$current_mtime" = "$_NM_START_MTIME" ] && return 0
-
-    log "HOT-RELOAD: ninja_monitor.sh updated (mtime ${_NM_START_MTIME} → ${current_mtime}). Restarting..."
+close_inherited_deploy_lock_fds() {
+    local fd_path fd_target inherited_fd
     for fd_path in "/proc/$$/fd/"*; do
         [ -e "$fd_path" ] || continue
         fd_target="$(readlink "$fd_path" 2>/dev/null || true)"
@@ -7640,6 +7636,15 @@ reload_ninja_monitor_if_updated() {
                 ;;
         esac
     done
+}
+
+reload_ninja_monitor_if_updated() {
+    local current_mtime
+    current_mtime="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
+    [ "$current_mtime" = "$_NM_START_MTIME" ] && return 0
+
+    log "HOT-RELOAD: ninja_monitor.sh updated (mtime ${_NM_START_MTIME} → ${current_mtime}). Restarting..."
+    close_inherited_deploy_lock_fds
     _ninja_monitor_hot_reload_exec "$_NM_SCRIPT_PATH"
 }
 
@@ -7714,6 +7719,9 @@ if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
     # shellcheck disable=SC2317
     return 0 2>/dev/null || exit 0
 fi
+
+# 旧monitorのexecが残したFDはmtime差の有無にかかわらずstartupで除去する。
+close_inherited_deploy_lock_fds
 
 discover_panes
 
