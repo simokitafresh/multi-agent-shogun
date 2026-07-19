@@ -956,7 +956,10 @@ guard19_scripts_today_history() {
         diff_stat="$(timeout 3s git -C "$git_root" ls-files --others --exclude-standard -- "$rel" 2>/dev/null)" || diff_stat=""
     fi
 
-    [[ -n "$log_lines" || -n "$diff_stat" ]] || return 0
+    # 重複実装の危険があるのは、同日中に既存実装がcommit済みで、さらに同じ
+    # ファイルへ新しい未commit変更を重ねようとしている場合だけである。
+    # 片側だけの通常作業をWARNに数えるとready detectorの偽陽性になる。
+    [[ -n "$log_lines" && -n "$diff_stat" ]] || return 0
 
     body="Guard19: 当日変更履歴(情報表示・車輪の再発明防止)
 対象: $rel"
