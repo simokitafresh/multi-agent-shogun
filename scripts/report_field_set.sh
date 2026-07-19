@@ -170,7 +170,7 @@ PY
                 RFS_RECONCILE_WORKER="$_rfs_batch_worker" \
                 RFS_RECONCILE_PARENT="$_rfs_batch_parent" \
                 RFS_RECONCILE_DELAY="${RFS_RECONCILE_DELAY:-0.2}" \
-                    nohup bash -c '
+                    nohup setsid -f bash -c '
                         sleep "$RFS_RECONCILE_DELAY"
                         bash "$RFS_RECONCILE_INBOX" karo \
                           "$RFS_RECONCILE_WORKER報告完了。report=${RFS_RECONCILE_REPORT##*/} parent_cmd=$RFS_RECONCILE_PARENT" \

@@ -13,6 +13,9 @@ setup() {
   export RFS_DISABLE_FAST_RECONCILER=1
   cat >"$FAKE_INBOX" <<'SH'
 #!/usr/bin/env bash
+if [ -n "${RFS_PROCESS_ID_LOG:-}" ]; then
+  ps -o sid=,pgid= -p $$ | tr -s ' ' | sed 's/^ //' >"$RFS_PROCESS_ID_LOG"
+fi
 printf '%s\n' "$*" >>"$RFS_EVENT_LOG"
 SH
   cat >"$REPORT" <<'YAML'
@@ -126,12 +129,16 @@ PY
 
 @test "persisted terminal report survives publish failpoint as durable outbox" {
   start_ns="$(date +%s%N)"
-  run env RFS_FAIL_AFTER_ATOMIC_REPLACE=1 RFS_DISABLE_FAST_RECONCILER=0 RFS_RECONCILE_DELAY=0.1 RFS_INBOX_WRITE_PATH="$FAKE_INBOX" RFS_EVENT_LOG="$RFS_EVENT_LOG" bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
+  parent_ids="$(ps -o sid=,pgid= -p $$ | tr -s ' ' | sed 's/^ //')"
+  export RFS_PROCESS_ID_LOG="$TMPDIR_CASE/reconciler_ids"
+  run env RFS_FAIL_AFTER_ATOMIC_REPLACE=1 RFS_DISABLE_FAST_RECONCILER=0 RFS_RECONCILE_DELAY=0.1 RFS_INBOX_WRITE_PATH="$FAKE_INBOX" RFS_EVENT_LOG="$RFS_EVENT_LOG" RFS_PROCESS_ID_LOG="$RFS_PROCESS_ID_LOG" bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
   [ "$status" -eq 86 ]
   run python3 -c 'import yaml,sys; assert yaml.safe_load(open(sys.argv[1]))["status"]=="completed"' "$REPORT"
   [ "$status" -eq 0 ]
   for _ in $(seq 1 40); do [ -s "$RFS_EVENT_LOG" ] && break; sleep 0.1; done
   [ "$(wc -l <"$RFS_EVENT_LOG")" -eq 1 ]
+  [ -s "$RFS_PROCESS_ID_LOG" ]
+  [ "$(cat "$RFS_PROCESS_ID_LOG")" != "$parent_ids" ]
   elapsed_ms="$(( ($(date +%s%N) - start_ns) / 1000000 ))"
   echo "FAILPOINT_REPAIR elapsed_ms=$elapsed_ms parent=1 child_contract=canonical" >&3
   [ "$elapsed_ms" -lt 5000 ]
