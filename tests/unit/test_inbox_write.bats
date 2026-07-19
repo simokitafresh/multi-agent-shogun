@@ -33,7 +33,7 @@ setup_file() {
 
     mkdir -p "$GIT_TEMPLATE_DIR/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
     # 選択的コピー: inbox_write.shが使うファイルのみ (NTFS→tmpfs コスト削減)
-    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py; do
+    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py report_completion_events.sh; do
         cp "$PROJECT_ROOT/scripts/lib/$_lib_f" "$GIT_TEMPLATE_DIR/scripts/lib/$_lib_f"
     done
 
@@ -1902,6 +1902,7 @@ YAML
 @test "filesystem fast-path: known ninja target succeeds without sourcing agent_config" {
     rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
     mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/inbox"
+    cp "$PROJECT_ROOT/scripts/lib/report_completion_events.sh" "$TEST_TMPDIR/scripts/lib/"
     unset INBOX_WRITE_TEST
 
     cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
@@ -1923,6 +1924,7 @@ YAML
 @test "filesystem fast-path: ninja sender to shogun is blocked without agent_config" {
     rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
     mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks"
+    cp "$PROJECT_ROOT/scripts/lib/report_completion_events.sh" "$TEST_TMPDIR/scripts/lib/"
     unset INBOX_WRITE_TEST
 
     cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'

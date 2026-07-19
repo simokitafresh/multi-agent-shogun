@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
-# test_necessity: Report YAML direct Write/Edit denied and inbox direct Write/Edit denied with flock-safe alternatives; violation is BLOCK.
+# test_necessity: Report/inbox direct edits are denied and Guard19 fires only when a same-day commit and a new uncommitted change overlap on one scripts file; violation is BLOCK.
+# regression_justification: Guard19 previously treated commit-only and dirty-only normal work as duplication risk, producing 5/34 false positives.
 
 setup_file() {
     export PROJECT_ROOT
@@ -541,7 +542,7 @@ _setup_guard19_repo() {
     printf '%s' "$repo"
 }
 
-@test "Guard 19: shows same-day commit title+time for a scripts file committed today" {
+@test "Guard 19: stays silent for same-day commit without a new uncommitted diff" {
     local repo gfl
     repo="$(_setup_guard19_repo)"
     gfl="$TMP_DIR/gate_fire_log.yaml"
@@ -556,18 +557,11 @@ _setup_guard19_repo() {
         "$PRE_HOOK" "$repo" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *'"additionalContext"'* ]]
-    [[ "$output" == *'Guard19: 当日変更履歴'* ]]
-    [[ "$output" == *'当日コミット:'* ]]
-    [[ "$output" == *'same day duplicate fix'* ]]
-    [[ "$output" == *'02:31'* ]]
-    [[ "$output" == *'未コミット差分: なし'* ]]
-    grep -q 'gate: "scripts_same_day_history"' "$gfl"
-    grep -q 'result: WARN' "$gfl"
-    grep -q 'commits_today=1' "$gfl"
+    [ -z "$output" ]
+    [ ! -f "$gfl" ]
 }
 
-@test "Guard 19: shows uncommitted diff warning with no same-day commit" {
+@test "Guard 19: stays silent for uncommitted diff without a same-day commit" {
     local repo gfl
     repo="$(_setup_guard19_repo)"
     gfl="$TMP_DIR/gate_fire_log_b.yaml"
@@ -579,9 +573,30 @@ _setup_guard19_repo() {
         "$PRE_HOOK" "$repo" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
 
     [ "$status" -eq 0 ]
-    [[ "$output" == *'当日コミット: なし'* ]]
+    [ -z "$output" ]
+    [ ! -f "$gfl" ]
+}
+
+@test "Guard 19: warns when same-day commit and uncommitted diff overlap" {
+    local repo gfl
+    repo="$(_setup_guard19_repo)"
+    gfl="$TMP_DIR/gate_fire_log_overlap.yaml"
+    printf '#!/bin/bash\necho v2\n' > "$repo/scripts/target.sh"
+    git -C "$repo" add scripts/target.sh
+    GIT_AUTHOR_DATE="2026-03-05T02:31:00" GIT_COMMITTER_DATE="2026-03-05T02:31:00" \
+        git -C "$repo" commit -q -m "same day duplicate fix" >/dev/null
+    printf '#!/bin/bash\necho dirty\n' > "$repo/scripts/target.sh"
+    _mark_read_for_current_agent "$repo/scripts/target.sh"
+
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" GUARD19_GIT_ROOT_OVERRIDE="$3" GUARD19_TODAY_OVERRIDE="$4" GATE_FIRE_LOG_FILE="$5" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$repo"'/scripts/target.sh","old_string":"dirty","new_string":"v3"}}' \
+        "$PRE_HOOK" "$repo" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'Guard19: 当日変更履歴'* ]]
+    [[ "$output" == *'same day duplicate fix'* ]]
     [[ "$output" == *'未コミット差分: あり'* ]]
-    grep -q 'commits_today=0; uncommitted=yes' "$gfl"
+    grep -q 'commits_today=1; uncommitted=yes' "$gfl"
 }
 
 @test "Guard 19: stays silent (no crash) when no same-day commit and no uncommitted diff" {
@@ -635,6 +650,7 @@ _setup_guard19_repo() {
     git -C "$repo" add scripts/target.sh
     GIT_AUTHOR_DATE="2026-03-05T02:31:00" GIT_COMMITTER_DATE="2026-03-05T02:31:00" \
         git -C "$repo" commit -q -m "same day duplicate fix" >/dev/null
+    printf '#!/bin/bash\necho dirty\n' > "$repo/scripts/target.sh"
     _mark_read_for_current_agent "$repo/scripts/target.sh"
 
     run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" GUARD19_GIT_ROOT_OVERRIDE="$3" GUARD19_TODAY_OVERRIDE="$4" GATE_FIRE_LOG_FILE="$5" bash "$2"' _ \
@@ -649,4 +665,26 @@ _setup_guard19_repo() {
         "$PRE_HOOK" "$repo" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
     [ "$status" -eq 0 ]
     [[ "$output" == *'same day duplicate fix'* ]]
+}
+
+@test "Guard 19: linked worktree preserves overlap detection" {
+    local repo linked gfl
+    repo="$(_setup_guard19_repo)"
+    linked="$TMP_DIR/guard19_linked"
+    git -C "$repo" worktree add -q -b guard19-linked "$linked"
+    gfl="$TMP_DIR/gate_fire_log_linked.yaml"
+    printf '#!/bin/bash\necho v2\n' > "$linked/scripts/target.sh"
+    git -C "$linked" add scripts/target.sh
+    GIT_AUTHOR_DATE="2026-03-05T02:31:00" GIT_COMMITTER_DATE="2026-03-05T02:31:00" \
+        git -C "$linked" commit -q -m "linked same day fix" >/dev/null
+    printf '#!/bin/bash\necho dirty\n' > "$linked/scripts/target.sh"
+    _mark_read_for_current_agent "$linked/scripts/target.sh"
+
+    run bash -c 'printf "%s" "$1" | MOCK_AGENT_ID="$6" GUARD19_GIT_ROOT_OVERRIDE="$3" GUARD19_TODAY_OVERRIDE="$4" GATE_FIRE_LOG_FILE="$5" bash "$2"' _ \
+        '{"tool_name":"Edit","tool_input":{"file_path":"'"$linked"'/scripts/target.sh","old_string":"dirty","new_string":"v3"}}' \
+        "$PRE_HOOK" "$linked" "2026-03-05" "$gfl" "$TEST_AGENT_ID"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *'linked same day fix'* ]]
+    grep -q 'commits_today=1; uncommitted=yes' "$gfl"
 }

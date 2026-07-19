@@ -13,7 +13,32 @@ FP_LEDGER="${THROUGHPUT_SCAN_FP_LEDGER:-$ROOT/logs/detector_fp_rate.yaml}"
 INSIGHTS_FILE="${THROUGHPUT_SCAN_INSIGHTS_FILE:-$ROOT/queue/insights.yaml}"
 INSIGHT_SCRIPT="${THROUGHPUT_SCAN_INSIGHT_SCRIPT:-$ROOT/scripts/insight_write.sh}"
 GATE_METRICS="${THROUGHPUT_SCAN_GATE_METRICS:-$ROOT/logs/gate_metrics.log}"
+TRAVERSAL_LEDGER="${THROUGHPUT_SCAN_TRAVERSAL_LEDGER:-$ROOT/logs/obsidian_traversal.yaml}"
 DRY_RUN=0
+
+if [[ "${1:-}" == "--record-traversal" ]]; then
+    [[ $# -eq 9 ]] || { echo "Usage: $0 --record-traversal route event_id landing adjacent finding action origin existing_links_csv" >&2; exit 2; }
+    python3 - "$TRAVERSAL_LEDGER" "${@:2}" <<'PY'
+import fcntl, os, sys, tempfile, yaml
+p,route,eid,a,b,finding,action,origin,links=sys.argv[1:]
+links=[x for x in links.split(',') if x]
+expected=f"[[{a}]] -> [[{b}]] -> [[{action}]]"
+if route not in {'preflight','semantic_search','causal_backlinks'} or origin != expected or not all(x in links for x in (a,b,action)):
+    raise SystemExit('TRAVERSAL_REJECT: invalid route/origin/link')
+os.makedirs(os.path.dirname(p) or '.',exist_ok=True)
+lock=p+'.lock'
+with open(lock,'a+') as lf:
+ fcntl.flock(lf,fcntl.LOCK_EX)
+ data=yaml.safe_load(open(p)) if os.path.exists(p) else {}; data=data or {}; events=data.setdefault('events',[])
+ if any(str(e.get('event_id'))==eid for e in events): print('TRAVERSAL_DUPLICATE'); raise SystemExit(0)
+ events.append({'event_id':eid,'route':route,'landing_node':a,'adjacent_node':b,'finding':finding,'connected_action':action,'hop_count':1,'origin':origin,'existing_links':links})
+ fd,tmp=tempfile.mkstemp(dir=os.path.dirname(p) or '.',prefix='.traversal.')
+ with os.fdopen(fd,'w') as out: yaml.safe_dump(data,out,allow_unicode=True,sort_keys=False); out.flush(); os.fsync(out.fileno())
+ os.replace(tmp,p)
+print('TRAVERSAL_RECORDED')
+PY
+    exit $?
+fi
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -41,6 +66,10 @@ while [[ $# -gt 0 ]]; do
             GATE_METRICS="${2:?--gate-metrics requires path}"
             shift 2
             ;;
+        --traversal-ledger)
+            TRAVERSAL_LEDGER="${2:?--traversal-ledger requires path}"
+            shift 2
+            ;;
         *)
             echo "Usage: bash scripts/throughput_scan.sh [--dry-run] [--loop-ledger path] [--fp-ledger path] [--insights path] [--insight-script path]" >&2
             exit 2
@@ -53,7 +82,7 @@ if [[ "$DRY_RUN" != "1" && ! -x "$INSIGHT_SCRIPT" ]]; then
     exit 0
 fi
 
-python3 - "$LOOP_LEDGER" "$FP_LEDGER" "$INSIGHTS_FILE" "$INSIGHT_SCRIPT" "$DRY_RUN" "$GATE_METRICS" <<'PY'
+python3 - "$LOOP_LEDGER" "$FP_LEDGER" "$INSIGHTS_FILE" "$INSIGHT_SCRIPT" "$DRY_RUN" "$GATE_METRICS" "$TRAVERSAL_LEDGER" <<'PY'
 import os
 import re
 import statistics
@@ -67,7 +96,7 @@ except Exception as exc:
     print(f"THROUGHPUT_SCAN_ERROR: PyYAML required: {exc}", file=sys.stderr)
     sys.exit(2)
 
-loop_path, fp_path, insights_path, insight_script, dry_run_raw, gate_metrics_path = sys.argv[1:7]
+loop_path, fp_path, insights_path, insight_script, dry_run_raw, gate_metrics_path, traversal_path = sys.argv[1:8]
 dry_run = dry_run_raw == "1"
 
 FP_RATE_THRESHOLD = float(os.environ.get("THROUGHPUT_SCAN_FP_RATE_THRESHOLD", "50"))
@@ -428,12 +457,49 @@ def build_candidates():
     return candidates
 
 
+def traversal_candidates():
+    data = load_yaml(traversal_path)
+    events = data.get("events") or []
+    accepted, rejected, seen, zero_hop = [], 0, set(), []
+    required_routes = {"preflight", "semantic_search", "causal_backlinks"}
+    for event in events:
+        if not isinstance(event, dict): rejected += 1; continue
+        event_id = str(event.get("event_id") or "")
+        route = str(event.get("route") or "")
+        landing = str(event.get("landing_node") or "")
+        adjacent = str(event.get("adjacent_node") or "")
+        action = str(event.get("connected_action") or "")
+        finding = str(event.get("finding") or "")
+        origin = str(event.get("origin") or "")
+        links = {str(x) for x in event.get("existing_links") or []}
+        expected = f"[[{landing}]] -> [[{adjacent}]] -> [[{action}]]"
+        valid = (event_id and event_id not in seen and route in required_routes and landing
+                 and finding and origin == expected and adjacent and action
+                 and landing in links and adjacent in links and action in links)
+        if not valid: rejected += 1; continue
+        seen.add(event_id); accepted.append(event)
+        if int(event.get("hop_count") or 0) < 1: zero_hop.append(event)
+    traversed = sum(int(e.get("hop_count") or 0) >= 1 for e in accepted)
+    discovered = sum(bool(str(e.get("finding") or "").strip()) for e in accepted)
+    connected = sum(bool(str(e.get("connected_action") or "").strip()) for e in accepted)
+    total = len(accepted)
+    print(f"TRAVERSAL_METRICS: accepted={total} rejected={rejected} duplicate={len(events)-len(seen)-rejected} traversal={traversed}/{total} discovery={discovered}/{total} action={connected}/{total}")
+    if zero_hop:
+        first = zero_hop[0]
+        return [{"kind":"obsidian_zero_hop", "target":"scripts/throughput_scan.sh",
+                 "verify":f"test -f {os.path.abspath(traversal_path)}", "priority":"high",
+                 "msg":("THROUGHPUT_FIX_KNOWN obsidian_zero_hop: traversal入口止まり "
+                        f"route={first['route']} landing={first['landing_node']} event_id={first['event_id']}. "
+                        "INSIGHT_FIX_KNOWN=1 target=scripts/throughput_scan.sh source=obsidian_traversal") }]
+    return []
+
+
 loop_data_for_ratchet = load_yaml(loop_path)
 print(throughput_ratchet(loop_data_for_ratchet))
 pending_texts = pending_insight_texts(insights_path)
 queued = 0
 duplicates = 0
-candidates = build_candidates()
+candidates = build_candidates() + traversal_candidates()
 for candidate in candidates:
     msg = candidate["msg"]
     dedup_key = msg[:120]

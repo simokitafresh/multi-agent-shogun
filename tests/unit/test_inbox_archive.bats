@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Symlinked inbox uses the canonical writer lock path; violation is BLOCK.
+# test_necessity: Symlinked inbox uses the canonical writer lock path, and block scalar body indentation never creates a message record boundary; violation is BLOCK.
 
 setup_file() {
     export PROJECT_ROOT
@@ -82,6 +82,84 @@ assert len(archive_files) == 1
 archive = yaml.safe_load(archive_files[0].read_text())
 assert archive["messages"][0]["content"] == "first line\nsecond line"
 assert yaml.safe_load((root / "queue/inbox/saizo.yaml").read_text()) == {"messages": []}
+PY
+}
+
+@test "block scalar nested bullets preserve exact message boundaries and metadata" {
+    cat > "$TEST_ROOT/queue/inbox/saizo.yaml" <<'YAML'
+messages:
+- content: |-
+    heading
+    - bullet one
+      - nested bullet
+    - id: not_a_message
+    tail
+  from: 'karo'
+  id: 'msg_nested_read'
+  read: true
+  timestamp: '2026-07-19T14:35:20'
+  type: 'task_assigned'
+  action: 'task_start'
+- content: 'keep unread'
+  from: 'karo'
+  id: 'msg_unread'
+  read: false
+  timestamp: '2026-07-19T14:36:20'
+  type: 'task_assigned'
+YAML
+
+    run bash "$TEST_SCRIPT" saizo
+    [ "$status" -eq 0 ]
+
+    python3 - "$TEST_ROOT" <<'PY'
+import pathlib, sys, yaml
+root = pathlib.Path(sys.argv[1])
+archive_path, = (root / "archive/inbox").glob("saizo_*.yaml")
+archive = yaml.safe_load(archive_path.read_text())
+inbox = yaml.safe_load((root / "queue/inbox/saizo.yaml").read_text())
+assert len(archive["messages"]) == 1
+assert archive["messages"][0] == {
+    "content": "heading\n- bullet one\n  - nested bullet\n- id: not_a_message\ntail",
+    "from": "karo", "id": "msg_nested_read", "read": True,
+    "timestamp": "2026-07-19T14:35:20", "type": "task_assigned",
+    "action": "task_start",
+}
+
+assert inbox["messages"] == [{
+    "content": "keep unread", "from": "karo", "id": "msg_unread",
+    "read": False, "timestamp": "2026-07-19T14:36:20", "type": "task_assigned",
+}]
+PY
+}
+
+@test "orphan-only repair requires one archived read source and preserves quarantine" {
+    cat > "$TEST_ROOT/archive/inbox/saizo_20260719.yaml" <<'YAML'
+messages:
+- from: gunshi
+  id: msg_source
+  read: true
+  timestamp: '2026-07-19T14:35:20'
+  type: review_result
+YAML
+    cat > "$TEST_ROOT/queue/inbox/saizo.yaml" <<'YAML'
+messages:
+- content: |-
+    split body
+  action: notify_karo
+- orphan: one
+- orphan: two
+YAML
+
+    run bash "$TEST_SCRIPT" saizo --repair-orphans-from-archive msg_source
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"valid_ids=0 invalid=3 archive_read_hits=1"* ]]
+    python3 - "$TEST_ROOT" <<'PY'
+import pathlib, sys, yaml
+root = pathlib.Path(sys.argv[1])
+assert yaml.safe_load((root / "queue/inbox/saizo.yaml").read_text()) == {"messages": []}
+quarantines = list((root / "archive/inbox/quarantine").glob("*.yaml"))
+assert len(quarantines) == 1
+assert len(yaml.safe_load(quarantines[0].read_text())["messages"]) == 3
 PY
 }
 

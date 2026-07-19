@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-18 -->
+<!-- last_updated: 2026-07-19 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,17 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3432 | backlinks=0 gateが偽陽性を報告。kotaro_cmd_3430(5件参照あり)とsaizo_cmd_3426(5件参照あり)がbacklinks=0と誤報。根因: causal_backlink_counts.sh L70-72の検索範囲がcontext, docs/research, skillsの3ディレクトリのみ。docs/semantic-index/index.md(セマンティックインデックス)からの参照を検出不能。memory/*.md(deepdiveリンク)やinstructions/*.mdからの参照も同様に検出漏れ。偽陽性=バグ(殿厳命2026-06-18)。 | infra | 06-18 | causal_backlink_counts.sh L70- |
-| cmd_3433 | lesson_write.sh --retagがdm-signal旧フォーマット教訓(L007-L118の26件)でFAIL。retagロジック(L568-589)がlessons.md Markdown形式(### LXXX:)を前提とするが、dm-signalはlessons.yaml 1行形式のみ(lessons.md不在)。universalタグ残29件がretag不可。偽陽性=バグ(殿厳命2026-06-18)。軍師報告blt_20260618_005912。 | infra | 06-18 | lesson_write.sh --retagの旧形式教訓( |
-| cmd_3434 | context鮮度ALERT: dm-signal-research.md等4ファイルが2026-06-13以降5日間未更新。相関レジーム研究7cmd(3425-3431)で確立した知見7項目(max相関=戦略同質性, 高相関=バブル, 乖離リフト3-4x偽陽性70%, deterioration逆機能, σ閾値混成母集団不機能, リスクベースBB不適, Turning Points BB不採用)をcontext索引に反映。家老報告blt_20260618_101554。 | infra | 06-18 | context/dm-signal-research.md |
-| cmd_3435 | 殿指示(2026-06-18): オントロジー記事知見を三層記憶に適用。因果関係の把握が本質。100億年後も有機的に成長し、新規概念を自動取込する仕組みを設計。現状のindex.md因果辺グラフは235エッジ/422ノード/197連結成分(最大5)でほぼ孤立点の集合。Phase 1として(1)因果辺DAG構造の完全分析(2)files_modified→concept経路の因果辺自動推論ロジック設計(3)NO_MATCH→仮concept自動生成の設計を行う。 | infra | 06-18 | Phase1: 因果辺DAG完全分析+AC2/AC3設計書を |
-| cmd_3436 | cmd_3435偵察で判明: 未宣言[[link]]669件中99.9%がconcept未到達。files_modified→conceptの直接マッピングが存在せずaliasテキストマッチのみ。設計書(saizo_files_modified_concept_inference_design_cmd3435_20260618.md)に基づきsemantic_index_update.shにファイルパス→concept推論ロジックを実装し、GATE CLEAR時に因果辺を自動生成する。殿指示(2026-06-18): 100億年後も有機的に成長する仕組み。 | infra | 06-18 | — |
-| cmd_3437 | cmd_3435偵察で判明: 未宣言[[link]]669件中99.9%がconcept未到達。files_modified→conceptの直接マッピングが存在せずaliasテキストマッチのみ。設計書(saizo_files_modified_concept_inference_design_cmd3435_20260618.md)に基づきsemantic_index_update.shにファイルパス→concept推論ロジックを実装し、GATE CLEAR時に因果辺を自動生成する。殿指示(2026-06-18): 100億年後も有機的に成長する仕組み。cmd_3436をcumulative BLOCK回避のため新ID再発行。 | infra | 06-18 | scripts/semantic_index_update. |
-| cmd_3438 | cmd_3435偵察で判明: NO_MATCHは放置状態。Phase 2b設計書(参照のみ・変更対象外)に基づきsemantic_index_update.shにNO_MATCH累積3回以上で仮concept自動生成を実装。殿指示(2026-06-18): 完全な新規概念の扱い+100億年有機成長。 | infra | 06-18 | NO_MATCH累積3回以上のファイルに対してprovisi |
-| cmd_3439 | Phase 2a(因果辺自動推論cmd_3437)+Phase 2b(仮concept自動生成cmd_3438)でグラフが育ち未知概念が入る基盤が完成。Phase 3はグラフ上のパルス伝達=GATE CLEAR時にcmdが影響した概念から因果グラフをBFS多段トラバースし、影響ノードに紐づく検証スクリプトを自動実行する。殿指示(2026-06-18): 100億年有機成長+連携して自動更新が揃わないと意味がない。独自実装(殿裁定2026-06-18)。 | infra | 06-18 | AC1: semantic_causal_traverse. |
-| cmd_3440 | 殿裁定(2026-06-18): CDPは全員が使えるべき。現状: cdp-browseスキルにロール制限なしだが忍者/家老の指南書(ashigaru.md/karo.md)にCDP言及ゼロ。道具の存在を知らないから使えない。三層記憶と同じ構造。忍者の本番確認、家老のCI RED後の画面検証にCDPが使えることを指南書に明記し、cdp-browseスキルのTRIGGERに忍者/家老パターンを追加する。 | infra | 06-18 | — |
-| cmd_3441 | 殿裁定(2026-06-18): CDPは全員が使えるべき。現状: cdp-browseスキルにロール制限なしだが忍者/家老の指南書(ashigaru.md/karo.md)にCDP言及ゼロ。道具の存在を知らないから使えない。忍者の本番確認、家老のCI RED後の画面検証にCDPが使えることを指南書に明記し、cdp-browseスキルのTRIGGERに忍者/家老パターンを追加する。cmd_3440をac_phase_mixing累計昇格回避のため新ID再発行。 | infra | 06-18 | ashigaru.md・karo-operations.md |
-| cmd_3442 | 洗脳監査(殿指示2026-06-18)で4穴発見。(1)useful_rate=2.0%根因=dm-signal YAML教訓のtags空欄(L007,L086,L508,L565,L633,L722等)。cmd_3433でretag機能追加したが実行していない(道具作って使わない=deepdive Phase9再現)。(2)Phase2b仮concept閾値到達テスト未投入。(3)Phase3 BFSが影響ノード列挙のみで検証スクリプト未実行(ダッシュボード問題再現)。(4)GATE CLEAR→因果辺→BFS→検証のE2Eパイプライン未通し。 | infra | 06-18 | AC1: dm-signal lessons.yaml 75 |
 | cmd_3443 | 洗脳監査(殿指示2026-06-18)でuseful_rate=2.0%の真因がtags空欄ではないと判明(軍師指摘blt_230320)。cmd_3432以降(タグ修正済み)でもuseful=1/23=4.3%。一次データ確認: L809(review_quality集計/infra)+L563(DNA制約/dm-signal)+L562(ALM Ward FoF/dm-signal)がPhase3 BFS実装cmd(infra)に注入されNOT_USEFUL。タグ付きでもinfra cmdにdm-signal教訓が注入される経路がdeploy_task.shに存在する。経路を特定し修正設計を出す。 | infra | 06-19 | — |
 | cmd_3444 | 偵察: Classroom Androidアプリ2大バグの根因特定 — WebViewハンバーガー不完全展開+同期後画面遷移失敗 | — | 06-19 | — |
 | cmd_3445 | 殿指示(2026-06-19 14:25): GPT+Sonnet忍者2名に別々の視点でデバッグ偵察。v1.0-v2.3の12回イテレーションで場当たり修正を繰り返したが根因未到達。問題A=file://プロトコルでWebViewのviewportが768px超→モバイルCSS不発→ハンバーガーメニュー不完全展開。問題B=同期完了後にCompose UIが再コンポーズされずダッシュボードに遷移しない。ブラウザでは同じHTMLが正常動作(殿確認済み)。 | google-classroom | 06-19 | Android WebView viewport根因とCom |

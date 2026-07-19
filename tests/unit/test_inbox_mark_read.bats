@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Bulk override cannot consume messages that arrived after inbox read; violation is BLOCK.
+# test_necessity: Bulk override cannot consume later messages, and block scalar body indentation never creates a message record boundary; violation is BLOCK.
 # inbox_mark_read.sh unit tests (cmd_cycle_002)
 
 setup_file() {
@@ -176,6 +176,33 @@ YAML
     [[ "$output" == *"Marked 1 message"* ]]
     [ "$(_get_read_status testagent msg_002)" = "true" ]
     [ "$(grep -c '^    read: false$' "$TEST_ROOT/queue/inbox/testagent.yaml")" -eq 2 ]
+}
+
+@test "nested bullets and field order mark only the selected record" {
+    cat > "$TEST_ROOT/queue/inbox/testagent.yaml" <<'YAML'
+messages:
+- content: |-
+    - id: nested_fake
+    - bullet
+      read: false
+  type: task_assigned
+  read: false
+  id: msg_id_after_content
+- id: msg_id_before_content
+  content: |-
+    - id: another_fake
+    - bullet two
+  type: wake_up
+  read: false
+YAML
+
+    run bash "$TEST_SCRIPT" testagent msg_id_after_content
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Marked 1 message"* ]]
+    [ "$(_get_read_status testagent msg_id_after_content)" = "true" ]
+    [ "$(_get_read_status testagent msg_id_before_content)" = "false" ]
+    [ "$(grep -c '^    - ' "$TEST_ROOT/queue/inbox/testagent.yaml")" -eq 4 ]
+    python3 -c 'import sys,yaml; d=yaml.safe_load(open(sys.argv[1])); assert len(d["messages"]) == 2' "$TEST_ROOT/queue/inbox/testagent.yaml"
 }
 
 @test "nonexistent msg_id returns success with informational message" {

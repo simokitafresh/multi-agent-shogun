@@ -50,6 +50,7 @@ source "$SCRIPT_DIR/scripts/lib/model_colors.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 source "$SCRIPT_DIR/scripts/lib/disk_space_watch.sh"
 source "$SCRIPT_DIR/scripts/lib/report_terminal_state.sh"
+source "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
 
 # --- CTX profile cache（L4-R?: cli_profile_getサブシェル呼び出し削減） ---
 # update_context_pct ループ内での$(cli_profile_get ...)サブシェル(78ms/回)を排除するグローバルキャッシュ
@@ -150,8 +151,8 @@ REFLUX_PROMOTION_DEFERRED_LEDGER="${REFLUX_PROMOTION_DEFERRED_LEDGER:-$SCRIPT_DI
 REFLUX_BACKLINK_SCAN_LIMIT=${REFLUX_BACKLINK_SCAN_LIMIT:-50}                     # backlinksゼロ在庫の1回あたり確認上限
 REFLUX_BACKLINK_TIMEOUT=${REFLUX_BACKLINK_TIMEOUT:-20}                           # backlinksゼロ確認のtimeout秒
 SPEED_TRAINING_LEDGER="${SPEED_TRAINING_LEDGER:-$SCRIPT_DIR/logs/script_speed_training_ledger.yaml}"
-KARO_IDLE_COOLDOWN=1800   # 家老idle自走サイクルクールダウン（秒）— 30分
-LAST_KARO_IDLE_NUDGE=0    # 家老idle自走サイクル最終通知時刻（epoch秒）
+KARO_IDLE_COOLDOWN=${KARO_IDLE_COOLDOWN:-1800}   # 家老idle自走サイクルクールダウン（秒）— 30分
+KARO_IDLE_NUDGE_STATE_FILE=${KARO_IDLE_NUDGE_STATE_FILE:-$STATE_DIR/shogun_karo_idle_nudge.last}
 SHOGUN_IDLE_ANALYSIS_COOLDOWN=3600  # 将軍idle分析triggerクールダウン（秒）— 60分
 _SHOGUN_IDLE_TRIGGER_STATE="/tmp/.shogun_idle_trigger_last"
 LAST_SHOGUN_IDLE_ANALYSIS_TRIGGER=$(cat "$_SHOGUN_IDLE_TRIGGER_STATE" 2>/dev/null || echo 0) # 将軍idle分析trigger最終通知時刻（epoch秒）— ファイル永続化でrespawn跨ぎ
@@ -1145,7 +1146,7 @@ _respawn_with_cli_verification() {
         # 新CLIの起動成功と誤認しないよう、各試行の前に残像を消す。
         tmux clear-history -t "$pane" 2>/dev/null || true
         if tmux respawn-pane -k -t "$pane" "$launch_command" 2>/dev/null && \
-                _wait_for_cli_ready "$pane" "$agent_name"; then
+                respawn_recovery_ready "$pane"; then
             elapsed=$((SECONDS - started))
             _record_respawn_outcome "$agent_name" 1 "$attempt" "$elapsed" || true
             return 0
@@ -1236,17 +1237,24 @@ safe_send_clear() {
         local _launch_cmd
         _launch_cmd=$(cli_launch_cmd "$agent_name" 2>/dev/null || echo "")
         if [ -n "${_launch_cmd:-}" ]; then
-            local _node_dir="${_launch_cmd%/bin/codex*}/bin"
+            local _launch_command
+            _launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$_launch_cmd" 2>/dev/null || true)
             # per-agent config.toml切替(2層SSOT: settings.yaml→config.toml。SSOT実装=cli_lookup.sh)
             codex_config_apply_agent "$agent_name" && \
                 [[ "$_CODEX_CFG_CHANGED" == true ]] && \
                 log "CODEX-CFG-SWITCH: $agent_name applied"
             log "CODEX-RESPAWN: $agent_name respawn-pane (codex reset)"
             local _fsc_respawn_ok=1
-            tmux respawn-pane -k -t "$pane" "export PATH=\"${_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
+            [ -n "$_launch_command" ] && tmux respawn-pane -k -t "$pane" "$_launch_command" 2>/dev/null || {
                 _fsc_respawn_ok=0
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
             }
+            if [ "$_fsc_respawn_ok" -eq 1 ] && respawn_recovery_ready "$pane"; then
+                _generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
+                [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-codex || _fsc_respawn_ok=0
+            else
+                _fsc_respawn_ok=0
+            fi
             _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
             # config.toml復元(SSOT: cli_lookup.sh codex_config_restore)
             codex_config_restore
@@ -1270,13 +1278,21 @@ safe_send_clear() {
     if [ -z "${_launch_cmd:-}" ]; then
         _launch_cmd="$HOME/bin/claude --effort high"
     fi
+    local _launch_command
+    _launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$_launch_cmd" 2>/dev/null || true)
     log "RESPAWN-PANE: $agent_name respawn-pane -k (CTX確実0%復帰), reason=$reason"
     local _fsc_respawn_ok=1
-    tmux respawn-pane -k -t "$pane" "cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
+    [ -n "$_launch_command" ] && tmux respawn-pane -k -t "$pane" "$_launch_command" 2>/dev/null || {
         _fsc_respawn_ok=0
         log "RESPAWN-FALLBACK: $agent_name respawn failed, trying /clear"
         safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
     }
+    if [ "$_fsc_respawn_ok" -eq 1 ] && respawn_recovery_ready "$pane"; then
+        _generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
+        [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-claude || _fsc_respawn_ok=0
+    else
+        _fsc_respawn_ok=0
+    fi
     _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
     # respawn-pane -kはscrollback履歴を引き継ぐ(tmux仕様)。Androidアプリが前セッション残像を表示するためクリア(殿実測2026-07-08)
     tmux clear-history -t "$pane" 2>/dev/null || true
@@ -1612,7 +1628,13 @@ PY
     task_identity=$(yaml_field_get "$report_file" "task_id" "" 2>/dev/null || true)
     parent_identity=$(yaml_field_get "$report_file" "parent_cmd" "" 2>/dev/null || true)
 
+    # shellcheck source=scripts/lib/report_completion_events.sh
+    source "$SCRIPT_DIR/scripts/lib/report_completion_events.sh"
+    local completion_event_types
+    completion_event_types="$REPORT_COMPLETION_EVENT_TYPES"
+
     if python3 - "$name" "$report_epoch" "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" \
+        "$completion_event_types" \
         "$report_identity" "$task_identity" "$parent_identity" "${inbox_sources[@]}" <<'PY'
 import datetime as _dt
 import os
@@ -1628,8 +1650,9 @@ try:
 except Exception:
     report_epoch = 0
 memory_db = sys.argv[3]
-identities = tuple(value for value in sys.argv[4:7] if value)
-sources = sys.argv[7:]
+completion_types = frozenset(sys.argv[4].split())
+identities = tuple(value for value in sys.argv[5:8] if value)
+sources = sys.argv[8:]
 
 
 def _has_exact_identity(msg):
@@ -1672,7 +1695,7 @@ for source in sources:
     for msg in messages:
         if not isinstance(msg, dict):
             continue
-        if str(msg.get("type", "")) != "report_received":
+        if str(msg.get("type", "")) not in completion_types:
             continue
         if str(msg.get("from", "")) != name:
             continue
@@ -1695,14 +1718,12 @@ if os.path.isfile(memory_db):
         rows = conn.execute(
             """SELECT ts, detail, raw_content FROM events
                WHERE event_type = 'inbox' AND agent = ? AND target = 'karo'
-                 AND (instr(coalesce(detail, ''), 'type: report_received') > 0
-                      OR instr(coalesce(raw_content, ''), 'type: report_received') > 0)
                ORDER BY ts DESC""",
             (name,),
         )
         for ts, detail, raw_content in rows:
             evidence = f"{detail or ''}\n{raw_content or ''}"
-            if "type: report_received" not in evidence:
+            if not any(f"type: {event_type}" in evidence for event_type in completion_types):
                 continue
             if not any(re.search(r"(?<![A-Za-z0-9_])" + re.escape(identity) +
                                  r"(?![A-Za-z0-9_])", evidence)
@@ -1949,10 +1970,16 @@ _failed_task_needs_karo_notice() {
     local failed_task_id failed_deployed_at
     failed_task_id=$(yaml_field_get "$task_file" "task_id")
     failed_deployed_at=$(yaml_field_get "$task_file" "deployed_at")
+    # Use the same completion-event contract as inbox acceptance and the clear
+    # gate; a valid alias is durable acknowledgement of this task generation.
+    # shellcheck source=scripts/lib/report_completion_events.sh
+    source "$SCRIPT_DIR/scripts/lib/report_completion_events.sh"
     if python3 - "$name" "$parent_cmd" "$failed_task_id" "$failed_deployed_at" \
+        "$REPORT_COMPLETION_EVENT_TYPES" \
         "$SCRIPT_DIR/queue/inbox/karo.yaml" "$SCRIPT_DIR/archive/inbox" <<'PY' 2>/dev/null
 import datetime as dt, glob, os, re, sys, yaml
-name, parent, task, deployed, hot, archive = sys.argv[1:]
+name, parent, task, deployed, completion_event_types, hot, archive = sys.argv[1:]
+completion_types=set(completion_event_types.split())
 def epoch(v):
     try:
         x=dt.datetime.fromisoformat(str(v).replace('Z','+00:00'))
@@ -1965,7 +1992,7 @@ for path in [hot, *glob.glob(os.path.join(archive, 'karo_*.yaml'))]:
     try: msgs=(yaml.safe_load(open(path, encoding='utf-8')) or {}).get('messages', [])
     except Exception: continue
     for msg in msgs if isinstance(msgs, list) else []:
-        if not isinstance(msg, dict) or msg.get('type') != 'report_received' or msg.get('from') != name: continue
+        if not isinstance(msg, dict) or msg.get('type') not in completion_types or msg.get('from') != name: continue
         text='\n'.join(str(msg.get(k,'')) for k in ('content','task_id','parent_cmd','report','report_path'))
         if not any(re.search(r'(?<![A-Za-z0-9_])'+re.escape(x)+r'(?![A-Za-z0-9_])', text) for x in ids): continue
         if epoch(msg.get('timestamp')) >= boundary - 10: raise SystemExit(0)
@@ -2583,11 +2610,19 @@ report_monitor_state() {
 # ─── AC1: 報告YAML完了判定 + タスクYAML自動done更新 ───
 # 報告YAMLのparent_cmdがタスクと一致し、status=doneなら自動更新
 # 戻り値: 0=完了済み(auto-done実行), 1=未完了
-check_and_update_done_task() {
+check_and_update_done_task() (
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     local report_file=""
-
+    local deploy_lock_dir="$SCRIPT_DIR/queue/locks"
+    local deploy_lock_file="$deploy_lock_dir/deploy_ninja_${name}.lock"
+    local deploy_lock_fd
+    mkdir -p "$deploy_lock_dir"
+    exec {deploy_lock_fd}>"$deploy_lock_file"
+    if ! flock -n "$deploy_lock_fd"; then
+        log "AUTO-DONE-SKIP-DEPLOY-LOCK-BUSY: $name retry=next-cycle"
+        return 1
+    fi
     # awk単一パスでtask_fileから必要フィールドを一括取得
     # (check_stall/auto_void_if_parent_cmd_completedと同パターン: サブシェル3回削減)
     local task_parent_cmd task_status task_id
@@ -2602,6 +2637,10 @@ check_and_update_done_task() {
     [ -z "$task_parent_cmd" ] && return 1
     # 新形式({ninja}_report_{cmd}.yaml)優先で一致報告を探索。旧形式も許容。
     report_file=$(find_matching_report_file "$name") || return 1
+    if [ -L "$report_file" ]; then
+        log "AUTO-DONE-SKIP-ARCHIVE-SYMLINK: $name report=$(basename "$report_file")"
+        return 1
+    fi
 
     # 報告のparent_cmdを取得
     local report_parent_cmd report_task_id
@@ -2704,7 +2743,7 @@ check_and_update_done_task() {
             return 1
             ;;
     esac
-}
+)
 
 monitor_task_state_fast_path() {
     local name
@@ -6513,10 +6552,11 @@ check_ninja_cli_dead() {
                 [[ "$_CODEX_CFG_CHANGED" == true ]] && \
                 log "CODEX-CFG-SWITCH(CLI-DEAD): $_name_bg applied"
             # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
-            local _node_path="${HOME}/.nvm/versions/node/v20.20.0/bin"
+            local _launch_command
+            _launch_command=$(respawn_recovery_launch_command "$_script_dir_bg" "$_launch_bg" 2>/dev/null || true)
             local _respawn_rc=0
             _respawn_with_cli_verification "$_pane_target_bg" "$_name_bg" \
-                "export PATH=\"${_node_path}:\$PATH\" && cd '${_script_dir_bg}' && ${_launch_bg}" \
+                "$_launch_command" \
                 "CLI-DEAD-RESPAWN" || _respawn_rc=$?
             # config.toml復元
             codex_config_restore 2>/dev/null
@@ -6528,7 +6568,12 @@ check_ninja_cli_dead() {
                 tmux set-option -t "$_pane_target_bg" -p @agent_id "$_name_bg" 2>/dev/null || true
             fi
             if [ "$_respawn_rc" -eq 0 ]; then
-                bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動成功】${_name_bg}: CLIバナー/プロンプト確認済み" 2>/dev/null || true
+                _generation=$(respawn_recovery_generation "$_pane_target_bg" 2>/dev/null || true)
+                if [ -n "$_generation" ] && respawn_recovery_notify "$_script_dir_bg" "$_name_bg" "$_generation" cli-dead; then
+                    bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動成功】${_name_bg}: CLIバナー/プロンプト確認済み" 2>/dev/null || true
+                else
+                    _respawn_rc=1
+                fi
             else
                 bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動失敗】${_name_bg}: 3回の起動確認に失敗。手動確認が必要。" 2>/dev/null || true
             fi
@@ -7500,6 +7545,62 @@ get_idle_pipeline_state() {
     echo "${ninja_total:-0}|${active_count:-0}|${pending_count:-0}"
 }
 
+# Durable cooldown transaction for karo idle-cycle delivery.  The state lock
+# covers read, decision, delivery, and the successful-delivery epoch update so
+# hot reloads, daemon respawns, and concurrent monitor processes share exactly
+# one cooldown generation.
+deliver_karo_idle_nudge_with_cooldown() {
+    local now="${1:?now epoch required}"
+    shift
+    local state_file="${KARO_IDLE_NUDGE_STATE_FILE:-${STATE_DIR:-/tmp}/shogun_karo_idle_nudge.last}"
+    local cooldown="${KARO_IDLE_COOLDOWN:-1800}"
+    local state_dir lock_file lock_fd last_epoch tmp_file
+    state_dir="${state_file%/*}"
+    lock_file="${state_file}.lock"
+    mkdir -p "$state_dir" || {
+        log "WARN: KARO-IDLE-CYCLE cannot create cooldown state dir: $state_dir"
+        return 1
+    }
+    exec {lock_fd}>"$lock_file" || return 1
+    flock "$lock_fd" || { exec {lock_fd}>&-; return 1; }
+
+    if [ -e "$state_file" ] && [ ! -f "$state_file" ]; then
+        log "WARN: KARO-IDLE-CYCLE cooldown state is not a regular file: $state_file"
+        exec {lock_fd}>&-
+        return 1
+    fi
+    last_epoch="$(cat "$state_file" 2>/dev/null || true)"
+    if [ -e "$state_file" ] && { [[ ! "$last_epoch" =~ ^[0-9]+$ ]] || [ "$last_epoch" -gt "$now" ]; }; then
+        log "WARN: KARO-IDLE-CYCLE invalid cooldown epoch '${last_epoch:-empty}'; repairing to $now and suppressing this cycle"
+        tmp_file="${state_file}.tmp.$$"
+        if ! printf '%s\n' "$now" > "$tmp_file" || ! mv -f "$tmp_file" "$state_file"; then
+            rm -f "$tmp_file"
+            exec {lock_fd}>&-
+            return 1
+        fi
+        exec {lock_fd}>&-
+        return 2
+    fi
+    if [[ "$last_epoch" =~ ^[0-9]+$ ]] && [ $((now - last_epoch)) -lt "$cooldown" ]; then
+        exec {lock_fd}>&-
+        return 2
+    fi
+
+    if "$@"; then
+        tmp_file="${state_file}.tmp.$$"
+        if ! printf '%s\n' "$now" > "$tmp_file" || ! mv -f "$tmp_file" "$state_file"; then
+            rm -f "$tmp_file"
+            log "ERROR: KARO-IDLE-CYCLE delivery succeeded but cooldown state update failed"
+            exec {lock_fd}>&-
+            return 1
+        fi
+        exec {lock_fd}>&-
+        return 0
+    fi
+    exec {lock_fd}>&-
+    return 1
+}
+
 # ═══ 家老idle自走サイクル起動チェック (cmd_1498) ═══
 # 全忍者idle/completed/done + パイプライン空 → 家老に改善サイクル起動を通知
 check_karo_idle_cycle() {
@@ -7525,21 +7626,111 @@ check_karo_idle_cycle() {
         return
     fi
 
-    # クールダウンチェック（30分）
+    # durable cooldown transactionへ渡す判定epoch
     local now
     now=$EPOCHSECONDS
-    local elapsed=$(( now - LAST_KARO_IDLE_NUDGE ))
-    if [ "$elapsed" -lt "$KARO_IDLE_COOLDOWN" ]; then
-        return
-    fi
 
-    # 全条件成立: 家老に改善サイクル起動を通知
+    # Snapshot確認後にdeployが成立し得るため、通知直前は全ninjaのdeploy lockを
+    # 同時保持してlive task YAMLを再検証する。1つでもbusyなら次cycleへ送る。
+    local name task_status lock_file lock_fd held_fd
+    local -a idle_cycle_lock_fds=()
+    mkdir -p "$SCRIPT_DIR/queue/locks"
+    for name in "${NINJA_NAMES[@]}"; do
+        lock_file="$SCRIPT_DIR/queue/locks/deploy_ninja_${name}.lock"
+        exec {lock_fd}>"$lock_file"
+        if ! flock -n "$lock_fd"; then
+            log "KARO-IDLE-CYCLE-SKIP: deploy lock busy agent=$name"
+            exec {lock_fd}>&-
+            for held_fd in "${idle_cycle_lock_fds[@]}"; do
+                exec {held_fd}>&-
+            done
+            return
+        fi
+        idle_cycle_lock_fds+=("$lock_fd")
+    done
+    for name in "${NINJA_NAMES[@]}"; do
+        task_status=$(awk '/^[[:space:]]+status:[[:space:]]*/ {print $2; exit}' "$SCRIPT_DIR/queue/tasks/${name}.yaml" 2>/dev/null || true)
+        case "$task_status" in
+            idle|completed|done) ;;
+            *)
+                log "KARO-IDLE-CYCLE-SKIP: live task active agent=$name status=${task_status:-missing}"
+                for held_fd in "${idle_cycle_lock_fds[@]}"; do
+                    exec {held_fd}>&-
+                done
+                return
+                ;;
+        esac
+    done
+
+    # 全条件成立: deployを遮断した同一境界内で家老へ通知する。
     log "KARO-IDLE-CYCLE: All ${ninja_total} ninjas idle/completed/done + pipeline empty → nudging karo"
-    if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "全忍者idle+パイプライン空。改善サイクルを回せ。" karo_idle_cycle ninja_monitor >> "$LOG" 2>&1; then
-        LAST_KARO_IDLE_NUDGE=$now
+    # 子プロセスにはlock FDを継承させない。親shellは通知完了まで保持する。
+    deliver_karo_idle_nudge_with_cooldown "$now" bash -c '
+        read -ra inherited_idle_fds <<< "$1"
+        for held_fd in "${inherited_idle_fds[@]}"; do
+            exec {held_fd}>&-
+        done
+        exec bash "$2/scripts/inbox_write.sh" karo "全忍者idle+パイプライン空。改善サイクルを回せ。" karo_idle_cycle ninja_monitor
+    ' _ "${idle_cycle_lock_fds[*]}" "$SCRIPT_DIR" >> "$LOG" 2>&1
+    local delivery_rc=$?
+    if [ "$delivery_rc" -eq 0 ]; then
         log "KARO-IDLE-CYCLE: Sent improvement cycle nudge to karo"
-    else
+    elif [ "$delivery_rc" -eq 1 ]; then
         log "ERROR: KARO-IDLE-CYCLE inbox_write failed"
+    fi
+    for held_fd in "${idle_cycle_lock_fds[@]}"; do
+        exec {held_fd}>&-
+    done
+}
+
+# Script更新は重いpane再探索周期と分離し、次cycleの業務処理前に反映する。
+# 旧版が残したdeploy lock FDもexec前に閉じ、新プロセスへ継承させない。
+_ninja_monitor_hot_reload_exec() {
+    exec bash "$1"
+}
+
+close_inherited_deploy_lock_fds() {
+    local fd_path fd_target inherited_fd
+    for fd_path in "/proc/$$/fd/"*; do
+        [ -e "$fd_path" ] || continue
+        fd_target="$(readlink "$fd_path" 2>/dev/null || true)"
+        case "$fd_target" in
+            */queue/locks/deploy_ninja_*.lock)
+                inherited_fd="${fd_path##*/}"
+                exec {inherited_fd}>&-
+                ;;
+        esac
+    done
+}
+
+reload_ninja_monitor_if_updated() {
+    local current_mtime
+    current_mtime="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
+    [ "$current_mtime" = "$_NM_START_MTIME" ] && return 0
+
+    log "HOT-RELOAD: ninja_monitor.sh updated (mtime ${_NM_START_MTIME} → ${current_mtime}). Restarting..."
+    close_inherited_deploy_lock_fds
+    _ninja_monitor_hot_reload_exec "$_NM_SCRIPT_PATH"
+}
+
+# Existing monitor idle edge is the single trigger; no new daemon/poll loop.
+# A trusted writer publishes one CLI argument per line and atomic rename claims it.
+check_throughput_ready_events() {
+    local ready_dir="${THROUGHPUT_READY_DIR:-$SCRIPT_DIR/queue/throughput_ready}"
+    local manifest running
+    local -a connector_args=()
+    [ -d "$ready_dir" ] || return 0
+    manifest=$(find "$ready_dir" -maxdepth 1 -type f -name '*.args' -print 2>/dev/null | sort | head -1)
+    [ -n "$manifest" ] || return 0
+    running="${manifest%.args}.running"
+    mv "$manifest" "$running" 2>/dev/null || return 0
+    mapfile -t connector_args < "$running"
+    if bash "$SCRIPT_DIR/scripts/throughput_growth_loop.sh" "${connector_args[@]}" >>"$LOG" 2>&1; then
+        mv "$running" "${running%.running}.done"
+        log "THROUGHPUT-READY-COMPLETE: manifest=${manifest##*/}"
+    else
+        mv "$running" "${running%.running}.args"
+        log "THROUGHPUT-READY-BLOCK: connector failed manifest=${manifest##*/}"
     fi
 }
 
@@ -7594,6 +7785,9 @@ if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
     return 0 2>/dev/null || exit 0
 fi
 
+# 旧monitorのexecが残したFDはmtime差の有無にかかわらずstartupで除去する。
+close_inherited_deploy_lock_fds
+
 discover_panes
 
 # ─── GP-239: Codex bypass flag check (startup) ───
@@ -7621,18 +7815,11 @@ _NM_START_MTIME="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
 while true; do
     cycle=$((cycle + 1))
 
+    # 毎cycle確認（20秒以内）。重いdiscover_panesは従来どおり10分周期。
+    reload_ninja_monitor_if_updated
+
     # Primary task state is observed before pane waits and maintenance.
     monitor_task_state_fast_path
-
-    # ─── hot-reload: スクリプト更新検知で自動再起動 (2026-06-26) ───
-    # commit後も旧コードで稼働し続けるバグの根治。10分ごとにmtimeチェック
-    if [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
-        _nm_cur_mtime="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
-        if [ "$_nm_cur_mtime" != "$_NM_START_MTIME" ]; then
-            log "HOT-RELOAD: ninja_monitor.sh updated (mtime ${_NM_START_MTIME} → ${_nm_cur_mtime}). Restarting..."
-            exec bash "$_NM_SCRIPT_PATH"
-        fi
-    fi
 
     # 定期的にペイン再探索（ペイン構成変更に対応）
     if [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
@@ -7940,6 +8127,7 @@ while true; do
     # ═══ STEP 1b: 後段チェック反映後の最終snapshot更新 ═══
     refresh_karo_snapshot_fast_path
     check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
+    check_throughput_ready_events # durable throughput connector (ready event exactly once)
     check_shogun_idle_analysis_trigger  # 将軍idle時自己分析trigger (cmd_3549)
     check_ntfy_listener_health  # ntfy_listenerゾンビ検知 (cmd_635)
     check_inbox_watcher_health  # inbox_watcher死亡検知+自動再起動 (おしお殿知見)

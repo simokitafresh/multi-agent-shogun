@@ -1,0 +1,122 @@
+# =============================================================================
+# Stock Database プロジェクト核心知識
+# =============================================================================
+# 用途: /clear後の忍者が自動読み込みし、プロジェクト核心知識を即座に取得
+# 更新日: 2026-03-12 (cmd_865初回偵察完了)
+
+project:
+  id: database
+  name: "Stock Database"
+  path: "/mnt/c/Python_app/database"
+  repo: "https://github.com/simokitafresh/database"
+  description: "殿の株式データベース。Supabase+Render構成。DM-Signalとは独立プロジェクト"
+  tech_stack: "Python 3.12 + FastAPI 0.111 + SQLAlchemy 2.0(async) + PostgreSQL(Supabase) + Render"
+
+# ── DB構成 ──
+tables:
+  - name: symbols
+    pk: "symbol (TEXT)"
+    purpose: "銘柄マスター"
+  - name: prices
+    pk: "(symbol, date) 複合"
+    purpose: "日次調整済みOHLCV(メインデータ)"
+    fk: "symbol→symbols.symbol"
+    constraints: "CHECK: low≤open/close≤high, positive OHLC, volume≥0"
+  - name: symbol_changes
+    pk: "(old_symbol, change_date) 複合"
+    purpose: "銘柄名変更履歴(1ホップ解決)"
+  - name: fetch_jobs
+    pk: "job_id (String)"
+    purpose: "バックグラウンド取得ジョブ管理"
+  - name: economic_indicators
+    pk: "(symbol, date) 複合"
+    purpose: "経済指標(FRED DTB3等)"
+  - name: corporate_events
+    pk: "id (SERIAL)"
+    purpose: "企業イベント(分割/配当検出・修正)"
+    fk: "symbol→symbols.symbol"
+views:
+  - "v_symbol_coverage: カバレッジ集計VIEW"
+functions:
+  - "get_prices_resolved(): 銘柄名変更透過解決(symbol_changes UNION ALL)"
+migration: "Alembic 11バージョン(001_init〜011_corporate_events)"
+
+# ── データフロー ──
+data_sources:
+  - name: "Yahoo Finance (yfinance)"
+    auth: "不要"
+    data: "株式・ETF・インデックス日次OHLCV(adjusted)"
+    rate_limit: "2.0 req/sec, burst 10, exponential backoff"
+  - name: "FRED API"
+    auth: "FRED_API_KEY"
+    data: "DTB3(3-Month Treasury Bill Rate, 1954年〜)"
+
+# ── デプロイ ──
+deploy:
+  hosting: "Render (Starter plan, $7/月)"
+  web: "Python runtime + gunicorn 2workers + uvicorn"
+  cron: "JST 08:00(一次取得)+17:00(確定取得+入力確定検証)の2回。全期間再取得"
+  price_sources:
+    primary: "EODHD EOD+Intraday All World Extended($29.99/mo, 殿裁定2026-07-05)"
+    verifier: "Tiingo(無料)"
+    third_check: "Alpaca IEX(無料)"
+    architecture: "生値正本(prices_raw)+確定済み配当/分割(corporate_events)→自前調整→prices互換"
+    design_doc: "/mnt/c/Python_app/database/docs/price-data-source-plan.md"
+  db: "Supabase PostgreSQL (asyncpg直接接続)"
+  cache: "Redis(TTL 4h) + In-memory fallback(max 1500)"
+  docker: "python:3.12-slim (entrypoint.sh: migration→gunicorn)"
+  note: "cron側Dockerfile.cronが不在 — render.yaml記載と実態不一致"
+
+# ── API概要(21エンドポイント) ──
+api_endpoints:
+  health: "GET /, /healthz, /v1/health"
+  symbols: "GET /v1/symbols"
+  prices: "GET /v1/prices, DELETE /v1/prices/{symbol}"
+  coverage: "GET /v1/coverage, /coverage/export"
+  fetch_jobs: "POST /v1/fetch, GET /v1/fetch, GET /v1/fetch/{id}, POST /v1/fetch/{id}/cancel"
+  events: "GET /v1/events(+pending/dividends/splits/{symbol}), POST confirm/ignore"
+  economic: "GET /v1/economic, /economic/{symbol}"
+  maintenance: "POST check-adjustments, GET adjustment-report, POST fix-adjustments"
+  cron: "POST daily-update, daily-economic-update, adjustment-check (X-Cron-Secret認証)"
+
+# ── DM-Signalとの関係 ──
+dm_signal_relation:
+  overlap: "10/11銘柄重複(TQQQ,TECL,XLU,^VIX,GLD,TMV,TMF,QLD,QQQ,SPY)"
+  data_source_diff: "database=yfinance(adjusted) vs DM-Signal=StockData API"
+  complement: "DTB3(1954〜)がDM-Signalリスクフリーレート補完に有用"
+  recommendation: "OPT-C(独立維持+DTB3共有のみ)が安全。統合はclose価格差異検証が前提"
+
+# ── 既知の問題 ──
+known_issues:
+  security:
+    - "scripts/set_final_symbols.py:5-6 — DB接続URLハードコード(セキュリティ問題)"
+    - "app/api/v1/cron.py:19-23 — CRON_SECRET_TOKEN未設定時フェイルオープン"
+    - "render.yaml — CORS_ALLOW_ORIGINS='*'(本番制限推奨)"
+    - "Stockdata-API.envがリポジトリルートに存在(.gitignore対象外の可能性)"
+    - "scripts/cron_command.sh:22 — CRON_SECRET_TOKENフォールバック値ハードコード"
+  code_quality:
+    - "app/services/upsert.py:127 — 重複return文(デッドコード)"
+    - "datetime.utcnow()使用箇所あり(非推奨→datetime.now(timezone.utc))"
+  infrastructure:
+    - "render.yaml cron→docker/Dockerfile.cron不在(ビルド不可)"
+    - ".github/workflowsがローカルに存在しない(CI状態不明)"
+    - "dependabotブランチ14本未マージ"
+    - "RLSポリシーがコード管理外(Supabaseダッシュボード)"
+  test_gaps:
+    - "price_service.py統合テストなし"
+    - "cache.py/redis_utils.pyテストなし"
+
+# ── コード規模 ──
+code_metrics:
+  app_lines: 11478
+  test_lines: 3647
+  services: 20
+  api_routers: 9
+  schemas: 9
+  test_files: 25
+test_policy:
+  policy: "実装testは作成→PASS→即削除。永続化は具体的不変量のtest_necessity宣言付きcontractのみ"
+  positive_rule: "削除diffまたは宣言全件、宣言率N/N、契約混入0、境界内回帰リスク受容、deletion_justification非空、fixture被参照0、regression_justification非空、race PASS後contract外test削除を全て二値確認する"
+  reason: "消費済みtestの保守費・fixture・実行時間と境界所有の曖昧化を防ぐ"
+  holes_1_7: [deletion_diff, declaration_rate, contract_contamination_zero, boundary_regression_risk_accepted, deletion_justification, fixture_reference_zero, regression_justification_and_race_stop]
+  origin: "[[殿裁定_default_delete_test_20260719]] -> [[default_delete_test_policy]] -> [[全PJ共通契約]]"

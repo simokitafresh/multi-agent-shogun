@@ -23,6 +23,23 @@ set -euo pipefail
 _iw_self="${BASH_SOURCE[0]}"; [[ "$_iw_self" != /* ]] && _iw_self="$PWD/$_iw_self"
 SCRIPT_DIR="${_iw_self%/scripts/inbox_watcher.sh}"
 
+# stale monitorが保持中に生成したwatcherはdeploy lock FDを継承し得る。
+# source/業務childを起動する前に無条件で閉じ、子孫へ伝播させない。
+close_inherited_deploy_lock_fds() {
+    local fd_path fd_target inherited_fd
+    for fd_path in "/proc/$$/fd/"*; do
+        [ -e "$fd_path" ] || continue
+        fd_target="$(readlink "$fd_path" 2>/dev/null || true)"
+        case "$fd_target" in
+            */queue/locks/deploy_ninja_*.lock)
+                inherited_fd="${fd_path##*/}"
+                exec {inherited_fd}>&-
+                ;;
+        esac
+    done
+}
+close_inherited_deploy_lock_fds
+
 # cli_lookup.sh を source（CLI種別をsettings.yaml+cli_profiles.yamlから動的取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 [ ! -f "$SCRIPT_DIR/scripts/lib/model_family.sh" ] || source "$SCRIPT_DIR/scripts/lib/model_family.sh"
@@ -31,6 +48,7 @@ source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 source "$SCRIPT_DIR/scripts/lib/script_update.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+source "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
 
 AGENT_ID="$1"
 PANE_TARGET="$2"
@@ -103,6 +121,7 @@ STARTUP_TIME="$(date +%s)"
 MIN_UPTIME=10  # minimum seconds before allowing auto-restart
 WATCHED_DEPS=(
     "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
+    "$SCRIPT_DIR/scripts/lib/respawn_recovery.sh"
     "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
     "$SCRIPT_DIR/lib/agent_state.sh"
 )
@@ -1111,26 +1130,39 @@ process_unread() {
                     # バックグラウンドshellが残っている場合でも/clearを強制送信する。
                     echo "[$(date)] [CLEAR-FORCE] clear_command received for $AGENT_ID — bypassing busy gating" >&2
 
-                    if ! send_cli_command "/clear"; then
+                    recovery_content="$special_content"
+                    if [ -n "$recovery_content" ] && [[ "$recovery_content" =~ [\`\$\|\;\&\<\>] ]]; then
+                        echo "[$(date)] [SECURITY] clear_command content rejected (shell metacharacters): ${recovery_content:0:80}" >&2
+                        recovery_content=""
+                    fi
+
+                    launch=$(cli_launch_cmd "$AGENT_ID" 2>/dev/null || true)
+                    launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$launch" 2>/dev/null || true)
+                    if [ -z "$launch_command" ] || ! tmux respawn-pane -k -t "$PANE_TARGET" "$launch_command" 2>/dev/null; then
                         special_ok=false
-                    elif [ -n "$special_content" ]; then
-                        # Whitelist: only plain text (no shell metacharacters or CLI commands beyond safe content)
-                        # Allow: alphanumeric, Japanese, whitespace, basic punctuation, newlines
-                        # Reject: backticks, $(), pipe, semicolon, &&, || etc.
-                        if [[ "$special_content" =~ [\`\$\|\;\&\<\>] ]]; then
-                            echo "[$(date)] [SECURITY] clear_command content rejected (shell metacharacters): ${special_content:0:80}" >&2
-                        elif ! send_cli_command "$special_content"; then
+                    else
+                        ready=0
+                        for _ in {1..30}; do
+                            if respawn_recovery_ready "$PANE_TARGET"; then ready=1; break; fi
+                            sleep 1
+                        done
+                        if [ "$ready" -eq 1 ]; then
+                            generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
+                            if [ -z "$generation" ] || ! respawn_recovery_notify "$SCRIPT_DIR" "$AGENT_ID" "$generation" clear-command "$recovery_content"; then
+                                special_ok=false
+                            fi
+                        else
                             special_ok=false
                         fi
                     fi
-                    # Post-clear verification: confirm CTX dropped to 0%
-                    sleep 8
-                    local post_ctx
-                    post_ctx=$(tmux capture-pane -t "$PANE_TARGET" -p -S -5 2>/dev/null | grep -oP 'CTX:\K[0-9]+' | tail -1 || echo "?")
-                    if [[ "$post_ctx" != "0" && "$post_ctx" != "?" ]]; then
-                        echo "[$(date)] [WARN] clear_command sent to $AGENT_ID but CTX:${post_ctx}% (not 0%). Agent may still be running" >&2
+                    # Post-clear verification uses the same fail-closed boundary as
+                    # notification persistence. Unknown/nonzero CTX never marks read.
+                    if respawn_recovery_ready "$PANE_TARGET"; then
+                        generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
+                        echo "[$(date)] [OK] clear_command verified: $AGENT_ID generation=$generation ready=1" >&2
                     else
-                        echo "[$(date)] [OK] clear_command verified: $AGENT_ID CTX:${post_ctx}%" >&2
+                        special_ok=false
+                        echo "[$(date)] [WARN] clear_command verification failed: $AGENT_ID ready=0; leaving unread for retry" >&2
                     fi
                     ;;
                 model_switch)

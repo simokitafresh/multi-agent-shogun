@@ -1,0 +1,123 @@
+# =============================================================================
+# Rebalancer プロジェクト核心知識
+# =============================================================================
+# 用途: /new後のエージェントが自動読み込みし、プロジェクト核心知識を即座に取得
+# 更新日: 2026-05-14 (cmd_2701初回登録)
+
+project:
+  id: rebalancer
+  name: "Portfolio Rebalance App"
+  path: "/mnt/c/Python_app/rebalancer"
+  repo: "https://github.com/simokitafresh/rebalancer"
+  description: "ポートフォリオリバランス計算アプリ v4.0。JPY/USD二重通貨対応、リアルタイム株価・為替取得、PWA対応。"
+  tech_stack: "Frontend: Next.js 15 static export + React 18 + TypeScript + Tailwind CSS v4 + Serwist PWA / Backend: Python 3.11 + FastAPI + uvicorn + yfinance + httpx + disk JSON cache"
+
+# ── アーキテクチャ ──
+architecture:
+  frontend:
+    framework: "Next.js 15.0.3 (App Router, static export)"
+    path: "frontend/"
+    build: "npm install && npm run build"
+    publish: "frontend/out"
+    pwa: "@serwist/next"
+    api_base_env: "NEXT_PUBLIC_API_BASE_URL"
+  backend:
+    framework: "FastAPI"
+    path: "backend/"
+    entrypoint: "backend/app/main.py"
+    start: "uvicorn app.main:app --host 0.0.0.0 --port 10000"
+    background_job: "PriceUpdaterService lifespan task; 5分間隔で株価+USD/JPYを更新"
+    cache: "disk JSON cache under static/data/cache locally; Render disk mounted at /var/lib/data"
+  data_flow:
+    - "yfinanceで米国ETF価格を取得し、通常/プレ/ポストマーケット価格を扱う"
+    - "Open Exchange Ratesを優先し、ExchangeRate-APIをUSD/JPY為替のfallbackにする"
+    - "リバランス計算はUSD建て価格をJPY換算し、target_weight合計100%を検証してBUY/SELL/HOLDを返す"
+
+# ── 追跡銘柄・為替 ──
+market_data:
+  source_of_truth: "/mnt/c/Python_app/rebalancer/backend/app/config.py"
+  tracked_tickers:
+    count: 18
+    note: "READMEは17 ETFsと記載するが、現行config.pyはGLDMを含む18銘柄。実装実態を正とする。"
+    symbols: [GDX, GLD, GLDM, IEF, LQD, QLD, QQQ, SOXX, SPXL, SPY, TECL, TMF, TMV, TQQQ, XLE, XLK, XLU, XLV]
+    categories:
+      index: [SPY, QQQ]
+      leveraged: [SPXL, TQQQ, QLD, TECL, TMF, TMV]
+      sector: [XLK, XLV, XLE, XLU, SOXX]
+      bond: [IEF, LQD]
+      commodity: [GLD, GLDM, GDX]
+  exchange_rates:
+    tracked: [USD_JPY]
+    primary_provider: "Open Exchange Rates (OPEN_EXCHANGE_RATES_APP_ID optional)"
+    fallback_provider: "ExchangeRate-API v4 latest/USD"
+  refresh:
+    interval_seconds: 300
+    cache_ttl_minutes: 10
+    retries: "3回、10秒起点のexponential backoff"
+
+# ── API概要 ──
+api_endpoints:
+  health: "GET /, /healthz, /health"
+  status: "GET /api/status"
+  supported_tickers: "GET /api/supported-tickers"
+  exchange_rate: "GET /api/exchange-rate"
+  convert_currency: "POST /api/convert-currency"
+  market_data: "POST /api/stock-price, POST /api/stock-prices"
+  rebalance: "POST /api/calculate-rebalance"
+  static_debug: "GET /static/* (cache debug用)"
+
+# ── Render構成 ──
+deploy:
+  hosting: "Render blueprint (render.yaml)"
+  backend:
+    name: "dm-rebalancer-backend"
+    type: "web"
+    runtime: "python"
+    region: "singapore"
+    plan: "starter"
+    python_version: "3.11.0"
+    port: 10000
+    disk: "cache-disk 1GB mounted at /var/lib/data"
+    health: "GET /health and /healthz"
+  frontend:
+    name: "dm-rebalancer-frontend"
+    type: "web"
+    runtime: "static"
+    publish: "frontend/out"
+    api_base: "https://dm-rebalancer-backend.onrender.com"
+    route_rewrite: "/* -> /index.html"
+  production_urls:
+    frontend_current: "https://dm-rebalancer-frontend.onrender.com"
+    frontend_legacy_doc: "https://rebalancer-frontend.onrender.com (userguide記載。現行render.yamlとは不一致)"
+    backend: "https://dm-rebalancer-backend.onrender.com"
+
+# ── 既知の注意点 ──
+known_issues:
+  documentation_drift:
+    - "README/userguideは対応銘柄17または18の表記が混在。現行config.pyの18銘柄を正とする。"
+    - "userguideのfrontend URLはrebalancer-frontend.onrender.comだが、render.yamlはdm-rebalancer-frontend.onrender.com。"
+    - "READMEにFastAPI 4.0とあるが、requirements.txtはversion pinなし。アプリversionはmain.pyで4.0.0。"
+  operations:
+    - "OPEN_EXCHANGE_RATES_APP_ID未設定でもfallbackは動くが、primary providerは使えない。"
+    - "バックグラウンド更新はFastAPI lifespan内asyncio taskのため、worker再起動で初期取得から再開する。"
+
+# ── 認証・データ保存 ──
+supabase_auth:
+  provider: "Google OAuth via Supabase Auth"
+  project_ref: "qydgtwdnsipbomddbfls"
+  region: "Northeast Asia (Tokyo)"
+  table: "saved_portfolios (1ユーザー1行、items JSONB、RLS有効)"
+  env_file: "frontend/.env.local (NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY)"
+  note: "BE改修なし。supabase-jsがクライアント側で直接通信"
+
+# ── テスト・検証 ──
+validation:
+  backend_tests: "cd /mnt/c/Python_app/rebalancer/backend && python -m pytest tests/ -v"
+  frontend_build: "cd /mnt/c/Python_app/rebalancer/frontend && npm run build"
+  health_check: "curl https://dm-rebalancer-backend.onrender.com/health"
+test_policy:
+  policy: "実装testは作成→PASS→即削除。永続化は具体的不変量のtest_necessity宣言付きcontractのみ"
+  positive_rule: "削除diffまたは宣言全件、宣言率N/N、契約混入0、境界内回帰リスク受容、deletion_justification非空、fixture被参照0、regression_justification非空、race PASS後contract外test削除を全て二値確認する"
+  reason: "消費済みtestの保守費・fixture・実行時間と境界所有の曖昧化を防ぐ"
+  holes_1_7: [deletion_diff, declaration_rate, contract_contamination_zero, boundary_regression_risk_accepted, deletion_justification, fixture_reference_zero, regression_justification_and_race_stop]
+  origin: "[[殿裁定_default_delete_test_20260719]] -> [[default_delete_test_policy]] -> [[全PJ共通契約]]"

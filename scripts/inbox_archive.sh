@@ -13,6 +13,8 @@ unset _ia_self
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh" 2>/dev/null \
     || lock_path() { printf '/tmp/shogun_lock_%s.lock' "$(printf '%s' "$1" | md5sum | cut -c1-16)"; }
 AGENT="$1"
+REPAIR_MODE="${2:-}"
+REPAIR_SOURCE_ID="${3:-}"
 
 if [ -z "$AGENT" ]; then
     echo "Usage: inbox_archive.sh <agent_id>" >&2
@@ -54,6 +56,55 @@ mkdir -p "$ARCHIVE_DIR"
 printf -v DATE_STAMP '%(%Y%m%d)T' -1
 ARCHIVE_FILE="$ARCHIVE_DIR/${AGENT}_${DATE_STAMP}.yaml"
 
+repair_orphans_from_archive() {
+    local source_id="$1" quarantine_dir quarantine_file repair_tmp
+    [ -n "$source_id" ] || {
+        echo "[inbox_archive] BLOCK: --repair-orphans-from-archive requires source message id" >&2
+        return 2
+    }
+    quarantine_dir="$ARCHIVE_DIR/quarantine"
+    mkdir -p "$quarantine_dir"
+    quarantine_file="$quarantine_dir/${AGENT}_${DATE_STAMP}_${source_id}.yaml"
+
+    INBOX_PATH="$INBOX" ARCHIVE_DIR_PATH="$ARCHIVE_DIR" SOURCE_ID="$source_id" python3 - <<'PY'
+import glob, os, sys, yaml
+inbox_path = os.environ["INBOX_PATH"]
+source_id = os.environ["SOURCE_ID"]
+with open(inbox_path, encoding="utf-8") as handle:
+    messages = (yaml.safe_load(handle) or {}).get("messages") or []
+valid_ids = [m.get("id") for m in messages if isinstance(m, dict) and m.get("id")]
+invalid_count = sum(not isinstance(m, dict) or not m.get("id") for m in messages)
+archive_hits = []
+for path in glob.glob(os.path.join(os.environ["ARCHIVE_DIR_PATH"], "*.yaml")):
+    with open(path, encoding="utf-8") as handle:
+        for message in (yaml.safe_load(handle) or {}).get("messages") or []:
+            if isinstance(message, dict) and message.get("id") == source_id and message.get("read") is True:
+                archive_hits.append(path)
+if valid_ids or invalid_count == 0 or len(archive_hits) != 1:
+    print(f"[inbox_archive] BLOCK repair: valid_ids={len(valid_ids)} invalid={invalid_count} archive_read_hits={len(archive_hits)}", file=sys.stderr)
+    sys.exit(2)
+print(f"[inbox_archive] repair preflight: valid_ids=0 invalid={invalid_count} archive_read_hits=1")
+PY
+
+    [ ! -e "$quarantine_file" ] || {
+        echo "[inbox_archive] BLOCK repair: quarantine already exists: $quarantine_file" >&2
+        return 2
+    }
+    cp -- "$INBOX" "$quarantine_file"
+    repair_tmp=$(mktemp "${INBOX%/*}/.ia_repair_XXXXXX.tmp")
+    printf 'messages: []\n' > "$repair_tmp"
+    mv "$repair_tmp" "$INBOX"
+    echo "[inbox_archive] Repaired orphan-only inbox; quarantine=$quarantine_file"
+}
+
+if [ "$REPAIR_MODE" = "--repair-orphans-from-archive" ]; then
+    (
+        flock -w 5 200 || exit 1
+        repair_orphans_from_archive "$REPAIR_SOURCE_ID"
+    ) 200>"$LOCKFILE"
+    exit $?
+fi
+
 inbox_archive_fast_path() {
     local inbox_path="$1"
     local archive_path="$2"
@@ -91,7 +142,7 @@ inbox_archive_fast_path() {
 
     if ! awk -v read_out="$read_tmp" -v unread_out="$unread_tmp" -v stats_out="$stats_tmp" '
 # Detect complex YAML in a single pass — replaces grep -Eq pre-scan
-/^[[:space:]][[:space:]][[:space:]][[:space:]][^[:space:]]/ {
+/^[[:space:]][[:space:]][[:space:]][[:space:]]/ {
     if (block_key != "") {
         line = $0
         sub(/^[[:space:]][[:space:]][[:space:]][[:space:]]/, "", line)
@@ -204,12 +255,12 @@ BEGIN {
 }
 /^[[:space:]]*messages:[[:space:]]*\[\][[:space:]]*$/ { empty_seen = 1; next }
 /^[[:space:]]*messages:[[:space:]]*$/ { next }
-/^[[:space:]]*-[[:space:]]*/ {
+/^-[[:space:]]/ {
     flush_msg()
     reset_msg()
     in_msg = 1
     line = $0
-    sub(/^[[:space:]]*-[[:space:]]*/, "", line)
+    sub(/^-[[:space:]]*/, "", line)
     key = line
     sub(/:.*/, "", key)
     val = line

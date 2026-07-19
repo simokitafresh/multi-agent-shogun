@@ -80,16 +80,20 @@ state_generation = hashlib.sha256(state_snapshot).hexdigest() if state_snapshot 
 fcntl.flock(state_lock.fileno(), fcntl.LOCK_UN)
 
 contract_line_re = re.compile(
-    r"(?:usage:|argument-hint|\$\{?[#@*0-9]|getopts|argparse|add_argument|sys\.argv|"
-    r"\b(?:exit|return|sys\.exit)\b|\b(?:echo|printf|print)\b|"
-    r"\b(?:rm|mv|cp|install|touch|mkdir|chmod|chown)\b|"
-    r"os\.(?:replace|rename|remove|unlink|mkdir)|(?:write_text|write_bytes)|"
-    r"open\s*\([^\n]*(?:['\"](?:a|w|x)[+b]?['\"])|atomic[_a-z]*write)",
+    r"(?:^\s*#\s*(?:usage|exit code|public (?:argument|output))\s*:|argument-hint|"
+    r"getopts|argparse|add_argument|sys\.argv|\$\{?[#@*0-9]|"
+    r"\b(?:exit|sys\.exit)\b|\b(?:echo|printf|print)\s*(?:\(|['\"]))",
     re.I,
 )
 
 def contract_sha256_text(text: str) -> str:
-    """Hash the externally observable CLI/exit/output/side-effect surface."""
+    """Hash the documented CLI arguments, exit codes and literal output format.
+
+    Filesystem writes and implementation calls are deliberately excluded: they
+    made every internal refactor look like an interface change.  Variable-only
+    diagnostic changes are likewise implementation detail; literal public
+    output and explicit ``# Public output:`` declarations remain contractual.
+    """
     surface = []
     for raw in text.splitlines():
         line = raw.strip()
@@ -343,6 +347,7 @@ skill_files = sorted(
 )
 missing: list[tuple[str, str, str]] = []
 stale: list[tuple[str, str, str]] = []
+deduped_stale = 0
 missing_example_paths: list[tuple[str, str, str]] = []
 unverified_side_effect_examples: list[str] = []
 total_refs = 0
@@ -406,13 +411,15 @@ for skill_file in skill_files:
             )
             baseline_iso = datetime.fromtimestamp(skill_freshness_time, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
             script_iso = datetime.fromtimestamp(resolved.stat().st_mtime, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
-            stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved), baseline_src, baseline_iso, script_iso))
             if str(entry.get("last_action_contract_sha256", "")) != current_hash:
+                stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved), baseline_src, baseline_iso, script_iso))
                 entry = dict(entry)
                 entry["last_action_contract_sha256"] = current_hash
                 hash_state["references"][state_key] = entry
                 actions_required += 1
                 state_dirty = True
+            else:
+                deduped_stale += 1
 
 if state_dirty:
     acquire_state_lock()
@@ -432,7 +439,7 @@ print(
     f"走査: {len(skill_files)} SKILL.md / script参照 {total_refs}件 / "
     f"参照あり {skills_with_refs}件 / roots={','.join(str(p.relative_to(repo_root)) if p.is_relative_to(repo_root) else str(p) for p in scan_roots)}"
 )
-print(f"契約hash action: required={actions_required}, deduped={max(0, len(stale) - actions_required)}")
+print(f"契約hash action: required={actions_required}, deduped={deduped_stale}")
 
 if state_corrupt:
     print(f"BLOCK: contract hash state is corrupt: {hash_state_path}")
@@ -515,25 +522,35 @@ done
 
 CACHE_TTL_SECONDS="${SKILL_REF_CACHE_TTL_SECONDS:-30}"
 RAW_ROOTS="${SKILL_REF_DIRS:-skills:.claude/skills:.codex/skills}"
-SCRIPT_MTIME="$(stat -c %Y "$0" 2>/dev/null || printf '0')"
-SKILL_MTIME="0"
-IFS=':' read -r -a SKILL_REF_ROOT_ARRAY <<< "$RAW_ROOTS"
-for raw_root in "${SKILL_REF_ROOT_ARRAY[@]}"; do
-    [ -n "$raw_root" ] || continue
-    expanded_root="${raw_root/#\~/$HOME}"
-    case "$expanded_root" in
-        /*) skill_root="$expanded_root" ;;
-        *) skill_root="$REPO_ROOT/$expanded_root" ;;
-    esac
-    [ -d "$skill_root" ] || continue
-    root_mtime="$(find "$skill_root" -name SKILL.md -printf '%T@\n' 2>/dev/null | sort -nr | head -1 | cut -d. -f1)"
-    if [ -n "${root_mtime:-}" ] && [ "$root_mtime" -gt "$SKILL_MTIME" ] 2>/dev/null; then
-        SKILL_MTIME="$root_mtime"
-    fi
-done
+
+# Cache identity is the complete result-determining input, not a maximum mtime.
+# This intentionally invalidates within TTL for verified-state changes, changes
+# to any (including non-max-mtime) SKILL.md, and every referenced script.
+INPUT_SIGNATURE="$({
+    printf 'gate\0'; sha256sum "$0" 2>/dev/null || true
+    printf 'roots\0%s\0' "$RAW_ROOTS"
+    printf 'record_verified\0%s\0' "${SKILL_REF_RECORD_VERIFIED:-0}"
+    state_file="${SKILL_REF_HASH_STATE:-$REPO_ROOT/logs/skill_script_refs_verified.json}"
+    printf 'state\0'; sha256sum "$state_file" 2>/dev/null || printf 'missing\n'
+    IFS=':' read -r -a signature_roots <<< "$RAW_ROOTS"
+    for raw_root in "${signature_roots[@]}"; do
+        [ -n "$raw_root" ] || continue
+        expanded_root="${raw_root/#\~/$HOME}"
+        case "$expanded_root" in /*) skill_root="$expanded_root" ;; *) skill_root="$REPO_ROOT/$expanded_root" ;; esac
+        [ -d "$skill_root" ] || continue
+        while IFS= read -r -d '' skill_file; do
+            printf 'skill\0%s\0' "$skill_file"; sha256sum "$skill_file"
+            while IFS= read -r ref; do
+                [ -n "$ref" ] || continue
+                case "$ref" in /*) ref_path="$ref" ;; ~/*) ref_path="${ref/#\~/$HOME}" ;; *) ref_path="$REPO_ROOT/$ref" ;; esac
+                printf 'ref\0%s\0' "$ref"; sha256sum "$ref_path" 2>/dev/null || printf 'missing\n'
+            done < <(grep -Eo '(bash|sh|python3?|node|ruby|perl)[[:space:]]+[^[:space:]`'"'"'"|;&)]*\.(sh|py|js)' "$skill_file" 2>/dev/null | awk '{print $2}' | sort -u)
+        done < <(find "$skill_root" -name SKILL.md -type f -print0 | sort -z)
+    done
+} | sha256sum | awk '{print $1}')"
 
 if [ "${SKILL_REF_DISABLE_CACHE:-0}" != "1" ] && [ "$CACHE_TTL_SECONDS" -gt 0 ] 2>/dev/null; then
-    CACHE_KEY="${REPO_ROOT//[^A-Za-z0-9._-]/_}_${RAW_ROOTS//[^A-Za-z0-9._-]/_}_${SCRIPT_MTIME}_${SKILL_MTIME}"
+    CACHE_KEY="${REPO_ROOT//[^A-Za-z0-9._-]/_}_${INPUT_SIGNATURE}"
     CACHE_BASE="/tmp/shogun_gate_skill_script_refs_${CACHE_KEY}"
     # Single cache file: first line = exit code, remaining lines = output.
     # Eliminates the race window between writing CACHE_OUT and CACHE_CODE separately.

@@ -46,6 +46,16 @@ deploy_task_guard_yaml_arg_order() {
     return 0
 }
 
+deploy_task_guard_direct_yaml_misuse() {
+    [ "${1:-}" = "--direct" ] || return 0
+    local direct_cmd="${3:-}"
+    if [[ "$direct_cmd" == */* || "$direct_cmd" == *.yaml || "$direct_cmd" == *.yml ]]; then
+        echo "BLOCK: --direct expects a cmd_id, not a YAML path. Use: deploy_task.sh --yaml <file> <ninja>" >&2
+        return 2
+    fi
+    return 0
+}
+
 deploy_task_early_target_from_args() {
     local first="${1:-}"
     shift || true
@@ -73,6 +83,7 @@ deploy_task_early_target_known() {
 
 if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; then
     deploy_task_guard_yaml_arg_order "$@" || exit $?
+    deploy_task_guard_direct_yaml_misuse "$@" || exit $?
     _dt_early_target="$(deploy_task_early_target_from_args "$@")"
     if [ -z "$_dt_early_target" ] || [ "${_dt_early_target,,}" = "none" ] || [[ "$_dt_early_target" == cmd_* ]]; then
         echo "ERROR: ninja_name is required and must be a configured agent, not '${_dt_early_target:-empty}'." >&2
@@ -392,6 +403,57 @@ deploy_task_guard_worker_assignment() {
     esac
 }
 
+deploy_task_yaml_transaction_begin() {
+    local task_file="$1" source_file="$2" ninja_name="$3" parent_cmd="$4"
+    local report_filename
+    DEPLOY_TASK_YAML_TX_DIR=$(mktemp -d) || return 1
+    DEPLOY_TASK_YAML_TX_TASK="$task_file"
+    cp -p -- "$task_file" "$DEPLOY_TASK_YAML_TX_DIR/task.before" || return 1
+    report_filename=$(FIELD_GET_NO_LOG=1 field_get "$source_file" report_filename "" 2>/dev/null || true)
+    [ -n "$report_filename" ] || report_filename="${ninja_name}_report_${parent_cmd}.yaml"
+    DEPLOY_TASK_YAML_TX_REPORT="$SCRIPT_DIR/queue/reports/$report_filename"
+    if [ -f "$DEPLOY_TASK_YAML_TX_REPORT" ]; then
+        cp -p -- "$DEPLOY_TASK_YAML_TX_REPORT" "$DEPLOY_TASK_YAML_TX_DIR/report.before" || return 1
+        DEPLOY_TASK_YAML_TX_REPORT_EXISTED=1
+    else
+        DEPLOY_TASK_YAML_TX_REPORT_EXISTED=0
+    fi
+    DEPLOY_TASK_YAML_TX_ARMED=1
+}
+
+deploy_task_yaml_transaction_rollback() {
+    [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" = "1" ] || return 0
+    DEPLOY_TASK_EXIT_NUDGE_ARMED=0
+    DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
+    cp -p -- "$DEPLOY_TASK_YAML_TX_DIR/task.before" "${DEPLOY_TASK_YAML_TX_TASK}.rollback"
+    mv -f -- "${DEPLOY_TASK_YAML_TX_TASK}.rollback" "$DEPLOY_TASK_YAML_TX_TASK"
+    if [ "${DEPLOY_TASK_YAML_TX_REPORT_EXISTED:-0}" = "1" ]; then
+        cp -p -- "$DEPLOY_TASK_YAML_TX_DIR/report.before" "${DEPLOY_TASK_YAML_TX_REPORT}.rollback"
+        mv -f -- "${DEPLOY_TASK_YAML_TX_REPORT}.rollback" "$DEPLOY_TASK_YAML_TX_REPORT"
+    elif [ -f "${DEPLOY_TASK_YAML_TX_REPORT:-}" ]; then
+        rm -f -- "$DEPLOY_TASK_YAML_TX_REPORT"
+    fi
+    log "YAML-TRANSACTION: rollback restored task/report; inbox publication=0"
+    DEPLOY_TASK_YAML_TX_ARMED=0
+    DEPLOY_TASK_YAML_TX_ISSUED_AT=""
+    DEPLOY_TASK_YAML_TX_ISSUED_CMD=""
+    rm -f -- "$DEPLOY_TASK_YAML_TX_DIR/task.before" "$DEPLOY_TASK_YAML_TX_DIR/report.before"
+    rmdir -- "$DEPLOY_TASK_YAML_TX_DIR" 2>/dev/null || true
+}
+
+deploy_task_yaml_transaction_commit() {
+    [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" = "1" ] || return 0
+    DEPLOY_TASK_YAML_TX_ARMED=0
+    rm -f -- "$DEPLOY_TASK_YAML_TX_DIR/task.before" "$DEPLOY_TASK_YAML_TX_DIR/report.before"
+    rmdir -- "$DEPLOY_TASK_YAML_TX_DIR" 2>/dev/null || true
+    if [ -n "${DEPLOY_TASK_YAML_TX_ISSUED_AT:-}" ]; then
+        log "[ISSUED_AT] Recorded: ${DEPLOY_TASK_YAML_TX_ISSUED_AT} (${DEPLOY_TASK_YAML_TX_ISSUED_CMD})"
+    fi
+    DEPLOY_TASK_YAML_TX_ISSUED_AT=""
+    DEPLOY_TASK_YAML_TX_ISSUED_CMD=""
+    log "YAML-TRANSACTION: committed task/report with delivery"
+}
+
 deploy_task_exit_cleanup() {
     local exit_status=$?
     local finished_us wall_ms residual_ms residual_pct finalize_ms
@@ -424,6 +486,9 @@ deploy_task_exit_cleanup() {
             deploy_task_append_issue_event "blocked" "exit_${exit_status}"
         fi
         DEPLOY_TASK_ISSUE_TERMINAL_RECORDED=1
+    fi
+    if [ "$exit_status" -ne 0 ]; then
+        deploy_task_yaml_transaction_rollback || true
     fi
     deploy_task_exit_nudge
     deploy_task_release_ninja_lock
@@ -1030,6 +1095,7 @@ cleanup_none_task_files() {
 
 parse_deploy_task_args() {
     deploy_task_guard_yaml_arg_order "$@" || exit $?
+    deploy_task_guard_direct_yaml_misuse "$@" || exit $?
     DIRECT_MODE=false
     NINJA_NAME=""
     CMD_ID=""
@@ -3373,7 +3439,7 @@ generate_report_template() {
     local task_id="$2"
     local parent_cmd="$3"
     local project="$4"
-    local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+    local task_file="${5:-$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml}"
     local report_file=""
     local report_rel_path=""
 
@@ -5755,24 +5821,30 @@ if not key_lines:
     print('[INJECT_GLD] WARN: no key lines extracted from §11', file=sys.stderr)
     sys.exit(0)
 
-# 既存の growth_loop_defense を除去
+# 既存の growth_loop_defense をYAML node境界で除去する。
+# quote/styleに依存した行regexは正規化後のsingle-quote listを孤立させるため禁止。
 with open(task_file, encoding='utf-8') as f:
     raw = f.read()
 
 raw_lines = raw.split('\n')
-new_lines = []
-skip = False
-for line in raw_lines:
-    if line.startswith('  growth_loop_defense:'):
-        skip = True
-        continue
-    if skip:
-        if re.match(r'  - "', line):
-            continue
-        else:
-            skip = False
-    if not skip:
-        new_lines.append(line)
+new_lines = raw_lines
+try:
+    root_node = yaml.compose(raw)
+    task_node = root_node
+    if isinstance(root_node, yaml.MappingNode):
+        for key_node, value_node in root_node.value:
+            if key_node.value == 'task':
+                task_node = value_node
+                break
+    if isinstance(task_node, yaml.MappingNode):
+        for key_node, value_node in task_node.value:
+            if key_node.value == 'growth_loop_defense':
+                start = key_node.start_mark.line
+                end = value_node.end_mark.line
+                new_lines = raw_lines[:start] + raw_lines[end:]
+                break
+except yaml.YAMLError:
+    sys.exit(1)
 
 inject_lines = ['  growth_loop_defense:']
 for kl in key_lines:
@@ -9238,7 +9310,14 @@ record_issued_at_once() {
         log "[ISSUED_AT] Preserved: ${existing_issued_at} (retry ${cmd_id})"
         return 0
     fi
-    yaml_field_set_batch "$task_file" "task" "issued_at=$timestamp" "issued_cmd_id=$cmd_id"
+    if ! yaml_field_set_batch "$task_file" "task" "issued_at=$timestamp" "issued_cmd_id=$cmd_id"; then
+        return 1
+    fi
+    if [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" = "1" ]; then
+        DEPLOY_TASK_YAML_TX_ISSUED_AT="$timestamp"
+        DEPLOY_TASK_YAML_TX_ISSUED_CMD="$cmd_id"
+        return 0
+    fi
     log "[ISSUED_AT] Recorded: ${timestamp} (${cmd_id})"
 }
 
@@ -10578,8 +10657,41 @@ notify_initial_deploy_ntfy_once() {
 
 deploy_task_apply_task_mutations() {
     local ninja_name="${1:-$NINJA_NAME}"
-    local task_file="$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml"
+    local task_file="${2:-$SCRIPT_DIR/queue/tasks/${ninja_name}.yaml}"
     local task_status
+
+    # 全injectorを同一dirの作業copyへ適用し、全validation PASS後に1回だけ公開する。
+    # 後段FAIL時は実taskのbytes/SHAを不変に保つ。
+    if [ "${DEPLOY_TASK_MUTATION_CANDIDATE:-0}" != "1" ]; then
+        local mutation_candidate
+        mutation_candidate=$(mktemp "${task_file}.mutation.XXXXXX") || return 1
+        if ! cp -p -- "$task_file" "$mutation_candidate"; then
+            rm -f "$mutation_candidate"
+            return 1
+        fi
+        if ! DEPLOY_TASK_MUTATION_CANDIDATE=1 deploy_task_apply_task_mutations "$ninja_name" "$mutation_candidate"; then
+            rm -f "$mutation_candidate"
+            return 1
+        fi
+        if [ "${DEPLOY_TASK_TEST_FAIL_AFTER_MUTATIONS:-0}" = "1" ]; then
+            rm -f "$mutation_candidate"
+            return 1
+        fi
+        if ! deploy_task_guard_task_yaml_syntax "mutation_candidate_pre_publish" "$mutation_candidate" "$ninja_name"; then
+            rm -f "$mutation_candidate"
+            return 1
+        fi
+        if ! mv -f -- "$mutation_candidate" "$task_file"; then
+            rm -f "$mutation_candidate"
+            return 1
+        fi
+        return 0
+    fi
+
+    if [ "${DEPLOY_TASK_TEST_MUTATE_AND_FAIL:-0}" = "1" ]; then
+        printf '\n  test_partial_mutation: true\n' >>"$task_file"
+        return 1
+    fi
 
     task_status=$(field_get "$task_file" "status" "unknown")
 
@@ -10736,7 +10848,7 @@ deploy_task_apply_task_mutations() {
     if [ -z "${task_id:-}" ]; then
         task_id="${_ac_task_id:-}"
     fi
-    deploy_task_mutation_phase report_publication generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project" || return $?
+    deploy_task_mutation_phase report_publication generate_report_template "$ninja_name" "$task_id" "$parent_cmd" "$project" "$task_file" || return $?
     inject_parent_contract "$task_file" "$SCRIPT_DIR/queue/reports/${report_filename:-}" "$ninja_name" \
         || { log "FATAL: parent contract injection failed"; return 1; }
     inject_done_redeploy_hints "$task_file" || true
@@ -10805,6 +10917,110 @@ PY
     esac
 }
 
+# D006 is an unconditional safety boundary.  Reject task sources that require
+# signalling an external process before reset_stale_fields can publish the
+# source into queue/tasks or create a report/inbox event.  Explanations of the
+# prohibition remain valid input; the guard targets executable/imperative
+# requirements, not the words themselves.
+deploy_task_destructive_signal_precheck() {
+    local source_file="$1" cmd_id="${2:-}"
+    python3 - "$source_file" "$cmd_id" <<'PY'
+import re
+import shlex
+import sys
+
+import yaml
+
+path, cmd_id = sys.argv[1:3]
+try:
+    raw = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except Exception as exc:
+    print(f"BLOCK: destructive signal preflight could not parse source: {exc}", file=sys.stderr)
+    raise SystemExit(2)
+
+source = raw.get("commands", raw)
+if cmd_id:
+    if isinstance(source, dict) and cmd_id in source:
+        task = source[cmd_id]
+    elif isinstance(source, list):
+        task = next((item for item in source if isinstance(item, dict) and item.get("id") == cmd_id), {})
+    else:
+        task = raw.get("task", raw)
+else:
+    task = raw.get("task", raw)
+if not isinstance(task, dict):
+    raise SystemExit(0)
+
+def flatten_acs(value):
+    if isinstance(value, dict):
+        values = value.values()
+    elif isinstance(value, list):
+        values = value
+    else:
+        values = [value]
+    out = []
+    for value in values:
+        if isinstance(value, dict):
+            for key in ("description", "command", "check", "criteria", "title"):
+                if value.get(key):
+                    out.append(str(value[key]))
+            for check in value.get("checks", []) if isinstance(value.get("checks"), list) else []:
+                out.append(str(check.get("check", "") if isinstance(check, dict) else check))
+        elif value:
+            out.append(str(value))
+    return out
+
+texts = [str(task.get(key) or "") for key in ("purpose", "command")]
+texts.extend(flatten_acs(task.get("acceptance_criteria") or task.get("ac") or []))
+
+safe_explanation = re.compile(
+    r"D006|禁止|禁則|違反|遮断|BLOCK|ブロック|検出|発火|参照|説明|例示|"
+    r"要求.{0,12}(?:場合|なら)|(?:使うな|実行するな|してはならない)", re.I
+)
+imperative_signal = re.compile(
+    r"(?:外部|別|他の|対象)?(?:プロセス|daemon|デーモン|PID|pane|ペイン).{0,30}"
+    r"(?:kill|pkill|killall|signal|シグナル|終了させ|停止させ).{0,20}"
+    r"(?:実行|送信|行う|せよ|すること|故障注入)", re.I
+)
+process_kill_fault = re.compile(
+    r"(?:process[ _-]?kill|プロセスkill).{0,20}(?:故障注入|実行|行う|せよ)", re.I
+)
+
+def has_signal_command(line):
+    """Recognize kill-family commands after shell wrappers and their args."""
+    try:
+        tokens = shlex.split(line, posix=True)
+    except ValueError:
+        tokens = re.split(r"\s+", line)
+    signal_commands = {"kill", "pkill", "killall"}
+    wrappers = {"env", "timeout", "command", "nohup", "nice", "setsid"}
+    for token in tokens:
+        normalized = token.strip(";|&(){}").rsplit("/", 1)[-1].lower()
+        if normalized in signal_commands:
+            return True
+        # Wrapper names are intentionally recognized while scanning through
+        # options, durations and VAR=value arguments to the eventual command.
+        if normalized in wrappers or token.startswith("-") or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", token):
+            continue
+    return False
+
+violations = []
+for text in texts:
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or safe_explanation.search(line):
+            continue
+        if has_signal_command(line) or imperative_signal.search(line) or process_kill_fault.search(line):
+            violations.append(line)
+
+if violations:
+    print("BLOCK: D006違反の外部プロセスsignal要求を配備前に検出。", file=sys.stderr)
+    print("positive_rule: phase永続保存後に対象プロセス自身が非0終了するテスト専用failpointを使え。", file=sys.stderr)
+    print(f"evidence: {violations[0]}", file=sys.stderr)
+    raise SystemExit(2)
+PY
+}
+
 # ═══════════════════════════════════════
 # メイン処理
 # ═══════════════════════════════════════
@@ -10828,6 +11044,9 @@ deploy_task_main() {
     DEPLOY_TASK_DRAFT_REVIEW_CMD_ID=""
     DEPLOY_TASK_DRAFT_REVIEW_NINJA=""
     DEPLOY_TASK_DRAFT_REVIEW_TYPE=""
+    DEPLOY_TASK_YAML_TX_ARMED=0
+    DEPLOY_TASK_YAML_TX_ISSUED_AT=""
+    DEPLOY_TASK_YAML_TX_ISSUED_CMD=""
     trap deploy_task_exit_cleanup EXIT
 
     local pane_target ctx_pct
@@ -10926,7 +11145,7 @@ deploy_task_main() {
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi
-    if [ -n "$CMD_ID" ]; then
+    if [ -n "$CMD_ID" ] && { [ "$DIRECT_MODE" != true ] || [ -z "$YAML_FILE" ]; }; then
         record_issued_at_once "$task_yaml" "$CMD_ID" "$(date '+%Y-%m-%dT%H:%M:%S')" || return 1
     fi
 
@@ -10967,6 +11186,10 @@ except Exception:
             # Validation-before-mutation: syntax, natural-boundary and required
             # source contracts must all pass while the current task is untouched.
             if [ "$DIRECT_MODE" = true ] && [ -n "$YAML_FILE" ]; then
+                deploy_task_yaml_transaction_begin "$task_yaml" "$YAML_FILE" "$NINJA_NAME" "$CMD_ID" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 1
+                }
                 [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_source_contract_precheck "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 2
@@ -10974,6 +11197,10 @@ except Exception:
                 deploy_task_ci_fix_run_id_precheck "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
+                }
+                deploy_task_destructive_signal_precheck "$YAML_FILE" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 2
                 }
                 deploy_task_direct_quality_contract_precheck "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
@@ -10989,14 +11216,23 @@ except Exception:
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 2
                 }
+                deploy_task_destructive_signal_precheck "$cmd_source_file" "$CMD_ID" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 2
+                }
             fi
-            reset_stale_fields "$NINJA_NAME"
+            # --yaml source replaces the full task atomically; mutating the old
+            # destination first breaks validation-before-publication on failure.
+            if [ "$DIRECT_MODE" != true ] || [ -z "$YAML_FILE" ]; then
+                reset_stale_fields "$NINJA_NAME"
+            fi
             if [ "$DIRECT_MODE" = true ]; then
             if [ -n "$YAML_FILE" ]; then
                 deploy_task_direct_yaml_publish "$task_yaml" "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                 }
+                _STALE_RESET_DONE=1
                 record_issued_at_once "$task_yaml" "$CMD_ID" "$(date '+%Y-%m-%dT%H:%M:%S')" || return 1
                 if deploy_task_direct_yaml_is_preinjected "$task_yaml"; then
                     DEPLOY_TASK_DIRECT_YAML_PREINJECTED=1
@@ -11261,6 +11497,7 @@ except Exception:
     deploy_task_check_deadline "after_inbox_write" || return $?
     DEPLOY_TASK_EXIT_NUDGE_SENT=1
     DEPLOY_TASK_EXIT_NUDGE_ARMED=0
+    deploy_task_yaml_transaction_commit
     deploy_task_wall_phase_checkpoint delivery
 
     # Canonical receipt order is delivery -> post_verify -> post_delivery.

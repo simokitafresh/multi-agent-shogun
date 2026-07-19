@@ -1,0 +1,236 @@
+# Simple OCR — お薬手帳OCR Webアプリ（医療現場向け）
+# 核心知識。忍者配備時に自動ロードされる
+# 原則: お薬手帳用に開発されたアプリ（殿定義）
+id: simple-ocr
+name: "Simple OCR"
+path: "/mnt/c/Python_app/Simple-OCR"
+repo: "https://github.com/simokitafresh/Simple-OCR"
+status: active
+
+# === 技術スタック ===
+tech_stack:
+  backend: "Flask + Flask-SocketIO (gevent)"
+  frontend: "HTML5 + Bootstrap 5 + Socket.IO"
+  ocr: "4エンジン切替(ocr_engines.py): google_text / google_document / claude_vision / two_stage"
+  db: "SQLite (ocr_logs + users + exclusion_patterns)"
+  hosting: "Render (gunicorn)"
+  realtime: "WebSocket (Flask-SocketIO)"
+  ai: "Anthropic Claude Haiku (two_stageのStage 2 + claude_visionエンジン)"
+
+# === アーキテクチャ ===
+architecture:
+  pattern: "モノリシック Flask アプリ"
+  entry_point: "app.py"
+  key_components:
+    - "SessionManager — WebSocketセッション管理(PC-スマホ連携)"
+    - "ocr_engines.py — OCRエンジン抽象化+4エンジン実装(cmd_2781)"
+    - "exclusion_manager — OCR結果から定型文を自動除去（元のシステムの整形レイヤー）"
+    - "admin/ — 管理画面(ログ/統計/除外パターン/ユーザー管理/OCRモード切替)"
+
+# === OCRパイプライン設計（核心・殿設計 2026-05-15） ===
+ocr_pipeline:
+  # 3層分離原則（殿設計）:
+  #   Stage 1: Google Vision DOCUMENT_TEXT_DETECTION → 座標付きブロック
+  #   Stage 2: Claude Haiku → 構造化JSON出力（座標から列・薬・用法を構造化）
+  #   Stage 3: Pythonスクリプト → 構造化JSONから不要項目除去→コピペ用テキスト生成
+  #
+  # ★設計思想（殿裁定 2026-05-15）:
+  #   - Stage 2はHaikuの得意分野=情報の構造化に専念。出力は構造化JSON
+  #   - Stage 3はdeterministic。不要項目の除去+整形をスクリプトで行う（プロンプトより確実）
+  #   - 不要項目の変更はStage 3スクリプト側だけで完結（プロンプト再設計不要）
+  #   - お薬手帳の整形は別レイヤー（元のシステムの設計思想を継承）
+  #   - Haikuプロンプトに整形ロジックを混ぜるな（cmd_2787で分離済み）
+  #
+  # 構造化JSONスキーマ v3（殿確定 2026-05-16）:
+  #   root:
+  #     patient_info: {patient_name}
+  #     date: {prescription_date, dispensing_date}
+  #     clinic: {name, corporation}
+  #     doctor: {name}
+  #     pharmacy: {name}
+  #     prescription_groups[]:       # ★用法の記載位置でグループ化
+  #       schedule: {daily_count, timing, duration}
+  #       drugs[]:
+  #         number
+  #         drug_info: {drug_name, formulation, manufacturer}  # ★strengthは削除。500mg等はdrug_nameの一部（容量違い区別のため）
+  #         dosage: {total_amount, single_dose}
+  #         drug_category
+  #         note                     # 変更不可指示/調剤指示/特記事項のみ
+  #
+  #   削除済み（殿裁定 2026-05-16）:
+  #     patient_id, pharmacy.{address,tel,fax,receipt_number}, pharmacy_notes全体,
+  #     instruction全体(route/site/guidance/storage/contraindication),
+  #     generic_prefix, alternative_form, strength(drug_nameに統合), 般指/殺指, 薬局フッター
+  #
+  #   プロンプトルール（殿裁定 2026-05-16、14回試行で確立）:
+  #     【グルーピング最重要ルール】
+  #     - お薬手帳ではグループの一番下に用法容量が記載される（殿設計）
+  #     - 用法テキストの出現位置のみでグループ区切りを判定。処方番号でグループ判断するな（殿厳命）
+  #     - 同じ値の用法が複数箇所にあればそれぞれ別グループ（sample2薬2と3+4: 両方「分3毎食後7日分」だが別記載→別group）
+  #     - 各薬剤は自分の直下の用法に属する。直上(前グループ)の用法を流用するな。処方日数の誤割り当ては重大エラー
+  #     - 「かゆい時に塗布」は不可分でschedule.timing（殿: 日本語では「塗布するタイミングはかゆいとき」と同義）
+  #     - 「1日N回塗布」→ daily_count=Nのみ
+  #     - schedule欠落(duration等)は重大エラー。全要素漏れなく抽出
+  #     【薬名ルール】
+  #     - 処方名と一般名の排他: 処方名優先。なければ一般名（殿裁定）
+  #     - drug_nameに500mg等の規格を含めたまま（250mg等の容量違いがあるから。殿裁定）
+  #     - manufacturerのみ分離
+  #     【除外ルール】
+  #     - instruction(route/site/guidance/storage/contraindication): グルーピング判断に使うが出力に含めない
+  #     - 般指/殺指/薬局フッター除外
+  #     - noteには変更不可指示/調剤指示/特記事項のみ。服薬指導は含めない
+  #     【OCR補正ルール】
+  #     - 丸数字→アラビア数字変換。「様」「■」除去
+  #     - OCRで番号欠落時はブロック順から補番（Google Visionが①⑦⑧のみ検出、②③④⑤⑥欠落の実績あり）
+  #
+  #   正解グルーピング（sample確認済み）:
+  #     sample1: group0=薬1+2(かゆい時に塗布), group1=薬3(顔用かゆい時に塗布), group2=薬4+5(1日2回), group3=薬6(1日1回夕食後14日分), group4=薬7+8(1日2回朝・夕食後7日分)
+  #     sample2: group0=薬1(分1朝食後3日分), group1=薬2(分3毎食後7日分), group2=薬3+4(分3毎食後7日分), group3=薬5(分2朝夕食後7日分)
+  #
+  #   プロンプト安定性: ★3回連続ACHIEVED (2026-05-16 temperature=0 + Stage 1.5)
+  #   スプレッドシート: https://docs.google.com/spreadsheets/d/1Q_SpqVihE77G6qmiv1dIhpwZlRSSbnHsDV91-oxmPac
+  #
+  #   安定化の鍵（なぜなぜ7回で特定 2026-05-16）:
+  #     問題: Haikuの数値比較（座標推論）が不安定 → グルーピングが崩れる
+  #     解決: Stage 1.5（deterministic前処理）を導入
+  #       - regexでscheduleブロックを事前検出（_detect_schedule_blocks()）
+  #       - y座標範囲を計算しプロンプトに注入（group N: y=A〜Bの薬剤 → schedule: "..."）
+  #       - LLMは数値比較不要。構造化（薬名分離/ヘッダ抽出）だけに専念
+  #     原理: LLMの弱点を環境（deterministic前処理）で補う = 知性の外部化
+  #
+  #   修正履歴:
+  #     (1) 一般名行除外の明示 — 【般】【桜】(後)パターン → 一般名誤カウント解消
+  #     (2) グルーピングルール明確化 — 「scheduleと直前scheduleの間の全薬剤」
+  #     (3) temperature=0 — 出力の決定論的安定化
+  #     (4) Stage 1.5導入 — schedule検出+y範囲注入でLLMの座標推論を排除
+  #     (5) 横向き画像対応 — _detect_reading_axis()でx/y軸自動判定+ブロックソート
+  #     (6) Stage 3実装 — JSON→コピペ用テキスト整形(1日N回変換+メーカー名除去+dosage/duration区別)
+  #     (7) ブロックフィルタリング — _filter_non_medical_blocks()で不要ブロック除去(薬局連絡先/服薬指導/記入欄)。12%平均削減
+  #     (8) デフォルトエンジン変更 — app.py DEFAULT_OCR_ENGINE='two_stage'
+  #     (9) prompt caching基盤 — cache_control ephemeral。Haiku=1055tok<2048最低要件で未発動。Sonnet(1024最低)切替時に自動有効化
+  #     (10) 薬名結合ルール追加 — 2段折返しの薬名ブロックを結合(デキストロメトルファン等)
+  #     (11) dosage/duration区別 — 「N日分」はduration。dosageに入れるな
+  #     (12) drug_category修正 — 「内服」「外用」はscheduleの投与経路でありcategoryではない
+  #     (13) instruction除外強化 — 保管指導・服薬指導はnoteにも入れない
+  #
+  # 進行状態:
+  #   - ✅ Stage 1: Google Vision DOCUMENT_TEXT_DETECTION
+  #   - ✅ Stage 1.5: schedule検出 + ブロックフィルタ + 横向き対応 + y範囲注入
+  #   - ✅ Stage 2: プロンプトv3 + temperature=0 + prompt caching基盤
+  #   - ✅ Stage 3: JSON→コピペ用テキスト整形
+  #   - ✅ デフォルトエンジン: two_stage（本番反映済み）
+  #   - ✅ 6サンプル×3回=18回全PASS(縦3+横3): sample1-2(小児科/内科), sample3-4(耳鼻咽喉科), sample5-6(内科)
+  #   - 次: 本番動作確認 / 薬局フォーマット学習(案) / Stage 3 gate(品質自動検証案)
+
+  engines:
+    google_text:
+      description: "Google Vision TEXT_DETECTION。単純テキスト抽出"
+      exclusion: "適用される(app.py L576-582)"
+    google_document:
+      description: "Google Vision DOCUMENT_TEXT_DETECTION。座標付きブロック抽出"
+      exclusion: "適用される"
+    claude_vision:
+      description: "Claude Haiku直接画像認識"
+      exclusion: "適用される"
+    two_stage:
+      description: "Stage 1: DOCUMENT_TEXT_DETECTION → Stage 1.5: regex schedule検出 → Stage 2: Claude Haiku(構造化JSON v3)"
+      exclusion: "意図的にスキップ。Stage 3スクリプトが整形を担当する設計"
+      temperature: 0
+      model: "TWO_STAGE_CLAUDE_MODEL環境変数（デフォルト: claude-haiku-4-5-20251001）"
+
+  stage1_5:
+    file: "ocr_engines.py _detect_schedule_blocks()"
+    role: "deterministic前処理。regexでscheduleブロック検出+y座標範囲計算→プロンプト注入"
+    why: "Haikuの座標数値比較が不安定→LLMから数値推論を排除し構造化だけに専念させる"
+
+  stage2_prompt:
+    file: "docs/two_stage_prompt_v3.txt（外部ファイル。ocr_engines.pyが読み込む）"
+    role: "構造化JSON v3出力。スキーマ+グルーピングルール+一般名除外ルール"
+    input: "プロンプト + Stage 1.5のschedule hint + OCR_LAYOUT_JSON"
+
+  exclusion_manager:
+    description: "パターンマッチで定型文を除去する仕組み。元のシステムの整形レイヤー"
+    file: "exclusion_manager.py"
+    db_table: "exclusion_patterns"
+    admin_ui: "管理画面から除外パターンを登録・管理可能"
+
+# === 3つの使い方モード ===
+modes:
+  - name: "PC受信+スマホ撮影"
+    route: "/pc + /mobile"
+    description: "QRコードでスマホ接続→撮影→WebSocketでPC即受信。メイン機能"
+  - name: "スタンドアロン"
+    route: "/standalone"
+    description: "1台で撮影からテキスト取得まで完結"
+  - name: "モバイル専用"
+    route: "/mobile"
+    description: "スマホだけで文字認識"
+
+# === DB設計 ===
+db_tables:
+  ocr_logs: "id, ocr_text, processed_text, text_length, line_count, image_size_kb, decode_time_ms, ocr_time_ms, exclusion_time_ms, total_time_ms, reduction_rate, applied_patterns_count"
+  users: "id, username, password_hash (管理画面認証)"
+  exclusion_patterns: "除外パターン管理"
+
+# === セキュリティ ===
+security:
+  image_retention: "1分で自動削除"
+  session: "UUID v4 セッションID"
+  admin_auth: "パスワードハッシュ(werkzeug)"
+  api_key: "環境変数 VISION_API_KEY + ANTHROPIC_API_KEY"
+
+# === 環境変数 ===
+env_vars:
+  - "VISION_API_KEY — Google Cloud Vision APIキー"
+  - "ANTHROPIC_API_KEY — Claude Haiku APIキー(two_stage/claude_vision用)"
+  - "TWO_STAGE_CLAUDE_MODEL — Stage 2モデル(デフォルト: claude-haiku-4-5-20251001)"
+  - "SECRET_KEY — Flask セッション秘密鍵"
+  - "INITIAL_ADMIN_PASSWORD — 初回管理者パスワード(デフォルト: admin123)"
+
+# === 実装履歴 ===
+implementation_history:
+  - cmd: cmd_2780
+    summary: "CoDD brownfield設計書逆生成"
+  - cmd: cmd_2781
+    summary: "OCRエンジン切替Phase 1-3。抽象化+4エンジン実装(google_text/google_document/claude_vision/two_stage)"
+  - cmd: cmd_2782
+    summary: "座標付き二段構えOCRパイプライン。DOCUMENT_TEXT_DETECTION+Claude Haiku。exclusion_managerはtwo_stageで意図的スキップ（Haikuが全部やる設計）"
+  - cmd: cmd_2783
+    summary: "整形テキスト出力+UI切替+本番push"
+  - cmd: cmd_2787
+    summary: "Haikuプロンプトをレイアウト忠実復元に限定。お薬手帳固有の解釈を除去"
+  - cmd: "殿+将軍直接(2026-05-16 session 1)"
+    summary: "スキーマv3確定(14回試行)+ocr_engines.py反映+Stage 1.5導入(regex schedule検出)+temperature=0+3回連続ACHIEVED"
+  - cmd: "殿+将軍直接(2026-05-16 session 2)"
+    summary: |
+      Stage 1.5拡張: 横向き画像対応(_detect_reading_axis)+ブロックフィルタ(_filter_non_medical_blocks 12%削減)
+      Stage 2修正: 薬名結合ルール+dosage/duration区別+drug_category修正+instruction除外強化
+      Stage 3実装: _format_structured_json(JSON→コピペ用テキスト。1日N回変換+メーカー名除去)
+      デフォルトエンジン: two_stage(app.py 6箇所)
+      prompt caching基盤: cache_control ephemeral(Haiku未発動/Sonnet切替時有効化)
+      6サンプル×3回=18回全PASS。本番push済み。設計書更新済み。
+
+# === コスト実測（2026-05-16） ===
+cost:
+  two_stage_haiku:
+    per_image: "$0.013 (~2.0円) ※ブロックフィルタ後"
+    detail: "sample2: in=6139 / sample3: in=4187 / sample6: in=4662"
+  two_stage_sonnet:
+    per_image: "$0.035 (~5.3円) ※推定。ブロックフィルタ後"
+    detail: "Haikuの約2.7倍。精度比較未実施"
+  model_switch: "TWO_STAGE_CLAUDE_MODEL=claude-sonnet-4-6-20250514"
+
+# === 次のアクション ===
+next_actions:
+  - topic: "本番動作確認"
+    detail: "Renderデプロイ後、実際のスマホ撮影でtwo_stage出力を確認"
+  - topic: "薬局フォーマット学習(案)"
+    detail: "同一薬局の構造パターンをDB蓄積し次回のschedule位置ヒントに再利用"
+  - topic: "Stage 3 gate(品質自動検証案)"
+    detail: "空group検出/group数≠schedule数不一致→自動リトライ"
+test_policy:
+  policy: "実装testは作成→PASS→即削除。永続化は具体的不変量のtest_necessity宣言付きcontractのみ"
+  positive_rule: "削除diffまたは宣言全件、宣言率N/N、契約混入0、境界内回帰リスク受容、deletion_justification非空、fixture被参照0、regression_justification非空、race PASS後contract外test削除を全て二値確認する"
+  reason: "消費済みtestの保守費・fixture・実行時間と境界所有の曖昧化を防ぐ"
+  holes_1_7: [deletion_diff, declaration_rate, contract_contamination_zero, boundary_regression_risk_accepted, deletion_justification, fixture_reference_zero, regression_justification_and_race_stop]
+  origin: "[[殿裁定_default_delete_test_20260719]] -> [[default_delete_test_policy]] -> [[全PJ共通契約]]"

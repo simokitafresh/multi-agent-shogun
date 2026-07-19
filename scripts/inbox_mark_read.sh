@@ -135,11 +135,11 @@ extract_bulletin_confirms() {
             }
             close(msg_filter_file)
         }
-        /^[[:space:]]*-[[:space:]]*/ {
+        /^-[[:space:]]/ {
             maybe_emit()
             reset_msg()
             line=$0
-            sub(/^[[:space:]]*-[[:space:]]*/, "", line)
+            sub(/^-[[:space:]]*/, "", line)
             key=line
             sub(/:.*/, "", key)
             val=line
@@ -152,7 +152,7 @@ extract_bulletin_confirms() {
             else if (key == "read") current_read=val
             next
         }
-        {
+        /^  [A-Za-z0-9_.-]+:[[:space:]]*/ {
             line=$0
             sub(/^[[:space:]]+/, "", line)
             key=line
@@ -244,40 +244,55 @@ while [ $attempt -lt $max_attempts ]; do
             # Mark specific msg_id: stateful awk pass (no python3)
             _cnt_file="/tmp/.imr_cnt_$$"
             awk -v id_file="$ID_LIST_FILE" -v cnt_file="$_cnt_file" '
+                function normalized_id(line,    value) {
+                    value=line
+                    if (value ~ /^- id:/) sub(/^- id:[[:space:]]*/, "", value)
+                    else if (value ~ /^  id:/) sub(/^  id:[[:space:]]*/, "", value)
+                    else return ""
+                    gsub(/^[ \t'"'"'"]*/, "", value)
+                    gsub(/[ \t'"'"'"]*$/, "", value)
+                    return value
+                }
+                function flush_record(    i,record_id,line) {
+                    if (record_count == 0) return
+                    record_id=""
+                    for (i=1; i<=record_count; i++) {
+                        if (record[i] ~ /^- id:/ || record[i] ~ /^  id:/) {
+                            record_id=normalized_id(record[i])
+                            break
+                        }
+                    }
+                    for (i=1; i<=record_count; i++) {
+                        line=record[i]
+                        if (record_id in wanted && line ~ /^  read:[[:space:]]*false[[:space:]]*$/) {
+                            sub(/read:[[:space:]]*false[[:space:]]*$/, "read: true", line)
+                            changed++
+                        }
+                        print line
+                    }
+                    delete record
+                    record_count=0
+                }
                 BEGIN {
                     changed=0
-                    current_id=""
+                    record_count=0
                     while ((getline wanted_id < id_file) > 0) wanted[wanted_id]=1
                     close(id_file)
                 }
                 {
-                    stripped=$0
-                    gsub(/^[[:space:]]+/,"",stripped)
-                    if (stripped ~ /^- /) {
-                        current_id=""
-                        inner=stripped
-                        sub(/^-[[:space:]]*/,"",inner)
-                        gsub(/^[[:space:]]+/,"",inner)
-                        if (inner ~ /^id:/) {
-                            current_id=inner
-                            sub(/^id:[[:space:]]*/,"",current_id)
-                            gsub(/^[ \t'"'"'"]*/,"",current_id)
-                            gsub(/[ \t'"'"'"]*$/,"",current_id)
-                        }
-                    } else if (stripped ~ /^id:/ && current_id=="") {
-                        current_id=stripped
-                        sub(/^id:[[:space:]]*/,"",current_id)
-                        gsub(/^[ \t'"'"'"]*/,"",current_id)
-                        gsub(/[ \t'"'"'"]*$/,"",current_id)
-                    } else if ($0 ~ /^  read:[[:space:]]*false[[:space:]]*$/ && current_id!="") {
-                        if (current_id in wanted) {
-                            sub(/read:[[:space:]]*false[[:space:]]*$/,"read: true")
-                            changed++
-                        }
+                    if ($0 ~ /^- /) {
+                        flush_record()
+                        record[++record_count]=$0
+                    } else if (record_count > 0) {
+                        record[++record_count]=$0
+                    } else {
+                        print
                     }
-                    print
                 }
-                END { print changed > cnt_file }
+                END {
+                    flush_record()
+                    print changed > cnt_file
+                }
             ' "$INBOX" > "$_tmp" || { rm -f "$_tmp" "$_cnt_file"; exit 1; }
             read -r _changed < "$_cnt_file" 2>/dev/null || _changed=0
             rm -f "$_cnt_file"

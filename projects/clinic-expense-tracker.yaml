@@ -1,0 +1,109 @@
+# =============================================================================
+# Clinic Expense Tracker Project Knowledge
+# =============================================================================
+# クリニック(若友会)の経費・証票ステータス管理。二層設計(SQLite+Drive)
+# 正本ソース: 将軍memo memory/project_clinic_expense_tracker.md (2026-06-10裁定群)
+
+project:
+  id: clinic-expense-tracker
+  name: "Clinic Expense Tracker"
+  repo: "https://github.com/simokitafresh/clinic-expense-tracker"
+  path: "/mnt/c/Python_app/clinic-expense-tracker"
+  language: python
+  created: "2026-06-10"
+  description: "クリニック(若友会)経費証票管理。会計士(佐瀬会計)への提出ステータス可視化"
+  gws_account: "karasuyama3387@gmail.com"
+  sheets_id: "1L_0zNoc3oY-YSmevzRuLnfwM7bnOXfFyzALD5SHzB_A"
+  design_gist: "cee4efc35e5b9a6b3f6f5723326bac3e"
+
+lord_rulings:
+  - "最大の痛み=現況がはっきりしないこと。現況可視化が最優先(2026-06-10 19:12)"
+  - "手順の正(19:15): (1)完全リスト=経費元21×月の全セル生成(マスタ=docs/02の21カテゴリ表が骨格。佐瀬メール起点は抜け漏れ→手戻り) (2)リストを佐瀬メール等の複数ソースで埋める (3)未提出の準備、1件片付けたらリスト1つ更新"
+  - "全部一気にやる必要はない。1ソースずつ(19:15)"
+  - "今後も使う仕組みだから古い時期から=2025-01起点。行追加で過去にも未来にも延長可能(19:17)"
+  - "見える化の目的=第三者(スタッフ等)にも頼める作業化(19:15)"
+  - "二層設計: 第1層=ローカルSQLite(テキストメタデータ正本)+FTS5 / 第2層=Google Drive(実ファイル)。三層記憶と同じ設計思想"
+  - "MF突合/OCR/Drive保存等は現況確定後に一つずつ"
+  - "取得済み=該当証票PDFがDriveに保存されていること。未取得は2種: 未取得(自動=gmail_api/cdp)/未取得(手動=manual)(2026-06-11 12:03)"
+  - "データ取得ルートを明確にせよ: Gmail API/CDP/手動スキャン/手動DL(2026-06-11 12:03)"
+  - "設定画面で経費元を設定・変更・保存。人間の判断がファースト。カテゴリと項目を自由に設定可能(2026-06-11 12:23)"
+  - "SSOT=Render上のアプリDB。設定画面で即反映→ローカルはdownload-dbで同期。双方向同期なし(2026-06-11 12:30)"
+
+core_rules:
+  - "DB: data/clinic_expense.db (SQLite+FTS5 bigram。日本語MATCH可)"
+  - "DB変更前にバックアップ必須(バックアップファースト・殿厳命)"
+  - "DB操作は直列配備(1忍者)のみ。並列禁止"
+  - "外部リポ: push to main禁止はL447適用外(家老がcmd完了処理でpush)。忍者はcommitまで"
+  - "Gmail取込: scripts/gmail_to_sqlite.py (単一プロセスAPI直叩き147ms/通+増分watermark+raw resume。gws CLI 1通毎起動は禁止=5.5秒/通)"
+  - "gws認証: token_cacheをAES-256-GCM復号でaccess_token再利用(L001)。環境変数=GOOGLE_WORKSPACE_CLI_ACCOUNT"
+  - "佐瀬メールパース: scripts/parse_sase_shortage.py (canonical/numbered 2形式。NFKC正規化の罠=L003)"
+  - "現況マトリクス生成: scripts/generate_master_and_status.py (--sheets --verifyで読み戻し検証)"
+  - "更新セルはmemo列に根拠gmail_id記録(ground truth追跡可能性)"
+  - "裏付けなきセルはnot_obtainedのまま残す(推定で埋めない=現況の正直な可視化)"
+
+db_state:  # 2026-06-11時点
+  mf_transactions: 3086
+  bank_transactions: 984
+  gmail_receipts: 1577  # 「201件」はresultSizeEstimate(推定値)の誤り
+  expense_sources: 21
+  monthly_status: "294セル(2025-01〜2026-06)。🟢submitted=143/🔴not_obtained=151"
+  known_findings:
+    - "滞留は2026-01から(3月からではない)"
+    - "2025年に常時🔴4の経費元=佐瀬リスト不在(要判別)"
+
+expense_sources_21:
+  - "請求書5: 日本電産/ネットプロテクションズ/アスクル/寺岡精工/スズケン"
+  - "SaaS2: サイボウズ/KING OF TIME"
+  - "カード1: セゾンプラチナビジネスAMEX(海外USD利用あり: OPENAI/CLAUDE.AI。引落=利用月+2ヶ月)"
+  - "銀行4: みずほ烏山2142363/三井住友目黒0910698/昭和信金0999236/昭和信金定期積金"
+  - "保険2: 国保/社保。帳簿2: 月計表/日計表。EC1: Amazonビジネス"
+
+accountant:
+  office: "佐瀬会計事務所(担当: 高橋)"
+  email: "sasekaikei@hotmail.co.jp"
+  mail_category: "shortage_list(不足リスト。canonical=（不足資料）/（受取済み分）形式)"
+  submit: "Google Driveフォルダ共有 or 郵送"
+
+data_quirks:
+  - "MF CSV: Shift-JIS(CP932)。UTF-8変換必要。MF_GROUP_NAME=若友会"
+  - "みずほ: .apiファイル(Shift-JIS TSV)。摘要は半角カナ。通帳PDFは画像=テキスト抽出不可"
+  - "三井住友/昭和信金: 画像PDFのみ(OCR必要)"
+  - "セゾン明細/インボイス: テキストPDF(適格請求書番号T2013301002884)"
+
+pending_decisions:
+  - "支払日・振込日と月セルの対応規則(アスクル2/27支払分=支払月か利用月か)"
+  - "annual/settlement経費のセル生成月(現状3月独自解釈=L002。佐瀬メールでは決算期R6.8-R7.7=7月末実態)"
+  - "2025年常時🔴4経費元の判別方針"
+
+completed_milestones:  # 2026-06-11
+  - "cmd_3277: gmail_receipts×経費元突合。61件not_obtained→obtained昇格"
+  - "cmd_3279: monthly_statusマトリクスWebアプリ実装(FastAPI+Jinja2)"
+  - "cmd_3283: Renderデプロイ+Basic Auth付きupload-db搬送"
+  - "cmd_3287: ステータス4色分類(自動黄/手動赤/取得済緑/提出済青)+取得ルート列追加"
+  - "cmd_3288: 経費元設定画面(/settings CRUD)+download-dbエンドポイント。SSOT=Render DB確立"
+
+architecture:  # 2026-06-11確立
+  ssot: "Render上のアプリDB(SQLite)。設定画面で即反映→ローカルはdownload-dbで同期"
+  sync_flow: "download-db(Render→local) → スクリプト実行 → upload-db(local→Render)。常に一方向"
+  status_definition:
+    obtained: "該当証票PDFがGoogle Driveに保存されている"
+    not_obtained_auto: "collection_method=gmail_api/cdpで自動取得可能だが未取得"
+    not_obtained_manual: "collection_method=manualで人間の物理操作が必要"
+    submitted: "会計士に提出済み"
+  collection_routes:
+    gmail_api: "ネットプロテクションズ/寺岡ペイオス/スズケン/サイボウズ/KING OF TIME"
+    cdp: "セゾンカード/Amazon"
+    manual: "日本電産/アスクル/みずほ/三井住友/昭和信金/昭和信金定期/国保/社保/月計表/日計表/法人負担/個別支出/確定申告/住民税"
+
+next_steps:
+  - "自動取得パイプライン: gmail_api 5経費元のPDF自動DL→Drive保存→status更新"
+  - "CDP取得パイプライン: セゾン/AmazonのPDF自動DL"
+  - "Step 2-2以降: 残ソース(Drive/MF/銀行)でのmonthly_status充填"
+  - "monthly_status編集UI(Webからセル状態を直接変更)"
+  - "2026年滞留(1月〜)の攻め方"
+test_policy:
+  policy: "実装testは作成→PASS→即削除。永続化は具体的不変量のtest_necessity宣言付きcontractのみ"
+  positive_rule: "削除diffまたは宣言全件、宣言率N/N、契約混入0、境界内回帰リスク受容、deletion_justification非空、fixture被参照0、regression_justification非空、race PASS後contract外test削除を全て二値確認する"
+  reason: "消費済みtestの保守費・fixture・実行時間と境界所有の曖昧化を防ぐ"
+  holes_1_7: [deletion_diff, declaration_rate, contract_contamination_zero, boundary_regression_risk_accepted, deletion_justification, fixture_reference_zero, regression_justification_and_race_stop]
+  origin: "[[殿裁定_default_delete_test_20260719]] -> [[default_delete_test_policy]] -> [[全PJ共通契約]]"

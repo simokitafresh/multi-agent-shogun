@@ -1314,3 +1314,186 @@ EOF
     run diff "$task_yaml.orig" "$task_yaml"
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: D006違反taskが忍者へ到達しない配備前不変量を守る。
+@test "destructive signal preflight blocks wrapper-hidden dangerous requirements and passes explanations/failpoints" {
+    local tmpdir fixture before dangerous safe text
+    tmpdir="$(mktemp -d)"
+    fixture="$tmpdir/source.yaml"
+    printf 'sentinel\n' > "$tmpdir/task.yaml"
+    printf 'sentinel\n' > "$tmpdir/report.yaml"
+    printf 'sentinel\n' > "$tmpdir/inbox.yaml"
+
+    dangerous=(
+      'command: "kill 1234"'
+      'command: "pkill -f ninja_monitor"'
+      'command: "killall throughput_growth_loop.sh"'
+      'purpose: "外部プロセスへsignalを送信して故障注入を実行せよ"'
+      'purpose: "対象daemonを終了させる故障注入を行う"'
+      'acceptance_criteria: ["process kill故障注入を実行する"]'
+      'command: "timeout 5 killall target"'
+      'command: "timeout --signal=TERM 5 pkill -f worker"'
+      'command: "env MODE=fault timeout -k 1 5 kill 1234"'
+    )
+    safe=(
+      'command: "TEST_FAILPOINT=after_persist bash scripts/worker.sh; test $? -ne 0"'
+      'purpose: "D006本文を参照して安全境界を確認する"'
+      'purpose: "kill/pkill/killallは禁止であると説明する"'
+      'acceptance_criteria: ["外部プロセスsignal要求を検出してBLOCKする"]'
+      'acceptance_criteria: ["process kill故障注入要求がある場合は遮断する"]'
+      'command: "bash scripts/worker.sh --self-exit-after-persist 17"'
+    )
+
+    for text in "${dangerous[@]}"; do
+      printf 'task:\n  %s\n' "$text" > "$fixture"
+      run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_destructive_signal_precheck '$fixture'"
+      [ "$status" -eq 2 ]
+      [[ "$output" == *"phase永続保存後に対象プロセス自身が非0終了するテスト専用failpointを使え"* ]]
+    done
+
+    for text in "${safe[@]}"; do
+      printf 'task:\n  %s\n' "$text" > "$fixture"
+      run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_destructive_signal_precheck '$fixture'"
+      [ "$status" -eq 0 ]
+    done
+
+    run bash -c "cmp -s '$tmpdir/task.yaml' '$tmpdir/report.yaml' && cmp -s '$tmpdir/task.yaml' '$tmpdir/inbox.yaml'"
+    [ "$status" -eq 0 ]
+}
+
+@test "direct --yaml safe source executes destructive preflight without runtime NameError" {
+    local tmpdir source
+    tmpdir="$(mktemp -d)"
+    source="$tmpdir/safe.yaml"
+    cat > "$source" <<'YAML'
+task:
+  purpose: safe direct fixture
+  command: TEST_FAILPOINT=after_persist bash scripts/worker.sh
+  acceptance_criteria:
+    - description: self exit failpoint returns nonzero after durable phase save
+YAML
+
+    run env DEPLOY_TASK_LIB_ONLY=1 SOURCE_FILE="$source" PROJECT_ROOT_ENV="$PROJECT_ROOT" bash -c '
+      source "$PROJECT_ROOT_ENV/scripts/deploy_task.sh"
+      deploy_task_destructive_signal_precheck "$SOURCE_FILE"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"NameError"* ]]
+}
+
+# test_necessity: growth_loop_defense再注入は既存listのquote/styleに依存せずYAMLキー全体を置換し、孤立要素を残さない不変量を守る。
+@test "growth loop defense replaces single-quoted lists by YAML node boundary" {
+    tmpdir="$(mktemp -d)"
+    for style in single plain block; do
+        task_file="$tmpdir/$style.yaml"
+        case "$style" in
+          single) old_value="  - 'old one'" ;;
+          plain) old_value="  - old-one" ;;
+          block) old_value="  - |\n    old block" ;;
+        esac
+        printf '%s\n' 'task:' '  purpose: gate hook defense' '  project: infra' '  growth_loop_defense:' >"$task_file"
+        printf '%b\n' "$old_value" >>"$task_file"
+        printf '%s\n' '  description: gate task' >>"$task_file"
+        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; inject_growth_loop_defense '$task_file'; inject_growth_loop_defense '$task_file'; python3 -c \"import yaml; d=yaml.safe_load(open('$task_file'))['task']; assert 'growth_loop_defense' in d; assert len(d['growth_loop_defense']) >= 1; assert not any('old' in str(x) for x in d['growth_loop_defense'])\""
+        [ "$status" -eq 0 ]
+        run python3 -c "import yaml; yaml.safe_load(open('$task_file'))"
+        [ "$status" -eq 0 ]
+        run grep -c "old one\|old-one\|old block" "$task_file"
+        [ "$status" -eq 1 ]
+    done
+}
+
+# test_necessity: mutation途中の後段FAILでは作業copyだけを破棄し、公開済taskのSHA/bytesを不変に保つ不変量を守る。
+@test "task mutation failure leaves original task SHA unchanged" {
+    tmpdir="$(mktemp -d)"; task_file="$tmpdir/task.yaml"
+    cat >"$task_file" <<'YAML'
+task:
+  status: assigned
+  task_id: atomic-fixture
+  parent_cmd: cmd_atomic_fixture
+  project: infra
+YAML
+    before="$(sha256sum "$task_file" | awk '{print $1}')"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1 DEPLOY_TASK_TEST_MUTATE_AND_FAIL=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; deploy_task_apply_task_mutations hayate '$task_file'"
+    [ "$status" -ne 0 ]
+    after="$(sha256sum "$task_file" | awk '{print $1}')"
+    [ "$before" = "$after" ]
+    run bash -c "compgen -G '${task_file}.mutation.*'"
+    [ "$status" -ne 0 ]
+}
+
+# test_necessity: --directへYAML pathを誤投入した場合、task/report/inbox publication前にBLOCKし正規--yaml構文を提示する不変量を守る。
+@test "direct mode rejects YAML path cmd before publication" {
+    task="$PROJECT_ROOT/queue/tasks/hayate.yaml"
+    inbox="$PROJECT_ROOT/queue/inbox/hayate.yaml"
+    task_sha_before="$(sha256sum "$task" | awk '{print $1}')"
+    reports_before="$(find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f -name 'hayate_report_*' | wc -l)"
+    assigned_before="$(grep -c "type: task_assigned" "$inbox" 2>/dev/null || true)"
+    run bash "$PROJECT_ROOT/scripts/deploy_task.sh" --direct hayate .cache/task.yaml
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Use: deploy_task.sh --yaml <file> <ninja>"* ]]
+    [ "$task_sha_before" = "$(sha256sum "$task" | awk '{print $1}')" ]
+    [ "$reports_before" -eq "$(find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f -name 'hayate_report_*' | wc -l)" ]
+    [ "$assigned_before" -eq "$(grep -c "type: task_assigned" "$inbox" 2>/dev/null || true)" ]
+}
+
+# test_necessity: --yaml経路はsource precheck完了前に旧taskへissued_at/resetを書かず、publish後の成功時だけRecordedを出す順序を守る。
+@test "yaml deployment records issued_at only after source precheck and atomic publish" {
+    run python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+s = open(sys.argv[1], encoding='utf-8').read()
+main = s[s.index('deploy_task_main() {'):]
+assert 'if [ -n "$CMD_ID" ] && { [ "$DIRECT_MODE" != true ] || [ -z "$YAML_FILE" ]; }; then' in main
+pre = main.index('deploy_task_source_contract_precheck "$YAML_FILE"')
+publish = main.index('deploy_task_direct_yaml_publish "$task_yaml" "$YAML_FILE"')
+record = main.index('record_issued_at_once "$task_yaml" "$CMD_ID"', publish)
+assert pre < publish < record, (pre, publish, record)
+assert 'if [ "$DIRECT_MODE" != true ] || [ -z "$YAML_FILE" ]; then\n                reset_stale_fields' in main
+PY
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: issued_at helper失敗時にRecorded偽成功ログを出さず、invalid旧taskもvalid sourceのatomic publishでVALIDへ置換できる不変量を守る。
+@test "issued_at failure logs no Recorded and valid source replaces invalid destination" {
+    tmpdir="$(mktemp -d)"; dest="$tmpdir/task.yaml"; source_yaml="$tmpdir/source.yaml"; log_file="$tmpdir/log"
+    printf 'task:\n  broken: [\n' >"$dest"
+    printf 'task:\n  status: assigned\n  parent_cmd: cmd_valid\n' >"$source_yaml"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; log(){ printf '%s\\n' \"\$*\" >>'$log_file'; }; yaml_field_set_batch(){ return 1; }; record_issued_at_once '$source_yaml' cmd_valid now"
+    [ "$status" -ne 0 ]
+    run grep -c '\[ISSUED_AT\] Recorded' "$log_file"
+    [ "$status" -ne 0 ]
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; log(){ :; }; deploy_task_direct_yaml_publish '$dest' '$source_yaml'; python3 -c \"import yaml; yaml.safe_load(open('$dest'))\""
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: --yaml full transactionの任意後段FAILでtask/reportを旧bytesへ戻し、新規reportとinbox publicationを残さない不変量を守る。
+@test "yaml transaction rollback restores task and report bytes" {
+    tmpdir="$(mktemp -d)"; mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue/reports" "$tmpdir/queue/inbox"
+    task="$tmpdir/queue/tasks/hayate.yaml"; source_yaml="$tmpdir/source.yaml"
+    report="$tmpdir/queue/reports/hayate_report_cmd_tx.yaml"
+    printf 'task:\n  status: idle\n  parent_cmd: cmd_old\n' >"$task"
+    printf 'task:\n  status: assigned\n  parent_cmd: cmd_tx\n  report_filename: hayate_report_cmd_tx.yaml\n' >"$source_yaml"
+    printf 'status: pending\nparent_cmd: cmd_tx\n' >"$report"
+    printf 'messages: []\n' >"$tmpdir/queue/inbox/hayate.yaml"
+    task_before="$(sha256sum "$task" | awk '{print $1}')"; report_before="$(sha256sum "$report" | awk '{print $1}')"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; log(){ printf '%s\\n' \"\$*\" >>'$tmpdir/log'; }; yaml_field_set_batch(){ printf '\\n  issued_at: now\\n' >>\"\$1\"; }; deploy_task_yaml_transaction_begin '$task' '$source_yaml' hayate cmd_tx; record_issued_at_once '$task' cmd_tx now; printf 'broken-report\\n' >'$report'; deploy_task_yaml_transaction_rollback"
+    [ "$status" -eq 0 ]
+    [ "$task_before" = "$(sha256sum "$task" | awk '{print $1}')" ]
+    [ "$report_before" = "$(sha256sum "$report" | awk '{print $1}')" ]
+    run grep -c '\[ISSUED_AT\] Recorded' "$tmpdir/log"
+    [ "$status" -ne 0 ]
+    [ "$(grep -c 'type: task_assigned' "$tmpdir/queue/inbox/hayate.yaml" || true)" -eq 0 ]
+}
+
+# test_necessity: --yaml transactionで元reportが存在しない場合、FAIL時に途中生成reportを削除しtask SHAを保持する不変量を守る。
+@test "yaml transaction rollback removes newly staged report" {
+    tmpdir="$(mktemp -d)"; mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue/reports"
+    task="$tmpdir/queue/tasks/hayate.yaml"; source_yaml="$tmpdir/source.yaml"; report="$tmpdir/queue/reports/hayate_report_cmd_new.yaml"
+    printf 'task:\n  status: idle\n' >"$task"
+    printf 'task:\n  parent_cmd: cmd_new\n  report_filename: hayate_report_cmd_new.yaml\n' >"$source_yaml"
+    before="$(sha256sum "$task" | awk '{print $1}')"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; SCRIPT_DIR='$tmpdir'; log(){ :; }; deploy_task_yaml_transaction_begin '$task' '$source_yaml' hayate cmd_new; printf 'changed\\n' >'$task'; printf 'new-report\\n' >'$report'; deploy_task_yaml_transaction_rollback"
+    [ "$status" -eq 0 ]
+    [ "$before" = "$(sha256sum "$task" | awk '{print $1}')" ]
+    [ ! -e "$report" ]
+}

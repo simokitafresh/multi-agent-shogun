@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate and validate the SG7 completion bundle used by Gunshi and Karo."""
 from __future__ import annotations
-import argparse, fcntl, glob, hashlib, json, os, subprocess, sys, time
+import argparse, fcntl, glob, hashlib, json, os, re, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
@@ -24,24 +24,32 @@ def find_command(root, cmd_id, report=None, report_path=None):
         if path.is_file():
             item = command_from(load(path), cmd_id)
             if item is not None: return item, path
-    # Karo-direct/training commands do not have a shogun command record.  Their
-    # completed report is still a durable contract source, so reconstruct the
-    # minimal summary instead of leaving SG7 generation as a dead manual path.
-    if isinstance(report, dict) and report_path is not None:
-        checks = report.get("binary_checks")
-        ac_ids = [key for key in checks if str(key).upper().startswith("AC")] if isinstance(checks, dict) else []
-        modified = report.get("files_modified")
-        scope = []
-        if isinstance(modified, list):
-            scope = [str(item.get("path") or "").strip() for item in modified if isinstance(item, dict) and str(item.get("path") or "").strip()]
-        lesson = report.get("lesson_candidate") if isinstance(report.get("lesson_candidate"), dict) else {}
-        project = str(report.get("project") or lesson.get("project") or "").strip()
-        if ac_ids and scope and project:
-            return {
-                "acceptance_criteria": ac_ids,
-                "not_in_scope": scope,
-                "project": project,
-            }, report_path
+    # Karo-direct commands intentionally have no Shogun command record.  Their
+    # assigned task is the contract; never infer that contract from report
+    # output or from another worker's task.
+    if cmd_id.startswith("cmd_karo_") and isinstance(report, dict) and report_path is not None:
+        if str(report.get("status") or "") != "completed" or str(report.get("verdict") or "").upper() != "PASS":
+            raise ValueError("karo-direct fallback requires completed/PASS report")
+        worker = str(report.get("worker_id") or "").strip()
+        if not re.fullmatch(r"[a-z][a-z0-9_-]*", worker):
+            raise ValueError("karo-direct report worker_id is missing or invalid")
+        task_path = root / f"queue/tasks/{worker}.yaml"
+        if not task_path.is_file():
+            raise ValueError(f"karo-direct worker task is missing: {worker}")
+        task_doc = load(task_path)
+        task = task_doc.get("task", task_doc) if isinstance(task_doc, dict) else None
+        if not isinstance(task, dict) or str(task.get("parent_cmd") or "") != cmd_id:
+            raise ValueError(f"karo-direct worker task parent_cmd mismatch: {worker}")
+        purpose = str(task.get("purpose") or "").strip()
+        criteria = task.get("acceptance_criteria")
+        project = str(task.get("project") or "").strip()
+        if not purpose or not isinstance(criteria, (list, dict)) or not criteria or not project:
+            raise ValueError(f"karo-direct worker task contract is incomplete: {worker}")
+        return {
+            "acceptance_criteria": criteria,
+            "command": purpose,
+            "project": project,
+        }, task_path
     raise ValueError(f"cmd spec not found: {cmd_id}")
 
 def summary(command):
