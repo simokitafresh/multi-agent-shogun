@@ -170,6 +170,62 @@ YAML
     [[ "$output" == *"PASS"* ]]
 }
 
+# test_necessity: same-run A/B campaigns must not reach callback without complete interleaved evidence.
+@test "T-001g: terminal same-run speed PASS without speed_ab is BLOCKed" {
+    mkdir -p "$TMPDIR_BATS/queue/reports" "$TMPDIR_BATS/queue/tasks"
+    local report="$TMPDIR_BATS/queue/reports/testninja_report_cmd_test.yaml"
+    create_valid_report "$report" >/dev/null
+    cat > "$TMPDIR_BATS/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_test
+  speed_campaign:
+    baseline_policy: same_run_interleaved_ab
+YAML
+    cat >> "$report" <<'YAML'
+speed_result: {quality: pass}
+test_results: {status: pass, wall_sec: 12.5, failures: 0, skips: 0}
+YAML
+
+    run env GATE_NO_LOG=1 bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"speed callback AB schema"* ]]
+}
+
+# test_necessity: complete same-run A/B evidence with matching statistics remains accepted.
+@test "T-001h: terminal same-run speed PASS with complete speed_ab passes" {
+    mkdir -p "$TMPDIR_BATS/queue/reports" "$TMPDIR_BATS/queue/tasks"
+    local report="$TMPDIR_BATS/queue/reports/testninja_report_cmd_test.yaml"
+    create_valid_report "$report" >/dev/null
+    cat > "$TMPDIR_BATS/queue/tasks/testninja.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_test
+  speed_campaign:
+    baseline_policy: same_run_interleaved_ab
+YAML
+    cat >> "$report" <<'YAML'
+speed_result: {quality: pass}
+test_results: {status: pass, wall_sec: 9, failures: 0, skips: 0}
+speed_ab:
+  last_good_commit: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  candidate_commit: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  command: bats tests/unit/example.bats
+  order: alternating
+  warmup_each: 1
+  sequence: [L, C, L, C, L, C, L, C, L, C, L, C, L, C, L, C, L, C, L, C]
+  last_good_samples_ms: [10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
+  candidate_samples_ms: [9, 9, 9, 9, 9, 9, 9, 9, 9, 9]
+  last_good_p50: 10
+  last_good_p95: 10
+  candidate_p50: 9
+  candidate_p95: 9
+  adopted: true
+YAML
+
+    run env GATE_NO_LOG=1 bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
 # --- T-002: Missing file → FAIL ---
 @test "T-002: missing file returns FAIL" {
     run bash "$GATE" "$TMPDIR_BATS/nonexistent.yaml"

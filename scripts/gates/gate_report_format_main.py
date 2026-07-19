@@ -7,6 +7,7 @@ import os
 import pathlib
 import re
 import shlex
+import statistics
 import subprocess
 import sys
 
@@ -185,6 +186,83 @@ def _variation_contract_issues(task_data, report_data):
         elif normalized not in {"yes", "no"}:
             invalid.append(name)
     return missing, invalid
+
+
+def _speed_ab_contract_issues(task_data, report_data):
+    """Validate the evidence required by the same-run interleaved callback."""
+    campaign = task_data.get("speed_campaign") if isinstance(task_data, dict) else None
+    if not isinstance(campaign, dict) or campaign.get("baseline_policy") != "same_run_interleaved_ab":
+        return []
+    ab = report_data.get("speed_ab") if isinstance(report_data, dict) else None
+    if not isinstance(ab, dict):
+        return ["speed_ab is missing"]
+
+    issues = []
+    required = ("last_good_commit", "candidate_commit", "command")
+    for key in required:
+        if not str(ab.get(key) or "").strip():
+            issues.append(f"speed_ab.{key} is missing")
+    if ab.get("last_good_commit") == ab.get("candidate_commit"):
+        issues.append("speed_ab commits must be distinct")
+    if ab.get("order") != "alternating":
+        issues.append("speed_ab.order must be alternating")
+    try:
+        if int(ab.get("warmup_each")) < 1:
+            raise ValueError
+    except (TypeError, ValueError, OverflowError):
+        issues.append("speed_ab.warmup_each must be >=1")
+
+    samples = []
+    for key in ("last_good_samples_ms", "candidate_samples_ms"):
+        raw = ab.get(key)
+        if not isinstance(raw, list) or len(raw) < 10:
+            issues.append(f"speed_ab.{key} requires >=10 samples")
+            samples.append([])
+            continue
+        try:
+            numeric = [float(value) for value in raw]
+        except (TypeError, ValueError, OverflowError):
+            numeric = []
+        if not numeric or not all(math.isfinite(value) and value >= 0 for value in numeric):
+            issues.append(f"speed_ab.{key} must contain finite nonnegative numbers")
+        samples.append(numeric)
+    base, candidate = samples
+    if base and candidate:
+        if len(base) != len(candidate):
+            issues.append("speed_ab sample counts must match")
+        expected_sequence = ["L" if index % 2 == 0 else "C" for index in range(len(base) * 2)]
+        if ab.get("sequence") != expected_sequence:
+            issues.append("speed_ab.sequence must be exact L/C alternation")
+
+        def p95(values):
+            ordered = sorted(values)
+            return ordered[max(0, math.ceil(0.95 * len(ordered)) - 1)]
+
+        computed = {
+            "last_good_p50": statistics.median(base),
+            "last_good_p95": p95(base),
+            "candidate_p50": statistics.median(candidate),
+            "candidate_p95": p95(candidate),
+        }
+        for key, expected in computed.items():
+            try:
+                actual = float(ab.get(key))
+            except (TypeError, ValueError, OverflowError):
+                issues.append(f"speed_ab.{key} is missing or nonnumeric")
+                continue
+            if not math.isfinite(actual) or not math.isclose(actual, expected, rel_tol=1e-9, abs_tol=1e-6):
+                issues.append(f"speed_ab.{key} does not match samples")
+        expected_adopted = (
+            computed["candidate_p50"] <= computed["last_good_p50"]
+            and computed["candidate_p95"] <= computed["last_good_p95"]
+            and (
+                computed["candidate_p50"] < computed["last_good_p50"]
+                or computed["candidate_p95"] < computed["last_good_p95"]
+            )
+        )
+        if ab.get("adopted") is not expected_adopted:
+            issues.append("speed_ab.adopted does not match the measured adoption contract")
+    return issues
 
 
 def _rfs_cmd(report_path, key, value):
@@ -460,6 +538,14 @@ def main(report_data=None) -> int:
                     "status=pass, wall_sec=<seconds>, failures=0, skips=0 を "
                     "report_field_set.sh経由で記録せよ"
                 )
+            if task_matches_report:
+                speed_ab_issues = _speed_ab_contract_issues(task_data, data)
+                if speed_ab_issues:
+                    errors.append("speed callback AB schema: " + "; ".join(speed_ab_issues))
+                    hints.append(
+                        "FIX (speed callback AB schema): speed_abへcommit/command/order/warmup/"
+                        "sequence/各10samples/p50/p95/adoptedを構造化記録せよ"
+                    )
 
     def metric_filled(metric) -> bool:
         if metric is None:

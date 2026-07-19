@@ -32,6 +32,7 @@ YAML
   grep -Fq 'action: "complete-deploy"' "$generated"
   grep -Fq 'quality=pass|fail|skip' "$generated"
   grep -Fq 'test_results(status=pass, wall_sec=有限非負値, failures=0, skips=0)' "$generated"
+  grep -Fq 'speed_ab(last_good_commit/candidate_commit/command/order=alternating/warmup_each/sequence/各10samples/p50/p95/adopted)' "$generated"
   grep -Fq 'FAIL0; SKIP0; no expectation relaxation' "$generated"
   grep -Fq 'shared fixture/cache first; switch to production script at plateau' "$generated"
 }
