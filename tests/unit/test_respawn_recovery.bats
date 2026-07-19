@@ -70,3 +70,23 @@ YAML
   [ "$status" -eq 0 ]
   [ "$(wc -l < "$TEST_RECOVERY_LOG")" -eq 1 ]
 }
+
+@test "real tmux pane generation is nonempty and pid-starttime fixture changes by respawn" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_generation "$TMUX_PANE"' _ "$repo"
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ ^[0-9]+:[0-9]+$ ]]
+
+  mkdir -p "$root/proc/101" "$root/proc/202"
+  printf '101 (fixture one) S 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 111 0\n' > "$root/proc/101/stat"
+  printf '202 (fixture two) S 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 222 0\n' > "$root/proc/202/stat"
+  printf '#!/usr/bin/env bash\ncat "$RESPAWN_PID_FILE"\n' > "$root/tmux-fixture"
+  chmod +x "$root/tmux-fixture"
+  printf '101\n' > "$root/pid"
+  export RESPAWN_PID_FILE="$root/pid" RESPAWN_RECOVERY_TMUX_BIN="$root/tmux-fixture" RESPAWN_RECOVERY_PROC_ROOT="$root/proc"
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_generation pane' _ "$repo"
+  [ "$output" = "101:111" ]
+  printf '202\n' > "$root/pid"
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_generation pane' _ "$repo"
+  [ "$output" = "202:222" ]
+}

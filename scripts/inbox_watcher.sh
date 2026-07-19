@@ -1128,7 +1128,7 @@ process_unread() {
                             sleep 1
                         done
                         if [ "$ready" -eq 1 ]; then
-                            generation=$(tmux display-message -t "$PANE_TARGET" -p '#{pane_start_time}' 2>/dev/null || true)
+                            generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
                             if [ -z "$generation" ] || ! respawn_recovery_notify "$SCRIPT_DIR" "$AGENT_ID" "$generation" clear-command "$recovery_content"; then
                                 special_ok=false
                             fi

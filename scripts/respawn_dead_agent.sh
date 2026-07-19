@@ -80,7 +80,7 @@ for _ in {1..20}; do
 done
 [[ "$dead" == "0" ]] && tmux capture-pane -t "$pane" -p -J -S -80 2>/dev/null | grep -qE 'Claude Code|OpenAI Codex|Codex CLI|❯|›' || { echo "FAIL: $agent CLI not ready" >&2; exit 1; }
 current="$(tmux display-message -t "$pane" -p '#{pane_current_command}')"
-generation="$(tmux display-message -t "$pane" -p '#{pane_start_time}' 2>/dev/null || true)"
+generation="$(respawn_recovery_generation "$pane" 2>/dev/null || true)"
 [ -n "$generation" ] || { echo "FAIL: respawn generation unavailable" >&2; exit 1; }
 respawn_recovery_notify "$ROOT" "$agent" "$generation" dead-pane
 echo "PASS: agent=$agent pane=$pane dead=0 current=$current"

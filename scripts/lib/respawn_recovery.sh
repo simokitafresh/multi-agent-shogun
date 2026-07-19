@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
 # Persist exactly one recovery nudge for an active task after verified respawn.
+respawn_recovery_generation() {
+    local pane="$1" pid stat starttime
+    local tmux_bin="${RESPAWN_RECOVERY_TMUX_BIN:-tmux}" proc_root="${RESPAWN_RECOVERY_PROC_ROOT:-/proc}"
+    pid=$($tmux_bin display-message -t "$pane" -p '#{pane_pid}' 2>/dev/null || true)
+    [[ "$pid" =~ ^[1-9][0-9]*$ ]] || return 1
+    [ -r "$proc_root/$pid/stat" ] || return 1
+    stat=$(<"$proc_root/$pid/stat")
+    # comm (field 2) may contain spaces and parentheses; strip through its final ') '.
+    stat=${stat##*) }
+    starttime=$(printf '%s\n' "$stat" | awk '{print $20}')
+    [[ "$starttime" =~ ^[0-9]+$ ]] || return 1
+    printf '%s:%s\n' "$pid" "$starttime"
+}
+
 respawn_recovery_notify() {
     local root="$1" agent="$2" generation="$3" source="${4:-respawn}" content="${5:-}"
     local task_file="$root/queue/tasks/${agent}.yaml"
