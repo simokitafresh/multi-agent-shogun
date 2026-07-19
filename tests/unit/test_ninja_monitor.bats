@@ -5,6 +5,65 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+run_codex_bypass_case() {
+    local task_status="$1" pane_idle="$2" has_flag="$3" recovery="$4" repeat="${5:-1}"
+    run env PROJECT_ROOT="$PROJECT_ROOT" TASK_STATUS="$task_status" PANE_IDLE="$pane_idle" \
+        HAS_FLAG="$has_flag" RECOVERY="$recovery" REPEAT="$repeat" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        unset NINJA_MONITOR_LIB_ONLY
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$STATE_DIR"
+        printf "task:\n  status: %s\n" "$TASK_STATUS" > "$SCRIPT_DIR/queue/tasks/alpha.yaml"
+        LOG="$BATS_TEST_TMPDIR/monitor.log"; : > "$LOG"; respawns=0; notices=0
+        log() { printf "%s\n" "$1" >> "$LOG"; }
+        cli_type() { printf "codex\n"; }
+        tmux() { [ "$1" = display-message ] && printf "4242\n"; }
+        pstree() { [ "$HAS_FLAG" = 1 ] && printf "codex --dangerously-bypass-approvals-and-sandbox\n"; }
+        check_idle() { [ "$PANE_IDLE" = 1 ]; }
+        cli_launch_cmd() { printf "/opt/codex/bin/codex --dangerously-bypass-approvals-and-sandbox\n"; }
+        respawn_recovery_launch_command() { printf "launch\n"; }
+        codex_config_apply_agent() { return 0; }; codex_config_restore() { return 0; }
+        _respawn_with_cli_verification() { respawns=$((respawns + 1)); [ "$RECOVERY" = pass ]; }
+        respawn_recovery_generation() { printf "4242\n"; }
+        respawn_recovery_notify() { notices=$((notices + 1)); return 0; }
+        rc=0
+        for ((i=0; i<REPEAT; i++)); do check_codex_bypass_once alpha pane || rc=$?; done
+        printf "rc=%s respawns=%s notices=%s\n" "$rc" "$respawns" "$notices"
+        cat "$LOG"
+    '
+}
+
+@test "GP-239 idle Codex missing bypass self-heals once through verified handshake" {
+    run_codex_bypass_case idle 1 0 pass 2
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"rc=0 respawns=1 notices=1"* ]]
+    [[ "$output" == *"CODEX-BYPASS-DEDUPE"* ]]
+}
+
+@test "GP-239 active or non-idle Codex missing bypass never respawns" {
+    run_codex_bypass_case in_progress 1 0 pass
+    [[ "$output" == *"rc=1 respawns=0 notices=0"* ]]
+    run_codex_bypass_case idle 0 0 pass
+    [[ "$output" == *"rc=1 respawns=0 notices=0"* ]]
+}
+
+@test "GP-239 healthy Codex bypass never respawns" {
+    run_codex_bypass_case idle 1 1 pass
+    [[ "$output" == *"rc=0 respawns=0 notices=0"* ]]
+}
+
+@test "GP-239 failed recovery is fail-closed and retryable next cycle" {
+    run_codex_bypass_case idle 1 0 fail 2
+    [[ "$output" == *"rc=1 respawns=2 notices=0"* ]]
+    [[ "$output" == *"retry=next_cycle"* ]]
+}
+
+@test "GP-239 main loop keeps the bypass check on the next cycle" {
+    run grep -q '^[[:space:]]*check_all_codex_bypass_flags$' "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+    [ "$status" -eq 0 ]
+}
+
 run_recovery_case() {
     local fixture_dead="$1" fixture_status="$2" recovery_result="${3:-pass}"
     run env PROJECT_ROOT="$PROJECT_ROOT" FIXTURE_DEAD="$fixture_dead" \

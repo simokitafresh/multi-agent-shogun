@@ -7779,6 +7779,83 @@ check_shogun_idle_analysis_trigger() {
 # check_karo_pane_dead_once / check_gunshi_pane_dead_once は削除済み (L821)
 # check_ninja_cli_dead() が全エージェント配列で統一カバー
 
+# ─── GP-239: Codex bypass flag self-heal ───
+_codex_bypass_generation() {
+    local pane="$1" pane_pid
+    pane_pid=$(tmux display-message -p -t "$pane" '#{pane_pid}' 2>/dev/null || true)
+    [ -n "$pane_pid" ] || return 1
+    printf '%s\n' "$pane_pid"
+}
+
+_codex_bypass_marker_file() {
+    local agent_name="$1"
+    printf '%s/codex_bypass_recovery_%s.generation\n' "$STATE_DIR" "$agent_name"
+}
+
+check_codex_bypass_once() {
+    local agent_name="$1" pane="$2" pane_pid task_file task_status generation marker launch launch_command
+    [ "$(cli_type "$agent_name" 2>/dev/null || true)" = "codex" ] || return 0
+    [ -n "$pane" ] || return 0
+    pane_pid=$(tmux display-message -p -t "$pane" '#{pane_pid}' 2>/dev/null || true)
+    [ -n "$pane_pid" ] || { log "CODEX-BYPASS-BLOCK: $agent_name pane_pid_missing"; return 1; }
+    if pstree -a "$pane_pid" 2>/dev/null | grep -q -- '--dangerously-bypass-approvals-and-sandbox'; then
+        return 0
+    fi
+
+    task_file="$SCRIPT_DIR/queue/tasks/${agent_name}.yaml"
+    task_status=$(awk '/^[[:space:]]*status:/ {gsub(/["'\''[:space:]]/, "", $2); print $2; exit}' "$task_file" 2>/dev/null || true)
+    if [ "$task_status" != "idle" ]; then
+        log "CODEX-BYPASS-WARN: $agent_name flag_missing task_status=${task_status:-unknown} respawn=blocked"
+        return 1
+    fi
+    if ! check_idle "$pane" "$agent_name"; then
+        log "CODEX-BYPASS-WARN: $agent_name flag_missing pane_not_idle respawn=blocked"
+        return 1
+    fi
+
+    generation=$(_codex_bypass_generation "$pane" 2>/dev/null || true)
+    marker=$(_codex_bypass_marker_file "$agent_name")
+    if [ -n "$generation" ] && [ "$(cat "$marker" 2>/dev/null || true)" = "$generation" ]; then
+        log "CODEX-BYPASS-DEDUPE: $agent_name generation=$generation respawn=0"
+        return 0
+    fi
+
+    launch=$(cli_launch_cmd "$agent_name" 2>/dev/null || true)
+    launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$launch" 2>/dev/null || true)
+    if [ -z "$launch_command" ]; then
+        log "CODEX-BYPASS-BLOCK: $agent_name launch_command_unavailable retry=next_cycle"
+        return 1
+    fi
+    codex_config_apply_agent "$agent_name" 2>/dev/null || {
+        log "CODEX-BYPASS-BLOCK: $agent_name config_apply_failed retry=next_cycle"
+        return 1
+    }
+    if ! _respawn_with_cli_verification "$pane" "$agent_name" "$launch_command" "CODEX-BYPASS-RESPAWN"; then
+        codex_config_restore 2>/dev/null || true
+        log "CODEX-BYPASS-BLOCK: $agent_name recovery_failed retry=next_cycle"
+        return 1
+    fi
+    codex_config_restore 2>/dev/null || true
+    generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
+    if [ -z "$generation" ] || ! respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$generation" codex-bypass; then
+        log "CODEX-BYPASS-BLOCK: $agent_name handshake_failed retry=next_cycle"
+        return 1
+    fi
+    mkdir -p "$(dirname "$marker")"
+    printf '%s\n' "$generation" > "$marker"
+    log "CODEX-BYPASS-RECOVERED: $agent_name generation=$generation respawn=1"
+}
+
+check_all_codex_bypass_flags() {
+    local agent_name pane
+    for agent_name in "${NINJA_NAMES[@]}"; do
+        [ "$(cli_type "$agent_name" 2>/dev/null || true)" = "codex" ] || continue
+        pane="${PANE_MAP[$agent_name]:-}"
+        [ -n "$pane" ] || continue
+        check_codex_bypass_once "$agent_name" "$pane" || true
+    done
+}
+
 # ─── 初期ペイン探索 ───
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
     # shellcheck disable=SC2317
@@ -7790,20 +7867,8 @@ close_inherited_deploy_lock_fds
 
 discover_panes
 
-# ─── GP-239: Codex bypass flag check (startup) ───
-# hayate事故(2026-04-28): --dangerously-bypass-approvals-and-sandbox欠落→毎回確認プロンプトで停止
-for _cbf_name in "${NINJA_NAMES[@]}"; do
-    if [ "$(cli_type "$_cbf_name" 2>/dev/null)" = "codex" ]; then
-        _cbf_pane="${PANE_MAP[$_cbf_name]:-}"
-        [ -z "$_cbf_pane" ] && continue
-        _cbf_pid=$(tmux list-panes -t "$_cbf_pane" -F '#{pane_pid}' 2>/dev/null | head -1)
-        [ -z "$_cbf_pid" ] && continue
-        if ! pstree -a "$_cbf_pid" 2>/dev/null | grep -q 'dangerously-bypass'; then
-            log "WARN: ${_cbf_name} Codex missing --dangerously-bypass-approvals-and-sandbox flag"
-            echo "[$(date -Is)] WARN: ${_cbf_name} Codex bypass flag missing → confirmation prompts will block ninja" >> "$LOG"
-        fi
-    fi
-done
+# hayate事故(2026-04-28): bypass欠落で確認プロンプト停止。startup直後から検査する。
+check_all_codex_bypass_flags
 
 # ─── メインループ ───
 cycle=0
@@ -7820,6 +7885,9 @@ while true; do
 
     # Primary task state is observed before pane waits and maintenance.
     monitor_task_state_fast_path
+
+    # GP-239: 復旧失敗はmarkerを残さず次cycleで再試行する。
+    check_all_codex_bypass_flags
 
     # 定期的にペイン再探索（ペイン構成変更に対応）
     if [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
