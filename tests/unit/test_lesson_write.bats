@@ -501,11 +501,14 @@ EOF
 # 8. lessons.md not found
 # ============================================================
 
-@test "fails when lessons.md does not exist" {
+@test "first write initializes project YAML fallback when lessons.md does not exist" {
     rm -f "$EXT_PROJECT/tasks/lessons.md"
     run_lesson_write testproj "タイトル" "教訓ファイルが存在しない場合のエラーハンドリングテスト"
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"not found"* ]]
+    [ "$status" -eq 0 ]
+    [ ! -f "$EXT_PROJECT/tasks/lessons.md" ]
+    run grep -A8 "^- id: L001" "$TEST_PROJECT/projects/testproj/lessons.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"タイトル"* ]]
 }
 
 @test "project YAML fallback writes explicit enforcement and automated true" {

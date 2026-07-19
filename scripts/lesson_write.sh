@@ -640,12 +640,17 @@ fi
 
 write_project_yaml_lesson() {
     local lessons_yaml="$SCRIPT_DIR/projects/${PROJECT_ID}/lessons.yaml"
+    local lessons_dir="${lessons_yaml%/*}"
     local lockfile
     local timestamp
 
-    if [ ! -f "$lessons_yaml" ]; then
-        return 1
-    fi
+    # Not every external project owns a tasks/lessons.md SSOT. The Shogun
+    # project layer is the canonical fallback for those projects, and must be
+    # initializable on first write. Requiring a hand-created empty YAML made
+    # every lesson candidate for a newly registered external project fail
+    # forever. Project membership was already validated from projects.yaml
+    # before this function is called, so the derived directory is bounded.
+    mkdir -p "$lessons_dir" || return 1
     lockfile="$(lock_path "$lessons_yaml")"
 
     timestamp=$(date "+%Y-%m-%d")
@@ -653,6 +658,18 @@ write_project_yaml_lesson() {
 
     (
         flock -w 10 200 || { echo "ERROR: Could not acquire lock" >&2; exit 1; }
+
+        if [ ! -f "$lessons_yaml" ]; then
+            local init_tmp
+            init_tmp="$(mktemp "${lessons_yaml}.init.XXXXXX")" || exit 1
+            {
+                printf 'ssot_path: %s\n' "$lessons_yaml"
+                printf "last_synced: '%s'\n" "$(date -Is)"
+                printf 'lesson_count: 0\n'
+                printf 'lessons:\n'
+            } > "$init_tmp"
+            mv -f "$init_tmp" "$lessons_yaml"
+        fi
 
         LESSONS_YAML_ENV="$lessons_yaml" \
         TITLE_ENV="$TITLE" \
