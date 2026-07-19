@@ -152,6 +152,12 @@ def _emit_self_retro(root, endpoint, cmd_id, wall_ms, cause_class):
 self_retro_write_async {endpoint} {cmd_id} {wall_ms} '{{"review_bundle":{wall_ms}}}' {cause_class} "review bundle generated and delivered" "reduce dominant review phase while preserving SG7 validation" "delivery succeeds and duplicate event count is 0" "[[review_bundle]] -> [[review_delivery]] -> [[fix_known]]"
 '''
     subprocess.run(["bash", "-c", payload], cwd=root, check=False)
+    subprocess.Popen(
+        ["bash", "-c", f'''source "{root / 'scripts/lib/retro_verbatim_prompt.sh'}"
+retro_verbatim_prompt_async "{root}" gunshi "review_bundle:{cmd_id}" review_bundle
+wait
+'''], cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
 
 def consume(args):
     root = Path(args.root).resolve(); path = Path(args.bundle)

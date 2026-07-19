@@ -2531,6 +2531,10 @@ while [ $attempt -lt $max_attempts ]; do
                     break
                 fi
             done
+            # Deep retro remains append-only; deliver the Lord's exact prompt as
+            # a separate, detached message. retro_prompt cannot re-enter here.
+            source "$SCRIPT_DIR/scripts/lib/retro_verbatim_prompt.sh"
+            retro_verbatim_prompt_async "$SCRIPT_DIR" "$FROM" "report_received:$MSG_ID" inbox_write
         fi
 
         dispatch_codex_delivery_verification "$TARGET" "$MSG_ID" "$TYPE"
