@@ -10846,6 +10846,10 @@ deploy_task_apply_task_mutations() {
         inject_direct_training_template "$task_file" "$canonical_training_parent_cmd" || return 1
     fi
 
+    # E3: direct --yaml / --cmd / normal resolveを含む全publication pathの最終形へ
+    # ci_fix clean reproduction scaffoldと専用ACを一度だけ注入する。
+    inject_ci_fix_clean_repro_contract "$task_file" || return 1
+
     local task_id parent_cmd project _ac_task_id report_filename
     deploy_task_guard_task_yaml_syntax "post_injection_pre_report_template" "$task_file" "$ninja_name" || return 1
     deploy_task_test_necessity_precheck "$task_file" || return 1
@@ -10922,6 +10926,108 @@ PY
             return 1
             ;;
     esac
+}
+
+# E3 Level5: ci_fixはclean-CI相当の同一harnessで修正前FAIL→修正後PASSを
+# push前に証明する。配備時点では空scaffoldを与え、専用ACがreport templateの
+# binary_checksへ展開される。完成証跡は下のvalidatorでfail-closed検証する。
+inject_ci_fix_clean_repro_contract() {
+    local task_file="$1" task_type
+    [ -f "$task_file" ] || return 0
+    task_type=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "" 2>/dev/null || true)
+    [ "${task_type,,}" = "ci_fix" ] || return 0
+
+    python3 - "$task_file" <<'PY' || return 1
+import json, os, re, sys, tempfile, yaml
+path = sys.argv[1]
+raw = open(path, encoding='utf-8').read()
+d = yaml.safe_load(raw) or {}
+t = d.get('task', d)
+evidence = {
+    'e2_harness_command':'',
+    'pre_fix_receipt':{'path':'','status':'','source_commit':'','fixed_target':'','started_at':'','failures':None,'skips':None},
+    'post_fix_receipt':{'path':'','status':'','source_commit':'','fixed_target':'','started_at':'','failures':None,'skips':None},
+    'push_started_at':'',
+    'validation_command':'deploy_task_ci_fix_clean_repro_evidence_validate <task_yaml>'}
+acs = t.get('acceptance_criteria') or []
+if isinstance(acs, dict):
+    acs = [{'id': str(k), 'description': str(v)} for k, v in acs.items()]
+elif not isinstance(acs, list):
+    acs = []
+acs = [x for x in acs if not (isinstance(x, dict) and x.get('id') == 'AC_CI_FIX_CLEAN_REPRO')]
+acs.append({
+    'id': 'AC_CI_FIX_CLEAN_REPRO',
+    'description': ('push前に同一E2 clean-CI harness/同一source_commit/同一fixed_targetで'
+                    '修正前FAIL receipt(failures>=1,SKIP0)→修正後PASS receipt(FAIL0,SKIP0)を生成し、'
+                    'ci_fix_clean_repro_evidenceの全必須欄を埋めvalidator PASSをreportへ記録する。'
+                    '空欄・pre-fix PASS・post-fix FAIL/SKIP・異なるsource/target・push後開始は禁止。')
+})
+
+def replace_task_field(text, key, value):
+    encoded = json.dumps(value, ensure_ascii=False, separators=(',', ':'))
+    lines = text.splitlines()
+    out, i, replaced = [], 0, False
+    while i < len(lines):
+        line = lines[i]
+        if re.match(r'^  ' + re.escape(key) + r':(?:\s|$)', line):
+            out.append('  ' + key + ': ' + encoded); replaced = True; i += 1
+            while i < len(lines):
+                stripped = lines[i].lstrip(' '); indent = len(lines[i]) - len(stripped)
+                if stripped and (indent < 2 or (indent == 2 and not stripped.startswith('- '))): break
+                i += 1
+            continue
+        out.append(line); i += 1
+    if not replaced:
+        out.append('  ' + key + ': ' + encoded)
+    return '\n'.join(out) + '\n'
+
+raw = replace_task_field(raw, 'ci_fix_clean_repro_evidence', evidence)
+raw = replace_task_field(raw, 'acceptance_criteria', acs)
+yaml.safe_load(raw)
+fd, tmp = tempfile.mkstemp(prefix=os.path.basename(path)+'.', dir=os.path.dirname(path) or '.')
+try:
+    with os.fdopen(fd, 'w', encoding='utf-8') as fh: fh.write(raw)
+    os.replace(tmp, path)
+finally:
+    if os.path.exists(tmp): os.unlink(tmp)
+PY
+    log "inject_ci_fix_clean_repro_contract: Level5 scaffold+AC injected"
+}
+
+deploy_task_ci_fix_clean_repro_evidence_validate() {
+    local task_file="$1"
+    python3 - "$task_file" <<'PY'
+import datetime as dt, re, sys, yaml
+d = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
+t = d.get('task', d)
+if str(t.get('task_type') or '').strip().lower() != 'ci_fix':
+    raise SystemExit(0)
+e = t.get('ci_fix_clean_repro_evidence')
+def block(msg):
+    print('BLOCK: ci_fix clean repro evidence ' + msg, file=sys.stderr)
+    raise SystemExit(1)
+if not isinstance(e, dict) or not str(e.get('e2_harness_command') or '').strip(): block('harness command missing')
+pre, post = e.get('pre_fix_receipt'), e.get('post_fix_receipt')
+if not isinstance(pre, dict) or not isinstance(post, dict): block('receipt mapping missing')
+required = ('path','status','source_commit','fixed_target','started_at','failures','skips')
+for name, receipt in (('pre', pre), ('post', post)):
+    for key in required:
+        if receipt.get(key) in (None, ''): block(f'{name}.{key} missing')
+if str(pre['status']).upper() != 'FAIL' or int(pre['failures']) < 1 or int(pre['skips']) != 0: block('pre receipt must be FAIL failures>=1 SKIP0')
+if str(post['status']).upper() != 'PASS' or int(post['failures']) != 0 or int(post['skips']) != 0: block('post receipt must be PASS FAIL0 SKIP0')
+if pre['path'] == post['path']: block('pre/post receipt paths must differ')
+if pre['source_commit'] != post['source_commit'] or not re.fullmatch(r'[0-9a-f]{40}', str(pre['source_commit'])): block('source_commit mismatch or invalid')
+if pre['fixed_target'] != post['fixed_target'] or not str(pre['fixed_target']).strip(): block('fixed_target mismatch')
+def stamp(value, label):
+    try: return dt.datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+    except Exception: block(label + ' timestamp invalid')
+push = stamp(e.get('push_started_at'), 'push_started_at')
+for name, receipt in (('pre', pre), ('post', post)):
+    started = stamp(receipt['started_at'], name + '.started_at')
+    if started.tzinfo is None or push.tzinfo is None: block('timestamps require timezone')
+    if started >= push: block(name + ' harness must start before push')
+print('PASS: ci_fix clean repro evidence valid')
+PY
 }
 
 # D006 is an unconditional safety boundary.  Reject task sources that require

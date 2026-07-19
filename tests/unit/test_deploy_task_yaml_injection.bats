@@ -142,6 +142,80 @@ assert guard < publish < report < delivery, (guard, publish, report, delivery)
 PY
 }
 
+@test "E3 Level5 injects clean repro scaffold and AC only into ci_fix tasks" {
+    tmpdir="$(mktemp -d)"
+    for kind in ci_fix impl recon training; do
+        printf 'task:\n  task_type: %s\n  acceptance_criteria:\n  - id: AC1\n    description: existing contract\n' "$kind" > "$tmpdir/$kind.yaml"
+        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; inject_ci_fix_clean_repro_contract '$tmpdir/$kind.yaml'"
+        [ "$status" -eq 0 ]
+    done
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; inject_ci_fix_clean_repro_contract '$tmpdir/ci_fix.yaml'"
+    [ "$status" -eq 0 ]
+
+    python3 - "$tmpdir" <<'PY'
+import pathlib, sys, yaml
+root = pathlib.Path(sys.argv[1])
+ci = yaml.safe_load((root/'ci_fix.yaml').read_text())['task']
+assert ci['ci_fix_clean_repro_evidence']['e2_harness_command'] == ''
+assert [x['id'] for x in ci['acceptance_criteria']] == ['AC1', 'AC_CI_FIX_CLEAN_REPRO']
+for kind in ('impl', 'recon', 'training'):
+    task = yaml.safe_load((root/f'{kind}.yaml').read_text())['task']
+    assert 'ci_fix_clean_repro_evidence' not in task
+    assert [x['id'] for x in task['acceptance_criteria']] == ['AC1']
+PY
+
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+script = open(sys.argv[1], encoding='utf-8').read()
+main = script[script.index('deploy_task_apply_task_mutations() {'):]
+inject = main.index('inject_ci_fix_clean_repro_contract "$task_file"')
+guard = main.index('deploy_task_guard_task_yaml_syntax "post_injection_pre_report_template"')
+report = main.index('generate_report_template "$ninja_name"')
+assert inject < guard < report, (inject, guard, report)
+PY
+}
+
+@test "E3 evidence validator blocks six invalid shapes and accepts only FAIL to FIX to PASS" {
+    tmpdir="$(mktemp -d)"
+    python3 - "$tmpdir" <<'PY'
+import copy, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+base = {
+ 'e2_harness_command': 'bash tests/e2_clean_ci.sh',
+ 'pre_fix_receipt': {'path':'pre.json','status':'FAIL','source_commit':'a'*40,'fixed_target':'tests/unit/x.bats#10','started_at':'2026-07-20T01:00:00+09:00','failures':1,'skips':0},
+ 'post_fix_receipt': {'path':'post.json','status':'PASS','source_commit':'a'*40,'fixed_target':'tests/unit/x.bats#10','started_at':'2026-07-20T01:10:00+09:00','failures':0,'skips':0},
+ 'push_started_at':'2026-07-20T01:20:00+09:00'}
+cases = {}
+cases['valid'] = copy.deepcopy(base)
+cases['pass_only'] = copy.deepcopy(base); cases['pass_only']['pre_fix_receipt'] = {}
+cases['source_mismatch'] = copy.deepcopy(base); cases['source_mismatch']['post_fix_receipt']['source_commit'] = 'b'*40
+cases['pre_pass'] = copy.deepcopy(base); cases['pre_pass']['pre_fix_receipt']['status'] = 'PASS'; cases['pre_pass']['pre_fix_receipt']['failures'] = 0
+cases['post_fail'] = copy.deepcopy(base); cases['post_fail']['post_fix_receipt']['status'] = 'FAIL'; cases['post_fail']['post_fix_receipt']['failures'] = 1
+cases['post_skip'] = copy.deepcopy(base); cases['post_skip']['post_fix_receipt']['skips'] = 1
+cases['after_push'] = copy.deepcopy(base); cases['after_push']['post_fix_receipt']['started_at'] = '2026-07-20T01:21:00+09:00'
+def scalar(v):
+    if v is None: return 'null'
+    if isinstance(v, int): return str(v)
+    return "'" + str(v).replace("'", "''") + "'"
+for name, evidence in cases.items():
+    lines = ['task:', '  task_type: ci_fix', '  ci_fix_clean_repro_evidence:']
+    for key, value in evidence.items():
+        if isinstance(value, dict):
+            lines.append(f'    {key}:')
+            for k, v in value.items(): lines.append(f'      {k}: {scalar(v)}')
+        else: lines.append(f'    {key}: {scalar(value)}')
+    (root/f'{name}.yaml').write_text('\n'.join(lines)+'\n')
+PY
+    for invalid in pass_only source_mismatch pre_pass post_fail post_skip after_push; do
+        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_clean_repro_evidence_validate '$tmpdir/'\"$invalid\"'.yaml'"
+        [ "$status" -eq 1 ]
+        [[ "$output" == *"BLOCK: ci_fix clean repro evidence"* ]]
+    done
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_clean_repro_evidence_validate '$tmpdir/valid.yaml'"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: ci_fix clean repro evidence valid"* ]]
+}
+
 @test "cmd_3855: L159 is not blanket-injected into every recon task" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import sys
