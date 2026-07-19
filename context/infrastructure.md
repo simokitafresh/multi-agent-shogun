@@ -835,7 +835,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1226 -->
+<!-- last_synced_lesson: L1227 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1775,6 +1775,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1224: 成功様ログはdurable transaction後に限定（cmd_karo_hotfix_idle_cycle_delivery_log_truth_202607191619）
 - L1225: 比較境界は両辺を同一fixtureで型正規化する（cmd_karo_ci_red_29676034794_deploy_fixture_202607191515）
 - L1226: 工程内訳は完全観測同一コホートで比較する（cmd_4085）
+- L1227: durable workerはpane process groupから分離する（cmd_karo_hotfix_report_publish_review_ready_202607191728）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
