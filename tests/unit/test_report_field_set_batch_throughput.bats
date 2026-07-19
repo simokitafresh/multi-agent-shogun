@@ -1,9 +1,19 @@
 #!/usr/bin/env bats
+# test_necessity: terminal batch publication must synchronously emit one
+# fingerprint-deduplicated lifecycle parent whose child review is repairable
+# from the persisted completed report after an interrupted publisher.
 
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   TMPDIR_CASE="$(mktemp -d)"
   REPORT="$TMPDIR_CASE/report.yaml"
+  FAKE_INBOX="$TMPDIR_CASE/inbox_write.sh"
+  export RFS_INBOX_WRITE_PATH="$FAKE_INBOX"
+  export RFS_EVENT_LOG="$TMPDIR_CASE/events"
+  cat >"$FAKE_INBOX" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$RFS_EVENT_LOG"
+SH
   cat >"$REPORT" <<'YAML'
 worker_id: hanzo
 parent_cmd: cmd_test
@@ -98,4 +108,52 @@ assert step2.count('bash scripts/report_field_set.sh "$REPORT"') == 0
 assert "revision_requested" in step2
 PY
   [ "$status" -eq 0 ]
+}
+
+@test "terminal batch publishes canonical completion synchronously and nonterminal writes publish nothing" {
+  run env RFS_INBOX_WRITE_PATH="$FAKE_INBOX" RFS_EVENT_LOG="$RFS_EVENT_LOG" bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
+  [ "$status" -eq 0 ]
+  [ "$(wc -l <"$RFS_EVENT_LOG")" -eq 1 ]
+  grep -q 'karo hanzo報告完了.*report=report.yaml parent_cmd=cmd_test report_received hanzo notify_karo' "$RFS_EVENT_LOG"
+
+  sed -i 's/status: completed/status: revision_requested/' "$REPORT"
+  : >"$RFS_EVENT_LOG"
+  run env RFS_INBOX_WRITE_PATH="$FAKE_INBOX" RFS_EVENT_LOG="$RFS_EVENT_LOG" bash -c 'printf "result.details: nonterminal\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
+  [ "$status" -eq 0 ]
+  [ ! -s "$RFS_EVENT_LOG" ]
+}
+
+@test "persisted terminal report survives publish failpoint as durable outbox" {
+  run env RFS_FAIL_AFTER_ATOMIC_REPLACE=1 RFS_INBOX_WRITE_PATH="$FAKE_INBOX" RFS_EVENT_LOG="$RFS_EVENT_LOG" bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
+  [ "$status" -eq 86 ]
+  [ ! -e "$RFS_EVENT_LOG" ]
+  run python3 -c 'import yaml,sys; assert yaml.safe_load(open(sys.argv[1]))["status"]=="completed"' "$REPORT"
+  [ "$status" -eq 0 ]
+}
+
+@test "twenty isolated terminal publishes persist review-ready events under five seconds with no live inbox writes" {
+  live_before="$(sha256sum "$ROOT/queue/inbox/karo.yaml" | awk '{print $1}')"
+  : >"$RFS_EVENT_LOG"
+  durations="$TMPDIR_CASE/durations"
+  for i in $(seq 1 20); do
+    case_report="$TMPDIR_CASE/report_$i.yaml"
+    cp "$REPORT" "$case_report"
+    start_ns="$(date +%s%N)"
+    run bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$case_report"
+    [ "$status" -eq 0 ]
+    end_ns="$(date +%s%N)"
+    echo $((end_ns-start_ns)) >>"$durations"
+    [ "$(stat -c %Y "$case_report")" -le "$(date +%s)" ]
+  done
+  [ "$(wc -l <"$RFS_EVENT_LOG")" -eq 20 ]
+  [ "$(sha256sum "$ROOT/queue/inbox/karo.yaml" | awk '{print $1}')" = "$live_before" ]
+  run python3 - "$durations" <<'PY'
+import sys
+xs=sorted(int(x)/1e9 for x in open(sys.argv[1]))
+p50=xs[9]; p95=xs[18]
+print(f"PUBLISH_METRIC n=20 p50={p50:.3f}s p95={p95:.3f}s fp=0 fn=0 skip=0")
+assert p50 < 5 and p95 < 5
+PY
+  [ "$status" -eq 0 ]
+  echo "$output" >&3
 }

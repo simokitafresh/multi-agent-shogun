@@ -5075,6 +5075,30 @@ check_stall() {
     fi
 }
 
+# A terminal report is itself a durable outbox.  Repair a publish interrupted
+# after the atomic report replace but before inbox persistence (pane death,
+# dispatcher exit, or monitor respawn). inbox_write's structured fingerprint
+# transaction makes this safe on every cycle and repairs a missing review child.
+repair_terminal_report_outboxes() {
+    local name task_file report_path report_full status
+    for name in "${NINJA_NAMES[@]}"; do
+        task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+        [ -f "$task_file" ] || continue
+        report_path=$(yaml_field_get "$task_file" report_path "" 2>/dev/null || true)
+        [ -n "$report_path" ] || continue
+        [[ "$report_path" = /* ]] && report_full="$report_path" || report_full="$SCRIPT_DIR/$report_path"
+        if [ ! -f "$report_full" ]; then
+            report_full="$SCRIPT_DIR/queue/archive/reports/${report_path##*/}"
+        fi
+        [ -f "$report_full" ] || continue
+        status=$(yaml_field_get "$report_full" status "" 2>/dev/null || true)
+        case "$status" in completed|done) ;; *) continue ;; esac
+        bash "${REPORT_OUTBOX_INBOX_WRITE_PATH:-$SCRIPT_DIR/scripts/inbox_write.sh}" karo \
+            "${name}報告完了。report=${report_full##*/}" report_received "$name" notify_karo \
+            >/dev/null 2>&1 || log "REPORT-OUTBOX-REPAIR-BLOCK: $name report=${report_full##*/}"
+    done
+}
+
 evaluate_active_idle_report_recovery() {
     local name="$1"
     local task_file="$2"
@@ -8096,6 +8120,9 @@ while true; do
     # ═══ STEP 1a: 家老陣形図の早期更新 ═══
     # 後段の定期gate/maintenanceが詰まっても、家老復帰・dashboardが古いsnapshotを掴まないようにする。
     refresh_karo_snapshot_fast_path
+
+    # terminal publish crash-window repair; bounded to one current report per ninja
+    repair_terminal_report_outboxes
 
     # ═══ 停滞検知チェック（全忍者） ═══
     for name in "${NINJA_NAMES[@]}"; do
