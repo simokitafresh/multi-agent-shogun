@@ -1316,7 +1316,7 @@ EOF
 }
 
 # test_necessity: D006違反taskが忍者へ到達しない配備前不変量を守る。
-@test "destructive signal preflight blocks 6 dangerous requirements and passes 6 explanations/failpoints" {
+@test "destructive signal preflight blocks wrapper-hidden dangerous requirements and passes explanations/failpoints" {
     local tmpdir fixture before dangerous safe text
     tmpdir="$(mktemp -d)"
     fixture="$tmpdir/source.yaml"
@@ -1331,6 +1331,9 @@ EOF
       'purpose: "外部プロセスへsignalを送信して故障注入を実行せよ"'
       'purpose: "対象daemonを終了させる故障注入を行う"'
       'acceptance_criteria: ["process kill故障注入を実行する"]'
+      'command: "timeout 5 killall target"'
+      'command: "timeout --signal=TERM 5 pkill -f worker"'
+      'command: "env MODE=fault timeout -k 1 5 kill 1234"'
     )
     safe=(
       'command: "TEST_FAILPOINT=after_persist bash scripts/worker.sh; test $? -ne 0"'
@@ -1356,4 +1359,24 @@ EOF
 
     run bash -c "cmp -s '$tmpdir/task.yaml' '$tmpdir/report.yaml' && cmp -s '$tmpdir/task.yaml' '$tmpdir/inbox.yaml'"
     [ "$status" -eq 0 ]
+}
+
+@test "direct --yaml safe source executes destructive preflight without runtime NameError" {
+    local tmpdir source
+    tmpdir="$(mktemp -d)"
+    source="$tmpdir/safe.yaml"
+    cat > "$source" <<'YAML'
+task:
+  purpose: safe direct fixture
+  command: TEST_FAILPOINT=after_persist bash scripts/worker.sh
+  acceptance_criteria:
+    - description: self exit failpoint returns nonzero after durable phase save
+YAML
+
+    run env DEPLOY_TASK_LIB_ONLY=1 SOURCE_FILE="$source" PROJECT_ROOT_ENV="$PROJECT_ROOT" bash -c '
+      source "$PROJECT_ROOT_ENV/scripts/deploy_task.sh"
+      deploy_task_destructive_signal_precheck "$SOURCE_FILE"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"NameError"* ]]
 }

@@ -10814,6 +10814,7 @@ deploy_task_destructive_signal_precheck() {
     local source_file="$1" cmd_id="${2:-}"
     python3 - "$source_file" "$cmd_id" <<'PY'
 import re
+import shlex
 import sys
 
 import yaml
@@ -10864,9 +10865,6 @@ safe_explanation = re.compile(
     r"D006|禁止|禁則|違反|遮断|BLOCK|ブロック|検出|発火|参照|説明|例示|"
     r"要求.{0,12}(?:場合|なら)|(?:使うな|実行するな|してはならない)", re.I
 )
-shell_signal = re.compile(
-    r"(?:^|[;&|`]|\$\(|\b(?:sudo|env|timeout)\s+)(?:\s*)(?:kill|pkill|killall)\b", re.I
-)
 imperative_signal = re.compile(
     r"(?:外部|別|他の|対象)?(?:プロセス|daemon|デーモン|PID|pane|ペイン).{0,30}"
     r"(?:kill|pkill|killall|signal|シグナル|終了させ|停止させ).{0,20}"
@@ -10876,13 +10874,31 @@ process_kill_fault = re.compile(
     r"(?:process[ _-]?kill|プロセスkill).{0,20}(?:故障注入|実行|行う|せよ)", re.I
 )
 
+def has_signal_command(line):
+    """Recognize kill-family commands after shell wrappers and their args."""
+    try:
+        tokens = shlex.split(line, posix=True)
+    except ValueError:
+        tokens = re.split(r"\s+", line)
+    signal_commands = {"kill", "pkill", "killall"}
+    wrappers = {"env", "timeout", "command", "nohup", "nice", "setsid"}
+    for token in tokens:
+        normalized = token.strip(";|&(){}").rsplit("/", 1)[-1].lower()
+        if normalized in signal_commands:
+            return True
+        # Wrapper names are intentionally recognized while scanning through
+        # options, durations and VAR=value arguments to the eventual command.
+        if normalized in wrappers or token.startswith("-") or re.match(r"^[A-Za-z_][A-Za-z0-9_]*=", token):
+            continue
+    return False
+
 violations = []
 for text in texts:
     for line in text.splitlines():
         line = line.strip()
         if not line or safe_explanation.search(line):
             continue
-        if shell_signal.search(line) or imperative_signal.search(line) or process_kill_fault.search(line):
+        if has_signal_command(line) or imperative_signal.search(line) or process_kill_fault.search(line):
             violations.append(line)
 
 if violations:
