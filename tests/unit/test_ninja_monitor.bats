@@ -184,9 +184,15 @@ SH
         flock -n "$SCRIPT_DIR/queue/locks/deploy_ninja_alpha.lock" -c true
         wait "$holder"
 
-        # 真の全idleは1通知。次cycle再評価でlost=0、1 cycle内duplicate=0。
+        # 真の全idleは1通知。初回後の3 cycleはcooldownで配送も送信成功ログも0。
+        KARO_IDLE_COOLDOWN=1800
+        check_karo_idle_cycle
+        check_karo_idle_cycle
+        check_karo_idle_cycle
         check_karo_idle_cycle
         [ "$(wc -l <"$SCRIPT_DIR/notifications")" -eq 1 ]
+        [ "$(grep -c "Sent improvement cycle nudge to karo" "$LOG")" -eq 1 ]
+        [ "$(grep -c "nudging karo" "$LOG" || true)" -eq 0 ]
         [ ! -e "$SCRIPT_DIR/child_fd_leaks" ]
         for agent in alpha beta; do
             flock -n "$SCRIPT_DIR/queue/locks/deploy_ninja_${agent}.lock" -c true
