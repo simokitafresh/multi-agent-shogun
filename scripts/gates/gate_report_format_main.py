@@ -2,6 +2,7 @@
 # semantic-links: [[gate迂回防止]], [[忍者報告品質プロトコル]]
 import datetime as dt
 import json
+import math
 import os
 import pathlib
 import re
@@ -407,6 +408,58 @@ def main(report_data=None) -> int:
                 "normal_pass/quoted_or_heredoc/linked_worktree/parallel_or_respawn/abnormal_exit "
                 "の全resultをyes/noで記入せよ"
             )
+
+    # Multi-round speed callbacks consume a stricter measurement schema than
+    # the generic operational_simulation contract.  A prose PASS row cannot
+    # advance the campaign: require the exact numeric fields before a terminal
+    # PASS report can reach the callback (R1/R2 both omitted them previously).
+    speed_result = data.get("speed_result")
+    if isinstance(speed_result, dict):
+        speed_quality = str(speed_result.get("quality") or "").strip().lower()
+        if speed_quality not in {"pass", "fail", "skip"}:
+            errors.append(
+                "speed_result.quality: must be pass/fail/skip for speed callback"
+            )
+        if speed_quality == "pass" and str(data.get("status") or "").strip().lower() in {"completed", "done"}:
+            test_results = data.get("test_results")
+            if isinstance(test_results, list):
+                measurement_rows = test_results
+            elif isinstance(test_results, dict):
+                measurement_rows = (
+                    [test_results]
+                    if "wall_sec" in test_results
+                    else [row for row in test_results.values() if isinstance(row, dict)]
+                )
+            else:
+                measurement_rows = []
+            valid_speed_measurement = False
+            for measurement in measurement_rows:
+                try:
+                    status = str(measurement.get("status") or "").strip().lower()
+                    wall_sec = float(measurement.get("wall_sec"))
+                    failures = int(measurement.get("failures"))
+                    skips = int(measurement.get("skips"))
+                except (AttributeError, TypeError, ValueError, OverflowError):
+                    continue
+                if (
+                    status == "pass"
+                    and math.isfinite(wall_sec)
+                    and wall_sec >= 0
+                    and failures == 0
+                    and skips == 0
+                ):
+                    valid_speed_measurement = True
+                    break
+            if not valid_speed_measurement:
+                errors.append(
+                    "speed callback schema: terminal quality=pass requires "
+                    "test_results(status=pass, wall_sec=finite>=0, failures=0, skips=0)"
+                )
+                hints.append(
+                    "FIX (speed callback schema): operational_simulation SSOTへ "
+                    "status=pass, wall_sec=<seconds>, failures=0, skips=0 を "
+                    "report_field_set.sh経由で記録せよ"
+                )
 
     def metric_filled(metric) -> bool:
         if metric is None:

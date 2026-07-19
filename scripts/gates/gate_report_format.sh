@@ -69,6 +69,7 @@ REPO_ROOT="${GATE_REPO_ROOT_OVERRIDE:-$_DEFAULT_REPO_ROOT}"
 PASS_CACHE="${GATE_PASS_CACHE_FILE:-$REPO_ROOT/logs/.gate_pass_cache}"
 LEARNING_FILE="${GATE_REPORT_FORMAT_LEARNING_FILE:-$REPO_ROOT/logs/gate_report_format_learning.yaml}"
 PREFILL_THRESHOLD="${GATE_REPORT_FORMAT_PREFILL_THRESHOLD:-10}"
+_GATE_DIR="${BASH_SOURCE[0]%/*}"
 # perf: cache keyはshellで組み立て、realpath起動を避ける。
 if [[ "$REPORT_PATH" = /* ]]; then
     _CANON="$REPORT_PATH"
@@ -77,9 +78,31 @@ else
 fi
 _MTIME=""
 _GATE_MTIME=""
+_COMBINED_MTIME=""
+_AUTOFIX_MTIME=""
+_FORMAT_MTIME=""
+_IDENTITY_MTIME=""
+_EXTRA_GATE_MTIME=""
 if [[ "${GATE_NO_LOG:-}" != "1" ]] || [ -f "$PASS_CACHE" ]; then
-    { read -r _MTIME; read -r _GATE_MTIME; } < <(stat -c '%Y' "$REPORT_PATH" "${BASH_SOURCE[0]}" 2>/dev/null || printf '\n\n')
-    if [ -n "$_MTIME" ] && [ -n "$_GATE_MTIME" ] && [ -f "$PASS_CACHE" ] && grep -qF "${_CANON} ${_MTIME} ${_GATE_MTIME}" "$PASS_CACHE" 2>/dev/null; then
+    {
+        read -r _MTIME
+        read -r _GATE_MTIME
+        read -r _COMBINED_MTIME
+        read -r _AUTOFIX_MTIME
+        read -r _FORMAT_MTIME
+        read -r _IDENTITY_MTIME
+    } < <(stat -c '%Y' \
+        "$REPORT_PATH" \
+        "${BASH_SOURCE[0]}" \
+        "$_GATE_DIR/gate_report_format_combined.py" \
+        "$_GATE_DIR/gate_report_autofix_main.py" \
+        "$_GATE_DIR/gate_report_format_main.py" \
+        "$REPO_ROOT/scripts/lib/report_commit_identity.py" 2>/dev/null || printf '\n\n\n\n\n\n')
+    if [ -n "${GATE_CACHE_VERSION_FILE_OVERRIDE:-}" ]; then
+        _EXTRA_GATE_MTIME=$(stat -c '%Y' "$GATE_CACHE_VERSION_FILE_OVERRIDE" 2>/dev/null || true)
+    fi
+    _GATE_SIGNATURE="${_GATE_MTIME}:${_COMBINED_MTIME}:${_AUTOFIX_MTIME}:${_FORMAT_MTIME}:${_IDENTITY_MTIME}:${_EXTRA_GATE_MTIME}"
+    if [ -n "$_MTIME" ] && [ -n "$_IDENTITY_MTIME" ] && [ -f "$PASS_CACHE" ] && grep -qF "${_CANON} ${_MTIME} ${_GATE_SIGNATURE}" "$PASS_CACHE" 2>/dev/null; then
         echo "PASS"
         exit 0
     fi
@@ -88,7 +111,6 @@ fi
 # cmd_2063: autofix + format validation を単一 python3 プロセスで実行
 # 旧: bash gate_report_autofix.sh (→python3) + python3 gate_report_format_main.py = 2プロセス
 # 新: python3 gate_report_format_combined.py (autofix+validation を1プロセス統合) = 1プロセス
-_GATE_DIR="${BASH_SOURCE[0]%/*}"
 RESULT=$(python3 "$_GATE_DIR/gate_report_format_combined.py" "$REPORT_PATH" 2>&1) || true
 
 echo "$RESULT"
@@ -644,7 +666,7 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
     # Update PASS cache (GP-073) — WSL2最適化: sed dedup削除、直接append
     # 旧エントリは次回grep時にmtime不一致で自然失効。correctnessに影響なし。
     if [ -n "$_MTIME" ]; then
-        echo "${_CANON} ${_MTIME} ${_GATE_MTIME}" >> "$PASS_CACHE" 2>/dev/null || true
+        echo "${_CANON} ${_MTIME} ${_GATE_SIGNATURE}" >> "$PASS_CACHE" 2>/dev/null || true
     fi
     exit 0
 else

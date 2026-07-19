@@ -125,6 +125,51 @@ YAML
     [[ "$output" == *"PASS"* ]]
 }
 
+# test_necessity: multi-round speed callback must never advance from prose-only PASS evidence.
+@test "T-001e: terminal speed PASS with prose-only results is BLOCKed" {
+    local report=$(create_valid_report)
+    cat >> "$report" <<'YAML'
+speed_result:
+  quality: pass
+  last_wall: 12.5
+  approach: shared fixture
+  dominant: repeated setup
+  elapsed_sec: 100
+  ctx_percent: 40
+test_results:
+  command: bats tests/unit/example.bats
+  actual: all tests passed
+  result: PASS
+YAML
+
+    run env GATE_NO_LOG=1 bash "$GATE" "$report"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"speed callback schema"* ]]
+}
+
+# test_necessity: a complete numeric speed callback measurement remains accepted.
+@test "T-001f: terminal speed PASS with numeric callback fields passes" {
+    local report=$(create_valid_report)
+    cat >> "$report" <<'YAML'
+speed_result:
+  quality: pass
+  last_wall: 12.5
+  approach: shared fixture
+  dominant: repeated setup
+  elapsed_sec: 100
+  ctx_percent: 40
+test_results:
+  status: pass
+  wall_sec: 12.5
+  failures: 0
+  skips: 0
+YAML
+
+    run env GATE_NO_LOG=1 bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS"* ]]
+}
+
 # --- T-002: Missing file → FAIL ---
 @test "T-002: missing file returns FAIL" {
     run bash "$GATE" "$TMPDIR_BATS/nonexistent.yaml"
@@ -513,6 +558,26 @@ PY
     run bash "$GATE" "$report"
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
+}
+
+# test_necessity: cached PASS must be invalidated whenever validator code generation changes.
+@test "T-007b: GP-073 cache invalidated when validator generation changes" {
+    local report="$REPO_TMPDIR_BATS/cache_validator_invalidate_report.yaml"
+    local generation="$REPO_TMPDIR_BATS/validator.generation"
+    create_valid_report "$report" >/dev/null
+    printf 'generation-1\n' > "$generation"
+    GATE_CACHE_VERSION_FILE_OVERRIDE="$generation" bash "$GATE" "$report" > /dev/null 2>&1
+    [ -f "$GATE_PASS_CACHE_FILE" ]
+
+    run env GATE_CACHE_VERSION_FILE_OVERRIDE="$generation" bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "PASS" ]]
+
+    sleep 1
+    printf 'generation-2\n' > "$generation"
+    run env GATE_CACHE_VERSION_FILE_OVERRIDE="$generation" bash "$GATE" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: origin欄が空/未記入"* ]]
 }
 
 # --- T-008: Missing binary_checks → FAIL ---
