@@ -9,7 +9,6 @@ report_contract_tests() {
     for tf in \
         "$TEST_DIR/test_affected_tests_report_contract.bats" \
         "$TEST_DIR/test_gate_report_autofix.bats" \
-        "$TEST_DIR/test_gate_report_format_cmd_3558.bats" \
         "$TEST_DIR/test_gate_report_format_cmd_3630_env_info.bats" \
         "$TEST_DIR/test_gate_report_format_lu_warn.bats" \
         "$TEST_DIR/test_gate_report_format_pass_no_improvement.bats" \
