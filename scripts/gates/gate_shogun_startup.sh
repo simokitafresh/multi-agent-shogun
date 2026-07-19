@@ -41,8 +41,13 @@ run_startup_short_cache() {
     fi
 
     tmp=$(mktemp)
-    "$@" > "$tmp" 2>&1
-    rc=$?
+    # This function runs under set -e.  Capture an expected non-zero gate
+    # result inside a conditional so its ALERT body and rc reach the cache.
+    if "$@" > "$tmp" 2>&1; then
+        rc=0
+    else
+        rc=$?
+    fi
     mkdir -p "$(dirname "$cache_file")"
     printf '%s\n' "$rc" > "${tmp}.rc"
     printf '%s\n' "$input_hash" > "${tmp}.hash"

@@ -76,3 +76,41 @@ EOF
     [[ "$output" == *"NOT_FOUND"* ]]
     [[ "$output" != *"FOUND_WITH_AUTOMATION"* ]]
 }
+
+# test_necessity: set -e下のshort cacheは失敗したgateのALERT本文と終了コードをmiss/hit双方で保存・再生する不変量を守る。
+@test "short cache preserves alert output and rc across miss and hit under set -e" {
+    local harness cache marker
+    harness="$TEST_ROOT/short-cache-harness.sh"
+    cache="$TEST_ROOT/loop-ledger.cache"
+    marker="$TEST_ROOT/invocations"
+
+    awk '
+        /^run_startup_short_cache\(\)/ {inside=1}
+        inside {print}
+        inside && /^}/ {exit}
+    ' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh" > "$TEST_ROOT/short-cache-function.sh"
+    cat > "$harness" <<'EOF'
+#!/bin/bash
+set -e
+source "$FUNCTION_FILE"
+failing_gate() {
+    printf 'invoked\n' >> "$MARKER"
+    printf 'ALERT: promotion inventory exceeded\n'
+    return 1
+}
+run_startup_short_cache "$CACHE_FILE" 60 failing_gate
+EOF
+    chmod +x "$harness"
+
+    run env FUNCTION_FILE="$TEST_ROOT/short-cache-function.sh" MARKER="$marker" CACHE_FILE="$cache" bash "$harness"
+    [ "$status" -eq 1 ]
+    [ "$(printf '%s\n' "$output" | grep -c '^ALERT: promotion inventory exceeded$')" -eq 1 ]
+    [ "$(wc -l < "$marker")" -eq 1 ]
+    [ "$(cat "${cache}.rc")" -eq 1 ]
+
+    run env FUNCTION_FILE="$TEST_ROOT/short-cache-function.sh" MARKER="$marker" CACHE_FILE="$cache" bash "$harness"
+    [ "$status" -eq 1 ]
+    [ "$(printf '%s\n' "$output" | grep -c '^ALERT: promotion inventory exceeded$')" -eq 1 ]
+    [ "$(wc -l < "$marker")" -eq 1 ]
+    [ "$(printf '%s\n' "$output" | awk '/^ALERT:/' | cksum | awk '{print $1 ":" $2}')" != "4294967295:0" ]
+}
