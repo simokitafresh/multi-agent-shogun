@@ -54,10 +54,14 @@ source "$TMP/scripts/lib/yaml_field_set.sh"
 $(extract_function inject_report_filename)
 $(extract_function deploy_task_speed_campaign_report_is_explicit)
 $(extract_function deploy_task_normalize_report_metadata)
+$(extract_function inject_done_redeploy_hints)
 log() { :; }
 NINJA_NAME="\$3"
 cp "\$2" "$TMP/queue/tasks/\$3.yaml"
 deploy_task_normalize_report_metadata "$TMP/queue/tasks/\$3.yaml"
+_DEPLOY_DONE_REUSE=1
+_DEPLOY_DONE_REPORT_PATH=queue/reports/r1.yaml
+inject_done_redeploy_hints "$TMP/queue/tasks/\$3.yaml"
 report=\$(FIELD_GET_NO_LOG=1 field_get "$TMP/queue/tasks/\$3.yaml" report_path "")
 mkdir -p "$TMP/\$(dirname "\$report")"
 printf 'status: pending\n' > "$TMP/\$report"

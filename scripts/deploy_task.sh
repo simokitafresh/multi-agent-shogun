@@ -10297,6 +10297,13 @@ inject_done_redeploy_hints() {
     [ "${_DEPLOY_DONE_REUSE:-0}" = "1" ] || return 0
     [ -f "$task_file" ] || return 0
 
+    # test-speedの各roundは同一parent_cmdでもreport identityが別物。
+    # 汎用done再配備hintでR2+をR1へ戻すと過去報告を上書きするため、生成器の明示契約を優先する。
+    if deploy_task_speed_campaign_report_is_explicit "$task_file"; then
+        log "done_redeploy_hint: SKIP explicit speed campaign round report"
+        return 0
+    fi
+
     report_path="${_DEPLOY_DONE_REPORT_PATH:-}"
     [ -n "$report_path" ] || return 0
 
