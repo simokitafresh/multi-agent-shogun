@@ -205,11 +205,11 @@ YAML
     python3 -c 'import sys,yaml; d=yaml.safe_load(open(sys.argv[1])); assert len(d["messages"]) == 2' "$TEST_ROOT/queue/inbox/testagent.yaml"
 }
 
-@test "nonexistent msg_id returns success with informational message" {
+@test "nonexistent msg_id returns nonzero so callers can detect the mismatch" {
     _create_inbox testagent
 
     run bash "$TEST_SCRIPT" testagent msg_nonexistent
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 2 ]
     [[ "$output" == *"not found or already read"* ]]
 
     # Original messages unchanged
@@ -217,12 +217,12 @@ YAML
     [ "$(_get_read_status testagent msg_002)" = "false" ]
 }
 
-@test "idempotent: re-marking already read message succeeds" {
+@test "re-marking already read message returns nonzero so callers can detect stale state" {
     _create_inbox testagent
 
     # Mark msg_003 which is already read:true
     run bash "$TEST_SCRIPT" testagent msg_003
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 2 ]
     [[ "$output" == *"not found or already read"* ]]
 
     # State unchanged

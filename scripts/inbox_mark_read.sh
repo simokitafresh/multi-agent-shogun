@@ -280,7 +280,8 @@ while [ $attempt -lt $max_attempts ]; do
         # Fast early exit: no unread messages in file
         if ! grep -q "^  read:[[:space:]]*false[[:space:]]*$" "$INBOX" 2>/dev/null; then
             if [ -n "$MSG_ID" ]; then
-                echo "[inbox_mark_read] msg_id=$MSG_ID not found or already read"
+                echo "[inbox_mark_read] ERROR: msg_id=$MSG_ID not found or already read" >&2
+                exit 2
             else
                 echo "[inbox_mark_read] No unread messages"
             fi
@@ -363,7 +364,8 @@ while [ $attempt -lt $max_attempts ]; do
         if [ "${_changed:-0}" -eq 0 ]; then
             rm -f "$_tmp"
             if [ -n "$MSG_ID" ]; then
-                echo "[inbox_mark_read] msg_id=$MSG_ID not found or already read"
+                echo "[inbox_mark_read] ERROR: msg_id=$MSG_ID not found or already read" >&2
+                exit 2
             else
                 echo "[inbox_mark_read] No unread messages"
             fi
@@ -383,7 +385,13 @@ while [ $attempt -lt $max_attempts ]; do
         rm -f "$ID_LIST_FILE"
         exit 0
     else
+        operation_rc=$?
         rm -f "$CONFIRM_LIST_FILE" "$ID_LIST_FILE"
+        # Contract/state mismatches are semantic failures, not lock contention.
+        # Preserve them for callers instead of retrying and collapsing them to rc=1.
+        if [ "$operation_rc" -eq 2 ]; then
+            exit 2
+        fi
         attempt=$((attempt + 1))
         if [ $attempt -lt $max_attempts ]; then
             echo "[inbox_mark_read] Lock timeout (attempt $attempt/$max_attempts), retrying..." >&2
