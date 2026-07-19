@@ -28,3 +28,20 @@ SH
   [[ "$output" == *"未解消source commit=0件かつALERT=0件"* ]]
   [[ "$output" != *"先頭の last_updated を 2026-07-20"* ]]
 }
+
+@test "normal checker output produces zero false-positive alerts" {
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$FIXTURE_ROOT/scripts/check.sh"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"総合判定: OK"* ]]
+  [[ "$output" != *"ALERT:"* ]]
+}
