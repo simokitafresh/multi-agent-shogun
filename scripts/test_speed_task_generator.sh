@@ -154,10 +154,36 @@ raise SystemExit(1)
 PY
 }
 
+# Timing rows are historical evidence, not proof that a test can still be
+# measured.  Default-delete may remove a test after its timing row was written.
+# Require both the live worktree file and the baseline HEAD blob before the row
+# can become work; otherwise an idle ninja receives an impossible A/B task.
+target_is_measurable() {
+    local target="$1" root_real target_real rel
+    root_real=$(realpath -m -- "$ROOT") || return 1
+    case "$target" in
+      /*) target_real=$(realpath -m -- "$target") || return 1 ;;
+      *)  target_real=$(realpath -m -- "$ROOT/$target") || return 1 ;;
+    esac
+    case "$target_real" in
+      "$root_real"/*) rel=${target_real#"$root_real"/} ;;
+      *) return 1 ;;
+    esac
+    [ -f "$target_real" ] || return 1
+    if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1 &&
+       git -C "$ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
+        git -C "$ROOT" cat-file -e "HEAD:$rel" 2>/dev/null || return 1
+    fi
+}
+
 next_target() {
     [ -r "$LEDGER" ] || return 1
     local wall target
     while IFS=$'\t' read -r wall target; do
+        if ! target_is_measurable "$target"; then
+            printf 'WARN: stale timing target skipped target=%s reason=missing_worktree_or_head\n' "$target" >&2
+            continue
+        fi
         active_or_completed "$target" || { printf '%s\t%s\n' "$wall" "$target"; return 0; }
     done < <(awk -F '\t' -v threshold="$THRESHOLD" '
       NR == 1 { for (i=1;i<=NF;i++) h[$i]=i; next }
@@ -200,6 +226,10 @@ append_campaign() {
 
 emit_round_task() {
     local campaign="$1" round="$2" target="$3" best="$4" elapsed="$5" slug stamp file report baseline_commit
+    target_is_measurable "$target" || {
+        printf 'BLOCK:target_not_measurable target=%s reason=missing_worktree_or_head\n' "$target" >&2
+        return 2
+    }
     slug=$(basename "$target" .bats | tr -c '[:alnum:]_-' '_')
     stamp=$(date +%Y%m%d%H%M%S)
     file="$OUT_DIR/test_speed_${campaign#cmd_training_test_speed_}_r${round}_${stamp}.yaml"

@@ -4,7 +4,8 @@
 setup() {
   ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
   TMP="$BATS_TEST_TMPDIR/repo"
-  mkdir -p "$TMP/logs" "$TMP/queue/tasks" "$TMP/queue/reports" "$TMP/queue/archive/reports" "$TMP/queue/training"
+  mkdir -p "$TMP/logs" "$TMP/queue/tasks" "$TMP/queue/reports" "$TMP/queue/archive/reports" "$TMP/queue/training" "$TMP/tests/unit"
+  touch "$TMP/tests/unit/slow.bats" "$TMP/tests/unit/worse.bats" "$TMP/tests/unit/current.bats" "$TMP/tests/unit/stale.bats"
   printf 'run_id\trepo\tcommit_sha\tsuite_root\trunner\ttest_file\ttest_id_count\twall_sec\tstatus\tskip_count\n' > "$TMP/logs/test_timing_ledger.tsv"
   printf 'global_status: running\n' > "$TMP/logs/script_speed_training_ledger.yaml"
 }
@@ -275,7 +276,7 @@ YAML
 @test "same-run AB accepts only dual-nonregression with one strict improvement and records evidence" {
   ledger="$TMP/logs/ab.tsv"
   run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_TASK_DIR="$TMP/queue/training" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" \
-    bash "$ROOT/scripts/test_speed_task_generator.sh" continue cab 1 t 10 9 cache pass cache 10 0 base cand 9 base cand 'run same' 10 100 120 99 120
+    bash "$ROOT/scripts/test_speed_task_generator.sh" continue cab 1 tests/unit/slow.bats 10 9 cache pass cache 10 0 base cand 9 base cand 'run same' 10 100 120 99 120
   [ "$status" -eq 0 ]
   [ "$(awk -F '\t' 'NR==2 {print $8":"$9":"$11":"$12":"$13":"$14":"$15}' "$ledger")" = 'base:cand:10:100:120:99:120' ]
   [[ "$output" != STOP:* ]]
