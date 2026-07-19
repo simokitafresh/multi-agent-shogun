@@ -7618,6 +7618,31 @@ check_karo_idle_cycle() {
     done
 }
 
+# Script更新は重いpane再探索周期と分離し、次cycleの業務処理前に反映する。
+# 旧版が残したdeploy lock FDもexec前に閉じ、新プロセスへ継承させない。
+_ninja_monitor_hot_reload_exec() {
+    exec bash "$1"
+}
+
+reload_ninja_monitor_if_updated() {
+    local current_mtime fd_path fd_target inherited_fd
+    current_mtime="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
+    [ "$current_mtime" = "$_NM_START_MTIME" ] && return 0
+
+    log "HOT-RELOAD: ninja_monitor.sh updated (mtime ${_NM_START_MTIME} → ${current_mtime}). Restarting..."
+    for fd_path in "/proc/$$/fd/"*; do
+        [ -e "$fd_path" ] || continue
+        fd_target="$(readlink "$fd_path" 2>/dev/null || true)"
+        case "$fd_target" in
+            */queue/locks/deploy_ninja_*.lock)
+                inherited_fd="${fd_path##*/}"
+                exec {inherited_fd}>&-
+                ;;
+        esac
+    done
+    _ninja_monitor_hot_reload_exec "$_NM_SCRIPT_PATH"
+}
+
 # Existing monitor idle edge is the single trigger; no new daemon/poll loop.
 # A trusted writer publishes one CLI argument per line and atomic rename claims it.
 check_throughput_ready_events() {
@@ -7717,18 +7742,11 @@ _NM_START_MTIME="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
 while true; do
     cycle=$((cycle + 1))
 
+    # 毎cycle確認（20秒以内）。重いdiscover_panesは従来どおり10分周期。
+    reload_ninja_monitor_if_updated
+
     # Primary task state is observed before pane waits and maintenance.
     monitor_task_state_fast_path
-
-    # ─── hot-reload: スクリプト更新検知で自動再起動 (2026-06-26) ───
-    # commit後も旧コードで稼働し続けるバグの根治。10分ごとにmtimeチェック
-    if [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then
-        _nm_cur_mtime="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
-        if [ "$_nm_cur_mtime" != "$_NM_START_MTIME" ]; then
-            log "HOT-RELOAD: ninja_monitor.sh updated (mtime ${_NM_START_MTIME} → ${_nm_cur_mtime}). Restarting..."
-            exec bash "$_NM_SCRIPT_PATH"
-        fi
-    fi
 
     # 定期的にペイン再探索（ペイン構成変更に対応）
     if [ $((cycle % REDISCOVER_EVERY)) -eq 0 ]; then

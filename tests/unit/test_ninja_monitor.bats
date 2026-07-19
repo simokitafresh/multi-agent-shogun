@@ -195,3 +195,22 @@ SH
     '
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: ninja_monitor変更を次cycleの業務処理前に反映し、旧processのdeploy lock FDを新processへ継承しない不変量を守る。
+@test "hot reload runs every cycle and closes inherited deploy lock fds before exec" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        root="$BATS_TEST_TMPDIR/root"; mkdir -p "$root/queue/locks"; LOG="$root/log"
+        _NM_SCRIPT_PATH="$root/ninja_monitor.sh"; printf "old\n" >"$_NM_SCRIPT_PATH"
+        _NM_START_MTIME=1
+        exec {fd_a}>"$root/queue/locks/deploy_ninja_alpha.lock"; flock -n "$fd_a"
+        exec {fd_b}>"$root/queue/locks/deploy_ninja_beta.lock"; flock -n "$fd_b"
+        _ninja_monitor_hot_reload_exec() { printf "exec:%s\n" "$1" >"$root/reloaded"; }
+        reload_ninja_monitor_if_updated
+        [ "$(cat "$root/reloaded")" = "exec:$_NM_SCRIPT_PATH" ]
+        flock -n "$root/queue/locks/deploy_ninja_alpha.lock" -c true
+        flock -n "$root/queue/locks/deploy_ninja_beta.lock" -c true
+        [ "$(grep -c HOT-RELOAD "$LOG")" -eq 1 ]
+    '
+    [ "$status" -eq 0 ]
+}
