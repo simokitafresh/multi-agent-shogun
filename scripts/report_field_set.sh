@@ -133,10 +133,6 @@ print("BATCH_OK fields={} fingerprint={}".format(len(updates), hashlib.sha256(te
 PY
     _rfs_batch_rc=$?
     if [ "$_rfs_batch_rc" -eq 0 ]; then
-        if [ "${RFS_FAIL_AFTER_ATOMIC_REPLACE:-0}" = "1" ]; then
-            echo "FAILPOINT: terminal bytes persisted before lifecycle publish" >&2
-            exit 86
-        fi
         _rfs_batch_status=$(python3 - "$_rfs_batch_report" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
@@ -164,6 +160,27 @@ PY
             # the canonical parent and review child to the exact persisted bytes;
             # inbox_write owns fingerprint dedupe and the atomic task-done edge.
             _rfs_inbox_write="${RFS_INBOX_WRITE_PATH:-$_rfs_batch_root/scripts/inbox_write.sh}"
+            if [ "${RFS_DISABLE_FAST_RECONCILER:-0}" != "1" ]; then
+                # Detached bounded reconciler closes the process/pane-death
+                # window without waiting for ninja_monitor's 20s cycle. The
+                # synchronous publisher below remains the success boundary;
+                # both converge through inbox_write's fingerprint transaction.
+                RFS_RECONCILE_INBOX="$_rfs_inbox_write" \
+                RFS_RECONCILE_REPORT="$_rfs_batch_report" \
+                RFS_RECONCILE_WORKER="$_rfs_batch_worker" \
+                RFS_RECONCILE_PARENT="$_rfs_batch_parent" \
+                RFS_RECONCILE_DELAY="${RFS_RECONCILE_DELAY:-0.2}" \
+                    nohup bash -c '
+                        sleep "$RFS_RECONCILE_DELAY"
+                        bash "$RFS_RECONCILE_INBOX" karo \
+                          "$RFS_RECONCILE_WORKER報告完了。report=${RFS_RECONCILE_REPORT##*/} parent_cmd=$RFS_RECONCILE_PARENT" \
+                          report_received "$RFS_RECONCILE_WORKER" notify_karo
+                    ' </dev/null >/dev/null 2>&1 &
+            fi
+            if [ "${RFS_FAIL_AFTER_ATOMIC_REPLACE:-0}" = "1" ]; then
+                echo "FAILPOINT: terminal bytes persisted before lifecycle publish" >&2
+                exit 86
+            fi
             bash "$_rfs_inbox_write" karo \
                 "${_rfs_batch_worker}報告完了。report=$(basename "$_rfs_batch_report") parent_cmd=${_rfs_batch_parent}" \
                 report_received "$_rfs_batch_worker" notify_karo

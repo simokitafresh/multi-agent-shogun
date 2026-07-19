@@ -10,6 +10,7 @@ setup() {
   FAKE_INBOX="$TMPDIR_CASE/inbox_write.sh"
   export RFS_INBOX_WRITE_PATH="$FAKE_INBOX"
   export RFS_EVENT_LOG="$TMPDIR_CASE/events"
+  export RFS_DISABLE_FAST_RECONCILER=1
   cat >"$FAKE_INBOX" <<'SH'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >>"$RFS_EVENT_LOG"
@@ -124,11 +125,16 @@ PY
 }
 
 @test "persisted terminal report survives publish failpoint as durable outbox" {
-  run env RFS_FAIL_AFTER_ATOMIC_REPLACE=1 RFS_INBOX_WRITE_PATH="$FAKE_INBOX" RFS_EVENT_LOG="$RFS_EVENT_LOG" bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
+  start_ns="$(date +%s%N)"
+  run env RFS_FAIL_AFTER_ATOMIC_REPLACE=1 RFS_DISABLE_FAST_RECONCILER=0 RFS_RECONCILE_DELAY=0.1 RFS_INBOX_WRITE_PATH="$FAKE_INBOX" RFS_EVENT_LOG="$RFS_EVENT_LOG" bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
   [ "$status" -eq 86 ]
-  [ ! -e "$RFS_EVENT_LOG" ]
   run python3 -c 'import yaml,sys; assert yaml.safe_load(open(sys.argv[1]))["status"]=="completed"' "$REPORT"
   [ "$status" -eq 0 ]
+  for _ in $(seq 1 40); do [ -s "$RFS_EVENT_LOG" ] && break; sleep 0.1; done
+  [ "$(wc -l <"$RFS_EVENT_LOG")" -eq 1 ]
+  elapsed_ms="$(( ($(date +%s%N) - start_ns) / 1000000 ))"
+  echo "FAILPOINT_REPAIR elapsed_ms=$elapsed_ms parent=1 child_contract=canonical" >&3
+  [ "$elapsed_ms" -lt 5000 ]
 }
 
 @test "twenty isolated terminal publishes persist review-ready events under five seconds with no live inbox writes" {
