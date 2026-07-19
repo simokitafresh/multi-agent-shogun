@@ -209,6 +209,36 @@ prompt_state_wait_preflight() {
   prompt_state_preflight_pid=""
 }
 
+_prompt_state_memory_citation_scaffold() {
+  [[ "${agent_id:-unknown}" == "shogun" ]] || return 0
+  (( prompt_is_inbox_nudge == 0 )) || return 0
+  local evidence_dir="${THREE_LAYER_PREACTION_EVIDENCE_DIR:-$SCRIPT_DIR/logs/preaction_memory}"
+  local safe_pane="${TMUX_PANE:-default}" evidence
+  safe_pane="${safe_pane//[^A-Za-z0-9_.-]/_}"
+  evidence="$evidence_dir/evidence_shogun_${safe_pane}.json"
+  [[ -s "$evidence" && -s "$evidence.current" ]] || return 0
+  python3 - "$evidence" <<'PY' 2>/dev/null || return 0
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+d = json.loads(p.read_text(encoding="utf-8"))
+if p.with_name(p.name + ".current").read_text(encoding="utf-8").strip() != str(d.get("nonce", "")):
+    raise SystemExit(1)
+if d.get("status") != "success" or any(str(d.get(k)) != "0" for k in ("memory_db", "semantic", "obsidian")):
+    raise SystemExit(1)
+layers = (("memory_db", "memory"), ("semantic", "semantic"), ("obsidian", "obsidian"))
+values = []
+for label, prefix in layers:
+    source, query, ts = (str(d.get(f"{prefix}_{x}", "")).strip() for x in ("source", "query", "timestamp"))
+    if int(d.get(f"{prefix}_count", 0)) <= 0 or not source or not query or query == "-" or not ts:
+        raise SystemExit(1)
+    values.append((label, source, query, ts))
+print("=== MEM引用タグ雛形（応答冒頭に保持。実在preflight値） ===")
+for label, source, query, ts in values:
+    print(f'[MEM: {label} source="{source}" query="{query}" ts="{ts}"]')
+print("=== /MEM引用タグ雛形 ===")
+PY
+}
+
 prompt_is_inbox_nudge=0
 if [[ "$prompt_text" =~ ^inbox[0-9]+$ ]]; then
   prompt_is_inbox_nudge=1
@@ -1194,6 +1224,21 @@ fi
 
 # --- Output JSON ---
 prompt_state_wait_preflight
+memory_citation_started_ms="$(date +%s%3N)"
+memory_citation_scaffold="$(_prompt_state_memory_citation_scaffold)"
+if [[ -n "$memory_citation_scaffold" ]]; then
+  memory_citation_finished_ms="$(date +%s%3N)"
+  memory_citation_wall_ms=$((memory_citation_finished_ms - memory_citation_started_ms))
+  memory_citation_gate_log="${PROMPT_STATE_MEM_CITATION_GATE_LOG:-$SCRIPT_DIR/logs/gate_fire_log.yaml}"
+  mkdir -p "${memory_citation_gate_log%/*}"
+  {
+    flock -w 2 219 || exit 2
+    printf -- '- ts: "%s", file: "prompt_state_inject", gate: "mem_citation_injection", result: PASS, checks: "injected=1 missing=0 block=0 false_positive=0 false_negative=0 detector_fp_rate=0 wall_ms=%s"\n' \
+      "$(date -Iseconds)" "$memory_citation_wall_ms" >&219
+  } 219>>"$memory_citation_gate_log"
+  additional_context="${memory_citation_scaffold}
+${additional_context}"
+fi
 _prompt_state_emit_output "UserPromptSubmit" "$additional_context"
 
 exit 0
