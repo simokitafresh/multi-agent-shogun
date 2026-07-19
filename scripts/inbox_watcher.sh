@@ -1120,12 +1120,13 @@ process_unread() {
                     fi
 
                     launch=$(cli_launch_cmd "$AGENT_ID" 2>/dev/null || true)
-                    if [ -z "$launch" ] || ! tmux respawn-pane -k -t "$PANE_TARGET" "cd '$SCRIPT_DIR' && exec $launch" 2>/dev/null; then
+                    launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$launch" 2>/dev/null || true)
+                    if [ -z "$launch_command" ] || ! tmux respawn-pane -k -t "$PANE_TARGET" "$launch_command" 2>/dev/null; then
                         special_ok=false
                     else
                         ready=0
                         for _ in {1..30}; do
-                            if tmux capture-pane -t "$PANE_TARGET" -p -J -S -80 2>/dev/null | grep -qE 'Claude Code|OpenAI Codex|Codex CLI|❯|›'; then ready=1; break; fi
+                            if respawn_recovery_ready "$PANE_TARGET"; then ready=1; break; fi
                             sleep 1
                         done
                         if [ "$ready" -eq 1 ]; then

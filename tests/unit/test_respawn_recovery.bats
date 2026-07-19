@@ -107,3 +107,32 @@ YAML
   [ "$status" -eq 0 ]
   [[ "$output" == *"RELOADED:/bin/true watcher pane"* ]]
 }
+
+@test "launch injects node PATH, active sender is karo, and unknown CTX is not ready" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "/bin/codex"' _ "$repo"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'.nvm/versions/node/v20.20.0/bin:$PATH'* ]]
+
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_notify "$1" tester gen-sender clear' _ "$root"
+  [ "$status" -eq 0 ]
+  grep -q '|recovery|karo|continue_same_task' "$TEST_RECOVERY_LOG"
+
+  mkdir -p "$root/proc/303"
+  printf '303 (ready fixture) S 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 333 0\n' > "$root/proc/303/stat"
+  cat > "$root/tmux-ready" <<'SH'
+#!/usr/bin/env bash
+case "$1:$*" in
+  display-message:*pane_dead*) printf '0\n' ;;
+  display-message:*) printf '303\n' ;;
+  capture-pane:*) printf 'OpenAI Codex CTX:%s%%\n' "${FIXTURE_CTX:-?}" ;;
+esac
+SH
+  chmod +x "$root/tmux-ready"
+  export RESPAWN_RECOVERY_TMUX_BIN="$root/tmux-ready" RESPAWN_RECOVERY_PROC_ROOT="$root/proc"
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_ready pane' _ "$repo"
+  [ "$status" -ne 0 ]
+  export FIXTURE_CTX=0
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_ready pane' _ "$repo"
+  [ "$status" -eq 0 ]
+}

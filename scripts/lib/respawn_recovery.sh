@@ -1,5 +1,22 @@
 #!/usr/bin/env bash
 # Persist exactly one recovery nudge for an active task after verified respawn.
+respawn_recovery_launch_command() {
+    local root="$1" launch="$2"
+    local node_path="${RESPAWN_RECOVERY_NODE_PATH:-${HOME}/.nvm/versions/node/v20.20.0/bin}"
+    [ -n "$launch" ] || return 1
+    printf 'export PATH="%s:$PATH"; cd "%s" && exec %s\n' "$node_path" "$root" "$launch"
+}
+
+respawn_recovery_ready() {
+    local pane="$1" capture ctx tmux_bin="${RESPAWN_RECOVERY_TMUX_BIN:-tmux}"
+    [ "$($tmux_bin display-message -t "$pane" -p '#{pane_dead}' 2>/dev/null || echo 1)" = 0 ] || return 1
+    capture=$($tmux_bin capture-pane -t "$pane" -p -J -S -100 2>/dev/null || true)
+    printf '%s\n' "$capture" | grep -qE 'Claude Code|OpenAI Codex|Codex CLI|❯|›' || return 1
+    respawn_recovery_generation "$pane" >/dev/null || return 1
+    ctx=$(printf '%s\n' "$capture" | grep -oE 'CTX:[[:space:]]*[0-9]+%' | tail -1 | grep -oE '[0-9]+' || true)
+    [ "$ctx" = 0 ] || return 1
+}
+
 respawn_recovery_generation() {
     local pane="$1" pid stat starttime
     local tmux_bin="${RESPAWN_RECOVERY_TMUX_BIN:-tmux}" proc_root="${RESPAWN_RECOVERY_PROC_ROOT:-/proc}"
@@ -49,10 +66,12 @@ PY
     if [ -n "$parent" ]; then
       message="respawn復帰。既存taskを継続せよ。parent_cmd=${parent} task_id=${task_id} source=${source}"
       [ -z "$content" ] || message="${message} 補足: ${content}"
+      sender=karo
     else
       message="$content"
+      sender=ninja_monitor
     fi
     bash "$root/scripts/inbox_write.sh" "$agent" "$message" \
-        recovery ninja_monitor continue_same_task || return 1
+        recovery "$sender" continue_same_task || return 1
     : > "$marker"
 }
