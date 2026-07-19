@@ -594,7 +594,13 @@ fi
 
 if [[ -z "$patch_file" && "$repair_index" == false ]]; then
     for scope_path in "${paths[@]}"; do
-        [[ -e "$scope_path" || -L "$scope_path" ]] \
+        scope_is_tracked_deletion=false
+        if [[ ! -e "$scope_path" && ! -L "$scope_path" ]] &&
+           git cat-file -e "HEAD:$scope_path" 2>/dev/null &&
+           git status --porcelain=v1 -- "$scope_path" | awk 'substr($0,1,2) ~ /D/ {found=1} END{exit !found}'; then
+            scope_is_tracked_deletion=true
+        fi
+        [[ -e "$scope_path" || -L "$scope_path" || "$scope_is_tracked_deletion" == true ]] \
             || { echo "BLOCK: scope path does not exist: $scope_path" >&2; exit 2; }
         [[ -n "$(git status --porcelain --ignored -- "$scope_path")" ]] \
             || { echo "BLOCK: scope path has no changes: $scope_path" >&2; exit 2; }
@@ -788,7 +794,7 @@ is_operational_yaml_commit_path() {
     [[ "$candidate" == queue/*.yaml || "$candidate" == queue/**/*.yaml || "$candidate" == logs/*.yaml ]]
 }
 
-mapfile -t private_commit_paths < <(git diff --cached --name-only --diff-filter=ACMR)
+mapfile -t private_commit_paths < <(git diff --cached --name-only --diff-filter=ACMRD)
 has_task_yaml=false
 has_implementation=false
 task_yaml_paths=()
@@ -813,7 +819,7 @@ if [[ "$has_task_yaml" == true && "$has_implementation" == true ]]; then
 fi
 
 requested_paths=("${paths[@]}")
-mapfile -t paths < <(git diff --cached --name-only --diff-filter=ACMR)
+mapfile -t paths < <(git diff --cached --name-only --diff-filter=ACMRD)
 ((${#paths[@]} > 0)) \
     || { echo "BLOCK: scope produced an empty private index after task-YAML separation" >&2; exit 2; }
 

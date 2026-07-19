@@ -143,6 +143,26 @@ YAML
     [ "$status" -eq 2 ]; [[ "$output" == *"concurrent HEAD test change"* ]]
 }
 
+@test "tracked test deletion with justification commits through the scoped helper" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf 'obsolete contract\n' > "$REPO/tests/test_obsolete.bats"
+    git -C "$REPO" add tests/test_obsolete.bats
+    git -C "$REPO" commit -qm tracked-test-base
+    rm "$REPO/tests/test_obsolete.bats"
+    cat > "$REPO/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  deletion_justification: contract is intentionally retired by the approved default-delete batch
+  planned_paths: [tests/test_obsolete.bats]
+YAML
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m "delete tracked test" -- tests/test_obsolete.bats' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" diff-tree --no-commit-id --name-status -r HEAD)" = $'D\ttests/test_obsolete.bats' ]
+    ! git -C "$REPO" cat-file -e HEAD:tests/test_obsolete.bats
+    [ -z "$(git -C "$REPO" status --porcelain -- tests/test_obsolete.bats)" ]
+}
+
 make_ga282_fixture() {
     mkdir -p "$REPO/queue/tasks" "$REPO/projects/infra"
     printf 'task: base\n' > "$REPO/queue/tasks/hayate.yaml"
