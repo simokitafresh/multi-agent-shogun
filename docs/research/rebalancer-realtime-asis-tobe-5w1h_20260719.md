@@ -62,6 +62,14 @@
 | IEXのquote活発性 | 18/18購読可でも全銘柄で活発なquoteは保証されない。symbol別age/coverageとEOD乖離を監視。healthzはstream auth/subscription/freshness/degradedを分離 |
 | SSE配信契約(家老レビューP2) | per-client bounded queue・heartbeat・slow consumer切離し・snapshot+generation+sequence・Last-Event-ID再開・restart時snapshot強制・CORS/接続上限を契約化。EventSourceのexactly-onceを仮定しない |
 
+### §4.1 EODHD secret rotation runbook
+
+1. EODHD側で新tokenを発行する。旧tokenはこの時点では失効させず、値をログ・設計書・Gitへ出力しない。
+2. Stock Database側のsecret正本とRenderの`dm-rebalancer-backend` secret `EODHD_API_TOKEN`を新tokenへ更新する。rebalancer実行時に他PJのsecretファイルを参照してはならない。
+3. backendを再deployし、secret値やtoken付きURLを出力せず、health PASS・追跡銘柄EOD取得18/18・既存テストFAIL0/SKIP0を確認する。
+4. 1件でもFAILなら旧tokenへ戻して再deployし、health PASSと18/18復旧を確認する。旧token失効前なので即時rollback可能とする。
+5. 両PJの正常確認後に旧tokenを失効し、再度18/18を実測する。最終チェックは「他PJ runtime参照0件・secretログ0件・18/18・FAIL0・SKIP0」の全条件が真であること。
+
 ## §5 工程表(Phase名参照。cmd番号は起票時にLS086照合表へ記録)
 
 家老レビュー(blt_20260719_191948)で「P1一括は責務過大」の指摘によりP1をa/b/cへ分割。
