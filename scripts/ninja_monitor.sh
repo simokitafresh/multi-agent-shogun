@@ -8360,6 +8360,8 @@ while true; do
         if [ -z "$_retro_pane" ] || ! check_idle "$_retro_pane" "$_retro_ninja"; then eval "exec ${_retro_lock_fd}>&-"; continue; fi
         source "$SCRIPT_DIR/scripts/lib/retro_verbatim_prompt.sh"
         if retro_verbatim_prompt_deliver "$SCRIPT_DIR" "$_retro_ninja" "$_retro_event_id" "$_retro_from"; then
+            bash "$SCRIPT_DIR/scripts/retro_write.sh" mark-delivered \
+                "$_retro_ninja" "$_retro_event_id" "$(date -Iseconds)" >> "$LOG" 2>&1
             mkdir -p "$SCRIPT_DIR/queue/retro/verbatim_awaiting_answer"
             mv "$_retro_event" "$SCRIPT_DIR/queue/retro/verbatim_awaiting_answer/${_retro_event##*/}"
             log "RETRO-TERMINAL-DELIVER: ninja=$_retro_ninja pane_idle=1 next_task=0 delivery=1 duplicate=0"
