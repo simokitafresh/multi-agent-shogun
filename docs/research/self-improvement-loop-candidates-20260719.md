@@ -32,15 +32,21 @@
 | D3 | fullrecalculate速度(precompute L5) | 実測497s/目標30s | 再開条件達成済み | 規模大=自走ループより計画レーン向き(gist 549122da) |
 | D4 | ETL cron安定性 | cron実行ログ+価格データ多重化 | 未ループ化 | 失敗検知→自己修復→再実行の型 |
 
-## §3 他リポジトリ・他PJ（偵察対象）
+## §3 他リポジトリ・他PJ（2026-07-19実地偵察済み）
 
-| # | 対象 | 状態 | 偵察観点 |
-|---|------|------|---------|
-| P1 | google-classroom | Playwright+Render cron化予定 | cron失敗検知→セレクタ自己修復ループの好適地 |
-| P2 | clinic-expense-tracker | MF3086+みずほ984件投入済み | 証票突合の計器づくりが先行 |
-| P3 | dividend-tracker | MVP R1-R9確定 | 計器未設。CI/テスト時間から着手か |
-| P4 | simokitafresh/database(株式DB) | Supabase+Render独立PJ | ETL失敗・データ品質の計器有無を偵察 |
-| P5 | kj-role-count等クリニック系 | backup-first実装済(LS040) | バックアップ検証ループ(復元テスト自動化)候補 |
+| # | 対象 | 計器（現物） | 状態 | 着手前提 |
+|---|------|--------------|------|----------|
+| P1 | google-classroom | scrape JSON log + Playwright + Render内蔵cron | 半備 | log schema固定→selector失敗分類→成功率台帳 |
+| P2 | clinic-expense-tracker | `/health`のみ（test/CI 0） | 計器先行 | CSV件数・重複・金額総和・未突合数の台帳 |
+| P3 | dividend-tracker | build/lintのみ（test/CI 0） | 計器先行 | 配当fixture集計contract→CI |
+| P4 | database（株式DB） | Render cron 2件+`/healthz`+36 tests | 即候補 | cron成功率・鮮度・欠損率を台帳化 |
+| P5 | kj-role-count | daily backup cron+`backup.py`+health+8 tests | 即候補 | 定期restoreで件数一致と所要時間を記録 |
+| P6 | Simple-OCR | backup/restore test+17 tests+OCR log DB | 即候補 | 復元成功率・件数一致・所要時間を台帳化 |
+| P7 | rebalancer | CI+6 tests+health+Playwright | 即候補 | CI時間と価格更新成功率を台帳化 |
+| P8 | dm-fusion/mcas/milk | build/lintまたは計器なし | 計器先行 | 隔離fixture+最小contract+CI |
+| P9 | auto-ops/kj-partshift/kj-toilet | 8/13/9 tracked tests | 候補 | 業務結果の件数・重複・遅延台帳を先行 |
+
+全15 PJの3条件、根拠、計器先行タスク案（対象・波及・test・edge・順序） → `docs/research/cmd_4086_loop_candidate_recon.md`
 
 ## §4 運用
 
