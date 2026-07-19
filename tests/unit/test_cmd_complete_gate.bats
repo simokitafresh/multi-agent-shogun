@@ -567,6 +567,38 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "task cmd matcher ignores stale cmd_id after current-format parent_cmd is cleared" {
+    local matcher="$PROJECT_ROOT/scripts/lib/task_cmd_match.sh"
+    local current="$TEST_PROJECT/queue/tasks/current_idle.yaml"
+    local legacy="$TEST_PROJECT/queue/tasks/legacy.yaml"
+    local active="$TEST_PROJECT/queue/tasks/active.yaml"
+
+    cat > "$current" <<EOF
+task:
+  parent_cmd:
+  cmd_id: $TEST_CMD_ID
+  status: idle
+EOF
+    cat > "$legacy" <<EOF
+task:
+  cmd_id: $TEST_CMD_ID
+  status: done
+EOF
+    cat > "$active" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  cmd_id: cmd_stale
+  status: done
+EOF
+
+    run bash -c 'source "$1"; task_file_matches_cmd "$2" "$3"' _ "$matcher" "$current" "$TEST_CMD_ID"
+    [ "$status" -ne 0 ]
+    run bash -c 'source "$1"; task_file_matches_cmd "$2" "$3"' _ "$matcher" "$legacy" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    run bash -c 'source "$1"; task_file_matches_cmd "$2" "$3"' _ "$matcher" "$active" "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+}
+
 @test "auto_resolve_cmd_related_insights resolves pending insights that mention cmd_id" {
     export INSIGHTS_FILE="$TEST_PROJECT/queue/insights.yaml"
     cat > "$INSIGHTS_FILE" <<EOF
