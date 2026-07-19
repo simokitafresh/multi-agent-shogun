@@ -1,5 +1,5 @@
 # Rebalancer Context
-<!-- last_updated: 2026-05-14 cmd_2701初回登録 -->
+<!-- last_updated: 2026-07-19 cmd_4088 -->
 
 ## §1 概要
 
@@ -19,6 +19,7 @@ Frontendは `frontend/` のNext.js static export。Backendは `backend/app/main.
 | Backend | `backend/app/main.py` | lifespanで`PriceUpdaterService`を起動。CORSはlocalhostとRender frontend |
 | Cache | `backend/app/services/cache.py` | disk JSON cache。Renderでは1GB diskを利用 |
 | Rebalance | `backend/app/api/rebalance.py` | USD価格をJPY換算し、target_weight合計100%を検証してBUY/SELL/HOLDを返す |
+| Price provenance | `backend/app/services/eodhd.py`, `backend/app/models.py` | 表示値(yfinance/Alpaca, `is_final=false`)と計算確定値(EODHD, `is_final=true`)を型分離。EODHDはdate最大の最新確定行を採用し、HTTP失敗はtoken/query/URL非露出の`EODHDRequestError`へ変換（cmd_4088、source commit `31d071c`） |
 
 - L609: Next.js srcなし時は`app/components`を正としてテスト配置。find/rgで実体確認（cmd_2719）
 
