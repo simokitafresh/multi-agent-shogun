@@ -139,3 +139,13 @@ SH
   run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_ready pane' _ "$repo"
   [ "$status" -eq 0 ]
 }
+
+@test "post-clear verification has no independent CTX parser or unknown success" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  run grep -n 'post_ctx\|CTX:${post_ctx}\|post_ctx.*"?"' "$repo/scripts/inbox_watcher.sh"
+  [ "$status" -ne 0 ]
+  run grep -n 'clear_command verified:.*generation=.*ready=1' "$repo/scripts/inbox_watcher.sh"
+  [ "$status" -eq 0 ]
+  run grep -n 'leaving unread for retry' "$repo/scripts/inbox_watcher.sh"
+  [ "$status" -eq 0 ]
+}

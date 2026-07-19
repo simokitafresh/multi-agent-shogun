@@ -1138,14 +1138,14 @@ process_unread() {
                             special_ok=false
                         fi
                     fi
-                    # Post-clear verification: confirm CTX dropped to 0%
-                    sleep 8
-                    local post_ctx
-                    post_ctx=$(tmux capture-pane -t "$PANE_TARGET" -p -S -5 2>/dev/null | grep -oP 'CTX:\K[0-9]+' | tail -1 || echo "?")
-                    if [[ "$post_ctx" != "0" && "$post_ctx" != "?" ]]; then
-                        echo "[$(date)] [WARN] clear_command sent to $AGENT_ID but CTX:${post_ctx}% (not 0%). Agent may still be running" >&2
+                    # Post-clear verification uses the same fail-closed boundary as
+                    # notification persistence. Unknown/nonzero CTX never marks read.
+                    if respawn_recovery_ready "$PANE_TARGET"; then
+                        generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
+                        echo "[$(date)] [OK] clear_command verified: $AGENT_ID generation=$generation ready=1" >&2
                     else
-                        echo "[$(date)] [OK] clear_command verified: $AGENT_ID CTX:${post_ctx}%" >&2
+                        special_ok=false
+                        echo "[$(date)] [WARN] clear_command verification failed: $AGENT_ID ready=0; leaving unread for retry" >&2
                     fi
                     ;;
                 model_switch)
