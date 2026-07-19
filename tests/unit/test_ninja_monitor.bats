@@ -5,40 +5,80 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
-@test "CI RED parallelization guard rejects five counterexamples and dedupes each generation" {
+@test "CI RED guard structurally deploys eligible work and dedupes each generation" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
         SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
         CI_RED_PARALLEL_STATE_FILE="$STATE_DIR/notified"
-        mkdir -p "$SCRIPT_DIR/scripts" "$STATE_DIR"
-        cat >"$SCRIPT_DIR/scripts/inbox_write.sh" <<EOF
+        mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue" "$SCRIPT_DIR/logs" "$STATE_DIR"
+        cat >"$SCRIPT_DIR/scripts/deploy_task.sh" <<EOF
 #!/usr/bin/env bash
-printf "%s\n" "\$*" >>"$STATE_DIR/notices"
+printf "%s\n" "\$*" >>"$STATE_DIR/deploys"
+printf "task:\n  status: assigned\n  parent_cmd: %s\n" "\$2" >"$SCRIPT_DIR/queue/tasks/\$1.yaml"
 EOF
-        count() { [ -f "$STATE_DIR/notices" ] && wc -l <"$STATE_DIR/notices" || printf "0\n"; }
-        check_ci_red_parallelization_guard "RED:101:job" 1899 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        printf "task:\n  status: idle\n" >"$SCRIPT_DIR/queue/tasks/alpha.yaml"
+        count() { [ -f "$STATE_DIR/deploys" ] && wc -l <"$STATE_DIR/deploys" || printf "0\n"; }
+        check_ci_red_parallelization_guard "RED:101:job" 1899 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"' alpha
         a=$(count)
-        check_ci_red_parallelization_guard "RED:101:job" 1900 0 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        check_ci_red_parallelization_guard "RED:101:job" 1900 0 cmd_1 $'"'"'101\tsha-a\t1000'"'"' alpha
         b=$(count)
-        check_ci_red_parallelization_guard "RED:101:job" 1900 1 "" $'"'"'101\tsha-a\t1000'"'"'
+        check_ci_red_parallelization_guard "RED:101:job" 1900 1 "" $'"'"'101\tsha-a\t1000'"'"' alpha
         c=$(count)
-        check_ci_red_parallelization_guard "GREEN" 1900 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        check_ci_red_parallelization_guard "GREEN" 1900 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"' alpha
         d=$(count)
         printf "101:sha-a\n" >"$STATE_DIR/notified"
-        check_ci_red_parallelization_guard "RED:101:job" 1900 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        check_ci_red_parallelization_guard "RED:101:job" 1900 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"' alpha
         e=$(count)
         rm -f "$STATE_DIR/notified"
-        check_ci_red_parallelization_guard "RED:101:job" 1900 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        check_ci_red_parallelization_guard "RED:101:job" 1900 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"' alpha
         positive=$(count)
-        check_ci_red_parallelization_guard "RED:101:job" 1901 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        check_ci_red_parallelization_guard "RED:101:job" 1901 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"' alpha
         same=$(count)
-        check_ci_red_parallelization_guard "RED:102:job" 1901 1 cmd_2 $'"'"'102\tsha-b\t1000'"'"'
+        printf "task:\n  status: idle\n" >"$SCRIPT_DIR/queue/tasks/alpha.yaml"
+        check_ci_red_parallelization_guard "RED:102:job" 1901 1 cmd_2 $'"'"'102\tsha-b\t1000'"'"' alpha
         next=$(count)
         printf "counter=%s,%s,%s,%s,%s positive=%s same=%s next=%s\n" "$a" "$b" "$c" "$d" "$e" "$positive" "$same" "$next"
-        grep -q "run=102 sha=sha-b duration_sec=901 idle=1 deployable_cmd=cmd_2" "$STATE_DIR/notices"
+        grep -q "alpha cmd_2" "$STATE_DIR/deploys"
+        grep -q "result: PASS" "$SCRIPT_DIR/logs/gate_fire_log.yaml"
+        ! grep -R -q parallelization_required "$SCRIPT_DIR"
     '
     [ "$status" -eq 0 ]
     [[ "$output" == *"counter=0,0,0,0,0 positive=1 same=1 next=2"* ]]
+}
+
+@test "CI RED structural deploy filters ineligible commands and fails closed retryably" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        CI_RED_PARALLEL_STATE_FILE="$STATE_DIR/notified"
+        mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/logs" "$STATE_DIR"
+        printf "task:\n  status: idle\n" >"$SCRIPT_DIR/queue/tasks/alpha.yaml"
+        cat >"$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<EOF
+commands:
+- {id: cmd_nonparallel, status: pending, parallel_ok: false}
+- {id: cmd_canceled, status: canceled, parallel_ok: true}
+- {id: cmd_deployed, status: pending, parallel_ok: true}
+- {id: cmd_eligible, status: approved, parallel_ok: true}
+EOF
+        printf "task:\n  status: in_progress\n  parent_cmd: cmd_deployed\n" >"$SCRIPT_DIR/queue/tasks/beta.yaml"
+        selected=$(_ci_red_first_deployable_cmd)
+        [ "$selected" = cmd_eligible ]
+        [ "$(_ci_red_first_idle_ninja)" = alpha ]
+
+        printf "#!/usr/bin/env bash\nexit 7\n" >"$SCRIPT_DIR/scripts/deploy_task.sh"
+        check_ci_red_parallelization_guard "RED:201:job" 1900 1 "$selected" $'"'"'201\tsha-fail\t1000'"'"' alpha
+        [ ! -f "$STATE_DIR/notified" ]
+        grep -q "result: BLOCK.*deploy_task_failed=1" "$SCRIPT_DIR/logs/gate_fire_log.yaml"
+
+        exec 8>"$STATE_DIR/notified.lock"; flock 8
+        check_ci_red_parallelization_guard "RED:202:job" 1900 1 "$selected" $'"'"'202\tsha-lock\t1000'"'"' alpha
+        flock -u 8
+        grep -q "result: BLOCK.*lock_busy=1" "$SCRIPT_DIR/logs/gate_fire_log.yaml"
+        [ ! -f "$STATE_DIR/notified" ]
+        printf "selected=%s autodeploy=0 block=2 duplicate=0\n" "$selected"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"selected=cmd_eligible autodeploy=0 block=2 duplicate=0"* ]]
 }
 
 run_codex_bypass_case() {

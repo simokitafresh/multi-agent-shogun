@@ -86,26 +86,60 @@ print(count)
 PY
 }
 
-_ci_red_first_deployable_cmd() {
-    python3 - "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<'PY'
-import sys, yaml
-try:
-    data = yaml.safe_load(open(sys.argv[1])) or {}
-except Exception:
-    raise SystemExit(0)
-items = data.get("commands", data.get("cmds", data if isinstance(data, list) else []))
-if isinstance(items, dict):
-    items = list(items.values())
-for item in items if isinstance(items, list) else []:
-    if isinstance(item, dict) and item.get("status") in {"pending", "approved"}:
-        print(item.get("id") or item.get("cmd_id") or "")
+_ci_red_first_idle_ninja() {
+    python3 - "$SCRIPT_DIR/queue/tasks" <<'PY'
+import glob, os, sys, yaml
+for path in sorted(glob.glob(sys.argv[1] + "/*.yaml")):
+    try:
+        task = (yaml.safe_load(open(path)) or {}).get("task", {})
+    except Exception:
+        continue
+    if task.get("status") == "idle":
+        print(os.path.basename(path).removesuffix(".yaml"))
         break
 PY
 }
 
+_ci_red_first_deployable_cmd() {
+    python3 - "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$SCRIPT_DIR/queue/tasks" <<'PY'
+import glob, sys, yaml
+try:
+    data = yaml.safe_load(open(sys.argv[1])) or {}
+except Exception:
+    raise SystemExit(0)
+deployed = set()
+for path in glob.glob(sys.argv[2] + "/*.yaml"):
+    try:
+        task = (yaml.safe_load(open(path)) or {}).get("task", {})
+    except Exception:
+        continue
+    if task.get("status") != "idle" and task.get("parent_cmd"):
+        deployed.add(str(task["parent_cmd"]))
+items = data.get("commands", data.get("cmds", data if isinstance(data, list) else []))
+if isinstance(items, dict):
+    items = list(items.values())
+for item in items if isinstance(items, list) else []:
+    cmd = str(item.get("id") or item.get("cmd_id") or "") if isinstance(item, dict) else ""
+    if (cmd and item.get("status") in {"pending", "approved"}
+            and item.get("parallel_ok") is True and cmd not in deployed):
+        print(cmd)
+        break
+PY
+}
+
+_ci_red_parallel_gate_log() {
+    local result="$1" detail="$2" log_file="${CI_RED_PARALLEL_GATE_LOG:-$SCRIPT_DIR/logs/gate_fire_log.yaml}"
+    detail="${detail//\"/_}"
+    mkdir -p "${log_file%/*}"
+    {
+        flock 9
+        printf '%s\n' "- ts: \"$(date -Iseconds)\", gate: ci_red_structural_autodeploy, result: ${result}, detail: \"${detail}\"" >&9
+    } 9>>"$log_file"
+}
+
 check_ci_red_parallelization_guard() {
     local ci_status="${1:-$CI_STATUS_CACHE}" now="${2:-$EPOCHSECONDS}"
-    local idle_count="${3:-}" deployable_cmd="${4:-}" details="${5:-}"
+    local idle_count="${3:-}" deployable_cmd="${4:-}" details="${5:-}" idle_ninja="${6:-}"
     [[ "$ci_status" == RED:* ]] || return 0
     local run_id="${ci_status#RED:}"; run_id="${run_id%%:*}"
     [[ -n "$details" ]] || details="$(_ci_red_run_details "$run_id")"
@@ -118,19 +152,27 @@ check_ci_red_parallelization_guard() {
     (( idle_count >= 1 )) || return 0
     [[ -n "$deployable_cmd" ]] || deployable_cmd="$(_ci_red_first_deployable_cmd)"
     [[ -n "$deployable_cmd" ]] || return 0
+    [[ -n "$idle_ninja" ]] || idle_ninja="$(_ci_red_first_idle_ninja)"
+    [[ -n "$idle_ninja" ]] || return 0
 
     local state_file="${CI_RED_PARALLEL_STATE_FILE:-$STATE_DIR/shogun_ci_red_parallelization.notified}"
     local generation="${run_id}:${sha}" lock_file="${state_file}.lock" previous=""
     mkdir -p "${state_file%/*}"
     exec {ci_red_lock_fd}>"$lock_file"
-    flock "$ci_red_lock_fd"
+    if ! flock -n "$ci_red_lock_fd"; then
+        _ci_red_parallel_gate_log BLOCK "run=${run_id} sha=${sha} lock_busy=1"
+        exec {ci_red_lock_fd}>&-
+        return 0
+    fi
     [[ -f "$state_file" ]] && IFS= read -r previous < "$state_file"
     if [[ "$previous" != "$generation" ]]; then
-        if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
-            "parallelization_required: CI RED run=${run_id} sha=${sha} duration_sec=${duration} idle=${idle_count} deployable_cmd=${deployable_cmd}" \
-            parallelization_required ninja_monitor parallelize_ci_red; then
+        if bash "$SCRIPT_DIR/scripts/deploy_task.sh" "$idle_ninja" "$deployable_cmd" \
+            >> "${CI_RED_PARALLEL_DEPLOY_LOG:-$SCRIPT_DIR/logs/deploy_ci_red_parallel.log}" 2>&1; then
             printf '%s\n' "$generation" > "${state_file}.tmp.$$"
             mv "${state_file}.tmp.$$" "$state_file"
+            _ci_red_parallel_gate_log PASS "run=${run_id} sha=${sha} ninja=${idle_ninja} cmd=${deployable_cmd} auto_deploy=1 duplicate=0"
+        else
+            _ci_red_parallel_gate_log BLOCK "run=${run_id} sha=${sha} ninja=${idle_ninja} cmd=${deployable_cmd} deploy_task_failed=1"
         fi
     fi
     flock -u "$ci_red_lock_fd"
