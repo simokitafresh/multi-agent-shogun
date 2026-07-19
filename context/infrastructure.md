@@ -832,7 +832,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1219 -->
+<!-- last_synced_lesson: L1220 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1765,6 +1765,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1217: 因果originは実在link集合と照合する（cmd_karo_hotfix_obsidian_traversal_ready_lane_202607191235）
 - L1218: cache keyは結果決定入力のcontent identity（cmd_karo_hotfix_skill_refs_cache_input_signature_202607191256）
 - L1219: liveログ集計はPOST-DEPLOY pane転記をtransaction事象から除外する（cmd_karo_hotfix_deploy_order_live_success2_202607191339）
+- L1220: cooldown正本はdurable成功epochへ束縛する（cmd_karo_hotfix_idle_nudge_cooldown_durable_202607191427）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
