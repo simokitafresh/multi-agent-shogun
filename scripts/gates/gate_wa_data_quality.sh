@@ -3,7 +3,8 @@
 # GP-063: WA計測の汚染検出+自動修復
 #
 # 検出パターン:
-#   1. False WA: workaround=true + detail内にcleanキーワード → clean化
+#   1. Contradictory clean WA: workaround=true + category=clean → clean化
+#   2. False WA: workaround=true + detail内にcleanキーワード → clean化
 #   2. 重複エントリ: 同一cmd_id+ninja → 後勝ち(cleanがあればclean)
 #   3. GP-049バイパス: workaround=true + detail<10文字 → WARN
 #   4. ninja名汚染: 既知忍者名以外のninja値 → WARN
@@ -84,6 +85,9 @@ run_check_mode_scan() {
         add_issue(text)
     }
     function fix_command(pattern) {
+        if (pattern == "CLEAN_CONTRADICTION") {
+            return "bash scripts/gates/gate_wa_data_quality.sh --fix  # workaround=true/category=clean矛盾をclean化"
+        }
         if (pattern == "FALSE_WA") {
             return "bash scripts/gates/gate_wa_data_quality.sh --fix  # cleanキーワード含有WAをclean化"
         }
@@ -114,6 +118,9 @@ run_check_mode_scan() {
 
         split("workaround不要|WA不要|修正なし|対処不要|修正不要|正規フロー完了|問題なし", clean_keywords, "|")
         for (i = 1; i <= n; i++) {
+            if (workaround[i] == "true" && category[i] == "clean") {
+                add_issue_pattern("CLEAN_CONTRADICTION", sprintf("CLEAN_CONTRADICTION[%d]: %s — workaround=true with category=clean", i - 1, cmd[i]))
+            }
             if (workaround[i] == "true" && category[i] != "clean") {
                 for (k in clean_keywords) {
                     if (index(detail[i], clean_keywords[k]) > 0) {
@@ -305,6 +312,8 @@ def add_issue(pattern: str, message: str) -> None:
     issues.append(message)
 
 def fix_command(pattern: str) -> str:
+    if pattern == "CLEAN_CONTRADICTION":
+        return "bash scripts/gates/gate_wa_data_quality.sh --fix  # workaround=true/category=clean矛盾をclean化"
     if pattern == "FALSE_WA":
         return "bash scripts/gates/gate_wa_data_quality.sh --fix  # cleanキーワード含有WAをclean化"
     if pattern == "DUPLICATE":
@@ -325,6 +334,12 @@ for i, entry in enumerate(entries):
     detail = str(entry.get("detail", ""))
     category = entry.get("category", "")
     cmd_id = str(entry.get("cmd_id", ""))
+    if workaround and category == "clean":
+        add_issue("CLEAN_CONTRADICTION", f"CLEAN_CONTRADICTION[{i}]: {cmd_id} — workaround=true with category=clean")
+        if fix_mode:
+            entry["workaround"] = False
+            fixes.append(f"FIX[{i}]: {cmd_id} → workaround=false, category=clean")
+        continue
     if workaround and category != "clean":
         for keyword in clean_keywords:
             if keyword in detail:

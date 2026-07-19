@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: karo workaround ledger must atomically and idempotently resolve exact entries, fail closed on blank/conflicting resolution and missing brainwash evidence, trigger root-signature immunity at N=3, and preserve primary logging when memory DB is unavailable.
+# test_necessity: karo workaround ledger must atomically and idempotently resolve exact entries, reject workaround=true/category=clean before write, fail closed on blank/conflicting resolution and missing brainwash evidence, trigger root-signature immunity at N=3, and preserve primary logging when memory DB is unavailable.
 # test_karo_workaround_validation.bats — cmd_1542 + cmd_karo_env_change_gate 単体テスト
 # AC1: validate_ninja_id() — ninja_id有効性チェック
 # AC2: root_cause最小長+null/empty拒否
@@ -324,22 +324,29 @@ YAML
     [[ "$output" == *"Clean:"* ]]
 }
 
-@test "explicit clean category: 3件目でもALERT/insight/PDを発火しない" {
+@test "explicit clean category in normal and --wa modes blocks before write" {
+    log="$TEST_DIR/logs/karo_workarounds.yaml"
+    before=0
+    if [ -f "$log" ]; then
+        before=$(awk '/^- cmd_id:/{count++} END{print count+0}' "$log")
+    fi
+
     run bash "$TEST_SCRIPT" cmd_test_1 hayate "normal detail" "normal root cause" clean
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"Logged:"* ]]
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK: category=cleanは--cleanモード専用"* ]]
+    [[ "$output" == *"--clean cmd_test_1 hayate"* ]]
 
-    run bash "$TEST_SCRIPT" cmd_test_2 hayate "normal detail" "normal root cause" clean
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"Logged:"* ]]
+    run bash "$TEST_SCRIPT" --wa cmd_test_2 hayate "normal detail" "normal root cause" clean "" \
+        "type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK: category=cleanは--cleanモード専用"* ]]
+    [[ "$output" == *"--clean cmd_test_2 hayate"* ]]
 
-    run bash "$TEST_SCRIPT" cmd_test_3 hayate "normal detail" "normal root cause" clean
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"Logged:"* ]]
-    [[ "$output" != *"ALERT"* ]]
-    # GP-220: category=cleanで通常モード呼出し時はWARNが出る（正しい動作）
-    [[ "$output" == *"category=cleanだが--cleanモードでない"* ]]
-
+    after=0
+    if [ -f "$log" ]; then
+        after=$(awk '/^- cmd_id:/{count++} END{print count+0}' "$log")
+    fi
+    [ "$before" -eq "$after" ]
     [ ! -f "$TEST_DIR/scripts/pending_decision_write.log" ]
 }
 
