@@ -19,6 +19,19 @@ setup() {
     TEST_TMPDIR="$BATS_TEST_TMPDIR"
 }
 
+make_nonexec_structural_writer_yfs() {
+    local fixture_root="$TEST_TMPDIR/nonexec-structural-writer"
+    mkdir -p "$fixture_root/scripts/lib"
+    cp "$YFS" "$fixture_root/scripts/lib/yaml_field_set.sh"
+    cat > "$fixture_root/scripts/report_field_set.sh" <<EOF
+#!/usr/bin/env bash
+exec bash "$PROJECT_ROOT/scripts/report_field_set.sh" "\$@"
+EOF
+    chmod 0644 "$fixture_root/scripts/report_field_set.sh"
+    [ "$(stat -c '%a' "$fixture_root/scripts/report_field_set.sh")" = "644" ] || return 1
+    printf '%s\n' "$fixture_root/scripts/lib/yaml_field_set.sh"
+}
+
 # --- 1. 既存フィールドの値更新 ---
 
 @test "mapping block: 既存フィールド値の更新" {
@@ -33,8 +46,11 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: Interpreter-invoked typed task writes must work when Git preserves report_field_set.sh as mode 100644; violation blocks every structured field.
 @test "task test_necessity: JSON入力をscalar化せず構造listとしてatomic保存する" {
     local yaml="$TEST_TMPDIR/task_necessity.yaml"
+    local fixture_yfs
+    fixture_yfs="$(make_nonexec_structural_writer_yfs)"
     cat > "$yaml" <<'EOF'
 task:
   status: in_progress
@@ -42,7 +58,7 @@ task:
 EOF
     local payload='[{"path":"tests/test_contract.py","defense_target":"typed contract remains structured","overlap_evidence":"no equivalent contract exists","overlaps_existing":false,"fixture_self_reference":false,"deprecated_mechanism":false}]'
 
-    run bash "$YFS" "$yaml" task test_necessity "$payload"
+    run bash "$fixture_yfs" "$yaml" task test_necessity "$payload"
     [ "$status" -eq 0 ]
     run python3 - "$yaml" <<'PY'
 import sys, yaml
@@ -76,6 +92,8 @@ EOF
 
 @test "task planned_paths: flow-list入力をscalar化せず構造listとしてatomic保存する" {
     local yaml="$TEST_TMPDIR/task_planned_paths.yaml"
+    local fixture_yfs
+    fixture_yfs="$(make_nonexec_structural_writer_yfs)"
     cat > "$yaml" <<'EOF'
 task:
   status: done
@@ -83,7 +101,7 @@ task:
 EOF
     local payload='[backend/app/main.py, backend/tests/test_api.py]'
 
-    run bash "$YFS" "$yaml" task planned_paths "$payload"
+    run bash "$fixture_yfs" "$yaml" task planned_paths "$payload"
     [ "$status" -eq 0 ]
     run python3 - "$yaml" <<'PY'
 import sys, yaml
