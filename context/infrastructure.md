@@ -395,6 +395,7 @@ cmd_1173偵察で特定した高優先gate未実装項目の構造的実装。
 - L971: lesson_health同型ALERTの重複recon配備はGA-166(L934)の未実装で根治しない（cmd_karo_hotfix_lesson_health_ga183_202607060939）
 - L972: GA再発連鎖はLevel5実装で初めて閉じた（cmd_karo_hotfix_ga184_lesson_health_early_route_202607061018）
 - WA重複判定は`cmd_id+ninja`だけで同一視しない。check/fix双方をcanonical原因単位（`root_signature`、legacyは`category/detail/root_cause` fingerprint）へ揃え、異根共存・同根後勝ち・clean優先をfixtureで固定する。→ `scripts/gates/gate_wa_data_quality.sh` / `tests/unit/test_gate_meta_quality.bats`（cmd_karo_hotfix_wa_duplicate_identity_data_restore_202607140312）
+- WAの`category=clean`は`--clean`専用であり、通常/`--wa`経路はlock・write前にBLOCKする。品質ゲートは`workaround=true && category=clean`をdetail非依存で検出し、既存atomic replace経路で`workaround=false`へ修復する。→ `scripts/karo_workaround_log.sh` / `scripts/gates/gate_wa_data_quality.sh` / `tests/unit/test_gate_wa_data_quality.bats`（cmd_karo_hotfix_wa_clean_contradiction_202607191718、fixture 9→0・FP0/FN0・48/48 PASS）
 → `scripts/cmd_complete_gate.sh` / `scripts/gates/gate_dc_duplicate.sh`
 
 ## 知識サイクル現状（cmd_531/533/541/1111/1113/1117 反映）
@@ -832,7 +833,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1225 -->
+<!-- last_synced_lesson: L1226 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1771,6 +1772,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1223: E2E respawn fixtureは本番ready/task identity/startup resume契約を同時に再現する（cmd_karo_ci_red_29676457160_e2e_clear_recovery_202607191541）
 - L1224: 成功様ログはdurable transaction後に限定（cmd_karo_hotfix_idle_cycle_delivery_log_truth_202607191619）
 - L1225: 比較境界は両辺を同一fixtureで型正規化する（cmd_karo_ci_red_29676034794_deploy_fixture_202607191515）
+- L1226: 工程内訳は完全観測同一コホートで比較する（cmd_4085）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
