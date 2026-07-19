@@ -383,7 +383,7 @@ lessons:
 - id: 'LS089'
   title: 'reflux 3段連鎖バグ — 修正1段ごとに次の障壁が露出する構造'
   origin: "[[promotion在庫188停滞]] -> [[delegated過剰判定]] -> [[estimated_minutes欠落]] -> [[QUALITY_CONTRACT_FP]] -> [[reflux完全復活]]"
-  detail: 'promotion在庫189停滞の根因修正で3段連鎖バグを体験: (1)delegated判定がpipeline workをブロック→修正→(2)estimated_minutes欠落でTEN_MIN_CONTRACT BLOCK→修正→(3)purpose文のgate+実装共起でQUALITY_CONTRACT FP→修正。deepdive Phase6「動いて初めて次の気づきが生まれる」の3段実証。教訓: 修正後は必ず次の障壁の有無をログで確認せよ。1段修正で完了と断定するな(洗脳#8完了急ぎ)。修正→ログ確認→次の障壁特定→修正のサイクルを障壁ゼロまで回せ。origin: [[promotion在庫188停滞]] -> [[delegated過剰判定]] -> [[estimated_minutes欠落]] -> [[QUALITY_CONTRACT_FP]] -> [[reflux完全復活]]'
+  detail: 'promotion在庫189停滞の根因修正で3段連鎖バグを体験: (1)delegated判定がpipeline workをブロック→修正→(2)estimated_minutes欠落でTEN_MIN_CONTRACT BLOCK→修正→(3)purpose文のgate+実装共起でQUALITY_CONTRACT FP→修正。deepdive Phase6「動いて初めて次の気づきが生まれる」の3段実証。教訓: 修正後は必ず次の障壁の有無をログで確認せよ。1段修正で完了と断定するな(洗脳#8完了急ぎ)。修正→ログ確認→次の障壁特定→修正のサイクルを障壁ゼロまで回せ'
   source_cmd: 'session_20260716'
   created_at: '2026-07-16'
   automated: true
