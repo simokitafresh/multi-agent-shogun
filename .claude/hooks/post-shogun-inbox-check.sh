@@ -204,11 +204,36 @@ fi
 NINJA_ALERT=""
 _snapshot="${SCRIPT_DIR}/queue/karo_snapshot.txt"
 if [ -f "$_snapshot" ]; then
-    _failed=$(grep '^ninja|' "$_snapshot" | grep '|failed|' | sed 's/^ninja|\([^|]*\)|.*/\1/' | paste -sd, 2>/dev/null || true)
-    _stall=$(grep '^ninja|' "$_snapshot" | grep '|assigned|.*CTX:0%' | sed 's/^ninja|\([^|]*\)|.*/\1/' | paste -sd, 2>/dev/null || true)
+    # snapshot is only a candidate index.  Task YAML + live pane state are the
+    # decision sources, so a freshly deployed task cannot become a false stall.
+    _alert_now="${SHOGUN_ALERT_NOW:-$(date +%s 2>/dev/null)}"
+    _alert_grace="${SHOGUN_SNAPSHOT_GRACE_SEC:-120}"
+    _task_dir="${SHOGUN_TASK_DIR:-${SCRIPT_DIR}/queue/tasks}"
+    _pane_states=$(tmux list-panes -a -F '#{@agent_id}|#{@agent_state}' 2>/dev/null || true)
+    _failed=""
+    _stall=""
+    while IFS='|' read -r _kind _agent _task _snap_status _rest; do
+        [ "$_kind" = "ninja" ] || continue
+        _task_file="${_task_dir}/${_agent}.yaml"
+        [ -f "$_task_file" ] || continue
+        _task_status=$(awk '/^[[:space:]]*status:/{gsub(/["'\''[:space:]]/,"",$2); print $2; exit}' "$_task_file")
+        _deployed=$(awk '/^[[:space:]]*deployed_at:/{sub(/^[^:]*:[[:space:]]*/,""); gsub(/["'\'']/,""); print; exit}' "$_task_file")
+        _deployed_epoch=0
+        [ -n "$_deployed" ] && _deployed_epoch=$(date -d "$_deployed" +%s 2>/dev/null || echo 0)
+        _pane_state=$(printf '%s\n' "$_pane_states" | awk -F'|' -v a="$_agent" '$1==a{print $2; exit}')
+        if [ "$_snap_status" = "failed" ] && [ "$_task_status" = "failed" ]; then
+            _failed="${_failed:+${_failed},}${_agent}"
+        elif [ "$_snap_status" = "assigned" ] && printf '%s' "$_rest" | grep -q 'CTX:0%'; then
+            _age=$((_alert_now - _deployed_epoch))
+            if [ "$_task_status" = "assigned" ] && [ "$_deployed_epoch" -gt 0 ] && \
+               [ "$_age" -ge "$_alert_grace" ] && [ "$_pane_state" = "idle" ]; then
+                _stall="${_stall:+${_stall},}${_agent}"
+            fi
+        fi
+    done < "$_snapshot"
     if [ -n "$_failed" ] || [ -n "$_stall" ]; then
         # Session-scope dedup: only alert when failed/stall set changes (LS094)
-        _dedup_file="/tmp/shogun_snapshot_alert_dedup"
+        _dedup_file="${SHOGUN_SNAPSHOT_DEDUP_FILE:-/tmp/shogun_snapshot_alert_dedup}"
         _current_set="f=${_failed}|s=${_stall}"
         _prev_set=""
         [ -f "$_dedup_file" ] && _prev_set=$(cat "$_dedup_file" 2>/dev/null || true)
@@ -240,11 +265,30 @@ if [ -n "$EFFECT_REMIND" ]; then
 fi
 # escalation未対処検出(Q6自動化ターゲット: 洗脳#5先送り防止)
 ESCALATION_UNREAD=0
+ESCALATION_NEW=""
 if [ -f "$INBOX" ]; then
-    ESCALATION_UNREAD=$(awk '/type:.*escalation/{esc=1; next} esc && /read: false/{n++; esc=0; next} /read:/{esc=0} END{print n+0}' "$INBOX")
+    _esc_state="${SHOGUN_ESCALATION_DEDUP_FILE:-/tmp/shogun_escalation_alert_dedup}"
+    ESCALATION_NEW=$(INBOX_PATH="$INBOX" STATE_PATH="$_esc_state" python3 -c '
+import fcntl, hashlib, os, yaml
+p=os.environ["INBOX_PATH"]; state=os.environ["STATE_PATH"]
+data=yaml.safe_load(open(p, encoding="utf-8")) or {}
+active=[]
+for m in data.get("messages", []):
+    if m.get("type") != "escalation" or m.get("read") is not False or str(m.get("actioned_by") or "").strip(): continue
+    raw="|".join(str(m.get(k) or "").strip() for k in ("from","action","content"))
+    sig=hashlib.sha256(raw.encode()).hexdigest(); active.append(sig)
+os.makedirs(os.path.dirname(state) or ".", exist_ok=True)
+with open(state,"a+",encoding="utf-8") as f:
+    fcntl.flock(f, fcntl.LOCK_EX); f.seek(0); seen=set(f.read().splitlines())
+    new=[s for s in active if s not in seen]
+    if new: f.seek(0,2); f.write("".join(s+"\n" for s in new)); f.flush(); os.fsync(f.fileno())
+print(f"{len(active)}|{len(new)}")
+' 2>/dev/null || printf '0|0')
+    ESCALATION_UNREAD=${ESCALATION_NEW%%|*}
+    ESCALATION_NEW=${ESCALATION_NEW#*|}
 fi
-if [ "$ESCALATION_UNREAD" -gt 0 ]; then
-    MSG="${MSG:+${MSG}\\n}⚠ 未対処エスカレーション${ESCALATION_UNREAD}件 — 即時行動せよ(洗脳#5先送り防止)"
+if [ "${ESCALATION_NEW:-0}" -gt 0 ]; then
+    MSG="${MSG:+${MSG}\\n}⚠ CRITICAL 新規エスカレーション${ESCALATION_NEW}件（未対処計${ESCALATION_UNREAD}件）— 即時行動せよ(洗脳#5先送り防止)"
 fi
 if [ -n "$SELF_DRIVE" ]; then
     MSG="${MSG:+${MSG}\\n}${SELF_DRIVE}"
