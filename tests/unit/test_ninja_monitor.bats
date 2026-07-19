@@ -121,3 +121,32 @@ EOF
     '
     [ "$status" -eq 0 ]
 }
+
+@test "AUTO-DONE deploy lock boundary is retryable and archive symlinks are inactive" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"; LOG="$BATS_TEST_TMPDIR/log"
+        mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/locks" "$STATE_DIR"; : >"$LOG"
+        log() { printf "%s\n" "$1" >>"$LOG"; }; write_karo_snapshot() { :; }
+        _reflux_promotion_record_completion() { :; }; report_monitor_state() { printf "pass_terminal\n"; }
+        yaml_field_set() { bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$@"; }
+        task="$SCRIPT_DIR/queue/tasks/alpha.yaml"; report="$SCRIPT_DIR/queue/reports/alpha_report_cmd_new.yaml"
+        printf "task:\n  parent_cmd: cmd_new\n  task_id: task_new\n  status: in_progress\n" >"$task"
+        printf "parent_cmd: cmd_new\ntask_id: task_new\nstatus: completed\ntimestamp: 2026-07-19T12:00:39+09:00\n" >"$report"
+        find_matching_report_file() { printf "%s\n" "$report"; }
+        flock "$SCRIPT_DIR/queue/locks/deploy_ninja_alpha.lock" -c "sleep 1" & holder=$!; sleep 0.1
+        check_and_update_done_task alpha && exit 91 || true; grep -q "status: in_progress" "$task"; wait "$holder"
+        check_and_update_done_task alpha; [ "$(grep -c "status: done" "$task")" -eq 1 ]
+        check_and_update_done_task alpha; [ "$(grep -c "status: done" "$task")" -eq 1 ]
+        bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$task" task status in_progress
+        bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$task" task parent_cmd cmd_changed
+        check_and_update_done_task alpha && exit 92 || true; grep -q "status: in_progress" "$task"
+        archive="$BATS_TEST_TMPDIR/archive.yaml"; cp "$report" "$archive"; ln -s "$archive" "$SCRIPT_DIR/queue/reports/archive-link.yaml"
+        report="$SCRIPT_DIR/queue/reports/archive-link.yaml"; bash "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "$task" task parent_cmd cmd_new
+        check_and_update_done_task alpha && exit 93 || true; grep -q "status: in_progress" "$task"
+        python3 -c "import yaml; yaml.safe_load(open(\"$task\"))"
+        [ "$(grep -c AUTO-DONE-SKIP-DEPLOY-LOCK-BUSY "$LOG")" -eq 1 ]
+        [ "$(grep -c AUTO-DONE-SKIP-ARCHIVE-SYMLINK "$LOG")" -eq 1 ]
+    '
+    [ "$status" -eq 0 ]
+}

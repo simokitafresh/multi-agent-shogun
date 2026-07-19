@@ -2596,11 +2596,19 @@ report_monitor_state() {
 # ─── AC1: 報告YAML完了判定 + タスクYAML自動done更新 ───
 # 報告YAMLのparent_cmdがタスクと一致し、status=doneなら自動更新
 # 戻り値: 0=完了済み(auto-done実行), 1=未完了
-check_and_update_done_task() {
+check_and_update_done_task() (
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
     local report_file=""
-
+    local deploy_lock_dir="$SCRIPT_DIR/queue/locks"
+    local deploy_lock_file="$deploy_lock_dir/deploy_ninja_${name}.lock"
+    local deploy_lock_fd
+    mkdir -p "$deploy_lock_dir"
+    exec {deploy_lock_fd}>"$deploy_lock_file"
+    if ! flock -n "$deploy_lock_fd"; then
+        log "AUTO-DONE-SKIP-DEPLOY-LOCK-BUSY: $name retry=next-cycle"
+        return 1
+    fi
     # awk単一パスでtask_fileから必要フィールドを一括取得
     # (check_stall/auto_void_if_parent_cmd_completedと同パターン: サブシェル3回削減)
     local task_parent_cmd task_status task_id
@@ -2615,6 +2623,10 @@ check_and_update_done_task() {
     [ -z "$task_parent_cmd" ] && return 1
     # 新形式({ninja}_report_{cmd}.yaml)優先で一致報告を探索。旧形式も許容。
     report_file=$(find_matching_report_file "$name") || return 1
+    if [ -L "$report_file" ]; then
+        log "AUTO-DONE-SKIP-ARCHIVE-SYMLINK: $name report=$(basename "$report_file")"
+        return 1
+    fi
 
     # 報告のparent_cmdを取得
     local report_parent_cmd report_task_id
@@ -2717,7 +2729,7 @@ check_and_update_done_task() {
             return 1
             ;;
     esac
-}
+)
 
 monitor_task_state_fast_path() {
     local name
