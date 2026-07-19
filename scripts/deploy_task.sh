@@ -9256,7 +9256,9 @@ record_issued_at_once() {
         log "[ISSUED_AT] Preserved: ${existing_issued_at} (retry ${cmd_id})"
         return 0
     fi
-    yaml_field_set_batch "$task_file" "task" "issued_at=$timestamp" "issued_cmd_id=$cmd_id"
+    if ! yaml_field_set_batch "$task_file" "task" "issued_at=$timestamp" "issued_cmd_id=$cmd_id"; then
+        return 1
+    fi
     log "[ISSUED_AT] Recorded: ${timestamp} (${cmd_id})"
 }
 
@@ -11081,7 +11083,7 @@ deploy_task_main() {
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi
-    if [ -n "$CMD_ID" ]; then
+    if [ -n "$CMD_ID" ] && { [ "$DIRECT_MODE" != true ] || [ -z "$YAML_FILE" ]; }; then
         record_issued_at_once "$task_yaml" "$CMD_ID" "$(date '+%Y-%m-%dT%H:%M:%S')" || return 1
     fi
 
@@ -11153,7 +11155,11 @@ except Exception:
                     return 2
                 }
             fi
-            reset_stale_fields "$NINJA_NAME"
+            # --yaml source replaces the full task atomically; mutating the old
+            # destination first breaks validation-before-publication on failure.
+            if [ "$DIRECT_MODE" != true ] || [ -z "$YAML_FILE" ]; then
+                reset_stale_fields "$NINJA_NAME"
+            fi
             if [ "$DIRECT_MODE" = true ]; then
             if [ -n "$YAML_FILE" ]; then
                 deploy_task_direct_yaml_publish "$task_yaml" "$YAML_FILE" || {

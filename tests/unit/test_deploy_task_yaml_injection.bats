@@ -1436,3 +1436,32 @@ YAML
     [ "$reports_before" -eq "$(find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f -name 'hayate_report_*' | wc -l)" ]
     [ "$assigned_before" -eq "$(grep -c "type: task_assigned" "$inbox" 2>/dev/null || true)" ]
 }
+
+# test_necessity: --yaml経路はsource precheck完了前に旧taskへissued_at/resetを書かず、publish後の成功時だけRecordedを出す順序を守る。
+@test "yaml deployment records issued_at only after source precheck and atomic publish" {
+    run python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+s = open(sys.argv[1], encoding='utf-8').read()
+main = s[s.index('deploy_task_main() {'):]
+assert 'if [ -n "$CMD_ID" ] && { [ "$DIRECT_MODE" != true ] || [ -z "$YAML_FILE" ]; }; then' in main
+pre = main.index('deploy_task_source_contract_precheck "$YAML_FILE"')
+publish = main.index('deploy_task_direct_yaml_publish "$task_yaml" "$YAML_FILE"')
+record = main.index('record_issued_at_once "$task_yaml" "$CMD_ID"', publish)
+assert pre < publish < record, (pre, publish, record)
+assert 'if [ "$DIRECT_MODE" != true ] || [ -z "$YAML_FILE" ]; then\n                reset_stale_fields' in main
+PY
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: issued_at helper失敗時にRecorded偽成功ログを出さず、invalid旧taskもvalid sourceのatomic publishでVALIDへ置換できる不変量を守る。
+@test "issued_at failure logs no Recorded and valid source replaces invalid destination" {
+    tmpdir="$(mktemp -d)"; dest="$tmpdir/task.yaml"; source_yaml="$tmpdir/source.yaml"; log_file="$tmpdir/log"
+    printf 'task:\n  broken: [\n' >"$dest"
+    printf 'task:\n  status: assigned\n  parent_cmd: cmd_valid\n' >"$source_yaml"
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; log(){ printf '%s\\n' \"\$*\" >>'$log_file'; }; yaml_field_set_batch(){ return 1; }; record_issued_at_once '$source_yaml' cmd_valid now"
+    [ "$status" -ne 0 ]
+    run grep -c '\[ISSUED_AT\] Recorded' "$log_file"
+    [ "$status" -ne 0 ]
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; log(){ :; }; deploy_task_direct_yaml_publish '$dest' '$source_yaml'; python3 -c \"import yaml; yaml.safe_load(open('$dest'))\""
+    [ "$status" -eq 0 ]
+}
