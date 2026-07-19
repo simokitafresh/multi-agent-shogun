@@ -68,4 +68,4 @@ AND条件（p95 -20%以上、blocked-agent-seconds -20%以上、品質合格成�
 
 変更は本研究文書1件のみ。運用script、既存log、queue YAMLは変更していない。
 
-origin: `[[fixed_SHA_CI_GREEN_09f87dd]] -> [[canonical_cohort_schema欠落]] -> [[local_pass_e2e_unproven]]`
+origin: `[[throughput-mece-design-20260718]] -> [[infra-throughput-outcome-design-20260718]] -> [[b1-e2e-same-cohort-final-20260719]]`
