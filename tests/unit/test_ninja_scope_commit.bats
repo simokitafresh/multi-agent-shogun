@@ -159,6 +159,51 @@ YAML
     [ -z "$(git -C "$REPO" status --porcelain -- tests/test_obsolete.bats)" ]
 }
 
+@test "tracked test deletion blocks while canonical inventory column 2 still references it" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks" "$REPO/docs/research"
+    printf 'obsolete contract\n' > "$REPO/tests/test_obsolete.bats"
+    printf 'case_id,test_path\ntests/test_obsolete.bats#1,tests/test_obsolete.bats\n' > "$REPO/docs/research/inventory.csv"
+    git -C "$REPO" add tests/test_obsolete.bats docs/research/inventory.csv
+    git -C "$REPO" commit -qm tracked-test-inventory-base
+    rm "$REPO/tests/test_obsolete.bats"
+    printf 'task:\n  deletion_justification: approved retirement\n  planned_paths: [tests/test_obsolete.bats]\n' > "$REPO/queue/tasks/hayate.yaml"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TEST_INVENTORY=docs/research/inventory.csv NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m delete -- tests/test_obsolete.bats' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"canonical inventory column 2"* ]]
+    git -C "$REPO" cat-file -e HEAD:tests/test_obsolete.bats
+}
+
+@test "tracked test deletion proceeds after canonical inventory synchronization" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks" "$REPO/docs/research"
+    printf 'obsolete contract\n' > "$REPO/tests/test_obsolete.bats"
+    printf 'case_id,test_path\ntests/test_obsolete.bats#1,tests/test_obsolete.bats\n' > "$REPO/docs/research/inventory.csv"
+    git -C "$REPO" add tests/test_obsolete.bats docs/research/inventory.csv
+    git -C "$REPO" commit -qm tracked-test-inventory-base
+    rm "$REPO/tests/test_obsolete.bats"
+    printf 'case_id,test_path\n' > "$REPO/docs/research/inventory.csv"
+    printf 'task:\n  deletion_justification: approved retirement\n  planned_paths: [tests/test_obsolete.bats, docs/research/inventory.csv]\n' > "$REPO/queue/tasks/hayate.yaml"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TEST_INVENTORY=docs/research/inventory.csv NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m delete -- tests/test_obsolete.bats docs/research/inventory.csv' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 0 ]
+    ! git -C "$REPO" cat-file -e HEAD:tests/test_obsolete.bats
+    [ "$(git -C "$REPO" show HEAD:docs/research/inventory.csv)" = 'case_id,test_path' ]
+}
+
+@test "true missing test path remains blocked independently of canonical inventory" {
+    mkdir -p "$REPO/queue/tasks" "$REPO/docs/research"
+    printf 'case_id,test_path\n' > "$REPO/docs/research/inventory.csv"
+    printf 'task:\n  deletion_justification: approved retirement\n  planned_paths: [tests/test_never_existed.bats]\n' > "$REPO/queue/tasks/hayate.yaml"
+
+    run bash -c 'cd "$1" && NINJA_SCOPE_TEST_INVENTORY=docs/research/inventory.csv NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m delete -- tests/test_never_existed.bats' _ "$REPO" "$HELPER"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK:"* ]]
+    ! git -C "$REPO" cat-file -e HEAD:tests/test_never_existed.bats
+}
+
 make_ga282_fixture() {
     mkdir -p "$REPO/queue/tasks" "$REPO/projects/infra"
     printf 'task: base\n' > "$REPO/queue/tasks/hayate.yaml"

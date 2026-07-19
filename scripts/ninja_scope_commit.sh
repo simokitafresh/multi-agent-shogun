@@ -458,6 +458,7 @@ import sys,yaml
 d=yaml.safe_load(open(sys.argv[1],encoding='utf-8')) or {}; print((d.get('task',d).get('deletion_justification') or '').strip())
 PY
 )"
+    canonical_test_inventory="${NINJA_SCOPE_TEST_INVENTORY:-$repo_root/docs/research/ci-test-elimination-inventory-20260719.csv}"
     for scope_path in "${paths[@]}"; do
         if git cat-file -e "HEAD:$scope_path" 2>/dev/null && [[ "$scope_path" == tests/* || "$scope_path" == *.bats || "${scope_path##*/}" == test_* ]]; then
             read -r added deleted < <(git diff --numstat -- "$scope_path" | awk 'NR==1{print $1,$2}')
@@ -466,8 +467,11 @@ PY
                 echo "BLOCK: existing test net deletion requires deletion_justification: $scope_path" >&2; exit 2
             fi
             if [[ ! -e "$scope_path" ]]; then
+                if [[ -f "$canonical_test_inventory" ]] && awk -F, -v path="$scope_path" 'NR > 1 && $2 == path { found=1; exit } END { exit !found }' "$canonical_test_inventory"; then
+                    echo "BLOCK: deleted tracked test remains referenced by canonical inventory column 2: $scope_path" >&2; exit 2
+                fi
                 base="${scope_path##*/}"
-                if git grep -l -F "$base" HEAD -- ':!'"$scope_path" | grep -q .; then
+                if git grep -l -F "$base" HEAD -- ':!'"$scope_path" ':!'"${canonical_test_inventory#$repo_root/}" | grep -q .; then
                     echo "BLOCK: deleted test/helper remains referenced by shared fixture: $scope_path" >&2; exit 2
                 fi
             fi
