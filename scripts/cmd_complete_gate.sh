@@ -202,6 +202,55 @@ export FIELD_GET_NO_LOG=1
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+
+# Resolve the git repository that owns a task.  Reports may describe work in
+# an external project; treating every commit as a multi-agent-shogun commit
+# makes valid external hashes unresolvable and turns repo-relative report
+# paths into false scope drift.  Prefer the actual target_path git root, then
+# projects/<id>.yaml project.path, and fail back to the platform repo.
+resolve_task_repo_dir() {
+    local task_file="$1"
+    local task_meta project_id target_path project_file project_path candidate root
+    task_meta=$(python3 - "$task_file" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+task = data.get("task", data)
+target = task.get("target_path", "")
+if isinstance(target, list):
+    target = next((str(x) for x in target if str(x).strip()), "")
+print(str(task.get("project") or ""))
+print(str(target or ""))
+PY
+)
+    project_id=$(printf '%s\n' "$task_meta" | sed -n '1p')
+    target_path=$(printf '%s\n' "$task_meta" | sed -n '2p')
+
+    project_path=""
+    project_file="$SCRIPT_DIR/projects/${project_id}.yaml"
+    if [ -n "$project_id" ] && [ -f "$project_file" ]; then
+        project_path=$(python3 - "$project_file" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+project = data.get("project", {})
+print(str(project.get("path") or data.get("path") or ""))
+PY
+)
+    fi
+
+    for candidate in "$target_path" "$project_path" "$SCRIPT_DIR"; do
+        [ -n "$candidate" ] || continue
+        if root=$(git -C "$candidate" rev-parse --show-toplevel 2>/dev/null); then
+            printf '%s\n' "$root"
+            return 0
+        fi
+    done
+    printf '%s\n' "$SCRIPT_DIR"
+}
+
+if [ "${CMD_COMPLETE_GATE_TASK_REPO_ONLY:-0}" = "1" ]; then
+    resolve_task_repo_dir "${CMD_COMPLETE_GATE_TASK_FILE:?task file required}"
+    exit 0
+fi
 if [ -f "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh" ]; then
     source "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh"
 else
@@ -3427,14 +3476,28 @@ check_scope_drift() {
             continue
         fi
 
+        local task_repo_dir
+        task_repo_dir=$(resolve_task_repo_dir "$task_file")
         local drift_count=0 total_count=0 drift_list=""
         while IFS= read -r fp; do
             [ -z "$fp" ] && continue
             total_count=$((total_count + 1))
+            local fp_cmp="$fp"
+            if [[ "$fp_cmp" == /* ]]; then
+                fp_cmp=$(realpath --relative-to="$task_repo_dir" "$fp_cmp" 2>/dev/null || printf '%s' "$fp_cmp")
+            fi
+            fp_cmp="${fp_cmp#./}"
             local matched=false
             while IFS= read -r tp; do
                 [ -z "$tp" ] && continue
-                if [[ "$fp" == "$tp"* ]]; then
+                local tp_cmp="$tp"
+                if [[ "$tp_cmp" == /* ]]; then
+                    tp_cmp=$(realpath --relative-to="$task_repo_dir" "$tp_cmp" 2>/dev/null || printf '%s' "$tp_cmp")
+                fi
+                tp_cmp="${tp_cmp#./}"
+                tp_cmp="${tp_cmp%/}"
+                if [ -z "$tp_cmp" ] || [ "$tp_cmp" = "." ] \
+                    || [ "$fp_cmp" = "$tp_cmp" ] || [[ "$fp_cmp" == "$tp_cmp/"* ]]; then
                     matched=true
                     break
                 fi
@@ -8181,7 +8244,8 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
-        ci_push_state=$(report_ci_push_state "$report_file" "$SCRIPT_DIR")
+        task_repo_dir=$(resolve_task_repo_dir "$task_file")
+        ci_push_state=$(report_ci_push_state "$report_file" "$task_repo_dir")
         case "$ci_push_state" in
             PUSHED:*) CI_PUSH_DETECTED=true ;;
             BLOCK:*) CI_PUSH_STATE_BLOCK="$ci_push_state"; break ;;

@@ -3617,6 +3617,24 @@ PY
     [ -z "$output" ]
 }
 
+@test "task repository resolution uses external target_path git root" {
+    local repo="$BATS_TEST_TMPDIR/external-task-repo"
+    local task="$BATS_TEST_TMPDIR/external-task.yaml"
+    git init -q "$repo"
+    mkdir -p "$repo/backend"
+    cat > "$task" <<YAML
+task:
+  project: external
+  target_path: $repo/backend
+YAML
+
+    run env CMD_COMPLETE_GATE_TASK_REPO_ONLY=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$task" \
+        bash "$SRC_GATE_SCRIPT" cmd_external_repo_probe
+    [ "$status" -eq 0 ]
+    [ "$output" = "$repo" ]
+}
+
 make_ci_push_repo() {
     local repo="$1"
     git init -q "$repo"
