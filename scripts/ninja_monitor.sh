@@ -3333,6 +3333,10 @@ _pause_speed_training_if_recurrence_high() {
     local rate recur total
     [ -r "$helper" ] || return 1
     [ -f "$SPEED_TRAINING_LEDGER" ] || return 1
+    if _speed_training_active_test_campaign; then
+        log "SPEED-TRAINING-AUTO-PAUSE-SKIP: active test-speed campaign"
+        return 1
+    fi
     [[ "$threshold" =~ ^[0-9]+$ ]] || threshold=10
     read -r rate recur total < <(_retrospective_recurrence_rate "$SCRIPT_DIR/logs/cmd_design_quality.yaml")
     [ "${total:-0}" -gt 0 ] 2>/dev/null || return 1
@@ -3345,6 +3349,28 @@ _pause_speed_training_if_recurrence_high() {
         return 0
     fi
     return 1
+}
+
+_speed_training_active_test_campaign() {
+    local task_glob=("$SCRIPT_DIR"/queue/tasks/*.yaml)
+    [ -e "${task_glob[0]}" ] || return 1
+    awk '
+      FNR == 1 {
+        if (NR > 1 && is_speed && is_active) found=1
+        is_speed=0; is_active=0
+      }
+      /^  parent_cmd:[[:space:]]*/ && $0 ~ /cmd_training_test_speed_/ { is_speed=1 }
+      /^  status:[[:space:]]*/ {
+        value=$0
+        sub(/^  status:[[:space:]]*/, "", value)
+        gsub(/[[:space:]\042]/, "", value)
+        if (value == "assigned" || value == "acknowledged" || value == "in_progress") is_active=1
+      }
+      END {
+        if (is_speed && is_active) found=1
+        exit(found ? 0 : 1)
+      }
+    ' "${task_glob[@]}"
 }
 
 _speed_training_pipeline_has_work() {

@@ -555,3 +555,17 @@ SH
   [ "$status" -eq 0 ]
   [ -f "$TMP/deployed" ]
 }
+
+@test "active test-speed campaign suppresses recurrence auto-pause until callback" {
+  function_body=$(sed -n '/^_speed_training_active_test_campaign()/,/^}/p' "$ROOT/scripts/ninja_monitor.sh")
+  eval "$function_body"
+  SCRIPT_DIR="$TMP"
+
+  printf 'task:\n  parent_cmd: cmd_training_test_speed_fixture\n  status: in_progress\n' > "$TMP/queue/tasks/kagemaru.yaml"
+  run _speed_training_active_test_campaign
+  [ "$status" -eq 0 ]
+
+  printf 'task:\n  parent_cmd: cmd_training_test_speed_fixture\n  status: idle\n' > "$TMP/queue/tasks/kagemaru.yaml"
+  run _speed_training_active_test_campaign
+  [ "$status" -ne 0 ]
+}
