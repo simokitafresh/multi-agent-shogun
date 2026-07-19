@@ -837,7 +837,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1236 -->
+<!-- last_synced_lesson: L1237 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1787,6 +1787,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1234: failed task respawnはready再試行と世代完了markerでexactly-onceにする（respawn_false_alert）
 - L1235: multi-round callback境界はpending世代・schema・enum・report identityを一契約で守る（speed_campaign_R1_R2）
 - L1236: 速度候補は履歴台帳ではなくworktreeとbaseline HEADの存在で配備可否を決める（cmd_karo_hotfix_test_speed_stale_target_202607200052）
+- L1237: tracked deletion commit helperはDを全phaseで一貫保持せよ（cmd_4093）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

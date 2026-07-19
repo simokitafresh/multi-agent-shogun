@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-19 -->
+<!-- last_updated: 2026-07-20 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,13 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3443 | 洗脳監査(殿指示2026-06-18)でuseful_rate=2.0%の真因がtags空欄ではないと判明(軍師指摘blt_230320)。cmd_3432以降(タグ修正済み)でもuseful=1/23=4.3%。一次データ確認: L809(review_quality集計/infra)+L563(DNA制約/dm-signal)+L562(ALM Ward FoF/dm-signal)がPhase3 BFS実装cmd(infra)に注入されNOT_USEFUL。タグ付きでもinfra cmdにdm-signal教訓が注入される経路がdeploy_task.shに存在する。経路を特定し修正設計を出す。 | infra | 06-19 | — |
-| cmd_3444 | 偵察: Classroom Androidアプリ2大バグの根因特定 — WebViewハンバーガー不完全展開+同期後画面遷移失敗 | — | 06-19 | — |
-| cmd_3445 | 殿指示(2026-06-19 14:25): GPT+Sonnet忍者2名に別々の視点でデバッグ偵察。v1.0-v2.3の12回イテレーションで場当たり修正を繰り返したが根因未到達。問題A=file://プロトコルでWebViewのviewportが768px超→モバイルCSS不発→ハンバーガーメニュー不完全展開。問題B=同期完了後にCompose UIが再コンポーズされずダッシュボードに遷移しない。ブラウザでは同じHTMLが正常動作(殿確認済み)。 | google-classroom | 06-19 | Android WebView viewport根因とCom |
-| cmd_3448 | cmd_3447万全偵察(3名一致)でviewportは正常(360-430px)と確定。根因候補2つ: (1)height:100vhがWebView dynamic viewportで誤計算しサイドバー高さが2行分に切詰め (2)同期HTMLが不完全(linkCount<20)。本cmdでonPageFinished JS診断ログをUI表示+CSS修正(100vh→top:0;bottom:0;height:auto;max-height:100dvh)を同時適用しビルド+GitHub Release。 | google-classroom | 06-19 | WebView onPageFinished診断ログを設定画 |
-| cmd_3449 | cmd_3447でGATE滞留発生(2026-06-19)。軍師根因特定(blt_20260619_185700): 分割cmd(cmd_XXXX_ninja)の報告ファイル名=ninja_report_cmd_XXXX_ninja.yaml。親cmdのGATEが期待するファイル名=ninja_report_cmd_XXXX.yaml(L202)。名前不一致でMISSING判定。glob展開を拡張し分割cmd報告を検出可能にする | infra | 06-19 | 分割cmd報告ファイル名(ninja_report_cmd_ |
-| cmd_3452 | 殿指示(2026-06-19 21:22): 動作していないhook/gate/デーモンがないか覚醒して調査。log_terminal_response.sh(Stop hook)がゼロ出力で沈黙していたバグを発端に、全10hookの動作検証を実施。確認済み6本(session_start_inject/pretool-dispatch/posttool-dispatch/stop_check_inbox/log_terminal_input/prompt_state_inject)。未検証4本(stop-lint-gate/stop_session_alerts/session_end_clear_check/log_terminal_response=cmd_3451で修復中)を重点検証 | infra | 06-19 | 未検証hook 4本を条件付きで実行検証し、修復が必要な沈黙 |
-| cmd_3450 | 殿指示(2026-06-19 21:14)。v5.3-diag診断データでsidebarClientHeight=88(2行分)が確認された。前セッション偵察(18:26)で根因特定済み: height:100vhがWebViewで誤計算されサイドバー高さが切り詰められる。モバイルビューでサイドバーをheight:0またはdisplay:noneで完全非表示にする | google-classroom | 06-19 | モバイルビューの.sidebarにheight:0+over |
 | cmd_3454 | — | — | 06-20 | — |
 | cmd_3455 | 殿指摘(2026-06-19 22:34): 記憶DBへの書込みが掲示板/inbox/insightの副作用に依存しており、知識を直接INSERTする専用ツールがない。三層貫通でLayer1に書くとき通信チャネルを迂回路にしていた。memory_db_knowledge_write.shを作成し、通信に依存しない直接書込みを可能にする | infra | 06-20 | memory_db_knowledge_write.shを追 |
 | cmd_3456 | 殿指示(2026-06-19 22:47): classroomを進めよう。cmd_3450 CSS修正(commit 5db49a5 height:0+overflow:hidden)がv5.3-diag以降に入っている。v5.4としてリリースし、殿の実機でv5.3-diag診断データ(sidebarClientHeight)が0になることを検証する | google-classroom | 06-20 | — |
@@ -329,3 +322,4 @@
 | cmd_4089 | rebalancer価格経路リアルタイム化設計書(正本パスはassumptions.source参照。軍師APPROVE+家老APPROVE WITH CHANGES済み)の工程P1b。P1a(cmd_4088+fix R1、provenance型境界)完了を受け、Alpaca IEX WebSocket購読とメモリlatest store、Alpaca clock/calendar正本による接続制御、healthの状態分離を実装する。家老レビュー④⑤の根治を含む | rebalancer | 07-19 | Alpaca IEX WS/latest store/cal |
 | cmd_4090 | rebalancer価格経路リアルタイム化設計書(正本パスはassumptions.source参照。軍師APPROVE+家老APPROVE WITH CHANGES済み)の工程P1c。P1b(cmd_4089、stream+health分離)完了を受け、WS切断時の再接続バックオフとyfinance表示専用fallbackへの自動退避を実装し、silent fallback禁止(家老レビュー③)としてdegraded/stale/sourceを状態APIへ明示する | rebalancer | 07-19 | P1c耐障害層を実装。WS切断/auth/購読失敗で1,2, |
 | cmd_4091 | rebalancer価格経路リアルタイム化設計書(正本パスはassumptions.source参照。軍師APPROVE+家老APPROVE WITH CHANGES済み)の工程P2。P1a-P1c(型境界・stream・耐障害)完了を受け、backend→FEのSSE配信契約とFE受信化を実装してend-to-end pushを完成させる。家老レビューP2指摘(配信契約の全項目)を仕様として固定する | rebalancer | 07-19 | RC5条件を新commitで完了。heartbeat tim |
+| cmd_4093 | 殿裁定(2026-07-20 00:22 二条件・小batch+00:36振り分け型合意)のB1'。cmd_4092の全量抽出資産(365 files/4,922 cases)を入力に、宣言なし∧FAIL実績なし層から明白な小batch(被テストスクリプトが大改修・削除済みで実装検証価値を消費済みの層)を選んで整理実走し、宣言なし∧FAIL実績あり層は削除せず契約昇格候補リストとして分離する | infra | 07-20 | 365/365 filesを宣言55・宣言なしFAILなし2 |
