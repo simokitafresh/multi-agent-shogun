@@ -53,10 +53,10 @@ $(extract_function inject_report_filename)
 $(extract_function deploy_task_speed_campaign_report_is_explicit)
 $(extract_function deploy_task_normalize_report_metadata)
 log() { :; }
-NINJA_NAME="\$4"
-cp "\$3" "$TMP/queue/tasks/\$4.yaml"
-deploy_task_normalize_report_metadata "$TMP/queue/tasks/\$4.yaml"
-report=\$(FIELD_GET_NO_LOG=1 field_get "$TMP/queue/tasks/\$4.yaml" report_path "")
+NINJA_NAME="\$3"
+cp "\$2" "$TMP/queue/tasks/\$3.yaml"
+deploy_task_normalize_report_metadata "$TMP/queue/tasks/\$3.yaml"
+report=\$(FIELD_GET_NO_LOG=1 field_get "$TMP/queue/tasks/\$3.yaml" report_path "")
 mkdir -p "$TMP/\$(dirname "\$report")"
 printf 'status: pending\n' > "$TMP/\$report"
 SH
@@ -99,7 +99,7 @@ YAML
   cp "$ROOT/scripts/test_speed_task_generator.sh" "$TMP/scripts/"
   cat > "$TMP/scripts/deploy_task.sh" <<'SH'
 #!/usr/bin/env bash
-cp "$3" "$SHOGUN_REPO_ROOT/deployed.yaml"
+cp "$2" "$SHOGUN_REPO_ROOT/deployed.yaml"
 SH
   chmod +x "$TMP/scripts/deploy_task.sh"
   task="$TMP/queue/training/r2.yaml"

@@ -320,14 +320,14 @@ task={"task":{"parent_cmd":task_id,"task_id":task_id,"project":"infra","task_typ
 with open(out,"w",encoding="utf-8") as f:
  json.dump(task,f,ensure_ascii=False,sort_keys=True,indent=2); f.write("\n")
 PY
-    "${DEPLOY_TASK:-$ROOT/scripts/deploy_task.sh}" --direct --yaml "$tmp" "$ninja"
+    "${DEPLOY_TASK:-$ROOT/scripts/deploy_task.sh}" --yaml "$tmp" "$ninja"
     ;;
   next) next_target ;;
   generate) generate ;;
   deploy)
     ninja="${2:?ninja required}"
     task=$(generate) || exit 1
-    bash "$ROOT/scripts/deploy_task.sh" --direct --yaml "$task" "$ninja"
+    bash "$ROOT/scripts/deploy_task.sh" --yaml "$task" "$ninja"
     ;;
   complete-deploy)
     ninja="${2:?ninja required}"; task_file="${3:?task file required}"; report_file="${4:?report file required}"
@@ -404,7 +404,7 @@ PY
     task=$(continue_campaign "$@") || exit $?
     [[ "$task" == STOP:* ]] && { printf '%s\n' "$task"; exit 0; }
     task=$(printf '%s\n' "$task" | tail -n 1)
-    bash "$ROOT/scripts/deploy_task.sh" --direct --yaml "$task" "$ninja"
+    bash "$ROOT/scripts/deploy_task.sh" --yaml "$task" "$ninja"
     ;;
   continue) shift; continue_campaign "$@" ;;
   continue-deploy)
@@ -412,7 +412,7 @@ PY
     task=$(continue_campaign "$@") || exit 1
     [[ "$task" == STOP:* ]] && { printf '%s\n' "$task"; exit 0; }
     task=$(printf '%s\n' "$task" | tail -n 1)
-    bash "$ROOT/scripts/deploy_task.sh" --direct --yaml "$task" "$ninja"
+    bash "$ROOT/scripts/deploy_task.sh" --yaml "$task" "$ninja"
     ;;
   *) echo "usage: $0 {next|generate|deploy NINJA|continue ...|continue-deploy NINJA ...|complete-deploy NINJA TASK REPORT}" >&2; exit 2 ;;
 esac

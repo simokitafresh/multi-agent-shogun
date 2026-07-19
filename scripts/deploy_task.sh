@@ -28,8 +28,8 @@ LOG="$SCRIPT_DIR/logs/deploy_task.log"
 
 # --yaml is an option prefix, never a trailing modifier.  Without this guard,
 # `deploy_task.sh ninja --yaml file` is parsed as a legacy message and may
-# redeploy the ninja's previous command.  Keep the established training form
-# `--direct --yaml file ninja` as well as canonical `--yaml file ninja`.
+# redeploy the ninja's previous command.  YAML task files use the single
+# canonical form `--yaml file ninja`; `--direct` is reserved for cmd IDs.
 deploy_task_guard_yaml_arg_order() {
     local index=0 arg
     local first="${1:-}"
