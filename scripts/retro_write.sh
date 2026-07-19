@@ -11,8 +11,8 @@ python3 - "$ROOT" "$@" <<'PY'
 import datetime as dt, fcntl, hashlib, json, os, subprocess, sys
 
 root, *args = sys.argv[1:]
-if not args or args[0] not in {"submit", "enqueue-trigger", "final-checkpoint"}:
-    raise SystemExit("usage: retro_write.sh submit ... | enqueue-trigger <ninja> <parent_msg> <triggered_at> [severity] | final-checkpoint")
+if not args or args[0] not in {"submit", "enqueue-trigger", "mark-delivered", "final-checkpoint"}:
+    raise SystemExit("usage: retro_write.sh submit ... | enqueue-trigger ... | mark-delivered <ninja> <event_id> <delivered_at> | final-checkpoint")
 qdir = os.path.join(root, "queue", "retro")
 os.makedirs(qdir, exist_ok=True)
 lock_path = os.path.join(qdir, ".retro.lock")
@@ -33,6 +33,8 @@ with open(lock_path, "a+") as lock:
     except (FileNotFoundError, json.JSONDecodeError):
         state = {"event_ids": [], "pending": [], "notified_batches": []}
     state.setdefault("legacy_tombstones", [])
+    state.setdefault("deliveries", {})
+    state.setdefault("unanswered_notified", [])
     # Repair state written by the short-lived legacy bridge that treated empty
     # prompts as actionable results.  Preserve the append-only audit log, but
     # remove those identities from batching and remember them as tombstones.
@@ -115,6 +117,11 @@ with open(lock_path, "a+") as lock:
                  "deployed_at": deployed, "terminal_at": terminal.isoformat(),
                  "duration_seconds": duration, "severity": severity, "content": content,
                  "recorded_at": dt.datetime.now(dt.timezone.utc).isoformat()}
+        for key in ("improvement_proposals", "hotfix_deployed"):
+            marker = key + "="
+            for token in content.split():
+                if token.startswith(marker) and token[len(marker):].isdigit():
+                    event[key] = int(token[len(marker):])
         with open(events_path, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n")
             fh.flush(); os.fsync(fh.fileno())
@@ -127,9 +134,84 @@ with open(lock_path, "a+") as lock:
         if len(args) not in {4, 5}: raise SystemExit("retro enqueue-trigger: expected 3 or 4 arguments")
         _, ninja, parent, triggered, *severity_arg = args
         severity = severity_arg[0] if severity_arg else "normal"
-        event_id = hashlib.sha256(("trigger\0" + parent + "\0" + ninja).encode()).hexdigest()
+        # This identity is also passed to retro_verbatim_prompt_async by the
+        # report_received caller, so delivery and answer ledgers share one key.
+        event_id = "report_received:" + parent
         if event_id not in state["legacy_tombstones"]:
             state["legacy_tombstones"].append(event_id)
+        state.setdefault("terminal_events", {})[event_id] = {
+            "ninja": ninja, "terminal_at": triggered, "severity": severity,
+        }
+    elif args[0] == "mark-delivered":
+        if len(args) != 4: raise SystemExit("retro mark-delivered: expected 3 arguments")
+        _, ninja, event_id, delivered_at = args
+        if parse_ts(delivered_at) is None: raise SystemExit("retro mark-delivered: malformed timestamp")
+        terminal = state.get("terminal_events", {}).get(event_id, {})
+        if terminal and terminal.get("ninja") != ninja:
+            raise SystemExit("retro mark-delivered: ninja mismatch")
+        state["deliveries"].setdefault(event_id, {
+            "ninja": ninja, "delivered_at": delivered_at,
+            "severity": terminal.get("severity", "normal"), "pane_idle": True,
+        })
+
+    # Reconcile answers from primary persisted transports at the finite
+    # checkpoint only. enqueue-trigger must not race the answer delivery.
+    # messages name their source event_id in content; E4 may append the same key
+    # to answers.jsonl.  A delivery is answered by either source, exactly once.
+    answered_ids = set()
+    karo_inbox = os.path.join(root, "queue", "inbox", "karo.yaml")
+    if args[0] == "final-checkpoint" and os.path.exists(karo_inbox):
+        current = {}
+        for raw in open(karo_inbox, encoding="utf-8"):
+            line = raw.strip()
+            if line.startswith("- "):
+                if current.get("type") == "retro_answer":
+                    text = current.get("content", "")
+                    answered_ids.update(eid for eid in state["deliveries"] if eid in text)
+                current = {}
+                line = line[2:]
+            if ":" in line:
+                key, value = line.split(":", 1)
+                current[key.strip()] = value.strip().strip("'\"")
+        if current.get("type") == "retro_answer":
+            text = current.get("content", "")
+            answered_ids.update(eid for eid in state["deliveries"] if eid in text)
+    e4_answers = os.path.join(qdir, "answers.jsonl")
+    if args[0] == "final-checkpoint" and os.path.exists(e4_answers):
+        for raw in open(e4_answers, encoding="utf-8"):
+            try: answer = json.loads(raw)
+            except json.JSONDecodeError: continue
+            if answer.get("event_id") in state["deliveries"]:
+                answered_ids.add(answer["event_id"])
+    for event_id in answered_ids:
+        state["deliveries"][event_id]["answered_at"] = state["deliveries"][event_id].get(
+            "answered_at", dt.datetime.now(dt.timezone.utc).isoformat())
+
+    timeout_seconds = int(os.environ.get("RETRO_ANSWER_TIMEOUT_SECONDS", "600"))
+    now = dt.datetime.now(dt.timezone.utc)
+    unanswered = []
+    for event_id, delivery in state["deliveries"].items():
+        delivered = parse_ts(delivery.get("delivered_at"))
+        if delivery.get("answered_at") or delivered is None:
+            continue
+        if args[0] == "final-checkpoint" and (now - delivered.astimezone(dt.timezone.utc)).total_seconds() >= timeout_seconds:
+            unanswered.append(event_id)
+            if event_id not in state["unanswered_notified"]:
+                state["unanswered_notified"].append(event_id)
+                notifications.append(("retro_unanswered", [event_id]))
+
+    proposal_count = hotfix_count = 0
+    if os.path.exists(events_path):
+        for raw in open(events_path, encoding="utf-8"):
+            try: event = json.loads(raw)
+            except json.JSONDecodeError: continue
+            proposal_count += int(event.get("improvement_proposals", 0) or 0)
+            hotfix_count += int(event.get("hotfix_deployed", 0) or 0)
+    if args[0] == "final-checkpoint" and proposal_count > hotfix_count:
+        proposal_gate_id = f"proposal-gap:{proposal_count}:{hotfix_count}"
+        if proposal_gate_id not in state["unanswered_notified"]:
+            state["unanswered_notified"].append(proposal_gate_id)
+            notifications.append(("retro_proposal_unactioned", [proposal_gate_id]))
 
     # Drain complete normal batches. final-checkpoint additionally flushes the
     # residual partial batch, while ordinary writes never interrupt early.
@@ -147,7 +229,13 @@ with open(lock_path, "a+") as lock:
         if batch_id not in state["notified_batches"]:
             state["notified_batches"].append(batch_id)
             state["pending"] = [x for x in state["pending"] if x not in ids]
-            payloads.append((kind, f"batch_id={batch_id} count={len(ids)} event_ids={','.join(ids)}"))
+            if kind == "retro_unanswered":
+                ninja = state["deliveries"][ids[0]]["ninja"]
+                payloads.append((kind, f"BLOCK_NEXT_TASK ninja={ninja} count={len(ids)} event_ids={','.join(ids)} action=reprompt"))
+            elif kind == "retro_proposal_unactioned":
+                payloads.append((kind, f"BLOCK proposal_count={proposal_count} hotfix_deployed={hotfix_count} unassigned={proposal_count-hotfix_count}"))
+            else:
+                payloads.append((kind, f"batch_id={batch_id} count={len(ids)} event_ids={','.join(ids)}"))
     tmp = state_path + f".tmp.{os.getpid()}"
     with open(tmp, "w", encoding="utf-8") as fh:
         json.dump(state, fh, ensure_ascii=False, sort_keys=True); fh.flush(); os.fsync(fh.fileno())
@@ -155,8 +243,12 @@ with open(lock_path, "a+") as lock:
 
 for kind, payload in payloads:
     subprocess.run(["bash", os.path.join(root, "scripts", "inbox_write.sh"), "karo", payload,
-                    kind, "retro_batcher", "review_retro_batch"], check=True)
-print("STORED" if args[0] == "submit" else "CHECKPOINT")
+                    kind, "retro_batcher", "hold_next_task" if kind in {"retro_unanswered", "retro_proposal_unactioned"} else "review_retro_batch"], check=True)
+delivery_count = len(state["deliveries"])
+answer_count = sum(bool(x.get("answered_at")) for x in state["deliveries"].values())
+print(f"DELIVERED={delivery_count} ANSWERED={answer_count} UNANSWERED={delivery_count-answer_count} "
+      f"PANE_IDLE_DELIVERED={sum(bool(x.get('pane_idle')) for x in state['deliveries'].values())} "
+      f"PROPOSALS={proposal_count} HOTFIX_DEPLOYED={hotfix_count} GATE_FIRES={len(state['unanswered_notified'])}")
 PY
 
 if [ "${1:-}" = submit ]; then
