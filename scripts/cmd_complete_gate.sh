@@ -98,6 +98,16 @@ if paths and all(value == "no-code-change" for value in paths):
     raise SystemExit
 
 commit = str(report.get("commit_hash") or "").strip()
+if commit == "no-code-change":
+    evidence = report.get("no_code_change_evidence")
+    before = str(evidence.get("before_tree") or "").strip().lower() if isinstance(evidence, dict) else ""
+    after = str(evidence.get("after_tree") or "").strip().lower() if isinstance(evidence, dict) else ""
+    unchanged = evidence.get("tree_unchanged") if isinstance(evidence, dict) else None
+    if unchanged is True and before == after and re.fullmatch(r"[0-9a-f]{40}", before):
+        print("tree-sentinel\t" + before)
+    else:
+        print("invalid-no-code-evidence\t\t")
+    raise SystemExit
 if not re.fullmatch(r"[0-9a-fA-F]{40}", commit):
     print("invalid\t" + commit)
 else:
@@ -107,6 +117,14 @@ PY
 
     if [ "$report_kind" = "sentinel" ]; then
         echo "UNPUSHED: no-code-change sentinel"
+    elif [ "$report_kind" = "tree-sentinel" ]; then
+        if git -C "$repo_dir" cat-file -e "${report_commit}^{tree}" 2>/dev/null; then
+            echo "UNPUSHED: no-code-change tree sentinel ($report_commit)"
+        else
+            echo "BLOCK: no-code-change tree unresolvable ($report_commit)"
+        fi
+    elif [ "$report_kind" = "invalid-no-code-evidence" ]; then
+        echo "BLOCK: no-code-change evidence invalid"
     elif [ "$report_kind" != "commit" ] \
         || ! git -C "$repo_dir" cat-file -e "${report_commit}^{commit}" 2>/dev/null; then
         echo "BLOCK: report commit invalid or unresolvable${report_commit:+ ($report_commit)}"

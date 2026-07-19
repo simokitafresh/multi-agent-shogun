@@ -3684,3 +3684,30 @@ run_ci_push_state() {
     run_ci_push_state "$repo" "$report"
     [ "$status" -eq 0 ]; [ "$output" = "UNPUSHED: no-code-change sentinel" ]
 }
+
+@test "CI push detection accepts only a resolvable unchanged tree for structured no-code-change" {
+    local repo="$BATS_TEST_TMPDIR/no-code-tree" report="$BATS_TEST_TMPDIR/no-code-tree.yaml" tree
+    make_ci_push_repo "$repo"
+    tree="$(git -C "$repo" rev-parse HEAD^{tree})"
+    printf 'commit_hash: no-code-change\nno_code_change_evidence: {before_tree: %s, after_tree: %s, tree_unchanged: true}\nfiles_modified: [{path: scripts/x.sh}]\n' "$tree" "$tree" > "$report"
+    run_ci_push_state "$repo" "$report"
+    [ "$status" -eq 0 ]; [ "$output" = "UNPUSHED: no-code-change tree sentinel ($tree)" ]
+}
+
+@test "CI push detection blocks malformed or unresolvable structured no-code-change evidence" {
+    local repo="$BATS_TEST_TMPDIR/no-code-adversarial" report="$BATS_TEST_TMPDIR/no-code-adversarial.yaml" tree
+    make_ci_push_repo "$repo"
+    tree="$(git -C "$repo" rev-parse HEAD^{tree})"
+    for evidence in \
+        '{}' \
+        "{before_tree: $tree, after_tree: 0000000000000000000000000000000000000000, tree_unchanged: true}" \
+        "{before_tree: not-hex, after_tree: not-hex, tree_unchanged: true}" \
+        "{before_tree: $tree, after_tree: $tree, tree_unchanged: false}"; do
+        printf 'commit_hash: no-code-change\nno_code_change_evidence: %s\nfiles_modified: [{path: scripts/x.sh}]\n' "$evidence" > "$report"
+        run_ci_push_state "$repo" "$report"
+        [ "$status" -eq 0 ]; [ "$output" = "BLOCK: no-code-change evidence invalid" ]
+    done
+    printf 'commit_hash: no-code-change\nno_code_change_evidence: {before_tree: "%040d", after_tree: "%040d", tree_unchanged: true}\nfiles_modified: [{path: scripts/x.sh}]\n' 1 1 > "$report"
+    run_ci_push_state "$repo" "$report"
+    [ "$status" -eq 0 ]; [[ "$output" == "BLOCK: no-code-change tree unresolvable"* ]]
+}
