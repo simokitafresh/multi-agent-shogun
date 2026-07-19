@@ -163,6 +163,7 @@ HTTP_CLIENT_CALL_RE = re.compile(
 )
 CURL_CMD_RE = re.compile(r"^(?:curl|curl\.exe)$")
 HTTP_MODULES = {"requests", "httpx", "urllib", "urllib.request"}
+WEBSOCKET_MODULES = {"websocket", "websockets"}
 SAFE_STDLIB_MODULES = {
     "json", "os", "pathlib", "re", "time", "datetime", "base64", "hashlib",
     "typing", "collections", "urllib.parse",
@@ -361,7 +362,7 @@ def _python_inline_code(tokens: list[str]) -> str | None:
 
 
 def _python_http_only_capability(tokens: list[str]) -> bool:
-    """Prove Python -c has only ordinary data processing plus explicit HTTP capability."""
+    """Prove Python -c has only ordinary data processing plus explicit non-DB network capability."""
     code = _python_inline_code(tokens)
     if code is None:
         return False
@@ -369,10 +370,10 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
         tree = ast.parse(code)
     except (SyntaxError, ValueError):
         return False
-    saw_http = False
+    saw_network = False
     # REPL-style snippets often reference already-available standard/HTTP modules without
     # an import in the same -c string; these roots still have known bounded capability.
-    trusted_roots = {"Path", "os", "json", "requests", "httpx", "urllib"}
+    trusted_roots = {"Path", "os", "json", "requests", "httpx", "urllib", "websocket", "websockets"}
     for node in ast.walk(tree):
         if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign, ast.NamedExpr)):
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
@@ -384,18 +385,18 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
                 name = alias.name
                 if name in ESCAPE_MODULES or name.split(".", 1)[0] in ESCAPE_MODULES:
                     return False
-                if name not in HTTP_MODULES and name not in SAFE_STDLIB_MODULES and name not in SAFE_CREDENTIAL_MODULES:
+                if name not in HTTP_MODULES and name not in WEBSOCKET_MODULES and name not in SAFE_STDLIB_MODULES and name not in SAFE_CREDENTIAL_MODULES:
                     return False
                 trusted_roots.add(alias.asname or name.split(".", 1)[0])
-                saw_http |= name in HTTP_MODULES
+                saw_network |= name in HTTP_MODULES
         elif isinstance(node, ast.ImportFrom):
             name = node.module or ""
             if name in ESCAPE_MODULES or name.split(".", 1)[0] in ESCAPE_MODULES:
                 return False
-            if name not in HTTP_MODULES and name not in SAFE_STDLIB_MODULES and name not in SAFE_CREDENTIAL_MODULES:
+            if name not in HTTP_MODULES and name not in WEBSOCKET_MODULES and name not in SAFE_STDLIB_MODULES and name not in SAFE_CREDENTIAL_MODULES:
                 return False
             trusted_roots.update(alias.asname or alias.name for alias in node.names)
-            saw_http |= name in HTTP_MODULES
+            saw_network |= name in HTTP_MODULES
         elif isinstance(node, ast.Call):
             if isinstance(node.func, ast.Name) and node.func.id in ESCAPE_CALLS:
                 return False
@@ -409,7 +410,14 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
                     chain.append(cur.id)
                     dotted = ".".join(reversed(chain))
                     if dotted.startswith(("requests.", "httpx.", "urllib.request.")):
-                        saw_http = True
+                        saw_network = True
+                    elif dotted in {"websocket.create_connection", "websockets.connect"}:
+                        # These are explicit WebSocket clients, not DB drivers.  Require a
+                        # literal secure-WebSocket endpoint so an imported module/alias
+                        # cannot turn an unresolved generic connect call into an allow.
+                        if "wss://" not in code:
+                            return False
+                        saw_network = True
                     elif dotted == "os.getenv" or dotted.startswith("os.environ.get"):
                         pass
                     elif cur.id == "os":
@@ -420,7 +428,7 @@ def _python_http_only_capability(tokens: list[str]) -> bool:
                 # Builtins are ordinary data processing; imported/assigned opaque executors are not.
                 if node.func.id not in {"open", "print", "len", "str", "bytes", "dict", "list", "set", "tuple", "int", "float", "bool"}:
                     return False
-    return saw_http
+    return saw_network
 
 
 def _python_m_is_safe(tokens: list[str]) -> bool:
