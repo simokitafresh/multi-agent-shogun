@@ -2,8 +2,10 @@
 
 setup() {
     ROOT="$BATS_TEST_TMPDIR/root"
-    mkdir -p "$ROOT/scripts/gates" "$ROOT/queue/gates/cmd_resume" "$ROOT/queue/archive/cmds" "$ROOT/logs"
+    mkdir -p "$ROOT/scripts/gates" "$ROOT/scripts/lib" "$ROOT/queue/gates/cmd_resume" "$ROOT/queue/archive/cmds" "$ROOT/logs"
     cp "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh" "$ROOT/scripts/cmd_complete.sh"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/defense_overhead_writer.sh" "$ROOT/scripts/lib/defense_overhead_writer.sh"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/retro_verbatim_prompt.sh" "$ROOT/scripts/lib/retro_verbatim_prompt.sh"
     printf '{"project":"infra","verdict":"APPROVE"}\n' > "$ROOT/queue/gates/cmd_resume/sg7_bundle.json"
     : > "$ROOT/logs/gate_metrics.log"
     for name in lesson_review cmd_complete_gate cmd_quality_log dashboard_update ntfy_cmd inbox_archive; do
@@ -37,6 +39,7 @@ PY
     export CMD_COMPLETE_ROOT_DIR="$ROOT" CMD_COMPLETE_SCRIPT_DIR="$ROOT/scripts"
     export CMD_COMPLETE_TEST_LOG="$LOG" CMD_COMPLETE_FAIL_DIR="$FAIL"
     export CMD_COMPLETE_DASHBOARD_RETRY_DELAY=0 CMD_COMPLETE_NTFY_RETRY_DELAY=0
+    export DEFENSE_OVERHEAD_ENABLED=0
 }
 
 run_complete() {
