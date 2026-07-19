@@ -5896,6 +5896,38 @@ INJECT_GLD_PY
     rm -f "$py_output"
 }
 
+# ─── 実験ファースト原則（殿厳命2026-07-20、全task Level5） ───
+inject_experiment_first_principle() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+    TASK_FILE_ENV="$task_file" python3 - <<'INJECT_EFP_PY'
+import os
+import tempfile
+import yaml
+
+task_file = os.environ['TASK_FILE_ENV']
+with open(task_file, encoding='utf-8') as f:
+    data = yaml.safe_load(f) or {}
+task = data.get('task', data)
+task['experiment_first_principle'] = [
+    '殿の原文: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』',
+    '適用形: 仮説を頭で絞らず、小さな独立実験へ分けて並列に全て試せ。想像で結論せず、各実験の一次結果を確認してから採否を決めよ。',
+]
+directory = os.path.dirname(task_file) or '.'
+fd, tmp_path = tempfile.mkstemp(prefix='.deploy-task.', dir=directory, text=True)
+try:
+    with os.fdopen(fd, 'w', encoding='utf-8') as f:
+        yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, task_file)
+except Exception:
+    if os.path.exists(tmp_path):
+        os.unlink(tmp_path)
+    raise
+INJECT_EFP_PY
+}
+
 inject_readonly_refs() {
     local task_file="$1"
     local parent_cmd command_text readonly_yaml
@@ -10743,7 +10775,7 @@ deploy_task_apply_task_mutations() {
         # removes the previous task's value before normal/direct publication;
         # clearing it again here erased a caller-supplied --yaml isolation
         # contract and replaced it with the generic reminder.
-        clear_fields="engineering_preferences|skill_hint|reports_to_read|context_files|context_hints|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
+        clear_fields="engineering_preferences|experiment_first_principle|skill_hint|reports_to_read|context_files|context_hints|report_template|bloom_level|stop_for|never_stop_for|ac_priority|ac_checkpoint|parallel_ok|ninja_weak_points|type"
         clear_tmp=$(mktemp)
         if awk -v fields="$clear_fields" '
         BEGIN { n=split(fields,arr,"|"); for(i=1;i<=n;i++) fset[arr[i]]=1; skip=0; cleared=0 }
@@ -10800,6 +10832,7 @@ deploy_task_apply_task_mutations() {
         inject_production_invariants "$task_file" || true  # Level5: 忍者に本番不変量(PI)自動提供
         inject_checklist_constraints "$task_file" || true  # Level5: checklist隣接Step制約強制注入(cmd_2644)
         inject_growth_loop_defense "$task_file" || true    # Level5: gate/hook関連cmdに防御階層§11を強制注入(cmd_2649)
+        inject_experiment_first_principle "$task_file" || true  # Level5: 全taskへ実験ファースト原則を強制注入
         inject_readonly_refs "$task_file" || true           # Level5: command必読/参照専用ファイルをreadonly_refへ源流注入
         inject_ac_version "$task_file" || true
         verify_ac_consistency "$task_file" || true
