@@ -87,8 +87,8 @@
 | P0 偵察 | Alpaca実叩き実測+^VIX/為替選定+置換設計 | cmd_4087 | 完了(購読+設計の範囲でAC正規化。開場時遅延はP3へ) |
 | P1a 型/確定値 | provenance型(source/as_of/is_final)+EODHD adapter+Render secret独立配備 | cmd_4088(+fix R1) | 完了(GATE CLEAR、commit 2023dbf/31d071c) |
 | P1b ストリーム | Alpaca stream/latest store+calendar正本+health分離 | cmd_4089 | 完了(GATE CLEAR、commit f31c5a0) |
-| P1c 耐障害 | resilience+fallback可視化(degraded/stale明示) | cmd_4090 | 起票済み |
-| P2 FE配信 | SSE契約(bounded queue/heartbeat/再開/snapshot)+FE受信化 | 保留: P1c完了後に逐次起票(backend配信なしにFE検証不能) | — |
+| P1c 耐障害 | resilience+fallback可視化(degraded/stale明示) | cmd_4090 | 完了(GATE CLEAR、commit df4ccf9) |
+| P2 FE配信 | SSE契約(bounded queue/heartbeat/再開/snapshot)+FE受信化 | cmd_4091 | 起票済み |
 | P3 本番検証(最終checkpoint) | 米国市場開場中の全銘柄subscription ACK+event→backend→SSE→browserの段階別p50/p95/max実測+WS強制切断・Render restart・SSE再接続のrecovery検証(duplicate0/out-of-order0)+終値EODHD突合+Alpaca計算混入0+秘密値ログ0の二値化 | 保留: P2完了かつ米国市場開場時間帯に起票(厳密さは最終checkpointへ集中) | — |
 
 ## 因果リンク
