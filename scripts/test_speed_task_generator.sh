@@ -214,7 +214,7 @@ task:
     - id: AC1
       description: "last-good/candidate commitを同一commandでwarmup後各10回以上A/B交互測定し、p50/p95と支配項を実測、FAIL=0・SKIP=0で完走する"
     - id: AC2
-      description: "related_lessonsが注入された場合のみ有用性を検証する。round別report/commitを作り、speed_result(last_wall/approach/quality/dominant/elapsed_sec/ctx_percent)を記録する。完了後はmonitor callbackが自動継承する"
+      description: "related_lessonsが注入された場合のみ有用性を検証する。round別report/commitを作り、speed_result(last_wall/approach/quality/dominant/elapsed_sec/ctx_percent)とtest_results(status=pass, wall_sec=有限非負値, failures=0, skips=0)を構造化記録する。完了後はmonitor callbackが自動継承する"
   related_lessons: []
   speed_campaign:
     campaign_id: "$campaign"

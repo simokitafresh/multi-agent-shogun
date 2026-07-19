@@ -29,6 +29,7 @@ YAML
   grep -Fq 'order: alternating' "$generated"
   grep -Fq 'report_filename: "test_speed_report_' "$generated"
   grep -Fq 'action: "complete-deploy"' "$generated"
+  grep -Fq 'test_results(status=pass, wall_sec=有限非負値, failures=0, skips=0)' "$generated"
   grep -Fq 'FAIL0; SKIP0; no expectation relaxation' "$generated"
   grep -Fq 'shared fixture/cache first; switch to production script at plateau' "$generated"
 }
