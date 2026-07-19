@@ -64,6 +64,14 @@ checkpoint承認後のみ、復元対象へ `# test_necessity:` を記入して�
 | 指標 | 記入前 | 記入後 |
 |---|---:|---:|
 | 対象20 filesの有効契約 | 0/20 | 20/20（移植済み3＋復元宣言17） |
-| 現HEAD全test fileの宣言 | 70/136 | 88/155（2026-07-20 03:53時点。並行追加を含む） |
+| 現HEAD全test fileの宣言 | 70/136 | 89/155（2026-07-20 05:40時点。並行追加を含む） |
 
 工程表への結論: B3 cmd_4095は20/20を移植済み3＋復元宣言17へ分類し、契約昇格を完了。全量FAIL0/SKIP0の最終receipt確認後に完了する。
+
+## §5 最新HEAD全量receipt（2026-07-20 05:43）
+
+- receipt: `logs/test_receipts/run_tests_20260719T204014_2397508.json`
+- 実測: 966/966 observed、FAIL 1、SKIP 0、rc=1
+- FAIL: `tests/unit/test_gate_single_check_consolidated.bats` の `gate_no_direct_yaml_dump blocks direct PyYAML dumps in shell scripts`
+- 一次原因: `scripts/deploy_task.sh:5941` と `scripts/throughput_scan.sh:36` に直接 `yaml.safe_dump` が残存し、現行gateがactive hits 2件として正しくBLOCKした。
+- 判定: 復元17 files由来の宣言欠落は0件だが、全量FAIL0契約は未達。運用script 2件は本taskの `tests` / 本文書scope外のため、修正cmdへ引き継ぐ。
