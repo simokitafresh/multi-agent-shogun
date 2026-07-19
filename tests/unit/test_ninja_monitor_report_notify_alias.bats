@@ -121,3 +121,32 @@ SH
   [ "$(wc -l <"$TEST_ROOT/events")" -eq 1 ]
   grep -q 'karo hayate報告完了.*report=hayate_report_cmd_alias.yaml report_received hayate notify_karo' "$TEST_ROOT/events"
 }
+
+@test "steady terminal task runs twenty monitor loops with zero publisher calls" {
+  cat >"$TEST_ROOT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  task_id: cmd_alias_normal
+  parent_cmd: cmd_alias
+  report_path: queue/reports/hayate_report_cmd_alias.yaml
+  status: done
+YAML
+  cat >>"$TEST_ROOT/queue/reports/hayate_report_cmd_alias.yaml" <<'YAML'
+status: completed
+worker_id: hayate
+YAML
+  cat >"$TEST_ROOT/fake_inbox.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$TEST_ROOT/events"
+SH
+  run env TEST_ROOT="$TEST_ROOT" PROJECT_ROOT="$PWD" bash -c '
+    export NINJA_MONITOR_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+    SCRIPT_DIR="$TEST_ROOT"
+    NINJA_NAMES=(hayate)
+    REPORT_OUTBOX_INBOX_WRITE_PATH="$TEST_ROOT/fake_inbox.sh"
+    export TEST_ROOT REPORT_OUTBOX_INBOX_WRITE_PATH
+    for _ in $(seq 1 20); do repair_terminal_report_outboxes; done
+    [ ! -e "$TEST_ROOT/events" ]
+  '
+  [ "$status" -eq 0 ]
+}

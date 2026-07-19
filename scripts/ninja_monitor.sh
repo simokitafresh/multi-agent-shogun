@@ -5080,10 +5080,15 @@ check_stall() {
 # dispatcher exit, or monitor respawn). inbox_write's structured fingerprint
 # transaction makes this safe on every cycle and repairs a missing review child.
 repair_terminal_report_outboxes() {
-    local name task_file report_path report_full status
+    local name task_file report_path report_full status task_status
     for name in "${NINJA_NAMES[@]}"; do
         task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
         [ -f "$task_file" ] || continue
+        task_status=$(yaml_field_get "$task_file" status "" 2>/dev/null || true)
+        # inbox_write publishes child review before the atomic done transition.
+        # Therefore only a still-active task can inhabit the crash window.
+        # Terminal/idle tasks are a steady state and must incur zero publishers.
+        case "$task_status" in assigned|acknowledged|in_progress) ;; *) continue ;; esac
         report_path=$(yaml_field_get "$task_file" report_path "" 2>/dev/null || true)
         [ -n "$report_path" ] || continue
         [[ "$report_path" = /* ]] && report_full="$report_path" || report_full="$SCRIPT_DIR/$report_path"
