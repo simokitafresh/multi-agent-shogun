@@ -61,6 +61,7 @@ task:
   assigned_to: karo
   parent_cmd: cmd_e2e_idle_010a
   subtask_id: subtask_e2e_idle_010a
+  task_id: subtask_e2e_idle_010a
   report_filename: karo_report_cmd_e2e_idle_010a.yaml
   status: assigned
 YAML
@@ -86,9 +87,9 @@ YAML
     stop_inbox_watcher "$watcher_pid"
 }
 
-# ═══ E2E-010-B: busy agent defers clear_command ═══
+# ═══ E2E-010-B: busy agent is recovered by process respawn ═══
 
-@test "E2E-010-B: busy codex agent defers clear_command until idle" {
+@test "E2E-010-B: busy codex agent respawns and resumes exactly once" {
     local pane
     pane="$(pane_target 1)"
     local task_file="$E2E_QUEUE/queue/tasks/sasuke.yaml"
@@ -99,6 +100,7 @@ task:
   assigned_to: sasuke
   parent_cmd: cmd_e2e_idle_010b
   subtask_id: subtask_e2e_idle_010b
+  task_id: subtask_e2e_idle_010b
   report_filename: sasuke_report_cmd_e2e_idle_010b.yaml
   status: assigned
 YAML
@@ -115,19 +117,10 @@ YAML
     run bash "$E2E_QUEUE/scripts/inbox_write.sh" "sasuke" "/clear" "clear_command" "karo"
     [ "$status" -eq 0 ]
 
-    # busy_hold中はclear_commandが即時実行されず、taskはまだ未完了のはず
-    sleep 2
-    run python3 -c "
-import yaml
-with open('$task_file') as f:
-    data = yaml.safe_load(f) or {}
-print(data.get('task', {}).get('status', ''))
-"
-    [ "$status" -eq 0 ]
-    [ "$output" = "assigned" ]
-
-    # After busy_hold ends, task should complete
     wait_for_yaml_value "$task_file" "task.status" "done" 45
+    run grep -c "codex mock completed task" "$task_file"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
 
     # Agent should return to idle
     run tmux display-message -t "$pane" -p '#{@agent_state}'

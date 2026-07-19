@@ -97,7 +97,7 @@ render_idle_prompt() {
             printf '\n❯ '
             ;;
         *)
-            printf '\n? for shortcuts                100%% context left\n› '
+            printf '\n? for shortcuts                CTX:0%%\n› '
             ;;
     esac
 }

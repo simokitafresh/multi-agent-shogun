@@ -1136,7 +1136,11 @@ process_unread() {
                         recovery_content=""
                     fi
 
-                    launch=$(cli_launch_cmd "$AGENT_ID" 2>/dev/null || true)
+                    # Tests and isolated recovery probes may provide the exact
+                    # executable boundary explicitly. Production leaves this
+                    # unset and continues to resolve the CLI from its SSOT.
+                    launch="${RESPAWN_RECOVERY_LAUNCH_OVERRIDE:-}"
+                    [ -n "$launch" ] || launch=$(cli_launch_cmd "$AGENT_ID" 2>/dev/null || true)
                     launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$launch" 2>/dev/null || true)
                     if [ -z "$launch_command" ] || ! tmux respawn-pane -k -t "$PANE_TARGET" "$launch_command" 2>/dev/null; then
                         special_ok=false

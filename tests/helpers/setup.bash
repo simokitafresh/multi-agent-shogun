@@ -127,10 +127,15 @@ start_inbox_watcher() {
     local target
     target="$(pane_target "$pane_idx")"
     local log_file="$E2E_ROOT/inbox_watcher_${agent_id}.log"
+    local recovery_launch=""
+    if [ -n "${E2E_MOCK_CLI_PATH:-}" ]; then
+        recovery_launch="/usr/bin/env SHOGUN_STATE_DIR=$SHOGUN_STATE_DIR MOCK_CLI_TYPE=$cli_type MOCK_AGENT_ID=$agent_id MOCK_PROCESSING_DELAY=$E2E_MOCK_DELAY MOCK_PROJECT_ROOT=$E2E_QUEUE /usr/bin/bash $E2E_MOCK_CLI_PATH"
+    fi
 
     INOTIFY_TIMEOUT="${E2E_INOTIFY_TIMEOUT:-5}" \
     BACKOFF_SEC="${E2E_BACKOFF_SEC:-20}" \
     SHOGUN_STATE_DIR="${SHOGUN_STATE_DIR:-$E2E_ROOT/state}" \
+    RESPAWN_RECOVERY_LAUNCH_OVERRIDE="$recovery_launch" \
     bash "$E2E_QUEUE/scripts/inbox_watcher.sh" "$agent_id" "$target" "$cli_type" >"$log_file" 2>&1 &
 
     echo "$!"

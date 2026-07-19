@@ -2,7 +2,7 @@
 
 codex_startup_banner() {
     echo "Codex CLI (mock)"
-    echo "? for shortcuts                100% context left"
+    echo "? for shortcuts                CTX:0%"
 }
 
 codex_handle_clear() {
