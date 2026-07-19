@@ -187,6 +187,9 @@ YAML
 
     run bash -c 'cd "$1" && NINJA_SCOPE_TEST_INVENTORY=docs/research/inventory.csv NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m delete -- tests/test_obsolete.bats docs/research/inventory.csv' _ "$REPO" "$HELPER"
 
+    if [ "$status" -ne 0 ]; then
+        printf '%s\n' "$output" >&3
+    fi
     [ "$status" -eq 0 ]
     ! git -C "$REPO" cat-file -e HEAD:tests/test_obsolete.bats
     [ "$(git -C "$REPO" show HEAD:docs/research/inventory.csv)" = 'case_id,test_path' ]

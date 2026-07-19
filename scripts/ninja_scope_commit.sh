@@ -471,7 +471,21 @@ PY
                     echo "BLOCK: deleted tracked test remains referenced by canonical inventory column 2: $scope_path" >&2; exit 2
                 fi
                 base="${scope_path##*/}"
-                if git grep -l -F "$base" HEAD -- ':!'"$scope_path" ':!'"${canonical_test_inventory#$repo_root/}" | grep -q .; then
+                canonical_inventory_repo_path="${canonical_test_inventory#$repo_root/}"
+                # Do not rely on Git's exclude-only pathspec semantics here.
+                # They have varied across the local and GitHub runner Git
+                # versions, making a synchronized inventory deletion pass on
+                # one environment and fail on the other.  Enumerate matches
+                # first, then exclude the two owned paths by exact shell
+                # comparison so the contract is version-independent.
+                shared_fixture_reference=false
+                while IFS= read -r reference_path; do
+                    reference_path="${reference_path#HEAD:}"
+                    [[ "$reference_path" == "$scope_path" || "$reference_path" == "$canonical_inventory_repo_path" ]] && continue
+                    shared_fixture_reference=true
+                    break
+                done < <(git grep -l -F "$base" HEAD -- . || true)
+                if [[ "$shared_fixture_reference" == true ]]; then
                     echo "BLOCK: deleted test/helper remains referenced by shared fixture: $scope_path" >&2; exit 2
                 fi
             fi
