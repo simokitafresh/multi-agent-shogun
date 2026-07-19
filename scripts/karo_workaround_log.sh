@@ -559,9 +559,12 @@ if [[ "$CLEAN_MODE" != true && "$CATEGORY" == "uncategorized" ]]; then
     echo "[karo_workaround_log] WARN: categoryが未分類(uncategorized)。5番目の引数で明示的にcategoryを指定せよ: $CMD_ID/$NINJA_NAME" >&2
 fi
 
-# GP-220: WARN when category=clean but not --clean mode (data quality: workaround=true+clean矛盾防止)
+# GP-220 hardening: category=clean is valid only through --clean.  Reject before
+# brainwash validation, lock acquisition, or any ledger write so callers cannot
+# persist the contradictory workaround=true/category=clean state.
 if [[ "$CLEAN_MODE" != true && "$CATEGORY" == "clean" ]]; then
-    echo "[karo_workaround_log] WARN: category=cleanだが--cleanモードでない。workaround=trueで記録される。--cleanモードを使え: $CMD_ID/$NINJA_NAME" >&2
+    echo "[karo_workaround_log] BLOCK: category=cleanは--cleanモード専用。正経路を使え: bash scripts/karo_workaround_log.sh --clean $CMD_ID $NINJA_NAME" >&2
+    exit 1
 fi
 
 # AC2(cmd_1538+cmd_1542): root_cause validation (empty/null/short)
