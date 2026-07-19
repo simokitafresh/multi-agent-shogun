@@ -1,0 +1,115 @@
+#!/usr/bin/env bats
+# test_necessity: no-code commit免除は許可scopeかつ一致するtree証跡がある場合だけ成立する
+
+load '../helpers/deploy_task_scaffold'
+
+setup_file() {
+  deploy_task_setup_file
+}
+
+setup() {
+  deploy_task_scaffold "nocode_commit_contract"
+}
+
+teardown() {
+  deploy_task_teardown
+}
+
+build_report() {
+  local task_type="$1" target_path="$2" command="$3" files_modified="$4"
+  cat >"$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  assigned_to: sasuke
+  task_id: cmd_nocode_fixture_${task_type}
+  parent_cmd: cmd_nocode_fixture
+  project: infra
+  task_type: ${task_type}
+  title: no-code commit contract fixture
+  command: "${command}"
+  target_path: "${target_path}"
+  files_modified: ${files_modified}
+  ac_version: fixture-v1
+  acceptance_criteria:
+    - id: AC1
+      description: report template contract is structured
+EOF
+  generate_report_template sasuke "cmd_nocode_fixture_${task_type}" cmd_nocode_fixture infra >/dev/null
+  printf '%s/queue/reports/sasuke_report_cmd_nocode_fixture.yaml\n' "$TEST_PROJECT"
+}
+
+@test "decision_candidate no-code scope emits machine-readable commit N/A" {
+  report="$(build_report decision_candidate queue/pending_decisions.yaml "decision candidate only" '[]')"
+
+  run python3 - "$report" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1]))
+c = d['commit_contract']
+assert c['required'] is False
+assert c['reason'] == 'allowed_no_code_task_type_and_no_code_scope'
+assert c['task_type'] == 'decision_candidate'
+assert 'queue/pending_decisions.yaml' in c['planned_paths']
+check = d['binary_checks']['commit'][0]
+assert 'commit N/A証跡' in check['check'] and check['result'] == ''
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "data_readonly scope emits commit N/A evidence" {
+  report="$(build_report data_readonly docs/research/input.csv "read data only" '[docs/research/input.csv]')"
+
+  run python3 - "$report" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1]))
+print(d['commit_contract'])
+assert d['commit_contract']['required'] is False
+assert d['commit_contract']['task_type'] == 'data_readonly'
+assert 'docs/research/input.csv' in d['commit_contract']['planned_paths']
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "free-text no-code claim cannot waive implementation task commit" {
+  report="$(build_report impl scripts/deploy_task.sh "no-code change; commit unnecessary" '[scripts/deploy_task.sh]')"
+
+  run python3 - "$report" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1]))
+assert d['commit_contract']['required'] is True
+assert d['commit_contract']['reason'] == 'implementation_path_present'
+assert 'git commitが完了したか' in d['binary_checks']['commit'][0]['check']
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "allowed no-code type with implementation path still requires commit" {
+  report="$(build_report decision_candidate scripts/decision_helper.py "decision helper update" '[scripts/decision_helper.py]')"
+
+  run python3 - "$report" <<'PY'
+import sys, yaml
+d = yaml.safe_load(open(sys.argv[1]))
+assert d['commit_contract']['required'] is True
+assert d['commit_contract']['reason'] == 'implementation_path_present'
+assert 'git commitが完了したか' in d['binary_checks']['commit'][0]['check']
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "no-code identity requires matching tree evidence" {
+  run python3 - "$PROJECT_ROOT" <<'PY'
+import pathlib, sys
+sys.path.insert(0, str(pathlib.Path(sys.argv[1]) / 'scripts' / 'lib'))
+from report_commit_identity import valid_commit_identity
+root = pathlib.Path(sys.argv[1])
+tree = 'a' * 40
+report = {
+  'files_modified': ['queue/tasks/sasuke.yaml'],
+  'binary_checks': {'commit': [{'check': 'commit不要', 'result': 'yes'}]},
+}
+assert not valid_commit_identity('no-code-change', report, root)
+report['no_code_change_evidence'] = {'before_tree': tree, 'after_tree': tree, 'tree_unchanged': True}
+assert valid_commit_identity('no-code-change', report, root)
+report['no_code_change_evidence']['after_tree'] = 'b' * 40
+assert not valid_commit_identity('no-code-change', report, root)
+PY
+  [ "$status" -eq 0 ]
+}
