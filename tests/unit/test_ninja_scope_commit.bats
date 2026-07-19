@@ -177,6 +177,8 @@ YAML
 
 @test "tracked test deletion proceeds after canonical inventory synchronization" {
     mkdir -p "$REPO/tests" "$REPO/queue/tasks" "$REPO/docs/research"
+    reflux_identity="$(mktemp -d "$BATS_TMPDIR/ninja_scope_reflux_identity.XXXXXX")"
+    git -C "$reflux_identity" init -q
     printf 'obsolete contract\n' > "$REPO/tests/test_obsolete.bats"
     printf 'case_id,test_path\ntests/test_obsolete.bats#1,tests/test_obsolete.bats\n' > "$REPO/docs/research/inventory.csv"
     git -C "$REPO" add tests/test_obsolete.bats docs/research/inventory.csv
@@ -185,7 +187,12 @@ YAML
     printf 'case_id,test_path\n' > "$REPO/docs/research/inventory.csv"
     printf 'task:\n  deletion_justification: approved retirement\n  planned_paths: [tests/test_obsolete.bats, docs/research/inventory.csv]\n' > "$REPO/queue/tasks/hayate.yaml"
 
-    run bash -c 'cd "$1" && NINJA_SCOPE_TEST_INVENTORY=docs/research/inventory.csv NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m delete -- tests/test_obsolete.bats docs/research/inventory.csv' _ "$REPO" "$HELPER"
+    run bash -c 'cd "$1" && DM_SIGNAL_REPO="$3" NINJA_SCOPE_TEST_INVENTORY=docs/research/inventory.csv NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m delete -- tests/test_obsolete.bats docs/research/inventory.csv' _ "$REPO" "$HELPER" "$BATS_TMPDIR/does-not-exist"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"DM_SIGNAL_REPO"* ]]
+
+    run bash -c 'cd "$1" && DM_SIGNAL_REPO="$3" NINJA_SCOPE_TEST_INVENTORY=docs/research/inventory.csv NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m delete -- tests/test_obsolete.bats docs/research/inventory.csv' _ "$REPO" "$HELPER" "$reflux_identity"
 
     if [ "$status" -ne 0 ]; then
         printf '%s\n' "$output" >&3
