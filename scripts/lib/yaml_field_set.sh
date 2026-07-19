@@ -1014,6 +1014,35 @@ yaml_field_set() {
         return 1
     fi
 
+    # cmd_4088: test_necessity is a typed lifecycle contract, never a scalar.
+    # The ordinary awk lane deliberately quotes JSON/YAML punctuation to keep
+    # scalar writes safe; using it for this field therefore turned a list into
+    # a string and blocked ninja_scope_commit only after all implementation
+    # work had finished.  Route this one known structured task field through
+    # the existing flocked/atomic structural writer.  Invalid scalar input is
+    # rejected before any write, so callers cannot silently corrupt the type.
+    if [ "$block_id" = "task" ] && [ "$field" = "test_necessity" ]; then
+        if ! YFS_STRUCTURED_VALUE="$new_value" python3 -c '
+import os, sys, yaml
+value = yaml.safe_load(os.environ.get("YFS_STRUCTURED_VALUE", ""))
+if not isinstance(value, (list, dict)):
+    print("BLOCK: task.test_necessity must be a YAML list or mapping", file=sys.stderr)
+    raise SystemExit(2)
+'; then
+            return 2
+        fi
+        local _yfs_self _yfs_report_setter
+        _yfs_self="${BASH_SOURCE[0]:-$0}"
+        [[ "$_yfs_self" != /* ]] && _yfs_self="$PWD/$_yfs_self"
+        _yfs_report_setter="${_yfs_self%/lib/yaml_field_set.sh}/report_field_set.sh"
+        if [ ! -x "$_yfs_report_setter" ]; then
+            echo "FATAL: yaml_field_set: structural writer not found: $_yfs_report_setter" >&2
+            return 1
+        fi
+        printf '%s\n' "$new_value" | bash "$_yfs_report_setter" "$yaml_file" task.test_necessity -
+        return $?
+    fi
+
     local lock_file
     lock_file="$(lock_path "$yaml_file")"
     local tmp_file

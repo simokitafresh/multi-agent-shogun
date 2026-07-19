@@ -33,6 +33,47 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "task test_necessity: JSON入力をscalar化せず構造listとしてatomic保存する" {
+    local yaml="$TEST_TMPDIR/task_necessity.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: in_progress
+  test_necessity: []
+EOF
+    local payload='[{"path":"tests/test_contract.py","defense_target":"typed contract remains structured","overlap_evidence":"no equivalent contract exists","overlaps_existing":false,"fixture_self_reference":false,"deprecated_mechanism":false}]'
+
+    run bash "$YFS" "$yaml" task test_necessity "$payload"
+    [ "$status" -eq 0 ]
+    run python3 - "$yaml" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+value = data["task"]["test_necessity"]
+assert isinstance(value, list), type(value)
+assert len(value) == 1
+assert value[0]["path"] == "tests/test_contract.py"
+assert value[0]["overlaps_existing"] is False
+print("STRUCTURED_LIST_OK=1 ENTRIES=1")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"STRUCTURED_LIST_OK=1 ENTRIES=1"* ]]
+}
+
+@test "task test_necessity: scalar入力はbyte-identical fail closedする" {
+    local yaml="$TEST_TMPDIR/task_necessity_scalar.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: in_progress
+  test_necessity: []
+EOF
+    cp "$yaml" "$yaml.before"
+
+    run bash "$YFS" "$yaml" task test_necessity "not-structured"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"must be a YAML list or mapping"* ]]
+    run cmp -s "$yaml.before" "$yaml"
+    [ "$status" -eq 0 ]
+}
+
 @test "list item id block: 既存フィールド値の更新" {
     cat > "$TEST_TMPDIR/test.yaml" <<'EOF'
 - id: AC1
