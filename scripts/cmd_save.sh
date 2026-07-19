@@ -6018,6 +6018,21 @@ check_research_artifact_reflux_ac() {
     ' <<< "$CMD_BLOCK_NC")
     [[ -n "$AC_SECTION" ]] || AC_SECTION="$CMD_BLOCK_NC"
 
+    # LK-A10 protects research-only commands whose markdown/data artifacts can
+    # otherwise escape commit-oriented checks.  An implementation command may
+    # still mention research/analysis in its semantic header; classify it by
+    # its executable AC structure before imposing the research artifact trio.
+    # Either a structured test/gate environment change, or a concrete artifact
+    # path paired with a binary check, proves that the command has an
+    # implementation/test deliverable rather than a research-only deliverable.
+    if grep -qiE 'environment_change:.*type=(test|gate)(;|[[:space:]]|$)' <<< "$CMD_BLOCK_NC"; then
+        return 0
+    fi
+    if grep -qE '(^|[[:space:]`"'\''])(scripts|tests|src|app|lib|config)/[^[:space:]`"'\'']+\.[A-Za-z0-9]+' <<< "$AC_SECTION" \
+        && grep -qE 'binary_check:' <<< "$AC_SECTION"; then
+        return 0
+    fi
+
     local missing=()
     if ! grep -qE 'cmd_[A-Za-z0-9_-]+_[^[:space:]"'\'']*[*]|cmd_[A-Za-z0-9_-]+[*]|docs/research/cmd_[A-Za-z0-9_-]+|outputs/[^[:space:]"'\'']*cmd_[A-Za-z0-9_-]+' <<< "$AC_SECTION"; then
         missing+=("成果物ファイル名プレフィックス(cmd_XXXX_*等)")

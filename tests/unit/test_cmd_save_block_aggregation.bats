@@ -207,6 +207,101 @@ YAML
     [[ "$output" != *"止まるな、修正して再実行せよ"* ]]
 }
 
+@test "LK-A10: research語を含む実装cmdは具体パスとbinary_checkがあれば発火しない" {
+    create_memory_db_fixture
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_pass:
+    id: cmd_pass
+    title: "fix — analysis語彙の実装cmd誤検出を修正"
+    purpose: "analysisという説明語を含む実装cmdのLK-A10誤検出を防ぐ"
+    project: infra
+    depends_on: none
+    origin: "[[cmd_4096]] -> [[LK-A10語彙FP]] -> [[AC構造分類]]"
+    type: impl
+    command: "scripts/inbox_mark_read.sh の契約を修正する"
+    acceptance_criteria:
+      - id: AC1
+        description: "scripts/inbox_mark_read.sh の終了コード契約を修正する"
+        binary_check: "bats tests/unit/test_inbox_mark_read.bats がFAIL0・SKIP0"
+      - id: AC2
+        description: "tests/unit/test_inbox_mark_read.bats で回帰を確認する"
+        binary_check: "誤ID時exit 1を確認する"
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "AC構造を分類器へ組み込む"
+      q3_next_quality: "実装cmdの語彙FPを防ぐ"
+      q4_depth: "shallow"
+      q5_verified_source: "tests/unit/test_cmd_save_block_aggregation.bats isolated_test + scripts/cmd_save.sh structure_verified"
+      q6_not_hiding: "no — 研究専用cmdの検査は維持する"
+      q7_definition_verified: "yes — 具体パスとbinary_checkを実装成果物構造とする"
+      q8_why_what: "WHY: 語彙だけでは実装cmdを研究cmdと誤分類する → WHAT: AC構造を主判定へ追加する → WHEN: LK-A10分類時 → WHERE: scripts/cmd_save.sh → WHO: 将軍cmd保存ゲート → HOW: full preflightで非発火と発火を固定する。複利: 同じ語彙FPを自動防止する"
+      q9_firefighting_root_cause: "root_cause: 語彙分類がAC構造を見ない | prevention: full preflightの回帰contractで構造分類を固定する"
+      q10_knowledge_boundary: "空間内。scripts/cmd_save.shと本contract testのみ"
+      q11_not_already_done: "未達成。LK-A10は現在AC構造を見ていない"
+      q12_lord_30min_cost: "no — FP往復を自動除去する"
+      q_ambiguity: "none"
+    assumptions:
+      - claim: "LK-A10はsemantic headerのanalysis語に一致する"
+        source: "scripts/cmd_save.sh"
+        trust: "verified"
+        verified_at: "2026-07-20"
+YAML
+
+    run_cmd_save_pass
+    echo "$output" >&2
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"保存確認OK: cmd_pass"* ]]
+    [[ "$output" != *"LK-A10:"* ]]
+}
+
+@test "LK-A10: 成果物ACと現物確認とcontext還流がない研究cmdは発火を維持する" {
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_multi_block:
+    id: cmd_multi_block
+    title: "analysis — 市場状態を分析する"
+    purpose: "市場状態の分析結果を報告する"
+    project: infra
+    depends_on: none
+    origin: "[[cmd_4097]] -> [[研究成果物欠落]] -> [[LK-A10維持]]"
+    type: impl
+    command: "市場状態を分析して結果を報告する"
+    acceptance_criteria:
+      - id: AC1
+        description: "分析結果を報告する"
+        binary_check: "報告の有無を確認する"
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "研究成果物の欠落をBLOCKする"
+      q3_next_quality: "研究結果を現物とcontextへ残す"
+      q4_depth: "shallow"
+      q5_verified_source: "tests/unit/test_cmd_save_block_aggregation.bats isolated_test + scripts/cmd_save.sh structure_verified"
+      q6_not_hiding: "no — 研究cmdの必須成果物を検査する"
+      q7_definition_verified: "yes — 三要件欠落時にLK-A10 BLOCK"
+      q8_why_what: "WHY: 研究成果物が後追いになる → WHAT: 三要件をBLOCKする → WHEN: 研究cmd保存時 → WHERE: scripts/cmd_save.sh → WHO: 将軍cmd保存ゲート → HOW: full preflightのBLOCK出力を固定する。複利: 研究知識の散逸を防ぐ"
+      q10_knowledge_boundary: "空間内。scripts/cmd_save.shと本contract testのみ"
+      q11_not_already_done: "既存LK-A10の発火維持を回帰確認する"
+      q12_lord_30min_cost: "no — 欠落を保存前に自動検出する"
+      q_ambiguity: "none"
+    assumptions:
+      - claim: "研究cmdに三要件が必要"
+        source: "scripts/cmd_save.sh"
+        trust: "verified"
+        verified_at: "2026-07-20"
+YAML
+
+    run_cmd_save
+    echo "$output" >&2
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"LK-A10: 研究/分析cmdのACに"* ]]
+    [[ "$output" == *"成果物ファイル名プレフィックス"* ]]
+    [[ "$output" == *"成果物現物確認"* ]]
+    [[ "$output" == *"context還流"* ]]
+}
+
 @test "AC2c: BLOCK SUMMARY shows recent pattern unique cmd counts" {
     cat > "$TEST_QUALITY_LOG" <<'YAML'
 entries:
