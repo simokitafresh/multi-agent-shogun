@@ -7543,6 +7543,27 @@ check_karo_idle_cycle() {
     fi
 }
 
+# Existing monitor idle edge is the single trigger; no new daemon/poll loop.
+# A trusted writer publishes one CLI argument per line and atomic rename claims it.
+check_throughput_ready_events() {
+    local ready_dir="${THROUGHPUT_READY_DIR:-$SCRIPT_DIR/queue/throughput_ready}"
+    local manifest running
+    local -a connector_args=()
+    [ -d "$ready_dir" ] || return 0
+    manifest=$(find "$ready_dir" -maxdepth 1 -type f -name '*.args' -print 2>/dev/null | sort | head -1)
+    [ -n "$manifest" ] || return 0
+    running="${manifest%.args}.running"
+    mv "$manifest" "$running" 2>/dev/null || return 0
+    mapfile -t connector_args < "$running"
+    if bash "$SCRIPT_DIR/scripts/throughput_growth_loop.sh" "${connector_args[@]}" >>"$LOG" 2>&1; then
+        mv "$running" "${running%.running}.done"
+        log "THROUGHPUT-READY-COMPLETE: manifest=${manifest##*/}"
+    else
+        mv "$running" "${running%.running}.args"
+        log "THROUGHPUT-READY-BLOCK: connector failed manifest=${manifest##*/}"
+    fi
+}
+
 # ═══ 将軍idle分析trigger (cmd_3549) ═══
 # 全忍者idle/completed/done + パイプライン空が10分以上継続 → 将軍にidle分析開始を通知
 check_shogun_idle_analysis_trigger() {
@@ -7940,6 +7961,7 @@ while true; do
     # ═══ STEP 1b: 後段チェック反映後の最終snapshot更新 ═══
     refresh_karo_snapshot_fast_path
     check_karo_idle_cycle       # 家老idle自走サイクル起動チェック (cmd_1498)
+    check_throughput_ready_events # durable throughput connector (ready event exactly once)
     check_shogun_idle_analysis_trigger  # 将軍idle時自己分析trigger (cmd_3549)
     check_ntfy_listener_health  # ntfy_listenerゾンビ検知 (cmd_635)
     check_inbox_watcher_health  # inbox_watcher死亡検知+自動再起動 (おしお殿知見)

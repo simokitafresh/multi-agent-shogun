@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: ninja_monitorは実task状態とpane実態の不一致をfail-closedで扱い、稼働忍者の誤respawnや二重配備を起こさない。
+# test_necessity: ninja_monitorはrestart/clear/pane-dead/respawnを跨ぐevent exactly-onceとlost0を守る。
 
 setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
