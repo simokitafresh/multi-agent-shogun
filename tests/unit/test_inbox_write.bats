@@ -1902,6 +1902,7 @@ YAML
 @test "filesystem fast-path: known ninja target succeeds without sourcing agent_config" {
     rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
     mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/inbox"
+    cp "$PROJECT_ROOT/scripts/lib/report_completion_events.sh" "$TEST_TMPDIR/scripts/lib/report_completion_events.sh"
     unset INBOX_WRITE_TEST
 
     cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
@@ -1923,6 +1924,7 @@ YAML
 @test "filesystem fast-path: ninja sender to shogun is blocked without agent_config" {
     rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
     mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks"
+    cp "$PROJECT_ROOT/scripts/lib/report_completion_events.sh" "$TEST_TMPDIR/scripts/lib/report_completion_events.sh"
     unset INBOX_WRITE_TEST
 
     cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'

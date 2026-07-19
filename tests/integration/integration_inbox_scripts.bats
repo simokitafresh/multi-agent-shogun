@@ -1,4 +1,5 @@
 #!/usr/bin/env bats
+# test_necessity: a clean-runner inbox write followed by mark-read must preserve exactly one message and transition its unread state atomically.
 
 setup() {
     export PROJECT_ROOT
@@ -10,6 +11,7 @@ setup() {
     cp "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMP/scripts/inbox_write.sh"
     cp "$PROJECT_ROOT/scripts/inbox_mark_read.sh" "$TEST_TMP/scripts/inbox_mark_read.sh"
     cp "$PROJECT_ROOT/scripts/lib/lock_path.sh" "$TEST_TMP/scripts/lib/lock_path.sh"
+    cp "$PROJECT_ROOT/scripts/lib/report_completion_events.sh" "$TEST_TMP/scripts/lib/report_completion_events.sh"
     chmod +x "$TEST_TMP/scripts/inbox_write.sh" "$TEST_TMP/scripts/inbox_mark_read.sh"
 }
 
