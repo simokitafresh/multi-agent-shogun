@@ -232,6 +232,9 @@ deploy_task_fast() {
         # shellcheck disable=SC2030,SC2031
         export DEPLOY_TASK_SKIP_BINARY_CHECK_WAIVERS=1
         ensure_deploy_task_library
+        # The library is cached across tests; rebind its project root for the
+        # current isolated fixture before any selector or queue operation.
+        SCRIPT_DIR="$TEST_PROJECT"
         # shellcheck disable=SC2317
         log() { :; }
 
@@ -257,12 +260,22 @@ deploy_task_fast() {
                 yaml_field_set "$task_file" "task" "parent_cmd" "$CMD_ID"
                 yaml_field_set "$task_file" "task" "status" "assigned"
                 yaml_field_set "$task_file" "task" "task_id" "${CMD_ID}_${direct_task_id_suffix}"
-                inject_training_target_path_from_alias_quality "$task_file" "$CMD_ID" || true
                 inject_direct_training_template "$task_file" "$CMD_ID" || return 1
+                # The cached library's training template can rewrite the task
+                # mapping; select the target after it so fixture roots retain
+                # the selector result.
+                inject_training_target_path_from_alias_quality "$task_file" "$CMD_ID" || true
             elif ! resolve_cmd_to_task "$CMD_ID" "$NINJA_NAME"; then
                 echo "ERROR: ${CMD_ID} の解決に失敗。shogun_to_karo.yamlにcmd_idが存在するか確認せよ。" >&2
                 return 1
             fi
+        fi
+
+        # Re-run the target selector at the fixture boundary. This mirrors
+        # production's post-template contract and covers cached-library paths
+        # where the direct branch is bypassed after argument normalization.
+        if [ -n "$CMD_ID" ]; then
+            inject_training_target_path_from_alias_quality "$task_file" "$CMD_ID" || true
         fi
 
         inject_task_id "$task_file" || true

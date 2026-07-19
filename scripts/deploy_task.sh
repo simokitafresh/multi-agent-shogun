@@ -2810,10 +2810,15 @@ inject_training_target_path_from_alias_quality() {
     fi
 
     local selected_target=""
-    local backlink_selector="$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+    # The library is sourced once by the Bats scaffold and reused across
+    # per-test TEST_PROJECT roots. Resolve all selector inputs from the task
+    # fixture, not the cached source root captured at source time.
+    local task_root="${task_file%/queue/tasks/*}"
+    [ "$task_root" != "$task_file" ] || task_root="$SCRIPT_DIR"
+    local backlink_selector="$task_root/scripts/causal_backlink_counts.sh"
     if [ -f "$backlink_selector" ]; then
         selected_target=$(
-            CAUSAL_BACKLINK_COUNTS_ROOT="$SCRIPT_DIR" bash "$backlink_selector" --zero --limit 1 2>/dev/null \
+            CAUSAL_BACKLINK_COUNTS_ROOT="$task_root" bash "$backlink_selector" --zero --limit 1 2>/dev/null \
                 | awk -F '\t' 'NF >= 2 { print $2; exit }' \
             || true
         )
@@ -2821,7 +2826,7 @@ inject_training_target_path_from_alias_quality() {
         log "WARN: causal_backlink_counts selector missing; falling back to markdown_link_counts"
     fi
 
-    local markdown_selector="$SCRIPT_DIR/scripts/markdown_link_counts.sh"
+    local markdown_selector="$task_root/scripts/markdown_link_counts.sh"
     if [ -z "$selected_target" ] && [ -f "$markdown_selector" ]; then
         selected_target=$(bash "$markdown_selector" --select-file 2>/dev/null | head -1 || true)
     elif [ -z "$selected_target" ]; then
@@ -2829,7 +2834,7 @@ inject_training_target_path_from_alias_quality() {
     fi
 
     if [ -z "$selected_target" ]; then
-        local selector="$SCRIPT_DIR/scripts/semantic_alias_quality.sh"
+        local selector="$task_root/scripts/semantic_alias_quality.sh"
         if [ ! -f "$selector" ]; then
             log "WARN: semantic_alias_quality selector missing; training target_path left empty"
             return 0
@@ -2841,7 +2846,9 @@ inject_training_target_path_from_alias_quality() {
         return 0
     fi
 
-    yaml_field_set "$task_file" "task" "target_path" "$selected_target" \
+    # target_path is a typed list; preserve the one selected path as a
+    # one-element YAML sequence rather than passing a scalar to the setter.
+    yaml_field_set "$task_file" "task" "target_path" "[\"$selected_target\"]" \
         || { log "FATAL: failed to set training target_path=${selected_target}"; return 1; }
     log "training_target_path: selected target_path=${selected_target}"
 }

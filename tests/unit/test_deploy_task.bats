@@ -1038,7 +1038,7 @@ import yaml
 
 with open(sys.argv[1], encoding="utf-8") as fh:
     task = (yaml.safe_load(fh) or {}).get("task") or {}
-assert task.get("target_path") == "context/orphan-incoming.md", task.get("target_path")
+assert task.get("target_path") == ["context/orphan-incoming.md"], task.get("target_path")
 PY
 }
 
@@ -1143,7 +1143,7 @@ import yaml
 with open(os.environ["TASK_FILE"], encoding="utf-8") as f:
     task = (yaml.safe_load(f) or {}).get("task") or {}
 
-assert task["target_path"] == "docs/isolated.md", task.get("target_path")
+assert task["target_path"] == ["docs/isolated.md"], task.get("target_path")
 PY
 }
 @test "inject_target_path_check records git HEAD and last commit evidence" {
