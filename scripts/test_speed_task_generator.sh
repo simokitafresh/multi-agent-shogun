@@ -185,7 +185,15 @@ append_campaign() {
             printf 'campaign_id\tround_index\ttarget_path\tbest_wall\tlast_wall\tapproach\tstop_reason\tab_base_commit\tab_candidate_commit\tab_command\tab_samples\tab_base_p50\tab_base_p95\tab_candidate_p50\tab_candidate_p95\n' > "$CAMPAIGN_LEDGER"
         fi
         # monitor callbacks are at-least-once; make each campaign round idempotent.
-        awk -F '\t' -v c="$campaign" -v r="$round" 'NR>1 && $1==c && $2==r {found=1} END{exit !found}' "$CAMPAIGN_LEDGER" && exit 0
+        # malformed quality values from an older callback are append-onlyで訂正可能にする。
+        # 正常な同一roundは従来どおりexactly-once。invalid quality_*だけは完了証跡ではない。
+        awk -F '\t' -v c="$campaign" -v r="$round" '
+          NR>1 && $1==c && $2==r {
+            if ($7 ~ /^quality_/ && $7 != "quality_fail" && $7 != "quality_skip") next
+            found=1
+          }
+          END{exit !found}
+        ' "$CAMPAIGN_LEDGER" && exit 0
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$campaign" "$round" "$target" "$best" "$last" "$approach" "$stop" "$ab_base" "$ab_candidate" "$ab_command" "$ab_n" "$ab_base_p50" "$ab_base_p95" "$ab_candidate_p50" "$ab_candidate_p95" >> "$CAMPAIGN_LEDGER"
     ) 8>"${CAMPAIGN_LEDGER}.lock"
 }
@@ -214,7 +222,7 @@ task:
     - id: AC1
       description: "last-good/candidate commitを同一commandでwarmup後各10回以上A/B交互測定し、p50/p95と支配項を実測、FAIL=0・SKIP=0で完走する"
     - id: AC2
-      description: "related_lessonsが注入された場合のみ有用性を検証する。round別report/commitを作り、speed_result(last_wall/approach/quality/dominant/elapsed_sec/ctx_percent)とtest_results(status=pass, wall_sec=有限非負値, failures=0, skips=0)を構造化記録する。完了後はmonitor callbackが自動継承する"
+      description: "related_lessonsが注入された場合のみ有用性を検証する。round別report/commitを作り、speed_result(last_wall/approach/quality=pass|fail|skip/dominant/elapsed_sec/ctx_percent)とtest_results(status=pass, wall_sec=有限非負値, failures=0, skips=0)を構造化記録する。品質説明文はqualityへ混ぜずresult.detailsへ記録する。完了後はmonitor callbackが自動継承する"
   related_lessons: []
   speed_campaign:
     campaign_id: "$campaign"
@@ -263,6 +271,10 @@ continue_campaign() {
     local quality="${7:?quality pass|fail|skip required}" dominant="${8:-none}" elapsed="${9:-0}" ctx="${10:-0}"
     local adopted_best stop next file baseline_commit="${11:-}" result_commit="${12:-}"
     local observed_last="${13:-$last}" ab_base="${14:-}" ab_candidate="${15:-}" ab_command="${16:-}" ab_n="${17:-}" ab_base_p50="${18:-}" ab_base_p95="${19:-}" ab_candidate_p50="${20:-}" ab_candidate_p95="${21:-}"
+    case "$quality" in
+      pass|fail|skip) ;;
+      *) echo "BLOCK:quality_invalid expected=pass|fail|skip actual=$quality" >&2; return 2 ;;
+    esac
     if [ -n "$ab_base" ] || [ -n "$ab_candidate" ]; then
         [ -n "$ab_base" ] && [ -n "$ab_candidate" ] && [ -n "$ab_command" ] && [ "$ab_n" -ge 10 ] 2>/dev/null || { echo "BLOCK:ab_evidence_missing" >&2; return 2; }
         if ! awk -v bp50="$ab_base_p50" -v bp95="$ab_base_p95" -v cp50="$ab_candidate_p50" -v cp95="$ab_candidate_p95" 'BEGIN{exit !(cp50<=bp50 && cp95<=bp95 && (cp50<bp50 || cp95<bp95))}'; then

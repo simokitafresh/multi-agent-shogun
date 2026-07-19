@@ -29,6 +29,7 @@ YAML
   grep -Fq 'order: alternating' "$generated"
   grep -Fq 'report_filename: "test_speed_report_' "$generated"
   grep -Fq 'action: "complete-deploy"' "$generated"
+  grep -Fq 'quality=pass|fail|skip' "$generated"
   grep -Fq 'test_results(status=pass, wall_sec=有限非負値, failures=0, skips=0)' "$generated"
   grep -Fq 'FAIL0; SKIP0; no expectation relaxation' "$generated"
   grep -Fq 'shared fixture/cache first; switch to production script at plateau' "$generated"
@@ -164,6 +165,23 @@ YAML
   [ "$status" -ne 0 ]
   [[ "$output" == *'BLOCK:no_valid_test_measurements'* ]]
   [ ! -e "$TMP/logs/invalid.tsv" ]
+}
+
+@test "invalid quality blocks before ledger mutation and malformed legacy round remains correctable" {
+  ledger="$TMP/logs/quality-invalid.tsv"
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_TASK_DIR="$TMP/queue/training" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" \
+    bash "$ROOT/scripts/test_speed_task_generator.sh" continue camp-quality 1 tests/unit/slow.bats 10 9 fixture "18/18 PASS" cache 10 0 same same 9
+  [ "$status" -ne 0 ]
+  [[ "$output" == *'BLOCK:quality_invalid'* ]]
+  [ ! -e "$ledger" ]
+
+  printf 'campaign_id\tround_index\ttarget_path\tbest_wall\tlast_wall\tapproach\tstop_reason\n' > "$ledger"
+  printf 'camp-quality\t1\ttests/unit/slow.bats\t9\t9\tfixture\tquality_18/18 PASS\n' >> "$ledger"
+  run env SHOGUN_REPO_ROOT="$TMP" TEST_SPEED_TASK_DIR="$TMP/queue/training" TEST_SPEED_CAMPAIGN_LEDGER="$ledger" \
+    bash "$ROOT/scripts/test_speed_task_generator.sh" continue camp-quality 1 tests/unit/slow.bats 10 9 fixture pass cache 10 0 same same 9
+  [ "$status" -eq 0 ]
+  [ "$(awk -F '\t' '$1=="camp-quality" && $2==1 {n++} END{print n+0}' "$ledger")" -eq 2 ]
+  [ "$(awk -F '\t' '$1=="camp-quality" && $2==1 {stop=$7} END{print stop}' "$ledger")" = '' ]
 }
 
 @test "round best preserves a faster previous best and existing campaign stop contracts" {
@@ -567,6 +585,21 @@ SH
   [ "$status" -eq 0 ]
 
   printf 'task:\n  parent_cmd: cmd_training_test_speed_fixture\n  status: idle\n' > "$TMP/queue/tasks/kagemaru.yaml"
+  run _speed_training_active_test_campaign
+  [ "$status" -ne 0 ]
+
+  cat > "$TMP/queue/tasks/kagemaru.yaml" <<'YAML'
+task:
+  parent_cmd: cmd_training_test_speed_fixture
+  status: done
+  speed_campaign:
+    campaign_id: cmd_training_test_speed_fixture
+    round_index: 1
+YAML
+  run _speed_training_active_test_campaign
+  [ "$status" -eq 0 ]
+
+  printf 'campaign_id\tround_index\ncmd_training_test_speed_fixture\t1\n' > "$TMP/logs/test_speed_campaign_ledger.tsv"
   run _speed_training_active_test_campaign
   [ "$status" -ne 0 ]
 }

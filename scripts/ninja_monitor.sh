@@ -3400,24 +3400,49 @@ _pause_speed_training_if_recurrence_high() {
 
 _speed_training_active_test_campaign() {
     local task_glob=("$SCRIPT_DIR"/queue/tasks/*.yaml)
+    local campaign_ledger="${TEST_SPEED_CAMPAIGN_LEDGER:-$SCRIPT_DIR/logs/test_speed_campaign_ledger.tsv}"
+    local status campaign round
     [ -e "${task_glob[0]}" ] || return 1
-    awk '
+    while IFS=$'\t' read -r status campaign round; do
+        case "$status" in
+            assigned|acknowledged|in_progress)
+                return 0
+                ;;
+            done|completed)
+                # report公開からcomplete-deploy callbackまでの隙間もactive。
+                # 同一roundがledgerへ記録済みならcallback完了なので抑止対象外。
+                if [ -n "$campaign" ] && [[ "$round" =~ ^[1-9][0-9]*$ ]] && \
+                   ! awk -F '\t' -v c="$campaign" -v r="$round" \
+                       'NR > 1 && $1 == c && $2 == r { found=1 } END { exit !found }' \
+                       "$campaign_ledger" 2>/dev/null; then
+                    return 0
+                fi
+                ;;
+        esac
+    done < <(awk '
+      function emit() {
+        if (is_speed) printf "%s\t%s\t%s\n", status, campaign, round
+      }
       FNR == 1 {
-        if (NR > 1 && is_speed && is_active) found=1
-        is_speed=0; is_active=0
+        if (NR > 1) emit()
+        is_speed=0; status=""; campaign=""; round=""
       }
       /^  parent_cmd:[[:space:]]*/ && $0 ~ /cmd_training_test_speed_/ { is_speed=1 }
       /^  status:[[:space:]]*/ {
         value=$0
         sub(/^  status:[[:space:]]*/, "", value)
         gsub(/[[:space:]\042]/, "", value)
-        if (value == "assigned" || value == "acknowledged" || value == "in_progress") is_active=1
+        status=value
       }
-      END {
-        if (is_speed && is_active) found=1
-        exit(found ? 0 : 1)
+      /^    campaign_id:[[:space:]]*/ {
+        campaign=$0; sub(/^    campaign_id:[[:space:]]*/, "", campaign); gsub(/[[:space:]\042]/, "", campaign)
       }
-    ' "${task_glob[@]}"
+      /^    round_index:[[:space:]]*/ {
+        round=$0; sub(/^    round_index:[[:space:]]*/, "", round); gsub(/[[:space:]\042]/, "", round)
+      }
+      END { emit() }
+    ' "${task_glob[@]}")
+    return 1
 }
 
 _speed_training_pipeline_has_work() {
