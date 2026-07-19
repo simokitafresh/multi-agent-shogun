@@ -5,6 +5,42 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+@test "CI RED parallelization guard rejects five counterexamples and dedupes each generation" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        CI_RED_PARALLEL_STATE_FILE="$STATE_DIR/notified"
+        mkdir -p "$SCRIPT_DIR/scripts" "$STATE_DIR"
+        cat >"$SCRIPT_DIR/scripts/inbox_write.sh" <<EOF
+#!/usr/bin/env bash
+printf "%s\n" "\$*" >>"$STATE_DIR/notices"
+EOF
+        count() { [ -f "$STATE_DIR/notices" ] && wc -l <"$STATE_DIR/notices" || printf "0\n"; }
+        check_ci_red_parallelization_guard "RED:101:job" 1899 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        a=$(count)
+        check_ci_red_parallelization_guard "RED:101:job" 1900 0 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        b=$(count)
+        check_ci_red_parallelization_guard "RED:101:job" 1900 1 "" $'"'"'101\tsha-a\t1000'"'"'
+        c=$(count)
+        check_ci_red_parallelization_guard "GREEN" 1900 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        d=$(count)
+        printf "101:sha-a\n" >"$STATE_DIR/notified"
+        check_ci_red_parallelization_guard "RED:101:job" 1900 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        e=$(count)
+        rm -f "$STATE_DIR/notified"
+        check_ci_red_parallelization_guard "RED:101:job" 1900 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        positive=$(count)
+        check_ci_red_parallelization_guard "RED:101:job" 1901 1 cmd_1 $'"'"'101\tsha-a\t1000'"'"'
+        same=$(count)
+        check_ci_red_parallelization_guard "RED:102:job" 1901 1 cmd_2 $'"'"'102\tsha-b\t1000'"'"'
+        next=$(count)
+        printf "counter=%s,%s,%s,%s,%s positive=%s same=%s next=%s\n" "$a" "$b" "$c" "$d" "$e" "$positive" "$same" "$next"
+        grep -q "run=102 sha=sha-b duration_sec=901 idle=1 deployable_cmd=cmd_2" "$STATE_DIR/notices"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"counter=0,0,0,0,0 positive=1 same=1 next=2"* ]]
+}
+
 run_codex_bypass_case() {
     local task_status="$1" pane_idle="$2" has_flag="$3" recovery="$4" repeat="${5:-1}"
     run env PROJECT_ROOT="$PROJECT_ROOT" TASK_STATUS="$task_status" PANE_IDLE="$pane_idle" \

@@ -61,6 +61,81 @@ declare -gA _CTX_PROFILE_PATTERN_CACHE _CTX_PROFILE_MODE_CACHE 2>/dev/null || \
 # --- Variables needed by lib functions (outside guard for lib-only mode) ---
 STALL_THRESHOLD_MIN=${STALL_THRESHOLD_MIN:-10} # 停滞検知しきい値（分）— assigned+idle状態がこの時間継続で通知 (cmd_1105: 15→10分に短縮)
 KARO_PENDING_CMD_GRACE_SEC=${KARO_PENDING_CMD_GRACE_SEC:-30} # cmd_save→cmd_delegate正規フローの短いpending窓をcmd_pending重複通知しない猶予
+CI_RED_PARALLEL_THRESHOLD_SEC=${CI_RED_PARALLEL_THRESHOLD_SEC:-900}
+
+# E1: CI RED中に遊休戦力と未配備cmdが共存する過剰直列化を、同一run世代で一度だけ検出する。
+_ci_red_run_details() {
+    local run_id="$1"
+    timeout 15 gh run view "$run_id" --repo simokitafresh/multi-agent-shogun \
+        --json headSha,createdAt 2>/dev/null \
+        | jq -r --arg run "$run_id" '[$run, .headSha, (.createdAt | fromdateiso8601)] | @tsv'
+}
+
+_ci_red_idle_count() {
+    python3 - "$SCRIPT_DIR/queue/tasks" <<'PY'
+import glob, sys, yaml
+count = 0
+for path in glob.glob(sys.argv[1] + "/*.yaml"):
+    try:
+        task = (yaml.safe_load(open(path)) or {}).get("task", {})
+    except Exception:
+        continue
+    if task.get("status") == "idle":
+        count += 1
+print(count)
+PY
+}
+
+_ci_red_first_deployable_cmd() {
+    python3 - "$SCRIPT_DIR/queue/shogun_to_karo.yaml" <<'PY'
+import sys, yaml
+try:
+    data = yaml.safe_load(open(sys.argv[1])) or {}
+except Exception:
+    raise SystemExit(0)
+items = data.get("commands", data.get("cmds", data if isinstance(data, list) else []))
+if isinstance(items, dict):
+    items = list(items.values())
+for item in items if isinstance(items, list) else []:
+    if isinstance(item, dict) and item.get("status") in {"pending", "approved"}:
+        print(item.get("id") or item.get("cmd_id") or "")
+        break
+PY
+}
+
+check_ci_red_parallelization_guard() {
+    local ci_status="${1:-$CI_STATUS_CACHE}" now="${2:-$EPOCHSECONDS}"
+    local idle_count="${3:-}" deployable_cmd="${4:-}" details="${5:-}"
+    [[ "$ci_status" == RED:* ]] || return 0
+    local run_id="${ci_status#RED:}"; run_id="${run_id%%:*}"
+    [[ -n "$details" ]] || details="$(_ci_red_run_details "$run_id")"
+    local detail_run sha red_since
+    IFS=$'\t' read -r detail_run sha red_since <<< "$details"
+    [[ "$detail_run" == "$run_id" && -n "$sha" && "$red_since" =~ ^[0-9]+$ ]] || return 0
+    local duration=$((now - red_since))
+    (( duration >= CI_RED_PARALLEL_THRESHOLD_SEC )) || return 0
+    [[ -n "$idle_count" ]] || idle_count="$(_ci_red_idle_count)"
+    (( idle_count >= 1 )) || return 0
+    [[ -n "$deployable_cmd" ]] || deployable_cmd="$(_ci_red_first_deployable_cmd)"
+    [[ -n "$deployable_cmd" ]] || return 0
+
+    local state_file="${CI_RED_PARALLEL_STATE_FILE:-$STATE_DIR/shogun_ci_red_parallelization.notified}"
+    local generation="${run_id}:${sha}" lock_file="${state_file}.lock" previous=""
+    mkdir -p "${state_file%/*}"
+    exec {ci_red_lock_fd}>"$lock_file"
+    flock "$ci_red_lock_fd"
+    [[ -f "$state_file" ]] && IFS= read -r previous < "$state_file"
+    if [[ "$previous" != "$generation" ]]; then
+        if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+            "parallelization_required: CI RED run=${run_id} sha=${sha} duration_sec=${duration} idle=${idle_count} deployable_cmd=${deployable_cmd}" \
+            parallelization_required ninja_monitor parallelize_ci_red; then
+            printf '%s\n' "$generation" > "${state_file}.tmp.$$"
+            mv "${state_file}.tmp.$$" "$state_file"
+        fi
+    fi
+    flock -u "$ci_red_lock_fd"
+    exec {ci_red_lock_fd}>&-
+}
 
 # --- lib-only mode: skip daemon initialization (tmux/settings依存) ---
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
@@ -8355,6 +8430,7 @@ while true; do
         CI_STATUS_CHECK_LAST=$_ci_check_now
     fi
     current_ci_status="$CI_STATUS_CACHE"
+    check_ci_red_parallelization_guard "$current_ci_status" "$_ci_check_now"
     # unpushed count: 2分間隔キャッシュ（git rev-list毎サイクル実行→WSL2 git起動コスト削減）
     _unpushed_now=$EPOCHSECONDS
     if (( _unpushed_now - UNPUSHED_COUNT_CHECK_LAST >= UNPUSHED_COUNT_CHECK_INTERVAL )); then
