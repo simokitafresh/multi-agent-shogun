@@ -2041,6 +2041,8 @@ import re
 import sys
 from pathlib import Path
 
+import yaml
+
 repo = Path(os.environ["L6_REPO_ROOT"])
 cmd_id = os.environ.get("L6_CMD_ID", "")
 title = os.environ.get("L6_CMD_TITLE", "")
@@ -2124,6 +2126,24 @@ block_start = re.compile(r"^\s*-\s+(?:cmd_id|id|gp_id):")
 level_re = re.compile(r"defense_level:\s*['\"]?([0-9]+)")
 results = []
 seen_keys = set()
+existing_candidate_keys = set()
+
+insights_path = repo / "queue" / "insights.yaml"
+if insights_path.exists():
+    try:
+        loaded_insights = yaml.safe_load(insights_path.read_text(encoding="utf-8")) or []
+    except (OSError, yaml.YAMLError):
+        loaded_insights = []
+    if isinstance(loaded_insights, dict):
+        loaded_insights = loaded_insights.get("insights", [])
+    if isinstance(loaded_insights, list):
+        for entry in loaded_insights:
+            if not isinstance(entry, dict):
+                continue
+            previous = str(entry.get("insight") or "")
+            match = re.search(r"; candidate=(.*); source=([^;]+)$", previous)
+            if match:
+                existing_candidate_keys.add((match.group(2), match.group(1)))
 
 def iter_blocks(text):
     current = []
@@ -2168,6 +2188,9 @@ for source in sources:
                 break
         if not summary:
             summary = compact(block)
+        candidate_key = (source.name, summary)
+        if candidate_key in existing_candidate_keys:
+            continue
         match_key = (level, summary[:90])
         if match_key in seen_keys:
             continue

@@ -2491,6 +2491,38 @@ EOF
     grep -q "cmd_complete_gate:l6_horizontal:$TEST_CMD_ID" "$insight_log"
 }
 
+# test_necessity: one Level5-under candidate may be emitted only once across command completions, including after resolution.
+@test "write_l6_horizontal_level5_insights skips candidate already present in insight history" {
+    local insight_log="$TEST_TMPDIR/insights.log"
+    cat > "$TEST_PROJECT/scripts/insight_write.sh" <<EOF
+#!/usr/bin/env bash
+printf '%s\n' "\$1" >> "$insight_log"
+EOF
+    chmod +x "$TEST_PROJECT/scripts/insight_write.sh"
+
+    cat > "$TEST_PROJECT/logs/gunshi_gp_tracker.yaml" <<'EOF'
+- id: GP-DUP
+  description: "YAML parse prevention must be upgraded"
+  defense_level: 4
+EOF
+    cat > "$TEST_PROJECT/queue/insights.yaml" <<'EOF'
+- id: INS-OLD
+  insight: "同パターンLevel5未満候補: source_cmd=cmd_old; matched=parse; current_pattern=old; candidate_level=4; candidate=YAML parse prevention must be upgraded; source=gunshi_gp_tracker.yaml"
+  priority: medium
+  source: cmd_complete_gate:l6_horizontal:cmd_old
+  status: resolved
+EOF
+
+    export CMD_TITLE="YAML parse prevention Level5化"
+    export CMD_PURPOSE="parse preventionを強化する"
+    export CMD_CHANGED_FILES="scripts/cmd_complete_gate.sh"
+
+    run write_l6_horizontal_level5_insights "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: no Level5-under horizontal candidates"* ]]
+    [ ! -f "$insight_log" ]
+}
+
 @test "write_l6_horizontal_level5_insights skips commands without Level5 signal" {
     local insight_log="$TEST_TMPDIR/insights.log"
     cat > "$TEST_PROJECT/scripts/insight_write.sh" <<EOF
