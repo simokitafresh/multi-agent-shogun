@@ -1276,3 +1276,18 @@ YAML
   [ "$status" -eq 0 ]
   [[ "$output" == *"enqueued=40 skipped=40 backlog=0 lost=0"* ]]
 }
+# test_necessity: per-ninja lock取得後のcheckpoint hold再検証により、review前の同時次task配備を防ぐ不変量を守る。
+@test "checkpoint review hold blocks deploy under ninja lock and reviewed releases it" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        source "$PROJECT_ROOT/scripts/deploy_task.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; mkdir -p "$SCRIPT_DIR/queue/checkpoint_manifests" "$SCRIPT_DIR/queue/locks"
+        printf "%s\n" state=ready worker=alpha reviewer=gunshi >"$SCRIPT_DIR/queue/checkpoint_manifests/f1.manifest"
+        deploy_task_acquire_ninja_lock alpha
+        rc=0; deploy_task_guard_checkpoint_review_hold alpha || rc=$?
+        [ "$rc" -eq 2 ]
+        sed -i "s/^state=ready/state=reviewed/" "$SCRIPT_DIR/queue/checkpoint_manifests/f1.manifest"
+        deploy_task_guard_checkpoint_review_hold alpha
+        deploy_task_release_ninja_lock
+    '
+    [ "$status" -eq 0 ]
+}

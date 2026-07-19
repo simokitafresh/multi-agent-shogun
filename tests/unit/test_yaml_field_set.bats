@@ -129,6 +129,25 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: task scope SSOTのtarget_pathをflow-list入力してもscalar化せず、scope commitが正しい配列を読む不変量を守る。
+@test "task target_path: flow-list入力を構造listとしてatomic保存する" {
+    local yaml="$TEST_TMPDIR/task_target_path.yaml"
+    cat > "$yaml" <<'YAML'
+task:
+  status: in_progress
+  target_path: old-path
+YAML
+    local payload='["scripts/a.sh", "tests/unit/test_a.bats"]'
+    run bash "$YFS" "$yaml" task target_path "$payload"
+    [ "$status" -eq 0 ]
+    run python3 - "$yaml" <<'PY'
+import sys, yaml
+value = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]["target_path"]
+assert value == ["scripts/a.sh", "tests/unit/test_a.bats"], value
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "list item id block: 既存フィールド値の更新" {
     cat > "$TEST_TMPDIR/test.yaml" <<'EOF'
 - id: AC1

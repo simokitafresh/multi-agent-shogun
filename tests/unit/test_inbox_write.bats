@@ -2041,3 +2041,16 @@ YAML
     [[ "$output" == *"Ninja cannot send inbox to shogun directly"* ]]
     [[ "$output" != *"agent_config should not be sourced"* ]]
 }
+# test_necessity: 成果物未作成のverify_requestをinboxへ先行配送せず、checkpoint manifestへ保留する不変量を守る。
+@test "verify_request without artifact is deferred to checkpoint manifest" {
+    root="$BATS_TEST_TMPDIR/root"; mkdir -p "$root/scripts" "$root/queue/inbox" "$root/queue/tasks"
+    cp "$PROJECT_ROOT/scripts/inbox_write.sh" "$root/scripts/inbox_write.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib" "$root/scripts/lib"
+    run env INBOX_WRITE_ROOT_OVERRIDE="$root" INBOX_WRITE_TEST=1 bash "$root/scripts/inbox_write.sh" gunshi \
+        "cmd_fixture worker=alpha artifact docs/research/later.md" verify_request karo review
+    [ "$status" -eq 0 ]
+    [[ "$output" == *CHECKPOINT_DEFERRED* ]]
+    [ ! -f "$root/queue/inbox/gunshi.yaml" ]
+    [ "$(find "$root/queue/checkpoint_manifests" -name '*.manifest' | wc -l)" -eq 1 ]
+    grep -q '^state=awaiting_artifact$' "$root"/queue/checkpoint_manifests/*.manifest
+}

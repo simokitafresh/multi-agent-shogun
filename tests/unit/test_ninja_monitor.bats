@@ -419,3 +419,19 @@ SH
     '
     [ "$status" -eq 0 ]
 }
+# test_necessity: checkpoint成果物ready後の10cycleでreview通知をexactly-once配送し、既読後reviewedへ閉じる不変量を守る。
+@test "checkpoint manifest promotes ready and delivers review exactly once" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; LOG="$BATS_TEST_TMPDIR/log"; mkdir -p "$SCRIPT_DIR/queue/checkpoint_manifests" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/docs/research" "$SCRIPT_DIR/scripts"
+        cp "$PROJECT_ROOT/scripts/inbox_write.sh" "$SCRIPT_DIR/scripts/inbox_write.sh"; ln -s "$PROJECT_ROOT/scripts/lib" "$SCRIPT_DIR/scripts/lib"; : >"$LOG"
+        content="cmd_fixture worker=alpha artifact docs/research/later.md"; b64=$(printf %s "$content" | base64 -w0)
+        printf "%s\n" state=awaiting_artifact task_id=cmd_fixture worker=alpha reviewer=gunshi artifact_path=docs/research/later.md artifact_hash=- requested_at_epoch=1 ready_at_epoch=0 reviewed_at_epoch=0 delivery_count=0 last_wake_epoch=0 request_type=verify_request request_from=karo request_action=review content_b64="$b64" fingerprint=f1 >"$SCRIPT_DIR/queue/checkpoint_manifests/f1.manifest"
+        printf artifact >"$SCRIPT_DIR/docs/research/later.md"
+        for _ in {1..10}; do INBOX_WRITE_TEST=1 process_checkpoint_manifests; done
+        [ "$(grep -c "type: .verify_request" "$SCRIPT_DIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+        grep -q "^delivery_count=1$" "$SCRIPT_DIR/queue/checkpoint_manifests/f1.manifest"
+        [ "$(grep -c CHECKPOINT-READY-DELIVER "$LOG")" -eq 1 ]
+    '
+    [ "$status" -eq 0 ]
+}

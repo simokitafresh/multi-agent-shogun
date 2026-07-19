@@ -1025,7 +1025,7 @@ yaml_field_set() {
     if [ "$block_id" = "task" ]; then
         case "$field" in
             test_necessity) _yfs_structured_type="list_or_mapping" ;;
-            planned_paths)  _yfs_structured_type="list" ;;
+            planned_paths|target_path) _yfs_structured_type="list" ;;
         esac
     fi
     if [ -n "$_yfs_structured_type" ]; then

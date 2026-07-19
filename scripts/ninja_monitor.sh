@@ -7978,6 +7978,76 @@ check_throughput_ready_events() {
     fi
 }
 
+checkpoint_manifest_field() {
+    local path="$1" key="$2"
+    sed -n "s/^${key}=//p" "$path" 2>/dev/null | head -1
+}
+
+checkpoint_manifest_set() {
+    local path="$1" key="$2" value="$3" tmp="${path}.tmp.$$"
+    awk -F= -v key="$key" -v value="$value" '
+        BEGIN { found=0 }
+        $1 == key { print key "=" value; found=1; next }
+        { print }
+        END { if (!found) print key "=" value }
+    ' "$path" > "$tmp" && mv "$tmp" "$path"
+}
+
+# Promote deferred review requests only after the exact artifact exists.
+# The manifest fingerprint is canonical, so ten monitor cycles still emit one
+# durable inbox message. A read message closes the lifecycle as reviewed.
+process_checkpoint_manifests() {
+    local dir="$SCRIPT_DIR/queue/checkpoint_manifests" manifest state artifact_rel artifact_abs
+    local reviewer request_type request_from request_action content_b64 content artifact_hash now delivery_count
+    [ -d "$dir" ] || return 0
+    now=$EPOCHSECONDS
+    for manifest in "$dir"/*.manifest; do
+        [ -f "$manifest" ] || continue
+        state=$(checkpoint_manifest_field "$manifest" state)
+        [ "$state" != "reviewed" ] || continue
+        artifact_rel=$(checkpoint_manifest_field "$manifest" artifact_path)
+        artifact_abs="$SCRIPT_DIR/$artifact_rel"
+        reviewer=$(checkpoint_manifest_field "$manifest" reviewer)
+        request_type=$(checkpoint_manifest_field "$manifest" request_type)
+        request_from=$(checkpoint_manifest_field "$manifest" request_from)
+        request_action=$(checkpoint_manifest_field "$manifest" request_action)
+        content_b64=$(checkpoint_manifest_field "$manifest" content_b64)
+
+        if [ "$state" = "awaiting_artifact" ]; then
+            [ -f "$artifact_abs" ] || continue
+            artifact_hash=$(sha256sum "$artifact_abs" | cut -d' ' -f1)
+            checkpoint_manifest_set "$manifest" artifact_hash "$artifact_hash"
+            checkpoint_manifest_set "$manifest" ready_at_epoch "$now"
+            checkpoint_manifest_set "$manifest" state ready
+            state=ready
+        fi
+        [ "$state" = "ready" ] || continue
+        delivery_count=$(checkpoint_manifest_field "$manifest" delivery_count)
+        if [ "${delivery_count:-0}" -eq 0 ]; then
+            content=$(printf '%s' "$content_b64" | base64 -d 2>/dev/null || true)
+            if CHECKPOINT_MANIFEST_READY_DELIVERY=1 bash "$SCRIPT_DIR/scripts/inbox_write.sh" \
+                "$reviewer" "$content" "$request_type" "$request_from" "$request_action" >> "$LOG" 2>&1; then
+                checkpoint_manifest_set "$manifest" delivery_count 1
+                checkpoint_manifest_set "$manifest" last_wake_epoch "$now"
+                log "CHECKPOINT-READY-DELIVER: manifest=${manifest##*/} reviewer=$reviewer delivery=1 duplicate=0"
+            fi
+        fi
+        # inbox consumption is the durable reviewed transition.
+        if python3 - "$SCRIPT_DIR/queue/inbox/${reviewer}.yaml" "$content" <<'PY' 2>/dev/null
+import sys, yaml
+path, content = sys.argv[1:]
+try: messages=(yaml.safe_load(open(path, encoding='utf-8')) or {}).get('messages', [])
+except Exception: raise SystemExit(1)
+raise SystemExit(0 if any(isinstance(m,dict) and m.get('type')=='verify_request' and m.get('content')==content and m.get('read') is True for m in messages) else 1)
+PY
+        then
+            checkpoint_manifest_set "$manifest" reviewed_at_epoch "$now"
+            checkpoint_manifest_set "$manifest" state reviewed
+            log "CHECKPOINT-REVIEWED: manifest=${manifest##*/} reviewer=$reviewer"
+        fi
+    done
+}
+
 # ═══ 将軍idle分析trigger (cmd_3549) ═══
 # 全忍者idle/completed/done + パイプライン空が10分以上継続 → 将軍にidle分析開始を通知
 check_shogun_idle_analysis_trigger() {
@@ -8340,6 +8410,8 @@ while true; do
     # ═══ STEP 1a: 家老陣形図の早期更新 ═══
     # 後段の定期gate/maintenanceが詰まっても、家老復帰・dashboardが古いsnapshotを掴まないようにする。
     refresh_karo_snapshot_fast_path
+
+    process_checkpoint_manifests
 
     # Failed/BLOCK retro prompts are delivered only after the pane is idle and
     # before another task is assigned. Successful delivery moves the event to

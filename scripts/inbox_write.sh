@@ -1672,6 +1672,52 @@ inbox_maybe_attach_review_context() {
     CONTENT="${CONTENT}${context_block}"
 }
 
+# A checkpoint review request is not deliverable until its artifact exists.
+# Persist the intent first; ninja_monitor promotes it to ready and replays the
+# exact request with CHECKPOINT_MANIFEST_READY_DELIVERY=1.
+checkpoint_manifest_defer_unready_review() {
+    [ "$TYPE" = "verify_request" ] || return 1
+    [ "${CHECKPOINT_MANIFEST_READY_DELIVERY:-0}" != "1" ] || return 1
+
+    local artifact_rel artifact_abs task_id worker reviewer manifest_dir key manifest tmp now content_b64
+    artifact_rel=$(printf '%s\n' "$CONTENT" | grep -oE '(docs|queue/reports)/[A-Za-z0-9_./-]+' | head -1 || true)
+    [ -n "$artifact_rel" ] || return 1
+    artifact_abs="$SCRIPT_DIR/$artifact_rel"
+    [ ! -f "$artifact_abs" ] || return 1
+
+    task_id=$(printf '%s\n' "$CONTENT" | grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 || true)
+    [ -n "$task_id" ] || task_id="unknown"
+    worker=$(printf '%s\n' "$CONTENT" | grep -oE 'worker=[A-Za-z0-9_-]+' | head -1 | cut -d= -f2- || true)
+    if [ -z "$worker" ] && [[ "$artifact_rel" == queue/reports/*_report_* ]]; then
+        worker="${artifact_rel##*/}"; worker="${worker%%_report_*}"
+    fi
+    [ -n "$worker" ] || worker="$FROM"
+    reviewer="$TARGET"
+    manifest_dir="$SCRIPT_DIR/queue/checkpoint_manifests"
+    mkdir -p "$manifest_dir"
+    key=$(printf '%s\0%s\0%s\0%s' "$task_id" "$worker" "$reviewer" "$artifact_rel" | sha256sum | cut -d' ' -f1)
+    manifest="$manifest_dir/$key.manifest"
+    [ -f "$manifest" ] && { printf 'CHECKPOINT_DEFERRED existing=%s\n' "$manifest"; return 0; }
+    tmp="$manifest.tmp.$$"; now=$EPOCHSECONDS
+    content_b64=$(printf '%s' "$CONTENT" | base64 -w0)
+    {
+        printf 'state=requested\n'
+        printf 'task_id=%s\nworker=%s\nreviewer=%s\n' "$task_id" "$worker" "$reviewer"
+        printf 'artifact_path=%s\nartifact_hash=-\n' "$artifact_rel"
+        printf 'requested_at_epoch=%s\nready_at_epoch=0\nreviewed_at_epoch=0\n' "$now"
+        printf 'delivery_count=0\nlast_wake_epoch=0\n'
+        printf 'request_type=%s\nrequest_from=%s\nrequest_action=%s\n' "$TYPE" "$FROM" "$ACTION"
+        printf 'content_b64=%s\n' "$content_b64"
+        printf 'fingerprint=%s\n' "$key"
+    } > "$tmp"
+    printf 'state=awaiting_artifact\n' > "$tmp.state"
+    tail -n +2 "$tmp" >> "$tmp.state"
+    mv -n "$tmp.state" "$manifest" 2>/dev/null || true
+    rm -f "$tmp" "$tmp.state"
+    printf 'CHECKPOINT_DEFERRED manifest=%s state=awaiting_artifact\n' "$manifest"
+    return 0
+}
+
 TARGET="$1"
 CONTENT="$2"
 TYPE="${3:-wake_up}"
@@ -1740,6 +1786,10 @@ fi
 
 if [ -z "$ACTION" ]; then
     echo "[inbox_write] WARN: action omitted; writing message without action field for backward compatibility" >&2
+fi
+
+if checkpoint_manifest_defer_unready_review; then
+    exit 0
 fi
 
 # HIGH-2: パストラバーサル防止 + sender/target制約

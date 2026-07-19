@@ -404,6 +404,20 @@ deploy_task_guard_retro_answer_hold() {
     done
 }
 
+deploy_task_guard_checkpoint_review_hold() {
+    local ninja_name="$1" manifest state worker
+    [ -n "${DEPLOY_TASK_NINJA_LOCK_FD:-}" ] || { echo "BLOCK: checkpoint hold guard requires ninja deploy lock" >&2; return 2; }
+    for manifest in "$SCRIPT_DIR"/queue/checkpoint_manifests/*.manifest; do
+        [ -f "$manifest" ] || continue
+        state=$(sed -n 's/^state=//p' "$manifest" | head -1)
+        case "$state" in awaiting_artifact|ready) ;; *) continue ;; esac
+        worker=$(sed -n 's/^worker=//p' "$manifest" | head -1)
+        [ "$worker" = "$ninja_name" ] || continue
+        echo "BLOCK: $ninja_name has a checkpoint artifact awaiting review; next task deployment is held" >&2
+        return 2
+    done
+}
+
 deploy_task_guard_worker_assignment() {
     local task_file="$1"
     local incoming_cmd="$2"
@@ -11241,6 +11255,10 @@ deploy_task_main() {
     # mutation and the durable task_start notification (GA-257).
     deploy_task_acquire_ninja_lock "$NINJA_NAME" || return 1
     if ! deploy_task_guard_retro_answer_hold "$NINJA_NAME"; then
+        deploy_task_release_ninja_lock
+        return 2
+    fi
+    if ! deploy_task_guard_checkpoint_review_hold "$NINJA_NAME"; then
         deploy_task_release_ninja_lock
         return 2
     fi
