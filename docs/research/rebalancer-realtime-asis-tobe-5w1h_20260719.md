@@ -25,13 +25,14 @@
 
 | 層 | ソース | 経路 | 遅延目標 |
 |----|--------|------|---------|
-| リアルタイム表示 | **Alpaca IEX WebSocket(無料枠・公式)** | WS購読→backendメモリ→**SSEでFEへ即時配信**(end-to-end push) | **秒未満** |
+| リアルタイム表示 | **Alpaca IEX WebSocket(無料枠・公式)** | WS購読→backendメモリ→**SSEでFEへ即時配信**(end-to-end push) | **秒未満**(Render Singapore↔日本のRTT 100-200msを含む。実用上問題ない水準) |
 | 確定値・モメンタム計算 | **EODHD現行プラン**(生値+自前調整、databaseと同一ソース) | 閉場中・月末計算はEOD確定値 | 日次確定 |
 | ^VIX(指数) | Alpaca対象外 → 現行経路維持 or EODHD delayed(比較選定=cmd_4087 AC2) | 別枠 | 参考表示 |
 | 為替USD/JPY | 同上(cmd_4087 AC2で選定) | 別枠 | — |
 
-- yfinance経路は**フォールバックとして残置**(WS切断・レート超過時の自動退避)→置換は可逆
+- yfinance経路は**表示専用フォールバックとして残置**(WS切断・レート超過時の自動退避)。**silent fallback禁止**: degraded/stale/sourceをUIへ明示し、**計算確定値には絶対に使用しない**(家老レビュー③)
 - 閉場中はWSを止めEOD確定値へ切替(動かない値を流さない+月末open/close整合)
+- **provenance境界(家老レビュー①)**: 表示値(Alpaca)と計算確定値(EODHD)を型とAPIで分離 — StockPriceResponse/RebalanceResultへsource/as_of/is_finalを追加し、Alpaca値の計算混入0件を型で強制。計算確定値はEODHD 100%
 
 ## §3 5W1H
 
@@ -54,15 +55,25 @@
 | ^VIX・為替がAlpaca対象外 | 別経路比較表で選定(cmd_4087 AC2)。参考表示はdelayed許容 |
 | Render無料/低プランのWS常時接続安定性 | 偵察で接続持続を実測。必要ならkeepalive設計 |
 | FE側がポーリングのままだと効果ゼロ | SSE化をToBeの必須要素として同一設計に含める(end-to-end) |
+| Alpaca APIキーの失効・更新 | 現時点で有効期限なし(無料Basic)。将来のキー更新に備え、キーはStock Database PJ `.env`を正本とし両PJで同期する運用を注記 |
+| 秘密配備(家老レビュー②) | rebalancer render.yamlにAlpaca/EODHD envは現状ない。database/.envのruntime参照は禁止し、**Render secretとして独立配備**+非ログ+rotation手順をACへ固定 |
+| プロセスモデル(家老レビュー④) | 現global singletonはsingle uvicorn worker前提。**workers=1を不変量化**するかleader/fanout設計。restart時generation更新必須 |
+| 市場カレンダー(家老レビュー⑤) | 現行の平日+時刻判定は祝日・early closeを誤る。**Alpaca clock APIまたは取引所calendarを正本**にし、pre-open接続・extended-hours方針を明記 |
+| IEXのquote活発性 | 18/18購読可でも全銘柄で活発なquoteは保証されない。symbol別age/coverageとEOD乖離を監視。healthzはstream auth/subscription/freshness/degradedを分離 |
+| SSE配信契約(家老レビューP2) | per-client bounded queue・heartbeat・slow consumer切離し・snapshot+generation+sequence・Last-Event-ID再開・restart時snapshot強制・CORS/接続上限を契約化。EventSourceのexactly-onceを仮定しない |
 
 ## §5 工程表(Phase名参照。cmd番号は起票時にLS086照合表へ記録)
 
+家老レビュー(blt_20260719_191948)で「P1一括は責務過大」の指摘によりP1をa/b/cへ分割。
+
 | Phase | 内容 | 起票cmd | 状態 |
 |-------|------|---------|------|
-| P0 偵察 | Alpaca実叩き実測+^VIX/為替選定+置換設計 | cmd_4087 | **実行中** |
-| P1 backend置換 | market_data.py WS化+フォールバック+閉場切替 | 未起票(P0結果待ち) | — |
-| P2 FE配信 | SSE受信化+表示更新 | 未起票 | — |
-| P3 本番検証 | Render上でのWS安定性+遅延実測+EOD突合 | 未起票 | — |
+| P0 偵察 | Alpaca実叩き実測+^VIX/為替選定+置換設計 | cmd_4087 | 完了(購読+設計の範囲でAC正規化。開場時遅延はP3へ) |
+| P1a 型/確定値 | provenance型(source/as_of/is_final)+EODHD adapter+Render secret独立配備 | cmd_4088 | 起票済み |
+| P1b ストリーム | Alpaca stream/latest store+calendar正本+health分離 | 保留: cmd_4088完了後に契約確定して逐次起票(型境界の上に積む依存順序) | — |
+| P1c 耐障害 | resilience+fallback可視化(degraded/stale UI明示) | 保留: P1b完了後に逐次起票 | — |
+| P2 FE配信 | SSE契約(bounded queue/heartbeat/再開/snapshot)+FE受信化 | 保留: P1c完了後に逐次起票(backend配信なしにFE検証不能) | — |
+| P3 本番検証(最終checkpoint) | 米国市場開場中の全銘柄subscription ACK+event→backend→SSE→browserの段階別p50/p95/max実測+WS強制切断・Render restart・SSE再接続のrecovery検証(duplicate0/out-of-order0)+終値EODHD突合+Alpaca計算混入0+秘密値ログ0の二値化 | 保留: P2完了かつ米国市場開場時間帯に起票(厳密さは最終checkpointへ集中) | — |
 
 ## 因果リンク
 
