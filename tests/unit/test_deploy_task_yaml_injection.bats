@@ -1429,12 +1429,15 @@ YAML
     task_sha_before="$(sha256sum "$task" | awk '{print $1}')"
     reports_before="$(find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f -name 'hayate_report_*' | wc -l)"
     assigned_before="$(grep -c "type: task_assigned" "$inbox" 2>/dev/null || true)"
+    assigned_before="${assigned_before:-0}"
     run bash "$PROJECT_ROOT/scripts/deploy_task.sh" --direct hayate .cache/task.yaml
     [ "$status" -ne 0 ]
     [[ "$output" == *"Use: deploy_task.sh --yaml <file> <ninja>"* ]]
     [ "$task_sha_before" = "$(sha256sum "$task" | awk '{print $1}')" ]
     [ "$reports_before" -eq "$(find "$PROJECT_ROOT/queue/reports" -maxdepth 1 -type f -name 'hayate_report_*' | wc -l)" ]
-    [ "$assigned_before" -eq "$(grep -c "type: task_assigned" "$inbox" 2>/dev/null || true)" ]
+    assigned_after="$(grep -c "type: task_assigned" "$inbox" 2>/dev/null || true)"
+    assigned_after="${assigned_after:-0}"
+    [ "$assigned_before" -eq "$assigned_after" ]
 }
 
 # test_necessity: --yaml経路はsource precheck完了前に旧taskへissued_at/resetを書かず、publish後の成功時だけRecordedを出す順序を守る。
