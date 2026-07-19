@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: CI completion must bind workflow SHA to the shared origin branch boundary and fail closed when that boundary is absent; violation is BLOCK.
+# test_necessity: CI readiness applies only to remote-contained report commits, never free text, and fails closed when commit or remote identity is unknowable; violation is BLOCK.
 # regression_justification: The existing completion-gate suite did not cover a dirty shared worktree whose local HEAD diverged from the pushed origin/main boundary.
 # test_cmd_complete_gate.bats - cmd_complete_gate.sh partial unit tests
 # Optimized: gate全体実行をやめ、重い責務を関数/局所フェーズ単位で直接検証する
@@ -3615,4 +3615,72 @@ PY
         CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" bash "$SRC_GATE_SCRIPT"
     [ "$status" -eq 0 ]
     [ -z "$output" ]
+}
+
+make_ci_push_repo() {
+    local repo="$1"
+    git init -q "$repo"
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    echo shared > "$repo/state"
+    git -C "$repo" add state
+    git -C "$repo" commit -qm shared
+    git -C "$repo" update-ref refs/remotes/origin/main "$(git -C "$repo" rev-parse HEAD)"
+}
+
+run_ci_push_state() {
+    local repo="$1" report="$2"
+    run env CMD_COMPLETE_GATE_CI_PUSH_STATE_ONLY=1 \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" \
+        CMD_COMPLETE_GATE_CI_REPORT="$report" bash "$SRC_GATE_SCRIPT"
+}
+
+@test "CI push detection ignores files_modified for an unpushed report commit" {
+    local repo="$BATS_TEST_TMPDIR/unpushed-files" report="$BATS_TEST_TMPDIR/unpushed-files.yaml"
+    make_ci_push_repo "$repo"
+    echo local >> "$repo/state"; git -C "$repo" commit -qam local
+    printf 'commit_hash: %s\nfiles_modified: [{path: scripts/x.sh}]\n' "$(git -C "$repo" rev-parse HEAD)" > "$report"
+    run_ci_push_state "$repo" "$report"
+    [ "$status" -eq 0 ]; [[ "$output" == UNPUSHED:* ]]
+}
+
+@test "CI push detection ignores git push free text for an unpushed report commit" {
+    local repo="$BATS_TEST_TMPDIR/unpushed-text" report="$BATS_TEST_TMPDIR/unpushed-text.yaml"
+    make_ci_push_repo "$repo"
+    echo local >> "$repo/state"; git -C "$repo" commit -qam local
+    printf 'commit_hash: %s\nresult: {summary: "git push: OK"}\n' "$(git -C "$repo" rev-parse HEAD)" > "$report"
+    run_ci_push_state "$repo" "$report"
+    [ "$status" -eq 0 ]; [[ "$output" == UNPUSHED:* ]]
+}
+
+@test "CI push detection accepts a remote-contained report commit" {
+    local repo="$BATS_TEST_TMPDIR/pushed" report="$BATS_TEST_TMPDIR/pushed.yaml"
+    make_ci_push_repo "$repo"
+    printf 'commit_hash: %s\nfiles_modified: [{path: scripts/x.sh}]\n' "$(git -C "$repo" rev-parse HEAD)" > "$report"
+    run_ci_push_state "$repo" "$report"
+    [ "$status" -eq 0 ]; [[ "$output" == PUSHED:* ]]
+}
+
+@test "CI push detection blocks when remote boundary is missing" {
+    local repo="$BATS_TEST_TMPDIR/missing-remote" report="$BATS_TEST_TMPDIR/missing-remote.yaml"
+    git init -q "$repo"
+    printf 'commit_hash: %040d\n' 1 > "$report"
+    run_ci_push_state "$repo" "$report"
+    [ "$status" -eq 0 ]; [[ "$output" == "BLOCK: remote"* ]]
+}
+
+@test "CI push detection blocks an invalid report commit" {
+    local repo="$BATS_TEST_TMPDIR/invalid-commit" report="$BATS_TEST_TMPDIR/invalid-commit.yaml"
+    make_ci_push_repo "$repo"
+    printf 'commit_hash: not-a-commit\n' > "$report"
+    run_ci_push_state "$repo" "$report"
+    [ "$status" -eq 0 ]; [[ "$output" == "BLOCK: report commit"* ]]
+}
+
+@test "CI push detection skips a no-code-change sentinel" {
+    local repo="$BATS_TEST_TMPDIR/no-code" report="$BATS_TEST_TMPDIR/no-code.yaml"
+    make_ci_push_repo "$repo"
+    printf 'commit_hash: not-required\nfiles_modified: [{path: no-code-change}]\n' > "$report"
+    run_ci_push_state "$repo" "$report"
+    [ "$status" -eq 0 ]; [ "$output" = "UNPUSHED: no-code-change sentinel" ]
 }

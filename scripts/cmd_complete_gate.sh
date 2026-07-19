@@ -60,12 +60,74 @@ resolve_ci_expected_head() {
         || true
 }
 
+# Decide whether a report crossed the shared remote completion boundary.
+# Free text and files_modified describe work, not publication.  The only
+# publication proof is a valid report commit contained by origin/main|master.
+report_ci_push_state() {
+    local report_file="$1"
+    local repo_dir="${2:-$SCRIPT_DIR}"
+    local expected_head report_commit report_kind
+
+    expected_head=$(resolve_ci_expected_head "$repo_dir")
+    if [ -z "$expected_head" ]; then
+        echo "BLOCK: remote main/master boundary missing"
+        return 0
+    fi
+
+    IFS=$'\t' read -r report_kind report_commit < <(REPORT_FILE="$report_file" python3 - <<'PY'
+import re
+import os
+import yaml
+
+try:
+    with open(os.environ["REPORT_FILE"], encoding="utf-8") as f:
+        report = yaml.safe_load(f) or {}
+except Exception:
+    print("invalid\t")
+    raise SystemExit
+
+files = report.get("files_modified") or []
+if isinstance(files, str):
+    files = [files]
+paths = []
+for item in files if isinstance(files, list) else []:
+    value = item.get("path") if isinstance(item, dict) else item
+    paths.append(str(value or "").strip().lower().replace("_", "-"))
+if paths and all(value == "no-code-change" for value in paths):
+    print("sentinel\t")
+    raise SystemExit
+
+commit = str(report.get("commit_hash") or "").strip()
+if not re.fullmatch(r"[0-9a-fA-F]{40}", commit):
+    print("invalid\t" + commit)
+else:
+    print("commit\t" + commit.lower())
+PY
+)
+
+    if [ "$report_kind" = "sentinel" ]; then
+        echo "UNPUSHED: no-code-change sentinel"
+    elif [ "$report_kind" != "commit" ] \
+        || ! git -C "$repo_dir" cat-file -e "${report_commit}^{commit}" 2>/dev/null; then
+        echo "BLOCK: report commit invalid or unresolvable${report_commit:+ ($report_commit)}"
+    elif git -C "$repo_dir" merge-base --is-ancestor "$report_commit" "$expected_head" 2>/dev/null; then
+        echo "PUSHED: report commit $report_commit contained by $expected_head"
+    else
+        echo "UNPUSHED: report commit $report_commit not contained by $expected_head"
+    fi
+}
+
 if [ "${CMD_COMPLETE_GATE_CI_EVAL_ONLY:-0}" = "1" ]; then
     evaluate_ci_readiness_json
     exit $?
 fi
 if [ "${CMD_COMPLETE_GATE_CI_EXPECTED_HEAD_ONLY:-0}" = "1" ]; then
     resolve_ci_expected_head "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$PWD}"
+    exit $?
+fi
+if [ "${CMD_COMPLETE_GATE_CI_PUSH_STATE_ONLY:-0}" = "1" ]; then
+    report_ci_push_state "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
+        "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$PWD}"
     exit $?
 fi
 # cmd_complete_gate.sh — cmd完了時の全ゲートフラグ確認スクリプト（ディレクトリ方式）
@@ -8090,6 +8152,7 @@ fi
 # ─── CI status check（push済みcmdでCI赤を検知 — failure時WARN。CLAUDE.md準拠） ───
 level_heading "[L3]" "CI status check:"
 CI_PUSH_DETECTED=false
+CI_PUSH_STATE_BLOCK=""
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
     if [ ! -f "$task_file" ]; then
         echo "  [WARN] matching task file disappeared, skipping: $task_file"
@@ -8100,14 +8163,19 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
     ninja_name=$(basename "$task_file" .yaml)
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
-        if grep -qE 'git push|files_modified' "$report_file" 2>/dev/null; then
-            CI_PUSH_DETECTED=true
-            break
-        fi
+        ci_push_state=$(report_ci_push_state "$report_file" "$SCRIPT_DIR")
+        case "$ci_push_state" in
+            PUSHED:*) CI_PUSH_DETECTED=true ;;
+            BLOCK:*) CI_PUSH_STATE_BLOCK="$ci_push_state"; break ;;
+        esac
     fi
 done
 
-if [ "$CI_PUSH_DETECTED" = true ]; then
+if [ -n "$CI_PUSH_STATE_BLOCK" ]; then
+    echo "  [CRITICAL] ${CI_PUSH_STATE_BLOCK}"
+    record_block_reason "ci_push_state:${CI_PUSH_STATE_BLOCK}"
+    ALL_CLEAR=false
+elif [ "$CI_PUSH_DETECTED" = true ]; then
     ci_result="${CMD_COMPLETE_GATE_CI_RUN_JSON:-}"
     if [ -z "$ci_result" ] && command -v gh >/dev/null 2>&1; then
         ci_result=$(timeout 15 gh run list --repo simokitafresh/multi-agent-shogun \
@@ -8138,7 +8206,7 @@ if [ "$CI_PUSH_DETECTED" = true ]; then
         ALL_CLEAR=false
     fi
 else
-    echo "  SKIP (no push detected in reports)"
+    echo "  SKIP (no remote-contained report commit detected)"
 fi
 
 # ─── cmd_3207: 速度修行の安全パターン削除検出 ───
