@@ -1146,7 +1146,7 @@ _respawn_with_cli_verification() {
         # 新CLIの起動成功と誤認しないよう、各試行の前に残像を消す。
         tmux clear-history -t "$pane" 2>/dev/null || true
         if tmux respawn-pane -k -t "$pane" "$launch_command" 2>/dev/null && \
-                _wait_for_cli_ready "$pane" "$agent_name"; then
+                respawn_recovery_ready "$pane"; then
             elapsed=$((SECONDS - started))
             _record_respawn_outcome "$agent_name" 1 "$attempt" "$elapsed" || true
             return 0
@@ -1237,18 +1237,19 @@ safe_send_clear() {
         local _launch_cmd
         _launch_cmd=$(cli_launch_cmd "$agent_name" 2>/dev/null || echo "")
         if [ -n "${_launch_cmd:-}" ]; then
-            local _node_dir="${_launch_cmd%/bin/codex*}/bin"
+            local _launch_command
+            _launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$_launch_cmd" 2>/dev/null || true)
             # per-agent config.toml切替(2層SSOT: settings.yaml→config.toml。SSOT実装=cli_lookup.sh)
             codex_config_apply_agent "$agent_name" && \
                 [[ "$_CODEX_CFG_CHANGED" == true ]] && \
                 log "CODEX-CFG-SWITCH: $agent_name applied"
             log "CODEX-RESPAWN: $agent_name respawn-pane (codex reset)"
             local _fsc_respawn_ok=1
-            tmux respawn-pane -k -t "$pane" "export PATH=\"${_node_dir}:\$PATH\" && cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
+            [ -n "$_launch_command" ] && tmux respawn-pane -k -t "$pane" "$_launch_command" 2>/dev/null || {
                 _fsc_respawn_ok=0
                 log "CODEX-RESPAWN-FALLBACK: $agent_name respawn failed"
             }
-            if [ "$_fsc_respawn_ok" -eq 1 ] && _wait_for_cli_ready "$pane" "$agent_name"; then
+            if [ "$_fsc_respawn_ok" -eq 1 ] && respawn_recovery_ready "$pane"; then
                 _generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
                 [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-codex || _fsc_respawn_ok=0
             else
@@ -1277,14 +1278,16 @@ safe_send_clear() {
     if [ -z "${_launch_cmd:-}" ]; then
         _launch_cmd="$HOME/bin/claude --effort high"
     fi
+    local _launch_command
+    _launch_command=$(respawn_recovery_launch_command "$SCRIPT_DIR" "$_launch_cmd" 2>/dev/null || true)
     log "RESPAWN-PANE: $agent_name respawn-pane -k (CTX確実0%復帰), reason=$reason"
     local _fsc_respawn_ok=1
-    tmux respawn-pane -k -t "$pane" "cd $SCRIPT_DIR && $_launch_cmd" 2>/dev/null || {
+    [ -n "$_launch_command" ] && tmux respawn-pane -k -t "$pane" "$_launch_command" 2>/dev/null || {
         _fsc_respawn_ok=0
         log "RESPAWN-FALLBACK: $agent_name respawn failed, trying /clear"
         safe_send_keys_atomic "$pane" "$clear_cmd" 0.3 || true
     }
-    if [ "$_fsc_respawn_ok" -eq 1 ] && _wait_for_cli_ready "$pane" "$agent_name"; then
+    if [ "$_fsc_respawn_ok" -eq 1 ] && respawn_recovery_ready "$pane"; then
         _generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
         [ -n "$_generation" ] && respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$_generation" clear-claude || _fsc_respawn_ok=0
     else
@@ -6538,10 +6541,11 @@ check_ninja_cli_dead() {
                 [[ "$_CODEX_CFG_CHANGED" == true ]] && \
                 log "CODEX-CFG-SWITCH(CLI-DEAD): $_name_bg applied"
             # PATH必須: codex shebang=#!/usr/bin/env node → nvm PATHなしでexit 127
-            local _node_path="${HOME}/.nvm/versions/node/v20.20.0/bin"
+            local _launch_command
+            _launch_command=$(respawn_recovery_launch_command "$_script_dir_bg" "$_launch_bg" 2>/dev/null || true)
             local _respawn_rc=0
             _respawn_with_cli_verification "$_pane_target_bg" "$_name_bg" \
-                "export PATH=\"${_node_path}:\$PATH\" && cd '${_script_dir_bg}' && ${_launch_bg}" \
+                "$_launch_command" \
                 "CLI-DEAD-RESPAWN" || _respawn_rc=$?
             # config.toml復元
             codex_config_restore 2>/dev/null

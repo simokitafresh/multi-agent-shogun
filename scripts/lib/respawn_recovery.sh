@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # Persist exactly one recovery nudge for an active task after verified respawn.
 respawn_recovery_launch_command() {
-    local root="$1" launch="$2"
-    local node_path="${RESPAWN_RECOVERY_NODE_PATH:-${HOME}/.nvm/versions/node/v20.20.0/bin}"
+    local root="$1" launch="$2" executable node_path
     [ -n "$launch" ] || return 1
+    read -r executable _ <<< "$launch"
+    [[ "$executable" = /* ]] || return 1
+    node_path="${RESPAWN_RECOVERY_NODE_PATH:-${executable%/*}}"
+    [ -d "$node_path" ] || return 1
     printf 'export PATH="%s:$PATH"; cd "%s" && exec %s\n' "$node_path" "$root" "$launch"
 }
 
@@ -13,7 +16,7 @@ respawn_recovery_ready() {
     capture=$($tmux_bin capture-pane -t "$pane" -p -J -S -100 2>/dev/null || true)
     printf '%s\n' "$capture" | grep -qE 'Claude Code|OpenAI Codex|Codex CLI|❯|›' || return 1
     respawn_recovery_generation "$pane" >/dev/null || return 1
-    ctx=$(printf '%s\n' "$capture" | grep -oE 'CTX:[[:space:]]*[0-9]+%' | tail -1 | grep -oE '[0-9]+' || true)
+    ctx=$(printf '%s\n' "$capture" | grep -oE '(CTX:[[:space:]]*|Context[[:space:]]+)[0-9]+%( used)?' | tail -1 | grep -oE '[0-9]+' || true)
     [ "$ctx" = 0 ] || return 1
 }
 

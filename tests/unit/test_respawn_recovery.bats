@@ -112,7 +112,7 @@ YAML
   repo="$BATS_TEST_DIRNAME/../.."
   run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_launch_command "$1" "/bin/codex"' _ "$repo"
   [ "$status" -eq 0 ]
-  [[ "$output" == *'.nvm/versions/node/v20.20.0/bin:$PATH'* ]]
+  [[ "$output" == *'PATH="/bin:$PATH"'* ]]
 
   run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_notify "$1" tester gen-sender clear' _ "$root"
   [ "$status" -eq 0 ]
@@ -133,6 +133,9 @@ SH
   run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_ready pane' _ "$repo"
   [ "$status" -ne 0 ]
   export FIXTURE_CTX=0
+  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_ready pane' _ "$repo"
+  [ "$status" -eq 0 ]
+  sed -i 's/OpenAI Codex CTX:%s%%/OpenAI Codex Context %s%% used/' "$root/tmux-ready"
   run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_ready pane' _ "$repo"
   [ "$status" -eq 0 ]
 }

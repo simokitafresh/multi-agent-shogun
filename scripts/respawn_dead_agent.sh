@@ -54,9 +54,8 @@ lock="/tmp/shogun_respawn_dead_${agent}.lock"
 exec 201>"$lock"
 flock -w 10 201 || { echo "BLOCK: respawn lock busy for $agent" >&2; exit 1; }
 
-node_path="${HOME}/.nvm/versions/node/v20.20.0/bin"
-tmux respawn-pane -t "$pane" \
-    "reset 2>/dev/null; export PATH=\"${node_path}:\$PATH\"; cd \"${ROOT}\" && exec ${launch}"
+launch_command=$(respawn_recovery_launch_command "$ROOT" "$launch") || { echo "BLOCK: launch command invalid" >&2; exit 1; }
+tmux respawn-pane -t "$pane" "reset 2>/dev/null; ${launch_command}"
 tmux clear-history -t "$pane" 2>/dev/null || true
 tmux set-option -p -t "$pane" @agent_id "$agent"
 tmux set-option -p -t "$pane" @context_pct "0%"
@@ -71,14 +70,14 @@ PY
 )"
 tmux set-option -p -t "$pane" @current_task "$task_state"
 
-for _ in {1..20}; do
+for _ in {1..40}; do
     sleep 0.25
     dead="$(tmux display-message -t "$pane" -p '#{pane_dead}' 2>/dev/null || echo 1)"
-    if [[ "$dead" == "0" ]] && tmux capture-pane -t "$pane" -p -J -S -80 2>/dev/null | grep -qE 'Claude Code|OpenAI Codex|Codex CLI|❯|›'; then
+    if respawn_recovery_ready "$pane"; then
         break
     fi
 done
-[[ "$dead" == "0" ]] && tmux capture-pane -t "$pane" -p -J -S -80 2>/dev/null | grep -qE 'Claude Code|OpenAI Codex|Codex CLI|❯|›' || { echo "FAIL: $agent CLI not ready" >&2; exit 1; }
+respawn_recovery_ready "$pane" || { echo "FAIL: $agent CLI not ready" >&2; exit 1; }
 current="$(tmux display-message -t "$pane" -p '#{pane_current_command}')"
 generation="$(respawn_recovery_generation "$pane" 2>/dev/null || true)"
 [ -n "$generation" ] || { echo "FAIL: respawn generation unavailable" >&2; exit 1; }
