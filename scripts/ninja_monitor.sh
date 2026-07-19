@@ -8341,6 +8341,30 @@ while true; do
     # 後段の定期gate/maintenanceが詰まっても、家老復帰・dashboardが古いsnapshotを掴まないようにする。
     refresh_karo_snapshot_fast_path
 
+    # Failed/BLOCK retro prompts are delivered only after the pane is idle and
+    # before another task is assigned. Successful delivery moves the event to
+    # awaiting_answer, which is the durable hold marker for deployment.
+    for _retro_event in "$SCRIPT_DIR"/queue/retro/verbatim_pending/*.event; do
+        [ -f "$_retro_event" ] || continue
+        mapfile -t _retro_fields < "$_retro_event"
+        _retro_ninja="${_retro_fields[0]:-}"
+        _retro_event_id="${_retro_fields[1]:-}"
+        _retro_from="${_retro_fields[2]:-}"
+        _retro_pane="${PANE_TARGETS[$_retro_ninja]:-}"
+        _retro_task="$SCRIPT_DIR/queue/tasks/${_retro_ninja}.yaml"
+        _retro_status=$(awk '/^[[:space:]]*status:/ {gsub(/["'\''[:space:]]/, "", $2); print $2; exit}' "$_retro_task" 2>/dev/null || true)
+        [[ "$_retro_status" =~ ^(failed|blocked|idle|done)$ ]] || continue
+        [ -n "$_retro_pane" ] && check_idle "$_retro_pane" "$_retro_ninja" || continue
+        source "$SCRIPT_DIR/scripts/lib/retro_verbatim_prompt.sh"
+        if retro_verbatim_prompt_deliver "$SCRIPT_DIR" "$_retro_ninja" "$_retro_event_id" "$_retro_from"; then
+            mkdir -p "$SCRIPT_DIR/queue/retro/verbatim_awaiting_answer"
+            mv "$_retro_event" "$SCRIPT_DIR/queue/retro/verbatim_awaiting_answer/${_retro_event##*/}"
+            log "RETRO-TERMINAL-DELIVER: ninja=$_retro_ninja pane_idle=1 next_task=0 delivery=1 duplicate=0"
+        else
+            log "RETRO-TERMINAL-BLOCK: ninja=$_retro_ninja delivery=0 retry=next_cycle"
+        fi
+    done
+
     # terminal publish crash-window repair; bounded to one current report per ninja
     repair_terminal_report_outboxes
 

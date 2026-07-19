@@ -93,6 +93,19 @@ if [[ "${BASH_SOURCE[0]}" == "$0" && "${DEPLOY_TASK_LIB_ONLY:-0}" != "1" ]]; the
         echo "ERROR: Unknown ninja: $_dt_early_target" >&2
         exit 1
     fi
+    for _dt_retro_hold in "$SCRIPT_DIR"/queue/retro/verbatim_awaiting_answer/*.event; do
+        [ -f "$_dt_retro_hold" ] || continue
+        if [ "$(sed -n '1p' "$_dt_retro_hold")" = "$_dt_early_target" ]; then
+            _dt_retro_event_id=$(sed -n '2p' "$_dt_retro_hold")
+            if [ -n "$_dt_retro_event_id" ] && grep -qF "$_dt_retro_event_id" "$SCRIPT_DIR/queue/inbox/karo.yaml" 2>/dev/null \
+                && grep -B8 -A8 -F "$_dt_retro_event_id" "$SCRIPT_DIR/queue/inbox/karo.yaml" | grep -q "type: 'retro_answer'"; then
+                rm -f "$_dt_retro_hold"
+                continue
+            fi
+            echo "BLOCK: $_dt_early_target has an unanswered terminal retrospective; next task deployment is held" >&2
+            exit 2
+        fi
+    done
     unset _dt_early_target
 fi
 

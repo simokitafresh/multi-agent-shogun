@@ -95,9 +95,10 @@ setup_file() {
 
     mkdir -p "$GIT_TEMPLATE_DIR/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
     # 選択的コピー: inbox_write.shが使うファイルのみ (NTFS→tmpfs コスト削減)
-    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py report_completion_events.sh; do
+    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py report_completion_events.sh retro_verbatim_prompt.sh; do
         cp "$PROJECT_ROOT/scripts/lib/$_lib_f" "$GIT_TEMPLATE_DIR/scripts/lib/$_lib_f"
     done
+    cp "$PROJECT_ROOT/scripts/inbox_write.sh" "$GIT_TEMPLATE_DIR/scripts/inbox_write.sh"
 
     git -C "$GIT_TEMPLATE_DIR" init -q
     git -C "$GIT_TEMPLATE_DIR" config user.name "test"
@@ -1074,11 +1075,47 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"verified failure report"* ]]
     [ "$(grep -c "^- content: '未達報告'" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+    [ "$(find "$TEST_TMPDIR/queue/retro/verbatim_pending" -name '*.event' | wc -l)" -eq 1 ]
+    grep -Rq '^task_failed:' "$TEST_TMPDIR/queue/retro/verbatim_pending"
 
     run _run_inbox_write karo "未達報告" task_failed testninja
     [ "$status" -eq 0 ]
     [[ "$output" == *DUPLICATE_MSG_ID=* ]]
     [ "$(grep -c "^- content: '未達報告'" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+    [ "$(find "$TEST_TMPDIR/queue/retro/verbatim_pending" -name '*.event' | wc -l)" -eq 1 ]
+}
+
+@test "task_failed: blocked task is a canonical terminal and receives verbatim prompt" {
+    setup_git_test_env
+    python3 - "$TEST_TMPDIR" <<'PY'
+import pathlib, yaml, sys
+root = pathlib.Path(sys.argv[1])
+task_path = root / "queue/tasks/testninja.yaml"
+report_path = root / "queue/reports/testninja_report_cmd_test_001.yaml"
+task = yaml.safe_load(task_path.read_text()); task["task"]["status"] = "blocked"
+task_path.write_text(yaml.safe_dump(task, allow_unicode=True, sort_keys=False))
+report = yaml.safe_load(report_path.read_text()); report["verdict"] = "FAIL"
+report["binary_checks"]["AC1"][0].update(check="BLOCK終端を実測", result="no")
+report_path.write_text(yaml.safe_dump(report, allow_unicode=True, sort_keys=False))
+PY
+    run _run_inbox_write karo "BLOCK報告" task_failed testninja
+    [ "$status" -eq 0 ]
+    [ "$(find "$TEST_TMPDIR/queue/retro/verbatim_pending" -name '*.event' | wc -l)" -eq 1 ]
+}
+
+@test "task_failed: terminal enqueue is stable across duplicate resend" {
+    setup_git_test_env
+    python3 - "$TEST_TMPDIR" <<'PY'
+import pathlib, yaml, sys
+root = pathlib.Path(sys.argv[1]); task_path=root/'queue/tasks/testninja.yaml'; report_path=root/'queue/reports/testninja_report_cmd_test_001.yaml'
+task=yaml.safe_load(task_path.read_text()); task['task']['status']='failed'; task_path.write_text(yaml.safe_dump(task,sort_keys=False))
+report=yaml.safe_load(report_path.read_text()); report['verdict']='FAIL'; report['binary_checks']['AC1'][0].update(check='AC1未達を実測',result='no'); report_path.write_text(yaml.safe_dump(report,sort_keys=False,allow_unicode=True))
+PY
+    run _run_inbox_write karo "未達報告" task_failed testninja
+    [ "$status" -eq 0 ]
+    run _run_inbox_write karo "未達報告" task_failed testninja
+    [ "$status" -eq 0 ]
+    [ "$(find "$TEST_TMPDIR/queue/retro/verbatim_pending" -name '*.event' | wc -l)" -eq 1 ]
 }
 
 @test "task_failed: PASS report is blocked" {

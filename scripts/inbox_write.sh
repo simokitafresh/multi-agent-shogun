@@ -2108,8 +2108,8 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                     if [ -n "$FAIL_DETAILS" ]; then
                         if [ "$TYPE" = "task_failed" ]; then
                             TASK_STATUS=$(inbox_yaml_field_get "$TASK_YAML" "status" "")
-                            if [ "$TASK_STATUS" != "failed" ]; then
-                                echo "[report_format_gate] BLOCKED: task_failed requires task status=failed (actual: ${TASK_STATUS:-missing})" >&2
+                            if [ "$TASK_STATUS" != "failed" ] && [ "$TASK_STATUS" != "blocked" ]; then
+                                echo "[report_format_gate] BLOCKED: task_failed requires task status=failed|blocked (actual: ${TASK_STATUS:-missing})" >&2
                                 exit 1
                             fi
                             echo "[report_format_gate] verified failure report: verdict=FAIL, task status=failed (ninja: ${FROM})" >&2
@@ -2535,6 +2535,14 @@ while [ $attempt -lt $max_attempts ]; do
             # a separate, detached message. retro_prompt cannot re-enter here.
             source "$SCRIPT_DIR/scripts/lib/retro_verbatim_prompt.sh"
             retro_verbatim_prompt_async "$SCRIPT_DIR" "$FROM" "report_received:$MSG_ID" inbox_write
+        fi
+
+        # Failure/BLOCK terminals enqueue only. Delivery waits for the monitor
+        # to prove pane-idle and no next task, avoiding prompt/task overlap.
+        if [ "$TYPE" = "task_failed" ] && [ "$TARGET" = "karo" ]; then
+            source "$SCRIPT_DIR/scripts/lib/retro_verbatim_prompt.sh"
+            _failed_retro_event="task_failed:${STRUCTURED_REPORT_ID}:${STRUCTURED_REPORT_VERSION}:${STRUCTURED_REPORT_FINGERPRINT}"
+            retro_verbatim_prompt_enqueue "$SCRIPT_DIR" "$FROM" "$_failed_retro_event" inbox_write
         fi
 
         dispatch_codex_delivery_verification "$TARGET" "$MSG_ID" "$TYPE"
