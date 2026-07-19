@@ -254,6 +254,9 @@ CLEAR率62.7%→84.6%(+21.9pt)。gate品質BLOCK3大原因の構造的解消+新
 | cmd_publish pre-flight | `cmd_publish.sh` のPython YAML parseをawk block scanへ置換し、`grep -c || echo 0` の0件二重出力を防止。CoDD生成物はwave1-3まで保存、最終計測はafter設計書を正とする | `docs/research/cmd_2585_cmd_publish_after_20260506.md`, `docs/research/codd_refactor_registry.md` |
 | CoDD改善32本 | cmd_1951の全量プロファイリングを起点にhot path 32本を改善。代表値: `cmd_save.sh 4.02s→1.06s (-73.6%)`, `deploy_task.sh 2639ms→32ms`, `gate_karo_startup.sh 464ms→190ms` | `docs/research/codd_refactor_registry.md`, `context/cmd-chronicle.md` 04-16 |
 | cmd_3801 fork削減 | 軍師分析(blt_20260709_142137: 820ms・479 fork)を受け、`is_gate_or_hook_addition_cmd`(4呼出元)と`collect_primary_cmd_targets`(2呼出元、8段awk/sed/grep/sortパイプライン)を、1プロセス内で不変の`$CMD_BLOCK_NC`をキーにメモ化。fixture計測でfork proxy 168→159(-5.4%)・wall-clock -31〜39%、`collect_primary_cmd_targets`単体では2回目呼出し7fork→0fork(-100%)。tests/unit/test_cmd_save.bats 124/124 PASS+関連6ファイル184/184 PASS | `docs/research/cmd_3801_cmd_save_speedup.md` |
+| cmd_save project cache | 82 checks内で不変のproject fieldをinvocation単位のscalar cacheへ統合し、5走の出力SHA・verdictを5/5不変のまま重複parseを除去 | `cmd_karo_hotfix_ready_defense_overhead_cmd_save82_202607191148`, commit `342f4cd90` |
+| hidden-infra ready adapter | defense overhead・retro events・bulletin failure・gate fireの4ログを共通候補へ正規化し、頻度×対処コストで優先順位付け、根因SHAでdedupして既存throughput connectorへexactly-once供給する | `scripts/throughput_growth_loop.sh`, `cmd_karo_hotfix_hidden_infra_bug_ready_lane_202607191231`, commit `ba8b533dd` |
+| Obsidian traversal ready lane | preflight・semantic search・causal backlinksの着地nodeから実在linkを1hop以上辿ったeventだけを記録し、traversal/発見/行動接続の3率を計測、0hopを優先度付きready候補へexactly-once昇格する | `scripts/throughput_scan.sh`, `cmd_karo_hotfix_obsidian_traversal_ready_lane_202607191235`, commit `53d996d41` |
 | GP-198/201 Session State | gate FAIL時の失敗履歴をtask再配備へ注入し、`cmd_save.sh` 側でもDiagnose MANDATORY+Session Stateを強制。/newや再配備を跨いでL3診断を保持 | `context/codd.md` §4, `context/cmd-chronicle.md` `cmd_karo_gp198`/`cmd_1939` |
 | GP-199 退化計測 | GP/改善cmdの報告に `before_metrics` / `after_metrics` / `regression` をWARNで強制し、速度改善が退化を隠さない形に変更 | `scripts/gates/gate_report_format.sh`, `context/cmd-chronicle.md` `cmd_1941` |
 | GP-202 成果物プレフィックス検査 | `files_modified` に `parent_cmd` プレフィックスが無い場合WARN。cmd_1948事故系の「別cmd成果物上書き」をゲートで検知 | `scripts/gates/gate_report_format.sh`, `tests/unit/test_report_template_gate_compat.bats` |
@@ -335,6 +338,8 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 | **Stop hook** | `{"decision":"block"}`の挙動差異 | **Claude Code**: メッセージ表示+ターン停止。**Codex**: reason文をプロンプトとして再実行=**無限ループ**。忍者done/completed時はblockせずidle flag+exit 0。quoting脆弱性検証→ [[cmd_1755_stop_hook]] (`docs/research/cmd_1755_stop_hook.md`) |
 | **launch_cmd** | `cli_profiles.yaml` | Codexは**絶対パス必須**(`/home/.../bin/codex`)。respawn-paneは.bashrc未読込→nvm PATHなし→`codex: command not found` |
 | **respawn方式** | `ninja_monitor.sh safe_send_clear()` | Codex再起動は`tmux respawn-pane -k`方式。Ctrl-C方式はcodex=PID 1終了→pane dead→relaunch届かない |
+| **clear/dead/CLI-dead共通復旧境界** | `scripts/lib/respawn_recovery.sh` | pane PID+`/proc/<pid>/stat` starttimeのgeneration変化、pane live、CLI banner、CTX0を共通ready条件にし、task identityを維持したままrecovery通知をexactly-once配送する。`cmd_karo_hotfix_respawn_resume_exactly_once_202607191154` / `26eb1742a` |
+| **monitor/deploy同一agent境界** | `scripts/ninja_monitor.sh` + `queue/locks/deploy_ninja_<agent>.lock` | AUTO-DONEとdeployを同一lockで直列化し、idle-cycle通知もsnapshot後に全agentのlive task YAMLを同lock下で再検証する。assigned/in_progressが1件でもあれば通知0、真の全idleだけ通知1。`cmd_karo_hotfix_monitor_deploy_lock_atomic_202607191207` / `842b982b1` |
 | **利用量モニタリング** | `usage_monitor.sh` + `usage_status.sh` | upstream ratelimit_check.sh(tmux capture方式)との比較→SQLite直接集計方式が安定。[[cmd_1756_ratelimit]] (`docs/research/cmd_1756_ratelimit.md`) |
 | **Codex idle時も respawn-pane -k 必須** | 設計意図(殿裁定2026-05-20) | `/new`はCodex CLI内部状態が「task in progress」だと拒否される。ninja_monitorがidle判定しても、CLI内部はsession activeのまま→`/new`非互換。respawn-pane -kはCLI内部状態に関係なくpaneプロセスを殺して再起動するため唯一確実なリセット手段。cmd_2904/2906で/new経路に変更→3忍者CTX滞留(51%/55%/43%)で実証。一見乱暴だが理由がある設計。198回/日ループの真因は発火条件(デバウンス/idle判定頻度)側であり、respawn手段を変えるべきではない。因果: [[cmd_2904_overfix]] -> [[codex_new_rejected]] -> [[respawn_is_correct_design]]。カタログ: `docs/research/gunshi_idle_infra_design_intent_catalog_20260520.md` |
 
@@ -827,7 +832,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1214 -->
+<!-- last_synced_lesson: L1217 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1755,6 +1760,9 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1212: 共有CI完了境界はlocal HEADではなくremote tracking refへ結ぶ（cmd_karo_hotfix_ci_readiness_remote_head_boundary_202607190832）
 - L1213: CI GREENはレビュー時刻境界にも束縛する（cmd_karo_hotfix_ci_readiness_run_freshness_202607190854）
 - L1214: hook variationでlinked worktreeを必ず敵対確認（cmd_karo_hotfix_ready_detector_fp_guard19_202607191141）
+- L1215: 二次snapshotは候補indexに限定（cmd_karo_hotfix_shogun_warning_fp_root_202607191231）
+- L1216: 掲示板投稿者と配送主体を分離する（cmd_karo_hotfix_bulletin_notify_auto_delivery_root_202607191231）
+- L1217: 因果originは実在link集合と照合する（cmd_karo_hotfix_obsidian_traversal_ready_lane_202607191235）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
