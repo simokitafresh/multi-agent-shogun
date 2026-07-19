@@ -124,15 +124,15 @@ emit_update_cmd_templates() {
             fi
             cat <<EOF
 - id: cmd_ctx_${slug}_${cmd_date}
-  purpose: "${rel_path} の鮮度ALERTを解消し、一次データで内容とlast_updatedを更新する"
+  purpose: "${rel_path} の鮮度ALERTを解消し、一次データで内容とsource_commit境界を更新する"
   project: ${project_id}
   acceptance_criteria:
     - "AC1: ${rel_path} を一次データと照合し、古い記述を更新または不要なら根拠付きで維持判断する"
-    - "AC2: ${rel_path} 先頭の last_updated を ${today} cmd_XXXX 形式へ更新する"
-    - "AC3: bash scripts/gates/gate_context_freshness.sh 実行時に ${rel_path} がALERT対象から外れる"
+    - "AC2: scripts/context_source_commit_set.shで${rel_path}のsource_commitを検証済み最新hashへ更新し、reason/evidenceを記録する。last_updatedだけの更新は禁止"
+    - "AC3: bash scripts/gates/gate_context_freshness.sh をcache無効で再実行し、${rel_path} の未解消source commit=0件かつALERT=0件を確認する"
   not_in_scope: "対象ファイル以外の知識整理・設計変更"
   unresolved_decisions: "none"
-  command: "${rel_path} の知識鮮度更新。現状: ${last_note}"
+  command: "${rel_path} の知識鮮度とsource_commit境界を更新。現状: ${last_note}。境界未更新なら完了せずBLOCKする"
 EOF
         done
 }
