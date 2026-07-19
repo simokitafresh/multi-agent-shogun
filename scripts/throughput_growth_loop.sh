@@ -37,6 +37,13 @@ tmpdir="${ledger%/*}/events/$safe_event_id"
 mkdir -p "$tmpdir"
 state="$tmpdir/state.json"
 append() { printf '%s\n' "$1" >>"$ledger"; }
+maybe_failpoint() {
+  local phase=$1
+  if [[ "${THROUGHPUT_TEST_FAILPOINT:-}" == "$phase" ]]; then
+    printf 'FAILPOINT phase=%s\n' "$phase" >&2
+    exit "${THROUGHPUT_TEST_FAILPOINT_RC:-97}"
+  fi
+}
 write_state() {
   local phase=$1 status=$2 candidate=${3:-} task=${4:-} tmp="$state.tmp.$$"
   python3 - "$tmp" "$event_id" "$status" "$phase" "${generation:-1}" "$candidate" "$task" <<'PY'
@@ -54,6 +61,7 @@ run_phase() {
   bash "$command" "$input" "$output.tmp"
   mv -f "$output.tmp" "$output"
   write_state "$name:after" RUNNING "$candidate" "$task"
+  [[ "$name" == deploy ]] || maybe_failpoint "$name"
 }
 generation=1
 if [[ -f "$state" ]]; then
@@ -63,7 +71,12 @@ d=json.load(open(sys.argv[1])); print(d.get("state",""),d.get("lease_generation"
 PY
 )
   [[ "$prior" != COMPLETE && "$prior" != BLOCK ]] || { echo "BLOCK duplicate"; exit 0; }
-  generation=$((generation + 1))
+  # A normal restart retains the lease generation. Only an explicit stale
+  # lease marker may advance ownership; process death alone is not staleness.
+  if [[ -f "$tmpdir/lease.stale" ]]; then
+    generation=$((generation + 1))
+    rm -f "$tmpdir/lease.stale"
+  fi
 fi
 current_event_id=$event_id
 current_event=$event
@@ -107,11 +120,14 @@ d=json.load(open(sys.argv[1])); print(d.get("task_id") or "")
 PY
 )
   write_state deploy:bound RUNNING "$candidate" "$task_id"
+  maybe_failpoint deploy
   if [[ ! -s "$wave/checkpoint.json" ]] && ! "$checkpoint" "$wave/deployed.json" "$wave/checkpoint.json"; then
     write_state stop:checkpoint_fail BLOCK "$candidate" "$task_id"
     append '{"event_id":"'"$current_event_id"'","state":"BLOCK","reason":"checkpoint_fail"}'
     echo "BLOCK checkpoint_fail"; exit 0
   fi
+  write_state checkpoint:after RUNNING "$candidate" "$task_id"
+  maybe_failpoint checkpoint
   run_phase record "$wave/checkpoint.json" "$wave/recorded.json" "$record" "$candidate" "$task_id"
   run_phase rerank "$wave/recorded.json" "$wave/reranked.json" "$rerank" "$candidate" "$task_id"
   append '{"event_id":"'"$current_event_id"'","state":"COMPLETE","reason":"checkpoint_pass","task_id":"'"$task_id"'","lease_generation":'"$generation"'}'

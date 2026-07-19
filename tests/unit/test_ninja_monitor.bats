@@ -102,3 +102,22 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"rc=0 calls=0 grace=1"* ]]
 }
+
+@test "throughput ready event is claimed exactly once and resumes the same task" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"
+        THROUGHPUT_READY_DIR="$SCRIPT_DIR/ready"
+        LOG="$SCRIPT_DIR/monitor.log"
+        mkdir -p "$SCRIPT_DIR/scripts" "$THROUGHPUT_READY_DIR"
+        printf "#!/usr/bin/env bash\nprintf \"%%s\\n\" \"\$*\" >>\"%s\"\n" "$SCRIPT_DIR/calls" >"$SCRIPT_DIR/scripts/throughput_growth_loop.sh"
+        printf "%s\n" "--event-id" "real-task-3" >"$THROUGHPUT_READY_DIR/wave3.args"
+        check_throughput_ready_events
+        check_throughput_ready_events
+        test -f "$THROUGHPUT_READY_DIR/wave3.done"
+        test "$(wc -l <"$SCRIPT_DIR/calls")" -eq 1
+        grep -Fx -- "--event-id real-task-3" "$SCRIPT_DIR/calls"
+    '
+    [ "$status" -eq 0 ]
+}
