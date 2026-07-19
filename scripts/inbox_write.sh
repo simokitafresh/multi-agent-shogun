@@ -2531,10 +2531,10 @@ while [ $attempt -lt $max_attempts ]; do
                     break
                 fi
             done
-            # Deep retro remains append-only; deliver the Lord's exact prompt as
-            # a separate, detached message. retro_prompt cannot re-enter here.
+            # Queue the exact prompt. ninja_monitor delivers only after proving
+            # pane idle while holding the same per-ninja lock as deployment.
             source "$SCRIPT_DIR/scripts/lib/retro_verbatim_prompt.sh"
-            retro_verbatim_prompt_async "$SCRIPT_DIR" "$FROM" "report_received:$MSG_ID" inbox_write
+            retro_verbatim_prompt_enqueue "$SCRIPT_DIR" "$FROM" "report_received:$MSG_ID" inbox_write
         fi
 
         # Failure/BLOCK terminals enqueue only. Delivery waits for the monitor
