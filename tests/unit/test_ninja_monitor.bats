@@ -231,3 +231,22 @@ SH
     '
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: stale monitorからinbox_watcherへ継承したdeploy lock FDをstartupで閉じ、inotify/sleep子孫へ伝播させない不変量を守る。
+@test "inbox watcher startup closes inherited deploy lock before spawning descendants" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        root="$BATS_TEST_TMPDIR/root"; mkdir -p "$root/queue/locks"
+        lock="$root/queue/locks/deploy_ninja_hayate.lock"
+        exec {fd}>"$lock"; flock -n "$fd"
+        exec env PROJECT_ROOT="$PROJECT_ROOT" LOCK_PATH="$lock" INBOX_WATCHER_LIB_ONLY=1 bash -c '\''
+            set -- hayate dummy-pane
+            source "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+            ! find "/proc/$$/fd" -type l -lname "*/deploy_ninja_*.lock" -print -quit | grep -q .
+            sleep 0.2 & child=$!
+            ! find "/proc/$child/fd" -type l -lname "*/deploy_ninja_*.lock" -print -quit | grep -q .
+            flock -n "$LOCK_PATH" -c true
+            wait "$child"
+        '\''
+    '
+    [ "$status" -eq 0 ]
+}

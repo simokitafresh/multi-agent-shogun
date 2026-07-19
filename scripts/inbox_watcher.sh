@@ -23,6 +23,23 @@ set -euo pipefail
 _iw_self="${BASH_SOURCE[0]}"; [[ "$_iw_self" != /* ]] && _iw_self="$PWD/$_iw_self"
 SCRIPT_DIR="${_iw_self%/scripts/inbox_watcher.sh}"
 
+# stale monitorが保持中に生成したwatcherはdeploy lock FDを継承し得る。
+# source/業務childを起動する前に無条件で閉じ、子孫へ伝播させない。
+close_inherited_deploy_lock_fds() {
+    local fd_path fd_target inherited_fd
+    for fd_path in "/proc/$$/fd/"*; do
+        [ -e "$fd_path" ] || continue
+        fd_target="$(readlink "$fd_path" 2>/dev/null || true)"
+        case "$fd_target" in
+            */queue/locks/deploy_ninja_*.lock)
+                inherited_fd="${fd_path##*/}"
+                exec {inherited_fd}>&-
+                ;;
+        esac
+    done
+}
+close_inherited_deploy_lock_fds
+
 # cli_lookup.sh を source（CLI種別をsettings.yaml+cli_profiles.yamlから動的取得）
 source "$SCRIPT_DIR/scripts/lib/cli_lookup.sh"
 [ ! -f "$SCRIPT_DIR/scripts/lib/model_family.sh" ] || source "$SCRIPT_DIR/scripts/lib/model_family.sh"
