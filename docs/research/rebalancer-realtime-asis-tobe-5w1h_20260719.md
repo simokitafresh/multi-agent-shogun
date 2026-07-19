@@ -62,13 +62,21 @@
 | IEXのquote活発性 | 18/18購読可でも全銘柄で活発なquoteは保証されない。symbol別age/coverageとEOD乖離を監視。healthzはstream auth/subscription/freshness/degradedを分離 |
 | SSE配信契約(家老レビューP2) | per-client bounded queue・heartbeat・slow consumer切離し・snapshot+generation+sequence・Last-Event-ID再開・restart時snapshot強制・CORS/接続上限を契約化。EventSourceのexactly-onceを仮定しない |
 
-### §4.1 EODHD secret rotation runbook
+### §4.1 EODHD secret rotation runbook（単一token制・殿指摘2026-07-19 20:38で改訂）
 
-1. EODHD側で新tokenを発行する。旧tokenはこの時点では失効させず、値をログ・設計書・Gitへ出力しない。
-2. Stock Database側のsecret正本とRenderの`dm-rebalancer-backend` secret `EODHD_API_TOKEN`を新tokenへ更新する。rebalancer実行時に他PJのsecretファイルを参照してはならない。
-3. backendを再deployし、secret値やtoken付きURLを出力せず、health PASS・追跡銘柄EOD取得18/18・既存テストFAIL0/SKIP0を確認する。
-4. 1件でもFAILなら旧tokenへ戻して再deployし、health PASSと18/18復旧を確認する。旧token失効前なので即時rollback可能とする。
-5. 両PJの正常確認後に旧tokenを失効し、再度18/18を実測する。最終チェックは「他PJ runtime参照0件・secretログ0件・18/18・FAIL0・SKIP0」の全条件が真であること。
+**前提制約(殿確認)**: EODHDのAPI tokenは**1アカウント1つのみ**。再発行(regenerate)すると旧tokenは即失効し、新旧並行期間は存在しない。よって「新token発行→検証→旧失効」のgraceful rotationは**不可能**。
+
+**方針: rotationは漏洩時の緊急手段のみ。日常運用ではrotationしない。第一防御は漏洩させないこと。**
+- 漏洩防御(実装済み・恒久): tokenのログ/エラー/URL露出0件をP1a契約テストで固定(EODHDRequestError sanitize、cmd_4088 fix R1)。これが本線の防御
+- 消費PJが増えるほど漏洩面が広がるため、token利用箇所は各PJのRender secret(独立配備)に限定し、コード・設計書・Gitへの記載は永久禁止
+
+**緊急rotation手順(漏洩検知時のみ)**:
+1. 影響同時性を受容する: regenerate実行の瞬間から全消費者(database本体・databaseのdaily cron・rebalancer backend)が401になる。EODは日次データのため、cron実行時刻(JST 08:00/17:00)を避けた時間帯に実施すれば実害は最小
+2. EODHD管理画面でregenerate→新token値を取得(非ログ・非記載)
+3. **両PJのRender secretを続けて更新**: database側`EODHD_API_KEY`等→rebalancer側`EODHD_API_TOKEN`→両backend再deploy
+4. 検証: database側daily-update系のhealth+rebalancer側EOD取得18/18+既存テストFAIL0/SKIP0
+5. rollbackは存在しない(旧token失効済み)ため、手順3-4を完了させることが唯一の復旧路。途中放置は片PJ 401継続=最悪状態
+6. 事後: 漏洩経路の根治(ログ・エラー・履歴)を確認してからクローズ。漏洩検知→クローズまでを1セッションで完結
 
 ## §5 工程表(Phase名参照。cmd番号は起票時にLS086照合表へ記録)
 
