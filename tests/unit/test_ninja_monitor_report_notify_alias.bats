@@ -29,6 +29,26 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+@test "monitor completion paths may source the shared contract twice" {
+  run bash -c '
+    # report_notification_completed source order in ninja_monitor.sh
+    source scripts/lib/report_completion_events.sh
+    first_types=$REPORT_COMPLETION_EVENT_TYPES
+    first_regex=$(report_completion_event_types_regex)
+    # scan_completed_reports source order in ninja_monitor.sh
+    source scripts/lib/report_completion_events.sh
+    [ "$REPORT_COMPLETION_EVENT_TYPES" = "$first_types" ]
+    [ "$(report_completion_event_types_regex)" = "$first_regex" ]
+    for t in report_received report_submitted task_done report_completed report_done report_ready; do
+      report_completion_event_type "$t" || exit 1
+    done
+    report_completion_event_type task_failed && exit 1
+    [ "$(wc -w <<<"$REPORT_COMPLETION_EVENT_TYPES")" -eq 6 ]
+  '
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
 @test "monitor durable evidence uses shared completion alias contract" {
   run python3 - <<'PY'
 from pathlib import Path
