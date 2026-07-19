@@ -122,6 +122,7 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: AUTO-DONEとdeployが同一agent lockで直列化され、旧parent/archive reportでtaskを書換えない不変量を守る。
 @test "AUTO-DONE deploy lock boundary is retryable and archive symlinks are inactive" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
