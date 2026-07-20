@@ -22,7 +22,7 @@ source "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh"
 # One monotonic-in-process clock and one terminal receipt make every commit
 # diagnosable without adding external telemetry I/O to this hot path.
 declare -A _PRECOMMIT_STEP_MS=() _PRECOMMIT_STEP_RC=()
-_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast instruction_sync codd_context_freshness semantic)
+_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax instruction_sync codd_context_freshness semantic)
 _PRECOMMIT_COMMAND_ID="${NINJA_COMMIT_COMMAND_ID:-${COMMAND_ID:-precommit-$$}}"
 _PRECOMMIT_STARTED_US="${EPOCHREALTIME/./}"
 _PRECOMMIT_TERMINAL_EMITTED=false
@@ -611,6 +611,26 @@ main() {
         echo "BLOCKED: yaml.dump/yaml.safe_dump detected in staged files (GP-136)" >&2
         echo "Data loss risk on operational YAML. Use yaml_field_set.sh instead." >&2
         echo "$_yaml_dump_violations" >&2
+        exit 1
+    fi
+    precommit_step_end 0
+
+    # shell_syntax: staged .sh must parse (bash -n on STAGED content).
+    # 2026-07-20: commit 6845c0041 shipped an if-less block into ninja_monitor.sh,
+    # killing the monitor for 47min. Syntax-broken shell must never reach the tree.
+    precommit_step_begin shell_syntax
+    _shell_syntax_fail=""
+    while IFS= read -r _staged_sh; do
+        [[ "$_staged_sh" == *.sh ]] || continue
+        staged_file_exists "$_staged_sh" || continue
+        if ! git show ":$_staged_sh" 2>/dev/null | bash -n 2>/dev/null; then
+            _shell_syntax_fail+="    $_staged_sh"$'\n'
+        fi
+    done < <(list_staged_files)
+    if [[ -n "$_shell_syntax_fail" ]]; then
+        precommit_step_end 1
+        echo "BLOCKED: bash -n failed on staged shell script(s):" >&2
+        printf '%s' "$_shell_syntax_fail" >&2
         exit 1
     fi
     precommit_step_end 0
