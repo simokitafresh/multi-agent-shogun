@@ -10317,9 +10317,9 @@ PY
 )" || rc=$?
     rc="${rc:-0}"
     if [ "$rc" -ne 0 ]; then
-        log "BLOCK(TEN_MIN_CONTRACT): ${result}"
-        echo "BLOCK: natural-boundary task contract failed: ${result}" >&2
-        return 2
+        # 殿裁定2026-07-20 17:22: 過剰対策削減。TEN_MIN_CONTRACT配備BLOCKを助言化。
+        # cmd_4105配備を2回ブロックした(家老RCA)。長時間cmdも配備を止めない。timeout_minutesで制御。revert復元可。
+        log "ADVISORY(TEN_MIN_CONTRACT): ${result}"
     fi
     log "ten_min_contract: ${result}"
     return 0
