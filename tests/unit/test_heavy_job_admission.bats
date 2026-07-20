@@ -519,6 +519,48 @@ print('ok')
     [ "$(python3 -c 'import json,glob; d=json.load(open(glob.glob("'"$fixture"'/receipts/*.json")[0])); print(d["observed_test_count"])')" -eq 1 ]
 }
 
+# test_necessity: terminal receiptを残してleaderが死に子孫だけがlock FDを保持しても、followerが10秒以内に停止せず同一結果へ収束する契約。
+@test "run_tests single-flight recovers terminal receipt from dead owner with orphan lock holder" {
+    local fixture="$TMP/singleflight-orphan"
+    mkdir -p "$fixture/tests/unit" "$fixture/scripts" "$fixture/receipts" "$fixture/sf"
+    cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/run_with_receipt.sh" "$ROOT/scripts/heavy_job_admission.sh" "$ROOT/scripts/test_timing_ledger_write.sh" "$ROOT/scripts/test_suite_timing_ledger_write.sh" "$fixture/scripts/"
+    printf '@test "pass" { true; }\n' > "$fixture/tests/unit/pass.bats"
+    git -C "$fixture" init -q
+    git -C "$fixture" config user.email test@example.com
+    git -C "$fixture" config user.name test
+    git -C "$fixture" add .
+    git -C "$fixture" commit -qm initial
+    local linked="$TMP/singleflight-orphan-linked"
+    git -C "$fixture" worktree add -q "$linked" HEAD
+    RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/seed-sf" BATS_MAX_TEST_JOBS=1 \
+        bash "$fixture/scripts/run_tests.sh" unit >/dev/null 2>&1
+    local receipt
+    receipt="$(find "$fixture/receipts" -name '*.json' -print -quit)"
+    (
+        exec 9>"$fixture/sf/unit.lock"
+        flock 9
+        sleep 20
+    ) &
+    local holder=$!
+    local holder_pgid
+    holder_pgid="$(ps -o pgid= -p "$holder" | tr -d ' ')"
+    printf '%s\n99999999\norphan-generation\n%s\n' "$receipt" "$holder_pgid" > "$fixture/sf/unit.state"
+    local started=$SECONDS
+    run timeout 12 env RUN_TESTS_RECEIPT_DIR="$fixture/receipts-follow" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 RUN_TESTS_SINGLEFLIGHT_STALE_SECONDS=2 BATS_MAX_TEST_JOBS=1 \
+        REPO_ROOT="$linked" bash "$linked/scripts/run_tests.sh" unit
+    local elapsed=$((SECONDS - started))
+    kill "$holder" 2>/dev/null || true
+    wait "$holder" 2>/dev/null || true
+    [ "$status" -eq 0 ]
+    [ "$elapsed" -le 10 ]
+    [[ "$output" == *"SINGLE_FLIGHT_STALE_OWNER"* ]]
+    [[ "$output" == *"owner_pid=99999999"* ]]
+    [[ "$output" == *"generation=orphan-generation"* ]]
+    [[ "$output" =~ lock_holders=[1-9][0-9]* ]]
+    [[ "$output" == *"followers=1"* ]]
+    [[ "$output" == *"stale_owner=1"* ]]
+}
+
 @test "already admitted run_tests skips single-flight lock to prevent lock inversion" {
     run env SHOGUN_HEAVY_JOB_LOCK_HELD=1 RUN_TESTS_ACTIVE=1 bash "$ROOT/scripts/run_tests.sh" unit
     [ "$status" -ne 0 ]

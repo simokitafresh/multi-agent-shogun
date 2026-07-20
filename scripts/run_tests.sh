@@ -671,13 +671,40 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             _sf_lock="$_sf_dir/${_mode}.lock"
             _sf_state="$_sf_dir/${_mode}.state"
             _sf_heartbeat="${RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS:-5}"
+            _sf_stale_timeout="${RUN_TESTS_SINGLEFLIGHT_STALE_SECONDS:-10}"
             [[ "$_sf_heartbeat" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid single-flight heartbeat interval" >&2; exit 2; }
+            [[ "$_sf_stale_timeout" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid single-flight stale timeout" >&2; exit 2; }
             exec {_sf_fd}>"$_sf_lock"
             if ! flock -n "$_sf_fd"; then
                 printf 'SINGLE_FLIGHT_FOLLOWER mode=%s waiting_for_leader=1\n' "$_mode" >&2
+                _sf_wait_started=$SECONDS
                 while ! flock -w "$_sf_heartbeat" "$_sf_fd"; do
                     printf 'SINGLE_FLIGHT_HEARTBEAT mode=%s waited_sec=%s\n' "$_mode" "$(( ${_sf_waited:-0} + _sf_heartbeat ))" >&2
                     _sf_waited=$(( ${_sf_waited:-0} + _sf_heartbeat ))
+                    if (( SECONDS - _sf_wait_started >= _sf_stale_timeout )); then
+                        _receipt="$(sed -n '1p' "$_sf_state" 2>/dev/null || true)"
+                        _sf_owner="$(sed -n '2p' "$_sf_state" 2>/dev/null || true)"
+                        _sf_generation="$(sed -n '3p' "$_sf_state" 2>/dev/null || true)"
+                        _sf_owner_pgid="$(sed -n '4p' "$_sf_state" 2>/dev/null || true)"
+                        [[ "$_sf_owner" =~ ^[1-9][0-9]*$ ]] \
+                            || { echo "BLOCK: single-flight stale owner metadata invalid" >&2; exit 2; }
+                        if kill -0 "$_sf_owner" 2>/dev/null; then
+                            continue
+                        fi
+                        bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null \
+                            || { echo "BLOCK: single-flight stale owner receipt invalid" >&2; exit 2; }
+                        _sf_holders="$(fuser "$_sf_lock" 2>/dev/null | awk '{print NF}' || true)"
+                        _sf_holders="${_sf_holders:-0}"
+                        _sf_descendants="$(ps -e -o pgid=,pid= 2>/dev/null | awk -v pgid="$_sf_owner_pgid" -v owner="$_sf_owner" '$1 == pgid && $2 != owner { n++ } END { print n+0 }')"
+                        printf 'SINGLE_FLIGHT_STALE_OWNER mode=%s owner_pid=%s generation=%s descendants=%s lock_holders=%s followers=1 waited_sec=%s action=join_terminal_receipt\n' \
+                            "$_mode" "$_sf_owner" "${_sf_generation:-unknown}" "$_sf_descendants" "$_sf_holders" "$(( SECONDS - _sf_wait_started ))" >&2
+                        printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s stale_owner=1\n' "$_mode" "$_receipt" >&2
+                        python3 - "$_receipt" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1])); print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} joined=1 stale_owner=1".format(sys.argv[1],d["rc"],d["observed_test_count"],d["declared_test_count"],d["skip_count"],d["output_sha256"],d["duration_ms"]))
+PY
+                        exit "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$_receipt")"
+                    fi
                 done
                 [ -s "$_sf_state" ] || { echo "BLOCK: single-flight leader state missing" >&2; exit 2; }
                 _receipt="$(sed -n '1p' "$_sf_state")"
@@ -695,7 +722,9 @@ PY
         if [ "$_singleflight" = 1 ]; then
             _snapshot="$_sf_dir/${_mode}.$$.snapshot"
             snapshot_test_tree "$_mode" "$_snapshot"
-            printf '%s\n' "$_receipt" > "$_sf_state"
+            _sf_generation="$(date -u +%s%N)-$$"
+            _sf_owner_pgid="$(ps -o pgid= -p $$ | tr -d ' ')"
+            printf '%s\n%s\n%s\n%s\n' "$_receipt" "$$" "$_sf_generation" "$_sf_owner_pgid" > "$_sf_state"
             export RUN_TESTS_SNAPSHOT_MANIFEST="$_snapshot"
             printf 'SINGLE_FLIGHT_LEADER mode=%s snapshot_count=%s\n' "$_mode" "$(wc -l < "$_snapshot")" >&2
         fi
