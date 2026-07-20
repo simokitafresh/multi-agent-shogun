@@ -5167,7 +5167,9 @@ inject_memory_db_context() {
         fi
         combined_sql="${combined_sql}SELECT * FROM (SELECT ts || ' | ' || substr(summary,1,100) FROM events WHERE summary LIKE '%${kw_esc}%' AND event_type IN ('conversation','knowledge','ruling') ORDER BY ts DESC LIMIT 2)"
     done
-    # FTS is an existence guard only.  A miss proves the current LIKE queries
+    # FTS is an existence guard only.  Each LIKE branch remains subquery-bound
+    # so its historical per-keyword ORDER BY/LIMIT 2 contract stays valid.
+    # A miss proves the current LIKE queries
     # would return no eligible rows; a hit delegates to the byte-identical
     # LIKE SQL below so ranking, limits, and output remain unchanged.
     if [ "$fts_safe" = true ] && [ -n "$fts_query" ]; then

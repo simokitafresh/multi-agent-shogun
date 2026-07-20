@@ -667,6 +667,7 @@ YAML
         ! grep -q '^  memory_db_context:' "$tmpdir/queue/tasks/task.yaml"
       else
         [ "$(wc -l < "$tmpdir/query.log")" -eq 2 ]
+        grep -q 'SELECT \* FROM (SELECT' "$tmpdir/query.log"
         grep -q "stable current LIKE bytes" "$tmpdir/queue/tasks/task.yaml"
       fi
     done
