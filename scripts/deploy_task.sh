@@ -140,8 +140,36 @@ DEPLOY_TASK_DEPLOY_COMPLETED=0
 mkdir -p "$SCRIPT_DIR/logs"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DEPLOY] $1" >> "$LOG"
+    local row
+    row="[$(date '+%Y-%m-%d %H:%M:%S')] [DEPLOY] $1"
+    if [ -n "${DEPLOY_TASK_LOG_BUFFER_FILE:-}" ]; then
+        printf '%s\n' "$row" >> "$DEPLOY_TASK_LOG_BUFFER_FILE"
+    else
+        printf '%s\n' "$row" >> "$LOG"
+    fi
     echo "[DEPLOY] $1" >&2
+}
+
+# Mutation injectors emit dozens of diagnostic rows.  Opening the shared 9P
+# log for every row put logging on the deploy critical path even though stderr
+# already provides live visibility.  Buffer only this bounded phase on Linux
+# tmpfs, then publish all rows under one short lock; no checkpoint is dropped.
+deploy_task_log_buffer_begin() {
+    [ -z "${DEPLOY_TASK_LOG_BUFFER_FILE:-}" ] || return 0
+    DEPLOY_TASK_LOG_BUFFER_FILE=$(mktemp /tmp/deploy-task-log.XXXXXX) || return 1
+}
+
+deploy_task_log_buffer_flush() {
+    local buffer_file="${DEPLOY_TASK_LOG_BUFFER_FILE:-}"
+    [ -n "$buffer_file" ] || return 0
+    DEPLOY_TASK_LOG_BUFFER_FILE=""
+    if [ -s "$buffer_file" ]; then
+        (
+            flock -x 9
+            cat "$buffer_file" >> "$LOG"
+        ) 9>"${LOG}.lock"
+    fi
+    rm -f "$buffer_file"
 }
 
 # One immutable read snapshot is shared by every deploy in the same wave.  The
@@ -562,6 +590,8 @@ deploy_task_yaml_transaction_commit() {
 deploy_task_exit_cleanup() {
     local exit_status=$?
     local finished_us wall_ms residual_ms residual_pct finalize_ms
+    # Preserve buffered mutation diagnostics on signals and unexpected exits.
+    deploy_task_log_buffer_flush || true
     if [ -n "${DEPLOY_TASK_STARTED_US:-}" ]; then
         deploy_task_wall_phase_checkpoint "${DEPLOY_TASK_PHASE:-unknown}"
         finished_us="${EPOCHREALTIME/./}"
@@ -11792,12 +11822,16 @@ except Exception:
 
     DEPLOY_TASK_PHASE=task_mutations
     deploy_task_wall_phase_checkpoint preflight
-    deploy_task_apply_task_mutations "$NINJA_NAME" || {
+    deploy_task_log_buffer_begin || log "WARN: mutation log buffer unavailable; using direct log writes"
+    deploy_task_apply_task_mutations "$NINJA_NAME"
+    local mutation_rc=$?
+    deploy_task_log_buffer_flush
+    if [ "$mutation_rc" -ne 0 ]; then
         DEPLOY_TASK_EXIT_NUDGE_ARMED=0
         DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
-        return 1
-    }
+        return "$mutation_rc"
+    fi
     # Publication identity (active status + deployed_at) must become visible
     # under the same per-ninja/deploy lock.  Previously deployed_at was written
     # after lock release and inbox delivery, allowing revision/respawn to see an
