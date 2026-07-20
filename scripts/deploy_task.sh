@@ -140,36 +140,8 @@ DEPLOY_TASK_DEPLOY_COMPLETED=0
 mkdir -p "$SCRIPT_DIR/logs"
 
 log() {
-    local row
-    row="[$(date '+%Y-%m-%d %H:%M:%S')] [DEPLOY] $1"
-    if [ -n "${DEPLOY_TASK_LOG_BUFFER_FILE:-}" ]; then
-        printf '%s\n' "$row" >> "$DEPLOY_TASK_LOG_BUFFER_FILE"
-    else
-        printf '%s\n' "$row" >> "$LOG"
-    fi
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DEPLOY] $1" >> "$LOG"
     echo "[DEPLOY] $1" >&2
-}
-
-# Mutation injectors emit dozens of diagnostic rows.  Opening the shared 9P
-# log for every row put logging on the deploy critical path even though stderr
-# already provides live visibility.  Buffer only this bounded phase on Linux
-# tmpfs, then publish all rows under one short lock; no checkpoint is dropped.
-deploy_task_log_buffer_begin() {
-    [ -z "${DEPLOY_TASK_LOG_BUFFER_FILE:-}" ] || return 0
-    DEPLOY_TASK_LOG_BUFFER_FILE=$(mktemp /tmp/deploy-task-log.XXXXXX) || return 1
-}
-
-deploy_task_log_buffer_flush() {
-    local buffer_file="${DEPLOY_TASK_LOG_BUFFER_FILE:-}"
-    [ -n "$buffer_file" ] || return 0
-    DEPLOY_TASK_LOG_BUFFER_FILE=""
-    if [ -s "$buffer_file" ]; then
-        (
-            flock -x 9
-            cat "$buffer_file" >> "$LOG"
-        ) 9>"${LOG}.lock"
-    fi
-    rm -f "$buffer_file"
 }
 
 # One immutable read snapshot is shared by every deploy in the same wave.  The
@@ -180,8 +152,7 @@ deploy_task_wave_cache() {
     local namespace="$1" target_key="$2" source_list="$3"
     shift 3
     local cache_root="${DEPLOY_TASK_WAVE_CACHE_DIR:-/tmp/deploy_task_wave_cache}"
-    local source_fp key cache_file claim_dir tmp_file source
-    local claim_timeout claim_deadline claim_remaining produced=0
+    local source_fp key cache_file lock_file tmp_file source
     mkdir -p "$cache_root"
     source_fp="$({
         while IFS= read -r source; do
@@ -200,39 +171,25 @@ deploy_task_wave_cache() {
     } | sha256sum | cut -d' ' -f1)"
     key="$(printf '%s\0%s\0%s' "$namespace" "$source_fp" "$target_key" | sha256sum | cut -d' ' -f1)"
     cache_file="$cache_root/${namespace}_${key}.snapshot"
-    claim_dir="$cache_file.claim"
-    claim_timeout="${DEPLOY_TASK_WAVE_CACHE_LOCK_TIMEOUT:-30}"
-    case "$claim_timeout" in
-        ''|*[!0-9]*) claim_timeout=30 ;;
-    esac
-    claim_deadline=$((SECONDS + claim_timeout))
-    while [ ! -f "$cache_file" ]; do
-        # mkdir is the atomic claim.  The elected producer performs the heavy
-        # read outside any flock; followers only wait for the atomic publish.
-        if mkdir "$claim_dir" 2>/dev/null; then
+    lock_file="$cache_file.lock"
+    if [ ! -f "$cache_file" ]; then
+        exec {wave_cache_fd}>"$lock_file"
+        flock -w "${DEPLOY_TASK_WAVE_CACHE_LOCK_TIMEOUT:-30}" "$wave_cache_fd" || return 1
+        if [ ! -f "$cache_file" ]; then
             tmp_file=$(mktemp "$cache_root/.${namespace}.${key}.XXXXXX")
             if "$@" > "$tmp_file"; then
                 mv "$tmp_file" "$cache_file"
-                produced=1
                 log "wave_cache: miss namespace=${namespace} source_fp=${source_fp} target_key=${target_key}"
             else
                 rm -f "$tmp_file"
-                rmdir "$claim_dir" 2>/dev/null || true
+                flock -u "$wave_cache_fd"
+                eval "exec ${wave_cache_fd}>&-"
                 return 1
             fi
-            rmdir "$claim_dir" 2>/dev/null || true
-            break
         fi
-        [ -f "$cache_file" ] && break
-        claim_remaining=$((claim_deadline - SECONDS))
-        [ "$claim_remaining" -gt 0 ] || return 1
-        if command -v inotifywait >/dev/null 2>&1; then
-            inotifywait -q -t "$claim_remaining" -e moved_to "$cache_root" >/dev/null 2>&1 || return 1
-        else
-            sleep 0.01
-        fi
-    done
-    if [ "$produced" -eq 0 ]; then
+        flock -u "$wave_cache_fd"
+        eval "exec ${wave_cache_fd}>&-"
+    else
         log "wave_cache: hit namespace=${namespace} source_fp=${source_fp} target_key=${target_key}"
     fi
     cat "$cache_file"
@@ -605,8 +562,6 @@ deploy_task_yaml_transaction_commit() {
 deploy_task_exit_cleanup() {
     local exit_status=$?
     local finished_us wall_ms residual_ms residual_pct finalize_ms
-    # Preserve buffered mutation diagnostics on signals and unexpected exits.
-    deploy_task_log_buffer_flush || true
     if [ -n "${DEPLOY_TASK_STARTED_US:-}" ]; then
         deploy_task_wall_phase_checkpoint "${DEPLOY_TASK_PHASE:-unknown}"
         finished_us="${EPOCHREALTIME/./}"
@@ -11837,16 +11792,12 @@ except Exception:
 
     DEPLOY_TASK_PHASE=task_mutations
     deploy_task_wall_phase_checkpoint preflight
-    deploy_task_log_buffer_begin || log "WARN: mutation log buffer unavailable; using direct log writes"
-    deploy_task_apply_task_mutations "$NINJA_NAME"
-    local mutation_rc=$?
-    deploy_task_log_buffer_flush
-    if [ "$mutation_rc" -ne 0 ]; then
+    deploy_task_apply_task_mutations "$NINJA_NAME" || {
         DEPLOY_TASK_EXIT_NUDGE_ARMED=0
         DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
-        return "$mutation_rc"
-    fi
+        return 1
+    }
     # Publication identity (active status + deployed_at) must become visible
     # under the same per-ninja/deploy lock.  Previously deployed_at was written
     # after lock release and inbox delivery, allowing revision/respawn to see an
