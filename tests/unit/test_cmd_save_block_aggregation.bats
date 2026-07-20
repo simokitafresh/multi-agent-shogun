@@ -116,47 +116,52 @@ conn.commit()
 PY
 }
 
-@test "AC2: 1回の実行で複数BLOCK理由を一括表示する" {
+@test "AC2: q11未記入はINFO助言のみでcmd保存を継続する" {
+    create_memory_db_fixture
     cat > "$TEST_QUEUE" <<'YAML'
 commands:
-  cmd_multi_block:
-    id: cmd_multi_block
-    title: "fix — cmd_save集約テスト"
+  cmd_pass:
+    id: cmd_pass
+    title: "verify — cmd_save助言継続テスト"
+    purpose: "q11未記入時も助言を表示してcmd保存を継続する"
     project: infra
-    command: "複数BLOCK理由を1回で露出させる"
+    depends_on: none
+    origin: "[[cmd_karo_test_decontam_cmd_save_20260720]] -> [[表示型BLOCK削除]] -> [[助言継続契約]]"
+    command: "q11未記入時の助言継続を検証する"
     status: pending
     acceptance_criteria:
       - id: AC1
-        description: "集約表示を確認"
+        description: "q11未記入の助言表示を確認"
       - id: AC2
-        description: "追加BLOCKを混在させる"
+        description: "cmd保存が継続することを確認"
       - id: AC3
-        description: "assumptionsも検証"
+        description: "保存確認OKを確認"
     quality_gate:
-      q1_firefighting: "yes"
+      q1_firefighting: "no"
       q2_learning: "奪わない"
       q3_next_quality: "上がる"
       q4_depth: "medium"
-      q5_verified_source: "code_reading"
-      q8_why_what: "WHY: 「集約表示を壊すな」 → WHAT: 意図的にBLOCKを4種類混在させる → WHEN: cmd_saveのBLOCK集約回帰を検証する時 → WHERE: tests/unit/test_cmd_save_block_aggregation.bats → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: 複数BLOCK理由を1回の出力で検証する。複利: 正の複利"
+      q5_verified_source: "tests/unit/test_cmd_save_block_aggregation.bats isolated_test + scripts/cmd_save.sh structure_verified"
+      q6_not_hiding: "no — q11助言を維持し、起票を止める表示型BLOCKだけを固定しない"
+      q7_definition_verified: "yes — 継続=exit 0かつ保存確認OKを本testで固定する"
+      q8_why_what: "WHY: q11未記入を理由にcmd起票を止めない → WHAT: INFO助言と保存継続を確認する → WHEN: cmd_saveのq11検証時 → WHERE: tests/unit/test_cmd_save_block_aggregation.bats → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: exit 0と保存確認OKを固定する。複利: 可逆な起票を止めず試行回数を増やす"
+      q10_knowledge_boundary: "空間内。scripts/cmd_save.shと本contract testのみ"
+      q12_lord_30min_cost: "no — q11助言で起票を止めず待機時間を増やさない"
       q_ambiguity: "none"
     assumptions:
-      - source: "nonexistent/path.sh code_reading"
+      - source: "tests/unit/test_cmd_save_block_aggregation.bats"
         trust: "verified"
-        detail: "存在しないパス"
+        detail: "isolated testで助言継続を検証する"
 YAML
 
-    run_cmd_save
+    run_cmd_save_pass
     echo "$output" >&2
 
-    [ "$status" -eq 1 ]
-    [[ "$(printf '%s\n' "$output" | grep -m1 '^止まるな、修正して再実行せよ$')" == "止まるな、修正して再実行せよ" ]]
-    [[ "$(printf '%s\n' "$output" | grep -c '^止まるな、修正して再実行せよ$')" -eq 1 ]]
-    [[ "$output" == *"BLOCK: 必須項目 1件 未記入。全て記入してからcmd_save.shを再実行せよ"* ]]
-    [[ "$output" == *"未記入: q11_not_already_done"* ]]
-    [[ "$output" == *"BLOCK: q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"* ]]
-    [[ "$output" == *"BLOCK: 消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ"* ]]
-    [[ "$output" == *"保存確認NG: cmd_multi_block"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INFO: quality_gate系フィールド未記入(助言のみ・起票継続): q11_not_already_done"* ]]
+    [[ "$output" != *"BLOCK: 必須項目"* ]]
+    [[ "$output" != *"止まるな、修正して再実行せよ"* ]]
+    [[ "$output" == *"保存確認OK: cmd_pass"* ]]
 }
 
 @test "AC1: PASS時はBLOCKナッジを表示しない" {
