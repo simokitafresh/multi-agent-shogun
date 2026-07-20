@@ -500,9 +500,9 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/clear,家老/clear(陣形図付き)|AUTOCOMPACT=90%
 - inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from> <action>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
-- cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)|**成長ループ**: BLOCK/WARN後にenvironment_change必須(構造化type/file/pattern+grep検証)。WARNもスルーしない
-- **成長ループ**|全ロール共通原則|`context/growth-loop.md`|殿「BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉」|将軍=environment_change強制、家老=WA記録時同構造、忍者=矛盾を作れない構造(GP-072c5)
-- **防御階層原則(Level1-6)**|Level5=事前コンテキスト提供、Level6=学習速度最大化。ゲート発火=未熟さの証拠|`context/growth-loop.md` §11
+- cmd_save.sh|将軍cmd保存前チェック(過剰対策削減済2026-07-20: 24.2秒→2.12秒)|WARNは助言のみで起票を止めない。environment_change強制/WARN→BLOCK昇格/origin必須/quality_gate必須/universal_shard契約は撤去済。残る構造検証(cmd_id/YAML)のみ
+- **成長ループ**(v2で反転2026-07-20)|全ロール共通原則|`context/growth-loop.md` v2|殿「起こしてはいけないミス=過剰対策。gate/hookに頼るな」|成長=表示型(人を止め作文を強要)を削り構造型(不可逆害防止)のみ残すこと。ミスは可逆に許容し下流で回収
+- **防御階層原則(旧Level1-6は再解釈)**|表示型BLOCKは邪魔者=撤去、構造型(不可逆害防止)のみ維持。ゲート発火は未熟さでなく過剰機構の証拠でありうる|`context/growth-loop.md` v2 §5
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - **CI RED忍者修正(殿裁定2026-07-16)**|家老がCI RED検知→idle忍者に即修正配備。**家老D0修正禁止・将軍cmd不要**|`gh run view <run_id> --log-failed`→`/karo-direct`で`task_type: ci_fix`+`ci_run_id`付きタスクを忍者へ配備→家老がレビュー/push/GREEN確認。`gate_karo_startup.sh`が配備証跡なしをALERT強制|理由: 実装を忍者へ一元化し、家老は診断・分解・検証に専念する
 - **CI RED中の他作業(殿裁定2026-05-03)**|GATE処理(commit/レビュー/CLEAR)は続行。pushのみ保留(GREEN復帰後一括push)。新cmd配備も続行|CI REDで全停止するな。修正は1名担当、残りは通常作業継続|→ `instructions/karo.md` §CI RED中の他作業
