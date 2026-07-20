@@ -5,8 +5,10 @@ RETRO_PANE_PROMPT='この作業で時間がかかった原因を分析し、利�
 RETRO_PANE_PROMPT_SHA256='b605951bd574d99027a6a1e496aabd5d4e1e67d6d8a4be1b88f4e6472595f84f'
 
 retro_pane_prompt_key() {
-    local target="$1" event_id="$2"
-    printf '%s\0%s' "$target" "$event_id" | sha256sum | cut -d' ' -f1
+    local target="$1" _event_id="$2"
+    # D0 2026-07-20: event_id依存→target+content単位で冪等化。
+    # 同一target+contentの重複配送を根絶(hanzo 2回delivered事故)
+    printf '%s\0%s' "$target" "$RETRO_PANE_PROMPT" | sha256sum | cut -d' ' -f1
 }
 
 retro_pane_prompt_resolve() {
@@ -60,7 +62,7 @@ retro_pane_prompt_deliver() {
     actual_sha=$(printf '%s' "$RETRO_PANE_PROMPT" | sha256sum | cut -d' ' -f1)
     if [ "$actual_sha" != "$expected_sha" ] ||
        ! "$tmux_bin" send-keys -t "$pane" -l -- "$RETRO_PANE_PROMPT" ||
-       ! "$tmux_bin" send-keys -t "$pane" Enter; then
+       ! { sleep 0.5; "$tmux_bin" send-keys -t "$pane" Enter; }; then
         rmdir "$claim" 2>/dev/null || true
         printf '%s\tfailed_send\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" >> "$ledger"
         return 1

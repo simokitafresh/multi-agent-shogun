@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: retro prompts must reach only an idle pane, preserve exact bytes, deduplicate the same event, and release failed claims for retry.
+# test_necessity: retro prompts must reach only an idle pane, preserve exact bytes, deduplicate identical target+content across events, and release failed claims for retry.
 
 setup() {
   ROOT="$BATS_TEST_TMPDIR/root"
@@ -19,16 +19,26 @@ setup() {
   source "$BATS_TEST_DIRNAME/../../scripts/lib/retro_pane_prompt.sh"
 }
 
-@test "same event sends once and independent event sends once" {
+@test "same target and content send once across independent events" {
   retro_pane_prompt_deliver "$ROOT" tobisaru event:a fixture
   retro_pane_prompt_deliver "$ROOT" tobisaru event:a fixture
   retro_pane_prompt_deliver "$ROOT" tobisaru event:b fixture
-  [ "$(grep -c $'\tdelivered\t' "$RETRO_PANE_LEDGER")" -eq 2 ]
-  [ "$(grep -c $'\tdeduplicated\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
-  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 2 ]
-  [ "$(grep -ao 'Enter' "$TMUX_CALLS" | wc -l)" -eq 2 ]
+  [ "$(grep -c $'\tdelivered\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  [ "$(grep -c $'\tdeduplicated\t' "$RETRO_PANE_LEDGER")" -eq 2 ]
+  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
+  [ "$(grep -ao 'Enter' "$TMUX_CALLS" | wc -l)" -eq 1 ]
   expected=$(printf '%s' "$RETRO_PANE_PROMPT" | sha256sum | cut -d' ' -f1)
-  [ "$(grep -c "$expected" "$RETRO_PANE_LEDGER")" -eq 2 ]
+  [ "$(grep -c "$expected" "$RETRO_PANE_LEDGER")" -eq 1 ]
+}
+
+@test "different target or content still delivers once each" {
+  retro_pane_prompt_deliver "$ROOT" tobisaru event:a fixture
+  retro_pane_prompt_deliver "$ROOT" kotaro event:b fixture
+  RETRO_PANE_PROMPT='different retrospective content'
+  RETRO_PANE_PROMPT_SHA256=$(printf '%s' "$RETRO_PANE_PROMPT" | sha256sum | cut -d' ' -f1)
+  retro_pane_prompt_deliver "$ROOT" tobisaru event:c fixture
+  [ "$(grep -c $'\tdelivered\t' "$RETRO_PANE_LEDGER")" -eq 3 ]
+  [ "$(grep -ao 'Enter' "$TMUX_CALLS" | wc -l)" -eq 3 ]
 }
 
 @test "busy pane and failed send release claim for retry" {

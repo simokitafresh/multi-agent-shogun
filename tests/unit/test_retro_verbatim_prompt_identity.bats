@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: enqueue/deliver must share exact event identity so retries cannot multiply durable holds while independent events still deliver.
+# test_necessity: enqueue/deliver must share target+content identity so distinct event IDs cannot multiply durable holds or deliveries.
 
 setup() {
   FIXTURE_ROOT="$BATS_TEST_TMPDIR/root"
@@ -30,22 +30,22 @@ setup() {
   [ "$(grep -ao 'send-keys' "$FIXTURE_COUNT" | wc -l)" -eq 2 ]
 }
 
-@test "independent commands each enqueue and deliver" {
+@test "independent command events with identical content share enqueue and delivery" {
   retro_verbatim_prompt_enqueue "$FIXTURE_ROOT" karo 'gate_clear:cmd_a' cmd_complete
   retro_verbatim_prompt_enqueue "$FIXTURE_ROOT" karo 'gate_clear:cmd_b' cmd_complete
   retro_verbatim_prompt_deliver "$FIXTURE_ROOT" karo 'gate_clear:cmd_a' cmd_complete
   retro_verbatim_prompt_deliver "$FIXTURE_ROOT" karo 'gate_clear:cmd_b' cmd_complete
-  [ "$(find "$RETRO_VERBATIM_PENDING_DIR" -type f | wc -l)" -eq 2 ]
-  [ "$(grep -ao 'send-keys' "$FIXTURE_COUNT" | wc -l)" -eq 4 ]
+  [ "$(find "$RETRO_VERBATIM_PENDING_DIR" -type f | wc -l)" -eq 1 ]
+  [ "$(grep -ao 'send-keys' "$FIXTURE_COUNT" | wc -l)" -eq 2 ]
 }
 
-@test "events without command context remain independent" {
+@test "events without command context also deduplicate identical content" {
   retro_verbatim_prompt_enqueue "$FIXTURE_ROOT" karo report_received:msg_a inbox_write
   retro_verbatim_prompt_enqueue "$FIXTURE_ROOT" karo task_failed:msg_b inbox_write
   retro_verbatim_prompt_deliver "$FIXTURE_ROOT" karo report_received:msg_a inbox_write
   retro_verbatim_prompt_deliver "$FIXTURE_ROOT" karo task_failed:msg_b inbox_write
-  [ "$(find "$RETRO_VERBATIM_PENDING_DIR" -type f | wc -l)" -eq 2 ]
-  [ "$(grep -ao 'send-keys' "$FIXTURE_COUNT" | wc -l)" -eq 4 ]
+  [ "$(find "$RETRO_VERBATIM_PENDING_DIR" -type f | wc -l)" -eq 1 ]
+  [ "$(grep -ao 'send-keys' "$FIXTURE_COUNT" | wc -l)" -eq 2 ]
 }
 
 @test "failed delivery removes claim and retry succeeds" {
