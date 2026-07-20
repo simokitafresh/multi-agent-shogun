@@ -20,7 +20,7 @@ set -euo pipefail
 # cmd_2078: SCRIPT_DIR string ops — $(cd dirname pwd)サブシェル2個→bash文字列演算 (~10ms節約)
 _dt_self="${BASH_SOURCE[0]}"
 [[ "$_dt_self" != /* ]] && _dt_self="$PWD/$_dt_self"
-SCRIPT_DIR="${_dt_self%/scripts/deploy_task.sh}"
+SCRIPT_DIR="${DEPLOY_TASK_ROOT_OVERRIDE:-${_dt_self%/scripts/deploy_task.sh}}"
 # shellcheck source=scripts/lib/defense_overhead_writer.sh
 source "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh"
 unset _dt_self
@@ -385,6 +385,46 @@ deploy_task_release_ninja_lock() {
     DEPLOY_TASK_NINJA_LOCK_FILE=""
 }
 
+deploy_task_retro_event_answered() {
+    local event_id="$1"
+    local root="$SCRIPT_DIR"
+    [ -n "$event_id" ] || return 1
+    python3 - "$root" "$event_id" <<'PY'
+import json, re, sys
+from pathlib import Path
+
+root, event_id = sys.argv[1:]
+retro = Path(root) / "queue/retro"
+
+# E4 is the primary answer ledger.  Match the complete event_id field only;
+# substring/nearby-line matches are intentionally not accepted.
+answers = retro / "answers.jsonl"
+if answers.exists():
+    for raw in answers.read_text(encoding="utf-8").splitlines():
+        try:
+            item = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if item.get("event_id") == event_id:
+            raise SystemExit(0)
+
+# The durable karo mailbox is a secondary persisted transport.  Parse YAML
+# structure and require the exact answer type plus an event-boundary match.
+try:
+    import yaml
+    mailbox = yaml.safe_load((Path(root) / "queue/inbox/karo.yaml").read_text(encoding="utf-8")) or {}
+except Exception:
+    mailbox = {}
+pattern = re.compile(r"(?<![A-Za-z0-9_-])" + re.escape(event_id) + r"(?![A-Za-z0-9_-])")
+for message in mailbox.get("messages", []) if isinstance(mailbox, dict) else []:
+    if not isinstance(message, dict) or message.get("type") != "retro_answer":
+        continue
+    if message.get("event_id") == event_id or pattern.search(str(message.get("content", ""))):
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
 deploy_task_guard_retro_answer_hold() {
     local ninja_name="$1" hold event_id
     # Caller must hold the per-ninja deploy lock. This closes the race between
@@ -394,11 +434,12 @@ deploy_task_guard_retro_answer_hold() {
         [ -f "$hold" ] || continue
         [ "$(sed -n '1p' "$hold")" = "$ninja_name" ] || continue
         event_id=$(sed -n '2p' "$hold")
-        if [ -n "$event_id" ] && grep -qF "$event_id" "$SCRIPT_DIR/queue/inbox/karo.yaml" 2>/dev/null \
-            && grep -B8 -A8 -F "$event_id" "$SCRIPT_DIR/queue/inbox/karo.yaml" | grep -q "type: 'retro_answer'"; then
+        if [ -n "$event_id" ] && deploy_task_retro_event_answered "$event_id"; then
+            printf '%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$ninja_name" "$event_id" "answered=1 decision=PASS" >> "$SCRIPT_DIR/logs/retro_hold_gate_fire.log"
             rm -f "$hold"
             continue
         fi
+        printf '%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$ninja_name" "$event_id" "answered=0 decision=BLOCK" >> "$SCRIPT_DIR/logs/retro_hold_gate_fire.log"
         echo "BLOCK: $ninja_name has an unanswered terminal retrospective; next task deployment is held" >&2
         return 2
     done
@@ -5302,6 +5343,7 @@ inject_model_injection_profile() {
     inject_block="${inject_block}"$'\n'"${indent}  - \"lessons_useful全reasonを具体記入\""
     inject_block="${inject_block}"$'\n'"${indent}  - \"files_modifiedはrepo相対path形式\""
     inject_block="${inject_block}"$'\n'"${indent}  - \"D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除\""
+    inject_block="${inject_block}"$'\n'"${indent}  - \"二段検証契約: 反復=bash scripts/run_tests.sh affected（引数省略時も変更ファイル自動選別）、報告直前の最終checkpoint=bash scripts/run_tests.sh unitを1回実行しFAIL0・SKIP0をreceiptで証明。中断再開時は実装commitと追加testを成果物として報告へ引き継ぐ\""
     if [ "$intensity" = "max" ]; then
         inject_block="${inject_block}"$'\n'"${indent}  extra_scaffold:"
         inject_block="${inject_block}"$'\n'"${indent}  - \"ACごとに実テスト証跡をresult.detailsへ記録\""
@@ -5925,6 +5967,7 @@ inject_experiment_first_principle() {
 import os
 import tempfile
 import yaml
+from scripts.lib.yaml_atomic import atomic_yaml_write
 
 task_file = os.environ['TASK_FILE_ENV']
 with open(task_file, encoding='utf-8') as f:
@@ -5934,18 +5977,7 @@ task['experiment_first_principle'] = [
     '殿の原文: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』',
     '適用形: 仮説を頭で絞らず、小さな独立実験へ分けて並列に全て試せ。想像で結論せず、各実験の一次結果を確認してから採否を決めよ。',
 ]
-directory = os.path.dirname(task_file) or '.'
-fd, tmp_path = tempfile.mkstemp(prefix='.deploy-task.', dir=directory, text=True)
-try:
-    with os.fdopen(fd, 'w', encoding='utf-8') as f:
-        yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
-        f.flush()
-        os.fsync(f.fileno())
-    os.replace(tmp_path, task_file)
-except Exception:
-    if os.path.exists(tmp_path):
-        os.unlink(tmp_path)
-    raise
+atomic_yaml_write(task_file, data)
 INJECT_EFP_PY
 }
 
