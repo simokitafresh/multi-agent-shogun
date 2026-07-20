@@ -45,6 +45,24 @@ fi
 BATS_CACHE="${BATS_CACHE:-1}"
 BATS_CACHE_DIR="${BATS_CACHE_DIR:-$REPO_ROOT/.cache/bats}"
 
+snapshot_test_tree() {
+    local mode="$1" out="$2"
+    case "$mode" in
+        all) find "$REPO_ROOT/tests/unit" "$REPO_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print0 ;;
+        unit) find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print0 ;;
+        *) return 1 ;;
+    esac | sort -zu | xargs -0 sha256sum > "$out"
+}
+
+verify_test_tree_snapshot() {
+    local snapshot="$1" expected actual file
+    while read -r expected file; do
+        [ -f "$file" ] || { echo "BLOCK: test snapshot path disappeared: $file" >&2; return 2; }
+        actual="$(sha256sum "$file" | awk '{print $1}')"
+        [ "$actual" = "$expected" ] || { echo "BLOCK: test snapshot changed during run: $file" >&2; return 2; }
+    done < "$snapshot"
+}
+
 # run_embedded_test() (tests/unit/*_small_consolidated.bats) writes a throwaway
 # nested-bats file as tests/unit/_tmp_<N>_<name>.<rand>.bats and removes it after
 # the nested run finishes. If that nested run is killed (CI timeout/OOM/Ctrl-C)
@@ -519,33 +537,45 @@ _run_tests_main() {
     # admission process group alive after the outer root has completed.  File
     # mode remains the explicit bounded primitive for focused nested checks.
     if [[ "${RUN_TESTS_ACTIVE:-0}" == "1" && "${1:-}" != "file" ]]; then
-        echo "BLOCK: nested aggregate run_tests invocation (${1:-all}); use file mode for focused child checks" >&2
+        echo "BLOCK: nested aggregate run_tests invocation (${1:-affected}); use file mode for focused child checks" >&2
         return 2
     fi
-    if [[ "${1:-all}" != "file" ]]; then
+    if [[ "${1:-affected}" != "file" ]]; then
         export RUN_TESTS_ACTIVE=1
     fi
 
     guard_fixture_symlink_write_through
     sweep_stale_embedded_test_tmp
 
-    case "${1:-all}" in
+    case "${1:-affected}" in
         all)
             RUN_TESTS_MODE=all
             # A full checkpoint must execute every selected file. Reusing
             # per-file pass cache here silently turns a warm "all" run into
             # an affected subset while still reporting the full file count.
             [ "$BATS_CACHE_EXPLICIT" -eq 1 ] || BATS_CACHE=0
-            mapfile -t test_files < <(
-                find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print
-                find "$REPO_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print
-            )
+            if [ -n "${RUN_TESTS_SNAPSHOT_MANIFEST:-}" ]; then
+                verify_test_tree_snapshot "$RUN_TESTS_SNAPSHOT_MANIFEST"
+                mapfile -t test_files < <(sed 's/^[^ ]*  //' "$RUN_TESTS_SNAPSHOT_MANIFEST")
+            else
+                mapfile -t test_files < <(
+                    find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print
+                    find "$REPO_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print
+                )
+            fi
             run_bats_files_parallel "${test_files[@]}"
+            [ -z "${RUN_TESTS_SNAPSHOT_MANIFEST:-}" ] || verify_test_tree_snapshot "$RUN_TESTS_SNAPSHOT_MANIFEST"
             ;;
         unit)
             RUN_TESTS_MODE=unit
-            mapfile -t test_files < <(find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
+            if [ -n "${RUN_TESTS_SNAPSHOT_MANIFEST:-}" ]; then
+                verify_test_tree_snapshot "$RUN_TESTS_SNAPSHOT_MANIFEST"
+                mapfile -t test_files < <(sed 's/^[^ ]*  //' "$RUN_TESTS_SNAPSHOT_MANIFEST")
+            else
+                mapfile -t test_files < <(find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
+            fi
             run_bats_files_parallel "${test_files[@]}"
+            [ -z "${RUN_TESTS_SNAPSHOT_MANIFEST:-}" ] || verify_test_tree_snapshot "$RUN_TESTS_SNAPSHOT_MANIFEST"
             ;;
         push)
             RUN_TESTS_MODE=push
@@ -588,12 +618,29 @@ _run_tests_main() {
             ;;
         affected)
             shift || true
-            mapfile -t selected < <(bash "$REPO_ROOT/scripts/test_select.sh" "$@")
+            local _selector_log _selector_rc _selector_output
+            _selector_log="$(mktemp)"
+            set +e
+            _selector_output="$(bash "$REPO_ROOT/scripts/test_select.sh" "$@" 2>"$_selector_log")"
+            _selector_rc=$?
+            set -e
+            cat "$_selector_log" >&2
+            if [ "$_selector_rc" -ne 0 ]; then
+                printf 'TEST_SELECTION result=fallback reason=selector_exit_%s target=unit\n' "$_selector_rc"
+                rm -f "$_selector_log"
+                RUN_TESTS_MODE=unit
+                mapfile -t test_files < <(find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
+                run_bats_files_parallel "${test_files[@]}"
+                exit $?
+            fi
+            rm -f "$_selector_log"
+            mapfile -t selected <<<"$_selector_output"
+            [ -n "$_selector_output" ] || selected=()
             if [ "${#selected[@]}" -eq 0 ]; then
-                echo "No affected tests selected."
+                echo "TEST_SELECTION result=selected reason=no_mapped_tests files=0"
                 exit 0
             fi
-            printf 'Selected %s affected test file(s).\n' "${#selected[@]}"
+            printf 'TEST_SELECTION result=selected reason=changed_files files=%s\n' "${#selected[@]}"
             RUN_TESTS_MODE=affected
             run_bats_files_parallel "${selected[@]}"
             ;;
@@ -612,7 +659,46 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         _requested_tap="${BATS_TAP_OUTPUT:-}"
         _receipt_dir="${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}"
         mkdir -p "$_receipt_dir"
+        _mode="${1:-affected}"
+        _singleflight=0
+        # Explicit heavy_job_admission callers already own the outer lock.
+        # Taking the single-flight lock underneath it would invert the normal
+        # order (single-flight -> admission) and deadlock two callers.
+        if [[ "${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}" != "1" && ( "$_mode" == "all" || "$_mode" == "unit" ) ]]; then
+            _singleflight=1
+            _sf_dir="${RUN_TESTS_SINGLEFLIGHT_DIR:-/tmp/shogun-run-tests-singleflight}"
+            mkdir -p "$_sf_dir"
+            _sf_lock="$_sf_dir/${_mode}.lock"
+            _sf_state="$_sf_dir/${_mode}.state"
+            _sf_heartbeat="${RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS:-5}"
+            [[ "$_sf_heartbeat" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid single-flight heartbeat interval" >&2; exit 2; }
+            exec {_sf_fd}>"$_sf_lock"
+            if ! flock -n "$_sf_fd"; then
+                printf 'SINGLE_FLIGHT_FOLLOWER mode=%s waiting_for_leader=1\n' "$_mode" >&2
+                while ! flock -w "$_sf_heartbeat" "$_sf_fd"; do
+                    printf 'SINGLE_FLIGHT_HEARTBEAT mode=%s waited_sec=%s\n' "$_mode" "$(( ${_sf_waited:-0} + _sf_heartbeat ))" >&2
+                    _sf_waited=$(( ${_sf_waited:-0} + _sf_heartbeat ))
+                done
+                [ -s "$_sf_state" ] || { echo "BLOCK: single-flight leader state missing" >&2; exit 2; }
+                _receipt="$(sed -n '1p' "$_sf_state")"
+                bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null \
+                    || { echo "BLOCK: single-flight leader receipt invalid" >&2; exit 2; }
+                printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s\n' "$_mode" "$_receipt" >&2
+                python3 - "$_receipt" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1])); print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} joined=1".format(sys.argv[1],d["rc"],d["observed_test_count"],d["declared_test_count"],d["skip_count"],d["output_sha256"],d["duration_ms"]))
+PY
+                exit "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$_receipt")"
+            fi
+        fi
         _receipt="${RUN_TESTS_RECEIPT_PATH:-$_receipt_dir/run_tests_$(date -u +%Y%m%dT%H%M%S)_$$.json}"
+        if [ "$_singleflight" = 1 ]; then
+            _snapshot="$_sf_dir/${_mode}.$$.snapshot"
+            snapshot_test_tree "$_mode" "$_snapshot"
+            printf '%s\n' "$_receipt" > "$_sf_state"
+            export RUN_TESTS_SNAPSHOT_MANIFEST="$_snapshot"
+            printf 'SINGLE_FLIGHT_LEADER mode=%s snapshot_count=%s\n' "$_mode" "$(wc -l < "$_snapshot")" >&2
+        fi
         _tap="${_receipt%.json}.tap"
         set +e
         BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
@@ -645,6 +731,7 @@ print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms
     sys.argv[1], d["rc"], d["observed_test_count"], d["declared_test_count"],
     d["skip_count"], d["output_sha256"], d["duration_ms"]))
 PY
+        [ "$_singleflight" != 1 ] || rm -f "$_snapshot"
         exit "$_rc"
     fi
 fi
