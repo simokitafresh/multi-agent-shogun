@@ -742,6 +742,21 @@ agent_has_self_watch() {
     return 1
 }
 
+# A successful tmux paste is not yet a successful CLI submission.  During a
+# Codex boot/respawn race Enter can be consumed before the input widget is
+# ready, leaving the nudge visibly parked at the prompt.  Detect only the
+# current prompt-shaped inbox token; ordinary transcript mentions do not
+# match this boundary.
+pane_nudge_submission_pending() {
+    local pane="$1" inbox_token="$2" recent
+    recent=$(tmux capture-pane -t "$pane" -p -S -8 2>/dev/null | tail -n 8 || true)
+    printf '%s\n' "$recent" | awk -v token="$inbox_token" '
+        $0 ~ "^[[:space:]]*[›>][[:space:]]*" token "([[:space:]]|—|$)" { pending=1; accepted_after=0; next }
+        pending && $0 ~ "^[[:space:]]*[•◦]" { accepted_after=1 }
+        END { exit !(pending && !accepted_after) }
+    '
+}
+
 # ─── Send wake-up nudge ───
 # Layered approach (send-keys撲滅):
 #   1. If agent has active inotifywait self-watch → skip (agent wakes itself)
@@ -1051,6 +1066,25 @@ send_wakeup() {
         if ! timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null; then
             echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
             exit 1
+        fi
+        # Submission ACK: paste-buffer+Enter can race a freshly booted Codex
+        # input widget.  Retry Enter once only when the exact inbox token is
+        # still parked at the live prompt, then fail without consuming the
+        # send lease if the CLI still has not accepted it.
+        local inbox_token="inbox${unread_count}"
+        sleep "${NUDGE_SUBMIT_VERIFY_DELAY_SEC:-1}"
+        if pane_nudge_submission_pending "$PANE_TARGET" "$inbox_token"; then
+            echo "[$(date)] [SUBMIT-RETRY] $AGENT_ID nudge remained at prompt; retrying Enter once" >&2
+            if ! timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null; then
+                [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
+                exit 1
+            fi
+            sleep "${NUDGE_SUBMIT_VERIFY_DELAY_SEC:-1}"
+            if pane_nudge_submission_pending "$PANE_TARGET" "$inbox_token"; then
+                echo "[$(date)] [SUBMIT-FAIL] $AGENT_ID nudge still pending after Enter retry" >&2
+                [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
+                exit 1
+            fi
         fi
         printf 'pasted\t%s\t%s\n' "$unread_count" "$current_fp" > "$send_result_file"
     ) 200>"$lock" || send_rc=$?

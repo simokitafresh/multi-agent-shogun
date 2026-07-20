@@ -322,6 +322,31 @@ YAML
     [ "$(printf '%s\n' "$output" | grep '^task-' | sort -u | wc -l)" -eq 2 ]
 }
 
+# test_necessity: respawn直後にEnterだけが消失しnudgeが入力欄へ残った場合、配送成功と誤認しない不変量を守る。
+@test "nudge submission ACK distinguishes parked prompt input from accepted transcript" {
+    run bash -c '
+      INBOX_WATCHER_LIB_ONLY=1 source "$1" test_agent fixture-pane
+      tmux() {
+        if [ "$1" = capture-pane ]; then
+          printf "header\n› inbox1\n\n  gpt-5.6-sol high · Context 0%% used\n"
+        fi
+      }
+      pane_nudge_submission_pending fixture-pane inbox1
+    ' _ "$WATCHER_SCRIPT"
+    [ "$status" -eq 0 ]
+
+    run bash -c '
+      INBOX_WATCHER_LIB_ONLY=1 source "$1" test_agent fixture-pane
+      tmux() {
+        if [ "$1" = capture-pane ]; then
+          printf "› inbox1\n• Ran sed -n 1,20p queue/inbox/test_agent.yaml\n◦ Working\n"
+        fi
+      }
+      pane_nudge_submission_pending fixture-pane inbox1
+    ' _ "$WATCHER_SCRIPT"
+    [ "$status" -eq 1 ]
+}
+
 # --- T-SW-001: self-watch active → skip nudge ---
 
 @test "T-SW-001: send_wakeup skips nudge when agent has active self-watch" {
