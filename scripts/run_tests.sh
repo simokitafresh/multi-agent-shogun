@@ -63,6 +63,41 @@ verify_test_tree_snapshot() {
     done < "$snapshot"
 }
 
+# A reusable terminal receipt may truthfully represent PASS, test FAIL, or
+# SKIP.  run_with_receipt.sh --verify-receipt intentionally accepts PASS only,
+# so followers need a structural validator that preserves non-PASS outcomes
+# instead of converting them into an infrastructure BLOCK.
+verify_terminal_test_receipt() {
+    python3 - "$1" <<'PY'
+import hashlib, json, pathlib, sys
+
+path = pathlib.Path(sys.argv[1])
+try:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    artifact = pathlib.Path(data["artifact"])
+    actual = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    required = {"complete", "result", "rc", "declared_test_count",
+                "observed_test_count", "skip_count", "output_sha256"}
+    valid = (required <= data.keys() and data["complete"] is True and
+             data["result"] in {"PASS", "FAIL"} and
+             isinstance(data["rc"], int) and data["rc"] >= 0 and
+             isinstance(data["skip_count"], int) and data["skip_count"] >= 0 and
+             data["declared_test_count"] == data["observed_test_count"] and
+             actual == data["output_sha256"])
+except (OSError, ValueError, KeyError, TypeError):
+    valid = False
+raise SystemExit(0 if valid else 1)
+PY
+}
+
+terminal_test_receipt_rc() {
+    python3 - "$1" <<'PY'
+import json, sys
+d=json.load(open(sys.argv[1], encoding="utf-8"))
+print(d["rc"] if d["rc"] != 0 else (0 if d["result"] == "PASS" else 1))
+PY
+}
+
 # run_embedded_test() (tests/unit/*_small_consolidated.bats) writes a throwaway
 # nested-bats file as tests/unit/_tmp_<N>_<name>.<rand>.bats and removes it after
 # the nested run finishes. If that nested run is killed (CI timeout/OOM/Ctrl-C)
@@ -668,8 +703,21 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             _singleflight=1
             _sf_dir="${RUN_TESTS_SINGLEFLIGHT_DIR:-/tmp/shogun-run-tests-singleflight-v2}"
             mkdir -p "$_sf_dir"
-            _sf_lock="$_sf_dir/${_mode}.lock"
-            _sf_state="$_sf_dir/${_mode}.state"
+            _checkpoint_generation="${RUN_TESTS_CHECKPOINT_GENERATION:-}"
+            _snapshot="$_sf_dir/${_mode}.$$.snapshot"
+            snapshot_test_tree "$_mode" "$_snapshot"
+            _sf_key=""
+            if [ -n "$_checkpoint_generation" ]; then
+                _head_hash="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+                _snapshot_hash="$(sha256sum "$_snapshot" | awk '{print $1}')"
+                _runner_hash="$(sha256sum "${BASH_SOURCE[0]}" "$REPO_ROOT/scripts/run_with_receipt.sh" | sha256sum | awk '{print $1}')"
+                _sf_key="$(printf '%s\n%s\n%s\n%s\n%s\n' \
+                    "$_mode" "$_checkpoint_generation" "$_head_hash" "$_snapshot_hash" "$_runner_hash" \
+                    | sha256sum | awk '{print $1}')"
+            fi
+            _sf_identity="${_sf_key:-$_mode}"
+            _sf_lock="$_sf_dir/${_sf_identity}.lock"
+            _sf_state="$_sf_dir/${_sf_identity}.state"
             _sf_heartbeat="${RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS:-5}"
             _sf_stale_timeout="${RUN_TESTS_SINGLEFLIGHT_STALE_SECONDS:-10}"
             [[ "$_sf_heartbeat" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid single-flight heartbeat interval" >&2; exit 2; }
@@ -691,7 +739,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                         if kill -0 "$_sf_owner" 2>/dev/null; then
                             continue
                         fi
-                        bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null \
+                        verify_terminal_test_receipt "$_receipt" \
                             || { echo "BLOCK: single-flight stale owner receipt invalid" >&2; exit 2; }
                         _sf_holders="$(fuser "$_sf_lock" 2>/dev/null | awk '{print NF}' || true)"
                         _sf_holders="${_sf_holders:-0}"
@@ -703,28 +751,41 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
 import json,sys
 d=json.load(open(sys.argv[1])); print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} joined=1 stale_owner=1".format(sys.argv[1],d["rc"],d["observed_test_count"],d["declared_test_count"],d["skip_count"],d["output_sha256"],d["duration_ms"]))
 PY
-                        exit "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$_receipt")"
+                        exit "$(terminal_test_receipt_rc "$_receipt")"
                     fi
                 done
                 [ -s "$_sf_state" ] || { echo "BLOCK: single-flight leader state missing" >&2; exit 2; }
                 _receipt="$(sed -n '1p' "$_sf_state")"
-                bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null \
+                verify_terminal_test_receipt "$_receipt" \
                     || { echo "BLOCK: single-flight leader receipt invalid" >&2; exit 2; }
                 printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s\n' "$_mode" "$_receipt" >&2
                 python3 - "$_receipt" <<'PY'
 import json,sys
 d=json.load(open(sys.argv[1])); print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} joined=1".format(sys.argv[1],d["rc"],d["observed_test_count"],d["declared_test_count"],d["skip_count"],d["output_sha256"],d["duration_ms"]))
 PY
-                exit "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$_receipt")"
+                exit "$(terminal_test_receipt_rc "$_receipt")"
+            fi
+            if [ -n "$_sf_key" ] && [ -s "$_sf_state" ] && \
+               [ "$(sed -n '5p' "$_sf_state")" = "$_sf_key" ]; then
+                _receipt="$(sed -n '1p' "$_sf_state")"
+                if verify_terminal_test_receipt "$_receipt"; then
+                    printf 'SINGLE_FLIGHT_REUSED mode=%s generation=%s key=%s receipt=%s\n' \
+                        "$_mode" "$_checkpoint_generation" "$_sf_key" "$_receipt" >&2
+                    python3 - "$_receipt" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1])); print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} reused=1".format(sys.argv[1],d["rc"],d["observed_test_count"],d["declared_test_count"],d["skip_count"],d["output_sha256"],d["duration_ms"]))
+PY
+                    rm -f "$_snapshot"
+                    exit "$(terminal_test_receipt_rc "$_receipt")"
+                fi
             fi
         fi
         _receipt="${RUN_TESTS_RECEIPT_PATH:-$_receipt_dir/run_tests_$(date -u +%Y%m%dT%H%M%S)_$$.json}"
         if [ "$_singleflight" = 1 ]; then
-            _snapshot="$_sf_dir/${_mode}.$$.snapshot"
-            snapshot_test_tree "$_mode" "$_snapshot"
             _sf_generation="$(date -u +%s%N)-$$"
             _sf_owner_pgid="$(ps -o pgid= -p $$ | tr -d ' ')"
-            printf '%s\n%s\n%s\n%s\n' "$_receipt" "$$" "$_sf_generation" "$_sf_owner_pgid" > "$_sf_state"
+            printf '%s\n%s\n%s\n%s\n%s\n' \
+                "$_receipt" "$$" "$_sf_generation" "$_sf_owner_pgid" "$_sf_key" > "$_sf_state"
             export RUN_TESTS_SNAPSHOT_MANIFEST="$_snapshot"
             printf 'SINGLE_FLIGHT_LEADER mode=%s snapshot_count=%s\n' "$_mode" "$(wc -l < "$_snapshot")" >&2
         fi
