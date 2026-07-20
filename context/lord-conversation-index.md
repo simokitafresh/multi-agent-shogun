@@ -1,19 +1,19 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-21 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-21T00:05:01+09:00 -->
+<!-- generated_at: 2026-07-21T00:13:20+09:00 -->
 
 ## 最新やり取り（直近24h）
+- 2026-07-21T00:13:20+09:00 | terminal | response | 同一bulletin(P3 credential FAIL)— 先のGuard14 BLOCKで既読化コマンドごと中断され未既読のまま残っていた。既に対応済み(credential配線を駆動済み)。既読化する。 [meta] stop_r…
+- 2026-07-21T00:12:29+09:00 | ntfy | outbound | CI赤: run 29753072513 Unit Tests (bats)
+- 2026-07-21T00:11:19+09:00 | terminal | response | inbox 0件。idle待機。
+- 2026-07-21T00:09:54+09:00 | terminal | response | **over-correction auditの表面が見えた。** 1問テスト(破ると不可逆害か)で分類すると: - **構造型=維持**: YAML構文/フィールド重複/git stash共有破壊/shogun_to_karo sed禁…
+- 2026-07-21T00:07:19+09:00 | terminal | response | 送信完了。全4忍者dirty audit完了。inbox 0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-21T00:06:41+09:00 | terminal | response | inbox 0件。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-21T00:06:15+09:00 | terminal | response | 送信完了。inbox 0件。idle待機。 [meta] stop_reason=end_turn
 - 2026-07-21T00:05:00+09:00 | terminal | response | 送信完了。inbox 0件。idle待機。
 - 2026-07-21T00:01:43+09:00 | terminal | response | 送信完了。inbox 0件。idle待機。
 - 2026-07-21T00:01:28+09:00 | ntfy | outbound | 【家老】cmd_karo_dirty_audit_saizo 初回配備開始 (title=(untitled), ninja=saizo)
-- 2026-07-21T00:00:16+09:00 | terminal | response | 送信完了。inbox 0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-20T23:55:19+09:00 | terminal | response | inbox 0件。idle待機。
-- 2026-07-20T23:53:39+09:00 | terminal | inbound | rebalancerの件は忘れていないか？米国市場はとっくに始まってるぞ
-- 2026-07-20T23:53:10+09:00 | terminal | response | **殿の問いへの回答: 完了していない。基盤(S0/S0b/S0c)はCLEARだが、実行4フェーズが未完:** - **B0**(READY): E2E cohort N≥10計測・支配律速の単一特定 — 未実施 - **F1**(BL…
-- 2026-07-20T23:52:31+09:00 | terminal | response | inbox 0件。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-20T23:51:17+09:00 | terminal | inbound | https://gist.github.com/simokitafresh/fb70493ecbfe05959056a18fff597850#file-campaign-lane-general-skill-asis-tobe-5w1h_…
-- 2026-07-20T23:50:37+09:00 | terminal | response | **復旧確認成功。** [MEM: obsidian link=[[deploy_path_awk_rc2_regression]]] 家老の検証: task YAMLをtask:ラップ形式へ修正+私のrevert → **deploy_…
 
 ## 未解決確認事項
 - **殿の問いへの回答: 完了していない。基盤(S0/S0b/S0c)はCLEARだが、実行4フェーズが未完:** - **B0**(READY): E2E cohort N≥10計測・支配律速の単一特定 — 未実施 - **F1**(BLOCKED_BY_B0): 律速を独立s…

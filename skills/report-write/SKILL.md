@@ -175,6 +175,15 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 ## 注意ポイント
 
+- 2026-07-20: gate=gate_report_format result=FAIL executor=tobisaru reason=lessons_useful: is string (must be list of dicts); verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); LG051: gate/hook/dispatcher変更には非test call...
+- 2026-07-20: gate=gate_report_format result=FAIL executor=hanzo reason=knowledge_candidate.items[0].fact: empty
+
+- 2026-07-20: gate=gate_report_format result=FAIL executor=tobisaru reason=variation_checks: required cells unfilled: normal_pass, quoted_or_heredoc, linked_worktree, parallel_or_respawn, abnormal_exit; operational_simulation: MISSING (command,expected...
+- 2026-07-20: gate=gate_report_format result=FAIL executor=kotaro reason=speed callback schema: terminal quality=pass requires test_results(status=pass, wall_sec=finite>=0, failures=0, skips=0)
+
+- 2026-07-19: gate=gate_report_format result=FAIL executor=saizo reason=lessons_useful[0]: id=\"PI-INFRA-003\" is invalid (must match L+number, e.g. L074)
+- 2026-07-18: gate=gate_report_format result=FAIL executor=kotaro reason=LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須; knowledge_candidate: found=true but items is empty
+
 - 2026-07-17: gate=gate_report_format result=FAIL executor=hayate reason=variation_checks: required cells unfilled: normal_pass, quoted_or_heredoc, linked_worktree, parallel_or_respawn, abnormal_exit; LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須
 - 2026-07-17: gate=gate_report_format result=FAIL executor=hanzo reason=LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須
 

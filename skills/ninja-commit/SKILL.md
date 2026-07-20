@@ -142,6 +142,9 @@ Script refs verified: 2026-05-22 cmd_2959 (cmd_2841: assumption_invalidation.*�
 
 ## 注意ポイント
 
+- 2026-07-19: gate=cmd_complete_gate result=FAIL executor=saizo reason=ci_push_state:BLOCK: report commit invalid or unresolvable (31d071c0bdf4e4b014844860ed2867b06098710e)
+- 2026-07-19: gate=cmd_complete_gate result=FAIL executor=kagemaru reason=ci_push_state:BLOCK: report commit invalid or unresolvable (no-code-change)
+
 - 2026-07-12: gate=gate_report_format result=FAIL executor=tobisaru reason=commit_hash: 'no-code-change' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
 - 2026-07-03: gate=gate_report_format result=FAIL executor=tobisaru reason=commit_hash: '67da37c4, ca170887' は40文字フルhashでない。git rev-parse HEADで取得したフルhashを記入せよ
 

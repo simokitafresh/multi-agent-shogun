@@ -1,6 +1,9 @@
 # gunshi idle自走サイクル進捗(殿裁定2026-07-07: 止まらずにサイクルを回し続ける仕組み)
 # Step完了時にyaml_field_set.shで更新する
 last_completed_step: 6
-completed_at: "2026-07-16T14:59:06+09:00"
+completed_at: "2026-07-20T07:05:00+09:00"
 session_id: "current"
-last_completed_at: "2026-07-16T14:36:00+09:00"
+last_completed_at: "2026-07-20T14:12:00+09:00"
+session_summary: レビュー12件(LGTM7/FAIL2/APPROVE5)+gate-sync4件(CLEAR3/BLOCK2)+CS遡及3件修正+deepdive全10Phase読了。retro_prompt繰返し配送(5回)=インフラ調査必要
+last_step: 6
+next_step: 7

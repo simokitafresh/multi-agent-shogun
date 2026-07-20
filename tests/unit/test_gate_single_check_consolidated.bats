@@ -7,6 +7,33 @@ setup() {
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
 }
 
+@test "deploy fixture dependency closure detects all three historical missing dependencies" {
+    fixture_root="$BATS_TEST_TMPDIR/deploy-fixture-closure"
+    mkdir -p "$fixture_root/scripts/lib"
+    source_script="$fixture_root/deploy_task.sh"
+    cat > "$source_script" <<'SH'
+source "$SCRIPT_DIR/scripts/lib/defense_overhead_writer.sh"
+source "$SCRIPT_DIR/scripts/lib/retro_verbatim_prompt.sh"
+python3 - <<'PY'
+from scripts.lib.yaml_atomic import atomic_yaml_write
+PY
+SH
+    source "$PROJECT_ROOT/tests/helpers/deploy_task_scaffold.bash"
+
+    run deploy_task_fixture_dependency_closure_check "$source_script" "$fixture_root/scripts/lib"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"defense_overhead_writer.sh"* ]]
+    [[ "$output" == *"retro_verbatim_prompt.sh"* ]]
+    [[ "$output" == *"yaml_atomic.py"* ]]
+
+    touch "$fixture_root/scripts/lib/defense_overhead_writer.sh" \
+        "$fixture_root/scripts/lib/retro_verbatim_prompt.sh" \
+        "$fixture_root/scripts/lib/yaml_atomic.py"
+    run deploy_task_fixture_dependency_closure_check "$source_script" "$fixture_root/scripts/lib"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"3/3"* ]]
+}
+
 setup_runtime_incident_fixture() {
     local fixture_root="$BATS_TEST_TMPDIR/runtime-incident-fixture"
     mkdir -p "$fixture_root/scripts/gates" "$fixture_root/.claude/hooks"

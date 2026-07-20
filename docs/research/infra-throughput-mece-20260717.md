@@ -1,6 +1,36 @@
-# Infra Throughput MECE Register — 2026-07-17
+# Infra Throughput MECE Register — 2026-07-17/18
 
-品質合格スループット = 固定品質で合格した成果数 / 壁時計時間。受領提案は以下6領域へ重複なく統合する。
+品質合格スループット = 固定品質で合格した成果数 / 壁時計時間。分類軸は「最初に誤った制御判断をした主故障地点」とし、各事象を以下7段階のどれか1つへ割り当てる。時間・FP/FN・SKIP・通知喪失は分類ではなく全段階共通の合格指標とする。
+
+## 2026-07-18 制御面ライフサイクル7区分（MECE正本）
+
+| # | 主故障地点 | 含むもの / 含まないもの | 一次値 | 修正・所有者 | 二値完了条件 |
+|---:|---|---|---:|---|---|
+| 1 | 入力・配送・routing | pane宛先決定、inbox wake-up、priority再送。報告内容検証は#6 | 同一fingerprint 9配送、turn abortでACK 612秒遅延（全体86.4%）。家老入力→将軍inbound混入60件超 | watcher lease=疾風LGTM（delivery 9→1）。cross-paneはfixture33/33後、実Codex入力がtarget/source_event_id空で記録0・FN1となり半蔵revision中 | 同一世代delivery=1、abort=0、誤宛先=0、記録喪失0、ACK後TP=1 |
+| 2 | identity・永続化 | report/message/taskの不変IDとarchive後参照。配送タイミングは#1 | report_id 0/286→live 289/289 resolved/unique。ただし同一report_idのreport_receivedを実戦で3件保存 | identity v2=`3a305a0f5`完了。canonical event idempotency=小太郎実装中 | resolved/unique=全件、同一event stored=1、duplicate=0、v2 mismatch/reuseはBLOCK |
+| 3 | 配備・schedule・publication | task生成、注入、dispatch、配備receipt。実行時preflightは#4 | 修正前220.263秒・226.210秒・365.199秒。`d5b4e3fac`後の実canary=102.423秒（timeout0）だが目標未達 | active-report pointer+phase計測=`d5b4e3fac`。未計測残差約65秒とreport scan 40を次段で除去 | 成功p95<30秒、成功後rc=0、task/nudge欠損0、timeout 0、phase timing 100% |
+| 4 | 実行入口・context・cache | startup/preflight、三層記憶、skill/context注入、WSL再起動cache。commit hookは#5 | helper 54.0→24.227秒。実配備memory_context 99.861秒→canary 18.714秒だが残存。GA-289はboundary空でLKG再利用不能 | source tip+contract hash LKG・WSL再構築=疾風実装中 | cache miss/restartでfail-open 0・自己封鎖0、SKIP0、同一source再読0、live p95<10秒 |
+| 5 | workspace mutation・commit | shared index、HEAD世代、precommit/git commit。報告commit identityは#6 | unintended 2-parent merge 1件。commit 24.906秒中git_commit 19.008秒、lock_wait 3ms | operation-state BLOCK+HEAD CAS+sole-parent=影丸LGTM。hook別計測は次波 | parent_count>1=0、UU/MM逆差分=0、FP/FN0、hook省略0 |
+| 6 | 検証・report・review | test、report契約、gate、軍師review、revision。完了後clearは#7 | no-code契約衝突FAIL 17件、report再走+332秒 | no-code N/A+世代一回化=`e7ab41112`、偽BLOCK17→0、正当BLOCK漏れ0、31/31 PASS。実no-code/code各5世代E2E待ち | FAIL0/SKIP0、偽BLOCK0、正当BLOCK漏れ0、同世代検証1回 |
+| 7 | 完了・reset・recovery | done検知、auto-clear、snapshot、respawn、WSL突発停止復旧。重いreflux処理自体は#4 | done認識+15分09秒、再巡回+7分15秒、処理7秒。巡回間隔435秒 | fast path+task/runtime列分離=`8dd728a22`、3/3 PASS。実done→BLOCK解除→respawn 3回E2E待ち | done検知p95<5秒、BLOCK解除再評価p95<5秒、task/runtime乖離0、復旧後喪失0 |
+
+横断合格条件: 全修正で `FAIL=0 / SKIP=0 / FP=0 / FN=0 / duplicate=0 / 通知喪失=0 / 安全境界低下=0`。短縮時間だけのPASSは禁止する。
+
+### 実戦効果測定（fixture合格後に家老が実施）
+
+| 領域 | 実戦lane | 比較値 | 合格条件 |
+|---:|---|---|---|
+| 1 | active turn中の実inboxへ同一fingerprintと次世代を配送し3pane宛先を照合 | delivery、abort、誤宛先、ACK後TP | 1 / 0 / 0 / 1 |
+| 2 | 実taskからreportを10世代生成し、revision・archive・同一content別pathを照合 | resolved、unique、duplicate、mismatch/reuse BLOCK | 全件 / 全件 / 0 / 全件BLOCK |
+| 3 | 実idle paneへの配備canaryを逐次10回、同時3配備を1波実行 | publication→nudge p50/p95、timeout、欠損、duplicate | p95<30秒、0、0、0 |
+| 4 | 実`infrastructure.md`/source tip/linked worktreeでread-only shadowを前後各10回、cache欠落・破損も注入 | p50/p95、ALERT集合差分、FP/FN、自己封鎖 | p95<10秒、差分0、0/0、0 |
+| 5 | 3忍者相当の選択scope commitを同時実行 | parent_count、逆差分、lock wait、FP/FN | 1、0、記録100%、0/0 |
+| 6 | 実no-code報告と実code報告を各5世代gate/reviewへ通す | 偽BLOCK、正当BLOCK漏れ、同世代検証回数、SKIP | 0、0、1、0 |
+| 7 | 実done→foreign dirty BLOCK→解除→respawnを3回通す | done検知p95、再評価p95、task/runtime乖離、喪失 | <5秒、<5秒、0、0 |
+
+実戦laneは本番業務データを変更しない。read-only shadowまたは可逆なinbox/task世代で行い、前後で同じ入力集合を使う。
+
+## 2026-07-17 初期登録（履歴）
 
 | Domain | Included proposals | Status / owner |
 |---|---|---|
@@ -21,7 +51,7 @@ Completion skill 3本の880行超hot-pathは Review & recovery 領域に属す�
 - process drain / heavy run admission / index lock / retry cwd: child survivors 1+ → 0, heavy concurrency 7+ → <=1 (`ef9c88492`, `78cbbe43c`)
 - ignored explicit owned commit + identity inheritance: commit failures 2/2 → 0 (`22a14d076`)
 - canonical report pointer: potential wait 900s → 5.95s (`eee01961a`)
-- reflux repeat selection: same promotion 3+ → 0, inventory 189 → 188 (`4a122414d`)
+- reflux repeat selection: `4a122414d`で一度same promotion 3+ → 0としたが、2026-07-18にL901が4忍者へ再発。`3d4d670f`は26/26 PASS・LGTMだがmain未統合のためREOPENED。最新設計は`docs/research/infra-throughput-outcome-design-20260718.md`を参照
 
 ## Endpoint
 

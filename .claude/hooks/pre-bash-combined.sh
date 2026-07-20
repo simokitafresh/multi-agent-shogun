@@ -1003,6 +1003,19 @@ if [[ -n "${command:-}" && "$command" == *'stash'* ]]; then
     fi
 fi
 
+# Guard: respawn-pane モデルエイリアス一次確認強制 (LG058: fable/sonnet誤同一視事故 2026-07-18)
+if echo "${command:-}" | grep -q 'respawn-pane.*claude.*--model'; then
+    _respawn_model=$(echo "$command" | grep -oP '(?<=--model\s)\S+' | head -1)
+    if [ -n "$_respawn_model" ] && ! echo "$_respawn_model" | grep -q '^claude-'; then
+        _cli_path=$(echo "$command" | grep -oP '(/[^\s]+/claude|~/bin/claude)\b' | head -1)
+        _cli_path="${_cli_path:-claude}"
+        _valid=$($_cli_path --help 2>/dev/null | grep -oP "'\w+'" | tr -d "'" | sort -u | tr '\n' ' ' || true)
+        if [ -n "$_valid" ] && ! echo " $_valid " | grep -q " $_respawn_model "; then
+            emit_deny "BLOCK(LG058): respawn-pane --model '$_respawn_model' は不明なモデルエイリアス。CLI確認結果の有効値: $_valid"
+        fi
+    fi
+fi
+
 # === Guard 4: block_destructive (complex, needs python3 for path checks) ===
 [[ "$payload" != *'rm '* && "$payload" != *'sudo'* && "$payload" != *'su '* && \
    "$payload" != *'kill'* && "$payload" != *'git push'* && "$payload" != *'git reset'* && \

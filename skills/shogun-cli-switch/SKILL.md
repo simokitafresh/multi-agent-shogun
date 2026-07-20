@@ -121,14 +121,23 @@ multi-agent-shogun の指揮官/指定agentを Claude Code と Codex CLI の間�
 
 **Codex注意**: config.tomlは全Codex忍者共有。変更は全Codex忍者に影響するが、respawnした忍者のみ反映。
 
-**per-agent effort回避策（家老medium+忍者low共存）** (殿指示2026-06-23で実証):
-Codex CLIには`--reasoning-effort`起動引数がない。per-agent effortはconfig.toml共有のため直接設定不可。
+**Codex CLI引数の実証結果(2026-07-20軍師実証)**:
+- `--model gpt-5.6-sol`: 有効。config.tomlの`model`値を上書き
+- `--effort low/medium/high`: **無効(exit 2)**。Codex CLIに`--effort`引数は存在しない
+- `--fast`: **無効(exit 2)**。Codex CLIに`--fast`引数は存在しない
+- `-c model_reasoning_effort=medium`: tmux respawn-pane経由だとquotingが崩れ無効化されることがある
+- config.toml `model = "gpt-5.6-sol"`: **有効だがexit 2になるモデル名あり**。gpt-5.6-solは`--model`経由でのみ動作する環境がある
+
+**正規方法(2026-07-20確立)**: config.tomlを家老のモデル/effortに合わせ(model=gpt-5.6-sol, model_reasoning_effort=medium)、忍者respawn時にcli_lookup.shのcodex_config_apply_agentで一時的にeffort=lowを適用→respawn→復元する。
+
+**per-agent effort回避策（家老medium+忍者low共存）** (殿指示2026-06-23で実証, 2026-07-20更新):
+Codex CLIには`--effort`起動引数がない(exit 2実証済み)。per-agent effortはconfig.toml共有のため直接設定不可。
 回避手順:
 1. `sed -i 's/model_reasoning_effort = "low"/model_reasoning_effort = "medium"/' ~/.codex/config.toml`
 2. 対象agentのみ `tmux respawn-pane -k -t <pane> "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"`
 3. `sed -i 's/model_reasoning_effort = "medium"/model_reasoning_effort = "low"/' ~/.codex/config.toml` (即座に戻す)
 4. バナーで `medium fast` を確認
-**制約**: 対象agentが再respawn(/clear等)されるとconfig.toml現在値(low)に戻る(揮発的)。ninja_monitorのidle /clearでrespawnされる忍者はconfig.toml現在値を取得する。
+**制約**: 対象agentが再respawn(/clear等)されるとconfig.toml現在値に戻る(揮発的)。ninja_monitorのidle /clearでrespawnされる忍者はconfig.toml現在値を取得するが、codex_config_apply_agentが接続済みの経路ではsettings.yaml値が一時適用される。
 
 **2026-07-10追記(未commit差分確認・要再検証)**: `cli_lookup.sh`の`codex_config_apply_agent()`/`codex_config_restore()`が`ninja_monitor.sh`の自動respawn経路(`safe_send_clear`=idle /clear系、`check_ninja_cli_dead`=死亡pane復旧)にのみ組み込まれた。該当agentのsettings.yaml `model_name`が`gpt-*`形式で設定されていれば、ninja_monitor起因の自動respawnではeffort/service_tierが一時適用→復元され揮発しなくなる見込み。ただし`switch_cli_mode.sh`(Step2の手動`to-codex`/`to-claude`)経路には未接続のため、手動切替直後は従来通り本回避策の手順が必要。本変更は未commit・無テストのため、実機respawnでの動作確認は次回検証時に実施すること。
 
