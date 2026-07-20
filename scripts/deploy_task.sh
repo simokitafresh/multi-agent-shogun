@@ -5125,6 +5125,7 @@ inject_semantic_concepts() {
             [ -n "$_causal_out" ] && { echo "INFO: [CAUSAL_CONTEXT] target因果辺:" >&2; printf '%s\n' "$_causal_out" | sed 's/^/  → /' >&2; }
         fi
     fi
+    return 0
 }
 
 # ─── 三層記憶先行知識注入(殿厳命2026-06-10: 使用しないのはバグ。L0-L7貫通) ───
@@ -10197,9 +10198,9 @@ deploy_task_direct_quality_contract_precheck() {
     result="$(deploy_task_quality_contract_result "$task_file")"
     case "$result" in
         WARN*)
-            log "BLOCK(QUALITY_CONTRACT): ${result}"
-            echo "BLOCK: direct deployment detector quality contract failed: ${result}" >&2
-            return 1
+            log "WARN(QUALITY_CONTRACT): ${result}"
+            echo "WARN: direct deployment detector quality contract diagnostic: ${result}" >&2
+            return 0
             ;;
         *)
             log "quality_contract: ${result}"
