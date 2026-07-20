@@ -2773,7 +2773,10 @@ if [ ${#alerts[@]} -gt 0 ]; then
                 ;;
         esac
     done
-    if [ -n "$_deferred_alerts" ]; then
+    # 殿裁定2026-07-20 過剰対策削減: 先送りCRITICAL→将軍inbox→cmd起票強要の自動エスカレーションエンジンを撤廃。
+    # 軟らかい指標(skill refs WARN/WA再出現/レビューWARN率)を「cmd起票せよ」と将軍へ迫るのは点数追いの表示型。
+    # 家老は自startup出力でalertを見る(下記collectは維持)が、将軍へ機構追加を強要しない。revert復元可。
+    if false && [ -n "$_deferred_alerts" ]; then
         _deferred_message="家老startup先送りCRITICAL自動エスカレーション: ${_deferred_alerts}。家老が対処できないため将軍cmd起票を検討せよ"
         mkdir -p "$SCRIPT_DIR/queue/locks"
         _deferred_lock="$SCRIPT_DIR/queue/locks/karo_startup_escalation.lock"
