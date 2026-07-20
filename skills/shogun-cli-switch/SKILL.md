@@ -128,15 +128,14 @@ multi-agent-shogun の指揮官/指定agentを Claude Code と Codex CLI の間�
 - `-c model_reasoning_effort=medium`: tmux respawn-pane経由だとquotingが崩れ無効化されることがある
 - config.toml `model = "gpt-5.6-sol"`: **有効だがexit 2になるモデル名あり**。gpt-5.6-solは`--model`経由でのみ動作する環境がある
 
-**正規方法(2026-07-20確立)**: config.tomlを家老のモデル/effortに合わせ(model=gpt-5.6-sol, model_reasoning_effort=medium)、忍者respawn時にcli_lookup.shのcodex_config_apply_agentで一時的にeffort=lowを適用→respawn→復元する。
+**正規方法(2026-07-21確立・殿裁定)**: config.tomlのmodel/model_reasoning_effortを対象agentの正本値(settings.yaml)にsedで書き換え→respawn-pane -k→最下行バナーで確認。restoreしない(restore廃止: a125c2aa5)。`/effort`コマンドは存在しない(実験実証6/6)。`/model`はインタラクティブメニューのみ(引数不可)。作業中は`/model`不可(idle時のみ)。
 
-**per-agent effort回避策（家老medium+忍者low共存）** (殿指示2026-06-23で実証, 2026-07-20更新):
-Codex CLIには`--effort`起動引数がない(exit 2実証済み)。per-agent effortはconfig.toml共有のため直接設定不可。
-回避手順:
-1. `sed -i 's/model_reasoning_effort = "low"/model_reasoning_effort = "medium"/' ~/.codex/config.toml`
-2. 対象agentのみ `tmux respawn-pane -k -t <pane> "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"`
-3. `sed -i 's/model_reasoning_effort = "medium"/model_reasoning_effort = "low"/' ~/.codex/config.toml` (即座に戻す)
-4. バナーで `medium fast` を確認
+**per-agent model/effort切替手順** (殿裁定2026-07-21、軍師6回実験で確立):
+1. `sed -i 's/^model = .*/model = "gpt-5.6-sol"/' ~/.codex/config.toml`
+2. `sed -i 's/^model_reasoning_effort = .*/model_reasoning_effort = "low"/' ~/.codex/config.toml`
+3. `tmux respawn-pane -k -t <pane> "codex --dangerously-bypass-approvals-and-sandbox --no-alt-screen"`
+4. 最下行バナーで `gpt-5.6-sol low` を一次確認
+5. 次のagent切替が必要なら手順1-4を繰り返す(config.tomlは上書きされるがrespawnしたpaneにのみ反映)
 **制約**: 対象agentが再respawn(/clear等)されるとconfig.toml現在値に戻る(揮発的)。ninja_monitorのidle /clearでrespawnされる忍者はconfig.toml現在値を取得するが、codex_config_apply_agentが接続済みの経路ではsettings.yaml値が一時適用される。
 
 **2026-07-10追記(未commit差分確認・要再検証)**: `cli_lookup.sh`の`codex_config_apply_agent()`/`codex_config_restore()`が`ninja_monitor.sh`の自動respawn経路(`safe_send_clear`=idle /clear系、`check_ninja_cli_dead`=死亡pane復旧)にのみ組み込まれた。該当agentのsettings.yaml `model_name`が`gpt-*`形式で設定されていれば、ninja_monitor起因の自動respawnではeffort/service_tierが一時適用→復元され揮発しなくなる見込み。ただし`switch_cli_mode.sh`(Step2の手動`to-codex`/`to-claude`)経路には未接続のため、手動切替直後は従来通り本回避策の手順が必要。本変更は未commit・無テストのため、実機respawnでの動作確認は次回検証時に実施すること。
