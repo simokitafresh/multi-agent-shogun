@@ -19,7 +19,8 @@ DRY_RUN=0
 if [[ "${1:-}" == "--record-traversal" ]]; then
     [[ $# -eq 9 ]] || { echo "Usage: $0 --record-traversal route event_id landing adjacent finding action origin existing_links_csv" >&2; exit 2; }
     python3 - "$TRAVERSAL_LEDGER" "${@:2}" <<'PY'
-import fcntl, os, sys, tempfile, yaml
+import fcntl, os, sys, yaml
+from scripts.lib.yaml_atomic import atomic_yaml_write
 p,route,eid,a,b,finding,action,origin,links=sys.argv[1:]
 links=[x for x in links.split(',') if x]
 expected=f"[[{a}]] -> [[{b}]] -> [[{action}]]"
@@ -32,9 +33,7 @@ with open(lock,'a+') as lf:
  data=yaml.safe_load(open(p)) if os.path.exists(p) else {}; data=data or {}; events=data.setdefault('events',[])
  if any(str(e.get('event_id'))==eid for e in events): print('TRAVERSAL_DUPLICATE'); raise SystemExit(0)
  events.append({'event_id':eid,'route':route,'landing_node':a,'adjacent_node':b,'finding':finding,'connected_action':action,'hop_count':1,'origin':origin,'existing_links':links})
- fd,tmp=tempfile.mkstemp(dir=os.path.dirname(p) or '.',prefix='.traversal.')
- with os.fdopen(fd,'w') as out: yaml.safe_dump(data,out,allow_unicode=True,sort_keys=False); out.flush(); os.fsync(out.fileno())
- os.replace(tmp,p)
+ atomic_yaml_write(p,data,sort_keys=False)
 print('TRAVERSAL_RECORDED')
 PY
     exit $?
