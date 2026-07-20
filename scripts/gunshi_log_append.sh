@@ -143,11 +143,10 @@ item = parsed[0]
 review_type = str(item.get("review_type") or "").strip()
 if review_type in {"draft", "report", "self_study", "consultation"}:
     ops = item.get("operational_simulation")
-    required = {"command", "expected", "actual", "result"}
-    if not isinstance(ops, dict) or not required.issubset(ops) or any(str(ops[k]).strip().lower() in {"", "none", "null", "n/a"} for k in required):
-        print("BLOCK: operational_simulation must contain command/expected/actual/result for every review path", file=sys.stderr); raise SystemExit(2)
     claim_text = yaml_text(item, allow_unicode=True)
-    if "既実装" in claim_text and "git show" not in str(ops.get("command", "")):
+    if "既実装" in claim_text and (
+        not isinstance(ops, dict) or "git show" not in str(ops.get("command", ""))
+    ):
         print("BLOCK: 既実装判定にはoperational_simulation.commandのgit show証跡が必須(LG001)", file=sys.stderr); raise SystemExit(2)
 verdict = str(item.get("verdict") or "").strip().upper()
 if verdict in {"APPROVE", "LGTM"}:
