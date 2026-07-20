@@ -19,6 +19,8 @@ files_modified:
 binary_checks:
   commit:
     - {check: 運用データのみのためcommit不要, result: yes}
+lessons_useful:
+  - {id: L074, useful: false, reason: fixture contract}
 no_code_change_evidence:
   before_tree: 1111111111111111111111111111111111111111
   after_tree: 1111111111111111111111111111111111111111

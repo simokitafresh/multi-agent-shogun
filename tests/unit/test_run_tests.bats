@@ -49,7 +49,7 @@ SH
 
   run env -u BATS_CACHE PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$BATS_ARGS_LOG" \
     SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
-    bash "$TMPROOT/scripts/run_tests.sh"
+    bash "$TMPROOT/scripts/run_tests.sh" all
 
   [ "$status" -eq 0 ]
   grep -Fxq "$TMPROOT/tests/unit/sample.bats" "$BATS_ARGS_LOG"
