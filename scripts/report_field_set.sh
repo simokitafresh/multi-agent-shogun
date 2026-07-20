@@ -31,7 +31,8 @@ if [ "${1:-}" = "--batch" ]; then
     mkdir -p "${_rfs_batch_report%/*}"
     exec 200>"$_rfs_batch_lock"
     flock -w 5 200 || { echo "BLOCK: batch report lock timeout" >&2; exit 1; }
-    RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
+    _rfs_batch_output=""
+    if _rfs_batch_output=$(RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
 import hashlib, os, pathlib, re, sys, tempfile, yaml
 sys.path.insert(0, sys.argv[2])
 from scripts.lib.yaml_atomic import yaml_text
@@ -138,28 +139,24 @@ try:
 finally:
     if os.path.exists(tmp): os.unlink(tmp)
 print("BATCH_OK fields={} fingerprint={}".format(len(updates), hashlib.sha256(text.encode()).hexdigest()))
+print("BATCH_META status={} worker={} parent={}".format(
+    str(data.get("status", "")), str(data.get("worker_id", "")), str(data.get("parent_cmd", ""))))
 PY
-    _rfs_batch_rc=$?
+    ); then
+        _rfs_batch_rc=0
+    else
+        _rfs_batch_rc=$?
+    fi
+    _rfs_batch_ok="${_rfs_batch_output%%$'\n'*}"
+    printf '%s\n' "$_rfs_batch_ok"
     if [ "$_rfs_batch_rc" -eq 0 ]; then
-        _rfs_batch_status=$(python3 - "$_rfs_batch_report" <<'PY'
-import sys, yaml
-data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-print(str(data.get("status", "")))
-PY
-)
+        _rfs_batch_meta="${_rfs_batch_output#*$'\n'}"
+        _rfs_batch_status="${_rfs_batch_meta#BATCH_META status=}"
+        _rfs_batch_status="${_rfs_batch_status%% worker=*}"
         if [ "$_rfs_batch_status" = "completed" ] || [ "$_rfs_batch_status" = "done" ]; then
-            _rfs_batch_worker=$(python3 - "$_rfs_batch_report" <<'PY'
-import sys, yaml
-data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-print(str(data.get("worker_id", "")))
-PY
-)
-            _rfs_batch_parent=$(python3 - "$_rfs_batch_report" <<'PY'
-import sys, yaml
-data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-print(str(data.get("parent_cmd", "")))
-PY
-)
+            _rfs_batch_worker="${_rfs_batch_meta#* worker=}"
+            _rfs_batch_worker="${_rfs_batch_worker%% parent=*}"
+            _rfs_batch_parent="${_rfs_batch_meta#* parent=}"
             [ -n "$_rfs_batch_worker" ] && [ -n "$_rfs_batch_parent" ] || {
                 echo "BLOCK: terminal report lacks worker_id/parent_cmd for durable publish" >&2
                 exit 1
