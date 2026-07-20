@@ -666,7 +666,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         # order (single-flight -> admission) and deadlock two callers.
         if [[ "${SHOGUN_HEAVY_JOB_ADMITTED:-${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}}" != "1" && ( "$_mode" == "all" || "$_mode" == "unit" ) ]]; then
             _singleflight=1
-            _sf_dir="${RUN_TESTS_SINGLEFLIGHT_DIR:-/tmp/shogun-run-tests-singleflight}"
+            _sf_dir="${RUN_TESTS_SINGLEFLIGHT_DIR:-/tmp/shogun-run-tests-singleflight-v2}"
             mkdir -p "$_sf_dir"
             _sf_lock="$_sf_dir/${_mode}.lock"
             _sf_state="$_sf_dir/${_mode}.state"
@@ -701,9 +701,20 @@ PY
         fi
         _tap="${_receipt%.json}.tap"
         set +e
-        BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
-            --summary-only --receipt "$_receipt" -- \
-            env BATS_TAP_OUTPUT="$_tap" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+        if [ "$_singleflight" = 1 ]; then
+            # The parent retains the mode lock until receipt publication, but
+            # test descendants must never inherit its FD and leak the lock.
+            (
+                eval "exec ${_sf_fd}>&-"
+                BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
+                    --summary-only --receipt "$_receipt" -- \
+                    env BATS_TAP_OUTPUT="$_tap" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+            )
+        else
+            BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
+                --summary-only --receipt "$_receipt" -- \
+                env BATS_TAP_OUTPUT="$_tap" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+        fi
         _rc=$?
         set -e
         if ! bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null; then
