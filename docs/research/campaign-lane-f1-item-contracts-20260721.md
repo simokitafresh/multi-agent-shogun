@@ -61,3 +61,4 @@
 - owned paths外diff 0、commit 1本、固有test `TOTAL=N FAIL=0 SKIP=0`。
 - 実装用testではなく、上記入出力不変量を守るcontract testとして各test先頭に非空 `test_necessity` を宣言する。
 - fixed SHAの `scripts/deploy_task.sh` と本書だけをread-only参照し、他item成果へ依存しない。
+- 淘汰対象は過剰制限だけとする。作業前三層記憶探索・Read-before-Edit・cmd_id採番・D001-009・YAML安全など不可逆害を防ぐ必須の構造強制は削減対象外であり、速度向上がそれらを削る候補は不採用とする。
