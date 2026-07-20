@@ -30,6 +30,18 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: 全忍者taskが反復選別と報告直前unit全量1回を区別する検証契約を自動受領する不変量を守る。
+@test "model profile injects two-stage validation contract" {
+    local task="$BATS_TEST_TMPDIR/two-stage-task.yaml"
+    printf 'task:\n  parent_cmd: cmd_test\n  status: assigned\n' > "$task"
+    run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; cli_model_display(){ echo "GPT"; }; inject_model_injection_profile "$2" saizo' _ "$TEST_PROJECT" "$task"
+    [ "$status" -eq 0 ]
+    run grep -F '反復=bash scripts/run_tests.sh affected' "$task"
+    [ "$status" -eq 0 ]
+    run grep -F '最終checkpoint=bash scripts/run_tests.sh unitを1回実行しFAIL0・SKIP0をreceiptで証明' "$task"
+    [ "$status" -eq 0 ]
+}
+
 setup() {
     deploy_task_scaffold "deploy_yaml_freshness"
 }

@@ -311,6 +311,44 @@ SH
   ! grep -q -- '--jobs 8' "$TMPROOT/bats.args"
 }
 
+# test_necessity: 忍者の反復は変更影響testを既定選択し、selector障害時だけunit全量へfail-safe fallbackする二段契約を守る。
+@test "default mode selects affected tests and records its rationale" {
+  printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$REPO_ROOT/tests/unit/a.bats"
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '1..1\nok 1 sample\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SELECTION result=selected reason=changed_files files=1"* ]]
+}
+
+@test "affected selector failure falls back to unit suite and records reason" {
+  printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
+  printf '#!/usr/bin/env bash\nexit 7\n' >"$TMPROOT/scripts/test_select.sh"
+  chmod +x "$TMPROOT/scripts/test_select.sh"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '1..1\nok 1 sample\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner affected scripts/foo.sh
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SELECTION result=fallback reason=selector_exit_7 target=unit"* ]]
+}
+
 @test "matching timing cohort orders measured files by LPT" {
   printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
   printf '@test "b" { true; }\n' >"$TMPROOT/tests/unit/b.bats"
