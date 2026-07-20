@@ -10,7 +10,7 @@ retro_verbatim_prompt_deliver() {
     local key marker
 
     mkdir -p "$state_dir" "$(dirname "$log")"
-    key=$(printf '%s\0%s\0%s' "$target" "$event_id" "$from" | sha256sum | cut -d' ' -f1)
+    key=$(printf '%s\0%s\0%s' "$target" "$from" "$RETRO_VERBATIM_PROMPT" | sha256sum | cut -d' ' -f1)
     marker="$state_dir/$key.claimed"
     if ! mkdir "$marker" 2>/dev/null; then
         printf '%s\tdeduplicated\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" >> "$log"
