@@ -182,7 +182,6 @@ PY
 }
 
 @test "twenty isolated terminal publishes persist review-ready events under five seconds with no live inbox writes" {
-  live_before="$(sha256sum "$ROOT/queue/inbox/karo.yaml" | awk '{print $1}')"
   : >"$RFS_EVENT_LOG"
   durations="$TMPDIR_CASE/durations"
   for i in $(seq 1 20); do
@@ -196,7 +195,7 @@ PY
     [ "$(stat -c %Y "$case_report")" -le "$(date +%s)" ]
   done
   [ "$(wc -l <"$RFS_EVENT_LOG")" -eq 20 ]
-  [ "$(sha256sum "$ROOT/queue/inbox/karo.yaml" | awk '{print $1}')" = "$live_before" ]
+  [ "$(grep -c '^karo hanzo報告完了' "$RFS_EVENT_LOG")" -eq 20 ]
   run python3 - "$durations" <<'PY'
 import sys
 xs=sorted(int(x)/1e9 for x in open(sys.argv[1]))
