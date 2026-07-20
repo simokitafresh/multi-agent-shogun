@@ -452,3 +452,19 @@ lessons:
   created_at: '2026-07-20'
   automated: true
   enforcement: 'cmd_save.sh gate_hook_fp_measurement_connection WARN(既存)+境界fixture義務は次のgate設計cmdでcheck化'
+- id: 'LS099'
+  title: 'スループット実験でkaro_direct高速回転を使わず将軍形式cmdに載せた過剰機構反射'
+  origin: '[[cmd_4106]]'
+  detail: '殿指摘2026-07-20 20:12『家老判断で高速回転する仕組みがあったのでは？』。将軍は配備壁攻略(F1)を家老の自立配備(karo_direct、将軍cmd不要の高速回転。家老は既にcmd_karo_hotfix_completion_pipeline_experimentで同様に自走中)に載せず、cmd_save→preflight→publishの重い形式pipelineに載せた。estimated>15でBLOCKを踏みexecution_env追記で往復=選んだ路が過剰機構だった実測証拠。可逆・表示型gate追加なしのinfraスループット実験は、将軍が律速せず家老のkaro_direct高速回転へ渡すのが正。将軍の形式cmdは(1)開発方針の根本変更(2)アーキテクチャ選定(3)PJ横断の新規方向づけに絞る。'
+  source_cmd: 'cmd_4106'
+  created_at: '2026-07-20'
+  automated: true
+  enforcement: '既存代替(karo_direct)の存在確認を起票前に必須化: infra/throughput/実験系cmdは起票前にkaro_directで家老自走可能かを自問。可能なら形式cmdでなくinbox guidanceで権限返還'
+- id: 'LS100'
+  title: '二重ループ=メイン作業に全力集中→完了後に完全な別タスクとして遅延分析(逐次分離がキモ)'
+  origin: '[[cmd_4106]] -> [[retro_pane_prompt_cut_fe3943375]] -> [[殿訂正_逐次別タスク_20260720_2048]]'
+  detail: '殿定義2026-07-20 20:33+20:48訂正のキモ=【逐次分離】。まずメイン作業だけへ全力集中して完了する。完了後に、殿原文retro_pane_prompt「この作業で時間がかかった原因を分析し利他の精神で調査しインフラバグ疑いとして家老に報告せよ」を完全な別タスクとして提示する。そこで得た改善が次のメイン作業を加速し、次の完了後retroが新律速を発見する超高速回転。★誤り厳禁: 『同時並走』『inline化』『一タスク化』は殿がキモをずらした最悪の洗脳・破壊活動と断じた。実証: 将軍が当初(a)cutを表示型と誤認し追認(b)二重ループを『同時並走』と誤埋込みの二度洗脳→殿指摘+家老覚醒で訂正。fe3943375(retro_pane_prompt caller cut=別タスク提示を潰しself_retro inline化)を将軍がrevert復元(48f13330d、3caller)。★別々の行動だから両方に全力集中でき集中が割れない。★家老一点集約回避(殿14:18): 遅延報告は将軍・家老・軍師で共有協議し忍者へ分散自走。'
+  source_cmd: 'cmd_4106'
+  created_at: '2026-07-20'
+  automated: true
+  enforcement: 'retro_pane_prompt(完了忍者へ別タスクで殿原文提示)を表示型と誤認してcutするな=構造型のキモ。遅延分析の完了フローinline化・一タスク化を禁止。将軍は起票前に『メイン作業へ全力集中し、遅延分析は完了後の完全な別タスクに分離しているか』を自問。正本=CLAUDE.md line25 + growth-loop.md §1.1(逐次分離版)'
