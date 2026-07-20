@@ -6510,7 +6510,10 @@ stop_stale_inbox_watcher() {
 # ─── 家老陣形図(karo_snapshot) — 家老/clear復帰用の圧縮状態 ───
 write_karo_snapshot() {
     local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
-    local lock_file="/tmp/karo_snapshot.lock"
+    # Derive the lock identity from the protected snapshot. Production writers
+    # still serialize on one lock, while isolated SCRIPT_DIR fixtures no longer
+    # contend with the live monitor through a process-global /tmp lock.
+    local lock_file="${snapshot_file}.lock"
     local timestamp
     printf -v timestamp '%(%Y-%m-%dT%H:%M:%S)T' -1
     if ! declare -p NINJA_NAMES >/dev/null 2>&1 || [ "${#NINJA_NAMES[@]}" -eq 0 ]; then
