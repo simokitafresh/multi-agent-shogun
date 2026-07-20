@@ -426,6 +426,10 @@ PY
 }
 
 deploy_task_guard_retro_answer_hold() {
+    # 殿裁定2026-07-20 17:22: 過剰対策削減。retro未回答による配備BLOCKを撤廃。
+    # retro台帳が配備を12分×5回ブロックし全忍者を回答処理に奪い脱感染campaignを停止させた(家老RCA blt_20260720_175956)。
+    # retroは有用だが配備(スループット)を止める理由にならない。非同期で回答する。revert復元可。
+    return 0
     local ninja_name="$1" hold event_id
     # Caller must hold the per-ninja deploy lock. This closes the race between
     # monitor publishing the hold and a concurrent deployment transaction.
