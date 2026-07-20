@@ -599,6 +599,10 @@ task:
 YAML
     cat > "$tmpdir/scripts/memory_db_query.sh" <<'EOF'
 #!/usr/bin/env bash
+if [[ "$1" == SELECT\ EXISTS* ]]; then
+  printf '1\n'
+  exit 0
+fi
 printf '%s\n' '2026-06-20 | 殿: "オントロジー" and can'\''t stop'
 EOF
     chmod +x "$tmpdir/scripts/memory_db_query.sh"
@@ -625,6 +629,47 @@ with open(sys.argv[1], encoding='utf-8') as f:
 ctx = task.get('memory_db_context') or []
 assert ctx == ['2026-06-20 | 殿: "オントロジー" and can\'t stop'], ctx
 PY
+}
+
+# test_necessity: FTS miss bypasses LIKE while FTS hit delegates to the unchanged LIKE output contract.
+@test "memory_db_context FTS existence guard bypasses only proven zero-hit queries" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/scripts"
+    cat > "$tmpdir/scripts/memory_db_query.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$1" >> "$QUERY_LOG"
+if [[ "$1" == SELECT\ EXISTS* ]]; then
+  [[ "$1" == *zz_nohit* ]] && printf '0\n' || printf '1\n'
+else
+  printf '%s\n' '2026-07-21 | stable current LIKE bytes'
+fi
+EOF
+    chmod +x "$tmpdir/scripts/memory_db_query.sh"
+    cat > "$tmpdir/run.sh" <<EOF
+#!/usr/bin/env bash
+SCRIPT_DIR="$tmpdir"
+log() { :; }
+$(sed -n '/^inject_memory_db_context()/,/^}/p' "$PROJECT_ROOT/scripts/deploy_task.sh")
+inject_memory_db_context "\$1"
+EOF
+    chmod +x "$tmpdir/run.sh"
+
+    for purpose in 'zz_nohit_7f3a9c qq_absent_91de2 never_seen_62ac1' '二重ループ インフラ改善 stable' 'memory 改善 仕組み'; do
+      cat > "$tmpdir/queue/tasks/task.yaml" <<YAML
+task:
+  purpose: "$purpose"
+YAML
+      : > "$tmpdir/query.log"
+      QUERY_LOG="$tmpdir/query.log" run bash "$tmpdir/run.sh" "$tmpdir/queue/tasks/task.yaml"
+      [ "$status" -eq 0 ]
+      if [[ "$purpose" == zz_nohit* ]]; then
+        [ "$(wc -l < "$tmpdir/query.log")" -eq 1 ]
+        ! grep -q '^  memory_db_context:' "$tmpdir/queue/tasks/task.yaml"
+      else
+        [ "$(wc -l < "$tmpdir/query.log")" -eq 2 ]
+        grep -q "stable current LIKE bytes" "$tmpdir/queue/tasks/task.yaml"
+      fi
+    done
 }
 
 @test "workaround lesson description preserves regex backslashes as printable text" {

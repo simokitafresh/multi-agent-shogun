@@ -5149,14 +5149,64 @@ inject_memory_db_context() {
     [ -n "$keywords" ] || return 0
 
     # cmd_3758: キーワード毎に別プロセスで叩いていたのをUNION ALLで1クエリ/1プロセスに統合(per-keyword LIMIT 2は維持)
-    local kw kw_esc combined_sql=""
+    local kw kw_esc kw_fts combined_sql="" fts_query="" fts_safe=true
     for kw in $keywords; do
         kw_esc="${kw//\'/\'\'}"
+        # FTS5 trigram cannot represent terms shorter than three characters.
+        # Preserve the current LIKE path for those terms instead of risking a
+        # false zero-hit decision.
+        if [ "${#kw}" -lt 3 ]; then
+            fts_safe=false
+        else
+            kw_fts="${kw//\"/\"\"}"
+            [ -z "$fts_query" ] || fts_query="${fts_query} OR "
+            fts_query="${fts_query}\"${kw_fts}\""
+        fi
         if [ -n "$combined_sql" ]; then
             combined_sql="${combined_sql}"$'\nUNION ALL\n'
         fi
-        combined_sql="${combined_sql}SELECT ts || ' | ' || substr(summary,1,100) FROM events WHERE summary LIKE '%${kw_esc}%' AND event_type IN ('conversation','knowledge','ruling') ORDER BY ts DESC LIMIT 2"
+        combined_sql="${combined_sql}SELECT * FROM (SELECT ts || ' | ' || substr(summary,1,100) FROM events WHERE summary LIKE '%${kw_esc}%' AND event_type IN ('conversation','knowledge','ruling') ORDER BY ts DESC LIMIT 2)"
     done
+    # FTS is an existence guard only.  A miss proves the current LIKE queries
+    # would return no eligible rows; a hit delegates to the byte-identical
+    # LIKE SQL below so ranking, limits, and output remain unchanged.
+    if [ "$fts_safe" = true ] && [ -n "$fts_query" ]; then
+        local existence_sql existence_result="" fts_db_path=""
+        existence_sql="SELECT EXISTS(SELECT 1 FROM events_fts JOIN events e ON e.rowid=events_fts.rowid WHERE events_fts MATCH '${fts_query//\'/\'\'}' AND e.event_type IN ('conversation','knowledge','ruling') LIMIT 1)"
+        # Resolve the same ext4 snapshot as memory_db_query, but execute this
+        # tiny existence probe directly.  Re-launching memory_db_query for the
+        # guard repeats its full cache/preflight setup and erases the measured
+        # zero-hit saving.
+        if [ -f "$SCRIPT_DIR/scripts/lib/memory_db_cache.sh" ]; then
+            # shellcheck source=lib/memory_db_cache.sh
+            source "$SCRIPT_DIR/scripts/lib/memory_db_cache.sh"
+            fts_db_path=$(prepare_memory_db_for_read "$SCRIPT_DIR" "$db_path" \
+                "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" 2>/dev/null || printf '%s' "$db_path")
+            existence_result=$(python3 - "$fts_db_path" "$fts_query" <<'PY' 2>/dev/null || true
+import sqlite3, sys
+
+db_path, query = sys.argv[1:]
+with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=0.5) as conn:
+    row = conn.execute(
+        "SELECT EXISTS(SELECT 1 FROM events_fts JOIN events e "
+        "ON e.rowid=events_fts.rowid WHERE events_fts MATCH ? "
+        "AND e.event_type IN ('conversation','knowledge','ruling') LIMIT 1)",
+        (query,),
+    ).fetchone()
+print(int(row[0]) if row else 0)
+PY
+)
+        elif declare -F deploy_task_wave_cache >/dev/null 2>&1; then
+            existence_result=$(deploy_task_wave_cache memory-exists "$keywords|$fts_query" "$db_path" \
+                timeout "${DEPLOY_TASK_MEMORY_CONTEXT_TIMEOUT_SEC:-3}" bash "$query_script" "$existence_sql" 2>/dev/null) || existence_result=""
+        else
+            existence_result=$(bash "$query_script" "$existence_sql" 2>/dev/null) || existence_result=""
+        fi
+        if [ "$existence_result" = "0" ]; then
+            log "inject_memory_db_context: FTS existence miss for: $keywords"
+            return 0
+        fi
+    fi
     if declare -F deploy_task_wave_cache >/dev/null 2>&1; then
         result=$(deploy_task_wave_cache memory "$keywords|$combined_sql" "$db_path" \
             timeout "${DEPLOY_TASK_MEMORY_CONTEXT_TIMEOUT_SEC:-3}" bash "$query_script" "$combined_sql" 2>/dev/null) || result=""
