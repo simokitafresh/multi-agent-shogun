@@ -327,38 +327,76 @@ check_disk_space_watch() {
 
 acquire_singleton_lock() {
     local pid_file="${STATE_DIR}/ninja_monitor.pid"
-    local existing_pid=""
+    local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR}/ninja_monitor.owner}"
+    local lock_file="${owner_file}.lock"
+    local existing_pid="" existing_generation="" existing_heartbeat=""
+    local now age tmp lock_fd
 
-    mkdir -p "$(dirname "$pid_file")"
+    mkdir -p "$(dirname "$owner_file")"
+    exec {lock_fd}>"$lock_file"
+    flock "$lock_fd"
+    now=$EPOCHSECONDS
 
-    if [ -f "$pid_file" ]; then
+    if [ -f "$owner_file" ]; then
+        read -r existing_pid existing_generation existing_heartbeat < "$owner_file" || true
+    elif [ -f "$pid_file" ]; then
         existing_pid=$(cat "$pid_file" 2>/dev/null || true)
-        if [ "$existing_pid" = "$$" ]; then
-            printf '%s\n' "$$" > "$pid_file"
-            return 0
-        fi
-        if _ninja_monitor_pid_is_live "$existing_pid"; then
-            log "SINGLETON-EXIT: another ninja_monitor instance is live (pid=${existing_pid}, pid_file=${pid_file})"
-            exit 0
-        fi
-        log "STALE-PID-REMOVED: ${pid_file} contained ${existing_pid:-empty}"
-        rm -f "$pid_file"
     fi
 
-    if ( set -o noclobber; printf '%s\n' "$$" > "$pid_file" ) 2>/dev/null; then
-        trap 'if [ "$(cat "'"$pid_file"'" 2>/dev/null || true)" = "$$" ]; then rm -f "'"$pid_file"'"; fi' EXIT
-        return 0
-    fi
-
-    existing_pid=$(cat "$pid_file" 2>/dev/null || true)
-    if _ninja_monitor_pid_is_live "$existing_pid"; then
-        log "SINGLETON-EXIT: another ninja_monitor instance won pid-file race (pid=${existing_pid}, pid_file=${pid_file})"
+    age=$(( now - ${existing_heartbeat:-0} ))
+    if _ninja_monitor_pid_is_live "$existing_pid" \
+        && [[ "$existing_heartbeat" =~ ^[0-9]+$ ]] \
+        && (( age <= ${NINJA_MONITOR_HEARTBEAT_STALE_SECONDS:-90} )); then
+        log "SINGLETON-BLOCK: healthy owner pid=${existing_pid} generation=${existing_generation:-legacy} heartbeat_age=${age}s"
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
         exit 0
     fi
 
-    log "STALE-PID-RACE-RECOVERY: replacing ${pid_file} after non-live pid ${existing_pid:-empty}"
+    NINJA_MONITOR_GENERATION="${now}-$$-${RANDOM}"
+    export NINJA_MONITOR_GENERATION
+    tmp="${owner_file}.tmp.$$"
+    printf '%s %s %s\n' "$$" "$NINJA_MONITOR_GENERATION" "$now" > "$tmp"
+    mv "$tmp" "$owner_file"
     printf '%s\n' "$$" > "$pid_file"
-    trap 'if [ "$(cat "'"$pid_file"'" 2>/dev/null || true)" = "$$" ]; then rm -f "'"$pid_file"'"; fi' EXIT
+    log "SINGLETON-TAKEOVER: old_pid=${existing_pid:-none} old_generation=${existing_generation:-none} heartbeat_age=${age}s new_generation=${NINJA_MONITOR_GENERATION}"
+    flock -u "$lock_fd"
+    eval "exec ${lock_fd}>&-"
+    trap 'ninja_monitor_release_owner' EXIT
+}
+
+ninja_monitor_release_owner() {
+    local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR}/ninja_monitor.owner}"
+    local pid_file="${STATE_DIR}/ninja_monitor.pid"
+    local pid="" generation="" heartbeat=""
+    [ -f "$owner_file" ] || return 0
+    read -r pid generation heartbeat < "$owner_file" || true
+    if [ "$generation" = "${NINJA_MONITOR_GENERATION:-}" ]; then
+        rm -f "$owner_file" "$pid_file"
+    fi
+}
+
+ninja_monitor_owner_heartbeat() {
+    local owner_file="${NINJA_MONITOR_OWNER_FILE:-${STATE_DIR}/ninja_monitor.owner}"
+    local lock_file="${owner_file}.lock"
+    local pid_file="${STATE_DIR}/ninja_monitor.pid"
+    local pid="" generation="" heartbeat="" now tmp lock_fd
+    exec {lock_fd}>"$lock_file"
+    flock "$lock_fd"
+    read -r pid generation heartbeat < "$owner_file" 2>/dev/null || true
+    if [ "$generation" != "${NINJA_MONITOR_GENERATION:-}" ]; then
+        log "SINGLETON-FENCE: generation ${NINJA_MONITOR_GENERATION:-missing} lost ownership to ${generation:-missing}"
+        flock -u "$lock_fd"
+        eval "exec ${lock_fd}>&-"
+        return 1
+    fi
+    now=$EPOCHSECONDS
+    tmp="${owner_file}.tmp.$$"
+    printf '%s %s %s\n' "$$" "$generation" "$now" > "$tmp"
+    mv "$tmp" "$owner_file"
+    printf '%s\n' "$$" > "$pid_file"
+    flock -u "$lock_fd"
+    eval "exec ${lock_fd}>&-"
 }
 
 _ninja_monitor_pid_is_live() {
@@ -8194,6 +8232,12 @@ _NM_START_MTIME="$(stat -c %Y "$_NM_SCRIPT_PATH" 2>/dev/null || echo 0)"
 while true; do
     cycle=$((cycle + 1))
 
+    # A stale generation is never killed.  The owner record is atomically
+    # replaced by its successor and the old loop self-fences at this checkpoint.
+    if ! ninja_monitor_owner_heartbeat; then
+        exit 0
+    fi
+
     # 毎cycle確認（20秒以内）。重いdiscover_panesは従来どおり10分周期。
     reload_ninja_monitor_if_updated
 
@@ -8433,7 +8477,7 @@ while true; do
         fi
         if [ -z "$_retro_pane" ] || ! check_idle "$_retro_pane" "$_retro_ninja"; then eval "exec ${_retro_lock_fd}>&-"; continue; fi
         source "$SCRIPT_DIR/scripts/lib/retro_pane_prompt.sh"
-        RETRO_PANE_TARGET="$_retro_pane" RETRO_PANE_IDLE_CHECK=true \
+        if RETRO_PANE_TARGET="$_retro_pane" RETRO_PANE_IDLE_CHECK=true \
             retro_pane_prompt_deliver "$SCRIPT_DIR" "$_retro_ninja" "$_retro_event_id" "$_retro_from"; then
             bash "$SCRIPT_DIR/scripts/retro_write.sh" mark-delivered \
                 "$_retro_ninja" "$_retro_event_id" "$(date -Iseconds)" >> "$LOG" 2>&1
