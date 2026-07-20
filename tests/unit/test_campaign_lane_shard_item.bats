@@ -103,6 +103,13 @@ PY
   reason_is report_terminal_pass
 }
 
+# test_necessity: campaign bridgeの既定配備が現行deploy_task正規I/Fを使い、全shardが実装前BLOCKにならない不変量を守る。
+@test "default deploy command uses canonical yaml mode without direct" {
+  run grep -F 'deploy_cmd="${CAMPAIGN_LANE_DEPLOY_CMD:-bash $ROOT/scripts/deploy_task.sh --yaml}"' "$ROOT/scripts/campaign_lane_shard_item.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"--direct --yaml"* ]]
+}
+
 @test "materialized checkout inherits source local commit identity" {
   make_deployer pass
   git -C "$SOURCE" config user.name "Campaign Source"

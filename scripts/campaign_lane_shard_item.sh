@@ -288,7 +288,7 @@ then
     fail task_yaml_write_failed
 fi
 
-deploy_cmd="${CAMPAIGN_LANE_DEPLOY_CMD:-bash $ROOT/scripts/deploy_task.sh --direct --yaml}"
+deploy_cmd="${CAMPAIGN_LANE_DEPLOY_CMD:-bash $ROOT/scripts/deploy_task.sh --yaml}"
 stage_start deploy
 if ! SHOGUN_ROOT="${SHOGUN_ROOT:-$ROOT}" bash -c 'exec "$@"' _ $deploy_cmd "$task_path" "$worker_id"; then
     fail deploy_failed "$report_path"
