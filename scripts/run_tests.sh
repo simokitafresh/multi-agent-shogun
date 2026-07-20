@@ -6,7 +6,6 @@
 #   bash scripts/run_tests.sh              # unit + top-level 全量
 #   bash scripts/run_tests.sh unit         # unit のみ
 #   bash scripts/run_tests.sh affected     # git diffから影響テストのみ
-#   bash scripts/run_tests.sh checkpoint   # 変更種別から affected/unit を自動選択
 #   bash scripts/run_tests.sh push         # test_necessity宣言済みCI境界のみ
 #   bash scripts/run_tests.sh file <path>  # 特定ファイル
 set -euo pipefail
@@ -62,41 +61,6 @@ verify_test_tree_snapshot() {
         actual="$(sha256sum "$file" | awk '{print $1}')"
         [ "$actual" = "$expected" ] || { echo "BLOCK: test snapshot changed during run: $file" >&2; return 2; }
     done < "$snapshot"
-}
-
-# A reusable terminal receipt may truthfully represent PASS, test FAIL, or
-# SKIP.  run_with_receipt.sh --verify-receipt intentionally accepts PASS only,
-# so followers need a structural validator that preserves non-PASS outcomes
-# instead of converting them into an infrastructure BLOCK.
-verify_terminal_test_receipt() {
-    python3 - "$1" <<'PY'
-import hashlib, json, pathlib, sys
-
-path = pathlib.Path(sys.argv[1])
-try:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    artifact = pathlib.Path(data["artifact"])
-    actual = hashlib.sha256(artifact.read_bytes()).hexdigest()
-    required = {"complete", "result", "rc", "declared_test_count",
-                "observed_test_count", "skip_count", "output_sha256"}
-    valid = (required <= data.keys() and data["complete"] is True and
-             data["result"] in {"PASS", "FAIL"} and
-             isinstance(data["rc"], int) and data["rc"] >= 0 and
-             isinstance(data["skip_count"], int) and data["skip_count"] >= 0 and
-             data["declared_test_count"] == data["observed_test_count"] and
-             actual == data["output_sha256"])
-except (OSError, ValueError, KeyError, TypeError):
-    valid = False
-raise SystemExit(0 if valid else 1)
-PY
-}
-
-terminal_test_receipt_rc() {
-    python3 - "$1" <<'PY'
-import json, sys
-d=json.load(open(sys.argv[1], encoding="utf-8"))
-print(d["rc"] if d["rc"] != 0 else (0 if d["result"] == "PASS" else 1))
-PY
 }
 
 # run_embedded_test() (tests/unit/*_small_consolidated.bats) writes a throwaway
@@ -552,37 +516,6 @@ run_bats_files_parallel() {
 # 衝突し"unknown test name"でスイート全体を破壊する問題を、nested batsを起動しない
 # 経路(関数直接呼出し)で回避するために必要な構造。
 _run_tests_main() {
-    if [[ "${1:-}" == "checkpoint" ]]; then
-        shift || true
-        local -a _checkpoint_changes=()
-        if [ "$#" -gt 0 ]; then
-            _checkpoint_changes=("$@")
-        else
-            mapfile -t _checkpoint_changes < <(
-                git -C "$REPO_ROOT" diff --name-only
-                git -C "$REPO_ROOT" diff --cached --name-only
-            )
-            mapfile -t _checkpoint_changes < <(printf '%s\n' "${_checkpoint_changes[@]}" | awk 'NF && !seen[$0]++')
-        fi
-
-        local _checkpoint_target=affected _changed
-        for _changed in "${_checkpoint_changes[@]}"; do
-            case "$_changed" in
-                scripts/run_tests.sh|scripts/test_select.sh|scripts/run_with_receipt.sh|tests/test_helper/*|tests/helpers/*)
-                    _checkpoint_target=unit
-                    break
-                    ;;
-            esac
-        done
-        printf 'CHECKPOINT_ROUTING target=%s changed_files=%s\n' \
-            "$_checkpoint_target" "${#_checkpoint_changes[@]}"
-        if [ "$_checkpoint_target" = unit ]; then
-            set -- unit
-        else
-            set -- affected "${_checkpoint_changes[@]}"
-        fi
-    fi
-
     # cmd_karo_hotfix_heavy_job_admission_202607121348: 全量/unit/affectedモードは
     # host-wide flock semaphore(scripts/heavy_job_admission.sh)経由で自分自身を
     # self-reexecし、同時に1本だけが動くようhost全体で強制する(内部の並列bats実行も
@@ -648,25 +581,14 @@ _run_tests_main() {
             RUN_TESTS_MODE=push
             inventory="$REPO_ROOT/docs/research/ci-test-elimination-inventory-20260719.csv"
             [ -r "$inventory" ] || { echo "BLOCK: push inventory missing" >&2; exit 2; }
-            # The inventory is an append-only measurement ledger, so rows for
-            # intentionally deleted tests remain as historical tombstones.
-            # Select every currently tracked push test, while still failing
-            # closed if a tracked path is missing from the worktree.
-            mapfile -t test_files < <(awk -F, '
-                NR==FNR { tracked[$0]=1; next }
-                NR>1 && $7=="push-maintain" && ($2 in tracked) { print $2 }
-            ' <(git -C "$REPO_ROOT" ls-files) "$inventory" | sort -u)
+            mapfile -t test_files < <(awk -F, 'NR>1 && $7=="push-maintain"{print $2}' "$inventory" | sort -u)
+            [ "${#test_files[@]}" -gt 0 ] || { echo "BLOCK: canonical push set empty" >&2; exit 2; }
+            declared_cases=$(awk -F, 'NR>1 && $7=="push-maintain"{n++} END{print n+0}' "$inventory")
+            unique_cases=$(awk -F, 'NR>1 && $7=="push-maintain"{seen[$1]=1} END{for(k in seen)n++; print n+0}' "$inventory")
+            [ "$declared_cases" -eq "$unique_cases" ] || { echo "BLOCK: duplicate canonical case identity rows=$declared_cases unique=$unique_cases" >&2; exit 2; }
             for file in "${test_files[@]}"; do
                 [ -f "$REPO_ROOT/$file" ] || { echo "BLOCK: canonical push test missing: $file" >&2; exit 2; }
             done
-            [ "${#test_files[@]}" -gt 0 ] || { echo "BLOCK: canonical push set empty" >&2; exit 2; }
-            mapfile -t canonical_cases < <(awk -F, '
-                NR==FNR { tracked[$0]=1; next }
-                NR>1 && $7=="push-maintain" && ($2 in tracked) { print $1 }
-            ' <(git -C "$REPO_ROOT" ls-files) "$inventory")
-            declared_cases="${#canonical_cases[@]}"
-            unique_cases=$(printf '%s\n' "${canonical_cases[@]}" | sort -u | wc -l)
-            [ "$declared_cases" -eq "$unique_cases" ] || { echo "BLOCK: duplicate canonical case identity rows=$declared_cases unique=$unique_cases" >&2; exit 2; }
             BATS_CACHE=0
             BATS_FILE_TIMEOUT_SECONDS=300
             printf 'CANONICAL_PUSH files=%s cases=%s\n' "${#test_files[@]}" "$declared_cases" >&2
@@ -723,7 +645,7 @@ _run_tests_main() {
             run_bats_files_parallel "${selected[@]}"
             ;;
         *)
-            echo "Usage: bash scripts/run_tests.sh [all|unit|push|affected|checkpoint|file <path>]" >&2
+            echo "Usage: bash scripts/run_tests.sh [all|unit|push|affected|file <path>]" >&2
             exit 1
             ;;
     esac
@@ -746,21 +668,8 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             _singleflight=1
             _sf_dir="${RUN_TESTS_SINGLEFLIGHT_DIR:-/tmp/shogun-run-tests-singleflight-v2}"
             mkdir -p "$_sf_dir"
-            _checkpoint_generation="${RUN_TESTS_CHECKPOINT_GENERATION:-}"
-            _snapshot="$_sf_dir/${_mode}.$$.snapshot"
-            snapshot_test_tree "$_mode" "$_snapshot"
-            _sf_key=""
-            if [ -n "$_checkpoint_generation" ]; then
-                _head_hash="$(git -C "$REPO_ROOT" rev-parse HEAD)"
-                _snapshot_hash="$(sha256sum "$_snapshot" | awk '{print $1}')"
-                _runner_hash="$(sha256sum "${BASH_SOURCE[0]}" "$REPO_ROOT/scripts/run_with_receipt.sh" | sha256sum | awk '{print $1}')"
-                _sf_key="$(printf '%s\n%s\n%s\n%s\n%s\n' \
-                    "$_mode" "$_checkpoint_generation" "$_head_hash" "$_snapshot_hash" "$_runner_hash" \
-                    | sha256sum | awk '{print $1}')"
-            fi
-            _sf_identity="${_sf_key:-$_mode}"
-            _sf_lock="$_sf_dir/${_sf_identity}.lock"
-            _sf_state="$_sf_dir/${_sf_identity}.state"
+            _sf_lock="$_sf_dir/${_mode}.lock"
+            _sf_state="$_sf_dir/${_mode}.state"
             _sf_heartbeat="${RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS:-5}"
             _sf_stale_timeout="${RUN_TESTS_SINGLEFLIGHT_STALE_SECONDS:-10}"
             [[ "$_sf_heartbeat" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid single-flight heartbeat interval" >&2; exit 2; }
@@ -782,7 +691,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                         if kill -0 "$_sf_owner" 2>/dev/null; then
                             continue
                         fi
-                        verify_terminal_test_receipt "$_receipt" \
+                        bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null \
                             || { echo "BLOCK: single-flight stale owner receipt invalid" >&2; exit 2; }
                         _sf_holders="$(fuser "$_sf_lock" 2>/dev/null | awk '{print NF}' || true)"
                         _sf_holders="${_sf_holders:-0}"
@@ -794,41 +703,28 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
 import json,sys
 d=json.load(open(sys.argv[1])); print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} joined=1 stale_owner=1".format(sys.argv[1],d["rc"],d["observed_test_count"],d["declared_test_count"],d["skip_count"],d["output_sha256"],d["duration_ms"]))
 PY
-                        exit "$(terminal_test_receipt_rc "$_receipt")"
+                        exit "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$_receipt")"
                     fi
                 done
                 [ -s "$_sf_state" ] || { echo "BLOCK: single-flight leader state missing" >&2; exit 2; }
                 _receipt="$(sed -n '1p' "$_sf_state")"
-                verify_terminal_test_receipt "$_receipt" \
+                bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null \
                     || { echo "BLOCK: single-flight leader receipt invalid" >&2; exit 2; }
                 printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s\n' "$_mode" "$_receipt" >&2
                 python3 - "$_receipt" <<'PY'
 import json,sys
 d=json.load(open(sys.argv[1])); print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} joined=1".format(sys.argv[1],d["rc"],d["observed_test_count"],d["declared_test_count"],d["skip_count"],d["output_sha256"],d["duration_ms"]))
 PY
-                exit "$(terminal_test_receipt_rc "$_receipt")"
-            fi
-            if [ -n "$_sf_key" ] && [ -s "$_sf_state" ] && \
-               [ "$(sed -n '5p' "$_sf_state")" = "$_sf_key" ]; then
-                _receipt="$(sed -n '1p' "$_sf_state")"
-                if verify_terminal_test_receipt "$_receipt"; then
-                    printf 'SINGLE_FLIGHT_REUSED mode=%s generation=%s key=%s receipt=%s\n' \
-                        "$_mode" "$_checkpoint_generation" "$_sf_key" "$_receipt" >&2
-                    python3 - "$_receipt" <<'PY'
-import json,sys
-d=json.load(open(sys.argv[1])); print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} reused=1".format(sys.argv[1],d["rc"],d["observed_test_count"],d["declared_test_count"],d["skip_count"],d["output_sha256"],d["duration_ms"]))
-PY
-                    rm -f "$_snapshot"
-                    exit "$(terminal_test_receipt_rc "$_receipt")"
-                fi
+                exit "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$_receipt")"
             fi
         fi
         _receipt="${RUN_TESTS_RECEIPT_PATH:-$_receipt_dir/run_tests_$(date -u +%Y%m%dT%H%M%S)_$$.json}"
         if [ "$_singleflight" = 1 ]; then
+            _snapshot="$_sf_dir/${_mode}.$$.snapshot"
+            snapshot_test_tree "$_mode" "$_snapshot"
             _sf_generation="$(date -u +%s%N)-$$"
             _sf_owner_pgid="$(ps -o pgid= -p $$ | tr -d ' ')"
-            printf '%s\n%s\n%s\n%s\n%s\n' \
-                "$_receipt" "$$" "$_sf_generation" "$_sf_owner_pgid" "$_sf_key" > "$_sf_state"
+            printf '%s\n%s\n%s\n%s\n' "$_receipt" "$$" "$_sf_generation" "$_sf_owner_pgid" > "$_sf_state"
             export RUN_TESTS_SNAPSHOT_MANIFEST="$_snapshot"
             printf 'SINGLE_FLIGHT_LEADER mode=%s snapshot_count=%s\n' "$_mode" "$(wc -l < "$_snapshot")" >&2
         fi

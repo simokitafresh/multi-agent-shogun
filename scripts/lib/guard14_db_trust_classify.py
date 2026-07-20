@@ -154,9 +154,6 @@ LOCAL_HOST_VALUES = {"localhost", "127.0.0.1", "::1"}
 # markerが0件で、明示HTTP client callがある場合だけ非DB資格情報として除外する。
 DB_ENV_VAR_RE = re.compile(r"\b[A-Z][A-Z0-9_]*(?:DB|DATABASE|POSTGRES|PG)[A-Z0-9_]*_(?:URL|DSN)\b")
 CONNECT_CALL_RE = re.compile(r"\.connect\s*\(")
-SQLITE_LITERAL_CONNECT_RE = re.compile(
-    r"\bsqlite3?\.connect\s*\(\s*['\"](?:file:)?(?P<path>/[^?'\"\s]+)"
-)
 CREATE_ENGINE_RE = re.compile(r"create_[A-Za-z_]*engine\s*\(")
 ENV_CREDENTIAL_FILE_RE = re.compile(r"(?:^|[^A-Za-z0-9_])\.env(?:\.[A-Za-z0-9_]+)?\b")
 CREDENTIAL_FILE_FLAG_RE = re.compile(r"^--credential-file(?:=.*)?$")
@@ -720,8 +717,6 @@ def _extract_candidates(tokens: list[str]) -> list[str]:
         found.append(m.group(1))
     for m in urls:
         found.append(_url_host_candidate(m.group(0)))
-    for match in SQLITE_LITERAL_CONNECT_RE.finditer(text):
-        found.append("sqlite-file:" + match.group("path"))
     found.extend(_flag_host_candidates(tokens))
     return found
 
@@ -731,11 +726,6 @@ def _is_local_candidate(value: str) -> bool:
         return False  # review_correction(09:17): 未解決/空値はfail-closedでuntrusted
     if value == ":memory:" or value in LOCAL_HOST_VALUES:
         return True
-    if value.startswith("sqlite-file:"):
-        # A literal absolute SQLite file is a local filesystem capability, not
-        # a network DB boundary. Dynamic/relative expressions do not match the
-        # structured extractor and remain fail-closed.
-        return os.path.isabs(value.removeprefix("sqlite-file:"))
     if value.startswith("/"):
         # An arbitrary absolute-looking string is not a local capability.
         # libpq's host value is a socket *directory*, so require the directory

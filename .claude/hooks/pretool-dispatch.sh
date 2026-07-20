@@ -85,10 +85,15 @@ case "$payload" in
         ;;
     *'"Write"'*|*'"Edit"'*)
         printf '%s' "$payload" | _run_pretool_child bash "$ROOT/.claude/hooks/pre-write-edit-combined.sh" || exit "$?"
+        printf '%s' "$payload" | _run_pretool_child bash "$ROOT/.claude/hooks/pre-edit-pi-inject.sh" || exit "$?"
         ;;
     *'"Skill"'*)
-        # Display/enforcement-only skill routing intentionally disabled.
-        exit 0
+        # Guard: /clear自発禁止 (殿裁定2026-06-28 LS074)
+        if [[ "${AGENT_ID:-}" == "shogun" ]] && echo "$payload" | grep -qi 'clear-prep\|shogun-clear-prep'; then
+          echo "BLOCK: /clear自発禁止。/clearは殿の専権事項。autocompact=90%が自動管理。殿の明示的指示なしに/clearスキルを実行するな。" >&2
+          exit 2
+        fi
+        source "$ROOT/.claude/hooks/pre-skill-project-guard.sh" <<< "$payload"
         ;;
     *)
         exit 0

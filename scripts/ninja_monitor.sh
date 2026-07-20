@@ -1417,8 +1417,8 @@ safe_send_clear() {
                 _fsc_respawn_ok=0
             fi
             _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
-            # 殿裁定2026-07-21: config.tomlを正本のまま維持。restoreすると汚染値に戻るため廃止
-            # codex_config_restore
+            # config.toml復元(SSOT: cli_lookup.sh codex_config_restore)
+            codex_config_restore
             if [ "$_fsc_respawn_ok" -ne 1 ]; then
                 log "CODEX-RESPAWN-VERIFY-FAIL: $agent_name ready handshake timed out; retry=next_cycle"
                 return 1
@@ -1429,7 +1429,6 @@ safe_send_clear() {
             tmux clear-history -t "$pane" 2>/dev/null || true
             tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
             log "CTX-RESET: $agent_name @context_pct → 0% after CODEX-RESPAWN"
-            # 殿裁定2026-07-21: modelは殿の指示以外で変えない。config.tomlを正本のまま維持(restoreしない)
             rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
             return 0
         fi
@@ -6511,10 +6510,7 @@ stop_stale_inbox_watcher() {
 # ─── 家老陣形図(karo_snapshot) — 家老/clear復帰用の圧縮状態 ───
 write_karo_snapshot() {
     local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
-    # Derive the lock identity from the protected snapshot. Production writers
-    # still serialize on one lock, while isolated SCRIPT_DIR fixtures no longer
-    # contend with the live monitor through a process-global /tmp lock.
-    local lock_file="${snapshot_file}.lock"
+    local lock_file="/tmp/karo_snapshot.lock"
     local timestamp
     printf -v timestamp '%(%Y-%m-%dT%H:%M:%S)T' -1
     if ! declare -p NINJA_NAMES >/dev/null 2>&1 || [ "${#NINJA_NAMES[@]}" -eq 0 ]; then
@@ -8472,9 +8468,6 @@ while true; do
     # awaiting_answer, which is the durable hold marker for deployment.
     for _retro_event in "$SCRIPT_DIR"/queue/retro/verbatim_pending/*.event; do
         [ -f "$_retro_event" ] || continue
-        # 殿裁定2026-07-20 17:22: 過剰対策削減。retro pane配送を停止(idle忍者の手番を奪う機構)。
-        # retro配送burst(final-checkpoint 14 unanswered+17 answers)が全忍者を回答に奪い脱感染campaignを停止させた(家老RCA blt_20260720_175956)。反省は有用だがスループットを止める理由にならない。revert復元可。
-        continue
         mapfile -t _retro_fields < "$_retro_event"
         _retro_ninja="${_retro_fields[0]:-}"
         _retro_event_id="${_retro_fields[1]:-}"

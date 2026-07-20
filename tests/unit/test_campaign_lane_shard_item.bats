@@ -79,13 +79,12 @@ SH
 
 base_item_json() {
   local path="${1:-skills/campaign-lane/adapters/new.py}"
-  printf '{"id":"item","path":"%s","purpose":"Implement the isolated campaign item","description":"Preserve the declared behavior and measure it.","owned_paths":["%s","tests/unit/test_new.py"],"read_only_paths":["skills/campaign-lane/scripts/contracts.py"],"test_command":"pytest -q tests/unit/test_new.py","contract_fingerprint":"%s"}' "$path" "$path" "$FIXTURE_FINGERPRINT"
+  printf '{"id":"item","path":"%s","owned_paths":["%s","tests/unit/test_new.py"],"read_only_paths":["skills/campaign-lane/scripts/contracts.py"],"test_command":"pytest -q tests/unit/test_new.py","contract_fingerprint":"%s"}' "$path" "$path" "$FIXTURE_FINGERPRINT"
 }
 
 run_bridge() {
   item_json="$(base_item_json)"
   run env SHARD_ITEM_JSON="$item_json" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
-    CAMPAIGN_LANE_DURABLE_TASK_PATH="$TMPROOT/out/task.yaml" \
     CAMPAIGN_LANE_WAIT_SEC="${CAMPAIGN_LANE_WAIT_SEC:-5}" CAMPAIGN_LANE_POLL_SEC=0.1 \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
 }
@@ -102,13 +101,6 @@ PY
   run_bridge
   [ "$status" -eq 0 ]
   reason_is report_terminal_pass
-}
-
-# test_necessity: campaign bridgeの既定配備が現行deploy_task正規I/Fを使い、全shardが実装前BLOCKにならない不変量を守る。
-@test "default deploy command uses canonical yaml mode without direct" {
-  run grep -F 'deploy_cmd="${CAMPAIGN_LANE_DEPLOY_CMD:-bash $ROOT/scripts/deploy_task.sh --yaml}"' "$ROOT/scripts/campaign_lane_shard_item.sh"
-  [ "$status" -eq 0 ]
-  [[ "$output" != *"--direct --yaml"* ]]
 }
 
 @test "materialized checkout inherits source local commit identity" {
@@ -152,8 +144,6 @@ assert read_only == ['skills/campaign-lane/scripts/contracts.py']
 assert set(read_only).isdisjoint({'skills/campaign-lane/adapters/new.py', 'tests/unit/test_new.py'})
 assert all(os.path.isfile(os.path.join(work, path)) for path in read_only)
 assert task['test_command'] == 'pytest -q tests/unit/test_new.py'
-assert task['purpose'] == 'Implement the isolated campaign item'
-assert task['description'].startswith('Preserve the declared behavior and measure it.')
 assert len(task['contract_fingerprint']) == 64
 PY
 }
@@ -161,7 +151,7 @@ PY
 @test "fingerprint mismatch blocks before deploy" {
   make_deployer pass
   fingerprint="$(printf stale | sha256sum | cut -d' ' -f1)"
-  item_json="{\"id\":\"item\",\"path\":\"skills/campaign-lane/adapters/new.py\",\"purpose\":\"Implement the isolated campaign item\",\"description\":\"Preserve the declared behavior and measure it.\",\"owned_paths\":[\"skills/campaign-lane/adapters/new.py\",\"tests/unit/test_new.py\"],\"read_only_paths\":[\"skills/campaign-lane/scripts/contracts.py\"],\"test_command\":\"pytest -q tests/unit/test_new.py\",\"contract_fingerprint\":\"$fingerprint\"}"
+  item_json="{\"id\":\"item\",\"path\":\"skills/campaign-lane/adapters/new.py\",\"owned_paths\":[\"skills/campaign-lane/adapters/new.py\",\"tests/unit/test_new.py\"],\"read_only_paths\":[\"skills/campaign-lane/scripts/contracts.py\"],\"test_command\":\"pytest -q tests/unit/test_new.py\",\"contract_fingerprint\":\"$fingerprint\"}"
   run env SHARD_ITEM_JSON="$item_json" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
   [ "$status" -ne 0 ]
@@ -290,7 +280,7 @@ PY
 
 @test "canonical control root is exported instead of isolated checkout queue" {
   make_deployer pass
-  run env SHARD_ITEM_JSON="$(base_item_json)" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" SHOGUN_ROOT="$ROOT" CAMPAIGN_LANE_DURABLE_TASK_PATH="$TMPROOT/out/task.yaml" CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 \
+  run env SHARD_ITEM_JSON="$(base_item_json)" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" SHOGUN_ROOT="$ROOT" CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
   [ "$status" -eq 0 ]
   [ "$(python3 -c 'import yaml; print(yaml.safe_load(open("'"$TMPROOT"'/out/task.yaml"))["task"]["canonical_root"])')" = "$ROOT" ]
@@ -318,7 +308,7 @@ PY
   printf '{"status":"fail","reason_code":"source_materialize_failed"}\n' > "$TMPROOT/out/result.json"
   item_json="$(base_item_json)"
 
-  run bash -c "cd '$TMPROOT/work' && exec env SHARD_ITEM_JSON='$item_json' CAMPAIGN_LANE_FIXED_SHA='$FIXED_SHA' CAMPAIGN_LANE_SOURCE_REPO='$SOURCE' CAMPAIGN_LANE_DEPLOY_CMD='$TMPROOT/bin/deploy' CAMPAIGN_LANE_DURABLE_TASK_PATH='$TMPROOT/out/task.yaml' CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 '$ROOT/scripts/campaign_lane_shard_item.sh' item skills/campaign-lane/adapters/new.py worker '$TMPROOT/work' '$TMPROOT/out'"
+  run bash -c "cd '$TMPROOT/work' && exec env SHARD_ITEM_JSON='$item_json' CAMPAIGN_LANE_FIXED_SHA='$FIXED_SHA' CAMPAIGN_LANE_SOURCE_REPO='$SOURCE' CAMPAIGN_LANE_DEPLOY_CMD='$TMPROOT/bin/deploy' CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 '$ROOT/scripts/campaign_lane_shard_item.sh' item skills/campaign-lane/adapters/new.py worker '$TMPROOT/work' '$TMPROOT/out'"
 
   [ "$status" -eq 0 ]
   [ -L "$TMPROOT/work" ]

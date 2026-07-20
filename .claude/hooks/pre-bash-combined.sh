@@ -631,13 +631,7 @@ if [[ "$payload" == *'queue/reports/'* ]]; then
         tee_pattern='tee[[:space:]].*queue/reports/[^ ]*\.yaml'
         python3_pattern='python3?.*open[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*,[^)]*[wax+]'
         python_path_write_pattern='python3?.*(Path[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*\)|[^[:space:];]+)[[:space:]]*\.(write_text|write_bytes)[[:space:]]*\('
-        shell_command="$command"
-        if [[ "$command" =~ ^[[:space:]]*(printf|echo)[[:space:]]+\'[^\']*\'[[:space:]]*$ ]] \
-            || { [[ "$command" =~ ^[[:space:]]*(printf|echo)[[:space:]]+\"[^\"]*\"[[:space:]]*$ ]] \
-                && [[ "$command" != *'$('* && "$command" != *'`'* ]]; }; then
-            shell_command=""
-        fi
-        if [[ "$shell_command" =~ $redirect_pattern ]] || [[ "$shell_command" =~ $tee_pattern ]]; then
+        if [[ "$command" =~ $redirect_pattern ]] || [[ "$command" =~ $tee_pattern ]]; then
             emit_deny "報告YAMLへのBashリダイレクト(>/>>/ tee)は禁止。report_field_set.sh経由で書き込みせよ。"
         fi
         if [[ "$command" =~ $python3_pattern ]] || [[ "$command" =~ $python_path_write_pattern ]]; then
@@ -1000,19 +994,6 @@ if [[ -n "${command:-}" && "$command" == *'stash'* ]]; then
     source "$SCRIPT_DIR/scripts/lib/git_stash_guard_classify.sh"
     if [[ "$(git_stash_guard_classify "$command")" == "block" ]]; then
         emit_deny "BLOCK: git stashは共有worktreeの全員分tracked差分を一括退避し他忍者のWIPを破壊する。指定pathだけを対象にする 'bash scripts/ninja_scope_commit.sh' を使え。読み取り専用の 'git stash list'/'git stash show' はBLOCK対象外。"
-    fi
-fi
-
-# Guard: respawn-pane モデルエイリアス一次確認強制 (LG058: fable/sonnet誤同一視事故 2026-07-18)
-if echo "${command:-}" | grep -q 'respawn-pane.*claude.*--model'; then
-    _respawn_model=$(echo "$command" | grep -oP '(?<=--model\s)\S+' | head -1)
-    if [ -n "$_respawn_model" ] && ! echo "$_respawn_model" | grep -q '^claude-'; then
-        _cli_path=$(echo "$command" | grep -oP '(/[^\s]+/claude|~/bin/claude)\b' | head -1)
-        _cli_path="${_cli_path:-claude}"
-        _valid=$($_cli_path --help 2>/dev/null | grep -oP "'\w+'" | tr -d "'" | sort -u | tr '\n' ' ' || true)
-        if [ -n "$_valid" ] && ! echo " $_valid " | grep -q " $_respawn_model "; then
-            emit_deny "BLOCK(LG058): respawn-pane --model '$_respawn_model' は不明なモデルエイリアス。CLI確認結果の有効値: $_valid"
-        fi
     fi
 fi
 

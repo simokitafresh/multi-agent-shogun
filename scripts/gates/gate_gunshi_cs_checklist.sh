@@ -1025,17 +1025,19 @@ _automation_no_adv=$(awk '
 done | tail -10)
 _automation_no_adv=$(_filter_remediated_lines adversarial "$_automation_no_adv")
 if [ -n "$_automation_no_adv" ]; then
-    echo "INFO(§5.6): 自動化系cmd(scripts/対象)のadversarial記録なし（計測のみ）:"
+    echo "WARN(§5.6): 自動化系cmd(scripts/対象)でadversarial未検討:"
     printf '%s\n' "$_automation_no_adv" | while read -r _id; do
-        [ -n "$_id" ] && echo "  - $_id"
+        [ -n "$_id" ] && echo "  - $_id: finding_categoriesにadversarialを追加せよ"
     done
+    warn=1
 fi
 
 # --- LG010: GP提案のdefense_level < 4 検出 ---
 _lg010_weak=$(grep -B2 'defense_level: [123]$' "$LOG_FILE" 2>/dev/null | grep 'id: GP-' | head -5)
 if [ -n "$_lg010_weak" ]; then
-    echo "INFO(LG010): defense_level<4のGP提案あり（計測のみ）:"
+    echo "WARN(LG010): defense_level<4のGP提案あり。Level4(フロー内BLOCK)以上を目指せ:"
     printf '%s\n' "$_lg010_weak" | sed 's/.*id: /  /' | head -3
+    warn=1
 fi
 
 # --- LG033: GP提案前の既存実装grep確認 ---

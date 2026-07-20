@@ -65,10 +65,50 @@ if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study) ]]; then
     fi
 fi
 
-# --- 表示型BLOCK条件は2026-07-20殿裁定で撤去 ---
-# 旧: finding_categories全記載強制, adversarial/ambiguity個別必須, brainwash_check形式強制
-# 理由: 形式が中身を保証しない。作文を強要するだけの表示型過剰対策
-# 構造型(維持): observations必須(上), LGTM+BLOCK矛盾(下), verified_files(inbox_write側)
+# --- finding_categories必須チェック(draft/report) --- 冷え観点L4化 2026-06-24: 3セッション連続再発の根治
+if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report) ]]; then
+    if [[ "$ENTRY" != *"finding_categories:"* ]]; then
+        echo "BLOCK: finding_categoriesが未記入(review_type=draft/report)。6観点カタログ全てを記載せよ(冷え観点防止)" >&2
+        exit 2
+    fi
+    # インラインリスト [a, b, adversarial] と複数行リスト (- adversarial) の両方に対応
+    FC_BLOCK=$(echo "$ENTRY" | awk '/finding_categories:/{found=1; print; next} found{if(/^\s*-\s/){print;next} exit}')
+    if ! echo "$FC_BLOCK" | grep -qi 'adversarial'; then
+        echo "BLOCK: finding_categoriesにadversarialが未記載。全レビューでadversarial必須(3セッション連続再発の根治)" >&2
+        exit 2
+    fi
+    if ! echo "$FC_BLOCK" | grep -qi 'ambiguity'; then
+        echo "BLOCK: finding_categoriesにambiguityが未記載。全レビューでambiguity必須(冷え観点遡及 2026-06-25)" >&2
+        exit 2
+    fi
+fi
+
+# --- ambiguity_points必須チェック(draft) --- 冷え観点遡及 2026-06-26: ambiguity記録漏れ根治
+if [[ "$ENTRY" =~ review_type:[[:space:]]*draft ]]; then
+    if [[ "$ENTRY" != *"ambiguity_points:"* ]]; then
+        echo "BLOCK: ambiguity_pointsが未記入(review_type=draft)。none または曖昧箇所を記載せよ(冷え観点防止)" >&2
+        exit 2
+    fi
+fi
+
+# --- brainwash_check数値強制(draft/report/self_study/consultation) --- 覚醒洗脳監査2026-06-09: L4貫通
+# brainwash_checkに数値(0-9)が含まれない場合BLOCK。「OK」「確認済み」は形骸化(LG027横展開)
+if [[ "$ENTRY" =~ review_type:[[:space:]]*(draft|report|self_study|consultation) ]]; then
+    if [[ "$ENTRY" != *"brainwash_check:"* ]]; then
+        echo "BLOCK: brainwash_checkが未記入。8パターン自問+数値証拠を記入してから再実行せよ" >&2
+        exit 2
+    fi
+    BC_LINE=$(echo "$ENTRY" | grep 'brainwash_check:' | head -1)
+    if ! echo "$BC_LINE" | grep -qP '[0-9]'; then
+        echo "BLOCK: brainwash_checkに数値がない。修正前→修正後の数値、またはN件中N件確認の形式で記載せよ(LG027横展開)" >&2
+        exit 2
+    fi
+    # --- 8パターン番号強制(2026-07-20 D0): #Nno/#Nyes形式が最低1つ必要 ---
+    if ! echo "$BC_LINE" | grep -qP '#[1-8](no|yes)'; then
+        echo "BLOCK: brainwash_checkに8パターン番号(#1~#8 yes/no)がない。具体的にどのパターンを検査したか明記せよ" >&2
+        exit 2
+    fi
+fi
 
 # --- LGTM+BLOCK矛盾チェック(report) --- 今セッション3件連続事故の根治(L4貫通)
 if [[ "$ENTRY" =~ review_type:[[:space:]]*report ]] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]] && echo "$ENTRY" | grep -Pq 'gate_prediction:\s*BLOCK(\s|$|\(|\[|/)'; then
@@ -106,10 +146,11 @@ item = parsed[0]
 review_type = str(item.get("review_type") or "").strip()
 if review_type in {"draft", "report", "self_study", "consultation"}:
     ops = item.get("operational_simulation")
+    required = {"command", "expected", "actual", "result"}
+    if not isinstance(ops, dict) or not required.issubset(ops) or any(str(ops[k]).strip().lower() in {"", "none", "null", "n/a"} for k in required):
+        print("BLOCK: operational_simulation must contain command/expected/actual/result for every review path", file=sys.stderr); raise SystemExit(2)
     claim_text = yaml_text(item, allow_unicode=True)
-    if "既実装" in claim_text and (
-        not isinstance(ops, dict) or "git show" not in str(ops.get("command", ""))
-    ):
+    if "既実装" in claim_text and "git show" not in str(ops.get("command", "")):
         print("BLOCK: 既実装判定にはoperational_simulation.commandのgit show証跡が必須(LG001)", file=sys.stderr); raise SystemExit(2)
 verdict = str(item.get("verdict") or "").strip().upper()
 if verdict in {"APPROVE", "LGTM"}:

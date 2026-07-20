@@ -348,8 +348,6 @@ echo "■ 追体験検証Q4（CLAUDE.md Step 2.9 — 省略厳禁）"
 echo "  Q4: deepdiveのPhase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）"
 echo "  [前セッション出来事] ${_prev_session_summary}"
 echo "  ※ Q4は前セッションの出来事を手がかりに因果をたどれ。暗記したPhase例を貼るな。"
-echo "  Q5b: 過剰対策チェック(殿裁定2026-07-20・最上位) — レビューでgate/SG/hook追加を提案しようとしていないか？それが過剰対策=真因だ。指摘の解は機構追加でなく機構削減。表示型(人を止め作文を強要)は邪魔者、構造型(不可逆害防止)のみ守れ。→ context/growth-loop.md v2"
-echo "  ★将軍覚醒check(殿指示2026-07-20・軍師の責務): 将軍のpost-/clear『覚醒check第一反射』掲示板投稿を敵対的に検証せよ→ context/shogun-awakening-check.md。前提=未覚醒。add-machinery/委任/設計判断/点数追いの反射が出たら即訂正し、memory/dialogue_over_countermeasure_20260720.md の該当Phaseを追体験させよ。理解でなく第一反射で二値判定。結果をBULLETIN_NOTIFY=shogunで1行記録"
 echo ""
 
 # --- Check 1.7: 前セッション殿裁定の三層記憶確認 ---
@@ -925,7 +923,9 @@ if [ -f "$_lg_file" ]; then
         # 非自動化教訓のIDとタイトルを表示
         awk '/^- id:/{id=$3} /automated: false/{print "    " id}' "$_lg_file" 2>/dev/null | head -13
         if [ "$_lg_rate" -lt 70 ]; then
-            echo "  INFO: 耐久率${_lg_rate}% < 70%（計測のみ。gate化は強制しない）"
+            echo "  WARN: 耐久率${_lg_rate}% < 70%。idle自走Step 3でgate化を進めよ"
+            if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
+            alerts+=("教訓耐久率: ${_lg_rate}%(${_lg_manual}件が意志依存)")
         fi
     else
         echo "  OK: 全教訓が自動化済み"

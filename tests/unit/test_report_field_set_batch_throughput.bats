@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
-# test_necessity: terminal batch publication must persist the durable report
-# before detached fingerprint-deduplicated delivery, and remain repairable
-# from those persisted bytes after an interrupted publisher.
+# test_necessity: terminal batch publication must synchronously emit one
+# fingerprint-deduplicated lifecycle parent whose child review is repairable
+# from the persisted completed report after an interrupted publisher.
 
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -151,12 +151,9 @@ PY
   [ "$status" -eq 0 ]
 }
 
-@test "terminal batch persists before detached canonical delivery and nonterminal writes publish nothing" {
+@test "terminal batch publishes canonical completion synchronously and nonterminal writes publish nothing" {
   run env RFS_INBOX_WRITE_PATH="$FAKE_INBOX" RFS_EVENT_LOG="$RFS_EVENT_LOG" bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
   [ "$status" -eq 0 ]
-  run python3 -c 'import yaml,sys; assert yaml.safe_load(open(sys.argv[1]))["status"]=="completed"' "$REPORT"
-  [ "$status" -eq 0 ]
-  for _ in $(seq 1 40); do [ -s "$RFS_EVENT_LOG" ] && break; sleep 0.1; done
   [ "$(wc -l <"$RFS_EVENT_LOG")" -eq 1 ]
   grep -q 'karo hanzo報告完了.*report=report.yaml parent_cmd=cmd_test report_received hanzo notify_karo' "$RFS_EVENT_LOG"
 
@@ -167,7 +164,7 @@ PY
   [ ! -s "$RFS_EVENT_LOG" ]
 }
 
-@test "persisted terminal report survives pre-delivery failpoint as durable outbox" {
+@test "persisted terminal report survives publish failpoint as durable outbox" {
   start_ns="$(date +%s%N)"
   parent_ids="$(ps -o sid=,pgid= -p $$ | tr -s ' ' | sed 's/^ //')"
   export RFS_PROCESS_ID_LOG="$TMPDIR_CASE/reconciler_ids"
@@ -175,10 +172,12 @@ PY
   [ "$status" -eq 86 ]
   run python3 -c 'import yaml,sys; assert yaml.safe_load(open(sys.argv[1]))["status"]=="completed"' "$REPORT"
   [ "$status" -eq 0 ]
-  [ ! -e "$RFS_EVENT_LOG" ]
-  [ ! -e "$RFS_PROCESS_ID_LOG" ]
+  for _ in $(seq 1 40); do [ -s "$RFS_EVENT_LOG" ] && break; sleep 0.1; done
+  [ "$(wc -l <"$RFS_EVENT_LOG")" -eq 1 ]
+  [ -s "$RFS_PROCESS_ID_LOG" ]
+  [ "$(cat "$RFS_PROCESS_ID_LOG")" != "$parent_ids" ]
   elapsed_ms="$(( ($(date +%s%N) - start_ns) / 1000000 ))"
-  echo "FAILPOINT_DURABLE elapsed_ms=$elapsed_ms persisted=1 delivery=0 monitor_repairable=1" >&3
+  echo "FAILPOINT_REPAIR elapsed_ms=$elapsed_ms parent=1 child_contract=canonical" >&3
   [ "$elapsed_ms" -lt 5000 ]
 }
 

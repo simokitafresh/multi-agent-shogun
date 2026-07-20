@@ -53,18 +53,26 @@ is_shogun_agent() {
 }
 
 # Preserve the former matcher-less shogun inbox check without taxing non-shogun hot paths.
+if is_shogun_agent; then
+    run_hook "$ROOT/.claude/hooks/post-shogun-inbox-check.sh" || true
+fi
+
 case "$payload" in
     *'"Bash"'*)
-        exit 0
+        if [ "$payload" = "${payload%inbox_mark_read.sh*}" ]; then
+            run_hook "$ROOT/.claude/hooks/post-bash-combined.sh" || exit "$?"
+        else
+            source "$ROOT/.claude/hooks/post-bulletin-notify-read-check.sh" <<< "$payload"
+        fi
         ;;
     *'"Grep"'*|*'"Glob"'*)
-        exit 0
+        printf '%s\n' "⚠ この検索結果は網羅的ではない可能性がある。別の手法でも確認したか？（Grep→Glob / Glob→Grep / lord_conversation確認）" >&2
         ;;
     *'"Write"'*|*'"Edit"'*)
         source "$ROOT/.claude/hooks/post-write-edit-combined.sh" <<< "$payload"
         ;;
     *'"Skill"'*)
-        exit 0
+        HOOK_PAYLOAD="$payload" run_hook "$ROOT/.claude/hooks/post-skill-execution.sh" || true
         ;;
     *)
         exit 0

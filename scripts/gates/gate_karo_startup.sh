@@ -1703,7 +1703,6 @@ echo "■ 追体験検証Q4（CLAUDE.md Step 2.88 — 省略厳禁）"
 echo "  Q4: deepdive_why_chain Phase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）"
 echo "  [前セッション出来事] ${_prev_session_summary:-(前セッション要約なし)}"
 echo "  ※ Q4は前セッションの出来事を手がかりに因果をたどれ。暗記したPhase例を貼るな。"
-echo "  Q5: 過剰対策チェック(殿裁定2026-07-20・最上位) — 今から書くhook/gate/workaround強制/契約は表示型(人を止め作文を強要)でないか？それが過剰対策=真因だ。表示型は削り、構造型(不可逆害防止・手を動かすと自然に守られる)のみ残せ。ミスは可逆に許容し下流で回収。deepdive Phase5『自動化×強制』を機構追加へ機械適用するな。→ context/growth-loop.md v2"
 echo ""
 
 # --- Check 2: 陣形図(karo_snapshot.txt)の鮮度 ---
@@ -1941,9 +1940,11 @@ if [[ "$_review_quality_line" == RATE* ]]; then
         echo "  WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, cmd_id単位最終verdict集計)"
     fi
     if [ "${_rq_rate:-0}" -gt 30 ] 2>/dev/null; then
-        # 殿裁定2026-07-20 17:22: 過剰対策削減。レビュー品質WARN率の将軍エスカレーション(cmd起票強要)を撤廃。
-        # WARN率=点数追いの表示型。家老を機構追加へ迫るのでなく、その場のレビューで構造型(不可逆害)だけ見ればよい。revert復元可。
-        echo "  INFO: レビュー品質WARN率${_rq_rate}%(助言のみ・エスカレーションせず)"
+        echo "  WARN: レビュー品質WARN率が30%超"
+        if [ "$overall" != "ALERT" ]; then
+            overall="WARN"
+            alerts+=("レビュー品質スケール: WARN率${_rq_rate}%")
+        fi
     else
         echo "  OK: レビュー品質WARN率30%以下"
     fi
@@ -2773,10 +2774,7 @@ if [ ${#alerts[@]} -gt 0 ]; then
                 ;;
         esac
     done
-    # 殿裁定2026-07-20 過剰対策削減: 先送りCRITICAL→将軍inbox→cmd起票強要の自動エスカレーションエンジンを撤廃。
-    # 軟らかい指標(skill refs WARN/WA再出現/レビューWARN率)を「cmd起票せよ」と将軍へ迫るのは点数追いの表示型。
-    # 家老は自startup出力でalertを見る(下記collectは維持)が、将軍へ機構追加を強要しない。revert復元可。
-    if false && [ -n "$_deferred_alerts" ]; then
+    if [ -n "$_deferred_alerts" ]; then
         _deferred_message="家老startup先送りCRITICAL自動エスカレーション: ${_deferred_alerts}。家老が対処できないため将軍cmd起票を検討せよ"
         mkdir -p "$SCRIPT_DIR/queue/locks"
         _deferred_lock="$SCRIPT_DIR/queue/locks/karo_startup_escalation.lock"

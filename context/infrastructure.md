@@ -223,7 +223,7 @@ CDP production checkはdeploy証跡が必要な場合だけ実行する。readon
 4. エッジケース・副作用
 5. **依存関係・順序制約**(flush順序・キャッシュ共有・ネスト読み書き等) ← cmd_1476追加
 
-テンプレート(deploy_task.sh)で必要情報を供給。cmd_754で4要件導入、cmd_1476で第5要件追加(DC裁定)。
+テンプレート(deploy_task.sh)+ゲートWARN(cmd_design_quality.yaml)で強制。cmd_754で4要件導入、cmd_1476で第5要件追加(DC裁定)。
 → `instructions/ashigaru.md` 偵察テンプレート / `logs/cmd_design_quality.yaml` q4_depth
 
 ## 直近改善（cmd_1532〜cmd_1543）
@@ -258,7 +258,7 @@ CLEAR率62.7%→84.6%(+21.9pt)。gate品質BLOCK3大原因の構造的解消+新
 | hidden-infra ready adapter | defense overhead・retro events・bulletin failure・gate fireの4ログを共通候補へ正規化し、頻度×対処コストで優先順位付け、根因SHAでdedupして既存throughput connectorへexactly-once供給する | `scripts/throughput_growth_loop.sh`, `cmd_karo_hotfix_hidden_infra_bug_ready_lane_202607191231`, commit `ba8b533dd` |
 | Obsidian traversal ready lane | preflight・semantic search・causal backlinksの着地nodeから実在linkを1hop以上辿ったeventだけを記録し、traversal/発見/行動接続の3率を計測、0hopを優先度付きready候補へexactly-once昇格する | `scripts/throughput_scan.sh`, `cmd_karo_hotfix_obsidian_traversal_ready_lane_202607191235`, commit `53d996d41` |
 | GP-198/201 Session State | gate FAIL時の失敗履歴をtask再配備へ注入し、`cmd_save.sh` 側でもDiagnose MANDATORY+Session Stateを強制。/newや再配備を跨いでL3診断を保持 | `context/codd.md` §4, `context/cmd-chronicle.md` `cmd_karo_gp198`/`cmd_1939` |
-| GP-199 退化計測 | GP/改善cmdの報告に `before_metrics` / `after_metrics` / `regression` を記録し、速度改善が退化を隠さない形に変更 | `scripts/gates/gate_report_format.sh`, `context/cmd-chronicle.md` `cmd_1941` |
+| GP-199 退化計測 | GP/改善cmdの報告に `before_metrics` / `after_metrics` / `regression` をWARNで強制し、速度改善が退化を隠さない形に変更 | `scripts/gates/gate_report_format.sh`, `context/cmd-chronicle.md` `cmd_1941` |
 | GP-202 成果物プレフィックス検査 | `files_modified` に `parent_cmd` プレフィックスが無い場合WARN。cmd_1948事故系の「別cmd成果物上書き」をゲートで検知 | `scripts/gates/gate_report_format.sh`, `tests/unit/test_report_template_gate_compat.bats` |
 | GP-204/208 運用耐障害 | `daemon_watchdog.sh` は `set -e` / 二重flockを外して部分失敗で全体停止しない形に修正。`bulletin_write.sh` は掲示板通知を80文字要約でなく全文inbox配信へ変更 | `scripts/daemon_watchdog.sh`, `scripts/bulletin_write.sh` |
 | cmd_3577 掲示板action_required追跡 | 軍師の穴発見/改善提案投稿を`action_required`へ自動昇格し、`gate_karo_startup.sh`が`actioned_by`空の未対応掲示板をWARN表示する | `scripts/bulletin_write.sh`, `scripts/gates/gate_karo_startup.sh`, `tests/unit/test_bulletin_board.bats`, `tests/unit/test_gate_karo_startup.bats` |

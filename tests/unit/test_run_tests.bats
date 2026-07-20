@@ -5,7 +5,6 @@ setup() {
   # This file deliberately launches isolated aggregate runner fixtures.  They
   # are new checkpoint roots, not accidental children of the outer CI runner.
   unset RUN_TESTS_ACTIVE
-  unset RUN_TESTS_SNAPSHOT_MANIFEST
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   TMPROOT="$(mktemp -d)"
   mkdir -p "$TMPROOT/scripts" "$TMPROOT/tests/unit" "$TMPROOT/bin" "$TMPROOT/logs"
@@ -50,7 +49,7 @@ SH
 
   run env -u BATS_CACHE PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$BATS_ARGS_LOG" \
     SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
-    bash "$TMPROOT/scripts/run_tests.sh" all
+    bash "$TMPROOT/scripts/run_tests.sh"
 
   [ "$status" -eq 0 ]
   grep -Fxq "$TMPROOT/tests/unit/sample.bats" "$BATS_ARGS_LOG"

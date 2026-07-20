@@ -230,13 +230,11 @@ run_publish_preflight() {
     lesson_count="$(count_active_shogun_lessons)"
     [[ "$lesson_count" =~ ^[0-9]+$ ]] || lesson_count=0
     lesson_threshold=$((SHOGUN_LESSON_LIMIT - 2))
-    # 過剰対策削減(殿裁定2026-07-20): 教訓件数はcmd publishと因果無関係。
-    # 無関係な保守上限をpublish臨界経路へ結合しBLOCKするのは表示型過剰対策。
-    # 肥大化防止の正しい強制点はlesson-write側(lesson_write_shogun.sh)。
-    # ここではpublishを止めず助言(WARN)のみに降格する。
     if (( lesson_count >= lesson_threshold )); then
-        echo "WARN: lessons_shogun.yaml が ${lesson_count}件(上限${SHOGUN_LESSON_LIMIT})。近く既存LS統合を検討せよ(publishは継続)。" >&2
+        echo "BLOCK: lessons_shogun.yaml が ${lesson_count}件。cmd_publish前に空きを2件以上確保せよ(上限${SHOGUN_LESSON_LIMIT}件)。" >&2
+        echo "  解消: 既存LSを統合し、件数を${lesson_threshold}件未満にしてから再実行。" >&2
         echo "  参考: bash scripts/lesson_write_shogun.sh --supersedes LS旧 LS新 \"統合理由\"" >&2
+        return 1
     fi
 
     [[ -f "$LAST_CMD_FILE" ]] || return 0

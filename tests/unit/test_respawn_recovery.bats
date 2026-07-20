@@ -29,31 +29,6 @@ YAML
   [ "$(grep -c 'parent_cmd=cmd_parent task_id=task_1' "$TEST_RECOVERY_LOG")" -eq 2 ]
 }
 
-@test "default marker and lock live in ext4 generation state, never below project root" {
-  unset RESPAWN_RECOVERY_STATE_DIR
-  export RESPAWN_RECOVERY_EXT4_ROOT="$root/ext4-state"
-  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_notify "$1" tester generation-ext4 clear' _ "$root"
-  [ "$status" -eq 0 ]
-  [ "$(find "$root/ext4-state" -name sent -type f | wc -l)" -eq 1 ]
-  [ "$(find "$root/ext4-state" -name '*.lock' -type f | wc -l)" -eq 1 ]
-  [ ! -e "$root/.cache/respawn-recovery" ]
-}
-
-@test "blocked notification transport fails open within configured deadline without false marker" {
-  cat > "$root/scripts/inbox_write.sh" <<'SH'
-#!/usr/bin/env bash
-sleep 120
-SH
-  chmod +x "$root/scripts/inbox_write.sh"
-  export RESPAWN_RECOVERY_NOTIFY_TIMEOUT_SECONDS=1
-  started=$SECONDS
-  run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_notify "$1" tester generation-timeout clear' _ "$root"
-  elapsed=$((SECONDS - started))
-  [ "$status" -eq 0 ]
-  [ "$elapsed" -le 2 ]
-  [ ! -e "$root/state/tester/$(printf %s generation-timeout | sha256sum | cut -d" " -f1)/sent" ]
-}
-
 @test "idle and done tasks produce no notification" {
   sed -i 's/in_progress/idle/' "$root/queue/tasks/tester.yaml"
   run bash -c 'source "$1/scripts/lib/respawn_recovery.sh"; respawn_recovery_notify "$1" tester generation-1 clear' _ "$root"

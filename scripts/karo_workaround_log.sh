@@ -396,9 +396,9 @@ verify_environment_change() {
     local env_structured="" env_type="" env_file="" env_pattern="" env_file_resolved=""
 
     if [[ -z "$env_change" ]]; then
-        echo "[karo_workaround_log] WARN: environment_change未記入。事実記録を継続する" >&2
+        echo "[karo_workaround_log] BLOCK: environment_change未記入。--wa時は何を環境に埋め込んだか記録せよ" >&2
         echo '  形式: type=gate|lesson|hook; file=対象ファイルパス; pattern=grepで検証可能な文字列' >&2
-        return 0
+        return 1
     fi
 
     if env_structured="$(parse_structured_environment_change "$env_change" 2>/dev/null)"; then
@@ -424,9 +424,9 @@ validate_brainwash_check() {
     local check="${1:-}"
 
     if [[ -z "$check" ]]; then
-        echo "[karo_workaround_log] WARN: brainwash_check未記入。事実記録を継続する: $CMD_ID/$NINJA_NAME" >&2
+        echo "[karo_workaround_log] BLOCK: brainwash_check未記入。KARO_WA_BRAINWASH_CHECK='洗脳#X + 修正前→後の数値'で渡せ: $CMD_ID/$NINJA_NAME" >&2
         echo "  例: KARO_WA_BRAINWASH_CHECK='洗脳#2検証スキップ防止: gate再実行 0→1件 PASS'" >&2
-        return 0
+        return 1
     fi
     if [[ ! "$check" =~ [0-9] ]]; then
         echo "[karo_workaround_log] BLOCK: brainwash_checkに数値なし。修正前→後の数値、またはN件中N件確認を記録せよ: $CMD_ID/$NINJA_NAME" >&2

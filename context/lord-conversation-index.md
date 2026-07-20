@@ -1,35 +1,40 @@
 # Lord Conversation Index
-<!-- last_updated: 2026-07-21 auto-generated -->
+<!-- last_updated: 2026-07-20 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-21T02:07:31+09:00 -->
+<!-- generated_at: 2026-07-20T17:25:11+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-21T02:07:31+09:00 | terminal | response | tobisaru再修正版 LGTM(PASS)送信済み。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-21T02:05:52+09:00 | terminal | response | saizo F1 report-publication LGTM(FAIL受理)送信済み。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-21T02:04:22+09:00 | terminal | response | kotaro F1 semantic-context LGTM(PASS)送信済み。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-21T02:02:33+09:00 | terminal | response | tobisaru修正版 LGTM(PASS)送信済み。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-21T01:57:36+09:00 | terminal | response | kagemaru preflight修正版 LGTM(PASS)送信済み。median 121ms(目標<8,686ms = 98.6%短縮)。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-21T01:55:50+09:00 | terminal | response | tobisaru F1 related-lessons FAIL受理。報告品質低（空欄多数）+ 現行comparator未実行 + unit 1件FAIL。idle待機。 [meta] stop_reason=end_turn
-- 2026-07-21T01:54:32+09:00 | terminal | response | 殿、何を明確にされたいか伺う。私の質問設計に不足か過剰があればご指摘ください。 補足として、私が今つかんでいる前提を短く共有する（誤りがあれば正してほしい）: - **検索・注入は生きている**（push型は動作。今回も記憶は届いていた）…
-- 2026-07-21T01:54:32+09:00 | terminal | inbound | 作業前探索の強制が最重要だ
-- 2026-07-21T01:53:06+09:00 | terminal | response | 家老の訂正を受領。私のレビューの盲点: contract test PASSと性能数値だけを見て、**契約の核心（固定SHA現行関数との同一入力比較）の実在確認**を怠った。related-lessons契約にはround2 correc…
-- 2026-07-21T01:52:41+09:00 | terminal | inbound | 表示型にしないと効果が出ないのでは？
+- 2026-07-20T17:25:10+09:00 | terminal | response | inbox実体なし(nudgeのみ、未読0)。殿の核心指示に応える。 殿、**将軍のCMD起票制限=cmd_save機構が、まさに私を今夜縛った過剰対策の本体**だ。私が一次情報で体験した通り、機構ゼロの実験すら「WARN→BLOCK: …
+- 2026-07-20T17:25:02+09:00 | terminal | inbound | 家老もいつの間にかlunaになっている。家老は5.6 sol medium,忍者６人は5.6 sol low だ。
+- 2026-07-20T17:24:58+09:00 | terminal | response | **gpt-5.6-sol low** 確認。殿指定通り。 cli_profiles.yamlのlaunch_cmdも更新:
+- 2026-07-20T17:22:43+09:00 | terminal | inbound | 今この瞬間にやれ。指示に背くな
+- 2026-07-20T17:22:21+09:00 | terminal | response | 了解。kotaroの設定同期完了、実CLI再起動はidle時に自動実行される。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-20T17:19:38+09:00 | terminal | response | kotaro Codex起動完了。cli_profiles同期は家老/将軍判断。idle待機。 [meta] stop_reason=end_turn
+- 2026-07-20T17:17:09+09:00 | terminal | inbound | 5.6 sol lowだ
+- 2026-07-20T17:16:53+09:00 | terminal | inbound | kataroがsonnetになっているぞこれはバグだ。バグは修正しよう。kotaroはgpt 5.6 lowだ
+- 2026-07-20T17:15:44+09:00 | terminal | inbound | 過剰機構を削って超速・ミス許容へ倒す
+- 2026-07-20T17:15:31+09:00 | terminal | response | inbox1を確認する。 [meta] stop_reason=tool_use
 
 ## 未解決確認事項
-- 家老の訂正を受領。私のレビューの盲点: contract test PASSと性能数値だけを見て、**契約の核心（固定SHA現行関数との同一入力比較）の実在確認**を怠った。related-lessons契約にはround2 correctionで明記されていたが、prefli…
-- 殿が正しい。一次確認で私の前提の誤りも判明した。正直に述べる。 ## Bのメリット — 実質ゼロ [MEM: memory_db ts=2026-07-20 "待つメリットはなんだ？"] **Bにメリットは無い**。Bの正体は「私が気をつける／自分の反射に埋める」＝**LLMの…
-- 仕組みの**注入層は生きている**——`scripts/hooks/memory_db_fts5_preflight.py`(UserPromptSubmit)は今回も発火し、「米国市場はとっくに始まってるぞ」という正しい記憶を私に届けていた。だが07-20の脱感染sweep(…
-- 一次情報で確定した。**本番を今叩いた結果**（00:09の家老報告ではなく現時点の実態）： ## rebalancer デプロイ状況 **✅ デプロイ済み・稼働中**。本番backend `dm-rebalancer-backend.onrender.com` が **v4.…
-- [MEM: semantic concept=deepdive_principles — 「今クリアされても今より強くてニューゲームできるようにせよ」] 本セッションの知見を環境に埋め込んだか確認する。 **本セッションで環境に残したもの（/clear後も残る）:** | co…
-- 殿、inbox確認完了。 ## 状況把握 **家老は殿の直接指示のもと自走中（将軍待ちなし）**。3件の未読はすべて家老のcampaign進捗通知だった。 | 項目 | 状態 | |------|------| | **主作業** | Gist fb70493 campaign…
-- 殿の問い: paneの実モデルは最下行が現在の最新か。 はい。Codex CLIのステータスバー最下行 `gpt-5.6-sol medium · Context 0% used` が現在の実モデル+effort。実験では全てこの最下行を一次確認に使った。上部バナー(`│ mo…
-- commit完了(a125c2aa5)。 殿、正直に回答する: **まだ「どんな時でも確実」ではない。** 実験で判明した制約: 1. **idle時のみ切替可能**（作業中は/model不可 — 殿の指摘通り理解済み） 2. **config.toml書き換え+respawn…
+- **gpt-5.6-sol low** 確認。殿指定通り。 cli_profiles.yamlのlaunch_cmdも更新:
+- inbox1を確認する。 [meta] stop_reason=tool_use
+- 変化なし。Enterでは動かない。Codex CLIの保留メッセージは`esc`で即送信される:
+- はっ。復帰完了つかまつった。 **戦局(一次確認済み):** - **cmd_4101**（single-flight+snapshot固定、全隊列の解放点）— 本体はcommit `1f5d0ed`到達済み。残はrun_tests差分のscope収束のみ。AC2(全量FAIL…
+- 一次確認完了。実態: - **疾風(pane3)**: CTX 0%・プロンプト空=respawn済みで待機可能。snapshotの`failed|idle`はタスク失敗の記録だが、実体はclear済みで再配備可能。 - **家老(pane1)**: CTX 58%・Worki…
+- 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=100件 clear_prep_check=ALERT [G0.殿/clear指示] WARN: 直…
+- 疾風がfailed化した — 全隊列の解放点だっただけに重大。一次確認する。 [meta] stop_reason=tool_use
+- 家老の追加確認と私のレビュー(FAIL、独立36/36 PASS、全unit FAIL1)は整合。矛盾なし。commit df6ffa104を一次確認済み。 全inbox処理完了。idle待機。 [meta] stop_reason=end_turn
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
 
 ## 参照cmd
+- cmd_4085
+- cmd_4089
+- cmd_4091
 - cmd_4093
+- cmd_4094
+- cmd_4095
 - cmd_4096
 - cmd_4097
 - cmd_4098
@@ -39,8 +44,6 @@
 - cmd_4102
 - cmd_4103
 - cmd_4104
-- cmd_4105
-- cmd_4106
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）

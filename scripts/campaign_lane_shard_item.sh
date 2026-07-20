@@ -110,13 +110,9 @@ for value in read_only:
         raise SystemExit(3)
 test_command = item.get("test_command")
 fingerprint = item.get("contract_fingerprint")
-purpose = item.get("purpose")
-description = item.get("description")
-if not isinstance(purpose, str) or not purpose.strip() or not isinstance(description, str) or not description.strip():
-    raise SystemExit(3)
 if not isinstance(test_command, str) or not test_command.strip() or not isinstance(fingerprint, str) or len(fingerprint) != 64 or any(c not in "0123456789abcdef" for c in fingerprint):
     raise SystemExit(3)
-print(json.dumps({"owned": out, "read_only": read_only, "test_command": test_command, "fingerprint": fingerprint, "purpose": purpose, "description": description}, separators=(",", ":")))
+print(json.dumps({"owned": out, "read_only": read_only, "test_command": test_command, "fingerprint": fingerprint}, separators=(",", ":")))
 PY
 )"
 contract_parse_rc=$?
@@ -215,8 +211,6 @@ field_set="$ROOT/scripts/lib/yaml_field_set.sh"
 task_key="campaign_lane_${item_id}_attempt_${attempt}"
 read_only_json="$(ITEM_CONTRACT_JSON="$item_contract_json" python3 -c 'import json,os; print(json.dumps(json.loads(os.environ["ITEM_CONTRACT_JSON"])["read_only"], separators=(",",":")))')"
 test_command="$(ITEM_CONTRACT_JSON="$item_contract_json" python3 -c 'import json,os; print(json.loads(os.environ["ITEM_CONTRACT_JSON"])["test_command"])')"
-item_purpose="$(ITEM_CONTRACT_JSON="$item_contract_json" python3 -c 'import json,os; print(json.loads(os.environ["ITEM_CONTRACT_JSON"])["purpose"])')"
-item_description="$(ITEM_CONTRACT_JSON="$item_contract_json" python3 -c 'import json,os; print(json.loads(os.environ["ITEM_CONTRACT_JSON"])["description"])')"
 test_path="$(OWNED_ABS_JSON="$owned_abs_json" ITEM_ABS="$workdir/$item_path" python3 - <<'PY'
 import json, os
 print(next(path for path in json.loads(os.environ["OWNED_ABS_JSON"]) if path != os.path.abspath(os.environ["ITEM_ABS"])))
@@ -240,8 +234,8 @@ if ! yaml_field_set_batch "$task_path" task \
     "project=infra" \
     "assigned_to=$worker_id" \
     "status=assigned" \
-    "purpose=$item_purpose" \
-    "description=${item_description} ${workdir}内だけを編集・commitし、owned path外diff 0を確認する。owned_paths_json/read_only_paths_jsonはcanonical JSON listとしてparseする。報告operational_simulation.actualへ厳密形式 TOTAL=N FAIL=0 SKIP=0、resultへPASSを記録する" \
+    "purpose=campaign lane shard ${item_id}を隔離workdir内の固有ownershipだけで完結する" \
+    "description=${workdir}内だけを編集・commitし、owned path外diff 0を確認する。owned_paths_json/read_only_paths_jsonはcanonical JSON listとしてparseする。報告operational_simulation.actualへ厳密形式 TOTAL=N FAIL=0 SKIP=0、resultへPASSを記録する" \
     "target_path=$workdir/$item_path" \
     "owned_paths_json=$owned_abs_json" \
     "contract_fingerprint=$expected_fingerprint" \
@@ -288,7 +282,7 @@ then
     fail task_yaml_write_failed
 fi
 
-deploy_cmd="${CAMPAIGN_LANE_DEPLOY_CMD:-bash $ROOT/scripts/deploy_task.sh --yaml}"
+deploy_cmd="${CAMPAIGN_LANE_DEPLOY_CMD:-bash $ROOT/scripts/deploy_task.sh --direct --yaml}"
 stage_start deploy
 if ! SHOGUN_ROOT="${SHOGUN_ROOT:-$ROOT}" bash -c 'exec "$@"' _ $deploy_cmd "$task_path" "$worker_id"; then
     fail deploy_failed "$report_path"
@@ -299,16 +293,13 @@ stage_stop deploy
 # task.report_path from the campaign-local placeholder to queue/reports/....
 # Resolve that canonical path after deployment; otherwise a successful shard
 # can sit for the full timeout while this bridge watches the stale placeholder.
-durable_task_path="${CAMPAIGN_LANE_DURABLE_TASK_PATH:-$ROOT/queue/tasks/${worker_id}.yaml}"
-canonical_report_path="$(CAMPAIGN_ROOT="$ROOT" TASK_KEY="$task_key" python3 - "$durable_task_path" <<'PY' 2>/dev/null
+canonical_report_path="$(python3 - "$task_path" <<'PY' 2>/dev/null
 import os, sys, yaml
 task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task") or {}
-if task.get("parent_cmd") != os.environ["TASK_KEY"]:
-    raise SystemExit(1)
 path = task.get("report_path")
 if not isinstance(path, str) or not path.strip():
     raise SystemExit(1)
-print(path if os.path.isabs(path) else os.path.join(os.environ["CAMPAIGN_ROOT"], path))
+print(os.path.abspath(path))
 PY
 )" || fail canonical_report_path_missing "$report_path"
 report_path="$canonical_report_path"

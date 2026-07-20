@@ -2,29 +2,6 @@
 # Shared scaffold for deploy_task test family.
 # Usage: load '../helpers/deploy_task_scaffold' in test files.
 
-deploy_task_fixture_dependency_closure_check() {
-    local source_script="$1"
-    local fixture_lib="$2"
-    python3 - "$source_script" "$fixture_lib" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-source = Path(sys.argv[1]).read_text(encoding="utf-8")
-fixture_lib = Path(sys.argv[2])
-required = set(re.findall(r"scripts/lib/([A-Za-z0-9_.-]+\.(?:sh|py))", source))
-required.update(
-    f"{module}.py"
-    for module in re.findall(r"from\s+scripts\.lib\.([A-Za-z0-9_]+)\s+import", source)
-)
-missing = sorted(name for name in required if not (fixture_lib / name).is_file())
-if missing:
-    print("FIXTURE_DEPENDENCY_CLOSURE_BLOCK: " + ",".join(missing), file=sys.stderr)
-    raise SystemExit(1)
-print(f"FIXTURE_DEPENDENCY_CLOSURE_PASS: {len(required)}/{len(required)}")
-PY
-}
-
 deploy_task_setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
@@ -39,7 +16,6 @@ deploy_task_setup_file() {
     export SRC_PANE_LOOKUP_SCRIPT="$PROJECT_ROOT/scripts/lib/pane_lookup.sh"
     export SRC_TMUX_UTILS_SCRIPT="$PROJECT_ROOT/scripts/lib/tmux_utils.sh"
     export SRC_AGENT_CONFIG_SCRIPT="$PROJECT_ROOT/scripts/lib/agent_config.sh"
-    export SRC_MEMORY_DB_CACHE_SCRIPT="$PROJECT_ROOT/scripts/lib/memory_db_cache.sh"
     export SRC_INJECT_TASK_MODIFIERS="$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
     export SRC_REPORT_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/report_field_set.sh"
     export SRC_REPORT_COMMIT_IDENTITY="$PROJECT_ROOT/scripts/lib/report_commit_identity.py"
@@ -53,7 +29,6 @@ deploy_task_setup_file() {
     export SRC_MARKDOWN_LINK_COUNTS_SCRIPT="$PROJECT_ROOT/scripts/markdown_link_counts.sh"
     export SRC_CAUSAL_BACKLINK_COUNTS_SCRIPT="$PROJECT_ROOT/scripts/causal_backlink_counts.sh"
     export SRC_DEFENSE_OVERHEAD_WRITER="$PROJECT_ROOT/scripts/lib/defense_overhead_writer.sh"
-    export SRC_YAML_ATOMIC="$PROJECT_ROOT/scripts/lib/yaml_atomic.py"
 
     [ -f "$SRC_DEPLOY_SCRIPT" ] || return 1
     [ -f "$SRC_CLI_LOOKUP_SCRIPT" ] || return 1
@@ -66,7 +41,6 @@ deploy_task_setup_file() {
     [ -f "$SRC_PANE_LOOKUP_SCRIPT" ] || return 1
     [ -f "$SRC_TMUX_UTILS_SCRIPT" ] || return 1
     [ -f "$SRC_AGENT_CONFIG_SCRIPT" ] || return 1
-    [ -f "$SRC_MEMORY_DB_CACHE_SCRIPT" ] || return 1
     [ -f "$SRC_INJECT_TASK_MODIFIERS" ] || return 1
     [ -f "$SRC_REPORT_FIELD_SET_SCRIPT" ] || return 1
     [ -f "$SRC_REPORT_COMMIT_IDENTITY" ] || return 1
@@ -78,7 +52,6 @@ deploy_task_setup_file() {
     [ -f "$SRC_MARKDOWN_LINK_COUNTS_SCRIPT" ] || return 1
     [ -f "$SRC_CAUSAL_BACKLINK_COUNTS_SCRIPT" ] || return 1
     [ -f "$SRC_DEFENSE_OVERHEAD_WRITER" ] || return 1
-    [ -f "$SRC_YAML_ATOMIC" ] || return 1
     command -v python3 >/dev/null 2>&1 || return 1
 
     export DEPLOY_TASK_TEMPLATE_DIR
@@ -106,7 +79,6 @@ deploy_task_setup_file() {
     cp "$SRC_PANE_LOOKUP_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/pane_lookup.sh"
     cp "$SRC_TMUX_UTILS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/tmux_utils.sh"
     cp "$SRC_AGENT_CONFIG_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/agent_config.sh"
-    cp "$SRC_MEMORY_DB_CACHE_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/memory_db_cache.sh"
     cp "$SRC_INJECT_TASK_MODIFIERS" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/inject_task_modifiers.py"
     cp "$SRC_REPORT_FIELD_SET_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/report_field_set.sh"
     cp "$SRC_REPORT_COMMIT_IDENTITY" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/report_commit_identity.py"
@@ -120,11 +92,6 @@ deploy_task_setup_file() {
     cp "$SRC_MARKDOWN_LINK_COUNTS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/markdown_link_counts.sh"
     cp "$SRC_CAUSAL_BACKLINK_COUNTS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/causal_backlink_counts.sh"
     cp "$SRC_DEFENSE_OVERHEAD_WRITER" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/defense_overhead_writer.sh"
-    cp "$SRC_YAML_ATOMIC" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/yaml_atomic.py"
-
-    deploy_task_fixture_dependency_closure_check \
-        "$DEPLOY_TASK_TEMPLATE_DIR/scripts/deploy_task.sh" \
-        "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib" || return 1
 
     for stub in inbox_write ntfy_cmd lesson_check; do
         printf '#!/usr/bin/env bash\nexit 0\n' > "$DEPLOY_TASK_TEMPLATE_DIR/scripts/${stub}.sh"

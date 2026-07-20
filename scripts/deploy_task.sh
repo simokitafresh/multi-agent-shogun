@@ -426,10 +426,6 @@ PY
 }
 
 deploy_task_guard_retro_answer_hold() {
-    # 殿裁定2026-07-20 17:22: 過剰対策削減。retro未回答による配備BLOCKを撤廃。
-    # retro台帳が配備を12分×5回ブロックし全忍者を回答処理に奪い脱感染campaignを停止させた(家老RCA blt_20260720_175956)。
-    # retroは有用だが配備(スループット)を止める理由にならない。非同期で回答する。revert復元可。
-    return 0
     local ninja_name="$1" hold event_id
     # Caller must hold the per-ninja deploy lock. This closes the race between
     # monitor publishing the hold and a concurrent deployment transaction.
@@ -497,33 +493,6 @@ deploy_task_yaml_transaction_begin() {
         DEPLOY_TASK_YAML_TX_REPORT_EXISTED=0
     fi
     DEPLOY_TASK_YAML_TX_ARMED=1
-}
-
-deploy_task_yaml_transaction_prepare_report_repair() {
-    local source_file="$1"
-    local source_task_id source_parent source_type report_task_id report_parent report_type report_status report_verdict
-    [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" = "1" ] || return 0
-    [ -f "${DEPLOY_TASK_YAML_TX_REPORT:-}" ] || return 0
-    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$source_file" task_id parent_cmd task_type 2>/dev/null)" || true
-    source_task_id="${task_id:-}"
-    source_parent="${parent_cmd:-}"
-    source_type="${task_type:-normal}"
-    unset task_id parent_cmd task_type status verdict
-    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$DEPLOY_TASK_YAML_TX_REPORT" task_id parent_cmd task_type status verdict 2>/dev/null)" || true
-    report_task_id="${task_id:-}"
-    report_parent="${parent_cmd:-}"
-    report_type="${task_type:-normal}"
-    report_status="${status:-}"
-    report_verdict="${verdict:-}"
-    if [ "$source_task_id" = "$report_task_id" ] && [ "$source_parent" = "$report_parent" ] && [ "$source_type" = "$report_type" ]; then
-        return 0
-    fi
-    if [[ "$report_status" =~ ^(completed|done)$ ]] || [[ "$report_verdict" =~ ^(PASS|FAIL|PASS_NO_IMPROVEMENT)$ ]]; then
-        echo "BLOCK: terminal report identity differs from same-cmd repair source" >&2
-        return 1
-    fi
-    rm -f -- "$DEPLOY_TASK_YAML_TX_REPORT"
-    log "YAML-TRANSACTION: removed mismatched nonterminal report for same-cmd repair"
 }
 
 deploy_task_yaml_transaction_rollback() {
@@ -5125,7 +5094,6 @@ inject_semantic_concepts() {
             [ -n "$_causal_out" ] && { echo "INFO: [CAUSAL_CONTEXT] target因果辺:" >&2; printf '%s\n' "$_causal_out" | sed 's/^/  → /' >&2; }
         fi
     fi
-    return 0
 }
 
 # ─── 三層記憶先行知識注入(殿厳命2026-06-10: 使用しないのはバグ。L0-L7貫通) ───
@@ -5149,66 +5117,14 @@ inject_memory_db_context() {
     [ -n "$keywords" ] || return 0
 
     # cmd_3758: キーワード毎に別プロセスで叩いていたのをUNION ALLで1クエリ/1プロセスに統合(per-keyword LIMIT 2は維持)
-    local kw kw_esc kw_fts combined_sql="" fts_query="" fts_safe=true
+    local kw kw_esc combined_sql=""
     for kw in $keywords; do
         kw_esc="${kw//\'/\'\'}"
-        # FTS5 trigram cannot represent terms shorter than three characters.
-        # Preserve the current LIKE path for those terms instead of risking a
-        # false zero-hit decision.
-        if [ "${#kw}" -lt 3 ]; then
-            fts_safe=false
-        else
-            kw_fts="${kw//\"/\"\"}"
-            [ -z "$fts_query" ] || fts_query="${fts_query} OR "
-            fts_query="${fts_query}\"${kw_fts}\""
-        fi
         if [ -n "$combined_sql" ]; then
             combined_sql="${combined_sql}"$'\nUNION ALL\n'
         fi
-        combined_sql="${combined_sql}SELECT * FROM (SELECT ts || ' | ' || substr(summary,1,100) FROM events WHERE summary LIKE '%${kw_esc}%' AND event_type IN ('conversation','knowledge','ruling') ORDER BY ts DESC LIMIT 2)"
+        combined_sql="${combined_sql}SELECT ts || ' | ' || substr(summary,1,100) FROM events WHERE summary LIKE '%${kw_esc}%' AND event_type IN ('conversation','knowledge','ruling') ORDER BY ts DESC LIMIT 2"
     done
-    # FTS is an existence guard only.  Each LIKE branch remains subquery-bound
-    # so its historical per-keyword ORDER BY/LIMIT 2 contract stays valid.
-    # A miss proves the current LIKE queries
-    # would return no eligible rows; a hit delegates to the byte-identical
-    # LIKE SQL below so ranking, limits, and output remain unchanged.
-    if [ "$fts_safe" = true ] && [ -n "$fts_query" ]; then
-        local existence_sql existence_result="" fts_db_path=""
-        existence_sql="SELECT EXISTS(SELECT 1 FROM events_fts JOIN events e ON e.rowid=events_fts.rowid WHERE events_fts MATCH '${fts_query//\'/\'\'}' AND e.event_type IN ('conversation','knowledge','ruling') LIMIT 1)"
-        # Resolve the same ext4 snapshot as memory_db_query, but execute this
-        # tiny existence probe directly.  Re-launching memory_db_query for the
-        # guard repeats its full cache/preflight setup and erases the measured
-        # zero-hit saving.
-        if [ -f "$SCRIPT_DIR/scripts/lib/memory_db_cache.sh" ]; then
-            # shellcheck source=lib/memory_db_cache.sh
-            source "$SCRIPT_DIR/scripts/lib/memory_db_cache.sh"
-            fts_db_path=$(prepare_memory_db_for_read "$SCRIPT_DIR" "$db_path" \
-                "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" 2>/dev/null || printf '%s' "$db_path")
-            existence_result=$(python3 - "$fts_db_path" "$fts_query" <<'PY' 2>/dev/null || true
-import sqlite3, sys
-
-db_path, query = sys.argv[1:]
-with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=0.5) as conn:
-    row = conn.execute(
-        "SELECT EXISTS(SELECT 1 FROM events_fts JOIN events e "
-        "ON e.rowid=events_fts.rowid WHERE events_fts MATCH ? "
-        "AND e.event_type IN ('conversation','knowledge','ruling') LIMIT 1)",
-        (query,),
-    ).fetchone()
-print(int(row[0]) if row else 0)
-PY
-)
-        elif declare -F deploy_task_wave_cache >/dev/null 2>&1; then
-            existence_result=$(deploy_task_wave_cache memory-exists "$keywords|$fts_query" "$db_path" \
-                timeout "${DEPLOY_TASK_MEMORY_CONTEXT_TIMEOUT_SEC:-3}" bash "$query_script" "$existence_sql" 2>/dev/null) || existence_result=""
-        else
-            existence_result=$(bash "$query_script" "$existence_sql" 2>/dev/null) || existence_result=""
-        fi
-        if [ "$existence_result" = "0" ]; then
-            log "inject_memory_db_context: FTS existence miss for: $keywords"
-            return 0
-        fi
-    fi
     if declare -F deploy_task_wave_cache >/dev/null 2>&1; then
         result=$(deploy_task_wave_cache memory "$keywords|$combined_sql" "$db_path" \
             timeout "${DEPLOY_TASK_MEMORY_CONTEXT_TIMEOUT_SEC:-3}" bash "$query_script" "$combined_sql" 2>/dev/null) || result=""
@@ -6936,12 +6852,9 @@ try:
         if any(m is not None and m > cache_mtime for m in (src_mtime, wal_mtime, shm_mtime)):
             try:
                 import subprocess
-                _refresh_env = os.environ.copy()
-                _refresh_env['SHOGUN_MEMORY_DB_CACHE_NONBLOCKING'] = '1'
                 subprocess.Popen(
                     _build_cmd,
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
-                    env=_refresh_env,
                 )
             except Exception:
                 pass
@@ -10253,9 +10166,9 @@ deploy_task_direct_quality_contract_precheck() {
     result="$(deploy_task_quality_contract_result "$task_file")"
     case "$result" in
         WARN*)
-            log "WARN(QUALITY_CONTRACT): ${result}"
-            echo "WARN: direct deployment detector quality contract diagnostic: ${result}" >&2
-            return 0
+            log "BLOCK(QUALITY_CONTRACT): ${result}"
+            echo "BLOCK: direct deployment detector quality contract failed: ${result}" >&2
+            return 1
             ;;
         *)
             log "quality_contract: ${result}"
@@ -10400,9 +10313,9 @@ PY
 )" || rc=$?
     rc="${rc:-0}"
     if [ "$rc" -ne 0 ]; then
-        # 殿裁定2026-07-20 17:22: 過剰対策削減。TEN_MIN_CONTRACT配備BLOCKを助言化。
-        # cmd_4105配備を2回ブロックした(家老RCA)。長時間cmdも配備を止めない。timeout_minutesで制御。revert復元可。
-        log "ADVISORY(TEN_MIN_CONTRACT): ${result}"
+        log "BLOCK(TEN_MIN_CONTRACT): ${result}"
+        echo "BLOCK: natural-boundary task contract failed: ${result}" >&2
+        return 2
     fi
     log "ten_min_contract: ${result}"
     return 0
@@ -10497,14 +10410,6 @@ should_skip_same_cmd_resolve() {
 
     [ -f "$task_file" ] || return 1
     [ -n "$requested_cmd" ] || return 1
-
-    # An explicit --yaml source is a repair request, even when parent_cmd is
-    # unchanged. Reusing the published task here also reuses its old report
-    # template and makes a partial same-cmd publication impossible to repair.
-    if [ -n "${YAML_FILE:-}" ]; then
-        log "same_cmd_redeploy: explicit YAML source forces atomic repair for ${requested_cmd}"
-        return 1
-    fi
 
     # Partial field extraction can succeed even when the task document is
     # malformed.  Reusing that document would skip stale reset/atomic --yaml
@@ -11442,15 +11347,6 @@ deploy_task_main() {
     # arriving concurrently.  Hold the worker lock across every task/report
     # mutation and the durable task_start notification (GA-257).
     deploy_task_acquire_ninja_lock "$NINJA_NAME" || return 1
-    # Snapshot before normalization/issued_at or any other task/report write.
-    # A failed direct-YAML preflight must leave both published artifacts byte
-    # identical and must not arm a delivery side effect.
-    if [ -n "$CMD_ID" ] && [ "$DIRECT_MODE" = true ] && [ -n "$YAML_FILE" ]; then
-        deploy_task_yaml_transaction_begin "$task_yaml" "$YAML_FILE" "$NINJA_NAME" "$CMD_ID" || {
-            deploy_task_release_ninja_lock
-            return 1
-        }
-    fi
     if ! deploy_task_guard_retro_answer_hold "$NINJA_NAME"; then
         deploy_task_release_ninja_lock
         return 2
@@ -11570,6 +11466,10 @@ except Exception:
             # Validation-before-mutation: syntax, natural-boundary and required
             # source contracts must all pass while the current task is untouched.
             if [ "$DIRECT_MODE" = true ] && [ -n "$YAML_FILE" ]; then
+                deploy_task_yaml_transaction_begin "$task_yaml" "$YAML_FILE" "$NINJA_NAME" "$CMD_ID" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 1
+                }
                 [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_source_contract_precheck "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 2
@@ -11583,10 +11483,6 @@ except Exception:
                     return 2
                 }
                 deploy_task_direct_quality_contract_precheck "$YAML_FILE" || {
-                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
-                    return 1
-                }
-                deploy_task_yaml_transaction_prepare_report_repair "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                 }

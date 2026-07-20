@@ -71,7 +71,6 @@ lessons:
     - cmd前提否定時は停止→現物確認→将軍shelve報告→偵察cmd要請の4段階(LK004: cmd_2794で軍師REQUEST_CHANGES→家老が現物確認→前提否定確定→影丸停止→将軍shelve。忍者に続行させるな)
     - CoDD修行AC設計前にCLI --helpで構文現物確認必須(LK006: codd extract/elicit/generate構文を未確認でAC設計→4忍者全FAIL。§0.1問い2にCLIツール構文確認を含む)
     - D0レビューでテスト前提更新を確認せよ(LK013: 軍師D0でMIN_SAMPLES 3→1変更→テスト前提古い→CI RED。D0変更がデフォルト値・閾値追加→既存テスト前提古くなっていないか)
-    吸収(2026-07-18, cmd_karo_recon_hidden_infra_bugs_202607180756, origin: [[Track_B初回FAIL]] -> [[家老配備前検証欠落]] -> [[監査縮退+独立性汚染]]): 吸収(2026-07-18, cmd_karo_recon_hidden_infra_bugs_202607180756): 独立偵察の固定base参照はnudge前にgit cat-file --batch-checkでN/N存在を確認し、task文面・worktree inventoryへの兄弟固有名露出0件、restart fixture>=1を二値確認する。初回Track Bはrefs 3/5・兄弟名1・restart 0/1で正当FAIL、代替Trackはrefs 5/5・兄弟名0へ修正。origin: [[Track_B初回FAIL]] -> [[家老配備前検証欠落]] -> [[監査縮退+独立性汚染]]
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015, LK004i, LK006i, LK013i]
   created_at: '2026-04-24'
   automated: true
@@ -211,13 +210,11 @@ lessons:
     - checklist参照が構造的に機能しない場合がある(cmd_3038/3043で3度連続ターゲット違い)。Codex忍者はchecklist参照より自力判定を優先する傾向。3度失敗→忍者配備では解決しない→家老直接実装(sed等)が正解(将軍承認2026-05-24)。判断基準: 同パターン3回失敗=構造的問題→家老直接対処に切替
     v3吸収(2026-05-26):
     - 教訓注入USEFUL率がcmd種別で0%〜70%ばらつく(cmd_3058 aliases修正=0%/cmd_3059 洗脳基準=70%)。project:infraタグだけでは全infra教訓を均一注入しtarget_pathと無関係な教訓が大量NOT_USEFUL。target_path(semantic系/gate系/hook系)での絞り込みがUSEFUL率の鍵。CMD起票要請中(掲示板blt_20260526_150304+blt_20260526_220647)
-    吸収(2026-07-18, cmd_karo_hotfix_report_unique_id_v2_202607180909, origin: [[cmd_karo_hotfix_report_unique_id_v2_202607180909]] -> [[content identity collision]] -> [[canonical report identity v2]]): 同一content別pathと同task複数revisionは文字列推定で衝突する。新規reportは配備世代ごとのUUID report_id v2をtask/report双方へ一度だけ保存し、legacyはcanonical relative path SHA-256で読取時解決する。v2欠落・不一致・別path再利用はfail-closed BLOCKし、報告関連通知はreport_id/report_path/task_id/parent_cmdを構造化伝搬する。
-    吸収(2026-07-20, cmd_speed_campaign_20260720, origin: [[speed_report_schema_gap]] -> [[callback_block]] -> [[gate_and_task_generation_contract]]): 速度R1/R2でtest_results数値字段とspeed_ab証跡が連続欠落し、汎用report gateと軍師レビューを通過した。terminal speed PASSは数値4字段を必須化し、same-run ABはcommit・交互sequence・各10samples・再計算一致p50/p95・adoptedをgateでBLOCK、task ACへ字段を自動注入。PASS cacheも全validator世代mtimeで失効させる。
   source_ids: [LK007, LK017, LK038]
   created_at: '2026-04-24'
   automated: true
-  enforcement_level: 5
-  enforcement: "Level5: task生成が完全schemaを提示し、Level4 gateがcallback前に欠落/統計不一致をBLOCK。"
+  enforcement_level: 4
+  enforcement: "Level4(フロー内BLOCK、複数環で二重防御): (1)配備環=deploy_task.sh check_scout_gate()(L7775-7877、呼出L8747)がimplタスクの偵察未完了時に配備そのものをBLOCK『BLOCK(scout_gate): 偵察未完了』。家老がscout_exemptを恣意決定できない設計はkaro-operations.md §1(L51)に明記。(2)報告環=gate_report_format.sh がbinary_checks欠落・verdict不正等の報告フォーマット違反時にexit 1でBLOCK(L368/376/381/645/761)。(3)配備テンプレート品質=deploy_task.sh L3011-3058がtarget_path全件gitignore対象時にcommit checkを自動でgate通過値'no'に設定(LK007由来『テンプレートデフォルト値はgate通過値にする』原則の実装箇所)。一次情報再検証(2026-07-09 cmd_reflux_promotion_202607090500_tobisaru): 該当ファイル・行を現物grep確認、かつ回帰テスト実行確認 — tests/unit/test_scout_gate_completed_skip.bats(6テスト全PASS、うち『scout_gate BLOCKs assigned impl task without scouts』が本BLOCK挙動を直接検証)。enforcement本文にLevel判定キーワードが無くgate_lesson_enforcement_level.shがデフォルトL1に誤分類していたため、enforcement_levelフィールドを明示追加(field優先ルール)。同日のLS080/LS040/LS078/LS-A24と同型の誤判定パターン。"
 
   when: cmd分解・タスクYAML作成時。仕組み変更cmd時
   how: 配備品質が忍者品質を決める。仕組み変更は3層同時修正(テンプレート/忍者ルール/家老ルール)
@@ -373,14 +370,10 @@ v7吸収(2026-05-19):
     - gate修正後は対象回帰テスト+所要時間の実測をセットで記録せよ(速度もバグ: 殿厳命2026-07-10)
     - 実装証拠: e34933ff3,70bfa75f4,790504963,f025df5aa,64eb1316a,0a41c0110
     吸収(2026-07-16, cmd_karo_recon2_ga267_scheduler_rc_audit_202607160130, origin: [[GA-267 addendum]] -> [[shell quote不整合]] -> [[heavy-job偽診断]]): 吸収(2026-07-16, GA-267 addendum): 引用符不整合でshlex解析不能なread-only rgをheavyと分類するとwrapperを誤案内し、根因修正を妨げる。classifierにmalformed三値を追加し、hookはBLOCK(shell-syntax)を返す。修正後admission 58/58 PASS、shellcheck 2/2、FAIL0/SKIP0。
-    吸収(2026-07-20, cmd_4093, origin: [[cmd_4093]] -> [[tracked_deletion]] -> [[scope_commit_D_preservation]]): tracked test削除は存在チェックとACMR filterだけでは正規削除をmissing扱い/脱落させる。HEAD追跡済み+porcelain Dのみ不在scopeを許可し、private diffをACMRDで全phase保持するcontract testを必須化した。
-    吸収(2026-07-20, cmd_karo_hotfix_ga303_context_freshness_202607200106, origin: [[GA-303_context_freshness_ALERT]] -> [[instruction_contract_split_brain]] -> [[generated_task_contract_test]]): GA-303は検知側がsource_commit更新を要求する一方、生成cmdがlast_updated単独更新を指示するsplit-brainで消火を再生産した。生成purpose/AC/command全てにsource_commit境界・未解消0・cache無効再検査を固定しALERT1→0、正常FP0、2/2 PASS。
-    吸収(2026-07-20, cmd_karo_ci_fix_ga304_inventory_reference_202607200137, origin: [[GA_304]] -> [[canonical_inventory_sync_gap]] -> [[commit_preflight_guard]]): GA-304はtest本体とselector参照を削除してもcanonical push inventory第2列に5行残り、CIが実行前FAILした。ninja_scope_commitでtracked test削除時にinventory参照残存をBLOCKし、同期済み削除のみ許可。横展開missing push fileは1/1、境界3/3、helper59/59、FP0。
-    吸収(2026-07-20, cmd_karo_ci_fix_ga304_ci_portability_202607200155, origin: [[GA_304_CI_FAIL]] -> [[GA_220_invalid_DM_SIGNAL_REPO]] -> [[fixture_host_identity_isolation]]): GA-304 run 29696342060で、同期済み削除fixtureがdocs/research/inventory.csvをstageした際、clean CIにDM_SIGNAL_REPO既定cloneがなくGA-220が正しくfail-closedした。ローカルclone存在により59/59だったため環境差を誤ってpathspecと診断した。production guardを緩めず、fixtureへ有効な独立Git repo identityを明示注入し、無効identity BLOCK・有効unrelated identity PASSを同一contractで強制する。誤根因の実装hunkは撤回。修正後3/3・helper59/59・reflux29/29・push1582/1582 PASS、FP0。
   source_ids: [LK002, LK003, LK004, LK008, LK011, LK013, LK039, LK053, LK074, LK077, LK082, LK083, LK084, LK087, LK090, LK001b, LK011b, LK012b, LK007, LK009, LK010, LK005i]
   created_at: '2026-04-24'
   automated: true
-  enforcement: "Level4: tracked test削除commitはcanonical inventory第2列参照0でなければBLOCK。"
+  enforcement: 'Level4(フロー内BLOCK/自動ゲート接続): 一次情報再検証(2026-07-09, cmd_reflux_promotion_202607090637_hanzo)。deploy_task.sh は check_scout_gate() でimplタスクの偵察未完了を配備時点でBLOCKし、報告テンプレートへself_gate_checkを自動注入する。maybe_notify_draft_review() は通常配備時に軍師draft reviewを自動送信し、EXIT trap fallbackで配備異常終了時もreview_draftへ接続する。ninja_monitor.sh は can_send_clear_with_report_gate() 経由で報告YAML未作成/未通知のdone状態をREPORT-MISSING-BLOCKとして/clear保留し、report_missingを家老へ通知する。scripts/lib/gunshi_notify.sh + inbox_write.sh はreport_receivedからreport_review、report_review_result(LGTM)からreview_gate.done作成+cmd_complete_gate起動へ接続する。関連回帰テスト: tests/unit/test_deploy_task_draft_review.bats、tests/unit/test_inbox_write.bats、tests/unit/test_ninja_monitor_clear_guard.bats、tests/unit/test_cmd_save_research_artifact_reflux.bats、tests/unit/test_deploy_task_template_generation.bats。従来enforcement本文が抽象的でgate_lesson_enforcement_level.shがL1誤分類していたため、field優先ルールに合わせてenforcement_levelを明示追加。'
   enforcement_level: 4
 
 # === 独立パターン ===

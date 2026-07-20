@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-exit 0  # lint/mechanism Stop enforcement disabled
 # Stop Hook: Check for lint violations in changed files before agent stops.
 # Loop prevention: file-based failure hash comparison (cmd_972 pattern).
 # Design: Same failure repeated = agent can't fix → allow stop + escalate to karo.

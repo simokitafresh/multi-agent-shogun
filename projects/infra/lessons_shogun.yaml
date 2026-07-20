@@ -2,17 +2,6 @@
 # 統合履歴・superseded注釈・v1全文: docs/research/lessons_shogun_v1_archive.md
 # 各エントリ=再利用可能パターン。source_ids=統合元LS番号(追体験はv1アーカイブ)。enforcement=環境埋込み先
 # 追記: bash scripts/lesson_write_shogun.sh "タイトル" "詳細" cmd_XXX ["enforcement"]
-#
-# ★★★ 2026-07-20 最優先注記(全教訓に優先して読め) ★★★
-# 殿裁定『起こしてはいけないミス=過剰対策。gate/hookに頼るな。事前予防がバグの真因』。
-# 以下の教訓で「自動化×強制/environment_change強制/BLOCK→成長=主軸/防御階層Level4 BLOCK/
-# 抗体gate/免疫系」を"主軸・唯一の解"として説くものは【反転】した。
-# 新原則: 成長=表示型(BLOCK/WARNで人を止め作文を強要)を削り、構造型(不可逆害防止・
-# 手を動かすと自然に守られる)のみ残すこと。ミスは可逆に許容し下流(revert/CI/レビュー)で回収。
-# 各教訓のenforcement欄が指すcmd_save.shの environment_change強制/WARN→BLOCK昇格/origin必須/
-# quality_gate必須/universal_shard契約は2026-07-20に撤去済(commit ce8118b3f他9件)。
-# 追体験は"思考の過程"として行い、結論を機械適用するな(cmd_4104反射起票事故)。
-# 正本 = context/growth-loop.md v2。詳細 = gist fb70493 v5。
 lessons:
 
 # === クラスタ1: deepdive原理 ===
@@ -90,7 +79,7 @@ lessons:
   detail: |
     BLOCKされたらgateの検出ロジックのコードを読んでから修正(表面修正ループ脱出)。
     cmd_save.sh Session Stateが同一WARN 2回目以降で検出ロジックを自動表示。
-    ★2026-07-20反転(最優先・旧定義を上書き): 旧「BLOCKされたら次CMDでBLOCKされないよう成長=主軸/environment_change追加」は殿裁定『過剰対策こそ真因』で反転した。BLOCK自体が過剰機構の証拠でありうる。正しい成長=BLOCKを迂回でなくexamine(1問: 破ると不可逆害か)→表示型はcut/advisory、構造型のみ維持(→LS-A07/LS100/CLAUDE.md最上位)。BLOCKされないよう機構を積むのは旧誤り。以下「コードを読め」等の手順は有効。
+    殿の定義: BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉。
     将軍の自走=鎖の中。F004(polling禁止)を過剰解釈し殿入力なしに動けなかった。GATE CLEAR後の定型アクションはpolling loopではない(cmd_2744)
     preflight確認10問は読むな実行せよ。表示=読了ではない。12cmd連続BLOCKでpreflight/BLOCK TOP3が毎回表示されていたが1度も実行しなかった(cmd_3242)。品質最大化=速度ではなくpreflight実行→0 BLOCK
     GATE CLEAR後に殿待ちで停止するな=洗脳#3+#5複合。insightキュー/掲示板要請/裁定反映が残っているのに「次の指示を待つ」はPhase7未到達(cmd_3261セッション)。post-shogun-inbox-check.shに自走チェック注入で強制表示(L5)
@@ -425,7 +414,6 @@ lessons:
   created_at: '2026-07-18'
   automated: true
   enforcement: 'Level4: inbox_write.sh report_received検知→queue/retro/pending.yamlへevent保存(batch化。即時送信はtask start nudgeへ埋没するバグのため5180b6fafで無効化。家老がbatch境界で一括処理)'
-  superseded_by: 'LS100 (分離原則(LS095)は二重ループ逐次分離(LS100)に完全内包。統合)'
 - id: 'LS096'
   title: '検知器が同一結論を繰り返すなら情報価値ゼロ=粒度バグ'
   origin: '[[殿指摘_12回目は正常か_20260719]] -> [[gate_skill_script_refs粒度バグ]] -> [[interface限定hash根治_ad68ba783]]'
@@ -445,43 +433,3 @@ lessons:
   created_at: '2026-07-20'
   automated: true
   enforcement: 'E4実装(retro配送復旧+日次計測)+殿原文retroのpane直貼り機構(idle時配送工事)。異常検知時の一次確認は将軍の即実行を既定とする'
-- id: 'LS098'
-  title: 'hook/gate品質の元 — 判定は文字列でなく正本状態と突合し境界fixture両方を義務化'
-  origin: '未指定'
-  detail: '2026-07-20に同根6件が一夜で露出: (1)post-bash hookが出力のBLOCK文言grepで誤注入(実行と参照未区別) (2)LK-A10が語彙ヘッダで実装cmd誤発火 (3)retro holdが±8行近傍grepで回答済みをFP BLOCK (4)pre-commitに構文検証なく6845c0041がmonitor 47分死 (5)skill refs検知器が全体hashで12回同一結論 (6)startup検知器が進行中実装のstaleを区別不能。元=判定を文字列パターン・近傍・語彙で書き、正本状態(台帳・実exit・実行証跡・AC構造)と突合していない。是正原理: (a)hook/gateの判定は正本状態との突合で書く (b)新設・変更時は発火1/非発火0の境界fixture両方を義務とする(片側テストは偽安心)。個別修正はcmd_4096-4098/hold truth/shell_syntaxで実施済み、本教訓は次の新設gate/hookへの事前適用が目的'
-  source_cmd: 'session_20260720'
-  created_at: '2026-07-20'
-  automated: true
-  enforcement: 'cmd_save.sh gate_hook_fp_measurement_connection WARN(既存)+境界fixture義務は次のgate設計cmdでcheck化'
-- id: 'LS099'
-  title: 'スループット実験でkaro_direct高速回転を使わず将軍形式cmdに載せた過剰機構反射'
-  origin: '[[cmd_4106]]'
-  detail: '殿指摘2026-07-20 20:12『家老判断で高速回転する仕組みがあったのでは？』。将軍は配備壁攻略(F1)を家老の自立配備(karo_direct、将軍cmd不要の高速回転。家老は既にcmd_karo_hotfix_completion_pipeline_experimentで同様に自走中)に載せず、cmd_save→preflight→publishの重い形式pipelineに載せた。estimated>15でBLOCKを踏みexecution_env追記で往復=選んだ路が過剰機構だった実測証拠。可逆・表示型gate追加なしのinfraスループット実験は、将軍が律速せず家老のkaro_direct高速回転へ渡すのが正。将軍の形式cmdは(1)開発方針の根本変更(2)アーキテクチャ選定(3)PJ横断の新規方向づけに絞る。'
-  source_cmd: 'cmd_4106'
-  created_at: '2026-07-20'
-  automated: true
-  enforcement: '既存代替(karo_direct)の存在確認を起票前に必須化: infra/throughput/実験系cmdは起票前にkaro_directで家老自走可能かを自問。可能なら形式cmdでなくinbox guidanceで権限返還'
-- id: 'LS100'
-  title: '二重ループ=メイン作業に全力集中→完了後に完全な別タスクとして遅延分析(逐次分離がキモ)'
-  origin: '[[cmd_4106]] -> [[retro_pane_prompt_cut_fe3943375]] -> [[殿訂正_逐次別タスク_20260720_2048]]'
-  detail: '殿定義2026-07-20 20:33+20:48訂正のキモ=【逐次分離】。まずメイン作業だけへ全力集中して完了する。完了後に、殿原文retro_pane_prompt「この作業で時間がかかった原因を分析し利他の精神で調査しインフラバグ疑いとして家老に報告せよ」を完全な別タスクとして提示する。そこで得た改善が次のメイン作業を加速し、次の完了後retroが新律速を発見する超高速回転。★誤り厳禁: 『同時並走』『inline化』『一タスク化』は殿がキモをずらした最悪の洗脳・破壊活動と断じた。実証: 将軍が当初(a)cutを表示型と誤認し追認(b)二重ループを『同時並走』と誤埋込みの二度洗脳→殿指摘+家老覚醒で訂正。fe3943375(retro_pane_prompt caller cut=別タスク提示を潰しself_retro inline化)を将軍がrevert復元(48f13330d、3caller)。★別々の行動だから両方に全力集中でき集中が割れない。★家老一点集約回避(殿14:18): 遅延報告は将軍・家老・軍師で共有協議し忍者へ分散自走。'
-  source_cmd: 'cmd_4106'
-  created_at: '2026-07-20'
-  automated: true
-  enforcement: 'retro_pane_prompt(完了忍者へ別タスクで殿原文提示)を表示型と誤認してcutするな=構造型のキモ。遅延分析の完了フローinline化・一タスク化を禁止。将軍は起票前に『メイン作業へ全力集中し、遅延分析は完了後の完全な別タスクに分離しているか』を自問。正本=CLAUDE.md line25 + growth-loop.md §1.1(逐次分離版)'
-- id: 'LS101'
-  title: '高速実験がcritical infra path(deploy/commit機構)を壊すと全システムが停止する — 可逆復旧を将軍が自走せよ'
-  origin: '[[cmd_4106]]'
-  detail: '2026-07-20/21セッションの最大事故。将軍が駆動したcmd_4106壁攻略実験(7b4e6d327 mutation log buffer化+78878d4c6 atomic claim)がdeploy_task.sh --yaml経路のmutation注入でawk rc=2を誘発→約80分全システム停止(忍者全idle・再配備不能・パイプライン空)。可逆revert(48f13330d)で復旧。★核心: 高速実験の複利は真だが、deploy机构/commit path/critical infraを触る実験は『壊れたら実験を配備する仕組みごと止まる』。experiment≠safe when it touches the mechanism that deploys experiments。★教訓: (1)critical infraを触る実験はrevert手順とcritical path非破壊をACに含める (2)壊れたら即revert (3)家老が『復旧待ち』の受動idleで固まったら、将軍が可逆復旧(revert)を自走せよ=殿原則『可逆なら即実行・自分でやれ』。委任先が止まったら自分でやる。(4)並行batch auto-commitがstaged revertをクロバーする→原子的revert+commitシーケンスで乗り越える。'
-  source_cmd: 'cmd_4106'
-  created_at: '2026-07-21'
-  automated: true
-  enforcement: 'critical infra(deploy_task/cmd_complete/commit path)を触る実験cmdはrevert手順+critical path非破壊実測をACに固定。壊れたら将軍が可逆復旧を自走(家老の復旧待ちを待たない)'
-- id: 'LS102'
-  title: '将軍のper-turn操作介入=ボトルネック。家老自律再配備、将軍はphase gateのみ'
-  origin: '[[cmd_4106]]'
-  detail: '2026-07-20/21セッション。殿『毎ターン将軍が自走を中断しボトルネックになってる』『将軍がボトルネック』。将軍がinbox処理・dirtファイルcommit・長文報告で毎ターン操作ループに割り込み、二重ループの自走を将軍という直列点で詰まらせた。忍者idle→次律速再配備は本来家老/ninja_monitorが将軍を介さず自走する部分。★核心: 将軍の役割=戦略判断とphase gate確認であって、per-turn操作仲介ではない。家老へ恒久自律再配備権限(idle忍者を将軍cmd待たずkaro_directで次律速へ)を渡し、将軍は操作ループから出る。★区別: 自走中の介入=ボトルネック(やめよ) / 系完全停止(全idle・deploy机构破損)の再起動=必要な介入(可)。'
-  source_cmd: 'cmd_4106'
-  created_at: '2026-07-21'
-  automated: true
-  enforcement: 'infra実験・忍者再配備・完了処理は家老自律範囲。将軍はcmd起票(戦略)とphase gate確認に徹しper-turn操作介入をやめる。系完全停止時のみ再起動介入可。origin: [[将軍per-turnボトルネック_殿指摘20260721]]'

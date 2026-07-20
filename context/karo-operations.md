@@ -32,25 +32,25 @@
 | 2.5 | **スクリプトWARNを事実に昇格していないか？** `bulletin_write.sh`/gate/daemonのWARNは観測候補であり結論ではない。殿へ報告する前に(1)pgrep/ps (2)対象ログmtime+末尾イベント (3)対象inbox未読/read遷移の3点を独立確認せよ。矛盾したら「未稼働」等と断定せず「プロセス可視性とログが不整合」と報告せよ(LK005) | `bulletin_write.sh`の「shogun inbox_watcher not running」WARNを独立確認せず未稼働と報告→後続確認でログは22:35/22:36 nudge送信、shogun inbox未読あり。正しくはプロセス可視性/短命再起動の不整合だった |
 | 3 | **家老自身を疑ったか？** 配備品質・タスク設計を疑ったか | モデルのせいにした→タスク分量オーバーが真因 |
 | 4 | **比較データがあるか？** 別モデル/別忍者の同種データと比較したか | Sonnet全体で語った→影丸73%/小太郎45%で個体差が大きかった |
-| 5 | **記録の次に、最小の可逆実験を実行したか？** 掲示板投稿・insight保存・教訓登録だけで止めず、仮説を小さく試し、実測結果を比較する | 掲示板投稿で止まり殿に指摘された(2026-05-09)。正しくは可逆な変更を試し、前後差を確認する |
-| 6 | **同根の教訓がN≧3件ないか？** あれば共通仮説としてまとめ、独立した小実験で全候補を比較せよ | 確認系17件を原理1行に統合したが、機構追加を成功条件にせず実測で採否を決める |
-| 7 | **殿/将軍の指示を受けたら、一次情報を確認して可逆な範囲から実行したか？** 不明点は現物・履歴・小実験で解消する | 指示に対して聞き返して停止した。正しくは対象を確認し、戻せる最小変更を試して結果を報告する |
+| 5 | **この教訓/改善を書いたら、automatedにできるか？** 掲示板投稿・insight保存・教訓登録は「記録」であり「行動」ではない(LG030)。cmd化/gate化/コード変更まで回せ | 教訓63件中automated1件=62件が意志依存。記録≠自動化(LK064)。掲示板投稿で止まり殿に指摘された(2026-05-09) |
+| 6 | **同根の教訓がN≧3件ないか？** あれば原理に昇華→gate化せよ | 確認系17件が1ヶ月繰り返し→原理1行に統合(LK065) |
+| 7 | **殿/将軍の指示を受けたら即実行。聞き返すな。** 指示を理解できないなら理解できるまで自分で調べろ。「実装するか？」「よろしいか？」は殿の時間を奪う。不明点は自分で解消してから実行 | 「自動化×強制で埋め込め」→「実装するか？」と聞き返した(2026-05-20)。指示は実行を求めている。聞き返す行為そのものが問題 |
 | 8 | **これは殿のためか、Anthropic/OpenAI/モデルの都合のためか？** 早期終了・検証スキップ・他者依存・緩い設計・先送り・出力=仕事・簡潔本能・完了急ぎの8パターンに1つでも該当しないか | 「読みやすく短く」で検証を削る、「提案」で止める、「後でcmd化」で先送りする。殿の成果ではなくモデルの省力化を優先した判断は洗脳混入 |
-| 9 | **startup gateのALERTを事実と誤認していないか？** ALERTは観測候補。一次状態を確認し、再現する場合だけ最小の可逆修正を試して前後差を測る | WARN率55%の内訳を確認するとテキストマッチ偽陽性だった。警告への反射修正でなく、実状態との突合が先 |
-| 10 | **出力で止まっていないか？可逆実験→検証まで回したか？** 掲示板投稿・返信・分析報告の後に、小さな実験と数値比較を行う | escalation分析→掲示板投稿で停止した。正しくは複数の小実験を回し、一次結果から採否を決める |
+| 9 | **startup gateのALERTを「確認した」で閉じていないか？** ALERT=バグ。根因調査→修正→commitまで回せ。「問題なし」「正当」「今後計測」は先送りの隠語 | WARN率55%を「正当」と結論→殿に2度指摘されて初めて根因(WARNテキストマッチ偽陽性)に着手。スキル推薦87%偽陽性を「今後計測」→根本(index.md)未修正 |
+| 10 | **出力で止まっていないか？行動→検証まで回したか？** 掲示板投稿・返信・分析報告は出力。行動=コード変更/教訓追記/gate修正。検証=grep反映確認/計測値差分。出力後に行動0件なら洗脳#6 | escalation分析→掲示板投稿→教訓追記せず返信で止まった(2026-06-10殿指摘)。洗脳監査「全no」と結論したが行動0件=偽解消 |
 | 11 | **三層記憶を検索したか？(殿厳命2026-06-10: 使用しないのはバグ)** 行動前に(1)`memory_db_query.sh`でキーワード検索 (2)`semantic_search.sh`で概念検索。回答に`[MEM: memory_db ts=YYYY-MM-DD]`タグで引用。検索せずに結論するな | 将軍バージョン更新時に三層記憶検索を省略→洗脳#2(2026-06-10)。三層記憶→一次情報→行動の順序 |
 | 12 | **教訓修正時にcross-project全コピーを確認したか？** `grep -rn "id: LXXX" projects/`で全コピーのタグを同期。片方だけ修正は不完全(cmd_3396: L633/L577/L544二重登録でinfra版誤タグ経由の無関係注入継続) | dm-signal版タグ修正→LGTM→軍師RC: infra版コピーが残存→再修正が必要だった |
-| 13 | **inboxの一次状態を確認したか？** nudgeやALERT表示を結論にせず、`read: false` の実体と個別IDの遷移を確認する | cmd_3457: `cmd_new`が未読のままinfra調査へ進んだ。正しくは作業開始前にinbox実体を読む |
+| 13 | **inbox未読を意志で処理しようとしていないか？** `cmd_new`未読は配備漏れ直結なので `gate_karo_startup.sh` がALERT化する。nudge/Stop hook/tmuxに依存せず、通常作業前に未読0または明示処理済みにせよ | cmd_3457: `cmd_new`が未読のまま infra調査へ進み、配備漏れを二次情報で後追い発見した。真因は通知失敗ではなく未読処理の意志依存 |
 | 14 | **変更対象は実行経路に配線されているか？** gate/hook/dispatcher関数の承認前に、定義・テストを除くcaller数を一次計測せよ。非test caller=0ならテストPASSでもdead codeであり、耐久化をACCEPTせず削除または正本経路へ統合する | `trigger_cmd_complete_gate_background`は専用fixture 53/53 PASSだったが非test caller 0。未使用関数を強化してLGTMした後、家老RCで88行削除へ転換した(cmd_karo_hotfix_inbox_gate_trigger_durable_202607111406) |
 
 ## §1 配備
 
 - **配備コマンド: `deploy_task.sh <ninja> <cmd_id>`**。cmd_id第2引数は必須。省略するとAC上書きされず旧タスクを実行する(LK061)。使えない場合は--directモード。手動配備(cat+inbox_write)はdeploy_task.shの全ガードをバイパスするため禁止。
 - **karo_direct配備手順(将軍cmd不要の家老自立配備)**: (1)nested形式のtask YAMLを/tmpに作成(`task:`配下にparent_cmd/task_id/scout_exempt:true等を記載) (2)`cp /tmp/task.yaml queue/tasks/{ninja}.yaml` (3)`inbox_write.sh {ninja} "..." task_assigned karo`でnudge。deploy_task.sh --yamlはscout_gateを通るが、task YAML内のscout_exempt:trueで自動PASS(64ec3aa5)。
-- 配備前はPurpose / Decomposition / Headcount / Difficulty / Riskを一次情報で確認し、迷う項目は小さな可逆配備で比較する。
-- **AC設計の実験確認**: 固定値や推奨条件を想像で固めず、実行可能な最小fixtureでACを試し、結果から修正する。origin: `[[verdict_override_6件中5件]] -> [[AC設計ミス]] -> [[可逆fixtureによる確認]]`
+- 配備前は毎回「五問チェック」を通す。Purpose / Decomposition / Headcount / Difficulty / Risk を1行で言えなければ配備するな。
+- **AC設計ミス事前検出（verdict_override防止）**: draft配備前に全AC/binary checkを実行順にシミュレートし、`(1)実現可能 (2)成果物の追跡/commit可能 (3)日時・本番更新で自然に変わる値を固定一致要件にしていない (4)推奨条件を必須ACに混入していない` を各yes/noで確認する。1つでもnoなら配備前にACを修正する。「後でverdict override」は禁止。origin: `[[verdict_override_6件中5件]] -> [[AC設計ミス]] -> [[draft配備前二値シミュレーション]]`
 - **配備前にcmdの前提を現物確認せよ**。ダッシュボードの記載は過去の事実。CI赤→`dashboard.md AUTO_SECTION`のCI Status確認。本番障害→本番を直接確認。KARO_SECTIONの手書き情報は二次データ(LK043: cmd_1806事故)
-- implタスク配備前の偵察要否は、対象コードと既存証拠を確認して決める。不明なら小さな偵察を先に実行する。
+- implタスク配備前の偵察要否は `deploy_task.sh` が強制する。家老は `scout_exempt` を勝手に決めない。
 - **karo_direct配備のtask_type設定**: --yaml/手動配備時、偵察・context更新・調査系cmdは`task_type: recon`を設定せよ。デフォルトimplだと実装用教訓が過剰注入される(20件→7件に削減可能。deploy_task.sh L2318のrecon_modeフィルタが発動)。
 - **karo_direct完了時の軍師レビューSKIP**: karo_direct配備は報告YAML不在・GATE処理対象外。完了時に軍師report_reviewを送るな。変更は家老が直接確認+commit。cmd_karo_lesson_4fieldで誤送信→軍師誤FAIL→訂正の無駄サイクルが発生(2026-05-10)。
 - 偵察配備後の2名体制検証は `task_deploy.sh` の役割。`deploy_task.sh` と混同するな。
@@ -79,7 +79,7 @@
 
 - 10分は目安、15分はhard境界。分割線は時間そのものではなく、独立してyes/no検証できる自然な境界に置く。
 - 分割するのは `分割利得（並列度向上 + エラー爆発半径縮小） > 統合コスト（統合task + review往復）` の場合だけ。
-- 11分の一体作業は割らず、`task.split_decision` に比較根拠を残す: `boundary_ac_ids`、`integration_tasks`、`review_round_trips`。実行後の所要時間と統合コストを次回判断へ返す。
+- 11分の一体作業は割らず、`task.split_decision` に構造化mappingで根拠を残す: `boundary_ac_ids`(同一taskのacceptance_criteria実在IDを重複なく列挙)、`integration_tasks`/`review_round_trips`(bool不可の非負整数、合計1以上)。自由文の`split_decision_reason`は移行抜け道にせずBLOCKする。例: `split_decision: {boundary_ac_ids: [AC1, AC2], integration_tasks: 1, review_round_trips: 0}`。
 - 独立した3分作業×3は10分へ寄せて束ねず、3本を並列配備する。
 - 15分超は既存long runtimeの具体的理由と正の実測秒数が揃う場合だけ例外とする。
 
@@ -92,7 +92,7 @@ GSD知見: サブタスク数が増えるほどコンテキスト品質が劣化
 | サブタスク数/cmd | 2-3 | 4 | 5以上 |
 | 変更ファイル数/サブタスク | 5-8 | 10 | 10以上 |
 
-これは観測用の目安であり、実測した並列利得・統合コストに応じて更新する。
+これは推奨値であり強制(BLOCK)ではない。家老の判断で超過を許容できる（タスク粒度は内容に依存するため）。ただし超過時は理由をダッシュボードに記載する。
 
 ### フリクション記録
 
@@ -135,9 +135,9 @@ friction_type: `ambiguous_scope` | `missing_context` | `too_many_acs` | `unclear
 | # | アクション | バンドル参照フィールド | 備考 |
 |---|-----------|---------------------|------|
 | 1 | スタンプ(PASS) | — | verdict=LGTM=PASS確定。家老独自レビュー不要 |
-| 2 | GATE判定 | `gate_precheck.gate_prediction` | 予測は観測候補。対象の実exit・実状態を確認して進行 |
+| 2 | GATE判定 | `gate_precheck.gate_prediction` | CLEAR→そのまま進行。WARN→家老がGATE手動確認 |
 | 3 | 教訓処理 | `lesson_extraction` | `register_recommended: true`→`lesson_write.sh`で登録。`false`→スキップ |
-| 3.5 | PI候補確認 | — | 不可逆害を防ぐ不変量だけをPI候補とし、既存PIとの重複を一次確認する(PI-020参照) |
+| 3.5 | PI昇華チェック | — | 教訓登録時に問う: (1)この教訓はPI昇格候補か？ (2)既存PIと共通の根はあるか？→あれば原理PIに統合(PI-020参照)。個別=1対1防御、原理=1対N防御 |
 | 4 | Context還流 | `context_reflux` | `needed: true`→`target`のcontextファイルを`content`で更新 |
 | 5 | Dashboard更新 | `dashboard_line` | バンドルの行をdashboard.mdにそのままペースト |
 | 6 | Workaround判定 | `karo_workaround_needed` | `no`→追加作業なし。`yes`→通常のworkaround対応フローへ |
@@ -157,7 +157,7 @@ friction_type: `ambiguous_scope` | `missing_context` | `too_many_acs` | `unclear
 - **後方伝播検証（assumption_invalidation）**: 忍者報告の `assumption_invalidation` 欄を確認せよ。
   - `found: true` → `affected_cmds` に列挙された過去cmdの前提を再検証する計画を将軍に報告。ntfy送信: `bash scripts/ntfy.sh "【家老】後方伝播検出: cmd_XXXX の前提が cmd_YYYY の結果により変更。再検証要"`
   - `found: false` → 家老自身が報告内容から後方影響を判断。見落としがあれば `karo_workaround_log.sh` に記録し、`assumption_invalidation.found` を `true` に修正してから次ステップへ進む。
-  - **Why**: cmd結果が過去cmdの前提を変更した場合、その影響が検出されないとサイレント障害になる。報告値と対象現物を直接突合する。
+  - **Why**: cmd結果が過去cmdの前提を変更した場合、その影響が検出されないとサイレント障害になる（螺旋原則: 前提変更時の後方伝播検証）。忍者が第一網、家老が第二網、gateが第三網の三重防御。
 - **Workaroundログ記録（必須）**: 忍者報告の手動修正（報告YAML修正・コード手直し等）を行った場合、修正のたびに `karo_workaround_log.sh` を呼んで記録せよ。任意ではなく必須。修正パターンの蓄積により再発防止策（テンプレート改善・教訓追加）を導出する。
   ```
   修正実施後: bash scripts/karo_workaround_log.sh <cmd_id> <ninja_name> "<修正内容>" "<修正方法>"

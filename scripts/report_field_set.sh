@@ -31,8 +31,7 @@ if [ "${1:-}" = "--batch" ]; then
     mkdir -p "${_rfs_batch_report%/*}"
     exec 200>"$_rfs_batch_lock"
     flock -w 5 200 || { echo "BLOCK: batch report lock timeout" >&2; exit 1; }
-    _rfs_batch_output=""
-    if _rfs_batch_output=$(RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
+    RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
 import hashlib, os, pathlib, re, sys, tempfile, yaml
 sys.path.insert(0, sys.argv[2])
 from scripts.lib.yaml_atomic import yaml_text
@@ -139,24 +138,28 @@ try:
 finally:
     if os.path.exists(tmp): os.unlink(tmp)
 print("BATCH_OK fields={} fingerprint={}".format(len(updates), hashlib.sha256(text.encode()).hexdigest()))
-print("BATCH_META status={} worker={} parent={}".format(
-    str(data.get("status", "")), str(data.get("worker_id", "")), str(data.get("parent_cmd", ""))))
 PY
-    ); then
-        _rfs_batch_rc=0
-    else
-        _rfs_batch_rc=$?
-    fi
-    _rfs_batch_ok="${_rfs_batch_output%%$'\n'*}"
-    printf '%s\n' "$_rfs_batch_ok"
+    _rfs_batch_rc=$?
     if [ "$_rfs_batch_rc" -eq 0 ]; then
-        _rfs_batch_meta="${_rfs_batch_output#*$'\n'}"
-        _rfs_batch_status="${_rfs_batch_meta#BATCH_META status=}"
-        _rfs_batch_status="${_rfs_batch_status%% worker=*}"
+        _rfs_batch_status=$(python3 - "$_rfs_batch_report" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(data.get("status", "")))
+PY
+)
         if [ "$_rfs_batch_status" = "completed" ] || [ "$_rfs_batch_status" = "done" ]; then
-            _rfs_batch_worker="${_rfs_batch_meta#* worker=}"
-            _rfs_batch_worker="${_rfs_batch_worker%% parent=*}"
-            _rfs_batch_parent="${_rfs_batch_meta#* parent=}"
+            _rfs_batch_worker=$(python3 - "$_rfs_batch_report" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(data.get("worker_id", "")))
+PY
+)
+            _rfs_batch_parent=$(python3 - "$_rfs_batch_report" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(data.get("parent_cmd", "")))
+PY
+)
             [ -n "$_rfs_batch_worker" ] && [ -n "$_rfs_batch_parent" ] || {
                 echo "BLOCK: terminal report lacks worker_id/parent_cmd for durable publish" >&2
                 exit 1
@@ -165,22 +168,30 @@ PY
             # the canonical parent and review child to the exact persisted bytes;
             # inbox_write owns fingerprint dedupe and the atomic task-done edge.
             _rfs_inbox_write="${RFS_INBOX_WRITE_PATH:-$_rfs_batch_root/scripts/inbox_write.sh}"
+            if [ "${RFS_DISABLE_FAST_RECONCILER:-0}" != "1" ]; then
+                # Detached bounded reconciler closes the process/pane-death
+                # window without waiting for ninja_monitor's 20s cycle. The
+                # synchronous publisher below remains the success boundary;
+                # both converge through inbox_write's fingerprint transaction.
+                RFS_RECONCILE_INBOX="$_rfs_inbox_write" \
+                RFS_RECONCILE_REPORT="$_rfs_batch_report" \
+                RFS_RECONCILE_WORKER="$_rfs_batch_worker" \
+                RFS_RECONCILE_PARENT="$_rfs_batch_parent" \
+                RFS_RECONCILE_DELAY="${RFS_RECONCILE_DELAY:-0.2}" \
+                    nohup setsid -f bash -c '
+                        sleep "$RFS_RECONCILE_DELAY"
+                        bash "$RFS_RECONCILE_INBOX" karo \
+                          "$RFS_RECONCILE_WORKER報告完了。report=${RFS_RECONCILE_REPORT##*/} parent_cmd=$RFS_RECONCILE_PARENT" \
+                          report_received "$RFS_RECONCILE_WORKER" notify_karo
+                    ' </dev/null >/dev/null 2>&1 &
+            fi
             if [ "${RFS_FAIL_AFTER_ATOMIC_REPLACE:-0}" = "1" ]; then
                 echo "FAILPOINT: terminal bytes persisted before lifecycle publish" >&2
                 exit 86
             fi
-            # The completed report is already the durable outbox. Delivery is
-            # intentionally detached from the writer's success boundary; the
-            # monitor can reconcile the persisted terminal bytes after a crash.
-            RFS_RECONCILE_INBOX="$_rfs_inbox_write" \
-            RFS_RECONCILE_REPORT="$_rfs_batch_report" \
-            RFS_RECONCILE_WORKER="$_rfs_batch_worker" \
-            RFS_RECONCILE_PARENT="$_rfs_batch_parent" \
-                nohup setsid -f bash -c '
-                    bash "$RFS_RECONCILE_INBOX" karo \
-                      "$RFS_RECONCILE_WORKER報告完了。report=${RFS_RECONCILE_REPORT##*/} parent_cmd=$RFS_RECONCILE_PARENT" \
-                      report_received "$RFS_RECONCILE_WORKER" notify_karo
-                ' </dev/null >/dev/null 2>&1 &
+            bash "$_rfs_inbox_write" karo \
+                "${_rfs_batch_worker}報告完了。report=$(basename "$_rfs_batch_report") parent_cmd=${_rfs_batch_parent}" \
+                report_received "$_rfs_batch_worker" notify_karo
         fi
     fi
     exit "$_rfs_batch_rc"

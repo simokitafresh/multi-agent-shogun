@@ -279,24 +279,7 @@ if [[ "$payload" == *'inbox_write'* && "$payload" == *'report_received'* ]]; the
     unset _post_bash_self
 
     if [[ -x "$SCRIPT_DIR/.claude/hooks/post-bash-commit-reminder.sh" ]]; then
-        # A per-git timeout is not an end-to-end budget: the reminder performs
-        # several git/status/blob probes serially.  Bound the whole optional
-        # warning path so a WSL2 filesystem stall can never hold the CLI.
-        _commit_reminder_timeout="${POST_BASH_COMMIT_REMINDER_TIMEOUT_SECONDS:-3}"
-        _commit_reminder_out=""
-        _commit_reminder_rc=0
-        _commit_reminder_out="$(HOOK_PAYLOAD="$payload" timeout --kill-after=1s \
-            "${_commit_reminder_timeout}s" bash \
-            "$SCRIPT_DIR/.claude/hooks/post-bash-commit-reminder.sh" 2>&1)" || _commit_reminder_rc=$?
-        if [[ "$_commit_reminder_rc" -eq 124 || "$_commit_reminder_rc" -eq 137 ]]; then
-            printf 'WARN: post-bash commit reminder timed out after %ss; fail-open\n' \
-                "$_commit_reminder_timeout" >&2
-        elif [[ "$_commit_reminder_rc" -ne 0 ]]; then
-            printf 'WARN: post-bash commit reminder failed rc=%s; fail-open\n' \
-                "$_commit_reminder_rc" >&2
-        elif [[ -n "$_commit_reminder_out" ]]; then
-            printf '%s\n' "$_commit_reminder_out"
-        fi
+        HOOK_PAYLOAD="$payload" bash "$SCRIPT_DIR/.claude/hooks/post-bash-commit-reminder.sh"
     else
         # Standalone helper is part of the production checkout.  Minimal
         # fail-safe keeps isolated/older hook bundles functional and clearly

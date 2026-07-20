@@ -134,7 +134,7 @@ check_case $'"'"'100 1 pts/9 S 00:00:00\n300 1 pts/8 R 00:00:01'"'"' $'"'"'100 1
     [ "$output" = $'active\nactive\nstall\nstall\nstall\nstall' ]
 }
 
-@test "check_undeployed_cmds: aged pending remains pending after advisory notification" {
+@test "check_undeployed_cmds: pending+delegated_at 10分超でntfy送信し重複通知しない" {
     DELEGATED_AT=$(date -d "11 minutes ago" "+%Y-%m-%dT%H:%M:%S")
     run bash -lc '
 set -euo pipefail
@@ -174,12 +174,13 @@ check_undeployed_cmds
 check_undeployed_cmds
 
 echo "NTFY_COUNT=$(wc -l < "$TEST_NTFY" | tr -d " ")"
-grep -q "status: pending" "$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 cat "$TEST_NTFY"
 cat "$TEST_LOG"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"NTFY_COUNT=1"* ]]
+    [[ "$output" == *"未配備cmd: cmd_undeployed"* ]]
+    [[ "$output" == *"UNDEPLOYED-CMD: cmd_undeployed"* ]]
 }
 
 @test "check_undeployed_cmds: 配備済み(status=delegated)なら通知しない" {
@@ -227,7 +228,7 @@ cat "$TEST_LOG"
     [[ "$output" == *"NTFY_COUNT=0"* ]]
 }
 
-@test "check_karo_pending_cmd: advisory path preserves a recent pending command" {
+@test "check_karo_pending_cmd: 新規pendingが猶予内ならcmd_pending通知しない" {
     RECENT_TS=$(date -d "10 seconds ago" "+%Y-%m-%dT%H:%M:%S")
     run bash -lc '
 set -euo pipefail
@@ -266,12 +267,12 @@ declare -A PREV_PENDING_SET STALE_CMD_NOTIFIED
 check_karo_pending_cmd
 
 test ! -f "$SCRIPT_DIR/inbox.log"
-grep -q "status: pending" "$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+grep -q "PENDING-CMD-GRACE: cmd_recent" "$LOG"
 '
     [ "$status" -eq 0 ]
 }
 
-@test "check_karo_pending_cmd: advisory delivery does not hold or mutate pending work" {
+@test "check_karo_pending_cmd: 猶予後もpendingならcmd_pending通知する" {
     OLD_TS=$(date -d "45 seconds ago" "+%Y-%m-%dT%H:%M:%S")
     run bash -lc '
 set -euo pipefail
@@ -310,9 +311,59 @@ declare -A PREV_PENDING_SET STALE_CMD_NOTIFIED
 check_karo_pending_cmd
 
 grep -q "karo|cmd_pending|cmd_pending cmd_old" "$SCRIPT_DIR/inbox.log"
-grep -q "status: pending" "$SCRIPT_DIR/queue/shogun_to_karo.yaml"
+grep -q "PENDING-CMD-NEW: cmd_old" "$LOG"
 '
     [ "$status" -eq 0 ]
+}
+
+@test "speed training auto-pause when retrospective recurrence rate exceeds 10 percent" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+SPEED_TRAINING_LEDGER="$TMP_ROOT/logs/script_speed_training_ledger.yaml"
+mkdir -p "$SCRIPT_DIR/logs" "$SCRIPT_DIR/tools"
+cp "$PROJECT_ROOT/tools/bash_speed_training.sh" "$SCRIPT_DIR/tools/bash_speed_training.sh"
+cat > "$SPEED_TRAINING_LEDGER" <<EOF
+global_status: running
+entries: []
+EOF
+cat > "$SCRIPT_DIR/logs/cmd_design_quality.yaml" <<EOF
+- cmd_id: cmd_prev_1
+  gate_result: WARN
+  timestamp: "2026-06-01T00:00:00"
+  notes: "alpha_issue"
+- cmd_id: cmd_prev_2
+  gate_result: WARN
+  timestamp: "2026-06-01T00:01:00"
+  notes: "beta_issue"
+EOF
+for i in $(seq 1 50); do
+    if [ "$i" -eq 50 ]; then note="alpha_issue"; else note="recent_unique_$i"; fi
+    cat >> "$SCRIPT_DIR/logs/cmd_design_quality.yaml" <<EOF
+- cmd_id: cmd_recent_$i
+  gate_result: WARN
+  timestamp: "2026-06-02T00:$i:00"
+  notes: "$note"
+EOF
+done
+
+LOG="$TMP_ROOT/monitor.log"
+log() { echo "$1" >> "$LOG"; }
+
+_pause_speed_training_if_recurrence_high
+grep -q "global_status: paused" "$SPEED_TRAINING_LEDGER"
+grep -q "SPEED-TRAINING-AUTO-PAUSE: recurrence_rate=50%" "$LOG"
+cat "$LOG"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"SPEED-TRAINING-AUTO-PAUSE"* ]]
 }
 
 @test "speed training auto-deploy never calls helper for in_progress or failed task" {

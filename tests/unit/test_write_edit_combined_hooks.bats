@@ -247,22 +247,24 @@ _mark_read_for_current_agent() {
     [[ "$output" != *'"permissionDecision":"deny"'* ]]
 }
 
-@test "pre combined hook does not deny when q5 evidence metadata is missing" {
+@test "pre combined hook warns when quality_gate q5 is filled but q5_verified_source is missing" {
     _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'","new_string":"commands:\n  cmd_test:\n    purpose: q5 pair regression\n    quality_gate:\n      q5: \"structure_verified\"\n      q1_firefighting: \"no\"\n    command: echo ok\n"}}'
     [ "$status" -eq 0 ]
-    [[ "$output" != *'"permissionDecision":"deny"'* ]]
+    [[ "$output" == *'WARN(q5_verified_source必須フィールド対)'* ]]
+    [[ "$output" == *'quality_gate.q5 が記入済みだが q5_verified_source が空/未記入'* ]]
 }
 
-@test "pre combined hook does not deny when q5 evidence metadata is empty" {
+@test "pre combined hook warns when quality_gate q5 is filled but q5_verified_source is empty" {
     _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'","new_string":"commands:\n  cmd_test:\n    purpose: q5 pair empty regression\n    quality_gate:\n      q5: \"structure_verified\"\n      q5_verified_source: \"\"\n    command: echo ok\n"}}'
     [ "$status" -eq 0 ]
-    [[ "$output" != *'"permissionDecision":"deny"'* ]]
+    [[ "$output" == *'WARN(q5_verified_source必須フィールド対)'* ]]
+    [[ "$output" == *'cmd_save.sh到達前に q5_verified_source'* ]]
 }
 
-@test "pre combined hook does not deny when q5 evidence metadata is filled" {
+@test "pre combined hook does not warn when quality_gate q5 and q5_verified_source are both filled" {
     _run_pre '{"tool_name":"Edit","tool_input":{"file_path":"'"$TMP_STK"'","new_string":"commands:\n  cmd_test:\n    purpose: q5 pair complete\n    quality_gate:\n      q5: \"structure_verified\"\n      q5_verified_source: \"tests/unit/test_write_edit_combined_hooks.bats isolated_test\"\n    command: echo ok\n"}}'
     [ "$status" -eq 0 ]
-    [[ "$output" != *'"permissionDecision":"deny"'* ]]
+    [[ "$output" != *'WARN(q5_verified_source必須フィールド対)'* ]]
 }
 
 @test "pre combined hook does not show checklist for other edit targets" {

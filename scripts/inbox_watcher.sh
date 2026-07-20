@@ -199,7 +199,7 @@ fingerprint_unread_ids() {
 task_publication_fingerprint() {
     local task_file="${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml"
     [ -f "$task_file" ] || return 1
-    local identity pane_generation
+    local identity
     identity=$(awk '
         /^[[:space:]]*(task_id|_ac_task_id|deployed_at):/ {
             line=$0; sub(/^[^:]*:[[:space:]]*/, "", line); gsub(/["[:space:]]/, "", line)
@@ -210,25 +210,7 @@ task_publication_fingerprint() {
         END { if (task_id != "" && deployed_at != "") print task_id "@" deployed_at }
     ' "$task_file")
     [ -n "$identity" ] || return 1
-    # A task publication is delivered once per live CLI generation.  Keeping
-    # only task_id+deployed_at here made a pre-respawn send lease suppress the
-    # required replay to the new CLI process, leaving the task unread/stalled.
-    pane_generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
-    [ -n "$pane_generation" ] || pane_generation="unknown-generation"
-    printf 'task-%s\n' "$(printf '%s@%s' "$identity" "$pane_generation" | sha256sum | awk '{print $1}')"
-}
-
-active_task_publication_fingerprint() {
-    local task_file="${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml"
-    [ -f "$task_file" ] || return 1
-    awk '
-        /^[[:space:]]*status:/ {
-            value=$0; sub(/^[^:]*:[[:space:]]*/, "", value); gsub(/["[:space:]]/, "", value)
-            if (value ~ /^(assigned|acknowledged|in_progress)$/) active=1
-        }
-        END { exit(active ? 0 : 1) }
-    ' "$task_file" || return 1
-    task_publication_fingerprint
+    printf 'task-%s\n' "$(printf '%s' "$identity" | sha256sum | awk '{print $1}')"
 }
 
 get_unread_info() {
@@ -742,21 +724,6 @@ agent_has_self_watch() {
     return 1
 }
 
-# A successful tmux paste is not yet a successful CLI submission.  During a
-# Codex boot/respawn race Enter can be consumed before the input widget is
-# ready, leaving the nudge visibly parked at the prompt.  Detect only the
-# current prompt-shaped inbox token; ordinary transcript mentions do not
-# match this boundary.
-pane_nudge_submission_pending() {
-    local pane="$1" inbox_token="$2" recent
-    recent=$(tmux capture-pane -t "$pane" -p -S -8 2>/dev/null | tail -n 8 || true)
-    printf '%s\n' "$recent" | awk -v token="$inbox_token" '
-        $0 ~ "^[[:space:]]*[›>][[:space:]]*" token "([[:space:]]|—|$)" { pending=1; accepted_after=0; next }
-        pending && $0 ~ "^[[:space:]]*[•◦]" { accepted_after=1 }
-        END { exit !(pending && !accepted_after) }
-    '
-}
-
 # ─── Send wake-up nudge ───
 # Layered approach (send-keys撲滅):
 #   1. If agent has active inotifywait self-watch → skip (agent wakes itself)
@@ -1067,25 +1034,6 @@ send_wakeup() {
             echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
             exit 1
         fi
-        # Submission ACK: paste-buffer+Enter can race a freshly booted Codex
-        # input widget.  Retry Enter once only when the exact inbox token is
-        # still parked at the live prompt, then fail without consuming the
-        # send lease if the CLI still has not accepted it.
-        local inbox_token="inbox${unread_count}"
-        sleep "${NUDGE_SUBMIT_VERIFY_DELAY_SEC:-1}"
-        if pane_nudge_submission_pending "$PANE_TARGET" "$inbox_token"; then
-            echo "[$(date)] [SUBMIT-RETRY] $AGENT_ID nudge remained at prompt; retrying Enter once" >&2
-            if ! timeout "$SEND_KEYS_TIMEOUT" tmux send-keys -t "$PANE_TARGET" Enter 2>/dev/null; then
-                [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
-                exit 1
-            fi
-            sleep "${NUDGE_SUBMIT_VERIFY_DELAY_SEC:-1}"
-            if pane_nudge_submission_pending "$PANE_TARGET" "$inbox_token"; then
-                echo "[$(date)] [SUBMIT-FAIL] $AGENT_ID nudge still pending after Enter retry" >&2
-                [ -n "$sent_token" ] && rm -f "$sent_token" 2>/dev/null || true
-                exit 1
-            fi
-        fi
         printf 'pasted\t%s\t%s\n' "$unread_count" "$current_fp" > "$send_result_file"
     ) 200>"$lock" || send_rc=$?
     if [ "$send_rc" -eq 2 ]; then
@@ -1283,25 +1231,11 @@ process_unread() {
             echo "[$(date)] [WAKE-DEFER] Deferred nudge for $AGENT_ID (busy gating)" >&2
         fi
     else
-        # A task can already be acknowledged/read when its CLI is respawned.
-        # In that case the mailbox is empty, but the active task still needs
-        # one delivery to the new process generation.  The generation-aware
-        # send lease makes this exactly-once without adding retries or gates.
-        local active_task_fp=""
-        active_task_fp=$(active_task_publication_fingerprint 2>/dev/null || true)
-        if [ -n "$active_task_fp" ]; then
-            local active_task_token="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${active_task_fp//[^A-Za-z0-9_.-]/_}"
-            if [ ! -f "$active_task_token" ]; then
-                send_wakeup 1 true "$active_task_fp" high false false || true
-            fi
-        fi
-        # No unread → clear only inbox-set state.  Keep generation-aware task
-        # leases while an active task exists, otherwise the next loop would
-        # redeliver the same task forever.
+        # No unread → clear fingerprint
         if [ -f "$FINGERPRINT_FILE" ]; then
             rm -f "$FINGERPRINT_FILE"
             rm -f "${STATE_DIR}/inbox_watcher_sent_fingerprint_${AGENT_ID}"
-            [ -n "$active_task_fp" ] || rm -f "${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_"*
+            rm -f "${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_"*
             clear_deferred_nudge
             echo "[$(date)] [FP-RESET] No unread, cleared fingerprint for $AGENT_ID" >&2
         fi

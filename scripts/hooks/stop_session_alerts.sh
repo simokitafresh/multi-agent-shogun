@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-exit 0  # display-only Stop warning disabled
 # semantic-links: [[Hook自動化フレームワーク]], [[覚醒設計書v3]]
 # @source: cmd_3401 (session_alerts.txt stop hookリアルタイム表示)
 # 目的: session_alerts.txtの未完了ALERTを毎応答表示し、起動時チェックの忘却を防止する

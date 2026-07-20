@@ -1417,9 +1417,6 @@ check_depends_on_field() {
 }
 
 check_origin_field() {
-    # 殿裁定2026-07-20 17:22: 過剰対策削減。origin[[リンク]]必須BLOCKを撤廃(全cmdに作文を強要する表示型)。
-    # 因果NW還流は有用だが起票を止める理由にならない。書きたい者は書く。revert復元可。
-    return 0
     load_cmd_block || return 0
     load_cmd_block_cache || return 0
 
@@ -3422,9 +3419,6 @@ check_diagnosis_format_block() {
 }
 
 check_environment_change_after_prior_block() {
-    # 殿裁定2026-07-20 17:22: 過剰対策削減。environment_change強制(機構追加を強要するエンジン)を撤廃。
-    # BLOCK後の再起票でも環境埋込みを強要しない。ミスは下流(revert/家老レビュー)が可逆回収。revert復元可。
-    return 0
     (( PRIOR_ATTEMPT_COUNT > 0 )) || return 0
 
     _ENV_STRUCTURED=""
@@ -3536,9 +3530,14 @@ check_required_quality_gate_keys_block() {
     fi
 
     if [[ ${#MISSING_KEYS[@]} -gt 0 ]]; then
-        # 殿裁定2026-07-20 17:22: 過剰対策削減。必須項目(quality_gate/q5/q8/q11/assumptions等の作文フィールド)未記入BLOCKを助言化。
-        # 全て表示型(title/AC等の構造型は別所で検証)。書きたい者は書く、起票は止めない。revert復元可。
-        echo "INFO: quality_gate系フィールド未記入(助言のみ・起票継続): ${MISSING_KEYS[*]}" >&2
+        record_block_reason "必須項目 ${#MISSING_KEYS[@]}件 未記入。全て記入してからcmd_save.shを再実行せよ"
+        echo "  未記入: ${MISSING_KEYS[*]}" >&2
+        echo "  ---" >&2
+        for _hint in "${MISSING_HINTS[@]}"; do
+            echo "$_hint" >&2
+        done
+        echo "  ---" >&2
+        abort_if_block_immediate || exit 1
     fi
 }
 
@@ -3714,9 +3713,16 @@ if load_cmd_block; then
     load_cmd_block_cache || true
 
     if ! cmd_block_has_field "quality_gate"; then
-        # 殿裁定2026-07-20 17:22: 過剰対策削減。quality_gate必須BLOCKを撤廃。
-        # 3問作文を全cmdに強要する表示型(成長ループ機構)。書きたい者は書く。起票は止めない。revert復元可。
-        echo "INFO: quality_gate未記入(助言のみ・起票継続)" >&2
+        record_block_reason "quality_gate未記入。3問に答えてからcmd_save.shを実行せよ"
+        cat >&2 <<'QG_TEMPLATE'
+---
+quality_gate:
+  q1_firefighting: "no/yes — 理由"
+  q2_learning: "奪わない/奪う — 学習機会への影響"
+  q3_next_quality: "上がる/下がる — 品質への影響"
+---
+QG_TEMPLATE
+        abort_if_block_immediate || exit 1
     fi
 
     # --- Field name validation: 不正フィールド名の即時検出 ---
@@ -3861,10 +3867,14 @@ if load_cmd_block; then
             found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
         ' <<< "${CMD_BLOCK_NC:-$CMD_BLOCK}")
         if [[ -n "${_Q11_COMMAND_SECTION:-}" ]]; then
-            # 殿裁定2026-07-20 17:22: 過剰対策削減#8。q11 semantic_search表示+docs/research全件scan(10-20秒/回)を停止。
-            # q11必須は#7で撤廃済。重いadvisory表示のためにcmd_save速度(karoボトルネックの主因)を犠牲にしない。revert復元可。
+            if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
+                show_q11_semantic_search_matches "$CMD_BLOCK_NC" &
+            fi
+
+            # WSL2最適化: docs/research/全件grep(50+NTFSファイル)はunitテストで10-20秒かかる。
+            # FAST_METADATAモードでは本番docs走査を避けるが、テストで明示された小さいresearch dirは走査する。
             _Q11_ALLOW_RESEARCH_SCAN=0
-            if false; then
+            if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" || -n "${CMD_SAVE_Q11_RESEARCH_DIR:-}" || "${_Q11_PROJECT_DIR}" != "${PROJECT_ROOT:-$PROJECT_DIR}" ]]; then
                 _Q11_ALLOW_RESEARCH_SCAN=1
             fi
             if [[ "$_Q11_ALLOW_RESEARCH_SCAN" == "1" ]]; then
@@ -6256,9 +6266,6 @@ check_long_runtime_execution_env_contract
 # --- Check 19.6: role-neutral universal shard entrance (30分単独をfail-closed) ---
 # Save入口でも同じ契約を自動検証する。manifestの永続生成はdeploy_task入口が担当する。
 check_universal_shard_contract() {
-    # 殿裁定2026-07-20 17:22: 過剰対策削減#9。split_decision/natural-boundary契約(python3 2.4秒/回)を撤廃。
-    # cmd_save 4.2秒の主因。長時間cmdはtimeout_minutesで制御でき、起票時の重い契約評価は不要。revert復元可。
-    return 0
     local tmp result rc=0
     tmp="$(mktemp)"
     printf '%s\n' "$CMD_BLOCK_NC" >"$tmp"
@@ -6845,10 +6852,7 @@ check_new_file_structure_warning() {
 # 目的: WARNが出た=問題がある。次のcmdで同じWARNが出ないように環境に埋め込め。
 # Check 3.6(PRIOR_ATTEMPT_COUNT>0)は過去BLOCK後の再PASS用。こちらはWARN初回用。
 # 全チェック完了後に配置(WARNは後段のCheckで蓄積されるため)
-# 殿裁定2026-07-20 17:22: 過剰対策削減。WARN→environment_change強制→BLOCK撤廃。
-#   WARNは助言のみとし起票を止めない。ミスは下流(家老レビュー+revert)が可逆回収する。
-#   「起こしてはいけないミス=過剰対策」(knowledge:579c33defd9e7dc9)。revertで完全復元可。
-if false && (( WARN_COUNT > 0 )) && (( PRIOR_ATTEMPT_COUNT == 0 )); then
+if (( WARN_COUNT > 0 )) && (( PRIOR_ATTEMPT_COUNT == 0 )); then
     if load_cmd_block; then
         _ENV_CHANGE_WARN="$(awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}' <<< "$CMD_BLOCK_NC")"
         if [[ -z "$_ENV_CHANGE_WARN" ]]; then
@@ -6895,7 +6899,7 @@ if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
                 [[ "$_wid" == "$CMD_ID" ]] && (( _warn_prior_count++ )) || true
             done
         fi
-        if false && (( _warn_prior_count >= _WARN_ESCALATE_THRESHOLD )); then  # 殿裁定2026-07-20 17:22: WARN累計→BLOCK昇格撤廃(過剰対策削減。WARNは助言のみ。revert復元可)
+        if (( _warn_prior_count >= _WARN_ESCALATE_THRESHOLD )); then
             log_preflight_autolearn "$_warn_r" "$_warn_prior_count"
             if [[ -n "${_warn_prior_cmd_ids:-}" ]]; then
                 record_block_reason "WARN累計昇格: 「${_warn_r}」が${_warn_prior_count}回繰り返されています(cmd_ids=${_warn_prior_cmd_ids})。WARNを解消してからcmd_save.shを実行せよ"

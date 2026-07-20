@@ -83,7 +83,7 @@ ninja_monitor idle検知
 
 **計測ソース: `logs/gate_fire_log.yaml`**（gate実行のたびに自動記録。忍者paneは/clearで消失するため信頼不可）
 - grep `cmd_training_L{level}` で該当レベルの全gate実行を抽出
-- 忍者ごとに初回結果（PASS/FAIL）を記録し、失敗内容を次の試行へ渡す
+- 忍者ごとに初回結果（PASS/FAIL）を判定 → 一発PASS率を算出
 
 ### 修行完了基準（殿裁定 2026-03-25）
 
@@ -92,6 +92,7 @@ ninja_monitor idle検知
 
 ### 計測指標
 
+- **一発PASS率**: gate_fire_logで初回実行がPASSだった忍者の割合（Level別）
 - 修行前後の本番初回CLEAR率変化
 - 修行→本番のBLOCKパターン再発率
 
@@ -106,6 +107,7 @@ ninja_monitor idle検知
 | saizo | FAIL×2 | YAML parse + reasons空 + bc空 + verdict空 | **NO** |
 | tobisaru | FAIL×2 | YAML parse + reason空 + bc空 + verdict空 | **NO** |
 
+**一発PASS率: 0/6 = 0%**
 
 共通弱点（全6名）:
 - binary_checks result: 空文字 or "PASS"（正: "yes"/"no"のみ）
@@ -157,6 +159,7 @@ deepdive Phase 4-5の実証: 知識をエージェントの頭（/clearで消え
 | kotaro | inbox_write.sh | FAIL→PASS | lu reason空×5, bc空×4, verdict空 | **NO** | inbox_write.sh yaml.dump問題発見 |
 | tobisaru | ntfy_listener.sh | PASS | — | **YES** | grep dedupパターン不一致バグ発見 |
 
+**一発PASS率: 4/6 = 67%**（L1 Round 6: 100%から低下）
 
 ### 分析
 
@@ -191,6 +194,7 @@ L1ヘッダーは「作業開始時」に読まれるが「提出直前」に再
 | kotaro | gate_report_autofix.sh | PASS | **YES** | **NO→YES** |
 | tobisaru | inbox_watcher.sh | PASS | **YES** | YES→YES |
 
+**一発PASS率: 5/5 = 100%**（R1: 4/6=67%→R2: 5/5=100%）
 ※ hanzoは前タスク継続中のためR2未参加
 
 ### 分析
@@ -228,6 +232,7 @@ L1と同じパターン: 環境改善1行が即効果。ヘッダー+フッタ�
 | kotaro | tobisaru L2_011 | PASS | — | **YES** |
 | tobisaru | hayate L2_007 | PASS | — | **YES** |
 
+**一発PASS率: 4/6 = 67%**
 
 ### 分析
 
@@ -277,6 +282,7 @@ R1のFAILパターン(self_gate_check空文字)に対し、スキャフォール
 | kotaro | L3_022 | kagemaru L2_008 | 5/5 PASS | PASS | **YES** |
 | tobisaru | L3_023 | kotaro L2_010 | 5/5 PASS | PASS | **YES** |
 
+**一発PASS率: 6/6 = 100%。L3完了。**
 
 ### L3 R2 lesson_candidate注目点
 
@@ -382,6 +388,7 @@ L1-L3パターン「レベルアップ→回帰→環境改善→100%」に従�
 
 *kagemaru: commit result='yes'のみ記入、AC1-AC3空。gate_report_format.shはcommit以外の空値を見逃した(gate coverage gap)
 
+**一発PASS率: 4/6 = 67%**（予測50-67%の上限一致）
 
 ### 分析
 
@@ -447,6 +454,7 @@ L2 R1→R2のフッター追加と同構造。bc/verdict空値の原因は「提
 
 *tobisaru R1=bc全空(実質ミス)、R2=gate偽陽性(報告実質は完全)。スキルは向上したが計測上はNO→NO。
 
+**一発PASS率: 4/6 = 67%**
 
 ### 分析
 
@@ -542,6 +550,7 @@ tobisaruのFAILは**ゲートの検出ロジック問題**:
 
 *kotaro: gate偽陽性。L225 reason「FILL_THIS漏れ防止」→「プレースホルダ漏れ防止」に修正でPASS。スキル上は完全。
 
+**Raw一発PASS率: 5/6 = 83%**
 **gate偽陽性除外時: 6/6 = 100%**
 
 ### 分析

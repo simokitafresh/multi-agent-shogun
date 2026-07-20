@@ -13,7 +13,8 @@
 #
 # Usage: bash scripts/gates/gate_enforcement_audit.sh [--verbose]
 # Exit:
-#   0 — 情報提供のみ。意志依存 script の件数は表示するが処理を止めない
+#   0 — 監査完了(意志依存 script が 0 件、または全件が明示的許容)
+#   1 — 意志依存 script を検出(要対処)
 
 set -euo pipefail
 
@@ -133,14 +134,15 @@ print(f"■ ⚠️ 意志依存 script 検出: {len(missing)} 本")
 for ref in missing:
     print(f"  - {ref}")
 print("")
-print("参照数とhook登録数の差分を計測した。登録や追加は要求しない。")
+print("これらは CLAUDE.md で参照されているが、どの settings.json の hooks にも未登録です。")
+print("読み手の意志に依存しており、Phase 4 原理「LLM に生存本能はない」により実行スキップ可能。")
 print("")
-print("参考（非強制）:")
+print("対処:")
 print("  (A) hook 登録: settings.json の SessionStart / PreToolUse / PostToolUse 等に登録")
 print("  (B) 他スクリプトから自動呼出: session_start_inject.sh のような既存 hook スクリプト内で bash 呼出")
 print(f"  (C) 手動実行が正当: {allowlist_file} に basename を追記して許容")
 print("")
-print("■ 参考情報(settings.json追記例、実行要求なし)")
+print("■ hooks登録コマンド候補(settings.json追記例)")
 print("# 既定例: missing script を .claude/settings.json の SessionStart hooks に追記")
 import shlex
 print(f"mkdir -p {shlex.quote(str((claude_md.parent / '.claude').as_posix()))}")
@@ -162,8 +164,8 @@ print("        entries.append({'hooks': [{'type': 'command', 'command': command}
 print("settings.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\\n', encoding='utf-8')")
 print("PY")
 print("")
-print("=== 総合判定: INFO (意志依存 script を計測、非停止) ===")
-sys.exit(0)
+print("=== 総合判定: ALERT (要対処) ===")
+sys.exit(1)
 PY
 python_status=$?
 set -e

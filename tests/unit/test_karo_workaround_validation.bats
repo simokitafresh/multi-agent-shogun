@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: karo workaround ledger must atomically and idempotently resolve exact entries, reject workaround=true/category=clean before write, keep optional evidence advisory while validating supplied structured evidence, trigger root-signature immunity at N=3, and preserve primary logging when memory DB is unavailable.
+# test_necessity: karo workaround ledger must atomically and idempotently resolve exact entries, reject workaround=true/category=clean before write, fail closed on blank/conflicting resolution and missing brainwash evidence, trigger root-signature immunity at N=3, and preserve primary logging when memory DB is unavailable.
 # test_karo_workaround_validation.bats — cmd_1542 + cmd_karo_env_change_gate 単体テスト
 # AC1: validate_ninja_id() — ninja_id有効性チェック
 # AC2: root_cause最小長+null/empty拒否
@@ -261,25 +261,25 @@ YAML
     [[ "$output" != *"root_causeが無効値"* ]]
 }
 
-@test "--wa without brainwash_check warns and records" {
+@test "--wa without brainwash_check blocks before recording" {
     run env -u KARO_WA_BRAINWASH_CHECK \
         bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test root cause" report_yaml_format "" \
         "type=gate; file=scripts/sample_gate.sh; pattern=ENV_CHANGE_MARKER"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"WARN: brainwash_check未記入"* ]]
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: brainwash_check未記入"* ]]
 
     run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
-    [ "$status" -eq 0 ]
+    [ "$status" -ne 0 ]
 }
 
-@test "normal mode without brainwash_check warns and records" {
+@test "normal mode without brainwash_check blocks before recording" {
     run env -u KARO_WA_BRAINWASH_CHECK \
         bash "$TEST_SCRIPT" cmd_test hayate "test issue" "test root cause" report_yaml_format
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"WARN: brainwash_check未記入"* ]]
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: brainwash_check未記入"* ]]
 
     run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
-    [ "$status" -eq 0 ]
+    [ "$status" -ne 0 ]
 }
 
 @test "--wa brainwash_check without numbers blocks before recording" {
@@ -364,13 +364,13 @@ YAML
     [ "$status" -ne 0 ]
 }
 
-@test "AC3: --wa modeでenvironment_change未記入でもWARNして記録" {
+@test "AC3: --wa modeでenvironment_change未記入ならBLOCK" {
     run bash "$TEST_SCRIPT" --wa cmd_test hayate "test issue" "test fix description" report_yaml_format SG4
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 1 ]
     [[ "$output" == *"environment_change未記入"* ]]
-    [[ "$output" == *"WARN"* ]]
+    [[ "$output" == *"BLOCK"* ]]
     run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
-    [ "$status" -eq 0 ]
+    [ "$status" -ne 0 ]
 }
 
 @test "AC4: --wa modeでstructured environment_changeを検証してYAML記録" {
