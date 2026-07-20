@@ -2,6 +2,17 @@
 # 統合履歴・superseded注釈・v1全文: docs/research/lessons_shogun_v1_archive.md
 # 各エントリ=再利用可能パターン。source_ids=統合元LS番号(追体験はv1アーカイブ)。enforcement=環境埋込み先
 # 追記: bash scripts/lesson_write_shogun.sh "タイトル" "詳細" cmd_XXX ["enforcement"]
+#
+# ★★★ 2026-07-20 最優先注記(全教訓に優先して読め) ★★★
+# 殿裁定『起こしてはいけないミス=過剰対策。gate/hookに頼るな。事前予防がバグの真因』。
+# 以下の教訓で「自動化×強制/environment_change強制/BLOCK→成長=主軸/防御階層Level4 BLOCK/
+# 抗体gate/免疫系」を"主軸・唯一の解"として説くものは【反転】した。
+# 新原則: 成長=表示型(BLOCK/WARNで人を止め作文を強要)を削り、構造型(不可逆害防止・
+# 手を動かすと自然に守られる)のみ残すこと。ミスは可逆に許容し下流(revert/CI/レビュー)で回収。
+# 各教訓のenforcement欄が指すcmd_save.shの environment_change強制/WARN→BLOCK昇格/origin必須/
+# quality_gate必須/universal_shard契約は2026-07-20に撤去済(commit ce8118b3f他9件)。
+# 追体験は"思考の過程"として行い、結論を機械適用するな(cmd_4104反射起票事故)。
+# 正本 = context/growth-loop.md v2。詳細 = gist fb70493 v5。
 lessons:
 
 # === クラスタ1: deepdive原理 ===
@@ -433,3 +444,11 @@ lessons:
   created_at: '2026-07-20'
   automated: true
   enforcement: 'E4実装(retro配送復旧+日次計測)+殿原文retroのpane直貼り機構(idle時配送工事)。異常検知時の一次確認は将軍の即実行を既定とする'
+- id: 'LS098'
+  title: 'hook/gate品質の元 — 判定は文字列でなく正本状態と突合し境界fixture両方を義務化'
+  origin: '未指定'
+  detail: '2026-07-20に同根6件が一夜で露出: (1)post-bash hookが出力のBLOCK文言grepで誤注入(実行と参照未区別) (2)LK-A10が語彙ヘッダで実装cmd誤発火 (3)retro holdが±8行近傍grepで回答済みをFP BLOCK (4)pre-commitに構文検証なく6845c0041がmonitor 47分死 (5)skill refs検知器が全体hashで12回同一結論 (6)startup検知器が進行中実装のstaleを区別不能。元=判定を文字列パターン・近傍・語彙で書き、正本状態(台帳・実exit・実行証跡・AC構造)と突合していない。是正原理: (a)hook/gateの判定は正本状態との突合で書く (b)新設・変更時は発火1/非発火0の境界fixture両方を義務とする(片側テストは偽安心)。個別修正はcmd_4096-4098/hold truth/shell_syntaxで実施済み、本教訓は次の新設gate/hookへの事前適用が目的'
+  source_cmd: 'session_20260720'
+  created_at: '2026-07-20'
+  automated: true
+  enforcement: 'cmd_save.sh gate_hook_fp_measurement_connection WARN(既存)+境界fixture義務は次のgate設計cmdでcheck化'
