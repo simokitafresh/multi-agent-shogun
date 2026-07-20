@@ -15,6 +15,15 @@ if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     exit 1
 fi
 
+# One report has one validation leader. Concurrent callers join before cache
+# inspection instead of launching duplicate autofix/git processes.
+_GATE_SINGLEFLIGHT_LOCK="${REPORT_PATH}.gate.lock"
+exec 199>"$_GATE_SINGLEFLIGHT_LOCK"
+flock -w "${GATE_SINGLEFLIGHT_TIMEOUT:-30}" 199 || {
+    echo "FAIL: report gate single-flight timeout: $REPORT_PATH" >&2
+    exit 1
+}
+
 # A caller that just validated/notified this exact content may pass the
 # fingerprint back. Exact content identity makes a second Python gate run
 # redundant; a mismatch falls through to the full gate.
@@ -433,10 +442,20 @@ try:
     repo_root = os.path.realpath(sys.argv[3])
 
     def add_path(paths, value):
-        s = str(value or '').strip().lstrip('- ').strip()
+        raw = str(value or '')
+        if '\n' in raw or '\r' in raw or '\x00' in raw:
+            paths.append('__INVALID_REPORT_PATH__')
+            return
+        s = raw.strip().lstrip('- ').strip()
         s = s.strip(chr(96)).strip('\"').strip(\"'\")
-        if s and s not in ('', 'none', 'null', 'FILL_THIS'):
-            paths.append(s)
+        if not s or s in ('none', 'null', 'FILL_THIS'):
+            return
+        normalized = os.path.normpath(s)
+        resolved = os.path.realpath(os.path.join(repo_root, normalized))
+        if s.startswith('-') or os.path.isabs(s) or not resolved.startswith(repo_root + os.sep):
+            paths.append('__INVALID_REPORT_PATH__')
+            return
+        paths.append(normalized)
 
     report_paths = []
     fm = rdata.get('files_modified') or []
@@ -469,8 +488,18 @@ except Exception:
     pass
 " "$REPORT_PATH" "$_CC_TASK_FILE" "$REPO_ROOT" 2>/dev/null || true)
         if [ -n "${_CC_CHECK//[[:space:]]/}" ]; then
+            mapfile -t _CC_PATHS <<< "$_CC_CHECK"
+            if printf '%s\n' "${_CC_PATHS[@]}" | grep -qxF '__INVALID_REPORT_PATH__'; then
+                echo "FAIL: malformed report path rejected before git status"
+                CONTAMINATION_BLOCK=1
+                RESULT="${RESULT}"$'\n'"FAIL: malformed report path rejected before git status"
+                _CC_PATHS=()
+            fi
             # AC2: git status check for uncommitted target_path changes
-            _CC_UNCOMMITTED=$(cd "$REPO_ROOT" && git status --porcelain -- $_CC_CHECK 2>/dev/null || true)
+            _CC_UNCOMMITTED=""
+            if [ "${#_CC_PATHS[@]}" -gt 0 ]; then
+                _CC_UNCOMMITTED=$(cd "$REPO_ROOT" && git status --porcelain -- "${_CC_PATHS[@]}" 2>/dev/null || true)
+            fi
             if [ -n "${_CC_UNCOMMITTED//[[:space:]]/}" ]; then
                 _CC_UNCOMMITTED=$(filter_session_state_only_task_diffs "$REPO_ROOT" "$_CC_UNCOMMITTED" 2>/dev/null || printf '%s\n' "$_CC_UNCOMMITTED")
             fi

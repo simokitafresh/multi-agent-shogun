@@ -83,10 +83,18 @@ except ValueError as exc:
 
 bc = data.get("binary_checks")
 results = []
-if isinstance(bc, dict):
-    for checks in bc.values():
-        if isinstance(checks, list):
-            results.extend(str((item or {}).get("result", "")).strip().lower() for item in checks if isinstance(item, dict))
+files = data.get("files_modified")
+lessons = data.get("lessons_useful")
+if not isinstance(files, list) or any(not isinstance(item, dict) for item in files):
+    raise SystemExit("BLOCK: files_modified must be a YAML list of mappings; scalar input is not auto-fixed")
+if not isinstance(lessons, list) or any(not isinstance(item, dict) for item in lessons):
+    raise SystemExit("BLOCK: lessons_useful must be a YAML list of mappings; scalar input is not auto-fixed")
+if not isinstance(bc, dict):
+    raise SystemExit("BLOCK: binary_checks must be a YAML mapping of check lists; scalar input is not auto-fixed")
+for ac_key, checks in bc.items():
+    if not isinstance(checks, list) or any(not isinstance(item, dict) for item in checks):
+        raise SystemExit(f"BLOCK: binary_checks.{ac_key} must be a YAML list of mappings; scalar input is not auto-fixed")
+    results.extend(str(item.get("result", "")).strip().lower() for item in checks)
 bad = [value for value in results if value not in {"yes", "no"}]
 if bad:
     raise SystemExit("BLOCK: binary_checks results must all be yes/no")

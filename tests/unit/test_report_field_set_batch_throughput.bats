@@ -24,7 +24,7 @@ parent_cmd: cmd_test
 ac_version_read: abc
 status: pending
 commit_hash: '0000000000000000000000000000000000000000'
-files_modified: [queue/reports/test.yaml]
+files_modified: [{path: queue/reports/test.yaml, change: fixture}]
 lessons_useful: [{id: L625, useful: true, reason: covered}]
 lesson_candidate: {found: false, no_lesson_reason: covered}
 binary_checks:
@@ -53,6 +53,17 @@ teardown() { rm -rf "$TMPDIR_CASE"; }
   [ "$status" -eq 0 ]
   run python3 -c 'import yaml,sys; d=yaml.safe_load(open(sys.argv[1])); assert d["status"]=="failed" and d["verdict"]=="FAIL"' "$REPORT"
   [ "$status" -eq 0 ]
+}
+
+@test "batch rejects scalar structural fields atomically" {
+  for field in files_modified lessons_useful binary_checks; do
+    cp "$REPORT" "$TMPDIR_CASE/scalar.yaml"
+    before="$(sha256sum "$TMPDIR_CASE/scalar.yaml" | awk '{print $1}')"
+    run bash -c 'printf "%s: scalar\n" "$3" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$TMPDIR_CASE/scalar.yaml" "$field"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"scalar input is not auto-fixed"* ]]
+    [ "$(sha256sum "$TMPDIR_CASE/scalar.yaml" | awk '{print $1}')" = "$before" ]
+  done
 }
 
 @test "terminal readiness blocks incomplete completed report without mutation" {
@@ -98,6 +109,32 @@ teardown() { rm -rf "$TMPDIR_CASE"; }
   echo '# changed' >>"$REPORT"
   run env GATE_FINGERPRINT_CACHE_FILE="$TMPDIR_CASE/fingerprints" GATE_VALIDATED_FINGERPRINT="$fp" GATE_NO_LOG=1 bash "$ROOT/scripts/gates/gate_report_format.sh" "$REPORT"
   [[ "$output" != *"fingerprint reuse"* ]]
+}
+
+@test "report gate serializes concurrent callers and quotes validated git pathspecs" {
+  fp="$(sha256sum "$REPORT" | awk '{print $1}')"
+  echo "$fp" > "$TMPDIR_CASE/fingerprints"
+  outputs="$TMPDIR_CASE/concurrent.outputs"
+  : >"$outputs"
+  for _ in $(seq 1 8); do
+    env GATE_FINGERPRINT_CACHE_FILE="$TMPDIR_CASE/fingerprints" \
+      GATE_VALIDATED_FINGERPRINT="$fp" GATE_NO_LOG=1 \
+      bash "$ROOT/scripts/gates/gate_report_format.sh" "$REPORT" >>"$outputs" &
+  done
+  wait
+  [ "$(grep -c 'PASS (fingerprint reuse)' "$outputs")" -eq 8 ]
+  [ -f "$REPORT.gate.lock" ]
+  [ ! -e "$TMPDIR_CASE/index.lock" ]
+  run python3 - "$ROOT/scripts/gates/gate_report_format.sh" <<'PY'
+from pathlib import Path
+import sys
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+assert 'flock -w "${GATE_SINGLEFLIGHT_TIMEOUT:-30}" 199' in text
+assert "paths.append('__INVALID_REPORT_PATH__')" in text
+assert 'git status --porcelain -- "${_CC_PATHS[@]}"' in text
+assert "FAIL: malformed report path rejected before git status" in text
+PY
+  [ "$status" -eq 0 ]
 }
 
 @test "report-write skill makes one batch transaction the canonical completion path" {

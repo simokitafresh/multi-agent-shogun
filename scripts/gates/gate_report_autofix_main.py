@@ -92,6 +92,16 @@ def main() -> int:
         data.update(inner)
         fixes.append("report:ラップ→フラット化")
 
+    # These fields are author-owned structural contracts. Guessing a shape
+    # from scalar text can silently change meaning, so reject before mutation.
+    for field, expected in (
+        ("lessons_useful", "list of mappings"),
+        ("binary_checks", "mapping of check lists"),
+    ):
+        if isinstance(data.get(field), str):
+            print(f"UNFIXABLE: {field} scalar input; expected YAML {expected}")
+            return 1
+
     # worker_id / parent_cmd ファイル名推定は消火(GP-107 Q1:値の推定=NO)→撤去
     # 空値はgate_report_format.shがBLOCKする
 
@@ -118,8 +128,8 @@ def main() -> int:
                 "Cannot auto-fix: manual correction required."
             )
             return 1
-        data["files_modified"] = [{"path": fm_str, "change": "modified"}]
-        fixes.append("files_modified string→dict変換(単一ファイル)")
+        print("UNFIXABLE: files_modified scalar input; expected YAML list of mappings")
+        return 1
     elif isinstance(fm, list):
         needs_fix = False
         new_fm = []

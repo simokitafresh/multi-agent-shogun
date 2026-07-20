@@ -63,8 +63,8 @@ EOF
     [[ "$output" == *"NO-FIX-NEEDED"* ]]
 }
 
-# === Test 2: files_modified string → dict変換 ===
-@test "files_modified single string is converted to dict list" {
+# === Test 2: files_modified scalar is an explicit input error ===
+@test "files_modified scalar is rejected without mutation" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
@@ -77,22 +77,10 @@ binary_checks:
       result: yes
 EOF
     run bash "$TEST_GATE" "$rpath"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"UNFIXABLE: files_modified scalar input"* ]]
+    run python3 -c "import yaml; d=yaml.safe_load(open('$rpath')); assert d['files_modified']=='scripts/foo.sh'"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    [[ "$output" == *"files_modified"* ]]
-    # Verify structure
-    run python3 -c "
-import yaml
-with open('$rpath') as f:
-    d = yaml.safe_load(f)
-fm = d['files_modified']
-assert isinstance(fm, list), f'Expected list, got {type(fm)}'
-assert fm[0]['path'] == 'scripts/foo.sh'
-assert fm[0]['change'] == 'modified'
-print('OK')
-"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
 }
 
 # === Test 3: lessons_useful numbered dict → GP-196で自動変換 ===
@@ -238,14 +226,16 @@ print('OK')
     [[ "$output" == *"OK"* ]]
 }
 
-# === Test 6: autofix後も元の値が保持される ===
-@test "autofix preserves existing field values" {
+# === Test 6: valid structure preserves existing field values ===
+@test "valid structure preserves existing field values" {
     local rpath="$TEST_TMPDIR/queue/reports/tobisaru_report_cmd_999.yaml"
     cat > "$rpath" <<'EOF'
 worker_id: tobisaru
 parent_cmd: cmd_999
 verdict: PASS
-files_modified: scripts/foo.sh
+files_modified:
+  - path: scripts/foo.sh
+    change: modified
 lessons_useful:
   - id: L001
     useful: true
@@ -265,13 +255,12 @@ ac_version_read: "3"
 EOF
     run bash "$TEST_GATE" "$rpath"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"AUTO-FIXED"* ]]
-    # Verify files_modified was fixed but other fields preserved
+    [[ "$output" == *"NO-FIX-NEEDED"* ]]
+    # Verify all fields are preserved
     run python3 -c "
 import yaml
 with open('$rpath') as f:
     d = yaml.safe_load(f)
-# files_modified was converted
 assert isinstance(d['files_modified'], list)
 # Other fields preserved exactly
 assert d['worker_id'] == 'tobisaru'
