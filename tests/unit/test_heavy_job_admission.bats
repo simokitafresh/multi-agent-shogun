@@ -532,7 +532,8 @@ print('ok')
     git -C "$fixture" commit -qm initial
     local linked="$TMP/singleflight-orphan-linked"
     git -C "$fixture" worktree add -q "$linked" HEAD
-    RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/seed-sf" BATS_MAX_TEST_JOBS=1 \
+    env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED \
+        RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/seed-sf" BATS_MAX_TEST_JOBS=1 \
         bash "$fixture/scripts/run_tests.sh" unit >/dev/null 2>&1
     local receipt
     receipt="$(find "$fixture/receipts" -name '*.json' -print -quit)"
@@ -546,7 +547,7 @@ print('ok')
     holder_pgid="$(ps -o pgid= -p "$holder" | tr -d ' ')"
     printf '%s\n99999999\norphan-generation\n%s\n' "$receipt" "$holder_pgid" > "$fixture/sf/unit.state"
     local started=$SECONDS
-    run timeout 12 env RUN_TESTS_RECEIPT_DIR="$fixture/receipts-follow" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 RUN_TESTS_SINGLEFLIGHT_STALE_SECONDS=2 BATS_MAX_TEST_JOBS=1 \
+    run timeout 12 env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED RUN_TESTS_RECEIPT_DIR="$fixture/receipts-follow" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 RUN_TESTS_SINGLEFLIGHT_STALE_SECONDS=2 BATS_MAX_TEST_JOBS=1 \
         REPO_ROOT="$linked" bash "$linked/scripts/run_tests.sh" unit
     local elapsed=$((SECONDS - started))
     kill "$holder" 2>/dev/null || true
