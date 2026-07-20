@@ -648,14 +648,25 @@ _run_tests_main() {
             RUN_TESTS_MODE=push
             inventory="$REPO_ROOT/docs/research/ci-test-elimination-inventory-20260719.csv"
             [ -r "$inventory" ] || { echo "BLOCK: push inventory missing" >&2; exit 2; }
-            mapfile -t test_files < <(awk -F, 'NR>1 && $7=="push-maintain"{print $2}' "$inventory" | sort -u)
-            [ "${#test_files[@]}" -gt 0 ] || { echo "BLOCK: canonical push set empty" >&2; exit 2; }
-            declared_cases=$(awk -F, 'NR>1 && $7=="push-maintain"{n++} END{print n+0}' "$inventory")
-            unique_cases=$(awk -F, 'NR>1 && $7=="push-maintain"{seen[$1]=1} END{for(k in seen)n++; print n+0}' "$inventory")
-            [ "$declared_cases" -eq "$unique_cases" ] || { echo "BLOCK: duplicate canonical case identity rows=$declared_cases unique=$unique_cases" >&2; exit 2; }
+            # The inventory is an append-only measurement ledger, so rows for
+            # intentionally deleted tests remain as historical tombstones.
+            # Select every currently tracked push test, while still failing
+            # closed if a tracked path is missing from the worktree.
+            mapfile -t test_files < <(awk -F, '
+                NR==FNR { tracked[$0]=1; next }
+                NR>1 && $7=="push-maintain" && ($2 in tracked) { print $2 }
+            ' <(git -C "$REPO_ROOT" ls-files) "$inventory" | sort -u)
             for file in "${test_files[@]}"; do
                 [ -f "$REPO_ROOT/$file" ] || { echo "BLOCK: canonical push test missing: $file" >&2; exit 2; }
             done
+            [ "${#test_files[@]}" -gt 0 ] || { echo "BLOCK: canonical push set empty" >&2; exit 2; }
+            mapfile -t canonical_cases < <(awk -F, '
+                NR==FNR { tracked[$0]=1; next }
+                NR>1 && $7=="push-maintain" && ($2 in tracked) { print $1 }
+            ' <(git -C "$REPO_ROOT" ls-files) "$inventory")
+            declared_cases="${#canonical_cases[@]}"
+            unique_cases=$(printf '%s\n' "${canonical_cases[@]}" | sort -u | wc -l)
+            [ "$declared_cases" -eq "$unique_cases" ] || { echo "BLOCK: duplicate canonical case identity rows=$declared_cases unique=$unique_cases" >&2; exit 2; }
             BATS_CACHE=0
             BATS_FILE_TIMEOUT_SECONDS=300
             printf 'CANONICAL_PUSH files=%s cases=%s\n' "${#test_files[@]}" "$declared_cases" >&2
