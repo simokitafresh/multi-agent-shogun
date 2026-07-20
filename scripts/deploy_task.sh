@@ -180,7 +180,8 @@ deploy_task_wave_cache() {
     local namespace="$1" target_key="$2" source_list="$3"
     shift 3
     local cache_root="${DEPLOY_TASK_WAVE_CACHE_DIR:-/tmp/deploy_task_wave_cache}"
-    local source_fp key cache_file lock_file tmp_file source
+    local source_fp key cache_file claim_dir tmp_file source
+    local claim_timeout claim_deadline claim_remaining produced=0
     mkdir -p "$cache_root"
     source_fp="$({
         while IFS= read -r source; do
@@ -199,25 +200,39 @@ deploy_task_wave_cache() {
     } | sha256sum | cut -d' ' -f1)"
     key="$(printf '%s\0%s\0%s' "$namespace" "$source_fp" "$target_key" | sha256sum | cut -d' ' -f1)"
     cache_file="$cache_root/${namespace}_${key}.snapshot"
-    lock_file="$cache_file.lock"
-    if [ ! -f "$cache_file" ]; then
-        exec {wave_cache_fd}>"$lock_file"
-        flock -w "${DEPLOY_TASK_WAVE_CACHE_LOCK_TIMEOUT:-30}" "$wave_cache_fd" || return 1
-        if [ ! -f "$cache_file" ]; then
+    claim_dir="$cache_file.claim"
+    claim_timeout="${DEPLOY_TASK_WAVE_CACHE_LOCK_TIMEOUT:-30}"
+    case "$claim_timeout" in
+        ''|*[!0-9]*) claim_timeout=30 ;;
+    esac
+    claim_deadline=$((SECONDS + claim_timeout))
+    while [ ! -f "$cache_file" ]; do
+        # mkdir is the atomic claim.  The elected producer performs the heavy
+        # read outside any flock; followers only wait for the atomic publish.
+        if mkdir "$claim_dir" 2>/dev/null; then
             tmp_file=$(mktemp "$cache_root/.${namespace}.${key}.XXXXXX")
             if "$@" > "$tmp_file"; then
                 mv "$tmp_file" "$cache_file"
+                produced=1
                 log "wave_cache: miss namespace=${namespace} source_fp=${source_fp} target_key=${target_key}"
             else
                 rm -f "$tmp_file"
-                flock -u "$wave_cache_fd"
-                eval "exec ${wave_cache_fd}>&-"
+                rmdir "$claim_dir" 2>/dev/null || true
                 return 1
             fi
+            rmdir "$claim_dir" 2>/dev/null || true
+            break
         fi
-        flock -u "$wave_cache_fd"
-        eval "exec ${wave_cache_fd}>&-"
-    else
+        [ -f "$cache_file" ] && break
+        claim_remaining=$((claim_deadline - SECONDS))
+        [ "$claim_remaining" -gt 0 ] || return 1
+        if command -v inotifywait >/dev/null 2>&1; then
+            inotifywait -q -t "$claim_remaining" -e moved_to "$cache_root" >/dev/null 2>&1 || return 1
+        else
+            sleep 0.01
+        fi
+    done
+    if [ "$produced" -eq 0 ]; then
         log "wave_cache: hit namespace=${namespace} source_fp=${source_fp} target_key=${target_key}"
     fi
     cat "$cache_file"
