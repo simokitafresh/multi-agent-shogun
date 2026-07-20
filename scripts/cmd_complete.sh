@@ -282,5 +282,3 @@ self_retro_write_async karo_cmd_complete "$CMD_ID" "$CMD_COMPLETE_WALL_MS" \
   "SG7 consume through archive completed" "reduce dominant completion phase without weakening checkpoints" \
   "all ordered checkpoints complete and duplicate event count is 0" \
   "[[cmd_complete]] -> [[completion_pipeline]] -> [[fix_known]]"
-source "$SCRIPT_DIR/lib/retro_pane_prompt.sh"
-retro_pane_prompt_async "$SCRIPT_DIR/.." karo "cmd_complete:$CMD_ID" cmd_complete
