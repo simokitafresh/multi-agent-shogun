@@ -6884,9 +6884,12 @@ try:
         if any(m is not None and m > cache_mtime for m in (src_mtime, wal_mtime, shm_mtime)):
             try:
                 import subprocess
+                _refresh_env = os.environ.copy()
+                _refresh_env['SHOGUN_MEMORY_DB_CACHE_NONBLOCKING'] = '1'
                 subprocess.Popen(
                     _build_cmd,
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
+                    env=_refresh_env,
                 )
             except Exception:
                 pass

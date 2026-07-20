@@ -403,7 +403,16 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
     os.makedirs(cache_dir, exist_ok=True)
     lock_path = f"{cache_path}.lock"
     with open(lock_path, "w", encoding="utf-8") as lock_handle:
-        fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        lock_flags = fcntl.LOCK_EX
+        if os.environ.get("SHOGUN_MEMORY_DB_CACHE_NONBLOCKING", "0") == "1":
+            lock_flags |= fcntl.LOCK_NB
+        try:
+            fcntl.flock(lock_handle, lock_flags)
+        except BlockingIOError:
+            # Deploy-time refreshes are best-effort. A current holder will
+            # atomically publish the newest complete cache; do not queue a
+            # second full-copy waiter behind it.
+            return cache_path
         # Orphan sweep: remove any stale tmp files left by pre-fix runs or
         # edge cases.  The exclusive flock guarantees no other backup is live.
         # Two patterns cover both old-style ({basename}.tmp.{PID}) and new-style
