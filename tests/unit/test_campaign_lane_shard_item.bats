@@ -79,7 +79,7 @@ SH
 
 base_item_json() {
   local path="${1:-skills/campaign-lane/adapters/new.py}"
-  printf '{"id":"item","path":"%s","owned_paths":["%s","tests/unit/test_new.py"],"read_only_paths":["skills/campaign-lane/scripts/contracts.py"],"test_command":"pytest -q tests/unit/test_new.py","contract_fingerprint":"%s"}' "$path" "$path" "$FIXTURE_FINGERPRINT"
+  printf '{"id":"item","path":"%s","purpose":"Implement the isolated campaign item","description":"Preserve the declared behavior and measure it.","owned_paths":["%s","tests/unit/test_new.py"],"read_only_paths":["skills/campaign-lane/scripts/contracts.py"],"test_command":"pytest -q tests/unit/test_new.py","contract_fingerprint":"%s"}' "$path" "$path" "$FIXTURE_FINGERPRINT"
 }
 
 run_bridge() {
@@ -144,6 +144,8 @@ assert read_only == ['skills/campaign-lane/scripts/contracts.py']
 assert set(read_only).isdisjoint({'skills/campaign-lane/adapters/new.py', 'tests/unit/test_new.py'})
 assert all(os.path.isfile(os.path.join(work, path)) for path in read_only)
 assert task['test_command'] == 'pytest -q tests/unit/test_new.py'
+assert task['purpose'] == 'Implement the isolated campaign item'
+assert task['description'].startswith('Preserve the declared behavior and measure it.')
 assert len(task['contract_fingerprint']) == 64
 PY
 }
@@ -151,7 +153,7 @@ PY
 @test "fingerprint mismatch blocks before deploy" {
   make_deployer pass
   fingerprint="$(printf stale | sha256sum | cut -d' ' -f1)"
-  item_json="{\"id\":\"item\",\"path\":\"skills/campaign-lane/adapters/new.py\",\"owned_paths\":[\"skills/campaign-lane/adapters/new.py\",\"tests/unit/test_new.py\"],\"read_only_paths\":[\"skills/campaign-lane/scripts/contracts.py\"],\"test_command\":\"pytest -q tests/unit/test_new.py\",\"contract_fingerprint\":\"$fingerprint\"}"
+  item_json="{\"id\":\"item\",\"path\":\"skills/campaign-lane/adapters/new.py\",\"purpose\":\"Implement the isolated campaign item\",\"description\":\"Preserve the declared behavior and measure it.\",\"owned_paths\":[\"skills/campaign-lane/adapters/new.py\",\"tests/unit/test_new.py\"],\"read_only_paths\":[\"skills/campaign-lane/scripts/contracts.py\"],\"test_command\":\"pytest -q tests/unit/test_new.py\",\"contract_fingerprint\":\"$fingerprint\"}"
   run env SHARD_ITEM_JSON="$item_json" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
   [ "$status" -ne 0 ]
