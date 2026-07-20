@@ -499,11 +499,11 @@ print('ok')
     git -C "$fixture" config user.name test
     git -C "$fixture" add .
     git -C "$fixture" commit -qm initial
-    env -u RUN_TESTS_ACTIVE REPO_ROOT="$fixture" RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 BATS_MAX_TEST_JOBS=1 bash "$fixture/scripts/run_tests.sh" unit >"$fixture/a.out" 2>"$fixture/a.err" &
+    env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED SHOGUN_HEAVY_JOB_LOCK_FILE="$fixture/heavy.lock" REPO_ROOT="$fixture" RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 BATS_MAX_TEST_JOBS=1 bash "$fixture/scripts/run_tests.sh" unit >"$fixture/a.out" 2>"$fixture/a.err" &
     local a=$!
     local waited=0
     while ! grep -q SINGLE_FLIGHT_LEADER "$fixture/a.err" 2>/dev/null; do sleep 0.02; waited=$((waited+1)); [ "$waited" -lt 200 ] || break; done
-    env -u RUN_TESTS_ACTIVE REPO_ROOT="$fixture" RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 BATS_MAX_TEST_JOBS=1 bash "$fixture/scripts/run_tests.sh" unit >"$fixture/b.out" 2>"$fixture/b.err" &
+    env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED SHOGUN_HEAVY_JOB_LOCK_FILE="$fixture/heavy.lock" REPO_ROOT="$fixture" RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 BATS_MAX_TEST_JOBS=1 bash "$fixture/scripts/run_tests.sh" unit >"$fixture/b.out" 2>"$fixture/b.err" &
     local b=$!
     local ra=0 rb=0
     wait "$a" || ra=$?
