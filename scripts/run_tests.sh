@@ -6,6 +6,7 @@
 #   bash scripts/run_tests.sh              # unit + top-level 全量
 #   bash scripts/run_tests.sh unit         # unit のみ
 #   bash scripts/run_tests.sh affected     # git diffから影響テストのみ
+#   bash scripts/run_tests.sh checkpoint   # 変更種別から affected/unit を自動選択
 #   bash scripts/run_tests.sh push         # test_necessity宣言済みCI境界のみ
 #   bash scripts/run_tests.sh file <path>  # 特定ファイル
 set -euo pipefail
@@ -551,6 +552,37 @@ run_bats_files_parallel() {
 # 衝突し"unknown test name"でスイート全体を破壊する問題を、nested batsを起動しない
 # 経路(関数直接呼出し)で回避するために必要な構造。
 _run_tests_main() {
+    if [[ "${1:-}" == "checkpoint" ]]; then
+        shift || true
+        local -a _checkpoint_changes=()
+        if [ "$#" -gt 0 ]; then
+            _checkpoint_changes=("$@")
+        else
+            mapfile -t _checkpoint_changes < <(
+                git -C "$REPO_ROOT" diff --name-only
+                git -C "$REPO_ROOT" diff --cached --name-only
+            )
+            mapfile -t _checkpoint_changes < <(printf '%s\n' "${_checkpoint_changes[@]}" | awk 'NF && !seen[$0]++')
+        fi
+
+        local _checkpoint_target=affected _changed
+        for _changed in "${_checkpoint_changes[@]}"; do
+            case "$_changed" in
+                scripts/run_tests.sh|scripts/test_select.sh|scripts/run_with_receipt.sh|tests/test_helper/*|tests/helpers/*)
+                    _checkpoint_target=unit
+                    break
+                    ;;
+            esac
+        done
+        printf 'CHECKPOINT_ROUTING target=%s changed_files=%s\n' \
+            "$_checkpoint_target" "${#_checkpoint_changes[@]}"
+        if [ "$_checkpoint_target" = unit ]; then
+            set -- unit
+        else
+            set -- affected "${_checkpoint_changes[@]}"
+        fi
+    fi
+
     # cmd_karo_hotfix_heavy_job_admission_202607121348: 全量/unit/affectedモードは
     # host-wide flock semaphore(scripts/heavy_job_admission.sh)経由で自分自身を
     # self-reexecし、同時に1本だけが動くようhost全体で強制する(内部の並列bats実行も
@@ -680,7 +712,7 @@ _run_tests_main() {
             run_bats_files_parallel "${selected[@]}"
             ;;
         *)
-            echo "Usage: bash scripts/run_tests.sh [all|unit|push|affected|file <path>]" >&2
+            echo "Usage: bash scripts/run_tests.sh [all|unit|push|affected|checkpoint|file <path>]" >&2
             exit 1
             ;;
     esac
