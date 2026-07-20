@@ -631,7 +631,13 @@ if [[ "$payload" == *'queue/reports/'* ]]; then
         tee_pattern='tee[[:space:]].*queue/reports/[^ ]*\.yaml'
         python3_pattern='python3?.*open[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*,[^)]*[wax+]'
         python_path_write_pattern='python3?.*(Path[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*\)|[^[:space:];]+)[[:space:]]*\.(write_text|write_bytes)[[:space:]]*\('
-        if [[ "$command" =~ $redirect_pattern ]] || [[ "$command" =~ $tee_pattern ]]; then
+        shell_command="$command"
+        if [[ "$command" =~ ^[[:space:]]*(printf|echo)[[:space:]]+\'[^\']*\'[[:space:]]*$ ]] \
+            || { [[ "$command" =~ ^[[:space:]]*(printf|echo)[[:space:]]+\"[^\"]*\"[[:space:]]*$ ]] \
+                && [[ "$command" != *'$('* && "$command" != *'`'* ]]; }; then
+            shell_command=""
+        fi
+        if [[ "$shell_command" =~ $redirect_pattern ]] || [[ "$shell_command" =~ $tee_pattern ]]; then
             emit_deny "報告YAMLへのBashリダイレクト(>/>>/ tee)は禁止。report_field_set.sh経由で書き込みせよ。"
         fi
         if [[ "$command" =~ $python3_pattern ]] || [[ "$command" =~ $python_path_write_pattern ]]; then
