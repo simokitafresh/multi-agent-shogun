@@ -1417,6 +1417,9 @@ check_depends_on_field() {
 }
 
 check_origin_field() {
+    # 殿裁定2026-07-20 17:22: 過剰対策削減。origin[[リンク]]必須BLOCKを撤廃(全cmdに作文を強要する表示型)。
+    # 因果NW還流は有用だが起票を止める理由にならない。書きたい者は書く。revert復元可。
+    return 0
     load_cmd_block || return 0
     load_cmd_block_cache || return 0
 
@@ -3716,16 +3719,9 @@ if load_cmd_block; then
     load_cmd_block_cache || true
 
     if ! cmd_block_has_field "quality_gate"; then
-        record_block_reason "quality_gate未記入。3問に答えてからcmd_save.shを実行せよ"
-        cat >&2 <<'QG_TEMPLATE'
----
-quality_gate:
-  q1_firefighting: "no/yes — 理由"
-  q2_learning: "奪わない/奪う — 学習機会への影響"
-  q3_next_quality: "上がる/下がる — 品質への影響"
----
-QG_TEMPLATE
-        abort_if_block_immediate || exit 1
+        # 殿裁定2026-07-20 17:22: 過剰対策削減。quality_gate必須BLOCKを撤廃。
+        # 3問作文を全cmdに強要する表示型(成長ループ機構)。書きたい者は書く。起票は止めない。revert復元可。
+        echo "INFO: quality_gate未記入(助言のみ・起票継続)" >&2
     fi
 
     # --- Field name validation: 不正フィールド名の即時検出 ---
