@@ -358,6 +358,7 @@ shared_index_file="$(git rev-parse --git-path index)"
 # helper lock it cannot belong to another scoped commit.  Remove it only when
 # the OS confirms that no process has the file open; otherwise fail closed.
 shared_index_lock="${shared_index_file}.lock"
+shared_index_contention_observed=false
 if [[ -e "$shared_index_lock" ]]; then
     if command -v fuser >/dev/null 2>&1 && fuser "$shared_index_lock" >/dev/null 2>&1; then
         echo "BLOCK: active shared index lock: $shared_index_lock" >&2
@@ -373,6 +374,7 @@ advance_shared_index_entry() {
     [[ "$attempts" =~ ^[1-9][0-9]*$ ]] \
         || { echo "BLOCK: index retry attempts must be a positive integer" >&2; return 2; }
     for ((attempt=1; attempt<=attempts; attempt++)); do
+        [[ -e "$shared_index_lock" ]] && shared_index_contention_observed=true
         current_entry="$(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -- "$path" | awk '$3 == 0 {print $1 " " $2; exit}')"
         if [[ "$current_entry" != "$expected_entry" ]]; then
             echo "WARN: shared index changed concurrently; preserving newer staged entry: $path" >&2
@@ -394,6 +396,29 @@ advance_shared_index_entry() {
         ((attempt < attempts)) && sleep "$delay"
     done
     echo "BLOCK: shared index did not converge after $attempts attempts: $path" >&2
+    return 1
+}
+
+# A Git writer can publish HEAD before DrvFS/9p exposes its final index and
+# worktree state.  `git status` started while index.lock still exists may
+# return the pre-terminal clean snapshot even when a dirty write becomes
+# visible before status exits.  Wait for the writer-owned terminal signal
+# first; never delete a lock at this post-publication boundary.
+wait_for_shared_index_terminal() {
+    local attempt
+    local attempts="${NINJA_SCOPE_COMMIT_TERMINAL_ATTEMPTS:-50}"
+    local delay="${NINJA_SCOPE_COMMIT_TERMINAL_DELAY:-0.02}"
+    [[ "$attempts" =~ ^[1-9][0-9]*$ ]] \
+        || { echo "BLOCK: terminal lock wait attempts must be a positive integer" >&2; return 2; }
+    for ((attempt=1; attempt<=attempts; attempt++)); do
+        [[ -e "$shared_index_lock" ]] || return 0
+        ((attempt < attempts)) && sleep "$delay"
+    done
+    if command -v fuser >/dev/null 2>&1 && fuser "$shared_index_lock" >/dev/null 2>&1; then
+        echo "BLOCK: active shared index lock did not terminate after $attempts attempts: $shared_index_lock" >&2
+    else
+        echo "BLOCK: stale shared index lock remained after $attempts attempts: $shared_index_lock" >&2
+    fi
     return 1
 }
 
@@ -633,8 +658,7 @@ if [[ "$repair_index" == true ]]; then
     done
     [[ -z "$(git status --porcelain -- "${paths[@]}")" ]] \
         || { echo "BLOCK: scoped index repair did not converge to clean state" >&2; exit 1; }
-    [[ ! -e "$shared_index_lock" ]] \
-        || { echo "BLOCK: shared index lock remained after repair: $shared_index_lock" >&2; exit 1; }
+    wait_for_shared_index_terminal
     publish_terminal_success "$(git rev-parse HEAD)"
     trap - EXIT
     exit 0
@@ -736,6 +760,7 @@ PY
     begin_phase git_commit
     assert_head_generation
     commit_hash="$(create_and_publish_scoped_commit)"
+    [[ -e "$shared_index_lock" ]] && shared_index_contention_observed=true
     published_commit_hash="$commit_hash"
     assert_single_parent_commit "$commit_hash"
     # HEAD更新後、共有indexの対象pathだけを新HEADへ追随させる。他pathのstageは
@@ -748,8 +773,7 @@ PY
     begin_phase post_check
     cleanup_patch_index
     trap - EXIT
-    [[ ! -e "$shared_index_lock" ]] \
-        || { echo "BLOCK: shared index lock remained after commit: $shared_index_lock" >&2; exit 1; }
+    wait_for_shared_index_terminal
     publish_terminal_success "$commit_hash"
     trap - EXIT
     exit 0
@@ -883,6 +907,7 @@ finish_phase 0
 begin_phase git_commit
 assert_head_generation
 commit_hash="$(create_and_publish_scoped_commit)"
+[[ -e "$shared_index_lock" ]] && shared_index_contention_observed=true
 published_commit_hash="$commit_hash"
 assert_single_parent_commit "$commit_hash"
 mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
@@ -902,6 +927,26 @@ finish_phase 0
 begin_phase post_check
 cleanup_normal_index
 trap - EXIT
+
+# Observe the writer terminal before any worktree cleanliness decision.  On
+# 9p an immediate status can complete from an older snapshot while a dirty
+# update is still becoming visible.
+wait_for_shared_index_terminal
+
+# When this transaction actually overlapped another shared-index writer, a
+# same-scope dirty byte visible after that writer's terminal cannot be called a
+# clean completion.  The ordinary no-contention path still allows GA-260's
+# non-overlapping concurrent hunk handling.
+if [[ "$shared_index_contention_observed" == true ]]; then
+    terminal_dirty_scope="$({ git diff --name-only -- "${paths[@]}"; git diff --cached --name-only -- "${paths[@]}"; } | sort -u | sed '/^$/d')"
+    if [[ -n "$terminal_dirty_scope" ]]; then
+        echo "BLOCK: shared-index writer terminated with same-scope dirty state:" >&2
+        while IFS= read -r dirty_path; do
+            [[ -n "$dirty_path" ]] && printf '  %s\n' "$dirty_path" >&2
+        done <<< "$terminal_dirty_scope"
+        exit 1
+    fi
+fi
 
 # 二値postcondition: commit treeは指定scopeのみ、他者stageはそのまま残る。
 # scope_path_is_in_scope(SSOT)で判定することで、正規化ロジックの重複を避ける。
@@ -933,9 +978,6 @@ if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/report_commit_nonoverlap_filter.sh"
         fi
     fi
 fi
-
-[[ ! -e "$shared_index_lock" ]] \
-    || { echo "BLOCK: shared index lock remained after commit: $shared_index_lock" >&2; exit 1; }
 
 # commit_hash自動記入 (2026-07-20): GPT忍者がFIX COMMANDを4回無視しcommit_hash欠落で
 # 報告BLOCKを繰り返した。忍者の意志に依存せず、commit確定時点で報告YAMLへ機構が記入する
