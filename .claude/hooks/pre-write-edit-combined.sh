@@ -409,6 +409,8 @@ print(len(non_gc))
             ')"
         fi
         _checklist="★起票は雛形から始めよ: bash scripts/cmd_skeleton.sh \"タイトル\" project で全必須フィールド入り雛形を生成→FILL_THISを埋めて貼れ(記憶からの作文はBLOCK往復の元)。雛形はstatus:draft。保存前検証: cmd_save.sh --preflight <id> (書込みなし)。保存後フロー: cmd_save.sh <id> でdraft→pending昇格 → cmd_delegate.sh cmd_<id> \"<msg>\"
+★連続起票の摩擦根絶(2026-07-20実測3回): cmd_publish/delegate後はqueueファイルにstatus/delegated_atが書き込まれ済み。次cmdのEdit直前に必ずRead(末尾数行)してからEditせよ。省略するとmodified-since-readで1往復無駄になる
+★テスト/CI系ACの定型句(2026-07-20実測BLOCK2回): 全量実行は『全量実行コマンド=bash scripts/run_tests.sh unitでFAIL0・SKIP0』の字句で書け。曖昧表記(bats一式/関連suite全量)はtest_ci_execution_contract BLOCKになる
 
 起票前確認11問:
 1. 対象現物を確認したか？
