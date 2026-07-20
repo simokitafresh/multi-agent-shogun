@@ -3419,6 +3419,9 @@ check_diagnosis_format_block() {
 }
 
 check_environment_change_after_prior_block() {
+    # 殿裁定2026-07-20 17:22: 過剰対策削減。environment_change強制(機構追加を強要するエンジン)を撤廃。
+    # BLOCK後の再起票でも環境埋込みを強要しない。ミスは下流(revert/家老レビュー)が可逆回収。revert復元可。
+    return 0
     (( PRIOR_ATTEMPT_COUNT > 0 )) || return 0
 
     _ENV_STRUCTURED=""
