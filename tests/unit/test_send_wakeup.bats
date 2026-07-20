@@ -201,6 +201,7 @@ teardown() {
     ln -s "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$root/scripts/lib/cli_lookup.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/tmux_utils.sh" "$root/scripts/lib/tmux_utils.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/script_update.sh" "$root/scripts/lib/script_update.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/respawn_recovery.sh" "$root/scripts/lib/respawn_recovery.sh"
     ln -s "$PROJECT_ROOT/lib/agent_state.sh" "$root/lib/agent_state.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/inbox_nudge_policy.sh" "$root/scripts/lib/inbox_nudge_policy.sh"
     ln -s "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$root/scripts/inbox_watcher.sh"
@@ -228,6 +229,7 @@ YAML
     ln -s "$PROJECT_ROOT/scripts/lib/cli_lookup.sh" "$root/scripts/lib/cli_lookup.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/tmux_utils.sh" "$root/scripts/lib/tmux_utils.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/script_update.sh" "$root/scripts/lib/script_update.sh"
+    ln -s "$PROJECT_ROOT/scripts/lib/respawn_recovery.sh" "$root/scripts/lib/respawn_recovery.sh"
     ln -s "$PROJECT_ROOT/lib/agent_state.sh" "$root/lib/agent_state.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/inbox_nudge_policy.sh" "$root/scripts/lib/inbox_nudge_policy.sh"
     ln -s "$PROJECT_ROOT/scripts/inbox_watcher.sh" "$root/scripts/inbox_watcher.sh"
@@ -235,6 +237,44 @@ YAML
     run bash -c "INBOX_WATCHER_LIB_ONLY=1 source '$root/scripts/inbox_watcher.sh' test_agent dummy-pane"
     [ "$status" -eq 1 ]
     [[ "$output" == *"ALERT: queue/inbox symlink is broken"* ]]
+}
+
+@test "T-SW-015: bulletin_notify unread set is classified as batchable" {
+    cat > "$TEST_INBOX_DIR/test_agent.yaml" <<'YAML'
+messages:
+- content: first
+  from: karo
+  id: msg_batch_1
+  read: false
+  timestamp: '2026-07-20T00:00:00'
+  type: bulletin_notify
+- content: second
+  from: gunshi
+  id: msg_batch_2
+  read: false
+  timestamp: '2026-07-20T00:00:01'
+  type: bulletin_notify
+YAML
+
+    run bash -c "SHOGUN_STATE_DIR='$TEST_TMPDIR' INBOX_WATCHER_LIB_ONLY=1 source '$WATCHER_SCRIPT' test_agent dummy-pane; INBOX='$TEST_INBOX_DIR/test_agent.yaml'; get_unread_info"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *$'\tnormal\ttrue' ]]
+}
+
+@test "T-SW-016: escalation is high priority and never batchable" {
+    cat > "$TEST_INBOX_DIR/test_agent.yaml" <<'YAML'
+messages:
+- content: urgent
+  from: karo
+  id: msg_urgent_1
+  read: false
+  timestamp: '2026-07-20T00:00:00'
+  type: escalation
+YAML
+
+    run bash -c "SHOGUN_STATE_DIR='$TEST_TMPDIR' INBOX_WATCHER_LIB_ONLY=1 source '$WATCHER_SCRIPT' test_agent dummy-pane; INBOX='$TEST_INBOX_DIR/test_agent.yaml'; get_unread_info"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *$'\thigh\tfalse' ]]
 }
 
 # --- T-SW-001: self-watch active → skip nudge ---
