@@ -5,6 +5,7 @@ setup() {
   # This file deliberately launches isolated aggregate runner fixtures.  They
   # are new checkpoint roots, not accidental children of the outer CI runner.
   unset RUN_TESTS_ACTIVE
+  unset RUN_TESTS_SNAPSHOT_MANIFEST
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   TMPROOT="$(mktemp -d)"
   mkdir -p "$TMPROOT/scripts" "$TMPROOT/tests/unit" "$TMPROOT/bin" "$TMPROOT/logs"
