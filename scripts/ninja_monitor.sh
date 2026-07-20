@@ -8468,6 +8468,9 @@ while true; do
     # awaiting_answer, which is the durable hold marker for deployment.
     for _retro_event in "$SCRIPT_DIR"/queue/retro/verbatim_pending/*.event; do
         [ -f "$_retro_event" ] || continue
+        # 殿裁定2026-07-20 17:22: 過剰対策削減。retro pane配送を停止(idle忍者の手番を奪う機構)。
+        # retro配送burst(final-checkpoint 14 unanswered+17 answers)が全忍者を回答に奪い脱感染campaignを停止させた(家老RCA blt_20260720_175956)。反省は有用だがスループットを止める理由にならない。revert復元可。
+        continue
         mapfile -t _retro_fields < "$_retro_event"
         _retro_ninja="${_retro_fields[0]:-}"
         _retro_event_id="${_retro_fields[1]:-}"
