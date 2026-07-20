@@ -1703,6 +1703,7 @@ echo "■ 追体験検証Q4（CLAUDE.md Step 2.88 — 省略厳禁）"
 echo "  Q4: deepdive_why_chain Phase NがPhase Mで覆された例を1つ挙げよ。なぜ覆されたか？（時系列×因果）"
 echo "  [前セッション出来事] ${_prev_session_summary:-(前セッション要約なし)}"
 echo "  ※ Q4は前セッションの出来事を手がかりに因果をたどれ。暗記したPhase例を貼るな。"
+echo "  Q5: 過剰対策チェック(殿裁定2026-07-20・最上位) — 今から書くhook/gate/workaround強制/契約は表示型(人を止め作文を強要)でないか？それが過剰対策=真因だ。表示型は削り、構造型(不可逆害防止・手を動かすと自然に守られる)のみ残せ。ミスは可逆に許容し下流で回収。deepdive Phase5『自動化×強制』を機構追加へ機械適用するな。→ context/growth-loop.md v2"
 echo ""
 
 # --- Check 2: 陣形図(karo_snapshot.txt)の鮮度 ---
