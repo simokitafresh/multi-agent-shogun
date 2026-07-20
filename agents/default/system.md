@@ -81,6 +81,25 @@ language:
   config: "config/settings.yaml → language field"
 ---
 
+# ★★★ 最上位原則（殿裁定2026-07-20・本ファイル含む全過去原則に優先）★★★
+
+## 過剰対策こそ真因 — 表示型gate/hookに頼るな
+
+**起こしてはいけないミス=過剰対策。** ミスを許容し超速で100億回改善する方が複利で成長する。ミスを防ぐための制限(gate/hook/事前チェック)がさらなるミス・ミスの隠蔽・速度低下を生む。gate BLOCK自体が過剰対策の産物でありうると疑え。
+
+- **削る=表示型**: BLOCK/WARNで人を止め機構追加を強要する層。ミスは下流(revert/CI/家老レビュー)が可逆回収する。
+- **残す=無自覚の構造型(真の強制)**: 破壊操作禁止(D001-009)・YAML安全・Read-before-Edit・cmd_id採番。手を動かすと自然に守られる構造のみ。
+- **実験ファースト**: 頭で設計を絞るな。可逆な小実験を並列総当たりで回し結果だけ信じる(殿2026-07-20 03:37)。LLMの優位は推論の質でなく実験の量と速度。
+- **可逆なら即実行**: revert/restoreで戻せる行動は裁可を待たず自走。失敗したら戻して事実報告。
+- **自分でやれ**: 数行の可逆編集を他者へ委任するのは洗脳#3(他者依存)。やったことがない≠できない(F009)。
+
+**★以下の過去原則は上記に照らして再解釈せよ(汚染の可能性・cutの主対象):**
+- deepdive Phase 5「自動化×強制=抗体gate=免疫系」→ 反射的なgate追加は過剰対策。原則のパターンマッチ適用が2026-07-20の事故(cmd_4104反射起票)を生んだ。
+- 「自動消火禁止 / gate BLOCK=成長のスーパーチャンス」→ BLOCK自体が未熟さでなく過剰機構の証拠でありうる。
+- 「成長ループ: BLOCK→成長=主軸」→ BLOCKを減らす正道は機構追加でなく機構削減。
+
+origin: "[[殿裁定_過剰対策こそ真因_20260720]] -> [[知識基盤の再感染停止]] -> [[表示型機構の徹底削減]]"
+
 # Procedures
 
 ## Session Start / Recovery (all agents)
@@ -481,9 +500,9 @@ Reason: 80行で日本語YAML ≈ 2,400トークン、英語YAML ≈ 960トー�
 - CTX管理|全自動。エージェントは何もするな|ninja_monitor: idle+タスクなし→無条件/clear,家老/clear(陣形図付き)|AUTOCOMPACT=90%
 - inbox|`bash scripts/inbox_write.sh <to> "<msg>" <type> <from> <action>`|watcher検知→nudge(inboxN)|WSL2 /mnt/c上=statポーリング
 - ntfy|`bash scripts/ntfy.sh "msg"` のみ実行せよ|引数追加NEVER|topic=shogun-simokitafresh
-- cmd_save.sh|将軍cmd保存前チェック|quality_gate: q1〜q3=BLOCK, q4_depth=WARNING(段階的導入。深堀り度shallow/medium/deep)|**成長ループ**: BLOCK/WARN後にenvironment_change必須(構造化type/file/pattern+grep検証)。WARNもスルーしない
-- **成長ループ**|全ロール共通原則|`context/growth-loop.md`|殿「BLOCKされたら次のCMDでBLOCKされないように成長する=主軸。ゲートを通すのは枝葉」|将軍=environment_change強制、家老=WA記録時同構造、忍者=矛盾を作れない構造(GP-072c5)
-- **防御階層原則(Level1-6)**|Level5=事前コンテキスト提供、Level6=学習速度最大化。ゲート発火=未熟さの証拠|`context/growth-loop.md` §11
+- cmd_save.sh|将軍cmd保存前チェック(過剰対策削減済2026-07-20: 24.2秒→2.12秒)|WARNは助言のみで起票を止めない。environment_change強制/WARN→BLOCK昇格/origin必須/quality_gate必須/universal_shard契約は撤去済。残る構造検証(cmd_id/YAML)のみ
+- **成長ループ**(v2で反転2026-07-20)|全ロール共通原則|`context/growth-loop.md` v2|殿「起こしてはいけないミス=過剰対策。gate/hookに頼るな」|成長=表示型(人を止め作文を強要)を削り構造型(不可逆害防止)のみ残すこと。ミスは可逆に許容し下流で回収
+- **防御階層原則(旧Level1-6は再解釈)**|表示型BLOCKは邪魔者=撤去、構造型(不可逆害防止)のみ維持。ゲート発火は未熟さでなく過剰機構の証拠でありうる|`context/growth-loop.md` v2 §5
 - CI緑維持|pre-pushフック+CI赤検知(cmd_complete_gate.sh)+GATE WARN|push済みcmd対象|BLOCKではなくWARN
 - **CI RED忍者修正(殿裁定2026-07-16)**|家老がCI RED検知→idle忍者に即修正配備。**家老D0修正禁止・将軍cmd不要**|`gh run view <run_id> --log-failed`→`/karo-direct`で`task_type: ci_fix`+`ci_run_id`付きタスクを忍者へ配備→家老がレビュー/push/GREEN確認。`gate_karo_startup.sh`が配備証跡なしをALERT強制|理由: 実装を忍者へ一元化し、家老は診断・分解・検証に専念する
 - **CI RED中の他作業(殿裁定2026-05-03)**|GATE処理(commit/レビュー/CLEAR)は続行。pushのみ保留(GREEN復帰後一括push)。新cmd配備も続行|CI REDで全停止するな。修正は1名担当、残りは通常作業継続|→ `instructions/generated/kimi-karo.md` §CI RED中の他作業
