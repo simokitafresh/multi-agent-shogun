@@ -61,21 +61,29 @@ if data is None or data["bundle_fingerprint"] != fingerprint:
     finally:
         if os.path.exists(tmp): os.unlink(tmp)
 PY
+
+    mapfile -t CHECKPOINT_COMPLETED < <(python3 - "$CHECKPOINT_PATH" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = json.load(fh)
+print(data["project"])
+print(*data["completed"], sep="\n")
+PY
+    )
+    CHECKPOINT_PROJECT="${CHECKPOINT_COMPLETED[0]:-}"
+    CHECKPOINT_COMPLETED=("${CHECKPOINT_COMPLETED[@]:1}")
 }
 
 checkpoint_has() {
-    python3 - "$CHECKPOINT_PATH" "$1" <<'PY'
-import json, sys
-with open(sys.argv[1], encoding="utf-8") as fh: data = json.load(fh)
-raise SystemExit(0 if sys.argv[2] in data["completed"] else 1)
-PY
+    local completed_step
+    for completed_step in "${CHECKPOINT_COMPLETED[@]}"; do
+        [[ "$completed_step" != "$1" ]] || return 0
+    done
+    return 1
 }
 
 checkpoint_project() {
-    python3 - "$CHECKPOINT_PATH" <<'PY'
-import json, sys
-with open(sys.argv[1], encoding="utf-8") as fh: print(json.load(fh)["project"])
-PY
+    printf '%s\n' "$CHECKPOINT_PROJECT"
 }
 
 checkpoint_mark() {
@@ -97,6 +105,8 @@ try:
 finally:
     if os.path.exists(tmp): os.unlink(tmp)
 PY
+    CHECKPOINT_COMPLETED+=("$step")
+    [[ -z "$project" ]] || CHECKPOINT_PROJECT="$project"
 }
 
 run_checkpointed() {
