@@ -117,6 +117,7 @@ flock -w "$TIMEOUT" "$admission_fd" \
 # locks until the complete process group drains.  Closing the lock descriptors
 # in the child preserves the durable-worker re-entry contract.
 export SHOGUN_HEAVY_JOB_LOCK_HELD=1
+export SHOGUN_HEAVY_JOB_ADMITTED=1
 ADMISSION_FD="$admission_fd" RUN_FD="${run_fd:-}" setsid bash -c '
     eval "exec ${ADMISSION_FD}>&-"
     [[ -z "$RUN_FD" ]] || eval "exec ${RUN_FD}>&-"

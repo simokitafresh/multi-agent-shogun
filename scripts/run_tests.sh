@@ -664,7 +664,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         # Explicit heavy_job_admission callers already own the outer lock.
         # Taking the single-flight lock underneath it would invert the normal
         # order (single-flight -> admission) and deadlock two callers.
-        if [[ "${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}" != "1" && ( "$_mode" == "all" || "$_mode" == "unit" ) ]]; then
+        if [[ "${SHOGUN_HEAVY_JOB_ADMITTED:-${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}}" != "1" && ( "$_mode" == "all" || "$_mode" == "unit" ) ]]; then
             _singleflight=1
             _sf_dir="${RUN_TESTS_SINGLEFLIGHT_DIR:-/tmp/shogun-run-tests-singleflight}"
             mkdir -p "$_sf_dir"

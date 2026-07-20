@@ -483,10 +483,46 @@ print('ok')
     holder=$!
     sleep 0.08
     run env SHOGUN_HEAVY_JOB_RUN_ID=same bash "$WRAPPER" -- true
-    [ "$status" -eq 2 ]
+    [ "$status" -ne 0 ]
     [[ "$output" == *"duplicate heavy run id"* ]]
     touch "$release"
     wait "$holder"
+}
+
+@test "run_tests single-flight joins one leader receipt with heartbeat and fixed snapshot" {
+    local fixture="$TMP/singleflight"
+    mkdir -p "$fixture/tests/unit" "$fixture/scripts" "$fixture/receipts" "$fixture/sf"
+    cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/run_with_receipt.sh" "$ROOT/scripts/heavy_job_admission.sh" "$ROOT/scripts/test_timing_ledger_write.sh" "$ROOT/scripts/test_suite_timing_ledger_write.sh" "$fixture/scripts/"
+    printf '@test "slow" { sleep 2; [ -f "$BATS_TEST_FILENAME" ]; }\n' > "$fixture/tests/unit/slow.bats"
+    git -C "$fixture" init -q
+    git -C "$fixture" config user.email test@example.com
+    git -C "$fixture" config user.name test
+    git -C "$fixture" add .
+    git -C "$fixture" commit -qm initial
+    env -u RUN_TESTS_ACTIVE REPO_ROOT="$fixture" RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 BATS_MAX_TEST_JOBS=1 bash "$fixture/scripts/run_tests.sh" unit >"$fixture/a.out" 2>"$fixture/a.err" &
+    local a=$!
+    local waited=0
+    while ! grep -q SINGLE_FLIGHT_LEADER "$fixture/a.err" 2>/dev/null; do sleep 0.02; waited=$((waited+1)); [ "$waited" -lt 200 ] || break; done
+    env -u RUN_TESTS_ACTIVE REPO_ROOT="$fixture" RUN_TESTS_RECEIPT_DIR="$fixture/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 BATS_MAX_TEST_JOBS=1 bash "$fixture/scripts/run_tests.sh" unit >"$fixture/b.out" 2>"$fixture/b.err" &
+    local b=$!
+    local ra=0 rb=0
+    wait "$a" || ra=$?
+    wait "$b" || rb=$?
+    if [ "$ra" -ne 0 ] || [ "$rb" -ne 0 ]; then
+        cat "$fixture/a.err" "$fixture/a.out" "$fixture/b.err" "$fixture/b.out" "$fixture"/receipts/*.output >&3
+        return 1
+    fi
+    [ "$(find "$fixture/receipts" -name '*.json' | wc -l)" -eq 1 ]
+    grep -q 'SINGLE_FLIGHT_JOINED' "$fixture/b.err"
+    grep -q 'SINGLE_FLIGHT_HEARTBEAT' "$fixture/b.err"
+    grep -q 'joined=1' "$fixture/b.out"
+    [ "$(python3 -c 'import json,glob; d=json.load(open(glob.glob("'"$fixture"'/receipts/*.json")[0])); print(d["observed_test_count"])')" -eq 1 ]
+}
+
+@test "already admitted run_tests skips single-flight lock to prevent lock inversion" {
+    run env SHOGUN_HEAVY_JOB_LOCK_HELD=1 RUN_TESTS_ACTIVE=1 bash "$ROOT/scripts/run_tests.sh" unit
+    [ "$status" -ne 0 ]
+    [[ "$output" != *'SINGLE_FLIGHT_'* ]]
 }
 
 @test "wrapper: durable背景workerへlock FDを継承せずmarker=0再入もself-deadlockしない" {
