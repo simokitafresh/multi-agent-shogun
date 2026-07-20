@@ -85,6 +85,7 @@ base_item_json() {
 run_bridge() {
   item_json="$(base_item_json)"
   run env SHARD_ITEM_JSON="$item_json" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" \
+    CAMPAIGN_LANE_DURABLE_TASK_PATH="$TMPROOT/out/task.yaml" \
     CAMPAIGN_LANE_WAIT_SEC="${CAMPAIGN_LANE_WAIT_SEC:-5}" CAMPAIGN_LANE_POLL_SEC=0.1 \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
 }
@@ -289,7 +290,7 @@ PY
 
 @test "canonical control root is exported instead of isolated checkout queue" {
   make_deployer pass
-  run env SHARD_ITEM_JSON="$(base_item_json)" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" SHOGUN_ROOT="$ROOT" CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 \
+  run env SHARD_ITEM_JSON="$(base_item_json)" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" SHOGUN_ROOT="$ROOT" CAMPAIGN_LANE_DURABLE_TASK_PATH="$TMPROOT/out/task.yaml" CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
   [ "$status" -eq 0 ]
   [ "$(python3 -c 'import yaml; print(yaml.safe_load(open("'"$TMPROOT"'/out/task.yaml"))["task"]["canonical_root"])')" = "$ROOT" ]
@@ -317,7 +318,7 @@ PY
   printf '{"status":"fail","reason_code":"source_materialize_failed"}\n' > "$TMPROOT/out/result.json"
   item_json="$(base_item_json)"
 
-  run bash -c "cd '$TMPROOT/work' && exec env SHARD_ITEM_JSON='$item_json' CAMPAIGN_LANE_FIXED_SHA='$FIXED_SHA' CAMPAIGN_LANE_SOURCE_REPO='$SOURCE' CAMPAIGN_LANE_DEPLOY_CMD='$TMPROOT/bin/deploy' CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 '$ROOT/scripts/campaign_lane_shard_item.sh' item skills/campaign-lane/adapters/new.py worker '$TMPROOT/work' '$TMPROOT/out'"
+  run bash -c "cd '$TMPROOT/work' && exec env SHARD_ITEM_JSON='$item_json' CAMPAIGN_LANE_FIXED_SHA='$FIXED_SHA' CAMPAIGN_LANE_SOURCE_REPO='$SOURCE' CAMPAIGN_LANE_DEPLOY_CMD='$TMPROOT/bin/deploy' CAMPAIGN_LANE_DURABLE_TASK_PATH='$TMPROOT/out/task.yaml' CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 '$ROOT/scripts/campaign_lane_shard_item.sh' item skills/campaign-lane/adapters/new.py worker '$TMPROOT/work' '$TMPROOT/out'"
 
   [ "$status" -eq 0 ]
   [ -L "$TMPROOT/work" ]

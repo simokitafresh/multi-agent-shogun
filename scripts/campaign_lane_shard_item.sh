@@ -299,13 +299,16 @@ stage_stop deploy
 # task.report_path from the campaign-local placeholder to queue/reports/....
 # Resolve that canonical path after deployment; otherwise a successful shard
 # can sit for the full timeout while this bridge watches the stale placeholder.
-canonical_report_path="$(python3 - "$task_path" <<'PY' 2>/dev/null
+durable_task_path="${CAMPAIGN_LANE_DURABLE_TASK_PATH:-$ROOT/queue/tasks/${worker_id}.yaml}"
+canonical_report_path="$(CAMPAIGN_ROOT="$ROOT" TASK_KEY="$task_key" python3 - "$durable_task_path" <<'PY' 2>/dev/null
 import os, sys, yaml
 task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task") or {}
+if task.get("parent_cmd") != os.environ["TASK_KEY"]:
+    raise SystemExit(1)
 path = task.get("report_path")
 if not isinstance(path, str) or not path.strip():
     raise SystemExit(1)
-print(os.path.abspath(path))
+print(path if os.path.isabs(path) else os.path.join(os.environ["CAMPAIGN_ROOT"], path))
 PY
 )" || fail canonical_report_path_missing "$report_path"
 report_path="$canonical_report_path"
