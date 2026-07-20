@@ -50,10 +50,20 @@ respawn_recovery_generation() {
     printf '%s:%s\n' "$pid" "$starttime"
 }
 
-respawn_recovery_notify() {
+respawn_recovery_state_dir() {
+    local root="$1" root_key
+    if [ -n "${RESPAWN_RECOVERY_STATE_DIR:-}" ]; then
+        printf '%s\n' "$RESPAWN_RECOVERY_STATE_DIR"
+        return 0
+    fi
+    root_key=$(printf '%s' "$root" | sha256sum | cut -d' ' -f1)
+    printf '%s/%s\n' "${RESPAWN_RECOVERY_EXT4_ROOT:-/tmp/shogun-respawn-recovery}" "$root_key"
+}
+
+respawn_recovery_notify_impl() {
     local root="$1" agent="$2" generation="$3" source="${4:-respawn}" content="${5:-}"
     local task_file="$root/queue/tasks/${agent}.yaml"
-    local state_dir="${RESPAWN_RECOVERY_STATE_DIR:-$root/.cache/respawn-recovery}"
+    local state_dir generation_dir timeout_seconds
     local values status parent task_id marker
     [ -n "$generation" ] && [ "$generation" != "unknown" ] || return 1
     if [ -n "$content" ] && [[ "$content" =~ [\`\$\|\;\&\<\>] ]]; then content=""; fi
@@ -77,8 +87,10 @@ PY
       assigned|acknowledged|in_progress) [ -n "$parent" ] && [ -n "$task_id" ] || return 1 ;;
       *) [ -n "$content" ] || return 0; parent=""; task_id="" ;;
     esac
-    mkdir -p "$state_dir"
-    marker="$state_dir/${agent}.$(printf '%s' "$generation" | sha256sum | cut -d' ' -f1).sent"
+    state_dir=$(respawn_recovery_state_dir "$root") || return 0
+    generation_dir="$state_dir/$agent/$(printf '%s' "$generation" | sha256sum | cut -d' ' -f1)"
+    mkdir -p "$generation_dir" || return 0
+    marker="$generation_dir/sent"
     exec 219>"${marker}.lock"
     flock -w 5 219 || return 1
     [ ! -e "$marker" ] || return 0
@@ -90,7 +102,34 @@ PY
       message="$content"
       sender=ninja_monitor
     fi
-    bash "$root/scripts/inbox_write.sh" "$agent" "$message" \
-        recovery "$sender" continue_same_task || return 1
+    timeout_seconds="${RESPAWN_RECOVERY_NOTIFY_TIMEOUT_SECONDS:-2}"
+    [[ "$timeout_seconds" =~ ^[1-9][0-9]*([.][0-9]+)?$ ]] || timeout_seconds=2
+    if ! timeout --signal=TERM --kill-after=1 "$timeout_seconds" \
+        bash "$root/scripts/inbox_write.sh" "$agent" "$message" \
+        recovery "$sender" continue_same_task; then
+      # Recovery notification is advisory. A blocked /mnt/c transport must not
+      # stop the monitor; leave the marker absent so a later generation/retry
+      # can deliver instead of recording a false success.
+      return 0
+    fi
     : > "$marker"
+}
+
+respawn_recovery_notify() {
+    local root="$1" agent="$2" generation="$3" source="${4:-respawn}" content="${5:-}"
+    local timeout_seconds="${RESPAWN_RECOVERY_NOTIFY_TIMEOUT_SECONDS:-2}"
+    local library="${BASH_SOURCE[0]}" rc
+    [ -n "$generation" ] && [ "$generation" != "unknown" ] || return 1
+    [[ "$timeout_seconds" =~ ^[1-9][0-9]*([.][0-9]+)?$ ]] || timeout_seconds=2
+    if timeout --signal=TERM --kill-after=1 "$timeout_seconds" \
+        bash -c 'source "$1"; shift; respawn_recovery_notify_impl "$@"' \
+        _ "$library" "$root" "$agent" "$generation" "$source" "$content"; then
+        return 0
+    else
+        rc=$?
+    fi
+    case "$rc" in
+      124|137) return 0 ;; # advisory recovery must never stall the monitor
+      *) return "$rc" ;;
+    esac
 }
