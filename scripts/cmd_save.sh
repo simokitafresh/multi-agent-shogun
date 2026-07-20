@@ -3861,14 +3861,10 @@ if load_cmd_block; then
             found && /^\s*[a-zA-Z_][a-zA-Z0-9_]*:/ { exit }
         ' <<< "${CMD_BLOCK_NC:-$CMD_BLOCK}")
         if [[ -n "${_Q11_COMMAND_SECTION:-}" ]]; then
-            if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
-                show_q11_semantic_search_matches "$CMD_BLOCK_NC" &
-            fi
-
-            # WSL2最適化: docs/research/全件grep(50+NTFSファイル)はunitテストで10-20秒かかる。
-            # FAST_METADATAモードでは本番docs走査を避けるが、テストで明示された小さいresearch dirは走査する。
+            # 殿裁定2026-07-20 17:22: 過剰対策削減#8。q11 semantic_search表示+docs/research全件scan(10-20秒/回)を停止。
+            # q11必須は#7で撤廃済。重いadvisory表示のためにcmd_save速度(karoボトルネックの主因)を犠牲にしない。revert復元可。
             _Q11_ALLOW_RESEARCH_SCAN=0
-            if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" || -n "${CMD_SAVE_Q11_RESEARCH_DIR:-}" || "${_Q11_PROJECT_DIR}" != "${PROJECT_ROOT:-$PROJECT_DIR}" ]]; then
+            if false; then
                 _Q11_ALLOW_RESEARCH_SCAN=1
             fi
             if [[ "$_Q11_ALLOW_RESEARCH_SCAN" == "1" ]]; then
