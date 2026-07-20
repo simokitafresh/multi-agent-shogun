@@ -75,7 +75,7 @@ Script refs verified: 2026-06-24T09:12. `switch_cli_mode.sh` 最新commit 78e467
 
 # Shogun CLI Switch
 
-Argument hint: `[status|to-claude|to-codex|pin-2.1.87|unpin-latest] [--agent AGENT] [--scope core|all|csv]`
+Argument hint: `[status|to-claude|to-codex|pin-2.1.87|unpin-latest|probe-codex] [--agent AGENT] [--scope core|all|csv]`
 
 Quality metric: 将軍系CLI/version切替cmdの`cmd_save.sh`チェック通過率（q1-q4 BLOCKなしで保存できた割合）。
 
@@ -129,6 +129,8 @@ multi-agent-shogun の指揮官/指定agentを Claude Code と Codex CLI の間�
 - config.toml `model = "gpt-5.6-sol"`: **有効だがexit 2になるモデル名あり**。gpt-5.6-solは`--model`経由でのみ動作する環境がある
 
 **正規方法(2026-07-21確立・殿裁定)**: config.tomlのmodel/model_reasoning_effortを対象agentの正本値(settings.yaml)にsedで書き換え→respawn-pane -k→最下行バナーで確認。restoreしない(restore廃止: a125c2aa5)。`/effort`コマンドは存在しない(実験実証6/6)。`/model`はインタラクティブメニューのみ(引数不可)。作業中は`/model`不可(idle時のみ)。
+
+**モデル実験はactive worker paneで行わない（2026-07-21）**: モデル/effortの組合せ検証は `shogun_cli_switch.sh probe-codex --model <model> --effort <level>` を使う。この経路は `codex exec --ephemeral --ignore-user-config` のisolated processで実行し、共有config checksum不変・全pane PID変化0を同時検証する。workerのtask中にself-respawnしてはならない。実運用の切替だけ、idle paneへ既存respawn経路を使う。
 
 **per-agent model/effort切替手順** (殿裁定2026-07-21、軍師6回実験で確立):
 1. `sed -i 's/^model = .*/model = "gpt-5.6-sol"/' ~/.codex/config.toml`

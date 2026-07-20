@@ -7,6 +7,10 @@ DRY_RUN=false
 SETTINGS_ONLY=false
 TARGET_AGENT=""
 SCOPE="core"
+PROBE_MODEL=""
+PROBE_EFFORT=""
+PROBE_TIER="default"
+CODEX_BIN="${CODEX_BIN:-codex}"
 
 PINNED_CMD="/home/simokitafresh/bin/claude --dangerously-skip-permissions"
 LATEST_CMD="/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions"
@@ -17,7 +21,7 @@ LATEST_BIN="/home/simokitafresh/.local/bin/claude"
 
 usage() {
   cat <<'USAGE'
-Usage: shogun_cli_switch.sh <status|pin-2.1.87|unpin-latest|to-claude|to-codex> [--agent <name>] [--scope <core|all|csv>] [--repo <path>] [--dry-run] [--settings-only]
+Usage: shogun_cli_switch.sh <status|pin-2.1.87|unpin-latest|to-claude|to-codex|probe-codex> [--agent <name>] [--scope <core|all|csv>] [--repo <path>] [--dry-run] [--settings-only]
 
 Actions:
   status         Show current launch_cmd, available binaries, and active Claude scope
@@ -25,6 +29,7 @@ Actions:
   unpin-latest   Point launch_cmd at /home/simokitafresh/.local/bin/claude and respawn Claude panes
   to-claude      Switch target agents to Claude CLI
   to-codex       Switch target agents to Codex CLI
+  probe-codex    Probe a Codex model/effort in an ephemeral process; never respawn a worker pane
 
 Options:
   --agent <name>     Target a single agent (pane-level switch via settings.yaml override)
@@ -32,6 +37,9 @@ Options:
   --repo <path>      Target multi-agent-shogun repository (default: current dir)
   --dry-run          Print actions only
   --settings-only    Update config only; do not respawn panes
+  --model <name>     Model for probe-codex
+  --effort <level>   low|medium|high|xhigh for probe-codex
+  --tier <tier>      default|auto|fast for probe-codex (default: default)
 USAGE
 }
 
@@ -59,6 +67,21 @@ while [[ $# -gt 0 ]]; do
     --settings-only)
       SETTINGS_ONLY=true
       shift
+      ;;
+    --model)
+      [[ $# -lt 2 ]] && { echo "[ERROR] --model requires a name" >&2; exit 1; }
+      PROBE_MODEL="$2"
+      shift 2
+      ;;
+    --effort)
+      [[ $# -lt 2 ]] && { echo "[ERROR] --effort requires a level" >&2; exit 1; }
+      PROBE_EFFORT="$2"
+      shift 2
+      ;;
+    --tier)
+      [[ $# -lt 2 ]] && { echo "[ERROR] --tier requires a value" >&2; exit 1; }
+      PROBE_TIER="$2"
+      shift 2
       ;;
     --agent)
       [[ $# -lt 2 ]] && { echo "[ERROR] --agent requires a name" >&2; exit 1; }
@@ -91,6 +114,51 @@ RESTART_WATCHERS="$REPO_ROOT/scripts/restart_watchers.sh"
 [[ -f "$SWITCH_SCRIPT" ]] || { echo "[ERROR] switch script not found: $SWITCH_SCRIPT" >&2; exit 1; }
 
 log() { echo "[shogun-cli-switch] $*"; }
+
+probe_codex_model() {
+  [[ -n "$PROBE_MODEL" ]] || { echo "[ERROR] probe-codex requires --model" >&2; return 1; }
+  case "$PROBE_EFFORT" in low|medium|high|xhigh) ;; *) echo "[ERROR] probe-codex requires --effort low|medium|high|xhigh" >&2; return 1 ;; esac
+  case "$PROBE_TIER" in default|auto|fast) ;; *) echo "[ERROR] probe-codex --tier must be default|auto|fast" >&2; return 1 ;; esac
+
+  local cfg="$HOME/.codex/config.toml" cfg_before="missing" cfg_after="missing"
+  local panes_before="" panes_after="" output_file rc
+  [[ -f "$cfg" ]] && cfg_before=$(sha256sum "$cfg" | awk '{print $1}')
+  if tmux has-session -t shogun 2>/dev/null; then
+    panes_before=$(tmux list-panes -a -F '#{pane_id}:#{pane_pid}' | sort)
+  fi
+  output_file=$(mktemp)
+  if [[ "$DRY_RUN" == true ]]; then
+    log "[dry-run] isolated probe: $CODEX_BIN exec --ephemeral --ignore-user-config --ignore-rules -m $PROBE_MODEL -c model_reasoning_effort=$PROBE_EFFORT -c service_tier=$PROBE_TIER"
+    rm -f "$output_file"
+    return 0
+  fi
+
+  set +e
+  "$CODEX_BIN" exec --ephemeral --ignore-user-config --ignore-rules --skip-git-repo-check \
+    -C "$REPO_ROOT" -m "$PROBE_MODEL" \
+    -c "model_reasoning_effort=\"$PROBE_EFFORT\"" \
+    -c "service_tier=\"$PROBE_TIER\"" --json \
+    'Reply with exactly PROBE_OK. Do not call tools.' >"$output_file" 2>&1
+  rc=$?
+  set -e
+
+  [[ -f "$cfg" ]] && cfg_after=$(sha256sum "$cfg" | awk '{print $1}')
+  if tmux has-session -t shogun 2>/dev/null; then
+    panes_after=$(tmux list-panes -a -F '#{pane_id}:#{pane_pid}' | sort)
+  fi
+  if [[ "$cfg_before" != "$cfg_after" || "$panes_before" != "$panes_after" ]]; then
+    echo "[ERROR] isolated probe changed shared config or worker pane PID" >&2
+    rm -f "$output_file"
+    return 1
+  fi
+  if [[ $rc -ne 0 ]] || ! grep -q 'PROBE_OK' "$output_file"; then
+    cat "$output_file" >&2
+    rm -f "$output_file"
+    return 1
+  fi
+  rm -f "$output_file"
+  log "probe PASS model=$PROBE_MODEL effort=$PROBE_EFFORT tier=$PROBE_TIER config_unchanged=1 pane_pid_changes=0"
+}
 
 get_current_launch_cmd() {
   python3 - "$CLI_PROFILES" <<'PY'
@@ -520,6 +588,9 @@ case "$ACTION" in
     ;;
   to-codex)
     apply_cli_switch codex
+    ;;
+  probe-codex)
+    probe_codex_model
     ;;
   pin-2.1.87)
     ensure_pinned_assets
