@@ -299,6 +299,29 @@ YAML
     [ "$(printf '%s\n' "$output" | grep '^task-' | sort -u | wc -l)" -eq 2 ]
 }
 
+# test_necessity: an acknowledged active task is recovered exactly once after CLI respawn even when its inbox message was already read.
+@test "active task fingerprint survives empty inbox and changes only with CLI generation" {
+    local root="$TEST_TMPDIR/root_active_task_generation"
+    mkdir -p "$root/queue/tasks"
+    cat > "$root/queue/tasks/test_agent.yaml" <<'YAML'
+task:
+  task_id: task_active_generation_fixture
+  deployed_at: "2026-07-21T00:00:00"
+  status: acknowledged
+YAML
+    run bash -c '
+      SHOGUN_STATE_DIR="$1/state" INBOX_WATCHER_LIB_ONLY=1 source "$2" test_agent fixture-pane
+      SCRIPT_DIR="$1"; PANE_TARGET=fixture-pane
+      respawn_recovery_generation() { printf "%s\n" "$FIXTURE_GENERATION"; }
+      FIXTURE_GENERATION=101:1001; a=$(active_task_publication_fingerprint); b=$(active_task_publication_fingerprint)
+      FIXTURE_GENERATION=202:2002; c=$(active_task_publication_fingerprint)
+      printf "%s\n%s\n%s\n" "$a" "$b" "$c"
+      [ "$a" = "$b" ] && [ "$a" != "$c" ]
+    ' _ "$root" "$WATCHER_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | grep '^task-' | sort -u | wc -l)" -eq 2 ]
+}
+
 # --- T-SW-001: self-watch active → skip nudge ---
 
 @test "T-SW-001: send_wakeup skips nudge when agent has active self-watch" {

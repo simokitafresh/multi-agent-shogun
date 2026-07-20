@@ -218,6 +218,19 @@ task_publication_fingerprint() {
     printf 'task-%s\n' "$(printf '%s@%s' "$identity" "$pane_generation" | sha256sum | awk '{print $1}')"
 }
 
+active_task_publication_fingerprint() {
+    local task_file="${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml"
+    [ -f "$task_file" ] || return 1
+    awk '
+        /^[[:space:]]*status:/ {
+            value=$0; sub(/^[^:]*:[[:space:]]*/, "", value); gsub(/["[:space:]]/, "", value)
+            if (value ~ /^(assigned|acknowledged|in_progress)$/) active=1
+        }
+        END { exit(active ? 0 : 1) }
+    ' "$task_file" || return 1
+    task_publication_fingerprint
+}
+
 get_unread_info() {
     # Fast path: skip Python3 startup (~40ms) when no unread messages exist
     if ! grep -qF 'read: false' "$INBOX" 2>/dev/null; then
@@ -1236,11 +1249,25 @@ process_unread() {
             echo "[$(date)] [WAKE-DEFER] Deferred nudge for $AGENT_ID (busy gating)" >&2
         fi
     else
-        # No unread → clear fingerprint
+        # A task can already be acknowledged/read when its CLI is respawned.
+        # In that case the mailbox is empty, but the active task still needs
+        # one delivery to the new process generation.  The generation-aware
+        # send lease makes this exactly-once without adding retries or gates.
+        local active_task_fp=""
+        active_task_fp=$(active_task_publication_fingerprint 2>/dev/null || true)
+        if [ -n "$active_task_fp" ]; then
+            local active_task_token="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${active_task_fp//[^A-Za-z0-9_.-]/_}"
+            if [ ! -f "$active_task_token" ]; then
+                send_wakeup 1 true "$active_task_fp" high false false || true
+            fi
+        fi
+        # No unread → clear only inbox-set state.  Keep generation-aware task
+        # leases while an active task exists, otherwise the next loop would
+        # redeliver the same task forever.
         if [ -f "$FINGERPRINT_FILE" ]; then
             rm -f "$FINGERPRINT_FILE"
             rm -f "${STATE_DIR}/inbox_watcher_sent_fingerprint_${AGENT_ID}"
-            rm -f "${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_"*
+            [ -n "$active_task_fp" ] || rm -f "${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_"*
             clear_deferred_nudge
             echo "[$(date)] [FP-RESET] No unread, cleared fingerprint for $AGENT_ID" >&2
         fi
