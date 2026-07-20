@@ -362,7 +362,9 @@ acquire_singleton_lock() {
     log "SINGLETON-TAKEOVER: old_pid=${existing_pid:-none} old_generation=${existing_generation:-none} heartbeat_age=${age}s new_generation=${NINJA_MONITOR_GENERATION}"
     flock -u "$lock_fd"
     eval "exec ${lock_fd}>&-"
-    trap 'ninja_monitor_release_owner' EXIT
+    if [ "${NINJA_MONITOR_RELEASE_OWNER_ON_EXIT:-1}" = "1" ]; then
+        trap 'ninja_monitor_release_owner' EXIT
+    fi
 }
 
 ninja_monitor_release_owner() {
@@ -402,6 +404,10 @@ ninja_monitor_owner_heartbeat() {
 _ninja_monitor_pid_is_live() {
     local pid="${1:-}"
     [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+    if [ -n "${NINJA_MONITOR_LIVENESS_OVERRIDE_PID:-}" ] \
+        && [ "$pid" = "$NINJA_MONITOR_LIVENESS_OVERRIDE_PID" ]; then
+        return 0
+    fi
     kill -0 "$pid" 2>/dev/null || return 1
 
     local cmdline=""

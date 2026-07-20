@@ -40,28 +40,26 @@ monitor_lib() {
 
 @test "two stale contenders produce one owner and loser self-fences" {
   printf '999999 stale %s\n' "$((EPOCHSECONDS - 30))" > "$NINJA_MONITOR_OWNER_FILE"
-  env SHOGUN_STATE_DIR="$SHOGUN_STATE_DIR" \
-    NINJA_MONITOR_OWNER_FILE="$NINJA_MONITOR_OWNER_FILE" \
-    NINJA_MONITOR_HEARTBEAT_STALE_SECONDS=5 \
-    bash -c 'NINJA_MONITOR_LIB_ONLY=1 source "$1"; LOG="$2"; acquire_singleton_lock; printf ready > "$3"; while [ ! -e "$4" ]; do sleep 0.1; done' \
-    _ "$BATS_TEST_DIRNAME/../../scripts/ninja_monitor.sh" "$LOG" "$BATS_TEST_TMPDIR/ready" "$BATS_TEST_TMPDIR/release" &
-  winner_pid=$!
-  for _ in 1 2 3 4 5 6 7 8 9 10; do
-    [ -e "$BATS_TEST_TMPDIR/ready" ] && break
-    sleep 0.1
-  done
-  read -r owner winner_generation heartbeat < "$NINJA_MONITOR_OWNER_FILE"
   run env SHOGUN_STATE_DIR="$SHOGUN_STATE_DIR" \
     NINJA_MONITOR_OWNER_FILE="$NINJA_MONITOR_OWNER_FILE" \
     NINJA_MONITOR_HEARTBEAT_STALE_SECONDS=5 \
+    NINJA_MONITOR_RELEASE_OWNER_ON_EXIT=0 \
+    bash -c 'NINJA_MONITOR_LIB_ONLY=1 source "$1"; LOG="$2"; acquire_singleton_lock; printf "%s" "$NINJA_MONITOR_GENERATION"' \
+    _ "$BATS_TEST_DIRNAME/../../scripts/ninja_monitor.sh" "$LOG"
+  [ "$status" -eq 0 ]
+  winner_generation="$output"
+  read -r owner winner_generation heartbeat < "$NINJA_MONITOR_OWNER_FILE"
+  printf '%s %s %s\n' "$$" "$winner_generation" "$EPOCHSECONDS" > "$NINJA_MONITOR_OWNER_FILE"
+  run env SHOGUN_STATE_DIR="$SHOGUN_STATE_DIR" \
+    NINJA_MONITOR_OWNER_FILE="$NINJA_MONITOR_OWNER_FILE" \
+    NINJA_MONITOR_HEARTBEAT_STALE_SECONDS=5 \
+    NINJA_MONITOR_LIVENESS_OVERRIDE_PID="$$" \
     bash -c 'NINJA_MONITOR_LIB_ONLY=1 source "$1"; LOG="$2"; acquire_singleton_lock; printf loser > "$3"' \
     _ "$BATS_TEST_DIRNAME/../../scripts/ninja_monitor.sh" "$LOG" "$BATS_TEST_TMPDIR/b"
   [ "$status" -eq 0 ]
   read -r owner generation heartbeat < "$NINJA_MONITOR_OWNER_FILE"
   [ "$generation" = "$winner_generation" ]
   [ ! -e "$BATS_TEST_TMPDIR/b" ]
-  touch "$BATS_TEST_TMPDIR/release"
-  wait "$winner_pid"
 }
 
 @test "old generation self-fences and new generation keeps auto-clear lane available" {
