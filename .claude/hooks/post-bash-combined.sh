@@ -49,6 +49,8 @@ mark_post_bash_verification_action_count() {
 mark_post_bash_verification_action_count
 
 # === Guard 0: cmd_save.sh BLOCK reminder ===
+# A filename mention is not execution evidence.  Only a direct bash invocation
+# with a non-zero result and a BLOCK line from that invocation may inject.
 if [[ "$payload" == *'cmd_save.sh'* || "$payload" == *'cmd_publish.sh'* ]]; then
     cmd_save_meta="$(PAYLOAD="$payload" jq -r '
         def walk_objects:
@@ -89,14 +91,17 @@ if [[ "$payload" == *'cmd_save.sh'* || "$payload" == *'cmd_publish.sh'* ]]; then
         cmd_save_output="${cmd_save_rest#*$'\t'}"
     fi
 
+    cmd_save_executed=0
+    if [[ "$cmd_save_command" =~ (^|[[:space:]]|\&\&|\|\||\;)(/usr/bin/env[[:space:]]+)?(/[^[:space:]]*/)?bash[[:space:]]+([^[:space:]]*/)?(cmd_save|cmd_publish)\.sh([[:space:]]|$) ]]; then
+        cmd_save_executed=1
+    fi
+
     cmd_save_block_detected=0
-    if [[ "$cmd_save_exit" == "1" ]]; then
-        cmd_save_block_detected=1
-    elif [[ "$cmd_save_output" == *'BLOCK:'* && ( "$cmd_save_output" == *'cmd_save.sh'* || "$cmd_save_command" == *'cmd_publish.sh'* || "$cmd_save_command" == *'cmd_save.sh'* ) ]]; then
+    if [[ "$cmd_save_executed" == "1" && -n "$cmd_save_exit" && "$cmd_save_exit" != "0" && "$cmd_save_output" == *'BLOCK:'* ]]; then
         cmd_save_block_detected=1
     fi
 
-    if [[ ( "$cmd_save_command" == *'cmd_save.sh'* || "$cmd_save_command" == *'cmd_publish.sh'* ) && "$cmd_save_block_detected" == "1" ]]; then
+    if [[ "$cmd_save_block_detected" == "1" ]]; then
         # BLOCK理由をpayloadから抽出(stderr/content内の"BLOCK:"行)
         block_lines="$(jq -r '
             [.. | strings] | join("\n")
