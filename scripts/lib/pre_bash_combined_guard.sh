@@ -515,7 +515,7 @@ pre_bash_combined_eval_command() {
     local lines=""
     local reason=""
     local approval_reason=""
-    local redirect_pattern tee_pattern python3_pattern mark_agent
+    local redirect_pattern tee_pattern python3_pattern mark_agent shell_command
 
     if [[ "$command" =~ (^|[\;\&\|])[[:space:]]*(git[[:space:]]+filter-repo|git-filter-repo) ]]; then
         pre_bash_combined_emit_deny "WARNING: git-filter-repo deletes files from WORKING TREE too, not just git history. Back up large files BEFORE running."
@@ -584,7 +584,13 @@ pre_bash_combined_eval_command() {
         tee_pattern='tee[[:space:]].*queue/reports/[^ ]*\.yaml'
         python3_pattern='python3?.*open[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*,[^)]*[wax+]'
         python_path_write_pattern='python3?.*(Path[[:space:]]*\([^)]*queue/reports/[^)]*\.yaml[^)]*\)|[^[:space:];]+)[[:space:]]*\.(write_text|write_bytes)[[:space:]]*\('
-        if [[ "$command" =~ $redirect_pattern ]] || [[ "$command" =~ $tee_pattern ]]; then
+        shell_command="$command"
+        if [[ "$command" =~ ^[[:space:]]*(printf|echo)[[:space:]]+\'[^\']*\'[[:space:]]*$ ]] \
+            || { [[ "$command" =~ ^[[:space:]]*(printf|echo)[[:space:]]+\"[^\"]*\"[[:space:]]*$ ]] \
+                && [[ "$command" != *'$('* && "$command" != *'`'* ]]; }; then
+            shell_command=""
+        fi
+        if [[ "$shell_command" =~ $redirect_pattern ]] || [[ "$shell_command" =~ $tee_pattern ]]; then
             pre_bash_combined_emit_deny "報告YAMLへのBashリダイレクト(>/>>/ tee)は禁止。report_field_set.sh経由で書き込みせよ。"
             return 1
         fi
