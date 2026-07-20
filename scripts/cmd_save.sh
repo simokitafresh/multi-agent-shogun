@@ -3536,14 +3536,9 @@ check_required_quality_gate_keys_block() {
     fi
 
     if [[ ${#MISSING_KEYS[@]} -gt 0 ]]; then
-        record_block_reason "必須項目 ${#MISSING_KEYS[@]}件 未記入。全て記入してからcmd_save.shを再実行せよ"
-        echo "  未記入: ${MISSING_KEYS[*]}" >&2
-        echo "  ---" >&2
-        for _hint in "${MISSING_HINTS[@]}"; do
-            echo "$_hint" >&2
-        done
-        echo "  ---" >&2
-        abort_if_block_immediate || exit 1
+        # 殿裁定2026-07-20 17:22: 過剰対策削減。必須項目(quality_gate/q5/q8/q11/assumptions等の作文フィールド)未記入BLOCKを助言化。
+        # 全て表示型(title/AC等の構造型は別所で検証)。書きたい者は書く、起票は止めない。revert復元可。
+        echo "INFO: quality_gate系フィールド未記入(助言のみ・起票継続): ${MISSING_KEYS[*]}" >&2
     fi
 }
 
