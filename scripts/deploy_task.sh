@@ -8302,9 +8302,13 @@ deploy_task_guard_target_path_collision() {
     [ -f "$task_file" ] || return 0
 
     python3 - "$SCRIPT_DIR" "$task_file" "$ninja_name" <<'TARGET_COLLISION_PY'
+import json
 import os
+import re
 import sys
 import yaml
+from datetime import datetime, timezone
+from scripts.lib.yaml_atomic import atomic_yaml_write
 
 script_dir, task_file, current_ninja = sys.argv[1:4]
 active_statuses = {'active', 'assigned', 'acknowledged', 'in_progress'}
@@ -8325,6 +8329,19 @@ def paths_from(value):
         return [str(item).strip() for item in value if str(item).strip()]
     return []
 
+def command_paths(value):
+    text = '\n'.join(map(str, value)) if isinstance(value, list) else str(value or '')
+    return re.findall(
+        r'(?<![A-Za-z0-9_./-])((?:/mnt/[A-Za-z0-9_.-]+/|(?:[A-Za-z0-9_.-]+/)*)'
+        r'[A-Za-z0-9_.-]+\.(?:sh|py|md|yaml|yml|json|toml|js|ts|tsx|jsx|css|html|sql|csv))'
+        r'(?![A-Za-z0-9_.-])', text)
+
+def readonly_paths(task):
+    rows = task.get('readonly_ref') or []
+    if isinstance(rows, dict):
+        rows = [rows]
+    return [str(row.get('path', '')).strip() for row in rows if isinstance(row, dict) and str(row.get('path', '')).strip()]
+
 def normalize(path):
     path = path.replace('\\', '/').strip()
     if not path:
@@ -8335,8 +8352,28 @@ def normalize(path):
 
 def reserved_paths(task):
     # target_path is the primary scope, while planned_paths records every file
-    # the task expects to touch.  Both are one reservation contract.
-    return paths_from(task.get('target_path')) + paths_from(task.get('planned_paths'))
+    # the task expects to touch. Command file references complete the contract,
+    # except references explicitly classified readonly by the injector.
+    explicit = paths_from(task.get('target_path')) + paths_from(task.get('planned_paths'))
+    readonly = {normalize(path) for path in readonly_paths(task)}
+    candidates = explicit + command_paths(task.get('command'))
+    return [path for path in candidates if normalize(path) not in readonly]
+
+def handoff_peers(task):
+    value = task.get('overlap_handoff_from') or task.get('handoff_from') or []
+    return set(paths_from(value))
+
+def record(decision, peer='', overlap=None, false_positive=0):
+    log_dir = os.path.join(script_dir, 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    row = {
+        'timestamp': datetime.now(timezone.utc).isoformat(),
+        'gate': 'deploy_target_overlap', 'worker': current_ninja,
+        'peer': peer, 'decision': decision, 'overlap': overlap or [],
+        'false_positive': false_positive,
+    }
+    with open(os.path.join(log_dir, 'target_overlap_gate_fire.jsonl'), 'a', encoding='utf-8') as f:
+        f.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + '\n')
 
 def split_file_targets(paths):
     file_targets = set()
@@ -8356,6 +8393,7 @@ def split_file_targets(paths):
 current_task = load_task(task_file)
 current_files, current_dirs = split_file_targets(reserved_paths(current_task))
 if not current_files and not current_dirs:
+    record('PASS', false_positive=0)
     sys.exit(0)
 
 task_dir = os.path.join(script_dir, 'queue', 'tasks')
@@ -8388,13 +8426,29 @@ for peer_ninja, status, parent_cmd, overlap in dir_infos:
     )
 
 if collisions:
+    unresolved = []
+    allowed = handoff_peers(current_task)
     for peer_ninja, status, parent_cmd, overlap in collisions:
+        if peer_ninja in allowed or parent_cmd in allowed:
+            barrier = current_task.setdefault('final_checkpoint_barrier', [])
+            barrier.append({
+                'peer': peer_ninja, 'parent_cmd': parent_cmd,
+                'paths': overlap, 'release_statuses': ['done', 'failed', 'idle'],
+            })
+            record('HANDOFF_BARRIER', peer_ninja, overlap, 0)
+            continue
         print(
             f'BLOCK: reserved path collision with {peer_ninja} '
             f'(status={status}, parent_cmd={parent_cmd or "unknown"}): {", ".join(overlap)}',
             file=sys.stderr,
         )
-    sys.exit(1)
+        record('BLOCK', peer_ninja, overlap, 0)
+        unresolved.append(peer_ninja)
+    if unresolved:
+        sys.exit(1)
+    atomic_yaml_write(task_file, {'task': current_task})
+    sys.exit(0)
+record('PASS', false_positive=0)
 TARGET_COLLISION_PY
 }
 
