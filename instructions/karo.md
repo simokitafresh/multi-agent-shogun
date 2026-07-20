@@ -255,7 +255,7 @@ ninja_monitor.shがassigned/acknowledged状態で10分以上idle化した忍者�
 | review_gate.done | review_gate.sh | implement時 |
 | report_merge.done | report_merge.sh | recon時 |
 
-完了フロー: lesson.done → archive.done → cmd_complete_gate.sh → CLEAR/BLOCK → **自己採点** → **軍師GATEフィードバック** → **status→completed**
+完了フロー: lesson.done → archive.done → cmd_complete_gate.sh → CLEAR/BLOCK → **軍師GATEフィードバック** → **status→completed**
 
 ### cmd status→completed遷移（GATE CLEAR後必須）
 
@@ -267,9 +267,7 @@ bash scripts/lib/yaml_field_set.sh queue/shogun_to_karo.yaml "{cmd_id}" status c
 
 
 → GATE詳細手順: `instructions/karo-procedures.md`
-  - §1 cmd完了時自己採点（karo_workaround）
   - §2 workaround軍師フィードバック・CI緑維持・GATEフィードバック通知
-  - §3 ラルフループ自動修復（穴検出WARN→即配備）
   - §4 gate穴検出3問の処理手順
 
 ## Deployment Checklist（要約）
@@ -411,10 +409,6 @@ command: "直近30日のパフォーマンス推移を計測し結果を報告�
 - **Dependencies**: blocked_by→status:blocked(inbox不要)。完了→unblock→assigned
 - **Completion Summary**: AC3個以上のcmdを完了扱いにする際は、報告に統合サマリテーブルを必ず含めよ。列は「達成事項」「先送り事項(not_in_scope)」「未決裁定(unresolved_decisions)」の3列固定とし、`instructions/shogun.md` の `not_in_scope` / `unresolved_decisions` 定義に合わせて deferred work を構造化して残せ。該当なしでも「なし」と明記し、session跨ぎで論点を消失させるな
 - **Dashboard**: 殿が自分で見るもの（殿裁定2026-04-26）。将軍の情報源ではない。AUTO域は自動(`dashboard_auto_section.sh`)。KARO域(`KARO_SECTION_START`〜`END`)のみ家老が更新。テンプレ:`config/dashboard_template.md` v3.0
-- **軍師レビュー精度表示**: KARO_SECTIONに以下を表示。`logs/gunshi_review_log.yaml`から算出:
-  - accuracy = (APPROVE→CLEAR + REQUEST_CHANGES→修正後CLEAR) / 全レビュー数
-  - APPROVE→FAIL件数（見落とし率）
-  - 更新タイミング: review_feedback送信後のダッシュボード更新時
 - **🚨要対応**: `pending_decision_write.sh`経由のみ
 - **ntfy**: cmd=`ntfy_cmd.sh`、他=`ntfy.sh`。Gistリンク必須。設定:`config/settings.yaml`
 - **Model切替**: `inbox_write {ninja} "/model <model>" model_switch karo`
@@ -468,7 +462,7 @@ CI RED修正は1名が担当し、残りは通常作業を継続。
 | 0 | **修行配備(殿指示時のみ)** | `context/training-cycle.md` | **殿の明示的指示がある時のみ**修行を配備(LK007)。トークン消費=殿のリアルマネー。家老に予算権限なし。殿指示なしのidle時はStep 1(分析・思考)へ直行せよ |
 | 0.5 | **§0.1判断4問チェック** | `context/karo-operations.md` §0.1 | **修行結果・分析・報告の前に必ず4問を通せ。配備だけで満足するな。** |
 | 0.7 | **startup gate ALERT即修正** | `gate_karo_startup.sh`出力 | **ALERT=バグ。「確認した」で閉じるな。** 根因調査→修正→commitまで回せ。「問題なし」「正当」「今後計測」は先送りの隠語(LK001: 2026-06-09 WARN率55%+偽陽性87%放置事故) |
-| 1 | **workaroundパターン分析** | `logs/karo_workarounds.yaml` 直近10件 | 繰り返す手動修正→template/gate改善の種。同じroot_cause 3回以上=gate化対象 |
+| 1 | **workaroundパターン分析** | `logs/karo_workarounds.yaml` 直近10件 | 繰り返す手動修正の具体的な原因を一次確認 |
 | 2 | **忍者品質プロファイル** | `gate_ninja_workaround_rate.sh --ninja X` | 個別忍者のWA率推移→弱点特定→教訓注入精度向上 |
 | 3 | **教訓有効性監査** | `projects/{id}/lessons*.yaml` + `logs/lesson_impact.tsv` | 有用率0%の教訓→deprecated/限定化。不要注入=忍者CTX浪費。impact.tsvで注入率/参照率/効果率を定量確認 |
 | 4 | **deploy_task.sh注入品質** | 直近5配備のrelated_lessons | 注入された教訓が実際に使われたか。tag matchingの精度 |

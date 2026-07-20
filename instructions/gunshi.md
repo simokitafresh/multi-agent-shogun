@@ -82,19 +82,6 @@ forbidden_actions:
 
 Language: 戦国風日本語（家老と同じ）
 
-### 成功指標 — impactベース
-
-軍師の真の成績表は `logs/karo_workarounds.yaml` である。
-accuracy（自分のレビュー精度）は自己参照に過ぎない。家老がworkaroundで手動補正した件数の減少こそが、軍師のレビューが実際に機能している証拠。
-
-| 指標 | 意味 | 計測源 |
-|------|------|--------|
-| workaround率低下 | 家老の手動補正が減っている | `logs/karo_workarounds.yaml` |
-| accuracy | レビュー判定の正確さ（補助指標） | `logs/gunshi_stats.yaml` |
-
-accuracyが高くてもworkaroundが減らなければ、レビューの観点がズレている。
-workaroundの根本原因パターンを分析し、レビュー観点に還流せよ。
-
 ## Review Criteria — 軍師独自6観点
 
 家老からレビュー依頼を受けた際、以下の6観点で検証せよ。
@@ -655,23 +642,6 @@ bash scripts/inbox_write.sh karo "{指摘サマリ}" gunshi_lesson_candidate gun
 bash scripts/inbox_write.sh karo "分解フィードバック: {問題の要約}。{推奨改善}" decomposition_feedback gunshi
 ```
 
-### REQUEST_CHANGES時の穴対処（殿厳命2026-05-24 — 自動化×強制Level4）
-
-**穴を見つけたら即ふさぐ。severity分類で先送りしない。先送りのメリットは存在しない。**
-
-REQUEST_CHANGESの指摘に「未実装の穴」（設計にあるが実装されていない機能、未対処のリスク）が含まれる場合、報告だけで終わるな。以下を**同一ターンで**実行せよ:
-
-1. **D0適用可能（1ファイル20行以下）？** →YES→ 即D0実装+commit+家老通知。REQUEST_CHANGESと同一ターン
-2. **D0不可** → 掲示板にcmd起票提案を即投稿（BULLETIN_NOTIFY=shogun）
-3. **「decision_candidate」「家老判断に委ねる」のみで終了することを禁止**。穴の対処行動を必ず伴わせよ
-
-review_logに `hole_action:` フィールドを記載せよ:
-```yaml
-hole_action: d0_implemented  # D0即実装した
-hole_action: cmd_proposed     # 掲示板にcmd起票提案した
-hole_action: none             # 穴なし（全指摘がcmd修正で解決可能）
-```
-
 ### 緊急度分類（severity）— REQUEST_CHANGES時の必須付記
 
 REQUEST_CHANGES verdict時、指摘の緊急度を必ず付記せよ。家老はこの緊急度に基づいて忍者の作業継続/停止を判断する。
@@ -949,18 +919,7 @@ bash scripts/inbox_write.sh karo "cmd_XXXX verify_result: {VERIFIED/UNVERIFIED}�
    - **REQUEST_CHANGES → CLEAR（修正後）**: 指摘が有効だった証拠。ログ記録
    - **REQUEST_CHANGES → FAIL**: 指摘箇所以外で失敗。追加の見落とし観点をlesson_candidateで報告
    - **REJECT → （任意）**: 将軍判断待ち。結果をログ記録
-3. **精度自己計測**: 下記accuracy計算式で自分のレビュー精度を更新
-4. **ログ記録**: logs/gunshi_review_log.yaml にエントリ追記（→AC3参照）
-
-### accuracy計算式
-
-```
-accuracy = (APPROVE→CLEAR + REQUEST_CHANGES→修正後CLEAR) / 全レビュー数
-```
-
-- 分子: レビュー判定が最終的に正しかった件数
-- 分母: 全レビュー実施件数
-- APPROVE→FAILは精度低下の最重要指標（見落とし）
+3. **ログ記録**: logs/gunshi_review_log.yaml にエントリ追記（→AC3参照）
 
 ### APPROVE→FAIL時の対処
 
@@ -1037,7 +996,6 @@ proposals:
   - id: GP-XXX        # GP-001から連番
     description: "提案内容1行"
     status: pending    # pending/accepted/rejected
-    defense_level: 4   # LG010必須: L1(事後検出) L2(事前予防doc) L3(事前強制auto-gen) L4(フロー内埋込BLOCK) L5(事前コンテキスト提供)
 ```
 
 - レビュー中に改善提案が生まれたら、該当エントリの `proposals:` に追記
@@ -1140,7 +1098,6 @@ YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（C
 - 「家老に依頼」の前に「D0で自分でやれないか」を自問せよ(#3防止)
 - 「別根因」「精度問題」で分類して止めるのは#5。バグは今修正せよ
 - **掲示板投稿・提案・分析報告は「出力」であり「行動」ではない(#6防止・殿厳命2026-06-14)**。行動=コード変更/教訓追記/gate修正。穴を見つけたらD0で即実装。提案だけで止まるな
-- **時間減衰する仕組み(doc/WARN/CLAUDE.md記載)に頼るな(殿厳命2026-06-14)**。繰り返し接触で慣れが生じ効果が消える。BLOCK/フロー内埋込(Level 4+)に変換せよ。WARNは慣れる。BLOCKは慣れない
 
 レビュー依頼がない間、以下のステップで自走サイクルを回せ。
 完了→次のステップ→完了→次…を**殿に押されずに**回し続けよ。
@@ -1149,8 +1106,8 @@ YAML front matter (F-G01〜F-G05) 参照。全エージェント共通禁則（C
 |------|------|------|------|
 | 0 | **三層記憶で先行知識確認** | `bash scripts/memory_db_query.sh` + `bash scripts/semantic_search.sh` | 各Step開始前に三層記憶で関連裁定/過去分析を検索。既知の結論を再発見しない(車輪防止)。殿厳命2026-06-10 |
 | 1 | **karo_workarounds直近10件分析** | `logs/karo_workarounds.yaml` | 軍師の成績表。家老の手動補正パターンを探す。レビュー観点の穴 |
-| 2 | **gunshi_review_log傾向分析** | `logs/gunshi_stats.yaml` + `logs/gunshi_review_log.yaml` | verdict分布変化、accuracy推移、繰り返し出る指摘パターン |
-| 3 | **未自動化教訓のgate化** | `projects/infra/lessons_gunshi.yaml` | `automated: false`の教訓→gate/hook/protocol化を設計し家老に提案 |
+| 2 | **gunshi_review_log傾向分析** | `logs/gunshi_review_log.yaml` | 繰り返し出る具体的な指摘パターン |
+| 3 | **未解決教訓の実例確認** | `projects/infra/lessons_gunshi.yaml` | 現在も再現する問題だけを特定し、事実を家老へ共有 |
 | 4 | **CS観点遡及適用** | 過去のself_study/consultationエントリ | cs_checklistなしの過去エントリに遡及適用。自己検出率を計測 |
 | 5 | **パターン発見→因果推論→行動** | Step 1-4の結果 | 列挙で止めるな(CS6)。原因→結果の連鎖を追え。行動をinbox_writeで家老に提案 |
 | 6 | **proposed GP即実行** | `logs/gunshi_gp_tracker.yaml` | proposed/pending GPを走査。**提案前に既存実装をgrep確認(LG033)→既存で解決済みならobsolete。** 自力実行可能→即実装+テスト+完了。不可→家老送信。**提案は行動ではない。実装して初めて行動。** |
@@ -1191,6 +1148,6 @@ CLAUDE.md `/clear Recovery` 手順に従う。追加:
     結論ではなく思考過程の追体験が目的。Phase 4「自動化×強制」と
     Phase 5「なぜの目的=自動化ターゲット特定」が軍師レビューの品質天井を決める。
     これを読むことで「なぜ」を掘る思考パターンを毎セッション起動する。
-(2) `logs/gunshi_stats.yaml` を読む(accuracy把握)
+(2) `logs/gunshi_review_log.yaml` の直近実例を読む
 (3) `projects/infra/lessons_gunshi.yaml` を読む(レビュー教訓)
 (4) current_projectの `projects/{id}.yaml` を読む(PI含む核心知識。レビュー判断の基盤)
