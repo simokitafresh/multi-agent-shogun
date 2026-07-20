@@ -8,7 +8,10 @@ updated textually so comments, ordering, and scalar styles remain unchanged.
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Iterable
 
@@ -109,8 +112,18 @@ def select(task: dict, lessons: list[dict], semantic: dict[str, set[str]], limit
 def replace_section(task_bytes: bytes, related: list[dict]) -> bytes:
     """Replace only task.related_lessons, preserving every unrelated byte."""
     text = task_bytes.decode("utf-8")
-    block = yaml.safe_dump({"related_lessons": related}, allow_unicode=True, sort_keys=False).rstrip().splitlines()
-    replacement = "\n".join("  " + line for line in block)
+    lines = ["  related_lessons:"]
+    for lesson in related:
+        lines.extend(
+            (
+                f"  - id: {json.dumps(str(lesson['id']), ensure_ascii=False)}",
+                f"    summary: {json.dumps(str(lesson['summary']), ensure_ascii=False)}",
+                f"    detail: {json.dumps(str(lesson['detail']), ensure_ascii=False)}",
+            )
+        )
+    if not related:
+        lines[0] += " []"
+    replacement = "\n".join(lines)
     pattern = re.compile(r"(?ms)^  related_lessons:(?:.*?)(?=^  [A-Za-z_][A-Za-z0-9_]*:|\Z)")
     if pattern.search(text):
         text = pattern.sub(replacement + "\n", text, count=1)
@@ -143,7 +156,19 @@ def main() -> int:
         Path(args.semantic_index).read_bytes() if args.semantic_index else None,
     )
     for path, result in zip(task_paths, results):
-        path.write_bytes(result)
+        fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(result)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, path)
+        except BaseException:
+            try:
+                os.unlink(temporary)
+            except FileNotFoundError:
+                pass
+            raise
     return 0
 
 

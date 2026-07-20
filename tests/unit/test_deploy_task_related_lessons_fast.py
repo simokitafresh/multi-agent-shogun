@@ -6,6 +6,7 @@ ambiguous-term, target_files, and semantic-boost parity at the helper boundary.
 import importlib.util
 import os
 import subprocess
+import sys
 import statistics
 import time
 from pathlib import Path
@@ -99,6 +100,9 @@ def _legacy_outputs(tmp_path, fixtures):
 
 
 def test_contract_fixtures_and_performance(tmp_path, capsys):
+    source = MODULE.read_text()
+    assert "yaml." + "safe_dump" not in source
+    assert "yaml." + "dump" not in source
     fixtures = [
         task(description="database timeout handling retry backend transaction recovery", target_path="backend/db.py"),
         task(description="unrelated words"),
@@ -119,3 +123,24 @@ def test_contract_fixtures_and_performance(tmp_path, capsys):
     median = statistics.median(timings)
     assert median < 2772
     print(f"TOTAL=5 FAIL=0 SKIP=0 median_ms={median:.3f} PASS fixed_sha=9dd8e58d319c")
+
+
+def test_cli_publishes_with_same_directory_atomic_replace(tmp_path, monkeypatch):
+    task_path = tmp_path / "task.yaml"
+    lessons_path = tmp_path / "lessons.yaml"
+    task_path.write_bytes(task(description="unrelated words"))
+    lessons_path.write_bytes(LESSONS)
+    calls = []
+    real_replace = fast.os.replace
+
+    def observed_replace(source, target):
+        calls.append((Path(source), Path(target)))
+        return real_replace(source, target)
+
+    monkeypatch.setattr(fast.os, "replace", observed_replace)
+    monkeypatch.setattr(sys, "argv", [str(MODULE), "--task", str(task_path), "--lessons", str(lessons_path)])
+    assert fast.main() == 0
+    assert len(calls) == 1
+    assert calls[0][0].parent == calls[0][1].parent == tmp_path
+    assert calls[0][1] == task_path
+    assert not list(tmp_path.glob(".task.yaml.*.tmp"))
