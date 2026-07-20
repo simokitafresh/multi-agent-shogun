@@ -277,6 +277,28 @@ YAML
     [[ "$output" == *$'\thigh\tfalse' ]]
 }
 
+# test_necessity: an active task is delivered once to each new CLI process generation and never duplicated within one generation.
+@test "task publication fingerprint replays once after respawn generation changes" {
+    local root="$TEST_TMPDIR/root_generation"
+    mkdir -p "$root/queue/tasks"
+    cat > "$root/queue/tasks/test_agent.yaml" <<'YAML'
+task:
+  task_id: task_generation_fixture
+  deployed_at: "2026-07-21T00:00:00"
+YAML
+    run bash -c '
+      SHOGUN_STATE_DIR="$1/state" INBOX_WATCHER_LIB_ONLY=1 source "$2" test_agent fixture-pane
+      SCRIPT_DIR="$1"; PANE_TARGET=fixture-pane
+      respawn_recovery_generation() { printf "%s\n" "$FIXTURE_GENERATION"; }
+      FIXTURE_GENERATION=101:1001; a=$(task_publication_fingerprint); b=$(task_publication_fingerprint)
+      FIXTURE_GENERATION=202:2002; c=$(task_publication_fingerprint); d=$(task_publication_fingerprint)
+      printf "%s\n%s\n%s\n%s\n" "$a" "$b" "$c" "$d"
+      [ "$a" = "$b" ] && [ "$c" = "$d" ] && [ "$a" != "$c" ]
+    ' _ "$root" "$WATCHER_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | grep '^task-' | sort -u | wc -l)" -eq 2 ]
+}
+
 # --- T-SW-001: self-watch active → skip nudge ---
 
 @test "T-SW-001: send_wakeup skips nudge when agent has active self-watch" {

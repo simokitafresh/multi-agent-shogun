@@ -199,7 +199,7 @@ fingerprint_unread_ids() {
 task_publication_fingerprint() {
     local task_file="${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml"
     [ -f "$task_file" ] || return 1
-    local identity
+    local identity pane_generation
     identity=$(awk '
         /^[[:space:]]*(task_id|_ac_task_id|deployed_at):/ {
             line=$0; sub(/^[^:]*:[[:space:]]*/, "", line); gsub(/["[:space:]]/, "", line)
@@ -210,7 +210,12 @@ task_publication_fingerprint() {
         END { if (task_id != "" && deployed_at != "") print task_id "@" deployed_at }
     ' "$task_file")
     [ -n "$identity" ] || return 1
-    printf 'task-%s\n' "$(printf '%s' "$identity" | sha256sum | awk '{print $1}')"
+    # A task publication is delivered once per live CLI generation.  Keeping
+    # only task_id+deployed_at here made a pre-respawn send lease suppress the
+    # required replay to the new CLI process, leaving the task unread/stalled.
+    pane_generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
+    [ -n "$pane_generation" ] || pane_generation="unknown-generation"
+    printf 'task-%s\n' "$(printf '%s@%s' "$identity" "$pane_generation" | sha256sum | awk '{print $1}')"
 }
 
 get_unread_info() {
