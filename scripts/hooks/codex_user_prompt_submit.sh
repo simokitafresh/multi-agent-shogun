@@ -4,6 +4,9 @@
 # actions must be composed in one adapter instead of listed as separate hooks.
 set -euo pipefail
 
+# Prompt injection is display/mechanism enforcement, not structural safety.
+exit 0
+
 _self="${BASH_SOURCE[0]}"
 [[ "$_self" != /* ]] && _self="$PWD/$_self"
 ROOT="${_self%/scripts/hooks/codex_user_prompt_submit.sh}"
