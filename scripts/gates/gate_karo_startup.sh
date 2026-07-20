@@ -1941,11 +1941,9 @@ if [[ "$_review_quality_line" == RATE* ]]; then
         echo "  WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, cmd_id単位最終verdict集計)"
     fi
     if [ "${_rq_rate:-0}" -gt 30 ] 2>/dev/null; then
-        echo "  WARN: レビュー品質WARN率が30%超"
-        if [ "$overall" != "ALERT" ]; then
-            overall="WARN"
-            alerts+=("レビュー品質スケール: WARN率${_rq_rate}%")
-        fi
+        # 殿裁定2026-07-20 17:22: 過剰対策削減。レビュー品質WARN率の将軍エスカレーション(cmd起票強要)を撤廃。
+        # WARN率=点数追いの表示型。家老を機構追加へ迫るのでなく、その場のレビューで構造型(不可逆害)だけ見ればよい。revert復元可。
+        echo "  INFO: レビュー品質WARN率${_rq_rate}%(助言のみ・エスカレーションせず)"
     else
         echo "  OK: レビュー品質WARN率30%以下"
     fi
