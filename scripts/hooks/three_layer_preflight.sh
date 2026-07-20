@@ -566,8 +566,7 @@ resolve_rg() {
 }
 
 verify() {
-    local tool_name="$1" target="${2:-}" command="${3:-}" parsed_status verify_started_ms verify_rc=0
-    verify_started_ms="$(date +%s%3N)"
+    local tool_name="$1" target="${2:-}" command="${3:-}" parsed_status verify_rc=0
     mkdir -p "$EVIDENCE_DIR"
     if [[ "$tool_name" == "Bash" ]] && is_allowed_read_only_bash "$command"; then
         return 0
@@ -579,9 +578,6 @@ verify() {
         target_real="$(realpath -m -- "$target")"
         [[ "$target_real" == "$root_real"/* ]] || return 0
     fi
-    # Read the two-file generation under the same lock used by invalidation and
-    # publish.  This prevents verify from observing the rename boundary between
-    # evidence JSON and its nonce while concurrent issue calls are active.
     parsed_status="$(
       {
         flock -s 9
@@ -613,9 +609,10 @@ PY
       } 9>"$publish_lock"
     )" || verify_rc=$?
     if [[ "$verify_rc" -ne 0 ]]; then
-        record_fail_open_warn "evidence_rc_${verify_rc}" "$tool_name" "$target" "$verify_started_ms"
-        echo "WARN: 三層preflight証跡が無効または失敗状態（fail-open、計測記録済み）。三層検索は bash scripts/hooks/three_layer_preflight.sh issue \"<今の作業内容1行>\" で再発行できる" >&2
-        return 0
+        # fail-closed復元(殿裁定2026-07-21「作業前探索の強制が最重要・即時復旧」)。
+        # 必須の構造強制(不可逆な"記憶ボロボロ"害を防ぐ、Read-before-Edit同型)であり過剰制限ではない。
+        echo "BLOCK: 三層preflight証跡が無効または失敗状態。作業前に三層記憶検索を完了せよ。復旧: bash scripts/hooks/three_layer_preflight.sh issue \"<今の作業内容1行>\" で再発行せよ" >&2
+        return 1
     fi
     [[ "$parsed_status" == success ]]
 }
