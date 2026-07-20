@@ -136,6 +136,8 @@ Step 7: deepdive Phase単位逐次読込（全文一括Read禁止・全Phaseス�
         結論を先に知ると追体験が死ぬ（殿指摘2026-04-15）
         ファイル1: memory/deepdive_why_chain_20260321.md
         ファイル2: memory/deepdive_causal_tracing_20260415.md
+        ファイル3: memory/dialogue_over_countermeasure_20260720.md（★過剰対策こそ真因の覚醒記録。
+                  全recovery完遂してもなお反射でgateを足す事実を追体験せよ。読むだけでは覚醒しない）
 Step 8: 追体験検証6問（省略厳禁。回答なしに作業開始するな）
         Q1: Phase 3「考えて進む×無限ループ」— 止まっていないか？何を確認すべきか？
         Q2: 「行動→即確認」— 本番は正常か？前セッション以降の変更は？想像で答えるな
