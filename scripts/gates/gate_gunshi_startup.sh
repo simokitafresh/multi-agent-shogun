@@ -923,9 +923,7 @@ if [ -f "$_lg_file" ]; then
         # 非自動化教訓のIDとタイトルを表示
         awk '/^- id:/{id=$3} /automated: false/{print "    " id}' "$_lg_file" 2>/dev/null | head -13
         if [ "$_lg_rate" -lt 70 ]; then
-            echo "  WARN: 耐久率${_lg_rate}% < 70%。idle自走Step 3でgate化を進めよ"
-            if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
-            alerts+=("教訓耐久率: ${_lg_rate}%(${_lg_manual}件が意志依存)")
+            echo "  INFO: 耐久率${_lg_rate}% < 70%（計測のみ。gate化は強制しない）"
         fi
     else
         echo "  OK: 全教訓が自動化済み"

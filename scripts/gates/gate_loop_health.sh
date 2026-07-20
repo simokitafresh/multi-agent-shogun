@@ -3,7 +3,7 @@
 # 目的: gate発火ログから成熟パターンを検出し、auto-fix追加候補を提案
 # 三層学習ループの第三層を自己進化させる: 発火→分析→成熟提案→新gate/auto-fix
 # Usage: bash scripts/gates/gate_loop_health.sh
-# Exit: 0=OK, 1=要対応(繰返しFAILパターンあり)
+# Exit: 0=情報提供完了。成熟提案は表示するが機構追加を強制しない
 
 set -e
 
@@ -156,20 +156,20 @@ if reason_counter_all:
     print()
 
 # --- Maturation recommendations ---
-print('=== 成熟提案 ===')
+print('=== 頻出パターン計測 ===')
 recommendations = []
 
 # Check for patterns that fire > 5 times and are auto-fixable (直近INSIGHT_WINDOW)
 for pattern, count in reason_counter.most_common():
     if count >= 5:
         if 'is dict (must be list)' in pattern:
-            recommendations.append(f'UPGRADE: "{pattern}" ({count}回) → gate_report_autofix.shにdict→list変換追加')
+            recommendations.append(f'FORMAT: "{pattern}" ({count}回)')
         elif pattern.startswith('binary_checks.ACx') and '.result: 空文字' in pattern:
-            recommendations.append(f'QUALITY: "{pattern}" ({count}回) → 値の推定auto-fix禁止。deploy_taskテンプレート警告・report_field_set導線・L1修行サイクルでresult記入を強制せよ')
+            recommendations.append(f'QUALITY: "{pattern}" ({count}回)')
         elif pattern.startswith('verdict: "" is not valid'):
             recommendations.append(f'QUALITY: "{pattern}" ({count}回) → binary_checks未記入時の副次症状(cmd_1614/L992でGP-107判定済み・意図的BLOCK)。値の推定auto-fix禁止。binary_checks全項目記入で自動導出され解消する')
         elif 'MISSING' in pattern and count >= 10:
-            recommendations.append(f'INVESTIGATE: "{pattern}" ({count}回) → テンプレート導線/事前警告を強化。空欄を有効値で隠す補完は禁止')
+            recommendations.append(f'MISSING: "{pattern}" ({count}回)')
 
 if recommendations:
     for r in recommendations:
@@ -242,9 +242,8 @@ if len(recent_ctx_rows) >= 5:
                 f'(ctx_pct={row["ctx_pct"]}%, median={median_ctx:.1f}%, ratio={ratio:.2f}x, delta=+{delta:.1f}pt)'
             )
 
-# === Auto-insight generation: recurring patterns → queue/insights.yaml ===
-# Phase 4原則: 理解だけでは行動は変わらない → 自動化×強制
-# 成熟候補を自動でinsight起票し、アクション強制
+# === Recurring pattern inventory (informational only) ===
+# Decontamination: gate計測から機構追加タスクを自動起票しない。
 insights_file = os.path.join(repo_root, 'queue', 'insights.yaml')
 existing_insights = set()
 try:
@@ -264,7 +263,7 @@ except Exception:
 
 new_insights = []
 # 時系列原則: insight生成は直近INSIGHT_WINDOWエントリのみ(解決済みパターンの再起票防止)
-for pattern, count in reason_counter.most_common():
+for pattern, count in []:
     if count < 5:
         continue
     # Build insight message
@@ -514,11 +513,11 @@ if fail_count > 0:
         sys.exit(0)
     recent_total = len(recent_entries)
     if recent_total >= 10 and recent_fail_count > recent_total * 0.3:
-        print('  WARNING: FAIL率30%超。gate強化を検討せよ。新auto-fixパターン追加はGP-107(消火4問)で判定必須')
-        sys.exit(1)
+        print('  INFO: FAIL率30%超。傾向を計測（機構追加は強制しない）')
+        sys.exit(0)
     elif format_fail_recent > 0:
-        print(f'  WARNING: フォーマット系FAIL {format_fail_recent}件が未auto-fix。新フォーマットパターンの成熟提案を確認せよ')
-        sys.exit(1)
+        print(f'  INFO: フォーマット系FAIL {format_fail_recent}件を計測（機構追加は強制しない）')
+        sys.exit(0)
     elif quality_fail_recent > 0:
         print(f'  INFO: 品質系FAIL {quality_fail_recent}件は意図的BLOCK(GP-107撤去済み)。修行サイクルで対応')
         sys.exit(0)
