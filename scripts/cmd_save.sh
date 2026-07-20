@@ -6852,7 +6852,10 @@ check_new_file_structure_warning() {
 # 目的: WARNが出た=問題がある。次のcmdで同じWARNが出ないように環境に埋め込め。
 # Check 3.6(PRIOR_ATTEMPT_COUNT>0)は過去BLOCK後の再PASS用。こちらはWARN初回用。
 # 全チェック完了後に配置(WARNは後段のCheckで蓄積されるため)
-if (( WARN_COUNT > 0 )) && (( PRIOR_ATTEMPT_COUNT == 0 )); then
+# 殿裁定2026-07-20 17:22: 過剰対策削減。WARN→environment_change強制→BLOCK撤廃。
+#   WARNは助言のみとし起票を止めない。ミスは下流(家老レビュー+revert)が可逆回収する。
+#   「起こしてはいけないミス=過剰対策」(knowledge:579c33defd9e7dc9)。revertで完全復元可。
+if false && (( WARN_COUNT > 0 )) && (( PRIOR_ATTEMPT_COUNT == 0 )); then
     if load_cmd_block; then
         _ENV_CHANGE_WARN="$(awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}' <<< "$CMD_BLOCK_NC")"
         if [[ -z "$_ENV_CHANGE_WARN" ]]; then
@@ -6899,7 +6902,7 @@ if [[ ${#WARN_REASONS[@]} -gt 0 ]]; then
                 [[ "$_wid" == "$CMD_ID" ]] && (( _warn_prior_count++ )) || true
             done
         fi
-        if (( _warn_prior_count >= _WARN_ESCALATE_THRESHOLD )); then
+        if false && (( _warn_prior_count >= _WARN_ESCALATE_THRESHOLD )); then  # 殿裁定2026-07-20 17:22: WARN累計→BLOCK昇格撤廃(過剰対策削減。WARNは助言のみ。revert復元可)
             log_preflight_autolearn "$_warn_r" "$_warn_prior_count"
             if [[ -n "${_warn_prior_cmd_ids:-}" ]]; then
                 record_block_reason "WARN累計昇格: 「${_warn_r}」が${_warn_prior_count}回繰り返されています(cmd_ids=${_warn_prior_cmd_ids})。WARNを解消してからcmd_save.shを実行せよ"
