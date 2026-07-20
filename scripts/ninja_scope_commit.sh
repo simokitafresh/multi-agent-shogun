@@ -937,5 +937,25 @@ fi
 [[ ! -e "$shared_index_lock" ]] \
     || { echo "BLOCK: shared index lock remained after commit: $shared_index_lock" >&2; exit 1; }
 
+# commit_hash自動記入 (2026-07-20): GPT忍者がFIX COMMANDを4回無視しcommit_hash欠落で
+# 報告BLOCKを繰り返した。忍者の意志に依存せず、commit確定時点で報告YAMLへ機構が記入する
+# (真の強制=構造型)。report特定不能・記入失敗は従来動作のまま(WARNのみ)。
+_auto_agent="${NINJA_AGENT_ID:-$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)}"
+_auto_task_yaml="$NINJA_SCOPE_COMMIT_SCRIPT_DIR/../queue/tasks/${_auto_agent}.yaml"
+if [[ -n "$_auto_agent" && -f "$_auto_task_yaml" ]]; then
+    _auto_report="$(grep -m1 '^  report_path:' "$_auto_task_yaml" | sed "s/^  report_path:[[:space:]]*//; s/['\"]//g")"
+    if [[ -n "$_auto_report" ]]; then
+        _auto_report_abs="$_auto_report"
+        [[ "$_auto_report_abs" = /* ]] || _auto_report_abs="$NINJA_SCOPE_COMMIT_SCRIPT_DIR/../$_auto_report"
+        if [[ -f "$_auto_report_abs" ]]; then
+            if bash "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/report_field_set.sh" "$_auto_report_abs" commit_hash "$commit_hash" >&2; then
+                echo "AUTO: commit_hash=$commit_hash を報告YAMLへ自動記入 ($_auto_report)" >&2
+            else
+                echo "WARN: commit_hash自動記入失敗 — FIX COMMANDで手動記入せよ" >&2
+            fi
+        fi
+    fi
+fi
+
 publish_terminal_success "$commit_hash"
 trap - EXIT
