@@ -1417,8 +1417,8 @@ safe_send_clear() {
                 _fsc_respawn_ok=0
             fi
             _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
-            # config.toml復元(SSOT: cli_lookup.sh codex_config_restore)
-            codex_config_restore
+            # 殿裁定2026-07-21: config.tomlを正本のまま維持。restoreすると汚染値に戻るため廃止
+            # codex_config_restore
             if [ "$_fsc_respawn_ok" -ne 1 ]; then
                 log "CODEX-RESPAWN-VERIFY-FAIL: $agent_name ready handshake timed out; retry=next_cycle"
                 return 1
@@ -1429,19 +1429,7 @@ safe_send_clear() {
             tmux clear-history -t "$pane" 2>/dev/null || true
             tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
             log "CTX-RESET: $agent_name @context_pct → 0% after CODEX-RESPAWN"
-            # 殿裁定2026-07-21: modelは殿の指示以外で変えない。respawn後に正本modelを/modelで復元
-            local _expected_model _expected_effort
-            _expected_model=$(cli_profile_get "$agent_name" model_name 2>/dev/null || true)
-            if [ -n "$_expected_model" ]; then
-                # model_name format: gpt-5.6-sol-medium → model=gpt-5.6-sol, effort=medium
-                _expected_effort="${_expected_model##*-}"
-                _expected_model="${_expected_model%-*}"
-                sleep 2
-                tmux send-keys -t "$pane" "/model $_expected_model" Enter 2>/dev/null || true
-                sleep 1
-                tmux send-keys -t "$pane" "/effort $_expected_effort" Enter 2>/dev/null || true
-                log "MODEL-RESTORE: $agent_name /model $_expected_model /effort $_expected_effort"
-            fi
+            # 殿裁定2026-07-21: modelは殿の指示以外で変えない。config.tomlを正本のまま維持(restoreしない)
             rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
             return 0
         fi
