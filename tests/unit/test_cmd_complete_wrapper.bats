@@ -6,8 +6,8 @@ setup() {
     cp "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh" "$FIXTURE/scripts/cmd_complete.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/defense_overhead_writer.sh" \
         "$FIXTURE/scripts/lib/defense_overhead_writer.sh"
-    cp "$BATS_TEST_DIRNAME/../../scripts/lib/retro_verbatim_prompt.sh" \
-        "$FIXTURE/scripts/lib/retro_verbatim_prompt.sh"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/retro_pane_prompt.sh" \
+        "$FIXTURE/scripts/lib/retro_pane_prompt.sh"
     printf '{}\n' > "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json"
 
     cat > "$FIXTURE/scripts/review_bundle.py" <<'PY'

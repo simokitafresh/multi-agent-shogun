@@ -5,7 +5,7 @@ setup() {
     mkdir -p "$ROOT/scripts/gates" "$ROOT/scripts/lib" "$ROOT/queue/gates/cmd_resume" "$ROOT/queue/archive/cmds" "$ROOT/logs"
     cp "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh" "$ROOT/scripts/cmd_complete.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/defense_overhead_writer.sh" "$ROOT/scripts/lib/defense_overhead_writer.sh"
-    cp "$BATS_TEST_DIRNAME/../../scripts/lib/retro_verbatim_prompt.sh" "$ROOT/scripts/lib/retro_verbatim_prompt.sh"
+    cp "$BATS_TEST_DIRNAME/../../scripts/lib/retro_pane_prompt.sh" "$ROOT/scripts/lib/retro_pane_prompt.sh"
     printf '{"project":"infra","verdict":"APPROVE"}\n' > "$ROOT/queue/gates/cmd_resume/sg7_bundle.json"
     : > "$ROOT/logs/gate_metrics.log"
     for name in lesson_review cmd_complete_gate cmd_quality_log dashboard_update ntfy_cmd inbox_archive; do

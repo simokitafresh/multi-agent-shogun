@@ -153,8 +153,8 @@ self_retro_write_async {endpoint} {cmd_id} {wall_ms} '{{"review_bundle":{wall_ms
 '''
     subprocess.run(["bash", "-c", payload], cwd=root, check=False)
     subprocess.Popen(
-        ["bash", "-c", f'''source "{root / 'scripts/lib/retro_verbatim_prompt.sh'}"
-retro_verbatim_prompt_async "{root}" gunshi "review_bundle:{cmd_id}" review_bundle
+        ["bash", "-c", f'''source "{root / 'scripts/lib/retro_pane_prompt.sh'}"
+retro_pane_prompt_async "{root}" gunshi "review_bundle:{cmd_id}" review_bundle
 wait
 '''], cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )

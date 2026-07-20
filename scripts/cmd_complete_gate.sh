@@ -8545,8 +8545,8 @@ if [ "$ALL_CLEAR" = true ]; then
       "all command gates passed" "reduce dominant gate phase without weakening checks" \
       "CLEAR remains stable and duplicate event count is 0" \
       "[[gate_clear]] -> [[self_retro]] -> [[fix_known]]"
-    source "$SCRIPT_DIR/scripts/lib/retro_verbatim_prompt.sh"
-    retro_verbatim_prompt_async "$SCRIPT_DIR" shogun "gate_clear:$CMD_ID" cmd_complete_gate
+    source "$SCRIPT_DIR/scripts/lib/retro_pane_prompt.sh"
+    retro_pane_prompt_async "$SCRIPT_DIR" shogun "gate_clear:$CMD_ID" cmd_complete_gate
     append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tCLEAR\tall_gates_passed\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$GATE_CLEAR_TS" "$CMD_ID" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_DURATION_METRIC" "$GATE_THROUGHPUT_METRIC" "$GATE_CTX_METRIC" "$GATE_KARO_CTX_METRIC" "$GATE_FIRST_MODEL_METRIC")"
     log_skill_execution_pass "cmd-complete" "cmd_complete_gate" "$CMD_ID"
     (bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" >/dev/null 2>&1 || true) &

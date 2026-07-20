@@ -8427,11 +8427,14 @@ while true; do
         mkdir -p "$SCRIPT_DIR/queue/locks"
         exec {_retro_lock_fd}>"$SCRIPT_DIR/queue/locks/deploy_ninja_${_retro_ninja}.lock"
         flock -n "$_retro_lock_fd" || { eval "exec ${_retro_lock_fd}>&-"; continue; }
-        _retro_status=$(awk '/^[[:space:]]*status:/ {gsub(/["'\''[:space:]]/, "", $2); print $2; exit}' "$_retro_task" 2>/dev/null || true)
-        if ! [[ "$_retro_status" =~ ^(failed|blocked|idle|done)$ ]]; then eval "exec ${_retro_lock_fd}>&-"; continue; fi
+        if [ -f "$_retro_task" ]; then
+            _retro_status=$(awk '/^[[:space:]]*status:/ {gsub(/["'\''[:space:]]/, "", $2); print $2; exit}' "$_retro_task" 2>/dev/null || true)
+            if ! [[ "$_retro_status" =~ ^(failed|blocked|idle|done)$ ]]; then eval "exec ${_retro_lock_fd}>&-"; continue; fi
+        fi
         if [ -z "$_retro_pane" ] || ! check_idle "$_retro_pane" "$_retro_ninja"; then eval "exec ${_retro_lock_fd}>&-"; continue; fi
-        source "$SCRIPT_DIR/scripts/lib/retro_verbatim_prompt.sh"
-        if retro_verbatim_prompt_deliver "$SCRIPT_DIR" "$_retro_ninja" "$_retro_event_id" "$_retro_from"; then
+        source "$SCRIPT_DIR/scripts/lib/retro_pane_prompt.sh"
+        RETRO_PANE_TARGET="$_retro_pane" RETRO_PANE_IDLE_CHECK=true \
+            retro_pane_prompt_deliver "$SCRIPT_DIR" "$_retro_ninja" "$_retro_event_id" "$_retro_from"; then
             bash "$SCRIPT_DIR/scripts/retro_write.sh" mark-delivered \
                 "$_retro_ninja" "$_retro_event_id" "$(date -Iseconds)" >> "$LOG" 2>&1
             mkdir -p "$SCRIPT_DIR/queue/retro/verbatim_awaiting_answer"
