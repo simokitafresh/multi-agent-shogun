@@ -26,6 +26,40 @@ NINJA_SCOPE_COMMIT_SCRIPT_DIR="${NINJA_SCOPE_COMMIT_ORIGINAL_DIR:?snapshot origi
 # every exit path, including signals and fail-closed guards, leaves no temp
 # artifact while the current process continues reading the same inode.
 rm -f -- "${NINJA_SCOPE_COMMIT_SNAPSHOT_PATH:?snapshot path missing}"
+
+# The immutable snapshot starts before repository discovery and the regular
+# terminal ledger below.  A signal in this bootstrap window used to terminate
+# with no stdout, stderr, or ledger at all.  Keep this early ledger deliberately
+# dependency-free: it must also work while Git/DrvFS is the failing boundary.
+bootstrap_terminal_emitted=false
+bootstrap_run_id="${NINJA_SCOPE_COMMIT_RUN_ID:-bootstrap}"
+bootstrap_ledger_dir="${TMPDIR:-/tmp}/ninja-scope-bootstrap-ledger"
+mkdir -p -- "$bootstrap_ledger_dir"
+bootstrap_run_key="$(printf '%s' "$PWD:$bootstrap_run_id" | sha256sum | awk '{print $1}')"
+bootstrap_ledger="$bootstrap_ledger_dir/$bootstrap_run_key.ledger"
+
+publish_bootstrap_failure() {
+    local rc="${1:-1}" reason="${2:-EXIT}" tmp
+    [[ "$bootstrap_terminal_emitted" == false && "$rc" -ne 0 ]] || return 0
+    tmp="${bootstrap_ledger}.tmp.$$"
+    printf 'version=1\nrun_id=%s\ncommit_hash=none\nrc=%s\nphase=bootstrap\nreason=%s\ncomplete=false\n' \
+        "$bootstrap_run_id" "$rc" "$reason" > "$tmp"
+    mv -f -- "$tmp" "$bootstrap_ledger"
+    printf 'event=bootstrap_failed run_id=%s rc=%s reason=%s ledger=%s\n' \
+        "$bootstrap_run_id" "$rc" "$reason" "$bootstrap_ledger" >&2
+    bootstrap_terminal_emitted=true
+}
+
+handle_bootstrap_signal() {
+    local signal="$1" rc="$2"
+    publish_bootstrap_failure "$rc" "$signal"
+    exit "$rc"
+}
+
+trap 'publish_bootstrap_failure "$?" EXIT' EXIT
+trap 'handle_bootstrap_signal TERM 143' TERM
+trap 'handle_bootstrap_signal INT 130' INT
+trap 'handle_bootstrap_signal HUP 129' HUP
 if [[ -n "${NINJA_SCOPE_COMMIT_TEST_AFTER_SNAPSHOT_DELAY:-}" ]]; then
     sleep "$NINJA_SCOPE_COMMIT_TEST_AFTER_SNAPSHOT_DELAY"
 fi
@@ -295,6 +329,10 @@ publish_terminal_failure() {
     fi
     terminal_event_emitted=true
 }
+# Repository-backed terminal accounting now owns every remaining exit path.
+# Clear bootstrap signal handlers before replacing its EXIT handler so a later
+# signal is recorded exactly once by the regular ledger.
+trap - TERM INT HUP
 trap 'publish_terminal_failure "$?"' EXIT
 
 # A successful return is one terminal contract: the commit object exists, the
