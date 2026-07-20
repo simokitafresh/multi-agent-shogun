@@ -499,6 +499,33 @@ deploy_task_yaml_transaction_begin() {
     DEPLOY_TASK_YAML_TX_ARMED=1
 }
 
+deploy_task_yaml_transaction_prepare_report_repair() {
+    local source_file="$1"
+    local source_task_id source_parent source_type report_task_id report_parent report_type report_status report_verdict
+    [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" = "1" ] || return 0
+    [ -f "${DEPLOY_TASK_YAML_TX_REPORT:-}" ] || return 0
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$source_file" task_id parent_cmd task_type 2>/dev/null)" || true
+    source_task_id="${task_id:-}"
+    source_parent="${parent_cmd:-}"
+    source_type="${task_type:-normal}"
+    unset task_id parent_cmd task_type status verdict
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$DEPLOY_TASK_YAML_TX_REPORT" task_id parent_cmd task_type status verdict 2>/dev/null)" || true
+    report_task_id="${task_id:-}"
+    report_parent="${parent_cmd:-}"
+    report_type="${task_type:-normal}"
+    report_status="${status:-}"
+    report_verdict="${verdict:-}"
+    if [ "$source_task_id" = "$report_task_id" ] && [ "$source_parent" = "$report_parent" ] && [ "$source_type" = "$report_type" ]; then
+        return 0
+    fi
+    if [[ "$report_status" =~ ^(completed|done)$ ]] || [[ "$report_verdict" =~ ^(PASS|FAIL|PASS_NO_IMPROVEMENT)$ ]]; then
+        echo "BLOCK: terminal report identity differs from same-cmd repair source" >&2
+        return 1
+    fi
+    rm -f -- "$DEPLOY_TASK_YAML_TX_REPORT"
+    log "YAML-TRANSACTION: removed mismatched nonterminal report for same-cmd repair"
+}
+
 deploy_task_yaml_transaction_rollback() {
     [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" = "1" ] || return 0
     DEPLOY_TASK_EXIT_NUDGE_ARMED=0
@@ -10415,6 +10442,14 @@ should_skip_same_cmd_resolve() {
     [ -f "$task_file" ] || return 1
     [ -n "$requested_cmd" ] || return 1
 
+    # An explicit --yaml source is a repair request, even when parent_cmd is
+    # unchanged. Reusing the published task here also reuses its old report
+    # template and makes a partial same-cmd publication impossible to repair.
+    if [ -n "${YAML_FILE:-}" ]; then
+        log "same_cmd_redeploy: explicit YAML source forces atomic repair for ${requested_cmd}"
+        return 1
+    fi
+
     # Partial field extraction can succeed even when the task document is
     # malformed.  Reusing that document would skip stale reset/atomic --yaml
     # publication and make the corruption unrecoverable (GA-258).
@@ -11351,6 +11386,15 @@ deploy_task_main() {
     # arriving concurrently.  Hold the worker lock across every task/report
     # mutation and the durable task_start notification (GA-257).
     deploy_task_acquire_ninja_lock "$NINJA_NAME" || return 1
+    # Snapshot before normalization/issued_at or any other task/report write.
+    # A failed direct-YAML preflight must leave both published artifacts byte
+    # identical and must not arm a delivery side effect.
+    if [ -n "$CMD_ID" ] && [ "$DIRECT_MODE" = true ] && [ -n "$YAML_FILE" ]; then
+        deploy_task_yaml_transaction_begin "$task_yaml" "$YAML_FILE" "$NINJA_NAME" "$CMD_ID" || {
+            deploy_task_release_ninja_lock
+            return 1
+        }
+    fi
     if ! deploy_task_guard_retro_answer_hold "$NINJA_NAME"; then
         deploy_task_release_ninja_lock
         return 2
@@ -11470,10 +11514,6 @@ except Exception:
             # Validation-before-mutation: syntax, natural-boundary and required
             # source contracts must all pass while the current task is untouched.
             if [ "$DIRECT_MODE" = true ] && [ -n "$YAML_FILE" ]; then
-                deploy_task_yaml_transaction_begin "$task_yaml" "$YAML_FILE" "$NINJA_NAME" "$CMD_ID" || {
-                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
-                    return 1
-                }
                 [ "${DEPLOY_TASK_LIB_ONLY:-0}" = "1" ] || deploy_task_source_contract_precheck "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 2
@@ -11487,6 +11527,10 @@ except Exception:
                     return 2
                 }
                 deploy_task_direct_quality_contract_precheck "$YAML_FILE" || {
+                    deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                    return 1
+                }
+                deploy_task_yaml_transaction_prepare_report_repair "$YAML_FILE" || {
                     deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                     return 1
                 }
