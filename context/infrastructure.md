@@ -848,7 +848,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1263 -->
+<!-- last_synced_lesson: L1265 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1825,6 +1825,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1261: 子通知抑制は親の後発terminal証拠で限定（cmd_karo_hotfix_completion_gap_child_fp_202607212324）
 - L1262: ps args regexではdaemon identityを判定しない（cmd_karo_hotfix_watcher_inventory_delivery_202607220022）
 - L1263: context境界候補は完全setter入力まで自動供給する（cmd_karo_hotfix_ga313_context_freshness_202607220112）
+- L1264: context境界更新だけで参照欠落を隠さない（cmd_karo_hotfix_ga314_context_freshness_202607220442）
+- L1265: enqueue抑止の成功rcを後段送信許可と解釈するな（cmd_karo_hotfix_retro_exactly_once_recurrence_202607220455）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
