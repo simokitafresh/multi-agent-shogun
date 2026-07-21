@@ -11,8 +11,14 @@ EXPECTED_WATCHER_COUNT="${EXPECTED_WATCHER_COUNT:-9}"
 source "$SCRIPT_DIR/scripts/lib/daemon_maintenance_lock.sh"
 
 watcher_processes() {
-    ps -eo pid=,ppid=,args= 2>/dev/null | awk '
-        /(^| )bash .*\/inbox_watcher\.sh [a-z]/ {
+    # Match process identity, not an arbitrary occurrence in the argument text.
+    # `ps ... args` alone also sees this regex inside `bash -lc "..."`, while
+    # the old literal `bash` prefix misses the production `/bin/bash` argv[0].
+    # Linux exposes a script process as the truncated `inbox_watcher.s` comm;
+    # that identity + exact argv[0]/script argv positions rejects both cases.
+    ps -eo pid=,ppid=,comm=,args= 2>/dev/null | awk '
+        $3 ~ /^inbox_watcher/ && ($4 == "bash" || $4 ~ /\/bash$/) &&
+        $5 ~ /\/inbox_watcher\.sh$/ && $6 ~ /^[a-z][a-z0-9_-]*$/ {
             pid=$1; ppid=$2; watcher[pid]=1; parent[pid]=ppid; line[pid]=$0
         }
         END {
@@ -132,8 +138,9 @@ verify_watcher_count() {
     actual="$(watcher_process_count)"
     if [ "$actual" -ne "$expected" ]; then
         echo "ERROR: inbox_watcherプロセス数が不正です (actual=${actual}, expected=${expected})"
-        ps -eo pid=,ppid=,args= 2>/dev/null | awk '
-            /(^| )bash .*\/inbox_watcher\.sh [a-z]/ {
+        ps -eo pid=,ppid=,comm=,args= 2>/dev/null | awk '
+            $3 ~ /^inbox_watcher/ && ($4 == "bash" || $4 ~ /\/bash$/) &&
+            $5 ~ /\/inbox_watcher\.sh$/ && $6 ~ /^[a-z][a-z0-9_-]*$/ {
                 pid=$1; ppid=$2; watcher[pid]=1; parent[pid]=ppid; line[pid]=$0
             }
             END {

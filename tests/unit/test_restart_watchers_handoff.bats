@@ -82,3 +82,30 @@ echo "missing=0 duplicate=0 deliveries=1"
     grep -Fq 'if (!(parent[pid] in watcher)) print line[pid]' "$SCRIPT"
     ! grep -q 'inotify_count.*EXPECTED_WATCHER_COUNT' "$SCRIPT"
 }
+
+@test "watcher inventory accepts bash spellings and rejects command-text false positives" {
+    run awk '
+        $3 ~ /^inbox_watcher/ && ($4 == "bash" || $4 ~ /\/bash$/) &&
+        $5 ~ /\/inbox_watcher\.sh$/ && $6 ~ /^[a-z][a-z0-9_-]*$/ {
+            pid=$1; ppid=$2; watcher[pid]=1; parent[pid]=ppid; line[pid]=$0
+        }
+        END {
+            for (pid in watcher) if (!(parent[pid] in watcher)) print line[pid]
+        }
+    ' <<'PS'
+101 1 inbox_watcher.s /bin/bash /repo/scripts/inbox_watcher.sh karo pane
+102 101 inbox_watcher.s /bin/bash /repo/scripts/inbox_watcher.sh karo pane
+201 1 inbox_watcher.s bash /repo/scripts/inbox_watcher.sh saizo pane
+202 201 inbox_watcher.s bash /repo/scripts/inbox_watcher.sh saizo pane
+301 1 bash /bin/bash -lc ps | rg '/inbox_watcher.sh karo'
+401 999 inbox_watcher.s /bin/bash /repo/scripts/inbox_watcher.sh vanished pane
+PS
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | wc -l)" -eq 3 ]
+    [[ "$output" == *"101 1 inbox_watcher.s /bin/bash"* ]]
+    [[ "$output" == *"201 1 inbox_watcher.s bash"* ]]
+    [[ "$output" == *"401 999 inbox_watcher.s /bin/bash"* ]]
+    [[ "$output" != *"102 101"* ]]
+    [[ "$output" != *"202 201"* ]]
+    [[ "$output" != *"301 1"* ]]
+}
