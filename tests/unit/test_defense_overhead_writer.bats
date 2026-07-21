@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Twenty concurrent events produce complete unique parseable entries with correct classification; violation is BLOCK.
+# test_necessity: Concurrent ledger events stay complete and async self-retro owners drain every child before teardown; violation loses telemetry or races cleanup and is BLOCK.
 
 setup() {
   export TEST_TMP="$(mktemp -d)"
@@ -7,7 +7,10 @@ setup() {
   source "$BATS_TEST_DIRNAME/../../scripts/lib/defense_overhead_writer.sh"
 }
 
-teardown() { rm -rf "$TEST_TMP"; }
+teardown() {
+  self_retro_drain
+  rm -rf "$TEST_TMP"
+}
 
 @test "writes required schema and rejects invalid or duplicate events" {
   run defense_overhead_write deploy_task deploy_total 17 PASS evt-1
@@ -86,6 +89,19 @@ PY
   SELF_RETRO_LEDGER=/proc/forbidden/events.jsonl
   run self_retro_write_async ninja_report cmd_fallback 9 '{"write":9}' delivery_missing cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
   [ "$status" -eq 0 ]
+}
+
+@test "deep self-retro owner drains delayed async writers before teardown" {
+  export SELF_RETRO_LEDGER="$TEST_TMP/self-retro.jsonl"
+  self_retro_write() {
+    sleep 0.05
+    printf '{"done":true}\n' >"$SELF_RETRO_LEDGER"
+  }
+  self_retro_write_async ninja_report cmd_delayed 1 '{"write":1}' delayed cause candidate criterion '[[a]] -> [[b]] -> [[c]]'
+  [ ! -e "$SELF_RETRO_LEDGER" ]
+  self_retro_drain
+  [ "$(cat "$SELF_RETRO_LEDGER")" = '{"done":true}' ]
+  [ "${#SELF_RETRO_ASYNC_PIDS[@]}" -eq 0 ]
 }
 
 @test "all four terminal endpoints invoke detached deep self-retro" {

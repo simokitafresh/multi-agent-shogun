@@ -2,6 +2,7 @@
 # Common, sourceable JSONL writer for defense/gate timing events.
 
 DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+SELF_RETRO_ASYNC_PIDS=()
 
 defense_overhead_write() {
     local source_name="${1:-}" check_id="${2:-}" wall_ms="${3:-}"
@@ -108,5 +109,17 @@ PY
 self_retro_write_async() {
     local endpoint="${1:-}" task_id="${2:-}" wall_ms="${3:-}"
     ( self_retro_write "$@" || defense_overhead_write self_retro "${endpoint}" "${wall_ms:-0}" WARN "self-retro-fallback-${task_id}-${endpoint}" || true ) >/dev/null 2>&1 &
+    SELF_RETRO_ASYNC_PIDS+=("$!")
     return 0
+}
+
+# The shell that owns async self-retro submissions must drain them before it
+# tears down their ledger directory. Writer failures remain non-blocking, but
+# process lifetime is explicit instead of racing filesystem cleanup.
+self_retro_drain() {
+    local pid
+    for pid in "${SELF_RETRO_ASYNC_PIDS[@]}"; do
+        wait "$pid" || true
+    done
+    SELF_RETRO_ASYNC_PIDS=()
 }
