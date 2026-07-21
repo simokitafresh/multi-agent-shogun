@@ -18,6 +18,12 @@ setup_file() {
         printf '\n'
         sed -n '/^append_line_locked()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
+        sed -n '/^dispatch_gate_notification_async()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^send_high_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
+        sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
+        printf '\n'
         sed -n '/^log_gate_stderr_file()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^lesson_done_satisfies_lesson_candidate_registration()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -2835,6 +2841,66 @@ teardown_file() {
 reset_gate_state() {
     ALL_CLEAR=true
     BLOCK_REASONS=()
+}
+
+@test "gate notification dispatch is non-blocking, single-launch, and route preserving across five variants" {
+    source "$GATE_HELPERS_FILE"
+    local notify_root="$BATS_TEST_TMPDIR/notify-root"
+    local marker="$notify_root/launches"
+    local start_ns elapsed_ms before after
+    mkdir -p "$notify_root/scripts" "$notify_root/logs"
+    export SCRIPT_DIR="$notify_root"
+
+    write_notify_stub() {
+        local path="$1" delay="$2" code="$3"
+        cat > "$path" <<EOF
+#!/usr/bin/env bash
+printf '%s|%s\n' "\${0##*/}" "\$*" >> "$marker"
+sleep "$delay"
+exit "$code"
+EOF
+        chmod +x "$path"
+    }
+
+    assert_fast_single_launch() {
+        local expected_route="$1"
+        shift
+        before="$(wc -l < "$marker" 2>/dev/null || printf '0')"
+        start_ns="$(date +%s%N)"
+        "$@"
+        elapsed_ms=$(( ($(date +%s%N) - start_ns) / 1000000 ))
+        [ "$elapsed_ms" -lt 1000 ]
+        [ "$LAST_GATE_NOTIFY_ROUTE" = "$expected_route" ]
+        for _ in {1..20}; do
+            after="$(wc -l < "$marker" 2>/dev/null || printf '0')"
+            [ "$after" -eq $((before + 1)) ] && break
+            sleep 0.02
+        done
+        [ "$after" -eq $((before + 1)) ]
+    }
+
+    : > "$marker"
+    write_notify_stub "$notify_root/scripts/ntfy.sh" 5 0
+    assert_fast_single_launch "ntfy.sh" send_high_notification "slow success"
+
+    write_notify_stub "$notify_root/scripts/ntfy.sh" 0 0
+    assert_fast_single_launch "ntfy.sh" send_high_notification "immediate success"
+
+    write_notify_stub "$notify_root/scripts/ntfy.sh" 0 1
+    assert_fast_single_launch "ntfy.sh" send_high_notification "immediate failure"
+
+    write_notify_stub "$notify_root/scripts/ntfy.sh" 0.2 1
+    assert_fast_single_launch "ntfy.sh" send_high_notification "retry failure"
+
+    write_notify_stub "$notify_root/scripts/ntfy_batch.sh" 0 0
+    write_notify_stub "$notify_root/scripts/ntfy_cmd.sh" 0 0
+    assert_fast_single_launch "ntfy_batch.sh" send_info_cmd_notification cmd_test "batch message"
+    rm "$notify_root/scripts/ntfy_batch.sh"
+    assert_fast_single_launch "ntfy_cmd.sh" send_info_cmd_notification cmd_test "fallback message"
+
+    [ "$(grep -c '^ntfy_batch.sh|batch message$' "$marker")" -eq 1 ]
+    [ "$(grep -c '^ntfy_cmd.sh|cmd_test fallback message$' "$marker")" -eq 1 ]
+    [ "$(wc -l < "$marker")" -eq 6 ]
 }
 
 # Direct function-level triage decision helper (no full gate execution)

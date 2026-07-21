@@ -13,6 +13,7 @@ setup_file() {
     command -v python3 >/dev/null 2>&1 || return 1
 
     {
+        sed -n '/^dispatch_gate_notification_async()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^gate_clear_notify_dedup_key()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^shogun_gate_clear_already_notified()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -45,6 +46,7 @@ setup() {
     mkdir -p \
         "$TEST_BIN" \
         "$TEST_PROJECT/scripts" \
+        "$TEST_PROJECT/logs" \
         "$TEST_PROJECT/queue/inbox" \
         "$TEST_PROJECT/queue/tasks" \
         "$TEST_PROJECT/queue/reports"
@@ -571,6 +573,7 @@ EOF
 
     run send_info_cmd_notification "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了"
     [ "$status" -eq 0 ]
+    for _ in {1..20}; do [ -s "$notify_log" ] && break; sleep 0.02; done
     grep -q "ntfy_cmd:$TEST_CMD_ID:GATE CLEAR — $TEST_CMD_ID 完了" "$notify_log"
 
     : > "$notify_log"
@@ -583,7 +586,8 @@ EOF
 
     run send_info_cmd_notification "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了"
     [ "$status" -eq 0 ]
-    grep -q "ntfy_batch:$TEST_CMD_ID:GATE CLEAR — $TEST_CMD_ID 完了" "$notify_log"
+    for _ in {1..20}; do [ -s "$notify_log" ] && break; sleep 0.02; done
+    grep -q "ntfy_batch:GATE CLEAR — $TEST_CMD_ID 完了:" "$notify_log"
     ! grep -q "ntfy_cmd:" "$notify_log"
 }
 

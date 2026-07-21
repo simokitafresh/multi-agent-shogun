@@ -604,10 +604,27 @@ unset _report_cache_task_files _report_cache_file _report_cache_name _report_cac
 LAST_GATE_NOTIFY_ROUTE=""
 CLEAR_NOTIFICATION_SENT=false
 
+dispatch_gate_notification_async() {
+    local route="$1"
+    shift
+    local log_file="$SCRIPT_DIR/logs/cmd_complete_gate_async.log"
+
+    # Notification delivery is deliberately outside the completion decision.
+    # Match deploy_task.sh's fire-and-forget boundary so endpoint retries and
+    # ntfy_batch's bounded flock cannot delay or alter the gate result.
+    (
+        if ! bash "$@" >> "$log_file" 2>&1; then
+            printf '%(%Y-%m-%dT%H:%M:%S%z)T notification route=%s status=failed\n' -1 "$route" >> "$log_file"
+        fi
+    ) </dev/null &
+    return 0
+}
+
 send_high_notification() {
     local message="$1"
     LAST_GATE_NOTIFY_ROUTE="ntfy.sh"
-    bash "$SCRIPT_DIR/scripts/ntfy.sh" "$message"
+    dispatch_gate_notification_async "$LAST_GATE_NOTIFY_ROUTE" \
+        "$SCRIPT_DIR/scripts/ntfy.sh" "$message"
 }
 
 send_info_cmd_notification() {
@@ -617,10 +634,13 @@ send_info_cmd_notification() {
 
     if [ -x "$batch_script" ]; then
         LAST_GATE_NOTIFY_ROUTE="ntfy_batch.sh"
-        bash "$batch_script" "$cmd_id" "$message"
+        # ntfy_batch.sh accepts the message as its sole argument.
+        dispatch_gate_notification_async "$LAST_GATE_NOTIFY_ROUTE" \
+            "$batch_script" "$message"
     else
         LAST_GATE_NOTIFY_ROUTE="ntfy_cmd.sh"
-        bash "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$cmd_id" "$message"
+        dispatch_gate_notification_async "$LAST_GATE_NOTIFY_ROUTE" \
+            "$SCRIPT_DIR/scripts/ntfy_cmd.sh" "$cmd_id" "$message"
     fi
 }
 
