@@ -128,12 +128,11 @@ staged_hook_related_exists() {
 # Return 0 when the full synchronizer must run, 1 only for the proven-clean
 # fast path. Hash lookup failure deliberately falls back to synchronization.
 precommit_self_sync_required() {
-    local installed_hook="$1" source_hook source_hash installed_hash
+    local installed_hook="$1" source_hook
     staged_hook_related_exists && return 0
     source_hook="$REPO_ROOT/scripts/hooks/git-pre-commit.sh"
-    source_hash="$(sha256sum "$source_hook" 2>/dev/null | awk '{print $1}')"
-    installed_hash="$(sha256sum "$installed_hook" 2>/dev/null | awk '{print $1}')"
-    [[ -n "$source_hash" && -n "$installed_hash" && "$source_hash" == "$installed_hash" ]] || return 0
+    [[ -r "$source_hook" && -r "$installed_hook" ]] || return 0
+    cmp -s "$source_hook" "$installed_hook" || return 0
     return 1
 }
 
