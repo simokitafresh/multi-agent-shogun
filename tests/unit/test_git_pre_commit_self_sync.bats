@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # test_necessity: pre-commit self-sync must skip its full synchronizer only when
-# the installed hook equals HEAD and no hook-related path is staged; stale,
+# the installed hook equals the repo SSOT and no hook-related path is staged; stale,
 # staged, and unreadable identities must remain fail-closed sync decisions.
 
 setup() {
