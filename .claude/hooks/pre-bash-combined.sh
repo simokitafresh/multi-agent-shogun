@@ -775,7 +775,7 @@ for tokens in segments:
 PY
     } || printf '__CLASSIFY_ERROR__';)"
     if [[ "$_bats_direct_path" == "__CLASSIFY_ERROR__" ]]; then
-        emit_deny "BLOCK(bats-file-mode): shell commandを安全に解析できない。quote/escapeを修正し、単体testは bash scripts/run_tests.sh file <path> で実行せよ。"
+        emit_deny "BLOCK(shell-syntax): shell commandを安全に解析できない。quote/escapeを修正せよ。構文修正後に.bats直実行なら bash scripts/run_tests.sh file <path> を使え。"
     elif [[ -n "$_bats_direct_path" ]]; then
         emit_deny "BLOCK(bats-file-mode): .batsをbash/shで直接実行してはならない。修正: bash scripts/run_tests.sh file ${_bats_direct_path}"
     fi
