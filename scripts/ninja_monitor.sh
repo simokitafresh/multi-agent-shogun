@@ -6863,6 +6863,65 @@ refresh_karo_snapshot_fast_path() {
     write_karo_snapshot
 }
 
+# Publish one task generation without waiting for the monitor's potentially
+# long maintenance cycle.  deploy_task/status-transition writers call this
+# only after their atomic task YAML publication; the task file remains SSOT.
+refresh_karo_snapshot_task_assignment() {
+    local name="${1:-}"
+    [[ "$name" =~ ^[a-z][a-z0-9_]*$ ]] || return 2
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
+    local lock_file="${KARO_SNAPSHOT_LOCK_FILE:-/tmp/karo_snapshot.lock}"
+    [ -f "$task_file" ] || return 3
+
+    local task_id status project source_ts timestamp runtime_state
+    IFS='|' read -r task_id status project < <(awk '
+        BEGIN { t=""; s=""; p="" }
+        /^[ \t]*task_id:/ && t=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); t=v }
+        /^[ \t]*status:/ && s=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); s=v }
+        /^[ \t]*project:/ && p=="" { v=$0; sub(/^[^:]*:[ \t]*/,"",v); gsub(/'"'"'|"/,"",v); p=v }
+        END { print t "|" s "|" p }
+    ' "$task_file")
+    [ -n "$task_id" ] || task_id=none
+    [ -n "$status" ] || status=idle
+    [ -n "$project" ] || project=none
+    source_ts=$(date -r "$task_file" '+%Y-%m-%dT%H:%M:%S' 2>/dev/null || echo unknown)
+    printf -v timestamp '%(%Y-%m-%dT%H:%M:%S)T' -1
+    case "$status" in
+        assigned|acknowledged|in_progress|pending) runtime_state=busy ;;
+        *) runtime_state=idle ;;
+    esac
+
+    {
+        flock -x -w 5 200 || return 4
+        local tmp_file existing_line ctx_field model_field new_line
+        tmp_file=$(mktemp "${snapshot_file}.tmp.XXXXXX") || return 5
+        existing_line=$(awk -F'|' -v n="$name" '$1=="ninja" && $2==n { print; exit }' "$snapshot_file" 2>/dev/null || true)
+        ctx_field=$(awk -F'|' '{for(i=1;i<=NF;i++) if($i ~ /^CTX:/){print $i; exit}}' <<< "$existing_line")
+        model_field=$(awk -F'|' '{for(i=1;i<=NF;i++) if($i ~ /^M:/){print $i; exit}}' <<< "$existing_line")
+        ctx_field="${ctx_field:-CTX:?%}"
+        model_field="${model_field:-M:?}"
+        new_line="ninja|${name}|${task_id}|${status}|${project}|${ctx_field}|${model_field}|SRC:${source_ts}|TASK:${status}|RUNTIME:${runtime_state}"
+        awk -F'|' -v OFS='|' -v n="$name" -v generated="# Generated: $timestamp" \
+            -v replacement="$new_line" -v active="$status" '
+            BEGIN { replaced=0 }
+            /^# Generated:/ { print generated; next }
+            $1=="ninja" && $2==n { print replacement; replaced=1; next }
+            $1=="idle" {
+                count=split($2, names, ","); out=""
+                for (i=1; i<=count; i++) if (names[i] != n && names[i] != "none") out=(out=="" ? names[i] : out "," names[i])
+                if (active !~ /^(assigned|acknowledged|in_progress|pending|failed)$/) out=(out=="" ? n : out "," n)
+                print "idle", (out=="" ? "none" : out); next
+            }
+            { print }
+            END { if (!replaced) print replacement }
+        ' "$snapshot_file" > "$tmp_file" && mv "$tmp_file" "$snapshot_file" || {
+            rm -f "$tmp_file"
+            return 6
+        }
+    } 200>"$lock_file"
+}
+
 # ─── CLI死亡検知+自動再起動 (cmd_1851 + L821拡張) ───
 # 全エージェント(家老+軍師+忍者)のpane_current_commandを確認し、bash/zshならCLI死亡と判定。
 # L821: NINJA_NAMESのみだと家老/軍師が監視対象外(各論パッチ禁止。原理1行で全員カバー)。
@@ -8348,6 +8407,10 @@ check_all_codex_bypass_flags() {
 
 # ─── 初期ペイン探索 ───
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" = "1" ]; then
+    if [ "${1:-}" = "--refresh-snapshot-task" ]; then
+        refresh_karo_snapshot_task_assignment "${2:-}"
+        exit $?
+    fi
     # shellcheck disable=SC2317
     return 0 2>/dev/null || exit 0
 fi
