@@ -74,6 +74,7 @@ LOCK_FILE="${CMD_SAVE_LOCK_FILE:-/tmp/shogun_to_karo.lock}"
 CMD_SAVE_LAST_CMD_FILE="${CMD_SAVE_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_last_cmd.txt}"
 CMD_SAVE_SHOGUN_LESSONS_FILE="${CMD_SAVE_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
 CMD_SAVE_SHOGUN_LESSON_ACK_FILE="${CMD_SAVE_SHOGUN_LESSON_ACK_FILE:-$PROJECT_DIR/queue/shogun_lesson_ack.yaml}"
+CMD_SAVE_SHOGUN_LESSON_LIMIT="${CMD_SAVE_SHOGUN_LESSON_LIMIT:-35}"
 PREFLIGHT_AUTOLEARN_FILE="${CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE:-$PROJECT_DIR/logs/preflight_autolearn.txt}"
 LORD_CONVERSATION_FILE="${CMD_SAVE_LORD_CONVERSATION_FILE:-$PROJECT_DIR/queue/lord_conversation.jsonl}"
 CMD_CHRONICLE_FILE="${CMD_SAVE_CMD_CHRONICLE_FILE:-$PROJECT_DIR/context/cmd-chronicle.md}"
@@ -90,6 +91,8 @@ fi
 source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
 # shellcheck source=scripts/lib/gate_hook_quality_contract.sh
 source "$SCRIPT_DIR/lib/gate_hook_quality_contract.sh"
+# shellcheck source=scripts/lib/cmd_shared_preflight.sh
+source "$SCRIPT_DIR/lib/cmd_shared_preflight.sh"
 
 EXTRACT_COMMAND_FILES_SCRIPT="${CMD_SAVE_EXTRACT_COMMAND_FILES_SCRIPT:-$SCRIPT_DIR/lib/extract_command_files.sh}"
 
@@ -3633,6 +3636,11 @@ if [[ "$RAW_ID" =~ ^cmd_ ]]; then
     CMD_ID="$RAW_ID"
 else
     CMD_ID="cmd_${RAW_ID}"
+fi
+
+# Publish直前だけに存在していたlesson-capを保存前にも同一入力・同一関数で適用する。
+if ! cmd_shared_preflight "$CMD_SAVE_SHOGUN_LESSONS_FILE" "$CMD_SAVE_SHOGUN_LESSON_LIMIT"; then
+    exit 1
 fi
 
 BLOCK_START_FILE="${CMD_SAVE_BLOCK_DIR:-/tmp}/cmd_save_block_start_${CMD_ID}.ts"

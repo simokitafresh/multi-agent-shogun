@@ -43,14 +43,7 @@ SHOGUN_LESSON_ACK_SCRIPT="${CMD_PUBLISH_SHOGUN_LESSON_ACK_SCRIPT:-$PROJECT_DIR/s
 CMD_PUBLISH_GIT_ROOT="${CMD_PUBLISH_GIT_ROOT:-$PROJECT_DIR}"
 
 source "$PROJECT_DIR/scripts/lib/yaml_field_set.sh"
-
-count_active_shogun_lessons() {
-    [[ -f "$SHOGUN_LESSONS_FILE" ]] || {
-        echo 0
-        return 0
-    }
-    awk 'BEGIN { count = 0 } /^- id:/ { count++ } /superseded_by:/ { count-- } END { print (count > 0 ? count : 0) }' "$SHOGUN_LESSONS_FILE" 2>/dev/null || echo 0
-}
+source "$PROJECT_DIR/scripts/lib/cmd_shared_preflight.sh"
 
 count_cmd_save_blocks_for_cmd() {
     local target_cmd_id="${1:-}"
@@ -225,17 +218,9 @@ run_cmd_save_with_block_summary() {
 }
 
 run_publish_preflight() {
-    local lesson_count lesson_threshold prev_cmd_id prev_block_count auto_ack_lesson
+    local prev_cmd_id prev_block_count auto_ack_lesson
 
-    lesson_count="$(count_active_shogun_lessons)"
-    [[ "$lesson_count" =~ ^[0-9]+$ ]] || lesson_count=0
-    lesson_threshold=$((SHOGUN_LESSON_LIMIT - 2))
-    if (( lesson_count >= lesson_threshold )); then
-        echo "BLOCK: lessons_shogun.yaml が ${lesson_count}件。active件数を ${lesson_threshold}件未満(=${lesson_threshold}件以上でBLOCK。空き3枠以上)にせよ(上限${SHOGUN_LESSON_LIMIT}件)。" >&2
-        echo "  解消: 既存LSを統合し、active件数を$((lesson_threshold - 1))件以下にしてから再実行。" >&2
-        echo "  参考: bash scripts/lesson_write_shogun.sh --supersedes LS旧 LS新 \"統合理由\"" >&2
-        return 1
-    fi
+    cmd_shared_preflight "$SHOGUN_LESSONS_FILE" "$SHOGUN_LESSON_LIMIT" || return 1
 
     [[ -f "$LAST_CMD_FILE" ]] || return 0
     prev_cmd_id="$(tr -d '[:space:]' < "$LAST_CMD_FILE" 2>/dev/null || true)"
