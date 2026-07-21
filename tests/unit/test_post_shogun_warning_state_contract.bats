@@ -36,7 +36,7 @@ SH
 
 @test "failed task uses report terminal SSOT across blocked success open and missing boundaries" {
   printf 'ninja|hanzo|t|failed|infra|CTX:20%%|RUNTIME:idle\n' > "$ROOT/queue/karo_snapshot.txt"
-  printf 'task:\n  status: failed\n  report_path: queue/reports/hanzo.yaml\n' > "$ROOT/queue/tasks/hanzo.yaml"
+  printf "task:\n  status: failed\n  report_path: 'queue/reports/hanzo.yaml'\n" > "$ROOT/queue/tasks/hanzo.yaml"
 
   printf 'status: failed\nverdict: FAIL\nstatus_detail: BLOCKED\n' > "$ROOT/queue/reports/hanzo.yaml"
   run bash "$ROOT/hook.sh"; [[ "$output" != *"failed=[hanzo]"* ]]
@@ -59,6 +59,22 @@ SH
   printf 'status: failed\nverdict: FAIL\nstatus_detail: BLOCKED\n' > "$ROOT/queue/reports/hanzo.yaml"
   rm "$ROOT/scripts/lib/report_terminal_state.sh"
   run bash "$ROOT/hook.sh"; [[ "$output" == *"failed=[hanzo]"* ]]
+}
+
+@test "symlinked root and parallel invocations keep terminal classification and dedup" {
+  printf 'ninja|hanzo|t|failed|infra|CTX:20%%|RUNTIME:idle\n' > "$ROOT/queue/karo_snapshot.txt"
+  printf 'task:\n  status: failed\n  report_path: queue/reports/hanzo.yaml\n' > "$ROOT/queue/tasks/hanzo.yaml"
+  printf 'status: completed\nverdict: PASS\nstatus_detail: DONE\n' > "$ROOT/queue/reports/hanzo.yaml"
+  ln -s "$ROOT" "$BATS_TEST_TMPDIR/linked-root"
+  export SHOGUN_ROOT="$BATS_TEST_TMPDIR/linked-root"
+
+  bash "$ROOT/hook.sh" > "$BATS_TEST_TMPDIR/out.1" & p1=$!
+  bash "$ROOT/hook.sh" > "$BATS_TEST_TMPDIR/out.2" & p2=$!
+  rc1=0; wait "$p1" || rc1=$?
+  rc2=0; wait "$p2" || rc2=$?
+  [ "$rc1" -le 1 ] && [ "$rc2" -le 1 ]
+  run awk '/failed=\[hanzo\]/{n++} END{print n+0}' "$BATS_TEST_TMPDIR/out.1" "$BATS_TEST_TMPDIR/out.2"
+  [ "$output" -ge 1 ] && [ "$output" -le 2 ]
 }
 
 @test "escalation signature is critical once, processed is quiet, new signature alerts" {
