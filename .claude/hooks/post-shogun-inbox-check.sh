@@ -1,4 +1,4 @@
-#!/bin/dash
+#!/usr/bin/env bash
 [ -z "$TMUX_PANE" ] && exit 0
 # Prefer the hook-injected root; retain git discovery for standalone use.
 _REPO_ROOT="${SHOGUN_ROOT:-}"
@@ -7,6 +7,12 @@ _REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 fi
 [ -z "$_REPO_ROOT" ] && exit 0
 SCRIPT_DIR="$_REPO_ROOT"
+_REPORT_TERMINAL_STATE_LIB="${SCRIPT_DIR}/scripts/lib/report_terminal_state.sh"
+_REPORT_TERMINAL_STATE_READY=0
+if [ -r "$_REPORT_TERMINAL_STATE_LIB" ] && source "$_REPORT_TERMINAL_STATE_LIB" 2>/dev/null && \
+   declare -F report_terminal_state >/dev/null 2>&1; then
+    _REPORT_TERMINAL_STATE_READY=1
+fi
 _NON_SHOGUN_CACHE="/tmp/shogun_not_shogun_${TMUX_PANE}"
 [ -e "$_NON_SHOGUN_CACHE" ] && exit 0
 
@@ -222,7 +228,21 @@ if [ -f "$_snapshot" ]; then
         [ -n "$_deployed" ] && _deployed_epoch=$(date -d "$_deployed" +%s 2>/dev/null || echo 0)
         _pane_state=$(printf '%s\n' "$_pane_states" | awk -F'|' -v a="$_agent" '$1==a{print $2; exit}')
         if [ "$_snap_status" = "failed" ] && [ "$_task_status" = "failed" ]; then
-            _failed="${_failed:+${_failed},}${_agent}"
+            _report_rel=$(awk '/^[[:space:]]*report_path:/{v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); gsub(/["'\'' ]/,"",v); print v; exit}' "$_task_file" 2>/dev/null)
+            _report_state="UNKNOWN"
+            if [ "$_REPORT_TERMINAL_STATE_READY" -eq 1 ] && [ -n "$_report_rel" ]; then
+                case "$_report_rel" in
+                    /*) _report_path="$_report_rel" ;;
+                    *) _report_path="${SCRIPT_DIR}/$_report_rel" ;;
+                esac
+                _report_state=$(report_terminal_state "$_report_path" 2>/dev/null) || _report_state="UNKNOWN"
+            fi
+            # A complete blocked report is already terminal evidence.  Every
+            # other state (including SUCCESS mismatch, OPEN, missing/UNKNOWN,
+            # or an unavailable SSOT) remains an actionable failed alert.
+            if [ "$_report_state" != "CLOSED_BLOCKED" ]; then
+                _failed="${_failed:+${_failed},}${_agent}"
+            fi
         elif [ "$_snap_status" = "assigned" ] && printf '%s' "$_rest" | grep -q 'CTX:0%'; then
             _age=$((_alert_now - _deployed_epoch))
             if [ "$_task_status" = "assigned" ] && [ "$_deployed_epoch" -gt 0 ] && \
