@@ -592,6 +592,29 @@ _run_tests_main() {
     # 同一ロックの傘下に入る)。file <path>単発実行は軽量とみなしadmission対象外。
     if [[ "${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}" != "1" && "${1:-}" != "file" ]]; then
         local _self="${BASH_SOURCE[0]:-$0}"
+        # An empty affected selection has no heavy work to protect.  Resolve it
+        # before admission, but persist a non-empty result so the admitted
+        # process consumes the exact same selection instead of re-reading a
+        # concurrently changing worktree.
+        if [[ "${1:-affected}" == "affected" ]]; then
+            local _early_selector_log _early_selector_rc _early_selector_output _early_manifest
+            _early_selector_log="$(mktemp)"
+            set +e
+            _early_selector_output="$(bash "$REPO_ROOT/scripts/test_select.sh" "${@:2}" 2>"$_early_selector_log")"
+            _early_selector_rc=$?
+            set -e
+            cat "$_early_selector_log" >&2
+            rm -f "$_early_selector_log"
+            if [[ "$_early_selector_rc" -eq 0 && -z "$_early_selector_output" ]]; then
+                echo "TEST_SELECTION result=selected reason=no_mapped_tests files=0 admission=skipped"
+                return 0
+            fi
+            if [[ "$_early_selector_rc" -eq 0 ]]; then
+                _early_manifest="$(mktemp)"
+                printf '%s\n' "$_early_selector_output" >"$_early_manifest"
+                export RUN_TESTS_AFFECTED_SELECTION_MANIFEST="$_early_manifest"
+            fi
+        fi
         # This function is entered behind the public receipt wrapper.  Keep
         # that inner identity across the admission re-exec; otherwise the
         # admitted process is mistaken for a second public invocation and
@@ -689,21 +712,29 @@ _run_tests_main() {
         affected)
             shift || true
             local _selector_log _selector_rc _selector_output
-            _selector_log="$(mktemp)"
-            set +e
-            _selector_output="$(bash "$REPO_ROOT/scripts/test_select.sh" "$@" 2>"$_selector_log")"
-            _selector_rc=$?
-            set -e
-            cat "$_selector_log" >&2
+            if [[ -n "${RUN_TESTS_AFFECTED_SELECTION_MANIFEST:-}" ]]; then
+                _selector_output="$(cat "$RUN_TESTS_AFFECTED_SELECTION_MANIFEST")"
+                rm -f "$RUN_TESTS_AFFECTED_SELECTION_MANIFEST"
+                unset RUN_TESTS_AFFECTED_SELECTION_MANIFEST
+                _selector_rc=0
+                _selector_log=""
+            else
+                _selector_log="$(mktemp)"
+                set +e
+                _selector_output="$(bash "$REPO_ROOT/scripts/test_select.sh" "$@" 2>"$_selector_log")"
+                _selector_rc=$?
+                set -e
+                cat "$_selector_log" >&2
+            fi
             if [ "$_selector_rc" -ne 0 ]; then
                 printf 'TEST_SELECTION result=fallback reason=selector_exit_%s target=unit\n' "$_selector_rc"
-                rm -f "$_selector_log"
+                [ -z "$_selector_log" ] || rm -f "$_selector_log"
                 RUN_TESTS_MODE=unit
                 mapfile -t test_files < <(find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print)
                 run_bats_files_parallel "${test_files[@]}"
                 exit $?
             fi
-            rm -f "$_selector_log"
+            [ -z "$_selector_log" ] || rm -f "$_selector_log"
             mapfile -t selected <<<"$_selector_output"
             [ -n "$_selector_output" ] || selected=()
             if [ "${#selected[@]}" -eq 0 ]; then

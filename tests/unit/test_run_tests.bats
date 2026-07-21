@@ -350,6 +350,72 @@ SH
   [[ "$output" == *"TEST_SELECTION result=fallback reason=selector_exit_7 target=unit"* ]]
 }
 
+# test_necessity: affected=0 must finish inside the public receipt wrapper without acquiring the host-wide heavy admission lock.
+@test "affected zero skips admission while preserving terminal receipt" {
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+exit 0
+SH
+  cat >"$TMPROOT/scripts/heavy_job_admission.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'called\n' >"$ADMISSION_MARKER"
+exit 91
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh" "$TMPROOT/scripts/heavy_job_admission.sh"
+
+  run env -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED \
+    PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ADMISSION_MARKER="$TMPROOT/admission.called" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/logs/test_receipts" \
+    bash "$TMPROOT/scripts/run_tests.sh" affected no-tests.file
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_RECEIPT_PASS"* ]]
+  artifact=$(python3 - "$TMPROOT/logs/test_receipts" <<'PY'
+import glob,json,os,sys
+receipt=max(glob.glob(os.path.join(sys.argv[1], '*.json')), key=os.path.getmtime)
+print(json.load(open(receipt))['artifact'])
+PY
+)
+  grep -q "files=0 admission=skipped" "$artifact"
+  [ ! -e "$TMPROOT/admission.called" ]
+}
+
+# test_necessity: non-empty and selector-error affected runs remain admitted, and the non-empty selector is consumed exactly once from a fixed manifest.
+@test "affected nonempty and selector error retain admission with fixed selection" {
+  cat >"$TMPROOT/scripts/heavy_job_admission.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'called\n' >>"$ADMISSION_MARKER"
+[ "${1:-}" != "--" ] || shift
+SHOGUN_HEAVY_JOB_LOCK_HELD=1 exec "$@"
+SH
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+count=$(cat "$SELECT_COUNT" 2>/dev/null || printf 0)
+count=$((count + 1))
+printf '%s\n' "$count" >"$SELECT_COUNT"
+if [ "${SELECT_ERROR:-0}" = 1 ]; then exit 7; fi
+printf '%s\n' "$REPO_ROOT/tests/unit/sample.bats"
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh" "$TMPROOT/scripts/heavy_job_admission.sh"
+
+  run env -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED \
+    PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ADMISSION_MARKER="$TMPROOT/admission.called" \
+    SELECT_COUNT="$TMPROOT/select.count" BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner affected changed.file
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TMPROOT/select.count")" -eq 1 ]
+  [ "$(wc -l <"$TMPROOT/admission.called")" -eq 1 ]
+
+  rm -f "$TMPROOT/select.count"
+  run env -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED \
+    PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" ADMISSION_MARKER="$TMPROOT/admission.called" \
+    SELECT_COUNT="$TMPROOT/select.count" SELECT_ERROR=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner affected changed.file
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"selector_exit_7 target=unit"* ]]
+  [ "$(wc -l <"$TMPROOT/admission.called")" -eq 2 ]
+}
+
 # test_necessity: shared-worktree task verdicts must use task/report-owned paths and never inherit an unrelated concurrent diff.
 @test "task mode selects only task and report owned paths" {
   printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
