@@ -74,3 +74,27 @@ establish_verified() {
   [ "$output" = "$first_output" ]
   [ "$(find /tmp -maxdepth 1 -name 'shogun_gate_skill_script_refs_*.cache' -newer "$FIXTURE/gate.sh" | wc -l)" -ge 1 ]
 }
+
+@test "37 distinct checked_at values use one aggregate history walk" {
+  git -C "$FIXTURE" init -q
+  git -C "$FIXTURE" config user.email fixture@example.invalid
+  git -C "$FIXTURE" config user.name fixture
+  git -C "$FIXTURE" add scripts/demo.sh skills/demo/SKILL.md
+  GIT_AUTHOR_DATE=2025-01-01T00:00:00Z GIT_COMMITTER_DATE=2025-01-01T00:00:00Z \
+    git -C "$FIXTURE" commit -qm fixture
+  rm -rf "$FIXTURE/skills"
+  mkdir -p "$FIXTURE/skills" "$FIXTURE/bin"
+  for i in $(seq 1 37); do
+    mkdir -p "$FIXTURE/skills/demo$i"
+    printf '# demo\nRun `bash scripts/demo.sh`.\n<!-- script_refs_checked_at: 2025-01-%02dT00:00:00+00:00 -->\n' \
+      "$i" > "$FIXTURE/skills/demo$i/SKILL.md"
+  done
+  real_git="$(command -v git)"
+  printf '#!/usr/bin/env bash\nif [[ " $* " == *" rev-list "* ]]; then printf "walk\\n" >> %q; fi\nexec %q "$@"\n' \
+    "$FIXTURE/rev-list.log" "$real_git" > "$FIXTURE/bin/git"
+  chmod +x "$FIXTURE/bin/git"
+  PATH="$FIXTURE/bin:$PATH" SKILL_REF_DISABLE_CACHE=1 run_gate
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$FIXTURE/rev-list.log")" -eq 2 ]
+  [[ "$output" == *"走査: 37 SKILL.md"* ]]
+}

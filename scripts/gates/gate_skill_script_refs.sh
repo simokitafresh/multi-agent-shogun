@@ -249,6 +249,9 @@ def git_checkout_available() -> bool:
 git_available = git_checkout_available()
 git_baseline_cache: dict[tuple[str, str], str | None] = {}
 git_snapshot_cache: dict[str, str | None] = {}
+git_history: list[tuple[int, str]] | None = None
+git_history_start_epoch: int | None = None
+git_history_paths: list[str] = []
 cat_file_process: subprocess.Popen[bytes] | None = None
 
 
@@ -267,15 +270,31 @@ atexit.register(close_cat_file)
 
 
 def git_snapshot_before(checked_iso: str) -> str | None:
+    global git_history
     if checked_iso in git_snapshot_cache:
         return git_snapshot_cache[checked_iso]
     commit: str | None = None
     if git_available:
         try:
-            commit = subprocess.run(
-                ["git", "-C", str(repo_root), "rev-list", "-1", f"--before={checked_iso}", "HEAD"],
-                check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-            ).stdout.strip() or None
+            if git_history is None:
+                since_epoch = git_history_start_epoch or int(datetime.fromisoformat(checked_iso).timestamp())
+                output = subprocess.run(
+                    ["git", "-C", str(repo_root), "rev-list", "--timestamp", f"--since=@{since_epoch}", "HEAD", "--", *git_history_paths],
+                    check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                ).stdout
+                git_history = []
+                for line in output.splitlines():
+                    timestamp, sha = line.split(" ", 1)
+                    git_history.append((int(timestamp), sha))
+                boundary = subprocess.run(
+                    ["git", "-C", str(repo_root), "rev-list", "--timestamp", "-1", f"--before=@{since_epoch}", "HEAD", "--", *git_history_paths],
+                    check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                ).stdout.strip()
+                if boundary:
+                    timestamp, sha = boundary.split(" ", 1)
+                    git_history.append((int(timestamp), sha))
+            cutoff = int(datetime.fromisoformat(checked_iso).timestamp())
+            commit = next((sha for timestamp, sha in git_history if timestamp <= cutoff), None)
         except (OSError, subprocess.CalledProcessError):
             pass
     git_snapshot_cache[checked_iso] = commit
@@ -345,6 +364,27 @@ for raw in raw_roots.split(":"):
 skill_files = sorted(
     {skill_file for root in scan_roots for skill_file in iter_skill_files(root)}
 )
+# Bound the aggregate history walk to the complete decision interval.  One
+# boundary commit preserves the exact baseline for the oldest marker.
+checked_epochs: list[int] = []
+history_path_set: set[str] = set()
+for skill_file in skill_files:
+    try:
+        preflight_text = skill_file.read_text(encoding="utf-8", errors="ignore")
+        marker = parse_checked_at(preflight_text)
+        for preflight_ref in extract_refs(preflight_text):
+            preflight_path = resolve_ref(preflight_ref)
+            try:
+                history_path_set.add(str(preflight_path.relative_to(repo_root)))
+            except ValueError:
+                pass
+    except OSError:
+        marker = None
+    if marker is not None:
+        checked_epochs.append(int(marker.timestamp()))
+if checked_epochs:
+    git_history_start_epoch = min(checked_epochs)
+git_history_paths = sorted(history_path_set)
 missing: list[tuple[str, str, str]] = []
 stale: list[tuple[str, str, str]] = []
 deduped_stale = 0
@@ -526,28 +566,41 @@ RAW_ROOTS="${SKILL_REF_DIRS:-skills:.claude/skills:.codex/skills}"
 # Cache identity is the complete result-determining input, not a maximum mtime.
 # This intentionally invalidates within TTL for verified-state changes, changes
 # to any (including non-max-mtime) SKILL.md, and every referenced script.
-INPUT_SIGNATURE="$({
-    printf 'gate\0'; sha256sum "$0" 2>/dev/null || true
-    printf 'roots\0%s\0' "$RAW_ROOTS"
-    printf 'record_verified\0%s\0' "${SKILL_REF_RECORD_VERIFIED:-0}"
-    state_file="${SKILL_REF_HASH_STATE:-$REPO_ROOT/logs/skill_script_refs_verified.json}"
-    printf 'state\0'; sha256sum "$state_file" 2>/dev/null || printf 'missing\n'
-    IFS=':' read -r -a signature_roots <<< "$RAW_ROOTS"
-    for raw_root in "${signature_roots[@]}"; do
-        [ -n "$raw_root" ] || continue
-        expanded_root="${raw_root/#\~/$HOME}"
-        case "$expanded_root" in /*) skill_root="$expanded_root" ;; *) skill_root="$REPO_ROOT/$expanded_root" ;; esac
-        [ -d "$skill_root" ] || continue
-        while IFS= read -r -d '' skill_file; do
-            printf 'skill\0%s\0' "$skill_file"; sha256sum "$skill_file"
-            while IFS= read -r ref; do
-                [ -n "$ref" ] || continue
-                case "$ref" in /*) ref_path="$ref" ;; ~/*) ref_path="${ref/#\~/$HOME}" ;; *) ref_path="$REPO_ROOT/$ref" ;; esac
-                printf 'ref\0%s\0' "$ref"; sha256sum "$ref_path" 2>/dev/null || printf 'missing\n'
-            done < <(grep -Eo '(bash|sh|python3?|node|ruby|perl)[[:space:]]+[^[:space:]`'"'"'"|;&)]*\.(sh|py|js)' "$skill_file" 2>/dev/null | awk '{print $2}' | sort -u)
-        done < <(find "$skill_root" -name SKILL.md -type f -print0 | sort -z)
-    done
-} | sha256sum | awk '{print $1}')"
+INPUT_SIGNATURE="$(SKILL_REF_REPO_ROOT="$REPO_ROOT" SKILL_REF_RAW_ROOTS="$RAW_ROOTS" python3 - "$0" <<'PY'
+import hashlib, os, re, sys
+from pathlib import Path
+
+repo = Path(os.environ['SKILL_REF_REPO_ROOT'])
+h = hashlib.sha256()
+def add(label, value):
+    h.update(label.encode() + b'\0' + value + b'\0')
+def content(path):
+    try: return path.read_bytes()
+    except OSError: return b'missing\n'
+
+add('gate', content(Path(sys.argv[1])))
+raw_roots = os.environ['SKILL_REF_RAW_ROOTS']
+add('roots', raw_roots.encode())
+add('record_verified', os.environ.get('SKILL_REF_RECORD_VERIFIED', '0').encode())
+state = Path(os.environ.get('SKILL_REF_HASH_STATE', str(repo / 'logs/skill_script_refs_verified.json')))
+add('state', content(state))
+ref_re = re.compile(r'(?:bash|sh|python3?|node|ruby|perl)\s+([^\s`\'"|;&)]*\.(?:sh|py|js))')
+for raw in raw_roots.split(':'):
+    if not raw: continue
+    root = Path(os.path.expanduser(raw))
+    if not root.is_absolute(): root = repo / root
+    if not root.is_dir(): continue
+    for skill in sorted(root.rglob('SKILL.md')):
+        data = content(skill)
+        add('skill', str(skill).encode() + b'\0' + data)
+        text = data.decode('utf-8', errors='ignore')
+        for ref in sorted(set(ref_re.findall(text))):
+            path = Path(os.path.expanduser(ref))
+            if not path.is_absolute(): path = repo / path
+            add('ref', ref.encode() + b'\0' + content(path))
+print(h.hexdigest())
+PY
+)"
 
 if [ "${SKILL_REF_DISABLE_CACHE:-0}" != "1" ] && [ "$CACHE_TTL_SECONDS" -gt 0 ] 2>/dev/null; then
     CACHE_KEY="${REPO_ROOT//[^A-Za-z0-9._-]/_}_${INPUT_SIGNATURE}"
