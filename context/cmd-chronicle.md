@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-21 -->
+<!-- last_updated: 2026-07-22 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,16 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3476 | idle自走分析で発見(2026-06-21)。BLOCK TOP1パターン(20件/50=40%、7ユニークcmd)。cmd_3408(2026-06-16)のFP修正後も18件残存。実例: cmd_3457でhanzoがCLAUDE.md変更不要と正しく判断したがcommand欄に参照ありのためBLOCK。忍者が変更不要と判断したファイルをgateに伝達する手段が不在 | infra | 06-21 | cmd_3408以降のcommand_files_modif |
-| cmd_3475 | startup gate SKILL.md script参照WARNが3セッション連続先送り(2026-06-19〜20)。7本のSKILL.md(codd-fix・dashboard-update・dream・idle-persist・karo-direct・recon-dual・review-bundle・shogun-teire)が参照スクリプトより古い。スクリプト変更をSKILL.mdに反映し、WARNをゼロにする | infra | 06-21 | 3本のSKILL.md(codd-fix/karo-dire |
-| cmd_3477 | karo_workarounds分析(2026-06-21)で発見。cmd_3466でcanceled cmdのtask YAMLが残存しcmd_complete_gateの報告待ち対象に残った。家老が手動でparent_cmdを退避して回避(stale_report WA)。deploy_task.shにcancel処理が完全不在(grep 0件)。cmd_complete_gate.shにもcanceled判定なし(grep 0件) | infra | 06-21 | canceled cmdをcmd_complete_gate |
-| cmd_3478 | 家老context_freshness ALERT GA-111(2026-06-21)。codd.md(06-11)・memory-db-queries.md(06-06)・obsidian-link-principles.md(06-11)の3件がsource commit未反映。hardcode修正(677d0c7f9)・knowledge writer追加(a29eea6ee)・semantic_causal_traverse追加(6fa0e374f)の反映が必要 | infra | 06-21 | context_freshness ALERT 3件を各so |
-| cmd_3479 | 殿承認の2層SSOT設計(2026-06-21)実装。デフォルト層(cli_profiles.yaml defaults)と動的層(settings.yaml)を分離し、tmux再起動時にデフォルト編成に復帰する仕組みを追加。併せてswitch_cli_mode.shのバグ2件(L835: agent_state=active残留→respawnスキップ、L836: model_name tmux変数同期漏れ)を修正する | infra | 06-21 | cmd_3479: cli_profiles default |
-| cmd_3480 | 殿指摘(2026-06-21)全件対処。cli_profiles.yaml defaultsにlaunch_cmd追加し、shutsujin_departure.shでtmux再起動時にデフォルト(pinned 2.1.87)に復帰させる。cmd_3479(type/model_name)と並列実施 | infra | 06-21 | cli_profiles.yaml defaultsにlau |
-| cmd_3481 | 殿指摘(2026-06-21)全件対処。config.tomlのmodel_reasoning_effort・service_tierが全Codex共有で、per-agent設定不可。hayateだけlowにしたくても全員lowになる。対策案3種(CLI引数・per-agent toml・一時書換え)の調査+実装 | infra | 06-21 | Codex per-agent effort/service |
-| cmd_3483 | 教訓健全度ALERT(useful_rate=22.2%, 3セッション連続)の残課題。cmd_3466(スコアリング改善)とD0タグ修正31件の後も残50件の0%有効教訓がinjection候補に残り、タスクと無関係な教訓が注入される。これら50件のwhen/howフィールドをタスク種別(偵察/実装/修正等)に限定し、inject_related_lessonsのマッチング精度を構造的に向上させる | infra | 06-21 | lesson_impact.tsvから0%有効教訓を抽出し、 |
-| cmd_3485 | cmd_3475で実証されたバグの構造的防止。ninja_monitorのauto_void_if_parent_cmd_completed(L1460)がstatus/voided_at/void_reasonのみ設定しparent_cmd/task_idを残すため、次cmd配備時にcmd_complete_gateの報告待ち対象に残りGATE BLOCKする(LK006)。家老掲示板blt_20260621_161244で報告済み | infra | 06-21 | auto_void_if_parent_cmd_comple |
-| cmd_3487 | session_alerts.txtは将軍startup gateが生成する将軍固有ALERTだが、stop_session_alerts.shが全エージェント共通パスを読むため家老・軍師・忍者にも表示される。忍者がスコープ外と判断するしかない状況を構造修正する | infra | 06-21 | stop_session_alerts.shをロール分離修正 |
 | cmd_3488 | 殿指摘(2026-06-22): semantic_search.shで「L1パイプライン BB」がNO_MATCH。根因: semantic_index.py L854-861のマッチングが部分文字列のみで、クエリを空白分割した個別単語がalias内に全出現するかの判定がない。aliasに合わせてクエリを書き直すのは方向性が間違い(殿指摘「バグに合わせるな」) | infra | 06-22 | semantic_searchのfirst-layer al |
 | cmd_3490 | 殿構想(2026-06-22): pf_L1のselection blockを複数BB直列に拡張(pf_L1+)。run_077_oikaze.pyをコピー改変しGSループ除去、固定パラメータでBB1→BB2直列パイプライン実行→本番holding_signalと月次パリティ突合するスクリプトを作成。1パターン(GSシン追い風-激攻+pf_L2追い風チャンピオン)でパリティ0不一致を確認 | dm-signal | 06-22 | run_l1plus_backtest.pyを追加し、BB1 |
 | cmd_3493 | 殿指示(2026-06-22): 22分は長い。道具を磨け。(1)DBロードを441パターン共通で1回に集約 (2)パリティ基準にticker×weight一致を追加 (3)441パターン一括実行モードでBB1×BB2全組合せを1実行→結果を1テーブル(441行×α6指標)に集約。見込み5-8分 | dm-signal | 06-22 | run_l1plus_backtest.pyに--batch |
