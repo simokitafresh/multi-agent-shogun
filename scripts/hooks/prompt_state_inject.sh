@@ -210,12 +210,11 @@ prompt_state_wait_preflight() {
 }
 
 _prompt_state_memory_citation_scaffold() {
-  [[ "${agent_id:-unknown}" == "shogun" ]] || return 0
   (( prompt_is_inbox_nudge == 0 )) || return 0
   local evidence_dir="${THREE_LAYER_PREACTION_EVIDENCE_DIR:-$SCRIPT_DIR/logs/preaction_memory}"
   local safe_pane="${TMUX_PANE:-default}" evidence
   safe_pane="${safe_pane//[^A-Za-z0-9_.-]/_}"
-  evidence="$evidence_dir/evidence_shogun_${safe_pane}.json"
+  evidence="$evidence_dir/evidence_${agent_id:-unknown}_${safe_pane}.json"
   [[ -s "$evidence" && -s "$evidence.current" ]] || return 0
   python3 - "$evidence" <<'PY' 2>/dev/null || return 0
 import json, pathlib, sys
@@ -365,7 +364,6 @@ prompt_state_brainwash_flag_file() {
 prompt_state_q6_brainwash_detected() {
   local flag_file
   flag_file="$(prompt_state_brainwash_flag_file)"
-  [[ "$agent_id" == "shogun" ]] || return 1
   [[ -f "$flag_file" ]] || return 1
 }
 
