@@ -8170,12 +8170,15 @@ PY
         fi
 
         local repo_root="" repo_relative="" head_oid="" last_commit=""
-        repo_root=$(git -C "$(dirname "$resolved")" rev-parse --show-toplevel 2>/dev/null || true)
+        local git_probe_dir
+        git_probe_dir="$(dirname "$resolved")"
+        [ -d "$resolved" ] && git_probe_dir="$resolved"
+        repo_root=$(git -C "$git_probe_dir" rev-parse --show-toplevel 2>/dev/null || true)
         if [ -n "$repo_root" ]; then
             repo_relative=$(realpath --relative-to="$repo_root" "$resolved" 2>/dev/null || true)
         fi
         if [ -z "$repo_root" ] || [ -z "$repo_relative" ] \
-            || ! git -C "$repo_root" cat-file -e "HEAD:${repo_relative}" 2>/dev/null; then
+            || { [ "$repo_relative" != "." ] && ! git -C "$repo_root" cat-file -e "HEAD:${repo_relative}" 2>/dev/null; }; then
             untracked_in_head+=("$p")
             git_evidence+=("${p}:worktree=yes,head=no,last_commit=none")
             continue
@@ -10999,6 +11002,7 @@ deploy_task_apply_task_mutations() {
 
     if [ "${DEPLOY_TASK_DIRECT_YAML_PREINJECTED:-0}" != "1" ]; then
         inject_reports_to_read "$task_file" || true
+        register_blocked_parent_continuation "$task_file" "$ninja_name" || return $?
         inject_context_files "$task_file" || true
         inject_credential_files "$task_file" || true
         inject_target_path_check "$task_file" || true
@@ -11064,6 +11068,32 @@ inject_code_location_contract() {
     fi
     contract='Code-locationは `bash scripts/code_locate.sh "QUERY" [PATHSPEC ...]`（追跡対象限定、git grep）を使う。`grep -r`/`grep -R`は禁止。追跡外生成物が必要な場合のみ `bash scripts/code_locate.sh --include-untracked --reason "必要理由" "QUERY" [PATH ...]` を使う（node_modules/.git/.*_worktreesは既定除外）。exit 0=match、1=no match、2以上=実行異常として区別する。'
     yaml_field_set "$task_file" "task" "code_location_contract" "$contract"
+}
+
+# Direct hotfixes may repair a failed task owned by another ninja.  Validate
+# the complete join before publishing the hotfix, then register the dependency
+# with wait_reason last as the visibility barrier for ninja_monitor.
+register_blocked_parent_continuation() {
+    local hotfix_task="$1" current_ninja="$2"
+    local task_type parent_cmd fixes blocked_ninja blocked_task
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$hotfix_task" task_type parent_cmd fixes blocked_parent_ninja blocked_parent_task_id 2>/dev/null)" || true
+    task_type="${task_type:-}"; parent_cmd="${parent_cmd:-}"; fixes="${fixes:-}"
+    blocked_ninja="${blocked_parent_ninja:-}"; blocked_task="${blocked_parent_task_id:-}"
+    [ -n "$fixes$blocked_ninja$blocked_task" ] || return 0
+    [ "$task_type" = "hotfix" ] || { echo "BLOCK: blocked-parent continuation requires task_type=hotfix" >&2; return 2; }
+    [ -n "$fixes" ] && [ -n "$blocked_ninja" ] && [ -n "$blocked_task" ] || { echo "BLOCK: incomplete blocked-parent reference" >&2; return 2; }
+    [ "$blocked_ninja" != "$current_ninja" ] || { echo "BLOCK: blocked-parent self-reference" >&2; return 2; }
+    [[ "$blocked_ninja" =~ ^(hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)$ ]] || { echo "BLOCK: invalid blocked_parent_ninja" >&2; return 2; }
+    local parent_file="$SCRIPT_DIR/queue/tasks/${blocked_ninja}.yaml" actual_id actual_status
+    [ -f "$parent_file" ] || { echo "BLOCK: blocked parent task file missing" >&2; return 2; }
+    actual_id=$(FIELD_GET_NO_LOG=1 field_get "$parent_file" task_id "" 2>/dev/null || true)
+    actual_status=$(FIELD_GET_NO_LOG=1 field_get "$parent_file" status "" 2>/dev/null || true)
+    [ "$actual_id" = "$blocked_task" ] || { echo "BLOCK: blocked parent task mismatch" >&2; return 2; }
+    [ "$actual_status" = "failed" ] || { echo "BLOCK: blocked parent must be failed" >&2; return 2; }
+    yaml_field_set "$parent_file" task continuation_task_id "$blocked_task" || return 2
+    yaml_field_set "$parent_file" task wait_connected_cmd "$parent_cmd" || return 2
+    yaml_field_set "$parent_file" task wait_reason dependency || return 2
+    log "DEPENDENCY-CONTINUATION-REGISTER: parent=${blocked_ninja}/${blocked_task} connected=${parent_cmd} fields=3/3"
 }
 
 # CI RED startup verification joins the active task to the failed Actions run
