@@ -17,6 +17,7 @@ deploy_task_setup_file() {
     export SRC_TMUX_UTILS_SCRIPT="$PROJECT_ROOT/scripts/lib/tmux_utils.sh"
     export SRC_AGENT_CONFIG_SCRIPT="$PROJECT_ROOT/scripts/lib/agent_config.sh"
     export SRC_INJECT_TASK_MODIFIERS="$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+    export SRC_RELATED_LESSONS_FAST="$PROJECT_ROOT/scripts/lib/deploy_task_related_lessons_fast.py"
     export SRC_REPORT_FIELD_SET_SCRIPT="$PROJECT_ROOT/scripts/report_field_set.sh"
     export SRC_REPORT_COMMIT_IDENTITY="$PROJECT_ROOT/scripts/lib/report_commit_identity.py"
     export SRC_REPORT_UNIQUE_IDENTITY="$PROJECT_ROOT/scripts/lib/report_unique_identity.py"
@@ -42,6 +43,7 @@ deploy_task_setup_file() {
     [ -f "$SRC_TMUX_UTILS_SCRIPT" ] || return 1
     [ -f "$SRC_AGENT_CONFIG_SCRIPT" ] || return 1
     [ -f "$SRC_INJECT_TASK_MODIFIERS" ] || return 1
+    [ -f "$SRC_RELATED_LESSONS_FAST" ] || return 1
     [ -f "$SRC_REPORT_FIELD_SET_SCRIPT" ] || return 1
     [ -f "$SRC_REPORT_COMMIT_IDENTITY" ] || return 1
     [ -f "$SRC_FIREFIGHTING_KEYWORDS_SCRIPT" ] || return 1
@@ -80,6 +82,7 @@ deploy_task_setup_file() {
     cp "$SRC_TMUX_UTILS_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/tmux_utils.sh"
     cp "$SRC_AGENT_CONFIG_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/agent_config.sh"
     cp "$SRC_INJECT_TASK_MODIFIERS" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/inject_task_modifiers.py"
+    cp "$SRC_RELATED_LESSONS_FAST" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/deploy_task_related_lessons_fast.py"
     cp "$SRC_REPORT_FIELD_SET_SCRIPT" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/report_field_set.sh"
     cp "$SRC_REPORT_COMMIT_IDENTITY" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/report_commit_identity.py"
     cp "$SRC_REPORT_UNIQUE_IDENTITY" "$DEPLOY_TASK_TEMPLATE_DIR/scripts/lib/report_unique_identity.py"
@@ -107,6 +110,13 @@ cli:
       type: codex
       role: ninja
       japanese_name: 佐助
+EOF
+
+    cat > "$DEPLOY_TASK_TEMPLATE_DIR/config/projects.yaml" <<'EOF'
+current_project: infra
+projects:
+  - id: infra
+    type: platform
 EOF
 
     cat > "$DEPLOY_TASK_TEMPLATE_DIR/config/cli_profiles.yaml" <<'EOF'
