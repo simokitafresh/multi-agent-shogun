@@ -1439,6 +1439,11 @@ PY
 
     local file="$direct_root/queue/tasks/tobisaru.yaml"
 
+    cat >> "$file" <<'YAML'
+  report_id: rpt-11111111-1111-4111-8111-111111111111
+  report_identity_version: 2
+YAML
+
     grep -q "^  scope:" "$file"
     grep -q "^  context:" "$file"
     grep -q "^  context_hints:" "$file"
@@ -1454,6 +1459,7 @@ PY
     reset_stale_fields "tobisaru"
 
     assert_missing_fields "$file" scope context context_hints assigned_scope expected_model_effort pre_deploy_banner_evidence not_in_scope recommended_skills
+    assert_missing_fields "$file" report_id report_identity_version
     ! grep -q "frontend/src/app/old/page.tsx" "$file"
     ! grep -q "context/old-task.md" "$file"
     ! grep -q "docs/research/old-task.md" "$file"
