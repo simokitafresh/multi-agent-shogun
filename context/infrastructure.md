@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-19 cmd_karo_hotfix_ga300_context_freshness_sources_202607190222 -->
+<!-- last_updated: 2026-07-22 cmd_karo_hotfix_ga313_context_freshness_202607220112 -->
 <!-- source_commit:fb95d7051d78ca733e6f84505a3f9dc03f78b676 reason:GA-313 reviewed full infra source boundary evidence:42e6ea0..fb95d70 classified 263 total: reflected/excluded 117 and unreflected reviewed 146/146; completion emits exact setter command -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
@@ -846,7 +846,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1262 -->
+<!-- last_synced_lesson: L1263 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1822,6 +1822,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1260: 終端markerには前段試行証跡を対で持たせる（cmd_karo_hotfix_shogun_recovery_marker_selfheal_202607212300）
 - L1261: 子通知抑制は親の後発terminal証拠で限定（cmd_karo_hotfix_completion_gap_child_fp_202607212324）
 - L1262: ps args regexではdaemon identityを判定しない（cmd_karo_hotfix_watcher_inventory_delivery_202607220022）
+- L1263: context境界候補は完全setter入力まで自動供給する（cmd_karo_hotfix_ga313_context_freshness_202607220112）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
