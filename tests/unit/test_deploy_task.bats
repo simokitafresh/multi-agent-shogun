@@ -30,15 +30,15 @@ PY
     [ "$status" -eq 0 ]
 }
 
-# test_necessity: 全忍者taskが反復選別と報告直前unit全量1回を区別する検証契約を自動受領する不変量を守る。
-@test "model profile injects two-stage validation contract" {
+# test_necessity: 全忍者taskが共有worktreeの無関係diff/FAILを任務判定へ混入させない所有scope検証契約を自動受領する不変量を守る。
+@test "model profile injects task-owned validation contract" {
     local task="$BATS_TEST_TMPDIR/two-stage-task.yaml"
     printf 'task:\n  parent_cmd: cmd_test\n  status: assigned\n' > "$task"
     run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; cli_model_display(){ echo "GPT"; }; inject_model_injection_profile "$2" saizo' _ "$TEST_PROJECT" "$task"
     [ "$status" -eq 0 ]
-    run grep -F '反復=bash scripts/run_tests.sh affected' "$task"
+    run grep -F '反復・報告直前とも bash scripts/run_tests.sh task queue/tasks/saizo.yaml' "$task"
     [ "$status" -eq 0 ]
-    run grep -F '最終checkpoint=bash scripts/run_tests.sh unitを1回実行しFAIL0・SKIP0をreceiptで証明' "$task"
+    run grep -F 'scope外FAILを当該任務のFAILへ混入させない' "$task"
     [ "$status" -eq 0 ]
 }
 
@@ -566,10 +566,10 @@ EOF
 
     run bash -c '
         set -euo pipefail
-        project="$1"
+        fixture_root="$1"
         export DEPLOY_TASK_LIB_ONLY=1
-        source "$project/scripts/deploy_task.sh"
-        log() { printf "%s\n" "$1" >> "$project/logs/exit_after_mutation.log"; }
+        source "$fixture_root/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1" >> "$fixture_root/logs/exit_after_mutation.log"; }
         resolve_pane() { echo "test-pane"; }
         get_ctx_pct() { echo 0; }
         check_idle() { return 0; }
@@ -587,7 +587,8 @@ EOF
         warn_task_clarity() { :; }
         warn_recent_noncmd_commit_targets() { :; }
         deploy_task_apply_task_mutations() {
-            printf "mutated\n" >> "$project/logs/exit_after_mutation.log"
+            printf "mutated\n" >> "$fixture_root/logs/exit_after_mutation.log"
+            deploy_task_ensure_fallback_report_metadata "$task_yaml" "$NINJA_NAME" "$CMD_ID"
         }
         deploy_task_check_deadline() {
             if [ "${1:-}" = "after_task_mutations" ]; then
@@ -596,7 +597,7 @@ EOF
             return 0
         }
         safe_inbox_write() {
-            printf "%s|%s|%s|%s\n" "$1" "$2" "$3" "$4" >> "$project/logs/exit_after_mutation_send.log"
+            printf "%s|%s|%s|%s\n" "$1" "$2" "$3" "$4" >> "$fixture_root/logs/exit_after_mutation_send.log"
         }
         deploy_task_main --direct sasuke cmd_2974
     ' _ "$TEST_PROJECT"
@@ -877,12 +878,16 @@ lessons:
     title: "deploy_task old training lesson"
     summary: "deploy_task training obsolete"
     detail: "obsolete deploy_task training"
+    when: "deploy_task training lesson"
+    target_files: ["scripts/deploy_task.sh"]
     status: confirmed
     superseded_by: L_NEW
   - id: L_NEW
     title: "deploy_task new training lesson"
     summary: "deploy_task training active"
     detail: "active deploy_task training"
+    when: "deploy_task training lesson"
+    target_files: ["scripts/deploy_task.sh"]
     status: confirmed
 EOF
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
