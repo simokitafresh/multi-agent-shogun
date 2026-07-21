@@ -109,6 +109,54 @@ def _report_mentions_residual_sweep(value):
     return any(term in text for term in expansion_terms)
 
 
+def _report_claims_completed_residual_sweep(value):
+    """Return true only for an affirmative claim that a sweep was performed."""
+    text = _flatten_for_scope(value)
+    if not text:
+        return False
+    expansion_terms = ("横展開", "修正前パターン", "残存確認", "同一パターン残存")
+    completed_terms = ("実施", "完了", "対応済", "修正済", "展開済", "反映済", "確認した", "確認済")
+    excluded_terms = (
+        "read-only", "readonly", "読み取り専用", "調査のみ", "確認のみ",
+        "提案", "提言", "推奨", "予定", "将来", "今後", "未実施", "実施していない",
+        "実施せず", "横展開なし", "横展開不要", "横展開しない",
+    )
+    for sentence in re.split(r"[。.!！?？\n]", text):
+        if not any(term in sentence for term in expansion_terms):
+            continue
+        if any(term in sentence.lower() for term in excluded_terms):
+            continue
+        if any(term in sentence for term in completed_terms):
+            return True
+    return False
+
+
+def _report_has_existing_implementation_file(files_modified):
+    """Return true when files_modified names an existing non-doc, non-test code file."""
+    code_suffixes = {
+        ".c", ".cc", ".cpp", ".cs", ".go", ".java", ".js", ".jsx", ".kt", ".php",
+        ".py", ".rb", ".rs", ".sh", ".swift", ".ts", ".tsx",
+    }
+    if not isinstance(files_modified, list):
+        return False
+    for item in files_modified:
+        raw_path = item.get("path") if isinstance(item, dict) else item
+        if not isinstance(raw_path, str) or not raw_path.strip():
+            continue
+        relative = pathlib.PurePosixPath(raw_path.strip().replace("\\", "/"))
+        lowered_parts = {part.lower() for part in relative.parts}
+        if lowered_parts.intersection({"docs", "doc", "tests", "test"}):
+            continue
+        candidate = (_PROJECT_ROOT / pathlib.Path(*relative.parts)).resolve()
+        try:
+            candidate.relative_to(_PROJECT_ROOT)
+        except ValueError:
+            continue
+        if candidate.is_file() and candidate.suffix.lower() in code_suffixes:
+            return True
+    return False
+
+
 def _report_has_residual_sweep_evidence(value):
     text = _flatten_for_scope(value)
     if not text:
@@ -1046,7 +1094,11 @@ def main(report_data=None) -> int:
         "causal_verification": data.get("causal_verification"),
         "purpose_validation": data.get("purpose_validation"),
     }
-    if _report_mentions_residual_sweep(residual_sweep_sources) and not _report_has_residual_sweep_evidence(
+    residual_sweep_applies = (
+        _report_has_existing_implementation_file(data.get("files_modified"))
+        and _report_claims_completed_residual_sweep(residual_sweep_sources)
+    )
+    if residual_sweep_applies and not _report_has_residual_sweep_evidence(
         residual_sweep_sources
     ):
         errors.append("LK-A14: 横展開/修正前パターンを扱う報告にはgrep/rg残存0件の一次証跡が必須")

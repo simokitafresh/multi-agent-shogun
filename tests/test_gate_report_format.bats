@@ -531,6 +531,7 @@ data["causal_verification"] = {
     "design_intent_checked": "exercise the production gate path",
     "evidence": "rg -n gate_report_format_main scripts --glob '!tests/**'; non-test caller count: 1",
 }
+
 data["operational_simulation"] = {
     "command": "rg 'old_pattern' scripts tests",
     "expected": "残存0件",
@@ -545,6 +546,45 @@ PY
     [ "$status" -eq 0 ]
     [[ "$output" == *"PASS"* ]]
     [[ "$output" != *"LK-A14"* ]]
+}
+
+# test_necessity: LK-A14 must require both an existing implementation file and an affirmative completed-sweep claim.
+# regression_justification: prose-only/read-only/proposal/docs/empty/negated reports previously caused false positives.
+@test "T-LKA14-3: implementation precision six variants have zero false positives and negatives" {
+    local fixture="$TMPDIR_BATS/lka14_variants.py"
+    cat > "$fixture" <<'PY'
+import importlib.util
+import pathlib
+
+module_path = pathlib.Path("scripts/gates/gate_report_format_main.py").resolve()
+spec = importlib.util.spec_from_file_location("gate_report_format_main", module_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+variants = [
+    ("implemented_code", ["scripts/gates/gate_report_format_main.py"], "修正前パターンの横展開を実施した", True),
+    ("readonly", ["scripts/gates/gate_report_format_main.py"], "read-only調査でSSOT横展開を確認のみ", False),
+    ("proposal", ["scripts/gates/gate_report_format_main.py"], "SSOT横展開を今後提案する", False),
+    ("docs_only", ["docs/research/example.md"], "修正前パターンの横展開を実施した", False),
+    ("files_empty", [], "修正前パターンの横展開を実施した", False),
+    ("negated", ["scripts/gates/gate_report_format_main.py"], "SSOT横展開は実施していない", False),
+]
+fp = fn = 0
+for name, files, text, expected in variants:
+    actual = (
+        module._report_has_existing_implementation_file(files)
+        and module._report_claims_completed_residual_sweep({"result": text})
+    )
+    print(f"{name}: expected={expected} actual={actual}")
+    fp += int(actual and not expected)
+    fn += int(expected and not actual)
+print(f"false_positive={fp} false_negative={fn}")
+raise SystemExit(0 if fp == 0 and fn == 0 else 1)
+PY
+
+    run python3 "$fixture"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"false_positive=0 false_negative=0"* ]]
 }
 
 @test "T-LG055-1: integration report without operational_simulation is BLOCKed" {
