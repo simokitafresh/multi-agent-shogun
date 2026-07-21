@@ -126,7 +126,8 @@ staged_hook_related_exists() {
 }
 
 # Return 0 when the full synchronizer must run, 1 only for the proven-clean
-# fast path. Hash lookup failure deliberately falls back to synchronization.
+# fast path. Content-read failure deliberately falls back to synchronization;
+# PRECOMMIT_RECEIPT self_sync_ms measures this decision independently.
 precommit_self_sync_required() {
     local installed_hook="$1" source_hook
     staged_hook_related_exists && return 0

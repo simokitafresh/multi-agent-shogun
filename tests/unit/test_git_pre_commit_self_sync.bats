@@ -2,6 +2,7 @@
 # test_necessity: pre-commit self-sync must skip its full synchronizer only when
 # the installed hook equals the repo SSOT and no hook-related path is staged; stale,
 # staged, and unreadable identities must remain fail-closed sync decisions.
+# Production acceptance additionally reads PRECOMMIT_RECEIPT self_sync_ms on DrvFS.
 
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
