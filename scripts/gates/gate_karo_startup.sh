@@ -37,6 +37,7 @@ elif [ "$_disk_status" != "OK" ]; then
 fi
 STARTUP_STDERR_LOG="$SCRIPT_DIR/logs/gate_karo_startup_stderr.log"
 STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/karo_startup_alert_history.tsv"
+STARTUP_ESCALATION_STATE="${KARO_STARTUP_ESCALATION_STATE:-$SCRIPT_DIR/logs/karo_startup_escalation_state.tsv}"
 STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-1}"
 # cmd_3658: 到着直後の未読が先送りCRITICAL streakに混入する誤検知の根治。
 # 最古未読メッセージがこの分数以上滞留していない限り、streak判定対象のalertを積まない。
@@ -2765,58 +2766,71 @@ _session_alerts_file="$SCRIPT_DIR/queue/session_alerts_karo.txt"
 render_session_alerts_file "$_session_alerts_file" "session_alerts_karo" "$_startup_run_id" "${alerts[@]}"
 
 # --- L1先送り自動エスカレーション: 先送りCRITICAL検出→将軍にinbox送信 ---
-if [ ${#alerts[@]} -gt 0 ]; then
-    _deferred_alerts=""
-    for a in "${alerts[@]}"; do
-        case "$a" in
-            先送りCRITICAL:*)
-                _deferred_alerts="${_deferred_alerts:+${_deferred_alerts}; }${a}"
-                ;;
-        esac
-    done
-    if [ -n "$_deferred_alerts" ]; then
-        _deferred_message="家老startup先送りCRITICAL自動エスカレーション: ${_deferred_alerts}。家老が対処できないため将軍cmd起票を検討せよ"
-        mkdir -p "$SCRIPT_DIR/queue/locks"
-        _deferred_lock="$SCRIPT_DIR/queue/locks/karo_startup_escalation.lock"
-        (
-        flock -x 9
-        _deferred_dup_status=$(python3 - "$SCRIPT_DIR/queue/inbox/shogun.yaml" "$_deferred_message" <<'PY' 2>/dev/null || true
-import sys
+_deferred_alerts_file="$(mktemp)"
+for a in "${alerts[@]}"; do
+    case "$a" in 先送りCRITICAL:*) printf '%s\n' "$a" >> "$_deferred_alerts_file" ;; esac
+done
+mkdir -p "$SCRIPT_DIR/queue/locks" "$(dirname "$STARTUP_ESCALATION_STATE")"
+_deferred_lock="$SCRIPT_DIR/queue/locks/karo_startup_escalation.lock"
+(
+flock -x 9
+_transition_output="$(python3 - "$STARTUP_ESCALATION_STATE" "$_deferred_alerts_file" "${KARO_STARTUP_ESCALATION_SUPPRESS_PATTERN:-}" <<'PY'
+import os, re, sys, tempfile
+from datetime import datetime
 from pathlib import Path
 
-try:
-    import yaml
-except Exception:
-    raise SystemExit(0)
+state_path, alerts_path, suppress = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
 
-path = Path(sys.argv[1])
-target = sys.argv[2]
-if not path.exists():
-    raise SystemExit(0)
+def key_for(alert):
+    key = re.sub(r'^先送りCRITICAL:\s*', '', alert.strip())
+    key = re.sub(r'\s*が\s*\d+\s*セッション連続\s*$', '', key)
+    # Rates/counts/session numbers vary between renderings but do not define the incident.
+    key = re.sub(r'\d+(?:\.\d+)?(?:%|件|回|分|秒|セッション)', '#', key)
+    key = re.sub(r'\s+', ' ', key).strip()
+    return key
 
-try:
-    data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-except Exception:
-    raise SystemExit(0)
+active = {}
+for line in alerts_path.read_text(encoding='utf-8').splitlines():
+    if line.strip(): active[key_for(line)] = line.strip()
 
-for msg in data.get("messages") or []:
-    if not isinstance(msg, dict):
-        continue
-    if msg.get("read"):
-        continue
-    if msg.get("from") == "karo" and msg.get("type") == "escalation" and msg.get("content") == target:
-        print("duplicate_unread")
-        break
+rows = {}
+if state_path.exists():
+    for line in state_path.read_text(encoding='utf-8').splitlines():
+        parts = line.split('\t')
+        if len(parts) == 5:
+            rows[parts[0]] = [int(parts[1]), parts[2], parts[3], parts[4]]
+
+now = datetime.now().astimezone().isoformat(timespec='seconds')
+for key, row in list(rows.items()):
+    if key not in active and row[1] == 'open':
+        row[1], row[3] = 'resolved', now
+
+for key, alert in active.items():
+    suppressed = bool(suppress and re.search(suppress, key))
+    if key not in rows:
+        rows[key] = [1, 'suppressed' if suppressed else 'open', '0', now]
+    elif rows[key][1] in ('resolved', 'suppressed') and not suppressed:
+        rows[key] = [rows[key][0] + 1, 'open', '0', now]
+    elif suppressed:
+        rows[key][1], rows[key][3] = 'suppressed', now
+    if rows[key][1] == 'open' and rows[key][2] == '0':
+        rows[key][2], rows[key][3] = '1', now
+        print(f'SEND\t{key}\t{rows[key][0]}\t{alert}')
+
+state_path.parent.mkdir(parents=True, exist_ok=True)
+fd, tmp = tempfile.mkstemp(prefix=state_path.name + '.', dir=state_path.parent)
+with os.fdopen(fd, 'w', encoding='utf-8') as fh:
+    for key in sorted(rows):
+        generation, terminal, notified, updated = rows[key]
+        fh.write(f'{key}\t{generation}\t{terminal}\t{notified}\t{updated}\n')
+os.replace(tmp, state_path)
 PY
-)
-        if [ "$_deferred_dup_status" = "duplicate_unread" ]; then
-            echo "  SKIP: 同一未読escalationが将軍inboxに存在 — 重複送信を抑制"
-        else
-            bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun \
-                "$_deferred_message" \
-                escalation karo 2>/dev/null || true
-        fi
-        ) 9>"$_deferred_lock"
-        unset _deferred_message _deferred_dup_status _deferred_lock
-    fi
-fi
+ )"
+while IFS=$'\t' read -r _action _key _generation _alert; do
+    [ "$_action" = "SEND" ] || continue
+    _deferred_message="家老startup先送りCRITICAL案件: key=${_key} generation=${_generation}; ${_alert}。家老が対処できないため将軍cmd起票を検討せよ"
+    bash "$SCRIPT_DIR/scripts/inbox_write.sh" shogun "$_deferred_message" escalation karo 2>/dev/null || true
+done <<< "$_transition_output"
+) 9>"$_deferred_lock"
+rm -f "$_deferred_alerts_file"
+unset _deferred_alerts_file _deferred_lock _deferred_message _transition_output _action _key _generation _alert
