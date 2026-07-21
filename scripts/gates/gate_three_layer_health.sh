@@ -5,7 +5,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 db_path="${SHOGUN_MEMORY_DB:-$repo_root/data/multi_agent_shogun_memory.db}"
 warn_bytes="${SHOGUN_THREE_LAYER_CACHE_WARN_BYTES:-5368709120}"
-cleanup_script="$repo_root/scripts/cleanup_three_layer_tmp.sh"
+cleanup_script="${SHOGUN_THREE_LAYER_CLEANUP_SCRIPT:-$repo_root/scripts/cleanup_three_layer_tmp.sh}"
 overall="PASS"
 
 # Resolve cache_path in bash (mirrors memory_db_live_insert.memory_db_cache_path()).
@@ -185,6 +185,7 @@ else
     cache_bytes=0
 fi
 echo "cache_dir=$cache_dir bytes=$cache_bytes warn_bytes=$warn_bytes"
+echo "cache_capacity_measured_at=$(date -u +%Y-%m-%dT%H:%M:%SZ) adopted_bytes=$cache_bytes source=initial_scan"
 if [ "$cache_bytes" -gt "$warn_bytes" ]; then
     echo "WARN: cache容量が閾値を超過。cleanup dry-runで対象を確認せよ。"
     overall="WARN"
@@ -194,7 +195,32 @@ fi
 
 echo "■ tmp残骸cleanup dry-run"
 if [ -x "$cleanup_script" ]; then
-    bash "$cleanup_script" --dry-run --cache-dir "$cache_dir"
+    cleanup_measured_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    if cleanup_output="$(bash "$cleanup_script" --dry-run --cache-dir "$cache_dir" 2>&1)"; then
+        printf '%s\n' "$cleanup_output"
+        cleanup_total_bytes="$(
+            printf '%s\n' "$cleanup_output" |
+                awk '/mode=dry-run/ { for (i=1; i<=NF; i++) if ($i ~ /^total_bytes=/) { sub(/^total_bytes=/, "", $i); print $i; exit } }'
+        )"
+        case "$cleanup_total_bytes" in
+            ''|*[!0-9]*)
+                echo "WARN: cleanup dry-runのtotal_bytesを解釈できない"
+                overall="WARN"
+                ;;
+            *)
+                echo "cleanup_capacity_measured_at=$cleanup_measured_at adopted_bytes=$cleanup_total_bytes source=cleanup_dry_run"
+                if [ "$cleanup_total_bytes" -gt "$warn_bytes" ]; then
+                    echo "WARN: cleanup dry-run時点のcache容量が閾値を超過"
+                    overall="WARN"
+                fi
+                ;;
+        esac
+    else
+        cleanup_status=$?
+        printf '%s\n' "$cleanup_output"
+        echo "WARN: cleanup dry-run failed status=$cleanup_status"
+        overall="WARN"
+    fi
 else
     echo "WARN: cleanup script not executable: $cleanup_script"
     overall="WARN"
