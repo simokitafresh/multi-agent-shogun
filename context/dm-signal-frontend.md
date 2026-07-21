@@ -1,6 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-13 cmd_karo_hotfix_ga238_context_freshness_202607131350 -->
-<!-- source_commit:d80a8b03b102bbc9ff9f57570ae31069835483ed (GA-238で導入。cmd_3787[bbd546b8]/cmd_3839[d80a8b03]のFE側変更を§15へ反映済み。次回鮮度チェックはこのcommit以降のdiffのみ照合対象=同型穴の解消) -->
+<!-- last_updated: 2026-07-22 cmd_karo_hotfix_ga314_context_freshness_202607220442 -->
+<!-- source_commit:96c8c5f50c36d3566a89aeaa6197e767bd926a42 reason:cmd_4114_FE一次差分を§16へ反映 evidence:1commit_4paths_603insertions_112deletions_alert1_to_0 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -345,3 +345,9 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 結論: (1) cmd_3839 admin visibility folder非表示(L1.5)の全閲覧EP適用に伴い、`frontend/app/admin/visibility/page.tsx`へ楽観ロック+FE tier切替時の未保存編集ガードを追加(`frontend/lib/types/tiers.ts`型更新含む)。(2) cmd_3787 monthly trade fail-closed化に伴い、`frontend/lib/types/api.ts`へ`missing_tickers`フィールドを追加。両方ともbackend側の主変更は`context/dm-signal-ops.md` §63.1/§63.2 と `context/dm-signal-core.md`(cmd_3787行)に既に反映済みであり、本節はFE側の変更箇所のみを索引する(重複記載を避ける)。
 
 → 詳細: `context/dm-signal-ops.md` §63.1/§63.2、`/mnt/c/Python_app/DM-signal/docs/research/cmd_3839_folder_hide_rollout.md`、`/mnt/c/Python_app/DM-signal/docs/research/cmd_3787_monthly_trade_missing_ticker_fail_closed.md`
+
+## 16. cmd_4114 Rolling Returns distribution Phase 1 (2026-07-22、GA-314で反映)
+
+結論: `/rolling-returns` にDistribution表を追加し、chartへ中央値・P10・0%基準線・best/worst window表示を追加。API型へmedian/P10/positive rate/sample count/best-worst期間を追加した。境界後一次差分は1 commit、FE 4 paths、+603/-112行。
+
+→ 実装: `/mnt/c/Python_app/DM-signal/frontend/app/rolling-returns/page.tsx`、`/mnt/c/Python_app/DM-signal/frontend/components/rolling-return-chart.tsx`、`/mnt/c/Python_app/DM-signal/frontend/components/rolling-returns-distribution-table.tsx`、`/mnt/c/Python_app/DM-signal/frontend/lib/types/api.ts`

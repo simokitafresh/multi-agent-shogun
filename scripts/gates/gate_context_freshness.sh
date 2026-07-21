@@ -95,6 +95,30 @@ source_commit_action() {
     fi
 }
 
+# GA-314: source更新を解消する際、索引本文が参照するrepo相対リンクの欠落を
+# source_commit更新だけで隠してはならない。鮮度ALERT対象に限って参照を検査し、
+# 欠落が1件でもあれば後段でBLOCKへ倒す。
+missing_context_links() {
+    local context_file="$1" rel_path="$2" token candidate reference_root="$ROOT_DIR"
+    if [[ "$rel_path" == context/dm-signal* && -f "$ROOT_DIR/projects/dm-signal.yaml" ]]; then
+        reference_root="$(python3 - "$ROOT_DIR/projects/dm-signal.yaml" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1])) or {}
+print((data.get("project") or {}).get("path", ""))
+PY
+)"
+        [[ -n "$reference_root" ]] || reference_root="$ROOT_DIR"
+    fi
+    while IFS= read -r token; do
+        candidate="${token#\`}"
+        candidate="${candidate%\`}"
+        [[ "$candidate" == docs/* || "$candidate" == context/* ]] || continue
+        candidate="${candidate%% *}"
+        candidate="${candidate%%#*}"
+        compgen -G "$reference_root/$candidate" >/dev/null || printf '%s\n' "$candidate"
+    done < <(grep -oE '`(docs|context)/[^`]+`' "$context_file" 2>/dev/null || true)
+}
+
 emit_update_cmd_templates() {
     [[ "${#STALE_TEMPLATE_ROWS[@]}" -gt 0 ]] || return 0
 
@@ -329,6 +353,14 @@ for rel_path in "${target_rel_paths[@]}"; do
     record_stale_template_candidate "$rel_path" "$days_ago" "$last_updated"
 
     if [[ -n "${source_alerts[$rel_path]:-}" ]]; then
+        missing_links="$(missing_context_links "$file" "$rel_path")"
+        if [[ -n "$missing_links" ]]; then
+            emit_actionable \
+                "BLOCK: ${basename_file} (source更新あり・参照リンク欠落)" \
+                "欠落参照を復旧してから内容とsource_commitを更新せよ: $(printf '%s' "$missing_links" | paste -sd, -)"
+            HAS_BLOCK=1
+            continue
+        fi
         emit_actionable \
             "ALERT: ${basename_file} (source commits since last_updated=${last_updated})" \
             "$(source_commit_action "$rel_path" "${source_alerts[$rel_path]}")"
