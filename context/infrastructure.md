@@ -844,7 +844,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1258 -->
+<!-- last_synced_lesson: L1261 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1816,6 +1816,9 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1256: 共有worktreeのテスト判定はtask所有pathへ帰属させる（cmd_karo_hotfix_task_test_attribution_202607211351）
 - L1257: 非同期writerの所有側drain契約（cmd_karo_ci_fix_29825839122_202607212030）
 - L1258: 非同期下位実装でもcaller境界を同期に残すな（cmd_karo_hotfix_cmd_complete_ntfy_nonblocking_202607212243）
+- L1259: 非同期下位実装でも上位caller同期tailを計測する（cmd_karo_hotfix_cmd_complete_wrapper_latency_202607212257）
+- L1260: 終端markerには前段試行証跡を対で持たせる（cmd_karo_hotfix_shogun_recovery_marker_selfheal_202607212300）
+- L1261: 子通知抑制は親の後発terminal証拠で限定（cmd_karo_hotfix_completion_gap_child_fp_202607212324）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
