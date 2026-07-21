@@ -1052,17 +1052,19 @@ forward_gunshi_review_result_to_active_ninjas() {
     local review_cmd_id=""
     review_cmd_id=$(printf '%s' "$review_content" | grep -oP '^cmd_[a-zA-Z0-9_]+' | head -1)
 
+    # A review without a leading canonical cmd id cannot be attributed safely.
+    # Fan-out in that state contaminates every active ninja with unrelated scope.
+    [ -n "$review_cmd_id" ] || return 0
+
     while IFS= read -r ninja; do
         [ -n "$ninja" ] || continue
 
         # cmd_idフィルタ: 忍者のtask YAMLのparent_cmdと一致する場合のみ転送
-        if [ -n "$review_cmd_id" ]; then
-            local ninja_parent_cmd=""
-            local task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
-            ninja_parent_cmd=$(inbox_yaml_field_get "$task_file" "parent_cmd" "")
-            if [ "$ninja_parent_cmd" != "$review_cmd_id" ]; then
-                continue  # この忍者の担当cmdではない→スキップ
-            fi
+        local ninja_parent_cmd=""
+        local task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+        ninja_parent_cmd=$(inbox_yaml_field_get "$task_file" "parent_cmd" "")
+        if [ "$ninja_parent_cmd" != "$review_cmd_id" ]; then
+            continue  # この忍者の担当cmdではない→スキップ
         fi
 
         forward_message="軍師レビュー補足: $review_content"
@@ -1862,10 +1864,21 @@ LOCKFILE="$(lock_path "$INBOX")"
 INBOX_DIR="${INBOX%/*}"
 [ -d "$INBOX_DIR" ] || mkdir -p "$INBOX_DIR"
 
-# Generate message ID and timestamp using bash builtins to avoid subprocess overhead
-printf -v _msg_stamp '%(%Y%m%d_%H%M%S)T' -1
-printf -v _msg_rand '%04x%04x' "$RANDOM" "$RANDOM"
-MSG_ID="msg_${_msg_stamp}_$$_${_msg_rand}"
+# Generate message ID and timestamp using bash builtins to avoid subprocess overhead.
+# S1 fast-delivery callers may preallocate the idempotency key so the durable
+# receipt and the authoritative inbox row share one identity across restarts.
+# The default remains unchanged for every existing caller.
+if [ -n "${INBOX_MESSAGE_ID:-}" ]; then
+    if [[ ! "$INBOX_MESSAGE_ID" =~ ^msg_[A-Za-z0-9_.:-]+$ ]]; then
+        echo "ERROR: Invalid INBOX_MESSAGE_ID: '$INBOX_MESSAGE_ID'" >&2
+        exit 1
+    fi
+    MSG_ID="$INBOX_MESSAGE_ID"
+else
+    printf -v _msg_stamp '%(%Y%m%d_%H%M%S)T' -1
+    printf -v _msg_rand '%04x%04x' "$RANDOM" "$RANDOM"
+    MSG_ID="msg_${_msg_stamp}_$$_${_msg_rand}"
+fi
 printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%S)T' -1
 
 # Review context push: 軍師レビュー依頼は送信経路で三層記憶を添付する。
@@ -2595,6 +2608,9 @@ while [ $attempt -lt $max_attempts ]; do
             retro_verbatim_prompt_enqueue "$SCRIPT_DIR" "$FROM" "$_failed_retro_event" inbox_write
         fi
 
+        # Machine-readable persistence receipt.  Emit only after the inbox row
+        # is durably published; watcher verification is a separate consequence.
+        printf 'INBOX_MESSAGE_ID=%s\n' "$MSG_ID"
         dispatch_codex_delivery_verification "$TARGET" "$MSG_ID" "$TYPE"
         exit 0
     else

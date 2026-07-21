@@ -1,5 +1,19 @@
 #!/usr/bin/env bats
 # test_necessity: inbox_writeはflock下でmessage identityをexactly-once永続化し、並行送信でも既存書状の欠落・重複を起こさない。
+
+@test "caller supplied message id is validated, persisted, and returned as receipt" {
+    setup_basic_test_env
+    local supplied="msg_contract_20260721_001"
+    run env INBOX_MESSAGE_ID="$supplied" \
+        bash "$TEST_INBOX_WRITE" test_agent "caller-id fixture" info test contract
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"INBOX_MESSAGE_ID=$supplied"* ]]
+    grep -q "  id: '$supplied'" "$TEST_INBOX_DIR/test_agent.yaml"
+
+    run env INBOX_MESSAGE_ID='bad id/with spaces' \
+        bash "$TEST_INBOX_WRITE" test_agent "invalid-id fixture" info test contract
+    [ "$status" -ne 0 ]
+}
 # test_inbox_write.bats — inbox_write.sh ユニットテスト
 # T-001 ~ T-012: リグレッションテスト仕様書実装
 # Git uncommitted check: report_received時のコミット漏れ検知
@@ -1929,11 +1943,13 @@ MOCK
     cat > "$TEST_TMPDIR/queue/tasks/ninja_a.yaml" <<'YAML'
 task:
   status: assigned
+  parent_cmd: cmd_999
 YAML
 
     cat > "$TEST_TMPDIR/queue/tasks/ninja_b.yaml" <<'YAML'
 task:
   status: in_progress
+  parent_cmd: cmd_999
 YAML
 
     cat > "$TEST_TMPDIR/queue/tasks/ninja_c.yaml" <<'YAML'
@@ -1941,7 +1957,7 @@ task:
   status: idle
 YAML
 
-    run _run_inbox_write karo "verdict: FAIL cmd_999 要確認" review_result gunshi
+    run _run_inbox_write karo "cmd_999 verdict: FAIL 要確認" review_result gunshi
     [ "$status" -eq 0 ]
 
     # grep検証 (python3不要)
@@ -1950,9 +1966,34 @@ YAML
         [[ "$(grep -c "^- " "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml")" -eq 1 ]]
         grep -q "^  from: 'gunshi'" "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml"
         grep -q "^  type: 'task_supplement'" "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml"
-        grep -q "軍師レビュー補足: verdict: FAIL cmd_999 要確認" "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml"
+        grep -q "軍師レビュー補足: cmd_999 verdict: FAIL 要確認" "$TEST_TMPDIR/queue/inbox/${_ninja}.yaml"
     done
     [ ! -f "$TEST_TMPDIR/queue/inbox/ninja_c.yaml" ]
+}
+
+@test "review_result without leading cmd id is not forwarded to active ninjas" {
+    rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
+    mkdir -p "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue/tasks"
+    cp -a "$GIT_TEMPLATE_DIR/scripts/lib" "$TEST_TMPDIR/scripts/lib"
+    unset INBOX_WRITE_TEST
+
+    cat > "$TEST_TMPDIR/scripts/lib/agent_config.sh" <<'MOCK'
+get_ninja_names() { echo "ninja_a"; }
+get_allowed_targets() { echo "karo shogun gunshi ninja_a"; }
+get_commander_names() { echo "shogun karo gunshi"; }
+is_commander_role() { case " $(get_commander_names) " in *" $1 "*) return 0 ;; esac; return 1; }
+get_commander_inbox_path() { is_commander_role "$1" || return 1; echo "${INBOX_WRITE_ROOT_OVERRIDE}/queue/inbox/${1}.yaml"; }
+MOCK
+    cat > "$TEST_TMPDIR/queue/tasks/ninja_a.yaml" <<'YAML'
+task:
+  status: in_progress
+  parent_cmd: cmd_other
+YAML
+
+    run _run_inbox_write karo "知識利用全員化D0レビュー完了。verdict: LGTM" review_result gunshi
+    [ "$status" -eq 0 ]
+    grep -q "^  type: 'review_result'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    [ ! -f "$TEST_TMPDIR/queue/inbox/ninja_a.yaml" ]
 }
 
 @test "task_supplement: not forwarded again to avoid recursive fanout" {
