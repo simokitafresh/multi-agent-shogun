@@ -9,8 +9,10 @@
 
 | 忍者 | 修正前 | 修正後 | SSOT | 乖離 |
 |---|---|---|---|---|
-| hanzo | sol medium | 確認待ち | sol low | 確認待ち |
-| saizo | sol high | 確認待ち | sol low | 確認待ち |
-| kotaro | sol high | 確認待ち | sol low | 確認待ち |
+| hanzo | sol medium | sol low | sol low | 0 |
+| saizo | sol high | sol low | sol low | 0 |
+| kotaro | sol high | sol low | sol low | 0 |
 
 結論: restore撤去でsettings.yamlのSSOTがconfig.tomlと次回自動respawn後のライブへ貫通する。
+
+補足: kotaroの初回再起動は家老の手動bare respawnがstale `pane_start_command`（high）を再利用したためhighが残った。正規`cli_launch_cmd`経路で再起動後、6/6 sol-low・乖離0を確認した。したがってrestoreは恒久ドリフトの真因だが、bare respawnも一時的なstale起動経路として併存していた。
