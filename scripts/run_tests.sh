@@ -6,6 +6,7 @@
 #   bash scripts/run_tests.sh              # unit + top-level 全量
 #   bash scripts/run_tests.sh unit         # unit のみ
 #   bash scripts/run_tests.sh affected     # git diffから影響テストのみ
+#   bash scripts/run_tests.sh task <task>  # task/reportの所有pathから影響テストのみ
 #   bash scripts/run_tests.sh push         # test_necessity宣言済みCI境界のみ
 #   bash scripts/run_tests.sh file <path>  # 特定ファイル
 set -euo pipefail
@@ -76,6 +77,75 @@ sweep_stale_embedded_test_tmp() {
     local dir="$REPO_ROOT/tests/unit"
     [ -d "$dir" ] || return 0
     find "$dir" -maxdepth 1 -type f -name '_tmp_*.bats' -mmin +"$ttl_minutes" -delete 2>/dev/null || true
+}
+
+# Resolve the files owned by one deployed task.  A shared worktree contains
+# concurrent diffs from other ninjas, so global `git diff` is not task
+# provenance.  target/files_to_modify/owned paths are available at assignment;
+# the report's files_modified extends that set at the final checkpoint.
+task_scope_paths() {
+    local task_file="$1"
+    python3 - "$REPO_ROOT" "$task_file" <<'PY'
+import json
+import os
+import sys
+
+import yaml
+
+root = os.path.realpath(sys.argv[1])
+task_path = os.path.realpath(sys.argv[2])
+
+def load(path):
+    with open(path, encoding="utf-8") as handle:
+        value = yaml.safe_load(handle) or {}
+    if not isinstance(value, dict):
+        raise ValueError(f"mapping required: {path}")
+    return value
+
+task_doc = load(task_path)
+task = task_doc.get("task", task_doc)
+if not isinstance(task, dict):
+    raise ValueError("task mapping missing")
+
+values = []
+
+def collect(value):
+    if isinstance(value, str):
+        if value.strip():
+            values.append(value.strip())
+    elif isinstance(value, dict):
+        collect(value.get("path"))
+    elif isinstance(value, list):
+        for item in value:
+            collect(item)
+
+for key in ("target_path", "test_path", "files_to_modify", "files_modified", "owned_paths"):
+    collect(task.get(key))
+
+owned_json = task.get("owned_paths_json")
+if isinstance(owned_json, str) and owned_json.strip():
+    collect(json.loads(owned_json))
+else:
+    collect(owned_json)
+
+report_path = task.get("report_path")
+if isinstance(report_path, str) and report_path.strip():
+    candidate = report_path if os.path.isabs(report_path) else os.path.join(root, report_path)
+    if os.path.isfile(candidate):
+        report = load(candidate)
+        collect(report.get("files_modified"))
+
+seen = set()
+for raw in values:
+    path = raw if os.path.isabs(raw) else os.path.join(root, raw)
+    resolved = os.path.realpath(path)
+    if resolved != root and not resolved.startswith(root + os.sep):
+        raise ValueError(f"scope path outside repository: {raw}")
+    relative = os.path.relpath(resolved, root)
+    if relative not in seen:
+        seen.add(relative)
+        sys.stdout.buffer.write(relative.encode() + b"\0")
+PY
 }
 
 # A throwaway fixture must never retain a live path back into the checkout.
@@ -644,8 +714,46 @@ _run_tests_main() {
             RUN_TESTS_MODE=affected
             run_bats_files_parallel "${selected[@]}"
             ;;
+        task)
+            shift || true
+            [ "$#" -eq 1 ] || { echo "Usage: bash scripts/run_tests.sh task <task_yaml>" >&2; exit 2; }
+            [ -r "$1" ] || { echo "BLOCK: task scope file is unreadable: $1" >&2; exit 2; }
+            local _scope_tmp _scope_rc
+            _scope_tmp="$(mktemp)"
+            set +e
+            task_scope_paths "$1" >"$_scope_tmp"
+            _scope_rc=$?
+            set -e
+            if [ "$_scope_rc" -ne 0 ]; then
+                rm -f "$_scope_tmp"
+                echo "BLOCK: task scope could not be resolved" >&2
+                exit 2
+            fi
+            mapfile -d '' -t scoped_paths <"$_scope_tmp"
+            rm -f "$_scope_tmp"
+            [ "${#scoped_paths[@]}" -gt 0 ] || { echo "BLOCK: task scope is empty" >&2; exit 2; }
+            printf 'TEST_SCOPE result=task files=%s task=%s\n' "${#scoped_paths[@]}" "$1"
+            local _selector_log _selector_rc _selector_output
+            _selector_log="$(mktemp)"
+            set +e
+            _selector_output="$(bash "$REPO_ROOT/scripts/test_select.sh" "${scoped_paths[@]}" 2>"$_selector_log")"
+            _selector_rc=$?
+            set -e
+            cat "$_selector_log" >&2
+            rm -f "$_selector_log"
+            [ "$_selector_rc" -eq 0 ] || { echo "BLOCK: task-scoped selector failed rc=$_selector_rc" >&2; exit 2; }
+            mapfile -t selected <<<"$_selector_output"
+            [ -n "$_selector_output" ] || selected=()
+            if [ "${#selected[@]}" -eq 0 ]; then
+                echo "TEST_SELECTION result=selected reason=task_scope_no_mapped_tests files=0"
+                exit 0
+            fi
+            printf 'TEST_SELECTION result=selected reason=task_scope files=%s\n' "${#selected[@]}"
+            RUN_TESTS_MODE=affected
+            run_bats_files_parallel "${selected[@]}"
+            ;;
         *)
-            echo "Usage: bash scripts/run_tests.sh [all|unit|push|affected|file <path>]" >&2
+            echo "Usage: bash scripts/run_tests.sh [all|unit|push|affected|task <task_yaml>|file <path>]" >&2
             exit 1
             ;;
     esac

@@ -350,6 +350,58 @@ SH
   [[ "$output" == *"TEST_SELECTION result=fallback reason=selector_exit_7 target=unit"* ]]
 }
 
+# test_necessity: shared-worktree task verdicts must use task/report-owned paths and never inherit an unrelated concurrent diff.
+@test "task mode selects only task and report owned paths" {
+  printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$@" >"$SELECT_ARGS_LOG"
+printf '%s\n' "$REPO_ROOT/tests/unit/a.bats"
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '1..1\nok 1 sample\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+  mkdir -p "$TMPROOT/queue/tasks" "$TMPROOT/queue/reports"
+  cat >"$TMPROOT/queue/tasks/kagemaru.yaml" <<'YAML'
+task:
+  target_path: scripts/lib/owned.sh
+  files_to_modify: [tests/unit/owned.bats]
+  report_path: queue/reports/kagemaru.yaml
+YAML
+  cat >"$TMPROOT/queue/reports/kagemaru.yaml" <<'YAML'
+files_modified:
+  - path: docs/research/owned.md
+    change: evidence
+YAML
+  export SELECT_ARGS_LOG="$TMPROOT/selector.args"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SELECT_ARGS_LOG="$SELECT_ARGS_LOG" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/kagemaru.yaml"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SCOPE result=task files=3"* ]]
+  grep -Fxq 'scripts/lib/owned.sh' "$SELECT_ARGS_LOG"
+  grep -Fxq 'tests/unit/owned.bats' "$SELECT_ARGS_LOG"
+  grep -Fxq 'docs/research/owned.md' "$SELECT_ARGS_LOG"
+  ! grep -Fq 'unrelated' "$SELECT_ARGS_LOG"
+}
+
+# test_necessity: an unresolved/empty task scope must fail closed instead of silently reverting to repository-wide git diff.
+@test "task mode rejects empty scope instead of using global git diff" {
+  mkdir -p "$TMPROOT/queue/tasks"
+  printf 'task:\n  status: in_progress\n' >"$TMPROOT/queue/tasks/empty.yaml"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/empty.yaml"
+
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: task scope is empty"* ]]
+}
+
 @test "matching timing cohort orders measured files by LPT" {
   printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
   printf '@test "b" { true; }\n' >"$TMPROOT/tests/unit/b.bats"
