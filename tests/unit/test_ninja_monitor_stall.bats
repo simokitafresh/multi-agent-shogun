@@ -40,6 +40,70 @@ EOF
     export PATH="$TEST_BIN:$PATH"
 }
 
+# test_necessity: dependency待機のfailed workerは接続cmd CLEAR前0回/CLEAR後ちょうど1回だけ再配備される
+@test "dependency continuation consumer releases failed task exactly once after GATE CLEAR" {
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+SCRIPT_DIR="'"$BATS_TEST_TMPDIR"'/dependency-continuation"
+LOG="$SCRIPT_DIR/logs/ninja_monitor.log"
+DEPENDENCY_CONTINUATION_GATE_LOG="$SCRIPT_DIR/logs/gate_fire_log.yaml"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/gates/cmd_dependency" "$SCRIPT_DIR/scripts/lib" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs"
+ln -s "'"$PROJECT_ROOT"'/scripts/lib/yaml_field_set.sh" "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+cat > "$SCRIPT_DIR/scripts/inbox_write.sh" <<'"'"'EOF'"'"'
+#!/usr/bin/env bash
+printf "%s|%s|%s|%s|%s\n" "$1" "$2" "$3" "$4" "$5" >> "$SCRIPT_DIR/logs/deployments.log"
+EOF
+chmod +x "$SCRIPT_DIR/scripts/inbox_write.sh"
+export SCRIPT_DIR
+
+cat > "$SCRIPT_DIR/queue/tasks/saizo.yaml" <<'"'"'EOF'"'"'
+task:
+  task_id: continuation_001
+  status: failed
+  wait_reason: dependency
+  wait_connected_cmd: cmd_dependency
+  continuation_task_id: continuation_001
+EOF
+
+declare -A PREV_STATE
+PREV_STATE[saizo]=idle
+log() { printf "%s\n" "$1" >> "$LOG"; }
+
+# CLEAR前: waitのまま、配備0。
+_handle_dependency_continuation saizo
+test "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" status)" = failed
+test ! -s "$SCRIPT_DIR/logs/deployments.log"
+
+# CLEAR後: assignedへ1回だけ遷移。同cycle再試行でも重複0。
+printf "GATE CLEAR: cmd_dependency\n" > "$SCRIPT_DIR/queue/gates/cmd_dependency/cmd_complete_gate.trigger.log"
+_handle_dependency_continuation saizo
+_handle_dependency_continuation saizo || true
+test "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" status)" = assigned
+test "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" wait_reason)" = dependency
+test "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" wait_connected_cmd)" = cmd_dependency
+test "$(yaml_field_get "$SCRIPT_DIR/queue/tasks/saizo.yaml" continuation_task_id)" = continuation_001
+test "$(wc -l < "$SCRIPT_DIR/logs/deployments.log")" -eq 1
+grep -q "deploy_count=1 duplicate_count=0 release_latency_sec=" "$DEPENDENCY_CONTINUATION_GATE_LOG"
+test "$(grep -c "result: BLOCK" "$DEPENDENCY_CONTINUATION_GATE_LOG" || true)" -eq 0
+
+# unrelated failed taskは誤配備しない。
+cat > "$SCRIPT_DIR/queue/tasks/hanzo.yaml" <<'"'"'EOF'"'"'
+task:
+  task_id: unrelated_001
+  status: failed
+EOF
+_handle_dependency_continuation hanzo || true
+test "$(wc -l < "$SCRIPT_DIR/logs/deployments.log")" -eq 1
+printf "pre_clear=0 post_clear=1 duplicate=0 false_positive=0\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"pre_clear=0 post_clear=1 duplicate=0 false_positive=0"* ]]
+}
+
 @test "C4-07 report state cohort separates awaiting evidence and PASS terminal" {
     run bash -lc '
 set -euo pipefail

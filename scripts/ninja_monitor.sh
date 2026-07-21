@@ -3350,6 +3350,97 @@ _handle_deploy_stall() {
     return 0
 }
 
+# dependency待機のfailed taskを、接続cmdのGATE CLEAR後に一度だけ再配備する。
+# task YAMLの3フィールドがdurable registrationのSSOT。statusのfailed→assigned
+# 遷移がexactly-once fenceとなり、monitor再起動後も復元できる。
+_dependency_continuation_gate_clear_epoch() {
+    local connected_cmd="$1"
+    local gate_dir="$SCRIPT_DIR/queue/gates/$connected_cmd"
+    local archive_marker="$gate_dir/archive.done"
+    local trigger_log="$gate_dir/cmd_complete_gate.trigger.log"
+
+    if [ -f "$archive_marker" ]; then
+        stat -c %Y "$archive_marker" 2>/dev/null
+        return
+    fi
+    if [ -f "$trigger_log" ] && grep -qE '^GATE CLEAR( \(緊急override\))?:' "$trigger_log"; then
+        stat -c %Y "$trigger_log" 2>/dev/null
+        return
+    fi
+    return 1
+}
+
+_dependency_continuation_gate_log() {
+    local result="$1" detail="$2"
+    local log_file="${DEPENDENCY_CONTINUATION_GATE_LOG:-$SCRIPT_DIR/logs/gate_fire_log.yaml}"
+    detail="${detail//\"/_}"
+    mkdir -p "${log_file%/*}"
+    {
+        flock 9
+        printf '%s\n' "- ts: \"$(date -Iseconds)\", gate: dependency_continuation_consumer, result: ${result}, detail: \"${detail}\"" >&9
+    } 9>>"$log_file"
+}
+
+_handle_dependency_continuation() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    [ -f "$task_file" ] || return 1
+
+    local task_status wait_reason connected_cmd continuation_task_id task_id release_fp
+    IFS='|' read -r task_status wait_reason connected_cmd continuation_task_id task_id release_fp < <(awk '
+        function value(line) { sub(/^[^:]*:[[:space:]]*/, "", line); gsub(/["'"'"'[:space:]]/, "", line); return line }
+        /^[[:space:]]*status:/ && status=="" { status=value($0) }
+        /^[[:space:]]*wait_reason:/ && reason=="" { reason=value($0) }
+        /^[[:space:]]*wait_connected_cmd:/ && connected=="" { connected=value($0) }
+        /^[[:space:]]*continuation_task_id:/ && continuation=="" { continuation=value($0) }
+        /^[[:space:]]*task_id:/ && $0 !~ /_ac_task_id:/ && task=="" { task=value($0) }
+        /^[[:space:]]*continuation_release_fingerprint:/ && released=="" { released=value($0) }
+        END { print status "|" reason "|" connected "|" continuation "|" task "|" released }
+    ' "$task_file")
+
+    [ "$task_status" = "failed" ] || return 1
+    [ "$wait_reason" = "dependency" ] || return 1
+
+    if [ -z "$connected_cmd" ] || [ -z "$continuation_task_id" ] || [ "$continuation_task_id" != "$task_id" ]; then
+        _dependency_continuation_gate_log BLOCK "ninja=${name} durable_fields=invalid wait_reason=${wait_reason} connected=${connected_cmd:-missing} continuation=${continuation_task_id:-missing} task=${task_id:-missing}"
+        log "DEPENDENCY-CONTINUATION-BLOCK: $name durable registration invalid"
+        return 0
+    fi
+
+    local fingerprint="${connected_cmd}:${continuation_task_id}"
+    [ "$release_fp" = "$fingerprint" ] && return 0
+
+    local clear_epoch
+    clear_epoch=$(_dependency_continuation_gate_clear_epoch "$connected_cmd") || {
+        log "DEPENDENCY-CONTINUATION-WAIT: $name connected=$connected_cmd"
+        return 0
+    }
+
+    local now latency
+    now=${EPOCHSECONDS:-$(date +%s)}
+    latency=$((now - clear_epoch))
+    [ "$latency" -lt 0 ] && latency=0
+
+    # statusを最後に変える。先行フィールド書込み途中に異常終了しても
+    # failedのままなので次cycleが再試行でき、assigned公開後は再実行しない。
+    yaml_field_set "$task_file" task continuation_release_fingerprint "$fingerprint" || return 0
+    yaml_field_set "$task_file" task continuation_released_at "$(date -Iseconds)" || return 0
+    yaml_field_set "$task_file" task status assigned || return 0
+
+    if bash "$SCRIPT_DIR/scripts/inbox_write.sh" "$name" \
+        "dependency ${connected_cmd} GATE CLEAR。continuation task ${continuation_task_id}を再開せよ。" \
+        task_assigned ninja_monitor task_start >> "$LOG" 2>&1; then
+        local result=PASS
+        [ "$latency" -gt 60 ] && result=BLOCK
+        _dependency_continuation_gate_log "$result" "ninja=${name} connected=${connected_cmd} continuation=${continuation_task_id} deploy_count=1 duplicate_count=0 release_latency_sec=${latency}"
+        log "DEPENDENCY-CONTINUATION-RELEASE: $name connected=$connected_cmd latency=${latency}s"
+    else
+        _dependency_continuation_gate_log BLOCK "ninja=${name} connected=${connected_cmd} continuation=${continuation_task_id} inbox_delivery_failed=1 release_latency_sec=${latency}"
+    fi
+    PREV_STATE[$name]="busy"
+    return 0
+}
+
 # idle通知（busy→idle遷移時のデバウンス付き通知）
 _handle_idle_notify() {
     local name="$1"
@@ -4953,6 +5044,7 @@ handle_confirmed_idle() {
     local name="$1"
 
     if _handle_post_clear_pending "$name"; then return; fi
+    if _handle_dependency_continuation "$name"; then return; fi
     if _handle_deploy_stall "$name"; then return; fi
 
     local now
