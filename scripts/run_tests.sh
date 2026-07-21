@@ -85,7 +85,9 @@ sweep_stale_embedded_test_tmp() {
 # the report's files_modified extends that set at the final checkpoint.
 task_scope_paths() {
     local task_file="$1"
-    python3 - "$REPO_ROOT" "$task_file" <<'PY'
+    local scope_root
+    scope_root="$(task_scope_root "$task_file")" || return 1
+    python3 - "$scope_root" "$task_file" "$REPO_ROOT" <<'PY'
 import json
 import os
 import sys
@@ -94,6 +96,7 @@ import yaml
 
 root = os.path.realpath(sys.argv[1])
 task_path = os.path.realpath(sys.argv[2])
+control_root = os.path.realpath(sys.argv[3])
 
 def load(path):
     with open(path, encoding="utf-8") as handle:
@@ -130,7 +133,7 @@ else:
 
 report_path = task.get("report_path")
 if isinstance(report_path, str) and report_path.strip():
-    candidate = report_path if os.path.isabs(report_path) else os.path.join(root, report_path)
+    candidate = report_path if os.path.isabs(report_path) else os.path.join(control_root, report_path)
     if os.path.isfile(candidate):
         report = load(candidate)
         collect(report.get("files_modified"))
@@ -145,6 +148,35 @@ for raw in values:
     if relative not in seen:
         seen.add(relative)
         sys.stdout.buffer.write(relative.encode() + b"\0")
+PY
+}
+
+# Resolve the task's repository from the project registry.  Unknown projects,
+# malformed registry paths, and non-git directories fail closed.
+task_scope_root() {
+    local task_file="$1"
+    python3 - "$REPO_ROOT" "$task_file" <<'PY'
+import os, subprocess, sys, yaml
+control_root, task_path = map(os.path.realpath, sys.argv[1:])
+doc = yaml.safe_load(open(task_path, encoding="utf-8")) or {}
+task = doc.get("task", doc)
+project = str(task.get("project") or "infra").strip()
+if project == "infra":
+    candidate = control_root
+else:
+    registry = os.path.join(control_root, "projects", project + ".yaml")
+    if not os.path.isfile(registry):
+        raise SystemExit(f"unknown project: {project}")
+    pdata = yaml.safe_load(open(registry, encoding="utf-8")) or {}
+    candidate = str((pdata.get("project") or {}).get("path") or "").strip()
+candidate = os.path.realpath(candidate)
+if not os.path.isdir(candidate):
+    raise SystemExit(f"invalid project path: {candidate}")
+check = subprocess.run(["git", "-C", candidate, "rev-parse", "--show-toplevel"],
+                       text=True, capture_output=True)
+if check.returncode or os.path.realpath(check.stdout.strip()) != candidate:
+    raise SystemExit(f"project path is not repository root: {candidate}")
+print(candidate)
 PY
 }
 
@@ -640,6 +672,12 @@ selection_manifest_for_singleflight() {
             ;;
         task)
             [ "$#" -eq 1 ] || return 2
+            local _sf_task_root
+            _sf_task_root="$(task_scope_root "$1")" || return 2
+            if [ "$_sf_task_root" != "$REPO_ROOT" ]; then
+                printf 'external-project:%s\n' "$_sf_task_root"
+                return 0
+            fi
             local scope
             scope="$(mktemp)"
             task_scope_paths "$1" >"$scope" || { rm -f "$scope"; return 2; }
@@ -859,7 +897,43 @@ _run_tests_main() {
             mapfile -d '' -t scoped_paths <"$_scope_tmp"
             rm -f "$_scope_tmp"
             [ "${#scoped_paths[@]}" -gt 0 ] || { echo "BLOCK: task scope is empty" >&2; exit 2; }
+            local _task_root
+            _task_root="$(task_scope_root "$1")" || { echo "BLOCK: task project root could not be resolved" >&2; exit 2; }
             printf 'TEST_SCOPE result=task files=%s task=%s\n' "${#scoped_paths[@]}" "$1"
+            if [ "$_task_root" != "$REPO_ROOT" ]; then
+                if [ -x "$_task_root/scripts/run_tests.sh" ]; then
+                    (cd "$_task_root" && bash scripts/run_tests.sh affected "${scoped_paths[@]}")
+                else
+                    local _external_backend=0 _external_frontend=0 _external_path
+                    local -a _external_backend_tests=() _external_frontend_sources=()
+                    for _external_path in "${scoped_paths[@]}"; do
+                        if [[ "$_external_path" == backend/* ]]; then
+                            _external_backend=1
+                            [[ "$_external_path" == backend/tests/* ]] && _external_backend_tests+=("${_external_path#backend/}")
+                        fi
+                        if [[ "$_external_path" == frontend/* ]]; then
+                            _external_frontend=1
+                            _external_frontend_sources+=("${_external_path#frontend/}")
+                        fi
+                    done
+                    if [ "$_external_backend" -eq 1 ] && [ -d "$_task_root/backend/tests" ]; then
+                        printf 'TEST_SELECTION result=external runner=pytest scope=backend project_root=%s\n' "$_task_root"
+                        if [ "${#_external_backend_tests[@]}" -gt 0 ]; then
+                            (cd "$_task_root/backend" && python3 -m pytest -q "${_external_backend_tests[@]}") || exit $?
+                        else
+                            (cd "$_task_root/backend" && python3 -m pytest -q) || exit $?
+                        fi
+                    fi
+                    if [ "$_external_frontend" -eq 1 ] && [ -f "$_task_root/frontend/package.json" ]; then
+                        printf 'TEST_SELECTION result=external runner=npm-test scope=frontend project_root=%s\n' "$_task_root"
+                        (cd "$_task_root/frontend" && npm test -- --runInBand --passWithNoTests --findRelatedTests "${_external_frontend_sources[@]}") || exit $?
+                    fi
+                    if [ "$_external_backend" -eq 0 ] && [ "$_external_frontend" -eq 0 ]; then
+                        echo "TEST_SELECTION result=selected reason=external_scope_no_mapped_tests files=0"
+                    fi
+                fi
+                exit $?
+            fi
             local _selector_log _selector_rc _selector_output
             _selector_log="$(mktemp)"
             set +e
