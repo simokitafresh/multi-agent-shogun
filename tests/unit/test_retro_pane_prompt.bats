@@ -47,6 +47,22 @@ setup() {
   [ "$(sed -n '3p' "$ORDER_LOG")" = enter ]
 }
 
+@test "parallel same-event send is one, restart resends zero, distinct events each send once" {
+  retro_pane_prompt_deliver "$ROOT" tobisaru event:parallel fixture &
+  retro_pane_prompt_deliver "$ROOT" tobisaru event:parallel fixture &
+  wait
+  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
+
+  run bash -c 'source "$1"; retro_pane_prompt_deliver "$2" tobisaru event:parallel fixture' \
+    _ "$BATS_TEST_DIRNAME/../../scripts/lib/retro_pane_prompt.sh" "$ROOT"
+  [ "$status" -eq 0 ]
+  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
+
+  retro_pane_prompt_deliver "$ROOT" tobisaru event:distinct-a fixture
+  retro_pane_prompt_deliver "$ROOT" tobisaru event:distinct-b fixture
+  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 3 ]
+}
+
 @test "busy pane and failed send release claim for retry" {
   FIXTURE_BUSY=1 run retro_pane_prompt_deliver "$ROOT" tobisaru event:retry fixture
   [ "$status" -eq 1 ]
@@ -104,6 +120,22 @@ setup() {
   [ "$(find "$RETRO_PANE_PENDING_DIR" -type f | wc -l)" -eq 1 ]
   [ "$(find "$RETRO_PANE_STATE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 0 ]
   [ "$(grep -c $'\tfailed_busy\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+}
+
+@test "async honors durable outstanding suppression across parallel callers and restart" {
+  retro_pane_prompt_async "$ROOT" tobisaru event:first fixture
+  wait
+  first_send_count="$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)"
+  [ "$first_send_count" -eq 1 ]
+
+  retro_pane_prompt_async "$ROOT" tobisaru event:first fixture
+  retro_pane_prompt_async "$ROOT" tobisaru event:second fixture &
+  retro_pane_prompt_async "$ROOT" tobisaru event:third fixture &
+  wait
+
+  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
+  [ "$(find "$RETRO_PANE_PENDING_DIR" -type f -name '*.event' | wc -l)" -eq 1 ]
+  [ "$(grep -c $'\tsuppressed_outstanding\t' "$RETRO_PANE_LEDGER")" -eq 2 ]
 }
 
 @test "report and reviewed failure pending events reconcile without pane delivery" {

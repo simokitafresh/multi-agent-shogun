@@ -219,11 +219,20 @@ retro_pane_prompt_deliver() {
 retro_pane_prompt_enqueue() {
     local root="$1" target="$2" event_id="$3" from="$4"
     local pending_dir="${RETRO_PANE_PENDING_DIR:-${RETRO_VERBATIM_PENDING_DIR:-$root/queue/retro/verbatim_pending}}"
-    local key tmp event_file existing existing_target
+    local key tmp event_file existing existing_target pending_lock
     mkdir -p "$pending_dir"
+    RETRO_PANE_ENQUEUE_DECISION=queued
+    pending_lock="${pending_dir%/}.enqueue.lock"
+    exec {retro_pending_lock_fd}>"$pending_lock"
+    flock -x "$retro_pending_lock_fd"
     key=$(retro_pane_prompt_key "$target" "$event_id")
     event_file="$pending_dir/$key.event"
-    [ -e "$event_file" ] && return 0
+    if [ -e "$event_file" ]; then
+        flock -u "$retro_pending_lock_fd"
+        exec {retro_pending_lock_fd}>&-
+        RETRO_PANE_ENQUEUE_DECISION=suppressed
+        return 0
+    fi
     # Bound each target to one outstanding prompt.  A later event remains in
     # the append-only retro ledger/state and can be reconciled there; stacking
     # a second pane prompt while the first is unresolved has no user benefit.
@@ -232,18 +241,30 @@ retro_pane_prompt_enqueue() {
         IFS= read -r existing_target < "$existing" || true
         if [ "$existing_target" = "$target" ]; then
             printf '%s\tsuppressed_outstanding\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "${RETRO_PANE_LEDGER:-${RETRO_VERBATIM_LOG:-$root/logs/retro_pane_prompt.tsv}}"
+            flock -u "$retro_pending_lock_fd"
+            exec {retro_pending_lock_fd}>&-
+            RETRO_PANE_ENQUEUE_DECISION=suppressed
             return 0
         fi
     done
     tmp="$event_file.tmp.$$"
     printf '%s\n%s\n%s\n%s\n' "$target" "$event_id" "$from" "$key" > "$tmp"
     mv -n "$tmp" "$event_file" 2>/dev/null || rm -f "$tmp"
+    flock -u "$retro_pending_lock_fd"
+    exec {retro_pending_lock_fd}>&-
 }
 
 retro_pane_prompt_async() {
     local root="$1" target="$2" event_id="$3" from="$4"
     # Persist before the detached attempt.  A busy pane or send failure leaves
     # this event for ninja_monitor's next idle cycle; only the claim is released.
-    retro_pane_prompt_enqueue "$root" "$target" "$event_id" "$from" || return 1
+    local enqueue_rc=0
+    RETRO_PANE_ENQUEUE_DECISION=
+    retro_pane_prompt_enqueue "$root" "$target" "$event_id" "$from" || enqueue_rc=$?
+    # Suppression is a successful exactly-once outcome: the event is already
+    # durable or this target already has an unresolved prompt.  In either case
+    # starting a detached delivery would violate the enqueue decision.
+    [ "$RETRO_PANE_ENQUEUE_DECISION" = suppressed ] && return 0
+    [ "$enqueue_rc" -eq 0 ] || return "$enqueue_rc"
     ( retro_pane_prompt_deliver "$root" "$target" "$event_id" "$from" ) >/dev/null 2>&1 &
 }
