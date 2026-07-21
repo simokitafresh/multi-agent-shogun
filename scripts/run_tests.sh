@@ -691,8 +691,17 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                         if kill -0 "$_sf_owner" 2>/dev/null; then
                             continue
                         fi
-                        bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null \
-                            || { echo "BLOCK: single-flight stale owner receipt invalid" >&2; exit 2; }
+                        if ! bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null; then
+                            # A dead owner may leave a state file whose receipt was
+                            # cleaned with its isolated checkout.  This is recoverable:
+                            # discard only the stale coordination record and become the
+                            # new leader.  Treating it as a terminal BLOCK strands every
+                            # subsequent run (and can make CI red without a test failure).
+                            rm -f "$_sf_state"
+                            printf 'SINGLE_FLIGHT_STALE_RECEIPT mode=%s action=restart_leader receipt=%s\n' \
+                                "$_mode" "$_receipt" >&2
+                            break 2
+                        fi
                         _sf_holders="$(fuser "$_sf_lock" 2>/dev/null | awk '{print NF}' || true)"
                         _sf_holders="${_sf_holders:-0}"
                         _sf_descendants="$(ps -e -o pgid=,pid= 2>/dev/null | awk -v pgid="$_sf_owner_pgid" -v owner="$_sf_owner" '$1 == pgid && $2 != owner { n++ } END { print n+0 }')"
