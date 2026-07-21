@@ -11,6 +11,7 @@ setup() {
   export RFS_INBOX_WRITE_PATH="$FAKE_INBOX"
   export RFS_EVENT_LOG="$TMPDIR_CASE/events"
   export RFS_DISABLE_FAST_RECONCILER=1
+  export RFS_TASK_FILE_PATH="$TMPDIR_CASE/task.yaml"
   cat >"$FAKE_INBOX" <<'SH'
 #!/usr/bin/env bash
 if [ -n "${RFS_PROCESS_ID_LOG:-}" ]; then
@@ -29,6 +30,10 @@ lessons_useful: [{id: L625, useful: true, reason: covered}]
 lesson_candidate: {found: false, no_lesson_reason: covered}
 binary_checks:
   AC1: [{check: concrete check, result: ''}]
+YAML
+  cat >"$RFS_TASK_FILE_PATH" <<'YAML'
+task:
+  status: in_progress
 YAML
 }
 
@@ -53,6 +58,10 @@ teardown() { rm -rf "$TMPDIR_CASE"; }
   [ "$status" -eq 0 ]
   run python3 -c 'import yaml,sys; d=yaml.safe_load(open(sys.argv[1])); assert d["status"]=="failed" and d["verdict"]=="FAIL"' "$REPORT"
   [ "$status" -eq 0 ]
+  run python3 -c 'import yaml,sys; assert yaml.safe_load(open(sys.argv[1]))["task"]["status"]=="failed"' "$RFS_TASK_FILE_PATH"
+  [ "$status" -eq 0 ]
+  [ "$(wc -l <"$RFS_EVENT_LOG")" -eq 1 ]
+  grep -q 'karo hanzo未達報告.*report=report.yaml parent_cmd=cmd_test task_failed hanzo notify_karo' "$RFS_EVENT_LOG"
 }
 
 @test "batch rejects scalar structural fields atomically" {

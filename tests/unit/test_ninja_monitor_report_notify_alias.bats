@@ -24,8 +24,8 @@ teardown() {
   rm -rf "$TEST_ROOT"
 }
 
-@test "completion alias SSOT contains exactly six accepted event types" {
-  run bash -c 'source scripts/lib/report_completion_events.sh; for t in report_received report_submitted task_done report_completed report_done report_ready; do report_completion_event_type "$t" || exit 1; done; report_completion_event_type task_failed && exit 1; [ "$(wc -w <<<"$REPORT_COMPLETION_EVENT_TYPES")" -eq 6 ]'
+@test "completion alias SSOT contains all seven terminal event types" {
+  run bash -c 'source scripts/lib/report_completion_events.sh; for t in report_received report_submitted task_done report_completed report_done report_ready task_failed; do report_completion_event_type "$t" || exit 1; done; [ "$(wc -w <<<"$REPORT_COMPLETION_EVENT_TYPES")" -eq 7 ]'
   [ "$status" -eq 0 ]
 }
 
@@ -39,11 +39,10 @@ teardown() {
     source scripts/lib/report_completion_events.sh
     [ "$REPORT_COMPLETION_EVENT_TYPES" = "$first_types" ]
     [ "$(report_completion_event_types_regex)" = "$first_regex" ]
-    for t in report_received report_submitted task_done report_completed report_done report_ready; do
+    for t in report_received report_submitted task_done report_completed report_done report_ready task_failed; do
       report_completion_event_type "$t" || exit 1
     done
-    report_completion_event_type task_failed && exit 1
-    [ "$(wc -w <<<"$REPORT_COMPLETION_EVENT_TYPES")" -eq 6 ]
+    [ "$(wc -w <<<"$REPORT_COMPLETION_EVENT_TYPES")" -eq 7 ]
   '
   [ "$status" -eq 0 ]
   [ -z "$output" ]
@@ -90,6 +89,30 @@ YAML
   '
   [ "$status" -eq 0 ]
   [ "$(grep -c 'REPORT-NOTIFY-MISSING-BLOCK' "$TEST_ROOT/monitor.log")" -eq 1 ]
+}
+
+@test "exact current task_failed evidence clears while stale identity remains missing" {
+  cat > "$TEST_ROOT/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- type: task_failed
+  from: hayate
+  timestamp: '2026-07-19T14:02:00+09:00'
+  report_path: queue/reports/hayate_report_cmd_alias.yaml
+  task_id: cmd_alias_normal
+  parent_cmd: cmd_alias
+YAML
+  run env TEST_ROOT="$TEST_ROOT" PROJECT_ROOT="$PWD" bash -c '
+    export NINJA_MONITOR_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+    SCRIPT_DIR="$TEST_ROOT"; LOG="$TEST_ROOT/monitor.log"
+    notify_karo_throttled(){ printf "FIRE\n" >> "$TEST_ROOT/fire.log"; }
+    run_test_speed_completion_callback(){ return 0; }
+    report_notification_completed hayate "$TEST_ROOT/queue/reports/hayate_report_cmd_alias.yaml" current
+    sed -i "s/cmd_alias_normal/cmd_stale_normal/; s/cmd_alias/cmd_stale/g" "$TEST_ROOT/queue/inbox/karo.yaml"
+    if report_notification_completed hayate "$TEST_ROOT/queue/reports/hayate_report_cmd_alias.yaml" stale; then exit 9; fi
+    [ "$(grep -c FIRE "$TEST_ROOT/fire.log")" -eq 1 ]
+  '
+  [ "$status" -eq 0 ]
 }
 
 @test "monitor repairs a persisted completed report through the canonical publisher" {

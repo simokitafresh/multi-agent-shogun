@@ -108,7 +108,7 @@ if results:
         # The intermediate revision_requested state must never reach readers.
         data["status"] = "completed"
 
-terminal = str(data.get("status", "")).strip() in {"completed", "done"}
+terminal = str(data.get("status", "")).strip() in {"completed", "done", "failed"}
 # operational_simulation is the author-entered test evidence SSOT.  Keep the
 # legacy test_results consumer compatible without a second hand-written copy.
 opsim = data.get("operational_simulation")
@@ -147,7 +147,7 @@ data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 print(str(data.get("status", "")))
 PY
 )
-        if [ "$_rfs_batch_status" = "completed" ] || [ "$_rfs_batch_status" = "done" ]; then
+        if [ "$_rfs_batch_status" = "completed" ] || [ "$_rfs_batch_status" = "done" ] || [ "$_rfs_batch_status" = "failed" ]; then
             _rfs_batch_worker=$(python3 - "$_rfs_batch_report" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
@@ -164,10 +164,19 @@ PY
                 echo "BLOCK: terminal report lacks worker_id/parent_cmd for durable publish" >&2
                 exit 1
             }
-            # The completed report is the durable outbox. Publishing here binds
+            # The terminal report is the durable outbox. Publishing here binds
             # the canonical parent and review child to the exact persisted bytes;
             # inbox_write owns fingerprint dedupe and the atomic task-done edge.
             _rfs_inbox_write="${RFS_INBOX_WRITE_PATH:-$_rfs_batch_root/scripts/inbox_write.sh}"
+            _rfs_event_type="report_received"
+            _rfs_event_label="報告完了"
+            if [ "$_rfs_batch_status" = "failed" ]; then
+                _rfs_event_type="task_failed"
+                _rfs_event_label="未達報告"
+                _rfs_task_file="${RFS_TASK_FILE_PATH:-$_rfs_batch_root/queue/tasks/${_rfs_batch_worker}.yaml}"
+                [ -f "$_rfs_task_file" ] || { echo "BLOCK: failed report lacks worker task YAML" >&2; exit 1; }
+                bash "$_rfs_batch_root/scripts/lib/yaml_field_set.sh" "$_rfs_task_file" task status failed
+            fi
             if [ "${RFS_DISABLE_FAST_RECONCILER:-0}" != "1" ]; then
                 # Detached bounded reconciler closes the process/pane-death
                 # window without waiting for ninja_monitor's 20s cycle. The
@@ -177,12 +186,14 @@ PY
                 RFS_RECONCILE_REPORT="$_rfs_batch_report" \
                 RFS_RECONCILE_WORKER="$_rfs_batch_worker" \
                 RFS_RECONCILE_PARENT="$_rfs_batch_parent" \
+                RFS_RECONCILE_EVENT="$_rfs_event_type" \
+                RFS_RECONCILE_LABEL="$_rfs_event_label" \
                 RFS_RECONCILE_DELAY="${RFS_RECONCILE_DELAY:-0.2}" \
                     nohup setsid -f bash -c '
                         sleep "$RFS_RECONCILE_DELAY"
                         bash "$RFS_RECONCILE_INBOX" karo \
-                          "$RFS_RECONCILE_WORKER報告完了。report=${RFS_RECONCILE_REPORT##*/} parent_cmd=$RFS_RECONCILE_PARENT" \
-                          report_received "$RFS_RECONCILE_WORKER" notify_karo
+                          "$RFS_RECONCILE_WORKER${RFS_RECONCILE_LABEL}。report=${RFS_RECONCILE_REPORT##*/} parent_cmd=$RFS_RECONCILE_PARENT" \
+                          "$RFS_RECONCILE_EVENT" "$RFS_RECONCILE_WORKER" notify_karo
                     ' </dev/null >/dev/null 2>&1 &
             fi
             if [ "${RFS_FAIL_AFTER_ATOMIC_REPLACE:-0}" = "1" ]; then
@@ -190,8 +201,8 @@ PY
                 exit 86
             fi
             bash "$_rfs_inbox_write" karo \
-                "${_rfs_batch_worker}報告完了。report=$(basename "$_rfs_batch_report") parent_cmd=${_rfs_batch_parent}" \
-                report_received "$_rfs_batch_worker" notify_karo
+                "${_rfs_batch_worker}${_rfs_event_label}。report=$(basename "$_rfs_batch_report") parent_cmd=${_rfs_batch_parent}" \
+                "$_rfs_event_type" "$_rfs_batch_worker" notify_karo
         fi
     fi
     exit "$_rfs_batch_rc"
@@ -2440,7 +2451,9 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
         if [ "$AUTO_COMPLETE_STATUS" -eq 1 ]; then
             status_tmp="${REPORT_PATH}.tmp.$$.$attempt.status"
             rm -f "$status_tmp"
-            if ! _report_field_set_fast_scalar "$tmp_file" "$status_tmp" "status" "completed" 1 "status"; then
+            _rfs_terminal_status="completed"
+            [ "$VALUE" = "FAIL" ] && _rfs_terminal_status="failed"
+            if ! _report_field_set_fast_scalar "$tmp_file" "$status_tmp" "status" "$_rfs_terminal_status" 1 "status"; then
                 rm -f "$tmp_file" "$status_tmp"
                 echo "FATAL: report_field_set: failed to auto-complete status for $REPORT_PATH" >&2
                 exit 1
@@ -2521,7 +2534,11 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
 
         echo "[report_field_set] $DOT_KEY = ${VALUE:0:80}"
         if [ "$AUTO_COMPLETE_STATUS" -eq 1 ]; then
-            echo "[report_field_set] status = completed (auto after verdict)"
+            if [ "$VALUE" = "FAIL" ]; then
+                echo "[report_field_set] status = failed (auto after verdict)"
+            else
+                echo "[report_field_set] status = completed (auto after verdict)"
+            fi
         fi
         # Awk fast path: only validate YAML when value contains backslash.
         # awk yaml_safe escapes '"' but not '\', so values with '\' can produce

@@ -89,13 +89,13 @@ PY
     [ "$output" = "PASS completed" ]
 }
 
-@test "verdict FAIL書込み成功後にstatus completedへ自動設定される" {
+@test "verdict FAIL書込み成功後にstatus failedへ自動設定される" {
     run bash "$RFS" "$TEST_REPORT" verdict FAIL
     [ "$status" -eq 0 ]
 
     run _field status
     [ "$status" -eq 0 ]
-    [ "$output" = "completed" ]
+    [ "$output" = "failed" ]
 }
 
 @test "verdict PASS_NO_IMPROVEMENT書込み成功後にstatus completedへ自動設定される" {

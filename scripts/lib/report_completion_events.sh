@@ -3,7 +3,7 @@
 # inbox acceptance and durable monitor evidence checks.
 
 if ! declare -p REPORT_COMPLETION_EVENT_TYPES >/dev/null 2>&1; then
-    readonly REPORT_COMPLETION_EVENT_TYPES="report_received report_submitted task_done report_completed report_done report_ready"
+    readonly REPORT_COMPLETION_EVENT_TYPES="report_received report_submitted task_done report_completed report_done report_ready task_failed"
 fi
 
 report_completion_event_type() {
