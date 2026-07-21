@@ -2932,6 +2932,64 @@ grep -q "KARO-COMPLETION-NOTIFY-GAP: LGTM received for cmd_test_gap001" "$LOG"
     [[ "$output" == *"PASS: gap detected and notified"* ]]
 }
 
+# test_necessity: read-only child completion is owned by a later parent CLEAR,
+# while uncleared/independent/unknown/FAIL cases must remain detectable.
+@test "completion_notify_gap: integrated read-only child suppresses only the parent-CLEAR PASS variant" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+T="$BATS_TEST_TMPDIR"; SCRIPT_DIR="$T"; STATE_DIR="$T/state"; LOG="$T/log"
+mkdir -p "$T/queue/inbox" "$T/queue/reports" "$T/queue/tasks" "$T/queue/gates/cmd_parent_clear" "$T/scripts" "$STATE_DIR"
+: > "$LOG"
+old=$(date -d "-600 seconds" -Iseconds)
+cat > "$T/queue/inbox/karo.yaml" <<EOF
+messages:
+- {content: "cmd_parent_clear_frontend_recon verdict: LGTM", timestamp: "$old", type: review_feedback}
+- {content: "cmd_parent_open_backend_recon verdict: LGTM", timestamp: "$old", type: review_feedback}
+- {content: "cmd_independent verdict: LGTM", timestamp: "$old", type: review_feedback}
+- {content: "cmd_unknown_frontend_recon verdict: LGTM", timestamp: "$old", type: review_feedback}
+- {content: "cmd_parent_clear_backend_scout verdict: LGTM", timestamp: "$old", type: review_feedback}
+EOF
+printf "messages: []\n" > "$T/queue/inbox/shogun.yaml"; printf "entries: []\n" > "$T/queue/bulletin_board.yaml"
+cat > "$T/queue/reports/pass.yaml" <<EOF
+parent_cmd: cmd_parent_clear_frontend_recon
+task_type: scout
+status: completed
+verdict: PASS
+EOF
+cat > "$T/queue/reports/open.yaml" <<EOF
+parent_cmd: cmd_parent_open_backend_recon
+task_type: recon
+status: completed
+verdict: PASS
+EOF
+cat > "$T/queue/reports/unknown.yaml" <<EOF
+parent_cmd: cmd_unknown_frontend_recon
+task_type: scout
+status: completed
+verdict: PASS
+EOF
+cat > "$T/queue/reports/fail.yaml" <<EOF
+parent_cmd: cmd_parent_clear_backend_scout
+task_type: scout
+status: completed
+verdict: FAIL
+EOF
+printf "GATE CLEAR: cmd_parent_clear\n" > "$T/queue/gates/cmd_parent_clear/cmd_complete_gate.trigger.log"
+printf "#!/bin/bash\necho INBOX_CALLED:\$@ >> \"$LOG\"\n" > "$T/scripts/inbox_write.sh"; chmod +x "$T/scripts/inbox_write.sh"
+log() { echo "$1" >> "$LOG"; }
+NINJA_MONITOR_LGTM_NOTIFY_GRACE=1 check_karo_completion_notify_gap
+test "$(grep -c INBOX_CALLED "$LOG")" -eq 4
+! grep -q "cmd_parent_clear_frontend_recon.*completion_notify_gap" "$LOG"
+grep -q "cmd_parent_open_backend_recon.*completion_notify_gap" "$LOG"
+grep -q "cmd_independent.*completion_notify_gap" "$LOG"
+grep -q "cmd_unknown_frontend_recon.*completion_notify_gap" "$LOG"
+grep -q "cmd_parent_clear_backend_scout.*completion_notify_gap" "$LOG"
+'
+    [ "$status" -eq 0 ]
+}
+
 # LGTMより前の進捗報告は、同一cmdでも完了通知の代替にならない
 @test "completion_notify_gap: earlier progress bulletin does not suppress a later LGTM gap" {
     run bash -lc '

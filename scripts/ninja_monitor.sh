@@ -2448,6 +2448,12 @@ def dedup_key(cmd_id):
     return cmd_id
 
 
+def readonly_child_parent(cmd_id):
+    """Return the integrating parent encoded by a read-only child cmd id."""
+    match = re.match(r'^(.+?)_(?:[A-Za-z0-9]+_)?(?:recon|scout)\d*$', cmd_id, re.I)
+    return dedup_key(match.group(1)) if match else None
+
+
 karo_data = load_yaml(karo_inbox)
 messages = karo_data.get("messages") if isinstance(karo_data, dict) else None
 if not isinstance(messages, list):
@@ -2457,6 +2463,8 @@ lgtm_events = []
 reopen_events = []
 terminal_events = []
 current_report_cmds = set()
+readonly_child_reports = set()
+readonly_child_report_cmds = set()
 # cmd_complete_gate.trigger.log and archive.done are durable evidence that the
 # completion gate reached its terminal CLEAR branch.  A later /cmd-complete can
 # overwrite the trigger log with "Already CLEARED", so archive.done must also
@@ -2489,6 +2497,14 @@ for report_path in glob.glob(os.path.join(reports_dir, "*.yaml")):
     cmd_id = str(report.get("parent_cmd") or "") if isinstance(report, dict) else ""
     if cmd_id:
         current_report_cmds.add(dedup_key(cmd_id))
+        if str(report.get("task_type") or "").lower() in {"recon", "scout"}:
+            readonly_child_report_cmds.add(dedup_key(cmd_id))
+        if (
+            dedup_key(cmd_id) in readonly_child_report_cmds
+            and str(report.get("status") or "") == "completed"
+            and str(report.get("verdict") or "") in {"PASS", "PASS_NO_IMPROVEMENT"}
+        ):
+            readonly_child_reports.add(dedup_key(cmd_id))
     commit_id = str(report.get("commit_hash") or report.get("commit") or report.get("git_commit") or "") if isinstance(report, dict) else ""
     if not cmd_id or len(commit_id) != 40:
         continue
@@ -2522,7 +2538,10 @@ for msg in messages:
     ts = epoch(msg.get("timestamp"))
     if ts is None:
         continue
-    if re.search(r'verdict[:=]\s*(LGTM|APPROVE|PASS)', content, re.I) and dedup_key(m.group(1)) not in current_report_cmds:
+    if re.search(r'verdict[:=]\s*(LGTM|APPROVE|PASS)', content, re.I) and (
+        dedup_key(m.group(1)) not in current_report_cmds
+        or dedup_key(m.group(1)) in readonly_child_report_cmds
+    ):
         lgtm_events.append((m.group(1), ts))
     elif re.search(r'verdict[:=]\s*(RC|REJECT|REVISION_REQUESTED)', content, re.I):
         reopen_events.append((dedup_key(m.group(1)), ts))
@@ -2594,6 +2613,18 @@ for path in glob.glob(os.path.join(tasks_dir, "*.yaml")):
 
 for cmd_id, ts in lgtm_events:
     event_key = dedup_key(cmd_id)
+    # A read-only recon/scout is evidence for its integrating parent, not an
+    # independently completable command.  Suppress only when the child report
+    # is terminal PASS and the parent's durable CLEAR happened after this
+    # child's LGTM.  Missing/uncleared parents and FAIL reports stay visible.
+    child_parent = readonly_child_parent(cmd_id)
+    if event_key in readonly_child_reports and child_parent is not None:
+        parent_clear_ts = max(
+            (clear_ts for key, clear_ts in terminal_events if key == child_parent),
+            default=None,
+        )
+        if parent_clear_ts is not None and parent_clear_ts >= ts:
+            continue
     terminal_ts = max(
         (clear_ts for key, clear_ts in terminal_events if key == event_key),
         default=None,
