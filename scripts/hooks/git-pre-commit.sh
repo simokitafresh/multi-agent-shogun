@@ -145,10 +145,10 @@ trap '_ec=$?; precommit_terminal_receipt "$_ec"; exit "$_ec"' EXIT
 # `git commit` callers are also valid and previously left the live hook stale.
 # A live hook therefore reconciles itself from the commit index (when this
 # commit includes the SSOT) or HEAD, then re-execs the atomically replaced copy.
-precommit_step_begin self_sync
 # Populate the parent-shell snapshot even when this tracked source is invoked
 # directly (tests and diagnostics); live-hook self-sync reuses the same data.
 load_staged_file_cache
+precommit_step_begin self_sync
 if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_git_hooks.sh" ]]; then
     _installed_hook="$(git -C "$REPO_ROOT" rev-parse --git-path hooks/pre-commit 2>/dev/null || true)"
     [[ "$_installed_hook" = /* ]] || _installed_hook="$REPO_ROOT/$_installed_hook"
