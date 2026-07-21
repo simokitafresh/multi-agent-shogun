@@ -6502,7 +6502,10 @@ $(cmd_block_get_field "title")
 $(cmd_block_get_field "purpose")"
     [[ -n "${signal_text//[[:space:]]/}" ]] || return 0
 
-    if grep -qiE 'テスト.*(修正|fix|回帰|regression)|CI.*(修正|fix|failure|fail)|continuous[[:space:]]+integration|test.*(fix|regression|failure)|ci.*(fix|failure)' <<< "$signal_text"; then
+    # 語境界\bで英語トークンを囲み、gate_test_health(_test=語境界不成立)やhotfix(tfix=不成立)等の
+    # 識別子内substring誤マッチを排除する(2026-07-21 cmd_4112設計cmド誤BLOCK FP修正。LS-A22(13))。
+    # 日本語(テスト/修正/回帰)は語境界問題がないため従来通り。挙動は正本と真陽性ケースで一致、FPのみ除去。
+    if grep -qiE 'テスト.*(修正|\bfix|回帰|regression)|\bCI\b.*(修正|\bfix|failure|\bfail)|continuous[[:space:]]+integration|\btest.*(\bfix|\bregression|\bfailure)|\bci\b.*(\bfix|\bfailure)' <<< "$signal_text"; then
         if ! grep -qiE '全量.*(実行|run)|full.*(run|suite)|全.*(suite|テスト).*(実行|run)' <<< "$ac_text"; then missing+=("全量実行コマンド"); fi
         if ! grep -qiE 'FAIL[[:space:]]*0|0[[:space:]]*(failures?|fails?|失敗)|no[[:space:]]*(failures?|fails?)' <<< "$ac_text"; then missing+=("FAIL0"); fi
         if ! grep -qiE 'SKIP[[:space:]]*0|0[[:space:]]*(skips?|skip|スキップ)|no[[:space:]]*skips?' <<< "$ac_text"; then missing+=("SKIP0"); fi

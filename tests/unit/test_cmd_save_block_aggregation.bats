@@ -250,6 +250,52 @@ YAML
     [ "$(printf '%s\n' "$output" | grep -c '^判定サマリ:')" -eq 1 ]
 }
 
+# test_necessity: 不変量=識別子内substring(gate_test_health の _test、hotfix の tfix)は
+# test-fix/CI-fix cmd分類を発火させてはならない。語境界\bを外すと設計/偵察cmdが誤BLOCKされる
+# 恒常FP(2026-07-21 cmd_4112設計cmd誤BLOCK, LS-A22(13))が再発するため、境界での非発火を恒久固定する。
+@test "AC2d: 識別子内substringのtest/fixはtest_ci契約を誤発火しない(語境界FPガード)" {
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_design_fp:
+    id: cmd_design_fp
+    title: "設計 — gate_test_health等の制御面病理as-is/to-be設計書"
+    purpose: "gate_test_health台帳鮮度の病理を定式化する。個別hotfixは既配備済で本cmdは設計書1本を作る"
+    project: infra
+    depends_on: none
+    origin: "[[fp_guard]] -> [[word_boundary]] -> [[no_false_block]]"
+    type: impl
+    task_type: impl
+    estimated_minutes: 10
+    timeout_minutes: 30
+    command: "gate_test_health等の根因を設計書へ転記する"
+    acceptance_criteria:
+      - id: AC1
+        description: "設計書を作成し記載の網羅を本文で確認する"
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "設計を忍者が統合する"
+      q3_next_quality: "後続実装cmdの根拠になる"
+      q4_depth: "medium"
+      q5_verified_source: "code_reading — 実測済データ転記"
+      q6_not_hiding: "no"
+      q7_definition_verified: "yes"
+      q8_why_what: "WHY: 病理集約 → WHAT: 設計書 → WHEN: 今 → WHERE: docs/research → WHO: 忍者 → HOW: 転記。複利: 各論再発見排除"
+      q10_knowledge_boundary: "空間内"
+      q11_not_already_done: "未達成。grepで確認"
+      q12_lord_30min_cost: "no"
+      q_ambiguity: "none"
+    assumptions:
+      - claim: "実測は既完了"
+        source: "telemetry"
+        trust: "verified"
+        verified_at: "2026-07-21"
+YAML
+
+    run_cmd_save
+    echo "$output" >&2
+    [[ "$output" != *"test_ci_execution_contract_missing:"* ]]
+}
+
 @test "AC1: PASS時はBLOCKナッジを表示しない" {
     create_memory_db_fixture
     cat > "$TEST_QUEUE" <<'YAML'
