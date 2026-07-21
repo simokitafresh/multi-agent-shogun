@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-16 cmd_3997 -->
-<!-- source_commit:f4d94ab48bd65536631037dbfbe16bdd380827a9 reason:cmd_3997 ledger drift監査永続化 evidence:core §21の旧通知専用契約をDB永続+冪等契約へ更新 -->
+<!-- last_updated: 2026-07-21 cmd_karo_hotfix_ga311_context_freshness_trigger_202607212219 -->
+<!-- source_commit:021ceba728e6de054b6a3b5eefb76b5b9d36d5de reason:GA-311 core contract reflux evidence:021ceba7 pytest timing ledger + 1bf0eae5 drift rerun boundary -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -608,6 +608,8 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 
 - `.github/workflows/pytest.yml` を追加。PyYAML/pytest依存をCIへ導入し、PostgreSQL service付きpytestへ拡張済み
 - `backend/tests/test_pipeline_cache_optimization.py` はCI対象。テスト関数ゼロの空振りを避ける教訓L721を併用する
+- 2026-07-16 `021ceba7`: 全pytest call結果を `backend/.pytest_cache/pytest_timing_ledger.tsv` へ記録するpluginを常時ロード。列は timestamp/nodeid/duration_sec/outcome/failures/skips/commit。flock+atomic replaceで並列追記し、既存ledger破損・git不在はfail-closed。
+- 2026-07-16 `1bf0eae5`: 新規Signal INSERTのledger driftは複数行でもdrift/alert/永続行を1:1で保存し、同一batch再実行では監査行を重複INSERTしない契約を回帰固定。
 - CI失敗調査ではworkflow依存不足とDB service起動を先に確認する
 
 ## §23 P4統合期のbackend変更 (cmd_karo_hotfix_p4_restore_core_integrator/cmd_3858/cmd_3861, 2026-07-12、GA-238で反映)

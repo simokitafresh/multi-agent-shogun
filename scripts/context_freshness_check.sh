@@ -1423,24 +1423,31 @@ def build_warning(rel_path: str, days_old: int | None) -> str:
 
 
 def build_source_warning(
+    project_id: str,
     rel_path: str,
     commit_count: int,
     updated_at: date,
     details: list[str] | None = None,
 ) -> str:
+    repo_path, _pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
     message = (
         f"ALERT: {rel_path} source commits {commit_count}件 "
-        f"since last_updated={updated_at.isoformat()}。更新要否を確認せよ"
+        f"since last_updated={updated_at.isoformat()} "
+        f"repo={repo_path} root_fallback={'yes' if root_fallback else 'no'} "
+        f"timeout={_GIT_TIMEOUT:g}s/{_GIT_RETRY_TIMEOUT:g}s。更新要否を確認せよ"
     )
     if details:
         message += f" latest: {' | '.join(details)}"
     return message
 
 
-def build_source_check_warning(rel_path: str, updated_at: date) -> str:
+def build_source_check_warning(project_id: str, rel_path: str, updated_at: date) -> str:
+    repo_path, _pathspecs, root_fallback = source_repo_for_context(project_id, rel_path)
     return (
         f"WARN: {rel_path} source commit check failed "
-        f"since last_updated={updated_at.isoformat()}。timeout/returncodeを確認せよ"
+        f"since last_updated={updated_at.isoformat()} repo={repo_path} "
+        f"root_fallback={'yes' if root_fallback else 'no'} "
+        f"timeout={_GIT_TIMEOUT:g}s/{_GIT_RETRY_TIMEOUT:g}s。timeout/returncodeを確認せよ"
     )
 
 
@@ -1509,9 +1516,9 @@ if mode == "--dashboard-warnings":
     for project_id, rel_path, abs_path, updated_at, _source_commit in files_for_git:
         cc, details = commit_summaries.get((project_id, rel_path), (0, []))
         if cc < 0:
-            warnings.append(build_source_check_warning(rel_path, updated_at))
+            warnings.append(build_source_check_warning(project_id, rel_path, updated_at))
         elif cc >= min_source_commits:
-            warnings.append(build_source_warning(rel_path, cc, updated_at, details))
+            warnings.append(build_source_warning(project_id, rel_path, cc, updated_at, details))
             alerted_for_group.append((rel_path, details))
     warnings.extend(build_group_warnings(alerted_for_group))
 elif mode == "--cmd-warnings":
@@ -1537,9 +1544,9 @@ elif mode == "--cmd-warnings":
         for current_project, rel_path, abs_path, updated_at, _source_commit in files_for_git:
             cc, details = commit_summaries.get((current_project, rel_path), (0, []))
             if cc < 0:
-                warnings.append(build_source_check_warning(rel_path, updated_at))
+                warnings.append(build_source_check_warning(current_project, rel_path, updated_at))
             elif cc > 0:
-                warnings.append(build_source_warning(rel_path, cc, updated_at, details))
+                warnings.append(build_source_warning(current_project, rel_path, cc, updated_at, details))
                 alerted_for_group.append((rel_path, details))
         warnings.extend(build_group_warnings(alerted_for_group))
 elif mode == "--cmd-commit-list":
