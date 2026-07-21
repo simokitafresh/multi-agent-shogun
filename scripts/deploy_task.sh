@@ -3789,9 +3789,22 @@ operational_simulation:
 EOF
 )
 
-    # Commit requirement is derived from structured task metadata.  Free-text
-    # claims such as "no-code" are not authority to waive a code-task commit.
+    # The task contract is the SSOT when it explicitly carries required.
+    # Only legacy tasks without that key fall back to type/path inference.
     local _commit_required=true _commit_reason="code_or_unclassified_task"
+    local _commit_explicit_required=""
+    _commit_explicit_required=$(python3 - "$task_file" <<'PY'
+import sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+contract = task.get("commit_contract")
+if isinstance(contract, dict) and "required" in contract:
+    value = contract["required"]
+    if isinstance(value, bool):
+        print(str(value).lower())
+    elif str(value).strip().lower() in {"true", "false"}:
+        print(str(value).strip().lower())
+PY
+)
     local _commit_task_type="${task_type:-${type:-${scope_mode:-unknown}}}"
     _commit_task_type="${_commit_task_type,,}"
     local _commit_planned_paths="${target_path} ${files_to_modify} ${files_modified} ${owned_paths}"
@@ -3801,7 +3814,10 @@ EOF
         _commit_has_code_path=true
     fi
     local _commit_scope_text="${constraints} ${not_in_scope}"
-    if echo "$_commit_scope_text" | grep -qiE 'コード変更.*禁止|変更.*禁止.*(調査|報告)|no[[:space:]_-]?code|read[[:space:]_-]?only'; then
+    if [ -n "$_commit_explicit_required" ]; then
+        _commit_required="$_commit_explicit_required"
+        _commit_reason="task_commit_contract_explicit"
+    elif echo "$_commit_scope_text" | grep -qiE 'コード変更.*禁止|変更.*禁止.*(調査|報告)|no[[:space:]_-]?code|read[[:space:]_-]?only'; then
         _commit_required=false
         _commit_reason="explicit_no_code_scope"
     elif [[ "$_commit_task_type" =~ ^(no[_-]?code|decision|decision_candidate|data[_-]?readonly|readonly|read_only|recon|recon2|scout)$ ]] \
