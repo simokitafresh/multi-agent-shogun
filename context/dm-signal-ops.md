@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-16 cmd_3997 -->
-<!-- source_commit:f4d94ab48bd65536631037dbfbe16bdd380827a9 reason:cmd_3997 ledger drift監査永続化 evidence:ops §81へ旧方式から新版への時系列と運用simulation 12/12を反映 -->
+<!-- last_updated: 2026-07-21 cmd_karo_hotfix_ga311_context_freshness_trigger_202607212219 -->
+<!-- source_commit:021ceba728e6de054b6a3b5eefb76b5b9d36d5de reason:GA-311 ops contract reflux evidence:021ceba7 pytest timing ledger operation -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1283,6 +1283,11 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - 新方式(2026-07-16, `f4d94ab4`)は同じsynthetic entryを`signal_change_log`へ1行永続化する。`old_holding_signal=proposed`、`new_holding_signal=ledger`、`date`はDB date型、内部フラグ`is_new_insert_ledger_drift`は永続化しない。同一payload再実行はSignal 1行・監査1行を維持し監査増分0。
 - ledger一致INSERT・ledger未被覆pending・既存UPDATE・cleanup経路は不変。回帰76/76 PASS、運用simulation 12/12 PASS、FAIL 0、SKIP 0。
 - 因果リンク: [[2026-07-14_run_level_ALERT橋渡し]] -> [[alert_payload非永続で事後追跡不能]] -> [[cmd_3997_signal_change_log永続化]]
+
+## §81.1 pytest timing ledger運用 (2026-07-16)
+
+- `021ceba7`でpytest pluginを常時ロードし、call単位のduration/outcome/failure/skip/commitを `backend/.pytest_cache/pytest_timing_ledger.tsv` に永続化。並列writerはflock+atomic replace、破損header/rowはUsageErrorでfail-closed。`PYTEST_TIMING_LEDGER_PATH`で隔離出力先を指定可能。
+- 因果リンク: [[pytest所要時間の推測]] -> [[call単位timing証跡欠落]] -> [[pytest_timing_ledger常時記録]]
 
 ## §82 確定域holding_signal correction event運用 (cmd_3908, 2026-07-15)
 
