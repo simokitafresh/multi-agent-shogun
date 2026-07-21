@@ -513,3 +513,14 @@ MOCK
     grep -q "send_wakeup()" "$WATCHER_SCRIPT"
     grep -q "agent_has_self_watch\|pgrep.*inotifywait\|paste-buffer" "$WATCHER_SCRIPT"
 }
+
+# test_necessity: Claudeのdim表示されたidle提案を実入力と誤認して未読配送を永久延期せず、実入力は引き続き保護する不変量を守る。
+@test "T-SW-017: Claude dim idle suggestion is not treated as typed input" {
+    run bash -c "INBOX_WATCHER_LIB_ONLY=1 source '$WATCHER_SCRIPT' test_agent dummy-pane; tmux() { if [[ \" \$* \" == *' -e '* ]]; then printf '\\033[39m❯ \\033[7mT\\033[0;2mry\\033[0m \\033[2m\"fix typecheck errors\"\\033[0m\\n'; else printf '❯ Try \"fix typecheck errors\"\\n'; fi; }; pane_input_line_has_text test:0.0 claude"
+    [ "$status" -eq 1 ]
+}
+
+@test "T-SW-018: Claude non-dim typed input remains protected" {
+    run bash -c "INBOX_WATCHER_LIB_ONLY=1 source '$WATCHER_SCRIPT' test_agent dummy-pane; tmux() { printf '❯ deploy now\\n'; }; pane_input_line_has_text test:0.0 claude"
+    [ "$status" -eq 0 ]
+}

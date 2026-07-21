@@ -591,11 +591,12 @@ pane_input_line_has_text() {
     last_line=$(printf '%s\n' "$pane_tail" | grep -E '^[[:space:]]*[›❯]' | tail -1 || true)
     [ -n "$last_line" ] || return 1
 
-    # Codex renders its idle suggestion inside the prompt using ANSI dim (SGR 2).
+    # Codex and Claude render their idle suggestions inside the prompt using
+    # ANSI dim (SGR 2).
     # Plain capture makes that placeholder indistinguishable from unsent user text,
     # which can defer recovery nudges forever. Preserve styles for this one check;
     # genuinely typed text is not dim and remains protected by INPUT-GUARD.
-    if [ "$effective_cli" = "codex" ]; then
+    if [[ "$effective_cli" = "codex" || "$effective_cli" = "claude" ]]; then
         styled_tail=$(tmux capture-pane -t "$pane_target" -p -e -J -S -3 2>/dev/null || true)
         [[ "$styled_tail" == *$'\033[2m'* ]] && return 1
     fi
