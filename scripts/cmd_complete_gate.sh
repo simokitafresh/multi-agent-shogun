@@ -6488,8 +6488,11 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     echo ""
     echo "Auto-notification (GATE CLEAR - emergency override):"
 
-    # dashboard_update（最初に実行。dashboard.mdを更新）
-    if SKIP_AUTO_SECTION=1 bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
+    # Wrapper owns the sole dashboard publication. Standalone emergency use
+    # remains self-contained and publishes exactly once.
+    if [ "${CMD_COMPLETE_WRAPPER_ACTIVE:-0}" = "1" ]; then
+        echo "  dashboard_update: delegated to cmd_complete wrapper"
+    elif SKIP_AUTO_SECTION=1 bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID"; then
         echo "  dashboard_update: OK ($CMD_ID)"
     else
         echo "  [INFO] dashboard_update: WARN (failed, continuing)" >&2
@@ -8756,9 +8759,14 @@ PY
     echo ""
     echo "Auto-notification (GATE CLEAR):"
 
-    # dashboard_update（最初に実行。dashboard.mdを更新）
-    (SKIP_AUTO_SECTION=1 bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID" >/dev/null 2>&1 || true) &
-    echo "  dashboard_update: queued (async)"
+    # Wrapper owns the sole SG7-bundle dashboard publication. A direct gate
+    # invocation has no wrapper continuation, so retain exactly one writer.
+    if [ "${CMD_COMPLETE_WRAPPER_ACTIVE:-0}" = "1" ]; then
+        echo "  dashboard_update: delegated to cmd_complete wrapper"
+    else
+        (SKIP_AUTO_SECTION=1 bash "$SCRIPT_DIR/scripts/dashboard_update.sh" "$CMD_ID" >/dev/null 2>&1 || true) &
+        echo "  dashboard_update: queued (standalone async)"
+    fi
 
     # gist_sync --once（dashboard更新後。ntfyにGist URLを含めるため）
     (bash "$SCRIPT_DIR/scripts/gist_sync.sh" --once >/dev/null 2>&1 || true) &
@@ -9277,8 +9285,9 @@ PYEOF
     echo "Git push (post-GATE CLEAR):"
     push_task_repositories "${MATCHING_TASK_FILES[@]}"
 
-    # cmd_1337: ダッシュボード自動更新（GATE CLEAR時のみ、バックグラウンド実行）
-    (bash "$SCRIPT_DIR/scripts/dashboard_auto_section.sh" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
+    # dashboard_auto_section is intentionally not launched here. The sole
+    # dashboard_update writer owns auto-section generation via its normal
+    # contract, preventing a second generation from racing the wrapper.
 
     # ─── Gunshi gate_result reflux 2回目（GATE CLEAR後 最終ステップ, cmd_3370） ───
     # 1回目（GATE CLEAR通知前）で取りこぼしたreportエントリに対応するため再実行。

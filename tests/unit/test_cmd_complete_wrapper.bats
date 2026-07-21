@@ -73,6 +73,58 @@ SH
     grep -q 'inbox_archive.sh|karo' "$CMD_COMPLETE_TEST_LOG"
 }
 
+# test_necessity: normal wrapper and standalone/emergency completion paths must each select exactly one dashboard writer.
+# regression_justification: the pre-fix gate launched dashboard_update twice plus dashboard_auto_section once (3 writers).
+@test "single dashboard writer ownership is explicit for wrapper and standalone gate paths" {
+    local wrapper="$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh"
+    local gate="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
+    run python3 - "$wrapper" "$gate" <<'PY'
+import pathlib, sys
+wrapper = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+gate = pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")
+assert 'CMD_COMPLETE_WRAPPER_ACTIVE=1' in wrapper
+assert gate.count('scripts/dashboard_update.sh" "$CMD_ID"') == 2  # emergency + normal standalone
+assert 'scripts/dashboard_auto_section.sh"' not in gate
+assert gate.count('dashboard_update: delegated to cmd_complete wrapper') == 2
+print('before_writer_invocations=3 after_wrapper=1 after_standalone=1')
+PY
+    [ "$status" -eq 0 ]
+    [ "$output" = "before_writer_invocations=3 after_wrapper=1 after_standalone=1" ]
+}
+
+# test_necessity: two distinct commands completing concurrently must not retry or duplicate their dashboard/ntfy events.
+@test "two concurrent command completions emit one dashboard and one ntfy each without retry" {
+    local cmd
+    for cmd in cmd_parallel_a cmd_parallel_b; do
+        mkdir -p "$FIXTURE/queue/gates/$cmd"
+        cp "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
+    done
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/two-cmds.log"
+    env CMD_COMPLETE_TEST_LOG="$CMD_COMPLETE_TEST_LOG" CMD_COMPLETE_ROOT_DIR="$FIXTURE" \
+        CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" bash "$FIXTURE/scripts/cmd_complete.sh" cmd_parallel_a >"$BATS_TEST_TMPDIR/a.out" 2>&1 &
+    local pid_a=$!
+    env CMD_COMPLETE_TEST_LOG="$CMD_COMPLETE_TEST_LOG" CMD_COMPLETE_ROOT_DIR="$FIXTURE" \
+        CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" bash "$FIXTURE/scripts/cmd_complete.sh" cmd_parallel_b >"$BATS_TEST_TMPDIR/b.out" 2>&1 &
+    local pid_b=$!
+    wait "$pid_a"
+    wait "$pid_b"
+    [ "$(grep -c '^dashboard_update.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 2 ]
+    [ "$(grep -c '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 2 ]
+    ! grep -q 'RETRY dashboard' "$BATS_TEST_TMPDIR/a.out" "$BATS_TEST_TMPDIR/b.out"
+    ! grep -q 'RETRY ntfy' "$BATS_TEST_TMPDIR/a.out" "$BATS_TEST_TMPDIR/b.out"
+}
+
+# test_necessity: every completion step and dashboard retry attempt must expose wall time and exit reason for RCA.
+@test "completion diagnostics record step wall time and retry failure reason" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/diagnostics.log"
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        CMD_COMPLETE_FAIL_STEP=dashboard_update.sh CMD_COMPLETE_DASHBOARD_ATTEMPTS=1 \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"PASS lesson_review wall_ms="* ]]
+    [[ "$output" == *"ATTEMPT_FAILED dashboard attempt=1/1 wall_ms="*"reason=exit_rc_1"* ]]
+}
+
 @test "failed step stops later steps and names the failure" {
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/failed.log"
     run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \

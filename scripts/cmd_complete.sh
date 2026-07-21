@@ -16,6 +16,7 @@ ROOT_DIR="${CMD_COMPLETE_ROOT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 # shellcheck source=scripts/lib/defense_overhead_writer.sh
 source "$ROOT_DIR/scripts/lib/defense_overhead_writer.sh"
 CMD_COMPLETE_STARTED_MS="$(date +%s%3N)"
+declare -A CMD_COMPLETE_STEP_MS=()
 BUNDLE_PATH="${2:-queue/gates/${CMD_ID}/sg7_bundle.json}"
 [[ "$BUNDLE_PATH" = /* ]] || BUNDLE_PATH="$ROOT_DIR/$BUNDLE_PATH"
 
@@ -114,35 +115,50 @@ checkpoint_init
 
 run_step() {
     local name="$1"
+    local started_ms elapsed_ms
     shift
+    started_ms="$(date +%s%3N)"
     printf '[cmd_complete] START %s\n' "$name" >&2
     if "$@"; then
-        printf '[cmd_complete] PASS %s\n' "$name" >&2
+        elapsed_ms=$(( $(date +%s%3N) - started_ms ))
+        CMD_COMPLETE_STEP_MS["$name"]="$elapsed_ms"
+        printf '[cmd_complete] PASS %s wall_ms=%d\n' "$name" "$elapsed_ms" >&2
     else
         local rc=$?
-        printf '[cmd_complete] FAILED %s\n' "$name" >&2
+        elapsed_ms=$(( $(date +%s%3N) - started_ms ))
+        CMD_COMPLETE_STEP_MS["$name"]="$elapsed_ms"
+        printf '[cmd_complete] FAILED %s wall_ms=%d rc=%d\n' "$name" "$elapsed_ms" "$rc" >&2
         return "$rc"
     fi
 }
 
 run_step_with_retry() {
     local name="$1" max_attempts="$2" retry_delay="$3"
-    local attempt rc=0
+    local attempt rc=0 attempt_started_ms attempt_wall_ms total_started_ms
     shift 3
+    total_started_ms="$(date +%s%3N)"
     for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+        attempt_started_ms="$(date +%s%3N)"
         printf '[cmd_complete] START %s attempt=%d/%d\n' "$name" "$attempt" "$max_attempts" >&2
         if "$@"; then
-            printf '[cmd_complete] PASS %s attempt=%d/%d\n' "$name" "$attempt" "$max_attempts" >&2
+            attempt_wall_ms=$(( $(date +%s%3N) - attempt_started_ms ))
+            CMD_COMPLETE_STEP_MS["$name"]=$(( $(date +%s%3N) - total_started_ms ))
+            printf '[cmd_complete] PASS %s attempt=%d/%d wall_ms=%d\n' "$name" "$attempt" "$max_attempts" "$attempt_wall_ms" >&2
             return 0
         else
             rc=$?
         fi
+        attempt_wall_ms=$(( $(date +%s%3N) - attempt_started_ms ))
+        printf '[cmd_complete] ATTEMPT_FAILED %s attempt=%d/%d wall_ms=%d reason=exit_rc_%d\n' \
+            "$name" "$attempt" "$max_attempts" "$attempt_wall_ms" "$rc" >&2
         if (( attempt < max_attempts )); then
             printf '[cmd_complete] RETRY %s after transient failure rc=%d\n' "$name" "$rc" >&2
             sleep "$retry_delay"
         fi
     done
-    printf '[cmd_complete] FAILED %s after %d attempts\n' "$name" "$max_attempts" >&2
+    CMD_COMPLETE_STEP_MS["$name"]=$(( $(date +%s%3N) - total_started_ms ))
+    printf '[cmd_complete] FAILED %s after %d attempts wall_ms=%d reason=exit_rc_%d\n' \
+        "$name" "$max_attempts" "${CMD_COMPLETE_STEP_MS[$name]}" "$rc" >&2
     return "$rc"
 }
 
@@ -238,7 +254,8 @@ if [[ -n "${CMD_COMPLETE_WORKAROUND_NINJA:-}" ]]; then
         "${CMD_COMPLETE_WORKAROUND_METHOD:?}"
 fi
 
-run_checkpointed cmd_complete_gate bash "$SCRIPT_DIR/cmd_complete_gate.sh" "$CMD_ID"
+run_checkpointed cmd_complete_gate env CMD_COMPLETE_WRAPPER_ACTIVE=1 \
+    bash "$SCRIPT_DIR/cmd_complete_gate.sh" "$CMD_ID"
 # cmd_complete_gate performs the fail-closed, command-correlated freshness
 # check before CLEAR. Do not run the dashboard-wide freshness monitor here:
 # an unrelated commit after another context's source_commit would otherwise
@@ -277,8 +294,19 @@ run_checkpointed inbox_archive archive_inbox_after_completion_hint
 
 printf '[cmd_complete] COMPLETE %s\n' "$CMD_ID"
 CMD_COMPLETE_WALL_MS=$(( $(date +%s%3N) - CMD_COMPLETE_STARTED_MS ))
+CMD_COMPLETE_PHASE_JSON="$(python3 - "${CMD_COMPLETE_STEP_MS[sg7_consume]:-0}" \
+  "${CMD_COMPLETE_STEP_MS[lesson_review]:-0}" "${CMD_COMPLETE_STEP_MS[cmd_complete_gate]:-0}" \
+  "${CMD_COMPLETE_STEP_MS[quality_log]:-0}" "${CMD_COMPLETE_STEP_MS[dashboard]:-0}" \
+  "${CMD_COMPLETE_STEP_MS[ntfy]:-0}" "${CMD_COMPLETE_STEP_MS[inbox_archive]:-0}" \
+  "$CMD_COMPLETE_WALL_MS" <<'PY'
+import json, sys
+names = ("sg7_consume", "lesson_review", "cmd_complete_gate", "quality_log",
+         "dashboard", "ntfy", "inbox_archive", "completion_total")
+print(json.dumps(dict(zip(names, map(int, sys.argv[1:]))), separators=(",", ":")))
+PY
+)"
 self_retro_write_async karo_cmd_complete "$CMD_ID" "$CMD_COMPLETE_WALL_MS" \
-  "{\"completion_total\":${CMD_COMPLETE_WALL_MS}}" completion_pipeline \
+  "$CMD_COMPLETE_PHASE_JSON" completion_pipeline \
   "SG7 consume through archive completed" "reduce dominant completion phase without weakening checkpoints" \
   "all ordered checkpoints complete and duplicate event count is 0" \
   "[[cmd_complete]] -> [[completion_pipeline]] -> [[fix_known]]"
