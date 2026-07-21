@@ -125,10 +125,9 @@ print_sg_pre24() {
             continue
         fi
         _gen_first=${_gen_files%%$'\n'*}
-        _src_hash=$(git -C "$REPO_ROOT" rev-list -1 "$fixed_hash" -- "$_ifile" 2>/dev/null || true)
-        _gen_hash=$(git -C "$REPO_ROOT" rev-list -1 "$fixed_hash" -- "$_gen_first" 2>/dev/null || true)
-        if [ -n "$_src_hash" ] && [ -n "$_gen_hash" ] && git -C "$REPO_ROOT" merge-base --is-ancestor "$_src_hash" "$_gen_hash" 2>/dev/null; then
-            echo "  PASS: ${_ifile} → fixed:${fixed_hash:0:12} 時点でgenerated/が正本以降に更新済み"
+        _fixed_files=$(git -C "$REPO_ROOT" diff-tree --no-commit-id --name-only -r "$fixed_hash" 2>/dev/null || true)
+        if printf '%s\n' "$_fixed_files" | grep -qxF "$_ifile" && printf '%s\n' "$_fixed_files" | grep -qxF "$_gen_first"; then
+            echo "  PASS: ${_ifile} → fixed:${fixed_hash:0:12} でgenerated/を同時更新済み"
         else
             echo "  ★ BLOCK: ${_ifile}変更がfixed:${fixed_hash:0:12} 時点のgenerated/に未反映"
             _pre24_pass=false
@@ -188,19 +187,20 @@ if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
         while IFS= read -r _hash; do
             [ -z "$_hash" ] && continue
             # 注: hashが別repo(clinic等)のものだとgit fatal(128)→代入の終了コード=128→set -e全死亡するため || true 必須(2026-06-11 cmd_3277で発火した既存バグ)
-            _PRE_CMD_FILES+="$(
-                cd "${PROJECT_DIR:-$REPO_ROOT}" \
-                    && timeout 2 git diff-tree --no-commit-id --name-only -r "$_hash" 2>/dev/null || true
-            )"$'\n'
-            _PRE_RECENT_DATA+="$(
-                cd "$REPO_ROOT" \
-                    && git show --oneline --name-only "$_hash" 2>/dev/null || true
-            )"$'\n'
+            _hash_repo="${PROJECT_DIR:-$REPO_ROOT}"
+            git -C "$_hash_repo" cat-file -e "${_hash}^{commit}" 2>/dev/null || _hash_repo="$REPO_ROOT"
+            if git -C "$_hash_repo" cat-file -e "${_hash}^{commit}" 2>/dev/null; then
+                _hash_files=$(git -C "$_hash_repo" diff-tree --no-commit-id --name-only -r "$_hash" 2>/dev/null || true)
+                _hash_numstat=$(git -C "$_hash_repo" diff-tree --no-commit-id --numstat -r "$_hash" 2>/dev/null || true)
+                _PRE_CMD_FILES+="${_hash_files}"$'\n'
+                _PRE_RECENT_DATA+="${_hash_files}"$'\n'
+                if [ "$_hash_repo" = "$REPO_ROOT" ]; then _PRE_REPO_NUMSTAT+="${_hash_numstat}"$'\n'; else _PRE_PROJECT_NUMSTAT+="${_hash_numstat}"$'\n'; fi
+            fi
         done <<< "$_REPORT_HASHES"
         _PRE_CMD_FILES=$(printf '%s\n' "$_PRE_CMD_FILES" | sed '/^$/d' | sort -u)
     else
         # PRE3/PRE19-DM用: cmd固有commitのnumstat (1 call)。name-only相当は3列目(path)から導出しPRE3と共用
-        _PRE_PROJECT_NUMSTAT=$(cd "${PROJECT_DIR:-$REPO_ROOT}" && timeout 2 git log --no-merges --fixed-strings --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null) || true
+        _PRE_PROJECT_NUMSTAT=$(cd "${PROJECT_DIR:-$REPO_ROOT}" && timeout 2 git log -20 --no-merges --fixed-strings --grep="${PARENT_CMD}" --format="" --numstat 2>/dev/null) || true
         _PRE_CMD_FILES=$(printf '%s\n' "$_PRE_PROJECT_NUMSTAT" | awk -F'\t' 'NF>=3{print $3}' | sort -u)
         # PRE14用: 直近20 commitとファイル (1 call)
         _PRE_RECENT_DATA=$(cd "$REPO_ROOT" && timeout 2 git log --oneline -20 --name-only 2>/dev/null) || true
@@ -209,11 +209,11 @@ fi
 # PRE13/PRE19-shogun用: REPO_ROOTのnumstat。PRE13はhashの有無に関わらず全履歴grep走査が必要なため
 # 上のブロックとは独立にガードする(元のPRE13ガードと同一条件=FILES_MODIFIEDのみ)。
 # PROJECT_DIR==REPO_ROOT(非DM-Signal報告。実運用で最頻出)なら上のnumstatをそのまま再利用しgit呼出を省略する。
-if [ -n "${FILES_MODIFIED:-}" ]; then
+if [ -n "${FILES_MODIFIED:-}" ] && [ -z "$_REPORT_HASHES" ]; then
     if [ "${PROJECT_DIR:-$REPO_ROOT}" = "$REPO_ROOT" ] && [ -n "$_PRE_PROJECT_NUMSTAT" ]; then
         _PRE_REPO_NUMSTAT="$_PRE_PROJECT_NUMSTAT"
     else
-        _PRE_REPO_NUMSTAT=$( { timeout 3 git -C "$REPO_ROOT" log --no-merges --fixed-strings --grep="${PARENT_CMD:-}" --format="" --numstat 2>/dev/null || true; } )
+        _PRE_REPO_NUMSTAT=$( { timeout 3 git -C "$REPO_ROOT" log -20 --no-merges --fixed-strings --grep="${PARENT_CMD:-}" --format="" --numstat 2>/dev/null || true; } )
     fi
 fi
 
@@ -269,7 +269,7 @@ if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ]; then
     echo ""
     echo "■ SG-PRE4: backend/app/変更チェック"
     # Find the latest commit for any modified file
-    LATEST_COMMIT=$(cd "$PROJECT_DIR" && echo "${FILES_MODIFIED:-}" | head -1 | xargs -I{} timeout 2 git log --format=%H -1 -- {} 2>/dev/null || echo "")
+    LATEST_COMMIT="${_REPORT_HASHES%%$'\n'*}"
     if [ -n "$LATEST_COMMIT" ]; then
         BACKEND_CHANGES=$(cd "$PROJECT_DIR" && git diff --name-only "${LATEST_COMMIT}^..${LATEST_COMMIT}" -- backend/app/ 2>/dev/null || echo "")
         if [ -z "$BACKEND_CHANGES" ]; then
