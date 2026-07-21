@@ -11,6 +11,8 @@
 
 ## コンテキスト管理
 
+related_lessonsのmemory boostは独自SQLite snapshotを作らず、`memory_db_cache.sh`のatomic共有ext4 snapshotをSSOTとして直接読む。修正前37.771秒（721MB backup 20.403秒）から共有snapshot query 0.57秒、Python側backup 0件。→ `docs/research/cmd_4111_related_lessons_snapshot.md`（cmd_4111）
+
 死亡agentの局所復旧は`scripts/respawn_dead_agent.sh <ninja> [--dry-run]`を使う。対象paneがdeadでない場合はBLOCKし、復旧後は`@agent_id`・`@context_pct`・active task由来の`@current_task`を同期する。忍者名はハードコードせず`scripts/lib/agent_config.sh`の`get_ninja_names`をSSOTとする。→ `scripts/respawn_dead_agent.sh` / `tests/unit/test_respawn_dead_agent.bats`（commits `76849460f`, `9fe5ec064`, `1cfa0e2f6`）
 
 daemon watchdogは個別health checkに加え、`inbox_watcher.sh>=9`・`ninja_monitor.sh`・`ntfy_listener.sh`・`usage_statusbar_loop.sh`・`gist_sync.sh`のprocess inventoryを1 snapshotで監査し、不足classごとにWARNする。消滅PIDの`/proc/<pid>/cmdline` raceは無音で扱い、inbox unread countは読取異常時も単一整数へ正規化する。P0は本番実走error 0で完了。次段は副作用のある`restart_watchers --status`修正(P1a-1)と全daemon共通maintenance lock(P1a-2)を分離し、既存watchdogの600秒/3回throttleと重複するbackoffは追加しない。→ `scripts/daemon_watchdog.sh` / `tests/unit/test_daemon_watchdog.bats` / `docs/research/daemon-inventory-asis-tobe-5w1h_20260715.md`（cmd_3951、commit `4bf8858c0`、R2最終inventory v1.3 `2afc5d9a1`）
