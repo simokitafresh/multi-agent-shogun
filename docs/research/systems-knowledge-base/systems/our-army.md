@@ -11,11 +11,11 @@
 | Upstream Repo | `https://github.com/yohey-w/multi-agent-shogun.git` |
 | Status | 本番運用中 |
 | System Config | `AGENTS.md` / `CLAUDE.md` system configuration `version: "3.0"` |
-| Active Roles | Lord(人間) → shogun → karo → gunshi → ninja×6 |
-| CLI Split | Claude + Codex (`projects/infra.yaml` `cli_agents`) |
+| Active Roles | Lord(人間) → shogun → karo → ninja×6（gunshiは独立レビュー役） |
+| CLI Split | Claude: shogun/gunshi、Codex: karo/ninja×6 (`config/settings.yaml` `cli.agents`) |
 | Communication | YAML mailbox + `scripts/inbox_write.sh` + watcher nudge |
-| Current Command Archive | `context/cmd-chronicle.md` に `cmd_` 行 725 件 (2026-04-19確認) |
-| Knowledge Layout | `AGENTS.md` / `instructions*` / `projects/*.yaml` / `context/*.md` / `queue/*.yaml` / MCP Memory(将軍限定) |
+| Current Command Archive | `context/cmd-chronicle.md`（時系列索引。件数は変動するため実読時に計測） |
+| Knowledge Layout | 三層記憶（記憶DB・semantic-map・Obsidian）を共有知の正本とし、`AGENTS.md` / `instructions*` / `projects/*.yaml` / `context/*.md` / `queue/*.yaml` を用途別に配置 |
 
 ## Design Philosophy
 
@@ -51,7 +51,7 @@
 
 | 観点 | 実装 |
 |------|------|
-| 知識層 | `AGENTS.md` 圧縮索引 + `context/*.md` 詳細 + `projects/*.yaml` 核心知識 |
+| 知識層 | 三層記憶を共有知の正本とし、`AGENTS.md` 圧縮索引 + `context/*.md` 詳細 + `projects/*.yaml` 核心知識を配置 |
 | 教訓層 | `projects/*/lessons.yaml` と `projects/infra/lessons_{role}.yaml` |
 | レビュー | 家老 + 軍師の品質管理ユニット |
 | 品質保証 | GATE 7項目 + review + pre-push/CI監視 |
@@ -140,10 +140,11 @@
 
 | 項目 | 内容 |
 |------|------|
-| verified_at | 2026-06-20 |
-| method | ローカル一次資料読取 (`AGENTS.md`, `CLAUDE.md`, `projects/infra.yaml`, `context/infrastructure.md`, `context/cmd-chronicle.md`) + `git remote -v` + 件数確認 |
-| source | `AGENTS.md`, `CLAUDE.md`, `projects/infra.yaml`, `context/infrastructure.md`, `context/cmd-chronicle.md` |
-| notes | `context/cmd-chronicle.md` の `cmd_` 行数は 725、知識辞書の既存件数は `systems=7`, `sources=1` を確認 |
+| verified_at | 2026-07-21 |
+| freshness_class | operational |
+| method | 現行一次資料の項目別照合 (`AGENTS.md`, `config/settings.yaml`, `scripts/inbox_write.sh`, `scripts/ninja_monitor.sh`, `scripts/gates/gate_knowledge_freshness.sh`) + `git remote -v` |
+| source | `AGENTS.md`, `config/settings.yaml`, `scripts/inbox_write.sh`, `scripts/ninja_monitor.sh`, `scripts/gates/gate_knowledge_freshness.sh`, `git remote -v` |
+| notes | 主要12項目を照合し一致8件・不一致4件。CLI配分、軍師の位置、共有知正本、変動するcmd件数の記述を現行実態へ修正。operational class（30日）を維持 |
 
 ## 因果リンク
 
