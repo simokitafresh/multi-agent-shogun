@@ -285,15 +285,34 @@ limit_ratio = 1.0 + pct / 100.0
 # a different source fingerprint means changed.  Existing unchanged slowness
 # remains visible in distribution output but cannot newly trip the file BLOCK.
 latest_baseline_file = {}
+baseline_file_values = {}
 for run in baseline:
     for row in run[3]:
         latest_baseline_file[row["test_file"]] = row
+        baseline_file_values.setdefault(row["test_file"], []).append(float(row["wall_sec"]))
 changed_rows = []
 for row in current[3]:
     previous = latest_baseline_file.get(row["test_file"])
     if previous is None or previous["source_fingerprint"] != row["source_fingerprint"]:
         changed_rows.append(row)
-file_hits = [r for r in changed_rows if float(r["wall_sec"]) > p95 and float(r["wall_sec"]) > p95 * limit_ratio]
+file_hits = []
+for row in changed_rows:
+    values = baseline_file_values.get(row["test_file"], [])
+    if not values:
+        # New files have no own history; retain the cohort-wide budget until a
+        # representative file-specific baseline exists.
+        budget = p95 * limit_ratio
+    else:
+        representative = statistics.median(values)
+        mad = statistics.median(abs(value - representative) for value in values)
+        # Relative growth catches a shifted representative. Three MADs absorb
+        # isolated contention/I/O spikes without promoting a noisy minimum or
+        # one latest observation to the permanent baseline.
+        budget = representative + max(representative * pct / 100.0, 3.0 * mad)
+    recent = (values + [float(row["wall_sec"])])[-min_runs:]
+    observed = statistics.median(recent)
+    if observed > budget:
+        file_hits.append(row)
 suite_hit = current_wall > wall_median + suite_abs and current_wall > wall_median * limit_ratio
 if file_hits or suite_hit:
     if active_exception:

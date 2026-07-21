@@ -92,3 +92,30 @@ EOF
   [ "$elapsed_ms" -lt 1000 ]
   [ ! -s "$DATE_FORK_LOG" ]
 }
+
+# test_necessity: A changed test's budget must use its own median plus robust
+# dispersion, so one contention spike cannot cause a false regression while a
+# shifted representative runtime still blocks.
+@test "ratchet uses per-file median and MAD instead of cohort p95" {
+  export TEST_TIMING_RATCHET_SUITE_ABS_SEC=1000
+  local i value
+  for i in 1 2 3 4 5 6 7 8 9; do
+    value=10
+    [ "$i" = 4 ] && value=100
+    printf 'r%s\trepo\told%s\tunit\tworker\ttests/unit/noisy.bats\t1\t%s\tpass\t0\t0\t0\t2026-07-%02dT00:00:00Z\tmode=unit;jobs=8\told\n' \
+      "$i" "$i" "$value" "$((20 + i))" >> "$LEDGER"
+  done
+  printf 'r10\trepo\tnew\tunit\tworker\ttests/unit/noisy.bats\t1\t12\tpass\t0\t0\t0\t2026-07-30T00:00:00Z\tmode=unit;jobs=8\tnew\n' >> "$LEDGER"
+
+  run_gate
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"OK: timing budget ratchet"* ]]
+
+  sed -i -e '/^r7\t/s/\t10\tpass/\t20\tpass/' \
+    -e '/^r8\t/s/\t10\tpass/\t20\tpass/' \
+    -e '/^r9\t/s/\t10\tpass/\t20\tpass/' \
+    -e '/^r10\t/s/\t12\tpass/\t20\tpass/' "$LEDGER"
+  run_gate
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: new/changed test budget exceeded: tests/unit/noisy.bats"* ]]
+}
