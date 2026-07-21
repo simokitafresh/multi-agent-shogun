@@ -105,7 +105,13 @@ fi
 # actually under test. three_layer_preflight.sh's own tests call verify()
 # directly (bypassing this dispatcher) with crafted evidence, so they are
 # unaffected by this bypass; the fail-closed check above still runs.
-if [[ -z "${BATS_TEST_FILENAME:-}" ]] && ! bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" verify "Bash" "" "$command" >/dev/null 2>&1; then
+# 復旧コマンド(証跡発行 three_layer_preflight.sh issue)自体は fail-closed 下でも常に通す。
+# これを弾くと証跡を再発行できずBashが完全ロックアウトするデッドロックになる
+# (2026-07-21 verify fail-closed復元 bcfe6c1f8 で顕在化。fail-open時は verify が常に0で隠れていた。
+#  hookメッセージが約束する『issueはallowlist済み』の実体化)。
+if [[ "$command" != *three_layer_preflight.sh*issue* ]] \
+   && [[ -z "${BATS_TEST_FILENAME:-}" ]] \
+   && ! bash "$SCRIPT_DIR/scripts/hooks/three_layer_preflight.sh" verify "Bash" "" "$command" >/dev/null 2>&1; then
     emit_deny "BLOCK: 三層preflight証跡なし/無効。UserPromptSubmitごとに記憶DB・semantic・Obsidian検索を完了せよ。復旧: bash scripts/hooks/three_layer_preflight.sh issue \"<今の作業内容1行>\" を実行せよ(証跡発行コマンド自体はallowlist済みでBLOCK中も実行可能)"
 fi
 
