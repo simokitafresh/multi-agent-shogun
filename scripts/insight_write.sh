@@ -414,7 +414,13 @@ PYEOF
         echo "WARN: insight DB INSERT skipped" >&2
       fi
     else
-      python3 "$MEMORY_DB_LIVE_INSERT" "${memory_db_args[@]}" >/dev/null 2>&1 200>&- &
+      # A background child that only uses `&`/disown still inherits the
+      # caller's process group and stdin.  Under Bats/CI that keeps the test
+      # formatter pipe and heavy-job PGID alive after every assertion passed.
+      # Start a new session and sever all standard streams while preserving
+      # the durable async queue/insert contract.
+      setsid -f python3 "$MEMORY_DB_LIVE_INSERT" "${memory_db_args[@]}" \
+        </dev/null >/dev/null 2>&1 200>&-
       disown 2>/dev/null || true
     fi
   fi
