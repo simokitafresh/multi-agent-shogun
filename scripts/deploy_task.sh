@@ -5094,6 +5094,11 @@ inject_semantic_concepts() {
             [ -n "$_causal_out" ] && { echo "INFO: [CAUSAL_CONTEXT] target因果辺:" >&2; printf '%s\n' "$_causal_out" | sed 's/^/  → /' >&2; }
         fi
     fi
+    # The injection operation succeeds even when no causal backlinks are
+    # available.  Do not leak the status of the optional empty-output branch
+    # as the function result; callers and fixed-SHA parity tests require a
+    # successful semantic-context injection to return zero.
+    return 0
 }
 
 # ─── 三層記憶先行知識注入(殿厳命2026-06-10: 使用しないのはバグ。L0-L7貫通) ───
