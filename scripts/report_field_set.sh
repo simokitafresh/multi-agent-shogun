@@ -2452,7 +2452,14 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
             status_tmp="${REPORT_PATH}.tmp.$$.$attempt.status"
             rm -f "$status_tmp"
             _rfs_terminal_status="completed"
-            [ "$VALUE" = "FAIL" ] && _rfs_terminal_status="failed"
+            # A fresh FAIL is a failed lifecycle terminal.  An explicitly
+            # reopened completed report keeps the established RC round-trip:
+            # revision_requested -> verdict rewrite -> completed.  The latter
+            # is a review generation transition, not a new task failure.
+            _rfs_prewrite_status="$(grep -m1 '^status:' "$REPORT_PATH" 2>/dev/null | sed 's/^status:[[:space:]]*//' | tr -d '\r"'"'"'')"
+            if [ "$VALUE" = "FAIL" ] && [ "$_rfs_prewrite_status" != "revision_requested" ]; then
+                _rfs_terminal_status="failed"
+            fi
             if ! _report_field_set_fast_scalar "$tmp_file" "$status_tmp" "status" "$_rfs_terminal_status" 1 "status"; then
                 rm -f "$tmp_file" "$status_tmp"
                 echo "FATAL: report_field_set: failed to auto-complete status for $REPORT_PATH" >&2
@@ -2534,7 +2541,7 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
 
         echo "[report_field_set] $DOT_KEY = ${VALUE:0:80}"
         if [ "$AUTO_COMPLETE_STATUS" -eq 1 ]; then
-            if [ "$VALUE" = "FAIL" ]; then
+            if [ "${_rfs_terminal_status:-completed}" = "failed" ]; then
                 echo "[report_field_set] status = failed (auto after verdict)"
             else
                 echo "[report_field_set] status = completed (auto after verdict)"
