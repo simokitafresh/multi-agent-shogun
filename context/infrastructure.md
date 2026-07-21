@@ -1796,7 +1796,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1243: failed/BLOCK終端のretro配送はenqueueとidle mark-deliveredを分離し、成功様ログをdurable配送後だけ記録する（cmd_karo_retro_answer_tracking_202607200324）
 - L1244: retro回答追跡は配送event_id単位で未回答を検知し、回答到着まで次task配備holdへ接続する（cmd_karo_retro_answer_tracking_202607200324）
 - L1245: terminal eventとprompt deliveryを同一時刻と見なさない（cmd_karo_retro_answer_tracking_202607200324）
-- L1250: retro pane配送は本文+Enter成功を不可逆な送信事実とし、seen失敗を`delivered_unverified`終端にしてclaimを解放しない。同一targetの未終端promptは最大1件（cmd_4108） → `docs/research/cmd_4108_retro_paste_fix.md`
+- L1250: retro pane配送は本文投入直後のcapture SHA照合+Enter rcを成立条件とし、Enter成功後はclaim内sent markerを原子的に保持する。seenは観測補助のみで、失敗しても`delivered_unverified`終端・再送禁止。同一targetの未終端promptは最大1件、report terminal／review terminalは正規reconciliationで`verbatim_reconciled`へ終端する（cmd_4108） → `docs/research/cmd_4108_retro_paste_fix.md`
 - L1246: 生成instructionsはcommon正本への追記が必要（cmd_karo_experiment_first_three_layers_2026072040）
 - L1247: source依存追加時はwrapper fixtureの依存閉包も同時更新する（cmd_karo_ci_fix_29699666303_cmd_complete_fixture_202607200455）
 - L1248: 復元testは後発依存と実git状態をfixture化する（cmd_karo_ci_fix_cmd4095_restored_contracts_202607200610）
