@@ -147,8 +147,44 @@ print(len(active))
 " 2>/dev/null || grep -c '^- id:' "$LESSONS_FILE" 2>/dev/null || echo 0)
 if [ "$ENTRY_COUNT" -ge 35 ]; then
     echo "BLOCK: lessons_shogun.yaml が active ${ENTRY_COUNT}件に到達(上限35件)。" >&2
-    echo "  新規追加の前に既存教訓を統合・パターン昇格せよ。" >&2
-    echo "  個別事故→パターンに昇格し件数を減らしてから再実行。" >&2
+    # Similar canonical lessons are actionable alternatives to a dead-end
+    # "reduce the count" instruction.  IDs come from the file being guarded,
+    # so every proposed ack/integration command references an existing lesson.
+    LESSON_CANDIDATES=$(LESSON_TITLE="$TITLE" python3 - "$LESSONS_FILE" <<'PY'
+import os
+import re
+import sys
+import yaml
+from difflib import SequenceMatcher
+
+with open(sys.argv[1], encoding="utf-8") as fh:
+    data = yaml.safe_load(fh) or {}
+title = os.environ.get("LESSON_TITLE", "")
+rows = []
+for item in data.get("lessons") or []:
+    if not isinstance(item, dict) or item.get("superseded_by"):
+        continue
+    lesson_id = str(item.get("id") or "").strip()
+    lesson_title = str(item.get("title") or "").strip()
+    if not re.fullmatch(r"LS(?:-A)?\d+", lesson_id):
+        continue
+    score = SequenceMatcher(None, title, lesson_title).ratio()
+    rows.append((score, lesson_id, lesson_title))
+for _, lesson_id, lesson_title in sorted(rows, reverse=True)[:3]:
+    print(f"{lesson_id}\t{lesson_title}")
+PY
+)
+    echo "  新規追加せず、既存lessonへackまたは統合せよ。正本候補:" >&2
+    while IFS=$'\t' read -r candidate_id candidate_title; do
+        [ -n "$candidate_id" ] || continue
+        echo "  - ${candidate_id}: ${candidate_title}" >&2
+        echo "    ack: bash scripts/shogun_lesson_ack.sh ${SOURCE_CMD:-cmd_XXXX} ${candidate_id}" >&2
+    done <<< "$LESSON_CANDIDATES"
+    if [ "$(printf '%s\n' "$LESSON_CANDIDATES" | awk 'NF{n++} END{print n+0}')" -ge 2 ]; then
+        _LW_OLD=$(printf '%s\n' "$LESSON_CANDIDATES" | awk 'NF{print $1; exit}')
+        _LW_NEW=$(printf '%s\n' "$LESSON_CANDIDATES" | awk 'NF{n++; if(n==2){print $1; exit}}')
+        echo "  統合: bash scripts/lesson_write_shogun.sh --supersedes ${_LW_OLD} ${_LW_NEW} \"同一パターンへ統合\"" >&2
+    fi
     echo "  参考: docs/research/lessons_shogun_v1_archive.md (97件→21件の統合実績)" >&2
     exit 1
 fi

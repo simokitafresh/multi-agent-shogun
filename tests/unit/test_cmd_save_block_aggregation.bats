@@ -50,6 +50,7 @@ run_cmd_save() {
         CMD_SAVE_INSIGHTS_FILE="$TEST_INSIGHTS" \
         CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$TEST_TMPDIR/no_semantic_search.sh" \
         CMD_SAVE_Q11_RESEARCH_DIR="$TEST_Q11_RESEARCH_DIR" \
+        CMD_SAVE_DEBUG="${CMD_SAVE_DEBUG:-0}" \
         CMD_SAVE_SYNC_QUALITY_LOG=1 \
         CMD_SAVE_DISABLE_QUALITY_LOG=1 \
         MEMORY_DB_LIVE_INSERT="$PROJECT_ROOT/scripts/memory_db_live_insert.py" \
@@ -157,6 +158,96 @@ YAML
     [[ "$output" == *"BLOCK: q5=code_readingのみ。コード読みだけでは前提未検証。isolated_test/structure_verified/production_verifiedのいずれかで実確認せよ"* ]]
     [[ "$output" == *"BLOCK: 消火cmdなのにq9_firefighting_root_cause未記入。真因と再発防止を記載してからcmd_save.shを実行せよ"* ]]
     [[ "$output" == *"保存確認NG: cmd_multi_block"* ]]
+    [ "$(printf '%s\n' "$output" | wc -l)" -le 50 ]
+    [[ "$(printf '%s\n' "$output" | head -n 1)" == "判定サマリ: 保存確認NG: cmd_multi_block (5件のBLOCK, 4件のWARN)" ]]
+    [[ "$output" != *"BLOCKトリガーマップ"* ]]
+}
+
+@test "AC1: debug時だけ判定位置詳細を表示し判定数は通常出力と一致する" {
+    # The preceding fixture is intentionally repeated: rendering mode must not
+    # change any detector result, only the amount of trace detail.
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_multi_block:
+    id: cmd_multi_block
+    title: "fix — cmd_save集約テスト"
+    project: infra
+    command: "複数BLOCK理由を1回で露出させる"
+    status: pending
+    acceptance_criteria:
+      - id: AC1
+        description: "集約表示を確認"
+      - id: AC2
+        description: "追加BLOCKを混在させる"
+      - id: AC3
+        description: "assumptionsも検証"
+    quality_gate:
+      q1_firefighting: "yes"
+      q2_learning: "奪わない"
+      q3_next_quality: "上がる"
+      q4_depth: "medium"
+      q5_verified_source: "code_reading"
+      q8_why_what: "WHY: 「集約表示を壊すな」 → WHAT: 意図的にBLOCKを4種類混在させる → WHEN: cmd_saveのBLOCK集約回帰を検証する時 → WHERE: tests/unit/test_cmd_save_block_aggregation.bats → WHO: 将軍cmd保存ゲートを使う将軍 → HOW: 複数BLOCK理由を1回の出力で検証する。複利: 正の複利"
+      q_ambiguity: "none"
+    assumptions:
+      - source: "nonexistent/path.sh code_reading"
+        trust: "verified"
+        detail: "存在しないパス"
+YAML
+
+    CMD_SAVE_DEBUG=1 run_cmd_save
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"保存確認NG: cmd_multi_block (5件のBLOCK, 4件のWARN)"* ]]
+    [[ "$output" == *"BLOCKトリガーマップ"* ]]
+    [[ "$output" == *"check=check_origin_field"* ]]
+    [ "$(printf '%s\n' "$output" | wc -l)" -gt 50 ]
+}
+
+@test "AC2: long-runtime・成果物・test契約の全欠落を初回1回で列挙する" {
+    cat > "$TEST_QUEUE" <<'YAML'
+commands:
+  cmd_multi_block:
+    id: cmd_multi_block
+    title: "analysis — CI test fix contracts"
+    purpose: "CI test failureを分析して修正する"
+    project: infra
+    depends_on: none
+    origin: "[[cmd_test]] -> [[contract_gap]] -> [[one_pass_feedback]]"
+    type: impl
+    task_type: impl
+    estimated_minutes: 20
+    timeout_minutes: 30
+    command: "CI test failureを分析し修正する"
+    acceptance_criteria:
+      - id: AC1
+        description: "分析結果を報告する"
+    quality_gate:
+      q1_firefighting: "no"
+      q2_learning: "欠落契約を一括提示する"
+      q3_next_quality: "修正往復を減らす"
+      q4_depth: "shallow"
+      q5_verified_source: "isolated_test — contract fixture"
+      q6_not_hiding: "no — 検出項目は削除しない"
+      q7_definition_verified: "yes — 既存判定を使用"
+      q8_why_what: "WHY: 後段BLOCKが逐次発火する → WHAT: 全判定を初回に完走する → WHEN: cmd_save時 → WHERE: scripts/cmd_save.sh → WHO: 将軍 → HOW: accumulate modeで後段まで実行する。複利: 再実行を減らす"
+      q10_knowledge_boundary: "空間内。既存cmd_save判定のみ"
+      q11_not_already_done: "未達成。isolated fixtureで確認"
+      q12_lord_30min_cost: "no — 往復を短縮する"
+      q_ambiguity: "none"
+    assumptions:
+      - claim: "既存3判定を変更しない"
+        source: "tests/unit/test_cmd_save_block_aggregation.bats isolated_test"
+        trust: "verified"
+        verified_at: "2026-07-21"
+YAML
+
+    run_cmd_save
+    echo "$output" >&2
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"estimated_minutes>15 requires execution_env mapping"* ]]
+    [[ "$output" == *"LK-A10: 研究/分析cmdのACに"* ]]
+    [[ "$output" == *"test_ci_execution_contract_missing:"* ]]
+    [ "$(printf '%s\n' "$output" | grep -c '^判定サマリ:')" -eq 1 ]
 }
 
 @test "AC1: PASS時はBLOCKナッジを表示しない" {

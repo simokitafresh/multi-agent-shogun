@@ -679,6 +679,12 @@ EOF
     [ "$status" -ne 0 ]
     [[ "$output" == *"BLOCK"* ]]
     [[ "$output" == *"active 35"* ]]
+    [[ "$output" == *"ack: bash scripts/shogun_lesson_ack.sh cmd_test LS"* ]]
+    [[ "$output" == *"統合: bash scripts/lesson_write_shogun.sh --supersedes LS"* ]]
+    [[ "$output" != *"LS-A05"* ]]
+    while read -r proposed_id; do
+        grep -q -- "- id: ${proposed_id}$" "$tmp_lessons"
+    done < <(printf '%s\n' "$output" | grep -oE 'shogun_lesson_ack\.sh cmd_test LS[0-9]+' | awk '{print $3}')
     rm -f "$tmp_lessons"
 }
 

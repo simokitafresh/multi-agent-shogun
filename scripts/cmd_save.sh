@@ -123,6 +123,47 @@ declare -a WARN_REASONS=()
 declare -a BLOCK_CHECKS=()
 declare -A CMD_BLOCK_CACHE=()
 
+# Normal output is a decision surface, not a trace dump.  Buffer one invocation
+# so the final verdict can be printed first, followed by every distinct
+# BLOCK/WARN result in one line.  Full INFO, trigger-location, and semantic alias
+# traces remain available with CMD_SAVE_DEBUG=1.
+cmd_save_output_filter() {
+    if [[ "${CMD_SAVE_DEBUG:-0}" == "1" ]]; then
+        cat
+        return 0
+    fi
+
+    awk '
+        { lines[NR] = $0 }
+        /^保存確認NG:/ { failed = 1; summary = $0 }
+        END {
+            if (!failed) {
+                for (i = 1; i <= NR; i++) print lines[i]
+                exit
+            }
+
+            print "判定サマリ: " summary
+            for (i = 1; i <= NR; i++) {
+                line = lines[i]
+                keep = (line ~ /^止まるな、修正して再実行せよ$/ ||
+                        line ~ /^BLOCK:/ ||
+                        line ~ /^  未記入:/ ||
+                        line ~ /unique_cmds=/ ||
+                        line ~ /^★ BLOCK SUMMARY:/ ||
+                        line ~ /^WARN(ING)?:/ ||
+                        line ~ /^ERROR:/ ||
+                        line ~ /^診断:/ ||
+                        line ~ /^★ (診断せよ|修正前に):/)
+                if (keep && !seen[line]++) print line
+            }
+            print "詳細: CMD_SAVE_DEBUG=1 で判定位置・semantic alias・解消例を表示"
+        }
+    '
+}
+
+exec 9>&1
+exec > >(cmd_save_output_filter >&9) 2>&1
+
 cmd_save_hash_text() {
     if command -v sha256sum >/dev/null 2>&1; then
         printf '%s' "$1" | sha256sum | cut -d' ' -f1
@@ -2835,34 +2876,28 @@ cmd_save_shogun_lesson_exists_for_cmd() {
 }
 
 cmd_save_default_ack_lesson_id() {
-    local preferred="${1:-LS-A05}"
     local resolved=""
 
-    [[ -f "$CMD_SAVE_SHOGUN_LESSONS_FILE" ]] || {
-        printf '%s\n' "$preferred"
-        return 0
-    }
+    [[ -f "$CMD_SAVE_SHOGUN_LESSONS_FILE" ]] || return 0
 
-    if grep -qE "^[[:space:]]*-[[:space:]]+id:[[:space:]]*['\"]?${preferred}['\"]?([[:space:]]|$)" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
-        printf '%s\n' "$preferred"
-        return 0
-    fi
-
-    resolved="$(awk -v old="$preferred" '
-        $0 ~ "^# " old ": superseded by " {
-            value = $0
-            sub("^# " old ": superseded by ", "", value)
-            split(value, parts, /[[:space:]]+/)
-            print parts[1]
-            exit
+    # Never propose a dead identifier. Choose the newest active canonical
+    # lesson directly from the guarded SSOT.
+    resolved="$(awk '
+        /^[[:space:]]*-[[:space:]]+id:/ {
+            if (id != "" && !superseded) latest = id
+            id = $0
+            sub(/^[[:space:]]*-[[:space:]]+id:[[:space:]]*/, "", id)
+            gsub(/["'\''[:space:]]/, "", id)
+            superseded = 0
+            next
+        }
+        /^[[:space:]]+superseded_by:/ { superseded = 1 }
+        END {
+            if (id != "" && !superseded) latest = id
+            print latest
         }
     ' "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null)"
-    if [[ -n "$resolved" ]] && grep -qE "^[[:space:]]*-[[:space:]]+id:[[:space:]]*['\"]?${resolved}['\"]?([[:space:]]|$)" "$CMD_SAVE_SHOGUN_LESSONS_FILE" 2>/dev/null; then
-        printf '%s\n' "$resolved"
-        return 0
-    fi
-
-    printf '%s\n' "$preferred"
+    [[ -n "$resolved" ]] && printf '%s\n' "$resolved"
 }
 
 warn_missing_prev_cmd_lesson() {
@@ -2878,8 +2913,11 @@ warn_missing_prev_cmd_lesson() {
 
     cmd_save_shogun_lesson_exists_for_cmd "$prev_cmd_id" && return 0
 
-    ack_lesson_id="$(cmd_save_default_ack_lesson_id LS-A05)"
-    warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh ${prev_cmd_id} ${ack_lesson_id}"
+    ack_lesson_id="$(cmd_save_default_ack_lesson_id)"
+    warn_msg="前${prev_cmd_id}で${prev_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。"
+    if [[ -n "$ack_lesson_id" ]]; then
+        warn_msg+="既知パターンなら: bash scripts/shogun_lesson_ack.sh ${prev_cmd_id} ${ack_lesson_id}"
+    fi
     record_block_reason "$warn_msg"
 }
 
@@ -2891,8 +2929,11 @@ remind_missing_current_cmd_lesson_after_clear() {
 
     cmd_save_shogun_lesson_exists_for_cmd "$CMD_ID" && return 0
 
-    ack_lesson_id="$(cmd_save_default_ack_lesson_id LS-A05)"
-    remind_msg="${CMD_ID}で${current_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。既知パターンなら: bash scripts/shogun_lesson_ack.sh ${CMD_ID} ${ack_lesson_id}"
+    ack_lesson_id="$(cmd_save_default_ack_lesson_id)"
+    remind_msg="${CMD_ID}で${current_block_count}回BLOCKされたが教訓未記録。lesson_write_shogun.shで記録せよ。"
+    if [[ -n "$ack_lesson_id" ]]; then
+        remind_msg+="既知パターンなら: bash scripts/shogun_lesson_ack.sh ${CMD_ID} ${ack_lesson_id}"
+    fi
     echo "REMIND: ${remind_msg}" >&2
     echo "REMIND: 環境埋込み判定: 同じBLOCKを既存hookテンプレート注入で防止可能か、gate修正が必要かを判定せよ。" >&2
 }
@@ -6261,7 +6302,9 @@ PY
     return 0
 }
 
-check_long_runtime_execution_env_contract
+if ! check_long_runtime_execution_env_contract; then
+    [[ "$CMD_SAVE_ACCUMULATE_BLOCKS" == "1" ]] || exit 1
+fi
 
 # --- Check 19.6: role-neutral universal shard entrance (30分単独をfail-closed) ---
 # Save入口でも同じ契約を自動検証する。manifestの永続生成はdeploy_task入口が担当する。
@@ -6278,7 +6321,9 @@ check_universal_shard_contract() {
     fi
     printf 'PASS(universal_shard=%s)\n' "$result"
 }
-check_universal_shard_contract
+if ! check_universal_shard_contract; then
+    [[ "$CMD_SAVE_ACCUMULATE_BLOCKS" == "1" ]] || exit 1
+fi
 
 # --- Check 20: assumptionsフィールド検査（BLOCK昇格 cmd_1906） ---
 # 起源: cmd_1905 — 暗黙前提を構造的に可視化し、未検証前提がcmdに混入するのを防ぐ
