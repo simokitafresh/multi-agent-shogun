@@ -1,6 +1,13 @@
 #!/usr/bin/env bats
 
 setup() {
+    # test_necessity: resume tests must observe the durable worker's terminal
+    # failure status rather than the public caller's successful queue handoff.
+    # These tests exercise the worker's durable failure propagation and resume
+    # contract.  Keep the tail synchronous so Bats observes the worker exit
+    # status; the public caller's detached latency contract is covered by
+    # test_cmd_complete_wrapper.bats.
+    export CMD_COMPLETE_SYNC_TAIL=1
     ROOT="$BATS_TEST_TMPDIR/root"
     mkdir -p "$ROOT/scripts/gates" "$ROOT/scripts/lib" "$ROOT/queue/gates/cmd_resume" "$ROOT/queue/archive/cmds" "$ROOT/logs"
     cp "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh" "$ROOT/scripts/cmd_complete.sh"
