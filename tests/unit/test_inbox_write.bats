@@ -1442,6 +1442,9 @@ YAML
     [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
 
     printf '\nsemantic_generation: 2\n' >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+    git -C "$TEST_TMPDIR" add queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m new-report-generation
+    mkdir -p "$TEST_TMPDIR/logs"
     run _run_inbox_write karo "new generation" report_received testninja
     [ "$status" -eq 0 ]
     [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 2 ]
