@@ -98,8 +98,31 @@ if $MEASURE; then
 
 elif [ -f "$LEDGER" ] && head -1 "$LEDGER" | grep -q '^run_id'; then
   ledger_fresh=0
-  latest_fresh_epoch=$(awk -F'\t' '$9=="pass" && $11==0 && ($4=="all" || $4=="unit") {gsub(/Z$/, "", $13); cmd="date -u -d \"" $13 "\" +%s"; cmd | getline e; close(cmd); if(e>m)m=e} END{print m+0}' "$LEDGER")
-  now_epoch=$(date +%s)
+  # Parse every timestamp in one Python process.  The former awk implementation
+  # forked GNU date once per matching row, making startup proportional to ledger
+  # size with a very large process-creation constant.
+  read -r latest_fresh_epoch now_epoch < <(python3 - "$LEDGER" <<'PY'
+import csv
+import datetime as dt
+import sys
+
+latest = 0
+with open(sys.argv[1], encoding="utf-8", newline="") as handle:
+    for row in csv.DictReader(handle, delimiter="\t"):
+        if (row.get("status") != "pass" or row.get("cache_hit") != "0"
+                or row.get("suite_root") not in ("all", "unit")):
+            continue
+        value = row.get("measured_at", "").strip()
+        try:
+            stamp = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+            if stamp.tzinfo is None:
+                stamp = stamp.replace(tzinfo=dt.timezone.utc)
+            latest = max(latest, int(stamp.timestamp()))
+        except (OverflowError, ValueError):
+            continue
+print(latest, int(dt.datetime.now(dt.timezone.utc).timestamp()))
+PY
+)
   age_hours=$(( (now_epoch - latest_fresh_epoch) / 3600 ))
   if (( latest_fresh_epoch == 0 || age_hours > LEDGER_STALE_HOURS )); then
     echo "WARN: timing ledger stale (age=${age_hours}h threshold=${LEDGER_STALE_HOURS}h); writer停止を確認してください"
