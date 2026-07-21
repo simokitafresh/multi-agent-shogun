@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: retro prompts must reach only an idle pane, preserve exact bytes, deduplicate the same event, and release failed claims for retry.
+# test_necessity: a successful pane send is an irreversible delivery boundary, and each target may have at most one outstanding retro prompt.
 
 setup() {
   ROOT="$BATS_TEST_TMPDIR/root"
@@ -44,14 +44,21 @@ setup() {
   [ "$(grep -c $'\tdelivered_prompt_seen\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
 }
 
-@test "send without prompt-seen ack releases claim and retries" {
+@test "send without prompt-seen ack is terminal and never retries" {
   FIXTURE_PROMPT_UNSEEN=1 run retro_pane_prompt_deliver "$ROOT" tobisaru event:respawn fixture
-  [ "$status" -eq 1 ]
-  [ "$(find "$RETRO_PANE_STATE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 0 ]
-  [ "$(grep -c $'\tfailed_prompt_unseen\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  [ "$status" -eq 0 ]
+  [ "$(find "$RETRO_PANE_STATE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 1 ]
+  [ "$(grep -c $'\tdelivered_unverified\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
   retro_pane_prompt_deliver "$ROOT" tobisaru event:respawn fixture
-  [ "$(grep -c $'\tdelivered_prompt_seen\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
-  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 2 ]
+  [ "$(grep -c $'\tdeduplicated\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
+}
+
+@test "one target can have only one outstanding event" {
+  retro_pane_prompt_enqueue "$ROOT" tobisaru event:first fixture
+  retro_pane_prompt_enqueue "$ROOT" tobisaru event:second fixture
+  [ "$(find "$RETRO_PANE_PENDING_DIR" -type f | wc -l)" -eq 1 ]
+  [ "$(grep -c $'\tsuppressed_outstanding\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
 }
 
 @test "retro transport has no inbox delivery path" {

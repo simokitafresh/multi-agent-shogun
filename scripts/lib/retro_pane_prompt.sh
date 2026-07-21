@@ -83,9 +83,11 @@ retro_pane_prompt_deliver() {
         return 1
     fi
     if ! retro_pane_prompt_seen "$pane" "$target"; then
-        rmdir "$claim" 2>/dev/null || true
-        printf '%s\tfailed_prompt_unseen\t%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" "$pane" >> "$ledger"
-        return 1
+        # send-keys and Enter already succeeded.  The pane check is only an
+        # observation and must never turn a completed send back into a retry:
+        # wrapped Codex input is not byte-for-byte visible in capture-pane.
+        printf '%s\tdelivered_unverified\t%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" "$pane" >> "$ledger"
+        return 0
     fi
     printf '%s\tdelivered_prompt_seen\t%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" "$pane" >> "$ledger"
 }
@@ -93,11 +95,22 @@ retro_pane_prompt_deliver() {
 retro_pane_prompt_enqueue() {
     local root="$1" target="$2" event_id="$3" from="$4"
     local pending_dir="${RETRO_PANE_PENDING_DIR:-${RETRO_VERBATIM_PENDING_DIR:-$root/queue/retro/verbatim_pending}}"
-    local key tmp event_file
+    local key tmp event_file existing existing_target
     mkdir -p "$pending_dir"
     key=$(retro_pane_prompt_key "$target" "$event_id")
     event_file="$pending_dir/$key.event"
     [ -e "$event_file" ] && return 0
+    # Bound each target to one outstanding prompt.  A later event remains in
+    # the append-only retro ledger/state and can be reconciled there; stacking
+    # a second pane prompt while the first is unresolved has no user benefit.
+    for existing in "$pending_dir"/*.event "${pending_dir%/verbatim_pending}/verbatim_awaiting_answer"/*.event; do
+        [ -f "$existing" ] || continue
+        IFS= read -r existing_target < "$existing" || true
+        if [ "$existing_target" = "$target" ]; then
+            printf '%s\tsuppressed_outstanding\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "${RETRO_PANE_LEDGER:-${RETRO_VERBATIM_LOG:-$root/logs/retro_pane_prompt.tsv}}"
+            return 0
+        fi
+    done
     tmp="$event_file.tmp.$$"
     printf '%s\n%s\n%s\n%s\n' "$target" "$event_id" "$from" "$key" > "$tmp"
     mv -n "$tmp" "$event_file" 2>/dev/null || rm -f "$tmp"
