@@ -304,6 +304,7 @@ idle安全機構: in_progress/acknowledged忍者のCLI操作スキップ(setting
 **修正(b3f55d9)**: `build_cli_command()`でopus時は`--model`スキップ → デフォルト1M起動。sonnet/haikuのみ`--model`指定。
 **殿裁定**: high effortで十分(Max=3-10xコスト、レートリミットリスク)。
 **モデル切替はrespawn方式**(殿裁定): `/model`コマンドではなくCLI再起動(respawn)が正しい手順。理由: (1)/model opusは200Kになる (2)claude↔codexは/modelで切替不可 (3)respawnならCLAUDE.md/instructions再読込が保証される。/henseiスキルもrespawn方式に再設計要。
+**Codex config SSOT貫通(cmd_4109)**: respawn前の`codex_config_apply_agent`がsettings.yamlからconfig.tomlを再生成し、restoreは行わない。restore撤去によりSSOTがライブへ貫通する。
 **CLI種別がモデルファミリーを決定（殿指摘2026-06-21）**:
 | CLI | モデルファミリー | effort指定 | fast指定 |
 |-----|-----------------|-----------|---------|
