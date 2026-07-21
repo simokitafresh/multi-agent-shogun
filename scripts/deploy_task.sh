@@ -11017,6 +11017,10 @@ deploy_task_apply_task_mutations() {
     # ci_fix clean reproduction scaffoldと専用ACを一度だけ注入する。
     inject_ci_fix_clean_repro_contract "$task_file" || return 1
 
+    # Level5: investigation tasks receive an executable, bounded code-location
+    # path before publication.  Raw recursive grep is intentionally forbidden.
+    inject_code_location_contract "$task_file" || return 1
+
     local task_id parent_cmd project _ac_task_id report_filename
     deploy_task_guard_task_yaml_syntax "post_injection_pre_report_template" "$task_file" "$ninja_name" || return 1
     deploy_task_test_necessity_precheck "$task_file" || return 1
@@ -11031,6 +11035,19 @@ deploy_task_apply_task_mutations() {
         || { log "FATAL: parent contract injection failed"; return 1; }
     inject_done_redeploy_hints "$task_file" || true
     log "TASK_MUTATION_SUMMARY report_scans=${DEPLOY_TASK_REPORT_SCAN_COUNT:-0}"
+}
+
+inject_code_location_contract() {
+    local task_file="$1" task_type bloom_level contract
+    [ -f "$task_file" ] || return 0
+    eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" task_type bloom_level 2>/dev/null)" || true
+    task_type="${task_type,,}"
+    bloom_level="${bloom_level,,}"
+    if [[ ! "$task_type" =~ ^(recon|scout|focused)$ ]] && [ "$bloom_level" != "focused" ]; then
+        return 0
+    fi
+    contract='Code-locationは `bash scripts/code_locate.sh "QUERY" [PATHSPEC ...]`（追跡対象限定、git grep）を使う。`grep -r`/`grep -R`は禁止。追跡外生成物が必要な場合のみ `bash scripts/code_locate.sh --include-untracked --reason "必要理由" "QUERY" [PATH ...]` を使う（node_modules/.git/.*_worktreesは既定除外）。exit 0=match、1=no match、2以上=実行異常として区別する。'
+    yaml_field_set "$task_file" "task" "code_location_contract" "$contract"
 }
 
 # CI RED startup verification joins the active task to the failed Actions run
