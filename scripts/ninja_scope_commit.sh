@@ -442,15 +442,8 @@ fi
 if [[ -n "$verification_head" ]]; then
     [[ "$verification_head" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "${verification_head}^{commit}" 2>/dev/null \
         || { echo "BLOCK: test verification HEAD evidence is invalid: ${verification_head:-<missing>}" >&2; exit 2; }
-    if [[ "$verification_head" != "$transaction_head" ]]; then
-        mapfile -t concurrent_test_changes < <(git diff --name-only "$verification_head" "$transaction_head" -- | awk '
-            $0 ~ /^tests\// || $0 ~ /\.bats$/ || $0 ~ /(^|\/)test_[^/]+$/ || $0 ~ /\.(spec|test)\.js$/ {print}
-        ')
-        if ((${#concurrent_test_changes[@]})); then
-            printf 'BLOCK: concurrent HEAD test change detected before test deletion/commit: %s\n' "${concurrent_test_changes[*]}" >&2
-            exit 2
-        fi
-    fi
+    [[ "$verification_head" == "$transaction_head" ]] \
+        || { echo "BLOCK: stale test receipt source_head: expected $transaction_head got $verification_head" >&2; exit 2; }
 fi
 if [[ -n "$transient_task_file" && -f "$transient_task_file" ]]; then
     deletion_justification="$(python3 - "$transient_task_file" <<'PY'
@@ -499,10 +492,20 @@ PY
         [[ -n "$verification_head" ]] || { echo "BLOCK: test verification HEAD evidence missing before transient deletion" >&2; exit 2; }
         [[ -n "$transient_receipt_file" && -f "$transient_receipt_file" ]] || { echo "BLOCK: transient test receipt missing" >&2; exit 2; }
         python3 - "$transient_receipt_file" "${transient_tests[@]}" <<'PY' || exit 2
-import sys, yaml
+import json, sys, yaml
 d=yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
 tests=sys.argv[2:]
-ok=d.get('status') == 'complete' and d.get('pass') is True and d.get('fail') == 0 and d.get('skip') == 0
+# Compatibility is input-only: legacy fields normalize into the canonical
+# terminal contract and are never evaluated as a second source of truth.
+if 'complete' not in d and any(k in d for k in ('status','pass','fail','skip')):
+    d={**d, 'complete': d.get('status') == 'complete',
+       'result': 'PASS' if d.get('pass') is True else 'FAIL',
+       'rc': 0 if d.get('fail') == 0 else 1,
+       'skip_count': d.get('skip'),
+       'observed_test_count': len(d.get('test_paths') or [])}
+ok=(d.get('complete') is True and d.get('result') == 'PASS' and d.get('rc') == 0 and
+    d.get('skip_count') == 0 and isinstance(d.get('observed_test_count'), int) and
+    d.get('observed_test_count') >= len(tests))
 covered=set(map(str,d.get('test_paths') or []))
 if not ok or not set(tests) <= covered:
     print('BLOCK: transient test receipt must prove complete PASS, FAIL0, SKIP0 for every candidate', file=sys.stderr); raise SystemExit(2)

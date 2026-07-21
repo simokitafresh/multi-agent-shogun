@@ -46,10 +46,11 @@ task:
   planned_paths: [own.txt, tests/test_transient.bats]
 YAML
     cat > "$REPO/receipt.yaml" <<'YAML'
-status: complete
-pass: true
-fail: 0
-skip: 0
+complete: true
+result: PASS
+rc: 0
+skip_count: 0
+observed_test_count: 1
 test_paths: [tests/test_transient.bats]
 YAML
     printf 'source_head: %s\n' "$(git -C "$REPO" rev-parse HEAD)" >> "$REPO/receipt.yaml"
@@ -63,10 +64,24 @@ YAML
     mkdir -p "$REPO/tests" "$REPO/queue/tasks"
     printf 'change\n' >> "$REPO/own.txt"; printf proof > "$REPO/tests/test_transient.bats"
     printf 'task:\n  planned_paths: [own.txt, tests/test_transient.bats]\n' > "$REPO/queue/tasks/hayate.yaml"
-    printf 'status: complete\npass: false\nfail: 1\nskip: 0\ntest_paths: [tests/test_transient.bats]\n' > "$REPO/receipt.yaml"
+    printf 'complete: true\nresult: FAIL\nrc: 1\nskip_count: 0\nobserved_test_count: 1\ntest_paths: [tests/test_transient.bats]\n' > "$REPO/receipt.yaml"
     run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m transient -- own.txt tests/test_transient.bats' _ "$REPO" "$HELPER"
     [ "$status" -eq 2 ]
     [ -f "$REPO/tests/test_transient.bats" ]
+}
+
+@test "canonical SKIP and insufficient coverage receipts block before deletion" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf 'change\n' >> "$REPO/own.txt"; printf proof > "$REPO/tests/test_transient.bats"
+    printf 'task:\n  planned_paths: [own.txt, tests/test_transient.bats]\n' > "$REPO/queue/tasks/hayate.yaml"
+    head="$(git -C "$REPO" rev-parse HEAD)"
+    printf 'complete: true\nresult: PASS\nrc: 0\nskip_count: 1\nobserved_test_count: 1\ntest_paths: [tests/test_transient.bats]\nsource_head: %s\n' "$head" > "$REPO/receipt.yaml"
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m skip -- own.txt tests/test_transient.bats' _ "$REPO" "$HELPER"
+    [ "$status" -eq 2 ]; [ -f "$REPO/tests/test_transient.bats" ]
+
+    printf 'complete: true\nresult: PASS\nrc: 0\nskip_count: 0\nobserved_test_count: 1\ntest_paths: [tests/another.bats]\nsource_head: %s\n' "$head" > "$REPO/receipt.yaml"
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m coverage -- own.txt tests/test_transient.bats' _ "$REPO" "$HELPER"
+    [ "$status" -eq 2 ]; [ -f "$REPO/tests/test_transient.bats" ]
 }
 
 @test "envなしでもreceipt HEAD後の並行test変更をBLOCKしproduction-only変更は許可する" {
@@ -74,18 +89,19 @@ YAML
     printf 'change\n' >> "$REPO/own.txt"; printf proof > "$REPO/tests/test_transient.bats"
     printf 'task:\n  planned_paths: [own.txt, tests/test_transient.bats]\n' > "$REPO/queue/tasks/hayate.yaml"
     source_head="$(git -C "$REPO" rev-parse HEAD)"
-    printf 'status: complete\npass: true\nfail: 0\nskip: 0\ntest_paths: [tests/test_transient.bats]\nsource_head: %s\n' "$source_head" > "$REPO/receipt.yaml"
+    printf 'complete: true\nresult: PASS\nrc: 0\nskip_count: 0\nobserved_test_count: 1\ntest_paths: [tests/test_transient.bats]\nsource_head: %s\n' "$source_head" > "$REPO/receipt.yaml"
     printf 'parallel production\n' >> "$REPO/other.txt"; git -C "$REPO" add other.txt; git -C "$REPO" commit -qm parallel-production
     run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m production-drift -- own.txt tests/test_transient.bats' _ "$REPO" "$HELPER"
-    [ "$status" -eq 0 ]
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"stale test receipt source_head"* ]]
 
     printf 'next\n' >> "$REPO/own.txt"; printf proof > "$REPO/tests/test_transient.bats"
     source_head="$(git -C "$REPO" rev-parse HEAD)"
-    printf 'status: complete\npass: true\nfail: 0\nskip: 0\ntest_paths: [tests/test_transient.bats]\nsource_head: %s\n' "$source_head" > "$REPO/receipt.yaml"
+    printf 'complete: true\nresult: PASS\nrc: 0\nskip_count: 0\nobserved_test_count: 1\ntest_paths: [tests/test_transient.bats]\nsource_head: %s\n' "$source_head" > "$REPO/receipt.yaml"
     printf tracked > "$REPO/tests/test_parallel.bats"; git -C "$REPO" add tests/test_parallel.bats; git -C "$REPO" commit -qm parallel-test
     run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m test-drift -- own.txt tests/test_transient.bats' _ "$REPO" "$HELPER"
     [ "$status" -eq 2 ]
-    [[ "$output" == *"concurrent HEAD test change"* ]]
+    [[ "$output" == *"stale test receipt source_head"* ]]
     [ -f "$REPO/tests/test_transient.bats" ]
 }
 
@@ -136,7 +152,7 @@ YAML
     expected_head="$(git -C "$REPO" rev-parse HEAD)"
     printf parallel > "$REPO/tests/test_parallel.bats"; git -C "$REPO" add tests/test_parallel.bats; git -C "$REPO" commit -qm parallel-test-change
     run bash -c 'cd "$1" && NINJA_SCOPE_EXPECTED_HEAD="$3" NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m shrink -- tests/test_contract.bats' _ "$REPO" "$HELPER" "$expected_head"
-    [ "$status" -eq 2 ]; [[ "$output" == *"concurrent HEAD test change"* ]]
+    [ "$status" -eq 2 ]; [[ "$output" == *"stale test receipt source_head"* ]]
 }
 
 @test "tracked test deletion with justification commits through the scoped helper" {

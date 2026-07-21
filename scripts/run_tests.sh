@@ -265,6 +265,13 @@ aggregate_bats_outputs() {
 
 run_bats_files_parallel() {
     local -a files=("$@")
+    if [[ -n "${RUN_TESTS_SELECTED_PATHS_FILE:-}" ]]; then
+        : > "$RUN_TESTS_SELECTED_PATHS_FILE"
+        local selected_path
+        for selected_path in "${files[@]}"; do
+            printf '%s\n' "${selected_path#"$REPO_ROOT"/}" >> "$RUN_TESTS_SELECTED_PATHS_FILE"
+        done
+    fi
     local total="${#files[@]}"
     local out_dir pid file failed file_inner_jobs file_weight active_weight running_pids
     local source_fp cache_key cache_path cached_count launched_count timing_path out manifest stats suite_started_ns
@@ -578,6 +585,45 @@ run_bats_files_parallel() {
     printf 'PASS: %s bats file(s) (%s run, %s cached)\n' "$total" "$launched_count" "$cached_count"
 }
 
+verify_run_tests_receipt() {
+    python3 - "$1" <<'PY'
+import hashlib, json, re, sys
+try:
+    d=json.load(open(sys.argv[1], encoding='utf-8'))
+    required={'version','complete','result','rc','duration_ms','output_sha256',
+              'declared_test_count','observed_test_count','skip_count','artifact',
+              'signal','command','source_head','test_paths'}
+    if set(d) != required or d['version'] != 2: raise ValueError('schema')
+    if not re.fullmatch(r'[0-9a-f]{40}', d['source_head']): raise ValueError('source_head')
+    if not isinstance(d['test_paths'], list) or not all(isinstance(x,str) and x for x in d['test_paths']):
+        raise ValueError('test_paths')
+    actual=hashlib.sha256(open(d['artifact'],'rb').read()).hexdigest()
+    valid=(actual == d['output_sha256'] and d['complete'] is True and
+           d['result'] == 'PASS' and d['rc'] == 0 and d['skip_count'] == 0 and
+           (d['declared_test_count'] == 0 or d['observed_test_count'] == d['declared_test_count']))
+    if not valid: raise ValueError('terminal contract')
+except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+    print(f'RECEIPT_FAIL {exc}', file=sys.stderr); raise SystemExit(1)
+print('RECEIPT_PASS')
+PY
+}
+
+publish_run_tests_metadata() {
+    python3 - "$1" "$2" "$3" <<'PY'
+import json, os, sys, tempfile
+path, head, paths_file=sys.argv[1:]
+d=json.load(open(path, encoding='utf-8'))
+paths=[]
+if os.path.isfile(paths_file):
+    paths=[line.strip() for line in open(paths_file, encoding='utf-8') if line.strip()]
+d.update(version=2, source_head=head, test_paths=paths)
+fd,tmp=tempfile.mkstemp(prefix='.run_tests_receipt.', dir=os.path.dirname(path) or '.')
+with os.fdopen(fd,'w',encoding='utf-8') as fh:
+    json.dump(d,fh,sort_keys=True); fh.write('\n'); fh.flush(); os.fsync(fh.fileno())
+os.replace(tmp,path)
+PY
+}
+
 # _run_tests_main(): sourceされても副作用ゼロ(関数定義+変数初期化のみ)にするため、
 # self-reexec判定・sweep呼び出し・case分岐(=実行を伴う処理)を全てこの関数にまとめる。
 # ファイル末尾の "BASH_SOURCE[0]==$0" ガードが直接実行時のみこれを呼ぶ。
@@ -689,6 +735,10 @@ _run_tests_main() {
             ;;
         file)
             shift
+            if [[ -n "${RUN_TESTS_SELECTED_PATHS_FILE:-}" ]]; then
+                : > "$RUN_TESTS_SELECTED_PATHS_FILE"
+                printf '%s\n' "$@" >> "$RUN_TESTS_SELECTED_PATHS_FILE"
+            fi
             # file mode is commonly invoked from a bats regression suite. Do
             # not let the nested bats root inherit the outer root's formatter
             # transport: otherwise nested TAP is counted as outer tests and
@@ -830,7 +880,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                         if kill -0 "$_sf_owner" 2>/dev/null; then
                             continue
                         fi
-                        if ! bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null; then
+                        if ! verify_run_tests_receipt "$_receipt" >/dev/null; then
                             # A dead owner may leave a state file whose receipt was
                             # cleaned with its isolated checkout.  This is recoverable:
                             # discard only the stale coordination record and become the
@@ -856,7 +906,7 @@ PY
                 done
                 [ -s "$_sf_state" ] || { echo "BLOCK: single-flight leader state missing" >&2; exit 2; }
                 _receipt="$(sed -n '1p' "$_sf_state")"
-                bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null \
+                verify_run_tests_receipt "$_receipt" >/dev/null \
                     || { echo "BLOCK: single-flight leader receipt invalid" >&2; exit 2; }
                 printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s\n' "$_mode" "$_receipt" >&2
                 python3 - "$_receipt" <<'PY'
@@ -877,6 +927,8 @@ PY
             printf 'SINGLE_FLIGHT_LEADER mode=%s snapshot_count=%s\n' "$_mode" "$(wc -l < "$_snapshot")" >&2
         fi
         _tap="${_receipt%.json}.tap"
+        _selected_paths="${_receipt%.json}.paths"
+        _source_head="$(git -C "$REPO_ROOT" rev-parse HEAD)"
         set +e
         if [ "$_singleflight" = 1 ]; then
             # The parent retains the mode lock until receipt publication, but
@@ -885,16 +937,18 @@ PY
                 eval "exec ${_sf_fd}>&-"
                 BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                     --summary-only --receipt "$_receipt" -- \
-                    env BATS_TAP_OUTPUT="$_tap" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                    env BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
             )
         else
             BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                 --summary-only --receipt "$_receipt" -- \
-                env BATS_TAP_OUTPUT="$_tap" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                env BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
         fi
         _rc=$?
         set -e
-        if ! bash "$REPO_ROOT/scripts/run_with_receipt.sh" --verify-receipt "$_receipt" >/dev/null; then
+        publish_run_tests_metadata "$_receipt" "$_source_head" "$_selected_paths"
+        rm -f "$_selected_paths"
+        if ! verify_run_tests_receipt "$_receipt" >/dev/null; then
             printf 'TEST_RECEIPT_FAIL path=%s\n' "$_receipt" >&2
             exit 1
         fi
