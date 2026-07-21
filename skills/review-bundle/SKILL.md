@@ -172,7 +172,7 @@ review_log追記後、今回のレビューで使った判断パターンがrevi
 根拠: なぜなぜ7回(2026-05-15殿指示)で根因特定。5件/セッションの判断パターンが未埋込みだった。
 
 ### Step 3: 家老inbox送信 + 永続化確認 + retry
-report reviewでLGTMを通知する前に、レビューした現物へfingerprintを固定する。この承認境界が将軍へ「完了レビューLGTM・家老/GATE判定待ち」を自動永続通知する:
+report reviewでLGTMを通知する前に、レビューした現物へfingerprintを固定する。この承認境界が家老だけへ「完了レビューLGTM・家老/GATE判定待ち」を自動永続通知する:
 ```bash
 bash scripts/review_approval.sh "$CMD_ID" gunshi LGTM "$REPORT_PATH"
 ```
@@ -234,7 +234,7 @@ done
 送信後は必ず `queue/inbox/karo.yaml` に同一 `content` + `from: gunshi` + `type: review_feedback` が存在することを確認せよ。確認不能のままStep 4へ進むな。
 
 ### Step 4: 掲示板投稿（FAIL時）
-LGTMはStep 3の `review_approval.sh` が将軍へ自動投稿する。手動の二重投稿は不要。FAIL時は将軍にも共有:
+LGTMはStep 3の `review_approval.sh` が `BULLETIN_NOTIFY=karo` で家老だけに自動投稿する。将軍・軍師自身へのnudgeと手動の二重投稿は不要。FAIL時は将軍にも共有:
 ```bash
 BULLETIN_NOTIFY=shogun,karo bash scripts/bulletin_write.sh gunshi "cmd_<cmd_id> FAIL — <fail_reason>" false action_required
 ```

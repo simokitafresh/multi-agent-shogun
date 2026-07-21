@@ -2383,8 +2383,8 @@ _karo_pending_work_clear_marker() {
     rm -f "$marker_file" 2>/dev/null || true
 }
 
-# ─── 軍師LGTM後の将軍未通知検知 (cmd_karo_hotfix_completion_notify_gap) ───
-# review_approval.shが正式LGTM時に将軍へ自動通知する。本チェックはそのフェイルセーフが
+# ─── 軍師LGTM後の家老未通知検知 (cmd_karo_hotfix_completion_notify_gap) ───
+# review_approval.shが正式LGTM時に家老へ自動通知する。本チェックはそのフェイルセーフが
 # 機能しない異常経路を検知するバックストップ。自然言語の「報告レビュー」固定文面に依存せず、
 # LGTMイベントより前の進捗通知を完了通知と誤認しない。
 # cmd_3780実例(2026-07-08): LGTM 22:53:35受領→家老が23:05頃rgで確認するまでbulletin/
@@ -2532,6 +2532,9 @@ if not lgtm_events:
 
 notifications = []
 completion_words = re.compile(r'(完了|LGTM|GATE\s*CLEAR|レビュー)', re.I)
+# The Karo bulletin_notify below is the current delivery contract.  Historical
+# bulletin/Shogun completion evidence remains a terminal compatibility signal:
+# its presence may suppress a duplicate, but its absence is never an error.
 bulletin_data = load_yaml(bulletin_file)
 bulletin_entries = bulletin_data.get("entries") if isinstance(bulletin_data, dict) else None
 for entry in (bulletin_entries or []):
@@ -2547,6 +2550,18 @@ shogun_data = load_yaml(shogun_inbox)
 shogun_messages = shogun_data.get("messages") if isinstance(shogun_data, dict) else None
 for msg in (shogun_messages or []):
     if not isinstance(msg, dict):
+        continue
+    content = str(msg.get("content", ""))
+    notice_ts = epoch(msg.get("timestamp"))
+    if notice_ts is None or not completion_words.search(content):
+        continue
+    for m in re.finditer(r'(cmd_[A-Za-z0-9_]+)', content):
+        notifications.append((dedup_key(m.group(1)), notice_ts))
+
+for msg in messages:
+    if not isinstance(msg, dict):
+        continue
+    if str(msg.get("type", "")) != "bulletin_notify":
         continue
     content = str(msg.get("content", ""))
     notice_ts = epoch(msg.get("timestamp"))
@@ -2613,8 +2628,8 @@ PY
     local cmd_id lgtm_generation
     while IFS=$'\t' read -r cmd_id lgtm_generation; do
         [ -z "$cmd_id" ] && continue
-        log "KARO-COMPLETION-NOTIFY-GAP: LGTM received for ${cmd_id} but no bulletin/shogun notification within ${grace}s"
-        notify_karo_throttled completion_notify_gap "${cmd_id}_${lgtm_generation}" "【自動検知】軍師LGTM(${cmd_id})受領後${grace}秒超過してもbulletin/将軍inboxに完了通知なし。cmd_complete_gate実行またはbulletin_write.shでの通知を確認せよ。"
+        log "KARO-COMPLETION-NOTIFY-GAP: LGTM received for ${cmd_id} but no Karo bulletin receipt within ${grace}s"
+        notify_karo_throttled completion_notify_gap "${cmd_id}_${lgtm_generation}" "【自動検知】軍師LGTM(${cmd_id})受領後${grace}秒超過しても家老inboxにbulletin_notifyなし。cmd_complete_gate実行またはreview_approval.shの家老通知を確認せよ。"
     done <<< "$pending"
 }
 
@@ -8540,7 +8555,7 @@ while true; do
         check_karo_pending
     fi
 
-    # ═══ 軍師LGTM後の将軍未通知検知（2分間隔 cmd_karo_hotfix_completion_notify_gap） ═══
+    # ═══ 軍師LGTM後の家老未通知検知（2分間隔 cmd_karo_hotfix_completion_notify_gap） ═══
     if [ $((cycle % 6)) -eq 0 ]; then
         check_karo_completion_notify_gap
     fi

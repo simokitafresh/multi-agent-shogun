@@ -205,9 +205,9 @@ if [ "$role:$result" = gunshi:LGTM ] && [ "$requested_scope" = report ]; then
   rm -f "$rejected_commit_file"
 fi
 
-# A formal report LGTM is operationally relevant to Shogun even before Karo's
-# ACCEPT/GATE result. Persist it at the approval boundary instead of relying on
-# a second manual send. bulletin_write.sh is fail-closed for inbox persistence;
+# A formal report LGTM is operationally relevant to Karo, who owns the
+# ACCEPT/GATE transition. Persist it at the approval boundary instead of relying
+# on a second manual send. bulletin_write.sh is fail-closed for inbox persistence;
 # A regenerated report can change its fingerprint without representing a new
 # review lifecycle.  Keep a durable marker per report path and make the
 # bulletin body fingerprint-independent, so retries remain exactly-once.
@@ -215,8 +215,8 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_NO_NOTIF
   notice_marker="$dir/gunshi_notice.sent"
   if [ ! -f "$notice_marker" ]; then
     review_notice="$cmd_id 完了レビュー LGTM — report=$report_rel。家老ACCEPT/GATE判定待ち。"
-    BULLETIN_NOTIFY=shogun bash "$ROOT/scripts/bulletin_write.sh" gunshi "$review_notice" false info || {
-      echo "BLOCK: LGTM recorded but Shogun notification persistence failed: cmd=$cmd_id report=$report_rel" >&2
+    BULLETIN_NOTIFY=karo bash "$ROOT/scripts/bulletin_write.sh" gunshi "$review_notice" false info || {
+      echo "BLOCK: LGTM recorded but Karo notification persistence failed: cmd=$cmd_id report=$report_rel" >&2
       exit 1
     }
     notice_tmp=$(mktemp "$dir/.gunshi_notice.XXXXXX")
