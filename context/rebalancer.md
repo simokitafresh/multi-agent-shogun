@@ -98,3 +98,14 @@ Source of truthは `backend/app/config.py`。
 
 <!-- lesson-sort 2026-05-19: L608→§6既知の注意点, L609→§2アーキテクチャに振り分け -->
 <!-- last_synced_lesson: L609 -->
+
+## §8 2026-07-21 現行本番知識
+
+| 項目 | 正本・事実 |
+|------|------------|
+| 表示価格 | AlpacaリアルタイムIEX WebSocket（表示用、`is_final=false`） |
+| リバランス計算 | EODHD確定終値（`services/eodhd.py` / `api/rebalance.py`、`source='eodhd'`、`is_final=true`） |
+| Render | `srv-d4jacrfpm1nc73dudmn0`。`ALPACA_API_KEY_ID` / `ALPACA_API_SECRET` / `EODHD_API_TOKEN`投入済み、再デプロイ後`market_phase=closed`で認証成立確認（2026-07-21） |
+| 環境変数注意 | Stock Database `.env`は`ALPACA_API_SECRET_KEY`、rebalancerコードは`ALPACA_API_SECRET`を読むため名称不一致に注意 |
+| EODHDトークン | 1アカウント1トークン、database PJと共有、graceful rotation不可 |
+| 資格情報配置 | `rebalancer/backend/.env`へ複製済み |
