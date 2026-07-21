@@ -5348,7 +5348,7 @@ inject_model_injection_profile() {
     inject_block="${inject_block}"$'\n'"${indent}  - \"lessons_useful全reasonを具体記入\""
     inject_block="${inject_block}"$'\n'"${indent}  - \"files_modifiedはrepo相対path形式\""
     inject_block="${inject_block}"$'\n'"${indent}  - \"D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除\""
-    inject_block="${inject_block}"$'\n'"${indent}  - \"二段検証契約: 反復=bash scripts/run_tests.sh affected（引数省略時も変更ファイル自動選別）、報告直前の最終checkpoint=bash scripts/run_tests.sh unitを1回実行しFAIL0・SKIP0をreceiptで証明。中断再開時は実装commitと追加testを成果物として報告へ引き継ぐ\""
+    inject_block="${inject_block}"$'\n'"${indent}  - \"任務帰属検証契約: 反復・報告直前とも bash scripts/run_tests.sh task queue/tasks/${ninja_name}.yaml を実行し、task/reportの所有pathから選ばれたテストだけをbinary_checksへ帰属させる。引数なしaffectedやunit全量を任務判定に使わない。全量all/unitはfixed-SHA統合checkpointで別に判定し、scope外FAILを当該任務のFAILへ混入させない\""
     if [ "$intensity" = "max" ]; then
         inject_block="${inject_block}"$'\n'"${indent}  extra_scaffold:"
         inject_block="${inject_block}"$'\n'"${indent}  - \"ACごとに実テスト証跡をresult.detailsへ記録\""
