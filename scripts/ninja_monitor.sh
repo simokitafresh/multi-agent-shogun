@@ -1417,8 +1417,6 @@ safe_send_clear() {
                 _fsc_respawn_ok=0
             fi
             _notify_failed_respawn_result "$agent_name" "$_fsc_notice_pending" "$_fsc_respawn_ok"
-            # config.toml復元(SSOT: cli_lookup.sh codex_config_restore)
-            codex_config_restore
             if [ "$_fsc_respawn_ok" -ne 1 ]; then
                 log "CODEX-RESPAWN-VERIFY-FAIL: $agent_name ready handshake timed out; retry=next_cycle"
                 return 1
@@ -6846,8 +6844,6 @@ check_ninja_cli_dead() {
             _respawn_with_cli_verification "$_pane_target_bg" "$_name_bg" \
                 "$_launch_command" \
                 "CLI-DEAD-RESPAWN" || _respawn_rc=$?
-            # config.toml復元
-            codex_config_restore 2>/dev/null
             # LK009 enforcement: CLI再起動後に@agent_idを再設定（pane変数汚染防止）
             local _current_agent_id
             _current_agent_id=$(tmux display-message -t "$_pane_target_bg" -p '#{@agent_id}' 2>/dev/null || true)
@@ -8189,11 +8185,9 @@ check_codex_bypass_once() {
         return 1
     }
     if ! _respawn_with_cli_verification "$pane" "$agent_name" "$launch_command" "CODEX-BYPASS-RESPAWN"; then
-        codex_config_restore 2>/dev/null || true
         log "CODEX-BYPASS-BLOCK: $agent_name recovery_failed retry=next_cycle"
         return 1
     fi
-    codex_config_restore 2>/dev/null || true
     generation=$(respawn_recovery_generation "$pane" 2>/dev/null || true)
     if [ -z "$generation" ] || ! respawn_recovery_notify "$SCRIPT_DIR" "$agent_name" "$generation" codex-bypass; then
         log "CODEX-BYPASS-BLOCK: $agent_name handshake_failed retry=next_cycle"

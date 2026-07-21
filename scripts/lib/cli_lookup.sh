@@ -618,14 +618,3 @@ codex_config_apply_agent() {
     fi
     return 0
 }
-
-codex_config_restore() {
-    local cfg="$HOME/.codex/config.toml"
-    [[ ! -f "$cfg" || "$_CODEX_CFG_CHANGED" != true ]] && return 0
-
-    [[ -n "$_CODEX_CFG_BACKUP_MODEL" ]] && sed -i "s|^model = \".*\"|model = \"$_CODEX_CFG_BACKUP_MODEL\"|" "$cfg"
-    [[ -n "$_CODEX_CFG_BACKUP_EFFORT" ]] && sed -i "s|^model_reasoning_effort = \".*\"|model_reasoning_effort = \"$_CODEX_CFG_BACKUP_EFFORT\"|" "$cfg"
-    [[ -n "$_CODEX_CFG_BACKUP_TIER" ]] && sed -i "s|^service_tier = \".*\"|service_tier = \"$_CODEX_CFG_BACKUP_TIER\"|" "$cfg"
-    _CODEX_CFG_CHANGED=false
-    return 0
-}

@@ -99,7 +99,7 @@ run_codex_bypass_case() {
         check_idle() { [ "$PANE_IDLE" = 1 ]; }
         cli_launch_cmd() { printf "/opt/codex/bin/codex --dangerously-bypass-approvals-and-sandbox\n"; }
         respawn_recovery_launch_command() { printf "launch\n"; }
-        codex_config_apply_agent() { return 0; }; codex_config_restore() { return 0; }
+        codex_config_apply_agent() { return 0; }
         _respawn_with_cli_verification() { respawns=$((respawns + 1)); [ "$RECOVERY" = pass ]; }
         respawn_recovery_generation() { printf "4242\n"; }
         respawn_recovery_notify() { notices=$((notices + 1)); return 0; }
