@@ -38,7 +38,8 @@ SH
 
 teardown() { rm -rf "$TMPROOT"; }
 
-@test "default all mode includes both unit and root-level bats files" {
+# test_necessity: explicit all mode must include both unit and root-level bats files; omission silently weakens the full checkpoint.
+@test "explicit all mode includes both unit and root-level bats files" {
   export BATS_ARGS_LOG="$TMPROOT/bats.args"
   cat >"$TMPROOT/bin/bats" <<'SH'
 #!/usr/bin/env bash
@@ -49,7 +50,7 @@ SH
 
   run env -u BATS_CACHE PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$BATS_ARGS_LOG" \
     SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
-    bash "$TMPROOT/scripts/run_tests.sh"
+    bash "$TMPROOT/scripts/run_tests.sh" all
 
   [ "$status" -eq 0 ]
   grep -Fxq "$TMPROOT/tests/unit/sample.bats" "$BATS_ARGS_LOG"

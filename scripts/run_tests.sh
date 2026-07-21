@@ -537,17 +537,17 @@ _run_tests_main() {
     # admission process group alive after the outer root has completed.  File
     # mode remains the explicit bounded primitive for focused nested checks.
     if [[ "${RUN_TESTS_ACTIVE:-0}" == "1" && "${1:-}" != "file" ]]; then
-        echo "BLOCK: nested aggregate run_tests invocation (${1:-all}); use file mode for focused child checks" >&2
+        echo "BLOCK: nested aggregate run_tests invocation (${1:-affected}); use file mode for focused child checks" >&2
         return 2
     fi
-    if [[ "${1:-all}" != "file" ]]; then
+    if [[ "${1:-affected}" != "file" ]]; then
         export RUN_TESTS_ACTIVE=1
     fi
 
     guard_fixture_symlink_write_through
     sweep_stale_embedded_test_tmp
 
-    case "${1:-all}" in
+    case "${1:-affected}" in
         all)
             RUN_TESTS_MODE=all
             # A full checkpoint must execute every selected file. Reusing
@@ -659,7 +659,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         _requested_tap="${BATS_TAP_OUTPUT:-}"
         _receipt_dir="${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}"
         mkdir -p "$_receipt_dir"
-        _mode="${1:-all}"
+        _mode="${1:-affected}"
         _singleflight=0
         # Explicit heavy_job_admission callers already own the outer lock.
         # Taking the single-flight lock underneath it would invert the normal
