@@ -8466,7 +8466,8 @@ while true; do
     # Failed/BLOCK retro prompts are delivered only after the pane is idle and
     # before another task is assigned. Successful delivery moves the event to
     # awaiting_answer, which is the durable hold marker for deployment.
-    for _retro_event in "$SCRIPT_DIR"/queue/retro/verbatim_pending/*.event; do
+    for _retro_event in "$SCRIPT_DIR"/queue/retro/verbatim_pending/*.event \
+        "$SCRIPT_DIR"/queue/retro/verbatim_awaiting_answer/*.event; do
         [ -f "$_retro_event" ] || continue
         mapfile -t _retro_fields < "$_retro_event"
         _retro_ninja="${_retro_fields[0]:-}"
@@ -8477,12 +8478,25 @@ while true; do
         mkdir -p "$SCRIPT_DIR/queue/locks"
         exec {_retro_lock_fd}>"$SCRIPT_DIR/queue/locks/deploy_ninja_${_retro_ninja}.lock"
         flock -n "$_retro_lock_fd" || { eval "exec ${_retro_lock_fd}>&-"; continue; }
+        source "$SCRIPT_DIR/scripts/lib/retro_pane_prompt.sh"
+        if _retro_reconcile_reason=$(retro_pane_prompt_reconcile_pending "$SCRIPT_DIR" "$_retro_event" "$_retro_ninja" "$_retro_event_id"); then
+            log "RETRO-TERMINAL-RECONCILED: ninja=$_retro_ninja event=$_retro_event_id reason=$_retro_reconcile_reason"
+            flock -u "$_retro_lock_fd" || true
+            eval "exec ${_retro_lock_fd}>&-"
+            continue
+        fi
+        case "$_retro_event" in
+            */verbatim_awaiting_answer/*)
+                flock -u "$_retro_lock_fd" || true
+                eval "exec ${_retro_lock_fd}>&-"
+                continue
+                ;;
+        esac
         if [ -f "$_retro_task" ]; then
             _retro_status=$(awk '/^[[:space:]]*status:/ {gsub(/["'\''[:space:]]/, "", $2); print $2; exit}' "$_retro_task" 2>/dev/null || true)
             if ! [[ "$_retro_status" =~ ^(failed|blocked|idle|done)$ ]]; then eval "exec ${_retro_lock_fd}>&-"; continue; fi
         fi
         if [ -z "$_retro_pane" ] || ! check_idle "$_retro_pane" "$_retro_ninja"; then eval "exec ${_retro_lock_fd}>&-"; continue; fi
-        source "$SCRIPT_DIR/scripts/lib/retro_pane_prompt.sh"
         if RETRO_PANE_TARGET="$_retro_pane" RETRO_PANE_IDLE_CHECK=true \
             retro_pane_prompt_deliver "$SCRIPT_DIR" "$_retro_ninja" "$_retro_event_id" "$_retro_from"; then
             bash "$SCRIPT_DIR/scripts/retro_write.sh" mark-delivered \

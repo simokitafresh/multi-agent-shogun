@@ -48,18 +48,113 @@ retro_pane_prompt_seen() {
     return 1
 }
 
+retro_pane_prompt_enter_delay() {
+    local delay="${RETRO_PANE_ENTER_DELAY_SECONDS:-0.5}"
+    if [ -n "${RETRO_PANE_SLEEP_CMD:-}" ]; then
+        "$RETRO_PANE_SLEEP_CMD" "$delay"
+    else
+        sleep "$delay"
+    fi
+}
+
+retro_pane_prompt_reconcile_terminal() {
+    local root="$1" event_file="$2"
+    [ -f "$event_file" ] || return 1
+    python3 - "$root" "$event_file" <<'PY'
+import sys
+from pathlib import Path
+
+import yaml
+
+root = Path(sys.argv[1])
+event_file = Path(sys.argv[2])
+fields = event_file.read_text(encoding="utf-8").splitlines()
+if len(fields) < 2:
+    raise SystemExit(1)
+event_id = fields[1]
+
+if event_id.startswith("report_received:"):
+    print("report_terminal")
+    raise SystemExit(0)
+
+if not event_id.startswith("task_failed:rpt-"):
+    raise SystemExit(1)
+report_id = event_id.split(":", 2)[1]
+
+try:
+    inbox = yaml.safe_load((root / "queue/inbox/gunshi.yaml").read_text(encoding="utf-8")) or {}
+except Exception:
+    inbox = {}
+parent_cmd = ""
+for message in inbox.get("messages", []) if isinstance(inbox, dict) else []:
+    if isinstance(message, dict) and message.get("report_id") == report_id:
+        parent_cmd = str(message.get("parent_cmd") or "")
+        break
+if not parent_cmd:
+    raise SystemExit(1)
+
+try:
+    reviews = yaml.safe_load((root / "logs/gunshi_review_log.yaml").read_text(encoding="utf-8")) or []
+except Exception:
+    reviews = []
+for review in reversed(reviews if isinstance(reviews, list) else []):
+    if not isinstance(review, dict):
+        continue
+    verdict = str(review.get("verdict") or "")
+    if (review.get("cmd_id") == parent_cmd and review.get("review_type") == "report"
+            and verdict in {"PASS", "FAIL"}):
+        print(f"review_terminal:{parent_cmd}:{verdict}")
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+retro_pane_prompt_reconcile_pending() {
+    local root="$1" event_file="$2" target="$3" event_id="$4" reason reconciled_dir ledger
+    reason=$(retro_pane_prompt_reconcile_terminal "$root" "$event_file") || return 1
+    reconciled_dir="${RETRO_PANE_RECONCILED_DIR:-$root/queue/retro/verbatim_reconciled}"
+    ledger="${RETRO_PANE_LEDGER:-${RETRO_VERBATIM_LOG:-$root/logs/retro_pane_prompt.tsv}}"
+    mkdir -p "$reconciled_dir" "$(dirname "$ledger")"
+    mv "$event_file" "$reconciled_dir/${event_file##*/}"
+    printf '%s\treconciled_terminal\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$reason" >> "$ledger"
+    printf '%s\n' "$reason"
+}
+
 retro_pane_prompt_deliver() {
     local root="$1" target="$2" event_id="$3" from="$4"
     local state_dir="${RETRO_PANE_STATE_DIR:-${RETRO_VERBATIM_STATE_DIR:-$root/queue/retro/pane_prompt}}"
     local ledger="${RETRO_PANE_LEDGER:-${RETRO_VERBATIM_LOG:-$root/logs/retro_pane_prompt.tsv}}"
-    local key claim pane expected_sha actual_sha tmux_bin="${RETRO_PANE_TMUX_BIN:-tmux}"
+    local key claim pane expected_sha actual_sha payload payload_sha buffer state_tmp quarantine_state tmux_bin="${RETRO_PANE_TMUX_BIN:-tmux}"
 
     mkdir -p "$state_dir" "$(dirname "$ledger")"
     key=$(retro_pane_prompt_key "$target" "$event_id")
     claim="$state_dir/$key.claimed"
     if ! mkdir "$claim" 2>/dev/null; then
-        printf '%s\tdeduplicated\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "$ledger"
-        return 0
+        if [ -f "$claim/sent" ]; then
+            printf '%s\tdeduplicated\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "$ledger"
+            return 0
+        fi
+        quarantine_state=$(head -n 1 "$claim/quarantined" 2>/dev/null || true)
+        if [ "$quarantine_state" = "paste_succeeded" ] || [ "$quarantine_state" = "input_sha_mismatch" ]; then
+            pane=$(retro_pane_prompt_resolve "$target") || return 1
+            retro_pane_prompt_idle "$pane" "$target" || return 1
+            if ! retro_pane_prompt_enter_delay; then
+                printf '%s\tfailed_enter_delay\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "$ledger"
+                return 1
+            fi
+            if ! "$tmux_bin" send-keys -t "$pane" Enter; then
+                printf '%s\tfailed_enter_recovery\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "$ledger"
+                return 1
+            fi
+            state_tmp="$claim/.sent.tmp.$$"
+            printf '%s\t%s\n' "$RETRO_PANE_PROMPT_SHA256" "$(date -Iseconds)" > "$state_tmp"
+            mv "$state_tmp" "$claim/sent"
+            rm -f "$claim/quarantined"
+            printf '%s\trecovered_enter\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "$ledger"
+            return 0
+        fi
+        printf '%s\tdeduplicated_unconfirmed\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "$ledger"
+        return 1
     fi
 
     pane=$(retro_pane_prompt_resolve "$target") || {
@@ -75,13 +170,42 @@ retro_pane_prompt_deliver() {
 
     expected_sha="$RETRO_PANE_PROMPT_SHA256"
     actual_sha=$(printf '%s' "$RETRO_PANE_PROMPT" | sha256sum | cut -d' ' -f1)
+    buffer="retro-${key:0:24}-$$"
     if [ "$actual_sha" != "$expected_sha" ] ||
-       ! "$tmux_bin" send-keys -t "$pane" -l -- "$RETRO_PANE_PROMPT" ||
-       ! "$tmux_bin" send-keys -t "$pane" Enter; then
+       ! printf '%s' "$RETRO_PANE_PROMPT" | "$tmux_bin" load-buffer -b "$buffer" -; then
         rmdir "$claim" 2>/dev/null || true
-        printf '%s\tfailed_send\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" >> "$ledger"
+        printf '%s\tfailed_buffer_load\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" >> "$ledger"
         return 1
     fi
+    payload=$("$tmux_bin" show-buffer -b "$buffer" 2>/dev/null) || payload=""
+    payload_sha=$(printf '%s' "$payload" | sha256sum | cut -d' ' -f1)
+    if [ "$payload_sha" != "$expected_sha" ]; then
+        "$tmux_bin" delete-buffer -b "$buffer" 2>/dev/null || true
+        rmdir "$claim" 2>/dev/null || true
+        printf '%s\tfailed_payload_sha\t%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" "$payload_sha" >> "$ledger"
+        return 1
+    fi
+    if ! "$tmux_bin" paste-buffer -t "$pane" -b "$buffer" -d; then
+        "$tmux_bin" delete-buffer -b "$buffer" 2>/dev/null || true
+        rmdir "$claim" 2>/dev/null || true
+        printf '%s\tfailed_paste\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" >> "$ledger"
+        return 1
+    fi
+    state_tmp="$claim/.quarantined.tmp.$$"
+    printf '%s\n' "paste_succeeded" > "$state_tmp"
+    mv "$state_tmp" "$claim/quarantined"
+    if ! retro_pane_prompt_enter_delay; then
+        printf '%s\tfailed_enter_delay\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" >> "$ledger"
+        return 1
+    fi
+    if ! "$tmux_bin" send-keys -t "$pane" Enter; then
+        printf '%s\tfailed_enter\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" >> "$ledger"
+        return 1
+    fi
+    state_tmp="$claim/.sent.tmp.$$"
+    printf '%s\t%s\n' "$expected_sha" "$(date -Iseconds)" > "$state_tmp"
+    mv "$state_tmp" "$claim/sent"
+    rm -f "$claim/quarantined"
     if ! retro_pane_prompt_seen "$pane" "$target"; then
         # send-keys and Enter already succeeded.  The pane check is only an
         # observation and must never turn a completed send back into a retry:
