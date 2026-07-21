@@ -231,8 +231,8 @@ run_publish_preflight() {
     [[ "$lesson_count" =~ ^[0-9]+$ ]] || lesson_count=0
     lesson_threshold=$((SHOGUN_LESSON_LIMIT - 2))
     if (( lesson_count >= lesson_threshold )); then
-        echo "BLOCK: lessons_shogun.yaml が ${lesson_count}件。cmd_publish前に空きを2件以上確保せよ(上限${SHOGUN_LESSON_LIMIT}件)。" >&2
-        echo "  解消: 既存LSを統合し、件数を${lesson_threshold}件未満にしてから再実行。" >&2
+        echo "BLOCK: lessons_shogun.yaml が ${lesson_count}件。active件数を ${lesson_threshold}件未満(=${lesson_threshold}件以上でBLOCK。空き3枠以上)にせよ(上限${SHOGUN_LESSON_LIMIT}件)。" >&2
+        echo "  解消: 既存LSを統合し、active件数を$((lesson_threshold - 1))件以下にしてから再実行。" >&2
         echo "  参考: bash scripts/lesson_write_shogun.sh --supersedes LS旧 LS新 \"統合理由\"" >&2
         return 1
     fi
