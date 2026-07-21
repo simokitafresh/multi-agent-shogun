@@ -13,7 +13,11 @@ import sqlite3
 import fcntl
 
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Resolve the module itself before deriving repository identity.  Fast deploy
+# roots expose this file through a symlink; abspath() preserves that lexical
+# root and used to create one cache key per deploy.  realpath() makes every
+# such import share the canonical repository root.
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 DEFAULT_DB_PATH = os.path.join(REPO_ROOT, "data", "multi_agent_shogun_memory.db")
 DEFAULT_CACHE_DIR = os.path.join(tempfile.gettempdir(), "shogun_memory_db_cache")
 DEFAULT_SEMANTIC_MAP_PATH = os.path.join(REPO_ROOT, "context", "semantic-map.md")
