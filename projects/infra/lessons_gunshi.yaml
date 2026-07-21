@@ -728,3 +728,33 @@ lessons:
   created_at: '2026-07-20'
   enforcement: "Level5: projects/infra/lessons_gunshi.yamlを軍師startupで自動ロードし、LGTM前のAC↔test関数と主要ロジック現物照合を事前注入"
   enforcement_level: 5
+- id: 'LG062'
+  title: 'precheck ERRORはcommit一次証跡と照合してからFAIL判定する'
+  origin: '[[bats_file_mode_guard_FAIL誤判定]] -> [[precheck偽陽性]] -> [[git_show一次確認義務]]'
+  detail: 'precheckのERROR表示だけを真実として受理すると、commit済みgeneratedファイルを未反映と誤判定する。FAIL確定前にgit show --statまたは固定SHA差分で対象ファイルの実在を確認し、矛盾時はprecheck偽陽性として検出器を修正する。'
+  source_cmd: 'cmd_karo_hotfix_bats_file_mode_guard_202607211704'
+  when: 'precheckがgenerated未反映・scope欠落等をERROR表示した時'
+  how: 'git show --statと固定SHA差分を一次確認し、precheck結果との一致を二値判定する'
+  created_at: '2026-07-21'
+  enforcement: 'Level5: review入力へcommitの対象ファイル一覧と固定SHA差分を事前注入する'
+  enforcement_level: 5
+- id: 'LG063'
+  title: 'FAIL受理はscope・核心AC・固定SHA baselineの3証跡を必須化する'
+  origin: '[[FAIL受理WARN58%]] -> [[将軍裁定_3点規律]] -> [[review品質×速度両立]]'
+  detail: 'FAIL受理時は、(a)scope外または既知別領域である証跡、(b)核心ACのPASS証跡、(c)固定SHA baseline比較の三点をreview_logへ残す。三点の一つでも欠ける場合は無根拠FAIL受理として止める。'
+  source_cmd: 'shogun_ruling_20260721_1647'
+  when: '忍者報告またはprecheckのFAILを受理する時'
+  how: '三証跡をreview_logへ記録し、欠落0/3を確認してから判定する'
+  created_at: '2026-07-21'
+  enforcement: 'Level4: 三証跡欠落時はreview bundle生成をBLOCKする'
+  enforcement_level: 4
+- id: 'LG064'
+  title: 'LG051非test caller数をdraft reviewで事前検死する'
+  origin: '[[LG051_2忍者BLOCK]] -> [[draft事前検死FM追加]] -> [[BLOCK削減]]'
+  detail: 'hook・gate・dispatcher変更では実装後のLG051 BLOCKを待たず、draft review時に定義行とtest/fixtureを除外した非test caller数を一次計測する。caller 0なら新設せず既存正本へ統合し、反復BLOCKを防ぐ。'
+  source_cmd: 'gunshi_session_20260721'
+  when: 'hook・gate・dispatcherを追加または変更するdraftをレビューする時'
+  how: 'rgで定義行とtest/fixtureを除外したnon-test caller countを計測しFMへ記録する'
+  created_at: '2026-07-21'
+  enforcement: 'Level5: draft reviewテンプレートへnon-test caller countの計測欄を自動注入する'
+  enforcement_level: 5
