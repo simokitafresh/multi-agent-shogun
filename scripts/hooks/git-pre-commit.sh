@@ -114,6 +114,28 @@ staged_file_exists() {
     return 1
 }
 
+staged_hook_related_exists() {
+    local staged_file
+    load_staged_file_cache
+    for staged_file in "${_STAGED_FILES[@]}"; do
+        case "$staged_file" in
+            scripts/hooks/*|.githooks/*) return 0 ;;
+        esac
+    done
+    return 1
+}
+
+# Return 0 when the full synchronizer must run, 1 only for the proven-clean
+# fast path. Hash lookup failure deliberately falls back to synchronization.
+precommit_self_sync_required() {
+    local installed_hook="$1" source_blob installed_blob
+    staged_hook_related_exists && return 0
+    source_blob="$(git -C "$REPO_ROOT" rev-parse HEAD:scripts/hooks/git-pre-commit.sh 2>/dev/null || true)"
+    installed_blob="$(git -C "$REPO_ROOT" hash-object -- "$installed_hook" 2>/dev/null || true)"
+    [[ -n "$source_blob" && -n "$installed_blob" && "$source_blob" == "$installed_blob" ]] || return 0
+    return 1
+}
+
 # Self-sync runs before failure-log plumbing is initialized, but it is still a
 # fail-closed terminal step and must publish the same truthful receipt.
 trap '_ec=$?; precommit_terminal_receipt "$_ec"; exit "$_ec"' EXIT
@@ -141,14 +163,16 @@ if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_g
         if staged_file_exists scripts/hooks/git-pre-commit.sh; then
             _sync_args+=(--scope-path scripts/hooks/git-pre-commit.sh)
         fi
-        bash "$REPO_ROOT/scripts/sync_git_hooks.sh" "${_sync_args[@]}" || {
-            precommit_step_end 1
-            echo "BLOCK(GA-222): live pre-commit hook self-sync failed" >&2
-            exit 1
-        }
-        _hook_hash_after="$(sha256sum "$_installed_hook" | awk '{print $1}')"
-        if [[ "$_hook_hash_before" != "$_hook_hash_after" ]]; then
-            exec env GIT_PRE_COMMIT_SELF_SYNCED=1 "$_installed_hook" "$@"
+        if precommit_self_sync_required "$_installed_hook"; then
+            bash "$REPO_ROOT/scripts/sync_git_hooks.sh" "${_sync_args[@]}" || {
+                precommit_step_end 1
+                echo "BLOCK(GA-222): live pre-commit hook self-sync failed" >&2
+                exit 1
+            }
+            _hook_hash_after="$(sha256sum "$_installed_hook" | awk '{print $1}')"
+            if [[ "$_hook_hash_before" != "$_hook_hash_after" ]]; then
+                exec env GIT_PRE_COMMIT_SELF_SYNCED=1 "$_installed_hook" "$@"
+            fi
         fi
         unset _installed_hook _running_hook _hook_hash_before _hook_hash_after _sync_args
     fi
