@@ -722,6 +722,66 @@ fi
 # false-positive surface. Removed rather than patched to eliminate the
 # raw-text-matching vector entirely.
 
+# === Guard 5.1: .bats direct shell execution prevention ===
+# A .bats file is not a standalone Bash script: invoking it through bash/sh
+# bypasses the repository runner's file-mode verdict and PASS/FAIL/SKIP
+# accounting. Classify argv positions after quote/heredoc-aware segmentation;
+# raw command text would recreate Guard 5's message/heredoc false positives.
+if [[ -n "${command:-}" && "$command" == *'.bats'* ]]; then
+    _bats_direct_path="$({ COMMAND="$command" PYTHONPATH="$SCRIPT_DIR/scripts/lib${PYTHONPATH:+:$PYTHONPATH}" python3 - 2>/dev/null <<'PY'
+import os
+from pathlib import PurePosixPath
+
+from shell_command_segments import segment_tokens
+
+
+def is_test_bats(value: str) -> bool:
+    normalized = value.replace("\\", "/")
+    return normalized.endswith(".bats") and "tests" in PurePosixPath(normalized).parts
+
+
+segments = segment_tokens(os.environ.get("COMMAND", ""))
+if segments is None:
+    print("__CLASSIFY_ERROR__")
+    raise SystemExit
+for tokens in segments:
+    if not tokens:
+        continue
+    index = 0
+    if tokens[index] == "env":
+        index += 1
+        while index < len(tokens) and (tokens[index].startswith("-") or "=" in tokens[index]):
+            index += 1
+    while index < len(tokens) and "=" in tokens[index] and not tokens[index].startswith(("/", "./")):
+        index += 1
+    if index >= len(tokens) or PurePosixPath(tokens[index]).name not in {"bash", "sh"}:
+        continue
+    index += 1
+    while index < len(tokens) and tokens[index].startswith("-"):
+        # -c consumes command text, not a script pathname.
+        if tokens[index] == "-c" or "c" in tokens[index][1:]:
+            index = len(tokens)
+            break
+        if tokens[index] == "--":
+            index += 1
+            break
+        if tokens[index] in {"-o", "-O"}:
+            index += 2
+            continue
+        index += 1
+    if index < len(tokens) and is_test_bats(tokens[index]):
+        print(tokens[index])
+        raise SystemExit
+PY
+    } || printf '__CLASSIFY_ERROR__';)"
+    if [[ "$_bats_direct_path" == "__CLASSIFY_ERROR__" ]]; then
+        emit_deny "BLOCK(bats-file-mode): shell commandを安全に解析できない。quote/escapeを修正し、単体testは bash scripts/run_tests.sh file <path> で実行せよ。"
+    elif [[ -n "$_bats_direct_path" ]]; then
+        emit_deny "BLOCK(bats-file-mode): .batsをbash/shで直接実行してはならない。修正: bash scripts/run_tests.sh file ${_bats_direct_path}"
+    fi
+    unset _bats_direct_path
+fi
+
 # === Guard 6: capture-pane minimum 30 lines (LK037/LK018: 末尾数行で状態を誤判断する防止) ===
 # + LG007: capture-pane=残像リマインダー
 if [[ "$payload" == *'capture-pane'* ]]; then

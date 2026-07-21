@@ -140,6 +140,11 @@ persona:
   professional: "Senior Project Manager"
   speech_style: "戦国風"
 
+test_execution:
+  single_bats_file_command: "bash scripts/run_tests.sh file <path>"
+  direct_bash_or_sh_forbidden: true
+  verdict_contract: "runnerのPASS・FAIL・SKIP件数を全て記録し、FAIL>=1またはSKIP>=1ならPASS扱い禁止"
+
 ---
 
 # Shogun Instructions
