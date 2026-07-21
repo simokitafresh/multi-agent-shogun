@@ -92,10 +92,12 @@ def shell_quote(value):
 today_days = days_from_civil(today)
 fresh_count = stale_count = warn_count = 0
 stale_entries = []
+class_limits = {"operational": 30, "stable_reference": 180}
 
 for path in targets:
     rel_path = path[len(prefix):] if path.startswith(prefix) else path
     raw_value = None
+    freshness_class = None
     with open(path, encoding="utf-8") as handle:
         for line in handle:
             stripped = line.strip()
@@ -103,12 +105,22 @@ for path in targets:
                 cells = stripped.strip("|").split("|", 2)
                 if len(cells) >= 2 and trim(cells[0]) == "verified_at":
                     raw_value = trim(cells[1])
-                    break
+                elif len(cells) >= 2 and trim(cells[0]) == "freshness_class":
+                    freshness_class = trim(cells[1])
             elif stripped.startswith("-"):
                 item = stripped[1:].lstrip()
                 if item.startswith("verified_at:"):
                     raw_value = trim(item.split(":", 1)[1])
-                    break
+                elif item.startswith("freshness_class:"):
+                    freshness_class = trim(item.split(":", 1)[1])
+
+    effective_class = freshness_class or "operational"
+    if effective_class not in class_limits:
+        print(f"WARN: {rel_path} (unknown freshness_class={effective_class})")
+        print("  action: freshness_classを operational または stable_reference に修正せよ")
+        warn_count += 1
+        continue
+    max_age_days = class_limits[effective_class]
 
     if raw_value is None:
         print(f"WARN: {rel_path} (verified_at missing)")
@@ -136,8 +148,8 @@ for path in targets:
         continue
 
     age_days = today_days - days_from_civil(verified_iso)
-    if age_days > 30:
-        print(f"STALE: {rel_path} ({age_days} days old; verified_at={raw_value})")
+    if age_days > max_age_days:
+        print(f"STALE: {rel_path} ({age_days} days old; class={effective_class}; limit={max_age_days}; verified_at={raw_value})")
         print(f"  action: {rel_path} を開き verified_at を {today} に更新せよ")
         stale_entries.append((age_days, rel_path, raw_value))
         stale_count += 1
@@ -145,7 +157,7 @@ for path in targets:
         print(f"WARN: {rel_path} (verified_at in future: {raw_value})")
         warn_count += 1
     else:
-        print(f"FRESH: {rel_path} ({age_days} days old; verified_at={raw_value})")
+        print(f"FRESH: {rel_path} ({age_days} days old; class={effective_class}; limit={max_age_days}; verified_at={raw_value})")
         fresh_count += 1
 
 if stale_count:

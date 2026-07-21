@@ -132,5 +132,6 @@ A4: AI による自然言語アサーション (2025年)
 ## Verification
 
 - verified_at: 2026-06-20
+- freshness_class: stable_reference
 - method: WebSearch ("mizchi Claude Code zenn 2025 2026") + WebFetch (zenn.dev/mizchi, mizchi.dev, 各記事URL, github.com/mizchi/ai-coding-guide-202507)
 - source: https://zenn.dev/mizchi / https://github.com/mizchi

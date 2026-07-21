@@ -130,6 +130,7 @@
 | 項目 | 値 |
 |------|-----|
 | verified_at | 2026-06-20 |
+| freshness_class | stable_reference |
 | method | GitHub API (gh api repos/forrestchang/andrej-karpathy-skills) + WebFetch README + WebSearch |
 | source | github.com/forrestchang/andrej-karpathy-skills 公式リポジトリ直接取得 |
 | stars_verified | 56,919 (API取得) |
