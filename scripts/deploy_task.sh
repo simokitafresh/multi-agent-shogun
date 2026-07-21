@@ -1376,6 +1376,9 @@ STALE_FIELDS = [
     # 第18層: 自然境界/実行時間契約。前cmdの長時間根拠を次cmdへ漏らすと、
     # source precheck=10分PASS後にtask=20分へ変質して契約が二重化する。
     'estimated_minutes', 'timeout_minutes', 'split_decision', 'execution_env',
+    # report identityは配備世代ごとの一意契約。旧世代taskからfast publicationへ
+    # 渡すと別report pathでも同じUUIDを再利用するため、世代境界で必ず除去する。
+    'report_id', 'report_identity_version',
 ]
 # parent_cmdが変わる場合だけacceptance_criteriaをクリアする。
 # 同一cmd再配備では、cmdソース不在時にテンプレートACをfallbackとして保持する。
