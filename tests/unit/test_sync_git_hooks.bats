@@ -45,6 +45,46 @@ teardown() {
     [ -n "${TEST_ROOT:-}" ] && [ -d "$TEST_ROOT" ] && rm -rf "$TEST_ROOT"
 }
 
+# test_necessity: GA-309 pre-push must select and execute tests from the pushed
+# commit snapshot; unrelated shared-worktree WIP must never create a false BLOCK.
+@test "GA-309 pre-push runs selector and runner from local_sha clean snapshot" {
+    mkdir -p "$TEST_ROOT/.githooks" "$TEST_ROOT/scripts" "$TEST_ROOT/logs/test_receipts"
+    cp "$BATS_TEST_DIRNAME/../../.githooks/pre-push" "$TEST_ROOT/.githooks/pre-push"
+    chmod +x "$TEST_ROOT/.githooks/pre-push"
+    cat > "$TEST_ROOT/scripts/test_select.sh" <<'EOF'
+#!/usr/bin/env bash
+echo tests/unit/clean.bats
+EOF
+    cat > "$TEST_ROOT/scripts/run_tests.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'clean-run\n' >> "$GA309_TRACE"
+exit 0
+EOF
+    chmod +x "$TEST_ROOT/scripts/test_select.sh" "$TEST_ROOT/scripts/run_tests.sh"
+    printf 'base\n' > "$TEST_ROOT/changed.txt"
+    (cd "$TEST_ROOT" && git add . && git commit -qm ga309-base)
+    printf 'pushed\n' > "$TEST_ROOT/changed.txt"
+    (cd "$TEST_ROOT" && git add changed.txt && git commit -qm ga309-pushed)
+    local local_sha base_sha trace
+    local_sha="$(git -C "$TEST_ROOT" rev-parse HEAD)"
+    base_sha="$(git -C "$TEST_ROOT" rev-parse HEAD^)"
+    trace="$BATS_TMPDIR/ga309-trace.$BATS_TEST_NUMBER"
+
+    # Dirty sentinels would fail or leave a distinct trace if the shared root
+    # leaked into either selection or execution.
+    printf '#!/usr/bin/env bash\necho tests/unit/dirty-sentinel.bats\n' > "$TEST_ROOT/scripts/test_select.sh"
+    printf '#!/usr/bin/env bash\nprintf "DIRTY_SENTINEL\\n" >> "$GA309_TRACE"\nexit 91\n' > "$TEST_ROOT/scripts/run_tests.sh"
+    chmod +x "$TEST_ROOT/scripts/test_select.sh" "$TEST_ROOT/scripts/run_tests.sh"
+
+    run env GA309_TRACE="$trace" PREPUSH_LOCK_WAIT_SECONDS=2 \
+        bash -c "cd '$TEST_ROOT' && printf 'refs/heads/main $local_sha refs/heads/main $base_sha\\n' | .githooks/pre-push origin example.invalid"
+
+    [ "$status" -eq 0 ]
+    [ "$(cat "$trace")" = "clean-run" ]
+    [[ "$output" != *"DIRTY_SENTINEL"* ]]
+    [ "$(git -C "$TEST_ROOT" worktree list --porcelain | grep -c '^worktree ')" -eq 1 ]
+}
+
 commit_hook_source() {
     local content="$1"
     mkdir -p "$TEST_ROOT/scripts/hooks" "$TEST_ROOT/.githooks"
