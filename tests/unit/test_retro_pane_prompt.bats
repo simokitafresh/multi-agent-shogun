@@ -9,12 +9,14 @@ setup() {
   export RETRO_PANE_LEDGER="$BATS_TEST_TMPDIR/ledger.tsv"
   export RETRO_PANE_TARGET='fixture:agents.7'
   export RETRO_PANE_IDLE_CHECK="$BATS_TEST_TMPDIR/idle"
+  export RETRO_PANE_SEEN_CHECK="$BATS_TEST_TMPDIR/seen"
   export RETRO_PANE_TMUX_BIN="$BATS_TEST_TMPDIR/tmux"
   printf '#!/usr/bin/env bash\n[ "${FIXTURE_BUSY:-0}" = 0 ]\n' > "$RETRO_PANE_IDLE_CHECK"
+  printf '#!/usr/bin/env bash\n[ "${FIXTURE_PROMPT_UNSEEN:-0}" = 0 ]\n' > "$RETRO_PANE_SEEN_CHECK"
   printf '%s\n' '#!/usr/bin/env bash' \
     'if [ "${FIXTURE_FAIL_SEND:-0}" = 1 ]; then exit 9; fi' \
     'printf "%s\\0" "$@" >> "$TMUX_CALLS"' > "$RETRO_PANE_TMUX_BIN"
-  chmod +x "$RETRO_PANE_IDLE_CHECK" "$RETRO_PANE_TMUX_BIN"
+  chmod +x "$RETRO_PANE_IDLE_CHECK" "$RETRO_PANE_SEEN_CHECK" "$RETRO_PANE_TMUX_BIN"
   export TMUX_CALLS="$BATS_TEST_TMPDIR/tmux.calls"
   source "$BATS_TEST_DIRNAME/../../scripts/lib/retro_pane_prompt.sh"
 }
@@ -23,7 +25,7 @@ setup() {
   retro_pane_prompt_deliver "$ROOT" tobisaru event:a fixture
   retro_pane_prompt_deliver "$ROOT" tobisaru event:a fixture
   retro_pane_prompt_deliver "$ROOT" tobisaru event:b fixture
-  [ "$(grep -c $'\tdelivered\t' "$RETRO_PANE_LEDGER")" -eq 2 ]
+  [ "$(grep -c $'\tdelivered_prompt_seen\t' "$RETRO_PANE_LEDGER")" -eq 2 ]
   [ "$(grep -c $'\tdeduplicated\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
   [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 2 ]
   [ "$(grep -ao 'Enter' "$TMUX_CALLS" | wc -l)" -eq 2 ]
@@ -39,7 +41,17 @@ setup() {
   [ "$status" -eq 1 ]
   [ "$(find "$RETRO_PANE_STATE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 0 ]
   retro_pane_prompt_deliver "$ROOT" tobisaru event:retry fixture
-  [ "$(grep -c $'\tdelivered\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  [ "$(grep -c $'\tdelivered_prompt_seen\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+}
+
+@test "send without prompt-seen ack releases claim and retries" {
+  FIXTURE_PROMPT_UNSEEN=1 run retro_pane_prompt_deliver "$ROOT" tobisaru event:respawn fixture
+  [ "$status" -eq 1 ]
+  [ "$(find "$RETRO_PANE_STATE_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 0 ]
+  [ "$(grep -c $'\tfailed_prompt_unseen\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  retro_pane_prompt_deliver "$ROOT" tobisaru event:respawn fixture
+  [ "$(grep -c $'\tdelivered_prompt_seen\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 2 ]
 }
 
 @test "retro transport has no inbox delivery path" {

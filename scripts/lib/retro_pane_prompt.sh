@@ -31,6 +31,23 @@ retro_pane_prompt_idle() {
     [ "$dead" = 0 ] && [ "$state" = idle ]
 }
 
+retro_pane_prompt_seen() {
+    local pane="$1" target="$2"
+    if [ -n "${RETRO_PANE_SEEN_CHECK:-}" ]; then
+        "$RETRO_PANE_SEEN_CHECK" "$pane" "$target" "$RETRO_PANE_PROMPT"
+        return
+    fi
+    local attempt
+    for attempt in 1 2 3 4 5; do
+        if tmux capture-pane -t "$pane" -p -J -S -30 2>/dev/null |
+            grep -Fq -- "$RETRO_PANE_PROMPT"; then
+            return 0
+        fi
+        [ "$attempt" -eq 5 ] || sleep 0.1
+    done
+    return 1
+}
+
 retro_pane_prompt_deliver() {
     local root="$1" target="$2" event_id="$3" from="$4"
     local state_dir="${RETRO_PANE_STATE_DIR:-${RETRO_VERBATIM_STATE_DIR:-$root/queue/retro/pane_prompt}}"
@@ -65,7 +82,12 @@ retro_pane_prompt_deliver() {
         printf '%s\tfailed_send\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" >> "$ledger"
         return 1
     fi
-    printf '%s\tdelivered\t%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" "$pane" >> "$ledger"
+    if ! retro_pane_prompt_seen "$pane" "$target"; then
+        rmdir "$claim" 2>/dev/null || true
+        printf '%s\tfailed_prompt_unseen\t%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" "$pane" >> "$ledger"
+        return 1
+    fi
+    printf '%s\tdelivered_prompt_seen\t%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" "$expected_sha" "$pane" >> "$ledger"
 }
 
 retro_pane_prompt_enqueue() {
