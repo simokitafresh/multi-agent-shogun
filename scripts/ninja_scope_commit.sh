@@ -162,7 +162,7 @@ create_and_publish_scoped_commit() {
         || { echo "BLOCK: GIT_CONFIG_COUNT must be a non-negative integer" >&2; return 2; }
     config_key="GIT_CONFIG_KEY_${config_count}=maintenance.auto"
     config_value="GIT_CONFIG_VALUE_${config_count}=false"
-    local tree_hash commit_hash
+    local tree_hash commit_hash command_stderr command_rc
     # `git commit` refreshes the whole index/worktree even when GIT_INDEX_FILE
     # contains only a bounded scope.  On DrvFS that reintroduces an O(repo)
     # lstat walk and, if the caller disappears after ref publication, permits a
@@ -175,11 +175,29 @@ create_and_publish_scoped_commit() {
         || { echo "BLOCK: pre-commit hook rejected scoped commit" >&2; return 1; }
     tree_hash="$(git write-tree)" \
         || { echo "BLOCK: failed to write scoped commit tree" >&2; return 1; }
-    commit_hash="$(printf '%s\n' "$message" | git commit-tree "$tree_hash" -p "$transaction_head")" \
+    command_stderr="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-git-exit.XXXXXX")"
+    if commit_hash="$(printf '%s\n' "$message" | git commit-tree "$tree_hash" -p "$transaction_head" 2>"$command_stderr")"; then
+        command_rc=0
+    else
+        command_rc=$?
+    fi
+    record_git_exit commit_tree "$command_rc" "$command_stderr" "$commit_hash"
+    [[ ! -s "$command_stderr" ]] || cat "$command_stderr" >&2
+    rm -f -- "$command_stderr"
+    ((command_rc == 0)) \
         || { echo "BLOCK: failed to create scoped commit object" >&2; return 1; }
     [[ "$commit_hash" =~ ^[0-9a-f]{40}$ ]] \
         || { echo "BLOCK: commit-tree did not return a 40hex object" >&2; return 1; }
-    git update-ref -m "$message" HEAD "$commit_hash" "$transaction_head" \
+    command_stderr="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-git-exit.XXXXXX")"
+    if git update-ref -m "$message" HEAD "$commit_hash" "$transaction_head" 2>"$command_stderr"; then
+        command_rc=0
+    else
+        command_rc=$?
+    fi
+    record_git_exit update_ref "$command_rc" "$command_stderr" "$commit_hash"
+    [[ ! -s "$command_stderr" ]] || cat "$command_stderr" >&2
+    rm -f -- "$command_stderr"
+    ((command_rc == 0)) \
         || { echo "BLOCK: failed to publish scoped commit ref" >&2; return 1; }
     # Preserve the observable post-commit contract for repository automation.
     # It runs only after the CAS publication, matching porcelain ordering.
@@ -213,6 +231,24 @@ terminal_ledger_dir="$(lock_path "$git_common_dir/ninja-scope-terminal-ledger")"
 mkdir -p -- "$terminal_ledger_dir"
 terminal_run_key="$(printf '%s' "$repo_root:$terminal_run_id" | sha256sum | awk '{print $1}')"
 terminal_ledger="$terminal_ledger_dir/$terminal_run_key.ledger"
+git_exit_receipt="$terminal_ledger_dir/$terminal_run_key.git-exit"
+
+record_git_exit() {
+    local command_name="$1" command_rc="$2" stderr_file="$3" commit_hash="${4:-none}"
+    local stderr_b64 tmp
+    stderr_b64="$(base64 -w0 < "$stderr_file")"
+    [[ "$commit_hash" =~ ^[0-9a-f]{40}$ ]] || commit_hash=none
+    tmp="${git_exit_receipt}.tmp.$$"
+    if [[ -f "$git_exit_receipt" ]]; then
+        cp -- "$git_exit_receipt" "$tmp"
+    else
+        printf 'version=1\n' > "$tmp"
+    fi
+    printf '%s_rc=%s\n%s_stderr_b64=%s\n%s_commit_hash=%s\n' \
+        "$command_name" "$command_rc" "$command_name" "$stderr_b64" \
+        "$command_name" "$commit_hash" >> "$tmp"
+    mv -f -- "$tmp" "$git_exit_receipt"
+}
 
 write_terminal_ledger() {
     local rc="$1" commit_hash="${2:-}" complete="$3" phase="$4"
@@ -228,6 +264,9 @@ write_terminal_ledger() {
     tmp="${terminal_ledger}.tmp.$$"
     printf 'version=1\nrun_id=%s\ncommit_hash=%s\nrc=%s\nphase=%s\nstatus_clean=%s\nhead_generation=%s\ncomplete=%s\n' \
         "$terminal_run_id" "$commit_hash" "$rc" "$phase" "$status_clean" "$head_generation" "$complete" > "$tmp"
+    if [[ -f "$git_exit_receipt" ]]; then
+        sed '1{/^version=/d;}' "$git_exit_receipt" >> "$tmp"
+    fi
     mv -f -- "$tmp" "$terminal_ledger"
 }
 
