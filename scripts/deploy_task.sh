@@ -11075,7 +11075,7 @@ inject_code_location_contract() {
 # with wait_reason last as the visibility barrier for ninja_monitor.
 register_blocked_parent_continuation() {
     local hotfix_task="$1" current_ninja="$2"
-    local task_type parent_cmd fixes blocked_ninja blocked_task
+    local task_type parent_cmd fixes blocked_ninja blocked_task configured_ninjas
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$hotfix_task" task_type parent_cmd fixes blocked_parent_ninja blocked_parent_task_id 2>/dev/null)" || true
     task_type="${task_type:-}"; parent_cmd="${parent_cmd:-}"; fixes="${fixes:-}"
     blocked_ninja="${blocked_parent_ninja:-}"; blocked_task="${blocked_parent_task_id:-}"
@@ -11083,7 +11083,11 @@ register_blocked_parent_continuation() {
     [ "$task_type" = "hotfix" ] || { echo "BLOCK: blocked-parent continuation requires task_type=hotfix" >&2; return 2; }
     [ -n "$fixes" ] && [ -n "$blocked_ninja" ] && [ -n "$blocked_task" ] || { echo "BLOCK: incomplete blocked-parent reference" >&2; return 2; }
     [ "$blocked_ninja" != "$current_ninja" ] || { echo "BLOCK: blocked-parent self-reference" >&2; return 2; }
-    [[ "$blocked_ninja" =~ ^(hayate|kagemaru|hanzo|saizo|kotaro|tobisaru)$ ]] || { echo "BLOCK: invalid blocked_parent_ninja" >&2; return 2; }
+    configured_ninjas="$(get_ninja_names)" || { echo "BLOCK: failed to load configured ninja roster" >&2; return 2; }
+    case " $configured_ninjas " in
+        *" $blocked_ninja "*) ;;
+        *) echo "BLOCK: invalid blocked_parent_ninja" >&2; return 2 ;;
+    esac
     local parent_file="$SCRIPT_DIR/queue/tasks/${blocked_ninja}.yaml" actual_id actual_status
     [ -f "$parent_file" ] || { echo "BLOCK: blocked parent task file missing" >&2; return 2; }
     actual_id=$(FIELD_GET_NO_LOG=1 field_get "$parent_file" task_id "" 2>/dev/null || true)
