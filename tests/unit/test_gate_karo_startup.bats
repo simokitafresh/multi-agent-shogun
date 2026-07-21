@@ -46,6 +46,26 @@ transition() { python3 "$PY" "$STATE" "$ALERTS" "${1:-}"; }
   grep -q $'\t1\tsuppressed\t0\t' "$STATE"
 }
 
+@test "同時startupはflock下で一件だけ送信する" {
+  echo '先送りCRITICAL: 並行案件 7件 が3セッション連続' > "$ALERTS"
+  LOCK="$TMPDIR_CASE/lock"
+  (flock -x 9; python3 "$PY" "$STATE" "$ALERTS" '') 9>"$LOCK" > "$TMPDIR_CASE/out1" &
+  p1=$!
+  (flock -x 9; python3 "$PY" "$STATE" "$ALERTS" '') 9>"$LOCK" > "$TMPDIR_CASE/out2" &
+  p2=$!
+  wait "$p1"; wait "$p2"
+  [ "$(cat "$TMPDIR_CASE/out1" "$TMPDIR_CASE/out2" | grep -c '^SEND')" -eq 1 ]
+}
+
+@test "破損stateはfail closedで上書きしない" {
+  printf 'bad\tnot-an-int\topen\t0\tbefore\n' > "$STATE"
+  cp "$STATE" "$TMPDIR_CASE/before"
+  echo '先送りCRITICAL: 異常系 1件 が3セッション連続' > "$ALERTS"
+  run transition
+  [ "$status" -ne 0 ]
+  cmp "$STATE" "$TMPDIR_CASE/before"
+}
+
 @test "実装は状態遷移と送信を同一flock区間に置く" {
   run awk '/_deferred_lock=.*karo_startup_escalation.lock/{seen=1} seen && /flock -x 9/{locked=1} locked && /inbox_write.sh.*shogun/{sent=1} END{exit !(seen&&locked&&sent)}' "$ROOT/scripts/gates/gate_karo_startup.sh"
   [ "$status" -eq 0 ]
