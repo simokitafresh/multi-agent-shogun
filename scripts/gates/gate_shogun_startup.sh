@@ -333,6 +333,14 @@ if [ -z "$SCRIPT_DIR" ]; then
     esac
     [ -n "$SCRIPT_DIR" ] || SCRIPT_DIR="."
 fi
+# Publish startup intent before any timeout-prone check.  UserPromptSubmit can
+# use this durable evidence to recover the completion marker when the caller
+# kills this gate with rc=124 before the final touch below.
+local _shogun_recovery_attempt="${SHOGUN_RECOVERY_ATTEMPT_MARKER:-${SCRIPT_DIR}/logs/shogun_recovery_attempted}"
+mkdir -p "$(dirname "$_shogun_recovery_attempt")"
+_shogun_recovery_attempt_tmp="${_shogun_recovery_attempt}.tmp.${BASHPID}"
+: > "$_shogun_recovery_attempt_tmp"
+mv -f "$_shogun_recovery_attempt_tmp" "$_shogun_recovery_attempt"
 local GATE_DIR="$SCRIPT_DIR/scripts/gates"
 local _STARTUP_GATE_STARTED_MS
 _STARTUP_GATE_STARTED_MS=$(date +%s%3N)

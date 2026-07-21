@@ -1165,5 +1165,6 @@ fi
 # /clear前に復帰完了マーカーを削除。次セッションが復帰手順(startup gate)を踏むまで
 # post-shogun-inbox-check.shのRECOVERY INCOMPLETE警告が正しく発火する(残骸の主検知。TTLは安全網)
 rm -f "${SHOGUN_RECOVERY_MARKER:-${ROOT_DIR}/logs/shogun_recovery_complete}"
+rm -f "${SHOGUN_RECOVERY_ATTEMPT_MARKER:-${ROOT_DIR}/logs/shogun_recovery_attempted}"
 
 exit "$( [ "$issues" -gt 0 ] && echo 1 || echo 0 )"

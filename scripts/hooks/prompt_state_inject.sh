@@ -258,10 +258,27 @@ fi
 
 refresh_shogun_recovery_marker() {
   local marker="${PROMPT_STATE_RECOVERY_MARKER:-${SHOGUN_ROOT:-$SCRIPT_DIR}/logs/shogun_recovery_complete}"
+  local attempt_marker="${PROMPT_STATE_RECOVERY_ATTEMPT_MARKER:-${SHOGUN_ROOT:-$SCRIPT_DIR}/logs/shogun_recovery_attempted}"
+  local now marker_mtime attempt_age
 
   [[ "$agent_id" == "shogun" ]] || return 0
-  [[ -f "$marker" ]] || return 0
-  touch "$marker" 2>/dev/null || true
+  if [[ -f "$marker" ]]; then
+    touch "$marker" 2>/dev/null || true
+    return 0
+  fi
+
+  # Missing completion marker is recoverable only when this session actually
+  # attempted startup recently.  No evidence and stale evidence remain
+  # fail-closed so PostToolUse continues to emit RECOVERY INCOMPLETE.
+  [[ -f "$attempt_marker" ]] || return 0
+  now="${PROMPT_STATE_NOW_EPOCH:-$(date +%s)}"
+  marker_mtime="$(stat -c %Y "$attempt_marker" 2>/dev/null || printf '0')"
+  [[ "$now" =~ ^[0-9]+$ && "$marker_mtime" =~ ^[0-9]+$ ]] || return 0
+  attempt_age=$((now - marker_mtime))
+  (( attempt_age >= 0 && attempt_age <= 480 * 60 )) || return 0
+  mkdir -p "$(dirname "$marker")" 2>/dev/null || return 0
+  : > "${marker}.tmp.${BASHPID}" 2>/dev/null || return 0
+  mv -f "${marker}.tmp.${BASHPID}" "$marker" 2>/dev/null || true
 }
 
 refresh_shogun_recovery_marker
