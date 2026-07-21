@@ -844,7 +844,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1255 -->
+<!-- last_synced_lesson: L1257 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1813,6 +1813,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1253: pre-push実走rootはpush objectへ固定する（cmd_karo_hotfix_ga309_prepush_isolated_exec_202607211653）
 - L1254: 完了副作用のwriter ownershipを入口で明示する（cmd_karo_hotfix_cmd_complete_single_dashboard_writer_202607211700）
 - L1255: 一時root cacheはroot寿命とcache寿命を分離して回収する（cmd_karo_hotfix_memory_cache_orphan_cleanup_202607211752）
+- L1256: 共有worktreeのテスト判定はtask所有pathへ帰属させる（cmd_karo_hotfix_task_test_attribution_202607211351）
+- L1257: 非同期writerの所有側drain契約（cmd_karo_ci_fix_29825839122_202607212030）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
