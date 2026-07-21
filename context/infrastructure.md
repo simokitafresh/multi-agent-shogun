@@ -1,6 +1,6 @@
 # インフラコンテキスト
 <!-- last_updated: 2026-07-19 cmd_karo_hotfix_ga300_context_freshness_sources_202607190222 -->
-<!-- source_commit:42e6ea06852a367b359b4bbbeb1cd143797d5f77 reason:cmd_karo_retro_answer_tracking_202607200324 idle retro delivery and answer hold evidence:context/infrastructure.md now records L1243-L1244 for enqueue/idle mark-delivered and event_id answer tracking; source commit reflects reviewed implementation -->
+<!-- source_commit:fb95d7051d78ca733e6f84505a3f9dc03f78b676 reason:GA-313 reviewed full infra source boundary evidence:42e6ea0..fb95d70 classified 263 total: reflected/excluded 117 and unreflected reviewed 146/146; completion emits exact setter command -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -27,6 +27,8 @@ CI fixtureの直近契約は、campaign aggregate再入をBLOCKし、campaign fi
 GA-300再分類: `ff52b26b3` は`codd-refactor`の参照鮮度注記のみでinfra契約変更なし。`44fbe59a5`の新規test必要性入口、`89672a069`のpath境界FP修正、`f7602c7fa`のtransient既定・commit前fail-closed削除は上記へ実内容反映。
 
 cmd完了時のown-commit freshness判定は、未反映commitをBLOCKする前に`CONTEXT_UPDATE_CANDIDATE project=<id> context=<path> source_commit=<hash> reason=own_reviewed_commit`を機械可読出力し、更新対象を自動供給する。承認済み変更がtest-onlyの場合だけ`CONTEXT_NON_REFLECTION_BOUNDARY ... reason=test_only`を出して正当な非反映境界を保持する。→ `scripts/cmd_complete_gate.sh` / `tests/unit/test_cmd_complete_gate_context_freshness_block.bats`（GA-285）
+
+完了フローのcontext境界更新は候補だけでなく、検証済みcontext/hash/reason/evidenceを埋めた`CONTEXT_UPDATE_COMMAND bash scripts/context_source_commit_set.sh ...`を同時出力する。更新者は本文反映をレビューしてこの入力を使い、境界metadataを再発明しない。GA-313では`42e6ea0..fb95d70`の263 commitをroot-fallback契約で全走査し、除外117（auto subject 32、本文参照31、context自己反映7、source pathなし47）・未反映146/146（scripts 105、tests 20、claude 6、instructions 5、CLAUDE.md 4、skills 3、memory 2、github 1）と分類した。直接原因は本文反映とsource境界更新の分離、根本原因は完了時入力が候補止まりでreason/evidence再構成を人へ残したこと。→ `scripts/cmd_complete_gate.sh` / `tests/unit/test_cmd_complete_gate_context_freshness_block.bats`（cmd_karo_hotfix_ga313_context_freshness_202607220112）
 
 8スキル（dashboard-update / idle-persist / review-bundle / verdict-check / karo-direct / ninja-commit / recon-dual / shogun-cli-switch）の対応script参照契約を再同期し、skill-ref gate WARN 8→0、validator 8/8 PASS・SKIP0を確認。→ commits `c4a654742`, `0fd87ed81`（cmd_karo_hotfix_skill_refs_batch_a/b_20260718140219）
 
