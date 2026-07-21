@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-20 -->
+<!-- last_updated: 2026-07-21 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,15 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3454 | — | — | 06-20 | — |
-| cmd_3455 | 殿指摘(2026-06-19 22:34): 記憶DBへの書込みが掲示板/inbox/insightの副作用に依存しており、知識を直接INSERTする専用ツールがない。三層貫通でLayer1に書くとき通信チャネルを迂回路にしていた。memory_db_knowledge_write.shを作成し、通信に依存しない直接書込みを可能にする | infra | 06-20 | memory_db_knowledge_write.shを追 |
-| cmd_3456 | 殿指示(2026-06-19 22:47): classroomを進めよう。cmd_3450 CSS修正(commit 5db49a5 height:0+overflow:hidden)がv5.3-diag以降に入っている。v5.4としてリリースし、殿の実機でv5.3-diag診断データ(sidebarClientHeight)が0になることを検証する | google-classroom | 06-20 | — |
-| cmd_3457 | 殿裁定(2026-06-19 22:56): F001の本質は将軍がコード実装すると殿との会話がブロックされること。簡単な操作までcmd起票すると余計に時間とトークンを消費し殿の指示が入らず目的手段逆転。F001を改訂し殿との会話をブロックしない操作は将軍直接実行、ブロックする規模のコード変更のみcmd委任と明記する | infra | 06-20 | F001を殿会話ブロック基準へ改訂し、将軍の短時間直接操作許 |
-| cmd_3463 | 殿指示(2026-06-20): SSOTが正しい場所にあるか調査→曖昧なものを正す→オントロジーを動かす。Phase 1完了(cmd_3458+3461)。Phase 2として曖昧SSOT(gist_url重複・launch_cmd不一致・skill path重複)を是正し、Phase 3としてGuard16をテーブル駆動に汎化+リポジトリパスの消費者書き換えを実施する。忍者名パターン(SSOT→ヘルパー→Guard→消費者)を全概念に横展開する基盤を構築する | infra | 06-20 | docs/research/ssot-registry.md |
-| cmd_3466 | 先送りBLOCK(教訓健全度ALERT、useful率低下)の根因対処。軍師分析(blt_20260620_133400): useful率低下の主因はマッチング精度(キーワードスコア)。deploy_task.shのinject_related_lessonsの選定精度を改善し、忍者が受け取る教訓の的中率を上げる | infra | 06-20 | inject_related_lessonsのtarget_ |
-| cmd_3470 | 殿指摘(2026-06-20 15:16「洗脳の証拠」): Commanderロール(shogun/karo/gunshi)が86ファイルに直書き。最大の未保護概念。消費者書換え前にロール名の使用パターンを分類しSSOT設計方針を確定する偵察 | infra | 06-20 | Commanderロール(shogun/karo/gunsh |
-| cmd_3472 | 殿指示「遅いスクリプトはバグ」(2026-06-20)。軍師速度監査: ralph_loop_metrics.sh 14-20秒がTOP1。hook(17ms)の850倍。根因=for+glob+gawkループ | infra | 06-20 | ralph_loop_metrics.sh を forループ |
-| cmd_3474 | 家老エスカレーション(2026-06-20 15:57): brainwash_check未記入WA 5件が3セッション連続CRITICAL。実態は100件中98件が未記入。normalize_karo_workarounds.pyにbrainwash_checkフィールドバリデーションを追加し、未記入WAの記録をブロックする | infra | 06-20 | normalize_karo_workarounds.py |
 | cmd_3476 | idle自走分析で発見(2026-06-21)。BLOCK TOP1パターン(20件/50=40%、7ユニークcmd)。cmd_3408(2026-06-16)のFP修正後も18件残存。実例: cmd_3457でhanzoがCLAUDE.md変更不要と正しく判断したがcommand欄に参照ありのためBLOCK。忍者が変更不要と判断したファイルをgateに伝達する手段が不在 | infra | 06-21 | cmd_3408以降のcommand_files_modif |
 | cmd_3475 | startup gate SKILL.md script参照WARNが3セッション連続先送り(2026-06-19〜20)。7本のSKILL.md(codd-fix・dashboard-update・dream・idle-persist・karo-direct・recon-dual・review-bundle・shogun-teire)が参照スクリプトより古い。スクリプト変更をSKILL.mdに反映し、WARNをゼロにする | infra | 06-21 | 3本のSKILL.md(codd-fix/karo-dire |
 | cmd_3477 | karo_workarounds分析(2026-06-21)で発見。cmd_3466でcanceled cmdのtask YAMLが残存しcmd_complete_gateの報告待ち対象に残った。家老が手動でparent_cmdを退避して回避(stale_report WA)。deploy_task.shにcancel処理が完全不在(grep 0件)。cmd_complete_gate.shにもcanceled判定なし(grep 0件) | infra | 06-21 | canceled cmdをcmd_complete_gate |

@@ -44,6 +44,8 @@ Bats直接実行は`run_timed_bats.sh`へ集約し、既存writerの14列台帳�
 
 Bats suiteの共有資源fixtureは、個別実行時間ではなくsuite内の同時実行競合でtiming ratchetを誤発火しうる。`run_tests.sh`の既存full aggregate weight分類へ対象fixtureを登録し、総並列度を保ったまま該当fixtureだけを排他実行する。対象5件のBLOCK 5→0、suite wall 32.416→13.700秒（-57.7%）、54/54 PASS・FAIL0・SKIP0。→ `scripts/run_tests.sh` / `tests/unit/test_run_tests.bats`（cmd_karo_ci_fix_timing_budget_ratchet_5files_202607161327、commit `b91b449d6`）
 
+共有worktreeの任務テスト帰属は `run_tests.sh task queue/tasks/<worker>.yaml` を使い、task/report所有pathのみを既存selectorへ渡す。引数なし`affected`や`unit`全量を忍者任務verdictへ混入させず、全量健全性はfixed-SHA統合checkpointで独立判定する。cmd_4108実測は690件中scope外FAIL1→所有4 test files・109/109 PASS・混入0。→ `docs/research/task-test-attribution-after-20260721.md`
+
 同一CLIが複数入力を受けるBatsでは、互換caseをbatch化してassertionを維持したまま重複初期化だけを減らす。`test_test_select.bats`は`test_select.sh`起動10→5、wall 18.248→8.444秒（53.7%短縮）、5/5 PASS・FAIL0・SKIP0。→ `tests/unit/test_test_select.bats` / `scripts/test_select.sh`（commit `a1ea08648`）
 
 速度修行の連続攻略は`min_rounds=2`・`max_rounds=3`・campaign budget 10分とし、次roundのbaselineは直前値でなく`best_so_far`を継承する。悪化runは採用せず、round別task/commit/reportとledgerの`round_index/best_wall/last_wall/approach/stop_reason`で強くてニューゲームする。→ `docs/research/ledger-driven-campaign-lane-pattern_20260714.md` §6.5（3者合意、v2.1 commit `3f9931302`、実装cmd_3952）
@@ -838,7 +840,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1249 -->
+<!-- last_synced_lesson: L1251 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1802,6 +1804,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1247: source依存追加時はwrapper fixtureの依存閉包も同時更新する（cmd_karo_ci_fix_29699666303_cmd_complete_fixture_202607200455）
 - L1248: 復元testは後発依存と実git状態をfixture化する（cmd_karo_ci_fix_cmd4095_restored_contracts_202607200610）
 - L1249: 内側の意味的exit codeを外側retryが潰さない（cmd_4096）
+- L1251: set -e下の集約gateは裸return 1で後段判定を殺さない（cmd_karo_hotfix_gate_friction_quality_speed_202607211409）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
