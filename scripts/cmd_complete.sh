@@ -269,6 +269,22 @@ else
     run_status_step
     checkpoint_mark status_completed
 fi
+
+# Dashboard publication, notification delivery, and inbox archival remain
+# strictly checkpoint ordered, but are not part of the interactive caller's
+# latency boundary.  The detached worker re-enters this same script, verifies
+# the bundle/checkpoint identity under the same lock, and resumes at dashboard.
+# A worker crash is therefore safely retryable by the next invocation.
+if [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
+    && [[ "${CMD_COMPLETE_ASYNC_TAIL_WORKER:-0}" != "1" ]]; then
+    _tail_log="$CHECKPOINT_DIR/completion_tail.log"
+    setsid env CMD_COMPLETE_ASYNC_TAIL_WORKER=1 \
+        CMD_COMPLETE_ROOT_DIR="$ROOT_DIR" CMD_COMPLETE_SCRIPT_DIR="$SCRIPT_DIR" \
+        bash "$SCRIPT_DIR/cmd_complete.sh" "$CMD_ID" "$BUNDLE_PATH" \
+        </dev/null >>"$_tail_log" 2>&1 9>&- &
+    printf '[cmd_complete] QUEUED completion_tail pid=%d log=%s\n' "$!" "$_tail_log"
+    exit 0
+fi
 # dashboard_update has its own 10s flock wait, but several independently
 # completed commands can legitimately queue behind one writer.  A single lock
 # timeout is transient, while publishing later steps without dashboard is not;

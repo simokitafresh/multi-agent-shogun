@@ -47,6 +47,12 @@ esac
 # shogun_to_karo.yamlからpurposeを取得
 YAML_FILE="$SCRIPT_DIR/queue/shogun_to_karo.yaml"
 PURPOSE=""
+NTFY_CMD_SCAN_BYTES="${NTFY_CMD_SCAN_BYTES:-524288}"
+
+bounded_tail() {
+  local path="$1"
+  tail -c "$NTFY_CMD_SCAN_BYTES" -- "$path" 2>/dev/null || true
+}
 
 trim_yaml_scalar() {
   local value="$1"
@@ -112,7 +118,7 @@ if [ -f "$YAML_FILE" ]; then
       fi
       [ "$_watch_count" -lt 5 ] || _watch_key=0
     fi
-  done < "$YAML_FILE"
+  done < <(bounded_tail "$YAML_FILE")
   unset _watch_list _watch_key _watch_count trimmed value _TRIMMED_YAML_SCALAR
 
   # Method 2: キー形式フォールバック（cmd_XXX: で始まる形式）
@@ -133,7 +139,7 @@ if [ -f "$DASHBOARD" ]; then
       STREAK="${BASH_REMATCH[1]}"
       break
     fi
-  done < "$DASHBOARD"
+  done < <(bounded_tail "$DASHBOARD")
 fi
 
 # 軍師verdict取得（queue/inbox + archive/inboxのgunshi→karo msg）
@@ -160,7 +166,7 @@ for src in "${_ntfy_cmd_sources[@]}"; do
       [ -n "$GUNSHI_VERDICT" ] && break
     fi
     _prev5="$_prev4"; _prev4="$_prev3"; _prev3="$_prev2"; _prev2="$_prev1"; _prev1="$line"
-  done < "$src"
+  done < <(bounded_tail "$src")
   [ -n "$GUNSHI_VERDICT" ] && break
 done
 unset _ntfy_cmd_sources _ntfy_cmd_archives _i _prev1 _prev2 _prev3 _prev4 _prev5 _candidate

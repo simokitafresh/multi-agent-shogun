@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
 setup() {
+    export CMD_COMPLETE_SYNC_TAIL=1
     export FIXTURE="$BATS_TEST_TMPDIR/root"
     mkdir -p "$FIXTURE/scripts/gates" "$FIXTURE/scripts/lib" "$FIXTURE/queue/gates/cmd_fixture"
     cp "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh" "$FIXTURE/scripts/cmd_complete.sh"
@@ -19,6 +20,80 @@ PY
     done
     make_stub "$FIXTURE/scripts/gates/gate_context_freshness.sh" gate_context_freshness.sh
     make_stub "$FIXTURE/scripts/gates/gate_yaml_status.sh" gate_yaml_status.sh
+}
+
+# test_necessity: the public completion caller must not inherit latency from the durable dashboard/notification tail.
+# regression_justification: production measurements showed dashboard=18.307s and ntfy≈23s despite ntfy's lower-level async worker.
+@test "public caller detaches ordered completion tail before slow dashboard and ntfy" {
+    unset CMD_COMPLETE_SYNC_TAIL
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/async-tail.log"
+    cat > "$FIXTURE/scripts/dashboard_update.sh" <<'SH'
+#!/usr/bin/env bash
+sleep 5
+printf 'dashboard_update.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+SH
+    chmod +x "$FIXTURE/scripts/dashboard_update.sh"
+
+    local start_ns elapsed_ms
+    start_ns="$(date +%s%N)"
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    elapsed_ms=$(( ($(date +%s%N) - start_ns) / 1000000 ))
+    [ "$status" -eq 0 ]
+    [ "$elapsed_ms" -lt 5000 ]
+    [[ "$output" == *"QUEUED completion_tail"* ]]
+    [ ! -e "$CMD_COMPLETE_TEST_LOG" ] || ! grep -q '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG"
+}
+
+# test_necessity: all known slow/failing tail variants must remain outside the public caller while the worker preserves checkpoints.
+@test "five tail latency variants return from public caller below five seconds" {
+    unset CMD_COMPLETE_SYNC_TAIL
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/five-variants.log"
+    local variant cmd start_ns elapsed_ms
+    for variant in sleep5 huge_archive endpoint_failure notification_throttle dashboard_contention; do
+        cmd="cmd_${variant}"
+        mkdir -p "$FIXTURE/queue/gates/$cmd"
+        cp "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
+        start_ns="$(date +%s%N)"
+        run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+            CMD_COMPLETE_TEST_VARIANT="$variant" bash "$FIXTURE/scripts/cmd_complete.sh" "$cmd"
+        elapsed_ms=$(( ($(date +%s%N) - start_ns) / 1000000 ))
+        [ "$status" -eq 0 ]
+        [ "$elapsed_ms" -lt 5000 ]
+        [[ "$output" == *"QUEUED completion_tail"* ]]
+    done
+}
+
+# test_necessity: cmd notifications must read only a fixed tail window while preserving purpose, sender, verdict and gist payload fields.
+@test "ntfy command metadata search is bounded and preserves payload contract" {
+    local root="$BATS_TEST_TMPDIR/ntfy-root" output_file="$BATS_TEST_TMPDIR/ntfy-payload"
+    mkdir -p "$root/scripts" "$root/queue/inbox" "$root/archive/inbox" "$root/config"
+    cp "$BATS_TEST_DIRNAME/../../scripts/ntfy_cmd.sh" "$root/scripts/ntfy_cmd.sh"
+    cat > "$root/scripts/ntfy.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$1" > "$NTFY_PAYLOAD_FILE"
+SH
+    chmod +x "$root/scripts/ntfy.sh"
+    dd if=/dev/zero bs=1024 count=2048 2>/dev/null | tr '\0' 'x' > "$root/queue/shogun_to_karo.yaml"
+    printf '\n- id: cmd_bounded\n  purpose: bounded purpose\n' >> "$root/queue/shogun_to_karo.yaml"
+    cat > "$root/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- content: 'cmd_bounded draft verdict: APPROVE'
+  from: gunshi
+YAML
+    cat > "$root/config/projects.yaml" <<'YAML'
+current_project: infra
+projects:
+- id: infra
+  gist_url: https://example.invalid/gist
+YAML
+    run env NTFY_PAYLOAD_FILE="$output_file" NTFY_CMD_SCAN_BYTES=4096 \
+        bash "$root/scripts/ntfy_cmd.sh" cmd_bounded done
+    [ "$status" -eq 0 ]
+    grep -q 'cmd_bounded done' "$output_file"
+    grep -q 'bounded purpose' "$output_file"
+    grep -q '軍師: APPROVE' "$output_file"
+    grep -q 'https://example.invalid/gist' "$output_file"
 }
 
 # test_necessity: cmd-complete must consume only its own CLEAR skill hint before the terminal inbox archive.
