@@ -97,9 +97,55 @@ is_generated_large_artifact() {
     return 1
 }
 
+print_sg_pre24() {
+    echo "■ SG-PRE24: generated/貫通チェック"
+    local fixed_hash="${_REPORT_HASHES%%$'\n'*}"
+    local _ifile _rname _gen_files _gen_first _src_hash _gen_hash
+    local -a _instr_files=()
+    while IFS= read -r _ifile; do
+        _instr_files+=("$_ifile")
+    done < <(echo "$FILES_MODIFIED" | tr ',' '\n' | sed 's/^[[:space:]]*//' | grep -E '^instructions/(shogun|karo|gunshi|ashigaru)' || true)
+    if [ "${#_instr_files[@]}" -eq 0 ] || [ ! -d "$REPO_ROOT/instructions/generated" ]; then
+        echo "  SKIP: instructions正本変更なし or generated/不在"
+        return 0
+    fi
+    if [ -z "$fixed_hash" ] || ! git -C "$REPO_ROOT" cat-file -e "${fixed_hash}^{commit}" 2>/dev/null; then
+        echo "  ★ BLOCK: reportの固定commit SHAが不在または無効"
+        return 1
+    fi
+
+    local _pre24_pass=true
+    for _ifile in "${_instr_files[@]}"; do
+        _rname=$(echo "$_ifile" | grep -oP '(shogun|karo|gunshi|ashigaru)' | head -1)
+        [ -z "$_rname" ] && continue
+        _gen_files=$(git -C "$REPO_ROOT" ls-tree -r --name-only "$fixed_hash" -- instructions/generated/ 2>/dev/null | grep -E "/[^/]*${_rname}[^/]*$" || true)
+        if [ -z "$_gen_files" ]; then
+            echo "  ★ BLOCK: ${_ifile}変更だが固定commit内のgenerated/に対応ファイルなし"
+            _pre24_pass=false
+            continue
+        fi
+        _gen_first=${_gen_files%%$'\n'*}
+        _src_hash=$(git -C "$REPO_ROOT" rev-list -1 "$fixed_hash" -- "$_ifile" 2>/dev/null || true)
+        _gen_hash=$(git -C "$REPO_ROOT" rev-list -1 "$fixed_hash" -- "$_gen_first" 2>/dev/null || true)
+        if [ -n "$_src_hash" ] && [ -n "$_gen_hash" ] && git -C "$REPO_ROOT" merge-base --is-ancestor "$_src_hash" "$_gen_hash" 2>/dev/null; then
+            echo "  PASS: ${_ifile} → fixed:${fixed_hash:0:12} 時点でgenerated/が正本以降に更新済み"
+        else
+            echo "  ★ BLOCK: ${_ifile}変更がfixed:${fixed_hash:0:12} 時点のgenerated/に未反映"
+            _pre24_pass=false
+        fi
+    done
+    "$_pre24_pass"
+}
+
 if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE9" ]; then
     print_sg_pre9
     exit 0
+fi
+
+if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE24" ]; then
+    _REPORT_HASHES=$(grep -oiP '(?:commit|commit_hash:)\s*\K[0-9a-f]{7,40}' "$REPORT_PATH" 2>/dev/null | sort -u || true)
+    print_sg_pre24
+    exit $?
 fi
 
 # ─── L5: GATE CLEAR≠レビュー免除リマインド (殿厳命2026-06-08) ───
@@ -773,65 +819,11 @@ fi
 
 # ─── SG-PRE24: instructions変更時のgenerated/貫通チェック(GP-265) ───
 echo "■ SG-PRE24: generated/貫通チェック"
-# instructions正本からrole名を抽出し、対応するgenerated/ファイルの内容貫通を検証
-_instr_files=()
-while IFS= read -r _if; do
-    _instr_files+=("$_if")
-done < <(echo "$FILES_MODIFIED" | tr ',' '\n' | sed 's/^[[:space:]]*//' | grep -E '^instructions/(shogun|karo|gunshi|ashigaru)' || true)
-if [ "${#_instr_files[@]}" -gt 0 ] && [ -d "$REPO_ROOT/instructions/generated" ]; then
-    _pre24_pass=true
-    for _ifile in "${_instr_files[@]}"; do
-        _rname=$(echo "$_ifile" | grep -oP '(shogun|karo|gunshi|ashigaru)' | head -1)
-        [ -z "$_rname" ] && continue
-        # generated/内の対応ファイルを検索
-        _gen_files=$(find "$REPO_ROOT/instructions/generated/" -name "*${_rname}*" -type f 2>/dev/null)
-        if [ -z "$_gen_files" ]; then
-            echo "  ★ BLOCK: ${_ifile}変更だがgenerated/に対応ファイルなし。build_instructions.sh再実行要"
-            _pre24_pass=false
-            continue
-        fi
-        _gen_first=$(echo "$_gen_files" | head -1)
-        # 判定: marker存在 OR generated commit/mtime が正本以降 → PASS
-        _file_pass=false
-        # Check 1: marker — 正本diffから代表語句を抽出し、generatedに存在するか
-        _marker=$(git diff HEAD~1 -- "$REPO_ROOT/$_ifile" 2>/dev/null | grep '^+[^+]' | grep -v '^+++' | head -5 | sed 's/^+//' | grep -oP '\S{8,}' | head -1 || true)
-        if [ -n "$_marker" ] && grep -qF "$_marker" "$_gen_first" 2>/dev/null; then
-            echo "  PASS: ${_ifile} → marker「${_marker}」がgenerated/に存在"
-            _file_pass=true
-        fi
-        # Check 2: commit/mtime — generatedのcommitが正本と同一以降か
-        if [ "$_file_pass" = false ]; then
-            _src_hash=$(timeout 2 git log --format=%H -1 -- "$REPO_ROOT/$_ifile" 2>/dev/null || true)
-            _gen_hash=$(echo "$_gen_first" | xargs timeout 2 git log --format=%H -1 -- 2>/dev/null || true)
-            if [ -n "$_src_hash" ] && [ -n "$_gen_hash" ]; then
-                if [ "$_src_hash" = "$_gen_hash" ]; then
-                    # 同一commitで両方更新 → 貫通済み
-                    echo "  PASS: ${_ifile} → generated/が同一commitで更新済み"
-                    _file_pass=true
-                else
-                    _src_ts=$(timeout 2 git log --format=%ct -1 -- "$REPO_ROOT/$_ifile" 2>/dev/null || echo 0)
-                    _gen_ts=$(echo "$_gen_first" | xargs timeout 2 git log --format=%ct -1 -- 2>/dev/null || echo 0)
-                    if [ "$_gen_ts" -ge "$_src_ts" ]; then
-                        echo "  PASS: ${_ifile} → generated/が正本以降のcommitで更新済み"
-                        _file_pass=true
-                    fi
-                fi
-            fi
-        fi
-        if [ "$_file_pass" = false ]; then
-            echo "  ★ BLOCK: ${_ifile}変更がgenerated/に未反映。build_instructions.sh再実行要"
-            [ -n "$_marker" ] && echo "    marker「${_marker}」がgenerated/に不在"
-            _pre24_pass=false
-        fi
-    done
-    if ! $_pre24_pass; then
-        echo "  ★ generated/未貫通 BLOCK"
-        ERRORS=$((ERRORS + 1))
-        GATE_PREDICTION="BLOCK"
-        GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }generated_not_penetrated"
-    fi
-else
-    echo "  SKIP: instructions正本変更なし or generated/不在"
+if ! print_sg_pre24; then
+    echo "  ★ generated/未貫通 BLOCK"
+    ERRORS=$((ERRORS + 1))
+    GATE_PREDICTION="BLOCK"
+    GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }generated_not_penetrated"
 fi
 
 # ─── SG-PRE25: command×files_modified名前照合 (LG036 Step3.5自動化) ───
