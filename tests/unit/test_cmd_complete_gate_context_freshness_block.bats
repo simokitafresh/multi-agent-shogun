@@ -98,6 +98,8 @@ OUT
     [[ "$output" == *"context/dm-signal-ops.md"* ]]
     [[ "$output" == *"CONTEXT_UPDATE_CANDIDATE project=dm-signal context=context/dm-signal-core.md source_commit=0568b016 reason=own_reviewed_commit"* ]]
     [[ "$output" == *"CONTEXT_UPDATE_CANDIDATE project=dm-signal context=context/dm-signal-ops.md source_commit=0568b016 reason=own_reviewed_commit"* ]]
+    [[ "$output" == *"CONTEXT_UPDATE_COMMAND bash scripts/context_source_commit_set.sh context/dm-signal-core.md 0568b016"* ]]
+    [[ "$output" == *"cmd_complete_gate\\ project=dm-signal\\ context=context/dm-signal-core.md\\ commit=0568b016"* ]]
 }
 
 @test "approved report with test-only files skips context reflux BLOCK" {
@@ -140,6 +142,7 @@ OUT
     run check_context_freshness_own_commit "cmd_3999_totally_unrelated"
     [ "$status" -eq 0 ]
     [[ "$output" != *"BLOCK"* ]]
+    [[ "$output" != *"CONTEXT_UPDATE_COMMAND"* ]]
 }
 
 @test "reviewed commit hash in backlog blocks even when commit subject does not contain cmd id" {

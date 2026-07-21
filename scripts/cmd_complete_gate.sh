@@ -6396,6 +6396,12 @@ check_context_freshness_own_commit() {
                 # of having to rediscover it from the dashboard-wide backlog.
                 printf '  CONTEXT_UPDATE_CANDIDATE project=%s context=%s source_commit=%s reason=own_reviewed_commit\n' \
                     "$_proj_id" "$_rel_path" "$_hash"
+                # Level5 input: provide the complete safe setter invocation, including
+                # the reason/evidence contract.  The actor must still review and commit
+                # the context change, but no longer has to invent boundary metadata.
+                printf "  CONTEXT_UPDATE_COMMAND bash scripts/context_source_commit_set.sh %q %q %q %q\n" \
+                    "$_rel_path" "$_hash" "${cmd_id} reviewed source boundary" \
+                    "cmd_complete_gate project=${_proj_id} context=${_rel_path} commit=${_hash}"
                 echo "    - ${_rel_path} (${_hash}: ${_subject})"
             done <<< "$own_hits"
             _any_block=1
