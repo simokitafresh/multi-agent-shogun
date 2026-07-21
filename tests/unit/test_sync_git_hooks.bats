@@ -69,6 +69,7 @@ EOF
     local_sha="$(git -C "$TEST_ROOT" rev-parse HEAD)"
     base_sha="$(git -C "$TEST_ROOT" rev-parse HEAD^)"
     trace="$BATS_TMPDIR/ga309-trace.$BATS_TEST_NUMBER"
+    : > "$trace"
 
     # Dirty sentinels would fail or leave a distinct trace if the shared root
     # leaked into either selection or execution.
