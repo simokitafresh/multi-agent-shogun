@@ -1339,3 +1339,58 @@ YAML
     '
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: blocked-parent owner validation follows the configured ninja roster, so roster additions propagate without code edits while unknown owners remain blocked.
+@test "blocked parent continuation validates owner through agent roster SSOT" {
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  task_id: cmd_parent_normal
+  status: failed
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/roster_added.yaml" <<'EOF'
+task:
+  task_id: cmd_parent_normal
+  status: failed
+EOF
+    cat > "$TEST_PROJECT/hotfix.yaml" <<'EOF'
+task:
+  task_type: hotfix
+  parent_cmd: cmd_hotfix
+  fixes: cmd_parent
+  blocked_parent_ninja: hayate
+  blocked_parent_task_id: cmd_parent_normal
+EOF
+
+    # A currently configured ninja remains valid.
+    run bash -c '
+      export DEPLOY_TASK_LIB_ONLY=1
+      source "$1/scripts/deploy_task.sh"
+      SCRIPT_DIR="$1"
+      get_ninja_names() { printf "%s\n" "hayate roster_added"; }
+      register_blocked_parent_continuation "$1/hotfix.yaml" kagemaru
+    ' _ "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+
+    # A newly configured ninja becomes valid without editing deploy_task.sh.
+    sed -i 's/blocked_parent_ninja: hayate/blocked_parent_ninja: roster_added/' "$TEST_PROJECT/hotfix.yaml"
+    run bash -c '
+      export DEPLOY_TASK_LIB_ONLY=1
+      source "$1/scripts/deploy_task.sh"
+      SCRIPT_DIR="$1"
+      get_ninja_names() { printf "%s\n" "hayate roster_added"; }
+      register_blocked_parent_continuation "$1/hotfix.yaml" kagemaru
+    ' _ "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+
+    sed -i 's/blocked_parent_ninja: roster_added/blocked_parent_ninja: unknown_ninja/' "$TEST_PROJECT/hotfix.yaml"
+    run bash -c '
+      export DEPLOY_TASK_LIB_ONLY=1
+      source "$1/scripts/deploy_task.sh"
+      SCRIPT_DIR="$1"
+      get_ninja_names() { printf "%s\n" "hayate roster_added"; }
+      register_blocked_parent_continuation "$1/hotfix.yaml" kagemaru
+    ' _ "$TEST_PROJECT"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK: invalid blocked_parent_ninja"* ]]
+}
