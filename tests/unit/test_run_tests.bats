@@ -468,6 +468,79 @@ YAML
   [[ "$output" == *"BLOCK: task scope is empty"* ]]
 }
 
+# test_necessity: public task/file callers selecting the same test must share one terminal receipt and preserve its failure rc.
+@test "task and file public callers single-flight the same selection and preserve failure rc" {
+  mkdir -p "$TMPROOT/queue/tasks" "$TMPROOT/receipts" "$TMPROOT/sf"
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$REPO_ROOT/tests/unit/sample.bats"
+SH
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+exec 9>>"$HEAVY_LOG"
+flock 9
+count=$(cat "$HEAVY_COUNT" 2>/dev/null || printf 0)
+printf '%s\n' "$((count + 1))" >"$HEAVY_COUNT"
+flock -u 9
+sleep 1
+printf '1..1\nnot ok 1 sample\n'
+exit 7
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh" "$TMPROOT/bin/bats"
+  cat >"$TMPROOT/queue/tasks/saizo.yaml" <<'YAML'
+task:
+  target_path: scripts/run_tests.sh
+YAML
+
+  common=(env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_CACHE=0
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf"
+    HEAVY_LOG="$TMPROOT/count.lock" HEAVY_COUNT="$TMPROOT/count")
+  "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/saizo.yaml" >"$TMPROOT/task.out" 2>"$TMPROOT/task.err" & p1=$!
+  sleep 0.2
+  "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats" >"$TMPROOT/file.out" 2>"$TMPROOT/file.err" & p2=$!
+  rc1=0; wait "$p1" || rc1=$?
+  rc2=0; wait "$p2" || rc2=$?
+  echo "rc1=$rc1 rc2=$rc2 task_err=$(tr '\n' '|' <"$TMPROOT/task.err") file_err=$(tr '\n' '|' <"$TMPROOT/file.err")" >&3
+  receipt_rc=$(python3 - "$TMPROOT/receipts" <<'PY'
+import glob,json,os,sys
+p=glob.glob(os.path.join(sys.argv[1], '*.json'))
+print(json.load(open(p[0]))['rc'])
+PY
+)
+  [ "$receipt_rc" -ne 0 ]
+  [ "$rc1" -eq "$receipt_rc" ]
+  [ "$rc2" -eq "$receipt_rc" ]
+  [ "$(find "$TMPROOT/receipts" -name '*.json' | wc -l)" -eq 1 ]
+  grep -q 'SINGLE_FLIGHT_JOINED' "$TMPROOT/file.err"
+}
+
+# test_necessity: distinct selected test sets must not false-positive as duplicates or serialize behind one selection lock.
+@test "different file selections run concurrently under distinct single-flight keys" {
+  printf '@test "other" { true; }\n' >"$TMPROOT/tests/unit/other.bats"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+exec 9>>"$PARALLEL_LOCK"
+flock 9
+active=$(cat "$PARALLEL_ACTIVE" 2>/dev/null || printf 0); active=$((active + 1)); printf '%s\n' "$active" >"$PARALLEL_ACTIVE"
+maximum=$(cat "$PARALLEL_MAX" 2>/dev/null || printf 0); [ "$active" -le "$maximum" ] || printf '%s\n' "$active" >"$PARALLEL_MAX"
+flock -u 9
+sleep 1
+flock 9
+active=$(cat "$PARALLEL_ACTIVE"); printf '%s\n' "$((active - 1))" >"$PARALLEL_ACTIVE"
+flock -u 9
+printf '1..1\nok 1 sample\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+  mkdir -p "$TMPROOT/receipts" "$TMPROOT/sf"
+  common=(env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf" PARALLEL_LOCK="$TMPROOT/parallel.lock" PARALLEL_ACTIVE="$TMPROOT/active" PARALLEL_MAX="$TMPROOT/max")
+  "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats" & p1=$!
+  "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/other.bats" & p2=$!
+  wait "$p1"
+  wait "$p2"
+  [ "$(find "$TMPROOT/receipts" -name '*.json' | wc -l)" -eq 2 ]
+  [ "$(cat "$TMPROOT/max")" -eq 2 ]
+}
+
 @test "matching timing cohort orders measured files by LPT" {
   printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
   printf '@test "b" { true; }\n' >"$TMPROOT/tests/unit/b.bats"

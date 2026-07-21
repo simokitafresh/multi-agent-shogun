@@ -608,6 +608,52 @@ print('RECEIPT_PASS')
 PY
 }
 
+validate_run_tests_terminal_receipt() {
+    python3 - "$1" <<'PY'
+import hashlib, json, re, sys
+try:
+    d=json.load(open(sys.argv[1], encoding='utf-8'))
+    required={'version','complete','result','rc','duration_ms','output_sha256',
+              'declared_test_count','observed_test_count','skip_count','artifact',
+              'signal','command','source_head','test_paths'}
+    if set(d) != required or d['version'] != 2: raise ValueError('schema')
+    if not re.fullmatch(r'[0-9a-f]{40}', d['source_head']): raise ValueError('source_head')
+    if not isinstance(d['test_paths'], list) or not all(isinstance(x,str) and x for x in d['test_paths']):
+        raise ValueError('test_paths')
+    actual=hashlib.sha256(open(d['artifact'],'rb').read()).hexdigest()
+    if actual != d['output_sha256'] or d['complete'] is not True: raise ValueError('terminal contract')
+    if d['result'] not in ('PASS','FAIL') or not isinstance(d['rc'], int): raise ValueError('result')
+except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+    print(f'RECEIPT_FAIL {exc}', file=sys.stderr); raise SystemExit(1)
+print('RECEIPT_TERMINAL')
+PY
+}
+
+selection_manifest_for_singleflight() {
+    local mode="$1"
+    shift
+    case "$mode" in
+        all|unit) printf '%s\n' "$mode" ;;
+        file)
+            [ "$#" -gt 0 ] || return 2
+            realpath -- "$@" | sort -u
+            ;;
+        task)
+            [ "$#" -eq 1 ] || return 2
+            local scope
+            scope="$(mktemp)"
+            task_scope_paths "$1" >"$scope" || { rm -f "$scope"; return 2; }
+            mapfile -d '' -t _sf_scoped <"$scope"
+            rm -f "$scope"
+            [ "${#_sf_scoped[@]}" -gt 0 ] || return 2
+            bash "$REPO_ROOT/scripts/test_select.sh" "${_sf_scoped[@]}" \
+                | while IFS= read -r _sf_path; do realpath --canonicalize-missing -- "$_sf_path"; done \
+                | sort -u
+            ;;
+        *) return 1 ;;
+    esac
+}
+
 publish_run_tests_metadata() {
     python3 - "$1" "$2" "$3" <<'PY'
 import json, os, sys, tempfile
@@ -853,12 +899,19 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         # Explicit heavy_job_admission callers already own the outer lock.
         # Taking the single-flight lock underneath it would invert the normal
         # order (single-flight -> admission) and deadlock two callers.
-        if [[ "${SHOGUN_HEAVY_JOB_ADMITTED:-${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}}" != "1" && ( "$_mode" == "all" || "$_mode" == "unit" ) ]]; then
+        if [[ "${SHOGUN_HEAVY_JOB_ADMITTED:-${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}}" != "1" && ( "$_mode" == "all" || "$_mode" == "unit" || "$_mode" == "task" || "$_mode" == "file" ) ]]; then
             _singleflight=1
             _sf_dir="${RUN_TESTS_SINGLEFLIGHT_DIR:-/tmp/shogun-run-tests-singleflight-v2}"
             mkdir -p "$_sf_dir"
-            _sf_lock="$_sf_dir/${_mode}.lock"
-            _sf_state="$_sf_dir/${_mode}.state"
+            _sf_selection="$(selection_manifest_for_singleflight "$_mode" "${@:2}")" \
+                || { echo "BLOCK: single-flight selection could not be resolved" >&2; exit 2; }
+            if [[ "$_mode" == all || "$_mode" == unit ]]; then
+                _sf_key="$_mode"
+            else
+                _sf_key="$(printf '%s\n' "$_sf_selection" | sha256sum | awk '{print $1}')"
+            fi
+            _sf_lock="$_sf_dir/${_sf_key}.lock"
+            _sf_state="$_sf_dir/${_sf_key}.state"
             _sf_heartbeat="${RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS:-5}"
             _sf_stale_timeout="${RUN_TESTS_SINGLEFLIGHT_STALE_SECONDS:-10}"
             [[ "$_sf_heartbeat" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid single-flight heartbeat interval" >&2; exit 2; }
@@ -880,7 +933,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                         if kill -0 "$_sf_owner" 2>/dev/null; then
                             continue
                         fi
-                        if ! verify_run_tests_receipt "$_receipt" >/dev/null; then
+                        if ! validate_run_tests_terminal_receipt "$_receipt" >/dev/null; then
                             # A dead owner may leave a state file whose receipt was
                             # cleaned with its isolated checkout.  This is recoverable:
                             # discard only the stale coordination record and become the
@@ -906,7 +959,7 @@ PY
                 done
                 [ -s "$_sf_state" ] || { echo "BLOCK: single-flight leader state missing" >&2; exit 2; }
                 _receipt="$(sed -n '1p' "$_sf_state")"
-                verify_run_tests_receipt "$_receipt" >/dev/null \
+                validate_run_tests_terminal_receipt "$_receipt" >/dev/null \
                     || { echo "BLOCK: single-flight leader receipt invalid" >&2; exit 2; }
                 printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s\n' "$_mode" "$_receipt" >&2
                 python3 - "$_receipt" <<'PY'
@@ -918,13 +971,16 @@ PY
         fi
         _receipt="${RUN_TESTS_RECEIPT_PATH:-$_receipt_dir/run_tests_$(date -u +%Y%m%dT%H%M%S)_$$.json}"
         if [ "$_singleflight" = 1 ]; then
-            _snapshot="$_sf_dir/${_mode}.$$.snapshot"
-            snapshot_test_tree "$_mode" "$_snapshot"
+            _snapshot=""
+            if [[ "$_mode" == all || "$_mode" == unit ]]; then
+                _snapshot="$_sf_dir/${_mode}.$$.snapshot"
+                snapshot_test_tree "$_mode" "$_snapshot"
+                export RUN_TESTS_SNAPSHOT_MANIFEST="$_snapshot"
+            fi
             _sf_generation="$(date -u +%s%N)-$$"
             _sf_owner_pgid="$(ps -o pgid= -p $$ | tr -d ' ')"
             printf '%s\n%s\n%s\n%s\n' "$_receipt" "$$" "$_sf_generation" "$_sf_owner_pgid" > "$_sf_state"
-            export RUN_TESTS_SNAPSHOT_MANIFEST="$_snapshot"
-            printf 'SINGLE_FLIGHT_LEADER mode=%s snapshot_count=%s\n' "$_mode" "$(wc -l < "$_snapshot")" >&2
+            printf 'SINGLE_FLIGHT_LEADER mode=%s selection_count=%s\n' "$_mode" "$(printf '%s\n' "$_sf_selection" | sed '/^$/d' | wc -l)" >&2
         fi
         _tap="${_receipt%.json}.tap"
         _selected_paths="${_receipt%.json}.paths"
@@ -948,10 +1004,18 @@ PY
         set -e
         publish_run_tests_metadata "$_receipt" "$_source_head" "$_selected_paths"
         rm -f "$_selected_paths"
-        if ! verify_run_tests_receipt "$_receipt" >/dev/null; then
+        _receipt_rc="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$_receipt" 2>/dev/null || printf 1)"
+        if ! validate_run_tests_terminal_receipt "$_receipt" >/dev/null; then
             printf 'TEST_RECEIPT_FAIL path=%s\n' "$_receipt" >&2
-            exit 1
+            [ "$_receipt_rc" -ne 0 ] || _receipt_rc=1
+            exit "$_receipt_rc"
         fi
+        if [ "$_receipt_rc" -ne 0 ]; then
+            printf 'TEST_RECEIPT_FAIL path=%s rc=%s\n' "$_receipt" "$_receipt_rc" >&2
+            exit "$_receipt_rc"
+        fi
+        verify_run_tests_receipt "$_receipt" >/dev/null \
+            || { printf 'TEST_RECEIPT_FAIL path=%s rc=%s\n' "$_receipt" "$_rc" >&2; exit 1; }
         if [ -n "$_requested_tap" ]; then
             mkdir -p "$(dirname "$_requested_tap")"
             _tap_source="$_tap"
@@ -973,7 +1037,7 @@ print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms
     sys.argv[1], d["rc"], d["observed_test_count"], d["declared_test_count"],
     d["skip_count"], d["output_sha256"], d["duration_ms"]))
 PY
-        [ "$_singleflight" != 1 ] || rm -f "$_snapshot"
+        [ "$_singleflight" != 1 ] || [ -z "$_snapshot" ] || rm -f "$_snapshot"
         exit "$_rc"
     fi
 fi
