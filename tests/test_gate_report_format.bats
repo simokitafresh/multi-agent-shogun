@@ -109,6 +109,7 @@ YAML
     cat > "$TMPDIR_BATS/queue/tasks/testninja.yaml" <<'YAML'
 task:
   parent_cmd: cmd_test
+  commit_contract: {required: false}
   variation_checks_required: true
 YAML
     cat >> "$report" <<'YAML'
@@ -199,6 +200,7 @@ YAML
     cat > "$TMPDIR_BATS/queue/tasks/testninja.yaml" <<'YAML'
 task:
   parent_cmd: cmd_test
+  commit_contract: {required: false}
   speed_campaign:
     baseline_policy: same_run_interleaved_ab
 YAML
