@@ -22,8 +22,8 @@ The two corrected records below supersede the original A-cell text in the 84-cel
 
 | page | before (source matrix) | after (corrected A cell) | primary evidence |
 |---|---|---|---|
-| rolling-returns | `h2 lg/tables sm (page.tsx:117-166; dist:72)` | canonical PageShell h1 `text-2xl md:text-3xl font-bold tracking-tight text-foreground`, then local h2/table typography | `app/rolling-returns/page.tsx:86,117-166`; `components/page-shell.tsx:46-50`; `components/rolling-returns-distribution-table.tsx:72` |
-| summary | `PageShell/h2 lg/mono (summary-table.tsx:138-165)` (canonical h1 style/reference absent) | canonical PageShell h1 `text-2xl md:text-3xl font-bold tracking-tight text-foreground`, then local table typography | `app/summary/page.tsx:91`; `components/page-shell.tsx:46-50`; `components/summary-table.tsx:138-165` |
+| rolling-returns | `h2 lg/tables sm (page.tsx:117-166; dist:72)` | canonical PageShell h1 `text-2xl md:text-3xl font-bold tracking-tight text-foreground`, then local h2/table typography | `app/rolling-returns/page.tsx:86,117-166`; `components/page-shell.tsx:30`; `components/rolling-returns-distribution-table.tsx:72` |
+| summary | `PageShell/h2 lg/mono (summary-table.tsx:138-165)` (canonical h1 style/reference absent) | canonical PageShell h1 `text-2xl md:text-3xl font-bold tracking-tight text-foreground`, then local table typography | `app/summary/page.tsx:91`; `components/page-shell.tsx:30`; `components/summary-table.tsx:138-165` |
 
 | page | canonical page-title renderer | local heading | verdict |
 |---|---|---|---|
