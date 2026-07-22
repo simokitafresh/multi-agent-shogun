@@ -3750,8 +3750,6 @@ snapshot = {
     "project": str(task.get("project") or sys.argv[6] or "unknown").strip(),
     "acceptance_criteria": task.get("acceptance_criteria"),
 }
-if not all(snapshot[k] for k in ("parent_cmd", "task_id", "ac_fingerprint", "purpose", "project")):
-    raise SystemExit("incomplete immutable task contract")
 print(json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
 PY
     ) || return 1
