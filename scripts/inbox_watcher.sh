@@ -1120,6 +1120,24 @@ record_info_autoack_gate() {
     { flock 9; printf '%s\n' "- ts: \"$(date -Iseconds)\", gate: inbox_info_digest_autoack, result: ${result}, detail: \"${detail}\"" >&9; } 9>>"$gate_log"
 }
 
+# A verified CLI generation is the commit point for clear_command delivery.
+# Recovery notification is a follow-up signal: failure must be visible, but it
+# must not roll back the already successful clear or leave the command unread.
+finalize_clear_command() {
+    local ready="$1" recovery_content="${2:-}" generation=""
+    if [ "$ready" -ne 1 ]; then
+        echo "[$(date)] [WARN] clear_command verification failed: $AGENT_ID ready=0; leaving unread for retry" >&2
+        return 1
+    fi
+
+    generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
+    echo "[$(date)] [OK] clear_command verified: $AGENT_ID generation=$generation ready=1" >&2
+    if [ -z "$generation" ] || ! respawn_recovery_notify "$SCRIPT_DIR" "$AGENT_ID" "$generation" clear-command "$recovery_content"; then
+        echo "[$(date)] [WARN] clear_command recovery notification failed: $AGENT_ID generation=${generation:-unknown}; clear remains acknowledged" >&2
+    fi
+    return 0
+}
+
 process_unread() {
     # Invalidate delivery leases on CLI generation change (respawn/clear)
     invalidate_leases_on_generation_change
@@ -1201,23 +1219,9 @@ process_unread() {
                             if respawn_recovery_ready "$PANE_TARGET"; then ready=1; break; fi
                             sleep 1
                         done
-                        if [ "$ready" -eq 1 ]; then
-                            generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
-                            if [ -z "$generation" ] || ! respawn_recovery_notify "$SCRIPT_DIR" "$AGENT_ID" "$generation" clear-command "$recovery_content"; then
-                                special_ok=false
-                            fi
-                        else
+                        if ! finalize_clear_command "$ready" "$recovery_content"; then
                             special_ok=false
                         fi
-                    fi
-                    # Post-clear verification uses the same fail-closed boundary as
-                    # notification persistence. Unknown/nonzero CTX never marks read.
-                    if respawn_recovery_ready "$PANE_TARGET"; then
-                        generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
-                        echo "[$(date)] [OK] clear_command verified: $AGENT_ID generation=$generation ready=1" >&2
-                    else
-                        special_ok=false
-                        echo "[$(date)] [WARN] clear_command verification failed: $AGENT_ID ready=0; leaving unread for retry" >&2
                     fi
                     ;;
                 model_switch)

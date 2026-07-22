@@ -150,6 +150,33 @@ SH
   [ "$status" -eq 0 ]
 }
 
+@test "verified clear ACK is independent from recovery notification outcome" {
+  repo="$BATS_TEST_DIRNAME/../.."
+  run bash -c '
+    export INBOX_WATCHER_LIB_ONLY=1 SHOGUN_STATE_DIR="$2/state"
+    source "$1/scripts/inbox_watcher.sh" tester dummy-pane
+    respawn_recovery_generation() { printf "generation-1\n"; }
+
+    ack=0; reclear=0
+    respawn_recovery_notify() { return 0; }
+    if finalize_clear_command 1 content; then ack=$((ack + 1)); else reclear=$((reclear + 1)); fi
+    printf "notify_ok ack=%s reclear=%s\n" "$ack" "$reclear"
+
+    ack=0; reclear=0
+    respawn_recovery_notify() { return 1; }
+    if finalize_clear_command 1 content; then ack=$((ack + 1)); else reclear=$((reclear + 1)); fi
+    printf "notify_fail ack=%s reclear=%s\n" "$ack" "$reclear"
+
+    ack=0; reclear=0
+    if finalize_clear_command 0 content; then ack=$((ack + 1)); else reclear=$((reclear + 1)); fi
+    printf "clear_fail ack=%s reclear=%s\n" "$ack" "$reclear"
+  ' _ "$repo" "$root"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"notify_ok ack=1 reclear=0"* ]]
+  [[ "$output" == *"notify_fail ack=1 reclear=0"* ]]
+  [[ "$output" == *"clear_fail ack=0 reclear=1"* ]]
+}
+
 @test "ready handshake retries transient startup and fails after its bounded deadline" {
   repo="$BATS_TEST_DIRNAME/../.."
   mkdir -p "$root/proc/404"
