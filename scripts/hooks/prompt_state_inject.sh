@@ -1133,12 +1133,27 @@ if [[ -n "$skill_trigger_warning" ]]; then
 ${skill_trigger_warning}"
 fi
 
+# --- 殿の対他エージェント裁定注入 (2026-07-23 事故根治) ---
+# 事故: 殿が01:05:52に疾風paneへ配色裁定を下したが、将軍・軍師のcontextには入らなかった。
+# 両者とも自分の旧結論を正本と信じ、将軍は稼働中の忍者へ誤った停止命令を出した。
+# 家老だけが lord_conversation_read hayate で一次確認して誤りを止めた。
+# 構造欠陥: lord_conversation_read.sh は agent_id で絞り込むため、将軍は殿が他者へ
+# 何を言ったか知る術がない=正本が黙って陳腐化する。BLOCKを足さずLevel5(事前提供)で盲点を消す。
+# 【恒久禁止】殿宛以外の会話を自エージェントのcontextへ注入する経路を作るな。
+# 殿裁定2026-07-23 01:16『他のロールに言ったこと目に入ると、自分事にLLMが勘違いする事故が多発した』
+# 殿裁定2026-07-23 01:18『他のLLMと俺の会話が漏れる経路があるのはバグだ』
+# 将軍がここに他エージェント宛の殿発言を注入した結果、他忍者宛の『続けよ』が将軍のcontextへ混入した(実測)。
+# 本文でもメタデータ(時刻/宛先)でも漏洩は漏洩であり、経路の存在自体がバグ。ラベルや要約では防げない。
+# 正しい運用: 他エージェント宛の情報が必要なときは、将軍が自分の意志で
+# bash scripts/lord_conversation_read.sh <agent> を実行して読む(能動的取得のみ)。
+lord_cross_agent=""
+
 header="=== Session Context (auto-injected) ==="
 fixed_part="${header}
 source: unknown
 timestamp: ${timestamp}
 agent: ${agent_id}
-inbox_unread: ${unread_count}${inbox_warning}${question_warning}${tech_memory_warning}${skill_trigger_warning}
+inbox_unread: ${unread_count}${inbox_warning}${question_warning}${tech_memory_warning}${skill_trigger_warning}${lord_cross_agent}
 --- karo_snapshot ---
 "
 

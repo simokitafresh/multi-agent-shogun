@@ -3024,13 +3024,13 @@ lessons = data.get("lessons") or []
 print(sum(1 for item in lessons if isinstance(item, dict) and str(item.get("id", "")).startswith("LS") and not item.get("superseded_by")))
 PY
 )
-    if [ "$_ls_count" -ge 31 ]; then
-        echo "  WARN: lessons_shogun.yaml active ${_ls_count}件(上限31件)。統合・パターン昇格が必要"
-        if [ "$overall" != "ALERT" ]; then overall="WARN"; fi
-        alerts+=("将軍教訓: active ${_ls_count}件(上限31)。既存教訓を統合せよ")
-    else
-        echo "  OK: lessons_shogun.yaml active ${_ls_count}件/上限31"
-    fi
+    # 件数WARN撤去(殿裁定2026-07-23 提案A)。理由: 閾値31は根拠なき逆算値
+    # (発生源commit 98f353873 message="Current count is 32 which now triggers WARN immediately")。
+    # 真の上限はcmd_save.sh CMD_SAVE_SHOGUN_LESSON_LIMIT=35であり「上限31」はラベル虚偽。
+    # -ge 31のため31件でも発火し健全域30以下=ラベルと可達域が不整合。1件統合しても再発火する
+    # 表示型gate(LS096 検知器が同一結論を繰り返す=粒度バグ)。教訓の件数は品質の代理変数として不正。
+    # 品質実測はgate_lesson_health.sh(origin充足率/useful率/enforcement phantom検出)が担う。
+    echo "  INFO: lessons_shogun.yaml active ${_ls_count}件 (件数閾値なし。品質はgate_lesson_health.shが実測)"
 else
     echo "  WARN — lessons_shogun.yaml不在。将軍教訓ファイルが存在しない"
     if [ "$overall" != "ALERT" ]; then overall="WARN"; fi

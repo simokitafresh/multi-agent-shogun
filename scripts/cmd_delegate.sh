@@ -346,7 +346,7 @@ if [ -n "$existing_delegated" ]; then
             exit 0
         fi
         echo "WARN: $CMD_ID is status=delegated but no cmd_new found in karo inbox. Retrying notification." >&2
-        bash "$PROJECT_DIR/scripts/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
+        bash "$PROJECT_DIR/scripts/inbox_write.sh" karo "$(build_notify_message "$MESSAGE" "$CMD_ID")" cmd_new shogun || {
             echo "ERROR: inbox_write.sh failed for $CMD_ID — status=delegatedは維持(手動inbox_writeで再送可)" >&2
             exit 1
         }
@@ -416,6 +416,21 @@ if cmd_is_archived "$CMD_ID"; then
     exit 1
 fi
 
+# cmd_new gate(inbox_write.sh L1967-1999)はcontentに cmd_\d+ が含まれることを要求し、
+# 不在なら exit 1 でBLOCKする。cmd_delegate.shは検証済みのCMD_IDを保持しているため、
+# 利用者メッセージにcmd_idが書かれていない場合は構造的に補う。
+# これを補わないと status=delegated だけが立ち、家老inboxへ配送されない乖離が起きる
+# (2026-07-23 cmd_4123実測: 1回目のdelegateでstatus=delegated かつ karo inbox 0件)。
+# 二次情報(status)と一次情報(inbox実体)の乖離を作らないための構造型強制。
+build_notify_message() {
+    local msg="$1" cmd_id="$2"
+    if printf '%s' "$msg" | grep -qE 'cmd_[0-9]+'; then
+        printf '%s' "$msg"
+    else
+        printf '%s: %s' "$cmd_id" "$msg"
+    fi
+}
+
 # Step 4: status=delegated + delegated_at を先に設定（inbox_writeのcmd_new guardがstatus確認するため）
 printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%S)T' -1
 yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "status" "delegated" || {
@@ -433,7 +448,7 @@ yaml_field_set "$SHOGUN_TO_KARO" "$CMD_ID" "delegated_at" "\"$TIMESTAMP\"" || {
 }
 
 # Step 5: inbox_write.sh で家老に通知（status=delegated済みなのでguard通過）
-bash "$PROJECT_DIR/scripts/inbox_write.sh" karo "$MESSAGE" cmd_new shogun || {
+bash "$PROJECT_DIR/scripts/inbox_write.sh" karo "$(build_notify_message "$MESSAGE" "$CMD_ID")" cmd_new shogun || {
     echo "ERROR: inbox_write.sh failed for $CMD_ID — status=delegatedは維持(手動inbox_writeで再送可)" >&2
     exit 1
 }

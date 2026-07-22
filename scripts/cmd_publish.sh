@@ -36,7 +36,7 @@ QUALITY_LOG_FILE="${CMD_PUBLISH_QUALITY_LOG_FILE:-$PROJECT_DIR/logs/cmd_design_q
 LAST_CMD_FILE="${CMD_PUBLISH_LAST_CMD_FILE:-$PROJECT_DIR/queue/cmd_save_last_cmd.txt}"
 SHOGUN_LESSONS_FILE="${CMD_PUBLISH_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
 SHOGUN_LESSON_ACK_FILE="${CMD_PUBLISH_SHOGUN_LESSON_ACK_FILE:-$PROJECT_DIR/queue/shogun_lesson_ack.yaml}"
-SHOGUN_LESSON_LIMIT="${CMD_PUBLISH_SHOGUN_LESSON_LIMIT:-35}"
+# SHOGUN_LESSON_LIMIT="${CMD_PUBLISH_SHOGUN_LESSON_LIMIT:-35}"  # 撤去済(殿裁定2026-07-23 提案A)。未使用変数として残さない
 CMD_SAVE_SCRIPT="${CMD_PUBLISH_CMD_SAVE_SCRIPT:-$PROJECT_DIR/scripts/cmd_save.sh}"
 CMD_DELEGATE_SCRIPT="${CMD_PUBLISH_CMD_DELEGATE_SCRIPT:-$PROJECT_DIR/scripts/cmd_delegate.sh}"
 SHOGUN_LESSON_ACK_SCRIPT="${CMD_PUBLISH_SHOGUN_LESSON_ACK_SCRIPT:-$PROJECT_DIR/scripts/shogun_lesson_ack.sh}"
@@ -220,7 +220,12 @@ run_cmd_save_with_block_summary() {
 run_publish_preflight() {
     local prev_cmd_id prev_block_count auto_ack_lesson
 
-    cmd_shared_preflight "$SHOGUN_LESSONS_FILE" "$SHOGUN_LESSON_LIMIT" || return 1
+    # 教訓件数capを撤去(殿裁定2026-07-23 提案A採用)。撤去はstartup gate/cmd_save/cmd_publishの
+    # 3箇所すべてに適用される。将軍が当初startup gateのみを直したため、cmd_save側のcapが残って
+    # cmd_4125の保存をBLOCKし、殿裁定済みのgateに従って教訓統合を強要される空転が再発した(実測)。
+    # 理由: 閾値35/33は原理由来ではなく当時の実数からの逆算であり、教訓の件数は品質の代理変数として不正。
+    # 品質実測はgate_lesson_health.sh(origin充足率/useful率/enforcement phantom検出)が担う。
+    # LS106参照(閾値の根拠をgit log -Sでたどれ=逆算値なら従うのではなく撤去を提案せよ)。
 
     [[ -f "$LAST_CMD_FILE" ]] || return 0
     prev_cmd_id="$(tr -d '[:space:]' < "$LAST_CMD_FILE" 2>/dev/null || true)"

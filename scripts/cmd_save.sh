@@ -74,7 +74,7 @@ LOCK_FILE="${CMD_SAVE_LOCK_FILE:-/tmp/shogun_to_karo.lock}"
 CMD_SAVE_LAST_CMD_FILE="${CMD_SAVE_LAST_CMD_FILE:-$PROJECT_DIR/logs/cmd_save_last_cmd.txt}"
 CMD_SAVE_SHOGUN_LESSONS_FILE="${CMD_SAVE_SHOGUN_LESSONS_FILE:-$PROJECT_DIR/projects/infra/lessons_shogun.yaml}"
 CMD_SAVE_SHOGUN_LESSON_ACK_FILE="${CMD_SAVE_SHOGUN_LESSON_ACK_FILE:-$PROJECT_DIR/queue/shogun_lesson_ack.yaml}"
-CMD_SAVE_SHOGUN_LESSON_LIMIT="${CMD_SAVE_SHOGUN_LESSON_LIMIT:-35}"
+# CMD_SAVE_SHOGUN_LESSON_LIMIT="${CMD_SAVE_SHOGUN_LESSON_LIMIT:-35}"  # 撤去済(殿裁定2026-07-23 提案A)。未使用変数として残さない
 PREFLIGHT_AUTOLEARN_FILE="${CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE:-$PROJECT_DIR/logs/preflight_autolearn.txt}"
 LORD_CONVERSATION_FILE="${CMD_SAVE_LORD_CONVERSATION_FILE:-$PROJECT_DIR/queue/lord_conversation.jsonl}"
 CMD_CHRONICLE_FILE="${CMD_SAVE_CMD_CHRONICLE_FILE:-$PROJECT_DIR/context/cmd-chronicle.md}"
@@ -3638,10 +3638,12 @@ else
     CMD_ID="cmd_${RAW_ID}"
 fi
 
-# Publish直前だけに存在していたlesson-capを保存前にも同一入力・同一関数で適用する。
-if ! cmd_shared_preflight "$CMD_SAVE_SHOGUN_LESSONS_FILE" "$CMD_SAVE_SHOGUN_LESSON_LIMIT"; then
-    exit 1
-fi
+# 教訓件数capを撤去(殿裁定2026-07-23 提案A採用)。startup gateの件数WARN撤去と同一裁定であり、
+# 撤去は両方に適用される。将軍が当初startup gate側のみを直しcmd_save側を残したため、
+# 殿裁定済みのcapがcmd_4125の保存をBLOCKし、教訓統合を強要する空転が再発した(実測)。
+# 理由: 閾値は原理由来ではなく当時の実数からの逆算であり、教訓の件数は品質の代理変数として不正。
+# 品質実測はgate_lesson_health.sh(origin充足率/useful率/enforcement phantom検出)が担う。
+# LS106参照(閾値の根拠をgit log -Sでたどれ=逆算値なら従うのではなく撤去を提案せよ)。
 
 BLOCK_START_FILE="${CMD_SAVE_BLOCK_DIR:-/tmp}/cmd_save_block_start_${CMD_ID}.ts"
 WARN_COUNT=0

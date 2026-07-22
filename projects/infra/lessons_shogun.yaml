@@ -182,6 +182,7 @@ lessons:
   created_at: '2026-04-24'
   automated: true
   enforcement: 'inbox_write.sh cmd_new guard(status判定)+cmd_delegate.sh status変更順序+inbox_write.sh task_assigned統一ガード(cmd_2684)'
+  superseded_by: 'LS-A07 (inbox_write guard 3段階設計(データ状態判定/bypass廃止/攻撃パターンテスト)はLS-A07 gate迂回禁止の正規フロー強制に包含。enforcementはinbox_write.sh/cmd_delegate.sh guardでcode稼働中)'
 
 - id: LS-A13
   title: cmd設計3原則 — assumptions明示/3層防御/environment_change主軸
@@ -278,6 +279,7 @@ lessons:
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_save.sh q8_why_what(BLOCK)+gunshi review因果推論ルール(causal_chain必須)+gate_gunshi_cs_checklist.sh CS6'
+  superseded_by: 'LS-A19 (因果チェーン(cmd配備→実装→報告の因果追跡)はLS-A19原理3則+deepdive_causal_tracing_20260415に完全内包。単独教訓として冗長ゆえ統合)'
 
 - id: LS-A22
   title: gate FPパターン — SCOUT偽陽性+研究道具FP+parity FP+教訓上限デッドロック
@@ -310,6 +312,7 @@ lessons:
   automated: true
   enforcement_level: 4
   enforcement: 'Level4(フロー内BLOCK): pre-bash-combined.sh Guard15がcodd generate --waveをshlex解析で検出し、.codd/extract/なし+既存ソースありの場合のみBLOCK(brownfield extract先行を強制、新規空PJは許可)。bats 9+回帰41 PASS。一次再検証全文→docs/research/lessons_shogun_a04_a09_detail.md'
+  superseded_by: 'LS-A17 (CoDD brownfield逆生成優先の教訓はenforcementがpre-bash-combined.sh Guard15で稼働中(code埋込済)。CoDD成長ループを扱うLS-A17へ統合)'
 - id: 'LS040'
   title: 'バックアップファースト — DB変更前に必ずバックアップ。例外なし'
   origin: '[[cmd_2850]]'
@@ -319,6 +322,7 @@ lessons:
   automated: true
   enforcement_level: 4
   enforcement: 'type=gate; file=/mnt/c/Python_app/kj-role-count/backend/database.py; pattern=run_backup。init_database内で無条件run_backup()実装済み(フロー内強制=L4相当)。適用はkj-role-count 1PJのみ、他PJ横展開はPJ単位個別実装cmd推奨でdecision_candidate整理済み。一次再検証全文→docs/research/lessons_shogun_a04_a09_detail.md'
+  superseded_by: 'LS-A16 (バックアップファースト(DB変更前backup)はLS-A16本番パリティ(DB変更後即確認/savepoint/verify)のDB安全原則に包含。enforcementはkj-role-count database.py run_backup無条件実行でcode稼働中)'
 # === クラスタ7: 記憶DB原則 ===
 - id: LS-A23
   title: 記憶DB原則 — ローカルDB+3層記憶+grep脱却+配管設計+さぼり禁止
@@ -357,7 +361,8 @@ lessons:
     (5)生成メカニズム理解(LS-A10吸収 2026-07-11): 計測データの生成メカニズム(コードパス)を理解せずに数字で結論するな。ローカル計測(WSL→Singapore RTT 80ms)≠本番ボトルネック(Render内RTT 1-5ms)。計測環境を明記し本番との差異を注記。本番特定にはRender上計測必須。enforcementはcmd_save.sh check_measurement_env_info()(L1076-1114)が環境差異キーワード検出時にmeasurement_env記入例を自動提示(bats Check20.11-20.13 PASS実測2026-07-08)
     (6)比較実験の同格性(LS083吸収2026-07-16): 階層生成物(静的EW合成)を本番動的FoF(BB選別→EW)と比較し誤所見を流した(cmd_3763)。比較は同一パイプラインの同格レベルのみ。cmd_save.sh check_comparison_pipeline_parity_warn()でLevel4 WARN
     (4)データ到達の証拠(cmd_3670/3671検分 2026-07-03): 「APIが呼ばれた」≠「データが計測ウィンドウ内に到達し描画された」。隔離プロファイル計測では初回API 401→リトライ200だが、200応答のresourceSize=0/transferSize=0=実データ未受信のまま好数値が原票化された。認証済みデータ描画ありの殿実測との比較は条件不一致で改善幅が過大評価される。有効性証拠は(a)200応答のresourceSize>0 (b)データ描画完了のDOM証拠まで要求せよ。(2)の「network-requestsにAPI呼び出し」だけでは1階層足りない
-  source_ids: [LS074, LS076, LS077]
+    (7)分布の証拠(LS102吸収2026-07-21): 単一telemetry値は分布の1点であって分布ではない。将軍がdeploy TASK_MUTATION_PHASEのmemory_context=3958msを『最大コスト・未最適化のバグ』と報告したが、家老が全変種再測すると直近5回=480/689/1655/413/656ms、median656ms・p95 1655msで3958msは非再現のcold outlierだった(cmd_4110)。速度/コスト系のinfra_bug_report起票前に同一項目を最低3サンプル(cold/warm含む)再測しmedian/p95/nを添えよ。単一max値のみの『最大コスト』主張を自己点検せよ
+  source_ids: [LS074, LS076, LS077, LS102]
   created_at: '2026-07-03'
   automated: true
   enforcement_level: 4
@@ -405,6 +410,7 @@ lessons:
   created_at: '2026-07-17'
   automated: true
   enforcement: 'Level4: cmd_save.sh check_tier1_exception_warn()がD001-D009+例外/緩和キーワード共起をWARN。tests/unit/test_cmd_save.bats Check21.7(2/2 PASS)'
+  superseded_by: 'LS099 (D006 Tier1を趣旨解釈で緩めた判断ミス(具体例)は、LS099『必須ハーネスと過剰制限は別物・必須を消すな』の一般原理に包含。個別事例ゆえ統合)'
   enforcement_level: 4
 - id: 'LS095'
   title: '分離原則 — メインtaskと振り返りを混ぜるな'
@@ -433,3 +439,93 @@ lessons:
   created_at: '2026-07-20'
   automated: true
   enforcement: 'E4実装(retro配送復旧+日次計測)+殿原文retroのpane直貼り機構(idle時配送工事)。異常検知時の一次確認は将軍の即実行を既定とする'
+- id: 'LS098'
+  title: 'CDP確認は環境依存でlaunch経路が異なる — 「不可能」と諦めるな(#1早期終了)'
+  origin: '[[殿指摘_CDPで確認は可能だ_20260721]] -> [[将軍のpowershell失敗=CDP不可能と誤結論]] -> [[chrome.exe直接起動で成功]]'
+  detail: 'CDPブラウザ確認で launch_browser/preflight_cdp_flow がpowershell.exe不在で失敗しても、それは『CDP不可能』ではない。真の経路: (1)稼働中CDP探索 curl localhost:9222|9234|9400/json/version (2)chrome.exe直接起動 = ''/mnt/c/Program Files/Google/Chrome/Application/chrome.exe'' --remote-debugging-port=9222 --remote-allow-origins=''*'' --user-data-dir=''C:\Users\simok\AppData\Local\Temp\cdp-chrome-9222''(D009隔離必須) --no-first-run about:blank & → curl --retry でCDP応答待ち → scripts/cdp/cdp_cli.sh navigate/snapshot/screenshot。WSL→Windows localhost forwardingは機能する。2026-07-21将軍がpowershell失敗で『CDP環境的に不可能』と結論し殿に訂正された(#1早期終了=別経路未試行)。教訓: ツール1経路の失敗を能力の限界と誤認するな。三層記憶(cdp-browser-automation.md)+代替経路を尽くしてから可否を結論せよ'
+  source_cmd: 'cmd_shogun_cdp_launch_20260721'
+  created_at: '2026-07-21'
+  automated: true
+  enforcement: '起動時lessons_shogun.yaml自動ロードでCDP launch代替経路を保持。CDP確認タスク時にpowershell失敗→chrome.exe直接起動をまず試行'
+- id: 'LS099'
+  title: '必須ハーネスと過剰制限は別物 — 必須を消したLLMに必須の選別はできない'
+  origin: '[[殿裁定_過剰対策こそ真因_20260720]] -> [[誤読=ハーネス全撤去で必須強制まで削除]] -> [[殿裁定_必須の強制は必要_gitで時点rollback_20260721]]'
+  detail: '殿裁定2026-07-21: 『過剰対策こそ真因』を『全gate/hook・全強制の撤去』と読むのは誤読=これ自体が過剰制限の本質とのズレ。区別: 【過剰制限=削る】不可逆な害を防がず速度低下・隠蔽・ミス誘発を生む表示型(作文強要WARN/機構追加強要)。【必須の強制=残す】不可逆な害を防ぐ無自覚の構造型(作業前三層記憶探索verify fail-closed/Read-before-Edit/cmd_id採番/D001-009/YAML安全)。実証: 07-20脱感染sweepがこの誤読でverify()等の必須ハーネスまで削り→将軍・家老・軍師の能力急落(記憶ボロボロ)。是正: 必須を消したLLMに必須/過剰の選別を任せるのは自己矛盾→gitで一気に健全時点(sweep前)へrollbackが唯一確実。rollback時はcode/runtime整合(queue/retro/task state)も点検せよ(不整合で配備BLOCK発生)。復元中に復活した各ハーネス(D004/[MEM]gate/検証gate/洗脳gate/軍師検証)が将軍自身の誤りを次々捕捉=必須ハーネスが自らの必要性を実証'
+  source_cmd: 'cmd_shogun_harness_essential_20260721'
+  created_at: '2026-07-21'
+  automated: true
+  enforcement: '起動時lessons_shogun.yaml自動ロード。gate/hook削減判断時に『不可逆害を防ぐ構造型か、作文強要の表示型か』を必ず二値判定。構造型は速度・脱感染で消すな'
+- id: 'LS100'
+  title: 'fail-closed強制は『脱出路の実装』を先に検証せよ — 復旧コマンド未allowlistで全ロックアウト'
+  origin: '[[殿裁定_作業前探索の強制が最重要_20260721]] -> [[verify_fail_closd復元]] -> [[issue未allowlistで全ロックアウト]] -> [[a69c7c2ca_issue_bypass根治]]'
+  detail: 'fail-closed enforcement(verify/gate)を復元・新設する時、証跡無効/検索失敗時に全状態変更Bash+Editがblockされる。その際【復旧コマンド(証跡再発行 three_layer_preflight.sh issue 等)自体がblockされないこと】を配備前に必ず検証せよ。2026-07-21: 将軍がverify fail-closd復元(bcfe6c1f8)時、pre-bash-combined.shのissue-allowlistが未実装(hookメッセージは『allowlist済み』と虚偽)で、証跡が一瞬無効化した瞬間に issueコマンドもEditも全blockされ脱出路ゼロの全ロックアウトに陥った(将軍が自分で嵌まった)。fail-openが常に0を返して隠していた失敗モード。根治=commit a69c7c2ca(pre-bash verify分岐に *three_layer_preflight.sh*issue* バイパス追加)。教訓: fail-closdは『壊れた時に閉じる』が正しいが、【壊れた時に自力で開け直せる復旧路】を必ず allowlist で保証してから閉じよ。検索サブシステムは断続的に失敗する(memory_db FTS空振り実測)ため、脱出路なきfail-closdは全員停止を招く。read-only Bashは is_allowed_read_only_bash で通るが compound/state-changing は blockされる点も確認。'
+  source_cmd: 'cmd_shogun_failclosed_escape_20260721'
+  created_at: '2026-07-21'
+  automated: true
+  enforcement: '起動時lessons_shogun.yaml自動ロード。fail-closd enforcement配備前チェック: 復旧コマンドがblock中も実行可か(allowlist実体化)をfixtureで検証。a69c7c2caのissue-bypassを基線とせよ'
+  superseded_by: 'LS-A22 (fail-closed脱出路未検証で全ロックアウトはLS-A22 gate FP/デッドロック群(preflight自己封鎖デッドロック含む)に包含。同クラスへ統合)'
+- id: 'LS101'
+  title: 'CI RED診断は origin失敗SHA vs 現HEAD を見よ — push保留と修正未pushの自己永続デッドロック'
+  origin: '[[殿裁定_gitで健全時点rollback_20260721]] -> [[rollback尾部多重回帰]] -> [[push保留デッドロック]] -> [[fast-forward pushで解消]]'
+  detail: 'CI REDが解けない時、まず【失敗runのSHA(origin/main) vs ローカルHEAD】を一次確認せよ。2026-07-21: CI REDが1セッション継続し家老が忍者deployで直せず滞留したが、真因は『CI RED中はpush保留』ルールで全CI修正入りの46commitが未pushのまま、CI REDは古いorigin(1fc7d294)で自己永続していた=修正は約21h存在したのにCI赤。デッドロック構造: push保留→修正がoriginに届かない→CI赤継続→push保留継続。解消=fast-forward push(force不要・origin失敗SHAはHEAD祖先を確認)で修正をoriginへ。診断法: git rev-parse origin/main vs HEAD、git log origin/main..HEAD で未pushにCI修正(ci_fix系)があるか。★rollback尾部の性質: 大規模rollbackは複数の正当修正を巻き戻し、CI上で多重回帰のwhack-a-mole(single-flight→semantic→test回帰…)として1件ずつ露呈する。各runで次の回帰を潰す漸進cleanupを前提とせよ。忍者deployが全失敗する時は deploy path 自体の回帰(single-flight receipt/yaml_field_set_batch/report identity)を疑い、壊れたdeploy path迂回の直接修正(家老D0認可)を検討。'
+  source_cmd: 'cmd_shogun_ci_red_push_deadlock_20260721'
+  created_at: '2026-07-21'
+  automated: true
+  enforcement: '起動時lessons_shogun.yaml自動ロード。CI RED未解決時の第一手= origin失敗SHA vs HEAD確認→未pushにci_fixあればfast-forward push。deploy全失敗時はdeploy path回帰を疑う'
+- id: 'LS102'
+  title: '単一telemetry値を分布と誤認するな — 代表値主張の前に再測で分布を見よ'
+  origin: '[[将軍memory_context単一サンプル報告]] -> [[3958ms cold outlierをmedianと誤認]] -> [[家老全変種再測でmedian656ms訂正]] -> [[LS-A24分布確認義務の拡張]]'
+  detail: '2026-07-21 将軍がdeploy TASK_MUTATION_PHASEログのmemory_context=3958msを『最大・未最適化のバグ』と家老へ報告した。だが家老reconが全変種再測すると直近5回=480/689/1655/413/656ms、median656ms・p95 1655msで3958msは非再現のcold outlierだった。単一サンプルを代表値と誤認=LS-A24(計測の実運用代表性)違反の一形態。正: telemetryの1行を根拠に『最大コスト/バグ』と断じる前に、同一項目を複数回(cold/warm含む)再測し、median/p95/サンプル数で分布を確認してから代表値を主張せよ。救いは家老が実験空間を縮めず全変種再測(実験ファースト)で捕捉したこと(第二層学習ループ)。個別telemetry値は分布の1点であり分布ではない。'
+  source_cmd: 'cmd_4110_memory_context_report'
+  created_at: '2026-07-21'
+  superseded_by: 'LS-A24'
+  superseded_at: '2026-07-22'
+  superseded_reason: 'LS102自身が「LS-A24(計測の実運用代表性)違反の一形態」と明記。LS-A24 detail(7)へ全文吸収し、active上限31超過(32件)を解消'
+  automated: true
+  enforcement: 'L4: 速度/コスト系のinfra_bug_report起票前に、対象項目のtelemetryを最低3サンプル(可能ならcold/warm)集計しmedian/p95/nを添える運用。単一max値のみの''最大コスト''主張を自己点検。将軍の速度報告テンプレにdistribution必須を意識化(未自動化=次の自動化ターゲット)。'
+- id: 'LS103'
+  title: '異常を''stale''と流すな — 継続する警告は必ず原因がある(観察スキップ防止)'
+  origin: '[[3時間RECOVERY INCOMPLETE nag放置]] -> [[staleとラベルし観察打ち切り(Phase1観察スキップ)]] -> [[marker不在の真因未掘]] -> [[継続警告は必ず原因ありの原則]]'
+  detail: '2026-07-21 将軍は/clear復帰から約3時間、全PostToolUse結果に出続けた『RECOVERY INCOMPLETE』nagを『stale hook』と繰り返し流した。殿の反復指令(この作業の時間浪費を掘れ)で初めて真因調査に入り、logs/shogun_recovery_complete marker不在(起動ゲートrc124 timeoutでtouch未到達+prompt_state_inject refreshが不在時未生成)が全tool call発火の原因と判明。marker手動生成でnag即停止。deepdive Phase1観察スキップの再現=目の前の異常シグナルを『既知/stale』とラベルして観察を打ち切る本能。正: 継続・反復する警告や見慣れた異常は必ず原因がある。''stale''仮説自体を一次確認(なぜ消えないか)で検証してから流せ。流す前に『この警告の発火条件は何か、なぜ消えないか』を1度は掘れ。'
+  source_cmd: 'cmd_recovery_marker_nag'
+  created_at: '2026-07-21'
+  automated: true
+  enforcement: 'L4: PostToolUse系の恒久nag(RECOVERY/INBOX等)は、同一メッセージがN回連続(例20回)出たら『発火条件の真因未調査』としてstop hookが1度WARN注入する運用を検討(未自動化=次の自動化ターゲット)。将軍の自己点検: 見慣れた警告を流す前に発火条件を1度掘る。'
+- id: 'LS104'
+  title: 'デザイン/モック依頼は最小から作れ — 既存を厳密踏襲し、頼まれた最小差分だけ足す(過剰デザイン禁止)'
+  origin: '[[殿ワイヤーフレーム依頼]] -> [[V1過剰デザインごちゃごちゃ却下]] -> [[V2列追加誤解]] -> [[V3既存踏襲+最小追加で正解]] -> [[最小から作る設計規律]]'
+  detail: '2026-07-22 殿のRolling Returnsワイヤーフレーム依頼で将軍が3反復を空費した。V1=バー/詳細パネル/Histogram/デザインガイド注記を盛り込み殿に『ごちゃごちゃ』と却下。V2=既存表に列追加と誤解。V3でようやく『既存表そのまま＋下に同型テーブル』の正解に到達。真因=(1)頼まれていない装飾/機能を先回りで足す過剰デザイン(洗脳: 出力量=価値の錯覚)、(2)殿の『同じスタイル/既存そのまま』を最初に字義通り受け取らず自分の設計を上乗せした。正: デザイン/UI/モック依頼は『既存を1ピクセルも変えず、指示された最小差分だけ』から作れ。既存スタイルを一次確認し忠実複製→頼まれた要素のみ最小追加。凝る前に殿に最小案を見せて方向確認。過剰は減点、最小は加点。この作業の遅延はインフラバグでなく将軍の設計過剰が真因(偽インフラバグを起票せず自責で記録)。'
+  source_cmd: 'cmd_rolling_returns_wireframe'
+  source_ids: [LS107]
+  created_at: '2026-07-22'
+  automated: true
+  detail_2: '(2)統一先の基準は文字列で固定して引用せよ(LS107吸収2026-07-23): 本番色崩れ。cmd_4122がMECE UI統一で13表の値色をcolors.tsのgetValueColorClassへ集約する際、プラス値をSTATUS_TEXT_CLASSES.positive=text-emerald-400固定にした。殿が基準と明示したmonthly-returns旧実装は text-foreground dark:text-emerald-400 で、light=--foreground(#0f172a)/dark=emerald というモード別非対称だった。単一のsemantic定数はdark:修飾子を表現できないため、集約した瞬間に非対称が消えlightモードのプラス値が緑に発光。context/ui-design-guide.md L27/L57の4.5:1規定に対し白背景×emerald-400は約1.6:1でガイド違反でもあった。つまりlight/dark別配色は好みではなくコントラスト規定に根拠がある。正: (a)統一系cmdのACには統一先の基準を明示しその現行実装の文字列をそのままACへ引用せよ (b)色をsemantic定数へ集約する際、元の実装にdark:修飾子があれば定数側もモード別を保持できる形にせよ。単一色へ簡約するな (c)18px以下の文字色を変更する変更は4.5:1を満たすか確認せよ。フォントの種類とサイズはlight/dark共通であり配色のみモードで異なる(殿原則2026-07-23 00:55)。なお殿の裁定は更新されうる: 同日01:05に『ダークモードは正の値は白の文字色、ライトモードでは黒に近い色』へ変更され dark emerald は失効した。基準を引用する際は最新の殿発言を lord_conversation_read で確認してから固定せよ。'
+  enforcement: 'L4: 設計/モック/UI系の殿依頼への初回応答は、既存の忠実複製+指示要素のみの最小案から始める自己規律。装飾/追加機能/注記の先回り盛り込みを『ごちゃごちゃリスク』として自己点検。統一系cmdは統一先の基準文字列をACへ直接引用し、light/dark非対称を単一色へ簡約しない。未自動化=次ターゲット(将軍応答前の最小性チェック)。'
+- id: 'LS105'
+  title: 'ノイズなalertは偽陽性とは限らぬ — 抑制提案の前に「下層の状態が真に解決済か」を一次確認せよ(真陽性の抑制=自動消火)'
+  origin: '[[将軍が陣形図alert抑制を推奨]] -> [[目的達成済=実害なしと誤判定]] -> [[影丸一次確認でtaskは真にOPEN未解決失敗]] -> [[真陽性抑制=自動消火を家老が中止]] -> [[抑制前にSSOT状態を一次確認する規律]]'
+  detail: '2026-07-22 将軍が陣形図failed alertの恒常ノイズを家老へ報告し、目的達成済ゆえ実害なし・alert抑制(acknowledged化/failure set除外)を推奨した。だが影丸一次確認+家老判断で前提が覆った: hayate reportはstatus=failed/verdict=FAIL/status_detail=BLOCKEDで、SSOT scripts/lib/report_terminal_state.shの正規分類はOPEN(status=completedのみCLOSED_BLOCKED終端)。すなわちtaskは真に未解決の失敗であり、alertは仕様どおりの真陽性。将軍の『目的達成済=実害なし』は誤りで、抑制実装は未解決失敗を隠す自動消火ゆえ家老が中止。正しい対応はalert抑制でなくreconの正式クローズ(completeさせるかFAILとして正規終端へ)。教訓: (1)恒常的に鳴るalertを『ノイズ』と決めつけ抑制へ寄せるな。まず下層状態がSSOT定義で真に解決済かを一次確認せよ。(2)データ取得済≠task解決済。status=completedでない限りOPEN(未解決)。(3)真陽性alertの抑制は自動消火(問題を隠す)。LS103(異常を流すな)の対=真陽性を消すな。'
+  source_cmd: 'cmd_karo_hotfix_failed_terminal_snapshot_alert'
+  created_at: '2026-07-22'
+  automated: true
+  enforcement: 'L4: alert/警告の抑制・除外・acknowledged化を提案する前に、下層状態のSSOT正規分類(report_terminal_state.sh等)で真に解決済かを一次確認する自己規律。''ノイズ削減''と''真陽性隠蔽(自動消火)''を二値で切り分ける。未自動化=次ターゲット。'
+  superseded_by: 'LS103 (真陽性alertを抑制するな(SSOT状態を一次確認)はLS103『異常をstaleで流すな・継続警告は必ず原因あり』の対(つい)であり同一原理=alertを消す/流す前に下層状態を一次確認。LS103へ統合)'
+- id: 'LS106'
+  title: '閾値の根拠をgit logでたどれ — 逆算で置かれた数値は成長を装った空転を生む'
+  origin: '未指定'
+  detail: 'startup gate『将軍教訓 active N件(上限31)』を殿の問い『理屈はあるのか』で一次調査した結果、発生源commit 98f353873(2026-05-10)のmessageが『Current count is 32 which now triggers WARN immediately』= 当時の実数32から発火させるために31を逆算した数値と判明。真の上限はcmd_save.sh CMD_SAVE_SHOGUN_LESSON_LIMIT=35で『上限31』はラベル虚偽。判定は-ge 31のため31件でも発火し健全域は30以下=ラベルと可達域が不整合。実測: LS102をLS-A24へ統合し32->31にしてもBLOCK再発火。1件統合するたびに再発火する空転構造(LS096 検知器が同一結論を繰り返す=粒度バグ)。正: 閾値ALERTに従う前にgit log -S で閾値の発生源commitをたどり『この数値は原理から導かれたか、当時の実数から逆算されたか』を判定せよ。逆算値なら従うのではなく撤去を提案せよ。件数は品質の代理変数として不正であり、品質はgate_lesson_health.sh(origin充足率/useful率/enforcement phantom)が実測する。'
+  source_cmd: '[[殿の問い_この制限に理屈はあるのか_20260723]] -> [[commit_98f353873_逆算閾値31]] -> [[LS102統合しても再発火=空転]] -> [[殿裁定A_件数WARN撤去]]'
+  created_at: '2026-07-23'
+  automated: false
+  enforcement: '未自動化'
+- id: 'LS107'
+  title: '統一先の基準は文字列で固定して引用せよ — semantic定数への集約でlight/dark非対称を簡約するとWCAG違反を生む'
+  origin: '未指定'
+  detail: '2026-07-23 本番色崩れ。cmd_4122がMECE UI統一で13表の値色をcolors.tsのgetValueColorClassへ集約した際、プラス値をSTATUS_TEXT_CLASSES.positive=text-emerald-400固定にした。基準(殿明示のmonthly-returns旧実装)は text-foreground dark:text-emerald-400 で、light=--foreground(#0f172a)/dark=emerald というモード別非対称だった。単一のsemantic定数はdark:修飾子を表現できないため、集約した瞬間に非対称が消えlightモードのプラス値が緑に発光。context/ui-design-guide.md L27/L57の4.5:1規定に対し白背景×emerald-400は約1.6:1でガイド違反でもあった。つまりlight/dark別配色は好みではなくコントラスト規定に根拠がある。統一cmdのACが『統一せよ』としか書かず統一先の基準文字列を引用していなかったことが根因。正: (1)統一系cmdのACには統一先の基準を明示し、その現行実装の文字列をそのままACへ引用せよ (2)色をsemantic定数へ集約する際、元の実装にdark:修飾子があれば定数側もモード別を保持できる形にせよ。単一色へ簡約するな (3)18px以下の文字色を変更する変更は4.5:1を満たすか確認せよ。フォントの種類とサイズはlight/dark共通であり配色のみモードで異なる(殿原則2026-07-23 00:55)。'
+  source_cmd: '[[殿本番指摘_色がめちゃくちゃ_20260723]] -> [[cmd_4122_semantic色定数への集約]] -> [[dark修飾子の消失でlightがWCAG1.6対1違反]] -> [[LS104_既存を厳密踏襲し最小差分だけ足す]]'
+  created_at: '2026-07-23'
+  superseded_by: 'LS104'
+  superseded_at: '2026-07-23'
+  superseded_reason: 'LS104(デザイン依頼は既存を厳密踏襲し最小差分だけ足す)の発展形。LS104 detail_2へ全文吸収し、殿裁定01:05でdark emeraldが失効した後方伝播も併記した'
+  automated: false
+  enforcement: '未自動化'
