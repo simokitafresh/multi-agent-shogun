@@ -191,6 +191,7 @@ PF切替計測実績(CDP): 547.2ms中央値(cmd_2312, 2026-04-26)。旧1008ms(cm
 
 13色CSSトークン(Light/Dark)。チャート7色パレット。ブレークポイント: xs(375)/sidebar(1100)/sidebar-xl(1280)。
 **A軸第3層完遂(cmd_4119)**: body=`text-sm text-foreground`、caption/note=`text-xs text-muted-foreground`、numeric=`font-mono text-sm tabular-nums`へ役割別token化。正当なcaptionのxsは維持し、数値桁揃えを全end-user表示へ適用。→ `docs/research/cmd_4119_body_numeric_inventory.md`
+**A軸h1 DRY完遂(cmd_4117)**: 12ページ・14分岐のcanonical h1直書きを`PAGE_TITLE_CLASS` 1定義へ集約し、文言・DOM・配置を不変維持。→ `docs/research/cmd_4117_h1_dry_inventory.md`
 - L284: 統計指標UIは信号機パターン(3色+灰)+Progressive Disclosure 3層。7±2超えは判断麻痺（cmd_860）
 - L287: 確率値の単独表示は過信誘発。頻度リフレーミングを添えよ（cmd_860）
 - L292: 統計指標UIの解釈可能性設計3原則（cmd_860）
