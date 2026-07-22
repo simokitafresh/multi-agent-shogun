@@ -889,7 +889,8 @@ declare -A REPORT_GATE_SENT      # 報告フォーマットgate FAIL送信済み
 declare -A UNCOMMITTED_BLOCK_SENT # commit未完了BLOCK送信済みフラグ — key: "ninja:cmd_id", value: "1"
 declare -A ACTIVE_IDLE_RECOVERY_SENT # active task+idle時の忍者再通知済みフラグ — key: "ninja:task_id:reason", value: "1"
 
-# Durable report-gate result cache. REPORT_GATE_SENT suppresses only the
+# cmd_karo_hotfix_completion_event_dedupe_20260723: durable report-gate cache.
+# REPORT_GATE_SENT suppresses only the
 # notification; this cache suppresses the repeated gate execution itself.
 # The key binds report bytes, immutable task contract, and gate implementation.
 # Mutable task status/timestamps are excluded, so report-only RC stays in its

@@ -656,6 +656,7 @@ inbox_report_revision_fingerprint() {
 # This closes the crash window where the inbox row was appended but the task
 # status update did not run. Exact retries repair that consequence instead of
 # waiting for ninja_monitor's polling cycle. Deployment identity stays intact.
+# cmd_karo_hotfix_completion_event_dedupe_20260723: reconcile durable terminal events.
 inbox_reconcile_terminal_task_generation() {
     local ninja="$1" report_path="$2"
     local task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
