@@ -966,7 +966,7 @@ if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/report_commit_nonoverlap_filter.sh"
         rm -f "$commit_probe"
         trap - EXIT
         if [[ -n "$overlapping_dirty" ]]; then
-            echo "BLOCK(GA-260): commit後も同一scopeにcommit hunkと重なる未commit差分あり:" >&2
+            echo "BLOCK(GA-260): post-commit mutation — commit後も同一scopeにcommit hunkと重なる未commit差分あり:" >&2
             while IFS= read -r dirty_path; do
                 [[ -n "$dirty_path" ]] && printf '  %s\n' "$dirty_path" >&2
             done <<< "$overlapping_dirty"

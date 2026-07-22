@@ -120,8 +120,10 @@ if terminal:
     if missing:
         raise SystemExit("BLOCK: terminal readiness missing: " + ",".join(missing))
     commit = str(data.get("commit_hash", "")).strip()
-    if not re.fullmatch(r"[0-9a-f]{40}|no-code-change", commit):
-        raise SystemExit("BLOCK: terminal readiness requires valid commit_hash")
+    contract = data.get("commit_contract") or {}
+    commit_required = not (isinstance(contract, dict) and contract.get("required") is False)
+    if commit_required and not re.fullmatch(r"[0-9a-f]{40}|no-code-change", commit):
+        raise SystemExit("BLOCK: terminal readiness requires valid commit_hash when commit_contract.required=true")
     if commit == "no-code-change":
         evidence = data.get("no_code_change_evidence") or {}
         before = str(evidence.get("before_tree") or "").strip() if isinstance(evidence, dict) else ""

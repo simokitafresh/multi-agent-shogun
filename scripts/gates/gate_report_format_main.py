@@ -20,6 +20,40 @@ sys.path.insert(0, str(_PROJECT_ROOT / "scripts" / "lib"))
 from report_commit_identity import valid_commit_identity
 
 
+def commit_contract_errors(report, task, root):
+    contract = task.get("commit_contract")
+    if isinstance(contract, dict) and contract.get("required") is False:
+        return []
+    identity = str(report.get("commit_hash") or "").strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", identity):
+        return ["required commit_hash is missing or invalid"]
+    evidence = report.get("commit_identity_evidence")
+    if not isinstance(evidence, dict):
+        return ["commit_identity_evidence is required"]
+    expected_run_id = str(task.get("task_id") or report.get("task_id") or "").strip()
+    errors = []
+    if str(evidence.get("source") or "") not in {"stdout", "terminal_ledger", "terminal_receipt"}:
+        errors.append("commit identity source must be stdout/terminal_ledger/terminal_receipt")
+    if str(evidence.get("run_id") or "") != expected_run_id:
+        errors.append(f"commit identity run_id mismatch: expected {expected_run_id!r}")
+    if str(evidence.get("commit_hash") or "") != identity:
+        errors.append("commit identity evidence hash differs from report commit_hash")
+    try:
+        subject = subprocess.run(["git", "-C", str(root), "show", "-s", "--format=%s", identity], check=True, capture_output=True, text=True, timeout=5).stdout.strip()
+        changed = set(subprocess.run(["git", "-C", str(root), "diff-tree", "--no-commit-id", "--name-only", "-r", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return errors + ["commit_hash does not resolve to a readable commit"]
+    if expected_run_id not in subject and str(report.get("parent_cmd") or "") not in subject:
+        errors.append("commit subject does not identify task_id/parent_cmd")
+    targets = task.get("target_path")
+    targets = [targets] if isinstance(targets, str) else (targets if isinstance(targets, list) else [])
+    for raw in targets:
+        target = str(raw or "").strip().rstrip("/")
+        if target and not any(path == target or path.startswith(target + "/") for path in changed):
+            errors.append(f"commit does not contain target_path: {target}")
+    return errors
+
+
 # gate_report_format.sh の contamination check(_CC_CHECK)と同一のread-only/
 # commit禁止マーカー。忍者が"commit:"項目にread-only遵守を記述した場合、
 # commit完了の申告として扱わない(両ゲートで判定基準を一致させる)。
@@ -519,6 +553,8 @@ def main(report_data=None) -> int:
     # variation requirement to an older report would be a false BLOCK.
     task_matches_report = str(task_data.get("parent_cmd") or "").strip() == parent_cmd_value
     if task_matches_report:
+        for _commit_contract_error in commit_contract_errors(data, task_data, _PROJECT_ROOT):
+            errors.append("commit_contract: " + _commit_contract_error)
         variation_missing, variation_invalid = _variation_contract_issues(task_data, data)
         if variation_missing:
             errors.append(
