@@ -167,7 +167,7 @@ batch_index_search() {
     [[ "$read_db" == "$cache_path" ]] && use_immutable=1
     local semantic_index="${THREE_LAYER_SEMANTIC_INDEX:-$ROOT/docs/semantic-index/index.md}"
     timeout "${timeout_seconds}s" python3 - "$read_db" "$semantic_index" "$query" "$use_immutable" <<'PY' >"$result_file"
-import datetime, pathlib, re, sqlite3, sys
+import datetime, pathlib, re, sqlite3, sys, time
 
 db_path, semantic_path, query, use_immutable = sys.argv[1:]
 aliases = {
@@ -186,6 +186,7 @@ memory_count = semantic_count = 0
 memory_query = semantic_query = "-"
 memory_ts = datetime.datetime.fromtimestamp(pathlib.Path(db_path).stat().st_mtime, datetime.timezone.utc).isoformat()
 semantic_ts = ""
+memory_started = time.monotonic()
 try:
     immutable = "&immutable=1" if use_immutable == "1" else ""
     with sqlite3.connect(f"file:{db_path}?mode=ro{immutable}", uri=True, timeout=0.5) as conn:
@@ -198,6 +199,8 @@ try:
                 break
 except Exception:
     memory_rc = 2
+memory_wall_ms = round((time.monotonic() - memory_started) * 1000)
+semantic_started = time.monotonic()
 try:
     path = pathlib.Path(semantic_path)
     if not path.is_file():
@@ -213,8 +216,10 @@ try:
     semantic_ts = datetime.datetime.fromtimestamp(path.stat().st_mtime, datetime.timezone.utc).isoformat()
 except Exception:
     semantic_rc = 2
+semantic_wall_ms = round((time.monotonic() - semantic_started) * 1000)
 print("\t".join(map(str, (memory_rc, semantic_rc, memory_count, semantic_count,
-                              memory_query, semantic_query, memory_ts, semantic_ts))))
+                              memory_query, semantic_query, memory_ts, semantic_ts,
+                              memory_wall_ms, semantic_wall_ms))))
 raise SystemExit(0 if memory_rc == semantic_rc == 0 else 1)
 PY
 }
@@ -305,7 +310,9 @@ issue() {
         [[ "$memory_cache_cold" == 1 && "$source_db" == "$ROOT/data/multi_agent_shogun_memory.db" ]] && prewarm_memory_cache_async "$source_db" "$memory_cache" "$boot_id"
     fi
     [[ "$memory_cache_cold" == 1 ]] && cold_cache=1
-    [[ "$cold_cache" == 1 && -z "${THREE_LAYER_GLOBAL_BUDGET_MS+x}" ]] && global_budget_ms="${THREE_LAYER_COLD_CACHE_BUDGET_MS:-8500}"
+    # The outer UserPromptSubmit hook is killed at 10s.  The former 8.5s
+    # internal budget left only 1.5s for DrvFS setup and atomic publication.
+    [[ "$cold_cache" == 1 && -z "${THREE_LAYER_GLOBAL_BUDGET_MS+x}" ]] && global_budget_ms="${THREE_LAYER_COLD_CACHE_BUDGET_MS:-6500}"
     deadline_ms=$((started_ms + global_budget_ms))
     mkdir -p "$EVIDENCE_DIR"
     if [[ -n "$prompt_arg" ]]; then
@@ -352,12 +359,13 @@ issue() {
     # failing layer cannot mask another layer's real result.
     local memory_rc=0 semantic_rc=0 obsidian_rc=0 memory_count=0 semantic_count=0 obsidian_count=0
     local memory_query="" semantic_query="" obsidian_used_query="" memory_ts="" semantic_ts="" obsidian_ts="" obsidian_source=""
+    local memory_wall_ms=0 semantic_wall_ms=0 obsidian_wall_ms=0 obsidian_started_ms=0
     local memory_pid="" semantic_pid="" obsidian_pid="" batch_pid="" batch_result="" obsidian_result=""
 
     local primary_timeout="${THREE_LAYER_PRIMARY_TIMEOUT_SECONDS:-2.2}" obsidian_timeout
-    [[ "$memory_cache_cold" == 1 && -z "${THREE_LAYER_PRIMARY_TIMEOUT_SECONDS+x}" ]] && primary_timeout="${THREE_LAYER_COLD_CACHE_TIMEOUT_SECONDS:-7}"
+    [[ "$memory_cache_cold" == 1 && -z "${THREE_LAYER_PRIMARY_TIMEOUT_SECONDS+x}" ]] && primary_timeout="${THREE_LAYER_COLD_CACHE_TIMEOUT_SECONDS:-3.5}"
     obsidian_timeout="$primary_timeout"
-    [[ "$cold_cache" == 1 ]] && obsidian_timeout="${THREE_LAYER_COLD_CACHE_TIMEOUT_SECONDS:-7}"
+    [[ "$cold_cache" == 1 ]] && obsidian_timeout="${THREE_LAYER_COLD_CACHE_TIMEOUT_SECONDS:-3.5}"
     if is_git_checkout && [[ "${THREE_LAYER_BATCH_PRIMARY:-1}" == 1 ]]; then
         batch_result="$(mktemp "$EVIDENCE_DIR/.batch-result.XXXXXX")"
         ( batch_index_search "$prompt" "$primary_timeout" "$batch_result" >/dev/null 2>&1 ) &
@@ -373,6 +381,7 @@ issue() {
     # 9P filesystem walk entirely. Fallback to rg only if .git is absent.
     if is_git_checkout && [[ -f "$ROOT/scripts/lib/causal_index.sh" ]]; then
         obsidian_result="$(mktemp "$EVIDENCE_DIR/.obsidian-result.XXXXXX")"
+        obsidian_started_ms="$(date +%s%3N)"
         ( obsidian_cached_search "$obsidian_query" "$obsidian_timeout" "$obsidian_result" >/dev/null 2>&1 ) &
         obsidian_pid=$!
     else
@@ -387,7 +396,7 @@ issue() {
         local batch_rc=0
         wait "$batch_pid" || batch_rc=$?
         if [[ -s "$batch_result" ]]; then
-            IFS=$'\t' read -r memory_rc semantic_rc memory_count semantic_count memory_query semantic_query memory_ts semantic_ts <"$batch_result"
+            IFS=$'\t' read -r memory_rc semantic_rc memory_count semantic_count memory_query semantic_query memory_ts semantic_ts memory_wall_ms semantic_wall_ms <"$batch_result"
         else
             memory_rc="$batch_rc"
             semantic_rc="$batch_rc"
@@ -416,6 +425,7 @@ issue() {
     # means no match, which is still a completed search; exit 2 is a failure.
     if [[ -n "$obsidian_pid" ]]; then
         wait "$obsidian_pid" || obsidian_rc=$?
+        [[ "$obsidian_started_ms" -gt 0 ]] && obsidian_wall_ms=$(( $(date +%s%3N) - obsidian_started_ms ))
         if [[ -s "$obsidian_result" ]]; then
             IFS=$'\t' read -r obsidian_count obsidian_used_query obsidian_source obsidian_ts <"$obsidian_result"
         fi
@@ -472,9 +482,10 @@ issue() {
     fi
     tmp_file="$(mktemp "$EVIDENCE_DIR/.evidence.XXXXXX")"
     {
-        printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","memory_count":"%s","semantic_count":"%s","obsidian_count":"%s","memory_source":"%s","semantic_source":"%s","obsidian_source":"%s","memory_timestamp":"%s","semantic_timestamp":"%s","obsidian_timestamp":"%s","memory_query":"%s","semantic_query":"%s","obsidian_query":"%s","status":"%s"}\n' \
+        printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","memory_count":"%s","semantic_count":"%s","obsidian_count":"%s","memory_wall_ms":"%s","semantic_wall_ms":"%s","obsidian_wall_ms":"%s","total_wall_ms":"%s","memory_source":"%s","semantic_source":"%s","obsidian_source":"%s","memory_timestamp":"%s","semantic_timestamp":"%s","obsidian_timestamp":"%s","memory_query":"%s","semantic_query":"%s","obsidian_query":"%s","status":"%s"}\n' \
             "$(json_escape "$agent_id")" "$(json_escape "$pane_id")" "$prompt_hash" "$nonce" "$issued_at" \
             "$memory_rc" "$semantic_rc" "$obsidian_rc" "$memory_count" "$semantic_count" "$obsidian_count" \
+            "$memory_wall_ms" "$semantic_wall_ms" "$obsidian_wall_ms" "$(( $(date +%s%3N) - started_ms ))" \
             "$(json_escape "${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}")" "$(json_escape "$semantic_index")" "$(json_escape "$obsidian_source")" \
             "$(json_escape "$memory_ts")" "$(json_escape "$semantic_ts")" "$(json_escape "$obsidian_ts")" \
             "$(json_escape "$memory_query")" "$(json_escape "$semantic_query")" "$(json_escape "$obsidian_used_query")" "$status"

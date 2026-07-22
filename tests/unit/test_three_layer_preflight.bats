@@ -224,6 +224,14 @@ JSON
     run issue_with_fixtures <<< '{"prompt":"preflight test"}'
     [ "$status" -eq 0 ]
     [ -s "$EVIDENCE" ]
+    run python3 - "$EVIDENCE" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+for key in ("memory_wall_ms", "semantic_wall_ms", "obsidian_wall_ms", "total_wall_ms"):
+    assert int(data[key]) >= 0, (key, data.get(key))
+assert int(data["total_wall_ms"]) < 10000
+PY
+    [ "$status" -eq 0 ]
 }
 
 @test "linked worktreeの.git fileでもGit checkout経路を使う" {
