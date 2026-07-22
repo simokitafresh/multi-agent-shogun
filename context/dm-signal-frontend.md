@@ -1,6 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-22 cmd_4122 -->
-<!-- source_commit:08895941 reason:cmd_4122 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=08895941 -->
+<!-- last_updated: 2026-07-23 cmd_4124 -->
+<!-- source_commit:20bc9de2b14f51ed0d79787b91486e4e13adc304 reason:cmd_4124_main_integration evidence:cmd_4124_content_present -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -366,3 +366,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 ## 18. cmd_4122 A4数値表統一 (2026-07-22)
 
 結論: 数値表示13/13表を `font-mono tabular-nums`、符号状態色を `getValueColorClass` SSOTへ統一し、font未適用表を4→0へ解消。→ `/mnt/c/Python_app/DM-signal/docs/research/cmd_4122_table_text_inventory.md`
+
+## 19. cmd_4124 値配色の基準復旧 (2026-07-23)
+
+結論: 値の色は正値=`text-foreground`（lightは黒寄り、darkは白）、負値=`text-red-400`（両モード）。フォント種類・サイズはlight/dark共通で不変。→ `/mnt/c/Python_app/DM-signal/docs/research/cmd_4124_color_baseline_restore.md`
