@@ -2,7 +2,7 @@
 """Search memory DB for events related to cmd title/purpose.
 
 Called by pre-write-edit-combined.sh during cmd preflight.
-Usage: memory_db_fts5_preflight.py <db_path> <query>
+Usage: memory_db_fts5_preflight.py <db_path> <query> <agent_id>
 Output: tab-separated rows (id, ts, agent, cmd_id, importance, summary)
 """
 import hashlib
@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 CJK_RE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]")
+AGENT_ID_RE = re.compile(r"[a-z][a-z0-9_-]*\Z")
 
 
 def has_cjk(text: str) -> bool:
@@ -79,17 +80,21 @@ def resolve_db_path(source_path: Path) -> Path:
 
 
 def main() -> int:
-    if len(sys.argv) < 3:
-        return 1
+    if len(sys.argv) < 4:
+        return 0
     db_path = resolve_db_path(Path(sys.argv[1]))
     query = sys.argv[2].strip()
-    if not db_path.exists() or not query:
+    agent_id = sys.argv[3].strip()
+    if not db_path.exists() or not query or not AGENT_ID_RE.fullmatch(agent_id):
         return 0
 
     db_uri = f"{db_path.resolve().as_uri()}?mode=ro"
     conn = sqlite3.connect(db_uri, uri=True)
     conn.execute("PRAGMA busy_timeout=3000")
     conn.row_factory = sqlite3.Row
+    event_columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(events)")}
+    if "target" not in event_columns:
+        return 0
 
     if has_cjk(query):
         terms = split_cjk_terms(query)
@@ -110,7 +115,7 @@ def main() -> int:
             SELECT e.id, e.ts, e.agent, e.cmd_id, e.importance, e.summary,
                    ({score_expr}) AS match_count
             FROM events AS e
-            WHERE {where}
+            WHERE ({where}) AND (e.target = '' OR e.target = ?)
             ORDER BY match_count DESC, e.importance DESC, e.ts DESC
             LIMIT 3
         """
@@ -118,7 +123,7 @@ def main() -> int:
         for t in terms:
             pat = f"%{t}%"
             score_params.extend([pat, pat])
-        rows = conn.execute(sql, params + score_params).fetchall()
+        rows = conn.execute(sql, score_params + params + [agent_id]).fetchall()
     else:
         def escape_fts5(val: str) -> str:
             return '"' + val.replace('"', '""') + '"'
@@ -134,10 +139,11 @@ def main() -> int:
             FROM events_fts
             JOIN events AS e ON e.rowid = events_fts.rowid
             WHERE events_fts MATCH ?
+              AND (e.target = '' OR e.target = ?)
             ORDER BY rank, e.ts DESC
             LIMIT 3
             """,
-            (fts_query,),
+            (fts_query, agent_id),
         ).fetchall()
 
     for row in rows:
