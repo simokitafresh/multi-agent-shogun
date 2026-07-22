@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate and validate the SG7 completion bundle used by Gunshi and Karo."""
 from __future__ import annotations
-import argparse, fcntl, glob, hashlib, json, os, re, subprocess, sys, time
+import argparse, fcntl, glob, hashlib, json, os, subprocess, sys, time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
@@ -17,6 +17,29 @@ def command_from(data, cmd_id):
     if isinstance(commands, list):
         return next((x for x in commands if isinstance(x, dict) and str(x.get("id")) == cmd_id), None)
 
+def _snapshot_command(report, cmd_id):
+    snapshot = report.get("task_contract_snapshot") if isinstance(report, dict) else None
+    if not isinstance(snapshot, dict):
+        raise ValueError("immutable task contract snapshot is missing")
+    report_task = str(report.get("task_id") or "")
+    expected = {
+        "parent_cmd": cmd_id,
+        "task_id": report_task,
+        "ac_fingerprint": str(report.get("ac_version_read") or ""),
+    }
+    for key, value in expected.items():
+        if not value or str(snapshot.get(key) or "") != value:
+            raise ValueError(f"immutable task contract identity mismatch: {key}")
+    issued = str(snapshot.get("issued_cmd_id") or "")
+    if issued and issued != cmd_id:
+        raise ValueError("immutable task contract identity mismatch: issued_cmd_id")
+    purpose = str(snapshot.get("purpose") or "").strip()
+    criteria = snapshot.get("acceptance_criteria")
+    project = str(snapshot.get("project") or "").strip()
+    if not purpose or not isinstance(criteria, (list, dict)) or not criteria or not project:
+        raise ValueError("immutable task contract snapshot is incomplete")
+    return {"acceptance_criteria": criteria, "command": purpose, "project": project}
+
 def find_command(root, cmd_id, report=None, report_path=None):
     paths = [root / "queue/shogun_to_karo.yaml", root / f"queue/reopened_cmds/{cmd_id}.yaml"]
     paths += [Path(p) for p in sorted(glob.glob(str(root / f"queue/archive/cmds/{cmd_id}_*.yaml")), reverse=True)]
@@ -25,40 +48,12 @@ def find_command(root, cmd_id, report=None, report_path=None):
             item = command_from(load(path), cmd_id)
             if item is not None: return item, path
     # Karo-direct commands intentionally have no Shogun command record.  Their
-    # assigned task is the contract; never infer that contract from report
-    # output or from another worker's task.
+    # immutable deploy-generation snapshot is the contract; the live worker
+    # task may already belong to a later assignment.
     if cmd_id.startswith("cmd_karo_") and isinstance(report, dict) and report_path is not None:
         if str(report.get("status") or "") != "completed" or str(report.get("verdict") or "").upper() != "PASS":
             raise ValueError("karo-direct fallback requires completed/PASS report")
-        worker = str(report.get("worker_id") or "").strip()
-        if not re.fullmatch(r"[a-z][a-z0-9_-]*", worker):
-            raise ValueError("karo-direct report worker_id is missing or invalid")
-        task_path = root / f"queue/tasks/{worker}.yaml"
-        if not task_path.is_file():
-            raise ValueError(f"karo-direct worker task is missing: {worker}")
-        task_doc = load(task_path)
-        task = task_doc.get("task", task_doc) if isinstance(task_doc, dict) else None
-        task_id = str(task.get("task_id") or task.get("_ac_task_id") or "") if isinstance(task, dict) else ""
-        report_task_id = str(report.get("task_id") or "")
-        parent_matches = isinstance(task, dict) and str(task.get("parent_cmd") or "") == cmd_id
-        direct_identity_matches = (
-            isinstance(task, dict)
-            and (parent_matches or str(task.get("issued_cmd_id") or "") == cmd_id)
-            and bool(task_id)
-            and report_task_id == task_id
-        )
-        if not direct_identity_matches:
-            raise ValueError(f"karo-direct worker task parent_cmd mismatch: {worker}")
-        purpose = str(task.get("purpose") or "").strip()
-        criteria = task.get("acceptance_criteria")
-        project = str(task.get("project") or "").strip()
-        if not purpose or not isinstance(criteria, (list, dict)) or not criteria or not project:
-            raise ValueError(f"karo-direct worker task contract is incomplete: {worker}")
-        return {
-            "acceptance_criteria": criteria,
-            "command": purpose,
-            "project": project,
-        }, task_path
+        return _snapshot_command(report, cmd_id), report_path
     raise ValueError(f"cmd spec not found: {cmd_id}")
 
 def summary(command):
@@ -124,6 +119,16 @@ def generate(args):
     if str(report_data.get("parent_cmd") or "") != args.cmd: raise ValueError("report parent_cmd contradicts requested cmd")
     report_ref = report_arg if report_arg.is_relative_to(root) else report
     command, source = find_command(root, args.cmd, report_data, report_ref); verdict = args.verdict.upper()
+    if verdict == "APPROVE":
+        if str(report_data.get("status") or "") != "completed" or str(report_data.get("verdict") or "").upper() != "PASS":
+            raise ValueError("APPROVE requires completed/PASS report")
+        hook_failures = report_data.get("hook_failures")
+        if isinstance(hook_failures, dict) and int(hook_failures.get("count") or 0) != 0:
+            raise ValueError("APPROVE forbidden while hook failures remain")
+        checks = report_data.get("binary_checks")
+        results = [str(item.get("result") or "").lower() for group in (checks or {}).values() if isinstance(group, list) for item in group if isinstance(item, dict)] if isinstance(checks, dict) else []
+        if not results or any(result != "yes" for result in results):
+            raise ValueError("APPROVE requires all binary checks resolved yes")
     review = {"cmd_id": args.cmd, "verdict": verdict, "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report_ref.relative_to(root)), "report_fingerprint": hashlib.sha256(report.read_bytes()).hexdigest(), "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}
     if verdict == "FAIL":
         if not args.fail_reason: raise ValueError("FAIL requires --fail-reason")
