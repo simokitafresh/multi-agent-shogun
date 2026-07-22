@@ -550,6 +550,8 @@ run_bats_files_parallel() {
 
     if [ "$failed" -ne 0 ]; then
         echo "One or more bats files failed:" >&2
+        # Preserve the first concrete runner failure (for example rc=7); a
+        # generic rc=1 would hide dependency failures such as exec rc=127.
         local _first_fail_rc=1
         for pid in "${all_pids[@]}"; do
             out="${pid_out[$pid]}"

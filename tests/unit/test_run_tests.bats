@@ -469,7 +469,7 @@ YAML
   [[ "$output" == *"BLOCK: task scope is empty"* ]]
 }
 
-# test_necessity: public task/file callers selecting the same test must share one terminal receipt; the task-leader fixture must include admission dependencies and preserve rc=7 (never 127 or collapsed rc=1).
+# test_necessity: public task/file callers selecting the same test must share one terminal receipt; the task-leader fixture must include admission dependencies and preserve rc=7 (never 127 or collapsed rc=1). This guards both dependency closure and exit-code fidelity.
 @test "task and file public callers single-flight the same selection and preserve failure rc" {
   mkdir -p "$TMPROOT/queue/tasks" "$TMPROOT/receipts" "$TMPROOT/sf"
   cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
