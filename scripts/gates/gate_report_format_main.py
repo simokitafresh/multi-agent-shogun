@@ -114,10 +114,19 @@ def _resolved_commit_contract(report, task):
 
     if not isinstance(report_contract, dict):
         return None, None
-    task_id = str(task.get("task_id") or "").strip()
-    parent_cmd = str(task.get("parent_cmd") or "").strip()
-    if task_id != str(report.get("task_id") or "").strip() or parent_cmd != str(report.get("parent_cmd") or "").strip():
-        return None, "report commit_contract identity mismatch"
+    snapshot = report.get("task_contract_snapshot")
+    if not isinstance(snapshot, dict):
+        return None, "report commit_contract task_contract_snapshot is missing"
+    identity_fields = (
+        ("task_id", "task_id"),
+        ("parent_cmd", "parent_cmd"),
+        ("ac_version_read", "ac_fingerprint"),
+    )
+    for report_key, snapshot_key in identity_fields:
+        report_value = str(report.get(report_key) or "").strip()
+        snapshot_value = str(snapshot.get(snapshot_key) or "").strip()
+        if not report_value or not snapshot_value or report_value != snapshot_value:
+            return None, f"report commit_contract snapshot identity mismatch: {report_key}"
     if report_contract.get("required") is False:
         task_type = str(report_contract.get("task_type") or report.get("task_type") or "").strip()
         if task_type not in {"recon", "scout"}:
