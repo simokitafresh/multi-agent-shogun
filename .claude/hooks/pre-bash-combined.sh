@@ -678,10 +678,14 @@ if [[ "$payload" == *'queue/tasks/'* ]]; then
         # Keep this fail-closed for every mutating open mode (w/a/x/+), plus
         # pathlib's direct write helpers.
         task_python_open_write_pattern='python3?.*open[[:space:]]*\([^)]*queue/tasks/[^)]*\.yaml[^)]*,[^)]*[wax+]'
+        task_python_open_mode_pattern='python3?.*open[[:space:]]*\([^)]*queue/tasks/[^)]*\.yaml[^)]*,'
+        task_python_open_read_mode_pattern="python3?.*open[[:space:]]*\\([^)]*queue/tasks/[^)]*\\.yaml[^)]*,[[:space:]]*[\"']r(b|t)?[\"'][[:space:]]*\\)"
         task_python_path_write_pattern='python3?.*(Path[[:space:]]*\([^)]*queue/tasks/[^)]*\.yaml[^)]*\)|[^[:space:];]+)[[:space:]]*\.(write_text|write_bytes)[[:space:]]*\('
         if [[ "$command" =~ $task_redirect_pattern ]] || [[ "$command" =~ $task_tee_pattern ]] \
             || [[ "$command" =~ $task_sed_pattern ]] \
             || [[ "$command" =~ $task_python_open_write_pattern ]] \
+            || { [[ "$command" =~ $task_python_open_mode_pattern ]] \
+                && [[ ! "$command" =~ $task_python_open_read_mode_pattern ]]; } \
             || [[ "$command" =~ $task_python_path_write_pattern ]]; then
             emit_deny "BLOCKED: queue/tasks/へのBash直接書換え(sed -i/リダイレクト/tee/python3 open())は禁止。bash scripts/lib/yaml_field_set.sh <file> <block_id> <field> <value> 経由で書き込みせよ。非atomicな公開は共有readerの破損原因となる。"
         fi
