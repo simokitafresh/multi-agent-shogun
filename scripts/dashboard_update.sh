@@ -19,6 +19,23 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 # shellcheck source=/dev/null
 source "$PROJECT_DIR/scripts/lib/agent_config.sh"
 
+# Opt-in phase telemetry for latency diagnosis.  The default path performs no
+# extra clock subprocesses; DASHBOARD_UPDATE_PROFILE=1 emits one line per phase.
+_DU_PROFILE="${DASHBOARD_UPDATE_PROFILE:-0}"
+_du_now_ms() {
+    date +%s%3N
+}
+_du_profile_phase() {
+    [[ "$_DU_PROFILE" == "1" ]] || return 0
+    local phase="$1" started_ms="$2" finished_ms
+    finished_ms=$(_du_now_ms)
+    printf 'DASHBOARD_UPDATE_PROFILE phase=%s wall_ms=%d elapsed_ms=%d\n' \
+        "$phase" "$((finished_ms - started_ms))" \
+        "$((finished_ms - _du_total_started))" >&2
+}
+_du_total_started=0
+[[ "$_DU_PROFILE" == "1" ]] && _du_total_started=$(_du_now_ms)
+
 CMD_ID=""
 BUNDLE_PATH=""
 DRY_RUN=false
@@ -113,6 +130,33 @@ REPORTS_DIR="$PROJECT_DIR/queue/reports"
 ARCHIVE_REPORTS_DIR="$PROJECT_DIR/queue/archive/reports"
 STK_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 
+# Return only reports whose top-level parent_cmd exactly matches CMD_ID.
+# The old callers parsed every report with PyYAML twice; on DrvFS that spent
+# 9-18 seconds before the actual dashboard work.  rg is a candidate index;
+# the consumers below still parse and verify every returned YAML.
+dashboard_matching_report_paths() {
+    [ -d "$REPORTS_DIR" ] || return 0
+    if command -v rg >/dev/null 2>&1; then
+        local pattern rc
+        pattern="^[[:space:]]*parent_cmd:[[:space:]]*['\"]?${CMD_ID}['\"]?[[:space:]]*(#.*)?$"
+        rc=0
+        rg -l --glob '*.yaml' "$pattern" "$REPORTS_DIR" 2>/dev/null || rc=$?
+        [ "$rc" -eq 1 ] && return 0
+        return "$rc"
+    fi
+    python3 - "$REPORTS_DIR" "$CMD_ID" <<'PY'
+import pathlib, re, sys
+pattern = re.compile(r'^\s*parent_cmd:\s*[\'\"]?' + re.escape(sys.argv[2]) + r'[\'\"]?\s*(?:#.*)?$')
+for path in sorted(pathlib.Path(sys.argv[1]).glob('*.yaml')):
+    try:
+        with path.open(encoding='utf-8', errors='replace') as stream:
+            if any(pattern.match(line.rstrip('\n')) for line in stream):
+                print(path)
+    except OSError:
+        continue
+PY
+}
+
 if [[ ! -f "$DASHBOARD" ]]; then
     echo "ERROR: dashboard.md not found: $DASHBOARD" >&2
     exit 1
@@ -124,19 +168,22 @@ fi
 # historical FAILs in the startup metric.  Make the contract executable:
 # no dashboard mutation, SKIP result, used=false.
 if [[ "$DRY_RUN" != true && -d "$REPORTS_DIR" ]]; then
-    read -r _matching_reports _completed_reports < <(python3 - "$REPORTS_DIR" "$CMD_ID" <<'PY'
-import pathlib
-import sys
+    _du_phase_started=0
+    [[ "$_DU_PROFILE" == "1" ]] && _du_phase_started=$(_du_now_ms)
+    read -r _matching_reports _completed_reports < <(python3 - 3< <(dashboard_matching_report_paths) <<'PY'
+import os
 import yaml
 
 matching = 0
 completed = 0
-for path in pathlib.Path(sys.argv[1]).glob("*.yaml"):
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    except (OSError, yaml.YAMLError):
+for raw_path in os.fdopen(3):
+    path = raw_path.strip()
+    if not path:
         continue
-    if str(data.get("parent_cmd", "")).strip() != sys.argv[2]:
+    try:
+        with open(path, encoding="utf-8") as stream:
+            data = yaml.safe_load(stream) or {}
+    except (OSError, yaml.YAMLError):
         continue
     matching += 1
     if str(data.get("status", "")).strip().lower() in {"completed", "done"}:
@@ -144,6 +191,7 @@ for path in pathlib.Path(sys.argv[1]).glob("*.yaml"):
 print(matching, completed)
 PY
     )
+    _du_profile_phase completion_guard "$_du_phase_started"
     if [[ "${_matching_reports:-0}" -gt 0 && "${_completed_reports:-0}" -eq 0 ]]; then
         _DASHBOARD_UPDATE_RESULT_OVERRIDE="SKIP"
         _DASHBOARD_UPDATE_USED="false"
@@ -163,8 +211,15 @@ refresh_snapshot_before_auto_section() {
         set -euo pipefail
         export NINJA_MONITOR_LIB_ONLY=1
         source "$1"
-        cycle=0
-        refresh_karo_snapshot_fast_path
+        # refresh_karo_snapshot_fast_path also probes every tmux pane/model and
+        # rewrites report/cmd rows already maintained by ninja_monitor.  A
+        # completion only needs current task/idle rows before AUTO rendering.
+        # Reuse the monitor atomic single-agent publisher for all configured
+        # ninjas: current task YAML remains SSOT, cached CTX/model fields remain
+        # intact, and no stale completed worker survives.
+        for agent in $(get_ninja_names); do
+            refresh_karo_snapshot_task_assignment "$agent"
+        done
     ' _ "$monitor_script"
 }
 
@@ -192,15 +247,17 @@ validate_reports_before_dashboard() {
         fi
         GATE_NO_LOG=1 GATE_SKIP_COMMIT_MISSING_CHECK="$skip_commit" \
             bash "$PROJECT_DIR/scripts/gates/gate_report_format.sh" "$report" || return 1
-    done < <(python3 - "$REPORTS_DIR" "$CMD_ID" <<'PY'
-import pathlib, sys, yaml
+    done < <(python3 - 3< <(dashboard_matching_report_paths) <<'PY'
+import os, yaml
 matches = []
-for path in sorted(pathlib.Path(sys.argv[1]).glob('*.yaml')):
-    try:
-        data = yaml.safe_load(path.read_text(encoding='utf-8')) or {}
-    except (OSError, yaml.YAMLError):
+for raw_path in os.fdopen(3):
+    path = raw_path.strip()
+    if not path:
         continue
-    if str(data.get('parent_cmd', '')).strip() != sys.argv[2]:
+    try:
+        with open(path, encoding='utf-8') as stream:
+            data = yaml.safe_load(stream) or {}
+    except (OSError, yaml.YAMLError):
         continue
     status = str(data.get('status', '')).strip().lower()
     matches.append((path, status))
@@ -222,14 +279,22 @@ PY
 # a binary_checks mismatch (cmd_3932 production replay).  Keep legacy report
 # validation only for callers that have not supplied a reviewed bundle.
 if [[ -z "$BUNDLE_PATH" ]]; then
+    _du_phase_started=0
+    [[ "$_DU_PROFILE" == "1" ]] && _du_phase_started=$(_du_now_ms)
     validate_reports_before_dashboard
+    _du_profile_phase report_validation "$_du_phase_started"
 fi
 
 # ─── Main processing (flock for concurrency safety) ───
 LOCK_FILE="${DASHBOARD}.lock"
 (
+    _du_phase_started=0
+    [[ "$_DU_PROFILE" == "1" ]] && _du_phase_started=$(_du_now_ms)
     flock -w 10 200 || { echo "ERROR: flock取得失敗" >&2; exit 1; }
+    _du_profile_phase lock_wait "$_du_phase_started"
 
+    _du_phase_started=0
+    [[ "$_DU_PROFILE" == "1" ]] && _du_phase_started=$(_du_now_ms)
     python3 << 'PYEOF'
 import yaml, glob, os, sys, re, shutil, subprocess
 
@@ -658,17 +723,24 @@ else:
 if status_label == '完了' and not is_replacement:
     print('UPDATED: 連勝/cmd完了 counters')
 PYEOF
+    _du_profile_phase report_render "$_du_phase_started"
 
     # ─── Step 6.5: AUTO域リアルタイム状況更新 (dashboard_auto_section.sh) ───
     # cmd_406: _step65_metricsの手動regex更新を廃止。
     # dashboard_auto_section.shがAUTO域(忍者配備/パイプライン/メトリクス)を一括再生成する。
     # GP-078: SKIP_AUTO_SECTION=1の場合は省略（cmd_complete_gate.shがL4060で別途実行するため二重呼出防止）
     if [[ "$DRY_RUN" != true ]] && [[ "${SKIP_AUTO_SECTION:-}" != "1" ]]; then
+        _du_phase_started=0
+        [[ "$_DU_PROFILE" == "1" ]] && _du_phase_started=$(_du_now_ms)
         refresh_snapshot_before_auto_section || echo "WARN: Step 6.5 snapshot refresh failed（AUTO域は既存snapshot/一次task YAMLで継続）" >&2
+        _du_profile_phase snapshot_refresh "$_du_phase_started"
+        _du_phase_started=0
+        [[ "$_DU_PROFILE" == "1" ]] && _du_phase_started=$(_du_now_ms)
         if ! DASHBOARD_LOCK_HELD=1 bash "$SCRIPT_DIR/dashboard_auto_section.sh"; then
             echo "ERROR: Step 6.5 dashboard_auto_section.sh failed" >&2
             exit 1
         fi
+        _du_profile_phase auto_section "$_du_phase_started"
     fi
 
     # ─── Step 6.7: 要対応セクション安全ネット同期 (pending_decisions → dashboard) ───
@@ -770,7 +842,10 @@ STEP67_PY
     }
     # dry-runではPD同期不要（dashboard.md変更なし）
     if [[ "$DRY_RUN" != true ]]; then
+        _du_phase_started=0
+        [[ "$_DU_PROFILE" == "1" ]] && _du_phase_started=$(_du_now_ms)
         _step67_pd_sync || echo "WARN: Step 6.7 要対応セクション同期失敗（既存値を維持）" >&2
+        _du_profile_phase pending_decisions_sync "$_du_phase_started"
     fi
 
     # ─── Step 6.8: Postcondition — PD⇔要対応件数の整合性検証 ───
@@ -832,11 +907,16 @@ else:
     print(f'[dashboard] OK: PD⇔要対応一致 ({expected}件)')
 STEP68_PY
     }
+    _du_phase_started=0
+    [[ "$_DU_PROFILE" == "1" ]] && _du_phase_started=$(_du_now_ms)
     _step68_postcondition || true
+    _du_profile_phase pending_decisions_postcondition "$_du_phase_started"
 
     # ─── Step 7: Update header timestamps (skip in dry-run) ───
     # flock内で実行: 並行呼出し時のdashboard.md書込み競合を防止
     if [[ "$DRY_RUN" != true ]]; then
+        _du_phase_started=0
+        [[ "$_DU_PROFILE" == "1" ]] && _du_phase_started=$(_du_now_ms)
         NOW_DATE=$(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M')
         NOW_TIME=$(TZ=Asia/Tokyo date '+%H:%M')
         # 現行ヘッダー: "# 🏯 Dashboard [project] — YYYY-MM-DD HH:MM 更新"
@@ -870,6 +950,7 @@ if updated:
 HEADER_PY
         # 旧テンプレート互換（残存環境向け）
         sed -i "s/忍者配備状況（[0-9]\{2\}:[0-9]\{2\}更新）/忍者配備状況（${NOW_TIME}更新）/" "$DASHBOARD"
+        _du_profile_phase header_timestamp "$_du_phase_started"
     fi
 
 ) 200>"$LOCK_FILE"
@@ -1004,5 +1085,10 @@ VALIDATE_MODEL_PYEOF
 # ─── Run validation ───
 SETTINGS_FILE="$PROJECT_DIR/config/settings.yaml"
 if [[ "$DRY_RUN" != true ]]; then
+    _du_phase_started=0
+    [[ "$_DU_PROFILE" == "1" ]] && _du_phase_started=$(_du_now_ms)
     validate_dashboard "$DASHBOARD" "$SETTINGS_FILE"
+    _du_profile_phase dashboard_validation "$_du_phase_started"
 fi
+
+_du_profile_phase total "$_du_total_started"
