@@ -6354,11 +6354,13 @@ if true; then
     # 原理: description非空+binary_check非空+FILL_THIS不在ならAC記入済み=assumptions精査不要
     _c20_ac_ok=false
     if [[ -n "${AC_TEXT:-}" ]]; then
-        _c20_fill=$(grep -c 'FILL_THIS' <<< "$AC_TEXT" || true)
-        _c20_desc_empty=$(grep -cE "^[[:space:]]*description:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
-        _c20_ac_cnt=$(grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' <<< "$AC_TEXT" || true)
-        _c20_bc_total=$(grep -cE '^[[:space:]]*binary_check:' <<< "$AC_TEXT" || true)
-        _c20_bc_empty=$(grep -cE "^[[:space:]]*binary_check:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
+        # Check19 already computed these exact counters from the same AC_TEXT.
+        # Reuse them instead of spawning five duplicate grep processes.
+        _c20_fill="${_FILL_COUNT:-0}"
+        _c20_desc_empty="${_DESC_EMPTY_COUNT:-0}"
+        _c20_ac_cnt="${_AC_ENTRY_COUNT:-0}"
+        _c20_bc_total="${_BC_TOTAL:-0}"
+        _c20_bc_empty="${_BC_EMPTY:-0}"
         if [[ "${_c20_fill:-0}" -eq 0 && "${_c20_desc_empty:-0}" -eq 0 && \
               ( "${_c20_ac_cnt:-0}" -eq 0 || "${_c20_bc_total:-0}" -gt 0 ) && \
               "${_c20_bc_empty:-0}" -eq 0 ]]; then
