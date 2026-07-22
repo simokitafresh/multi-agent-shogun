@@ -223,8 +223,6 @@ LAST_WATCHER_RESTART=0  # inbox_watcher最終再起動時刻（epoch秒）
 WATCHER_RESTART_COOLDOWN_MIN=3  # inbox_watcher連続再起動防止クールダウン（分）
 LAST_BATCH_FLUSH=0   # ntfy_batch_flush最終実行時刻（epoch秒）
 CDP_CLEANUP_SCRIPT="$SCRIPT_DIR/scripts/cdp_chrome_cleanup.sh"
-CDP_CLEANUP_INTERVAL=300  # CDP cleanup最小間隔（秒）— 5分
-LAST_CDP_CLEANUP=0        # CDP cleanup最終実行時刻（epoch秒）
 LOCK_CLEANUP_INTERVAL=3600  # /tmp lock file cleanup間隔（秒）— 1時間
 LAST_LOCK_CLEANUP=0         # lock cleanup最終実行時刻（epoch秒）
 BULLETIN_ARCHIVE_INTERVAL=3600  # 掲示板archive間隔（秒）— 1時間
@@ -7908,28 +7906,35 @@ check_yaml_size() {
     fi
 }
 
-# ─── CDP Chrome idle連動クリーンアップ (cmd_905) ───
+# ─── CDP Chrome task終端連動クリーンアップ ───
 run_cdp_cleanup() {
+    local agent_name="$1"
+    local task_cmd="${2:-}"
     # スクリプト存在チェック（cmd_905_Aが未配備でもエラーにならない）
     if [ ! -x "$CDP_CLEANUP_SCRIPT" ]; then
         return 0
     fi
 
-    local now
-    now=$EPOCHSECONDS
-    local elapsed=$((now - LAST_CDP_CLEANUP))
-    if [ "$elapsed" -lt "$CDP_CLEANUP_INTERVAL" ]; then
-        log "CDP-CLEANUP-DEBOUNCE: ${elapsed}s < ${CDP_CLEANUP_INTERVAL}s, skip"
-        return 0
-    fi
-
-    log "CDP-CLEANUP: Running cdp_chrome_cleanup.sh (idle ninja detected)"
-    if bash "$CDP_CLEANUP_SCRIPT" >> "$LOG" 2>&1; then
-        log "CDP-CLEANUP: Completed successfully"
+    log "CDP-CLEANUP: owner=$agent_name cmd=${task_cmd:-any} terminal task detected"
+    local -a args=(--agent "$agent_name")
+    [ -n "$task_cmd" ] && args+=(--cmd "$task_cmd")
+    if bash "$CDP_CLEANUP_SCRIPT" "${args[@]}" >> "$LOG" 2>&1; then
+        log "CDP-CLEANUP: owner=$agent_name completed successfully"
     else
-        log "CDP-CLEANUP: Script exited with error (non-fatal)"
+        log "CDP-CLEANUP: owner=$agent_name script exited with error (non-fatal)"
     fi
-    LAST_CDP_CLEANUP=$now
+}
+
+cleanup_terminal_task_cdps() {
+    local name task_file status task_cmd
+    for name in "${NINJA_NAMES[@]}"; do
+        task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+        [ -f "$task_file" ] || continue
+        status=$(yaml_field_get "$task_file" "status" "" 2>/dev/null || true)
+        [[ "$status" =~ ^(done|failed)$ ]] || continue
+        task_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+        run_cdp_cleanup "$name" "$task_cmd"
+    done
 }
 
 # ═══ /tmp lock file定期cleanup ═══
@@ -8654,10 +8659,8 @@ while true; do
         fi
     fi
 
-    # ═══ CDP Chrome cleanup（idle忍者検出時 cmd_905） ═══
-    if [ ${#NEWLY_IDLE[@]} -gt 0 ]; then
-        run_cdp_cleanup
-    fi
+    # ═══ CDP Chrome cleanup（task done/failed終端時、owner限定） ═══
+    cleanup_terminal_task_cdps
 
     # ═══ STEP 1a: 家老陣形図の早期更新 ═══
     # 後段の定期gate/maintenanceが詰まっても、家老復帰・dashboardが古いsnapshotを掴まないようにする。

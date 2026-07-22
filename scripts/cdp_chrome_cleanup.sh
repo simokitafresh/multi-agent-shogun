@@ -1,80 +1,122 @@
 #!/usr/bin/env bash
-# CDP Chrome Cleanup — Kill all residual Chrome processes tracked by PID files
-# Standalone script callable from ninja_monitor.sh or cron
-# Location: /mnt/c/tools/multi-agent-shogun/scripts/cdp_chrome_cleanup.sh
+# CDP Chrome Cleanup — remove only the terminal task owner's isolated Chrome.
 set -euo pipefail
 
-PID_DIR="/tmp"
+PID_DIR="${CDP_PID_DIR:-/tmp}"
 PID_PREFIX="cdp_chrome_"
 LOG_PREFIX="[cdp_cleanup]"
 
-timestamp() {
-    printf '%(%Y-%m-%d %H:%M:%S)T' -1
+timestamp() { printf '%(%Y-%m-%d %H:%M:%S)T' -1; }
+log() { echo "${LOG_PREFIX} $(timestamp) $*"; }
+log_err() { echo "${LOG_PREFIX} $(timestamp) ERROR: $*" >&2; }
+
+usage() {
+    echo "Usage: $0 --agent AGENT [--cmd CMD]" >&2
+    echo "PID record: agent=... profile=... port=... cmd=... pid=... (pid may repeat)" >&2
+    exit 2
 }
 
-log() {
-    echo "${LOG_PREFIX} $(timestamp) $*"
-}
+agent=""
+cmd=""
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --agent) [ "$#" -ge 2 ] || usage; agent="$2"; shift 2 ;;
+        --cmd) [ "$#" -ge 2 ] || usage; cmd="$2"; shift 2 ;;
+        *) usage ;;
+    esac
+done
+[[ "$agent" =~ ^[a-z][a-z0-9_-]*$ ]] || usage
 
-log_err() {
-    echo "${LOG_PREFIX} $(timestamp) ERROR: $*" >&2
-}
-
-cleanup_all() {
-    local pid_files
-    pid_files=("${PID_DIR}/${PID_PREFIX}"*.pid)
-
-    # Check if glob matched anything
-    if [[ ! -f "${pid_files[0]:-}" ]]; then
-        log "No PID files found. Nothing to clean."
+process_command_line() {
+    local pid="$1"
+    if [ -n "${CDP_PROCESS_TABLE_FILE:-}" ]; then
+        awk -F '\t' -v pid="$pid" '$1 == pid { sub(/^[^\t]*\t/, ""); print; exit }' "$CDP_PROCESS_TABLE_FILE"
         return 0
     fi
-
-    local total=0
-    local killed=0
-    local failed=0
-
-    for pid_file in "${pid_files[@]}"; do
-        total=$((total + 1))
-        local basename
-        basename="$(basename "$pid_file")"
-        local port_str="${basename#${PID_PREFIX}}"
-        port_str="${port_str%.pid}"
-
-        if [[ ! "$port_str" =~ ^[0-9]+$ ]]; then
-            log_err "Malformed PID file: ${pid_file} — skipping"
-            failed=$((failed + 1))
-            continue
-        fi
-
-        local pid
-        pid="$(cat "$pid_file" 2>/dev/null || echo "")"
-
-        if [[ ! "$pid" =~ ^[0-9]+$ ]]; then
-            log_err "Invalid PID in ${pid_file}: '${pid}' — removing file"
-            rm -f "$pid_file"
-            failed=$((failed + 1))
-            continue
-        fi
-
-        log "Killing Chrome PID ${pid} (port ${port_str})..."
-        if powershell.exe -NoProfile -Command "Stop-Process -Id ${pid} -Force -ErrorAction SilentlyContinue" 2>/dev/null; then
-            log "PID ${pid} killed successfully"
-            killed=$((killed + 1))
-        else
-            log "PID ${pid} — process may already be gone"
-            killed=$((killed + 1))
-        fi
-
-        rm -f "$pid_file"
-        log "PID file removed: ${pid_file}"
-    done
-
-    log "Summary: ${killed}/${total} cleaned, ${failed} failed"
-    return 0
+    powershell.exe -NoProfile -Command \
+        "(Get-CimInstance Win32_Process -Filter \"ProcessId=${pid}\").CommandLine" 2>/dev/null | tr -d '\r'
 }
 
-# --- Main ---
-log "Starting CDP Chrome cleanup scan..."
-cleanup_all
+stop_process() {
+    local pid="$1"
+    if [ -n "${CDP_STOP_LOG:-}" ]; then
+        printf '%s\n' "$pid" >> "$CDP_STOP_LOG"
+        return 0
+    fi
+    powershell.exe -NoProfile -Command \
+        "Stop-Process -Id ${pid} -Force -ErrorAction Stop" >/dev/null 2>&1
+}
+
+cleanup_owner() {
+    local total=0 killed=0 stale=0 malformed=0 foreign=0
+    local pid_file
+    shopt -s nullglob
+    local pid_files=("${PID_DIR}/${PID_PREFIX}"*.pid)
+    shopt -u nullglob
+
+    for pid_file in "${pid_files[@]}"; do
+        local rec_agent="" profile="" port="" rec_cmd="" key value
+        local -a pids=()
+        while IFS='=' read -r key value; do
+            value="${value%$'\r'}"
+            case "$key" in
+                agent) rec_agent="$value" ;;
+                profile) profile="$value" ;;
+                port) port="$value" ;;
+                cmd) rec_cmd="$value" ;;
+                pid) pids+=("$value") ;;
+            esac
+        done < "$pid_file"
+
+        # Legacy numeric-only records have no ownership boundary. Never stop them.
+        if [ -z "$rec_agent" ]; then
+            foreign=$((foreign + 1))
+            continue
+        fi
+        if [ "$rec_agent" != "$agent" ] || { [ -n "$cmd" ] && [ "$rec_cmd" != "$cmd" ]; }; then
+            foreign=$((foreign + 1))
+            continue
+        fi
+
+        total=$((total + 1))
+        if [[ ! "$profile" =~ ^cdp-${agent}-[A-Za-z0-9._-]+$ ]] ||
+           [[ ! "$port" =~ ^[0-9]+$ ]] || [ -z "$rec_cmd" ] || [ "${#pids[@]}" -eq 0 ]; then
+            log_err "Malformed owned PID record removed: ${pid_file}"
+            rm -f -- "$pid_file"
+            malformed=$((malformed + 1))
+            continue
+        fi
+
+        local pid line
+        for pid in "${pids[@]}"; do
+            if [[ ! "$pid" =~ ^[0-9]+$ ]]; then
+                malformed=$((malformed + 1))
+                continue
+            fi
+            line="$(process_command_line "$pid" || true)"
+            if [ -z "$line" ]; then
+                stale=$((stale + 1))
+                continue
+            fi
+            # Chrome children do not all repeat --remote-debugging-port.  The
+            # unique isolated profile is therefore the per-process ownership
+            # token; port remains mandatory in the record and binds the group.
+            if [[ "$line" != *"$profile"* ]]; then
+                stale=$((stale + 1))
+                continue
+            fi
+            if stop_process "$pid"; then
+                killed=$((killed + 1))
+            else
+                stale=$((stale + 1))
+            fi
+        done
+        rm -f -- "$pid_file"
+    done
+
+    log "Summary: owner=${agent} cmd=${cmd:-any} records=${total} killed=${killed} stale=${stale} malformed=${malformed} foreign_kept=${foreign}"
+}
+
+log "Starting owner-scoped CDP cleanup..."
+cleanup_owner
 log "Done."
