@@ -1322,7 +1322,7 @@ YAML
     [ "$(grep -c "report_fingerprint:" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
 }
 
-# test_necessity: a crash after durable report event append but before task
+# test_necessity(cmd_karo_hotfix_completion_event_dedupe_20260723): a crash after durable report event append but before task
 # mutation must be repaired by an exact retry without waiting for monitor.
 @test "duplicate terminal report event synchronously repairs missing task done transition" {
     setup_git_test_env

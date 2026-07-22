@@ -5,7 +5,7 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
-# test_necessity: identical report bytes plus the same immutable task contract
+# test_necessity(cmd_karo_hotfix_completion_event_dedupe_20260723): identical report bytes plus the same immutable task contract
 # must execute report gate once across monitor cycles/restarts, while a real
 # contract change must create a new generation and re-enable validation.
 @test "report gate durable generation dedupes status churn and reopens on contract change" {
