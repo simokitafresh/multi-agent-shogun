@@ -6,7 +6,7 @@ Scope: `/rolling-returns`, `/summary`, `/trades`, `/admin`, `/admin/fof`, `/admi
 
 ## 84-cell result (7 pages × A-L)
 
-| page | A typography/title | B color/state | C spacing/layout | D surface/card | E table | F control | G chart | H navigation/title | I state | J responsive | K viewport state-color | L supporting text |
+| page | A page title | B color/state | C spacing/layout | D surface/card | E table | F control | G chart | H navigation/title | I state | J responsive | K viewport state-color | L supporting text |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | rolling-returns | section heading + table heading/cell, yes (`app/rolling-returns/page.tsx:117-166`; `components/rolling-returns-distribution-table.tsx:72`) | cell state helper, yes (`components/rolling-returns-summary-table.tsx:47-51`; `components/rolling-returns-distribution-table.tsx:41-44`) | container/card classes, yes (`app/rolling-returns/page.tsx:113-164`) | card surfaces, yes (`app/rolling-returns/page.tsx:116-174`) | table components/branches, yes (`app/rolling-returns/page.tsx:135-160`) | chart period controls, yes (`components/rolling-return-chart.tsx:325-356`) | SVG chart, yes (`components/rolling-return-chart.tsx:363-370`) | canonical PageShell title, yes (`app/rolling-returns/page.tsx:86`) | loading/error/no-data states, yes (`app/rolling-returns/page.tsx:87-131`) | desktop/mobile table branches, yes (`components/rolling-returns-summary-table.tsx:97,309`; `components/rolling-returns-distribution-table.tsx:71,136`) | data-cell color divergence, yes (`components/rolling-returns-distribution-table.tsx:104-169`) | section headings/chart annotation and absent table caption, yes (`app/rolling-returns/page.tsx:136-166`; `components/rolling-return-chart.tsx:363-370`) |
 | summary | section/table heading and numeric cell typography, yes (`components/summary-table.tsx:138-165`) | numeric cell/row state, yes (`components/summary-table.tsx:140-205`) | shell/table cell classes, yes (`components/page-shell.tsx:25-56`; `components/summary-table.tsx:143`) | bare table wrapper, yes (`components/summary-table.tsx:138-146`) | scroll table, yes (`components/summary-table.tsx:143-257`) | PageShell controls, yes (`app/summary/page.tsx:90-129`) | N/A yes: page chart import/JSX absent (`app/summary/page.tsx:9-12`) | canonical PageShell title, yes (`app/summary/page.tsx:91`) | permission/loading/error/no-data states, yes (`app/summary/page.tsx:80-110`) | overflow table behavior, yes (`components/summary-table.tsx:143-257`) | single-DOM cell state color, yes (`components/summary-table.tsx:190-257`) | analysis-period helper text, yes (`app/summary/page.tsx:120-125`) |
@@ -17,6 +17,13 @@ Scope: `/rolling-returns`, `/summary`, `/trades`, `/admin`, `/admin/fof`, `/admi
 | admin/visibility | local page h1/h2/table text, yes (`app/admin/visibility/page.tsx:596-1209`) | toggle/status cells, yes (`app/admin/visibility/page.tsx:756-1228`) | page/grid/cell classes, yes (`app/admin/visibility/page.tsx:581-1185`) | GlassCard/modal surfaces, yes (`app/admin/visibility/page.tsx:648-776`; `app/admin/visibility/components/ManageTiersModal.tsx:249-310`) | visibility matrix table, yes (`app/admin/visibility/page.tsx:772-1360`) | tier/page toggles/save/modal controls, yes (`app/admin/visibility/page.tsx:623-1360`) | N/A yes: chart absent (`app/admin/visibility/page.tsx:3-34`) | noncanonical local h1 + back/TierSelector, yes (`app/admin/visibility/page.tsx:581-623`) | auth/error/loading/disabled states, yes (`app/admin/visibility/page.tsx:550-1360`) | same DOM/grid/table overflow, yes (`app/admin/visibility/page.tsx:668-1360`) | shared toggle/status color, yes (`app/admin/visibility/page.tsx:772-1360`) | descriptions/status/metadata/modal help, yes (`app/admin/visibility/page.tsx:661-1228`; `app/admin/visibility/components/ManageTiersModal.tsx:215-409`) |
 
 ## A-axis canonical title separation
+
+The two corrected records below supersede the original A-cell text in the 84-cell table. A is strictly the page-title column; section/table typography is a secondary difference, not a substitute for the canonical title.
+
+| page | before (source matrix) | after (corrected A cell) | primary evidence |
+|---|---|---|---|
+| rolling-returns | `h2 lg/tables sm (page.tsx:117-166; dist:72)` | canonical PageShell h1 `text-2xl md:text-3xl font-bold tracking-tight text-foreground`, then local h2/table typography | `app/rolling-returns/page.tsx:86,117-166`; `components/page-shell.tsx:46-50`; `components/rolling-returns-distribution-table.tsx:72` |
+| summary | `PageShell/h2 lg/mono (summary-table.tsx:138-165)` (canonical h1 style/reference absent) | canonical PageShell h1 `text-2xl md:text-3xl font-bold tracking-tight text-foreground`, then local table typography | `app/summary/page.tsx:91`; `components/page-shell.tsx:46-50`; `components/summary-table.tsx:138-165` |
 
 | page | canonical page-title renderer | local heading | verdict |
 |---|---|---|---|
@@ -31,10 +38,10 @@ Scope: `/rolling-returns`, `/summary`, `/trades`, `/admin`, `/admin/fof`, `/admi
 ## Error/false-positive accounting
 
 - Verified cells: **84/84**; unchecked: **0**.
-- Element-description mismatches: **0/84**.
+- Element-description mismatches in source matrix: **2/84** (rolling-returns A, summary A); both corrected above.
 - Bad/nonexistent file:line references after expanding matrix aliases (`page`, `table`, `summary`, `dist`, `chart`, `FoFEditor`, `WeightBreakdown`, `modal`): **0/84**.
-- Recheck false positives: **0**. The apparent A-axis conflict was classification ambiguity, not a false implementation claim: `PageShell` title (canonical) and local `h1`/section heading (noncanonical/local) are now recorded separately.
-- Correction candidates: **0**; therefore no before/after replacement entries are required.
+- Recheck false positives: **0**. Both positive controls are confirmed source-matrix errors.
+- Correction candidates completed: **2/2**, with before/after/primary evidence above.
 
 ## Causal links
 
