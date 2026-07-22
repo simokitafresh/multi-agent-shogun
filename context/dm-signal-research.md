@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-22 cmd_4119 -->
-<!-- dm_signal_research_reflux: fingerprint=285c76b7c16e3cfc4aace9610963548cccc08eb4125318e4409366b09e06e3d0; mode=non-target; evidence_b64=cmVhZC1vbmx5IEYtYXhpcyBpbnZlbnRvcnk7IGltcGxlbWVudGF0aW9uIHBlbmRpbmcgYW5kIHN0YWJsZSBjb250ZXh0IHVwZGF0ZSBvdXRzaWRlIHRhc2sgc2NvcGU= -->
-<!-- source_commit:1d3ed9c7 reason:cmd_karo_recon2_dm_style_axis_j_202607222337 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=1d3ed9c7 -->
+<!-- last_updated: 2026-07-23 cmd_4122 -->
+<!-- dm_signal_research_reflux: fingerprint=20b00134477e52204aaf97ac80e4c71fd30a949e7ae627b960e9a12f99cffc78; mode=synced; evidence_b64=TOi7uGNvcHkvY2FwdGlvbuWFqOaVsOebo+afu+aIkOaenOOCkmF4aXPmlofmm7jjgbjkv53lrZjjgZflsIbou43ntbHlkIjlr77osaE= -->
+<!-- source_commit:af994b15 reason:cmd_karo_recon2_dm_style_axis_f_202607222337 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=af994b15 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
