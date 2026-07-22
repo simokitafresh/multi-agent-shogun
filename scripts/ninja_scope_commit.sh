@@ -174,9 +174,21 @@ create_and_publish_scoped_commit() {
     # hooks.  Observers must not mistake a bounded wait expiry for rc0.
     printf 'event=progress run_id=%s phase=pre_commit complete=false ledger=%s\n' \
         "$terminal_run_id" "$terminal_ledger" >&2
-    env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
-        git hook run --ignore-missing pre-commit >&2 \
-        || { echo "BLOCK: pre-commit hook rejected scoped commit" >&2; return 1; }
+    helper_repo_root="$(cd "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/.." && pwd)"
+    if [[ "$repo_root" != "$helper_repo_root" && -f "$repo_root/lefthook.yml" && -x "$repo_root/.git/hooks/pre-commit" && \
+          -f "$repo_root/scripts/run_precommit_checks.sh" ]] && \
+       grep -q 'run: bash scripts/run_precommit_checks.sh' "$repo_root/lefthook.yml"; then
+        # The configured hook command is the contract; invoke it directly.
+        # Lefthook first runs an unbounded repository-wide `git status`, which
+        # can stall for minutes on DrvFS despite our private scoped index.
+        env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
+            bash "$repo_root/scripts/run_precommit_checks.sh" >&2 \
+            || { echo "BLOCK: pre-commit hook command rejected scoped commit" >&2; return 1; }
+    else
+        env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
+            git hook run --ignore-missing pre-commit >&2 \
+            || { echo "BLOCK: pre-commit hook rejected scoped commit" >&2; return 1; }
+    fi
     tree_hash="$(git write-tree)" \
         || { echo "BLOCK: failed to write scoped commit tree" >&2; return 1; }
     command_stderr="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-git-exit.XXXXXX")"

@@ -1015,6 +1015,20 @@ HOOK
     [ "$(cat "$REPO/.git/hook-marker")" = hook-ran ]
 }
 
+@test "lefthook configured command bypasses unbounded wrapper status scan" {
+    mkdir -p "$REPO/.git/hooks" "$REPO/scripts"
+    printf '#!/bin/sh\nexit 99\n' > "$REPO/.git/hooks/pre-commit"
+    chmod +x "$REPO/.git/hooks/pre-commit"
+    printf 'pre-commit:\n  commands:\n    repo-checks:\n      run: bash scripts/run_precommit_checks.sh\n' > "$REPO/lefthook.yml"
+    printf '#!/bin/sh\nprintf direct > .git/direct-hook-marker\n' > "$REPO/scripts/run_precommit_checks.sh"
+    chmod +x "$REPO/scripts/run_precommit_checks.sh"
+    printf 'own change\n' >> "$REPO/own.txt"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m direct-hook -- own.txt"
+    [ "$status" -eq 0 ]
+    [ "$(cat "$REPO/.git/direct-hook-marker")" = direct ]
+}
+
 @test "GA-222: 正本が無いrepoではsync_git_hooks呼び出しが無害にno-opする" {
     printf 'own change\n' >> "$REPO/own.txt"
 
