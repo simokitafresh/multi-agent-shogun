@@ -97,8 +97,38 @@ def _resolve_commit_repo(report, task, root):
     return canonical, None
 
 
+def _resolved_commit_contract(report, task):
+    """Resolve task/report contract without weakening identity or contradictions."""
+    task_contract = task.get("commit_contract") if isinstance(task, dict) else None
+    report_contract = report.get("commit_contract") if isinstance(report, dict) else None
+
+    if isinstance(task_contract, dict):
+        if (
+            isinstance(report_contract, dict)
+            and report_contract.get("required") in (True, False)
+            and task_contract.get("required") in (True, False)
+            and report_contract.get("required") is not task_contract.get("required")
+        ):
+            return None, "task/report commit_contract required mismatch"
+        return task_contract, None
+
+    if not isinstance(report_contract, dict):
+        return None, None
+    task_id = str(task.get("task_id") or "").strip()
+    parent_cmd = str(task.get("parent_cmd") or "").strip()
+    if task_id != str(report.get("task_id") or "").strip() or parent_cmd != str(report.get("parent_cmd") or "").strip():
+        return None, "report commit_contract identity mismatch"
+    if report_contract.get("required") is False:
+        task_type = str(report_contract.get("task_type") or report.get("task_type") or "").strip()
+        if task_type not in {"recon", "scout"}:
+            return None, "report commit_contract required=false is limited to no-code recon/scout"
+    return report_contract, None
+
+
 def commit_contract_errors(report, task, root):
-    contract = task.get("commit_contract")
+    contract, contract_error = _resolved_commit_contract(report, task)
+    if contract_error:
+        return [contract_error]
     if isinstance(contract, dict) and contract.get("required") is False:
         return []
     identity = str(report.get("commit_hash") or "").strip()
