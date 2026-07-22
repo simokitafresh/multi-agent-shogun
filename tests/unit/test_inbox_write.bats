@@ -248,6 +248,22 @@ setup() {
     [[ "$output" == *'does not identify exactly one awaiting event'* ]]
 }
 
+# test_necessity: a prompt created after send prechecks but before the locked append is bound at the final durable checkpoint.
+@test "infra bug answer identity refreshes live root at locked append" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/retro/verbatim_awaiting_answer"
+    hook="$TEST_TMPDIR/bin/flock"
+    mkdir -p "${hook%/*}"
+    printf '%s\n' '#!/bin/bash' \
+      'if [ ! -e "$INBOX_WRITE_ROOT_OVERRIDE/queue/retro/verbatim_awaiting_answer/live.event" ]; then' \
+      "  printf 'testninja\\nevent:live\\nfixture\\nkey-live\\n' > \"\$INBOX_WRITE_ROOT_OVERRIDE/queue/retro/verbatim_awaiting_answer/live.event\"" \
+      'fi' 'exec /usr/bin/flock "$@"' > "$hook"
+    chmod +x "$hook"
+    run env PATH="$TEST_TMPDIR/bin:$PATH" bash "$TEST_INBOX_WRITE" karo "live answer" infra_bug_suspected testninja investigate
+    [ "$status" -eq 0 ]
+    [ "$(grep -c "event_id: 'event:live'" "$TEST_INBOX_DIR/karo.yaml")" -eq 1 ]
+}
+
 # =============================================================================
 # T-001: 引数バリデーション — target未指定でexit 1
 # =============================================================================

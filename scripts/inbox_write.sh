@@ -2424,6 +2424,50 @@ while [ $attempt -lt $max_attempts ]; do
     (
         flock -w 5 200 || exit 1
 
+        # Report/retro prechecks above can be slow enough for a prompt to become
+        # visible after the first identity scan.  Resolve again at the durable
+        # append checkpoint so a 0 -> 1 live transition cannot persist an
+        # unbound answer (the 12:57 prompt / 12:59 answer incident).
+        if [ "$TYPE" = "infra_bug_suspected" ]; then
+            _retro_event_id="${RETRO_EVENT_ID:-}"
+            _retro_matches=()
+            for _retro_hold in "$SCRIPT_DIR"/queue/retro/verbatim_awaiting_answer/*.event; do
+                [ -f "$_retro_hold" ] || continue
+                if [ "$(sed -n '1p' "$_retro_hold")" = "$FROM" ]; then
+                    _retro_matches+=("$(sed -n '2p' "$_retro_hold")")
+                fi
+            done
+            if [ -n "$_retro_event_id" ]; then
+                _retro_exact=0
+                for _retro_candidate in "${_retro_matches[@]}"; do
+                    [ "$_retro_candidate" = "$_retro_event_id" ] && _retro_exact=$((_retro_exact + 1))
+                done
+                if [ "$_retro_exact" -ne 1 ]; then
+                    echo "[retro_answer_identity] BLOCKED: RETRO_EVENT_ID does not identify exactly one awaiting event for ${FROM}" >&2
+                    exit 2
+                fi
+            elif [ "${#_retro_matches[@]}" -eq 1 ]; then
+                _retro_event_id="${_retro_matches[0]}"
+            elif [ "${#_retro_matches[@]}" -gt 1 ]; then
+                echo "[retro_answer_identity] BLOCKED: ambiguous awaiting events for ${FROM}: ${#_retro_matches[@]}" >&2
+                exit 2
+            fi
+            _locked_identity_fields=("${_identity_fields[@]}")
+            if [ -n "$_retro_event_id" ]; then
+                # Drop a stale pre-lock identity before appending the live one.
+                _locked_identity_fields=()
+                for ((_i=0; _i<${#_identity_fields[@]}; _i+=2)); do
+                    [ "${_identity_fields[_i]}" = "event_id" ] || _locked_identity_fields+=("${_identity_fields[_i]}" "${_identity_fields[_i+1]}")
+                done
+                _locked_identity_fields+=(event_id "$_retro_event_id")
+            fi
+            if [ -n "$ACTION" ]; then
+                _msg_block="$(inbox_build_message_block action "$ACTION" content "$CONTENT" from "$FROM" id "$MSG_ID" read "$MESSAGE_READ_STATE" timestamp "$TIMESTAMP" type "$TYPE" "${_locked_identity_fields[@]}")"$'\n'
+            else
+                _msg_block="$(inbox_build_message_block content "$CONTENT" from "$FROM" id "$MSG_ID" read "$MESSAGE_READ_STATE" timestamp "$TIMESTAMP" type "$TYPE" "${_locked_identity_fields[@]}")"$'\n'
+            fi
+        fi
+
         # Initialize inbox under the same flock that protects message append.
         if [ ! -f "$INBOX" ]; then
             printf 'messages: []\n' > "$INBOX"
