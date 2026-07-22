@@ -6317,7 +6317,19 @@ fi
 # --- Check 19.6: role-neutral universal shard entrance (30分単独をfail-closed) ---
 # Save入口でも同じ契約を自動検証する。manifestの永続生成はdeploy_task入口が担当する。
 check_universal_shard_contract() {
-    local tmp result rc=0
+    local tmp result rc=0 estimated
+    estimated="$(cmd_block_get_field "estimated_minutes")"
+    # The Python contract only performs substantive work at >=30 minutes.
+    # Keep the exact not_required result on the overwhelmingly common short
+    # path without starting Python or scanning every worker task YAML.
+    if [[ -z "$estimated" ]]; then
+        printf 'PASS(universal_shard={"estimated_minutes": 0.0, "status": "not_required"})\n'
+        return 0
+    fi
+    if [[ "$estimated" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk -v n="$estimated" 'BEGIN { exit !(n < 30) }'; then
+        printf 'PASS(universal_shard={"estimated_minutes": %s, "status": "not_required"})\n' "$estimated"
+        return 0
+    fi
     tmp="$(mktemp)"
     printf '%s\n' "$CMD_BLOCK_NC" >"$tmp"
     result="$(python3 "$PROJECT_DIR/scripts/lib/universal_shard_contract.py" "$tmp" \
