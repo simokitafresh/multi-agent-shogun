@@ -181,19 +181,7 @@ print(str(data.get("status", "")))
 PY
 )
         if [ "$_rfs_batch_status" = "completed" ] || [ "$_rfs_batch_status" = "done" ] || [ "$_rfs_batch_status" = "failed" ]; then
-            _rfs_gate_started="$(_rfs_mono_ms)"
-            # The batch validator above is the local, fail-closed gate: it has
-            # checked every terminal prerequisite and derived the verdict in
-            # the same process that produced these exact bytes.  Publish its
-            # fingerprint while we still own the report gate singleflight so
-            # inbox_write/review callers can reuse precisely this revision.
             _rfs_validated_fp="$_rfs_current_fp"
-            _rfs_fp_cache="${GATE_FINGERPRINT_CACHE_FILE:-${_rfs_batch_report}.validated_fingerprints}"
-            # We own the report gate lock, so no reader can inspect this cache
-            # until the single complete fingerprint is present.  Keeping only
-            # the current revision also prevents stale cache growth.
-            printf '%s\n' "$_rfs_validated_fp" >"$_rfs_fp_cache"
-            _rfs_phase local_gate "$_rfs_gate_started"
             _rfs_batch_worker=$(python3 - "$_rfs_batch_report" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
@@ -246,15 +234,14 @@ PY
                 echo "FAILPOINT: terminal bytes persisted before lifecycle publish" >&2
                 exit 86
             fi
-            _rfs_publish_started="$(_rfs_mono_ms)"
-            _rfs_phase publish "$_rfs_publish_started"
             _rfs_inbox_started="$(_rfs_mono_ms)"
             GATE_SINGLEFLIGHT_OWNER=1 GATE_OWNER_PID="$$" GATE_PHASE_RECEIPT="$_rfs_phase_receipt" \
-            GATE_VALIDATED_FINGERPRINT="$_rfs_validated_fp" \
             bash "$_rfs_inbox_write" karo \
                 "${_rfs_batch_worker}${_rfs_event_label}。report=$(basename "$_rfs_batch_report") parent_cmd=${_rfs_batch_parent}" \
                 "$_rfs_event_type" "$_rfs_batch_worker" notify_karo
             _rfs_phase inbox_write "$_rfs_inbox_started"
+            _rfs_publish_started="$(_rfs_mono_ms)"
+            _rfs_phase publish "$_rfs_publish_started"
             _rfs_total_ms=$(( $(_rfs_mono_ms) - _rfs_wait_started ))
             if [ "$_rfs_total_ms" -gt 1000 ]; then
                 printf 'infra_bug_suspected\twall_ms=%s\tcaller=%s\towner_pid=%s\tfingerprint=%s\n' \
