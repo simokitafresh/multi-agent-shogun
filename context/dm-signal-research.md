@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-14 cmd_3903_context_sync_202607141136 -->
-<!-- dm_signal_research_reflux: fingerprint=494a896fb4164d5a410517f3c303f793ad5b48ac33519d4baad9069ea48f3ece; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtZnJvbnRlbmQubWQgwqcxNzogY21kXzQxMTYgQTIgc2VjdGlvbi1oZWFkaW5nIDU3LzU3IGNhbm9uaWNhbDsgaW52ZW50b3J5IGRvY3MvcmVzZWFyY2gvY21kXzQxMTZfYTJfaGVhZGluZ19pbnZlbnRvcnkubWQ= -->
-<!-- source_commit:95a58350 reason:cmd_4119 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=95a58350 -->
+<!-- last_updated: 2026-07-22 cmd_4119 -->
+<!-- dm_signal_research_reflux: fingerprint=285c76b7c16e3cfc4aace9610963548cccc08eb4125318e4409366b09e06e3d0; mode=non-target; evidence_b64=cmVhZC1vbmx5IEYtYXhpcyBpbnZlbnRvcnk7IGltcGxlbWVudGF0aW9uIHBlbmRpbmcgYW5kIHN0YWJsZSBjb250ZXh0IHVwZGF0ZSBvdXRzaWRlIHRhc2sgc2NvcGU= -->
+<!-- source_commit:b0cc9240 reason:cmd_karo_recon2_dm_style_axis_h_202607222337 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=b0cc9240 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
