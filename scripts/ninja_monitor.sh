@@ -2910,11 +2910,12 @@ check_and_update_done_task() (
     # 忍者が先にdoneへ更新する正常経路でpromotion ledger writerが一度も起動しなかった。
     # parent_cmd/task_id一致を確認後に冪等writerのみ実行し、状態更新は引き続き省略する。
     if [ "$task_status" = "done" ]; then
-        (_reflux_promotion_record_completion "$report_file" || \
-            log "REFLUX-LEDGER-BLOCK: failed to reconcile done task report $(basename "$report_file")") &
+        _reflux_promotion_record_completion_detached "$report_file" || \
+            log "REFLUX-LEDGER-BLOCK: failed to detach done task report $(basename "$report_file")"
         # The task/report lifecycle is already terminal.  Publish that state
-        # immediately instead of waiting for the next monitor-cycle snapshot.
-        write_karo_snapshot
+        # with the single-agent atomic writer.  A full snapshot scans every
+        # report/pane and previously stalled this fast path for minutes.
+        refresh_karo_snapshot_task_assignment "$name"
         return 0
     fi
 
@@ -2986,9 +2987,9 @@ check_and_update_done_task() (
                 return 1
             fi
             log "AUTO-DONE: $name task auto-updated to done (report=$(basename "$report_file"), parent_cmd=$report_parent_cmd, status=$report_status)"
-            (_reflux_promotion_record_completion "$report_file" || \
-                log "REFLUX-LEDGER-BLOCK: failed to record $(basename "$report_file")") &
-            write_karo_snapshot
+            _reflux_promotion_record_completion_detached "$report_file" || \
+                log "REFLUX-LEDGER-BLOCK: failed to detach $(basename "$report_file")"
+            refresh_karo_snapshot_task_assignment "$name"
             return 0
             ;;
         *)
@@ -4145,6 +4146,25 @@ PY
             fi
         done <<< "$lesson_ids"
     } 200>"$lock_file"
+}
+
+# A plain background subshell remains attached to the monitor's command-
+# substitution pipes and can keep the done fast-path waiting.  Double-fork a
+# lib-only worker with closed stdio.  Completion is idempotent, so a launch
+# failure is retried on the next cycle while the task remains done.
+_reflux_promotion_record_completion_detached() {
+    local report_file="$1"
+    local monitor_script="${BASH_SOURCE[0]}"
+    local ledger="${REFLUX_PROMOTION_LEDGER:-$SCRIPT_DIR/logs/reflux_promotion_completed.tsv}"
+    [ -r "$report_file" ] || return 1
+    command -v setsid >/dev/null 2>&1 || return 1
+    setsid -f env NINJA_MONITOR_LIB_ONLY=1 REFLUX_PROMOTION_LEDGER="$ledger" \
+        bash -c '
+            source "$1"
+            SCRIPT_DIR="$2"
+            _reflux_promotion_record_completion "$3"
+        ' _ "$monitor_script" "$SCRIPT_DIR" "$report_file" \
+        </dev/null >/dev/null 2>&1
 }
 
 _reflux_promotion_backfill_and_check() {
@@ -6899,8 +6919,10 @@ refresh_karo_snapshot_task_assignment() {
 
     {
         flock -x -w 5 200 || return 4
-        local tmp_file existing_line ctx_field model_field new_line
+        local tmp_file snapshot_source existing_line ctx_field model_field new_line
         tmp_file=$(mktemp "${snapshot_file}.tmp.XXXXXX") || return 5
+        snapshot_source="$snapshot_file"
+        [ -f "$snapshot_source" ] || snapshot_source=/dev/null
         existing_line=$(awk -F'|' -v n="$name" '$1=="ninja" && $2==n { print; exit }' "$snapshot_file" 2>/dev/null || true)
         ctx_field=$(awk -F'|' '{for(i=1;i<=NF;i++) if($i ~ /^CTX:/){print $i; exit}}' <<< "$existing_line")
         model_field=$(awk -F'|' '{for(i=1;i<=NF;i++) if($i ~ /^M:/){print $i; exit}}' <<< "$existing_line")
@@ -6920,7 +6942,7 @@ refresh_karo_snapshot_task_assignment() {
             }
             { print }
             END { if (!replaced) print replacement }
-        ' "$snapshot_file" > "$tmp_file" && mv "$tmp_file" "$snapshot_file" || {
+        ' "$snapshot_source" > "$tmp_file" && mv "$tmp_file" "$snapshot_file" || {
             rm -f "$tmp_file"
             return 6
         }

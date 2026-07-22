@@ -81,3 +81,64 @@ monitor_lib() {
   [ "$status" -eq 0 ]
   ! grep -Eq '(^|[;&|[:space:]])(pkill|killall|tmux[[:space:]]+kill|kill[[:space:]]+-[^0])' <<< "$output"
 }
+
+# test_necessity: done fast-path must publish snapshot/autoclear state without
+# waiting for a contended promotion ledger, while the detached writer persists it.
+@test "done fast-path detaches promotion ledger writer without losing completion" {
+  run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." bash -c '
+    export NINJA_MONITOR_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+    SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+    LOG="$BATS_TEST_TMPDIR/monitor.log"; REFLUX_PROMOTION_LEDGER="$BATS_TEST_TMPDIR/promotion.tsv"
+    mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/locks" "$STATE_DIR"
+    task="$SCRIPT_DIR/queue/tasks/alpha.yaml"; report="$BATS_TEST_TMPDIR/completed.yaml"
+    printf "task:\n  parent_cmd: cmd_reflux_promotion_probe\n  task_id: task_probe\n  status: done\n" >"$task"
+    printf "parent_cmd: cmd_reflux_promotion_probe\ntask_id: task_probe\nstatus: completed\nverdict: PASS\nresult:\n  summary: 昇格候補 L999\nbinary_checks: {}\n" >"$report"
+    find_matching_report_file() { printf "%s\n" "$report"; }
+    write_karo_snapshot() { sleep 2; }
+    refresh_karo_snapshot_task_assignment() { date +%s%3N >"$BATS_TEST_TMPDIR/snapshot_at"; }
+    log() { :; }
+    flock "$REFLUX_PROMOTION_LEDGER.lock" -c "sleep 2" & holder=$!
+    sleep 0.1
+    start=$(date +%s%3N)
+    check_and_update_done_task alpha
+    elapsed=$(( $(date +%s%3N) - start ))
+    [ "$elapsed" -lt 1000 ]
+    [ -s "$BATS_TEST_TMPDIR/snapshot_at" ]
+    # A background child that inherits deploy_lock_fd makes autoclear/deploy
+    # observe the task as busy even though the fast-path already returned.
+    flock -n "$SCRIPT_DIR/queue/locks/deploy_ninja_alpha.lock" -c true
+    wait "$holder"
+    deadline=$(( EPOCHSECONDS + 5 ))
+    until grep -q $'"'"'\tL999\t'"'"' "$REFLUX_PROMOTION_LEDGER" 2>/dev/null; do
+      [ "$EPOCHSECONDS" -lt "$deadline" ] || exit 91
+      sleep 0.1
+    done
+    printf "elapsed_ms=%s promotion_count=%s\n" "$elapsed" "$(grep -c $'"'"'\tL999\t'"'"' "$REFLUX_PROMOTION_LEDGER")"
+  '
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"promotion_count=1"* ]]
+}
+
+# test_necessity: a terminal done task remains eligible for exactly one
+# successful autoclear after the monitor fast-path publishes its state.
+@test "done task reaches autoclear after fast-path without singleton regression" {
+  run env PROJECT_ROOT="$BATS_TEST_DIRNAME/../.." bash -c '
+    export NINJA_MONITOR_LIB_ONLY=1
+    source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+    SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; mkdir -p "$SCRIPT_DIR/queue/tasks"
+    printf "task:\n  status: done\n" >"$SCRIPT_DIR/queue/tasks/alpha.yaml"
+    PANE_TARGETS[alpha]=fixture-pane
+    tmux() { [ "$1" = display-message ] && printf "alpha\n" || return 0; }
+    cli_type() { printf "codex\n"; }
+    get_context_pct() { printf "42\n"; }
+    cli_profile_get() { [ "$2" = clear_debounce ] && printf "0\n" || printf "\n"; }
+    can_send_clear_with_report_gate() { return 0; }
+    safe_send_clear() { printf "%s|%s|%s\n" "$1" "$2" "$3" >>"$BATS_TEST_TMPDIR/clears"; }
+    _handle_auto_clear alpha "$EPOCHSECONDS"
+    [ "$(wc -l <"$BATS_TEST_TMPDIR/clears")" -eq 1 ]
+    grep -Fx "fixture-pane|alpha|AUTO-CLEAR" "$BATS_TEST_TMPDIR/clears"
+  '
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"fixture-pane|alpha|AUTO-CLEAR"* ]]
+}
