@@ -833,11 +833,28 @@ echo "■ SG-PRE25: command×files_modified名前照合(LG036)"
 if [ -n "${PARENT_CMD:-}" ] && [ -n "${FILES_MODIFIED:-}" ]; then
     _cmd_spec="$REPO_ROOT/queue/shogun_to_karo.yaml"
     if [ -f "$_cmd_spec" ]; then
+        _pre25_assigned_acs=$(python3 - "$REPORT_PATH" "${TASK_FILE:-}" <<'PY'
+import sys, yaml
+def load(path):
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return yaml.safe_load(fh) or {}
+    except (OSError, yaml.YAMLError):
+        return {}
+report = load(sys.argv[1])
+task = load(sys.argv[2]).get("task", {}) if len(sys.argv) > 2 and sys.argv[2] else {}
+raw = report.get("assigned_acs") or report.get("parent_ac_coverage") or task.get("assigned_acs") or []
+if isinstance(raw, str):
+    raw = [raw]
+print(",".join(str(v) for v in raw if str(v).strip()))
+PY
+)
         _pre25_result=$(bash "$REPO_ROOT/scripts/lib/extract_command_files.sh" \
             --cmd-id "${PARENT_CMD}" \
             --spec "$_cmd_spec" \
             --repo "$REPO_ROOT" \
             --files-modified "${FILES_MODIFIED}" \
+            --assigned-acs "${_pre25_assigned_acs}" \
             --report "$REPORT_PATH" 2>/dev/null || true)
         # 複数行出力対応: READONLY_EXCLUDED行とWARN/PASS行を分離処理
         _has_warn=0
@@ -876,6 +893,11 @@ elif [ "${FM_FORMAT_INVALID:-0}" = "1" ]; then
     ERRORS=$((ERRORS + 1))
 else
     echo "  SKIP: PARENT_CMD or FILES_MODIFIED empty"
+fi
+
+if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE25" ]; then
+    [ "$ERRORS" -eq 0 ]
+    exit $?
 fi
 
 # ─── GATE_PREDICTION (自動計算) ───

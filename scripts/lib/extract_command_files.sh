@@ -7,7 +7,7 @@ usage() {
     cat >&2 <<'EOF'
 Usage:
   extract_command_files.sh --command-text <text> --repo <repo> [--target-path <path> ...]
-  extract_command_files.sh --cmd-id <cmd_id> --spec <yaml> --repo <repo> [--files-modified <paths>]
+  extract_command_files.sh --cmd-id <cmd_id> --spec <yaml> --repo <repo> [--files-modified <paths>] [--assigned-acs <AC1,AC2>]
 EOF
 }
 
@@ -17,6 +17,7 @@ spec_file=""
 repo=""
 files_modified=""
 report_file=""
+assigned_acs=""
 target_paths=()
 
 while [[ $# -gt 0 ]]; do
@@ -45,6 +46,10 @@ while [[ $# -gt 0 ]]; do
             report_file="${2:-}"
             shift 2
             ;;
+        --assigned-acs)
+            assigned_acs="${2:-}"
+            shift 2
+            ;;
         --target-path)
             target_paths+=("${2:-}")
             shift 2
@@ -69,6 +74,7 @@ SPEC_FILE_ENV="$spec_file" \
 REPO_ENV="$repo" \
 FILES_MODIFIED_ENV="$files_modified" \
 REPORT_FILE_ENV="$report_file" \
+ASSIGNED_ACS_ENV="$assigned_acs" \
 TARGET_PATHS_ENV="$(printf '%s\n' "${target_paths[@]}")" \
 python3 - <<'PY'
 import glob
@@ -85,6 +91,7 @@ fm_raw = os.environ.get("FILES_MODIFIED_ENV", "")
 report_file = os.environ.get("REPORT_FILE_ENV", "")
 target_paths = [p.strip().strip("`'\"") for p in os.environ.get("TARGET_PATHS_ENV", "").splitlines() if p.strip()]
 spec = {}
+assigned_acs = {v.upper() for v in re.split(r"[\s,]+", os.environ.get("ASSIGNED_ACS_ENV", "")) if v.strip()}
 
 def load_cmd_from_payload(payload, target_cmd):
     commands = payload.get("commands", {}) if isinstance(payload, dict) else {}
@@ -101,6 +108,19 @@ if cmd_id and not cmd_text and spec_file and os.path.exists(spec_file):
         with open(spec_file, encoding="utf-8") as fh:
             spec = load_cmd_from_payload(yaml.safe_load(fh) or {}, cmd_id)
         cmd_text = str(spec.get("command", "") or "")
+        criteria = spec.get("acceptance_criteria") or []
+        if assigned_acs and isinstance(criteria, (list, dict)):
+            if isinstance(criteria, dict):
+                rows = [dict(row, id=ac_id) for ac_id, row in criteria.items() if isinstance(row, dict)]
+            else:
+                rows = [row for row in criteria if isinstance(row, dict)]
+            all_ids = {str(row.get("id", "")).upper() for row in rows if row.get("id")}
+            if assigned_acs < all_ids:
+                cmd_text = "\n".join(
+                    str(row.get("description", "") or "")
+                    for row in rows
+                    if str(row.get("id", "")).upper() in assigned_acs
+                )
     except Exception as exc:
         print(f"SKIP: {exc}")
         raise SystemExit(0)
@@ -210,6 +230,10 @@ for idx, match in enumerate(matches):
     if is_probable_product_token(ref):
         continue
     seen.add(ref)
+    if target_paths and any(ref_matches_target(ref, target) for target in target_paths):
+        write_refs.append(os.path.basename(ref))
+        debug(ref, "target_path_match readonly=False")
+        continue
     sentence_end_candidates = [pos for pos in (cmd_text.find("\n", match.end()), cmd_text.find("。", match.end()), cmd_text.find("；", match.end()), cmd_text.find(";", match.end())) if pos >= 0]
     sentence_end = min(sentence_end_candidates) if sentence_end_candidates else len(cmd_text)
     next_file_start = matches[idx + 1].start() if idx + 1 < len(matches) else sentence_end
