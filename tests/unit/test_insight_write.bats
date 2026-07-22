@@ -19,6 +19,14 @@ setup() {
     ln -s "$PROJECT_ROOT/scripts/insight_resolve.sh" "${TEST_TMP}/scripts/insight_resolve.sh"
     ln -s "$PROJECT_ROOT/scripts/lib/yaml_field_set.sh" "${TEST_TMP}/scripts/lib/yaml_field_set.sh"
     chmod +x "${TEST_TMP}/scripts/insight_write.sh"
+
+    # Every fixture must stay off the production memory DB.  The symlinked
+    # live-insert module resolves its own real path, so leaving SHOGUN_MEMORY_DB
+    # unset silently selects PROJECT_ROOT/data/multi_agent_shogun_memory.db.
+    # TEST_TMP is an ext4 /tmp directory; use it as the primary test DB and do
+    # not build a redundant cache copy for this already-isolated database.
+    export SHOGUN_MEMORY_DB="${TEST_TMP}/data/test_memory.db"
+    export SHOGUN_MEMORY_DB_SKIP_CACHE_SYNC=1
 }
 
 teardown() {
@@ -59,6 +67,52 @@ CREATE VIRTUAL TABLE events_fts USING fts5(
 """)
 conn.commit()
 PY
+}
+
+# test_necessity: insight-write fixtures must never open the production memory DB and a locked isolated SQLite write must fail within the configured busy timeout.
+@test "memory DB isolation: ext4 fixture only and locked insert exits within timeout" {
+    production_db="$PROJECT_ROOT/data/multi_agent_shogun_memory.db"
+    [ "$SHOGUN_MEMORY_DB" != "$production_db" ]
+    create_memory_db_fixture "$SHOGUN_MEMORY_DB"
+    [ "$(stat -f -c %T "$(dirname "$SHOGUN_MEMORY_DB")")" != "9p" ]
+
+    ready="$TEST_TMP/lock.ready"
+    release="$TEST_TMP/lock.release"
+    python3 - "$SHOGUN_MEMORY_DB" "$ready" "$release" <<'PY' &
+import sqlite3
+import sys
+import time
+from pathlib import Path
+
+db_path, ready_path, release_path = sys.argv[1:]
+conn = sqlite3.connect(db_path)
+conn.execute("BEGIN EXCLUSIVE")
+Path(ready_path).touch()
+deadline = time.monotonic() + 12
+while not Path(release_path).exists() and time.monotonic() < deadline:
+    time.sleep(0.02)
+conn.rollback()
+conn.close()
+PY
+    locker_pid=$!
+    for _ in $(seq 1 100); do
+        [ -f "$ready" ] && break
+        sleep 0.02
+    done
+    [ -f "$ready" ]
+
+    started_ms="$(date +%s%3N)"
+    run timeout 8s python3 "${TEST_TMP}/scripts/memory_db_live_insert.py" \
+        insight --entry-id INS-LOCKED --ts 2026-07-23T04:15:00+0900 \
+        --insight "locked fixture" --priority high --source unit_test \
+        --status pending --resolved-at "" --source-file "$TEST_TMP/queue/insights.yaml"
+    elapsed_ms=$(( $(date +%s%3N) - started_ms ))
+    [ "$status" -ne 0 ]
+    [ "$status" -ne 124 ]
+    [ "$elapsed_ms" -le 7000 ]
+
+    touch "$release"
+    wait "$locker_pid"
 }
 
 # --- 1. 正常なinsight追加 ---
