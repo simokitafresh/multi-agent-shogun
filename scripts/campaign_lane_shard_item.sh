@@ -5,6 +5,8 @@ set -uo pipefail
 # deploy の終了は配備完了に過ぎない。report YAML の終端 PASS だけを shard success にする。
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CONTROL_ROOT="${SHOGUN_ROOT:-$ROOT}"
+export SHOGUN_ROOT="$CONTROL_ROOT"
 SOURCE_REPO="${CAMPAIGN_LANE_SOURCE_REPO:-$ROOT}"
 FIXED_SHA="${CAMPAIGN_LANE_FIXED_SHA:-9192bf61ada7bb3c44ceecf5cf86599df0b8ec81}"
 WAIT_SEC="${CAMPAIGN_LANE_WAIT_SEC:-1800}"
@@ -249,7 +251,7 @@ if ! yaml_field_set_batch "$task_path" task \
     "report_filename=$(basename "$report_path")" \
     "estimated_minutes=10" \
     "campaign_attempt=$attempt" \
-    "canonical_root=${SHOGUN_ROOT:-$ROOT}"
+    "canonical_root=$CONTROL_ROOT"
 then
     fail task_yaml_write_failed
 fi
@@ -257,7 +259,7 @@ if ! TASK_PATH="$task_path" TASK_KEY="$task_key" WORKER_ID="$worker_id" \
     WORKDIR="$workdir" ITEM_PATH="$item_path" OWNED_JSON="$owned_abs_json" \
     FINGERPRINT="$expected_fingerprint" READ_ONLY_JSON="$read_only_json" \
     TEST_COMMAND="$test_command" TEST_PATH="$test_path" FIXED_SHA_ENV="$FIXED_SHA" \
-    REPORT_PATH_ENV="$report_path" ATTEMPT_ENV="$attempt" CANONICAL_ROOT="${SHOGUN_ROOT:-$ROOT}" \
+    REPORT_PATH_ENV="$report_path" ATTEMPT_ENV="$attempt" CANONICAL_ROOT="$CONTROL_ROOT" \
     python3 - <<'PY'
 import json, os, yaml
 t = (yaml.safe_load(open(os.environ["TASK_PATH"], encoding="utf-8")) or {}).get("task") or {}
@@ -284,7 +286,7 @@ fi
 
 deploy_cmd="${CAMPAIGN_LANE_DEPLOY_CMD:-bash $ROOT/scripts/deploy_task.sh --direct --yaml}"
 stage_start deploy
-if ! SHOGUN_ROOT="${SHOGUN_ROOT:-$ROOT}" bash -c 'exec "$@"' _ $deploy_cmd "$task_path" "$worker_id"; then
+if ! SHOGUN_ROOT="$CONTROL_ROOT" bash -c 'exec "$@"' _ $deploy_cmd "$task_path" "$worker_id"; then
     fail deploy_failed "$report_path"
 fi
 stage_stop deploy
