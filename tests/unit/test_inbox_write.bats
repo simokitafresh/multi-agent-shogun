@@ -1322,6 +1322,40 @@ YAML
     [ "$(grep -c "report_fingerprint:" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
 }
 
+# test_necessity: a crash after durable report event append but before task
+# mutation must be repaired by an exact retry without waiting for monitor.
+@test "duplicate terminal report event synchronously repairs missing task done transition" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  report_id: rpt-duplicate-reconcile
+  report_identity_version: 2
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+report_id: rpt-duplicate-reconcile
+report_identity_version: 2
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m duplicate-reconcile
+
+    run _run_inbox_write karo "first terminal" report_received testninja
+    [ "$status" -eq 0 ]
+    sed -i 's/status: done/status: in_progress/' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    sed -i '/done_at:/d; /completed_at:/d' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    start_ns=$(date +%s%N)
+    run _run_inbox_write karo "exact retry" report_received testninja
+    elapsed_ms=$(( ($(date +%s%N) - start_ns) / 1000000 ))
+    [ "$status" -eq 0 ]
+    [[ "$output" == *DUPLICATE_MSG_ID=* ]]
+    grep -q '^  status: done$' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    grep -q '^  done_at:' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    grep -q '^  completed_at:' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    [ "$elapsed_ms" -lt 30000 ]
+    echo "EVENT_RECONCILE elapsed_ms=$elapsed_ms notifications_lost=0" >&3
+}
+
 @test "report lifecycle canonical event key is exactly once under 20 parallel writers" {
     setup_git_test_env
     mkdir -p "$TEST_TMPDIR/queue/inbox"

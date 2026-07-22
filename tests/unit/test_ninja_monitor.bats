@@ -5,6 +5,55 @@ setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+# test_necessity: identical report bytes plus the same immutable task contract
+# must execute report gate once across monitor cycles/restarts, while a real
+# contract change must create a new generation and re-enable validation.
+@test "report gate durable generation dedupes status churn and reopens on contract change" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"
+        mkdir -p "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$STATE_DIR"
+        cat > "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" <<EOF
+#!/usr/bin/env bash
+count_file="$STATE_DIR/gate_calls"
+count=0; [ ! -f "\$count_file" ] || count=\$(cat "\$count_file")
+printf "%s\n" "\$((count + 1))" > "\$count_file"
+printf "FAIL: stable reason\n"
+exit 1
+EOF
+        printf "status: completed\nverdict: PASS\n" > "$SCRIPT_DIR/queue/reports/report.yaml"
+        cat > "$SCRIPT_DIR/queue/tasks/ninja.yaml" <<EOF
+task:
+  task_id: cmd_generation_normal
+  parent_cmd: cmd_generation
+  ac_version: abc
+  deployed_at: 2026-07-23T00:00:00
+  status: in_progress
+  target_path: [scripts/a.sh]
+  planned_paths: [scripts/a.sh]
+EOF
+        first=$(report_gate_generation_key "$SCRIPT_DIR/queue/reports/report.yaml" "$SCRIPT_DIR/queue/tasks/ninja.yaml")
+        ! run_report_gate_deduped ninja "$SCRIPT_DIR/queue/reports/report.yaml" "$SCRIPT_DIR/queue/tasks/ninja.yaml"
+        ! run_report_gate_deduped ninja "$SCRIPT_DIR/queue/reports/report.yaml" "$SCRIPT_DIR/queue/tasks/ninja.yaml"
+        [ "$(cat "$STATE_DIR/gate_calls")" -eq 1 ]
+        sed -i "s/status: in_progress/status: done/" "$SCRIPT_DIR/queue/tasks/ninja.yaml"
+        same=$(report_gate_generation_key "$SCRIPT_DIR/queue/reports/report.yaml" "$SCRIPT_DIR/queue/tasks/ninja.yaml")
+        [ "$same" = "$first" ]
+        ! run_report_gate_deduped ninja "$SCRIPT_DIR/queue/reports/report.yaml" "$SCRIPT_DIR/queue/tasks/ninja.yaml"
+        [ "$(cat "$STATE_DIR/gate_calls")" -eq 1 ]
+        sed -i "s#scripts/a.sh#scripts/b.sh#g" "$SCRIPT_DIR/queue/tasks/ninja.yaml"
+        changed=$(report_gate_generation_key "$SCRIPT_DIR/queue/reports/report.yaml" "$SCRIPT_DIR/queue/tasks/ninja.yaml")
+        [ "$changed" != "$first" ]
+        ! report_gate_cached_outcome ninja "$changed"
+        ! run_report_gate_deduped ninja "$SCRIPT_DIR/queue/reports/report.yaml" "$SCRIPT_DIR/queue/tasks/ninja.yaml"
+        [ "$(cat "$STATE_DIR/gate_calls")" -eq 2 ]
+        printf "same=1 dedupe=1 changed=1 calls=2\n"
+    '
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"same=1 dedupe=1 changed=1 calls=2"* ]]
+}
+
 @test "CI RED guard structurally deploys eligible work and dedupes each generation" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
         export NINJA_MONITOR_LIB_ONLY=1; source "$PROJECT_ROOT/scripts/ninja_monitor.sh"

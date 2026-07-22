@@ -652,6 +652,38 @@ inbox_report_revision_fingerprint() {
     printf '%s\0%s' "$action" "$content" | sha256sum | awk '{print $1}'
 }
 
+# Reconcile the task side of an already durable terminal report event.
+# This closes the crash window where the inbox row was appended but the task
+# status update did not run. Exact retries repair that consequence instead of
+# waiting for ninja_monitor's polling cycle. Deployment identity stays intact.
+inbox_reconcile_terminal_task_generation() {
+    local ninja="$1" report_path="$2"
+    local task_file="$SCRIPT_DIR/queue/tasks/${ninja}.yaml"
+    [ -f "$task_file" ] && [ -f "$report_path" ] || return 0
+
+    local report_status report_task_id report_parent task_id task_parent current_status now
+    report_status=$(inbox_yaml_field_get "$report_path" "status" "")
+    case "$report_status" in completed|done|success) ;; *) return 0 ;; esac
+    report_task_id=$(inbox_yaml_field_get "$report_path" "task_id" "")
+    report_parent=$(inbox_yaml_field_get "$report_path" "parent_cmd" "")
+    task_id=$(inbox_yaml_field_get "$task_file" "task_id" "")
+    task_parent=$(inbox_yaml_field_get "$task_file" "parent_cmd" "")
+    [ -n "$report_task_id" ] && [ -n "$task_id" ] && [ "$report_task_id" != "$task_id" ] && return 0
+    [ -n "$report_parent" ] && [ -n "$task_parent" ] && [ "$report_parent" != "$task_parent" ] && return 0
+
+    current_status=$(inbox_yaml_field_get "$task_file" "status" "")
+    case "$current_status" in done|failed|blocked) return 0 ;; esac
+    now=$(date '+%Y-%m-%dT%H:%M:%S')
+    (
+        # shellcheck source=scripts/lib/yaml_field_set.sh
+        source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+        local -a updates=("status=done")
+        [ -n "$(inbox_yaml_field_get "$task_file" "done_at" "")" ] || updates+=("done_at=$now")
+        [ -n "$(inbox_yaml_field_get "$task_file" "completed_at" "")" ] || updates+=("completed_at=$now")
+        yaml_field_set_batch "$task_file" task "${updates[@]}"
+    ) 2>/dev/null
+}
+
 inbox_deliver_report_review_generation() {
     local ninja="$1" report_path="$2" parent_cmd="$3" fingerprint="$4"
     local report_base="${report_path##*/}"
@@ -2064,8 +2096,12 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                     } 201>"$LOCKFILE" || true
                 )
                 if [ -n "$_early_event_id" ]; then
-                    if [ "$TYPE" = "report_received" ] && [ -n "${FULL_REPORT:-}" ] && [ -n "${STRUCTURED_PARENT_CMD:-}" ]; then
+                    if inbox_type_triggers_report_completion "$TYPE" && [ -n "${FULL_REPORT:-}" ] && [ -n "${STRUCTURED_PARENT_CMD:-}" ]; then
                         inbox_deliver_report_review_generation "$FROM" "$FULL_REPORT" "$STRUCTURED_PARENT_CMD" "$STRUCTURED_REPORT_FINGERPRINT" || true
+                        inbox_reconcile_terminal_task_generation "$FROM" "$FULL_REPORT" || {
+                            echo "[inbox_write] WARN: duplicate terminal event task reconciliation failed: id=$_early_event_id" >&2
+                            exit 1
+                        }
                     fi
                     printf 'DUPLICATE_MSG_ID=%s\n' "$_early_event_id"
                     exit 0

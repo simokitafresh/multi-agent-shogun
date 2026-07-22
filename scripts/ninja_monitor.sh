@@ -888,6 +888,78 @@ declare -A AUTO_DEPLOY_DONE       # auto_deploy_next.sh呼出済みフラグ —
 declare -A REPORT_GATE_SENT      # 報告フォーマットgate FAIL送信済みフラグ — key: "ninja:cmd_id", value: "1"
 declare -A UNCOMMITTED_BLOCK_SENT # commit未完了BLOCK送信済みフラグ — key: "ninja:cmd_id", value: "1"
 declare -A ACTIVE_IDLE_RECOVERY_SENT # active task+idle時の忍者再通知済みフラグ — key: "ninja:task_id:reason", value: "1"
+
+# Durable report-gate result cache. REPORT_GATE_SENT suppresses only the
+# notification; this cache suppresses the repeated gate execution itself.
+# The key binds report bytes, immutable task contract, and gate implementation.
+# Mutable task status/timestamps are excluded, so report-only RC stays in its
+# own report-fingerprint lane without manufacturing a task generation.
+report_gate_generation_key() {
+    local report_file="$1" task_file="$2"
+    python3 - "$report_file" "$task_file" "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+import yaml
+
+report_path, task_path, gate_path = map(pathlib.Path, sys.argv[1:])
+task = (yaml.safe_load(task_path.read_text(encoding="utf-8")) or {}).get("task", {})
+contract_keys = (
+    "task_id", "parent_cmd", "ac_version", "deployed_at", "target_path",
+    "planned_paths", "acceptance_criteria", "not_in_scope", "commit_contract",
+)
+contract = {key: task.get(key) for key in contract_keys}
+digest = hashlib.sha256()
+digest.update(report_path.read_bytes())
+digest.update(json.dumps(contract, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode())
+for gate_component in sorted(gate_path.parent.glob("gate_report_format*")):
+    if gate_component.is_file():
+        digest.update(gate_component.name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(gate_component.read_bytes())
+print(digest.hexdigest())
+PY
+}
+
+report_gate_cached_outcome() {
+    local name="$1" key="$2" state_file="${STATE_DIR:-/tmp}/report_gate_${name}.state"
+    [ -f "$state_file" ] || return 1
+    awk -F'\t' -v key="$key" '$1==key && ($2=="PASS" || $2=="FAIL") {print $2; exit}' "$state_file"
+}
+
+report_gate_record_outcome() {
+    local name="$1" key="$2" outcome="$3" reason="$4"
+    local state_file="${STATE_DIR:-/tmp}/report_gate_${name}.state" reason_hash tmp
+    reason_hash=$(printf '%s' "$reason" | sha256sum | awk '{print $1}')
+    mkdir -p "$(dirname "$state_file")"
+    tmp="${state_file}.tmp.$$"
+    {
+        flock -x -w 5 200 || exit 1
+        printf '%s\t%s\t%s\n' "$key" "$outcome" "$reason_hash" > "$tmp"
+        mv "$tmp" "$state_file"
+    } 200>"${state_file}.lock"
+}
+
+run_report_gate_deduped() {
+    local name="$1" report_file="$2" task_file="$3"
+    local generation cached outcome output
+    generation=$(report_gate_generation_key "$report_file" "$task_file" 2>/dev/null || true)
+    cached=""
+    [ -n "$generation" ] && cached=$(report_gate_cached_outcome "$name" "$generation" 2>/dev/null || true)
+    if [ "$cached" = "PASS" ] || [ "$cached" = "FAIL" ]; then
+        log "REPORT-GATE-DEDUPE: $name outcome=$cached generation=$generation"
+        printf '%s (durable report generation cache)\n' "$cached"
+        [ "$cached" = "PASS" ]
+        return
+    fi
+
+    output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || true
+    if echo "$output" | grep -q '^PASS'; then outcome=PASS; else outcome=FAIL; fi
+    [ -n "$generation" ] && report_gate_record_outcome "$name" "$generation" "$outcome" "$output" || true
+    printf '%s\n' "$output"
+    [ "$outcome" = "PASS" ]
+}
 declare -A STALL_COUNT            # DEPLOY-STALL回数カウンター — key: "ninja:subtask_id", value: count
 declare -A POST_CLEAR_PENDING     # /new後にpost_clear_cmd送信待ち — key: agent_name, value: epoch秒
 declare -A REPORT_DONE_MISMATCH_NOTIFIED  # report done+status未idle通知時刻 — key: "ninja:cmd_id", value: epoch秒
@@ -3044,7 +3116,7 @@ is_task_deployed() {
                     fi
                 fi
                 if [ -n "$gate_report_file" ] && [ -f "$gate_report_file" ]; then
-                    gate_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$gate_report_file" 2>&1) || true
+                    gate_output=$(run_report_gate_deduped "$name" "$gate_report_file" "$task_file" 2>&1) || true
                     if ! echo "$gate_output" | grep -q "^PASS"; then
                         gate_passed=false
                         if [ "${REPORT_GATE_SENT[$gate_key]}" != "1" ]; then
