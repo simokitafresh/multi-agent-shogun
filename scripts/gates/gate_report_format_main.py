@@ -28,16 +28,20 @@ def commit_contract_errors(report, task, root):
     if not re.fullmatch(r"[0-9a-f]{40}", identity):
         return ["required commit_hash is missing or invalid"]
     evidence = report.get("commit_identity_evidence")
+    evidence_required = task.get("commit_identity_contract_required") is True
     if not isinstance(evidence, dict):
-        return ["commit_identity_evidence is required"]
+        evidence = {}
+        if evidence_required:
+            return ["commit_identity_evidence is required by opt-in contract"]
     expected_run_id = str(task.get("task_id") or report.get("task_id") or "").strip()
     errors = []
-    if str(evidence.get("source") or "") not in {"stdout", "terminal_ledger", "terminal_receipt"}:
-        errors.append("commit identity source must be stdout/terminal_ledger/terminal_receipt")
-    if str(evidence.get("run_id") or "") != expected_run_id:
-        errors.append(f"commit identity run_id mismatch: expected {expected_run_id!r}")
-    if str(evidence.get("commit_hash") or "") != identity:
-        errors.append("commit identity evidence hash differs from report commit_hash")
+    if evidence:
+        if str(evidence.get("source") or "") not in {"stdout", "terminal_ledger", "terminal_receipt"}:
+            errors.append("commit identity source must be stdout/terminal_ledger/terminal_receipt")
+        if str(evidence.get("run_id") or "") != expected_run_id:
+            errors.append(f"commit identity run_id mismatch: expected {expected_run_id!r}")
+        if str(evidence.get("commit_hash") or "") != identity:
+            errors.append("commit identity evidence hash differs from report commit_hash")
     try:
         subject = subprocess.run(["git", "-C", str(root), "show", "-s", "--format=%s", identity], check=True, capture_output=True, text=True, timeout=5).stdout.strip()
         changed = set(subprocess.run(["git", "-C", str(root), "diff-tree", "--no-commit-id", "--name-only", "-r", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())

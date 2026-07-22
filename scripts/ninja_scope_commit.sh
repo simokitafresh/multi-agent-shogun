@@ -170,6 +170,10 @@ create_and_publish_scoped_commit() {
     # private index, construct the object, then publish HEAD with an old-value
     # CAS.  The repository-wide flock keeps index/ref convergence in the same
     # transaction while update-ref is the sole publication point.
+    # Publish nonterminal progress before potentially slow external-repo
+    # hooks.  Observers must not mistake a bounded wait expiry for rc0.
+    printf 'event=progress run_id=%s phase=pre_commit complete=false ledger=%s\n' \
+        "$terminal_run_id" "$terminal_ledger" >&2
     env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
         git hook run --ignore-missing pre-commit >&2 \
         || { echo "BLOCK: pre-commit hook rejected scoped commit" >&2; return 1; }

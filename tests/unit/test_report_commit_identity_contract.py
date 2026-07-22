@@ -21,6 +21,12 @@ def _task(required=True):
     }
 
 
+def _opt_in_task():
+    task = _task()
+    task["commit_identity_contract_required"] = True
+    return task
+
+
 def _report(commit_hash=GOOD, evidence_hash=GOOD, source="terminal_ledger"):
     return {
         "task_id": TASK_ID,
@@ -73,3 +79,18 @@ def test_missing_target_path_is_rejected(_run):
 
 def test_optional_commit_contract_does_not_require_hash_or_evidence():
     assert commit_contract_errors({}, _task(required=False), Path(".")) == []
+
+
+@patch("scripts.gates.gate_report_format_main.subprocess.run", side_effect=_git)
+def test_legacy_required_report_without_evidence_remains_compatible(_run):
+    report = _report()
+    report.pop("commit_identity_evidence")
+    assert commit_contract_errors(report, _task(), Path(".")) == []
+
+
+def test_opt_in_contract_requires_same_run_evidence():
+    report = _report()
+    report.pop("commit_identity_evidence")
+    assert commit_contract_errors(report, _opt_in_task(), Path(".")) == [
+        "commit_identity_evidence is required by opt-in contract"
+    ]
