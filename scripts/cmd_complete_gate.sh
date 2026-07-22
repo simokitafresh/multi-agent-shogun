@@ -278,15 +278,10 @@ push_task_repositories() {
         upstream_sha=$(git -C "$repo" rev-parse '@{upstream}' 2>/dev/null || true)
         if [ -n "$upstream_ref" ] && [ -n "$head_sha" ] && [ "$head_sha" = "$upstream_sha" ]; then
             echo "  git push: SKIP ($repo already up-to-date with ${upstream_ref})"
-        elif timeout "${CMD_COMPLETE_GATE_PUSH_TIMEOUT:-240}" git -C "$repo" push 2>&1; then
+        elif git -C "$repo" push 2>&1; then
             echo "  git push: OK ($repo)"
         else
-            _push_rc=$?
-            if [ "$_push_rc" -eq 124 ]; then
-                echo "  [INFO] git push: WARN ($repo push timed out after ${CMD_COMPLETE_GATE_PUSH_TIMEOUT:-240}s — remote unreachable/too slow, non-blocking; commits accumulate until next push)"
-            else
-                echo "  [INFO] git push: WARN ($repo push failed rc=$_push_rc, non-blocking)"
-            fi
+            echo "  [INFO] git push: WARN ($repo push failed, non-blocking)"
         fi
     done
 }
@@ -8330,7 +8325,7 @@ fi
 level_heading "[L3]" "CI status check:"
 CI_PUSH_DETECTED=false
 CI_PUSH_STATE_BLOCK=""
-CI_PUSH_REPO_DIR=""
+declare -A _CI_PUSH_REPO_DIRS=()
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
     if [ ! -f "$task_file" ]; then
         echo "  [WARN] matching task file disappeared, skipping: $task_file"
@@ -8344,7 +8339,7 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
         task_repo_dir=$(resolve_task_repo_dir "$task_file")
         ci_push_state=$(report_ci_push_state "$report_file" "$task_repo_dir")
         case "$ci_push_state" in
-            PUSHED:*) CI_PUSH_DETECTED=true; CI_PUSH_REPO_DIR="$task_repo_dir" ;;
+            PUSHED:*) CI_PUSH_DETECTED=true; _CI_PUSH_REPO_DIRS["$task_repo_dir"]=1 ;;
             BLOCK:*) CI_PUSH_STATE_BLOCK="$ci_push_state"; break ;;
         esac
     fi
@@ -8356,7 +8351,15 @@ if [ -n "$CI_PUSH_STATE_BLOCK" ]; then
     ALL_CLEAR=false
 elif [ "$CI_PUSH_DETECTED" = true ]; then
     ci_result="${CMD_COMPLETE_GATE_CI_RUN_JSON:-}"
-    ci_repo_dir="${CI_PUSH_REPO_DIR:-$SCRIPT_DIR}"
+    # Fail-closed when matching tasks span multiple distinct repositories.
+    if [ "${#_CI_PUSH_REPO_DIRS[@]}" -gt 1 ]; then
+        echo "  [CRITICAL] BLOCK: CI status check spans ${#_CI_PUSH_REPO_DIRS[@]} distinct repos (${!_CI_PUSH_REPO_DIRS[*]})"
+        record_block_reason "ci_readiness:BLOCK: mixed task repos (${#_CI_PUSH_REPO_DIRS[@]} distinct)"
+        ALL_CLEAR=false
+    fi
+    ci_repo_dir="${!_CI_PUSH_REPO_DIRS[*]}"
+    ci_repo_dir="${ci_repo_dir%% *}"
+    : "${ci_repo_dir:=$SCRIPT_DIR}"
     ci_origin_slug=""
     if [ -d "$ci_repo_dir/.git" ] || git -C "$ci_repo_dir" rev-parse --git-dir >/dev/null 2>&1; then
         ci_origin_slug=$(git -C "$ci_repo_dir" remote get-url origin 2>/dev/null \
@@ -8368,6 +8371,7 @@ elif [ "$CI_PUSH_DETECTED" = true ]; then
         record_block_reason "ci_readiness:BLOCK: origin slug unresolvable from ${ci_repo_dir}"
         ALL_CLEAR=false
     fi
+    expected_head=$(resolve_ci_expected_head "$ci_repo_dir")
     if [ -z "$ci_result" ] && [ -n "$ci_origin_slug" ] && command -v gh >/dev/null 2>&1; then
         ci_result=$(timeout 15 gh run list --repo "$ci_origin_slug" \
             --branch main --limit 5 \
@@ -8382,7 +8386,6 @@ elif [ "$CI_PUSH_DETECTED" = true ]; then
                   else .[0] end]' 2>/dev/null || printf '%s' "$ci_result")
         fi
     fi
-    expected_head=$(resolve_ci_expected_head "$ci_repo_dir")
     ci_run_id=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then (.[0].databaseId // "" | tostring) else "" end' 2>/dev/null || true)
     target_conclusion=success
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
