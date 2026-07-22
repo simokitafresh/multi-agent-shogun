@@ -231,6 +231,8 @@ guard_report_revision_delivery() {
     local type="$2"
     local task_yaml report_path task_status report_status parent_cmd
 
+    # Delivery is only the final durable edge.  The formal RC entry point must
+    # atomically reopen report/task state before this notification is accepted.
     [ "$type" = "report_revision" ] || return 0
     target_is_ninja "$target" || return 0
 

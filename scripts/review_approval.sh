@@ -158,7 +158,8 @@ trap 'rm -f "$tmp" "${REVIEW_FP_CACHE_DIR:?}"/*; rmdir "${REVIEW_FP_CACHE_DIR:?}
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" "$correction_scope" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 if [ "$role" = karo ] && [ "$result" = RC ]; then
-  # RC reopening is one lifecycle transaction.  ninja_monitor uses this same
+  # RC reopening is one lifecycle transaction and the canonical formal entry.
+  # ninja_monitor uses this same
   # per-worker lock for AUTO-DONE, so it cannot observe the old completed
   # report between task/report resets or emit report_notification_missing
   # before the fresh task_start notification is durable.

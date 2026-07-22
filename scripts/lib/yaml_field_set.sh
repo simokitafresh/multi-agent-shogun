@@ -14,6 +14,8 @@
 # - Adds field at block end if missing.
 # - Uses flock -w 10 for exclusive writes.
 # - Verifies written value by re-reading; exits 1 with FATAL on mismatch.
+# Cross-file report revision lifecycles are intentionally not composed here;
+# review_approval.sh owns that transaction under the worker deploy lock.
 
 # Inline lock_path helper to avoid sourcing another file on the hot path.
 # ロジックはscripts/lib/lock_path.sh(正本)と完全一致させること — 独自の派生ロジックは

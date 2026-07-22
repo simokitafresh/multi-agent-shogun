@@ -2992,6 +2992,8 @@ check_and_update_done_task() (
         return 0
     fi
 
+    # The RC writer holds deploy_ninja_<worker>.lock through notification;
+    # this reader holds the same lock, so partial revision state is invisible.
     # cmd_karo_hotfix_report_notify_inprogress_guard: 再配備(deployed_at)より前のreportは
     # 前回試行の残骸。in_progress再開後にまだ新しい報告が届いていないだけなのに、
     # 旧いcompleted報告を見てAUTO-DONEしてしまうとreport_notification_missingが偽陽性化する。
