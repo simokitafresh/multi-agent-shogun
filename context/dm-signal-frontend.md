@@ -1,6 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
 <!-- last_updated: 2026-07-22 cmd_karo_hotfix_ga314_context_freshness_202607220442 -->
-<!-- source_commit:96c8c5f50c36d3566a89aeaa6197e767bd926a42 reason:cmd_4114_FE一次差分を§16へ反映 evidence:1commit_4paths_603insertions_112deletions_alert1_to_0 -->
+<!-- source_commit:cf8da310 reason:dead_signals_href_resolved evidence:Trades_/dashboard/_and_Signals_retired_verified_20260722 -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -32,7 +32,7 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 - L189: ページ順序定義をsidebar/mobile-menu/page-navigationに重複保持すると導線不整合が発生しやすい（cmd_564）
 - L216: frontend設定参照は next.config.js ではなく next.config.mjs を使え（cmd_719）
 
-## 2. ページ一覧 (2026-05-07 コード確認)
+## 2. ページ一覧 (2026-07-22 コード確認)
 
 ### 稼働ページ(データ表示あり: 12ページ)
 
@@ -57,8 +57,8 @@ Modern Web Guidance: `skills/modern-web-guidance/SKILL.md`（Google Chrome公式
 | ページ | ルート | 状態 |
 |--------|--------|------|
 | Home | `/` | 封鎖中(2026-03-04 e5d7c773)。dashboardへのリンクのみ |
-| Trades | `/trades` | 封鎖中(2026-03-04 e5d7c773 discontinue trades page)。signalsページへのリンクのみ。既知: `docs/future-01/004.md` L194, `docs/research/fe-speed-improvement-design.md` L14 |
-| Signals | `/signals` | ルート不在(ディレクトリなし) |
+| Trades | `/trades` | 封鎖画面は維持。殿裁定で廃止された`/signals`へのdead hrefを除去し、CTAは正規ホーム導線`/dashboard/`へ修正済み (`cf8da310`) |
+| Signals | `/signals` | 殿裁定により独立page廃止確定。Dashboard内Current Signalを正規表示とする (`cf8da310`; `docs/research/dm-signal-page-style-diff-mece_20260722.md`) |
 
 ### Admin(認証必須)
 
