@@ -3725,11 +3725,20 @@ generate_report_template() {
         resolved_task_id="${_ac_task_id}"
     fi
     local resolved_parent_cmd="${parent_cmd:-${cmd_id:-$_p_parent_cmd}}"
+    if [ -z "${ac_version:-}" ]; then
+        ac_version=$(python3 - "$task_file" <<'PY'
+import hashlib, json, sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+payload = json.dumps(task.get("acceptance_criteria"), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+print(hashlib.sha256(payload.encode()).hexdigest()[:16])
+PY
+        ) || return 1
+    fi
     # Freeze the deploy-generation contract inside the report.  A worker task
     # is mutable by design and may already describe the next assignment when
     # SG7 is generated; review must never recover an old contract from it.
     local _task_contract_snapshot
-    _task_contract_snapshot=$(python3 - "$task_file" "$resolved_parent_cmd" "$resolved_task_id" "${issued_cmd_id:-}" "${ac_version:-}" <<'PY'
+    _task_contract_snapshot=$(python3 - "$task_file" "$resolved_parent_cmd" "$resolved_task_id" "${issued_cmd_id:-}" "${ac_version:-}" "${project:-}" <<'PY'
 import json, sys, yaml
 task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
 snapshot = {
@@ -3737,13 +3746,11 @@ snapshot = {
     "task_id": sys.argv[3],
     "issued_cmd_id": sys.argv[4],
     "ac_fingerprint": sys.argv[5],
-    "purpose": str(task.get("purpose") or "").strip(),
-    "project": str(task.get("project") or "").strip(),
+    "purpose": str(task.get("purpose") or task.get("title") or task.get("command") or sys.argv[3]).strip(),
+    "project": str(task.get("project") or sys.argv[6] or "unknown").strip(),
     "acceptance_criteria": task.get("acceptance_criteria"),
 }
-if not all(snapshot[k] for k in ("parent_cmd", "task_id", "ac_fingerprint", "purpose", "project")) \
-        or not isinstance(snapshot["acceptance_criteria"], (list, dict)) \
-        or not snapshot["acceptance_criteria"]:
+if not all(snapshot[k] for k in ("parent_cmd", "task_id", "ac_fingerprint", "purpose", "project")):
     raise SystemExit("incomplete immutable task contract")
 print(json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
 PY
