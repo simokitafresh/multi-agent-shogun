@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Concurrent ledger events stay complete and async self-retro owners drain every child before teardown; violation loses telemetry or races cleanup and is BLOCK.
+# test_necessity: Self-retro preserves durable telemetry while suppressing only known zero-signal insight delivery.
 
 setup() {
   export TEST_TMP="$(mktemp -d)"
@@ -128,6 +128,32 @@ r=[json.loads(x) for x in open(sys.argv[1])]
 assert len(r)==3
 assert sum(x['cause_class']=='repeated' for x in r)==2
 assert sum(x['cause_class']=='singleton' for x in r)==1
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "known zero-signal template is recorded but not delivered while measured signal is delivered" {
+  export SELF_RETRO_LEDGER="$TEST_TMP/self-retro.jsonl"
+  export DEFENSE_OVERHEAD_REPO_ROOT="$TEST_TMP/root"
+  mkdir -p "$DEFENSE_OVERHEAD_REPO_ROOT/scripts"
+  printf '#!/bin/bash\nprintf "%%s\\n" "$1" >>"%s"\n' "$TEST_TMP/insight.calls" >"$DEFENSE_OVERHEAD_REPO_ROOT/scripts/insight_write.sh"
+  chmod +x "$DEFENSE_OVERHEAD_REPO_ROOT/scripts/insight_write.sh"
+
+  SELF_RETRO_FIX_KNOWN_THRESHOLD=2 self_retro_write ninja_report cmd_zero_one 0 '{"write":0}' repeated cause template criterion '[[a]] -> [[b]] -> [[c]]'
+  SELF_RETRO_FIX_KNOWN_THRESHOLD=2 self_retro_write ninja_report cmd_zero_two 0 '{"write":0}' repeated cause template criterion '[[a]] -> [[b]] -> [[c]]'
+  [ ! -e "$TEST_TMP/insight.calls" ]
+
+  SELF_RETRO_FIX_KNOWN_THRESHOLD=2 self_retro_write ninja_report cmd_signal_one 8 '{"write":8}' measured cause template criterion '[[a]] -> [[b]] -> [[c]]'
+  SELF_RETRO_FIX_KNOWN_THRESHOLD=2 self_retro_write ninja_report cmd_signal_two 9 '{"write":9}' measured cause template criterion '[[a]] -> [[b]] -> [[c]]'
+  run grep -c 'self-retro dominant cause=measured' "$TEST_TMP/insight.calls"
+  [ "$status" -eq 0 ] && [ "$output" -eq 1 ]
+
+  run python3 - "$SELF_RETRO_LEDGER" <<'PY'
+import json,sys
+rows=[json.loads(x) for x in open(sys.argv[1])]
+assert len(rows) == 4
+assert sum(r['wall_ms'] == 0 for r in rows) == 2
+assert sum(r['wall_ms'] > 0 for r in rows) == 2
 PY
   [ "$status" -eq 0 ]
 }

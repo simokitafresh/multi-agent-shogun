@@ -65,6 +65,31 @@ defense_overhead_write_batch_async() {
 
 # Deep post-terminal retrospective.  This deliberately has its own append-only
 # ledger so the stable defense_overhead.jsonl schema remains backward compatible.
+_self_retro_should_emit_insight() {
+    local ledger="$1" improvement="$2" wall_ms="$3" phase_ms_json="$4" threshold="$5"
+    python3 - "$ledger" "$improvement" "$wall_ms" "$phase_ms_json" "$threshold" <<'PY'
+import json, sys
+
+ledger, improvement, wall_ms, phases_raw, threshold = sys.argv[1:]
+phases = json.loads(phases_raw)
+seen = 0
+try:
+    with open(ledger, encoding="utf-8") as fh:
+        for raw in fh:
+            try:
+                row = json.loads(raw)
+            except (TypeError, ValueError):
+                continue
+            seen += row.get("improvement_candidate") == improvement
+except OSError:
+    raise SystemExit(0)
+
+known_template = seen >= int(threshold)
+zero_signal = int(wall_ms) == 0 or max(phases.values()) == 0
+raise SystemExit(1 if known_template and zero_signal else 0)
+PY
+}
+
 self_retro_write() {
     local endpoint="${1:-}" task_id="${2:-}" wall_ms="${3:-}" phase_ms_json="${4:-}"
     local cause_class="${5:-}" cause_structure="${6:-}" improvement="${7:-}"
@@ -99,7 +124,9 @@ PY
     flock -u "$SELF_RETRO_FD"; eval "exec ${SELF_RETRO_FD}>&-"
     local repeats
     repeats="$(grep -Fc "\"cause_class\":\"${cause_class}\"" "$ledger" 2>/dev/null || true)"
-    if [ "${repeats:-0}" -ge "${SELF_RETRO_FIX_KNOWN_THRESHOLD:-3}" ] && [ -x "${DEFENSE_OVERHEAD_REPO_ROOT}/scripts/insight_write.sh" ]; then
+    if [ "${repeats:-0}" -ge "${SELF_RETRO_FIX_KNOWN_THRESHOLD:-3}" ] \
+      && _self_retro_should_emit_insight "$ledger" "$improvement" "$wall_ms" "$phase_ms_json" "${SELF_RETRO_FIX_KNOWN_THRESHOLD:-3}" \
+      && [ -x "${DEFENSE_OVERHEAD_REPO_ROOT}/scripts/insight_write.sh" ]; then
         INSIGHT_FIX_KNOWN=true INSIGHT_TARGET_FILE="$ledger" INSIGHT_VERIFY_COMMAND="grep -Fq '$event_id' '$ledger'" \
           bash "${DEFENSE_OVERHEAD_REPO_ROOT}/scripts/insight_write.sh" \
           "self-retro dominant cause=${cause_class}; candidate=${improvement}; criterion=${binary_criterion}" high self_retro >/dev/null 2>&1 || true

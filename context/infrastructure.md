@@ -36,6 +36,8 @@ SG7レビュー情報はformal Gunshi LGTM時に`review_approval.sh`が`review_b
 
 家老の完了処理は`scripts/cmd_complete.sh`を単一入口とし、SG7 consume→lesson review→cmd gate→context freshness→品質記録→status証明→dashboard→ntfy→inbox archiveをfail-closedで直列実行する。archive済み番号cmdはarchive・dashboard・gate_metricsのCLEAR三証拠、active/archive statusを持たないdirect cmdは消費済みSG7・formal review gate・gate_metrics CLEARの三証拠が揃う時だけstatus完了扱いとする。将軍startupのQ6実装証拠は現行inboxに加えて自agentの当日/前日archiveを探索し、明示ラベル`Q6追補（自動化ターゲット実装証拠）`を最新回答SSOTとして旧Q6回答を更新する一方、説明文だけの`Q6追補とは`は回答に数えない。CI RED通知はGitHub run ID台帳を単一flock区間で判定・送信・追記して同一run再送を抑止する。→ `scripts/cmd_complete.sh` / `scripts/gates/gate_shogun_startup.sh` / `tests/unit/test_cmd_complete_wrapper.bats` / `tests/unit/test_gate_shogun_startup.bats`（cmd_3956、cmd_karo_hotfix_q6_followup_alias_202607191453、commits `4b696fd5b`, `9b91e40c1`, `96482b4ef`, `9fe3fb9fa`, `e15d1f0cb`, `a409822ea`）
 
+self-retroは記録/checkを維持し、同一`improvement_candidate`が閾値以上の既知定型文かつ`wall_ms=0`または支配phase=0の時だけINSIGHT掲示板/inbox配送を抑止する。188件replayで配送180→107（-73）、記録188不変、completion_total中央値23,561ms。支配phaseはdashboard 50.8%。→ `docs/research/cmd_4123_self_retro_signal.md`（cmd_4123）
+
 GATE CLEAR後の因果監査は`semantic_index_update → semantic_map_generate → semantic_causal_traverse`を同一durable workerで直列実行し、`setsid`でpane process groupから分離、cmd別flock、pending/result/logでPASS/WARN/FAILを永続化する。各0.04秒の`gunshi_gate_reflux`とworkaround率は同期維持し、refluxは同一cmd_idの全entryへ`gate_result+gate_synced_at`をlock内atomic置換する。dashboard archive/update/auto publisherも同一lockと同一filesystem renameを使う。→ `scripts/semantic_causal_post_clear.sh` / `scripts/gunshi_gate_reflux.sh` / `scripts/dashboard_update.sh`（commits `91c3bf2dc`, `ab302df7b`, `1616a1eb3`、post-commit 177/177 PASS・SKIP0）
 
 三層知識writeはLayer1成功後、Layer2/3 payloadを先に`logs/three_layer_chain_state/*.pending.json`へatomic永続化し、`setsid+nohup`のworkerがper-event排他でsemantic更新・Obsidianリンク候補・resultを確定する。startup healthは120秒超pending、FAIL result、未解決ERRORをWARNする。Git pre-commitはtracked正本とlive `.git/hooks/pre-commit`をcommit index/HEADから自己同期し、atomic置換後は新live hookを再execするため、`ninja_scope_commit.sh`を通らないdirect commitでもdriftを残さない。→ `scripts/three_layer_knowledge_chain.sh` / `scripts/gates/gate_three_layer_health.sh` / `scripts/hooks/git-pre-commit.sh`（commits `f10a41c28`, `dabd3100c`、関連47/47 PASS・SKIP0）
@@ -848,7 +850,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1269 -->
+<!-- last_synced_lesson: L1282 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1831,6 +1833,19 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1267: 周期fast pathは外部公開イベントの鮮度を保証しない（cmd_karo_hotfix_snapshot_assignment_parity_202607220455）
 - L1268: subshell内検証失敗を後続成功処理で上書きしない（cmd_karo_hotfix_lessons_yaml_corruption_20260722）
 - L1269: terminal labelはreceipt rcから一箇所で導出する（cmd_karo_hotfix_run_tests_receipt_truth_race_202607221252）
+- L1270: karo-direct reviewはparent_cmd単独でなくexact task identityを結べ（cmd_karo_hotfix_review_approval_karo_direct_boundary_202607221526）
+- L1271: read許可は未知mode fail-closedと対で設計する（cmd_karo_hotfix_prebash_task_read_false_positive_202607221537）
+- L1272: 外部project commitはproject SSOT repoで検証する（cmd_karo_hotfix_external_repo_commit_gate_202607221641）
+- L1273: 内側deadlineは外側timeoutへ十分な固定余白を残す（cmd_karo_hotfix_three_layer_preflight_latency_202607221647）
+- L1274: 実行対象pathはpublic境界で固定しtest本文へは伝播させない（cmd_karo_ci_fix_run_29902368727_singleflight_rc127_202607221711）
+- L1275: 追加ごとに変わるdirectory mtimeだけでは全件cacheにならない（cmd_karo_hotfix_dashboard_auto_scan_speed_202607221733）
+- L1276: 検証は全件parseではなく候補索引後の実体parseに分離する（cmd_karo_hotfix_dashboard_update_speed_r2_202607221806）
+- L1277: CDP cleanupはowner recordと実process identityの二重照合が必要（cmd_karo_hotfix_cdp_owner_cleanup_on_terminal_202607221849）
+- L1278: 成功確定と後続通知を同一booleanへ結合しない（cmd_karo_hotfix_clear_success_ack_independent_notify_202607221900）
+- L1279: test fixtureがrun_tests.shの依存スクリプト(heavy_job_admission.sh)を不足するとtask-leader時のみ再現するrc=127 race conditionになる（cmd_karo_ci_fix_run_29906586600_rc127_exact_exec_202607221822）
+- L1280: background子のfd継承をfast-pathで許さない（cmd_karo_hotfix_autoclear_monitor_fastpath_stall_202607221905）
+- L1281: SSOT再利用指示はexport実在確認をtask契約化する（cmd_4120）
+- L1282: cmd_complete_gateのCI照会repoがmulti-agent-shogunにハードコードされており外部PJタスクのCI status checkがfalse positiveになる（cmd_karo_hotfix_cmd_complete_project_ci_repo_202607222302）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
