@@ -1,6 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-22 cmd_4116 -->
-<!-- source_commit:95a58350 reason:cmd_4119 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=95a58350 -->
+<!-- last_updated: 2026-07-22 cmd_4117 -->
+<!-- source_commit:f3f9de7e reason:cmd_4120 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=f3f9de7e -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -362,3 +362,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 結論: 全h2/h3をコード現読で88/88抽出し、section-heading 57/57を `text-lg font-semibold text-foreground` へ統一。sub-label・意味色status-label・エディタ/モーダル等の役割外見出しは保持した。
 
 → 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_4116_a2_heading_inventory.md`
+
+## 18. cmd_4122 A4数値表統一 (2026-07-22)
+
+結論: 数値表示13/13表を `font-mono tabular-nums`、符号状態色を `getValueColorClass` SSOTへ統一し、font未適用表を4→0へ解消。→ `/mnt/c/Python_app/DM-signal/docs/research/cmd_4122_table_text_inventory.md`
