@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# cmd_karo_hotfix_test_runner_drvfs_admission_20260723_normal
 # run_tests.sh — テスト実行ラッパー（並列化自動適用）
 # 誰が実行しても --jobs 8 が適用される。直接batsを呼ぶな。
 #

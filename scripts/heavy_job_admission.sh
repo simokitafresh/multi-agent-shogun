@@ -2,6 +2,7 @@
 # heavy_job_admission.sh — host-wide 単一admission契約(重量テストジョブ最大同時1)。
 # cmd_karo_hotfix_heavy_job_admission_202607121348
 # cmd_karo_hotfix_test_runner_drvfs_admission_20260723_normal
+# receipt schema and admission contract share this task identity.
 #
 # 使い方: bash scripts/heavy_job_admission.sh -- <実際に実行したいコマンド> [引数...]
 #
