@@ -141,6 +141,9 @@ fi
 
 echo "[$(date)] inbox_watcher started — agent: $AGENT_ID, pane: $PANE_TARGET, cli: $CLI_TYPE_AT_STARTUP, script_hash: $SCRIPT_HASH" >&2
 
+# CLI generation tracking for delivery lease scope (generation change → invalidate leases)
+CURRENT_CLI_GENERATION=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || echo "")
+
 ensure_current_pane_target() {
     local current_agent resolved
 
@@ -561,6 +564,23 @@ get_fp_age() {
         fi
     fi
     echo 0
+}
+
+# ─── CLI generation lease invalidation ───
+# After respawn/clear, CLI generation (PID:starttime) changes.
+# Delivery leases (sent_tokens) from the old generation must be invalidated
+# so that the same task fingerprint can be re-delivered to the new CLI instance.
+invalidate_leases_on_generation_change() {
+    local new_gen
+    new_gen=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || echo "")
+    [ -n "$new_gen" ] || return 0
+    if [ -n "$CURRENT_CLI_GENERATION" ] && [ "$new_gen" != "$CURRENT_CLI_GENERATION" ]; then
+        echo "[$(date)] [GENERATION-CHANGE] $AGENT_ID: $CURRENT_CLI_GENERATION -> $new_gen, invalidating delivery leases" >&2
+        rm -f "${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_"*
+        rm -f "$FINGERPRINT_FILE"
+        rm -f "$DEBOUNCE_FILE"
+    fi
+    CURRENT_CLI_GENERATION="$new_gen"
 }
 
 # ─── Resolve effective CLI type ───
@@ -1101,6 +1121,9 @@ record_info_autoack_gate() {
 }
 
 process_unread() {
+    # Invalidate delivery leases on CLI generation change (respawn/clear)
+    invalidate_leases_on_generation_change
+
     # Persist judgment-free informational messages before acknowledging them.
     # Failure is fail-closed: messages remain unread and enter the normal nudge path.
     local auto_info_output="" auto_info_rc=0

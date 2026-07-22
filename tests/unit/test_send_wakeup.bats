@@ -524,3 +524,77 @@ MOCK
     run bash -c "INBOX_WATCHER_LIB_ONLY=1 source '$WATCHER_SCRIPT' test_agent dummy-pane; tmux() { printf '❯ deploy now\\n'; }; pane_input_line_has_text test:0.0 claude"
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: CLI世代変更時に旧delivery leaseが失効し、同一fingerprintの再配送が偽dedupされない不変量を守る。
+@test "T-SW-019: generation change invalidates sent_token delivery leases" {
+    local state_dir="$TEST_TMPDIR/gen_state"
+    mkdir -p "$state_dir"
+
+    # Create sent_token and fingerprint files simulating previous generation delivery
+    touch "${state_dir}/inbox_watcher_sent_test_agent_abc123"
+    touch "${state_dir}/inbox_watcher_sent_test_agent_def456"
+    echo "old_fp" > "${state_dir}/inbox_watcher_fingerprint_test_agent"
+    echo "1000" > "${state_dir}/inbox_watcher_last_nudge_test_agent"
+
+    [ -f "${state_dir}/inbox_watcher_sent_test_agent_abc123" ]
+
+    run bash -c "
+        SHOGUN_STATE_DIR='$state_dir' INBOX_WATCHER_LIB_ONLY=1 source '$WATCHER_SCRIPT' test_agent dummy-pane
+        STATE_DIR='$state_dir'
+        FINGERPRINT_FILE='${state_dir}/inbox_watcher_fingerprint_test_agent'
+        DEBOUNCE_FILE='${state_dir}/inbox_watcher_last_nudge_test_agent'
+        CURRENT_CLI_GENERATION='100:5000'
+        respawn_recovery_generation() { echo '200:6000'; }
+        invalidate_leases_on_generation_change
+        ls '${state_dir}/inbox_watcher_sent_test_agent_'* 2>/dev/null && echo 'TOKENS_EXIST' || echo 'TOKENS_CLEARED'
+        [ -f '${state_dir}/inbox_watcher_fingerprint_test_agent' ] && echo 'FP_EXISTS' || echo 'FP_CLEARED'
+        [ -f '${state_dir}/inbox_watcher_last_nudge_test_agent' ] && echo 'DEBOUNCE_EXISTS' || echo 'DEBOUNCE_CLEARED'
+    "
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"TOKENS_CLEARED"* ]]
+    [[ "$output" == *"FP_CLEARED"* ]]
+    [[ "$output" == *"DEBOUNCE_CLEARED"* ]]
+    [[ "$output" == *"GENERATION-CHANGE"* ]]
+}
+
+@test "T-SW-020: same generation preserves sent_token delivery leases" {
+    local state_dir="$TEST_TMPDIR/gen_state"
+    mkdir -p "$state_dir"
+
+    touch "${state_dir}/inbox_watcher_sent_test_agent_abc123"
+    echo "same_fp" > "${state_dir}/inbox_watcher_fingerprint_test_agent"
+
+    run bash -c "
+        SHOGUN_STATE_DIR='$state_dir' INBOX_WATCHER_LIB_ONLY=1 source '$WATCHER_SCRIPT' test_agent dummy-pane
+        STATE_DIR='$state_dir'
+        FINGERPRINT_FILE='${state_dir}/inbox_watcher_fingerprint_test_agent'
+        CURRENT_CLI_GENERATION='100:5000'
+        respawn_recovery_generation() { echo '100:5000'; }
+        invalidate_leases_on_generation_change
+        ls '${state_dir}/inbox_watcher_sent_test_agent_'* 2>/dev/null && echo 'TOKENS_EXIST' || echo 'TOKENS_CLEARED'
+        [ -f '${state_dir}/inbox_watcher_fingerprint_test_agent' ] && echo 'FP_EXISTS' || echo 'FP_CLEARED'
+    "
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"TOKENS_EXIST"* ]]
+    [[ "$output" == *"FP_EXISTS"* ]]
+    # No GENERATION-CHANGE log should appear
+    [[ "$output" != *"GENERATION-CHANGE"* ]]
+}
+
+@test "T-SW-021: unknown generation does not invalidate leases" {
+    local state_dir="$TEST_TMPDIR/gen_state"
+    mkdir -p "$state_dir"
+
+    touch "${state_dir}/inbox_watcher_sent_test_agent_xyz789"
+
+    run bash -c "
+        SHOGUN_STATE_DIR='$state_dir' INBOX_WATCHER_LIB_ONLY=1 source '$WATCHER_SCRIPT' test_agent dummy-pane
+        STATE_DIR='$state_dir'
+        CURRENT_CLI_GENERATION='100:5000'
+        respawn_recovery_generation() { return 1; }
+        invalidate_leases_on_generation_change
+        ls '${state_dir}/inbox_watcher_sent_test_agent_'* 2>/dev/null && echo 'TOKENS_EXIST' || echo 'TOKENS_CLEARED'
+    "
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"TOKENS_EXIST"* ]]
+}
