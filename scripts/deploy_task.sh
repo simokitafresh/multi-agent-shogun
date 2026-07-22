@@ -408,19 +408,24 @@ if answers.exists():
         if item.get("event_id") == event_id:
             raise SystemExit(0)
 
-# The durable karo mailbox is a secondary persisted transport.  Parse YAML
-# structure and require the exact answer type plus an event-boundary match.
-try:
-    import yaml
-    mailbox = yaml.safe_load((Path(root) / "queue/inbox/karo.yaml").read_text(encoding="utf-8")) or {}
-except Exception:
-    mailbox = {}
+# The live and archived Karo mailboxes are secondary persisted transports.
+# Parse YAML structure and require the exact answer type plus an event-boundary
+# match. inbox_archive must not turn an answered hold back into unanswered.
+import yaml
+
+mailboxes = [Path(root) / "queue/inbox/karo.yaml"]
+mailboxes.extend(sorted((Path(root) / "archive/inbox").glob("karo_*.yaml")))
 pattern = re.compile(r"(?<![A-Za-z0-9_-])" + re.escape(event_id) + r"(?![A-Za-z0-9_-])")
-for message in mailbox.get("messages", []) if isinstance(mailbox, dict) else []:
-    if not isinstance(message, dict) or message.get("type") != "retro_answer":
+for mailbox_path in mailboxes:
+    try:
+        mailbox = yaml.safe_load(mailbox_path.read_text(encoding="utf-8")) or {}
+    except Exception:
         continue
-    if message.get("event_id") == event_id or pattern.search(str(message.get("content", ""))):
-        raise SystemExit(0)
+    for message in mailbox.get("messages", []) if isinstance(mailbox, dict) else []:
+        if not isinstance(message, dict) or message.get("type") != "retro_answer":
+            continue
+        if message.get("event_id") == event_id or pattern.search(str(message.get("content", ""))):
+            raise SystemExit(0)
 raise SystemExit(1)
 PY
 }
