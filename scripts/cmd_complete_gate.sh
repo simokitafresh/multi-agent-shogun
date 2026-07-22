@@ -278,10 +278,15 @@ push_task_repositories() {
         upstream_sha=$(git -C "$repo" rev-parse '@{upstream}' 2>/dev/null || true)
         if [ -n "$upstream_ref" ] && [ -n "$head_sha" ] && [ "$head_sha" = "$upstream_sha" ]; then
             echo "  git push: SKIP ($repo already up-to-date with ${upstream_ref})"
-        elif git -C "$repo" push 2>&1; then
+        elif timeout "${CMD_COMPLETE_GATE_PUSH_TIMEOUT:-240}" git -C "$repo" push 2>&1; then
             echo "  git push: OK ($repo)"
         else
-            echo "  [INFO] git push: WARN ($repo push failed, non-blocking)"
+            _push_rc=$?
+            if [ "$_push_rc" -eq 124 ]; then
+                echo "  [INFO] git push: WARN ($repo push timed out after ${CMD_COMPLETE_GATE_PUSH_TIMEOUT:-240}s — remote unreachable/too slow, non-blocking; commits accumulate until next push)"
+            else
+                echo "  [INFO] git push: WARN ($repo push failed rc=$_push_rc, non-blocking)"
+            fi
         fi
     done
 }
@@ -8325,6 +8330,7 @@ fi
 level_heading "[L3]" "CI status check:"
 CI_PUSH_DETECTED=false
 CI_PUSH_STATE_BLOCK=""
+CI_PUSH_REPO_DIR=""
 for task_file in "${MATCHING_TASK_FILES[@]}"; do
     if [ ! -f "$task_file" ]; then
         echo "  [WARN] matching task file disappeared, skipping: $task_file"
@@ -8338,7 +8344,7 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
         task_repo_dir=$(resolve_task_repo_dir "$task_file")
         ci_push_state=$(report_ci_push_state "$report_file" "$task_repo_dir")
         case "$ci_push_state" in
-            PUSHED:*) CI_PUSH_DETECTED=true ;;
+            PUSHED:*) CI_PUSH_DETECTED=true; CI_PUSH_REPO_DIR="$task_repo_dir" ;;
             BLOCK:*) CI_PUSH_STATE_BLOCK="$ci_push_state"; break ;;
         esac
     fi
@@ -8350,12 +8356,33 @@ if [ -n "$CI_PUSH_STATE_BLOCK" ]; then
     ALL_CLEAR=false
 elif [ "$CI_PUSH_DETECTED" = true ]; then
     ci_result="${CMD_COMPLETE_GATE_CI_RUN_JSON:-}"
-    if [ -z "$ci_result" ] && command -v gh >/dev/null 2>&1; then
-        ci_result=$(timeout 15 gh run list --repo simokitafresh/multi-agent-shogun \
-            --workflow test.yml --branch main --limit 1 \
-            --json conclusion,createdAt,databaseId,headSha 2>/dev/null || true)
+    ci_repo_dir="${CI_PUSH_REPO_DIR:-$SCRIPT_DIR}"
+    ci_origin_slug=""
+    if [ -d "$ci_repo_dir/.git" ] || git -C "$ci_repo_dir" rev-parse --git-dir >/dev/null 2>&1; then
+        ci_origin_slug=$(git -C "$ci_repo_dir" remote get-url origin 2>/dev/null \
+            | sed -n 's|.*github\.com[:/]\([^/]*/[^/]*\)\.git$|\1|p; s|.*github\.com[:/]\([^/]*/[^/]*\)$|\1|p' \
+            | head -1)
     fi
-    expected_head=$(resolve_ci_expected_head "$SCRIPT_DIR")
+    if [ -z "$ci_origin_slug" ]; then
+        echo "  [CRITICAL] BLOCK: cannot derive GitHub origin slug from task repo ${ci_repo_dir}"
+        record_block_reason "ci_readiness:BLOCK: origin slug unresolvable from ${ci_repo_dir}"
+        ALL_CLEAR=false
+    fi
+    if [ -z "$ci_result" ] && [ -n "$ci_origin_slug" ] && command -v gh >/dev/null 2>&1; then
+        ci_result=$(timeout 15 gh run list --repo "$ci_origin_slug" \
+            --branch main --limit 5 \
+            --json conclusion,createdAt,databaseId,headSha 2>/dev/null || true)
+        # Pick the most recent run whose head matches expected_head; fall back
+        # to the overall most recent run (index 0) when no exact match exists.
+        if [ -n "$ci_result" ] && [ -n "$expected_head" ]; then
+            ci_result=$(printf '%s' "$ci_result" | jq -c \
+                --arg head "$expected_head" \
+                '[if ([.[] | select(.headSha == $head)] | length) > 0
+                  then ([.[] | select(.headSha == $head)] | sort_by(.createdAt) | reverse | .[0])
+                  else .[0] end]' 2>/dev/null || printf '%s' "$ci_result")
+        fi
+    fi
+    expected_head=$(resolve_ci_expected_head "$ci_repo_dir")
     ci_run_id=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then (.[0].databaseId // "" | tostring) else "" end' 2>/dev/null || true)
     target_conclusion=success
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
