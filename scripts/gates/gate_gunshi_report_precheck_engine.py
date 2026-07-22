@@ -343,13 +343,25 @@ def main():
             # 明示した完了表現であり、実作業の未完了ではない。語の直後だけを
             # 局所判定し、「未確認の前提あり」「未解決事項を保留」は維持する。
             occurrences = list(re.finditer(re.escape(lower_term), lower_text))
-            negated_completion_count = 0
+            benign_occurrence_count = 0
             for occurrence in occurrences:
                 _, end = occurrence.span()
-                after = lower_text[end:min(len(lower_text), end + 16)]
-                if re.match(r'(?:の)?(?:前提|事項|項目|問題|課題)?(?:は)?(?:なし|無し|ない)(?:\b|。|、|$)', after):
-                    negated_completion_count += 1
-            if occurrences and negated_completion_count == len(occurrences):
+                after = lower_text[end:min(len(lower_text), end + 32)]
+                completed_or_quoted = (
+                    # 完了肯定: 「未確認0を確認」
+                    re.match(r'0(?:件)?(?:を)?確認(?:済み|済)?', after)
+                    # 対象なし: 「未確認前提なし」「未確認routeなし」
+                    or re.match(
+                        r'(?:の)?(?:前提|事項|項目|問題|課題|[a-z_][a-z0-9_-]*)?'
+                        r'(?:は)?(?:なし|無し|ない)(?:\b|。|、|$)',
+                        after,
+                    )
+                    # AC要件引用: 「未確認が1件でもあればBLOCK」
+                    or re.match(r'が?(?:1件|一件|1つ|ひとつ)でもあれば', after)
+                )
+                if completed_or_quoted:
+                    benign_occurrence_count += 1
+            if occurrences and benign_occurrence_count == len(occurrences):
                 return True
             # 偵察報告やdetector設計説明では「未確認/未解決」は調査状態・分類語であり、
             # AC未達や委譲を意味しない。委譲・未完了語が同居する場合は検出を維持する。

@@ -49,6 +49,24 @@ YAML
   [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
 }
 
+@test "LG043 ignores completed zero-count confirmation" {
+  run_engine "未確認0を確認"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+}
+
+@test "LG043 ignores no-route completion expression" {
+  run_engine "未確認routeなし"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+}
+
+@test "LG043 ignores quoted conditional AC requirement" {
+  run_engine "AC要件は未確認が1件でもあればBLOCK"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+}
+
 @test "LG043 keeps blocking actual unverified work" {
   run_engine "本番動作は未確認"
   [ "$status" -eq 0 ]
@@ -68,6 +86,13 @@ YAML
   [ "$status" -eq 0 ]
   [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
   [[ "$output" == *"BC_YES_CLARITY_TERMS="*"保留"* ]]
+}
+
+@test "LG043 keeps blocking delegation to karo" {
+  run_engine "残作業は家老が実施"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+  [[ "$output" == *"BC_YES_CLARITY_TERMS="*"家老が実施"* ]]
 }
 
 @test "SG-PRE35 blocks unclassified new test and accepts necessity plus control groups" {
