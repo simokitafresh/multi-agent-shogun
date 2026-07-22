@@ -1109,12 +1109,12 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                 eval "exec ${_sf_fd}>&-"
                 BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                     --summary-only --receipt "$_receipt" -- \
-                    env BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                    env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
             )
         else
             BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                 --summary-only --receipt "$_receipt" -- \
-                env BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
         fi
         _rc=$?
         set -e
