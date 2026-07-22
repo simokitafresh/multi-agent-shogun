@@ -225,6 +225,29 @@ setup() {
     grep -q '"duration_seconds": 511' "$TEST_TMPDIR/queue/retro/events.jsonl"
 }
 
+# test_necessity: spontaneous infra findings remain deliverable, while retrospective answers attach one exact hold identity and ambiguity fails closed.
+@test "infra bug answer identity handles zero one and two awaiting events" {
+    setup_basic_test_env
+    run bash "$TEST_INBOX_WRITE" karo "spontaneous finding" infra_bug_suspected testninja investigate
+    [ "$status" -eq 0 ]
+    ! grep -q '^  event_id:' "$TEST_INBOX_DIR/karo.yaml"
+
+    mkdir -p "$TEST_TMPDIR/queue/retro/verbatim_awaiting_answer"
+    printf 'testninja\nevent:one\nfixture\nkey1\n' > "$TEST_TMPDIR/queue/retro/verbatim_awaiting_answer/one.event"
+    run bash "$TEST_INBOX_WRITE" karo "answer one" infra_bug_suspected testninja investigate
+    [ "$status" -eq 0 ]
+    grep -q "event_id: 'event:one'" "$TEST_INBOX_DIR/karo.yaml"
+
+    printf 'testninja\nevent:two\nfixture\nkey2\n' > "$TEST_TMPDIR/queue/retro/verbatim_awaiting_answer/two.event"
+    run bash "$TEST_INBOX_WRITE" karo "ambiguous answer" infra_bug_suspected testninja investigate
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'ambiguous awaiting events'* ]]
+
+    RETRO_EVENT_ID=event:missing run bash "$TEST_INBOX_WRITE" karo "wrong explicit answer" infra_bug_suspected testninja investigate
+    [ "$status" -eq 2 ]
+    [[ "$output" == *'does not identify exactly one awaiting event'* ]]
+}
+
 # =============================================================================
 # T-001: 引数バリデーション — target未指定でexit 1
 # =============================================================================

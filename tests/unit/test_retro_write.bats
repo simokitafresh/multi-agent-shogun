@@ -107,6 +107,27 @@ YAML
   [ ! -e "$RETRO_ROOT_OVERRIDE/notifications" ]
 }
 
+# test_necessity: structured infrastructure answers resolve only their exact delivery and release one FIFO backlog event.
+@test "structured infra bug answer resolves exact event and promotes one backlog item" {
+  mkdir -p "$RETRO_ROOT_OVERRIDE/queue/retro/verbatim_awaiting_answer" "$RETRO_ROOT_OVERRIDE/queue/retro/verbatim_backlog"
+  bash "$RETRO_ROOT_OVERRIDE/scripts/retro_write.sh" enqueue-trigger n1 msg-1 2026-07-18T15:00:00+09:00
+  bash "$RETRO_ROOT_OVERRIDE/scripts/retro_write.sh" mark-delivered n1 report_received:msg-1 2026-07-18T15:01:00+09:00
+  printf 'n1\nreport_received:msg-1\nfixture\nkey1\n' > "$RETRO_ROOT_OVERRIDE/queue/retro/verbatim_awaiting_answer/key1.event"
+  printf 'n1\nreport_received:msg-2\nfixture\nkey2\n1\n' > "$RETRO_ROOT_OVERRIDE/queue/retro/verbatim_backlog/key2.event"
+  printf 'n1\nreport_received:msg-3\nfixture\nkey3\n2\n' > "$RETRO_ROOT_OVERRIDE/queue/retro/verbatim_backlog/key3.event"
+  cat > "$RETRO_ROOT_OVERRIDE/queue/inbox/karo.yaml" <<'YAML'
+messages:
+- type: infra_bug_suspected
+  event_id: report_received:msg-1
+  content: 'event_id=report_received:msg-999 must not release another event'
+YAML
+  bash "$RETRO_ROOT_OVERRIDE/scripts/retro_write.sh" final-checkpoint
+  python3 -c 'import json,sys; d=json.load(open(sys.argv[1]))["deliveries"]; assert "answered_at" in d["report_received:msg-1"]' "$RETRO_ROOT_OVERRIDE/queue/retro/state.json"
+  [ ! -e "$RETRO_ROOT_OVERRIDE/queue/retro/verbatim_awaiting_answer/key1.event" ]
+  [ -e "$RETRO_ROOT_OVERRIDE/queue/retro/verbatim_pending/key2.event" ]
+  [ -e "$RETRO_ROOT_OVERRIDE/queue/retro/verbatim_backlog/key3.event" ]
+}
+
 @test "expired unanswered delivery blocks next task and reprompts exactly once" {
   bash "$RETRO_ROOT_OVERRIDE/scripts/retro_write.sh" enqueue-trigger n1 msg-1 2026-07-18T15:00:00+09:00
   bash "$RETRO_ROOT_OVERRIDE/scripts/retro_write.sh" mark-delivered n1 report_received:msg-1 2026-07-18T15:01:00+09:00

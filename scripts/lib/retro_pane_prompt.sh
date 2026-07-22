@@ -219,31 +219,37 @@ retro_pane_prompt_deliver() {
 retro_pane_prompt_enqueue() {
     local root="$1" target="$2" event_id="$3" from="$4"
     local pending_dir="${RETRO_PANE_PENDING_DIR:-${RETRO_VERBATIM_PENDING_DIR:-$root/queue/retro/verbatim_pending}}"
-    local key tmp event_file existing existing_target pending_lock
-    mkdir -p "$pending_dir"
+    local retro_queue_dir="${pending_dir%/*}"
+    [[ "$pending_dir" == */verbatim_pending ]] && retro_queue_dir="${pending_dir%/verbatim_pending}"
+    local backlog_dir="${RETRO_PANE_BACKLOG_DIR:-$retro_queue_dir/verbatim_backlog}"
+    local state_dir="${RETRO_PANE_STATE_DIR:-${RETRO_VERBATIM_STATE_DIR:-$root/queue/retro/pane_prompt}}"
+    local key tmp event_file existing existing_target pending_lock backlog_file
+    mkdir -p "$pending_dir" "$backlog_dir"
     RETRO_PANE_ENQUEUE_DECISION=queued
     pending_lock="${pending_dir%/}.enqueue.lock"
     exec {retro_pending_lock_fd}>"$pending_lock"
     flock -x "$retro_pending_lock_fd"
     key=$(retro_pane_prompt_key "$target" "$event_id")
     event_file="$pending_dir/$key.event"
-    if [ -e "$event_file" ]; then
+    backlog_file="$backlog_dir/$key.event"
+    if [ -e "$event_file" ] || [ -e "$backlog_file" ] || [ -f "$state_dir/$key.claimed/sent" ]; then
         flock -u "$retro_pending_lock_fd"
         exec {retro_pending_lock_fd}>&-
         RETRO_PANE_ENQUEUE_DECISION=suppressed
         return 0
     fi
-    # Bound each target to one outstanding prompt.  A later event remains in
-    # the append-only retro ledger/state and can be reconciled there; stacking
-    # a second pane prompt while the first is unresolved has no user benefit.
+    # Bound each target to one visible prompt, but never discard a later event.
     for existing in "$pending_dir"/*.event "${pending_dir%/verbatim_pending}/verbatim_awaiting_answer"/*.event; do
         [ -f "$existing" ] || continue
         IFS= read -r existing_target < "$existing" || true
         if [ "$existing_target" = "$target" ]; then
-            printf '%s\tsuppressed_outstanding\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "${RETRO_PANE_LEDGER:-${RETRO_VERBATIM_LOG:-$root/logs/retro_pane_prompt.tsv}}"
+            tmp="$backlog_file.tmp.$$"
+            printf '%s\n%s\n%s\n%s\n%s\n' "$target" "$event_id" "$from" "$key" "$(date +%s%N)" > "$tmp"
+            mv -n "$tmp" "$backlog_file" 2>/dev/null || rm -f "$tmp"
+            printf '%s\tqueued_backlog\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "${RETRO_PANE_LEDGER:-${RETRO_VERBATIM_LOG:-$root/logs/retro_pane_prompt.tsv}}"
             flock -u "$retro_pending_lock_fd"
             exec {retro_pending_lock_fd}>&-
-            RETRO_PANE_ENQUEUE_DECISION=suppressed
+            RETRO_PANE_ENQUEUE_DECISION=backlogged
             return 0
         fi
     done
@@ -252,6 +258,39 @@ retro_pane_prompt_enqueue() {
     mv -n "$tmp" "$event_file" 2>/dev/null || rm -f "$tmp"
     flock -u "$retro_pending_lock_fd"
     exec {retro_pending_lock_fd}>&-
+}
+
+retro_pane_prompt_promote_backlog() {
+    local root="$1" target="$2"
+    local pending_dir="${RETRO_PANE_PENDING_DIR:-${RETRO_VERBATIM_PENDING_DIR:-$root/queue/retro/verbatim_pending}}"
+    local retro_queue_dir="${pending_dir%/*}"
+    [[ "$pending_dir" == */verbatim_pending ]] && retro_queue_dir="${pending_dir%/verbatim_pending}"
+    local backlog_dir="${RETRO_PANE_BACKLOG_DIR:-$retro_queue_dir/verbatim_backlog}"
+    local awaiting_dir="$retro_queue_dir/verbatim_awaiting_answer"
+    local pending_lock="${pending_dir%/}.enqueue.lock" existing existing_target oldest="" order oldest_order=""
+    mkdir -p "$pending_dir" "$backlog_dir"
+    exec {retro_promote_lock_fd}>"$pending_lock"
+    flock -x "$retro_promote_lock_fd"
+    for existing in "$pending_dir"/*.event "$awaiting_dir"/*.event; do
+        [ -f "$existing" ] || continue
+        IFS= read -r existing_target < "$existing" || true
+        if [ "$existing_target" = "$target" ]; then
+            flock -u "$retro_promote_lock_fd"; exec {retro_promote_lock_fd}>&-
+            return 0
+        fi
+    done
+    for existing in "$backlog_dir"/*.event; do
+        [ -f "$existing" ] || continue
+        IFS= read -r existing_target < "$existing" || true
+        [ "$existing_target" = "$target" ] || continue
+        order=$(sed -n '5p' "$existing")
+        if [ -z "$oldest" ] || [[ "$order" < "$oldest_order" ]]; then oldest="$existing"; oldest_order="$order"; fi
+    done
+    if [ -n "$oldest" ]; then
+        mv "$oldest" "$pending_dir/${oldest##*/}"
+        printf '%s\tpromoted_backlog\t%s\t%s\n' "$(date -Iseconds)" "$target" "$(sed -n '2p' "$pending_dir/${oldest##*/}")" >> "${RETRO_PANE_LEDGER:-${RETRO_VERBATIM_LOG:-$root/logs/retro_pane_prompt.tsv}}"
+    fi
+    flock -u "$retro_promote_lock_fd"; exec {retro_promote_lock_fd}>&-
 }
 
 retro_pane_prompt_async() {
@@ -264,7 +303,7 @@ retro_pane_prompt_async() {
     # Suppression is a successful exactly-once outcome: the event is already
     # durable or this target already has an unresolved prompt.  In either case
     # starting a detached delivery would violate the enqueue decision.
-    [ "$RETRO_PANE_ENQUEUE_DECISION" = suppressed ] && return 0
+    { [ "$RETRO_PANE_ENQUEUE_DECISION" = suppressed ] || [ "$RETRO_PANE_ENQUEUE_DECISION" = backlogged ]; } && return 0
     [ "$enqueue_rc" -eq 0 ] || return "$enqueue_rc"
     ( retro_pane_prompt_deliver "$root" "$target" "$event_id" "$from" ) >/dev/null 2>&1 &
 }

@@ -9,6 +9,7 @@ mkdir -p "$QUEUE_DIR"
 
 python3 - "$ROOT" "$@" <<'PY'
 import datetime as dt, fcntl, hashlib, json, os, subprocess, sys
+import yaml
 
 root, *args = sys.argv[1:]
 if not args or args[0] not in {"submit", "enqueue-trigger", "mark-delivered", "final-checkpoint"}:
@@ -161,21 +162,19 @@ with open(lock_path, "a+") as lock:
     answered_ids = set()
     karo_inbox = os.path.join(root, "queue", "inbox", "karo.yaml")
     if args[0] == "final-checkpoint" and os.path.exists(karo_inbox):
-        current = {}
-        for raw in open(karo_inbox, encoding="utf-8"):
-            line = raw.strip()
-            if line.startswith("- "):
-                if current.get("type") == "retro_answer":
-                    text = current.get("content", "")
-                    answered_ids.update(eid for eid in state["deliveries"] if eid in text)
-                current = {}
-                line = line[2:]
-            if ":" in line:
-                key, value = line.split(":", 1)
-                current[key.strip()] = value.strip().strip("'\"")
-        if current.get("type") == "retro_answer":
-            text = current.get("content", "")
-            answered_ids.update(eid for eid in state["deliveries"] if eid in text)
+        try:
+            messages = (yaml.safe_load(open(karo_inbox, encoding="utf-8")) or {}).get("messages", [])
+        except Exception:
+            messages = []
+        for message in messages if isinstance(messages, list) else []:
+            if not isinstance(message, dict) or message.get("type") not in {"retro_answer", "infra_bug_suspected"}:
+                continue
+            structured = str(message.get("event_id") or "")
+            if structured in state["deliveries"]:
+                answered_ids.add(structured)
+            elif message.get("type") == "retro_answer":
+                text = str(message.get("content") or "")
+                answered_ids.update(eid for eid in state["deliveries"] if f"event_id={eid}" in text)
     e4_answers = os.path.join(qdir, "answers.jsonl")
     if args[0] == "final-checkpoint" and os.path.exists(e4_answers):
         for raw in open(e4_answers, encoding="utf-8"):
@@ -186,6 +185,50 @@ with open(lock_path, "a+") as lock:
     for event_id in answered_ids:
         state["deliveries"][event_id]["answered_at"] = state["deliveries"][event_id].get(
             "answered_at", dt.datetime.now(dt.timezone.utc).isoformat())
+
+    # Resolve only the answered visible event, then promote exactly one oldest
+    # durable backlog item for the same ninja.
+    if args[0] == "final-checkpoint" and answered_ids:
+        pending_dir = os.path.join(qdir, "verbatim_pending")
+        awaiting_dir = os.path.join(qdir, "verbatim_awaiting_answer")
+        backlog_dir = os.path.join(qdir, "verbatim_backlog")
+        reconciled_dir = os.path.join(qdir, "verbatim_reconciled")
+        ledger_path = os.path.join(root, "logs", "retro_pane_prompt.tsv")
+        for directory in (pending_dir, awaiting_dir, backlog_dir, reconciled_dir, os.path.dirname(ledger_path)):
+            os.makedirs(directory, exist_ok=True)
+        with open(os.path.join(qdir, "verbatim_pending.enqueue.lock"), "a+") as elock:
+            fcntl.flock(elock, fcntl.LOCK_EX)
+            targets = set()
+            for name in os.listdir(awaiting_dir):
+                path = os.path.join(awaiting_dir, name)
+                try: fields = open(path, encoding="utf-8").read().splitlines()
+                except OSError: continue
+                if len(fields) >= 2 and fields[1] in answered_ids:
+                    targets.add(fields[0]); os.replace(path, os.path.join(reconciled_dir, name))
+            ledger_rows = []
+            for target in sorted(targets):
+                visible = False
+                for directory in (pending_dir, awaiting_dir):
+                    for name in os.listdir(directory):
+                        try: first = open(os.path.join(directory, name), encoding="utf-8").readline().rstrip("\n")
+                        except OSError: continue
+                        if first == target: visible = True; break
+                    if visible: break
+                if visible: continue
+                candidates = []
+                for name in os.listdir(backlog_dir):
+                    path = os.path.join(backlog_dir, name)
+                    try: fields = open(path, encoding="utf-8").read().splitlines()
+                    except OSError: continue
+                    if len(fields) >= 2 and fields[0] == target:
+                        candidates.append((fields[4] if len(fields) > 4 else "", name, fields[1]))
+                if candidates:
+                    _, name, next_event = min(candidates)
+                    os.replace(os.path.join(backlog_dir, name), os.path.join(pending_dir, name))
+                    ledger_rows.append(f"{dt.datetime.now().astimezone().isoformat()}\tpromoted_backlog\t{target}\t{next_event}\n")
+            if ledger_rows:
+                with open(ledger_path, "a", encoding="utf-8") as ledger:
+                    ledger.writelines(ledger_rows); ledger.flush(); os.fsync(ledger.fileno())
 
     timeout_seconds = int(os.environ.get("RETRO_ANSWER_TIMEOUT_SECONDS", "600"))
     now = dt.datetime.now(dt.timezone.utc)

@@ -2371,6 +2371,35 @@ case "$TYPE" in
         ;;
 esac
 
+# Infrastructure-bug findings are answers to an exact retrospective prompt.
+# Persist the identity structurally; ambiguous/no-hold cases fail closed.
+if [ "$TYPE" = "infra_bug_suspected" ]; then
+    _retro_event_id="${RETRO_EVENT_ID:-}"
+    _retro_matches=()
+    for _retro_hold in "$SCRIPT_DIR"/queue/retro/verbatim_awaiting_answer/*.event; do
+        [ -f "$_retro_hold" ] || continue
+        if [ "$(sed -n '1p' "$_retro_hold")" = "$FROM" ]; then
+            _retro_matches+=("$(sed -n '2p' "$_retro_hold")")
+        fi
+    done
+    if [ -n "$_retro_event_id" ]; then
+        _retro_exact=0
+        for _retro_candidate in "${_retro_matches[@]}"; do
+            [ "$_retro_candidate" = "$_retro_event_id" ] && _retro_exact=$((_retro_exact + 1))
+        done
+        if [ "$_retro_exact" -ne 1 ]; then
+            echo "[retro_answer_identity] BLOCKED: RETRO_EVENT_ID does not identify exactly one awaiting event for ${FROM}" >&2
+            exit 2
+        fi
+    elif [ "${#_retro_matches[@]}" -eq 1 ]; then
+        _retro_event_id="${_retro_matches[0]}"
+    elif [ "${#_retro_matches[@]}" -gt 1 ]; then
+        echo "[retro_answer_identity] BLOCKED: ambiguous awaiting events for ${FROM}: ${#_retro_matches[@]}" >&2
+        exit 2
+    fi
+    [ -z "$_retro_event_id" ] || _identity_fields+=(event_id "$_retro_event_id")
+fi
+
 if [ -n "$ACTION" ]; then
     _msg_block="$(inbox_build_message_block \
         action "$ACTION" \

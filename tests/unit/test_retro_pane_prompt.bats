@@ -6,6 +6,7 @@ setup() {
   mkdir -p "$ROOT/logs" "$ROOT/queue/retro"
   export RETRO_PANE_STATE_DIR="$BATS_TEST_TMPDIR/claims"
   export RETRO_PANE_PENDING_DIR="$BATS_TEST_TMPDIR/pending"
+  export RETRO_PANE_BACKLOG_DIR="$ROOT/queue/retro/verbatim_backlog"
   export RETRO_PANE_LEDGER="$BATS_TEST_TMPDIR/ledger.tsv"
   export RETRO_PANE_TARGET='fixture:agents.7'
   export RETRO_PANE_IDLE_CHECK="$BATS_TEST_TMPDIR/idle"
@@ -102,11 +103,15 @@ setup() {
   [ "$(grep -c '^sleep:0.5$' "$ORDER_LOG")" -eq 3 ]
 }
 
-@test "one target can have only one outstanding event" {
+@test "one target has one visible event and later event is durable" {
   retro_pane_prompt_enqueue "$ROOT" tobisaru event:first fixture
   retro_pane_prompt_enqueue "$ROOT" tobisaru event:second fixture
-  [ "$(find "$RETRO_PANE_PENDING_DIR" -type f | wc -l)" -eq 1 ]
-  [ "$(grep -c $'\tsuppressed_outstanding\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  [ "$(find "$RETRO_PANE_PENDING_DIR" -type f -name '*.event' | wc -l)" -eq 1 ]
+  [ "$(find "$ROOT/queue/retro/verbatim_backlog" -type f -name '*.event' | wc -l)" -eq 1 ]
+  [ "$(grep -c $'\tqueued_backlog\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  rm "$RETRO_PANE_PENDING_DIR"/*.event
+  retro_pane_prompt_promote_backlog "$ROOT" tobisaru
+  grep -Rq '^event:second$' "$RETRO_PANE_PENDING_DIR"
 }
 
 @test "retro transport has no inbox delivery path" {
@@ -122,7 +127,7 @@ setup() {
   [ "$(grep -c $'\tfailed_busy\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
 }
 
-@test "async honors durable outstanding suppression across parallel callers and restart" {
+@test "async preserves distinct events in durable backlog across parallel callers and restart" {
   retro_pane_prompt_async "$ROOT" tobisaru event:first fixture
   wait
   first_send_count="$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)"
@@ -135,7 +140,8 @@ setup() {
 
   [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
   [ "$(find "$RETRO_PANE_PENDING_DIR" -type f -name '*.event' | wc -l)" -eq 1 ]
-  [ "$(grep -c $'\tsuppressed_outstanding\t' "$RETRO_PANE_LEDGER")" -eq 2 ]
+  [ "$(find "$ROOT/queue/retro/verbatim_backlog" -type f -name '*.event' | wc -l)" -eq 2 ]
+  [ "$(grep -c $'\tqueued_backlog\t' "$RETRO_PANE_LEDGER")" -eq 2 ]
 }
 
 @test "report and reviewed failure pending events reconcile without pane delivery" {
