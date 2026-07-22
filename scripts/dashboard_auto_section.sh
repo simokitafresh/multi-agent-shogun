@@ -490,6 +490,8 @@ _CFC_CACHE="$_TMP_DIR/cfc"
 _ARCH_TITLES_CACHE="/tmp/dashboard_arch_titles_cache_${_proj_hash}.txt"
 _ARCH_CFC_CACHE="/tmp/dashboard_arch_cfc_cache_${_proj_hash}.txt"
 _ARCH_COUNT_CACHE="/tmp/dashboard_arch_count_cache_${_proj_hash}.txt"
+_ARCH_MANIFEST_CACHE="/tmp/dashboard_arch_manifest_${_proj_hash}.tsv"
+_ARCH_INDEX_LOCK="/tmp/dashboard_arch_index_${_proj_hash}.lock"
 # GP-cmd_2081: ディレクトリmtimeキャッシュ — globを-nt比較で回避(~24ms削減)
 _ARCH_MTIME_CACHE="/tmp/dashboard_arch_mtime_${_proj_hash}.txt"
 # trap統合済み（L71に一本化）— ここでの再定義は不要
@@ -501,48 +503,133 @@ if [[ -d "$ARCHIVE_CMD_DIR" ]]; then
         cat "$_ARCH_TITLES_CACHE" >> "$TMP_TITLES"
         cat "$_ARCH_CFC_CACHE" > "$_CFC_CACHE"
     else
-        # キャッシュミス: glob + gawk + キャッシュ更新
-        shopt -s nullglob
-        _arch_files=("$ARCHIVE_CMD_DIR"/cmd_*.yaml)
-        shopt -u nullglob
-        if (( ${#_arch_files[@]} > 0 )); then
-            # フルスキャン
-            gawk -v titles_out="$TMP_TITLES" -v cfc_out="$_CFC_CACHE" '
-                BEGINFILE {
-                    fname = FILENAME; sub(/.*\//, "", fname)
-                    cid = ""; tit = ""; proj = ""; st = ""; dt = ""
-                }
-                /^ *- id: cmd_/ {
-                    sub(/.*- id: */, ""); gsub(/["\047[:space:]]/, "")
-                    cid = $0
-                }
-                /^    title:/ && cid != "" {
-                    sub(/.*title: */, "")
-                    gsub(/^["\047]|["\047]$/, "")
-                    if (length($0) > 50) $0 = substr($0, 1, 47) "..."
-                    tit = $0
-                }
-                /project:/ {
-                    v = $0; sub(/.*project: */, "", v); gsub(/["\047\t ]/, "", v)
-                    if (v != "" && proj == "") proj = v
-                }
-                /status:/ {
-                    v = $0; sub(/.*status: */, "", v); gsub(/["\047\t ]/, "", v)
-                    if (v != "") st = v
-                }
-                dt == "" && /_(at|date):/ {
-                    if (match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}/))
-                        dt = substr($0, RSTART, RLENGTH)
-                }
-                ENDFILE {
-                    if (cid != "" && tit != "") print cid "\t" tit > titles_out
-                    if (proj != "") print fname "|" proj "|" st "|" dt > cfc_out
-                }
-            ' "${_arch_files[@]}" 2>/dev/null
-            # キャッシュ保存
-            cp "$TMP_TITLES" "$_ARCH_TITLES_CACHE" 2>/dev/null || true
-            cp "$_CFC_CACHE" "$_ARCH_CFC_CACHE" 2>/dev/null || true
-            touch "$_ARCH_MTIME_CACHE" 2>/dev/null || true
+        # Directory mtime changes on every completed cmd.  Passing the entire
+        # archive as one gawk argv therefore re-opened ~4k DrvFS files for each
+        # completion.  Keep a signature manifest and parse only additions or
+        # replacements; a cold/rebuild scan uses bounded parallel readers.
+        exec 9>"$_ARCH_INDEX_LOCK"
+        flock -w 30 9 || { echo "ERROR: dashboard archive index lock timeout" >&2; exit 1; }
+        _arch_diag=$(python3 - "$ARCHIVE_CMD_DIR" "$_ARCH_TITLES_CACHE" \
+            "$_ARCH_CFC_CACHE" "$_ARCH_MANIFEST_CACHE" "$_ARCH_COUNT_CACHE" \
+            "$_ARCH_MTIME_CACHE" "$TMP_TITLES" "$_CFC_CACHE" <<'PY'
+import concurrent.futures
+import os
+import re
+import shutil
+import sys
+import tempfile
+import time
+
+(archive_dir, titles_cache, cfc_cache, manifest_cache, count_cache,
+ mtime_cache, titles_out, cfc_out) = sys.argv[1:]
+started = time.monotonic()
+
+entries = []
+with os.scandir(archive_dir) as scan:
+    for entry in scan:
+        if entry.is_file() and entry.name.startswith("cmd_") and entry.name.endswith(".yaml"):
+            entries.append((entry.name, entry.path))
+entries.sort()
+current = {name for name, _ in entries}
+
+previous = set()
+if os.path.isfile(manifest_cache):
+    with open(manifest_cache, encoding="utf-8") as stream:
+        for line in stream:
+            name = line.rstrip("\n").split("\t", 1)[0]
+            if name:
+                previous.add(name)
+
+cache_ready = os.path.isfile(titles_cache) and os.path.isfile(cfc_cache) and bool(previous)
+removed = previous - current
+added_names = current - previous
+# Archive files are immutable after publication.  Directory mtime is the
+# invalidation signal; comparing names avoids 4k DrvFS stat calls.  Deletion is
+# exceptional and rebuilds both derived indexes.
+mode = "incremental" if cache_ready and not removed else "rebuild"
+scan_names = added_names if mode == "incremental" else current
+
+title_rows = []
+cfc_by_file = {}
+if mode == "incremental":
+    with open(titles_cache, encoding="utf-8", errors="replace") as stream:
+        for line in stream:
+            title_rows.append(line.rstrip("\n"))
+    with open(cfc_cache, encoding="utf-8", errors="replace") as stream:
+        for line in stream:
+            name = line.rstrip("\n").split("|", 1)[0]
+            cfc_by_file[name] = line.rstrip("\n")
+
+date_pattern = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}")
+id_pattern = re.compile(r"^ *- id: cmd_")
+
+def parse(item):
+    name, path = item
+    cmd_id = title = project = status = date = ""
+    with open(path, encoding="utf-8", errors="replace") as stream:
+        for raw in stream:
+            line = raw.rstrip("\n")
+            if id_pattern.search(line):
+                value = re.sub(r".*- id: *", "", line)
+                cmd_id = re.sub(r"[\"'\s]", "", value)
+            if line.startswith("    title:") and cmd_id:
+                value = re.sub(r".*title: *", "", line)
+                title = value.strip("\"'")
+                if len(title) > 50:
+                    title = title[:47] + "..."
+            if "project:" in line and not project:
+                value = re.sub(r".*project: *", "", line)
+                project = re.sub(r"[\"'\t ]", "", value)
+            if "status:" in line:
+                value = re.sub(r".*status: *", "", line)
+                value = re.sub(r"[\"'\t ]", "", value)
+                if value:
+                    status = value
+            if not date and re.search(r"_(?:at|date):", line):
+                match = date_pattern.search(line)
+                if match:
+                    date = match.group(0)
+    title_row = f"{cmd_id}\t{title}" if cmd_id and title else ""
+    cfc_row = f"{name}|{project}|{status}|{date}" if project else ""
+    return name, cmd_id, title_row, cfc_row
+
+items = [entry for entry in entries if entry[0] in scan_names]
+workers = min(32, max(1, len(items)))
+with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+    for name, cmd_id, title_row, cfc_row in pool.map(parse, items):
+        if title_row:
+            title_rows.append(title_row)
+        if cfc_row:
+            cfc_by_file[name] = cfc_row
+
+def atomic_write(path, lines):
+    directory = os.path.dirname(path) or "."
+    fd, temporary = tempfile.mkstemp(prefix=os.path.basename(path) + ".", dir=directory)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            for line in lines:
+                stream.write(line + "\n")
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+cfc_lines = [cfc_by_file[key] for key in sorted(cfc_by_file)]
+manifest_lines = [name for name, _ in entries]
+atomic_write(titles_cache, title_rows)
+atomic_write(cfc_cache, cfc_lines)
+atomic_write(manifest_cache, manifest_lines)
+atomic_write(count_cache, [str(len(entries))])
+atomic_write(mtime_cache, [str(time.time_ns())])
+shutil.copyfile(titles_cache, titles_out)
+shutil.copyfile(cfc_cache, cfc_out)
+wall_ms = int((time.monotonic() - started) * 1000)
+print(f"archive_mode={mode} archive_total={len(entries)} archive_scanned={len(items)} archive_wall_ms={wall_ms}")
+PY
+        )
+        flock -u 9
+        if [[ "${DASHBOARD_PROFILE:-0}" == "1" ]]; then
+            printf 'DASHBOARD_PROFILE %s\n' "$_arch_diag" >&2
         fi
     fi
 fi
