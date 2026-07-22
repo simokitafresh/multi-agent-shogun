@@ -28,10 +28,35 @@ if [ "${1:-}" = "--batch" ]; then
     _rfs_batch_root="${_rfs_batch_self%/scripts/report_field_set.sh}"
     [[ "$_rfs_batch_report" = /* ]] || _rfs_batch_report="$PWD/$_rfs_batch_report"
     _rfs_batch_lock="${_rfs_batch_report}.lock"
+    _rfs_receipt_dir="${RFS_RECEIPT_DIR:-/dev/shm}"
+    [ -d "$_rfs_receipt_dir" ] || _rfs_receipt_dir="${TMPDIR:-/tmp}"
+    _rfs_phase_receipt="${RFS_PHASE_RECEIPT:-${_rfs_receipt_dir}/rfs-terminal-receipt.$$.tsv}"
+    : >"$_rfs_phase_receipt"
+    _rfs_current_fp=missing
+    _rfs_mono_ms() {
+        local _up _whole _frac
+        read -r _up _ </proc/uptime
+        _whole="${_up%%.*}"
+        _frac="${_up#*.}000"
+        _frac="${_frac:0:3}"
+        printf '%s\n' "$((10#${_whole} * 1000 + 10#${_frac}))"
+    }
+    _rfs_phase() {
+        local _phase="$1" _started="$2" _now _fp
+        _now="$(_rfs_mono_ms)"
+        _fp="$_rfs_current_fp"
+        printf '%s\twall_ms=%s\tcaller=%s\towner_pid=%s\tfingerprint=%s\n' \
+            "$_phase" "$((_now - _started))" "${RFS_CALLER:-report_field_set}" "$$" "${_fp:-missing}" >>"$_rfs_phase_receipt"
+    }
+    _rfs_wait_started="$(_rfs_mono_ms)"
+    exec 199>"${_rfs_batch_report}.gate.lock"
+    flock -w "${RFS_SINGLEFLIGHT_TIMEOUT:-30}" 199 || { echo "BLOCK: terminal gate single-flight timeout" >&2; exit 1; }
+    _rfs_phase singleflight_wait "$_rfs_wait_started"
     mkdir -p "${_rfs_batch_report%/*}"
     exec 200>"$_rfs_batch_lock"
     flock -w 5 200 || { echo "BLOCK: batch report lock timeout" >&2; exit 1; }
-    RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
+    _rfs_atomic_started="$(_rfs_mono_ms)"
+    _rfs_batch_output=$(RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
 import hashlib, os, pathlib, re, sys, tempfile, yaml
 sys.path.insert(0, sys.argv[2])
 from scripts.lib.yaml_atomic import yaml_text
@@ -141,7 +166,13 @@ finally:
     if os.path.exists(tmp): os.unlink(tmp)
 print("BATCH_OK fields={} fingerprint={}".format(len(updates), hashlib.sha256(text.encode()).hexdigest()))
 PY
+)
     _rfs_batch_rc=$?
+    printf '%s\n' "$_rfs_batch_output"
+    if [ "$_rfs_batch_rc" -eq 0 ]; then
+        _rfs_current_fp="${_rfs_batch_output##*fingerprint=}"
+    fi
+    _rfs_phase atomic_replace "$_rfs_atomic_started"
     if [ "$_rfs_batch_rc" -eq 0 ]; then
         _rfs_batch_status=$(python3 - "$_rfs_batch_report" <<'PY'
 import sys, yaml
@@ -150,6 +181,19 @@ print(str(data.get("status", "")))
 PY
 )
         if [ "$_rfs_batch_status" = "completed" ] || [ "$_rfs_batch_status" = "done" ] || [ "$_rfs_batch_status" = "failed" ]; then
+            _rfs_gate_started="$(_rfs_mono_ms)"
+            # The batch validator above is the local, fail-closed gate: it has
+            # checked every terminal prerequisite and derived the verdict in
+            # the same process that produced these exact bytes.  Publish its
+            # fingerprint while we still own the report gate singleflight so
+            # inbox_write/review callers can reuse precisely this revision.
+            _rfs_validated_fp="$_rfs_current_fp"
+            _rfs_fp_cache="${GATE_FINGERPRINT_CACHE_FILE:-${_rfs_batch_report}.validated_fingerprints}"
+            # We own the report gate lock, so no reader can inspect this cache
+            # until the single complete fingerprint is present.  Keeping only
+            # the current revision also prevents stale cache growth.
+            printf '%s\n' "$_rfs_validated_fp" >"$_rfs_fp_cache"
+            _rfs_phase local_gate "$_rfs_gate_started"
             _rfs_batch_worker=$(python3 - "$_rfs_batch_report" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
@@ -202,9 +246,21 @@ PY
                 echo "FAILPOINT: terminal bytes persisted before lifecycle publish" >&2
                 exit 86
             fi
+            _rfs_publish_started="$(_rfs_mono_ms)"
+            _rfs_phase publish "$_rfs_publish_started"
+            _rfs_inbox_started="$(_rfs_mono_ms)"
+            GATE_SINGLEFLIGHT_OWNER=1 GATE_OWNER_PID="$$" GATE_PHASE_RECEIPT="$_rfs_phase_receipt" \
+            GATE_VALIDATED_FINGERPRINT="$_rfs_validated_fp" \
             bash "$_rfs_inbox_write" karo \
                 "${_rfs_batch_worker}${_rfs_event_label}。report=$(basename "$_rfs_batch_report") parent_cmd=${_rfs_batch_parent}" \
                 "$_rfs_event_type" "$_rfs_batch_worker" notify_karo
+            _rfs_phase inbox_write "$_rfs_inbox_started"
+            _rfs_total_ms=$(( $(_rfs_mono_ms) - _rfs_wait_started ))
+            if [ "$_rfs_total_ms" -gt 1000 ]; then
+                printf 'infra_bug_suspected\twall_ms=%s\tcaller=%s\towner_pid=%s\tfingerprint=%s\n' \
+                    "$_rfs_total_ms" "${RFS_CALLER:-report_field_set}" "$$" \
+                    "$(sha256sum "$_rfs_batch_report" | awk '{print $1}')" >>"$_rfs_phase_receipt"
+            fi
         fi
     fi
     exit "$_rfs_batch_rc"

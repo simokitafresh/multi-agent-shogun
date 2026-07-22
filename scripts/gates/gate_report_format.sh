@@ -15,14 +15,38 @@ if [ -z "$REPORT_PATH" ] || [ ! -f "$REPORT_PATH" ]; then
     exit 1
 fi
 
+_gate_mono_ms() {
+    local _up _whole _frac
+    read -r _up _ </proc/uptime
+    _whole="${_up%%.*}"
+    _frac="${_up#*.}000"; _frac="${_frac:0:3}"
+    printf '%s\n' "$((10#${_whole} * 1000 + 10#${_frac}))"
+}
+_GATE_MONO_START_MS="$(_gate_mono_ms)"
+_GATE_RECEIPT="${GATE_PHASE_RECEIPT:-}"
+_gate_receipt_phase() {
+    [ -n "$_GATE_RECEIPT" ] || return 0
+    local _phase="$1" _started="$2" _now _wall _fp
+    _now="$(_gate_mono_ms)"
+    _wall=$((_now - _started))
+    _fp="$(sha256sum "$REPORT_PATH" 2>/dev/null | awk '{print $1}')"
+    printf '%s\twall_ms=%s\tcaller=%s\towner_pid=%s\tfingerprint=%s\n' \
+        "$_phase" "$_wall" "${GATE_CALLER:-gate_report_format}" "${GATE_OWNER_PID:-$$}" "${_fp:-missing}" >>"$_GATE_RECEIPT"
+}
+
 # One report has one validation leader. Concurrent callers join before cache
 # inspection instead of launching duplicate autofix/git processes.
 _GATE_SINGLEFLIGHT_LOCK="${REPORT_PATH}.gate.lock"
-exec 199>"$_GATE_SINGLEFLIGHT_LOCK"
-flock -w "${GATE_SINGLEFLIGHT_TIMEOUT:-30}" 199 || {
-    echo "FAIL: report gate single-flight timeout: $REPORT_PATH" >&2
-    exit 1
-}
+_GATE_WAIT_STARTED="$(_gate_mono_ms)"
+if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
+    exec 199>"$_GATE_SINGLEFLIGHT_LOCK"
+    flock -w "${GATE_SINGLEFLIGHT_TIMEOUT:-30}" 199 || {
+        _gate_receipt_phase singleflight_wait "$_GATE_WAIT_STARTED"
+        echo "FAIL: report gate single-flight timeout: $REPORT_PATH" >&2
+        exit 1
+    }
+fi
+_gate_receipt_phase singleflight_wait "$_GATE_WAIT_STARTED"
 
 # A caller that just validated/notified this exact content may pass the
 # fingerprint back. Exact content identity makes a second Python gate run
@@ -599,6 +623,7 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
         { grep -vxF "$_gate_validated_fp" "$_GATE_FP_CACHE" 2>/dev/null || true; echo "$_gate_validated_fp"; } > "${_GATE_FP_CACHE}.tmp.$$"
         mv "${_GATE_FP_CACHE}.tmp.$$" "$_GATE_FP_CACHE"
     ) 200>"${_GATE_FP_CACHE}.lock"
+    _gate_receipt_phase local_gate "$_GATE_MONO_START_MS"
 fi
 
 # Test/unit fast path: callers that only need stdout + exit code can bypass cache/log/session-state work.
