@@ -55,6 +55,28 @@ YAML
   [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
 }
 
+@test "LG043 ignores bare zero-count completion at end of L-axis report" {
+  run_engine "route母集団21と表21を機械比較して未確認0"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+  [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+}
+
+@test "LG043 ignores bare zero-count completion before whitespace and punctuation" {
+  for expression in "未確認0 " "未確認0。" "未確認0、次項も完了"; do
+    run_engine "$expression"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
+  done
+}
+
+@test "LG043 blocks bare zero-count followed by remaining work" {
+  run_engine "未確認0だが残作業あり"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=1"* ]]
+  [[ "$output" == *"GATE_PREDICTION=BLOCK"* ]]
+}
+
 @test "LG043 ignores no-route completion expression" {
   run_engine "未確認routeなし"
   [ "$status" -eq 0 ]
