@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-22 cmd_karo_hotfix_ga314_context_freshness_202607220442 -->
+<!-- last_updated: 2026-07-22 cmd_karo_hotfix_dead_signals_href_20260722 -->
 <!-- source_commit:cf8da310 reason:dead_signals_href_resolved evidence:Trades_/dashboard/_and_Signals_retired_verified_20260722 -->
 
 > 索引層。結論+参照のみ。
