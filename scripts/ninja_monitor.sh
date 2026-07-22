@@ -874,7 +874,7 @@ declare -A PANE_TARGETS   # 忍者名 → tmuxペインターゲット
 declare -A LAST_CLEARED   # 最終/clear送信時刻（epoch秒）
 declare -A STALL_FIRST_SEEN  # 停滞初回検知時刻（epoch秒）— assigned+idleを初めて観測した時刻
 declare -A STALL_NOTIFIED    # 停滞通知時刻（epoch秒）— key: "ninja:task_id", value: epoch
-declare -A STALE_CMD_NOTIFIED  # stale cmd最終通知時刻 — key: "cmd_XXX", value: epoch秒
+declare -A STALE_CMD_NOTIFIED  # stale cmd通知済み世代 — key: "cmd_XXX", value: 状態fingerprint
 declare -A UNDEPLOYED_CMD_NOTIFIED  # pending+delegated_at超過cmdのntfy送信済みフラグ — key: "cmd_XXX", value: epoch秒
 declare -A PREV_PENDING_SET       # 前回認識したpending cmd集合 — key: cmd_id, value: "1"
 _PENDING_CMDS_CACHE_CYCLE=-1   # サイクル内pending cmdsキャッシュ — 同一cycle内のpython3再起動を省略
@@ -5728,16 +5728,18 @@ list_pending_cmds() {
 
     # awk置換: python3起動コスト削減(WSL2 ~150ms/回 → <1ms) — dict形式対応
     # dict形式: commands:\n  cmd_xxx:\n    status: pending\n    timestamp: ...\n    delegated_at: ...
+    # defer契約も同じsnapshotから返し、stale判定と通知世代を一次状態へ束縛する。
     awk '
     function emit() {
         if (cmd_id != "" && status == "pending") {
-            print cmd_id "|" timestamp "|" delegated_at
+            print cmd_id "|" timestamp "|" delegated_at "|" deferred_until "|" defer_reason "|" restart_condition
         }
     }
     /^  [[:alnum:]_]+:$/ {
         emit()
         v = $0; sub(/^  /, "", v); sub(/:$/, "", v); gsub(/["'"'"'[:space:]]/, "", v)
         cmd_id = v; status = ""; timestamp = ""; delegated_at = ""
+        deferred_until = ""; defer_reason = ""; restart_condition = ""
         next
     }
     /^    status:/ {
@@ -5751,6 +5753,18 @@ list_pending_cmds() {
     /^    delegated_at:/ {
         v = $0; sub(/^[^:]*:[[:space:]]*/, "", v); gsub(/["\\]/, "", v)
         delegated_at = v; next
+    }
+    /^    deferred_until:/ {
+        v = $0; sub(/^[^:]*:[[:space:]]*/, "", v); gsub(/["\\]/, "", v)
+        deferred_until = v; next
+    }
+    /^    defer_reason:/ {
+        v = $0; sub(/^[^:]*:[[:space:]]*/, "", v); gsub(/^["'"'']|["'"'']$/, "", v)
+        defer_reason = v; next
+    }
+    /^    restart_condition:/ {
+        v = $0; sub(/^[^:]*:[[:space:]]*/, "", v); gsub(/^["'"'']|["'"'']$/, "", v)
+        restart_condition = v; next
     }
     END { emit() }
     ' "$cmd_file"
@@ -5775,16 +5789,10 @@ check_stale_cmds() {
     now=$EPOCHSECONDS
     local -A _current_pending=()  # 現サイクルのpending cmd集合 (STALE_CMD_NOTIFIEDプルーン用)
 
-    while IFS='|' read -r cmd_id cmd_timestamp _cmd_delegated_at; do
+    while IFS='|' read -r cmd_id cmd_timestamp _cmd_delegated_at deferred_until defer_reason restart_condition; do
         [ -z "$cmd_id" ] && continue
         [ -z "$cmd_timestamp" ] && continue
         _current_pending["$cmd_id"]=1
-
-        # デバウンス: 同一cmdの再通知を30分間隔で抑制
-        local last_stale_notify="${STALE_CMD_NOTIFIED[$cmd_id]:-0}"
-        if [ $((now - last_stale_notify)) -lt $STALE_CMD_DEBOUNCE ]; then
-            continue
-        fi
 
         local cmd_epoch
         cmd_epoch=$(date -d "$cmd_timestamp" +%s 2>/dev/null || echo "0")
@@ -5799,6 +5807,23 @@ check_stale_cmds() {
             continue
         fi
 
+        # 意図的deferは期限到来または再開条件成立までstaleではない。
+        # restart_conditionは正本writerが成立時に true/met/ready/satisfied へ遷移させる契約。
+        local defer_deadline_epoch=0 restart_met=0
+        if [ -n "$deferred_until" ]; then
+            defer_deadline_epoch=$(date -d "$deferred_until" +%s 2>/dev/null || echo 0)
+            [[ "$defer_deadline_epoch" =~ ^[0-9]+$ ]] || defer_deadline_epoch=0
+        fi
+        case "${restart_condition,,}" in
+            true|met|ready|satisfied) restart_met=1 ;;
+        esac
+        if [ -n "$deferred_until$defer_reason$restart_condition" ] && \
+           [ "$restart_met" -eq 0 ] && \
+           { [ "$defer_deadline_epoch" -eq 0 ] || [ "$now" -lt "$defer_deadline_epoch" ]; }; then
+            log "STALE-CMD-DEFERRED: ${cmd_id} intentional defer active until=${deferred_until:-unspecified} restart=${restart_condition:-unspecified}"
+            continue
+        fi
+
         # subtask存在確認: queue/tasks/*.yaml の parent_cmd を照合 (L335: -Fw必須)
         if grep -Fwl "parent_cmd: ${cmd_id}" "$SCRIPT_DIR/queue/tasks/"*.yaml >/dev/null 2>&1; then
             continue
@@ -5808,9 +5833,17 @@ check_stale_cmds() {
         elapsed_hour=$((elapsed_sec / 3600))
         local msg="${cmd_id}が${elapsed_hour}時間pendingのまま。将軍に確認せよ"
 
+        # 同一一次状態は永久dedupeし、期限・条件・理由等の変更だけを新世代とする。
+        local notify_generation
+        notify_generation=$(printf '%s\0' "$cmd_id" "$cmd_timestamp" "$_cmd_delegated_at" \
+            "$deferred_until" "$defer_reason" "$restart_condition" | sha256sum | awk '{print $1}')
+        if [ "${STALE_CMD_NOTIFIED[$cmd_id]:-}" = "$notify_generation" ]; then
+            continue
+        fi
+
         log "STALE-CMD: ${cmd_id} pending ${elapsed_hour}h with no subtasks, notifying karo"
         if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$msg" stale_cmd ninja_monitor >> "$LOG" 2>&1; then
-            STALE_CMD_NOTIFIED[$cmd_id]=$now
+            STALE_CMD_NOTIFIED[$cmd_id]="$notify_generation"
         else
             log "ERROR: Failed to send stale cmd notification for ${cmd_id}"
         fi
@@ -5831,7 +5864,7 @@ check_undeployed_cmds() {
     now=$EPOCHSECONDS
     local -A current_pending=()
 
-    while IFS='|' read -r cmd_id _cmd_timestamp delegated_at; do
+    while IFS='|' read -r cmd_id _cmd_timestamp delegated_at _deferred_until _defer_reason _restart_condition; do
         [ -z "$cmd_id" ] && continue
         [ -z "$delegated_at" ] && continue
         current_pending["$cmd_id"]=1
@@ -5890,7 +5923,7 @@ check_karo_pending_cmd() {
     # 現在のpending cmd集合を収集し、新規のみ通知
     local -a current_ids=()
 
-    while IFS='|' read -r cmd_id cmd_timestamp _cmd_delegated_at; do
+    while IFS='|' read -r cmd_id cmd_timestamp _cmd_delegated_at _deferred_until _defer_reason _restart_condition; do
         [ -z "$cmd_id" ] && continue
 
         if [ -n "$cmd_timestamp" ] && [ "${KARO_PENDING_CMD_GRACE_SEC:-0}" -gt 0 ]; then
