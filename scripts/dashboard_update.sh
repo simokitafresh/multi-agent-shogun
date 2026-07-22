@@ -290,7 +290,14 @@ LOCK_FILE="${DASHBOARD}.lock"
 (
     _du_phase_started=0
     [[ "$_DU_PROFILE" == "1" ]] && _du_phase_started=$(_du_now_ms)
-    flock -w 10 200 || { echo "ERROR: flock取得失敗" >&2; exit 1; }
+    if [[ "${DASHBOARD_CALLER_SINGLEFLIGHT:-0}" == "1" ]]; then
+        # cmd_complete already queues distinct completion tails on one global
+        # lock.  Once admitted, wait for any standalone dashboard writer
+        # instead of returning exit 1 and starting a competing retry loop.
+        flock 200
+    else
+        flock -w 10 200 || { echo "ERROR: flock取得失敗" >&2; exit 1; }
+    fi
     _du_profile_phase lock_wait "$_du_phase_started"
 
     _du_phase_started=0

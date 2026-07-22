@@ -167,26 +167,38 @@ PY
     [ "$output" = "before_writer_invocations=3 after_wrapper=1 after_standalone=1" ]
 }
 
-# test_necessity: two distinct commands completing concurrently must not retry or duplicate their dashboard/ntfy events.
-@test "two concurrent command completions emit one dashboard and one ntfy each without retry" {
+# test_necessity: three distinct completion tails must queue before dashboard publication so no caller enters dashboard's own flock/retry competition and every terminal event remains durable.
+@test "three concurrent command completions singleflight dashboard and complete 3 of 3" {
     local cmd
-    for cmd in cmd_parallel_a cmd_parallel_b; do
+    for cmd in cmd_parallel_a cmd_parallel_b cmd_parallel_c; do
         mkdir -p "$FIXTURE/queue/gates/$cmd"
         cp "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
     done
-    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/two-cmds.log"
-    env CMD_COMPLETE_TEST_LOG="$CMD_COMPLETE_TEST_LOG" CMD_COMPLETE_ROOT_DIR="$FIXTURE" \
-        CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" bash "$FIXTURE/scripts/cmd_complete.sh" cmd_parallel_a >"$BATS_TEST_TMPDIR/a.out" 2>&1 &
-    local pid_a=$!
-    env CMD_COMPLETE_TEST_LOG="$CMD_COMPLETE_TEST_LOG" CMD_COMPLETE_ROOT_DIR="$FIXTURE" \
-        CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" bash "$FIXTURE/scripts/cmd_complete.sh" cmd_parallel_b >"$BATS_TEST_TMPDIR/b.out" 2>&1 &
-    local pid_b=$!
-    wait "$pid_a"
-    wait "$pid_b"
-    [ "$(grep -c '^dashboard_update.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 2 ]
-    [ "$(grep -c '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 2 ]
-    ! grep -q 'RETRY dashboard' "$BATS_TEST_TMPDIR/a.out" "$BATS_TEST_TMPDIR/b.out"
-    ! grep -q 'RETRY ntfy' "$BATS_TEST_TMPDIR/a.out" "$BATS_TEST_TMPDIR/b.out"
+    cat > "$FIXTURE/scripts/dashboard_update.sh" <<'SH'
+#!/usr/bin/env bash
+active="${CMD_COMPLETE_TEST_LOG}.dashboard-active"
+mkdir "$active" 2>/dev/null || { printf 'dashboard_overlap\n' >> "${CMD_COMPLETE_TEST_LOG}.errors"; exit 91; }
+sleep 0.05
+printf 'dashboard_update.sh|%s\n' "$*" >> "$CMD_COMPLETE_TEST_LOG"
+rmdir "$active"
+SH
+    chmod +x "$FIXTURE/scripts/dashboard_update.sh"
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/three-cmds.log"
+    local cmd pid pids=()
+    for cmd in cmd_parallel_a cmd_parallel_b cmd_parallel_c; do
+        env CMD_COMPLETE_TEST_LOG="$CMD_COMPLETE_TEST_LOG" CMD_COMPLETE_ROOT_DIR="$FIXTURE" \
+            CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" CMD_COMPLETE_SYNC_TAIL=1 \
+            bash "$FIXTURE/scripts/cmd_complete.sh" "$cmd" >"$BATS_TEST_TMPDIR/$cmd.out" 2>&1 &
+        pids+=("$!")
+    done
+    for pid in "${pids[@]}"; do wait "$pid"; done
+    [ ! -e "${CMD_COMPLETE_TEST_LOG}.errors" ]
+    [ "$(grep -c '^dashboard_update.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 3 ]
+    [ "$(grep -c '^ntfy_cmd.sh|' "$CMD_COMPLETE_TEST_LOG")" -eq 3 ]
+    [ "$(grep -h -c '^\[cmd_complete\] COMPLETE ' "$BATS_TEST_TMPDIR"/cmd_parallel_*.out | awk '{s+=$1} END{print s}')" -eq 3 ]
+    ! grep -q 'RETRY dashboard' "$BATS_TEST_TMPDIR"/cmd_parallel_*.out
+    ! grep -q 'RETRY ntfy' "$BATS_TEST_TMPDIR"/cmd_parallel_*.out
+    grep -q 'DASHBOARD_CALLER_SINGLEFLIGHT=1' "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh"
 }
 
 # test_necessity: every completion step and dashboard retry attempt must expose wall time and exit reason for RCA.

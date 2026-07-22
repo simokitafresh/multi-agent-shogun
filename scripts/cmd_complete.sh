@@ -285,18 +285,31 @@ if [[ "${CMD_COMPLETE_SYNC_TAIL:-0}" != "1" ]] \
     printf '[cmd_complete] QUEUED completion_tail pid=%d log=%s\n' "$!" "$_tail_log"
     exit 0
 fi
-# dashboard_update has its own 10s flock wait, but several independently
-# completed commands can legitimately queue behind one writer.  A single lock
-# timeout is transient, while publishing later steps without dashboard is not;
-# bounded retry keeps the sequence fail-closed without requiring manual reruns.
+# Distinct commands have distinct checkpoint locks, so their detached tails can
+# otherwise enter dashboard_update's 10s flock concurrently and each start an
+# independent retry loop.  Queue them once at the wrapper boundary instead.
+# The lock is released immediately after dashboard publication; ntfy/archive
+# retain per-command ordering without blocking the next dashboard publisher.
+COMPLETION_DASHBOARD_LOCK="${CMD_COMPLETE_DASHBOARD_LOCK:-$ROOT_DIR/queue/gates/completion_dashboard.lock}"
+mkdir -p "$(dirname "$COMPLETION_DASHBOARD_LOCK")"
+exec 8>"$COMPLETION_DASHBOARD_LOCK"
+_dashboard_queue_started_ms="$(date +%s%3N)"
+printf '[cmd_complete] QUEUED dashboard_singleflight\n' >&2
+flock 8
+printf '[cmd_complete] ACQUIRED dashboard_singleflight wait_ms=%d\n' \
+    "$(( $(date +%s%3N) - _dashboard_queue_started_ms ))" >&2
+
 if checkpoint_has dashboard; then
     printf '[cmd_complete] SKIP dashboard checkpoint_verified\n' >&2
 else
     run_step_with_retry dashboard "${CMD_COMPLETE_DASHBOARD_ATTEMPTS:-3}" \
         "${CMD_COMPLETE_DASHBOARD_RETRY_DELAY:-1}" \
+        env DASHBOARD_CALLER_SINGLEFLIGHT=1 \
         bash "$SCRIPT_DIR/dashboard_update.sh" "$CMD_ID" --bundle "$BUNDLE_PATH"
     checkpoint_mark dashboard
 fi
+flock -u 8
+exec 8>&-
 if checkpoint_has ntfy; then
     printf '[cmd_complete] SKIP ntfy checkpoint_verified\n' >&2
 else
