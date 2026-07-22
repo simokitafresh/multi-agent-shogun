@@ -20,6 +20,49 @@ sys.path.insert(0, str(_PROJECT_ROOT / "scripts" / "lib"))
 from report_commit_identity import valid_commit_identity
 
 
+def _has_explicit_commit_scope(task):
+    contract = task.get("commit_contract") if isinstance(task, dict) else None
+    return any(task.get(key) for key in ("owned_paths", "planned_paths", "files_to_modify", "files_modified")) or (
+        isinstance(contract, dict) and bool(contract.get("planned_paths"))
+    )
+
+
+def commit_owned_paths(task):
+    """Return write/commit scope; target_path is legacy-only, never inspection scope."""
+    if not isinstance(task, dict):
+        return []
+
+    values = []
+    contract = task.get("commit_contract")
+    if isinstance(contract, dict):
+        values.append(contract.get("planned_paths"))
+    values.extend(
+        task.get(key)
+        for key in ("owned_paths", "planned_paths", "files_to_modify", "files_modified")
+    )
+
+    paths = []
+
+    def append(value):
+        if isinstance(value, dict):
+            value = value.get("path") or value.get("file") or value.get("name")
+        if isinstance(value, (list, tuple)):
+            for item in value:
+                append(item)
+            return
+        text = str(value or "").strip()
+        if text and text not in {"none", "null", "FILL_THIS"} and text not in paths:
+            paths.append(text)
+
+    for value in values:
+        append(value)
+    # Existing pre-migration tasks had no typed scope. Preserve their contract
+    # only when target_path has not been explicitly classified as inspection.
+    if not paths and not task.get("inspection_path"):
+        append(task.get("target_path"))
+    return paths
+
+
 def _resolve_commit_repo(report, task, root):
     project_id = str(report.get("project") or task.get("project") or "").strip()
     if not project_id or project_id == "infra":
@@ -86,8 +129,10 @@ def commit_contract_errors(report, task, root):
         return errors + ["commit_hash does not resolve to a readable commit"]
     if expected_run_id not in subject and str(report.get("parent_cmd") or "") not in subject:
         errors.append("commit subject does not identify task_id/parent_cmd")
-    targets = task.get("target_path")
-    targets = [targets] if isinstance(targets, str) else (targets if isinstance(targets, list) else [])
+    legacy_target_scope = not _has_explicit_commit_scope(task) and not task.get("inspection_path")
+    targets = commit_owned_paths(task)
+    if not targets:
+        errors.append("commit owned/planned scope is missing")
     for raw in targets:
         target = str(raw or "").strip().rstrip("/")
         if target and not any(path == target or path.startswith(target + "/") for path in changed):
@@ -99,7 +144,8 @@ def commit_contract_errors(report, task, root):
             except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
                 target_subject = ""
             if expected_run_id not in target_subject and str(report.get("parent_cmd") or "") not in target_subject:
-                errors.append(f"commit/task history does not contain target_path: {target}")
+                scope_label = "target_path" if legacy_target_scope else "owned/planned path"
+                errors.append(f"commit/task history does not contain {scope_label}: {target}")
     return errors
 
 

@@ -415,6 +415,8 @@ if [[ "$_REPORT_REAL" == "$_REPO_REAL"/* ]] && [ "${GATE_SKIP_COMMIT_MISSING_CHE
 import os
 import yaml, sys
 try:
+    sys.path.insert(0, sys.argv[4])
+    from scripts.gates.gate_report_format_main import commit_owned_paths
     rdata = yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
     bc = rdata.get('binary_checks') or {}
     commit = bc.get('commit') or []
@@ -475,18 +477,14 @@ try:
         # false-BLOCK on unrelated concurrent changes.
         paths = report_paths
     else:
-        tp = task.get('target_path') or ''
-        if isinstance(tp, list):
-            for p in tp:
-                add_path(paths, p)
-        elif tp:
-            add_path(paths, tp)
+        for owned in commit_owned_paths(task):
+            add_path(paths, owned)
 
     for p in paths:
         print(p)
 except Exception:
     pass
-" "$REPORT_PATH" "$_CC_TASK_FILE" "$REPO_ROOT" 2>/dev/null || true)
+" "$REPORT_PATH" "$_CC_TASK_FILE" "$REPO_ROOT" "$_DEFAULT_REPO_ROOT" 2>/dev/null || true)
         if [ -n "${_CC_CHECK//[[:space:]]/}" ]; then
             mapfile -t _CC_PATHS <<< "$_CC_CHECK"
             if printf '%s\n' "${_CC_PATHS[@]}" | grep -qxF '__INVALID_REPORT_PATH__'; then
