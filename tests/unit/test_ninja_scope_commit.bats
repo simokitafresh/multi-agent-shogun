@@ -705,7 +705,10 @@ make_own_patch() {
 
 @test "patch modeはlinked worktreeでも意図位置をcommitしforeign hunkを保全する" {
     make_shared_fixture; make_own_patch
-    linked="$BATS_TMPDIR/linked-$BATS_TEST_NUMBER"
+    # Parallel/aborted suites may reuse BATS_TMPDIR + test number.  Reserve a
+    # process-unique pathname, then let `git worktree add` create it.
+    linked="$(mktemp -d "${TMPDIR:-/tmp}/ninja-linked-${BATS_TEST_NUMBER}.XXXXXX")"
+    rmdir "$linked"
     git -C "$REPO" worktree add -q -b linked-branch "$linked"
     for i in 1 4 7; do sed -i "${i}s/$/-foreign/" "$linked/shared.txt"; done
     before="$(cat "$linked/shared.txt")"
@@ -751,6 +754,36 @@ make_own_patch() {
     [ "$(grep -c -- '-other' "$REPO/shared.txt")" -eq 13 ]
     [ "$(git -C "$REPO" ls-files -s -- other.txt)" = "$other_index_before" ]
     [ "$(git -C "$REPO" diff --cached --name-only)" = other.txt ]
+}
+
+@test "preexisting same-file foreign 506行とtask-owned 10変更はpatch modeでforeign吸収0件" {
+    : > "$REPO/shared.txt"
+    for i in $(seq 1 600); do printf 'base-%03d\n' "$i" >> "$REPO/shared.txt"; done
+    git -C "$REPO" add shared.txt
+    git -C "$REPO" commit -qm same-file-base
+    base_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+
+    cp "$REPO/shared.txt" "$REPO/shared.base"
+    for i in 10 60 110 160 210 260 310 360 410 460; do
+        sed -i "${i}s/$/-task/" "$REPO/shared.txt"
+    done
+    git -C "$REPO" diff -- shared.txt > "$REPO/task.patch"
+    mv "$REPO/shared.base" "$REPO/shared.txt"
+
+    for i in $(seq 1 506); do printf 'foreign-%03d\n' "$i" >> "$REPO/shared.txt"; done
+    for i in 10 60 110 160 210 260 310 360 410 460; do
+        sed -i "${i}s/$/-task/" "$REPO/shared.txt"
+    done
+    worktree_before="$(git -C "$REPO" hash-object shared.txt)"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m same-file-owned --patch '$REPO/task.patch' --base-blob '$base_blob' -- shared.txt"
+
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" show HEAD:shared.txt | grep -c -- '-task')" -eq 10 ]
+    [ "$(git -C "$REPO" show HEAD:shared.txt | grep -c '^foreign-')" -eq 0 ]
+    [ "$(git -C "$REPO" hash-object shared.txt)" = "$worktree_before" ]
+    [ "$(grep -c '^foreign-' "$REPO/shared.txt")" -eq 506 ]
+    [ "$(git -C "$REPO" show --format= --numstat HEAD -- shared.txt | awk '{print $1+$2}')" -eq 20 ]
 }
 
 @test "patch mode commit後の直接git add競合はforeign stageを上書きしない" {
