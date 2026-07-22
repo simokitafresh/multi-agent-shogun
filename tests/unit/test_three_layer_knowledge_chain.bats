@@ -89,3 +89,102 @@ assert '_three_layer_chain "$event_id"' not in text
 PY
     [ "$status" -eq 0 ]
 }
+
+@test "knowledge cache incremental upsert is synchronous and exact" {
+    run python3 - "$BATS_TEST_DIRNAME/../.." "$ROOT" <<'PY'
+import sqlite3
+import sys
+from pathlib import Path
+
+repo, root = Path(sys.argv[1]), Path(sys.argv[2])
+sys.path.insert(0, str(repo / "scripts"))
+import memory_db_live_insert as live
+
+db = root / "memory.db"
+cache = root / "lord_ruling_cache.db"
+with sqlite3.connect(db) as conn:
+    conn.execute("""CREATE TABLE events (
+        id TEXT PRIMARY KEY, ts TEXT, event_type TEXT, agent TEXT, target TEXT,
+        direction TEXT, summary TEXT, detail TEXT, cmd_id TEXT, concepts TEXT,
+        raw_content TEXT
+    )""")
+    conn.execute(
+        "INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        ("knowledge:exact", "2026-07-23T00:00:00", "knowledge", "kagemaru", "",
+         "direct_insert", "exact", "durable", "cmd_test", '["cache"]',
+         "durable [[cache]]"),
+    )
+
+live.upsert_lord_ruling_cache_event(str(cache), str(db), "knowledge:exact")
+with sqlite3.connect(cache) as conn:
+    row = conn.execute(
+        "SELECT event_id, summary FROM lord_rulings WHERE event_id = ?",
+        ("knowledge:exact",),
+    ).fetchone()
+assert row is not None and row[0] == "knowledge:exact" and "durable" in row[1], row
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "full rebuild cannot replace a concurrent incremental cache event with a stale snapshot" {
+    run python3 - "$BATS_TEST_DIRNAME/../.." "$ROOT" <<'PY'
+import sqlite3
+import sys
+import threading
+from pathlib import Path
+
+repo, root = Path(sys.argv[1]), Path(sys.argv[2])
+sys.path.insert(0, str(repo / "scripts"))
+import memory_db_import as importer
+import memory_db_live_insert as live
+
+db = root / "memory.db"
+cache = root / "lord_ruling_cache.db"
+with sqlite3.connect(db) as conn:
+    conn.execute("""CREATE TABLE events (
+        id TEXT PRIMARY KEY, ts TEXT, event_type TEXT, agent TEXT, target TEXT,
+        direction TEXT, summary TEXT, detail TEXT, cmd_id TEXT, concepts TEXT,
+        raw_content TEXT
+    )""")
+    conn.execute(
+        "INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        ("knowledge:old", "2026-07-23T00:00:00", "knowledge", "kagemaru", "",
+         "direct_insert", "old", "old", "cmd_test", "[]", "old"),
+    )
+
+snapshot_projecting = threading.Event()
+release_rebuild = threading.Event()
+original_project = importer._prompt_cache_summary
+def paused_project(*args):
+    snapshot_projecting.set()
+    assert release_rebuild.wait(5)
+    return original_project(*args)
+importer._prompt_cache_summary = paused_project
+
+rebuild = threading.Thread(target=importer.build_lord_ruling_cache, args=(cache, db))
+rebuild.start()
+assert snapshot_projecting.wait(5)
+with sqlite3.connect(db) as conn:
+    conn.execute(
+        "INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        ("knowledge:new", "2026-07-23T00:00:01", "knowledge", "kagemaru", "",
+         "direct_insert", "new", "new", "cmd_test", "[]", "new"),
+    )
+
+upsert = threading.Thread(
+    target=live.upsert_lord_ruling_cache_event,
+    args=(str(cache), str(db), "knowledge:new"),
+)
+upsert.start()
+release_rebuild.set()
+rebuild.join(5)
+upsert.join(5)
+assert not rebuild.is_alive() and not upsert.is_alive()
+with sqlite3.connect(cache) as conn:
+    count = conn.execute(
+        "SELECT COUNT(*) FROM lord_rulings WHERE event_id = 'knowledge:new'"
+    ).fetchone()[0]
+assert count == 1, count
+PY
+    [ "$status" -eq 0 ]
+}

@@ -98,7 +98,12 @@ if os.environ.get("MEMORY_DB_SEMANTIC_INDEX_PATH"):
         semantic_index_path=semantic_index_path,
     )
 
-live_insert.SQLITE_BUSY_TIMEOUT_MS = 1000
+busy_timeout_ms = int(os.environ.get("MEMORY_DB_WRITE_BUSY_TIMEOUT_MS", "250"))
+max_attempts = int(os.environ.get("MEMORY_DB_WRITE_MAX_ATTEMPTS", "5"))
+retry_sleep_seconds = float(os.environ.get("MEMORY_DB_WRITE_RETRY_SLEEP_SECONDS", "0.05"))
+if busy_timeout_ms <= 0 or max_attempts <= 0 or retry_sleep_seconds < 0:
+    raise ValueError("memory DB write retry settings must be positive")
+live_insert.SQLITE_BUSY_TIMEOUT_MS = busy_timeout_ms
 knowledge = live_insert.normalize_text(knowledge_text)
 source = live_insert.normalize_text(source_text)
 explicit_cmd_id = live_insert.normalize_text(cmd_id)
@@ -132,7 +137,8 @@ event_row = (
     "normal",
 )
 
-for attempt in range(1, 11):
+append_started = time.monotonic()
+for attempt in range(1, max_attempts + 1):
     try:
         live_insert.append_event(
             db_path,
@@ -140,15 +146,22 @@ for attempt in range(1, 11):
             concept_text_extra=f"{source}\n{event_cmd_id}",
             raw_content=knowledge,
         )
-        memory_db_import.build_lord_ruling_cache(
-            memory_db_import.default_lord_ruling_cache_path(memory_db_import.Path(db_path)),
-            memory_db_import.Path(db_path),
-        )
         break
     except sqlite3.OperationalError as exc:
-        if "database is locked" not in str(exc).lower() or attempt == 10:
+        if "database is locked" not in str(exc).lower() or attempt == max_attempts:
             raise
-        time.sleep(1)
+        time.sleep(retry_sleep_seconds * (2 ** (attempt - 1)))
+append_ms = (time.monotonic() - append_started) * 1000
+
+cache_started = time.monotonic()
+cache_path = memory_db_import.default_lord_ruling_cache_path(memory_db_import.Path(db_path))
+live_insert.upsert_lord_ruling_cache_event(str(cache_path), db_path, event_id)
+cache_ms = (time.monotonic() - cache_started) * 1000
+if os.environ.get("MEMORY_DB_WRITE_TIMING", "0") == "1":
+    print(
+        f"TIMING append_ms={append_ms:.3f} cache_ms={cache_ms:.3f} attempts={attempt}",
+        file=sys.stderr,
+    )
 print(f"OK: {event_id}")
 PY
 )"

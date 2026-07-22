@@ -461,6 +461,73 @@ def sync_memory_db_ext4_cache(db_path: str) -> None:
     create_memory_db_ext4_cache(db_path)
 
 
+def upsert_lord_ruling_cache_event(cache_path: str, db_path: str, event_id: str) -> None:
+    """Synchronously project one committed event into the prompt cache.
+
+    Knowledge writes used to rebuild the complete cache after every insert.
+    Read the committed source row, update only its cache projection under the
+    same cache lock used by full rebuilds, and read it back before returning.
+    """
+    import memory_db_import
+
+    with sqlite3.connect(db_path) as source_conn:
+        source_conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+        row = source_conn.execute(
+            """
+            SELECT id, ts, event_type, cmd_id, summary, detail, target,
+                   concepts, raw_content
+            FROM events
+            WHERE id = ?
+              AND ((event_type = 'conversation' AND agent = 'lord' AND direction = 'inbound')
+                   OR (event_type = 'knowledge' AND (target = '' OR target IS NULL)))
+            """,
+            (event_id,),
+        ).fetchone()
+    if row is None:
+        raise sqlite3.DatabaseError(f"prompt cache source event missing: {event_id}")
+
+    source_id, ts, event_type, cmd_id, summary, detail, target, concepts, raw_content = row
+    projected_summary = memory_db_import._prompt_cache_summary(
+        source_id, ts, event_type, summary, detail, concepts, raw_content
+    )
+    cache_path = os.path.abspath(cache_path)
+    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+    lock_path = f"{cache_path}.lock"
+    with open(lock_path, "a", encoding="utf-8") as lock_handle:
+        fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        with sqlite3.connect(cache_path) as cache_conn:
+            cache_conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+            cache_conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS lord_rulings (
+                    event_id TEXT PRIMARY KEY,
+                    ts TEXT,
+                    event_type TEXT,
+                    cmd_id TEXT,
+                    summary TEXT,
+                    detail TEXT,
+                    target TEXT DEFAULT ''
+                )
+                """
+            )
+            cache_conn.execute(
+                """
+                INSERT OR REPLACE INTO lord_rulings (
+                    event_id, ts, event_type, cmd_id, summary, detail, target
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (source_id, ts, event_type, cmd_id, projected_summary, detail, target or ""),
+            )
+            cache_conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_lord_rulings_ts ON lord_rulings(ts)"
+            )
+            cached = cache_conn.execute(
+                "SELECT event_id FROM lord_rulings WHERE event_id = ?", (event_id,)
+            ).fetchone()
+            if cached is None or cached[0] != event_id:
+                raise sqlite3.DatabaseError(f"prompt cache verification failed: {event_id}")
+
+
 def normalize_text(value: object) -> str:
     if value is None:
         return ""

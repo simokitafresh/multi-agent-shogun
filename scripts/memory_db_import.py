@@ -1581,31 +1581,34 @@ def _prompt_cache_summary(
 def build_lord_ruling_cache(cache_path: Path, db_path: Path) -> None:
     """Refresh prompt cache from the main DB, including universal knowledge."""
     cache_path.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(db_path) as source_conn:
-        source_rows = source_conn.execute(
-            """
-            SELECT id, ts, event_type, cmd_id, summary, detail, target,
-                   concepts, raw_content
-            FROM events
-            WHERE (event_type = 'conversation' AND agent = 'lord' AND direction = 'inbound')
-               OR (event_type = 'knowledge' AND (target = '' OR target IS NULL))
-            """
-        ).fetchall()
-    rows = [
-        (
-            event_id,
-            ts,
-            event_type,
-            cmd_id,
-            _prompt_cache_summary(event_id, ts, event_type, summary, detail, concepts, raw_content),
-            detail,
-            target or "",
-        )
-        for event_id, ts, event_type, cmd_id, summary, detail, target, concepts, raw_content in source_rows
-    ]
     lock_path = cache_path.with_name(f"{cache_path.name}.lock")
     with lock_path.open("a", encoding="utf-8") as lock_handle:
+        # Serialize the source snapshot with incremental cache upserts.  Taking
+        # this lock after the SELECT would let a stale full-rebuild snapshot
+        # replace a newer incremental row.
         fcntl.flock(lock_handle, fcntl.LOCK_EX)
+        with sqlite3.connect(db_path) as source_conn:
+            source_rows = source_conn.execute(
+                """
+                SELECT id, ts, event_type, cmd_id, summary, detail, target,
+                       concepts, raw_content
+                FROM events
+                WHERE (event_type = 'conversation' AND agent = 'lord' AND direction = 'inbound')
+                   OR (event_type = 'knowledge' AND (target = '' OR target IS NULL))
+                """
+            ).fetchall()
+        rows = [
+            (
+                event_id,
+                ts,
+                event_type,
+                cmd_id,
+                _prompt_cache_summary(event_id, ts, event_type, summary, detail, concepts, raw_content),
+                detail,
+                target or "",
+            )
+            for event_id, ts, event_type, cmd_id, summary, detail, target, concepts, raw_content in source_rows
+        ]
         fd, tmp_name = tempfile.mkstemp(prefix=f".{cache_path.name}.", suffix=".tmp", dir=cache_path.parent)
         os.close(fd)
         tmp_path = Path(tmp_name)
