@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-22 cmd_4119 -->
+<!-- last_updated: 2026-07-22 cmd_4116 -->
 <!-- source_commit:95a58350 reason:cmd_4119 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=95a58350 -->
 
 > 索引層。結論+参照のみ。
@@ -192,6 +192,7 @@ PF切替計測実績(CDP): 547.2ms中央値(cmd_2312, 2026-04-26)。旧1008ms(cm
 13色CSSトークン(Light/Dark)。チャート7色パレット。ブレークポイント: xs(375)/sidebar(1100)/sidebar-xl(1280)。
 **A軸第3層完遂(cmd_4119)**: body=`text-sm text-foreground`、caption/note=`text-xs text-muted-foreground`、numeric=`font-mono text-sm tabular-nums`へ役割別token化。正当なcaptionのxsは維持し、数値桁揃えを全end-user表示へ適用。→ `docs/research/cmd_4119_body_numeric_inventory.md`
 **A軸h1 DRY完遂(cmd_4117)**: 12ページ・14分岐のcanonical h1直書きを`PAGE_TITLE_CLASS` 1定義へ集約し、文言・DOM・配置を不変維持。→ `docs/research/cmd_4117_h1_dry_inventory.md`
+**B軸B1完遂(cmd_4120)**: status text shadeを`STATUS_TEXT_CLASSES`へSSOT化（positive=`emerald-400`、negative=`red-400`、warning=`amber-400`、neutral=`muted-foreground`）。非正準13件→0件。→ `docs/research/cmd_4120_status_color_inventory.md`
 - L284: 統計指標UIは信号機パターン(3色+灰)+Progressive Disclosure 3層。7±2超えは判断麻痺（cmd_860）
 - L287: 確率値の単独表示は過信誘発。頻度リフレーミングを添えよ（cmd_860）
 - L292: 統計指標UIの解釈可能性設計3原則（cmd_860）
@@ -328,8 +329,9 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 - （L650/L651/L653/L656→§8性能最適化、L654/L655→§2.5、L702/L704/L705→§11.5、L719→§5に振り分け済み 2026-06-16）
 - （L786/L792→§5、L796→§7、L798/L801→§8に振り分け済み 2026-07-16）
 - （L804/L850/L858/L873/L878/L880→ops/core、L861→research、L865/L867/L868/L890/L902→infraに振り分け済み 2026-07-16）
-<!-- last_synced_lesson: L906 -->
+<!-- last_synced_lesson: L907 -->
 - L906: lint修正時もmasked表示のkey一意性を保持する（cmd_4116）
+- L907: 共有style定数化では既存formatter debtを先に分離する（cmd_4117）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 
