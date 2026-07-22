@@ -632,7 +632,7 @@ try:
     d=json.load(open(sys.argv[1], encoding='utf-8'))
     required={'version','complete','result','rc','duration_ms','output_sha256',
               'declared_test_count','observed_test_count','skip_count','artifact',
-              'signal','command','source_head','test_paths'}
+              'signal','command','source_head','test_paths','drvfs_p9_client_rpc'}
     if set(d) != required or d['version'] != 2: raise ValueError('schema')
     if not re.fullmatch(r'[0-9a-f]{40}', d['source_head']): raise ValueError('source_head')
     if not isinstance(d['test_paths'], list) or not all(isinstance(x,str) and x for x in d['test_paths']):
@@ -655,7 +655,7 @@ try:
     d=json.load(open(sys.argv[1], encoding='utf-8'))
     required={'version','complete','result','rc','duration_ms','output_sha256',
               'declared_test_count','observed_test_count','skip_count','artifact',
-              'signal','command','source_head','test_paths'}
+              'signal','command','source_head','test_paths','drvfs_p9_client_rpc'}
     if set(d) != required or d['version'] != 2: raise ValueError('schema')
     if not re.fullmatch(r'[0-9a-f]{40}', d['source_head']): raise ValueError('source_head')
     if not isinstance(d['test_paths'], list) or not all(isinstance(x,str) and x for x in d['test_paths']):
@@ -752,11 +752,41 @@ paths=[]
 if os.path.isfile(paths_file):
     paths=[line.strip() for line in open(paths_file, encoding='utf-8') if line.strip()]
 d.update(version=2, source_head=head, test_paths=paths)
+artifact=d.get('artifact', '')
+p9={'persistent': False, 'probe_timeout_sec': None, 'pids': []}
+try:
+    with open(artifact, encoding='utf-8', errors='replace') as fh:
+        for line in fh:
+            if line.startswith('DRVFS_P9_STATE '):
+                fields=dict(item.split('=',1) for item in line.split()[1:] if '=' in item)
+                p9['persistent']=fields.get('persistent') == '1'
+                p9['probe_timeout_sec']=int(fields['probe_timeout_sec'])
+                p9['pids']=[] if fields.get('pids') == 'none' else fields.get('pids','').split(',')
+except (OSError, ValueError):
+    pass
+d['drvfs_p9_client_rpc']=p9
 fd,tmp=tempfile.mkstemp(prefix='.run_tests_receipt.', dir=os.path.dirname(path) or '.')
 with os.fdopen(fd,'w',encoding='utf-8') as fh:
     json.dump(d,fh,sort_keys=True); fh.write('\n'); fh.flush(); os.fsync(fh.fileno())
 os.replace(tmp,path)
 PY
+}
+
+probe_persistent_p9_rpc() {
+    local probe_timeout="${SHOGUN_DRVFS_P9_PROBE_TIMEOUT:-2}" first second
+    [[ "$probe_timeout" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid p9 probe timeout" >&2; return 2; }
+    first="$(timeout "$probe_timeout" ps -e -o pid=,stat=,wchan= 2>/dev/null \
+        | awk '$2 ~ /^D/ && $3 == "p9_client_rpc" {print $1}' | sort -n | paste -sd, -)" || return 2
+    [[ -n "$first" ]] || { printf 'DRVFS_P9_STATE persistent=0 probe_timeout_sec=%s pids=none\n' "$probe_timeout"; return 1; }
+    sleep 0.1
+    second="$(timeout "$probe_timeout" ps -e -o pid=,stat=,wchan= 2>/dev/null \
+        | awk '$2 ~ /^D/ && $3 == "p9_client_rpc" {print $1}' | sort -n | paste -sd, -)" || return 2
+    if [[ -n "$second" ]]; then
+        printf 'DRVFS_P9_STATE persistent=1 probe_timeout_sec=%s pids=%s\n' "$probe_timeout" "$second"
+        return 0
+    fi
+    printf 'DRVFS_P9_STATE persistent=0 probe_timeout_sec=%s pids=none\n' "$probe_timeout"
+    return 1
 }
 
 # _run_tests_main(): sourceされても副作用ゼロ(関数定義+変数初期化のみ)にするため、
@@ -771,7 +801,7 @@ _run_tests_main() {
     # host-wide flock semaphore(scripts/heavy_job_admission.sh)経由で自分自身を
     # self-reexecし、同時に1本だけが動くようhost全体で強制する(内部の並列bats実行も
     # 同一ロックの傘下に入る)。file <path>単発実行は軽量とみなしadmission対象外。
-    if [[ "${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}" != "1" && "${1:-}" != "file" ]]; then
+    if [[ "${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}" != "1" && "${1:-}" != "file" && "${1:-}" != "task" ]]; then
         local _self="${BASH_SOURCE[0]:-$0}"
         # An empty affected selection has no heavy work to protect.  Resolve it
         # before admission, but persist a non-empty result so the admitted
@@ -802,6 +832,13 @@ _run_tests_main() {
         # publishes a duplicate terminal receipt for the same run.
         exec bash "$(dirname "$_self")/heavy_job_admission.sh" -- \
             bash "$_self" --receipt-inner "$@"
+    fi
+
+    if [[ "${RUN_TESTS_SINGLEFLIGHT_LEADER_PENDING:-0}" == "1" ]]; then
+        printf 'SINGLE_FLIGHT_LEADER mode=%s selection_count=%s admission=%s\n' \
+            "${RUN_TESTS_SINGLEFLIGHT_MODE:-unknown}" "${RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT:-0}" \
+            "$([[ "${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}" == 1 ]] && echo acquired || echo lightweight)" >&2
+        unset RUN_TESTS_SINGLEFLIGHT_LEADER_PENDING
     fi
 
     # A full/unit/affected runner is a checkpoint root, never a reusable test
@@ -978,7 +1015,32 @@ _run_tests_main() {
                     fi
                     if [ "$_external_frontend" -eq 1 ] && [ -f "$_task_root/frontend/package.json" ]; then
                         printf 'TEST_SELECTION result=external runner=npm-test scope=frontend project_root=%s\n' "$_task_root"
-                        (cd "$_task_root/frontend" && npm test -- --runInBand --passWithNoTests --findRelatedTests "${_external_frontend_sources[@]}") || exit $?
+                        local _frontend_root="$_task_root/frontend"
+                        if [[ -z "${RUN_TESTS_DRVFS_P9_DETECTED+x}" ]]; then
+                            set +e
+                            probe_persistent_p9_rpc
+                            local _p9_rc=$?
+                            set -e
+                            case "$_p9_rc" in
+                                0) export RUN_TESTS_DRVFS_P9_DETECTED=1 ;;
+                                1) export RUN_TESTS_DRVFS_P9_DETECTED=0 ;;
+                                *) echo "BLOCK: bounded p9_client_rpc probe failed" >&2; exit 2 ;;
+                            esac
+                        fi
+                        if [[ "${RUN_TESTS_DRVFS_P9_DETECTED:-0}" == "1" ]]; then
+                            local _fallback="${RUN_TESTS_FRONTEND_EXT4_FALLBACK:-}"
+                            [[ -n "$_fallback" && -d "$_fallback/frontend" ]] \
+                                || { echo "BLOCK: persistent p9_client_rpc requires RUN_TESTS_FRONTEND_EXT4_FALLBACK" >&2; exit 2; }
+                            local _fallback_fs
+                            _fallback_fs="$(findmnt -n -o FSTYPE -T "$_fallback" 2>/dev/null || true)"
+                            [[ "$_fallback_fs" != 9p && "$_fallback_fs" != drvfs && "$_fallback" == /tmp/* ]] \
+                                || { echo "BLOCK: frontend fallback must be isolated ext4 under /tmp" >&2; exit 2; }
+                            [[ -f "$_fallback/.shogun-source-head" && "$(cat "$_fallback/.shogun-source-head")" == "$(git -C "$_task_root" rev-parse HEAD)" ]] \
+                                || { echo "BLOCK: frontend ext4 fallback source identity mismatch" >&2; exit 2; }
+                            _frontend_root="$_fallback/frontend"
+                            printf 'DRVFS_EXT4_FALLBACK result=selected root=%s receipt=required\n' "$_fallback"
+                        fi
+                        (cd "$_frontend_root" && npm test -- --runInBand --passWithNoTests --findRelatedTests "${_external_frontend_sources[@]}") || exit $?
                     fi
                     if [ "$_external_backend" -eq 0 ] && [ "$_external_frontend" -eq 0 ]; then
                         echo "TEST_SELECTION result=selected reason=external_scope_no_mapped_tests files=0"
@@ -1105,7 +1167,10 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             _sf_generation="$(date -u +%s%N)-$$"
             _sf_owner_pgid="$(ps -o pgid= -p $$ | tr -d ' ')"
             printf '%s\n%s\n%s\n%s\n' "$_receipt" "$$" "$_sf_generation" "$_sf_owner_pgid" > "$_sf_state"
-            printf 'SINGLE_FLIGHT_LEADER mode=%s selection_count=%s\n' "$_mode" "$(printf '%s\n' "$_sf_selection" | sed '/^$/d' | wc -l)" >&2
+            export RUN_TESTS_SINGLEFLIGHT_LEADER_PENDING=1
+            export RUN_TESTS_SINGLEFLIGHT_MODE="$_mode"
+            export RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT
+            RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT="$(printf '%s\n' "$_sf_selection" | sed '/^$/d' | wc -l)"
         fi
         _tap="${_receipt%.json}.tap"
         _selected_paths="${_receipt%.json}.paths"

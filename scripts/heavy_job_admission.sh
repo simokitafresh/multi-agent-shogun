@@ -29,6 +29,9 @@ LOCK_FILE="${SHOGUN_HEAVY_JOB_LOCK_FILE:-/tmp/shogun_heavy_job_admission_v2.lock
 # 万一のlock leak(理論上あり得ないはずだが)でホストが永久停止するため、
 # 実務上「無期限」相当の長さを保ちつつ保険的な上限として3600sを設定する。
 TIMEOUT="${SHOGUN_HEAVY_JOB_ADMISSION_TIMEOUT:-3600}"
+HEARTBEAT_SECONDS="${SHOGUN_HEAVY_JOB_ADMISSION_HEARTBEAT_SECONDS:-5}"
+OWNER_FILE="${SHOGUN_HEAVY_JOB_OWNER_FILE:-${LOCK_FILE}.owner}"
+P9_PROBE_TIMEOUT="${SHOGUN_DRVFS_P9_PROBE_TIMEOUT:-2}"
 # A leader may exit after detaching a descendant.  Admission must not wait on
 # that process group forever: bounded failure releases the lock and makes the
 # lifecycle defect observable to the caller/CI instead of producing a silent
@@ -38,6 +41,31 @@ TIMEOUT="${SHOGUN_HEAVY_JOB_ADMISSION_TIMEOUT:-3600}"
 # This does not signal unrelated processes or broaden cleanup scope.
 DRAIN_TIMEOUT="${SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT:-10}"
 DRAIN_MEMBER_LIMIT="${SHOGUN_HEAVY_JOB_DRAIN_MEMBER_LIMIT:-20}"
+
+[[ "$TIMEOUT" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid heavy admission timeout" >&2; exit 2; }
+[[ "$HEARTBEAT_SECONDS" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid heavy admission heartbeat interval" >&2; exit 2; }
+[[ "$P9_PROBE_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid p9 probe timeout" >&2; exit 2; }
+
+detect_persistent_p9_rpc() {
+    local first second
+    first="$(timeout "$P9_PROBE_TIMEOUT" ps -e -o pid=,stat=,wchan= 2>/dev/null \
+        | awk '$2 ~ /^D/ && $3 == "p9_client_rpc" {print $1}' | sort -n | paste -sd, -)" || return 2
+    [[ -n "$first" ]] || return 1
+    sleep 0.1
+    second="$(timeout "$P9_PROBE_TIMEOUT" ps -e -o pid=,stat=,wchan= 2>/dev/null \
+        | awk '$2 ~ /^D/ && $3 == "p9_client_rpc" {print $1}' | sort -n | paste -sd, -)" || return 2
+    [[ -n "$second" ]] || return 1
+    printf '%s\n' "$second"
+}
+
+read_owner_metadata() {
+    owner_pid="unknown" owner_started="0"
+    if [[ -r "$OWNER_FILE" ]]; then
+        read -r owner_pid owner_started <"$OWNER_FILE" || true
+        [[ "$owner_pid" =~ ^[1-9][0-9]*$ ]] || owner_pid="unknown"
+        [[ "$owner_started" =~ ^[1-9][0-9]*$ ]] || owner_started="0"
+    fi
+}
 
 process_group_has_live_member() {
     local target_pgid="$1"
@@ -109,8 +137,41 @@ if [[ -n "$run_id" ]]; then
 fi
 
 exec {admission_fd}>"$LOCK_FILE"
-flock -w "$TIMEOUT" "$admission_fd" \
-    || { echo "BLOCK: heavy job admission timeout after ${TIMEOUT}s" >&2; exit 2; }
+queue_started="$(date +%s)"
+while ! flock -w "$HEARTBEAT_SECONDS" "$admission_fd"; do
+    now="$(date +%s)"
+    read_owner_metadata
+    owner_age=0
+    (( owner_started > 0 && now >= owner_started )) && owner_age=$((now - owner_started))
+    printf 'HEAVY_ADMISSION_HEARTBEAT owner_pid=%s owner_age_sec=%s queue_age_sec=%s\n' \
+        "$owner_pid" "$owner_age" "$((now - queue_started))" >&2
+    if (( now - queue_started >= TIMEOUT )); then
+        echo "BLOCK: heavy job admission timeout after ${TIMEOUT}s" >&2
+        exit 2
+    fi
+done
+owner_started="$(date +%s)"
+printf '%s %s\n' "$$" "$owner_started" >"$OWNER_FILE"
+cleanup_owner_metadata() {
+    local recorded_pid=""
+    [[ -r "$OWNER_FILE" ]] && read -r recorded_pid _ <"$OWNER_FILE" || true
+    [[ "$recorded_pid" == "$$" ]] && rm -f "$OWNER_FILE"
+}
+trap cleanup_owner_metadata EXIT
+printf 'HEAVY_ADMISSION_ACQUIRED owner_pid=%s queue_age_sec=%s\n' "$$" "$((owner_started - queue_started))" >&2
+
+p9_pids=""
+set +e
+p9_pids="$(detect_persistent_p9_rpc)"
+p9_rc=$?
+set -e
+case "$p9_rc" in
+    0) export RUN_TESTS_DRVFS_P9_DETECTED=1
+       printf 'DRVFS_P9_STATE persistent=1 probe_timeout_sec=%s pids=%s\n' "$P9_PROBE_TIMEOUT" "$p9_pids" >&2 ;;
+    1) export RUN_TESTS_DRVFS_P9_DETECTED=0
+       printf 'DRVFS_P9_STATE persistent=0 probe_timeout_sec=%s pids=none\n' "$P9_PROBE_TIMEOUT" >&2 ;;
+    *) echo "BLOCK: bounded p9_client_rpc probe failed" >&2; exit 2 ;;
+esac
 
 # A shell can return while a background descendant is still doing the real
 # work.  Run each top-level job in its own session and retain both admission
