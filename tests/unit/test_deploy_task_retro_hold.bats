@@ -39,3 +39,13 @@ teardown() { exec 9>&-; }
   [ ! -e "$ROOT/queue/retro/verbatim_awaiting_answer/hold.event" ]
   [ "$(grep -c 'decision=PASS' "$ROOT/logs/retro_hold_gate_fire.log")" -eq 1 ]
 }
+
+# test_necessity: inbox_archive後もexact retro_answer identityが回答済みとしてholdを解除し続ける不変量。
+@test "archived structured retro answer releases hold after live inbox removal" {
+  mkdir -p "$ROOT/archive/inbox"
+  printf 'messages:\n- type: retro_answer\n  event_id: report_received:msg-1\n  content: "answer archived"\n  read: true\n' > "$ROOT/archive/inbox/karo_20260722.yaml"
+  printf 'messages: []\n' > "$ROOT/queue/inbox/karo.yaml"
+  deploy_task_guard_retro_answer_hold ninja-a
+  [ ! -e "$ROOT/queue/retro/verbatim_awaiting_answer/hold.event" ]
+  [ "$(grep -c 'decision=PASS' "$ROOT/logs/retro_hold_gate_fire.log")" -eq 1 ]
+}

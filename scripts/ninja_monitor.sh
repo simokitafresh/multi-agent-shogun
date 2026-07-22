@@ -6115,10 +6115,11 @@ check_inbox_renudge() {
                             continue
                         fi
                     fi
-                    # 軍師review済みの報告は「家老未処理」ではない。通知を繰り返すと空振りinboxになる。
+                    # 軍師review済みはレビュー工程の終端であり、cmd完了工程の終端ではない。
+                    # pending集合へ残して既存の世代dedupeで家老へ完了処理を一度だけ要求する。
+                    # GATE CLEAR/archive済みは上段で除外されるため、clear後の再通知は発生しない。
                     if [[ "$_reviewed_report_cmds" == *"|$_kpcmd|"* ]]; then
-                        log "KARO-PENDING-SKIP-REVIEWED: $_kpcmd already has gunshi report review"
-                        continue
+                        log "KARO-PENDING-REVIEWED-COMPLETION: $_kpcmd has gunshi report review; requesting cmd completion"
                     fi
                     _kentry_lines+=("${_kworker}|${_ktid}|${_kpcmd}|${_kts}|${_kreport_path}")
                     [ -f "$_kreport_path" ] && _kreport_paths_needed+=("$_kreport_path")

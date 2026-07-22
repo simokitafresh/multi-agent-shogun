@@ -1948,7 +1948,8 @@ fi
     [[ "$output" != *"DIRECT_NUDGE:inbox0"* ]]
 }
 
-@test "check_inbox_renudge: reviewed done report does not create duplicate karo pending inbox" {
+# test_necessity: 軍師LGTM済みdoneを処理不要SKIPせず、既存世代dedupeで家老完了処理要求を一度だけ送る不変量。
+@test "check_inbox_renudge: reviewed done report requests karo completion exactly once" {
     run bash -lc '
 set -euo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -2000,6 +2001,7 @@ safe_send_keys_atomic() {
 }
 
 check_inbox_renudge
+check_inbox_renudge
 
 cat "$LOG"
 if [ -f "$TMP_ROOT/direct_nudge.log" ]; then
@@ -2007,9 +2009,11 @@ if [ -f "$TMP_ROOT/direct_nudge.log" ]; then
 fi
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"KARO-PENDING-SKIP-REVIEWED: cmd_reviewed_done already has gunshi report review"* ]]
-    [[ "$output" != *"KARO-PENDING-INBOX"* ]]
-    [[ "$output" != *"pending_work"* ]]
+    [[ "$output" == *"KARO-PENDING-REVIEWED-COMPLETION: cmd_reviewed_done has gunshi report review; requesting cmd completion"* ]]
+    [[ "$output" == *"KARO-PENDING-INBOX"* ]]
+    [[ "$output" == *"KARO-PENDING-DEDUPE"* ]]
+    [[ "$output" == *"INBOX-WRITE-CALLED: to=karo type=pending_work"* ]]
+    [ "$(grep -c 'INBOX-WRITE-CALLED: to=karo type=pending_work' <<< "$output")" -eq 1 ]
     [[ "$output" != *"DIRECT_NUDGE:inbox0"* ]]
 }
 
