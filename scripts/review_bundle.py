@@ -38,7 +38,16 @@ def find_command(root, cmd_id, report=None, report_path=None):
             raise ValueError(f"karo-direct worker task is missing: {worker}")
         task_doc = load(task_path)
         task = task_doc.get("task", task_doc) if isinstance(task_doc, dict) else None
-        if not isinstance(task, dict) or str(task.get("parent_cmd") or "") != cmd_id:
+        task_id = str(task.get("task_id") or task.get("_ac_task_id") or "") if isinstance(task, dict) else ""
+        report_task_id = str(report.get("task_id") or "")
+        parent_matches = isinstance(task, dict) and str(task.get("parent_cmd") or "") == cmd_id
+        direct_identity_matches = (
+            isinstance(task, dict)
+            and (parent_matches or str(task.get("issued_cmd_id") or "") == cmd_id)
+            and bool(task_id)
+            and report_task_id == task_id
+        )
+        if not direct_identity_matches:
             raise ValueError(f"karo-direct worker task parent_cmd mismatch: {worker}")
         purpose = str(task.get("purpose") or "").strip()
         criteria = task.get("acceptance_criteria")

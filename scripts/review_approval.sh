@@ -82,14 +82,33 @@ PY
   ) || { echo "BLOCK: RC report worker_id missing or invalid: $report_rel" >&2; exit 1; }
   task_file="$ROOT/queue/tasks/$worker_id.yaml"
   [ -f "$task_file" ] || { echo "BLOCK: RC worker task not found: $worker_id" >&2; exit 1; }
-  task_parent=$(python3 - "$task_file" <<'PY'
+  task_boundary=$(python3 - "$task_file" "$report" "$cmd_id" <<'PY'
 import sys, yaml
-data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-print(str((data.get("task") or {}).get("parent_cmd") or ""))
+task_doc = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+report = yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}
+task = task_doc.get("task") or {}
+cmd_id = sys.argv[3]
+task_parent = str(task.get("parent_cmd") or "")
+task_id = str(task.get("task_id") or task.get("_ac_task_id") or "")
+report_task_id = str(report.get("task_id") or "")
+issued_cmd_id = str(task.get("issued_cmd_id") or "")
+
+# Normal Shogun commands remain bound by parent_cmd.  Karo-direct deployment
+# has a separate worker task identity; its canonical command edge is the
+# deploy-time issued_cmd_id, and both sides must name the exact same task.
+normal = not cmd_id.startswith("cmd_karo_") and task_parent == cmd_id
+karo_direct = (
+    cmd_id.startswith("cmd_karo_")
+    and (task_parent == cmd_id or issued_cmd_id == cmd_id)
+    and task_id != ""
+    and report_task_id == task_id
+)
+if not (normal or karo_direct):
+    raise SystemExit(1)
+print(f"parent={task_parent or 'missing'} task_id={task_id or 'missing'} issued_cmd_id={issued_cmd_id or 'missing'}")
 PY
-  ) || { echo "BLOCK: RC worker task unreadable: $worker_id" >&2; exit 1; }
-  [ "$task_parent" = "$cmd_id" ] || {
-    echo "BLOCK: RC worker task parent_cmd mismatch: worker=$worker_id expected=$cmd_id actual=${task_parent:-missing}" >&2
+  ) || {
+    echo "BLOCK: RC worker task boundary mismatch: worker=$worker_id expected_cmd=$cmd_id" >&2
     exit 1
   }
 fi
