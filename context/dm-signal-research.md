@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-14 cmd_3903_context_sync_202607141136 -->
-<!-- dm_signal_research_reflux: fingerprint=408670e269519a52802955a32f55343df28f82a3fd806a21834ee2b21d7ef089; mode=synced; evidence_b64=bXVsdGktYWdlbnQtc2hvZ3VuIGNvbnRleHQvZG0tc2lnbmFsLW9wcy5tZCDCpzc3IGNvbW1pdCAxYmVmZTFjOGU0ZjM0YzdmOWU5MmE5YTU4MzEwZjVlZDFlYjk3ZTI5 -->
-<!-- source_commit:f2e5756a reason:cmd3903_signal_change_context_sync evidence:reflux_to_ops_section77 -->
+<!-- dm_signal_research_reflux: fingerprint=494a896fb4164d5a410517f3c303f793ad5b48ac33519d4baad9069ea48f3ece; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtZnJvbnRlbmQubWQgwqcxNzogY21kXzQxMTYgQTIgc2VjdGlvbi1oZWFkaW5nIDU3LzU3IGNhbm9uaWNhbDsgaW52ZW50b3J5IGRvY3MvcmVzZWFyY2gvY21kXzQxMTZfYTJfaGVhZGluZ19pbnZlbnRvcnkubWQ= -->
+<!-- source_commit:95a58350 reason:cmd_4119 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=95a58350 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
