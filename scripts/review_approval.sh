@@ -158,6 +158,14 @@ trap 'rm -f "$tmp" "${REVIEW_FP_CACHE_DIR:?}"/*; rmdir "${REVIEW_FP_CACHE_DIR:?}
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" "$correction_scope" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
 if [ "$role" = karo ] && [ "$result" = RC ]; then
+  # RC reopening is one lifecycle transaction.  ninja_monitor uses this same
+  # per-worker lock for AUTO-DONE, so it cannot observe the old completed
+  # report between task/report resets or emit report_notification_missing
+  # before the fresh task_start notification is durable.
+  rc_deploy_lock="$ROOT/queue/locks/deploy_ninja_${worker_id}.lock"
+  mkdir -p "${rc_deploy_lock%/*}"
+  exec 201>"$rc_deploy_lock"
+  flock -w 10 201 || { echo "BLOCK: RC deploy lock timeout: worker=$worker_id" >&2; exit 1; }
   # Preserve RC as monotonic command history.  The per-report karo.yaml is
   # intentionally overwritten by the later ACCEPT, so it cannot tell the
   # completion-quality logger that rework occurred.
@@ -200,8 +208,12 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
   # RC is a real redeployment. Refresh the deployment clock before reopening;
   # otherwise ninja_monitor's Stage-1 timeout measures from the original
   # deployment and can immediately reset the revived task to idle.
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task deployed_at "$(date -Iseconds)"
+  rc_deployed_at=$(date -Iseconds)
+  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task deployed_at "$rc_deployed_at"
+  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task retry_deployed_at "$rc_deployed_at"
   bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task status assigned
+  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task reviewed false
+  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task review_result ""
   bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task acknowledged_at ""
   bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task completed_at ""
   bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task done_at ""

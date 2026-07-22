@@ -2996,8 +2996,12 @@ check_and_update_done_task() (
     # 前回試行の残骸。in_progress再開後にまだ新しい報告が届いていないだけなのに、
     # 旧いcompleted報告を見てAUTO-DONEしてしまうとreport_notification_missingが偽陽性化する。
     # deployed_at以降のreportのみ「今回の完了」とみなす（deployed_at欠落時は従来どおり）。
-    local task_deployed_at
+    local task_deployed_at retry_deployed_at
     task_deployed_at=$(yaml_field_get "$task_file" "deployed_at" "" 2>/dev/null || true)
+    retry_deployed_at=$(yaml_field_get "$task_file" "retry_deployed_at" "" 2>/dev/null || true)
+    if [ -n "$retry_deployed_at" ]; then
+        task_deployed_at="$retry_deployed_at"
+    fi
     if [ -n "$task_deployed_at" ]; then
         local report_timestamp task_deployed_epoch report_epoch
         report_timestamp=$(yaml_field_get "$report_file" "timestamp" "" 2>/dev/null || true)
