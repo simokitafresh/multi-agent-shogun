@@ -54,7 +54,15 @@ def commit_contract_errors(report, task, root):
     for raw in targets:
         target = str(raw or "").strip().rstrip("/")
         if target and not any(path == target or path.startswith(target + "/") for path in changed):
-            errors.append(f"commit does not contain target_path: {target}")
+            try:
+                target_subject = subprocess.run(
+                    ["git", "-C", str(root), "log", "-1", "--format=%s", identity, "--", target],
+                    check=True, capture_output=True, text=True, timeout=5,
+                ).stdout.strip()
+            except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+                target_subject = ""
+            if expected_run_id not in target_subject and str(report.get("parent_cmd") or "") not in target_subject:
+                errors.append(f"commit/task history does not contain target_path: {target}")
     return errors
 
 

@@ -181,9 +181,20 @@ create_and_publish_scoped_commit() {
         # The configured hook command is the contract; invoke it directly.
         # Lefthook first runs an unbounded repository-wide `git status`, which
         # can stall for minutes on DrvFS despite our private scoped index.
-        env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
-            bash "$repo_root/scripts/run_precommit_checks.sh" >&2 \
-            || { echo "BLOCK: pre-commit hook command rejected scoped commit" >&2; return 1; }
+        if [[ -n "$patch_file" && "$scope_path" == frontend/*.ts* ]]; then
+            # Patch mode's private index intentionally differs from the full
+            # worktree.  The canonical hook's `biome --write; git add <file>`
+            # would widen that index back to every foreign hunk.  Run the same
+            # formatter check read-only, then the mixed-change contract against
+            # the exact private index.
+            (cd "$repo_root/frontend" && npx biome check -- "${scope_path#frontend/}") >&2 \
+                && python3 "$repo_root/scripts/check_mixed_format_commit.py" --repo "$repo_root" >&2 \
+                || { echo "BLOCK: patch pre-commit checks rejected scoped commit" >&2; return 1; }
+        else
+            env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
+                bash "$repo_root/scripts/run_precommit_checks.sh" >&2 \
+                || { echo "BLOCK: pre-commit hook command rejected scoped commit" >&2; return 1; }
+        fi
     else
         env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
             git hook run --ignore-missing pre-commit >&2 \

@@ -69,12 +69,14 @@ def test_foreign_run_id_is_rejected(_run):
 def test_missing_target_path_is_rejected(_run):
     def missing_target(command, **_kwargs):
         if "--format=%s" in command:
+            if "log" in command:
+                return CompletedProcess(command, 0, stdout="other task\n")
             return CompletedProcess(command, 0, stdout=f"{TASK_ID}: owned commit\n")
         return CompletedProcess(command, 0, stdout="scripts/a.sh\n")
 
     _run.side_effect = missing_target
     errors = commit_contract_errors(_report(), _task(), Path("."))
-    assert errors == ["commit does not contain target_path: scripts/b.py"]
+    assert errors == ["commit/task history does not contain target_path: scripts/b.py"]
 
 
 def test_optional_commit_contract_does_not_require_hash_or_evidence():
