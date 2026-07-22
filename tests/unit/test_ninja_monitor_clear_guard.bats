@@ -881,6 +881,45 @@ grep -q "REPORT-NOTIFY-MISSING-BLOCK" "$LOG"
     [[ "$output" == *"PASS: missing report_received → return 1 (blocked)"* ]]
 }
 
+# test_necessity: exact SG7 LGTM is stronger terminal evidence than a missing earlier report_received transport and must suppress its false alert.
+@test "report_gate: exact gunshi SG7 LGTM suppresses report_received missing false positive" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$BATS_TEST_TMPDIR"; LOG="$SCRIPT_DIR/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/scripts"
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: done
+  task_id: cmd_reviewed_exact
+  parent_cmd: cmd_reviewed
+  deployed_at: "2026-07-22T16:00:00+09:00"
+  report_filename: hayate_report_cmd_reviewed.yaml
+YAML
+cat > "$SCRIPT_DIR/queue/reports/hayate_report_cmd_reviewed.yaml" <<YAML
+worker_id: hayate
+task_id: cmd_reviewed_exact
+parent_cmd: cmd_reviewed
+verdict: PASS
+YAML
+cat > "$SCRIPT_DIR/queue/inbox/karo.yaml" <<YAML
+messages:
+- content: "cmd_reviewed report=hayate_report_cmd_reviewed.yaml verdict=LGTM"
+  from: gunshi
+  read: true
+  timestamp: "2026-07-22T16:12:57+09:00"
+  type: report_review_result
+YAML
+log(){ echo "$1" >> "$LOG"; }; notify_karo_throttled(){ echo "NOTIFY:$*" >> "$LOG"; }
+can_send_clear_with_report_gate hayate reviewed
+! grep -q "REPORT-NOTIFY-MISSING-BLOCK\|report_notification_missing" "$LOG"
+echo "PASS: SG7 reviewed missing false positives=0"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: SG7 reviewed missing false positives=0"* ]]
+}
+
 @test "report_gate: read exact-identity notification prevents repeated false missing alerts" {
     run bash -lc '
 set -eo pipefail

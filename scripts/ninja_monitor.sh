@@ -1866,9 +1866,15 @@ for source in sources:
     for msg in messages:
         if not isinstance(msg, dict):
             continue
-        if str(msg.get("type", "")) not in completion_types:
-            continue
-        if str(msg.get("from", "")) != name:
+        msg_type = str(msg.get("type", ""))
+        sender = str(msg.get("from", ""))
+        direct_completion = msg_type in completion_types and sender == name
+        reviewed_completion = (
+            msg_type == "report_review_result"
+            and sender == "gunshi"
+            and re.search(r"\bLGTM\b", str(msg.get("content", "")), re.I)
+        )
+        if not (direct_completion or reviewed_completion):
             continue
         if not _has_exact_identity(msg):
             continue
