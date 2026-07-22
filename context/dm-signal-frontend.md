@@ -351,3 +351,9 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 結論: `/rolling-returns` にDistribution表を追加し、chartへ中央値・P10・0%基準線・best/worst window表示を追加。API型へmedian/P10/positive rate/sample count/best-worst期間を追加した。境界後一次差分は1 commit、FE 4 paths、+603/-112行。
 
 → 実装: `/mnt/c/Python_app/DM-signal/frontend/app/rolling-returns/page.tsx`、`/mnt/c/Python_app/DM-signal/frontend/components/rolling-return-chart.tsx`、`/mnt/c/Python_app/DM-signal/frontend/components/rolling-returns-distribution-table.tsx`、`/mnt/c/Python_app/DM-signal/frontend/lib/types/api.ts`
+
+## 17. cmd_4116 A軸第2層 section heading統一 (2026-07-22)
+
+結論: 全h2/h3をコード現読で88/88抽出し、section-heading 57/57を `text-lg font-semibold text-foreground` へ統一。sub-label・意味色status-label・エディタ/モーダル等の役割外見出しは保持した。
+
+→ 詳細: `/mnt/c/Python_app/DM-signal/docs/research/cmd_4116_a2_heading_inventory.md`
