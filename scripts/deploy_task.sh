@@ -1334,7 +1334,7 @@ existing_parent_cmd = _pc_m.group(1) if _pc_m else ''
 # スカラー+リスト両方を確実にクリアするフィールド一覧
 STALE_FIELDS = [
     # 第1層: cmd固有メタデータ(スカラー)
-    'purpose', 'target_path', 'constraints', 'progress', 'description', 'deployed_at', 'completed_at', 'done_at', 'acknowledged_at',
+    'purpose', 'target_path', 'inspection_path', 'owned_paths', 'commit_contract', 'constraints', 'progress', 'description', 'deployed_at', 'completed_at', 'done_at', 'acknowledged_at',
     # 第2層: inject_task_modifiers.pyが「存在チェック」するフィールド(リスト含む)
     'engineering_preferences', 'context_files', 'stop_for', 'never_stop_for',
     'ac_priority', 'ac_checkpoint', 'parallel_ok',
@@ -3812,7 +3812,15 @@ PY
 )
     local _commit_task_type="${task_type:-${type:-${scope_mode:-unknown}}}"
     _commit_task_type="${_commit_task_type,,}"
-    local _commit_planned_paths="${target_path} ${files_to_modify} ${files_modified} ${owned_paths}"
+    local _commit_planned_paths
+    _commit_planned_paths=$(python3 - "$task_file" "${PROJECT_ROOT:-$SCRIPT_DIR}" <<'PY'
+import sys, yaml
+sys.path.insert(0, sys.argv[2])
+from scripts.gates.gate_report_format_main import commit_owned_paths
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+print(" ".join(commit_owned_paths(task)))
+PY
+)
     local _commit_has_code_path=false
     if printf '%s\n' "$_commit_planned_paths" | grep -Eqi \
         '(scripts/|src/|tests/|app/|lib/|[[:alnum:]_./-]+\.(sh|bash|py|js|jsx|ts|tsx|go|rs|java|kt|rb|php|c|cc|cpp|h|hpp)([^[:alnum:]_]|$))'; then
@@ -4799,6 +4807,38 @@ RECON_EOF
     mv "${_active_report_index}.tmp" "$_active_report_index"
     log "report_path: set (${report_rel_path})"
     log "report_template: generated (${report_file})"
+}
+
+# Keep read/inspection scope distinct from the paths a worker owns and commits.
+# Legacy target_path remains available to readers, but never becomes ownership
+# merely because a recon task inspected it.
+inject_scope_contract_fields() {
+    local task_file="$1" inspection_json
+    [ -f "$task_file" ] || return 0
+    mapfile -t _scope_contract_values < <(python3 - "$task_file" <<'PY'
+import json, sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+
+def paths(value):
+    if isinstance(value, str):
+        return [value] if value.strip() else []
+    if isinstance(value, list):
+        return [str(v) for v in value if str(v).strip()]
+    return []
+
+planned = paths(task.get("planned_paths"))
+owned = paths(task.get("owned_paths")) or planned
+target = paths(task.get("target_path"))
+inspection = paths(task.get("inspection_path"))
+if not inspection and target and target != owned:
+    inspection = target
+print(json.dumps(inspection, ensure_ascii=False))
+PY
+)
+    inspection_json="${_scope_contract_values[0]:-[]}"
+    local -a scope_args=()
+    [ "$inspection_json" = "[]" ] || scope_args+=("inspection_path=$inspection_json")
+    [ "${#scope_args[@]}" -eq 0 ] || yaml_field_set_batch "$task_file" task "${scope_args[@]}" || return 1
 }
 
 ensure_report_template_completeness() {
@@ -11045,6 +11085,7 @@ deploy_task_apply_task_mutations() {
     # Level5: investigation tasks receive an executable, bounded code-location
     # path before publication.  Raw recursive grep is intentionally forbidden.
     inject_code_location_contract "$task_file" || return 1
+    inject_scope_contract_fields "$task_file" || return 1
 
     local task_id parent_cmd project _ac_task_id report_filename
     deploy_task_guard_task_yaml_syntax "post_injection_pre_report_template" "$task_file" "$ninja_name" || return 1
