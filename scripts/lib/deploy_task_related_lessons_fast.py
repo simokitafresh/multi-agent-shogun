@@ -16,9 +16,10 @@ import json
 import os
 import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
-from typing import Iterable, Mapping
+from typing import Iterable, Mapping, MutableSequence
 
 import yaml
 
@@ -33,15 +34,38 @@ def _terms(value: object) -> set[str]:
     return {word.casefold() for word in expanded if len(word) > 3 or (len(word) >= 2 and word.isascii() and word.isupper())}
 
 
-def parse_lessons(blobs: Iterable[bytes], source_projects: Iterable[str] | None = None) -> list[dict]:
-    """Parse each lesson source exactly once and retain source provenance."""
+def parse_lessons(
+    blobs: Iterable[bytes],
+    source_projects: Iterable[str] | None = None,
+    source_paths: Iterable[str] | None = None,
+    errors: MutableSequence[dict[str, str]] | None = None,
+) -> list[dict]:
+    """Parse healthy sources once; quarantine malformed sources with provenance."""
     result = []
     blobs = list(blobs)
     sources = list(source_projects or ("" for _ in blobs))
+    paths = list(source_paths or ("" for _ in blobs))
     if len(sources) != len(blobs):
         raise ValueError("source_projects must have one entry per lesson blob")
-    for blob, source_project in zip(blobs, sources):
-        loaded = yaml.safe_load(blob) or {}
+    if len(paths) != len(blobs):
+        raise ValueError("source_paths must have one entry per lesson blob")
+    for blob, source_project, source_path in zip(blobs, sources, paths):
+        try:
+            loaded = yaml.safe_load(blob) or {}
+            if not isinstance(loaded, dict) or not isinstance(loaded.get("lessons", []), list):
+                raise yaml.YAMLError("top-level mapping with lessons list required")
+        except yaml.YAMLError as exc:
+            error = {
+                "level": "ERROR",
+                "type": "malformed_lesson_source",
+                "source_project": str(source_project or ""),
+                "source_path": str(source_path or ""),
+                "error": str(exc).splitlines()[0],
+            }
+            if errors is None:
+                raise
+            errors.append(error)
+            continue
         for lesson in loaded.get("lessons", []):
             item = dict(lesson)
             item["_source_project"] = str(source_project or "")
@@ -368,12 +392,14 @@ def inject_many(
     semantic_blob: bytes | None = None,
     *,
     source_projects: Iterable[str] | None = None,
+    source_paths: Iterable[str] | None = None,
+    source_errors: MutableSequence[dict[str, str]] | None = None,
     platform_projects: Iterable[str] = (),
     semantic_boosts: Mapping[str, int] | None = None,
     memory_boosts: Mapping[str, int] | None = None,
     useful_rates: Mapping[str, float] | None = None,
 ) -> list[bytes]:
-    lessons = parse_lessons(lesson_blobs, source_projects)
+    lessons = parse_lessons(lesson_blobs, source_projects, source_paths, source_errors)
     semantic = parse_semantic_index(semantic_blob)
     output = []
     for raw in tasks:
@@ -573,7 +599,10 @@ def inject_repository_task(
                 int(os.environ.get("MEMORY_DB_LESSON_BOOST", "20")),
             )
     lesson_blobs = [path.read_bytes() for path in lesson_paths]
-    lessons = parse_lessons(lesson_blobs, lesson_sources)
+    source_errors: list[dict[str, str]] = []
+    lessons = parse_lessons(
+        lesson_blobs, lesson_sources, [str(path) for path in lesson_paths], source_errors,
+    )
     semantic = parse_semantic_index(semantic_blob)
     rates = _useful_rates(root / "logs/lesson_impact.tsv")
     metadata: dict[str, object] = {}
@@ -593,6 +622,7 @@ def inject_repository_task(
     return {
         "injected": len(final_task.get("related_lessons") or []), "available": available,
         "project": project, "semantic_concepts": matched_concepts, "memory_events": memory_events,
+        "source_errors": source_errors,
     }
 
 
@@ -618,16 +648,21 @@ def main() -> int:
     def load_map(path: str | None) -> dict:
         return json.loads(Path(path).read_text()) if path else {}
 
+    source_errors: list[dict[str, str]] = []
     results = inject_many(
         [p.read_bytes() for p in task_paths],
         [Path(p).read_bytes() for p in args.lessons],
         Path(args.semantic_index).read_bytes() if args.semantic_index else None,
         source_projects=args.source_project,
+        source_paths=args.lessons,
+        source_errors=source_errors,
         platform_projects=args.platform_project,
         semantic_boosts=load_map(args.semantic_boosts_json),
         memory_boosts=load_map(args.memory_boosts_json),
         useful_rates=load_map(args.useful_rates_json),
     )
+    for error in source_errors:
+        print(json.dumps(error, ensure_ascii=False, sort_keys=True), file=sys.stderr)
     for path, result in zip(task_paths, results):
         fd, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
         try:

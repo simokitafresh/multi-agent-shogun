@@ -549,6 +549,22 @@ EOF
     [[ "$output" == *"automated: false"* ]]
 }
 
+@test "project YAML fallback preserves existing file when YAML validation fails" {
+    # test_necessity: a malformed lesson source must never be replaced by a
+    # partially generated candidate; the last known bytes are the recovery evidence.
+    rm -f "$EXT_PROJECT/tasks/lessons.md"
+    mkdir -p "$TEST_PROJECT/projects/testproj"
+    printf 'lessons:\n- id: L001\n  title: truncated\n  summary: "unterminated\n' \
+        > "$TEST_PROJECT/projects/testproj/lessons.yaml"
+    cp "$TEST_PROJECT/projects/testproj/lessons.yaml" "$BATS_TEST_TMPDIR/before.yaml"
+
+    run_lesson_write testproj "原子公開検証" "破損した既存YAMLを不変に保つ検証用の十分長い詳細" "cmd_709" "hanzo"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"existing lesson YAML is invalid"* ]]
+    run cmp "$BATS_TEST_TMPDIR/before.yaml" "$TEST_PROJECT/projects/testproj/lessons.yaml"
+    [ "$status" -eq 0 ]
+}
+
 # ============================================================
 # 9. Subdomain tag inference from target-files
 # ============================================================

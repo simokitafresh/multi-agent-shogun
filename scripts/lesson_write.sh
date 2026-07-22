@@ -686,6 +686,9 @@ write_project_yaml_lesson() {
 import os
 import re
 import sys
+import tempfile
+
+import yaml
 
 path = os.environ["LESSONS_YAML_ENV"]
 title = os.environ["TITLE_ENV"]
@@ -754,12 +757,47 @@ entry.append("  harmful_count: 0")
 entry.append("  injection_count: 0")
 entry.append(f"  last_referenced: {sq(timestamp)}")
 
-with open(path, "a", encoding="utf-8") as fh:
-    fh.write("\n".join(entry) + "\n")
+try:
+    existing = yaml.safe_load(content) or {}
+except yaml.YAMLError as exc:
+    print(f"ERROR: existing lesson YAML is invalid; preserving {path}: {exc}", file=sys.stderr)
+    sys.exit(1)
+if (not isinstance(existing, dict) or "lessons" not in existing
+        or (existing.get("lessons") is not None and not isinstance(existing.get("lessons"), list))):
+    print(f"ERROR: existing lesson YAML has invalid schema; preserving {path}", file=sys.stderr)
+    sys.exit(1)
+
+candidate = content
+if candidate and not candidate.endswith("\n"):
+    candidate += "\n"
+candidate += "\n".join(entry) + "\n"
+try:
+    generated = yaml.safe_load(candidate) or {}
+except yaml.YAMLError as exc:
+    print(f"ERROR: generated lesson YAML is invalid; preserving {path}: {exc}", file=sys.stderr)
+    sys.exit(1)
+if not isinstance(generated, dict) or not isinstance(generated.get("lessons"), list):
+    print(f"ERROR: generated lesson YAML has invalid schema; preserving {path}", file=sys.stderr)
+    sys.exit(1)
+
+directory = os.path.dirname(path) or "."
+fd, temporary = tempfile.mkstemp(prefix=".lesson-write.", suffix=".tmp", dir=directory)
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(candidate)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(temporary, path)
+except BaseException:
+    try:
+        os.unlink(temporary)
+    except FileNotFoundError:
+        pass
+    raise
 
 print(f"{new_id} added to {path}")
 PY
-    ) 200>"$lockfile"
+    ) 200>"$lockfile" || return 1
 
     # cmd_108: Write .done flag for cmd_complete_gate
     if [ -n "$CMD_ID" ]; then
