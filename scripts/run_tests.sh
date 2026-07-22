@@ -550,16 +550,20 @@ run_bats_files_parallel() {
 
     if [ "$failed" -ne 0 ]; then
         echo "One or more bats files failed:" >&2
+        local _first_fail_rc=1
         for pid in "${all_pids[@]}"; do
             out="${pid_out[$pid]}"
             file="${pid_file[$pid]}"
-            if [ "${pid_rc[$pid]:-0}" -ne 0 ] || \
-               awk -F '\t' -v p="$pid" '$1==p && $5>0 {found=1} END{exit !found}' "$stats"; then
+            if [ "${pid_rc[$pid]:-0}" -ne 0 ]; then
+                [ "$_first_fail_rc" -ne 1 ] || _first_fail_rc="${pid_rc[$pid]}"
+                echo "==== $file ====" >&2
+                tail -120 "$out" >&2
+            elif awk -F '\t' -v p="$pid" '$1==p && $5>0 {found=1} END{exit !found}' "$stats"; then
                 echo "==== $file ====" >&2
                 tail -120 "$out" >&2
             fi
         done
-        return 1
+        return "$_first_fail_rc"
     fi
 
     # Publish timing only after the whole selected suite completed.  Thus an

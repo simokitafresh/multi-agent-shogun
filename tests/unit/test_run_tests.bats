@@ -10,7 +10,8 @@ setup() {
   mkdir -p "$TMPROOT/scripts" "$TMPROOT/tests/unit" "$TMPROOT/bin" "$TMPROOT/logs"
   cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/test_timing_ledger_write.sh" \
     "$ROOT/scripts/test_suite_timing_ledger_write.sh" "$ROOT/scripts/universal_shard.py" \
-    "$ROOT/scripts/universal_shard_adapters.py" "$ROOT/scripts/run_with_receipt.sh" "$TMPROOT/scripts/"
+    "$ROOT/scripts/universal_shard_adapters.py" "$ROOT/scripts/run_with_receipt.sh" \
+    "$ROOT/scripts/heavy_job_admission.sh" "$TMPROOT/scripts/"
   printf '@test "sample" { true; }\n' >"$TMPROOT/tests/unit/sample.bats"
   printf '@test "root sample" { true; }\n' >"$TMPROOT/tests/root_sample.bats"
   cat >"$TMPROOT/bin/bats" <<'SH'
