@@ -16,6 +16,7 @@ status: pending
 files_modified:
   - {path: queue/reports/hayate_report_cmd_test.yaml, change: runtime report}
   - {path: logs/loop_ledger.yaml, change: runtime ledger}
+lessons_useful: []
 binary_checks:
   commit:
     - {check: 運用データのみのためcommit不要, result: yes}
