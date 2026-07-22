@@ -341,7 +341,8 @@ run_bats_files_parallel() {
             -u BATS_TEST_FILE_NUMBER \
             -u BATS_OUT \
             -u BATS_TAP_OUTPUT \
-            bats "$test_file" --jobs "$test_jobs" --timing 3>&- || rc=$?
+            -u RUN_TESTS_BATS_BIN \
+            "${RUN_TESTS_BATS_BIN:-bats}" "$test_file" --jobs "$test_jobs" --timing 3>&- || rc=$?
         if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
             printf 'TIMEOUT: %s exceeded %ss (rc=%s)\n' \
                 "${test_file##*/}" "$BATS_FILE_TIMEOUT_SECONDS" "$rc" >&2
@@ -355,7 +356,8 @@ run_bats_files_parallel() {
     fi
 
     if [ "${BATS_SPLIT_FILES:-1}" != "1" ]; then
-        bats "${files[@]}" --jobs "$JOBS" --timing
+        env -u RUN_TESTS_BATS_BIN \
+            "${RUN_TESTS_BATS_BIN:-bats}" "${files[@]}" --jobs "$JOBS" --timing
         return $?
     fi
 
@@ -884,7 +886,8 @@ _run_tests_main() {
                 -u BATS_TEST_FILE_NUMBER \
                 -u BATS_OUT \
                 -u BATS_TAP_OUTPUT \
-                bats "$@" --jobs "$JOBS" --timing 3>&-
+                -u RUN_TESTS_BATS_BIN \
+                "${RUN_TESTS_BATS_BIN:-bats}" "$@" --jobs "$JOBS" --timing 3>&-
             ;;
         affected)
             shift || true
@@ -1101,6 +1104,11 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         _tap="${_receipt%.json}.tap"
         _selected_paths="${_receipt%.json}.paths"
         _source_head="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+        # Resolve at this public-call boundary.  RUN_TESTS_BATS_BIN may belong
+        # to an enclosing bats root; inheriting it would bypass an isolated
+        # fixture's PATH and execute the wrong runner.
+        _bats_bin="$(command -v bats 2>/dev/null || true)"
+        [ -n "$_bats_bin" ] || { echo "BLOCK: bats executable could not be resolved" >&2; exit 2; }
         set +e
         if [ "$_singleflight" = 1 ]; then
             # The parent retains the mode lock until receipt publication, but
@@ -1109,12 +1117,12 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                 eval "exec ${_sf_fd}>&-"
                 BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                     --summary-only --receipt "$_receipt" -- \
-                    env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                    env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
             )
         else
             BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                 --summary-only --receipt "$_receipt" -- \
-                env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
         fi
         _rc=$?
         set -e
