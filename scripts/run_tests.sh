@@ -661,6 +661,49 @@ print('RECEIPT_TERMINAL')
 PY
 }
 
+emit_run_tests_terminal_receipt() {
+    local receipt="$1"
+    shift
+    validate_run_tests_terminal_receipt "$receipt" >/dev/null || {
+        printf 'TEST_RECEIPT_BLOCK path=%s rc=2\n' "$receipt" >&2
+        return 2
+    }
+    python3 - "$receipt" "$@" <<'PY'
+import json, sys
+path=sys.argv[1]; suffix=" ".join(sys.argv[2:])
+d=json.load(open(path, encoding="utf-8")); rc=d["rc"]
+label="PASS" if rc == 0 else "FAIL"
+print("TEST_RECEIPT_{} path={} rc={} tests={}/{} skip={} sha256={} duration_ms={}{}".format(
+    label, path, rc, d["observed_test_count"], d["declared_test_count"],
+    d["skip_count"], d["output_sha256"], d["duration_ms"],
+    (" " + suffix) if suffix else ""))
+raise SystemExit(rc)
+PY
+}
+
+recover_run_tests_terminal_receipt() {
+    local identity="$1" receipt=""
+    if [ -f "$identity" ]; then
+        receipt="$identity"
+    elif [ -s "${RUN_TESTS_SINGLEFLIGHT_DIR:-/tmp/shogun-run-tests-singleflight-v2}/${identity}.state" ]; then
+        receipt="$(sed -n '1p' "${RUN_TESTS_SINGLEFLIGHT_DIR:-/tmp/shogun-run-tests-singleflight-v2}/${identity}.state")"
+    elif [ -f "${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}/${identity}" ]; then
+        receipt="${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}/${identity}"
+    elif [ -f "${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}/${identity}.json" ]; then
+        receipt="${RUN_TESTS_RECEIPT_DIR:-$REPO_ROOT/logs/test_receipts}/${identity}.json"
+    fi
+    [ -n "$receipt" ] || { printf 'TEST_RECEIPT_RECOVERY_BLOCK identity=%s rc=2\n' "$identity" >&2; return 2; }
+    validate_run_tests_terminal_receipt "$receipt" >/dev/null || {
+        printf 'TEST_RECEIPT_RECOVERY_BLOCK identity=%s path=%s rc=2\n' "$identity" "$receipt" >&2
+        return 2
+    }
+    python3 - "$identity" "$receipt" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[2], encoding="utf-8"))
+print("TEST_RECEIPT_RECOVERED identity={} path={} rc={}".format(sys.argv[1],sys.argv[2],d["rc"]))
+PY
+}
+
 selection_manifest_for_singleflight() {
     local mode="$1"
     shift
@@ -961,6 +1004,11 @@ _run_tests_main() {
 }
 
 if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
+    if [[ "${1:-}" == "receipt" ]]; then
+        [ "$#" -eq 2 ] || { echo "Usage: bash scripts/run_tests.sh receipt <run-or-selection-identity>" >&2; exit 2; }
+        recover_run_tests_terminal_receipt "$2"
+        exit $?
+    fi
     if [[ "${1:-}" == "--receipt-inner" ]]; then
         shift
         _run_tests_main "$@"
@@ -1024,11 +1072,8 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                         printf 'SINGLE_FLIGHT_STALE_OWNER mode=%s owner_pid=%s generation=%s descendants=%s lock_holders=%s followers=1 waited_sec=%s action=join_terminal_receipt\n' \
                             "$_mode" "$_sf_owner" "${_sf_generation:-unknown}" "$_sf_descendants" "$_sf_holders" "$(( SECONDS - _sf_wait_started ))" >&2
                         printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s stale_owner=1\n' "$_mode" "$_receipt" >&2
-                        python3 - "$_receipt" <<'PY'
-import json,sys
-d=json.load(open(sys.argv[1])); print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} joined=1 stale_owner=1".format(sys.argv[1],d["rc"],d["observed_test_count"],d["declared_test_count"],d["skip_count"],d["output_sha256"],d["duration_ms"]))
-PY
-                        exit "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$_receipt")"
+                        emit_run_tests_terminal_receipt "$_receipt" joined=1 stale_owner=1
+                        exit $?
                     fi
                 done
                 [ -s "$_sf_state" ] || { echo "BLOCK: single-flight leader state missing" >&2; exit 2; }
@@ -1036,11 +1081,8 @@ PY
                 validate_run_tests_terminal_receipt "$_receipt" >/dev/null \
                     || { echo "BLOCK: single-flight leader receipt invalid" >&2; exit 2; }
                 printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s\n' "$_mode" "$_receipt" >&2
-                python3 - "$_receipt" <<'PY'
-import json,sys
-d=json.load(open(sys.argv[1])); print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} joined=1".format(sys.argv[1],d["rc"],d["observed_test_count"],d["declared_test_count"],d["skip_count"],d["output_sha256"],d["duration_ms"]))
-PY
-                exit "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$_receipt")"
+                emit_run_tests_terminal_receipt "$_receipt" joined=1
+                exit $?
             fi
         fi
         _receipt="${RUN_TESTS_RECEIPT_PATH:-$_receipt_dir/run_tests_$(date -u +%Y%m%dT%H%M%S)_$$.json}"

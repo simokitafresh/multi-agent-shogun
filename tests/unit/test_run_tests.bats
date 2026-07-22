@@ -495,23 +495,71 @@ YAML
   common=(env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_CACHE=0
     RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf"
     HEAVY_LOG="$TMPROOT/count.lock" HEAVY_COUNT="$TMPROOT/count")
-  "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/saizo.yaml" >"$TMPROOT/task.out" 2>"$TMPROOT/task.err" & p1=$!
-  sleep 0.2
-  "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats" >"$TMPROOT/file.out" 2>"$TMPROOT/file.err" & p2=$!
-  rc1=0; wait "$p1" || rc1=$?
-  rc2=0; wait "$p2" || rc2=$?
-  echo "rc1=$rc1 rc2=$rc2 task_err=$(tr '\n' '|' <"$TMPROOT/task.err") file_err=$(tr '\n' '|' <"$TMPROOT/file.err")" >&3
-  receipt_rc=$(python3 - "$TMPROOT/receipts" <<'PY'
+  for trial in 1 2 3; do
+    rm -f "$TMPROOT/receipts"/* "$TMPROOT/sf"/* "$TMPROOT/count"
+    if [ $((trial % 2)) -eq 1 ]; then
+      "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/saizo.yaml" >"$TMPROOT/task.out" 2>"$TMPROOT/task.err" & p1=$!
+      sleep 0.2
+      "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats" >"$TMPROOT/file.out" 2>"$TMPROOT/file.err" & p2=$!
+    else
+      "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats" >"$TMPROOT/file.out" 2>"$TMPROOT/file.err" & p2=$!
+      sleep 0.2
+      "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/saizo.yaml" >"$TMPROOT/task.out" 2>"$TMPROOT/task.err" & p1=$!
+    fi
+    rc1=0; wait "$p1" || rc1=$?
+    rc2=0; wait "$p2" || rc2=$?
+    echo "trial=$trial rc1=$rc1 rc2=$rc2 task_err=$(tr '\n' '|' <"$TMPROOT/task.err") file_err=$(tr '\n' '|' <"$TMPROOT/file.err")" >&3
+    receipt_rc=$(python3 - "$TMPROOT/receipts" <<'PY'
 import glob,json,os,sys
 p=glob.glob(os.path.join(sys.argv[1], '*.json'))
 print(json.load(open(p[0]))['rc'])
 PY
 )
-  [ "$receipt_rc" -ne 0 ]
-  [ "$rc1" -eq "$receipt_rc" ]
-  [ "$rc2" -eq "$receipt_rc" ]
-  [ "$(find "$TMPROOT/receipts" -name '*.json' | wc -l)" -eq 1 ]
-  grep -q 'SINGLE_FLIGHT_JOINED' "$TMPROOT/file.err"
+    [ "$receipt_rc" -eq 7 ]
+    [ "$rc1" -eq "$receipt_rc" ]
+    [ "$rc2" -eq "$receipt_rc" ]
+    [ "$(find "$TMPROOT/receipts" -name '*.json' | wc -l)" -eq 1 ]
+    [ "$(grep -h -c 'SINGLE_FLIGHT_JOINED' "$TMPROOT/task.err" "$TMPROOT/file.err" | awk '{s+=$1} END{print s}')" -eq 1 ]
+    grep -h -q 'TEST_RECEIPT_FAIL.*rc=7.*joined=1' "$TMPROOT/task.out" "$TMPROOT/file.out"
+    ! grep -h -q 'TEST_RECEIPT_PASS.*rc=7' "$TMPROOT/task.out" "$TMPROOT/file.out"
+  done
+}
+
+# test_necessity: every terminal receipt rc must determine both the public label and process exit code.
+@test "terminal receipt emitter keeps label exit and receipt rc identical for rc0 rc1 rc2 rc7" {
+  mkdir -p "$TMPROOT/receipts"
+  for rc in 0 1 2 7; do
+    artifact="$TMPROOT/receipts/r${rc}.output"; printf 'fixture rc=%s\n' "$rc" >"$artifact"
+    python3 - "$TMPROOT/receipts/r${rc}.json" "$artifact" "$rc" <<'PY'
+import hashlib,json,sys
+p,a,rc=sys.argv[1],sys.argv[2],int(sys.argv[3]); raw=open(a,'rb').read()
+json.dump(dict(version=2,complete=True,result='PASS' if rc==0 else 'FAIL',rc=rc,duration_ms=1,
+ output_sha256=hashlib.sha256(raw).hexdigest(),declared_test_count=1,observed_test_count=1,
+ skip_count=0,artifact=a,signal=None,command=['fixture'],source_head='0'*40,test_paths=['tests/unit/sample.bats']),open(p,'w'))
+PY
+    run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; emit_run_tests_terminal_receipt "$2" fixture=1' _ "$TMPROOT" "$TMPROOT/receipts/r${rc}.json"
+    [ "$status" -eq "$rc" ]
+    if [ "$rc" -eq 0 ]; then [[ "$output" == TEST_RECEIPT_PASS* ]]; else [[ "$output" == TEST_RECEIPT_FAIL* ]]; fi
+    [[ "$output" == *"rc=$rc"* ]]
+  done
+}
+
+# test_necessity: truncated tool output must be recoverable from selection or run identity without rerunning tests.
+@test "receipt recovery resolves selection state and run identity without execution" {
+  mkdir -p "$TMPROOT/receipts" "$TMPROOT/sf"
+  artifact="$TMPROOT/receipts/recover.output"; printf 'terminal\n' >"$artifact"
+  python3 - "$TMPROOT/receipts/recover.json" "$artifact" <<'PY'
+import hashlib,json,sys
+p,a=sys.argv[1:]; raw=open(a,'rb').read()
+json.dump(dict(version=2,complete=True,result='FAIL',rc=7,duration_ms=1,
+ output_sha256=hashlib.sha256(raw).hexdigest(),declared_test_count=1,observed_test_count=1,
+ skip_count=0,artifact=a,signal=None,command=['fixture'],source_head='0'*40,test_paths=['tests/unit/sample.bats']),open(p,'w'))
+PY
+  printf '%s\n' "$TMPROOT/receipts/recover.json" >"$TMPROOT/sf/selection-id.state"
+  run env REPO_ROOT="$TMPROOT" RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf" bash "$TMPROOT/scripts/run_tests.sh" receipt selection-id
+  [ "$status" -eq 0 ]; [[ "$output" == *'path='*'/recover.json rc=7'* ]]
+  run env REPO_ROOT="$TMPROOT" RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts" bash "$TMPROOT/scripts/run_tests.sh" receipt recover
+  [ "$status" -eq 0 ]; [[ "$output" == *'path='*'/recover.json rc=7'* ]]
 }
 
 # test_necessity: distinct selected test sets must not false-positive as duplicates or serialize behind one selection lock.
