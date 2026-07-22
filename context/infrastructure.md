@@ -115,6 +115,8 @@ failed taskとcompleted reportは文書完成と作業結果を別軸で扱う�
 | live | `queue/lord_conversation.jsonl` / `lib/lord_conversation.sh` | 直近対話を原子追記。terminal/ntfy response、terminal inboundを記録 | 消費者はtarget/agentで絞る。全inbound直読み禁止 |
 | retention | `scripts/conversation_retention.sh` / `context/lord-conversation-index.md` | liveを24h/200件に保ち、古い行を`logs/lord_conversation_archive/`へ追記退避 | アーカイブが一次データ。DBだけに飛びつくな |
 | batch DB | `scripts/memory_db_import.py` | archive/live/掲示板/report/insight/document等を`events`へ再構築 | `/clear`時再構築。WAL+INSERT OR REPLACE |
+
+殿発言の自動注入producerは4系統、target隔離なしは4経路（recon時点4→4）。caller/filter全数表は `docs/research/cmd_4125_lord_utterance_isolation.md`。
 | live DB | `scripts/memory_db_live_insert.py` + 各writer | inbox/report/cmd_quality等をリアルタイムINSERT | 失敗しても正本YAML/JSONL成功を優先 |
 | query | `scripts/memory_db_query.sh` / `scripts/semantic_search.sh` | SELECT-only SQL、FTS5 fallback、semantic検索補助 | destructive SQLは禁止 |
 
