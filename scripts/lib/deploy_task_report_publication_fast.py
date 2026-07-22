@@ -18,7 +18,7 @@ import tempfile
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Mapping, Sequence
 
 import yaml
 
@@ -53,6 +53,25 @@ class Publication:
     report_bytes: bytes
     task_metadata_patch: dict[str, Any]
     reused_existing: bool
+
+
+@dataclass(frozen=True)
+class ExistingReport:
+    """One report plus the current task state of its owning worker."""
+
+    path: str
+    report_bytes: bytes
+    owner_task_parent_cmd: str = ""
+    owner_task_status: str = ""
+
+
+@dataclass(frozen=True)
+class PublicationPlan:
+    publication: Publication
+    destination: str
+    archive_paths: tuple[str, ...]
+    protected_paths: tuple[str, ...]
+    publish_required: bool = True
 
 
 def _as_text(data: bytes | str | None) -> str:
@@ -99,12 +118,16 @@ def _replace_scalar(text: str, key: str, value: Any) -> str:
     wanted = _clean(value)
     if _report_scalar(text, key) == wanted:
         return text
-    return pattern.sub(lambda m: f"{m.group(1)}{_yaml_scalar(value)}{m.group(3)}", text, count=1)
+    return pattern.sub(
+        lambda m: f"{m.group(1)}{_yaml_scalar(value)}{m.group(3)}", text, count=1
+    )
 
 
 def _replace_section(text: str, key: str, replacement: str) -> str:
     lines = text.splitlines(keepends=True)
-    start = next((i for i, line in enumerate(lines) if line.startswith(f"{key}:")), None)
+    start = next(
+        (i for i, line in enumerate(lines) if line.startswith(f"{key}:")), None
+    )
     if start is None:
         raise ValueError(f"report template missing required section: {key}")
     end = start + 1
@@ -115,6 +138,76 @@ def _replace_section(text: str, key: str, replacement: str) -> str:
         end += 1
     block = replacement.rstrip("\n") + "\n"
     return "".join(lines[:start]) + block + "".join(lines[end:])
+
+
+def _top_level_block(text: str, key: str) -> str:
+    lines = text.splitlines(keepends=True)
+    start = next(
+        (i for i, line in enumerate(lines) if line.startswith(f"{key}:")), None
+    )
+    if start is None:
+        raise ValueError(f"report template missing required field: {key}")
+    end = start + 1
+    while end < len(lines):
+        line = lines[end]
+        if line and not line[0].isspace() and not line.startswith("#"):
+            break
+        end += 1
+    return "".join(lines[start:end]).rstrip("\n")
+
+
+def _repair_completeness(
+    existing: str, template: str, scalar_repairs: Mapping[str, Any]
+) -> str:
+    """Append missing canonical top-level fields without serializing YAML."""
+
+    repaired = existing.rstrip("\n") + "\n"
+    for key in REQUIRED_REPORT_KEYS:
+        if re.search(rf"^{re.escape(key)}:", repaired, re.MULTILINE):
+            continue
+        if key in scalar_repairs:
+            repaired += f"{key}: {_yaml_scalar(scalar_repairs[key])}\n"
+        else:
+            repaired += _top_level_block(template, key) + "\n"
+    yaml.safe_load(repaired)
+    return repaired
+
+
+def _canonical_report_path(task: Mapping[str, Any]) -> str:
+    speed = task.get("speed_campaign") or {}
+    if isinstance(speed, dict):
+        campaign = _clean(speed.get("campaign_id"))
+        round_index = speed.get("round_index")
+        expected = f"test_speed_report_{campaign}_r{round_index}.yaml"
+        explicit_name = _clean(task.get("report_filename"))
+        explicit_path = _clean(task.get("report_path"))
+        if (
+            campaign
+            and isinstance(round_index, int)
+            and round_index > 0
+            and explicit_name == expected
+            and explicit_path == f"queue/reports/{expected}"
+        ):
+            return explicit_path
+    parent = _clean(task.get("parent_cmd") or task.get("cmd_id"))
+    worker = _task_worker(task)
+    explicit_name = Path(_clean(task.get("report_filename"))).name
+    expected_suffix = f"_report_{parent}.yaml"
+    if parent.startswith("cmd_") and explicit_name.endswith(expected_suffix):
+        return f"queue/reports/{explicit_name}"
+    if parent.startswith("cmd_"):
+        return f"queue/reports/{worker}_report_{parent}.yaml"
+    return f"queue/reports/{worker}_report.yaml"
+
+
+def _task_worker(task: Mapping[str, Any]) -> str:
+    worker = _clean(task.get("assigned_to") or task.get("worker_id"))
+    if worker:
+        return worker
+    filename = Path(_clean(task.get("report_filename"))).name
+    if "_report" in filename:
+        return filename.split("_report", 1)[0]
+    return ""
 
 
 def _lesson_ids(task: Mapping[str, Any]) -> list[str]:
@@ -136,7 +229,9 @@ def _lessons_block(ids: Iterable[str]) -> str:
     ids = list(ids)
     if not ids:
         return "lessons_useful: []  # ★教訓注入なし。このフィールドを変更するな。空リストのまま提出せよ"
-    lines = ["lessons_useful:  # ★教訓注入済み。[]で上書きするな。各教訓にuseful+reasonを記入せよ"]
+    lines = [
+        "lessons_useful:  # ★教訓注入済み。[]で上書きするな。各教訓にuseful+reasonを記入せよ"
+    ]
     for lesson_id in ids:
         lines.extend(
             (
@@ -165,9 +260,19 @@ def _normalize_check(value: Any, description: Any = "") -> str:
 
 def _criteria(task: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
     raw = task.get("acceptance_criteria") or []
-    selected = {_clean(x) for x in (task.get("ac_assigned") or [])} if isinstance(task.get("ac_assigned"), list) else set()
+    selected = (
+        {_clean(x) for x in (task.get("ac_assigned") or [])}
+        if isinstance(task.get("ac_assigned"), list)
+        else set()
+    )
     result: list[tuple[str, list[str]]] = []
-    items = list(raw.items()) if isinstance(raw, dict) else list(enumerate(raw, start=1)) if isinstance(raw, list) else []
+    items = (
+        list(raw.items())
+        if isinstance(raw, dict)
+        else list(enumerate(raw, start=1))
+        if isinstance(raw, list)
+        else []
+    )
     for position, pair in enumerate(items, start=1):
         key, value = pair
         ac_id = _clean(key) if isinstance(raw, dict) else f"AC{key}"
@@ -189,12 +294,16 @@ def _criteria(task: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
                     for item in raw_checks
                 ]
         elif isinstance(value, list):
-            checks = [item.get("check") if isinstance(item, dict) else item for item in value]
+            checks = [
+                item.get("check") if isinstance(item, dict) else item for item in value
+            ]
         else:
             description = value
         if not checks:
             checks = _split_checks(description)
-        normalized = [_normalize_check(item, description) for item in checks if _clean(item)]
+        normalized = [
+            _normalize_check(item, description) for item in checks if _clean(item)
+        ]
         if not normalized:
             normalized = [f"FILL: {ac_id}の確認項目を記入"]
         if not selected or ac_id in selected:
@@ -203,14 +312,43 @@ def _criteria(task: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
 
 
 def _commit_required(task: Mapping[str, Any]) -> bool:
-    task_type = _clean(task.get("task_type") or task.get("type") or task.get("scope_mode")).lower()
+    task_type = _clean(
+        task.get("task_type") or task.get("type") or task.get("scope_mode")
+    ).lower()
     paths = " ".join(
-        _clean(task.get(key)) for key in ("target_path", "files_to_modify", "files_modified", "owned_paths")
+        _clean(task.get(key))
+        for key in ("target_path", "files_to_modify", "files_modified", "owned_paths")
     )
-    scope = f"{_clean(task.get('constraints'))} {_clean(task.get('not_in_scope'))}".lower()
-    explicit_no_code = bool(re.search(r"コード変更.*禁止|変更.*禁止.*(?:調査|報告)|no[ _-]?code|read[ _-]?only", scope))
-    code_path = bool(re.search(r"(?:scripts/|src/|tests/|app/|lib/|\.(?:sh|py|js|ts|go|rs|java|kt)\b)", paths, re.I))
-    return not (explicit_no_code or (task_type in {"recon", "recon2", "scout", "readonly", "read_only"} and not code_path))
+    scope = (
+        f"{_clean(task.get('constraints'))} {_clean(task.get('not_in_scope'))}".lower()
+    )
+    explicit_no_code = bool(
+        re.search(
+            r"コード変更.*禁止|変更.*禁止.*(?:調査|報告)|no[ _-]?code|read[ _-]?only",
+            scope,
+        )
+    )
+    code_path = bool(
+        re.search(
+            r"(?:scripts/|src/|tests/|app/|lib/|\.(?:sh|py|js|ts|go|rs|java|kt)\b)",
+            paths,
+            re.I,
+        )
+    )
+    allowed_no_code = {
+        "no_code",
+        "no-code",
+        "decision",
+        "decision_candidate",
+        "data_readonly",
+        "data-readonly",
+        "readonly",
+        "read_only",
+        "recon",
+        "recon2",
+        "scout",
+    }
+    return not (explicit_no_code or (task_type in allowed_no_code and not code_path))
 
 
 def _binary_checks_block(task: Mapping[str, Any]) -> str:
@@ -220,18 +358,53 @@ def _binary_checks_block(task: Mapping[str, Any]) -> str:
         for check in checks:
             lines.append(f"  - check: {_yaml_scalar(check)}")
             lines.append('    result: ""  # yes or no')
-    lines.extend(("  commit:", f"  - check: {_yaml_scalar('git commitが完了したか(untracked/modified=0)' if _commit_required(task) else 'commit N/A証跡とコード変更・stage/commitを実行していないことを確認')}", '    result: ""  # yes or no'))
+    lines.extend(
+        (
+            "  commit:",
+            f"  - check: {_yaml_scalar('git commitが完了したか(untracked/modified=0)' if _commit_required(task) else 'commit N/A証跡とコード変更・stage/commitを実行していないことを確認')}",
+            '    result: ""  # yes or no',
+        )
+    )
     return "\n".join(lines)
 
 
 def _variation_required(task: Mapping[str, Any]) -> bool:
-    task_type = _clean(task.get("task_type") or task.get("type") or task.get("scope_mode")).lower()
+    task_type = _clean(
+        task.get("task_type") or task.get("type") or task.get("scope_mode")
+    ).lower()
     if task_type in {"scout", "recon", "recon2"}:
         return False
-    text = " ".join(_clean(task.get(key)) for key in ("title", "purpose", "command", "description", "target_path", "acceptance_criteria", "constraints", "not_in_scope")).lower()
-    enforcement = bool(re.search(r"enforcement|gate|hook|detector|guard|watcher|state[ _-]?machine|ゲート|フック|検知器|ガード|監視", text))
-    code = bool(re.search(r"scripts/|\.sh\b|\.py\b|コード変更|コード修正|実装|修正|implement|\bfix\b", text))
-    docs_only = bool(re.search(r"docs?[ _-]?only|documentation[ _-]?only|教訓のみ|fixtureのみ|索引のみ|docsのみ", text))
+    text = " ".join(
+        _clean(task.get(key))
+        for key in (
+            "title",
+            "purpose",
+            "command",
+            "description",
+            "target_path",
+            "acceptance_criteria",
+            "constraints",
+            "not_in_scope",
+        )
+    ).lower()
+    enforcement = bool(
+        re.search(
+            r"enforcement|gate|hook|detector|guard|watcher|state[ _-]?machine|ゲート|フック|検知器|ガード|監視",
+            text,
+        )
+    )
+    code = bool(
+        re.search(
+            r"scripts/|\.sh\b|\.py\b|コード変更|コード修正|実装|修正|implement|\bfix\b",
+            text,
+        )
+    )
+    docs_only = bool(
+        re.search(
+            r"docs?[ _-]?only|documentation[ _-]?only|教訓のみ|fixtureのみ|索引のみ|docsのみ",
+            text,
+        )
+    )
     return enforcement and code and not docs_only
 
 
@@ -247,58 +420,313 @@ def build_publication(
     template = _as_text(template_bytes)
     existing = _as_text(existing_report_bytes)
     desired_id = report_id or _clean(task.get("report_id")) or f"rpt-{uuid.uuid4()}"
-    if not re.fullmatch(r"rpt-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}", desired_id):
+    if not re.fullmatch(
+        r"rpt-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
+        desired_id,
+    ):
         raise ValueError("report_id must be an RFC 4122 version-4 rpt identity")
-    rel_path = report_path or _clean(task.get("report_path"))
-    if not rel_path:
-        filename = _clean(task.get("report_filename"))
-        parent = _clean(task.get("parent_cmd") or task.get("cmd_id"))
-        worker = _clean(task.get("assigned_to"))
-        filename = filename or (f"{worker}_report_{parent}.yaml" if parent.startswith("cmd_") else f"{worker}_report.yaml")
-        rel_path = f"queue/reports/{filename}"
+    canonical_path = _canonical_report_path(task)
+    rel_path = report_path or _clean(task.get("report_path")) or canonical_path
+    parent = _clean(task.get("parent_cmd") or task.get("cmd_id"))
+    if parent.startswith("cmd_") and Path(rel_path).name != Path(canonical_path).name:
+        rel_path = canonical_path
     patch = {
         "report_id": desired_id,
         "report_identity_version": 2,
         "report_path": rel_path,
+        "report_filename": Path(rel_path).name,
         "variation_checks_required": _variation_required(task),
+    }
+    scalar_values = {
+        "worker_id": task.get("assigned_to")
+        or task.get("worker_id")
+        or _report_scalar(template, "worker_id"),
+        "report_id": desired_id,
+        "report_identity_version": 2,
+        "task_id": task.get("subtask_id")
+        or task.get("task_id")
+        or task.get("_ac_task_id")
+        or _report_scalar(template, "task_id"),
+        "parent_cmd": task.get("parent_cmd")
+        or task.get("cmd_id")
+        or _report_scalar(template, "parent_cmd"),
+        "task_type": task.get("task_type")
+        or task.get("type")
+        or task.get("scope_mode")
+        or _report_scalar(template, "task_type"),
+        "ac_version_read": task.get("ac_version")
+        or _report_scalar(template, "ac_version_read"),
     }
     existing_id = REPORT_ID_RE.search(existing)
     existing_status = REPORT_STATUS_RE.search(existing)
-    if existing and existing_id and existing_id.group(1) == desired_id and existing_status and existing_status.group(1) == "pending":
-        _validate_structural_report(existing)
-        return Publication(existing.encode("utf-8"), patch, True)
+    if (
+        existing
+        and existing_id
+        and existing_id.group(1) == desired_id
+        and existing_status
+        and existing_status.group(1) == "pending"
+    ):
+        repaired = _repair_completeness(existing, template, scalar_values)
+        if _report_scalar(repaired, "parent_cmd") != parent:
+            existing = ""
+        else:
+            return Publication(repaired.encode("utf-8"), patch, True)
 
     report = template
-    scalar_values = {
-        "worker_id": task.get("assigned_to") or task.get("worker_id") or "",
-        "report_id": desired_id,
-        "report_identity_version": 2,
-        "task_id": task.get("subtask_id") or task.get("task_id") or task.get("_ac_task_id") or "",
-        "parent_cmd": task.get("parent_cmd") or task.get("cmd_id") or "",
-        "task_type": task.get("task_type") or task.get("type") or task.get("scope_mode") or "",
-        "ac_version_read": task.get("ac_version") or "",
-    }
     for key, value in scalar_values.items():
         report = _replace_scalar(report, key, value)
-    report = _replace_section(report, "lessons_useful", _lessons_block(_lesson_ids(task)))
+    report = _replace_section(
+        report, "lessons_useful", _lessons_block(_lesson_ids(task))
+    )
     report = _replace_section(report, "binary_checks", _binary_checks_block(task))
     _validate_structural_report(report)
     return Publication(report.encode("utf-8"), patch, False)
 
 
+def plan_publication(
+    task_bytes: bytes,
+    template_bytes: bytes,
+    existing_reports: Sequence[ExistingReport] = (),
+    *,
+    report_id: str | None = None,
+) -> PublicationPlan:
+    """Plan production-safe reuse/archive/protection without filesystem writes.
+
+    Completed reports and active peer reports are immutable.  Pending reports
+    are reusable only at the canonical basename with the same parent command
+    and report identity.  Every other pending artifact is stale and is offered
+    to the caller for archival before atomic publication.
+    """
+
+    task = _task_from_bytes(task_bytes)
+    destination = _canonical_report_path(task)
+    worker = _task_worker(task)
+    parent = _clean(task.get("parent_cmd") or task.get("cmd_id"))
+    desired_id = report_id or _clean(task.get("report_id"))
+    archive: list[str] = []
+    protected: list[str] = []
+    reusable: bytes | None = None
+
+    for artifact in existing_reports:
+        path = artifact.path
+        basename = Path(path).name
+        owner = basename.split("_report", 1)[0] if "_report" in basename else ""
+        try:
+            value = yaml.safe_load(artifact.report_bytes) or {}
+            if not isinstance(value, dict):
+                raise ValueError("report root must be mapping")
+        except (yaml.YAMLError, ValueError):
+            if owner == worker or path == destination:
+                archive.append(path)
+            continue
+
+        report_parent = _clean(value.get("parent_cmd"))
+        status = _clean(value.get("status"))
+        verdict = _clean(value.get("verdict"))
+        completed = status == "completed" or bool(
+            verdict and verdict not in {"null", '""'}
+        )
+        peer_active = (
+            owner != worker
+            and artifact.owner_task_parent_cmd == parent
+            and artifact.owner_task_status
+            in {"assigned", "acknowledged", "in_progress"}
+        )
+        if completed or peer_active:
+            protected.append(path)
+            continue
+
+        # Production scans only this worker's active generation and peer
+        # reports for the same parent command.  Unrelated peer reports are not
+        # owned by this publication and must remain untouched.
+        if owner != worker and report_parent != parent:
+            continue
+
+        same_generation = (
+            path == destination
+            and basename == Path(destination).name
+            and report_parent in {"", parent}
+            and status == "pending"
+            and bool(desired_id)
+            and _clean(value.get("report_id")) == desired_id
+        )
+        if same_generation:
+            reusable = artifact.report_bytes
+        else:
+            archive.append(path)
+
+    destination_protected = destination in protected
+    publication = build_publication(
+        task_bytes,
+        template_bytes,
+        reusable,
+        report_id=desired_id or report_id,
+        report_path=destination,
+    )
+    return PublicationPlan(
+        publication,
+        destination,
+        tuple(dict.fromkeys(archive)),
+        tuple(dict.fromkeys(protected)),
+        not destination_protected,
+    )
+
+
+def _patch_task_metadata(task_path: Path, patch: Mapping[str, Any]) -> None:
+    """Publish task metadata with a targeted textual rewrite and one rename."""
+
+    raw = task_path.read_text(encoding="utf-8")
+
+    def metadata_scalar(value: Any) -> str:
+        if isinstance(value, (bool, int)):
+            return _yaml_scalar(value)
+        clean = _clean(value)
+        return (
+            clean if re.fullmatch(r"[A-Za-z0-9_./:-]+", clean) else _yaml_scalar(value)
+        )
+
+    lines = raw.splitlines()
+    output: list[str] = []
+    seen: set[str] = set()
+    in_task = False
+    insertion = 0
+    for line in lines:
+        if line == "task:":
+            in_task = True
+            output.append(line)
+            insertion = len(output)
+            continue
+        if in_task and line and not line[0].isspace() and not line.startswith("#"):
+            for key, value in patch.items():
+                if key not in seen:
+                    output.append(f"  {key}: {metadata_scalar(value)}")
+            in_task = False
+        match = re.match(r"^  ([A-Za-z_][A-Za-z0-9_]*):", line) if in_task else None
+        if match and match.group(1) in patch:
+            key = match.group(1)
+            output.append(f"  {key}: {metadata_scalar(patch[key])}")
+            seen.add(key)
+        else:
+            output.append(line)
+    if in_task:
+        for key, value in patch.items():
+            if key not in seen:
+                output.append(f"  {key}: {metadata_scalar(value)}")
+    rendered = "\n".join(output) + ("\n" if raw.endswith("\n") else "")
+    yaml.safe_load(rendered)
+    stage = task_path.with_name(f".{task_path.name}.report-meta.{os.getpid()}")
+    stage.write_text(rendered, encoding="utf-8")
+    os.replace(stage, task_path)
+
+
+def execute_publication_plan(
+    root: Path,
+    task_path: Path,
+    template_bytes: bytes,
+    *,
+    report_id: str,
+    ext4_temp_dir: Path = Path("/tmp"),
+) -> PublicationPlan:
+    """Archive -> publish -> task patch -> active pointer, in that order."""
+
+    task = _task_from_bytes(task_path.read_bytes())
+    worker = _task_worker(task)
+    parent = _clean(task.get("parent_cmd") or task.get("cmd_id"))
+    destination_name = Path(_canonical_report_path(task)).name
+    reports_dir = root / "queue" / "reports"
+    candidates: list[ExistingReport] = []
+    for report in reports_dir.glob("*_report*.yaml") if reports_dir.exists() else ():
+        owner = report.name.split("_report", 1)[0]
+        # This publication owns only the worker's generations and peer reports
+        # for the same parent command.  Reading/parsing every historical report
+        # made the DrvFs hot path proportional to the entire report corpus even
+        # though plan_publication deliberately leaves unrelated peers untouched.
+        own_generation = owner == worker
+        peer_generation = bool(parent) and report.name.endswith(
+            f"_report_{parent}.yaml"
+        )
+        if not (own_generation or peer_generation or report.name == destination_name):
+            continue
+        owner_task = root / "queue" / "tasks" / f"{owner}.yaml"
+        owner_parent = owner_status = ""
+        if owner_task.exists():
+            try:
+                owner_data = _task_from_bytes(owner_task.read_bytes())
+                owner_parent = _clean(owner_data.get("parent_cmd"))
+                owner_status = _clean(owner_data.get("status"))
+            except (ValueError, yaml.YAMLError, UnicodeDecodeError):
+                pass
+        candidates.append(
+            ExistingReport(
+                report.relative_to(root).as_posix(),
+                report.read_bytes(),
+                owner_parent,
+                owner_status,
+            )
+        )
+    plan = plan_publication(
+        task_path.read_bytes(), template_bytes, candidates, report_id=report_id
+    )
+
+    stale_dir = root / "archive" / "reports" / "stale"
+    for relative in plan.archive_paths:
+        source = root / relative
+        if not source.exists():
+            continue
+        stale_dir.mkdir(parents=True, exist_ok=True)
+        target = stale_dir / source.name
+        if target.exists():
+            target = stale_dir / f"{source.stem}.{uuid.uuid4().hex}{source.suffix}"
+        os.replace(source, target)
+
+    destination = root / plan.destination
+    if plan.publish_required:
+        atomic_publish(
+            plan.publication.report_bytes, destination, ext4_temp_dir=ext4_temp_dir
+        )
+    elif not destination.exists():
+        raise ValueError("protected destination disappeared before publication")
+
+    metadata = dict(plan.publication.task_metadata_patch)
+    if not plan.publish_required:
+        protected = yaml.safe_load(destination.read_bytes()) or {}
+        existing_id = _clean(protected.get("report_id"))
+        if existing_id:
+            metadata["report_id"] = existing_id
+    _patch_task_metadata(task_path, metadata)
+
+    pointer = reports_dir / f".deploy_active_{worker}"
+    atomic_publish(
+        (plan.destination + "\n").encode("utf-8"), pointer, ext4_temp_dir=ext4_temp_dir
+    )
+    return plan
+
+
 def _validate_structural_report(text: str) -> None:
-    missing = [key for key in REQUIRED_REPORT_KEYS if not re.search(rf"^{re.escape(key)}:", text, re.MULTILINE)]
+    missing = [
+        key
+        for key in REQUIRED_REPORT_KEYS
+        if not re.search(rf"^{re.escape(key)}:", text, re.MULTILINE)
+    ]
     if missing:
-        raise ValueError(f"report template missing required fields: {', '.join(missing)}")
+        raise ValueError(
+            f"report template missing required fields: {', '.join(missing)}"
+        )
 
 
-def atomic_publish(report_bytes: bytes, destination: Path, *, ext4_temp_dir: Path = Path("/tmp")) -> None:
+def atomic_publish(
+    report_bytes: bytes, destination: Path, *, ext4_temp_dir: Path = Path("/tmp")
+) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     ext4_temp_dir.mkdir(parents=True, exist_ok=True)
     build_path: Path | None = None
-    stage_path = destination.with_name(f".{destination.name}.publish.{os.getpid()}.{uuid.uuid4().hex}")
+    stage_path = destination.with_name(
+        f".{destination.name}.publish.{os.getpid()}.{uuid.uuid4().hex}"
+    )
     try:
-        with tempfile.NamedTemporaryFile(prefix="deploy-report-", dir=ext4_temp_dir, delete=False) as handle:
+        with tempfile.NamedTemporaryFile(
+            prefix="deploy-report-", dir=ext4_temp_dir, delete=False
+        ) as handle:
             build_path = Path(handle.name)
             handle.write(report_bytes)
             handle.flush()
@@ -323,23 +751,61 @@ def main() -> int:
     parser.add_argument("--task", type=Path, required=True)
     parser.add_argument("--template", type=Path, required=True)
     parser.add_argument("--existing", type=Path)
-    parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument("--report", type=Path)
     parser.add_argument("--metadata-output", type=Path)
     parser.add_argument("--report-id")
     parser.add_argument("--report-path")
     parser.add_argument("--temp-dir", type=Path, default=Path("/tmp"))
+    parser.add_argument("--execute-plan", action="store_true")
+    parser.add_argument("--root", type=Path)
     args = parser.parse_args()
+    if args.execute_plan:
+        if args.root is None or args.report_id is None:
+            parser.error("--execute-plan requires --root and --report-id")
+        plan = execute_publication_plan(
+            args.root,
+            args.task,
+            args.template.read_bytes(),
+            report_id=args.report_id,
+            ext4_temp_dir=args.temp_dir,
+        )
+        print(
+            json.dumps(
+                {
+                    **plan.publication.task_metadata_patch,
+                    "destination": plan.destination,
+                    "archive_paths": plan.archive_paths,
+                    "protected_paths": plan.protected_paths,
+                    "reused_existing": plan.publication.reused_existing,
+                    "publish_required": plan.publish_required,
+                },
+                ensure_ascii=False,
+                separators=(",", ":"),
+            )
+        )
+        return 0
+    if args.report is None:
+        parser.error("--report is required unless --execute-plan is used")
     publication = build_publication(
         args.task.read_bytes(),
         args.template.read_bytes(),
-        args.existing.read_bytes() if args.existing and args.existing.exists() else None,
+        args.existing.read_bytes()
+        if args.existing and args.existing.exists()
+        else None,
         report_id=args.report_id,
         report_path=args.report_path,
     )
     atomic_publish(publication.report_bytes, args.report, ext4_temp_dir=args.temp_dir)
-    payload = json.dumps(publication.task_metadata_patch, ensure_ascii=False, separators=(",", ":")) + "\n"
+    payload = (
+        json.dumps(
+            publication.task_metadata_patch, ensure_ascii=False, separators=(",", ":")
+        )
+        + "\n"
+    )
     if args.metadata_output:
-        atomic_publish(payload.encode("utf-8"), args.metadata_output, ext4_temp_dir=args.temp_dir)
+        atomic_publish(
+            payload.encode("utf-8"), args.metadata_output, ext4_temp_dir=args.temp_dir
+        )
     else:
         print(payload, end="")
     return 0
