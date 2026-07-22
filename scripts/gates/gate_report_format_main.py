@@ -20,6 +20,40 @@ sys.path.insert(0, str(_PROJECT_ROOT / "scripts" / "lib"))
 from report_commit_identity import valid_commit_identity
 
 
+def _resolve_commit_repo(report, task, root):
+    project_id = str(report.get("project") or task.get("project") or "").strip()
+    if not project_id or project_id == "infra":
+        return pathlib.Path(root), None
+    if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", project_id):
+        return None, f"unknown or invalid project: {project_id!r}"
+
+    project_file = pathlib.Path(root) / "projects" / f"{project_id}.yaml"
+    try:
+        project_data = yaml.safe_load(project_file.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError):
+        return None, f"unknown project: {project_id}"
+    project = project_data.get("project")
+    project_path = project.get("path") if isinstance(project, dict) else project_data.get("path")
+    if not isinstance(project_path, str) or not project_path.strip():
+        return None, f"project repository path is missing: {project_id}"
+
+    repo = pathlib.Path(project_path).expanduser().resolve()
+    try:
+        probe = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "--show-toplevel"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return None, f"project repository is unreadable: {project_id}"
+    canonical = pathlib.Path(probe.stdout.strip()).resolve()
+    if canonical != repo:
+        return None, f"project repository root mismatch: {project_id}"
+    return canonical, None
+
+
 def commit_contract_errors(report, task, root):
     contract = task.get("commit_contract")
     if isinstance(contract, dict) and contract.get("required") is False:
@@ -42,9 +76,12 @@ def commit_contract_errors(report, task, root):
             errors.append(f"commit identity run_id mismatch: expected {expected_run_id!r}")
         if str(evidence.get("commit_hash") or "") != identity:
             errors.append("commit identity evidence hash differs from report commit_hash")
+    commit_repo, repo_error = _resolve_commit_repo(report, task, root)
+    if repo_error:
+        return errors + [repo_error]
     try:
-        subject = subprocess.run(["git", "-C", str(root), "show", "-s", "--format=%s", identity], check=True, capture_output=True, text=True, timeout=5).stdout.strip()
-        changed = set(subprocess.run(["git", "-C", str(root), "diff-tree", "--no-commit-id", "--name-only", "-r", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())
+        subject = subprocess.run(["git", "-C", str(commit_repo), "show", "-s", "--format=%s", identity], check=True, capture_output=True, text=True, timeout=5).stdout.strip()
+        changed = set(subprocess.run(["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())
     except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return errors + ["commit_hash does not resolve to a readable commit"]
     if expected_run_id not in subject and str(report.get("parent_cmd") or "") not in subject:
@@ -56,7 +93,7 @@ def commit_contract_errors(report, task, root):
         if target and not any(path == target or path.startswith(target + "/") for path in changed):
             try:
                 target_subject = subprocess.run(
-                    ["git", "-C", str(root), "log", "-1", "--format=%s", identity, "--", target],
+                    ["git", "-C", str(commit_repo), "log", "-1", "--format=%s", identity, "--", target],
                     check=True, capture_output=True, text=True, timeout=5,
                 ).stdout.strip()
             except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):

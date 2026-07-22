@@ -1,7 +1,7 @@
 """test_necessity: report commit identity is a cross-task safety contract."""
 
 from pathlib import Path
-from subprocess import CompletedProcess
+from subprocess import CalledProcessError, CompletedProcess
 from unittest.mock import patch
 
 from scripts.gates.gate_report_format_main import commit_contract_errors
@@ -95,4 +95,66 @@ def test_opt_in_contract_requires_same_run_evidence():
     report.pop("commit_identity_evidence")
     assert commit_contract_errors(report, _opt_in_task(), Path(".")) == [
         "commit_identity_evidence is required by opt-in contract"
+    ]
+
+
+def _external_fixture(tmp_path):
+    repo = (tmp_path / "external-repo").resolve()
+    repo.mkdir()
+    projects = tmp_path / "projects"
+    projects.mkdir()
+    (projects / "dm-signal.yaml").write_text(
+        f"project:\n  id: dm-signal\n  path: {repo}\n",
+        encoding="utf-8",
+    )
+    return repo
+
+
+def _external_git(repo, *, missing=False):
+    def run(command, **_kwargs):
+        assert command[command.index("-C") + 1] == str(repo)
+        if "rev-parse" in command:
+            return CompletedProcess(command, 0, stdout=f"{repo}\n")
+        if missing:
+            raise CalledProcessError(128, command)
+        if "--format=%s" in command:
+            return CompletedProcess(command, 0, stdout=f"{TASK_ID}: owned commit\n")
+        return CompletedProcess(command, 0, stdout="scripts/a.sh\nscripts/b.py\n")
+
+    return run
+
+
+def test_external_project_existing_commit_uses_project_repository(tmp_path):
+    repo = _external_fixture(tmp_path)
+    task = {**_task(), "project": "dm-signal"}
+    with patch(
+        "scripts.gates.gate_report_format_main.subprocess.run",
+        side_effect=_external_git(repo),
+    ):
+        assert commit_contract_errors(_report(), task, tmp_path) == []
+
+
+def test_external_project_missing_commit_stays_fail_closed(tmp_path):
+    repo = _external_fixture(tmp_path)
+    task = {**_task(), "project": "dm-signal"}
+    with patch(
+        "scripts.gates.gate_report_format_main.subprocess.run",
+        side_effect=_external_git(repo, missing=True),
+    ):
+        assert commit_contract_errors(_report(), task, tmp_path) == [
+            "commit_hash does not resolve to a readable commit"
+        ]
+
+
+@patch("scripts.gates.gate_report_format_main.subprocess.run", side_effect=_git)
+def test_infra_project_keeps_platform_repository(_run, tmp_path):
+    report = {**_report(), "project": "infra"}
+    assert commit_contract_errors(report, _task(), tmp_path) == []
+    assert all(command[command.index("-C") + 1] == str(tmp_path) for command in (call.args[0] for call in _run.call_args_list))
+
+
+def test_unknown_project_is_rejected_without_git_fallback(tmp_path):
+    task = {**_task(), "project": "unknown-project"}
+    assert commit_contract_errors(_report(), task, tmp_path) == [
+        "unknown project: unknown-project"
     ]
