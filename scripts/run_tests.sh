@@ -343,6 +343,11 @@ run_bats_files_parallel() {
             -u BATS_OUT \
             -u BATS_TAP_OUTPUT \
             -u RUN_TESTS_BATS_BIN \
+            -u SHOGUN_HEAVY_JOB_LOCK_HELD \
+            -u SHOGUN_HEAVY_JOB_ADMITTED \
+            -u SHOGUN_HEAVY_JOB_TOKEN \
+            -u SHOGUN_HEAVY_JOB_OWNER_GENERATION \
+            -u SHOGUN_HEAVY_JOB_OWNER_PID \
             "${RUN_TESTS_BATS_BIN:-bats}" "$test_file" --jobs "$test_jobs" --timing 3>&- || rc=$?
         if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
             printf 'TIMEOUT: %s exceeded %ss (rc=%s)\n' \
@@ -633,11 +638,17 @@ try:
     d=json.load(open(sys.argv[1], encoding='utf-8'))
     required={'version','complete','result','rc','duration_ms','output_sha256',
               'declared_test_count','observed_test_count','skip_count','artifact',
-              'signal','command','source_head','test_paths','drvfs_p9_client_rpc'}
-    if set(d) != required or d['version'] != 2: raise ValueError('schema')
+              'signal','command','source_head','test_paths'}
+    if d.get('version') == 3: required.update({'drvfs_p9_client_rpc','run_manifest'})
+    elif 'drvfs_p9_client_rpc' in d: required.add('drvfs_p9_client_rpc')
+    if set(d) != required or d.get('version') not in (2,3): raise ValueError('schema')
     if not re.fullmatch(r'[0-9a-f]{40}', d['source_head']): raise ValueError('source_head')
     if not isinstance(d['test_paths'], list) or not all(isinstance(x,str) and x for x in d['test_paths']):
         raise ValueError('test_paths')
+    if d['version'] == 3:
+        m=d['run_manifest']
+        if not isinstance(m,dict) or set(m) != {'cache','commit_sha','selector_input_fingerprint','selected_paths_fingerprint','estimated_cost'}:
+            raise ValueError('run_manifest')
     actual=hashlib.sha256(open(d['artifact'],'rb').read()).hexdigest()
     valid=(actual == d['output_sha256'] and d['complete'] is True and
            d['result'] == 'PASS' and d['rc'] == 0 and d['skip_count'] == 0 and
@@ -656,8 +667,10 @@ try:
     d=json.load(open(sys.argv[1], encoding='utf-8'))
     required={'version','complete','result','rc','duration_ms','output_sha256',
               'declared_test_count','observed_test_count','skip_count','artifact',
-              'signal','command','source_head','test_paths','drvfs_p9_client_rpc'}
-    if set(d) != required or d['version'] != 2: raise ValueError('schema')
+              'signal','command','source_head','test_paths'}
+    if d.get('version') == 3: required.update({'drvfs_p9_client_rpc','run_manifest'})
+    elif 'drvfs_p9_client_rpc' in d: required.add('drvfs_p9_client_rpc')
+    if set(d) != required or d.get('version') not in (2,3): raise ValueError('schema')
     if not re.fullmatch(r'[0-9a-f]{40}', d['source_head']): raise ValueError('source_head')
     if not isinstance(d['test_paths'], list) or not all(isinstance(x,str) and x for x in d['test_paths']):
         raise ValueError('test_paths')
@@ -717,7 +730,8 @@ selection_manifest_for_singleflight() {
     local mode="$1"
     shift
     case "$mode" in
-        all|unit) printf '%s\n' "$mode" ;;
+        all) find "$REPO_ROOT/tests/unit" "$REPO_ROOT/tests" -maxdepth 1 -name '*.bats' -type f -print | sort -u ;;
+        unit) find "$REPO_ROOT/tests/unit" -maxdepth 1 -name '*.bats' -type f -print | sort -u ;;
         file)
             [ "$#" -gt 0 ] || return 2
             realpath -- "$@" | sort -u
@@ -745,14 +759,21 @@ selection_manifest_for_singleflight() {
 }
 
 publish_run_tests_metadata() {
-    python3 - "$1" "$2" "$3" <<'PY'
-import json, os, sys, tempfile
-path, head, paths_file=sys.argv[1:]
+    python3 - "$1" "$2" "$3" "$4" <<'PY'
+import hashlib, json, os, sys, tempfile
+path, head, paths_file, selector_input_fp=sys.argv[1:]
 d=json.load(open(path, encoding='utf-8'))
 paths=[]
 if os.path.isfile(paths_file):
     paths=[line.strip() for line in open(paths_file, encoding='utf-8') if line.strip()]
-d.update(version=2, source_head=head, test_paths=paths)
+selected_blob=('\n'.join(paths)+'\n').encode()
+cache={'enabled': os.environ.get('BATS_CACHE','1') != '0',
+       'directory': os.environ.get('BATS_CACHE_DIR','')}
+d.update(version=3, source_head=head, test_paths=paths,
+         run_manifest={'cache': cache, 'commit_sha': head,
+                       'selector_input_fingerprint': selector_input_fp,
+                       'selected_paths_fingerprint': hashlib.sha256(selected_blob).hexdigest(),
+                       'estimated_cost': {'selected_files': len(paths)}})
 artifact=d.get('artifact', '')
 p9={'persistent': False, 'probe_timeout_sec': None, 'pids': []}
 try:
@@ -1093,7 +1114,12 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         # Explicit heavy_job_admission callers already own the outer lock.
         # Taking the single-flight lock underneath it would invert the normal
         # order (single-flight -> admission) and deadlock two callers.
-        if [[ "${SHOGUN_HEAVY_JOB_ADMITTED:-${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}}" != "1" && ( "$_mode" == "all" || "$_mode" == "unit" || "$_mode" == "task" || "$_mode" == "file" ) ]]; then
+        _admission_claim="${SHOGUN_HEAVY_JOB_ADMITTED:-${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}}"
+        if [[ "${SHOGUN_HEAVY_JOB_ADMITTED:-0}" == "1" ]]; then
+            bash "$REPO_ROOT/scripts/heavy_job_admission.sh" --validate-token \
+                || { echo "BLOCK: invalid heavy admission capability" >&2; exit 2; }
+        fi
+        if [[ "$_admission_claim" != "1" && ( "$_mode" == "all" || "$_mode" == "unit" || "$_mode" == "task" || "$_mode" == "file" ) ]]; then
             _singleflight=1
             _sf_dir="${RUN_TESTS_SINGLEFLIGHT_DIR:-/tmp/shogun-run-tests-singleflight-v2}"
             mkdir -p "$_sf_dir"
@@ -1157,6 +1183,8 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                 exit $?
             fi
         fi
+        _selector_input="${_sf_selection:-$_mode}"
+        _selector_input_fp="$(printf '%s\n' "$_selector_input" | sha256sum | awk '{print $1}')"
         _receipt="${RUN_TESTS_RECEIPT_PATH:-$_receipt_dir/run_tests_$(date -u +%Y%m%dT%H%M%S)_$$.json}"
         if [ "$_singleflight" = 1 ]; then
             _snapshot=""
@@ -1172,10 +1200,19 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             export RUN_TESTS_SINGLEFLIGHT_MODE="$_mode"
             export RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT
             RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT="$(printf '%s\n' "$_sf_selection" | sed '/^$/d' | wc -l)"
+            # Publish leadership before run_with_receipt captures child output.
+            # Followers and monitors must observe the leader while it is live,
+            # not only after the terminal artifact is flushed.
+            printf 'SINGLE_FLIGHT_LEADER mode=%s selection_count=%s admission=pending generation=%s receipt=%s\n' \
+                "$_mode" "$RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT" "$_sf_generation" "$_receipt" >&2
+            export RUN_TESTS_SINGLEFLIGHT_LEADER_PENDING=0
         fi
         _tap="${_receipt%.json}.tap"
         _selected_paths="${_receipt%.json}.paths"
         _source_head="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+        # Freeze the selector result before any test process starts. Nested
+        # fixture runners must not overwrite the public run's selected set.
+        printf '%s\n' "${_sf_selection:-}" | sed '/^$/d' >"$_selected_paths"
         # Resolve at this public-call boundary.  RUN_TESTS_BATS_BIN may belong
         # to an enclosing bats root; inheriting it would bypass an isolated
         # fixture's PATH and execute the wrong runner.
@@ -1189,16 +1226,16 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                 eval "exec ${_sf_fd}>&-"
                 BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                     --summary-only --receipt "$_receipt" -- \
-                    env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                    env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE= bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
             )
         else
             BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                 --summary-only --receipt "$_receipt" -- \
-                env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE= bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
         fi
         _rc=$?
         set -e
-        publish_run_tests_metadata "$_receipt" "$_source_head" "$_selected_paths"
+        publish_run_tests_metadata "$_receipt" "$_source_head" "$_selected_paths" "$_selector_input_fp"
         rm -f "$_selected_paths"
         _receipt_rc="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$_receipt" 2>/dev/null || printf 1)"
         if ! validate_run_tests_terminal_receipt "$_receipt" >/dev/null; then

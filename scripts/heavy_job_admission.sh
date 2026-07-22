@@ -33,6 +33,7 @@ LOCK_FILE="${SHOGUN_HEAVY_JOB_LOCK_FILE:-/tmp/shogun_heavy_job_admission_v2.lock
 TIMEOUT="${SHOGUN_HEAVY_JOB_ADMISSION_TIMEOUT:-3600}"
 HEARTBEAT_SECONDS="${SHOGUN_HEAVY_JOB_ADMISSION_HEARTBEAT_SECONDS:-5}"
 OWNER_FILE="${SHOGUN_HEAVY_JOB_OWNER_FILE:-${LOCK_FILE}.owner}"
+CAPABILITY_DIR="${SHOGUN_HEAVY_JOB_CAPABILITY_DIR:-/tmp/shogun-heavy-capabilities}"
 P9_PROBE_TIMEOUT="${SHOGUN_DRVFS_P9_PROBE_TIMEOUT:-2}"
 # A leader may exit after detaching a descendant.  Admission must not wait on
 # that process group forever: bounded failure releases the lock and makes the
@@ -49,24 +50,48 @@ DRAIN_MEMBER_LIMIT="${SHOGUN_HEAVY_JOB_DRAIN_MEMBER_LIMIT:-20}"
 [[ "$P9_PROBE_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid p9 probe timeout" >&2; exit 2; }
 
 detect_persistent_p9_rpc() {
-    local first second
-    first="$(timeout "$P9_PROBE_TIMEOUT" ps -e -o pid=,stat=,wchan= 2>/dev/null \
+    local first second resolved_ps
+    # Process-lifecycle fixtures intentionally inject a fake ps for drain
+    # behavior.  Do not let the unrelated p9 probe consume or reinterpret that
+    # fixture; production PATH resolves to the system ps.
+    resolved_ps="$(command -v ps 2>/dev/null || true)"
+    [[ "$(realpath -- "$resolved_ps" 2>/dev/null || true)" == "$(realpath -- /bin/ps)" ]] || return 1
+    first="$(timeout "$P9_PROBE_TIMEOUT" /bin/ps -e -o pid=,stat=,wchan= 2>/dev/null \
         | awk '$2 ~ /^D/ && $3 == "p9_client_rpc" {print $1}' | sort -n | paste -sd, -)" || return 2
     [[ -n "$first" ]] || return 1
     sleep 0.1
-    second="$(timeout "$P9_PROBE_TIMEOUT" ps -e -o pid=,stat=,wchan= 2>/dev/null \
+    second="$(timeout "$P9_PROBE_TIMEOUT" /bin/ps -e -o pid=,stat=,wchan= 2>/dev/null \
         | awk '$2 ~ /^D/ && $3 == "p9_client_rpc" {print $1}' | sort -n | paste -sd, -)" || return 2
     [[ -n "$second" ]] || return 1
     printf '%s\n' "$second"
 }
 
 read_owner_metadata() {
-    owner_pid="unknown" owner_started="0"
+    owner_pid="unknown" owner_started="0" owner_generation="unknown" owner_nonce="unknown"
     if [[ -r "$OWNER_FILE" ]]; then
-        read -r owner_pid owner_started <"$OWNER_FILE" || true
+        read -r owner_pid owner_started owner_generation owner_nonce <"$OWNER_FILE" || true
         [[ "$owner_pid" =~ ^[1-9][0-9]*$ ]] || owner_pid="unknown"
         [[ "$owner_started" =~ ^[1-9][0-9]*$ ]] || owner_started="0"
     fi
+}
+
+validate_and_consume_admission_token() {
+    local consume="${1:-1}"
+    local token="${SHOGUN_HEAVY_JOB_TOKEN:-}" generation="${SHOGUN_HEAVY_JOB_OWNER_GENERATION:-}"
+    local claimed_owner="${SHOGUN_HEAVY_JOB_OWNER_PID:-}" consume_file capability_file
+    local cap_owner="" cap_generation="" cap_nonce=""
+    [[ -n "$token" ]] && capability_file="$CAPABILITY_DIR/$(printf '%s' "$token" | sha256sum | awk '{print $1}').cap"
+    [[ -n "${capability_file:-}" && -r "$capability_file" ]] \
+        && read -r cap_owner cap_generation cap_nonce <"$capability_file" || true
+    [[ -n "$token" && "$token" == "$cap_nonce" && "$generation" == "$cap_generation" \
+        && "$claimed_owner" == "$cap_owner" ]] || {
+        echo "BLOCK: heavy admission ownership proof mismatch" >&2; return 2;
+    }
+    [[ "$consume" == "1" ]] || return 0
+    consume_file="${capability_file}.consumed"
+    ( set -o noclobber; printf '%s\n' "$$" >"$consume_file" ) 2>/dev/null || {
+        echo "BLOCK: heavy admission token already consumed" >&2; return 2;
+    }
 }
 
 process_group_has_live_member() {
@@ -121,11 +146,20 @@ if [[ "${1:-}" == "--" ]]; then
     shift
 fi
 
+if [[ "${1:-}" == "--validate-token" ]]; then
+    validate_and_consume_admission_token 1
+    exit $?
+fi
+
 if [[ $# -lt 1 ]]; then
     echo "Usage: $0 -- <command> [args...]" >&2
     exit 2
 fi
 
+if [[ "${SHOGUN_HEAVY_JOB_ADMITTED:-0}" == "1" ]]; then
+    validate_and_consume_admission_token 0 || exit $?
+    exec "$@"
+fi
 if [[ "${SHOGUN_HEAVY_JOB_LOCK_HELD:-0}" == "1" ]]; then
     exec "$@"
 fi
@@ -153,7 +187,14 @@ while ! flock -w "$HEARTBEAT_SECONDS" "$admission_fd"; do
     fi
 done
 owner_started="$(date +%s)"
-printf '%s %s\n' "$$" "$owner_started" >"$OWNER_FILE"
+owner_generation="$(date -u +%s%N)-$$"
+owner_nonce="$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"
+printf '%s %s %s %s\n' "$$" "$owner_started" "$owner_generation" "$owner_nonce" >"$OWNER_FILE"
+mkdir -p "$CAPABILITY_DIR"
+chmod 700 "$CAPABILITY_DIR"
+capability_file="$CAPABILITY_DIR/$(printf '%s' "$owner_nonce" | sha256sum | awk '{print $1}').cap"
+printf '%s %s %s\n' "$$" "$owner_generation" "$owner_nonce" >"$capability_file"
+chmod 600 "$capability_file"
 cleanup_owner_metadata() {
     local recorded_pid=""
     [[ -r "$OWNER_FILE" ]] && read -r recorded_pid _ <"$OWNER_FILE" || true
@@ -181,6 +222,9 @@ esac
 # in the child preserves the durable-worker re-entry contract.
 export SHOGUN_HEAVY_JOB_LOCK_HELD=1
 export SHOGUN_HEAVY_JOB_ADMITTED=1
+export SHOGUN_HEAVY_JOB_TOKEN="$owner_nonce"
+export SHOGUN_HEAVY_JOB_OWNER_GENERATION="$owner_generation"
+export SHOGUN_HEAVY_JOB_OWNER_PID="$$"
 ADMISSION_FD="$admission_fd" RUN_FD="${run_fd:-}" setsid bash -c '
     eval "exec ${ADMISSION_FD}>&-"
     [[ -z "$RUN_FD" ]] || eval "exec ${RUN_FD}>&-"
