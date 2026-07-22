@@ -3539,12 +3539,12 @@ generate_report_template() {
           parent_cmd="" cmd_id="" ac_version="" title="" task_type="" target_path="" \
           scout_exempt="" type="" scope_mode="" purpose="" command="" description="" \
           constraints="" not_in_scope="" files_to_modify="" files_modified="" \
-          owned_paths="" acceptance_criteria=""
+          owned_paths="" acceptance_criteria="" issued_cmd_id=""
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_file" \
         report_filename assigned_to subtask_id task_id _ac_task_id \
         parent_cmd cmd_id ac_version title task_type target_path scout_exempt \
         type scope_mode purpose command description constraints not_in_scope \
-        files_to_modify files_modified owned_paths acceptance_criteria 2>/dev/null)" || true
+        files_to_modify files_modified owned_paths acceptance_criteria issued_cmd_id 2>/dev/null)" || true
 
     # Reuse values already parsed by field_get_multi above.  Calling
     # is_enforcement_variation_contract_task here reparsed the same YAML in a
@@ -3725,6 +3725,29 @@ generate_report_template() {
         resolved_task_id="${_ac_task_id}"
     fi
     local resolved_parent_cmd="${parent_cmd:-${cmd_id:-$_p_parent_cmd}}"
+    # Freeze the deploy-generation contract inside the report.  A worker task
+    # is mutable by design and may already describe the next assignment when
+    # SG7 is generated; review must never recover an old contract from it.
+    local _task_contract_snapshot
+    _task_contract_snapshot=$(python3 - "$task_file" "$resolved_parent_cmd" "$resolved_task_id" "${issued_cmd_id:-}" "${ac_version:-}" <<'PY'
+import json, sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+snapshot = {
+    "parent_cmd": sys.argv[2],
+    "task_id": sys.argv[3],
+    "issued_cmd_id": sys.argv[4],
+    "ac_fingerprint": sys.argv[5],
+    "purpose": str(task.get("purpose") or "").strip(),
+    "project": str(task.get("project") or "").strip(),
+    "acceptance_criteria": task.get("acceptance_criteria"),
+}
+if not all(snapshot[k] for k in ("parent_cmd", "task_id", "ac_fingerprint", "purpose", "project")) \
+        or not isinstance(snapshot["acceptance_criteria"], (list, dict)) \
+        or not snapshot["acceptance_criteria"]:
+    raise SystemExit("incomplete immutable task contract")
+print(json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+PY
+    ) || return 1
     # Level 5: report generation must hand the worker task-specific summary
     # context instead of manufacturing the known-bad FILL_THIS token.  This is
     # deliberately phrased as the task outcome to record; measured evidence is
@@ -3892,6 +3915,7 @@ task_type: ${task_type}
 timestamp: ""  # date "+%Y-%m-%dT%H:%M:%S" で取得せよ
 status: pending
 ac_version_read: ${ac_version}
+task_contract_snapshot: ${_task_contract_snapshot}
 result:
   summary: "${_summary_context} — 実施・検証結果を本報告へ記録"  # Level5: task context pre-supplied; 完了前に実測を追記
   details: ""
