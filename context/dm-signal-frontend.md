@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-23 cmd_4128 -->
+<!-- last_updated: 2026-07-23 cmd_4132 -->
 <!-- source_commit:7b881e13 reason:cmd_4132 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=7b881e13 -->
 
 > 索引層。結論+参照のみ。
