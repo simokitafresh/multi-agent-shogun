@@ -117,6 +117,49 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: 10分契約のsplit_decisionはmapping型でなければ
+# deploy_task preflightが見た目上JSONのscalarを拒否し、再配備不能になる。
+@test "split_decision: taskとcmd正本でJSON mapping入力を構造mappingとして保存する" {
+    local yaml="$TEST_TMPDIR/task_split_decision.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: assigned
+  split_decision: {}
+EOF
+    local payload='{"boundary_ac_ids":["AC1","AC2"],"integration_tasks":0,"review_round_trips":1}'
+
+    run bash "$YFS" "$yaml" task split_decision "$payload"
+    [ "$status" -eq 0 ]
+    run python3 - "$yaml" <<'PY'
+import sys, yaml
+value = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]["split_decision"]
+assert isinstance(value, dict), type(value)
+assert value == {
+    "boundary_ac_ids": ["AC1", "AC2"],
+    "integration_tasks": 0,
+    "review_round_trips": 1,
+}
+PY
+    [ "$status" -eq 0 ]
+
+    local cmd_yaml="$TEST_TMPDIR/cmd_split_decision.yaml"
+    cat > "$cmd_yaml" <<'EOF'
+commands:
+  cmd_test:
+    status: delegated
+    split_decision: {}
+EOF
+    run bash "$YFS" "$cmd_yaml" cmd_test split_decision "$payload"
+    [ "$status" -eq 0 ]
+    run python3 - "$cmd_yaml" <<'PY'
+import sys, yaml
+value = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["commands"]["cmd_test"]["split_decision"]
+assert isinstance(value, dict), type(value)
+assert value["boundary_ac_ids"] == ["AC1", "AC2"]
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "task planned_paths: flow-list入力をscalar化せず構造listとしてatomic保存する" {
     local yaml="$TEST_TMPDIR/task_planned_paths.yaml"
     local fixture_yfs

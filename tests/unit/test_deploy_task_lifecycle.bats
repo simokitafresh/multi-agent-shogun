@@ -94,6 +94,9 @@ task:
   quality_gate:
     action_conversion: '前cmdのCI未解消条件をBLOCKする'
     fp_measurement: '前cmdのCI偽陽性を計測する'
+  work_items:
+  - '前cmdの旧作業1'
+  - '前cmdの旧作業2'
   stop_for:
   - 'old stop condition 1'
   - 'old stop condition 2'
@@ -143,6 +146,9 @@ resolve_fixture_task() {
 
     # shellcheck disable=SC1091
     source "$REAL_PROJECT_ROOT/scripts/lib/yaml_field_set.sh"
+    # _overwrite_ac_from_cmd is now part of resolve_cmd_to_task's preflight
+    # projection and reads parent_cmd through the production getter.
+    source "$REAL_PROJECT_ROOT/scripts/lib/field_get.sh"
 
     # setup_file extracts this stable function bundle once from the 2,000+
     # line production script.  Re-sourcing the ext4 fixture preserves the real
@@ -159,11 +165,6 @@ resolve_fixture_task() {
     sed -i "/    timestamp:/i\\    assumptions:\n    - claim: '2026-07-10 verified claim'\n      source: 'scripts/deploy_task.sh:1134'\n      trust: verified" "$root/queue/shogun_to_karo.yaml"
 
     resolve_fixture_task "$root" "cmd_9999" "tobisaru"
-    SCRIPT_DIR="$root"
-    source "$REAL_PROJECT_ROOT/scripts/lib/field_get.sh"
-    eval "$(extract_function _overwrite_ac_from_cmd)"
-    _overwrite_ac_from_cmd "$root/queue/tasks/tobisaru.yaml"
-
     run python3 - "$root/queue/tasks/tobisaru.yaml" <<'PY'
 import sys, yaml
 task = yaml.safe_load(open(sys.argv[1]))['task']
@@ -181,11 +182,6 @@ PY
     prepare_source_fixture "$root"
 
     resolve_fixture_task "$root" "cmd_9999" "tobisaru"
-    SCRIPT_DIR="$root"
-    source "$REAL_PROJECT_ROOT/scripts/lib/field_get.sh"
-    eval "$(extract_function _overwrite_ac_from_cmd)"
-    _overwrite_ac_from_cmd "$root/queue/tasks/tobisaru.yaml"
-
     run python3 - "$root/queue/tasks/tobisaru.yaml" <<'PY'
 import sys, yaml
 task = yaml.safe_load(open(sys.argv[1]))['task']
@@ -548,6 +544,7 @@ setup_file() {
         extract_function reset_stale_fields
         extract_function resolve_cmd_source_path
         extract_function emit_depends_on_ac_context
+        extract_function _overwrite_ac_from_cmd
         extract_function resolve_cmd_to_task
         extract_function inject_cmd_time_contract
         extract_function inject_cmd_assumptions
@@ -1040,6 +1037,23 @@ EOF
     [[ "$output" == *"task YAML invalid; force repair path"* ]]
 }
 
+@test "same-command retry satisfies the stale-reset preflight contract" {
+    # test_necessity: a retry that intentionally reuses the already-reset task
+    # must not be rejected later by the unconditional _STALE_RESET_DONE gate.
+    run python3 - "$TEST_PROJECT/scripts/deploy_task.sh" <<'PY'
+import pathlib, re, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+pattern = re.compile(
+    r"if should_skip_same_cmd_resolve .*?; then"
+    r".*?_STALE_RESET_DONE=1"
+    r".*?same_cmd_redeploy: skipped reset_stale_fields",
+    re.S,
+)
+raise SystemExit(0 if pattern.search(text) else 1)
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "cmd_3701: draft cmd is blocked before deployment" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
@@ -1320,9 +1334,16 @@ EOF
         target_path progress description started_at \
         constraints engineering_preferences context_files scope context context_hints assigned_scope expected_model_effort pre_deploy_banner_evidence not_in_scope recommended_skills stop_for never_stop_for parallel_ok \
         files_to_modify files_modified quality_gate \
-        AC1 AC2 AC3 acceptance_criteria ac_priority ac_checkpoint \
+        work_items AC1 AC2 AC3 ac_priority ac_checkpoint \
         command reports_to_read credential_warning context_update type report_template \
         worker_id timestamp
+
+    run python3 - "$file" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1]))['task']
+assert task['acceptance_criteria'] == ['AC1: テスト']
+PY
+    [ "$status" -eq 0 ]
 
     nested_after=$(grep -c '^\s*task:' "$nested_file")
     [ "$nested_after" -eq 1 ]

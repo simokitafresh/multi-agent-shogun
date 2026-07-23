@@ -1371,6 +1371,9 @@ STALE_FIELDS = [
     # 第15層: cmd固有メタ(karo_direct手動注入/resolve_cmd_to_task転写。前cmdの値が次cmdに残留する)
     'expected_model_effort', 'pre_deploy_banner_evidence',
     'not_in_scope', 'recommended_skills', 'assigned_lesson_ids',
+    # 前cmdの実装分解を次cmdへ持ち越すと、忍者が現cmdのACより旧work_itemsを
+    # 優先して別任務を実行する。sourceから再投影されないため世代境界で必ず除去する。
+    'work_items',
     # 第15.5層: cmd固有の変更対象・detector品質契約。前cmdの値が残ると
     # 教訓target filterと忍者の作業scopeを別cmdへ向ける（cmd_3997/3998で連続再現）。
     'files_to_modify', 'files_modified', 'quality_gate',
@@ -1862,6 +1865,12 @@ resolve_cmd_to_task() {
     [ "$_scout_exempt_stk" = "true" ] && _batch_args+=("scout_exempt=true")
     yaml_field_set_batch "$task_file" "task" "${_batch_args[@]}" \
         || { log "FATAL: yaml_field_set_batch failed for resolve_cmd_to_task"; return 1; }
+
+    # task側の自然境界precheckはacceptance_criteriaのIDをsplit_decisionと照合する。
+    # inject_ac_version（task mutation段階）までAC転記を遅らせると、precheckが先に
+    # 実行され同一cmd retryでAC欠落BLOCKになるため、解決時点で正本から投影する。
+    _overwrite_ac_from_cmd "$task_file" \
+        || { log "FATAL: acceptance criteria injection failed for ${cmd_id}"; return 1; }
 
     # Precheckした自然境界契約と忍者が読むtask契約を同一SSOTから投影する。
     # estimated_minutesだけ検査してtaskへ転記しないと、使い回しYAMLの旧
@@ -11650,6 +11659,10 @@ except Exception:
         export _DEPLOY_PREV_PARENT_CMD
         if should_skip_same_cmd_resolve "$task_yaml" "$CMD_ID" "$NINJA_NAME"; then
             _DEPLOY_PREV_PARENT_CMD="$CMD_ID"
+            # The reused task already passed reset_stale_fields during the first
+            # publication. Mark that contract satisfied so retry preflight does
+            # not contradict the intentional same-command reuse path.
+            _STALE_RESET_DONE=1
             log "same_cmd_redeploy: skipped reset_stale_fields and resolve_cmd_to_task for ${CMD_ID}"
         else
             if ! deploy_task_guard_direct_yaml_prewrite_collision "$YAML_FILE" "$NINJA_NAME"; then

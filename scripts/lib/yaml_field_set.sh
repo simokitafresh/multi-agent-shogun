@@ -1025,6 +1025,9 @@ yaml_field_set() {
     # the existing flocked/atomic structural writer.  Invalid scalar input is
     # rejected before any write, so callers cannot silently corrupt the type.
     local _yfs_structured_type=""
+    case "$field" in
+        split_decision) _yfs_structured_type="mapping" ;;
+    esac
     if [ "$block_id" = "task" ]; then
         case "$field" in
             test_necessity) _yfs_structured_type="list_or_mapping" ;;
@@ -1069,7 +1072,14 @@ if not valid:
             echo "FATAL: yaml_field_set: structural writer not found: $_yfs_report_setter" >&2
             return 1
         fi
-        printf '%s\n' "$new_value" | bash "$_yfs_report_setter" "$yaml_file" "task.${field}" -
+        local _yfs_structured_path="task.${field}"
+        if [ "$block_id" != "task" ]; then
+            # Command ledgers nest entries below `commands`, while task files
+            # expose the reusable `task` block directly. Preserve the caller's
+            # block identity instead of silently writing a stray task.* field.
+            _yfs_structured_path="commands.${block_id}.${field}"
+        fi
+        printf '%s\n' "$new_value" | bash "$_yfs_report_setter" "$yaml_file" "$_yfs_structured_path" -
         return $?
     fi
 
