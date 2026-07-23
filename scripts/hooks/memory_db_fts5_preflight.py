@@ -173,7 +173,7 @@ def inspect_skill_metadata(db_path: Path) -> tuple[int, int, int, int, int, int]
     try:
         columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(events)")}
         if "skill" not in columns:
-            return 0, 0, 0, 0, 0
+            return 0, 0, 0, 0, 0, 0
         predicate = " OR ".join(
             "(lower(coalesce(summary, '')) LIKE ? OR lower(coalesce(detail, '')) LIKE ?)"
             for _ in CDP_TERMS

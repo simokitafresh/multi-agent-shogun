@@ -64,6 +64,13 @@ PY
   [ "$status" -eq 0 ]
   [[ "$output" == plain$'\t'* ]]
   [[ "$output" != *"Skill("* ]]
+
+  run python3 "$SCRIPT" --backup "$backup" "$DB"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *$'quick_check=ok' ]]
+  run python3 "$SCRIPT" --inspect-skill-metadata "$DB"
+  [ "$status" -eq 0 ]
+  [ "$output" = $'skill_column=0\ttargets=0\tskill_set=0\tfalse_positive=0\tfalse_negative=0\tnull_events=0' ]
 }
 
 @test "LIKE and FTS5 visibility allow self and empty target but exclude another agent" {
