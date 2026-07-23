@@ -147,7 +147,9 @@ fi
 # cmd_2063: autofix + format validation を単一 python3 プロセスで実行
 # 旧: bash gate_report_autofix.sh (→python3) + python3 gate_report_format_main.py = 2プロセス
 # 新: python3 gate_report_format_combined.py (autofix+validation を1プロセス統合) = 1プロセス
-RESULT=$(python3 "$_GATE_DIR/gate_report_format_combined.py" "$REPORT_PATH" 2>&1) || true
+# The validator may invoke hooks that schedule their own background cache
+# refresh. Do not let those transitive descendants inherit the report lock.
+RESULT=$(python3 "$_GATE_DIR/gate_report_format_combined.py" "$REPORT_PATH" 199>&- 2>&1) || true
 
 echo "$RESULT"
 
