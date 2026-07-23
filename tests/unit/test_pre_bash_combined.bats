@@ -8,6 +8,12 @@ setup_file() {
     HOOK="$ROOT/.claude/hooks/pre-bash-combined.sh"
 }
 
+setup() {
+    export GATE_FIRE_LOG_FILE="$BATS_TEST_TMPDIR/gate_fire_log.yaml"
+    export SKILL_EXECUTION_LOG_FILE="$BATS_TEST_TMPDIR/skill_execution_log.yaml"
+    export SHOGUN_AGENT_ID="saizo"
+}
+
 run_hook() {
     local command="$1" payload
     payload="$(python3 -c 'import json,sys; print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]}}))' "$command")"
@@ -70,4 +76,40 @@ run_hook() {
     run_hook "bash 'tests/unit/broken.bats"
     [ "$status" -eq 2 ]
     [[ "$output" == *"安全に解析できない"* ]]
+}
+
+@test "CDP直コマンド3種はnudgeしてexit 0かつfire logへ3件記録" {
+    for command in \
+        "python3 scripts/cdp_font_probe.py" \
+        "chrome --remote-debugging-port=9222" \
+        "python3 probe.py --debug_port 9234"; do
+        run_hook "$command"
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"★CDP直コマンド検知: Skill(claude-in-chrome)を先に起動せよ"* ]]
+    done
+    [ "$(grep -c 'gate: \"cdp_direct_skill_nudge\"' "$GATE_FIRE_LOG_FILE")" -eq 3 ]
+}
+
+@test "非CDPコマンド3種はnudgeもfire logも発生しない" {
+    for command in "ls -la" "python3 normal.py" "python3 server.py --port 8080"; do
+        run_hook "$command"
+        [ "$status" -eq 0 ]
+        [[ "$output" != *"CDP直コマンド検知"* ]]
+    done
+    [ ! -e "$GATE_FIRE_LOG_FILE" ]
+}
+
+@test "claude-in-chrome receipt済みならCDP commandの重複nudgeは0" {
+    cat > "$SKILL_EXECUTION_LOG_FILE" <<'YAML'
+executions:
+- ts: "2026-07-23T14:00:00+0900"
+  skill: "claude-in-chrome"
+  executor: "saizo"
+  result: "PASS"
+  used: "true"
+YAML
+    run_hook "chrome --remote-debugging-port=9222"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"CDP直コマンド検知"* ]]
+    [ ! -e "$GATE_FIRE_LOG_FILE" ]
 }
