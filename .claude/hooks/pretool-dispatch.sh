@@ -89,6 +89,7 @@ case "$payload" in
         ;;
     *'"Skill"'*)
         # Guard: /clear自発禁止 (殿裁定2026-06-28 LS074)
+        # Dispatch boundary: inspect only the structured skill field, never descriptive args.
         _requested_skill="$(printf '%s' "$payload" | jq -r \
           '.tool_input.skill // .toolInput.skill // empty' 2>/dev/null || true)"
         if [[ "${AGENT_ID:-}" == "shogun" ]] \
