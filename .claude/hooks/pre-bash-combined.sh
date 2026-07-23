@@ -651,10 +651,14 @@ if [[ "$payload" == *'logs/karo_workarounds.yaml'* ]]; then
     if [[ -n "${command:-}" && "$command" != *'karo_workaround_log.sh'* ]]; then
         wa_redirect_pattern='>+[[:space:]]*[^ ]*logs/karo_workarounds\.yaml'
         wa_tee_pattern='tee[[:space:]].*logs/karo_workarounds\.yaml'
-        wa_sed_pattern='(^|[;&|])[[:space:]]*sed[[:space:]].*(-i|--in-place).*logs/karo_workarounds\.yaml'
-        wa_awk_pattern='(^|[;&|])[[:space:]]*awk[[:space:]].*logs/karo_workarounds\.yaml.*>+'
+        # 兄弟Guard3(reports)と同型に修正(殿裁定2026-07-23 gate品質バグ即時修正):
+        # (a)sed/awkの .* はコマンド境界(;&|)を越えて別ファイル操作+ログ参照を誤結合するため
+        #    [^;&|]* に限定 (b)awkは対象ログへのリダイレクト書込のみ(別ファイルへの>は許可)
+        #    (c)pythonはopen()に書込モード ,[wax+] がある場合のみ(read open()は許可)
+        wa_sed_pattern='(^|[;&|])[[:space:]]*sed[[:space:]][^;&|]*(-i|--in-place)[^;&|]*logs/karo_workarounds\.yaml'
+        wa_awk_pattern='awk[[:space:]][^;&|]*>+[[:space:]]*[^ ]*logs/karo_workarounds\.yaml'
         wa_yfs_pattern='(^|[;&|])[[:space:]]*(bash[[:space:]]+)?[^;&|[:space:]]*yaml_field_set\.sh[[:space:]]+logs/karo_workarounds\.yaml'
-        wa_python_pattern='python3?.*open.*logs/karo_workarounds\.yaml'
+        wa_python_pattern='python3?[^;&|]*open[[:space:]]*\([^)]*logs/karo_workarounds\.yaml[^)]*,[^)]*[wax+]'
         if [[ "$command" =~ $wa_redirect_pattern ]] || [[ "$command" =~ $wa_tee_pattern ]] \
             || [[ "$command" =~ $wa_sed_pattern ]] || [[ "$command" =~ $wa_awk_pattern ]] \
             || [[ "$command" =~ $wa_yfs_pattern ]] || [[ "$command" =~ $wa_python_pattern ]]; then
@@ -832,9 +836,25 @@ if [[ "$payload" == *'inbox_mark_read'* ]]; then
 fi
 
 # === Guard 8: wf_runner.py parallel execution BLOCK (LG025: OOM Kill実証済み) ===
-# Note: regex limits to python execution context to avoid blocking mentions in message strings
+# Quote-aware argv判定。regexは引用文字列の内側から再マッチできるため
+# `echo "python3 wf_runner.py"` まで誤BLOCKする。
 if [[ "$payload" == *'wf_runner.py'* ]]; then
-    if [[ -n "${command:-}" && "$command" =~ python[23]?[[:space:]].*wf_runner\.py ]]; then
+    if [[ -n "${command:-}" ]] && COMMAND="$command" \
+        PYTHONPATH="$SCRIPT_DIR/scripts/lib${PYTHONPATH:+:$PYTHONPATH}" \
+        python3 - <<'PY' 2>/dev/null
+import os
+from pathlib import PurePosixPath
+from shell_command_segments import segment_tokens
+
+for segment in segment_tokens(os.environ["COMMAND"]) or []:
+    executable = PurePosixPath(segment[0]).name if segment else ""
+    if executable in {"python", "python2", "python3"} and any(
+        PurePosixPath(token).name == "wf_runner.py" for token in segment[1:]
+    ):
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+    then
         emit_deny "BLOCKED: wf_runner.py は並列OOMリスクのため使用禁止。代替: l1_alm_wf_engine.py --csv で1本ずつ直列実行せよ。"
     fi
 fi
@@ -844,13 +864,13 @@ fi
 # 手動操作をBLOCKし、対応スキル使用を強制する (Level 4)
 # Note: $command内のcommit message等のテキスト言及を除外するため、
 # 実際のファイル操作パターン(cat/echo >> FILE, sed -i FILE)のみ検出
-if [[ "$command" =~ (cat|echo|printf)[[:space:]].*\>\>[[:space:]]*.*gunshi_review_log\.yaml ]]; then
+if [[ "$command" =~ (cat|echo|printf)[[:space:]][^\;\&\|]*\>\>[[:space:]]*[^\ \;\&\|]*gunshi_review_log\.yaml ]]; then
     _agent_id="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)}"
     if [[ "$_agent_id" == "gunshi" ]]; then
         emit_deny "BLOCKED: review_log直接追記禁止。/review-bundle スキルを使え (殿裁定: スキル無視はバグ)"
     fi
 fi
-if [[ "$command" =~ sed[[:space:]]+-i.*gate_result.*gunshi_review_log\.yaml || "$command" =~ sed[[:space:]]+-i.*gunshi_review_log\.yaml.*gate_result ]]; then
+if [[ "$command" =~ sed[[:space:]]+-i[^\;\&\|]*gunshi_review_log\.yaml ]]; then
     _agent_id="${AGENT_ID:-$(tmux display-message -t "${TMUX_PANE:-}" -p '#{@agent_id}' 2>/dev/null || true)}"
     if [[ "$_agent_id" == "gunshi" ]]; then
         emit_deny "BLOCKED: gate_result手動sed禁止。/gate-sync スキルを使え (殿裁定: スキル無視はバグ)"
@@ -917,8 +937,28 @@ PY
     fi
 fi
 
-# Guard 13: 削除(2026-06-20)。各論パッチ(respawn-paneのみBLOCK)はバグ。
-# 原理的解決=三層記憶skill_routing概念。検索すれば正しいスキルに到達する。
+# === Guard 13: respawn-pane直接実行BLOCK (殿命令2026-07-22: CLI種別ミス再発防止) ===
+# 根拠: 軍師がrespawn-pane -k直接実行→全忍者にClaude CLI決め打ち→type:codex忍者がClaude化
+# 修繕: agent_respawn.sh経由でcli_lookup.shが自動解決。直接respawn-paneは構造的にBLOCK
+if [[ "$command" == *respawn-pane* ]] && COMMAND="$command" \
+    PYTHONPATH="$SCRIPT_DIR/scripts/lib${PYTHONPATH:+:$PYTHONPATH}" \
+    python3 - <<'PY' 2>/dev/null
+import os
+from pathlib import PurePosixPath
+from shell_command_segments import segment_tokens
+
+for segment in segment_tokens(os.environ["COMMAND"]) or []:
+    executable = PurePosixPath(segment[0]).name if segment else ""
+    if executable == "tmux" and "respawn-pane" in segment[1:]:
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+then
+    # ninja_monitor.sh/reset_layout等の内部インフラは除外(既にcli_lookup.sh使用済み)
+    if [[ "$command" != *"ninja_monitor"* ]] && [[ "$command" != *"reset_layout"* ]]; then
+        emit_deny "BLOCKED: respawn-pane直接実行禁止。bash scripts/agent_respawn.sh <agent_name> を使え（CLI種別を自動解決する）。"
+    fi
+fi
 
 # === Guard 13.5: CDP direct-command Skill nudge (non-blocking) ===
 # CDPを直接叩く前にCDP専用スキル /cdp-browse を起動する正規経路へ誘導する。

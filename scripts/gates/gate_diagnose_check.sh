@@ -199,8 +199,11 @@ fi
 
 # diagnose_reason記入済み: 思考した証拠あり。通常フローへ
 if [ -n "$DIAGNOSE_REASON" ]; then
-    # FIX hintのコピペ検出（簡易）
-    if echo "$DIAGNOSE_REASON" | grep -qi "report_field_set\|FIX\|bash scripts/" ; then
+    # FIX hintのコピペ検出（理由文の先頭がコマンド貼付の場合のみ。裸substring
+    # 'FIX'/'report_field_set'/'bash scripts/' で判定すると、正当な『なぜ』の散文
+    # (例: 本gate自身の推奨解答『report_field_set.shの存在を知らず…』)まで誤BLOCK
+    # する自己矛盾FPになる。殿裁定2026-07-23=gate品質バグ即時修正）
+    if echo "$DIAGNOSE_REASON" | grep -qiE '^[[:space:]]*(bash[[:space:]]+scripts/|report_field_set\.sh[[:space:]]|scripts/[^[:space:]]+\.sh[[:space:]])' ; then
         echo ""
         echo "━━━ 診断推論: コピペ検出 ━━━"
         echo "★ diagnose_reasonにFIX hintをコピペしている。"
