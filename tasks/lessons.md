@@ -11071,3 +11071,19 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **when**: 未設定
 - **how**: 未設定
 - 同一OUT_FILEの2 writerが同じprevious snapshotを読むとatomic writeだけでもlost updateする。変更前8反復で1件再現し、全区間flock後16反復0件を確認。次回は並行writer fixtureを必須チェックへ追加する。
+
+### L1290: context参照は単一repo rootで解決しない
+- **日付**: 2026-07-23
+- **出典**: cmd_karo_hotfix_context_freshness_ga319_20260723
+- **記録者**: tobisaru
+- **tags**: [gate, context, infra]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_context_freshness.sh,tests/unit/test_gate_context_freshness.bats]
+- **origin**: [[GA-319]] -> [[単一repo参照解決]] -> [[登録project roots union防御]]
+- **enforcement**: 未自動化
+- **when**: context freshness gateがsource更新と参照欠落を同時検査する時
+- **how**: ROOT_DIRとprojects/*.yaml project.pathの全rootでcompgenし、どこにも無い参照だけを重複排除してBLOCKする
+- **if**: context本文にdocs/またはcontextへのrepo相対参照がある
+- **then**: 登録済み全rootで存在確認する
+- **because**: context indexはcontrol-planeとsource projectの両方を参照するため
+- source projectを持つcontextもcontrol-planeと他projectの正本へcross-repo参照する。参照欠落gateはworkspace rootと全登録project.pathのunionで解決し、全root不在だけをBLOCKせよ。GA-319では単一DM root判定により候補124件中123件が偽陽性となった。次回チェック: workspace-only/project-only/全root欠落の3 fixtureを二値検証する。
