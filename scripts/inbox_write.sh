@@ -2129,7 +2129,16 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                         echo "[report_autofix] $AUTOFIX_RESULT" >&2
                     fi
                     # Phase 2: フォーマット検証（auto-fix後に実行）
-                    GATE_RESULT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1 || true)
+                    # Reuse only a caller validation bound to this exact
+                    # lifecycle generation.  A missing or stale value is
+                    # cleared so gate_report_format performs a full check.
+                    _GATE_REUSE_FINGERPRINT=""
+                    if [ -n "${GATE_VALIDATED_FINGERPRINT:-}" ] &&
+                       [ "$GATE_VALIDATED_FINGERPRINT" = "${STRUCTURED_REPORT_FINGERPRINT:-}" ]; then
+                        _GATE_REUSE_FINGERPRINT="$GATE_VALIDATED_FINGERPRINT"
+                    fi
+                    GATE_RESULT=$(GATE_VALIDATED_FINGERPRINT="$_GATE_REUSE_FINGERPRINT" \
+                        "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1 || true)
                     if echo "$GATE_RESULT" | grep -q "^FAIL"; then
                         # GP-071: テンプレート状態検出 — 忍者がまだ記入中ならquality_fix_requestスキップ
                         # FILL_THIS残存 or verdict未記入 → テンプレート状態（忍者が書いている途中）

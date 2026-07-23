@@ -43,6 +43,7 @@ if [ -n "${GATE_VALIDATED_FINGERPRINT:-}" ]; then
     _gate_current_fingerprint="$(sha256sum "$REPORT_PATH" | awk '{print $1}')"
     if [ "$_gate_current_fingerprint" = "$GATE_VALIDATED_FINGERPRINT" ] &&
        [ -f "$_GATE_FP_CACHE" ] && grep -qxF "$GATE_VALIDATED_FINGERPRINT" "$_GATE_FP_CACHE"; then
+        _gate_receipt_phase fingerprint_reuse "$_GATE_MONO_START_MS"
         echo "PASS (fingerprint reuse)"
         exit 0
     fi

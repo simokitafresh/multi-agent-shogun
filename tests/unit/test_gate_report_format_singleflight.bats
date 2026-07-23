@@ -29,3 +29,16 @@ teardown() {
     [ "$status" -eq 0 ]
     [ "$output" = "PASS (fingerprint reuse)" ]
 }
+
+@test "one byte report mutation cannot reuse a stale validated fingerprint" {
+    printf 'x' >>"$REPORT"
+
+    run env \
+        GATE_VALIDATED_FINGERPRINT="$FP" \
+        GATE_FAST_EXIT=1 \
+        GATE_NO_LOG=1 \
+        bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" != *"fingerprint reuse"* ]]
+}
