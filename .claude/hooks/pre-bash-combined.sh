@@ -920,6 +920,44 @@ fi
 # Guard 13: 削除(2026-06-20)。各論パッチ(respawn-paneのみBLOCK)はバグ。
 # 原理的解決=三層記憶skill_routing概念。検索すれば正しいスキルに到達する。
 
+# === Guard 13.5: CDP direct-command Skill nudge (non-blocking) ===
+# CDPを直接叩く前にCDP専用スキル /cdp-browse を起動する正規経路へ誘導する。
+# receipt済みなら重複nudgeせず、未receipt時だけFP計測可能なfire logを残す。
+if [[ "$command" =~ (cdp_font_probe|remote-debugging|debug[_-]?port) ]] \
+    || [[ "$command" =~ curl[[:space:]].*:9222([/[:space:]]|$) ]]; then
+    _cdp_skill_log="${SKILL_EXECUTION_LOG_FILE:-$SCRIPT_DIR/logs/skill_execution_log.yaml}"
+    _cdp_agent="${SHOGUN_AGENT_ID:-}"
+    if [[ -z "$_cdp_agent" && -n "${TMUX_PANE:-}" ]]; then
+        _cdp_agent="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    fi
+    _cdp_receipt=0
+    if [[ -f "$_cdp_skill_log" ]] && awk -v agent="$_cdp_agent" '
+        /^- ts:/ { skill=executor=result=used="" }
+        /^[[:space:]]+skill:/ { skill=$0; sub(/^[^:]*:[[:space:]]*/, "", skill); gsub(/"/, "", skill) }
+        /^[[:space:]]+executor:/ { executor=$0; sub(/^[^:]*:[[:space:]]*/, "", executor); gsub(/"/, "", executor) }
+        /^[[:space:]]+result:/ { result=$0; sub(/^[^:]*:[[:space:]]*/, "", result); gsub(/"/, "", result) }
+        /^[[:space:]]+used:/ {
+            used=$0; sub(/^[^:]*:[[:space:]]*/, "", used); gsub(/"/, "", used)
+            if (skill == "cdp-browse" && result == "PASS" && used == "true" &&
+                (agent == "" || executor == agent)) found=1
+        }
+        END { exit(found ? 0 : 1) }
+    ' "$_cdp_skill_log"; then
+        _cdp_receipt=1
+    fi
+    if (( !_cdp_receipt )); then
+        echo "★CDP直コマンド検知: CDP専用スキル /cdp-browse を先に起動せよ(内部でscripts/cdp/cdp_cli.sh+隔離profile cdp-chrome-XXXX/D009を使う)。手順正本=memory/cdp-browser-automation.md。claude-in-chrome MCP(browser extension)は使うな — extension未接続で失敗し殿の通常Chromeを汚染する(記憶DB 2026-07-22ルール)。" >&2
+        _cdp_fire_log="${GATE_FIRE_LOG_FILE:-$SCRIPT_DIR/logs/gate_fire_log.yaml}"
+        (
+            flock -w 2 200 2>/dev/null || exit 0
+            mkdir -p "$(dirname "$_cdp_fire_log")" 2>/dev/null || true
+            printf -- '- ts: "%s", gate: "cdp_direct_skill_nudge", result: WARN, reasons: "cdp-browse receipt missing"\n' \
+                "$(date '+%Y-%m-%dT%H:%M:%S')" >> "$_cdp_fire_log"
+        ) 200>"${_cdp_fire_log}.lock" 2>/dev/null || true
+    fi
+    unset _cdp_skill_log _cdp_agent _cdp_receipt _cdp_fire_log
+fi
+
 # === Guard 14: DB direct connection BLOCK (LS064+LS-A17: /db-check skill強制) ===
 # WARN→BLOCK升格(2026-07-01): WARNでは試行錯誤を防げない実証(将軍がpsycopg2で6回試行錯誤)
 # /db-checkスキルにスキーマ・接続方式・クエリテンプレート完備。直接接続は不要
