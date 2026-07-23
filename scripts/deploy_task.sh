@@ -1334,7 +1334,7 @@ existing_parent_cmd = _pc_m.group(1) if _pc_m else ''
 # スカラー+リスト両方を確実にクリアするフィールド一覧
 STALE_FIELDS = [
     # 第1層: cmd固有メタデータ(スカラー)
-    'purpose', 'target_path', 'inspection_path', 'owned_paths', 'commit_contract', 'constraints', 'progress', 'description', 'deployed_at', 'completed_at', 'done_at', 'acknowledged_at',
+    'purpose', 'target_path', 'inspection_path', 'owned_paths', 'planned_paths', 'commit_contract', 'constraints', 'progress', 'description', 'deployed_at', 'completed_at', 'done_at', 'acknowledged_at',
     # 第2層: inject_task_modifiers.pyが「存在チェック」するフィールド(リスト含む)
     'engineering_preferences', 'context_files', 'stop_for', 'never_stop_for',
     'ac_priority', 'ac_checkpoint', 'parallel_ok',
@@ -1347,6 +1347,7 @@ STALE_FIELDS = [
     'type', 'report_template',
     # 第9層: resolve_cmd_to_taskで上書きされるが安全網(cmd_2231 saizo stale contamination: title/report_path残留)
     'title', 'report_path', 'report_filename', 'assigned_acs', 'scope_note',
+    'subtask_id', 'scope_mode',
     # 第6層: ネスト残留+旧メタデータ(cmd_1527発見: 前cmdの全task:ブロックが残留)
     'task', 'worker_id', 'timestamp',
     # 第7層: GP-198 session state (新cmd配備時に前cmdの失敗履歴をクリア)
@@ -3716,9 +3717,9 @@ generate_report_template() {
     # タスクYAMLから自動記入値を取得（cmd_532: 機械的フィールド自動記入）
     # cmd_1983: field_get_multiで一括取得済み → 変数参照のみ
     local worker_id="${assigned_to:-$ninja_name}"
-    local resolved_task_id="${subtask_id}"
+    local resolved_task_id="${task_id}"
     if [ -z "$resolved_task_id" ]; then
-        resolved_task_id="${task_id:-$_p_task_id}"
+        resolved_task_id="${_ac_task_id:-${subtask_id:-$_p_task_id}}"
     fi
     # task_id系が全て空なら_ac_task_idをfallback
     if [ -z "$resolved_task_id" ]; then

@@ -449,9 +449,9 @@ def build_publication(
         or _report_scalar(template, "worker_id"),
         "report_id": desired_id,
         "report_identity_version": 2,
-        "task_id": task.get("subtask_id")
-        or task.get("task_id")
+        "task_id": task.get("task_id")
         or task.get("_ac_task_id")
+        or task.get("subtask_id")
         or _report_scalar(template, "task_id"),
         "parent_cmd": task.get("parent_cmd")
         or task.get("cmd_id")
