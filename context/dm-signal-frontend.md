@@ -1,6 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-23 cmd_4124 -->
-<!-- source_commit:20bc9de2b14f51ed0d79787b91486e4e13adc304 reason:cmd_4124_main_integration evidence:cmd_4124_content_present -->
+<!-- last_updated: 2026-07-23 cmd_4127 -->
+<!-- source_commit:6567ab90 reason:cmd_4127_reviewed_source_boundary evidence:kagemaru implementation commit reflected by section20 canonical result -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -370,6 +370,10 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 ## 20. cmd_4127 表フォント14px統一 (2026-07-23)
 
 結論: 表フォントcanonicalは本体14px・数値`ui-monospace tabular-nums`・文字Inter・ヘッダ14px。方向矢印はアイコン役割として18pxを維持。→ `docs/research/cmd_4127_font_unify_result.md`
+
+## 21. cmd_4128 Up vs. Down Market表の残存是正 (2026-07-23)
+
+結論: `up-down-market-chart`の数値28セルもcanonical mono/14pxへ統一し、文字ラベルInterを維持。コード側の表フォント統一は全数完了し、本番CDP逸脱0証明は将軍の出口責務。→ `docs/research/cmd_4128_updown_font_result.md`
 
 ## 19. cmd_4124 値配色の基準復旧 (2026-07-23)
 
