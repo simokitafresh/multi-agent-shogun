@@ -90,6 +90,7 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# cmd_karo_hotfix_control_plane_contracts_ga321_20260723
 # test_necessity: deploy_taskが公開するcommit_contractはreportと同じmapping型でなければreadonly免除判定が壊れる。
 @test "task commit_contract: JSON mapping入力をscalar化せず構造mappingとして保存する" {
     local yaml="$TEST_TMPDIR/task_commit_contract.yaml"

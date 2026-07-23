@@ -41,6 +41,8 @@ else:
     pos = next((i + 1 for i, v in enumerate(lines[:8]) if 'last_updated:' in v), min(1, len(lines)))
     lines.insert(pos, line + '\n')
     updated = ''.join(lines)
+# cmd_karo_hotfix_control_plane_contracts_ga321_20260723: publish both
+# freshness markers in the same atomic replacement.
 today = datetime.date.today().isoformat()
 last_updated = f'<!-- last_updated: {today} {reason} -->'
 last_updated_pattern = re.compile(r'<!--\s*last_updated:\s*[^>\n]*-->')

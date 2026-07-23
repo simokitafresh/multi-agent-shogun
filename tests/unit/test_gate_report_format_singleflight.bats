@@ -43,6 +43,7 @@ teardown() {
     [[ "$output" != *"fingerprint reuse"* ]]
 }
 
+# cmd_karo_hotfix_control_plane_contracts_ga321_20260723
 # test_necessity: SKILL_LOG_SYNCの同期loggerが起動するtransitive background子へreport lock FDを継承させず、親gate直後の後続gateが取得できる不変量。
 @test "sync skill logger closes report lock FD before transitive background spawn" {
     run python3 - "$REPO_ROOT/scripts/gates/gate_report_format.sh" <<'PY'

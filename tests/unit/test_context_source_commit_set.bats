@@ -50,6 +50,7 @@ teardown() { rm -rf "$TMP"; }
 teardown_file() { rm -rf "$SOURCE_MARKER_TEMPLATE"; }
 
 @test "sets validated source commit with reason and evidence" {
+  # cmd_karo_hotfix_control_plane_contracts_ga321_20260723: markers are one transaction.
   run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "$SHA" audit log-zero
   [ "$status" -eq 0 ]
   grep -q "source_commit:$SHA reason:audit evidence:log-zero" "$TMP/context/test.md"

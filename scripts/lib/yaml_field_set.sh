@@ -1016,6 +1016,7 @@ yaml_field_set() {
         return 1
     fi
 
+    # cmd_karo_hotfix_control_plane_contracts_ga321_20260723:
     # Typed lifecycle fields are never scalars.  The ordinary awk lane
     # The ordinary awk lane deliberately quotes JSON/YAML punctuation to keep
     # scalar writes safe; using it for these fields therefore turns a list into
