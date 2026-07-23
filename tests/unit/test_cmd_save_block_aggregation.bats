@@ -82,6 +82,34 @@ run_cmd_save_pass() {
         bash "$SAVE_SCRIPT" cmd_pass
 }
 
+@test "AC path extraction preserves absolute slash after parentheses and quotes" {
+    mkdir -p "$TEST_TMPDIR/project"
+    touch "$TEST_TMPDIR/project/existing.sh"
+    awk '
+      /^trim_inline_yaml_scalar\(\)/ { helpers=1 }
+      helpers && /^update_bulletin_actioned_by_for_cmd\(\)/ { helpers=0 }
+      helpers { print }
+      /^check_ac_file_paths\(\)/ { guard=1 }
+      guard && /^check_ac_file_paths$/ { exit }
+      guard { print }
+    ' "$SAVE_SCRIPT" > "$TEST_TMPDIR/ac_path_guard.sh"
+
+    run env TEST_EXISTING="$TEST_TMPDIR/project/existing.sh" bash -c '
+      source "$1"
+      record_warn_reason() { printf "WARN_REASON:%s\n" "$1"; }
+      PROJECT_DIR="$2"
+      CMD_BLOCK_PROJECT=infra
+      CMD_BLOCK="set"
+      CMD_BLOCK_NC=$(printf "project: infra\nacceptance_criteria:\n  - id: AC1\n    description: (/%s) and \\\"/%s\\\" and /%s\nquality_gate: {}\n" \
+        "${TEST_EXISTING#/}" "${TEST_EXISTING#/}" "${TEST_EXISTING#/}")
+      check_ac_file_paths
+    ' _ "$TEST_TMPDIR/ac_path_guard.sh" "$PROJECT_ROOT"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"WARN_REASON:ac_missing_parent_path"* ]]
+    [[ "$output" != *"missing parent"* ]]
+}
+
 create_memory_db_fixture() {
     mkdir -p "$(dirname "$TEST_MEMORY_DB")"
     python3 - "$TEST_MEMORY_DB" <<'PY'

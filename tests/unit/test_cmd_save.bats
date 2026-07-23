@@ -64,3 +64,29 @@ abort_if_block_immediate() {
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 }
+
+@test "quoted scalar continuation beginning hash survives comment stripping" {
+  awk '
+    /^cmd_save_strip_yaml_comment_lines\(\)/ { emit=1 }
+    emit && /^load_cmd_block\(\)/ { exit }
+    emit { print }
+  ' "$REPO_ROOT/scripts/cmd_save.sh" > "$BATS_TEST_TMPDIR/comment_guard.sh"
+
+  run bash -c '
+    source "$1"
+    cmd_save_strip_yaml_comment_lines <<'"'"'YAML'"'"'
+purpose: "cmd_4141 fold
+  #9 remains quoted data"
+  # ordinary YAML comment
+command: |
+  # block scalar data
+YAML
+  ' _ "$BATS_TEST_TMPDIR/comment_guard.sh"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"#9 remains quoted data"* ]]
+  [[ "$output" == *"# block scalar data"* ]]
+  [[ "$output" != *"ordinary YAML comment"* ]]
+  run python3 -c 'import sys,yaml; data=yaml.safe_load(sys.stdin.read()); assert "#9" in data["purpose"]; assert "# block scalar data" in data["command"]' <<< "$output"
+  [ "$status" -eq 0 ]
+}

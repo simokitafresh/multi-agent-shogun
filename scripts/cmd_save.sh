@@ -1268,6 +1268,70 @@ check_measurement_env_info() {
     record_warn_reason "measurement_env記入提案" "info" "check=measurement_env_info"
 }
 
+cmd_save_strip_yaml_comment_lines() {
+    # Remove only YAML comment lines.  A line beginning with "#" is scalar
+    # content while a quoted or block scalar is open, so it must survive.
+    awk '
+        function indent_of(line,    n) {
+            match(line, /[^ ]/)
+            return RSTART ? RSTART - 1 : length(line)
+        }
+        function scan_quotes(line,    i, ch, next_ch, escaped) {
+            escaped = 0
+            for (i = 1; i <= length(line); i++) {
+                ch = substr(line, i, 1)
+                next_ch = substr(line, i + 1, 1)
+                if (quote == "\"") {
+                    if (escaped) {
+                        escaped = 0
+                    } else if (ch == "\\") {
+                        escaped = 1
+                    } else if (ch == "\"") {
+                        quote = ""
+                    }
+                } else if (quote == "\047") {
+                    if (ch == "\047" && next_ch == "\047") {
+                        i++
+                    } else if (ch == "\047") {
+                        quote = ""
+                    }
+                } else if (ch == "\"" || ch == "\047") {
+                    quote = ch
+                } else if (ch == "#") {
+                    break
+                }
+            }
+        }
+        {
+            indent = indent_of($0)
+            if (block_indent >= 0) {
+                if ($0 ~ /^[[:space:]]*$/ || indent > block_indent) {
+                    print
+                    next
+                }
+                block_indent = -1
+            }
+
+            if (quote != "") {
+                print
+                scan_quotes($0)
+                next
+            }
+            if ($0 ~ /^[[:space:]]*#/) {
+                next
+            }
+
+            print
+            if ($0 ~ /:[[:space:]]*[|>][-+0-9]*([[:space:]]*#.*)?$/) {
+                block_indent = indent
+                next
+            }
+            scan_quotes($0)
+        }
+        BEGIN { block_indent = -1; quote = "" }
+    '
+}
+
 load_cmd_block() {
     if [[ "$CMD_BLOCK_LOADED" -eq 1 ]]; then
         [[ "$CMD_BLOCK_FOUND" -eq 1 ]]
@@ -1281,12 +1345,12 @@ load_cmd_block() {
 
     [[ -f "$QUEUE_FILE" ]] || return 1
 
-    # cmd_training_speed_block_get_field_20260529: single awk pass (block extract + comment strip)
-    # eliminates 1 awk fork (printf|awk for CMD_BLOCK_NC was separate)
+    # Extract the raw block first. Comment removal is quote/block-scalar aware:
+    # cmd_4141 proved that a folded quoted scalar continuation may legitimately
+    # begin with "#9", which is data rather than a YAML comment.
     CMD_BLOCK=$(awk -v cmd_id="$CMD_ID" '
         $0 == "  " cmd_id ":" { found = 1; next }
         found && /^  cmd_[^:]+:/ { exit }
-        found && /^[[:space:]]*#/ { next }
         found { print }
     ' "$QUEUE_FILE")
 
@@ -1303,7 +1367,7 @@ load_cmd_block() {
         echo "  対処: Edit toolで重複セクションを削除し、正しい値のみ残せ" >&2
     fi
 
-    CMD_BLOCK_NC="$CMD_BLOCK"
+    CMD_BLOCK_NC="$(cmd_save_strip_yaml_comment_lines <<< "$CMD_BLOCK")"
     CMD_BLOCK_FOUND=1
     return 0
 }
@@ -4436,7 +4500,7 @@ check_ac_file_paths() {
     # 次のパスの先頭に誤結合し「/scripts/foo.sh」のような偽の絶対パスを生成していた
     # (path_exists_for_cmd_sourceがOS root直下を探索し実在ファイルを「不在」と誤判定)。
     # 先頭"/"は空白/行頭直後にのみ許可し、区切り文字直後の吸収を止める
-    PATHS=$(grep -oP '(?<![^\s])/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)|[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' <<< "$AC_BLOCK" | sort -u || true)
+    PATHS=$(grep -oP '(?<![^\s("'\''\[])/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)|[A-Za-z0-9_.-]+(/[A-Za-z0-9_.+-]+)+\.(py|tsx|ts|jsx|js|sh|bash|yaml|yml|json|sql|html|css|toml|cfg|env)' <<< "$AC_BLOCK" | sort -u || true)
     [[ -z "$PATHS" ]] && return 0
 
     # プロジェクトWDを取得: cmdブロックのproject → current_project → fallback
