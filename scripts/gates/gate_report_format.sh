@@ -34,11 +34,13 @@ _gate_receipt_phase() {
         "$_phase" "$_wall" "${GATE_CALLER:-gate_report_format}" "${GATE_OWNER_PID:-$$}" "${_fp:-missing}" >>"$_GATE_RECEIPT"
 }
 
-# A caller that already observed this exact content in the validated-generation
-# cache may reuse it before joining the single-flight lock.  The previous order
-# checked this only after flock, so a PASS already published by the leader could
-# still make Gunshi wait 30 seconds and falsely FAIL on timeout.
 _GATE_FP_CACHE="${GATE_FINGERPRINT_CACHE_FILE:-${REPORT_PATH}.validated_fingerprints}"
+
+# Materialize the stable lock path even when a validated generation can return
+# before flock. Reusers must not wait for the active leader, but callers and
+# diagnostics may rely on the per-report lock artifact existing.
+_GATE_SINGLEFLIGHT_LOCK="${REPORT_PATH}.gate.lock"
+: >>"$_GATE_SINGLEFLIGHT_LOCK"
 if [ -n "${GATE_VALIDATED_FINGERPRINT:-}" ]; then
     _gate_current_fingerprint="$(sha256sum "$REPORT_PATH" | awk '{print $1}')"
     if [ "$_gate_current_fingerprint" = "$GATE_VALIDATED_FINGERPRINT" ] &&
@@ -51,7 +53,6 @@ fi
 
 # One report has one validation leader. Concurrent callers join before cache
 # inspection instead of launching duplicate autofix/git processes.
-_GATE_SINGLEFLIGHT_LOCK="${REPORT_PATH}.gate.lock"
 _GATE_WAIT_STARTED="$(_gate_mono_ms)"
 if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
     exec 199>"$_GATE_SINGLEFLIGHT_LOCK"
@@ -665,16 +666,20 @@ esac
 if [ "$RESULT_IS_PASS" -eq 1 ]; then
     # WSL2最適化: gate_fire_log書込みをバックグラウンド化（ログは判定に影響しない）
     (
+        exec 199>&-
         flock -w 5 200 2>/dev/null
         printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: PASS\n' "$TS" "$_LOG_PATH" >> "$LOG_FILE"
     ) 200>"$LOG_FILE.lock" 2>/dev/null &
     # DB INSERT: eventsテーブルへゲート記録（非ブロック）
     _GRF_CMD_ID="$(basename "${REPORT_PATH%.yaml}" | grep -oE 'cmd_[0-9a-zA-Z_]+' | head -1 || true)"
     # WSL2最適化: memory_db_live_insert を非同期化（DB書込みは判定に影響しない）
-    python3 "$REPO_ROOT/scripts/memory_db_live_insert_async.py" gate \
-        --gate-name "gate_report_format" --result "PASS" \
-        --cmd-id "${_GRF_CMD_ID:-}" --ts "$TS" --detail "" \
-        --source-file "$REPORT_PATH" >/dev/null 2>&1 &
+    (
+        exec 199>&-
+        python3 "$REPO_ROOT/scripts/memory_db_live_insert_async.py" gate \
+            --gate-name "gate_report_format" --result "PASS" \
+            --cmd-id "${_GRF_CMD_ID:-}" --ts "$TS" --detail "" \
+            --source-file "$REPORT_PATH"
+    ) >/dev/null 2>&1 &
     disown 2>/dev/null || true
     _SKILL_LOG="$REPO_ROOT/scripts/skill_execution_log.sh"
     _REPORT_WRITE_SKILL="$REPO_ROOT/skills/report-write/SKILL.md"
@@ -699,22 +704,28 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
                 "$REPORT_PATH" \
                 "$REPO_ROOT/skills/verdict-check/SKILL.md" >/dev/null 2>&1 || true
         else
-            bash "$_SKILL_LOG" \
-                "report-write" \
-                "$_REPORT_EXECUTOR" \
-                "PASS" \
-                "gate_report_format PASS" \
-                "gate_report_format" \
-                "$REPORT_PATH" \
-                "$_REPORT_WRITE_SKILL" >/dev/null 2>&1 &
-            bash "$_SKILL_LOG" \
-                "verdict-check" \
-                "$_REPORT_EXECUTOR" \
-                "PASS" \
-                "gate_report_format verdict/binary_checks PASS" \
-                "gate_report_format" \
-                "$REPORT_PATH" \
-                "$REPO_ROOT/skills/verdict-check/SKILL.md" >/dev/null 2>&1 &
+            (
+                exec 199>&-
+                bash "$_SKILL_LOG" \
+                    "report-write" \
+                    "$_REPORT_EXECUTOR" \
+                    "PASS" \
+                    "gate_report_format PASS" \
+                    "gate_report_format" \
+                    "$REPORT_PATH" \
+                    "$_REPORT_WRITE_SKILL"
+            ) >/dev/null 2>&1 &
+            (
+                exec 199>&-
+                bash "$_SKILL_LOG" \
+                    "verdict-check" \
+                    "$_REPORT_EXECUTOR" \
+                    "PASS" \
+                    "gate_report_format verdict/binary_checks PASS" \
+                    "gate_report_format" \
+                    "$REPORT_PATH" \
+                    "$REPO_ROOT/skills/verdict-check/SKILL.md"
+            ) >/dev/null 2>&1 &
         fi
     fi
     # Update PASS cache (GP-073) — WSL2最適化: sed dedup削除、直接append
@@ -755,15 +766,19 @@ except Exception:
     fi
     if [ "${GATE_SESSION_STATE_TEST:-0}" != "1" ] && [ "$_GATE_FIRE_LOG_SKIP" = "0" ]; then
         (
+            exec 199>&-
             flock -w 5 200 2>/dev/null
             printf -- '- ts: "%s", file: "%s", gate: "gate_report_format", result: FAIL, reasons: "%s"\n' "$TS" "$_LOG_PATH" "$REASONS" >> "$LOG_FILE"
         ) 200>"$LOG_FILE.lock" 2>/dev/null || true
         # DB INSERT: eventsテーブルへゲート記録（非ブロック）
         _GRF_CMD_ID="$(basename "${REPORT_PATH%.yaml}" | grep -oE 'cmd_[0-9a-zA-Z_]+' | head -1 || true)"
-        python3 "$REPO_ROOT/scripts/memory_db_live_insert_async.py" gate \
-            --gate-name "gate_report_format" --result "FAIL" \
-            --cmd-id "${_GRF_CMD_ID:-}" --ts "$TS" --detail "$REASONS" \
-            --source-file "$REPORT_PATH" >/dev/null 2>&1 &
+        (
+            exec 199>&-
+            python3 "$REPO_ROOT/scripts/memory_db_live_insert_async.py" gate \
+                --gate-name "gate_report_format" --result "FAIL" \
+                --cmd-id "${_GRF_CMD_ID:-}" --ts "$TS" --detail "$REASONS" \
+                --source-file "$REPORT_PATH"
+        ) >/dev/null 2>&1 &
         disown 2>/dev/null || true
     fi
     # cmd_2459: Gate FAIL → relevant skill feedback loop.
