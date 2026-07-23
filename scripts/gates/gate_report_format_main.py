@@ -65,6 +65,29 @@ def commit_owned_paths(task):
     return paths
 
 
+def _report_modified_paths(report):
+    paths = []
+    value = report.get("files_modified") if isinstance(report, dict) else None
+    if not isinstance(value, list):
+        return paths
+    for item in value:
+        if isinstance(item, dict):
+            item = item.get("path")
+        text = str(item or "").strip().rstrip("/")
+        if text and text not in paths:
+            paths.append(text)
+    return paths
+
+
+def _literal_path_within(path, scope):
+    """Match repository paths literally; brackets in dynamic routes are not globs."""
+    candidate = str(path or "").strip().rstrip("/")
+    boundary = str(scope or "").strip().rstrip("/")
+    return bool(candidate and boundary) and (
+        candidate == boundary or candidate.startswith(boundary + "/")
+    )
+
+
 def _resolve_commit_repo(report, task, root):
     project_id = str(report.get("project") or task.get("project") or "").strip()
     if not project_id or project_id == "infra":
@@ -171,12 +194,21 @@ def commit_contract_errors(report, task, root):
     if expected_run_id not in subject and str(report.get("parent_cmd") or "") not in subject:
         errors.append("commit subject does not identify task_id/parent_cmd")
     legacy_target_scope = not _has_explicit_commit_scope(task) and not task.get("inspection_path")
-    targets = commit_owned_paths(task)
-    if not targets:
+    allowed_targets = commit_owned_paths(task)
+    if not allowed_targets:
         errors.append("commit owned/planned scope is missing")
+    modified_targets = _report_modified_paths(report)
+    for modified in modified_targets:
+        if allowed_targets and not any(
+            _literal_path_within(modified, allowed) for allowed in allowed_targets
+        ):
+            errors.append(f"files_modified path is outside planned scope: {modified}")
+    # planned_paths is the permission ceiling, not a promise that every allowed
+    # path changes. Commit provenance applies only to the report's actual subset.
+    targets = modified_targets or allowed_targets
     for raw in targets:
         target = str(raw or "").strip().rstrip("/")
-        if target and not any(path == target or path.startswith(target + "/") for path in changed):
+        if target and not any(_literal_path_within(path, target) for path in changed):
             try:
                 target_subject = subprocess.run(
                     ["git", "-C", str(commit_repo), "log", "-1", "--format=%s", identity, "--", target],
@@ -639,7 +671,13 @@ def main(report_data=None) -> int:
                 fm_paths.append(str(item.get("path", "")))
             elif isinstance(item, str):
                 fm_paths.append(item)
-        if fm_paths and not any(parent_cmd_value in os.path.basename(path) for path in fm_paths if path):
+        cmd_artifact_paths = [
+            path for path in fm_paths
+            if re.search(r"(?:^|[_-])cmd_[0-9A-Za-z_]+", os.path.basename(path))
+        ]
+        if cmd_artifact_paths and not any(
+            parent_cmd_value in os.path.basename(path) for path in cmd_artifact_paths
+        ):
             # 修行cmd/CI修正/karo_direct配備はcmd_idがファイル名に含まれない構造的偽陽性
             if not (parent_cmd_value.startswith("cmd_training_") or parent_cmd_value.startswith("cmd_karo_")):
                 hints.append(f"GP-202 WARN: files_modified内に{parent_cmd_value}を含むファイルが0件。別cmdの成果物を上書きしていないか確認せよ")
