@@ -493,9 +493,16 @@ if [[ -z "$verification_head" && -n "$transient_receipt_file" && -f "$transient_
     verification_head="$(python3 - "$transient_receipt_file" <<'PY'
 import sys, yaml
 d=yaml.safe_load(open(sys.argv[1], encoding='utf-8')) or {}
-print(d.get('source_head') or d.get('source_commit') or d.get('head') or '')
+head=d.get('source_head') or d.get('source_commit') or d.get('head') or ''
+manifest=d.get('run_manifest')
+if isinstance(manifest, dict):
+    commit_sha=manifest.get('commit_sha') or ''
+    if commit_sha and commit_sha != head:
+        print('BLOCK: test receipt source_head/run_manifest.commit_sha mismatch', file=sys.stderr)
+        raise SystemExit(2)
+print(head)
 PY
-)"
+)" || exit 2
 fi
 if [[ -z "$verification_head" && -n "$transient_task_file" && -f "$transient_task_file" ]]; then
     verification_head="$(python3 - "$transient_task_file" <<'PY'

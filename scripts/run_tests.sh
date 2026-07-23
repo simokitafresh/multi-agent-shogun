@@ -858,6 +858,46 @@ selection_manifest_for_singleflight() {
             ;;
         task)
             [ "$#" -eq 1 ] || return 2
+            local _sf_task_identity
+            _sf_task_identity="$(python3 - "$1" <<'PY'
+import hashlib
+import json
+import os
+import sys
+
+import yaml
+
+path = os.path.realpath(sys.argv[1])
+document = yaml.safe_load(open(path, encoding="utf-8")) or {}
+task = document.get("task", document)
+if not isinstance(task, dict):
+    raise SystemExit(2)
+
+def paths(value):
+    result = []
+    if isinstance(value, str) and value.strip():
+        result.append(value.strip())
+    elif isinstance(value, dict):
+        result.extend(paths(value.get("path")))
+    elif isinstance(value, list):
+        for item in value:
+            result.extend(paths(item))
+    return result
+
+contract = task.get("commit_contract")
+planned = paths(task.get("planned_paths"))
+if isinstance(contract, dict):
+    planned.extend(paths(contract.get("planned_paths")))
+identity = {
+    "task_file": path,
+    "task_id": str(task.get("task_id") or task.get("subtask_id") or ""),
+    "planned_paths": sorted(set(planned)),
+}
+blob = json.dumps(identity, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+print(hashlib.sha256(blob.encode()).hexdigest())
+PY
+)" || return 2
+            printf 'task-identity:%s\n' "$_sf_task_identity"
             local _sf_task_root
             _sf_task_root="$(task_scope_root "$1")" || return 2
             if [ "$_sf_task_root" != "$REPO_ROOT" ]; then
@@ -986,6 +1026,51 @@ probe_persistent_p9_rpc() {
     fi
     printf 'DRVFS_P9_STATE persistent=0 probe_timeout_sec=%s pids=none\n' "$probe_timeout"
     return 1
+}
+
+provision_frontend_ext4_fallback() {
+    local task_root="$1"
+    shift
+    local source_head fallback patch_file scope_path
+    source_head="$(git -C "$task_root" rev-parse HEAD)" || return 2
+    fallback="$(mktemp -d /tmp/shogun-frontend-fallback.XXXXXX)" || return 2
+    patch_file="$(mktemp /tmp/shogun-frontend-fallback-patch.XXXXXX)" || {
+        rm -rf -- "$fallback"
+        return 2
+    }
+    if ! git clone --quiet --shared --no-checkout "$task_root" "$fallback" \
+        || ! git -C "$fallback" checkout --quiet "$source_head" \
+        || ! git -C "$task_root" diff --binary "$source_head" -- "$@" >"$patch_file"; then
+        rm -f -- "$patch_file"
+        rm -rf -- "$fallback"
+        return 2
+    fi
+    if [[ -s "$patch_file" ]] && ! git -C "$fallback" apply --binary "$patch_file"; then
+        rm -f -- "$patch_file"
+        rm -rf -- "$fallback"
+        return 2
+    fi
+    rm -f -- "$patch_file"
+    for scope_path in "$@"; do
+        if [[ -e "$task_root/$scope_path" ]] \
+            && ! git -C "$task_root" ls-files --error-unmatch -- "$scope_path" >/dev/null 2>&1; then
+            mkdir -p "$fallback/$(dirname "$scope_path")"
+            cp -a -- "$task_root/$scope_path" "$fallback/$scope_path"
+        fi
+    done
+    if [[ -d "$task_root/frontend/node_modules" && ! -e "$fallback/frontend/node_modules" ]]; then
+        ln -s "$task_root/frontend/node_modules" "$fallback/frontend/node_modules"
+    fi
+    printf '%s\n' "$source_head" >"$fallback/.shogun-source-head"
+    printf 'DRVFS_EXT4_FALLBACK result=provisioned root=%s source_head=%s dirty_paths=%s\n' \
+        "$fallback" "$source_head" "$#" >&2
+    printf '%s\n' "$fallback"
+}
+
+cleanup_frontend_ext4_fallback() {
+    local fallback="$1"
+    [[ "$fallback" == /tmp/shogun-frontend-fallback.* && -d "$fallback" ]] || return 2
+    rm -rf -- "$fallback"
 }
 
 # _run_tests_main(): sourceされても副作用ゼロ(関数定義+変数初期化のみ)にするため、
@@ -1215,8 +1300,14 @@ _run_tests_main() {
                         fi
                         if [[ "${RUN_TESTS_DRVFS_P9_DETECTED:-0}" == "1" ]]; then
                             local _fallback="${RUN_TESTS_FRONTEND_EXT4_FALLBACK:-}"
-                            [[ -n "$_fallback" && -d "$_fallback/frontend" ]] \
-                                || { echo "BLOCK: persistent p9_client_rpc requires RUN_TESTS_FRONTEND_EXT4_FALLBACK" >&2; exit 2; }
+                            local _fallback_owned=0
+                            if [[ -z "$_fallback" ]]; then
+                                _fallback="$(provision_frontend_ext4_fallback "$_task_root" "${scoped_paths[@]}")" \
+                                    || { echo "BLOCK: frontend ext4 fallback provisioning failed" >&2; exit 2; }
+                                _fallback_owned=1
+                            fi
+                            [[ -d "$_fallback/frontend" ]] \
+                                || { echo "BLOCK: frontend ext4 fallback is missing frontend/" >&2; exit 2; }
                             local _fallback_fs
                             _fallback_fs="$(findmnt -n -o FSTYPE -T "$_fallback" 2>/dev/null || true)"
                             [[ "$_fallback_fs" != 9p && "$_fallback_fs" != drvfs && "$_fallback" == /tmp/* ]] \
@@ -1226,7 +1317,14 @@ _run_tests_main() {
                             _frontend_root="$_fallback/frontend"
                             printf 'DRVFS_EXT4_FALLBACK result=selected root=%s receipt=required\n' "$_fallback"
                         fi
-                        (cd "$_frontend_root" && npm test -- --runInBand --passWithNoTests --findRelatedTests "${_external_frontend_sources[@]}") || exit $?
+                        local _frontend_rc=0
+                        (cd "$_frontend_root" && npm test -- --runInBand --passWithNoTests --findRelatedTests "${_external_frontend_sources[@]}") \
+                            || _frontend_rc=$?
+                        if [[ "${_fallback_owned:-0}" == "1" ]]; then
+                            cleanup_frontend_ext4_fallback "$_fallback" \
+                                || { echo "BLOCK: frontend ext4 fallback cleanup failed" >&2; exit 2; }
+                        fi
+                        [[ "$_frontend_rc" -eq 0 ]] || exit "$_frontend_rc"
                     fi
                     if [ "$_external_backend" -eq 0 ] && [ "$_external_frontend" -eq 0 ]; then
                         echo "TEST_SELECTION result=selected reason=external_scope_no_mapped_tests files=0"
@@ -1389,11 +1487,16 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         fi
         _tap="${_receipt%.json}.tap"
         _selected_paths="${_receipt%.json}.paths"
-        _source_head="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+        _source_root="$REPO_ROOT"
+        if [[ "$_mode" == task ]]; then
+            _source_root="$(task_scope_root "${2:-}")" \
+                || { echo "BLOCK: task source root could not be resolved" >&2; exit 2; }
+        fi
+        _source_head="$(git -C "$_source_root" rev-parse HEAD)"
         # Freeze the selector result before any test process starts. Nested
         # fixture runners must not overwrite the public run's selected set.
         printf '%s\n' "${_sf_selection:-}" \
-            | sed '/^$/d; /^readonly-probe:/d' >"$_selected_paths"
+            | sed '/^$/d; /^readonly-probe:/d; /^task-identity:/d' >"$_selected_paths"
         # Resolve at this public-call boundary.  RUN_TESTS_BATS_BIN may belong
         # to an enclosing bats root; inheriting it would bypass an isolated
         # fixture's PATH and execute the wrong runner.

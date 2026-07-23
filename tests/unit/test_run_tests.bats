@@ -668,8 +668,8 @@ YAML
   [[ "$output" != *"readonly_probe"* ]]
 }
 
-# test_necessity: public task/file callers selecting the same test must share one terminal receipt; the task-leader fixture must include admission dependencies and preserve rc=7 (never 127 or collapsed rc=1). This guards both dependency closure and exit-code fidelity.
-@test "task and file public callers single-flight the same selection and preserve failure rc" {
+# test_necessity: task identity is stronger than a raw file selection, so task/file callers must not share a receipt while both preserve the concrete runner rc=7.
+@test "task and file public callers remain identity-isolated and preserve failure rc" {
   mkdir -p "$TMPROOT/queue/tasks" "$TMPROOT/receipts" "$TMPROOT/sf"
   cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
 #!/usr/bin/env bash
@@ -718,11 +718,100 @@ PY
     [ "$receipt_rc" -eq 7 ]
     [ "$rc1" -eq "$receipt_rc" ]
     [ "$rc2" -eq "$receipt_rc" ]
-    [ "$(find "$TMPROOT/receipts" -name '*.json' | wc -l)" -eq 1 ]
-    [ "$(grep -h -c 'SINGLE_FLIGHT_JOINED' "$TMPROOT/task.err" "$TMPROOT/file.err" | awk '{s+=$1} END{print s}')" -eq 1 ]
-    grep -h -q 'TEST_RECEIPT_FAIL.*rc=7.*joined=1' "$TMPROOT/task.out" "$TMPROOT/file.out"
+    [ "$(find "$TMPROOT/receipts" -name '*.json' | wc -l)" -eq 2 ]
+    [ "$(cat "$TMPROOT/count")" -eq 2 ]
+    [ "$(grep -h -c 'SINGLE_FLIGHT_JOINED' "$TMPROOT/task.err" "$TMPROOT/file.err" | awk '{s+=$1} END{print s+0}')" -eq 0 ]
+    ! grep -h -q 'joined=1' "$TMPROOT/task.out" "$TMPROOT/file.out"
     ! grep -h -q 'TEST_RECEIPT_PASS.*rc=7' "$TMPROOT/task.out" "$TMPROOT/file.out"
   done
+}
+
+# test_necessity: task-mode single-flight identity must include task realpath, task_id, and planned paths so distinct tasks selecting the same test can never consume each other's receipt.
+@test "distinct task identities selecting the same test execute twice with cross-task JOIN zero" {
+  mkdir -p "$TMPROOT/queue/tasks" "$TMPROOT/receipts" "$TMPROOT/sf"
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$REPO_ROOT/tests/unit/sample.bats"
+SH
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+exec 9>>"$TASK_COUNT.lock"
+flock 9
+count=$(cat "$TASK_COUNT" 2>/dev/null || printf 0)
+printf '%s\n' "$((count + 1))" >"$TASK_COUNT"
+flock -u 9
+sleep 0.5
+printf '1..1\nok 1 isolated-task\n'
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh" "$TMPROOT/bin/bats"
+  for agent in alpha beta; do
+    cat >"$TMPROOT/queue/tasks/$agent.yaml" <<YAML
+task:
+  task_id: task-$agent
+  planned_paths: [scripts/run_tests.sh]
+YAML
+  done
+  common=(env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED
+    PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_CACHE=0
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf"
+    TASK_COUNT="$TMPROOT/task-count")
+  "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/alpha.yaml" >"$TMPROOT/alpha.out" 2>"$TMPROOT/alpha.err" & p1=$!
+  "${common[@]}" bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/beta.yaml" >"$TMPROOT/beta.out" 2>"$TMPROOT/beta.err" & p2=$!
+  wait "$p1"
+  wait "$p2"
+  [ "$(cat "$TMPROOT/task-count")" -eq 2 ]
+  [ "$(find "$TMPROOT/receipts" -name '*.json' -type f | wc -l)" -eq 2 ]
+  [ "$(grep -h -c 'SINGLE_FLIGHT_JOINED' "$TMPROOT/alpha.err" "$TMPROOT/beta.err" | awk '{s+=$1} END{print s+0}')" -eq 0 ]
+}
+
+# test_necessity: external frontend task under persistent p9 must self-provision an ext4 checkout, apply the task-owned dirty patch, and publish source_head/commit_sha from the external repository.
+@test "external p9 fallback provisions dirty source and receipt uses external HEAD" {
+  external="$TMPROOT/external"
+  mkdir -p "$external/frontend" "$TMPROOT/projects" "$TMPROOT/queue/tasks" "$TMPROOT/receipts" "$TMPROOT/sf"
+  printf '{"scripts":{"test":"fixture"}}\n' >"$external/frontend/package.json"
+  printf 'committed\n' >"$external/frontend/source.ts"
+  git -C "$external" init -q
+  git -C "$external" config user.email test@example.invalid
+  git -C "$external" config user.name test
+  git -C "$external" add frontend
+  git -C "$external" commit -qm init
+  external_head="$(git -C "$external" rev-parse HEAD)"
+  printf 'dirty\n' >>"$external/frontend/source.ts"
+  cat >"$TMPROOT/projects/external.yaml" <<YAML
+project:
+  path: $external
+YAML
+  cat >"$TMPROOT/queue/tasks/external.yaml" <<'YAML'
+task:
+  task_id: external-dirty-task
+  project: external
+  planned_paths: [frontend/source.ts]
+YAML
+  cat >"$TMPROOT/bin/npm" <<'SH'
+#!/usr/bin/env bash
+case "$PWD" in
+  /tmp/shogun-frontend-fallback.*/frontend) ;;
+  *) echo "not ext4 fallback: $PWD" >&2; exit 9 ;;
+esac
+grep -qx dirty source.ts || { echo "dirty patch missing" >&2; exit 8; }
+printf 'Test Suites: 1 passed, 1 total\nTests:       1 passed, 1 total\nSnapshots:   0 total\n'
+SH
+  chmod +x "$TMPROOT/bin/npm"
+  run env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED \
+    PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_CACHE=0 RUN_TESTS_DRVFS_P9_DETECTED=1 \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf" \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/external.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"DRVFS_EXT4_FALLBACK result=provisioned"* ]]
+  receipt="$(find "$TMPROOT/receipts" -name '*.json' -type f | head -1)"
+  [ -n "$receipt" ]
+  run python3 - "$receipt" "$external_head" <<'PY'
+import json, sys
+d=json.load(open(sys.argv[1]))
+assert d["source_head"] == sys.argv[2]
+assert d["run_manifest"]["commit_sha"] == sys.argv[2]
+PY
+  [ "$status" -eq 0 ]
 }
 
 # test_necessity: every terminal receipt rc must determine both the public label and process exit code.

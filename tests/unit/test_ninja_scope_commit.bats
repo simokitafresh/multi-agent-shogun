@@ -60,6 +60,29 @@ YAML
     [ "$(git -C "$REPO" show --format= --name-only HEAD)" = own.txt ]
 }
 
+# test_necessity: scope commit must reject an external receipt whose source_head and run_manifest.commit_sha disagree, before deleting or committing any path.
+@test "receipt source_head and run_manifest commit identity mismatch blocks scope commit" {
+    mkdir -p "$REPO/queue/tasks"
+    printf 'change\n' >>"$REPO/own.txt"
+    printf 'task:\n  planned_paths: [own.txt]\n' >"$REPO/queue/tasks/hayate.yaml"
+    head="$(git -C "$REPO" rev-parse HEAD)"
+    cat >"$REPO/receipt.yaml" <<YAML
+complete: true
+result: PASS
+rc: 0
+skip_count: 0
+observed_test_count: 1
+test_paths: [tests/example.bats]
+source_head: $head
+run_manifest:
+  commit_sha: "0000000000000000000000000000000000000000"
+YAML
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml NINJA_TEST_RECEIPT=receipt.yaml bash "$2" -m mismatch -- own.txt' _ "$REPO" "$HELPER"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"source_head/run_manifest.commit_sha mismatch"* ]]
+    [ -n "$(git -C "$REPO" status --short -- own.txt)" ]
+}
+
 @test "transient FAIL receipt blocks before deletion" {
     mkdir -p "$REPO/tests" "$REPO/queue/tasks"
     printf 'change\n' >> "$REPO/own.txt"; printf proof > "$REPO/tests/test_transient.bats"
