@@ -790,6 +790,19 @@ print('RECEIPT_TERMINAL')
 PY
 }
 
+read_run_tests_receipt_rc() {
+    python3 - "$1" <<'PY'
+import json, sys
+try:
+    value = json.load(open(sys.argv[1], encoding="utf-8")).get("rc")
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= 255:
+        raise ValueError("rc")
+except (OSError, ValueError, TypeError, json.JSONDecodeError):
+    raise SystemExit(2)
+print(value)
+PY
+}
+
 emit_run_tests_terminal_receipt() {
     local receipt="$1"
     shift
@@ -1411,7 +1424,14 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         set -e
         publish_run_tests_metadata "$_receipt" "$_source_head" "$_selected_paths" "$_selector_input_fp"
         rm -f "$_selected_paths"
-        _receipt_rc="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$_receipt" 2>/dev/null || printf 1)"
+        # This branch runs under nounset.  A truncated/missing receipt must
+        # therefore have a value before any parser or validator can fail.
+        # Invalid receipt identity is an infrastructure BLOCK (rc=2), never a
+        # guessed test failure rc=1 and never an unbound-variable abort.
+        _receipt_rc=2
+        if _parsed_receipt_rc="$(read_run_tests_receipt_rc "$_receipt" 2>/dev/null)"; then
+            _receipt_rc="$_parsed_receipt_rc"
+        fi
         if ! validate_run_tests_terminal_receipt "$_receipt" >/dev/null; then
             printf 'TEST_RECEIPT_FAIL path=%s\n' "$_receipt" >&2
             [ "$_receipt_rc" -ne 0 ] || _receipt_rc=1

@@ -744,6 +744,34 @@ PY
   done
 }
 
+# test_necessity: the public task leader reads receipt rc under nounset; valid
+# terminal rc values must survive exactly, while missing/malformed identities
+# fail closed as rc=2 without an unbound-variable abort or false PASS.
+@test "receipt rc reader is total for rc0 rc1 rc2 rc7 missing and malformed cells" {
+  mkdir -p "$TMPROOT/receipts"
+  for rc in 0 1 2 7; do
+    printf '{"rc":%s}\n' "$rc" >"$TMPROOT/receipts/r${rc}.json"
+    run env REPO_ROOT="$TMPROOT" bash -uc \
+      'source "$1/scripts/run_tests.sh"; value=2; if parsed="$(read_run_tests_receipt_rc "$2")"; then value="$parsed"; fi; printf "%s\n" "$value"' \
+      _ "$TMPROOT" "$TMPROOT/receipts/r${rc}.json"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$rc" ]
+    [[ "$output" != *"unbound variable"* ]]
+  done
+
+  for cell in missing malformed; do
+    path="$TMPROOT/receipts/${cell}.json"
+    [ "$cell" = malformed ] && printf '{bad\n' >"$path"
+    run env REPO_ROOT="$TMPROOT" bash -uc \
+      'source "$1/scripts/run_tests.sh"; value=2; if parsed="$(read_run_tests_receipt_rc "$2" 2>/dev/null)"; then value="$parsed"; fi; printf "%s\n" "$value"' \
+      _ "$TMPROOT" "$path"
+    [ "$status" -eq 0 ]
+    [ "$output" = 2 ]
+    [[ "$output" != *"unbound variable"* ]]
+    [[ "$output" != *"TEST_RECEIPT_PASS"* ]]
+  done
+}
+
 # test_necessity: truncated tool output must be recoverable from selection or run identity without rerunning tests.
 @test "receipt recovery resolves selection state and run identity without execution" {
   mkdir -p "$TMPROOT/receipts" "$TMPROOT/sf"
