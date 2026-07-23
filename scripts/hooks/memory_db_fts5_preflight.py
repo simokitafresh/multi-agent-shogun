@@ -3,6 +3,9 @@
 
 Called by pre-write-edit-combined.sh during cmd preflight.
 Usage: memory_db_fts5_preflight.py <db_path> <query> <agent_id>
+       memory_db_fts5_preflight.py --backup <db_path> <backup_path>
+       memory_db_fts5_preflight.py --migrate-skill-metadata <db_path>
+       memory_db_fts5_preflight.py --inspect-skill-metadata <db_path>
 Output: tab-separated rows (id, ts, agent, cmd_id, importance, summary)
 """
 import hashlib
@@ -14,6 +17,9 @@ from pathlib import Path
 
 CJK_RE = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]")
 AGENT_ID_RE = re.compile(r"[a-z][a-z0-9_-]*\Z")
+SKILL_NAME_RE = re.compile(r"[a-z][a-z0-9-]*\Z")
+CDP_SKILL = "claude-in-chrome"
+CDP_TERMS = ("cdp", "getcomputedstyle", "remote-debugging")
 
 
 def has_cjk(text: str) -> bool:
@@ -75,11 +81,166 @@ def resolve_db_path(source_path: Path) -> Path:
     safe_name = str(source_path).replace("/", "_")
     cache_path = cache_dir / safe_name
     if cache_path.is_file() and cache_path.stat().st_size > 0:
+        # A schema migration can land before the asynchronous cache refresh.
+        # Never let a stale cache erase newly structured metadata at recall.
+        try:
+            with sqlite3.connect(
+                f"{source_path.resolve().as_uri()}?mode=ro", uri=True
+            ) as source:
+                source_columns = {
+                    str(row[1]) for row in source.execute("PRAGMA table_info(events)")
+                }
+            with sqlite3.connect(
+                f"{cache_path.resolve().as_uri()}?mode=ro", uri=True
+            ) as cache:
+                cache_columns = {
+                    str(row[1]) for row in cache.execute("PRAGMA table_info(events)")
+                }
+            if "skill" in source_columns and "skill" not in cache_columns:
+                return source_path
+        except sqlite3.Error:
+            return source_path
         return cache_path
     return source_path
 
 
+def migrate_skill_metadata(db_path: Path) -> tuple[int, int]:
+    """Add the nullable skill column and classify CDP knowledge idempotently."""
+    conn = sqlite3.connect(db_path)
+    try:
+        columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(events)")}
+        if "skill" not in columns:
+            conn.execute("ALTER TABLE events ADD COLUMN skill TEXT")
+        predicate = " OR ".join(
+            "(lower(coalesce(summary, '')) LIKE ? OR lower(coalesce(detail, '')) LIKE ?)"
+            for _ in CDP_TERMS
+        )
+        params: list[str] = []
+        for term in CDP_TERMS:
+            params.extend((f"%{term}%", f"%{term}%"))
+        conn.execute(
+            f"""
+            UPDATE events
+               SET skill = ?
+             WHERE event_type = 'knowledge'
+               AND ({predicate})
+               AND skill IS NOT ?
+            """,
+            [CDP_SKILL, *params, CDP_SKILL],
+        )
+        conn.commit()
+        target_count = int(
+            conn.execute(
+                f"""
+                SELECT count(*) FROM events
+                 WHERE event_type = 'knowledge' AND ({predicate})
+                """,
+                params,
+            ).fetchone()[0]
+        )
+        false_positive = int(
+            conn.execute(
+                f"""
+                SELECT count(*) FROM events
+                 WHERE skill = ? AND NOT (
+                       event_type = 'knowledge' AND ({predicate})
+                 )
+                """,
+                [CDP_SKILL, *params],
+            ).fetchone()[0]
+        )
+        return target_count, false_positive
+    finally:
+        conn.close()
+
+
+def backup_database(db_path: Path, backup_path: Path) -> int:
+    """Create a transactionally consistent SQLite online backup."""
+    source = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
+    destination = sqlite3.connect(backup_path)
+    try:
+        source.backup(destination)
+        result = str(destination.execute("PRAGMA quick_check").fetchone()[0])
+        destination.commit()
+        return 0 if result == "ok" else 1
+    finally:
+        destination.close()
+        source.close()
+
+
+def inspect_skill_metadata(db_path: Path) -> tuple[int, int, int, int, int, int]:
+    conn = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
+    try:
+        columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(events)")}
+        if "skill" not in columns:
+            return 0, 0, 0, 0, 0
+        predicate = " OR ".join(
+            "(lower(coalesce(summary, '')) LIKE ? OR lower(coalesce(detail, '')) LIKE ?)"
+            for _ in CDP_TERMS
+        )
+        params: list[str] = []
+        for term in CDP_TERMS:
+            params.extend((f"%{term}%", f"%{term}%"))
+        targets = int(
+            conn.execute(
+                f"SELECT count(*) FROM events WHERE event_type='knowledge' AND ({predicate})",
+                params,
+            ).fetchone()[0]
+        )
+        skill_set = int(
+            conn.execute("SELECT count(*) FROM events WHERE skill=?", (CDP_SKILL,)).fetchone()[0]
+        )
+        false_positive = int(
+            conn.execute(
+                f"""
+                SELECT count(*) FROM events WHERE skill=? AND NOT (
+                    event_type='knowledge' AND ({predicate})
+                )
+                """,
+                [CDP_SKILL, *params],
+            ).fetchone()[0]
+        )
+        false_negative = int(
+            conn.execute(
+                f"""
+                SELECT count(*) FROM events
+                 WHERE event_type='knowledge' AND ({predicate})
+                   AND coalesce(skill, '') != ?
+                """,
+                [*params, CDP_SKILL],
+            ).fetchone()[0]
+        )
+        null_events = int(
+            conn.execute("SELECT count(*) FROM events WHERE skill IS NULL").fetchone()[0]
+        )
+        return 1, targets, skill_set, false_positive, false_negative, null_events
+    finally:
+        conn.close()
+
+
 def main() -> int:
+    if len(sys.argv) == 4 and sys.argv[1] == "--backup":
+        db_path, backup_path = Path(sys.argv[2]), Path(sys.argv[3])
+        if not db_path.is_file() or backup_path.resolve() == db_path.resolve():
+            return 2
+        rc = backup_database(db_path, backup_path)
+        print(f"backup={backup_path}\tquick_check={'ok' if rc == 0 else 'failed'}")
+        return rc
+    if len(sys.argv) == 3 and sys.argv[1] == "--inspect-skill-metadata":
+        db_path = Path(sys.argv[2])
+        if not db_path.is_file():
+            return 2
+        values = inspect_skill_metadata(db_path)
+        labels = ("skill_column", "targets", "skill_set", "false_positive", "false_negative", "null_events")
+        print("\t".join(f"{label}={value}" for label, value in zip(labels, values)))
+        return 0
+    if len(sys.argv) == 3 and sys.argv[1] == "--migrate-skill-metadata":
+        db_path = Path(sys.argv[2])
+        if not db_path.is_file():
+            return 2
+        target_count, false_positive = migrate_skill_metadata(db_path)
+        print(f"targets={target_count}\tfalse_positive={false_positive}")
+        return 0 if false_positive == 0 else 1
     if len(sys.argv) < 4:
         return 0
     db_path = resolve_db_path(Path(sys.argv[1]))
@@ -95,6 +256,7 @@ def main() -> int:
     event_columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(events)")}
     if "target" not in event_columns:
         return 0
+    skill_expr = "e.skill" if "skill" in event_columns else "''"
 
     if has_cjk(query):
         terms = split_cjk_terms(query)
@@ -113,6 +275,7 @@ def main() -> int:
         )
         sql = f"""
             SELECT e.id, e.ts, e.agent, e.cmd_id, e.importance, e.summary,
+                   {skill_expr} AS skill,
                    ({score_expr}) AS match_count
             FROM events AS e
             WHERE ({where}) AND (e.target = '' OR e.target = ?)
@@ -133,8 +296,9 @@ def main() -> int:
             return 0
         fts_query = " OR ".join(escape_fts5(t) for t in fts_terms)
         rows = conn.execute(
-            """
+            f"""
             SELECT e.id, e.ts, e.agent, e.cmd_id, e.importance, e.summary,
+                   {skill_expr} AS skill,
                    bm25(events_fts) AS rank
             FROM events_fts
             JOIN events AS e ON e.rowid = events_fts.rowid
@@ -148,6 +312,9 @@ def main() -> int:
 
     for row in rows:
         summary = (row["summary"] or "").replace("\t", " ").replace("\n", " ").strip()
+        skill = str(row["skill"] or "").strip()
+        if SKILL_NAME_RE.fullmatch(skill):
+            summary = f"{summary} ★このknowledgeの実行にはSkill({skill})を起動せよ"
         print(
             "\t".join(
                 [
