@@ -467,8 +467,9 @@ SH
   [ "$(wc -l <"$TMPROOT/admission.called")" -eq 2 ]
 }
 
-# test_necessity: shared-worktree task verdicts must use task/report-owned paths and never inherit an unrelated concurrent diff.
-@test "task mode selects only task and report owned paths" {
+# test_necessity: an explicitly task-owned contract test is the task-lane
+# checkpoint; dependency expansion belongs to the fixed-SHA integration lane.
+@test "task mode selects the declared contract test without transitive expansion" {
   printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
   cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
 #!/usr/bin/env bash
@@ -501,10 +502,8 @@ YAML
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"TEST_SCOPE result=task files=3"* ]]
-  grep -Fxq 'scripts/lib/owned.sh' "$SELECT_ARGS_LOG"
-  grep -Fxq 'tests/unit/owned.bats' "$SELECT_ARGS_LOG"
-  grep -Fxq 'docs/research/owned.md' "$SELECT_ARGS_LOG"
-  ! grep -Fq 'unrelated' "$SELECT_ARGS_LOG"
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_declared_contract"* ]]
+  [ ! -e "$SELECT_ARGS_LOG" ]
 }
 
 # test_necessity: an unresolved/empty task scope must fail closed instead of silently reverting to repository-wide git diff.

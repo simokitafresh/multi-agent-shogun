@@ -18,6 +18,8 @@ _PROJECT_ROOT = pathlib.Path(
 ).resolve()
 sys.path.insert(0, str(_PROJECT_ROOT / "scripts" / "lib"))
 from report_commit_identity import valid_commit_identity
+from ac_contract import canonical_assigned_ids
+from cross_repo_commit_contract import validate_cross_repo_commits
 
 
 def _has_explicit_commit_scope(task):
@@ -689,6 +691,8 @@ def main(report_data=None) -> int:
     if task_matches_report:
         for _commit_contract_error in commit_contract_errors(data, task_data, _PROJECT_ROOT):
             errors.append("commit_contract: " + _commit_contract_error)
+        for _cross_repo_error in validate_cross_repo_commits(data):
+            errors.append("cross_repo_commits: " + _cross_repo_error)
         variation_missing, variation_invalid = _variation_contract_issues(task_data, data)
         if variation_missing:
             errors.append(
@@ -799,9 +803,7 @@ def main(report_data=None) -> int:
         if regression_norm not in ("yes", "no"):
             hints.append("GP-199 WARN: regression未記入 — GP/改善cmdは退化有無を yes/no で記録せよ")
 
-    assigned_acs_raw = task_data.get("assigned_acs", "") or ""
-    if isinstance(assigned_acs_raw, str) and assigned_acs_raw.strip():
-        assigned_acs = {a.strip() for a in assigned_acs_raw.replace(",", " ").split()}
+    assigned_acs = canonical_assigned_ids(task_data)
 
     lu = data.get("lessons_useful")
     if lu is None and "lessons_useful" in data:

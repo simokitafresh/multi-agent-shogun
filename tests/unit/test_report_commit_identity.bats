@@ -229,3 +229,37 @@ PY
   PROJECT_ROOT="$ROOT" review_report_fingerprint "$alias_report" >/dev/null
   [ "$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f | wc -l)" -eq 2 ]
 }
+
+@test "cross-repo commit contract proves every path in its owning repository" {
+  local repo_a="$BATS_TEST_TMPDIR/repo-a" repo_b="$BATS_TEST_TMPDIR/repo-b"
+  for repo in "$repo_a" "$repo_b"; do
+    git -C "$BATS_TEST_TMPDIR" init -q "${repo##*/}"
+    git -C "$repo" config user.email fixture@example.invalid
+    git -C "$repo" config user.name fixture
+  done
+  printf 'a\n' >"$repo_a/a.txt"
+  printf 'b\n' >"$repo_b/b.txt"
+  git -C "$repo_a" add a.txt && git -C "$repo_a" commit -qm a
+  git -C "$repo_b" add b.txt && git -C "$repo_b" commit -qm b
+  sha_a="$(git -C "$repo_a" rev-parse HEAD)"
+  sha_b="$(git -C "$repo_b" rev-parse HEAD)"
+
+  run python3 - "$ROOT" "$repo_a" "$sha_a" "$repo_b" "$sha_b" <<'PY'
+import pathlib, sys
+sys.path.insert(0, str(pathlib.Path(sys.argv[1]) / "scripts" / "lib"))
+from cross_repo_commit_contract import validate_cross_repo_commits
+report = {
+    "commit_hash": sys.argv[3],
+    "files_modified": [{"path": "a.txt"}],
+    "cross_repo_commits": [
+        {"repo": sys.argv[2], "commit_hash": sys.argv[3], "paths": ["a.txt"]},
+        {"repo": sys.argv[4], "commit_hash": sys.argv[5], "paths": ["b.txt"]},
+    ],
+}
+assert validate_cross_repo_commits(report) == []
+report["cross_repo_commits"][1]["paths"] = ["missing.txt"]
+errors = validate_cross_repo_commits(report)
+assert errors == ["cross_repo_commits[1] commit does not contain path: missing.txt"], errors
+PY
+  [ "$status" -eq 0 ]
+}

@@ -20,6 +20,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "scripts/lib/deploy_task_report_publication_fast.py"
+sys.path.insert(0, str(SOURCE.parent))
 SPEC = importlib.util.spec_from_file_location("report_publication_fast", SOURCE)
 assert SPEC and SPEC.loader
 FAST = importlib.util.module_from_spec(SPEC)
@@ -157,7 +158,16 @@ def test_new_report_has_current_contract_and_metadata_patch() -> None:
         "report_id": REPORT_ID,
         "report_identity_version": 2,
         "report_path": "queue/reports/saizo_report_cmd_fast_report_fixture.yaml",
+        "report_filename": "saizo_report_cmd_fast_report_fixture.yaml",
         "variation_checks_required": False,
+        "commit_contract": {
+            "required": True,
+            "reason": "implementation_path_present",
+            "task_type": "full",
+            "planned_paths": [
+                "scripts/lib/deploy_task_report_publication_fast.py"
+            ],
+        },
     }
 
 

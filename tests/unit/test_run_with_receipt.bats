@@ -114,3 +114,33 @@ PY
     run bash "$RUNNER" --verify-receipt "$bad"
     [ "$status" -ne 0 ]
 }
+
+@test "live progress publishes atomic partial evidence and streams file boundaries" {
+  receipt="$BATS_TEST_TMPDIR/live.json"
+  stderr_log="$BATS_TEST_TMPDIR/live.stderr"
+  bash "$RUNNER" --summary-only --live-progress --receipt "$receipt" -- \
+    bash -c 'echo "START: first.bats pid=1 weight=1 timeout=10s"; sleep 2; echo "DONE: first.bats rc=0"; echo "1..1"; echo "ok 1 live"' \
+    >"$BATS_TEST_TMPDIR/live.stdout" 2>"$stderr_log" &
+  runner_pid=$!
+
+  progress_seen=0
+  for _ in 1 2 3 4 5; do
+    if [[ -f "${receipt%.json}.progress.json" ]]; then
+      python3 - "${receipt%.json}.progress.json" <<'PY'
+import json, sys
+d=json.load(open(sys.argv[1], encoding="utf-8"))
+assert d["complete"] is False
+assert d["files_started"] >= 1
+PY
+      progress_seen=1
+      break
+    fi
+    sleep 1
+  done
+  wait "$runner_pid"
+
+  [ "$progress_seen" -eq 1 ]
+  [ ! -e "${receipt%.json}.progress.json" ]
+  grep -Fq 'START: first.bats' "$stderr_log"
+  grep -Fq 'DONE: first.bats rc=0' "$stderr_log"
+}

@@ -22,6 +22,8 @@ from typing import Any, Iterable, Mapping, Sequence
 
 import yaml
 
+from ac_contract import canonical_assigned_ids
+
 
 REPORT_ID_RE = re.compile(r"^report_id:\s*['\"]?([^\s'\"#]+)", re.MULTILINE)
 REPORT_STATUS_RE = re.compile(r"^status:\s*['\"]?([^\s'\"#]+)", re.MULTILINE)
@@ -263,14 +265,7 @@ def _criteria(task: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
     # assigned_acs is the parent-contract SSOT. ac_assigned remains a legacy
     # compatibility alias. Reading only the alias re-expanded split reports to
     # every parent AC during fast publication (cmd_4127).
-    selected_raw = task.get("assigned_acs") or task.get("ac_assigned") or []
-    if isinstance(selected_raw, str):
-        selected_values = re.split(r"[\s,|]+", selected_raw.strip().strip("[]"))
-    elif isinstance(selected_raw, list):
-        selected_values = selected_raw
-    else:
-        selected_values = []
-    selected = {_clean(value) for value in selected_values if _clean(value)}
+    selected = canonical_assigned_ids(task)
     result: list[tuple[str, list[str]]] = []
     items = (
         list(raw.items())
@@ -317,14 +312,33 @@ def _criteria(task: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
     return result
 
 
-def _commit_required(task: Mapping[str, Any]) -> bool:
+def _owned_paths(task: Mapping[str, Any]) -> list[str]:
+    result: list[str] = []
+    for key in ("owned_paths", "planned_paths", "files_to_modify", "files_modified", "target_path"):
+        raw = task.get(key)
+        values = raw if isinstance(raw, list) else [raw]
+        for value in values:
+            if isinstance(value, Mapping):
+                value = value.get("path") or value.get("file")
+            text = _clean(value)
+            if text and text not in result:
+                result.append(text)
+    return result
+
+
+def _commit_contract(task: Mapping[str, Any]) -> dict[str, Any]:
     task_type = _clean(
         task.get("task_type") or task.get("type") or task.get("scope_mode")
     ).lower()
-    paths = " ".join(
-        _clean(task.get(key))
-        for key in ("target_path", "files_to_modify", "files_modified", "owned_paths")
-    )
+    paths = _owned_paths(task)
+    explicit = task.get("commit_contract")
+    if isinstance(explicit, Mapping) and isinstance(explicit.get("required"), bool):
+        return {
+            "required": explicit["required"],
+            "reason": _clean(explicit.get("reason")) or "task_commit_contract_explicit",
+            "task_type": _clean(explicit.get("task_type")) or task_type or "unknown",
+            "planned_paths": _owned_paths(explicit) or paths,
+        }
     scope = (
         f"{_clean(task.get('constraints'))} {_clean(task.get('not_in_scope'))}".lower()
     )
@@ -337,7 +351,7 @@ def _commit_required(task: Mapping[str, Any]) -> bool:
     code_path = bool(
         re.search(
             r"(?:scripts/|src/|tests/|app/|lib/|\.(?:sh|py|js|ts|go|rs|java|kt)\b)",
-            paths,
+            " ".join(paths),
             re.I,
         )
     )
@@ -354,7 +368,42 @@ def _commit_required(task: Mapping[str, Any]) -> bool:
         "recon2",
         "scout",
     }
-    return not (explicit_no_code or (task_type in allowed_no_code and not code_path))
+    required = not (explicit_no_code or (task_type in allowed_no_code and not code_path))
+    if explicit_no_code:
+        reason = "explicit_no_code_scope"
+    elif task_type in allowed_no_code and not code_path:
+        reason = "allowed_no_code_task_type_and_no_code_scope"
+    elif code_path:
+        reason = "implementation_path_present"
+    else:
+        reason = "code_or_unclassified_task"
+    return {
+        "required": required,
+        "reason": reason,
+        "task_type": task_type or "unknown",
+        "planned_paths": paths,
+    }
+
+
+def _commit_required(task: Mapping[str, Any]) -> bool:
+    return bool(_commit_contract(task)["required"])
+
+
+def _commit_contract_block(task: Mapping[str, Any]) -> str:
+    contract = _commit_contract(task)
+    lines = [
+        "commit_contract:",
+        f"  required: {'true' if contract['required'] else 'false'}",
+        f"  reason: {_yaml_scalar(contract['reason'])}",
+        f"  task_type: {_yaml_scalar(contract['task_type'])}",
+        "  planned_paths:",
+    ]
+    paths = contract["planned_paths"]
+    if paths:
+        lines.extend(f"  - {_yaml_scalar(path)}" for path in paths)
+    else:
+        lines[-1] = "  planned_paths: []"
+    return "\n".join(lines)
 
 
 def _binary_checks_block(task: Mapping[str, Any]) -> str:
@@ -451,6 +500,7 @@ def build_publication(
         "report_path": rel_path,
         "report_filename": Path(rel_path).name,
         "variation_checks_required": _variation_required(task),
+        "commit_contract": _commit_contract(task),
     }
     scalar_values = {
         "worker_id": task.get("assigned_to")
@@ -482,6 +532,9 @@ def build_publication(
         and existing_status.group(1) == "pending"
     ):
         repaired = _repair_completeness(existing, template, scalar_values)
+        repaired = _replace_section(
+            repaired, "commit_contract", _commit_contract_block(task)
+        )
         if _report_scalar(repaired, "parent_cmd") != parent:
             existing = ""
         else:
@@ -492,6 +545,9 @@ def build_publication(
         report = _replace_scalar(report, key, value)
     report = _replace_section(
         report, "lessons_useful", _lessons_block(_lesson_ids(task))
+    )
+    report = _replace_section(
+        report, "commit_contract", _commit_contract_block(task)
     )
     report = _replace_section(report, "binary_checks", _binary_checks_block(task))
     _validate_structural_report(report)
@@ -591,6 +647,10 @@ def _patch_task_metadata(task_path: Path, patch: Mapping[str, Any]) -> None:
     """Publish task metadata with a targeted textual rewrite and one rename."""
 
     raw = task_path.read_text(encoding="utf-8")
+    structured_contract = patch.get("commit_contract")
+    scalar_patch = {
+        key: value for key, value in patch.items() if key != "commit_contract"
+    }
 
     def metadata_scalar(value: Any) -> str:
         if isinstance(value, (bool, int)):
@@ -612,21 +672,56 @@ def _patch_task_metadata(task_path: Path, patch: Mapping[str, Any]) -> None:
             insertion = len(output)
             continue
         if in_task and line and not line[0].isspace() and not line.startswith("#"):
-            for key, value in patch.items():
+            for key, value in scalar_patch.items():
                 if key not in seen:
                     output.append(f"  {key}: {metadata_scalar(value)}")
             in_task = False
         match = re.match(r"^  ([A-Za-z_][A-Za-z0-9_]*):", line) if in_task else None
-        if match and match.group(1) in patch:
+        if match and match.group(1) in scalar_patch:
             key = match.group(1)
-            output.append(f"  {key}: {metadata_scalar(patch[key])}")
+            output.append(f"  {key}: {metadata_scalar(scalar_patch[key])}")
             seen.add(key)
         else:
             output.append(line)
     if in_task:
-        for key, value in patch.items():
+        for key, value in scalar_patch.items():
             if key not in seen:
                 output.append(f"  {key}: {metadata_scalar(value)}")
+    if isinstance(structured_contract, Mapping):
+        contract_lines = [
+            "  commit_contract:",
+            f"    required: {'true' if structured_contract.get('required') else 'false'}",
+            f"    reason: {_yaml_scalar(structured_contract.get('reason'))}",
+            f"    task_type: {_yaml_scalar(structured_contract.get('task_type'))}",
+            "    planned_paths:",
+        ]
+        contract_paths = structured_contract.get("planned_paths") or []
+        if contract_paths:
+            contract_lines.extend(
+                f"    - {_yaml_scalar(path)}" for path in contract_paths
+            )
+        else:
+            contract_lines[-1] = "    planned_paths: []"
+        rewritten: list[str] = []
+        skip_contract = False
+        inserted = False
+        for line in output:
+            indent = len(line) - len(line.lstrip(" "))
+            if skip_contract:
+                if line.strip() == "" or indent > 2:
+                    continue
+                skip_contract = False
+            if line.startswith("  commit_contract:"):
+                if not inserted:
+                    rewritten.extend(contract_lines)
+                    inserted = True
+                skip_contract = True
+                continue
+            rewritten.append(line)
+        if not inserted:
+            task_line = rewritten.index("task:") + 1
+            rewritten[task_line:task_line] = contract_lines
+        output = rewritten
     rendered = "\n".join(output) + ("\n" if raw.endswith("\n") else "")
     yaml.safe_load(rendered)
     stage = task_path.with_name(f".{task_path.name}.report-meta.{os.getpid()}")

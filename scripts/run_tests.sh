@@ -754,9 +754,24 @@ selection_manifest_for_singleflight() {
             mapfile -d '' -t _sf_scoped <"$scope"
             rm -f "$scope"
             [ "${#_sf_scoped[@]}" -gt 0 ] || return 2
-            bash "$REPO_ROOT/scripts/test_select.sh" "${_sf_scoped[@]}" \
-                | while IFS= read -r _sf_path; do realpath --canonicalize-missing -- "$_sf_path"; done \
-                | sort -u
+            local -a _sf_declared_tests=()
+            local _sf_path
+            for _sf_path in "${_sf_scoped[@]}"; do
+                if [[ "$_sf_path" == tests/* || "$_sf_path" == */tests/* \
+                    || "$_sf_path" == *.bats || "$_sf_path" == *.spec.js \
+                    || "$_sf_path" == *.test.js || "${_sf_path##*/}" == test_* ]]; then
+                    _sf_declared_tests+=("$_sf_path")
+                fi
+            done
+            if [ "${#_sf_declared_tests[@]}" -gt 0 ]; then
+                printf '%s\n' "${_sf_declared_tests[@]}" \
+                    | while IFS= read -r _sf_path; do realpath --canonicalize-missing -- "$_sf_path"; done \
+                    | sort -u
+            else
+                bash "$REPO_ROOT/scripts/test_select.sh" "${_sf_scoped[@]}" \
+                    | while IFS= read -r _sf_path; do realpath --canonicalize-missing -- "$_sf_path"; done \
+                    | sort -u
+            fi
             ;;
         *) return 1 ;;
     esac
@@ -777,7 +792,13 @@ d.update(version=3, source_head=head, test_paths=paths,
          run_manifest={'cache': cache, 'commit_sha': head,
                        'selector_input_fingerprint': selector_input_fp,
                        'selected_paths_fingerprint': hashlib.sha256(selected_blob).hexdigest(),
-                       'estimated_cost': {'selected_files': len(paths)}})
+                       'estimated_cost': {
+                           'selected_files': len(paths),
+                           'suite_timeout_sec': int(os.environ.get('RUN_TESTS_SUITE_TIMEOUT_SEC', '1200')),
+                           'selection_reason': 'unknown',
+                           'direct_files': 0,
+                           'transitive_files': 0,
+                       }})
 artifact=d.get('artifact', '')
 p9={'persistent': False, 'probe_timeout_sec': None, 'pids': []}
 try:
@@ -792,6 +813,17 @@ try:
     # receipt wrapper cannot count them.  Adopt Jest's terminal summary into
     # the same declared/observed/skip contract before the receipt is verified.
     clean=re.sub(r'\x1b\[[0-9;]*m', '', artifact_text)
+    reasons=list(re.finditer(
+        r'^TEST_SELECTION_REASON direct=(\d+) transitive=(\d+) source=([A-Za-z0-9_-]+)\s*$',
+        clean, re.MULTILINE,
+    ))
+    if reasons:
+        direct, transitive, source=reasons[-1].groups()
+        d['run_manifest']['estimated_cost'].update(
+            selection_reason=source,
+            direct_files=int(direct),
+            transitive_files=int(transitive),
+        )
     jest=list(re.finditer(
         r'^Tests:\s+(?:(\d+)\s+failed,\s*)?(?:(\d+)\s+skipped,\s*)?'
         r'(?:(\d+)\s+passed,\s*)?(\d+)\s+total\s*$',
@@ -1096,13 +1128,29 @@ _run_tests_main() {
                 exit $?
             fi
             local _selector_log _selector_rc _selector_output
-            _selector_log="$(mktemp)"
-            set +e
-            _selector_output="$(bash "$REPO_ROOT/scripts/test_select.sh" "${scoped_paths[@]}" 2>"$_selector_log")"
-            _selector_rc=$?
-            set -e
-            cat "$_selector_log" >&2
-            rm -f "$_selector_log"
+            local -a _declared_contract_tests=()
+            local _scoped_path
+            for _scoped_path in "${scoped_paths[@]}"; do
+                if [[ "$_scoped_path" == tests/* || "$_scoped_path" == */tests/* \
+                    || "$_scoped_path" == *.bats || "$_scoped_path" == *.spec.js \
+                    || "$_scoped_path" == *.test.js || "${_scoped_path##*/}" == test_* ]]; then
+                    _declared_contract_tests+=("$_scoped_path")
+                fi
+            done
+            if [ "${#_declared_contract_tests[@]}" -gt 0 ]; then
+                _selector_output="$(printf '%s\n' "${_declared_contract_tests[@]}")"
+                _selector_rc=0
+                echo "TEST_SELECTION_REASON direct=${#_declared_contract_tests[@]} transitive=0 source=task_declared_contract"
+            else
+                _selector_log="$(mktemp)"
+                set +e
+                _selector_output="$(bash "$REPO_ROOT/scripts/test_select.sh" "${scoped_paths[@]}" 2>"$_selector_log")"
+                _selector_rc=$?
+                set -e
+                cat "$_selector_log" >&2
+                rm -f "$_selector_log"
+                echo "TEST_SELECTION_REASON direct=0 transitive=$(printf '%s\n' "$_selector_output" | sed '/^$/d' | wc -l) source=dependency_map"
+            fi
             [ "$_selector_rc" -eq 0 ] || { echo "BLOCK: task-scoped selector failed rc=$_selector_rc" >&2; exit 2; }
             mapfile -t selected <<<"$_selector_output"
             [ -n "$_selector_output" ] || selected=()
@@ -1243,6 +1291,10 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         # fixture's PATH and execute the wrong runner.
         _bats_bin="$(command -v bats 2>/dev/null || true)"
         [ -n "$_bats_bin" ] || { echo "BLOCK: bats executable could not be resolved" >&2; exit 2; }
+        _suite_timeout="${RUN_TESTS_SUITE_TIMEOUT_SEC:-1200}"
+        [[ "$_suite_timeout" =~ ^[1-9][0-9]*$ ]] \
+            || { echo "BLOCK: RUN_TESTS_SUITE_TIMEOUT_SEC must be a positive integer" >&2; exit 2; }
+        export RUN_TESTS_SUITE_TIMEOUT_SEC="$_suite_timeout"
         set +e
         if [ "$_singleflight" = 1 ]; then
             # The parent retains the mode lock until receipt publication, but
@@ -1250,12 +1302,14 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             (
                 eval "exec ${_sf_fd}>&-"
                 BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
-                    --summary-only --receipt "$_receipt" -- \
+                    --summary-only --live-progress --receipt "$_receipt" -- \
+                    timeout --signal=TERM --kill-after=5 "$_suite_timeout" \
                     env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE= bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
             )
         else
             BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
-                --summary-only --receipt "$_receipt" -- \
+                --summary-only --live-progress --receipt "$_receipt" -- \
+                timeout --signal=TERM --kill-after=5 "$_suite_timeout" \
                 env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE= bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
         fi
         _rc=$?

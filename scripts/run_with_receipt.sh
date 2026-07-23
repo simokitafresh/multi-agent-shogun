@@ -18,7 +18,7 @@ Validates schema, artifact hash, rc, completeness, TAP counts, and SKIP=0.
 EOF
 }
 
-receipt="" artifact="" max_bytes=1048576 declared="" verify="" summary_only=false
+receipt="" artifact="" max_bytes=1048576 declared="" verify="" summary_only=false live_progress=false
 while (($#)); do
     case "$1" in
         --receipt) receipt="${2:-}"; shift 2 ;;
@@ -27,6 +27,7 @@ while (($#)); do
         --declared-test-count) declared="${2:-}"; shift 2 ;;
         --verify-receipt) verify="${2:-}"; shift 2 ;;
         --summary-only) summary_only=true; shift ;;
+        --live-progress) live_progress=true; shift ;;
         --help|-h) usage; exit 0 ;;
         --) shift; break ;;
         *) printf 'ERROR: unknown option: %s\n' "$1" >&2; usage >&2; exit 2 ;;
@@ -71,6 +72,34 @@ artifact_tmp="$(mktemp "$artifact_dir/.run_receipt.artifact.XXXXXX")"
 started_ms="$(date +%s%3N)"
 child_pid=""
 signal_name=""
+progress="${receipt%.json}.progress.json"
+
+write_progress() {
+    local line_count started done last_file progress_tmp
+    line_count="$(wc -l <"$raw" 2>/dev/null || printf 0)"
+    started="$(grep -c '^START: ' "$raw" 2>/dev/null || true)"
+    done="$(grep -c '^DONE: ' "$raw" 2>/dev/null || true)"
+    last_file="$(sed -nE 's/^(START|DONE): ([^ ]+).*/\2/p' "$raw" | tail -1)"
+    progress_tmp="$(mktemp "$receipt_dir/.run_receipt.progress.XXXXXX")"
+    python3 - "$progress_tmp" "$started_ms" "$line_count" "$started" "$done" "$last_file" "$@" <<'PY'
+import json, os, sys, time
+path, started_ms, lines, started, done, last_file, *command = sys.argv[1:]
+data = {
+    "version": 1,
+    "complete": False,
+    "started_ms": int(started_ms),
+    "updated_ms": int(time.time() * 1000),
+    "output_lines": int(lines),
+    "files_started": int(started),
+    "files_done": int(done),
+    "last_file": last_file or None,
+    "command": command,
+}
+with open(path, "w", encoding="utf-8") as fh:
+    json.dump(data, fh, sort_keys=True); fh.write("\n"); fh.flush(); os.fsync(fh.fileno())
+PY
+    mv -f "$progress_tmp" "$progress"
+}
 
 write_receipt() {
     local rc="$1" complete="$2" signal_value="$3"
@@ -126,9 +155,29 @@ trap 'rm -f "$raw" "$artifact_tmp"' EXIT
 # the receipt runner, its caller, or an enclosing heavy-job admission group.
 setsid -- "$@" > "$raw" 2>&1 &
 child_pid=$!
+if [[ "$live_progress" == true ]]; then
+    published_lines=0
+    while state="$(ps -o stat= -p "$child_pid" 2>/dev/null)" \
+        && [[ -n "$state" && "$state" != Z* ]]; do
+        sleep 1
+        current_lines="$(wc -l <"$raw" 2>/dev/null || printf 0)"
+        if ((current_lines > published_lines)); then
+            sed -n "$((published_lines + 1)),${current_lines}p" "$raw" >&2
+            published_lines="$current_lines"
+        fi
+        write_progress "$@"
+    done
+fi
 wait "$child_pid"
 rc=$?
 child_pid=""
+if [[ "$live_progress" == true ]]; then
+    current_lines="$(wc -l <"$raw" 2>/dev/null || printf 0)"
+    if ((current_lines > published_lines)); then
+        sed -n "$((published_lines + 1)),${current_lines}p" "$raw" >&2
+    fi
+    write_progress "$@"
+fi
 head -c "$max_bytes" "$raw" > "$artifact_tmp"
 if [[ "$summary_only" == true ]]; then
     printf 'RECEIPT_WRITTEN %s artifact=%s\n' "$receipt" "$artifact" >&2
@@ -138,5 +187,6 @@ fi
 complete=true
 write_receipt "$rc" "$complete" "" "$@"
 rm -f "$raw"
+rm -f "$progress"
 trap - EXIT
 [[ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["result"])' "$receipt")" == PASS ]]

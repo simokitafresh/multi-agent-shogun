@@ -652,6 +652,8 @@ PY
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue" "$tmpdir/scripts/lib"
     cp "$PROJECT_ROOT/scripts/lib/field_get.sh" "$tmpdir/scripts/lib/field_get.sh"
+    touch "$tmpdir/refactor-workorder-20260611.md"
+    touch "$tmpdir/scripts/run_tests.sh"
     cat > "$tmpdir/queue/tasks/sasuke.yaml" <<'YAML'
 task:
   parent_cmd: cmd_readonly
@@ -662,7 +664,7 @@ YAML
 commands:
   cmd_readonly:
     command: |
-      refactor-workorder-20260611.md を必読参照し、backend/app/api/main.py を修正する。
+      refactor-workorder-20260611.md と run_tests.sh を必読参照し、backend/app/api/main.py を修正する。
 YAML
 
     cat > "$tmpdir/run_inject.sh" <<EOF
@@ -689,7 +691,11 @@ with open(sys.argv[1], encoding='utf-8') as f:
 refs = task.get('readonly_ref') or []
 assert refs, task
 assert refs[0]['path'] == 'refactor-workorder-20260611.md', refs
-assert '必読' in refs[0]['reason'], refs
+assert [row['path'] for row in refs] == [
+    'refactor-workorder-20260611.md',
+    'scripts/run_tests.sh',
+], refs
+assert all('必読' in row['reason'] for row in refs), refs
 PY
 }
 
@@ -697,6 +703,8 @@ PY
     tmpdir="$(mktemp -d)"
     mkdir -p "$tmpdir/queue/tasks" "$tmpdir/queue" "$tmpdir/scripts/lib"
     cp "$PROJECT_ROOT/scripts/lib/field_get.sh" "$tmpdir/scripts/lib/field_get.sh"
+    touch "$tmpdir/daemon_supervisor.sh" "$tmpdir/restart_watchers.sh" \
+      "$tmpdir/gist_sync.sh" "$tmpdir/daemon_watchdog.log" "$tmpdir/ninja_monitor.log"
     cat > "$tmpdir/queue/tasks/hayate.yaml" <<'YAML'
 task:
   readonly_ref:

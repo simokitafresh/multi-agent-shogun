@@ -15,6 +15,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "scripts/lib/deploy_task_report_publication_fast.py"
+sys.path.insert(0, str(SOURCE.parent))
 SPEC = importlib.util.spec_from_file_location("generation_identity", SOURCE)
 assert SPEC and SPEC.loader
 FAST = importlib.util.module_from_spec(SPEC)
@@ -78,3 +79,15 @@ verdict: ""
     assert FAST.build_publication(task, template).task_metadata_patch[
         "variation_checks_required"
     ] is False
+
+
+def test_positional_assignment_maps_to_explicit_criterion_id() -> None:
+    task = {
+        "assigned_acs": ["AC2"],
+        "acceptance_criteria": [
+            {"id": "R1", "checks": ["first"]},
+            {"id": "R2", "checks": ["second"]},
+        ],
+    }
+
+    assert FAST._criteria(task) == [("R2", ["second"])]

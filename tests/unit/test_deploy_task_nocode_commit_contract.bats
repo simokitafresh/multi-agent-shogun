@@ -40,10 +40,12 @@ EOF
 @test "decision_candidate no-code scope emits machine-readable commit N/A" {
   report="$(build_report decision_candidate queue/pending_decisions.yaml "decision candidate only" '[]')"
 
-  run python3 - "$report" <<'PY'
+  run python3 - "$report" "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
 import sys, yaml
 d = yaml.safe_load(open(sys.argv[1]))
 c = d['commit_contract']
+task = yaml.safe_load(open(sys.argv[2]))['task']
+assert task['commit_contract'] == c, (task['commit_contract'], c)
 assert c['required'] is False
 assert c['reason'] == 'allowed_no_code_task_type_and_no_code_scope'
 assert c['task_type'] == 'decision_candidate'
@@ -51,6 +53,7 @@ assert 'queue/pending_decisions.yaml' in c['planned_paths']
 check = d['binary_checks']['commit'][0]
 assert 'commit N/A証跡' in check['check'] and check['result'] == ''
 PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
   [ "$status" -eq 0 ]
 }
 
