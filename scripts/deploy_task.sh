@@ -3356,6 +3356,13 @@ except Exception:
 
 task = raw.get('task', raw) if isinstance(raw, dict) else {}
 
+# Runtime variation checks are an infra enforcement contract.  Product tasks
+# may legitimately mention gate/hook behavior in acceptance criteria, but that
+# text must not reclassify them as platform enforcement implementations.
+project = str(task.get('project', '')).strip().lower()
+if project != 'infra':
+    raise SystemExit(1)
+
 # Reconnaissance is structurally no-code.  Injected lessons and context may
 # contain words such as scripts/ and gate; those must never reclassify a recon
 # task as an enforcement implementation that requires runtime variation tests.
@@ -3555,12 +3562,14 @@ generate_report_template() {
     local _variation_checks_required=false
     local _variation_text="${title:-} ${purpose:-} ${command:-} ${description:-} ${target_path:-} ${files_to_modify:-} ${files_modified:-} ${acceptance_criteria:-} ${constraints:-} ${not_in_scope:-}"
     _variation_text="${_variation_text,,}"
+    local _variation_project="${project,,}"
     # 「gate/hook変更でない」の否定scopeをpositive keywordとして数えると、
     # 通常UI修正へenforcement variationを偽強制する。分類前に否定句だけ除く。
     _variation_text="$(printf '%s\n' "$_variation_text" | sed -E 's/(gate|hook|ゲート|フック)([[:space:]]*[/・][[:space:]]*(gate|hook|ゲート|フック))?[[:space:]]*(の)?変更[[:space:]]*(で|では)?ない//g')"
     local _variation_task_type="${task_type:-${type:-${scope_mode:-}}}"
     _variation_task_type="${_variation_task_type,,}"
-    if [[ ! "$_variation_task_type" =~ ^(scout|recon|recon2)$ ]] \
+    if [[ "$_variation_project" == "infra" ]] \
+        && [[ ! "$_variation_task_type" =~ ^(scout|recon|recon2)$ ]] \
         && [[ "$_variation_text" =~ enforcement|gate|hook|detector|guard|watcher|state[[:space:]_-]?machine|ゲート|フック|検知器|ガード|監視 ]] \
         && [[ "$_variation_text" =~ scripts/|\.sh([^[:alnum:]_]|$)|\.py([^[:alnum:]_]|$)|コード変更|コード修正|実装|修正|implement|fix([^[:alnum:]_]|$) ]] \
         && [[ ! "$_variation_text" =~ docs?[[:space:]_-]?only|documentation[[:space:]_-]?only|教訓のみ|fixtureのみ|索引のみ|docsのみ ]]; then

@@ -77,6 +77,45 @@ PY
     check_case quoted_false "'false'" recon2 scripts/tool.sh false
 }
 
+# test_necessity: variation_checks_requiredはinfra enforcement変更だけに付与し、非infra本文のgate/hook言及を偽陽性にしない不変量を守る。
+@test "variation contract requires infra project and enforcement code change" {
+    use_private_scripts_fixture
+    local task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+
+    check_variation_case() {
+        local name="$1" project="$2" purpose="$3" expected="$4"
+        cat > "$task" <<YAML
+task:
+  parent_cmd: cmd_${name}
+  task_id: cmd_${name}_normal
+  task_type: normal
+  project: ${project}
+  purpose: "${purpose}"
+  report_filename: sasuke_report_cmd_${name}.yaml
+  acceptance_criteria:
+  - id: AC1
+    description: boundary contract
+YAML
+        run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; generate_report_template sasuke "$2_normal" "$2" "$3" "$4"' _ "$TEST_PROJECT" "cmd_${name}" "$project" "$task"
+        [ "$status" -eq 0 ]
+        run env TASK="$task" EXPECTED="$expected" python3 - <<'PY'
+import os
+import yaml
+
+task = yaml.safe_load(open(os.environ["TASK"], encoding="utf-8"))["task"]
+assert task["variation_checks_required"] is (os.environ["EXPECTED"] == "true"), task
+PY
+        [ "$status" -eq 0 ]
+    }
+
+    check_variation_case product_gate dm-signal \
+        "metrics UIを修正しgate/hook変更ではないことを確認する" false
+    check_variation_case infra_gate infra \
+        "scripts/gates/example.shのenforcement hookを修正する" true
+    check_variation_case infra_normal infra \
+        "通常のREADME説明文を更新する" false
+}
+
 teardown() {
     deploy_task_teardown
     if [ -n "${TEST_GIT_ROOT:-}" ] && [ -d "$TEST_GIT_ROOT" ]; then
