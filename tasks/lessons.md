@@ -11072,6 +11072,32 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **how**: 未設定
 - 同一OUT_FILEの2 writerが同じprevious snapshotを読むとatomic writeだけでもlost updateする。変更前8反復で1件再現し、全区間flock後16反復0件を確認。次回は並行writer fixtureを必須チェックへ追加する。
 
+### L1288: 構造化成功statusは本文の失敗語より優先せよ
+- **日付**: 2026-07-23
+- **出典**: cmd_karo_hotfix_skill_dispatch_payload_20260723
+- **記録者**: saizo
+- **tags**: [infra,testing]
+- **subdomain**: infra
+- **target_files**: [.claude/hooks/pretool-dispatch.sh,.claude/hooks/post-skill-execution.sh,tests/unit/test_skill_dispatch_payload_contract.bats]
+- **origin**: [[cmd_karo_hotfix_skill_dispatch_payload_20260723]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- PostToolUse本文にはFAIL count zero等の説明語が含まれるためpayload全文regexはFPとなる。status/exitを優先し欠落時のみ行頭signalへfallbackする
+
+### L1289: context文書の鮮度メタデータはcommit前に強制する
+- **日付**: 2026-07-23
+- **出典**: cmd_karo_hotfix_context_freshness_ga318_20260723
+- **記録者**: hanzo
+- **tags**: [context_freshness, git_hook, infra]
+- **subdomain**: infra
+- **target_files**: [context/*.md,scripts/hooks/git-pre-commit.sh]
+- **origin**: [[GA-318]] -> [[last_updated生成時欠落]] -> [[git-pre-commit-context-metadata防御]]
+- **enforcement**: Level4: staged operational context without last_updated is blocked; explicit exclusions pass
+- **when**: context/*.mdを新規作成または更新してcommitする時
+- **how**: 先頭5行にlast_updatedを記載し、除外対象はconfig/context_freshness_excludes.txtへ明示する
+- context/*.md新規作成時にlast_updatedを省略すると、dashboard鮮度走査が後日WARNを生成する。運用対象は先頭5行へ日付を記載し、除外正本掲載の生成物・安定資料だけを免除する。git pre-commitがstaged blobを検査し欠落をBLOCKするため、作成者の記憶に依存しない。GA-318実測: 全56件、候補2件、真陽性1件・除外済み偽陽性1件、修正後対象WARN 1→0、防御fixture 3/3 PASS。
+
 ### L1290: context参照は単一repo rootで解決しない
 - **日付**: 2026-07-23
 - **出典**: cmd_karo_hotfix_context_freshness_ga319_20260723
