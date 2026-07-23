@@ -946,7 +946,7 @@ if [[ "$command" =~ (cdp_font_probe|remote-debugging|debug[_-]?port) ]] \
         _cdp_receipt=1
     fi
     if (( !_cdp_receipt )); then
-        echo "★CDP直コマンド検知: CDP専用スキル /cdp-browse を先に起動せよ(内部でscripts/cdp/cdp_cli.sh+隔離profile cdp-chrome-XXXX/D009を使う)。将軍の本番実測手順は記憶DB knowledge:7e967b43(cdp_font_probe.py+powershell隔離profile起動+Render API viewer認証)。claude-in-chrome MCP(browser extension)は使うな — extension未接続で失敗し殿の通常Chromeを汚染する(記憶DB 2026-07-22ルール)。" >&2
+        echo "★CDP直コマンド検知: CDP専用スキル /cdp-browse を先に起動せよ(内部でscripts/cdp/cdp_cli.sh+隔離profile cdp-chrome-XXXX/D009を使う)。本番実測の正本は記憶DB knowledge:776999ee — bash scripts/cdp/cdp_measure.sh <cmd_id> --pages /a /b が起動+認証(auto-ops perf_measure.py: admin Basic Auth→viewer pw→viewer認証)+測定を内包。★viewer認証だけでは不十分、admin認証(Basic Auth)要のPF/ページ有り。稼働中CDP(9222)へ独自測定は cdp_font_probe.py(font)/cdp_ed_probe.py(E/D軸)。claude-in-chrome MCP(browser extension)は使うな — extension未接続で失敗し殿の通常Chromeを汚染する(記憶DB 2026-07-22ルール)。" >&2
         _cdp_fire_log="${GATE_FIRE_LOG_FILE:-$SCRIPT_DIR/logs/gate_fire_log.yaml}"
         (
             flock -w 2 200 2>/dev/null || exit 0
