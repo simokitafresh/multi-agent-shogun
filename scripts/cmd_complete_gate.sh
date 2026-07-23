@@ -19,6 +19,13 @@ for name, value in (("target_result", t), ("workflow_result", w)):
     if not isinstance(value.get("conclusion"), str) or not isinstance(value.get("head_sha"), str):
         print(f"BLOCK: {name} conclusion/head_sha type invalid")
         raise SystemExit(1)
+workflow_status=w.get("status")
+if workflow_status is None:
+    # Backward-compatible input for callers predating typed workflow status.
+    workflow_status="completed" if w.get("conclusion") else "unknown"
+if not isinstance(workflow_status, str):
+    print("BLOCK: workflow_result status type invalid")
+    raise SystemExit(1)
 if not isinstance(reviewed_at, str) or not isinstance(w.get("created_at"), str):
     print("BLOCK: reviewed_at/workflow_result.created_at type invalid")
     raise SystemExit(1)
@@ -40,6 +47,9 @@ if not expected or t["head_sha"] != expected or w["head_sha"] != expected:
 if t["conclusion"] != "success":
     print("BLOCK: target_result is not GREEN")
     raise SystemExit(1)
+if workflow_status != "completed":
+    print(f"BLOCK: workflow_result pending status={workflow_status}; wait for CI completion then re-run gate")
+    raise SystemExit(1)
 if w["conclusion"] != "success":
     print("BLOCK: workflow_result is not GREEN")
     raise SystemExit(1)
@@ -48,6 +58,24 @@ if created < reviewed:
     raise SystemExit(1)
 print("READY: target_result=GREEN workflow_result=GREEN fresh_after_review head_sha=" + expected)
 ' 
+}
+
+format_gate_block_message() {
+    local cmd_id="$1"
+    local block_reason="$2"
+    local missing_list="${3:-}"
+    local dedup_key="${cmd_id} gate_result: BLOCK reason=${block_reason}"
+
+    case "$block_reason" in
+        *"ci_readiness:BLOCK: workflow_result pending status="*)
+            printf '%s missing=[%s]。CI完了通知を待機し、完了後に同じcmdを再ゲートせよ。修正再配備は不要。\n' \
+                "$dedup_key" "$missing_list"
+            ;;
+        *)
+            printf '%s missing=[%s]。再配備提案: BLOCK理由を確認し、該当忍者へ修正再配備せよ。\n' \
+                "$dedup_key" "$missing_list"
+            ;;
+    esac
 }
 
 # CI is shared at the pushed branch boundary, not at a dirty/shared
@@ -137,6 +165,11 @@ PY
 
 if [ "${CMD_COMPLETE_GATE_CI_EVAL_ONLY:-0}" = "1" ]; then
     evaluate_ci_readiness_json
+    exit $?
+fi
+if [ "${CMD_COMPLETE_GATE_BLOCK_MESSAGE_ONLY:-0}" = "1" ]; then
+    format_gate_block_message "${CMD_COMPLETE_GATE_BLOCK_CMD_ID:-cmd_test}" \
+        "${CMD_COMPLETE_GATE_BLOCK_REASON:-}" "${CMD_COMPLETE_GATE_BLOCK_MISSING:-}"
     exit $?
 fi
 if [ "${CMD_COMPLETE_GATE_CI_EXPECTED_HEAD_ONLY:-0}" = "1" ]; then
@@ -771,7 +804,13 @@ notify_karo_gate_block() {
     local block_reason="$2"
     local missing_list="${3:-}"
     local dedup_key="${cmd_id} gate_result: BLOCK reason=${block_reason}"
-    local message="${dedup_key} missing=[${missing_list}]。再配備提案: BLOCK理由を確認し、該当忍者へ修正再配備せよ。"
+    local message
+    if declare -F format_gate_block_message >/dev/null 2>&1; then
+        message=$(format_gate_block_message "$cmd_id" "$block_reason" "$missing_list")
+    else
+        # Extracted legacy fixture helpers may source this function alone.
+        message="${dedup_key} missing=[${missing_list}]。再配備提案: BLOCK理由を確認し、該当忍者へ修正再配備せよ。"
+    fi
 
     if grep -Fq "$dedup_key" "$SCRIPT_DIR/queue/inbox/karo.yaml" 2>/dev/null; then
         echo "  karo gate_block notify: SKIP (dedup — already in inbox)"
@@ -8375,7 +8414,7 @@ elif [ "$CI_PUSH_DETECTED" = true ]; then
     if [ -z "$ci_result" ] && [ -n "$ci_origin_slug" ] && command -v gh >/dev/null 2>&1; then
         ci_result=$(timeout 15 gh run list --repo "$ci_origin_slug" \
             --branch main --limit 5 \
-            --json conclusion,createdAt,databaseId,headSha 2>/dev/null || true)
+            --json status,conclusion,createdAt,databaseId,headSha 2>/dev/null || true)
         # Pick the most recent run whose head matches expected_head; fall back
         # to the overall most recent run (index 0) when no exact match exists.
         if [ -n "$ci_result" ] && [ -n "$expected_head" ]; then
@@ -8398,7 +8437,7 @@ elif [ "$CI_PUSH_DETECTED" = true ]; then
         'if type == "array" and length > 0 and (.[0] | type) == "object" then
            {expected_head_sha:$expected, reviewed_at:$reviewed,
             target_result:{conclusion:$target,head_sha:$expected},
-            workflow_result:{conclusion:.[0].conclusion,head_sha:.[0].headSha,created_at:.[0].createdAt}}
+            workflow_result:{status:.[0].status,conclusion:.[0].conclusion,head_sha:.[0].headSha,created_at:.[0].createdAt}}
          else {expected_head_sha:$expected,reviewed_at:$reviewed,target_result:{conclusion:$target,head_sha:$expected},workflow_result:null} end' \
         2>/dev/null || printf '{}')
     if ci_decision=$(printf '%s' "$ci_decision_json" | evaluate_ci_readiness_json 2>&1); then
