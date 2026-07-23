@@ -98,3 +98,24 @@ establish_verified() {
   [ "$(wc -l < "$FIXTURE/rev-list.log")" -eq 2 ]
   [[ "$output" == *"走査: 37 SKILL.md"* ]]
 }
+
+@test "verified contract state bypasses the aggregate Git history walk" {
+  git -C "$FIXTURE" init -q
+  git -C "$FIXTURE" config user.email fixture@example.invalid
+  git -C "$FIXTURE" config user.name fixture
+  git -C "$FIXTURE" add scripts/demo.sh skills/demo/SKILL.md
+  GIT_AUTHOR_DATE=2025-01-01T00:00:00Z GIT_COMMITTER_DATE=2025-01-01T00:00:00Z \
+    git -C "$FIXTURE" commit -qm fixture
+  establish_verified
+
+  mkdir -p "$FIXTURE/bin"
+  real_git="$(command -v git)"
+  printf '#!/usr/bin/env bash\nif [[ " $* " == *" rev-list "* ]]; then printf "walk\\n" >> %q; fi\nexec %q "$@"\n' \
+    "$FIXTURE/rev-list.log" "$real_git" > "$FIXTURE/bin/git"
+  chmod +x "$FIXTURE/bin/git"
+
+  PATH="$FIXTURE/bin:$PATH" SKILL_REF_DISABLE_CACHE=1 run_gate
+  [ "$status" -eq 0 ]
+  [ ! -s "$FIXTURE/rev-list.log" ]
+  [[ "$output" == *"総合判定: PASS"* ]]
+}

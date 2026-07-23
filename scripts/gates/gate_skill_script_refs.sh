@@ -41,6 +41,8 @@ hash_state_path = Path(os.environ.get(
     "SKILL_REF_HASH_STATE", repo_root / "logs/skill_script_refs_verified.json"
 ))
 record_verified = os.environ.get("SKILL_REF_RECORD_VERIFIED", "0") == "1"
+contract_hash_cache: dict[Path, str] = {}
+mtime_cache: dict[Path, float] = {}
 
 hash_state_path.parent.mkdir(parents=True, exist_ok=True)
 state_lock = (hash_state_path.parent / (hash_state_path.name + ".lock")).open("a+")
@@ -104,7 +106,19 @@ def contract_sha256_text(text: str) -> str:
 
 
 def contract_sha256(path: Path) -> str:
-    return contract_sha256_text(path.read_text(encoding="utf-8", errors="ignore"))
+    cached = contract_hash_cache.get(path)
+    if cached is None:
+        cached = contract_sha256_text(path.read_text(encoding="utf-8", errors="ignore"))
+        contract_hash_cache[path] = cached
+    return cached
+
+
+def path_mtime(path: Path) -> float:
+    cached = mtime_cache.get(path)
+    if cached is None:
+        cached = path.stat().st_mtime
+        mtime_cache[path] = cached
+    return cached
 
 command_ref_re = re.compile(
     r"(?:^|[\s`(])(?:bash|sh|python3?|node|ruby|perl)\s+"
@@ -150,11 +164,14 @@ def clean_ref(raw: str) -> str:
 def resolve_ref(raw: str) -> Path:
     ref = clean_ref(raw)
     if ref.startswith("~/"):
-        return Path(os.path.expanduser(ref)).resolve()
+        return Path(os.path.abspath(os.path.expanduser(ref)))
     path = Path(ref)
     if path.is_absolute():
         return path
-    return (repo_root / path).resolve()
+    # All decisions below perform explicit exists/stat/read checks.  A lexical
+    # absolute path is sufficient and avoids one DrvFS realpath walk per
+    # reference (the same scripts are referenced by many skills).
+    return Path(os.path.abspath(repo_root / path))
 
 
 def extract_refs(text: str) -> list[str]:
@@ -198,16 +215,36 @@ def example_path_exists(raw: str) -> tuple[bool, Path]:
     # A skill may intentionally run inside another registered project. Resolve
     # relative examples against those roots before declaring them absent.
     try:
-        import yaml
-        projects = yaml.safe_load((repo_root / "config/projects.yaml").read_text(encoding="utf-8")) or {}
-        for item in projects.get("projects", []):
-            root = Path(str(item.get("path") or "")).expanduser()
-            candidate = (root / raw).resolve()
+        for root in project_roots():
+            candidate = root / raw
             if candidate.exists():
                 return True, candidate
     except Exception:
         pass
     return False, resolved
+
+
+_project_roots_cache: list[Path] | None = None
+
+
+def project_roots() -> list[Path]:
+    global _project_roots_cache
+    if _project_roots_cache is not None:
+        return _project_roots_cache
+    roots: list[Path] = []
+    try:
+        import yaml
+        projects = yaml.safe_load(
+            (repo_root / "config/projects.yaml").read_text(encoding="utf-8")
+        ) or {}
+        for item in projects.get("projects", []):
+            raw_root = str(item.get("path") or "")
+            if raw_root:
+                roots.append(Path(os.path.abspath(os.path.expanduser(raw_root))))
+    except Exception:
+        roots = []
+    _project_roots_cache = roots
+    return roots
 
 
 def parse_checked_at(text: str) -> datetime | None:
@@ -372,7 +409,17 @@ for skill_file in skill_files:
     try:
         preflight_text = skill_file.read_text(encoding="utf-8", errors="ignore")
         marker = parse_checked_at(preflight_text)
+        display_skill = str(skill_file.relative_to(repo_root))
         for preflight_ref in extract_refs(preflight_text):
+            # The verified contract hash is the stronger and cheaper baseline.
+            # Do not build a repository-wide Git history for references whose
+            # exact public contract was already recorded.  On DrvFS the single
+            # aggregate rev-list dominated startup (38.63s for 56 references).
+            preflight_entry = hash_state["references"].get(
+                f"{display_skill}::{preflight_ref}", {}
+            )
+            if preflight_entry.get("contract_sha256") or preflight_entry.get("sha256"):
+                continue
             preflight_path = resolve_ref(preflight_ref)
             try:
                 history_path_set.add(str(preflight_path.relative_to(repo_root)))
@@ -408,7 +455,7 @@ for skill_file in skill_files:
     total_refs += len(refs)
     checked_at = parse_checked_at(text)
     checked_at_epoch = checked_at.timestamp() if checked_at is not None else None
-    skill_freshness_time = checked_at_epoch if checked_at_epoch is not None else skill_file.stat().st_mtime
+    skill_freshness_time = checked_at_epoch if checked_at_epoch is not None else path_mtime(skill_file)
 
     display_skill = str(skill_file.relative_to(repo_root))
     for example_path in extract_example_paths(text):
@@ -434,11 +481,15 @@ for skill_file in skill_files:
             }
             verified_hash = current_hash
             state_dirty = True
-        git_baseline = git_contract_baseline(resolved, checked_at) if checked_at is not None else None
+        git_baseline = (
+            git_contract_baseline(resolved, checked_at)
+            if checked_at is not None and not verified_hash
+            else None
+        )
         baseline_hashes = {value for value in (verified_hash, git_baseline) if value}
         contract_changed = bool(baseline_hashes) and current_hash not in baseline_hashes
         mtime_fallback_changed = (
-            not baseline_hashes and resolved.stat().st_mtime > skill_freshness_time + 1
+            not baseline_hashes and path_mtime(resolved) > skill_freshness_time + 1
         )
         if resolved.is_file() and (contract_changed or mtime_fallback_changed):
             # 判定根拠を明示: 採用基準(checked_atコメント最新値かmtimeか)が見えないと
@@ -450,7 +501,7 @@ for skill_file in skill_files:
                 "SKILL.md mtime fallback"
             )
             baseline_iso = datetime.fromtimestamp(skill_freshness_time, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
-            script_iso = datetime.fromtimestamp(resolved.stat().st_mtime, tz=timezone.utc).astimezone().isoformat(timespec="seconds")
+            script_iso = datetime.fromtimestamp(path_mtime(resolved), tz=timezone.utc).astimezone().isoformat(timespec="seconds")
             if str(entry.get("last_action_contract_sha256", "")) != current_hash:
                 stale.append((display_skill, ref, str(resolved.relative_to(repo_root)) if resolved.is_relative_to(repo_root) else str(resolved), baseline_src, baseline_iso, script_iso))
                 entry = dict(entry)
