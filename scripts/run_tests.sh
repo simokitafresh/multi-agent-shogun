@@ -580,44 +580,48 @@ run_bats_files_parallel() {
     # from timing freshness and regression comparisons.
     local mode="${RUN_TESTS_MODE:-file}" run_id commit_sha measured_at batch
     local test_count skip_count elapsed_ns wall_sec status cache_hit
-    run_id="$(date -u +%Y%m%dT%H%M%S).$$"
-    commit_sha="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || printf unknown)"
-    measured_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    batch="$(mktemp "${TMPDIR:-/tmp}/shogun-timing.XXXXXX")"
-    for file in "${files[@]}"; do
-        cache_hit=1
-        wall_sec=0
-        skip_count=0
-        status=pass
-        for pid in "${all_pids[@]}"; do
-            [ "${pid_file[$pid]}" = "$file" ] || continue
-            cache_hit=0
-            IFS=$'\t' read -r started_ns ended_ns <"${pid_time[$pid]}"
-            elapsed_ns=$((ended_ns - started_ns))
-            wall_sec="$(awk -v ns="$elapsed_ns" 'BEGIN {printf "%.3f", ns/1000000000}')"
-            skip_count="$(awk -F '\t' -v p="$pid" '$1==p {print $4; exit}' "$stats")"
-            break
+    # A focused file run is a partial diagnostic, not suite-freshness
+    # evidence. Preserve the historical contract: only aggregate modes may
+    # update timing ledgers.
+    if [[ "$mode" != file ]]; then
+        run_id="$(date -u +%Y%m%dT%H%M%S).$$"
+        commit_sha="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || printf unknown)"
+        measured_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        batch="$(mktemp "${TMPDIR:-/tmp}/shogun-timing.XXXXXX")"
+        for file in "${files[@]}"; do
+            cache_hit=1
+            wall_sec=0
+            skip_count=0
+            status=pass
+            for pid in "${all_pids[@]}"; do
+                [ "${pid_file[$pid]}" = "$file" ] || continue
+                cache_hit=0
+                IFS=$'\t' read -r started_ns ended_ns <"${pid_time[$pid]}"
+                elapsed_ns=$((ended_ns - started_ns))
+                wall_sec="$(awk -v ns="$elapsed_ns" 'BEGIN {printf "%.3f", ns/1000000000}')"
+                skip_count="$(awk -F '\t' -v p="$pid" '$1==p {print $4; exit}' "$stats")"
+                break
+            done
+            test_count="$(awk -F '\t' -v f="$file" '$2==f {print $3; exit}' "$stats")"
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+              "$run_id" "${REPO_ROOT##*/}" "$commit_sha" "$mode" bats \
+              "$file" "$test_count" "$wall_sec" "$status" "$skip_count" "$cache_hit" \
+              "$source_fp" "$measured_at" "mode=$mode;jobs=$MAX_TEST_JOBS" >>"$batch"
         done
-        test_count="$(awk -F '\t' -v f="$file" '$2==f {print $3; exit}' "$stats")"
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-          "$run_id" "${REPO_ROOT##*/}" "$commit_sha" "$mode" bats \
-          "$file" "$test_count" "$wall_sec" "$status" "$skip_count" "$cache_hit" \
-          "$source_fp" "$measured_at" "mode=$mode;jobs=$MAX_TEST_JOBS" >>"$batch"
-    done
-    TEST_TIMING_LEDGER="${TEST_TIMING_LEDGER:-$REPO_ROOT/logs/test_timing_ledger.tsv}" \
-      bash "$REPO_ROOT/scripts/test_timing_ledger_write.sh" "$batch"
-    local suite_ended_ns suite_wall_sec sum_file_sec suite_batch
-    suite_ended_ns="$(date +%s%N)"
-    suite_wall_sec="$(awk -v a="$suite_started_ns" -v b="$suite_ended_ns" 'BEGIN {printf "%.3f", (b-a)/1000000000}')"
-    sum_file_sec="$(awk -F '\t' '{s+=$8} END {printf "%.3f", s+0}' "$batch")"
-    suite_batch="$(mktemp "${TMPDIR:-/tmp}/shogun-suite-timing.XXXXXX")"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\tpass\t%s\t%s\n' \
-      "$run_id" "${REPO_ROOT##*/}" "$commit_sha" "$mode" "$suite_wall_sec" \
-      "$sum_file_sec" "$total" "$source_fp" "$measured_at" >"$suite_batch"
-    TEST_SUITE_TIMING_LEDGER="${TEST_SUITE_TIMING_LEDGER:-$REPO_ROOT/logs/test_suite_timing_ledger.tsv}" \
-      bash "$REPO_ROOT/scripts/test_suite_timing_ledger_write.sh" "$suite_batch"
-    rm -f "$suite_batch"
-    rm -f "$batch"
+        TEST_TIMING_LEDGER="${TEST_TIMING_LEDGER:-$REPO_ROOT/logs/test_timing_ledger.tsv}" \
+          bash "$REPO_ROOT/scripts/test_timing_ledger_write.sh" "$batch"
+        local suite_ended_ns suite_wall_sec sum_file_sec suite_batch
+        suite_ended_ns="$(date +%s%N)"
+        suite_wall_sec="$(awk -v a="$suite_started_ns" -v b="$suite_ended_ns" 'BEGIN {printf "%.3f", (b-a)/1000000000}')"
+        sum_file_sec="$(awk -F '\t' '{s+=$8} END {printf "%.3f", s+0}' "$batch")"
+        suite_batch="$(mktemp "${TMPDIR:-/tmp}/shogun-suite-timing.XXXXXX")"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\tpass\t%s\t%s\n' \
+          "$run_id" "${REPO_ROOT##*/}" "$commit_sha" "$mode" "$suite_wall_sec" \
+          "$sum_file_sec" "$total" "$source_fp" "$measured_at" >"$suite_batch"
+        TEST_SUITE_TIMING_LEDGER="${TEST_SUITE_TIMING_LEDGER:-$REPO_ROOT/logs/test_suite_timing_ledger.tsv}" \
+          bash "$REPO_ROOT/scripts/test_suite_timing_ledger_write.sh" "$suite_batch"
+        rm -f "$suite_batch" "$batch"
+    fi
     rm -f "$manifest" "$stats"
 
     if [ "$BATS_CACHE" = "1" ]; then
@@ -986,30 +990,12 @@ _run_tests_main() {
             ;;
         file)
             shift
-            if [[ -n "${RUN_TESTS_SELECTED_PATHS_FILE:-}" ]]; then
-                : > "$RUN_TESTS_SELECTED_PATHS_FILE"
-                printf '%s\n' "$@" >> "$RUN_TESTS_SELECTED_PATHS_FILE"
-            fi
-            # file mode is commonly invoked from a bats regression suite. Do
-            # not let the nested bats root inherit the outer root's formatter
-            # transport: otherwise nested TAP is counted as outer tests and
-            # bats reports "Executed N instead of expected M tests" even when
-            # both roots completed successfully.
-            env \
-                -u BATS_ROOT_PID \
-                -u BATS_RUN_TMPDIR \
-                -u BATS_SUITE_TMPDIR \
-                -u BATS_FILE_TMPDIR \
-                -u BATS_TEST_TMPDIR \
-                -u BATS_TEST_FILENAME \
-                -u BATS_TEST_NAME \
-                -u BATS_TEST_NUMBER \
-                -u BATS_SUITE_TEST_NUMBER \
-                -u BATS_TEST_FILE_NUMBER \
-                -u BATS_OUT \
-                -u BATS_TAP_OUTPUT \
-                -u RUN_TESTS_BATS_BIN \
-                "${RUN_TESTS_BATS_BIN:-bats}" "$@" --jobs "$JOBS" --timing 3>&-
+            test_files=("$@")
+            # Multiple files must use the same per-file process boundary as
+            # all/unit/affected. A single bats root shares formatter state and
+            # process-global fixture variables across files, producing
+            # order-dependent false failures in otherwise passing suites.
+            run_bats_files_parallel "${test_files[@]}"
             ;;
         affected)
             shift || true

@@ -26,15 +26,27 @@ SH
   git -C "$TMPROOT" commit -qm init
 }
 
-@test "nested aggregate runner fails closed while focused file mode remains allowed" {
+@test "nested aggregate runner fails closed while file mode isolates every selected file" {
   run env RUN_TESTS_ACTIVE=1 SHOGUN_HEAVY_JOB_LOCK_HELD=1 REPO_ROOT="$TMPROOT" \
     bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner all
   [ "$status" -eq 2 ]
   [[ "$output" == *"BLOCK: nested aggregate run_tests invocation"* ]]
 
+  export BATS_ARGS_LOG="$TMPROOT/file-mode.args"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$BATS_ARGS_LOG"
+printf '1..1\nok 1 sample in 5ms\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
   run env RUN_TESTS_ACTIVE=1 SHOGUN_HEAVY_JOB_LOCK_HELD=1 REPO_ROOT="$TMPROOT" PATH="$TMPROOT/bin:$PATH" \
-    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner file "$TMPROOT/tests/unit/sample.bats"
+    BATS_ARGS_LOG="$BATS_ARGS_LOG" BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner file \
+      "$TMPROOT/tests/unit/sample.bats" "$TMPROOT/tests/root_sample.bats"
   [ "$status" -eq 0 ]
+  [ "$(wc -l <"$BATS_ARGS_LOG")" -eq 2 ]
+  [ "$(grep -Fc "$TMPROOT/tests/unit/sample.bats" "$BATS_ARGS_LOG")" -eq 1 ]
+  [ "$(grep -Fc "$TMPROOT/tests/root_sample.bats" "$BATS_ARGS_LOG")" -eq 1 ]
 }
 
 teardown() { rm -rf "$TMPROOT"; }

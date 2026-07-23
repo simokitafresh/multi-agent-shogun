@@ -558,7 +558,7 @@ print(json.dumps({'transient':[p for p in new_tests if p not in persistent]}))
 PY
     )" || exit 2
     mapfile -t transient_tests < <(
-        python3 -c 'import json,sys; print(*json.loads(sys.argv[1])["transient"], sep="\n")' \
+        python3 -c 'import json,sys; [print(p) for p in json.loads(sys.argv[1])["transient"]]' \
             "$necessity_classification"
     )
     if ((${#transient_tests[@]})); then
