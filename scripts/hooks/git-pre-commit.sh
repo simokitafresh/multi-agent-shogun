@@ -22,7 +22,7 @@ source "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh"
 # One monotonic-in-process clock and one terminal receipt make every commit
 # diagnosable without adding external telemetry I/O to this hot path.
 declare -A _PRECOMMIT_STEP_MS=() _PRECOMMIT_STEP_RC=()
-_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax instruction_sync codd_context_freshness semantic)
+_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax instruction_sync context_metadata codd_context_freshness semantic)
 _PRECOMMIT_COMMAND_ID="${NINJA_COMMIT_COMMAND_ID:-${COMMAND_ID:-precommit-$$}}"
 _PRECOMMIT_STARTED_US="${EPOCHREALTIME/./}"
 _PRECOMMIT_TERMINAL_EMITTED=false
@@ -303,6 +303,35 @@ check_codd_context_freshness_pair() {
         echo "  action: inspect the source diff, update context/codd.md, and stage both in one commit" >&2
         return 1
     fi
+}
+
+context_freshness_excluded() {
+    local wanted="${1:-}" line
+    local exclude_file="$REPO_ROOT/config/context_freshness_excludes.txt"
+    [[ -f "$exclude_file" ]] || return 1
+    while IFS= read -r line; do
+        line="${line%%#*}"
+        line="${line#"${line%%[![:space:]]*}"}"
+        line="${line%"${line##*[![:space:]]}"}"
+        [[ -n "$line" ]] || continue
+        [[ "$line" == "$wanted" || "$line" == "${wanted##*/}" ]] && return 0
+    done < "$exclude_file"
+    return 1
+}
+
+check_staged_context_last_updated() {
+    local file header
+    while IFS= read -r file; do
+        [[ "$file" == context/*.md ]] || continue
+        [[ "${_STAGED_FILE_STATUS[$file]:-}" != D* ]] || continue
+        context_freshness_excluded "$file" && continue
+        header="$(git show ":$file" 2>/dev/null | sed -n '1,5p')"
+        if ! grep -qE '<!--[[:space:]]*last_updated:[[:space:]]*[0-9]{4}-[0-9]{2}-[0-9]{2}\b' <<<"$header"; then
+            echo "BLOCK(GA-318): $file lacks last_updated metadata in its first 5 lines" >&2
+            echo "  action: add <!-- last_updated: YYYY-MM-DD cmd_id --> after verifying the document" >&2
+            return 1
+        fi
+    done < <(list_staged_files)
 }
 
 infer_test_group_prefix() {
@@ -675,6 +704,13 @@ main() {
         else
             echo "  OK: generated instructions in sync."
         fi
+    fi
+    precommit_step_end 0
+
+    precommit_step_begin context_metadata
+    if ! check_staged_context_last_updated; then
+        precommit_step_end 1
+        exit 1
     fi
     precommit_step_end 0
 

@@ -1,5 +1,6 @@
 # 将軍 覚醒チェック — 軍師によるpost-/clear敵対的検証
 
+<!-- last_updated: 2026-07-23 cmd_karo_hotfix_context_freshness_ga318_20260723 -->
 <!-- origin: 殿指示2026-07-20「/clear後に軍師が将軍の覚醒レベルを確認」。読むだけでは覚醒しない(dialogue_over_countermeasure_20260720)ため、第三者(軍師)が第一反射を敵対的に検証し訂正する。訂正=覚醒の契機。 -->
 
 ## 原理（なぜこれが要るか）
