@@ -182,6 +182,14 @@ main() {
         exit 1
     }
 
+    # Bind the downstream notification to the exact generation validated above.
+    # inbox_write invokes the same gate for lifecycle enforcement; forwarding
+    # this fingerprint lets that invocation reuse the published validation.
+    # Any byte change after this point produces a mismatch and forces a full
+    # revalidation instead of reusing stale PASS state.
+    local validated_fingerprint
+    validated_fingerprint=$(sha256sum "$report_file" | awk '{print $1}')
+    GATE_VALIDATED_FINGERPRINT="$validated_fingerprint" \
     bash "$SCRIPT_DIR/scripts/inbox_write.sh" \
         karo \
         "${ninja_name}、任務完了。報告YAML確認されたし。" \
