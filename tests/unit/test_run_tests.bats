@@ -47,6 +47,16 @@ SH
   [ "$(wc -l <"$BATS_ARGS_LOG")" -eq 2 ]
   [ "$(grep -Fc "$TMPROOT/tests/unit/sample.bats" "$BATS_ARGS_LOG")" -eq 1 ]
   [ "$(grep -Fc "$TMPROOT/tests/root_sample.bats" "$BATS_ARGS_LOG")" -eq 1 ]
+
+  rm -f "$BATS_ARGS_LOG"
+  run env RUN_TESTS_ACTIVE=1 SHOGUN_HEAVY_JOB_LOCK_HELD=1 REPO_ROOT="$TMPROOT" PATH="$TMPROOT/bin:$PATH" \
+    BATS_ARGS_LOG="$BATS_ARGS_LOG" BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/logs/test_receipts" \
+    bash "$TMPROOT/scripts/run_tests.sh" file "$TMPROOT/tests/unit/sample.bats"
+  [ "$status" -eq 0 ]
+  receipt="$(find "$TMPROOT/logs/test_receipts" -name '*.json' -type f | head -1)"
+  [ -n "$receipt" ]
+  [ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["test_paths"][0])' "$receipt")" = "tests/unit/sample.bats" ]
 }
 
 teardown() { rm -rf "$TMPROOT"; }

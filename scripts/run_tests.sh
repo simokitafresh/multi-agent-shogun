@@ -343,6 +343,7 @@ run_bats_files_parallel() {
             -u BATS_OUT \
             -u BATS_TAP_OUTPUT \
             -u RUN_TESTS_BATS_BIN \
+            -u RUN_TESTS_SELECTED_PATHS_FILE \
             -u SHOGUN_HEAVY_JOB_LOCK_HELD \
             -u SHOGUN_HEAVY_JOB_ADMITTED \
             -u SHOGUN_HEAVY_JOB_TOKEN \
@@ -1290,13 +1291,13 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                 BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                     --summary-only --live-progress --receipt "$_receipt" -- \
                     timeout --signal=TERM --kill-after=5 "$_suite_timeout" \
-                    env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE= bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                    env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
             )
         else
             BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                 --summary-only --live-progress --receipt "$_receipt" -- \
                 timeout --signal=TERM --kill-after=5 "$_suite_timeout" \
-                env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE= bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
         fi
         _rc=$?
         set -e
