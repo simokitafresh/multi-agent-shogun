@@ -54,7 +54,7 @@ Bats直接実行は`run_timed_bats.sh`へ集約し、既存writerの14列台帳�
 
 Bats suiteの共有資源fixtureは、個別実行時間ではなくsuite内の同時実行競合でtiming ratchetを誤発火しうる。`run_tests.sh`の既存full aggregate weight分類へ対象fixtureを登録し、総並列度を保ったまま該当fixtureだけを排他実行する。対象5件のBLOCK 5→0、suite wall 32.416→13.700秒（-57.7%）、54/54 PASS・FAIL0・SKIP0。→ `scripts/run_tests.sh` / `tests/unit/test_run_tests.bats`（cmd_karo_ci_fix_timing_budget_ratchet_5files_202607161327、commit `b91b449d6`）
 
-Timing ratchetのファイル判定は全ファイルp95+最新単発値でなく、ファイル別履歴median+MAD分散マージンと直近5実測medianを使う。一時I/OスパイクはPASS、代表値シフトはBLOCK。→ `docs/research/cmd_4115_timing_ratchet_variance.md`
+Timing ratchetのファイル判定は全ファイルp95+最新単発値でなく、ファイル別履歴median+MAD分散マージンと直近5実測medianを使う。一時I/OスパイクはPASS、代表値シフトはBLOCK。仮説3テスト(test_three_layer_preflight/gist_verified_write/gate_yaml_field_set_block_sync)は現在BLOCK無し。現在の起動ゲートBLOCK原因はCase(a)本質遅化4テスト(ninja_scope_commit/cmd_complete_gate_small_consolidated/deploy_task_yaml_injection/inbox_write)。高速化cmd要。→ `docs/research/cmd_4115_timing_ratchet_variance.md`
 
 affected=0はheavy-job admission前にselectorを先行し、terminal receiptを保ったまま即returnする。非空selectionはmanifest固定してadmission後の再選択を防ぐ。248.660→1.81秒（-99.3%）、admission marker 0。→ `docs/research/cmd_4110_admission_affected_zero.md`
 
