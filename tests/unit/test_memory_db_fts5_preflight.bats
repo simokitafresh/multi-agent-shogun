@@ -88,7 +88,7 @@ PY
 }
 
 @test "missing agent identity and missing target schema fail closed with zero rows" {
-  run python3 "$SCRIPT" "$DB" alpha
+  run env -u TMUX_PANE python3 "$SCRIPT" "$DB" alpha
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 

@@ -12,6 +12,7 @@ import hashlib
 import os
 import re
 import sqlite3
+import subprocess
 import sys
 from pathlib import Path
 
@@ -24,6 +25,27 @@ CDP_TERMS = ("cdp", "getcomputedstyle", "remote-debugging")
 
 def has_cjk(text: str) -> bool:
     return bool(CJK_RE.search(text))
+
+
+def resolve_agent_id(explicit: str = "") -> str:
+    candidate = explicit.strip()
+    if AGENT_ID_RE.fullmatch(candidate):
+        return candidate
+    pane = os.environ.get("TMUX_PANE", "").strip()
+    if not pane:
+        return ""
+    try:
+        result = subprocess.run(
+            ["tmux", "display-message", "-t", pane, "-p", "#{@agent_id}"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=1,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    candidate = result.stdout.strip()
+    return candidate if AGENT_ID_RE.fullmatch(candidate) else ""
 
 
 def cjk_char_group(ch: str) -> str:
@@ -241,11 +263,11 @@ def main() -> int:
         target_count, false_positive = migrate_skill_metadata(db_path)
         print(f"targets={target_count}\tfalse_positive={false_positive}")
         return 0 if false_positive == 0 else 1
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 3:
         return 0
     db_path = resolve_db_path(Path(sys.argv[1]))
     query = sys.argv[2].strip()
-    agent_id = sys.argv[3].strip()
+    agent_id = resolve_agent_id(sys.argv[3] if len(sys.argv) >= 4 else "")
     if not db_path.exists() or not query or not AGENT_ID_RE.fullmatch(agent_id):
         return 0
 
