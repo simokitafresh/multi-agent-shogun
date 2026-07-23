@@ -155,7 +155,17 @@ echo "★★★ infra/scripts変更: binary_checks=yesを鵜呑みにするな�
 # ─── SG-PRE1: gate_report_format.sh ───
 echo ""
 echo "■ SG-PRE1: gate_report_format.sh"
-if GATE_NO_LOG=1 SHOGUN_DISABLE_MEMORY_DB_CACHE=1 bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT_PATH" 2>/dev/null; then
+_PRE1_REPORT_FP="$(sha256sum "$REPORT_PATH" 2>/dev/null | awk '{print $1}')"
+_PRE1_VALIDATED_FP=""
+if [ -n "$_PRE1_REPORT_FP" ] &&
+   [ -f "${REPORT_PATH}.validated_fingerprints" ] &&
+   grep -qxF "$_PRE1_REPORT_FP" "${REPORT_PATH}.validated_fingerprints"; then
+    _PRE1_VALIDATED_FP="$_PRE1_REPORT_FP"
+fi
+if GATE_NO_LOG=1 \
+   GATE_VALIDATED_FINGERPRINT="$_PRE1_VALIDATED_FP" \
+   SHOGUN_DISABLE_MEMORY_DB_CACHE=1 \
+   bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT_PATH" 2>/dev/null; then
     echo "  PASS"
 else
     echo "  FAIL — フォーマット不備あり。詳細は上記出力参照"

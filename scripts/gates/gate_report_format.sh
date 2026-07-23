@@ -34,6 +34,20 @@ _gate_receipt_phase() {
         "$_phase" "$_wall" "${GATE_CALLER:-gate_report_format}" "${GATE_OWNER_PID:-$$}" "${_fp:-missing}" >>"$_GATE_RECEIPT"
 }
 
+# A caller that already observed this exact content in the validated-generation
+# cache may reuse it before joining the single-flight lock.  The previous order
+# checked this only after flock, so a PASS already published by the leader could
+# still make Gunshi wait 30 seconds and falsely FAIL on timeout.
+_GATE_FP_CACHE="${GATE_FINGERPRINT_CACHE_FILE:-${REPORT_PATH}.validated_fingerprints}"
+if [ -n "${GATE_VALIDATED_FINGERPRINT:-}" ]; then
+    _gate_current_fingerprint="$(sha256sum "$REPORT_PATH" | awk '{print $1}')"
+    if [ "$_gate_current_fingerprint" = "$GATE_VALIDATED_FINGERPRINT" ] &&
+       [ -f "$_GATE_FP_CACHE" ] && grep -qxF "$GATE_VALIDATED_FINGERPRINT" "$_GATE_FP_CACHE"; then
+        echo "PASS (fingerprint reuse)"
+        exit 0
+    fi
+fi
+
 # One report has one validation leader. Concurrent callers join before cache
 # inspection instead of launching duplicate autofix/git processes.
 _GATE_SINGLEFLIGHT_LOCK="${REPORT_PATH}.gate.lock"
@@ -47,19 +61,6 @@ if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
     }
 fi
 _gate_receipt_phase singleflight_wait "$_GATE_WAIT_STARTED"
-
-# A caller that just validated/notified this exact content may pass the
-# fingerprint back. Exact content identity makes a second Python gate run
-# redundant; a mismatch falls through to the full gate.
-_GATE_FP_CACHE="${GATE_FINGERPRINT_CACHE_FILE:-${REPORT_PATH}.validated_fingerprints}"
-if [ -n "${GATE_VALIDATED_FINGERPRINT:-}" ]; then
-    _gate_current_fingerprint="$(sha256sum "$REPORT_PATH" | awk '{print $1}')"
-    if [ "$_gate_current_fingerprint" = "$GATE_VALIDATED_FINGERPRINT" ] &&
-       [ -f "$_GATE_FP_CACHE" ] && grep -qxF "$GATE_VALIDATED_FINGERPRINT" "$_GATE_FP_CACHE"; then
-        echo "PASS (fingerprint reuse)"
-        exit 0
-    fi
-fi
 
 # executor帰属: 報告YAMLのworker_idを読取り(CLI非依存)
 _REPORT_EXECUTOR="${AGENT_ID:-}"
