@@ -153,10 +153,10 @@ def parse_skip_count(text: str) -> int:
     matches = numeric_matches(
         non_tap_text,
         (
-            r"(\d+)\s+(?:tests?\s+)?skipped\b",
-            r"(\d+)\s+(?:tests?\s+)?skips?\b",
-            r"skipped:\s*(\d+)\b",
-            r"skips?:\s*(\d+)\b",
+            r"^\s*Tests:\s+.*?\b(\d+)\s+skipped(?:,|$)",
+            r"^\s*=+.*?\b(\d+)\s+skipped(?:,|=)",
+            r"^\s*(\d+)\s+skipped\s*$",
+            r"^\s*skips?:\s*(\d+)\s*$",
         ),
     )
 
@@ -174,14 +174,15 @@ def parse_skip_count(text: str) -> int:
 
 
 def parse_fail_count(text: str) -> int:
+    non_tap_text = _filter_tap_lines(text)
     matches = numeric_matches(
-        text,
+        non_tap_text,
         (
-            r"(\d+)\s+(?:tests?\s+)?failed\b",
-            r"(\d+)\s+(?:test suites?\s+)?failed\b",
-            r"(\d+)\s+failures?\b",
-            r"failed:\s*(\d+)\b",
-            r"failures?:\s*(\d+)\b",
+            r"^\s*Tests:\s+.*?\b(\d+)\s+failed(?:,|$)",
+            r"^\s*=+.*?\b(\d+)\s+failed(?:,|=)",
+            r"^\s*(\d+)\s+failed(?:,\s*\d+\s+(?:passed|skipped))*\s*$",
+            r"^\s*(?:failed|failures?):\s*(\d+)\s*$",
+            r"^\s*FAILED\s+\([^)]*failures=(\d+)",
         ),
     )
 
@@ -192,7 +193,7 @@ def parse_fail_count(text: str) -> int:
     if matches:
         return max(matches)
 
-    if re.search(r"(?im)^\s*FAIL(?:ED)?\b", text) or re.search(r"\bFAILED\b", text):
+    if re.search(r"(?im)^\s*FAIL(?:ED)?(?:\s|:|$)", non_tap_text):
         return 1
 
     return 0

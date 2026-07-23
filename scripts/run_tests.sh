@@ -650,9 +650,13 @@ try:
         if not isinstance(m,dict) or set(m) != {'cache','commit_sha','selector_input_fingerprint','selected_paths_fingerprint','estimated_cost'}:
             raise ValueError('run_manifest')
     actual=hashlib.sha256(open(d['artifact'],'rb').read()).hexdigest()
+    counts_valid=(
+        (d['declared_test_count'] > 0 and d['observed_test_count'] == d['declared_test_count'])
+        or (d['declared_test_count'] == 0 and d['observed_test_count'] == 0 and not d['test_paths'])
+    )
     valid=(actual == d['output_sha256'] and d['complete'] is True and
            d['result'] == 'PASS' and d['rc'] == 0 and d['skip_count'] == 0 and
-           (d['declared_test_count'] == 0 or d['observed_test_count'] == d['declared_test_count']))
+           counts_valid)
     if not valid: raise ValueError('terminal contract')
 except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
     print(f'RECEIPT_FAIL {exc}', file=sys.stderr); raise SystemExit(1)
@@ -760,7 +764,7 @@ selection_manifest_for_singleflight() {
 
 publish_run_tests_metadata() {
     python3 - "$1" "$2" "$3" "$4" <<'PY'
-import hashlib, json, os, sys, tempfile
+import hashlib, json, os, re, sys, tempfile
 path, head, paths_file, selector_input_fp=sys.argv[1:]
 d=json.load(open(path, encoding='utf-8'))
 paths=[]
@@ -777,16 +781,37 @@ d.update(version=3, source_head=head, test_paths=paths,
 artifact=d.get('artifact', '')
 p9={'persistent': False, 'probe_timeout_sec': None, 'pids': []}
 try:
-    with open(artifact, encoding='utf-8', errors='replace') as fh:
-        for line in fh:
+    artifact_text=open(artifact, encoding='utf-8', errors='replace').read()
+    for line in artifact_text.splitlines():
             if line.startswith('DRVFS_P9_STATE '):
                 fields=dict(item.split('=',1) for item in line.split()[1:] if '=' in item)
                 p9['persistent']=fields.get('persistent') == '1'
                 p9['probe_timeout_sec']=int(fields['probe_timeout_sec'])
                 p9['pids']=[] if fields.get('pids') == 'none' else fields.get('pids','').split(',')
+    # External project runners (notably Jest) do not emit TAP, so the generic
+    # receipt wrapper cannot count them.  Adopt Jest's terminal summary into
+    # the same declared/observed/skip contract before the receipt is verified.
+    clean=re.sub(r'\x1b\[[0-9;]*m', '', artifact_text)
+    jest=list(re.finditer(
+        r'^Tests:\s+(?:(\d+)\s+failed,\s*)?(?:(\d+)\s+skipped,\s*)?'
+        r'(?:(\d+)\s+passed,\s*)?(\d+)\s+total\s*$',
+        clean, re.MULTILINE,
+    ))
+    if jest:
+        failed, skipped, passed, total=(int(value or 0) for value in jest[-1].groups())
+        d['declared_test_count']=total
+        d['observed_test_count']=failed + skipped + passed
+        d['skip_count']=skipped
 except (OSError, ValueError):
     pass
 d['drvfs_p9_client_rpc']=p9
+# A selected test scope with no observable test is never a successful test run.
+# Empty selection remains valid only for explicit affected=0 fast exits.
+if paths and d.get('rc') == 0 and (
+    d.get('declared_test_count', 0) == 0 or d.get('observed_test_count', 0) == 0
+):
+    d['rc']=2
+    d['result']='FAIL'
 fd,tmp=tempfile.mkstemp(prefix='.run_tests_receipt.', dir=os.path.dirname(path) or '.')
 with os.fdopen(fd,'w',encoding='utf-8') as fh:
     json.dump(d,fh,sort_keys=True); fh.write('\n'); fh.flush(); os.fsync(fh.fileno())

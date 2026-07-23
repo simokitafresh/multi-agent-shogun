@@ -217,8 +217,10 @@ def _filter_tap_lines(text: str) -> str:
 def parse_skip_count(text: str) -> int:
     non_tap_text = _filter_tap_lines(text)
     matches = []
-    for pat in (r"(\d+)\s+(?:tests?\s+)?skipped\b", r"(\d+)\s+(?:tests?\s+)?skips?\b",
-                r"skipped:\s*(\d+)\b", r"skips?:\s*(\d+)\b"):
+    for pat in (r"^\s*Tests:\s+.*?\b(\d+)\s+skipped(?:,|$)",
+                r"^\s*=+.*?\b(\d+)\s+skipped(?:,|=)",
+                r"^\s*(\d+)\s+skipped\s*$",
+                r"^\s*skips?:\s*(\d+)\s*$"):
         for m in re.finditer(pat, non_tap_text, flags=re.IGNORECASE | re.MULTILINE):
             try: matches.append(int(m.group(1)))
             except Exception: pass
@@ -234,15 +236,18 @@ def parse_fail_count(text: str) -> int:
     # 除外しないと「ok 265 failed AC count command...」等のテスト名が誤マッチする。
     non_tap_text = _filter_tap_lines(text)
     matches = []
-    for pat in (r"(\d+)\s+(?:tests?\s+)?failed\b", r"(\d+)\s+(?:test suites?\s+)?failed\b",
-                r"(\d+)\s+failures?\b", r"failed:\s*(\d+)\b", r"failures?:\s*(\d+)\b"):
+    for pat in (r"^\s*Tests:\s+.*?\b(\d+)\s+failed(?:,|$)",
+                r"^\s*=+.*?\b(\d+)\s+failed(?:,|=)",
+                r"^\s*(\d+)\s+failed(?:,\s*\d+\s+(?:passed|skipped))*\s*$",
+                r"^\s*(?:failed|failures?):\s*(\d+)\s*$",
+                r"^\s*FAILED\s+\([^)]*failures=(\d+)"):
         for m in re.finditer(pat, non_tap_text, flags=re.IGNORECASE | re.MULTILINE):
             try: matches.append(int(m.group(1)))
             except Exception: pass
     bats_fails = len(re.findall(r"(?im)^\s*not ok\b(?!.*#\s*skip\b)", text))
     if bats_fails: matches.append(bats_fails)
     if matches: return max(matches)
-    if re.search(r"(?im)^\s*FAIL(?:ED)?\b", non_tap_text) or re.search(r"\bFAILED\b", non_tap_text): return 1
+    if re.search(r"(?im)^\s*FAIL(?:ED)?(?:\s|:|$)", non_tap_text): return 1
     return 0
 
 

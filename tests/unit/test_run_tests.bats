@@ -39,6 +39,56 @@ SH
 
 teardown() { rm -rf "$TMPROOT"; }
 
+# test_necessity: External Jest output must publish its real terminal count and a selected external scope may never pass as 0/0.
+@test "external Jest receipt adopts summary counts and fails closed when summary is absent" {
+  receipt="$TMPROOT/logs/external.json"
+  artifact="$TMPROOT/logs/external.output"
+  paths="$TMPROOT/logs/external.paths"
+  head="$(git -C "$TMPROOT" rev-parse HEAD)"
+  printf 'external-project:%s\n' "$TMPROOT" >"$paths"
+  printf 'Test Suites: 21 passed, 21 total\nTests:       126 passed, 126 total\nSnapshots:   0 total\n' >"$artifact"
+  python3 - "$receipt" "$artifact" <<'PY'
+import hashlib, json, sys
+path, artifact = sys.argv[1:]
+raw = open(artifact, 'rb').read()
+json.dump({
+    "version": 2, "complete": True, "result": "PASS", "rc": 0,
+    "duration_ms": 1, "output_sha256": hashlib.sha256(raw).hexdigest(),
+    "declared_test_count": 0, "observed_test_count": 0, "skip_count": 0,
+    "artifact": artifact, "signal": None, "command": ["jest"],
+}, open(path, "w"))
+PY
+
+  run env REPO_ROOT="$TMPROOT" bash -c '
+    source "$1/scripts/run_tests.sh"
+    publish_run_tests_metadata "$2" "$3" "$4" selector
+    verify_run_tests_receipt "$2"
+  ' _ "$TMPROOT" "$receipt" "$head" "$paths"
+  [ "$status" -eq 0 ]
+  [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["observed_test_count"])' "$receipt")" -eq 126 ]
+  [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["declared_test_count"])' "$receipt")" -eq 126 ]
+
+  printf 'runner completed without a parseable summary\n' >"$artifact"
+  python3 - "$receipt" "$artifact" <<'PY'
+import hashlib, json, sys
+path, artifact = sys.argv[1:]
+raw = open(artifact, 'rb').read()
+json.dump({
+    "version": 2, "complete": True, "result": "PASS", "rc": 0,
+    "duration_ms": 1, "output_sha256": hashlib.sha256(raw).hexdigest(),
+    "declared_test_count": 0, "observed_test_count": 0, "skip_count": 0,
+    "artifact": artifact, "signal": None, "command": ["external-runner"],
+}, open(path, "w"))
+PY
+  run env REPO_ROOT="$TMPROOT" bash -c '
+    source "$1/scripts/run_tests.sh"
+    publish_run_tests_metadata "$2" "$3" "$4" selector
+    verify_run_tests_receipt "$2"
+  ' _ "$TMPROOT" "$receipt" "$head" "$paths"
+  [ "$status" -ne 0 ]
+  [ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$receipt")" -eq 2 ]
+}
+
 # test_necessity: explicit all mode must include both unit and root-level bats files; omission silently weakens the full checkpoint.
 @test "explicit all mode includes both unit and root-level bats files" {
   export BATS_ARGS_LOG="$TMPROOT/bats.args"
