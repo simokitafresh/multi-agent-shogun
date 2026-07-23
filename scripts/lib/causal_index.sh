@@ -61,8 +61,16 @@ build_index() {
     fi
     tmp="$(mktemp "${cache}.tmp.XXXXXX")"
 
+    # 一時worktree/cloneディレクトリを除外(2026-07-23 将軍が実測7-8s/lookupを解剖)。
+    # 各worktree/cloneはリポジトリ全体のコピーで、同一[[リンク]]を数十重複させ因果索引を汚染し、
+    # rg走査を7-8sへ肥大化させていた(Guard18が全Edit毎にlookupを呼ぶため、[[リンク]]を含む
+    # docへのEditが毎回7-8s課金)。正本[[リンク]]源はdocs/context/projects/memory/scripts等の
+    # 非隠しディレクトリのみ。worktree/cloneはトップレベルの隠しディレクトリ(.始まり)として
+    # 生成されるため、'!.*/**'で名前を直書きせず一括除外する(操作的オントロジー: エージェント名非依存)。
+    # queue/campaign_lane配下はshard workdirのclone置き場のため個別除外。
     "$_CI_RG" --hidden --no-heading --line-number --glob '!.git/**' --glob '!node_modules/**' \
         --glob '!logs/**' --glob '!data/**' --glob '!.cache/**' \
+        --glob '!.*/**' --glob '!queue/campaign_lane/**' \
         '\[\[[^\[\]]+\]\]' "$SCRIPT_DIR" \
         | awk -v root="$SCRIPT_DIR/" '
             {

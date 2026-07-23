@@ -1,6 +1,54 @@
-# DM-Signal page style MECE v2 — 全21 page × A–L
+# DM-Signal page style MECE v2 — 全21 page × A–L 12軸 スタイル統一設計書
 
-検証日: 2026-07-22。一次情報root: `/mnt/c/Python_app/DM-signal/frontend`。6断片の詳細を保持し、本書は21 pageの検索索引兼統合判定とする。
+> ★このドキュメントを初めて読むLLM/人へ: まず本§METAを最後まで読め。前提を飛ばすと必ず誤解する。特に「測定はgrep禁止・CDP必須」「canonical(正)は殿裁定で確定済み」の2点を外すと過去の事故(本番色崩れ・フォント不統一)を再生産する。
+
+## §META — 前提情報(5W1H) / AsIs-ToBe / バージョン / 索引
+
+### バージョン履歴
+| ver | 日付 | 転換点 | 誰の裁定 |
+|---|---|---|---|
+| v1 | 2026-07-22 | 全21page×A-L 12軸=252セルのMECE差分マトリクスを初版化 | 殿 |
+| v2.0 | 2026-07-22 | §6実装粒度ブレークダウン(1cmd=1忍者)+§6.1コンポーネント×属性カバレッジ表を追加(A4/B1が対象表未明示で4表取りこぼした反省) | 殿裁定「粒度を小さく」 |
+| **v2.1** | **2026-07-23** | **測定方式をソースgrep一次 → 本番CDP getComputedStyle一次へ転換(grepは描画を見ないため誤検出)。役割別粒度(ヘッダ/本体数値/本体文字)導入。色/フォントcanonicalを殿裁定で明示固定。§META(前提)追加** | 殿指摘「grepは見落とすぞ」「前提がないと誤解が生まれる」 |
+
+### 5W1H(この設計書の前提)
+- **Why(なぜ存在するか)**: DM-Signal本番FEの全21ページで、表・見出し・色・余白等のスタイルがページ/コンポーネントごとにバラバラ。殿が本番ライブレビューで不統一を繰り返し検出。場当たり修正では取りこぼす(1ページに複数コンポーネントの表が同居し、ページ名だけ見ると別componentの表を見落とす)ため、全数を軸×コンポーネント×属性×役割のマトリクスで管理し、取りこぼし0を実測証明する。
+- **What(何を統一するか)**: 21ページを12軸(A typography / B color / C spacing / D card / E table / F interaction / G chart / H header / I states / J responsive / K viewport-color / L copy)で全数統一。
+- **Who(誰が何を)**: 将軍=canonical確定(殿裁定を仰ぐ)+本番CDP実測(偵察入口・検証出口)。家老=cmd配備判断とGATE。忍者=コード実装+jest/tscで完結(per-task CDP禁止)。軍師=レビュー。
+- **When(いつ)**: 2026-07-22起票、継続中。各軸は独立cmdで順次。
+- **Where(どこが一次情報か)**: コード=`/mnt/c/Python_app/DM-signal/frontend`。**描画の真実=本番`https://dm-signal-frontend.onrender.com`のCDP getComputedStyle(ソースコードのclassnameではない)**。6断片の行番号詳細=`docs/research/fragments/mece_v2_{hayate,hanzo,kagemaru,kotaro,saizo,tobisaru}_20260722.md`。
+- **How(どう測り、どう完了とするか)**: 測定は本番CDP getComputedStyle(§6.1手順)。**grepは○/×判定に使うな**(CSS継承/上書き/グループセレクタ/条件分岐class/semantic tokenを見ず、ソース文字列≠描画フォント)。完了=CDP実測で逸脱0を全数証明+本番デプロイ後に将軍が全数実物確認。
+
+### canonical(正=殿裁定で確定済み。統一の基準はこれ。多数決・既存踏襲で決めるな)
+| 対象 | canonical | 裁定 |
+|---|---|---|
+| 表本体・数値 | **14px / ui-monospace / tabular-nums** | 殿 2026-07-23 10:15 |
+| 表本体・文字(ラベル) | **14px / Inter** | 殿 2026-07-23 10:15 |
+| 表ヘッダ | **14px / Inter** | 殿 2026-07-23 10:15 |
+| 値の色(getValueColorClass) | 正値=**text-foreground**(light黒寄り#0f172a/dark白#f8fafc) / 負値=text-red-400(両モード) / 0・null=空文字 | 殿 2026-07-23 01:05(★00:45暫定のdark:emerald-400は失効) |
+| status色バッジ(STATUS_TEXT_CLASSES) | 正=emerald-400/負=red-400/warning=amber-400/neutral=muted-foreground。★**値の色とは別物。混同禁止** | cmd_4120 |
+| page-title h1 | `text-2xl md:text-3xl font-bold tracking-tight text-foreground` | cmd_4115 |
+| 統一対象外(例外) | アイコン役割(deteriorationの方向矢印↘↓→ text-lg色付き)は数値/文字でなくアイコンゆえ除外 | 実装者判断+殿確認 |
+
+### AsIs → ToBe(2026-07-23時点)
+- **AsIs**: A軸(typography)完遂=本番LIVE。B軸=B1 status色/K軸viewport色/値の色(cmd_4124)完了。表フォント14px統一=cmd_4127で6表修正+本番CDP検証済、cmd_4128でup-down-market-chart回収中。B2/B3(色)・C(余白)・D(card)・E(表構造)・F(interaction)・G(chart)・H(header)・I(states)・J(responsive)・L(copy)=未着手または偵察のみ。
+- **ToBe**: 全12軸×全コンポーネント×全属性が、上記canonicalへ本番CDP実測で逸脱0。1ページ複数表もCDP DOM文脈で各表の実体componentを特定して全数カバー。
+
+### 索引(§一覧)
+| § | 内容 | 用途 |
+|---|---|---|
+| §0 | Route inventory 21/21 | 全ページ列挙(取りこぼし防止の母数) |
+| §1 | Axes A–L 定義 | 12軸の意味 |
+| §2 | Main matrix 21×12=252 | 軸×ページの差分一覧 |
+| §2.5 | Viewport state-color差分 | PC/mobile色差(K軸詳細) |
+| §2.6 | Explanatory-copy/note/legend差分 | L軸詳細 |
+| §3 | Unified design candidates | 統一案 |
+| §4 | CE/ME/numeric verification | 断片突合・再検証 |
+| §5 | Causal links | 因果 |
+| §6 | 実装粒度ブレークダウン(A1-L1) | 1cmd=1忍者のサブタスク+状態/cmd |
+| **§6.1** | **コンポーネント×属性×役割カバレッジ(CDP実測)** | **フォント/色の逸脱を本番CDPで全数記録。測定手順も内包** |
+
+一次情報root: `/mnt/c/Python_app/DM-signal/frontend`。本書は21 pageの検索索引兼統合判定。gist正本=`c50699ea4e13d003a7864996b93ba19f`(gist_verified_write.shでバイト一致検証)、三層記憶=knowledge:7e967b43(CDP実測基盤)/70cfc7e4(§6.1改訂)/9d1f8e19(cmd_4127出口検証)。
 
 ## §0 Route inventory — 21/21
 
@@ -193,3 +241,94 @@ origin: `[[殿指示_デザイン統一_20260722]] -> [[6断片_A_L全数調査]
 viewport-origin: `[[Rolling_distribution_mobile_helper欠落]] -> [[PC_mobile状態色不一致]] -> [[共通cell_renderer提案]]`  
 copy-origin: `[[caption不在_notes分散]] -> [[L軸全数抽出]] -> [[DataNote_Legend_caption_token提案]]`
 reverify-origin: `[[三分割252セル再検証]] -> [[要素種別_所在混同11件]] -> [[MECE正本訂正11_252]]`
+
+## §6 実装粒度ブレークダウン(殿裁定2026-07-22: 実装イメージで粒度を小さく)
+
+各軸を「1cmd=1忍者で実装可能なサブタスク」へ細分化。CDPは各サブタスクの本番デプロイ後1回のみ(per-task CDP禁止)、実装はコード現読+jest。基本形=Monthly Returns。既存資産を再利用(車輪の再発明防止): 色=`frontend/lib/colors.ts`、見出し器=`components/ui/page-header.tsx`。
+
+| ID | 軸 | サブタスク | 基準/SSOT | 状態/cmd |
+|---|---|---|---|---|
+| A1 | A typo | page-title h1 class統一 | canonical `text-2xl md:text-3xl font-bold tracking-tight text-foreground` | ✅完了 cmd_4115 |
+| A2 | A typo | section見出しh2/h3を`section-heading`(text-lg semibold foreground)へ | Monthly Returns h2 | ✅完了 cmd_4116 |
+| A3 | A typo | インラインh1(12ページ)→page-header.tsx/共有定数へDRY(12→1) | page-header.tsx | ✅完了 cmd_4117 |
+| A4 | A typo | body=text-sm/caption=text-xs muted/numeric=font-mono text-sm tabular-nums。★font-size/family統一はgrep不可→CDP実測必須(§6.1参照)。cmd_4119は一部表のみ、CDP実測で残存6表判明→cmd_4127/4128で全数化 | Monthly Returns | ✅完了 cmd_4119+4122+4127(本番CDP検証済)、cmd_4128(up-down-market回収中) |
+| B1 | B color | **status色**shade統一(STATUS_TEXT_CLASSESバッジ): 負値=text-red-400/正値=text-emerald-400/warning=amber-400/neutral=muted-foreground、colors.ts SSOT。⚠️**値の色(getValueColorClass)はstatus色と別ルール→B1-value参照。混同禁止** | colors.ts | ✅cmd_4120完了 |
+| B1-value | B color | **値の色**(数値表示getValueColorClass): 正値=`text-foreground`(light黒寄り#0f172a/dark白#f8fafc)/負値=`STATUS_TEXT_CLASSES.negative`(text-red-400,両モード)/0・null=空文字。**殿裁定2026-07-23T01:05『ダークモードは正の値は白の文字色、ライトモードでは黒に近い色。マイナスは赤』(★同日00:45の暫定`text-foreground dark:text-emerald-400`は01:05裁定で失効。dark emeraldは付与しない)**。統一cmdは値色にstatus色のemeraldを流用するな(cmd_4122がemerald固定にしlightで緑発光→本番色崩れ→cmd_4124で修正。ui-design-guide L27/L57: 18px以下は4.5:1、白背景×emerald-400≈1.6:1でガイド違反) | colors.ts getValueColorClass | ✅cmd_4124本番LIVE |
+| B2 | B color | chart等のinline hex(#3B82F6等8色)→colors.ts定数/semantic tokenへ | colors.ts | 未 |
+| B3 | B color | border/background色をsemantic token(border/bg-card/muted等)へ統一 | tailwind semantic token | 未 |
+| C1 | C spacing | shell padding `p/px-4 md:p/px-8` 統一 | Monthly Returns shell | 未 |
+| C2 | C spacing | cell density(py/px)を named token化 | — | 未 |
+| C3 | C spacing | section間gap統一(space-y) | — | 未 |
+| D1 | D card | 等価データ面のbare/card混在→`DataSection surface=bare|card` | — | 未 |
+| D2 | D card | radius/shadow/elevation token統一 | GlassCard基準 | 未 |
+| E1 | E table | header/row/cell構造を`TableShell`へ共通化 | Monthly Returns table | 未 |
+| E2 | E table | sticky/hide/mobile-dual policyを命名(critical-column) | — | 未 |
+| E3 | E table | numeric format(小数桁/%/+-記号)統一 | — | 未 |
+| F1 | F interaction | touch target 48px floor(mobile) | — | 未 |
+| F2 | F interaction | focus/hover/link-underline contract | — | 未 |
+| G1 | G chart | shared ChartTooltip/Axis/Legend抽出 | — | 未 |
+| G2 | G chart | chart palette→colors.ts SSOT | colors.ts | 未 |
+| H1 | H header | header 4系統→slotted PageHeader一本化 | page-header.tsx | 未(A3と関連) |
+| H2 | H header | PageNavigation null/route policy | — | 未 |
+| I1 | I states | loading/empty/error→`PageState` variants | — | 未 |
+| I2 | I states | reserved-height token(CLS防止) | — | 未 |
+| J1 | J responsive | hide/scroll/dual-mobile policyを named data-surface化 | — | 未 |
+| K1 | K vp-color | mobile二重実装テーブルのgetValueColor SSOT適用(負値=赤) | colors.ts getValueColorClass | ✅本番LIVE cmd_4118 |
+| L1 | L copy | notes/legend/captionを`DataNote`/`Legend`/semantic caption tokenへ | — | 未 |
+
+**配備順序の原則**: 実害バグ(K済) > A軸完遂(A2-A4進行中) > B色(B1 status統一が高頻度=次) > E表 > 他。各サブタスクは独立cmd化し、同一component衝突時のみdepends_onで直列化。
+
+impl-granularity-origin: `[[殿裁定_実装粒度細分化_20260722]] -> [[MECE_§3が1軸1行で粗い]] -> [[§6実装サブタスク表A1-L1へ細分]]`
+
+## §6.1 コンポーネント単位カバレッジ表(殿裁定2026-07-22: §6でもまだ粗い→取りこぼしが見える粒度へ)
+
+**教訓**: §6のA4「body/numeric token」は「13表のうち何表か」を明示せず、cmd_4119が4表(compare-returns/compare-summary/drawdowns/risk-management)を取りこぼした。殿の本番ライブレビューで露出=深掘り不足(全数網羅の甘さ)の再現。**対策=各サブタスクをコンポーネント×属性のマトリクスまで下げ、全対象を明示列挙して取りこぼしをgrepで0証明する。** 未列挙=対象外を意味しない、必ず全数を列挙せよ。
+
+### 【廃止】旧・数値font-m/色 grepカバレッジ表(将軍grep実測 2026-07-22)
+
+> ⚠️**この旧grep表は2026-07-23に廃止**(下記CDP実測表が正)。廃止理由: grepの`✅(N)`はソースにfont-monoが「N回書かれている」だけで、実際に**全数値セルに描画されているか**を保証しない。実証=rolling-returns-summary-tableはgrep`✅(12)`だったが本番CDP getComputedStyleで数値48セルがプロポーショナル(等幅漏れ)だった。またこの13表リストは**up-down-market-chart(/metricsのUp vs Down Market表)を含まず**、その数値等幅漏れを構造的に見落とした(cmd_4128で回収)。grep件数を○/×判定に使うと必ず取りこぼす。
+
+### 数値表示テーブル × フォント属性(本番CDP getComputedStyle実測 2026-07-23)【正】
+
+canonical=本体数値14px/ui-monospace/tabular-nums、本体文字14px/Inter、ヘッダ14px。逸脱=canonicalからの計算済みスタイルのズレ(役割別)。
+
+| # | コンポーネント | 出現ページ | CDP実測(デプロイ後) | 逸脱内容 | cmd |
+|---|---|---|---|---|---|
+| 1 | rolling-returns-summary-table | /rolling-returns | ✅canonical | (旧)数値48セル等幅漏れ→修正 | cmd_4127 本番CDP検証済 |
+| 2 | rolling-returns-distribution-table | /rolling-returns | ✅canonical | — | cmd_4122/4127 |
+| 3 | deterioration表 | /deterioration | ✅canonical | (旧)カテゴリ小ラベル12px→14px。方向矢印18pxはアイコン除外(意図的) | cmd_4127 本番CDP検証済 |
+| 4 | up-down-market-chart表 | /metrics(t1) | 🔄回収中 | 数値セル等幅漏れ(font-mono 0件)。cmd_4127が対象漏れ(実体がmetrics-tableでなくup-down-market-chart) | cmd_4128 |
+| 5 | annual-returns-table | /annual-returns | ✅canonical | col0の年号(2025等)はデータでなく行ラベル→Inter正当(偽陽性でない) | cmd_4122/4127 |
+| 6 | monthly-returns-table | /monthly-returns | ✅canonical | col0の年号/月ラベルはInter正当 | cmd_4122/4127 |
+| 7 | monthly-trade-table | /monthly-trade | ✅canonical | '---'プレースホルダは数値でない(偽陽性) | cmd_4122/4127 |
+| 8 | metrics-table(t0) | /metrics | ✅canonical | — | cmd_4122 |
+| 9 | summary-table | /summary | ✅canonical | — | cmd_4122 |
+| 10 | drawdowns-table | /drawdowns | ✅canonical | — | cmd_4122 |
+| 11 | compare-returns-table | /compare-returns | ✅canonical | — | cmd_4122 |
+| 12 | compare-summary-table | /compare-summary | ✅canonical | — | cmd_4122 |
+| 13 | risk-management-table | (risk管理面) | 要CDP実測 | 旧grepでgetValueColor7+基準外混在。CDPで再測要 | cmd_4122 |
+| 14 | model-trades-table | /trades | 要CDP実測 | 旧grep✅(5)。CDPで再測要 | cmd_4122 |
+| 15 | mtd-daily-table | /mtd | 要CDP実測 | 旧grep✅(6)。CDPで再測要 | cmd_4122 |
+
+**教訓(cmd_4128で確定)**: 1ページに複数の表コンポーネントが同居する(例:/metricsはmetrics-table + up-down-market-chart)。**修正対象componentもソースgrep(ページ名→単一component連想)でなくCDP DOM文脈(近傍見出し/firstRow/parentClass)で実体特定せよ**。ページ名≠component名。将軍がcmd_4127起票時にページ名基準でmetrics-tableを対象化し、実体のup-down-market-chartを外した=同一の取りこぼし構造の再現。
+
+**完遂条件(CDP実測全数証明)**: 全表を本番CDP getComputedStyleで役割別実測し、canonical(本体14px/数値mono/文字Inter/ヘッダ14px)からの逸脱0を証明。加えて色は値の色=getValueColorClass経由(直書きred-400/amber混在=0)。grep 0件証明では不十分(描画と不一致)。「要CDP実測」の3表(risk-management/model-trades/mtd-daily)は本番CDPで再測して✅/逸脱を確定する。
+
+### 粒度ルール(全サブタスク共通)【2026-07-23 CDP実測一次化へ改訂】
+
+**改訂理由(殿指摘2026-07-23『表によってフォントが違う。grepは見落とすぞ』)**: 旧ルールはgrep件数を一次測定に据えたが、grepは(a)CSS継承(親→子で降る)(b)CSS上書き(text-base→14pxへ後勝ち)(c)グループセレクタ`[&_td]:font-mono`(d)条件分岐class(clsx/cn)(e)semantic token経由 を一切見ない。実証: 将軍がソースgrepで『数値font-mono 54/54統一』と報告したが、本番CDP getComputedStyleでは逸脱6表(rolling-returns等の数値48セルが等幅漏れ、annual/monthlyのヘッダ12px混在)。ソースの文字列≠描画されたフォント。**grepは偵察の起点にすらしてはならない。範囲を絞る母数として使うと、grepが見ないセルが最初から範囲外になり必ず見落とす(将軍が見落とした当人として実証)。**
+
+1. **対象コンポーネントを全数列挙せよ**(「該当する表」でなく全表を名指し)。未列挙=対象外を意味しない。
+2. **属性ごとの現状は本番CDP `getComputedStyle` で実測する(grep禁止)**。測定は役割別に分解: セルを {ヘッダ / 本体・数値 / 本体・文字} に分類し、各役割の font-size・font-family・font-weight の計算済み値を記録する。役割で分けないと『サイズ混在』の正体(数値/文字の差か、ヘッダ由来か)が判別できず誤修正する(殿指摘2026-07-23 09:55)。
+3. **canonicalを殿裁定で明示的に確定してから逸脱を定義せよ**。多数決や既存実装の踏襲で決めるな(cmd_4122がmonthly-returns基準でなく他表慣習に合わせemerald固定にし本番色崩れ)。**表フォントcanonical(殿裁定2026-07-23 10:15)**: 本体数値=14px/ui-monospace/tabular-nums、本体文字=14px/Inter、ヘッダ=14px。例外=アイコン役割(deteriorationの方向矢印↘↓→ text-lg色付き)はcmd_4119のmuted caption除外と同型で統一対象外。
+4. **完遂条件=CDP getComputedStyleで逸脱0を全数証明**(grep 0件証明では不十分。描画と不一致のため)。
+5. **偵察入口も検証出口もCDP実測**。旧ルールはCDPを『最終確認』に後置したが、入口をgrepにすると見落とすため、偵察の最初からCDPで測る。将軍が実施(per-task CDP禁止=忍者の実装ループ内のみ、本番デプロイ後の全数実測は将軍の役目 knowledge:43724140b320495c)。
+
+### CDP実測手順(確立済み・knowledge:7e967b43cd1c82f8)
+1. **Chrome起動**: `powershell.exe`(フルパス`/mnt/c/Windows/System32/WindowsPowerShell/v1.0/`)の`Start-Process`で完全デタッチ起動(WSLシェルの`&`起動は子プロセスとして死ぬ)。必須フラグ=`--remote-debugging-port`+`--remote-allow-origins=*`(Chrome111+のWS必須)+`--user-data-dir`(隔離profile、殿のChrome不干渉D009)+`--window-position=-32000,-32000`(オフスクリーン)。`--headless`はWSL2でGPU FATALクラッシュのため使わない。
+2. **viewer認証**: 本番`VIEWER_PASS`はRender API(`/v1/services/<FE_srv>/env-vars`, `Authorization: Bearer <RENDER_API_KEY>`)から取得(ローカルbackend envは古い)。`POST /api/auth/verify-viewer {password}`でpremium token取得→CDPセッションの`localStorage`キー`dm_viewer_token`へ`{token,expires,tier_name}`をJSON注入→reloadで表描画(未認証だと表0件・bodyLen極小)。
+3. **測定(恒久ツール使用)**: `python3 scripts/cdp/cdp_font_probe.py --base https://dm-signal-frontend.onrender.com --routes /summary,/metrics,...` を使う。役割別(header/body-number/body-text)のfont計算済み値をJSON出力し、数値がプロポーショナル(等幅漏れ)のセルを `body-number(prop!)` として surface する。★**固定sleepするな**: 本ツールはセル数が2回連続同値で安定するまでポーリングし、安定検知した瞬間に測定へ進む(本番の表+セルは約2sで充填し2〜10s不変。固定sleep15sは1ページ約13sの純浪費で1セッション20ページ超で4〜5分を捨てる=2026-07-23将軍実測。ポーリング版は1ページ約2.5s=6.1倍速)。ナビゲーション後は新規WebSocket接続で測る(persistent WSは実行コンテキスト喪失で測定不能)ことも本ツールが内包。認証要ページは事前にviewer tokenを注入しておく(手順2)。**この surface はcandidateであり、数値prop検出=即逸脱ではない**: 年号/月ラベル(行ラベル)や'---'プレースホルダは数値内容だがラベル/非数値ゆえInter正当(偽陽性)。セル内容(textContent/cellIndex)で実データか判別してから逸脱確定せよ。
+
+このコンポーネント×属性×役割粒度を、B(色: 全component×status色/border/bg)、E(表: 全表×header/row/cell/sticky)、G(グラフ: 全chart×palette/axis/legend)等の各軸にも適用。測定は全てCDP実測、grepは補助(どのcomponentファイルを触るかの当たり付け)にのみ使い、○/×判定には使わない。
+
+component-granularity-origin: `[[殿指摘_表font色不統一連鎖_20260722]] -> [[§6のA4/B1が対象表を明示せず4表取りこぼし]] -> [[§6.1コンポーネント×属性カバレッジ表で全数列挙]] -> [[殿指摘_grepは見落とす_20260723]] -> [[測定をCDP getComputedStyle一次化+役割別粒度]]`

@@ -1582,10 +1582,20 @@ if [ "${KARO_STARTUP_SKIP_CI_CHECK:-0}" != "1" ]; then
     _ci_query_failed=0
     if [ -z "$_ci_json" ]; then
         if command -v gh >/dev/null 2>&1; then
-            _ci_json="$(timeout "${KARO_STARTUP_GH_TIMEOUT:-8}" gh run list \
-                --repo "${KARO_STARTUP_CI_REPO:-simokitafresh/multi-agent-shogun}" \
-                --status completed --limit 1 \
-                --json conclusion,databaseId,headSha 2>/dev/null || true)"
+            # 一時的なgh blip(ネットワーク/cold auth/rate limit)で偽CRITICALを出さないため
+            # 1回リトライしてから失敗と判定する(2026-07-23 将軍: gh実測749-841msでtimeout8sは十分
+            # だが単発blipでgeneration=1のCI状態取得失敗→CRITICAL→cmd起票検討 の偽陽性が発生。
+            # 『取得できなかった(不明)』を即CRITICALへ直結させず、単発失敗は一過性として吸収する。
+            # 今夜の『一時的を永続と誤認』系(WARN累計昇格/DBロック)と同型の是正)。
+            _ci_attempt=0
+            while [ "$_ci_attempt" -lt 2 ]; do
+                _ci_json="$(timeout "${KARO_STARTUP_GH_TIMEOUT:-8}" gh run list \
+                    --repo "${KARO_STARTUP_CI_REPO:-simokitafresh/multi-agent-shogun}" \
+                    --status completed --limit 1 \
+                    --json conclusion,databaseId,headSha 2>/dev/null || true)"
+                [ -n "$_ci_json" ] && break
+                _ci_attempt=$((_ci_attempt + 1))
+            done
             [ -n "$_ci_json" ] || _ci_query_failed=1
         fi
     fi
