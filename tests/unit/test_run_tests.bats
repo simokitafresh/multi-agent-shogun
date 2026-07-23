@@ -528,6 +528,66 @@ YAML
   [ ! -e "$SELECT_ARGS_LOG" ]
 }
 
+# test_necessity: deployed planned_paths are the task ownership SSOT; both
+# supported schema locations must select the declared contract test directly,
+# while contradictory dual declarations fail closed before any selector runs.
+@test "task mode normalizes planned_paths ownership and rejects contradictory SSOTs" {
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+echo "selector must not run" >&2
+exit 91
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh"
+  mkdir -p "$TMPROOT/queue/tasks"
+
+  cat >"$TMPROOT/queue/tasks/top.yaml" <<'YAML'
+task:
+  planned_paths: [scripts/run_tests.sh, tests/unit/owned.bats]
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=1 BATS_INNER_JOBS=1 \
+    bash -c 'cd "$1" && bash scripts/run_tests.sh --receipt-inner task queue/tasks/top.yaml' _ "$TMPROOT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SCOPE result=task files=2"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_declared_contract"* ]]
+
+  mkdir -p "$TMPROOT/receipts" "$TMPROOT/sf"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=1 BATS_INNER_JOBS=1 \
+    bash -c 'cd "$1" && bash scripts/run_tests.sh task queue/tasks/top.yaml' _ "$TMPROOT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PASS: 1 bats file(s) (0 run, 1 cached)"* ]]
+  [[ "$output" == *"TEST_RECEIPT_PASS"* ]]
+
+  cat >"$TMPROOT/queue/tasks/nested.yaml" <<'YAML'
+task:
+  commit_contract:
+    required: true
+    planned_paths: [scripts/run_tests.sh, tests/unit/owned.bats]
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/nested.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SCOPE result=task files=2"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_declared_contract"* ]]
+
+  cat >"$TMPROOT/queue/tasks/mismatch.yaml" <<'YAML'
+task:
+  planned_paths: [scripts/run_tests.sh, tests/unit/owned.bats]
+  commit_contract:
+    required: true
+    planned_paths: [scripts/run_tests.sh, tests/unit/different.bats]
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/mismatch.yaml"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: task scope could not be resolved"* ]]
+}
+
 # test_necessity: an unresolved/empty task scope must fail closed instead of silently reverting to repository-wide git diff.
 @test "task mode rejects empty scope instead of using global git diff" {
   mkdir -p "$TMPROOT/queue/tasks"

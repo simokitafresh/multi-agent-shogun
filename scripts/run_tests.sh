@@ -132,6 +132,39 @@ if isinstance(owned_json, str) and owned_json.strip():
 else:
     collect(owned_json)
 
+top_planned = task.get("planned_paths")
+commit_contract = task.get("commit_contract")
+nested_planned = commit_contract.get("planned_paths") if isinstance(commit_contract, dict) else None
+
+def normalized_paths(value):
+    raw_paths = []
+
+    def gather(item):
+        if isinstance(item, str):
+            if item.strip():
+                raw_paths.append(item.strip())
+        elif isinstance(item, dict):
+            gather(item.get("path"))
+        elif isinstance(item, list):
+            for child in item:
+                gather(child)
+
+    gather(value)
+    normalized = set()
+    for raw in raw_paths:
+        path = raw if os.path.isabs(raw) else os.path.join(root, raw)
+        resolved = os.path.realpath(path)
+        if resolved != root and not resolved.startswith(root + os.sep):
+            raise ValueError(f"scope path outside repository: {raw}")
+        normalized.add(os.path.relpath(resolved, root))
+    return normalized
+
+top_paths = normalized_paths(top_planned)
+nested_paths = normalized_paths(nested_planned)
+if top_paths and nested_paths and top_paths != nested_paths:
+    raise ValueError("planned_paths mismatch between task and commit_contract")
+collect(top_planned if top_paths else nested_planned)
+
 report_path = task.get("report_path")
 if isinstance(report_path, str) and report_path.strip():
     candidate = report_path if os.path.isabs(report_path) else os.path.join(control_root, report_path)
@@ -186,6 +219,13 @@ if isinstance(owned_json, str) and owned_json.strip():
         owned.append("owned_paths_json")
 elif owned_json not in (None, "", [], {}):
     owned.append("owned_paths_json")
+
+top_planned = task.get("planned_paths")
+commit_planned = commit.get("planned_paths") if isinstance(commit, dict) else None
+if top_planned not in (None, "", [], {}):
+    owned.append("planned_paths")
+if commit_planned not in (None, "", [], {}):
+    owned.append("commit_contract.planned_paths")
 
 raise SystemExit(0 if is_no_commit and is_recon and has_inspection and not owned else 1)
 PY
@@ -330,6 +370,10 @@ aggregate_bats_outputs() {
                 close(out)
             }
             tests=count_source(file)
+            if (cache_hit == 1 && tap != "") {
+                print "1.." tests >> tap
+                for (i=1; i<=tests; i++) print "ok " i " cached" >> tap
+            }
             print pid "\t" file "\t" tests "\t" skip "\t" abnormal > stats
         }
     ' "$manifest"
@@ -588,6 +632,21 @@ run_bats_files_parallel() {
     [ -z "${BATS_TAP_OUTPUT:-}" ] || : >"$BATS_TAP_OUTPUT"
     for pid in "${all_pids[@]}"; do
         printf '%s\t%s\t%s\t%s\t0\n' "$pid" "${pid_file[$pid]}" "${pid_out[$pid]}" "${pid_time[$pid]}" >>"$manifest"
+    done
+    local _manifest_file _manifest_live _manifest_index=0
+    for _manifest_file in "${files[@]}"; do
+        _manifest_live=0
+        for pid in "${all_pids[@]}"; do
+            if [ "${pid_file[$pid]}" = "$_manifest_file" ]; then
+                _manifest_live=1
+                break
+            fi
+        done
+        if [ "$_manifest_live" -eq 0 ]; then
+            _manifest_index=$((_manifest_index + 1))
+            printf 'cache-%s\t%s\t/dev/null\t/dev/null\t1\n' \
+                "$_manifest_index" "$_manifest_file" >>"$manifest"
+        fi
     done
     aggregate_bats_outputs "$manifest" "$stats"
     if [ -n "${BATS_TAP_OUTPUT:-}" ] && [ -f "$BATS_TAP_OUTPUT" ]; then
