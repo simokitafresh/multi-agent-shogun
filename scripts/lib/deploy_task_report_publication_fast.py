@@ -260,11 +260,17 @@ def _normalize_check(value: Any, description: Any = "") -> str:
 
 def _criteria(task: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
     raw = task.get("acceptance_criteria") or []
-    selected = (
-        {_clean(x) for x in (task.get("ac_assigned") or [])}
-        if isinstance(task.get("ac_assigned"), list)
-        else set()
-    )
+    # assigned_acs is the parent-contract SSOT. ac_assigned remains a legacy
+    # compatibility alias. Reading only the alias re-expanded split reports to
+    # every parent AC during fast publication (cmd_4127).
+    selected_raw = task.get("assigned_acs") or task.get("ac_assigned") or []
+    if isinstance(selected_raw, str):
+        selected_values = re.split(r"[\s,|]+", selected_raw.strip().strip("[]"))
+    elif isinstance(selected_raw, list):
+        selected_values = selected_raw
+    else:
+        selected_values = []
+    selected = {_clean(value) for value in selected_values if _clean(value)}
     result: list[tuple[str, list[str]]] = []
     items = (
         list(raw.items())

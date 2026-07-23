@@ -1974,7 +1974,7 @@ EOF
     [ "$status" -eq 0 ]
 }
 
-@test "GP-194 AC2: ac_assigned=[AC2] → binary_checks has only AC2 (not AC1, AC3)" {
+@test "cmd_4127: assigned_acs=[AC2] → binary_checks has only AC2 (not AC1, AC3)" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
   title: "ac_assigned filter test"
@@ -1982,7 +1982,7 @@ task:
   parent_cmd: cmd_1909
   task_id: cmd_1909_exact
   project: infra
-  ac_assigned: [AC2]
+  assigned_acs: [AC2]
   acceptance_criteria:
   - id: AC1
     description: "AC1の確認"
