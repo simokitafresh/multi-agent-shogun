@@ -1,6 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
 <!-- last_updated: 2026-07-23 cmd_4132 -->
-<!-- source_commit:7b881e13 reason:cmd_4132 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=7b881e13 -->
+<!-- source_commit:2b4d7423 reason:cmd_4138 reviewed source boundary evidence:cmd_complete_gate -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。

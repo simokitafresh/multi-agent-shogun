@@ -115,6 +115,7 @@ cdp_helper.screenshot(port=port, tab_id=tab_id, path="/tmp/dm_signal_screenshot.
 
 ## §37 ETL
 
+- cmd_4140: deterioration履歴欠落はcron失敗/表示filterではなく、月次batchが現在月1点だけをUPSERTしAPI/FEも既定6点しか取得しないことが原因。本番102 PFは0点=0・1点=86・3点=1・5点=15だが、月次returnは106〜276か月ありas-of切断backfillが可能。→ `docs/research/cmd_4140_deterioration_history_recon_20260723.md`
 - L802: precompute paramsはFE PAGE_APISから機械抽出して実要求との差分を照合する（cmd_3667）
 - L803: FE要求params整合テストはpage.tsxではなく別module定数をSSOTにする（cmd_3668）
 - cmd_3668/3669: FE実要求paramsとprecompute raw paramsの同期防御。dashboard performance yearsは `frontend/app/dashboard/page.tsx` の共有定数経由で呼び、`backend/tests/test_precompute_raw.py` がPAGE_APIS内の直書き `api.getPerformance(portfolioId, 3/0)` 不在を検査する。FE params lessonは `tasks/lessons.md` L803。関連commit: DM-Signal `49e9d8f6`, `3730537c`。
