@@ -55,7 +55,12 @@ _ARCHIVE_CACHE="${CFC_ARCHIVE_CACHE:-/tmp/dashboard_arch_cfc_cache.txt}"
 
 _CACHE_TTL="${CFC_OUTPUT_CACHE_TTL:-2}"
 _ROOT_KEY="$(printf '%s' "$SCRIPT_DIR" | cksum | awk '{print $1}')"
-_MODE_KEY="$(printf '%s|%s|%s|%s|%s|%s' "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_ENTRIES_CSV" "$(date +%Y-%m-%d)" | cksum | awk '{print $1}')"
+# --cmd-commit-list callers may reuse one cmd id while walking more than one
+# project.  CFC_PROJECT_OVERRIDE changes the result set, so omitting it from the
+# cache identity can replay project A's commit list for project B and let an
+# unreflected source/context pair escape the completion-time BLOCK (GA-320).
+_PROJECT_OVERRIDE="${CFC_PROJECT_OVERRIDE:-}"
+_MODE_KEY="$(printf '%s|%s|%s|%s|%s|%s|%s' "$MODE" "$ARG" "$STALE_DAYS" "$_ARCHIVE_CACHE" "$EXCLUDE_ENTRIES_CSV" "$_PROJECT_OVERRIDE" "$(date +%Y-%m-%d)" | cksum | awk '{print $1}')"
 _CACHE_FILE="/tmp/context_freshness_check_${_ROOT_KEY}_${_MODE_KEY}.cache"
 
 if [[ "$_CACHE_TTL" =~ ^[0-9]+$ ]] && [[ "$_CACHE_TTL" -gt 0 ]] && [[ -f "$_CACHE_FILE" ]]; then

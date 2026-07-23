@@ -769,6 +769,51 @@ PY
     [[ "$output" == *"registered=10 enforced=10"* ]]
 }
 
+@test "GA-320 cmd commit-list cache is isolated by project override" {
+    local source_repo="$TEST_TMPDIR/source/dm-signal"
+    mkdir -p "$source_repo/backend/app" "$TEST_TMPDIR/projects" "$TEST_TMPDIR/scripts/config"
+    git -C "$source_repo" init -q
+    git -C "$source_repo" config user.email "test@example.invalid"
+    git -C "$source_repo" config user.name "Test User"
+    printf 'project:\n  id: dm-signal\n  path: "%s"\n' "$source_repo" > "$TEST_TMPDIR/projects/dm-signal.yaml"
+    printf 'dm-v1\n' > "$source_repo/backend/app/core.py"
+    git -C "$source_repo" add backend/app/core.py
+    git -C "$source_repo" commit -q -m "initial dm source"
+    local dm_boundary
+    dm_boundary="$(git -C "$source_repo" rev-parse --short HEAD)"
+    _create_context "context/dm-signal-core.md" "$TODAY"
+    sed -i "1s/ -->/ source_commit:${dm_boundary} -->/" "$TEST_TMPDIR/context/dm-signal-core.md"
+    printf 'dm-v2\n' >> "$source_repo/backend/app/core.py"
+    git -C "$source_repo" add backend/app/core.py
+    git -C "$source_repo" commit -q -m "feature: dm cache identity"
+
+    printf 'infra-v1\n' > "$TEST_TMPDIR/scripts/infra_source.sh"
+    git -C "$TEST_TMPDIR" add scripts/infra_source.sh
+    git -C "$TEST_TMPDIR" commit -q -m "initial infra source"
+    local infra_boundary
+    infra_boundary="$(git -C "$TEST_TMPDIR" rev-parse --short HEAD)"
+    _create_context "context/infrastructure.md" "$TODAY"
+    sed -i "1s/ -->/ source_commit:${infra_boundary} -->/" "$TEST_TMPDIR/context/infrastructure.md"
+    printf 'infra-v2\n' >> "$TEST_TMPDIR/scripts/infra_source.sh"
+    git -C "$TEST_TMPDIR" add scripts/infra_source.sh
+    git -C "$TEST_TMPDIR" commit -q -m "feature: infra cache identity"
+
+    cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" \
+        "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"
+
+    CFC_OUTPUT_CACHE_TTL=120 CFC_PROJECT_OVERRIDE=dm-signal \
+        run bash "$TEST_SCRIPT" --cmd-commit-list same_cmd
+    [ "$status" -eq 0 ]
+    [[ "$output" == *$'context/dm-signal-core.md\t'* ]]
+    [[ "$output" != *"context/infrastructure.md"* ]]
+
+    CFC_OUTPUT_CACHE_TTL=120 CFC_PROJECT_OVERRIDE=infra \
+        run bash "$TEST_SCRIPT" --cmd-commit-list same_cmd
+    [ "$status" -eq 0 ]
+    [[ "$output" == *$'context/infrastructure.md\t'* ]]
+    [[ "$output" != *"context/dm-signal-core.md"* ]]
+}
+
 @test "GA-255 infrastructure context without source_commit blocks before git" {
     mkdir -p "$TEST_TMPDIR/scripts/config"
     cp "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_TMPDIR/scripts/config/context_source_commits.tsv"

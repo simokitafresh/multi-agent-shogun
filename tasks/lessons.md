@@ -11113,3 +11113,19 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **then**: 登録済み全rootで存在確認する
 - **because**: context indexはcontrol-planeとsource projectの両方を参照するため
 - source projectを持つcontextもcontrol-planeと他projectの正本へcross-repo参照する。参照欠落gateはworkspace rootと全登録project.pathのunionで解決し、全root不在だけをBLOCKせよ。GA-319では単一DM root判定により候補124件中123件が偽陽性となった。次回チェック: workspace-only/project-only/全root欠落の3 fixtureを二値検証する。
+
+### L1291: context freshness cacheはproject overrideをidentityへ含める
+- **日付**: 2026-07-23
+- **出典**: cmd_karo_hotfix_context_freshness_ga320_20260723
+- **記録者**: kotaro
+- **tags**: [context, gate, cache]
+- **subdomain**: infra
+- **target_files**: [scripts/context_freshness_check.sh,tests/unit/test_context_freshness_check.bats]
+- **origin**: [[GA-320]] -> [[project_override_cache_identity欠落]] -> [[Level4完了時BLOCKの偽陰性防止]]
+- **enforcement**: 未自動化
+- **when**: context freshnessの--cmd-commit-listを同一cmd_idで複数projectに対して呼ぶ時
+- **how**: CFC_PROJECT_OVERRIDEをcache identityへ含め、project別出力の非交差をcontract testで二値確認する
+- **if**: 同一mode/cmd引数でもproject overrideが異なる
+- **then**: overrideごとに独立cacheを生成して該当projectのcommit listだけを返す
+- **because**: projectを跨ぐcache再利用は未反映source/context対を完了時BLOCKへ渡せず偽陰性になるため
+- 同一cmd_idで複数projectの--cmd-commit-listを生成する経路では、CFC_PROJECT_OVERRIDEをoutput cache keyから落とすと先行projectのcommit listが後続へ再利用され、真のsource/context乖離を見逃す。cache identityへoverrideを含め、同じcmdでdm-signal 5件とinfra 3件が分離されるcontract testを置く。

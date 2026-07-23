@@ -1,13 +1,15 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-23 cmd_4122 -->
+<!-- last_updated: 2026-07-23 cmd_karo_hotfix_context_freshness_ga320_20260723 -->
 <!-- dm_signal_research_reflux: fingerprint=4f50b61a3838f8901d285dc0704ab991a168ff1cc9600613ba7236f4b21980b0; mode=synced; evidence_b64=Y21kXzQxMjQgdmFsdWUgY29sb3IgYmFzZWxpbmUgcmVzdG9yZWQgaW4gY29udGV4dC9kbS1zaWduYWwtZnJvbnRlbmQubWQgwqcxOTsgcG9zaXRpdmU9dGV4dC1mb3JlZ3JvdW5kIGluIGJvdGggbW9kZXMgdmlhIENTUyB2YXJpYWJsZXM= -->
-<!-- source_commit:af994b15 reason:cmd_karo_recon2_dm_style_axis_f_202607222337 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=af994b15 -->
+<!-- source_commit:20bc9de2 reason:GA-320 reviewed research source boundary evidence:2/2 UI audit commits false positive for research and reflected in frontend context -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
 コア定義(§0-5,8,10-11,13,15,18) → `context/dm-signal-core.md`
 運用手順(§6-7,9,12,14,16-17) → `context/dm-signal-ops.md`
 補足: 旧詳細資料(`parity-verification-details.md`, `edge-detection-cycles.md`, `spa-overfitting-analysis.md`, `gs-results-by-ninjutsu.md`)は未復旧。現存するdocs/researchは `cmd_484/485/486/488` の4件のみ。
+
+GA-320境界照合: `ace6d961`（copy/caption axis L監査）と`20bc9de2`（値配色baseline復旧）は研究アルゴリズム変更ではなくUI監査資料の追加で、結論は`context/dm-signal-frontend.md` §19へ反映済み。research索引への重複転記は偽陽性2/2として行わず、source境界のみ更新する。
 
 ---
 

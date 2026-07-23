@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-23 cmd_karo_hotfix_context_freshness_ga319_20260723 -->
-<!-- source_commit:fb95d7051d78ca733e6f84505a3f9dc03f78b676 reason:GA-313 reviewed full infra source boundary evidence:42e6ea0..fb95d70 classified 263 total: reflected/excluded 117 and unreflected reviewed 146/146; completion emits exact setter command -->
+<!-- last_updated: 2026-07-23 cmd_karo_hotfix_context_freshness_ga320_20260723 -->
+<!-- source_commit:02ef923b2 reason:GA-320 reviewed infra source boundary evidence:3/3 true positives: 92ffc2728,6fb2dc41a,02ef923b2 reflected; project override cache isolated -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -18,6 +18,10 @@ related_lessonsのmemory boostは独自SQLite snapshotを作らず、`memory_db_
 daemon watchdogは個別health checkに加え、`inbox_watcher.sh>=9`・`ninja_monitor.sh`・`ntfy_listener.sh`・`usage_statusbar_loop.sh`・`gist_sync.sh`のprocess inventoryを1 snapshotで監査し、不足classごとにWARNする。消滅PIDの`/proc/<pid>/cmdline` raceは無音で扱い、inbox unread countは読取異常時も単一整数へ正規化する。P0は本番実走error 0で完了。次段は副作用のある`restart_watchers --status`修正(P1a-1)と全daemon共通maintenance lock(P1a-2)を分離し、既存watchdogの600秒/3回throttleと重複するbackoffは追加しない。→ `scripts/daemon_watchdog.sh` / `tests/unit/test_daemon_watchdog.bats` / `docs/research/daemon-inventory-asis-tobe-5w1h_20260715.md`（cmd_3951、commit `4bf8858c0`、R2最終inventory v1.3 `2afc5d9a1`）
 
 context freshnessの`source_commit`境界はinfra root fallbackにも適用する。境界後commitは、context自身を変更した・lesson-only・本文がhash/cmd IDを明示した場合だけ反映済みと分類し、それ以外は日付をbumpしてもALERTへ残す。ALERTには直近3件のhash・subjectを同梱する。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124、GA-264、GA-295）
+
+`--cmd-commit-list`の出力cache identityはmode/cmdだけでなく`CFC_PROJECT_OVERRIDE`を含める。同一cmdを複数projectで照合しても先行projectの結果を再利用せず、project固有の未反映source/context対を完了時BLOCKへ渡す。GA-320では修正前に同一cmdのdm-signal結果5件がinfra照合へ誤再利用され、修正後はdm-signal 5件・infra 3件を分離。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`
+
+直近infra契約: `02ef923b2`はcmd quality append/archive/atomic replaceのlock identityを`lock_path.sh`へ統一しLost Updateを防止、`6fb2dc41a`はCodex hook payloadをshell command文字列へ正規化、`92ffc2728`は隔離profile必須の再利用可能なCDP tier probeを追加した。→ `scripts/cmd_quality_log.sh` / `.claude/hooks/pre-bash-combined.sh` / `scripts/cdp/cdp_tier_probe.py`（GA-320）
 
 pre-commitのCoDD metadata境界は正本metadataが存在する対象だけを検査し、metadata欠落を別契約へ誤分類しない。stall fixtureのprocess-group drainはtest harness後処理のみで本番scheduler挙動を変更しない。→ `scripts/hooks/git-pre-commit.sh` / `tests/unit/test_git_pre_commit.bats` / `tests/unit/test_ninja_monitor_stall.bats`（GA-298、GA-299再分類）
 CI fixtureの直近契約は、campaign aggregate再入をBLOCKし、campaign fixture契約を同期し、receipt checkpoint rootをactive boundaryへ隔離する。→ `b3a8be4a4` / `d6a3cc8ca` / `f713cf329`（cmd_karo_ci_fix_29649090790_campaign_reentry_202607190011、cmd_karo_ci_fix_29649090790_campaign_contract_sync_202607190026、cmd_karo_ci_fix_29649090790_receipt_active_boundary_202607190044）
@@ -852,7 +856,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1290 -->
+<!-- last_synced_lesson: L1291 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1856,6 +1860,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1288: 構造化成功statusは本文の失敗語より優先せよ（cmd_karo_hotfix_skill_dispatch_payload_20260723）
 - L1289: context文書の鮮度メタデータはcommit前に強制する（cmd_karo_hotfix_context_freshness_ga318_20260723）
 - L1290: context参照は単一repo rootで解決しない（cmd_karo_hotfix_context_freshness_ga319_20260723）
+- L1291: context freshness cacheはproject overrideをidentityへ含める（cmd_karo_hotfix_context_freshness_ga320_20260723）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
