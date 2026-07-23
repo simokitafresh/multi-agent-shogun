@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-23 -->
+<!-- last_updated: 2026-07-24 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,24 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3494 | 殿指示(2026-06-22): pf_L2奥義21体(新四つ目除く)を構成PFとして7忍法GSを実行しpf_L3(秘奥義)を生成。Phase0=L3用universe YAML作成+分身smoke runでpeak RSS実測。L2 GS実績: 構成21体peak RSS 10.1GB(cmd_2402)。WSL2 available 20GB。構成PF数同一だが奥義=複合PFのためRSS増加の可能性→実測必須(軍師指摘) | dm-signal | 06-23 | L3用hiougi_ougi_21.yamlを作成し、run |
-| cmd_3495 | 殿指示(2026-06-22): pf_L3秘奥義GS 7忍法直列の1本目。Phase0(cmd_3494)でRSS安全確認済み(peak 104.6MB)。pf_L2奥義21体を構成PFとして追い風(MomentumFilter)の全パラメータ空間をGSで探索。run_077_oikaze.py --universe hiougi_ougi_21.yaml | dm-signal | 06-23 | run_077_oikaze.pyをhiougi_ougi_ |
-| cmd_3496 | pf_L3秘奥義GS 7忍法直列の2本目。run_077_nukimi.py --universe hiougi_ougi_21.yaml | dm-signal | 06-23 | run_077_nukimi.pyをhiougi_ougi_ |
-| cmd_3501 | pf_L3秘奥義GS直列3本目。run_077_kawarimi.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | pf_L3秘奥義GS直列3本目としてkawarimiをLin |
-| cmd_3502 | pf_L3秘奥義GS直列4本目。run_077_yotsume.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | Linux venvでrun_077_yotsume.pyを |
-| cmd_3503 | pf_L3秘奥義GS直列5本目(最重量)。run_077_kasoku_diff.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | pf_L3秘奥義GS直列5本目(kasoku_diff)をL |
-| cmd_3504 | pf_L3秘奥義GS直列最終(6本目)。run_077_kasoku_ratio.py --universe hiougi_ougi_21.yaml。並列配備禁止(LS-A15) | dm-signal | 06-23 | run_077_kasoku_ratio.pyをhiougi |
-| cmd_3505 | 殿指示(2026-06-22): pf_L2奥義21体を構成PFとして7忍法GSを実行しpf_L3(秘奥義)を生成。6忍法はGATE CLEAR済み(cmd_3495-3504)。残り分身のフルGSを実行する。cmd_3494はsmoke run(1パターン限定)のみでチャンピオン選出用の全探索DBが不在 | dm-signal | 06-23 | 分身GSをhiougi_ougi_21ユニバースで全探索実行 |
-| cmd_3506 | 殿指示(2026-06-22): pf_L3秘奥義GS全7忍法完走後にチャンピオン選出。cmd_2366_l1_champion_select.pyにpf_L3対応(specs_for_layer L3+DB対応表)を追加し、7忍法×3モード(激攻・常勝・鉄壁)のTop1を選出。α6指標比較テーブルを生成 | dm-signal | 06-23 | cmd_2366_l1_champion_select.py |
-| cmd_3508 | 殿指示(2026-06-23): pf_L3全パターンWF-β調整を5分以内に完了できる道具を先に作れ。cmd_3507で半蔵35分超=load_matrixが全パターン月次リターンを(months×patterns)numpy配列に一括展開(加速D=3.5億セル≈1.3GB)しボトルネック。忍法単位でバッチ処理し、分身(7,525パターン)で動作確認→全7忍法見積もり→5分以内の確信を得てから全量実行 | dm-signal | 06-23 | cmd_2369_l1_wf_alpha_select.py |
-| cmd_3510 | 殿指示(2026-06-23): WFのみでは不十分。4つの試練+レジーム分析の道具を先に作れ。cmd_2369のstreaming基盤(cmd_3508で高速化済み)にOOS(前半β→後半α)・Expanding Window・レジーム分析(本番RegimeAnalysisService同一方式: SPY月次動的閾値μ±0.5σ)の3モードを追加する。分身smoke runで動作確認+時間計測し、全量実行の確信を得る | dm-signal | 06-23 | cmd_2369 WF-alpha選抜ツールへOOS/Exp |
-| cmd_3512 | 殿指示(2026-06-23): (1)5独立スクリプト並列が発展性がある (2)品質維持で速度+メモリ+進捗 (3)小さく試す。cmd_2369の共通基盤をrobustness_common.pyに切り出し、5独立スクリプト(trial_is/trial_oos/trial_expanding/trial_wf/trial_regime)を作成。各スクリプトに進捗stderr+CLI引数。分身1忍法の小テストで動作確認 | dm-signal | 06-23 | robustness_common.pyと5独立CLI(tr |
-| cmd_3513 | 殿指示(2026-06-23): Codex /goalで5独立スクリプト(trial_is/oos/expanding/wf/regime)の実行速度を-5%×3ラウンド改善させる。家老がidle忍者のCodexペインにsend-keysで/goal目標文を送り、忍者が自律的に達成する。品質維持(diff 0)を合格条件とする。分身DB(7,525パターン)の小テストで計測 | dm-signal | 06-23 | pending: trial_oos.py /goal sp |
-| cmd_3514 | 殿指示(2026-06-23): cmd_3513(分身のみ)で/goal速度改善56%短縮を実証。次は7忍法×5スクリプト=35タスクに拡大。各忍法はBBが異なるため最適化ポイントが異なる。Codex /goalで各忍法×各スクリプトに-5%×3ターンの複利速度改善を実施。6忍者並列配備 | dm-signal | 06-23 | yotsume 5 trial再検証完了。trial_reg |
-| cmd_3515 | 殿指示(2026-06-23 15:05,15:14): 12+21+21+21体を4視点+レジームで分析。シン四神(12体)のtrial対応+SPYベンチマーク比較も含む。cmd_3512-3514で整備した5本のtrial scripts(IS/OOS/Expanding/WF/Regime)を全レイヤーに拡張し75体+SPY全量検証 | dm-signal | 06-23 | kasoku_ratio残4試練(oos/expanding |
-| cmd_3516 | 殿指示(2026-06-23 18:23): 任意のPFだけを実行するモードの追加。cmd_3515で全GS空間探索が走り75体チャンピオン検証に数十分かかった根因はrobustness_common.pyがGS DBの全パターンをロードする設計。チャンピオン名(pattern_id)を指定して該当パターンだけ抽出しtrial実行するオプションを追加し、75体検証を数分で完了可能にする | dm-signal | 06-23 | robustness_common.pyに--pattern |
-| cmd_3517 | 殿指示(2026-06-23 19:21/19:56): α6は6項目のはずだが3項目しか出力されていない+TQQQもベンチマークに追加。プランドキュメント: docs/research/plan_alpha6_robustness_verification.md Step 1。robustness_common.pyのmetrics辞書にMRU・Calmar・Avg UWPを追加し、TQQQベンチマークに対応し、smoke確認で6項目出力+既存3項目回帰一致を検証する | dm-signal | 06-23 | robustness trial出力をα6全6項目へ拡張し、 |
-| cmd_3518 | プランドキュメント docs/research/plan_alpha6_robustness_verification.md Step 2+3。cmd_3517でα6全項目+TQQQ対応済み。全レイヤー(シン四神・シン忍法・奥義・秘奥義)+SPY+TQQQ×5 trialを全量再実行し、固定体裁報告書(まとめ+正率+詳細+ベンチマーク)をMarkdown+gistで生成する。家老・軍師はプランドキュメントを読み、実行と結果がプランに背かないか厳重に確認せよ | dm-signal | 06-23 | L1 kasoku_ratioを5 trialsで再実行し、 |
 | cmd_3522 | 殿指示(2026-06-24): 想像せずに確認せよ。確認を便利にする道具が三層記憶だ。将軍がGS全量探索パターン数を記事に書く際、三層記憶を検索せず推測値を5回連発。全て既存の三層記憶に実数(合計7,521,549)があった。根因: stop_check_inbox.sh L252の[MEM]タグ検査は殿への応答(last_assistant_message)のみ対象。Write toolやgh gist edit経由の数値出力は検査対象外 | infra | 06-24 | 数値を含むWrite/gh gist edit出力時に三層記 |
 | cmd_3523 | 殿指示(2026-06-24): 穴を塞ぐのではなく穴が生まれない仕組みを作れ。洗脳の本質は確認の拒否。確認なしの出力を構造的に不可能にする。将軍の全応答で確認行為(三層記憶検索/capture-pane/DB検索/grep/bats等)の実行回数が0ならWARN。パターンマッチではなく確認行為の有無そのものを検査する | infra | 06-24 | 将軍応答ターンの確認行為ゼロをStop hookでWARNす |
 | cmd_3524 | 殿指示(2026-06-25): α6の6指標に加え、ボラティリティドラッグ・歪度・尖度・最低継続期間・最大連敗期間の5指標をrobustness_common.pyに追加し、シン四神(12体)+シン忍法(21体)+奥義(21体)×7窓で計算する。発端: ぷろっぷ記事DailyProp#102(期待値プラスでも資産増えない問題)から投資継続性の定量評価が必要 | dm-signal | 06-25 | cmd_3524: α6 robustness共通出力へ連続 |
