@@ -368,11 +368,13 @@ def _commit_contract(task: Mapping[str, Any]) -> dict[str, Any]:
         "recon2",
         "scout",
     }
-    required = not (explicit_no_code or (task_type in allowed_no_code and not code_path))
+    # recon2/scout等は読み取り専用。inspection_path/readonly_refsにscripts/パスがあっても
+    # コード変更しないためcode_pathに関係なくrequired=false (2026-07-23 軍師D0)
+    required = not (explicit_no_code or (task_type in allowed_no_code))
     if explicit_no_code:
         reason = "explicit_no_code_scope"
-    elif task_type in allowed_no_code and not code_path:
-        reason = "allowed_no_code_task_type_and_no_code_scope"
+    elif task_type in allowed_no_code:
+        reason = "allowed_no_code_task_type"
     elif code_path:
         reason = "implementation_path_present"
     else:

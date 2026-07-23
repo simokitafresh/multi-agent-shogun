@@ -47,7 +47,7 @@ c = d['commit_contract']
 task = yaml.safe_load(open(sys.argv[2]))['task']
 assert task['commit_contract'] == c, (task['commit_contract'], c)
 assert c['required'] is False
-assert c['reason'] == 'allowed_no_code_task_type_and_no_code_scope'
+assert c['reason'] == 'allowed_no_code_task_type'
 assert c['task_type'] == 'decision_candidate'
 assert 'queue/pending_decisions.yaml' in c['planned_paths']
 check = d['binary_checks']['commit'][0]
@@ -84,15 +84,16 @@ PY
   [ "$status" -eq 0 ]
 }
 
-@test "allowed no-code type with implementation path still requires commit" {
+@test "allowed no-code type with implementation path emits commit N/A (recon reads but does not modify)" {
   report="$(build_report decision_candidate scripts/decision_helper.py "decision helper update" '[scripts/decision_helper.py]')"
 
   run python3 - "$report" <<'PY'
 import sys, yaml
 d = yaml.safe_load(open(sys.argv[1]))
-assert d['commit_contract']['required'] is True
-assert d['commit_contract']['reason'] == 'implementation_path_present'
-assert 'git commitが完了したか' in d['binary_checks']['commit'][0]['check']
+# recon/decision_candidate等の読み取り専用タスクはplanned_pathsにscripts/があっても
+# commit_contract.required=false (2026-07-23 軍師D0: inspection_path≠変更対象)
+assert d['commit_contract']['required'] is False
+assert d['commit_contract']['reason'] == 'allowed_no_code_task_type'
 PY
   [ "$status" -eq 0 ]
 }
