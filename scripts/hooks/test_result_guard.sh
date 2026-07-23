@@ -7,8 +7,12 @@ set -eu
 IFS='' read -r -d '' payload || true
 [[ -z "$payload" ]] && exit 0
 
-# Fast-path: skip if not Bash tool
-[[ "$payload" != *'"Bash"'* ]] && exit 0
+# Fast-path: skip if not a supported shell tool
+shell_tool="$(python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("tool_name") or d.get("toolName") or "")' <<< "$payload" 2>/dev/null || true)"
+case "$shell_tool" in
+    Bash|exec_command|unified_exec) ;;
+    *) exit 0 ;;
+esac
 # Fast-path: skip if no test-related keywords in payload
 [[ "$payload" != *'pytest'* && "$payload" != *'bats'* && "$payload" != *'jest'* && \
    "$payload" != *'npm test'* && "$payload" != *'pnpm test'* && "$payload" != *'yarn test'* && \
@@ -213,7 +217,7 @@ def emit_context(messages):
 
 data = load_payload(os.environ.get("HOOK_PAYLOAD", ""))
 tool_name = data.get("tool_name") or data.get("toolName") or ""
-if tool_name != "Bash":
+if tool_name not in {"Bash", "exec_command", "unified_exec"}:
     raise SystemExit(0)
 
 tool_input = data.get("tool_input") or data.get("toolInput") or {}

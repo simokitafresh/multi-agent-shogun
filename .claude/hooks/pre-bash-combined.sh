@@ -13,14 +13,19 @@ if [[ -n "${BATS_TEST_FILENAME:-}" && -n "${GUARD14_BATS_COMMAND+x}" ]]; then
     payload='{"tool_name":"Bash","tool_input":{"command":"guard14-bats-command"}}'
 fi
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
-[[ "$payload" != *'"Bash"'* ]] && exit 0
+shell_tool="$(awk 'match($0, /"(tool_name|toolName)"[[:space:]]*:[[:space:]]*"([^"]+)"/) { value=substr($0,RSTART,RLENGTH); sub(/^.*:[[:space:]]*"/,"",value); sub(/"$/,"",value); print value; exit }' <<< "$payload" 2>/dev/null || true)"
+case "$shell_tool" in
+    Bash|exec_command|unified_exec) ;;
+    *) exit 0 ;;
+esac
 command="${command:-}"
 # cmd_2075: jq → awk置換 (jq≈4ms → awk≈2ms, 前回revertとの差: サブシェル維持/ツール軽量化)
 # awk char-by-char でJSON stringを復元する。ここで一度だけdecodeし、
 # 全Guardへ実際のshell command（改行・quoteを含む）を渡す。
-if [[ -z "$command" && "$payload" == *'"tool_input"'* && "$payload" == *'"command"'* ]]; then
+if [[ -z "$command" && ( "$payload" == *'"tool_input"'* || "$payload" == *'"toolInput"'* ) \
+    && ( "$payload" == *'"command"'* || "$payload" == *'"cmd"'* ) ]]; then
     command="$(awk '
-        match($0, /"command"[[:space:]]*:[[:space:]]*"/) {
+        match($0, /"(command|cmd)"[[:space:]]*:[[:space:]]*"/) {
             s = substr($0, RSTART + RLENGTH)
             n = length(s); result = ""
             for (i = 1; i <= n; i++) {

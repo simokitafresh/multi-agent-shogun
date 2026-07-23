@@ -9,7 +9,11 @@ else
     payload="$(cat 2>/dev/null || true)"
 fi
 [[ -z "${payload//[[:space:]]/}" ]] && exit 0
-[[ "$payload" != *'"Bash"'* ]] && exit 0
+shell_tool="$(jq -r '.tool_name // .toolName // empty' 2>/dev/null <<< "$payload" || true)"
+case "$shell_tool" in
+    Bash|exec_command|unified_exec) ;;
+    *) exit 0 ;;
+esac
 
 mark_post_bash_numeric_gist_flag() {
     [[ "$payload" == *'gh gist edit'* ]] || return 0
@@ -29,7 +33,7 @@ mark_post_bash_numeric_gist_flag
 
 mark_post_bash_verification_action_count() {
     local command agent_id state_dir count_file
-    command="$(printf '%s' "$payload" | jq -r '.tool_input.command // .toolInput.command // empty' 2>/dev/null || true)"
+    command="$(printf '%s' "$payload" | jq -r '.tool_input.command // .tool_input.cmd // .toolInput.command // .toolInput.cmd // empty' 2>/dev/null || true)"
     [[ -n "$command" ]] || return 0
     agent_id="${TMUX_AGENT_ID:-}"
     if [[ -z "$agent_id" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
@@ -70,7 +74,7 @@ if [[ "$payload" == *'cmd_save.sh'* || "$payload" == *'cmd_publish.sh'* ]]; then
             | [ .[] | .. | strings ]
             | join("\n");
         [
-            (.tool_input.command // .toolInput.command // ""),
+            (.tool_input.command // .tool_input.cmd // .toolInput.command // .toolInput.cmd // ""),
             ([
                 walk_objects
                 | (.exit_code? // .exitCode?)
@@ -253,7 +257,7 @@ def parse_fail_count(text: str) -> int:
 
 data = load_payload(os.environ.get("HOOK_PAYLOAD", ""))
 tool_name = data.get("tool_name") or data.get("toolName") or ""
-if tool_name != "Bash": raise SystemExit(0)
+if tool_name not in {"Bash", "exec_command", "unified_exec"}: raise SystemExit(0)
 tool_input = data.get("tool_input") or data.get("toolInput") or {}
 command = ""
 if isinstance(tool_input, dict):
@@ -289,7 +293,7 @@ if [[ "$payload" == *'inbox_write'* && "$payload" == *'report_received'* ]]; the
         # Standalone helper is part of the production checkout.  Minimal
         # fail-safe keeps isolated/older hook bundles functional and clearly
         # labels that task scope could not be established.
-        command="$(printf '%s' "$payload" | jq -r '.tool_input.command // empty' 2>/dev/null || true)"
+        command="$(printf '%s' "$payload" | jq -r '.tool_input.command // .tool_input.cmd // .toolInput.command // .toolInput.cmd // empty' 2>/dev/null || true)"
         ninja_name=""
         if [[ "$command" =~ report_received[[:space:]]+([a-z_]+) ]]; then
             ninja_name="${BASH_REMATCH[1]}"
@@ -348,7 +352,7 @@ done
 
 # Phase 1: halt/clear送信検出→CTX記録
 if [[ "$payload" == *'inbox_write'* ]]; then
-    _iw_cmd="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" || true)"
+    _iw_cmd="$(jq -r '.tool_input.command // .tool_input.cmd // .toolInput.command // .toolInput.cmd // ""' 2>/dev/null <<< "$payload" || true)"
     # Fix(2026-05-21): heredoc/文字列内のinbox_writeにマッチ防止。bash第1引数チェック
     _iw_verb="${_iw_cmd%%[[:space:]]*}"
     _iw_arg1_raw="${_iw_cmd#*[[:space:]]}"
@@ -384,7 +388,7 @@ fi
 # 根因1: `sh`がパス内マッチ。根因2: verb=bash+引数内文字列マッチ(inbox_write msg内のdeploy_task.sh)
 # → bashの第1引数(スクリプトパス)がdeploy_task.shを含むかで判定
 if [[ "$payload" == *'deploy_task.sh'* ]]; then
-    _g4_cmd="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" || true)"
+    _g4_cmd="$(jq -r '.tool_input.command // .tool_input.cmd // .toolInput.command // .toolInput.cmd // ""' 2>/dev/null <<< "$payload" || true)"
     _g4_verb="${_g4_cmd%%[[:space:]]*}"
     _g4_rest="${_g4_cmd#*[[:space:]]}"
     _g4_arg1="${_g4_rest%%[[:space:]]*}"
@@ -399,7 +403,7 @@ if [[ "${_g4_verb:-}" == "bash" && "${_g4_arg1:-}" == *deploy_task.sh* ]]; then
         printf '%s' "$_warn_msg" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
     else
         # deployment complete でもnudge到達は別問題。pane確認を強制
-        _deploy_target="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" | grep -oP 'deploy_task\.sh\s+\K\S+' || true)"
+        _deploy_target="$(jq -r '.tool_input.command // .tool_input.cmd // .toolInput.command // .toolInput.cmd // ""' 2>/dev/null <<< "$payload" | grep -oP 'deploy_task\.sh\s+\K\S+' || true)"
         if [[ -n "$_deploy_target" ]]; then
             printf '%s' "★確認必須: ${_deploy_target}のpaneをcapture-pane -S -30で確認し、nudgeが到達し作業を開始したか目視確認せよ。deploy完了≠nudge到達。" | jq -Rs '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:.}}'
         fi
@@ -411,7 +415,7 @@ fi
 # (post-bash-commit-reminder.shと同じ「事前WARN、事後BLOCKはcmd_complete_gate側」の二段構え)。
 # cmd_1770三重事故(DB登録→パリティ未確認→コード未デプロイ+偽signal)の再発防止。
 if [[ "$payload" == *'recalculate-sync'* ]]; then
-    _g5_cmd="$(jq -r '.tool_input.command // .toolInput.command // ""' 2>/dev/null <<< "$payload" || true)"
+    _g5_cmd="$(jq -r '.tool_input.command // .tool_input.cmd // .toolInput.command // .toolInput.cmd // ""' 2>/dev/null <<< "$payload" || true)"
     _g5_verb="${_g5_cmd%%[[:space:]]*}"
     _g5_verb="${_g5_verb//\"/}"
     if [[ "$_g5_verb" == "curl" && "$_g5_cmd" == *'recalculate-sync'* ]]; then

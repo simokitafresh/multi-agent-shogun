@@ -15,9 +15,21 @@ setup() {
 }
 
 run_hook() {
-    local command="$1" payload
-    payload="$(python3 -c 'import json,sys; print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.argv[1]}}))' "$command")"
+    local command="$1" tool="${2:-Bash}" field="${3:-command}" payload
+    payload="$(python3 -c 'import json,sys; print(json.dumps({"tool_name":sys.argv[2],"tool_input":{sys.argv[3]:sys.argv[1]}}))' "$command" "$tool" "$field")"
     run env BATS_TEST_FILENAME="$BATS_TEST_FILENAME" bash -c 'printf "%s" "$1" | bash "$2"' _ "$payload" "$HOOK"
+}
+
+@test "shell payload境界は3 toolとcommand/cmdで同じ禁止commit契約を強制する" {
+    # test_necessity: Codexの3 shell tool payloadが入口名やcommand field差でPreToolUseを迂回できない不変量。
+    for spec in "Bash command" "exec_command cmd" "unified_exec cmd"; do
+        set -- $spec
+        run_hook "git commit --no-verify -m blocked" "$1" "$2"
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"BLOCK"* ]]
+        run_hook "printf safe" "$1" "$2"
+        [ "$status" -eq 0 ]
+    done
 }
 
 @test "bashでtests配下.batsを直接実行するとfile mode修正文付きでBLOCK" {
