@@ -89,6 +89,8 @@ try:
     task = task_data.get("task", task_data) if isinstance(task_data, dict) else {}
     project = task.get("project", "")
     owned_paths = task.get("owned_paths")
+    planned_paths = task.get("planned_paths")
+    target_path = task.get("target_path")
     report_path_value = task.get("report_path", "")
 except Exception:
     raise SystemExit(0)
@@ -125,28 +127,30 @@ def git(*args):
     )
 
 
-def global_fallback(reason):
-    """Fail safe only when task/report scope cannot be established."""
-    result = git("status", "--porcelain", "--untracked-files=no")
-    if result.returncode != 0:
-        return [], [f"scope_fallback_failed:{reason}"]
-    paths = []
-    for line in result.stdout.splitlines():
-        path = line[3:].strip() if len(line) >= 4 else ""
-        if path and not any(path.startswith(p) for p in (
-            "logs/", "queue/", "node_modules/", ".next/", "__pycache__/"
-        )) and not path.endswith((".log", ".pyc")):
-            paths.append(path)
-    paths = sorted(set(paths))
-    return paths, ([f"scope_fallback:{reason}"] if paths else [])
+def valid_scope_paths(value):
+    if not isinstance(value, list) or not value:
+        return []
+    if not all(
+        isinstance(path, str) and path.strip() and not os.path.isabs(path)
+        for path in value
+    ):
+        return []
+    return list(dict.fromkeys(path.strip() for path in value))
+
+
+def resolve_task_scope():
+    for value in (owned_paths, planned_paths):
+        resolved = valid_scope_paths(value)
+        if resolved:
+            return resolved
+    if isinstance(target_path, str) and target_path.strip() and not os.path.isabs(target_path):
+        return [target_path.strip()]
+    return []
 
 
 issues = []
 filtered = []
-scope_ready = isinstance(owned_paths, list) and bool(owned_paths) and all(
-    isinstance(path, str) and path.strip() and not os.path.isabs(path)
-    for path in owned_paths
-)
+scope_paths = resolve_task_scope()
 report_path = report_path_value
 if report_path and not os.path.isabs(report_path):
     report_path = os.path.join(script_dir, report_path)
@@ -159,15 +163,14 @@ if report_path and os.path.isfile(report_path):
     except Exception:
         report = None
 
-if not scope_ready:
-    filtered, issues = global_fallback("task_owned_paths_missing_or_invalid")
+if not scope_paths:
+    issues = ["task_scope_missing_or_invalid"]
 elif not isinstance(report, dict):
-    filtered, issues = global_fallback("report_missing_or_invalid")
+    issues = ["report_missing_or_invalid"]
 else:
-    owned_paths = list(dict.fromkeys(path.strip() for path in owned_paths))
-    status = git("status", "--porcelain", "--untracked-files=all", "--", *owned_paths)
+    status = git("status", "--porcelain", "--untracked-files=all", "--", *scope_paths)
     if status.returncode != 0:
-        filtered, issues = global_fallback("owned_status_failed")
+        issues = ["scope_status_failed"]
     else:
         filtered = sorted({
             line[3:].strip() for line in status.stdout.splitlines()
@@ -185,7 +188,7 @@ else:
                 issues.append("report_commit_not_found")
             else:
                 mismatched = []
-                for path in owned_paths:
+                for path in scope_paths:
                     head_blob = git("rev-parse", f"HEAD:{path}")
                     report_blob = git("rev-parse", f"{commit_hash}:{path}")
                     if (head_blob.returncode != 0 or report_blob.returncode != 0

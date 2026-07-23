@@ -63,6 +63,6 @@ gate_hook_quality_contract_evaluate() {
 gate_hook_quality_contract_default_candidate() {
     local block_text="${1:-}"
     printf '%s\n' "$block_text" | grep -qiE '(^|[^A-Za-z0-9_])(gate|hook)([^A-Za-z0-9_]|$)|ゲート|フック' || return 1
-    printf '%s\n' "$block_text" | grep -qiE '追加|新設|導入|実装|作成|append|add|new|create|introduce' || return 1
+    printf '%s\n' "$block_text" | grep -qiE '追加|新設|導入|実装|作成|(^|[^A-Za-z0-9_])(append|add|new|create|introduce)([^A-Za-z0-9_]|$)' || return 1
     return 0
 }
