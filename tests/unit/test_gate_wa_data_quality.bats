@@ -1,11 +1,103 @@
 #!/usr/bin/env bats
-# test_necessity: gate_wa_data_quality must detect every workaround=true/category=clean contradiction independent of detail, atomically repair only those contradictions, and leave valid clean and real-WA entries unchanged.
+# test_necessity: gate_wa_data_quality must preserve distinct causes hidden behind a shared ::general signature while still repairing true duplicates and preferring clean entries.
+# regression_justification: the production ledger contained two distinct ::general records that collapsed to one identity and produced a destructive DUPLICATE --fix proposal.
 
 GATE="$BATS_TEST_DIRNAME/../../scripts/gates/gate_wa_data_quality.sh"
 
 setup() {
     export TEST_DIR="$(mktemp -d "${BATS_TMPDIR:-/tmp}/wa-quality.XXXXXX")"
     export WA_FILE="$TEST_DIR/karo_workarounds.yaml"
+}
+
+@test "distinguishes general causes while blocking exact duplicates with FP0 FN0" {
+    cat > "$WA_FILE" <<'YAML'
+- cmd_id: cmd_general
+  ninja: tobisaru
+  workaround: true
+  category: task_drift
+  root_signature: 'task_drift::general'
+  detail: 'first distinct failure detail'
+  root_cause: 'first distinct root cause'
+- cmd_id: cmd_general
+  ninja: tobisaru
+  workaround: true
+  category: task_drift
+  root_signature: 'task_drift::general'
+  detail: 'second distinct failure detail'
+  root_cause: 'second distinct root cause'
+YAML
+
+    run env WA_FILE="$WA_FILE" bash "$GATE"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: no data quality issues"* ]]
+
+    cat >> "$WA_FILE" <<'YAML'
+- cmd_id: cmd_general
+  ninja: tobisaru
+  workaround: true
+  category: task_drift
+  root_signature: 'task_drift::general'
+  detail: 'second distinct failure detail'
+  root_cause: 'second distinct root cause'
+YAML
+
+    run env WA_FILE="$WA_FILE" bash "$GATE"
+    [ "$status" -ne 0 ]
+    [ "$(printf '%s\n' "$output" | grep -Fc 'DUPLICATE[')" -eq 1 ]
+
+    run env WA_FILE="$WA_FILE" bash "$GATE" --fix
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"FIXED: 1 changes applied"* ]]
+    [ "$(grep -c '^  detail:' "$WA_FILE")" -eq 2 ]
+}
+
+@test "keeps concrete signature deduplication and clean preference" {
+    cat > "$WA_FILE" <<'YAML'
+- cmd_id: cmd_concrete
+  ninja: hanzo
+  workaround: true
+  category: report_yaml_format
+  root_signature: 'report_yaml_format::schema_shape'
+  detail: 'older wording for same concrete cause'
+  root_cause: 'older diagnosis'
+- cmd_id: cmd_concrete
+  ninja: hanzo
+  workaround: true
+  category: report_yaml_format
+  root_signature: 'report_yaml_format::schema_shape'
+  detail: 'newer wording for same concrete cause'
+  root_cause: 'newer diagnosis'
+- cmd_id: cmd_clean
+  ninja: hayate
+  workaround: true
+  category: task_drift
+  root_signature: 'task_drift::general'
+  detail: 'valid workaround entry detail'
+  root_cause: 'valid workaround root cause'
+- cmd_id: cmd_clean
+  ninja: hayate
+  workaround: false
+  category: clean
+  detail: ''
+  root_cause: ''
+YAML
+
+    run env WA_FILE="$WA_FILE" bash "$GATE"
+    [ "$status" -ne 0 ]
+    [ "$(printf '%s\n' "$output" | grep -Fc 'DUPLICATE[')" -eq 2 ]
+
+    run env WA_FILE="$WA_FILE" bash "$GATE" --fix
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"FIXED: 2 changes applied"* ]]
+
+    run python3 - "$WA_FILE" <<'PY'
+import sys, yaml
+rows = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+assert len(rows) == 2, rows
+assert any(row["cmd_id"] == "cmd_concrete" and row["detail"].startswith("newer") for row in rows)
+assert any(row["cmd_id"] == "cmd_clean" and row["workaround"] is False for row in rows)
+PY
+    [ "$status" -eq 0 ]
 }
 
 teardown() {

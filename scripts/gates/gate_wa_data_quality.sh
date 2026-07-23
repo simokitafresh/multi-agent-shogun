@@ -138,7 +138,9 @@ run_check_mode_scan() {
             # unrelated causes are never collapsed into one "general" bucket.
             if (workaround[i] == "true") {
                 cause = root_signature[i]
-                if (cause == "") {
+                if (cause ~ /::general$/) {
+                    cause = cause "|" detail[i] "|" root_cause[i]
+                } else if (cause == "") {
                     cause = "legacy:" category[i] "|" detail[i] "|" root_cause[i]
                 }
                 key = cmd[i] SUBSEP ninja[i] SUBSEP cause
@@ -361,7 +363,12 @@ for i, entry in enumerate(entries):
     cmd_ninja = f"{cmd_id}|{ninja}"
     if entry.get("workaround", False):
         root_signature = str(entry.get("root_signature", "")).strip()
-        if root_signature:
+        if root_signature.endswith("::general"):
+            cause = root_signature + "|" + "|".join(
+                str(entry.get(field, "")).strip()
+                for field in ("detail", "root_cause")
+            )
+        elif root_signature:
             cause = root_signature
         else:
             cause = "legacy:" + "|".join(
