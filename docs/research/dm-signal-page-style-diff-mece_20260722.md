@@ -25,7 +25,7 @@
 | 表本体・数値 | **14px / ui-monospace / tabular-nums** | 殿 2026-07-23 10:15 |
 | 表本体・文字(ラベル) | **14px / Inter** | 殿 2026-07-23 10:15 |
 | 表ヘッダ | **14px / Inter** | 殿 2026-07-23 10:15 |
-| 値の色(getValueColorClass) | 正値=**text-foreground**(light黒寄り#0f172a/dark白#f8fafc) / 負値=text-red-400(両モード) / 0・null=空文字 | 殿 2026-07-23 01:05(★00:45暫定のdark:emerald-400は失効) |
+| 値の色(getValueColorClass) | 正値=**text-foreground**(light黒寄り#0f172a/dark白#f8fafc) / 負値=**text-red-600 dark:text-red-400**(light濃色/dark現行維持) / 0・null=空文字 | 殿 2026-07-23 01:05、cmd_4142でlight contrast是正(2026-07-24) |
 | status色バッジ(STATUS_TEXT_CLASSES) | 正=emerald-400/負=red-400/warning=amber-400/neutral=muted-foreground。★**値の色とは別物。混同禁止** | cmd_4120 |
 | page-title h1 | `text-2xl md:text-3xl font-bold tracking-tight text-foreground` | cmd_4115 |
 | 統一対象外(例外) | アイコン役割(deteriorationの方向矢印↘↓→ text-lg色付き)は数値/文字でなくアイコンゆえ除外 | 実装者判断+殿確認 |
