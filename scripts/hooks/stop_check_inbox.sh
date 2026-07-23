@@ -595,7 +595,17 @@ else
     for _dcmd in $_delegated_cmds; do
       _has_task=false
       for _tf2 in "$SCRIPT_DIR"/queue/tasks/*.yaml; do
-        if grep -q "parent_cmd:.*${_dcmd}" "$_tf2" 2>/dev/null; then
+        _task_parent_cmd="$(awk '
+          /^[[:space:]]*parent_cmd:[[:space:]]*/ {
+            value=$0
+            sub(/^[[:space:]]*parent_cmd:[[:space:]]*/, "", value)
+            sub(/[[:space:]]*(#.*)?$/, "", value)
+            gsub(/^["'\'']|["'\'']$/, "", value)
+            print value
+            exit
+          }
+        ' "$_tf2" 2>/dev/null || true)"
+        if [[ "$_task_parent_cmd" == "$_dcmd" ]]; then
           _has_task=true
           break
         fi
