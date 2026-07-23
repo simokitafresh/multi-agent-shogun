@@ -152,6 +152,45 @@ for raw in values:
 PY
 }
 
+# A read-only recon owns no source path.  Treating inspection references as
+# implementation ownership expands dependency tests and attributes unrelated
+# failures to the recon.  Keep this predicate narrow and fail closed: only the
+# explicit no-commit recon/scout contract with inspection-only inputs qualifies.
+task_is_readonly_probe() {
+    local task_file="$1"
+    python3 - "$task_file" <<'PY'
+import json
+import sys
+
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    document = yaml.safe_load(handle) or {}
+task = document.get("task", document)
+if not isinstance(task, dict):
+    raise SystemExit(2)
+
+commit = task.get("commit_contract")
+is_no_commit = isinstance(commit, dict) and commit.get("required") is False
+is_recon = task.get("task_type") in {"recon", "recon2", "scout"}
+has_inspection = bool(task.get("inspection_path") or task.get("readonly_refs"))
+
+owned = []
+for key in ("target_path", "test_path", "files_to_modify", "files_modified", "owned_paths"):
+    value = task.get(key)
+    if value not in (None, "", [], {}):
+        owned.append(key)
+owned_json = task.get("owned_paths_json")
+if isinstance(owned_json, str) and owned_json.strip():
+    if json.loads(owned_json):
+        owned.append("owned_paths_json")
+elif owned_json not in (None, "", [], {}):
+    owned.append("owned_paths_json")
+
+raise SystemExit(0 if is_no_commit and is_recon and has_inspection and not owned else 1)
+PY
+}
+
 # Resolve the task's repository from the project registry.  Unknown projects,
 # malformed registry paths, and non-git directories fail closed.
 task_scope_root() {
@@ -753,6 +792,10 @@ selection_manifest_for_singleflight() {
                 printf 'external-project:%s\n' "$_sf_task_root"
                 return 0
             fi
+            if task_is_readonly_probe "$1"; then
+                printf 'readonly-probe:%s\n' "$(realpath -- "$1")"
+                return 0
+            fi
             local scope
             scope="$(mktemp)"
             task_scope_paths "$1" >"$scope" || { rm -f "$scope"; return 2; }
@@ -1038,6 +1081,11 @@ _run_tests_main() {
             shift || true
             [ "$#" -eq 1 ] || { echo "Usage: bash scripts/run_tests.sh task <task_yaml>" >&2; exit 2; }
             [ -r "$1" ] || { echo "BLOCK: task scope file is unreadable: $1" >&2; exit 2; }
+            if task_is_readonly_probe "$1"; then
+                echo "TEST_SCOPE result=readonly_probe files=0 task=$1"
+                echo "TEST_SELECTION result=selected reason=readonly_probe_no_source_tests files=0"
+                exit 0
+            fi
             local _scope_tmp _scope_rc
             _scope_tmp="$(mktemp)"
             set +e
@@ -1272,7 +1320,8 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         _source_head="$(git -C "$REPO_ROOT" rev-parse HEAD)"
         # Freeze the selector result before any test process starts. Nested
         # fixture runners must not overwrite the public run's selected set.
-        printf '%s\n' "${_sf_selection:-}" | sed '/^$/d' >"$_selected_paths"
+        printf '%s\n' "${_sf_selection:-}" \
+            | sed '/^$/d; /^readonly-probe:/d' >"$_selected_paths"
         # Resolve at this public-call boundary.  RUN_TESTS_BATS_BIN may belong
         # to an enclosing bats root; inheriting it would bypass an isolated
         # fixture's PATH and execute the wrong runner.

@@ -540,6 +540,74 @@ YAML
   [[ "$output" == *"BLOCK: task scope is empty"* ]]
 }
 
+# test_necessity: inspection-only recon tasks must produce a successful
+# zero-source-test receipt instead of expanding inspection references through
+# the dependency selector and attributing unrelated failures to the recon.
+@test "readonly recon task skips source selection and emits a zero-test receipt" {
+  mkdir -p "$TMPROOT/queue/tasks" "$TMPROOT/receipts" "$TMPROOT/sf"
+  cat >"$TMPROOT/queue/tasks/readonly.yaml" <<'YAML'
+task:
+  task_type: recon2
+  commit_contract:
+    required: false
+  inspection_path: '["scripts/inspected.sh"]'
+  readonly_refs: [scripts/other.sh]
+YAML
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+echo "selector must not run" >&2
+exit 91
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/receipts" RUN_TESTS_SINGLEFLIGHT_DIR="$TMPROOT/sf" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" task "$TMPROOT/queue/tasks/readonly.yaml"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SCOPE result=readonly_probe files=0"* ]]
+  [[ "$output" == *"TEST_SELECTION result=selected reason=readonly_probe_no_source_tests files=0"* ]]
+  [[ "$output" == *"TEST_RECEIPT_PASS"* ]]
+  receipt="$(find "$TMPROOT/receipts" -name '*.json' -type f | head -1)"
+  [ -n "$receipt" ]
+  run python3 - "$receipt" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert d["rc"] == 0
+assert d["declared_test_count"] == 0
+assert d["observed_test_count"] == 0
+assert d["skip_count"] == 0
+assert d["test_paths"] == []
+PY
+  [ "$status" -eq 0 ]
+}
+
+# test_necessity: a recon with commit ownership remains an implementation task;
+# readonly classification must not suppress its declared contract test.
+@test "commit-required recon keeps implementation test selection" {
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
+  mkdir -p "$TMPROOT/queue/tasks"
+  cat >"$TMPROOT/queue/tasks/implementation.yaml" <<'YAML'
+task:
+  task_type: recon2
+  commit_contract:
+    required: true
+  target_path: scripts/run_tests.sh
+  test_path: tests/unit/owned.bats
+  inspection_path: '["scripts/run_tests.sh"]'
+YAML
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/implementation.yaml"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SCOPE result=task files=2"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_declared_contract"* ]]
+  [[ "$output" != *"readonly_probe"* ]]
+}
+
 # test_necessity: public task/file callers selecting the same test must share one terminal receipt; the task-leader fixture must include admission dependencies and preserve rc=7 (never 127 or collapsed rc=1). This guards both dependency closure and exit-code fidelity.
 @test "task and file public callers single-flight the same selection and preserve failure rc" {
   mkdir -p "$TMPROOT/queue/tasks" "$TMPROOT/receipts" "$TMPROOT/sf"
