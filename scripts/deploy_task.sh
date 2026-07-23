@@ -3899,15 +3899,24 @@ PY
     _commit_paths_evidence="${_commit_paths_evidence//$'\n'/ }"
     _commit_paths_evidence="${_commit_paths_evidence//\/\\}"
     _commit_paths_evidence="${_commit_paths_evidence//\"/\\\"}"
+    local _commit_repo_root
+    if [ "${project:-infra}" = "infra" ]; then
+        _commit_repo_root="$SCRIPT_DIR"
+    else
+        _commit_repo_root=$(get_project_path "${project}" 2>/dev/null || true)
+    fi
+    [ -n "$_commit_repo_root" ] || _commit_repo_root="$SCRIPT_DIR"
+    _commit_repo_root=$(git -C "$_commit_repo_root" rev-parse --show-toplevel 2>/dev/null || printf '%s\n' "$_commit_repo_root")
     local _commit_contract_json
-    _commit_contract_json=$(python3 - "$_commit_required" "$_commit_reason" "$_commit_task_type" "$_commit_planned_paths" <<'PY'
+    _commit_contract_json=$(python3 - "$_commit_required" "$_commit_reason" "$_commit_task_type" "$_commit_planned_paths" "$_commit_repo_root" <<'PY'
 import json, sys
-required, reason, task_type, paths = sys.argv[1:]
+required, reason, task_type, paths, repo_root = sys.argv[1:]
 print(json.dumps({
     "required": required == "true",
     "reason": reason,
     "task_type": task_type,
     "planned_paths": [path for path in paths.split() if path],
+    "repo_root": repo_root,
 }, ensure_ascii=False, separators=(",", ":")))
 PY
 )
@@ -3925,8 +3934,65 @@ commit_contract:
   reason: "${_commit_reason}"
   task_type: "${_commit_task_type}"
   planned_paths: ${_commit_paths_json}
+  repo_root: "${_commit_repo_root}"
 EOF
 )
+    local _cross_repo_commits_block=""
+    if [ "$_commit_repo_root" != "$SCRIPT_DIR" ]; then
+        _cross_repo_commits_block=$(cat <<EOF
+cross_repo_commits:
+  - repo: "${_commit_repo_root}"
+    commit_hash: ""  # 対象repoで作成した40文字commit hash
+    paths: ${_commit_paths_json}  # commit_contractと同じ所有scope
+EOF
+)
+    fi
+
+    local _ac_evidence_mapping_block
+    _ac_evidence_mapping_block=$(python3 - "$task_file" <<'PY'
+import sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+print("ac_evidence_mapping:")
+for item in task.get("acceptance_criteria") or []:
+    if not isinstance(item, dict):
+        continue
+    key = str(item.get("id") or item.get("ac") or "").strip()
+    if key:
+        print(f'  {key}: ""  # このACの一次証拠を1:1で記入')
+PY
+) || return 1
+    local _semantic_validation_block
+    _semantic_validation_block=$(cat <<'EOF'
+semantic_validation:
+  classification_axis: ""  # N×M一致時の分類軸
+  recount: ""  # 分類軸ごとの再計算式・件数
+  actual: ""  # 分類別内訳の実測
+  result: ""  # PASS or FAIL
+EOF
+)
+    local _level5_report_contract_json
+    _level5_report_contract_json=$(python3 - "$task_file" <<'PY'
+import json, sys, yaml
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+mapping = {}
+for item in task.get("acceptance_criteria") or []:
+    if isinstance(item, dict):
+        key = str(item.get("id") or item.get("ac") or "").strip()
+        if key:
+            mapping[key] = ""
+print(json.dumps({
+    "ac_evidence_mapping": mapping,
+    "semantic_validation": {
+        "classification_axis": "",
+        "recount": "",
+        "actual": "",
+        "result": "",
+    },
+}, ensure_ascii=False, separators=(",", ":")))
+PY
+) || return 1
+    yaml_field_set "$task_file" "task" "report_contract_templates" "$_level5_report_contract_json" \
+        || { log "FATAL: failed to publish Level5 report contract templates"; return 1; }
 
     # Build the complete canonical template off-path.  Readers must observe
     # either no report or one complete report; never a partially appended
@@ -3988,6 +4054,9 @@ test_triage: ""  # in_branch / pre_existing / unknown
 ${_before_after_block}
 ${_causal_verification_block}
 ${_commit_contract_block}
+${_cross_repo_commits_block}
+${_ac_evidence_mapping_block}
+${_semantic_validation_block}
 files_modified:
   - path: ""  # 変更ファイルパスを記入。説明文ではなく repo-root 相対パス
     change: ""  # 変更内容を1文で記入

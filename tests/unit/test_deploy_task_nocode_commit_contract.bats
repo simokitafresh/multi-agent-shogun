@@ -37,6 +37,77 @@ EOF
   printf '%s/queue/reports/sasuke_report_cmd_nocode_fixture.yaml\n' "$TEST_PROJECT"
 }
 
+# test_necessity: LG044の正直報告は各ACの証拠slotが配備時点で存在しなければ、
+# workerがschemaを推測して再提出するため、AC SSOT由来の1:1 mappingを守る。
+@test "Level5 report template preinjects LG044 AC evidence slots into task and report" {
+  report="$(build_report impl scripts/deploy_task.sh "implementation update" '[scripts/deploy_task.sh]')"
+
+  run python3 - "$report" "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import json, sys, yaml
+report = yaml.safe_load(open(sys.argv[1]))
+task = yaml.safe_load(open(sys.argv[2]))["task"]
+assert report["ac_evidence_mapping"] == {"AC1": ""}
+assert json.loads(task["report_contract_templates"])["ac_evidence_mapping"] == {"AC1": ""}
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+}
+
+# test_necessity: LG048のN×M検算は4つの正規field名をLevel5で供給し、
+# 空欄をPASSへ捏造せずworkerの実測入力を要求する契約を守る。
+@test "Level5 report template preinjects empty LG048 semantic validation schema" {
+  report="$(build_report impl scripts/deploy_task.sh "implementation update" '[scripts/deploy_task.sh]')"
+
+  run python3 - "$report" "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import json, sys, yaml
+report = yaml.safe_load(open(sys.argv[1]))
+task = yaml.safe_load(open(sys.argv[2]))["task"]
+expected = {"classification_axis": "", "recount": "", "actual": "", "result": ""}
+assert report["semantic_validation"] == expected
+assert json.loads(task["report_contract_templates"])["semantic_validation"] == expected
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+}
+
+# test_necessity: 外部projectのcommitはinfra repo基準の相対pathと混同せず、
+# 対象Git rootと所有pathを同じcontractからreportへ供給する必要がある。
+@test "DM-signal commit contract preinjects external repo scope" {
+  local dm_repo
+  dm_repo="$(get_project_path dm-signal)"
+  cat >"$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  assigned_to: sasuke
+  task_id: cmd_dm_scope
+  parent_cmd: cmd_dm_scope
+  project: dm-signal
+  task_type: impl
+  title: dm scope fixture
+  target_path: backend/app/main.py
+  planned_paths: [backend/app/main.py]
+  ac_version: fixture-v1
+  acceptance_criteria:
+    - id: AC1
+      description: external scope is structured
+EOF
+  generate_report_template sasuke cmd_dm_scope cmd_dm_scope dm-signal >/dev/null
+  local report="$TEST_PROJECT/queue/reports/sasuke_report_cmd_dm_scope.yaml"
+
+  run python3 - "$report" "$TEST_PROJECT/queue/tasks/sasuke.yaml" "$dm_repo" <<'PY'
+import sys, yaml
+report = yaml.safe_load(open(sys.argv[1]))
+task = yaml.safe_load(open(sys.argv[2]))["task"]
+root = sys.argv[3]
+assert task["commit_contract"]["repo_root"] == root
+assert task["commit_contract"]["planned_paths"] == ["backend/app/main.py"]
+assert report["cross_repo_commits"] == [{
+    "repo": root, "commit_hash": "", "paths": ["backend/app/main.py"]
+}]
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+}
+
 @test "decision_candidate no-code scope emits machine-readable commit N/A" {
   report="$(build_report decision_candidate queue/pending_decisions.yaml "decision candidate only" '[]')"
 
