@@ -324,10 +324,13 @@ canonical=本体数値14px/ui-monospace/tabular-nums、本体文字14px/Inter、
 4. **完遂条件=CDP getComputedStyleで逸脱0を全数証明**(grep 0件証明では不十分。描画と不一致のため)。
 5. **偵察入口も検証出口もCDP実測**。旧ルールはCDPを『最終確認』に後置したが、入口をgrepにすると見落とすため、偵察の最初からCDPで測る。将軍が実施(per-task CDP禁止=忍者の実装ループ内のみ、本番デプロイ後の全数実測は将軍の役目 knowledge:43724140b320495c)。
 
-### CDP実測手順(確立済み・knowledge:7e967b43cd1c82f8)
-1. **Chrome起動**: `powershell.exe`(フルパス`/mnt/c/Windows/System32/WindowsPowerShell/v1.0/`)の`Start-Process`で完全デタッチ起動(WSLシェルの`&`起動は子プロセスとして死ぬ)。必須フラグ=`--remote-debugging-port`+`--remote-allow-origins=*`(Chrome111+のWS必須)+`--user-data-dir`(隔離profile、殿のChrome不干渉D009)+`--window-position=-32000,-32000`(オフスクリーン)。`--headless`はWSL2でGPU FATALクラッシュのため使わない。
-2. **viewer認証**: 本番`VIEWER_PASS`はRender API(`/v1/services/<FE_srv>/env-vars`, `Authorization: Bearer <RENDER_API_KEY>`)から取得(ローカルbackend envは古い)。`POST /api/auth/verify-viewer {password}`でpremium token取得→CDPセッションの`localStorage`キー`dm_viewer_token`へ`{token,expires,tier_name}`をJSON注入→reloadで表描画(未認証だと表0件・bodyLen極小)。
-3. **測定(恒久ツール使用)**: `python3 scripts/cdp/cdp_font_probe.py --base https://dm-signal-frontend.onrender.com --routes /summary,/metrics,...` を使う。役割別(header/body-number/body-text)のfont計算済み値をJSON出力し、数値がプロポーショナル(等幅漏れ)のセルを `body-number(prop!)` として surface する。★**固定sleepするな**: 本ツールはセル数が2回連続同値で安定するまでポーリングし、安定検知した瞬間に測定へ進む(本番の表+セルは約2sで充填し2〜10s不変。固定sleep15sは1ページ約13sの純浪費で1セッション20ページ超で4〜5分を捨てる=2026-07-23将軍実測。ポーリング版は1ページ約2.5s=6.1倍速)。ナビゲーション後は新規WebSocket接続で測る(persistent WSは実行コンテキスト喪失で測定不能)ことも本ツールが内包。認証要ページは事前にviewer tokenを注入しておく(手順2)。**この surface はcandidateであり、数値prop検出=即逸脱ではない**: 年号/月ラベル(行ラベル)や'---'プレースホルダは数値内容だがラベル/非数値ゆえInter正当(偽陽性)。セル内容(textContent/cellIndex)で実データか判別してから逸脱確定せよ。
+### CDP実測手順(正本・knowledge:776999ee で上書き 2026-07-23)
+★旧記述(powershell手動起動+Render API verify-viewer手動注入、knowledge:7e967b43)は手動分解の断片。実体は下記ラッパーが起動+認証+測定を一括で行う。手動powershell/claude-in-chrome MCPは使うな。
+1. **起動+認証+測定 一括**: `bash scripts/cdp/cdp_measure.sh <cmd_id> --pages /a /b`。内部で `/mnt/c/Python_app/auto-ops/workflows/perf_measure.py --profile production` を実行し、CDP起動(preflight port9222・既起動なら再利用・隔離profile D009)+認証+測定+JSON/MD保存(`/mnt/c/Python_app/DM-signal/outputs/`)を全て行う。
+2. **認証の実体(perf_measure.py)**: **admin Basic Auth**(config `auth.admin_user/admin_pass`)で `/api/admin/tiers/passwords` からviewer passwordを取得→ `/api/viewer-permissions` でviewer認証。未認証だと表0件。
+3. **★admin認証(殿厳命2026-07-23)**: **viewer認証だけでは不十分、admin認証で入らないと確認できないPF/ページがある**。admin対象は config `auth.admin_user/admin_pass` を設定して測れ(`/admin/*`もこの経路で到達可)。
+4. **稼働中CDP(9222・認証済)への独自測定**: `python3 scripts/cdp/<probe>.py --base https://dm-signal-frontend.onrender.com --routes /a,/b --port 9222`。probe=`cdp_font_probe.py`(font役割別=header/body-number/body-text、数値プロポーショナルを `body-number(prop!)` surface)/`cdp_ed_probe.py`(E軸境界線・stripe・padding + D軸card)/`cdp_card_probe.py`(全カード列挙)。★**固定sleep禁止**=セル数2回連続同値まで安定ポーリング後に即測定(本番約2sで充填、固定15sは1ページ約13s浪費=将軍実測、ポーリング版6.1倍速)。ナビゲーション後は新規WSで測る(persistent WSは実行コンテキスト喪失)。**数値prop検出=candidateであり即逸脱でない**: 年号/月ラベル・'---'プレースホルダは非データゆえInter正当(偽陽性)、textContentで実データ判別してから逸脱確定。
+5. **実ルートは想像するな**: ルートは `frontend/app/*/page.tsx` が権威(全21件)。将軍が架空ルート(risk-management/model-trades等)を作り`[]`を得た検証不足事故あり(2026-07-23)。
 
 このコンポーネント×属性×役割粒度を、B(色: 全component×status色/border/bg)、E(表: 全表×header/row/cell/sticky)、G(グラフ: 全chart×palette/axis/legend)等の各軸にも適用。測定は全てCDP実測、grepは補助(どのcomponentファイルを触るかの当たり付け)にのみ使い、○/×判定には使わない。
 
