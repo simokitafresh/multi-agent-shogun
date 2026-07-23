@@ -2,6 +2,8 @@
 # Codex UserPromptSubmit adapter.
 # Codex runs multiple hooks for one event concurrently, so sequence-dependent
 # actions must be composed in one adapter instead of listed as separate hooks.
+# Required-skill receipts are enforced by codex_skill_execution_guard.sh at
+# PreToolUse; this adapter remains limited to prompt logging and context injection.
 set -euo pipefail
 
 _self="${BASH_SOURCE[0]}"
