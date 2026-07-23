@@ -4293,6 +4293,129 @@ show_pending_insights() {
 
 show_pending_insights
 
+# --- Check 9.9: explicit reference existence guard ---
+# Only structurally declared references in target_path / assumptions /
+# acceptance_criteria are checked. Prose, URLs, globs, placeholders and shell
+# fragments are deliberately ignored to keep the detector fail-open on
+# ambiguous text.
+check_explicit_reference_existence() {
+    [[ -z "${CMD_BLOCK_NC:-}" ]] && return 0
+
+    local project_id project_wd violations
+    project_id="${CMD_BLOCK_PROJECT:-}"
+    [[ -z "$project_id" ]] && project_id=$(awk '/^current_project:/{print $2}' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null || true)
+    [[ -z "$project_id" ]] && return 0
+    project_wd="${CMD_REFERENCE_PROJECT_WD_OVERRIDE:-}"
+    if [[ -z "$project_wd" ]]; then
+        project_wd=$(awk -v id="$project_id" '
+            /^  - id:/ { current_id = $3; gsub(/"/, "", current_id) }
+            /^    path:/ && current_id == id { gsub(/.*path: *"?/, ""); gsub(/"$/, ""); print; exit }
+        ' "$PROJECT_DIR/config/projects.yaml" 2>/dev/null || true)
+    fi
+    [[ -d "$project_wd" ]] || return 0
+
+    violations=$(CMD_REFERENCE_PROJECT_WD="$project_wd" CMD_REFERENCE_BLOCK="$CMD_BLOCK_NC" python3 - <<'PY'
+import os
+import re
+import sqlite3
+import sys
+
+import yaml
+
+root = os.path.realpath(os.environ["CMD_REFERENCE_PROJECT_WD"])
+try:
+    doc = yaml.safe_load(os.environ["CMD_REFERENCE_BLOCK"]) or {}
+except yaml.YAMLError:
+    raise SystemExit(0)
+if not isinstance(doc, dict):
+    raise SystemExit(0)
+
+scope = {key: doc[key] for key in ("target_path", "assumptions", "acceptance_criteria") if key in doc}
+path_re = re.compile(
+    r"^(?:\./)?[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.+-]+)+"
+    r"\.(?:py|tsx?|jsx?|sh|bash|ya?ml|json|sql|html|css|toml|cfg|env|md|txt|csv|db|sqlite)$"
+)
+ambiguous_re = re.compile(r"(?:https?://|[*?\[\]{}<>$`]|\|\||&&|;\s|\s(?:>|>>|<)\s)")
+
+
+def strings(value):
+    if isinstance(value, str):
+        yield value.strip().strip("\"'")
+    elif isinstance(value, list):
+        for item in value:
+            yield from strings(item)
+    elif isinstance(value, dict):
+        for item in value.values():
+            yield from strings(item)
+
+
+def explicit_path(value):
+    if not value or any(ch.isspace() for ch in value) or ambiguous_re.search(value):
+        return None
+    if os.path.isabs(value):
+        return value if re.search(r"\.[A-Za-z0-9]+$", value) else None
+    return value if path_re.fullmatch(value) else None
+
+
+violations = set()
+for raw in strings(scope):
+    candidate = explicit_path(raw)
+    if not candidate:
+        continue
+    resolved = os.path.realpath(candidate if os.path.isabs(candidate) else os.path.join(root, candidate))
+    if not os.path.exists(resolved):
+        violations.add(candidate)
+
+
+def mappings(value):
+    if isinstance(value, dict):
+        yield value
+        for item in value.values():
+            yield from mappings(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from mappings(item)
+
+
+for mapping in mappings(scope):
+    db_value = next((mapping.get(key) for key in ("db_path", "database_path", "sqlite_path")
+                     if isinstance(mapping.get(key), str)), None)
+    table = mapping.get("table")
+    if not db_value or not isinstance(table, str):
+        continue
+    db_candidate = explicit_path(db_value.strip().strip("\"'"))
+    table = table.strip()
+    if not db_candidate or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", table):
+        continue
+    db_path = db_candidate if os.path.isabs(db_candidate) else os.path.join(root, db_candidate)
+    if not os.path.isfile(db_path):
+        continue
+    try:
+        with sqlite3.connect(f"file:{os.path.realpath(db_path)}?mode=ro", uri=True) as conn:
+            exists = conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name=?",
+                (table,),
+            ).fetchone()
+    except sqlite3.Error:
+        continue
+    if not exists:
+        violations.add(table)
+
+for item in sorted(violations):
+    print(item)
+PY
+    ) || true
+
+    [[ -z "${violations//[[:space:]]/}" ]] && return 0
+    while IFS= read -r reference; do
+        [[ -z "$reference" ]] && continue
+        record_block_reason "参照先が非実在: ${reference}。falsifyしてから起票せよ"
+    done <<< "$violations"
+    abort_if_block_immediate || return 1
+}
+
+check_explicit_reference_existence
+
 # --- Check 10: AC内ファイルパス存在チェック（親ディレクトリありはINFO、親も不在はBLOCK） ---
 # 起源: cmd_1464事故 + cmd_1896/1899で3回連続パス誤り(2026-04-14なぜなぜ7回)
 # 目的: AC内のファイルパス参照が実在するか検証。未作成でも親ディレクトリがあれば作成対象として許容する
