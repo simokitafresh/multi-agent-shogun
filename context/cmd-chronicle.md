@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-22 -->
+<!-- last_updated: 2026-07-23 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,9 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3488 | 殿指摘(2026-06-22): semantic_search.shで「L1パイプライン BB」がNO_MATCH。根因: semantic_index.py L854-861のマッチングが部分文字列のみで、クエリを空白分割した個別単語がalias内に全出現するかの判定がない。aliasに合わせてクエリを書き直すのは方向性が間違い(殿指摘「バグに合わせるな」) | infra | 06-22 | semantic_searchのfirst-layer al |
-| cmd_3490 | 殿構想(2026-06-22): pf_L1のselection blockを複数BB直列に拡張(pf_L1+)。run_077_oikaze.pyをコピー改変しGSループ除去、固定パラメータでBB1→BB2直列パイプライン実行→本番holding_signalと月次パリティ突合するスクリプトを作成。1パターン(GSシン追い風-激攻+pf_L2追い風チャンピオン)でパリティ0不一致を確認 | dm-signal | 06-22 | run_l1plus_backtest.pyを追加し、BB1 |
-| cmd_3493 | 殿指示(2026-06-22): 22分は長い。道具を磨け。(1)DBロードを441パターン共通で1回に集約 (2)パリティ基準にticker×weight一致を追加 (3)441パターン一括実行モードでBB1×BB2全組合せを1実行→結果を1テーブル(441行×α6指標)に集約。見込み5-8分 | dm-signal | 06-22 | run_l1plus_backtest.pyに--batch |
 | cmd_3494 | 殿指示(2026-06-22): pf_L2奥義21体(新四つ目除く)を構成PFとして7忍法GSを実行しpf_L3(秘奥義)を生成。Phase0=L3用universe YAML作成+分身smoke runでpeak RSS実測。L2 GS実績: 構成21体peak RSS 10.1GB(cmd_2402)。WSL2 available 20GB。構成PF数同一だが奥義=複合PFのためRSS増加の可能性→実測必須(軍師指摘) | dm-signal | 06-23 | L3用hiougi_ougi_21.yamlを作成し、run |
 | cmd_3495 | 殿指示(2026-06-22): pf_L3秘奥義GS 7忍法直列の1本目。Phase0(cmd_3494)でRSS安全確認済み(peak 104.6MB)。pf_L2奥義21体を構成PFとして追い風(MomentumFilter)の全パラメータ空間をGSで探索。run_077_oikaze.py --universe hiougi_ougi_21.yaml | dm-signal | 06-23 | run_077_oikaze.pyをhiougi_ougi_ |
 | cmd_3496 | pf_L3秘奥義GS 7忍法直列の2本目。run_077_nukimi.py --universe hiougi_ougi_21.yaml | dm-signal | 06-23 | run_077_nukimi.pyをhiougi_ougi_ |
@@ -307,3 +304,6 @@
 | cmd_4096 | 家老の現物確認(blt_20260720_063835、2026-07-20 06:38)で確定した観測面不一致の是正。指定msg_idが未存在・既読でもexit 0で返るため、呼出し側のフォールバックや誤り検知が構造的に不発になる。誤IDを非0で返し、呼出し側が検知できる契約へ是正する | infra | 07-20 | 明示msg_idの既読化0件をexit 2へ変更。修正前16 |
 | cmd_4097 | 家老の現物照合(blt_20260720_065426、2026-07-20 06:54)で確定: scripts/cmd_save.shのLK-A10判定はtype・title・purposeの語彙一致のみで発火し、AC構造を見ないため、実装cmdの説明文に該当語が1語あるだけで発火する(cmd_4096起票時に実測FP1/1)。AC構造(実装/テスト成果物の有無)を主判定へ加え、FPを構造根絶する | infra | 07-20 | LK-A10へAC構造分類を追加。修正前FP1/1相当から修 |
 | cmd_4098 | 将軍実測(2026-07-20 06:57と06:59の誤注入2回)+家老現物照合(blt_20260720_070744、blt_20260720_133430)で根因合意済み: .claude/hooks/post-bash-combined.shのBLOCK注入判定が、cmd_save.shをファイル引数として参照しただけのコマンドや実exit 0のコマンドでも、出力中のBLOCK文言だけで発火する。実行と参照の区別+実行証跡との突合を実装し、境界fixtureで固定する | infra | 07-20 | Guard 0を直接bash実行・非zero exit・当該 |
+| cmd_4119 | 殿裁定(2026-07-22 A軸を第3層まで完遂を選択): MECE A軸typographyの第3層。①タイトルh1・②section見出しh2/h3(cmd_4116/4117)の下、本文と数値セルのサイズが場当たりで混在。将軍grep実測: 本文=text-sm(105)/text-xs(51)/text-base(2)混在、数値mono=text-xs(4)/text-sm(2)/text-lg(1)混在、一部の数値表示にfont-mono/tabular-nums欠落。Monthly Returns基本形に揃えtoken化する。ただし役割分類が要る: 本文(body)とキャプション/注釈(caption=小さくて正当)を区別し、xsを機械的にsmへ変換しない。数値セルは font-mono + tabular-nums + 単一サイズへ統一(桁揃え)。CDP撤去済(殿裁定per-task CDP禁止)——実装はコード現読+テストで完結、本番デプロイ後のCDP最終確認は将軍が別段で1回実施。 | dm-signal | 07-22 | A軸第3層を完遂。body/caption/numericを |
+| cmd_4116 | 殿裁定(2026-07-22): MECE §3 A軸(typography)統一の第2層。①ページタイトルh1は統一済み。残る問題=表/グラフ/カードの同格セクション見出し(h2/h3)が全ページで場当たり実装され、サイズ(sm/base/lg/xl/2xl/無指定)・太さ(medium/semibold/bold)・色(foreground/primary/sky-400/purple/amber/muted)が混在。実例=annual-returnsで同格の『グラフ見出し(h3 text-xl text-primary, annual-returns-chart.tsx:213)』と『表見出し(h2 text-lg text-foreground, annual-returns-table.tsx:103)』が別レベル・別サイズ・別色になり、下位h3が上位h2より大きい逆転。殿裁定でMonthly Returnsが基本形=セクション見出しh2 text-lg font-semibold text-foreground(monthly-returns-table.tsx:197/monthly-trade-table.tsx:123)。将軍grep実測でアクセント色見出し14/font-bold 6/サイズ逸脱3が基本形から逸脱。全ページを基本形へ収束させ、同格見出しは必ず同サイズ・同色にする。ただし役割の違う見出し(サブラベル10箇所=項目グループ、状態色ラベル2箇所=劣化色で色が意味)は別トークンで保持し機械的一律化はしない。参考モック=https://claude.ai/code/artifact/cd098407-ba1d-425e-8752-dc28d9af0da3 | dm-signal | 07-22 | 全h2/h3 88/88を現読しsection-headin |
+| cmd_4120 | 殿裁定(2026-07-22 Bも進めよう): MECE B軸(color)のB1=status色統一。将軍grep実測でstatus色class(意味色)が同一意味で異shade混在: 負値=text-red-400(35件)だがtext-red-600(1件)、正値=text-emerald-400(23件)だがtext-green-400(4件)、warning=text-amber-400(5)/text-amber-500(6)/text-amber-600(2)混在。同じ意味(負/正/警告)に異なる色shadeが割り当てられ視覚的不統一。既存`frontend/lib/colors.ts`と`getValueColorClass`をSSOTに使い(車輪の再発明防止=既存grep確認済)、少数派shade(red-600/green-400/amber混在)を多数派の正準shade(負=red-400/正=emerald-400/警告=amber-XXX単一)へ寄せる。CDP撤去済(実装はコード+テスト、本番デプロイ後CDPは将軍が1回)。K軸(cmd_4118 mobile負値=赤)は状態色の適用漏れ修正で完了済、本B1はshade値そのものの統一で別subtask。 | dm-signal | 07-22 | B軸B1 status色shadeをSSOT化。非正準tex |

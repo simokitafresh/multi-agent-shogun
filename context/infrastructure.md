@@ -852,7 +852,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1282 -->
+<!-- last_synced_lesson: L1283 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1848,6 +1848,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1280: background子のfd継承をfast-pathで許さない（cmd_karo_hotfix_autoclear_monitor_fastpath_stall_202607221905）
 - L1281: SSOT再利用指示はexport実在確認をtask契約化する（cmd_4120）
 - L1282: cmd_complete_gateのCI照会repoがmulti-agent-shogunにハードコードされており外部PJタスクのCI status checkがfalse positiveになる（cmd_karo_hotfix_cmd_complete_project_ci_repo_202607222302）
+- L1283: report_field_setのlistからscalar変換は孤立listを残し得る（cmd_karo_hotfix_memory_db_write_latency_20260723）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
