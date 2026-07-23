@@ -28,7 +28,7 @@ git -C "$repo" merge-base --is-ancestor "$commit" HEAD || { echo "BLOCK: commit 
 file="$ROOT/$context_path"
 [[ -f "$file" ]] || { echo 'BLOCK: context file missing' >&2; exit 1; }
 python3 - "$file" "$commit" "$reason" "$evidence" <<'PY'
-import os, re, sys, tempfile
+import datetime, os, re, sys, tempfile
 path, commit, reason, evidence = sys.argv[1:]
 text = open(path, encoding='utf-8').read()
 line = f'<!-- source_commit:{commit} reason:{reason} evidence:{evidence} -->'
@@ -40,6 +40,15 @@ else:
     lines = text.splitlines(True)
     pos = next((i + 1 for i, v in enumerate(lines[:8]) if 'last_updated:' in v), min(1, len(lines)))
     lines.insert(pos, line + '\n')
+    updated = ''.join(lines)
+today = datetime.date.today().isoformat()
+last_updated = f'<!-- last_updated: {today} {reason} -->'
+last_updated_pattern = re.compile(r'<!--\s*last_updated:\s*[^>\n]*-->')
+if last_updated_pattern.search(updated):
+    updated = last_updated_pattern.sub(last_updated, updated, count=1)
+else:
+    lines = updated.splitlines(True)
+    lines.insert(min(1, len(lines)), last_updated + '\n')
     updated = ''.join(lines)
 fd, tmp = tempfile.mkstemp(prefix='.source-commit.', dir=os.path.dirname(path))
 try:

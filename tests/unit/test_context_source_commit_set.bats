@@ -53,6 +53,7 @@ teardown_file() { rm -rf "$SOURCE_MARKER_TEMPLATE"; }
   run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "$SHA" audit log-zero
   [ "$status" -eq 0 ]
   grep -q "source_commit:$SHA reason:audit evidence:log-zero" "$TMP/context/test.md"
+  grep -q "<!-- last_updated: $(date +%F) audit -->" "$TMP/context/test.md"
 }
 
 @test "replaces a source marker whose evidence contains an arrow" {

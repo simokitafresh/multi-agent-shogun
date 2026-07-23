@@ -42,3 +42,29 @@ teardown() {
     [ "$status" -ne 0 ]
     [[ "$output" != *"fingerprint reuse"* ]]
 }
+
+# test_necessity: SKILL_LOG_SYNCの同期loggerが起動するtransitive background子へreport lock FDを継承させず、親gate直後の後続gateが取得できる不変量。
+@test "sync skill logger closes report lock FD before transitive background spawn" {
+    run python3 - "$REPO_ROOT/scripts/gates/gate_report_format.sh" <<'PY'
+import pathlib, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+start = text.index('if [ "${SKILL_LOG_SYNC:-0}" = "1" ]; then')
+end = text.index("else", start)
+branch = text[start:end]
+assert "exec 199>&-" in branch
+assert branch.index("exec 199>&-") < branch.index('bash "$_SKILL_LOG"')
+PY
+    [ "$status" -eq 0 ]
+
+    lock="$TEST_DIR/transitive.gate.lock"
+    (
+        exec 199>"$lock"
+        flock 199
+        (
+            exec 199>&-
+            sleep 2 &
+        )
+    )
+    run flock -w 1 "$lock" true
+    [ "$status" -eq 0 ]
+}

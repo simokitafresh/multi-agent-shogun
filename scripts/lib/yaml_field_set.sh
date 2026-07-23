@@ -1027,6 +1027,7 @@ yaml_field_set() {
     if [ "$block_id" = "task" ]; then
         case "$field" in
             test_necessity) _yfs_structured_type="list_or_mapping" ;;
+            commit_contract) _yfs_structured_type="mapping" ;;
             planned_paths|target_path) _yfs_structured_type="list" ;;
         esac
     fi
@@ -1036,9 +1037,21 @@ import os, sys, yaml
 value = yaml.safe_load(os.environ.get("YFS_STRUCTURED_VALUE", ""))
 kind = os.environ["YFS_STRUCTURED_TYPE"]
 field = os.environ["YFS_STRUCTURED_FIELD"]
-valid = isinstance(value, list) if kind == "list" else isinstance(value, (list, dict))
+valid = (
+    isinstance(value, list)
+    if kind == "list"
+    else isinstance(value, dict)
+    if kind == "mapping"
+    else isinstance(value, (list, dict))
+)
 if not valid:
-    expected = "a YAML list" if kind == "list" else "a YAML list or mapping"
+    expected = (
+        "a YAML list"
+        if kind == "list"
+        else "a YAML mapping"
+        if kind == "mapping"
+        else "a YAML list or mapping"
+    )
     print(f"BLOCK: task.{field} must be {expected}", file=sys.stderr)
     raise SystemExit(2)
 '; then

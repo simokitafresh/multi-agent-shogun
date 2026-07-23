@@ -689,22 +689,25 @@ if [ "$RESULT_IS_PASS" -eq 1 ]; then
         # WSL2最適化: skill_execution_log.sh を非同期化。
         # SKILL_LOG_SYNC=1 でテスト時は同期実行(CI並列でポーリング競合を回避)。
         if [ "${SKILL_LOG_SYNC:-0}" = "1" ]; then
-            bash "$_SKILL_LOG" \
-                "report-write" \
-                "$_REPORT_EXECUTOR" \
-                "PASS" \
-                "gate_report_format PASS" \
-                "gate_report_format" \
-                "$REPORT_PATH" \
-                "$_REPORT_WRITE_SKILL" >/dev/null 2>&1 || true
-            bash "$_SKILL_LOG" \
-                "verdict-check" \
-                "$_REPORT_EXECUTOR" \
-                "PASS" \
-                "gate_report_format verdict/binary_checks PASS" \
-                "gate_report_format" \
-                "$REPORT_PATH" \
-                "$REPO_ROOT/skills/verdict-check/SKILL.md" >/dev/null 2>&1 || true
+            (
+                exec 199>&-
+                bash "$_SKILL_LOG" \
+                    "report-write" \
+                    "$_REPORT_EXECUTOR" \
+                    "PASS" \
+                    "gate_report_format PASS" \
+                    "gate_report_format" \
+                    "$REPORT_PATH" \
+                    "$_REPORT_WRITE_SKILL"
+                bash "$_SKILL_LOG" \
+                    "verdict-check" \
+                    "$_REPORT_EXECUTOR" \
+                    "PASS" \
+                    "gate_report_format verdict/binary_checks PASS" \
+                    "gate_report_format" \
+                    "$REPORT_PATH" \
+                    "$REPO_ROOT/skills/verdict-check/SKILL.md"
+            ) >/dev/null 2>&1 || true
         else
             (
                 exec 199>&-

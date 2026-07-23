@@ -90,6 +90,32 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: deploy_taskが公開するcommit_contractはreportと同じmapping型でなければreadonly免除判定が壊れる。
+@test "task commit_contract: JSON mapping入力をscalar化せず構造mappingとして保存する" {
+    local yaml="$TEST_TMPDIR/task_commit_contract.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: assigned
+  commit_contract: {}
+EOF
+    local payload='{"required":false,"reason":"allowed_no_code_task_type","task_type":"readonly","planned_paths":[]}'
+
+    run bash "$YFS" "$yaml" task commit_contract "$payload"
+    [ "$status" -eq 0 ]
+    run python3 - "$yaml" <<'PY'
+import sys, yaml
+contract = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]["commit_contract"]
+assert isinstance(contract, dict), type(contract)
+assert contract == {
+    "required": False,
+    "reason": "allowed_no_code_task_type",
+    "task_type": "readonly",
+    "planned_paths": [],
+}
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "task planned_paths: flow-list入力をscalar化せず構造listとしてatomic保存する" {
     local yaml="$TEST_TMPDIR/task_planned_paths.yaml"
     local fixture_yfs
