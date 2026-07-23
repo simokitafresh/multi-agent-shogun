@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Lord delegation pattern blocks with F009 (forbidden action enforcement); violation is BLOCK.
+# test_necessity: Lord delegation pattern blocks with F009, and delegated cmd IDs require exact parent_cmd equality; violation is BLOCK.
 # test_stop_check_inbox.bats - cmd_648 stop hook behavior
 
 setup_file() {
@@ -474,6 +474,36 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
 '
     [ "$status" -eq 0 ]
     [[ "$output" != *"次アクションあり"* ]]
+}
+
+@test "T-SCI-011B: karo does not treat cmd_4131 or xcmd_41 parent_cmd as cmd_41 deployment" {
+    export TMUX_AGENT_ID="karo"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: in_progress
+  parent_cmd: cmd_4131
+YAML
+    cat > "$TEST_PROJECT/queue/tasks/kagemaru.yaml" <<'YAML'
+task:
+  status: in_progress
+  parent_cmd: xcmd_41
+YAML
+    cat > "$TEST_PROJECT/queue/shogun_to_karo.yaml" <<'YAML'
+commands:
+  cmd_41:
+    status: delegated
+YAML
+
+    PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="karo"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"cmd_41 status=delegated"* ]]
+    [[ "$output" == *"忍者配備を進めよ"* ]]
 }
 
 @test "T-SCI-012: ninja with status=done exits cleanly without block" {

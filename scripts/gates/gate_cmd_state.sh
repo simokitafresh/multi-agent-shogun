@@ -36,6 +36,22 @@ emit_actionable() {
     echo "action: $action"
 }
 
+# Match a cmd ID as a complete token.  Cmd IDs may contain alphanumerics,
+# underscores, and hyphens; adjacent characters from that set mean the text
+# belongs to a different ID (for example cmd_4131 or xcmd_41).
+contains_exact_cmd_id() {
+    local cmd_id="$1"
+    local file="$2"
+    CMD_ID="$cmd_id" perl -ne '
+        BEGIN {
+            $id = quotemeta($ENV{"CMD_ID"});
+            $pattern = qr/(?<![A-Za-z0-9_-])$id(?![A-Za-z0-9_-])/;
+        }
+        $found = 1 if /$pattern/;
+        END { exit($found ? 0 : 1) }
+    ' "$file"
+}
+
 if [ ! -f "$SHOGUN_TO_KARO" ]; then
     echo "OK: shogun_to_karo.yaml not found — no cmds to check"
     echo "--- 総合判定: OK ---"
@@ -103,21 +119,21 @@ for cmd_row in "${CMD_ROWS[@]}"; do
 
     # 証跡1: karo inbox に cmd_new メッセージが存在するか
     if [ -f "$KARO_INBOX" ]; then
-        if grep -q "$cmd_id" "$KARO_INBOX" 2>/dev/null; then
+        if contains_exact_cmd_id "$cmd_id" "$KARO_INBOX" 2>/dev/null; then
             has_evidence=1
         fi
     fi
 
     # 証跡2: dashboard.md に cmd_id の記載があるか
     if [ "$has_evidence" -eq 0 ] && [ -f "$DASHBOARD" ]; then
-        if grep -q "$cmd_id" "$DASHBOARD" 2>/dev/null; then
+        if contains_exact_cmd_id "$cmd_id" "$DASHBOARD" 2>/dev/null; then
             has_evidence=1
         fi
     fi
 
     # 証跡3: karo_snapshot.txt に cmd_id の記載があるか
     if [ "$has_evidence" -eq 0 ] && [ -f "$SNAPSHOT" ]; then
-        if grep -q "$cmd_id" "$SNAPSHOT" 2>/dev/null; then
+        if contains_exact_cmd_id "$cmd_id" "$SNAPSHOT" 2>/dev/null; then
             has_evidence=1
         fi
     fi
