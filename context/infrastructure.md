@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-23 cmd_karo_hotfix_context_freshness_ga318_20260723 -->
+<!-- last_updated: 2026-07-23 cmd_karo_hotfix_context_freshness_ga319_20260723 -->
 <!-- source_commit:fb95d7051d78ca733e6f84505a3f9dc03f78b676 reason:GA-313 reviewed full infra source boundary evidence:42e6ea0..fb95d70 classified 263 total: reflected/excluded 117 and unreflected reviewed 146/146; completion emits exact setter command -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
