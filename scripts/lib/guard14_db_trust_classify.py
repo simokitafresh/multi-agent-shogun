@@ -343,10 +343,28 @@ def _is_connection_segment(tokens: list[str]) -> bool:
 
 
 def _segment_has_env_credential_source(tokens: list[str]) -> bool:
-    return (
-        ENV_CREDENTIAL_FILE_RE.search(" ".join(tokens)) is not None
-        or any(CREDENTIAL_FILE_FLAG_RE.match(token) for token in tokens)
-    )
+    if any(CREDENTIAL_FILE_FLAG_RE.match(token) for token in tokens):
+        return True
+    if ENV_CREDENTIAL_FILE_RE.search(" ".join(tokens)) is None:
+        return False
+
+    # A dot-env spelling is a credential source only when the command can use it
+    # as one.  VCS/message commands carry arbitrary prose, and a non-inline shell
+    # script receives tokens after its script operand as inert argv.  Treating
+    # those argument strings as file reads made inbox notifications and commit
+    # messages fail closed despite having no DB or credential capability.
+    cmd0 = _segment_cmd0(tokens)
+    if cmd0 in SAFE_NON_DB_CMDS:
+        return False
+    stripped = _strip_env_prefix(tokens)
+    if cmd0 in {"bash", "sh"} and "-c" not in stripped:
+        rest = stripped[1:]
+        script_index = next((i for i, token in enumerate(rest) if not token.startswith("-")), None)
+        if script_index is not None:
+            script = rest[script_index]
+            if ENV_CREDENTIAL_FILE_RE.search(script) is None:
+                return False
+    return True
 
 
 def _segment_has_explicit_http_call(tokens: list[str]) -> bool:
@@ -578,7 +596,14 @@ def _segment_is_exempt(tokens: list[str]) -> bool:
         canonical = _canonical_exempt_script_path(os.path.basename(clean))
         if not canonical or not os.path.exists(canonical):
             return False
-        resolved = os.path.realpath(clean)
+        # Hook callers do not have a stable cwd.  A repository-relative script
+        # operand is defined relative to the classifier's repository SSOT, while
+        # an absolute operand remains absolute.  Cwd-relative realpath made the
+        # documented `python3 scripts/db_capability_launcher.py ...` form fail
+        # whenever the hook process happened to start outside the repository.
+        resolved = os.path.realpath(
+            clean if os.path.isabs(clean) else os.path.join(_REPO_ROOT, clean)
+        )
         if not os.path.exists(resolved):
             return False
         try:
