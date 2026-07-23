@@ -23,7 +23,7 @@ usage() {
     printf '%s\n' \
         "Usage: bash scripts/ninja_done.sh <ninja_name> <parent_cmd>" \
         "Example: bash scripts/ninja_done.sh hayate cmd_795" \
-        "Note: parent_cmd must be cmd_XXX (digits only). task_id like cmd_795_review is invalid." >&2
+        "Note: parent_cmd must match cmd_[A-Za-z0-9_-]+. Spaces, slash, dot, and traversal are invalid." >&2
 }
 
 show_help() {
@@ -65,8 +65,13 @@ resolve_report_file() {
         return 1
     fi
 
-    local latest_path="" path
+    local latest_path="" path basename expected_prefix expected_suffix
+    expected_prefix="${ninja_name}_report_${cmd_id}_"
+    expected_suffix=".yaml"
     for path in "${archived_paths[@]}"; do
+        basename="${path##*/}"
+        [[ "$basename" == "$expected_prefix"????????"$expected_suffix" ]] || continue
+        [[ "${basename#"$expected_prefix"}" =~ ^[0-9]{8}\.yaml$ ]] || continue
         if [ -z "$latest_path" ] || [ "$path" -nt "$latest_path" ]; then
             latest_path="$path"
         fi
@@ -157,8 +162,8 @@ main() {
         exit 1
     fi
 
-    if [[ ! "$parent_cmd" =~ ^cmd_[0-9]+$ ]]; then
-        echo "ERROR: parent_cmd は cmd_XXX 形式（数字のみ。task_id/cmd_XXX_suffix不可）で指定せよ: $parent_cmd" >&2
+    if [[ ! "$parent_cmd" =~ ^cmd_[A-Za-z0-9_-]+$ ]]; then
+        echo "ERROR: parent_cmd は cmd_[A-Za-z0-9_-]+ 形式で指定せよ（空白/slash/dot/traversal不可）: $parent_cmd" >&2
         exit 1
     fi
 

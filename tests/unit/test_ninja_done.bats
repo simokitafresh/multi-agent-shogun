@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Gate failure prevents inbox notification; violation is BLOCK.
+# test_necessity: Valid parent_cmd identity reaches exactly its report and gate failure prevents notification; violation is BLOCK.
 
 setup_file() {
     export PROJECT_ROOT
@@ -100,6 +100,62 @@ EOF
     [ -f "$TEST_ROOT/inbox_write_calls.log" ]
     grep -F "karo hayate、任務完了。報告YAML確認されたし。 report_received hayate notify_karo" \
         "$TEST_ROOT/inbox_write_calls.log"
+}
+
+@test "numeric and karo-direct parent_cmd identities both reach report_received" {
+    for cmd_id in cmd_123 cmd_karo_hotfix_ninja_done_20260723; do
+        cat > "$TEST_ROOT/queue/reports/hayate_report_${cmd_id}.yaml" <<'EOF'
+result:
+  summary: done
+EOF
+        run bash "$TEST_ROOT/scripts/ninja_done.sh" hayate "$cmd_id"
+        [ "$status" -eq 0 ]
+    done
+
+    [ "$(grep -c ' report_received hayate notify_karo$' "$TEST_ROOT/inbox_write_calls.log")" -eq 2 ]
+}
+
+@test "unsafe parent_cmd identities are rejected before report lookup" {
+    for cmd_id in "cmd_bad id" "cmd_bad/id" "cmd_bad.id" "cmd_../escape"; do
+        run bash "$TEST_ROOT/scripts/ninja_done.sh" hayate "$cmd_id"
+        [ "$status" -eq 1 ]
+        [[ "$output" == *"cmd_[A-Za-z0-9_-]+"* ]]
+    done
+    [ ! -f "$TEST_ROOT/inbox_write_calls.log" ]
+}
+
+@test "archive fallback does not select a similar-suffix report" {
+    mkdir -p "$TEST_ROOT/queue/archive/reports"
+    cat > "$TEST_ROOT/queue/archive/reports/hayate_report_cmd_target_suffix_20200101.yaml" <<'EOF'
+result:
+  summary: wrong report
+EOF
+
+    run bash "$TEST_ROOT/scripts/ninja_done.sh" hayate cmd_target
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"report YAML not found"* ]]
+    [ ! -f "$TEST_ROOT/inbox_write_calls.log" ]
+}
+
+@test "one-byte report change forces downstream gate revalidation" {
+    report="$TEST_ROOT/queue/reports/hayate_report_cmd_mutation.yaml"
+    cat > "$report" <<'EOF'
+result:
+  summary: done
+EOF
+    cat > "$TEST_ROOT/scripts/inbox_write.sh" <<EOF
+#!/usr/bin/env bash
+printf '\\n' >> "\${INBOX_TEST_REPORT:?}"
+bash "$TEST_ROOT/scripts/gates/gate_report_format.sh" "\$INBOX_TEST_REPORT"
+EOF
+    chmod +x "$TEST_ROOT/scripts/inbox_write.sh"
+
+    run env INBOX_TEST_REPORT="$report" \
+        bash "$TEST_ROOT/scripts/ninja_done.sh" hayate cmd_mutation
+
+    [ "$status" -eq 0 ]
+    [ "$(grep -c '^full$' "$TEST_ROOT/gate_full_calls.log")" -eq 2 ]
 }
 
 @test "notification carries the exact fingerprint validated by ninja_done" {
