@@ -80,7 +80,7 @@ run_hook() {
 
 @test "CDP直コマンド3種はnudgeしてexit 0かつfire logへ3件記録" {
     for command in \
-        "python3 scripts/cdp_font_probe.py" \
+        "python3 scripts/cdp_font_probe.py --port 9222" \
         "chrome --remote-debugging-port=9222" \
         "python3 probe.py --debug_port 9234"; do
         run_hook "$command"
@@ -90,8 +90,13 @@ run_hook() {
     [ "$(grep -c 'gate: \"cdp_direct_skill_nudge\"' "$GATE_FIRE_LOG_FILE")" -eq 3 ]
 }
 
-@test "非CDPコマンド3種はnudgeもfire logも発生しない" {
-    for command in "ls -la" "python3 normal.py" "python3 server.py --port 8080"; do
+@test "非CDPコマンド5種はnudgeもfire logも発生しない" {
+    for command in \
+        "ls -la" \
+        "python3 normal.py" \
+        "python3 server.py --port 8080" \
+        "python3 server.py --port 9000" \
+        "python3 server.py --port 9222"; do
         run_hook "$command"
         [ "$status" -eq 0 ]
         [[ "$output" != *"CDP直コマンド検知"* ]]
