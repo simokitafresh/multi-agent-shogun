@@ -1,6 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-23 cmd_karo_hotfix_cmd4131_stale_metrics_contract_20260723 reviewed source boundary -->
-<!-- source_commit:74a87b63 reason:cmd_karo_hotfix_cmd4131_stale_metrics_contract_20260723 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=74a87b63 -->
+<!-- last_updated: 2026-07-23 cmd_4139 reviewed source boundary -->
+<!-- source_commit:f6443d49 reason:cmd_4139 reviewed source boundary evidence:cmd_complete_gate -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -329,9 +329,11 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 - （L650/L651/L653/L656→§8性能最適化、L654/L655→§2.5、L702/L704/L705→§11.5、L719→§5に振り分け済み 2026-06-16）
 - （L786/L792→§5、L796→§7、L798/L801→§8に振り分け済み 2026-07-16）
 - （L804/L850/L858/L873/L878/L880→ops/core、L861→research、L865/L867/L868/L890/L902→infraに振り分け済み 2026-07-16）
-<!-- last_synced_lesson: L907 -->
+<!-- last_synced_lesson: L911 -->
 - L906: lint修正時もmasked表示のkey一意性を保持する（cmd_4116）
 - L907: 共有style定数化では既存formatter debtを先に分離する（cmd_4117）
+- L910: mobile表は文字列列を先に圧縮し数値列をnowrap固定する（cmd_4139）
+- L911: 表示分類はラベル文字列でなくDOM軸を現読する（cmd_4141）
 
 ## 13. 2026-03 holding表示バグ (cmd_499)
 
