@@ -856,7 +856,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1293 -->
+<!-- last_synced_lesson: L1295 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1863,6 +1863,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1291: context freshness cacheはproject overrideをidentityへ含める（cmd_karo_hotfix_context_freshness_ga320_20260723）
 - L1292: Bats fixtureは共有lockもtest rootへ隔離する（cmd_karo_hotfix_prepush_snapshot_fixture_20260723）
 - L1293: 最新taskへの前task test_necessity混入を配備時に遮断する（cmd_4136）
+- L1294: 外部repo task runnerのno-mapped-testsを対象repo一次試験で補完する（cmd_4137）
+- L1295: taskの修復対象実体と役割権限を配備前に検証する（cmd_karo_hotfix_control_plane_contracts_ga321_20260723）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

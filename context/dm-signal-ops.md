@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-23 cmd_karo_hotfix_context_freshness_ga320_20260723 -->
+<!-- last_updated: 2026-07-23 cmd_4140 -->
 <!-- source_commit:0815a02e reason:GA-320 reviewed ops source boundary evidence:3/3 true positives: d8530bcb,96c8c5f5,0815a02e reflected -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
