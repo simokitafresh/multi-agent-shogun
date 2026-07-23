@@ -64,12 +64,40 @@ fi
 result="PASS"
 stumbling_points=""
 
-# tool_resultにBLOCKやエラーが含まれるか確認
-if printf '%s' "$payload" | grep -qiE '"(BLOCK|ERROR|FAIL)[^"]*"' 2>/dev/null; then
+# 構造化status/exit codeを優先し、tool_result本文は行頭の明示シグナルだけをfallbackにする。
+# payload全文を検索するとskill argsや「FAIL count is zero」まで失敗扱いする。
+failure_meta="$(printf '%s' "$payload" | jq -r '
+    [
+      (.status? // empty),
+      (.tool_result.status? // empty),
+      (.toolUseResult.status? // empty),
+      (.exit_code? // empty),
+      (.exitCode? // empty),
+      (.tool_result.exit_code? // empty),
+      (.toolUseResult.exitCode? // empty)
+    ] | map(tostring) | .[]
+  ' 2>/dev/null || true)"
+result_text="$(printf '%s' "$payload" | jq -r '
+    [
+      .tool_result?,
+      .toolUseResult?,
+      .tool_response?,
+      .result?,
+      .output?,
+      .stderr?
+    ]
+    | map(select(. != null))
+    | [ .[] | if type == "string" then . else (.. | strings) end ]
+    | flatten | join("\n")
+  ' 2>/dev/null || true)"
+if printf '%s\n' "$failure_meta" | grep -qiE '^(fail|failed|failure|error|blocked|2|[1-9][0-9]*)$' 2>/dev/null \
+  || { ! printf '%s\n' "$failure_meta" | grep -qiE '^(success|succeeded|pass|passed|0)$' 2>/dev/null \
+    && printf '%s\n' "$result_text" | grep -qiE '^[[:space:]]*(BLOCK|ERROR|FAIL)(:|[[:space:]]|$)' 2>/dev/null; }; then
     result="FAIL"
     # stumbling_pointsとして最初のエラーメッセージ片を取得
-    stumbling_points="$(printf '%s' "$payload" | grep -oiE '(BLOCK|ERROR|FAIL)[^"]{0,80}' 2>/dev/null | head -1 || true)"
+    stumbling_points="$(printf '%s\n' "$result_text" | grep -iE '^[[:space:]]*(BLOCK|ERROR|FAIL)(:|[[:space:]]|$)' 2>/dev/null | head -1 | cut -c1-120 || true)"
 fi
+unset failure_meta result_text
 
 # --- skill_pathを導出 ---
 skill_path=""

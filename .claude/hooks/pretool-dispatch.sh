@@ -89,10 +89,14 @@ case "$payload" in
         ;;
     *'"Skill"'*)
         # Guard: /clear自発禁止 (殿裁定2026-06-28 LS074)
-        if [[ "${AGENT_ID:-}" == "shogun" ]] && echo "$payload" | grep -qi 'clear-prep\|shogun-clear-prep'; then
+        _requested_skill="$(printf '%s' "$payload" | jq -r \
+          '.tool_input.skill // .toolInput.skill // empty' 2>/dev/null || true)"
+        if [[ "${AGENT_ID:-}" == "shogun" ]] \
+          && [[ "$_requested_skill" == "clear-prep" || "$_requested_skill" == "shogun-clear-prep" ]]; then
           echo "BLOCK: /clear自発禁止。/clearは殿の専権事項。autocompact=90%が自動管理。殿の明示的指示なしに/clearスキルを実行するな。" >&2
           exit 2
         fi
+        unset _requested_skill
         source "$ROOT/.claude/hooks/pre-skill-project-guard.sh" <<< "$payload"
         ;;
     *)
