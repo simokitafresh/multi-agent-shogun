@@ -204,9 +204,13 @@ if merge_into:
         print(f"ERROR: --merge-into target has no detail field: {merge_into}", file=sys.stderr)
         sys.exit(1)
     detail_end = detail_start + 1
+    field_re = re.compile(r"^  [A-Za-z_][A-Za-z0-9_-]*:\s*")
     while detail_end < end:
         line = lines[detail_end]
-        if line.strip() and len(line) - len(line.lstrip(" ")) <= 2:
+        # A quoted YAML scalar may legally continue at column zero.  Treat only
+        # an actual two-space mapping key as the next field; indentation alone
+        # would leave quoted continuation lines behind and corrupt the merge.
+        if field_re.match(line):
             break
         detail_end += 1
     replacement = ["  detail: |\n"]

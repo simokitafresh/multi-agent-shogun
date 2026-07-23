@@ -725,3 +725,32 @@ EOF
     run python3 -c "import yaml; x=yaml.safe_load(open('$role_root/projects/infra/lessons_gunshi.yaml'))['lessons'][-1]; assert x['enforcement']=='Level5: startup context injection'; assert x['enforcement_level']==5"
     [ "$status" -eq 0 ]
 }
+
+@test "role lesson merge replaces a multiline quoted detail without corrupting YAML" {
+    # test_necessity: the capacity consolidation contract must accept existing
+    # role lessons whose valid quoted detail continues at column zero.
+    local role_root="$BATS_TEST_TMPDIR/role-merge-root"
+    mkdir -p "$role_root/scripts/lib" "$role_root/projects/infra"
+    cp "$REAL_PROJECT_ROOT/scripts/lesson_write_karo.sh" "$role_root/scripts/lesson_write_karo.sh"
+    cp "$REAL_PROJECT_ROOT/scripts/lib/lock_path.sh" "$role_root/scripts/lib/lock_path.sh"
+    cat > "$role_root/projects/infra/lessons_karo.yaml" <<'YAML'
+lessons:
+- id: LK-A11
+  title: achievable task contract
+  detail: "first line
+continuation at column zero
+last line"
+  source_ids: [LK001]
+YAML
+
+    run bash "$role_root/scripts/lesson_write_karo.sh" \
+        "typed contract ownership" \
+        "verify target existence and worker authority before deployment" \
+        "cmd_test" \
+        --origin "[[cmd_test]] -> [[authority_mismatch]]" \
+        --merge-into LK-A11
+    [ "$status" -eq 0 ]
+
+    run python3 -c "import yaml; x=yaml.safe_load(open('$role_root/projects/infra/lessons_karo.yaml'))['lessons'][0]; assert 'continuation at column zero' in x['detail']; assert 'verify target existence and worker authority before deployment' in x['detail']; assert x['source_ids']==['LK001']"
+    [ "$status" -eq 0 ]
+}
