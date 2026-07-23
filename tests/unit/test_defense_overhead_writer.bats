@@ -132,6 +132,40 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "production ledger canonical: gate_clear suppressed and completion_pipeline emitted" {
+  # test_necessity: 実データ正本突合 — gate_clear(wall_ms=0,seen>=3)→suppression,completion_pipeline(wall_ms>0,seen>=3)→emission の二値は production self_retro.jsonl で常に成立しなければならない
+  local ledger="logs/self_retro.jsonl"
+  [ -f "$ledger" ] || skip "production self_retro.jsonl not present"
+  run python3 - "$ledger" <<'PY'
+import json, sys
+ledger = sys.argv[1]
+with open(ledger, encoding="utf-8") as fh:
+    rows = [json.loads(line) for line in fh if line.strip()]
+gate = [r for r in rows if r.get("cause_class") == "gate_clear"]
+comp = [r for r in rows if r.get("cause_class") == "completion_pipeline"]
+assert gate, "no gate_clear records"
+assert comp, "no completion_pipeline records"
+assert all(r["wall_ms"] == 0 and max(r["phase_ms"].values()) == 0 for r in gate), "gate_clear must all be wall_ms=0"
+assert all(r["wall_ms"] > 0 for r in comp), "completion_pipeline must all be wall_ms>0"
+threshold = 3
+gate_imp = gate[0]["improvement_candidate"]
+comp_imp = comp[0]["improvement_candidate"]
+gate_seen = sum(1 for r in rows if r.get("improvement_candidate") == gate_imp)
+comp_seen = sum(1 for r in rows if r.get("improvement_candidate") == comp_imp)
+assert gate_seen >= threshold, f"gate_clear seen={gate_seen} < threshold={threshold}"
+assert comp_seen >= threshold, f"completion_pipeline seen={comp_seen} < threshold={threshold}"
+gate_known = gate_seen >= threshold
+gate_zero = True
+comp_known = comp_seen >= threshold
+comp_zero = max(comp[0]["phase_ms"].values()) == 0 or comp[0]["wall_ms"] == 0
+gate_suppress = gate_known and gate_zero
+comp_suppress = comp_known and comp_zero
+assert gate_suppress, f"gate_clear should be suppressed: known={gate_known} zero={gate_zero}"
+assert not comp_suppress, f"completion_pipeline should NOT be suppressed: known={comp_known} zero={comp_zero}"
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "known zero-signal template is recorded but not delivered while measured signal is delivered" {
   export SELF_RETRO_LEDGER="$TEST_TMP/self-retro.jsonl"
   export DEFENSE_OVERHEAD_REPO_ROOT="$TEST_TMP/root"
