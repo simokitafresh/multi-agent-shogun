@@ -32,7 +32,8 @@ lesson_id="${2:-}"
     exit 1
 }
 [[ "$cmd_id" =~ ^cmd_[0-9A-Za-z_-]+$ ]] || die "cmd_id must look like cmd_XXXX (got: $cmd_id)"
-[[ "$lesson_id" =~ ^LS-[A-Za-z0-9_-]+$ ]] || die "lesson_id must look like LS-XXXX (got: $lesson_id)"
+[[ "$lesson_id" =~ ^LS([0-9]+|-[A-Za-z0-9_-]+)$ ]] || \
+    die "lesson_id must match an existing Shogun lesson ID form (LS123 or LS-A01; got: $lesson_id)"
 [[ -f "$SHOGUN_LESSONS_FILE" ]] || die "lessons_shogun.yaml not found: $SHOGUN_LESSONS_FILE"
 [[ -f "$QUALITY_LOG_FILE" ]] || die "quality log not found: $QUALITY_LOG_FILE"
 

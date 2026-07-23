@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Same cmd_id+lesson_id re-execution does not produce duplicate entries; violation is BLOCK.
+# test_necessity: Every lesson ID form emitted from lessons_shogun SSOT is accepted while malformed/nonexistent IDs remain rejected.
 # test_shogun_lesson_ack.bats — shogun_lesson_ack.sh validation and append behavior
 
 setup_file() {
@@ -21,6 +21,8 @@ setup() {
 lessons:
 - id: LS-A05
   title: "遡及学習対応"
+- id: LS110
+  title: "共有script契約変更"
 YAML
     cat > "$TEST_QUALITY_LOG" <<'YAML'
 entries:
@@ -54,6 +56,19 @@ run_ack() {
     grep -q 'block_count: 1' "$TEST_ACK"
 }
 
+@test "AC1 contract: lessons_shogun実在IDの2形式をconsumerが2/2受理する" {
+    local lesson_id
+    for lesson_id in LS110 LS-A05; do
+        TEST_ACK="$TEST_TMPDIR/shogun_lesson_ack_${lesson_id}.yaml"
+        TEST_ACK_LOCK="${TEST_ACK}.lock"
+        run_ack cmd_9999 "$lesson_id"
+        echo "$output" >&2
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"OK: recorded ack for cmd_9999 -> $lesson_id"* ]]
+        grep -q "lesson_id: \"$lesson_id\"" "$TEST_ACK"
+    done
+}
+
 @test "AC2: 存在しないlesson_idはBLOCKする" {
     run_ack cmd_9999 LS-NOTFOUND
     echo "$output" >&2
@@ -61,6 +76,17 @@ run_ack() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"BLOCK: lesson_id not found"* ]]
     [ ! -f "$TEST_ACK" ]
+}
+
+@test "AC2 contract: malformed lesson_idは全件形式拒否する" {
+    local lesson_id
+    for lesson_id in LS LS_110 LS- 'LS 110' XX110; do
+        run_ack cmd_9999 "$lesson_id"
+        echo "$output" >&2
+        [ "$status" -ne 0 ]
+        [[ "$output" == *"BLOCK: lesson_id must match"* ]]
+        [ ! -f "$TEST_ACK" ]
+    done
 }
 
 @test "cmd_3701: superseded lesson_id is resolved before ack write" {
