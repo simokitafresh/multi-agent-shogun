@@ -1,5 +1,5 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-23 cmd_4127 -->
+<!-- last_updated: 2026-07-23 cmd_4128 -->
 <!-- source_commit:6567ab90 reason:cmd_4127_reviewed_source_boundary evidence:kagemaru implementation commit reflected by section20 canonical result -->
 
 > 索引層。結論+参照のみ。
