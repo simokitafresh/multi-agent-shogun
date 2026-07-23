@@ -3866,10 +3866,11 @@ PY
     elif echo "$_commit_scope_text" | grep -qiE 'コード変更.*禁止|変更.*禁止.*(調査|報告)|no[[:space:]_-]?code|read[[:space:]_-]?only'; then
         _commit_required=false
         _commit_reason="explicit_no_code_scope"
-    elif [[ "$_commit_task_type" =~ ^(no[_-]?code|decision|decision_candidate|data[_-]?readonly|readonly|read_only|recon|recon2|scout)$ ]] \
-        && [ "$_commit_has_code_path" = false ]; then
+    elif [[ "$_commit_task_type" =~ ^(no[_-]?code|decision|decision_candidate|data[_-]?readonly|readonly|read_only|recon|recon2|scout)$ ]]; then
+        # recon2/scout等は読み取り専用。inspection_path/readonly_refsにscripts/パスがあっても
+        # コード変更しないためhas_code_pathに関係なくrequired=false (2026-07-23 軍師D0)
         _commit_required=false
-        _commit_reason="allowed_no_code_task_type_and_no_code_scope"
+        _commit_reason="allowed_no_code_task_type"
     elif [ "$_commit_has_code_path" = true ]; then
         _commit_reason="implementation_path_present"
     fi
