@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-21 cmd_karo_hotfix_ga311_context_freshness_trigger_202607212219 -->
-<!-- source_commit:021ceba728e6de054b6a3b5eefb76b5b9d36d5de reason:GA-311 core contract reflux evidence:021ceba7 pytest timing ledger + 1bf0eae5 drift rerun boundary -->
+<!-- last_updated: 2026-07-23 cmd_karo_hotfix_context_freshness_ga319_20260723 -->
+<!-- source_commit:0815a02e reason:GA-319 cross-repo参照解決とsource差分反映 evidence:96c8c5f5 rolling distribution + d8530bcb/0815a02e canonical pytest plugin -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -372,6 +372,7 @@ cmd_3572でMTD事前計算テーブル`precomputed_mtd`、`backend/app/jobs/prec
 ### §8.8 Rolling Returns API/Table (2026-07-01)
 
 Rolling Returns summary tableは`3_months`/`6_months`/`1_year`/`2_years`/`3_years`/`5_years`/`7_years`/`10_years`を返す。3M/6Mは年率換算せず、期間内のraw compound returnを表示する。根拠: commits `86348160`, `5883fb01`, `/mnt/c/Python_app/DM-signal/backend/app/jobs/generators/rolling_returns.py`, `/mnt/c/Python_app/DM-signal/backend/app/services/rolling_returns_calculator.py`, `/mnt/c/Python_app/DM-signal/frontend/components/rolling-returns-summary-table.tsx`。
+2026-07-22 `96c8c5f5`: Rolling Returnsに期間別distributionを追加。DB/API生成は`backend/app/jobs/generators/rolling_returns.py`と`backend/app/services/rolling_returns_calculator.py`、表示は`frontend/components/rolling-returns-distribution-table.tsx`が正本。
 
 ## 10. ディレクトリ構成
 
@@ -609,6 +610,7 @@ null/NaN → INSUFFICIENT_DATA(灰)。Label→色変換は `labelToColorDot()` �
 - `.github/workflows/pytest.yml` を追加。PyYAML/pytest依存をCIへ導入し、PostgreSQL service付きpytestへ拡張済み
 - `backend/tests/test_pipeline_cache_optimization.py` はCI対象。テスト関数ゼロの空振りを避ける教訓L721を併用する
 - 2026-07-16 `021ceba7`: 全pytest call結果を `backend/.pytest_cache/pytest_timing_ledger.tsv` へ記録するpluginを常時ロード。列は timestamp/nodeid/duration_sec/outcome/failures/skips/commit。flock+atomic replaceで並列追記し、既存ledger破損・git不在はfail-closed。
+- 2026-07-22 `0815a02e`: duration ledger pluginのcanonical importは`backend.tests.pytest_duration_ledger_plugin`。`backend/tests/conftest.py`とplugin contract testは同じimport pathを使う。
 - 2026-07-16 `1bf0eae5`: 新規Signal INSERTのledger driftは複数行でもdrift/alert/永続行を1:1で保存し、同一batch再実行では監査行を重複INSERTしない契約を回帰固定。
 - CI失敗調査ではworkflow依存不足とDB service起動を先に確認する
 

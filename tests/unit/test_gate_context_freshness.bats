@@ -45,3 +45,52 @@ SH
   [[ "$output" == *"総合判定: OK"* ]]
   [[ "$output" != *"ALERT:"* ]]
 }
+
+@test "stale context links resolve across workspace and registered project roots" {
+  project_root="$BATS_TEST_TMPDIR/project"
+  mkdir -p "$FIXTURE_ROOT/projects" "$FIXTURE_ROOT/docs/research" \
+    "$project_root/docs/spec"
+  printf 'workspace source\n' > "$FIXTURE_ROOT/docs/research/workspace.md"
+  printf 'project source\n' > "$project_root/docs/spec/project.md"
+  cat > "$FIXTURE_ROOT/projects/example.yaml" <<YAML
+project:
+  path: "$project_root"
+YAML
+  cat > "$FIXTURE_ROOT/context/infrastructure.md" <<'MD'
+<!-- last_updated: 2026-07-19 cmd_fixture -->
+See `docs/research/workspace.md` and `docs/spec/project.md`.
+MD
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"ALERT: infrastructure.md"* ]]
+  [[ "$output" != *"参照リンク欠落"* ]]
+}
+
+@test "stale context still blocks when no registered root contains a link" {
+  printf '%s\n' \
+    '<!-- last_updated: 2026-07-19 cmd_fixture -->' \
+    'See `docs/research/truly-missing.md` twice: `docs/research/truly-missing.md`.' \
+    > "$FIXTURE_ROOT/context/infrastructure.md"
+
+  run env \
+    CONTEXT_FRESHNESS_ROOT="$FIXTURE_ROOT" \
+    CONTEXT_FRESHNESS_CHECK_SCRIPT="$FIXTURE_ROOT/scripts/check.sh" \
+    CONTEXT_FRESHNESS_NTFY_SCRIPT=/bin/true \
+    CONTEXT_FRESHNESS_ALERT_STATE_DIR="$BATS_TEST_TMPDIR/state" \
+    CONTEXT_FRESHNESS_GATE_DISABLE_CACHE=1 \
+    CONTEXT_FRESHNESS_TODAY=2026-07-20 \
+    bash "$ROOT/scripts/gates/gate_context_freshness.sh"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"BLOCK: infrastructure.md (source更新あり・参照リンク欠落)"* ]]
+  [ "$(grep -o 'docs/research/truly-missing.md' <<< "$output" | wc -l)" -eq 1 ]
+}

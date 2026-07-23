@@ -99,24 +99,49 @@ source_commit_action() {
 # source_commit更新だけで隠してはならない。鮮度ALERT対象に限って参照を検査し、
 # 欠落が1件でもあれば後段でBLOCKへ倒す。
 missing_context_links() {
-    local context_file="$1" rel_path="$2" token candidate reference_root="$ROOT_DIR"
-    if [[ "$rel_path" == context/dm-signal* && -f "$ROOT_DIR/projects/dm-signal.yaml" ]]; then
-        reference_root="$(python3 - "$ROOT_DIR/projects/dm-signal.yaml" <<'PY'
+    local context_file="$1" rel_path="$2" token candidate reference_root found
+    local -a reference_roots=("$ROOT_DIR")
+
+    # Context indexes intentionally link both to this control-plane repository
+    # and to project repositories.  A single project root therefore cannot be
+    # the resolution SSOT: GA-314 replaced ROOT_DIR with the dm-signal root and
+    # made every control-plane link in dm-signal contexts a false missing link.
+    # Resolve against every registered project root and fail only when none
+    # contains the referenced path.
+    while IFS= read -r reference_root; do
+        [[ -n "$reference_root" && "$reference_root" != "$ROOT_DIR" ]] \
+            && reference_roots+=("$reference_root")
+    done < <(python3 - "$ROOT_DIR"/projects/*.yaml <<'PY'
 import sys, yaml
-data = yaml.safe_load(open(sys.argv[1])) or {}
-print((data.get("project") or {}).get("path", ""))
+seen = set()
+for filename in sys.argv[1:]:
+    try:
+        data = yaml.safe_load(open(filename)) or {}
+    except (OSError, yaml.YAMLError):
+        continue
+    path = str((data.get("project") or {}).get("path", "")).strip()
+    if path and path not in seen:
+        seen.add(path)
+        print(path)
 PY
-)"
-        [[ -n "$reference_root" ]] || reference_root="$ROOT_DIR"
-    fi
+)
+
     while IFS= read -r token; do
         candidate="${token#\`}"
         candidate="${candidate%\`}"
         [[ "$candidate" == docs/* || "$candidate" == context/* ]] || continue
         candidate="${candidate%% *}"
         candidate="${candidate%%#*}"
-        compgen -G "$reference_root/$candidate" >/dev/null || printf '%s\n' "$candidate"
-    done < <(grep -oE '`(docs|context)/[^`]+`' "$context_file" 2>/dev/null || true)
+        found=0
+        for reference_root in "${reference_roots[@]}"; do
+            if compgen -G "$reference_root/$candidate" >/dev/null; then
+                found=1
+                break
+            fi
+        done
+        (( found == 1 )) || printf '%s\n' "$candidate"
+    done < <(grep -oE '`(docs|context)/[^`]+`' "$context_file" 2>/dev/null || true) \
+        | sort -u
 }
 
 emit_update_cmd_templates() {
