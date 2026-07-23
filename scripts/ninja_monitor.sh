@@ -6783,7 +6783,7 @@ stop_stale_inbox_watcher() {
 # ─── 家老陣形図(karo_snapshot) — 家老/clear復帰用の圧縮状態 ───
 write_karo_snapshot() {
     local snapshot_file="$SCRIPT_DIR/queue/karo_snapshot.txt"
-    local lock_file="/tmp/karo_snapshot.lock"
+    local lock_file="${KARO_SNAPSHOT_LOCK_FILE:-/tmp/karo_snapshot.lock}"
     local timestamp
     printf -v timestamp '%(%Y-%m-%dT%H:%M:%S)T' -1
     if ! declare -p NINJA_NAMES >/dev/null 2>&1 || [ "${#NINJA_NAMES[@]}" -eq 0 ]; then

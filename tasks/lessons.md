@@ -11129,3 +11129,19 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **then**: overrideごとに独立cacheを生成して該当projectのcommit listだけを返す
 - **because**: projectを跨ぐcache再利用は未反映source/context対を完了時BLOCKへ渡せず偽陰性になるため
 - 同一cmd_idで複数projectの--cmd-commit-listを生成する経路では、CFC_PROJECT_OVERRIDEをoutput cache keyから落とすと先行projectのcommit listが後続へ再利用され、真のsource/context乖離を見逃す。cache identityへoverrideを含め、同じcmdでdm-signal 5件とinfra 3件が分離されるcontract testを置く。
+
+### L1292: Bats fixtureは共有lockもtest rootへ隔離する
+- **日付**: 2026-07-23
+- **出典**: cmd_karo_hotfix_prepush_snapshot_fixture_20260723
+- **記録者**: tobisaru
+- **tags**: [testing, flock, fixture, infra]
+- **subdomain**: infra
+- **target_files**: [scripts/ninja_monitor.sh,tests/unit/test_ninja_monitor_stall.bats]
+- **origin**: [[GA-320-prepush-67]] -> [[固定/tmp共有lock]] -> [[fixture lock isolation]]
+- **enforcement**: Level5: KARO_SNAPSHOT_LOCK_FILEをfixtureへ事前注入し稼働中daemonとの競合を構造排除
+- **when**: Bats fixtureでSCRIPT_DIRを一時rootへ差し替えてdaemon関数をsource実行する時
+- **how**: 対象関数のlock/cache/state pathを環境変数化し、fixtureでBATS_TEST_TMPDIR配下へ束縛して固定共有path残存0件をrg確認する
+- **if**: fixtureが運用daemon関数をlib-only sourceする
+- **then**: データpathと全共有lock/cache/state pathを同じtest rootへ隔離する
+- **because**: データだけ隔離しても固定/tmp lock競合でsuite/pre-pushのみ偽FAILになるため
+- fixtureがqueue/tasksをBATS_TEST_TMPDIRへ隔離しても、対象関数の固定/tmp lockが稼働中daemonと競合すると単独PASS・suite/pre-push FAILになる。共有資源を持つ関数は環境変数でlock pathを注入可能にし、fixtureは固有lockを明示する。次回チェック: fixture内SCRIPT_DIR差替え時にlock/cache/state pathも同じtest rootへ束縛され、固定/tmp lock残存0件をrgで確認する。
