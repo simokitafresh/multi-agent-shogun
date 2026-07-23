@@ -3716,11 +3716,14 @@ generate_report_template() {
         log "report_template: stale own report archived (${stale_own_basename}, old_cmd=${stale_own_pcmd})"
     done
 
-    # 冪等性: 既存テンプレートがあればスキップ（L060: 上書き防止）
+    # 冪等性: 既存テンプレートがあれば本文は上書きしない（L060）。
+    # ただし同一cmd retryではreset_stale_fieldsがtask側commit_contractを消すため、
+    # 保持したreportの型付き契約をtaskへ再投影して二つのSSOTを再同期する。
     if [ -f "$report_file" ]; then
         log "report_template: already exists, skipping (${report_file})"
         report_id=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "report_id" "" 2>/dev/null || true)
         ensure_report_template_completeness "$report_file" "$task_file"
+        rehydrate_task_commit_contract_from_report "$task_file" "$report_file" || return 1
         deploy_task_publish_report_metadata "$task_file" "$report_id" "$report_identity_version" "$report_rel_path" "$_variation_checks_required" || return 1
         printf '%s\n' "$report_rel_path" > "${_active_report_index}.tmp"
         mv "${_active_report_index}.tmp" "$_active_report_index"
@@ -5054,6 +5057,44 @@ EOF
         python3 -c "import yaml,sys; yaml.safe_load(open(sys.argv[1], encoding='utf-8'))" "$report_file"
         log "report_template: required fields repaired ($(basename "$report_file"))"
     fi
+}
+
+rehydrate_task_commit_contract_from_report() {
+    local task_file="$1"
+    local report_file="$2"
+    local contract_json=""
+
+    contract_json=$(python3 - "$report_file" <<'PY'
+import json
+import sys
+import yaml
+
+report = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+contract = report.get("commit_contract")
+if not isinstance(contract, dict):
+    raise SystemExit(0)  # legacy report: preserve compatibility
+required = contract.get("required")
+reason = contract.get("reason")
+task_type = contract.get("task_type")
+paths = contract.get("planned_paths")
+if not isinstance(required, bool) or not str(reason or "").strip() \
+        or not str(task_type or "").strip() or not isinstance(paths, list) \
+        or any(not isinstance(path, str) or not path.strip() for path in paths):
+    raise SystemExit("invalid report commit_contract")
+print(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
+PY
+    ) || {
+        log "FATAL: existing report commit_contract is invalid: ${report_file}"
+        return 1
+    }
+
+    if [ -z "$contract_json" ]; then
+        log "report_template: legacy report has no commit_contract; task contract unchanged"
+        return 0
+    fi
+    yaml_field_set "$task_file" "task" "commit_contract" "$contract_json" \
+        || { log "FATAL: failed to rehydrate task commit_contract"; return 1; }
+    log "report_template: task commit_contract rehydrated from existing report"
 }
 
 # ─── セマンティクスインデックス概念注入（task YAMLにsemantic_conceptsを挿入） ───

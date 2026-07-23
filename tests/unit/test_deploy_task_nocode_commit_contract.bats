@@ -98,6 +98,34 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "same-command retry rehydrates task commit contract from preserved report" {
+  # test_necessity: reset_stale_fields clears the task contract before a retry,
+  # while L060 preserves the report; both SSOTs must be synchronized again.
+  report="$(build_report impl scripts/deploy_task.sh "implementation update" '[scripts/deploy_task.sh]')"
+
+  cat >"$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  assigned_to: sasuke
+  task_id: cmd_nocode_fixture_impl
+  parent_cmd: cmd_nocode_fixture
+  project: infra
+  task_type: impl
+  target_path: scripts/deploy_task.sh
+  ac_version: fixture-v1
+EOF
+
+  generate_report_template sasuke cmd_nocode_fixture_impl cmd_nocode_fixture infra >/dev/null
+
+  run python3 - "$report" "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys, yaml
+report = yaml.safe_load(open(sys.argv[1]))
+task = yaml.safe_load(open(sys.argv[2]))["task"]
+assert task["commit_contract"] == report["commit_contract"]
+assert task["commit_contract"]["planned_paths"] == ["scripts/deploy_task.sh"]
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "no-code identity requires matching tree evidence" {
   run python3 - "$PROJECT_ROOT" <<'PY'
 import pathlib, sys
