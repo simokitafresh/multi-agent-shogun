@@ -80,12 +80,12 @@ run_hook() {
 
 @test "CDP直コマンド3種はnudgeしてexit 0かつfire logへ3件記録" {
     for command in \
-        "python3 scripts/cdp_font_probe.py --port 9222" \
+        "python3 scripts/cdp_font_probe.py" \
         "chrome --remote-debugging-port=9222" \
-        "python3 probe.py --debug_port 9234"; do
+        "curl http://127.0.0.1:9222/json/version"; do
         run_hook "$command"
         [ "$status" -eq 0 ]
-        [[ "$output" == *"★CDP直コマンド検知: Skill(claude-in-chrome)を先に起動せよ"* ]]
+        [[ "$output" == *"★CDP直コマンド検知: CDP専用スキル /cdp-browse を先に起動せよ"* ]]
     done
     [ "$(grep -c 'gate: \"cdp_direct_skill_nudge\"' "$GATE_FIRE_LOG_FILE")" -eq 3 ]
 }
@@ -104,11 +104,11 @@ run_hook() {
     [ ! -e "$GATE_FIRE_LOG_FILE" ]
 }
 
-@test "claude-in-chrome receipt済みならCDP commandの重複nudgeは0" {
+@test "cdp-browse receipt済みならCDP commandの重複nudgeは0" {
     cat > "$SKILL_EXECUTION_LOG_FILE" <<'YAML'
 executions:
 - ts: "2026-07-23T14:00:00+0900"
-  skill: "claude-in-chrome"
+  skill: "cdp-browse"
   executor: "saizo"
   result: "PASS"
   used: "true"
