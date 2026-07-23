@@ -417,6 +417,9 @@ commands:
     scope_mode: FULL
     purpose: "new purpose"
     target_path: /tmp/project
+    acceptance_criteria:
+      - id: AC1
+        description: "new task acceptance criterion"
 EOF
 
     run bash -c '
