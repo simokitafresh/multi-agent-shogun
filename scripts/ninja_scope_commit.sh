@@ -557,11 +557,50 @@ for p in scope:
     is_test='/tests/' in f'/{p}' or p.startswith('tests/') or p.endswith(('.bats','.spec.js','.test.js')) or p.rsplit('/',1)[-1].startswith('test_')
     if is_test and subprocess.run(['git','-C',repo,'cat-file','-e',f'HEAD:{p}'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode != 0:
         new_tests.append(p)
-persistent, errors=validate_entries(t.get('test_necessity'), new_tests)
+raw=t.get('test_necessity')
+entries=[dict(entry) for entry in raw if isinstance(entry,dict)] if isinstance(raw,list) else []
+task_ids={str(t.get(key) or '').strip() for key in ('task_id','subtask_id','parent_cmd')}
+task_ids.discard('')
+new_set=set(new_tests)
+current_entries=[]
+retained=[]
+errors=[]
+for entry in entries:
+    path=str(entry.get('path') or '').strip()
+    if path in new_set:
+        current_entries.append(entry)
+        continue
+    if not path:
+        current_entries.append(entry)
+        continue
+    exists=subprocess.run(
+        ['git','-C',repo,'cat-file','-e',f'HEAD:{path}'],
+        stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,
+    ).returncode == 0
+    history=subprocess.run(
+        ['git','-C',repo,'log','--format=%s','--',path],
+        text=True,capture_output=True,
+    )
+    subjects=history.stdout.splitlines() if history.returncode == 0 else []
+    same_task=exists and any(
+        identity in subject for identity in task_ids for subject in subjects
+    )
+    if same_task:
+        retained.append(path)
+    else:
+        errors.append(
+            f'test_necessity path is neither an actual new test nor retained '
+            f'in same-task history: {path}'
+        )
+persistent, validation_errors=validate_entries(current_entries, new_tests)
+errors.extend(validation_errors)
 if errors:
     print('BLOCK: new test necessity contract failed: ' + '; '.join(errors), file=sys.stderr)
     raise SystemExit(2)
-print(json.dumps({'transient':[p for p in new_tests if p not in persistent]}))
+print(json.dumps({
+    'transient':[p for p in new_tests if p not in persistent],
+    'retained':retained,
+}))
 PY
     )" || exit 2
     mapfile -t transient_tests < <(

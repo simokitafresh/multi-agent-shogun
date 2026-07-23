@@ -164,6 +164,52 @@ YAML
     git -C "$REPO" cat-file -e HEAD:tests/test_persistent.bats
 }
 
+# test_necessity: a persistent test committed earlier by the same task must remain valid evidence for a later production-only follow-up commit.
+@test "same-task retained test allows production-only follow-up commit" {
+    mkdir -p "$REPO/tests" "$REPO/queue/tasks"
+    printf retained >"$REPO/tests/test_retained.bats"
+    git -C "$REPO" add tests/test_retained.bats
+    git -C "$REPO" commit -qm 'task-retained: add contract test'
+    printf 'follow-up\n' >>"$REPO/own.txt"
+    cat >"$REPO/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  task_id: task-retained
+  planned_paths: [own.txt]
+  test_necessity:
+    - path: tests/test_retained.bats
+      defense_target: same task follow-up retains the established contract
+      overlap_evidence: no equivalent retained contract exists
+      overlaps_existing: false
+      fixture_self_reference: false
+      deprecated_mechanism: false
+YAML
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m "task-retained: production follow-up" -- own.txt' _ "$REPO" "$HELPER"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$REPO" show --format= --name-only HEAD)" = own.txt ]
+}
+
+# test_necessity: a declaration with no actual new test and no same-task retained history must fail closed instead of silently blessing a missing contract.
+@test "test necessity absent from current scope and same-task history blocks" {
+    mkdir -p "$REPO/queue/tasks"
+    printf 'follow-up\n' >>"$REPO/own.txt"
+    cat >"$REPO/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  task_id: task-missing
+  planned_paths: [own.txt]
+  test_necessity:
+    - path: tests/test_missing.bats
+      defense_target: missing contracts cannot be inferred from declarations
+      overlap_evidence: no equivalent contract exists
+      overlaps_existing: false
+      fixture_self_reference: false
+      deprecated_mechanism: false
+YAML
+    run bash -c 'cd "$1" && NINJA_SCOPE_TASK_FILE=queue/tasks/hayate.yaml bash "$2" -m "task-missing: production follow-up" -- own.txt' _ "$REPO" "$HELPER"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"neither an actual new test nor retained in same-task history"* ]]
+    [ -n "$(git -C "$REPO" status --short -- own.txt)" ]
+}
+
 @test "existing test net deletion requires justification and concurrent HEAD drift blocks" {
     mkdir -p "$REPO/tests" "$REPO/queue/tasks"
     printf 'one\ntwo\n' > "$REPO/tests/test_contract.bats"; git -C "$REPO" add tests/test_contract.bats; git -C "$REPO" commit -qm test-base
