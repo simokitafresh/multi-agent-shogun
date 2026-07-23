@@ -367,6 +367,10 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 
 結論: 数値表示13/13表を `font-mono tabular-nums`、符号状態色を `getValueColorClass` SSOTへ統一し、font未適用表を4→0へ解消。→ `/mnt/c/Python_app/DM-signal/docs/research/cmd_4122_table_text_inventory.md`
 
+## 20. cmd_4127 表フォント14px統一 (2026-07-23)
+
+結論: 表フォントcanonicalは本体14px・数値`ui-monospace tabular-nums`・文字Inter・ヘッダ14px。方向矢印はアイコン役割として18pxを維持。→ `docs/research/cmd_4127_font_unify_result.md`
+
 ## 19. cmd_4124 値配色の基準復旧 (2026-07-23)
 
 結論: 値の色は正値=`text-foreground`（lightは黒寄り、darkは白）、負値=`text-red-400`（両モード）。フォント種類・サイズはlight/dark共通で不変。→ `/mnt/c/Python_app/DM-signal/docs/research/cmd_4124_color_baseline_restore.md`
