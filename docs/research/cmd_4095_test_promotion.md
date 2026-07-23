@@ -75,3 +75,23 @@ checkpoint承認後のみ、復元対象へ `# test_necessity:` を記入して�
 - FAIL: `tests/unit/test_gate_single_check_consolidated.bats` の `gate_no_direct_yaml_dump blocks direct PyYAML dumps in shell scripts`
 - 一次原因: `scripts/deploy_task.sh:5941` と `scripts/throughput_scan.sh:36` に直接 `yaml.safe_dump` が残存し、現行gateがactive hits 2件として正しくBLOCKした。
 - 判定: 復元17 files由来の宣言欠落は0件だが、全量FAIL0契約は未達。運用script 2件は本taskの `tests` / 本文書scope外のため、修正cmdへ引き継ぐ。
+
+## §6 tobisaru確認receipt（2026-07-24 tobisaru）
+
+| 指標 | 記入前→後 |
+|------|----------|
+| 17復元files現存 | 17/17 確認済み |
+| test_necessity宣言 | 17/17 全件OK |
+| 現HEAD全test宣言率 | 123/187 |
+
+### task-scope実行receipt
+
+- receipt: `logs/test_receipts/run_tests_20260723T220635_2974880.json`
+- 選択ファイル(dependency map): 9 files（414 cases declared、414 observed、SKIP 0）
+- task-owned復元filesのPASS: test_context_freshness_check.bats(55)、test_deploy_task_ac_handling.bats(49) — 共にPASS
+- scope外FAIL 1: `tests/unit/test_heavy_job_admission.bats` 「GitHub runner型: 終了済みzombieだけのprocess groupはdrain済みとして扱う」— タイミング感応テスト(WSL2環境)。本taskの17復元filesと無関係。task contractに従いbinary_checks帰属対象外
+- yaml.safe_dump問題: 前回(§5)のFAIL原因は修正済み確認(`gate_no_direct_yaml_dump.sh`: active hits = 0)
+
+### 分類表更新
+- `docs/research/cmd_4093_test_triage_batch1.md` §4「昇格候補」→「昇格済み」へ更新（移植済み3＋復元宣言17＝20/20完了）
+- `docs/research/s3-test-speed-asis-tobe-5w1h_20260720.md` §5 B3行を「完了」へ更新
