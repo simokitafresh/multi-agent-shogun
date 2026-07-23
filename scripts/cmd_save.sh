@@ -6172,6 +6172,12 @@ check_research_artifact_reflux_ac() {
         "$TASK_TYPE" \
         "$(cmd_block_get_field "title")" \
         "$(cmd_block_get_field "purpose")")"
+    # A docs/research/... spec PATH reference is not research INTENT. Strip path
+    # tokens containing "research/" so an implementation command that merely cites
+    # a spec living under docs/research/ is not misclassified as a research command
+    # (LK-A10 false positive; 殿裁定2026-07-23 cmd_4131). Standalone intent words
+    # ("research the market", "analysis of X") survive and still classify.
+    SEARCH_TEXT_EN="$(sed -E 's#[A-Za-z0-9_./-]*research/[A-Za-z0-9_./-]*##g' <<< "$SEARCH_TEXT_EN")"
     # Keep Japanese classifier terms on the same semantic-header boundary as
     # English. Full-command scanning misclassifies implementation commands when
     # explanatory AC/q5 text merely mentions research, analysis, or investigation.
@@ -6202,7 +6208,7 @@ check_research_artifact_reflux_ac() {
     if grep -qiE 'environment_change:.*type=(test|gate)(;|[[:space:]]|$)' <<< "$CMD_BLOCK_NC"; then
         return 0
     fi
-    if grep -qE '(^|[[:space:]`"'\''])(scripts|tests|src|app|lib|config)/[^[:space:]`"'\'']+\.[A-Za-z0-9]+' <<< "$AC_SECTION" \
+    if grep -qE '(^|[[:space:]`"'\''])(scripts|tests|src|app|lib|config|frontend|components|backend)/[^[:space:]`"'\'']+\.[A-Za-z0-9]+' <<< "$AC_SECTION" \
         && grep -qE 'binary_check:' <<< "$AC_SECTION"; then
         return 0
     fi
