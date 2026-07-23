@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Duplicate CLEAR entries are deduplicated and rework flag upgrades monotonically (no->yes only); violation is BLOCK.
+# test_necessity: Duplicate CLEAR entries are deduplicated, rework upgrades monotonically, and every quality-log writer shares one canonical lock identity; violation can lose completion records and is BLOCK.
 # test_cmd_quality_log.bats — cmd_quality_log idempotency tests
 
 setup() {
@@ -63,13 +63,18 @@ count_entries() {
     [ "$(count_entries)" -eq 2 ]
 }
 
-@test "cmd_quality_log uses the hot log's lock path shared with rotation" {
+@test "all quality-log writers use the same canonical lock identity" {
     run bash -c '
-        source="$1"
-        log="$2"
-        grep -Fq "LOCK_FILE=\"\${LOG_FILE}.lock\"" "$source" && \
-        [ "$log.lock" = "${log}.lock" ]
-    ' _ "$PROJECT_ROOT/scripts/cmd_quality_log.sh" "$CMD_QUALITY_LOG_FILE"
+        root="$1"
+        source "$root/scripts/lib/lock_path.sh"
+        log="/mnt/c/tools/multi-agent-shogun/logs/cmd_design_quality.yaml"
+        canonical="$(lock_path "$log")"
+        [[ "$canonical" == /tmp/shogun_lock_*.lock ]] &&
+        [ "$canonical" != "${log}.lock" ] &&
+        grep -Fq '\''LOCK_FILE="$(lock_path "$LOG_FILE")"'\'' "$root/scripts/cmd_quality_log.sh" &&
+        grep -Fq '\''exec 201>"$(lock_path "$fp")"'\'' "$root/scripts/yaml_auto_archive.sh" &&
+        grep -Fq '\''200>"$(lock_path "$_GV_DQ_FILE")"'\'' "$root/scripts/cmd_complete_gate.sh"
+    ' _ "$PROJECT_ROOT"
     [ "$status" -eq 0 ]
 }
 

@@ -15,11 +15,12 @@ _cql_self="${BASH_SOURCE[0]:-$0}"
 [[ "$_cql_self" != /* ]] && _cql_self="$PWD/$_cql_self"
 SCRIPT_DIR="${_cql_self%/*}"
 REPO_ROOT="${SCRIPT_DIR%/scripts}"
+source "$REPO_ROOT/scripts/lib/lock_path.sh"
 LOG_FILE="${CMD_QUALITY_LOG_FILE:-$REPO_ROOT/logs/cmd_design_quality.yaml}"
-# yaml_auto_archive.sh uses this same per-file lock before replacing the hot
-# log.  A separate lock allowed an append to race with archive's stale temp
-# file and silently discard the appended entries.
-LOCK_FILE="${LOG_FILE}.lock"
+# Every append/replace path must derive the identical canonical lock. On
+# /mnt/c, lock_path maps to /tmp; a literal "${LOG_FILE}.lock" is a different
+# lock and permits a stale atomic replacement to discard a successful append.
+LOCK_FILE="$(lock_path "$LOG_FILE")"
 SOURCE_STAGE="${CMD_QUALITY_SOURCE:-cmd_complete_gate}"
 DIAGNOSIS_TEXT="${CMD_QUALITY_DIAGNOSIS:-}"
 FAST_METADATA="${CMD_QUALITY_FAST_METADATA:-0}"

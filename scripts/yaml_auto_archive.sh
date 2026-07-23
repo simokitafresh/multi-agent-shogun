@@ -13,8 +13,11 @@ set -euo pipefail
 # WSL2最適化: $(cd)/$(dirname) subshell(~8ms) → string ops。
 _yaa_self="${BASH_SOURCE[0]}"
 [[ "$_yaa_self" != /* ]] && _yaa_self="$PWD/$_yaa_self"
-ROOT_DIR="${SHOGUN_ROOT:-${_yaa_self%/scripts/yaml_auto_archive.sh}}"
+_yaa_code_root="${_yaa_self%/scripts/yaml_auto_archive.sh}"
+ROOT_DIR="${SHOGUN_ROOT:-$_yaa_code_root}"
+source "$_yaa_code_root/scripts/lib/lock_path.sh"
 unset _yaa_self
+unset _yaa_code_root
 CONFIG_FILE="${YAML_AUTO_ARCHIVE_CONFIG:-$ROOT_DIR/config/yaml_auto_archive.tsv}"
 LOCK_FILE="/tmp/shogun_yaml_auto_archive.lock"
 
@@ -144,7 +147,7 @@ while IFS=$'\t' read -r rel_path keep_s top_key entry_pattern rel_archive; do
     # identical lock around a possible replacement to make append+archive
     # serializable; the global archive lock alone did not cover writers.
     if [[ "${fp#$ROOT_DIR/}" == "logs/cmd_design_quality.yaml" ]]; then
-        exec 201>"${fp}.lock"
+        exec 201>"$(lock_path "$fp")"
         flock -w 10 201 || { echo "ALERT ${fp#$ROOT_DIR/}: failed to acquire quality-log lock; aborting" >&2; exit 1; }
         _archive_one "$fp" "$keep_s" "$top_key" "$entry_pattern" "$fa"
         exec 201>&-
