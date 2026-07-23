@@ -12,6 +12,8 @@ t=d.get("target_result")
 w=d.get("workflow_result")
 expected=str(d.get("expected_head_sha") or "")
 reviewed_at=d.get("reviewed_at")
+workflow_started_at=w.get("started_at") if isinstance(w, dict) else None
+workflow_freshness_at=workflow_started_at or (w.get("created_at") if isinstance(w, dict) else None)
 if not isinstance(t, dict) or not isinstance(w, dict):
     print("BLOCK: typed target_result/workflow_result required")
     raise SystemExit(1)
@@ -26,8 +28,8 @@ if workflow_status is None:
 if not isinstance(workflow_status, str):
     print("BLOCK: workflow_result status type invalid")
     raise SystemExit(1)
-if not isinstance(reviewed_at, str) or not isinstance(w.get("created_at"), str):
-    print("BLOCK: reviewed_at/workflow_result.created_at type invalid")
+if not isinstance(reviewed_at, str) or not isinstance(workflow_freshness_at, str):
+    print("BLOCK: reviewed_at/workflow_result.started_at type invalid")
     raise SystemExit(1)
 def parse_aware(value, name):
     try:
@@ -40,7 +42,7 @@ def parse_aware(value, name):
         raise SystemExit(1)
     return parsed.astimezone(timezone.utc)
 reviewed=parse_aware(reviewed_at, "reviewed_at")
-created=parse_aware(w["created_at"], "workflow_result.created_at")
+started=parse_aware(workflow_freshness_at, "workflow_result.started_at")
 if not expected or t["head_sha"] != expected or w["head_sha"] != expected:
     print("BLOCK: head SHA mismatch")
     raise SystemExit(1)
@@ -53,7 +55,7 @@ if workflow_status != "completed":
 if w["conclusion"] != "success":
     print("BLOCK: workflow_result is not GREEN")
     raise SystemExit(1)
-if created < reviewed:
+if started < reviewed:
     print("BLOCK: workflow run predates SG7 review")
     raise SystemExit(1)
 print("READY: target_result=GREEN workflow_result=GREEN fresh_after_review head_sha=" + expected)
@@ -8414,14 +8416,14 @@ elif [ "$CI_PUSH_DETECTED" = true ]; then
     if [ -z "$ci_result" ] && [ -n "$ci_origin_slug" ] && command -v gh >/dev/null 2>&1; then
         ci_result=$(timeout 15 gh run list --repo "$ci_origin_slug" \
             --branch main --limit 5 \
-            --json status,conclusion,createdAt,databaseId,headSha 2>/dev/null || true)
+            --json status,conclusion,createdAt,startedAt,databaseId,headSha 2>/dev/null || true)
         # Pick the most recent run whose head matches expected_head; fall back
         # to the overall most recent run (index 0) when no exact match exists.
         if [ -n "$ci_result" ] && [ -n "$expected_head" ]; then
             ci_result=$(printf '%s' "$ci_result" | jq -c \
                 --arg head "$expected_head" \
                 '[if ([.[] | select(.headSha == $head)] | length) > 0
-                  then ([.[] | select(.headSha == $head)] | sort_by(.createdAt) | reverse | .[0])
+                  then ([.[] | select(.headSha == $head)] | sort_by(.startedAt // .createdAt) | reverse | .[0])
                   else .[0] end]' 2>/dev/null || printf '%s' "$ci_result")
         fi
     fi
@@ -8437,7 +8439,8 @@ elif [ "$CI_PUSH_DETECTED" = true ]; then
         'if type == "array" and length > 0 and (.[0] | type) == "object" then
            {expected_head_sha:$expected, reviewed_at:$reviewed,
             target_result:{conclusion:$target,head_sha:$expected},
-            workflow_result:{status:.[0].status,conclusion:.[0].conclusion,head_sha:.[0].headSha,created_at:.[0].createdAt}}
+            workflow_result:{status:.[0].status,conclusion:.[0].conclusion,head_sha:.[0].headSha,
+                             started_at:(.[0].startedAt // .[0].createdAt),created_at:.[0].createdAt}}
          else {expected_head_sha:$expected,reviewed_at:$reviewed,target_result:{conclusion:$target,head_sha:$expected},workflow_result:null} end' \
         2>/dev/null || printf '{}')
     if ci_decision=$(printf '%s' "$ci_decision_json" | evaluate_ci_readiness_json 2>&1); then
