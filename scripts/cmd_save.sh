@@ -565,7 +565,7 @@ is_gate_or_script_modification_cmd() {
 
     # 偵察/棚卸し/研究/バックテストcmdはscriptsディレクトリを走査対象にするだけでgate修正ではない
     cmd_text_matches_pattern "$search_text" '偵察|棚卸し|audit|recon|調査|研究|backtest|道具磨き|道具作り|grid_search|run_077|run_l1plus' && return 1
-    cmd_text_matches_pattern "$search_text" 'gate|hook|script|\.sh|ゲート|フック|スクリプト' || return 1
+    cmd_text_matches_pattern "$search_text" '(^|[^A-Za-z0-9_])(gate|hook|script)([^A-Za-z0-9_]|$)|\.sh|ゲート|フック|スクリプト' || return 1
     cmd_text_matches_pattern "$search_text" '修正|改善|追加|変更|更新|精度|誤判定|偽陽性|fix|modify|update|improve|add' || return 1
     return 0
 }
@@ -1711,7 +1711,7 @@ cmd_save_is_causal_verification_scope() {
         in_ac && /^[[:space:]]{4}[A-Za-z_][A-Za-z0-9_]*:/ { in_ac=0 }
         in_ac { print }
     ' <<< "$CMD_BLOCK_NC")"
-    grep -qiE 'hook|gate|daemon|semantic|search|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report_field_set|gate_report_format|cmd_save|inbox_watcher|ninja_monitor' <<< "$search_text"
+    grep -qiE '(^|[^A-Za-z0-9_])(hook|gate|search)([^A-Za-z0-9_]|$)|daemon|semantic|memory[ _-]?db|記憶DB|deploy_task|配備フロー|report_field_set|gate_report_format|cmd_save|inbox_watcher|ninja_monitor' <<< "$search_text"
 }
 
 show_causal_verification_q5_template() {
@@ -7127,7 +7127,11 @@ if [[ ${#BLOCK_CHECKS[@]} -gt 0 ]]; then
         if (( _same_check_count >= 2 )); then
             _nazenaze_value="$(extract_nazenaze_root_cause)"
             if [[ -z "$_nazenaze_value" ]]; then
-                record_block_reason "同一チェック(${_nz_check})で3回目BLOCK。diagnosis.nazenaze_root_cause になぜなぜ7回の根因分析を記入せよ"
+                # BLOCK撤去(殿裁定2026-07-23 gate品質バグ即時修正): count_same_check_prior_blocks は
+                # 同一cmd_idの過去BLOCK数を数えるが、BLOCK解消の検証手段は cmd_save 再実行しかなく、
+                # 正当なfix-and-retryで数が増え3回目で恒久BLOCK=WARN経路(L7101)で撤去済みの自己参照と
+                # 同型。nazenazeの推奨(と学習)は残すがBLOCKはしない。
+                echo "  ★ 同一チェック(${_nz_check})で複数回BLOCK。diagnosis.nazenaze_root_cause でなぜなぜ7回の根因分析を推奨(BLOCKはしない)。" >&2
                 echo "  形式: nazenaze_root_cause: \"なぜ1→なぜ2→...→根因: ...→仕組み: ...\"" >&2
             fi
         fi

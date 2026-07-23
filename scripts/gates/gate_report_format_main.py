@@ -826,9 +826,12 @@ def main(report_data=None) -> int:
                     if "id" not in item:
                         errors.append(f'lessons_useful[{i}]: missing "id" field (must have lesson ID like L074)')
                         hints.append(f'FIX (lessons_useful[{i}]): id フィールド必須。テンプレート注入済みの教訓IDを確認せよ:\n  - id: L074\n    useful: true\n    reason: "理由"')
-                    elif isinstance(item["id"], str) and not re.match(r'^L\d+$', item["id"]):
-                        errors.append(f'lessons_useful[{i}]: id="{item["id"]}" is invalid (must match L+number, e.g. L074)')
-                        hints.append(f'FIX (lessons_useful[{i}]): idはL+数字形式のみ。テンプレート注入済みの教訓IDを確認せよ')
+                    elif isinstance(item["id"], str) and not re.match(r'^L[SKG]?-?A?\d+(\(\d+\))?$', item["id"]):
+                        # 実在する教訓ID体系(L074/LS086/LK-A10/LG017/LS-A04(46)/LS110)を全て許容する。
+                        # 旧 ^L\d+$ はLS/LK/LG系・ハイフン・括弧付きを弾く厳格すぎるregexだった
+                        # (殿裁定2026-07-23 gate品質バグ即時修正)。
+                        errors.append(f'lessons_useful[{i}]: id="{item["id"]}" is invalid (must be a lesson ID like L074/LS086/LK-A10/LG017)')
+                        hints.append(f'FIX (lessons_useful[{i}]): idは教訓ID形式(L+数字, LS/LK/LG系, ハイフン・括弧可)。テンプレート注入済みの教訓IDを確認せよ')
                     if "useful" not in item:
                         errors.append(f'lessons_useful[{i}]: missing "useful" field')
                         hints.append(f"FIX (lessons_useful[{i}]): useful: true or false を記入せよ")
