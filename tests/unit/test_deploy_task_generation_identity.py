@@ -23,7 +23,7 @@ SPEC.loader.exec_module(FAST)
 
 
 def test_current_task_id_wins_over_stale_subtask_id() -> None:
-    task = b"""task:
+    task = """task:
   assigned_to: kotaro
   task_id: cmd_4128_full
   _ac_task_id: cmd_4128_full
@@ -31,6 +31,7 @@ def test_current_task_id_wins_over_stale_subtask_id() -> None:
   parent_cmd: cmd_4128
   task_type: full
   project: dm-signal
+  purpose: gate/hook変更でないUI修正
   ac_version: current
   report_id: rpt-12345678-1234-4123-8123-123456789abc
   report_path: queue/reports/kotaro_report_cmd_4128.yaml
@@ -38,7 +39,7 @@ def test_current_task_id_wins_over_stale_subtask_id() -> None:
   - id: AC1
     checks:
     - check: current generation remains authoritative
-"""
+""".encode()
     template = b"""worker_id: old
 report_id: rpt-12345678-1234-4123-8123-123456789abc
 report_identity_version: 2
@@ -74,3 +75,6 @@ verdict: ""
     report = FAST.build_publication(task, template).report_bytes
 
     assert yaml.safe_load(report)["task_id"] == "cmd_4128_full"
+    assert FAST.build_publication(task, template).task_metadata_patch[
+        "variation_checks_required"
+    ] is False

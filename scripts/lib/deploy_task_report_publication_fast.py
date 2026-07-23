@@ -393,22 +393,31 @@ def _variation_required(task: Mapping[str, Any]) -> bool:
             "not_in_scope",
         )
     ).lower()
+    # Negative scope statements describe what the task is not.  Leaving their
+    # keywords in the classifier made phrases such as "gate/hook変更でないUI修正"
+    # satisfy both the enforcement and code predicates.
+    classifier_text = re.sub(
+        r"(?:gate|hook|ゲート|フック)(?:\s*[/・]\s*(?:gate|hook|ゲート|フック))?"
+        r"\s*(?:の)?変更\s*(?:で|では)?ない",
+        "",
+        text,
+    )
     enforcement = bool(
         re.search(
             r"enforcement|gate|hook|detector|guard|watcher|state[ _-]?machine|ゲート|フック|検知器|ガード|監視",
-            text,
+            classifier_text,
         )
     )
     code = bool(
         re.search(
             r"scripts/|\.sh\b|\.py\b|コード変更|コード修正|実装|修正|implement|\bfix\b",
-            text,
+            classifier_text,
         )
     )
     docs_only = bool(
         re.search(
             r"docs?[ _-]?only|documentation[ _-]?only|教訓のみ|fixtureのみ|索引のみ|docsのみ",
-            text,
+            classifier_text,
         )
     )
     return enforcement and code and not docs_only

@@ -3554,6 +3554,9 @@ generate_report_template() {
     local _variation_checks_required=false
     local _variation_text="${title:-} ${purpose:-} ${command:-} ${description:-} ${target_path:-} ${files_to_modify:-} ${files_modified:-} ${acceptance_criteria:-} ${constraints:-} ${not_in_scope:-}"
     _variation_text="${_variation_text,,}"
+    # 「gate/hook変更でない」の否定scopeをpositive keywordとして数えると、
+    # 通常UI修正へenforcement variationを偽強制する。分類前に否定句だけ除く。
+    _variation_text="$(printf '%s\n' "$_variation_text" | sed -E 's/(gate|hook|ゲート|フック)([[:space:]]*[/・][[:space:]]*(gate|hook|ゲート|フック))?[[:space:]]*(の)?変更[[:space:]]*(で|では)?ない//g')"
     local _variation_task_type="${task_type:-${type:-${scope_mode:-}}}"
     _variation_task_type="${_variation_task_type,,}"
     if [[ ! "$_variation_task_type" =~ ^(scout|recon|recon2)$ ]] \
