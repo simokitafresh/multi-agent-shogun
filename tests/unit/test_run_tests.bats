@@ -625,6 +625,134 @@ YAML
   [[ "$output" == *"BLOCK: task scope could not be resolved"* ]]
 }
 
+# test_necessity: an undeclared top/nested planned_paths mismatch (no
+# scope_expansion_reason) must keep BLOCKing exactly as before — a declared
+# expansion path must never quietly widen undeclared scope grabs (bulletin
+# blt_20260724_162804 (d): undeclared expansion stays BLOCKed).
+@test "cmd_4161 AC1: undeclared planned_paths expansion stays BLOCKed and fires a gate_fire_log entry" {
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
+  mkdir -p "$TMPROOT/queue/tasks"
+  cat >"$TMPROOT/queue/tasks/undeclared.yaml" <<'YAML'
+task:
+  planned_paths: [scripts/run_tests.sh]
+  commit_contract:
+    required: true
+    planned_paths: [scripts/run_tests.sh, tests/unit/owned.bats]
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/undeclared.yaml"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: task scope could not be resolved"* ]]
+  [[ "$output" == *"SCOPE_EXPANSION status=undeclared"* ]]
+  [ -f "$TMPROOT/logs/gate_fire_log.yaml" ]
+  grep -q 'gate: "scope_expansion", result: BLOCK' "$TMPROOT/logs/gate_fire_log.yaml"
+  grep -q 'status=undeclared' "$TMPROOT/logs/gate_fire_log.yaml"
+}
+
+# test_necessity: a declared expansion (non-empty scope_expansion_reason and
+# a nested planned_paths superset of the top-level declaration) must pass the
+# mismatch check, widen the resolved scope to the superset, and record a
+# gate_fire_log PASS entry so detector_fp_rate can track it.
+@test "cmd_4161 AC1: declared planned_paths expansion passes and widens resolved scope" {
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
+  printf '@test "extra" { true; }\n' >"$TMPROOT/tests/unit/extra.bats"
+  mkdir -p "$TMPROOT/queue/tasks"
+  cat >"$TMPROOT/queue/tasks/declared.yaml" <<'YAML'
+task:
+  planned_paths: [scripts/run_tests.sh, tests/unit/owned.bats]
+  commit_contract:
+    required: true
+    planned_paths: [scripts/run_tests.sh, tests/unit/owned.bats, tests/unit/extra.bats]
+    scope_expansion_reason: "target_path outgrew original scope during implementation"
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/declared.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"SCOPE_EXPANSION status=declared"* ]]
+  [[ "$output" == *"TEST_SCOPE result=task files=3"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=2 transitive=0 source=task_declared_contract"* ]]
+  [ -f "$TMPROOT/logs/gate_fire_log.yaml" ]
+  grep -q 'gate: "scope_expansion", result: PASS' "$TMPROOT/logs/gate_fire_log.yaml"
+  grep -q 'status=declared' "$TMPROOT/logs/gate_fire_log.yaml"
+
+  # A reason that does not accompany a superset (nested drops an originally
+  # declared path while adding another) must not be treated as a valid
+  # declared expansion — it stays BLOCKed even though a reason is present.
+  cat >"$TMPROOT/queue/tasks/partial.yaml" <<'YAML'
+task:
+  planned_paths: [scripts/run_tests.sh, tests/unit/owned.bats]
+  commit_contract:
+    required: true
+    planned_paths: [scripts/run_tests.sh, tests/unit/extra.bats]
+    scope_expansion_reason: "not a true superset"
+YAML
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/partial.yaml"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: task scope could not be resolved"* ]]
+  [[ "$output" == *"SCOPE_EXPANSION status=undeclared"* ]]
+}
+
+# test_necessity: declare_scope_expansion() is the only supported way to
+# widen commit_contract.planned_paths. It must require a non-empty reason,
+# merge new paths without duplicating existing ones, and record the reason
+# on task.commit_contract.scope_expansion_reason (bulletin blt_20260724_162804
+# (a): raw yaml_field_set nested-path writes corrupt the YAML instead).
+@test "cmd_4161 AC1: declare-scope-expansion CLI requires a reason and merges planned_paths" {
+  mkdir -p "$TMPROOT/queue/tasks"
+  cat >"$TMPROOT/queue/tasks/expand.yaml" <<'YAML'
+task:
+  commit_contract:
+    required: true
+    reason: implementation_path_present
+    planned_paths: [scripts/run_tests.sh]
+YAML
+
+  run env REPO_ROOT="$ROOT" LOG_DIR="$TMPROOT/logs" \
+    bash "$TMPROOT/scripts/run_tests.sh" declare-scope-expansion \
+    "$TMPROOT/queue/tasks/expand.yaml" "" tests/unit/extra.bats
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"BLOCK: scope expansion reason must be non-empty"* ]]
+
+  run env REPO_ROOT="$ROOT" LOG_DIR="$TMPROOT/logs" \
+    bash "$TMPROOT/scripts/run_tests.sh" declare-scope-expansion \
+    "$TMPROOT/queue/tasks/expand.yaml" "need extra fixture" tests/unit/extra.bats
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"OK: commit_contract.planned_paths expanded"* ]]
+
+  run python3 -c '
+import yaml
+data = yaml.safe_load(open("'"$TMPROOT"'/queue/tasks/expand.yaml"))
+contract = data["task"]["commit_contract"]
+print(contract["planned_paths"])
+print(contract["scope_expansion_reason"])
+print(contract["reason"])
+'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"['scripts/run_tests.sh', 'tests/unit/extra.bats']"* ]]
+  [[ "$output" == *"need extra fixture"* ]]
+  [[ "$output" == *"implementation_path_present"* ]]
+  [ -f "$TMPROOT/logs/gate_fire_log.yaml" ]
+  grep -q 'gate: "scope_expansion_declared", result: PASS' "$TMPROOT/logs/gate_fire_log.yaml"
+  grep -q 'reason=need extra fixture' "$TMPROOT/logs/gate_fire_log.yaml"
+
+  # Re-running with a path already present must not duplicate it.
+  run env REPO_ROOT="$ROOT" LOG_DIR="$TMPROOT/logs" \
+    bash "$TMPROOT/scripts/run_tests.sh" declare-scope-expansion \
+    "$TMPROOT/queue/tasks/expand.yaml" "second call" tests/unit/extra.bats
+  [ "$status" -eq 0 ]
+  run python3 -c '
+import yaml
+data = yaml.safe_load(open("'"$TMPROOT"'/queue/tasks/expand.yaml"))
+print(len(data["task"]["commit_contract"]["planned_paths"]))
+'
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"2"* ]]
+}
+
 # test_necessity: an unresolved/empty task scope must fail closed instead of silently reverting to repository-wide git diff.
 @test "task mode rejects empty scope instead of using global git diff" {
   mkdir -p "$TMPROOT/queue/tasks"

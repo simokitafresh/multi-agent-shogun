@@ -407,6 +407,30 @@ status=$(field_get "$task_file" "status")
 bash scripts/lib/yaml_field_set.sh queue/tasks/hayate.yaml task status in_progress
 ```
 
+### commit_contract.planned_paths拡大手順（cmd_4161・殿命）
+
+実装が正当にtarget_path外へ拡大した場合（横断修正・generated再生成・付随テスト追加等）、
+`commit_contract.planned_paths`を直接編集するな。`yaml_field_set.sh`はネストしたdotted
+フィールド(`commit_contract.planned_paths`のような文字列)を実フィールドとして認識せず、
+リテラルキーとして追加してYAMLを壊す（bulletin blt_20260724_162804 (a)）。
+
+**正規経路は`declare-scope-expansion`のみ**。理由必須、無宣言の拡大は従来どおりBLOCKされる:
+
+```bash
+bash scripts/run_tests.sh declare-scope-expansion \
+  queue/tasks/{your_ninja_name}.yaml \
+  "<拡大理由。具体的に>" \
+  <追加パス1> [<追加パス2> ...]
+```
+
+- reasonが空文字ならBLOCK。新パスは既存`planned_paths`へ重複なく追加され、
+  `commit_contract.scope_expansion_reason`に理由が記録される
+- 発火は`logs/gate_fire_log.yaml`（`gate: "scope_expansion_declared"` or `"scope_expansion"`）へ
+  記録され、`detector_fp_rate`で計測される
+- 拡大後は`bash scripts/run_tests.sh task queue/tasks/{your_ninja_name}.yaml`が
+  widened scopeで通ることを確認してから実装を続けよ
+- 拡大が妥当か判断に迷う場合は実装を進めず家老へ相談せよ（無制限の自己拡大を許す機能ではない）
+
 ## State Verification Principle (L067/L074)
 
 関連する複数の状態は、変更トリガーの副作用ではなく、各状態を独立に「正しいか？」を検証せよ。

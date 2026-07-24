@@ -163,9 +163,25 @@ def normalized_paths(value):
 
 top_paths = normalized_paths(top_planned)
 nested_paths = normalized_paths(nested_planned)
+scope_source = top_planned if top_paths else nested_planned
 if top_paths and nested_paths and top_paths != nested_paths:
-    raise ValueError("planned_paths mismatch between task and commit_contract")
-collect(top_planned if top_paths else nested_planned)
+    expansion_reason = ""
+    if isinstance(commit_contract, dict):
+        expansion_reason = str(commit_contract.get("scope_expansion_reason") or "").strip()
+    # A legitimate expansion (target_path outgrew its original scope during
+    # implementation) must go through declare_scope_expansion(), which
+    # records a non-empty reason alongside the widened commit_contract.
+    # planned_paths. Without that reason, a top/nested mismatch is either
+    # accidental drift or an undeclared scope grab, and stays a hard BLOCK
+    # exactly as before (bulletin blt_20260724_162804 (d)).
+    declared = bool(expansion_reason) and nested_paths.issuperset(top_paths)
+    status = "declared" if declared else "undeclared"
+    added = sorted(nested_paths - top_paths)
+    print(f"SCOPE_EXPANSION status={status} added={added} reason={expansion_reason!r}", file=sys.stderr)
+    if not declared:
+        raise ValueError("planned_paths mismatch between task and commit_contract")
+    scope_source = nested_planned
+collect(scope_source)
 
 report_path = task.get("report_path")
 if isinstance(report_path, str) and report_path.strip():
@@ -185,6 +201,107 @@ for raw in values:
         seen.add(relative)
         sys.stdout.buffer.write(relative.encode() + b"\0")
 PY
+}
+
+# Record a task_scope_paths() SCOPE_EXPANSION stderr line into gate_fire_log
+# for detector_fp_rate visibility (AC1: 検査発火はgate_fire_logへ記録し
+# detector_fp_rateで計測可能に接続する). No-op when task_scope_paths did not
+# hit a top/nested planned_paths mismatch at all.
+log_scope_expansion_fire() {
+    local task_yaml="$1"
+    local stderr_file="$2"
+    local scope_rc="$3"
+    local line
+    line="$(grep '^SCOPE_EXPANSION ' "$stderr_file" 2>/dev/null | tail -1 || true)"
+    [ -n "$line" ] || return 0
+    local log_dir="${LOG_DIR:-$REPO_ROOT/logs}"
+    mkdir -p "$log_dir" 2>/dev/null || true
+    local result="BLOCK"
+    [ "$scope_rc" -eq 0 ] && result="PASS"
+    local detail="${line#SCOPE_EXPANSION }"
+    detail="${detail//\"/\\\"}"
+    (
+        flock -w 5 204 || true
+        printf -- '- ts: "%s", file: "%s", gate: "scope_expansion", result: %s, checks: "%s"\n' \
+            "$(date '+%Y-%m-%dT%H:%M:%S')" "$task_yaml" "$result" "$detail" \
+            >> "$log_dir/gate_fire_log.yaml"
+    ) 204>"$log_dir/gate_fire_log.yaml.lock"
+}
+
+# Canonical, audited way to expand a task's commit_contract.planned_paths
+# beyond its originally declared scope. Writing planned_paths directly, or
+# via yaml_field_set on a raw dotted nested field name, either desyncs the
+# top-level/commit_contract copies or corrupts the YAML with a literal
+# "commit_contract.planned_paths" key (bulletin blt_20260724_162804 (a): the
+# case-driven field router in yaml_field_set() only recognizes the exact
+# field name "commit_contract" for its structured mapping lane, not a
+# dotted path into it). This is the only supported entry point: it requires
+# a non-empty reason, rewrites commit_contract as one atomic mapping via
+# that existing structured lane, and records the event to gate_fire_log.
+declare_scope_expansion() {
+    local task_yaml="$1"
+    local reason="$2"
+    shift 2 || true
+    local -a new_paths=("$@")
+
+    [ -f "$task_yaml" ] || { echo "BLOCK: task yaml not found: $task_yaml" >&2; return 2; }
+    reason="${reason#"${reason%%[![:space:]]*}"}"
+    reason="${reason%"${reason##*[![:space:]]}"}"
+    [ -n "$reason" ] || { echo "BLOCK: scope expansion reason must be non-empty" >&2; return 2; }
+    [ "${#new_paths[@]}" -gt 0 ] || { echo "BLOCK: at least one new path is required" >&2; return 2; }
+
+    local new_contract_json
+    new_contract_json="$(REASON="$reason" python3 - "$task_yaml" "${new_paths[@]}" <<'PY'
+import json
+import os
+import sys
+
+import yaml
+
+task_path = sys.argv[1]
+new_paths = sys.argv[2:]
+reason = os.environ["REASON"]
+
+with open(task_path, encoding="utf-8") as fh:
+    doc = yaml.safe_load(fh) or {}
+task = doc.get("task", doc)
+if not isinstance(task, dict):
+    print("BLOCK: task mapping missing", file=sys.stderr)
+    raise SystemExit(2)
+
+contract = task.get("commit_contract")
+if not isinstance(contract, dict):
+    print("BLOCK: task.commit_contract must be a mapping", file=sys.stderr)
+    raise SystemExit(2)
+
+existing = contract.get("planned_paths") or []
+if not isinstance(existing, list):
+    print("BLOCK: commit_contract.planned_paths must be a list", file=sys.stderr)
+    raise SystemExit(2)
+
+merged = list(dict.fromkeys([*[str(p) for p in existing], *new_paths]))
+updated = dict(contract)
+updated["planned_paths"] = merged
+updated["scope_expansion_reason"] = reason
+print(json.dumps(updated))
+PY
+)" || return 2
+
+    if ! bash "$REPO_ROOT/scripts/lib/yaml_field_set.sh" "$task_yaml" task commit_contract "$new_contract_json"; then
+        echo "BLOCK: failed to write expanded commit_contract" >&2
+        return 1
+    fi
+
+    local log_dir="${LOG_DIR:-$REPO_ROOT/logs}"
+    mkdir -p "$log_dir" 2>/dev/null || true
+    (
+        flock -w 5 205 || true
+        printf -- '- ts: "%s", file: "%s", gate: "scope_expansion_declared", result: PASS, checks: "reason=%s added=%s"\n' \
+            "$(date '+%Y-%m-%dT%H:%M:%S')" "$task_yaml" "${reason//\"/\\\"}" "${new_paths[*]}" \
+            >> "$log_dir/gate_fire_log.yaml"
+    ) 205>"$log_dir/gate_fire_log.yaml.lock"
+
+    echo "OK: commit_contract.planned_paths expanded (reason recorded)"
 }
 
 # A read-only recon owns no source path.  Treating inspection references as
@@ -1263,12 +1380,16 @@ _run_tests_main() {
                 echo "TEST_SELECTION result=selected reason=readonly_probe_no_source_tests files=0"
                 exit 0
             fi
-            local _scope_tmp _scope_rc
+            local _scope_tmp _scope_err _scope_rc
             _scope_tmp="$(mktemp)"
+            _scope_err="$(mktemp)"
             set +e
-            task_scope_paths "$1" >"$_scope_tmp"
+            task_scope_paths "$1" >"$_scope_tmp" 2>"$_scope_err"
             _scope_rc=$?
             set -e
+            cat "$_scope_err" >&2
+            log_scope_expansion_fire "$1" "$_scope_err" "$_scope_rc"
+            rm -f "$_scope_err"
             if [ "$_scope_rc" -ne 0 ]; then
                 rm -f "$_scope_tmp"
                 echo "BLOCK: task scope could not be resolved" >&2
@@ -1412,6 +1533,15 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
     if [[ "${1:-}" == "receipt" ]]; then
         [ "$#" -eq 2 ] || { echo "Usage: bash scripts/run_tests.sh receipt <run-or-selection-identity>" >&2; exit 2; }
         recover_run_tests_terminal_receipt "$2"
+        exit $?
+    fi
+    if [[ "${1:-}" == "declare-scope-expansion" ]]; then
+        shift
+        [ "$#" -ge 3 ] || {
+            echo "Usage: bash scripts/run_tests.sh declare-scope-expansion <task_yaml> <reason> <new_path...>" >&2
+            exit 2
+        }
+        declare_scope_expansion "$@"
         exit $?
     fi
     if [[ "${1:-}" == "--receipt-inner" ]]; then
