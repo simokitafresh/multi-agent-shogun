@@ -1379,6 +1379,20 @@ _run_tests_main() {
             [ "$_selector_rc" -eq 0 ] || { echo "BLOCK: task-scoped selector failed rc=$_selector_rc" >&2; exit 2; }
             mapfile -t selected <<<"$_selector_output"
             [ -n "$_selector_output" ] || selected=()
+            # Execution guard: declared paths may name tests that exist only in
+            # another environment or are yet to be written (files_to_modify);
+            # passing a missing file to bats fails with rc=7 (CI RED 2026-07-24
+            # sample.bats). Keep the selection reason, drop only missing files.
+            local -a _runnable_tests=()
+            local _sel_file
+            for _sel_file in "${selected[@]}"; do
+                if [ -f "$_sel_file" ] || [ -f "$REPO_ROOT/$_sel_file" ]; then
+                    _runnable_tests+=("$_sel_file")
+                else
+                    echo "WARN: selected test not found, skipping: $_sel_file" >&2
+                fi
+            done
+            selected=("${_runnable_tests[@]}")
             if [ "${#selected[@]}" -eq 0 ]; then
                 echo "TEST_SELECTION result=selected reason=task_scope_no_mapped_tests files=0"
                 exit 0
