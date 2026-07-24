@@ -592,6 +592,11 @@ else
 
     # 2. 未配備CMD(status=delegated + task未作成。on_hold/shelved/blockedは除外)
     _delegated_cmds="$(awk '/^  cmd_[0-9]+:/{cmd=$1; gsub(/:$/,"",cmd)} cmd && /status:.*(on_hold|shelved|blocked)/{cmd=""} cmd && /status:.*delegated/{print cmd; cmd=""}' "$SCRIPT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true)"
+    # idle忍者0名ならdelegated ALERTをスキップ(配備不可能なのにALERTしても無駄)
+    _idle_ninja_count="$(grep -c '|idle|' "$SCRIPT_DIR/queue/karo_snapshot.txt" 2>/dev/null || echo 0)"
+    if [[ "$_idle_ninja_count" -eq 0 ]] && [[ -n "$_delegated_cmds" ]]; then
+      _delegated_cmds=""
+    fi
     for _dcmd in $_delegated_cmds; do
       _has_task=false
       for _tf2 in "$SCRIPT_DIR"/queue/tasks/*.yaml; do

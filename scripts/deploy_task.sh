@@ -488,12 +488,12 @@ deploy_task_yaml_transaction_begin() {
     local report_filename
     DEPLOY_TASK_YAML_TX_DIR=$(mktemp -d) || return 1
     DEPLOY_TASK_YAML_TX_TASK="$task_file"
-    cp -p -- "$task_file" "$DEPLOY_TASK_YAML_TX_DIR/task.before" || return 1
+    cp -- "$task_file" "$DEPLOY_TASK_YAML_TX_DIR/task.before" || return 1
     report_filename=$(FIELD_GET_NO_LOG=1 field_get "$source_file" report_filename "" 2>/dev/null || true)
     [ -n "$report_filename" ] || report_filename="${ninja_name}_report_${parent_cmd}.yaml"
     DEPLOY_TASK_YAML_TX_REPORT="$SCRIPT_DIR/queue/reports/$report_filename"
     if [ -f "$DEPLOY_TASK_YAML_TX_REPORT" ]; then
-        cp -p -- "$DEPLOY_TASK_YAML_TX_REPORT" "$DEPLOY_TASK_YAML_TX_DIR/report.before" || return 1
+        cp -- "$DEPLOY_TASK_YAML_TX_REPORT" "$DEPLOY_TASK_YAML_TX_DIR/report.before" || return 1
         DEPLOY_TASK_YAML_TX_REPORT_EXISTED=1
     else
         DEPLOY_TASK_YAML_TX_REPORT_EXISTED=0
@@ -505,10 +505,10 @@ deploy_task_yaml_transaction_rollback() {
     [ "${DEPLOY_TASK_YAML_TX_ARMED:-0}" = "1" ] || return 0
     DEPLOY_TASK_EXIT_NUDGE_ARMED=0
     DEPLOY_TASK_DRAFT_REVIEW_ARMED=0
-    cp -p -- "$DEPLOY_TASK_YAML_TX_DIR/task.before" "${DEPLOY_TASK_YAML_TX_TASK}.rollback"
+    cp -- "$DEPLOY_TASK_YAML_TX_DIR/task.before" "${DEPLOY_TASK_YAML_TX_TASK}.rollback"
     mv -f -- "${DEPLOY_TASK_YAML_TX_TASK}.rollback" "$DEPLOY_TASK_YAML_TX_TASK"
     if [ "${DEPLOY_TASK_YAML_TX_REPORT_EXISTED:-0}" = "1" ]; then
-        cp -p -- "$DEPLOY_TASK_YAML_TX_DIR/report.before" "${DEPLOY_TASK_YAML_TX_REPORT}.rollback"
+        cp -- "$DEPLOY_TASK_YAML_TX_DIR/report.before" "${DEPLOY_TASK_YAML_TX_REPORT}.rollback"
         mv -f -- "${DEPLOY_TASK_YAML_TX_REPORT}.rollback" "$DEPLOY_TASK_YAML_TX_REPORT"
     elif [ -f "${DEPLOY_TASK_YAML_TX_REPORT:-}" ]; then
         rm -f -- "$DEPLOY_TASK_YAML_TX_REPORT"
@@ -11093,7 +11093,7 @@ deploy_task_apply_task_mutations() {
     if [ "${DEPLOY_TASK_MUTATION_CANDIDATE:-0}" != "1" ]; then
         local mutation_candidate
         mutation_candidate=$(mktemp "${task_file}.mutation.XXXXXX") || return 1
-        if ! cp -p -- "$task_file" "$mutation_candidate"; then
+        if ! cp -- "$task_file" "$mutation_candidate"; then
             rm -f "$mutation_candidate"
             return 1
         fi
