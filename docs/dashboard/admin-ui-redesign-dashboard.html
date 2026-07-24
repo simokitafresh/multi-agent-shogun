@@ -1,0 +1,111 @@
+<title>Admin UI改修 — AsIs/ToBe 裁定ダッシュボード</title>
+<style>
+:root{
+  --bg:#f7f6f3; --panel:#ffffff; --ink:#1a2332; --sub:#5c6672; --line:#d9d5cc;
+  --accent:#8a5a2b; --accent-ink:#6e4520;
+  --ok:#1a7f4e; --warn:#a86412; --crit:#b3372f;
+  --chip-ok:#e3f2e9; --chip-warn:#f7ead6; --chip-crit:#f8e3e1; --mark:#f3ead9;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#15181d; --panel:#1d2127; --ink:#e8e6e1; --sub:#9aa2ac; --line:#333a43;
+  --accent:#d09a58; --accent-ink:#e0b078;
+  --ok:#4cc38a; --warn:#e0a458; --crit:#e0716a;
+  --chip-ok:#1d3328; --chip-warn:#38301e; --chip-crit:#3a2422; --mark:#33301f;
+}}
+:root[data-theme="dark"]{
+  --bg:#15181d; --panel:#1d2127; --ink:#e8e6e1; --sub:#9aa2ac; --line:#333a43;
+  --accent:#d09a58; --accent-ink:#e0b078;
+  --ok:#4cc38a; --warn:#e0a458; --crit:#e0716a;
+  --chip-ok:#1d3328; --chip-warn:#38301e; --chip-crit:#3a2422; --mark:#33301f;
+}
+:root[data-theme="light"]{
+  --bg:#f7f6f3; --panel:#ffffff; --ink:#1a2332; --sub:#5c6672; --line:#d9d5cc;
+  --accent:#8a5a2b; --accent-ink:#6e4520;
+  --ok:#1a7f4e; --warn:#a86412; --crit:#b3372f;
+  --chip-ok:#e3f2e9; --chip-warn:#f7ead6; --chip-crit:#f8e3e1; --mark:#f3ead9;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;line-height:1.65;margin:0;padding:28px 20px 60px}
+main{max-width:1080px;margin:0 auto}
+h1{font-size:1.45rem;margin:0 0 4px;text-wrap:balance}
+h2{font-size:1.05rem;margin:34px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--line)}
+h3{font-size:.95rem;margin:18px 0 6px}
+.meta{color:var(--sub);font-size:.82rem;margin-bottom:6px}
+.note{background:var(--mark);border-left:3px solid var(--accent);padding:8px 12px;font-size:.86rem;margin:12px 0}
+.tblwrap{overflow-x:auto;background:var(--panel);border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:.85rem}
+th{background:var(--panel);text-align:left;padding:8px 10px;border-bottom:2px solid var(--line);font-weight:600;white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+td.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.chip{display:inline-block;padding:1px 9px;border-radius:2px;font-size:.76rem;font-weight:600;white-space:nowrap}
+.c-ok{background:var(--chip-ok);color:var(--ok)} .c-warn{background:var(--chip-warn);color:var(--warn)} .c-crit{background:var(--chip-crit);color:var(--crit)}
+.bar{display:inline-block;height:10px;background:var(--crit);opacity:.75;vertical-align:middle;margin-right:6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin:12px 0}
+.card{background:var(--panel);border:1px solid var(--line);padding:12px 14px}
+.card .k{font-size:.74rem;color:var(--sub);letter-spacing:.06em;text-transform:uppercase}
+.card .v{font-size:1.02rem;font-weight:600;margin-top:3px}
+.qa{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);padding:12px 14px;margin:10px 0}
+.qa .q{font-weight:700}
+.qa .r{margin-top:6px;font-size:.88rem}
+.qa .r b{color:var(--accent-ink)}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.84em;background:var(--mark);padding:0 4px}
+ul{margin:6px 0;padding-left:20px}
+li{margin:3px 0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+<main>
+<h1>🗂 DM-Signal Admin UI改修 — AsIs/ToBe 裁定ダッシュボード</h1>
+<div class="meta">v1.0 ｜ 2026-07-24 19:20 ｜ 設計正本: <code>docs/research/admin-ui-redesign-asis-tobe-5w1h_20260724.md</code>（gist 0634a3e8）｜ 実測: 将軍CDP 4ページ（12:55・認証済・viewport 2561×1398）＋スクショ4枚 ｜ コード偵察: cmd_4153</div>
+<div class="note"><b>状態: 実装未着手（殿指示 12:43「実装にはいらず修正案を練ろう」）。</b>このページの目的は§3の<b>未決4項の裁定</b>。各項に将軍の推薦案を付した — 却下・修正は殿の一言で足りる。</div>
+
+<h2>§1 なぜ直すか（5W1H要約）</h2>
+<div class="cards">
+  <div class="card"><div class="k">Why（殿原文 12:43）</div><div class="v">「カードでデザイン優先となっているため、一覧性が低く作業が猥雑」</div></div>
+  <div class="card"><div class="k">Who / 設計基準</div><div class="v">使うのは殿のみ → 見栄えより作業効率（一覧性・到達クリック数・情報密度）</div></div>
+  <div class="card"><div class="k">規模</div><div class="v">PF 102件（Max 200）＋ FoF 約39件</div></div>
+  <div class="card"><div class="k">流用資産</div><div class="v">viewer表canonical（14px・罫線slate-700/800・padding12-8・sticky thead）を再利用</div></div>
+</div>
+
+<h2>§2 AsIs 実測（本番CDP・スクロール量を可視化）</h2>
+<div class="tblwrap"><table>
+<thead><tr><th>ページ</th><th>構成</th><th>画面数（932px換算）</th><th>一覧性の実態</th><th>判定</th></tr></thead>
+<tbody>
+<tr><td><code>/admin</code>（本体）</td><td>cards32・buttons212・表0</td><td class="num"><span class="bar" style="width:9px"></span>1.7</td><td><b>102PFを単票ナビ（Prev/Next/ドロップダウン）で1件ずつ</b>。俯瞰・比較が構造的に不可能。ナビカード3枚が1画面の1/3を消費し単票が2画面目に沈む</td><td><span class="chip c-crit">最重症</span></td></tr>
+<tr><td><code>/admin/fof</code></td><td>cards80・表78・buttons489</td><td class="num"><span class="bar" style="width:132px"></span><b>26.4</b></td><td>39 FoFが巨大カード縦積み（約630px/枚）。Weight Breakdown表が<b>常時展開</b>で縦を支配。名前を探すだけで大量スクロール</td><td><span class="chip c-crit">スクロール地獄</span></td></tr>
+<tr><td><code>/admin/visibility</code></td><td>表1・buttons382</td><td class="num"><span class="bar" style="width:40px"></span>8.0</td><td>表形式で方向は正しいが行高が大きく102行=8画面。thead非sticky・検索なし</td><td><span class="chip c-warn">圧縮余地</span></td></tr>
+<tr><td><code>/admin/folders</code></td><td>cards4・buttons52</td><td class="num"><span class="bar" style="width:5px"></span>1.0</td><td>行リスト+件数+行内操作で1画面完結。<b>4ページ中最良=他ページのToBe参考型</b></td><td><span class="chip c-ok">参考型</span></td></tr>
+</tbody></table></div>
+<ul>
+<li>共通: viewer側で統一済みの表canonicalがadminには<b>未適用</b>。カードが全ページの基本骨格。</li>
+<li>共通: 検索・フィルタ・ソートが4ページとも<b>存在しない</b>（102PF・39FoFに対して）。</li>
+</ul>
+
+<h2>§3 ToBe案（未裁定 — P1:カード→表 / P2:canonical再利用 / P3:一覧→単票の2段 / P4:最小差分）</h2>
+<div class="tblwrap"><table>
+<thead><tr><th>案</th><th>対象</th><th>内容</th><th>期待効果</th><th>優先</th></tr></thead>
+<tbody>
+<tr><td><b>A（本命）</b></td><td>/admin本体</td><td>単票の手前に<b>PF一覧テーブル</b>（102行）新設: 検索box+フォルダフィルタ+列ソート+sticky thead。行クリックで既存単票エディタへ（単票は現行維持=最小差分）。ナビカード3枚は小型タブへ圧縮</td><td>到達=検索1回+クリック1回。全PF設定の俯瞰・比較が初めて可能</td><td class="num">1</td></tr>
+<tr><td><b>B</b></td><td>/admin/fof</td><td>一覧テーブル（39行: FoF名/構成数/構成PF省略表示/配分方式/as-of/操作）。Weight Breakdownは<b>行展開（既定=閉）</b></td><td>26.4画面 → 1-2画面。構成の横断比較が可能</td><td class="num">2</td></tr>
+<tr><td><b>C</b></td><td>/admin/visibility</td><td>表canonical padding12-8で行高圧縮+thead sticky+PF名検索box。L1グリッドは現行維持</td><td>8画面 → 4-5画面</td><td class="num">3</td></tr>
+<tr><td><b>D</b></td><td>/admin/folders</td><td>現行維持+展開時PF行へcanonical適用のみ</td><td>—（既に良型）</td><td class="num">4</td></tr>
+</tbody></table></div>
+<div class="note">実装は裁定後、案ごとに独立cmd（1道具1CMD）。着手前にcmd_4153コードインベントリで波及先（テスト・共有コンポーネント）を確定。</div>
+
+<h2>§4 未決4項 — 殿の裁定待ち（各項に将軍の推薦付き）</h2>
+<div class="qa"><div class="q">1. 案Aの一覧テーブルに載せる列の選定（全設定項目は載らない。何を俯瞰したいか）</div>
+<div class="r"><b>将軍の推薦</b>: PF名 / フォルダ / Top N / Rebalance Trigger / Lookback概要（期間数のみ） / Benchmark / 操作（Edit・複製・削除）。理由: 運用時の確認頻度が高い判定系設定を優先し、Absolute Momentum・Safe Haven等の詳細は単票で見る。列は後から足せる（最小から作る=LS104）。</div></div>
+<div class="qa"><div class="q">2. 単票エディタの2カラムカード構成を表形式へ寄せるか、現行維持か</div>
+<div class="r"><b>将軍の推薦</b>: <b>現行維持</b>。理由: 一覧性問題の主因は「102件を1件ずつしか見られない」ことで、単票自体の形ではない。案Aで一覧が入れば単票の役割は編集のみ。差分最小・回帰リスク最小。</div></div>
+<div class="qa"><div class="q">3. FoF Weight Breakdownの既定=閉で問題ないか（as-of確認の頻度）</div>
+<div class="r"><b>将軍の推薦</b>: <b>既定=閉、ただしas-of日付だけは一覧行に常時表示</b>。理由: 縦を支配する本体（Component×Target%）は低頻度、鮮度確認（as-of）は高頻度と推定されるため分離。</div></div>
+<div class="qa"><div class="q">4. 一括操作（複数PF選択→フォルダ移動 / visibility変更）の要否</div>
+<div class="r"><b>将軍の推薦</b>: <b>初期スコープ外</b>（案A-Dの後の独立cmd）。理由: 一覧化だけで俯瞰・到達の主課題は解消し、一括操作は誤操作リスク（本番設定の大量変更）を伴うため、一覧運用の実感を得てから設計する方が安全。</div></div>
+
+<h2>§5 証跡</h2>
+<ul>
+<li>本番CDP実測JSON: session scratchpad <code>admin_recon_report.json</code>（cdp-browse正本経路・認証済）</li>
+<li>スクショ4枚: <code>admin_recon_admin*.png</code>（/admin・/fof・/folders・/visibility）</li>
+<li>コード全数偵察: cmd_4153 → <code>docs/research/cmd_4153_admin_ui_recon_20260724.md</code></li>
+<li>origin: [[殿指示_admin一覧性改善_20260724]] → [[将軍CDP4ページ実測+cmd_4153]] → [[admin-ui-redesign-asis-tobe-5w1h]]</li>
+</ul>
+</main>

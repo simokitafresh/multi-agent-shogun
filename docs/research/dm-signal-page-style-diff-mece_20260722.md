@@ -13,6 +13,28 @@
 | **v2.2** | **2026-07-24** | **罫線(E軸罫線サブ軸)クローズ: hotfix5本(549119c1/5fb37166/5490a887/06494565/9c0c9e23)→将軍の全数罫線probe(11ページ18表)で逸脱0確定。罫線canonical=annual式(横:thead下slate-700+行間slate-800/縦:列グループ境界slate-700/sticky列境界も同色/trレベル・テーマ連動)。測定規律3号(逸脱0宣言は全ページ×全表の全数実測のみ)を追加。UIバッチ(殿21案)=検証済20/後段2** | 殿+将軍全数実測 |
 | **v2.3** | **2026-07-24 12:30** | **N1(rolling Distribution表をSummary Statistics同型化: PF名ヘッダ色sky-700/slate-500・Roll Period rowSpan・thead空セル除去)+N3(凡例をmetrics同型: rounded-full中央揃え)=commit be95e33fで実装、将軍CDP再probe逸脱0確定(11:07)。cmd_4148 deterioration全期間backfill本番完了(00c20c54: 102PF・164行→7,998 snapshots・as-of切断・冪等UPSERT・backup+restore手順あり・SQL4項目検証PASS・GATE CLEAR 12:18)+history API 360か月対応。origin/main=HEAD=00c20c54(全push済み)。残=N2レスポンシブsticky(根因確定: overflow-x-auto lg:overflow-visibleがモバイルでスクロールコンテナ化しth sticky不発。compare-summary-table.tsx L258/L336残存を将軍現物確認、idle忍者へhotfix配備督促済み 12:30)+cmd_4145 loading殿実機確認** | 将軍実測+GATE |
 | **v2.4** | **2026-07-24 16:20** | **live deploy=32190169(13:30反映)を将軍CDP検証: N4(worst window色=符号連動getValueColorClass、hotfix 04e98d37+32190169)=PASS(全数probe 60サンプル: 負11件全てrgb(220,38,38)red-600・正49件全てrgb(15,23,42)text-foreground、逸脱0/60)。N2 v1(f0bcd321 overflow-y-clip追加)=FAIL実測確定(mobile 412×915・SW解除+ignoreCache reload後もscrollY=2000でthTop=-1841。真因=CSS仕様: overflowの片軸clipは他軸auto/scroll併用時hiddenへ計算される。computed overflowY=hidden実測。ラッパーがスクロールコンテナのままsticky不発=overflow-y-clipでは構造的に解決不能)→修正方向=モバイルtierでラッパーを非スクロールコンテナ化、家老へ差戻し(msg_140926)。殿新指摘N5(15:11)=rolling 2表の幅不一致: 実測で表外形は両方1088px・左端418px同一、差はRoll Period列幅Summary=188px/Distribution=89px(データ列も約150px/約170px)の列幅配分。N1同型化で列幅固定が漏れ。基準=Summary表で同一colgroup幅固定hotfixを家老へ配備指示(msg_151322)。残=N2再修正+N5列幅+cmd_4145殿実機確認。CDP検証規律追加: navigate前にlive deploy包含確認をcdp-browse SKILL.md手順5へ構造埋込(9864e8cbe)** | 将軍実測+殿指摘 |
+| **v3.0** | **2026-07-24 19:25** | **完成版へ再構築(殿指示「次回同じようなことがあっても役に立つ資料として完成させよ」): §RETRO(なぜ時間がかかったか=7根因の実証データ)+§PLAYBOOK(次回のUI統一を最短で回す手順)を新設。N2 v2=compare系2表PASS(殿実機確認19:10)・deterioration残。N5列幅=クローズ(殿実機確認19:10)。cmd_4145 loading=クローズ(殿実機確認19:14)** | 殿指示+将軍実測 |
+
+## §RETRO — なぜここまで時間がかかったか(7根因・全て本PJの実証データ)
+
+同型のUI統一PJを次回やる者へ: 以下は全て本PJで実際に時間を溶かした根因である。抽象論ではない。
+
+1. **測定パラダイムの誤りに気づくのが遅れた(最大の損失)**: 初期は「ソースgrepで0件=統一済み」と証明していた。grepはCSS継承・上書き・グループセレクタ・semantic tokenを見ず、ソース文字列≠描画。将軍が「font-mono 54/54統一」とgrep誤報→本番CDPで逸脱6表(殿指摘「grepは見落とすぞ」v2.1)。**描画の真実はgetComputedStyleのみ**。
+2. **部分検証→殿指摘の反復**: 罫線で2度、「全部見てないだろ(テーブル二つ違う罫線)」、rolling 2表の列幅、と**部分サンプル検証のたびに取りこぼしが殿の実機で発覚**した。全数実測(全ページ×全表×全役割)を最初から回していれば各1往復で済んだ(測定規律3号の由来)。
+3. **canonical(正)を文字列で固定せず実装に入った**: cmd_4122でmonthly-returns基準の値色を`dark:`修飾子を落として単色簡約→light側WCAG1.6:1違反の本番色崩れ(LS107)。**統一先の基準は殿裁定でhex/クラス文字列まで固定し、ACへ直接引用**してから実装させる。
+4. **CSS仕様の机上実装**: N2 v1でoverflow-y-clipを追加したが、CSS仕様(片軸clipは他軸auto併用時hiddenへ計算)により無効=1往復丸損。**hotfixでも隔離検証(最小fixture/実DOM probe)してからpush**。
+5. **測定環境の罠を都度発見(規律が後追い)**: PWAのService Workerが旧バンドル配信(偽陰性)、モバイルemulation残留、DOM検出器の陰性≠実装不在。**測定前チェック(SW unregister+ignoreCache reload・viewport実寸明示・陰性はコード実在と突合)を最初から適用**。
+6. **「兼用」等の実装主張を現物確認せず検証に進んだ**: N2 v2の報告「deterioration兼用」をgit show --statで見れば変更0件が10秒で分かった。**修正report受領→対象ファイル一覧を現物確認→それからprobe**。
+7. **インフラ摩擦+全量テスト事故**: cross-repo GATE不成立・push deadlock・そして将軍自身が三層記憶未検索でAC2へフルスイート指示を焼込み(忍者が延べ80-100分の全量テスト反復)。**起票の定型句も三層記憶と突合(knowledge:59515c96=途中affected/最終unitの二段設計)**。
+
+## §PLAYBOOK — 次回のUI統一を最短で回す手順(この順で実行せよ)
+
+1. **canonical確定(最初の30分)**: 基準ページを殿と確定→基準の実測値(hex・px・クラス文字列)を本番CDPで採取→本設計書形式の§METAに文字列で固定→以後の全ACはこの文字列を直接引用。
+2. **全数AsIsマトリクス(実装前)**: 全ページ×全コンポーネント×全属性×役割(ヘッダ/本体数値/本体文字)を本番CDP getComputedStyleで全数採取(grep禁止)。恒久probe道具は既存: `scripts/cdp/cdp_font_probe.py`(ポーリング式)・`cdp_tier_probe.py`・`cdp_contrast_probe.py`・罫線probe。**測定前チェック: SW unregister+ignoreCache reload・viewport明示(desktop 1707×1067 dpr1.5 / mobile 412×915)・CDP経路はskills/cdp-browse/SKILL.md正本(navigate前にlive deploy包含確認=手順5)**。
+3. **cmd分割**: 1軸1cmd(1道具1CMD)・AC粒度は§6.1カバレッジ表(コンポーネント×属性)で取りこぼしゼロを機械化。AC数値はassumptions隔離(LS110)・テストACは選択実行(run_tests.sh task/file/affected。フルスイートはgateがBLOCK)。
+4. **修正の検証出口は2段固定**: (a)将軍CDP全数再probe逸脱0(部分サンプル宣言禁止=測定規律3号) → (b)殿実機確認。report受領時はまずgit show --statで変更ファイルと主張(「兼用」等)を突合してからprobeする。
+5. **進捗の外部化**: artifact(粒度全量維持=要約置換禁止)+設計正本md+gistを同一更新で三点同期(gist側だけ進めるとローカル正本と乖離する=本PJで実際に発生)。復帰点は記憶DB knowledgeへ都度書込み。
+6. **摩擦は即D0/即cmd**: 測定道具・GATE・pushの摩擦は発見の場で潰す(本PJの摩擦修正は全て後続レーンを加速した)。ただしD0前に三層記憶検索(同型知識・既存道具の有無)を機械的に実行する。
 
 ### 5W1H(この設計書の前提)
 - **Why(なぜ存在するか)**: DM-Signal本番FEの全21ページで、表・見出し・色・余白等のスタイルがページ/コンポーネントごとにバラバラ。殿が本番ライブレビューで不統一を繰り返し検出。場当たり修正では取りこぼす(1ページに複数コンポーネントの表が同居し、ページ名だけ見ると別componentの表を見落とす)ため、全数を軸×コンポーネント×属性×役割のマトリクスで管理し、取りこぼし0を実測証明する。
