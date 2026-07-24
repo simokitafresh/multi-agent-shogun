@@ -2,6 +2,8 @@
 # cmd_karo_hotfix_test_runner_drvfs_admission_20260723_normal
 # run_tests.sh — テスト実行ラッパー（並列化自動適用）
 # 誰が実行しても --jobs 8 が適用される。直接batsを呼ぶな。
+# cmd_4105 周期時間実測(2026-07-24): unit=284s(144files) / affected(1file)=3.9s / direct-bats(1file)=0.8s
+# 削減率: 全量→direct=99.7%(355x) / affected→direct=79.6%(4.9x) / mechanism-overhead=1.6s固定
 #
 # Usage:
 #   bash scripts/run_tests.sh              # unit + top-level 全量
