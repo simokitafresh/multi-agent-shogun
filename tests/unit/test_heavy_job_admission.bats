@@ -489,6 +489,7 @@ print('ok')
     wait "$holder"
 }
 
+# test_necessity: unit並行2要求でleaderが1件のreceipt・1回の実行に完結し、followerが同一receiptへ相乗りしheartbeatで待機進捗を出力し、snapshot母数(observed_test_count)が両者で一致する不変量。
 @test "run_tests single-flight joins one leader receipt with heartbeat and fixed snapshot" {
     local fixture="$TMP/singleflight"
     mkdir -p "$fixture/tests/unit" "$fixture/scripts" "$fixture/receipts" "$fixture/sf"
@@ -562,6 +563,7 @@ print('ok')
     [[ "$output" == *"stale_owner=1"* ]]
 }
 
+# test_necessity: SHOGUN_HEAVY_JOB_LOCK_HELD=1を持つ既admitted呼出しはsingle-flightロック取得をスキップしlock inversionによるdeadlockを防ぐ不変量。
 @test "already admitted run_tests skips single-flight lock to prevent lock inversion" {
     run env SHOGUN_HEAVY_JOB_LOCK_HELD=1 RUN_TESTS_ACTIVE=1 bash "$ROOT/scripts/run_tests.sh" unit
     [ "$status" -ne 0 ]
