@@ -225,3 +225,53 @@ grep -c "NOT_USEFUL" docs/research/lesson_useful_rate_recon_20260724.md
 # AC3: 5要件見出し確認
 grep -c "^### 変更対象ファイル\|^### 波及先ファイル\|^### 関連テスト有無\|^### エッジケース\|^### 依存順序" docs/research/lesson_useful_rate_recon_20260724.md
 ```
+
+---
+
+## cmd_4151 AC1: 全期間feedback確認 + 最終淘汰リスト (2026-07-24 hanzo)
+
+### 全期間feedbackスキャン結果 (logs/lesson_impact.tsv)
+
+| lesson_id | 全期間feedback | USEFUL(infra文脈) | USEFUL(dm-signal文脈) | NOT_USEFUL | 除外判定 |
+|-----------|--------------|-------------------|----------------------|------------|---------|
+| L1290 (infra) | 3件 | 0件 | 0件 | 3件(全dm-signal full) | 淘汰対象 |
+| L1291 (infra) | 4件 | 0件 | 0件 | 4件(全dm-signal full) | 淘汰対象 |
+| L1292 (infra) | 4件 | 0件 | 0件 | 4件(全dm-signal full) | 淘汰対象 |
+| L547 (infra) | 2件 | **1件(infra hotfix)** | 0件 | 1件(infra full) | **除外済み(将軍裁定)** |
+| L551 (dm-signal) | 2件 | 0件 | 0件 | 2件(全dm-signal full) | 淘汰対象 |
+| L584 (dm-signal) | 2件 | 0件 | 0件 | 2件(全dm-signal full) | 淘汰対象 |
+
+**L547除外根拠**: `cmd_karo_hotfix_shogun_lesson_id_contract_20260723_normal` にてinfra文脈USEFUL評価確認 + 将軍裁定(assumptionsに明記)により除外。
+
+### 最終淘汰リスト
+
+| lesson_id | ファイル | 淘汰理由 |
+|-----------|---------|---------|
+| L1290 | projects/infra/lessons.yaml | 全期間feedback 0 USEFUL / 3 NOT_USEFUL (dm-signal文脈cross-project注入) |
+| L1291 | projects/infra/lessons.yaml | 全期間feedback 0 USEFUL / 4 NOT_USEFUL (dm-signal文脈cross-project注入) |
+| L1292 | projects/infra/lessons.yaml | 全期間feedback 0 USEFUL / 4 NOT_USEFUL (dm-signal文脈cross-project注入) |
+| L551 | projects/dm-signal/lessons.yaml | 全期間feedback 0 USEFUL / 2 NOT_USEFUL (ALMディスコン教訓) |
+| L584 | projects/dm-signal/lessons.yaml | 全期間feedback 0 USEFUL / 2 NOT_USEFUL (how=日付のみ低品質教訓) |
+
+---
+
+## cmd_4151 AC3: gate_lesson_health.sh再実行結果 (2026-07-24 hanzo)
+
+### 実行結果
+
+```
+METRIC: lesson_effectiveness_threshold status=OK rate=100.0% useful_rate=64.7% window_cmds=10
+        referenced=9 injected=9 useful=11 total_feedback=17 scope=all
+```
+
+### useful_rate変化
+
+| 時点 | status | useful_rate | useful | total_feedback |
+|------|--------|-------------|--------|----------------|
+| 変更前 (偵察AC1実測) | WARN | 42.9% | 12/28 | 28件 |
+| 変更後 (cmd_4151実行後) | **OK** | **64.7%** | 11/17 | 17件 |
+| **差分** | WARN→OK | **+21.8pt** | -1/(-11) | -11件(淘汰5教訓の注入停止) |
+
+**total_feedback 28→17: 淘汰5教訓(L1290×3 + L1291×4 + L1292×4 + L551×2 + L584×2 = 15件のNOT_USEFUL)が計算対象から除外されたため。useful 12→11: L1292のfeedback行が今後計算されないため。**
+
+status=OKへ回復(閾値50%達成: 64.7%)。

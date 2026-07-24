@@ -11112,6 +11112,8 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **if**: context本文にdocs/またはcontextへのrepo相対参照がある
 - **then**: 登録済み全rootで存在確認する
 - **because**: context indexはcontrol-planeとsource projectの両方を参照するため
+- **retired**: true
+- **retired_at**: 2026-07-24
 - source projectを持つcontextもcontrol-planeと他projectの正本へcross-repo参照する。参照欠落gateはworkspace rootと全登録project.pathのunionで解決し、全root不在だけをBLOCKせよ。GA-319では単一DM root判定により候補124件中123件が偽陽性となった。次回チェック: workspace-only/project-only/全root欠落の3 fixtureを二値検証する。
 
 ### L1291: context freshness cacheはproject overrideをidentityへ含める
@@ -11128,6 +11130,8 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **if**: 同一mode/cmd引数でもproject overrideが異なる
 - **then**: overrideごとに独立cacheを生成して該当projectのcommit listだけを返す
 - **because**: projectを跨ぐcache再利用は未反映source/context対を完了時BLOCKへ渡せず偽陰性になるため
+- **retired**: true
+- **retired_at**: 2026-07-24
 - 同一cmd_idで複数projectの--cmd-commit-listを生成する経路では、CFC_PROJECT_OVERRIDEをoutput cache keyから落とすと先行projectのcommit listが後続へ再利用され、真のsource/context乖離を見逃す。cache identityへoverrideを含め、同じcmdでdm-signal 5件とinfra 3件が分離されるcontract testを置く。
 
 ### L1292: Bats fixtureは共有lockもtest rootへ隔離する
@@ -11144,4 +11148,62 @@ origin: [[cmd_karo_hotfix_shogun_startup_defer_skill_refs_202607020421]] -> [[�
 - **if**: fixtureが運用daemon関数をlib-only sourceする
 - **then**: データpathと全共有lock/cache/state pathを同じtest rootへ隔離する
 - **because**: データだけ隔離しても固定/tmp lock競合でsuite/pre-pushのみ偽FAILになるため
+- **retired**: true
+- **retired_at**: 2026-07-24
 - fixtureがqueue/tasksをBATS_TEST_TMPDIRへ隔離しても、対象関数の固定/tmp lockが稼働中daemonと競合すると単独PASS・suite/pre-push FAILになる。共有資源を持つ関数は環境変数でlock pathを注入可能にし、fixtureは固有lockを明示する。次回チェック: fixture内SCRIPT_DIR差替え時にlock/cache/state pathも同じtest rootへ束縛され、固定/tmp lock残存0件をrgで確認する。
+
+### L1293: 最新taskへの前task test_necessity混入を配備時に遮断する
+- **日付**: 2026-07-23
+- **出典**: cmd_4136
+- **記録者**: kagemaru
+- **tags**: [dm-signal,deploy,testing,gate]
+- **subdomain**: infra
+- **target_files**: [frontend/app/rolling-returns/page.tsx,frontend/app/drawdowns/page.tsx,frontend/app/metrics/page.tsx]
+- **origin**: [[cmd_4136]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- UI task cmd_4136へCodex hook taskのtest_necessity 3件が残存しscope commitがBLOCK。deploy時はtask_type/target_pathとtest_necessity pathのrepo整合を二値検査すべき。
+
+### L1294: 外部repo task runnerのno-mapped-testsを対象repo一次試験で補完する
+- **日付**: 2026-07-23
+- **出典**: cmd_4137
+- **記録者**: hayate
+- **tags**: [dm-signal,bash]
+- **subdomain**: infra
+- **target_files**: [frontend/components/compare-returns-table.tsx,frontend/components/__tests__/compare-returns-table.test.tsx,frontend/components/monthly-trade-table.tsx,frontend/app/annual-returns/page.tsx,frontend/app/compare-returns/page.tsx]
+- **origin**: [[cmd_4137]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- task target_pathが外部repoの場合run_tests.sh taskはexternal_scope_no_mapped_tests rc=2になり得る。次回は選択器結果と対象repoのJest/tscを分離して二値記録する。
+
+### L1295: taskの修復対象実体と役割権限を配備前に検証する
+- **日付**: 2026-07-23
+- **出典**: cmd_karo_hotfix_control_plane_contracts_ga321_20260723
+- **記録者**: kagemaru
+- **tags**: [infra,gate,deploy,testing,lesson]
+- **subdomain**: infra
+- **target_files**: [scripts/gates/gate_report_format.sh,scripts/lib/yaml_field_set.sh,scripts/context_source_commit_set.sh,tests/unit/test_gate_report_format_singleflight.bats,tests/unit/test_yaml_field_set.bats]
+- **origin**: [[cmd_karo_hotfix_control_plane_contracts_ga321_20260723]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- cmd_4140実体0件かつ他忍者task修復・lesson正式登録が忍者禁止操作だった。deploy前に対象存在とworker権限を二値検査すべき。
+
+### L1296: run_tests.sh affected機構の固定オーバーヘッドは1.6s・direct batsは0.8s: 途中検証ではdirect bats推奨
+- **日付**: 2026-07-24
+- **出典**: cmd_4105
+- **記録者**: saizo
+- **tags**: [infra,testing,bash]
+- **subdomain**: infra
+- **target_files**: [scripts/run_tests.sh]
+- **origin**: [[cmd_4105]]
+- **enforcement**: 未自動化
+- **when**: 未設定
+- **how**: 未設定
+- run_tests.sh affected の機構固定オーバーヘッドは1,615ms(0ファイル時)。
+1ファイル実行時の affected=3,917ms vs direct=799ms = 4.9x差。
+途中検証(反復)では direct bats が4.9x高速。
+最終checkpointのみ run_tests.sh unit (ミス許容の安全網=CI)。
+殿裁定「途中=try数最大・厳密さは最終のみ」の数値的根拠。
