@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-23 cmd_karo_hotfix_context_freshness_ga320_20260723 -->
-<!-- dm_signal_research_reflux: fingerprint=4f50b61a3838f8901d285dc0704ab991a168ff1cc9600613ba7236f4b21980b0; mode=synced; evidence_b64=Y21kXzQxMjQgdmFsdWUgY29sb3IgYmFzZWxpbmUgcmVzdG9yZWQgaW4gY29udGV4dC9kbS1zaWduYWwtZnJvbnRlbmQubWQgwqcxOTsgcG9zaXRpdmU9dGV4dC1mb3JlZ3JvdW5kIGluIGJvdGggbW9kZXMgdmlhIENTUyB2YXJpYWJsZXM= -->
+<!-- dm_signal_research_reflux: fingerprint=f1f8d64f32f849b77f98eee7f317a85ed6a912f0e64f4fe8162be7aeacd9ad55; mode=non-target; evidence_b64=Y21kXzM4NzE6IGFydGlmYWN0IGludmVudG9yeSAoZGlzayByZWNsYWltIHRhc2spLiBOb3QgRE0tc2lnbmFsIHJlc2VhcmNoLiBSZWZsdXhlZCB0byBjb250ZXh0L2luZnJhc3RydWN0dXJlLm1kIGluIHNob2d1biByZXBvIChjb21taXQgNmM5ZjRlMmQ1OTJhYzAyNmZkMWY0YzVjZjU3ZTQxMjZlNGM0YjM5NSk= -->
 <!-- source_commit:20bc9de2 reason:GA-320 reviewed research source boundary evidence:2/2 UI audit commits false positive for research and reflected in frontend context -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
