@@ -36,10 +36,24 @@ PY
     printf 'task:\n  parent_cmd: cmd_test\n  status: assigned\n' > "$task"
     run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; cli_model_display(){ echo "GPT"; }; inject_model_injection_profile "$2" saizo' _ "$TEST_PROJECT" "$task"
     [ "$status" -eq 0 ]
-    run grep -F '反復・報告直前とも bash scripts/run_tests.sh task queue/tasks/saizo.yaml' "$task"
+    run grep -F '任務帰属検証契約(二段形)' "$task"
     [ "$status" -eq 0 ]
     run grep -F 'scope外FAILを当該任務のFAILへ混入させない' "$task"
     [ "$status" -eq 0 ]
+}
+
+# test_necessity: 検証契約の二段形(反復=選別実行可・報告直前=unit FAIL0/SKIP0)が全忍者へ注入され、一段形の旧契約が残存しない不変量を守る。
+@test "model profile injects two-stage contract with affected iterative and unit final checkpoint" {
+    local task="$BATS_TEST_TMPDIR/two-stage-regression-task.yaml"
+    printf 'task:\n  parent_cmd: cmd_test\n  status: assigned\n' > "$task"
+    run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; cli_model_display(){ echo "GPT"; }; inject_model_injection_profile "$2" kotaro' _ "$TEST_PROJECT" "$task"
+    [ "$status" -eq 0 ]
+    run grep -F '反復検証=bash scripts/run_tests.sh affectedで選別実行可' "$task"
+    [ "$status" -eq 0 ]
+    run grep -F '報告直前=bash scripts/run_tests.sh unitでFAIL0・SKIP0を1回証明' "$task"
+    [ "$status" -eq 0 ]
+    run grep -F '反復・報告直前とも bash scripts/run_tests.sh task' "$task"
+    [ "$status" -eq 1 ]
 }
 
 setup() {

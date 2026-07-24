@@ -750,7 +750,9 @@ try:
         raise ValueError('test_paths')
     if d['version'] == 3:
         m=d['run_manifest']
-        if not isinstance(m,dict) or set(m) != {'cache','commit_sha','selector_input_fingerprint','selected_paths_fingerprint','estimated_cost'}:
+        _rm_req={'cache','commit_sha','selector_input_fingerprint','selected_paths_fingerprint','estimated_cost'}
+        _rm_opt=_rm_req|{'changed_files'}
+        if not isinstance(m,dict) or not _rm_req<=set(m)<=_rm_opt:
             raise ValueError('run_manifest')
     actual=hashlib.sha256(open(d['artifact'],'rb').read()).hexdigest()
     counts_valid=(
@@ -984,6 +986,10 @@ try:
             direct_files=int(direct),
             transitive_files=int(transitive),
         )
+    changed_lines=list(re.finditer(r'^TEST_SELECTION_CHANGED_FILES (.+)\s*$', clean, re.MULTILINE))
+    if changed_lines:
+        raw=changed_lines[-1].group(1).strip()
+        d['run_manifest']['changed_files']=[] if raw=='none' else [f for f in raw.split(',') if f]
     jest=list(re.finditer(
         r'^Tests:\s+(?:(\d+)\s+failed,\s*)?(?:(\d+)\s+skipped,\s*)?'
         r'(?:(\d+)\s+passed,\s*)?(\d+)\s+total\s*$',
@@ -1200,7 +1206,14 @@ _run_tests_main() {
             ;;
         affected)
             shift || true
-            local _selector_log _selector_rc _selector_output
+            local _selector_log _selector_rc _selector_output _changed_files_str
+            # Capture the input set for receipt rationale. Explicit paths take
+            # precedence; otherwise snapshot the live git diff at run time.
+            if [ "$#" -gt 0 ]; then
+                _changed_files_str="$(printf '%s,' "$@" | sed 's/,$//')"
+            else
+                _changed_files_str="$(cd "$REPO_ROOT" && { git diff --name-only 2>/dev/null; git diff --cached --name-only 2>/dev/null; } | sort -u | paste -sd',' -)"
+            fi
             if [[ -n "${RUN_TESTS_AFFECTED_SELECTION_MANIFEST:-}" ]]; then
                 _selector_output="$(cat "$RUN_TESTS_AFFECTED_SELECTION_MANIFEST")"
                 rm -f "$RUN_TESTS_AFFECTED_SELECTION_MANIFEST"
@@ -1216,6 +1229,8 @@ _run_tests_main() {
                 cat "$_selector_log" >&2
             fi
             if [ "$_selector_rc" -ne 0 ]; then
+                printf 'TEST_SELECTION_CHANGED_FILES %s\n' "${_changed_files_str:-none}"
+                printf 'TEST_SELECTION_REASON direct=0 transitive=0 source=fallback_selector_error\n'
                 printf 'TEST_SELECTION result=fallback reason=selector_exit_%s target=unit\n' "$_selector_rc"
                 [ -z "$_selector_log" ] || rm -f "$_selector_log"
                 RUN_TESTS_MODE=unit
@@ -1226,10 +1241,13 @@ _run_tests_main() {
             [ -z "$_selector_log" ] || rm -f "$_selector_log"
             mapfile -t selected <<<"$_selector_output"
             [ -n "$_selector_output" ] || selected=()
+            printf 'TEST_SELECTION_CHANGED_FILES %s\n' "${_changed_files_str:-none}"
             if [ "${#selected[@]}" -eq 0 ]; then
+                printf 'TEST_SELECTION_REASON direct=0 transitive=0 source=git_diff_changed_files\n'
                 echo "TEST_SELECTION result=selected reason=no_mapped_tests files=0"
                 exit 0
             fi
+            printf 'TEST_SELECTION_REASON direct=0 transitive=%s source=git_diff_changed_files\n' "${#selected[@]}"
             printf 'TEST_SELECTION result=selected reason=changed_files files=%s\n' "${#selected[@]}"
             RUN_TESTS_MODE=affected
             run_bats_files_parallel "${selected[@]}"

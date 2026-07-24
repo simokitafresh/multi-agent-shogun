@@ -453,6 +453,43 @@ PY
   [ ! -e "$TMPROOT/admission.called" ]
 }
 
+# test_necessity: affected mode with non-empty selector records selection rationale (git_diff_changed_files) in the receipt so ninjas can compare iterative vs full duration_ms without re-running.
+@test "affected nonempty selection records git_diff_changed_files rationale in receipt" {
+  printf '@test "dummy" { true; }\n' >"$TMPROOT/tests/unit/dummy.bats"
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s/tests/unit/dummy.bats\n' "$REPO_ROOT"
+SH
+  cat >"$TMPROOT/scripts/heavy_job_admission.sh" <<'SH'
+#!/usr/bin/env bash
+[ "${1:-}" != "--" ] || shift
+SHOGUN_HEAVY_JOB_LOCK_HELD=1 exec "$@"
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh" "$TMPROOT/scripts/heavy_job_admission.sh"
+
+  run env -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED \
+    PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    RUN_TESTS_RECEIPT_DIR="$TMPROOT/logs/test_receipts" \
+    BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" affected
+
+  [ "$status" -eq 0 ]
+  receipt=$(python3 - "$TMPROOT/logs/test_receipts" <<'PY'
+import glob,json,os,sys
+receipts=sorted(glob.glob(os.path.join(sys.argv[1],'run_tests_*.json')),key=os.path.getmtime)
+if receipts: print(receipts[-1])
+PY
+  )
+  [ -n "$receipt" ]
+  run python3 - "$receipt" <<'PY'
+import json,sys
+d=json.load(open(sys.argv[1]))
+reason=d.get('run_manifest',{}).get('estimated_cost',{}).get('selection_reason','')
+assert reason == 'git_diff_changed_files', f'expected git_diff_changed_files got {reason!r}'
+PY
+  [ "$status" -eq 0 ]
+}
+
 # test_necessity: non-empty and selector-error affected runs remain admitted, and the non-empty selector is consumed exactly once from a fixed manifest.
 @test "affected nonempty and selector error retain admission with fixed selection" {
   cat >"$TMPROOT/scripts/heavy_job_admission.sh" <<'SH'
