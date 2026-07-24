@@ -32,23 +32,23 @@ setup() {
   export FIXTURE_CAPTURE_TEXT="$RETRO_PANE_PROMPT"
 }
 
-@test "same event sends once and independent event sends once" {
+@test "same content delivers once and deduplicates until claim is cleared" {
   retro_pane_prompt_deliver "$ROOT" tobisaru event:a fixture
   retro_pane_prompt_deliver "$ROOT" tobisaru event:a fixture
   retro_pane_prompt_deliver "$ROOT" tobisaru event:b fixture
-  [ "$(grep -c $'\tdelivered_prompt_seen\t' "$RETRO_PANE_LEDGER")" -eq 2 ]
-  [ "$(grep -c $'\tdeduplicated\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
-  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 2 ]
-  [ "$(grep -ao 'Enter' "$TMUX_CALLS" | wc -l)" -eq 2 ]
+  [ "$(grep -c $'\tdelivered_prompt_seen\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  [ "$(grep -c $'\tdeduplicated\t' "$RETRO_PANE_LEDGER")" -eq 2 ]
+  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
+  [ "$(grep -ao 'Enter' "$TMUX_CALLS" | wc -l)" -eq 1 ]
   expected=$(printf '%s' "$RETRO_PANE_PROMPT" | sha256sum | cut -d' ' -f1)
-  [ "$(grep -c "$expected" "$RETRO_PANE_LEDGER")" -eq 2 ]
-  [ "$(grep -c '^sleep:0.5$' "$ORDER_LOG")" -eq 2 ]
+  [ "$(grep -c "$expected" "$RETRO_PANE_LEDGER")" -eq 1 ]
+  [ "$(grep -c '^sleep:0.5$' "$ORDER_LOG")" -eq 1 ]
   [ "$(sed -n '1p' "$ORDER_LOG")" = paste-buffer ]
   [ "$(sed -n '2p' "$ORDER_LOG")" = sleep:0.5 ]
   [ "$(sed -n '3p' "$ORDER_LOG")" = enter ]
 }
 
-@test "parallel same-event send is one, restart resends zero, distinct events each send once" {
+@test "parallel same-content send is one and subsequent event_ids also deduplicate" {
   retro_pane_prompt_deliver "$ROOT" tobisaru event:parallel fixture &
   retro_pane_prompt_deliver "$ROOT" tobisaru event:parallel fixture &
   wait
@@ -61,7 +61,7 @@ setup() {
 
   retro_pane_prompt_deliver "$ROOT" tobisaru event:distinct-a fixture
   retro_pane_prompt_deliver "$ROOT" tobisaru event:distinct-b fixture
-  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 3 ]
+  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
 }
 
 @test "busy pane and failed send release claim for retry" {
@@ -85,33 +85,32 @@ setup() {
   [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
 }
 
-@test "payload SHA mismatch retries safely and Enter failure resumes without repaste" {
+@test "payload SHA mismatch retries safely" {
   FIXTURE_CAPTURE_MISMATCH=1 run retro_pane_prompt_deliver "$ROOT" tobisaru event:sha fixture
   [ "$status" -eq 1 ]
   run retro_pane_prompt_deliver "$ROOT" tobisaru event:sha fixture
   [ "$status" -eq 0 ]
   [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
   [ "$(grep -c $'\tfailed_payload_sha\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+}
 
+@test "Enter failure resumes without repaste" {
   FIXTURE_FAIL_ENTER=1 run retro_pane_prompt_deliver "$ROOT" tobisaru event:enter fixture
   [ "$status" -eq 1 ]
   run retro_pane_prompt_deliver "$ROOT" tobisaru event:enter fixture
   [ "$status" -eq 0 ]
   [ "$(grep -c $'\tfailed_enter\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
   [ "$(grep -c $'\trecovered_enter\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
-  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 2 ]
-  [ "$(grep -c '^sleep:0.5$' "$ORDER_LOG")" -eq 3 ]
+  [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
+  [ "$(grep -c '^sleep:0.5$' "$ORDER_LOG")" -eq 2 ]
 }
 
-@test "one target has one visible event and later event is durable" {
+@test "same content pending suppresses subsequent enqueue" {
   retro_pane_prompt_enqueue "$ROOT" tobisaru event:first fixture
   retro_pane_prompt_enqueue "$ROOT" tobisaru event:second fixture
   [ "$(find "$RETRO_PANE_PENDING_DIR" -type f -name '*.event' | wc -l)" -eq 1 ]
-  [ "$(find "$ROOT/queue/retro/verbatim_backlog" -type f -name '*.event' | wc -l)" -eq 1 ]
-  [ "$(grep -c $'\tqueued_backlog\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
-  rm "$RETRO_PANE_PENDING_DIR"/*.event
-  retro_pane_prompt_promote_backlog "$ROOT" tobisaru
-  grep -Rq '^event:second$' "$RETRO_PANE_PENDING_DIR"
+  [ "$(find "$ROOT/queue/retro/verbatim_backlog" -type f -name '*.event' | wc -l)" -eq 0 ]
+  [ "$(grep -c $'\tsuppressed_outstanding\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
 }
 
 @test "retro transport has no inbox delivery path" {
@@ -127,7 +126,7 @@ setup() {
   [ "$(grep -c $'\tfailed_busy\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
 }
 
-@test "async preserves distinct events in durable backlog across parallel callers and restart" {
+@test "async deduplicates same-content events after initial delivery" {
   retro_pane_prompt_async "$ROOT" tobisaru event:first fixture
   wait
   first_send_count="$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)"
@@ -140,8 +139,7 @@ setup() {
 
   [ "$(grep -aoF "$RETRO_PANE_PROMPT" "$TMUX_CALLS" | wc -l)" -eq 1 ]
   [ "$(find "$RETRO_PANE_PENDING_DIR" -type f -name '*.event' | wc -l)" -eq 1 ]
-  [ "$(find "$ROOT/queue/retro/verbatim_backlog" -type f -name '*.event' | wc -l)" -eq 2 ]
-  [ "$(grep -c $'\tqueued_backlog\t' "$RETRO_PANE_LEDGER")" -eq 2 ]
+  [ "$(find "$ROOT/queue/retro/verbatim_backlog" -type f -name '*.event' | wc -l)" -eq 0 ]
 }
 
 @test "report and reviewed failure pending events reconcile without pane delivery" {
@@ -164,4 +162,24 @@ setup() {
   [ ! -e "$failed_event" ]
   [ -e "$ROOT/queue/retro/verbatim_reconciled/failed.event" ]
   [ "$(grep -c $'\treconciled_terminal\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+}
+
+@test "reconcile clears claim so same content re-delivers after answer" {
+  # deliver first retro prompt
+  retro_pane_prompt_deliver "$ROOT" tobisaru event:initial fixture
+  [ "$(grep -c $'\tdelivered_prompt_seen\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  # same content → deduplicated while claim is held
+  retro_pane_prompt_deliver "$ROOT" tobisaru event:retry fixture
+  [ "$(grep -c $'\tdeduplicated\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  # simulate reconcile_pending clearing claim via event file with stored key
+  mkdir -p "$ROOT/queue/retro/verbatim_pending" "$ROOT/queue/inbox" "$ROOT/logs"
+  key=$(retro_pane_prompt_key tobisaru "")
+  pending_event="$ROOT/queue/retro/verbatim_pending/${key}.event"
+  printf 'tobisaru\nreport_received:msg-reconcile\nfixture\n%s\n' "$key" > "$pending_event"
+  retro_pane_prompt_reconcile_pending "$ROOT" "$pending_event" tobisaru report_received:msg-reconcile
+  [ "$(grep -c $'\tclaim_cleared\t' "$RETRO_PANE_LEDGER")" -eq 1 ]
+  [ ! -d "$RETRO_PANE_STATE_DIR/${key}.claimed" ]
+  # now same content re-delivers
+  retro_pane_prompt_deliver "$ROOT" tobisaru event:after_reconcile fixture
+  [ "$(grep -c $'\tdelivered_prompt_seen\t' "$RETRO_PANE_LEDGER")" -eq 2 ]
 }

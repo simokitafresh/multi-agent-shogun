@@ -5,8 +5,10 @@ RETRO_PANE_PROMPT='この作業で時間がかかった原因を分析し、利�
 RETRO_PANE_PROMPT_SHA256='b605951bd574d99027a6a1e496aabd5d4e1e67d6d8a4be1b88f4e6472595f84f'
 
 retro_pane_prompt_key() {
-    local target="$1" event_id="$2"
-    printf '%s\0%s' "$target" "$event_id" | sha256sum | cut -d' ' -f1
+    local target="$1"
+    # $2 (event_id) deliberately ignored: key is content-stable across cmd completions
+    # so same target+content never re-delivers until the claim is cleared by reconciliation.
+    printf '%s\0%s' "$target" "$RETRO_PANE_PROMPT_SHA256" | sha256sum | cut -d' ' -f1
 }
 
 retro_pane_prompt_resolve() {
@@ -110,13 +112,21 @@ PY
 }
 
 retro_pane_prompt_reconcile_pending() {
-    local root="$1" event_file="$2" target="$3" event_id="$4" reason reconciled_dir ledger
+    local root="$1" event_file="$2" target="$3" event_id="$4"
+    local reason key state_dir claim reconciled_dir ledger
     reason=$(retro_pane_prompt_reconcile_terminal "$root" "$event_file") || return 1
+    key=$(sed -n '4p' "$event_file" 2>/dev/null || true)
     reconciled_dir="${RETRO_PANE_RECONCILED_DIR:-$root/queue/retro/verbatim_reconciled}"
     ledger="${RETRO_PANE_LEDGER:-${RETRO_VERBATIM_LOG:-$root/logs/retro_pane_prompt.tsv}}"
     mkdir -p "$reconciled_dir" "$(dirname "$ledger")"
     mv "$event_file" "$reconciled_dir/${event_file##*/}"
     printf '%s\treconciled_terminal\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$reason" >> "$ledger"
+    if [ -n "$key" ]; then
+        state_dir="${RETRO_PANE_STATE_DIR:-${RETRO_VERBATIM_STATE_DIR:-$root/queue/retro/pane_prompt}}"
+        claim="$state_dir/$key.claimed"
+        rm -rf "$claim"
+        printf '%s\tclaim_cleared\t%s\t%s\n' "$(date -Iseconds)" "$target" "$key" >> "$ledger"
+    fi
     printf '%s\n' "$reason"
 }
 
@@ -232,10 +242,18 @@ retro_pane_prompt_enqueue() {
     key=$(retro_pane_prompt_key "$target" "$event_id")
     event_file="$pending_dir/$key.event"
     backlog_file="$backlog_dir/$key.event"
-    if [ -e "$event_file" ] || [ -e "$backlog_file" ] || [ -f "$state_dir/$key.claimed/sent" ]; then
+    if [ -e "$event_file" ] || [ -e "$backlog_file" ]; then
         flock -u "$retro_pending_lock_fd"
         exec {retro_pending_lock_fd}>&-
         RETRO_PANE_ENQUEUE_DECISION=suppressed
+        printf '%s\tsuppressed_outstanding\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "${RETRO_PANE_LEDGER:-${RETRO_VERBATIM_LOG:-$root/logs/retro_pane_prompt.tsv}}"
+        return 0
+    fi
+    if [ -f "$state_dir/$key.claimed/sent" ]; then
+        flock -u "$retro_pending_lock_fd"
+        exec {retro_pending_lock_fd}>&-
+        RETRO_PANE_ENQUEUE_DECISION=suppressed
+        printf '%s\tsuppressed_delivered\t%s\t%s\t%s\n' "$(date -Iseconds)" "$target" "$event_id" "$key" >> "${RETRO_PANE_LEDGER:-${RETRO_VERBATIM_LOG:-$root/logs/retro_pane_prompt.tsv}}"
         return 0
     fi
     # Bound each target to one visible prompt, but never discard a later event.
