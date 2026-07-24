@@ -1347,7 +1347,7 @@ task_has_related_lessons() {
     local task_path="$1"
     awk '
         BEGIN { in_block = 0 }
-        /^  related_lessons:[[:space:]]*$/ { in_block = 1; next }
+        /^  related_lessons:[[:space:]]*(\[\])?[[:space:]]*$/ { in_block = 1; next }
         in_block {
             if ($0 ~ /^  - id:[[:space:]]*/) {
                 found = 1
