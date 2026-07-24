@@ -2082,9 +2082,15 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                 _REPORT_IDENTITY=$(inbox_resolve_report_identity "$FULL_REPORT" "$TASK_YAML") || exit 1
                 IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
                 STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$TASK_YAML" "task_id" "")
-                STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
+                # cmd_4163: 報告YAML自身のparent_cmdを一次として帰属を解決する。
+                # task YAMLは配備間隔中に次cmdへ差し替わり得るため、その現在値を
+                # 一次にすると「旧cmd向け報告が新cmdへ誤帰属する」raceが起きる
+                # (LS078)。報告YAML自身のparent_cmdは発行時点で固定され、以後
+                # 変化しないので、こちらを一次・task YAMLはレガシー報告
+                # (parent_cmd未記載)向けのfallbackに限定する。
+                STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$FULL_REPORT" "parent_cmd" "")
                 [ -n "$STRUCTURED_TASK_ID" ] || STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$FULL_REPORT" "task_id" "")
-                [ -n "$STRUCTURED_PARENT_CMD" ] || STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$FULL_REPORT" "parent_cmd" "")
+                [ -n "$STRUCTURED_PARENT_CMD" ] || STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
                 STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$FULL_REPORT" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
                 STRUCTURED_REVISION_FINGERPRINT=$(inbox_report_revision_fingerprint "$TYPE" "$ACTION" "$CONTENT")
 
@@ -2625,7 +2631,10 @@ while [ $attempt -lt $max_attempts ]; do
                     if [ "$report_found" -eq 0 ]; then
                         echo "[inbox_write] auto-done BLOCKED: report YAML not found: ${REPORT_FILENAME:-unknown} (ninja: $FROM)" >&2
                     else
-                        _parent_cmd=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
+                        # cmd_4163: 報告YAML自身のparent_cmdを一次とする(LS078)。
+                        # task YAMLは配備差替え後の再送/リトライ経路のfallbackのみ
+                        _parent_cmd=$(inbox_yaml_field_get "$REPORT_FULL_PATH" "parent_cmd" "")
+                        [ -n "$_parent_cmd" ] || _parent_cmd=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
                         if [ "${INBOX_REVIEW_CHILD_DELIVERED:-0}" -eq 0 ] && [ -n "$_parent_cmd" ] && [ -n "$REPORT_FULL_PATH" ] && [ -f "$REPORT_FULL_PATH" ] && [ -f "$SCRIPT_DIR/scripts/lib/gunshi_notify.sh" ]; then
                             # shellcheck disable=SC2034  # PROJECT_ROOT is used by sourced gunshi_notify.sh
                             PROJECT_ROOT="$SCRIPT_DIR"
