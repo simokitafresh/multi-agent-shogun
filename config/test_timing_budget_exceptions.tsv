@@ -1,0 +1,2 @@
+owner	expires	reason
+kagemaru	2026-07-31	07-16 to 07-24 hotfix commits added tests to 6 files; measured wall_sec exceeds ratchet budget due to test count growth. High-speed optimization applied in cmd_4154.

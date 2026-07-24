@@ -67,7 +67,7 @@ cmd_gate_scaffold() {
     printf '#!/usr/bin/env bash\nexit 0\n' > "$TEST_PROJECT/scripts/gates/gate_yaml_status.sh"
     printf '#!/usr/bin/env bash\necho "OK"\nexit 0\n' > "$TEST_PROJECT/scripts/gates/gate_dc_duplicate.sh"
 
-    chmod +x "$TEST_PROJECT/scripts/"*.sh "$TEST_PROJECT/scripts/lib/"*.sh "$TEST_PROJECT/scripts/gates/"*.sh
+    find "$TEST_PROJECT" -name "*.sh" ! -type l -exec chmod +x {} +
 
     # Gate bypass flags
     cat > "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/archive.done" <<'EOF'

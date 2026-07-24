@@ -209,8 +209,13 @@ for _ref_line in "${_PUSH_REFS[@]}"; do
     printf '%s\n' "${_changed_files[@]}" > "$_CHANGED_FILES_FILE"
 
     _PREPUSH_EXEC_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/shogun-prepush.XXXXXX")"
+    # /tmp(ext4)側worktreeは/mnt/c(DRVFS)本体とowner混在扱いになり
+    # 'dubious ownership'でcheckoutが落ちる(2026-07-24 GA-325-328根因。
+    # dirty filesは無関係)。作成中だけsafe.directoryへ登録する
+    git config --global --add safe.directory "$_PREPUSH_EXEC_ROOT" 2>/dev/null || true
     if ! git -C "$REPO_ROOT" worktree add --detach --no-checkout "$_PREPUSH_EXEC_ROOT" "$_local_sha" >/dev/null 2>&1 \
             || ! git -C "$_PREPUSH_EXEC_ROOT" checkout --force "$_local_sha" >/dev/null 2>&1; then
+        git config --global --unset-all safe.directory "^${_PREPUSH_EXEC_ROOT}\$" 2>/dev/null || true
         echo "[pre-push] BLOCK: cannot create clean snapshot for $_local_sha." >&2
         exit 1
     fi
@@ -239,6 +244,7 @@ for _ref_line in "${_PUSH_REFS[@]}"; do
         echo "[pre-push] BLOCK: clean snapshot cleanup failed: $_PREPUSH_EXEC_ROOT" >&2
         exit 1
     }
+    git config --global --unset-all safe.directory "^${_PREPUSH_EXEC_ROOT}\$" 2>/dev/null || true
     _PREPUSH_EXEC_ROOT=""
 done
 

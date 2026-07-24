@@ -135,6 +135,7 @@ queue/memory_db_live_insert_queue/
 !config/dashboard_template.md
 !config/context_freshness_excludes.txt
 !config/campaign_lane_catalog.yaml
+!config/test_timing_budget_exceptions.tsv
 
 # Templates
 !templates/

@@ -186,9 +186,15 @@ sync_one_hook() {
     fi
 
     if ! chmod +x "$tmp"; then
-        rm -f "$tmp"
-        echo "BLOCK(GA-222): chmod +x failed for $hook_name — installed hook left untouched" >&2
-        return 1
+        # On WSL2 DrvFS (Windows NTFS), chmod always returns EPERM even for
+        # files we just created, but the filesystem maps all files as
+        # executable.  If the file is already executable (DrvFS guarantees
+        # this), treat the chmod failure as a no-op and proceed with mv.
+        if [[ ! -x "$tmp" ]]; then
+            rm -f "$tmp"
+            echo "BLOCK(GA-222): chmod +x failed for $hook_name — installed hook left untouched" >&2
+            return 1
+        fi
     fi
 
     if ! mv -f "$tmp" "$installed"; then
