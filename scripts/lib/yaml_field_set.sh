@@ -83,6 +83,27 @@ _yaml_field_set_normalize() {
     printf '%s' "$_YFS_NORM"
 }
 
+# cmd_4162 (忍者利他報告blt_20260724_162804): yaml_field_set/yaml_field_set_batchの
+# field引数はawk側で常に単一の完全一致キーとして扱われる。呼び出し側が
+# "planned_paths[1]"のようなネストlist添字表記を渡しても、そのフィールド名の
+# ブロックは存在しないため root-level fallback が働き、添字表記の文字列そのものが
+# 新規のリテラルキーとして黙って書き込まれる(list要素の更新にならない)。
+# yaml_field_setのawkエンジンはYAML構造を解釈しない行ベース置換であり、
+# list要素単位の更新は安全に実装できない。よって解釈対応ではなく、
+# 添字表記を検出した時点でfail-closedし、呼び出し側にリスト全体を書き直すよう促す。
+_yaml_field_set_reject_bracket_field() {
+    local field="$1"
+    case "$field" in
+        *'['*']'*)
+            echo "FATAL: yaml_field_set: nested list index notation is not supported in field path: '$field'" >&2
+            echo "  yaml_field_set only replaces a whole field's scalar value; per-element list writes like '${field}' would silently create a literal key instead of updating the list element." >&2
+            echo "  Hint: rewrite the entire list field with its full new value instead (e.g. yaml_field_set <file> <block_id> ${field%%\[*} '[...]')." >&2
+            return 1
+            ;;
+    esac
+    return 0
+}
+
 # cmd_karo_hotfix_queue_yaml_atomicity_202607110113: 公開前にYAML構文を検証する。
 # awk生成物が不正(例: 値に生の改行が混入し裸テキストが行頭に漏れる)でも、
 # 検証をパスしない限り旧ファイルへは一切書き戻さない(fail-closed)。
@@ -1016,6 +1037,10 @@ yaml_field_set() {
         return 1
     fi
 
+    if ! _yaml_field_set_reject_bracket_field "$field"; then
+        return 1
+    fi
+
     # cmd_karo_hotfix_control_plane_contracts_ga321_20260723:
     # Typed lifecycle fields are never scalars.  The ordinary awk lane
     # The ordinary awk lane deliberately quotes JSON/YAML punctuation to keep
@@ -1199,6 +1224,9 @@ yaml_field_set_batch() {
         _f="${_arg%%=*}"
         _v="${_arg#*=}"
         if [ -z "$_f" ]; then continue; fi
+        if ! _yaml_field_set_reject_bracket_field "$_f"; then
+            return 1
+        fi
         _v="${_v//\\/\\\\}"
         if [ "$_count" -gt 0 ]; then
             _fields="${_fields}${_sep}${_f}"

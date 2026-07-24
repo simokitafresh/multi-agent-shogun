@@ -1356,3 +1356,77 @@ print('PUBLISH_OK')
     [ "$status" -eq 0 ]
     [ "$output" -ge 10 ]
 }
+
+# ── cmd_4162 (忍者利他報告blt_20260724_162804): ネストlist添字表記の明示エラー化 ──
+# Origin: 才蔵がcmd_4156でplanned_paths[1]のようなlist添字表記をfield引数として渡した際、
+# 一致するブロックが存在せずroot-level fallbackが働き、添字表記の文字列そのものが
+# 新規のリテラルキーとして黙って書き込まれ手戻りが発生した(掲示板blt_20260724_162804)。
+# yaml_field_setのawkエンジンはYAML構造を解釈しない行ベース置換であり、list要素単位の
+# 更新は安全に実装できないため、添字表記はfail-closedで明示エラー化する。
+
+@test "yaml_field_set: 添字指定(planned_paths[1])はFATALで即座に書込みを中止する" {
+    local yaml="$TEST_TMPDIR/subscript_reject.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: pending
+  planned_paths:
+  - path/a.sh
+  - path/b.sh
+EOF
+    cp "$yaml" "$yaml.before"
+
+    run bash "$YFS" "$yaml" task "planned_paths[1]" "path/changed.sh"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"FATAL"* ]]
+    [[ "$output" == *"nested list index notation is not supported"* ]]
+}
+
+@test "yaml_field_set: 添字表記が黙ってリテラルキー化せずファイルがbyte-identicalに保たれる" {
+    local yaml="$TEST_TMPDIR/subscript_no_literal_key.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: pending
+  planned_paths:
+  - path/a.sh
+  - path/b.sh
+EOF
+    cp "$yaml" "$yaml.before"
+
+    run bash "$YFS" "$yaml" task "planned_paths[1]" "path/changed.sh"
+    [ "$status" -ne 0 ]
+
+    # 添字表記の文字列がリテラルキーとして新規追加されていないこと
+    run grep -F "planned_paths[1]:" "$yaml"
+    [ "$status" -ne 0 ]
+
+    # 元のlist構造・値も変わらず、ファイル全体がbyte-identicalであること
+    run cmp -s "$yaml.before" "$yaml"
+    [ "$status" -eq 0 ]
+    run python3 -c "
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))
+assert data['task']['planned_paths'] == ['path/a.sh', 'path/b.sh'], data['task']['planned_paths']
+print('PLANNED_PATHS_UNCHANGED_OK')
+" "$yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PLANNED_PATHS_UNCHANGED_OK"* ]]
+}
+
+@test "yaml_field_set_batch: 添字指定を含むbatch呼出しは全体をFATALでfail-closedし部分書込みしない" {
+    local yaml="$TEST_TMPDIR/subscript_batch_reject.yaml"
+    cat > "$yaml" <<'EOF'
+task:
+  status: pending
+  ninja: hayate
+EOF
+    cp "$yaml" "$yaml.before"
+
+    run bash -lc "source \"$YFS\" && yaml_field_set_batch \"$yaml\" task \"status=done\" \"ninja[0]=bad\""
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"FATAL"* ]]
+    [[ "$output" == *"nested list index notation is not supported"* ]]
+
+    # 添字表記でBLOCKされた際、先行フィールド(status=done)も部分書込みされないこと
+    run cmp -s "$yaml.before" "$yaml"
+    [ "$status" -eq 0 ]
+}
