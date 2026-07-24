@@ -182,6 +182,19 @@ causal_chain: "未検証前提→誤配備→家老workaround増。個別SQL×10
 4. `LGTM / FAIL` を家老へ返す
 5. GATE結果が返ってきたら、自分の見落とし有無を検証する
 
+### ⚠ LGTM記録時の必須手順 (lgtm_bundle_guard, cmd_4157)
+
+**verdict=LGTMは必ず `/review-bundle` スキル経由で記録せよ。review_logへの直接記載は禁止。**
+
+```bash
+# LGTM時 — sg7_bundle.json生成と家老通知を不可分で実行する
+bash scripts/review_approval.sh "$CMD_ID" gunshi LGTM "$REPORT_PATH"
+# → gunshi_log_append.sh の lgtm_bundle_guard がbundle未生成のままLGTM記載をBLOCKする
+# → 詳細手順は /review-bundle スキル参照
+```
+
+- FAIL時（bundle不要): `bash scripts/inbox_write.sh karo "FAIL: $CMD_ID" ...` のみ実行
+
 ## 5段階思考プロトコル
 
 1. `logs/karo_workarounds.yaml` の直近10件を読み、同類の失敗を探す
