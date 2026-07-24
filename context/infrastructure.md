@@ -2187,3 +2187,7 @@ df計測SSOT=`scripts/lib/disk_space_watch.sh`。将軍/家老startupは警告�
 ## 防御機構スループット棚卸し（cmd_4059）
 
 最終checkpointは維持し、毎tool・毎prompt・毎commitの同期枝を計測可能化して非同期化/差分化するのが最優先。現物189項目の全数台帳と上位候補 → `docs/research/gate_hook_inventory_20260718.md`
+
+## DM-signal outputs陳腐化成果物削除（cmd_3871, 2026-07-24）
+
+cmd_3819(3.4GB)+cmd_3825系(3.0GB)+grid_search bak(31MB)=計6.4GB回収。C: 664G→658G(72%→71%)。保全: cmd_3854 golden baseline(96MB)・cmd_3859 shadow artifacts(18MB)は無傷。詳細 → `DM-signal/docs/research/cmd_3871_stale_artifact_inventory.md`
