@@ -1,6 +1,6 @@
 # DM-signal フロントエンド コンテキスト（索引）
-<!-- last_updated: 2026-07-24 cmd_karo_hotfix_border_annual_match_20260724 reviewed source boundary -->
-<!-- source_commit:034e6889 reason:cmd_karo_hotfix_border_annual_match_20260724 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-frontend.md commit=034e6889 -->
+<!-- last_updated: 2026-07-24 cmd_karo_hotfix_responsive_sticky_20260724 reviewed source boundary -->
+<!-- source_commit:f0bcd321 reason:cmd_karo_hotfix_responsive_sticky_20260724 reviewed source boundary evidence:cmd_complete_gate project=dm-signal -->
 
 > 索引層。結論+参照のみ。
 > 補足: frontend詳細索引は復旧済み。主要参照は `docs/research/frontend-components.md` / `docs/research/frontend-api-spec.md` / `docs/research/frontend-deploy.md`。
@@ -383,3 +383,7 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 ## 19. cmd_4124 値配色の基準復旧 (2026-07-23)
 
 結論: 値の色は正値=`text-foreground`（lightは黒寄り、darkは白）、負値=`text-red-400`（両モード）。フォント種類・サイズはlight/dark共通で不変。→ `/mnt/c/Python_app/DM-signal/docs/research/cmd_4124_color_baseline_restore.md`
+
+## 22. cmd_4153 admin UI全数偵察 (2026-07-24)
+
+結論: admin 4ルート・17 TSX全数調査。一覧性低下根因=FoFカード縦積み/DB Status collapsed default/folders全collapsed/modal退避。改善提案5案 (FoF→table canonical/DB Status展開default/split-view編集/nav compact/folders全展開) を5要件形式で記載。→ `docs/research/cmd_4153_admin_ui_recon_20260724.md`

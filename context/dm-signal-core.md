@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-24 cmd_4114 -->
-<!-- source_commit:0815a02e reason:GA-319 cross-repo参照解決とsource差分反映 evidence:96c8c5f5 rolling distribution + d8530bcb/0815a02e canonical pytest plugin -->
+<!-- last_updated: 2026-07-24 cmd_4148 reviewed source boundary -->
+<!-- source_commit:00c20c54 reason:cmd_4148 reviewed source boundary evidence:cmd_complete_gate project=dm-signal -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
