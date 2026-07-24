@@ -1498,6 +1498,8 @@ safe_send_clear() {
             tmux clear-history -t "$pane" 2>/dev/null || true
             tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
             log "CTX-RESET: $agent_name @context_pct → 0% after CODEX-RESPAWN"
+            # LS078根治: settings.yaml model_nameをそのまま@model_nameへ焼込み(バナーパース非経由)
+            apply_model_name_tag "$agent_name" "$pane" || true
             rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
             return 0
         fi
@@ -1540,6 +1542,8 @@ safe_send_clear() {
     tmux clear-history -t "$pane" 2>/dev/null || true
     tmux set-option -p -t "$pane" @context_pct "0%" 2>/dev/null || true
     log "CTX-RESET: $agent_name @context_pct → 0% after respawn-pane"
+    # LS078根治: settings.yaml model_nameをそのまま@model_nameへ焼込み(バナーパース非経由)
+    apply_model_name_tag "$agent_name" "$pane" || true
     rm -f "${STATE_DIR}/shogun_idle_${agent_name}"
     return 0
 }
@@ -7185,6 +7189,8 @@ check_ninja_cli_dead() {
                 tmux set-option -t "$_pane_target_bg" -p @agent_id "$_name_bg" 2>/dev/null || true
             fi
             if [ "$_respawn_rc" -eq 0 ]; then
+                # LS078根治: settings.yaml model_nameをそのまま@model_nameへ焼込み(バナーパース非経由)
+                apply_model_name_tag "$_name_bg" "$_pane_target_bg" || true
                 _generation=$(respawn_recovery_generation "$_pane_target_bg" 2>/dev/null || true)
                 if [ -n "$_generation" ] && respawn_recovery_notify "$_script_dir_bg" "$_name_bg" "$_generation" cli-dead; then
                     bash "$_script_dir_bg/scripts/ntfy.sh" "【CLI再起動成功】${_name_bg}: CLIバナー/プロンプト確認済み" 2>/dev/null || true
@@ -7312,9 +7318,15 @@ check_model_names() {
         fi
         [ -z "$target" ] && continue
 
-        # モデル表示名解決（model_resolve.shに統一委譲）
+        # LS078根治: settings.yaml model_name(正本)を最優先する。バナーパース
+        # (resolve_model_display/detect_real_model)は正本未設定のagentのみのフォールバック。
+        # 旧実装はバナーパースを最優先し、respawnチョークポイントが焼込んだ正本値を
+        # 周期チェックが表示形式で上書きし続ける矛盾があった(cmd_4160)。
         local expected
-        expected=$(resolve_model_display "$name" "$target")
+        expected=$(_cli_lookup_settings_get "$name" "model_name" "")
+        if [ -z "$expected" ]; then
+            expected=$(resolve_model_display "$name" "$target")
+        fi
 
         # 現在値
         local current
@@ -8533,6 +8545,8 @@ check_codex_bypass_once() {
         log "CODEX-BYPASS-BLOCK: $agent_name handshake_failed retry=next_cycle"
         return 1
     fi
+    # LS078根治: settings.yaml model_nameをそのまま@model_nameへ焼込み(バナーパース非経由)
+    apply_model_name_tag "$agent_name" "$pane" || true
     mkdir -p "$(dirname "$marker")"
     printf '%s\n' "$generation" > "$marker"
     log "CODEX-BYPASS-RECOVERED: $agent_name generation=$generation respawn=1"

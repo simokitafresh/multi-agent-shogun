@@ -301,13 +301,13 @@ restart_agent_cli() {
         local _agent="$1"
         local _target="$2"
         local _fallback="$3"
-        local _detected=""
-        if declare -F detect_real_model >/dev/null 2>&1; then
-            _detected=$(detect_real_model "$_agent" "$_target" 2>/dev/null || true)
-        fi
-        tmux set-option -p -t "$_target" @model_name "${_detected:-$_fallback}" >/dev/null 2>&1 || true
-        if [[ -n "$_detected" ]]; then
-            echo "  [runtime] ${_agent}@${_target}: @model_name=${_detected} (detected)"
+        # LS078根治: バナーパース(detect_real_model)は使わず、settings.yaml model_name
+        # 文字列をそのまま@model_nameへ焼込む(apply_model_name_tag=SSOT実装)。
+        # model_name未設定時のみdisplay_name(CLI種別名)へフォールバック。
+        if apply_model_name_tag "$_agent" "$_target"; then
+            echo "  [runtime] ${_agent}@${_target}: @model_name tagged from settings.yaml"
+        else
+            tmux set-option -p -t "$_target" @model_name "$_fallback" >/dev/null 2>&1 || true
         fi
     }
 

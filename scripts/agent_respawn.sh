@@ -35,6 +35,9 @@ else
     exit 1
 fi
 
+# LS078根治: settings.yaml model_nameをそのまま@model_nameへ焼込み(バナーパース非経由)
+apply_model_name_tag "$agent_name" "$pane" || true
+
 # task statusをidle化
 bash "$REPO_ROOT/scripts/lib/yaml_field_set.sh" "queue/tasks/${agent_name}.yaml" task status idle 2>/dev/null || true
 

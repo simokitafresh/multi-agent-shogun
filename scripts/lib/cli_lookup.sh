@@ -568,6 +568,40 @@ cli_launch_cmd() {
     fi
 }
 
+# apply_model_name_tag <agent_name> <pane_target>
+# LS078(真実の在処不一致)根治: settings.yaml cli.agents.<agent>.model_name の
+# 文字列をそのまま(整形・表示名変換なし)tmux @model_name へ焼き込む。
+# バナーパース(detect_real_model)や表示名変換(cli_model_display)は経由しない。
+# 呼び出しチョークポイントはagent_respawn.sh/switch_cli_mode.sh/ninja_monitor.shの
+# 各respawn経路のみ(respawn直後に1回だけ呼ぶ)。
+# 突合結果(settings.yaml値 vs 焼込み後の実tmux値)をログへ記録する。
+# 戻り値: 0=model_name設定済みかつ焼込み一致 / 1=model_name未設定 or 焼込み不一致
+apply_model_name_tag() {
+    local agent="$1"
+    local target="$2"
+    local model_name
+    model_name=$(_cli_lookup_settings_get "$agent" "model_name" "")
+    [[ -z "$model_name" ]] && return 1
+
+    tmux set-option -p -t "$target" @model_name "$model_name" 2>/dev/null || true
+
+    local actual result
+    actual=$(tmux show-options -p -t "$target" -v @model_name 2>/dev/null || echo "")
+    if [[ "$actual" == "$model_name" ]]; then
+        result="match"
+    else
+        result="mismatch"
+    fi
+
+    local log_file="${MODEL_NAME_TAG_LOG:-${_CLI_LOOKUP_DIR}/logs/model_name_tag_verify.log}"
+    mkdir -p "$(dirname "$log_file")" 2>/dev/null || true
+    printf '%s agent=%s pane=%s settings_model=%s tmux_model=%s result=%s\n' \
+        "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$agent" "$target" "$model_name" "$actual" "$result" \
+        >> "$log_file" 2>/dev/null || true
+
+    [[ "$result" == "match" ]]
+}
+
 # codex_config_apply_agent <agent_name>
 # settings.yamlのmodel_name/service_tierからconfig.tomlを一時切替する。
 # SSOT: この関数がconfig.toml per-agent切替の唯一の実装(2層SSOT: settings.yaml→config.toml)
