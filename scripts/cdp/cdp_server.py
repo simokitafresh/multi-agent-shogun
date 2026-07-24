@@ -528,6 +528,25 @@ class CDPDaemonServer(ThreadingMixIn, HTTPServer):
 # ---------------------------------------------------------------------------
 # Idle watchdog
 # ---------------------------------------------------------------------------
+def cred_heartbeat(cred_path: str, cred_data: dict):
+    """Background thread: re-create the server info file if it disappears.
+
+    Without this, deleting /tmp/cdp-server.json while the daemon is alive
+    strands clients permanently: the token is unrecoverable, restart fails
+    with Address-in-use, and kill is forbidden (D006). 2026-07-24 incident.
+    """
+    while True:
+        time.sleep(30)
+        try:
+            if not os.path.exists(cred_path):
+                with open(cred_path, "w") as f:
+                    json.dump(cred_data, f)
+                os.chmod(cred_path, 0o600)
+                print(f"Recreated missing {cred_path}", file=sys.stderr)
+        except OSError:
+            pass
+
+
 def idle_watchdog(state: DaemonState, server: CDPDaemonServer):
     """Background thread: exit if idle for configured timeout."""
     while True:
@@ -603,6 +622,12 @@ def main():
         target=idle_watchdog, args=(state, server), daemon=True
     )
     watchdog.start()
+
+    # Start cred-file heartbeat (recreate /tmp/cdp-server.json if deleted)
+    heartbeat = threading.Thread(
+        target=cred_heartbeat, args=(cred_path, cred_data), daemon=True
+    )
+    heartbeat.start()
 
     # Handle SIGTERM gracefully
     def sigterm_handler(signum, frame):

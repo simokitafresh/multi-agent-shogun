@@ -67,6 +67,9 @@ else
   printf -v _sr_current_ts '%(%s)T' -1
   if (( _sr_current_ts - _sr_cache_ts > _sr_compiled_ttl )); then
     _sr_need_compile=1
+  # TTL内でもSKILL.md編集を即反映 (2026-07-24: TRIGGER追記が最大1hマッチ不能だった)
+  elif [[ -n "$(find "${_sr_skills_dir}" -name 'SKILL.md' -newer "${_sr_compiled_cache}" -print -quit 2>/dev/null)" ]]; then
+    _sr_need_compile=1
   fi
 fi
 
