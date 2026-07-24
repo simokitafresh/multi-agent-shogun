@@ -30,6 +30,13 @@ RESERVATION_LOCK="${CMD_SKELETON_RESERVATION_LOCK:-${RESERVATION_FILE}.lock}"
 TITLE="${1:-FILL_THIS: タイトル(パリティ/新規作成/new_fileの語を含めるな=偽陽性トリガー)}"
 PROJECT="${2:-FILL_THIS_project}"
 
+# オプション風引数(--help等)をタイトル扱いすると採番予約が走り番号を浪費する
+# (実測2026-07-24: --helpでcmd_4149が予約された)。予約前にガードする。
+if [[ "$TITLE" == -* ]]; then
+    sed -n '4,12p' "$0" >&2
+    exit 2
+fi
+
 # --- 次cmd_id算出: queue + last_cmd + 明示予約の最大値+1 ---
 # archiveは採番の正本にしない: cmd_9997-9999等の帯域外IDが混在し採番が飛ぶ(実測2026-06-10)。
 # last_cmdはcmd_save PASS毎に更新される。queueは保存前の手動採番、予約SSOTは設計段階の未来IDをカバー。

@@ -96,7 +96,7 @@ def build(task, workers, source_id):
         return {"status": "serial", "serial_dependency_evidence": evidence,
                 "estimated_minutes": estimated}
     if len(items) < 2:
-        raise ValueError("30-minute single task requires >=2 work_items/parallel_ok boundaries or explicit serial_dependency_evidence")
+        raise ValueError("30-minute single task requires >=2 work_items/parallel_ok boundaries or explicit serial_dependency_evidence (serial_dependency_evidence is a top-level task field; a value nested inside split_decision is not read)")
     if len(workers) < 2:
         return {"status": "deferred", "reason": "eligible_workers<2; silent single-worker fallback forbidden",
                 "eligible_workers": len(workers), "item_count": len(items)}
