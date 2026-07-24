@@ -172,11 +172,14 @@ review_log追記後、今回のレビューで使った判断パターンがrevi
 根拠: なぜなぜ7回(2026-05-15殿指示)で根因特定。5件/セッションの判断パターンが未埋込みだった。
 
 ### Step 3: 家老inbox送信 + 永続化確認 + retry
+
+**⚠ lgtm_bundle_guard(cmd_4157)**: `gunshi_log_append.sh` は `sg7_bundle.json` が存在しない状態でのLGTM記載をBLOCKする。Step 2(review_log追記)より先にStep 3を実行せよ。
+
 report reviewでLGTMを通知する前に、レビューした現物へfingerprintを固定する。この承認境界が家老だけへ「完了レビューLGTM・家老/GATE判定待ち」を自動永続通知する:
 ```bash
 bash scripts/review_approval.sh "$CMD_ID" gunshi LGTM "$REPORT_PATH"
 ```
-このコマンド成功前にLGTM通知を送るな。report更新後は再レビュー・再実行が必須。
+このコマンドが sg7_bundle.json を生成し家老へbulletin通知する。成功前にLGTM通知を送るな。report更新後は再レビュー・再実行が必須。
 
 既存の `review_approval.sh` 成功後、最後にSG7 notifyを実行する。notifyはexact reportの
 approval markerとbundle fingerprintを再検証し、どちらか不一致なら通知0件・exit 2:

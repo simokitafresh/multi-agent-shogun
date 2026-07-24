@@ -10,7 +10,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="${GUNSHI_SCRIPT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 LOG_FILE="$SCRIPT_DIR/logs/gunshi_review_log.yaml"
 ARCHIVE_DIR="$SCRIPT_DIR/logs/archive"
 MAX_LINES=2500
@@ -114,6 +114,31 @@ fi
 if [[ "$ENTRY" =~ review_type:[[:space:]]*report ]] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]] && echo "$ENTRY" | grep -Pq 'gate_prediction:\s*BLOCK(\s|$|\(|\[|/)'; then
     echo "BLOCK: verdict=LGTMとgate_prediction=BLOCKの矛盾。BLOCKが予測される報告にLGTMを出すな。FAILに変更するか、BLOCK理由を解消してからLGTMせよ" >&2
     exit 2
+fi
+
+# --- LGTM bundle guard: sg7_bundle.json必須(lgtm_bundle_guard, cmd_4157) ---
+# LGTM記載とbundle生成を不可分にする。bundle未生成のままreview_logへLGTM記載を禁止する
+if [[ "$ENTRY" =~ review_type:[[:space:]]*report ]] && [[ "$ENTRY" =~ verdict:[[:space:]]*LGTM ]]; then
+    _lbg_cmd_id=$(python3 -c "
+import sys, yaml
+entry = yaml.safe_load(sys.argv[1])
+item = entry[0] if isinstance(entry, list) and entry else (entry if isinstance(entry, dict) else {})
+print(str(item.get('cmd_id') or ''))
+" "$ENTRY" 2>/dev/null || true)
+    if [ -n "$_lbg_cmd_id" ]; then
+        _lbg_bundle="$SCRIPT_DIR/queue/gates/$_lbg_cmd_id/sg7_bundle.json"
+        if [ ! -f "$_lbg_bundle" ]; then
+            _lbg_log="$SCRIPT_DIR/logs/gate_fire_log.yaml"
+            _lbg_ts=$(date -Iseconds)
+            mkdir -p "$(dirname "$_lbg_log")"
+            (
+                flock -w 5 9 || true
+                echo "- ts: \"$_lbg_ts\", file: \"$_lbg_cmd_id\", gate: \"lgtm_bundle_guard\", result: BLOCK, reasons: \"LGTM for $_lbg_cmd_id but queue/gates/$_lbg_cmd_id/sg7_bundle.json is missing\"" >> "$_lbg_log"
+            ) 9>>"$_lbg_log.lock"
+            echo "BLOCK: lgtm_bundle_guard: $_lbg_cmd_id のsg7_bundle.jsonが未生成。先に bash scripts/review_approval.sh $_lbg_cmd_id gunshi LGTM <report_path> を実行してからreview_log記録せよ" >&2
+            exit 2
+        fi
+    fi
 fi
 
 # --- gate_prediction_reason必須チェック(report) --- GP-259: prediction偽陽性分析の材料を残す

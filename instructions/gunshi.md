@@ -814,12 +814,21 @@ WA率>50%時の追加チェック:
 
 ### 通知手順
 
-レビュー完了後、家老にinbox_writeで送信:
-```bash
-# LGTM時（SG7バンドル付き）
-bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: LGTM。4観点OK。--- SG7 bundle --- gate_precheck: report_format: PASS, commit_verified: true, gate_prediction: CLEAR lesson_extraction: has_candidate: {true/false}, summary: {要約}, register_recommended: {true/false} context_reflux: needed: {true/false}, target: {path}, content: {要約} dashboard_line: cmd_XXXX {ninja} PASS。{成果}。workaround: no karo_workaround_needed: no --- SG7 bundle end ---" report_review_result gunshi
+**verdict=LGTMは必ず `/review-bundle` スキル経由で記録せよ。直接inbox_writeは禁止。**
 
-# FAIL時（バンドルなし）
+- LGTMをreview_logに記録する前に `bash scripts/review_approval.sh <cmd_id> gunshi LGTM <report_path>` が必須(sg7_bundle.json生成+家老通知を不可分実行)
+- `gunshi_log_append.sh` の `lgtm_bundle_guard` がbundle未生成のままLGTM記載をBLOCKする(cmd_4157)
+- LGTM時は `review_approval.sh` が `BULLETIN_NOTIFY=karo` で家老へ自動通知する。手動inbox_write不要
+
+```bash
+# LGTM時 — /review-bundle スキルを実行せよ
+# Step 1: bundle生成(review_approval.shが内包)
+bash scripts/review_approval.sh "$CMD_ID" gunshi LGTM "$REPORT_PATH"
+# Step 2: sg7 notify(inbox_write経由でkaroへ届く)
+python3 scripts/review_bundle.py notify --cmd "$CMD_ID" --bundle "queue/gates/$CMD_ID/sg7_bundle.json"
+# → 完全手順は /review-bundle スキル参照
+
+# FAIL時（bundle不要。inbox_writeのみ）
 bash scripts/inbox_write.sh karo "cmd_XXXX {ninja}報告レビュー。verdict: FAIL。{fail_reasons}" report_review_result gunshi
 ```
 
