@@ -44,7 +44,8 @@ Start-Process chrome.exe --remote-debugging-port=9222 --remote-allow-origins=* -
 2. 認証が必要なサイトなら、対象PJの `projects/{project}.yaml` と `context/{project}.md` から認証方式と認証情報の参照先を確認する。
 3. UIログインが正本のサイトでは `ui_login` を使い、フォーム入力、送信、ログイン後URLまたは画面要素まで確認する。
 4. Cookie注入などPJ専用の認証 helper が正本化されている場合は、そのPJ contextの手順を優先する。DM-Signalは `auto-ops` の `cdp_cli.sh auth --env <env>` が標準。
-5. `navigate` で対象URLへ移動する。
+5. **修正後の本番検証タスクでは、navigate前にlive deployが対象commitを含むことを一次確認する（実装完了≠本番到達 LS-A09(34)）。** DM-Signalは Render deploy状態（FE=srv-d4ja8pp5pdvs739a5fsg）のdeploy commit SHAと対象commitの包含関係を `git merge-base --is-ancestor <対象> <deploy SHA>` で照合。未反映のまま画面検証すると旧UIを測って偽陰性/偽陽性になる。
+6. `navigate` で対象URLへ移動する。
 6. `screenshot` で証跡を保存する。
 7. スクリーンショットまたはAX snapshotを読んで、画面が期待状態かを報告する。
 
