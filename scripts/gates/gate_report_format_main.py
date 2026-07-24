@@ -81,12 +81,25 @@ def _report_modified_paths(report):
 
 
 def _literal_path_within(path, scope):
-    """Match repository paths literally; brackets in dynamic routes are not globs."""
+    """Match repository paths literally; brackets in dynamic routes are not globs.
+
+    Handles absolute vs relative path mismatch: if one is an absolute path
+    and the other is relative, check if the absolute path ends with the
+    relative path (e.g. '/mnt/c/.../scripts/x.sh' contains 'scripts/x.sh').
+    """
     candidate = str(path or "").strip().rstrip("/")
     boundary = str(scope or "").strip().rstrip("/")
-    return bool(candidate and boundary) and (
-        candidate == boundary or candidate.startswith(boundary + "/")
-    )
+    if not candidate or not boundary:
+        return False
+    if candidate == boundary or candidate.startswith(boundary + "/"):
+        return True
+    # Reverse containment: absolute scope ends with relative candidate
+    if boundary.endswith("/" + candidate):
+        return True
+    # Reverse: absolute candidate ends with relative scope
+    if candidate.endswith("/" + boundary):
+        return True
+    return False
 
 
 def _resolve_commit_repo(report, task, root):
