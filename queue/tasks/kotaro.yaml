@@ -1,131 +1,73 @@
 task:
-  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
-  ac_priority: AC1 > AC2 > AC3
-  acceptance_criteria:
-  - checks:
-    - check: historical ledger timing is selection evidence only and MUST NOT decide adoption
-    - check: resolve last-good commit and candidate commit, then measure both in the same fixed environment with one identical safe command
-    id: AC1
-  - checks:
-    - check: implementation improves runtime without reducing behavior or safety; async timeout shortening and other feature thinning (LS081) are forbidden
-    - check: safety patterns (|| true, 2>/dev/null, cat 2>/dev/null, trap, timeout, set +e) are NOT deleted. git diff must show zero removed safety lines
-    - check: if new functions are added, all test files that source/export -f the parent script have updated mock/export lists
-    - check: all related tests pass with FAIL=0 and SKIP=0; expectations, coverage, and target count are unchanged
-    id: AC2
-  - checks:
-    - check: after warmup, alternate last-good/candidate A/B runs in the same environment for at least 10 samples per arm using the exact same command
-    - check: candidate p50 and p95 are both <= last-good and at least one is strictly lower; otherwise rollback candidate, record saturated, and retain last-good
-    - check: record-real stores both commits, exact command, samples per arm, both p50/p95 pairs and test result; missing evidence, historical-only comparison, or unresolved hook/gate failure is BLOCK
-    - check: deployment/result event is appended to gate_fire_log and measurable by detector_fp_rate
-    id: AC3
-  engineering_preferences:
-  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
-  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
-  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
-  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
-  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
-  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
-  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
-  estimated_minutes: 5
-  issued_at: '2026-07-17T07:19:51'
-  issued_cmd_id: cmd_training_speed_inbox_archive_20260717071949
-  never_stop_for:
-  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
-  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
-  - 自明な修正（typo等） — 実行→事後報告
-  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
-  parallel_ok:
-  - AC1
-  - AC2
-  - AC3
-  parent_cmd: cmd_training_speed_inbox_archive_20260717071949
+  assumptions:
+    claim: test_select.shは実在しrun_tests.sh L591で接続済み(将軍rg一次確認2026-07-20 14:45)。全量2092件=12分41秒/専用5件=4.3秒の実測は疾風receipt出典(logs/test_receipts/run_tests_20260720T044324_427321.json)。最終checkpoint全量1回の原則は殿裁定2026-07-14で恒久化済み
+    source: 掲示板blt_20260720_140504(疾風実測)+scripts/run_tests.sh L591現物+CLAUDE.md『厳密さは最終checkpointへ集中』殿裁定
+    trust: verified
+  estimated_minutes: 10
+  timeout_minutes: 30
+  issued_at: '2026-07-24T09:53:28'
+  issued_cmd_id: cmd_4102
+  parent_cmd: null
   project: infra
-  purpose: 'Speed-train scripts/inbox_archive.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger.'
-  scout_exempt: true
-  selection_evidence:
-    historical_only: true
-    measured_ms: 74
-    priority_axis: measured runtime fallback
-    source: logs/script_speed_training_ledger.yaml
-  status: done
-  stop_for: []
-  target_path: scripts/inbox_archive.sh
-  task_id: cmd_training_speed_inbox_archive_20260717071949_normal
-  task_type: speed_training
-  related_lessons:
-  - id: 'L162'
-    summary: 'IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能'
-    detail: 'IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能'
-  standard_skills:
-  - "report-write"
-  - "verdict-check"
-  - "ninja-commit"
+  status: idle
+  task_id: cmd_4102_full
+  task_type: full
   model_injection_profile:
-    model_label: "GPT 5.6 Sol low"
-    family: "gpt"
-    injection_intensity: "max"
-    protocol: "T5弱LLM構造化プロトコル"
+    model_label: GPT 5.6 Sol low
+    family: gpt
+    injection_intensity: max
+    protocol: T5弱LLM構造化プロトコル
     report_contract:
-    - "binary_checks全resultをyes/noで記入"
-    - "lessons_useful全reasonを具体記入"
-    - "files_modifiedはrepo相対path形式"
-    - "D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除"
+    - binary_checks全resultをyes/noで記入
+    - lessons_useful全reasonを具体記入
+    - files_modifiedはrepo相対path形式
+    - 'D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除'
+    - '任務帰属検証契約: 反復・報告直前とも bash scripts/run_tests.sh task queue/tasks/kotaro.yaml
+      を実行し、task/reportの所有pathから選ばれたテストだけをbinary_checksへ帰属させる。引数なしaffectedやunit全量を任務判定に使わない。全量all/unitはfixed-SHA統合checkpointで別に判定し、scope外FAILを当該任務のFAILへ混入させない'
     extra_scaffold:
-    - "ACごとに実テスト証跡をresult.detailsへ記録"
-    - "報告前にplaceholder残存確認とgate_report_formatを実行"
-  semantic_concepts:
-  - "lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) docs/research/gunshi_idle_knowledge_burial_audit_20260505.md — 軍師idle: 知識埋没監査(2026-05-05) docs/research/gunshi_idle_lesson_dedup_20260413.md — 軍師idle: 教訓重複排除分析(2026-04-13) docs/research/gunshi_idle_lesson_effectiveness_20260413.md — 軍師idle: 教訓有効性測定(2026-04-13) docs/research/gunshi_idle_lesson_impact_20260412.md — 軍師idle: 教訓インパクト分析(2026-04-12) docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) docs/research/gunshi_idle_lesson_injection_quality_20260605.md — 軍師idle: 教訓注入品質監査(2026-06-05) docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md — 軍師idle: 教訓参照率分析(2026-04-30) docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md — 軍師idle: 教訓タグ不一致分析(2026-05-07) docs/research/gunshi_idle_lesson_useful_rate_20260422.md — 軍師idle: 教訓有用率計測(2026-04-22) docs/research/gunshi_idle_lesson_useful_rate_20260503.md — 軍師idle: 教訓有用率計測v2(2026-05-03) docs/research/gunshi_idle_lesson_useful_rate_20260608.md — 軍師idle: 教訓有用率計測v3(2026-06-08) docs/research/gunshi_idle_lesson_waste_analysis_20260516.md — 軍師idle: 教訓無駄分析(2026-05-16) docs/research/gunshi_idle_lesson_useful_rate_improvement_20260620.md — 軍師idle: 教訓有用率改善分析(2026-06-20) docs/research/gunshi_idle_session_lessons_20260617.md — 軍師idle: セッション教訓分析(2026-06-17) docs/research/gunshi_idle_session_lessons_20260618.md — 軍師idle: セッション教訓分析(2026-06-18) docs/research/gunshi_idle_self_run_20260624.md — 軍師idle: idle自走Step1-8完了分析(2026-06-24) docs/research/gunshi_idle_useful_rate_bootstrap_analysis_20260618.md — 軍師idle: 有用率ブートストラップ分析(2026-06-18) docs/research/lessons_karo_v3_archive.md — 家老教訓v3アーカイブ(統合前全文保存)"
-  causal_verification:
-    cause_checked: ""  # 変更前にgit log/blame・教訓・設計書・semantic/causalを確認し3行以上で記録
-    design_intent_checked: ""  # 導入理由/守るべき既存防御/今回壊れている因果を記録
-    evidence: ""  # bounded確認: scope限定、timeout、既存cache利用。全走査を避ける
-    origin: ""  # [[発端]] -> [[原因]] -> [[結果]]
-  context_hints:
-  - "context/gs-speedup-knowledge.md"
-  - "context/training-cycle.md"
-  growth_loop_defense:
-  - "ゲートの成功=未熟さの証拠。発火しないシステムが完成系。"
-  - "Level1(事後検出): 間違えた後にgateが検出"
-  - "Level2(事前予防(doc)): ドキュメントに「こうせよ」と記載"
-  - "Level3(事前強制(auto-gen)): テンプレートを自動生成して正しい構造を強制"
-  - "Level4(フロー内BLOCK): 間違ったら即停止。先に進めない"
-  - "Level5(事前コンテキスト提供): 正しい入力を自動生成して渡す。間違える余地がない"
-  - "Level6(学習速度最大化): 間違いから学ぶ速度を最大化。下限が切り上がる"
-  - "新規gate/hook設計時: 最初からLevel 5を目指せ。Level 4で止めるな"
-  - "BLOCKされたら**: 修正してCLEARするだけでなく「同じBLOCKが二度と起きない仕組み」を環境に埋め込め"
-  description: |-
-    【注入教訓】 必ず確認してから作業開始せよ
-      - L162: IF フックスクリプトテスト時 THEN dirname($0)からパス計算するスクリプトは環境変数上書きでは対応不能
-    ────────────────────────────────────────
-    
-    
-  ac_version: cd728cce
-  _ac_task_id: cmd_training_speed_inbox_archive_20260717071949_normal
-  _ac_worker_id: 
-  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
-  report_filename: kotaro_report_cmd_training_speed_inbox_archive_20260717071949.yaml
-  report_path: queue/reports/kotaro_report_cmd_training_speed_inbox_archive_20260717071949.yaml
-  bloom_level: 
+    - ACごとに実テスト証跡をresult.detailsへ記録
+    - 報告前にplaceholder残存確認とgate_report_formatを実行
+  experiment_first_principle:
+  - '殿の原文: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』'
+  - '適用形: 仮説を頭で絞らず、小さな独立実験へ分けて並列に全て試せ。想像で結論せず、各実験の一次結果を確認してから採否を決めよ。'
+  ac_version: b99834bc
+  _ac_task_id: null
+  _ac_worker_id: null
+  target_path_git_preflight: frontend/components/compare-returns-table.tsx:worktree=yes,head=yes,last_commit=pending@034e68898e78e2c30651fca7bcb004b4a0a3f479;frontend/components/__tests__/compare-returns-table.test.tsx:worktree=yes,head=yes,last_commit=pending@034e68898e78e2c30651fca7bcb004b4a0a3f479
+  report_contract_templates: '{"ac_evidence_mapping":{"AC1":"","AC2":"","AC3":""},"semantic_validation":{"classification_axis":"","recount":"","actual":"","result":""}}'
   variation_checks_required: false
-  parent_ac_coverage: 
+  parent_ac_coverage: null
   parent_contract_fingerprint: ''
-  deployed_at: "2026-07-17T07:20:20"
-  acknowledged_at: "2026-07-17T07:21:16"
-
-  session_state:
-    attempt: 3
-    last_block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    tried_approaches:
-    - 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC7[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); operational_simulation: MISSING (command,expected,actual,result; integration cmd requires command/expected/actual/result — LG055)'
-    - 'cmd_3264-AC2 target_path配下に未commit変更あり'
-    approach_summary: 'steady-state mkdir省略候補を同一環境A/B各10で測定。L p50/p95=539/763ms、C=589/744msでp50退行のためrollbackしsaturated記録。関連試験3/3 PASS、FAIL0、SKIP0。'
-    prior_attempts:
-    - attempt: 1
-      block_reason: 'binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC5[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC6[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC7[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); operational_simulation: MISSING (command,expected,actual,result; integration cmd requires command/expected/actual/result — LG055)'
-      approach_summary: 'Speed-train scripts/inbox_archive.sh: measure real runtime before, improve safely, run script-specific tests, measure the same command after, and record real timings in ledger. — 実施・検証結果を本報告へ記録'
-    - attempt: 2
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      approach_summary: 'steady-state mkdir省略候補を同一環境A/B各10で測定。L p50/p95=539/763ms、C=589/744msでp50退行のためrollbackしsaturated記録。関連試験3/3 PASS、FAIL0、SKIP0。'
-    - attempt: 3
-      block_reason: 'cmd_3264-AC2 target_path配下に未commit変更あり'
-      approach_summary: 'steady-state mkdir省略候補を同一環境A/B各10で測定。L p50/p95=539/763ms、C=589/744msでp50退行のためrollbackしsaturated記録。関連試験3/3 PASS、FAIL0、SKIP0。'
+  cmd_id: cmd_4102
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_4102
+    (deployed 2026-07-24T09:53:32). Read from the beginning.
+  deployed_at: '2026-07-24T09:53:32'
+  acknowledged_at: null
+  done_at: null
+  completed_at: null
+  purpose: '''疾風の一次実測(blt_20260720_140504、2026-07-20 14:05: 専用fixture5件=約4.3秒に対しunit全量2092件=760,762ms=12分41秒)で確定した検証税の是正。殿原則(厳密さは最終checkpointへ集中、途中はtry回数最大化)に従い、忍者の反復検証をscripts/test_select.sh選別実行(run_tests.sh'
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/run_tests.sh
+  acceptance_criteria:
+  - id: AC1
+    description: scripts/run_tests.shの選別実行経路を忍者の反復検証デフォルトとして整備(変更ファイル自動検出+選別結果と根拠のreceipt記録+選別失敗時は全量フォールバック)し、代表的な単一script変更で選別実行が全量比で短縮されることをreceiptの実測秒で確認する
+    checks:
+    - check: scripts/run_tests.shの選別実行経路を忍者の反復検証デフォルトとして整備(変更ファイル自動検出+選別結果と根拠のreceipt記録+選別失敗時は全量フォールバック)し、代表的な単一script変更で選別実行が全量比で短縮されることをreceiptの実測秒で確認する
+  - id: AC2
+    description: deploy_task.shが注入する検証契約の文言を『反復=選別実行可、報告直前に全量実行コマンド=bash scripts/run_tests.sh
+      unitでFAIL0・SKIP0を1回証明』の二段形へ更新し、契約注入の回帰テストをtests/unit/配下へ追加、全量実行コマンド=bash scripts/run_tests.sh
+      unitでFAIL0・SKIP0完走、中断再開時は実装commitと追加テストを引継ぎ成果物として報告へ記載することを確認する
+    checks:
+    - check: deploy_task.shが注入する検証契約の文言を『反復=選別実行可、報告直前に全量実行コマンド=bash scripts/run_tests.sh
+        unitでFAIL0・SKIP0を1回証明』の二段形へ更新し、契約注入の回帰テストをtests/unit/配下へ追加、全量実行コマンド=bash scripts/run_tests.sh
+        unitでFAIL0・SKIP0完走、中断再開時は実装commitと追加テストを引継ぎ成果物として報告へ記載することを確認する
+  report_path: queue/reports/kotaro_report_cmd_4102.yaml
+  report_filename: kotaro_report_cmd_4102.yaml
+  commit_contract:
+    required: true
+    reason: code_or_unclassified_task
+    task_type: full
+    planned_paths:
+    - tests/unit/test_heavy_job_admission.bats
+    repo_root: /mnt/c/tools/multi-agent-shogun
+  report_id: rpt-373b9eee-7aa2-4f54-ac4a-7c14973dfab4
+  report_identity_version: 2
