@@ -1,5 +1,5 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-23 cmd_karo_hotfix_context_freshness_ga319_20260723 -->
+<!-- last_updated: 2026-07-24 cmd_4114 -->
 <!-- source_commit:0815a02e reason:GA-319 cross-repo参照解決とsource差分反映 evidence:96c8c5f5 rolling distribution + d8530bcb/0815a02e canonical pytest plugin -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
@@ -373,6 +373,7 @@ cmd_3572でMTD事前計算テーブル`precomputed_mtd`、`backend/app/jobs/prec
 
 Rolling Returns summary tableは`3_months`/`6_months`/`1_year`/`2_years`/`3_years`/`5_years`/`7_years`/`10_years`を返す。3M/6Mは年率換算せず、期間内のraw compound returnを表示する。根拠: commits `86348160`, `5883fb01`, `/mnt/c/Python_app/DM-signal/backend/app/jobs/generators/rolling_returns.py`, `/mnt/c/Python_app/DM-signal/backend/app/services/rolling_returns_calculator.py`, `/mnt/c/Python_app/DM-signal/frontend/components/rolling-returns-summary-table.tsx`。
 2026-07-22 `96c8c5f5`: Rolling Returnsに期間別distributionを追加。DB/API生成は`backend/app/jobs/generators/rolling_returns.py`と`backend/app/services/rolling_returns_calculator.py`、表示は`frontend/components/rolling-returns-distribution-table.tsx`が正本。
+2026-07-24 `61848453` cmd_4114: sample_count/positive_rate contract tests追加(4テスト PASS)。Rolling Returns Phase1実装完了。
 
 ## 10. ディレクトリ構成
 

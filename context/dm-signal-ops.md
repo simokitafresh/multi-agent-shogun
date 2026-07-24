@@ -1,5 +1,5 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-23 cmd_4140 -->
+<!-- last_updated: 2026-07-24 cmd_4114 -->
 <!-- source_commit:0815a02e reason:GA-320 reviewed ops source boundary evidence:3/3 true positives: d8530bcb,96c8c5f5,0815a02e reflected -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
@@ -1292,6 +1292,7 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 
 - `021ceba7`でpytest pluginを常時ロードし、call単位のduration/outcome/failure/skip/commitを `backend/.pytest_cache/pytest_timing_ledger.tsv` に永続化。並列writerはflock+atomic replace、破損header/rowはUsageErrorでfail-closed。`PYTEST_TIMING_LEDGER_PATH`で隔離出力先を指定可能。
 - `d8530bcb`→`0815a02e`でplugin importを`backend.tests.pytest_duration_ledger_plugin`へ統一し、CI/ローカルとも同一canonical moduleをロードする契約へ修正。`96c8c5f5`ではrolling returns summaryへmedian・p10・positive rate・sample count・best/worst window境界を追加し、PF/benchmark×close/openを同一valid seriesから算出する。→ `/mnt/c/Python_app/DM-signal/backend/tests/test_pytest_duration_ledger_plugin.py` / `/mnt/c/Python_app/DM-signal/backend/app/jobs/generators/rolling_returns.py`（GA-320）
+- `61848453` cmd_4114: sample_count/positive_rate contract tests追加(4テスト PASS)。Rolling Returns Phase1実装完了。
 - 因果リンク: [[pytest所要時間の推測]] -> [[call単位timing証跡欠落]] -> [[pytest_timing_ledger常時記録]]
 
 ## §82 確定域holding_signal correction event運用 (cmd_3908, 2026-07-15)
