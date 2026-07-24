@@ -117,6 +117,36 @@ cleanup_owner() {
     log "Summary: owner=${agent} cmd=${cmd:-any} records=${total} killed=${killed} stale=${stale} malformed=${malformed} foreign_kept=${foreign}"
 }
 
+cleanup_orphan_profiles() {
+    local total=0 killed=0 pid cmdline
+    if [ -n "${CDP_PROCESS_TABLE_FILE:-}" ]; then
+        while IFS=$'\t' read -r pid cmdline; do
+            cmdline="${cmdline%$'\r'}"
+            [[ "$pid" =~ ^[0-9]+$ ]] || continue
+            [[ "$cmdline" == *"cdp-"* && "$cmdline" == *"--remote-debugging-port"* ]] || continue
+            total=$((total + 1))
+            if stop_process "$pid"; then
+                killed=$((killed + 1))
+            fi
+        done < "$CDP_PROCESS_TABLE_FILE"
+    else
+        local ps_out
+        ps_out="$(powershell.exe -NoProfile -Command \
+            "(Get-CimInstance Win32_Process -Filter \"Name='chrome.exe'\").ForEach({\$_.ProcessId.ToString() + [char]9 + [string]\$_.CommandLine})" \
+            2>/dev/null | tr -d '\r')" || true
+        while IFS=$'\t' read -r pid cmdline; do
+            [[ "$pid" =~ ^[0-9]+$ ]] || continue
+            [[ "$cmdline" == *"cdp-"* && "$cmdline" == *"--remote-debugging-port"* ]] || continue
+            total=$((total + 1))
+            if stop_process "$pid"; then
+                killed=$((killed + 1))
+            fi
+        done <<< "$ps_out"
+    fi
+    log "Orphan profiles scan: found=${total} killed=${killed}"
+}
+
 log "Starting owner-scoped CDP cleanup..."
 cleanup_owner
+cleanup_orphan_profiles
 log "Done."

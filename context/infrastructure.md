@@ -58,6 +58,8 @@ Timing ratchetのファイル判定は全ファイルp95+最新単発値でな�
 
 affected=0はheavy-job admission前にselectorを先行し、terminal receiptを保ったまま即returnする。非空selectionはmanifest固定してadmission後の再選択を防ぐ。248.660→1.81秒（-99.3%）、admission marker 0。→ `docs/research/cmd_4110_admission_affected_zero.md`
 
+CDP孤児=profileパターン自動掃除で意志非依存化。`cleanup_orphan_profiles`が`--user-data-dir`に`cdp-`を含み`--remote-debugging-port`を持つchrome.exeをpidfile有無に関係なく掃除する。殿のdefault Chrome（`cdp-`なし）は除外。→ `scripts/cdp_chrome_cleanup.sh` / `docs/research/cmd_4121_cdp_orphan_cleanup.md`（cmd_4121）
+
 共有worktreeの任務テスト帰属は `run_tests.sh task queue/tasks/<worker>.yaml` を使い、task/report所有pathのみを既存selectorへ渡す。引数なし`affected`や`unit`全量を忍者任務verdictへ混入させず、全量健全性はfixed-SHA統合checkpointで独立判定する。cmd_4108実測は690件中scope外FAIL1→所有4 test files・109/109 PASS・混入0。→ `docs/research/task-test-attribution-after-20260721.md`
 
 同一CLIが複数入力を受けるBatsでは、互換caseをbatch化してassertionを維持したまま重複初期化だけを減らす。`test_test_select.bats`は`test_select.sh`起動10→5、wall 18.248→8.444秒（53.7%短縮）、5/5 PASS・FAIL0・SKIP0。→ `tests/unit/test_test_select.bats` / `scripts/test_select.sh`（commit `a1ea08648`）

@@ -69,10 +69,19 @@ configure_worktree_hooks_path() {
     git_dir="$(git -C "$repo_root" rev-parse --absolute-git-dir 2>/dev/null)" \
         || { echo "BLOCK(GA-222): failed to resolve worktree git dir" >&2; return 1; }
     hooks_dir="$git_dir/hooks"
-    git -C "$repo_root" config extensions.worktreeConfig true \
-        || { echo "BLOCK(GA-222): failed to enable worktreeConfig" >&2; return 1; }
-    git -C "$repo_root" config --worktree core.hooksPath "$hooks_dir" \
-        || { echo "BLOCK(GA-222): failed to isolate hooksPath for worktree" >&2; return 1; }
+    # Idempotency check: skip write if already set.  git config write creates a
+    # lock file and calls chmod on it; on WSL2 /mnt/c (9P/NTFS) chmod always
+    # fails with EPERM even for files we just created.  Reading via --get does not
+    # create a lock file, so it succeeds.  Skipping the write when the value is
+    # already correct avoids the chmod failure entirely.
+    if [[ "$(git -C "$repo_root" config --get extensions.worktreeConfig 2>/dev/null)" != "true" ]]; then
+        git -C "$repo_root" config extensions.worktreeConfig true \
+            || { echo "BLOCK(GA-222): failed to enable worktreeConfig" >&2; return 1; }
+    fi
+    if [[ "$(git -C "$repo_root" config --worktree core.hooksPath 2>/dev/null)" != "$hooks_dir" ]]; then
+        git -C "$repo_root" config --worktree core.hooksPath "$hooks_dir" \
+            || { echo "BLOCK(GA-222): failed to isolate hooksPath for worktree" >&2; return 1; }
+    fi
 }
 
 configure_worktree_hooks_path || exit 1
