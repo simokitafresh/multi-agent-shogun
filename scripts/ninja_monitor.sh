@@ -6990,13 +6990,10 @@ write_karo_snapshot() {
 refresh_karo_snapshot_fast_path() {
     # 陣形図は復帰用の生存情報。重い監視チェックより前に必ず一度発行する。
     write_state_file
-    # Model/banner consistency is documented as a REDISCOVER_EVERY check.
-    # Keep snapshot fresh every call, but avoid the multi-pane model scan on
-    # every fast-path refresh.
-    local _rediscover_every="${REDISCOVER_EVERY:-30}"
-    if [ -z "${cycle:-}" ] || [ $((cycle % _rediscover_every)) -eq 0 ]; then
-        check_model_names
-    fi
+    # @model_name整合性: 毎サイクル実行(旧REDISCOVER_EVERY=10分→20秒)。
+    # CLI切替後の枠表示乖離を最大20秒に短縮。model_detect.shは軽量(ps+capture-pane)。
+    # D0修正: 2026-07-24 殿指示。根因=10分間隔で古い値が残存しpane枠がCodex/GPT/Fable表示。
+    check_model_names
     write_karo_snapshot
 }
 
