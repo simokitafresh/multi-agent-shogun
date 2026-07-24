@@ -71,18 +71,24 @@ ensure_server() {
 post_json() {
     local endpoint="$1"
     local body="$2"
-    local response
-    response=$(curl -sf -m "$REQUEST_TIMEOUT" \
+    local response http_code
+    # -f を使わず本文+HTTPコードを取得する。-sf は401本文を捨てるため
+    # Token mismatch分岐が到達不能になり「Server not responding」誤診断を
+    # 誘発した(2026-07-24: 誤診断→cred file削除→復旧不能事故)
+    response=$(curl -s -m "$REQUEST_TIMEOUT" -w $'\n%{http_code}' \
         -H "Authorization: Bearer $TOKEN" \
         -H "Content-Type: application/json" \
         -d "$body" \
         "http://localhost:${PORT}${endpoint}" 2>&1) || {
-        local rc=$?
-        if [[ "$response" == *"401"* ]] || [[ "$response" == *"Unauthorized"* ]]; then
-            die "Token mismatch"
-        fi
-        die "Server not responding (curl exit $rc)"
+        die "Server not responding (curl exit $?)"
     }
+    http_code="${response##*$'\n'}"
+    response="${response%$'\n'*}"
+    if [[ "$http_code" == "401" ]]; then
+        die "Token mismatch: /tmp/cdp-server.json is stale (daemon holds a different token). DO NOT delete the file. Recovery: wait for daemon idle-exit (~30min) then rerun (auto-restart), or use auto-ops cdp_helper directly (skills/cdp-browse/SKILL.md 'Python preflight')."
+    elif [[ "$http_code" != 2* ]]; then
+        die "HTTP $http_code from daemon: $response"
+    fi
     echo "$response"
 }
 
