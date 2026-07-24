@@ -580,7 +580,9 @@ else
     _pending_actions=()
 
     # 1. 完了忍者の報告パイプライン(status=done → レビュー/GATE処理が必要)
-    # CI RED中はci_readiness判定キャッシュを参照しGATE催促を抑制(cmd_4158)
+    # cmd_4158: CI RED中はci_readiness判定キャッシュを参照しGATE催促を抑制。
+    # キャッシュ: CI_READINESS_CACHE(デフォルト=/tmp/last_ci_notify_state, ci_status_check.shが書込み)
+    # 切替発報: gate_fire_log.yaml → detector_fp_rateで偽陽性計測可能
     _ci_notify_cache="${CI_READINESS_CACHE:-/tmp/last_ci_notify_state}"
     _ci_is_red=false
     if [[ -f "$_ci_notify_cache" ]]; then
