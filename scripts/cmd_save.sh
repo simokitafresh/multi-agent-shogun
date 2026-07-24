@@ -753,6 +753,65 @@ show_q11_causal_backlinks() {
     rm -rf "$_q11_tmpdir"
 }
 
+extract_memory_db_search_tokens() {
+    local text="${1:-}"
+    [[ -n "${text//[[:space:]]/}" ]] || return 1
+
+    {
+        grep -oE 'scripts/[A-Za-z0-9_./-]+\.(sh|py)' <<< "$text" | sed -E 's#.*/##'
+        grep -oE '(^|[^A-Za-z0-9_])run_[A-Za-z0-9_]+' <<< "$text" | grep -oE 'run_[A-Za-z0-9_]+'
+    } | awk 'NF && !seen[$0]++' | head -20
+}
+
+# cmd_4164: AC・command本文の実行コマンド系トークン(scripts/配下のコマンド名・run系方式語)を
+# 抽出し、記憶DB検索を自動実行してヒットknowledgeの要約を判定出力へ注入する。
+# show_q11_semantic_search_matches(cache/timeout/background)の部品を再利用。
+show_memory_db_command_token_matches() {
+    local query_script="${CMD_SAVE_MEMORY_DB_QUERY_SCRIPT:-$PROJECT_DIR/scripts/memory_db_query.sh}"
+    [[ -f "$query_script" ]] || return 0
+
+    local ac_text cmd_text combined tokens
+    ac_text="$(extract_acceptance_criteria_block 2>/dev/null || true)"
+    cmd_text="$(extract_command_text_block 2>/dev/null || true)"
+    combined="${ac_text}"$'\n'"${cmd_text}"
+    tokens="$(extract_memory_db_search_tokens "$combined" || true)"
+    [[ -n "${tokens//[[:space:]]/}" ]] || return 0
+
+    local _cache_payload _cache_tmp
+    _cache_payload="memdbtoken:$(printf '%s' "$tokens" | tr '\n' ',')"
+    if declare -F cmd_save_metadata_cache_replay >/dev/null && cmd_save_metadata_cache_replay "memory_db_token" "$_cache_payload"; then
+        return 0
+    fi
+    _cache_tmp="$(mktemp)"
+
+    local db_path
+    db_path="${MEMORY_DB_QUERY_DB:-${SHOGUN_MEMORY_DB:-$PROJECT_DIR/data/multi_agent_shogun_memory.db}}"
+
+    {
+        echo "INFO: memory-db自動検索(方式トークン検知): $(printf '%s' "$tokens" | tr '\n' ' ')"
+        local token rows rc
+        while IFS= read -r token; do
+            [[ -n "$token" ]] || continue
+            rc=0
+            if command -v timeout >/dev/null 2>&1; then
+                rows="$(timeout 5 bash "$query_script" --db "$db_path" --search "$token" 2>/dev/null)" || rc=$?
+            else
+                rows="$(bash "$query_script" --db "$db_path" --search "$token" 2>/dev/null)" || rc=$?
+            fi
+            [[ "$rc" -eq 0 && -n "${rows//[[:space:]]/}" ]] || continue
+            echo "  token=${token}:"
+            while IFS=$'\t' read -r _id _ts _agent _cmd_id _importance _summary; do
+                [[ -n "${_summary:-}" ]] || continue
+                echo "    - ${_cmd_id:-?} (${_importance:-?}) ${_summary}"
+            done < <(head -3 <<< "$rows")
+        done <<< "$tokens"
+    } > "$_cache_tmp"
+    cat "$_cache_tmp" >&2
+    declare -F cmd_save_metadata_cache_store >/dev/null && cmd_save_metadata_cache_store "memory_db_token" "$_cache_payload" "$_cache_tmp"
+    rm -f "$_cache_tmp"
+    return 0
+}
+
 collect_assumption_source_files() {
     local block_text="${1:-${CMD_BLOCK_NC:-}}"
     local project_dir="${PROJECT_DIR:-${PROJECT_ROOT:-.}}"
@@ -3984,6 +4043,7 @@ QG_TEMPLATE
         if [[ -n "${_Q11_COMMAND_SECTION:-}" ]]; then
             if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
                 show_q11_semantic_search_matches "$CMD_BLOCK_NC" &
+                show_memory_db_command_token_matches &
             fi
 
             # WSL2最適化: docs/research/全件grep(50+NTFSファイル)はunitテストで10-20秒かかる。
