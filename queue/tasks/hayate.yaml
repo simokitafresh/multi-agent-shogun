@@ -1,22 +1,26 @@
 task:
   assumptions:
-    claim: 承認済設計書(gist f9c2a179 §7.5/§8 Phase1)とワイヤーフレーム(docs/design/rolling-returns-wireframe_20260721.html)が実在。実装対象は
-      backend/app/db/models.py(RollingReturnsSummary)・jobs/generators/rolling_returns.py・services/rolling_returns_calculator.py・frontend/components/rolling-returns-summary-table.tsx・rolling-return-chart.tsx・app/rolling-returns/page.tsx。現行8期間とライトテーマとDM-safe/SPYとchartタブ1Y/3Y/5Y/7Y/10YはCDPで一次確認済(2026-07-20)。本番DBはRenderでスキーマ変更はバックアップ先行
-    source: docs/design/rolling-returns-improvement-asis-tobe_20260721.md §7.5/§8/§9
-      + rolling-returns-wireframe_20260721.html + CDP screenshot(2026-07-20) + rolling_returns実装ファイル群
+    claim: '対象の実測(2026-07-13将軍走査): outputs/analysis計約11GB(うちcmd_3819約3.4GB+cmd_3775_profiles約1.5GB+cmd_3825約740MB+cmd_2143_verify約363MB)、cdp_profile_cmd695系6世代約1.1GB、grid_search直下1026_yotsume_grid_monthly_fast.csv.bak_cmd1057約787MB(2026-03-19、殿裁定=GSはlocal
+      SQL化済みで過去CSV不要)。保全必須=cmd_3854 golden baseline+cmd_3859 shadow artifacts(P4-P5照合正本)。回収見込み合計約7GB'
+    source: find実測(2026-07-13 08:23完了、500MB超走査)+記憶DB 2026-07-13T01:32将軍実測スキャン報告+docs/research/nondeterminism-single-path-asis-tobe-5w1h_20260711.md(照合正本の現役性)
     trust: verified
-  estimated_minutes: 90
-  timeout_minutes: 120
+  estimated_minutes: 20
+  timeout_minutes: 30
+  split_decision:
+    boundary_ac_ids:
+    - AC1
+    integration_tasks: 0
+    review_round_trips: 1
   execution_env:
-    long_runtime_reason: backend DBスキーマ追加とmigrationとgeneratorとcalculatorとAPI、frontend
-      Distribution表とチャート連動詳細と大型Histogramの複層実装に加え、本番migrationとregenerate後のDB/API/FE三層パリティ一次突合まで含むため90分規模を要する
-    measured_runtime_sec: 600
-  issued_at: "2026-07-24T09:59:09"
-  issued_cmd_id: cmd_3827
-  parent_cmd: 
+    constraint: Linux。削除はrm実行前にrealpathで対象がoutputs配下であることを確認。DB接続不要
+    long_runtime_reason: 対象三群の500MB超走査と検分二分リスト作成を含むため(2026-07-13 find実測で走査完了に20分弱)
+    measured_runtime_sec: 1150
+  issued_at: '2026-07-24T10:06:30'
+  issued_cmd_id: cmd_3871
+  parent_cmd: cmd_3871
   project: dm-signal
-  status: idle
-  task_id: cmd_4114_full
+  status: completed
+  task_id: cmd_3871_full
   task_type: full
   model_injection_profile:
     model_label: GPT 5.6 Sol low
@@ -43,82 +47,63 @@ task:
   variation_checks_required: false
   parent_ac_coverage: null
   parent_contract_fingerprint: ''
-  cmd_id: cmd_4114
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_4114
-    (deployed 2026-07-24T09:20:30). Read from the beginning.
+  cmd_id: cmd_3871
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_3871
+    (deployed 2026-07-24T10:06:35). Read from the beginning.
   report_contract_templates: '{"ac_evidence_mapping":{"AC1":"","AC2":"","AC3":"","AC4":""},"semantic_validation":{"classification_axis":"","recount":"","actual":"","result":""}}'
-  deployed_at: '2026-07-24T09:20:30'
-  acknowledged_at: "2026-07-24T00:24:39"
-  done_at: "2026-07-24T00:57:35"
-  completed_at: "2026-07-24T00:57:35"
-  purpose: 殿指示(2026-07-22 02:19 実装cmd化・Phase1配備)。承認済設計書(gist f9c2a179 §7.5/§8 Phase1・ワイヤーフレームdocs/design/rolling-returns-wireframe_20260721.html)のPhase1を本番実装する。backendでMedian/P10/Positive
-  target_path: /mnt/c/Python_app/DM-signal
+  deployed_at: '2026-07-24T10:06:35'
+  acknowledged_at: '2026-07-24T10:07:21'
+  done_at: "2026-07-24T01:45:55"
+  completed_at: "2026-07-24T01:45:55"
+  purpose: 殿指示(2026-07-13 08:17「他に陳腐化した巨大ファイルはないか？覚醒して確認せよ」+08:25「今起票しないメリットは？」=即起票裁定)。将軍の実測走査で特定済みの陳腐化中間成果物(outputs/analysis配下の完了済みcmd成果物、outputs配下のcdp_profile_cmd695系旧世代、outputs/grid_search直下の旧CSVバックアップ)をcmd_3869と同型のKEEP/DELETE二分リスト方式で検分し、承認済み分を削除してディスクを回収する。grid_search配下のgs系DB世代はcmd_3868の対象のため本cmdのスコープ外
+  target_path: /mnt/c/Python_app/DM-signal/outputs
   acceptance_criteria:
   - id: AC1
-    description: backend実装。設計書§8 Phase1記載の実装対象(RollingReturnsSummaryモデル・rolling_returnsのgenerator・calculator・API)へ、設計書§6/§7で定義した分布統計フィールド(median・p10・positive_rate・sample_count・best/worst
-      windowの開始終了)をClose/Open別とPortfolio/Benchmark別に追加し、同一のdropna済みseriesから一括算出してAPIへ公開する。schema追加migrationを作成する。算出規約は設計書§6/§9の定義に従うことを実コード上で確認する
+    description: 対象三群(outputs/analysis配下の完了済みcmd成果物、cdp_profile_cmd695系の旧世代、grid_search直下の旧CSVバックアップ)を名前・容量・更新時刻で一覧化し、保全対象(cmd_3854
+      golden baseline、cmd_3859 shadow artifacts、進行中cmdの参照物)を固定した上でKEEPとDELETEの二分リストをdocs/research/cmd_3871_stale_artifact_inventory.mdとして作成し、ls・test
+      -sの現物確認とDELETE合計容量の数値記録を行う
     checks:
-    - check: backend実装。設計書§8 Phase1記載の実装対象(RollingReturnsSummaryモデル・rolling_returnsのgenerator・calculator・API)へ、設計書§6/§7で定義した分布統計フィールド(median・p10・positive_rate・sample_count・best/worst
-        windowの開始終了)をClose/Open別とPortfolio/Benchmark別に追加し、同一のdropna済みseriesから一括算出してAPIへ公開する。schema追加migrationを作成する。算出規約は設計書§6/§9の定義に従うことを実コード上で確認する
+    - check: 対象三群(outputs/analysis配下の完了済みcmd成果物、cdp_profile_cmd695系の旧世代、grid_search直下の旧CSVバックアップ)を名前・容量・更新時刻で一覧化し、保全対象(cmd_3854
+        golden baseline、cmd_3859 shadow artifacts、進行中cmdの参照物)を固定した上でKEEPとDELETEの二分リストをdocs/research/cmd_3871_stale_artifact_inventory.mdとして作成し、ls・test
+        -sの現物確認とDELETE合計容量の数値記録を行う
   - id: AC2
-    description: frontend実装。承認ワイヤーフレーム(docs/design/rolling-returns-wireframe_20260721.html・設計書§7.5)に一致させる。既存Summary
-      Statistics(Average/High/Low)は不変のまま、同型のDistribution表(Median/P10/Positive・全ローリング期間・desktop横並びとmobile縦分割)を新設し、Rolling
-      CAGR Chart直下にチャート期間タブと単一コントロールで連動する詳細(Win Rate vs SPYは各窓Portfolio>=SPYのpaired割合・Sample
-      Count・Best/Worst Windowは期間とPortfolio/SPY同一窓リターン併記で局面文章説明なし・全幅グループ棒Histogram)を常時表示する。画面テキストは英語のみ、P25とNegative
-      Rateは非表示。期間選択でchartと詳細が同時更新することを実装する
+    description: DELETE候補の全件について進行中cmd・runbook・設計書からの参照がないことをrg検索の件数で確認し、承認済みリストのみを削除実行して、削除前後のdf実測差分・削除件数・保全対象の無傷を数値と現物で確認する
     checks:
-    - check: frontend実装。承認ワイヤーフレーム(docs/design/rolling-returns-wireframe_20260721.html・設計書§7.5)に一致させる。既存Summary
-        Statistics(Average/High/Low)は不変のまま、同型のDistribution表(Median/P10/Positive・全ローリング期間・desktop横並びとmobile縦分割)を新設し、Rolling
-        CAGR Chart直下にチャート期間タブと単一コントロールで連動する詳細(Win Rate vs SPYは各窓Portfolio>=SPYのpaired割合・Sample
-        Count・Best/Worst Windowは期間とPortfolio/SPY同一窓リターン併記で局面文章説明なし・全幅グループ棒Histogram)を常時表示する。画面テキストは英語のみ、P25とNegative
-        Rateは非表示。期間選択でchartと詳細が同時更新することを実装する
+    - check: DELETE候補の全件について進行中cmd・runbook・設計書からの参照がないことをrg検索の件数で確認し、承認済みリストのみを削除実行して、削除前後のdf実測差分・削除件数・保全対象の無傷を数値と現物で確認する
   - id: AC3
-    description: regressionとcontract testを追加する。固定fixtureで既存Average/High/Lowが変更前後で完全一致すること、新分布統計が独立計算と一致すること、Sample
-      Countと正負rateの契約(設計書§9)を満たすことを検証する新規regression testを追加する。実装専用testはPASS確認後に同一タスク内で削除し、守る不変量を宣言したcontract
-      testのみtest_necessity付きで残す
+    description: 回収容量の実測値を報告に数値で記録し、結論をcontext/infrastructure.mdへ1行還流する
     checks:
-    - check: regressionとcontract testを追加する。固定fixtureで既存Average/High/Lowが変更前後で完全一致すること、新分布統計が独立計算と一致すること、Sample
-        Countと正負rateの契約(設計書§9)を満たすことを検証する新規regression testを追加する。実装専用testはPASS確認後に同一タスク内で削除し、守る不変量を宣言したcontract
-        testのみtest_necessity付きで残す
-  report_path: queue/reports/hayate_report.yaml
-  report_filename: hayate_report.yaml
-  commit_contract:
-    required: true
-    reason: implementation_path_present
-    task_type: full
-    planned_paths:
-    - /mnt/c/tools/multi-agent-shogun/scripts/lib/retro_pane_prompt.sh
-    repo_root: /mnt/c/tools/multi-agent-shogun
-  report_id: rpt-ea5e1127-cce1-4179-883c-2739c8ab4a33
-  report_identity_version: 2
+    - check: 回収容量の実測値を報告に数値で記録し、結論をcontext/infrastructure.mdへ1行還流する
   related_lessons:
-  - id: 'L118'
-    summary: 'IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)'
-    detail: 'IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)'
-  - id: 'L117'
-    summary: 'saizo(cmd_277,subtask_277_nukimi)'
-    detail: 'saizo(cmd_277,subtask_277_nukimi)'
-  - id: 'L116'
-    summary: 'PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし。single_pf(0.111)≈single_pf+crossPF(0.114)≈MTL(0.114)。C3-H(佐助53.3%)と合わせ、月次粒度ではPF間情報は予測情報源にならない。Transfer'
-    detail: 'PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし。single_pf(0.111)≈single_pf+crossPF(0.114)≈MTL(0.114)。C3-H(佐助53.3%)と合わせ、月次粒度ではPF間情報は予測情報源にならない。Transfer'
-  - id: 'L115'
-    summary: 'IF Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換時 THEN Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換'
-    detail: 'IF Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換時 THEN Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換'
-  - id: 'L114'
-    summary: 'IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最大57.1%)時'
-    detail: 'IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最大57.1%)時'
-  - id: 'L113'
-    summary: 'IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawdown(月内DD>10%)でprec=88.9%だがbase_rate=55.7%(3xレバETFの通常変動)。Bottom-20%ile/Consecutiveは稀少事象すぎてシグナル0。ターゲット定義を厳しくすると正例が減りモデルが学習'
-    detail: 'IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawdown(月内DD>10%)でprec=88.9%だがbase_rate=55.7%(3xレバETFの通常変動)。Bottom-20%ile/Consecutiveは稀少事象すぎてシグナル0。ターゲット定義を厳しくすると正例が減りモデルが学習'
-  - id: 'L111'
-    summary: 'IF 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達時'
-    detail: 'IF 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達時'
-  - id: 'L110'
-    summary: 'IF 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%時 THEN 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%'
-    detail: 'IF 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%時 THEN 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%'
-  - id: 'L108'
-    summary: 'エッジ残存率の急落(MoM大幅低下/0%クロス)は将来リターン低下の予測器としてprecision 18-34%、recall 4-20%。イベント後の平均超過リターンは正(平均回帰傾向)。崩壊検知より一時的ノイズフィルタとしての活用が適切。単独指標での予測精度限定的だがcmd_270/271の傾き指標との複合判定で改善余地あり'
-    detail: 'エッジ残存率の急落(MoM大幅低下/0%クロス)は将来リターン低下の予測器としてprecision 18-34%、recall 4-20%。イベント後の平均超過リターンは正(平均回帰傾向)。崩壊検知より一時的ノイズフィルタとしての活用が適切。単独指標での予測精度限定的だがcmd_270/271の傾き指標との複合判定で改善余地あり'
-  - id: 'L098'
-    summary: 'IF SVMF fallbackパスはprice_data_cache全期間データに対してtarget_date未フィルタリング時 THEN'
-    detail: 'IF SVMF fallbackパスはprice_data_cache全期間データに対してtarget_date未フィルタリング時 THEN'
+  - id: L118
+    summary: IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)
+    detail: IF hayate(cmd_282,subtask_282_integ)時 THEN hayate(cmd_282,subtask_282_integ)
+  - id: L117
+    summary: saizo(cmd_277,subtask_277_nukimi)
+    detail: saizo(cmd_277,subtask_277_nukimi)
+  - id: L116
+    summary: PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし。single_pf(0.111)≈single_pf+crossPF(0.114)≈MTL(0.114)。C3-H(佐助53.3%)と合わせ、月次粒度ではPF間情報は予測情報源にならない。Transfer
+    detail: PF間のローリング相関/リード・ラグ/同時崩壊カウントを20特徴量追加しても改善なし。single_pf(0.111)≈single_pf+crossPF(0.114)≈MTL(0.114)。C3-H(佐助53.3%)と合わせ、月次粒度ではPF間情報は予測情報源にならない。Transfer
+  - id: L115
+    summary: IF Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換時 THEN Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換
+    detail: IF Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換時 THEN Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換
+  - id: L114
+    summary: IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最大57.1%)時
+    detail: IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最大57.1%)時
+  - id: L113
+    summary: IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawdown(月内DD>10%)でprec=88.9%だがbase_rate=55.7%(3xレバETFの通常変動)。Bottom-20%ile/Consecutiveは稀少事象すぎてシグナル0。ターゲット定義を厳しくすると正例が減りモデルが学習
+    detail: IF C2-Bの22特徴量で予測対象を4種に変更時 THEN C2-Bの22特徴量で予測対象を4種に変更 C2-Bの22特徴量で予測対象を4種に変更。Drawdown(月内DD>10%)でprec=88.9%だがbase_rate=55.7%(3xレバETFの通常変動)。Bottom-20%ile/Consecutiveは稀少事象すぎてシグナル0。ターゲット定義を厳しくすると正例が減りモデルが学習
+  - id: L111
+    summary: IF 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達時
+    detail: IF 7アプローチ(AND/MAJORITY/CUSUM/Sharpe/VolWeighted/Idiosyncratic/LogisticCV)全て80%未達時
+  - id: L110
+    summary: IF 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%時 THEN 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%
+    detail: IF 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%時 THEN 22特徴量(週次αスロープ/歪度/尖度/DD/ボラクラスタ/KS乖離)でDM3高確信度のみ65.5%
+  - id: L108
+    summary: エッジ残存率の急落(MoM大幅低下/0%クロス)は将来リターン低下の予測器としてprecision 18-34%、recall 4-20%。イベント後の平均超過リターンは正(平均回帰傾向)。崩壊検知より一時的ノイズフィルタとしての活用が適切。単独指標での予測精度限定的だがcmd_270/271の傾き指標との複合判定で改善余地あり
+    detail: エッジ残存率の急落(MoM大幅低下/0%クロス)は将来リターン低下の予測器としてprecision 18-34%、recall 4-20%。イベント後の平均超過リターンは正(平均回帰傾向)。崩壊検知より一時的ノイズフィルタとしての活用が適切。単独指標での予測精度限定的だがcmd_270/271の傾き指標との複合判定で改善余地あり
+  - id: L098
+    summary: IF SVMF fallbackパスはprice_data_cache全期間データに対してtarget_date未フィルタリング時 THEN
+    detail: IF SVMF fallbackパスはprice_data_cache全期間データに対してtarget_date未フィルタリング時 THEN
+  planned_paths:
+  - docs/research/cmd_3871_stale_artifact_inventory.md
