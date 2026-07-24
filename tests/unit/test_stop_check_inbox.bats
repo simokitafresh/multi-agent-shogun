@@ -496,6 +496,7 @@ commands:
     status: delegated
 YAML
     # idle忍者1名以上のfixture — L596 grep '|idle|' karo_snapshot.txtが0を返すとdelegated alertがスキップされるため必須
+    # fix: cmd_karo_ci_fix_sci011b_snapshot_20260724 (CI run 30067518341)
     cat > "$TEST_PROJECT/queue/karo_snapshot.txt" <<'SNAPSHOT'
 ninja|saizo|cmd_test|idle|infra|CTX:0%|M:So|SRC:2026-07-24T00:00:00|TASK:idle|RUNTIME:idle
 SNAPSHOT
