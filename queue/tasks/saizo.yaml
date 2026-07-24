@@ -29,13 +29,13 @@ task:
   - AC2
   - AC3
   - AC4
-  parent_cmd: cmd_karo_recon2_ga268_warmup_singleflight_audit_202607160147
+  parent_cmd: 
   project: infra
   purpose: GA-268全unitのmemory warmup single-flight不成立を独立再現し、実装競合かfixture競合か根因判定する
   quality_gate:
     action_conversion: 未解消条件はBLOCKへ変換する
     fp_measurement: hook_failuresと反復分布でfalse_positive件数を計測する
-  status: failed
+  status: idle
   stop_for: []
   task_id: cmd_karo_recon2_ga268_warmup_singleflight_audit_202607160147_normal
   task_type: recon2
@@ -129,3 +129,16 @@ task:
   parent_contract_fingerprint: ''
   deployed_at: "2026-07-16T01:47:54"
   acknowledged_at: "2026-07-16T01:48:12"
+
+  session_state:
+    attempt: 1
+    last_block_reason: 'status: \"failed\" cannot carry terminal verdict PASS (set status to completed after revisions)'
+    tried_approaches:
+    - 'status: \"failed\" cannot carry terminal verdict PASS (set status to completed after revisions)'
+    diagnose_reason: 'commit_contractのplanned_pathsにscripts/lib/review_approval.shしか含めなかったが、batsファイルも新規作成してfiles_modifiedに含めた。commit_contractを更新せずに報告したためscope外判定。operational_simulationはLG055(integration cmd)対象かを確認せず省略した。'
+    approach_summary: 'review_report_fingerprintの同一性境界を正規化ハッシュ方式で再設計。content_hash算出をsha256(全文)→非内容フィールド除外済みのPython正規化ハッシュに変更(除外: commit_hash/cross_repo_commits/commit/git_commit/status/timestamp/submitted_at/completed_at/done_at/updated_at/acknowledged_at/result.commit_hash)。verdict・binary_checks・ac_evidence_mapping等の内容フィールドは除外リストに含めない。commit_identityはfail-closed検証のみに使用し指紋値から除外。境界テスト6件をbatsで追加(3件: 非内容変更でfp安定、2件: 内容変更でfp変化、1件: commit_hash修正後LGTM+ACCEPT維持)。全6件PASS。全量unit: 2353テスト中1FAIL(pre-existing: test_cmd_publish_preflight.batsがL37でfail、私の変更前から同一)、私の変更による新規FAILはゼロ。commit: 3718e72455fb1878a71cd04a276c9a9a62afb0fa'
+    prior_attempts:
+    - attempt: 1
+      block_reason: 'status: \"failed\" cannot carry terminal verdict PASS (set status to completed after revisions)'
+      diagnose_reason: 'commit_contractのplanned_pathsにscripts/lib/review_approval.shしか含めなかったが、batsファイルも新規作成してfiles_modifiedに含めた。commit_contractを更新せずに報告したためscope外判定。operational_simulationはLG055(integration cmd)対象かを確認せず省略した。'
+      approach_summary: 'review_report_fingerprintの同一性境界を正規化ハッシュ方式で再設計。content_hash算出をsha256(全文)→非内容フィールド除外済みのPython正規化ハッシュに変更(除外: commit_hash/cross_repo_commits/commit/git_commit/status/timestamp/submitted_at/completed_at/done_at/updated_at/acknowledged_at/result.commit_hash)。verdict・binary_checks・ac_evidence_mapping等の内容フィールドは除外リストに含めない。commit_identityはfail-closed検証のみに使用し指紋値から除外。境界テスト6件をbatsで追加(3件: 非内容変更でfp安定、2件: 内容変更でfp変化、1件: commit_hash修正後LGTM+ACCEPT維持)。全6件PASS。全量unit: 2353テスト中1FAIL(pre-existing: test_cmd_publish_preflight.batsがL37でfail、私の変更前から同一)、私の変更による新規FAILはゼロ。commit: 3718e72455fb1878a71cd04a276c9a9a62afb0fa'
