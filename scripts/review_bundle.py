@@ -126,7 +126,8 @@ def generate(args):
         if isinstance(hook_failures, dict) and int(hook_failures.get("count") or 0) != 0:
             raise ValueError("APPROVE forbidden while hook failures remain")
         checks = report_data.get("binary_checks")
-        results = [str(item.get("result") or "").lower() for group in (checks or {}).values() if isinstance(group, list) for item in group if isinstance(item, dict)] if isinstance(checks, dict) else []
+        # yaml.safe_load coerces bare yes/no to booleans; treat them as equivalent
+        results = [("yes" if item.get("result") is True else "no" if item.get("result") is False else str(item.get("result") or "").lower()) for group in (checks or {}).values() if isinstance(group, list) for item in group if isinstance(item, dict)] if isinstance(checks, dict) else []
         if not results or any(result != "yes" for result in results):
             raise ValueError("APPROVE requires all binary checks resolved yes")
     review = {"cmd_id": args.cmd, "verdict": verdict, "reviewer": "gunshi", "reviewed_at": datetime.now().astimezone().isoformat(timespec="seconds"), "report": str(report_ref.relative_to(root)), "report_fingerprint": hashlib.sha256(report.read_bytes()).hexdigest(), "cmd_spec_source": str(source.relative_to(root)), "cmd_spec_summary": summary(command), "dashboard_line": dashboard_line(report_data, args.cmd)}

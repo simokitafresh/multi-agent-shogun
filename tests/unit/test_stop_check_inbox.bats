@@ -495,6 +495,10 @@ commands:
   cmd_41:
     status: delegated
 YAML
+    # idle忍者1名以上のfixture — L596 grep '|idle|' karo_snapshot.txtが0を返すとdelegated alertがスキップされるため必須
+    cat > "$TEST_PROJECT/queue/karo_snapshot.txt" <<'SNAPSHOT'
+ninja|saizo|cmd_test|idle|infra|CTX:0%|M:So|SRC:2026-07-24T00:00:00|TASK:idle|RUNTIME:idle
+SNAPSHOT
 
     PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
 set -euo pipefail
