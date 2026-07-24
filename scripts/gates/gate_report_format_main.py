@@ -58,9 +58,10 @@ def commit_owned_paths(task):
 
     for value in values:
         append(value)
-    # Existing pre-migration tasks had no typed scope. Preserve their contract
-    # only when target_path has not been explicitly classified as inspection.
-    if not paths and not task.get("inspection_path"):
+    # Existing pre-migration tasks had no typed scope. Preserve their contract.
+    # inspection_path is a read-only reference and does not define commit scope,
+    # so target_path must still serve as fallback when no explicit paths exist.
+    if not paths:
         append(task.get("target_path"))
     return paths
 
