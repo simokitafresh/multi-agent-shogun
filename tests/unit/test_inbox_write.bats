@@ -1259,6 +1259,43 @@ YAML
 
 }
 
+@test "report_received: report's own parent_cmd wins over task YAML's redeployed parent_cmd (race, LS078/cmd_4163)" {
+    setup_git_test_env
+    mkdir -p "$TEST_TMPDIR/scripts"
+    ln -sf "$PROJECT_ROOT/scripts/inbox_write.sh" "$TEST_TMPDIR/scripts/inbox_write.sh"
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+status: completed
+parent_cmd: cmd_test_001
+YAML
+    git -C "$TEST_TMPDIR" add queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m race-report-identity
+
+    # task入替race再現: karoが同じ忍者のtask YAMLを次cmdへ再配備した直後に、
+    # 旧cmd(cmd_test_001)向けの報告が届く。report_path/report_filenameは
+    # 旧報告を指したまま、parent_cmdフィールドだけが新cmdへ書き換わる。
+    sed -i 's/parent_cmd: cmd_test_001/parent_cmd: cmd_test_002_redeployed/' "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    grep -q "parent_cmd: 'cmd_test_001'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    ! grep -q "parent_cmd: 'cmd_test_002_redeployed'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+
+    local attempt
+    for attempt in $(seq 1 50); do
+        grep -q "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml" 2>/dev/null && break
+        sleep 0.1
+    done
+    grep -q "cmd_test_001" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+    ! grep -q "cmd_test_002_redeployed" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
+}
+
+@test "report_received: normal flow (no race) keeps attributing to task YAML's parent_cmd when report omits its own field" {
+    setup_git_test_env
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    grep -q "parent_cmd: 'cmd_test_001'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+}
+
 @test "report_received v2 persists structured identity and blocks mismatch" {
     setup_git_test_env
     cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
