@@ -580,13 +580,31 @@ else
     _pending_actions=()
 
     # 1. 完了忍者の報告パイプライン(status=done → レビュー/GATE処理が必要)
+    # CI RED中はci_readiness判定キャッシュを参照しGATE催促を抑制(cmd_4158)
+    _ci_notify_cache="${CI_READINESS_CACHE:-/tmp/last_ci_notify_state}"
+    _ci_is_red=false
+    if [[ -f "$_ci_notify_cache" ]]; then
+      _ci_cache_val="$(cat "$_ci_notify_cache" 2>/dev/null || true)"
+      if [[ "$_ci_cache_val" == failure:* ]]; then
+        _ci_is_red=true
+      fi
+    fi
+    _gfl="$SCRIPT_DIR/logs/gate_fire_log.yaml"
     for _tf in "$SCRIPT_DIR"/queue/tasks/*.yaml; do
       [[ -f "$_tf" ]] || continue
       _ninja_name="$(basename "$_tf" .yaml)"
       _task_status="$(awk '/^[[:space:]]*status:/{print $2; exit}' "$_tf" 2>/dev/null || true)"
       _task_pcmd="$(awk '/^  parent_cmd:/{print $2; exit}' "$_tf" 2>/dev/null || true)"
       if [[ "$_task_status" == "done" ]]; then
-        _pending_actions+=("${_ninja_name}(${_task_pcmd}) status=done → 報告レビュー/GATE処理を進めよ")
+        if [[ "$_ci_is_red" == "true" ]]; then
+          _pending_actions+=("${_ninja_name}(${_task_pcmd}) status=done → CI RED修正待ち(GATE催促抑制中)")
+          # gate_fire_logへ切替発報(detector_fp_rateで計測可能)
+          _gfl_ts="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+          mkdir -p "$SCRIPT_DIR/logs" 2>/dev/null || true
+          printf '%s\n' "- ts: \"${_gfl_ts}\", file: \"${_ninja_name}(${_task_pcmd})\", gate: \"stop_check_inbox\", result: SUPPRESSED, reason: \"ci_red_gate_prompt_suppressed\"" >> "$_gfl" 2>/dev/null || true
+        else
+          _pending_actions+=("${_ninja_name}(${_task_pcmd}) status=done → 報告レビュー/GATE処理を進めよ")
+        fi
       fi
     done
 

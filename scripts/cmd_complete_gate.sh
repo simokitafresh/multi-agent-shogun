@@ -155,13 +155,47 @@ PY
         fi
     elif [ "$report_kind" = "invalid-no-code-evidence" ]; then
         echo "BLOCK: no-code-change evidence invalid"
-    elif [ "$report_kind" != "commit" ] \
-        || ! git -C "$repo_dir" cat-file -e "${report_commit}^{commit}" 2>/dev/null; then
+    elif [ "$report_kind" != "commit" ]; then
         echo "BLOCK: report commit invalid or unresolvable${report_commit:+ ($report_commit)}"
-    elif git -C "$repo_dir" merge-base --is-ancestor "$report_commit" "$expected_head" 2>/dev/null; then
-        echo "PUSHED: report commit $report_commit contained by $expected_head"
+    elif git -C "$repo_dir" cat-file -e "${report_commit}^{commit}" 2>/dev/null; then
+        if git -C "$repo_dir" merge-base --is-ancestor "$report_commit" "$expected_head" 2>/dev/null; then
+            echo "PUSHED: report commit $report_commit contained by $expected_head"
+        else
+            echo "UNPUSHED: report commit $report_commit not contained by $expected_head"
+        fi
     else
-        echo "UNPUSHED: report commit $report_commit not contained by $expected_head"
+        # Primary repo cannot resolve commit; try cross_repo_commits for an alternate repo.
+        local cross_repo_dir cross_repo_head
+        cross_repo_dir=$(REPORT_FILE="$report_file" COMMIT="$report_commit" python3 - <<'PY'
+import os, yaml
+try:
+    with open(os.environ["REPORT_FILE"], encoding="utf-8") as f:
+        report = yaml.safe_load(f) or {}
+except Exception:
+    raise SystemExit
+target = os.environ.get("COMMIT", "").lower()
+for entry in report.get("cross_repo_commits") or []:
+    if not isinstance(entry, dict):
+        continue
+    commit = str(entry.get("commit_hash") or "").strip().lower()
+    if commit == target:
+        print(str(entry.get("repo") or ""))
+        raise SystemExit
+PY
+)
+        if [ -n "$cross_repo_dir" ] \
+            && git -C "$cross_repo_dir" cat-file -e "${report_commit}^{commit}" 2>/dev/null; then
+            cross_repo_head=$(resolve_ci_expected_head "$cross_repo_dir")
+            if [ -z "$cross_repo_head" ]; then
+                echo "BLOCK: cross-repo remote main/master boundary missing ($cross_repo_dir)"
+            elif git -C "$cross_repo_dir" merge-base --is-ancestor "$report_commit" "$cross_repo_head" 2>/dev/null; then
+                echo "PUSHED: report commit $report_commit contained by $cross_repo_head"
+            else
+                echo "UNPUSHED: report commit $report_commit not contained by $cross_repo_head"
+            fi
+        else
+            echo "BLOCK: report commit invalid or unresolvable${report_commit:+ ($report_commit)}"
+        fi
     fi
 }
 
@@ -801,21 +835,56 @@ notify_karo_lesson_registration_reminder() {
     fi
 }
 
+# Return 0 if there is already an unread type=gate_block message for cmd_id in karo's inbox.
+# Used by notify_karo_gate_block() to suppress duplicate BLOCK notifications regardless of reason text.
+karo_gate_block_unread_exists() {
+    local cmd_id="$1"
+    local inbox_file="$SCRIPT_DIR/queue/inbox/karo.yaml"
+    [ -f "$inbox_file" ] || return 1
+
+    python3 - "$inbox_file" "$cmd_id" <<'PY'
+import sys
+import yaml
+
+path, cmd_id = sys.argv[1], sys.argv[2]
+
+try:
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+except Exception:
+    sys.exit(1)
+
+for msg in data.get("messages") or []:
+    if not isinstance(msg, dict):
+        continue
+    if msg.get("type") != "gate_block":
+        continue
+    if msg.get("read"):
+        continue
+    if cmd_id in str(msg.get("content") or ""):
+        sys.exit(0)
+sys.exit(1)
+PY
+}
+
 notify_karo_gate_block() {
     local cmd_id="$1"
     local block_reason="$2"
     local missing_list="${3:-}"
-    local dedup_key="${cmd_id} gate_result: BLOCK reason=${block_reason}"
     local message
     if declare -F format_gate_block_message >/dev/null 2>&1; then
         message=$(format_gate_block_message "$cmd_id" "$block_reason" "$missing_list")
     else
         # Extracted legacy fixture helpers may source this function alone.
+        local dedup_key="${cmd_id} gate_result: BLOCK reason=${block_reason}"
         message="${dedup_key} missing=[${missing_list}]。再配備提案: BLOCK理由を確認し、該当忍者へ修正再配備せよ。"
     fi
 
-    if grep -Fq "$dedup_key" "$SCRIPT_DIR/queue/inbox/karo.yaml" 2>/dev/null; then
+    if karo_gate_block_unread_exists "$cmd_id"; then
         echo "  karo gate_block notify: SKIP (dedup — already in inbox)"
+        if declare -F append_line_locked >/dev/null 2>&1 && [ -n "${LOG_DIR:-}" ]; then
+            append_line_locked "$LOG_DIR/gate_fire_log.yaml" \
+                "- ts: \"$(date '+%Y-%m-%dT%H:%M:%S')\", file: \"${cmd_id}\", gate: \"gate_block_dedup\", result: SKIP, checks: \"dedup_suppressed=1 reason=${block_reason} detector_fp_rate=tracked\""
+        fi
     elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" gate_block cmd_complete_gate 2>/dev/null; then
         echo "  karo gate_block notify: OK"
     else

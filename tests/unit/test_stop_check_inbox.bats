@@ -860,3 +860,57 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
     [[ "$output" == *'"decision":"block"'* ]]
     [[ "$output" == *"洗脳#3"* ]]
 }
+
+@test "T-SCI-CI-RED-001: karo CI RED中はGATE催促の代わりにCI RED修正待ちを表示" {
+    export TMUX_AGENT_ID="karo"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_9999
+YAML
+    printf 'commands:\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    mkdir -p "$TEST_PROJECT/logs"
+
+    # CI RED状態をキャッシュファイルで注入
+    _ci_cache="$TEST_ROOT/ci_state"
+    printf 'failure:30000000000\n' > "$_ci_cache"
+
+    CI_READINESS_CACHE="$_ci_cache" PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="karo"
+printf "%s" "$PAYLOAD" | CI_READINESS_CACHE="$CI_READINESS_CACHE" "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CI RED修正待ち"* ]]
+    [[ "$output" != *"報告レビュー/GATE処理を進めよ"* ]]
+    # gate_fire_logにSUPPRESSED記録あり
+    grep -q 'result: SUPPRESSED' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+    grep -q 'ci_red_gate_prompt_suppressed' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+}
+
+@test "T-SCI-CI-GREEN-001: karo CI GREEN時は従来のGATE催促を表示" {
+    export TMUX_AGENT_ID="karo"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"
+    mkdir -p "$TEST_PROJECT/queue/tasks"
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_9999
+YAML
+    printf 'commands:\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+
+    # CI GREEN状態をキャッシュファイルで注入
+    _ci_cache="$TEST_ROOT/ci_state"
+    printf 'success:30000000001\n' > "$_ci_cache"
+
+    CI_READINESS_CACHE="$_ci_cache" PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="karo"
+printf "%s" "$PAYLOAD" | CI_READINESS_CACHE="$CI_READINESS_CACHE" "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"報告レビュー/GATE処理を進めよ"* ]]
+    [[ "$output" != *"CI RED修正待ち"* ]]
+}

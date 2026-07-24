@@ -3882,3 +3882,69 @@ run_ci_push_state() {
     run_ci_push_state "$repo" "$report"
     [ "$status" -eq 0 ]; [[ "$output" == "BLOCK: no-code-change tree unresolvable"* ]]
 }
+
+@test "CI push detection resolves cross-repo commit when primary repo lacks it" {
+    # Scenario: task.project=dm-signal so task_repo_dir=dm-signal-repo, but ninja
+    # committed to shogun-repo. cross_repo_commits lists the shogun entry.
+    local dm_repo="$BATS_TEST_TMPDIR/dm-signal-repo"
+    local shogun_repo="$BATS_TEST_TMPDIR/shogun-repo"
+    local report="$BATS_TEST_TMPDIR/cross-repo-pushed.yaml"
+
+    # Set up shogun-like repo with a pushed commit
+    make_ci_push_repo "$shogun_repo"
+    echo infra-change >> "$shogun_repo/state"
+    git -C "$shogun_repo" commit -qam "infra fix"
+    local shogun_commit
+    shogun_commit=$(git -C "$shogun_repo" rev-parse HEAD)
+    # Mark shogun commit as "pushed" (in origin/main)
+    git -C "$shogun_repo" update-ref refs/remotes/origin/main "$shogun_commit"
+
+    # Set up dm-signal-like repo (does NOT contain shogun_commit)
+    make_ci_push_repo "$dm_repo"
+
+    # Report: primary commit_hash is from shogun; cross_repo_commits has shogun entry
+    printf 'commit_hash: %s\ncross_repo_commits:\n- repo: %s\n  commit_hash: %s\n  paths:\n  - scripts/cmd_complete_gate.sh\n' \
+        "$shogun_commit" "$shogun_repo" "$shogun_commit" > "$report"
+
+    # dm_repo is the task_repo_dir (can't resolve shogun commit)
+    run_ci_push_state "$dm_repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == PUSHED:* ]]
+}
+
+@test "CI push detection resolves cross-repo commit as unpushed when not in cross-repo origin" {
+    local dm_repo="$BATS_TEST_TMPDIR/dm-signal-unpushed"
+    local shogun_repo="$BATS_TEST_TMPDIR/shogun-unpushed"
+    local report="$BATS_TEST_TMPDIR/cross-repo-unpushed.yaml"
+
+    # Set up shogun-like repo with a local-only commit (not pushed to origin)
+    make_ci_push_repo "$shogun_repo"
+    echo local-only >> "$shogun_repo/state"
+    git -C "$shogun_repo" commit -qam "local infra fix"
+    local shogun_commit
+    shogun_commit=$(git -C "$shogun_repo" rev-parse HEAD)
+    # origin/main stays at the earlier commit (shogun_commit not pushed)
+
+    make_ci_push_repo "$dm_repo"
+
+    printf 'commit_hash: %s\ncross_repo_commits:\n- repo: %s\n  commit_hash: %s\n  paths:\n  - scripts/cmd_complete_gate.sh\n' \
+        "$shogun_commit" "$shogun_repo" "$shogun_commit" > "$report"
+
+    run_ci_push_state "$dm_repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == UNPUSHED:* ]]
+}
+
+@test "CI push detection still blocks when commit unresolvable and not in cross_repo_commits" {
+    local dm_repo="$BATS_TEST_TMPDIR/dm-signal-still-block"
+    local report="$BATS_TEST_TMPDIR/cross-repo-block.yaml"
+
+    make_ci_push_repo "$dm_repo"
+
+    # commit_hash not in dm_repo and cross_repo_commits is empty
+    printf 'commit_hash: %040d\ncross_repo_commits: []\n' 9 > "$report"
+
+    run_ci_push_state "$dm_repo" "$report"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: report commit"* ]]
+}
