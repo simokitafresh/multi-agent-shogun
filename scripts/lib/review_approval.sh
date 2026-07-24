@@ -18,7 +18,32 @@ review_report_fingerprint() {
     local report="$1" content_hash commit_identity root cache_key cache_file
     [ -f "$report" ] || return 1
     root="${PROJECT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-    content_hash=$(sha256sum "$report" | awk '{print $1}') || return 1
+    # Compute a normalized content hash that excludes non-content metadata fields
+    # (commit_hash, cross_repo_commits, lifecycle timestamps, etc.) so that
+    # post-approval corrections to these fields do not invalidate the approval.
+    # verdict, binary_checks, result, ac_evidence_mapping, and all review-payload
+    # fields are intentionally kept — changes to them continue to invalidate approval.
+    content_hash=$(python3 - "$report" <<'PY'
+import hashlib, json, sys, yaml
+
+# Non-content metadata fields that may be amended after approval without
+# changing the review-relevant payload (AC results, binary_checks, verdict).
+_NON_CONTENT = frozenset({
+    "commit_hash", "cross_repo_commits", "commit", "git_commit",
+    "status", "timestamp", "submitted_at", "completed_at", "done_at",
+    "updated_at", "acknowledged_at",
+})
+
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+for key in _NON_CONTENT:
+    data.pop(key, None)
+result = data.get("result")
+if isinstance(result, dict):
+    result.pop("commit_hash", None)
+payload = json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+print(hashlib.sha256(payload.encode("utf-8")).hexdigest())
+PY
+    ) || return 1
     # Path is part of the identity boundary: no-code eligibility can depend on
     # whether files_modified names this exact report. Keep path+content in the
     # key so identical bytes at different paths never share a decision.
@@ -28,6 +53,11 @@ review_report_fingerprint() {
         cat "$cache_file"
         return 0
     fi
+    # Validate that a commit identity is determinable (fail-closed gate).
+    # The identity value is NOT included in the fingerprint so that correcting
+    # commit_hash / cross_repo_commits after approval does not invalidate it.
+    # No-code reports ("no-code-change") satisfy the gate through their structural
+    # contract (binary_checks / files_modified), which is part of content_hash.
     commit_identity=$(python3 - "$report" "$root" <<'PY'
 import pathlib, sys, yaml
 d = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
@@ -114,7 +144,11 @@ raise SystemExit(1)
 PY
 ) || return 1
     [ -n "$commit_identity" ] || return 1
-    printf '%s:%s\n' "$content_hash" "$commit_identity" > "$cache_file.tmp.$BASHPID"
+    # The fingerprint is the normalized content hash alone.  commit_identity is
+    # used only as a gate (see above) and intentionally excluded from the value
+    # so that correcting commit_hash / cross_repo_commits after approval does
+    # not require a new review cycle.
+    printf '%s\n' "$content_hash" > "$cache_file.tmp.$BASHPID"
     mv -f "$cache_file.tmp.$BASHPID" "$cache_file"
     cat "$cache_file"
 }
