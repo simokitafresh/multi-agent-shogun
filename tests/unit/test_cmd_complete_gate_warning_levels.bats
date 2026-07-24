@@ -20,6 +20,7 @@ setup_file() {
         sed -n '/^notify_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^send_clear_notifications_once()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^karo_gate_block_unread_exists()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_gate_block()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_cmd_fail()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^log_skill_execution_pass()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -75,6 +76,15 @@ if [ "$1" = "shogun" ]; then
     type=${3//\'/\'\'}
     printf -- "- content: '%s'\n  from: '%s'\n  id: 'msg_test'\n  read: false\n  timestamp: '2099-01-01T00:00:00'\n  type: '%s'\n" "$content" "$from" "$type"
   } >> "${SCRIPT_DIR}/queue/inbox/shogun.yaml"
+fi
+if [ "$1" = "karo" ] && [ "$3" = "gate_block" ]; then
+  {
+    [ -s "${SCRIPT_DIR}/queue/inbox/karo.yaml" ] || printf 'messages:\n'
+    content=${2//\'/\'\'}
+    from=${4//\'/\'\'}
+    type=${3//\'/\'\'}
+    printf -- "- content: '%s'\n  from: '%s'\n  id: 'msg_test_%s'\n  read: false\n  timestamp: '2099-01-01T00:00:00'\n  type: '%s'\n" "$content" "$from" "$$" "$type"
+  } >> "${SCRIPT_DIR}/queue/inbox/karo.yaml"
 fi
 EOF
     chmod +x "$TEST_PROJECT/scripts/inbox_write.sh"
@@ -640,6 +650,54 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"karo gate_block notify: OK"* ]]
     grep -q "^karo|$TEST_CMD_ID gate_result: BLOCK reason=missing_gates:review_gate missing=\\[review_gate\\]。再配備提案: BLOCK理由を確認し、該当忍者へ修正再配備せよ。|gate_block|cmd_complete_gate$" "$INBOX_WRITE_LOG"
+}
+
+@test "notify_karo_gate_block suppresses same cmd_id even when reason differs" {
+    export LOG_DIR="$TEST_PROJECT/logs"
+    append_line_locked() {
+        printf '%s\n' "$2" >> "$1"
+    }
+
+    # 1回目: 送信OK
+    run notify_karo_gate_block "$TEST_CMD_ID" "reason_one:hash_abc" ""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo gate_block notify: OK"* ]]
+    [ "$(grep -c '^karo|' "$INBOX_WRITE_LOG")" -eq 1 ]
+
+    # 2回目: reason違い連続発火 → 未読存在のためSKIP
+    run notify_karo_gate_block "$TEST_CMD_ID" "reason_two:hash_def" ""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo gate_block notify: SKIP (dedup — already in inbox)"* ]]
+    # INBOX_WRITE_LOG には1件のみ（2件目は送信されない）
+    [ "$(grep -c '^karo|' "$INBOX_WRITE_LOG")" -eq 1 ]
+    grep -q 'gate: "gate_block_dedup", result: SKIP' "$LOG_DIR/gate_fire_log.yaml"
+    grep -q 'detector_fp_rate=tracked' "$LOG_DIR/gate_fire_log.yaml"
+}
+
+@test "notify_karo_gate_block sends again after previous gate_block is marked read" {
+    # 1回目: 送信OK
+    run notify_karo_gate_block "$TEST_CMD_ID" "reason_one" ""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo gate_block notify: OK"* ]]
+
+    # 家老が既読処理済みをシミュレート
+    sed -i 's/read: false/read: true/' "$TEST_PROJECT/queue/inbox/karo.yaml"
+
+    # 2回目: 既読済みのため新規BLOCKは通知される
+    run notify_karo_gate_block "$TEST_CMD_ID" "reason_two" ""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo gate_block notify: OK"* ]]
+    [ "$(grep -c '^karo|' "$INBOX_WRITE_LOG")" -eq 2 ]
+}
+
+@test "notify_karo_gate_block does not dedup a different cmd_id with a shared prefix" {
+    printf "messages:\n- content: '%s gate_result: BLOCK reason=existing'\n  read: false\n  type: gate_block\n" \
+        "${TEST_CMD_ID}9" > "$TEST_PROJECT/queue/inbox/karo.yaml"
+
+    run notify_karo_gate_block "$TEST_CMD_ID" "new_reason" ""
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo gate_block notify: OK"* ]]
+    [ "$(grep -c '^karo|' "$INBOX_WRITE_LOG")" -eq 1 ]
 }
 
 @test "notify_karo_cmd_fail writes FAIL report and redeploy proposal to karo inbox" {

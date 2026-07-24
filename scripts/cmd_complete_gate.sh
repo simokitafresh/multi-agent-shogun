@@ -437,6 +437,7 @@ cmd_status_is_canceled() {
     [ -n "$cmd_id" ] || return 1
     python3 - "$YAML_FILE" "$cmd_id" <<'PY'
 import sys
+import re
 import yaml
 
 path, cmd_id = sys.argv[1], sys.argv[2]
@@ -844,6 +845,7 @@ karo_gate_block_unread_exists() {
 
     python3 - "$inbox_file" "$cmd_id" <<'PY'
 import sys
+import re
 import yaml
 
 path, cmd_id = sys.argv[1], sys.argv[2]
@@ -860,7 +862,8 @@ for msg in data.get("messages") or []:
         continue
     if msg.get("read"):
         continue
-    if cmd_id in str(msg.get("content") or ""):
+    content = str(msg.get("content") or "")
+    if re.match(rf"^{re.escape(cmd_id)} gate_result: BLOCK(?:\s|$)", content):
         sys.exit(0)
 sys.exit(1)
 PY
