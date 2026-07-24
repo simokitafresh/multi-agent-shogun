@@ -10,6 +10,9 @@
 | v1 | 2026-07-22 | 全21page×A-L 12軸=252セルのMECE差分マトリクスを初版化 | 殿 |
 | v2.0 | 2026-07-22 | §6実装粒度ブレークダウン(1cmd=1忍者)+§6.1コンポーネント×属性カバレッジ表を追加(A4/B1が対象表未明示で4表取りこぼした反省) | 殿裁定「粒度を小さく」 |
 | **v2.1** | **2026-07-23** | **測定方式をソースgrep一次 → 本番CDP getComputedStyle一次へ転換(grepは描画を見ないため誤検出)。役割別粒度(ヘッダ/本体数値/本体文字)導入。色/フォントcanonicalを殿裁定で明示固定。§META(前提)追加** | 殿指摘「grepは見落とすぞ」「前提がないと誤解が生まれる」 |
+| **v2.2** | **2026-07-24** | **罫線(E軸罫線サブ軸)クローズ: hotfix5本(549119c1/5fb37166/5490a887/06494565/9c0c9e23)→将軍の全数罫線probe(11ページ18表)で逸脱0確定。罫線canonical=annual式(横:thead下slate-700+行間slate-800/縦:列グループ境界slate-700/sticky列境界も同色/trレベル・テーマ連動)。測定規律3号(逸脱0宣言は全ページ×全表の全数実測のみ)を追加。UIバッチ(殿21案)=検証済20/後段2** | 殿+将軍全数実測 |
+| **v2.3** | **2026-07-24 12:30** | **N1(rolling Distribution表をSummary Statistics同型化: PF名ヘッダ色sky-700/slate-500・Roll Period rowSpan・thead空セル除去)+N3(凡例をmetrics同型: rounded-full中央揃え)=commit be95e33fで実装、将軍CDP再probe逸脱0確定(11:07)。cmd_4148 deterioration全期間backfill本番完了(00c20c54: 102PF・164行→7,998 snapshots・as-of切断・冪等UPSERT・backup+restore手順あり・SQL4項目検証PASS・GATE CLEAR 12:18)+history API 360か月対応。origin/main=HEAD=00c20c54(全push済み)。残=N2レスポンシブsticky(根因確定: overflow-x-auto lg:overflow-visibleがモバイルでスクロールコンテナ化しth sticky不発。compare-summary-table.tsx L258/L336残存を将軍現物確認、idle忍者へhotfix配備督促済み 12:30)+cmd_4145 loading殿実機確認** | 将軍実測+GATE |
+| **v2.4** | **2026-07-24 16:20** | **live deploy=32190169(13:30反映)を将軍CDP検証: N4(worst window色=符号連動getValueColorClass、hotfix 04e98d37+32190169)=PASS(全数probe 60サンプル: 負11件全てrgb(220,38,38)red-600・正49件全てrgb(15,23,42)text-foreground、逸脱0/60)。N2 v1(f0bcd321 overflow-y-clip追加)=FAIL実測確定(mobile 412×915・SW解除+ignoreCache reload後もscrollY=2000でthTop=-1841。真因=CSS仕様: overflowの片軸clipは他軸auto/scroll併用時hiddenへ計算される。computed overflowY=hidden実測。ラッパーがスクロールコンテナのままsticky不発=overflow-y-clipでは構造的に解決不能)→修正方向=モバイルtierでラッパーを非スクロールコンテナ化、家老へ差戻し(msg_140926)。殿新指摘N5(15:11)=rolling 2表の幅不一致: 実測で表外形は両方1088px・左端418px同一、差はRoll Period列幅Summary=188px/Distribution=89px(データ列も約150px/約170px)の列幅配分。N1同型化で列幅固定が漏れ。基準=Summary表で同一colgroup幅固定hotfixを家老へ配備指示(msg_151322)。残=N2再修正+N5列幅+cmd_4145殿実機確認。CDP検証規律追加: navigate前にlive deploy包含確認をcdp-browse SKILL.md手順5へ構造埋込(9864e8cbe)** | 将軍実測+殿指摘 |
 
 ### 5W1H(この設計書の前提)
 - **Why(なぜ存在するか)**: DM-Signal本番FEの全21ページで、表・見出し・色・余白等のスタイルがページ/コンポーネントごとにバラバラ。殿が本番ライブレビューで不統一を繰り返し検出。場当たり修正では取りこぼす(1ページに複数コンポーネントの表が同居し、ページ名だけ見ると別componentの表を見落とす)ため、全数を軸×コンポーネント×属性×役割のマトリクスで管理し、取りこぼし0を実測証明する。
@@ -30,9 +33,10 @@
 | page-title h1 | `text-2xl md:text-3xl font-bold tracking-tight text-foreground` | cmd_4115 |
 | 統一対象外(例外) | アイコン役割(deteriorationの方向矢印↘↓→ text-lg色付き)は数値/文字でなくアイコンゆえ除外 | 実装者判断+殿確認 |
 
-### AsIs → ToBe(2026-07-23時点)
-- **AsIs**: A軸(typography)完遂=本番LIVE。B軸=B1 status色/K軸viewport色/値の色(cmd_4124)完了。表フォント14px統一=cmd_4127で6表修正+本番CDP検証済、cmd_4128でup-down-market-chart回収中。B2/B3(色)・C(余白)・D(card)・E(表構造)・F(interaction)・G(chart)・H(header)・I(states)・J(responsive)・L(copy)=未着手または偵察のみ。
-- **ToBe**: 全12軸×全コンポーネント×全属性が、上記canonicalへ本番CDP実測で逸脱0。1ページ複数表もCDP DOM文脈で各表の実体componentを特定して全数カバー。
+### AsIs → ToBe(2026-07-24 10:30時点)
+- **AsIs**: A軸(typography)完遂=本番LIVE。B軸=B1 status色/K軸viewport色/値の色(cmd_4124)+light/darkコントラスト9ペア是正(cmd_4142)完了。表フォント14px統一=本番CDP検証済。**E軸(表構造)+D軸(card)=cmd_4131/4132で二層モデル本番LIVE+全数実測済**。**罫線=逸脱0クローズ(v2.2)**。UIバッチ(殿21案・cmd_4133-4147+hotfix群)=検証済20/後段2(4140後段のdeterioration履歴修正cmd、4145の殿実機確認)。
+- **進行中(2026-07-24 10:10殿新規指摘)**: (1)rolling-returnsページ内の表間不統一 — Summary Statistics表(正)とDistribution表で、PF名ヘッダ色(正=sky-700系青rgb(3,105,161)/BM=slate-500 rgb(100,116,139)、Distribution=黒rgb(15,23,42))・Roll Period列頭の縦2段折返し(正=2行89px/Distribution=1行44px)・thead空セル構造が異なる→Distribution表をSummary同型化hotfix配備中。(2)compare-summaryのsticky追従が殿実機で不発 — 将軍CDP実測ではth sticky追従正常(scroll後th0Top=0、deterioration/compare-returnsと同一実装)のため、PWA Service Worker旧バンドル配信の疑い(既知の偽陰性根因と同型)。SWの自動更新機構(skipWaiting等)の恒久修正を検討中。
+- **ToBe**: 全12軸×全コンポーネント×全属性が、上記canonicalへ本番CDP実測で逸脱0。1ページ複数表もCDP DOM文脈で各表の実体componentを特定して全数カバー。**同一ページ内の同種表(Summary/Distribution等)の相互同型性も統一対象**(2026-07-24追加)。
 
 ### 索引(§一覧)
 | § | 内容 | 用途 |

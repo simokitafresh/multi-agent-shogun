@@ -50,7 +50,7 @@ li{margin:3px 0}
 <header>
   <div class="eyebrow">DM-Signal UI改善バッチ — 戦況ダッシュボード</div>
   <h1>殿21案 + 派生修正の全状況</h1>
-  <div class="meta">更新: 2026-07-24 12:30 ｜ ★罫線統一クローズ＋N1/N3検証済（CDP再probe逸脱0 11:07）＋cmd_4148 deterioration全期間backfill本番完了（102PF・164行→7,998 snapshots・GATE CLEAR 12:18）｜ 残=N2レスポンシブsticky（未着手を将軍現物確認・配備督促12:30）＋cmd_4145殿実機確認 ｜ 全判定は本番CDP実測（SW鮮度対策+実表示幅2560相当）｜ 台帳正本: docs/research/lord_ui_ideas_batch_20260723.md ｜ 設計正本: dm-signal-page-style-diff-mece_20260722.md v2.3（gist c50699ea 同期済 12:30）｜ cmd_4133〜4148+hotfix群</div>
+  <div class="meta">更新: 2026-07-24 16:20 ｜ ★live deploy=32190169（N2 v1+N4含む・13:30反映）を将軍CDP検証: <b>N4=PASS（逸脱0/60）／N2 v1=FAIL（overflow-y-clipはCSS仕様でhidden化=無効・差戻し）</b>＋殿新指摘N5=rolling 2表の列幅不一致（根因実測済・hotfix配備中）｜ 罫線統一クローズ＋N1/N3検証済（11:07）＋cmd_4148 backfill本番完了 ｜ 残=N2再修正＋N5列幅hotfix＋cmd_4145殿実機確認 ｜ 全判定は本番CDP実測（SW鮮度対策込み）｜ 台帳正本: docs/research/lord_ui_ideas_batch_20260723.md ｜ 設計正本: dm-signal-page-style-diff-mece_20260722.md v2.4（gist c50699ea）｜ cmd_4133〜4148+hotfix群</div>
 </header>
 
 <h2>⓪ 進行中トラッカー（殿新規指摘 2026-07-24 10:10-10:15）</h2>
@@ -58,14 +58,16 @@ li{margin:3px 0}
 <thead><tr><th>#</th><th>指摘</th><th>正</th><th>将軍の一次実測</th><th>対処</th><th>状態</th></tr></thead>
 <tbody>
 <tr><td>N1</td><td>rolling-returns内でSummary Statistics表とDistribution表の見た目が異なる</td><td>Summary Statistics</td><td>差分3点実測確定: PF名ヘッダ色（正=sky-700系 rgb(3,105,161)、BM=slate-500 rgb(100,116,139)。Distribution=両方黒 rgb(15,23,42)）／Roll Period列頭の縦2段折返し（正=2行89px、Dist=1行44px）／Dist theadに空セル1個の構造差</td><td>影丸commit be95e33fで同型化→将軍CDP再probe（SW鮮度対策込み）で<b>逸脱0確定</b>: rowSpan2/高89px/PF名rgb(3,105,161)/SPY slate-500/空セル0</td><td><span class="chip c-ok">検証済</span></td></tr>
-<tr><td>N2</td><td>compare-summaryのsticky追従が<b>レスポンシブで不発</b>（PC=正常。殿実機観測 10:22）</td><td>—</td><td>根因確定（mobile viewport 412×915 CDP実測）: ラッパー<code>overflow-x-auto lg:overflow-visible</code>がモバイルで生き、CSS仕様によりoverflow-yがautoへ昇格→スクロールコンテナ化しth sticky top:0がviewport追従しない（scroll後th0Top=-1341。PC lg+はvisibleでth0Top=0正常）。対象=全行展開3長大表のモバイルtier全数の可能性</td><td>「モバイルでthead追従+横スクロール共存」を受入条件にhotfix指示済（msg_102304）。12:28将軍現物確認でcompare-summary-table.tsx L258/L336に<code>overflow-x-auto lg:overflow-visible</code>残存=未着手と確定→idle忍者への即配備を家老へ督促（msg_123004）。SW自動更新cmdは偽陰性根治として独立継続</td><td><span class="chip c-warn">配備督促中</span></td></tr>
+<tr><td>N2</td><td>compare-summaryのsticky追従が<b>レスポンシブで不発</b>（PC=正常。殿実機観測 10:22）</td><td>—</td><td>根因確定（mobile viewport 412×915 CDP実測）: ラッパー<code>overflow-x-auto lg:overflow-visible</code>がモバイルで生き、CSS仕様によりoverflow-yがautoへ昇格→スクロールコンテナ化しth sticky top:0がviewport追従しない（scroll後th0Top=-1341。PC lg+はvisibleでth0Top=0正常）。対象=全行展開3長大表のモバイルtier全数の可能性</td><td>疾風hotfix f0bcd321（overflow-y-clip追加）push+deploy（live 32190169）→<b>将軍CDP再検証でFAIL</b>（15:05実測: mobile 412×915・SW解除+ignoreCache reload後もscrollY=2000でthTop=-1841）。真因=CSS仕様: overflowの片軸がclipで他軸がauto/scrollだとclipは<b>hiddenへ計算</b>される（実測computed overflowY=hidden）→ラッパーがスクロールコンテナのままsticky不発。overflow-y-clip追加では構造的に解決不能。修正方向=モバイルtierでラッパーを非スクロールコンテナ化、と家老へ差戻し済（msg_140926）。SW自動更新cmdは独立継続</td><td><span class="chip c-warn">再修正中（v1無効を実測確定）</span></td></tr>
+<tr><td>N4</td><td>rolling worst windowの色が役割固定（ベンチマーク数値も負なら赤にすべき。殿裁定12:36=値の符号に色）</td><td>符号連動getValueColorClass</td><td>live 32190169で将軍CDP全数probe（15:04）: /rolling-returns worst window関連の%値60サンプル=負11件全てrgb(220,38,38)=red-600、正49件全てrgb(15,23,42)=text-foreground。<b>逸脱0/60</b></td><td>影丸hotfix 04e98d37+32190169（固定text-red-400→符号連動getValueColorClass）push+deploy→将軍CDP検証PASS</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>N5</td><td>rolling-returnsの2表の幅が異なって見える（殿指摘15:11）</td><td>Summary Statistics</td><td>将軍本番CDP実測（15:12・desktop 1707×1067）: 表外形は両方1088px・左端418pxで同一。差は<b>列幅配分</b>=Roll Period列がSummary=188px／Distribution=89px、データ列も約150px／約170px→縦の列境界がずれ幅違いに見える。N1同型化はヘッダ構造を揃えたが列幅固定が漏れ</td><td>基準=Summary表で両表を同一colgroup幅に固定（table-fixed等）するhotfixを家老へ配備指示済（msg_151322）。モバイル変種も対象。push後将軍再probe</td><td><span class="chip c-warn">hotfix配備中</span></td></tr>
 <tr><td>N3</td><td>ヒストグラム凡例の表示が/metricsと/rolling-returnsで異なる</td><td>/metrics（Up vs. Down Market Performance最下部）</td><td>—（忍者がコード現読で差分特定。出口は将軍CDP+殿実機）</td><td>be95e33fで同型化→将軍CDP再probeで<b>逸脱0確定</b>: 両ページ凡例が同一実測（rounded-fullスウォッチ、PF=rgb(14,165,233)/BM=rgb(148,163,184)、同構造flex gap-2）</td><td><span class="chip c-ok">検証済</span></td></tr>
 </tbody></table></div>
 
 <h2>サマリ</h2>
 <div class="cards">
   <div class="card"><div class="n" style="color:var(--ok)">20</div><div class="l">本番反映・実測検証済み（殿21案）</div></div>
-  <div class="card"><div class="n" style="color:var(--warn)">1</div><div class="l">新規指摘 対応中（N2レスポンシブsticky。N1/N3は検証済）</div></div>
+  <div class="card"><div class="n" style="color:var(--warn)">2</div><div class="l">新規指摘 対応中（N2レスポンシブsticky再修正・N5列幅同型化。N1/N3/N4は検証済）</div></div>
   <div class="card"><div class="n" style="color:var(--hold)">2</div><div class="l">後段（偵察後修正 / 実機確認待ち）</div></div>
 </div>
 
