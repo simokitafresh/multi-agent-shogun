@@ -861,6 +861,7 @@ printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
     [[ "$output" == *"洗脳#3"* ]]
 }
 
+# cmd_4158: CI RED/GREEN境界テスト — stop_check_inbox.shのGATE催促抑制contract
 @test "T-SCI-CI-RED-001: karo CI RED中はGATE催促の代わりにCI RED修正待ちを表示" {
     export TMUX_AGENT_ID="karo"
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"
