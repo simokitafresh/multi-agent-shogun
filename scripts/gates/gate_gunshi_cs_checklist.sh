@@ -172,7 +172,7 @@ BEGIN {
         next
     }
     if (in_obs) {
-        if ($0 ~ /^[[:space:]]{4,}- /) {
+        if ($0 ~ /^[[:space:]]{2,}- /) {
             obs_text = obs_text "\n" $0
             obs_count++
             next
@@ -762,15 +762,15 @@ verified_files_missing=$(awk '
         }
         next
     }
-    in_verified && /^[[:space:]]{4,}-[[:space:]]*/ {
+    in_verified && /^[[:space:]]{2,}-[[:space:]]*/ {
         item = $0
-        sub(/^[[:space:]]{4,}-[[:space:]]*/, "", item)
+        sub(/^[[:space:]]{2,}-[[:space:]]*/, "", item)
         gsub(/["'\''"]/, "", item)
         item = trim(item)
         if (item ~ /:[a-zA-Z0-9_]+/) verified_count++
         next
     }
-    in_verified && !/^[[:space:]]{4,}/ { in_verified = 0 }
+    in_verified && !/^[[:space:]]{2,}/ { in_verified = 0 }
     END { flush() }
 ' "$LOG_FILE" 2>/dev/null | tail -20 || true)
 
