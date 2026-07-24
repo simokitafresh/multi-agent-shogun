@@ -387,3 +387,11 @@ L122(キャッシュ無効化), L121(API実コード確認) → `context/dm-sign
 ## 22. cmd_4153 admin UI全数偵察 (2026-07-24)
 
 結論: admin 4ルート・17 TSX全数調査。一覧性低下根因=FoFカード縦積み/DB Status collapsed default/folders全collapsed/modal退避。改善提案5案 (FoF→table canonical/DB Status展開default/split-view編集/nav compact/folders全展開) を5要件形式で記載。→ `docs/research/cmd_4153_admin_ui_recon_20260724.md`
+
+## 23. N2/N5 モバイルsticky根治+rolling列幅統一 (2026-07-24 殿実機確認済)
+
+結論(N2): 全行展開3長大表(compare-returns/compare-summary/deterioration)のモバイルtierは、ラッパーを非スクロールコンテナ化(overflow visible/visible)してth sticky top:0をviewport追従させる。**overflow-y-clipは無効**(CSS仕様: 片軸clipは他軸auto/scroll併用時hiddenへ計算される)。commit=60a69234(compare系2表)+6f03e892(deterioration。60a69234はdeterioration変更0件=「兼用」想定誤りが差戻し根因)。検証=将軍CDP mobile 412×915でthTop=0全数+殿実機確認(19:10/19:41)。
+
+結論(N5): rolling-returnsのSummary Statistics/Distribution 2表はtable-fixed+colgroupで列幅統一(Roll Period=151px・データ列156px)。外形幅が同一でも列幅配分差は「幅が違う」と見える。commit=3c23d0d4。検証=将軍CDP両表全列幅同一+殿実機確認(19:10)。
+
+→ 経緯全量: `docs/research/dm-signal-page-style-diff-mece_20260722.md` v3.0(§RETRO/§PLAYBOOK付き完成版、gist c50699ea)
