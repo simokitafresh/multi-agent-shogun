@@ -2786,7 +2786,7 @@ _deferred_lock="$SCRIPT_DIR/queue/locks/karo_startup_escalation.lock"
 flock -x 9
 _transition_output="$(python3 - "$STARTUP_ESCALATION_STATE" "$_deferred_alerts_file" "${KARO_STARTUP_ESCALATION_SUPPRESS_PATTERN:-}" <<'PY'
 import os, re, sys, tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 state_path, alerts_path, suppress = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
@@ -2798,6 +2798,30 @@ def key_for(alert):
     key = re.sub(r'\d+(?:\.\d+)?(?:%|件|回|分|秒|セッション)', '#', key)
     key = re.sub(r'\s+', ' ', key).strip()
     return key
+
+# Load dismissed keys from shogun's judgment ledger (fail-open: missing/unreadable → escalate normally)
+dismissed_keys = set()
+ledger_path = state_path.parent / 'shogun_escalation_decisions.tsv'
+try:
+    if ledger_path.exists():
+        _now_dt = datetime.now().astimezone()
+        for _line in ledger_path.read_text(encoding='utf-8').splitlines():
+            _parts = _line.split('\t')
+            if len(_parts) < 4:
+                continue
+            _lk, _ld, _lt, _le = _parts[0], _parts[1], _parts[2], _parts[3]
+            if _ld == 'dismiss':
+                _expiry_h = float(_le or '0')
+                if _expiry_h == 0:
+                    dismissed_keys.add(_lk)
+                else:
+                    try:
+                        if _now_dt < datetime.fromisoformat(_lt) + timedelta(hours=_expiry_h):
+                            dismissed_keys.add(_lk)
+                    except ValueError:
+                        pass
+except (OSError, ValueError):
+    pass  # fail-open: unreadable ledger → escalate normally
 
 active = {}
 for line in alerts_path.read_text(encoding='utf-8').splitlines():
@@ -2823,7 +2847,7 @@ for key, alert in active.items():
         rows[key] = [rows[key][0] + 1, 'open', '0', now]
     elif suppressed:
         rows[key][1], rows[key][3] = 'suppressed', now
-    if rows[key][1] == 'open' and rows[key][2] == '0':
+    if rows[key][1] == 'open' and rows[key][2] == '0' and key not in dismissed_keys:
         rows[key][2], rows[key][3] = '1', now
         print(f'SEND\t{key}\t{rows[key][0]}\t{alert}')
 
