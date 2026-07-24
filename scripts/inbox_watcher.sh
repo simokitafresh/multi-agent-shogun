@@ -909,11 +909,11 @@ send_wakeup() {
                     _unread_age=$(get_first_unread_age)
                     _window="$DEBOUNCE_SEC"
                     [ "$batchable" = "true" ] && _window="$NORMAL_BATCH_WINDOW_SEC"
-                    if [ "$_elapsed" -lt "$_window" ] && ! priority_deadline_reached "$priority" "$_unread_age"; then
-                        printf 'skip\t[BATCH-WINDOW] Skipping nudge (%ss < %ss) for %s\n' "$_elapsed" "$_window" "$AGENT_ID" > "$atomic_result_file"
-                        exit 0
-                    fi
                     if [ "$_elapsed" -lt "$_window" ]; then
+                        if [ "$batchable" = "true" ] || ! priority_deadline_reached "$priority" "$_unread_age"; then
+                            printf 'skip\t[BATCH-WINDOW] Skipping nudge (%ss < %ss) for %s\n' "$_elapsed" "$_window" "$AGENT_ID" > "$atomic_result_file"
+                            exit 0
+                        fi
                         printf 'send\t[PRIORITY-DEADLINE] %s unread age %ss reached deadline during debounce for %s\n' "$priority" "$_unread_age" "$AGENT_ID" > "$atomic_result_file"
                         exit 0
                     fi

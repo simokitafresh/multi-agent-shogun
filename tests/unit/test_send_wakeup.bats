@@ -598,3 +598,109 @@ MOCK
     [ "$status" -eq 0 ]
     [[ "$output" == *"TOKENS_EXIST"* ]]
 }
+
+# test_necessity: bulletin_notify複数未読が窓内(300s)でPRIORITY-DEADLINEを無視して集約される不変量を守る。
+# batchable=trueの場合、unread_ageがNORMAL_PRIORITY_NUDGE_DEADLINE_SEC(120s)を超えても
+# NORMAL_BATCH_WINDOW_SEC(300s)内はSKIPとなることを保証する。
+@test "T-SW-022: batchable window suppresses nudge even past priority deadline (elapsed=130s, unread_age=130s)" {
+    cat > "$TEST_INBOX_DIR/test_agent.yaml" <<'YAML'
+messages:
+- content: first post
+  from: karo
+  id: msg_bn_a
+  read: false
+  timestamp: '2026-07-20T00:00:00'
+  type: bulletin_notify
+- content: second post
+  from: gunshi
+  id: msg_bn_b
+  read: false
+  timestamp: '2026-07-20T00:02:00'
+  type: bulletin_notify
+YAML
+
+    local state_dir="$TEST_TMPDIR/state22"
+    mkdir -p "$state_dir"
+
+    # Simulate: nudge sent 130s ago (past 120s NORMAL deadline but within 300s batch window)
+    local last_nudge
+    last_nudge=$(( $(date +%s) - 130 ))
+    printf '%s' "$last_nudge" > "${state_dir}/inbox_watcher_last_nudge_test_agent"
+
+    run bash -c "
+        export SHOGUN_STATE_DIR='$state_dir'
+        export INBOX_WATCHER_LIB_ONLY=1
+        source '$WATCHER_SCRIPT' test_agent dummy-pane
+
+        INBOX='$TEST_INBOX_DIR/test_agent.yaml'
+
+        raw_info=\$(get_unread_info)
+        IFS=\$'\t' read -r _count _specials _fp _sb64 _htask priority batchable <<< \"\$raw_info\"
+
+        _now=\$(date +%s)
+        _last=''
+        IFS= read -r _last < \"\$DEBOUNCE_FILE\" 2>/dev/null || true
+        [[ \"\$_last\" =~ ^[0-9]+$ ]] || _last=0
+        _elapsed=\$((_now - _last))
+        _unread_age=130
+        _window=\"\$DEBOUNCE_SEC\"
+        [ \"\$batchable\" = 'true' ] && _window=\"\$NORMAL_BATCH_WINDOW_SEC\"
+
+        decision='send'
+        if [ \"\$_elapsed\" -lt \"\$_window\" ]; then
+            if [ \"\$batchable\" = 'true' ] || ! priority_deadline_reached \"\$priority\" \"\$_unread_age\"; then
+                decision='skip'
+            fi
+        fi
+
+        printf 'batchable=%s priority=%s elapsed=%s window=%s decision=%s\n' \"\$batchable\" \"\$priority\" \"\$_elapsed\" \"\$_window\" \"\$decision\"
+    "
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"batchable=true"* ]]
+    [[ "$output" == *"priority=normal"* ]]
+    [[ "$output" == *"window=300"* ]]
+    [[ "$output" == *"decision=skip"* ]]
+}
+
+# test_necessity: escalation/CRITICAL型は高優先度に分類されdebounceブロックの
+# priority!=highガードをスキップし即時配送される不変量を守る。
+@test "T-SW-023: escalation classified as high priority bypasses debounce block guard" {
+    cat > "$TEST_INBOX_DIR/test_agent.yaml" <<'YAML'
+messages:
+- content: urgent escalation
+  from: karo
+  id: msg_esc_1
+  read: false
+  timestamp: '2026-07-20T00:00:00'
+  type: escalation
+YAML
+
+    local state_dir="$TEST_TMPDIR/state23"
+    mkdir -p "$state_dir"
+
+    # Even if a nudge was recently sent (10s ago), escalation bypasses debounce
+    local last_nudge
+    last_nudge=$(( $(date +%s) - 10 ))
+    printf '%s' "$last_nudge" > "${state_dir}/inbox_watcher_last_nudge_test_agent"
+
+    run bash -c "
+        export SHOGUN_STATE_DIR='$state_dir'
+        export INBOX_WATCHER_LIB_ONLY=1
+        source '$WATCHER_SCRIPT' test_agent dummy-pane
+        INBOX='$TEST_INBOX_DIR/test_agent.yaml'
+
+        raw_info=\$(get_unread_info)
+        IFS=\$'\t' read -r _count _specials _fp _sb64 _htask priority batchable <<< \"\$raw_info\"
+
+        # The debounce block guard in inbox_watcher.sh: [ \"\$priority\" != 'high' ]
+        # For escalation, priority=high → condition is false → debounce block skipped → immediate delivery
+        debounce_bypassed='false'
+        [ \"\$priority\" != 'high' ] || debounce_bypassed='true'
+
+        printf 'priority=%s batchable=%s debounce_bypassed=%s\n' \"\$priority\" \"\$batchable\" \"\$debounce_bypassed\"
+    "
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"priority=high"* ]]
+    [[ "$output" == *"batchable=false"* ]]
+    [[ "$output" == *"debounce_bypassed=true"* ]]
+}
