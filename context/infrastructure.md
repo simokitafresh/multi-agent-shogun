@@ -858,7 +858,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1298 -->
+<!-- last_synced_lesson: L1302 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1870,6 +1870,10 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1296: run_tests.sh affected機構の固定オーバーヘッドは1.6s・direct batsは0.8s: 途中検証ではdirect bats推奨（cmd_4105）
 - L1297: cross_repo_commits契約はci_push_stateに未接続だった(grep 0件確認)（cmd_4155）
 - L1298: CI環境でbats skipを使うとreceipt result=FAILになる — SKIP=FAIL policyに従いreturn 0で代替せよ（cmd_karo_ci_fix_sample_bats_20260724）
+- L1299: yaml_field_set.shのfield引数にネストlist添字([N])を渡すと黙ってリテラルキー化する(修正済み)（cmd_4162）
+- L1300: set -euo pipefailの環境でgrep|tailのようなno-match前提パイプラインを`local var; var=$(cmd | cmd2)`へ入れるとpipefailで即死する（cmd_4161）
+- L1301: 周期チェックがバナーパース優先だと正本焼込みを無効化する（cmd_4160）
+- L1302: cmd_save_output_filterはBLOCK時にINFO系新規出力を無条件で隠す（cmd_4164）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
