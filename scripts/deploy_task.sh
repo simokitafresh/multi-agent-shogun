@@ -49,6 +49,8 @@ deploy_task_guard_yaml_arg_order() {
 
 deploy_task_guard_direct_yaml_misuse() {
     [ "${1:-}" = "--direct" ] || return 0
+    # canonical form `--direct --yaml <file> <ninja> [cmd_id]` は$3がYAMLパスで正当
+    [ "${2:-}" != "--yaml" ] || return 0
     local direct_cmd="${3:-}"
     if [[ "$direct_cmd" == */* || "$direct_cmd" == *.yaml || "$direct_cmd" == *.yml ]]; then
         echo "BLOCK: --direct expects a cmd_id, not a YAML path. Use: deploy_task.sh --yaml <file> <ninja>" >&2
