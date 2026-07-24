@@ -1,0 +1,177 @@
+<title>DM-Signal UI改善バッチ — 戦況ダッシュボード</title>
+<style>
+:root{
+  --bg:#f6f8fb; --surface:#ffffff; --ink:#16233a; --sub:#5a6b85; --line:#dbe3ef;
+  --accent:#0369a1; --accent-soft:#e3f1fa;
+  --ok:#0f766e; --ok-bg:#e0f2f0; --warn:#9a5b00; --warn-bg:#fdf0dc; --todo:#6b5bd2; --todo-bg:#ece9fb; --hold:#8a94a6; --hold-bg:#eef1f6;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#101827; --surface:#182338; --ink:#e8eef8; --sub:#93a3bc; --line:#2a3852;
+  --accent:#4db7f0; --accent-soft:#173049;
+  --ok:#4fd1b8; --ok-bg:#123230; --warn:#f0b35c; --warn-bg:#37290f; --todo:#a99df2; --todo-bg:#251f45; --hold:#8a94a6; --hold-bg:#1d2637;
+}}
+:root[data-theme="dark"]{
+  --bg:#101827; --surface:#182338; --ink:#e8eef8; --sub:#93a3bc; --line:#2a3852;
+  --accent:#4db7f0; --accent-soft:#173049;
+  --ok:#4fd1b8; --ok-bg:#123230; --warn:#f0b35c; --warn-bg:#37290f; --todo:#a99df2; --todo-bg:#251f45; --hold:#8a94a6; --hold-bg:#1d2637;
+}
+:root[data-theme="light"]{
+  --bg:#f6f8fb; --surface:#ffffff; --ink:#16233a; --sub:#5a6b85; --line:#dbe3ef;
+  --accent:#0369a1; --accent-soft:#e3f1fa;
+  --ok:#0f766e; --ok-bg:#e0f2f0; --warn:#9a5b00; --warn-bg:#fdf0dc; --todo:#6b5bd2; --todo-bg:#ece9fb; --hold:#8a94a6; --hold-bg:#eef1f6;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Yu Gothic UI",system-ui,sans-serif;margin:0;padding:32px 20px 64px;line-height:1.55;font-size:14px}
+main{max-width:1020px;margin:0 auto}
+.eyebrow{font-size:11px;letter-spacing:.14em;color:var(--accent);font-weight:700;text-transform:uppercase}
+h1{font-size:25px;margin:6px 0 4px;text-wrap:balance}
+.meta{color:var(--sub);font-size:12.5px}
+h2{font-size:15px;color:var(--sub);letter-spacing:.06em;border-bottom:1px solid var(--line);padding-bottom:6px;margin:28px 0 12px}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.c-ok{color:var(--ok);background:var(--ok-bg)} .c-warn{color:var(--warn);background:var(--warn-bg)}
+.c-todo{color:var(--todo);background:var(--todo-bg)} .c-hold{color:var(--hold);background:var(--hold-bg)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.card .n{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.card .l{font-size:12px;color:var(--sub)}
+.tblwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{color:var(--sub);text-align:left;font-size:11.5px;letter-spacing:.05em}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--sub)}
+.sw{display:inline-block;width:11px;height:11px;border-radius:3px;border:1px solid rgba(128,128,128,.45);vertical-align:-1px;margin-right:3px}
+code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--accent-soft);border-radius:4px;padding:0 4px}
+.note{color:var(--sub);font-size:12.5px;margin-top:8px}
+ul{margin:6px 0;padding-left:20px}
+li{margin:3px 0}
+</style>
+<main>
+<header>
+  <div class="eyebrow">DM-Signal UI改善バッチ — 戦況ダッシュボード</div>
+  <h1>殿21案 + 派生修正の全状況</h1>
+  <div class="meta">更新: 2026-07-24 12:30 ｜ ★罫線統一クローズ＋N1/N3検証済（CDP再probe逸脱0 11:07）＋cmd_4148 deterioration全期間backfill本番完了（102PF・164行→7,998 snapshots・GATE CLEAR 12:18）｜ 残=N2レスポンシブsticky（未着手を将軍現物確認・配備督促12:30）＋cmd_4145殿実機確認 ｜ 全判定は本番CDP実測（SW鮮度対策+実表示幅2560相当）｜ 台帳正本: docs/research/lord_ui_ideas_batch_20260723.md ｜ 設計正本: dm-signal-page-style-diff-mece_20260722.md v2.3（gist c50699ea 同期済 12:30）｜ cmd_4133〜4148+hotfix群</div>
+</header>
+
+<h2>⓪ 進行中トラッカー（殿新規指摘 2026-07-24 10:10-10:15）</h2>
+<div class="tblwrap"><table>
+<thead><tr><th>#</th><th>指摘</th><th>正</th><th>将軍の一次実測</th><th>対処</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td>N1</td><td>rolling-returns内でSummary Statistics表とDistribution表の見た目が異なる</td><td>Summary Statistics</td><td>差分3点実測確定: PF名ヘッダ色（正=sky-700系 rgb(3,105,161)、BM=slate-500 rgb(100,116,139)。Distribution=両方黒 rgb(15,23,42)）／Roll Period列頭の縦2段折返し（正=2行89px、Dist=1行44px）／Dist theadに空セル1個の構造差</td><td>影丸commit be95e33fで同型化→将軍CDP再probe（SW鮮度対策込み）で<b>逸脱0確定</b>: rowSpan2/高89px/PF名rgb(3,105,161)/SPY slate-500/空セル0</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>N2</td><td>compare-summaryのsticky追従が<b>レスポンシブで不発</b>（PC=正常。殿実機観測 10:22）</td><td>—</td><td>根因確定（mobile viewport 412×915 CDP実測）: ラッパー<code>overflow-x-auto lg:overflow-visible</code>がモバイルで生き、CSS仕様によりoverflow-yがautoへ昇格→スクロールコンテナ化しth sticky top:0がviewport追従しない（scroll後th0Top=-1341。PC lg+はvisibleでth0Top=0正常）。対象=全行展開3長大表のモバイルtier全数の可能性</td><td>「モバイルでthead追従+横スクロール共存」を受入条件にhotfix指示済（msg_102304）。12:28将軍現物確認でcompare-summary-table.tsx L258/L336に<code>overflow-x-auto lg:overflow-visible</code>残存=未着手と確定→idle忍者への即配備を家老へ督促（msg_123004）。SW自動更新cmdは偽陰性根治として独立継続</td><td><span class="chip c-warn">配備督促中</span></td></tr>
+<tr><td>N3</td><td>ヒストグラム凡例の表示が/metricsと/rolling-returnsで異なる</td><td>/metrics（Up vs. Down Market Performance最下部）</td><td>—（忍者がコード現読で差分特定。出口は将軍CDP+殿実機）</td><td>be95e33fで同型化→将軍CDP再probeで<b>逸脱0確定</b>: 両ページ凡例が同一実測（rounded-fullスウォッチ、PF=rgb(14,165,233)/BM=rgb(148,163,184)、同構造flex gap-2）</td><td><span class="chip c-ok">検証済</span></td></tr>
+</tbody></table></div>
+
+<h2>サマリ</h2>
+<div class="cards">
+  <div class="card"><div class="n" style="color:var(--ok)">20</div><div class="l">本番反映・実測検証済み（殿21案）</div></div>
+  <div class="card"><div class="n" style="color:var(--warn)">1</div><div class="l">新規指摘 対応中（N2レスポンシブsticky。N1/N3は検証済）</div></div>
+  <div class="card"><div class="n" style="color:var(--hold)">2</div><div class="l">後段（偵察後修正 / 実機確認待ち）</div></div>
+</div>
+
+<h2>① 殿の案 全21件の状態（本番実測値つき）</h2>
+<div class="tblwrap"><table>
+<thead><tr><th>#</th><th>内容</th><th>cmd</th><th>本番実測（判定根拠）</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>FoF名を青系へ（<span class="sw" style="background:#2563eb"></span>blue-600 / dark:blue-400、admin PFバッジと同色）</td><td class="num">4133</td><td>FoF名78/78がrgb(37,99,235)・紫残0</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>2</td><td>compare-returns縦スクロール廃止・全行展開</td><td class="num">4137</td><td>104行展開・内側スクロールnull</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>3</td><td>バー色統一（rolling-returnsの色違い解消）</td><td class="num">4135</td><td>ヒストグラム棒=PF青sky-500（div棒実測）</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>4</td><td>チャートのカード枠除去（dashboard基準）</td><td class="num">4136</td><td>rolling/drawdowns/metricsでcard=null</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>5</td><td>チャート罫線（グリッド）の視認性向上</td><td class="num">4135</td><td>--chart-grid=#cbd5e1へ更新</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>6</td><td>dark背景を濃紺#1e293bへ</td><td class="num">4134</td><td>dark実効bg=rgb(30,41,59)</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>7</td><td>スマホ横スクロール解消（padding削減→列幅設計→省略表示の優先順）</td><td class="num">4139</td><td>412pxで表内横スク0（広tier deteriorationのみ設計上維持）</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>8</td><td>チャート系列色=PF青/BMグレー方式</td><td class="num">4135</td><td>全ページ実効値 PF=#0ea5e9 / BM=#94a3b8</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>9</td><td>罫線をannual式へ統一+列グループ縦線（殿裁定=annual完全同型）</td><td class="num">4141+hotfix5本</td><td>★全数罫線probe（11ページ18表・下記⑤）で逸脱0確定: thead下=rgb(51,65,85)/行間=rgb(30,41,59)/列グループ縦線=slate-700。最終hotfix=compare-summary/deterioration col0 sticky罫線 border-border→border-slate-700（9c0c9e23）をSW鮮度対策込み再probeでrgb(51,65,85)確認</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>10</td><td>狭tier capを1100pxへ</td><td class="num">4137</td><td>全狭tier表 max-w-[1100px]・横スク0</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>11</td><td>compare-returns列幅フィット→<b>#15で同幅化に発展</b></td><td class="num">4137→4143</td><td>—（#15に統合）</td><td><span class="chip c-ok">統合</span></td></tr>
+<tr><td>12</td><td>deteriorationデフォルトソート=good先頭</td><td class="num">4138</td><td>先頭6行すべてGood</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>13</td><td>deterioration詳細の履歴欠落（cron/DB/表示の切り分け）</td><td class="num">4140</td><td>偵察ACCEPT済（根因文書化）→修正cmdは後段</td><td><span class="chip c-hold">後段</span></td></tr>
+<tr><td>14</td><td>セクションタイトル前の縦線を全ページ除去</td><td class="num">4136</td><td>Drawdownsのアクセントバー除去</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>15</td><td>compare-returns表を他表と同幅に</td><td class="num">4143</td><td>表幅866→1036px（w-full化）</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>16</td><td>一番上へ戻るボタン（殿裁定=案A右下円形・300px出現）</td><td class="num">4143</td><td>本番実装稼働中（curl直で実在確認+殿実機で動作。将軍の初回「不在」はSW旧バンドルの偽陰性）</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>17</td><td>monthly-trade Full時のみ画面幅いっぱい（Simple=1100）</td><td class="num">4144+hotfix</td><td>Full時cap=null・表幅1411px（根因=page-shellのmax-w-6xlを修正）</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>18</td><td>dashboard Total Return Chartの遷移復帰loading残留</td><td class="num">4145</td><td>競合条件の修正push済み（再マウント契約test付き）。競合型のため殿実機での再発なしが最終確認</td><td><span class="chip c-hold">実機確認待ち</span></td></tr>
+<tr><td>19</td><td>deteriorationも全行展開</td><td class="num">4146</td><td>104行展開・スクロール後thead top=0</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>20</td><td>compare-summaryも全行展開</td><td class="num">4147</td><td>104行展開・スクロール後thead top=0（2026-07-24 10:20 CDP再実測でも th0Top=0 を再確認）</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>21</td><td>compare-returns列幅バランス（Portfolio圧縮+数値均等）</td><td class="num">hotfix</td><td>Portfolio 369→228px・数値列101px均等</td><td><span class="chip c-ok">検証済</span></td></tr>
+</tbody></table></div>
+
+<h2>② 派生修正（バッチ中の実測・殿指摘で追加）</h2>
+<div class="tblwrap"><table>
+<thead><tr><th>内容</th><th>本番実測</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td>light/darkコントラスト違反9ペア是正（負値=red-600/dark:red-400のcanonical改訂含む）</td><td>red-600セル155検出=反映</td><td><span class="chip c-ok">検証済(cmd_4142)</span></td></tr>
+<tr><td>card枠残存2件（deterioration表 / metrics Market Type）</td><td>両方card=null</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>広tier2表のsticky追従不全（根因=overflow-x-autoラッパー）</td><td>スクロール後thead top=0</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>rollingヒストグラムのcyan-500ハードコード</td><td>PF青sky-500に統一</td><td><span class="chip c-ok">検証済</span></td></tr>
+<tr><td>compare-summary/deterioration col0 sticky罫線のborder-border残（罫線最終hotfix）</td><td>両ページcol0 sticky=rgb(51,65,85)（9c0c9e23、SW鮮度対策込み再probe）</td><td><span class="chip c-ok">検証済</span></td></tr>
+</tbody></table></div>
+
+<h2>③ 確定canonical（殿裁定・全て本番実測ベース）</h2>
+<ul>
+<li><b>表の二層モデル</b>: 狭tier=cap<b>1100px</b>・中央寄せ・padding12px/8px・card/stripeなし ／ 広tier=幅可変・ヘッダ+1列目sticky</li>
+<li><b>全行展開型</b>: 長大表（compare-returns/deterioration/compare-summary）は内側縦スクロール廃止・thead stickyページ追従（th-level sticky top:0）</li>
+<li><b>罫線=annual式</b>: 横線=thead下slate-700+行間slate-800（trレベル・テーマ連動）、縦線=<b>列グループ境界</b>（annual完全同型）。sticky列の境界線も同色slate-700。divide-y（border-top方式）は色・見た目同一で許容</li>
+<li><b>色</b>: FoF名=blue-600/dark:blue-400 ／ 負値=red-600/dark:red-400 ／ チャート=PF青#0ea5e9・BMグレー#94a3b8・grid#cbd5e1 ／ dark背景=#1e293b</li>
+<li><b>表ヘッダのPF/BM色</b>（N1で確立中）: PF名=sky-700系 rgb(3,105,161)／BM=slate-500 rgb(100,116,139)（rolling Summary Statisticsが正）</li>
+<li><b>モバイル</b>: padding削減→列幅設計→省略表示（ellipsis+title）の優先順で412px幅に収容</li>
+<li><b>戻るボタン</b>=案A（右下44px円形・スクロール300px超で出現・smooth）</li>
+<li><b>同一ページ内の同種表は相互同型</b>（Summary/Distribution等。2026-07-24追加）</li>
+</ul>
+
+<h2>④ 測定規律（この戦役で確立・記憶DB貫通済み）</h2>
+<ul>
+<li><b>grepは見落とす</b>: 判定は本番CDP getComputedStyle一次。ソースclassname≠描画</li>
+<li><b>測定前チェック1号</b>: viewport実寸確認（モバイルemulation残留事故対策。desktop=1707×1067 dpr1.5）</li>
+<li><b>測定前チェック2号</b>: Service Worker鮮度（PWAが旧バンドル配信→unregister+ignoreCache reload。curl直がSWバイパスの決定打）</li>
+<li><b>測定規律3号</b>: 罫線など横断スタイルの逸脱0宣言は<b>全ページ×全表の全数実測</b>でのみ可（部分検証は2度誤報を生んだ）</li>
+<li><b>DOM検出器の陰性は実装不在の証明にならない</b>: curl直+殿実機と突合してから結論（逆に検出器の陽性も殿実機のSW旧バンドルとは乖離しうる=N2）</li>
+<li>チャートはSVGとは限らない（div棒ヒストグラム）。probe群=ed/font/maxdisplay/tier/contrast+罫線（cdp_border_probe）の6本を恒久化</li>
+</ul>
+
+<h2>⑤ 罫線 全数実測（2026-07-24 09:26 probe、11ページ18表）</h2>
+<div class="tblwrap"><table>
+<thead><tr><th>route</th><th>表</th><th>列数</th><th>thead下</th><th>行間</th><th>列グループ縦線</th><th>備考</th></tr></thead>
+<tbody>
+<tr><td>/annual-returns</td><td class="num">t0</td><td class="num">10</td><td>slate-700</td><td>slate-800</td><td>3本(col 1,3,5)</td><td>基準（annual式）</td></tr>
+<tr><td>/monthly-returns</td><td class="num">t0</td><td class="num">11</td><td>slate-700</td><td>slate-800</td><td>3本(col 2,4,6)</td><td></td></tr>
+<tr><td>/rolling-returns</td><td class="num">t0</td><td class="num">7</td><td>slate-700</td><td>slate-800</td><td>2本(col 1,4)</td><td>Summary Statistics</td></tr>
+<tr><td>/rolling-returns</td><td class="num">t1</td><td class="num">4</td><td>slate-700</td><td>slate-800</td><td>—</td><td>非表示mobile変種（対象外・offsetParent=null実証）</td></tr>
+<tr><td>/rolling-returns</td><td class="num">t2</td><td class="num">4</td><td>slate-700</td><td>slate-800</td><td>—</td><td>非表示mobile変種（対象外）</td></tr>
+<tr><td>/rolling-returns</td><td class="num">t3</td><td class="num">7</td><td>slate-700</td><td>slate-800</td><td>2本(col 1,4)</td><td>Distribution（N1同型化対象）</td></tr>
+<tr><td>/rolling-returns</td><td class="num">t4</td><td class="num">4</td><td>—</td><td>slate-800</td><td>—</td><td>非表示mobile変種（対象外）</td></tr>
+<tr><td>/rolling-returns</td><td class="num">t5</td><td class="num">4</td><td>—</td><td>slate-800</td><td>—</td><td>非表示mobile変種（対象外）</td></tr>
+<tr><td>/compare-returns</td><td class="num">t0</td><td class="num">9</td><td>slate-700</td><td>slate-800</td><td>3本(col 1,5,8)</td><td>Portfolio|MTD-6M|1Y-5Y|ALL＝殿裁定通り</td></tr>
+<tr><td>/compare-summary</td><td class="num">t0</td><td class="num">18</td><td>slate-700</td><td>slate-800</td><td>4本(col 1,6,10,14)+col0 sticky境界</td><td>col0 sticky境界はprobe時slate-200→<b>9c0c9e23でslate-700化・再probe確認済</b></td></tr>
+<tr><td>/deterioration</td><td class="num">t0</td><td class="num">14</td><td>slate-700</td><td>slate-800</td><td>6本(col 1,2,6,7,11,12)+col0 sticky境界</td><td>同上（9c0c9e23で是正・再probe確認済）</td></tr>
+<tr><td>/drawdowns</td><td class="num">t0</td><td class="num">8</td><td>slate-700</td><td>slate-800</td><td>なし</td><td>列グループなし＝縦線なし維持（殿裁定）</td></tr>
+<tr><td>/drawdowns</td><td class="num">t1</td><td class="num">8</td><td>slate-700</td><td>slate-800</td><td>なし</td><td>同上</td></tr>
+<tr><td>/metrics</td><td class="num">t0</td><td class="num">3</td><td>slate-700</td><td>slate-800（border-top方式）</td><td>なし</td><td>divide-y。色・見た目同一で許容</td></tr>
+<tr><td>/metrics</td><td class="num">t1</td><td class="num">8</td><td>slate-700</td><td>slate-800</td><td>3本(col 1,4,5)</td><td>Up vs. Down Market</td></tr>
+<tr><td>/dashboard</td><td class="num">t0</td><td class="num">5</td><td>slate-700</td><td>slate-800</td><td>2本(col 1,3)</td><td></td></tr>
+<tr><td>/monthly-trade</td><td class="num">t0</td><td class="num">9</td><td>slate-700</td><td>slate-800</td><td>4本(col 1,3,5,8)</td><td></td></tr>
+<tr><td>/summary</td><td class="num">t0</td><td class="num">3</td><td>slate-700</td><td>slate-800（border-top方式）</td><td>なし</td><td>divide-y。許容</td></tr>
+</tbody></table></div>
+<p class="note">測定条件: viewport 1707×1067 dpr1.5（=殿の2560×1600表示相当）／getComputedStyleのborder実効値／deploy 549119c1 live確認後。0.666667px=Tailwind border（0.667px）。</p>
+
+<h2>⑥ 罫線hotfix系譜（5本・全てmain反映済み）</h2>
+<div class="tblwrap"><table>
+<thead><tr><th>commit</th><th>内容</th><th>担当</th></tr></thead>
+<tbody>
+<tr><td class="num">5fb37166</td><td>compare-returns 列グループ縦線（1M縦線除去→Portfolio|MTD-6M|1Y-5Y|ALLの3本へ）</td><td>小太郎</td></tr>
+<tr><td class="num">06494565</td><td>rolling-returns Distribution表2枚の縦線</td><td>影丸</td></tr>
+<tr><td class="num">549119c1</td><td>metrics Up/Down表の横線</td><td>才蔵（半蔵から引継ぎ）</td></tr>
+<tr><td class="num">5490a887</td><td>metrics残+dashboard横線</td><td>才蔵</td></tr>
+<tr><td class="num">9c0c9e23</td><td>compare-summary/deterioration col0 sticky罫線 border-border→border-slate-700（6箇所）</td><td>影丸</td></tr>
+</tbody></table></div>
+
+<h2>⑦ 残作業</h2>
+<ul>
+<li><b>N1+N3</b>: <span class="chip c-ok">完了</span> be95e33fで同型化、将軍CDP再probeで逸脱0確定（2026-07-24 11:07）</li>
+<li><b>deterioration履歴backfill</b>: <span class="chip c-ok">完了</span> cmd_4148本番実行済み（commit 00c20c54・push済）。102PF・164行→7,998 snapshots（785秒・skip0・label分布 GOOD4597/EW522/WATCH1354/MIXED833/DET692）。backup+restore手順あり、read-only SQL4項目検証PASS、軍師LGTM+GATE CLEAR 12:18。検証原票=DM-signal docs/research/cmd_4148_deterioration_backfill_verify.md</li>
+<li><b>N2実装</b>: 未着手を将軍現物確認（12:28）→idle忍者への即配備を家老へ督促（msg_123004）</li>
+<li><b>N2恒久対策</b>: PWA Service Worker自動更新（skipWaiting/clientsClaim or 更新プロンプト）のcmd化 — SW旧バンドルによる偽陰性/実機不一致が3回発生しており根治対象</li>
+<li>cmd_4145（loading残留）の殿実機での再発なし確認</li>
+</ul>
+<p class="note">罫線統一は2026-07-24 10:05クローズ。設計正本v2.2（AsIs-ToBe・canonical・測定規律を反映）はgist c50699ea4e13d003a7864996b93ba19f にバイト一致検証付きで同期済み。関連artifact: 戻るボタンモック（案A採用済）= claude.ai/code/artifact/6736bf2d-174e-4dc9-88d4-5f33c1e6ebc7</p>
+</main>
