@@ -6488,6 +6488,10 @@ MIN_KEYWORD_SCORE_BY_TASK_TYPE = {
     'exact': int(os.environ.get('MIN_KEYWORD_SCORE_EXACT', '4')),
     'focused': int(os.environ.get('MIN_KEYWORD_SCORE_FOCUSED', os.environ.get('MIN_KEYWORD_SCORE_EXACT', '4'))),
 }
+# 是正1: Bootstrapギャップ解消 — feedback=0件の教訓はこの閾値を要求(通常閾値より高く設定)
+MIN_KEYWORD_SCORE_ZERO_FEEDBACK = int(os.environ.get('MIN_KEYWORD_SCORE_ZERO_FEEDBACK', '5'))
+# 是正2: cross-project注入の精度向上 — project不一致教訓はこの閾値を要求(通常閾値より高く設定)
+MIN_KEYWORD_SCORE_CROSS_PROJECT = int(os.environ.get('MIN_KEYWORD_SCORE_CROSS_PROJECT', '5'))
 IMPACT_COLUMNS = [
     'timestamp', 'cmd_id', 'ninja', 'lesson_id', 'action', 'result',
     'referenced', 'project', 'task_type', 'bloom_level', 'score',
@@ -6614,8 +6618,8 @@ def compute_useful_rates(script_dir):
     useful_counts = {lid: vals[0] for lid, vals in feedback_counts.items()}
     return useful_rates, feedback_totals, useful_counts
 
-ZERO_USEFUL_DEPRECATE_MIN_SAMPLES = int(os.environ.get('ZERO_USEFUL_DEPRECATE_MIN_SAMPLES', '1'))
-ENABLE_ZERO_USEFUL_AUTO_DEPRECATE = os.environ.get('ENABLE_ZERO_USEFUL_AUTO_DEPRECATE', '0') == '1'
+ZERO_USEFUL_DEPRECATE_MIN_SAMPLES = int(os.environ.get('ZERO_USEFUL_DEPRECATE_MIN_SAMPLES', '3'))
+ENABLE_ZERO_USEFUL_AUTO_DEPRECATE = os.environ.get('ENABLE_ZERO_USEFUL_AUTO_DEPRECATE', '1') == '1'
 
 def _deprecate_lessons_in_file(yaml_path, lesson_ids):
     """Add deprecated: true to matching lesson blocks without round-tripping YAML."""
@@ -7659,6 +7663,12 @@ try:
             score += semantic_boost
 
         cross_project_score = lesson.get('_cross_project_score', 0) or 0
+        # 是正2: cross-project注入の精度向上 — project不一致教訓はraw keyword_scoreで高閾値フィルタ
+        # 根因: platform教訓(infra等)がdm-signal cmdにkeyword_score低値で素通りしNOT_USEFUL量産(L1290-L1292事例)
+        if (lesson.get('_source_project') and lesson.get('_source_project') != project
+                and keyword_score < MIN_KEYWORD_SCORE_CROSS_PROJECT):
+            keyword_score_filtered += 1
+            continue
         if cross_project_score and score < cross_project_score:
             score = cross_project_score
 
@@ -7671,7 +7681,12 @@ try:
         if score <= 0:
             continue
 
-        if score < MIN_KEYWORD_SCORE:
+        # 是正1: Bootstrapギャップ解消 — feedback=0件の新規教訓はより高い閾値を要求
+        # 根因: 初回注入時feedback=0の教訓はuseful_rateフィルタを素通りしNOT_USEFUL量産(L1291-L1292等)
+        _effective_min_score = MIN_KEYWORD_SCORE
+        if feedback_totals.get(lid, 0) == 0:
+            _effective_min_score = max(_effective_min_score, MIN_KEYWORD_SCORE_ZERO_FEEDBACK)
+        if score < _effective_min_score:
             keyword_score_filtered += 1
             continue
 

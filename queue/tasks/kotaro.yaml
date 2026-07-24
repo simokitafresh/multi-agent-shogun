@@ -1,20 +1,110 @@
 task:
+  _ac_task_id: cmd_4152_full
+  _ac_worker_id: null
+  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_4152
+    (deployed 2026-07-24T12:24:22). Read from the beginning.
+  ac_checkpoint: '各AC完了後に checkpoint: 次ACの前提条件確認 → scope drift検出 → progress更新'
+  ac_priority: AC1 > AC2 > AC3 > AC4
+  ac_version: 412fc28f
+  acceptance_criteria:
+  - id: AC1
+    description: scripts/deploy_task.shのinject_related_lessonsで、全期間feedbackゼロの教訓に対し偵察の是正1の閾値強化(MIN_KEYWORD_SCORE引上げ相当)を実装し、feedbackゼロ+低keyword_scoreの教訓が注入されない境界をbats
+      fixtureで検証する
+    checks:
+    - check: scripts/deploy_task.shのinject_related_lessonsで、全期間feedbackゼロの教訓に対し偵察の是正1の閾値強化(MIN_KEYWORD_SCORE引上げ相当)を実装し、feedbackゼロ+低keyword_scoreの教訓が注入されない境界をbats
+        fixtureで検証する
+  - id: AC2
+    description: project不一致教訓の選定閾値を偵察の是正2に沿って引き上げ、cross-project低スコア注入が抑止される境界と同project教訓が引き続き注入される境界の両方をbats
+      fixtureで検証する
+    checks:
+    - check: project不一致教訓の選定閾値を偵察の是正2に沿って引き上げ、cross-project低スコア注入が抑止される境界と同project教訓が引き続き注入される境界の両方をbats
+        fixtureで検証する
+  - id: AC3
+    description: ENABLE_ZERO_USEFUL_AUTO_DEPRECATEを有効化し最低サンプル数を偵察の是正3の値へ変更、全期間useful評価ゼロが閾値件数に達した教訓の自動deprecateをbats
+      fixtureで検証する
+    checks:
+    - check: ENABLE_ZERO_USEFUL_AUTO_DEPRECATEを有効化し最低サンプル数を偵察の是正3の値へ変更、全期間useful評価ゼロが閾値件数に達した教訓の自動deprecateをbats
+        fixtureで検証する
+  - id: AC4
+    description: 全量実行コマンド=bash scripts/run_tests.sh file tests/unit/test_deploy_task_yaml_injection.bats
+      でFAIL0・SKIP0を確認し、変更前後の注入挙動差分(是正対象教訓の注入有無)を報告YAMLへ記録する
+    checks:
+    - check: 全量実行コマンド=bash scripts/run_tests.sh file tests/unit/test_deploy_task_yaml_injection.bats
+        でFAIL0・SKIP0を確認し、変更前後の注入挙動差分(是正対象教訓の注入有無)を報告YAMLへ記録する
+  acknowledged_at: "2026-07-24T03:25:28Z"
   assumptions:
-    claim: test_select.shは実在しrun_tests.sh L591で接続済み(将軍rg一次確認2026-07-20 14:45)。全量2092件=12分41秒/専用5件=4.3秒の実測は疾風receipt出典(logs/test_receipts/run_tests_20260720T044324_427321.json)。最終checkpoint全量1回の原則は殿裁定2026-07-14で恒久化済み
-    source: 掲示板blt_20260720_140504(疾風実測)+scripts/run_tests.sh L591現物+CLAUDE.md『厳密さは最終checkpointへ集中』殿裁定
+    claim: 是正1-3の対象コード位置と定数はcmd_4150偵察AC2表で行番号まで確定済み(MIN_KEYWORD_SCOREフィルタ7674-7676、cross_project_score
+      7661-7663、AUTO_DEPRECATE定数6617-6618。是正3の最低サンプル数=3。確認日2026-07-24)
+    source: docs/research/lesson_useful_rate_recon_20260724.md AC2表+選定基準是正案
     trust: verified
-  estimated_minutes: 10
-  timeout_minutes: 30
-  issued_at: '2026-07-24T09:53:28'
-  issued_cmd_id: cmd_4102
-  parent_cmd: null
+  cmd_id: cmd_4152
+  completed_at: null
+  deployed_at: "2026-07-24T12:24:54"
+  done_at: null
+  engineering_preferences:
+  - prefer 指揮系統 + inbox_write/report YAML経路 over 直接割込み。通信は仕組みで残せ
+  - prefer queue/ YAMLなど一次データ over dashboard要約や推測状態。二次データは必ず照合せよ
+  - prefer 正本編集 + build_instructions.sh再生成 over generatedファイル直編集
+  - prefer flock/atomic helper（inbox_mark_read.sh, yaml_field_set等）over 共有運用ファイルの手編集
+  - prefer safe defaults / non-destructive ops over 強制reset・広域cleanup・履歴改変
+  - prefer gateと状態遷移で強制する運用 over 口約束や人間依存の手順
+  - prefer 実テスト実行+結果確認 over 推論だけでbinary_checksを記入。体験は抽象を校正する
+  estimated_minutes: 15
+  issued_at: '2026-07-24T12:22:18'
+  issued_cmd_id: cmd_4152
+  never_stop_for:
+  - CDPポート未応答 — preflight_cdp_flowが自動起動する。まず実行せよ
+  - 既存インフラの自動対処機能があるエラー — まず実行→失敗なら報告
+  - 自明な修正（typo等） — 実行→事後報告
+  - 9p stall/hang疑い — まず独立検証（別ペイン/短いコマンド）で環境起因か切り分けよ
+  parallel_ok:
+  - AC1
+  - AC2
+  - AC3
+  - AC4
+  parent_ac_coverage:
+  - AC1
+  - AC2
+  - AC3
+  - AC4
+  parent_cmd: cmd_4152
+  parent_contract_fingerprint: 18ff9c522280ec7e
   project: infra
-  status: idle
-  task_id: cmd_4102_full
+  purpose: cmd_4150偵察でNOT_USEFUL量産の根本メカニズム=初回注入時feedbackゼロの教訓がuseful_rateフィルタを素通りするBootstrapギャップ+cross-project低スコア注入+自動deprecate無効を確定した。inject_related_lessonsの選定基準を是正し無関連注入を構造的に抑える
+  report_contract_templates: '{"ac_evidence_mapping":{"AC1":"","AC2":"","AC3":"","AC4":""},"semantic_validation":{"classification_axis":"","recount":"","actual":"","result":""}}'
+  split_decision:
+    boundary_ac_ids:
+    - AC1
+    - AC2
+    - AC3
+    integration_tasks: 1
+    review_round_trips: 1
+  status: done
+  stop_for: []
+  target_path: /mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh
+  target_path_git_preflight: /mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh:worktree=yes,head=yes,last_commit=pending@0bf349754b7ef10694317ea19dc54f0485c78a28
+  task_id: cmd_4152_full
   task_type: full
+  timeout_minutes: 30
+  variation_checks_required: false
+  related_lessons:
+  - id: L230
+    summary: lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227
+    detail: lessons.extend()でplatform教訓を後方追加→dict comprehensionで同一IDの場合にplatform版が残る。ID重複227
+  - id: L119
+    summary: inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat
+    detail: inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat
+  - id: L540
+    summary: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text
+      regexで削除し、P
+    detail: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text regexで削除し、P
+  standard_skills:
+  - report-write
+  - verdict-check
+  - ninja-commit
   model_injection_profile:
-    model_label: GPT 5.6 Sol low
-    family: gpt
+    model_label: Sonnet 4.6 high
+    family: sonnet
     injection_intensity: max
     protocol: T5弱LLM構造化プロトコル
     report_contract:
@@ -22,52 +112,128 @@ task:
     - lessons_useful全reasonを具体記入
     - files_modifiedはrepo相対path形式
     - 'D7適用表を証跡化: 新behavior=新/拡張test、bugfix=再現regression、behavior不変refactor=既存coverage維持、docs/data-only=実行test免除根拠。既存contract再利用、配置二値基準、モック4類型、contract消滅時のみ削除'
-    - '任務帰属検証契約: 反復・報告直前とも bash scripts/run_tests.sh task queue/tasks/kotaro.yaml
-      を実行し、task/reportの所有pathから選ばれたテストだけをbinary_checksへ帰属させる。引数なしaffectedやunit全量を任務判定に使わない。全量all/unitはfixed-SHA統合checkpointで別に判定し、scope外FAILを当該任務のFAILへ混入させない'
+    - '任務帰属検証契約(二段形): 反復検証=bash scripts/run_tests.sh affectedで選別実行可。報告直前=bash scripts/run_tests.sh
+      unitでFAIL0・SKIP0を1回証明。task/reportの所有pathから選ばれたテストだけをbinary_checksへ帰属させ、scope外FAILを当該任務のFAILへ混入させない'
     extra_scaffold:
     - ACごとに実テスト証跡をresult.detailsへ記録
     - 報告前にplaceholder残存確認とgate_report_formatを実行
+  semantic_concepts:
+  - 'agent_formation_management — 編成管理:  config/settings.yaml context/infrastructure.md
+    CLIモデル指定とコンテキスト scripts/deploy_task.sh tests/unit/test_deploy_training.bats scripts/ninja_monitor.sh
+    scripts/clear_prep_check.sh scripts/build_instructions.sh skills/shogun-all-codex-switch/SKILL.md
+    skills/shogun-peacetime-rollback/SKILL.md skills/shogun-cli-switch/SKILL.md skills/shogun-cli-switch/scripts/shogun_cli_switch.sh
+    docs/research/claude-code-version-runbook.md docs/research/model-comparison-5w1h-20260701.md
+    全モデル5W1H比較(GPT5.5/Sonnet4.6/Sonnet5/Opus4.8) docs/research/sonnet5_vs_46_ab_evaluation_20260701.md
+    5ラウンドA/B/C評価データ scripts/hooks/stop_check_inbox.sh Stop hook(Claude Code専用。Codex非対応)
+    .codex/hooks.json Codex hook設定(Stopなし。PreToolUse/PostToolUseのみ) docs/research/gunshi_codex_clear_judgment_20260422.md
+    — 軍師分析: Codex clear判断基準(2026-04-22) docs/research/gunshi_idle_codex_commit_missing_20260413.md
+    — 軍師idle: Codexコミット欠落分析(2026-04-13) docs/research/gunshi_idle_codex_respawn_loop_20260516.md
+    — 軍師idle: Codex respawnループ分析(2026-05-16) docs/research/gunshi_idle_codex_respawn_loop_nazenaze_20260520.md
+    — 軍師idle: Codex respawnループなぜなぜ(2026-05-20)'
+  - 'growth_loop — 学習ループ:  AGENTS.md 学習ループ原則 context/growth-loop.md context/infrastructure.md
+    知識サイクル現状 docs/research/three-layer-learning-loop-auto-growth-asis-tobe-5w1h_20260707.md
+    三層学習ループ自動成長極限化設計書(AsIs/ToBe 5W1H・弱LLM/他CLI/他PJ可搬) docs/research/throughput-first-asis-tobe-5w1h_20260708.md
+    全体スループット第一原則設計書v1.1(品質と速度は一体・局所最適の罠・既存問い群を1つの自問へ統合+削るサイクル常設)'
+  - 'provisional_lessons — 仮: Lessons:  projects/infra/lessons.yaml'
+  - 'lesson_lifecycle — 教訓ライフサイクル管理:  scripts/lesson_write.sh scripts/auto_draft_lesson.sh
+    scripts/sync_lessons.sh scripts/lesson_write_karo.sh scripts/lesson_write_shogun.sh
+    scripts/lesson_effectiveness.sh scripts/lesson_harvest.sh scripts/lesson_deprecate.sh
+    scripts/lesson_deprecation_scan.sh scripts/causal_backlinks.sh projects/infra/lessons_gunshi.yaml
+    projects/infra/lessons_karo.yaml projects/infra/lessons_shogun.yaml docs/research/gunshi_idle_insights_consumption_bottleneck_20260515.md
+    — 軍師idle: インサイト消費ボトルネック分析(2026-05-15) docs/research/gunshi_idle_knowledge_burial_audit_20260505.md
+    — 軍師idle: 知識埋没監査(2026-05-05) docs/research/gunshi_idle_lesson_dedup_20260413.md
+    — 軍師idle: 教訓重複排除分析(2026-04-13) docs/research/gunshi_idle_lesson_effectiveness_20260413.md
+    — 軍師idle: 教訓有効性測定(2026-04-13) docs/research/gunshi_idle_lesson_impact_20260412.md
+    — 軍師idle: 教訓インパクト分析(2026-04-12) docs/research/gunshi_idle_lesson_injection_dual_track_20260428.md
+    — 軍師idle: 教訓注入デュアルトラック設計(2026-04-28) docs/research/gunshi_idle_lesson_injection_quality_20260605.md
+    — 軍師idle: 教訓注入品質監査(2026-06-05) docs/research/gunshi_idle_lesson_injection_universal_bypass_20260602.md
+    — 軍師idle: 教訓注入汎用バイパス問題(2026-06-02) docs/research/gunshi_idle_lesson_ref_rate_analysis_20260430.md
+    — 軍師idle: 教訓参照率分析(2026-04-30) docs/research/gunshi_idle_lesson_tag_mismatch_20260507.md
+    — 軍師idle: 教訓タグ不一致分析(2026-05-07) docs/research/gunshi_idle_lesson_useful_rate_20260422.md
+    — 軍師idle: 教訓有用率計測(2026-04-22) docs/research/gunshi_idle_lesson_useful_rate_20260503.md
+    — 軍師idle: 教訓有用率計測v2(2026-05-03) docs/research/gunshi_idle_lesson_useful_rate_20260608.md
+    — 軍師idle: 教訓有用率計測v3(2026-06-08) docs/research/gunshi_idle_lesson_waste_analysis_20260516.md
+    — 軍師idle: 教訓無駄分析(2026-05-16) docs/research/gunshi_idle_lesson_useful_rate_improvement_20260620.md
+    — 軍師idle: 教訓有用率改善分析(2026-06-20) docs/research/gunshi_idle_session_lessons_20260617.md
+    — 軍師idle: セッション教訓分析(2026-06-17) docs/research/gunshi_idle_session_lessons_20260618.md
+    — 軍師idle: セッション教訓分析(2026-06-18) docs/research/gunshi_idle_self_run_20260624.md
+    — 軍師idle: idle自走Step1-8完了分析(2026-06-24) docs/research/gunshi_idle_useful_rate_bootstrap_analysis_20260618.md
+    — 軍師idle: 有用率ブートストラップ分析(2026-06-18) docs/research/lessons_karo_v3_archive.md —
+    家老教訓v3アーカイブ(統合前全文保存)'
+  recommended_skills:
+  - shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み)
+  - lesson-sort(教訓整理/振り分け/将軍)
+  - dream(三層記憶整理/将軍)
+  - shogun-teire(知識棚卸し/将軍)
+  related_causal_links:
+  - '[[cmd_4150偵察_Bootstrapギャップ+cross注入根因]]'
+  - '[[cmd_4152選定基準是正]]'
+  - '[[選定フィルタの盲点封鎖]]'
+  causal_verification:
+    cause_checked: ''
+    design_intent_checked: ''
+    evidence: ''
+    origin: ''
+  context_hints:
+  - context/training-cycle.md
+  description: "【注入教訓】 必ず確認してから作業開始せよ\n  - L230: lessons.extend()でplatform教訓を後方追加→dict\
+    \ comprehensionで同一IDの場合にplatform版が残る。ID重複227\n  - L119: inline Python scriptの実行結果(注入ID一覧)をpostcondファイルに書き出し、bash側で読み取って後続処理(lesson_updat\n\
+    \  - L540: _overwrite_ac_from_cmdがtask YAMLのdescription内部にある【注入教訓】マーカーをraw text\
+    \ regexで削除し、P\n────────────────────────────────────────"
   experiment_first_principle:
   - '殿の原文: 『LLMは人間ではない。考えることは向いてない。膨大な量の実験を超速で回し続ける総当たりが構造的に有効だ』'
   - '適用形: 仮説を頭で絞らず、小さな独立実験へ分けて並列に全て試せ。想像で結論せず、各実験の一次結果を確認してから採否を決めよ。'
-  ac_version: b99834bc
-  _ac_task_id: null
-  _ac_worker_id: null
-  target_path_git_preflight: frontend/components/compare-returns-table.tsx:worktree=yes,head=yes,last_commit=pending@034e68898e78e2c30651fca7bcb004b4a0a3f479;frontend/components/__tests__/compare-returns-table.test.tsx:worktree=yes,head=yes,last_commit=pending@034e68898e78e2c30651fca7bcb004b4a0a3f479
-  report_contract_templates: '{"ac_evidence_mapping":{"AC1":"","AC2":"","AC3":""},"semantic_validation":{"classification_axis":"","recount":"","actual":"","result":""}}'
-  variation_checks_required: false
-  parent_ac_coverage: null
-  parent_contract_fingerprint: ''
-  cmd_id: cmd_4102
-  _deploy_notice: STALE TASK INVALID. This YAML is the latest instruction for cmd_4102
-    (deployed 2026-07-24T09:53:32). Read from the beginning.
-  deployed_at: '2026-07-24T09:53:32'
-  acknowledged_at: null
-  done_at: null
-  completed_at: null
-  purpose: '''疾風の一次実測(blt_20260720_140504、2026-07-20 14:05: 専用fixture5件=約4.3秒に対しunit全量2092件=760,762ms=12分41秒)で確定した検証税の是正。殿原則(厳密さは最終checkpointへ集中、途中はtry回数最大化)に従い、忍者の反復検証をscripts/test_select.sh選別実行(run_tests.sh'
-  target_path: /mnt/c/tools/multi-agent-shogun/scripts/run_tests.sh
-  acceptance_criteria:
-  - id: AC1
-    description: scripts/run_tests.shの選別実行経路を忍者の反復検証デフォルトとして整備(変更ファイル自動検出+選別結果と根拠のreceipt記録+選別失敗時は全量フォールバック)し、代表的な単一script変更で選別実行が全量比で短縮されることをreceiptの実測秒で確認する
-    checks:
-    - check: scripts/run_tests.shの選別実行経路を忍者の反復検証デフォルトとして整備(変更ファイル自動検出+選別結果と根拠のreceipt記録+選別失敗時は全量フォールバック)し、代表的な単一script変更で選別実行が全量比で短縮されることをreceiptの実測秒で確認する
-  - id: AC2
-    description: deploy_task.shが注入する検証契約の文言を『反復=選別実行可、報告直前に全量実行コマンド=bash scripts/run_tests.sh
-      unitでFAIL0・SKIP0を1回証明』の二段形へ更新し、契約注入の回帰テストをtests/unit/配下へ追加、全量実行コマンド=bash scripts/run_tests.sh
-      unitでFAIL0・SKIP0完走、中断再開時は実装commitと追加テストを引継ぎ成果物として報告へ記載することを確認する
-    checks:
-    - check: deploy_task.shが注入する検証契約の文言を『反復=選別実行可、報告直前に全量実行コマンド=bash scripts/run_tests.sh
-        unitでFAIL0・SKIP0を1回証明』の二段形へ更新し、契約注入の回帰テストをtests/unit/配下へ追加、全量実行コマンド=bash scripts/run_tests.sh
-        unitでFAIL0・SKIP0完走、中断再開時は実装commitと追加テストを引継ぎ成果物として報告へ記載することを確認する
-  report_path: queue/reports/kotaro_report_cmd_4102.yaml
-  report_filename: kotaro_report_cmd_4102.yaml
+  role_reminder: 忍者kotaro。このタスクのみ実行せよ。スコープ外の改善・判断は禁止。発見はlesson_candidate/decision_candidateへ
+  report_filename: kotaro_report_cmd_4152.yaml
+  report_path: queue/reports/kotaro_report_cmd_4152.yaml
+  bloom_level: null
+  ninja_weak_points:
+    source: karo_workarounds.yaml
+    total_workarounds: 2
+    top_pattern: file_disappearance(1件)
+    breakdown: file_disappearance(1件), context_freshness(1件)
+    warning: ⚠ ファイル操作後は存在確認。特にreport YAMLが消失していないか検証
+    gate_fail_top3:
+    - pattern: bc_result_empty
+      count: 1015
+    - pattern: verdict_invalid
+      count: 202
+    - pattern: status_pending
+      count: 165
+    gate_warning: '⚠ gate頻出FAIL: binary_checksの各check項目にresult("yes"/"no")を記入。空文字禁止;
+      verdictは"PASS"/"FAIL"の二値のみ。空文字/None禁止; 完了後にstatusを"completed"に更新。"pending"のまま報告禁止'
+    gate_blocks:
+    - reason: binary_checks_fail
+      count: 1
+      hint: binary_checksのresultが"yes"でない項目あり。全ACのチェック完了を確認
+  inspection_path: '["/mnt/c/tools/multi-agent-shogun/scripts/deploy_task.sh"]'
   commit_contract:
     required: true
     reason: code_or_unclassified_task
     task_type: full
     planned_paths:
-    - tests/unit/test_heavy_job_admission.bats
+    - scripts/deploy_task.sh
+    - tests/unit/test_deploy_task_yaml_injection.bats
     repo_root: /mnt/c/tools/multi-agent-shogun
-  report_id: rpt-373b9eee-7aa2-4f54-ac4a-7c14973dfab4
+  report_id: rpt-644b255b-524f-42e2-b27b-e68fbd387781
   report_identity_version: 2
+
+  session_state:
+    attempt: 4
+    last_block_reason: 'commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: files_modified path is outside planned scope: scripts/deploy_task.sh; commit_contract: files_modified path is outside planned scope: tests/unit/test_deploy_task_yaml_injection.bats; status: \"revision_requested\" cannot carry terminal verdict PASS (set status to completed after revisions)'
+    tried_approaches:
+    - 'commit_contract: required commit_hash is missing or invalid; binary_checks.AC1[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC2[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC3[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.AC4[0].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_checks.commit[0].result: 空文字。\"yes\" または \"no\" を記入せよ; status: \"pending\" はテンプレート初期値。完了後に \"completed\" に更新せよ; verdict: \"\" is not valid (must be \"PASS\", \"FAIL\", or \"PASS_NO_IMPROVEMENT\"); operational_simulation: MISSING (command,expected,actual,result; integration cmd requires command/expected/actual/result — LG055)'
+    - 'commit_contract: required commit_hash is missing or invalid; binary_checks.commit[0].result: \"pending — /ninja-commitで完了予定\" は不正。\"yes\" または \"no\" のみ; operational_simulation: MISSING (command,expected,actual,result; integration cmd requires command/expected/actual/result — LG055); status: \"done\" cannot carry terminal verdict PASS (set status to completed after revisions)'
+    - 'commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: files_modified path is outside planned scope: scripts/deploy_task.sh; commit_contract: files_modified path is outside planned scope: tests/unit/test_deploy_task_yaml_injection.bats; operational_simulation.result: must be PASS or FAIL'
+    - 'commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: files_modified path is outside planned scope: scripts/deploy_task.sh; commit_contract: files_modified path is outside planned scope: tests/unit/test_deploy_task_yaml_injection.bats; status: \"revision_requested\" cannot carry terminal verdict PASS (set status to completed after revisions)'
+    approach_summary: 'BootstrapギャップAC1+cross-project低スコアAC2+auto-deprecate無効AC3を是正し、56/56 PASS SKIP0達成。'
+    prior_attempts:
+    - attempt: 2
+      block_reason: 'commit_contract: required commit_hash is missing or invalid; binary_checks.commit[0].result: \"pending — /ninja-commitで完了予定\" は不正。\"yes\" または \"no\" のみ; operational_simulation: MISSING (command,expected,actual,result; integration cmd requires command/expected/actual/result — LG055); status: \"done\" cannot carry terminal verdict PASS (set status to completed after revisions)'
+      approach_summary: 'BootstrapギャップAC1+cross-project低スコアAC2+auto-deprecate無効AC3を是正し、56/56 PASS SKIP0達成。'
+    - attempt: 3
+      block_reason: 'commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: files_modified path is outside planned scope: scripts/deploy_task.sh; commit_contract: files_modified path is outside planned scope: tests/unit/test_deploy_task_yaml_injection.bats; operational_simulation.result: must be PASS or FAIL'
+      approach_summary: 'BootstrapギャップAC1+cross-project低スコアAC2+auto-deprecate無効AC3を是正し、56/56 PASS SKIP0達成。'
+    - attempt: 4
+      block_reason: 'commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: files_modified path is outside planned scope: scripts/deploy_task.sh; commit_contract: files_modified path is outside planned scope: tests/unit/test_deploy_task_yaml_injection.bats; status: \"revision_requested\" cannot carry terminal verdict PASS (set status to completed after revisions)'
+      approach_summary: 'BootstrapギャップAC1+cross-project低スコアAC2+auto-deprecate無効AC3を是正し、56/56 PASS SKIP0達成。'

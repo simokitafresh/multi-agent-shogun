@@ -1582,3 +1582,261 @@ PY
     [ "$before" = "$(sha256sum "$task" | awk '{print $1}')" ]
     [ ! -e "$report" ]
 }
+
+# test_necessity: feedback=0教訓がMIN_KEYWORD_SCORE_ZERO_FEEDBACK(5)境界でフィルタされる不変量を守る。
+# feedback>0教訓は通常閾値(2)で注入継続する境界も合わせて検証。
+@test "是正1 boundary: feedback=0の教訓はMIN_KEYWORD_SCORE_ZERO_FEEDBACK(5)で境界フィルタされる" {
+    local tmpdir task_file log_file
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/logs" "$tmpdir/projects/infra" "$tmpdir/config" "$tmpdir/queue" "$tmpdir/cache"
+    log_file="$tmpdir/deploy.log"
+
+    # lesson_impact.tsv: L_WITH_FEEDBACK has 1 USEFUL feedback; L_ZERO_LOW, L_ZERO_HIGH have none
+    {
+        printf 'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore\ttraversal_depth\n'
+        printf '2026-07-24T00:00:00\tcmd_t\tsasuke\tL_WITH_FEEDBACK\tfeedback\tUSEFUL\t1\tinfra\tfull\t1\t3\t0\n'
+    } > "$tmpdir/logs/lesson_impact.tsv"
+
+    # Lessons without tags (old-format → always reach scoring loop via backward-compat path)
+    # Keywords come from task description (xqzalpha..xqzdelta + xqzepsilon).
+    # L_ZERO_LOW uses xqzalpha only (keyword_score=3 < 5=zero-fb threshold) → BLOCKED
+    # L_ZERO_HIGH has 4 unique keywords (keyword_score=12 >= 5)              → INJECTED
+    # L_WITH_FEEDBACK uses xqzepsilon (keyword_score=3 >= 2 normal); unique keyword avoids dedup with L_ZERO_HIGH → INJECTED
+    cat > "$tmpdir/projects/infra/lessons.yaml" <<'YAML'
+lessons:
+- id: L_ZERO_LOW
+  title: xqzalpha
+  summary: condition applies
+  when: condition applies
+  status: confirmed
+- id: L_ZERO_HIGH
+  title: xqzalpha xqzbeta xqzgamma xqzdelta
+  summary: condition applies
+  when: condition applies
+  status: confirmed
+- id: L_WITH_FEEDBACK
+  title: xqzepsilon
+  when: xqzepsilon scenario
+  status: confirmed
+YAML
+
+    cat > "$tmpdir/config/projects.yaml" <<'YAML'
+projects:
+- id: infra
+  type: platform
+YAML
+    printf 'commands: {}\n' > "$tmpdir/queue/shogun_to_karo.yaml"
+
+    task_file="$tmpdir/task.yaml"
+    # target_path uses a non-existent path to avoid keyword contamination from path words
+    cat > "$task_file" <<'YAML'
+task:
+  parent_cmd: cmd_test_zero_feedback
+  task_id: cmd_test_zero_feedback_full
+  project: infra
+  task_type: full
+  tags:
+  - infra
+  description: xqzalpha xqzbeta xqzgamma xqzdelta xqzepsilon
+  target_path: /tmp/xqztestonly/xqztestpath
+YAML
+
+    # source first (libs need real SCRIPT_DIR), then override SCRIPT_DIR so inject reads from tmpdir
+    run bash -lc "
+        export DEPLOY_TASK_LIB_ONLY=1
+        export LOG='$log_file'
+        export DEPLOY_LESSON_CACHE_DIR='$tmpdir/cache'
+        source '$PROJECT_ROOT/scripts/deploy_task.sh' 2>/dev/null
+        SCRIPT_DIR='$tmpdir'
+        inject_related_lessons '$task_file'
+    "
+    [ "$status" -eq 0 ]
+
+    python3 - "$task_file" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+injected = [l['id'] for l in task.get('related_lessons', [])]
+assert 'L_ZERO_LOW' not in injected, \
+    f"L_ZERO_LOW (feedback=0, keyword_score=3<5) must NOT be injected. got: {injected}"
+assert 'L_ZERO_HIGH' in injected, \
+    f"L_ZERO_HIGH (feedback=0, keyword_score=12>=5) must be injected. got: {injected}"
+assert 'L_WITH_FEEDBACK' in injected, \
+    f"L_WITH_FEEDBACK (feedback>0, keyword_score=3>=2) must be injected. got: {injected}"
+PY
+}
+
+# test_necessity: cross-project教訓がMIN_KEYWORD_SCORE_CROSS_PROJECT(5)境界でフィルタされ、同project教訓は通常閾値(2)で注入継続する不変量を守る。
+@test "是正2 boundary: cross-project教訓はMIN_KEYWORD_SCORE_CROSS_PROJECT(5)で境界フィルタされ同project教訓は通過する" {
+    local tmpdir task_file log_file
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/logs" "$tmpdir/projects/dm-signal" "$tmpdir/projects/infra" \
+             "$tmpdir/config" "$tmpdir/queue" "$tmpdir/cache"
+    log_file="$tmpdir/deploy.log"
+
+    # lesson_impact.tsv: all 3 lessons have 2 USEFUL feedbacks (useful_rate=1.0, AC1 zero-fb filter does not interfere)
+    {
+        printf 'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore\ttraversal_depth\n'
+        for lid in L_CROSS_LOW L_CROSS_HIGH L_SAME; do
+            printf '2026-07-24T00:00:00\tcmd_t\tsasuke\t%s\tfeedback\tUSEFUL\t1\tdm-signal\tfull\t1\t3\t0\n' "$lid"
+            printf '2026-07-24T00:00:01\tcmd_t\tsasuke\t%s\tfeedback\tUSEFUL\t1\tdm-signal\tfull\t1\t3\t0\n' "$lid"
+        done
+    } > "$tmpdir/logs/lesson_impact.tsv"
+
+    # dm-signal lesson: L_SAME (same project, unique keyword yqzepsilon, keyword_score=3 >= 2 → INJECTED)
+    # Uses yqzepsilon instead of yqzalpha to avoid dedup with L_CROSS_HIGH which also has yqzalpha
+    cat > "$tmpdir/projects/dm-signal/lessons.yaml" <<'YAML'
+lessons:
+- id: L_SAME
+  title: yqzepsilon
+  when: yqzepsilon scenario
+  status: confirmed
+YAML
+
+    # infra (platform/cross-project) lessons:
+    # L_CROSS_LOW:  keyword_score=3 < 5=cross-project threshold → BLOCKED
+    # L_CROSS_HIGH: keyword_score=12 >= 5 → INJECTED
+    cat > "$tmpdir/projects/infra/lessons.yaml" <<'YAML'
+lessons:
+- id: L_CROSS_LOW
+  title: yqzalpha
+  summary: condition applies
+  when: condition applies
+  status: confirmed
+- id: L_CROSS_HIGH
+  title: yqzalpha yqzbeta yqzgamma yqzdelta
+  summary: condition applies
+  when: condition applies
+  status: confirmed
+YAML
+
+    cat > "$tmpdir/config/projects.yaml" <<'YAML'
+projects:
+- id: dm-signal
+  type: active
+- id: infra
+  type: platform
+YAML
+    printf 'commands: {}\n' > "$tmpdir/queue/shogun_to_karo.yaml"
+
+    task_file="$tmpdir/task.yaml"
+    # description includes yqzepsilon so L_SAME gets keyword_score=3 (yqzepsilon*3)
+    cat > "$task_file" <<'YAML'
+task:
+  parent_cmd: cmd_test_cross_project
+  task_id: cmd_test_cross_project_full
+  project: dm-signal
+  task_type: full
+  tags:
+  - deploy
+  description: yqzalpha yqzbeta yqzgamma yqzdelta yqzepsilon
+  target_path: /tmp/yqztestonly/yqztestpath
+YAML
+
+    # source first (libs need real SCRIPT_DIR), then override SCRIPT_DIR so inject reads from tmpdir
+    run bash -lc "
+        export DEPLOY_TASK_LIB_ONLY=1
+        export LOG='$log_file'
+        export DEPLOY_LESSON_CACHE_DIR='$tmpdir/cache'
+        source '$PROJECT_ROOT/scripts/deploy_task.sh' 2>/dev/null
+        SCRIPT_DIR='$tmpdir'
+        inject_related_lessons '$task_file'
+    "
+    [ "$status" -eq 0 ]
+
+    python3 - "$task_file" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+injected = [l['id'] for l in task.get('related_lessons', [])]
+assert 'L_CROSS_LOW' not in injected, \
+    f"L_CROSS_LOW (cross-project, keyword_score=3<5) must NOT be injected. got: {injected}"
+assert 'L_CROSS_HIGH' in injected, \
+    f"L_CROSS_HIGH (cross-project, keyword_score=12>=5) must be injected. got: {injected}"
+assert 'L_SAME' in injected, \
+    f"L_SAME (same-project, keyword_score=3>=2) must be injected. got: {injected}"
+PY
+}
+
+# test_necessity: ENABLE_ZERO_USEFUL_AUTO_DEPRECATE=1(デフォルト)かつMIN_SAMPLES=3で全期間usefulゼロ教訓が自動deprecateされる不変量を守る。
+@test "是正3: ENABLE_ZERO_USEFUL_AUTO_DEPRECATE=1(デフォルト)・MIN_SAMPLES=3でzero-useful教訓を自動deprecate" {
+    python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys
+
+script = open(sys.argv[1], encoding='utf-8').read()
+
+# デフォルト値の確認
+assert "os.environ.get('ZERO_USEFUL_DEPRECATE_MIN_SAMPLES', '3')" in script, \
+    "ZERO_USEFUL_DEPRECATE_MIN_SAMPLES default must be '3'"
+assert "os.environ.get('ENABLE_ZERO_USEFUL_AUTO_DEPRECATE', '1') == '1'" in script, \
+    "ENABLE_ZERO_USEFUL_AUTO_DEPRECATE default must be '1'"
+
+# apply_zero_useful_deprecation関数の構造確認 (build_lesson_detailが後に来る)
+start = script.index("def apply_zero_useful_deprecation(")
+end = script.index("\ndef build_lesson_detail(", start)
+body = script[start:end]
+assert "if not ENABLE_ZERO_USEFUL_AUTO_DEPRECATE:" in body, body[:200]
+assert "zero_lids" in body, body[:200]
+assert "total >= ZERO_USEFUL_DEPRECATE_MIN_SAMPLES" in body, body[:200]
+assert "useful_counts.get(lid, 0) == 0" in body, body[:200]
+PY
+
+    # 実際にapply_zero_useful_deprecation関数を呼んでMIN_SAMPLES=3境界を検証
+    local tmpdir
+    tmpdir="$(mktemp -d)"
+    cat > "$tmpdir/lessons.yaml" <<'YAML'
+lessons:
+- id: L_ZERO_3
+  title: test zero useful three samples
+  status: confirmed
+- id: L_ZERO_2
+  title: test zero useful two samples
+  status: confirmed
+- id: L_ACTIVE
+  title: active lesson
+  status: confirmed
+YAML
+
+    python3 - "$tmpdir/lessons.yaml" "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
+import sys, os, yaml, re
+
+lessons_path = sys.argv[1]
+script_path = sys.argv[2]
+
+script = open(script_path, encoding='utf-8').read()
+
+# Extract _deprecate_lessons_in_file and apply_zero_useful_deprecation
+relevant_fns = []
+for fn in ["def _deprecate_lessons_in_file(", "def apply_zero_useful_deprecation("]:
+    s = script.index(fn)
+    remaining = script[s:]
+    m = re.search(r'\ndef [a-z]', remaining[1:])
+    e = s + 1 + m.start() if m else len(script)
+    relevant_fns.append(script[s:e])
+
+ns = {}
+exec("import os, sys, tempfile, yaml, re\n", ns)
+exec("ZERO_USEFUL_DEPRECATE_MIN_SAMPLES = int(os.environ.get('ZERO_USEFUL_DEPRECATE_MIN_SAMPLES', '3'))\n", ns)
+exec("ENABLE_ZERO_USEFUL_AUTO_DEPRECATE = os.environ.get('ENABLE_ZERO_USEFUL_AUTO_DEPRECATE', '1') == '1'\n", ns)
+for fn_body in relevant_fns:
+    exec(fn_body, ns)
+
+lessons = yaml.safe_load(open(lessons_path, encoding='utf-8'))['lessons']
+
+# L_ZERO_3: 3 NOT_USEFUL (== MIN_SAMPLES=3) → deprecated
+# L_ZERO_2: 2 NOT_USEFUL (< MIN_SAMPLES=3) → NOT deprecated
+# L_ACTIVE: 2 USEFUL → NOT deprecated
+feedback_totals = {'L_ZERO_3': 3, 'L_ZERO_2': 2, 'L_ACTIVE': 2}
+useful_counts = {'L_ZERO_3': 0, 'L_ZERO_2': 0, 'L_ACTIVE': 2}
+
+changed = ns['apply_zero_useful_deprecation'](lessons, lessons_path, feedback_totals, useful_counts)
+assert changed > 0, f"Expected auto-deprecate changes at MIN_SAMPLES=3 boundary, got {changed}"
+
+zero3 = next(l for l in lessons if l['id'] == 'L_ZERO_3')
+assert zero3.get('deprecated') is True, f"L_ZERO_3 (samples=3>=3, useful=0) must be deprecated. got: {zero3}"
+
+zero2 = next(l for l in lessons if l['id'] == 'L_ZERO_2')
+assert not zero2.get('deprecated'), f"L_ZERO_2 (samples=2<3) must NOT be deprecated. got: {zero2}"
+
+active = next(l for l in lessons if l['id'] == 'L_ACTIVE')
+assert not active.get('deprecated'), f"L_ACTIVE (useful>0) must NOT be deprecated. got: {active}"
+PY
+}
