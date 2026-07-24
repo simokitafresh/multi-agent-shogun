@@ -109,7 +109,12 @@ def simulated_staged_files(repo: str, add_commands: list[list[str]]) -> list[str
     os.close(fd)
     try:
         if source_index.exists():
-            shutil.copy2(source_index, temporary_index)
+            try:
+                shutil.copy2(source_index, temporary_index)
+            except PermissionError:
+                # NTFS/WSL2 cannot set mtime on Windows-hosted files; fall back
+                # to content-only copy (mtime is irrelevant for a temporary index).
+                shutil.copy(source_index, temporary_index)
         env = os.environ.copy()
         env["GIT_INDEX_FILE"] = temporary_index
         for add_args in add_commands:
