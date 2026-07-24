@@ -1250,7 +1250,7 @@ _lgtm_resolved_by_ss=$(awk '
     in_obs && /^    - / { obs=obs " " $0 }
     in_obs && /^  [^ ]/ { in_obs=0 }
     /timestamp:/ && rt=="self_study" {
-        if (obs ~ /LGTM→BLOCK遡及/) { s=obs; while (match(s, /cmd_[0-9]+/)) { print substr(s,RSTART,RLENGTH); s=substr(s,RSTART+RLENGTH) } }
+        if (obs ~ /LGTM→BLOCK遡及/) { s=obs; while (match(s, /cmd_[a-zA-Z0-9_]+/)) { print substr(s,RSTART,RLENGTH); s=substr(s,RSTART+RLENGTH) } }
         obs=""; rt=""
     }
 ' "$LOG_FILE" 2>/dev/null | sort -u)
