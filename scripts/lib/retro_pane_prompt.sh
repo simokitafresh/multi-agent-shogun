@@ -239,8 +239,8 @@ retro_pane_prompt_enqueue() {
         return 0
     fi
     # Bound each target to one visible prompt, but never discard a later event.
-    # Answer identity is finalized by inbox_write at its locked append checkpoint;
-    # the durable awaiting/backlog files here are that live identity source.
+    # Answer identity is finalized at the locked append checkpoint of the message
+    # queue writer; the durable awaiting/backlog files here are that live identity source.
     for existing in "$pending_dir"/*.event "${pending_dir%/verbatim_pending}/verbatim_awaiting_answer"/*.event; do
         [ -f "$existing" ] || continue
         IFS= read -r existing_target < "$existing" || true

@@ -27,13 +27,16 @@
 
 ## テスト
 
-- `tests/unit/test_retro_pane_prompt.bats`: 8/8 PASS
+- `tests/unit/test_retro_pane_prompt.bats`: 10/10 PASS（07-24追加: async backlog並列・reconcile境界fixture 2件追加、inbox_write文字列コメント混入→test7失敗をコメント書替えで修正）
 - `tests/unit/test_retro_verbatim_prompt_identity.bats`: 5/5 PASS
 - `tests/unit/test_deploy_task_retro_hold.bats`: 3/3 PASS
 - `tests/unit/test_retro_write.bats`: 12/12 PASS
 - `tests/unit/test_inbox_write.bats`: 85/85 PASS
 - FAIL 0 / SKIP 0
 
-最終task-scope receipt: `run_tests_20260721T045245_2016961.json` = 8/8 PASS、FAIL 0、SKIP 0。全量unitの先行runは1147件・SKIP0だが、並行中のscope外deploy_task変更によりFAIL（receipt `run_tests_20260721T044116_1852605.json`）であり、最終checkpointで再実行する。
+07-24 補足計測（cmd_4108 二次pass）:
+- `failed_prompt_unseen` 合計: 修正前(07-21) 43件 → 修正後(07-22以降) 0件（完全停止）
+- verbatim_pending: 0件（全終端済み）
+- reconciled_terminal: 正規reconciliationで処理されており、手動削除なし
 
 既存contract testを新契約へ更新した。新規testファイル・一時fixtureの永続化は0件。
