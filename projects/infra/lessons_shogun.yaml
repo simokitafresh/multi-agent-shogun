@@ -457,6 +457,7 @@ lessons:
   automated: true
   enforcement: 'cmd_save.sh LG020が自動強制'
 - id: 'LS109'
+  superseded_by: 'LS110'
   title: 'environment_changeはdouble quoteで書け — WARN対応checkのawk抽出はsingle quoteを剥がさない'
   origin: '[[cmd_4150]]'
   detail: 'cmd_4150で4回BLOCK。真因2層: (1)AC内の裸数値(件数/上位N)が数量WARN2件を誘発しWARN>0でCheck 3.6b(WARN時environment_change強制)が発火 (2)environment_changeをsingle quote(''type=lesson; ...'')で書いたためcmd_save.sh L7124のawk抽出(sub両端の二重引用符のみ剥離)が先頭''を残しparse_structured_environment_changeが失敗→『非構造化』BLOCK。修正: AC数値を相対表現化+environment_changeを二重引用符に変更でPASS。型: environment_changeは常にdouble quote、AC具体数値はassumptions/purposeのみ(LS-A04(36)と同根)'
@@ -467,8 +468,16 @@ lessons:
 - id: 'LS110'
   title: 'AC・cmd本文の絶対数値は起票前にassumptions claimへ隔離せよ'
   origin: '[[cmd_4154]]'
-  detail: 'cmd_4154初回preflightで数値絶対値WARN。ratchet行番号等をcmd本文に書いた。LS-A04(36)裸数量語則の再発形。起票時の型: 数値・行番号・件数はassumptions claim内のみ、AC/commandは相対表現+参照名で書く'
+  detail: 'cmd_4154初回preflightで数値絶対値WARN。ratchet行番号等をcmd本文に書いた。LS-A04(36)裸数量語則の再発形。起票時の型: 数値・行番号・件数はassumptions claim内のみ、AC/commandは相対表現+参照名で書く。(LS109吸収)environment_changeは常にdouble quoteで書く(single quoteはawk抽出が剥がさず非構造化BLOCK、cmd_4150で4回BLOCK実証)'
   source_cmd: 'cmd_4154'
   created_at: '2026-07-24'
   automated: true
   enforcement: 'cmd_save.sh数値絶対値WARN(既存)が自動検知'
+- id: 'LS111'
+  title: 'gateテンプレ盲従による全量テスト指示 — 定型句も三層記憶と突合してから従え'
+  origin: '[[cmd_4154]]'
+  detail: '2026-07-24全量テスト事故: 将軍がcmd_4154-4163のAC2へrun_tests.sh unit(約2454s)を焼込み忍者が反復フル実行(延べ80-100分浪費)。直接原因=cmd_save.sh test_ci_execution_contract(将軍のcmd_3867由来)+hookガイダンスの全量字句強制に将軍がBLOCK回避で盲従。真因=起票の分岐点で三層記憶が構造発火しない(knowledge:59515c96途中affected/最終unit二段設計・才蔵二段設計提案・05-19全量26分問題が既存なのに未参照)。付随=是正時に殿発言を殿裁定としてコードへ焼込む帰属捏造→即削除。強制のみ有効: gate反転(全量指定BLOCK)+起票Edit時の記憶DB自動注入拡張で意志依存ゼロ化'
+  source_cmd: 'cmd_4154'
+  created_at: '2026-07-24'
+  automated: true
+  enforcement: 'cmd_save.sh test_ci_execution_contract反転(選択実行要求+unit/all BLOCK)+pre-write-edit-combined.shガイダンス同期+起票Edit時memory-db自動注入拡張(実装中)'

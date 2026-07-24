@@ -6723,12 +6723,19 @@ $(cmd_block_get_field "purpose")"
     # 識別子内substring誤マッチを排除する(2026-07-21 cmd_4112設計cmド誤BLOCK FP修正。LS-A22(13))。
     # 日本語(テスト/修正/回帰)は語境界問題がないため従来通り。挙動は正本と真陽性ケースで一致、FPのみ除去。
     if grep -qiE 'テスト.*(修正|\bfix|回帰|regression)|\bCI\b.*(修正|\bfix|failure|\bfail)|continuous[[:space:]]+integration|\btest.*(\bfix|\bregression|\bfailure)|\bci\b.*(\bfix|\bfailure)' <<< "$signal_text"; then
-        if ! grep -qiE '全量.*(実行|run)|full.*(run|suite)|全.*(suite|テスト).*(実行|run)' <<< "$ac_text"; then missing+=("全量実行コマンド"); fi
+        # 2026-07-24: 本checkが「全量実行」語を強制した結果、将軍ACに全量unitが焼き込まれ
+        # 忍者がフルスイート実行する経路になっていた(実測: unit全量 rolling_median 2454s vs
+        # task選択実行 数秒。run_tests.sh cmd_4105計測=99.7%削減が選択実行の設計原則)。
+        # 是正: 要求を選択実行契約(run_tests.sh task|file|affected)へ反転し、フルスイート指定はBLOCK。
+        if grep -qiE 'run_tests\.sh[[:space:]]+(unit|all|push)\b|全量.*(実行|run)|full.*(run|suite)' <<< "$ac_text"; then
+            missing+=("フルスイート指定検出(原則禁止。run_tests.sh task/file/affectedの選択実行へ書換えよ)")
+        fi
+        if ! grep -qiE 'run_tests\.sh[[:space:]]+(task|file|affected)\b|選択実行' <<< "$ac_text"; then missing+=("選択実行コマンド(run_tests.sh task/file/affected)"); fi
         if ! grep -qiE 'FAIL[[:space:]]*0|0[[:space:]]*(failures?|fails?|失敗)|no[[:space:]]*(failures?|fails?)' <<< "$ac_text"; then missing+=("FAIL0"); fi
         if ! grep -qiE 'SKIP[[:space:]]*0|0[[:space:]]*(skips?|skip|スキップ)|no[[:space:]]*skips?' <<< "$ac_text"; then missing+=("SKIP0"); fi
         if ! grep -qiE '中断.*(再開|resume)|再開.*(成果物|artifact|引継|handoff)|成果物.*(引継|handoff)' <<< "$ac_text"; then missing+=("中断再開時の成果物引継ぎ"); fi
         if (( ${#missing[@]} > 0 )); then
-            record_block_reason "test_ci_execution_contract_missing: ${missing[*]}。ACに全量実行コマンド・FAIL0/SKIP0・中断再開時の成果物引継ぎ契約を固定せよ"
+            record_block_reason "test_ci_execution_contract_missing: ${missing[*]}。ACに選択実行コマンド(run_tests.sh task/file/affected)・FAIL0/SKIP0・中断再開時の成果物引継ぎ契約を固定せよ。フルスイート(unit/all)はテスト時間を極端に悪化させるため選択実行が原則(unit全量2454s vs 選択数秒の実測)"
             abort_if_block_immediate || exit 1
         fi
     fi
