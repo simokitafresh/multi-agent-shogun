@@ -4037,6 +4037,96 @@ task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {
 print(" ".join(commit_owned_paths(task)))
 PY
 )
+    # B32 asymmetric expansion: an AC that orders the worker to extend tests
+    # makes the test file part of the delivery, but issuers only declare the
+    # implementation path, so every such task hit "files_modified path is
+    # outside planned scope" (25 real pairs on 2026-07-25/26).  Expand the
+    # ceiling only toward existing tests/ files tied to a planned
+    # implementation path (name stem or in-file reference).  Unrelated tests/
+    # files and every non-tests/ path stay outside scope.
+    if [ "${project:-infra}" = "infra" ] && [ -d "$SCRIPT_DIR/tests" ]; then
+        local _commit_paths_with_tests
+        _commit_paths_with_tests=$(python3 - "$task_file" "$SCRIPT_DIR" "$_commit_planned_paths" <<'PY'
+import os, re, subprocess, sys, yaml
+
+task_file, repo_root, planned_raw = sys.argv[1], sys.argv[2], sys.argv[3]
+planned = [p for p in planned_raw.split() if p]
+task = (yaml.safe_load(open(task_file, encoding="utf-8")) or {}).get("task", {}) or {}
+
+
+def ac_text(value):
+    if isinstance(value, dict):
+        return " ".join(ac_text(v) for v in value.values())
+    if isinstance(value, (list, tuple)):
+        return " ".join(ac_text(v) for v in value)
+    return str(value or "")
+
+
+text = ac_text(task.get("acceptance_criteria"))
+requires_test = bool(re.search(r"(テスト|bats|fixture|regression|tests?/|\btests?\b)", text, re.IGNORECASE))
+code_paths = [p for p in planned if not p.startswith("tests/")]
+if not requires_test or not code_paths:
+    print(" ".join(planned))
+    raise SystemExit(0)
+
+stems = {os.path.splitext(os.path.basename(p))[0] for p in code_paths}
+names = {os.path.basename(p) for p in code_paths}
+tests_root = os.path.join(repo_root, "tests")
+
+
+def run(cmd, stdin_text=None):
+    try:
+        proc = subprocess.run(
+            cmd, cwd=repo_root, input=stdin_text,
+            capture_output=True, text=True, timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if proc.returncode > 1:  # 1 == "no match" for grep, which is a real answer
+        return None
+    return proc.stdout.split()
+
+
+# This runs on the hot deploy path, so the scan stays in C: the git index lane
+# (~0.9s on DrvFs) is tried first and find+grep (~1.8s) is the fallback for
+# non-repo trees such as the bats scaffold.  A Python walk+read was 4.9s.
+suffixes = (".bats", ".py", ".sh")
+# "^[^#]*" keeps a comment-only mention from widening the ceiling:
+# tests/unit/test_inbox_write.bats names scripts/archive_completed.sh in a
+# comment and must stay outside scope.
+patterns = "\n".join(
+    "^[^#]*" + re.escape(token) for token in sorted(set(code_paths) | names)
+)
+
+test_files = run(["git", "ls-files", "--", "tests"])
+if test_files is not None:
+    test_files = [p for p in test_files if p.endswith(suffixes)]
+    hits = run(["git", "grep", "-lE", "-f", "-", "--", "tests"], patterns) or []
+else:
+    test_files = run(
+        ["find", tests_root, "-type", "f",
+         "(", "-name", "*.bats", "-o", "-name", "*.py", "-o", "-name", "*.sh", ")"],
+    ) or []
+    hits = []
+    if test_files:
+        hits = run(["grep", "-lE", "-f", "-", "--", *test_files], patterns) or []
+
+added = set()
+for path in test_files:
+    stem = os.path.splitext(os.path.basename(path))[0]
+    if any(stem == "test_" + s or stem.startswith("test_" + s + "_") for s in stems):
+        added.add(os.path.relpath(os.path.join(repo_root, path), repo_root))
+for hit in hits:
+    if hit.endswith(suffixes):
+        added.add(os.path.relpath(os.path.join(repo_root, hit), repo_root))
+
+print(" ".join(planned + sorted(p for p in added if p not in planned)))
+PY
+) || _commit_paths_with_tests=""
+        if [ -n "$_commit_paths_with_tests" ]; then
+            _commit_planned_paths="$_commit_paths_with_tests"
+        fi
+    fi
     local _commit_has_code_path=false
     if printf '%s\n' "$_commit_planned_paths" | grep -Eqi \
         '(scripts/|src/|tests/|app/|lib/|[[:alnum:]_./-]+\.(sh|bash|py|js|jsx|ts|tsx|go|rs|java|kt|rb|php|c|cc|cpp|h|hpp)([^[:alnum:]_]|$))'; then
@@ -8758,6 +8848,7 @@ deploy_task_guard_target_path_collision() {
 import json
 import os
 import re
+import subprocess
 import sys
 import yaml
 from datetime import datetime, timezone
@@ -8852,6 +8943,7 @@ if not current_files and not current_dirs:
 task_dir = os.path.join(script_dir, 'queue', 'tasks')
 collisions = []
 dir_infos = []
+settled_claims = []
 for name in sorted(os.listdir(task_dir)) if os.path.isdir(task_dir) else []:
     if not name.endswith('.yaml') or name.startswith('.'):
         continue
@@ -8861,15 +8953,61 @@ for name in sorted(os.listdir(task_dir)) if os.path.isdir(task_dir) else []:
     peer_path = os.path.join(task_dir, name)
     peer_task = load_task(peer_path)
     status = str(peer_task.get('status') or '').strip()
-    if status not in active_statuses:
-        continue
     peer_files, peer_dirs = split_file_targets(reserved_paths(peer_task))
+    if status not in active_statuses:
+        # The task record says "finished", but unpushed edits say otherwise.
+        # Keep the claim so the worktree lane below can compare declaration
+        # against the actual tree (2026-07-26: hanzo held 5 uncommitted files
+        # from terminal tasks while the same paths were deployed to tobisaru).
+        settled_claims.append((peer_ninja, status, str(peer_task.get('parent_cmd') or ''), peer_files))
+        continue
     file_overlap = sorted(current_files & peer_files)
     dir_overlap = sorted(current_dirs & peer_dirs)
     if file_overlap:
         collisions.append((peer_ninja, status, str(peer_task.get('parent_cmd') or ''), file_overlap))
     if dir_overlap:
         dir_infos.append((peer_ninja, status, str(peer_task.get('parent_cmd') or ''), dir_overlap))
+
+def worktree_dirty(candidates):
+    """Paths that the tree says are still in flight, whatever the task says."""
+    rels = []
+    for path in sorted(candidates):
+        rel = os.path.relpath(path, script_dir)
+        if not rel.startswith('..'):
+            rels.append(rel)
+    if not rels:
+        return set()
+    try:
+        # Pathspec-limited on purpose: a bare `git status` is 54s on this
+        # DrvFs checkout, the limited form is 0.6s.
+        proc = subprocess.run(
+            ['git', '-C', script_dir, 'status', '--porcelain', '--', *rels],
+            capture_output=True, text=True, timeout=60,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return set()
+    if proc.returncode != 0:
+        return set()
+    dirty = set()
+    for line in proc.stdout.splitlines():
+        entry = line[3:].strip()
+        if ' -> ' in entry:
+            entry = entry.split(' -> ')[-1]
+        dirty.add(normalize(entry.strip('"')))
+    return dirty
+
+
+settled_overlap = set()
+for _peer, _status, _cmd, _peer_files in settled_claims:
+    settled_overlap |= (current_files & _peer_files)
+if settled_overlap:
+    dirty_paths = worktree_dirty(settled_overlap)
+    allowed_settled = handoff_peers(current_task)
+    for peer_ninja, status, parent_cmd, peer_files in settled_claims:
+        overlap = sorted((current_files & peer_files) & dirty_paths)
+        if not overlap or peer_ninja in allowed_settled or parent_cmd in allowed_settled:
+            continue
+        collisions.append((peer_ninja, f'{status or "unknown"}/uncommitted', parent_cmd, overlap))
 
 for peer_ninja, status, parent_cmd, overlap in dir_infos:
     print(

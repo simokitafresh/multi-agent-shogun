@@ -216,3 +216,107 @@ assert not valid_commit_identity('no-code-change', report, root)
 PY
   [ "$status" -eq 0 ]
 }
+
+# B32 (2026-07-26): 実データ由来のfixture。2026-07-25/26に発生した
+# "files_modified path is outside planned scope: tests/..." の実ペアを
+# そのまま素材にする(合成しない)。real_test_pairs の左=起票時のplanned実装path、
+# 右=忍者がACに従って触り、scope外BLOCKされた実在のtestファイル。
+stage_real_test_fixtures() {
+  mkdir -p "$TEST_PROJECT/tests/unit"
+  local rel
+  for rel in "$@"; do
+    cp "$PROJECT_ROOT/$rel" "$TEST_PROJECT/tests/unit/$(basename "$rel")"
+  done
+}
+
+build_test_requiring_task() {
+  local task_id="$1" target="$2" ac_description="$3"
+  cat >"$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  assigned_to: sasuke
+  task_id: ${task_id}
+  parent_cmd: ${task_id}
+  project: infra
+  task_type: hotfix
+  title: b32 planned_paths fixture
+  target_path: ${target}
+  ac_version: fixture-v1
+  acceptance_criteria:
+    - id: AC1
+      description: ${ac_description}
+EOF
+  generate_report_template sasuke "$task_id" "$task_id" infra >/dev/null
+}
+
+# test_necessity: ACがtestの拡張を要求する場合、実装pathに結び付く既存tests/
+# ファイルはplanned_pathsに含まれなければならない(含まれないとcommit時に
+# 必ずscope外BLOCKになる)。
+@test "B32 positive control: AC requiring tests expands planned_paths to the real test files" {
+  stage_real_test_fixtures \
+    tests/unit/test_ninja_scope_commit.bats \
+    tests/unit/test_scratch_retention.bats \
+    tests/unit/test_archive_completed_queue_flag_retention.bats \
+    tests/unit/test_gate_skill_script_refs.bats \
+    tests/unit/test_gate_gunshi_report_precheck_cache.bats \
+    tests/unit/test_cmd_complete_gate_task_idle.bats
+
+  local expanded=0 total=0
+  local pair impl expected
+  for pair in \
+    "scripts/ninja_scope_commit.sh|tests/unit/test_ninja_scope_commit.bats" \
+    "scripts/ninja_monitor.sh|tests/unit/test_scratch_retention.bats" \
+    "scripts/archive_completed.sh|tests/unit/test_archive_completed_queue_flag_retention.bats" \
+    "scripts/gates/gate_skill_script_refs.sh|tests/unit/test_gate_skill_script_refs.bats" \
+    "scripts/gates/gate_gunshi_report_precheck.sh|tests/unit/test_gate_gunshi_report_precheck_cache.bats" \
+    "scripts/cmd_complete_gate.sh|tests/unit/test_cmd_complete_gate_task_idle.bats" \
+  ; do
+    impl="${pair%%|*}"
+    expected="${pair##*|}"
+    total=$((total + 1))
+    build_test_requiring_task "cmd_b32_${total}" "$impl" \
+      "既存テストを拡張して両方向fixtureを固定する。新規testファイルを作るな"
+    if python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" "$impl" "$expected" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
+paths = task["commit_contract"]["planned_paths"]
+assert sys.argv[2] in paths, (sys.argv[2], paths)
+assert sys.argv[3] in paths, (sys.argv[3], paths)
+PY
+    then
+      expanded=$((expanded + 1))
+    else
+      printf 'not expanded: %s -> %s\n' "$impl" "$expected" >&3
+    fi
+  done
+  [ "$expanded" -eq "$total" ]
+}
+
+# test_necessity: 拡張は非対称でなければならない。ACがtestを要求しない場合と、
+# 実装pathに無関係なtests/ファイルは、従来通りscope外に留まる。
+@test "B32 negative control: unrelated tests and non-test ACs keep the original ceiling" {
+  stage_real_test_fixtures \
+    tests/unit/test_archive_completed_queue_flag_retention.bats \
+    tests/unit/test_inbox_write.bats
+
+  build_test_requiring_task cmd_b32_neg_related scripts/archive_completed.sh \
+    "既存テストを拡張して両方向fixtureを固定する"
+  run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys, yaml
+paths = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]["commit_contract"]["planned_paths"]
+assert "tests/unit/test_archive_completed_queue_flag_retention.bats" in paths, paths
+assert "tests/unit/test_inbox_write.bats" not in paths, paths
+assert not any(p.startswith("scripts/") and p != "scripts/archive_completed.sh" for p in paths), paths
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+
+  build_test_requiring_task cmd_b32_neg_notest scripts/archive_completed.sh \
+    "queue flagの保持を実装する"
+  run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys, yaml
+paths = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]["commit_contract"]["planned_paths"]
+assert paths == ["scripts/archive_completed.sh"], paths
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+}
