@@ -1238,6 +1238,76 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "B26-ESCAPE(ci_fix): done task with unarchived report allows task_type=ci_fix deployment through and logs b26_ci_fix_escape" {
+    # 実データ再現(logs/defense_overhead.jsonl 2026-07-25T23:50:51実測):
+    # held=cmd_karo_impl_lg051_scope_basename_20260725(saizo,status=done,report未archive)
+    # incoming=cmd_karo_ci_fix_30161415740_phantom_unit_path_20260725(task_type=ci_fix)
+    cat > "$TEST_PROJECT/queue/tasks/saizo.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_karo_impl_lg051_scope_basename_20260725
+  status: done
+EOF
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_karo_impl_lg051_scope_basename_20260725.yaml" <<'EOF'
+worker_id: saizo
+verdict: PASS
+EOF
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_INCOMING_TASK_TYPE=ci_fix
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=saizo
+        deploy_task_guard_worker_assignment "$1/queue/tasks/saizo.yaml" cmd_karo_ci_fix_30161415740_phantom_unit_path_20260725
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"B26-ESCAPE(ci_fix)"* ]]
+
+    run grep -c '"event":"b26_ci_fix_escape"' "$TEST_PROJECT/logs/defense_overhead.jsonl"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+
+    run grep -q '"held_cmd":"cmd_karo_impl_lg051_scope_basename_20260725".*"incoming_cmd":"cmd_karo_ci_fix_30161415740_phantom_unit_path_20260725"' "$TEST_PROJECT/logs/defense_overhead.jsonl"
+    [ "$status" -eq 0 ]
+}
+
+@test "B26-ESCAPE(ci_fix)の陰性対照: 同条件でtask_type=hotfixは従来通りBLOCKされ、escapeログは出力されない" {
+    # AC2陰性方向: B26 escape hatchが非ci_fixを緩めていないことを、
+    # 陽性テストと同一状態(done+report未archive)・実データ(cmd_karo_hotfix_reflux_deploy_race_20260725)で固定する
+    cat > "$TEST_PROJECT/queue/tasks/saizo.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_karo_impl_lg051_scope_basename_20260725
+  status: done
+EOF
+    cat > "$TEST_PROJECT/queue/reports/saizo_report_cmd_karo_impl_lg051_scope_basename_20260725.yaml" <<'EOF'
+worker_id: saizo
+verdict: PASS
+EOF
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        export DEPLOY_INCOMING_TASK_TYPE=hotfix
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=saizo
+        before=$(sha256sum "$1/queue/tasks/saizo.yaml")
+        if deploy_task_guard_worker_assignment "$1/queue/tasks/saizo.yaml" cmd_karo_hotfix_reflux_deploy_race_20260725; then
+            exit 9
+        fi
+        after=$(sha256sum "$1/queue/tasks/saizo.yaml")
+        [ "$before" = "$after" ]
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK"* ]]
+    [[ "$output" == *"完了済み(status=done)だが報告未archive"* ]]
+    [[ "$output" != *"B26-ESCAPE"* ]]
+
+    if [ -f "$TEST_PROJECT/logs/defense_overhead.jsonl" ]; then
+        run grep -c '"event":"b26_ci_fix_escape"' "$TEST_PROJECT/logs/defense_overhead.jsonl"
+        [ "$output" -eq 0 ]
+    fi
+}
+
 @test "GA-258: malformed same-command task cannot skip the atomic repair path" {
     cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
 task:
