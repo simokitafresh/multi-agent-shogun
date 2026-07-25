@@ -236,6 +236,34 @@ PY
   [ "$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f | wc -l)" -eq 2 ]
 }
 
+@test "no-code identity comes from the gate accessor, not from slicing the fingerprint" {
+  printf '\ncommit_hash: no-code-change\n' >> "$REPORT"
+  source "$ROOT/scripts/lib/review_approval.sh"
+
+  fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT")
+  # 恒偽の再発防止: fingerprint は content hash 単独であり区切り文字を持たない。
+  # ∴ 呼び出し側の "${fingerprint##*:}" は常に hash 全体を返し no-code 判定は恒偽になる。
+  [[ "$fp" != *:* ]]
+  [ "${fp##*:}" = "$fp" ]
+  [ "${fp##*:}" != "no-code-change" ]
+  # gate が決めた commit identity は専用アクセサからのみ得られる。
+  [ "$(PROJECT_ROOT="$ROOT" review_report_commit_identity "$REPORT")" = "no-code-change" ]
+}
+
+@test "review fingerprint cache entry holds fingerprint and identity in one two-line file" {
+  printf '\ncommit_hash: no-code-change\n' >> "$REPORT"
+  source "$ROOT/scripts/lib/review_approval.sh"
+
+  fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT")
+  # (realpath, content_hash)組ごとにちょうど1エントリ。sidecarを作らない。
+  [ "$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f | wc -l)" -eq 1 ]
+  cache_file=$(find "$REVIEW_FP_CACHE_DIR" -maxdepth 1 -type f)
+  [ "$(wc -l < "$cache_file")" -eq 2 ]
+  [ "$(sed -n '1p' "$cache_file")" = "$fp" ]
+  [ "$(sed -n '2p' "$cache_file")" = "no-code-change" ]
+  [ "$(PROJECT_ROOT="$ROOT" review_report_commit_identity "$REPORT")" = "no-code-change" ]
+}
+
 @test "cross-repo commit contract proves every path in its owning repository" {
   local repo_a="$BATS_TEST_TMPDIR/repo-a" repo_b="$BATS_TEST_TMPDIR/repo-b"
   for repo in "$repo_a" "$repo_b"; do
