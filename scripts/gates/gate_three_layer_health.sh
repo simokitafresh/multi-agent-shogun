@@ -35,7 +35,10 @@ record_cache_rowid_gap() {
     # 共有writerの5フィールド契約(source/check_id/wall_ms/verdict/event_id)は
     # 変えずに、値は event_id へ詰める。event_idの許容文字は [A-Za-z0-9_.:-] の
     # ため区切りは '-' を使う。既存の grep + json parse がそのまま使える。
-    event_id="cache_rowid_gap:cache-${cache_rowid}:source-${source_rowid}:gap-${gap}:warn-${rowid_gap_warn}:${stamp}"
+    # writerはevent_id重複を排除する。秒だけだと同一秒に走った別プロセスの
+    # 観測が1件へ潰れる(実測: 2並列で1行しか残らなかった)ため、PIDも含めて
+    # 「1実行=1行」を厳密にする。
+    event_id="cache_rowid_gap:cache-${cache_rowid}:source-${source_rowid}:gap-${gap}:warn-${rowid_gap_warn}:${stamp}-$$"
     case "$verdict" in
         PASS|WARN) ledger_verdict="$verdict" ;;
         # 欠測は WARN として残す。行を書かなければ『測ってgap=0』と
