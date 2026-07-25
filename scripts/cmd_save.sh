@@ -5271,12 +5271,20 @@ show_three_layer_memory_ruling_info() {
         return 0
     fi
 
+    # cmd_karo_impl_cmd_save_three_layer_speed_20260725 (AC2): n=5直接計測で
+    # memory_db_search段(227,441件のFTS問合せ)が支配相と判明した(直接計測:
+    # デフォルトSEMANTIC_MEMORY_DB_TIMEOUT=5で5/5回が5000-6249msの自身のtimeout上限へ到達=
+    # 早期成功でなく毎回timeout枯渇)。この関数はgate判定に無関係なINFO専用処理であり
+    # (呼出元コメント参照、verdict常にPASS固定)、判定条件は一切変更せず支配相のtimeout
+    # 予算のみを縮小する。外側timeoutにも-k(kill-after)を付け、SIGTERM未応答時の
+    # 追加滞留を打ち切る(是正前は外側8sの想定上限を大きく超える実測あり=32.2s)。
     if command -v timeout >/dev/null 2>&1; then
         if output="$(
             SEMANTIC_DISABLE_LLM=1 \
             SEMANTIC_DISABLE_CAUSAL=1 \
             SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
-                timeout 8 bash "$semantic_script" "$query" 2>/dev/null
+            SEMANTIC_MEMORY_DB_TIMEOUT="${SEMANTIC_MEMORY_DB_TIMEOUT:-2}" \
+                timeout -k 1 4 bash "$semantic_script" "$query" 2>/dev/null
         )"; then
             rc=0
         else
@@ -5287,6 +5295,7 @@ show_three_layer_memory_ruling_info() {
             SEMANTIC_DISABLE_LLM=1 \
             SEMANTIC_DISABLE_CAUSAL=1 \
             SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
+            SEMANTIC_MEMORY_DB_TIMEOUT="${SEMANTIC_MEMORY_DB_TIMEOUT:-2}" \
                 bash "$semantic_script" "$query" 2>/dev/null
         )"; then
             rc=0
