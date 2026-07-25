@@ -86,3 +86,53 @@ PY
     run flock -w 1 "$lock" true
     [ "$status" -eq 0 ]
 }
+
+# cmd_karo_impl_singleflight_hold_instrumentation_20260725
+# test_necessity: ロック保持区間(flock取得→解放)のwall_msが既存台帳へ
+# check_id=singleflight_hold/source=gate_report_format として1件記録される不変量。
+# これが消えるとGATE_SINGLEFLIGHT_TIMEOUTの妥当性が再び実測ではなく外挿になる。
+@test "lock-holding run records one singleflight_hold row into the shared overhead ledger" {
+    ledger="$TEST_DIR/overhead.jsonl"
+
+    run env \
+        DEFENSE_OVERHEAD_LEDGER="$ledger" \
+        GATE_FIRE_LOG_FILE="$TEST_DIR/fire.yaml" \
+        GATE_FAST_EXIT=1 \
+        bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT"
+
+    # 非同期writerの着地を待つ(最大10秒)。判定はgateのPASS/FAILに依存しない。
+    for _ in $(seq 1 100); do
+        grep -q '"check_id":"singleflight_hold"' "$ledger" 2>/dev/null && break
+        sleep 0.1
+    done
+
+    run grep -c '"check_id":"singleflight_hold"' "$ledger"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+
+    run grep '"check_id":"singleflight_hold"' "$ledger"
+    [[ "$output" == *'"source":"gate_report_format"'* ]]
+    [[ "$output" =~ \"wall_ms\":[0-9]+ ]]
+}
+
+# cmd_karo_impl_singleflight_hold_instrumentation_20260725
+# test_necessity: ロックを取得しなかった経路(fingerprint reuse)ではhold行を出さない不変量。
+# 保持していない区間を保持時間として記録すると上限判定の母数が汚染される。
+@test "fingerprint reuse path records no singleflight_hold row" {
+    ledger="$TEST_DIR/overhead_reuse.jsonl"
+
+    run env \
+        DEFENSE_OVERHEAD_LEDGER="$ledger" \
+        GATE_VALIDATED_FINGERPRINT="$FP" \
+        bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT"
+    [ "$status" -eq 0 ]
+    [ "$output" = "PASS (fingerprint reuse)" ]
+
+    sleep 0.5
+    # 台帳が生成されない場合も「hold行なし」として扱う(writerは行が無ければ触らない)
+    count=0
+    if [ -f "$ledger" ]; then
+        count="$(grep -c '"check_id":"singleflight_hold"' "$ledger" || true)"
+    fi
+    [ "$count" -eq 0 ]
+}

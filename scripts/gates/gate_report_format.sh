@@ -72,6 +72,35 @@ if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
 fi
 _gate_receipt_phase singleflight_wait "$_GATE_WAIT_STARTED"
 
+# cmd_karo_impl_singleflight_hold_instrumentation_20260725 AC1:
+# ロック保持区間(flock取得成功→プロセス終了によるfd 199解放)を既存台帳
+# logs/defense_overhead.jsonl へ check_id=singleflight_hold で記録する。
+# 待ち側(singleflight_wait)と対を成し、GATE_SINGLEFLIGHT_TIMEOUTの妥当性を
+# 外挿ではなく実測分布(p95/max)で判定できるようにする。新台帳は作らない。
+# 記録はdetached subshell(1 fork)で行い、本番経路の待ち時間を増やさない(AC3)。
+if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
+    _GATE_HOLD_STARTED="$(_gate_mono_ms)"
+    # shellcheck disable=SC2317  # EXIT trap経由の間接呼出し(SC2317は到達不能と誤検知する)
+    _gate_record_singleflight_hold() {
+        local _rc="$?" _verdict _hold_ms _lib
+        [ -n "${_GATE_HOLD_STARTED:-}" ] || return 0
+        _hold_ms=$(( $(_gate_mono_ms) - _GATE_HOLD_STARTED ))
+        case "$_rc" in
+            0) _verdict="PASS" ;;
+            1) _verdict="FAIL" ;;
+            *) _verdict="BLOCK" ;;
+        esac
+        _lib="$(dirname "${BASH_SOURCE[0]}")/../lib/defense_overhead_writer.sh"
+        [ -f "$_lib" ] || return 0
+        # shellcheck source=/dev/null
+        . "$_lib" 2>/dev/null || return 0
+        defense_overhead_write_async gate_report_format singleflight_hold \
+            "$_hold_ms" "$_verdict" "gate_report_format:hold:$$:${_GATE_HOLD_STARTED}" || true
+        return 0
+    }
+    trap '_gate_record_singleflight_hold' EXIT
+fi
+
 # executor帰属: 報告YAMLのworker_idを読取り(CLI非依存)
 _REPORT_EXECUTOR="${AGENT_ID:-}"
 if [ -z "$_REPORT_EXECUTOR" ]; then
