@@ -365,6 +365,23 @@ detect_numeric_flag_memory_gap() {
   printf 'WARN: 数値を含むWrite/gh gist edit出力フラグあり、同一セッション内の三層記憶検索(memory_db_query.sh/semantic_search.sh)フラグなし。推測値を出す前に記憶DB/セマンティックを確認せよ(cmd_3522)。\n' >&2
 }
 
+# cmd_4171: 該当cmdの承認記録(queue/gates/<cmd>/review_approvals/配下)が
+# 軍師LGTM+家老ACCEPTの両方かつ現行reportとfingerprint一致で揃っているかを確認する。
+# cmd_4158(CI RED抑制)の姉妹拡張: 承認済みタスクへの反復催促を状態表示へ切替えるための判定。
+_review_approval_lib_loaded=false
+task_review_already_approved() {
+  local cmd_id="$1" report_rel="$2" report_abs
+  [[ -n "$cmd_id" && -n "$report_rel" ]] || return 1
+  if [[ "$_review_approval_lib_loaded" != "true" ]]; then
+    # shellcheck disable=SC1091
+    source "$SCRIPT_DIR/scripts/lib/review_approval.sh" 2>/dev/null || return 1
+    _review_approval_lib_loaded=true
+  fi
+  report_abs="$report_rel"
+  [[ "$report_abs" == /* ]] || report_abs="$SCRIPT_DIR/$report_abs"
+  PROJECT_ROOT="$SCRIPT_DIR" review_two_phase_ready "$cmd_id" "$report_abs" 2>/dev/null
+}
+
 detect_verification_action_gap() {
   local agent="$1"
   local count_file="$STATE_DIR/shogun_verification_action_count_${agent}"
@@ -605,7 +622,16 @@ else
           mkdir -p "$SCRIPT_DIR/logs" 2>/dev/null || true
           printf '%s\n' "- ts: \"${_gfl_ts}\", file: \"${_ninja_name}(${_task_pcmd})\", gate: \"stop_check_inbox\", result: SUPPRESSED, reason: \"ci_red_gate_prompt_suppressed\"" >> "$_gfl" 2>/dev/null || true
         else
-          _pending_actions+=("${_ninja_name}(${_task_pcmd}) status=done → 報告レビュー/GATE処理を進めよ")
+          _task_report_path="$(awk '/^[[:space:]]*report_path:/{print $2; exit}' "$_tf" 2>/dev/null || true)"
+          if [[ -n "$_task_report_path" ]] && task_review_already_approved "$_task_pcmd" "$_task_report_path"; then
+            _pending_actions+=("${_ninja_name}(${_task_pcmd}) status=done → 承認済み・GATE自動処理待ち(催促不要)")
+            # gate_fire_logへ切替発報(detector_fp_rateで計測可能)
+            _gfl_ts="$(date '+%Y-%m-%dT%H:%M:%S%z')"
+            mkdir -p "$SCRIPT_DIR/logs" 2>/dev/null || true
+            printf '%s\n' "- ts: \"${_gfl_ts}\", file: \"${_ninja_name}(${_task_pcmd})\", gate: \"stop_check_inbox\", result: SUPPRESSED, reason: \"review_approved_gate_prompt_suppressed\"" >> "$_gfl" 2>/dev/null || true
+          else
+            _pending_actions+=("${_ninja_name}(${_task_pcmd}) status=done → 報告レビュー/GATE処理を進めよ")
+          fi
         fi
       fi
     done

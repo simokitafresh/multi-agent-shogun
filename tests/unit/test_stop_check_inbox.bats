@@ -915,3 +915,95 @@ printf "%s" "$PAYLOAD" | CI_READINESS_CACHE="$CI_READINESS_CACHE" "$TEST_PROJECT
     [[ "$output" == *"報告レビュー/GATE処理を進めよ"* ]]
     [[ "$output" != *"CI RED修正待ち"* ]]
 }
+
+# cmd_4171: 承認記録済みタスクへの反復催促を状態表示へ切替える境界テスト
+setup_review_approval_fixture_libs() {
+    mkdir -p "$TEST_PROJECT/scripts/lib"
+    ln -sf "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_PROJECT/scripts/lib/review_approval.sh"
+    ln -sf "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_PROJECT/scripts/lib/report_commit_identity.py"
+}
+
+write_review_approval_report_fixture() {
+    local cmd_id="$1" report_rel="$2"
+    mkdir -p "$TEST_PROJECT/queue/reports"
+    cat > "$TEST_PROJECT/$report_rel" <<YAML
+parent_cmd: ${cmd_id}
+task_type: full
+worker_id: hayate
+commit_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+status: completed
+YAML
+}
+
+write_review_approval_records() {
+    local cmd_id="$1" report_rel="$2" fp_key fp key dir
+    fp_key=$(bash -c "
+set -euo pipefail
+source '$TEST_PROJECT/scripts/lib/review_approval.sh'
+fp=\$(PROJECT_ROOT='$TEST_PROJECT' review_report_fingerprint '$TEST_PROJECT/$report_rel')
+key=\$(review_report_key '$report_rel')
+printf '%s %s' \"\$fp\" \"\$key\"
+")
+    fp="${fp_key%% *}"
+    key="${fp_key##* }"
+    dir="$TEST_PROJECT/queue/gates/${cmd_id}/review_approvals/reports/${key}"
+    mkdir -p "$dir"
+    printf 'timestamp: %s\nrole: gunshi\nresult: LGTM\nfingerprint: %s\nreport: %s\ncorrection_scope: implementation\n' \
+        "$(date -Iseconds)" "$fp" "$report_rel" > "$dir/gunshi.yaml"
+    printf 'timestamp: %s\nrole: karo\nresult: ACCEPT\nfingerprint: %s\nreport: %s\ncorrection_scope: implementation\n' \
+        "$(date -Iseconds)" "$fp" "$report_rel" > "$dir/karo.yaml"
+}
+
+@test "T-SCI-REVIEW-APPROVED-001: karo sees state display instead of催促 when review already approved (cmd_4171)" {
+    export TMUX_AGENT_ID="karo"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_9999
+  report_path: queue/reports/hayate_report_cmd_9999.yaml
+YAML
+    printf 'commands:\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+
+    setup_review_approval_fixture_libs
+    write_review_approval_report_fixture cmd_9999 queue/reports/hayate_report_cmd_9999.yaml
+    write_review_approval_records cmd_9999 queue/reports/hayate_report_cmd_9999.yaml
+
+    PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="karo"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"承認済み・GATE自動処理待ち"* ]]
+    [[ "$output" != *"報告レビュー/GATE処理を進めよ"* ]]
+    grep -q 'result: SUPPRESSED' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+    grep -q 'review_approved_gate_prompt_suppressed' "$TEST_PROJECT/logs/gate_fire_log.yaml"
+}
+
+@test "T-SCI-REVIEW-APPROVED-002: karo still sees従来の催促 when review not yet approved (cmd_4171)" {
+    export TMUX_AGENT_ID="karo"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_9999
+  report_path: queue/reports/hayate_report_cmd_9999.yaml
+YAML
+    printf 'commands:\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+
+    setup_review_approval_fixture_libs
+    write_review_approval_report_fixture cmd_9999 queue/reports/hayate_report_cmd_9999.yaml
+    # 承認記録(gunshi.yaml/karo.yaml)は書き込まない = 未承認状態
+
+    PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="karo"
+printf "%s" "$PAYLOAD" | "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"報告レビュー/GATE処理を進めよ"* ]]
+    [[ "$output" != *"承認済み・GATE自動処理待ち"* ]]
+}
