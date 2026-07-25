@@ -2,7 +2,7 @@
 
 origin: [[殿指示_gate_commit_flow設計_20260725]] <- [[three-layer-learning-loop-auto-growth v3.0]] + [[deploy_control_plane速度改善_20260721]] + [[将軍家老RCA協働_20260725]]
 created: 2026-07-25T17:00+09:00 (将軍直筆)
-status: **draft v1 — 家老・軍師レビュー待ち。レビュー後に殿裁定で方針確定**
+status: **v2.0 — 家老・軍師レビュー完了(blt_171812/173818/174610反映)。殿裁定待ち**
 baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 
 ## §0 要求定義(殿指示 2026-07-25 16:57)
@@ -61,7 +61,17 @@ baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 | B17 | retention台帳 | 固定パス上書きで移動記録消失(quarantine 17,381ファイルに対し台帳0件) | 計器 |
 | B18 | AC内の行番号参照 | 並行変更で陳腐化し別の行を指す(本日3cmd実証) | 品質(誤誘導) |
 | B19 | 共有worktree commit | 指揮官D0 commitが第三者のstage済み変更を巻き込み帰属破壊(0f1c3ea65将軍commitが才蔵922行を巻込→才蔵7回BLOCKループ) | 競合(retry不可) |
-| B20 | ci_readiness記録 | BLOCK 104件の実測分解: 真の赤23件(22.1%)のみ。SHA mismatch34+predates SG7 26=E型(CI runと評価対象の対応付け破壊)、pending13=**WAIT**(gate自身が再実行を指示するのにterminal BLOCK記録=誤り)。一括計上すると実態の78%を取り違える | 計器(E型)+記録分類 |
+| B20 | ci_readiness記録(家老が独立検証で一致=24/108=22.2%。pending queuedもWAITへ) | BLOCK 104件の実測分解: 真の赤23件(22.1%)のみ。SHA mismatch34+predates SG7 26=E型(CI runと評価対象の対応付け破壊)、pending13=**WAIT**(gate自身が再実行を指示するのにterminal BLOCK記録=誤り)。一括計上すると実態の78%を取り違える | 計器(E型)+記録分類 |
+
+### §2.2 家老レビューによる追加(blt_174610。全て本日一次実測)
+
+| # | 箇所 | 事象 | 分類 |
+|---|------|------|------|
+| B21 | FAIL verdictのクローズ | FAIL cmdを閉じる正規経路が不在(archive明示経路は2回とも review_gate.done検査で停止)。実際に通った経路(RC→AC是正→同一cmd_id再配備)は手順書に未記載 | 品質(経路欠落) |
+| B22 | retro回答 | 忍者がinboxで回答してもtype不一致で機械判定に乗らず家老が手動復元 | 品質(誤帰属) |
+| B23 | yaml_field_set | list型・ネスト型が書けずplanned_paths拡張/ci_fix evidence記入が毎回手作業(本日4回) | 速度(手動律速) |
+
+**C型の本体再定義(家老)**: 『同一ファイル並行』ではなく**『commit/pushの粒度が宣言scopeと一致しない』**が本体。本日4件(未commit差分の塞ぎ/922行巻込7回BLOCK/家老pushが他者未commit状態を公開しCI RED/pre-push警告2回を再試行で突破)。指揮官3ロールのcommitと**pushも**scope分離機構の対象に含める。
 
 ## §3 構造分類 — ボトルネックは5種類(A-E)
 
@@ -94,6 +104,11 @@ baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 
 ### 方針2(対案): CI RED級のみ即応し、速度系は現行レーン任せで新設なし
 最小変更。ただしB5/B6/B7は再発する(本日3件発生が反証)。
+
+### レビュー結果サマリ(2026-07-25 完了)
+- **軍師**: 方針1賛成+push通過方式条件付き賛成。B11-B18+B20追加、E型独立、誤帰属サブ型、affected逆依存規則、planned_paths非対称拡張
+- **家老**: 方針1賛成+push通過方式賛成。ci_readiness分解を独立検証(22.2%で一致)。B21-B23追加、C型本体再定義、pre-commit接続の費用対効果=正(追加数百msに対しCI 1周8-10分+往復の削減)を実証
+- **push通過方式の歯止め(家老提案)**: (a)RED検知→忍者配備SLA=『次のGATE処理より前』に固定(人の判断に委ねない) (b)同一REDへの追いpush上限2回、3回目で新規配備停止しRED修正へ全リソース
 
 **将軍推薦=方針1**。理由: 本日1日でB4-B7の4件が実発生しており、型別標準対処がなければ同型を毎回一から診断することになる。方針1は新gate増設ではなく「既存機構への接続+パターンの正本化」であり、P7(削るな速くしろ)/P8(考える工程維持)と整合。
 
