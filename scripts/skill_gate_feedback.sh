@@ -312,6 +312,26 @@ else:
             inserted = True
     text = "\n".join(out) + "\n"
 
+# rotate: 注意ポイント配下のFAILログbulletは最新20件のみ保持(dedupは完全一致のみで
+# reason可変部(ファイル名等)が毎回別エントリ化し無限肥大した実績: report-write 218件/4111語
+# →gate_skill_quality WARN。2026-07-25殿エスカレーション対応)
+MAX_CAUTION_BULLETS = 20
+lines2 = text.splitlines()
+out2, in_notes, kept = [], False, 0
+for line in lines2:
+    if line.strip() == heading:
+        in_notes = True
+        out2.append(line)
+        continue
+    if in_notes and line.startswith("#"):
+        in_notes = False
+    if in_notes and line.lstrip().startswith("- 20"):
+        kept += 1
+        if kept > MAX_CAUTION_BULLETS:
+            continue
+    out2.append(line)
+text = "\n".join(out2) + "\n"
+
 fd, tmp = tempfile.mkstemp(dir=str(skill_file.parent), prefix=".SKILL.", suffix=".tmp")
 os.close(fd)
 Path(tmp).write_text(text, encoding="utf-8")
