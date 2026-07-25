@@ -468,7 +468,7 @@ lessons:
 - id: 'LS110'
   title: 'AC・cmd本文の絶対数値は起票前にassumptions claimへ隔離せよ'
   origin: '[[cmd_4154]]'
-  detail: 'cmd_4154初回preflightで数値絶対値WARN。ratchet行番号等をcmd本文に書いた。LS-A04(36)裸数量語則の再発形。起票時の型: 数値・行番号・件数はassumptions claim内のみ、AC/commandは相対表現+参照名で書く。(LS109吸収)environment_changeは常にdouble quoteで書く(single quoteはawk抽出が剥がさず非構造化BLOCK、cmd_4150で4回BLOCK実証)'
+  detail: 'cmd_4154初回preflightで数値絶対値WARN。ratchet行番号等をcmd本文に書いた。LS-A04(36)裸数量語則の再発形。起票時の型: 数値・行番号・件数はassumptions claim内のみ、AC/commandは相対表現+参照名で書く。(cmd_4165追記2026-07-25)識別子(check_id・テーブル名・フィールド名)も同様: ACへ書く識別子は現物で実在確認したもののみ。将軍がAC2へ未確認のcheck_id:report_publicationを創作し(台帳実在はdeploy_totalのみ)、実装成功のcmdが前提バグでFAIL判定になった。(LS109吸収)environment_changeは常にdouble quoteで書く(single quoteはawk抽出が剥がさず非構造化BLOCK、cmd_4150で4回BLOCK実証)'
   source_cmd: 'cmd_4154'
   created_at: '2026-07-24'
   automated: true
