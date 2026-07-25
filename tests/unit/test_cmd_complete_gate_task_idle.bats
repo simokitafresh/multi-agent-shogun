@@ -287,3 +287,56 @@ PY
     [[ "$output" != *"$(basename "$stale"): verdict=MISSING"* ]]
     [[ "$output" != *"no_task_parent_report:$(basename "$stale")"* ]]
 }
+
+# cmd_karo_hotfix_post_clear_fail_open_20260725 (AC1): regression guard for the exact
+# fatal pattern that killed cmd_4171 — a bare "|| exit" chained directly onto
+# auto_resolve_cmd_related_insights would abort the script before Auto-notification/
+# Bulletin/Task idle transition ever ran (hayate stuck at status=done). Fails if this
+# pattern is reintroduced at either the normal or emergency-override CLEAR branch.
+@test "AC1: auto_resolve_cmd_related_insights call sites no longer chain a bare exit" {
+    run grep -n 'auto_resolve_cmd_related_insights "\$CMD_ID" || exit' "$SRC_GATE_SCRIPT"
+    [ "$status" -ne 0 ]
+
+    run grep -c 'if ! auto_resolve_cmd_related_insights "\$CMD_ID"; then' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 2 ]
+}
+
+# cmd_karo_hotfix_post_clear_fail_open_20260725 (AC4): reproduces cmd_4171's exact
+# condition — auto_resolve_cmd_related_insights fails with "insight declaration
+# selection failed" (INSIGHTS_FILE unreadable) — using the real function AND the
+# real set_matching_tasks_idle function (both extracted verbatim from source), run
+# in the same sequence as the actual normal-CLEAR call site. Proves the insight
+# failure no longer prevents the ninja's task from transitioning to idle.
+@test "AC4: insight auto-triage failure does not block task idle transition (cmd_4171 reproduction)" {
+    log_gate_stderr_file() { :; }
+    eval "$(awk '/^auto_resolve_cmd_related_insights\(\)/,/^}/' "$SRC_GATE_SCRIPT")"
+
+    export INSIGHTS_FILE="$TEST_PROJECT/queue/insights_as_dir.yaml"
+    mkdir -p "$INSIGHTS_FILE"
+    cp "$PROJECT_ROOT/scripts/insight_write.sh" "$TEST_PROJECT/scripts/insight_write.sh"
+    cp "$PROJECT_ROOT/scripts/insight_resolve.sh" "$TEST_PROJECT/scripts/insight_resolve.sh"
+    chmod +x "$TEST_PROJECT/scripts/insight_write.sh" "$TEST_PROJECT/scripts/insight_resolve.sh"
+
+    write_nested_task "hayate" "done"
+    MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hayate.yaml")
+
+    post_insight_sequence() {
+        if ! auto_resolve_cmd_related_insights "$TEST_CMD_ID"; then
+            echo "  [WARN] Insight auto-triage failed (non-blocking, GATE CLEAR continues)"
+        fi
+        echo ""
+        echo "Task idle transition: queued (async)"
+        set_matching_tasks_idle
+    }
+
+    run post_insight_sequence
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[WARN] insight declaration selection failed (non-blocking)"* ]]
+    [[ "$output" == *"[WARN] Insight auto-triage failed (non-blocking, GATE CLEAR continues)"* ]]
+    [[ "$output" == *"Task idle transition: queued (async)"* ]]
+    [[ "$output" == *"hayate: done → idle"* ]]
+
+    run grep -n "^  status: idle$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
+    [ "$status" -eq 0 ]
+}

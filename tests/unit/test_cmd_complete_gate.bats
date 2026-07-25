@@ -657,7 +657,9 @@ PY
 
     run auto_resolve_cmd_related_insights "$TEST_CMD_ID"
     [ "$status" -eq 1 ]
-    [[ "$output" == *"[BLOCK] insight declaration selection failed"* ]]
+    # cmd_karo_hotfix_post_clear_fail_open_20260725 (AC1): この失敗はもうGATE CLEARを
+    # 止めない(呼出し元がfail-open化)ため、メッセージも実態に合わせWARNへ変更した。
+    [[ "$output" == *"[WARN] insight declaration selection failed (non-blocking)"* ]]
     grep -F "auto_resolve_cmd_related_insights parse:" "$TEST_PROJECT/logs/cmd_complete_gate_stderr.log"
 }
 

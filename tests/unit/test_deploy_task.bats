@@ -772,6 +772,52 @@ EOF
     grep -q "report_path: queue/reports/sasuke_report_cmd_3091.yaml" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
 }
 
+# test_necessity: binary_checksテンプレート注入(awk -v repl)はAC description中のリテラル\t
+# (バックスラッシュ+t、2文字)を実タブ(1バイト)へ化けさせず、報告YAMLがyaml.safe_loadで
+# 読める不変量を守る。cmd_karo_hotfix_post_clear_fail_open_20260725 AC3:
+# awk -v はPOSIX仕様でCエスケープを解釈するため、AC descriptionにリテラル\tを含む
+# 忍者task(才蔵自身の受領taskがまさにこれで実際に壊れた実例)が報告YAML破損→
+# auto_resolve_cmd_related_insightsのyaml.safe_load失敗→GATE CLEAR後処理の連鎖BLOCKを招いた。
+@test "cmd_karo_hotfix_post_clear_fail_open_20260725 AC3: literal backslash-t in AC description survives report template injection without corrupting YAML" {
+    use_private_scripts_fixture
+
+    cat > "$TEST_PROJECT/queue/tasks/kotaro.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_ac3_literal_tab
+  task_id: cmd_ac3_literal_tab_normal
+  task_type: normal
+  project: infra
+  report_filename: kotaro_report_cmd_ac3_literal_tab.yaml
+  acceptance_criteria:
+  - id: 'AC1'
+    checks:
+    - check: 'リテラル\tを含むAC descriptionが実タブへ化けず報告YAMLがyaml.safe_loadで読めることを確認する'
+EOF
+
+    run bash -c '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { printf "%s\n" "$1"; }
+        generate_report_template kotaro cmd_ac3_literal_tab_normal cmd_ac3_literal_tab infra
+    ' _ "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+
+    local report_file="$TEST_PROJECT/queue/reports/kotaro_report_cmd_ac3_literal_tab.yaml"
+
+    # 実タブ(0x09)が注入されていないこと(化けていれば失敗)
+    run grep -cP '\t' "$report_file"
+    [ "$status" -ne 0 ]
+
+    # バックスラッシュ+tの2文字は元のまま残っていること
+    grep -F 'リテラル\tを含む' "$report_file"
+
+    # yaml.safe_loadで読めること(実タブ混入時のScannerErrorが再発していないこと)
+    run python3 -c "import yaml; yaml.safe_load(open('$report_file', encoding='utf-8'))"
+    [ "$status" -eq 0 ]
+}
+
 @test "cmd_3091: deploy_task_main reaches quality monitors before deployment complete" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:

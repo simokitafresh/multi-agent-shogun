@@ -271,6 +271,7 @@ export FIELD_GET_NO_LOG=1
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+source "$SCRIPT_DIR/scripts/lib/gate_report_format_classify.sh"
 
 # Resolve the git repository that owns a task.  Reports may describe work in
 # an external project; treating every commit as a multi-agent-shogun commit
@@ -2515,8 +2516,13 @@ for root in roots:
         try:
             doc = yaml.safe_load(candidate.read_text(encoding="utf-8")) or {}
         except Exception as exc:
-            print(f"ERROR: cannot parse declaration source {candidate}: {exc}", file=sys.stderr)
-            sys.exit(2)
+            # cmd_karo_hotfix_post_clear_fail_open_20260725 (root cause): an unrelated
+            # malformed report/task file (e.g. literal-tab corruption from the awk -v
+            # Cescape bug) used to abort selection for EVERY cmd via sys.exit(2), even
+            # when that file had nothing to do with the cmd currently completing.
+            # Skip the broken source and keep collecting from the rest instead.
+            print(f"WARN: skipping unparseable declaration source {candidate}: {exc}", file=sys.stderr)
+            continue
         if belongs_to_cmd(doc):
             collect_refs(doc, declared)
 
@@ -2550,7 +2556,7 @@ PY
     log_gate_stderr_file "auto_resolve_cmd_related_insights parse" "$stderr_tmp"
     rm -f "$stderr_tmp"
     if [ "$select_rc" -ne 0 ]; then
-        echo "  [BLOCK] insight declaration selection failed"
+        echo "  [WARN] insight declaration selection failed (non-blocking)"
         return 1
     fi
 
@@ -2562,7 +2568,7 @@ PY
             "cmd=${cmd_id};gate=cmd_complete_gate;result=CLEAR" >/dev/null 2>&1; then
             count=$((count + 1))
         else
-            echo "  [BLOCK] insight resolve failed: $id"
+            echo "  [WARN] insight resolve failed: $id (non-blocking)"
             failures=$((failures + 1))
         fi
     done <<< "$ids"
@@ -6643,7 +6649,12 @@ if [ -f "$GATES_DIR/emergency.override" ]; then
     write_l6_horizontal_level5_insights "$CMD_ID"
     echo ""
     echo "Insight auto-triage (cmd-related):"
-    auto_resolve_cmd_related_insights "$CMD_ID" || exit 1
+    # cmd_karo_hotfix_post_clear_fail_open_20260725 (AC1): 通常GATE CLEAR経路と同型の
+    # 構造欠陥(1ステップの失敗が後続の全ステップを道連れにする)がemergency override
+    # 経路にも存在したため同じくfail-openにする。
+    if ! auto_resolve_cmd_related_insights "$CMD_ID"; then
+        echo "  [WARN] Insight auto-triage failed (non-blocking, GATE CLEAR continues)"
+    fi
 
     # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
     echo ""
@@ -6986,11 +6997,28 @@ validate_report_format_file() {
     REPORT_FORMAT_SEEN["$report_file"]=1
     REPORT_FORMAT_CHECKED=$((REPORT_FORMAT_CHECKED + 1))
     "$SCRIPT_DIR/scripts/gates/gate_report_autofix.sh" "$report_file" 2>/dev/null || true
-    GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1 || true)
-    if echo "$GATE_OUTPUT" | grep -q "^FAIL"; then
+    local GATE_RC=0 GATE_STATUS
+    GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
+    GATE_STATUS=$(gate_report_format_classify "$GATE_RC")
+    # cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (AC1/AC2):
+    # インフラ由来のsingle-flightタイムアウト(exit code 2)を品質FAILと機械的に区別する。
+    # 1回だけ再試行し、それでも解消しなければ品質問題(report_format)とは別のreasonで
+    # BLOCKし(検証未完了のまま素通りさせない)、ninjaへの誤った修正要求を防ぐ。
+    if [ "$GATE_STATUS" = "INFRA_TIMEOUT" ]; then
+        echo "  [INFO] $(basename "$report_file"): single-flightタイムアウト(インフラ由来)。1回再試行"
+        GATE_RC=0
+        GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
+        GATE_STATUS=$(gate_report_format_classify "$GATE_RC")
+    fi
+    if [ "$GATE_STATUS" = "QUALITY_FAIL" ]; then
         REPORT_FORMAT_FAILED=$((REPORT_FORMAT_FAILED + 1))
         echo "  [CRITICAL] $(basename "$report_file"): $GATE_OUTPUT"
         record_block_reason "report_format:$(basename "$report_file")"
+        ALL_CLEAR=false
+    elif [ "$GATE_STATUS" = "INFRA_TIMEOUT" ]; then
+        REPORT_FORMAT_FAILED=$((REPORT_FORMAT_FAILED + 1))
+        echo "  [CRITICAL] $(basename "$report_file"): インフラ異常(single-flightロック競合)で2回連続timeout。品質問題ではない"
+        record_block_reason "infra_timeout:$(basename "$report_file")"
         ALL_CLEAR=false
     else
         echo "  $(basename "$report_file"): PASS"
@@ -8945,7 +8973,13 @@ PY
     write_l6_horizontal_level5_insights "$CMD_ID"
     echo ""
     echo "Insight auto-triage (cmd-related):"
-    auto_resolve_cmd_related_insights "$CMD_ID" || exit 1
+    # cmd_karo_hotfix_post_clear_fail_open_20260725 (AC1): このステップの失敗で
+    # Auto-notification/Bulletin/Task idle transition等の後続ステップ全てを
+    # 道連れにしていた(cmd_4171実証: hayateがdoneのまま取り残された)。他の後続
+    # ステップと同じくfail-openにし、失敗はWARNとして明示するが後続へは進める。
+    if ! auto_resolve_cmd_related_insights "$CMD_ID"; then
+        echo "  [WARN] Insight auto-triage failed (non-blocking, GATE CLEAR continues)"
+    fi
 
     # ─── GATE CLEAR時 自動通知（ベストエフォート） ───
     echo ""

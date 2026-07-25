@@ -85,7 +85,9 @@ PY
   sed -i 's/INS-ROOT/INS-MISSING/g' "$FIXTURE/queue/tasks/kotaro.yaml" "$FIXTURE/queue/reports/kotaro.yaml"
   run run_resolver
   [ "$status" -ne 0 ]
-  [[ "$output" == *"[BLOCK] insight declaration selection failed"* ]]
+  # cmd_karo_hotfix_post_clear_fail_open_20260725 (AC1): 呼出し元がfail-open化された
+  # ためメッセージも実態に合わせWARNへ変更(このfunction自体はreturn 1のまま=fails closed)。
+  [[ "$output" == *"[WARN] insight declaration selection failed (non-blocking)"* ]]
 }
 
 @test "structured action_cmd exact match resolves without substring matching" {
