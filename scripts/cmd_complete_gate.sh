@@ -1356,7 +1356,7 @@ except Exception as e:
 # ─── GATE CLEAR後 task YAML を idle 化（cmd_karo_gate_clear_idle） ───
 # 報告読取と archive 完了後にのみ実行し、次の配備で stale task を残さない。
 set_matching_tasks_idle() {
-    local task_file ninja_name current_status verify_status
+    local task_file ninja_name current_status verify_status current_parent_cmd
     local updated_count=0 skipped_count=0 warn_count=0
 
     echo ""
@@ -1383,6 +1383,28 @@ set_matching_tasks_idle() {
             skipped_count=$((skipped_count + 1))
             continue
         fi
+
+        # cmd_karo_speed_completion_pipeline_20260725: reassignment race guard.
+        # MATCHING_TASK_FILES is a stale snapshot from gate-check-loop start; by
+        # the time this post-CLEAR job runs, karo may already have redeployed
+        # this ninja onto a different cmd (status acknowledged/in_progress on a
+        # still-open report). Only a live re-read of parent_cmd==CMD_ID AND
+        # status in {done,completed} proves the file still belongs to *this*
+        # just-completed cmd, so a mid-report task is never stomped to idle.
+        current_parent_cmd=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "")
+        if [ "$current_parent_cmd" != "$CMD_ID" ]; then
+            echo "  ${ninja_name}: skip (parent_cmd=${current_parent_cmd:-unknown} != ${CMD_ID}, reassigned)"
+            skipped_count=$((skipped_count + 1))
+            continue
+        fi
+        case "$current_status" in
+            done|completed) ;;
+            *)
+                echo "  ${ninja_name}: skip (status=${current_status:-unknown}, task in progress)"
+                skipped_count=$((skipped_count + 1))
+                continue
+                ;;
+        esac
 
         if yaml_field_set "$task_file" "task" "status" "idle" >/dev/null 2>&1; then
             verify_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "")

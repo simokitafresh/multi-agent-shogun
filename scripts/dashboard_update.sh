@@ -233,7 +233,7 @@ export ARCHIVE_REPORTS_DIR
 # commit-state inspection, and only while exact CLEAR + two-phase fingerprint
 # approval still hold; schema/binary_checks/verdict always run.
 validate_reports_before_dashboard() {
-    local latest_status report skip_commit
+    local latest_status report skip_commit report_fingerprint
     [ -d "$REPORTS_DIR" ] || return 0
     latest_status=$(awk -F '\t' -v cmd="$CMD_ID" '$2 == cmd { status=$3 } END { print status }' \
         "$PROJECT_DIR/logs/gate_metrics.log" 2>/dev/null || true)
@@ -245,7 +245,18 @@ validate_reports_before_dashboard() {
         if [ "$latest_status" = "CLEAR" ] && review_two_phase_ready "$CMD_ID" "$report"; then
             skip_commit=1
         fi
+        # cmd_karo_speed_completion_pipeline_20260725: by the time dashboard
+        # runs, this report was already fully validated earlier in the same
+        # completion pipeline (ninja_done.sh / gate_gunshi_report_precheck.sh /
+        # cmd_complete_gate.sh's own gate_report_format.sh call) and its
+        # fingerprint is already in gate_report_format.sh's own reuse cache.
+        # Forward it the same way ninja_done.sh does so an unchanged report
+        # hits that existing fast path instead of re-running the full ~4-8s
+        # validation from scratch. Any byte change since caching still forces
+        # a full revalidation (fingerprint mismatch falls through as-is).
+        report_fingerprint=$(sha256sum "$report" 2>/dev/null | awk '{print $1}')
         GATE_NO_LOG=1 GATE_SKIP_COMMIT_MISSING_CHECK="$skip_commit" \
+            GATE_VALIDATED_FINGERPRINT="$report_fingerprint" \
             bash "$PROJECT_DIR/scripts/gates/gate_report_format.sh" "$report" || return 1
     done < <(python3 - 3< <(dashboard_matching_report_paths) <<'PY'
 import os, yaml

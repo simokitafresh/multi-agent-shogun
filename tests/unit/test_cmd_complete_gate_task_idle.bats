@@ -10,6 +10,7 @@ setup() {
     cmd_gate_scaffold "cmd_gate_idle"
     export SCRIPT_DIR="$TEST_PROJECT"
     export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    export CMD_ID="$TEST_CMD_ID"
 
     source "$TEST_PROJECT/scripts/lib/field_get.sh"
     source "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
@@ -34,7 +35,7 @@ EOF
 
 @test "set_matching_tasks_idle transitions matching nested task YAMLs to idle" {
     write_nested_task "hayate" "done"
-    write_nested_task "sasuke" "acknowledged"
+    write_nested_task "sasuke" "completed"
     MATCHING_TASK_FILES=(
         "$TEST_PROJECT/queue/tasks/hayate.yaml"
         "$TEST_PROJECT/queue/tasks/sasuke.yaml"
@@ -43,12 +44,53 @@ EOF
     run set_matching_tasks_idle
     [ "$status" -eq 0 ]
     [[ "$output" == *"hayate: done → idle"* ]]
-    [[ "$output" == *"sasuke: acknowledged → idle"* ]]
+    [[ "$output" == *"sasuke: completed → idle"* ]]
     [[ "$output" == *"summary: updated=2 skipped=0 warn=0"* ]]
 
     run grep -n "^  status: idle$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
     [ "$status" -eq 0 ]
     run grep -n "^  status: idle$" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+}
+
+# cmd_karo_speed_completion_pipeline_20260725: MATCHING_TASK_FILES is a snapshot
+# taken at gate-check-loop start. If karo redeploys the ninja onto a NEW cmd
+# (report still being written, status=acknowledged) before this async post-CLEAR
+# job runs, the transition must NOT fire — it must never stomp a mid-report task
+# back to idle. This is the exact fixture for the "does not fire" half of AC3.
+@test "set_matching_tasks_idle does not transition a task mid-report on the same parent_cmd" {
+    write_nested_task "hayate" "acknowledged"
+    MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hayate.yaml")
+
+    run set_matching_tasks_idle
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"hayate: skip (status=acknowledged, task in progress)"* ]]
+    [[ "$output" == *"summary: updated=0 skipped=1 warn=0"* ]]
+
+    run grep -n "^  status: acknowledged$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
+    [ "$status" -eq 0 ]
+}
+
+# The snapshot can also go stale by cmd reassignment: karo redeploys the ninja
+# onto a different cmd_id entirely (still status=done from an earlier, unrelated
+# task write) before this job runs. parent_cmd no longer matches CMD_ID, so the
+# file must be left untouched even though status looks like "done".
+@test "set_matching_tasks_idle does not transition a task reassigned to a different parent_cmd" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<EOF
+task:
+  parent_cmd: cmd_other_reassigned
+  assigned_to: hayate
+  task_id: hayate_task
+  status: done
+EOF
+    MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/hayate.yaml")
+
+    run set_matching_tasks_idle
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"hayate: skip (parent_cmd=cmd_other_reassigned != ${TEST_CMD_ID}, reassigned)"* ]]
+    [[ "$output" == *"summary: updated=0 skipped=1 warn=0"* ]]
+
+    run grep -n "^  status: done$" "$TEST_PROJECT/queue/tasks/hayate.yaml"
     [ "$status" -eq 0 ]
 }
 
