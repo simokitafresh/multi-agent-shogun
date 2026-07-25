@@ -11540,6 +11540,50 @@ PY
     esac
 }
 
+# 歯止め(b) 殿裁可2026-07-25: 同一のCI REDに対する追いpushは2回まで。3回目からは
+# 新規配備を止め、RED修正へリソースを寄せる。一次情報は2つだけを使う:
+#   (1) CI REDの実態   = gh run list の最新完了run (conclusion/headSha)
+#   (2) 追いpush回数   = git rev-list --count <red_head_sha>..origin/main
+# gate_metrics.logはrun_idを持たずcmd単位の記録しか残らないため、RED起点からの
+# push本数を数えられる唯一の一次情報がgit履歴である(新規台帳を作らない)。
+deploy_task_ci_red_followup_push_guard() {
+    local source_file="${1:-}"
+    local task_type="" runs conclusion red_sha followups limit
+    [ "${DEPLOY_TASK_SKIP_CI_RED_GUARD:-0}" = "1" ] && return 0
+    limit="${DEPLOY_TASK_CI_RED_FOLLOWUP_LIMIT:-2}"
+
+    if [ -n "$source_file" ] && [ -f "$source_file" ]; then
+        task_type=$(FIELD_GET_NO_LOG=1 field_get "$source_file" "task_type" "" 2>/dev/null || true)
+    fi
+    # ci_fix自身はREDを消すための弾なので常に通す。
+    [ "${task_type,,}" = "ci_fix" ] && return 0
+
+    runs="${DEPLOY_TASK_CI_RED_JSON:-}"
+    if [ -z "$runs" ]; then
+        command -v gh >/dev/null 2>&1 || return 0
+        runs=$(timeout "${DEPLOY_TASK_GH_TIMEOUT:-8}" gh run list             --repo "${DEPLOY_TASK_CI_REPO:-simokitafresh/multi-agent-shogun}"             --branch main --status completed --limit 1             --json conclusion,databaseId,headSha 2>/dev/null || true)
+        [ -n "$runs" ] || return 0
+    fi
+    conclusion=$(printf '%s' "$runs" | jq -r 'if type=="array" and length>0 then (.[0].conclusion // "") else "" end' 2>/dev/null || true)
+    [ "$conclusion" = "failure" ] || return 0
+    red_sha=$(printf '%s' "$runs" | jq -r 'if type=="array" and length>0 then (.[0].headSha // "") else "" end' 2>/dev/null || true)
+
+    followups="${DEPLOY_TASK_CI_FOLLOWUP_PUSHES:-}"
+    if [ -z "$followups" ]; then
+        [ -n "$red_sha" ] || return 0
+        git -C "$SCRIPT_DIR" rev-parse --verify "${red_sha}^{commit}" >/dev/null 2>&1 || return 0
+        followups=$(git -C "$SCRIPT_DIR" rev-list --count "${red_sha}..refs/remotes/origin/main" 2>/dev/null || echo "")
+    fi
+    [[ "$followups" =~ ^[0-9]+$ ]] || return 0
+
+    if [ "$followups" -gt "$limit" ]; then
+        log "BLOCK(ci_red_followup): red_sha=${red_sha:0:9} followup_pushes=${followups} limit=${limit}"
+        echo "BLOCK: CI RED(sha=${red_sha:0:9})に対する追いpushが${followups}回(上限${limit}回)。新規配備を停止し、task_type=ci_fixでRED修正へ全リソースを寄せよ。" >&2
+        return 1
+    fi
+    return 0
+}
+
 # E3 Level5: ci_fixはclean-CI相当の同一harnessで修正前FAIL→修正後PASSを
 # push前に証明する。配備時点では空scaffoldを与え、専用ACがreport templateの
 # binary_checksへ展開される。完成証跡は下のvalidatorでfail-closed検証する。
@@ -11917,6 +11961,10 @@ except Exception:
             log "same_cmd_redeploy: skipped reset_stale_fields and resolve_cmd_to_task for ${CMD_ID}"
         else
             if ! deploy_task_guard_direct_yaml_prewrite_collision "$YAML_FILE" "$NINJA_NAME"; then
+                deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+                return 1
+            fi
+            if ! deploy_task_ci_red_followup_push_guard "$YAML_FILE"; then
                 deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
                 return 1
             fi

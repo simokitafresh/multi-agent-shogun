@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
-# test_necessity: CI completion readiness must accept only typed GREEN results for the reviewed commit and a workflow attempt started no earlier than SG7 review; violation is BLOCK.
-# regression_justification: Historical GREEN runs and reruns whose original createdAt predates review must be distinguished by the latest attempt startedAt.
+# test_necessity: CI completion readiness must BLOCK only on a real red verdict; every "no evaluation for this code" case (head SHA mismatch / predates review / pending / cancelled on either result) resolves to a single WAIT state that does not block the gate (push通過+CI後追い方式, 殿裁可 2026-07-25).
+# regression_justification: A run whose jobs were all cancelled reports conclusion=failure yet contains no evaluation; it must resolve to WAIT, never to a red verdict that demands a ninja fix.
 
 setup() {
     GATE="$BATS_TEST_DIRNAME/../../scripts/cmd_complete_gate.sh"
@@ -28,10 +28,10 @@ evaluate() {
     [[ "$output" == *"target_result=GREEN workflow_result=GREEN"* ]]
 }
 
-@test "head SHA mismatch is fail-closed" {
+@test "head SHA mismatch is WAIT, not BLOCK" {
     evaluate '{"expected_head_sha":"abc","reviewed_at":"2026-07-19T08:42:17+09:00","target_result":{"conclusion":"success","head_sha":"abc"},"workflow_result":{"conclusion":"success","head_sha":"def","created_at":"2026-07-19T08:43:00+09:00"}}'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"head SHA mismatch"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: ci_evaluation_absent=[head_sha_mismatch]"* ]]
 }
 
 @test "missing typed result object is fail-closed" {
@@ -40,10 +40,10 @@ evaluate() {
     [[ "$output" == *"typed target_result/workflow_result required"* ]]
 }
 
-@test "workflow run older than SG7 review is fail-closed" {
+@test "workflow run older than SG7 review is WAIT, not BLOCK" {
     evaluate '{"expected_head_sha":"abc","reviewed_at":"2026-07-19T08:42:17+09:00","target_result":{"conclusion":"success","head_sha":"abc"},"workflow_result":{"conclusion":"success","head_sha":"abc","created_at":"2026-07-19T08:42:16+09:00"}}'
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"predates SG7 review"* ]]
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: ci_evaluation_absent=[run_predates_review]"* ]]
 }
 
 @test "rerun started after SG7 review is ready even when original run predates review" {
@@ -52,10 +52,30 @@ evaluate() {
     [[ "$output" == *"fresh_after_review"* ]]
 }
 
-@test "rerun started before SG7 review remains fail-closed" {
+@test "rerun started before SG7 review is WAIT, not BLOCK" {
     evaluate '{"expected_head_sha":"abc","reviewed_at":"2026-07-19T08:42:17+09:00","target_result":{"conclusion":"success","head_sha":"abc"},"workflow_result":{"conclusion":"success","head_sha":"abc","created_at":"2026-07-19T08:40:00+09:00","started_at":"2026-07-19T08:42:16+09:00"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: ci_evaluation_absent=[run_predates_review]"* ]]
+}
+
+@test "run whose jobs were all cancelled is WAIT, not a red verdict" {
+    evaluate '{"expected_head_sha":"abc","reviewed_at":"2026-07-19T08:42:17+09:00","target_result":{"conclusion":"success","head_sha":"abc"},"workflow_result":{"conclusion":"failure","head_sha":"abc","created_at":"2026-07-19T08:43:00+09:00","jobs_conclusions":["cancelled","cancelled","cancelled","cancelled"]}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: ci_evaluation_absent=[workflow_all_jobs_cancelled]"* ]]
+    [[ "$output" != *"is not GREEN"* ]]
+}
+
+@test "cancelled target_result is WAIT on the target side as well" {
+    evaluate '{"expected_head_sha":"abc","reviewed_at":"2026-07-19T08:42:17+09:00","target_result":{"conclusion":"cancelled","head_sha":"abc"},"workflow_result":{"conclusion":"success","head_sha":"abc","created_at":"2026-07-19T08:43:00+09:00"}}'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WAIT: ci_evaluation_absent=[target_no_verdict]"* ]]
+    [[ "$output" != *"is not GREEN"* ]]
+}
+
+@test "a single failing job keeps the red verdict even when others cancelled" {
+    evaluate '{"expected_head_sha":"abc","reviewed_at":"2026-07-19T08:42:17+09:00","target_result":{"conclusion":"success","head_sha":"abc"},"workflow_result":{"conclusion":"failure","head_sha":"abc","created_at":"2026-07-19T08:43:00+09:00","jobs_conclusions":["failure","cancelled"]}}'
     [ "$status" -eq 1 ]
-    [[ "$output" == *"predates SG7 review"* ]]
+    [[ "$output" == *"workflow_result is not GREEN"* ]]
 }
 
 @test "missing invalid and unparseable freshness timestamps are fail-closed" {

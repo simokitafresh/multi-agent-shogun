@@ -43,23 +43,76 @@ def parse_aware(value, name):
     return parsed.astimezone(timezone.utc)
 reviewed=parse_aware(reviewed_at, "reviewed_at")
 started=parse_aware(workflow_freshness_at, "workflow_result.started_at")
+# push通過+CI後追い方式(殿裁可 2026-07-25 / 軍師REQUEST_CHANGES反映)。
+# 判定は3状態のみ: (i)対応する評価がGREEN=PASS (ii)対応する評価がRED=BLOCK
+# (iii)このコードに対する評価が存在しない=WAIT(後追い確認。GATEを止めない)。
+# 「別commitの評価」「未完了run」「全job cancelled」はいずれも同一の意味であり、
+# 分岐を足さずこの1つの状態判定へ集約する。単に条件を削ると stale GREEN で
+# 未検証CLEAR、stale RED で誤帰属BLOCKになるため、削除ではなく状態化する。
+NO_VERDICT={"cancelled", "canceled", "skipped", "stale", "neutral", "action_required", ""}
+jobs=w.get("jobs_conclusions")
+absent=[]
 if not expected or t["head_sha"] != expected or w["head_sha"] != expected:
-    print("BLOCK: head SHA mismatch")
-    raise SystemExit(1)
+    absent.append("head_sha_mismatch")
+if workflow_status != "completed":
+    absent.append(f"run_pending:{workflow_status}")
+if started < reviewed:
+    absent.append("run_predates_review")
+if str(t["conclusion"]).lower() in NO_VERDICT:
+    absent.append("target_no_verdict")
+if str(w["conclusion"]).lower() in NO_VERDICT:
+    absent.append("workflow_no_verdict")
+elif isinstance(jobs, list) and jobs and all(
+    str(job or "").lower() in NO_VERDICT for job in jobs
+):
+    # GitHubは全jobがcancelledのrunにも conclusion=failure を付ける。
+    # 「評価が無い」を「赤い評価」と読み違えないための一次情報がjob結論である。
+    absent.append("workflow_all_jobs_cancelled")
+if absent:
+    print("WAIT: ci_evaluation_absent=[" + ",".join(absent) + "] — 後追いで確認せよ(GATEは止めない) head_sha=" + (expected or "unresolved"))
+    raise SystemExit(0)
 if t["conclusion"] != "success":
     print("BLOCK: target_result is not GREEN")
-    raise SystemExit(1)
-if workflow_status != "completed":
-    print(f"BLOCK: workflow_result pending status={workflow_status}; wait for CI completion then re-run gate")
     raise SystemExit(1)
 if w["conclusion"] != "success":
     print("BLOCK: workflow_result is not GREEN")
     raise SystemExit(1)
-if started < reviewed:
-    print("BLOCK: workflow run predates SG7 review")
-    raise SystemExit(1)
 print("READY: target_result=GREEN workflow_result=GREEN fresh_after_review head_sha=" + expected)
 ' 
+}
+
+# 歯止め(a)の一次情報: queue/tasks配下に task_type=ci_fix かつ ci_run_id 一致の
+# activeタスクが存在するか。gate_karo_startup.sh Check 0.9と同じ機械証跡を使い、
+# 判定基準の二重定義を避ける(新規台帳を作らない)。
+ci_fix_task_deployed() {
+    local run_id="$1"
+    local tasks_dir="${CMD_COMPLETE_GATE_TASKS_DIR:-$SCRIPT_DIR/queue/tasks}"
+    [ -n "$run_id" ] || return 1
+    [ -d "$tasks_dir" ] || return 1
+    python3 - "$tasks_dir" "$run_id" <<'PY'
+from pathlib import Path
+import sys
+import yaml
+
+tasks_dir = Path(sys.argv[1])
+run_id = sys.argv[2]
+active = {"assigned", "acknowledged", "in_progress", "done"}
+for path in sorted(tasks_dir.glob("*.yaml")):
+    try:
+        doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except Exception:
+        continue
+    task = doc.get("task", doc) if isinstance(doc, dict) else {}
+    if not isinstance(task, dict):
+        continue
+    if str(task.get("task_type", "")) != "ci_fix":
+        continue
+    if str(task.get("ci_run_id", "")) != run_id:
+        continue
+    if str(task.get("status", "")) in active:
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
 }
 
 format_gate_block_message() {
@@ -8554,6 +8607,17 @@ elif [ "$CI_PUSH_DETECTED" = true ]; then
         fi
     fi
     ci_run_id=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then (.[0].databaseId // "" | tostring) else "" end' 2>/dev/null || true)
+    # A非GREEN run may be "all jobs cancelled" (=評価が存在しない)。job結論は
+    # run levelのconclusionからは判別できないため、非GREEN時だけ一次情報を引く。
+    ci_jobs_json="${CMD_COMPLETE_GATE_CI_JOBS_JSON:-}"
+    ci_run_conclusion=$(printf '%s' "$ci_result" | jq -r 'if type == "array" and length > 0 then (.[0].conclusion // "") else "" end' 2>/dev/null || true)
+    if [ -z "$ci_jobs_json" ] && [ -n "$ci_run_id" ] && [ -n "$ci_origin_slug" ] \
+        && [ -n "$ci_run_conclusion" ] && [ "$ci_run_conclusion" != "success" ] \
+        && command -v gh >/dev/null 2>&1; then
+        ci_jobs_json=$(timeout 15 gh run view "$ci_run_id" --repo "$ci_origin_slug" --json jobs 2>/dev/null || true)
+    fi
+    ci_jobs_conclusions=$(printf '%s' "$ci_jobs_json" | jq -c '[.jobs[]?.conclusion // ""]' 2>/dev/null || printf 'null')
+    [ -n "$ci_jobs_conclusions" ] || ci_jobs_conclusions=null
     target_conclusion=success
     for task_file in "${MATCHING_TASK_FILES[@]}"; do
         ninja_name=$(basename "$task_file" .yaml)
@@ -8562,19 +8626,43 @@ elif [ "$CI_PUSH_DETECTED" = true ]; then
     done
     ci_decision_json=$(printf '%s' "$ci_result" | jq -c \
         --arg expected "$expected_head" --arg target "$target_conclusion" --arg reviewed "$SG7_REVIEWED_AT" \
+        --argjson jobs "$ci_jobs_conclusions" \
         'if type == "array" and length > 0 and (.[0] | type) == "object" then
            {expected_head_sha:$expected, reviewed_at:$reviewed,
             target_result:{conclusion:$target,head_sha:$expected},
             workflow_result:{status:.[0].status,conclusion:.[0].conclusion,head_sha:.[0].headSha,
-                             started_at:(.[0].startedAt // .[0].createdAt),created_at:.[0].createdAt}}
+                             started_at:(.[0].startedAt // .[0].createdAt),created_at:.[0].createdAt,
+                             jobs_conclusions:$jobs}}
          else {expected_head_sha:$expected,reviewed_at:$reviewed,target_result:{conclusion:$target,head_sha:$expected},workflow_result:null} end' \
         2>/dev/null || printf '{}')
     if ci_decision=$(printf '%s' "$ci_decision_json" | evaluate_ci_readiness_json 2>&1); then
-        echo "  OK: ${ci_decision} run=${ci_run_id}"
+        case "$ci_decision" in
+            WAIT:*)
+                # 状態(iii): このコードに対するCI評価がまだ存在しない。BLOCKではなく
+                # 後追い確認へ回す(記録カテゴリ = WAIT)。GATE CLEARは止めない。
+                echo "  WAIT: ${ci_decision#WAIT: }${ci_run_id:+ run=${ci_run_id}}"
+                echo "  NOTE: push通過+CI後追い方式(殿裁可 2026-07-25) — CI結果は後追いで確認せよ"
+                ;;
+            *)
+                echo "  OK: ${ci_decision} run=${ci_run_id}"
+                ;;
+        esac
     else
         echo "  [CRITICAL] ${ci_decision}${ci_run_id:+ run=${ci_run_id}}"
         record_block_reason "ci_readiness:${ci_decision}"
         ALL_CLEAR=false
+        # 歯止め(a): 真のCI赤は「次のGATE処理より前に忍者ci_fix配備」がSLA。
+        # 既存の起動gate Check 0.9と同じ機械証跡(task_type=ci_fix + ci_run_id)を
+        # 使い、未配備のまま次のGATE処理へ進めないよう理由へ明示する。
+        case "$ci_decision" in
+            *"workflow_result is not GREEN"*)
+                if [ -n "$ci_run_id" ] && ! ci_fix_task_deployed "$ci_run_id"; then
+                    echo "  [CRITICAL] BLOCK: run=${ci_run_id} のci_fix忍者タスク未配備 — 次のGATE処理より前に配備せよ"
+                    echo "  ACTION: /karo-directでidle忍者へ task_type=ci_fix, ci_run_id=${ci_run_id} を配備(家老D0修正禁止)"
+                    record_block_reason "ci_readiness:BLOCK: ci_fix未配備 run=${ci_run_id}"
+                fi
+                ;;
+        esac
     fi
 else
     echo "  SKIP (no remote-contained report commit detected)"
