@@ -1618,3 +1618,176 @@
   - "軍師速度調査(掲示板blt_20260725_144002)のprecheck cold 15秒がpurpose記載のmedian 13.7秒と整合"
   - "AC2のチェック削除禁止+AC3の判定突合は削るな速くしろ原則の具体化として適切"
   - "defense_overhead.jsonl既存台帳を使う指示(新台帳禁止)は車輪の再発明防止に準拠"
+- cmd_id: cmd_karo_ci_fix_30153849352_ga231c_false_positive_20260725
+  review_type: draft
+  reviewer: gunshi
+  reviewed_at: '2026-07-25T20:02:00+09:00'
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  gate_prediction_reason: 'draft review; ACは自己修正的でガード緩和を明示禁止。真因も軍師が実測済みで忍者の判断余地は小さい'
+  operational_simulation:
+    command: 'printf hook payload | TMUX_AGENT_ID=shogun bash .claude/hooks/pre-bash-combined.sh を git status / git commit -m test / cat scripts/run_tests.sh の3コマンドで個別実行。併せて bats tests/unit/test_heavy_job_admission.bats -f 通常のgit/report操作は偽陽性0'
+    expected: '家老の推定が正なら、GA-231cは指揮官identityでのgit commitのみを阻止し、他の通常操作は素通りするはず。もしガードが真に広すぎるなら git status や cat も阻止されるはず'
+    actual: 'git status=rc0(通過) / cat scripts/run_tests.sh=rc0(通過) / git commit -m test=rc2 BLOCK(GA-231c)。bats単体実行は not ok 1件、失敗行は line 726(git commit)のみ'
+    result: 'PASS — 発火は1/3件でgit commitのみ。非commit系の偽陽性0/2件。ガードの発火範囲は広すぎず、偽陽性ではないと確定した'
+  verified_files:
+  - 'tests/unit/test_heavy_job_admission.bats:48'
+  - 'tests/unit/test_heavy_job_admission.bats:726'
+  - '.claude/hooks/pre-bash-combined.sh:575'
+  ambiguity_points: 'cmd_id及びpurposeが「ga231c_false_positive」という未検証の結論を名前に埋め込んでいる。AC1/AC2は検証を命じているが、名前が先に答えを提示しており忍者をガード緩和方向へ誘導する非対称なバイアスになる'
+  brainwash_check: '#1yes(早期終了リスクあり・回避した): GA-231cを19:30に自ら称賛した直後で「正しいはず」と打ち切る誘因があったため逆仮説(ガードが広すぎる)を先に検証。#2no(検証スキップなし): 家老の推定を読むだけで終えずbats単体実行(not ok 1件)+hook直接実行3件でrc実測(git status=0/git commit=2/cat=0)。#3no(他者依存なし): 忍者の報告を待たず軍師D0で真因確定、AC1所要を実質ゼロ化。#4no(緩い設計なし): ガード緩和を否と判定しtest側是正を指定。#5no(先送りなし): 本レビュー内で真因まで確定。#6no(出力=仕事の錯覚なし): 掲示板作文で止めずreview_log追記+家老へ実測値送付という下流消費可能な形にした。#7no(簡潔本能なし): 観点7件全記録。#8no(完了急ぎなし): 命名バイアスという指摘しにくい所見を省略せずlesson_candidate化。数値: 非commit系コマンドの偽陽性0/2件、発火1/3件(git commitのみ)。'
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  adversarial_review: 'PASS — 軍師が自らGA-231cを19:30に称賛した直後の案件であり、自己の評価を守る方向の確証バイアスが働きうる。これを打ち消すため「GA-231cが真に広すぎる」仮説を優先検証した。結果は逆で、testのharnessがTMUX_AGENT_ID=shogunを明示固定しており発火は設計通りと実測で確定した'
+  observations:
+  - '事実1: tests/unit/test_heavy_job_admission.bats:48 の _run_hook は TMUX_AGENT_ID=shogun をハードコードしている。すなわち当該testは指揮官identityでgit commitを実行しており、GA-231cが阻止対象とする行為そのものである'
+  - '事実2: 軍師が個別コマンド単位で実測した結果、git status=rc0 / cat=rc0 / git commit -m test=rc2 BLOCK(GA-231c)。偽陽性は0件でgit commitのみが発火する。発火範囲は広すぎない'
+  - '事実3: get_commander_names=[shogun karo gunshi]。ガードは agent_id が commander集合に属する場合のみ発火し、空identityでは発火しない。CI固有の環境起因ではなくtestの明示的な指定が原因'
+  - '事実4: 従ってこれは偽陽性ではなく、testの前提(指揮官のdirect git commit=通常操作)が commit 50c266171 により陳腐化した事案である。AC2の分岐(b)が正解でありガード緩和は誤り'
+  - '事実5: 家老の推定「GA-231c由来の可能性が高い」は正しかったが、「false_positive」という性質づけは誤り。AC1が推定の訂正を求めている設計は機能している'
+  lesson_candidate: 'cmd_idに未検証の結論(false_positive/bug/regression等の性質判断)を含めるな。現象と対象(ci_fix_<run_id>_<test名>)までに留めよ。名前は忍者が最初に読み最後まで参照する前提であり、誤った性質づけはAC本文の警告より強く作用する。origin: "[[cmd_karo_ci_fix_30153849352_ga231c_false_positive_20260725]] -> [[命名への結論埋込]] -> [[忍者のガード緩和バイアス]]"'
+- cmd_id: cmd_karo_impl_gate_metrics_record_split_20260725
+  review_type: draft
+  reviewer: gunshi
+  reviewed_at: '2026-07-25T20:16:00+09:00'
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  gate_prediction_reason: 'draft review; 設計方針は正しくACも検証を命じているが、引用数値と caller 列挙に是正が必要。配備継続可'
+  operational_simulation:
+    command: "grep -o 'ci_readiness:BLOCK:[^\\t]*' logs/gate_metrics.log | sed で SHA正規化 | sort | uniq -c、および grep -c 'ci_readiness' vs grep -c 'ci_readiness:BLOCK:'、さらに grep -rln 'gate_metrics' scripts/ .claude/hooks/ tests/"
+    expected: 'purposeの主張通りなら ci_readiness BLOCK は108件で、内訳(38/26/24/16/2)の合計108と一致するはず。AC2の caller 5件が gate_metrics の読み手を代表しているはず'
+    actual: "ci_readiness を含む行=108だが ci_readiness:BLOCK: を含む行=106。差2行は cmd名 ci_readiness_remote_head_boundary_202607190832 / ci_readiness_run_freshness_202607190854 でgate結果ではない。理由別実測は head SHA mismatch 37 / predates 26 / is not GREEN 24 / in_progress 16 / queued 2 / 複合 'head SHA mismatch|command_files_modified_mismatch' 1 = 合計106で完全一致。caller は gunshi_gate_reflux.sh が gate_metrics を0件参照(存在しないcaller)、実際の参照ファイルは39件"
+    result: 'PASS(検証成功) — 前提数値の誤り2件と caller 列挙の誤り1件を検出。設計方針(3分離+生値保全)自体は正しく支持できる'
+  verified_files:
+  - 'logs/gate_metrics.log:1'
+  - 'queue/tasks/kotaro.yaml:11'
+  - 'scripts/gunshi_gate_reflux.sh:1'
+  ambiguity_points: "AC1のBLOCK/WAIT/INFO 3分離に対し、複合理由行 'head SHA mismatch|command_files_modified_mismatch'(実測1件)の分類が未定義。SHA mismatchはWAIT相当だがcommand_files_modified_mismatchの帰属が指定されておらず、実装者が片方を黙って落とす危険がある"
+  brainwash_check: '#1yes(早期終了リスクあり・回避した): 数値が軍師実測と家老独立検証で一致と明記されており「検証済み」として素通りする誘因が強かったため、あえて理由別に全列挙して突合した。結果108→106の誤りを検出。#2no(検証スキップなし): grepで理由別内訳・行数・caller数を全て自分で数えた。#3no(他者依存なし): 小太郎のAC2実行を待たずcaller 39件を軍師が先に洗い出した。#4no(緩い設計なし): 複合理由の未定義を指摘しACの穴として明示。#5no(先送りなし): 本レビュー内で訂正値を確定。#6no(出力=仕事の錯覚なし): review_log追記+家老へ訂正値送付。#7no(簡潔本能なし): 観点7件全記録。#8no(完了急ぎなし): 数値一致という見栄えの良い前提を崩す指摘を省略しなかった。数値: 引用108→実測106(誤差2件)、内訳合計106で完全一致、caller列挙5件→実測39件(うち1件は非参照)。'
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  adversarial_review: 'PASS — 本cmdは軍師自身のaccuracy分母汚染を根拠に挙げており、軍師に有利な結論(=承認)へ傾く利害がある。これを打ち消すため定量根拠を優先的に攻撃した。結果、軍師自身が過去に出した104という数も家老の108も誤りで真値106であることが判明し、自陣の数値も否定された'
+  observations:
+  - '事実1: ci_readiness を含む行は108だが ci_readiness:BLOCK: を含む行は106。差2行は cmd名に文字列を含むだけのci_readiness_remote_head_boundary_202607190832 / ci_readiness_run_freshness_202607190854 でありgate結果ではない'
+  - '事実2: 理由別実測は head SHA mismatch 37 / predates SG7 review 26 / is not GREEN 24 / in_progress 16 / queued 2 / 複合1 = 合計106。106を分母にすると内訳が完全一致し、108では2件が説明不能になる'
+  - '事実3: 軍師の過去計測104も家老の独立検証108も真値106と異なる。両者一致という報告は成立していない'
+  - "事実4: 複合理由行 'head SHA mismatch|command_files_modified_mismatch' が1件存在し、AC1の3分離では分類先が未定義"
+  - '事実5: AC2が列挙する gunshi_gate_reflux.sh は gate_metrics を0件参照しており実在しないcallerである。一方 gate_metrics を参照するファイルは実測39件で、gate_cycle_health/gate_immunity_depth/gate_loop_health/gate_autofix_proposal/throughput_scan/ralph_loop_metrics/model_analysis/rotate_gate_metrics 等が列挙から漏れている'
+  lesson_candidate: '複数エージェントの数値が一致したという事実は、その数値が正しいことを意味しない。同じ誤った計測方法(grep -c で対象外の行を巻き込む)を共有していれば一致は再現する。定量根拠を引用する際は件数の一致ではなく内訳の合計一致で検証せよ。origin: "[[cmd_karo_impl_gate_metrics_record_split_20260725]] -> [[grep -c の対象外行混入]] -> [[軍師104/家老108/真値106の三者不一致]]"'
+- cmd_id: cmd_karo_impl_fail_close_path_20260725
+  review_type: draft
+  reviewer: gunshi
+  reviewed_at: '2026-07-25T20:17:30+09:00'
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  gate_prediction_reason: 'draft review; 家老の診断はコード現物と一致。ACも新gate増設を明示禁止し安全性維持を二値化している。行番号引用1件の誤りのみ'
+  operational_simulation:
+    command: "sed -n '1272,1286p' scripts/archive_completed.sh と sed -n '1323,1327p'、および grep -n 'FAIL_VERDICT' scripts/cmd_complete_gate.sh + sed -n '6944,6952p'"
+    expected: '家老の主張が正なら、review_gate.done検査が明示CMD_IDを積極処理し(1276-1283)、sweep専用分岐(1325)がその外側にあるはず。FAIL_VERDICTは6830行にあるはず'
+    actual: "1277-1283に if [ -n \"$CMD_ID\" ]; then check_cmd_for_review=\"$CMD_ID\" が実在し、sweep分岐 if [ -z \"$CMD_ID\" ] は1325行=検査の後方にある(家老の主張と一致)。一方 FAIL_VERDICT は6949行であり6830行ではない。6830行は教訓フィードバック記録コードで無関係"
+    result: 'PASS(検証成功) — 家老の構造診断は正確で軍師の当初推奨が誤りだったことを再確認。行番号引用の誤り1件(6830→6949)を検出'
+  verified_files:
+  - 'scripts/archive_completed.sh:1277'
+  - 'scripts/archive_completed.sh:1325'
+  - 'scripts/cmd_complete_gate.sh:6949'
+  ambiguity_points: 'AC1が(a)archive_completed.sh条件追加と(b)手順明文化の二択または両方としているが、選択基準が「実装可能性と安全性」とだけ書かれ判定閾値がない。(a)は閉じる経路をコードへ埋める構造型、(b)は手順書という表示型であり、殿裁定(真の強制=無自覚の構造型)に照らせば(a)優先が原則である。この優先順位がACに明示されていない'
+  brainwash_check: '#1yes(早期終了リスクあり・回避した): 本件は軍師自身の誤推奨の是正であり、家老の診断を承認して早く閉じたい利害があった。あえて家老の主張を優先攻撃し行番号まで全て現物確認した。#2no(検証スキップなし): archive_completed.sh 2箇所とcmd_complete_gate.sh 1箇所をsed/grepで直接確認。#3no(他者依存なし): 才蔵のAC1調査を待たず軍師が先に構造を確認。#4no(緩い設計なし): AC1の(a)(b)選択に優先順位がない点を指摘。#5no(先送りなし): 本レビュー内で行番号誤りを確定。#6no(出力=仕事の錯覚なし): review_log追記+家老へ訂正送付。#7no(簡潔本能なし): 観点7件全記録。#8no(完了急ぎなし): 自分の誤りを再確認する不快な検証を省略しなかった。数値: 主張3件中2件が正確(review_gate.done位置/sweep分岐位置)、1件が誤り(FAIL_VERDICT 6830→実測6949、119行のズレ)。'
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  adversarial_review: 'PASS — 本cmdは軍師が誤った推奨(archive_completed.sh明示CMD_ID経路)を出し撤回した件の是正である。軍師には自分の非を小さく見せる利害があるため、家老の診断を承認する方向ではなく攻撃する方向で検証した。結果、家老の構造診断は完全に正しく軍師の当初推奨が誤りであったことが再確認された'
+  observations:
+  - '事実1: archive_completed.sh:1277-1283 に if [ -n "$CMD_ID" ]; then check_cmd_for_review="$CMD_ID" が実在し、明示CMD_IDを積極的に review_gate.done 検査の対象にしている'
+  - '事実2: sweep専用分岐 if [ -z "$CMD_ID" ] は1325行にあり、上記検査の後方=外側である。∴明示CMD_ID経路では検査を回避できず、FAIL verdictのcmdはCLEAR記録を持たないため kept++ でスキップされる。家老が2回試して2回とも停止した事実と整合する'
+  - '事実3: 従って軍師の当初推奨(archive_completed.sh明示CMD_ID経路でFAIL cmdを閉じよ)は誤りであり、撤回は妥当だった'
+  - '事実4: purposeとAC2が引用する FAIL_VERDICT の行番号6830は誤り。実測では cmd_complete_gate.sh:6949 の if verdict == "FAIL": print(f"{path}\tFAIL_VERDICT\tverdict=FAIL") である。6830行は教訓フィードバック記録コードで無関係'
+  - '事実5: 家老の性質づけ『FAIL verdictをBLOCKする挙動は設計どおりで迂回すべきでない』は6949の現物と一致し正しい。閉じる経路の新設とFAILをCLEAR扱いすることが別問題であるというAC2の整理も妥当'
+  lesson_candidate: 'cmd purposeで他ファイルの行番号を引用する際は引用時点でsedし現物と一致を確認せよ。行番号は他cmdのcommitで容易にずれ、忍者はその行を直接読むため誤引用は調査の起点を丸ごと誤らせる。構造の記述(関数名/条件式)を主、行番号を従として併記するのが安全である。origin: "[[cmd_karo_impl_fail_close_path_20260725]] -> [[行番号6830の誤引用]] -> [[才蔵が無関係な教訓記録コードを読む危険]]"'
+- cmd_id: cmd_karo_impl_precommit_affected_link_20260725
+  review_type: draft
+  reviewer: gunshi
+  reviewed_at: '2026-07-25T20:21:00+09:00'
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  gate_prediction_reason: 'draft review; 設計方向は正しいがコスト根拠が別機能の実測値の流用。AC3の閾値明示を条件に配備継続可'
+  operational_simulation:
+    command: "git show a111f3304 -- scripts/hooks/git-pre-commit.sh で check_staged_sourced_deps の実装を確認。time相当で bats tests/unit/test_git_pre_commit_sourced_dep.bats を実測。grep -rl で scripts/lib/{yaml_field_set,agent_config,lock_path}.sh の参照元数を計数"
+    expected: "purposeの『追加コストは数百ms』が正なら、AC1が求めるaffectedテスト実行も同オーダーに収まるはず"
+    actual: "check_staged_sourced_deps は git show|grep のみでテストを1件も実行しない静的検査だった。一方 bats 最小1ファイルの実測は1169ms。tests/unit配下は158本。逆依存の参照元は yaml_field_set.sh=59 / agent_config.sh=46 / lock_path.sh=38 ファイル"
+    result: 'PASS(検証成功) — テスト1本で既に数百msを超過し、lib変更時は数十ファイルが引き込まれる。コスト根拠は機能違いの数値の流用と確定'
+  verified_files:
+  - 'scripts/hooks/git-pre-commit.sh:check_staged_sourced_deps'
+  - 'queue/tasks/kagemaru.yaml:11'
+  - 'tests/unit/test_git_pre_commit_sourced_dep.bats:1'
+  ambiguity_points: 'AC3が「閾値を超える場合は対象の絞り込みで解決せよ」と命じているが閾値そのものが未定義。purposeの「数百ms」が唯一の基準に見えるがそれは別機能の値であり、影丸が実測値を見て想定内と誤判断しうる'
+  brainwash_check: '#1yes(早期終了リスクあり・回避した): 設計方向が正しく本日のCI RED 2件という実害も本物のため承認して次へ進む誘因が強かった。あえてコスト根拠だけを攻撃し、根拠commitの現物まで遡った。#2no(検証スキップなし): a111f3304のdiffを読み静的検査であることを確認、batsを実測1169ms、参照元を3lib分計数。#3no(他者依存なし): 影丸のAC3実測を待たず軍師が先に数値を出した。#4no(緩い設計なし): 閾値未定義を明示指摘。#5no(先送りなし): 本レビュー内で数値確定。#6no(出力=仕事の錯覚なし): review_log追記+家老へ数値送付。#7no(簡潔本能なし): 観点7件全記録。#8no(完了急ぎなし): 3件連続レビューで疲弊しても実測を省略しなかった。数値: 主張「数百ms」に対し実測 bats最小1本=1169ms(約2-4倍超過)、逆依存参照元 最大59ファイル、tests/unit総数158本。'
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  adversarial_review: 'PASS — 本cmdは殿裁可の実装弾②であり承認圧が高い。加えて軍師は本日pre-commit接続に賛成の立場を設計書レビューで表明済みで、自分の過去の賛成を守る利害があった。これを打ち消すため賛成根拠(費用対効果)そのものを攻撃対象に選んだ結果、自分が賛成した際の前提数値が誤りであったと判明した'
+  observations:
+  - '事実1: purposeの「追加コストは数百ms」は半蔵のcheck_staged_sourced_deps(commit a111f3304)の実測値である。同関数の実装をgit showで確認したところ git show ":$staged_sh" | grep -oE で source 行を静的走査するのみでテストを1件も実行しない'
+  - '事実2: AC1が求めるのは「affectedテストを解決し実行する」経路であり、静的grepとは計測対象が別物。機能Aのコストで機能Bを正当化している'
+  - '事実3: 実測で最小構成のbatsファイル1本が1169ms。主張の「数百ms」を単体で既に超過している。tests/unit配下は158本'
+  - '事実4: AC2の逆依存規則の対象規模を実測: scripts/lib/yaml_field_set.sh は59ファイル、agent_config.sh は46ファイル、lock_path.sh は38ファイルから参照される。lib1本の変更で数十ファイルが引き込まれ、1本1.17秒換算で数十秒〜分単位がpre-commitに乗る'
+  - '事実5: AC3は「閾値を超える場合は非同期化ではなく絞り込みで解決せよ」と正しく方向づけているが閾値が未定義。殿裁定「削るな速くしろ」に照らせば遅いpre-commitはインフラバグであり、数値上限の明示が必要'
+  lesson_candidate: '費用対効果を根拠に施策を通す際、コスト側の実測値がその施策自体の計測であることを確認せよ。先行する類似施策の実測値を流用すると、静的検査とテスト実行のように桁の違う処理が同一視される。cmd purposeでコストを引用する際は「何を計測した値か」を併記させよ。origin: "[[cmd_karo_impl_precommit_affected_link_20260725]] -> [[静的grepの実測値をテスト実行のコスト根拠に流用]] -> [[全commitに数十秒が乗る危険]]"'
+- cmd_id: cmd_karo_ci_fix_30153849352_ga231c_false_positive_20260725
+  review_type: self_study
+  reviewer: gunshi
+  reviewed_at: '2026-07-25T20:29:00+09:00'
+  verdict: FAIL
+  fail_reason: '軍師のレビュー結論が半蔵のgate BLOCKを直接引き起こした。是正対象をhookからtestへ移す判断を下しながら、planned_paths拡張の必要性を家老へ申し送らなかった指摘漏れ'
+  operational_simulation:
+    command: "grep -n 'planned_paths' -A 8 queue/tasks/hanzo.yaml と grep -n 'target_path' queue/tasks/hanzo.yaml、および quality_monitor通知のgate_errors確認"
+    expected: '軍師が19:59に出した「test側を是正せよ」という結論が実行可能なら、planned_pathsにtest fileが含まれているはず'
+    actual: 'planned_paths は L193-194 で .claude/hooks/pre-bash-combined.sh 1本のみ。target_path も同じ。半蔵がtestを是正した結果 files_modified が planned scope 外となりgate FAIL。半蔵はdiagnose_reasonで契約の自己改変を明示的に拒否して停止した'
+    result: 'FAIL(軍師の指摘漏れを確認) — 是正対象の変更判断は契約(planned_paths)への波及点検を伴うべきだった'
+  verified_files:
+  - 'queue/tasks/hanzo.yaml:193'
+  - 'queue/tasks/hanzo.yaml:212'
+  - 'queue/tasks/hanzo.yaml:57'
+  cs_checklist:
+    CS1: '前提確認: 是正対象をhookからtestへ移すという結論の実行可能性を、task YAMLのplanned_pathsと突合せずに家老へ返した。突合していれば即座に不整合が見えた'
+    CS2: '影響範囲: レビュー結論の変更がscope契約へ波及することを見落とした。波及先はplanned_paths/target_path/files_modified検査の3箇所'
+    CS3: '代替案検討: 「(b)test側を是正せよ」と結論する際、(b1)planned_paths拡張が家老に必要 という付帯条件を書けたが書かなかった'
+    CS4: '検証方法: 半蔵のattempt 3回のBLOCK履歴(prior_attempts)が示す通り、軍師の申し送り不足が忍者の試行を3回浪費させた'
+    CS5: 'リスク: 忍者が契約を自己改変してPASSさせる誘惑が生じる。半蔵はこれを明示拒否したが、弱いモデルなら自己改変を選びうる構造だった'
+    CS6: '再発防止: レビューで是正対象ファイルの変更を結論する場合、planned_paths/target_path更新要否を必ず併記する。これをレビュー手順へ組み込む'
+  ambiguity_points: 'none'
+  brainwash_check: '#1no(早期終了なし): quality_monitor通知を「忍者側の問題」として流さず自分の関与を追跡した。#2no(検証スキップなし): hanzo.yamlのplanned_paths/target_path/diagnose_reason/prior_attemptsを直接確認。#3no(他者依存なし): 家老の分析を待たず軍師が自ら因果を特定し即申し送った。#4no(緩い設計なし): 自分の指摘漏れを教訓として構造化。#5no(先送りなし): 発覚から即座に家老へ送付。#6no(出力=仕事の錯覚なし): 掲示板作文ではなく家老が直接実行できる手順(yaml_field_set --append)を添えた。#7no(簡潔本能なし): 自分に不利な因果を省略せず全記録。#8no(完了急ぎなし): レビュー4件連続の疲弊下でも自責の記録を省かなかった。数値: 半蔵のprior_attempts 3回が軍師の申し送り不足で浪費された。planned_paths 1本→必要2本の不足1本。'
+  finding_categories:
+  - assumptions
+  - numbers
+  - premortem
+  - adversarial
+  adversarial_review: 'PASS — 本件は軍師に不利な因果であり「忍者の記入不足」「家老の配備ミス」へ帰責して自分を守る経路が容易に取れた。実際gate_errorsは半蔵の報告に対して出ている。それを退け、是正対象の変更判断を下した軍師が起点であると特定した'
+  observations:
+  - '事実1: queue/tasks/hanzo.yaml:193-194 の planned_paths は .claude/hooks/pre-bash-combined.sh 1本のみ。target_path(L57)も同じ'
+  - '事実2: 軍師が19:59のレビューで「偽陽性ではない。test側(line 726)を是正せよ」と結論し家老経由で半蔵へ渡った。この時点でplanned_pathsの拡張が必須になったが軍師は申し送らなかった'
+  - '事実3: 半蔵はdiagnose_reasonで「task YAMLの契約を書き換えて自分でPASSさせるのは契約の自己改変であり行わない」と明記して停止。忍者の判断は模範的で攻めるべきではない'
+  - '事実4: 成果物自体は健全。半蔵のapproach_summaryによれば隔離treeで pre=FAIL(failures=1,skips=0) → post=PASS(80/80,failures=0,skips=0)、run_tests.sh affected=496/496 PASS skip0'
+  - '事実5: 残WARN2件のうちGP-062(別cmd cmd_karo_impl_commander_scope_commit_20260725への参照)は、本件がGA-231c由来である以上staleではなく正当な因果参照の可能性が高い'
+  lesson_candidate: 'レビューで是正対象ファイルを変更する判断を下したら、その変更がplanned_paths/target_path/scope契約へ波及するかを同時に点検し家老へ申し送れ。忍者は契約を自己改変できない(すべきでない)ため、対象変更の申し送り漏れは忍者を必ず詰ませる。「何を直すべきか」を変えたら「どこを触ってよいか」も変えねばならない。origin: "[[cmd_karo_ci_fix_30153849352_ga231c_false_positive_20260725]] -> [[軍師が是正対象をhookからtestへ変更]] -> [[planned_paths未拡張で半蔵が3回BLOCK]]"'
