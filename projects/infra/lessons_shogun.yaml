@@ -144,13 +144,6 @@ lessons:
   automated: true
   enforcement_level: 4
   enforcement: "Level4: 個別事象は運用フロー内のhook/gate/scriptへ埋込済み。一次証跡: .claude/settings.json PostToolUse→.claude/hooks/posttool-dispatch.sh→post-shogun-inbox-check.sh(将軍inbox盲点/復帰手順スキップ警告), scripts/bulletin_write.sh(L294付近: prepend書込み), scripts/restart_watchers.sh watcher_process_count()(親子プロセスを除外して二重起動誤判定防止), scripts/lib/model_detect.sh _model_detect_latest_claude_session()(ログ内他CLIバナー誤検出防止), scripts/lib/pre_bash_combined_guard.sh queue/inbox symlink WARN(cmd_3453)。LS-A11は『未実装候補』ではなく既存防御の実績カタログとして扱う。"
-- id: 'LS-A12'
-  title: inbox_write guard 3段階設計 — 迂回路ゼロの構造
-  origin: '[[cmd_2004]] + [[cmd_1994]]'
-  detail: '全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS-A12'
-  created_at: '2026-04-24'
-  automated: true
-  superseded_by: 'LS-A07'
 - id: LS-A13
   title: cmd設計3原則 — assumptions明示/3層防御/environment_change主軸
   origin: '[[cmd_1905]] [[cmd_1822]] [[cmd_1953]] [[cmd_2107]] [[cmd_2129]] [[cmd_2166]] [[cmd_2173]]'
@@ -223,13 +216,6 @@ lessons:
   created_at: '2026-04-24'
   automated: true
   enforcement: 'cmd_save.sh q11(BLOCK)+q5(BLOCK)+q10(WARNING)+MCP L-FactOnly+gunshi review因果推論ルール LG023'
-- id: 'LS-A20'
-  title: 因果チェーン — cmd配備→実装→報告の因果を追え
-  origin: '[[cmd_2818]]: deepdive_causal_tracing_20260415起源の因果チェーン教訓を逆引き可能にするためoriginを付与'
-  detail: '全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS-A20'
-  created_at: '2026-04-24'
-  automated: true
-  superseded_by: 'LS-A19'
 - id: LS-A22
   title: gate FPパターン — SCOUT偽陽性+研究道具FP+parity FP+教訓上限デッドロック
   origin: '[[cmd_2314]] [[cmd_2315]] [[cmd_2318]] [[cmd_2319]] [[cmd_2330]] [[cmd_2331]] [[cmd_2332]] [[cmd_2343]] [[cmd_2351]] [[cmd_2355]] [[cmd_2358]] [[cmd_2366]] [[cmd_2367]] [[cmd_2368]] [[cmd_2369]] [[cmd_2374]] [[cmd_2377]] [[cmd_2379]] [[cmd_2381]] [[cmd_2382]] [[cmd_2383]] [[cmd_2384]] [[cmd_2385]] [[cmd_2392]]'
@@ -251,20 +237,6 @@ lessons:
 # === LS023-LS035統合完了 (2026-04-29) ===
 # 13件→LS-A04(18-25追記,9件)＋LS-A22(3-7追記,4件)に吸収完了
 # source_cmds: cmd_2339-cmd_2369
-- id: 'LS036'
-  title: 'CoDDはbrownfield逆生成が正解。greenfield generateは遅い'
-  origin: '[[cmd_2850]] -> [[cmd_2891_修行CoDD導入で30分超過]] -> [[context/training-cycle.md §28_brownfield限定制定2026-05-19]]'
-  detail: '全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS036'
-  created_at: '2026-05-18'
-  automated: true
-  superseded_by: 'LS-A17'
-- id: 'LS040'
-  title: 'バックアップファースト — DB変更前に必ずバックアップ。例外なし'
-  origin: '[[cmd_2850]]'
-  detail: '全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS040'
-  created_at: '2026-05-18'
-  automated: true
-  superseded_by: 'LS-A16'
 - id: LS-A23
   title: 記憶DB原則 — ローカルDB+3層記憶+grep脱却+配管設計+さぼり禁止
   origin: '[[cmd_2964]] [[cmd_2965]] [[cmd_2984]] [[cmd_2994]] [[cmd_3007]]'
@@ -335,13 +307,6 @@ lessons:
   automated: true
   enforcement_level: 5
   enforcement: 'Level5: type=hook+test; file=.claude/hooks/post-shogun-inbox-check.sh; pattern=escalation_unread; test=tests/unit/test_post_shogun_escalation_warn.bats(4/4 PASS)。PostToolUseごとにescalation未対処をWARN表示'
-- id: 'LS092'
-  title: 'D006 Tier1 UNCONDITIONAL規則を趣旨解釈で緩めた判断ミス'
-  origin: '[[cmd_karo_ci_fix_29574746129]]'
-  detail: '全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS092'
-  created_at: '2026-07-17'
-  automated: true
-  superseded_by: 'LS099'
 - id: 'LS095'
   title: '分離原則 — メインtaskと振り返りを混ぜるな'
   origin: '[[殿裁定_分離原則_20260718]] -> [[AC自動注入否定]] -> [[retro_prompt分離実装_2f6203c98]]'
@@ -386,13 +351,6 @@ lessons:
   created_at: '2026-07-21'
   automated: true
   enforcement: '起動時lessons_shogun.yaml自動ロード。gate/hook削減判断時に『不可逆害を防ぐ構造型か、作文強要の表示型か』を必ず二値判定。構造型は速度・脱感染で消すな'
-- id: 'LS100'
-  title: 'fail-closed強制は『脱出路の実装』を先に検証せよ — 復旧コマンド未allowlistで全ロックアウト'
-  origin: '[[殿裁定_作業前探索の強制が最重要_20260721]] -> [[verify_fail_closd復元]] -> [[issue未allowlistで全ロックアウト]] -> [[a69c7c2ca_issue_bypass根治]]'
-  detail: '全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS100'
-  created_at: '2026-07-21'
-  automated: true
-  superseded_by: 'LS-A22'
 - id: 'LS101'
   title: 'CI RED診断は origin失敗SHA vs 現HEAD を見よ — push保留と修正未pushの自己永続デッドロック'
   origin: '[[殿裁定_gitで健全時点rollback_20260721]] -> [[rollback尾部多重回帰]] -> [[push保留デッドロック]] -> [[fast-forward pushで解消]]'
@@ -401,13 +359,6 @@ lessons:
   created_at: '2026-07-21'
   automated: true
   enforcement: '起動時lessons_shogun.yaml自動ロード。CI RED未解決時の第一手= origin失敗SHA vs HEAD確認→未pushにci_fixあればfast-forward push。deploy全失敗時はdeploy path回帰を疑う'
-- id: 'LS102'
-  title: '単一telemetry値を分布と誤認するな — 代表値主張の前に再測で分布を見よ'
-  origin: '[[将軍memory_context単一サンプル報告]] -> [[3958ms cold outlierをmedianと誤認]] -> [[家老全変種再測でmedian656ms訂正]] -> [[LS-A24分布確認義務の拡張]]'
-  detail: '全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS102'
-  created_at: '2026-07-21'
-  automated: true
-  superseded_by: 'LS-A24'
 - id: 'LS103'
   title: '異常を''stale''と流すな — 継続する警告は必ず原因がある(観察スキップ防止)'
   origin: '[[3時間RECOVERY INCOMPLETE nag放置]] -> [[staleとラベルし観察打ち切り(Phase1観察スキップ)]] -> [[marker不在の真因未掘]] -> [[継続警告は必ず原因ありの原則]]'
@@ -426,13 +377,6 @@ lessons:
   automated: true
   detail_2: '(2)統一先の基準は文字列で固定して引用せよ(LS107吸収2026-07-23): 本番色崩れ。cmd_4122がMECE UI統一で13表の値色をcolors.tsのgetValueColorClassへ集約する際、プラス値をSTATUS_TEXT_CLASSES.positive=text-emerald-400固定にした。殿が基準と明示したmonthly-returns旧実装は text-foreground dark:text… 全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS104'
   enforcement: 'L4: 設計/モック/UI系の殿依頼への初回応答は、既存の忠実複製+指示要素のみの最小案から始める自己規律。装飾/追加機能/注記の先回り盛り込みを『ごちゃごちゃリスク』として自己点検。統一系cmdは統一先の基準文字列をACへ直接引用し、light/dark非対称を単一色へ簡約しない。未自動化=次ターゲット(将軍応答前の最小性チェック)。'
-- id: 'LS105'
-  title: 'ノイズなalertは偽陽性とは限らぬ — 抑制提案の前に「下層の状態が真に解決済か」を一次確認せよ(真陽性の抑制=自動消火)'
-  origin: '[[将軍が陣形図alert抑制を推奨]] -> [[目的達成済=実害なしと誤判定]] -> [[影丸一次確認でtaskは真にOPEN未解決失敗]] -> [[真陽性抑制=自動消火を家老が中止]] -> [[抑制前にSSOT状態を一次確認する規律]]'
-  detail: '全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS105'
-  created_at: '2026-07-22'
-  automated: true
-  superseded_by: 'LS103'
 - id: 'LS106'
   title: '閾値の根拠をgit logでたどれ — 逆算で置かれた数値は成長を装った空転を生む'
   origin: '[[殿の問い_この制限に理屈はあるのか_20260723]] -> [[commit_98f353873_逆算閾値31]] -> [[LS102統合しても再発火=空転]] -> [[殿裁定A_件数WARN撤去]]'
@@ -441,13 +385,6 @@ lessons:
   created_at: '2026-07-23'
   automated: false
   enforcement: '未自動化'
-- id: 'LS107'
-  title: '統一先の基準は文字列で固定して引用せよ — semantic定数への集約でlight/dark非対称を簡約するとWCAG違反を生む'
-  origin: '[[殿本番指摘_色がめちゃくちゃ_20260723]] -> [[cmd_4122_semantic色定数への集約]] -> [[dark修飾子の消失でlightがWCAG1.6対1違反]] -> [[LS104_既存を厳密踏襲し最小差分だけ足す]]'
-  detail: '全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS107'
-  created_at: '2026-07-23'
-  automated: true
-  superseded_by: 'LS104'
 - id: 'LS108'
   title: '起票数値はq5へコマンド→件数形式で証跡を書く'
   origin: '[[cmd_4133起票LG020_BLOCK]] -> [[証跡形式が散文でツール語+件数不足]] -> [[q5コマンド→件数形式の型]]'
@@ -456,15 +393,6 @@ lessons:
   created_at: '2026-07-23'
   automated: true
   enforcement: 'cmd_save.sh LG020が自動強制'
-- id: 'LS109'
-  superseded_by: 'LS110'
-  title: 'environment_changeはdouble quoteで書け — WARN対応checkのawk抽出はsingle quoteを剥がさない'
-  origin: '[[cmd_4150]]'
-  detail: 'cmd_4150で4回BLOCK。真因2層: (1)AC内の裸数値(件数/上位N)が数量WARN2件を誘発しWARN>0でCheck 3.6b(WARN時environment_change強制)が発火 (2)environment_changeをsingle quote(''type=lesson; ...'')で書いたためcmd_save.sh L7124のawk抽出(sub両端の二重引用符のみ剥離)が先頭''を残しparse_structured_environment_changeが失敗→『非構造化』BLOCK。修正: AC数値を相対表現化+environment_changeを二重引用符に変更でPASS。型: environment_changeは常にdouble quote、AC具体数値はassumptions/purposeのみ(LS-A04(36)と同根)'
-  source_cmd: 'cmd_4150'
-  created_at: '2026-07-24'
-  automated: true
-  enforcement: '未自動化=次ターゲット: cmd_save.sh awk抽出のsingle quote剥離対応またはcmd_skeleton.sh雛形にdouble quote例を明記'
 - id: 'LS110'
   title: 'AC・cmd本文の絶対数値は起票前にassumptions claimへ隔離せよ'
   origin: '[[cmd_4154]]'
