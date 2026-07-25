@@ -494,11 +494,14 @@ deploy_task_guard_worker_assignment() {
                 return 1
             fi
             ;;
-        done)
+        done|PASS)
             if [ -n "$incoming_cmd" ] && [ -n "$current_parent" ] && [ "$current_parent" != "$incoming_cmd" ] \
                 && deploy_task_guard_done_report_unarchived "$worker_name" "$current_parent"; then
-                log "BLOCK(cmd_4170): ${worker_name:-worker} done task ${current_parent} has an unarchived report; refusing overwrite by ${incoming_cmd}"
-                echo "BLOCK: ${worker_name:-worker} は ${current_parent} 完了済みだが報告未archive。別cmd ${incoming_cmd} での上書きを拒否。cmd_complete/archive完了後に再試行せよ。" >&2
+                log "BLOCK(cmd_karo_hotfix_reflux_deploy_race_20260725): ${worker_name:-worker} ${current_status} task ${current_parent} has an unarchived report; refusing overwrite by ${incoming_cmd}"
+                echo "BLOCK: ${worker_name:-worker} は ${current_parent} 完了済み(status=${current_status})だが報告未archive。別cmd ${incoming_cmd} での上書きを拒否。cmd_complete/archive完了後に再試行せよ。" >&2
+                bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
+                    "配備競合BLOCK: ${worker_name:-worker} は ${current_parent}(status=${current_status})完了済みだが報告未archiveのまま、別cmd ${incoming_cmd} からの上書き配備を試行→拒否した。archive完了を確認してから再配備せよ。" \
+                    reflux_conflict_block deploy_task review_reflux_conflict >/dev/null 2>&1 || true
                 return 1
             fi
             ;;
@@ -4266,8 +4269,11 @@ EOF
 
         # report内のlessons_useful空値を差し替え
         if grep -Eq '^lessons_useful:[[:space:]]*(null|~|\[\])' "$report_file" 2>/dev/null; then
-            awk -v repl="$_lu_block" '
-                /^lessons_useful:[[:space:]]*(null|~|\[\])/ { print repl; next }
+            # cmd_karo_hotfix_post_clear_fail_open_20260725: awk -v はPOSIX仕様でCエスケープ(\t等)を
+            # 解釈し、埋込テキスト中のリテラル\tを実タブへ化けさせYAMLを破壊する。ENVIRON経由で
+            # 値をエスケープ解釈なしに渡す(cmd_complete_gate.shのgate_metrics literal_tab修正と同型)。
+            _LU_BLOCK_ENV="$_lu_block" awk '
+                /^lessons_useful:[[:space:]]*(null|~|\[\])/ { print ENVIRON["_LU_BLOCK_ENV"]; next }
                 { print }
             ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
             log "lessons_useful template: ${_lu_count} entries injected"
@@ -4376,10 +4382,12 @@ PY_MEMORY_REFS
     )
 
     if [ -n "$_memory_references_block" ]; then
-        awk -v repl="$_memory_references_block" '
-            /^skill_candidate:/ && !inserted { print repl; inserted=1 }
+        # cmd_karo_hotfix_post_clear_fail_open_20260725: awk -v のCエスケープ解釈でリテラル\tが
+        # 実タブへ化けYAMLを破壊するためENVIRON経由に変更(L4272と同型修正)。
+        _MEM_REFS_ENV="$_memory_references_block" awk '
+            /^skill_candidate:/ && !inserted { print ENVIRON["_MEM_REFS_ENV"]; inserted=1 }
             { print }
-            END { if (!inserted) print repl }
+            END { if (!inserted) print ENVIRON["_MEM_REFS_ENV"] }
         ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
         log "report_template: memory_references template injected"
     fi
@@ -4832,8 +4840,10 @@ ${_commit_bc}"
     _bc_full=$(_apply_binary_check_waivers "$task_file" "$_bc_full")
 
     if grep -qF "$_bc_placeholder" "$report_file" 2>/dev/null; then
-        awk -v repl="$_bc_full" -v placeholder="$_bc_placeholder" '
-            index($0, placeholder) { print repl; next }
+        # cmd_karo_hotfix_post_clear_fail_open_20260725: repl(AC description由来)はENVIRON経由。
+        # placeholderは固定文字列(バックスラッシュ無し)でawk -vのCエスケープ解釈の影響を受けないため維持。
+        _BC_FULL_ENV="$_bc_full" awk -v placeholder="$_bc_placeholder" '
+            index($0, placeholder) { print ENVIRON["_BC_FULL_ENV"]; next }
             { print }
         ' "$report_file" > "${report_file}.tmp" && mv "${report_file}.tmp" "$report_file"
         if [ -n "$_bc_block" ]; then

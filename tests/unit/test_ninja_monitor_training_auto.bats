@@ -189,6 +189,63 @@ echo "REFLUX_TARGET_ACTIVE_SKIP_OK"
     [[ "$output" == *"REFLUX_TARGET_ACTIVE_SKIP_OK"* ]]
 }
 
+@test "cmd_karo_hotfix_reflux_deploy_race: reflux auto deploy does not overwrite a done/PASS ninja (RUNTIME=idle but GATE CLEAR/archive pending)" {
+    # blt_20260725_130045: RUNTIME=idleだけを見て配備すると、家老の手動配備や忍者の
+    # 報告作成中にstatus=done/PASSのtask YAMLを上書きしていた(cmd_4165実証)。
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
+
+cat > "$SCRIPT_DIR/queue/insights.yaml" <<YAML
+- id: INS-test
+  status: pending
+YAML
+
+cat > "$SCRIPT_DIR/scripts/deploy_task.sh" <<SH
+#!/bin/bash
+echo DEPLOY_CALLED >> "$TMP_ROOT/deploy.log"
+SH
+chmod +x "$SCRIPT_DIR/scripts/deploy_task.sh"
+
+log() { echo "$1" >> "$TMP_ROOT/test.log"; }
+yaml_field_get() {
+    grep -m1 -E "^[[:space:]]*$2:" "$1" | sed "s/.*:[[:space:]]*//; s/[\"'"'"' ]//g" || true
+}
+_training_pipeline_has_work() { return 1; }
+
+REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=1
+REFLUX_AUTO_DEPLOY_COOLDOWN=1
+REFLUX_AUTO_DEPLOY_STATE_PREFIX="$TMP_ROOT/state/reflux_auto"
+
+for pair in "hayate:done" "kagemaru:PASS"; do
+    name="${pair%%:*}"
+    st="${pair##*:}"
+    cat > "$SCRIPT_DIR/queue/tasks/${name}.yaml" <<YAML
+task:
+  status: ${st}
+  parent_cmd: cmd_old_${name}
+YAML
+    declare -gA REFLUX_IDLE_FIRST_SEEN=()
+    REFLUX_IDLE_FIRST_SEEN[$name]=0
+    _handle_reflux_auto_deploy "$name" 100 && exit 1
+    grep -q "REFLUX-AUTO-SKIP: ${name} task status=${st}" "$TMP_ROOT/test.log"
+    test ! -f "$TMP_ROOT/deploy.log"
+done
+echo "REFLUX_DONE_PASS_SKIP_OK"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REFLUX_DONE_PASS_SKIP_OK"* ]]
+}
+
 @test "training auto deploy stops when cooldown state dir cannot be prepared" {
     run bash -c '
 set -euo pipefail

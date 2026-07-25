@@ -1038,7 +1038,7 @@ EOF
     ' -- "$TEST_PROJECT"
     [ "$status" -eq 0 ]
     [[ "$output" == *"BLOCK"* ]]
-    [[ "$output" == *"完了済みだが報告未archive"* ]]
+    [[ "$output" == *"完了済み(status=done)だが報告未archive"* ]]
 }
 
 @test "cmd_4170: done task overwrite by a different cmd is allowed again once the report is archived" {
@@ -1121,9 +1121,119 @@ EOF
 
     [ "$status" -eq 1 ]
     [[ "$output" == *"BLOCK"* ]]
-    [[ "$output" == *"完了済みだが報告未archive"* ]]
+    [[ "$output" == *"完了済み(status=done)だが報告未archive"* ]]
 
     # ガードが実際の上書きより前に発火し、既存task(cmd_old/done)を保護したことを確認
+    run grep -q "cmd_old" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_karo_hotfix_reflux_deploy_race: PASS task with unarchived report BLOCKs overwrite and notifies karo inbox" {
+    # blt_20260725_130045: cmd_4170はstatus=doneのみ保護し、status=PASSは未保護のまま
+    # reflux promotionに上書きされていた(hanzo cmd_4170_full実例)。PASSにも同じ保護を及ぼす。
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: PASS
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_old.yaml" <<'EOF'
+worker_id: hayate
+verdict: PASS
+EOF
+
+    # deploy_task_scaffoldの最小fixture(DEPLOY_TASK_TEMPLATE_DIR)はinbox_write.shを
+    # 含まないため、既存テスト群と同じ規約(bash()差替え)でinbox_write.sh呼び出しを
+    # 捕捉し、実引数を検証する(実物を叩かない)。
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=hayate
+        PROJECT_DIR="$1"
+        bash() {
+            if [[ "${1:-}" == */inbox_write.sh ]]; then
+                printf "%s\n" "$*" >> "$PROJECT_DIR/inbox_call.log"
+                return 0
+            fi
+            command bash "$@"
+        }
+        before=$(sha256sum "$1/queue/tasks/hayate.yaml")
+        if deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_new; then
+            exit 9
+        fi
+        after=$(sha256sum "$1/queue/tasks/hayate.yaml")
+        [ "$before" = "$after" ]
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK"* ]]
+    [[ "$output" == *"完了済み(status=PASS)だが報告未archive"* ]]
+
+    run cat "$TEST_PROJECT/inbox_call.log"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo"* ]]
+    [[ "$output" == *"配備競合BLOCK"* ]]
+    [[ "$output" == *"cmd_new"* ]]
+}
+
+@test "cmd_karo_hotfix_reflux_deploy_race: PASS task overwrite by a different cmd is allowed again once the report is archived" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: PASS
+EOF
+    # No queue/reports/hayate_report_cmd_old.yaml present: archive_completed.sh
+    # already moved it to archive/reports/ — the deployment window is closed.
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=hayate
+        deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_new
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_karo_hotfix_reflux_deploy_race: reflux/direct auto-deploy path is BLOCKed by the same PASS/unarchived guard" {
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: PASS
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_cmd_old.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_old
+status: completed
+verdict: PASS
+EOF
+    cat > "$TEST_PROJECT/reflux_tmp_task.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_reflux_promotion_202607251300_sasuke
+  task_id: cmd_reflux_promotion_202607251300_sasuke_exact
+  task_type: exact
+  status: assigned
+EOF
+
+    run bash -lc '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { :; }
+        resolve_pane() { echo "test-pane"; }
+        get_ctx_pct() { echo 0; }
+        cli_type() { echo codex; }
+        check_idle() { return 0; }
+        deploy_task_validate_cli_target() { return 0; }
+        normalize_task_yaml() { :; }
+        deploy_task_main --direct --yaml "$project/reflux_tmp_task.yaml" sasuke cmd_reflux_promotion_202607251300_sasuke
+    ' -- "$TEST_PROJECT"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK"* ]]
+    [[ "$output" == *"完了済み(status=PASS)だが報告未archive"* ]]
+
+    # ガードが実際の上書きより前に発火し、既存task(cmd_old/PASS)を保護したことを確認
     run grep -q "cmd_old" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
     [ "$status" -eq 0 ]
 }

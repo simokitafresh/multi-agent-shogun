@@ -4612,9 +4612,9 @@ _handle_reflux_auto_deploy() {
     if [ -f "$task_file" ]; then
         task_status=$(yaml_field_get "$task_file" "status")
         case "$task_status" in
-            assigned|acknowledged|in_progress|pending|failed)
+            assigned|acknowledged|in_progress|pending|failed|done|PASS)
                 unset "REFLUX_IDLE_FIRST_SEEN[$name]"
-                log "REFLUX-AUTO-SKIP: $name task status=${task_status}"
+                log "REFLUX-AUTO-SKIP: $name task status=${task_status} (RUNTIME=idleでもGATE CLEAR/archive未完了の可能性。上書き対象外)"
                 return 1
                 ;;
         esac
