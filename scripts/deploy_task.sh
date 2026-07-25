@@ -4216,10 +4216,12 @@ PY
     local _semantic_validation_block
     _semantic_validation_block=$(cat <<'EOF'
 semantic_validation:
-  classification_axis: ""  # N×M一致時の分類軸
-  recount: ""  # 分類軸ごとの再計算式・件数
-  actual: ""  # 分類別内訳の実測
-  result: ""  # PASS or FAIL
+  # ★N×M一致が無い場合も記入必須。空欄はBLOCKされる(precheck LG048はresult=PASS以外を無条件でBLOCKする)
+  # ★該当なしなら「分類軸は存在しない/偶然の一致である」を再計数で示し result: PASS を記入せよ
+  classification_axis: ""  # 分類軸。無ければ「分類軸なし(偶然の一致)」+各数値の由来
+  recount: ""  # 分類軸ごとの再計算式・件数。偶然なら各数値がどこ由来かを1つずつ特定する
+  actual: ""  # 分類別内訳の実測。積の関係で生成された数値が実在しないなら、その旨を実測で示す
+  result: ""  # PASS or FAIL(★空欄不可)
 EOF
 )
     local _level5_report_contract_json
