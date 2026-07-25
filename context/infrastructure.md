@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-25 cmd_4155-4164 batch reflux -->
+<!-- last_updated: 2026-07-26 cmd_karo_impl_b32_planned_paths_test_20260726 -->
 <!-- source_commit:538dfa251 reason:cmd_4155-4164 batch reflux evidence:cmd_4155(28c833505)+cmd_4156(3718e7245)+cmd_4157(0e489017a)+cmd_4158+cmd_4159+cmd_4160(538dfa251)+cmd_4161(d626e5774)+cmd_4162(6b46ec40c)+cmd_4163(b5590d7d3)+cmd_4164+将軍D0(31aaa50d6,afff2450e) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
@@ -886,7 +886,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1329 -->
+<!-- last_synced_lesson: L1330 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1929,6 +1929,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1327: 9p+大容量packのrepoでは、履歴系gitのコストはwalk範囲ではなく呼出し回数で決まる。窓を狭めても速くならない（cmd_karo_impl_skill_refs_walk_scope_20260725）
 - L1328: 計器の相定義が跨いだ区間に支配相が隠れる。相合計と総時間の差を必ず見よ（cmd_karo_impl_report_publish_latency_20260725）
 - L1329: quarantine退避先はソースと同一FSに置け(cross-device mvは実コピーになる)（cmd_karo_impl_tmp_cache_retention_20260726）
+- L1330: 契約(planned_paths)は宣言であり作業ツリーの実体ではない。終端statusのtaskでも未commit変更は残る（cmd_karo_impl_b32_planned_paths_test_20260726）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
