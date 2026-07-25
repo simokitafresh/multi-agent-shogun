@@ -48,14 +48,28 @@ baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 | B9 | stop hook | session_alerts同根因3行重複=処理コスト3倍 | shogun-rca:5 | 品質(重複) |
 | B10 | loop_ledger | 33.2s/回+stock指標欠陥(是正済) | shogun-rca:3/穴12 | 速度+計器 |
 
-## §3 構造分類 — ボトルネックは4種類しかない
+### §2.1 軍師レビューによる追加(blt_171812。全て軍師の本日一次実測。詳細は同掲示板正文)
+
+| # | 箇所 | 事象 | 分類 |
+|---|------|------|------|
+| B11 | 報告publish経路 | terminal publishの32.1%が>1秒(avg 10.9s/max 48.1s) | 速度 |
+| B12 | gate_report_format | single-flight timeoutを品質FAILへ誤帰属(6件実測) | 品質(誤帰属) |
+| B13 | review_log gate_result | 1cmd=1スカラーで中間BLOCK固定→38%が最終結果と不一致 | 計器 |
+| B14 | 軍師precheck | 書込み中evalが構文エラー即死→ERRORS未算出でfail-open | 品質(fail-open) |
+| B15 | gate_metrics.log | rotate後もliveファイル1本しか読まないconsumer複数(promotion consumed急落の真因) | 計器 |
+| B16 | LG051スコープ | basename先頭一致で対象漏れ(dead code見逃しの原因。cmd_complete_gate.sh自身も対象外) | 品質(検出漏れ) |
+| B17 | retention台帳 | 固定パス上書きで移動記録消失(quarantine 17,381ファイルに対し台帳0件) | 計器 |
+| B18 | AC内の行番号参照 | 並行変更で陳腐化し別の行を指す(本日3cmd実証) | 品質(誤誘導) |
+
+## §3 構造分類 — ボトルネックは5種類(A-E)
 
 | 型 | 該当 | 対処原理 |
 |----|------|---------|
 | A 速度型(機械的処理が遅い) | B1/B2/B3/B10 | **台帳駆動高速化**(支配項逆引き→品質維持高速化→前後証明)。稼働中 |
 | B 直列脆弱型(1箇所の失敗が全体を止める) | B4 | **fail-open分離**(各ステップ独立+失敗隔離)。配備中(才蔵再作業) |
 | C 競合型(共有資源の同時アクセス) | B5(HEAD lock)/B2(queueファイル) | **単一writer化 or リトライ規約 + retention**(T9) |
-| D 品質型(検出が遅い/誤検出/重複) | B6/B7/B8/B9 | **検出の前倒し**(commit時に構造検証)+**FP根治**+**重複統合** |
+| D 品質型(検出が遅い/誤検出/重複/検出漏れ/誤誘導) | B6/B7/B8/B9/B16/B18 | **検出の前倒し**+**FP根治**+**重複統合**。軍師提案で**誤帰属サブ型**(B12/B14: 正しく検出したが原因を別主体へ帰属)を明示 — 対処=失敗種別の機械可読化(影丸cmd実装中) |
+| E 計器型(測定系自体の誤り)【軍師提案で独立】 | B10/B13/B15/B17 | **一次情報との定期突合**。計器の誤りは自己検知できず全判断を汚染するため型分離必須(B13で軍師自身のaccuracy指標が信頼不能と判明した実証) |
 
 ## §4 ToBe方針案(レビュー対象)
 
@@ -64,7 +78,9 @@ baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 - A型→既存高速化レーン(変更なし・実績-47%〜-99%)
 - B型→post-CLEARで確立するfail-open分離パターンを、他の直列パイプライン(deploy内部/archive)へ横展開
 - C型→(a)commit: 忍者はninja-commit経由でretry内蔵化、将軍/家老/軍師のD0 commitにも共通retryヘルパー導入 (b)queue: T9 retention
-- D型→**commit時構造検証の1本化**: 「新規source先の同一commit内包」「gate系ファイル変更時の該当batsローカル実行」をpre-commit(既存commit_contract系)へ接続。CIまで検出を遅らせない
+- D型→**commit時構造検証の1本化**: 「新規source先の同一commit内包」「gate系変更時のbats実行」をpre-commitへ接続。選定規則(軍師レビュー確定): 新規機構は作らず**既存run_tests.shのaffected/taskスコープに乗せる**(staged paths→affected、FAIL>0またはSKIP>0でBLOCK)。ただし**逆依存規則を明文化**: scripts/lib/*の追加・変更はtests/helpers/*経由の全testをaffectedに含める(CI RED 30148392707の真因=helper allowlist未追随がこの規則で捕まる)
+- B8(planned_paths)→自動拡張は**非対称**で統合: ACがtest作成を要求する場合のみtests/配下への拡張を許す(permission ceilingの一般緩和はしない)
+- E型→計器と一次情報の定期突合をT8(計器契約検証)へ統合
 
 ### 方針1追加要素(殿発案 2026-07-25 17:11): push通過+CI後追い方式
 「CI GREEN待ちでpush保留」を廃し、**pushは常時通過させ、CI REDは後追いの即応義務に変える**。
