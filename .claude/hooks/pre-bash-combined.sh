@@ -565,6 +565,16 @@ PY
                 emit_deny "BLOCK(GA-231): 忍者のgit commit直書きは禁止。/ninja-commit または bash scripts/ninja_scope_commit.sh を使い、共有indexの他者stageをcommitから分離せよ"
                 ;;
         esac
+        # cmd_karo_impl_commander_scope_commit_20260725 (AC1): 指揮官(将軍・家老・軍師)の
+        # D0 commitはninja_scope_commit.shの保護対象外だった(GA-231はninjaのみ判定)。
+        # 実害: 将軍の設計書commit 0f1c3ea65が才蔵のstage済みdead module削除922行を巻き込んだ。
+        # 忍者はtask YAML由来のplanned_pathsがあるが指揮官にはその前提がないため、明示pathspec
+        # (-- <path> [path ...])でscopeを与える経路として同一scriptを使わせる。
+        case " $(get_commander_names) " in
+            *" $_guard1_agent_id "*)
+                emit_deny "BLOCK(GA-231c): 指揮官のgit commit直書きは禁止。他者のstage済み変更を巻き込む事故を防ぐため bash scripts/ninja_scope_commit.sh -m \"<message>\" -- <path1> [path2 ...] で変更pathを明示してcommitせよ(task YAMLは不要。忍者と同じscriptを指揮官も直接使える)"
+                ;;
+        esac
         if ! bash "$SCRIPT_DIR/scripts/dm_signal_research_reflux_guard.sh" check-command "$command"; then
             emit_deny "BLOCK(GA-220): DM-Signal research commit requires matching context reflux fingerprint"
         fi

@@ -130,3 +130,41 @@ YAML
     [[ "$output" != *"CDP直コマンド検知"* ]]
     [ ! -e "$GATE_FIRE_LOG_FILE" ]
 }
+
+# cmd_karo_impl_commander_scope_commit_20260725
+# test_necessity: GA-231 previously checked only get_ninja_names, leaving shogun/karo/gunshi
+# free to run raw `git commit` and sweep in another agent's staged changes (実害: 0f1c3ea65
+# swallowed 才蔵's staged 922-line deletion). Commander roles must now be denied the same way,
+# directed at ninja_scope_commit.sh's explicit-pathspec entry point.
+@test "commander(karo) direct git commit is BLOCKED and routed to ninja_scope_commit.sh (GA-231c)" {
+    TMUX_AGENT_ID=karo run_hook "git commit -m test"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-231c)"* ]]
+    [[ "$output" == *"ninja_scope_commit.sh"* ]]
+}
+
+@test "commander(shogun/gunshi) direct git commit is BLOCKED same as karo (GA-231c)" {
+    for _cmdr in shogun gunshi; do
+        TMUX_AGENT_ID="$_cmdr" run_hook "git commit -m test"
+        [ "$status" -eq 2 ]
+        [[ "$output" == *"BLOCK(GA-231c)"* ]]
+    done
+}
+
+# test_necessity: regression guard — the pre-existing ninja block (GA-231) must keep firing
+# with its own message, not the new commander branch, so callers still get ninja-specific
+# guidance (/ninja-commit).
+@test "ninja direct git commit is still BLOCKED with the original GA-231 message (regression)" {
+    TMUX_AGENT_ID=saizo run_hook "git commit -m test"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(GA-231)"* ]]
+    [[ "$output" != *"GA-231c"* ]]
+    [[ "$output" == *"/ninja-commit"* ]]
+}
+
+# test_necessity: an unrecognized agent id (neither ninja nor commander) must not be denied by
+# GA-231/GA-231c — false positives here would fail-closed every unlabeled or CI invocation.
+@test "unrecognized agent id direct git commit is not blocked by GA-231/GA-231c" {
+    TMUX_AGENT_ID=nobody run_hook "git commit -m test"
+    [[ "$output" != *"BLOCK(GA-231"* ]]
+}

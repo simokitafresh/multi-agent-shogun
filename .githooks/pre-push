@@ -208,6 +208,56 @@ for _ref_line in "${_PUSH_REFS[@]}"; do
     fi
     printf '%s\n' "${_changed_files[@]}" > "$_CHANGED_FILES_FILE"
 
+    # --- Dirty working tree / pushed-commit overlap guard ---
+    # (cmd_karo_impl_commander_scope_commit_20260725 AC2)
+    # 実害: 家老のpushが才蔵の未commit変更(参照整理)を置き去りにして公開し、
+    # CI setup_fileがRED化した(公開済みcommitと作業ツリーの未確定状態が不整合を
+    # 起こした)。pushしようとしているcommitが変更したpathと、現在の作業ツリーに
+    # 残る未commit変更(他者所有含む)のpathが重なる場合、公開される内容が
+    # 作業ツリー上でまだ確定していない変更と食い違っている可能性が高い。
+    # デフォルトでBLOCKする。判定は状態のみに依存するため再試行しても同じ結果になる。
+    # AC4: 緊急D0 hotfixの摩擦を減らすため明示的escape hatchを用意し、
+    # 使用時はlogs/push_dirty_tree_bypass.jsonlへ理由付きで記録する(計測可能)。
+    if [ -z "${SHOGUN_PUSH_DIRTY_TREE_BYPASS:-}" ]; then
+        mapfile -t _dirty_paths < <(git -C "$REPO_ROOT" status --porcelain --untracked-files=no 2>/dev/null | cut -c4- | sort -u)
+        if [ "${#_dirty_paths[@]}" -gt 0 ]; then
+            _overlap_paths=""
+            for _dp in "${_dirty_paths[@]}"; do
+                for _cf in "${_changed_files[@]}"; do
+                    if [ "$_dp" = "$_cf" ]; then
+                        _overlap_paths="${_overlap_paths}${_dp}"$'\n'
+                    fi
+                done
+            done
+            if [ -n "$_overlap_paths" ]; then
+                echo "[pre-push] BLOCK(GA-PUSH1): pushしようとしているcommitと、作業ツリーの未commit変更が同一pathを差している。" >&2
+                echo "[pre-push] 公開されるcommitの内容が、作業ツリー上でまだ未確定の変更と不整合を起こす可能性がある。" >&2
+                echo "[pre-push] 重複path:" >&2
+                printf '%s\n' "$_overlap_paths" | sed '/^$/d' | sed 's/^/  /' >&2
+                echo "[pre-push] 対処: 未commit変更をcommitしてから再push、または他者の変更なら内容を確認せよ。" >&2
+                echo "[pre-push] 緊急時のescape hatch: SHOGUN_PUSH_DIRTY_TREE_BYPASS='<理由>' git push" >&2
+                echo "[pre-push]   (使用はlogs/push_dirty_tree_bypass.jsonlへ理由付きで記録され、計測可能)" >&2
+                exit 1
+            fi
+        fi
+    else
+        mkdir -p "$REPO_ROOT/logs"
+        SHOGUN_PUSH_DIRTY_TREE_BYPASS="$SHOGUN_PUSH_DIRTY_TREE_BYPASS" \
+        TMUX_AGENT_ID="${TMUX_AGENT_ID:-}" \
+        python3 - "$REPO_ROOT/logs/push_dirty_tree_bypass.jsonl" <<'PY' 2>/dev/null || true
+import json, os, sys, datetime
+path = sys.argv[1]
+entry = {
+    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "reason": os.environ.get("SHOGUN_PUSH_DIRTY_TREE_BYPASS", ""),
+    "agent": os.environ.get("TMUX_AGENT_ID") or "unknown",
+}
+with open(path, "a", encoding="utf-8") as fh:
+    fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+PY
+        echo "[pre-push] WARN(GA-PUSH1): dirty working tree bypass used (SHOGUN_PUSH_DIRTY_TREE_BYPASS set). Logged to logs/push_dirty_tree_bypass.jsonl" >&2
+    fi
+
     _PREPUSH_EXEC_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/shogun-prepush.XXXXXX")"
     # /tmp(ext4)側worktreeは/mnt/c(DRVFS)本体とowner混在扱いになり
     # 'dubious ownership'でcheckoutが落ちる(2026-07-24 GA-325-328根因。
