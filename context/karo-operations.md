@@ -237,6 +237,8 @@ REQUEST_CHANGES修正完了後の再検証。severity判定→verify_request→�
 
 - cmd関連通知は `ntfy_cmd.sh`、それ以外は `ntfy.sh` を使い分ける。
 - Frog は1日1件。cmd と VF task で競合する。
+- **GATE実行前CI確認(LK-A01 v21)**: `gh run list --repo simokitafresh/multi-agent-shogun --workflow test.yml --limit 1` でCI状態確認。failure中はcmd_complete_gate.sh実行しない(ci_readiness BLOCKが確定しており再実行は負の複利)。CI修正完了→push→GREEN後にGATE実行。
+- **done忍者のtask YAML手動idle化禁止(LK-A01 v22)**: stop hookのdone催促解消のためにtask YAMLをidle化するな。忍者が報告作成中のtask情報を喪失させる。done→idle遷移はGATE CLEAR→archive_completed.shの正規フローで自然解消される。
 - cmd完了時は lesson review → cmd_complete_gate → GATE CLEAR → **cmd品質記録** → **status→completed** → archive の順を崩すな。
 - **status→completed遷移**: GATE CLEAR確認後（全subtask done + gate CLEAR）、以下を実行してcmdのstatusをcompletedに遷移:
   ```
