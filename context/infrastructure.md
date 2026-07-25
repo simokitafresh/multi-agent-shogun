@@ -886,7 +886,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1304 -->
+<!-- last_synced_lesson: L1305 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1904,6 +1904,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1302: cmd_save_output_filterはBLOCK時にINFO系新規出力を無条件で隠す（cmd_4164）
 - L1303: cmd生成時のtarget_path単数推定はAC本文が複数ファイル(2表)を指す場合にミスマッチする（cmd_karo_hotfix_n5_rolling_colwidth_20260724）
 - L1304: 台帳長期集計ウィンドウは既存fix投入時刻を跨ぐと支配項判定を誤る（cmd_4168）
+- L1305: 配備ガードのstatus case網羅性: 進行中状態だけでなく完了直後archive未了も保護対象に含めよ（cmd_4170）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

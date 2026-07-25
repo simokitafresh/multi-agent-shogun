@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-24 -->
+<!-- last_updated: 2026-07-25 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,8 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3522 | 殿指示(2026-06-24): 想像せずに確認せよ。確認を便利にする道具が三層記憶だ。将軍がGS全量探索パターン数を記事に書く際、三層記憶を検索せず推測値を5回連発。全て既存の三層記憶に実数(合計7,521,549)があった。根因: stop_check_inbox.sh L252の[MEM]タグ検査は殿への応答(last_assistant_message)のみ対象。Write toolやgh gist edit経由の数値出力は検査対象外 | infra | 06-24 | 数値を含むWrite/gh gist edit出力時に三層記 |
-| cmd_3523 | 殿指示(2026-06-24): 穴を塞ぐのではなく穴が生まれない仕組みを作れ。洗脳の本質は確認の拒否。確認なしの出力を構造的に不可能にする。将軍の全応答で確認行為(三層記憶検索/capture-pane/DB検索/grep/bats等)の実行回数が0ならWARN。パターンマッチではなく確認行為の有無そのものを検査する | infra | 06-24 | 将軍応答ターンの確認行為ゼロをStop hookでWARNす |
 | cmd_3524 | 殿指示(2026-06-25): α6の6指標に加え、ボラティリティドラッグ・歪度・尖度・最低継続期間・最大連敗期間の5指標をrobustness_common.pyに追加し、シン四神(12体)+シン忍法(21体)+奥義(21体)×7窓で計算する。発端: ぷろっぷ記事DailyProp#102(期待値プラスでも資産増えない問題)から投資継続性の定量評価が必要 | dm-signal | 06-25 | cmd_3524: α6 robustness共通出力へ連続 |
 | cmd_3525 | cmd_3524レビューで発見: robustness_common.pyのKurtosisがraw(正規=3.0)、Skewnessが母集団式。本番metrics_impl.py L1174はpandas .kurt()=excess(正規=0.0)、L1170は.skew()=Fisher補正。Compare Summary画面と数値不一致を修正しシン四神・シン忍法・奥義全量×7窓で再計算 | dm-signal | 06-25 | cmd_3525: continuity_risk_metr |
 | cmd_3526 | 殿指示(2026-06-25): Compare Summary画面のTQQQ行でUpside/Downside Captureが常に100%/0/1の退化値になる不具合を修正。根因: 合成DataFrameのbenchmark_returnにTQQQ自身を代入しているため自己比較になる。修正: benchmark_returnをSPYに変更しCapture=TQQQ vs SPYの実値にする。設計書: docs/spec/compare-summary-benchmark-capture-fix.md | dm-signal | 06-25 | Compare Summary追加ベンチマークTQQQのca |
@@ -316,3 +314,6 @@
 | cmd_4154 | 2026-07-24将軍startup gateでgate_test_health.sh --ledger-onlyがtiming budget ratchet BLOCK(直近hotfix群で変更されたテストファイル群の実行時間が予算超過)。殿裁定2026-07-21『削るな、速くしろ』に従い、テストを削除せず品質2原則(正本突合判定+境界fixture)を保ったまま予算内へ高速化する | infra | 07-24 | cmd_4154 timing budget ratchet |
 | cmd_4155 | 家老インフラバグ報告2026-07-24(掲示板blt_20260724_142511): task.project=dm-signalの偵察・hotfixでmulti-agent-shogun側にcommitした成果物のcommit_hashを、report_ci_push_stateがresolve_task_repo_dirの単一repo_dirでのみ解決するためunresolvable BLOCKになりGATE処理を浪費する。報告YAMLの既存cross_repo_commits契約をci_push_state判定へ接続し、別repoのcommitも解決可能にする | infra | 07-24 | report_ci_push_stateにcross_rep |
 | cmd_4158 | 家老インフラバグ報告2026-07-24(掲示板blt_20260724_143816): CI RED中はci_readiness BLOCKによりGATE CLEARが構造的に不可能なのに、stop_check_inbox.shがstatus=done忍者ごとに『報告レビュー/GATE処理を進めよ』を毎回出力し、家老が同じBLOCKを反復する負の複利が発生している(同一メッセージ複数回出力を家老一次計測)。CI状態を確認し、CI RED中はGATE催促の代わりにCI RED修正待ちである旨を表示する | infra | 07-24 | CI RED中にGATE催促が繰り返されるバグを修正。sto |
+| cmd_4168 | 台帳高速化レーン4本目(殿問い2026-07-25)。logs/defense_overhead.jsonl将軍実集計でgit_pre_commit:self_syncが第3支配項(全commitで毎回走る=複利大)。同期対象の変更有無をmtime/hash差分で先判定し、未変更時の同期処理をスキップする差分化で短縮する。同期の正しさ(変更時は必ず同期される)は不変 | infra | 07-25 | AC1(差分判定によるself_syncスキップ)は2026 |
+| cmd_4169 | 台帳高速化レーン5本目(殿問い2026-07-25)。cmd_save/cmd_publishの実行が長い実測(2026-07-24将軍のpublishでtimeout移行が複数回発生)があるのに、logs/defense_overhead.jsonlにはcmd_saveの内部フェーズ別記録がほぼ無く支配項が見えない。台帳方式の第一歩=計装。主要フェーズ(check群・semantic照会・memory_db照会・Session State等)のwall_msをsource:cmd_saveで台帳へ記録し、次の高速化cmdの標的を数値で確定させる。計装のみで判定ロジックは不変 | infra | 07-25 | AC1: scripts/cmd_save.shへdefen |
+| cmd_4170 | 家老インフラバグ報告2026-07-25(掲示板blt_20260725_130046): kagemaruがcmd_4165の報告作成中にtask YAMLがidle化・reflux配備で上書きされparent_cmd喪失。根因=deploy_task.shの配備保護regexがassigned・acknowledged・in_progressのみでstatus=doneを保護せず、done〜GATE CLEAR・archive完了までの窓で再配備上書きが可能な構造。配備側でこの窓を機械的に保護する | infra | 07-25 | deploy_task_guard_worker_assig |
