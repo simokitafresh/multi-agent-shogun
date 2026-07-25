@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# provenance: cmd_karo_hotfix_lesson_write_chmod_eperm_20260725_normal (DrvFs chmod EPERM許容化)
 # semantic-links: [[cmd設計品質ログ]]
 # cmd_quality_log.sh — cmd設計品質をlogs/cmd_design_quality.yamlに記録
 # Usage: bash scripts/cmd_quality_log.sh <cmd_id> <gate_result> <karo_rework:yes/no> <supplementary_cmds:数値> [notes]

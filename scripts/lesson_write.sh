@@ -1,4 +1,5 @@
 #!/bin/bash
+# provenance: cmd_karo_hotfix_lesson_write_chmod_eperm_20260725_normal (DrvFs chmod EPERM許容化)
 # semantic-links: [[教訓ライフサイクル管理]]
 # lesson_write.sh — SSOT (DM-signal/tasks/lessons.md) への教訓追記（排他ロック付き）
 # Usage: bash scripts/lesson_write.sh <project_id> "<title>" "<detail>" "<source_cmd>" "<author>" [cmd_id] [--strategic] [--tags "db,api"] [--subdomain fe|be|gs|infra] [--target-files "scripts/foo.sh,tests/foo.bats"] [--source-marker "gate_auto_draft"] [--origin "[[cmd_XXX]]"] [--when "trigger"] [--how "steps"] [--if "condition"] [--then "action"] [--because "reason"]
