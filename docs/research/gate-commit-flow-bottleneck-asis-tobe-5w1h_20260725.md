@@ -66,6 +66,12 @@ baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 - C型→(a)commit: 忍者はninja-commit経由でretry内蔵化、将軍/家老/軍師のD0 commitにも共通retryヘルパー導入 (b)queue: T9 retention
 - D型→**commit時構造検証の1本化**: 「新規source先の同一commit内包」「gate系ファイル変更時の該当batsローカル実行」をpre-commit(既存commit_contract系)へ接続。CIまで検出を遅らせない
 
+### 方針1追加要素(殿発案 2026-07-25 17:11): push通過+CI後追い方式
+「CI GREEN待ちでpush保留」を廃し、**pushは常時通過させ、CI REDは後追いの即応義務に変える**。
+- 根拠: (1)LS101 push保留デッドロック実証(修正21h未pushでRED自己永続) (2)本日lib hotfix即pushが現HEADの真の回帰即検出を可能にした (3)本repoはpush≠デプロイでrevert完全可逆(07-10裁定適用対象)
+- 必須条件: (a)CI RED→忍者ci_fix即配備SLAの強制継続 (b)D型検出前倒しとセット(CIは最後の網に格下げ) (c)push=本番デプロイ直結repo(DM-Signal等)は適用外
+- レビュー観点追加: 家老=RED放置累積の歯止め運用、軍師=RED中の追いpush許容条件(未解決RED上への積み増し規則)
+
 ### 方針2(対案): CI RED級のみ即応し、速度系は現行レーン任せで新設なし
 最小変更。ただしB5/B6/B7は再発する(本日3件発生が反証)。
 
