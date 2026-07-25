@@ -76,3 +76,17 @@ lg051_silent() {
 @test "in-scope change passes once non-test caller evidence is recorded" {
     lg051_silent "scripts/cmd_complete_gate.sh" "rg実測: non-test caller count: 8"
 }
+
+# test/fixtureは対象外。LG051が求めるのは「test/fixtureを除外した実運用caller数」であり
+# test自身はgate実装ではない。トークン境界化でtestを巻き込みT-GP286-2をCI REDにした回帰の再発防止。
+@test "test and fixture paths are out of scope even when the name contains gate/hook" {
+    lg051_silent "tests/test_gate_report_format.bats" ""
+    lg051_silent "tests/unit/test_cmd_complete_gate.bats" ""
+    lg051_silent "tests/fixtures/gate_sample.sh" ""
+}
+
+# 除外は「置き場所」で判定する。basenameのtest_接頭辞で除外すると本番hookを取りこぼす
+@test "production hooks named test_* stay in scope (location decides, not the prefix)" {
+    lg051_fired "scripts/hooks/test_hooks.sh" ""
+    lg051_fired "scripts/hooks/test_result_guard.sh" ""
+}

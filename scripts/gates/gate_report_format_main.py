@@ -1103,8 +1103,20 @@ def main(report_data=None) -> int:
     #       (2)basename内で区切り([_.-]/境界)に挟まれたトークン一致。
     # トークン境界必須にしているため delegate/mitigate/aggregate/propagate/navigate
     # のような「gate」を部分文字列として含むだけの語は拾わない(偽陽性を増やさない)。
+    # test/fixtureは対象外: 本検査が求めるのは「定義・test/fixtureを除外した実運用
+    # caller数」であり、test自身はgate/hook/dispatcherの実運用コードではない。
+    # (トークン境界化でtests/test_gate_report_format.batsのようなtestまで巻き込み
+    #  T-GP286-2がCI REDになった。母集団定義に元からtestは含まれていない)
+    # 判定は「置き場所」で行う。basenameのtest_接頭辞で除外すると
+    # scripts/hooks/test_hooks.sh / test_result_guard.sh のような
+    # 名前がtest_で始まる本番hookまで対象外にしてしまう(実測FN=2)。
+    _test_path_re = re.compile(
+        r"(?:^|/)tests?/|\.bats$|(?:^|/)fixtures?/",
+        re.I,
+    )
     _caller_scope = any(
-        re.search(
+        not _test_path_re.search(_path)
+        and re.search(
             r"(?:^|/)(?:hooks?|gates?|dispatchers?)/"
             r"|(?:^|/|[_.-])(?:hooks?|gates?|dispatchers?|dispatch)(?:[_.-]|$)",
             _path,
