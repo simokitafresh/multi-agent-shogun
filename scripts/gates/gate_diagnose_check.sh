@@ -170,6 +170,58 @@ END {
 ' "$TASK_DIR/${NINJA_NAME}.yaml" 2>/dev/null)
 fi
 
+# --- 3.6 実体判定: 何がブロックしているかでDIVERGENTの成否を決める ---
+# 類似度は「診断文の写し」にすぎない。契約(planned_paths/ac_version等)や環境が
+# ブロックしている間は、忍者側に是正手段がないため同じ診断の反復こそが正しい。
+# 実体=BLOCK理由の分類を見て、偽陽性だけを落とす。真に同じ壁で足踏みしている
+# 反復(同一のアプローチ起因理由の継続)は従来どおり発火させる。
+DIVERGENT_SUPPRESS_REASON=""
+
+# BLOCK理由の主部(最初の";"まで)を取り出す
+_main_reason_of() {
+    local raw="${1%%;*}"
+    raw="${raw#"${raw%%[![:space:]]*}"}"
+    raw="${raw%"${raw##*[![:space:]]}"}"
+    printf '%s' "$raw"
+}
+
+# 契約起因・環境起因(=忍者が報告側で解消できない)か判定する。
+# 判定語は本日の実データ(半蔵 planned scope外・疾風 planned scope外)と
+# 契約/インフラ層のBLOCK文言に限定する。報告記入の不備(binary_checks未記入、
+# status未更新、verdict不正など忍者が直せるもの)は含めない=検知能力を落とさない。
+_is_contract_or_env_block() {
+    printf '%s' "$1" | grep -qiE \
+        'outside planned scope|planned_paths|planned scope|ac_version|ac_fingerprint|contract_fingerprint|task (yaml|contract) (field )?(missing|invalid)|lock (busy|timeout)|flock|single-flight|deploy lock|infra(structure)? error|環境起因|契約起因'
+}
+
+if [ "$SIM_LEVEL" = "block" ] || [ "$SIM_LEVEL" = "warn" ]; then
+    CURRENT_MAIN_REASON="$(_main_reason_of "$BLOCK_REASONS")"
+    PRIOR_MAIN_REASON=""
+    if [ -f "$TASK_DIR/${NINJA_NAME}.yaml" ]; then
+        PRIOR_MAIN_REASON="$(awk '
+            /^[[:space:]]+block_reason:/ {
+                line = $0
+                sub(/^.*block_reason:[[:space:]]*/, "", line)
+                gsub(/^["\047]|["\047]$/, "", line)
+                last = line
+            }
+            END { print last }
+        ' "$TASK_DIR/${NINJA_NAME}.yaml" 2>/dev/null)"
+        PRIOR_MAIN_REASON="$(_main_reason_of "$PRIOR_MAIN_REASON")"
+    fi
+
+    if [ -n "$CURRENT_MAIN_REASON" ] && _is_contract_or_env_block "$CURRENT_MAIN_REASON"; then
+        # 契約/環境がブロックしている間の反復は正しい再提出である。
+        DIVERGENT_SUPPRESS_REASON="現BLOCKは契約/環境起因(${CURRENT_MAIN_REASON:0:60})。忍者側に是正手段がないため反復は正当"
+        SIM_LEVEL="none"
+    elif [ -n "$CURRENT_MAIN_REASON" ] && [ -n "$PRIOR_MAIN_REASON" ] \
+        && [ "$CURRENT_MAIN_REASON" != "$PRIOR_MAIN_REASON" ]; then
+        # 壁が変わっている=足踏みではない。診断文が似ていても前進している。
+        DIVERGENT_SUPPRESS_REASON="BLOCK理由が前回から変化(前=${PRIOR_MAIN_REASON:0:40} / 今=${CURRENT_MAIN_REASON:0:40})。同一の壁での足踏みではない"
+        [ "$SIM_LEVEL" = "block" ] && SIM_LEVEL="warn"
+    fi
+fi
+
 # --- 4. 診断メッセージ出力 ---
 
 # 初回BLOCK（diagnose_reason空 + 連続0-1回）: 警告+FIX hintのまま通す
@@ -225,6 +277,10 @@ if [ -n "$DIAGNOSE_REASON" ]; then
     fi
     if [ "$SIM_LEVEL" = "warn" ]; then
         echo "[DIAGNOSE] WARN: prior_attempts と類似した診断/アプローチの再提出を検出 ($SIM_MESSAGE)" >&2
+    fi
+    # 抑止は必ず可視化する。黙って消すと「検知器が何を見送ったか」が追えなくなる。
+    if [ -n "$DIVERGENT_SUPPRESS_REASON" ]; then
+        echo "[DIAGNOSE] INFO: DIVERGENT抑止 — ${DIVERGENT_SUPPRESS_REASON} ($SIM_MESSAGE)" >&2
     fi
     echo "[DIAGNOSE] OK: diagnose_reason記入確認 (${#DIAGNOSE_REASON}文字)" >&2
     exit 0
