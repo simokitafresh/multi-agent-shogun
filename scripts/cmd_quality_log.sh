@@ -355,7 +355,11 @@ if upgraded:
             handle.writelines(lines)
             handle.flush()
             os.fsync(handle.fileno())
-        os.chmod(tmp_name, mode)
+        # DrvFs(/mnt/c): 所有者root/mode 777固定。非所有者chmodはEPERM、mode継承は元から不要
+        try:
+            os.chmod(tmp_name, mode)
+        except PermissionError as exc:
+            print(f"WARN: chmod skipped (mode preservation unsupported on this filesystem): {exc}", file=sys.stderr)
         os.replace(tmp_name, path)
     finally:
         if os.path.exists(tmp_name):

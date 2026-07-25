@@ -248,7 +248,12 @@ if merge_into:
             fh.writelines(lines)
             fh.flush()
             os.fsync(fh.fileno())
-        os.chmod(candidate, stat.S_IMODE(os.stat(lessons_file).st_mode))
+        # DrvFs(/mnt/c)ではファイル所有者=root/mode=777が強制され、非所有者(uid!=0)のchmodはEPERM。
+        # replace後のmodeもDrvFs側が777に固定するため、mode継承は元から不要。ext4等では従来通り継承する。
+        try:
+            os.chmod(candidate, stat.S_IMODE(os.stat(lessons_file).st_mode))
+        except PermissionError as exc:
+            print(f"WARN: chmod skipped (mode preservation unsupported on this filesystem): {exc}", file=sys.stderr)
         with open(candidate, encoding="utf-8") as fh:
             candidate_data = yaml.safe_load(fh)
         candidate_matches = [lesson for lesson in candidate_data.get("lessons", []) if str(lesson.get("id", "")) == merge_into]

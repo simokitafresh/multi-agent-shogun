@@ -382,7 +382,9 @@ v7吸収(2026-05-19):
   origin: "[[LK039]] -> [[deploy_task.sh]] -> [[gate/hookバグ修正]]"
 - id: LK-A14
   title: LG027横展開確認 — grep修正前パターンで残存0件確認必須
-  detail: 同パターンが複数ファイルにコピペ散在。修正後にgrep残存確認が不在→12体Cash100%事故。
+  detail: |
+    同パターンが複数ファイルにコピペ散在。修正後にgrep残存確認が不在→12体Cash100%事故。
+    吸収(2026-07-25, cmd_karo_hotfix_lesson_write_chmod_eperm_20260725, origin: [[cmd_karo_hotfix_lesson_write_chmod_eperm_20260725]]): 本番経路接続の確認 — 修正モジュールの非test callerを数えよ(cmd_4172でdead codeを修正しGATE CLEARしたが本番経路のinline実装は未変更だった。家老・軍師とも見逃した)
   source_ids: [LK052]
   created_at: '2026-04-24'
   automated: true

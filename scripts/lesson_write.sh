@@ -585,6 +585,7 @@ if [ -n "$PROMOTE_ID" ]; then
 import os
 import re
 import stat
+import sys
 import tempfile
 
 path = os.environ["LESSONS_FILE_ENV"]
@@ -622,7 +623,11 @@ try:
         fh.write(updated)
         fh.flush()
         os.fsync(fh.fileno())
-    os.chmod(tmp, mode)
+    # DrvFs(/mnt/c): 所有者root/mode 777固定。非所有者chmodはEPERM、replace後modeもFS側が固定するため継承は不要
+    try:
+        os.chmod(tmp, mode)
+    except PermissionError as exc:
+        print(f"WARN: chmod skipped (mode preservation unsupported on this filesystem): {exc}", file=sys.stderr)
     os.replace(tmp, path)
 finally:
     if os.path.exists(tmp):
