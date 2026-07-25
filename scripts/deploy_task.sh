@@ -467,18 +467,38 @@ deploy_task_guard_checkpoint_review_hold() {
     done
 }
 
+deploy_task_guard_done_report_unarchived() {
+    local ninja_name="$1" parent_cmd="$2"
+    local report_file
+    [ -n "$ninja_name" ] || return 1
+    [ -n "$parent_cmd" ] || return 1
+    for report_file in "$SCRIPT_DIR/queue/reports/${ninja_name}_report_${parent_cmd}"*.yaml; do
+        [ -f "$report_file" ] && return 0
+    done
+    return 1
+}
+
 deploy_task_guard_worker_assignment() {
     local task_file="$1"
     local incoming_cmd="$2"
-    local current_status current_parent
+    local current_status current_parent worker_name
 
     current_status=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "status" "unknown" 2>/dev/null || true)
     current_parent=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    worker_name="${NINJA_NAME:-$(basename "$task_file" .yaml)}"
     case "$current_status" in
         assigned|acknowledged|in_progress)
             if [ -n "$incoming_cmd" ] && [ "$current_parent" != "$incoming_cmd" ]; then
-                log "BLOCK(GA-257): ${NINJA_NAME:-worker} already has active task ${current_parent:-unknown} (status=${current_status})"
-                echo "BLOCK: ${NINJA_NAME:-worker} は ${current_parent:-unknown} を実行中/受領済み。別cmd ${incoming_cmd} で上書きしない。" >&2
+                log "BLOCK(GA-257): ${worker_name:-worker} already has active task ${current_parent:-unknown} (status=${current_status})"
+                echo "BLOCK: ${worker_name:-worker} は ${current_parent:-unknown} を実行中/受領済み。別cmd ${incoming_cmd} で上書きしない。" >&2
+                return 1
+            fi
+            ;;
+        done)
+            if [ -n "$incoming_cmd" ] && [ -n "$current_parent" ] && [ "$current_parent" != "$incoming_cmd" ] \
+                && deploy_task_guard_done_report_unarchived "$worker_name" "$current_parent"; then
+                log "BLOCK(cmd_4170): ${worker_name:-worker} done task ${current_parent} has an unarchived report; refusing overwrite by ${incoming_cmd}"
+                echo "BLOCK: ${worker_name:-worker} は ${current_parent} 完了済みだが報告未archive。別cmd ${incoming_cmd} での上書きを拒否。cmd_complete/archive完了後に再試行せよ。" >&2
                 return 1
             fi
             ;;

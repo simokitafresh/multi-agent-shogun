@@ -1013,6 +1013,121 @@ EOF
     [[ "$output" == *"別cmd cmd_second で上書きしない"* ]]
 }
 
+@test "cmd_4170: done task with unarchived report BLOCKs overwrite by a different cmd" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: done
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_old.yaml" <<'EOF'
+worker_id: hayate
+verdict: PASS
+EOF
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=hayate
+        before=$(sha256sum "$1/queue/tasks/hayate.yaml")
+        if deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_new; then
+            exit 9
+        fi
+        after=$(sha256sum "$1/queue/tasks/hayate.yaml")
+        [ "$before" = "$after" ]
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"BLOCK"* ]]
+    [[ "$output" == *"完了済みだが報告未archive"* ]]
+}
+
+@test "cmd_4170: done task overwrite by a different cmd is allowed again once the report is archived" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: done
+EOF
+    # No queue/reports/hayate_report_cmd_old.yaml present: archive_completed.sh
+    # already moved it to archive/reports/ — the deployment window is closed.
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=hayate
+        deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_new
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_4170: done task with unarchived report does not block a same-cmd redeploy" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: done
+EOF
+    cat > "$TEST_PROJECT/queue/reports/hayate_report_cmd_old.yaml" <<'EOF'
+worker_id: hayate
+verdict: PASS
+EOF
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=hayate
+        deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_old
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+}
+
+@test "cmd_4170: reflux/direct auto-deploy path (deploy_task.sh --direct --yaml) is BLOCKed by the same done/unarchived guard" {
+    # 家老インフラバグ報告(blt_20260725_130046)の再現経路: ninja_monitor.shの
+    # reflux promotion自動配備は "deploy_task.sh --direct --yaml <tmp_task> <ninja> <cmd_id>"
+    # を呼ぶ。既存taskがstatus=done+report未archiveのままこの経路で上書きされないことを確認する。
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: done
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_cmd_old.yaml" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_old
+status: completed
+verdict: PASS
+EOF
+    cat > "$TEST_PROJECT/reflux_tmp_task.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_reflux_promotion_202607251300_sasuke
+  task_id: cmd_reflux_promotion_202607251300_sasuke_exact
+  task_type: exact
+  status: assigned
+EOF
+
+    run bash -lc '
+        set -euo pipefail
+        project="$1"
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$project/scripts/deploy_task.sh"
+        log() { :; }
+        resolve_pane() { echo "test-pane"; }
+        get_ctx_pct() { echo 0; }
+        cli_type() { echo codex; }
+        check_idle() { return 0; }
+        deploy_task_validate_cli_target() { return 0; }
+        normalize_task_yaml() { :; }
+        deploy_task_main --direct --yaml "$project/reflux_tmp_task.yaml" sasuke cmd_reflux_promotion_202607251300_sasuke
+    ' -- "$TEST_PROJECT"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK"* ]]
+    [[ "$output" == *"完了済みだが報告未archive"* ]]
+
+    # ガードが実際の上書きより前に発火し、既存task(cmd_old/done)を保護したことを確認
+    run grep -q "cmd_old" "$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    [ "$status" -eq 0 ]
+}
+
 @test "GA-258: malformed same-command task cannot skip the atomic repair path" {
     cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
 task:
