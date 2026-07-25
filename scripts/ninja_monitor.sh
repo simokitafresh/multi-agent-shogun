@@ -8101,6 +8101,7 @@ run_lock_cleanup() {
         log "LOCK-CLEANUP: Removed $count stale lock files from $cleanup_dir"
     fi
     run_scratch_retention "$cleanup_dir"
+    run_tmp_cache_retention "$cleanup_dir"
     LAST_LOCK_CLEANUP=$now
 }
 
@@ -8134,6 +8135,56 @@ run_scratch_retention() {
     )
     if [ "$moved" -gt 0 ]; then
         log "SCRATCH-RETENTION: Quarantined $moved stale scratch/lock dirs to $quarantine"
+    fi
+}
+
+# ═══ /tmp cache のretention (cmd_karo_impl_tmp_cache_retention_20260726) ═══
+# 経路: 半蔵のretentionはlock(ディレクトリ形)とrepo直下scratchだけを見ており、/tmp直下の
+#       多数派である**cache**が無制限に残る(実測 /tmp直下130,377件中 context_freshness_check
+#       19,261 + 同 .cache.$$ 残骸 588 / review_fp_cache 4,398 / cmd_save_q 1,324 /
+#       pre_bash_memory_inject 1,083 = 26,654件 ≒ 20%)。maxdepth1を舐める全gate・全配備の
+#       preflightがこの件数を直撃する。
+# 安全性(生成元でTTL判定済み・失っても再生成されるのみ):
+#   - context_freshness_check_*.cache : scripts/context_freshness_check.sh:64。TTL 2秒、
+#     cache keyに $(date +%Y-%m-%d) を含むため前日分は原理的に再利用されない。
+#   - cmd_save_q*.cache               : scripts/cmd_save.sh:4162。有効性は研究dirとの -nt 比較。
+#   - pre_bash_memory_inject_*        : .claude/hooks/pre-bash-combined.sh:311。30秒デバウンス印。
+#   - review_fp_cache_<pid>_<rand>/   : scripts/lib/review_approval.sh:11。呼び出し1回のスコープ。
+# 方針: 削除ルール準拠でrmせず集約移動する(殿が最終削除を判断)。新規デーモン・新規台帳は作らず
+#       既存 run_lock_cleanup 経路に載せる(LG032)。退避先は同一FS(/tmp配下)に置き、
+#       cross-device mvによる実コピーを避ける。
+# 陰性対照: (a) TTL内=使用中のcacheは1件も動かさない (b) review_fp_cacheは名前中のPIDが
+#       生存していれば触らない(実行中のレビューを壊すため)。
+TMP_CACHE_RETENTION_TTL_MIN="${TMP_CACHE_RETENTION_TTL_MIN:-1440}"   # 24h
+run_tmp_cache_retention() {
+    local cleanup_dir="${1:-/tmp}"
+    local quarantine="${TMP_CACHE_QUARANTINE_DIR:-$cleanup_dir/.shogun_tmp_cache_quarantine}"
+    local moved=0 path base pid
+    mkdir -p "$quarantine" 2>/dev/null || return 0
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        base="${path##*/}"
+        if [[ "$base" == review_fp_cache_* ]]; then
+            pid="${base#review_fp_cache_}"
+            pid="${pid%%_*}"
+            # 陰性対照: 生存プロセスが所有する invocation-scoped cache は触らない
+            if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
+                continue
+            fi
+        fi
+        mv "$path" "$quarantine/" 2>/dev/null && moved=$((moved + 1))
+    done < <(
+        find "$cleanup_dir" -maxdepth 1 -type f \
+            \( -name "context_freshness_check_*.cache" \
+               -o -name "context_freshness_check_*.cache.*" \
+               -o -name "cmd_save_q*.cache" \
+               -o -name "pre_bash_memory_inject_*" \) \
+            -mmin "+$TMP_CACHE_RETENTION_TTL_MIN" -print 2>/dev/null
+        find "$cleanup_dir" -maxdepth 1 -type d -name "review_fp_cache_*" \
+            -mmin "+$TMP_CACHE_RETENTION_TTL_MIN" -print 2>/dev/null
+    )
+    if [ "$moved" -gt 0 ]; then
+        log "TMP-CACHE-RETENTION: Quarantined $moved stale cache entries to $quarantine"
     fi
 }
 
