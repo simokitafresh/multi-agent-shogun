@@ -1095,8 +1095,21 @@ def main(report_data=None) -> int:
         _path = _entry.get("path", "") if isinstance(_entry, dict) else str(_entry)
         if _path:
             _fm_paths.append(_path)
+    # cmd_karo_impl_lg051_scope_basename_20260725 (B16):
+    # 旧判定 r"(?:^|/)(?:hooks?|gates?|dispatchers?)(?:/|[^/]*$)" はbasenameの
+    # 「先頭」一致しか拾えず、cmd_complete_gate.sh のように語が中間・末尾にある
+    # 実運用gateを取りこぼしていた(実測: 真対象124件中12件=9.7%が対象外)。
+    # 是正: (1)hooks/gates/dispatchers ディレクトリ節、または
+    #       (2)basename内で区切り([_.-]/境界)に挟まれたトークン一致。
+    # トークン境界必須にしているため delegate/mitigate/aggregate/propagate/navigate
+    # のような「gate」を部分文字列として含むだけの語は拾わない(偽陽性を増やさない)。
     _caller_scope = any(
-        re.search(r"(?:^|/)(?:hooks?|gates?|dispatchers?)(?:/|[^/]*$)", _path, re.I)
+        re.search(
+            r"(?:^|/)(?:hooks?|gates?|dispatchers?)/"
+            r"|(?:^|/|[_.-])(?:hooks?|gates?|dispatchers?|dispatch)(?:[_.-]|$)",
+            _path,
+            re.I,
+        )
         for _path in _fm_paths
     )
     if _caller_scope:
