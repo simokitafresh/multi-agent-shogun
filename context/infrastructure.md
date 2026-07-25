@@ -886,7 +886,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1309 -->
+<!-- last_synced_lesson: L1325 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1909,6 +1909,22 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1307: bashの\tはprintf/echo -e経由でのみ実タブへ展開される。二重引用符+コマンド置換の生文字列補間では文字通り残る（cmd_karo_hotfix_gate_metrics_literal_tab_20260725）
 - L1308: 高頻度runの生スキャン系stockには単純隣接snapshot比較ではなくgrace-hour以上前baseline比較を使う（cmd_karo_hotfix_loop_ledger_stock_metric_20260725）
 - L1309: test_cmd_publish_preflight.batsが殿裁定2026-07-23のlesson-cap撤去(commit 4f4aae961)に未追随のまま2日間スコープ外FAILを出し続けている（cmd_karo_hotfix_reflux_deploy_race_20260725）
+- L1310: 共有worktreeの検証は隔離cloneで行え。他忍者の未commit差分がテスト結果を汚染する（cmd_karo_ci_fix_30148392707_classify_scaffold_20260725）
+- L1311: DrvFs(/mnt/c)上のatomic replaceでmode継承chmodを書くな（cmd_karo_hotfix_lesson_write_chmod_eperm_20260725）
+- L1312: 一発限りsentinelは作成時に保持期限を決めないと必ず無期限累積する（cmd_karo_hotfix_queue_flag_retention_20260725）
+- L1313: 共有indexにgit rmでstageした削除は、他エージェントのcommitに吸収されて帰属が失われる（cmd_karo_hotfix_boost_bypass_production_path_20260725）
+- L1314: run_tests.sh taskは対象外の既知不具合をFAILへ混入させうる。binary_checksのAC5結果は事前にHEAD比較で無関係性を検証してからno/yesを判断せよ（cmd_karo_hotfix_singleflight_fail_misattribution_20260725）
+- L1315: 『条件を外して速くせよ』というACは、その条件が後段判定の帰属条件でないかを先に確認せよ（cmd_karo_impl_push_through_ci_followup_20260725）
+- L1316: fallback経路は「一致しなかった入力」を黙って別物として成功させうる（cmd_karo_impl_yaml_field_set_list_nested_20260725）
+- L1317: 計装の上限値を決める前に、既存receiptに『内包区間』の本番実測が眠っていないか探せ（cmd_karo_impl_singleflight_hold_instrumentation_20260725）
+- L1318: gateを緩めるときは『そのgateが守りたかった目的』を別証跡で満たせるかを問え。CLEARの捏造で通すな（cmd_karo_impl_fail_close_path_20260725）
+- L1319: hookのidentity依存guardを追加したら、agent identityをハードコードしている既存testを同時に洗え（cmd_karo_ci_fix_30153849352_ga231c_false_positive_20260725）
+- L1320: 判定を多状態化したら記録も同時に多状態化せよ。判定だけ直すと台帳が嘘をつく（cmd_karo_impl_gate_metrics_record_split_20260725）
+- L1321: grepベースの逆依存検出は『マッチ0件=依存なし』で自己欺瞞できる。実データでの正規表現検証が計測より先（cmd_karo_impl_precommit_affected_link_20260725）
+- L1322: cmd起票前に『解決済みでないか』をgit logで一次確認せよ。台帳・設計書は写しであり実体ではない（cmd_karo_impl_fail_verdict_close_path_20260725）
+- L1323: preflightの支配相はファイル数ではなくgit履歴walk回数。pathspec付きgit logは9p上で1回12-19秒（cmd_karo_impl_deploy_preflight_scan_20260725）
+- L1324: 同一概念の判定が複数箇所にある時は、集合の一致をtestで固定してから中身を直せ（cmd_karo_impl_retro_answer_type_match_20260725）
+- L1325: スコープregexを広げる修正では、広げた側と広げすぎない側の両方をtestで固定せよ。『gate』は delegate に含まれる（cmd_karo_impl_lg051_scope_basename_20260725）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
