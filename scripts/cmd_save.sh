@@ -93,6 +93,8 @@ source "$SCRIPT_DIR/lib/firefighting_keywords.sh"
 source "$SCRIPT_DIR/lib/gate_hook_quality_contract.sh"
 # shellcheck source=scripts/lib/cmd_shared_preflight.sh
 source "$SCRIPT_DIR/lib/cmd_shared_preflight.sh"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+source "$SCRIPT_DIR/lib/defense_overhead_writer.sh"
 
 EXTRACT_COMMAND_FILES_SCRIPT="${CMD_SAVE_EXTRACT_COMMAND_FILES_SCRIPT:-$SCRIPT_DIR/lib/extract_command_files.sh}"
 
@@ -125,6 +127,43 @@ declare -a BLOCK_REASONS=()
 declare -a WARN_REASONS=()
 declare -a BLOCK_CHECKS=()
 declare -A CMD_BLOCK_CACHE=()
+
+# 内部フェーズ計装(cmd_4169): defense_overhead_writer.sh経由でsource:cmd_saveへwall_ms記録。
+# 判定ロジック(BLOCK_COUNT/WARN_COUNT)には一切関与しない。setに-uがあるため空でも常に宣言する。
+declare -a CMD_SAVE_PHASE_EVENTS=()
+CMD_SAVE_PHASE_LAST_US=""
+CMD_SAVE_RUN_ID=""
+
+cmd_save_phase_mark() {
+    local name="$1" now_us wall_ms
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    if [[ -n "${CMD_SAVE_PHASE_LAST_US:-}" ]]; then
+        wall_ms=$(( (now_us - CMD_SAVE_PHASE_LAST_US + 999) / 1000 ))
+        CMD_SAVE_PHASE_EVENTS+=("$name" "$wall_ms")
+    fi
+    CMD_SAVE_PHASE_LAST_US="$now_us"
+}
+
+# 非同期INFO表示(semantic_search/memory_db照会)は`&`で親フローをブロックしないため、
+# cmd_save_phase_markの区間計測に乗らない。関数自身の総実行時間を自己計測しPASS固定で記録する
+# (これらはgate判定に無関係なINFO専用処理のため、verdictはmemory_db_token_search_overheadの
+# 既存手動記録に倣いPASS固定)。
+cmd_save_timed_bg() {
+    local check_id="$1" _t_start _t_end _t_ms _rc
+    shift
+    _t_start="${EPOCHREALTIME/./}"
+    _t_start="${_t_start:0:16}"
+    set +e
+    "$@"
+    _rc=$?
+    set -e
+    _t_end="${EPOCHREALTIME/./}"
+    _t_end="${_t_end:0:16}"
+    _t_ms=$(( (_t_end - _t_start + 999) / 1000 ))
+    defense_overhead_write_async cmd_save "$check_id" "$_t_ms" PASS "${CMD_ID:-cmd_unknown}-${check_id}-$$-${_t_end}" || true
+    return "$_rc"
+}
 
 # Normal output is a decision surface, not a trace dump.  Buffer one invocation
 # so the final verdict can be printed first, followed by every distinct
@@ -3068,6 +3107,27 @@ handle_cmd_save_exit() {
     local status=$?
     trap - EXIT
 
+    # 内部フェーズ計装(cmd_4169): 区間計測済みのCMD_SAVE_PHASE_EVENTSをsource:cmd_saveで台帳へ一括記録。
+    # 判定(BLOCK_COUNT/WARN_COUNT)そのものは変更しない。verdictは既存の確定ロジック
+    # (BLOCK_COUNT>0=BLOCK, WARN_COUNT>0=WARN, それ以外=PASS)をそのまま踏襲する。
+    if [[ "${#CMD_SAVE_PHASE_EVENTS[@]}" -gt 0 ]]; then
+        local _cs_verdict _cs_i _cs_phase _cs_ms
+        local -a _cs_batch=()
+        if [[ "${BLOCK_COUNT:-0}" -gt 0 ]]; then
+            _cs_verdict=BLOCK
+        elif [[ "${WARN_COUNT:-0}" -gt 0 ]]; then
+            _cs_verdict=WARN
+        else
+            _cs_verdict=PASS
+        fi
+        for (( _cs_i=0; _cs_i<${#CMD_SAVE_PHASE_EVENTS[@]}; _cs_i+=2 )); do
+            _cs_phase="${CMD_SAVE_PHASE_EVENTS[$_cs_i]}"
+            _cs_ms="${CMD_SAVE_PHASE_EVENTS[$((_cs_i+1))]}"
+            _cs_batch+=(cmd_save "$_cs_phase" "$_cs_ms" "$_cs_verdict" "${CMD_SAVE_RUN_ID:-cmd_unknown-$$}-${_cs_phase}")
+        done
+        defense_overhead_write_batch_async "${_cs_batch[@]}" || true
+    fi
+
     if [[ "$status" -ne 0 ]]; then
         local block_reason same_reason_count
         if [[ ${#BLOCK_REASONS[@]} -gt 0 ]]; then
@@ -3813,6 +3873,11 @@ if [[ "${CMD_SAVE_PREV_LESSON_FAST:-0}" = "1" ]]; then
     exit 1
 fi
 
+# 内部フェーズ計装(cmd_4169)の開始点: ここから主要check群のwall_msを区間計測する。
+CMD_SAVE_PHASE_LAST_US="${EPOCHREALTIME/./}"
+CMD_SAVE_PHASE_LAST_US="${CMD_SAVE_PHASE_LAST_US:0:16}"
+CMD_SAVE_RUN_ID="${CMD_ID}-$$-${CMD_SAVE_PHASE_LAST_US}"
+
 # --- Check 0.9: YAML構文検証 ---
 # perf: CSafeLoader(libyaml)がPure Python SafeLoader比で約8倍速い(実測0.28s→0.03s級)。
 # 構文検証のみで結果は使わないため、Loaderの違いによる出力差は発生しない。
@@ -3859,12 +3924,16 @@ check_archive_duplicate_warn
 # depends_onで直列依存が明示されているdraft群は共存可能（先に書いておくパターン）
 check_other_draft_exists_block
 
+cmd_save_phase_mark "checks_pre_session"
+
 # --- Session State: 同一cmdの過去BLOCK履歴を表示 ---
 if load_cmd_block; then
     CMD_DIAGNOSIS="$(extract_cmd_diagnosis "$CMD_BLOCK_NC")"
     show_prior_attempts
     warn_missing_prev_cmd_lesson
 fi
+
+cmd_save_phase_mark "session_state"
 
 # --- Check 3.5: diagnosis質検査（cmd_2159） ---
 # 目的: diagnosisが記入されている場合、「BLOCK理由:」「対策:」の2部構成を強制
@@ -4042,8 +4111,8 @@ QG_TEMPLATE
         ' <<< "${CMD_BLOCK_NC:-$CMD_BLOCK}")
         if [[ -n "${_Q11_COMMAND_SECTION:-}" ]]; then
             if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
-                show_q11_semantic_search_matches "$CMD_BLOCK_NC" &
-                show_memory_db_command_token_matches &
+                cmd_save_timed_bg q11_semantic_search_overhead show_q11_semantic_search_matches "$CMD_BLOCK_NC" &
+                cmd_save_timed_bg memory_db_token_search_overhead show_memory_db_command_token_matches &
             fi
 
             # WSL2最適化: docs/research/全件grep(50+NTFSファイル)はunitテストで10-20秒かかる。
@@ -5240,7 +5309,7 @@ show_three_layer_memory_ruling_info() {
 
 # WSL2最適化: 非同期化（全出力>&2、判定に影響しない）
 if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
-    show_three_layer_memory_ruling_info &
+    cmd_save_timed_bg three_layer_memory_ruling_overhead show_three_layer_memory_ruling_info &
 fi
 
 # --- Check 11.13: projects yaml forbidden_topics矛盾検出（WARNING — WARN_COUNTに加算しない） ---
@@ -7268,6 +7337,8 @@ if [[ ${#BLOCK_CHECKS[@]} -gt 0 ]]; then
         fi
     done
 fi
+
+cmd_save_phase_mark "checks_main"
 
 # --- 結果出力 ---
 # AC1(cmd_3243): PASS時にBLOCK→成功の所要時間を計算
