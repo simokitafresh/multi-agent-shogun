@@ -1666,6 +1666,19 @@ deploy_task_cleanup_canceled_cmd() {
 # command欄から "bash scripts/..." or "scripts/..." パターンを抽出し、
 # YAML作成後にgitコミットされたスクリプトがあればWARN。BLOCKにはしない（段階的導入）。
 check_yaml_freshness() {
+    # 既存台帳(logs/defense_overhead.jsonl)へwallを記録する。新台帳は作らない。
+    local _cyf_start_us _cyf_end_us _cyf_wall_ms _cyf_rc
+    _cyf_start_us="${EPOCHREALTIME/./}"
+    check_yaml_freshness_impl "$@"
+    _cyf_rc=$?
+    _cyf_end_us="${EPOCHREALTIME/./}"
+    _cyf_wall_ms=$(((_cyf_end_us - _cyf_start_us + 999) / 1000))
+    defense_overhead_write_async deploy_task check_yaml_freshness "$_cyf_wall_ms" PASS \
+        "cyf:${DEPLOY_TASK_ISSUE_ATTEMPT_ID:-$$}:${_cyf_start_us}" || true
+    return "$_cyf_rc"
+}
+
+check_yaml_freshness_impl() {
     local yaml_file="$1"
     local git_root="$2"
 
@@ -1680,6 +1693,22 @@ check_yaml_freshness() {
     local yaml_mtime
     yaml_mtime=$(stat -c %Y "$yaml_file" 2>/dev/null || echo 0)
 
+    # 走査範囲の絞り込み（検査項目は削除しない。同じWARN集合を出す）。
+    # 一番外側の必要条件から順に安いgit呼び出しで棄却する:
+    #   Tier0: HEADの最新commitがYAMLより古い → どのpathもYAMLより新しくなり得ない(pathspecなし=履歴walkなし)
+    #   Tier1: 全path一括のpathspec walk 1回 → 最新commitがYAMLより古ければ全path棄却
+    # どちらも通らない時だけ、path単位のwalkへ落ちる。
+    local head_epoch newest_epoch
+    head_epoch=$(git -C "$git_root" log -1 --format=%at 2>/dev/null || true)
+    if [ -n "$head_epoch" ] && [ "$head_epoch" -le "$yaml_mtime" ] 2>/dev/null; then
+        return 0
+    fi
+    # shellcheck disable=SC2086 # 意図的な単語分割: pathspecを複数渡す
+    newest_epoch=$(git -C "$git_root" log -1 --format=%at -- $script_paths 2>/dev/null || true)
+    if [ -z "$newest_epoch" ] || { [ "$newest_epoch" -le "$yaml_mtime" ] 2>/dev/null; }; then
+        return 0
+    fi
+
     while IFS= read -r script_path; do
         [ -z "$script_path" ] && continue
 
@@ -1689,17 +1718,16 @@ check_yaml_freshness() {
         # targets have no freshness provenance to inspect.
         git -C "$git_root" cat-file -e "HEAD:${script_path}" 2>/dev/null || continue
 
-        # git log で最新commit時刻とhashを取得
-        local commit_iso commit_hash commit_epoch
-        commit_iso=$(git -C "$git_root" log -1 --format="%aI" -- "$script_path" 2>/dev/null || true)
-        [ -z "$commit_iso" ] && continue
+        # 同一walkからepochとhashを1回で取得する(旧実装は同じwalkを2回していた)
+        local commit_line commit_hash commit_epoch
+        commit_line=$(git -C "$git_root" log -1 --format="%at %h" -- "$script_path" 2>/dev/null || true)
+        [ -z "$commit_line" ] && continue
 
-        commit_epoch=$(date -d "$commit_iso" +%s 2>/dev/null || true)
+        commit_epoch="${commit_line%% *}"
+        commit_hash="${commit_line##* }"
         [ -z "$commit_epoch" ] && continue
 
-        commit_hash=$(git -C "$git_root" log -1 --format="%h" -- "$script_path" 2>/dev/null || true)
-
-        if [ "$commit_epoch" -gt "$yaml_mtime" ]; then
+        if [ "$commit_epoch" -gt "$yaml_mtime" ] 2>/dev/null; then
             echo "[DEPLOY] WARN: ${script_path} はYAML作成後に更新されている(commit: ${commit_hash})。task YAMLを再作成せよ" >&2
         fi
     done <<< "$script_paths"
