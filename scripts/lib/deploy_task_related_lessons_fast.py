@@ -308,7 +308,10 @@ def select(
             or fnmatch.fnmatch(Path(target).name, Path(str(pattern)).name)
             for pattern in patterns
         )
-        if patterns and not target_match and lid not in boosts:
+        # An author-declared target_files scope is authoritative: a broad semantic/memory
+        # keyword boost must not override an explicit file-scope mismatch (measured cause
+        # of NOT_USEFUL infra-lesson over-injection, e.g. L550/L310/L603/L594/L088/L548).
+        if patterns and not target_match:
             continue
         if keyword_score > 0 and target_match:
             score += 50

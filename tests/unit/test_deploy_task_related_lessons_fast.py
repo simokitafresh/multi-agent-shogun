@@ -1,7 +1,9 @@
 """Contract tests for the wave-oriented related-lessons helper.
 
 test_necessity: preserves byte-stable task rewriting, selection ordering, hit0,
-ambiguous-term, target_files, and semantic-boost parity at the helper boundary.
+ambiguous-term, target_files, and semantic-boost parity at the helper boundary;
+and an author-declared target_files scope must reject a file-scope mismatch
+even under a semantic/memory boost (measured NOT_USEFUL over-injection cause).
 """
 import importlib.util
 import os
@@ -144,3 +146,48 @@ def test_cli_publishes_with_same_directory_atomic_replace(tmp_path, monkeypatch)
     assert calls[0][0].parent == calls[0][1].parent == tmp_path
     assert calls[0][1] == task_path
     assert not list(tmp_path.glob(".task.yaml.*.tmp"))
+
+
+MISMATCH_LESSONS = b"""lessons:
+- id: L201
+  status: confirmed
+  project: fixture
+  title: deploy_task.sh heredoc argument passing
+  summary: deploy_task.sh specific heredoc quoting fix
+  detail: applies only to deploy_task.sh
+  when: deploy_task.sh modification
+  target_files: [deploy_task.sh]
+"""
+MISMATCH_SEMANTIC = """## deploy_pipeline — deploy pipeline
+| id | deploy_pipeline |
+| label | deploy pipeline |
+| aliases | deploy, configuration, pipeline |
+| related_lessons | L201 |
+""".encode()
+
+
+def test_target_files_mismatch_rejected_even_with_semantic_boost():
+    # Replay evidence (cmd_4172): with production projects/infra/lessons.yaml +
+    # docs/semantic-index/index.md, a bootstrap-state (no feedback yet) rerun of the
+    # real cmd_4172 task text selected L317/L603/L088 -- each target_files-scoped to
+    # files unrelated to the task's real target_path, pulled in only by a broad
+    # semantic-concept boost. This fixture reproduces that class of bug in isolation.
+    lessons = fast.parse_lessons([MISMATCH_LESSONS], ["fixture"], ["fixture/lessons.yaml"])
+    semantic = fast.parse_semantic_index(MISMATCH_SEMANTIC)
+    query_text = "deploy pipeline review"
+    boosts, matched = fast.parse_semantic_matches(MISMATCH_SEMANTIC, query_text)
+    assert boosts.get("L201")  # sanity: the boost actually fires
+
+    mismatched_task = {
+        "project": "fixture", "task_type": "normal",
+        "description": query_text, "target_path": "scripts/lib/other_module.py",
+    }
+    related = fast.select(mismatched_task, lessons, semantic, semantic_boosts=boosts)
+    assert "L201" not in {row["id"] for row in related}
+
+    matched_task = {
+        "project": "fixture", "task_type": "normal",
+        "description": query_text, "target_path": "deploy_task.sh",
+    }
+    related_matched = fast.select(matched_task, lessons, semantic, semantic_boosts=boosts)
+    assert "L201" in {row["id"] for row in related_matched}
