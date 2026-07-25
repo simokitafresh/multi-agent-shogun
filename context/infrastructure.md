@@ -886,7 +886,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1345 -->
+<!-- last_synced_lesson: L1347 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1945,6 +1945,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1343: mtimeで鮮度を比べるな。cacheのmtimeは『作業が終わった時刻』でありデータの時点ではない(WAL下では本体mtimeも書込み時刻を表さない)（cmd_karo_recon_memory_cache_mtime_freshness_20260726）
 - L1344: 同一の脆弱パターン(mtime staleness判定)が同一システム内に複数箇所存在しうる。1箇所修正時に類似箇所を横断的に探索せよ（cmd_karo_impl_b45_memory_cache_rowid_watermark_20260726）
 - L1345: 観測手段そのものが観測を残さないと、次の判断ができない。欠測は無記録ではなく明示記録にせよ（cmd_karo_impl_cache_gap_telemetry_20260726）
+- L1346: hookのtestは『実行者のtmux identity』に依存しうる。判定が読む環境変数を実装で確かめ、testで固定せよ（cmd_karo_impl_d00x_coverage_on_live_impl_20260726）
+- L1347: git logのpathspec検索はbounded(-n N)でも高負荷下で重い。graph walk+選択的diff-treeへ分解せよ（cmd_karo_impl_b46_commit_ownership_all_history_20260726）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
