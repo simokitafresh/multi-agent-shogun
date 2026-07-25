@@ -22,7 +22,7 @@ source "$REPO_ROOT/scripts/lib/defense_overhead_writer.sh"
 # One monotonic-in-process clock and one terminal receipt make every commit
 # diagnosable without adding external telemetry I/O to this hot path.
 declare -A _PRECOMMIT_STEP_MS=() _PRECOMMIT_STEP_RC=()
-_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax instruction_sync context_metadata codd_context_freshness semantic)
+_PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yaml_ast shell_syntax sourced_dep affected_tests instruction_sync context_metadata codd_context_freshness semantic)
 _PRECOMMIT_COMMAND_ID="${NINJA_COMMIT_COMMAND_ID:-${COMMAND_ID:-precommit-$$}}"
 _PRECOMMIT_STARTED_US="${EPOCHREALTIME/./}"
 _PRECOMMIT_TERMINAL_EMITTED=false
@@ -215,6 +215,143 @@ check_staged_sourced_deps() {
     echo "It exists on your disk only. Fresh checkouts and CI would fail at source time." >&2
     echo "Stage the sourced file in this same commit (git add <path>)." >&2
     return 1
+}
+
+# AC2 (cmd_karo_impl_precommit_affected_link_20260725): a staged scripts/lib/
+# change can break a caller whose own test never touches the lib path
+# directly. CI RED run 30150910971 was exactly this shape: the changed file's
+# own tests passed, the dependent side broke. Trace both `source`/`.` edges
+# AND `bash <path>` subprocess-invocation edges forward via grep (same
+# technique as check_staged_sourced_deps, reused here to find callers instead
+# of dependencies) and emit each caller path so its tests ride along into the
+# affected-test run below. `bash` matters as much as `source` here: 軍師's
+# review measured scripts/lib/yaml_field_set.sh at 59 real callers and
+# scripts/lib/agent_config.sh at 46 — git grep -hF confirmed the overwhelming
+# majority of yaml_field_set.sh's own 37 repo references are `bash
+# .../yaml_field_set.sh "$file" ...` CLI-style calls, not `source`. A
+# source-only pattern would silently miss almost all of them.
+resolve_reverse_lib_deps() {
+    local staged_sh lib_base caller
+    while IFS= read -r staged_sh; do
+        [[ "$staged_sh" == scripts/lib/*.sh ]] || continue
+        staged_file_exists "$staged_sh" || continue
+        lib_base="${staged_sh##*/}"
+        while IFS= read -r caller; do
+            [[ -n "$caller" && "$caller" != "$staged_sh" ]] || continue
+            printf '%s\n' "$caller"
+        done < <(
+            # Deliberately lenient (unlike check_staged_sourced_deps' strict
+            # forward match): callers commonly wrap the path in a subshell
+            # (e.g. "$(dirname "$0")/lib/foo.sh"), which breaks a
+            # quote-excluding character class. Over-matching here only adds
+            # an extra affected test — the safe direction to err in — while
+            # under-matching would silently miss AC2's incident shape.
+            git -C "$REPO_ROOT" grep -lE '(source|\.|bash)[[:space:]].*/'"${lib_base}"'([[:space:]"]|$)' \
+                -- 'scripts' '.githooks' '.claude/hooks' 2>/dev/null
+        )
+    done < <(list_staged_files)
+}
+
+# LG042/LK-A14: reverse-dependency reports must state how many locations were
+# searched, not just how many matched, so the scan's honesty is auditable.
+reverse_lib_dep_scan_scope() {
+    git -C "$REPO_ROOT" ls-files -- 'scripts' '.githooks' '.claude/hooks' 2>/dev/null | wc -l | tr -d ' '
+}
+
+# AC3 threshold decision (n=10 direct measurement, this repo's current scale,
+# real shared-worktree contention): a single non-lib code file staged →
+# median 1844ms / max 3262ms added latency, dominated by test_select.sh's
+# fixed-cost mapping construction, not by anything this task added. Budget:
+# median <=2000ms / max <=5000ms for that common code-touching case (measured
+# max sits ~35% under budget). Non-code commits (queue/*.yaml, projects/*.yaml,
+# logs/*, the majority of traffic in this repo) are filtered to ~0ms below via
+# staged_file_could_have_tests(). A widely-shared scripts/lib/ change (e.g.
+# yaml_field_set.sh, 29 real callers) is the deliberate exception: selection
+# alone measured 6.8s there, and narrowing it away would defeat AC2's whole
+# purpose — that IS the incident class AC2 exists to catch, so it is accepted
+# out-of-budget rather than narrowed. Exceeding the common-case budget in
+# production (visible via logs/defense_overhead.jsonl check_id=affected_tests)
+# is the trigger to narrow staged_file_could_have_tests() further, not to make
+# this async (殿裁定「削るな速くしろ」).
+staged_file_could_have_tests() {
+    local file="${1:-}"
+    case "$file" in
+        *.sh|*.py) return 0 ;;
+        .githooks/*|.claude/hooks/*) return 0 ;;
+        context/*.md|docs/rule/*.md|docs/research/*.md) return 0 ;;
+        instructions/gunshi.md) return 0 ;;
+        tests/unit/test_*.bats) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# AC1: resolve staged paths (plus AC2's reverse-dependency expansion) to
+# affected tests and run them, reusing scripts/run_tests.sh's existing
+# `affected` mode (which itself delegates to scripts/test_select.sh) instead
+# of reimplementing selection here. AC4: SHOGUN_PRECOMMIT_AFFECTED_BYPASS
+# mirrors the escape-hatch pattern established for SHOGUN_PUSH_DIRTY_TREE_BYPASS
+# (cmd_karo_impl_commander_scope_commit_20260725) — logged, not silent.
+check_precommit_affected_tests() {
+    local -a target_files=() reverse_deps=()
+    local staged reverse scope_count has_relevant=false
+    local run_tests="$REPO_ROOT/scripts/run_tests.sh"
+    [[ -f "$run_tests" ]] || return 0
+
+    while IFS= read -r staged; do
+        [[ -n "$staged" ]] || continue
+        target_files+=("$staged")
+        staged_file_could_have_tests "$staged" && has_relevant=true
+    done < <(list_staged_files)
+    [[ "$has_relevant" == "true" ]] || return 0
+    ((${#target_files[@]} > 0)) || return 0
+
+    while IFS= read -r reverse; do
+        [[ -n "$reverse" ]] || continue
+        reverse_deps+=("$reverse")
+    done < <(resolve_reverse_lib_deps)
+
+    if ((${#reverse_deps[@]} > 0)); then
+        scope_count="$(reverse_lib_dep_scan_scope)"
+        echo "[pre-commit] AC2 reverse-dep scan: scope=${scope_count} tracked scripts/.githooks/.claude-hooks files, caller_matches=${#reverse_deps[@]}" >&2
+        target_files+=("${reverse_deps[@]}")
+    fi
+
+    if [[ -n "${SHOGUN_PRECOMMIT_AFFECTED_BYPASS:-}" ]]; then
+        mkdir -p "$REPO_ROOT/logs"
+        SHOGUN_PRECOMMIT_AFFECTED_BYPASS="$SHOGUN_PRECOMMIT_AFFECTED_BYPASS" \
+        TMUX_AGENT_ID="${TMUX_AGENT_ID:-}" \
+        python3 - "$REPO_ROOT/logs/precommit_affected_bypass.jsonl" <<'PY' 2>/dev/null || true
+import json, os, sys, datetime
+path = sys.argv[1]
+entry = {
+    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "reason": os.environ.get("SHOGUN_PRECOMMIT_AFFECTED_BYPASS", ""),
+    "agent": os.environ.get("TMUX_AGENT_ID") or "unknown",
+    }
+with open(path, "a", encoding="utf-8") as fh:
+    fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+PY
+        echo "[pre-commit] WARN(GA-PRECOMMIT1): affected-test bypass used (SHOGUN_PRECOMMIT_AFFECTED_BYPASS set). Logged to logs/precommit_affected_bypass.jsonl" >&2
+        return 0
+    fi
+
+    # ninja_scope_commit.sh exports GIT_INDEX_FILE (and callers may export
+    # GIT_DIR/GIT_WORK_TREE) around its private-index commit-tree flow, which
+    # invokes this hook. Matched bats fixtures that build their own isolated
+    # `git init` repo under $BATS_TEST_TMPDIR inherit that leaked context and
+    # corrupt their tree ("invalid object ... for <unrelated staged path>")
+    # when this hook actually runs them for the first time (discovered live:
+    # this exact commit's own affected-test run broke on it). Strip the git
+    # plumbing env for the child process so nested test repos resolve purely
+    # from their own `-C <path>`, not from this commit's private index.
+    if ! env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE -u GIT_OBJECT_DIRECTORY -u GIT_COMMON_DIR \
+            bash "$run_tests" affected "${target_files[@]}" >&2; then
+        echo "BLOCK(GA-PRECOMMIT1): staged changes broke an affected test (directly, or via a scripts/lib/ reverse dependency)." >&2
+        echo "  action: fix the failing test and re-commit." >&2
+        echo "  emergency: SHOGUN_PRECOMMIT_AFFECTED_BYPASS='<reason>' git commit ... (logged to logs/precommit_affected_bypass.jsonl)" >&2
+        return 1
+    fi
+    return 0
 }
 
 is_semantic_propagation_file() {
@@ -734,6 +871,16 @@ main() {
     # inspected, so dynamic or genuinely external sources cannot false-positive.
     precommit_step_begin sourced_dep
     if ! check_staged_sourced_deps; then
+        precommit_step_end 1
+        exit 1
+    fi
+    precommit_step_end 0
+
+    # affected_tests: AC1+AC2 (cmd_karo_impl_precommit_affected_link_20260725).
+    # staged→affected test resolution (reusing scripts/run_tests.sh's existing
+    # `affected` mode) plus the scripts/lib/ reverse-dependency expansion.
+    precommit_step_begin affected_tests
+    if ! check_precommit_affected_tests; then
         precommit_step_end 1
         exit 1
     fi
