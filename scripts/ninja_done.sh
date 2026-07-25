@@ -178,14 +178,33 @@ main() {
     fi
 
     # cmd_1254: gate_report_format.sh — 家老への報告送信前にフォーマット検証
-    local gate_output
+    local gate_output gate_rc gate_status
     init_paths
-    gate_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || {
+    # shellcheck source=scripts/lib/gate_report_format_classify.sh
+    source "$SCRIPT_DIR/scripts/lib/gate_report_format_classify.sh"
+    gate_rc=0
+    gate_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || gate_rc=$?
+    gate_status=$(gate_report_format_classify "$gate_rc")
+    # cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (AC1/AC2):
+    # インフラ由来のsingle-flightタイムアウト(exit code 2)は品質FAIL(その他の非ゼロ)と
+    # 機械的に区別する。忍者へ修正を要求せず、1回だけ再試行する。
+    if [ "$gate_status" = "INFRA_TIMEOUT" ]; then
+        echo "INFO: gate_report_format.sh singleflightタイムアウト(インフラ由来)。1回再試行する。" >&2
+        gate_rc=0
+        gate_output=$(bash "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || gate_rc=$?
+        gate_status=$(gate_report_format_classify "$gate_rc")
+    fi
+    if [ "$gate_status" = "QUALITY_FAIL" ]; then
         echo "ERROR: gate_report_format.sh FAIL — 報告YAMLを修正して再実行せよ。" >&2
         echo "  対象: $report_file" >&2
         echo "  詳細: $gate_output" >&2
         exit 1
-    }
+    elif [ "$gate_status" = "INFRA_TIMEOUT" ]; then
+        echo "ERROR: gate_report_format.sh がインフラ異常(ロック競合)で2回連続timeout。報告YAMLの問題ではない。" >&2
+        echo "  対象: $report_file" >&2
+        echo "  → しばらく待って再実行するか、家老の復旧対応を待て(修正不要)。" >&2
+        exit 1
+    fi
 
     # Bind the downstream notification to the exact generation validated above.
     # inbox_write invokes the same gate for lifecycle enforcement; forwarding

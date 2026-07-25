@@ -255,9 +255,27 @@ validate_reports_before_dashboard() {
         # validation from scratch. Any byte change since caching still forces
         # a full revalidation (fingerprint mismatch falls through as-is).
         report_fingerprint=$(sha256sum "$report" 2>/dev/null | awk '{print $1}')
+        local _du_gate_rc=0 _du_gate_status
         GATE_NO_LOG=1 GATE_SKIP_COMMIT_MISSING_CHECK="$skip_commit" \
             GATE_VALIDATED_FINGERPRINT="$report_fingerprint" \
-            bash "$PROJECT_DIR/scripts/gates/gate_report_format.sh" "$report" || return 1
+            bash "$PROJECT_DIR/scripts/gates/gate_report_format.sh" "$report" || _du_gate_rc=$?
+        # cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (AC1/AC2):
+        # インフラ由来のsingle-flightタイムアウト(exit code 2)は、忍者の品質問題ではなく
+        # dashboard生成側の一時的なロック競合にすぎない。1回だけ再試行してから諦める。
+        # 遅延source: report検証が実際に非ゼロ終了した時だけ読み込み、
+        # 大半のtest fixture/呼出しが持つ最小scripts/lib契約を壊さない。
+        if [ "$_du_gate_rc" -ne 0 ]; then
+            # shellcheck source=scripts/lib/gate_report_format_classify.sh
+            source "$PROJECT_DIR/scripts/lib/gate_report_format_classify.sh"
+            _du_gate_status=$(gate_report_format_classify "$_du_gate_rc")
+            if [ "$_du_gate_status" = "INFRA_TIMEOUT" ]; then
+                _du_gate_rc=0
+                GATE_NO_LOG=1 GATE_SKIP_COMMIT_MISSING_CHECK="$skip_commit" \
+                    GATE_VALIDATED_FINGERPRINT="$report_fingerprint" \
+                    bash "$PROJECT_DIR/scripts/gates/gate_report_format.sh" "$report" || _du_gate_rc=$?
+            fi
+            [ "$_du_gate_rc" -eq 0 ] || return 1
+        fi
     done < <(python3 - 3< <(dashboard_matching_report_paths) <<'PY'
 import os, yaml
 matches = []

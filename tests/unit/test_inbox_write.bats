@@ -109,7 +109,7 @@ setup_file() {
 
     mkdir -p "$GIT_TEMPLATE_DIR/scripts/lib" "$GIT_TEMPLATE_DIR/scripts/gates" "$GIT_TEMPLATE_DIR/queue/tasks" "$GIT_TEMPLATE_DIR/queue/reports" "$GIT_TEMPLATE_DIR/src"
     # 選択的コピー: inbox_write.shが使うファイルのみ (NTFS→tmpfs コスト削減)
-    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py report_completion_events.sh retro_pane_prompt.sh retro_verbatim_prompt.sh; do
+    for _lib_f in agent_config.sh field_get.sh cli_lookup.sh gunshi_notify.sh report_commit_nonoverlap_filter.sh yaml_field_set.sh report_unique_identity.py report_completion_events.sh retro_pane_prompt.sh retro_verbatim_prompt.sh gate_report_format_classify.sh; do
         cp "$PROJECT_ROOT/scripts/lib/$_lib_f" "$GIT_TEMPLATE_DIR/scripts/lib/$_lib_f"
     done
     cp "$PROJECT_ROOT/scripts/inbox_write.sh" "$GIT_TEMPLATE_DIR/scripts/inbox_write.sh"
@@ -1105,6 +1105,75 @@ EOF
     [[ "$output" == *"AC1[1]: AC1が未完了であることを確認"* ]]
     [[ "$output" == *"task_failedで家老へ報告せよ"* ]]
     [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
+# cmd_karo_hotfix_singleflight_fail_misattribution_20260725
+# test_necessity: an infrastructure-only single-flight lock timeout (exit code 2) must not be
+# misattributed to the reporting ninja as a quality problem; AC2 requires zero gunshi quality
+# notifications and the report still reaching karo once the transient contention clears.
+@test "report_received: transient singleflight timeout recovers via retry — report reaches karo, no gunshi quality notification (AC2)" {
+    setup_git_test_env
+    local counter="$TEST_TMPDIR/gate_call_count"
+    echo 0 > "$counter"
+    cat > "$TEST_TMPDIR/scripts/gates/gate_report_format.sh" <<EOF
+#!/bin/bash
+n=\$(cat "$counter"); n=\$((n + 1)); echo "\$n" > "$counter"
+if [ "\$n" -eq 1 ]; then
+    echo "INFRA_TIMEOUT: report gate single-flight timeout: \$1" >&2
+    exit 2
+fi
+echo "PASS: all checks passed"
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 0 ]
+    [ "$(cat "$counter")" -eq 2 ]
+    [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+    grep -q "report_received" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    { [ ! -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ] || ! grep -q "quality_monitor" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"; }
+}
+
+# test_necessity: when the transient lock contention does NOT clear within the single retry,
+# AC2 requires an explicit karo-facing infra notification (not a ninja fix-it demand, not a
+# gunshi quality notification) and the report file must remain on disk (not discarded).
+@test "report_received: persistent singleflight timeout notifies karo as infra anomaly, not a ninja quality fix (AC2)" {
+    setup_git_test_env
+    cat > "$TEST_TMPDIR/scripts/gates/gate_report_format.sh" <<EOF
+#!/bin/bash
+echo "INFRA_TIMEOUT: report gate single-flight timeout: \$1" >&2
+exit 2
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"インフラ異常"* ]]
+    [[ "$output" != *"修正して再送信"* ]]
+    [ -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+    grep -q "infra_anomaly" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    { [ ! -f "$TEST_TMPDIR/queue/inbox/gunshi.yaml" ] || ! grep -q "quality_monitor" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"; }
+    [ -f "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" ]
+}
+
+# test_necessity: regression guard — a genuine report-quality FAIL (exit code 1, distinct from
+# the infra exit code 2) must keep triggering the existing gunshi quality-monitor notification
+# and BLOCK karo delivery exactly as before this cmd's change.
+@test "report_received: genuine quality FAIL still notifies gunshi and blocks karo delivery (regression, AC1)" {
+    setup_git_test_env
+    cat > "$TEST_TMPDIR/scripts/gates/gate_report_format.sh" <<EOF
+#!/bin/bash
+echo "FAIL: some quality problem: \$1" >&2
+exit 1
+EOF
+    chmod +x "$TEST_TMPDIR/scripts/gates/gate_report_format.sh"
+
+    run _run_inbox_write karo "報告完了" report_received testninja
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCKED: 報告YAML品質問題"* ]]
+    [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+    grep -q "quality_monitor" "$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 }
 
 @test "task_failed: FAIL report and failed task deliver exactly once without retry" {

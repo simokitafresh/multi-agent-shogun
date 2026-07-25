@@ -2143,9 +2143,62 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                        [ "$GATE_VALIDATED_FINGERPRINT" = "${STRUCTURED_REPORT_FINGERPRINT:-}" ]; then
                         _GATE_REUSE_FINGERPRINT="$GATE_VALIDATED_FINGERPRINT"
                     fi
+                    # Lazily sourced: this path only runs once a FULL_REPORT is being
+                    # validated, so the filesystem fast-path (wake_up etc., which never
+                    # reaches here) keeps its zero-extra-dependency contract.
+                    # shellcheck source=scripts/lib/gate_report_format_classify.sh
+                    source "$SCRIPT_DIR/scripts/lib/gate_report_format_classify.sh"
+                    GATE_EXIT=0
                     GATE_RESULT=$(GATE_VALIDATED_FINGERPRINT="$_GATE_REUSE_FINGERPRINT" \
-                        "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1 || true)
-                    if echo "$GATE_RESULT" | grep -q "^FAIL"; then
+                        "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1) || GATE_EXIT=$?
+                    GATE_STATUS=$(gate_report_format_classify "$GATE_EXIT")
+
+                    # cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (AC1/AC2):
+                    # インフラ由来のsingle-flightロック競合(exit code 2)は、忍者の品質FAIL
+                    # とは機械的に区別する(文字列prefixに依存しない)。忍者へ修正を要求せず、
+                    # 報告も破棄しない。1回だけ再試行し、なお解消しなければ軍師ではなく
+                    # 家老へインフラ異常として明示通知する(品質監視通知は出さない)。
+                    if [ "$GATE_STATUS" = "INFRA_TIMEOUT" ]; then
+                        echo "[report_format_gate] INFO: single-flightタイムアウト(インフラ由来)を検出。1回再試行する" >&2
+                        GATE_EXIT=0
+                        GATE_RESULT=$(GATE_VALIDATED_FINGERPRINT="$_GATE_REUSE_FINGERPRINT" \
+                            "$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$FULL_REPORT" 2>&1) || GATE_EXIT=$?
+                        GATE_STATUS=$(gate_report_format_classify "$GATE_EXIT")
+                    fi
+
+                    if [ "$GATE_STATUS" = "INFRA_TIMEOUT" ]; then
+                        ensure_agent_config_loaded
+                        KARO_INBOX="$(get_commander_inbox_path karo)"
+                        ROUTE_TS=$(date -Is)
+                        ROUTE_ID="msg_$(date +%s%N | head -c 16)"
+                        (
+                            flock -w 5 202 || { echo "[report_quality_route] WARN: flock timeout for karo inbox, skipping infra notification" >&2; exit 1; }
+                            if [ ! -f "$KARO_INBOX" ]; then
+                                mkdir -p "$(dirname "$KARO_INBOX")"
+                                printf 'messages: []\n' > "$KARO_INBOX"
+                            fi
+                            _karo_msg="$(inbox_build_message_block \
+                                content "【インフラ異常】報告gateのsingle-flightロック競合により忍者${FROM}の報告フォーマット検証が2回連続timeout。忍者の品質問題ではない。report_path=${FULL_REPORT}" \
+                                from "system" \
+                                id "$ROUTE_ID" \
+                                read "false" \
+                                timestamp "$ROUTE_TS" \
+                                type "infra_anomaly" \
+                                original_ninja "$FROM" \
+                                report_path "$FULL_REPORT")"$'\n'
+                            inbox_append_message_locked "$KARO_INBOX" "$_karo_msg"
+                        ) 202>"$(lock_path "$KARO_INBOX")" \
+                            && echo "[report_quality_route] インフラ異常を家老に通知済み(忍者への修正要求は行わない)" >&2 \
+                            || echo "[report_quality_route] WARN: karo infra notification skipped (flock timeout)" >&2
+                        echo "" >&2
+                        echo "==============================" >&2
+                        echo "[report_format_gate] インフラ異常(ロック競合)により報告フォーマット検証が完了できなかった (ninja: ${FROM})" >&2
+                        echo "[report_format_gate] 報告YAMLの問題ではない。修正不要。家老の復旧対応を待て" >&2
+                        echo "==============================" >&2
+                        exit 1
+                    fi
+
+                    if [ "$GATE_STATUS" = "QUALITY_FAIL" ]; then
                         # GP-071: テンプレート状態検出 — 忍者がまだ記入中ならquality_fix_requestスキップ
                         # FILL_THIS残存 or verdict未記入 → テンプレート状態（忍者が書いている途中）
                         # verdict記入済み + FAIL → 本物の品質問題 → 軍師に転送

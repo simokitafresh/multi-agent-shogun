@@ -10,10 +10,12 @@ init_test_root() {
     export TEST_ROOT="$BATS_TEST_TMPDIR/root"
     mkdir -p \
         "$TEST_ROOT/scripts/gates" \
+        "$TEST_ROOT/scripts/lib" \
         "$TEST_ROOT/queue/reports" \
         "$TEST_ROOT/queue/archive/reports"
 
     cp "$PROJECT_ROOT/scripts/ninja_done.sh" "$TEST_ROOT/scripts/ninja_done.sh"
+    cp "$PROJECT_ROOT/scripts/lib/gate_report_format_classify.sh" "$TEST_ROOT/scripts/lib/gate_report_format_classify.sh"
 
     cat > "$TEST_ROOT/scripts/gates/gate_report_format.sh" <<EOF
 #!/usr/bin/env bash
@@ -30,6 +32,15 @@ printf 'full\n' >> "$TEST_ROOT/gate_full_calls.log"
 if [ "\${GATE_SHOULD_FAIL:-0}" = "1" ]; then
     echo "FAIL: mocked gate" >&2
     exit 1
+fi
+if [ "\${GATE_SHOULD_TIMEOUT:-0}" = "1" ]; then
+    echo "INFRA_TIMEOUT: mocked timeout" >&2
+    exit 2
+fi
+if [ "\${GATE_TIMEOUT_ONCE:-0}" = "1" ] && [ ! -f "$TEST_ROOT/gate_timeout_once_consumed" ]; then
+    touch "$TEST_ROOT/gate_timeout_once_consumed"
+    echo "INFRA_TIMEOUT: mocked timeout (once)" >&2
+    exit 2
 fi
 printf '%s\n' "\$fingerprint" >"\$cache"
 echo "PASS"
@@ -196,5 +207,41 @@ EOF
     run env GATE_SHOULD_FAIL=1 bash "$TEST_ROOT/scripts/ninja_done.sh" hayate cmd_125
     [ "$status" -eq 1 ]
     [[ "$output" == *"gate_report_format.sh FAIL"* ]]
+    [ ! -f "$TEST_ROOT/inbox_write_calls.log" ]
+}
+
+# cmd_karo_hotfix_singleflight_fail_misattribution_20260725
+# test_necessity: an infra-only single-flight timeout (exit code 2) must not be misattributed
+# as a report quality problem; AC2 requires the retry to still deliver notification once the
+# transient contention clears, without any "fix your report" messaging.
+@test "transient infra timeout recovers via retry and still notifies karo" {
+    cat > "$TEST_ROOT/queue/reports/hayate_report_cmd_129.yaml" <<'EOF'
+result:
+  summary: done
+EOF
+
+    run env GATE_TIMEOUT_ONCE=1 bash "$TEST_ROOT/scripts/ninja_done.sh" hayate cmd_129
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"インフラ由来"* ]]
+    [[ "$output" != *"報告YAMLを修正して再実行せよ"* ]]
+    [ "$(grep -c '^full$' "$TEST_ROOT/gate_full_calls.log")" -eq 2 ]
+    grep -F "karo hayate、任務完了。報告YAML確認されたし。 report_received hayate notify_karo" \
+        "$TEST_ROOT/inbox_write_calls.log"
+}
+
+# test_necessity: when the infra timeout does NOT clear within the single retry, AC2 requires
+# the caller to distinguish it from a genuine quality FAIL (different message, still blocked
+# from a false completion notification, but never telling the ninja to fix their report).
+@test "persistent infra timeout blocks with an infra message, not a quality-fix demand" {
+    cat > "$TEST_ROOT/queue/reports/hayate_report_cmd_130.yaml" <<'EOF'
+result:
+  summary: done
+EOF
+
+    run env GATE_SHOULD_TIMEOUT=1 bash "$TEST_ROOT/scripts/ninja_done.sh" hayate cmd_130
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"インフラ異常"* ]]
+    [[ "$output" != *"gate_report_format.sh FAIL"* ]]
+    [[ "$output" != *"報告YAMLを修正して再実行せよ"* ]]
     [ ! -f "$TEST_ROOT/inbox_write_calls.log" ]
 }
