@@ -30,6 +30,23 @@ teardown() {
     [ "$output" = "PASS (fingerprint reuse)" ]
 }
 
+# cmd_karo_hotfix_singleflight_fail_misattribution_20260725
+# test_necessity: a single-flight lock timeout is infrastructure contention, not a report
+# quality problem, and must be distinguishable by callers via exit code alone (not string
+# prefix matching, which collides with the ordinary quality-FAIL "FAIL:" prefix).
+@test "single-flight lock timeout reports a dedicated exit code and marker, not FAIL:" {
+    flock "${REPORT}.gate.lock" sleep 3 &
+    lock_pid=$!
+    sleep 0.1
+
+    run env GATE_SINGLEFLIGHT_TIMEOUT=1 bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT"
+
+    wait "$lock_pid"
+    [ "$status" -eq 2 ]
+    [[ "$output" == "INFRA_TIMEOUT: report gate single-flight timeout: $REPORT" ]]
+    [[ "$output" != FAIL:* ]]
+}
+
 @test "one byte report mutation cannot reuse a stale validated fingerprint" {
     printf 'x' >>"$REPORT"
 

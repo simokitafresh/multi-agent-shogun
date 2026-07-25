@@ -138,7 +138,7 @@ teardown() { rm -rf "$TMPDIR_CASE"; }
 from pathlib import Path
 import sys
 text = Path(sys.argv[1]).read_text(encoding="utf-8")
-assert 'flock -w "${GATE_SINGLEFLIGHT_TIMEOUT:-30}" 199' in text
+assert 'flock -w "${GATE_SINGLEFLIGHT_TIMEOUT:-60}" 199' in text
 assert "paths.append('__INVALID_REPORT_PATH__')" in text
 assert 'git status --porcelain -- "${_CC_PATHS[@]}"' in text
 assert "FAIL: malformed report path rejected before git status" in text

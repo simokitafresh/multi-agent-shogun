@@ -56,10 +56,17 @@ fi
 _GATE_WAIT_STARTED="$(_gate_mono_ms)"
 if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
     exec 199>"$_GATE_SINGLEFLIGHT_LOCK"
-    flock -w "${GATE_SINGLEFLIGHT_TIMEOUT:-30}" 199 || {
+    # cmd_karo_hotfix_singleflight_fail_misattribution_20260725:
+    # AC3: 待ち上限を実測ロック保持時間(inbox_write phase実測max 45,700ms)に
+    # 安全マージンを載せた60秒へ引上げ(旧30秒では保持側の最大実測値を82.7%しかカバーできず
+    # 並行2呼出しで確定的にtimeoutしていた)。チェック内容は一切削除・緩和していない。
+    # AC1: timeoutは品質FAIL(exit 1, "FAIL:"接頭辞)と機械的に区別できるよう、
+    # 専用exit code(2)+専用接頭辞(INFRA_TIMEOUT:)で報告する。呼出元は文字列prefixではなく
+    # 終了コードで判定せよ(scripts/lib/gate_report_format_classify.sh)。
+    flock -w "${GATE_SINGLEFLIGHT_TIMEOUT:-60}" 199 || {
         _gate_receipt_phase singleflight_wait "$_GATE_WAIT_STARTED"
-        echo "FAIL: report gate single-flight timeout: $REPORT_PATH" >&2
-        exit 1
+        echo "INFRA_TIMEOUT: report gate single-flight timeout: $REPORT_PATH" >&2
+        exit 2
     }
 fi
 _gate_receipt_phase singleflight_wait "$_GATE_WAIT_STARTED"
