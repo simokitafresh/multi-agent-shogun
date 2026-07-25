@@ -1195,7 +1195,12 @@ _verified_by_ss=$(awk '
 _infra_no_verify=$(awk '
     /^- cmd_id:/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); rt=""; obs=""; bc=""; gr="" }
     /review_type: report/ { rt="report" }
+    # cmd_karo_impl_b42_yaml_latch_and_dup_field_20260726: YAML後勝ち準拠。
+    # 同一エントリ内にgate_resultの重複キーがある場合、最後にマッチした行の
+    # 値を採るよう両方の値を代入する(CLEAR専用のlatchだとBLOCKで上書きされず
+    # CLEAR→BLOCK順で見逃しが発生していた)。
     /gate_result: CLEAR/ { gr="CLEAR" }
+    /gate_result:.*BLOCK/ { gr="BLOCK" }
     /observations:/ { in_obs=1; next }
     in_obs && /^    - / { obs=obs " " $0 }
     in_obs && /^  [^ ]/ { in_obs=0 }
@@ -1257,6 +1262,10 @@ _lgtm_resolved_by_ss=$(awk '
 _lgtm_block=$(awk '
     /^- cmd_id:/ { id=substr($0,index($0,":")+2); gsub(/[" \t]/,"",id); v=""; gr="" }
     /verdict: LGTM/ { v="LGTM" }
+    # cmd_karo_impl_b42_yaml_latch_and_dup_field_20260726: YAML後勝ち準拠。
+    # BLOCK専用のlatchだとCLEARで解除されずBLOCK→CLEAR順で誤検知が発生していた
+    # (実データ: cmd_4171はgate_result BLOCK→CLEARの順で並ぶが最終値はCLEAR)。
+    /gate_result: CLEAR/ { gr="CLEAR" }
     /gate_result:.*BLOCK/ { gr="BLOCK" }
     /timestamp:/ && v=="LGTM" && gr=="BLOCK" && id != "" { print id }
 ' "$LOG_FILE" 2>/dev/null | while read -r _cid; do

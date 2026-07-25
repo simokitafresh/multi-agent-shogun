@@ -122,15 +122,23 @@ update_log() {
     done
 
     # Phase 2: gate_resultフィールド不在のdraft/reportエントリ → 挿入
-    # sort -u: 同一cmd_idのdraft+reportが両方missing→重複挿入防止
+    # cmd_karo_impl_b42_yaml_latch_and_dup_field_20260726: 自前awk実装を廃止し
+    # 正本(scripts/gunshi_gate_reflux.sh)へ委譲する。旧実装は(i)行頭2スペース
+    # 固定のhas_gate判定でインデント違いを不在と誤判定 (ii)cmd_idを部分一致で
+    # 拾う (iii)foundが次のreview_type行で解除されるため同一cmd_idの
+    # draft/report両方が不在でも先に来た方にしか挿入しない、という3つの穴が
+    # あった。reflux.shはhas_gate先計算+既存値差異時は触らない+インデント耐性
+    # (^\s*gate_result:)+cmd_id完全一致(行末アンカー)を既に実装済みであり、
+    # 同一cmd_idの全エントリを1回の呼出しで正しく更新する。
+    # sort -u: 同一cmd_idのdraft+reportが両方missing→重複呼出し防止
     local missing_cmds
     missing_cmds=$(awk '
         /^- cmd_id:/ {
             if (n>0 && !has_gate && (rt=="draft"||rt=="report")) print prev_cmd
             n++; has_gate=0; rt=""; prev_cmd=$3
         }
-        /^  gate_result:/ { has_gate=1 }
-        /^  review_type:/ { v=$2; gsub(/["'"'"']/, "", v); if (v=="draft"||v=="report") rt=v }
+        /^[[:space:]]*gate_result:/ { has_gate=1 }
+        /^[[:space:]]*review_type:/ { v=$2; gsub(/["'"'"']/, "", v); if (v=="draft"||v=="report") rt=v }
         END { if (n>0 && !has_gate && (rt=="draft"||rt=="report")) print prev_cmd }
     ' "$target_file" | sort -u)
 
@@ -140,25 +148,10 @@ update_log() {
             if $DRY_RUN; then
                 echo "  [dry-run] $cmd_id: (missing) → $result"
             else
-                # review_type行の直後にgate_resultを挿入
-                if ! (
-                    flock -w 10 200 || exit 1
-                    awk -v cid="$cmd_id" -v res="$result" '
-                        /cmd_id:/ && $0 ~ cid { found=1 }
-                        { print }
-                        found && /review_type:/ {
-                            print "  gate_result: " res
-                            found=0
-                        }
-                    ' "$target_file" > "${target_file}.tmp"
-                    if [[ -s "${target_file}.tmp" ]]; then
-                        mv "${target_file}.tmp" "$target_file"
-                    else
-                        rm -f "${target_file}.tmp"
-                        echo "  WARN: awk produced empty output for $target_file (race?), skipping mv" >&2
-                    fi
-                ) 200>"${target_file}.lock"; then
-                    echo "  WARN: flock timeout for $target_file, skipping" >&2
+                if GUNSHI_REVIEW_LOG="$target_file" bash scripts/gunshi_gate_reflux.sh "$cmd_id" "$result"; then
+                    :
+                else
+                    echo "  WARN: gunshi_gate_reflux.sh failed for $cmd_id on $target_file, skipping" >&2
                     continue
                 fi
             fi

@@ -68,6 +68,28 @@ YAML
     ! grep -q 'gate_result: CLEAR' "$REVIEW_LOG"
 }
 
+# cmd_karo_impl_b42_yaml_latch_and_dup_field_20260726
+# test_necessity: gunshi_gate_sync.sh Phase2 delegates to this script's
+# cmd_id matching (cmd_re anchors ^- cmd_id:\s*<cid>\s*$), which must never
+# insert into an entry whose cmd_id merely contains the target cmd_id as a
+# substring (e.g. cmd_41 must not match cmd_4171's entry).
+@test "cmd_id partial match does not cross-match a longer cmd_id sharing the same prefix" {
+    cat > "$REVIEW_LOG" <<'YAML'
+- cmd_id: cmd_41
+  review_type: report
+  verdict: LGTM
+- cmd_id: cmd_4171
+  review_type: report
+  verdict: LGTM
+YAML
+
+    run env GUNSHI_REVIEW_LOG="$REVIEW_LOG" bash "$REFLUX_SCRIPT" cmd_41 BLOCK
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"1 entries updated"* ]]
+    grep -A2 'cmd_id: cmd_41$' "$REVIEW_LOG" | grep -q 'gate_result: BLOCK'
+    ! grep -A2 'cmd_id: cmd_4171' "$REVIEW_LOG" | grep -q 'gate_result:'
+}
+
 @test "leaves other cmd entries untouched" {
     cat > "$REVIEW_LOG" <<'YAML'
 - cmd_id: cmd_400
