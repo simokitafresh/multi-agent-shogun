@@ -126,6 +126,34 @@ wrapperはarchive直前に、対象cmdと内容が完全一致する未読`skill
 - Step 3でBLOCK → BLOCK理由を確認し修正。修正後Step 3から再実行
 - 新しいinbox nudgeが来ても上記Step 1-8を先に完了する（CTX膨張防止）
 
+### verdict=FAIL のcmdを閉じる（cmd_karo_impl_fail_close_path_20260725）
+
+Step 3が `FAIL_VERDICT` でBLOCKするのは設計どおりの正しい挙動であり、迂回するな。
+FAIL verdictは定義上CLEARに到達しないため、閉じ方は次の2通りしかない。
+
+**(1) 是正して閉じる（第一選択）** — ACが未達なだけで是正可能な場合:
+
+```bash
+bash scripts/review_approval.sh <cmd_id> karo RC <report_path> report   # 報告がrevision_requestedへ遷移
+# → ACを実測可能な形へ是正 → 同一cmd_idで再配備 → 忍者が再実行 → 通常のGATE CLEAR
+```
+
+`karo RC` を挟まずに別cmdで再配備すると「完了済み(status=done)だが報告未archive」でBLOCKされ、
+同一cmd_idで再配備しても「pending reportあり」でBLOCKされる。RCが正規の入口である。
+
+**(2) FAILのまま閉じる（是正せず終了する場合）** — 上の `karo RC` を記録した上で:
+
+```bash
+bash scripts/archive_completed.sh 3 <cmd_id>   # [archive] FAIL_CLOSE: ... が出れば退避成功
+```
+
+`archive_completed.sh` は「家老の正式レビュー証跡（`queue/gates/<cmd_id>/review_approvals/reports/*/karo.yaml`）があり、
+かつ報告の `verdict: FAIL`」の場合に限り、CLEARを捏造せずに報告を退避する。
+review_gate.done を書かないため **gate_metrics上CLEARにはならず、品質記録にはFAILとして残る**。
+証跡がない、または verdict が FAIL でない報告は従来どおり退避されない（安全性は不変）。
+
+これにより pending report が解消し、忍者が解放されて次のcmdを受けられる。
+
 ## 制約
 - archive_completed.shはGATE CLEAR時に自動実行されるため手動不要
 - 順序を崩すな（§8ルール）

@@ -945,6 +945,27 @@ EOF
         [ "${_stale_gate_incomplete[$_report_file]+x}" = "x" ]
     }
 
+    # cmd_karo_impl_fail_close_path_20260725 (設計書v2.0 B21):
+    # 家老がこの報告を正式にレビューした証跡(fingerprint束縛のkaro.yaml)があるか。
+    # review_gate.done検査の目的は「家老レビュー未完了の報告を退避させない」ことであり、
+    # 家老の正式判定が記録済みならその目的は満たされている。CLEARの有無とは別軸である。
+    karo_review_decision_recorded() {
+        local _cmd="$1" _f
+        for _f in "$PROJECT_DIR/queue/gates/${_cmd}/review_approvals/reports"/*/karo.yaml; do
+            [ -f "$_f" ] && return 0
+        done
+        return 1
+    }
+
+    # verdict=FAIL の報告か。FAIL close経路は本来CLEARに到達しないcmdだけに限定する。
+    report_verdict_is_fail() {
+        local _report_file="$1" _v
+        _v="$(grep -m1 '^verdict:' "$_report_file" 2>/dev/null || true)"
+        _v="${_v#verdict:}"
+        _v="${_v//[\"\' ]/}"
+        [ "$_v" = "FAIL" ]
+    }
+
     archive_overflow_reports_to_cap() {
         local cap=10
         local overflow_list="$TMP/report_overflow_candidates.tsv"
@@ -1295,6 +1316,14 @@ PY
                             write_review_gate_from_metrics "$check_cmd_for_review"
                             _gate_status["$check_cmd_for_review"]="ok"
                             echo "[archive] BACKFILL: review_gate.done missing but gate_metrics CLEAR found for ${check_cmd_for_review}: $_bname"
+                        elif karo_review_decision_recorded "$check_cmd_for_review" \
+                             && report_verdict_is_fail "$report_file"; then
+                            # cmd_karo_impl_fail_close_path_20260725: FAIL verdictのcmdは
+                            # 定義上CLEARへ到達せず、従来はここでkept++され報告が永久に滞留し
+                            # 忍者が解放されなかった。家老の正式レビュー証跡がある場合に限り退避を許す。
+                            # CLEARは捏造しない(review_gate.doneを書かない)ため、gate_metrics上は
+                            # CLEARにならず品質記録にはFAILのまま残る。
+                            echo "[archive] FAIL_CLOSE: verdict=FAIL with recorded Karo review and no CLEAR for ${check_cmd_for_review}; archiving without creating a CLEAR marker: $_bname"
                         elif report_is_stale_gate_incomplete "$report_file"; then
                             echo "[archive] STALE: review_gate.done missing and no CLEAR for ${check_cmd_for_review}; archiving 14d+ report as gate-incomplete: $_bname"
                         else
@@ -1307,6 +1336,11 @@ PY
                             write_review_gate_from_metrics "$check_cmd_for_review"
                             _gate_status["$check_cmd_for_review"]="ok"
                             echo "[archive] BACKFILL: review_gate.done placeholder replaced from gate_metrics CLEAR for ${check_cmd_for_review}: $_bname"
+                        elif karo_review_decision_recorded "$check_cmd_for_review" \
+                             && report_verdict_is_fail "$report_file"; then
+                            # cmd_karo_impl_fail_close_path_20260725: missing側と同一根拠。
+                            # placeholderのままCLEARに到達しないFAIL cmdも滞留させない。
+                            echo "[archive] FAIL_CLOSE: verdict=FAIL with recorded Karo review and placeholder gate for ${check_cmd_for_review}; archiving without creating a CLEAR marker: $_bname"
                         else
                             # GP-133: deploy_preflightのplaceholderはレビュー未完了。アーカイブ禁止。
                             if report_is_stale_gate_incomplete "$report_file"; then
