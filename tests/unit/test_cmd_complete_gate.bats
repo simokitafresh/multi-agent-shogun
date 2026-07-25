@@ -2227,11 +2227,45 @@ for marker in [
     'OVERRIDE\\temergency_override',
     'BLOCK\\tcdp_production_check_failed',
     'CLEAR\\tall_gates_passed',
-    'BLOCK\\t%s',
+    # cmd_karo_hotfix_gate_metrics_literal_tab_20260725: the 5 early-exit
+    # BLOCK writes were fixed to use printf '%s\t%s\tBLOCK\t%s' too, which
+    # also contains the substring 'BLOCK\t%s'. Match the longer, still-unique
+    # tail ('\t%s\t%s' continuing into task_type/model) so this keeps
+    # targeting the generic block_reason row instead of the first early-exit
+    # match found by str.index().
+    'BLOCK\\t%s\\t%s\\t%s',
 ]:
     idx = script.index(marker)
     window = script[idx:idx + 700]
     assert 'GATE_FIRST_MODEL_METRIC' in window, marker
+PY
+}
+
+@test "cmd_complete_gate early-exit BLOCK rows use printf so tabs are real bytes" {
+    # test_necessity: cmd_karo_hotfix_gate_metrics_literal_tab_20260725 found
+    # 5 early-exit BLOCK append_line_locked calls interpolating "\t" inside a
+    # plain double-quoted string (bash never expands \t there), producing a
+    # literal backslash-t two-char sequence that breaks every downstream
+    # awk -F'\t' consumer of gate_metrics.log. This guards the printf fix so
+    # a future edit cannot silently reintroduce the naked-interpolation form.
+    python3 - "$SRC_GATE_SCRIPT" <<'PY'
+import sys
+script = open(sys.argv[1], encoding='utf-8').read()
+reasons = [
+    'parent_cmd_contract',
+    'sg7_bundle_missing_or_invalid',
+    'review_two_phase_pending',
+    'review_fingerprint_changed_after_normalize',
+    'context_freshness_own_commit_unreflected',
+]
+for reason in reasons:
+    fixed = (
+        'append_line_locked "$GATE_METRICS_LOG" "$(printf \'%s\\t%s\\tBLOCK\\t%s\' '
+        '"$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "' + reason + '")"'
+    )
+    assert fixed in script, 'missing printf fix for ' + reason
+    broken = ')\\t${CMD_ID}\\tBLOCK\\t' + reason + '"'
+    assert broken not in script, 'literal backslash-t regression for ' + reason
 PY
 }
 
@@ -2303,6 +2337,10 @@ EOF
     [ "$status" -ne 0 ]
     [[ "$output" == *"review_fingerprint_changed_after_normalize"* ]]
     [ "$(grep -c $'\t'"$TEST_CMD_ID"$'\tCLEAR\t' "$metrics" || true)" -eq 0 ]
+    # test_necessity: BLOCK rows must contain real tab bytes (not a literal
+    # "\t" two-char sequence), or awk -F'\t' consumers (block_reasons lookup,
+    # gate_fire dedupe) silently fail to parse the row.
+    grep -Fq $'\t'"$TEST_CMD_ID"$'\tBLOCK\treview_fingerprint_changed_after_normalize' "$metrics"
     [ ! -e "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/archive.done" ]
     [ ! -s "$TEST_PROJECT/notify.log" ]
 }

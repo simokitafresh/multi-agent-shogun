@@ -6255,7 +6255,7 @@ ALWAYS_REQUIRED=("archive" "lesson")
 # and complete AC coverage. Direct cmd_karo_* hotfixes retain their contract.
 if ! python3 "$SCRIPT_DIR/scripts/lib/parent_cmd_contract.py" "$CMD_ID" --root "$SCRIPT_DIR"; then
     echo "GATE BLOCK: parent_cmd_contract"
-    append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\tparent_cmd_contract"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "parent_cmd_contract")"
     exit 1
 fi
 
@@ -6269,7 +6269,7 @@ if [ -f "$SCRIPT_DIR/scripts/cmd_complete.sh" ]; then
         || ! _SG7_SPEC_JSON=$(python3 "$SCRIPT_DIR/scripts/review_bundle.py" consume \
             --cmd "$CMD_ID" --bundle "$_sg7_bundle" --expect-verdict APPROVE); then
         echo "GATE BLOCK: sg7_bundle_missing_or_invalid"
-        append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\tsg7_bundle_missing_or_invalid"
+        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "sg7_bundle_missing_or_invalid")"
         exit 1
     fi
     load_validated_sg7_context "$_sg7_bundle" "$_SG7_SPEC_JSON"
@@ -6300,7 +6300,7 @@ if [ "$HAS_IMPLEMENT" = "true" ]; then
     if ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}" \
         && ! review_gate_manifest_ready "$CMD_ID" "${_two_phase_reports[@]}"; then
         echo "GATE BLOCK: review_two_phase_pending (every report requires matching gunshi LGTM + karo ACCEPT)"
-        append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\treview_two_phase_pending"
+        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "review_two_phase_pending")"
         exit 1
     fi
 fi
@@ -6350,7 +6350,7 @@ if [ "$HAS_IMPLEMENT" = "true" ] \
     && ! review_all_reports_ready "$CMD_ID" "${_two_phase_reports[@]}" \
     && ! review_gate_manifest_ready "$CMD_ID" "${_two_phase_reports[@]}"; then
     echo "GATE BLOCK: review_fingerprint_changed_after_normalize"
-    append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\treview_fingerprint_changed_after_normalize"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "review_fingerprint_changed_after_normalize")"
     exit 1
 fi
 
@@ -6526,7 +6526,7 @@ check_context_freshness_own_commit() {
 
 if ! check_context_freshness_own_commit "$CMD_ID"; then
     echo "GATE BLOCK: context_freshness_own_commit_unreflected"
-    append_line_locked "$GATE_METRICS_LOG" "$(date +%Y-%m-%dT%H:%M:%S)\t${CMD_ID}\tBLOCK\tcontext_freshness_own_commit_unreflected"
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "context_freshness_own_commit_unreflected")"
     exit 1
 fi
 
