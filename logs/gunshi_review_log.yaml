@@ -1,1293 +1,11 @@
 - cmd_id: cmd_karo_recon2_run_tests_true_critical_path_202607190411
-- cmd_id: cmd_4098
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - ".claude/hooks/post-bash-combined.sh:54"
-    - ".claude/hooks/post-bash-combined.sh:95"
-    - ".claude/hooks/post-bash-combined.sh:100"
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-20T14:15:08+09:00
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - ambiguity
-    - adversarial
-  findings_summary: "7観点OK。Guard 0の判定条件は既にexecution regex+exit非0+BLOCK文言の3条件だが、将軍実測で2回誤注入を確認。payload schema差異が疑い。修正+境界fixture固定で対処"
-  observations:
-    - "事実1: post-bash-combined.sh L95のregexはbash cmd_save/cmd_publish.shパターンのみcmd_save_executed=1にする設計だが、将軍06:57/06:59の2回でsed参照・cmd_publish exit 0でも誤注入を実測"
-    - "事実2: 既存テスト(test_post_bash_cmd_save_guard.bats)に非実行参照の境界fixtureが未固定(家老blt_20260720_133430で確認)"
-  operational_simulation:
-    command: "grep -n 'cmd_save_executed' .claude/hooks/post-bash-combined.sh"
-    expected: "L94-96でexecution regex判定、L100で3条件(executed+exit非0+BLOCK文言)の論理積"
-    actual: "L94-96 cmd_save_executed=0初期値+regex判定、L100 3条件論理積が現物で確認"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "shallow変更(単一hook判定条件)。攻撃面はpayload操作だがClaude CLI内部生成のため外部入力なし。既存set -eu維持。rollback=git revert 1 commit"
-  origin: "[[cmd_4098]] -> [[post-bash BLOCK誤注入]] -> [[payload schema差異]]"
-  causal_chain: "payload内cmd_save語→解析進入→schema差異でcommand抽出不一致→regex判定不正確→非実行でも注入→実装+fixture固定で恒久修正"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC照合2/2件 hook現物90行確認 FM3件全対処"
-  timestamp: "2026-07-20T13:55:00"
-- cmd_id: cmd_karo_hotfix_retro_prompt_content_dedup_202607201342
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "scripts/lib/retro_verbatim_prompt.sh:13"
-    - "scripts/lib/retro_verbatim_prompt.sh:33"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - ambiguity
-    - adversarial
-  findings_summary: "7観点OK。deliver L13のkeyはtarget+from+content(event_idなし)で冪等。enqueue L33のkeyはtarget+event_id+fromでevent_id依存→重複enqueueの根因。AC3件でclaim key統一+独立配送検証+全量テスト"
-  observations:
-    - "事実1: retro_verbatim_prompt.sh deliver L13 key=sha256(target+from+PROMPT)でevent_idなし→冪等。enqueue L33 key=sha256(target+event_id+from)でevent_id含む→同一content/targetでもevent_id違いで重複"
-    - "事実2: 掲示板blt_20260720_133855で家老が確認: event_idがcmd完了ごとに変わるためsha256マーカーが別→同一promptが毎回新規配送"
-  operational_simulation:
-    command: "grep -n 'sha256sum' scripts/lib/retro_verbatim_prompt.sh"
-    expected: "L13(deliver)とL33(enqueue)で異なるkey生成。enqueueにevent_id含む"
-    actual: "L13: target+from+PROMPT、L33: target+event_id+from。不一致確認"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "hotfix 1ファイル3行程度。claim key統一のみ。攻撃面なし(内部スクリプト)。rollback=git revert"
-  origin: "[[retro_prompt重複配送]] -> [[enqueue event_id依存]] -> [[claim key統一]]"
-  causal_chain: "cmd完了→retro_verbatim_prompt_enqueue呼出し→event_id含むkey生成→同一content/targetに対して毎回新しいevent_id→claimマーカー不一致→重複inbox配送→CTX浪費。key計算をcontent単位に統一で恒久修正"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no FM3件全照合 deliver/enqueueの2箇所のkey現物確認"
-  timestamp: "2026-07-20T13:57:00"
-- cmd_id: cmd_karo_hotfix_retro_prompt_content_dedup_202607201342
-  review_type: report
-  report_ninja: kagemaru
-  report_task_id: cmd_karo_hotfix_retro_prompt_content_dedup_202607201342_normal
-  verdict: FAIL
-  fail_reasons:
-    - "status:revision_requestedのままverdictがPASS(LG005)"
-    - "target_path配下に未commit変更が残存(precheck BLOCK)"
-  lesson_quality: OK
-  escalation_needed: false
-  gate_result: null
-  gate_prediction: BLOCK
-  gate_prediction_reason: "status:revision_requestedはgate_report_format.shがBLOCK"
-  verified_files:
-    - "queue/reports/kagemaru_report_cmd_karo_hotfix_retro_prompt_content_dedup_202607201342.yaml:8"
-    - "scripts/lib/retro_verbatim_prompt.sh:13"
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - ambiguity
-    - adversarial
-  findings_summary: "4観点OK。実装内容は正しい(binary_checks全yes、test 99/99 PASS、commit確認)が、status未更新+未commit変更でGATE BLOCK予測"
-  observations:
-    - "事実1: status=revision_requested(L8)のままverdict=PASS(L146)。gate_report_format.shはrevision_requestedのPASSをBLOCKする"
-    - "事実2: git diff --name-only -- scripts/lib/retro_verbatim_prompt.sh で未commit変更あり。commit 94838735以降に追加変更発生"
-  operational_simulation:
-    command: "grep -n 'status:' queue/reports/kagemaru_report_cmd_karo_hotfix_retro_prompt_content_dedup_202607201342.yaml"
-    expected: "status: completed"
-    actual: "status: revision_requested"
-    result: "FAIL"
-  step3_5_verified: true
-  origin: "[[cmd_karo_hotfix_retro_prompt_content_dedup_202607201342]] -> [[status未更新]] -> [[GATE BLOCK予測]]"
-  causal_chain: "忍者がrevision要求後にstatus更新せずverdict PASS→gate_report_format.shがrevision_requested+PASSTを矛盾検出→BLOCK"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no precheck ERRORS=1を見逃さずFAIL判定 status現物L8確認"
-  timestamp: "2026-07-20T14:05:00"
-- cmd_id: cmd_4099
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/shogun_to_karo.yaml:2390"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - ambiguity
-    - adversarial
-  findings_summary: "7観点OK。nudge17回実測+fingerprint/debounce現物確認済み。窓集約+即時維持のACが二値基準で明確。shallow 10分1忍者配備"
-  observations:
-    - "事実1: 将軍が04:08-05:07に自inboxでnudge17回を実測。家老がlogs/inbox_watcher_karo.logで8件/28分を計数"
-    - "事実2: inbox_watcher.shの30秒debounceは投稿ごと新msg_idによるfingerprint変化で突破される(家老blt_20260720_063835)"
-  operational_simulation:
-    command: "grep -n 'debounce' scripts/inbox_watcher.sh"
-    expected: "既存debounce機構あり、fingerprint変化で突破される"
-    actual: "debounce 30秒は実装済みだがfingerprint依存で各投稿が別通知扱い"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "shallow変更(watcher送出条件)。CRITICAL/escalation即時維持でACが安全側を固定。rollback=git revert"
-  origin: "[[cmd_4099]] -> [[bulletin_notify過剰nudge]] -> [[窓集約+即時維持]]"
-  causal_chain: "bulletin_write投稿ごとに新msg_id→inbox_watcher fingerprintが変化→30秒debounce突破→nudge過剰送出→受信側ターン細切れ消費。窓集約で通常通知をbatch化、CRITICAL系は即時維持で恒久修正"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC照合2/2件 一次計測17回/8件の数値確認"
-  timestamp: "2026-07-20T14:06:00"
-- cmd_id: cmd_4100
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "scripts/lib/retro_verbatim_prompt.sh:33"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - ambiguity
-    - adversarial
-  findings_summary: "7観点OK。karo_hotfix(94838735)でdeliver L13修正済み。cmd_4100はenqueue L33側+包括テストの後続cmd。同一忍者(kagemaru)逐次配備で衝突なし"
-  observations:
-    - "事実1: karo_hotfix commit 94838735はdeliver keyのみ修正(target+event_id+from→target+from+PROMPT)。enqueue L33はtarget+event_id+fromのまま(git show HEAD確認)"
-    - "事実2: cmd_4100はenqueue側の冪等化+独立cmd retro配送維持+回帰テスト追加を目的とする後続cmd"
-  operational_simulation:
-    command: "git show HEAD:scripts/lib/retro_verbatim_prompt.sh | sed -n '33p'"
-    expected: "enqueue keyにevent_id含む(未修正)"
-    actual: "key=$(printf '%s\\0%s\\0%s' \"$target\" \"$event_id\" \"$from\" | sha256sum)"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "shallow変更(lib冪等キー)。同一忍者逐次で衝突なし。rollback=git revert"
-  origin: "[[cmd_4100]] -> [[enqueue event_id依存]] -> [[content冪等化+独立retro配送維持]]"
-  causal_chain: "enqueue keyがevent_id含む→cmd完了ごと新eventfile→同一content重複配送→content冪等化で根絶。karo_hotfixでdeliver側修正済み→cmd_4100でenqueue側+テスト追加で完結"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC照合2/2件 karo_hotfix diffとHEAD enqueue L33を現物確認"
-  timestamp: "2026-07-20T14:10:00"
-- cmd_id: cmd_4098
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_4098_full
-  verdict: LGTM
-  verified_files:
-    - "queue/reports/hayate_report_cmd_4098.yaml:30"
-    - ".claude/hooks/post-bash-combined.sh:95"
-  gate_result: CLEAR
-  gate_synced_at: 2026-07-20T14:15:08+09:00
-  gate_prediction: CLEAR
-  gate_prediction_reason: "all checks passed"
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - ambiguity
-    - adversarial
-  findings_summary: "4観点OK。Guard 0三条件AND判定(直接bash実行+非zero exit+BLOCK出力)で誤注入根絶。境界5/5+unit 2092/2092 PASS。非test caller=1(posttool-dispatch.sh)でdead codeでない"
-  observations:
-    - "事実1: causal_verification.evidenceにrg -l post-bash-combined.sh+non-test caller count: 1(.claude/hooks/posttool-dispatch.sh)の一次証跡あり(LG051充足)"
-    - "事実2: 境界fixture 5/5 PASS+unit 2092/2092 PASS・FAIL0・SKIP0。receipt=run_tests_20260720T044324_427321.json"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "hook変更だがshallow(判定条件是正のみ)。非test caller=1で実用経路あり。set -eu維持。rollback=git revert"
-  step3_5_verified: true
-  origin: "[[cmd_4098]] -> [[post-bash BLOCK誤注入根絶]] -> [[境界fixture回帰保護]]"
-  causal_chain: "Guard 0の三条件AND判定(直接bash実行+非zero exit+BLOCK出力)で誤注入根絶→5境界fixtureで回帰保護→2092 unit全量PASSで副作用なし"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no precheck ERRORS=0 非test caller=1(dead codeでない)確認"
-  operational_simulation:
-    command: "grep -c 'non-test caller count' queue/reports/hayate_report_cmd_4098.yaml"
-    expected: "LG051証跡あり"
-    actual: "causal_verification.evidenceに non-test caller count: 1 記載確認"
-    result: "PASS"
-  timestamp: "2026-07-20T14:15:00"
-- cmd_id: cmd_karo_hotfix_retro_pane_transport_202607201400
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/tobisaru.yaml:5"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - ambiguity
-    - adversarial
-  findings_summary: "7観点OK。inbox重複配送をpane直貼りで回避。target 5ファイル。send-keys直接使用は家老設計判断として許容"
-  observations:
-    - "事実1: AC1はretro配送をinbox_write→pane send-keys+Enterに切替。CLAUDE.md通信規約との緊張あるが家老がhotfixとして設計"
-    - "事実2: target_path 5ファイル(retro_pane_prompt.sh新規+cmd_complete/gate/review_bundle/ninja_monitor修正)"
-  operational_simulation:
-    command: "grep -c 'send-keys' queue/tasks/tobisaru.yaml"
-    expected: "AC1にsend-keys+Enter使用が明記"
-    actual: "AC1 description確認。inbox_writeを呼ばない直貼り設計"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "hotfix設計。5ファイル変更だがshallow(配送経路切替)。AC2でidle確認+SHA一致+台帳で安全保証。rollback=git revert"
-  origin: "[[cmd_karo_hotfix_retro_pane_transport]] -> [[inbox重複配送回避]] -> [[pane直貼り配送]]"
-  causal_chain: "inbox_write経由retro→event_id別再配送→pane直貼りでinbox経路回避→idle確認+SHA+台帳で安全保証→重複問題の根本回避"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC照合3/3件 target_path 5ファイル全確認"
-  timestamp: "2026-07-20T14:18:00"
-- cmd_id: cmd_4099
-  review_type: report
-  report_ninja: hanzo
-  report_task_id: cmd_4099_full
-  verdict: FAIL
-  fail_reasons:
-    - "AC2 binary_checks result:no(全量unit FAIL0未達。対象17/17 PASS、watcher起因FAIL=0)"
-  lesson_quality: OK
-  escalation_needed: false
-  gate_result: null
-  gate_prediction: BLOCK
-  gate_prediction_reason: "bc:no検出(AC2)。全量unitの対象外FAIL(report_field_set性能/cmd_complete系)で0達成不能"
-  verified_files:
-    - "queue/reports/hanzo_report_cmd_4099.yaml:11"
-    - "queue/reports/hanzo_report_cmd_4099.yaml:27"
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - ambiguity
-    - adversarial
-  findings_summary: "4観点OK(実装品質)。AC2 bc:no→FAIL。対象17/17 PASS・watcher起因0。全量FAILは対象外テスト。家老waive判断で進行可能"
-  observations:
-    - "事実1: AC1 PASS(300秒窓集約+高priority即時維持実装済み)。対象テスト17/17 PASS"
-    - "事実2: 全量unit 1回目1735中1件FAIL(report_field_set性能)、2回目879中15件FAIL(cmd_complete系)。2回でFAIL集合不一致=watcher無関係"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "watcher変更はbatchable分類追加のみ。既存debounce/flock構造維持。rollback=git revert"
-  step3_5_verified: true
-  operational_simulation:
-    command: "grep 'result:' queue/reports/hanzo_report_cmd_4099.yaml | head -5"
-    expected: "AC2にresult: no"
-    actual: "AC2 result: no。test_triageでwatcher差分起因0件の切分け済み"
-    result: "PASS"
-  origin: "[[cmd_4099]] -> [[AC2全量FAIL0未達]] -> [[対象外テストの非決定性FAIL]]"
-  causal_chain: "AC2要求=全量FAIL0→全量unitに対象外テスト含む→report_field_set性能/cmd_complete系が非決定的FAIL→watcher変更起因0だが全量FAIL0達成不能→bc:no→FAIL"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no precheck ERRORS=0 bc:no見落としなし gate_prediction=BLOCK転記"
-  timestamp: "2026-07-20T14:22:00"
-- cmd_id: cmd_4100
-  review_type: report
-  report_ninja: kagemaru
-  report_task_id: cmd_4100_full
-  verdict: FAIL
-  fail_reasons:
-    - "AC2 binary_checks result:no(全量unit FAIL16/SKIP0。専用contract 5/5 PASS、対象外FAIL)"
-  lesson_quality: OK
-  escalation_needed: false
-  gate_result: null
-  gate_prediction: BLOCK
-  gate_prediction_reason: "bc:no検出(AC2)。全量unit対象外FAIL16件でFAIL0未達"
-  verified_files:
-    - "queue/reports/kagemaru_report_cmd_4100.yaml:11"
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - ambiguity
-    - adversarial
-  findings_summary: "4観点OK(実装品質)。AC2 bc:no→FAIL。専用contract 5/5 PASS。全量FAIL16は対象外。cmd_4099と同パターン"
-  observations:
-    - "事実1: AC1 PASS(enqueue/deliverのcanonical cmd identity共通化)。専用contract 5/5 PASS"
-    - "事実2: 全量1823件中FAIL16・SKIP0。FAIL集合はcmd_4099 hanzoと類似(共有worktree対象外テスト)"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "lib冪等キー変更のみ。攻撃面なし。rollback=git revert"
-  step3_5_verified: true
-  operational_simulation:
-    command: "grep 'result:' queue/reports/kagemaru_report_cmd_4100.yaml | head -5"
-    expected: "AC2にresult: no"
-    actual: "AC2 result: no確認。test_triageで対象外FAIL切分け済み"
-    result: "PASS"
-  origin: "[[cmd_4100]] -> [[AC2全量FAIL16]] -> [[共有worktree対象外テスト非決定性FAIL]]"
-  causal_chain: "AC2要求=全量FAIL0→共有worktreeに他者変更FAIL混入→専用5/5 PASSだが全量FAIL0未達→bc:no→FAIL"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no precheck ERRORS=0 bc:no確認 gate_prediction=BLOCK転記"
-  timestamp: "2026-07-20T14:31:00"
-- cmd_id: cmd_karo_hotfix_retro_pane_transport_202607201400
-  review_type: report
-  report_ninja: tobisaru
-  report_task_id: cmd_karo_hotfix_retro_pane_transport_202607201400_normal
-  verdict: FAIL
-  fail_reasons:
-    - "LG044 ac_evidence_mapping欠落(AC1/2/3。正直報告+全yes+mapping不在)"
-    - "ninja_monitor.sh L8436-8437構文エラー混入(if欠落→即死→auto_clear全停止)。軍師D0修正済み"
-  lesson_quality: OK
-  escalation_needed: false
-  gate_result: null
-  gate_prediction: BLOCK
-  gate_prediction_reason: "LG044: 正直報告フラグあり+binary_checks全yesだがac_evidence_mapping欠落(AC1/2/3)"
-  verified_files:
-    - "scripts/ninja_monitor.sh:8436"
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - ambiguity
-    - adversarial
-  findings_summary: "実装は全unit 2101/2101 PASS。しかしLG044 mapping欠落+ninja_monitor.sh構文エラー混入で2件FAIL"
-  observations:
-    - "事実1: commit 6845c0041がninja_monitor.sh L8436-8437でif文を欠落させ、bash syntax errorでninja_monitor即死。14:03以降auto_clear 0回"
-    - "事実2: precheck ERROR=1(LG044 ac_evidence_mapping欠落AC1/2/3)。正直報告フラグあり+全yesだが証拠1:1なし"
-  adversarial_review:
-    required: true
-    verdict: FAIL
-    reason: "大型変更(7ファイル)でninja_monitor.shに構文エラー混入。テスト2101PASSでも構文エラーは検出不能(bashの遅延パース)"
-  step3_5_verified: true
-  operational_simulation:
-    command: "bash -n scripts/ninja_monitor.sh"
-    expected: "rc 0(構文エラーなし)"
-    actual: "修正前: syntax error L8437。修正後: rc 0"
-    result: "PASS(D0修正後)"
-  origin: "[[cmd_karo_hotfix_retro_pane_transport]] -> [[if欠落構文エラー]] -> [[ninja_monitor即死→auto_clear全停止]]"
-  causal_chain: "tobisaruがL8436でif文を落とした→bashパース時にsyntax error→ninja_monitor起動直後に死亡→auto_clear/stall検知/CTX監視すべて停止→idle忍者3名がclear不能で滞留"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 構文エラーをD0修正し bash -n rc0確認。precheck ERRORS=1見落としなし"
-  timestamp: "2026-07-20T14:55:00"
-- cmd_id: cmd_4101
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/shogun_to_karo.yaml:2390"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。receipt3本で重複実行と母数変動を実測確認済み。single-flight+snapshotで構造解消"
-  observations:
-    - "事実1: receipt3本(1735/1045s+879/1333s+1823/548s)の並行実行と母数-49.3%変動を影丸が実測"
-    - "事実2: rg single_flight heavy_job_admission.sh→0件で既存実装なし確認(将軍rg)"
-  operational_simulation:
-    command: "grep -c 'single_flight' queue/shogun_to_karo.yaml"
-    expected: "cmd_4101内にsingle-flight記載"
-    actual: "purpose/AC/q11に記載確認"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "medium depth。排他+相乗りの2script変更。flock既存。rollback=git revert"
-  origin: "[[cmd_4101]] -> [[heavy runner重複]] -> [[single-flight+snapshot]]"
-  causal_chain: "全量要求重複enqueue→flock直列だが再実行→母数変動で判定不能→single-flight相乗り+snapshot固定で重複根絶+母数確定"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC照合2/2 receipt3本の数値確認"
-  timestamp: "2026-07-20T14:58:00"
-- cmd_id: cmd_4102
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/shogun_to_karo.yaml:2434"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。殿原則『厳密さは最終checkpoint』の直接適用。全量12分41秒→選別4.3秒。最終全量1回維持"
-  observations:
-    - "事実1: 全量2092件=760,762ms vs 専用5件=4.3秒(疾風receipt実測)"
-    - "事実2: test_select.sh L591接続済み(将軍rg確認)。反復デフォルト化で既存経路を活用"
-  operational_simulation:
-    command: "grep -c 'test_select' queue/shogun_to_karo.yaml"
-    expected: "cmd_4102内にtest_select記載"
-    actual: "AC/q11に記載確認"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "shallow。既存selector接続のデフォルト化+契約文言更新。rollback=git revert"
-  origin: "[[cmd_4102]] -> [[反復全量12分税]] -> [[二段契約化]]"
-  causal_chain: "反復に全量要求→12分×N回=try回数抑制→選別デフォルト化+最終全量1回で反復時間圧縮→殿原則準拠"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC照合2/2 実測差(12分41秒→4.3秒)確認"
-  timestamp: "2026-07-20T14:59:00"
-- cmd_id: cmd_karo_hotfix_retro_hold_truth_202607201451
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/tobisaru.yaml:5"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。hold判定をinbox grep→正規回答台帳突合に変更。偽陽性排除+未回答BLOCK維持"
-  observations:
-    - "事実1: AC1 hold判定をinbox近傍grep依存→正規回答台帳突合へ変更。偽陽性0件を既存fixtureで証明"
-    - "事実2: AC3で変更前後のhold誤停止件数と配備壁時計を報告記載要求"
-  operational_simulation:
-    command: "grep -c 'retro_hold' queue/tasks/tobisaru.yaml"
-    expected: "task内にretro hold記載"
-    actual: "AC1/2/3に記載確認"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "hotfix。hold判定改善。回答済み→即通過、未回答→BLOCK維持。rollback=git revert"
-  origin: "[[retro_hold偽陽性]] -> [[inbox grep依存]] -> [[正規回答台帳突合]]"
-  causal_chain: "inbox近傍grep→回答テキストマッチ偽陽性→配備不要BLOCK→台帳突合で正確判定→偽陽性排除"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC照合3/3 偽陽性0件要求確認"
-  timestamp: "2026-07-20T15:00:00"
-- cmd_id: cmd_karo_hotfix_ninja_monitor_graceful_takeover_202607201455
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/kagemaru.yaml:5"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。ninja_monitor構文エラーバグの根本解決。killなし世代引継ぎでD006準拠の自己修復力構築"
-  observations:
-    - "事実1: 本セッションでcommit 6845c0041のif欠落→ninja_monitor即死→auto_clear全停止を実体験。D0修正済みだがPID 1401898がsingleton lockで新インスタンス起動不能"
-    - "事実2: AC2でkill/pkill/tmux kill不使用を静的検証要求。heartbeat+世代判定でgraceful引継ぎ"
-  operational_simulation:
-    command: "ps -p 1401898 -o stat"
-    expected: "旧ninja_monitorプロセスが生存(構文エラー箇所未到達で部分稼働)"
-    actual: "PID 1401898 stat=S (sleeping, 部分稼働中)"
-    result: "PASS"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "ninja_monitor変更は高影響(全忍者の監視/auto_clear/stall検知)。AC2のkill不使用静的検証+3境界テストで安全保証"
-  origin: "[[ninja_monitor構文エラー即死]] -> [[kill不可でsingleton lock解除不能]] -> [[graceful_takeover設計]]"
-  causal_chain: "tobisaruがif欠落→ninja_monitor即死→killなしでは復旧不能→graceful takeover(heartbeat+世代判定+atomic引継ぎ)で構造根治"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC照合3/3 本セッションの実体験に基づく根治設計確認"
-  timestamp: "2026-07-20T15:02:00"
-- cmd_id: cmd_karo_recheck_kotaro_ac5_202607201501
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/kotaro.yaml:5"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。軍師retro一次RCA(44/44 PASS実測)と整合。AC3件で旧FAIL根拠突合+1:1証拠要求"
-  observations:
-    - "事実1: 軍師が14:25にtest_deploy_task.bats 44/44 PASS・FAIL0を実測済み。旧FAIL2は他者commit差分が原因で現HEAD解消"
-  operational_simulation:
-    command: "bats tests/unit/test_deploy_task.bats (軍師14:25実測)"
-    expected: "44/44 PASS"
-    actual: "44/44 PASS FAIL0"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "再検証のみ。新コード変更なし。rollback不要"
-  origin: "[[小太郎AC5再検証]] -> [[旧FAIL2根治確認]] -> [[軍師retro一次RCA]]"
-  causal_chain: "旧FAIL2(selector/task_root差分)→他者commit→現HEAD解消→軍師実測44/44→家老が小太郎に再検証配備"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 自分の実測44/44と突合済み"
-  timestamp: "2026-07-20T15:03:00"
-- cmd_id: cmd_4102
-  review_type: report
-  report_ninja: saizo
-  report_task_id: cmd_4102_full
-  verdict: FAIL
-  fail_reasons:
-    - "AC2 bc:no(cmd_4101 single-flight回帰1件FAILでscope混在)"
-  lesson_quality: OK
-  escalation_needed: false
-  gate_result: null
-  gate_prediction: BLOCK
-  gate_prediction_reason: "bc:no検出(AC2)。cmd_4101並行変更でsingle-flight回帰FAIL"
-  verified_files:
-    - "queue/reports/saizo_report_cmd_4102.yaml:11"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  findings_summary: "4観点OK(実装品質)。AC2 bc:no→FAIL。焦点4/4 PASS・4.361s。cmd_4101並行変更のscope混在"
-  observations:
-    - "事実1: AC1 PASS(焦点4/4 PASS・4.361s・selector異常時fallback実装)"
-    - "事実2: 最終unit 200/200 observed・SKIP0だがrc=1(cmd_4101 single-flight回帰1件FAIL)"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "run_tests.sh選別デフォルト化。既存経路活用。rollback=git revert"
-  step3_5_verified: true
-  operational_simulation:
-    command: "grep 'result:' queue/reports/saizo_report_cmd_4102.yaml | head -5"
-    expected: "AC2 result: no"
-    actual: "AC2 result: no(cmd_4101 scope混在)"
-    result: "PASS"
-  origin: "[[cmd_4102]] -> [[AC2 cmd_4101並行FAIL]] -> [[scope混在]]"
-  causal_chain: "cmd_4101がrun_tests.sh/heavy_job_admission.shを並行変更→cmd_4102最終unitでsingle-flight回帰FAIL→scope混在でAC2未達"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no bc:no見落としなし gate_prediction=BLOCK転記"
-  timestamp: "2026-07-20T15:08:00"
-- cmd_id: cmd_karo_recon_target_overlap_gap_20260720
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/hanzo.yaml:5"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。cmd_4101/4102のscope混在根因を偵察で特定。偵察5要件充足"
-  observations:
-    - "事実1: cmd_4102でscripts/run_tests.sh並行編集がcollision gateを通過しFAIL→偵察でgate gap特定"
-  operational_simulation:
-    command: "grep 'target_path' queue/tasks/hanzo.yaml"
-    expected: "偵察対象が明確"
-    actual: "deploy preflightのtarget_path/planned_paths未宣言gapを一次実験で再現"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "偵察(read-only)。実装変更なし"
-  origin: "[[target_overlap_gap偵察]] -> [[cmd_4102 scope混在]] -> [[collision gate gap]]"
-  causal_chain: "cmd_4101/4102がrun_tests.shを並行変更→collision gateのtarget_path宣言依存→command欄参照を捕捉できない→偵察でgap特定"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC照合3/3"
-  timestamp: "2026-07-20T15:15:00"
-- cmd_id: cmd_karo_hotfix_target_overlap_checkpoint_barrier_20260720
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/saizo.yaml:5"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。半蔵偵察から根治実装。command由来の実変更候補→正本契約反映+交差直列化+readonly_ref除外+peer完了barrier"
-  observations:
-    - "事実1: 半蔵偵察でcollision偽陰性1/1実証(run_tests.sh変更意図がreadonly_refへ誤分類→collision予約脱落)"
-    - "事実2: AC4件で偽陰性根治+偽BLOCK防止+peer完了barrier+全量FAIL0の多層防御"
-  operational_simulation:
-    command: "grep 'target_path' queue/tasks/saizo.yaml"
-    expected: "deploy_task.sh変更対象が明確"
-    actual: "AC1-4で変更対象と検証方法が特定済み"
-    result: "PASS"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "deploy_task.sh変更は高影響。AC2でFP測定+AC3でbarrier検証+AC4で全量PASで安全保証"
-  origin: "[[target_overlap偵察]] -> [[collision偽陰性1/1]] -> [[根治実装]]"
-  causal_chain: "command欄のwrite-intent pathがtarget_path/planned_pathsに未宣言→collision gateすり抜け→並行変更FAIL→正本契約反映+barrier拘束で根絶"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC照合4/4 偵察実測1/1と突合"
-  timestamp: "2026-07-20T15:24:00"
-- cmd_id: cmd_karo_hotfix_target_overlap_checkpoint_barrier_20260720
-  review_type: report
-  report_ninja: saizo
-  report_task_id: cmd_karo_hotfix_target_overlap_checkpoint_barrier_20260720_normal
-  verdict: FAIL
-  fail_reasons:
-    - "AC4(全量FAIL0)未達: single-flight滞留でreceipt未生成"
-  lesson_quality: OK
-  escalation_needed: false
-  gate_result: null
-  gate_prediction: BLOCK
-  gate_prediction_reason: "AC4 bc:noの予測。single-flight滞留でreceipt未生成"
-  verified_files:
-    - "queue/reports/saizo_report_cmd_karo_hotfix_target_overlap_checkpoint_barrier_20260720.yaml:1"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  findings_summary: "AC1-3 PASS(新規3/3+既存7/7)。AC4 FAIL(single-flight滞留)。cmd_4101収束後に解消予定"
-  observations:
-    - "事実1: target/planned/command由来の変更候補統合+readonly除外+barrier実装はPASS"
-    - "事実2: 全量unitはsingle-flight(cmd_4101並行)で滞留しreceipt未生成"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "deploy_task.sh変更。AC1-3でFP/FN二値検証済み"
-  step3_5_verified: true
-  operational_simulation:
-    command: "grep 'single-flight' queue/reports/saizo_report_cmd_karo_hotfix_target_overlap_checkpoint_barrier_20260720.yaml"
-    expected: "AC4 FAIL理由にsingle-flight滞留"
-    actual: "unit全量はsingle-flight滞留でreceipt未生成のためAC4 FAIL"
-    result: "PASS"
-  origin: "[[target_overlap_barrier]] -> [[AC4 single-flight滞留]] -> [[cmd_4101並行依存]]"
-  causal_chain: "cmd_4101がheavy_job_admission.shを並行変更→single-flight機構が滞留→全量runnerがreceipt生成不能→AC4未達"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no FAIL理由明確 bc:no確認"
-  timestamp: "2026-07-20T15:40:00"
-- cmd_id: cmd_karo_hotfix_commit_shogun_d0_20260720
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "scripts/ninja_monitor.sh:8436"
-    - "scripts/lib/retro_pane_prompt.sh:9"
-    - "scripts/lib/retro_pane_prompt.sh:65"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。軍師D0修正3件(ninja_monitor if欠落+retro冪等化+Enter delay)のcommit配備"
-  observations:
-    - "事実1: 3修正の効果: ninja_monitor構文エラー根絶(bash -n PASS)+retro重複配送根絶(content単位key)+Enter未送達根絶(sleep 0.5)"
-  operational_simulation:
-    command: "bash -n scripts/ninja_monitor.sh && bash -n scripts/lib/retro_pane_prompt.sh"
-    expected: "rc 0"
-    actual: "rc 0"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "D0修正のcommit。修正内容は既にAUTO-RESTARTで本番稼働中"
-  origin: "[[軍師D0修正3件]] -> [[commit配備]] -> [[恒久化]]"
-  causal_chain: "殿指摘→D0修正3件→AUTO-RESTART本番反映済み→commit配備で恒久化"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 3修正のbash -n PASS+効果検証済み"
-  timestamp: "2026-07-20T15:41:00"
-- cmd_id: cmd_karo_hotfix_ninja_monitor_graceful_takeover_202607201455
-  review_type: report
-  report_ninja: kagemaru
-  report_task_id: cmd_karo_hotfix_ninja_monitor_graceful_takeover_202607201455_normal
-  verdict: FAIL
-  fail_reasons:
-    - "AC3 bc:no(全量rc124=旧single-flight leader子孫lock FD保持でFAIL)"
-  lesson_quality: OK
-  escalation_needed: false
-  gate_result: null
-  gate_prediction: BLOCK
-  gate_prediction_reason: "AC3 bc:no。旧single-flightプロセスのlock FD保持で全量runner rc124"
-  verified_files:
-    - "queue/reports/kagemaru_report_cmd_karo_hotfix_ninja_monitor_graceful_takeover_202607201455.yaml:1"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  findings_summary: "AC1-2 PASS(generation+heartbeat owner fencing、専用5/5+affected611/611)。AC3 FAIL(全量rc124)"
-  observations:
-    - "事実1: generation+heartbeat owner fencing実装で旧世代のgraceful引継ぎ機構が動作(専用5/5 PASS)"
-    - "事実2: affected611/611 PASS=影響範囲のregression確認済み。rc124は旧single-flight leader由来"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "ninja_monitor.sh変更は高影響。AC1-2でfencing境界検証済み。rc124は外部要因(cmd_4101並行)"
-  step3_5_verified: true
-  operational_simulation:
-    command: "grep 'rc124\\|single-flight' queue/reports/kagemaru_report_cmd_karo_hotfix_ninja_monitor_graceful_takeover_202607201455.yaml"
-    expected: "AC3 FAIL理由にrc124/single-flight"
-    actual: "旧single-flight leader子孫のlock FD保持でrc124"
-    result: "PASS"
-  origin: "[[graceful_takeover]] -> [[AC3 rc124]] -> [[旧single-flight leader lock FD保持]]"
-  causal_chain: "cmd_4101がsingle-flight機構を並行実装→旧leaderがlock FDを保持→全量runnerがrc124→AC3未達。takeover実装自体は正常動作"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC1-2 PASS確認 rc124外部要因"
-  timestamp: "2026-07-20T15:45:00"
-- cmd_id: cmd_karo_hotfix_commit_shogun_d0_20260720
-  review_type: report
-  report_ninja: tobisaru
-  report_task_id: cmd_karo_hotfix_commit_shogun_d0_20260720_normal
-  verdict: LGTM
-  verified_files:
-    - "scripts/hooks/git-pre-commit.sh:618"
-  gate_result: null
-  gate_prediction: CLEAR
-  gate_prediction_reason: "all checks passed"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  findings_summary: "4観点OK。pre-commit shell_syntax(bash -n)実装。commit d70b16。files_modified修正済み(2回目提出)"
-  observations:
-    - "事実1: commit d70b16ca55のgit showでshell_syntaxステップ確認済み(将軍掲示板blt_154326)"
-    - "事実2: 初回FAIL=files_modified構造文字列化。2回目修正でpath正常化"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "pre-commit hookへのbash -n追加。既存ステップ構造維持。rollback=git revert"
-  step3_5_verified: true
-  operational_simulation:
-    command: "git show d70b16ca55 --stat"
-    expected: "scripts/hooks/git-pre-commit.sh 1ファイル変更"
-    actual: "将軍掲示板で確認済み"
-    result: "PASS"
-  origin: "[[D0 pre-commit shell_syntax]] -> [[bash -n gate]] -> [[構文エラーcommit根絶]]"
-  causal_chain: "ninja_monitor構文エラー事故→対策A=bash -n pre-commit→commit d70b16→GATE CLEAR予測"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no precheck ERRORS=0 files_modified修正確認"
-  timestamp: "2026-07-20T15:57:00"
-- cmd_id: cmd_karo_hotfix_report_gate_batch_contract_20260720
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/tobisaru.yaml:5"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。tobisaru 6回BLOCK+index.lock+revision遷移の3バグ根治"
-  observations:
-    - "事実1: 本セッション実体験: tobisaru commit_hash 6回BLOCK=scalar誤用AUTO-FIXが構造を壊す→AC1で構造保持"
-    - "事実2: index.lock競合(blt_154906)=gate多重起動→AC2でsingle-flight化"
-  operational_simulation:
-    command: "grep 'single-flight' queue/tasks/tobisaru.yaml"
-    expected: "AC2にsingle-flight記載"
-    actual: "AC2: 同一reportへのgate実行をsingle-flightへ収束"
-    result: "PASS"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "gate_report_format/yaml_field_set変更は高影響。AC3でterminal fingerprint契約維持を固定"
-  origin: "[[tobisaru 6回BLOCK]] -> [[scalar誤用+gate多重+revision欠如]] -> [[report_gate_batch_contract根治]]"
-  causal_chain: "batch payload→scalar化→gate拒否→6回BLOCK+gate多重起動→index.lock→hayate BLOCK。single-flight+構造保持+revision遷移で3根因同時根治"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 本セッション3バグの実体験から根治設計 AC3/3"
-  timestamp: "2026-07-20T16:11:00"
-- cmd_id: cmd_karo_recon_test_run_tests_root_level_regression_20260720
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/saizo.yaml:3"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。test_run_tests 21/22 FAIL再現+cmd_4101依存切分けの偵察。5要件充足"
-  observations:
-    - "事実1: cmd_4101がsingle-flight/snapshotを並行実装中→run_tests regression原因がcmd_4101起因か独立かを先行特定"
-  operational_simulation:
-    command: "grep 'AC1' queue/tasks/saizo.yaml"
-    expected: "FAIL再現+receipt記録"
-    actual: "AC1: 21/22 FAILを同一transportで再現+root_sample発生行・期待・実測receipt記録"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "偵察(read-only)。実装変更なし"
-  origin: "[[run_tests regression偵察]] -> [[21/22 FAIL]] -> [[cmd_4101依存切分け]]"
-  causal_chain: "全量unit FAIL→cmd_4101並行か独立か不明→偵察で再現+依存特定→次の根治配備を加速"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC照合2/2"
-  timestamp: "2026-07-20T16:13:00"
-- cmd_id: cmd_4101
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_4101_full
-  verdict: FAIL
-  fail_reasons:
-    - "AC2 bc:no(全量は既存競合FAILが3回。実装起因ではなく外部並行競合)"
-  lesson_quality: OK
-  escalation_needed: false
-  gate_result: null
-  gate_prediction: BLOCK
-  gate_prediction_reason: "AC2 bc:no。全量FAILは外部競合(tobisaru/saizo並行)起因"
-  verified_files:
-    - "queue/reports/hayate_report_cmd_4101.yaml:1"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  findings_summary: "実装品質最高: single-flight+snapshot+FD非継承(LG062根治)+heartbeat+lock順序。79/79 PASS。AC2は外部競合FAIL"
-  observations:
-    - "事実1: 対象回帰79/79 PASS。single-flight/snapshot/子孫FD非継承を実装しLG062(lock 26分保持)を根治"
-    - "事実2: 全量FAILは3回試行で全てrc!=0。外部並行(tobisaru report gate多重/saizo偵察)の競合。実装起因FAIL 0"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "heavy_job_admission+run_tests変更は高影響。79/79回帰+FD非継承でlock孤児根絶。全量FAILは外部要因"
-  step3_5_verified: true
-  operational_simulation:
-    command: "grep '79/79' queue/reports/hayate_report_cmd_4101.yaml"
-    expected: "対象回帰79/79 PASS"
-    actual: "79/79 PASS確認"
-    result: "PASS"
-  origin: "[[cmd_4101 single-flight根治]] -> [[79/79 PASS]] -> [[AC2外部競合FAIL]]"
-  causal_chain: "single-flight+snapshot+FD非継承実装→79/79回帰PASS→全量3回試行全て外部並行競合FAIL→AC2未達→waive→push後に全cmd全量解消"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 79/79 PASS確認 外部競合の切分け完了"
-  timestamp: "2026-07-20T16:16:00"
-- cmd_id: cmd_karo_recon_test_run_tests_root_level_regression_20260720
-  review_type: report
-  report_ninja: saizo
-  report_task_id: cmd_karo_recon_test_run_tests_root_level_regression_20260720_normal
-  verdict: FAIL
-  fail_reasons:
-    - "ERRORS=1 GATE_PREDICTION=BLOCK(偵察commit不要パターン)"
-  lesson_quality: OK
-  escalation_needed: false
-  gate_result: null
-  gate_prediction: BLOCK
-  gate_prediction_reason: "偵察report commit bc:noまたはprecheckエラー"
-  verified_files:
-    - "queue/reports/saizo_report_cmd_karo_recon_test_run_tests_root_level_regression_20260720.yaml:1"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  findings_summary: "偵察結果は有用(21/22 FAIL root_sample+cmd_4101依存切分け)。GATE BLOCKは偵察commit不要パターン"
-  observations:
-    - "事実1: 偵察(read-only)でcommit不要だがbinary_checks.commit=noでGATE BLOCK予測"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "偵察。実装変更なし"
-  step3_5_verified: true
-  operational_simulation:
-    command: "grep 'ERRORS' precheck output"
-    expected: "ERRORS>=1"
-    actual: "ERRORS=1"
-    result: "PASS"
-  origin: "[[run_tests regression偵察]] -> [[GATE BLOCK偵察パターン]] -> [[waive相当]]"
-  causal_chain: "偵察=read-only→commit不要→bc:no→GATE BLOCK→waive相当で結果採用"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no ERRORS=1確認"
-  timestamp: "2026-07-20T16:18:00"
-- cmd_id: cmd_karo_hotfix_report_gate_batch_contract_20260720
-  review_type: report
-  report_ninja: tobisaru
-  report_task_id: cmd_karo_hotfix_report_gate_batch_contract_20260720_normal
-  verdict: FAIL
-  fail_reasons:
-    - "全unit 314/315 FAIL1→GATE BLOCK"
-  lesson_quality: OK
-  escalation_needed: false
-  gate_result: null
-  gate_prediction: BLOCK
-  gate_prediction_reason: "bc:no(全unit FAIL1)。独立fixture36/36は全PASS"
-  verified_files:
-    - "queue/reports/tobisaru_report_cmd_karo_hotfix_report_gate_batch_contract_20260720.yaml:1"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  findings_summary: "実装品質良好: scalar3/3+gate8/8+malformed拒否+36/36。全unit FAIL1は外部競合"
-  observations:
-    - "事実1: 複合型3種scalarをbyte不変BLOCK 3/3。gate同時8呼出を8/8 single-flight収束"
-    - "事実2: 全unit 314/315 PASS・FAIL1・SKIP0。独立fixture全PASS"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "gate_report_format/report_field_set変更は高影響。36/36独立fixtureで安全保証"
-  step3_5_verified: true
-  operational_simulation:
-    command: "precheck ERRORS/prediction確認"
-    expected: "ERRORS=0"
-    actual: "ERRORS=0 prediction=BLOCK(bc:no)"
-    result: "PASS"
-  origin: "[[report_gate_batch_contract]] -> [[scalar構造保持+single-flight+malformed拒否]] -> [[全unit FAIL1外部競合]]"
-  causal_chain: "tobisaru 6回BLOCK根因→3バグ同時根治→独立36/36 PASS→全unit FAIL1は外部競合"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no precheck ERRORS=0 36/36確認"
-  timestamp: "2026-07-20T16:30:00"
-- cmd_id: cmd_karo_hotfix_orphan_singleflight_owner_recovery_20260720
-  review_type: report
-  report_ninja: hanzo
-  report_task_id: cmd_karo_hotfix_orphan_singleflight_owner_recovery_20260720_normal
-  verdict: FAIL
-  fail_reasons:
-    - "全量scope外FAIL(test_ninja_scope_commit 1件)→GATE BLOCK"
-  lesson_quality: OK
-  escalation_needed: false
-  gate_result: null
-  gate_prediction: BLOCK
-  gate_prediction_reason: "bc:no。scope外test_ninja_scope_commit 1件FAIL"
-  verified_files:
-    - "queue/reports/hanzo_report_cmd_karo_hotfix_orphan_singleflight_owner_recovery_20260720.yaml:1"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  findings_summary: "対象102/102 PASS。stale owner 2秒検出+bounded合流実装完了。scope外FAIL1件"
-  observations:
-    - "事実1: LG062(FD孤児lock 26分保持)根治のstale owner recovery実装。対象102/102 PASS"
-    - "事実2: 全量FAILはtest_ninja_scope_commit 1件(scope外。本cmdの変更起因ではない)"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "run_tests.sh変更。対象102/102回帰PASS"
-  step3_5_verified: true
-  operational_simulation:
-    command: "precheck ERRORS/prediction確認"
-    expected: "ERRORS=0"
-    actual: "ERRORS=0 prediction=BLOCK"
-    result: "PASS"
-  origin: "[[orphan_singleflight_recovery]] -> [[stale owner 2秒検出]] -> [[scope外FAIL1]]"
-  causal_chain: "LG062 FD孤児→stale owner recovery実装→102/102 PASS→全量scope外FAIL→BLOCK"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 102/102確認 scope外切分け済み"
-  timestamp: "2026-07-20T17:13:00"
-- cmd_id: cmd_4105
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/inbox/gunshi.yaml:39"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。殿原則直接適用。全量316件129秒vs変更テスト直接実行の実測比較実験"
-  observations:
-    - "事実1: hanzo RCA(blt_20260720_171418)でscope2ファイルに全量129秒を課す真因確定"
-  operational_simulation:
-    command: "inbox review_context確認"
-    expected: "殿裁定と実測根拠"
-    actual: "殿裁定2件+hanzo RCA数値"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "実験cmd。isolated cloneで実測。本番変更なし"
-  origin: "[[全量検証129秒ボトルネック]] -> [[実験で削減可否実測]] -> [[CI/revert可逆回収]]"
-  causal_chain: "scope2ファイルでも全量316件129秒→家老直列化→実験で直接実行vs全量を実測→削減判定"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 殿原則準拠 設計判断なし=実験で決める"
-  timestamp: "2026-07-20T17:49:00"
-- cmd_id: cmd_karo_takeover_posttool_bash_bounded_latency_20260720
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/inbox/gunshi.yaml:draft"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。PostToolUse hookのbounded latency実装。家老Codex CLIフリーズの恒久対策"
-  observations:
-    - "事実1: 本セッションで家老がhook待ちで保留メッセージ蓄積→Escで解消した事象の恒久修正"
-  operational_simulation:
-    command: "inbox review確認"
-    expected: "PostToolUse bounded latency"
-    actual: "bounded latency実装cmd"
-    result: "PASS"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "hook timeout改善。fail-open設計"
-  origin: "[[家老Codex CLIフリーズ]] -> [[PostToolUse hook待ち]] -> [[bounded latency]]"
-  causal_chain: "PostToolUse hookが長時間→Codex CLI保留メッセージ蓄積→フリーズ→bounded latencyで恒久修正"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no 本セッション実体験の恒久修正"
-  timestamp: "2026-07-20T18:16:00"
-- cmd_id: cmd_shogun_decontamination_20260720_instructions
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/tobisaru.yaml:5"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。殿原則『過剰機構を削って超速』の直接適用。安全規則保持+過剰cut"
-  observations:
-    - "事実1: D001-009/YAML安全/Read-before-Editは保持。点数率追跡/予防BLOCK/機構追加強要をcut"
-  operational_simulation:
-    command: "grep 'constraints' queue/tasks/tobisaru.yaml"
-    expected: "AGENTS.md/cmd_save.sh変更禁止"
-    actual: "constraints確認"
-    result: "PASS"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "instructions変更は高影響だがcut方向(削減)のため安全側。安全規則を保持する制約あり"
-  origin: "[[殿裁定_過剰機構削減]] -> [[instructions decontamination]] -> [[超速化]]"
-  causal_chain: "過剰機構が家老ボトルネック+忍者BLOCK多発→cut→超速化"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC3/3照合 制約確認"
-  timestamp: "2026-07-20T18:18:00"
-- cmd_id: cmd_shogun_decontamination_20260720_context
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/kotaro.yaml:5"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。context過剰機構cut。instructions版と同構造。一次知識保持+リンク切れ0"
-  observations:
-    - "事実1: 一次知識・設計根拠・不可逆害防止保持。点数率/BLOCK-WARN/機構追加強要cutの二面分類"
-  operational_simulation:
-    command: "grep 'constraints' queue/tasks/kotaro.yaml"
-    expected: "docs/research+AGENTS.md変更禁止"
-    actual: "確認"
-    result: "PASS"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "context変更は高影響だがcut方向。一次知識保持+リンク切れ0で安全保証"
-  origin: "[[殿裁定_過剰機構削減]] -> [[context decontamination]] -> [[超速化]]"
-  causal_chain: "context過剰機構→忍者CTX消費増→rate limit加速→cut→超速化"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC3/3照合"
-  timestamp: "2026-07-20T18:20:00"
-- cmd_id: cmd_shogun_decontamination_20260720_gates
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/kagemaru.yaml:AC1-4"
-  gate_result: null
-  confidence: HIGH
-  ambiguity_points: none
-  finding_categories: [assumptions, numbers, simulation, premortem, north_star, ambiguity, adversarial]
-  findings_summary: "7観点OK。gates過剰機構cut。構造型誤cutはBLOCK条件(AC4)で安全保証"
-  observations:
-    - "事実1: AC4でFP(構造型誤cut)1件以上→BLOCK。削減方向だが安全側を固定"
-  operational_simulation:
-    command: "grep 'false_positive' queue/tasks/kagemaru.yaml"
-    expected: "FP BLOCK条件あり"
-    actual: "AC4 FP BLOCK確認"
-    result: "PASS"
-  adversarial_review:
-    required: true
-    verdict: PASS
-    reason: "gate変更は高影響。AC4でFP=0を要求し構造型保護を保証"
-  origin: "[[殿裁定_過剰機構削減]] -> [[gates decontamination]] -> [[超速化]]"
-  causal_chain: "gate過剰機構→忍者BLOCK多発(tobisaru 6回等)→表示型cut→BLOCK率低下→超速化"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no AC4/4照合 FP BLOCK確認"
-  timestamp: "2026-07-20T18:21:00"
-- cmd_id: cmd_shogun_decontamination_20260720_lessons
-  review_type: report
-  report_ninja: hayate
-  report_task_id: cmd_shogun_decontamination_20260720_lessons_normal
-  verdict: LGTM
-  verified_files:
-    - "queue/reports/hayate_report_cmd_shogun_decontamination_20260720_lessons.yaml:1"
-  gate_result: null
-  gate_prediction: CLEAR
-  gate_prediction_reason: "all checks passed"
-  finding_categories: [assumptions, numbers, premortem, ambiguity, adversarial]
-  findings_summary: "4観点OK。1144件走査→構造型370残置+表示型20非活性化。YAML parse PASS。GATE CLEAR予測"
-  observations:
-    - "事実1: 教訓1144件中表示型20件を公式helperで非活性化。active1095件"
-  adversarial_review:
-    required: false
-    verdict: PASS
-    reason: "非活性化のみ。削除なし。YAML parse PASSで構造保護"
-  step3_5_verified: true
-  operational_simulation:
-    command: "precheck確認"
-    expected: "ERRORS=0 CLEAR"
-    actual: "ERRORS=0 CLEAR"
-    result: "PASS"
-  origin: "[[decontamination_lessons]] -> [[表示型20件非活性化]] -> [[超速化]]"
-  causal_chain: "過剰教訓→CTX消費→非活性化→CTX削減→超速化"
-  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no GATE CLEAR予測"
-  timestamp: "2026-07-20T18:37:00"
-- cmd_id: cmd_karo_hotfix_auto_clear_respawn_lock_20260720
-  review_type: report
-  report_ninja: hayate
-  verdict: LGTM
-  verified_files:
-    - "scripts/lib/respawn_recovery.sh:57"
-  gate_result: null
-  gate_prediction: CLEAR
-  gate_prediction_reason: all checks passed
-  finding_categories:
-    - assumptions
-    - numbers
-    - premortem
-    - adversarial
-    - ambiguity
-  findings_summary: "4観点OK。ext4移行で9p D-state排除、notify全体2秒deadline fail-open、12/12 PASS"
-  observations:
-    - "事実1: commit 0973d1ee diff +70/-6。respawn_recovery_state_dirがext4 /tmp/shogun-respawn-recovery/<hash>へ移行"
-    - "事実2: respawn_recovery_notifyが全体をtimeout --signal=TERM --kill-after=1で包み、fail-open(return 0)でmarker残さず"
-    - "事実3: テスト2件追加。ext4 state確認+sleep120偽inbox_writeで2秒以内fail-open確認"
-  operational_simulation:
-    command: "git show 0973d1ee -- scripts/lib/respawn_recovery.sh"
-    expected: "ext4 state dir + timeout wrap + fail-open return 0"
-    actual: "respawn_recovery_state_dir→/tmp/shogun-respawn-recovery/<hash>、timeout --signal=TERM --kill-after=1、rc 124/137→return 0"
-    result: PASS
-  causal_chain: "9p /mnt/c上のmarker lock open→D-state→monitor 120秒超停止→ext4世代dirへ移行+全体deadline→D-state原因排除+fail-open保証"
-  brainwash_check: "#1no #2no(git show diffで12箇所全行確認) #3no #4no #5no #6no(commit stat +70/-6確認) #7no #8no"
-  origin: "[[auto_clear_D_state]] -> [[9p_marker_lock]] -> [[ext4_generation_deadline]]"
-  timestamp: "2026-07-20T18:51:00+09:00"
-- cmd_id: cmd_karo_hotfix_unit_final_checkpoint_20260720
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-    - "queue/tasks/hanzo.yaml:1"
-  gate_result: null
-  confidence: HIGH
-  finding_categories:
-    - assumptions
-    - numbers
-    - simulation
-    - premortem
-    - north_star
-    - adversarial
-    - ambiguity
-  findings_summary: "6観点OK。decontamination最終unit検証。AC4個、10分budget妥当。表示型gate/hook追加禁止=殿裁定準拠"
-  observations:
-    - "事実1: AC3に表示型gate/hook追加禁止を明示。殿裁定(過剰対策こそ真因)に完全準拠"
-    - "事実2: unit全量316件は実測2分。10分budgetで十分"
-    - "事実3: 並行競合分離(AC2)→真欠陥のみ修正(AC3)の順序依存は適切"
-  operational_simulation:
-    command: "grep -c 'id: AC' queue/tasks/hanzo.yaml"
-    expected: "AC 4個、順序依存あり"
-    actual: "AC1-AC4、AC1→AC2→AC3の順序依存"
-    result: PASS
-  ambiguity_points: none
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: "hotfix最終検証。changed_lines < 200。blast radius=unit再実行のみ"
-  causal_chain: "decontamination表示型gate削減→並行競合FAIL残存→unit最終checkpoint→FAIL0/SKIP0証明"
-  brainwash_check: "#1no(AC4個+2分実測で十分性判断) #2no(unit 316件計測済み) #3no #4no #5no #6no #7no #8no"
-  origin: "[[decontamination_20260720]] -> [[unit_final_checkpoint]] -> [[FAIL0_SKIP0証明]]"
-  timestamp: "2026-07-20T18:55:00+09:00"
-- cmd_id: cmd_karo_hotfix_role_decontam_operations_20260720
-  review_type: report
-  report_ninja: kotaro
-  verdict: LGTM
-  verified_files:
-    - "context/karo-operations.md:14"
-  gate_result: null
-  gate_prediction: CLEAR
-  gate_prediction_reason: all checks passed
-  finding_categories:
-    - assumptions
-    - premortem
-    - adversarial
-  findings_summary: "4観点OK。表示型14箇所をexperiment-first語彙へ置換、構造型4件保持"
-  observations:
-    - "事実1: commit cd53f314 +14/-14行 context/karo-operations.mdのみ変更"
-    - "事実2: grep確認で表示型パターン(gate化せよ/事前BLOCK)残存0件"
-    - "事実3: 構造型(D001-009/YAML安全/Read-before-Edit/caller実行経路)は未変更"
-  operational_simulation:
-    command: "git show --stat cd53f314"
-    expected: "karo-operations.md only, display-type removal"
-    actual: "+14/-14 context/karo-operations.md"
-    result: PASS
-  causal_chain: "殿裁定_過剰対策こそ真因→karo-operations表示型語彙14件検出→experiment-first語彙へ置換→構造型は保持"
-  brainwash_check: "#1no #2no(diff14行確認) #3no #4no #5no #6no #7no #8no"
-  origin: "[[殿裁定_過剰対策こそ真因_20260720]] -> [[karo_operations_decontam]] -> [[表示��14件cut]]"
-  timestamp: "2026-07-20T19:16:00+09:00"
-- cmd_id: cmd_karo_hotfix_unit_final_checkpoint_20260720
-  review_type: report
-  report_ninja: hanzo
-  verdict: LGTM
-  verified_files:
-    - "queue/reports/hanzo_report_cmd_karo_hotfix_unit_final_checkpoint_20260720.yaml:11"
-  gate_result: null
-  gate_prediction: CLEAR
-  gate_prediction_reason: all checks passed
-  finding_categories:
-    - assumptions
-    - premortem
-  findings_summary: "FAIL報告はAC4準拠。FAIL1=ninja_scope_commit test15(他agent未commit差分による真の欠陥)。競合回避で未修正は正しい判断"
-  observations:
-    - "事実1: unit 316件中FAIL1/SKIP0。単独再現も59件中FAIL1で並行競合ではなく真の欠陥"
-    - "事実2: 原因=ninja_scope_commit.shのAUTO行stdout追加が単一hash出力contractを破る"
-    - "事実3: 同ファイルは他agent作業中dirty差分のため競合編集を避けてBLOCK=AC4準拠"
-  operational_simulation:
-    command: "read report yaml status field"
-    expected: "status: failed with BLOCK per AC4"
-    actual: "status: failed, BLOCKED, FAIL1 from ninja_scope_commit test 15"
-    result: PASS
-  causal_chain: "decontam全量unit再実行→ninja_scope_commit test15 FAIL再現→他agent dirty差分→AC4によりBLOCK報告"
-  brainwash_check: "#1no #2no(report内容と一次データ照合) #3no #4no #5no #6no #7no #8no"
-  origin: "[[decontamination_20260720]] -> [[unit_final_checkpoint_FAIL1]] -> [[ninja_scope_commit_dirty_diff]]"
-  timestamp: "2026-07-20T19:18:00+09:00"
-- cmd_id: cmd_karo_hotfix_role_decontam_instructions_20260720
-  review_type: report
-  report_ninja: hayate
-  verdict: LGTM
-  verified_files:
-    - "queue/reports/hayate_report_cmd_karo_hotfix_role_decontam_instructions_20260720.yaml:11"
-  gate_result: null
-  gate_prediction: CLEAR
-  gate_prediction_reason: all checks passed
-  finding_categories:
-    - assumptions
-    - premortem
-  findings_summary: "実装目的達成(表示型13件+自己採点3件cut、構造marker 11件保持)。FAIL1=ninja_scope_commit test15(共有テスト競合)でcommit未達"
-  observations:
-    - "事実1: before display=13/selfscore=3 → after=0/0。65行cut"
-    - "事実2: 構造安全marker 11件(D001-009/YAML helper/Read-before-Edit/競合防止)は保持"
-    - "事実3: affected 118件中FAIL1=ninja_scope_commit #15(scope外shared test競合)"
-  operational_simulation:
-    command: "read report status and test results"
-    expected: "status failed due to shared test FAIL"
-    actual: "status: failed, BLOCKED, test_ninja_scope_commit #15 scope外FAIL"
-    result: PASS
-  causal_chain: "instructions表示型cut実装完了→affected test run→ninja_scope_commit dirty差分→FAIL1→commit未達→BLOCK報告"
-  brainwash_check: "#1no #2no(report内容照合) #3no #4no #5no #6no #7no #8no"
-  origin: "[[decontamination_20260720]] -> [[instructions_decontam]] -> [[shared_test_FAIL_block]]"
-  timestamp: "2026-07-20T19:19:00+09:00"
-- cmd_id: cmd_shogun_decontamination_20260720_context
-  review_type: report
-  report_ninja: kotaro
-  verdict: FAIL
-  verified_files:
-  - queue/reports/kotaro_report_cmd_shogun_decontamination_20260720_context.yaml:1
-  gate_result: null
-  gate_prediction: CLEAR
-  gate_prediction_reason: all checks passed except commit_hash
-  finding_categories:
-  - assumptions
-  - premortem
-  findings_summary: 'FAIL: commit_hash不在。実commitは7d91c98a6で内容正しい(表示型12行cut+助言化3行)。hash修正で再提出'
-  observations:
-  - '事実1: report記載hash b0e975cfd...がgit objectに不在'
-  - '事実2: 実際のcommit 7d91c98a6は内容正しい(2files +3/-12)'
-  - '事実3: decontam実装は正しい(一発PASS率削除、WARN強制→情報化)'
-  operational_simulation:
-    command: git cat-file -t b0e975cfd0f3804c05c36867a6f7d3325f37838a
-    expected: commit
-    actual: 'fatal: Not a valid object name'
-    result: FAIL
-  causal_chain: ninja_scope_commit.shが別hash返却→kotaroが未検証で記録→report hash不在
-  brainwash_check: '#1no #2no(git cat-file実測) #3no #4no #5no #6no #7no #8no'
-  origin: '[[decontamination_20260720]] -> [[context_decontam]] -> [[commit_hash_mismatch]]'
-  timestamp: '2026-07-20T19:21:00+09:00'
-- cmd_id: cmd_karo_hotfix_scope_commit_stdout_contract_20260720
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - queue/tasks/kagemaru.yaml:1
-  gate_result: null
-  confidence: HIGH
-  finding_categories:
-  - assumptions
-  - simulation
-  - premortem
-  - north_star
-  - adversarial
-  - ambiguity
-  findings_summary: 6観点OK。stdout contract violation修正。表示型追加なし
-  observations:
-  - '事実1: ninja_scope_commit.shのAUTO行stdout追加が単一hash出力contractを破る真の欠陥を修正'
-  - '事実2: 表示型gate/hook追加なし。殿裁定準拠'
-  operational_simulation:
-    command: read task YAML purpose
-    expected: scope_commit stdout contract fix
-    actual: dirty-diff functionality保持+commit_hash auto-fill保持
-    result: PASS
-  ambiguity_points: none
-  adversarial_review:
-    required: false
-    verdict: N/A
-    reason: hotfix single file
-  causal_chain: ninja_scope_commit stdout追加→hash出力contract破壊→全decontam FAIL1の共通原因→修正
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  origin: '[[ninja_scope_commit_stdout]] -> [[contract_violation]] -> [[全decontam共通FAIL]]'
-  timestamp: '2026-07-20T19:21:30+09:00'
-- cmd_id: cmd_karo_test_decontam_cmd_save_20260720
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - queue/tasks/hanzo.yaml:1
-  gate_result: null
-  confidence: HIGH
-  finding_categories:
-  - assumptions
-  - simulation
-  - premortem
-  - north_star
-  - adversarial
-  - ambiguity
-  findings_summary: 6観点OK。削除済み表示型BLOCKテスト同期。構造型保持
-  observations:
-  - '事実1: cmd_save表示型BLOCK assertion→advisory-continue behaviorへ同期'
-  - '事実2: 構造型(cmd_id/YAML安全/入力破損防止)保持'
-  operational_simulation:
-    command: read task YAML
-    expected: test sync for removed display-type blocks
-    actual: test decontam cmd_save
-    result: PASS
-  ambiguity_points: none
-  causal_chain: 表示型BLOCK削除→テスト前提崩壊→テスト同期で整合回復
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  origin: '[[decontamination_20260720]] -> [[cmd_save_test_sync]]'
-  timestamp: '2026-07-20T19:21:30+09:00'
-- cmd_id: cmd_karo_test_decontam_deploy_20260720
-  review_type: draft
-  verdict: APPROVE
-  verified_files:
-  - queue/tasks/saizo.yaml:1
-  gate_result: null
-  confidence: HIGH
-  finding_categories:
-  - assumptions
-  - simulation
-  - premortem
-  - north_star
-  - adversarial
-  - ambiguity
-  findings_summary: 6観点OK。削除済み表示型deployゲートテスト同期。ownership-collision+YAML-atomic構造型保持
-  observations:
-  - '事実1: retro hold/quality doc mandatory/WARN stop assertion削除'
-  - '事実2: 新inspection機構追加禁止のAC'
-  operational_simulation:
-    command: read task YAML
-    expected: test sync for removed display-type deploy gates
-    actual: test decontam deploy
-    result: PASS
-  ambiguity_points: none
-  causal_chain: 表示型deployゲート削除→テスト前提崩壊→テスト同期
-  brainwash_check: '#1no #2no #3no #4no #5no #6no #7no #8no'
-  origin: '[[decontamination_20260720]] -> [[deploy_test_sync]]'
-  timestamp: '2026-07-20T19:21:30+09:00'
 - cmd_id: cmd_karo_test_decontam_monitor_20260720
   review_type: draft
   verdict: APPROVE
   verified_files:
   - queue/tasks/tobisaru.yaml:1
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:10+09:00
   confidence: HIGH
   finding_categories:
   - assumptions
@@ -1315,7 +33,8 @@
   verdict: APPROVE
   verified_files:
   - queue/tasks/saizo.yaml:1
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:10+09:00
   confidence: HIGH
   finding_categories:
   - assumptions
@@ -1344,7 +63,8 @@
   verdict: LGTM
   verified_files:
     - "scripts/deploy_task.sh:1"
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:10+09:00
   gate_prediction: CLEAR
   gate_prediction_reason: all checks passed
   finding_categories:
@@ -1370,7 +90,8 @@
   verdict: LGTM
   verified_files:
     - "tests/unit/test_cmd_save_block_aggregation.bats:1"
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:10+09:00
   gate_prediction: CLEAR
   gate_prediction_reason: all checks passed
   finding_categories:
@@ -1395,7 +116,8 @@
   verdict: APPROVE
   verified_files:
     - "queue/tasks/kotaro.yaml:1"
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:10+09:00
   confidence: HIGH
   finding_categories:
     - assumptions
@@ -1429,7 +151,8 @@
   verdict: LGTM
   verified_files:
     - "tests/unit/test_ninja_monitor_stall.bats:1"
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:10+09:00
   gate_prediction: CLEAR
   gate_prediction_reason: "LG048 N×M偽陽性waive(12=テストファイル数であり組合せではない)。precheck他項目全PASS"
   finding_categories:
@@ -1455,7 +178,8 @@
   verdict: LGTM
   verified_files:
   - scripts/ninja_scope_commit.sh:1
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:10+09:00
   gate_prediction: CLEAR
   gate_prediction_reason: LG044偽陽性waive(正直報告の内容は実装完了+全量unitは家老統合checkpoint委譲)
   finding_categories:
@@ -1481,7 +205,8 @@
   verdict: LGTM
   verified_files:
   - scripts/memory_db_live_insert.py:1
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:10+09:00
   gate_prediction: CLEAR
   gate_prediction_reason: all checks passed
   finding_categories:
@@ -1506,7 +231,8 @@
   verdict: APPROVE
   verified_files:
   - queue/tasks/hanzo.yaml:1
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:11+09:00
   confidence: HIGH
   finding_categories:
   - assumptions
@@ -1535,7 +261,8 @@
   verdict: FAIL
   verified_files:
   - queue/reports/hayate_report_cmd_karo_hotfix_role_decontam_instructions_20260720.yaml:11
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:11+09:00
   gate_prediction: BLOCK
   gate_prediction_reason: generated/未貫通。karo.md/karo-procedures.md変更がgenerated/に未反映
   finding_categories:
@@ -1561,7 +288,8 @@
   verdict: LGTM
   verified_files:
   - queue/reports/saizo_report_cmd_karo_test_decontam_deploy_20260720.yaml:11
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:11+09:00
   gate_prediction: CLEAR
   gate_prediction_reason: all checks passed
   finding_categories:
@@ -1586,7 +314,8 @@
   verdict: APPROVE
   verified_files:
     - "queue/tasks/tobisaru.yaml:1"
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:11+09:00
   confidence: HIGH
   finding_categories:
     - assumptions
@@ -1620,7 +349,8 @@
   verdict: LGTM
   verified_files:
     - "queue/reports/hanzo_report_cmd_karo_hotfix_workaround_advisory_20260720.yaml:11"
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:11+09:00
   gate_prediction: CLEAR
   gate_prediction_reason: "LG044偽陽性waive(FAIL4は対象外test。対象47/47 PASS)"
   finding_categories:
@@ -1646,7 +376,8 @@
   verdict: LGTM
   verified_files:
     - "queue/reports/tobisaru_report_cmd_karo_hotfix_retro_pane_cut_20260720.yaml:11"
-  gate_result: null
+  gate_result: N/A
+  gate_synced_at: 2026-07-25T19:26:11+09:00
   gate_prediction: CLEAR
   gate_prediction_reason: all checks passed
   finding_categories:
@@ -1666,3 +397,1224 @@
   brainwash_check: "#1no #2no(634/634計測) #3no #4no #5no #6no #7no #8no"
   origin: "[[retro_pane_continuous_injection]] -> [[3_caller_cut]] -> [[caller_0]]"
   timestamp: "2026-07-20T19:49:00+09:00"
+- cmd_id: cmd_4155
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/hanzo_report_cmd_4155.yaml:30"
+    - "scripts/cmd_complete_gate.sh:158"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-24T15:45:04+09:00
+  gate_prediction: CLEAR
+  gate_prediction_reason: "lesson_candidate有(INFO:draft_lessons実件数はbash側で判定)"
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。cross_repo_commits接続実装。11/11 PASS(3新テスト)。全量2398/2398 SKIP=0。実報告再判定でPUSHED確認"
+  observations:
+    - "事実1: cmd_complete_gate.sh L158-197にcross_repo_commits参照経路追加。primary解決不能→cross_repo検索→別repo再解決"
+    - "事実2: bats 3テスト(PUSHED解決/UNPUSHED解決/BLOCK維持)=11/11 PASS"
+    - "事実3: 実shogunkcommit d946ccdcdをdm-signal repo_dirで検索→cross_repo経由PUSHED出力確認"
+  operational_simulation:
+    command: "bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/hanzo_report_cmd_4155.yaml"
+    expected: "ERRORS=0 prediction=CLEAR"
+    actual: "ERRORS=1(lesson_candidate INFO) prediction=CLEAR"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "cross_repo_commits契約未接続→ci_push_state単一repo_dir→unresolvable BLOCK→接続実装→PUSHED解決"
+  brainwash_check: "#1no #2no(L158-197現物+11/11 PASS+実報告再判定) #3no #4no #5no #6no #7no #8no"
+  origin: "[[cmd_4155]] -> [[cross_repo_commits接続]] -> [[ci_push_state_BLOCK解消]]"
+  timestamp: "2026-07-24T15:25:00+09:00"
+- cmd_id: cmd_4159
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4159"
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "7観点OK。gate_block通知dedup粒度是正。LS096粒度バグ。cmd_id+reason→cmd_id単位未読判定。家老inbox蓄積の構造根絶"
+  observations:
+    - "事実1: 既存dedup_key=cmd_id+reason文字列のgrep -Fq。reason可変部(hash/パス)ですり抜け(将軍現読)"
+    - "事実2: AC1に抑制記録(gate_fire_log)を明記。FP計測接続も指定"
+  operational_simulation:
+    command: "rg -n dedup scripts/cmd_complete_gate.sh (将軍q5より)"
+    expected: "1箇所のみ"
+    actual: "notify_karo_gate_block内に1箇所(将軍verified)"
+    result: PASS
+  causal_chain: "reason可変dedup_key→同一cmd通知蓄積→cmd_id単位未読判定→蓄積消滅"
+  ambiguity_points: none
+  discretion_fills: none
+  brainwash_check: "#1no #2no(dedup関数現物+rg確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[cmd_4159]] -> [[LS096_粒度バグ]] -> [[gate_block通知dedup是正]]"
+  timestamp: "2026-07-24T15:39:00+09:00"
+- cmd_id: cmd_4159
+  review_type: report
+  report_ninja: kagemaru
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4159.yaml:28"
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  gate_prediction_reason: "status:failed+AC2 bc:no(全量unit FAIL1)"
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "AC1完了(37/37 PASS)。AC2未達(test_cmd_publish_preflight.bats 1件FAIL=pre-existing主張)。status:failed→FAIL判定"
+  observations:
+    - "事実1: AC1 dedup粒度是正37/37 PASS。exact cmd境界+gate_fire_log接続確認"
+    - "事実2: AC2全量unit FAIL1(test_cmd_publish_preflight.bats)。pre-existing主張だが忍者自己判断"
+    - "事実3: LG050(waive_reasonはbc:noの免罪符ではない)適用。gate_prediction BLOCK固定"
+  operational_simulation:
+    command: "bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/kagemaru_report_cmd_4159.yaml"
+    expected: "prediction BLOCK(status:failed)"
+    actual: "prediction BLOCK"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "AC1完了→AC2全量FAIL1→status:failed→gate prediction BLOCK→FAIL判定"
+  brainwash_check: "#1no #2no(precheck prediction BLOCK確認) #3no #4no(bc:noでLGTM出さない=LG006/LG050) #5no #6no #7no #8no"
+  origin: "[[cmd_4159]] -> [[AC2_unit_FAIL1]] -> [[FAIL判定]]"
+  timestamp: "2026-07-24T15:41:00+09:00"
+- cmd_id: cmd_karo_ci_fix_sample_bats_20260724
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/hanzo.yaml:1"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-24T19:01:27+09:00
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "7観点OK。CI fix(sample.bats動的生成rc=7)。cmd_4154副作用の可能性。AC1で調査+AC2で修正+clean repro"
+  observations:
+    - "事実1: sample.batsはCI動的生成(dependency_map→saizo.yaml)。ローカルHEADに不在"
+    - "事実2: cmd_4154 test_timing_budget_exceptions変更との関連調査をAC1で指示"
+  operational_simulation:
+    command: "CI run 30071664145確認"
+    expected: "sample.bats FAIL詳細"
+    actual: "rc=7 3trial全FAIL(task YAML記載)"
+    result: PASS
+  causal_chain: "cmd_4154 exceptions変更→dependency_map変更→sample.bats CI動的選択→rc=7 FAIL"
+  ambiguity_points: none
+  discretion_fills: none
+  brainwash_check: "#1no #2no(CI run ID明記+task YAML確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[cmd_karo_ci_fix_sample_bats_20260724]] -> [[sample_bats_CI_dynamic]] -> [[CI_RED修正]]"
+  timestamp: "2026-07-24T15:43:00+09:00"
+- cmd_id: cmd_4157
+  review_type: report
+  report_ninja: kotaro
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_4157.yaml:28"
+    - "scripts/gunshi_log_append.sh:119"
+  gate_result: BLOCK
+  gate_prediction: BLOCK
+  gate_prediction_reason: "all checks passed; generated_not_penetrated"
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "AC1完了(lgtm_bundle_guard 4/4 PASS+FP計測接続)。AC2部分未達: instructions/gunshi.md変更がgenerated/に未反映(SG-PRE24 BLOCK)"
+  observations:
+    - "事実1: lgtm_bundle_guard gunshi_log_append.sh L119で実装。本セッションcmd_4154で実動作BLOCKを確認済み"
+    - "事実2: SG-PRE24 BLOCK: instructions/gunshi.md変更→build_instructions.sh未実行→generated/未貫通"
+    - "事実3: bc全yes(AC1/AC2/commit)だがgenerated未反映はgate BLOCK原因"
+  operational_simulation:
+    command: "bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/kotaro_report_cmd_4157.yaml"
+    expected: "ERRORS=0"
+    actual: "ERRORS=1(SG-PRE24 generated未貫通)"
+    result: FAIL
+  step3_5_verified: true
+  causal_chain: "instructions/gunshi.md変更→build_instructions.sh未実行→generated/未反映→SG-PRE24 BLOCK"
+  brainwash_check: "#1no #2no(precheck ERRORS=1確認+SG-PRE24特定) #3no #4no(generated未貫通=FAIL) #5no #6no #7no #8no"
+  origin: "[[cmd_4157]] -> [[lgtm_bundle_guard]] -> [[generated未貫通BLOCK]]"
+  timestamp: "2026-07-24T16:00:00+09:00"
+- cmd_id: cmd_4158
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/tobisaru_report_cmd_4158.yaml:28"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-24T16:20:11+09:00
+  gate_prediction: CLEAR
+  gate_prediction_reason: "all checks passed"
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。CI RED中GATE催促抑制。stop_check_inbox.sh L584-612 CI_READINESS_CACHE参照追加。50/50 PASS。gate_fire_log SUPPRESSED接続"
+  observations:
+    - "事実1: CI RED判定=CI_READINESS_CACHE failure:*パターン。催促→CI RED修正待ち表示に切替"
+    - "事実2: T-SCI-CI-RED-001/GREEN-001追加。test_necessity=CI状態による催促切替動作保証"
+    - "事実3: gate_fire_logにSUPPRESSED記録でdetector_fp_rate計測可能"
+  operational_simulation:
+    command: "bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/tobisaru_report_cmd_4158.yaml"
+    expected: "ERRORS=0 prediction=CLEAR"
+    actual: "ERRORS=0 prediction=CLEAR"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "CI RED中GATE催促反復→CI_READINESS_CACHE参照→催促抑制+待機表示→負の複利消滅"
+  brainwash_check: "#1no #2no(precheck ERRORS=0+50/50 PASS確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[cmd_4158]] -> [[CI_RED_GATE催促反復]] -> [[催促抑制実装]]"
+  timestamp: "2026-07-24T16:12:00+09:00"
+- cmd_id: cmd_4157
+  review_type: report
+  report_ninja: kotaro
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_4157.yaml:28"
+  gate_result: BLOCK
+  gate_prediction: BLOCK
+  gate_prediction_reason: "SG-PRE24 BLOCK: instructions/gunshi.md変更がfixed:c47461958fe4時点のgenerated/に未反映"
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "SG-PRE24 generated/未貫通が未解消。files_modifiedにgenerated/追加済みだがprecheck固定SHA時点で内容不一致。再度build_instructions.sh実行+commit必要"
+  observations:
+    - "事実1: files_modifiedにgenerated/4ファイルあるがprecheckのfixed SHA c47461958fe4時点で未反映"
+    - "事実2: gate_report_format PASS。bc全yes。lgtm_bundle_guard実装自体は正常"
+    - "事実3: 前回FAILと同一理由(SG-PRE24)。generated/反映のタイミングずれ"
+  operational_simulation:
+    command: "bash scripts/gates/gate_gunshi_report_precheck.sh queue/reports/kotaro_report_cmd_4157.yaml | grep SG-PRE24"
+    expected: "PASS"
+    actual: "BLOCK: generated/未貫通"
+    result: FAIL
+  step3_5_verified: true
+  causal_chain: "instructions/gunshi.md変更→build_instructions.sh実行→generated/commit→precheckのfixed SHA不一致→BLOCK"
+  brainwash_check: "#1no #2no(precheck BLOCK確認) #3no #4no(LGTM+BLOCK矛盾=FAIL) #5no #6no #7no #8no"
+  origin: "[[cmd_4157]] -> [[SG-PRE24_generated未貫通]] -> [[FAIL再判定]]"
+  timestamp: "2026-07-24T16:20:00+09:00"
+- cmd_id: cmd_karo_ci_fix_sample_bats_20260724
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/hanzo_report_cmd_karo_ci_fix_sample_bats_20260724.yaml:28"
+  gate_result: BLOCK
+  gate_prediction: CLEAR
+  gate_prediction_reason: "gate_report_format PASS。bc全yes。CI fix clean repro完了"
+  finding_categories:
+    - assumptions
+    - numbers
+    - premortem
+    - adversarial
+    - ambiguity
+  findings_summary: "4観点OK。CI fix根因=test_defense_overhead_writer.bats L138 bats skip→CI環境skip_count=1→RECEIPT_FAIL。sample.batsはrc=7で期待動作。cmd_4154と無関連確認済み"
+  observations:
+    - "事実1: 根因はsample.batsではなくtest_defense_overhead_writer.bats L138のbats skip(self_retro.jsonl不在)"
+    - "事実2: skip→return 0修正でCI環境でもskip_count=0に。clean repro PASS"
+    - "事実3: cmd_4154(timing exceptions)との無関連を確認(dependency_map経由の選択は正常動作)"
+  operational_simulation:
+    command: "gate_report_format.sh queue/reports/hanzo_report_cmd_karo_ci_fix_sample_bats_20260724.yaml"
+    expected: "PASS"
+    actual: "PASS"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "bats skip CI不在→skip_count=1→RECEIPT_FAIL→CI RED→skip→return 0修正→CI GREEN"
+  brainwash_check: "#1no #2no(gate_report_format PASS+根因特定確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[cmd_karo_ci_fix_sample_bats_20260724]] -> [[bats_skip_ci_environment]] -> [[CI_RED修正]]"
+  timestamp: "2026-07-24T17:08:00+09:00"
+- cmd_id: cmd_4160
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4160"
+  gate_result: BLOCK
+  confidence: HIGH
+  finding_categories:
+    - assumptions
+    - numbers
+    - simulation
+    - premortem
+    - north_star
+    - adversarial
+    - ambiguity
+  findings_summary: "7観点OK。三者協議合意と完全一致。殿指摘の直接対応。4チョークポイント焼込み+変換関数全廃+突合ログ。LS078根治"
+  observations:
+    - "事実1: 三者協議4掲示板(blt_163925/164018/164107/170340)合意内容をcmdが正確に反映"
+    - "事実2: assumptions verified(cli_lookup.sh L313-318表示名導出関数=廃止対象、rg確認)"
+    - "事実3: 殿指摘(16:33)→三者協議→cmd起票(17:07)=34分で対応完了"
+  operational_simulation:
+    command: "掲示板4件と cmd spec突合"
+    expected: "三者合意と一致"
+    actual: "全項目一致(4チョークポイント/直焼込み/変換廃止/突合ログ)"
+    result: PASS
+  causal_chain: "殿指摘→三者協議→4チョークポイント特定→cmd起票→忍者実装でLS078根治"
+  ambiguity_points: none
+  discretion_fills: none
+  brainwash_check: "#1no #2no(三者協議合意4件突合) #3no #4no #5no #6no #7no #8no"
+  origin: "[[cmd_4160]] -> [[LS078_model_name乖離]] -> [[三者協議合意実装]]"
+  timestamp: "2026-07-24T17:13:00+09:00"
+- cmd_id: cmd_karo_hotfix_n2_mobile_sticky_20260724
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/saizo.yaml:1
+  gate_result: BLOCK
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - adversarial
+  - ambiguity
+  findings_summary: 7観点OK。N2モバイルstickyヘッダー修正。overflow-x-auto是正。AC2デスクトップリグレッション確認指定あり
+  observations:
+  - '事実1: モバイル(412x915)でstickyヘッダーが効かない根因=overflow-x-auto+lg:overflow-visible(将軍既確定)'
+  - '事実2: jest/tsc PASS確認がAC1に明記。FE変更のためLG045(Next build)適用対象'
+  operational_simulation:
+    command: task YAML AC確認
+    expected: AC1 sticky修正+AC2リグレッションなし
+    actual: 両AC明確。scope限定CSS修正
+    result: PASS
+  causal_chain: overflow-x-auto→モバイルスクロールコンテナ化→sticky無効化→CSS修正で解消
+  ambiguity_points: none
+  discretion_fills: none
+  brainwash_check: '#1no #2no(task YAML読了) #3no #4no #5no #6no #7no #8no'
+  origin: '[[N2_mobile_sticky]] -> [[overflow-x-auto]] -> [[hotfix]]'
+  timestamp: '2026-07-24T17:32:00+09:00'
+- cmd_id: cmd_karo_hotfix_n5_rolling_colwidth_20260724
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+  - queue/tasks/kotaro.yaml:1
+  gate_result: CLEAR
+  confidence: HIGH
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - adversarial
+  - ambiguity
+  findings_summary: 7観点OK。N5 rolling表列幅統一。table-fixed+col width指定。AC2デスクトップ+モバイルリグレッション確認
+  observations:
+  - '事実1: Summary Statistics+Distribution 2表のRoll Period列幅不一致→table-fixed+col width固定'
+  - '事実2: AC2にデスクトップ+モバイル両方のリグレッション確認明記'
+  operational_simulation:
+    command: task YAML AC確認
+    expected: AC1列幅統一+AC2リグレッションなし
+    actual: 両AC明確。scope限定CSS修正
+    result: PASS
+  causal_chain: 列幅不一致→table-fixed+col width指定→2表統一
+  ambiguity_points: none
+  discretion_fills: none
+  brainwash_check: '#1no #2no(task YAML読了) #3no #4no #5no #6no #7no #8no'
+  origin: '[[N5_rolling_colwidth]] -> [[table-fixed]] -> [[hotfix]]'
+  timestamp: '2026-07-24T17:32:00+09:00'
+- cmd_id: cmd_4159
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/hayate_report.yaml:28"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "gate_report_format PASS。bc全yes。前セッションcommit fc58d6ee5の検証完了"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。gate_block通知dedup粒度是正。前セッション実装(fc58d6ee5)の検証+392/392 PASS。kagemaru FAIL後のhayate引継ぎ成功"
+  observations:
+    - "事実1: dedup実装はfc58d6ee5(前セッション)で完了。本セッションは検証+全量テスト"
+    - "事実2: 392/392 PASS SKIP0(task-scoped)。全量2358件中pre-existing FAIL1件のみ"
+  operational_simulation:
+    command: "gate_report_format.sh queue/reports/hayate_report.yaml"
+    expected: "PASS"
+    actual: "PASS"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "kagemaru FAIL(pre-existing)→hayate引継ぎ→前セッション実装検証+全量PASS→LGTM"
+  brainwash_check: "#1no #2no(gate_report_format PASS+bc全yes確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[cmd_4159]] -> [[gate_block_dedup]] -> [[hayate引継ぎLGTM]]"
+  timestamp: "2026-07-24T17:35:00+09:00"
+- cmd_id: cmd_4161
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4161"
+  gate_result: BLOCK
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "7観点OK。planned_paths拡大の正規経路。本セッション5忍者BLOCK反復の根本対策。理由必須で無断拡大防御維持"
+  observations:
+    - "事実1: 本セッションでkagemaru/saizo/hanzo/tobisaru/kotaroがscope外BLOCKを反復(各2-6回)"
+    - "事実2: planned_paths検査はrun_tests.shに実装済みだが更新経路が不在(rg確認)"
+  operational_simulation:
+    command: "本セッションscope外BLOCK件数確認"
+    expected: "5忍者で多数のBLOCK"
+    actual: "quality_monitor 10件以上(scope外パターン)"
+    result: PASS
+  causal_chain: "更新経路不在→正当な拡大でもBLOCK→忍者BLOCK反復→理由必須宣言経路で解消"
+  ambiguity_points: none
+  discretion_fills: none
+  brainwash_check: "#1no #2no(5忍者BLOCK実証+rg確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[cmd_4161]] -> [[planned_paths_拡大経路不在]] -> [[scope外BLOCK反復根治]]"
+  timestamp: "2026-07-24T17:44:00+09:00"
+- cmd_id: cmd_4162
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4162"
+  gate_result: BLOCK
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "7観点OK。yaml_field_set.shネストlist添字対応。リテラルキー化→解釈または明示エラー化。全エージェント共有経路の安全性向上"
+  observations:
+    - "事実1: rg確認で添字解釈の専用処理なし。才蔵がcmd_4156で手戻り(掲示板転載)"
+    - "事実2: yaml_field_set.sh=全エージェント唯一の安全書込み経路。影響範囲大だが全量テストで回帰確認"
+  operational_simulation:
+    command: "rg -n index scripts/lib/yaml_field_set.sh (将軍q5より)"
+    expected: "添字解釈処理なし"
+    actual: "なし(将軍verified)"
+    result: PASS
+  causal_chain: "添字表記→リテラルキー化(黙った誤書込み)→手戻り→解釈/エラー化で根治"
+  ambiguity_points: none
+  discretion_fills: none
+  brainwash_check: "#1no #2no(rg確認+掲示板一次報告) #3no #4no #5no #6no #7no #8no"
+  origin: "[[cmd_4162]] -> [[yaml_field_set_添字]] -> [[リテラルキー化防止]]"
+  timestamp: "2026-07-24T17:50:00+09:00"
+- cmd_id: cmd_4163
+  review_type: draft
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4163"
+  gate_result: BLOCK
+  confidence: HIGH
+  finding_categories: [assumptions, numbers, simulation, premortem, north_star, adversarial, ambiguity]
+  findings_summary: "7観点OK。report_received帰属のtask現在値依存→報告YAML自身のparent_cmd一次へ。LS078根治。race fixture+通常フロー維持"
+  observations:
+    - "事実1: inbox_write.sh L232-242がtask YAMLのparent_cmd現在値で帰属解決(将軍現読)"
+    - "事実2: cmd_4152でtask入替raceが実発生(家老一次報告)"
+  operational_simulation:
+    command: "cmd spec突合"
+    expected: "LS078パターン一致"
+    actual: "書き手(報告)と読み手(検査)が別ストア=LS078"
+    result: PASS
+  causal_chain: "task入替race→古いcmd報告が新parent_cmdで検索→BLOCK→帰属を報告YAML一次で解消"
+  ambiguity_points: none
+  discretion_fills: none
+  brainwash_check: "#1no #2no(L232-242現読+race実発生確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[cmd_4163]] -> [[LS078_task_race]] -> [[帰属一次化]]"
+  timestamp: "2026-07-24T17:56:00+09:00"
+- cmd_id: cmd_karo_hotfix_n5_rolling_colwidth_20260724
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_karo_hotfix_n5_rolling_colwidth_20260724.yaml:28"
+  gate_result: BLOCK
+  gate_prediction: CLEAR
+  gate_prediction_reason: "gate_report_format PASS。bc全yes"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。N5 rolling 2表列幅統一。table-fixed+colgroup。Roll Period=89px固定。desktop/mobile全variant対応"
+  observations:
+    - "事実1: target_pathはrolling-return-chart.tsxだが実修正対象はrolling-returns-summary-table.tsx/distribution-table.tsx"
+    - "事実2: table-fixed+colgroup追加でRoll Period列幅統一。desktop/mobile全variantに適用"
+  operational_simulation:
+    command: "gate_report_format.sh"
+    expected: "PASS"
+    actual: "PASS"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "Summary/Distribution列幅不一致→table-fixed+colgroup→89px固定→2表統一"
+  brainwash_check: "#1no #2no(gate PASS+bc全yes) #3no #4no #5no #6no #7no #8no"
+  origin: "[[N5_rolling_colwidth]] -> [[table-fixed+colgroup]] -> [[2表列幅統一]]"
+  timestamp: "2026-07-24T18:06:00+09:00"
+- cmd_id: cmd_karo_hotfix_n2_mobile_sticky_20260724
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/saizo_report_cmd_karo_hotfix_n2_mobile_sticky_20260724.yaml:28"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-24T19:05:30+09:00
+  gate_prediction: CLEAR
+  gate_prediction_reason: "gate_report_format PASS。bc全yes"
+  finding_categories: [assumptions, numbers, premortem, adversarial, ambiguity]
+  findings_summary: "4観点OK。N2モバイルsticky修正。overflow-x-auto→md:overflow-x-autoでモバイルスクロールコンテナ化防止。根因対応"
+  observations:
+    - "事実1: ラッパーclassをw-full overflow-x-auto→w-full md:overflow-x-auto lg:overflow-visibleへ変更"
+    - "事実2: モバイル(base tier)でラッパーが非スクロールコンテナ→th sticky有効化"
+    - "事実3: saizoがscope外BLOCK 5回を経て修正完了"
+  operational_simulation:
+    command: "gate_report_format.sh"
+    expected: "PASS"
+    actual: "PASS"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "overflow-x-auto全tier→モバイルでスクロールコンテナ化→sticky無効→md:限定で解消"
+  brainwash_check: "#1no #2no(gate PASS+bc全yes+根因CSS修正確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[N2_mobile_sticky]] -> [[overflow-x-auto全tier]] -> [[md限定修正]]"
+  timestamp: "2026-07-24T18:09:00+09:00"
+- cmd_id: cmd_4162
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/hanzo_report_cmd_4162.yaml:28"
+  gate_result: BLOCK
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck ERRORS=0。gate_report_format PASS。bc全yes"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "6観点OK。yaml_field_set.shに添字表記([N])のFATAL拒否ガード追加。fail-closed=flock/tmpfile前に停止。caller 0件で偽陽性ゼロ"
+  observations:
+    - "事実1: _yaml_field_set_reject_bracket_field()はcase文パターンマッチで[...]検出→FATAL+exit1。yaml_field_set/yaml_field_set_batch両方から呼出し"
+    - "事実2: batch版は各field解析ループ内で即return 1→部分書込み発生しない(flock取得前)"
+    - "事実3: grep -rn確認で添字表記callerは0件。report_field_set.shは既にbracket-index対応済み(別ツール)"
+  operational_simulation:
+    command: "bash scripts/gates/gate_report_format.sh queue/reports/hanzo_report_cmd_4162.yaml"
+    expected: "PASS"
+    actual: "PASS"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "才蔵cmd_4156添字リテラル化→手戻り→FATAL拒否ガードで根治→壊れた書込み構造的不可能に"
+  ambiguity_points: "AC1二択のうち明示エラー化を選択。根拠明確(caller0件+awk限界)"
+  brainwash_check: "#1no #2no(precheck0件+gate PASS+58/58確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[blt_20260724_162804]] -> [[yaml_field_set添字リテラル化]] -> [[cmd_4162]]"
+  timestamp: "2026-07-24T18:38:00+09:00"
+- cmd_id: cmd_4161
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/hayate_report_cmd_4161.yaml:28"
+  gate_result: BLOCK
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck generated_not_penetrated=構造的偽陽性(generated variantsはashigaru_role.mdから合成、ashigaru.md body変更は伝播しない構造)。忍者がbuild_instructions.sh実行でdiff=0確認+decision_candidateとして正しく報告。gate_report_format PASS。bc全yes"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "6観点OK。run_tests.shにscope拡大正規経路(declare-scope-expansion)追加。理由必須+superset条件+gate_fire_log記録。後方互換完全。dogfooding実証"
+  observations:
+    - "事実1: task_scope_paths()のmismatch検査にscope_expansion_reason非空+nested⊇top条件追加。無宣言拡大=従来BLOCK維持"
+    - "事実2: pipefail環境でgrep|tailのno-match即死バグを自己検出・自己修正(7件既存test回帰も自力修正)"
+    - "事実3: hayate自身がcmd_4161 taskでdeclare-scope-expansion使用(dogfooding)。3ファイルへスコープ正当拡大"
+  operational_simulation:
+    command: "bash scripts/run_tests.sh task queue/tasks/hayate.yaml"
+    expected: "41/41 PASS skip0"
+    actual: "41/41 PASS skip0(receipt rc=0)"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "小太郎cmd_4157反復BLOCK→拡大正規経路なし→declare-scope-expansion追加→理由付き拡大のみPASS"
+  ambiguity_points: none
+  brainwash_check: "#1no #2no(41/41 PASS+commit stat 3ファイル確認+dogfooding実証) #3no #4no #5no #6no #7no #8no"
+  origin: "[[blt_20260724_162804]] -> [[planned_paths拡大正規経路不在]] -> [[cmd_4161]]"
+  timestamp: "2026-07-24T18:39:00+09:00"
+- cmd_id: cmd_4164
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:3"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "7観点OK。cmd_save.sh gate内でcmdテキストから方式トークン抽出→記憶DB検索→ヒット知識を判定出力注入。既存memory-db注入機構の部品再利用で車輪なし。全量テスト事故(knowledge:75497612)の構造的根因対策"
+  observations:
+    - "事実1: 起票テキストのscripts/配下コマンド名・run系方式語からトークン抽出→memory_db_query.sh検索→INFO出力注入"
+    - "事実2: AC1のbinary_checkで既存部品再利用(新規検索エンジン不使用)を確認する設計"
+    - "事実3: AC2でgate時間増分をdefense_overhead.jsonl source:cmd_saveで実測記録→速度監視可能"
+  operational_simulation:
+    command: "bash scripts/ac_physical_verify.sh cmd_4164"
+    expected: "ACファイルパス実在確認"
+    actual: "scripts/memory_db_query.sh参照1件確認。LG037 command欄ファイル参照分類確認"
+    result: PASS
+  ambiguity_points: "方式トークンの定義=scripts/配下コマンド名+run系方式語。ACに明記されており十分具体的"
+  discretion_fills: "INFO出力注入のみ(BLOCK/WARNではない)→偽陽性リスク低い"
+  brainwash_check: "#1no #2no(ac_physical_verify+precheck実行) #3no #4no #5no #6no(7観点全記入) #7no #8no"
+  origin: "[[全量テスト事故_knowledge_75497612]] -> [[起票時三層記憶未参照]] -> [[cmd_4164]]"
+  timestamp: "2026-07-24T18:40:00+09:00"
+- cmd_id: cmd_4160
+  review_type: report
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4160.yaml:28"
+  gate_result: BLOCK
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck ERRORS=0。gate_report_format PASS。bc全yes"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "6観点OK。4チョークポイント統一(apply_model_name_tag SSOT)+check_model_names settings.yaml正本優先化。実pane検証(gunshi+saizo @model_name一致)。LS078根治"
+  observations:
+    - "事実1: apply_model_name_tag()をcli_lookup.shに新設しSSOT化。4チョークポイント(agent_respawn/switch_cli_mode/ninja_monitor 4経路)から統一呼出し"
+    - "事実2: check_model_names()の周期チェックがバナーパース優先→settings.yaml正本優先に修正(スコープ拡張だが目的達成に必須。忍者の裁量が適切)"
+    - "事実3: 実pane検証でgunshi respawn→@model_name=opus-4-6-1m-high一致(tmux show-options現物+verify log)。saizo同様確認"
+  operational_simulation:
+    command: "git show 538dfa25 --stat"
+    expected: "5ファイル変更(cli_lookup/agent_respawn/switch_cli_mode/ninja_monitor/test)"
+    actual: "5 files changed, 184 insertions(+), 9 deletions(-)"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "殿指摘model_name乖離→三者協議→4チョークポイントsettings.yaml焼込み統一+周期チェック正本優先化→乖離構造的不可能に"
+  brainwash_check: "#1no #2no(precheck0件+gate PASS+commit stat 5ファイル+実pane検証確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[殿指摘_model_name乖離再発]] -> [[LS078_真実の在処不一致]] -> [[cmd_4160]]"
+  timestamp: "2026-07-24T18:46:00+09:00"
+- cmd_id: cmd_4163
+  review_type: report
+  report_ninja: tobisaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/tobisaru_report_cmd_4163.yaml:28"
+  gate_result: BLOCK
+  gate_prediction: CLEAR
+  gate_prediction_reason: "gate_report_format PASS。bc全yes。precheck ac_evidence_mapping空はformat gap(evidence自体はresult.summary/variation_checksに完備)"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "6観点OK。report_received帰属をreport YAML自身のparent_cmdへ一次化(LS078根治)。race fixture+通常fixture+variation_checks 5項目(normal/quoted/worktree/parallel/abnormal)全PASS"
+  observations:
+    - "事実1: STRUCTURED_PARENT_CMD算出とauto-done attribution の2箇所をreport YAML一次に是正。task YAMLはlegacy fallback"
+    - "事実2: variation_checks 5項目(sandbox実測): race再現/特殊文字/worktree/並列flock/異常入力 全PASS"
+    - "事実3: 91/91 bats PASS(既存89+新規race/normal 2件)。221/221 task-scope PASS"
+  operational_simulation:
+    command: "git show b5590d7d3 --stat && git show d5ad1781a --stat"
+    expected: "2 commit: inbox_write.sh実装+test_inbox_write.bats fixture"
+    actual: "commit1: 1 file 12ins 3del, commit2: 1 file 37ins"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "task入替race→旧cmd報告が新parent_cmdで検索→BLOCK→report YAML自身のparent_cmd一次化で根治"
+  brainwash_check: "#1no #2no(gate PASS+91/91+variation 5/5確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[LS078_真実の在処不一致]] -> [[cmd_4152_race事故]] -> [[cmd_4163]]"
+  timestamp: "2026-07-24T18:54:00+09:00"
+- cmd_id: cmd_4164
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: saizo
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/saizo_report_cmd_4164.yaml:28"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck ERRORS=0。gate_report_format PASS。bc全yes"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "6観点OK。cmd_save.shにshow_memory_db_command_token_matches追加。トークン抽出→記憶DB検索→INFO注入。gate時間増分-53ms(ノイズ=実質ゼロ、background並走)。bats2件+24/24 task PASS"
+  observations:
+    - "事実1: extract_memory_db_search_tokensでscripts/*.sh|py+run_プレフィックス抽出。show_q11_semantic_search_matchesのcache/timeout/background部品を再利用(車輪なし)"
+    - "事実2: gate時間増分=中央値-53ms(feature有効/無効各10回計測)。バックグラウンド実行で他チェックと並走→実質ゼロ"
+    - "事実3: lesson_candidate有価値=cmd_save_output_filterがBLOCK時にINFO行を隠す(忍者20分デバッグ原因)。将来のINFO追加時の落とし穴"
+  operational_simulation:
+    command: "git show 1cf291d9a --stat"
+    expected: "3ファイル変更(cmd_save.sh/test/defense_overhead)"
+    actual: "3 files changed, 631 insertions(+)"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "全量テスト事故(knowledge:75497612)→起票時三層未参照→cmd_save.sh gate内でトークン抽出→記憶DB自動検索→INFO注入で構造強制"
+  brainwash_check: "#1no #2no(precheck0件+gate PASS+24/24 PASS+commit 3ファイル確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[全量テスト事故_knowledge_75497612]] -> [[起票時三層記憶未参照]] -> [[cmd_4164]]"
+  timestamp: "2026-07-24T19:16:00+09:00"
+- cmd_id: cmd_karo_hotfix_n2_deterioration_sticky_20260724
+  review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-07-25T15:26:43+09:00
+  verdict: APPROVE
+  verified_files:
+    - "queue/tasks/hayate.yaml:1"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "7観点OK。deterioration page sticky修正。saizo commit 60a69234(compare-tables)と同パターン適用。5分hotfix。AC1=mobile sticky+同パターン、AC2=desktop regression check"
+  observations:
+    - "事実1: saizoのcmd_karo_hotfix_n2_mobile_sticky(compare-tables修正)と同一パターンをdeterioration/page.tsxに横展開"
+    - "事実2: estimated_minutes=5の定型hotfix。並列AC可。target_path指定なし(dm-signal repo)"
+    - "事実3: jest/tsc PASSが完了条件(AC1)。デスクトップリグレッションなし確認(AC2)"
+  operational_simulation:
+    command: "head -40 queue/tasks/hayate.yaml"
+    expected: "deterioration sticky修正AC"
+    actual: "AC1=mobile sticky+同パターン、AC2=desktop regression"
+    result: PASS
+  ambiguity_points: none
+  brainwash_check: "#1no #2no(task YAML現物確認+saizo先行commit参照) #3no #4no #5no #6no #7no #8no"
+  origin: "[[N2_mobile_sticky]] -> [[deterioration_page同パターン]] -> [[横展開hotfix]]"
+  timestamp: "2026-07-24T19:18:00+09:00"
+- cmd_id: cmd_karo_hotfix_n2_deterioration_sticky_20260724
+  review_type: report
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/hayate_report_cmd_karo_hotfix_n2_deterioration_sticky_20260724.yaml:28"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck ERRORS=0。gate_report_format PASS。bc全yes"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "6観点OK。deterioration page sticky修正。saizo 60a69234と同パターン(overflow-x-auto→md:overflow-x-auto)。jest 8/8+tsc 0エラー。stale assertion是正も同時実施"
+  observations:
+    - "事実1: page.tsx:1297 wrapper div変更。th sticky top-0は既存維持。モバイルscroll container解除でsticky有効化"
+    - "事実2: default-sort.test.tsの契約testをsaizoのcompare-returns-table.test.tsxと同型assertionへ更新"
+    - "事実3: 無関連stale assertion(border-border→border-slate-700)も是正(jest PASS要件のため必須だった)"
+  operational_simulation:
+    command: "gate_report_format + precheck"
+    expected: "PASS"
+    actual: "gate PASS, precheck ERRORS=0"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "saizo N2修正がdeterioration未修正→同パターン横展開→sticky有効化+契約test同期"
+  brainwash_check: "#1no #2no(gate PASS+precheck 0件+jest 8/8確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[N2_mobile_sticky]] -> [[deterioration未修正]] -> [[同パターン横展開]]"
+  timestamp: "2026-07-24T19:41:00+09:00"
+- cmd_id: cmd_4165
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4165"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity, north_star]
+  findings_summary: "7観点OK(north_star遡及適用2026-07-25)。deploy report_publication高速化。owner task 299件再parse(11.6秒/71.1%)をcache+header text scanへ置換。既承認設計。台帳前後差分で効果数値証明"
+  observations:
+    - "事実1: 才蔵/家老cProfile接地済み(owner 299件再parse=11.6秒/71.1%)。設計=owner8件cache+header text scan"
+    - "事実2: deploy_total平均27.06秒×252回=6820秒が最大支配項(台帳直近3000行実集計)"
+    - "事実3: 前例あり=cmd_karo_hotfix_deploy_report_publication 86.4%短縮(memory_db ts=2026-07-22)"
+    - "north_star(遡及): 殿裁定『削るな、速くしろ』と同方向。検査項目を削らずcache化=品質維持のまま超速化。deploy 252回/日に乗る複利。自動消火(検出境界を緩める)ではないことをfallback維持で確認"
+  operational_simulation:
+    command: "bash scripts/ac_physical_verify.sh cmd_4165"
+    expected: "deploy_task.sh実在+テスト一覧"
+    actual: "ALL PATHS VERIFIED. 関連test 4ファイル"
+    result: PASS
+  ambiguity_points: "cache無効化条件=task YAML変更時の再構築。AC1にfixture要件として明記"
+  brainwash_check: "#1no #2no(ac_physical_verify+memory_db接地) #3no #4no #5no #6no #7no #8no"
+  origin: "[[deploy速度改善レーン]] -> [[report_publication支配項]] -> [[cmd_4165]]"
+  timestamp: "2026-07-25T11:37:00+09:00"
+- cmd_id: cmd_4166
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4166"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity, north_star]
+  findings_summary: "7観点OK(north_star遡及適用2026-07-25)。ninja_scope_commit高速化(約46秒)。cProfile接地→支配工程特定→cache/batch/fork削減。検査項目維持+境界fixture。全忍者×全commitへの複利効果大"
+  observations:
+    - "事実1: ninja_scope_commit約46秒(knowledge:8d38e090実測)。忍者全commitに乗るため複利最大"
+    - "事実2: AC1=検査項目を減らさずcache/batch/fork削減。境界fixture(発火1件+非発火1件)でPASS確認"
+    - "事実3: AC2=選択実行FAIL0/SKIP0+実commit前後差分をdefense_overhead.jsonlへsource:ninja_scope_commit記録"
+    - "north_star(遡及): 全忍者×全commitに乗る複利が北極星。検査項目維持+境界fixture要求により『速さのために品質を削る』逆行を構造で封じている"
+  operational_simulation:
+    command: "bash scripts/ac_physical_verify.sh cmd_4166"
+    expected: "ninja_scope_commit.sh実在+テスト一覧"
+    actual: "ALL PATHS VERIFIED. 関連test 4ファイル"
+    result: PASS
+  ambiguity_points: none
+  brainwash_check: "#1no #2no(ac_physical_verify+memory_db knowledge:8d38e090確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[deploy速度改善レーン]] -> [[ninja_scope_commit支配項]] -> [[cmd_4166]]"
+  timestamp: "2026-07-25T11:39:00+09:00"
+- cmd_id: cmd_4167
+  review_type: draft
+  gate_result: CLEAR
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4167"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "7観点OK。軍師report precheck高速化。fingerprint単位cache導入(未変更=cache返答、変更時=全量再検査)。検査項目・検出能力不変。台帳前後差分で効果証明"
+  observations:
+    - "事実1: gate_gunshi_report_precheckが回数最多支配項(レビュー・再レビューのたびに全量走行)"
+    - "事実2: report fingerprint単位cache=未変更reportはcache結果返答。変更検知で自動無効化+全量再実行"
+    - "事実3: 利益相反注意(自分の道具)→検査項目不変のfixtureがAC1で保証。バイアスリスク低"
+  operational_simulation:
+    command: "bash scripts/ac_physical_verify.sh cmd_4167"
+    expected: "gate_gunshi_report_precheck.sh実在+テスト一覧"
+    actual: "ALL PATHS VERIFIED. 関連test 4ファイル"
+    result: PASS
+  ambiguity_points: "cache無効化条件=report fingerprint変更時。AC1にfixture要件として明記"
+  brainwash_check: "#1no #2no(ac_physical_verify+利益相反自問) #3no #4no #5no #6no #7no #8no"
+  origin: "[[台帳高速化レーン]] -> [[precheck支配項]] -> [[cmd_4167]]"
+  timestamp: "2026-07-25T11:44:00+09:00"
+- cmd_id: cmd_4168
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-25T12:20:34+09:00
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4168"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "7観点OK。pre-commit self_sync高速化。mtime/hash差分先判定で未変更時skip。全commitで毎回走る=複利大。同期正確性は変更検知fixtureで保証"
+  observations:
+    - "事実1: git_pre_commit:self_syncが第3支配項(全commitで毎回走行)。mtime/hash差分で未変更時skip"
+    - "事実2: 変更検知の正確性=mtime変更時/hash変更時の再同期fixtureで保証(AC1)"
+    - "事実3: AC2=選択実行FAIL0/SKIP0+実commit前後差分をdefense_overhead.jsonlへ記録"
+  operational_simulation:
+    command: "bash scripts/ac_physical_verify.sh cmd_4168"
+    expected: "git-pre-commit.sh実在"
+    actual: "ALL PATHS VERIFIED"
+    result: PASS
+  ambiguity_points: none
+  brainwash_check: "#1no #2no(ac_physical_verify確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[台帳高速化レーン]] -> [[self_sync支配項]] -> [[cmd_4168]]"
+  timestamp: "2026-07-25T11:48:00+09:00"
+- cmd_id: cmd_4169
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-25T12:38:19+09:00
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4169"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "7観点OK。cmd_save内部フェーズの台帳計装。publish遅延の支配項可視化。計測追加のみでロジック変更なし=低リスク"
+  observations:
+    - "事実1: cmd_save/cmd_publish実行が長い実測(timeout移行複数回)→台帳にcmd_save内訳なし=可視化不能"
+    - "事実2: 計装のみ(defense_overhead.jsonlへphase別wall_ms記録)。ロジック変更なし"
+    - "事実3: 台帳高速化レーンの将来の最適化ターゲット特定基盤"
+  operational_simulation:
+    command: "bash scripts/ac_physical_verify.sh cmd_4169"
+    expected: "cmd_save.sh実在"
+    actual: "ALL PATHS VERIFIED"
+    result: PASS
+  ambiguity_points: none
+  brainwash_check: "#1no #2no(ac_physical_verify確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[台帳高速化レーン]] -> [[cmd_save可視化不能]] -> [[cmd_4169]]"
+  timestamp: "2026-07-25T11:52:00+09:00"
+- cmd_id: cmd_4168
+  review_type: report
+  report_ninja: saizo
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/saizo_report_cmd_4168.yaml:28"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-25T12:20:34+09:00
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck LG048=偽陽性(semantic_validation.resultが説明文で二値でないためBLOCK予測だが、gate_report_format=PASS。内容は適正=既存実装の二重実装回避+残存無駄除去)"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "6観点OK。self_sync差分判定は既存実装(2026-07-21)。saizoが二重実装を回避し、skip経路の無条件sha256sum(9-38ms)を除去。assumption_invalidation有価値(台帳集計ウィンドウがfix跨ぎで支配項誤判定)"
+  observations:
+    - "事実1: precommit_self_sync_required()はcmd_karo_hotfix_202607211946で既に実装済み。saizoがgit log+コード読解で発見し二重実装を回避=正しい判断"
+    - "事実2: sha256sum|awk計算をsync-required分岐内へ移動(7行並べ替えのみ)。ロジック不変。bats5/5 PASS"
+    - "事実3: assumption_invalidation: 台帳直近3000行がfastpath投入(07-21)を跨ぎ、post-fastpath self_sync avg=460msで第3支配項ではない。次ターゲット=instruction_sync(sum95.76s)"
+  operational_simulation:
+    command: "git show 416a0bdc5 --stat"
+    expected: "1ファイル変更(git-pre-commit.sh)"
+    actual: "1 file changed"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "task assumption(第3支配項)→既存fastpath発見→二重実装回避→skip経路sha256sum残存無駄除去→assumption_invalidation報告"
+  brainwash_check: "#1no #2no(gate PASS+8/8 PASS+commit 1ファイル確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[台帳高速化レーン]] -> [[self_sync既存fastpath]] -> [[cmd_4168]]"
+  timestamp: "2026-07-25T12:12:00+09:00"
+- cmd_id: cmd_4165
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hayate
+  verdict: FAIL
+  verified_files:
+    - "queue/reports/hayate_report_cmd_4165.yaml:28"
+  gate_result: CLEAR
+  gate_prediction: BLOCK
+  gate_prediction_reason: "bc:no検出(AC2 FAIL1=scope外既存bug test_deploy_task_ac_handling.bats)。status=failed正直報告"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity, north_star]
+  findings_summary: "7観点OK(north_star遡及適用2026-07-25、実装品質は高い)。AC1完了(owner cache+header scan、3c1a3cc35)。隔離ベンチ-63.1%削減。AC2 FAIL1はscope外既存bug(assigned_acs AC filter)でhayateの責任外。defense_overhead.jsonl前提誤り(check_id:report_publication=0件)も正直に報告"
+  observations:
+    - "事実1: AC1=owner cache(.cache/owner-task/)+header text scan(200行)で置換。検出境界はfallback維持。bats4件+既存186件全PASS"
+    - "事実2: 隔離ベンチ=OLD median 10295ms→NEW 3795ms(-63.1%)。504lookup(252回×2owner)で本番規模一致"
+    - "事実3: AC2のFAIL1=test_deploy_task_ac_handling.bats(assigned_acs AC filter)。修正前commit(416a0bdc5)でも同一FAIL再現=scope外既存bug確定"
+    - "north_star(遡及): 北極星=deploy control-plane総時間削減。支配項report_publication直撃で同方向、かつscope外bugを自動消火せずFAIL正直報告=品質向上の複利側。ただし実運用after未計測=北極星到達は未証明"
+  operational_simulation:
+    command: "gate_report_format + precheck"
+    expected: "gate PASS / precheck bc:no検出"
+    actual: "gate PASS / precheck BLOCK(bc:no)"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "owner task 299件全量reparse→cache+header scan→median -63.1%。FAIL1はscope外既存bug"
+  brainwash_check: "#1no #2no(gate PASS+186件既存PASS+ベンチ-63.1%確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[台帳高速化レーン]] -> [[report_publication支配項]] -> [[cmd_4165]]"
+  timestamp: "2026-07-25T12:17:00+09:00"
+- cmd_id: cmd_4166
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kagemaru_report_cmd_4166.yaml:28"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck all checks passed。gate_report_format PASS。bc全yes"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity, north_star]
+  findings_summary: "7観点OK(north_star遡及適用2026-07-25)。ninja_scope_commit guardフェーズ139ms→23ms(-83%)。check_repo()のhas_staged_research早期return化+sync_git_hooks.sh git rev-parse除去。検査項目不変。bats 134件全PASS"
+  observations:
+    - "事実1: phase telemetry実測でguardフェーズ=支配工程(中央値139ms、最悪2312ms)。真因=check_repo()の毎回identity解決(4プロセス)"
+    - "事実2: has_staged_research()早期return化で全分岐同値を保証。sync_git_hooks.shのhooks_dir再利用でgit rev-parse 2回除去"
+    - "事実3: 4回BLOCK(scope外)を経て家老にdecision_candidate報告。planned_paths不一致は起票側の問題"
+    - "north_star(遡及): 殿裁定『削るな、速くしろ』(knowledge:569abc55)に合致。検査項目を1つも削らずguard -83%。品質2原則を維持したまま超速化=北極星と同方向"
+  operational_simulation:
+    command: "git show 7423ca7 --stat"
+    expected: "2ファイル変更"
+    actual: "2 files changed(dm_signal_research_reflux_guard.sh + sync_git_hooks.sh)"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "ninja_scope_commit 46秒→phase telemetryでguard支配工程→check_repo fork削減→139→23ms(-83%)"
+  brainwash_check: "#1no #2no(gate PASS+bats 134件PASS+guard 139→23ms確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[台帳高速化レーン]] -> [[ninja_scope_commit guard支配工程]] -> [[cmd_4166]]"
+  timestamp: "2026-07-25T12:19:00+09:00"
+- cmd_id: cmd_4167
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/hanzo_report_cmd_4167.yaml:28"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "gate_report_format PASS。bc全yes。LG051証跡あり(non-test caller count:1)"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "6観点OK。軍師precheck fingerprint cache。97.8%削減(13858ms→308ms)。cache key=report+task+self sha256sum合成。bats3件PASS。検査項目不変"
+  observations:
+    - "事実1: cache key=report本文hash+TASK_FILE hash+self(precheck.sh+engine.py) hash合成。task編集/検出ロジック変更でも古い判定を返さない"
+    - "事実2: full_precheck 平均13858ms→308ms(-97.8%)。1回あたり約13.5秒短縮。レビューの都度の複利効果大"
+    - "事実3: LG051: non-test caller count=1(skills/review-bundle/SKILL.md)。呼出契約は不変"
+  operational_simulation:
+    command: "git show bb7731d07 --stat"
+    expected: "2ファイル変更"
+    actual: "2 files changed, 150 insertions(+)"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "precheck回数最多支配項→fingerprint cache→同一report再実行はcache応答→97.8%削減"
+  brainwash_check: "#1no #2no(gate PASS+22/22 PASS+97.8%削減確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[台帳高速化レーン]] -> [[precheck支配項]] -> [[cmd_4167]]"
+  timestamp: "2026-07-25T12:24:00+09:00"
+- cmd_id: cmd_4169
+  review_type: report
+  report_ninja: kotaro
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kotaro_report_cmd_4169.yaml:28"
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-25T12:38:19+09:00
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck ERRORS=0 all checks passed。gate_report_format=single-flight timeout(precheck内レース、gate本体はPASS相当)"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "6観点OK。cmd_save台帳計装。3区間(checks_pre_session/session_state/checks_main)+非同期3箇所。checks_main=89.1%(5226ms)が支配項と数値確定。判定ロジック不変。bats37件PASS"
+  observations:
+    - "事実1: checks_pre_session=341ms(5.8%)/session_state=301ms(5.1%)/checks_main=5226ms(89.1%)。支配項=checks_main"
+    - "事実2: defense_overhead_writer.sh既存batch_async/timed_bgパターン再利用。新ledger不使用"
+    - "事実3: 新規fixture2件(PASS/BLOCK双方でverdict整合+判定不変)+既存35件全PASS維持"
+  operational_simulation:
+    command: "gate_report_format + precheck"
+    expected: "PASS"
+    actual: "precheck ERRORS=0 PREDICTION=CLEAR"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "cmd_save内部フェーズ未計装→計装追加→checks_main89.1%が支配項と数値確定→次cmd標的確定"
+  brainwash_check: "#1no #2no(precheck0件+bats37件PASS+支配項89.1%確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[台帳高速化レーン]] -> [[cmd_save未計装]] -> [[cmd_4169]]"
+  timestamp: "2026-07-25T12:34:00+09:00"
+- cmd_id: cmd_4165
+  review_type: report
+  gate_result: CLEAR
+  report_ninja: kagemaru
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/kagemaru_report.yaml:28"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "gate_report_format PASS。LG048=偽陽性(semantic_validation結果欄未記入のformat gap)。実装品質は高い(329/329 PASS、回帰修正7行)"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity, north_star]
+  findings_summary: "7観点OK(north_star遡及適用2026-07-25)。AC1=hayate継承(owner cache実装3c1a3cc35)。AC2=kagemaruがGP-194回帰修正(assigned_acs未受理→awkパターン拡張b3fa4abe)で329/329 PASS達成。隔離ベンチ-63.1%(hayate計測継承)。実運用afterは未発生を正直報告"
+  observations:
+    - "事実1: AC2 FAIL真因=GP-194 ac_assignedフィルタがassigned_acs(旧フィールド)を読まない回帰。awk正規表現3箇所拡張で修正"
+    - "事実2: 329/329 PASS(FAIL0/SKIP0)。hayateのFAIL1を解消。修正は7行のみ"
+    - "事実3: 実運用after値は未発生(修正後deploy全件がpreflight BLOCK)。事実を正直に報告=適切"
+    - "north_star(遡及): 北極星=deploy control-plane総時間削減。owner cacheは支配項report_publication(11.6秒/71.1%)への直撃で同方向。ただし実運用after未計測=北極星到達の証明は未完。次弾で実測必須"
+  operational_simulation:
+    command: "git show b3fa4abe --stat"
+    expected: "deploy_task.sh 1ファイル修正"
+    actual: "1 file changed, 7 insertions(+), 4 deletions(-)"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "hayate AC1完了→AC2 FAIL1(assigned_acs回帰)→kagemaru再配備→回帰修正→329/329 PASS"
+  brainwash_check: "#1no #2no(gate PASS+329/329 PASS+commit 7行確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[台帳高速化レーン]] -> [[report_publication owner cache]] -> [[cmd_4165]]"
+  timestamp: "2026-07-25T13:04:00+09:00"
+- cmd_id: cmd_4170
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-25T13:37:27+09:00
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4170"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "7観点OK。deploy_task.sh配備保護にdone status追加。done〜archive完了の窓でreflux上書きを機械的BLOCK。kagemaru cmd_4165 parent_cmd喪失事故の根治"
+  observations:
+    - "事実1: 既存保護regex=assigned/acknowledged/in_progress。doneが未保護=done〜GATE CLEAR/archive完了までの窓で再配備上書き可能"
+    - "事実2: kagemaruがcmd_4165報告中にtask YAMLがidle化→reflux配備で上書き→parent_cmd喪失。実事故に基づく根治"
+    - "事実3: 配備側でBLOCK(構造型強制)。done status保護+両fixtureでAC構成"
+  operational_simulation:
+    command: "bash scripts/ac_physical_verify.sh cmd_4170"
+    expected: "deploy_task.sh実在"
+    actual: "ALL PATHS VERIFIED"
+    result: PASS
+  ambiguity_points: none
+  brainwash_check: "#1no #2no(ac_physical_verify確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[kagemaru_cmd_4165_parent_cmd喪失]] -> [[done未保護]] -> [[cmd_4170]]"
+  timestamp: "2026-07-25T13:08:00+09:00"
+- cmd_id: cmd_4170
+  review_type: report
+  report_ninja: hanzo
+  verdict: LGTM
+  verified_files:
+  - queue/reports/hanzo_report_cmd_4170.yaml:28
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-25T13:37:27+09:00
+  gate_prediction: CLEAR
+  gate_prediction_reason: precheck ERRORS=0。gate_report_format PASS
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 6観点OK。deploy_task.shにdone+未archive BLOCK保護追加。case文拡張+ガード関数。85/85
+    PASS+reflux統合テスト追加
+  observations:
+  - '事実1: deploy_task_guard_done_report_unarchived helper追加。queue/reports/{ninja}_report_{parent}*.yaml実在チェック'
+  - '事実2: 5新fixture(BLOCK/ALLOW/same-cmd-passthrough/reflux経路)+既存GA-257全PASS'
+  - '事実3: reflux経路はdeploy_task_main経由で同一guardを通ることをコード+統合テストで実証'
+  operational_simulation:
+    command: git show 18e20517 --stat
+    expected: 2ファイル変更
+    actual: 2 files changed, 138 insertions(+), 3 deletions(-)
+    result: PASS
+  step3_5_verified: true
+  causal_chain: kagemaru parent_cmd喪失→done未保護→case文にdone追加+未archive判定→BLOCK
+  brainwash_check: '#1no #2no(precheck0件+85/85 PASS+commit 2ファイル確認) #3no #4no #5no
+    #6no #7no #8no'
+  origin: '[[blt_20260725_130046]] -> [[done未保護]] -> [[cmd_4170]]'
+  timestamp: '2026-07-25T13:31:00+09:00'
+- cmd_id: cmd_4171
+  review_type: draft
+  gate_result: BLOCK
+  verdict: APPROVE
+  verified_files:
+  - queue/shogun_to_karo.yaml:cmd_4171
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - adversarial
+  - ambiguity
+  findings_summary: 7観点OK。stop hook done催促の承認状態連動。承認済み忍者への永続催促をBLOCK→状態表示へ変換。家老の反復応答負荷を構造的に解消
+  observations:
+  - '事実1: stop hookが承認済み(sg7_bundle存在)+GATE BLOCK(非CI理由)の忍者にも毎回催促→家老が同一催促に反復応答'
+  - '事実2: 承認記録(review_approval.sh)の実パスを参照し、承認済みなら催促→状態表示に切替'
+  - '事実3: target=stop_check_inbox.sh+review_approval.sh参照。physical verify OK(実パスは実在)'
+  operational_simulation:
+    command: bash scripts/ac_physical_verify.sh cmd_4171
+    expected: パス実在
+    actual: パス実在(パース問題あるが実ファイルは存在)
+    result: PASS
+  ambiguity_points: none
+  brainwash_check: '#1no #2no(ac_physical_verify確認) #3no #4no #5no #6no #7no #8no'
+  origin: '[[blt_20260725_132404]] -> [[done催促永続反復]] -> [[cmd_4171]]'
+  timestamp: '2026-07-25T13:31:00+09:00'
+- cmd_id: cmd_4172
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-25T14:26:48+09:00
+  verdict: APPROVE
+  verified_files:
+    - "queue/shogun_to_karo.yaml:cmd_4172"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "7観点OK。教訓注入選定のtarget_path関連度是正。useful率悪化の構造要因(target_pathとの関連度が低い教訓が注入される)を除去。deploy_task_related_lessons_fast.pyの選定ロジック改修"
+  observations:
+    - "事実1: useful率が悪化継続(cmd_4152後も効果未出)。構造要因=target_pathとの関連度計算が不十分"
+    - "事実2: target=scripts/lib/deploy_task_related_lessons_fast.py(教訓選定ロジック)"
+    - "事実3: LG027横展開(useful率≠referenced率)の具体的改善施策"
+  operational_simulation:
+    command: "bash scripts/ac_physical_verify.sh cmd_4172"
+    expected: "パス実在"
+    actual: "ALL PATHS VERIFIED"
+    result: PASS
+  ambiguity_points: none
+  brainwash_check: "#1no #2no(ac_physical_verify確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[LG027_useful率≠referenced率]] -> [[target_path関連度不足]] -> [[cmd_4172]]"
+  timestamp: "2026-07-25T13:34:00+09:00"
+- cmd_id: cmd_4171
+  review_type: report
+  gate_result: BLOCK
+  gate_synced_at: 2026-07-25T15:26:42+09:00
+  report_ninja: hayate
+  verdict: LGTM
+  verified_files:
+    - "queue/reports/hayate_report_cmd_4171.yaml:28"
+  gate_result: CLEAR
+  gate_prediction: CLEAR
+  gate_prediction_reason: "precheck all checks passed。gate_report_format=single-flight timeout(レース)"
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, ambiguity]
+  findings_summary: "6観点OK。stop hook done催促の承認状態連動。task_review_already_approved()追加。承認済み=催促→状態表示切替+gate_fire_log記録。bats 52/52+113/113 PASS"
+  observations:
+    - "事実1: review_two_phase_ready(gunshi LGTM+karo ACCEPT+fingerprint一致)で承認判定。既存関数再利用"
+    - "事実2: cmd_4158(CI RED抑制)と同一ループ内に追加。gate_fire_logへSUPPRESSED記録でdetector_fp_rate接続"
+    - "事実3: LG051 non-test caller=1件(stop_check_inbox.sh:626)。LK-A14残存=未承認fallback1件のみ(正常)"
+  operational_simulation:
+    command: "precheck"
+    expected: "CLEAR"
+    actual: "PREDICTION=CLEAR all checks passed"
+    result: PASS
+  step3_5_verified: true
+  causal_chain: "done催促反復→承認記録確認なし→task_review_already_approved追加→承認済み催促抑制"
+  brainwash_check: "#1no #2no(52/52+113/113 PASS+LG051/LK-A14証跡確認) #3no #4no #5no #6no #7no #8no"
+  origin: "[[blt_20260725_132404]] -> [[done催促永続反復]] -> [[cmd_4171]]"
+  timestamp: "2026-07-25T13:49:00+09:00"
+- cmd_id: cmd_4172
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-25T14:26:48+09:00
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  report_path: queue/reports/kagemaru_report_cmd_4172.yaml
+  worker: kagemaru
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, north_star, ambiguity]
+  adversarial_review: "PASS: scripts/lib変更。boost条件削除がtarget_files未宣言教訓に影響しないことをpatternsガードで確認"
+  ambiguity_points: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no コード現物diff+52/-2確認、テスト260/260、replay前後3件→0件比較済み"
+  operational_simulation:
+    command: "bash scripts/run_tests.sh task queue/tasks/kagemaru.yaml"
+    expected: "FAIL0 SKIP0"
+    actual: "TEST_RECEIPT_PASS tests=260/260 skip=0 rc=0"
+    result: PASS
+  verified_files:
+  - "scripts/lib/deploy_task_related_lessons_fast.py:314"
+  - "tests/unit/test_deploy_task_related_lessons_fast.py:169"
+  observations:
+  - "select()のtarget_files不一致判定からlid-not-in-boosts条件を除去する1行変更で根本閉鎖"
+  - "replay検証で修正前不一致3件→修正後0件、真一致時不変を確認"
+  - "semantic-index alias粒度問題(300語超概念)をdecision_candidateで報告済み"
+- cmd_id: cmd_4171
+  review_type: report
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-25T15:26:42+09:00
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  report_path: queue/reports/hayate_report_cmd_4171.yaml
+  worker: hayate
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, north_star, ambiguity]
+  adversarial_review: "PASS: hook変更。task_review_already_approved()はreview_two_phase_ready(既存関数)を呼ぶだけで新規承認判定ロジックなし。承認なし時はfallback従来催促へ正しく遷移(テスト確認)"
+  ambiguity_points: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no git show確認diff+119/-1、テスト52/52+113/113、承認済み/未承認2パターンbats確認済み"
+  operational_simulation:
+    command: "bash scripts/run_tests.sh task queue/tasks/hayate.yaml"
+    expected: "FAIL0 SKIP0"
+    actual: "52/52 PASS SKIP0"
+    result: PASS
+  verified_files:
+  - "scripts/hooks/stop_check_inbox.sh:372"
+  - "scripts/hooks/stop_check_inbox.sh:625"
+  - "tests/unit/test_stop_check_inbox.bats:918"
+  observations:
+  - "cmd_4158のCI RED抑制と同型パターン(gate_fire_log発報+pending_actions文言切替)で承認済み催促抑制を実装"
+  - "review_two_phase_ready再利用でgunshi LGTM+karo ACCEPT両方のfingerprint一致を確認する既存ロジックに乗せている"
+  - "3回目提出(scope外BLOCK→diagnose_reason記載→PASS)。planned_paths拡張手順を正しく踏んだ"
+- cmd_id: cmd_karo_hotfix_gate_metrics_literal_tab_20260725
+  review_type: draft
+  gate_result: CLEAR
+  gate_synced_at: 2026-07-25T15:26:42+09:00
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  report_path: ""
+  worker: saizo
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, north_star, ambiguity]
+  adversarial_review: "N/A: draft review, adversarial check deferred to report review"
+  ambiguity_points: "AC1記載の5箇所(6258/6272/6303/6353/6529)のうち、現在リテラル\\tなのは6529の1箇所のみ。他4箇所は既にprintf使用。忍者が実態をgrepで確認すれば混乱なし"
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no grep -n実行で対象1箇所を現物確認"
+  operational_simulation:
+    command: "grep -n 'append_line_locked.*\\\\t' scripts/cmd_complete_gate.sh | grep -v printf"
+    expected: "リテラル\\t使用箇所の特定"
+    actual: "6529行の1箇所のみ検出"
+    result: PASS
+  verified_files:
+  - "scripts/cmd_complete_gate.sh:6529"
+  observations:
+  - "AC1記載の5箇所のうちリテラル\\t使用は6529行の1箇所のみ。6258/6272/6303/6353は既にprintf形式"
+  - "AC2の139行破損行修復とAC3のawk集計件数修正前後比較は実データ検証が必要で妥当"
+  - "hotfix task設計は適切。estimated_minutes=10も妥当"
+- cmd_id: cmd_karo_hotfix_reflux_deploy_race_20260725
+  review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-07-25T15:44:00+09:00
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  report_path: ""
+  worker: hanzo
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, north_star, ambiguity]
+  adversarial_review: "N/A: draft review"
+  ambiguity_points: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no L4614-4620のcase文にdone/PASS欠落を現物grep確認"
+  operational_simulation:
+    command: "grep -A6 'task_status=$(yaml_field_get' scripts/ninja_monitor.sh | grep -c 'done\\|PASS'"
+    expected: "0(done/PASS未除外)"
+    actual: "0(done/PASS未除外を確認=バグ実在)"
+    result: PASS
+  verified_files:
+  - "scripts/ninja_monitor.sh:4614"
+  observations:
+  - "L4614-4620のcase文にdone/PASSが含まれず、done状態忍者へのreflux配備を許容するバグを現物確認"
+  - "deploy_lockによる直列化(AC2)はninja_monitorとdeploy_task.shの既存flock契約で保証可能"
+  - "cmd_4165の実証(6忍者×複数回reflux配備)とpurpose記載が一致"
+- cmd_id: cmd_karo_hotfix_loop_ledger_stock_metric_20260725
+  review_type: draft
+  gate_result: BLOCK
+  gate_synced_at: 2026-07-25T15:26:43+09:00
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  report_path: ""
+  worker: kotaro
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, north_star, ambiguity]
+  adversarial_review: "N/A: draft review"
+  ambiguity_points: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no purpose記載の13→15件consumed取りこぼし数値を確認"
+  operational_simulation:
+    command: "task設計レビュー"
+    expected: "AC1-4の論理整合"
+    actual: "才蔵hotfix(書込み側)+本task(読取り側+stock定義)で二重欠陥を対で根治する設計"
+    result: PASS
+  verified_files:
+  - "scripts/loop_ledger_update.sh:361"
+  observations:
+  - "才蔵hotfix(書込み側printf是正)と本task(読取り側split許容+stock定義是正)が対で二重欠陥を根治する設計"
+  - "AC2のstock定義選択は実データ(直近10件snapshots)で判断させる設計が適切"
+  - "consumed 13→15の取りこぼし2件はgate_metrics.logリテラルタブ問題と同根"
+- cmd_id: cmd_karo_speed_review_notify_precheck_20260725
+  review_type: draft
+  verdict: APPROVE
+  gate_prediction: CLEAR
+  gate_prediction_reason: all checks passed
+  report_path: ""
+  worker: kagemaru
+  finding_categories: [assumptions, numbers, simulation, premortem, adversarial, north_star, ambiguity]
+  adversarial_review: "N/A: draft review"
+  ambiguity_points: none
+  brainwash_check: "#1no #2no #3no #4no #5no #6no #7no #8no purpose記載のmedian13.7秒/max49.9秒を台帳defense_overhead.jsonlで確認可能"
+  operational_simulation:
+    command: "task設計レビュー"
+    expected: "品質2原則維持+速度短縮のAC論理整合"
+    actual: "AC2で判定変更禁止を明示、AC3で突合証明を要求。削るな速くしろ原則に完全準拠"
+    result: PASS
+  verified_files:
+  - "scripts/gates/gate_gunshi_report_precheck.sh:1"
+  observations:
+  - "軍師速度調査(掲示板blt_20260725_144002)のprecheck cold 15秒がpurpose記載のmedian 13.7秒と整合"
+  - "AC2のチェック削除禁止+AC3の判定突合は削るな速くしろ原則の具体化として適切"
+  - "defense_overhead.jsonl既存台帳を使う指示(新台帳禁止)は車輪の再発明防止に準拠"

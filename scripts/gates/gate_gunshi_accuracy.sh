@@ -32,7 +32,9 @@ for e in entries:
     pred_m = re.search(r"gate_prediction:\s*(\S+)", e)
     result_m = re.search(r"gate_result:\s*(\S+)", e)
     verdict_m = re.search(r"verdict:\s*(\S+)", e)
-    if not (pred_m and result_m and result_m.group(1) != "null"):
+    # N/A = cmdがrevert等で終端し実GATEが存在しない墓標。予測の当否は評価不能なので
+    # 分母から除外する(誤答計上=偽陽性=バグ。殿指示2026-06-24と同原理)
+    if not (pred_m and result_m and result_m.group(1) in ("CLEAR", "BLOCK", "WARN", "FAIL")):
         continue
     cmd = cmd_m.group(1) if cmd_m else "?"
     pred = pred_m.group(1)
