@@ -296,6 +296,17 @@ semantic_loop = loop_from_insights(insight_entries, is_semantic)
 
 
 # --- promotion loop: lesson enforcement candidates below Level4 ---
+def split_gate_metrics_columns(line):
+    # gate_metrics.log rows must be tab-separated, but a writer bug
+    # (cmd_complete_gate.sh append_line_locked calls that skipped printf)
+    # emitted a literal backslash-t (two chars) instead of a real tab for
+    # 139/512 historical rows (cmd_karo_hotfix_gate_metrics_literal_tab_20260725).
+    # split("\t") alone treats those rows as a single column and silently
+    # drops them. Normalize literal "\t" to a real tab before splitting so
+    # both encodings parse identically.
+    return line.replace("\\t", "\t").split("\t")
+
+
 def load_promotion_consumption(root_path, metrics_path):
     consumed_by_cmd = {}
 
@@ -313,7 +324,7 @@ def load_promotion_consumption(root_path, metrics_path):
     metrics = Path(metrics_path)
     if metrics.is_file():
         for line in metrics.read_text(encoding="utf-8", errors="replace").splitlines():
-            cols = line.split("\t")
+            cols = split_gate_metrics_columns(line)
             if len(cols) < 3 or cols[2].strip().upper() != "CLEAR":
                 continue
             record(cols[1].strip(), parse_ts(cols[0]))
@@ -897,12 +908,52 @@ existing_snapshots = load_existing_snapshots(out_path)
 previous_snapshot = existing_snapshots[-1] if existing_snapshots else None
 previous_loops = previous_snapshot.get("loops", {}) if previous_snapshot else {}
 
+
+# promotion.stock is a raw scan of currently-below-Level4 lessons (see
+# load_promotion_loop), not a produced-consumed cumulative counter like
+# lesson.stock (len(injected_ids - feedback_ids)). The scan is driven by
+# system-wide lesson_write.sh activity unrelated to reflux-promotion
+# throughput, and loop_ledger_update.sh runs many times per day (every
+# shogun startup gate), so comparing it to the single immediately-adjacent
+# snapshot fires on minutes-apart noise. Once genuine consumption goes
+# stale (no cmd_reflux_promotion_* CLEAR for days), the grace-period gate
+# below was permanently defeated and every noisy uptick escalated —
+# observed recurring/unresolved in logs/shogun_startup_alert_history.tsv
+# 2026-07-19..07-25 (cmd_karo_hotfix_loop_ledger_stock_metric_20260725).
+# Fix: compare against the most recent snapshot that is itself at least
+# stock_increase_grace_hours old, so a real backlog trend must persist
+# across a full grace window (not a single sampling instant) to escalate,
+# and require the grace-window itself to exist before evaluating at all.
+def find_promotion_baseline_stock(snapshots, min_age_hours, now):
+    candidates = []
+    for snap in snapshots:
+        if not isinstance(snap, dict):
+            continue
+        ts = parse_ts(snap.get("generated_at"))
+        if ts is None:
+            continue
+        age_hours = (now - ts).total_seconds() / 3600
+        if age_hours < min_age_hours:
+            continue
+        candidates.append((ts, snap))
+    if not candidates:
+        return None
+    _, baseline_snap = max(candidates, key=lambda pair: pair[0])
+    stock = (baseline_snap.get("loops", {}) or {}).get("promotion", {}).get("stock")
+    return stock if isinstance(stock, int) else None
+
+
 alerts = []
 stock_increase_grace_hours = int(os.environ.get("LOOP_LEDGER_STOCK_INCREASE_GRACE_HOURS", "24"))
 for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill", "throughput"):
     loop = loops[name]
     if loop["stalled"]:
         alerts.append(f"{name}: 空転(produced={loop['produced']}, consumed=0, window={window_days}d)")
+    if name == "promotion":
+        baseline_stock = find_promotion_baseline_stock(existing_snapshots, stock_increase_grace_hours, now)
+        if baseline_stock is not None and loop["stock"] > baseline_stock:
+            alerts.append(f"{name}: 在庫超過({stock_increase_grace_hours}h以上前{baseline_stock}→今回{loop['stock']})")
+        continue
     prev = previous_loops.get(name) if isinstance(previous_loops, dict) else None
     if isinstance(prev, dict):
         prev_stock = prev.get("stock")
