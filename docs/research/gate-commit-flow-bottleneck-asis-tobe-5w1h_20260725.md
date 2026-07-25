@@ -71,6 +71,8 @@ baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 | B22 | retro回答 | 忍者がinboxで回答してもtype不一致で機械判定に乗らず家老が手動復元 | 品質(誤帰属) |
 | B23 | yaml_field_set | list型・ネスト型が書けずplanned_paths拡張/ci_fix evidence記入が毎回手作業(本日4回) | 速度(手動律速) |
 
+| B24 | ci_readiness cancelled | キャンセルされたCI runがconclusion=failureとして記録され『is not GREEN』BLOCKに混入(run 30151586555実測: 全4 job cancelled=テスト未実行なのにfailure)。実体は『CIが赤』でなく『CIが走っていない』 | 計器(E型)。是正=cancelledはWAIT扱い(再実行促し) |
+
 **C型の本体再定義(家老)**: 『同一ファイル並行』ではなく**『commit/pushの粒度が宣言scopeと一致しない』**が本体。本日4件(未commit差分の塞ぎ/922行巻込7回BLOCK/家老pushが他者未commit状態を公開しCI RED/pre-push警告2回を再試行で突破)。指揮官3ロールのcommitと**pushも**scope分離機構の対象に含める。
 
 ## §3 構造分類 — ボトルネックは5種類(A-E)
