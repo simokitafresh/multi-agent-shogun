@@ -502,6 +502,20 @@ deploy_task_guard_worker_assignment() {
             fi
             ;;
         done|PASS)
+            # B26 escape hatch (将軍裁可 blt_20260725_234849): CI REDのときGATEが通らず
+            # 報告がarchiveできない。その状態でこのガードが全配備を拒むと「CI修正を
+            # 配備できないからCI REDが直らない」という自己矛盾で全忍者が詰む(2026-07-25実証)。
+            # ci_fixはREDを消すための弾なので、これに限り通す。他のtask_typeは従来通り拒否。
+            if [ "${DEPLOY_INCOMING_TASK_TYPE:-}" != "" ] \
+                && [ "$(printf '%s' "${DEPLOY_INCOMING_TASK_TYPE:-}" | tr '[:upper:]' '[:lower:]')" = "ci_fix" ] \
+                && [ -n "$incoming_cmd" ] && [ -n "$current_parent" ] && [ "$current_parent" != "$incoming_cmd" ] \
+                && deploy_task_guard_done_report_unarchived "$worker_name" "$current_parent"; then
+                log "B26-ESCAPE(ci_fix): ${worker_name:-worker} ${current_status} task ${current_parent} has an unarchived report; allowing ${incoming_cmd} because task_type=ci_fix"
+                printf '{"ts":"%s","event":"b26_ci_fix_escape","worker":"%s","held_cmd":"%s","incoming_cmd":"%s","held_status":"%s"}\n' \
+                    "$(date -Is)" "${worker_name:-worker}" "$current_parent" "$incoming_cmd" "$current_status" \
+                    >> "$SCRIPT_DIR/logs/defense_overhead.jsonl" 2>/dev/null || true
+                return 0
+            fi
             if [ -n "$incoming_cmd" ] && [ -n "$current_parent" ] && [ "$current_parent" != "$incoming_cmd" ] \
                 && deploy_task_guard_done_report_unarchived "$worker_name" "$current_parent"; then
                 log "BLOCK(cmd_karo_hotfix_reflux_deploy_race_20260725): ${worker_name:-worker} ${current_status} task ${current_parent} has an unarchived report; refusing overwrite by ${incoming_cmd}"
@@ -11953,6 +11967,12 @@ deploy_task_main() {
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_yaml" status parent_cmd 2>/dev/null)" || true
     pre_resolve_status="${status:-unknown}"
     pre_resolve_cmd="${parent_cmd:-}"
+    # B26 escape hatch入力: 配備しようとしているtaskのtask_typeをガードへ渡す。
+    # source YAMLがあるときのみ読む(なければ空=従来通り拒否側に倒れるfail-closed)。
+    DEPLOY_INCOMING_TASK_TYPE=""
+    if [ -n "$YAML_FILE" ] && [ -f "$YAML_FILE" ]; then
+        DEPLOY_INCOMING_TASK_TYPE=$(FIELD_GET_NO_LOG=1 field_get "$YAML_FILE" "task_type" "" 2>/dev/null || true)
+    fi
     if [ -n "$CMD_ID" ] && ! deploy_task_guard_worker_assignment "$task_yaml" "$CMD_ID"; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
