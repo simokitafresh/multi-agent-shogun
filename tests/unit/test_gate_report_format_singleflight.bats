@@ -136,3 +136,31 @@ PY
     fi
     [ "$count" -eq 0 ]
 }
+
+# cmd_karo_impl_singleflight_hold_instrumentation_20260725 (軍師レビュー指摘の是正)
+# test_necessity: 計装のためにforkする非同期writerがgate.lock(fd 199)を継承してはならない。
+# 継承するとledger.lock待ちと低速FS書込みの間ロックが保持され、計装自体が
+# single-flight timeoutを増やす(本cmdの目的に反する)。gate復帰直後にflock -nで
+# 即時取得できることを直接assertし、実装の内部構造に依存せず解放を検証する。
+@test "async overhead writer does not inherit the report lock (flock -n succeeds right after the gate returns)" {
+    ledger="$TEST_DIR/overhead_fd.jsonl"
+
+    # ledger lockを先に保持し、writer子プロセスを確実にブロックさせる
+    : >"${ledger}.lock"
+    flock "${ledger}.lock" sleep 3 &
+    ledger_holder=$!
+    sleep 0.2
+
+    run env \
+        DEFENSE_OVERHEAD_LEDGER="$ledger" \
+        GATE_FIRE_LOG_FILE="$TEST_DIR/fire_fd.yaml" \
+        GATE_FAST_EXIT=1 \
+        bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT"
+
+    # gate復帰直後: writerはまだledger lock待ちだが、gate.lockは解放済みでなければならない
+    run flock -n "${REPORT}.gate.lock" true
+    lock_status="$status"
+
+    wait "$ledger_holder"
+    [ "$lock_status" -eq 0 ]
+}

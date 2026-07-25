@@ -94,6 +94,12 @@ if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
         [ -f "$_lib" ] || return 0
         # shellcheck source=/dev/null
         . "$_lib" 2>/dev/null || return 0
+        # 軍師レビュー指摘(cmd_karo_impl_singleflight_hold_instrumentation_20260725):
+        # writerのdetached subshellは親のfdを継承するため、fd 199を開いたままforkすると
+        # 子がgate.lockを保持したままledger.lockと低速FS書込みを待つ。計装自体が
+        # ロック保持区間を延ばし、本cmdの目的(timeout削減)に反する。∴fork前に必ず閉じる。
+        # ここでの解放は保持区間の終端そのものであり、計測値(_hold_ms算出済み)にも影響しない。
+        exec 199>&- 2>/dev/null || true
         defense_overhead_write_async gate_report_format singleflight_hold \
             "$_hold_ms" "$_verdict" "gate_report_format:hold:$$:${_GATE_HOLD_STARTED}" || true
         return 0
