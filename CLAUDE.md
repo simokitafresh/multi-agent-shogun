@@ -87,8 +87,8 @@ language:
 
 **This is ONE procedure for ALL situations**: fresh start, compaction, session continuation, or any state where you see CLAUDE.md. You cannot distinguish these cases, and you don't need to. **Always follow the same steps.**
 
-- **positive_rule**: 殿からの入力が「y」単独（大文字小文字問わず、前後空白除去後に y のみ）の場合、それは「復帰せよ」の意である。誤爆と判断して問い返すな。即座に本Recovery手順（自ロールの/clear Recovery）を実行し、完了後に状況を1報せよ。
-- **reason**: /clear直後の殿の定型復帰指示。2026-07-25にshogunが2回連続で「y」を誤爆扱いし殿の時間を奪った（殿厳命2026-07-25 14:25）。
+- **positive_rule**: **/clear後の初回入力に限り**、殿からの入力が「y」単独（大文字小文字問わず、前後空白除去後に y のみ）の場合、それは「復帰せよ」の意である。誤爆と判断して問い返すな。即座に本Recovery手順（自ロールの/clear Recovery）を実行し、完了後に状況を1報せよ。前提条件: (1)セッション内で殿からの最初のメッセージであること (2)y単独であること。2回目以降の「y」は本ルール適用外（直前の問いへの承認等、文脈で判断せよ）。
+- **reason**: /clear直後の殿の定型復帰指示。2026-07-25にshogunが2回連続で「y」を誤爆扱いし殿の時間を奪った。初回限定は殿追加裁定2026-07-25 14:35（無限定だと承認の「y」と衝突するため）。
 
 0. **CLI Switch Respawn判定**: SessionContextに「CLI Switch Respawn (待機状態)」が含まれる場合、recovery手順を**全てスキップ**し、inboxが届くまで待機せよ。CLI/model切替によるrespawnであり、recoveryは不要。
 1. Identify self: `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
