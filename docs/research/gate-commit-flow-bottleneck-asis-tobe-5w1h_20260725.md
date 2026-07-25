@@ -61,6 +61,7 @@ baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 | B17 | retention台帳 | 固定パス上書きで移動記録消失(quarantine 17,381ファイルに対し台帳0件) | 計器 |
 | B18 | AC内の行番号参照 | 並行変更で陳腐化し別の行を指す(本日3cmd実証) | 品質(誤誘導) |
 | B19 | 共有worktree commit | 指揮官D0 commitが第三者のstage済み変更を巻き込み帰属破壊(0f1c3ea65将軍commitが才蔵922行を巻込→才蔵7回BLOCKループ) | 競合(retry不可) |
+| B20 | ci_readiness記録 | BLOCK 104件の実測分解: 真の赤23件(22.1%)のみ。SHA mismatch34+predates SG7 26=E型(CI runと評価対象の対応付け破壊)、pending13=**WAIT**(gate自身が再実行を指示するのにterminal BLOCK記録=誤り)。一括計上すると実態の78%を取り違える | 計器(E型)+記録分類 |
 
 ## §3 構造分類 — ボトルネックは5種類(A-E)
 
@@ -83,6 +84,7 @@ baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 - D型→**commit時構造検証の1本化**: 「新規source先の同一commit内包」「gate系変更時のbats実行」をpre-commitへ接続。選定規則(軍師レビュー確定): 新規機構は作らず**既存run_tests.shのaffected/taskスコープに乗せる**(staged paths→affected、FAIL>0またはSKIP>0でBLOCK)。ただし**逆依存規則を明文化**: scripts/lib/*の追加・変更はtests/helpers/*経由の全testをaffectedに含める(CI RED 30148392707の真因=helper allowlist未追随がこの規則で捕まる)
 - B8(planned_paths)→自動拡張は**非対称**で統合: ACがtest作成を要求する場合のみtests/配下への拡張を許す(permission ceilingの一般緩和はしない)
 - E型→計器と一次情報の定期突合をT8(計器契約検証)へ統合
+- B20→**記録カテゴリの3分離(BLOCK/WAIT/INFO)**: pendingはBLOCK率に数えない(指標水増し+軍師予測精度汚染+『BLOCK=成長機会』原則の空振り適用を防ぐ)。真のGREEN失敗のみD型即応SLA対象。push通過+CI後追い方式が入ればSHA mismatch/predates計60件は正規手順へ吸収されBLOCK記録自体が不要化=**殿発案方式の定量的裏付け**。GATE_PREDICTIONへのci_readiness事前判定(CI run状態+headSha+bundle mtimeで提出前機械判定)も併せて有効
 
 ### 方針1追加要素(殿発案 2026-07-25 17:11): push通過+CI後追い方式
 「CI GREEN待ちでpush保留」を廃し、**pushは常時通過させ、CI REDは後追いの即応義務に変える**。
