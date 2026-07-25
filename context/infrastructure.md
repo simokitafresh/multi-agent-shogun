@@ -886,7 +886,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1335 -->
+<!-- last_synced_lesson: L1345 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1935,6 +1935,16 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1333: 検知器の判定入力が『診断文の写し』だと、契約/環境が原因の正しい反復まで誤検出する。実体(何がブロックしているか)を見よ（cmd_karo_impl_divergent_detector_fix_20260726）
 - L1334: gateの判定入力に自由文字列を使うなら、必ず二値enumの結論欄を併置せよ（cmd_karo_impl_b33_hook_failure_state_20260726）
 - L1335: 境界検査に代理変数(ファイル数)を使うと、境界の中身が壊れても緑のままになる（cmd_karo_impl_fingerprint_fanout_ac4_20260726）
+- L1336: 検出器を廃止する前に、その目的を果たす受け皿が実在することを実測せよ。廃止の是非より受け皿の有無が先である（cmd_karo_impl_b37_error_report_false_fire_20260726）
+- L1337: derived dataをgit追跡すると、常時dirtyがdirty-tree系gateと噛み合って構造的なpushデッドロックになる（cmd_karo_recon_index_regen_race_20260726）
+- L1338: キャッシュを読む前に『それは何の値か』を書込み側の実装で確かめよ。通知履歴と現在状態は別物である（cmd_karo_impl_b38_ci_cache_staleness_20260726）
+- L1339: 同一値の共有化はcommit前に新旧regex/リストの完全一致を実測せよ（cmd_karo_impl_prepush_autogen_exclude_20260726）
+- L1340: tmp残骸の不在は生成の不在ではない。生成経路の現役性は出力先のmtimeで測れ（cmd_karo_recon_queue_tmp_leak_20260726）
+- L1341: 同じファイルを正しいparserと自作awkが逆順で読むと、実体と検知結果が真逆になる(YAML後勝ち vs 行の先勝ち)（cmd_karo_recon_cs_lgtm_block_attribution_20260726）
+- L1342: 同一ファイル内の逆向きラッチは片方だけ直すと別方向のバグを見逃す（cmd_karo_impl_b42_yaml_latch_and_dup_field_20260726）
+- L1343: mtimeで鮮度を比べるな。cacheのmtimeは『作業が終わった時刻』でありデータの時点ではない(WAL下では本体mtimeも書込み時刻を表さない)（cmd_karo_recon_memory_cache_mtime_freshness_20260726）
+- L1344: 同一の脆弱パターン(mtime staleness判定)が同一システム内に複数箇所存在しうる。1箇所修正時に類似箇所を横断的に探索せよ（cmd_karo_impl_b45_memory_cache_rowid_watermark_20260726）
+- L1345: 観測手段そのものが観測を残さないと、次の判断ができない。欠測は無記録ではなく明示記録にせよ（cmd_karo_impl_cache_gap_telemetry_20260726）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
