@@ -1202,7 +1202,7 @@ YAML
     _init_fixture_repo "$repo"
     mkdir -p "$repo/context"
     printf 'one\ntwo\nthree\nfour\n' > "$repo/context/shared.txt"
-    git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m init
+    git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m "test-fixture(tests/test_gate_report_format.bats): fixture repo seed"
     sed -i 's/^one$/one owned/' "$repo/context/shared.txt"
     git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m 'cmd_multi: first scoped commit'
     local first_hash; first_hash=$(git -C "$repo" rev-parse HEAD)
@@ -1231,7 +1231,7 @@ YAML
     _init_fixture_repo "$repo"
     mkdir -p "$repo/context"
     printf 'one\ntwo\nthree\nfour\n' > "$repo/context/shared.txt"
-    git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m init
+    git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m "test-fixture(tests/test_gate_report_format.bats): fixture repo seed"
     sed -i 's/^one$/one foreign/' "$repo/context/shared.txt"
     git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m 'other_cmd: foreign commit'
     local foreign_hash; foreign_hash=$(git -C "$repo" rev-parse HEAD)
@@ -1271,7 +1271,7 @@ task:
 YAML
     printf 'line01\nline02\nline03\nline04\nline05\nline06\nline07\nline08\nline09\nline10\n' > "$repo/shared.txt"
     git -C "$repo" add queue/tasks/testninja.yaml shared.txt
-    git -C "$repo" commit -q -m "init"
+    git -C "$repo" commit -q -m "test-fixture(tests/test_gate_report_format.bats:_setup_ac3_hunk_repo): fixture repo seed"
 
     sed -i 's/^line02$/line02 reporter-change/' "$repo/shared.txt"
     git -C "$repo" add shared.txt
