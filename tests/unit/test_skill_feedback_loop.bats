@@ -1901,6 +1901,7 @@ hook_failures:
     bypass_record: "SHOGUN_PRECOMMIT_AFFECTED_BYPASS set with the reason; recorded in logs/precommit_affected_bypass.jsonl"
     post_verification: "after commit the bats re-run reported 66/66 PASS including test28"
     post_verification_result: all_pass
+    post_verification_head: 8203a2a3e
 EOF
     run_hook_failure_generate
     [ "$status" -eq 0 ]
@@ -1918,9 +1919,82 @@ hook_failures:
     bypass_record: "reason written to SHOGUN_PRECOMMIT_AFFECTED_BYPASS and recorded in logs/precommit_affected_bypass.jsonl"
     post_verification: "re-measured after commit: FAIL set identical, zero new FAIL"
     post_verification_result: no_new_failure
+    post_verification_head: e104282cb
 EOF
     run_hook_failure_generate
     [ "$status" -eq 0 ]
+}
+
+# hanzo's B28: (d) legitimately failed first (two new regressions after the merged
+# commit 8203a2a3e), the cause was fixed by its owner (868d0213e), and the
+# re-measurement on the new HEAD held.  Declaring the failure must block APPROVE
+# while naming the way out; the corrected re-measurement must then pass.
+@test "review_bundle APPROVE blocks a declared regression and clears after re-measurement" {
+    setup_hook_failure_repo
+    cat >> "$HOOK_REPORT" <<'EOF'
+hook_failures:
+  count: 2
+  details:
+    cause: "merged commit 8203a2a3e; pre-existing RED matched, but two new regressions appeared in test_report_commit_identity"
+    independent_verification: "the three pre-existing RED tests reproduce without this change"
+    bypass_record: "recorded in logs/precommit_affected_bypass.jsonl"
+    post_verification: "measured after the merged commit: 2 new FAIL, so the bypass does not hold"
+    post_verification_result: regression_detected
+    post_verification_head: 8203a2a3e
+EOF
+    run_hook_failure_generate
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"regression_detected"* ]]
+    [[ "$output" == *"re-measure on the new HEAD"* ]]
+
+    # after the owner fixed the cause, the re-measurement on the new HEAD holds
+    setup_hook_failure_repo
+    cat >> "$HOOK_REPORT" <<'EOF'
+hook_failures:
+  count: 2
+  details:
+    cause: "merged commit 8203a2a3e; the sidecar broke the cache boundary proxy, fixed by its owner in 868d0213e"
+    independent_verification: "the pre-existing RED reproduces without this change"
+    bypass_record: "recorded in logs/precommit_affected_bypass.jsonl"
+    post_verification: "re-measured on the corrected HEAD: pre-existing RED 3 to 1, zero new FAIL"
+    post_verification_result: no_new_failure
+    post_verification_head: 868d0213e
+EOF
+    run_hook_failure_generate
+    [ "$status" -eq 0 ]
+}
+
+@test "review_bundle APPROVE requires the HEAD the post verification was measured on" {
+    setup_hook_failure_repo
+    cat >> "$HOOK_REPORT" <<'EOF'
+hook_failures:
+  count: 1
+  details:
+    cause: "environment-only failure outside the diff"
+    independent_verification: "reproduced without this change"
+    bypass_record: "recorded in logs/precommit_affected_bypass.jsonl"
+    post_verification: "re-measured after commit: FAIL set identical, zero new FAIL"
+    post_verification_result: no_new_failure
+EOF
+    run_hook_failure_generate
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"post_verification_head"* ]]
+
+    setup_hook_failure_repo
+    cat >> "$HOOK_REPORT" <<'EOF'
+hook_failures:
+  count: 1
+  details:
+    cause: "environment-only failure outside the diff"
+    independent_verification: "reproduced without this change"
+    bypass_record: "recorded in logs/precommit_affected_bypass.jsonl"
+    post_verification: "re-measured after commit: FAIL set identical, zero new FAIL"
+    post_verification_result: no_new_failure
+    post_verification_head: "measured at 02:04"
+EOF
+    run_hook_failure_generate
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"commit hash"* ]]
 }
 
 @test "review_bundle APPROVE stays blocked when hook failure resolution evidence is incomplete" {

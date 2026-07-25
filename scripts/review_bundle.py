@@ -118,7 +118,18 @@ _HOOK_RESOLUTION_STEPS = ("cause", "independent_verification", "bypass_record", 
 # (d) is not "everything passes" but "nothing got worse": a full re-run PASS
 # (kagemaru: 66/66) and an identical-failure-set proof (hayate: no new FAIL) are
 # both valid, and nothing else is.
-_HOOK_POST_RESULTS = ("all_pass", "no_new_failure")
+# hanzo's B28 supplies the third and decisive case: (d) can legitimately *fail*.
+# He measured after the merged commit, found two new regressions, and reported
+# "the bypass does not hold" instead of hiding it; the cause was fixed by its
+# owner and his re-measurement on the new HEAD then held.  So `regression_detected`
+# is a first-class declarable state — it blocks APPROVE while naming the way out,
+# because a state that cannot be declared honestly has no exit and simply stalls.
+_HOOK_POST_RESULTS = ("all_pass", "no_new_failure", "regression_detected")
+_HOOK_POST_BLOCKING = {"regression_detected"}
+# (d) re-measurement answers "what is true now", not "does the old number repeat"
+# — hanzo's 02:04 count of 3 would have been wrong by the time he reported.  The
+# measured HEAD pins the answer to a revision.
+_HOOK_HEAD_KEY = "post_verification_head"
 
 def _require_hook_failures_resolved(hook_failures):
     details = hook_failures.get("details")
@@ -135,6 +146,18 @@ def _require_hook_failures_resolved(hook_failures):
         raise ValueError(
             "APPROVE forbidden while hook failures remain: post_verification_result must be one of "
             + "/".join(_HOOK_POST_RESULTS)
+        )
+    if outcome in _HOOK_POST_BLOCKING:
+        raise ValueError(
+            "APPROVE forbidden while hook failures remain: post_verification_result=regression_detected. "
+            "Fix the cause, re-measure on the new HEAD, then update post_verification/"
+            + _HOOK_HEAD_KEY + " and re-request review"
+        )
+    head = str(details.get(_HOOK_HEAD_KEY) or "").strip()
+    if len(head) < 7 or len(head) > 40 or any(c not in "0123456789abcdefABCDEF" for c in head):
+        raise ValueError(
+            "APPROVE forbidden while hook failures remain: " + _HOOK_HEAD_KEY
+            + " must be the 7-40 char commit hash the post verification was measured on"
         )
 
 def generate(args):
