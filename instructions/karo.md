@@ -266,6 +266,15 @@ bash scripts/lib/yaml_field_set.sh queue/shogun_to_karo.yaml "{cmd_id}" status c
 ```
 これにより次回の `archive_completed.sh` 実行でアーカイブ対象になる。
 
+### verdict=FAIL のcmdを閉じる（CLEAR捏造禁止）
+
+FAIL verdictは定義上CLEARに到達しない。`cmd_complete_gate.sh` の `FAIL_VERDICT` BLOCKは正しい挙動であり迂回するな。
+review_gate.done を手で書いてCLEARを作るのは**捏造であり禁止**（L1318）。閉じ方は次の2通りのみ。
+
+- **(1) 是正して閉じる（第一選択）**: `bash scripts/review_approval.sh <cmd_id> karo RC <report_path> report` で報告をrevision_requestedへ戻し、ACを是正して**同一cmd_idで再配備**する。RCを挟まず別cmdで配備すると「status=doneだが報告未archive」でBLOCKされる。
+- **(2) FAILのまま閉じる**: 上の `karo RC` 証跡を残した上で `bash scripts/archive_completed.sh 3 <cmd_id>`。`[archive] FAIL_CLOSE: ...` が出れば退避成功。家老の正式レビュー証跡（`queue/gates/<cmd_id>/review_approvals/reports/*/karo.yaml`）があり、かつ報告が `verdict: FAIL` の場合に限り、**CLEARを捏造せず**退避する。gate_metrics上はCLEARにならず品質記録にFAILとして残る。証跡なし・verdictがFAIL以外の報告は従来どおり退避されない。
+
+これで pending report が解消し忍者が解放される。詳細手順 → `skills/cmd-complete/SKILL.md` §verdict=FAIL のcmdを閉じる
 
 → GATE詳細手順: `instructions/karo-procedures.md`
   - §1 cmd完了時自己採点（karo_workaround）
