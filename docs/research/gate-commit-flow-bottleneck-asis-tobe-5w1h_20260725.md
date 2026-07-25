@@ -2,7 +2,7 @@
 
 origin: [[殿指示_gate_commit_flow設計_20260725]] <- [[three-layer-learning-loop-auto-growth v3.0]] + [[deploy_control_plane速度改善_20260721]] + [[将軍家老RCA協働_20260725]]
 created: 2026-07-25T17:00+09:00 (将軍直筆)
-status: **v2.0 — 家老・軍師レビュー完了(blt_171812/173818/174610反映)。殿裁定待ち**
+status: **v2.1 — 殿裁可(2026-07-25 17:48)。方針1+push通過+CI後追い方式(歯止め2点付き)を正式採用。実装分解へ**
 baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 
 ## §0 要求定義(殿指示 2026-07-25 16:57)
