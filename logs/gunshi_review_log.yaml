@@ -1791,3 +1791,37 @@
   - '事実4: 成果物自体は健全。半蔵のapproach_summaryによれば隔離treeで pre=FAIL(failures=1,skips=0) → post=PASS(80/80,failures=0,skips=0)、run_tests.sh affected=496/496 PASS skip0'
   - '事実5: 残WARN2件のうちGP-062(別cmd cmd_karo_impl_commander_scope_commit_20260725への参照)は、本件がGA-231c由来である以上staleではなく正当な因果参照の可能性が高い'
   lesson_candidate: 'レビューで是正対象ファイルを変更する判断を下したら、その変更がplanned_paths/target_path/scope契約へ波及するかを同時に点検し家老へ申し送れ。忍者は契約を自己改変できない(すべきでない)ため、対象変更の申し送り漏れは忍者を必ず詰ませる。「何を直すべきか」を変えたら「どこを触ってよいか」も変えねばならない。origin: "[[cmd_karo_ci_fix_30153849352_ga231c_false_positive_20260725]] -> [[軍師が是正対象をhookからtestへ変更]] -> [[planned_paths未拡張で半蔵が3回BLOCK]]"'
+- cmd_id: cmd_karo_impl_fail_close_path_20260725
+  review_type: report
+  reviewer: gunshi
+  reviewed_at: '2026-07-25T20:38:30+09:00'
+  verdict: LGTM
+  gate_prediction: CLEAR
+  gate_prediction_reason: 'precheckはERRORS=1でBLOCKを出したが、当該規則LG043(未達成語検出)は grep -rln で確認した結果 gate_gunshi_report_precheck.sh と同engine.py にのみ実装され本番gate(cmd_complete_gate.sh/gate_report_format.sh)には存在しない。加えて検出語「未完了」6箇所は全てreview_gate.done検査の目的説明の引用で先送り宣言ではない=二重の偽陽性。∴本番GATEはCLEARと予測'
+  operational_simulation:
+    command: "bats tests/unit/test_archive_completed_fail_close.bats 実走。grep -n 'verdict=FAIL' scripts/archive_completed.sh。grep -n '未完了' で報告内6箇所の実文脈確認。grep -rln 'LG043' scripts/ で規則の実装範囲を確認。grep -c '6830' で誤行番号の残存数計数"
+    expected: '報告の主張が正なら3象限がtestで固定されCLEAR捏造なしの分岐が実在するはず。またprecheck ERRORが本番gateにも効くなら同規則がcmd_complete_gate側にも実装されているはず'
+    actual: 'bats 3/3 PASS。archive_completed.sh:1326と1343にFAIL_CLOSE分岐が両経路で実在し without creating a CLEAR marker と明示。LG043は gate_gunshi_report_precheck.sh と engine.py の2ファイルにのみ存在し本番gateには不在。「未完了」6箇所は全て目的説明の引用。誤行番号6830が報告内に6箇所残存'
+    result: 'PASS — 実装は健全。precheck ERRORはprecheck専用規則かつ意味文脈の誤判定という二重の偽陽性と確定。別途6830→6949の訂正が必要'
+  verified_files:
+  - 'scripts/archive_completed.sh:1326'
+  - 'scripts/archive_completed.sh:1343'
+  - 'tests/unit/test_archive_completed_fail_close.bats:1'
+  ambiguity_points: 'none'
+  brainwash_check: '#1no(早期終了なし): precheck BLOCKで差し戻す方が楽だったが実文脈6箇所を読み規則の実装範囲まで遡って偽陽性と確定した。#2no(検証スキップなし): batsを実走し3/3 PASSを目視、実装分岐と規則の実装ファイルをgrepで現物確認。#3no(他者依存なし): 家老のgate結果を待たず軍師が判定。#4no(緩い設計なし): ok3(PASS報告は証跡があっても素通りしない)が緩和の限定を固定していることを確認。#5no(先送りなし): 6830誤引用を本レビュー内で指摘。#6no(出力=仕事の錯覚なし): review_approval.shでfingerprint固定済み。#7no(簡潔本能なし): precheck FPという指摘しにくい所見を明記。#8yes(完了急ぎリスクあり・回避した): log_appendがverdict/prediction矛盾でBLOCKした際、predictionをBLOCKのまま残しverdictをFAILへ落として通す誘因があったが、規則の実装範囲を調べCLEARが正しいと立証してから記録した。数値: bats 3/3 PASS skip0、FAIL_CLOSE分岐2箇所実在、LG043実装2ファイル(いずれもprecheck側)本番gate0件、「未完了」6箇所すべて偽陽性、誤行番号6830が6箇所残存。'
+  finding_categories:
+  - assumptions
+  - numbers
+  - simulation
+  - premortem
+  - north_star
+  - ambiguity
+  - adversarial
+  adversarial_review: 'PASS — 本cmdは軍師の誤推奨の是正であり成功を承認したい利害があった。加えて軍師は本日すでに部分一致FPを2件指摘済みで「またFPだろう」という先入観が働きうる。これを打ち消すため、まず偽陽性ではない可能性(本当に未達成作業が残っている)を疑って6箇所全ての実文脈を読み、さらに規則が本番gateにも存在する可能性を確認してから判定した'
+  observations:
+  - '事実1: bats tests/unit/test_archive_completed_fail_close.bats が3/3 PASS。ok3「PASS verdict report without CLEAR is still blocked even with a Karo review record」が緩和の対象象限を1つに限定していることを直接固定している'
+  - '事実2: archive_completed.sh:1326(missing経路)と1343(placeholder経路)にFAIL_CLOSE分岐が実在し、いずれも archiving without creating a CLEAR marker と出力する。CLEAR捏造なし・新gate増設なし'
+  - '事実3: precheckのERROR根拠であるLG043(未達成語検出)は grep -rln の結果 gate_gunshi_report_precheck.sh と gate_gunshi_report_precheck_engine.py の2ファイルにのみ実装され、cmd_complete_gate.sh/gate_report_format.sh には存在しない。∴precheck専用規則であり本番GATEをBLOCKしない'
+  - '事実4: 検出語「未完了」6箇所は全て review_gate.done 検査の目的『家老レビュー未完了の報告を退避させない』の引用であり作業の先送り宣言ではない。SG-PREが語の出現のみで判定し意味文脈を見ていない'
+  - '事実5: 報告内に誤った行番号6830が6箇所残存。軍師が20:18に家老へ実測6949と訂正したが才蔵の報告作成に間に合わなかった。実装は該当箇所に触れていないため実害は小さいが誤情報が記録に残る'
+  lesson_candidate: 'SG-PREの未達成語検出(LG043)は語の出現のみで判定し意味文脈を見ないため、gate/検査の目的説明を引用した報告で偽陽性を出す。本日将軍が根治した境界なし部分一致FPと同型がSG-PRE側に残存している。判定対象を「自身の作業状態を述べる文」に限定するか引用・目的説明の文脈を除外せよ。またprecheck専用規則が本番gateに存在しない場合、gate_predictionへそのまま転記するとaccuracyの分母を汚す。規則の実装範囲を確認してから転記せよ。origin: "[[cmd_karo_impl_fail_close_path_20260725]] -> [[SG-PRE未達成語の部分一致判定]] -> [[precheck専用規則のgate_prediction転記によるaccuracy汚染]]"'
