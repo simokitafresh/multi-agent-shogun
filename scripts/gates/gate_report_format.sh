@@ -63,6 +63,7 @@ if [ "${GATE_SINGLEFLIGHT_OWNER:-0}" != "1" ]; then
     # AC1: timeoutは品質FAIL(exit 1, "FAIL:"接頭辞)と機械的に区別できるよう、
     # 専用exit code(2)+専用接頭辞(INFRA_TIMEOUT:)で報告する。呼出元は文字列prefixではなく
     # 終了コードで判定せよ(scripts/lib/gate_report_format_classify.sh)。
+    # provenance: 本変更の実体は118dc5ff8で導入済み。
     flock -w "${GATE_SINGLEFLIGHT_TIMEOUT:-60}" 199 || {
         _gate_receipt_phase singleflight_wait "$_GATE_WAIT_STARTED"
         echo "INFRA_TIMEOUT: report gate single-flight timeout: $REPORT_PATH" >&2

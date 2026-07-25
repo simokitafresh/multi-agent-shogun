@@ -188,6 +188,7 @@ main() {
     # cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (AC1/AC2):
     # インフラ由来のsingle-flightタイムアウト(exit code 2)は品質FAIL(その他の非ゼロ)と
     # 機械的に区別する。忍者へ修正を要求せず、1回だけ再試行する。
+    # provenance: 本変更の実体はdf3421336で導入済み。
     if [ "$gate_status" = "INFRA_TIMEOUT" ]; then
         echo "INFO: gate_report_format.sh singleflightタイムアウト(インフラ由来)。1回再試行する。" >&2
         gate_rc=0

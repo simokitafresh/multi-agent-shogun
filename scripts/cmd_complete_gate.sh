@@ -7007,6 +7007,7 @@ validate_report_format_file() {
     # インフラ由来のsingle-flightタイムアウト(exit code 2)を品質FAILと機械的に区別する。
     # 1回だけ再試行し、それでも解消しなければ品質問題(report_format)とは別のreasonで
     # BLOCKし(検証未完了のまま素通りさせない)、ninjaへの誤った修正要求を防ぐ。
+    # provenance: 本変更の実体はd1499a6a7で導入済み。
     if [ "$GATE_STATUS" = "INFRA_TIMEOUT" ]; then
         echo "  [INFO] $(basename "$report_file"): single-flightタイムアウト(インフラ由来)。1回再試行"
         GATE_RC=0

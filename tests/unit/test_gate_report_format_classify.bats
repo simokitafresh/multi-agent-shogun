@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# cmd_karo_hotfix_singleflight_fail_misattribution_20260725
+# cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (provenance: 118dc5ff8)
 # test_necessity: gate_report_format.sh's exit code (0/2/other) is the single machine-readable
 # contract every caller (inbox_write.sh/ninja_done.sh/cmd_complete_gate.sh/dashboard_update.sh)
 # relies on to avoid re-deriving its own ad-hoc, divergent classification of the same signal.

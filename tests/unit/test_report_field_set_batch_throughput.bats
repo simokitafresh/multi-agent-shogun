@@ -138,6 +138,7 @@ teardown() { rm -rf "$TMPDIR_CASE"; }
 from pathlib import Path
 import sys
 text = Path(sys.argv[1]).read_text(encoding="utf-8")
+# cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (provenance: 118dc5ff8): 30->60
 assert 'flock -w "${GATE_SINGLEFLIGHT_TIMEOUT:-60}" 199' in text
 assert "paths.append('__INVALID_REPORT_PATH__')" in text
 assert 'git status --porcelain -- "${_CC_PATHS[@]}"' in text

@@ -210,7 +210,7 @@ EOF
     [ ! -f "$TEST_ROOT/inbox_write_calls.log" ]
 }
 
-# cmd_karo_hotfix_singleflight_fail_misattribution_20260725
+# cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (provenance: df3421336)
 # test_necessity: an infra-only single-flight timeout (exit code 2) must not be misattributed
 # as a report quality problem; AC2 requires the retry to still deliver notification once the
 # transient contention clears, without any "fix your report" messaging.

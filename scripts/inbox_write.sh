@@ -2158,6 +2158,7 @@ if inbox_type_triggers_report_completion "$TYPE"; then
                     # とは機械的に区別する(文字列prefixに依存しない)。忍者へ修正を要求せず、
                     # 報告も破棄しない。1回だけ再試行し、なお解消しなければ軍師ではなく
                     # 家老へインフラ異常として明示通知する(品質監視通知は出さない)。
+                    # provenance: 本変更の実体はdf3421336で導入済み。
                     if [ "$GATE_STATUS" = "INFRA_TIMEOUT" ]; then
                         echo "[report_format_gate] INFO: single-flightタイムアウト(インフラ由来)を検出。1回再試行する" >&2
                         GATE_EXIT=0

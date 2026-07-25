@@ -30,7 +30,7 @@ teardown() {
     [ "$output" = "PASS (fingerprint reuse)" ]
 }
 
-# cmd_karo_hotfix_singleflight_fail_misattribution_20260725
+# cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (provenance: 118dc5ff8)
 # test_necessity: a single-flight lock timeout is infrastructure contention, not a report
 # quality problem, and must be distinguishable by callers via exit code alone (not string
 # prefix matching, which collides with the ordinary quality-FAIL "FAIL:" prefix).

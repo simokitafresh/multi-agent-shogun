@@ -1107,7 +1107,7 @@ EOF
     [ ! -f "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
 }
 
-# cmd_karo_hotfix_singleflight_fail_misattribution_20260725
+# cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (provenance: df3421336)
 # test_necessity: an infrastructure-only single-flight lock timeout (exit code 2) must not be
 # misattributed to the reporting ninja as a quality problem; AC2 requires zero gunshi quality
 # notifications and the report still reaching karo once the transient contention clears.

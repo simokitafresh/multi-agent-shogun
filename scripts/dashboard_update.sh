@@ -264,6 +264,7 @@ validate_reports_before_dashboard() {
         # dashboard生成側の一時的なロック競合にすぎない。1回だけ再試行してから諦める。
         # 遅延source: report検証が実際に非ゼロ終了した時だけ読み込み、
         # 大半のtest fixture/呼出しが持つ最小scripts/lib契約を壊さない。
+        # provenance: 本変更の実体はdf3421336で導入済み。
         if [ "$_du_gate_rc" -ne 0 ]; then
             # shellcheck source=scripts/lib/gate_report_format_classify.sh
             source "$PROJECT_DIR/scripts/lib/gate_report_format_classify.sh"
