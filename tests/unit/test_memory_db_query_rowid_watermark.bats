@@ -85,10 +85,16 @@ PY
     touch "$cache"
     insert_event "$source" "新規書込み直後エントリ 三層記憶テスト"
 
-    # env -iで環境変数を完全にクリアしてから明示指定のみ渡す。継承された
-    # MEMORY_DB_QUERY_*/SHOGUN_MEMORY_DB_*系の値が呼出し元シェルに残っていて
-    # 結果へ紛れ込む余地を断つ(親シェルの汚染に対する耐性)。
-    run env -i PATH="$PATH" HOME="$HOME" \
+    # 機序を特定した(2026-07-26、家老指摘の再調査): memory_db_query.sh:70-71は
+    # --targetが空の場合 `tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}'`
+    # で実行者自身のagent_idをtargetへ自動解決し、SQLの--targetフィルタへ渡す。
+    # fixtureはtarget='kagemaru'で挿入しているため、この自動解決経路をtmux
+    # pane由来のTMUX_PANE(またはAGENT_ID/MEMORY_DB_QUERY_TARGET)に依存させると
+    # 実行者がkagemaru以外(karo/hayate等)の場合にtargetが一致せず0件になる
+    # (実測で再現・確定済み: MEMORY_DB_QUERY_TARGET=karoを模擬指定すると0件)。
+    # target解決に使う3変数を明示的にunsetし(env -u)、実行者の身元に依存しない
+    # 決定論的な検索にする(env -iのような包括遮断ではなく、特定した変数のみ)。
+    run env -u TMUX_PANE -u AGENT_ID -u MEMORY_DB_QUERY_TARGET \
         MEMORY_DB_QUERY_DB="$source" SHOGUN_MEMORY_DB_CACHE_PATH="$cache" \
         bash "$QUERY_SCRIPT" --search "三層記憶テスト"
     [ "$status" -eq 0 ]
@@ -109,7 +115,10 @@ PY
     # 非デフォルトDBパスはprepare_memory_db_for_readが素通し(cache未使用)する
     # 安全側ガードを持つ(cmd_2xxx由来、本タスクの対象外)。本番の既定DBパスは
     # このガードに該当しないため、fixtureではcache経路へ明示的にopt-inする。
-    run env -i PATH="$PATH" HOME="$HOME" \
+    # target解決に使う3変数を明示的にunsetする(上のAC5(b)テストと同じ機序:
+    # TMUX_PANE経由の実行者自身のagent_id自動解決が、target='kagemaru'固定の
+    # fixtureデータと実行者が異なる場合に0件を生む)。
+    run env -u TMUX_PANE -u AGENT_ID -u MEMORY_DB_QUERY_TARGET \
         MEMORY_DB_QUERY_DB="$source" SHOGUN_MEMORY_DB_CACHE_PATH="$cache" \
         SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1 \
         bash "$QUERY_SCRIPT" --search "三層記憶テスト"
