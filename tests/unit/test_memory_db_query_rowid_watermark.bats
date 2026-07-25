@@ -85,7 +85,11 @@ PY
     touch "$cache"
     insert_event "$source" "新規書込み直後エントリ 三層記憶テスト"
 
-    run env MEMORY_DB_QUERY_DB="$source" SHOGUN_MEMORY_DB_CACHE_PATH="$cache" \
+    # env -iで環境変数を完全にクリアしてから明示指定のみ渡す。継承された
+    # MEMORY_DB_QUERY_*/SHOGUN_MEMORY_DB_*系の値が呼出し元シェルに残っていて
+    # 結果へ紛れ込む余地を断つ(親シェルの汚染に対する耐性)。
+    run env -i PATH="$PATH" HOME="$HOME" \
+        MEMORY_DB_QUERY_DB="$source" SHOGUN_MEMORY_DB_CACHE_PATH="$cache" \
         bash "$QUERY_SCRIPT" --search "三層記憶テスト"
     [ "$status" -eq 0 ]
     [[ "$output" == *"新規書込み直後エントリ"* ]]
@@ -105,7 +109,8 @@ PY
     # 非デフォルトDBパスはprepare_memory_db_for_readが素通し(cache未使用)する
     # 安全側ガードを持つ(cmd_2xxx由来、本タスクの対象外)。本番の既定DBパスは
     # このガードに該当しないため、fixtureではcache経路へ明示的にopt-inする。
-    run env MEMORY_DB_QUERY_DB="$source" SHOGUN_MEMORY_DB_CACHE_PATH="$cache" \
+    run env -i PATH="$PATH" HOME="$HOME" \
+        MEMORY_DB_QUERY_DB="$source" SHOGUN_MEMORY_DB_CACHE_PATH="$cache" \
         SHOGUN_MEMORY_DB_QUERY_CACHE_NONDEFAULT=1 \
         bash "$QUERY_SCRIPT" --search "三層記憶テスト"
     [ "$status" -eq 0 ]
