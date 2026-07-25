@@ -1,250 +1,127 @@
-# 台帳駆動 Campaign Lane 汎用スキル化 — As-Is / To-Be / 5W1H
+# 台帳駆動 Campaign Lane — 品質維持高速化の両輪エンジン（覚醒再構築 v6：過剰対策削除の誤りを訂正）
 
-更新日: 2026-07-16  
-状態: 汎用controller実装済み / 応用候補catalog 12件登録済み / script-speed・pytest-speed実経路ready
-参照元: [台帳駆動・自走攻略レーン設計パターン v2.2](https://gist.github.com/simokitafresh/f777582a41c66e95a53d1cc993bc5a1c)
+更新日: 2026-07-25 09:20（将軍による訂正再構築 v6）
+状態: **v5の中核前提「過剰対策削除」は誤りと証明された（07-20 rollback実証+07-21/07-24殿裁定）。本v6が正本。**
+旧版: v5(2026-07-20「脱・過剰対策エンジン」)・v4以前は gist revision 履歴を参照。v5本文の要約は§9に保持（削除しない — 誤りの記録こそ再発防止の資産）。
+関連正本: `context/growth-loop.md` v2+§1.5 / `docs/research/dm-signal-page-style-diff-mece_20260722.md` v3.0 §RETRO（同型の振り返り完成版）
 
-## §0 結論
+> ★前提のないLLM/人へ: まず§0(何が間違いだったか)→§1(因果チェーン)→§2(現行の正しい軸)の順に読め。v5の「表示型=邪魔者・撤去せよ」を実行してはならない。
 
-「一次計測台帳が次の標的を選び、idle実行者が改善し、結果が次の選定へ戻る」閉ループを、テスト高速化専用処理から `campaign-lane` 汎用スキルへ分離した。
+---
 
-汎用化したのは次の判断契約である。
+## §0 結論 — v5の何が間違いだったか（3点、全て実証済み）
 
-- `minimize` / `maximize` / `target` の目的関数
-- adapterが供給する数値priorityによる決定的選定
-- `best_so_far` とround内複数計測のobjective方向best
-- `min_rounds=2` / `max_rounds=3` / 累積budget
-- 悪化不採用、stale拒否、品質FAIL除外、飽和停止
-- idle人数に応じた可変Nと既存 `shard-work` へのhandoff
-- 同一target・同一round重複と並行二重recordの排除
+**誤り1: 「表示型=邪魔者、撤去」という削除軸そのもの。**
+v5の2値分類（構造型keep/表示型cut）と1問判定（「破ると不可逆な害が出るか？」）を実行した07-20の脱感染sweepは、**必須防御まで削除して能力急落を起こし、wholesale rollback（b3f2f56d0）を要した**。証明されたこと: **必須ハーネスを消したLLMに「必須/過剰」の選別はできない**（LS099）。1問判定はLLM自身が答えを誤る — 判定器が汚染されているのに判定させる構造だった。
 
-新しいworker管理箱やmonitorは作っていない。実行は既存のidle検知・配備・`shard-work`を使う。
+**誤り2: 「遅さの真因=防御機構の存在」という因果の取り違え。**
+殿裁定07-21 13:56: 『**削る/守るの軸自体が誤り。過剰だろうが超速なら何の問題もない。問題は速度が遅いこと。削るな、速くしろ**』（knowledge:569abc55）。07-20 sweepの真因は「削りたくなるほど遅かった」こと。正解は削除ではなく**品質2原則（正本突合判定+境界fixture両方）を保ったままの高速化**だった。実証: 削除ゼロで deploy_total 67.3→35.8s(-47%)・admission 248.66→1.81s(-99.3%)・related_lessons 37.77→0.57s(-98.5%)を達成（07-21〜、logs/defense_overhead.jsonl台帳で前後差分証明）。
 
-## §1 As-Is / To-Be
+**誤り3: 「表示型の強制=作文強要=無価値」という評価。**
+殿裁定07-24 18:44（原文）: 『**だからこそ一見効率が悪い表示型の強制が必須になるんだ。考えるべきことは毎回考える。機械的なことは自動化する。**』（knowledge:2f977ef733dddf35+タイポ訂正c4ee37b5、growth-loop.md §1.5）。区別軸は表示型/構造型ではなく**「考えるべきことか、機械的なことか」**。考えるべき分岐（品質判断・設計選択・方式決定）の表示型強制は、一見効率が悪くても必須。実証: 07-24全量テスト事故 — 将軍が起票テンポを目的化して考える工程（三層記憶突合）を省き、10本のcmdにフルスイート指示を焼き込んだ（knowledge:75497612。忍者が延べ80-100分の全量テスト反復）。「考える作業を奪う自動化・省略」こそが大きなトラブルを起こす。
 
-| 観点 | As-Is | To-Be |
+---
+
+## §1 因果チェーン（三層記憶から辿った時系列 — これが本書の根拠）
+
+```text
+07-16  v1-v3: campaign lane=台帳駆動テスト高速化の道具として誕生（この層は今も有効）
+07-18  v4: 「自動成長の実行基盤」。F2棚卸し=防御189件「撤去0/維持144」
+07-20 17:07  殿裁定『過剰対策こそ真因』→ v5: 脱・過剰対策エンジンへ全面反転。表示型cut 9件でcmd_save 24.2→2.12s(-91%)
+07-20 夜     脱感染sweepが必須防御（verify fail-closed / Read-before-Edit等）まで削除
+             → 能力急落 → wholesale rollback b3f2f56d0 【削除軸の誤りの一次実証】(LS099)
+07-21 13:56  殿裁定『削る/守る軸自体が誤り。削るな、速くしろ』(knowledge:569abc55)
+             → growth-loop.md v2: 品質2原則を保ったまま高速化が正
+07-21〜      削除ゼロの高速化で実証: deploy -47% / admission -99.3% / related_lessons -98.5%
+07-24        全量テスト事故: 考える工程(三層突合)の省略が10cmd×全量テスト浪費を生む(knowledge:75497612)
+07-24 18:44  殿裁定『一見効率が悪い表示型の強制が必須。考えるべきことは毎回考える。
+             機械的なことは自動化する』(knowledge:2f977ef7) 【区別軸の確定=削除軸の最終否定】
+07-25  v6: 本書。campaign laneを「品質維持高速化の両輪エンジン」として再定義
+```
+
+因果リンク: `[[殿裁定_過剰対策こそ真因_20260720]] -> [[脱感染sweep必須削除]] -> [[能力急落rollback_b3f2f56d0]] -> [[LS099_必須と過剰は別物]] -> [[殿裁定_削るな速くしろ_20260721]] -> [[殿裁定_表示型強制必須_20260724]] -> [[campaign_lane_v6]]`
+
+---
+
+## §2 現行の正しい軸（v5 §1-§2を全面置換）
+
+| 原理 | 内容 | 出典 |
 |---|---|---|
-| 対象 | Bats単体テスト速度に固定 | 数値化できる任意の候補群 |
-| 目的関数 | wall秒の最小化のみ | minimize / maximize / target |
-| 選定 | 専用ledgerのwall降順 | adapter由来priority降順 + ID安定順 |
-| round | test専用callback | 共通min2/max3・budget契約 |
-| baseline | 単一`last_wall`を継承する穴あり | 全有効計測からobjective方向bestを導出 |
-| 並列数 | 固定人数化の誘惑 | `N=min(独立候補, capability適合idle worker, budget内)` |
-| 実行 | 専用generatorが直接配備 | controllerは判断のみ、実行は`shard-work`へ委譲 |
-| 状態 | タスク固有YAML/TSV | catalog YAML + append-only measurement JSONL |
-| 安全性 | 後追いで重複guard追加 | stale・duplicate・in-flight・SEALED・主観評価を入口BLOCK |
-| 応用 | 文書上の候補列挙 | 機械可読catalog 12件 + readiness validator |
+| **削るな、速くしろ** | 過剰だろうが超速なら問題ない。問題は速度が遅いこと。遅いgate/hook=インフラバグとして品質維持のまま高速化 | 殿裁定07-21 13:56 |
+| **考えるべきことは毎回考える** | 品質判断・設計選択・方式決定の分岐には一見効率が悪くても表示型強制で毎回考えさせる。考える作業を奪う自動化・省略が大トラブルの根 | 殿裁定07-24 18:44 |
+| **機械的なことは自動化する** | 三層記憶の検索・突合・知識注入・検証実行・計測は自動化して高速化する | 殿裁定07-24 18:44 |
+| **品質2原則** | (1)判定は正本と突合する (2)発火1件・非発火1件の境界fixtureを双方固定。検出能力を減らした高速化はFAIL | growth-loop.md v2 |
+| **速度は品質のための手段** | 速度が重要なのは学習ループを高速で回し続けて品質を向上させるため。因果を逆にするな | 殿07-24 18:42 |
+| 実験ファースト / 可逆なら即実行 / 厳密さは最終チェックのみ | v5から変更なしで有効 | 殿原則07-20/07-10/07-14 |
 
-## §2 5W1H
+**gate/hookの扱い（v5の2値分類を置換）:**
 
-- **Why**: idle能力を遊ばせず、改善の選定と停止を人間の記憶・特定CLI・特定LLMから切り離すため。
-- **What**: 数値台帳から候補を選び、複数roundを回し、best-so-farと飽和条件で停止する汎用スキル。
-- **Who**: adapter=計測正規化、`campaign-lane`=判断、`shard-work`=分割実行、既存配備系=worker起動、担当者=品質契約付き改善。
-- **When**: 対象列挙可能・数値優先可能・1弾10分以内・成果を二値検証可能、の4条件を満たすとき。
-- **Where**: `skills/campaign-lane/`をClaude/Codex共通正本とし、既存の配備・monitor・shard基盤へ相乗りする。
-- **How**: catalog検証 → measurement検証 → priority選定 → shard handoff → record → best/stop再判定。
-
-## §3 責務境界
-
-```text
-通常業務runner / gate / API
-        │ 自動計測
-        ▼
-一次台帳 ── adapter ──► 正規化measurement JSONL
-                              │
-                              ▼
-                       campaign-lane
-                   validate / select / record / status
-                              │ HANDOFF
-                              ▼
-                         shard-work
-                可変N・LPT・隔離・retry・lossless merge
-                              │
-                              ▼
-                     既存idle配備経路
-```
-
-`campaign-lane`はworkerを起動せず、paneを監視せず、候補commandも実行しない。`shard-work`は既知集合の単発分割を担当し、campaignの継続・停止判断はしない。
-
-## §4 スキル構成
-
-```text
-skills/campaign-lane/
-├── SKILL.md
-├── agents/openai.yaml
-└── scripts/campaign_lane.py
-```
-
-実行入口:
-
-```bash
-python3 skills/campaign-lane/scripts/campaign_lane.py validate CATALOG.yaml MEASUREMENTS.jsonl
-python3 skills/campaign-lane/scripts/campaign_lane.py select   CATALOG.yaml MEASUREMENTS.jsonl
-python3 skills/campaign-lane/scripts/campaign_lane.py record   CATALOG.yaml MEASUREMENTS.jsonl --result '{...}'
-python3 skills/campaign-lane/scripts/campaign_lane.py status   CATALOG.yaml MEASUREMENTS.jsonl
-```
-
-## §5 Runtime catalog契約
-
-```yaml
-objective: minimize
-min_rounds: 2
-max_rounds: 3
-budget: 10
-measurement_not_before: "2026-07-16T00:00:00+09:00"
-candidates:
-  - id: target-a
-    cost: 2
-    priority: 90
-    capability: test
-    independent: true
-  - id: target-b
-    cost: 2
-    priority: 80
-    capability: test
-    independent: true
-workers:
-  - id: worker-1
-    idle: true
-    capabilities: [test]
-  - id: worker-2
-    idle: true
-    capabilities: [test]
-```
-
-`priority`はadapterが一次計測から生成する。catalog記載順、worker名、CLI名、LLM名で優先順位を変えてはならない。
-
-## §6 Measurement契約
-
-1行1eventのappend-only JSONLとする。
-
-```json
-{"target":"target-a","round":1,"status":"success","quality":"pass","value":4.285,"cost":2,"measured_at":"2026-07-16T19:00:00+09:00"}
-```
-
-不変量:
-
-- キーは `(target, round)`。同一targetのR1/R2/R3は許可し、同一round重複はBLOCKする。
-- `measurement_not_before`より古い計測はBLOCKする。
-- `quality_fail`、非数値、失敗計測をbestへ採用しない。
-- concurrent recordはflock内で再読し、成功1件・重複BLOCK1件にする。
-- minimizeは最小、maximizeは最大、targetは目標への距離最小を採用する。
-- round内で複数回計測した場合も、最後の値ではなくobjective方向bestを使う。
-
-## §7 停止条件
-
-| 条件 | 結果 |
+| 対象 | 処置 |
 |---|---|
-| target到達 | `TARGET_REACHED` |
-| 累積costがbudget到達 | `BUDGET_EXHAUSTED` |
-| min2後に改善なし | `SATURATED` |
-| round 3到達 | `MAX_ROUNDS` |
-| SEALED本番・主観評価・依存候補 | `BLOCK` |
-| budget内に独立候補2件を収容不能 | `BLOCK` |
-| capability適合idle workerが2名未満 | `BLOCK` |
+| 不可逆な害を防ぐ構造型（D001-009・YAML安全・Read-before-Edit・cmd_id採番等） | 維持（v5と同じ） |
+| **考えるべき分岐の表示型**（quality_gate・起票時の判断問い・レビュー観点） | **維持**（v5は撤去としたが誤り）。ただし遅ければ高速化・粒度が浅ければ是正（例: memory_db_fts5_top3はtitle+purposeのみで沈黙=粒度バグ→cmd_4164で是正） |
+| **機械的な検査・検索・計測** | 自動化+高速化（台帳逆引きで支配項から） |
+| 判定が常に同一結論を返す検知器 | 粒度バグとして根治（LS096。削除ではなく判定粒度の是正） |
 
-serialへの無言fallbackはしない。人数は6人固定ではなく、その時点の適合idle人数から決める。
+**削減判断が必要になった場合の手順:** LLMが単独で必須/過剰を選別しない（できないことが実証済み）。gitで健全時点へrollback可能な状態を保ち、削減は殿裁定+境界fixtureでの前後検証を必須とする。
 
-## §8 応用候補catalog
+---
 
-機械可読正本: `config/campaign_lane_catalog.yaml`  
-validator: `python3 scripts/validate_campaign_lane_catalog.py`
+## §3 campaign laneの再定義（v6）
 
-2026-07-16時点:
+campaign-laneは『**台帳駆動で支配項を特定し、品質2原則を保ったまま高速化し続ける両輪エンジン**』。v5の「脱・過剰対策エンジン」定義は破棄。
 
-| readiness | 件数 | 意味 |
-|---|---:|---|
-| ready | 2 | writer→台帳→adapter→task→報告の全辺が接続済み |
-| partial | 9 | 台帳またはwriterはあるが、決定的adapterなどが不足 |
-| blocked | 1 | 外部環境または一次writer未確認 |
-
-登録済み12候補:
-
-1. 本体スクリプト速度
-2. pytestテスト速度
-3. SKILL.md鮮度
-4. context鮮度
-5. 因果backlinks=0
-6. insight queue
-7. detector false-positive率
-8. 教訓backlog
-9. workaround率
-10. CI runtime
-11. 三層記憶候補backlog
-12. 報告gate失敗率
-
-`ready=2`は script-speed と pytest-speed のwriter→台帳→adapter→task生成までを実経路で計測した値である。script-speedはさらにidle配備→改善→record→次標的の再配備まで貫通した。残る候補も、対象固有adapterと通常業務からの自動writerが揃うまでreadyへ上げない。
-
-## §9 テスト証跡
-
-| 対象 | 結果 | 主な敵対fixture |
-|---|---:|---|
-| campaign-lane skill validation | 1/1 PASS | frontmatter・構成 |
-| generic controller | 15/15 PASS | priority逆転、累積budget、stale、duplicate、同target R1-R3、並行record、品質FAIL、SEALED |
-| 既存test-speed callback | 22/22 PASS | R2計測4.285/5.196→best 4.285、順序逆転、valid 0件BLOCK、previous best保持 |
-| script-speed adapter | 20/20 PASS | 台帳264件、偽予約32→0、全writer parse+atomic公開、idle guard、deploy失敗rollback、5分task契約、実配備target/owner一致 |
-| script-speed 実campaign | 120/120 PASS | `prompt_state_inject.sh` 125.700→87.433ms（30.5%改善）、record完了後に次標的を自動配備 |
-| pytest-speed writer | 7/7 PASS | 通常pytestからTSV台帳へflock+atomic追記、malformed台帳fail-closed、SKIP/FAIL記録 |
-| pytest-speed adapter | 12/12 PASS | 実`next` 60秒timeout→0.23〜0.85秒、候補11件、generation予約、並行deploy成功1/重複0、失敗rollback |
-| 応用候補catalog | 12/12 fields PASS | lane_id重複0、ready=2 / partial=9 / blocked=1 |
-
-確認コマンド:
-
-```bash
-python3 /home/simokitafresh/.codex/skills/.system/skill-creator/scripts/quick_validate.py skills/campaign-lane
-bats tests/unit/test_campaign_lane.bats
-bats tests/unit/test_test_speed_task_generator.bats
-bats tests/unit/test_bash_speed_training.bats
-bats tests/unit/test_pytest_speed_task_generator.bats
-python3 scripts/validate_campaign_lane_catalog.py
-```
-
-## §10 改善された具体例
-
-既存速度レーンでは、同一roundで4.285秒と5.196秒を計測したのに、最後の5.196秒を次roundのbestとして継承していた。
-
-修正後:
-
+実行ループ（台帳方式）:
 ```text
-previous best: 9.818
-valid measurements: [4.285, 5.196]
-round best: 4.285
-next best_so_far: min(9.818, 4.285) = 4.285
-last observation: 5.196（観測履歴として別保存）
+1. 計装     全防御・全フェーズのwall_msを既存台帳(logs/defense_overhead.jsonl等)へ記録（新ledger新設は車輪=禁止 knowledge:fbb5716c）
+2. 逆引き   台帳を集計し支配項（総時間=avg×回数）を特定
+3. 高速化   cache/batch/差分化/fork削減。検査項目・検出能力は減らさない
+4. 実測     同一台帳の前後差分で数値証明+境界fixture PASS
+5. 還流     手法を次の支配項へ横展開
 ```
 
-これにより、計測回数を増やした結果baselineが悪化する逆転を防いだ。
+実績（この方式で削除ゼロ達成分）: deploy_total -47% / admission -99.3% / related_lessons -98.5% / report publication p95 4.30→0.50s / context freshness gate p95 4,483→112ms。
 
-## §11 残課題
+次期支配項（2026-07-25 台帳直近3000行の実集計）: ①deploy_total 平均27.1s×252回（残候補=report_publication owner再parse+ninja_scope_commit） ②軍師precheck 平均5.2s×555回 ③pre-commit self_sync 平均4.8s×249回 ④cmd_save内部フェーズ（未計装→まず計装）。
 
-1. §8の残候補ごとのadapterを作り、`ready=2`を実測で引き上げる。
-2. 専用計測runを増やさず、通常業務経路へ自動writerを接続する。
-3. script-speedで貫通済みの生成→idle配備→改善→record→次標的を、pytest-speedでも実機貫通させる。
-4. adapterの選定精度とfalse-positive率を計測し、100% FPなら較正または退役する。
-5. 完了処理・計測経路・選定器のうち最弱リンクを毎cycleで更新する。
+---
 
-## §12 Source map
+## §4 判断契約・アウトカム定義（v5 §5-§6から変更なしで有効）
 
-- `skills/campaign-lane/SKILL.md`
-- `skills/campaign-lane/scripts/campaign_lane.py`
-- `tests/unit/test_campaign_lane.bats`
-- `config/campaign_lane_catalog.yaml`
-- `scripts/validate_campaign_lane_catalog.py`
-- `scripts/test_speed_task_generator.sh`
-- `tests/unit/test_test_speed_task_generator.bats`
-- `tools/bash_speed_training.sh`
-- `tests/unit/test_bash_speed_training.bats`
-- `scripts/pytest_speed_task_generator.sh`
-- `tests/unit/test_pytest_speed_task_generator.bats`
-- `/mnt/c/Python_app/DM-signal/backend/tests/pytest_duration_ledger_plugin.py`
-- `/mnt/c/Python_app/DM-signal/backend/tests/test_pytest_duration_ledger_plugin.py`
-- `docs/research/ledger-driven-campaign-lane-pattern_20260714.md`
+- 目的関数: `minimize` / `maximize` / `target`。round契約: min_rounds=2 / max_rounds=3 / 累積budget / best_so_far継承。
+- 停止条件: TARGET_REACHED / BUDGET_EXHAUSTED / SATURATED / MAX_ROUNDS / SEALED・本番接触は裁可 / PAUSED_BY_LORD。
+- 実行入口: `python3 skills/campaign-lane/scripts/campaign_lane.py {validate|select|record|status}`
+- **アウトカム=「品質合格成果数/壁時計時間」の一点。** 横断不変量（FAIL0/SKIP0/FP0/FN0/duplicate0/通知喪失0/安全境界低下0）を守ったまま分母を縮めて初めてPASS。
 
-## 因果リンク
+---
 
-`[[ledger-driven-campaign-lane-pattern_20260714]] -> [[campaign-lane]] -> [[shard-work]] -> [[adaptive-idle-workers]]`
+## §5 失敗カタログ（v4/v5から継承+v5自身の失敗を追加）
 
-`[[fixture-only false ready]] -> [[real-path readiness gate]] -> [[campaign-lane ready]]`
+| # | 失敗 | v6での位置づけ |
+|---|---|---|
+| F1 | 並列化が直列化資源を跨ぐと逆効果 | 有効（serialized_resources判定は維持） |
+| F2 | 防御機構自身が律速 | **再々解釈: 律速の解は削除でなく高速化**（v4「撤去0」は棚卸しとして正しく、v5「表示型撤去」が誤りだった） |
+| F3 | fail-closed防御が制御面を封鎖 | 有効。復旧コマンドのallowlist実体化を事前検証（LS100） |
+| F5 | 変更流量増でCI衝突急増 | 有効。CI RED=1名修正・残り通常作業継続 |
+| F6 | 通知配送の喪失 | 有効（通知喪失0は不変量） |
+| F7 | 1周デモ≠連続運転 | 有効。継続駆動は残課題 |
+| **F11(新)** | **削除軸の実行が必須防御を消し能力急落** | 07-20 sweep→rollback b3f2f56d0。LLMは必須/過剰を選別できない。削減は殿裁定+fixture検証必須 |
+| **F12(新)** | **考える工程の省略が事故を量産** | 07-24全量テスト事故。速度の目的化=考える表示型の迂回。表示型強制は維持し、機械部分だけ速くする |
+| F8-F10(v5) | 過剰対策連鎖・委任矛盾・ガード再帰 | 歴史記録として保持。「過剰対策」の枠組み自体はv6で破棄 |
 
+---
 
-origin: [[家老自走cmd_20260716]]
+## §9 v5の記録（歴史保存 — 実行禁止・参照のみ）
+
+v5(2026-07-20)は殿裁定『過剰対策こそ真因』を受け「表示型cut・構造型keep」の2値分類で9件をcutし、cmd_save 24.2→2.12s(-91%)等を実測した。**このうち「遅い機械的処理の高速化」に相当する部分（q11 docs/research全件scan廃止・universal_shard python起動削減等）は有効で現行も生きている。誤りだったのは「考えさせる表示型（quality_gate・origin・environment_change等）の撤去」で、rollback後に必須分は復元され、07-24裁定で表示型強制の必須性が確定した。** v5全文はgist revision履歴(2026-07-20 18:30版)を参照。
+
+---
+
+## §10 Source map
+
+- 台帳: `logs/defense_overhead.jsonl`（source:deploy_task / git_pre_commit / gate_gunshi_report_precheck 等）
+- 裁定原文: 記憶DB knowledge:569abc55(削るな速くしろ) / knowledge:2f977ef733dddf35+c4ee37b5(表示型強制必須・タイポ訂正) / knowledge:75497612(全量テスト事故) / LS099(必須と過剰は別物) / LS096(粒度バグ)
+- 現行原則正本: `context/growth-loop.md` v2 + §1.5
+- rollback一次証跡: commit b3f2f56d0（07-20脱感染sweepのwholesale rollback）
+
+origin: [[家老自走cmd_20260716]] -> [[覚醒再構築v4_20260718]] -> [[過剰対策削減v5_20260720]] -> [[rollback_b3f2f56d0_削除軸の誤り実証]] -> [[殿裁定_削るな速くしろ_20260721]] -> [[殿裁定_表示型強制必須_20260724]] -> [[訂正再構築v6_20260725]]
