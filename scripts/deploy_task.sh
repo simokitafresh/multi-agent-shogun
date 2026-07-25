@@ -650,6 +650,93 @@ deploy_task_history_cache_get() {
     printf '%s\n' "$cached_commit"
 }
 
+# cmd_4165: report_publication工程の「owner task再parse」対策。
+# cProfile接地(blt_20260721_173822): report_publicationの支配項は他忍者(owner)のtask
+# YAMLをparent_cmd/status確認のため毎回field_get()で2回、全量awk走査していたこと
+# (299回重複parse/owner実数8人、11.6秒=工程の71.1%)。
+# 設計(既承認・knowledge:8d38e090): owner task 8件をmtimeキーで1回cache
+# +cache miss時はheader text scan(先頭N行のみ1pass)。ただし「同parent_cmd一致
+# (PROTECT判定に直結する安全境界)」「header scan未検出(malformed境界)」の2ケースのみ
+# field_get()の全量parseへfallbackし、検出境界(全列挙)は落とさない。
+deploy_task_owner_cache_get() {
+    local ninja="$1" mtime="$2"
+    local cache_file="$SCRIPT_DIR/.cache/owner-task/${ninja}"
+    local cached_mtime cached_parent cached_status
+    [ -f "$cache_file" ] || return 1
+    IFS=$'\t' read -r cached_mtime cached_parent cached_status < "$cache_file" || return 1
+    [ "$cached_mtime" = "$mtime" ] || return 1
+    printf '%s\t%s\n' "$cached_parent" "$cached_status"
+}
+
+deploy_task_owner_cache_set() {
+    local ninja="$1" mtime="$2" parent="$3" status="$4"
+    local cache_dir="$SCRIPT_DIR/.cache/owner-task"
+    mkdir -p "$cache_dir"
+    local cache_file="$cache_dir/${ninja}"
+    printf '%s\t%s\t%s\n' "$mtime" "$parent" "$status" > "${cache_file}.tmp.$$"
+    mv "${cache_file}.tmp.$$" "$cache_file"
+}
+
+# 先頭${max_lines}行だけを1 awk passでparent_cmd/statusを同時抽出する。
+# field_get()と同じ「任意インデント許容・最初の出現優先」規約(L070準拠、2sp固定禁止)。
+# 窓内に両方見つからなければ __HEADER_MISS__ を返し、呼び出し側でfull parseへfallbackさせる。
+deploy_task_owner_header_scan() {
+    local max_lines="$1" file="$2"
+    awk -v maxl="$max_lines" '
+        function trim(s) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+            gsub(/^\x27|\x27[[:space:]]*$/, "", s)
+            gsub(/^"|"[[:space:]]*$/, "", s)
+            return s
+        }
+        gp == "" && $0 ~ /^[[:space:]]*parent_cmd:/ {
+            v = $0; sub(/^[[:space:]]*parent_cmd:[[:space:]]*/, "", v)
+            gp = trim(v); if (gp == "") gp = "\x01"
+        }
+        gs == "" && $0 ~ /^[[:space:]]*status:/ {
+            v = $0; sub(/^[[:space:]]*status:[[:space:]]*/, "", v)
+            gs = trim(v); if (gs == "") gs = "\x01"
+        }
+        gp != "" && gs != "" { found = 1; exit }
+        NR >= maxl { exit }
+        END {
+            if (found) printf "%s\t%s\n", (gp == "\x01" ? "" : gp), (gs == "\x01" ? "" : gs)
+            else print "__HEADER_MISS__"
+        }
+    ' "$file" 2>/dev/null
+}
+
+# owner(他忍者)のtask YAMLからparent_cmd/statusを取得する。出力: "parent_cmd<TAB>status" 1行。
+deploy_task_owner_task_lookup() {
+    local other_ninja="$1" other_task_file="$2" current_parent_cmd="$3"
+    local mtime
+    mtime=$(stat -c '%Y' "$other_task_file" 2>/dev/null) || { printf '\t\n'; return 1; }
+
+    local cached
+    cached=$(deploy_task_owner_cache_get "$other_ninja" "$mtime")
+    if [ -n "$cached" ]; then
+        printf '%s\n' "$cached"
+        return 0
+    fi
+
+    local scan parent status need_full=0
+    scan=$(deploy_task_owner_header_scan 200 "$other_task_file")
+    if [ "$scan" = "__HEADER_MISS__" ]; then
+        need_full=1
+    else
+        IFS=$'\t' read -r parent status <<< "$scan"
+        [ "$parent" = "$current_parent_cmd" ] && need_full=1
+    fi
+
+    if [ "$need_full" -eq 1 ]; then
+        parent=$(field_get "$other_task_file" "parent_cmd" "" 2>/dev/null || true)
+        status=$(field_get "$other_task_file" "status" "" 2>/dev/null || true)
+    fi
+
+    deploy_task_owner_cache_set "$other_ninja" "$mtime" "$parent" "$status"
+    printf '%s\t%s\n' "$parent" "$status"
+}
+
 deploy_task_queue_stale_report() {
     deploy_task_deferred_append stale_reports "path=$1" "parent=$2" "verdict=${3:-empty}"
 }
@@ -3668,9 +3755,10 @@ generate_report_template() {
             local _other_ninja="${stale_basename%%_report_*}"
             local _other_task_file="$SCRIPT_DIR/queue/tasks/${_other_ninja}.yaml"
             if [ -f "$_other_task_file" ]; then
-                local _other_task_parent _other_task_status
-                _other_task_parent=$(field_get "$_other_task_file" "parent_cmd" "" 2>/dev/null || true)
-                _other_task_status=$(field_get "$_other_task_file" "status" "" 2>/dev/null || true)
+                local _other_task_parent _other_task_status _owner_lookup
+                # cmd_4165: owner8件cache+header text scan(同parent_cmd一致/malformed境界のみfull parse)
+                _owner_lookup=$(deploy_task_owner_task_lookup "$_other_ninja" "$_other_task_file" "$_p_parent_cmd")
+                IFS=$'\t' read -r _other_task_parent _other_task_status <<< "$_owner_lookup"
                 if [[ "$_other_task_parent" == "$_p_parent_cmd" ]] && [[ "$_other_task_status" =~ ^(assigned|acknowledged|in_progress)$ ]]; then
                     log "report_template: PROTECTED active other ninja report (${stale_basename}, status=${_other_task_status})"
                     continue
