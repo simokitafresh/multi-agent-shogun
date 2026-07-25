@@ -49,6 +49,13 @@ _run_hook() {
     _hook_payload "$1" | TMUX_AGENT_ID=shogun bash "$HOOK"
 }
 
+# GA-231/GA-231c(忍者・指揮官のgit commit直書き禁止)はagent identityで発火する。
+# heavy admissionの偽陽性を測る際は、identity由来のBLOCKと混同しないよう
+# 鎖の外(agent roleでない)identityで実行する。
+_run_hook_as_non_agent() {
+    _hook_payload "$1" | TMUX_AGENT_ID=lord-tools bash "$HOOK"
+}
+
 _exclusive_fixture_contract() {
     local runner="$1" block fixture
     local -a required=(
@@ -722,7 +729,12 @@ print('ok')
 @test "hook: 通常のgit/report操作は偽陽性0" {
     run _run_hook "git status"
     [ "$status" -eq 0 ]
-    run _run_hook "git commit -m test"
+    # cmd_karo_impl_commander_scope_commit_20260725 で GA-231c(指揮官のgit commit直書き禁止)が
+    # 追加されたため、shogun identityでのdirect commitはBLOCKが正となった。
+    # 本testの契約は「heavy admission分類器の偽陽性0」であり identity guard の検証ではないので、
+    # 鎖の外のidentityで測る。GA-231c自体の発火は
+    # tests/unit/test_pre_bash_combined.bats が既に固定しているため重複させない。
+    run _run_hook_as_non_agent "git commit -m test"
     [ "$status" -eq 0 ]
     run _run_hook "cat scripts/run_tests.sh"
     [ "$status" -eq 0 ]
