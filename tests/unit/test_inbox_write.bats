@@ -248,6 +248,40 @@ setup() {
     [[ "$output" == *'does not identify exactly one awaiting event'* ]]
 }
 
+# test_necessity: retro回答族(infra_bug_suspected/infra_bug_report/infra_bug/retro_answer)は全て保留イベント識別子を構造化して持ち、回答族でないtypeは一切retro扱いされない。
+@test "every retro answer type attaches the hold identity and other types never do" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/retro/verbatim_awaiting_answer"
+    printf 'testninja\nevent:family\nfixture\nkey-family\n' > "$TEST_TMPDIR/queue/retro/verbatim_awaiting_answer/one.event"
+
+    for answer_type in infra_bug_suspected infra_bug_report infra_bug retro_answer; do
+        rm -f "$TEST_INBOX_DIR/karo.yaml"
+        run bash "$TEST_INBOX_WRITE" karo "answer via $answer_type" "$answer_type" testninja investigate
+        [ "$status" -eq 0 ]
+        grep -q "event_id: 'event:family'" "$TEST_INBOX_DIR/karo.yaml"
+    done
+
+    # 回答族でないtypeは同じ保留があってもretro扱いしない(誤判定0)。
+    for other_type in escalation bulletin_notify status_update analysis_result; do
+        rm -f "$TEST_INBOX_DIR/karo.yaml"
+        run bash "$TEST_INBOX_WRITE" karo "unrelated $other_type" "$other_type" testninja notify_karo
+        [ "$status" -eq 0 ]
+        ! grep -q "event_id: 'event:family'" "$TEST_INBOX_DIR/karo.yaml"
+    done
+}
+
+# test_necessity: 本文がevent_idを名乗る既存のretro_answer運用は、保留イベントが複数あってもBLOCKされずそのIDを構造化フィールドへ写す。
+@test "content declared event_id survives multiple awaiting holds without blocking" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/queue/retro/verbatim_awaiting_answer"
+    printf 'testninja\nevent:one\nfixture\nkey1\n' > "$TEST_TMPDIR/queue/retro/verbatim_awaiting_answer/one.event"
+    printf 'testninja\nevent:two\nfixture\nkey2\n' > "$TEST_TMPDIR/queue/retro/verbatim_awaiting_answer/two.event"
+
+    run bash "$TEST_INBOX_WRITE" karo "event_id=event:two 回答本文" retro_answer testninja investigate
+    [ "$status" -eq 0 ]
+    grep -q "event_id: 'event:two'" "$TEST_INBOX_DIR/karo.yaml"
+}
+
 # test_necessity: a prompt created after send prechecks but before the locked append is bound at the final durable checkpoint.
 @test "infra bug answer identity refreshes live root at locked append" {
     setup_basic_test_env

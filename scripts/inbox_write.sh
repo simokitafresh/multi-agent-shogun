@@ -2481,8 +2481,28 @@ esac
 
 # Infrastructure-bug findings are answers to an exact retrospective prompt.
 # Persist the identity structurally; ambiguous/no-hold cases fail closed.
-if [ "$TYPE" = "infra_bug_suspected" ]; then
+# 忍者が同じretro回答をinfra_bug_suspected/infra_bug_report/infra_bug/retro_answerの
+# どれで送るかは実データ上ばらついており(実測: 各48/43/29/78件)、送信側がtypeを1つに
+# 決め打ちしていたためinfra_bug_report・infra_bugの72件は一度もevent_idを持てず、
+# 判定側(retro_write.sh final-checkpoint)の突合に乗らなかった。回答族を1つの集合として
+# 扱う。★この集合は scripts/retro_write.sh の受理集合と同一でなければならない
+# (tests/unit/test_retro_answer_type_parity.bats が両者の一致を強制する)。
+inbox_is_retro_answer_type() {
+    case "$1" in
+        infra_bug_suspected|infra_bug_report|infra_bug|retro_answer) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+if inbox_is_retro_answer_type "$TYPE"; then
     _retro_event_id="${RETRO_EVENT_ID:-}"
+    # 回答本文が event_id=<id> を名乗っている場合、それは送信者が明示した識別子であり
+    # 保留イベントが複数でも曖昧ではない。既存のretro_answer運用(本文にevent_idを書き、
+    # 判定側が本文突合で拾う形)を壊さないため、本文由来IDは fail-closed の対象にせず
+    # 構造化フィールドへ写すだけにする。厳密照合を課すのは明示のRETRO_EVENT_IDのみ。
+    _retro_content_event_id=""
+    if [ -z "$_retro_event_id" ]; then
+        _retro_content_event_id=$(printf '%s' "$CONTENT" | grep -oE 'event_id=[^[:space:]]+' | head -1 | cut -d= -f2- || true)
+    fi
     _retro_matches=()
     for _retro_hold in "$SCRIPT_DIR"/queue/retro/verbatim_awaiting_answer/*.event; do
         [ -f "$_retro_hold" ] || continue
@@ -2499,6 +2519,8 @@ if [ "$TYPE" = "infra_bug_suspected" ]; then
             echo "[retro_answer_identity] BLOCKED: RETRO_EVENT_ID does not identify exactly one awaiting event for ${FROM}" >&2
             exit 2
         fi
+    elif [ -n "$_retro_content_event_id" ]; then
+        _retro_event_id="$_retro_content_event_id"
     elif [ "${#_retro_matches[@]}" -eq 1 ]; then
         _retro_event_id="${_retro_matches[0]}"
     elif [ "${#_retro_matches[@]}" -gt 1 ]; then
@@ -2536,8 +2558,12 @@ while [ $attempt -lt $max_attempts ]; do
         # visible after the first identity scan.  Resolve again at the durable
         # append checkpoint so a 0 -> 1 live transition cannot persist an
         # unbound answer (the 12:57 prompt / 12:59 answer incident).
-        if [ "$TYPE" = "infra_bug_suspected" ]; then
+        if inbox_is_retro_answer_type "$TYPE"; then
             _retro_event_id="${RETRO_EVENT_ID:-}"
+            _retro_content_event_id=""
+            if [ -z "$_retro_event_id" ]; then
+                _retro_content_event_id=$(printf '%s' "$CONTENT" | grep -oE 'event_id=[^[:space:]]+' | head -1 | cut -d= -f2- || true)
+            fi
             _retro_matches=()
             for _retro_hold in "$SCRIPT_DIR"/queue/retro/verbatim_awaiting_answer/*.event; do
                 [ -f "$_retro_hold" ] || continue
@@ -2554,6 +2580,8 @@ while [ $attempt -lt $max_attempts ]; do
                     echo "[retro_answer_identity] BLOCKED: RETRO_EVENT_ID does not identify exactly one awaiting event for ${FROM}" >&2
                     exit 2
                 fi
+            elif [ -n "$_retro_content_event_id" ]; then
+                _retro_event_id="$_retro_content_event_id"
             elif [ "${#_retro_matches[@]}" -eq 1 ]; then
                 _retro_event_id="${_retro_matches[0]}"
             elif [ "${#_retro_matches[@]}" -gt 1 ]; then

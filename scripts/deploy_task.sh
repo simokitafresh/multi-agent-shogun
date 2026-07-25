@@ -425,7 +425,14 @@ for mailbox_path in mailboxes:
     except Exception:
         continue
     for message in mailbox.get("messages", []) if isinstance(mailbox, dict) else []:
-        if not isinstance(message, dict) or message.get("type") != "retro_answer":
+        # 回答族は送信側(scripts/inbox_write.sh inbox_is_retro_answer_type)および
+        # 判定側(scripts/retro_write.sh final-checkpoint)と同一集合でなければならない。
+        # ここだけ retro_answer 厳密一致だったため、忍者が infra_bug_suspected 等で
+        # 回答してもholdが解けず次の配備がBLOCKされ続けた(家老が手動復元していた真因)。
+        # tests/unit/test_retro_answer_type_parity.bats が3箇所の一致を強制する。
+        if not isinstance(message, dict) or message.get("type") not in {
+            "retro_answer", "infra_bug_suspected", "infra_bug_report", "infra_bug",
+        }:
             continue
         if message.get("event_id") == event_id or pattern.search(str(message.get("content", ""))):
             raise SystemExit(0)

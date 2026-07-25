@@ -167,12 +167,17 @@ with open(lock_path, "a+") as lock:
         except Exception:
             messages = []
         for message in messages if isinstance(messages, list) else []:
-            if not isinstance(message, dict) or message.get("type") not in {"retro_answer", "infra_bug_suspected"}:
+            # 回答族は送信側(scripts/inbox_write.sh inbox_is_retro_answer_type)と同一集合。
+            # 片側だけ増やすと回答が再び機械判定に乗らないため、
+            # tests/unit/test_retro_answer_type_parity.bats が両者の一致を強制する。
+            if not isinstance(message, dict) or message.get("type") not in {
+                "retro_answer", "infra_bug_suspected", "infra_bug_report", "infra_bug",
+            }:
                 continue
             structured = str(message.get("event_id") or "")
             if structured in state["deliveries"]:
                 answered_ids.add(structured)
-            elif message.get("type") == "retro_answer":
+            else:
                 text = str(message.get("content") or "")
                 answered_ids.update(eid for eid in state["deliveries"] if f"event_id={eid}" in text)
     e4_answers = os.path.join(qdir, "answers.jsonl")
