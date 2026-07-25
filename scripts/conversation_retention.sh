@@ -279,6 +279,31 @@ index_body = f"""# Lord Conversation Index
 - `logs/lord_conversation_archive/*.jsonl`（24h超過・200件超過の退避先）
 """
 
+# cmd_karo_impl_prepush_autogen_exclude_20260726: last_updated/generated_at は
+# 呼び出しごとに now を書くため、実体の中身(直近やり取り等)が同一でも毎回diffが
+# 出て GA-PUSH1(pre-push dirty tree guard)を汚す(実データ:
+# logs/push_dirty_tree_bypass.jsonl 2026-07-25T15:13:56Z/18:09:14Z)。
+# 中身が前回と同一なら、timestampだけ更新して差分を作らない — 前回ファイルを
+# タイムスタンプ行だけ正規化して比較し、一致すれば前回ファイルをそのまま使う。
+_TIMESTAMP_LINES_RE = re.compile(
+    r"^<!-- (last_updated|generated_at): .*-->$", re.MULTILINE
+)
+
+
+def _normalize_timestamps(text: str) -> str:
+    return _TIMESTAMP_LINES_RE.sub("<!-- \\1: __FROZEN__ -->", text)
+
+
+_existing_body = (
+    index_path.read_text(encoding="utf-8", errors="replace")
+    if index_path.exists()
+    else ""
+)
+if _existing_body and _normalize_timestamps(_existing_body) == _normalize_timestamps(
+    index_body
+):
+    index_body = _existing_body
+
 tmp_index = index_path.parent / (index_path.name + ".tmp")
 tmp_index.write_text(index_body, encoding="utf-8", errors="replace")
 os.replace(str(tmp_index), str(index_path))

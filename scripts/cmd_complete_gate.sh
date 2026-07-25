@@ -395,6 +395,7 @@ export FIELD_GET_NO_LOG=1
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
+source "$SCRIPT_DIR/scripts/lib/autogen_paths.sh"
 
 # Resolve the git repository that owns a task.  Reports may describe work in
 # an external project; treating every commit as a multi-agent-shogun commit
@@ -3265,7 +3266,7 @@ check_project_code_stubs() {
     local uncommitted uncommitted_filtered
     uncommitted=$({ git -C "$project_path" diff --name-only 2>/dev/null; git -C "$project_path" diff --cached --name-only 2>/dev/null; } | sort -u | sed '/^$/d')
     if [[ -n "$uncommitted" ]]; then
-        uncommitted_filtered=$(printf '%s\n' "$uncommitted" | grep -v -E '^queue/|^logs/|^dashboard\.md$|^context/lord-conversation-index\.md$|^context/senkyoku-log\.md$|^context/cmd-chronicle\.md$|^context/dm-signal-research\.md$|\.log$' || true)
+        uncommitted_filtered=$(printf '%s\n' "$uncommitted" | grep -v -E "$AUTOGEN_PATH_EXCLUDE_REGEX" || true)
         # BLOCK only dirty files claimed by the current cmd report. External
         # repos may contain unrelated dirty files from older tasks.
         if [[ -n "$uncommitted_filtered" ]] && declare -F collect_report_modified_files >/dev/null 2>&1; then

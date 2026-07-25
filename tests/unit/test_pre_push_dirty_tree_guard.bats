@@ -98,3 +98,75 @@ latest_artifact_text() {
     grep -q '"reason": "emergency CI RED fix"' "$FAKE_REPO/logs/push_dirty_tree_bypass.jsonl"
     grep -q '"agent": "karo"' "$FAKE_REPO/logs/push_dirty_tree_bypass.jsonl"
 }
+
+# cmd_karo_impl_prepush_autogen_exclude_20260726
+# test_necessity: real incident (logs/push_dirty_tree_bypass.jsonl
+# 2026-07-25T15:13:56Z/18:09:14Z) — conversation_retention.sh regenerates
+# context/lord-conversation-index.md on every agent turn, re-stamping
+# generated_at even when the substantive content is unchanged. That made
+# GA-PUSH1 fire on an auto-generated index and forced repeated
+# SHOGUN_PUSH_DIRTY_TREE_BYPASS use. An overlap limited to auto-generated
+# paths must not BLOCK.
+@test "AUTOGEN-EXCLUDE: overlap limited to an auto-generated index path (context/lord-conversation-index.md, the real incident file) is not blocked" {
+    mkdir -p "$FAKE_REPO/scripts/lib" "$FAKE_REPO/context"
+    cp "$PROJECT_ROOT/scripts/lib/autogen_paths.sh" "$FAKE_REPO/scripts/lib/autogen_paths.sh"
+    printf 'index v1\n' > "$FAKE_REPO/context/lord-conversation-index.md"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "add index"
+    printf 'index v2 (regenerated)\n' > "$FAKE_REPO/context/lord-conversation-index.md"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "publish index update"
+    LOCAL_SHA="$(git -C "$FAKE_REPO" rev-parse HEAD)"
+
+    # conversation_retention.shが数分ごとにgenerated_atだけ更新して再生成するのと
+    # 同じ形: pushしたcommitと同じpathを未commitで再度上書きする。
+    printf 'index v3 (regenerated again, uncommitted)\n' > "$FAKE_REPO/context/lord-conversation-index.md"
+
+    # 成功path(exit 0)では_record_hook_failureが起動せずlogs/hook_artifacts/*.logへの
+    # 書込みが発生しない(L945: hookのstderr redirectはBLOCK時のみartifact化される
+    # 設計)ため、成功したことそのもの(exit 0・artifact不在)のみを検証する。
+    run run_prepush
+    [ "$status" -eq 0 ]
+    [ -z "$(latest_artifact_text)" ]
+}
+
+# test_necessity: the exclusion must not weaken existing protection for
+# ordinary (non-autogen) files even when the autogen lib is loaded —
+# regression fixture for AC4(a).
+@test "AUTOGEN-EXCLUDE陰性(a): with the autogen lib present, a normal file's dirty-overlap is still BLOCKed exactly as before" {
+    mkdir -p "$FAKE_REPO/scripts/lib"
+    cp "$PROJECT_ROOT/scripts/lib/autogen_paths.sh" "$FAKE_REPO/scripts/lib/autogen_paths.sh"
+    printf 'not yet committed\n' >> "$FAKE_REPO/shared.txt"
+
+    run run_prepush
+    [ "$status" -eq 1 ]
+    artifact="$(latest_artifact_text)"
+    [[ "$artifact" == *"BLOCK(GA-PUSH1)"* ]]
+    [[ "$artifact" == *"shared.txt"* ]]
+}
+
+# test_necessity: AC4(c) — a mixed overlap (autogen path + normal file) must
+# still BLOCK, and the reported duplicate path must cite only the normal
+# file so operators are not misled into thinking the exclusion is the
+# blocker.
+@test "AUTOGEN-EXCLUDE陰性(c): overlap mixing an auto-generated path and a normal file BLOCKs, citing only the normal file" {
+    mkdir -p "$FAKE_REPO/scripts/lib" "$FAKE_REPO/context"
+    cp "$PROJECT_ROOT/scripts/lib/autogen_paths.sh" "$FAKE_REPO/scripts/lib/autogen_paths.sh"
+    printf 'index v1\n' > "$FAKE_REPO/context/lord-conversation-index.md"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "add index on top of shared.txt publish"
+    LOCAL_SHA="$(git -C "$FAKE_REPO" rev-parse HEAD)"
+
+    printf 'not yet committed\n' >> "$FAKE_REPO/shared.txt"
+    printf 'index v2 (regenerated, uncommitted)\n' > "$FAKE_REPO/context/lord-conversation-index.md"
+
+    run run_prepush
+    [ "$status" -eq 1 ]
+    artifact="$(latest_artifact_text)"
+    [[ "$artifact" == *"BLOCK(GA-PUSH1)"* ]]
+    # 重複path一覧は "  <path>"(2文字インデント)で出力される。changed_filesの
+    # 一覧セクションには通常インデントなしでlord-conversation-index.mdが載るため、
+    # 「重複pathとして報告していない」ことをインデント付き文字列で厳密に確認する。
+    [[ "$artifact" == *$'\n  shared.txt'* ]]
+    [[ "$artifact" != *$'\n  context/lord-conversation-index.md'* ]]
+}

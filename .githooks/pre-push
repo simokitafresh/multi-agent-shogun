@@ -15,6 +15,10 @@ if [ -z "$REPO_ROOT" ] || [ ! -d "$REPO_ROOT" ]; then
     echo "[pre-push] BLOCK: cannot resolve the pushing worktree." >&2
     exit 1
 fi
+if [ -f "$REPO_ROOT/scripts/lib/autogen_paths.sh" ]; then
+    # shellcheck source=scripts/lib/autogen_paths.sh
+    source "$REPO_ROOT/scripts/lib/autogen_paths.sh"
+fi
 # Git exports repository-local variables to hooks.  If they leak into Bats,
 # fixture commands such as `git -C "$tmpdir" init/commit` still operate on the
 # push repository and can commit/delete its real files.  Resolve REPO_ROOT
@@ -230,14 +234,27 @@ for _ref_line in "${_PUSH_REFS[@]}"; do
                 done
             done
             if [ -n "$_overlap_paths" ]; then
-                echo "[pre-push] BLOCK(GA-PUSH1): pushしようとしているcommitと、作業ツリーの未commit変更が同一pathを差している。" >&2
-                echo "[pre-push] 公開されるcommitの内容が、作業ツリー上でまだ未確定の変更と不整合を起こす可能性がある。" >&2
-                echo "[pre-push] 重複path:" >&2
+                # 自動生成path(context索引・queue/logs運用ファイル等)は、内容が
+                # 同一でも再生成のたびにdiffが出る(cmd_karo_impl_prepush_autogen_exclude_20260726:
+                # conversation_retention.shがgenerated_atを毎回nowで更新するため)。
+                # 除外根拠は「自動生成であること」であり、通常ファイルの重複は
+                # 従来通りBLOCKする(自動生成pathと混在していてもBLOCKする)。
+                _overlap_paths_blocking="$_overlap_paths"
+                if [ -n "${AUTOGEN_PATH_EXCLUDE_REGEX:-}" ]; then
+                    _overlap_paths_blocking=$(printf '%s\n' "$_overlap_paths" | sed '/^$/d' | grep -v -E "$AUTOGEN_PATH_EXCLUDE_REGEX" || true)
+                fi
+                if [ -n "$_overlap_paths_blocking" ]; then
+                    echo "[pre-push] BLOCK(GA-PUSH1): pushしようとしているcommitと、作業ツリーの未commit変更が同一pathを差している。" >&2
+                    echo "[pre-push] 公開されるcommitの内容が、作業ツリー上でまだ未確定の変更と不整合を起こす可能性がある。" >&2
+                    echo "[pre-push] 重複path:" >&2
+                    printf '%s\n' "$_overlap_paths_blocking" | sed '/^$/d' | sed 's/^/  /' >&2
+                    echo "[pre-push] 対処: 未commit変更をcommitしてから再push、または他者の変更なら内容を確認せよ。" >&2
+                    echo "[pre-push] 緊急時のescape hatch: SHOGUN_PUSH_DIRTY_TREE_BYPASS='<理由>' git push" >&2
+                    echo "[pre-push]   (使用はlogs/push_dirty_tree_bypass.jsonlへ理由付きで記録され、計測可能)" >&2
+                    exit 1
+                fi
+                echo "[pre-push] INFO(GA-PUSH1): 重複pathは自動生成/運用ファイルのみのためBLOCKをskipする:" >&2
                 printf '%s\n' "$_overlap_paths" | sed '/^$/d' | sed 's/^/  /' >&2
-                echo "[pre-push] 対処: 未commit変更をcommitしてから再push、または他者の変更なら内容を確認せよ。" >&2
-                echo "[pre-push] 緊急時のescape hatch: SHOGUN_PUSH_DIRTY_TREE_BYPASS='<理由>' git push" >&2
-                echo "[pre-push]   (使用はlogs/push_dirty_tree_bypass.jsonlへ理由付きで記録され、計測可能)" >&2
-                exit 1
             fi
         fi
     else
