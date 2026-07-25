@@ -156,7 +156,6 @@ if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_g
     _running_hook="${BASH_SOURCE[0]:-$0}"
     [[ "$_running_hook" = /* ]] || _running_hook="$PWD/$_running_hook"
     if [[ -e "$_installed_hook" && "$_running_hook" -ef "$_installed_hook" ]]; then
-        _hook_hash_before="$(sha256sum "$_installed_hook" | awk '{print $1}')"
         _sync_args=()
         # Do not put the cache loader on the left side of a pipeline: Bash
         # would populate the array in a subshell and main() would rescan the
@@ -165,6 +164,12 @@ if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_g
             _sync_args+=(--scope-path scripts/hooks/git-pre-commit.sh)
         fi
         if precommit_self_sync_required "$_installed_hook"; then
+            # sha256sum is only needed to detect whether sync_git_hooks.sh
+            # actually rewrote the installed hook; computing it before this
+            # branch spent a subprocess (~10-40ms on DrvFS) on every commit,
+            # including the common case where precommit_self_sync_required
+            # already decided (via cmp) that no sync is required at all.
+            _hook_hash_before="$(sha256sum "$_installed_hook" | awk '{print $1}')"
             bash "$REPO_ROOT/scripts/sync_git_hooks.sh" "${_sync_args[@]}" || {
                 precommit_step_end 1
                 echo "BLOCK(GA-222): live pre-commit hook self-sync failed" >&2
