@@ -17,12 +17,13 @@ export TMP  # GP-080: PythonのENVIRON参照用
 cleanup() { rm -rf "$TMP"; }
 trap cleanup EXIT
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
+# ARCHIVE_COMPLETED_PROJECT_DIR: テスト用の差し替え口。未設定時は実リポジトリ。
+PROJECT_DIR="${ARCHIVE_COMPLETED_PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
 # shellcheck disable=SC1091
-source "$PROJECT_DIR/scripts/lib/field_get.sh"
+source "$SCRIPT_DIR/lib/field_get.sh"
 # shellcheck disable=SC1091
-source "$PROJECT_DIR/scripts/lib/lock_path.sh"
+source "$SCRIPT_DIR/lib/lock_path.sh"
 
 QUEUE_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 CHANGELOG_FILE="$PROJECT_DIR/queue/completed_changelog.yaml"
@@ -1695,6 +1696,247 @@ if compgen -G "$REPORTS_DIR/*_report*.yaml" > /dev/null 2>&1 || compgen -G "$REP
     ' "${_rpt_files[@]}" 2>/dev/null > "$_REPORT_CACHE"
 fi
 
+# ============================================================
+# queue配下 一発限りsentinel/flag の保持期限(retention)回収
+# cmd_karo_hotfix_queue_flag_retention_20260725
+#
+# 対象と根拠(参照元コードの現物読解):
+#   queue/gates/<cmd>/*              archive_completed.sh / cmd_complete_gate.sh /
+#                                    auto_draft_lesson.sh — 全て per-cmd キー参照のみ。
+#                                    GATE CLEAR + archive 完了後は読み手なし。
+#                                    唯一の後読みは archive_reports() の archive.done 参照だが、
+#                                    これは queue/reports に当該cmdの報告が残る間だけ。
+#   queue/dispatch_ntfy_started/<cmd>.started        deploy_task.sh(初回通知一回性) と
+#                                    cmd_complete_gate.sh(duration fallback)。GATE 完了後は不要。
+#   queue/draft_review_started/<cmd>.draft_review.started  deploy_task.sh の一回性のみ。
+#   queue/locks/deploy_cmd_*.lock    flock 用の空ファイル。未保持なら削除しても再生成される。
+#
+# 判定は mtime 単独ではなく cmd の実状態に基づく:
+#   (1) archive.done 存在 または gate_metrics.log の CLEAR 記録（完了の一次証跡）
+#   (2) 稼働中参照が queue 配下の一次データに 1 件も無い
+#   (3) reopen されていない (queue/reopened_cmds/<cmd>.yaml が無い)
+#   (4) 完了証跡の mtime が保持日数を超過
+# 削除ではなく quarantine 移動を既定とする（即rm禁止）。
+# ============================================================
+QUEUE_FLAG_RETENTION_MODE="${QUEUE_FLAG_RETENTION_MODE:-quarantine}" # off|dry-run|quarantine
+QUEUE_FLAG_RETENTION_INTERVAL_SEC="${QUEUE_FLAG_RETENTION_INTERVAL_SEC:-86400}"
+QUEUE_FLAG_RETENTION_STAMP="${QUEUE_FLAG_RETENTION_STAMP:-$PROJECT_DIR/queue/flags/queue_flag_retention.last}"
+QUEUE_FLAG_RETENTION_DAYS="${QUEUE_FLAG_RETENTION_DAYS:-30}"
+QUEUE_FLAG_QUARANTINE_DIR="${QUEUE_FLAG_QUARANTINE_DIR:-$PROJECT_DIR/archive/queue_flag_quarantine}"
+QUEUE_FLAG_RETENTION_REPORT="${QUEUE_FLAG_RETENTION_REPORT:-$PROJECT_DIR/logs/queue_flag_retention_candidates.tsv}"
+
+# 稼働中cmd集合。queue配下の一次データを over-inclusive に走査する（安全側）。
+_qfr_build_active_set() {
+    local out="$1"
+    {
+        grep -hoE 'cmd_[A-Za-z0-9_.-]+' \
+            "$PROJECT_DIR/queue/shogun_to_karo.yaml" 2>/dev/null || true
+        for _d in tasks reports deferred direct_tasks drafts inbox reopened_cmds; do
+            [ -d "$PROJECT_DIR/queue/$_d" ] || continue
+            grep -rhoE 'cmd_[A-Za-z0-9_.-]+' "$PROJECT_DIR/queue/$_d" 2>/dev/null || true
+            find "$PROJECT_DIR/queue/$_d" -maxdepth 1 -printf '%f\n' 2>/dev/null \
+                | grep -oE 'cmd_[A-Za-z0-9_.-]+' || true
+        done
+    } | sed 's/\.yaml$//' | sort -u > "$out"
+}
+
+# gate_metrics.log の CLEAR 済み cmd 集合
+_qfr_build_clear_set() {
+    local out="$1"
+    : > "$out"
+    [ -f "$PROJECT_DIR/logs/gate_metrics.log" ] || return 0
+    awk -F'\t' '
+        $2 == "CLEAR" && $3 != "" { print $3; next }
+        $3 == "CLEAR" && $2 != "" { print $2; next }
+    ' "$PROJECT_DIR/logs/gate_metrics.log" 2>/dev/null | sort -u > "$out"
+}
+
+# realpath が queue 配下であることを検証（AC3: blast radius 封じ込め）
+_qfr_assert_under_queue() {
+    local p rp queue_root
+    queue_root="$(cd "$PROJECT_DIR/queue" && pwd -P)"
+    for p in "$@"; do
+        rp="$(realpath -m "$p")"
+        case "$rp" in
+            "$queue_root"/*) ;;
+            *) echo "[flag-retention] ABORT: queue外パス検出: $rp" >&2; return 1 ;;
+        esac
+    done
+    return 0
+}
+
+_qfr_lock_is_free() {
+    local lock_file="$1" fd
+    exec {fd}>>"$lock_file" 2>/dev/null || return 1
+    if flock -n "$fd"; then
+        flock -u "$fd"
+        exec {fd}>&-
+        return 0
+    fi
+    exec {fd}>&-
+    return 1
+}
+
+prune_queue_flag_retention() {
+    case "$QUEUE_FLAG_RETENTION_MODE" in
+        off) return 0 ;;
+        dry-run|quarantine) ;;
+        *) echo "[flag-retention] ERROR: 未知のMODE: $QUEUE_FLAG_RETENTION_MODE" >&2; return 1 ;;
+    esac
+    if [[ ! "$QUEUE_FLAG_RETENTION_DAYS" =~ ^[0-9]+$ ]]; then
+        echo "[flag-retention] ERROR: RETENTION_DAYS は非負整数" >&2; return 1
+    fi
+
+    # スロットル: 既定は24時間に1回。/mnt/c 上の全走査コストを毎回払わない。
+    if [ "${QUEUE_FLAG_RETENTION_INTERVAL_SEC}" -gt 0 ] && [ -f "$QUEUE_FLAG_RETENTION_STAMP" ]; then
+        local _last _age
+        _last=$(stat -c %Y "$QUEUE_FLAG_RETENTION_STAMP" 2>/dev/null || echo 0)
+        _age=$(( $(date +%s) - _last ))
+        if [ "$_age" -lt "$QUEUE_FLAG_RETENTION_INTERVAL_SEC" ]; then
+            echo "[flag-retention] skip: 前回実行から ${_age}s (interval=${QUEUE_FLAG_RETENTION_INTERVAL_SEC}s)"
+            return 0
+        fi
+    fi
+    mkdir -p "$(dirname "$QUEUE_FLAG_RETENTION_STAMP")"
+    : > "$QUEUE_FLAG_RETENTION_STAMP"
+
+    local active="$TMP/qfr_active.txt" cleared="$TMP/qfr_clear.txt"
+    _qfr_build_active_set "$active"
+    _qfr_build_clear_set "$cleared"
+
+    local now cutoff
+    now=$(date +%s)
+    cutoff=$(( now - QUEUE_FLAG_RETENTION_DAYS * 86400 ))
+
+    local cand="$TMP/qfr_candidates.tsv"
+    : > "$cand"
+
+    # /mnt/c は 1 プロセス起動が高価。判定はサブプロセスを起こさず連想配列で回す。
+    local -A _qfr_active=() _qfr_clear=() _qfr_reopened=()
+    local _k
+    while IFS= read -r _k; do
+        if [ -n "$_k" ]; then _qfr_active["$_k"]=1; fi
+    done < "$active"
+    while IFS= read -r _k; do
+        if [ -n "$_k" ]; then _qfr_clear["$_k"]=1; fi
+    done < "$cleared"
+    if [ -d "$PROJECT_DIR/queue/reopened_cmds" ]; then
+        while IFS= read -r _k; do
+            _qfr_reopened["${_k%.yaml}"]=1
+        done < <(find "$PROJECT_DIR/queue/reopened_cmds" -maxdepth 1 -name '*.yaml' -printf '%f\n' 2>/dev/null)
+    fi
+
+    local gates_dir="$PROJECT_DIR/queue/gates"
+    local cmd ev_mtime has_archive_done
+    if [ -d "$gates_dir" ]; then
+        # 1 回の find で「cmd dir と archive.done の mtime」をまとめて取る
+        while IFS=$'\t' read -r cmd has_archive_done ev_mtime; do
+            [ -n "$cmd" ] || continue
+            case "$cmd" in cmd_*) ;; *) continue ;; esac
+            [ -z "${_qfr_reopened[$cmd]:-}" ] || continue          # (3)
+            [ -z "${_qfr_active[$cmd]:-}" ] || continue            # (2)
+            if [ "$has_archive_done" != "1" ]; then                # (1)
+                [ -n "${_qfr_clear[$cmd]:-}" ] || continue
+            fi
+            [ "$ev_mtime" -le "$cutoff" ] || continue              # (4)
+            printf 'gates\t%s\t%s\n' "$cmd" "$gates_dir/$cmd" >> "$cand"
+        done < <(
+            {
+                find "$gates_dir" -mindepth 1 -maxdepth 1 -type d -printf 'D\t%f\t%T@\n' 2>/dev/null
+                find "$gates_dir" -mindepth 2 -maxdepth 2 -type f -name archive.done -printf 'A\t%h\t%T@\n' 2>/dev/null
+            } |
+            awk -F'\t' '
+                { split($3, m, "."); ts = m[1] }
+                $1 == "D" { dirmtime[$2] = ts; order[++n] = $2; next }
+                $1 == "A" { base = $2; sub(/.*\//, "", base); adone[base] = ts; next }
+                END {
+                    for (i = 1; i <= n; i++) {
+                        d = order[i]
+                        if (d in adone) print d "\t1\t" adone[d]
+                        else print d "\t0\t" dirmtime[d]
+                    }
+                }
+            '
+        )
+    fi
+
+    # cmd単位で回収可能と判定できたものだけ、他ディレクトリの同cmdフラグも回収する
+    local -A _qfr_reclaim=()
+    while IFS=$'\t' read -r _k cmd _; do
+        if [ "$_k" = "gates" ]; then _qfr_reclaim["$cmd"]=1; fi
+    done < "$cand"
+
+    local f base
+    for cmd in ${_qfr_reclaim[@]+"${!_qfr_reclaim[@]}"}; do
+        f="$PROJECT_DIR/queue/dispatch_ntfy_started/${cmd}.started"
+        [ ! -f "$f" ] || printf 'dispatch_ntfy_started\t%s\t%s\n' "$cmd" "$f" >> "$cand"
+        f="$PROJECT_DIR/queue/draft_review_started/${cmd}.draft_review.started"
+        [ ! -f "$f" ] || printf 'draft_review_started\t%s\t%s\n' "$cmd" "$f" >> "$cand"
+    done
+    # lock は cmd 名から一意に導けないため 1 回だけ列挙して突合する
+    if [ -d "$PROJECT_DIR/queue/locks" ]; then
+        while IFS= read -r base; do
+            cmd="${base#deploy_}"
+            cmd="${cmd%.lock}"
+            while [ -n "$cmd" ] && [ -z "${_qfr_reclaim[$cmd]:-}" ]; do
+                case "$cmd" in *_*) cmd="${cmd%_*}" ;; *) cmd="" ;; esac
+            done
+            [ -n "$cmd" ] || continue
+            f="$PROJECT_DIR/queue/locks/$base"
+            _qfr_lock_is_free "$f" || continue   # 保持中lockは触らない
+            printf 'locks\t%s\t%s\n' "$cmd" "$f" >> "$cand"
+        done < <(find "$PROJECT_DIR/queue/locks" -maxdepth 1 -type f -name 'deploy_cmd_*.lock' -printf '%f\n' 2>/dev/null)
+    fi
+
+    local total_files total_bytes
+    total_files=0; total_bytes=0
+    if [ -s "$cand" ]; then
+        local _p _cand_paths=()
+        while IFS= read -r _p; do _cand_paths+=("$_p"); done < <(cut -f3 "$cand")
+        total_files=$(find "${_cand_paths[@]}" -type f 2>/dev/null | wc -l)
+        total_bytes=$(du -sb "${_cand_paths[@]}" 2>/dev/null | awk -F'\t' '{s+=$1} END {print s+0}')
+    fi
+
+    mkdir -p "$(dirname "$QUEUE_FLAG_RETENTION_REPORT")"
+    {
+        printf '# queue flag retention candidates\n'
+        printf '# generated: %s\tmode: %s\tretention_days: %s\n' "$(date '+%Y-%m-%dT%H:%M:%S')" "$QUEUE_FLAG_RETENTION_MODE" "$QUEUE_FLAG_RETENTION_DAYS"
+        printf '# entries: %s\tfiles: %s\tbytes: %s\n' "$(wc -l < "$cand")" "$total_files" "$total_bytes"
+        cat "$cand"
+    } > "$QUEUE_FLAG_RETENTION_REPORT"
+
+    echo "[flag-retention] mode=$QUEUE_FLAG_RETENTION_MODE days=$QUEUE_FLAG_RETENTION_DAYS entries=$(wc -l < "$cand") files=$total_files bytes=$total_bytes report=$QUEUE_FLAG_RETENTION_REPORT"
+
+    [ -s "$cand" ] || return 0
+
+    # (2) realpath 全件検証。1件でもqueue外なら何も動かさない
+    local paths=()
+    while IFS= read -r f; do paths+=("$f"); done < <(cut -f3 "$cand")
+    _qfr_assert_under_queue "${paths[@]}" || return 1
+
+    [ "$QUEUE_FLAG_RETENTION_MODE" = "quarantine" ] || return 0
+
+    local stamp qroot rel dest moved
+    stamp="$(date '+%Y%m%d_%H%M%S')"
+    qroot="$QUEUE_FLAG_QUARANTINE_DIR/$stamp"
+    moved=0
+    while IFS=$'\t' read -r _kind _cmd f; do
+        [ -e "$f" ] || continue
+        rel="${f#"$PROJECT_DIR"/}"
+        dest="$qroot/$rel"
+        mkdir -p "$(dirname "$dest")"
+        mv "$f" "$dest" && moved=$((moved + 1))
+    done < "$cand"
+    cp "$QUEUE_FLAG_RETENTION_REPORT" "$qroot/candidates.tsv" 2>/dev/null || true
+    echo "[flag-retention] quarantined=$moved -> $qroot"
+}
+
+# テスト用: 関数定義だけ読み込んで本流を実行しない
+if [ "${QUEUE_FLAG_RETENTION_LIB_ONLY:-0}" = "1" ]; then
+    # shellcheck disable=SC2317  # sourceされない実行時のみ到達する
+    return 0 2>/dev/null || exit 0
+fi
+
 archive_cmds
 sync_stk_status_from_archive
 trim_cmd_chronicle || true
@@ -1729,6 +1971,9 @@ postcondition_archive() {
     echo "[archive] postcondition: OK (archived=$output/$input)"
 }
 postcondition_archive || true
+
+# queue flag retention（既定=quarantine, 24h throttle。失敗してもarchive本流を止めない）
+prune_queue_flag_retention || echo "[flag-retention] WARN: 回収処理をスキップした" >&2
 
 archive_dashboard
 
