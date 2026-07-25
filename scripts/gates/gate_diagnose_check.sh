@@ -191,7 +191,7 @@ _main_reason_of() {
 # status未更新、verdict不正など忍者が直せるもの)は含めない=検知能力を落とさない。
 _is_contract_or_env_block() {
     printf '%s' "$1" | grep -qiE \
-        'outside planned scope|planned_paths|planned scope|ac_version|ac_fingerprint|contract_fingerprint|task (yaml|contract) (field )?(missing|invalid)|lock (busy|timeout)|flock|single-flight|deploy lock|infra(structure)? error|環境起因|契約起因'
+        'planned (scope|path)|planned_paths|owned/planned|ac_version|ac_fingerprint|contract_fingerprint|task (yaml|contract) (field )?(missing|invalid)|lock (busy|timeout)|flock|single-flight|deploy lock|infra(structure)? error|環境起因|契約起因'
 }
 
 if [ "$SIM_LEVEL" = "block" ] || [ "$SIM_LEVEL" = "warn" ]; then
