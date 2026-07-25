@@ -886,7 +886,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1330 -->
+<!-- last_synced_lesson: L1335 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1930,6 +1930,11 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1328: 計器の相定義が跨いだ区間に支配相が隠れる。相合計と総時間の差を必ず見よ（cmd_karo_impl_report_publish_latency_20260725）
 - L1329: quarantine退避先はソースと同一FSに置け(cross-device mvは実コピーになる)（cmd_karo_impl_tmp_cache_retention_20260726）
 - L1330: 契約(planned_paths)は宣言であり作業ツリーの実体ではない。終端statusのtaskでも未commit変更は残る（cmd_karo_impl_b32_planned_paths_test_20260726）
+- L1331: fixture repoは git -C ではなく toplevel 実体検査で守れ(git initの失敗が本番repoへの逸脱commitになる)（cmd_karo_impl_b31_commit_attribution_20260726）
+- L1332: bypassの事後確認は『既存FAILが同値か』だけでなく『新規FAILが0件か』まで見よ。同値確認だけでは自分のcommitが壊した回帰を見逃す（cmd_karo_impl_b28_failed_report_close_20260726）
+- L1333: 検知器の判定入力が『診断文の写し』だと、契約/環境が原因の正しい反復まで誤検出する。実体(何がブロックしているか)を見よ（cmd_karo_impl_divergent_detector_fix_20260726）
+- L1334: gateの判定入力に自由文字列を使うなら、必ず二値enumの結論欄を併置せよ（cmd_karo_impl_b33_hook_failure_state_20260726）
+- L1335: 境界検査に代理変数(ファイル数)を使うと、境界の中身が壊れても緑のままになる（cmd_karo_impl_fingerprint_fanout_ac4_20260726）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
