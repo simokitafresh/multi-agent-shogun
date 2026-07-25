@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-25 -->
+<!-- last_updated: 2026-07-26 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,15 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3524 | 殿指示(2026-06-25): α6の6指標に加え、ボラティリティドラッグ・歪度・尖度・最低継続期間・最大連敗期間の5指標をrobustness_common.pyに追加し、シン四神(12体)+シン忍法(21体)+奥義(21体)×7窓で計算する。発端: ぷろっぷ記事DailyProp#102(期待値プラスでも資産増えない問題)から投資継続性の定量評価が必要 | dm-signal | 06-25 | cmd_3524: α6 robustness共通出力へ連続 |
-| cmd_3525 | cmd_3524レビューで発見: robustness_common.pyのKurtosisがraw(正規=3.0)、Skewnessが母集団式。本番metrics_impl.py L1174はpandas .kurt()=excess(正規=0.0)、L1170は.skew()=Fisher補正。Compare Summary画面と数値不一致を修正しシン四神・シン忍法・奥義全量×7窓で再計算 | dm-signal | 06-25 | cmd_3525: continuity_risk_metr |
-| cmd_3526 | 殿指示(2026-06-25): Compare Summary画面のTQQQ行でUpside/Downside Captureが常に100%/0/1の退化値になる不具合を修正。根因: 合成DataFrameのbenchmark_returnにTQQQ自身を代入しているため自己比較になる。修正: benchmark_returnをSPYに変更しCapture=TQQQ vs SPYの実値にする。設計書: docs/spec/compare-summary-benchmark-capture-fix.md | dm-signal | 06-25 | Compare Summary追加ベンチマークTQQQのca |
-| cmd_3530 | 殿指示(2026-06-25): cmd_3524/3525で検証済みの5指標を本番Metricsページに実装。設計書docs/spec/metrics-page-continuity-risk-indicators.md(review-2反映済み)に全コード記載。BE: metrics_impl.pyに3指標close/open追加+Skew/Kurt open修正+metrics.pyキャッシュformat/構造検証+summary追加BM MinMo None変換。FE: integer型追加+用語集 | dm-signal | 06-25 | Metricsページに継続性5指標を本番実装し、BE/FE表 |
-| cmd_3531 | 殿指示(2026-06-25): Compare Chart画面のベンチマークドロップダウンにTQQQを追加。現状None/SPYのみ→None/SPY/TQQQにする。BE変更不要(API任意ティッカー対応済み)。FE frontend/app/compare/ 配下に定数追加+availableBenchmarksに合流。設計書docs/spec/compare-chart-tqqq-benchmark.md | dm-signal | 06-25 | Compare Chart benchmark dropdo |
-| cmd_3532 | 殿指摘(2026-06-25): Compare summary画面のTQQQのMaxDDが-12.2%と表示され現実(-80%)と極端に乖離。根因: calculate_metrics()のMaxDD処理がmonthly_df_cache(TQQQ月次データ)ではなくvisible_anchor_portfolio_id(DM-safe)のDrawdownPeriodテーブルを参照。MaxDD・MDD Date・Drawdown Length・Recovery Time・Underwater Period・Avg Underwater Period・PTU・Peak/Trough/Recovery Date・Calmar Ratioが汚染 | dm-signal | 06-25 | calculate_metrics()でmonthly_df |
-| cmd_3533 | 殿指示(2026-06-25): Compare SummaryのSPY/TQQQ行でp̄列がダッシュ表示。設計書docs/spec/p-average-benchmark-extension.md(378行, review-1反映済み)に全実装が記載。既存PK不整合是正(R1-01) + 新テーブル + バッチ拡張 + API + FEの5段階 | dm-signal | 06-25 | p-average benchmark拡張を実装し、SPY/ |
-| cmd_3534 | 殿指示(2026-06-25): Compare Summaryの列が冗長。capture派生3列(U/D Spread/Ratio/Vector)と劣化系4ドット(G1/G2/P/p̄)を表から外し、Alpha(annualized)とMin Months vs Benchmark(t-test)を前面に出す。設計書docs/spec/compare-summary-metric-reselection.md(369行,review-2反映済み)。BE変更ゼロ、FEのみで完結 | dm-signal | 06-25 | Compare Summaryの表示列からcapture派生 |
-| cmd_3536 | 殿指示(2026-06-25): metricsページのUp vs. Down表・チャートがCLOSE固定でトグルに追従しない。設計書docs/spec/up-down-market-timing-toggle.md(review-1反映済み)。BE timing keyword-only + 入力列切替 + DDL補完、FE api-client後方互換 + stale guard | dm-signal | 06-25 | Up/Down MarketをOPEN/CLOSE timi |
 | cmd_3538 | 殿指示(2026-06-26): Compare SummaryのPF名をタップするとそのPFのSummaryページに飛べるようにする。設計書compare-summary-portfolio-link.md確定済み(家老レビューAPPROVE) | dm-signal | 06-26 | compare-summary-table.tsxにNext |
 | cmd_3539 | 軍師idle自走分析(2026-06-26 blt_20260626_021604): metrics_impl.py calculate_metrics()でpd.to_datetimeが15122回呼ばれ1PFあたり1.84s(全体の45%)。to_datetime呼出し削減で速度改善。修正前後で全数値完全一致必須 | dm-signal | 06-26 | metrics_impl.py L195のpd.to_dat |
 | cmd_3540 | cmd_3539でmetrics_impl.py L195を修正したが、同一パターン(リスト内包表記内pd.to_datetime個別呼出し)がtrades_impl.py L116/L259に残存。忍者lesson_candidateで検出済み。全数値完全一致必須 | dm-signal | 06-26 | trades_impl.py L116/L259のpd.to |
