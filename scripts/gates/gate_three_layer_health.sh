@@ -20,6 +20,33 @@ else
     cache_path="${cache_dir}/${_repo_key}_${db_path##*/}"
 fi
 
+# cache追随チェックの判定値を既存台帳(logs/defense_overhead.jsonl)へ1行残す。
+# 表示だけでは startup gate の出力が流れて消え、過去の値を後から追えない。
+# 記録は観測専用であり、gateの判定・出力・exit codeには一切影響させない
+# (書込み失敗もgateを落とさない。標準出力へは何も足さない)。
+record_cache_rowid_gap() {
+    local cache_rowid="$1" source_rowid="$2" gap="$3" verdict="$4"
+    local writer="$repo_root/scripts/lib/defense_overhead_writer.sh"
+    [ -f "$writer" ] || return 0
+    # shellcheck source=scripts/lib/defense_overhead_writer.sh
+    source "$writer" 2>/dev/null || return 0
+    local stamp event_id ledger_verdict
+    printf -v stamp '%(%s)T' -1
+    # 共有writerの5フィールド契約(source/check_id/wall_ms/verdict/event_id)は
+    # 変えずに、値は event_id へ詰める。event_idの許容文字は [A-Za-z0-9_.:-] の
+    # ため区切りは '-' を使う。既存の grep + json parse がそのまま使える。
+    event_id="cache_rowid_gap:cache-${cache_rowid}:source-${source_rowid}:gap-${gap}:warn-${rowid_gap_warn}:${stamp}"
+    case "$verdict" in
+        PASS|WARN) ledger_verdict="$verdict" ;;
+        # 欠測は WARN として残す。行を書かなければ『測ってgap=0』と
+        # 『測れなかった』が区別できなくなる。
+        *) ledger_verdict="WARN" ;;
+    esac
+    defense_overhead_write three_layer_health cache_rowid_gap 0 \
+        "$ledger_verdict" "$event_id" >/dev/null 2>&1 || true
+    return 0
+}
+
 echo "=== three-layer memory health ==="
 echo "db_path=$db_path"
 echo "cache_path=${cache_path:-unknown}"
@@ -207,21 +234,34 @@ PY
         if [ "$rowid_gap" -gt "$rowid_gap_warn" ]; then
             echo "WARN: cacheが本体に追随していない(gap=${rowid_gap}件 > 閾値${rowid_gap_warn}件)。async refresh/delta-search機構を確認せよ。"
             overall="WARN"
+            _rowid_gap_verdict="WARN"
         else
             echo "OK: cacheは本体に追随している(gap=${rowid_gap}件)"
+            _rowid_gap_verdict="PASS"
         fi
+        # 表示は流れて消えるため、判定と同じ値を既存台帳へ1行だけ残す。
+        # 新ledgerは作らない(車輪の再発明防止)。event_idへ値を詰めるのは、
+        # 共有writerの5フィールド契約を変えずに済ませるため(writerはscope外)。
+        record_cache_rowid_gap "$cache_max_rowid" "$source_max_rowid" "$rowid_gap" "$_rowid_gap_verdict"
     else
         # 9P高負荷時のtimeout等でrowid水位を取得できないケース。実検索経路
         # (memory_db_query.sh)は自前でcacheのみへフォールバックし利用者へは
         # 影響しないため、この診断プローブの失敗単独をWARNにしない(AC3:
         # 9p高負荷時のフォールバック防御を診断側でも壊さない)。
         echo "INFO: cache/本体のrowid水位を取得できない(9p timeout等)。追随状態を判定不能のためskip"
+        # 欠測は明示的に記録する。行を書かないと『測ってgap=0だった』と
+        # 『測れなかった』が後から区別できない(沈黙は解釈不能)。
+        record_cache_rowid_gap na na na UNMEASURED
     fi
 else
     # sourceまたはcacheが存在しない場合(初回起動前・cache未生成等)は
     # 追随チェックの対象外。三層記憶DB不在そのものは上のevents.state分布
     # セクションが別途検出する。
     echo "INFO: cache/本体のいずれかが不在のため追随チェックをskip(query_db=$query_db db_path=$db_path)"
+    # 不在によるskipも欠測として残す。ここで行を書かないと、台帳上は
+    # 『gapが記録された実行』と『そもそも測れなかった実行』の区別がつかず、
+    # 記録が無いことを「正常だった」と読み違える余地が残る。
+    record_cache_rowid_gap na na na UNMEASURED
 fi
 
 echo "■ cache容量チェック"
