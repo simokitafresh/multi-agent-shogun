@@ -102,6 +102,22 @@ def _literal_path_within(path, scope):
     return False
 
 
+def _subject_identifies_cmd(subject, cmd_id):
+    """True if subject names cmd_id as a whole identifier, not a prefix substring.
+
+    cmd_karo_impl_b46_commit_ownership_all_history_20260726 (B46): naive
+    `cmd_id in subject` lets a shorter id (e.g. cmd_417) falsely match a
+    longer sibling (cmd_4171) that merely starts with the same characters.
+    cmd_id/task_id characters are limited to [A-Za-z0-9_], so \\b correctly
+    rejects a digit-to-digit continuation (no boundary between '7' and '1' in
+    'cmd_4171') while still matching a real, fully-bounded occurrence.
+    """
+    cmd_id = str(cmd_id or "").strip()
+    if not cmd_id:
+        return False
+    return re.search(rf"\b{re.escape(cmd_id)}\b", str(subject or "")) is not None
+
+
 def _resolve_commit_repo(report, task, root):
     project_id = str(report.get("project") or task.get("project") or "").strip()
     if not project_id or project_id == "infra":
@@ -205,7 +221,9 @@ def commit_contract_errors(report, task, root):
         changed = set(subprocess.run(["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())
     except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return errors + ["commit_hash does not resolve to a readable commit"]
-    if expected_run_id not in subject and str(report.get("parent_cmd") or "") not in subject:
+    if not _subject_identifies_cmd(subject, expected_run_id) and not _subject_identifies_cmd(
+        subject, report.get("parent_cmd")
+    ):
         errors.append("commit subject does not identify task_id/parent_cmd")
     legacy_target_scope = not _has_explicit_commit_scope(task) and not task.get("inspection_path")
     allowed_targets = commit_owned_paths(task)
@@ -219,20 +237,88 @@ def commit_contract_errors(report, task, root):
             errors.append(f"files_modified path is outside planned scope: {modified}")
     # planned_paths is the permission ceiling, not a promise that every allowed
     # path changes. Commit provenance applies only to the report's actual subset.
+    #
+    # cmd_karo_impl_b46_commit_ownership_all_history_20260726 (B46): checking
+    # only the single most-recent commit that touched a shared path let a
+    # later, unrelated cmd's commit hide this task's own ownership commit
+    # (実データ: gate_three_layer_health.sh — `git log -1` from 244b6eb6c
+    # returned 疾風's cache_gap_telemetry commit; 影丸's own b45 commit
+    # (aba450d32) was 3rd back). Walking the *entire* path history is
+    # correct per 将軍裁定 but not viable at gate speed: `git log --format=%s
+    # -- <path>` over the full history of a heavily-touched file
+    # (scripts/deploy_task.sh, 569 commits) measured 15.6-27.8s (n=3) against
+    # this gate's existing logs/defense_overhead.jsonl
+    # (source=gate_report_format) baseline of median 530ms / p90 2820ms
+    # (n=1378) — an unacceptable regression. A *pathspec-filtered* `git log
+    # -nN -- path` is not a viable fix either: under this host's real
+    # concurrent load (load average 8.5, many agents sharing the 9P-backed
+    # worktree) it timed out (>8s) even at n=3, because git's pathspec
+    # history-simplification computes a tree-diff per commit while walking
+    # backward — expensive under I/O contention regardless of N.
+    #
+    # Fix: split the walk into two cheap primitives instead of one expensive
+    # pathspec walk. (1) `git log --format=%H%x1f%s -nN <identity>` fetches
+    # the last N commit hashes+subjects with NO pathspec (pure commit-graph
+    # walk, no per-commit diff) — measured ~220ms even under the same load.
+    # (2) filter that list to just the commits whose subject already
+    # identifies *this* cmd (cheap, in-memory) — normally 1-3 of the N. (3)
+    # only for those few self-owned commits, call `git diff-tree
+    # --no-commit-id --name-only -r <hash>` (a single-commit diff, not a
+    # history walk) to see which targets it actually touched. Total cost is
+    # one cheap graph walk + a handful of single-commit diffs, independent of
+    # how many total commits the repository or the target path has —
+    # measured ~1-2.5s combined for both of B45's real targets under the
+    # same heavy-load conditions where the pathspec approach timed out.
+    #
+    # ★見逃す事例: もし同一pathを、当該cmdのcommitより後に
+    # OWNERSHIP_HISTORY_LOOKBACK 件以上の*別cmd*のcommitが割り込んだ場合、
+    # 当該cmdのcommitはウィンドウ外へ押し出され再びBLOCKする(全件走査でしか
+    # 救えない、本質的にはA8的な沈黙の窓が縮小しただけで消えてはいない)。
+    OWNERSHIP_HISTORY_LOOKBACK = 10
     targets = modified_targets or allowed_targets
-    for raw in targets:
-        target = str(raw or "").strip().rstrip("/")
-        if target and not any(_literal_path_within(path, target) for path in changed):
+    pending_targets = [
+        t
+        for t in (str(raw or "").strip().rstrip("/") for raw in targets)
+        if t and not any(_literal_path_within(path, t) for path in changed)
+    ]
+    if pending_targets:
+        try:
+            log_out = subprocess.run(
+                [
+                    "git", "-C", str(commit_repo), "log",
+                    f"-n{OWNERSHIP_HISTORY_LOOKBACK}", "--format=%H\x1f%s", identity,
+                ],
+                check=True, capture_output=True, text=True, timeout=5,
+            ).stdout
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            log_out = ""
+        own_commits = []
+        for line in log_out.splitlines():
+            commit_hash, sep, subj = line.partition("\x1f")
+            if not sep:
+                continue
+            if _subject_identifies_cmd(subj, expected_run_id) or _subject_identifies_cmd(
+                subj, report.get("parent_cmd")
+            ):
+                own_commits.append(commit_hash)
+        owned_targets = set()
+        for commit_hash in own_commits:
+            if len(owned_targets) == len(pending_targets):
+                break
             try:
-                target_subject = subprocess.run(
-                    ["git", "-C", str(commit_repo), "log", "-1", "--format=%s", identity, "--", target],
+                commit_files = subprocess.run(
+                    ["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", commit_hash],
                     check=True, capture_output=True, text=True, timeout=5,
-                ).stdout.strip()
+                ).stdout.splitlines()
             except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
-                target_subject = ""
-            if expected_run_id not in target_subject and str(report.get("parent_cmd") or "") not in target_subject:
+                continue
+            for t in pending_targets:
+                if t not in owned_targets and any(_literal_path_within(p, t) for p in commit_files):
+                    owned_targets.add(t)
+        for t in pending_targets:
+            if t not in owned_targets:
                 scope_label = "target_path" if legacy_target_scope else "owned/planned path"
-                errors.append(f"commit/task history does not contain {scope_label}: {target}")
+                errors.append(f"commit/task history does not contain {scope_label}: {t}")
     return errors
 
 
