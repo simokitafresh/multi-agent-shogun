@@ -909,6 +909,84 @@ printf "%s" "$PAYLOAD" | CI_READINESS_CACHE="$CI_READINESS_CACHE" "$TEST_PROJECT
     grep -q 'ci_red_gate_prompt_suppressed' "$TEST_PROJECT/logs/gate_fire_log.yaml"
 }
 
+# cmd_karo_impl_b38_ci_cache_staleness_20260726 (B38):
+# 真因は「鮮度上限がない」ではなく「別種の値(最後に通知した状態)を現在状態として読んでいた」こと。
+# ci_status_check.shは状態が変わらない限り書き直さないため、2行目の確認時刻でしか鮮度は判定できない。
+# 是正の主対象は偽陽性(GREENなのにRED表示)であり、陰性側=古い値でRED表示しないことを本体として固定する。
+@test "T-SCI-CI-STALE-001: 確認時刻がTTL超過のfailureキャッシュではCI RED表示をせず通常のGATE催促を出す" {
+    export TMUX_AGENT_ID="karo"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_9999
+YAML
+    printf 'commands:\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+
+    # 2行形式: 1行目=最後に通知した状態 / 2行目=最後に確認した時刻(2時間前=TTL 900秒超過)
+    _ci_cache="$TEST_ROOT/ci_state"
+    printf 'failure:30000000000\n%s\n' "$(( $(date +%s) - 7200 ))" > "$_ci_cache"
+
+    CI_READINESS_CACHE="$_ci_cache" PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="karo"
+printf "%s" "$PAYLOAD" | CI_READINESS_CACHE="$CI_READINESS_CACHE" "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"CI RED修正待ち"* ]]
+    [[ "$output" == *"報告レビュー/GATE処理を進めよ"* ]]
+}
+
+@test "T-SCI-CI-FRESH-001: 確認時刻がTTL内のfailureキャッシュでは従来通りCI RED修正待ちを表示する" {
+    export TMUX_AGENT_ID="karo"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_9999
+YAML
+    printf 'commands:\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+
+    _ci_cache="$TEST_ROOT/ci_state"
+    printf 'failure:30000000000\n%s\n' "$(( $(date +%s) - 60 ))" > "$_ci_cache"
+
+    CI_READINESS_CACHE="$_ci_cache" PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="karo"
+printf "%s" "$PAYLOAD" | CI_READINESS_CACHE="$CI_READINESS_CACHE" "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CI RED修正待ち"* ]]
+    [[ "$output" != *"報告レビュー/GATE処理を進めよ"* ]]
+}
+
+@test "T-SCI-CI-LEGACY-001: 旧1行形式のfailureキャッシュはmtimeが古ければCI RED表示をしない" {
+    export TMUX_AGENT_ID="karo"
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/logs"
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'YAML'
+task:
+  status: done
+  parent_cmd: cmd_9999
+YAML
+    printf 'commands:\n' > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
+
+    _ci_cache="$TEST_ROOT/ci_state"
+    printf 'failure:30000000000\n' > "$_ci_cache"
+    touch -d '2 hours ago' "$_ci_cache"
+
+    CI_READINESS_CACHE="$_ci_cache" PAYLOAD='{"stop_hook_active":false}' TEST_PROJECT_PATH="$TEST_PROJECT" run bash -c '
+set -euo pipefail
+TMUX_AGENT_ID="karo"
+printf "%s" "$PAYLOAD" | CI_READINESS_CACHE="$CI_READINESS_CACHE" "$TEST_PROJECT_PATH/scripts/hooks/stop_check_inbox.sh"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"CI RED修正待ち"* ]]
+    [[ "$output" == *"報告レビュー/GATE処理を進めよ"* ]]
+}
+
 @test "T-SCI-CI-GREEN-001: karo CI GREEN時は従来のGATE催促を表示" {
     export TMUX_AGENT_ID="karo"
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/karo.yaml"

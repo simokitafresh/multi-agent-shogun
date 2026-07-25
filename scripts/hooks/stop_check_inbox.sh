@@ -605,11 +605,24 @@ else
     # cmd_4158: CI RED中はci_readiness判定キャッシュを参照しGATE催促を抑制。
     # キャッシュ: CI_READINESS_CACHE(デフォルト=/tmp/last_ci_notify_state, ci_status_check.shが書込み)
     # 切替発報: gate_fire_log.yaml → detector_fp_rateで偽陽性計測可能
+    # cmd_karo_impl_b38_ci_cache_staleness_20260726 (B38):
+    # このキャッシュは「最後に通知した状態」であり現在のCI状態ではない。ci_status_check.shは
+    # 状態が変わらない限り書き直さなかったため、2026-07-26 02:00頃に約2時間前の
+    # failure:30161415740 をCI REDとして表示した(実際は既にGREEN)。
+    # 2行目の確認時刻(ci_status_check.shが5分間隔で毎回更新)で鮮度を判定し、
+    # 鮮度外は「不明」としてRED表示しない。鮮度内のfailureは従来通りRED表示する(黙らせない)。
+    # 旧形式(1行のみ)はmtimeを確認時刻の代替とする(移行期のみ。5分以内に2行形式へ更新される)。
     _ci_notify_cache="${CI_READINESS_CACHE:-/tmp/last_ci_notify_state}"
+    _ci_cache_ttl="${CI_READINESS_CACHE_TTL_SEC:-900}"   # 既定15分 = 確認間隔5分の3倍
     _ci_is_red=false
     if [[ -f "$_ci_notify_cache" ]]; then
-      _ci_cache_val="$(cat "$_ci_notify_cache" 2>/dev/null || true)"
-      if [[ "$_ci_cache_val" == failure:* ]]; then
+      _ci_cache_val="$(head -n 1 "$_ci_notify_cache" 2>/dev/null || true)"
+      _ci_checked_at="$(sed -n 2p "$_ci_notify_cache" 2>/dev/null || true)"
+      if [[ ! "$_ci_checked_at" =~ ^[0-9]+$ ]]; then
+        _ci_checked_at="$(stat -c %Y "$_ci_notify_cache" 2>/dev/null || echo 0)"
+      fi
+      if [[ "$_ci_cache_val" == failure:* ]] \
+        && (( EPOCHSECONDS - _ci_checked_at <= _ci_cache_ttl )); then
         _ci_is_red=true
       fi
     fi

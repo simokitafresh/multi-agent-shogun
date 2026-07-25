@@ -21,7 +21,9 @@ set -euo pipefail
 
 REPO="simokitafresh/multi-agent-shogun"
 WORKFLOW="test.yml"
-LAST_NOTIFY_FILE="/tmp/last_ci_notify_state"
+# 消費者(scripts/hooks/stop_check_inbox.sh)は同じpathを CI_READINESS_CACHE で上書きできる。
+# 書込み側だけ固定pathだと本番キャッシュを汚さずに検証できないため、同一の環境変数で揃える。
+LAST_NOTIFY_FILE="${CI_READINESS_CACHE:-/tmp/last_ci_notify_state}"
 STATUS_MODE=false
 
 [[ "${1:-}" == "--status" ]] && STATUS_MODE=true
@@ -72,23 +74,35 @@ _ci_script="${BASH_SOURCE[0]:-$0}"
 SCRIPT_DIR="${_ci_script%/*}"
 unset _ci_script
 
+# cmd_karo_impl_b38_ci_cache_staleness_20260726 (B38):
+# このファイルは「最後に通知した状態」であり「現在のCI状態」ではない。状態が変わらない限り
+# 書き直さないため、消費者(stop_check_inbox.sh)からは「いつ確認した値か」が分からず、
+# 2026-07-26 02:00頃に約2時間前の failure:30161415740 を現在状態として表示する誤りが出た。
+# mtimeは「最後に状態が変わった時刻」であって「最後に確認した時刻」ではないため鮮度に使えない。
+# ∴ 2行目へ確認時刻(epoch)を持たせ、状態が不変でも毎回更新する。1行目の意味と通知の重複抑止は不変。
+write_notify_state() {
+    printf '%s\n%s\n' "$1" "$EPOCHSECONDS" > "$LAST_NOTIFY_FILE"
+}
+
 last_notified=""
-[[ -f "$LAST_NOTIFY_FILE" ]] && last_notified=$(cat "$LAST_NOTIFY_FILE" 2>/dev/null || true)
+[[ -f "$LAST_NOTIFY_FILE" ]] && last_notified=$(head -n 1 "$LAST_NOTIFY_FILE" 2>/dev/null || true)
 
 if [[ "$conclusion" == "failure" ]]; then
     if [[ "$last_notified" == "failure:${run_id}" ]]; then
+        write_notify_state "failure:${run_id}"   # 通知は抑止しつつ確認時刻だけ更新する
         exit 0
     fi
     bash "$SCRIPT_DIR/ntfy.sh" "CI赤: run ${run_id} ${failed_jobs}"
-    echo "failure:${run_id}" > "$LAST_NOTIFY_FILE"
+    write_notify_state "failure:${run_id}"
     exit 0
 fi
 
 if [[ "$conclusion" == "success" ]]; then
     if [[ "$last_notified" == "success:${run_id}" ]]; then
+        write_notify_state "success:${run_id}"   # 同上
         exit 0
     fi
     bash "$SCRIPT_DIR/ntfy_batch.sh" "CI緑: run ${run_id}"
-    echo "success:${run_id}" > "$LAST_NOTIFY_FILE"
+    write_notify_state "success:${run_id}"
     exit 0
 fi
