@@ -271,7 +271,6 @@ export FIELD_GET_NO_LOG=1
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
 source "$SCRIPT_DIR/scripts/lib/lock_path.sh"
-source "$SCRIPT_DIR/scripts/lib/gate_report_format_classify.sh"
 
 # Resolve the git repository that owns a task.  Reports may describe work in
 # an external project; treating every commit as a multi-agent-shogun commit
@@ -6998,6 +6997,10 @@ validate_report_format_file() {
     REPORT_FORMAT_CHECKED=$((REPORT_FORMAT_CHECKED + 1))
     "$SCRIPT_DIR/scripts/gates/gate_report_autofix.sh" "$report_file" 2>/dev/null || true
     local GATE_RC=0 GATE_STATUS
+    # 遅延source: このfunctionが呼ばれた時だけ読み込み、cmd_complete_gate.shの
+    # 大半のtest scaffold(cmd_gate_scaffold.bash等)が持つ最小scripts/lib契約を壊さない。
+    # shellcheck source=scripts/lib/gate_report_format_classify.sh
+    source "$SCRIPT_DIR/scripts/lib/gate_report_format_classify.sh"
     GATE_OUTPUT=$("$SCRIPT_DIR/scripts/gates/gate_report_format.sh" "$report_file" 2>&1) || GATE_RC=$?
     GATE_STATUS=$(gate_report_format_classify "$GATE_RC")
     # cmd_karo_hotfix_singleflight_fail_misattribution_20260725 (AC1/AC2):
