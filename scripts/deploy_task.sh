@@ -4366,23 +4366,26 @@ PY_MEMORY_REFS
 
     # cmd_1260+cmd_1393: acceptance_criteriaのbinary_checksをreportに事前展開（Python→bash/awk）
     # GP-194: ac_assigned フィールド読み込み（分割配備時の担当AC範囲制限）
+    # cmd_4127: assigned_acs(旧フィールド名)も同一セマンティクスの別名として受理する
+    # (inject_parent_contractのparent AC coverage判定と共有するフィールドで、GP-194導入時に
+    # binary_checksフィルタ側の別名対応が漏れ、cmd_4127の後方互換テストが回帰していた)
     # 両フォーマット対応: inline "[AC1,AC2]" と yaml.dump後の multi-line "- AC1"
     local _ac_assigned_filter=""
     _ac_assigned_filter=$(awk '
-        /^  ac_assigned:[[:space:]]*\[/ {
+        /^  (ac_assigned|assigned_acs):[[:space:]]*\[/ {
             s=$0; sub(/^[^[]*\[/, "", s); sub(/\].*$/, "", s)
             n=split(s, a, /[[:space:]]*,[[:space:]]*/);
             out=""
             for(i=1;i<=n;i++) { gsub(/[[:space:]"'"'"']/, "", a[i]); if(a[i]!="") out=(out=="")?a[i]:(out"|"a[i]) }
             print out; exit
         }
-        /^  ac_assigned:[[:space:]]*[^[:space:]]/ {
-            s=$0; sub(/^  ac_assigned:[[:space:]]*/, "", s)
+        /^  (ac_assigned|assigned_acs):[[:space:]]*[^[:space:]]/ {
+            s=$0; sub(/^  (ac_assigned|assigned_acs):[[:space:]]*/, "", s)
             gsub(/[\[\][:space:]"'"'"']/, "", s)
             if (s != "") print s
             exit
         }
-        /^  ac_assigned:[[:space:]]*$/ { in_aa=1; next }
+        /^  (ac_assigned|assigned_acs):[[:space:]]*$/ { in_aa=1; next }
         in_aa && /^  - / {
             item=$0; sub(/^[[:space:]]*-[[:space:]]*/, "", item); gsub(/[[:space:]"'"'"']/, "", item)
             if(item!="") out=(out=="")?item:(out"|"item)
