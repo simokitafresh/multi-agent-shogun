@@ -419,18 +419,36 @@ EOF
     [[ "$output" != *"★結論を含む通知あり"* ]]
 }
 
-@test "T-SCI-007: error message triggers async error_report notification" {
+# cmd_karo_impl_b37_error_report_false_fire_20260726 (B37): 契約を反転した。
+# 旧T-SCI-007は「発言がERROR_PATTERNにマッチしたら error_report を送る」を固定していたが、
+# その経路は「エラーが起きた」と「エラーについて語った」を区別できず 2026-07-26 に3件誤発火した。
+# 実停止は ninja_monitor のSTALL検知(active task + idle pane)が一次情報で拾い、
+# error_report の正当な発火元は .claude/hooks/stop-lint-gate.sh(実状態で判定)のみである。
+@test "T-SCI-007: error mention in speech never triggers error_report (B37 陰性対照)" {
     printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
 
     run_hook '{"stop_hook_active":false,"last_assistant_message":"エラーのため中断する"}'
     [ "$status" -eq 0 ]
 
-    for _ in 1 2 3 4 5 6 7 8 9 10; do
-        [[ -s "$INBOX_WRITE_LOG" ]] && break
-        sleep 0.02
-    done
+    sleep 0.3
+    ! grep -q 'error_report' "$INBOX_WRITE_LOG"
+}
 
-    grep -q '^karo|hayate、エラー停止|error_report|hayate$' "$INBOX_WRITE_LOG"
+# 本日の誤発火3件と同型の実データ: 忍者がエラーについて報告・議論しているだけの発言。
+@test "T-SCI-007b: real false-fire texts do not notify karo at all (B37 陰性対照)" {
+    printf 'messages:\n' > "$TEST_PROJECT/queue/inbox/hayate.yaml"
+
+    run_hook '{"stop_hook_active":false,"last_assistant_message":"pre-commitがaffected_tests rc=1でBLOCK。失敗3件は当方のdiff起因でない既存REDであり、隔離treeで同じ行で同じFAILを確認した。作業は中断せず継続する。"}'
+    [ "$status" -eq 0 ]
+
+    sleep 0.3
+    ! grep -q 'error_report' "$INBOX_WRITE_LOG"
+
+    run_hook '{"stop_hook_active":false,"last_assistant_message":"commitがfailed. stopせずに原因を調べる: error handling path was aborted in the fixture, not in production."}'
+    [ "$status" -eq 0 ]
+
+    sleep 0.3
+    ! grep -q 'error_report' "$INBOX_WRITE_LOG"
 }
 
 @test "T-SCI-010: karo sees pending work when inbox is empty but ninja status=done" {

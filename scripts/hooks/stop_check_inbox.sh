@@ -10,7 +10,14 @@ case "$SOURCE_PATH" in
   *) SCRIPT_DIR="$(cd "${SOURCE_PATH%/*}/../.." && pwd)" ;;
 esac
 readonly COMPLETE_PATTERN='任務完了|完了でござる|報告YAML.*更新|task completed|タスク完了'
-readonly ERROR_PATTERN='エラー.*中断|失敗.*中断|error.*abort|failed.*stop'
+# cmd_karo_impl_b37_error_report_false_fire_20260726 (B37):
+# 旧 ERROR_PATTERN='エラー.*中断|失敗.*中断|error.*abort|failed.*stop' は
+# last_assistant_message(発言全文)へマッチして error_report を送っていたが、
+# 「エラーが起きた」と「エラーについて語った」を区別できず 2026-07-26 に3件誤発火した
+# (半蔵01:45 / 疾風01:54・02:06 — 3件ともpane実測で正常稼働中)。
+# 実際に停止した忍者は ninja_monitor のSTALL検知(active task + idle pane、pane抜粋つき)が
+# 一次情報で拾う。error_report の正当な発火元は .claude/hooks/stop-lint-gate.sh:237
+# (同一lint違反の反復=実状態で判定し具体的な対処を示す)のみとし、発言マッチ経路は廃止する。
 readonly SUMMARY_LIMIT=5
 readonly SUMMARY_SNIPPET_LEN=80
 readonly SHOGUN_BRAINWASH_AUDIT='洗脳8パターン自問: #1早期終了 #2検証スキップ #3他者依存 #4緩い設計 #5先送り #6出力=仕事 #7簡潔本能 #8完了急ぎ'
@@ -482,8 +489,6 @@ if [[ "$agent_id" != "shogun" && "$agent_id" != "gunshi" && "$payload" == *'"las
   shopt -s nocasematch
   if [[ "$payload" =~ $COMPLETE_PATTERN ]]; then
     notify_completion "report_completed" "${agent_id}、タスク完了"
-  elif [[ "$payload" =~ $ERROR_PATTERN ]]; then
-    notify_completion "error_report" "${agent_id}、エラー停止"
   fi
   shopt -u nocasematch
 fi
