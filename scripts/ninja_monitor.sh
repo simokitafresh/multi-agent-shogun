@@ -8100,7 +8100,41 @@ run_lock_cleanup() {
     if [ "$count" -gt 0 ]; then
         log "LOCK-CLEANUP: Removed $count stale lock files from $cleanup_dir"
     fi
+    run_scratch_retention "$cleanup_dir"
     LAST_LOCK_CLEANUP=$now
+}
+
+# ═══ 作業残骸/lockディレクトリのretention (cmd_karo_impl_scratch_retention_cleanup_20260725) ═══
+# 経路: (a) lock作成元 = scripts/lib/lock_path.sh の /tmp/shogun_lock_*.lock を
+#       ninja_scope_commit等がディレクトリとして使い ledger/receipt を溜める。既存cleanupは
+#       -type f しか見ておらずディレクトリ形は無制限に残る。
+#       (b) scratch作成元 = repo直下に mktemp -d 等で作られる作業用ツリー(.<agent>-<topic>.XXXX)。
+#       untrackedのままgit status/os.walk/findが辿り、走査コストを押し上げる。
+# 方針: 削除ルール準拠でrmせず集約移動する(殿が最終削除を判断)。新規デーモン・新規台帳は作らない(LG032)。
+# 陰性対照: git worktree 登録済みパスは1件でも積集合があれば対象から除外する(壊すため)。
+SCRATCH_RETENTION_TTL_MIN="${SCRATCH_RETENTION_TTL_MIN:-1440}"   # 24h
+run_scratch_retention() {
+    local cleanup_dir="${1:-/tmp}"
+    local quarantine="${SCRATCH_QUARANTINE_DIR:-/mnt/c/tools/shogun-scratch-quarantine/auto}"
+    local repo="${SCRATCH_RETENTION_REPO:-$SCRIPT_DIR}"
+    local registered moved=0 path
+    mkdir -p "$quarantine" 2>/dev/null || return 0
+    registered="$(git -C "$repo" worktree list --porcelain 2>/dev/null | awk '/^worktree /{print $2}')"
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        case $'\n'"$registered"$'\n' in
+            *$'\n'"$path"$'\n'*) continue ;;   # 陰性対照: 登録済みworktreeは触らない
+        esac
+        mv "$path" "$quarantine/" 2>/dev/null && moved=$((moved + 1))
+    done < <(
+        find "$cleanup_dir" -maxdepth 1 -type d -name "shogun_lock_*.lock" \
+            -mmin "+$SCRATCH_RETENTION_TTL_MIN" -print 2>/dev/null
+        find "$repo" -maxdepth 1 -type d -name ".*.??????" \
+            -mmin "+$SCRATCH_RETENTION_TTL_MIN" -print 2>/dev/null
+    )
+    if [ "$moved" -gt 0 ]; then
+        log "SCRATCH-RETENTION: Quarantined $moved stale scratch/lock dirs to $quarantine"
+    fi
 }
 
 # ═══ 掲示板自動アーカイブ (掲示板肥大防止) ═══
