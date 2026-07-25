@@ -2233,7 +2233,10 @@ for marker in [
     # tail ('\t%s\t%s' continuing into task_type/model) so this keeps
     # targeting the generic block_reason row instead of the first early-exit
     # match found by str.index().
-    'BLOCK\\t%s\\t%s\\t%s',
+    # cmd_karo_impl_gate_metrics_record_split_20260725: 記録カテゴリの3分離により
+    # 汎用block行の第3カラムは固定文字列'BLOCK'ではなく変数になった。同じ行を
+    # category+reasonの引数対で指し、model_profile併記の不変量はそのまま検証する。
+    '"$_gate_record_category" "$block_reason"',
 ]:
     idx = script.index(marker)
     window = script[idx:idx + 700]

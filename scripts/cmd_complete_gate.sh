@@ -81,6 +81,71 @@ print("READY: target_result=GREEN workflow_result=GREEN fresh_after_review head_
 ' 
 }
 
+# cmd_karo_impl_gate_metrics_record_split_20260725 (設計書v2.4 B20):
+# gate_metrics.log の記録カテゴリを3分離する。
+#   BLOCK = terminalな失敗(修正しない限り解けない)
+#   WAIT  = 評価が存在しない(head SHA mismatch / run未完了 / review前のrun /
+#           全job cancelled 等)。後追いで解ける。修正再配備の対象ではない
+#   INFO  = 参考情報(記録はするが失敗率の分母/分子に混ぜない)
+# 判定ロジックは新設しない。evaluate_ci_readiness_json の absent 集約が出力する
+# トークンをそのまま記録カテゴリへ写像する(判定の二重定義を避ける — L563)。
+# 実測(2026-07-25): ci_readiness BLOCK 108件のうち terminal は24件(22.2%)のみで、
+# 残り84件は評価不在。全件BLOCK記録がBLOCK率を実態の4.5倍に見せていた。
+classify_gate_record_category() {
+    local reason="$1"
+    case "$reason" in
+        INFO:*|*"|INFO:"*)
+            printf 'INFO\n' ;;
+        # absent集約トークン(evaluate_ci_readiness_json由来)と、
+        # 同義の旧表記(実測ログに残る文言)を同一カテゴリへ写像する。
+        *ci_evaluation_absent=*|*head_sha_mismatch*|*run_pending:*|*run_predates_review*|\
+        *target_no_verdict*|*workflow_no_verdict*|*workflow_all_jobs_cancelled*|\
+        *"WAIT:"*|*"head SHA mismatch"*|*"predates SG7 review"*|*"pending status="*|\
+        *"pending in_progress"*|*"pending queued"*|*cancelled*|*canceled*)
+            printf 'WAIT\n' ;;
+        *)
+            printf 'BLOCK\n' ;;
+    esac
+}
+
+# '|'区切りの複合理由を1カテゴリへ集約する。terminalが1件でも混ざればBLOCK
+# (fail-closed)。全てが評価不在ならWAIT、全てが参考情報ならINFO。
+classify_gate_record_reasons() {
+    local joined="$1"
+    local reason category has_wait=0 has_info=0
+    [ -n "$joined" ] || { printf 'BLOCK\n'; return 0; }
+    local _old_ifs="$IFS"
+    IFS='|'
+    # shellcheck disable=SC2086
+    set -- $joined
+    IFS="$_old_ifs"
+    for reason in "$@"; do
+        [ -n "$reason" ] || continue
+        category=$(classify_gate_record_category "$reason")
+        case "$category" in
+            BLOCK) printf 'BLOCK\n'; return 0 ;;
+            WAIT) has_wait=1 ;;
+            INFO) has_info=1 ;;
+        esac
+    done
+    if [ "$has_wait" -eq 1 ]; then
+        printf 'WAIT\n'
+    elif [ "$has_info" -eq 1 ]; then
+        printf 'INFO\n'
+    else
+        printf 'BLOCK\n'
+    fi
+}
+
+# B25: ci_readiness記録へ生値(workflow run_id / conclusion)を併記する。
+# 既存カラム順は変えず末尾へ追加する(後方互換)。丸めた「is not GREEN」からは
+# 「真のfailure」と「cancelled」を事後分解できないため、一次情報を残す。
+format_ci_raw_columns() {
+    local run_id="${1:-}"
+    local conclusion="${2:-}"
+    printf 'ci_run_id=%s\tci_conclusion=%s' "${run_id:-none}" "${conclusion:-none}"
+}
+
 # 歯止め(a)の一次情報: queue/tasks配下に task_type=ci_fix かつ ci_run_id 一致の
 # activeタスクが存在するか。gate_karo_startup.sh Check 0.9と同じ機械証跡を使い、
 # 判定基準の二重定義を避ける(新規台帳を作らない)。
@@ -254,6 +319,12 @@ PY
 
 if [ "${CMD_COMPLETE_GATE_CI_EVAL_ONLY:-0}" = "1" ]; then
     evaluate_ci_readiness_json
+    exit $?
+fi
+if [ "${CMD_COMPLETE_GATE_CLASSIFY_ONLY:-0}" = "1" ]; then
+    # 記録カテゴリの純関数をfixtureへ露出する(判定表がgh出力とドリフトしないよう、
+    # evaluate_ci_readiness_json と同じ方式で外から検証可能にする)。
+    classify_gate_record_reasons "${CMD_COMPLETE_GATE_CLASSIFY_REASON:-}"
     exit $?
 fi
 if [ "${CMD_COMPLETE_GATE_BLOCK_MESSAGE_ONLY:-0}" = "1" ]; then
@@ -8642,9 +8713,23 @@ elif [ "$CI_PUSH_DETECTED" = true ]; then
                 # 後追い確認へ回す(記録カテゴリ = WAIT)。GATE CLEARは止めない。
                 echo "  WAIT: ${ci_decision#WAIT: }${ci_run_id:+ run=${ci_run_id}}"
                 echo "  NOTE: push通過+CI後追い方式(殿裁可 2026-07-25) — CI結果は後追いで確認せよ"
+                # B20: 評価不在は台帳へもWAITとして残す(BLOCK率へ混ぜない)。
+                # B25: run_id/conclusionの生値を併記し、後から実測分解できるようにする。
+                append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tWAIT\tci_readiness:%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
+                    "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$ci_decision" \
+                    "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" \
+                    "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC" \
+                    "$(format_ci_raw_columns "$ci_run_id" "$ci_run_conclusion")")"
                 ;;
             *)
                 echo "  OK: ${ci_decision} run=${ci_run_id}"
+                # B20/B25: GREEN評価も参考情報(INFO)として生値付きで残す。
+                # 「is not GREEN 24件」の対照群を台帳内で実測できるようにするため。
+                append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tINFO\tci_readiness:%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' \
+                    "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$ci_decision" \
+                    "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" \
+                    "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC" \
+                    "$(format_ci_raw_columns "$ci_run_id" "$ci_run_conclusion")")"
                 ;;
         esac
     else
@@ -9647,7 +9732,11 @@ else
         done
         block_reason="fallback_gate_status:$(IFS='|'; echo "${_gate_details[*]}")"
     fi
-    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$block_reason" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC")"
+    # B20: terminalな失敗だけをBLOCKとして台帳へ記す。評価不在(head SHA mismatch /
+    # run未完了 / review前run / 全job cancelled)はWAITで記録し、BLOCK率・再発検知・
+    # 軍師accuracyの分母を汚さない。理由が複合ならterminal優先(fail-closed)。
+    _gate_record_category=$(classify_gate_record_reasons "$block_reason")
+    append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "$_gate_record_category" "$block_reason" "$GATE_TASK_TYPE" "$GATE_MODEL" "$GATE_BLOOM_LEVEL" "$GATE_INJECTED_LESSONS" "$CMD_TITLE" "$GATE_FIRST_MODEL_METRIC" "$(format_ci_raw_columns "${ci_run_id:-}" "${ci_run_conclusion:-}")")"
     bash "$SCRIPT_DIR/scripts/rotate_gate_metrics.sh" 2>/dev/null || true
     echo "GATE BLOCK: 不足フラグ=[${missing_list}] 理由=${block_reason}"
     echo ""
