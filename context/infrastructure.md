@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-23 cmd_karo_hotfix_prepush_snapshot_fixture_20260723 -->
-<!-- source_commit:02ef923b2 reason:GA-320 reviewed infra source boundary evidence:3/3 true positives: 92ffc2728,6fb2dc41a,02ef923b2 reflected; project override cache isolated -->
+<!-- last_updated: 2026-07-25 cmd_4155-4164 batch reflux -->
+<!-- source_commit:538dfa251 reason:cmd_4155-4164 batch reflux evidence:cmd_4155(28c833505)+cmd_4156(3718e7245)+cmd_4157(0e489017a)+cmd_4158+cmd_4159+cmd_4160(538dfa251)+cmd_4161(d626e5774)+cmd_4162(6b46ec40c)+cmd_4163(b5590d7d3)+cmd_4164+将軍D0(31aaa50d6,afff2450e) -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -35,6 +35,34 @@ cmd完了時のown-commit freshness判定は、未反映commitをBLOCKする前�
 完了フローのcontext境界更新は候補だけでなく、検証済みcontext/hash/reason/evidenceを埋めた`CONTEXT_UPDATE_COMMAND bash scripts/context_source_commit_set.sh ...`を同時出力する。更新者は本文反映をレビューしてこの入力を使い、境界metadataを再発明しない。GA-313では`42e6ea0..fb95d70`の263 commitをroot-fallback契約で全走査し、除外117（auto subject 32、本文参照31、context自己反映7、source pathなし47）・未反映146/146（scripts 105、tests 20、claude 6、instructions 5、CLAUDE.md 4、skills 3、memory 2、github 1）と分類した。直接原因は本文反映とsource境界更新の分離、根本原因は完了時入力が候補止まりでreason/evidence再構成を人へ残したこと。実装証拠はcontext反映`e23c6b36f`・Level5防御`7a93897e5`。→ `scripts/cmd_complete_gate.sh` / `tests/unit/test_cmd_complete_gate_context_freshness_block.bats`（cmd_karo_hotfix_ga313_context_freshness_202607220112）
 
 8スキル（dashboard-update / idle-persist / review-bundle / verdict-check / karo-direct / ninja-commit / recon-dual / shogun-cli-switch）の対応script参照契約を再同期し、skill-ref gate WARN 8→0、validator 8/8 PASS・SKIP0を確認。→ commits `c4a654742`, `0fd87ed81`（cmd_karo_hotfix_skill_refs_batch_a/b_20260718140219）
+
+## 2026-07-24インフラ修正バッチ(cmd_4154-4164)
+
+`report_ci_push_state`はcross-repo成果物commitをreport YAMLの`cross_repo_commits`から解決する。単一`resolve_task_repo_dir`のみだと別repoのcommitがunresolvable BLOCKになっていた。→ `scripts/cmd_complete_gate.sh`（cmd_4155、commit `28c833505`）
+
+`review_report_fingerprint`の同一性境界を正規化hashに変更し、非内容フィールド(commit_hash/cross_repo_commits等)の修正で承認(gunshi LGTM+karo ACCEPT)が無効化されない。→ `scripts/lib/review_approval.sh`（cmd_4156、commit `3718e7245`）
+
+軍師LGTM記載とsg7_bundle生成を`lgtm_bundle_guard`で不可分化。LGTM記載後にbundle未生成でGATEが進まない反復(LK-A09 v7)を構造根絶。→ `scripts/review_bundle.py` / `scripts/gunshi_log_append.sh`（cmd_4157、commit `0e489017a`）
+
+`stop_check_inbox.sh`はCI RED中にdone忍者へのGATE催促を抑制し「CI RED修正待ち」を表示する。CI REDでGATE CLEARが不可能な状態での反復催促(負の複利)を防止。→ `scripts/hooks/stop_check_inbox.sh`（cmd_4158、commit tobisaru）
+
+`cmd_complete_gate.sh`のgate_block通知dedupをcmd_id単位に粒度修正。reason可変部で既存通知をすり抜け同一cmdの通知が蓄積する問題を解消。→ `scripts/cmd_complete_gate.sh`（cmd_4159、commit hayate）
+
+pane `@model_name`乖離の恒久是正: settings.yaml model_nameを4チョークポイント(cli_launch_cmd/agent_respawn/switch_cli_mode/ninja_monitor)でtmux `@model_name`へ直接焼込み、バナーパース変換関数を全廃。→ `scripts/lib/cli_lookup.sh` / `scripts/agent_respawn.sh` / `scripts/switch_cli_mode.sh` / `scripts/ninja_monitor.sh`（cmd_4160、commit `538dfa251`）
+
+`commit_contract.planned_paths`の正規拡大経路(`declare-scope-expansion`)を追加。実装中にtarget_path外へscope拡大した場合、理由必須の宣言で拡大しBLOCK 5回反復を防止。→ `scripts/deploy_task.sh`（cmd_4161、commit `d626e5774`）
+
+`yaml_field_set.sh`のネストlist添字表記(`field[N]`)を検出し明示FATALでfail-closedする。リテラルキー化による無音失敗を防止。→ `scripts/lib/yaml_field_set.sh`（cmd_4162、commit `6b46ec40c`）
+
+`inbox_write.sh`のreport_received帰属をtask現在値から報告YAML自身のparent_cmdへ切替。task入替race(新task配備後に旧cmd向けreport_receivedが新parent_cmdを使う)を根治。→ `scripts/inbox_write.sh`（cmd_4163、commit `b5590d7d3`）
+
+`cmd_save.sh`の起票gateに三層記憶自動検索(memory_db_fts5 top3)をbackground並走で注入。起票時に三層記憶を検索しなかった全量テスト事故(10cmd影響)の構造再発防止。→ `scripts/cmd_save.sh`（cmd_4164、commit saizo）
+
+`cmd_save.sh`のtest_ci_execution_contractを選択実行(run_tests.sh task/file/affected)要求+unit/all BLOCKへ反転。ACに全量テスト指示を書けない構造化。→ `scripts/cmd_save.sh`（将軍D0、commit `31aaa50d6`）
+
+`review_bundle.py`のbinary_checks result判定でYAML boolean強制(True/False)をyes/no等価扱い。→ `scripts/review_bundle.py`（将軍D0、commit `afff2450e`）
+
+テスト高速化: timing budget ratchet BLOCK対象6ファイルの遅延源を修正。→ `tests/unit/`（cmd_4154、commit `e0e65073e`）
 
 SG7レビュー情報はformal Gunshi LGTM時に`review_approval.sh`が`review_bundle.py generate`を原子的に実行して永続化する。GATE後に報告がarchiveされても、`dashboard_update.sh --bundle`はfingerprint済みbundleをSSOTとして再検証せず消費する。archive済みdirect/training報告の復旧時だけ`review_bundle.py generate --allow-archived`を使う。→ `scripts/review_approval.sh` / `scripts/review_bundle.py` / `scripts/dashboard_update.sh`（cmd_3932根治、commits `d2c108a9f`, `b52d88702`）
 
@@ -858,7 +886,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1302 -->
+<!-- last_synced_lesson: L1303 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1874,6 +1902,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1300: set -euo pipefailの環境でgrep|tailのようなno-match前提パイプラインを`local var; var=$(cmd | cmd2)`へ入れるとpipefailで即死する（cmd_4161）
 - L1301: 周期チェックがバナーパース優先だと正本焼込みを無効化する（cmd_4160）
 - L1302: cmd_save_output_filterはBLOCK時にINFO系新規出力を無条件で隠す（cmd_4164）
+- L1303: cmd生成時のtarget_path単数推定はAC本文が複数ファイル(2表)を指す場合にミスマッチする（cmd_karo_hotfix_n5_rolling_colwidth_20260724）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
