@@ -145,11 +145,17 @@ make_split_contexts() {
     [ "$(git -C "$DM" rev-list --count HEAD)" -eq 1 ]
 }
 
+# cmd_karo_impl_commander_scope_commit_20260725: TMUX_AGENT_ID uses a fictitious,
+# non-ninja/non-commander identity (not "shogun") so these fixtures continue to
+# isolate GA-220 (DM-Signal reflux) behavior. GA-231c now blocks every real
+# commander's direct `git commit` regardless of repo/content (see
+# tests/unit/test_pre_bash_combined.bats), which would otherwise short-circuit
+# these commands before GA-220 ever runs.
 @test "実pre-bash hook入口をdirect commit前BLOCKする" {
     printf 'design\n' > "$DM/docs/research/design.md"
     git -C "$DM" add docs/research/design.md
     payload="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git -C '$DM' commit -m test\"}}"
-    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=shogun DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
+    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=dm_signal_reflux_probe DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
     [ "$status" -eq 2 ]
     [[ "$output" == *"GA-220"* ]]
     [ "$(git -C "$DM" rev-list --count HEAD)" -eq 1 ]
@@ -159,7 +165,7 @@ make_split_contexts() {
     printf 'change\n' >> "$DM/README.md"
     git -C "$DM" add README.md
     payload="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git -C '$DM' commit -m test\"}}"
-    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=shogun DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
+    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=dm_signal_reflux_probe DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
     [ "$status" -eq 0 ]
 }
 
@@ -168,7 +174,7 @@ make_split_contexts() {
     git -C "$DM" add docs/research/design.md
     bash "$GUARD" prepare --repo "$DM" --mode synced --evidence 'context §54 synced'
     payload="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"git -C '$DM' commit -m test\"}}"
-    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=shogun DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
+    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=dm_signal_reflux_probe DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
     [ "$status" -eq 0 ]
 }
 
@@ -347,7 +353,7 @@ EOF
 @test "GA-236 TOCTOU: 実pre-bash hookでも同一command連結BLOCKが発火する" {
     printf 'design\n' > "$DM/docs/research/design.md"
     payload="{\"tool_name\":\"Bash\",\"tool_input\":{\"command\":\"cd '$DM' && git add docs/research/design.md && git commit -m test\"}}"
-    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=shogun DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
+    run bash -c "cd '$DM' && printf '%s' '$payload' | BATS_TEST_FILENAME=fixture TMUX_AGENT_ID=dm_signal_reflux_probe DM_SIGNAL_REPO='$DM' DM_SIGNAL_REFLUX_CONTEXT_FILE='$CTX' bash '$ROOT/.claude/hooks/pre-bash-combined.sh'"
     [ "$status" -eq 2 ]
     [[ "$output" == *"GA-220"* ]]
     [ "$(git -C "$DM" rev-list --count HEAD)" -eq 1 ]
