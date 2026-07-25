@@ -1079,6 +1079,15 @@ if (( unread_count >= 1 )); then
   fi
 fi
 
+# --- Paste placeholder loss detection (shogun-rca:14 2026-07-25) ---
+# 殿の貼り付けがCLI入力層で展開されずリテラル'[Pasted text #N +N lines]'のまま到達すると
+# 本文が完全消失する(lord_conversationにも残らない)。検出して即再送依頼を促す。
+paste_loss_warning=""
+if echo "$prompt_text" | grep -qE '^\[Pasted text #[0-9]+( \+[0-9]+ lines?)?\]$'; then
+  paste_loss_warning="
+🚨 貼り付け消失検知: このメッセージはプレースホルダのみで本文が届いていない(CLI入力層で消失)。調査不要。即座に殿へ再送を依頼せよ。"
+fi
+
 # --- Question pattern detection → confirmation injection (cmd_2293) ---
 # cmd_karo_hotfix_shogun_startup_loop_memory_202607082152: 「今クリアされても今より強くて
 # ニューゲームできるようにせよ」という殿の命令文(疑問符なし)がquestion_detectedに未検知のまま
@@ -1153,7 +1162,7 @@ fixed_part="${header}
 source: unknown
 timestamp: ${timestamp}
 agent: ${agent_id}
-inbox_unread: ${unread_count}${inbox_warning}${question_warning}${tech_memory_warning}${skill_trigger_warning}${lord_cross_agent}
+inbox_unread: ${unread_count}${paste_loss_warning}${inbox_warning}${question_warning}${tech_memory_warning}${skill_trigger_warning}${lord_cross_agent}
 --- karo_snapshot ---
 "
 

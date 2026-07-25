@@ -444,7 +444,7 @@ if [[ "$agent_id" == "shogun" && "$payload" == *'"last_assistant_message"'* ]]; 
     # cmd_3418 + memory citation enforcement: preflightを使った非定型回答は
     # 引用タグまでを一つの契約としてfail-closedにする。定型応答とpreflight未実施は対象外。
     if has_successful_three_layer_preflight && ! is_routine_shogun_response "$last_assistant_message" && [[ "$last_assistant_message" != *'[MEM:'* ]]; then
-      printf '{"decision":"block","reason":"BLOCK: 三層preflight済みの非定型回答に[MEM:]引用タグがない。memory_db/semantic/obsidianの引用元を明記せよ。"}\n'
+      printf '{"decision":"block","reason":"BLOCK: 三層preflight済みの非定型回答に[MEM:]引用タグがない。memory_db/semantic/obsidianの引用元を明記せよ。知識参照を要しない回答(再送依頼・配送失敗通知等)には偽の引用を作らず [MEM: n/a — 理由] と明記せよ(shogun-rca:15: 空引用は計器を汚す)。"}\n'
       exit 0
     fi
     # cmd_3420 AC1/AC2: 数量表現→全件照合強制WARN(洗脳#1/#8 L5化)
