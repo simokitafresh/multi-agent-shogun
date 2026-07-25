@@ -876,7 +876,7 @@ HOOK
     [ "$(git -C "$REPO" diff-tree --no-commit-id --name-only -r HEAD)" = shared.txt ]
 }
 
-@test "旧HEAD blobがshared indexに残るMM状態は後続patchをBLOCKし内容を保持する" {
+@test "旧HEAD blobがshared indexに残るMM状態でも後続patchはcommitしforeign内容を保全する(B27)" {
     make_shared_fixture; make_own_patch
     old_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
     base_blob="$old_blob"
@@ -888,16 +888,42 @@ HOOK
     printf 'foreign-worktree\n' >> "$REPO/shared.txt"
     stale_entry="$(git -C "$REPO" ls-files -s -- shared.txt)"
     head_before="$(git -C "$REPO" rev-parse HEAD)"
+    # 2本目のpatchは現HEAD基準(line36、1本目のown.patchが触れていない行)で有効に構成する。
     printf '%s\n' 'diff --git a/shared.txt b/shared.txt' '--- a/shared.txt' '+++ b/shared.txt' \
-        '@@ -1 +1 @@' '-base-01-own' '+next-owner' > "$REPO/next.patch"
+        '@@ -36 +36 @@' '-base-36' '+base-36-second-own' > "$REPO/next.patch"
     new_base="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
 
-    run bash -c "cd '$REPO' && bash '$HELPER' -m must-block-stale --patch '$REPO/next.patch' --base-blob '$new_base' -- shared.txt"
-    [ "$status" -eq 2 ]
-    [[ "$output" == *"already has staged content"* ]]
+    run bash -c "cd '$REPO' && bash '$HELPER' -m second --patch '$REPO/next.patch' --base-blob '$new_base' -- shared.txt"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"leaving it untouched"* ]]
+    # shared indexの旧stale entryはcommit後も一切上書きされず保全される(B27 AC2)。
     [ "$(git -C "$REPO" ls-files -s -- shared.txt)" = "$stale_entry" ]
     [ "$(tail -1 "$REPO/shared.txt")" = foreign-worktree ]
-    [ "$(git -C "$REPO" rev-parse HEAD)" = "$head_before" ]
+    [ "$(git -C "$REPO" rev-parse HEAD)" != "$head_before" ]
+    [ "$(git -C "$REPO" show HEAD:shared.txt | tail -1)" = base-36-second-own ]
+}
+
+@test "shared indexに事前staged済みforeign内容がある状態でもpatch modeはcommitしforeign stageを保全する(B27)" {
+    make_shared_fixture
+    base_blob="$(git -C "$REPO" rev-parse HEAD:shared.txt)"
+    make_own_patch
+
+    # 他者(例: 自動生成索引の再生成)が同一pathへ別内容を自分のpatch呼び出し前に
+    # 既にstage済み。normal modeは「partial/foreign staged content...use --patch」で
+    # BLOCKし、この--patch modeが実際の脱出経路になる(2026-07-25実例:
+    # logs/push_dirty_tree_bypass.jsonl context/lord-conversation-index.md)。
+    printf 'foreign pre-staged content\n' > "$REPO/shared.txt"
+    git -C "$REPO" add shared.txt
+    foreign_entry="$(git -C "$REPO" ls-files -s -- shared.txt)"
+    worktree_before="$(cat "$REPO/shared.txt")"
+
+    run bash -c "cd '$REPO' && bash '$HELPER' -m b27-patch --patch '$REPO/own.patch' --base-blob '$base_blob' -- shared.txt"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"leaving it untouched"* ]]
+    [ "$(git -C "$REPO" show HEAD:shared.txt | grep -c -- '-own')" -eq 5 ]
+    [ "$(git -C "$REPO" ls-files -s -- shared.txt)" = "$foreign_entry" ]
+    [ "$(cat "$REPO/shared.txt")" = "$worktree_before" ]
 }
 
 @test "patch modeはbase blob不一致をcommit前にBLOCKする" {

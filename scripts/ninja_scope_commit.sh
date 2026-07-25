@@ -777,10 +777,18 @@ if [[ -n "$patch_file" ]]; then
     fi
     [[ "$head_blob" == "$base_blob" ]] \
         || { echo "BLOCK: base blob mismatch for $scope_path (expected $base_blob, HEAD has $head_blob)" >&2; exit 2; }
+    # B27: shared indexが既にHEAD差分のforeign stageを持つことは、この関数が
+    # commitソースとして共有indexを使わない(専用indexをHEADから作る)以上、
+    # commit自体の正当性には無関係である。事前BLOCKするとnormal modeの
+    # 「partial/foreign staged content...use --patch」誘導が必ず自己矛盾で
+    # 再BLOCKする無限escape不能状態になる(2026-07-25 logs/push_dirty_tree_bypass.jsonl
+    # で実証済み)。ここではBLOCKせず、pre-existingなforeign stageの有無だけ記録し、
+    # 破壊防止はcommit後のshared index追随(advance_shared_index_entry呼び出し)側で行う。
     shared_index_blob="$(git ls-files -s -- "$scope_path" | awk 'NR==1 {print $2}')"
-    [[ "${shared_index_blob:-0000000000000000000000000000000000000000}" == "$head_blob" ]] \
-        || { echo "BLOCK: scope path already has staged content in shared index: $scope_path" >&2; exit 2; }
     shared_index_entry_before="$(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -- "$scope_path" | awk '$3 == 0 {print $1 " " $2; exit}')"
+    shared_index_had_foreign_stage=false
+    [[ "${shared_index_blob:-0000000000000000000000000000000000000000}" == "$head_blob" ]] \
+        || shared_index_had_foreign_stage=true
 
     mapfile -t patch_paths < <(git apply --numstat -- "$patch_file" 2>/dev/null | awk '{print $3}')
     ((${#patch_paths[@]} > 0)) \
@@ -862,10 +870,18 @@ PY
     assert_single_parent_commit "$commit_hash"
     # HEAD更新後、共有indexの対象pathだけを新HEADへ追随させる。他pathのstageは
     # 一切変更せず、対象pathが旧HEAD由来の逆差分として残るindex汚染を防ぐ。
+    # B27: pre-existingなforeign stage(このcommit開始前から既にHEAD差分だった
+    # shared index entry)は、それが自分のcommitと無関係な他者の意図的staged
+    # 内容である可能性を排除できないため、advanceで上書きしない。単に追随を
+    # skipしてそのまま保全する(他者のstageを破壊するな — B27 AC2)。
     finish_phase 0
     begin_phase advance_shared_index
     unset GIT_INDEX_FILE
-    advance_shared_index_entry "$scope_path" "$shared_index_entry_before"
+    if [[ "$shared_index_had_foreign_stage" == true ]]; then
+        echo "INFO: shared index entry predates this commit and differs from prior HEAD; leaving it untouched to avoid clobbering foreign stage: $scope_path" >&2
+    else
+        advance_shared_index_entry "$scope_path" "$shared_index_entry_before"
+    fi
     finish_phase 0
     begin_phase post_check
     cleanup_patch_index
