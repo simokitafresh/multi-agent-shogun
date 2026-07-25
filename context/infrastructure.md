@@ -886,7 +886,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1306 -->
+<!-- last_synced_lesson: L1309 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1906,6 +1906,9 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1304: 台帳長期集計ウィンドウは既存fix投入時刻を跨ぐと支配項判定を誤る（cmd_4168）
 - L1305: 配備ガードのstatus case網羅性: 進行中状態だけでなく完了直後archive未了も保護対象に含めよ（cmd_4170）
 - L1306: 教訓選定scoringのtarget_files宣言は、広範なsemantic-index概念エイリアス一致で無条件バイパスされていた（cmd_4172）
+- L1307: bashの\tはprintf/echo -e経由でのみ実タブへ展開される。二重引用符+コマンド置換の生文字列補間では文字通り残る（cmd_karo_hotfix_gate_metrics_literal_tab_20260725）
+- L1308: 高頻度runの生スキャン系stockには単純隣接snapshot比較ではなくgrace-hour以上前baseline比較を使う（cmd_karo_hotfix_loop_ledger_stock_metric_20260725）
+- L1309: test_cmd_publish_preflight.batsが殿裁定2026-07-23のlesson-cap撤去(commit 4f4aae961)に未追随のまま2日間スコープ外FAILを出し続けている（cmd_karo_hotfix_reflux_deploy_race_20260725）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
