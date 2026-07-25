@@ -84,19 +84,36 @@ if [ -n "$search_query" ]; then
     # a 622MB 9P full scan while the asynchronous cache refresh is in flight.
     delta_source_path=""
     delta_after_rowid=""
-    if [ -s "$cache_db_path" ] && { [ "$source_db_path" -nt "$cache_db_path" ] \
-        || { [ -f "${source_db_path}-wal" ] && [ "${source_db_path}-wal" -nt "$cache_db_path" ]; } \
-        || { [ -f "${source_db_path}-shm" ] && [ "${source_db_path}-shm" -nt "$cache_db_path" ]; }; }; then
-        delta_after_rowid="$(python3 - "$cache_db_path" <<'PY' 2>/dev/null || true
+    # cmd_karo_impl_b45_memory_cache_rowid_watermark_20260726: mtimeの3条件
+    # (本体/-wal/-shm)は、cache生成がmkstemp→copy→os.replaceで公開されるため
+    # cacheのmtimeが「コピー完了時刻」でしかなく、かつ本体.dbはWALモードで
+    # checkpointまでmtimeが動かないため、書込み直後は全条件が偽になり
+    # delta経路が抑止されていた(検索が古いcacheだけを見て0件を返す窓)。
+    # 時刻を比較しても揃わない以上、内容の水位(rowid)で直接比較する。
+    if [ -s "$cache_db_path" ]; then
+        cache_max_rowid="$(python3 - "$cache_db_path" <<'PY' 2>/dev/null || true
 import sqlite3, sys
 with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True) as conn:
     row = conn.execute("SELECT COALESCE(MAX(rowid), 0) FROM events").fetchone()
 print(int(row[0]) if row else 0)
 PY
 )"
-        if [[ "$delta_after_rowid" =~ ^[0-9]+$ ]]; then
-            delta_source_path="$source_db_path"
-            db_path="$cache_db_path"
+        if [[ "$cache_max_rowid" =~ ^[0-9]+$ ]]; then
+            # source側は9P越しのため、高負荷時のstall防止にtimeoutで防御する。
+            # timeout/失敗時はcacheのみへフォールバックする(9p高負荷時の既存
+            # 防御を維持。AC3)。
+            source_max_rowid="$(timeout 2 python3 - "$source_db_path" <<'PY' 2>/dev/null || true
+import sqlite3, sys
+with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True) as conn:
+    row = conn.execute("SELECT COALESCE(MAX(rowid), 0) FROM events").fetchone()
+print(int(row[0]) if row else 0)
+PY
+)"
+            if [[ "$source_max_rowid" =~ ^[0-9]+$ ]] && [ "$source_max_rowid" -gt "$cache_max_rowid" ]; then
+                delta_after_rowid="$cache_max_rowid"
+                delta_source_path="$source_db_path"
+                db_path="$cache_db_path"
+            fi
         fi
     fi
     # A cache whose SQLite header is absent cannot satisfy any search. Repair

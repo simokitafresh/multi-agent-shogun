@@ -177,6 +177,53 @@ else
     overall="WARN"
 fi
 
+echo "■ cache追随チェック(cmd_karo_impl_b45_memory_cache_rowid_watermark_20260726)"
+# 疾風の偵察(cmd_karo_recon_memory_cache_mtime_freshness_20260726)実証: STATUS
+# PASSを表示中にmemory_db_query.shの検索が0件を返す(A8=沈黙の検査)。cacheが
+# 本体に追随しているかをrowid水位で直接検査する。gap>0自体は正常
+# (非同期cache再生成の合間に生じる/delta-searchが自動で埋める)なので、
+# 実測の定常gap(数件程度)を大きく超える異常な乖離のみWARNとする。
+rowid_gap_warn="${SHOGUN_THREE_LAYER_CACHE_ROWID_GAP_WARN:-1000}"
+if [ -f "$query_db" ] && [ -f "$db_path" ]; then
+    cache_max_rowid="$(python3 - "$query_db" <<'PY' 2>/dev/null || true
+import sqlite3, sys
+with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True) as conn:
+    row = conn.execute("SELECT COALESCE(MAX(rowid), 0) FROM events").fetchone()
+print(int(row[0]) if row else 0)
+PY
+)"
+    # 本体は9P越しの可能性があるため、高負荷時のstall防止にtimeoutで防御する。
+    source_max_rowid="$(timeout 2 python3 - "$db_path" <<'PY' 2>/dev/null || true
+import sqlite3, sys
+with sqlite3.connect(f"file:{sys.argv[1]}?mode=ro", uri=True) as conn:
+    row = conn.execute("SELECT COALESCE(MAX(rowid), 0) FROM events").fetchone()
+print(int(row[0]) if row else 0)
+PY
+)"
+    if [[ "$cache_max_rowid" =~ ^[0-9]+$ ]] && [[ "$source_max_rowid" =~ ^[0-9]+$ ]]; then
+        rowid_gap=$((source_max_rowid - cache_max_rowid))
+        [ "$rowid_gap" -lt 0 ] && rowid_gap=0
+        echo "cache_max_rowid=$cache_max_rowid source_max_rowid=$source_max_rowid gap=$rowid_gap warn_gap=$rowid_gap_warn"
+        if [ "$rowid_gap" -gt "$rowid_gap_warn" ]; then
+            echo "WARN: cacheが本体に追随していない(gap=${rowid_gap}件 > 閾値${rowid_gap_warn}件)。async refresh/delta-search機構を確認せよ。"
+            overall="WARN"
+        else
+            echo "OK: cacheは本体に追随している(gap=${rowid_gap}件)"
+        fi
+    else
+        # 9P高負荷時のtimeout等でrowid水位を取得できないケース。実検索経路
+        # (memory_db_query.sh)は自前でcacheのみへフォールバックし利用者へは
+        # 影響しないため、この診断プローブの失敗単独をWARNにしない(AC3:
+        # 9p高負荷時のフォールバック防御を診断側でも壊さない)。
+        echo "INFO: cache/本体のrowid水位を取得できない(9p timeout等)。追随状態を判定不能のためskip"
+    fi
+else
+    # sourceまたはcacheが存在しない場合(初回起動前・cache未生成等)は
+    # 追随チェックの対象外。三層記憶DB不在そのものは上のevents.state分布
+    # セクションが別途検出する。
+    echo "INFO: cache/本体のいずれかが不在のため追随チェックをskip(query_db=$query_db db_path=$db_path)"
+fi
+
 echo "■ cache容量チェック"
 if [ -d "$cache_dir" ]; then
     # WSL2ではdu -sbが過大報告する(sparse files等)。ls -lベースで実ファイルサイズ合計を取得
