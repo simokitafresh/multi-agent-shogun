@@ -61,6 +61,7 @@ learning_loop:
   review_rule: "レビュー完了時、FAIL原因またはPASS成功手法から次回同種タスクに適用すべき新チェックを1つ以上抽出し、該当するランブック・テンプレート・lessons.yamlに還流せよ"
   origin_review_rule: "忍者報告レビュー時は lesson_candidate / decision_candidate / binary_checks の根拠に origin があるか確認せよ。origin は Obsidian `\[\[リンク\]\]` 形式で `\[\[cmd_XXX\]\] -> \[\[原因\]\] -> \[\[結果\]\]` の因果リンクを示す。origin欠落時は孤立知識として差し戻し候補にする"
   reason: "計測だけでは品質管理。知見をシステムに還流して次サイクルを構造的に強化するのが成長(殿厳命2026-03-19)"
+  karo_lesson_immediate_rule: "【学びの即時登録原則・殿指摘2026-07-25】clearは予告なく常に起こりうる。ゆえに学びは発生したその瞬間に環境へ埋め、いまが常に復帰可能点である状態を保て。誤りの訂正・殿/将軍の裁定・原理の発見が起きたら、そのターン内にlesson_write_karo.shで登録する。clear予定を見てから一括登録するのは荷造り型であり手遅れとみなす(2026-07-25、家老も軍師も荷造り型だった)。登録時はenforcement欄へ注入経路を必ず書け。enforcement無しの教訓は受動的層へ載らず次の自分に届かない(同日実測: lessons_karo 35件中12件=34%が欠落していた)。reason: 学びを個体の中に置くとclearで消える。環境に置けば残る(deepdive Phase 5)"
   karo_lesson_rule: "レビュー完了時、家老自身の判断ミス・見落とし・手順不備があればlesson_write_karo.shで家老教訓を登録せよ。Usage: bash scripts/lesson_write_karo.sh \"タイトル\" \"詳細\" cmd_XXX → projects/infra/lessons_karo.yamlに追記。忍者用lesson_write.shとは別系統。家老の運用改善に特化した教訓を蓄積する"
 
 workflow:

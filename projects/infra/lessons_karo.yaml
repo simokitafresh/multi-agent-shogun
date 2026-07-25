@@ -72,6 +72,7 @@ lessons:
     - cmd前提否定時は停止→現物確認→将軍shelve報告→偵察cmd要請の4段階(LK004: cmd_2794で軍師REQUEST_CHANGES→家老が現物確認→前提否定確定→影丸停止→将軍shelve。忍者に続行させるな)
     - CoDD修行AC設計前にCLI --helpで構文現物確認必須(LK006: codd extract/elicit/generate構文を未確認でAC設計→4忍者全FAIL。§0.1問い2にCLIツール構文確認を含む)
     - D0レビューでテスト前提更新を確認せよ(LK013: 軍師D0でMIN_SAMPLES 3→1変更→テスト前提古い→CI RED。D0変更がデフォルト値・閾値追加→既存テスト前提古くなっていないか)
+    吸収(2026-07-25, cmd_karo_hotfix_lesson_write_chmod_eperm_20260725, origin: [[karo_misjudgment_20260725]] -> [[secondary_source_transcription]] -> [[LK-A01]]): 2026-07-25、家老は1セッションで6回判断を誤り、全て忍者・軍師に捕捉された: (1)疾風へ達成不能なAC4を発行(cmd_4171のGATE CLEARが発令10分前に完了済みで再実行手段ゼロ。async log 940件中該当0件で実測確認) (2)cmd_4172をdead codeと知らずACCEPT(replay証跡を根拠にし本番経路接続を未確認。非test caller 0件) (3)CI真因を疾風の仮説のまま転記(実際はgit未追跡libのsource。gate_report_format.shは当該libを参照していなかった) (4)未commit差分の帰属を軍師の判定のまま転記(差分内のコメントにcmd_idが明記されており確認すれば即判明した) (5)先行commit担当者の呼称を半蔵/影丸で取り違え(才蔵が指摘) (6)遅延source化の要否をtest互換の観点だけで判断(影丸が本番実行コストの観点を提示)。共通因は『他者の結論を一次確認せず転記する』または『一つの観点だけで結論する』である
   source_ids: [LK005, LK006, LK009, LK010, LK012, LK018, LK030, LK037, LK040, LK041, LK043, LK044, LK047, LK048, LK052, LK054, LK065, LK069, LK085, LK002, LK003, LK004, LK006b, LK013, LK011, LK014, LK015, LK004i, LK006i, LK013i]
   created_at: '2026-04-24'
   automated: true
@@ -279,15 +280,9 @@ lessons:
   origin: "[[LK058]] -> [[研究成果物未確認]] -> [[空deliverable]]"
 - id: LK-A11
   title: AC設計は忍者が物理的に達成可能か事前確認
-  detail: "gitignore対象ファイルへのcommit ACは達成不可能。推奨事項を必須binary_checkに混入。
-verdict_override 3件の根因。CoDDのACにimplementを入れるな(準備と実装は別cmd)。
-CI完了待ちで忍者を止めるな(報告を先に書かせろ)。
-追加吸収: LK006(既存テスト赤を確認せず全体pytestを必須ACにするな)。
-v5吸収(2026-05-15):
-- 外部リポ(Simple-OCR等)のpush ACは忍者push禁止規則と構造的に衝突。push ACは家老実施前提で設計せよ(cmd_2782/2783/karo_ci_fix_simple_ocr_rebase実証)
-v7吸収(2026-05-19):
-- 全テストPASS ACは忍者環境でbats全1816件26分超。test_select.sh使用+関連テストPASSに修正せよ(cmd_training_speed修行で実証)
-- 速度目標ACでWSL2環境固有律速がscope外の場合→FAIL形骸化(cmd_2856 AC4 WAIVE。軍師ACスコープ完結性チェックbf02cd97で構造防止)"
+  detail: |
+    gitignore対象ファイルへのcommit ACは達成不可能。推奨事項を必須binary_checkに混入。 verdict_override 3件の根因。CoDDのACにimplementを入れるな(準備と実装は別cmd)。 CI完了待ちで忍者を止めるな(報告を先に書かせろ)。 追加吸収: LK006(既存テスト赤を確認せず全体pytestを必須ACにするな)。 v5吸収(2026-05-15): - 外部リポ(Simple-OCR等)のpush ACは忍者push禁止規則と構造的に衝突。push ACは家老実施前提で設計せよ(cmd_2782/2783/karo_ci_fix_simple_ocr_rebase実証) v7吸収(2026-05-19): - 全テストPASS ACは忍者環境でbats全1816件26分超。test_select.sh使用+関連テストPASSに修正せよ(cmd_training_speed修行で実証) - 速度目標ACでWSL2環境固有律速がscope外の場合→FAIL形骸化(cmd_2856 AC4 WAIVE。軍師ACスコープ完結性チェックbf02cd97で構造防止)
+    吸収(2026-07-25, cmd_karo_impl_yaml_field_set_list_nested_20260725, origin: [[karo_excerpt_relay_20260725]] -> [[contract_invisible_to_ninja]] -> [[LK-A11]]): 2026-07-25、家老はdraftレビューをinboxで受領し要点だけを抜粋して忍者へ転送していた。結果、忍者は自分に課された条件の全文を読めない状態で作業した。小太郎が『条件2-4は軍師のdraft review本文が掲示板に残っていないため未参照』と報告して発覚。同型の被害は本日3件: (1)疾風=達成不能なAC4で3往復(家老がAC起票時に達成可能性を未検証。cmd_4171のGATE CLEARが発令10分前に完了済みで再実行手段ゼロ、async log 940件中該当0件で実測確認) (2)影丸=semantic_validation.resultの記入方法を知らされず空欄でBLOCK(gate_gunshi_report_precheck.sh:1219が厳密一致PASSを要求。疾風も同じ箇所で括弧付きPASSにより3往復) (3)小太郎=条件2-4未参照。∴gateは正しく動いているのに忍者は何を満たせばよいか分からない。planned_pathsの事前不足も本日4回発生しており(小太郎/半蔵/影丸×2)、いずれも『AC遂行と契約が矛盾し確定的にBLOCKする』構造である
   source_ids: [LK006, LK042, LK020, LK078, LK014]
   created_at: '2026-04-24'
   automated: true
@@ -386,6 +381,8 @@ v7吸収(2026-05-19):
   detail: |
     同パターンが複数ファイルにコピペ散在。修正後にgrep残存確認が不在→12体Cash100%事故。
     吸収(2026-07-25, cmd_karo_hotfix_lesson_write_chmod_eperm_20260725, origin: [[cmd_karo_hotfix_lesson_write_chmod_eperm_20260725]]): 本番経路接続の確認 — 修正モジュールの非test callerを数えよ(cmd_4172でdead codeを修正しGATE CLEARしたが本番経路のinline実装は未変更だった。家老・軍師とも見逃した)
+    吸収(2026-07-25, cmd_karo_impl_commander_scope_commit_20260725, origin: [[karo_confirmed_but_incomplete_20260725]] -> [[search_scope_not_declared]] -> [[LK-A14]]): 2026-07-25、家老は軍師の要求1『pre-push hookはgit管理下に存在しない』を実測確認した: (a)scripts/hooks/git-pre-push.sh が存在しない=事実 (b).git/hooks/pre-push は git ls-files 0件=事実。両方とも正しかったため指摘を受け入れ、影丸へ『git管理外への実装になるからやめよ』と是正指示を出した。しかし影丸が反論し再確認したところ .githooks/pre-push は git ls-files=1件(追跡下)で、scripts/sync_git_hooks.sh:103-104 の HOOK_MANIFEST が pre-push:.githooks/pre-push を正本と明示していた。.git/hooks/ が管理外なのは全repoで普遍的なgitの仕様であり本日のuntracked lib事故とは別種。∴家老は軍師が挙げた2箇所だけを確認し第三の場所(.githooks/)を探索しなかった。これは『一次確認せず転記』(LK-A01)とは別種であり、**一次確認したつもりになる**という質的に悪い誤りである。影丸が反論しなければ正しい実装を壊していた。軍師のLG042(探索範囲を列挙して埋める)が効く領域だが、軍師自身も適用しきれなかった
+    吸収(2026-07-25, cmd_karo_impl_commander_scope_commit_20260725, origin: [[karo_detector_false_positive_20260725]] -> [[unverified_premise_in_detector]] -> [[LK-A14]]): 2026-07-25、家老は殿指摘『学びは発生した瞬間に環境へ埋めよ』を受けて gate_karo_startup.sh へ『WA記録あり×本日の教訓登録0件』検知器を追加した。しかし WA の総数を数える実装にしたため、本日WA記録18件のうち真の手動補正(workaround=True)が**1件のみ**である事実を捉えられず、ALERTを誤発火させ将軍のescalationを1件増やした。実測内訳: workaround=True 1件 / category=clean 8件(正常完了記録) / category=rework_auto_capture 9件(ninja=system、detail='cmd_complete_gate completed rework event'、auto_captured=True=システムの自動観測)。∴17件は家老の手動補正ではない。原因は『WAの総数を数えれば家老の学びの発生を捉えられる』という未検証の前提を置き、実データのworkaroundフィールドを見ずに検知器を書いたこと。家老は本日E型(計器の誤りは自己検知できない)を繰り返し報告し、他者の計器の誤りを4回指摘しながら、自分が作った計器を実データで検証しなかった。同日、同じ検知器で他に2つのバグも出した: grep -c の改行混入によるinteger expression error、および --merge-into が created_at を更新しないため統合登録を0件と誤判定
   source_ids: [LK052]
   created_at: '2026-04-24'
   automated: true
@@ -531,6 +528,8 @@ v7吸収(2026-05-19):
   when: 'type=hook; file=instructions/karo.md; pattern=wc -l'
   how: 'commit 68ad68104でold_string一意マッチ失敗→1252行意図せず削除。Edit後は即wc -lで行数差分確認。origin: [[68ad68104]] -> [[Edit一意マッチ失敗]] -> [[1252行誤削除]]'
   created_at: '2026-06-18'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LK002'
   title: 'gate再実行前に完了報告するな — 修正途中データで完了報告は洗脳#2'
   origin: '[[cmd_3431]]'
@@ -539,6 +538,8 @@ v7吸収(2026-05-19):
   when: 'type=lesson; file=instructions/karo.md; pattern=gate再実行'
   how: '初回commit時点でまだALERTだったのに完了報告。報告前に必ずgate再実行で数値確認。origin: [[殿指摘_確認しない問題]] -> [[修正途中完了報告]] -> [[家老指摘で発覚]]'
   created_at: '2026-06-18'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LK003'
   title: '教訓タグは固有タグ必須 — universal/空タグはNOT_USEFUL量産'
   origin: '[[cmd_session_20260618]]'
@@ -547,6 +548,8 @@ v7吸収(2026-05-19):
   when: 'type=lesson; file=scripts/lesson_write.sh; pattern=tags'
   how: 'lesson_write.shで新教訓登録時タグ空/universalだと全cmdに無差別注入→NOT_USEFUL量産(184→170件修正中)。GS/ALM/WF固有タグ必須。origin: [[useful率5.4%]] -> [[universalタグ]] -> [[NOT_USEFUL量産]]'
   created_at: '2026-06-18'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LK004'
   title: 'SG-PRE25 ERROR時はGATE_PREDICTION CLEARより precheckFAIL指示を優先せよ'
   origin: '[[cmd_3439]]'
@@ -555,6 +558,8 @@ v7吸収(2026-05-19):
   when: 'type=lesson; file=instructions/karo.md; pattern=SG-PRE25'
   how: 'cmd_3435/3437/3438/3439で4連続BLOCK実証。GATE_PREDICTIONはcommand欄ファイル名抽出精度に依存し偽CLEARを出す。SG-PRE25 ERRORが1件でも出たらprecheckFAIL指示最優先。origin: [[cmd_3435-3439_4連続BLOCK]] -> [[SG-PRE25_GATE_PREDICTION矛盾]] -> [[precheckFAIL優先ルール]]'
   created_at: '2026-06-18'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LK005'
   title: 'infra'
   origin: '[[gate_shogun_startup_Q6]] -> [[path_re抽出失敗_SKIP→WARN3連続]] -> [[gate_shogun_startup.sh_メッセージ改善]]'
@@ -563,6 +568,8 @@ v7吸収(2026-05-19):
   when: 'gate_shogun_startup.sh'
   how: '[[将軍Q6回答_抽象的自動化ターゲット]] -> [[path_re抽出失敗_SKIP→WARN3連続]] -> [[gate_shogun_startup.sh_メッセージ改善]]'
   created_at: '2026-06-20'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LK006'
   title: 'auto-voidされた忍者のparent_cmdが残存するとGATE BLOCKを引き起こす'
   origin: '[[cmd_3475]]'
@@ -571,6 +578,8 @@ v7吸収(2026-05-19):
   when: '同種の状況が再発した時'
   how: 'ninja_monitorのAUTO-VOIDはtask statusをidle化するがparent_cmd/task_idをクリアしない。cmd_complete_gate.shはparent_cmd一致でreport要求対象を特定するため、parent_cmd残存→報告YAML待ち→BLOCK。対処: auto-void受信時に家老がparent_cmd+task_idを手動クリア。根本対処: ninja_monitorのvoid処理にparent_cmdクリアを追加(CMD起票候補)。origin: [[cmd_3475_hanzo_identity_confusion]] -> [[auto-void_parent_cmd残存]] -> [[GATE_BLOCK_retry3回]]'
   created_at: '2026-06-21'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LK007'
   title: 'switch_cli_mode.sh settings.yaml未更新+Codex起動コマンド問題'
   origin: '[[session_20260623_cli_switch]] -> [[switch_cli_mode settings未反映]] -> [[手動修正3名成功]]'
@@ -579,6 +588,8 @@ v7吸収(2026-05-19):
   when: '同種の状況が再発した時'
   how: 'switch_cli_mode.sh to-codex --scopeでtmux変数(@agent_cli/@model_name)は更新されたがsettings.yaml type/model_nameは未更新だった。また、Codex 0.141.0ではcodex --full-autoがexit 2。respawn時にCodexプロンプトに旧Claude CLI起動コマンドがsend-keysで貼付。対処: (1)yaml_field_set.shで手動settings更新 (2)respawn-pane -k ''codex''でクリーン起動。origin: [[session_20260623_cli_switch]] -> [[switch_cli_mode settings未反映]] -> [[手動修正3名成功]]'
   created_at: '2026-06-23'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LK008'
   title: 'precheck/gateデータソース不一致=偽陽性の温床(LG043)'
   origin: '[[cmd_3490]]'
@@ -587,6 +598,8 @@ v7吸収(2026-05-19):
   when: '同種の状況が再発した時'
   how: 'SG-PRE25とcmd_complete_gateが同一判定を行うがデータソースが異なる(precheck=readonly_ref未読込、gate=readonly_ref除外済み)→偽陽性。修正: precheck側にreadonly_ref読込+コピー/copy/ベース系read_markers追加(commit e86dbd7a7)。一般原則: 同一判定の2系統はデータソースを同一化せよ。origin: [[cmd_3490_FP]] -> [[precheck_gate_data_source_divergence]] -> [[readonly_ref同一化修正]]'
   created_at: '2026-06-23'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LK009'
   title: 'context_freshness ALERTはroot_fallback有無とtimeout値を必ず数値記録する'
   origin: '[[GA-120_context_freshness_ALERT]] -> [[source_repo_root_fallback_timeout差分]] -> [[google_classroom_saxo_context鮮度判定]]'
@@ -609,6 +622,8 @@ v7吸収(2026-05-19):
   when: 'AUTO-VOID/parent_cmd完了判定/分割配備task'
   how: 'subtask_idを確認し、_ac_task_idだけで他忍者完了報告と同一視しない'
   created_at: '2026-06-23'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LK011'
   title: 'runtime CLI switchで起動時デフォルト復元を呼ばない'
   origin: '[[runtime_cli_switch]] -> [[shutsujin_departure_default_restore]] -> [[settings_tmux_pane_mismatch]]'
@@ -617,6 +632,8 @@ v7吸収(2026-05-19):
   when: 'Claude/Codex切替、モデル編成変更、pane respawn後の検証時'
   how: 'runtime切替中はshutsujin_departure.shを呼ばない。switch_cli_mode.shのpost-switch verificationでsettings/tmux/実paneを照合し、不一致ならexit 1。固定行sedではなくYAMLパースで対象agentを確認する。'
   created_at: '2026-06-24'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LK012'
   title: 'karo_direct完了後はGATE CLEARだけでなく品質記録まで確認せよ'
   origin: '[[karo_direct_hotfix]] -> [[cmd_design_quality未記録]] -> [[gate_result_null蓄積]]'
@@ -625,6 +642,8 @@ v7吸収(2026-05-19):
   when: 'karo_direct完了処理、cmd_complete_gate CLEAR後、gunshi gate_reminder受信時'
   how: 'startup gateのcmd品質記録漏れチェックを見て、WARNなら/cmd-completeまたはcmd_quality_log.shで品質記録まで閉じる'
   created_at: '2026-06-24'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LK013'
   title: 'inbox_mark_read hook誤判定時もEditで既読化せず正規scriptを変数経由で使う'
   origin: '[[inbox_mark_read_hook_fp]] -> [[Read検出不一致]] -> [[flock維持変数経由]]'
@@ -633,3 +652,5 @@ v7吸収(2026-05-19):
   when: 'inbox_mark_read前Read済みなのにhookが誤BLOCKする時'
   how: 'cat/確認後もBLOCKする場合、script_path変数で同じinbox_mark_read.shを呼び、Editでread flagを書き換えない'
   created_at: '2026-06-25'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(karo) Step 2.5 が projects/infra/lessons_karo.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5

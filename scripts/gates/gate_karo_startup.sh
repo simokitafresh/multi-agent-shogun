@@ -2583,6 +2583,72 @@ echo ""
 show_active_cmd_semantic_context
 show_semantic_no_match_metrics
 
+# --- WA記録あり×教訓未登録の検知(学びの即時登録原則・殿指摘2026-07-25) ---
+# 殿の「いまクリアされても今より強くてニューゲーム」の真意は「clear前に荷造りせよ」ではなく
+# 「clearは予告なく起こる。学びは発生した瞬間に環境へ埋め、いまが常に復帰可能点であれ」。
+# 家老の学びの発生点は karo_workarounds(手動補正の記録)である。WAを記録したのに
+# 同日 lessons_karo へ登録が無い場合、その学びは家老個体の中にあり clear で消える。
+echo "■ WA記録×教訓登録の追随"
+_wa_file="$SCRIPT_DIR/logs/karo_workarounds.yaml"
+_lk_file="$SCRIPT_DIR/projects/infra/lessons_karo.yaml"
+if [ -f "$_wa_file" ] && [ -f "$_lk_file" ]; then
+    _today=$(date +%Y-%m-%d)
+    _wa_today=$(python3 -c "import yaml,sys;ws=yaml.safe_load(open(sys.argv[1]))or[];print(sum(1 for w in ws if isinstance(w,dict) and w.get(chr(39)+chr(39)) is None and w.get(\"workaround\") is True and sys.argv[2] in str(w.get(\"timestamp\",\"\"))))" "$_wa_file" "$_today" 2>/dev/null | tr -d "\n" | tr -d " " || true)
+    _lk_today=$(grep -c "${_today}" "$_lk_file" 2>/dev/null | tr -d "\n" | tr -d " " || true)
+    [ -n "$_wa_today" ] || _wa_today=0
+    [ -n "$_lk_today" ] || _lk_today=0
+    case "$_wa_today" in *[!0-9]*) _wa_today=0 ;; esac
+    case "$_lk_today" in *[!0-9]*) _lk_today=0 ;; esac
+    echo "  本日: WA記録 ${_wa_today}件 / 教訓登録 ${_lk_today}件"
+    if [ "${_wa_today:-0}" -gt 0 ] && [ "${_lk_today:-0}" -eq 0 ]; then
+        echo "  ALERT: WAを記録したが本日の教訓登録が0件。学びが家老個体の中に留まっている"
+        echo "  ACTION: bash scripts/lesson_write_karo.sh でそのターン内に登録せよ。clear前の一括登録は荷造り型=手遅れ"
+        overall="ALERT"
+        alerts+=("WA記録あり×本日の教訓登録0件 — 学びが環境へ埋まっていない")
+    else
+        echo "  OK: 学びの外部化が追随している"
+    fi
+else
+    echo "  SKIP: WAログまたは教訓ファイル不在"
+fi
+
+# --- 教訓enforcement欠落検知 ---
+# 2026-07-25: 家老が代行登録したLG065にenforcementが無く、書いただけで起動時に効かない
+# 状態だった(軍師が/clear直前に指摘)。実測で lessons_karo 35件中12件(34%)、
+# lessons_gunshi 2件が同状態。enforcementの無い教訓は受動的層へ載らず、次の自分に届かない。
+# 「登録した」で満足せず「注入される状態か」を毎起動で二値確認する。
+echo "■ 教訓enforcement欠落"
+_enf_out=$(timeout 10 python3 - "$SCRIPT_DIR" <<'PYEOF' 2>/dev/null || true
+import sys, yaml
+from pathlib import Path
+root = Path(sys.argv[1])
+total_missing = 0
+for name in ("karo", "gunshi", "shogun"):
+    f = root / "projects" / "infra" / f"lessons_{name}.yaml"
+    if not f.is_file():
+        continue
+    try:
+        data = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+    except Exception:
+        continue
+    lessons = data.get("lessons") if isinstance(data, dict) else data
+    if not isinstance(lessons, list):
+        continue
+    missing = [str(x.get("id")) for x in lessons if isinstance(x, dict) and not x.get("enforcement")]
+    if missing:
+        total_missing += len(missing)
+        print(f"  ALERT: lessons_{name} {len(missing)}/{len(lessons)}件 enforcement欠落: {' '.join(missing[:8])}")
+if total_missing == 0:
+    print("  OK: 全ロールの教訓にenforcement記載あり")
+PYEOF
+)
+echo "${_enf_out:-  SKIP: 検査不能}"
+if echo "$_enf_out" | grep -q "ALERT:"; then
+    echo "  ACTION: enforcement欄へ注入経路(Level5=起動時全文ロード等)を明記せよ。書いただけの教訓は次の自分に届かない"
+    overall="ALERT"
+    alerts+=("教訓enforcement欠落 — 書いただけで効かない教訓がある")
+fi
+
 # --- 教訓効果計測(lesson_impact TOP5) ---
 echo "■ 教訓効果計測"
 _li_script="$SCRIPT_DIR/scripts/lesson_impact_analysis.sh"

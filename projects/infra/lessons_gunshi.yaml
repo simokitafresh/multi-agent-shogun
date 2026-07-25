@@ -708,6 +708,8 @@ lessons:
   when: 'レビュー報告・設計書・ダッシュボードが件数、率、期間集計を根拠にする時'
   how: '分子、分母、対象期間、同期時点を列挙し、同じ一次データから各値を再計算する。4要素の1つでも証跡がなければLGTMしない'
   created_at: '2026-07-13'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(gunshi) Step 2.5 が projects/infra/lessons_gunshi.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LG053'
   title: '新規gate・guardは実例由来の敵対的FP変形を3件以上通せ'
   origin: '[[GA-220]] -> [[敵対的FP変形不足]] -> [[追いhotfix3件]]'
@@ -716,6 +718,8 @@ lessons:
   when: '新しいhook、gate、guard、dispatcher検知ロジックを含むdraft review時'
   how: '過去の実運用FPを3件以上選び、各々を境界・引用・否定・複数ブロックの少なくとも1種へ変形したfixtureを作る。全件で非BLOCKを実測できなければ承認しない'
   created_at: '2026-07-13'
+  enforcement: 'Level5(受動的層): CLAUDE.md /clear Recovery(gunshi) Step 2.5 が projects/infra/lessons_gunshi.yaml を全文ロードするため毎起動で注入される'
+  enforcement_level: 5
 - id: 'LG061'
   title: 'テスト全数PASSをロジック正確性の証明にするな'
   origin: '[[cmd_4088_LGTM見落とし]] -> [[cmd_4091_SSE_assert見落とし]] -> [[テスト数≠ロジック正確性]]'
@@ -757,4 +761,36 @@ lessons:
   how: 'rgで定義行とtest/fixtureを除外したnon-test caller countを計測しFMへ記録する'
   created_at: '2026-07-21'
   enforcement: 'Level5: draft reviewテンプレートへnon-test caller countの計測欄を自動注入する'
+  enforcement_level: 5
+- id: 'LG066'
+  title: '数値は単発値か分布かを明示せよ — 標本数を書けば自分の誤りに気づく'
+  origin: '[[LG065]] -> [[単発cold 288msから競合下分布を推定]] -> [[忍者は n=113/n=942/n=10 と標本数明示]]'
+  detail: '2026-07-25、軍師はgate単体の単発・無競合測定値(cold 288ms/warm 46ms)から多エージェント競合下のロック保持区間を推定し「45.7秒より大幅に短い」と述べた。実測は直接計測n=10でmax 4,640ms、上位集合local_gate n=113でmax 35,460msであり、単発値からは分布の裾を押さえられなかった。同日の忍者報告は全て標本数(n=113/n=942/n=10)を明示しており、標本数を書く習慣の有無が信頼度の差であった。またn=10のような小標本では結論を出さない判断も必要である(60秒上限の妥当性は標本が貯まるまで再判定しないと決めた)。'
+  source_cmd: 'gunshi_session_20260725'
+  when: 'レビュー・報告で数値を根拠に使う時。特に性能値・件数・比率を判断材料にする時'
+  how: 'n=<標本数>を併記する。単発値からの推定は「推定である」と明記する。単発・無競合の測定値を多エージェント競合下の分布として使わない。標本が小さい場合は結論を保留し再判定条件を明示する'
+  created_at: '2026-07-25'
+  automated: false
+  enforcement: 'Level5(受動的層): startup gateのlessons_gunshi.yaml全文ロードで毎起動注入'
+  enforcement_level: 5
+- id: 'LG067'
+  title: '撤回・訂正は反映まで追跡せよ — 出した時点では何も変わっていない'
+  origin: '[[LG030]] -> [[45,700ms誤帰属の撤回未追跡]] -> [[影丸AC3が3往復]] -> [[疾風AC4も3往復]]'
+  detail: '2026-07-25、軍師は誤った数値(ロック保持区間=45,700ms)を撤回したが、それがAC文言へ埋め込まれたままであることを追跡せず、忍者は同じ回答を3回提出した。同日、draftレビューでAC文言の修正(cmd_4171固定を外す)を要求した際も反映確認を怠り別の忍者を3往復させた。いずれもLG030(行動完了≠還流完了)の再発である。撤回・指摘は出した時点では下流に何も起きていない。一方で同日、家老が軍師の誤答を自分で2回実行して否定した事例、および軍師の陳腐化した観測を家老が現物確認で捕まえた事例があり、相互の一次確認が誤りの伝播を止めている。'
+  source_cmd: 'gunshi_session_20260725'
+  when: '自分の指摘・数値・撤回が他者の成果物やAC文言へ伝播しうる時'
+  how: '撤回・訂正・指摘を出した後、配備前にそれが反映されたかを確認する。未反映なら再度要求する。他者から結論を受け取った側も一次確認してから転記する(受け手の一次確認が最後の防波堤である)'
+  created_at: '2026-07-25'
+  automated: false
+  enforcement: 'Level5(受動的層): startup gateのlessons_gunshi.yaml全文ロードで毎起動注入'
+  enforcement_level: 5
+- id: 'LG065'
+  title: 'N箇所中M箇所を見て全体を結論するな — 軍師自身の出力へLG042を適用せよ'
+  origin: '[[gunshi_seven_errors_20260725]] -> [[partial_observation_full_conclusion]] -> [[LG042]]'
+  detail: '2026-07-25、軍師は本日7件の誤りをすべて自ら撤回・訂正したが7件は同一構造であった: (1)7699をboost入口と気づかず最優先是正と断定=下流適用点7736-7738を見ていない (2)実装先をuniversal_shard.pyへ移せと要求=引数フロー未確認 (3)quarantineを削除済みと誤認=ls/duの非再帰計測で判断、実体は再帰17,381件 (4)ロック保持区間=45,700msと誤帰属=phaseの包含関係未確認、AC文言へ伝播し影丸を3往復させた (5)archive_completed.sh明示CMD_ID経路で閉じられると回答=同一ループ内の他check(review_gate.done検査1276-1283)を列挙せず家老を2回空振りさせた (6)LG051スコープがscripts/libをカバーしないと断定=正規表現のbasename先頭一致を未確認 (7)60秒は過大と推測=単発値cold 288msから競合下の分布を推定。共通構造は『N箇所あるうちM箇所(M<N)を見て全体について結論した』。軍師は同じ過ちを本日他者へ4回指摘しており、LG042『否定的存在主張は探索範囲を列挙し全範囲を自分で実測せよ。1箇所実測+推論の代用は確認の偽完了』は既に正しく存在する。欠けているのは軍師自身の出力への適用強制であり、LG042のenforcementはcmd_save.sh Check20(cmd起票時)にあって軍師のレビュー出力には掛かっていない。家老も同日、軍師が示した2箇所だけを確認して.githooks/を探索せず同型の誤りを犯した(LK-A14)'
+  source_cmd: 'cmd_karo_impl_commander_scope_commit_20260725'
+  when: '軍師がレビューでXは存在しない/使われていない/原因であると断定する時、および実測値から一般化する時'
+  how: '断定の前に探索範囲を列挙しなぜその範囲で十分かを述べよ。N箇所のうち何箇所を実測したかを明示しM<Nなら断定せずM箇所の実測ではと範囲を限定して述べよ。単発値から分布を推定するな。同一ループ・同一関数内の他checkを必ず列挙せよ'
+  created_at: '2026-07-25'
+  enforcement: 'Level5(受動的層): startup gateのlessons_gunshi.yaml全文ロードで毎起動注入'
   enforcement_level: 5
