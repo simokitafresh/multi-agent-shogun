@@ -289,6 +289,15 @@ git_snapshot_cache: dict[str, str | None] = {}
 git_history: list[tuple[int, str]] | None = None
 git_history_start_epoch: int | None = None
 git_history_paths: list[str] = []
+git_history_boundary_done = False
+git_history_git_calls = 0
+_git_head_sha_cache: str | None = None
+git_history_cache_path = Path(
+    os.environ.get(
+        "SKILL_REF_GIT_HISTORY_CACHE",
+        str(repo_root / "logs/skill_script_refs_git_history.json"),
+    )
+)
 cat_file_process: subprocess.Popen[bytes] | None = None
 
 
@@ -306,32 +315,124 @@ def close_cat_file() -> None:
 atexit.register(close_cat_file)
 
 
+def git_head_sha() -> str | None:
+    global _git_head_sha_cache
+    if _git_head_sha_cache is not None:
+        return _git_head_sha_cache or None
+    sha = ""
+    try:
+        sha = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "HEAD"],
+            check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        sha = ""
+    _git_head_sha_cache = sha
+    return sha or None
+
+
+def git_history_cache_key(since_epoch: int) -> str | None:
+    # HEADが答えを完全に決める。HEADが動けばkeyが変わり、古い答えは絶対に
+    # ヒットしない(E型=実体でなく写しを見る、の再発防止)。
+    head = git_head_sha()
+    if head is None:
+        return None
+    payload = "\0".join([head, str(since_epoch), *git_history_paths])
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def git_history_cache_load(key: str) -> list[tuple[int, str]] | None:
+    try:
+        blob = json.loads(git_history_cache_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return None
+    entry = blob.get(key) if isinstance(blob, dict) else None
+    if not isinstance(entry, list):
+        return None
+    try:
+        return [(int(ts), str(sha)) for ts, sha in entry]
+    except (TypeError, ValueError):
+        return None
+
+
+def git_history_cache_store(key: str, history: list[tuple[int, str]]) -> None:
+    try:
+        blob = json.loads(git_history_cache_path.read_text(encoding="utf-8"))
+        if not isinstance(blob, dict):
+            blob = {}
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        blob = {}
+    blob[key] = [[ts, sha] for ts, sha in history]
+    # 直近8世代だけ保持する。HEADごとにkeyが増えるため上限がないと無限成長する。
+    if len(blob) > 8:
+        for stale_key in list(blob)[:-8]:
+            blob.pop(stale_key, None)
+    try:
+        git_history_cache_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = git_history_cache_path.with_suffix(".tmp")
+        tmp.write_text(json.dumps(blob), encoding="utf-8")
+        os.replace(tmp, git_history_cache_path)
+    except OSError:
+        pass
+
+
 def git_snapshot_before(checked_iso: str) -> str | None:
-    global git_history
+    global git_history, git_history_boundary_done, git_history_git_calls
     if checked_iso in git_snapshot_cache:
         return git_snapshot_cache[checked_iso]
     commit: str | None = None
     if git_available:
         try:
+            cutoff = int(datetime.fromisoformat(checked_iso).timestamp())
+            since_epoch = git_history_start_epoch or cutoff
             if git_history is None:
-                since_epoch = git_history_start_epoch or int(datetime.fromisoformat(checked_iso).timestamp())
-                output = subprocess.run(
-                    ["git", "-C", str(repo_root), "rev-list", "--timestamp", f"--since=@{since_epoch}", "HEAD", "--", *git_history_paths],
-                    check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                ).stdout
-                git_history = []
-                for line in output.splitlines():
-                    timestamp, sha = line.split(" ", 1)
-                    git_history.append((int(timestamp), sha))
+                cache_key = git_history_cache_key(since_epoch)
+                cached = git_history_cache_load(cache_key) if cache_key else None
+                if cached is not None:
+                    # HEAD不変の間、履歴系gitの呼出しは0回になる。
+                    git_history = cached
+                    git_history_boundary_done = True
+                else:
+                    # pathspec付きwalkはsinceを付けても全履歴を辿るため(実測: 窓を
+                    # 2026-06-07→07-18へ狭めても28.8s→34.0sで改善なし)、sinceは
+                    # 出力を間引くだけで走査費用を下げない。よってpathspecがある時は
+                    # sinceを外し、境界commitを同じ1回の出力へ含めて呼出しを2→1へ統合する。
+                    argv = ["git", "-C", str(repo_root), "rev-list", "--timestamp"]
+                    if not git_history_paths:
+                        argv.append(f"--since=@{since_epoch}")
+                    argv.append("HEAD")
+                    if git_history_paths:
+                        argv.extend(["--", *git_history_paths])
+                    git_history_git_calls += 1
+                    output = subprocess.run(
+                        argv, check=True, text=True,
+                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                    ).stdout
+                    git_history = []
+                    for line in output.splitlines():
+                        timestamp, sha = line.split(" ", 1)
+                        git_history.append((int(timestamp), sha))
+                    # pathspecありなら全履歴を持っているので境界クエリは不要。
+                    git_history_boundary_done = bool(git_history_paths)
+                    if cache_key:
+                        git_history_cache_store(cache_key, git_history)
+            commit = next((sha for timestamp, sha in git_history if timestamp <= cutoff), None)
+            if commit is None and not git_history_boundary_done:
+                # since窓の外にしか答えがない場合だけ、境界を1回だけ取りに行く。
+                git_history_boundary_done = True
+                git_history_git_calls += 1
                 boundary = subprocess.run(
-                    ["git", "-C", str(repo_root), "rev-list", "--timestamp", "-1", f"--before=@{since_epoch}", "HEAD", "--", *git_history_paths],
+                    ["git", "-C", str(repo_root), "rev-list", "--timestamp", "-1",
+                     f"--before=@{since_epoch}", "HEAD", "--", *git_history_paths],
                     check=True, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                 ).stdout.strip()
                 if boundary:
                     timestamp, sha = boundary.split(" ", 1)
                     git_history.append((int(timestamp), sha))
-            cutoff = int(datetime.fromisoformat(checked_iso).timestamp())
-            commit = next((sha for timestamp, sha in git_history if timestamp <= cutoff), None)
+                    cache_key = git_history_cache_key(since_epoch)
+                    if cache_key:
+                        git_history_cache_store(cache_key, git_history)
+                commit = next((sha for timestamp, sha in git_history if timestamp <= cutoff), None)
         except (OSError, subprocess.CalledProcessError):
             pass
     git_snapshot_cache[checked_iso] = commit

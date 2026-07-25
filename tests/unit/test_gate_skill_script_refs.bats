@@ -75,7 +75,7 @@ establish_verified() {
   [ "$(find /tmp -maxdepth 1 -name 'shogun_gate_skill_script_refs_*.cache' -newer "$FIXTURE/gate.sh" | wc -l)" -ge 1 ]
 }
 
-@test "37 distinct checked_at values use one aggregate history walk" {
+@test "37 distinct checked_at values use one aggregate history walk, zero after the HEAD-keyed cache warms, and a fresh walk once HEAD moves" {
   git -C "$FIXTURE" init -q
   git -C "$FIXTURE" config user.email fixture@example.invalid
   git -C "$FIXTURE" config user.name fixture
@@ -93,10 +93,30 @@ establish_verified() {
   printf '#!/usr/bin/env bash\nif [[ " $* " == *" rev-list "* ]]; then printf "walk\\n" >> %q; fi\nexec %q "$@"\n' \
     "$FIXTURE/rev-list.log" "$real_git" > "$FIXTURE/bin/git"
   chmod +x "$FIXTURE/bin/git"
+  export SKILL_REF_GIT_HISTORY_CACHE="$FIXTURE/logs/git_history.json"
   PATH="$FIXTURE/bin:$PATH" SKILL_REF_DISABLE_CACHE=1 run_gate
   [ "$status" -eq 0 ]
-  [ "$(wc -l < "$FIXTURE/rev-list.log")" -eq 2 ]
+  # pathspecつきwalkはsinceを付けても全履歴を辿るため、境界commitは同じ1回の
+  # 出力に含められる。呼出しは2→1。判定内容は不変(37件・同一出力)。
+  [ "$(wc -l < "$FIXTURE/rev-list.log")" -eq 1 ]
   [[ "$output" == *"走査: 37 SKILL.md"* ]]
+  first_output="$output"
+
+  # HEAD不変ならディスクキャッシュがヒットし、履歴系gitは1回も呼ばれない。
+  : > "$FIXTURE/rev-list.log"
+  PATH="$FIXTURE/bin:$PATH" SKILL_REF_DISABLE_CACHE=1 run_gate
+  [ "$status" -eq 0 ]
+  [ ! -s "$FIXTURE/rev-list.log" ]
+  [ "$output" = "$first_output" ]
+
+  # 陰性対照: HEADが動いたらキーが変わり、古い答えは絶対にヒットしない。
+  printf '\n# moved\n' >> "$FIXTURE/scripts/demo.sh"
+  git -C "$FIXTURE" add scripts/demo.sh
+  GIT_AUTHOR_DATE=2025-02-01T00:00:00Z GIT_COMMITTER_DATE=2025-02-01T00:00:00Z \
+    git -C "$FIXTURE" commit -qm moved
+  : > "$FIXTURE/rev-list.log"
+  PATH="$FIXTURE/bin:$PATH" SKILL_REF_DISABLE_CACHE=1 run_gate
+  [ "$(wc -l < "$FIXTURE/rev-list.log")" -eq 1 ]
 }
 
 @test "verified contract state bypasses the aggregate Git history walk" {
