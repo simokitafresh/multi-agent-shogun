@@ -171,18 +171,22 @@ _write_approval() {
 # G2(main branch protection)も稼働実装のみが持つ判定であり、休眠実装向けの
 # scripts/hooks/test_hooks.sh にしかケースが無かった。外部repoは一時ディレクトリで
 # 代用でき環境依存なく書けることを実測したため本弾に含める。
-# agent identityは明示する(未設定だと三層preflightのBLOCKが先に出て判定が変わるため)。
-_run_hook_as_ninja() {
+# ★G2の判定はTMUX_AGENT_IDではなく **TMUX_PANE** を読み、tmuxへ問い合わせたagent_idが
+# 指揮官(shogun/karo/gunshi)なら設計上allowする。∴TMUX_PANEを継承したまま実行すると
+# 「誰がtestを走らせたか」で結果が変わる(実測: 忍者paneならblock、家老paneならallow)。
+# 実装は正しく、環境依存だったのはtest側であるため、TMUX_PANEを空に固定して
+# tmuxルックアップを行わせず、agent非特定時の判定を検証する。
+_run_hook_as_non_commander() {
     local cmd="$1"
     local payload
     payload="$(printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$cmd")"
-    run bash -c 'printf "%s" "$1" | PRE_BASH_LORD_CONVERSATION_FILE="$2" TMUX_AGENT_ID=hanzo bash "$3"' _ "$payload" "$PRE_BASH_LORD_CONVERSATION_FILE" "$HOOK_SCRIPT"
+    run bash -c 'printf "%s" "$1" | PRE_BASH_LORD_CONVERSATION_FILE="$2" TMUX_PANE="" TMUX_AGENT_ID=hanzo bash "$3"' _ "$payload" "$PRE_BASH_LORD_CONVERSATION_FILE" "$HOOK_SCRIPT"
 }
 
 @test "G2: pushing main in an external repo is blocked by the live hook" {
     local ext="$BATS_TEST_TMPDIR/ext"
     mkdir -p "$ext" && git -C "$ext" init -q
-    _run_hook_as_ninja "cd $ext && git push origin main"
+    _run_hook_as_non_commander "cd $ext && git push origin main"
     [ "$status" -ne 0 ]
     [[ "$output" == *"G2"* ]]
 }
@@ -190,13 +194,13 @@ _run_hook_as_ninja() {
 @test "G2 negative: pushing a feature branch in an external repo is allowed" {
     local ext="$BATS_TEST_TMPDIR/ext"
     mkdir -p "$ext" && git -C "$ext" init -q
-    _run_hook_as_ninja "cd $ext && git push origin feature-x"
+    _run_hook_as_non_commander "cd $ext && git push origin feature-x"
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
 
 @test "G2 negative: pushing main inside the project repo is allowed" {
-    _run_hook_as_ninja "git push origin main"
+    _run_hook_as_non_commander "git push origin main"
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
