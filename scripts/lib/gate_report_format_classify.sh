@@ -18,6 +18,11 @@
 #   source scripts/lib/gate_report_format_classify.sh
 #   status=$(gate_report_format_classify "$exit_code")
 #   # status: PASS | INFRA_TIMEOUT | QUALITY_FAIL
+#
+# Provenance (cmd_karo_hotfix_singleflight_fail_misattribution_20260725):
+#   このfunction定義自体はd1499a6a7(cmd_complete_gate.sh側の遅延source化と共に
+#   git追跡下へ移行)で導入。呼出側の実装はgate_report_format.sh側=118dc5ff8、
+#   inbox_write.sh/ninja_done.sh/dashboard_update.sh側=df3421336に既出。
 
 gate_report_format_classify() {
     local exit_code="${1:-1}"
