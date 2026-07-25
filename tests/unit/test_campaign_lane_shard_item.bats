@@ -424,3 +424,114 @@ PY
   [ "$status" -ne 0 ]
   reason_is terminal_scope_mismatch
 }
+
+# --- scratch lifecycle (release_scratch): active-lane guard is binary only
+# (completion marker + live process), never mtime/elapsed-time. Three
+# fixtures per campaign lane policy: active=marker-absent ("lock" not yet
+# released), active=live-process-present despite a terminal marker, and
+# completed (both checks clear).
+
+release_scratch_base() {
+  local base="$TMPROOT/scratch-base"
+  mkdir -p "$base/tmpdir" "$base/cache_dir" "$base/output_dir" "$base/workdir" "$base/workdir.failed-1"
+  printf tmp-junk >"$base/tmpdir/junk"
+  printf cache-junk >"$base/cache_dir/junk"
+  printf old-evidence >"$base/workdir.failed-1/evidence"
+  printf '%s' "$base"
+}
+
+run_release_scratch() {
+  run bash -c "source '$ROOT/scripts/campaign_lane_shard_item.sh' && release_scratch '$1/workdir' '$1/output_dir'"
+}
+
+@test "release_scratch: no completion marker leaves scratch untouched (active = lock present)" {
+  base="$(release_scratch_base)"
+
+  run_release_scratch "$base"
+
+  [ "$status" -eq 0 ]
+  [ -f "$base/tmpdir/junk" ]
+  [ -f "$base/cache_dir/junk" ]
+  [ -f "$base/workdir.failed-1/evidence" ]
+}
+
+@test "release_scratch: non-terminal marker status leaves scratch untouched (active = lock present)" {
+  base="$(release_scratch_base)"
+  printf '{"status":"in_progress"}' >"$base/output_dir/result.json"
+
+  run_release_scratch "$base"
+
+  [ "$status" -eq 0 ]
+  [ -f "$base/tmpdir/junk" ]
+  [ -f "$base/workdir.failed-1/evidence" ]
+}
+
+@test "release_scratch: terminal marker with a live process holding scratch open is untouched (active = live process)" {
+  base="$(release_scratch_base)"
+  printf '{"status":"success"}' >"$base/output_dir/result.json"
+
+  ( cd "$base/tmpdir" && exec sleep 5 ) &
+  bg_pid=$!
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    [ -L "/proc/$bg_pid/cwd" ] && break
+    sleep 0.1
+  done
+
+  run_release_scratch "$base"
+  wait "$bg_pid" 2>/dev/null || true
+
+  [ "$status" -eq 0 ]
+  [ -f "$base/tmpdir/junk" ]
+  [ -f "$base/cache_dir/junk" ]
+  [ -f "$base/workdir.failed-1/evidence" ]
+}
+
+@test "release_scratch: terminal marker with no live process reclaims tmpdir/cache_dir but preserves failed-attempt quarantine (completed)" {
+  base="$(release_scratch_base)"
+  printf '{"status":"success"}' >"$base/output_dir/result.json"
+
+  run_release_scratch "$base"
+
+  [ "$status" -eq 0 ]
+  [ ! -e "$base/tmpdir/junk" ]
+  [ ! -e "$base/cache_dir/junk" ]
+  [ -d "$base/tmpdir" ]
+  [ -d "$base/cache_dir" ]
+  [ -d "$base/workdir" ]
+  [ -f "$base/workdir.failed-1/evidence" ]
+}
+
+@test "release_scratch: fail status also reclaims tmpdir/cache_dir once terminal and idle" {
+  base="$(release_scratch_base)"
+  printf '{"status":"fail"}' >"$base/output_dir/result.json"
+
+  run_release_scratch "$base"
+
+  [ "$status" -eq 0 ]
+  [ ! -e "$base/tmpdir/junk" ]
+  [ -f "$base/workdir.failed-1/evidence" ]
+}
+
+@test "release_scratch never removes the shard's own workdir checkout" {
+  base="$(release_scratch_base)"
+  printf real-checkout >"$base/workdir/marker"
+  printf '{"status":"success"}' >"$base/output_dir/result.json"
+
+  run_release_scratch "$base"
+
+  [ "$status" -eq 0 ]
+  [ -f "$base/workdir/marker" ]
+}
+
+@test "successful shard completion through the real pipeline releases sibling tmpdir/cache_dir scratch" {
+  make_deployer pass
+  mkdir -p "$TMPROOT/tmpdir" "$TMPROOT/cache_dir"
+  printf tmp-junk >"$TMPROOT/tmpdir/junk"
+  printf cache-junk >"$TMPROOT/cache_dir/junk"
+
+  run_bridge
+
+  [ "$status" -eq 0 ]
+  [ ! -e "$TMPROOT/tmpdir/junk" ]
+  [ ! -e "$TMPROOT/cache_dir/junk" ]
+}

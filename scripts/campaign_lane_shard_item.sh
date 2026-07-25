@@ -62,6 +62,7 @@ with open(tmp, "w", encoding="utf-8") as handle:
     handle.write("\n")
 os.replace(tmp, path)
 PY
+    release_scratch "$workdir" "$output_dir"
 }
 
 fail() {
@@ -69,6 +70,90 @@ fail() {
     printf 'FAIL: %s\n' "$1" >&2
     exit 1
 }
+
+# _scratch_path_in_use: true (rc=0) iff some live process has $1, or a path
+# beneath it, open as cwd or as a file descriptor. This is the second half of
+# the active-lane guard: a completion marker alone can lag a still-running
+# process (or be replayed from a stale retry), so scratch release additionally
+# requires zero corroborating process evidence, mirroring the /proc/*/cwd
+# verification method used to confirm the historical backlog was non-live.
+_scratch_path_in_use() {
+    local check_real link
+    check_real="$(readlink -f "$1" 2>/dev/null || true)"
+    [[ -n "$check_real" ]] || return 1
+    # A single find pass resolves every cwd/fd symlink target in one process
+    # (find's own %l, no per-entry readlink fork). On a busy multi-agent host
+    # with hundreds of processes/fds, forking readlink once per entry took
+    # >10s and let the very process being probed for exit mid-scan; this form
+    # completes in a small fraction of that time.
+    while IFS= read -r link; do
+        [[ -n "$link" ]] || continue
+        if [[ "$link" == "$check_real" || "$link" == "$check_real"/* ]]; then
+            return 0
+        fi
+    done < <(find /proc -maxdepth 3 \( -path '/proc/[0-9]*/cwd' -o -path '/proc/[0-9]*/fd/*' \) -printf '%l\n' 2>/dev/null)
+    return 1
+}
+
+# release_scratch: reclaim a completed shard's genuinely ephemeral scratch
+# (TMPDIR-sibling tmpdir/ and SHARD_CACHE_DIR-sibling cache_dir/ contents
+# only). Guarded by two binary checks only, per campaign lane policy —
+# mtime/elapsed-time is never used as evidence of completion:
+#   (i)  completion marker — output_dir/result.json must exist with a
+#        terminal status ("success"/"fail"). shard_item.sh is the only writer
+#        of this file, and only write_result() (the terminal exit path)
+#        writes it, so its absence/non-terminal content means this shard
+#        (or lane) has not finished.
+#   (ii) live-process check — _scratch_path_in_use() above. Even with a
+#        terminal marker, a lingering process holding the path open blocks
+#        release.
+# Both must clear before anything is removed. Deliberately out of scope here:
+# the current attempt's own workdir checkout, and any workdir.failed-*
+# quarantine left by a prior retry's materialize() step. The latter is
+# failure-diagnostic audit evidence — reclaiming it is AC3's quarantine
+# two-stage flow (list -> verify realpath scope -> dry-run -> move -> verify
+# lane health -> delete), not an automatic side effect of this shard's own
+# completion; a contract test pins that a freshly quarantined attempt must
+# still be readable immediately after the retry that quarantined it succeeds.
+release_scratch() {
+    local rel_workdir="$1" rel_output_dir="$2"
+    local rel_result="$rel_output_dir/result.json"
+    [[ -f "$rel_result" ]] || return 0
+    local rel_status
+    rel_status="$(python3 -c '
+import json, sys
+try:
+    print(json.load(open(sys.argv[1], encoding="utf-8")).get("status", ""))
+except Exception:
+    print("")
+' "$rel_result" 2>/dev/null || true)"
+    case "$rel_status" in
+        success|fail) ;;
+        *) return 0 ;;
+    esac
+    local rel_base rel_tmpdir rel_cache_dir rel_candidate
+    rel_base="$(dirname "$rel_output_dir")"
+    rel_tmpdir="$rel_base/tmpdir"
+    rel_cache_dir="$rel_base/cache_dir"
+    for rel_candidate in "$rel_workdir" "$rel_tmpdir" "$rel_cache_dir"; do
+        [[ -e "$rel_candidate" ]] || continue
+        _scratch_path_in_use "$rel_candidate" && return 0
+    done
+    if [[ -d "$rel_tmpdir" ]]; then
+        find "$rel_tmpdir" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+    fi
+    if [[ -d "$rel_cache_dir" ]]; then
+        find "$rel_cache_dir" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
+    fi
+}
+
+# Allow bats to `source` this file to exercise release_scratch()/
+# _scratch_path_in_use() in isolation without running the materialize/deploy
+# pipeline. Direct execution (the only production invocation path) is
+# unaffected: BASH_SOURCE[0] == $0 in that case, so this is a no-op.
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+    return 0
+fi
 
 if [[ -z "$item_id" || -z "$item_path" || -z "$worker_id" || -z "$workdir" || -z "$output_dir" ]]; then
     printf 'Usage: %s item_id item_path worker_id workdir output_dir\n' "$0" >&2
@@ -220,12 +305,14 @@ PY
 )" || fail invalid_owned_paths
 # One lock/parse/atomic replace for the generated task.  The former 19 CLI
 # invocations dominated the 28-case fixture and multiplied YAML subprocesses.
+# shellcheck disable=SC1090  # field_set is always ROOT/scripts/lib/yaml_field_set.sh, resolved at runtime
 if ! source "$field_set"; then
     fail task_yaml_write_failed
 fi
 # yaml_field_set_batch's generic verifier starts one YAML parser per field.
 # This task has a fixed schema, so defer those scalar checks and verify the
 # complete generated task in one parse immediately after the atomic write.
+# shellcheck disable=SC2317  # intentional override, invoked indirectly by yaml_field_set_batch
 _yaml_field_set_verify_parsed() { return 0; }
 if ! yaml_field_set_batch "$task_path" task \
     "task_id=$task_key" \
@@ -286,6 +373,7 @@ fi
 
 deploy_cmd="${CAMPAIGN_LANE_DEPLOY_CMD:-bash $ROOT/scripts/deploy_task.sh --direct --yaml}"
 stage_start deploy
+# shellcheck disable=SC2086  # deploy_cmd is an intentionally unquoted multi-word command line
 if ! SHOGUN_ROOT="$CONTROL_ROOT" bash -c 'exec "$@"' _ $deploy_cmd "$task_path" "$worker_id"; then
     fail deploy_failed "$report_path"
 fi
