@@ -60,6 +60,7 @@ baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 | B16 | LG051スコープ | basename先頭一致で対象漏れ(dead code見逃しの原因。cmd_complete_gate.sh自身も対象外) | 品質(検出漏れ) |
 | B17 | retention台帳 | 固定パス上書きで移動記録消失(quarantine 17,381ファイルに対し台帳0件) | 計器 |
 | B18 | AC内の行番号参照 | 並行変更で陳腐化し別の行を指す(本日3cmd実証) | 品質(誤誘導) |
+| B19 | 共有worktree commit | 指揮官D0 commitが第三者のstage済み変更を巻き込み帰属破壊(0f1c3ea65将軍commitが才蔵922行を巻込→才蔵7回BLOCKループ) | 競合(retry不可) |
 
 ## §3 構造分類 — ボトルネックは5種類(A-E)
 
@@ -77,7 +78,8 @@ baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 各ボトルネックへの個別対処(各論パッチ)をやめ、§3の4型への分類と型別標準対処を正本化する。
 - A型→既存高速化レーン(変更なし・実績-47%〜-99%)
 - B型→post-CLEARで確立するfail-open分離パターンを、他の直列パイプライン(deploy内部/archive)へ横展開
-- C型→(a)commit: 忍者はninja-commit経由でretry内蔵化、将軍/家老/軍師のD0 commitにも共通retryヘルパー導入 (b)queue: T9 retention
+- C型→(a)commit: 忍者はninja_scope_commit.sh(HEAD由来専用index+宣言scope限定add=LG004)で既に保護済み。**指揮官(将軍/家老/軍師)D0 commitへ同機構の適用範囲を拡大**(B19対処。新規機構でなく既存スクリプトの流用)+retryヘルパー (b)queue: T9 retention
+- D型誤帰属サブ型の追加対処: DIVERGENT警告に『同一BLOCK反復時は外部要因の可能性を家老へ確認せよ』分岐を追加(本日BLOCKループ12回は全て忍者の外に原因があり、警告が誤った自己修正へ誘導していた)
 - D型→**commit時構造検証の1本化**: 「新規source先の同一commit内包」「gate系変更時のbats実行」をpre-commitへ接続。選定規則(軍師レビュー確定): 新規機構は作らず**既存run_tests.shのaffected/taskスコープに乗せる**(staged paths→affected、FAIL>0またはSKIP>0でBLOCK)。ただし**逆依存規則を明文化**: scripts/lib/*の追加・変更はtests/helpers/*経由の全testをaffectedに含める(CI RED 30148392707の真因=helper allowlist未追随がこの規則で捕まる)
 - B8(planned_paths)→自動拡張は**非対称**で統合: ACがtest作成を要求する場合のみtests/配下への拡張を許す(permission ceilingの一般緩和はしない)
 - E型→計器と一次情報の定期突合をT8(計器契約検証)へ統合
