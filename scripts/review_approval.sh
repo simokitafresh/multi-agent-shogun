@@ -25,20 +25,33 @@ report=$(realpath "$report")
 # report to revision_requested before waking the worker; without this guard a
 # delayed Gunshi review can bind LGTM to that post-RC document and recreate a
 # stale approval after RC invalidation.
-report_status=$(python3 - "$report" <<'PY'
+report_lifecycle=$(python3 - "$report" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 print(str(data.get("status") or "").strip())
+print(str(data.get("verdict") or "").strip().upper())
 PY
 ) || { echo "BLOCK: report status unreadable: $report" >&2; exit 1; }
-[ "$report_status" = "completed" ] || {
+report_status=$(printf '%s\n' "$report_lifecycle" | sed -n 1p)
+report_verdict=$(printf '%s\n' "$report_lifecycle" | sed -n 2p)
+# cmd_karo_impl_b28_failed_report_close_20260726 (B28):
+# verdict=FAIL は report_field_set が status=failed へ落とすため、B21のFAIL_CLOSE経路が
+# 要求する証跡(review_approvals/reports/*/karo.yaml)を作る手段が存在しなかった
+# (この guard が status=completed のみを通すため)。failed も家老へ提出済みの終端報告で
+# あることに変わりはないので、家老のACCEPTに限り受け付ける。CLEARは捏造しない
+# (下流の review_gate.done 生成と GATE trigger は fail_close=1 で明示的にスキップする)。
+fail_close=0
+if [ "$report_status" = "failed" ] && [ "$role:$result" = "karo:ACCEPT" ] && [ "$report_verdict" = "FAIL" ]; then
+  fail_close=1
+fi
+[ "$report_status" = "completed" ] || [ "$fail_close" = 1 ] || {
   echo "BLOCK: formal review requires status=completed (actual=${report_status:-missing}): $report" >&2
   exit 1
 }
 base="$ROOT/queue/gates/$cmd_id/review_approvals"
 mkdir -p "$base"
 exec 200>"$base/.lock"; flock -w 10 200
-fingerprint=$(review_report_fingerprint "$report") || { echo "BLOCK: report missing or commit_hash absent: $report" >&2; exit 1; }
+fingerprint=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT="$fail_close" review_report_fingerprint "$report") || { echo "BLOCK: report missing or commit_hash absent: $report" >&2; exit 1; }
 report_rel=${report#"$ROOT"/}; report_key=$(review_report_key "$report_rel")
 dir="$base/reports/$report_key"; mkdir -p "$dir"
 # An RC means the reviewed implementation was not acceptable.  Re-submitting
@@ -49,7 +62,10 @@ dir="$base/reports/$report_key"; mkdir -p "$dir"
 rejected_commit_file="$dir/last_rc_commit"
 rejected_payload_file="$dir/last_rc_report_payload"
 rc_scope_file="$dir/last_rc_scope"
-current_commit=${fingerprint##*:}
+# The fingerprint is the normalized content hash alone (3718e7245 / cmd_4156);
+# ${fingerprint##*:} returned the whole hash, so the no-code test below was
+# always false.  Read the gate's decided commit identity instead.
+current_commit=$(REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT="$fail_close" review_report_commit_identity "$report" 2>/dev/null || true)
 stored_scope=$(head -n 1 "$rc_scope_file" 2>/dev/null || true)
 case "$stored_scope" in implementation|report) ;; *) stored_scope="" ;; esac
 if [ "$result" = RC ]; then
@@ -265,7 +281,12 @@ if [ -n "${REVIEW_APPROVAL_TEST_READY_FILE:-}" ]; then
   : > "$REVIEW_APPROVAL_TEST_READY_FILE"
   while [ ! -e "${REVIEW_APPROVAL_TEST_RELEASE_FILE:?}" ]; do sleep 0.01; done
 fi
-if review_all_reports_ready "$cmd_id" "${reports[@]}"; then
+if [ "$fail_close" = 1 ]; then
+  # B28: FAIL close は「家老が正式にFAILとして終端させた」証跡だけを残す。
+  # review_gate.done(=CLEAR marker)を書かず GATE も起動しないため、品質記録には
+  # FAILのまま残る(instructions/karo.md §verdict=FAIL のcmdを閉じる・L1318)。
+  echo "fail-close review recorded (no CLEAR marker, no gate trigger): $cmd_id"
+elif review_all_reports_ready "$cmd_id" "${reports[@]}"; then
   if [[ "$cmd_id" =~ ^cmd_[0-9]+$ ]] && ! python3 "$ROOT/scripts/lib/parent_cmd_contract.py" "$cmd_id" --root "$ROOT"; then
     echo "BLOCK: parent cmd SSOT/purpose/AC contract incomplete; formalization withheld" >&2
     exit 1

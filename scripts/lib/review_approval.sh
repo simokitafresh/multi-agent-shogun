@@ -142,15 +142,44 @@ if isinstance(commit_hash, str) and len(commit_hash) == 40 and all(c in "0123456
 
 raise SystemExit(1)
 PY
-) || return 1
-    [ -n "$commit_identity" ] || return 1
+) || commit_identity=""
+    # cmd_karo_impl_b28_failed_report_close_20260726 (B28):
+    # commit identity gate は「レビューを実在の成果物へ束縛する」ためのものだが、
+    # verdict=FAIL の報告は成果物が無い/不完全なまま終端することがある。FAILを
+    # FAILとして閉じる経路にまでこの gate を課すと、閉じられない報告が永久に残る
+    # (才蔵 cmd_karo_ci_fix_30161415740 で実証)。家老のFAIL closeに限り免除する。
+    # 免除は review_approval.sh の fail_close 判定(status=failed かつ verdict=FAIL
+    # かつ karo:ACCEPT)からのみ有効化される。
+    if [ -z "$commit_identity" ]; then
+        [ "${REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT:-0}" = 1 ] || return 1
+    fi
     # The fingerprint is the normalized content hash alone.  commit_identity is
     # used only as a gate (see above) and intentionally excluded from the value
     # so that correcting commit_hash / cross_repo_commits after approval does
     # not require a new review cycle.
+    # Persist the gate's commit identity beside the fingerprint.  The fingerprint
+    # itself no longer carries it (cmd_4156 / 3718e7245), so callers that must
+    # branch on no-code vs implementation identity read this sidecar instead of
+    # string-splitting the fingerprint.
+    printf '%s\n' "$commit_identity" > "$cache_file.identity.tmp.$BASHPID"
+    mv -f "$cache_file.identity.tmp.$BASHPID" "$cache_file.identity"
     printf '%s\n' "$content_hash" > "$cache_file.tmp.$BASHPID"
     mv -f "$cache_file.tmp.$BASHPID" "$cache_file"
     cat "$cache_file"
+}
+
+# Commit identity of a report as decided by the fingerprint gate:
+# "no-code-change" for structurally no-code reports, otherwise the 40-hex
+# implementation commit.  Empty output means no identity was determinable
+# (only reachable under REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT=1).
+review_report_commit_identity() {
+    local report="$1" content_hash cache_key cache_file
+    review_report_fingerprint "$report" >/dev/null || return 1
+    content_hash=$(review_report_fingerprint "$report") || return 1
+    cache_key=$(printf '%s:%s' "$(realpath "$report")" "$content_hash" | sha256sum | awk '{print $1}')
+    cache_file="$REVIEW_FP_CACHE_DIR/$cache_key.identity"
+    [ -f "$cache_file" ] || return 1
+    head -n 1 "$cache_file"
 }
 
 # RC on a report-only task must require a substantive report correction, not an

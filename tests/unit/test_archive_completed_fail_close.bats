@@ -62,6 +62,51 @@ run_archive() {
     [ "$output" -eq 1 ]
 }
 
+# ── cmd_karo_impl_b28_failed_report_close_20260726 (B28) ──
+# 上のFAIL_CLOSE分岐が要求する karo.yaml 証跡は review_approval.sh だけが作るが、
+# verdict=FAIL の報告は status=failed へ落ちるため、その入口が status=completed 必須で
+# 閉じていた(=証跡到達不能)。証跡生成側の入口も両方向で固定する。
+_b28_root() {
+    B28="$BATS_TEST_TMPDIR/b28"
+    mkdir -p "$B28/queue/reports" "$B28/queue/gates" "$B28/queue/tasks" "$B28/queue/locks"
+    ln -sfn "$REPO_ROOT/scripts" "$B28/scripts"
+    B28_CMD="cmd_karo_b28_fixture"
+    B28_REPORT="$B28/queue/reports/saizo_report_${B28_CMD}.yaml"
+    printf 'worker_id: saizo\nparent_cmd: %s\ntask_id: %s_normal\nstatus: failed\nverdict: %s\nfiles_modified:\n  - path: ""\n' \
+        "$B28_CMD" "$B28_CMD" "$1" > "$B28_REPORT"
+}
+
+_b28_review() {
+    REVIEW_APPROVAL_ROOT="$B28" REVIEW_APPROVAL_NO_NOTIFY=1 REVIEW_APPROVAL_NO_TRIGGER=1 \
+        bash "$REPO_ROOT/scripts/review_approval.sh" "$B28_CMD" karo ACCEPT \
+        "queue/reports/saizo_report_${B28_CMD}.yaml" 2>&1
+}
+
+@test "B28: failed report with verdict FAIL can record the Karo evidence without a CLEAR marker" {
+    _b28_root FAIL
+
+    run _b28_review
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"fail-close review recorded"* ]]
+    # FAIL_CLOSE分岐が要求する証跡が実在する = 経路が到達可能になった
+    run bash -c 'ls "$1"/queue/gates/"$2"/review_approvals/reports/*/karo.yaml' _ "$B28" "$B28_CMD"
+    [ "$status" -eq 0 ]
+    # CLEARは捏造しない
+    [ ! -f "$B28/queue/gates/$B28_CMD/review_gate.done" ]
+}
+
+@test "B28: failed report whose verdict is not FAIL stays blocked at the submission guard" {
+    _b28_root PASS
+
+    run _b28_review
+    echo "$output"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"formal review requires status=completed"* ]]
+    run bash -c 'ls "$1"/queue/gates/"$2"/review_approvals/reports/*/karo.yaml' _ "$B28" "$B28_CMD"
+    [ "$status" -ne 0 ]
+}
+
 # 安全性: PASS verdictはCLEAR経路を通るべきで、本分岐で素通りさせない
 @test "PASS verdict report without CLEAR is still blocked even with a Karo review record" {
     write_report PASS

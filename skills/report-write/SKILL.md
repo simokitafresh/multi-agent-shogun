@@ -175,6 +175,39 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 
 ## 注意ポイント
 
+- 2026-07-26: gate=gate_report_format result=FAIL executor=saizo reason=commit_contract: files_modified path is outside planned scope: tests/test_gate_report_format.bats
+- 2026-07-26: gate=gate_report_format result=FAIL executor=saizo reason=lesson_candidate: found=true but no title; commit_contract: files_modified path is outside planned scope: tests/test_gate_report_format.bats
+
+- 2026-07-26: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: files_modified path is outside planned scope: tests/unit/test_ninja_scope_commit.bats
+- 2026-07-26: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: files_modified path is outside planned scope: tests/unit/test_gate_skill_script_refs.bats; binary_checks.AC2[1].result: 空文字。\"yes\" または \"no\" を記入せよ; binary_che...
+
+- 2026-07-25: gate=gate_report_format result=FAIL executor=hanzo reason=commit_contract: files_modified path is outside planned scope: tests/unit/test_scratch_retention.bats; status: \"revision_requested\" cannot carry terminal verdict PASS (set sta...
+- 2026-07-25: gate=gate_report_format result=FAIL executor=hayate reason=commit_contract: files_modified path is outside planned scope: tests/unit/test_gate_skill_script_refs.bats; variation_checks: required cells unfilled: normal_pass, quoted_or_her...
+
+- 2026-07-25: gate=gate_report_format result=FAIL executor=hanzo reason=commit_contract: files_modified path is outside planned scope: tests/unit/test_scratch_retention.bats
+- 2026-07-25: gate=gate_report_format result=FAIL executor=hanzo reason=commit_contract: files_modified path is outside planned scope: instructions/karo.md; status: \"revision_requested\" cannot carry terminal verdict PASS (set status to completed a...
+
+- 2026-07-25: gate=gate_report_format result=FAIL executor=hanzo reason=commit_contract: files_modified path is outside planned scope: instructions/karo.md
+- 2026-07-25: gate=gate_report_format result=FAIL executor=hanzo reason=commit_contract: files_modified path is outside planned scope: tests/unit/test_heavy_job_admission.bats
+
+- 2026-07-25: gate=gate_report_format result=FAIL executor=tobisaru reason=variation_checks: required cells unfilled: normal_pass, quoted_or_heredoc, linked_worktree, parallel_or_respawn, abnormal_exit
+- 2026-07-25: gate=gate_report_format result=FAIL executor=saizo reason=commit_contract: files_modified path is outside planned scope: scripts/lib/deploy_task_related_lessons_fast.py; commit_contract: files_modified path is outside planned scope: te...
+
+- 2026-07-25: gate=cmd_complete_gate result=FAIL executor=hanzo reason=hanzo:lesson_candidate_malformed|ci_readiness:BLOCK: head SHA mismatch
+- 2026-07-25: gate=gate_report_format result=FAIL executor=tobisaru reason=commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: files_modified path is outside planned scope: scripts/lesson_write.sh; commit_contract: fi...
+
+- 2026-07-25: gate=cmd_complete_gate result=FAIL executor=unknown reason=report_format:saizo_report_cmd_karo_hotfix_post_clear_fail_open_20260725.yaml
+- 2026-07-25: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: files_modified path is outside planned scope: tests/unit/test_gate_report_format_singleflight.bats; commit_contract: files_modified path is outside planned scop...
+
+- 2026-07-25: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: commit subject does not identify task_id/parent_cmd; commit_contract: files_modified path is outside planned scope: scripts/lib/gate_report_format_classify.sh; ...
+- 2026-07-25: gate=gate_report_format result=FAIL executor=hanzo reason=LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須
+
+- 2026-07-25: gate=gate_report_format result=FAIL executor=tobisaru reason=commit_contract: files_modified path is outside planned scope: tests/unit/test_campaign_lane_shard_item.bats
+- 2026-07-25: gate=gate_report_format result=FAIL executor=kotaro reason=commit_contract: files_modified path is outside planned scope: scripts/archive_completed.sh; commit_contract: files_modified path is outside planned scope: tests/unit/test_archi...
+
+
+
+
 過去のgate FAIL頻出パターン要約(生ログはlogs/gate_fire_log.yaml等の台帳が正本。ここには要約のみ保持):
 
 1. **commit_contract: files outside planned scope**(最頻出) — 実装がtarget_path外(特にtests/)へ拡大した時。テストファイルもplanned_paths/files_to_modifyへ事前宣言せよ(拡大時の正規更新=cmd_4161)
@@ -184,6 +217,11 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 5. **型エラー**: lessons_usefulはdictのlist(useful=true/false bool)・binary_checks resultは"yes"/"no"文字列・verdictはPASS/FAIL/PASS_NO_IMPROVEMENT・timestampはISO形式・FILL_THIS残存禁止
 6. **commit_hash**: 40文字フルhash必須。commit subjectにtask_id/parent_cmdを含める。cross_repo_commitsは該当repoのcommitにpathが実在すること
 7. **status遷移**: revision_requestedにverdict PASSを載せるな(completedへ更新してから)
+8. **コード変更が無いcmdの正規表現(commit_hash: no-code-change)** — `permits_no_code_identity()`(scripts/lib/report_commit_identity.py)は次の**3条件のAND**でのみ受理する。1つでも欠けると `BLOCK: terminal readiness requires valid commit_hash` で終端できない(cmd_karo_impl_b28/b29_20260726で明文化):
+   - `no_code_change_evidence`: `tree_unchanged: true` かつ `before_tree` = `after_tree`(40-hex。作業前後の `git rev-parse HEAD^{tree}` を記録)
+   - `commit_contract.required: false`(理由を `reason` に書く。free-textマーカーではなくこのフィールドがSSOT)
+   - `files_modified`: **非空**、かつ全pathが `queue/` または `logs/` 配下(またはgit-ignore済み `projects/`)
+   **成果物が本報告YAMLだけの場合、`files_modified` に自分の報告YAML自身(`queue/reports/<自分の報告>.yaml`)を書くのが正規である。**`files_modified` を空にする経路は存在しない(空はfail-closed)。`change` には「本cmdの成果物は本報告のみ」+その根拠を書け。実データ例=`queue/archive/reports/saizo_report_cmd_karo_ci_fix_30161415740_phantom_unit_path_20260725_20260726.yaml`
 
 Script refs verified: 2026-06-02T20:31:22+09:00 user infra-bug audit. `report_field_set.sh` の現行契約を再確認。lessons_useful空リスト、binary_checks空欄、status pending、summary空欄はgate_report_format.shでBLOCKされるため提出前に必ずgateを通す。
 Script refs verified: 2026-06-08 9a1c5df09. `report_field_set.sh` のfiles_modified autofixがスペース区切り複数パス（拡張子or/を含む2+トークン）を検出し個別dict変換する。files_modifiedをスペース区切り文字列で渡しても正しくlist of dict化される。推奨形式（YAML list）への影響なし。

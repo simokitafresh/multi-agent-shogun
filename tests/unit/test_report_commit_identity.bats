@@ -101,8 +101,11 @@ YAML
   [[ "$output" != *"commit_hash: 'no-code-change'"* ]]
 
   source "$ROOT/scripts/lib/review_approval.sh"
+  # cmd_4156(3718e7245)で fingerprint は「正規化content hash単独」へ変更され、commit identity は
+  # gate としてのみ使われ値には含まれなくなった。守る不変量は変わらず
+  # 「no-code報告でも identity gate を通過し fingerprint が得られる(fail-closedにならない)」こと。
   fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT")
-  [[ "$fp" == *":no-code-change" ]]
+  [[ "$fp" =~ ^[0-9a-f]{64}$ ]]
 }
 
 @test "no-code allowance stays fail-closed for five forbidden categories" {
@@ -198,8 +201,11 @@ PY
 @test "review fingerprint accepts operational no-code without unrelated HEAD" {
   printf '\ncommit_hash: no-code-change\n' >> "$REPORT"
   source "$ROOT/scripts/lib/review_approval.sh"
+  # cmd_4156(3718e7245)で fingerprint は「正規化content hash単独」へ変更され、commit identity は
+  # gate としてのみ使われ値には含まれなくなった。守る不変量は変わらず
+  # 「no-code報告でも identity gate を通過し fingerprint が得られる(fail-closedにならない)」こと。
   fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT")
-  [[ "$fp" == *":no-code-change" ]]
+  [[ "$fp" =~ ^[0-9a-f]{64}$ ]]
 }
 
 @test "review fingerprint cache reuses unchanged content and invalidates on byte change" {
