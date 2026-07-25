@@ -1840,3 +1840,92 @@ active = next(l for l in lessons if l['id'] == 'L_ACTIVE')
 assert not active.get('deprecated'), f"L_ACTIVE (useful>0) must NOT be deprecated. got: {active}"
 PY
 }
+
+# test_necessity: boost付き教訓であってもtarget_files不一致なら注入されず、一致なら注入される双方向の不変量を守る。
+@test "boost bypass: boost付き教訓はtarget_files不一致なら除外され一致なら注入される" {
+    local tmpdir task_file log_file
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/logs" "$tmpdir/projects/infra" "$tmpdir/config" "$tmpdir/queue" \
+             "$tmpdir/cache" "$tmpdir/docs/semantic-index"
+    log_file="$tmpdir/deploy.log"
+
+    # 両教訓ともuseful実績ありにし、zero-feedbackフィルタが判定へ干渉しないようにする
+    {
+        printf 'timestamp\tcmd_id\tninja\tlesson_id\taction\tresult\treferenced\tproject\ttask_type\tbloom_level\tscore\ttraversal_depth\n'
+        for lid in L_BOOST_MISMATCH L_BOOST_MATCH; do
+            printf '2026-07-25T00:00:00\tcmd_t\tsaizo\t%s\tfeedback\tUSEFUL\t1\tinfra\thotfix\t1\t3\t0\n' "$lid"
+            printf '2026-07-25T00:00:01\tcmd_t\tsaizo\t%s\tfeedback\tUSEFUL\t1\tinfra\thotfix\t1\t3\t0\n' "$lid"
+        done
+    } > "$tmpdir/logs/lesson_impact.tsv"
+
+    # 両教訓ともsemantic概念経由でboostが付く。差はtarget_filesの一致/不一致のみ。
+    cat > "$tmpdir/docs/semantic-index/index.md" <<'MD'
+## zqzconcept — zqzboostterm
+
+| id | zqzconcept |
+| label | zqzboostterm |
+| aliases | zqzboostterm |
+| related_lessons | L_BOOST_MISMATCH, L_BOOST_MATCH |
+MD
+
+    cat > "$tmpdir/projects/infra/lessons.yaml" <<'YAML'
+lessons:
+- id: L_BOOST_MISMATCH
+  title: zqzboostterm whisker calibration drift
+  summary: pulley bracket loosening changes whisker calibration drift
+  when: whisker calibration drift is observed
+  status: confirmed
+  target_files:
+  - scripts/zqz_unrelated_module.py
+- id: L_BOOST_MATCH
+  title: zqzboostterm gearbox torque tuning
+  summary: spline gauge reading precedes gearbox torque tuning
+  when: gearbox torque tuning is required
+  status: confirmed
+  target_files:
+  - scripts/zqz_target_module.py
+YAML
+
+    cat > "$tmpdir/config/projects.yaml" <<'YAML'
+projects:
+- id: infra
+  type: platform
+YAML
+    printf 'commands: {}\n' > "$tmpdir/queue/shogun_to_karo.yaml"
+
+    task_file="$tmpdir/task.yaml"
+    cat > "$task_file" <<'YAML'
+task:
+  parent_cmd: cmd_test_boost_bypass
+  task_id: cmd_test_boost_bypass_hotfix
+  project: infra
+  task_type: hotfix
+  tags:
+  - infra
+  description: zqzboostterm scenario
+  target_path: scripts/zqz_target_module.py
+YAML
+
+    run bash -lc "
+        export DEPLOY_TASK_LIB_ONLY=1
+        export LOG='$log_file'
+        export DEPLOY_LESSON_CACHE_DIR='$tmpdir/cache'
+        export MEMORY_DB_PATH='$tmpdir/nonexistent_memory.db'
+        source '$PROJECT_ROOT/scripts/deploy_task.sh' 2>/dev/null
+        SCRIPT_DIR='$tmpdir'
+        inject_related_lessons '$task_file'
+    "
+    [ "$status" -eq 0 ]
+
+    python3 - "$task_file" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+injected = [l['id'] for l in task.get('related_lessons', [])]
+# (a) boost付き × target_files不一致 → 注入されない
+assert 'L_BOOST_MISMATCH' not in injected, \
+    f"boosted lesson with mismatching target_files must NOT be injected. got: {injected}"
+# (b) boost付き × target_files一致 → 従来どおり注入される(boost機能の退行検知)
+assert 'L_BOOST_MATCH' in injected, \
+    f"boosted lesson with matching target_files must still be injected. got: {injected}"
+PY
+}

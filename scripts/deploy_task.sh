@@ -7652,8 +7652,9 @@ try:
         for _l in confirmed_lessons:
             if _l.get('_cross_project_opt_in'):
                 continue
-            if _l.get('id', '') in lesson_boosts:
-                continue
+            # cmd_karo_hotfix_boost_bypass_production_path_20260725 AC1:
+            # boost付きでもtarget_files不一致なら除外対象にする(boostは関連度加点であり
+            # 明示target_files制約のバイパス根拠ではない)
             _ltf = _l.get('target_files', [])
             if not _ltf:
                 continue
@@ -7675,8 +7676,8 @@ try:
             if isinstance(_ltf, str):
                 _ltf = [_ltf]
             if _ltf and any(str(p).strip() for p in _ltf):
-                if _l.get('id', '') in lesson_boosts:
-                    continue
+                # cmd_karo_hotfix_boost_bypass_production_path_20260725 AC1:
+                # boost付きもマッチ不可能な以上は除外する
                 _tf_excluded_ids.add(_l.get('id', ''))
         if _tf_excluded_ids:
             print(f'[INJECT] target_files filter (no task files): {len(_tf_excluded_ids)} lessons with target_files excluded', file=sys.stderr)
