@@ -64,6 +64,8 @@ repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" \
 # makes divergent worktrees race: the last sync silently changes every other
 # worktree's runtime hook.  Enable Git's worktree config and pin hooksPath to
 # this worktree's own git-dir before resolving any installed hook path.
+WORKTREE_HOOKS_DIR=""
+
 configure_worktree_hooks_path() {
     local git_dir hooks_dir
     git_dir="$(git -C "$repo_root" rev-parse --absolute-git-dir 2>/dev/null)" \
@@ -82,6 +84,13 @@ configure_worktree_hooks_path() {
         git -C "$repo_root" config --worktree core.hooksPath "$hooks_dir" \
             || { echo "BLOCK(GA-222): failed to isolate hooksPath for worktree" >&2; return 1; }
     fi
+    # Publish the value this function just enforced/confirmed so
+    # resolve_installed_path can reuse it below without a second
+    # `git rev-parse --git-path` subprocess per hook (cmd_4166 perf: this
+    # worktree-scoped core.hooksPath write takes precedence over any other
+    # config source once extensions.worktreeConfig=true, which the block
+    # above just guaranteed, so re-deriving it via git is redundant).
+    WORKTREE_HOOKS_DIR="$hooks_dir"
 }
 
 configure_worktree_hooks_path || exit 1
@@ -135,7 +144,12 @@ uses_hook_source_convention() {
 }
 
 resolve_installed_path() {
-    local hook_name="$1" rel
+    local hook_name="$1"
+    if [[ -n "$WORKTREE_HOOKS_DIR" ]]; then
+        printf '%s/%s' "$WORKTREE_HOOKS_DIR" "$hook_name"
+        return 0
+    fi
+    local rel
     rel="$(git -C "$repo_root" rev-parse --git-path "hooks/$hook_name" 2>/dev/null)" || return 1
     [[ "$rel" = /* ]] && printf '%s' "$rel" || printf '%s/%s' "$repo_root" "$rel"
 }

@@ -165,6 +165,17 @@ has_worktree_research_changes() {
 
 check_repo() {
     local repo="$1" fingerprint recorded rc
+    # GA-220 perf(cmd_4166): every branch below only ever blocks or
+    # fingerprints when docs/research has staged/unstaged/untracked changes
+    # in $repo; with none, the function always returns 0 regardless of repo
+    # identity. Check that first (one cheap `git diff --quiet`) so ordinary
+    # commits skip DM_SIGNAL_REPO identity resolution (repo_common_dir x2 =
+    # git rev-parse + realpath x2, ~100-300ms and occasionally far more on
+    # WSL2/DrvFS) for every commit that never touches docs/research — nearly
+    # all of them outside the DM-Signal repo itself. Each branch's outcome is
+    # unchanged; only the now-provably-irrelevant identity resolution and the
+    # redundant repeated has_staged_research calls below are removed.
+    has_staged_research "$repo" || return 0
     rc=0; is_dm_signal_repo "$repo" || rc=$?
     if ((rc == 2)); then
         # A clean CI checkout intentionally has no external DM-Signal clone.
@@ -175,14 +186,10 @@ check_repo() {
         if ! repo_common_dir "$repo" >/dev/null 2>&1; then
             return 0
         fi
-        if has_staged_research "$repo"; then
-            echo "BLOCK(GA-220): DM_SIGNAL_REPO repo identityを解決できないため、対象repoのstaged docs/researchをfail-closed: $DM_SIGNAL_REPO" >&2
-            return 2
-        fi
-        return 0
+        echo "BLOCK(GA-220): DM_SIGNAL_REPO repo identityを解決できないため、対象repoのstaged docs/researchをfail-closed: $DM_SIGNAL_REPO" >&2
+        return 2
     fi
     ((rc == 0)) || return 0
-    has_staged_research "$repo" || return 0
     fingerprint="$(staged_fingerprint "$repo")" || {
         echo "BLOCK(GA-220): staged docs/research fingerprintを生成できない" >&2
         return 2
