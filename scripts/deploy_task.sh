@@ -4272,6 +4272,8 @@ EOF
             # cmd_karo_hotfix_post_clear_fail_open_20260725: awk -v はPOSIX仕様でCエスケープ(\t等)を
             # 解釈し、埋込テキスト中のリテラル\tを実タブへ化けさせYAMLを破壊する。ENVIRON経由で
             # 値をエスケープ解釈なしに渡す(cmd_complete_gate.shのgate_metrics literal_tab修正と同型)。
+            # AC3検証: tests/unit/test_deploy_task.bats「literal backslash-t in AC description survives
+            # report template injection」fixtureでリテラル\t保存+yaml.safe_load成功を確認済み。
             _LU_BLOCK_ENV="$_lu_block" awk '
                 /^lessons_useful:[[:space:]]*(null|~|\[\])/ { print ENVIRON["_LU_BLOCK_ENV"]; next }
                 { print }
