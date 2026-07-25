@@ -44,6 +44,38 @@ eval "$(python3 "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py"
     --report "$REPORT_PATH" \
     --tasks-dir "${GUNSHI_PRECHECK_TASKS_DIR:-$REPO_ROOT/queue/tasks}" 2>/dev/null)"
 
+# ─── 結果cache: report内容hash単位 (cmd_4167: full_precheck 555回×平均5.17秒の削減) ───
+# 同一reportの再precheckをcache返答にし、report(+関連task)の内容が変わった時のみ全量再検査する。
+# 対象は既定の全量precheckのみ(GUNSHI_PRECHECK_ONLYの個別観点確認はcache対象外・従来通り毎回実行)。
+# cache keyはreport/task本文のsha256sum(既存SG-PRE1の_PRE1_REPORT_FPと同族の素朴な内容hash。
+# 新規hash機構は作らない)に加え、検出ロジック自体の変更を取りこぼさないよう本スクリプトと
+# engineの内容hashも含める(GA-232と同型: 検出コード変更はledger不変でも過去判定を無効化する)。
+GUNSHI_PRECHECK_CACHE_WRITE=0
+GUNSHI_PRECHECK_CACHE_FILE=""
+if [ -z "${GUNSHI_PRECHECK_ONLY:-}" ]; then
+    GUNSHI_PRECHECK_CACHE_DIR="${GUNSHI_PRECHECK_CACHE_DIR:-${TMPDIR:-/tmp}/gate_gunshi_report_precheck_cache}"
+    _cache_report_hash="$(sha256sum "$REPORT_PATH" 2>/dev/null | awk '{print $1}')"
+    _cache_task_hash="none"
+    if [ -n "${TASK_FILE:-}" ] && [ -f "$TASK_FILE" ]; then
+        _cache_task_hash="$(sha256sum "$TASK_FILE" 2>/dev/null | awk '{print $1}')"
+    fi
+    _cache_self_hash="$(cat "$0" "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py" 2>/dev/null | sha256sum | awk '{print $1}')"
+    _cache_sig="report=${_cache_report_hash}:task=${_cache_task_hash}:self=${_cache_self_hash}"
+    _cache_key="$(printf '%s' "$_cache_sig" | sha256sum | awk '{print $1}')"
+    GUNSHI_PRECHECK_CACHE_FILE="${GUNSHI_PRECHECK_CACHE_DIR}/${_cache_key}"
+    if [ -s "$GUNSHI_PRECHECK_CACHE_FILE" ]; then
+        _cache_exit="$(head -1 "$GUNSHI_PRECHECK_CACHE_FILE" 2>/dev/null)"
+        if [[ "$_cache_exit" =~ ^[01]$ ]]; then
+            # stdoutはfull check実行時と同一バイト列を保つ(同一reportの再precheckが
+            # cache返答で全検査と同一結果になる契約)。cache応答である旨はstderrにのみ出す。
+            echo "★ cache応答(full_precheck結果cache): report/task/検出ロジック内容hash一致のため全検査を省略" >&2
+            tail -n +2 "$GUNSHI_PRECHECK_CACHE_FILE"
+            exit "$_cache_exit"
+        fi
+    fi
+    GUNSHI_PRECHECK_CACHE_WRITE=1
+fi
+
 if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE35" ]; then
     echo ""
     echo "■ SG-PRE35: 新規テスト必要性契約"
@@ -146,6 +178,12 @@ if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE24" ]; then
     print_sg_pre24
     exit $?
 fi
+
+# ─── ここから全量precheck本体をfunction化 ───────────────────────────────
+# cache miss時のみ呼び出す。command substitutionのsubshellで実行するため、
+# 内部のexitはこのfunction(=subshell)だけを終了し、末尾のEXIT trap(defense_overhead計測)は
+# 呼出元プロセスの終了時に1回だけ発火する(subshell exitでは発火しない。動作確認済み)。
+_gunshi_precheck_body() {
 
 # ─── L5: GATE CLEAR≠レビュー免除リマインド (殿厳命2026-06-08) ───
 echo ""
@@ -1320,3 +1358,23 @@ else
     echo "★ 機械的検証PASS。6観点レビューに進め"
     exit 0
 fi
+}
+# ─── ここまでfunction化 ───────────────────────────────────────────────
+
+set +e
+_gunshi_precheck_output="$(_gunshi_precheck_body)"
+_gunshi_precheck_rc=$?
+set -e
+printf '%s\n' "$_gunshi_precheck_output"
+
+if [ "$GUNSHI_PRECHECK_CACHE_WRITE" -eq 1 ] && [ -n "$GUNSHI_PRECHECK_CACHE_FILE" ]; then
+    mkdir -p "$(dirname "$GUNSHI_PRECHECK_CACHE_FILE")" 2>/dev/null || true
+    if {
+        printf '%s\n' "$_gunshi_precheck_rc"
+        printf '%s\n' "$_gunshi_precheck_output"
+    } > "${GUNSHI_PRECHECK_CACHE_FILE}.$$" 2>/dev/null; then
+        mv "${GUNSHI_PRECHECK_CACHE_FILE}.$$" "$GUNSHI_PRECHECK_CACHE_FILE" 2>/dev/null || true
+    fi
+fi
+
+exit "$_gunshi_precheck_rc"
