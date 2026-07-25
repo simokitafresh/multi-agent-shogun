@@ -67,7 +67,7 @@ baseline: 2026-07-25 一次計測(defense_overhead.jsonl + 本日の事故4件)
 
 | # | 箇所 | 事象 | 分類 |
 |---|------|------|------|
-| B21 | FAIL verdictのクローズ | FAIL cmdを閉じる正規経路が不在(archive明示経路は2回とも review_gate.done検査で停止)。実際に通った経路(RC→AC是正→同一cmd_id再配備)は手順書に未記載 | 品質(経路欠落) |
+| B21 | FAIL verdictのクローズ | **正規経路は存在しない(軍師が現物確認で確定・自身の先行回答を撤回)**: archive_completed.sh明示CMD_ID経路もreview_gate.done検査(1279-1304行、sweep分岐の外側)で停止し、CLEARを持たないcmdは構造的にarchive不能。唯一機能する経路(karo RC→AC是正→同一cmd_id再配備)は手順書に未記載 | 直列脆弱(B型)+経路欠落 |
 | B22 | retro回答 | 忍者がinboxで回答してもtype不一致で機械判定に乗らず家老が手動復元 | 品質(誤帰属) |
 | B23 | yaml_field_set | list型・ネスト型が書けずplanned_paths拡張/ci_fix evidence記入が毎回手作業(本日4回) | 速度(手動律速) |
 
