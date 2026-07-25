@@ -106,6 +106,37 @@ def validate(bundle, expected_cmd=None, expected_verdict=None):
     if not line.startswith(f"- **{cmd_id}**:"): raise ValueError("dashboard_line contradicts cmd_id")
     return review
 
+# hook_failures.count records how many times a hook fired; it says nothing about
+# whether those failures are still open.  Judging on the count alone kept fully
+# resolved work (kagemaru B27, hayate divergent-detector) from ever reaching
+# APPROVE.  The judgement axis is therefore the *state* of the failures, proven
+# by the four-step evidence those workers already produced voluntarily:
+# cause / independent verification / bypass record / post-commit verification.
+# The evidence lives inside the existing `details` field (no new report field,
+# LG032): a plain string keeps the legacy "unresolved" meaning and stays blocked.
+_HOOK_RESOLUTION_STEPS = ("cause", "independent_verification", "bypass_record", "post_verification")
+# (d) is not "everything passes" but "nothing got worse": a full re-run PASS
+# (kagemaru: 66/66) and an identical-failure-set proof (hayate: no new FAIL) are
+# both valid, and nothing else is.
+_HOOK_POST_RESULTS = ("all_pass", "no_new_failure")
+
+def _require_hook_failures_resolved(hook_failures):
+    details = hook_failures.get("details")
+    if not isinstance(details, dict):
+        raise ValueError(
+            "APPROVE forbidden while hook failures remain: hook_failures.details must be a mapping with "
+            + "/".join(_HOOK_RESOLUTION_STEPS) + " plus post_verification_result"
+        )
+    missing = [step for step in _HOOK_RESOLUTION_STEPS if not str(details.get(step) or "").strip()]
+    if missing:
+        raise ValueError(f"APPROVE forbidden while hook failures remain: resolution evidence missing: {','.join(missing)}")
+    outcome = str(details.get("post_verification_result") or "").strip()
+    if outcome not in _HOOK_POST_RESULTS:
+        raise ValueError(
+            "APPROVE forbidden while hook failures remain: post_verification_result must be one of "
+            + "/".join(_HOOK_POST_RESULTS)
+        )
+
 def generate(args):
     root = Path(args.root).resolve(); report_arg = Path(args.report)
     if not report_arg.is_absolute(): report_arg = root / report_arg
@@ -124,7 +155,7 @@ def generate(args):
             raise ValueError("APPROVE requires completed/PASS report")
         hook_failures = report_data.get("hook_failures")
         if isinstance(hook_failures, dict) and int(hook_failures.get("count") or 0) != 0:
-            raise ValueError("APPROVE forbidden while hook failures remain")
+            _require_hook_failures_resolved(hook_failures)
         checks = report_data.get("binary_checks")
         # yaml.safe_load coerces bare yes/no to booleans; treat them as equivalent
         results = [("yes" if item.get("result") is True else "no" if item.get("result") is False else str(item.get("result") or "").lower()) for group in (checks or {}).values() if isinstance(group, list) for item in group if isinstance(item, dict)] if isinstance(checks, dict) else []

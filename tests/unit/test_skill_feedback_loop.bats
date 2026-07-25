@@ -1855,3 +1855,125 @@ EOF
     [[ "$output" == *"ESCALATION_SKIPPED_NO_BULLETIN"* ]]
     [[ "$output" == *"TRAINING_SKIPPED_NO_GENERATOR"* ]]
 }
+
+# review_bundle.py judges hook_failures by state, not by count.  The fixtures
+# below carry the real evidence from kagemaru's B27 report (count 3, full re-run
+# PASS) and hayate's divergent-detector report (count 1, identical FAIL set).
+setup_hook_failure_repo() {
+    TEST_REPO="$TEST_TMPDIR/hookrepo"
+    rm -rf "$TEST_REPO"
+    mkdir -p "$TEST_REPO/scripts" "$TEST_REPO/queue/reports" "$TEST_REPO/queue/gates"
+    cp "$PROJECT_ROOT/scripts/review_bundle.py" "$TEST_REPO/scripts/review_bundle.py"
+    cat > "$TEST_REPO/queue/shogun_to_karo.yaml" <<'EOF'
+commands:
+  cmd_2473:
+    purpose: hook failure state fixture
+    project: infra
+    target_path: scripts/review_bundle.py
+    acceptance_criteria:
+      - id: AC1
+        description: hook failure state fixture
+EOF
+    cat > "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml" <<'EOF'
+worker_id: hayate
+parent_cmd: cmd_2473
+status: completed
+result:
+  summary: hook failure state fixture
+EOF
+    complete_dashboard_report_fixture "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml"
+    HOOK_REPORT="$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml"
+}
+
+run_hook_failure_generate() {
+    run python3 "$TEST_REPO/scripts/review_bundle.py" --root "$TEST_REPO" generate \
+        --cmd cmd_2473 --verdict APPROVE --report queue/reports/hayate_report_cmd_2473.yaml
+}
+
+@test "review_bundle APPROVE passes hook failures carrying full four-step resolution evidence" {
+    setup_hook_failure_repo
+    cat >> "$HOOK_REPORT" <<'EOF'
+hook_failures:
+  count: 3
+  details:
+    cause: "GA-PRECOMMIT1 blocked on existing test28 in test_ninja_scope_commit.bats, outside this task diff and unmodified"
+    independent_verification: "bats --filter of test28 passed 3/3 consecutively in isolation"
+    bypass_record: "SHOGUN_PRECOMMIT_AFFECTED_BYPASS set with the reason; recorded in logs/precommit_affected_bypass.jsonl"
+    post_verification: "after commit the bats re-run reported 66/66 PASS including test28"
+    post_verification_result: all_pass
+EOF
+    run_hook_failure_generate
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"queue/gates/cmd_2473/sg7_bundle.json"* ]]
+}
+
+@test "review_bundle APPROVE accepts a no-new-failure post verification outcome" {
+    setup_hook_failure_repo
+    cat >> "$HOOK_REPORT" <<'EOF'
+hook_failures:
+  count: 1
+  details:
+    cause: "DrvFs chmod EPERM breaks the fixture git init; the guard aborts before the gate is reached"
+    independent_verification: "a plain mktemp -d + git init reproduces the same EPERM without this change"
+    bypass_record: "reason written to SHOGUN_PRECOMMIT_AFFECTED_BYPASS and recorded in logs/precommit_affected_bypass.jsonl"
+    post_verification: "re-measured after commit: FAIL set identical, zero new FAIL"
+    post_verification_result: no_new_failure
+EOF
+    run_hook_failure_generate
+    [ "$status" -eq 0 ]
+}
+
+@test "review_bundle APPROVE stays blocked when hook failure resolution evidence is incomplete" {
+    # legacy free-text details keep their unresolved meaning
+    setup_hook_failure_repo
+    cat >> "$HOOK_REPORT" <<'EOF'
+hook_failures:
+  count: 3
+  details: "GA-PRECOMMIT1 blocked 3 times; bypassed"
+EOF
+    run_hook_failure_generate
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"hook failures remain"* ]]
+
+    # missing (d) post-commit verification is the escape hatch this must close
+    setup_hook_failure_repo
+    cat >> "$HOOK_REPORT" <<'EOF'
+hook_failures:
+  count: 3
+  details:
+    cause: "existing test outside the diff"
+    independent_verification: "passed 3/3 in isolation"
+    bypass_record: "recorded in logs/precommit_affected_bypass.jsonl"
+    post_verification: ""
+    post_verification_result: all_pass
+EOF
+    run_hook_failure_generate
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"post_verification"* ]]
+
+    # a declared but unclassifiable post-verification outcome is not evidence
+    setup_hook_failure_repo
+    cat >> "$HOOK_REPORT" <<'EOF'
+hook_failures:
+  count: 3
+  details:
+    cause: "existing test outside the diff"
+    independent_verification: "passed 3/3 in isolation"
+    bypass_record: "recorded in logs/precommit_affected_bypass.jsonl"
+    post_verification: "looked fine"
+    post_verification_result: confirmed
+EOF
+    run_hook_failure_generate
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"post_verification_result"* ]]
+
+    # count 0 keeps the historical fast path
+    setup_hook_failure_repo
+    cat >> "$HOOK_REPORT" <<'EOF'
+hook_failures:
+  count: 0
+  details: ""
+EOF
+    run_hook_failure_generate
+    [ "$status" -eq 0 ]
+}
