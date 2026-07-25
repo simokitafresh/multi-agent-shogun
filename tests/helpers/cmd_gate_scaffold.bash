@@ -50,13 +50,14 @@ cmd_gate_scaffold() {
     ln -s "$SRC_GATE_SCRIPT" "$TEST_PROJECT/scripts/cmd_complete_gate.sh"
     ln -s "$SRC_CONTEXT_FRESHNESS_SCRIPT" "$TEST_PROJECT/scripts/context_freshness_check.sh"
     ln -s "$PROJECT_ROOT/config/context_freshness_excludes.txt" "$TEST_PROJECT/config/context_freshness_excludes.txt"
-    ln -s "$SRC_FIELD_GET_SCRIPT" "$TEST_PROJECT/scripts/lib/field_get.sh"
-    ln -s "$SRC_LOCK_PATH_SCRIPT" "$TEST_PROJECT/scripts/lib/lock_path.sh"
-    ln -s "$SRC_YAML_FIELD_SET_SCRIPT" "$TEST_PROJECT/scripts/lib/yaml_field_set.sh"
-    ln -s "$SRC_GUNSHI_NOTIFY_SCRIPT" "$TEST_PROJECT/scripts/lib/gunshi_notify.sh"
-    ln -s "$SRC_NONOVERLAP_FILTER_SCRIPT" "$TEST_PROJECT/scripts/lib/report_commit_nonoverlap_filter.sh"
-    ln -s "$SRC_TASK_CMD_MATCH_SCRIPT" "$TEST_PROJECT/scripts/lib/task_cmd_match.sh"
-    ln -s "$SRC_PARENT_CMD_CONTRACT_SCRIPT" "$TEST_PROJECT/scripts/lib/parent_cmd_contract.py"
+    # scripts/lib is mirrored wholesale (one symlink per entry), never by an
+    # allowlist: cmd_complete_gate.sh may start sourcing a new lib at any time
+    # and an allowlist would break silently on the next such addition.
+    local lib_entry
+    for lib_entry in "$PROJECT_ROOT/scripts/lib/"*; do
+        [ -e "$lib_entry" ] || continue
+        ln -sfn "$lib_entry" "$TEST_PROJECT/scripts/lib/$(basename "$lib_entry")"
+    done
     ln -s "$PROJECT_ROOT/scripts/config/context_source_commits.tsv" "$TEST_PROJECT/scripts/config/context_source_commits.tsv"
 
     # Non-blocking script stubs required by cmd_complete_gate.sh
@@ -78,6 +79,12 @@ EOF
 timestamp: 2026-03-04T00:00:00
 source: lesson_check
 EOF
+}
+
+# Detach a mirrored lib entry before a test writes its own stub in its place.
+# Writing straight onto the mirror symlink would follow it into the real repo.
+cmd_gate_lib_override() {
+    rm -f "$TEST_PROJECT/scripts/lib/$1"
 }
 
 cmd_gate_teardown() {

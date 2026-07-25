@@ -186,6 +186,37 @@ fi
 precommit_step_end 0
 _STDERR_FILE="/tmp/_hook_stderr_precommit_$$"
 
+# A staged script may not `source` a repo file that this commit neither tracks
+# nor stages.  2026-07-25: 239d663ff added
+# `source .../scripts/lib/gate_report_format_classify.sh` to cmd_complete_gate.sh
+# while the lib itself stayed untracked.  It worked on every machine that had the
+# file on disk and broke every fresh checkout and CI run — the completion GATE
+# aborted at source time.  Only paths that exist in the working tree are
+# inspected, so dynamic or genuinely external sources cannot false-positive.
+check_staged_sourced_deps() {
+    local staged_sh dep missing=""
+    while IFS= read -r staged_sh; do
+        [[ "$staged_sh" == *.sh ]] || continue
+        staged_file_exists "$staged_sh" || continue
+        while IFS= read -r dep; do
+            [[ -n "$dep" ]] || continue
+            [[ -f "$REPO_ROOT/$dep" ]] || continue
+            git ls-files --error-unmatch -- "$dep" >/dev/null 2>&1 && continue
+            missing+="    $staged_sh -> $dep"$'\n'
+        done < <(
+            git show ":$staged_sh" 2>/dev/null \
+                | grep -oE '^[[:space:]]*(source|\.)[[:space:]]+"?[^"[:space:]]+' \
+                | grep -oE '(scripts|tests|config)/[A-Za-z0-9_./-]+'
+        )
+    done < <(list_staged_files)
+    [[ -z "$missing" ]] && return 0
+    echo "BLOCKED: staged script sources a repo file that is not tracked and not staged:" >&2
+    printf '%s' "$missing" >&2
+    echo "It exists on your disk only. Fresh checkouts and CI would fail at source time." >&2
+    echo "Stage the sourced file in this same commit (git add <path>)." >&2
+    return 1
+}
+
 is_semantic_propagation_file() {
     local file="${1:-}"
     [[ -n "$file" ]] || return 1
@@ -690,6 +721,20 @@ main() {
         precommit_step_end 1
         echo "BLOCKED: bash -n failed on staged shell script(s):" >&2
         printf '%s' "$_shell_syntax_fail" >&2
+        exit 1
+    fi
+    precommit_step_end 0
+
+    # sourced_dep: a staged script may not `source` a repo file that this commit
+    # neither tracks nor stages.  2026-07-25: 239d663ff added
+    # `source .../scripts/lib/gate_report_format_classify.sh` to cmd_complete_gate.sh
+    # while the lib itself stayed untracked.  It worked on every machine that had
+    # the file on disk and broke every fresh checkout and CI run — the completion
+    # GATE aborted at source time.  Only paths that exist in the working tree are
+    # inspected, so dynamic or genuinely external sources cannot false-positive.
+    precommit_step_begin sourced_dep
+    if ! check_staged_sourced_deps; then
+        precommit_step_end 1
         exit 1
     fi
     precommit_step_end 0

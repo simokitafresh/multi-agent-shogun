@@ -126,8 +126,6 @@ PY
     # Build the invariant scaffold once on ext4. Each test still receives an
     # isolated copy, but avoids repeating mkdir/symlink/stub process setup.
     cmd_gate_scaffold "cmd_gate_master"
-    cp "$SRC_NORMALIZE_SCRIPT" "$TEST_PROJECT/scripts/lib/normalize_report.sh"
-    chmod +x "$TEST_PROJECT/scripts/lib/normalize_report.sh"
     cat > "$TEST_PROJECT/config/projects.yaml" <<EOF
 projects:
   - id: infra
@@ -2289,8 +2287,6 @@ PY
     local report="$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml"
     local metrics="$TEST_PROJECT/logs/gate_metrics.log"
 
-    cp "$PROJECT_ROOT/scripts/lib/review_approval.sh" "$TEST_PROJECT/scripts/lib/review_approval.sh"
-    cp "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_PROJECT/scripts/lib/report_commit_identity.py"
     cp "$PROJECT_ROOT/scripts/bulletin_write.sh" "$TEST_PROJECT/scripts/bulletin_write.sh"
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
 task:
@@ -2318,6 +2314,7 @@ lessons_useful: [{id: L625, useful: true, reason: fixture}]
 binary_checks:
   AC1: [{check: fixture, result: yes}]
 EOF
+    cmd_gate_lib_override normalize_report.sh
     cat > "$TEST_PROJECT/scripts/lib/normalize_report.sh" <<'EOF'
 #!/usr/bin/env bash
 printf 'normalized_by_fixture: true\n' >> "$1"
@@ -3070,6 +3067,7 @@ prepare_full_gate_triage_fixture() {
     write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
     write_triage_report_fixture "$triage" "no"
 
+    cmd_gate_lib_override normalize_report.sh
     cat > "$TEST_PROJECT/scripts/lib/normalize_report.sh" <<'EOF'
 #!/usr/bin/env bash
 echo "no normalization needed"
