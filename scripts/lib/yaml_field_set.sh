@@ -4,6 +4,8 @@
 #
 # Usage:
 #   bash scripts/lib/yaml_field_set.sh <yaml_file> <block_id> <field> <new_value>
+#   bash scripts/lib/yaml_field_set.sh <yaml_file> <block_id> <a.b.c> <new_value>   # nested path
+#   bash scripts/lib/yaml_field_set.sh --append <yaml_file> <block_id> <field> <element>  # list append
 #   source scripts/lib/yaml_field_set.sh && yaml_field_set <yaml_file> <block_id> <field> <new_value>
 #
 # Behavior:
@@ -1021,14 +1023,324 @@ END {
 ' "$yaml_file"
 }
 
+# cmd_karo_impl_yaml_field_set_list_nested_20260725:
+# 構造書込みレーン。dotted path("a.b.c")とlist追記(--append)を扱う。
+# 旧実装はdotted fieldをawkの完全一致キーとして扱い、該当キーが無いと
+# root fallbackで**トップレベルにリテラルキー'a.b.c'を新規追加しRC=0を返した**
+# (半蔵が隔離コピーで実測)。成功を返しながら意図と異なる結果を残すのが最も危険であり、
+# 本レーンは書けない場合に必ず非ゼロで失敗する。
+# 書込みはyaml.dumpによる全文再生成ではなく、対象keyの行範囲だけを差し替える
+# 外科的splice(周辺行はバイト単位で保存)。fragment生成のみyaml_atomic.yaml_textを使う
+# (L295/cmd_1399: 全文yaml.dumpはデータ消失を起こす)。
+_yaml_field_set_structural() {
+    local yaml_file="$1"
+    local out_file="$2"
+    local block_id="$3"
+    local field="$4"
+    local value="$5"
+    local mode="$6"
+
+    local _self _root
+    _self="${BASH_SOURCE[0]:-$0}"
+    [[ "$_self" != /* ]] && _self="$PWD/$_self"
+    _root="${_self%/scripts/lib/yaml_field_set.sh}"
+
+    YFS_S_FILE="$yaml_file" YFS_S_OUT="$out_file" YFS_S_BLOCK="$block_id" \
+    YFS_S_PATH="$field" YFS_S_VALUE="$value" YFS_S_MODE="$mode" \
+    YFS_S_LIBDIR="${_self%/yaml_field_set.sh}" YFS_S_ROOT="$_root" python3 - <<'PY'
+import os
+import re
+import sys
+
+import yaml
+
+
+def _load_yaml_text():
+    libdir = os.environ.get("YFS_S_LIBDIR", "")
+    local = os.path.join(libdir, "yaml_atomic.py")
+    if os.path.isfile(local):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location("_yfs_yaml_atomic", local)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.yaml_text
+    sys.path.insert(0, os.environ.get("YFS_S_ROOT", ""))
+    from scripts.lib.yaml_atomic import yaml_text  # noqa: E402
+
+    return yaml_text
+
+
+def fail(msg, code=1):
+    sys.stderr.write("FATAL: yaml_field_set(structural): %s\n" % msg)
+    raise SystemExit(code)
+
+
+yaml_text = _load_yaml_text()
+
+path_file = os.environ["YFS_S_FILE"]
+out_file = os.environ["YFS_S_OUT"]
+block_id = os.environ["YFS_S_BLOCK"]
+dotted = os.environ["YFS_S_PATH"]
+raw_value = os.environ["YFS_S_VALUE"]
+mode = os.environ["YFS_S_MODE"]
+
+with open(path_file, encoding="utf-8") as fh:
+    text = fh.read()
+lines = text.splitlines(True)
+
+try:
+    data = yaml.safe_load(text)
+except Exception as exc:
+    fail("source file is not parseable YAML: %s" % exc)
+
+keys = [k for k in dotted.split(".") if k != ""]
+if not keys or len(keys) != len(dotted.split(".")):
+    fail("invalid field path: %r" % dotted)
+
+# Structured input is honoured only when it parses to a list/mapping.  Anything
+# else stays the caller's literal string, so 'yes'/'123'/'null' cannot be
+# silently retyped by YAML resolution.
+def coerce(s):
+    try:
+        parsed = yaml.safe_load(s)
+    except Exception:
+        return s
+    if isinstance(parsed, (list, dict)):
+        return parsed
+    return s
+
+
+element = coerce(raw_value)
+
+
+def indent_of(line):
+    return len(line) - len(line.lstrip(" "))
+
+
+def blankish(line):
+    s = line.strip()
+    return s == "" or s.startswith("#")
+
+
+def find_key(start, end, indent, key):
+    pat = re.compile(r"^ {%d}%s\s*:" % (indent, re.escape(key)))
+    for i in range(start, end):
+        if blankish(lines[i]):
+            continue
+        if indent_of(lines[i]) != indent:
+            continue
+        if pat.match(lines[i]):
+            return i
+    return None
+
+
+def body_of(key_idx, end):
+    """Return (body_start, body_end, child_indent) for the mapping key at key_idx."""
+    ki = indent_of(lines[key_idx])
+    body_start = key_idx + 1
+    body_end = body_start
+    child_indent = None
+    i = body_start
+    while i < end:
+        if blankish(lines[i]):
+            i += 1
+            continue
+        if indent_of(lines[i]) <= ki:
+            break
+        if child_indent is None:
+            child_indent = indent_of(lines[i])
+        body_end = i + 1
+        i += 1
+    if child_indent is None:
+        child_indent = ki + 2
+    return body_start, body_end, child_indent
+
+
+def value_end(key_idx, end):
+    """Exclusive end line of the whole value owned by the key at key_idx."""
+    ki = indent_of(lines[key_idx])
+    last = key_idx + 1
+    i = key_idx + 1
+    while i < end:
+        if blankish(lines[i]):
+            i += 1
+            continue
+        line_indent = indent_of(lines[i])
+        if line_indent < ki:
+            break
+        if line_indent == ki and not lines[i].lstrip().startswith("- "):
+            break
+        last = i + 1
+        i += 1
+    return last
+
+
+# --- resolve the block scope -------------------------------------------------
+if block_id == "root":
+    scope = (0, len(lines), 0)
+else:
+    map_idx = None
+    map_pat = re.compile(r"^(\s*)%s\s*:\s*(#.*)?$" % re.escape(block_id))
+    for i, line in enumerate(lines):
+        if map_pat.match(line):
+            map_idx = i
+            break
+    if map_idx is not None:
+        scope = body_of(map_idx, len(lines))
+    else:
+        item_idx = None
+        item_pat = re.compile(
+            r"^(\s*)-\s*(id|cmd_id|check)\s*:\s*[\"']?%s[\"']?\s*$" % re.escape(block_id)
+        )
+        for i, line in enumerate(lines):
+            if item_pat.match(line):
+                item_idx = i
+                break
+        if item_idx is None:
+            fail("block_id not found: %s (%s)" % (block_id, path_file), 2)
+        dash_indent = indent_of(lines[item_idx])
+        child_indent = dash_indent + 2
+        end = item_idx + 1
+        i = item_idx + 1
+        while i < len(lines):
+            if blankish(lines[i]):
+                i += 1
+                continue
+            if indent_of(lines[i]) <= dash_indent:
+                break
+            end = i + 1
+            i += 1
+        scope = (item_idx, end, child_indent)
+
+start, end, cur_indent = scope
+
+# --- walk intermediate segments ---------------------------------------------
+for depth, key in enumerate(keys[:-1]):
+    idx = find_key(start, end, cur_indent, key)
+    if idx is None:
+        fail(
+            "path segment %r not found under %s (path=%s). "
+            "Create the parent mapping first; this helper never invents intermediate keys."
+            % (key, ".".join([block_id] + keys[:depth]) or block_id, dotted),
+            2,
+        )
+    inline = lines[idx].split(":", 1)[1].strip()
+    if inline and not inline.startswith("#"):
+        fail(
+            "path segment %r holds a scalar value, not a mapping (path=%s)" % (key, dotted),
+            2,
+        )
+    start, end, cur_indent = body_of(idx, end)
+
+leaf = keys[-1]
+leaf_idx = find_key(start, end, cur_indent, leaf)
+
+# --- compute the new value ---------------------------------------------------
+def navigate(root_obj):
+    node = root_obj
+    if block_id != "root":
+        found = []
+
+        def walk(n):
+            if isinstance(n, dict):
+                v = n.get(block_id)
+                if isinstance(v, dict):
+                    found.append(v)
+                for vv in n.values():
+                    walk(vv)
+            elif isinstance(n, list):
+                for item in n:
+                    if isinstance(item, dict):
+                        for k in ("id", "cmd_id", "check"):
+                            if k in item and str(item[k]) == block_id:
+                                found.append(item)
+                                break
+                    walk(item)
+
+        walk(root_obj)
+        if not found:
+            return None, False
+        node = found[0]
+    for k in keys[:-1]:
+        if not isinstance(node, dict) or k not in node:
+            return None, False
+        node = node[k]
+    if not isinstance(node, dict) or leaf not in node:
+        return None, False
+    return node[leaf], True
+
+
+if mode == "append":
+    existing, present = navigate(data)
+    if present and isinstance(existing, list):
+        new_value = list(existing)
+    elif present and existing is not None and existing != "":
+        # scalar → list 化(小太郎事例: planned_paths が scalar 1本で contract test が
+        # scope外判定になった)。既存値は先頭要素として保持する。
+        new_value = [existing]
+    else:
+        new_value = []
+    if isinstance(element, list):
+        additions = element
+    else:
+        additions = [element]
+    for item in additions:
+        if item not in new_value:
+            new_value.append(item)
+else:
+    new_value = element
+
+# --- render + splice ---------------------------------------------------------
+try:
+    fragment = yaml_text({leaf: new_value})
+except Exception as exc:
+    fail("failed to render value fragment: %s" % exc)
+
+pad = " " * cur_indent
+rendered = []
+for line in fragment.splitlines():
+    rendered.append((pad + line if line.strip() else "") + "\n")
+
+if leaf_idx is None:
+    insert_at = end
+    new_lines = lines[:insert_at] + rendered + lines[insert_at:]
+else:
+    new_lines = lines[:leaf_idx] + rendered + lines[value_end(leaf_idx, end):]
+
+new_text = "".join(new_lines)
+
+# --- verify on the candidate before the caller publishes ---------------------
+try:
+    new_data = yaml.safe_load(new_text)
+except Exception as exc:
+    fail("generated content is not parseable YAML: %s" % exc)
+
+actual, present = navigate(new_data)
+if not present:
+    fail("post-write verification could not locate %s.%s" % (block_id, dotted))
+if actual != new_value:
+    fail("post-write mismatch expected=%r actual=%r" % (new_value, actual))
+
+with open(out_file, "w", encoding="utf-8") as fh:
+    fh.write(new_text)
+PY
+}
+
 yaml_field_set() {
+    local _yfs_mode="set"
+    if [ "${1:-}" = "--append" ]; then
+        _yfs_mode="append"
+        shift
+    fi
+
     local yaml_file="$1"
     local block_id="$2"
     local field="$3"
     local new_value="$4"
 
     if [ "$#" -lt 4 ]; then
-        echo "Usage: yaml_field_set <yaml_file> <block_id> <field> <new_value>" >&2
+        echo "Usage: yaml_field_set [--append] <yaml_file> <block_id> <field|a.b.c> <new_value>" >&2
         return 1
     fi
 
@@ -1039,6 +1351,33 @@ yaml_field_set() {
 
     if ! _yaml_field_set_reject_bracket_field "$field"; then
         return 1
+    fi
+
+    # cmd_karo_impl_yaml_field_set_list_nested_20260725: dotted path / list追記は
+    # awkレーン(完全一致キー前提)では表現できない。構造書込みレーンへ回す。
+    # 判定はstructured typeより先に行う(--append planned_paths のような
+    # 「既知の構造化fieldへの追記」もawk/全置換ではなく追記として扱うため)。
+    if [ "$_yfs_mode" = "append" ] || [[ "$field" == *.* ]]; then
+        local _s_lock _s_tmp
+        _s_lock="$(lock_path "$yaml_file")"
+        _s_tmp="$(mktemp "${yaml_file}.XXXXXX")" || {
+            echo "FATAL: yaml_field_set: failed to create temp file for $yaml_file" >&2
+            return 1
+        }
+        {
+            flock -w 10 200 || {
+                rm -f "$_s_tmp"
+                echo "FATAL: yaml_field_set: flock timeout for $yaml_file" >&2
+                return 1
+            }
+            if ! _yaml_field_set_structural "$yaml_file" "$_s_tmp" "$block_id" "$field" "$new_value" "$_yfs_mode"; then
+                rm -f "$_s_tmp"
+                echo "FATAL: yaml_field_set: structural write failed for ${block_id}.${field} in $yaml_file; original file kept unchanged" >&2
+                return 1
+            fi
+            _yaml_field_set_publish_atomic "$_s_tmp" "$yaml_file" || return 1
+        } 200>"$_s_lock"
+        return $?
     fi
 
     # cmd_karo_hotfix_control_plane_contracts_ga321_20260723:
@@ -1226,6 +1565,16 @@ yaml_field_set_batch() {
         if [ -z "$_f" ]; then continue; fi
         if ! _yaml_field_set_reject_bracket_field "$_f"; then
             return 1
+        fi
+        # cmd_karo_impl_yaml_field_set_list_nested_20260725: batchのawkレーンも
+        # 完全一致キー前提のため、dotted pathを渡すとトップレベルにリテラルキーを
+        # 作って成功を返していた。構造レーン(自前でflock/atomic publishする)へ委譲する。
+        if [[ "$_f" == *.* ]]; then
+            if ! yaml_field_set "$yaml_file" "$block_id" "$_f" "$_v"; then
+                echo "FATAL: yaml_field_set_batch: structural write failed for ${block_id}.${_f}" >&2
+                return 1
+            fi
+            continue
         fi
         _v="${_v//\\/\\\\}"
         if [ "$_count" -gt 0 ]; then
@@ -1477,6 +1826,8 @@ END {
             _vf="${_arg%%=*}"
             _va="${_arg#*=}"
             if [ -z "$_vf" ]; then continue; fi
+            # dotted pathは構造レーンが候補上で検証済み(awkレーンには存在しない)。
+            if [[ "$_vf" == *.* ]]; then continue; fi
             if ! _verify_err="$(_yaml_field_set_verify_parsed "$yaml_file" "$block_id" "$_vf" "$_va" "0" 2>&1 1>/dev/null)"; then
                 echo "FATAL: yaml_field_set_batch: mismatch ${block_id}.${_vf} ($_verify_err)" >&2
                 return 1
