@@ -216,3 +216,53 @@ PY
   [ "$status" -eq 0 ]
   echo "$output" >&3
 }
+
+# ─── cmd_karo_impl_report_publish_latency_20260725 ───
+# publish経路の支配相は「公開済みバイト列の識別子を得るための再読込」だった
+# (実測 avg 548ms = total 1043msの52.5%)。side-channelで消したが、識別子の
+# 正しさと fallback は検査を1つも失わずに維持されねばならない。
+
+publish_terminal() {
+  run bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$1"
+}
+
+@test "side-channel経由でもterminal識別子(worker/parent)が正しく束縛される" {
+  : >"$RFS_EVENT_LOG"
+  case_report="$TMPDIR_CASE/meta_fast.yaml"
+  cp "$REPORT" "$case_report"
+  publish_terminal "$case_report"
+  [ "$status" -eq 0 ]
+  [ "$(grep -c 'hanzo報告完了' "$RFS_EVENT_LOG")" -eq 1 ]
+  [ "$(grep -c 'parent_cmd=cmd_test' "$RFS_EVENT_LOG")" -eq 1 ]
+  # side-channelの一時ファイルを残さない
+  [ "$(find "$TMPDIR_CASE" -name 'meta_fast.yaml.meta.*' | wc -l)" -eq 0 ]
+}
+
+@test "side-channel不在でも従来の再読込fallbackで同じ識別子を束縛する" {
+  : >"$RFS_EVENT_LOG"
+  case_report="$TMPDIR_CASE/meta_fallback.yaml"
+  cp "$REPORT" "$case_report"
+  RFS_BATCH_META_DISABLE=1 publish_terminal "$case_report"
+  [ "$status" -eq 0 ]
+  [ "$(grep -c 'hanzo報告完了' "$RFS_EVENT_LOG")" -eq 1 ]
+  [ "$(grep -c 'parent_cmd=cmd_test' "$RFS_EVENT_LOG")" -eq 1 ]
+}
+
+@test "publish経路の相別時間が既存台帳defense_overhead.jsonlへ記録される" {
+  export DEFENSE_OVERHEAD_LEDGER="$TMPDIR_CASE/defense_overhead.jsonl"
+  : >"$DEFENSE_OVERHEAD_LEDGER"
+  case_report="$TMPDIR_CASE/telemetry.yaml"
+  cp "$REPORT" "$case_report"
+  publish_terminal "$case_report"
+  [ "$status" -eq 0 ]
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    [ "$(grep -c '"check_id":"publish_total"' "$DEFENSE_OVERHEAD_LEDGER")" -ge 1 ] && break
+    sleep 0.3
+  done
+  grep -q '"source":"report_publish"' "$DEFENSE_OVERHEAD_LEDGER"
+  grep -q '"check_id":"publish_total"' "$DEFENSE_OVERHEAD_LEDGER"
+  grep -q '"check_id":"terminal_meta"' "$DEFENSE_OVERHEAD_LEDGER"
+  grep -q '"check_id":"atomic_replace"' "$DEFENSE_OVERHEAD_LEDGER"
+  # 新台帳を作らない: 書込み先は既存ledgerのみ
+  [ "$(find "$TMPDIR_CASE" -name '*.jsonl' | wc -l)" -eq 1 ]
+}

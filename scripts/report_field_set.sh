@@ -56,7 +56,15 @@ if [ "${1:-}" = "--batch" ]; then
     exec 200>"$_rfs_batch_lock"
     flock -w 5 200 || { echo "BLOCK: batch report lock timeout" >&2; exit 1; }
     _rfs_atomic_started="$(_rfs_mono_ms)"
-    _rfs_batch_output=$(RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
+    # 公開直後のterminal識別子を受け取るside-channel(stdout契約は不変)。
+    # RFS_BATCH_META_DISABLE=1 はside-channelを無効化し、従来の再読込fallbackを
+    # そのまま実行させる(fallbackが生きていることを外から検証可能にするため)。
+    if [ "${RFS_BATCH_META_DISABLE:-0}" = "1" ]; then
+        _rfs_batch_meta_file=""
+    else
+        _rfs_batch_meta_file="$(mktemp "${_rfs_batch_report}.meta.XXXXXX")" || _rfs_batch_meta_file=""
+    fi
+    _rfs_batch_output=$(RFS_BATCH_META_FILE="$_rfs_batch_meta_file" RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
 import hashlib, os, pathlib, re, sys, tempfile, yaml
 sys.path.insert(0, sys.argv[2])
 from scripts.lib.yaml_atomic import yaml_text
@@ -164,6 +172,21 @@ try:
     os.replace(tmp, path)
 finally:
     if os.path.exists(tmp): os.unlink(tmp)
+
+# cmd_karo_impl_report_publish_latency_20260725: publish経路はこの直後に
+# status/worker_id/parent_cmd を得るため report を3回 python3+yaml.safe_load で
+# 読み直していた(実測 avg 548ms = publish総時間の52.5%)。ここでは同じ値が
+# 既にメモリ上にあり、公開済みバイト列と同一である。検査を1つも省かずに
+# 再読込3プロセスだけを消すため、値をside-channelファイルへ書き出す
+# (stdoutは既存の 'fingerprint=' パース契約があるため変更しない)。
+meta_path = os.environ.get("RFS_BATCH_META_FILE")
+if meta_path:
+    with open(meta_path, "w", encoding="utf-8") as meta_handle:
+        meta_handle.write("\t".join([
+            str(data.get("status", "")),
+            str(data.get("worker_id", "")),
+            str(data.get("parent_cmd", "")),
+        ]) + "\n")
 print("BATCH_OK fields={} fingerprint={}".format(len(updates), hashlib.sha256(text.encode()).hexdigest()))
 PY
 )
@@ -174,26 +197,45 @@ PY
     fi
     _rfs_phase atomic_replace "$_rfs_atomic_started"
     if [ "$_rfs_batch_rc" -eq 0 ]; then
-        _rfs_batch_status=$(python3 - "$_rfs_batch_report" <<'PY'
+        # 公開済みバイト列の識別子(status/worker_id/parent_cmd)は、書込みを行った
+        # python processが既に保持している。side-channelから受け取り、同じ値を得る
+        # ための3回のpython3+yaml.safe_load再読込を消す(実測 548ms/1043ms = 52.5%)。
+        # side-channelが無い/壊れた場合は従来の再読込へfallbackする(fail-closed)。
+        _rfs_meta_started="$(_rfs_mono_ms)"
+        _rfs_batch_status=""
+        _rfs_batch_worker=""
+        _rfs_batch_parent=""
+        if [ -s "$_rfs_batch_meta_file" ]; then
+            IFS=$'\t' read -r _rfs_batch_status _rfs_batch_worker _rfs_batch_parent \
+                < "$_rfs_batch_meta_file" || true
+        fi
+        if [ -z "$_rfs_batch_status" ]; then
+            _rfs_batch_status=$(python3 - "$_rfs_batch_report" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 print(str(data.get("status", "")))
 PY
 )
+        fi
+        _rfs_phase terminal_meta "$_rfs_meta_started"
         if [ "$_rfs_batch_status" = "completed" ] || [ "$_rfs_batch_status" = "done" ] || [ "$_rfs_batch_status" = "failed" ]; then
             _rfs_validated_fp="$_rfs_current_fp"
-            _rfs_batch_worker=$(python3 - "$_rfs_batch_report" <<'PY'
+            if [ -z "$_rfs_batch_worker" ]; then
+                _rfs_batch_worker=$(python3 - "$_rfs_batch_report" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 print(str(data.get("worker_id", "")))
 PY
 )
-            _rfs_batch_parent=$(python3 - "$_rfs_batch_report" <<'PY'
+            fi
+            if [ -z "$_rfs_batch_parent" ]; then
+                _rfs_batch_parent=$(python3 - "$_rfs_batch_report" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 print(str(data.get("parent_cmd", "")))
 PY
 )
+            fi
             [ -n "$_rfs_batch_worker" ] && [ -n "$_rfs_batch_parent" ] || {
                 echo "BLOCK: terminal report lacks worker_id/parent_cmd for durable publish" >&2
                 exit 1
@@ -249,6 +291,28 @@ PY
                     "$(sha256sum "$_rfs_batch_report" | awk '{print $1}')" >>"$_rfs_phase_receipt"
             fi
         fi
+    fi
+    [ -n "$_rfs_batch_meta_file" ] && rm -f "$_rfs_batch_meta_file"
+    # cmd_karo_impl_report_publish_latency_20260725: publish経路の相別所要時間を
+    # 既存台帳 logs/defense_overhead.jsonl へ流す(新台帳を作らない)。
+    # /dev/shmのTSV receiptはプロセス毎に消えるため前後比較の母数にできなかった。
+    if [ "${RFS_PUBLISH_TELEMETRY:-1}" = "1" ] \
+        && [ -f "$_rfs_batch_root/scripts/lib/defense_overhead_writer.sh" ]; then
+        # shellcheck source=/dev/null
+        source "$_rfs_batch_root/scripts/lib/defense_overhead_writer.sh"
+        _rfs_publish_total_ms=$(( $(_rfs_mono_ms) - _rfs_wait_started ))
+        _rfs_telemetry_args=()
+        while IFS=$'\t' read -r _rfs_tp _rfs_tw _; do
+            case "$_rfs_tp" in
+                singleflight_wait|atomic_replace|terminal_meta|inbox_write|publish) ;;
+                *) continue ;;
+            esac
+            _rfs_telemetry_args+=(report_publish "$_rfs_tp" "${_rfs_tw#wall_ms=}" PASS \
+                "report_publish:${_rfs_tp}:$$:${_rfs_wait_started}")
+        done < "$_rfs_phase_receipt"
+        _rfs_telemetry_args+=(report_publish publish_total "$_rfs_publish_total_ms" PASS \
+            "report_publish:total:$$:${_rfs_wait_started}")
+        defense_overhead_write_batch_async "${_rfs_telemetry_args[@]}"
     fi
     exit "$_rfs_batch_rc"
 fi
