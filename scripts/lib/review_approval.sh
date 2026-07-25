@@ -50,7 +50,7 @@ PY
     cache_key=$(printf '%s:%s' "$(realpath "$report")" "$content_hash" | sha256sum | awk '{print $1}')
     cache_file="$REVIEW_FP_CACHE_DIR/$cache_key"
     if [ -s "$cache_file" ]; then
-        cat "$cache_file"
+        head -n 1 "$cache_file"
         return 0
     fi
     # Validate that a commit identity is determinable (fail-closed gate).
@@ -157,15 +157,13 @@ PY
     # used only as a gate (see above) and intentionally excluded from the value
     # so that correcting commit_hash / cross_repo_commits after approval does
     # not require a new review cycle.
-    # Persist the gate's commit identity beside the fingerprint.  The fingerprint
-    # itself no longer carries it (cmd_4156 / 3718e7245), so callers that must
-    # branch on no-code vs implementation identity read this sidecar instead of
-    # string-splitting the fingerprint.
-    printf '%s\n' "$commit_identity" > "$cache_file.identity.tmp.$BASHPID"
-    mv -f "$cache_file.identity.tmp.$BASHPID" "$cache_file.identity"
-    printf '%s\n' "$content_hash" > "$cache_file.tmp.$BASHPID"
+    # One report identity == one cache entry (line 1 = fingerprint, line 2 = the
+    # gate's decided commit identity).  The identity is kept in the SAME file
+    # rather than a sidecar so the cache boundary stays "1 entry per (path,
+    # content)" and a single atomic mv publishes both values together.
+    printf '%s\n%s\n' "$content_hash" "$commit_identity" > "$cache_file.tmp.$BASHPID"
     mv -f "$cache_file.tmp.$BASHPID" "$cache_file"
-    cat "$cache_file"
+    head -n 1 "$cache_file"
 }
 
 # Commit identity of a report as decided by the fingerprint gate:
@@ -174,12 +172,11 @@ PY
 # (only reachable under REVIEW_FAIL_CLOSE_IDENTITY_EXEMPT=1).
 review_report_commit_identity() {
     local report="$1" content_hash cache_key cache_file
-    review_report_fingerprint "$report" >/dev/null || return 1
     content_hash=$(review_report_fingerprint "$report") || return 1
     cache_key=$(printf '%s:%s' "$(realpath "$report")" "$content_hash" | sha256sum | awk '{print $1}')
-    cache_file="$REVIEW_FP_CACHE_DIR/$cache_key.identity"
+    cache_file="$REVIEW_FP_CACHE_DIR/$cache_key"
     [ -f "$cache_file" ] || return 1
-    head -n 1 "$cache_file"
+    sed -n '2p' "$cache_file"
 }
 
 # RC on a report-only task must require a substantive report correction, not an
