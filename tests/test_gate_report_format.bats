@@ -24,6 +24,29 @@ teardown() {
     unset GATE_PASS_CACHE_FILE GATE_FIRE_LOG_FILE SKILL_EXECUTION_LOG_FILE
 }
 
+# Helper: fixture repoを作る唯一の入口。
+# REPO_TMPDIR_BATSは本番repoの直下にあるため、git initが失敗すると .git が不完全なまま残り、
+# 以降の `git -C "$repo" add/commit` は discovery が親を遡って**本番repoに解決される**。
+# 実測(B31): /mnt/c(DrvFs)では config.lock の chmod が EPERM で init が rc=128 になり、
+# _setup_ac3_hunk_repo の `commit -q -m "init"` が本番mainへ他者のstage済み変更を
+# message="init"でcommitしていた(9e88ddc28 / da5dbb369)。
+# ∴ initの成否ではなく「このgitが本当にfixture repoを指しているか」を実体で検査し、
+# 逸脱していればcommitへ到達する前にsubshellごと落とす。
+_init_fixture_repo() {
+    local repo="$1"
+    mkdir -p "$repo"
+    git -C "$repo" init -q || true
+    local top expected
+    top="$(git -C "$repo" rev-parse --show-toplevel 2>/dev/null || true)"
+    expected="$(cd "$repo" && pwd -P)"
+    if [ "$top" != "$expected" ]; then
+        echo "FATAL: fixture git init escaped to '${top:-<none>}' (expected '$expected'). Aborting before any commit reaches the production repo." >&2
+        exit 1
+    fi
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+}
+
 # Helper: create a minimal valid report
 create_valid_report() {
     local path="${1:-$TMPDIR_BATS/report.yaml}"
@@ -1050,9 +1073,7 @@ YAML
     local repo="$REPO_TMPDIR_BATS/session_state_repo"
     local report="$repo/reports/testninja_report_cmd_test.yaml"
     mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs"
-    git -C "$repo" init -q
-    git -C "$repo" config user.email test@example.com
-    git -C "$repo" config user.name test
+    _init_fixture_repo "$repo"
     cat > "$repo/queue/tasks/testninja.yaml" <<'YAML'
 task:
   status: in_progress
@@ -1121,9 +1142,7 @@ YAML
     local repo="$REPO_TMPDIR_BATS/task_status_repo"
     local report="$repo/reports/testninja_report_cmd_test.yaml"
     mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs"
-    git -C "$repo" init -q
-    git -C "$repo" config user.email test@example.com
-    git -C "$repo" config user.name test
+    _init_fixture_repo "$repo"
     cat > "$repo/queue/tasks/testninja.yaml" <<'YAML'
 task:
   status: in_progress
@@ -1180,9 +1199,7 @@ YAML
     local repo="$REPO_TMPDIR_BATS/multicommit_nonoverlap_repo"
     local report="$repo/reports/testninja_report_cmd_multi.yaml"
     mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs"
-    git -C "$repo" init -q
-    git -C "$repo" config user.email test@example.com
-    git -C "$repo" config user.name test
+    _init_fixture_repo "$repo"
     mkdir -p "$repo/context"
     printf 'one\ntwo\nthree\nfour\n' > "$repo/context/shared.txt"
     git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m init
@@ -1211,9 +1228,7 @@ YAML
     local repo="$REPO_TMPDIR_BATS/multicommit_unowned_repo"
     local report="$repo/reports/testninja_report_cmd_multi.yaml"
     mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs"
-    git -C "$repo" init -q
-    git -C "$repo" config user.email test@example.com
-    git -C "$repo" config user.name test
+    _init_fixture_repo "$repo"
     mkdir -p "$repo/context"
     printf 'one\ntwo\nthree\nfour\n' > "$repo/context/shared.txt"
     git -C "$repo" add context/shared.txt && git -C "$repo" commit -q -m init
@@ -1248,9 +1263,7 @@ _setup_ac3_hunk_repo() {
     local repo="$1"
     local autocommit_line_edit="$2"
     mkdir -p "$repo/queue/tasks" "$repo/reports" "$repo/logs"
-    git -C "$repo" init -q
-    git -C "$repo" config user.email test@example.com
-    git -C "$repo" config user.name test
+    _init_fixture_repo "$repo"
     cat > "$repo/queue/tasks/testninja.yaml" <<'YAML'
 task:
   status: in_progress
@@ -1362,4 +1375,90 @@ YAML
     [[ "$output" != *"Traceback"* ]]
     [[ "$output" == *"WARN(cmd_3264-AC3)"* ]]
     [[ "$output" == *"shared.txt"* ]]
+}
+
+# ─── DIVERGENT v2 の実体判定 (cmd_karo_impl_divergent_detector_fix_20260726) ───
+# test_necessity: 契約/環境がブロックしている間の正しい再提出ではDIVERGENTを発火させず、
+# 同一のアプローチ起因BLOCKが継続する反復では従来どおり発火し続けること(両方向)。
+DIAGNOSE_GATE="scripts/gates/gate_diagnose_check.sh"
+
+# 診断文とapproachは実データ(queue/tasks/hanzo.yaml prior_attempts attempt6-8)由来。
+# 3ケースとも同一文面を使うため、差を生むのは「実体=BLOCK理由」だけになる。
+_divergent_fixture() {  # $1=prior block_reason
+    local diag='commit_contract.planned_paths が実装1件のみで、AC4が明示的に要求するtest fixtureを含んでいない。許可scopeの正本はtask YAMLであり報告側では解消できない。'
+    local approach='残骸をrepo外へ集約移動しTTL retentionを既存cleanupへ載せた。交互A/B計測では-11.6%。'
+    local task_dir="$TMPDIR_BATS/state/tasks"
+    mkdir -p "$task_dir" "$TMPDIR_BATS/reports"
+    cat > "$task_dir/fixninja.yaml" <<YAML
+task:
+  status: in_progress
+  session_state:
+    attempt: 7
+    prior_attempts:
+    - attempt: 6
+      block_reason: '$1'
+      diagnose_reason: '$diag'
+      approach_summary: '$approach'
+YAML
+    cat > "$TMPDIR_BATS/reports/r.yaml" <<YAML
+worker_id: fixninja
+parent_cmd: cmd_fix
+status: completed
+diagnose_reason: '$diag'
+result:
+  summary: '$approach'
+YAML
+}
+
+@test "DIVERGENT v2: 契約起因BLOCK(planned scope外)では同一診断の再提出でも発火しない" {
+    local reason='commit_contract: files_modified path is outside planned scope: tests/unit/test_scratch_retention.bats'
+    _divergent_fixture "$reason"
+    run env GATE_SESSION_STATE_TASK_DIR="$TMPDIR_BATS/state/tasks" \
+        bash "$DIAGNOSE_GATE" "$TMPDIR_BATS/reports/r.yaml" "$reason"
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"DIVERGENT v2"* ]]
+    [[ "$output" == *"DIVERGENT抑止"* ]]
+}
+
+@test "DIVERGENT v2: BLOCK理由が前回から変化していればblockしない(同じ壁での足踏みではない)" {
+    _divergent_fixture 'variation_checks: required cells unfilled: normal_pass'
+    run env GATE_SESSION_STATE_TASK_DIR="$TMPDIR_BATS/state/tasks" \
+        bash "$DIAGNOSE_GATE" "$TMPDIR_BATS/reports/r.yaml" 'binary_checks.AC3[2].result: 空文字'
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"DIVERGENT v2"* ]]
+}
+
+@test "DIVERGENT v2: 同一のアプローチ起因BLOCKが継続する反復は従来どおり発火する" {
+    local reason='binary_checks.AC1[0].result: 空文字。"yes" または "no" を記入せよ'
+    _divergent_fixture "$reason"
+    run env GATE_SESSION_STATE_TASK_DIR="$TMPDIR_BATS/state/tasks" \
+        bash "$DIAGNOSE_GATE" "$TMPDIR_BATS/reports/r.yaml" "$reason"
+    echo "$output"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"DIVERGENT v2"* ]]
+}
+
+# --- B31: fixture repoの本番repoへの逸脱を止める両方向fixture ---
+# test_necessity: fixture用のgitコマンドは、fixture repo以外(特に本番repo)を対象にしてはならない。
+
+@test "T-B31-1: _init_fixture_repo aborts when git discovery escapes the fixture dir" {
+    local repo="$TMPDIR_BATS/escaped_repo"
+    mkdir -p "$repo"
+    # initを不能にする(書込み不可) → .gitが作られず discovery が外へ逃げる状態を作る
+    chmod 500 "$repo"
+    run _init_fixture_repo "$repo"
+    chmod 700 "$repo"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"FATAL: fixture git init escaped"* ]]
+}
+
+@test "T-B31-2: _init_fixture_repo accepts a genuine isolated fixture repo" {
+    local repo="$TMPDIR_BATS/genuine_repo"
+    run _init_fixture_repo "$repo"
+    echo "$output"
+    [ "$status" -eq 0 ]
+    [ "$(git -C "$repo" rev-parse --show-toplevel)" = "$(cd "$repo" && pwd -P)" ]
+    [ "$(git -C "$repo" config user.name)" = "test" ]
 }
