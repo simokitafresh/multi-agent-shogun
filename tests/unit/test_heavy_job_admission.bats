@@ -520,11 +520,14 @@ print('ok')
         cat "$fixture/a.err" "$fixture/a.out" "$fixture/b.err" "$fixture/b.out" "$fixture"/receipts/*.output >&3
         return 1
     fi
-    [ "$(find "$fixture/receipts" -name '*.json' | wc -l)" -eq 1 ]
+    # A join also writes a small structured .join_status.json sidecar
+    # (cmd_karo_impl_singleflight_tree_identity_20260726 AC4); exclude it here
+    # so this count still proves "exactly one real receipt, no re-run".
+    [ "$(find "$fixture/receipts" -name '*.json' ! -name '*.join_status.json' | wc -l)" -eq 1 ]
     grep -q 'SINGLE_FLIGHT_JOINED' "$fixture/b.err"
     grep -q 'SINGLE_FLIGHT_HEARTBEAT' "$fixture/b.err"
     grep -q 'joined=1' "$fixture/b.out"
-    [ "$(python3 -c 'import json,glob; d=json.load(open(glob.glob("'"$fixture"'/receipts/*.json")[0])); print(d["observed_test_count"])')" -eq 1 ]
+    [ "$(python3 -c 'import json,glob; d=json.load(open(sorted(p for p in glob.glob("'"$fixture"'/receipts/*.json") if not p.endswith(".join_status.json"))[0])); print(d["observed_test_count"])')" -eq 1 ]
 }
 
 # test_necessity: terminal receiptを残してleaderが死に子孫だけがlock FDを保持しても、followerが10秒以内に停止せず同一結果へ収束する契約。
@@ -553,7 +556,20 @@ print('ok')
     local holder=$!
     local holder_pgid
     holder_pgid="$(ps -o pgid= -p "$holder" | tr -d ' ')"
-    printf '%s\n99999999\norphan-generation\n%s\n' "$receipt" "$holder_pgid" > "$fixture/sf/unit.state"
+    # cmd_karo_impl_singleflight_tree_identity_20260726: the follower now
+    # cross-checks the dead owner's recorded tree identity (lines 5-6) against
+    # its OWN tree before joining. Compute the exact same fingerprint the
+    # follower (running from $linked, mode=unit) will independently derive, so
+    # this fixture keeps exercising "orphan lock holder recovery" rather than
+    # tripping the (unrelated) tree-mismatch guard.
+    local _seed_selection _seed_head _seed_dirty
+    _seed_selection="$(find "$linked/tests/unit" -maxdepth 1 -name '*.bats' -type f -print | sort -u)"
+    _seed_head="$(git -C "$linked" rev-parse HEAD)"
+    _seed_dirty="$(
+        { printf '%s\n' "$_seed_selection"; git -C "$linked" status --porcelain -- "$linked/tests/unit/pass.bats" 2>/dev/null; } \
+        | sha256sum | awk '{print $1}'
+    )"
+    printf '%s\n99999999\norphan-generation\n%s\n%s\n%s\n' "$receipt" "$holder_pgid" "$_seed_head" "$_seed_dirty" > "$fixture/sf/unit.state"
     local started=$SECONDS
     run timeout 12 env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED RUN_TESTS_RECEIPT_DIR="$fixture/receipts-follow" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 RUN_TESTS_SINGLEFLIGHT_STALE_SECONDS=2 BATS_MAX_TEST_JOBS=1 \
         REPO_ROOT="$linked" bash "$linked/scripts/run_tests.sh" unit

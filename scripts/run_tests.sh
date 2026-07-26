@@ -931,11 +931,28 @@ emit_run_tests_terminal_receipt() {
         printf 'TEST_RECEIPT_BLOCK path=%s rc=2\n' "$receipt" >&2
         return 2
     }
+    # AC4 (cmd_karo_impl_singleflight_tree_identity_20260726): whether this
+    # invocation joined another run's receipt was previously only visible as
+    # a "joined=1" token in this stdout line -- an indirect, body-grep-only
+    # signal (today's cross-cutting theme). The shared receipt JSON itself
+    # cannot gain a "joined" key without changing its strict schema (which
+    # run_with_receipt.sh, the leader's own receipt writer, is not part of
+    # this task's scope to touch). Instead, write a small structured sidecar
+    # a caller can read directly instead of parsing process output.
     python3 - "$receipt" "$@" <<'PY'
 import json, sys
 path=sys.argv[1]; suffix=" ".join(sys.argv[2:])
+flags = dict(tok.split("=", 1) for tok in sys.argv[2:] if "=" in tok)
 d=json.load(open(path, encoding="utf-8")); rc=d["rc"]
 label="PASS" if rc == 0 else "FAIL"
+if flags.get("joined") == "1":
+    sidecar_path = path + ".join_status.json"
+    with open(sidecar_path, "w", encoding="utf-8") as fh:
+        json.dump({
+            "joined": True,
+            "stale_owner": flags.get("stale_owner") == "1",
+            "leader_receipt": path,
+        }, fh)
 print("TEST_RECEIPT_{} path={} rc={} tests={}/{} skip={} sha256={} duration_ms={}{}".format(
     label, path, rc, d["observed_test_count"], d["declared_test_count"],
     d["skip_count"], d["output_sha256"], d["duration_ms"],
@@ -1578,6 +1595,50 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             _sf_stale_timeout="${RUN_TESTS_SINGLEFLIGHT_STALE_SECONDS:-10}"
             [[ "$_sf_heartbeat" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid single-flight heartbeat interval" >&2; exit 2; }
             [[ "$_sf_stale_timeout" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid single-flight stale timeout" >&2; exit 2; }
+            # This invocation's own tree identity (source root/HEAD/dirty-hash).
+            # Recorded by the leader so a joiner can prove it is the SAME tree
+            # the leader actually tested, not merely "the same file selection"
+            # (cmd_karo_impl_singleflight_tree_identity_20260726: join previously
+            # validated only the receipt's FORM, never tree identity, so a
+            # joiner's terminal-receipt could silently be someone else's tree).
+            # Scoped to source_head + selection input + the SELECTED test
+            # files' own dirty status only (gunshi draft review, adopted by
+            # karo): a whole-repo `git status --porcelain` changes every
+            # second in a shared worktree with 6 ninjas writing concurrently,
+            # so an unscoped exact-match would almost never hold and would
+            # defeat the join optimization entirely for everyone (conflicts
+            # with "削るな速くしろ"). Only changes to the files that actually
+            # affect THIS run's test results should count as a mismatch.
+            _sf_tree_root="$REPO_ROOT"
+            if [[ "$_mode" == task ]]; then
+                _sf_tree_root="$(task_scope_root "${2:-}")" \
+                    || { echo "BLOCK: task source root could not be resolved" >&2; exit 2; }
+            fi
+            _sf_tree_head="$(git -C "$_sf_tree_root" rev-parse HEAD)"
+            # `file` mode may legitimately target a path outside this repo
+            # entirely (an isolated test fixture, e.g. a bats tmpdir); `git
+            # status --porcelain -- <path>` fatals on a pathspec outside the
+            # tree, and that fatal exit propagates through `set -eo pipefail`
+            # even with stderr redirected. Only ask git about paths that are
+            # actually inside this tree; an external path has no repo-tracked
+            # dirty state to compare, so it is simply excluded from the hash.
+            mapfile -t _sf_dirty_scope_paths < <(
+                printf '%s\n' "$_sf_selection" | sed '/^$/d; /^readonly-probe:/d; /^task-identity:/d' \
+                    | while IFS= read -r _sf_candidate; do
+                        _sf_candidate_real="$(realpath -- "$_sf_candidate" 2>/dev/null)" || continue
+                        case "$_sf_candidate_real" in
+                            "$_sf_tree_root"/*) printf '%s\n' "$_sf_candidate" ;;
+                        esac
+                    done
+            )
+            _sf_tree_dirty="$(
+                {
+                    printf '%s\n' "$_sf_selection"
+                    if [ "${#_sf_dirty_scope_paths[@]}" -gt 0 ]; then
+                        git -C "$_sf_tree_root" status --porcelain -- "${_sf_dirty_scope_paths[@]}" 2>/dev/null
+                    fi
+                } | sha256sum | awk '{print $1}'
+            )"
             exec {_sf_fd}>"$_sf_lock"
             if ! flock -n "$_sf_fd"; then
                 printf 'SINGLE_FLIGHT_FOLLOWER mode=%s waiting_for_leader=1\n' "$_mode" >&2
@@ -1590,6 +1651,8 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                         _sf_owner="$(sed -n '2p' "$_sf_state" 2>/dev/null || true)"
                         _sf_generation="$(sed -n '3p' "$_sf_state" 2>/dev/null || true)"
                         _sf_owner_pgid="$(sed -n '4p' "$_sf_state" 2>/dev/null || true)"
+                        _sf_leader_tree_head="$(sed -n '5p' "$_sf_state" 2>/dev/null || true)"
+                        _sf_leader_tree_dirty="$(sed -n '6p' "$_sf_state" 2>/dev/null || true)"
                         [[ "$_sf_owner" =~ ^[1-9][0-9]*$ ]] \
                             || { echo "BLOCK: single-flight stale owner metadata invalid" >&2; exit 2; }
                         if kill -0 "$_sf_owner" 2>/dev/null; then
@@ -1606,6 +1669,18 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                                 "$_mode" "$_receipt" >&2
                             break 2
                         fi
+                        # Tree identity: the dead leader's receipt is only a valid
+                        # stand-in for THIS invocation if it tested the exact same
+                        # HEAD + working-tree dirty state we would test right now.
+                        # Missing fields (older state file format) count as a
+                        # mismatch -- unproven identity is never treated as a match.
+                        if [[ -z "$_sf_leader_tree_head" || "$_sf_tree_head" != "$_sf_leader_tree_head" \
+                              || "$_sf_tree_dirty" != "$_sf_leader_tree_dirty" ]]; then
+                            rm -f "$_sf_state"
+                            printf 'SINGLE_FLIGHT_TREE_MISMATCH mode=%s action=restart_leader receipt=%s\n' \
+                                "$_mode" "$_receipt" >&2
+                            break 2
+                        fi
                         _sf_holders="$(fuser "$_sf_lock" 2>/dev/null | awk '{print NF}' || true)"
                         _sf_holders="${_sf_holders:-0}"
                         _sf_descendants="$(ps -e -o pgid=,pid= 2>/dev/null | awk -v pgid="$_sf_owner_pgid" -v owner="$_sf_owner" '$1 == pgid && $2 != owner { n++ } END { print n+0 }')"
@@ -1618,11 +1693,21 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                 done
                 [ -s "$_sf_state" ] || { echo "BLOCK: single-flight leader state missing" >&2; exit 2; }
                 _receipt="$(sed -n '1p' "$_sf_state")"
+                _sf_leader_tree_head="$(sed -n '5p' "$_sf_state" 2>/dev/null || true)"
+                _sf_leader_tree_dirty="$(sed -n '6p' "$_sf_state" 2>/dev/null || true)"
                 validate_run_tests_terminal_receipt "$_receipt" >/dev/null \
                     || { echo "BLOCK: single-flight leader receipt invalid" >&2; exit 2; }
-                printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s\n' "$_mode" "$_receipt" >&2
-                emit_run_tests_terminal_receipt "$_receipt" joined=1
-                exit $?
+                if [[ -n "$_sf_leader_tree_head" && "$_sf_tree_head" == "$_sf_leader_tree_head" \
+                      && "$_sf_tree_dirty" == "$_sf_leader_tree_dirty" ]]; then
+                    printf 'SINGLE_FLIGHT_JOINED mode=%s receipt=%s\n' "$_mode" "$_receipt" >&2
+                    emit_run_tests_terminal_receipt "$_receipt" joined=1
+                    exit $?
+                fi
+                # Tree mismatch: the leader tested a different tree than the one
+                # this invocation actually has. Do not claim its receipt as our
+                # own -- fall through and become the new leader instead.
+                printf 'SINGLE_FLIGHT_TREE_MISMATCH mode=%s action=restart_leader receipt=%s\n' \
+                    "$_mode" "$_receipt" >&2
             fi
         fi
         _selector_input="${_sf_selection:-$_mode}"
@@ -1637,7 +1722,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
             fi
             _sf_generation="$(date -u +%s%N)-$$"
             _sf_owner_pgid="$(ps -o pgid= -p $$ | tr -d ' ')"
-            printf '%s\n%s\n%s\n%s\n' "$_receipt" "$$" "$_sf_generation" "$_sf_owner_pgid" > "$_sf_state"
+            printf '%s\n%s\n%s\n%s\n%s\n%s\n' "$_receipt" "$$" "$_sf_generation" "$_sf_owner_pgid" "$_sf_tree_head" "$_sf_tree_dirty" > "$_sf_state"
             export RUN_TESTS_SINGLEFLIGHT_LEADER_PENDING=1
             export RUN_TESTS_SINGLEFLIGHT_MODE="$_mode"
             export RUN_TESTS_SINGLEFLIGHT_SELECTION_COUNT
