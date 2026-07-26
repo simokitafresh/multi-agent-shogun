@@ -354,6 +354,9 @@ When you receive `inboxN` (e.g. `inbox3`):
    **Edit toolでのinbox既読化は禁止** — flock未使用のためLost Update(メッセージ消失)が発生する
 5. Resume normal workflow
 
+- **positive_rule**: **指示・命令を `low` / `info` / `gate_clear` / `heartbeat` / `status_update` / `retro_answer` のtypeで送るな。** watcherはこの6typeを「判断不要の情報通知」とみなし**自動既読化して `logs/inbox_info_digest.jsonl` へ退避する。受け手のターンを起こさない**(`scripts/inbox_mark_read.sh:112` の `allowed` 集合)。指示は `task_assigned` 等の起床するtypeで送れ。
+- **reason**: 2026-07-26、家老が `report_received` のBLOCKを回避して `status_update` へ切り替え、以後の忍者宛指示(才蔵5通・影丸2通・飛猿1通・半蔵1通)が全てdigestへ退避され**1件も届かなかった**。家老は40分を「指示の書き方が悪い」と誤診し3度書き直した。∴**一度のBLOCK回避が、以後の全指示を無効化した。** これは「正規フローが通らない=調査対象、迂回するな」(deepdive causal_tracing Phase 6)の実例であり、**BLOCKされた時に別typeへ逃げるのはgate迂回の変形**である。
+
 **Also**: After completing ANY task, check your inbox for unread messages before going idle.
 This is a safety net — even if the wake-up nudge was missed, messages are still in the file.
 
