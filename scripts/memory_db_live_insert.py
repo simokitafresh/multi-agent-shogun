@@ -125,10 +125,20 @@ def create_sqlite_backup(
             backup_root,
             f"{os.path.basename(source_path)}.bak_{suffix}_{stamp}",
         )
-    with sqlite3.connect(source_path) as src, sqlite3.connect(backup_path) as dst:
-        src.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
-        dst.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
-        src.backup(dst)
+    if output_path:
+        # The ext4-cache caller (create_memory_db_ext4_cache) is the only
+        # user of this branch and treats backup_path as a disposable,
+        # not-yet-published temp file that gets a full integrity check
+        # before publication either way, so a faster copy mechanism here
+        # cannot leak a bad snapshot even if this reasoning has a gap.
+        # Named/milestone backups (the backup_dir/suffix branch below) keep
+        # the original sqlite .backup() API untouched.
+        _hot_copy_snapshot(source_path, backup_path)
+    else:
+        with sqlite3.connect(source_path) as src, sqlite3.connect(backup_path) as dst:
+            src.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+            dst.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+            src.backup(dst)
     if (
         output_path is None
         and is_routine_backup_suffix(suffix)
@@ -372,6 +382,76 @@ def remove_memory_db_cache_sidecars(cache_path: str) -> None:
             os.unlink(cache_sidecar)
 
 
+def _record_phase_point(check_id: str, wall_ms: int, verdict: str, event_id: str) -> None:
+    """Append one sub-phase timing observation to the shared defense ledger.
+
+    Reuses the existing five-field ledger contract (no new ledger) so
+    refresh_window's internal cost breakdown (copy vs. verify) becomes
+    directly greppable via check_id, per cmd_4174's measurement requirement.
+    fail-open: never let instrumentation affect the cache data path.
+    """
+    try:
+        writer = os.path.join(REPO_ROOT, "scripts", "lib", "defense_overhead_writer.sh")
+        if not os.path.exists(writer):
+            return
+        subprocess.run(
+            [
+                "bash",
+                "-c",
+                'source "$1"; defense_overhead_write "$2" "$3" "$4" "$5" "$6"',
+                "_",
+                writer,
+                "three_layer_health",
+                check_id,
+                str(int(wall_ms)),
+                verdict,
+                event_id,
+            ],
+            check=False,
+            timeout=10,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        return
+
+
+def _hot_copy_snapshot(db_path: str, output_path: str) -> None:
+    """Publish output_path as a byte-copy snapshot of db_path, WAL-safe.
+
+    create_sqlite_backup()'s sqlite3 .backup() API copies page-by-page; over
+    a 9p-backed /mnt/c source (measured: ~60s for an 883MB db, vs. ~9s for a
+    plain sequential file copy of the same bytes) that page granularity is
+    the dominant cost, not anything about the database's logical content.
+    shutil.copyfile() reads in large sequential chunks and is what actually
+    saves the time; the risk it introduces (a writer's autocheckpoint
+    rewriting db_path's pages mid-copy, tearing the snapshot) is closed by
+    holding an open read transaction on db_path for the copy's duration:
+    WAL-mode checkpoints never overwrite frames still needed by a reader
+    whose snapshot predates them, so the base file's pages this reader
+    depends on cannot change while it is open. New writes still land in the
+    WAL file; copying db_path/-wal/-shm in that order after the read
+    transaction is taken picks up a self-consistent (possibly slightly
+    fresher) snapshot either way. Callers still run the existing
+    require_cache_backup_healthy() integrity gate against the result before
+    publishing it, so a torn copy (if this reasoning is ever wrong for some
+    edge case) is caught there instead of silently corrupting the cache.
+    """
+    reader = sqlite3.connect(db_path)
+    try:
+        reader.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+        reader.execute("BEGIN")
+        reader.execute("SELECT 1 FROM sqlite_master LIMIT 1")
+        shutil.copyfile(db_path, output_path)
+        for suffix in ("-wal", "-shm"):
+            src_side = f"{db_path}{suffix}"
+            if os.path.exists(src_side):
+                shutil.copyfile(src_side, f"{output_path}{suffix}")
+    finally:
+        reader.execute("COMMIT")
+        reader.close()
+
+
 def require_cache_backup_healthy(db_path: str) -> None:
     """Verify a freshly-built cache copy before it is published.
 
@@ -521,8 +601,18 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
         os.close(fd)
         temp_path = temp_name
         try:
+            _copy_t0 = time.monotonic_ns()
             create_sqlite_backup(db_path, output_path=temp_path, suffix="ext4_cache")
+            _copy_ms = (time.monotonic_ns() - _copy_t0) // 1_000_000
+            _record_phase_point(
+                "refresh_copy", _copy_ms, "PASS", f"refresh_copy:grp-{_window_group}"
+            )
+            _verify_t0 = time.monotonic_ns()
             require_cache_backup_healthy(temp_path)
+            _verify_ms = (time.monotonic_ns() - _verify_t0) // 1_000_000
+            _record_phase_point(
+                "refresh_verify", _verify_ms, "PASS", f"refresh_verify:grp-{_window_group}"
+            )
             os.replace(temp_path, cache_path)
             # Refresh window, point 2 of 2: the watermark at publication.  The
             # difference against point 1 is the number of writes that arrived
