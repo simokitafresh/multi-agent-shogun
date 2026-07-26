@@ -1091,3 +1091,37 @@ FAKEEOF
     run _run_hook "git stash show"
     [ "$status" -eq 0 ]
 }
+
+# test_necessity: cmd_4175 grounds git_pre_commit's affected_tests dominant term (台帳実測
+# mean=113s/max=1303s) by splitting queue-wait from execution. Metrics must stay opt-in so
+# direct/unrelated wrapper callers (this suite's own 80 other cases, semantic_causal_post_clear.sh)
+# never write into the shared ledger by accident, and both events must land with correct wall_ms.
+@test "wrapper: SHOGUN_HEAVY_JOB_ADMISSION_METRICS=1 records queue_wait and execution; unset writes nothing" {
+    local ledger="$TMP/defense_overhead.jsonl"
+
+    run env -u SHOGUN_HEAVY_JOB_ADMISSION_METRICS DEFENSE_OVERHEAD_LEDGER="$ledger" bash "$WRAPPER" -- bash -c 'exit 0'
+    [ "$status" -eq 0 ]
+    [ ! -e "$ledger" ]
+
+    run env SHOGUN_HEAVY_JOB_ADMISSION_METRICS=1 DEFENSE_OVERHEAD_LEDGER="$ledger" \
+        bash "$WRAPPER" -- bash -c 'sleep 1; exit 0'
+    [ "$status" -eq 0 ]
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+        [ "$(wc -l <"$ledger" 2>/dev/null || echo 0)" -ge 2 ] && break
+        sleep 0.3
+    done
+    [ "$(wc -l <"$ledger")" -eq 2 ]
+    run grep -c '"check_id":"queue_wait"' "$ledger"
+    [ "$output" -eq 1 ]
+    run grep -c '"check_id":"execution"' "$ledger"
+    [ "$output" -eq 1 ]
+    run python3 -c "
+import json
+rows = [json.loads(l) for l in open('$ledger')]
+exec_row = next(r for r in rows if r['check_id'] == 'execution')
+assert exec_row['source'] == 'heavy_job_admission'
+assert exec_row['verdict'] == 'PASS'
+assert exec_row['wall_ms'] >= 900, exec_row['wall_ms']
+"
+    [ "$status" -eq 0 ]
+}

@@ -1338,7 +1338,8 @@ _run_tests_main() {
         # that inner identity across the admission re-exec; otherwise the
         # admitted process is mistaken for a second public invocation and
         # publishes a duplicate terminal receipt for the same run.
-        exec bash "$(dirname "$_self")/heavy_job_admission.sh" -- \
+        exec env SHOGUN_HEAVY_JOB_ADMISSION_METRICS=1 \
+            bash "$(dirname "$_self")/heavy_job_admission.sh" -- \
             bash "$_self" --receipt-inner "$@"
     fi
 

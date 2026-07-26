@@ -23,6 +23,27 @@
 #     self-deadlockしない(nested呼出しdeadlock対策)。
 set -euo pipefail
 
+# cmd_4175: opt-in check_id-granular timing (queue_wait / execution) so the
+# git_pre_commit affected_tests dominant term (台帳実測 n=183 mean=113s
+# max=1303s) can be split into "waiting for the host-wide semaphore" vs.
+# "actually running tests" without guessing. Off by default: this wrapper is
+# also invoked directly, unwrapped, by test fixtures that copy only this file
+# (no scripts/lib/ alongside) and by other callers (semantic_causal_post_clear.sh)
+# that have no stake in this ledger. Only run_tests.sh's self-reexec opts in
+# (SHOGUN_HEAVY_JOB_ADMISSION_METRICS=1) so this can never write duplicate/
+# unrelated noise into a caller's own ledger context by accident.
+_hja_metrics_enabled=0
+if [[ "${SHOGUN_HEAVY_JOB_ADMISSION_METRICS:-0}" == "1" ]]; then
+    _hja_self="${BASH_SOURCE[0]:-$0}"
+    _hja_lib="$(cd "$(dirname "$_hja_self")" && pwd)/lib/defense_overhead_writer.sh"
+    if [[ -f "$_hja_lib" ]]; then
+        # shellcheck disable=SC1090,SC1091
+        source "$_hja_lib"
+        _hja_metrics_enabled=1
+    fi
+    unset _hja_self _hja_lib
+fi
+
 # v2: 2026-07-15、旧lockのFDがdurable背景workerへ継承され、そのworkerが
 # SHOGUN_HEAVY_JOB_LOCK_HELD=0で再入して自己デッドロックした。現在の旧inodeを
 # 自然timeoutへ隔離しつつ、修正済み契約を即時復旧するためlock世代も更新する。
@@ -201,7 +222,12 @@ cleanup_owner_metadata() {
     [[ "$recorded_pid" == "$$" ]] && rm -f "$OWNER_FILE"
 }
 trap cleanup_owner_metadata EXIT
-printf 'HEAVY_ADMISSION_ACQUIRED owner_pid=%s queue_age_sec=%s\n' "$$" "$((owner_started - queue_started))" >&2
+_hja_queue_age_sec=$((owner_started - queue_started))
+printf 'HEAVY_ADMISSION_ACQUIRED owner_pid=%s queue_age_sec=%s\n' "$$" "$_hja_queue_age_sec" >&2
+if [[ "$_hja_metrics_enabled" == "1" ]]; then
+    defense_overhead_write_async heavy_job_admission queue_wait "$((_hja_queue_age_sec * 1000))" \
+        PASS "hja-${owner_generation}-queue"
+fi
 
 p9_pids=""
 set +e
@@ -233,6 +259,11 @@ ADMISSION_FD="$admission_fd" RUN_FD="${run_fd:-}" setsid bash -c '
 leader_pid=$!
 rc=0
 wait "$leader_pid" || rc=$?
+if [[ "$_hja_metrics_enabled" == "1" ]]; then
+    defense_overhead_write_async heavy_job_admission execution \
+        "$(( ($(date +%s) - owner_started) * 1000 ))" \
+        "$([[ "$rc" -eq 0 ]] && echo PASS || echo FAIL)" "hja-${owner_generation}-exec"
+fi
 drain_started=$SECONDS
 while process_group_has_live_member "$leader_pid"; do
     if (( SECONDS - drain_started >= DRAIN_TIMEOUT )); then
