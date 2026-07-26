@@ -91,15 +91,15 @@ commit_contract:
   - scripts/deepdive_replay.sh
   repo_root: /mnt/c/tools/multi-agent-shogun
 ac_evidence_mapping:
-  AC1: ''
-  AC2: ''
-  AC3: ''
-  AC4: ''
+  AC1: "コマンド: grep -cE 'READ_REQUIRED|recovery-cache-mark' scripts/gates/gate_karo_startup.sh scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_shogun_startup.sh → 出力(生): karo:0/gunshi:3/shogun:0。証跡=queue/reports本文AC1節+scripts/gates/gate_gunshi_startup.sh:10-70(sha256 content-hash機構)。1件の定義=正規表現マッチ行数の合計。網羅範囲=3ロールのstartup gateのみ"
+  AC2: "コマンド: deepdive_replay.shをウォーム5回実行しtime計測; wc -l logs/deepdive_replay/karo.jsonl; grep -c '^## Phase' memory/deepdive_why_chain_20260321.md memory/deepdive_karo_verification_20260405.md → 出力: 中央値0.06秒(0.07/0.06/0.06/0.05/0.06)、karo.jsonl本日18件(全36行中)、Phase数10+8=18一致。証跡=本文AC2節"
+  AC3: "コマンド: wc -l instructions/karo.md instructions/gunshi.md instructions/shogun.md; grep -c '^## ' 各ファイル → 出力: karo565行/18節、gunshi1223行/22節、shogun385行/12節。機械コスト見積り=0.06秒×Phase数(karo1.08秒/gunshi1.32秒/shogun0.72秒)、読解時間は見積り不能。証跡=本文AC3節、(A)(B)方式比較表"
+  AC4: "コマンド: git status/git diff確認(コード変更0件)、gate/hook出力確認(未解消条件0件) → 出力: 変更ファイル=報告YAMLのみ。commit_contract.required=falseでcode変更なしを確認。証跡=本文AC4節+commit_contract欄"
 semantic_validation:
-  classification_axis: ''
-  recount: ''
-  actual: ''
-  result: ''
+  classification_axis: "AC1-AC3で用いた分類軸: (1)機構の実在性(grepヒット有無) (2)機構のBLOCK接続性(overall変数/stop hookへの結線有無) (3)AC3見積り可否(機械コストは実測可・読解コストは見積り不能)"
+  recount: AC1のgrepを2回(scripts/ .claude/hooks/全体版と3ロールstartup gate限定版)実行し同一趣旨の結果を確認。AC2は1Phase時間を5回実行し中央値算出、Phase数はwc/grepで2ファイルとも再カウントし一致確認
+  actual: "実測値: karo:0件/gunshi:3件/shogun:0件(READ_REQUIRED系)。1Phase中央値0.06秒。karo本日受領証18件/総Phase18。instructions行数565/1223/385、節数18/22/12"
+  result: 各ACのcheck文言と実施内容が一致。AC1は家老前提(a)の訂正(gunshi分は機構実在だがBLOCK未接続)、AC2は3点の実測値、AC3は機械コスト見積り+読解コスト見積り不能の明記、AC4は無変更確認まで完了
 files_modified:
 - path: queue/reports/hayate_report_cmd_karo_cycle5_instructions_receipt_feasibility_20260727.yaml
   change: 本cmdの成果物は本報告のみ(調査タスク・コード変更なし)
