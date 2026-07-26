@@ -7,65 +7,65 @@ cli:
   agents:
     shogun:
       type: claude
-      model_name: opus-4-6-high
+      model_name: fable-5-low
       role: shogun
       japanese_name: 将軍
-      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions --effort high
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model claude-fable-5 --effort low
     karo:
-      type: codex
-      model_name: gpt-5.6-sol-medium
+      type: claude
+      model_name: opus-5-1m-low
       role: karo
-      launch_cmd: 
+      launch_cmd: "/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort low"
       service_tier: fast
       japanese_name: 家老
     gunshi:
       type: claude
-      model_name: opus-4-6-1m-high
+      model_name: opus-5-1m-low
       role: gunshi
-      launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions --effort high
+      launch_cmd: "/home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model 'claude-opus-5[1m]' --effort low"
       japanese_name: 軍師
     hayate:
-      type: codex
-      model_name: gpt-5.6-sol-low
+      type: claude
+      model_name: sonnet-5-low
       role: ninja
       japanese_name: 疾風
       service_tier: default
-      launch_cmd: 
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort low
     kagemaru:
-      type: codex
-      model_name: gpt-5.6-sol-low
+      type: claude
+      model_name: sonnet-5-low
       role: ninja
       japanese_name: 影丸
       service_tier: default
-      launch_cmd: 
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort low
     hanzo:
-      type: codex
-      model_name: gpt-5.6-sol-low
+      type: claude
+      model_name: sonnet-5-low
       role: ninja
       japanese_name: 半蔵
       service_tier: default
-      launch_cmd: 
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort low
     saizo:
-      type: codex
-      model_name: gpt-5.6-sol-low
+      type: claude
+      model_name: sonnet-5-low
       role: ninja
       japanese_name: 才蔵
       service_tier: default
-      launch_cmd: 
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort low
     kotaro:
-      type: codex
-      model_name: gpt-5.6-sol-low
+      type: claude
+      model_name: sonnet-5-low
       role: ninja
       japanese_name: 小太郎
       service_tier: default
-      launch_cmd: 
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort low
     tobisaru:
-      type: codex
-      model_name: gpt-5.6-sol-low
+      type: claude
+      model_name: sonnet-5-low
       role: ninja
       japanese_name: 飛猿
       service_tier: default
-      launch_cmd: 
+      launch_cmd: /home/simokitafresh/.local/bin/claude --dangerously-skip-permissions --model sonnet --effort low
 idle_cycle: on
 effort: high
 token_budget:
@@ -81,3 +81,7 @@ logging:
 layout:
   col1_width_pct: 36
   karo_height: 24
+type: claude
+model_name: sonnet-4-6-high
+launch_cmd: /home/simokitafresh/bin/claude --dangerously-skip-permissions --effort high
+service_tier: 

@@ -92,6 +92,19 @@ pane_lookup() {
         fi
     fi
 
+    # Source 1.5: sessionワイド探索
+    # 将軍は shogun:agents ではなく別window(shogun:main)に常駐する。
+    # @agent_id はwindowを跨いで一意なので、session全体を走査して解決する。
+    if command -v tmux >/dev/null 2>&1; then
+        local _pl_wpane _pl_wagent
+        while read -r _pl_wpane _pl_wagent; do
+            if [[ "$_pl_wagent" == "$name" ]]; then
+                echo "shogun:${_pl_wpane}"
+                return 0
+            fi
+        done < <(tmux list-panes -s -t shogun -F '#{window_index}.#{pane_index} #{@agent_id}' 2>/dev/null)
+    fi
+
     # Source 2: 静的フォールバック (tmux未起動時)
     local static_pane="${_PANE_LOOKUP_MAP[$name]:-}"
     if [ -n "$static_pane" ]; then
