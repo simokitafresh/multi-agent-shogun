@@ -76,6 +76,8 @@ GATE CLEAR後の因果監査は`semantic_index_update → semantic_map_generate 
 
 三層preflightのmemory/semantic読取は、stale検知中も最後にatomic publishされた完全snapshotを返し、refresh childをcommand substitutionの待機対象にしない。`semantic_search.sh`は共有cache helperへ収束する一方、非default DB cacheのsidecar清掃とhelper未同梱時のstandalone alias検索という既存二契約を維持する。修正前は並行writer下10/10 timeout（memory124・semantic124）だったが、修正後は10/10成功、関連Bats 64/64 PASS・SKIP0、実運用のcmd_complete_gate併走中preflightも2.33秒・exit 0。→ `scripts/lib/memory_db_cache.sh` / `scripts/semantic_search.sh` / `tests/unit/test_memory_db_cache_warmup.bats`（cmd_karo_hotfix_preflight_concurrent_writes_202607150705、commits `1c9db0f38`, `b05faaaa5`）
 
+cache refreshは**並列に実行され、公開順序が逆転する**（`os.replace`で先に始まった窓が後に終わる）。B48の2点計測（mkstemp直前+os.replace直後にrowid+時刻を記録）22-23窓の実測: 窓長 median 124.3秒（min 16.5/max 244.6=**定数でなく分布**。理論値75秒は実測の6割）、取りこぼし median 9.5件、**公開順序の逆転2件**（1422610→1422600、1422663→1422652）。ただし逆転は2分46秒/1分47秒で回復し前の高さを超える。**逆転中の検索3件は全件hit>0・no_match=0・exit=0で、各検索の3〜12秒前の書込みが存在した状態で成立** = B45の`rowid水位比較+delta`が並列公開の逆転まで覆っている。∴`memory_db_cache.sh:55-57`/`:153-155`の残存mtime3条件は**是正不要・記録のみ**（PD-134クローズ）。**未確認**: `search_logs`に結果内容の列が無く（id/ts/caller/agent_id/query/hit_count/no_match/elapsed_ms/exit_code/created_at）、返された内容そのものの正しさは**原理的に事後検証できない**。→ `scripts/memory_db_live_insert.py` / `scripts/lib/memory_db_cache.sh` / `logs/defense_overhead.jsonl`（source=three_layer_health, check_id=refresh_window）（cmd_karo_impl_b48_refresh_window_2point_telemetry_20260726、PD-134）
+
 配備の排他はcmd別lockに加え、同じ忍者のtask/report mutationからdurable task_start通知までを忍者別flockで直列化する。待機後は`assigned|acknowledged|in_progress`の別cmdを再読して上書きBLOCKするため、異なるcmdの同時配備でもtask YAMLを混線させない。破損taskはsame-cmd再利用を禁止してstale reset+atomic `--yaml` publishへ必ず戻す。→ `scripts/deploy_task.sh` / `tests/unit/test_deploy_task_lifecycle.bats`（GA-257/258、commits `e6847f0ab`, `448eba94b`、全量76/76 PASS・SKIP0）
 
 Bats直接実行は`run_timed_bats.sh`へ集約し、既存writerの14列台帳へ必ず追記する。速度修行task生成もwrapperを強制し、`gate_test_health.sh`が完了reportと台帳の対象集合差を検知する。夜戦欠測7件をbackfillし、台帳543→551・coverage 7/7・対象24/24 PASS。→ `scripts/run_timed_bats.sh` / `scripts/test_speed_task_generator.sh` / `scripts/gates/gate_test_health.sh`（cmd_3942、commit `7e11d37c5`）
@@ -886,7 +888,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1349 -->
+<!-- last_synced_lesson: L1350 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1949,6 +1951,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1347: git logのpathspec検索はbounded(-n N)でも高負荷下で重い。graph walk+選択的diff-treeへ分解せよ（cmd_karo_impl_b46_commit_ownership_all_history_20260726）
 - L1348: 理論窓長からの導出は実測窓長の半分だった — 窓は導出せず両端で測れ（cmd_karo_impl_b48_refresh_window_2point_telemetry_20260726）
 - L1349: 境界hashはgate出力の転記だけでなく実装ロジックから素性を確認せよ（cmd_karo_impl_ctx_infrastructure_freshness_20260726）
+- L1350: 非同期起動されたgateの『待ち』は工程和ではなくgate本体の実行時間で上限が決まる（cmd_karo_recon_finalize_polling_to_event_20260726）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
