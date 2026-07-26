@@ -1,0 +1,110 @@
+scripts/gates/gate_artifact_map.sh	no	no	no test file references this detector
+scripts/gates/gate_autofix_proposal.sh	no	yes	positive=- negative=tests/unit/test_gate_small_consolidated.bats
+scripts/gates/gate_cmd_state.sh	yes	yes	positive=tests/unit/test_gate_cmd_state.bats negative=tests/unit/test_gate_cmd_state.bats
+scripts/gates/gate_codd_regression.sh	no	no	no test file references this detector
+scripts/gates/gate_codex_hooks_no_stop.sh	yes	yes	positive=tests/unit/test_gate_codex_hooks_no_stop.bats negative=tests/unit/test_gate_codex_hooks_no_stop.bats
+scripts/gates/gate_codex_safe_write.sh	no	no	no test file references this detector
+scripts/gates/gate_context_freshness.sh	yes	yes	positive=tests/unit/test_cmd_complete_gate_context_freshness_block.bats,tests/unit/test_cmd_complete_wrapper.bats,tests/unit/test_gate_context_freshness.bats negative=tests/unit/test_cmd_complete_gate_context_freshness_block.bats,tests/unit/test_cmd_complete_wrapper.bats,tests/unit/test_gate_context_freshness.bats
+scripts/gates/gate_cycle_health.sh	no	no	no test file references this detector
+scripts/gates/gate_daemon.py	no	no	no test file references this detector
+scripts/gates/gate_dc_duplicate.sh	yes	yes	positive=tests/unit/test_cmd_complete_gate.bats negative=tests/helpers/cmd_gate_scaffold.bash,tests/unit/test_cmd_complete_gate.bats
+scripts/gates/gate_design_cmd_handoff.sh	no	no	no test file references this detector
+scripts/gates/gate_diagnose_check.sh	yes	yes	positive=tests/test_gate_report_format.bats negative=tests/test_gate_report_format.bats
+scripts/gates/gate_enforcement_audit.sh	no	no	no test file references this detector
+scripts/gates/gate_field_get.sh	no	no	no test file references this detector
+scripts/gates/gate_fp_relaxation_proposal.py	no	yes	positive=- negative=tests/unit/test_gate_small_consolidated.bats
+scripts/gates/gate_gunshi_accuracy.sh	no	no	no test file references this detector
+scripts/gates/gate_gunshi_cs_checklist.sh	yes	no	positive=tests/unit/test_gate_gunshi_cs_checklist.bats negative=-
+scripts/gates/gate_gunshi_observations.sh	no	no	no test file references this detector
+scripts/gates/gate_gunshi_report_precheck.sh	yes	yes	positive=tests/unit/test_defense_overhead_writer.bats,tests/unit/test_deploy_task_nocode_commit_contract.bats,tests/unit/test_gate_gunshi_report_precheck.bats,tests/unit/test_gate_gunshi_report_precheck_direct_hash.bats,tests/unit/test_gate_hot_path_no_sync_io.bats negative=tests/unit/test_defense_overhead_writer.bats,tests/unit/test_deploy_task_nocode_commit_contract.bats,tests/unit/test_gate_gunshi_report_precheck.bats,tests/unit/test_gate_gunshi_report_precheck_cache.bats,tests/unit/test_gate_gunshi_report_precheck_direct_hash.bats,tests/unit/test_gate_hot_path_no_sync_io.bats
+scripts/gates/gate_gunshi_report_precheck_engine.py	yes	yes	positive=tests/unit/test_gate_gunshi_report_precheck.bats negative=tests/unit/test_gate_gunshi_report_precheck.bats
+scripts/gates/gate_gunshi_startup.sh	no	yes	positive=- negative=tests/unit/test_gate_small_consolidated.bats
+scripts/gates/gate_hooks_no_runtime_incident_ids.sh	yes	yes	positive=tests/unit/test_gate_single_check_consolidated.bats negative=tests/unit/test_gate_single_check_consolidated.bats
+scripts/gates/gate_hot_path_no_sync_io.sh	yes	yes	positive=tests/unit/test_gate_hot_path_no_sync_io.bats negative=tests/unit/test_gate_hot_path_no_sync_io.bats
+scripts/gates/gate_immunity_depth.sh	no	no	no test file references this detector
+scripts/gates/gate_karo_startup.sh	yes	yes	positive=tests/unit/test_gate_karo_startup.bats negative=tests/unit/test_disk_space_watch.bats,tests/unit/test_escalation_decision_ledger.bats,tests/unit/test_gate_karo_startup.bats
+scripts/gates/gate_knowledge_freshness.sh	yes	yes	positive=tests/unit/test_gate_knowledge_freshness.bats negative=tests/unit/test_gate_small_consolidated.bats
+scripts/gates/gate_lesson_enforcement_level.sh	yes	yes	positive=tests/unit/test_loop_ledger_promotion.bats negative=tests/unit/test_ninja_monitor_training_auto.bats
+scripts/gates/gate_lesson_health.sh	yes	yes	positive=tests/unit/test_ninja_monitor_stall.bats negative=tests/unit/test_ninja_monitor_stall.bats
+scripts/gates/gate_loop_health.sh	yes	yes	positive=tests/unit/test_ninja_monitor_stall.bats negative=tests/unit/test_ninja_monitor_stall.bats
+scripts/gates/gate_mcp_access.sh	yes	yes	positive=tests/unit/test_gate_mcp_access.bats negative=tests/unit/test_gate_mcp_access.bats
+scripts/gates/gate_memory_db_live_insert_async.sh	no	no	no test file references this detector
+scripts/gates/gate_ninja_workaround_rate.sh	no	yes	positive=- negative=tests/unit/test_gate_small_consolidated.bats
+scripts/gates/gate_no_direct_yaml_dump.sh	yes	yes	positive=tests/unit/test_gate_single_check_consolidated.bats negative=tests/unit/test_gate_single_check_consolidated.bats
+scripts/gates/gate_no_hardcoded_ninja_list.sh	no	no	no test file references this detector
+scripts/gates/gate_p_average_freshness.sh	no	no	positive=- negative=-
+scripts/gates/gate_pd_sync.sh	yes	yes	positive=tests/unit/test_pending_decision_write.bats negative=tests/unit/test_pending_decision_write.bats
+scripts/gates/gate_queue_yaml_parse.sh	yes	yes	positive=tests/unit/test_gate_queue_yaml_parse.bats negative=tests/unit/test_gate_queue_yaml_parse.bats
+scripts/gates/gate_queue_yaml_reader_migration.sh	yes	yes	positive=tests/unit/test_gate_queue_yaml_reader_migration.bats negative=tests/unit/test_gate_queue_yaml_reader_migration.bats
+scripts/gates/gate_recalculate_completeness.sh	no	no	no test file references this detector
+scripts/gates/gate_report_autofix.sh	yes	yes	positive=tests/test_gate_report_format.bats,tests/unit/test_cmd_complete_gate.bats,tests/unit/test_gate_report_autofix.bats,tests/unit/test_gate_report_format_pass_no_improvement.bats,tests/unit/test_inbox_write.bats,tests/unit/test_skill_feedback_loop.bats negative=tests/test_gate_report_format.bats,tests/unit/test_cmd_complete_gate.bats,tests/unit/test_gate_report_autofix.bats,tests/unit/test_gate_report_format_cmd_3630_env_info.bats,tests/unit/test_gate_report_format_pass_no_improvement.bats,tests/unit/test_inbox_write.bats,tests/unit/test_skill_feedback_loop.bats
+scripts/gates/gate_report_autofix_main.py	yes	yes	positive=tests/unit/test_gate_report_autofix.bats,tests/unit/test_gate_report_format_pass_no_improvement.bats,tests/unit/test_skill_feedback_loop.bats negative=tests/unit/test_gate_report_autofix.bats,tests/unit/test_gate_report_format_cmd_3630_env_info.bats,tests/unit/test_gate_report_format_pass_no_improvement.bats,tests/unit/test_skill_feedback_loop.bats
+scripts/gates/gate_report_format.sh	yes	yes	positive=tests/test_gate_report_format.bats,tests/unit/test_cmd_complete_gate.bats,tests/unit/test_deploy_task_ac_handling.bats,tests/unit/test_gate_hot_path_no_sync_io.bats,tests/unit/test_gate_report_autofix.bats,tests/unit/test_gate_report_format_pass_no_improvement.bats,tests/unit/test_gate_report_format_singleflight.bats,tests/unit/test_inbox_write.bats,tests/unit/test_ninja_done.bats,tests/unit/test_ninja_monitor_stall.bats,tests/unit/test_report_commit_identity.bats,tests/unit/test_report_field_set_batch_throughput.bats,tests/unit/test_skill_feedback_loop.bats,tests/unit/test_write_edit_combined_hooks.bats negative=tests/test_gate_report_format.bats,tests/unit/test_cmd_complete_gate.bats,tests/unit/test_deploy_task_ac_handling.bats,tests/unit/test_gate_hot_path_no_sync_io.bats,tests/unit/test_gate_report_autofix.bats,tests/unit/test_gate_report_format_cmd_3630_env_info.bats,tests/unit/test_gate_report_format_pass_no_improvement.bats,tests/unit/test_gate_report_format_singleflight.bats,tests/unit/test_gate_small_consolidated.bats,tests/unit/test_inbox_write.bats,tests/unit/test_ninja_done.bats,tests/unit/test_ninja_monitor.bats,tests/unit/test_ninja_monitor_stall.bats,tests/unit/test_ninja_monitor_training_auto.bats,tests/unit/test_report_commit_identity.bats,tests/unit/test_report_field_set_batch_throughput.bats,tests/unit/test_skill_feedback_loop.bats,tests/unit/test_write_edit_combined_hooks.bats
+scripts/gates/gate_report_format_combined.py	yes	yes	positive=tests/unit/test_gate_report_format_pass_no_improvement.bats,tests/unit/test_skill_feedback_loop.bats negative=tests/unit/test_gate_report_format_cmd_3630_env_info.bats,tests/unit/test_gate_report_format_pass_no_improvement.bats,tests/unit/test_skill_feedback_loop.bats
+scripts/gates/gate_report_format_main.py	yes	yes	positive=tests/test_gate_report_format.bats,tests/unit/test_gate_report_format_pass_no_improvement.bats,tests/unit/test_report_commit_identity.bats,tests/unit/test_skill_feedback_loop.bats negative=tests/test_gate_report_format.bats,tests/unit/test_gate_report_format_cmd_3630_env_info.bats,tests/unit/test_gate_report_format_pass_no_improvement.bats,tests/unit/test_report_commit_identity.bats,tests/unit/test_skill_feedback_loop.bats
+scripts/gates/gate_set_e_short_circuit.sh	yes	yes	positive=tests/unit/test_gate_set_e_short_circuit.bats negative=tests/unit/test_gate_set_e_short_circuit.bats
+scripts/gates/gate_shogun_memory.sh	no	no	no test file references this detector
+scripts/gates/gate_shogun_startup.sh	yes	yes	positive=tests/unit/test_gate_shogun_startup.bats,tests/unit/test_heavy_job_admission.bats negative=tests/unit/test_disk_space_watch.bats,tests/unit/test_gate_shogun_startup.bats,tests/unit/test_heavy_job_admission.bats
+scripts/gates/gate_silent_fallback.sh	no	no	no test file references this detector
+scripts/gates/gate_skill_health.sh	no	no	no test file references this detector
+scripts/gates/gate_skill_quality.sh	no	yes	positive=- negative=tests/unit/test_gate_small_consolidated.bats
+scripts/gates/gate_skill_script_refs.sh	yes	yes	positive=tests/unit/test_cmd_complete_gate.bats,tests/unit/test_cmd_complete_gate_subsystems.bats,tests/unit/test_deploy_task_nocode_commit_contract.bats,tests/unit/test_gate_skill_script_refs.bats negative=tests/unit/test_cmd_complete_gate.bats,tests/unit/test_cmd_complete_gate_subsystems.bats,tests/unit/test_deploy_task_nocode_commit_contract.bats,tests/unit/test_gate_skill_script_refs.bats,tests/unit/test_gate_small_consolidated.bats
+scripts/gates/gate_test_health.sh	yes	yes	positive=tests/unit/test_cmd_save_block_aggregation.bats,tests/unit/test_gate_test_health_ledger.bats negative=tests/unit/test_cmd_save_block_aggregation.bats,tests/unit/test_gate_test_health_ledger.bats
+scripts/gates/gate_three_layer_health.sh	yes	yes	positive=tests/unit/test_gate_three_layer_health_capacity.bats,tests/unit/test_report_commit_identity.bats negative=tests/unit/test_gate_three_layer_health_capacity.bats,tests/unit/test_memory_db_query_rowid_watermark.bats,tests/unit/test_report_commit_identity.bats
+scripts/gates/gate_universal_shard.py	no	no	no test file references this detector
+scripts/gates/gate_vercel_phase.sh	no	no	no test file references this detector
+scripts/gates/gate_wa_data_quality.sh	yes	yes	positive=tests/unit/test_gate_wa_data_quality.bats negative=tests/unit/test_gate_wa_data_quality.bats
+scripts/gates/gate_workaround_rate.sh	no	no	no test file references this detector
+scripts/gates/gate_yaml_field_set_block_sync.sh	yes	yes	positive=tests/unit/test_gate_yaml_field_set_block_sync.bats negative=tests/unit/test_gate_yaml_field_set_block_sync.bats
+scripts/gates/gate_yaml_status.sh	yes	yes	positive=tests/unit/test_cmd_complete_resume.bats,tests/unit/test_cmd_complete_wrapper.bats negative=tests/helpers/cmd_gate_scaffold.bash,tests/unit/test_cmd_complete_resume.bats,tests/unit/test_cmd_complete_wrapper.bats
+scripts/gates/lesson_context_routes.sh	yes	yes	positive=tests/unit/test_lesson_write.bats negative=tests/unit/test_lesson_write.bats
+scripts/gates/mark_no_learning.sh	no	yes	positive=- negative=tests/unit/test_learning_ops_small_consolidated.bats
+scripts/gates/session_alerts_render.sh	no	no	no test file references this detector
+.claude/hooks/hook_violation_logger.py	no	no	no test file references this detector
+.claude/hooks/post-bash-combined.sh	yes	yes	positive=tests/unit/test_test_result_guard_summary_scope.bats negative=tests/unit/test_post_bash_cmd_save_guard.bats,tests/unit/test_test_result_guard_summary_scope.bats
+.claude/hooks/post-bash-commit-reminder.sh	yes	yes	positive=tests/unit/test_scope_resolvers_contract.bats negative=tests/unit/test_scope_resolvers_contract.bats
+.claude/hooks/post-bulletin-notify-read-check.sh	no	no	no test file references this detector
+.claude/hooks/post-edit-instruction-hook-consistency.sh	no	no	no test file references this detector
+.claude/hooks/post-edit-report-guard.sh	no	no	no test file references this detector
+.claude/hooks/post-search-completeness-guard.sh	no	no	no test file references this detector
+.claude/hooks/post-shogun-inbox-check.sh	yes	yes	positive=tests/unit/test_post_shogun_warning_state_contract.bats negative=tests/unit/test_post_shogun_warning_state_contract.bats
+.claude/hooks/post-skill-execution.sh	yes	yes	positive=tests/unit/test_skill_dispatch_payload_contract.bats negative=tests/unit/test_skill_dispatch_payload_contract.bats
+.claude/hooks/post-write-edit-combined.sh	yes	yes	positive=tests/unit/test_write_edit_combined_hooks.bats negative=tests/unit/test_write_edit_combined_hooks.bats
+.claude/hooks/post-write-shellcheck.sh	no	no	no test file references this detector
+.claude/hooks/posttool-dispatch.sh	no	no	no test file references this detector
+.claude/hooks/pre-bash-combined.sh	yes	yes	positive=tests/unit/test_dm_signal_research_reflux_guard.bats,tests/unit/test_guard14_dbcheck_overmatch.bats,tests/unit/test_heavy_job_admission.bats,tests/unit/test_pre_bash_combined.bats,tests/unit/test_pre_bash_destructive_approval.bats,tests/unit/test_pre_bash_task_yaml_guard.bats,tests/unit/test_three_layer_preflight.bats negative=tests/unit/test_dm_signal_research_reflux_guard.bats,tests/unit/test_guard14_dbcheck_overmatch.bats,tests/unit/test_heavy_job_admission.bats,tests/unit/test_pre_bash_combined.bats,tests/unit/test_pre_bash_destructive_approval.bats,tests/unit/test_pre_bash_task_yaml_guard.bats,tests/unit/test_shogun_to_karo_mutation_classify.py,tests/unit/test_three_layer_preflight.bats
+.claude/hooks/pre-bash-no-verify-guard.sh	no	no	no test file references this detector
+.claude/hooks/pre-bash-yaml-dump-guard.sh	no	no	no test file references this detector
+.claude/hooks/pre-edit-pi-inject.sh	no	no	no test file references this detector
+.claude/hooks/pre-edit-report-deny.sh	no	no	no test file references this detector
+.claude/hooks/pre-edit-workaround-deny.sh	no	no	no test file references this detector
+.claude/hooks/pre-skill-project-guard.sh	no	no	no test file references this detector
+.claude/hooks/pre-write-config-guard.sh	no	no	no test file references this detector
+.claude/hooks/pre-write-edit-combined.sh	yes	yes	positive=tests/unit/test_three_layer_preflight.bats,tests/unit/test_write_edit_combined_hooks.bats negative=tests/unit/test_three_layer_preflight.bats,tests/unit/test_write_edit_combined_hooks.bats
+.claude/hooks/pre-write-read-tracker.sh	no	no	no test file references this detector
+.claude/hooks/pretool-dispatch.sh	yes	yes	positive=tests/unit/test_pre_bash_destructive_approval.bats,tests/unit/test_skill_dispatch_payload_contract.bats negative=tests/unit/test_pre_bash_destructive_approval.bats,tests/unit/test_skill_dispatch_payload_contract.bats
+.claude/hooks/stop-lint-gate.sh	no	yes	positive=- negative=tests/unit/test_stop_check_inbox.bats
+scripts/hooks/bash_state_hook.sh	no	no	no test file references this detector
+scripts/hooks/block_destructive.sh	no	yes	positive=- negative=tests/test_block_destructive.bats
+scripts/hooks/codex_session_start.sh	yes	yes	positive=tests/unit/test_gate_codex_hooks_no_stop.bats negative=tests/unit/test_gate_codex_hooks_no_stop.bats
+scripts/hooks/codex_skill_execution_guard.sh	yes	yes	positive=tests/unit/test_codex_skill_execution_guard.bats negative=tests/unit/test_codex_skill_execution_guard.bats
+scripts/hooks/codex_user_prompt_submit.sh	yes	yes	positive=tests/unit/test_gate_codex_hooks_no_stop.bats negative=tests/unit/test_gate_codex_hooks_no_stop.bats
+scripts/hooks/git-pre-commit.sh	yes	yes	positive=tests/unit/test_defense_overhead_writer.bats,tests/unit/test_git_pre_commit_affected_deps.bats,tests/unit/test_git_pre_commit_context_metadata.bats,tests/unit/test_git_pre_commit_sourced_dep.bats,tests/unit/test_ninja_scope_commit.bats,tests/unit/test_scope_path.bats,tests/unit/test_sync_git_hooks.bats negative=tests/unit/test_defense_overhead_writer.bats,tests/unit/test_git_pre_commit_affected_deps.bats,tests/unit/test_git_pre_commit_context_metadata.bats,tests/unit/test_git_pre_commit_self_sync.bats,tests/unit/test_git_pre_commit_sourced_dep.bats,tests/unit/test_ninja_scope_commit.bats,tests/unit/test_scope_path.bats,tests/unit/test_sync_git_hooks.bats
+scripts/hooks/git-stage-guard.py	no	no	no test file references this detector
+scripts/hooks/memory_db_fts5_preflight.py	no	yes	positive=- negative=tests/unit/test_memory_db_fts5_preflight.bats
+scripts/hooks/pre-bash-report-deny.sh	no	no	no test file references this detector
+scripts/hooks/pre-bash-test-fullrun-guard.sh	no	no	no test file references this detector
+scripts/hooks/pre-karo-edit-guard.sh	yes	yes	positive=tests/unit/test_scope_resolvers_contract.bats negative=tests/unit/test_scope_resolvers_contract.bats
+scripts/hooks/pre-mcp-lord-attribution-guard.sh	no	no	no test file references this detector
+scripts/hooks/pre-write-report-deny.sh	no	no	no test file references this detector
+scripts/hooks/pre_compact_save.sh	no	no	no test file references this detector
+scripts/hooks/prompt_state_inject.sh	yes	yes	positive=tests/unit/test_gate_codex_hooks_no_stop.bats,tests/unit/test_prompt_state_all_roles_memory.bats negative=tests/unit/test_gate_codex_hooks_no_stop.bats,tests/unit/test_prompt_state_all_roles_memory.bats
+scripts/hooks/session_end_clear_check.sh	no	no	no test file references this detector
+scripts/hooks/session_start_inject.sh	yes	yes	positive=tests/unit/test_gate_codex_hooks_no_stop.bats negative=tests/unit/test_gate_codex_hooks_no_stop.bats
+scripts/hooks/stop_check_inbox.sh	yes	yes	positive=tests/unit/test_cmd_complete_gate.bats negative=tests/unit/test_cmd_complete_gate.bats,tests/unit/test_stop_check_inbox.bats
+scripts/hooks/stop_session_alerts.sh	no	no	no test file references this detector
+scripts/hooks/test_result_guard.sh	yes	yes	positive=tests/unit/test_test_result_guard_summary_scope.bats negative=tests/unit/test_test_result_guard_summary_scope.bats
+scripts/hooks/three_layer_preflight.sh	yes	yes	positive=tests/unit/test_three_layer_preflight.bats negative=tests/unit/test_three_layer_preflight.bats
+.git/hooks/commit-msg	yes	yes	positive=tests/unit/test_sync_git_hooks.bats negative=tests/test_helper/bats-assert/.git/hooks/applypatch-msg.sample,tests/test_helper/bats-assert/.git/hooks/commit-msg.sample,tests/test_helper/bats-support/.git/hooks/applypatch-msg.sample,tests/test_helper/bats-support/.git/hooks/commit-msg.sample,tests/unit/test_sync_git_hooks.bats
+.git/hooks/pre-commit	yes	yes	positive=tests/unit/test_defense_overhead_writer.bats,tests/unit/test_git_pre_commit_affected_deps.bats,tests/unit/test_git_pre_commit_context_metadata.bats,tests/unit/test_git_pre_commit_sourced_dep.bats,tests/unit/test_ninja_scope_commit.bats,tests/unit/test_scope_path.bats,tests/unit/test_sync_git_hooks.bats negative=tests/test_helper/bats-assert/.git/hooks/pre-commit.sample,tests/test_helper/bats-support/.git/hooks/pre-commit.sample,tests/unit/test_defense_overhead_writer.bats,tests/unit/test_git_pre_commit_affected_deps.bats,tests/unit/test_git_pre_commit_context_metadata.bats,tests/unit/test_git_pre_commit_self_sync.bats,tests/unit/test_git_pre_commit_sourced_dep.bats,tests/unit/test_ninja_monitor_clear_guard.bats,tests/unit/test_ninja_scope_commit.bats,tests/unit/test_scope_path.bats,tests/unit/test_stop_check_inbox.bats,tests/unit/test_sync_git_hooks.bats
+.git/hooks/pre-push	yes	yes	positive=tests/unit/test_pre_push_dirty_tree_guard.bats,tests/unit/test_sync_git_hooks.bats negative=tests/unit/test_gate_small_consolidated.bats,tests/unit/test_git_pre_commit_self_sync.bats,tests/unit/test_pre_push_dirty_tree_guard.bats,tests/unit/test_sync_git_hooks.bats
