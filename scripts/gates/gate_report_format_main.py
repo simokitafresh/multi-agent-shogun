@@ -17,7 +17,7 @@ _PROJECT_ROOT = pathlib.Path(
     os.environ.get("PROJECT_ROOT") or pathlib.Path(__file__).resolve().parents[2]
 ).resolve()
 sys.path.insert(0, str(_PROJECT_ROOT / "scripts" / "lib"))
-from report_commit_identity import valid_commit_identity
+from report_commit_identity import permits_no_code_identity, valid_commit_identity
 from ac_contract import canonical_assigned_ids
 from cross_repo_commit_contract import validate_cross_repo_commits
 
@@ -196,6 +196,15 @@ def commit_contract_errors(report, task, root):
     if isinstance(contract, dict) and contract.get("required") is False:
         return []
     identity = str(report.get("commit_hash") or "").strip()
+    # cmd_karo_hotfix_no_code_identity_20260727: report_commit_identity.py が no-code報告の
+    # 正本判定(permits_no_code_identity: tree_unchanged+before==after の40hex, explicit_no_commit,
+    # operational_files_only の積)を持つのに、この関数は一度も呼んでいなかった(grep 0件を才蔵が実測)。
+    # 結果 recon/scout以外のno-code報告は 40hex commit_hash を作れず構造的にFAILし、
+    # review_approval.sh:132 の no-code経路と要求が相反していた(疾風/才蔵の2件でGATE deadlock)。
+    # commit_hash は空文字とsentinel('no-code-change'等)の両方が実際に使われているため、
+    # 40hexでないこと自体を条件にせず、no-code identityの3条件成立で許可する。
+    if not re.fullmatch(r"[0-9a-f]{40}", identity) and permits_no_code_identity(report, root):
+        return []
     if not re.fullmatch(r"[0-9a-f]{40}", identity):
         return ["required commit_hash is missing or invalid"]
     evidence = report.get("commit_identity_evidence")
