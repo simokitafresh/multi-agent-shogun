@@ -2328,7 +2328,10 @@ EOF
     : > "$metrics"
     : > "$TEST_PROJECT/notify.log"
 
-    REVIEW_APPROVAL_ROOT="$TEST_PROJECT" REVIEW_APPROVAL_NO_TRIGGER=1 \
+    # cmd_karo_impl_approval_log_atomic_20260726: gunshi LGTM は台帳エントリ不在で fail-closed
+    # になった。本testの対象は normalize 後の approved report 検査であり台帳契約ではないため、
+    # fixture では検査だけ無効化する。
+    REVIEW_APPROVAL_ROOT="$TEST_PROJECT" REVIEW_APPROVAL_NO_TRIGGER=1 REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 \
         bash "$PROJECT_ROOT/scripts/review_approval.sh" "$TEST_CMD_ID" gunshi LGTM "$report"
     REVIEW_APPROVAL_ROOT="$TEST_PROJECT" REVIEW_APPROVAL_NO_TRIGGER=1 \
         bash "$PROJECT_ROOT/scripts/review_approval.sh" "$TEST_CMD_ID" karo ACCEPT "$report"
