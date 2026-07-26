@@ -161,6 +161,7 @@ created_by = sys.argv[5]
 timestamp = sys.argv[6]
 dashboard_path = sys.argv[7]
 origin = sys.argv[8]
+dedup_key = os.environ.get('PD_DEDUP_KEY', '').strip()
 
 def _atomic_write_text(path, content):
     tmp_fd, tmp_path = tempfile.mkstemp(dir=os.path.dirname(path), suffix='.tmp')
@@ -217,6 +218,35 @@ try:
     if not data.get('decisions'):
         data['decisions'] = []
 
+    def _persist(all_decisions):
+        _total = len(all_decisions)
+        _resolved = sum(1 for d in all_decisions if isinstance(d, dict) and d.get('status') == 'resolved')
+        ordered = {'summary': {'total': _total, 'resolved': _resolved, 'pending': _total - _resolved},
+                   'decisions': all_decisions}
+        sys.path.insert(0, os.path.dirname(os.path.dirname(data_path)))
+        from scripts.lib.yaml_atomic import atomic_yaml_write
+        atomic_yaml_write(data_path, ordered, indent=2, sort_keys=False)
+
+    # 同一事象の重複PD抑止: dedup_keyが一致するpending PDがあれば、新規createせず既存を更新する。
+    # 「既に記録したから黙る」ではない — occurrence/last_seen_at/summaryを更新して
+    # 「同じ問題が何件目まで悪化したか」という新しい情報を1件のPDへ集約する(A8 沈黙の検査)。
+    if dedup_key:
+        for d in data['decisions']:
+            if not isinstance(d, dict) or d.get('status') != 'pending':
+                continue
+            if d.get('dedup_key') != dedup_key:
+                continue
+            d['summary'] = summary
+            d['occurrence'] = int(d.get('occurrence', 1)) + 1
+            d['last_seen_at'] = timestamp
+            d['last_source_cmd'] = source_cmd
+            _persist(data['decisions'])
+            _sync_dashboard_add_pending(dashboard_path, d.get('id', ''), summary, source_cmd)
+            print(f"[pending_decision] Updated {d.get('id')} (occurrence={d['occurrence']}, dedup_key={dedup_key}): {summary[:60]}")
+            print(f"PD_ID={d.get('id')}")
+            print('PD_DEDUP=updated')
+            sys.exit(0)
+
     # Auto-increment ID: find max existing PD-XXX
     max_id = 0
     for d in data['decisions']:
@@ -258,6 +288,10 @@ try:
     }
     if origin:
         new_decision['origin'] = origin
+    if dedup_key:
+        new_decision['dedup_key'] = dedup_key
+        new_decision['occurrence'] = 1
+        new_decision['last_seen_at'] = timestamp
     data['decisions'].append(new_decision)
 
     # Update summary (AC2/AC3: auto-generated counts)

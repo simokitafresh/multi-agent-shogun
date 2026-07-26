@@ -732,6 +732,10 @@ EOF
                 bash "$SCRIPT_DIR/ntfy.sh" "【家老ALERT】workaround同一カテゴリ「${CATEGORY}」根本原因「${ROOT_SIGNATURE}」が${OCCURRENCE}件。構造対策cmd起票を強制" 2>/dev/null || true
                 bash "$SCRIPT_DIR/insight_write.sh" "workaround同一カテゴリ「${CATEGORY}」根本原因「${ROOT_SIGNATURE}」が${OCCURRENCE}件蓄積。構造対策cmdの起票が必要" "high" "karo_workaround_log" 2>/dev/null || true
                 # なぜなぜ7回到達: ALERTを行動に接続（表示→PD自動起票→将軍startup gate検知）
+                # PD_DEDUP_KEY: 同一root_signatureのWAが4件目5件目と増えてもPDは1件へ集約し、
+                # occurrence/summaryの件数を更新する。件数増=悪化という情報は保持されるため
+                # 「既に記録したから黙る」検知器にはならない(A8 沈黙の検査)。
+                PD_DEDUP_KEY="wa_escalation:${CATEGORY}::${ROOT_SIGNATURE}" \
                 bash "$SCRIPT_DIR/pending_decision_write.sh" create "workaround同一カテゴリ「${CATEGORY}」根本原因「${ROOT_SIGNATURE}」が${OCCURRENCE}件蓄積。構造対策cmdの起票・裁定が必要" "${CMD_ID}" escalation karo 2>/dev/null || true
             fi
         elif [[ "$CATEGORY" != "clean" && $OCCURRENCE -eq 2 ]]; then

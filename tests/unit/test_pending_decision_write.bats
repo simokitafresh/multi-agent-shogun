@@ -396,3 +396,30 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" != *"類似する既存pending decision"* ]]
 }
+
+# ── Test 25: create - PD_DEDUP_KEY aggregates into one PD carrying the count ──
+# test_necessity: 同一dedup_keyのpending PDは新規createされず既存1件へ集約され、occurrenceが増加する（重複PD増殖の禁止）。
+@test "create with PD_DEDUP_KEY updates the existing pending PD instead of creating a new one" {
+    PD_DEDUP_KEY="wa_escalation:gate_logic_gap::gate_logic_gap::general" \
+        _run_pd create "同カテゴリ根本原因が3件蓄積" "cmd_3001" "escalation" "karo" >/dev/null 2>&1
+
+    PD_DEDUP_KEY="wa_escalation:gate_logic_gap::gate_logic_gap::general" \
+        run _run_pd create "同カテゴリ根本原因が4件蓄積" "cmd_3002" "escalation" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PD_ID=PD-001"* ]]
+    [[ "$output" == *"PD_DEDUP=updated"* ]]
+    [[ "$output" == *"occurrence=2"* ]]
+
+    # 集約先は「黙る」のではなく最新件数を保持する
+    run grep -c "^- id: PD-" "$TEST_TMPDIR/queue/pending_decisions.yaml"
+    [ "$output" -eq 1 ]
+    run grep -c "4件蓄積" "$TEST_TMPDIR/queue/pending_decisions.yaml"
+    [ "$output" -eq 1 ]
+
+    # 異なるdedup_keyは別PDとして立つ（陰性対照）
+    PD_DEDUP_KEY="wa_escalation:deploy_contract::deploy_contract::general" \
+        run _run_pd create "別根本原因が3件蓄積" "cmd_3003" "escalation" "karo"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PD_ID=PD-002"* ]]
+    [[ "$output" != *"PD_DEDUP=updated"* ]]
+}

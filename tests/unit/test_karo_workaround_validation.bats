@@ -57,6 +57,7 @@ SH
     cat > "$TEST_DIR/scripts/pending_decision_write.sh" <<'SH'
 #!/usr/bin/env bash
 echo "PD:$*" >> "${BASH_SOURCE[0]%.sh}.log"
+echo "PD_DEDUP_KEY:${PD_DEDUP_KEY:-}" >> "${BASH_SOURCE[0]%.sh}.log"
 exit 0
 SH
     chmod +x "$TEST_DIR/scripts/pending_decision_write.sh"
@@ -767,4 +768,19 @@ PY
 
     run grep -n "cmd_id: cmd_test" "$TEST_DIR/logs/karo_workarounds.yaml"
     [ "$status" -eq 0 ]
+}
+
+# test_necessity: ALERT時のPD起票は同一root_signatureをdedup keyとして渡す（重複PD増殖の禁止）。
+@test "ALERT passes PD_DEDUP_KEY so repeated same-signature workarounds aggregate into one PD" {
+    run bash "$TEST_SCRIPT" cmd_d1 hayate "binary_checksが欠落しquote parseも壊れた" "rc1" report_yaml_format
+    [ "$status" -eq 0 ]
+    run bash "$TEST_SCRIPT" cmd_d2 hayate "lessons_usefulが欠落しdict→list変換も壊れた" "rc2" report_yaml_format
+    [ "$status" -eq 0 ]
+    run bash "$TEST_SCRIPT" cmd_d3 hayate "knowledge_candidateが欠落しquote parseも壊れた" "rc3" report_yaml_format
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ALERT"* ]]
+
+    run grep -c "^PD_DEDUP_KEY:wa_escalation:report_yaml_format::report_yaml_format::schema_shape$" \
+        "$TEST_DIR/scripts/pending_decision_write.log"
+    [ "$output" -eq 1 ]
 }
