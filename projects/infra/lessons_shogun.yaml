@@ -125,8 +125,10 @@ lessons:
     (35)gateの自動修復提案(--fix等)も未検証の主張(2026-07-14 WA台帳偽解決事故): データ削除・上書き系の修復コマンドは対象エントリの中身を読み同一性(canonical原因単位)を自分で確認してから実行。gateの検出も修復提案も一次データで突合してから従う=(33)の拡張。全文→docs/research/lessons_shogun_a04_a09_detail.md
     (36)working tree現物での「修正済み」判定禁止(2026-07-14 semantic除外誤裁定): working treeは他者の未commit差分を含む共有作業場。「修正済み」判定はgit show HEAD:fileまたは-S/-Lのcommit証跡のみ。検索null結果(帰属先なしの一次情報)を見逃すな。全文→docs/research/lessons_shogun_a04_a09_detail.md
     (37)本番修復のスコープは症状由来でなく不変量からの逸脱全件で決めよ(2026-07-14 cmd_3905復元漏れ): 将軍が復元対象を「アラートに載った161行」で固定→アラートは上書きのみ検知し新規INSERT(7/13行23件)を拾わない構造だったため、復元後もAPIは誤値を返し続けた。殿の「検証しよう」指示による家老再検証で捕捉。是正=全対象を不変量(ledger最新event)との照合述語で機械的に導出し、mismatch全件を対象化(184行照合→23行追加復元→184/184 exact)。上位構造: 検知器の出力は検知器の盲点を継承する。修復・検証のスコープを検知器由来にせず、正しさの定義(不変量)から導け。(2)の「反証を探す」の修復スコープへの拡張
+    (38)(LS103吸収2026-07-26)継続する警告を'stale'と流すな — 同一警告がN回続くのは必ず原因がある。見慣れた警告を流す前に発火条件を1度掘れ(RECOVERY INCOMPLETE nag 3時間放置の実例。全文→superseded_archive §LS103)
+    (39)(LS106吸収2026-07-26)閾値の根拠はgit logでたどれ — 逆算で置かれた数値(実数32から発火させるための31等)は成長を装った空転を生む(全文→superseded_archive §LS106)
     (旧detail残りは移設先参照)
-  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063, LS062_commit, LS063_alpha, LS067, LS069, LS061, LS076]
+  source_ids: [LS005, LS006, LS007, LS014, LS038, LS045, LS065, LS079, LS080, LS082, LS085, LS032, LS033, LS037, LS046, LS044, LS047, LS053, LS063, LS062_commit, LS063_alpha, LS067, LS069, LS061, LS076, LS103, LS106]
   created_at: '2026-04-25'
   automated: true
   enforcement: 'CLAUDE.md「想像せずに確認する原則」+cmd_save.sh q5(BLOCK)+q7(BLOCK)+q10(WARNING)+Check 20 assumptions(BLOCK)+q11_existing_alternative Guard一覧自動表示(cmd_2863)+post-bash-combined.sh cmd_publish hook(cmd_2898)'
@@ -359,14 +361,6 @@ lessons:
   created_at: '2026-07-21'
   automated: true
   enforcement: '起動時lessons_shogun.yaml自動ロード。CI RED未解決時の第一手= origin失敗SHA vs HEAD確認→未pushにci_fixあればfast-forward push。deploy全失敗時はdeploy path回帰を疑う'
-- id: 'LS103'
-  title: '異常を''stale''と流すな — 継続する警告は必ず原因がある(観察スキップ防止)'
-  origin: '[[3時間RECOVERY INCOMPLETE nag放置]] -> [[staleとラベルし観察打ち切り(Phase1観察スキップ)]] -> [[marker不在の真因未掘]] -> [[継続警告は必ず原因ありの原則]]'
-  detail: '2026-07-21 将軍は/clear復帰から約3時間、全PostToolUse結果に出続けた『RECOVERY INCOMPLETE』nagを『stale hook』と繰り返し流した。殿の反復指令(この作業の時間浪費を掘れ)で初めて真因調査に入り、logs/shogun_recovery_complete marker不在(起動ゲートrc124 timeoutでtouch未到達+prompt_state_inject refresh… 全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS103'
-  source_cmd: 'cmd_recovery_marker_nag'
-  created_at: '2026-07-21'
-  automated: true
-  enforcement: 'L4: PostToolUse系の恒久nag(RECOVERY/INBOX等)は、同一メッセージがN回連続(例20回)出たら『発火条件の真因未調査』としてstop hookが1度WARN注入する運用を検討(未自動化=次の自動化ターゲット)。将軍の自己点検: 見慣れた警告を流す前に発火条件を1度掘る。'
 - id: 'LS104'
   title: 'デザイン/モック依頼は最小から作れ — 既存を厳密踏襲し、頼まれた最小差分だけ足す(過剰デザイン禁止)'
   origin: '[[殿ワイヤーフレーム依頼]] -> [[V1過剰デザインごちゃごちゃ却下]] -> [[V2列追加誤解]] -> [[V3既存踏襲+最小追加で正解]] -> [[最小から作る設計規律]]'
@@ -377,26 +371,11 @@ lessons:
   automated: true
   detail_2: '(2)統一先の基準は文字列で固定して引用せよ(LS107吸収2026-07-23): 本番色崩れ。cmd_4122がMECE UI統一で13表の値色をcolors.tsのgetValueColorClassへ集約する際、プラス値をSTATUS_TEXT_CLASSES.positive=text-emerald-400固定にした。殿が基準と明示したmonthly-returns旧実装は text-foreground dark:text… 全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS104'
   enforcement: 'L4: 設計/モック/UI系の殿依頼への初回応答は、既存の忠実複製+指示要素のみの最小案から始める自己規律。装飾/追加機能/注記の先回り盛り込みを『ごちゃごちゃリスク』として自己点検。統一系cmdは統一先の基準文字列をACへ直接引用し、light/dark非対称を単一色へ簡約しない。未自動化=次ターゲット(将軍応答前の最小性チェック)。'
-- id: 'LS106'
-  title: '閾値の根拠をgit logでたどれ — 逆算で置かれた数値は成長を装った空転を生む'
-  origin: '[[殿の問い_この制限に理屈はあるのか_20260723]] -> [[commit_98f353873_逆算閾値31]] -> [[LS102統合しても再発火=空転]] -> [[殿裁定A_件数WARN撤去]]'
-  detail: 'startup gate『将軍教訓 active N件(上限31)』を殿の問い『理屈はあるのか』で一次調査した結果、発生源commit 98f353873(2026-05-10)のmessageが『Current count is 32 which now triggers WARN immediately』= 当時の実数32から発火させるために31を逆算した数値と判明。真の上限はcmd_save.sh CMD_SAVE_SHOGUN_… 全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS106'
-  source_cmd: '[[殿の問い_この制限に理屈はあるのか_20260723]] -> [[commit_98f353873_逆算閾値31]] -> [[LS102統合しても再発火=空転]] -> [[殿裁定A_件数WARN撤去]]'
-  created_at: '2026-07-23'
-  automated: false
-  enforcement: '未自動化'
-- id: 'LS108'
-  title: '起票数値はq5へコマンド→件数形式で証跡を書く'
-  origin: '[[cmd_4133起票LG020_BLOCK]] -> [[証跡形式が散文でツール語+件数不足]] -> [[q5コマンド→件数形式の型]]'
-  detail: 'LG020は数値リテラルの証跡をq5_verified_source/assumptionsで『ツール語(grep/実測等)+→または件数』の両方を要求する。散文の『実測済』だけでは不成立。数値を書くcmdは起票時にq5へ『grep -n X → N件』『WCAG式python計算 → 5.0対1』の形式で記せ。2026-07-23 cmd_4133がLG020で2回BLOCKされ形式判明。'
-  source_cmd: 'cmd_4133'
-  created_at: '2026-07-23'
-  automated: true
-  enforcement: 'cmd_save.sh LG020が自動強制'
 - id: 'LS110'
   title: 'AC・cmd本文の絶対数値は起票前にassumptions claimへ隔離せよ'
   origin: '[[cmd_4154]]'
-  detail: 'cmd_4154初回preflightで数値絶対値WARN。ratchet行番号等をcmd本文に書いた。LS-A04(36)裸数量語則の再発形。起票時の型: 数値・行番号・件数はassumptions claim内のみ、AC/commandは相対表現+参照名で書く。(cmd_4165追記2026-07-25)識別子(check_id・テーブル名・フィールド名)も同様: ACへ書く識別子は現物で実在確認したもののみ。将軍がAC2へ未確認のcheck_id:report_publicationを創作し(台帳実在はdeploy_totalのみ)、実装成功のcmdが前提バグでFAIL判定になった。(LS109吸収)environment_changeは常にdouble quoteで書く(single quoteはawk抽出が剥がさず非構造化BLOCK、cmd_4150で4回BLOCK実証)'
+  detail: 'cmd_4154初回preflightで数値絶対値WARN。ratchet行番号等をcmd本文に書いた。LS-A04(36)裸数量語則の再発形。起票時の型: 数値・行番号・件数はassumptions claim内のみ、AC/commandは相対表現+参照名で書く。(cmd_4165追記2026-07-25)識別子(check_id・テーブル名・フィールド名)も同様: ACへ書く識別子は現物で実在確認したもののみ。将軍がAC2へ未確認のcheck_id:report_publicationを創作し(台帳実在はdeploy_totalのみ)、実装成功のcmdが前提バグでFAIL判定になった。(LS109吸収)environment_changeは常にdouble quoteで書く(single quoteはawk抽出が剥がさず非構造化BLOCK、cmd_4150で4回BLOCK実証)。(LS108吸収2026-07-26)数値リテラルの証跡はq5へ『ツール語+→+件数』形式(grep -n X → N件)。散文の実測済だけではLG020不成立(cmd_4133で2回BLOCK実証)'
+  source_ids_absorbed: [LS108, LS109]
   source_cmd: 'cmd_4154'
   created_at: '2026-07-24'
   automated: true
