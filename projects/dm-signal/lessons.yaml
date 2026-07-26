@@ -10720,6 +10720,9 @@ lessons:
   when: layout最上位でProviderが全ページをラップしている構造では、ページ個別実装よりProviderでの条件分岐が最小差分で安全時
   how: layout最上位でProviderが全ページをラップしている構造では、ページ個別実装よりProviderでの条件分岐が最小差分で安全
   origin: '[[cmd_526]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-27'
 - id: L158
   title: WSL上のWindows venvでは .venv/Scripts/python.exe 経由でpytestを実行できる
   summary: python3環境にpytestが無くても、Windows形式venvがある場合は .venv/Scripts/python.exe -m pytest
@@ -10916,6 +10919,9 @@ lessons:
   when: docs/research/配下ファイル16件の消失は、DM-signalリポジトリ側のgit操作時
   how: docs/research/配下ファイル16件の消失は、DM-signalリポジトリ側のgit操作
   origin: '[[cmd_492]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-27'
 - id: L142
   title: CSV言及は『入力ソース』と『出力成果物』を分離記述しないと知識汚染が再発する
   summary: IF GSはDB直読へ移行済みでもCSV成果物は継続利用されるため、文書に『CSV禁止』だけ書くと誤誘導、逆に『CSV入力』だけ残すと旧実装回帰になる時
