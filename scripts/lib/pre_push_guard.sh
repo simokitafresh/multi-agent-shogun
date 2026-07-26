@@ -67,16 +67,71 @@ pre_push_guard_first_blocking_commit() {
     return "$rc"
 }
 
-# 安全に送れる先端(重複commitの親)を返す。全量pushでよい場合は何も出力しない。
+# commit subject 先頭の cmd_id を返す(無ければ空)。
+# 先頭に限るのは、本文中で他cmdに「言及しただけ」のものを拾わないためである
+# (本日 inbox_write の auto-read が本文grepで別cmdを掴んだのと同じ失敗を避ける)。
+pre_push_guard_cmd_id_of() {
+    local repo="${1:-.}" sha="$2" subject
+    subject=$(git -C "$repo" log -1 --format=%s "$sha" 2>/dev/null) || return 0
+    case "$subject" in
+        cmd_*) printf '%s\n' "${subject%%:*}" ;;
+    esac
+}
+
+# 境界候補が「同一cmdを2つに割っていないか」を検査し、割っていれば手前へ下げる。
+# 理由(軍師の実測 2026-07-26): path基準だけで #4 を境界にすると、
+#   cmd_karo_impl_watcher_log_series_kind = db3a1e724(#3) と 92bef71db(#9)
+#   cmd_karo_impl_approval_log_atomic     = 6d8412dfd(#5) と 2e2dcb0c2(#10)
+# のうち前者(=レビュー指摘を受けた版)だけが公開され、★是正commitが置き去りになる。
+# 「部分的な状態を完全であるかのように公開する」ことになるため、境界はcmdを割らない。
+pre_push_guard_unsplit_tip() {
+    local repo="${1:-.}" remote_ref="${2:-origin/main}" tip="$3"
+    local sha cid inside_first outside changed
+    [ -n "$tip" ] || return 0
+    while :; do
+        changed=0
+        outside=$(git -C "$repo" rev-list "${tip}..HEAD" 2>/dev/null)
+        while read -r sha; do
+            [ -n "$sha" ] || continue
+            cid=$(pre_push_guard_cmd_id_of "$repo" "$sha")
+            [ -n "$cid" ] || continue
+            # 同じcmd_idが境界の外側にも居るなら、この境界はcmdを割っている
+            inside_first=""
+            while read -r osha; do
+                [ -n "$osha" ] || continue
+                if [ "$(pre_push_guard_cmd_id_of "$repo" "$osha")" = "$cid" ]; then
+                    inside_first="$sha"; break
+                fi
+            done <<< "$outside"
+            if [ -n "$inside_first" ]; then
+                tip=$(git -C "$repo" rev-parse "${inside_first}^" 2>/dev/null) || return 1
+                changed=1
+                break
+            fi
+        done < <(git -C "$repo" rev-list --reverse "${remote_ref}..${tip}" 2>/dev/null)
+        [ "$changed" -eq 1 ] || break
+        # 境界が remote まで下がったら送れるものは無い
+        if [ "$tip" = "$(git -C "$repo" rev-parse "$remote_ref" 2>/dev/null)" ]; then
+            return 0
+        fi
+    done
+    printf '%s\n' "$tip"
+}
+
+# 安全に送れる先端を返す。全量pushでよい場合・進める余地が無い場合は何も出力しない。
+# 基準は2つだけである(軍師の注意: 基準を増やすほど境界は手前へ下がり、
+# 極端には常に0件となって停滞解消という目的自体を失う。増やすなら効果を実測してから):
+#   1. path重複  — 未commit pathと重なるcommitを含めない
+#   2. cmd分割   — 境界より後に同一cmd_idのcommitがあるなら、その境界を採らない
 pre_push_guard_safe_tip() {
     local repo="${1:-.}" remote_ref="${2:-origin/main}"
     local first parent oldest
     first=$(pre_push_guard_first_blocking_commit "$repo" "$remote_ref") || return 1
-    [ -n "$first" ] || return 0               # S1
+    [ -n "$first" ] || return 0               # S1: 全量pushでよい(分割は起きない)
     oldest=$(git -C "$repo" rev-list --reverse "${remote_ref}..HEAD" 2>/dev/null | head -1)
     [ "$first" != "$oldest" ] || return 0     # S2
     parent=$(git -C "$repo" rev-parse "${first}^" 2>/dev/null) || return 1
-    printf '%s\n' "$parent"                   # S3
+    pre_push_guard_unsplit_tip "$repo" "$remote_ref" "$parent"   # S3 (+S4: 分割なら手前へ)
 }
 
 # 人が読むための要約。★push コマンドは提案するだけで実行しない。

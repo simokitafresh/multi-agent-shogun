@@ -96,3 +96,44 @@ setup() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"action=none"* ]]
 }
+
+# --- 基準2: 境界がcmdを分割しないこと(軍師の指摘 2026-07-26) ---
+# path基準だけでは、同一cmd_idが2commitに分かれている時に境界がそれを割り、
+# 是正前の版だけを公開しうる(実例: cmd_karo_impl_watcher_log_series_kind が
+# db3a1e724 と 92bef71db、cmd_karo_impl_approval_log_atomic が 6d8412dfd と
+# 2e2dcb0c2。いずれも後者が軍師レビューを受けた是正commit)。
+_setup_split_history() {
+    cd "$W/wc"
+    # X1(cmd_alpha) X2(cmd_beta) X3(阻害path) X4(cmd_alpha 是正)
+    printf 'x1\n' > scripts/x1.txt;      git add -A; git commit -q -m "cmd_alpha_20260726: first"
+    printf 'x2\n' > scripts/x2.txt;      git add -A; git commit -q -m "cmd_beta_20260726: only one"
+    printf 'x3\n' > scripts/split.sh;    git add -A; git commit -q -m "cmd_gamma_20260726: touches blocking path"
+    printf 'x4\n' > scripts/x4.txt;      git add -A; git commit -q -m "cmd_alpha_20260726: fix after review"
+}
+
+@test "positive control: a boundary that would split one cmd is moved back before that cmd" {
+    _setup_split_history
+    # 阻害pathを未commitに = path基準の境界は X2(cmd_beta) の位置になる
+    printf 'x3-dirty\n' > "$W/wc/scripts/split.sh"
+
+    # path基準だけなら X2 が境界。しかし X1(cmd_alpha) は X4 に続きがあるので割れる。
+    run bash "$GUARD" safe-tip "$W/wc" origin/main
+    [ "$status" -eq 0 ]
+    # cmd_alpha を含まない位置、すなわち X1 の親まで下がる
+    [ "$output" = "$(git -C "$W/wc" rev-parse HEAD~4)" ]
+    # 下がった境界に cmd_alpha が含まれないこと
+    run git -C "$W/wc" log --format=%s "origin/main..$output"
+    [[ "$output" != *"cmd_alpha_20260726"* ]]
+}
+
+@test "negative control: when no cmd is split, the path-based boundary is kept as is" {
+    cd "$W/wc"
+    printf 'y1\n' > scripts/y1.txt;   git add -A; git commit -q -m "cmd_delta_20260726: only one"
+    printf 'y2\n' > scripts/split.sh; git add -A; git commit -q -m "cmd_eps_20260726: touches blocking path"
+    printf 'y2-dirty\n' > "$W/wc/scripts/split.sh"
+
+    run bash "$GUARD" safe-tip "$W/wc" origin/main
+    [ "$status" -eq 0 ]
+    # 阻害commitの直前(= cmd_delta)がそのまま境界になる
+    [ "$output" = "$(git -C "$W/wc" rev-parse HEAD~1)" ]
+}
