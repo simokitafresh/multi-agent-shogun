@@ -217,6 +217,72 @@ PY
   [ "$status" -eq 0 ]
 }
 
+# test_necessity: gitignore免除は commit_contract.required=true のtaskにだけ適用され、
+# required=false のno-commit契約(N/A証跡check)を上書きしてはならない。
+# 実データ由来: 2026-07-26 に才蔵のrecon2(target_path=queue/pending_decisions.yaml)と
+# 半蔵の1件が、この上書きにより達成不能な result:"no" でBLOCKされた(実害3件)。
+gitignore_exempt_fixture() {
+  local task_type="$1" target="$2"
+  if [ ! -d "$TEST_PROJECT/.git" ]; then
+    git -C "$TEST_PROJECT" init -q
+    # scripts/ はscaffoldがsymlinkで張るため check-ignore が pathspec を拒否する。
+    # 実在ディレクトリ配下のコードpathを使う(queue/ 配下 かつ .sh = has_code_path=true)。
+    printf 'queue/\n' >"$TEST_PROJECT/.gitignore"
+  fi
+  cat >"$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  assigned_to: sasuke
+  task_id: cmd_gitignore_exempt_${task_type}
+  parent_cmd: cmd_gitignore_exempt
+  project: infra
+  task_type: ${task_type}
+  title: gitignore exempt fixture
+  target_path: "${target}"
+  ac_version: fixture-v1
+  acceptance_criteria:
+    - id: AC1
+      description: gitignore exemption must respect the no-commit contract
+EOF
+  generate_report_template sasuke "cmd_gitignore_exempt_${task_type}" cmd_gitignore_exempt infra >/dev/null
+  printf '%s/queue/reports/sasuke_report_cmd_gitignore_exempt.yaml\n' "$TEST_PROJECT"
+}
+
+@test "gitignore exemption does not overwrite the no-commit contract of a read-only task" {
+  report="$(gitignore_exempt_fixture recon2 queue/pending_decisions.yaml)"
+
+  run python3 - "$report" "$TEST_PROJECT" <<'PY'
+import subprocess, sys, yaml
+# 前提の一次確認: target_path が本当に gitignore 対象でなければ試験が無意味になる
+assert subprocess.run(['git', '-C', sys.argv[2], 'check-ignore', '-q',
+                       'queue/pending_decisions.yaml']).returncode == 0, 'fixture path is not gitignored'
+d = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))
+assert d['commit_contract']['required'] is False, d['commit_contract']
+check = d['binary_checks']['commit'][0]
+assert 'commit N/A証跡' in check['check'], check
+assert check['result'] == '', check
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+}
+
+@test "gitignore exemption still applies to an implementation task and states the reason" {
+  report="$(gitignore_exempt_fixture impl queue/generated_helper.sh)"
+
+  run python3 - "$report" "$TEST_PROJECT" <<'PY'
+import subprocess, sys, yaml
+assert subprocess.run(['git', '-C', sys.argv[2], 'check-ignore', '-q',
+                       'queue/generated_helper.sh']).returncode == 0, 'fixture path is not gitignored'
+d = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))
+assert d['commit_contract']['required'] is True, d['commit_contract']
+check = d['binary_checks']['commit'][0]
+assert check['result'] == 'no', check
+# AC2: なぜnoなのかがcheck本文から分かること
+assert '理由: target_pathが全てgitignore対象' in check['check'], check
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+}
+
 # B32 (2026-07-26): 実データ由来のfixture。2026-07-25/26に発生した
 # "files_modified path is outside planned scope: tests/..." の実ペアを
 # そのまま素材にする(合成しない)。real_test_pairs の左=起票時のplanned実装path、

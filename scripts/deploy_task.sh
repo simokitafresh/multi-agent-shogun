@@ -4697,7 +4697,12 @@ PY_MEMORY_REFS
         # GP-190修正: scout_exempt=trueはscout gate免除フラグ。commit要否とは独立。
         # impl taskはscout_exemptに関わらずcommit checkが必要。
         # read-only taskは上でno-commit契約を生成するため、gitignore免除で上書きしない。
-        if [ -n "$_tp_raw" ]; then
+        # cmd_karo_impl_gitignore_exempt_readonly_20260726: 880976003(2026-07-14)は上の
+        # コメントとno-commit契約を同時に入れながら条件分岐を実装しなかった。結果、
+        # required=false かつ target_pathが全てgitignore対象のtask(例 recon2 +
+        # queue/*.yaml)でN/A証跡checkが result:"no" へ上書きされ、忍者が達成不能な
+        # checkでBLOCKされた(実害3件)。required=false のときは免除を適用しない。
+        if [ -n "$_tp_raw" ] && [ "$_commit_required" != false ]; then
             local -a _tp_paths=()
             if echo "$_tp_raw" | grep -q '^- '; then
                 while IFS= read -r _tp_line; do
@@ -4719,10 +4724,12 @@ PY_MEMORY_REFS
                     fi
                 done
                 if [ "$_all_ignored" = "true" ]; then
+                    # AC2: なぜnoなのかをcheck本文に持たせる。理由が無いと『何が起きたかは
+                    # 分かるがなぜかが分からない』状態になり、同じ真因が別々に再調査される。
                     _commit_bc='  commit:
-  - check: "git commitが完了したか(untracked/modified=0)"
+  - check: "git commitが完了したか(untracked/modified=0) ※理由: target_pathが全てgitignore対象のためcommit不可。deploy_task.shが自動でnoを設定した"
     result: "no"  # gitignore対象ファイルのみ: commit不要'
-                    log "binary_checks: commit check auto-set to no (all target_path are gitignored)"
+                    log "binary_checks: commit check auto-set to no (reason: all target_path are gitignored: ${_tp_paths[*]})"
                 fi
             fi
         fi
