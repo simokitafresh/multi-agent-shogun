@@ -11800,6 +11800,8 @@ evidence = {
     'pre_fix_receipt':{'path':'','status':'','source_commit':'','fixed_target':'','started_at':'','failures':None,'skips':None},
     'post_fix_receipt':{'path':'','status':'','source_commit':'','fixed_target':'','started_at':'','failures':None,'skips':None},
     'push_started_at':'',
+    'outcome':'',
+    'not_reproducible':{'independent_receipts':[],'ci_green':{'run_id':'','status':'','observed_at':'','commit':''},'diagnostics':{'path':'','emits':[]}},
     'validation_command':'deploy_task_ci_fix_clean_repro_evidence_validate <task_yaml>'}
 acs = t.get('acceptance_criteria') or []
 if isinstance(acs, dict):
@@ -11812,7 +11814,10 @@ acs.append({
     'description': ('push前に同一E2 clean-CI harness/同一source_commit/同一fixed_targetで'
                     '修正前FAIL receipt(failures>=1,SKIP0)→修正後PASS receipt(FAIL0,SKIP0)を生成し、'
                     'ci_fix_clean_repro_evidenceの全必須欄を埋めvalidator PASSをreportへ記録する。'
-                    '空欄・pre-fix PASS・post-fix FAIL/SKIP・異なるsource/target・push後開始は禁止。')
+                    '空欄・pre-fix PASS・post-fix FAIL/SKIP・異なるsource/target・push後開始は禁止。'
+                    'CI失敗が再現しない場合のみ outcome: not_reproducible を宣言してよい。'
+                    'その場合は3点(3環境以上の独立検証receipt(全PASS)・CI本番GREENの実測・'
+                    '失敗時にrc/stderr/reason_codeを出す診断計装)を not_reproducible へ記入せよ。1つでも欠ければBLOCKされる。')
 })
 
 def replace_task_field(text, key, value):
@@ -11858,6 +11863,40 @@ e = t.get('ci_fix_clean_repro_evidence')
 def block(msg):
     print('BLOCK: ci_fix clean repro evidence ' + msg, file=sys.stderr)
     raise SystemExit(1)
+if isinstance(e, dict) and str(e.get('outcome') or '').strip().lower() == 'not_reproducible':
+    # 将軍裁定 2026-07-26 (blt_20260726_170522): a CI failure that does not reproduce
+    # must be reportable instead of forcing an honest reporter into a permanent FAIL.
+    # The escape is fixed to three proofs and blocks when any single one is missing.
+    # The FAIL->PASS path below is untouched; this terminal only applies when the
+    # task explicitly declares outcome: not_reproducible.
+    nr = e.get('not_reproducible')
+    if not isinstance(nr, dict): block('not_reproducible block missing')
+    receipts = nr.get('independent_receipts')
+    if not isinstance(receipts, list) or len(receipts) < 3: block('not_reproducible needs >=3 independent verification receipts')
+    environments = set()
+    for idx, receipt in enumerate(receipts):
+        if not isinstance(receipt, dict): block('not_reproducible receipt[%d] must be a mapping' % idx)
+        for key in ('path', 'environment', 'status', 'started_at'):
+            if str(receipt.get(key) or '').strip() == '': block('not_reproducible receipt[%d].%s missing' % (idx, key))
+        if str(receipt['status']).upper() != 'PASS': block('not_reproducible receipt[%d] must be PASS (the failure did not reproduce)' % idx)
+        environments.add(str(receipt['environment']).strip())
+    if len(environments) < 3: block('not_reproducible needs 3 distinct environments, got %d' % len(environments))
+    ci = nr.get('ci_green')
+    if not isinstance(ci, dict): block('not_reproducible ci_green missing')
+    for key in ('run_id', 'status', 'observed_at', 'commit'):
+        if str(ci.get(key) or '').strip() == '': block('not_reproducible ci_green.' + key + ' missing')
+    if str(ci['status']).upper() != 'GREEN': block('not_reproducible ci_green.status must be GREEN')
+    if not re.fullmatch(r'[0-9a-f]{40}', str(ci['commit'])): block('not_reproducible ci_green.commit must be a full sha')
+    diagnostics = nr.get('diagnostics')
+    if not isinstance(diagnostics, dict): block('not_reproducible diagnostics missing')
+    if str(diagnostics.get('path') or '').strip() == '': block('not_reproducible diagnostics.path missing')
+    emits = diagnostics.get('emits')
+    if not isinstance(emits, list): block('not_reproducible diagnostics.emits missing')
+    emitted = {str(x).strip() for x in emits}
+    absent = [key for key in ('rc', 'stderr', 'reason_code') if key not in emitted]
+    if absent: block('not_reproducible diagnostics must emit ' + ','.join(absent))
+    print('PASS: ci_fix clean repro not_reproducible evidence valid')
+    raise SystemExit(0)
 if not isinstance(e, dict) or not str(e.get('e2_harness_command') or '').strip(): block('harness command missing')
 pre, post = e.get('pre_fix_receipt'), e.get('post_fix_receipt')
 if not isinstance(pre, dict) or not isinstance(post, dict): block('receipt mapping missing')

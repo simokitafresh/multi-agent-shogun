@@ -216,6 +216,67 @@ PY
     [[ "$output" == *"PASS: ci_fix clean repro evidence valid"* ]]
 }
 
+@test "not_reproducible terminal accepts only the three fixed proofs and never relaxes FAIL to PASS" {
+    tmpdir="$(mktemp -d)"
+    python3 - "$tmpdir" <<'PY'
+import copy, json, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+receipt = lambda env: {'path': f'logs/{env}.json', 'environment': env, 'status': 'PASS', 'started_at': '2026-07-26T10:00:00+09:00'}
+base = {
+ 'e2_harness_command': 'bash tests/e2_clean_ci.sh',
+ 'outcome': 'not_reproducible',
+ 'not_reproducible': {
+   'independent_receipts': [receipt('wsl2-local'), receipt('linked-worktree'), receipt('ci-container')],
+   'ci_green': {'run_id': '1234567890', 'status': 'GREEN', 'observed_at': '2026-07-26T11:00:00+09:00', 'commit': 'c'*40},
+   'diagnostics': {'path': 'scripts/run_tests.sh', 'emits': ['rc', 'stderr', 'reason_code']}}}
+cases = {}
+# 陽性: 3点揃い
+cases['nr_valid'] = copy.deepcopy(base)
+# 境界: receipt 3件だが環境が2種類しかない
+cases['nr_two_envs'] = copy.deepcopy(base)
+cases['nr_two_envs']['not_reproducible']['independent_receipts'][2]['environment'] = 'wsl2-local'
+# 陰性1: receipt 2件のみ
+cases['nr_two_receipts'] = copy.deepcopy(base)
+cases['nr_two_receipts']['not_reproducible']['independent_receipts'] = cases['nr_two_receipts']['not_reproducible']['independent_receipts'][:2]
+# 陰性2: 診断計装が reason_code を出さない
+cases['nr_no_diag'] = copy.deepcopy(base)
+cases['nr_no_diag']['not_reproducible']['diagnostics']['emits'] = ['rc', 'stderr']
+# 陰性3: CI本番がGREENでない
+cases['nr_ci_red'] = copy.deepcopy(base)
+cases['nr_ci_red']['not_reproducible']['ci_green']['status'] = 'RED'
+for name, evidence in cases.items():
+    # YAMLはJSONの上位互換。運用YAMLと同じくyaml.dump系は使わない(CLAUDE.md YAML書込み安全規則)
+    (root/f'{name}.yaml').write_text(json.dumps({'task': {'task_type': 'ci_fix', 'ci_fix_clean_repro_evidence': evidence}}, ensure_ascii=False))
+PY
+    for invalid in nr_two_envs nr_two_receipts nr_no_diag nr_ci_red; do
+        run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_clean_repro_evidence_validate '$tmpdir/'\"$invalid\"'.yaml'"
+        [ "$status" -eq 1 ]
+        [[ "$output" == *"BLOCK: ci_fix clean repro evidence not_reproducible"* ]]
+    done
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_clean_repro_evidence_validate '$tmpdir/nr_valid.yaml'"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"PASS: ci_fix clean repro not_reproducible evidence valid"* ]]
+}
+
+@test "not_reproducible is opt-in: without the declaration a FAIL-free task still blocks" {
+    tmpdir="$(mktemp -d)"
+    python3 - "$tmpdir" <<'PY'
+import json, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+receipt = lambda env: {'path': f'logs/{env}.json', 'environment': env, 'status': 'PASS', 'started_at': '2026-07-26T10:00:00+09:00'}
+proofs = {
+  'independent_receipts': [receipt('a'), receipt('b'), receipt('c')],
+  'ci_green': {'run_id': '1', 'status': 'GREEN', 'observed_at': '2026-07-26T11:00:00+09:00', 'commit': 'c'*40},
+  'diagnostics': {'path': 'scripts/run_tests.sh', 'emits': ['rc', 'stderr', 'reason_code']}}
+# outcome未宣言: 3点が揃っていても従来のFAIL->PASS要求が生き、pre receiptなしはBLOCK
+evidence = {'e2_harness_command': 'bash tests/e2_clean_ci.sh', 'not_reproducible': proofs}
+(root/'no_outcome.yaml').write_text(json.dumps({'task': {'task_type': 'ci_fix', 'ci_fix_clean_repro_evidence': evidence}}, ensure_ascii=False))
+PY
+    run bash -lc "export DEPLOY_TASK_LIB_ONLY=1; source '$PROJECT_ROOT/scripts/deploy_task.sh'; deploy_task_ci_fix_clean_repro_evidence_validate '$tmpdir/no_outcome.yaml'"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"BLOCK: ci_fix clean repro evidence receipt mapping missing"* ]]
+}
+
 @test "cmd_3855: L159 is not blanket-injected into every recon task" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import sys
