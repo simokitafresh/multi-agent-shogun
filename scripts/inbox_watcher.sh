@@ -216,6 +216,22 @@ task_publication_fingerprint() {
     printf 'task-%s\n' "$(printf '%s' "$identity" | sha256sum | awk '{print $1}')"
 }
 
+# Log series identifier. [SEND-RESULT] attempted prints the unread-set fingerprint
+# computed before the send lock, while [SEND-LEASE] prints the fingerprint after the
+# in-lock re-snapshot, which switches to task_publication_fingerprint when a
+# task_assigned message is present. The two adjacent lines therefore carry different
+# fingerprints in the same call and read as one causal story ("attempted → skipped")
+# although they name different fingerprint domains. task_publication_fingerprint() is
+# the only producer of the "task-" prefix, so the prefix is the structural marker of
+# which computation path produced the value — not a cosmetic classification.
+fp_log_kind() {
+    case "${1:-}" in
+        task-*) printf 'task' ;;
+        ''|-) printf 'none' ;;
+        *) printf 'inbox' ;;
+    esac
+}
+
 get_unread_info() {
     # Fast path: skip Python3 startup (~40ms) when no unread messages exist
     if ! grep -qF 'read: false' "$INBOX" 2>/dev/null; then
@@ -992,7 +1008,7 @@ send_wakeup() {
     lock="${STATE_DIR}/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
     local send_rc=0 send_result_file send_result send_outcome sent_count sent_fp
     send_result_file="${STATE_DIR}/inbox_watcher_send_result_${AGENT_ID}_${BASHPID}"
-    echo "[$(date)] [SEND-RESULT] attempted agent=$AGENT_ID observed_count=$unread_count fingerprint=$current_fp" >&2
+    echo "[$(date)] [SEND-RESULT] attempted agent=$AGENT_ID observed_count=$unread_count fingerprint=$current_fp kind=$(fp_log_kind "$current_fp")" >&2
     (
         flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; exit 1; }
         if [ "$resnapshot_before_send" = "true" ]; then
@@ -1023,7 +1039,7 @@ send_wakeup() {
             safe_fp="${current_fp//[^A-Za-z0-9_.-]/_}"
             sent_token="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${safe_fp}"
             if ! ( set -C; : > "$sent_token" ) 2>/dev/null; then
-                echo "[$(date)] [SEND-LEASE] Skipping delivered fingerprint for $AGENT_ID until ACK/set change: $current_fp" >&2
+                echo "[$(date)] [SEND-LEASE] Skipping delivered fingerprint for $AGENT_ID until ACK/set change: $current_fp kind=$(fp_log_kind "$current_fp")" >&2
                 printf 'dedup\t%s\t%s\n' "$unread_count" "$current_fp" > "$send_result_file"
                 exit 0
             fi
@@ -1069,17 +1085,17 @@ send_wakeup() {
     IFS=$'\t' read -r send_outcome sent_count sent_fp <<< "$send_result"
     case "$send_outcome" in
         dedup)
-            echo "[$(date)] [SEND-RESULT] dedup agent=$AGENT_ID current_count=$sent_count fingerprint=$sent_fp" >&2
+            echo "[$(date)] [SEND-RESULT] dedup agent=$AGENT_ID current_count=$sent_count fingerprint=$sent_fp kind=$(fp_log_kind "$sent_fp")" >&2
             return 0
             ;;
         coalesced-empty)
-            echo "[$(date)] [SEND-RESULT] dedup agent=$AGENT_ID current_count=0 fingerprint=- reason=no-unread" >&2
+            echo "[$(date)] [SEND-RESULT] dedup agent=$AGENT_ID current_count=0 fingerprint=- reason=no-unread kind=none" >&2
             return 0
             ;;
         pasted)
             unread_count="$sent_count"
             current_fp="$sent_fp"
-            echo "[$(date)] [SEND-RESULT] pasted agent=$AGENT_ID current_count=$sent_count fingerprint=$sent_fp" >&2
+            echo "[$(date)] [SEND-RESULT] pasted agent=$AGENT_ID current_count=$sent_count fingerprint=$sent_fp kind=$(fp_log_kind "$sent_fp")" >&2
             ;;
         *)
             echo "[$(date)] WARNING: missing send result for $AGENT_ID" >&2
