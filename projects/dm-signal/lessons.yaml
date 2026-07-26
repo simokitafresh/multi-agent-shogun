@@ -55,7 +55,7 @@ lessons:
   - frontend/components/compare-returns-table.tsx
   - frontend/components/__tests__/table-border-canonical.test.ts
   origin: '[[cmd_karo_hotfix_compare_border_slate200_20260724]]'
-  enforcement: 未自動化
+  enforcement: "L1のまま(2026-07-26 小太郎が一次確認)。★対象test(frontend/components/__tests__/table-border-canonical.test.ts)を現物確認: source文字列にborder-slate-700/border-slate-800が含まれるか(L20-21)、border-slate-200/border-white/20/30が含まれないか(L22-24)のliteral token grepのみで、getComputedStyleによる実効色測定は行っていない=本教訓が指摘する反パターンそのものが現存する。★実害を実測: tailwind.config.js:41 border:\"var(--border)\"によりborder-borderは文字列にslate/grayを含まず理論上literal token検査を素通りする。app/deterioration/page.tsx:920で実際にborder-b border-border/30が使用されているが、これは対象6表(canonical test対象)とは別のZ/G1/G2キー値表であり、現時点で対象6ファイル内に同種の盲点は無い(grep確認済み)。★∴現在進行中の実害は無いが検査手法自体の欠陥は解消していない。★computed style化にはfrontend/jestではTailwindのCSS生成がビルド時のみでjsdomに実CSSが無く(既存harness0件)、本番実測はCDP経由(docs/research/cmd_font_unify_14px_cdp_measured_20260723.mdが確立した手法=将軍/家老による周期的手動監査で、CI組込みのunit testではない)のみが本プロジェクトの前例。★どちらの経路で自動化するか(jsdom+Tailwindビルド注入 or CDP監査をPF登録チェックリストへ組込み)は設計判断を要するためdecision_candidateへ整理(cmd_reflux_promotion_202607262050_kotaro)"
   automated: false
 - id: L912
   title: cancel済みeffectは共有phase遷移前に停止する
