@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-26 -->
+<!-- last_updated: 2026-07-27 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,21 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3538 | 殿指示(2026-06-26): Compare SummaryのPF名をタップするとそのPFのSummaryページに飛べるようにする。設計書compare-summary-portfolio-link.md確定済み(家老レビューAPPROVE) | dm-signal | 06-26 | compare-summary-table.tsxにNext |
-| cmd_3539 | 軍師idle自走分析(2026-06-26 blt_20260626_021604): metrics_impl.py calculate_metrics()でpd.to_datetimeが15122回呼ばれ1PFあたり1.84s(全体の45%)。to_datetime呼出し削減で速度改善。修正前後で全数値完全一致必須 | dm-signal | 06-26 | metrics_impl.py L195のpd.to_dat |
-| cmd_3540 | cmd_3539でmetrics_impl.py L195を修正したが、同一パターン(リスト内包表記内pd.to_datetime個別呼出し)がtrades_impl.py L116/L259に残存。忍者lesson_candidateで検出済み。全数値完全一致必須 | dm-signal | 06-26 | trades_impl.py L116/L259のpd.to |
-| cmd_3541 | cmd_3539/3540でmetrics_impl/trades_implを修正したが、同一パターンがrecalculate_fast.py L2622に残存。backend全域grep確認済みで最後の1箇所。全数値完全一致必須 | dm-signal | 06-26 | recalculate_fast.py L2622のpd.t |
-| cmd_3543 | 軍師idle自走分析(2026-06-26 blt_20260626_031051): monthly_trade_impl.pyが1PFあたり69s(全サービス中最大)。get_signal_payload_at_date 1002回+expand_portfolio_to_tickers 489回=DBクエリ1023回で67.7s。N+1クエリ解消で速度改善。修正前後で全数値完全一致必須(DataFrame.equals()=Trueで検証) | dm-signal | 06-26 | monthly_trade_impl.pyでFoF展開入力を |
-| cmd_3544 | 軍師速度バグ全体マップ(2026-06-26 blt_20260626_032240): monthly_returns_calculator.pyが1PFあたり3.8s、DBクエリ30回。N+1クエリ解消で速度改善。修正前後で全数値完全一致必須(DataFrame.equals()=Trueで検証) | dm-signal | 06-26 | monthly_returnsの最新N件取得をcount() |
-| cmd_3542 | 軍師idle自走分析(2026-06-26 blt_20260626_030029): annual_returns_calculator.py が1PFあたり5.3s(全サービス中最大)。DB execute 37回=3.4s(63%)がN+1的多数クエリで根因。クエリ統合で速度改善。修正前後で全数値完全一致必須(DataFrame.equals()=Trueで検証) | dm-signal | 06-26 | annual_returns_calculator.pyのD |
-| cmd_3546 | 殿指示(2026-06-26): ローカル検証だけでは不十分。本番環境でfullrecalculate実行前後で全PF全指標の数値が完全一致することを証明せよ | dm-signal | 06-26 | 本番Render環境fullrecalculate前後の全P |
-| cmd_3547 | 殿指示(2026-06-26): 速度バグ起票。cmd_3542/3543/3544でバルクパスのN+1は修正済みだが、monthly_returns_calculator.py:262とmonthly_trade_impl.py:419のMTDフォールバックパスがcalculate_monthly_returnにcache params(portfolio_cache/signal_cache)を渡していない。現物確認済み(2026-06-26 07:42) | dm-signal | 06-26 | MTDフォールバック2箇所にportfolio_cache/ |
-| cmd_3548 | 殿指示(2026-06-26): 設計書compare-summary-benchmark-row-period-instability-fix.mdに従い実装。SPY行がフォルダーフィルター連動で値が変動する不具合を、TQQQと同じstandalone経路に載せて修正する | dm-signal | 06-26 | Compare SummaryのSPY行期間依存バグ修正完了 |
-| cmd_3549 | Loop Engineering §VI-C Manual Loop防止。将軍のidle時自己分析(Step 1-7)が意志依存で先送りされる(3セッション連続startup BLOCK実績)。ninja_monitor.shに全忍者idle+パイプライン空を10分以上検知→将軍にidle_analysis_trigger nudge送信を追加し、Manual Loopを解消する | infra | 06-26 | ninja_monitorに将軍idle分析triggerを |
-| cmd_3550 | 殿指示(2026-06-26): Loop Engineering論文知見の環境埋込み。Phase 2-1(idle自走)完了に続き、Phase 2-2として論文V-A『エージェントに自己採点させるとNodding Loopになる』を防止する。cmd_3298/3315で忍者のbinary_check yes虚偽報告が実証済み | infra | 06-26 | cmd_complete_gateにself-grade c |
-| cmd_3553 | 殿指示(2026-06-26): Loop Engineering論文VIII『4つのコストは沈黙のうちに蓄積する』防止。startup gateの既存計測値(useful率/rework率/BLOCK率)を週次でログに蓄積し、3週連続悪化をALERT強制表示する | infra | 06-26 | weekly_metrics_trend.shを追加し、st |
-| cmd_3554 | 殿指示(2026-06-26): Loop Engineering Phase 3開始。論文VIII/XI-B『1つのバグが一晩空回りして請求を生む』防止。同一cmdで/clear 3回超を検知し、空回りループをidle強制で止める | infra | 06-26 | 同一cmdのclear回数上限(max_clear_per_ |
-| cmd_3555 | 殿指示(2026-06-26): Loop Engineering Phase 3並列起票。論文IV Skills『intent debtとは毎回説明し直すコスト。スキルはこれを返済する』。スキル未使用率と陳腐化率を定期計測し、debt未返済のスキルを可視化する | infra | 06-26 | skill_usage_metrics.shで全SKILL. |
 | cmd_3560 | 殿指示(2026-06-27): 穴2=context変更やprojects変更が三層記憶に自動伝播しない。lesson_write.shにはsemantic連携あり(L1118)だがcontext変更時は手動貫通に依存=意志依存=Phase4 | infra | 06-27 | git pre-commit hookにcontext/pr |
 | cmd_3561 | 殿指示(2026-06-27): 穴3=教訓186件中useful3件=活用率1.6%。忍者がlessons_usefulに活用結果を記入していない。記入を構造的に強制し計測精度を上げる | infra | 06-27 | AC1: gate_report_format_combin |
 | cmd_3563 | 殿指示(2026-06-27): FTS5フォールバックの速度改善。計測でPython単体0.27秒だがbash全体42-83秒。WSL2上のflock/subshell/source等のbashオーバーヘッドが真因。alias HITケースでも42秒かかっておりセマンティック検索が実質機能不全 | infra | 06-27 | semantic_search.shのmemory DB c |

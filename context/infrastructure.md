@@ -888,7 +888,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1350 -->
+<!-- last_synced_lesson: L1378 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1952,6 +1952,34 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1348: 理論窓長からの導出は実測窓長の半分だった — 窓は導出せず両端で測れ（cmd_karo_impl_b48_refresh_window_2point_telemetry_20260726）
 - L1349: 境界hashはgate出力の転記だけでなく実装ロジックから素性を確認せよ（cmd_karo_impl_ctx_infrastructure_freshness_20260726）
 - L1350: 非同期起動されたgateの『待ち』は工程和ではなくgate本体の実行時間で上限が決まる（cmd_karo_recon_finalize_polling_to_event_20260726）
+- L1351: python heredocのrepo内import は cwd に依存する — repo rootで叩けば通るため導入時に露見せず、別cwdの常駐プロセスからだけ恒久的に落ちる（cmd_karo_hotfix_deploy_task_pythonpath_20260726）
+- L1352: 検知器の重複抑止は『黙らせる』ではなく『1件へ集約して数を持たせる』（cmd_karo_impl_pd_duplicate_create_20260726）
+- L1353: 『特定文字列が0件』は『無検査』の証明にならない。実行フロー全体で他guardの防御有無を確認せよ（cmd_karo_impl_pd106_shared_tree_git_guard_20260726）
+- L1354: 自分が書いた出力を自分で読み直す処理は、同一emitterなら往復が恒等変換であり、parse+再renderは丸ごと削れる（cmd_karo_impl_loop_ledger_two_bugs_20260726）
+- L1355: 計装は『既存台帳へ乗せる』が要件であり『既存writer関数を呼ぶ』は要件ではない（cmd_karo_impl_report_field_set_telemetry_20260726）
+- L1356: fallbackを『厳格化』する変更は、その fallback だけが支えていた経路を無言で落とす — 絞る前に『誰が今この経路に乗っているか』を列挙せよ（cmd_karo_impl_reflux_review_path_20260726）
+- L1357: 防御レベルの分類は実装ではなくenforcement文字列を見ている — 記述の陳腐化が偽の未昇格を生む（cmd_reflux_promotion_202607261200_hanzo）
+- L1358: 監査スクリプト自身が『黙る検知器』になる — 測れない状態をrc=0で結果として出力するな（cmd_4173）
+- L1359: 昇格候補には『防御が無い』と『防御は在るが台帳の記述が古い』の2種がある — 実装側を先に見よ（cmd_reflux_promotion_202607261446_tobisaru）
+- L1360: 対照testを消すと検知器は無対照になる — default-delete施行時に『その検知器の唯一の対照だったtest』まで一緒に消えていないか確認せよ（cmd_karo_impl_control_fixture_gunshi_accuracy_20260726）
+- L1361: 対照fixtureは変異試験まで通して初めて『空でない』と言える（cmd_karo_impl_control_fixture_stop_session_alerts_20260726）
+- L1362: 設計意図をコメントに書いた時点で実装したつもりになる — コメントと条件分岐は同一commitでも別物であり、片方だけが入る（cmd_karo_impl_gitignore_exempt_readonly_20260726）
+- L1363: 共有worktreeの生きたログ/台帳を検証対象にする場合、実行タイミングで前提数値が変わりうることを踏まえ、commit直前に必ず再実測せよ（cmd_karo_impl_gunshi_accuracy_verdict_norm_20260726）
+- L1364: 配送の判定を本文から取ると、語順で結果が変わり、送った側には成功に見える — 判定は送信者が明示した構造参照から取れ（cmd_karo_impl_autoread_structural_field_20260726）
+- L1365: 『存在するが効いていない』には実装漏れと意図的撤去の2通りがあり、grepでは区別できない — 撤去意図はgit logにしか無い（cmd_karo_cifix_cmd_publish_preflight_invariant_20260726）
+- L1366: 隣接ログ行の『別々の系列』仮説は、同一呼び出し内で値の意味領域が切り替わる形の可能性を先に潰せ（cmd_karo_impl_watcher_log_series_kind_20260726）
+- L1367: 不可分化には『無ければ作る』と『無ければ止める』の2つの向きがあり、生成できない内容を持つ側は必ず後者（cmd_karo_impl_approval_log_atomic_20260726）
+- L1368: 『昇格しない』も一次確認の成果 — 在庫を減らすために形だけLevelを上げるな（cmd_reflux_promotion_202607261757_tobisaru）
+- L1369: 契約の終端を足しても、既存タスクは配備時のscaffoldのまま — 契約変更は再配備しない限り既存の弾へ届かない（cmd_karo_impl_clean_repro_not_reproducible_20260726）
+- L1370: gitはprefixしか送れない — 『無関係だから救える』は順序を確かめるまで言えない（cmd_karo_impl_partial_push_safety_20260726）
+- L1371: bash -c 内のassertion列は set -e が無いと最後の1行しか効かない — 途中のgrepは飾りになる（cmd_karo_impl_codex_ssot_test_fixture_20260726）
+- L1372: 共有worktreeで『無関係な変更を検知しないための絞り込み』を実装する際は、テスト自身が生成する副産物(receipt/lock/sidecar)や、対象がrepo外パスでありうることを、実データで先に確認してから絞り込み範囲を決めよ（cmd_karo_impl_singleflight_tree_identity_20260726）
+- L1373: 教訓のenforcement_level表示は二次情報 — 昇格候補を見たらまず判定器の分類ロジックと実gate実装を読め（cmd_reflux_promotion_202607261830_hayate）
+- L1374: CI単発失敗は『直前runとの差分』を先に見よ — 無関係な1行差分ならcommit起因ではない（cmd_karo_cifix_campaign_lane_shard_item_20260726）
+- L1375: 『どの検査が落ちたか』の前に『検査に到達したか』を見よ — setup失敗はテスト名のせいで実装の欠陥に見える（cmd_karo_cifix_gate_metrics_model_labels_20260726）
+- L1376: gate_report_format.sh修正後もB7破損データは自動修復されない。修復経路が存在しないままの旧破損が残存する（cmd_karo_cycle2_bugverify_b7_b19_20260727）
+- L1377: B16は手段が無いではなく単純な機械的問合せだけでは不正確が実態。ninja_monitor.shの複合補正ロジックが証拠（cmd_karo_cycle2_bugverify_b16_b18_20260727）
+- L1378: 運用台帳の代表値表記が中央値でなく平均(外れ値driven)である場合、典型コストを過大/過小評価する（cmd_karo_cycle2_bugverify_perf_20260727）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
