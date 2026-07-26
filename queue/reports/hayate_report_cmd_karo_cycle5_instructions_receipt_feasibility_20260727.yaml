@@ -98,8 +98,8 @@ ac_evidence_mapping:
 semantic_validation:
   classification_axis: "AC1-AC3で用いた分類軸: (1)機構の実在性(grepヒット有無) (2)機構のBLOCK接続性(overall変数/stop hookへの結線有無) (3)AC3見積り可否(機械コストは実測可・読解コストは見積り不能)"
   recount: AC1のgrepを2回(scripts/ .claude/hooks/全体版と3ロールstartup gate限定版)実行し同一趣旨の結果を確認。AC2は1Phase時間を5回実行し中央値算出、Phase数はwc/grepで2ファイルとも再カウントし一致確認
-  actual: "実測値: karo:0件/gunshi:3件/shogun:0件(READ_REQUIRED系)。1Phase中央値0.06秒。karo本日受領証18件/総Phase18。instructions行数565/1223/385、節数18/22/12"
-  result: 各ACのcheck文言と実施内容が一致。AC1は家老前提(a)の訂正(gunshi分は機構実在だがBLOCK未接続)、AC2は3点の実測値、AC3は機械コスト見積り+読解コスト見積り不能の明記、AC4は無変更確認まで完了
+  actual: "実測値: karo:0件/gunshi:3件/shogun:0件(READ_REQUIRED系)。1Phase中央値0.06秒。karo本日受領証18件/総Phase18。instructions行数565/1223/385、節数18/22/12。各ACのcheck文言と実施内容が一致。AC1は家老前提(a)の訂正(gunshi分は機構実在だがBLOCK未接続)、AC2は3点の実測値、AC3は機械コスト見積り+読解コスト見積り不能の明記、AC4は無変更確認まで完了"
+  result: PASS
 files_modified:
 - path: queue/reports/hayate_report_cmd_karo_cycle5_instructions_receipt_feasibility_20260727.yaml
   change: 本cmdの成果物は本報告のみ(調査タスク・コード変更なし)
@@ -211,4 +211,4 @@ self_gate_check:
 verdict: PASS
 parent_ac_coverage: null
 parent_contract_fingerprint: ''
-commit_hash: ed973e39d00e2d8e6ce2fefe05fc3989cb6fbee3
+commit_hash: 3d633417380554b91113256822f8e1c8a6847725
