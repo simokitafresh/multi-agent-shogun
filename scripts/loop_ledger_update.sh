@@ -71,6 +71,7 @@ import sqlite3
 import sys
 import subprocess
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 try:
@@ -625,10 +626,19 @@ def load_memory_reference_effectiveness(report_dirs_raw):
             return None
         return parsed.get("memory_references")
 
-    for report in candidates:
-        if yaml is None:
-            continue
-        refs = extract_memory_references(report)
+    # Each report is an independent open()+read on WSL2 NTFS, where the wait is
+    # I/O latency rather than CPU (L508).  Overlap the reads with a thread pool
+    # but keep aggregation strictly in `candidates` order — reflux_targets keeps
+    # the LAST sample per source, so order is part of the output contract.
+    if yaml is None:
+        parsed_refs = [None] * len(candidates)
+    elif candidates:
+        with ThreadPoolExecutor(max_workers=16) as pool:
+            parsed_refs = list(pool.map(extract_memory_references, candidates))
+    else:
+        parsed_refs = []
+
+    for report, refs in zip(candidates, parsed_refs):
         if not isinstance(refs, list):
             continue
         report_count += 1
@@ -893,19 +903,83 @@ for name, loop in loops.items():
 
 
 # --- load existing snapshots (never yaml.dump — manual emit, this file is fully owned by this script) ---
-def load_existing_snapshots(path):
-    if not path.is_file() or yaml is None:
-        return []
+# History is retained in full (MAX_SNAPSHOTS unchanged); what is dropped is the
+# round trip.  Every prior snapshot block in this file was rendered by
+# emit_snapshot() below, so the previous run's own output is reused verbatim
+# instead of being parsed into dicts and re-rendered identically.  Only the two
+# facts later logic actually needs are extracted:
+#   * previous_loops      -> the LAST snapshot only (one yaml parse, ~70KB)
+#   * generated_at/stock  -> a line scan keyed to emit_snapshot's fixed indent
+# yaml.safe_load of the whole 7.6MB file cost 22.6s per run (measured
+# 2026-07-26) and this script runs on every shogun startup gate.
+_SNAPSHOT_HEAD = "- generated_at:"
+
+
+def split_existing_snapshot_blocks(path):
+    """Return prior snapshot blocks as raw rendered text, newest last."""
     try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    except Exception:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
         return []
-    items = data.get("snapshots") if isinstance(data, dict) else None
-    return [item for item in (items or []) if isinstance(item, dict)]
+    lines = text.split("\n")
+    starts = [i for i, line in enumerate(lines) if line.startswith(_SNAPSHOT_HEAD)]
+    if not starts:
+        return []
+    # Everything after the final snapshot that is not indented and not a
+    # snapshot head (i.e. the regenerated "alerts:" key) terminates the region.
+    end = len(lines)
+    for i in range(starts[-1] + 1, len(lines)):
+        line = lines[i]
+        if line and not line.startswith((" ", "-")):
+            end = i
+            break
+    bounds = starts + [end]
+    blocks = []
+    for i in range(len(starts)):
+        block = "\n".join(lines[bounds[i]:bounds[i + 1]]).rstrip("\n")
+        if block:
+            blocks.append(block)
+    return blocks
 
 
-existing_snapshots = load_existing_snapshots(out_path)
-previous_snapshot = existing_snapshots[-1] if existing_snapshots else None
+def snapshot_block_generated_at(block):
+    head = block.split("\n", 1)[0]
+    value = head[len(_SNAPSHOT_HEAD):].strip()
+    return value.strip('"') or None
+
+
+def snapshot_block_promotion_stock(block):
+    """Read loops.promotion.stock from a rendered block (emit_snapshot indent)."""
+    in_promotion = False
+    for line in block.split("\n"):
+        if line == "    promotion:":
+            in_promotion = True
+            continue
+        if in_promotion:
+            if not line.startswith("      "):
+                break
+            if line.startswith("      stock:"):
+                try:
+                    return int(line.split(":", 1)[1].strip())
+                except ValueError:
+                    return None
+    return None
+
+
+def parse_one_snapshot_block(block):
+    if yaml is None or not block:
+        return {}
+    try:
+        parsed = yaml.safe_load(block) or []
+    except Exception:
+        return {}
+    if isinstance(parsed, list) and parsed and isinstance(parsed[0], dict):
+        return parsed[0]
+    return {}
+
+
+existing_snapshot_blocks = split_existing_snapshot_blocks(out_path) if out_path.is_file() else []
+previous_snapshot = parse_one_snapshot_block(existing_snapshot_blocks[-1]) if existing_snapshot_blocks else None
 previous_loops = previous_snapshot.get("loops", {}) if previous_snapshot else {}
 
 
@@ -924,22 +998,20 @@ previous_loops = previous_snapshot.get("loops", {}) if previous_snapshot else {}
 # stock_increase_grace_hours old, so a real backlog trend must persist
 # across a full grace window (not a single sampling instant) to escalate,
 # and require the grace-window itself to exist before evaluating at all.
-def find_promotion_baseline_stock(snapshots, min_age_hours, now):
+def find_promotion_baseline_stock(snapshot_blocks, min_age_hours, now):
     candidates = []
-    for snap in snapshots:
-        if not isinstance(snap, dict):
-            continue
-        ts = parse_ts(snap.get("generated_at"))
+    for block in snapshot_blocks:
+        ts = parse_ts(snapshot_block_generated_at(block))
         if ts is None:
             continue
         age_hours = (now - ts).total_seconds() / 3600
         if age_hours < min_age_hours:
             continue
-        candidates.append((ts, snap))
+        candidates.append((ts, block))
     if not candidates:
         return None
-    _, baseline_snap = max(candidates, key=lambda pair: pair[0])
-    stock = (baseline_snap.get("loops", {}) or {}).get("promotion", {}).get("stock")
+    _, baseline_block = max(candidates, key=lambda pair: pair[0])
+    stock = snapshot_block_promotion_stock(baseline_block)
     return stock if isinstance(stock, int) else None
 
 
@@ -950,7 +1022,7 @@ for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory",
     if loop["stalled"]:
         alerts.append(f"{name}: 空転(produced={loop['produced']}, consumed=0, window={window_days}d)")
     if name == "promotion":
-        baseline_stock = find_promotion_baseline_stock(existing_snapshots, stock_increase_grace_hours, now)
+        baseline_stock = find_promotion_baseline_stock(existing_snapshot_blocks, stock_increase_grace_hours, now)
         if baseline_stock is not None and loop["stock"] > baseline_stock:
             alerts.append(f"{name}: 在庫超過({stock_increase_grace_hours}h以上前{baseline_stock}→今回{loop['stock']})")
         continue
@@ -1100,25 +1172,14 @@ def emit_snapshot(generated_at, window_days, loops, warn_backlog=None):
     return "\n".join(lines)
 
 
-snapshot_text = emit_snapshot(iso(now), window_days, loops)
-snapshots_text = [snapshot_text] if not existing_snapshots else None
+snapshot_text = emit_snapshot(iso(now), window_days, loops, warn_backlog)
 
-# Re-emit all prior snapshots (already-validated dicts) + the new one, capped to max_snapshots
-all_snapshot_dicts = existing_snapshots + [{
-    "generated_at": iso(now),
-    "window_days": window_days,
-    "loops": {name: dict(loop) for name, loop in loops.items()},
-    "warn_backlog": dict(warn_backlog),
-}]
-all_snapshot_dicts = all_snapshot_dicts[-max_snapshots:]
-
-rendered = []
-for snap in all_snapshot_dicts:
-    snap_loops = snap.get("loops", {})
-    rendered.append(emit_snapshot(snap.get("generated_at"), snap.get("window_days", window_days), {
-        name: snap_loops.get(name, {"produced": 0, "consumed": 0, "stock": 0, "last_consumption_ts": None, "stalled": False})
-        for name in ("lesson", "insight", "semantic", "promotion", "obsidian", "memory", "skill", "throughput")
-    }, snap.get("warn_backlog")))
+# Carry prior snapshots through as the text this script already rendered for
+# them, then append the newly rendered one, capped to max_snapshots.  Re-render
+# is a no-op by construction (same emitter, same input), so reusing the text is
+# byte-identical while removing the parse+render round trip for 99 snapshots.
+rendered = existing_snapshot_blocks + [snapshot_text]
+rendered = rendered[-max_snapshots:]
 
 content = ["# loop_ledger.yaml — generated by scripts/loop_ledger_update.sh (T7, cmd_3720)", "snapshots:"]
 content.extend(rendered)
