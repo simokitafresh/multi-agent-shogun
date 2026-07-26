@@ -1990,7 +1990,7 @@ source: deploy_preflight
 note: placeholder
 EOF
 
-    REVIEW_APPROVAL_ROOT="$TEST_TMPDIR" REVIEW_APPROVAL_NO_TRIGGER=1 bash "$PROJECT_ROOT/scripts/review_approval.sh" cmd_karo_auto_review_gate gunshi LGTM "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
+    REVIEW_APPROVAL_ROOT="$TEST_TMPDIR" REVIEW_APPROVAL_NO_TRIGGER=1 REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 bash "$PROJECT_ROOT/scripts/review_approval.sh" cmd_karo_auto_review_gate gunshi LGTM "$TEST_TMPDIR/queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml"
     run _run_inbox_write karo "cmd_karo_auto_review_gate testninja報告レビュー。verdict: LGTM。report: queue/reports/testninja_report_cmd_karo_auto_review_gate.yaml" report_review_result gunshi
     [ "$status" -eq 0 ]
     [[ "$output" != *"provisional gunshi LGTM recorded"* ]]
@@ -2049,7 +2049,7 @@ EOF
     ln -sf "$PROJECT_ROOT/scripts/lib/report_commit_identity.py" "$TEST_TMPDIR/scripts/lib/report_commit_identity.py"
     ln -sf "$PROJECT_ROOT/scripts/bulletin_write.sh" "$TEST_TMPDIR/scripts/bulletin_write.sh"
     printf 'parent_cmd: cmd_guard\nstatus: completed\ncommit_hash: abc123abc123abc123abc123abc123abc123abc1\nresult:\n  summary: ok\n' > "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
-    REVIEW_APPROVAL_ROOT="$TEST_TMPDIR" REVIEW_APPROVAL_NO_TRIGGER=1 bash "$PROJECT_ROOT/scripts/review_approval.sh" cmd_guard gunshi LGTM "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
+    REVIEW_APPROVAL_ROOT="$TEST_TMPDIR" REVIEW_APPROVAL_NO_TRIGGER=1 REVIEW_APPROVAL_SKIP_LEDGER_CHECK=1 bash "$PROJECT_ROOT/scripts/review_approval.sh" cmd_guard gunshi LGTM "$TEST_TMPDIR/queue/reports/ninja_report_cmd_guard.yaml"
     local content
     local -a contents=(
         'cmd_guard verdict: LGTM; gate_prediction: BLOCKED; report: queue/reports/ninja_report_cmd_guard.yaml'
