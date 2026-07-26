@@ -27,6 +27,7 @@ with open(sys.argv[1]) as f:
 # 先頭が "- cmd_id:" で始まる場合もパース可能にする
 entries = [e for e in re.split(r"\n- cmd_id:|- cmd_id:", content) if e.strip()]
 results = []
+skipped = 0
 for e in entries:
     cmd_m = re.search(r"^[:\s]*(\S+)", e)
     pred_m = re.search(r"gate_prediction:\s*(\S+)", e)
@@ -35,11 +36,16 @@ for e in entries:
     # N/A = cmdがrevert等で終端し実GATEが存在しない墓標。予測の当否は評価不能なので
     # 分母から除外する(誤答計上=偽陽性=バグ。殿指示2026-06-24と同原理)
     if not (pred_m and result_m and result_m.group(1) in ("CLEAR", "BLOCK", "WARN", "FAIL")):
+        skipped += 1  # 静かに落とさず明示カウント(将軍裁定): 内容は推測・捏造しない
         continue
     cmd = cmd_m.group(1) if cmd_m else "?"
     pred = pred_m.group(1)
     result = result_m.group(1)
-    verdict = verdict_m.group(1) if verdict_m else "?"
+    verdict_raw = verdict_m.group(1) if verdict_m else "?"
+    # REQ_CHANGES はREQUEST_CHANGESの表記ゆれ(同義語彙)。LGTM/APPROVEは
+    # review_type(report/draft)に束縛された別概念のため寄せない(軍師実測:
+    # report×LGTM=28/28, draft×APPROVE=23/23, 交差0件)
+    verdict = "REQUEST_CHANGES" if verdict_raw == "REQ_CHANGES" else verdict_raw
     # 公正計算: 軍師が問題を検出→修正→CLEARは正解
     if verdict == "FAIL" and pred == "BLOCK" and result == "CLEAR":
         correct = True  # FAIL検出→家老修正→CLEAR
@@ -52,11 +58,11 @@ for e in entries:
     results.append({"cmd": cmd, "pred": pred, "result": result, "verdict": verdict, "correct": correct})
 
 if not results:
-    print("データなし")
+    print(f"データなし (skipped={skipped})")
     sys.exit(0)
 
 c_all = sum(1 for r in results if r["correct"])
-print(f"全体: {c_all}/{len(results)} ({c_all*100//len(results)}%)")
+print(f"全体: {c_all}/{len(results)} ({c_all*100//len(results)}%) skipped={skipped}")
 
 recent = results[-10:]
 c_r = sum(1 for r in recent if r["correct"])
