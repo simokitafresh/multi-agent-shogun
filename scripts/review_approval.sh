@@ -169,6 +169,52 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ -f "$ROOT/scripts/review_bu
       exit 1
     }
 fi
+# cmd_karo_impl_approval_log_atomic_20260726: 承認発行と台帳記録の不可分化。
+# 軍師は本日3回「承認は発行したが logs/gunshi_review_log.yaml を書かなかった」を起こし、
+# accuracy が対象を数えない値になった。台帳が accuracy の母集団(gate_gunshi_startup.sh:521 が
+# review_type in (draft, report) を母集団とする)である以上、記録されない承認は「測れない承認」である。
+# ★方向: 新しいgate/BLOCKを足すのではなく、既存の gunshi_log_append.sh をこのコマンドの内部で呼ぶ。
+# ★順序: sg7 bundle 生成の後に置く(gunshi_log_append の lgtm_bundle_guard が bundle 実在を要求するため。
+#   逆順にすると承認→台帳の依存が循環してデッドロックする)。
+# ★失敗時の扱い(AC2の選択): 台帳記録が失敗したら承認ファイルを書かない=承認も成立させない。
+#   理由: 台帳が正本(accuracy母集団)であり、記録できない承認を残すことは今回の事故そのものだからである。
+# ★karo ACCEPT では呼ばない(AC4): gunshi_review_log は軍師のレビュー記録であり、
+#   accuracy 母集団に reviewer 条件が無い(gate_gunshi_startup.sh:521)ため、家老の承認を書くと
+#   軍師の精度母集団へ家老の判断が混入する。
+if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_NO_LEDGER:-0}" != 1 ]; then
+  if [ -n "${REVIEW_LOG_ENTRY_FILE:-}" ]; then
+    [ -r "$REVIEW_LOG_ENTRY_FILE" ] || {
+      echo "BLOCK: REVIEW_LOG_ENTRY_FILE unreadable: $REVIEW_LOG_ENTRY_FILE" >&2
+      exit 1
+    }
+    # 台帳はappend-onlyで、承認ファイルのように上書きされない。再実行(retry/併走)で
+    # 同一レビューが複数行になると accuracy の母集団が水増しされるため、
+    # 既存の gunshi_notice.sent と同じ per-report marker で exactly-once にする。
+    ledger_marker="$dir/review_log.appended"
+    if [ -f "$ledger_marker" ] && [ "$(head -n 1 "$ledger_marker" 2>/dev/null || true)" = "$fingerprint" ]; then
+      echo "review ledger append: SKIP (already appended for this report lifecycle)"
+    else
+      GUNSHI_SCRIPT_DIR="$ROOT" bash "$ROOT/scripts/gunshi_log_append.sh" < "$REVIEW_LOG_ENTRY_FILE" || {
+        echo "BLOCK: review ledger append failed; approval withheld (cmd=$cmd_id report=$report_rel)" >&2
+        exit 1
+      }
+      ledger_tmp=$(mktemp "$dir/.review_log.XXXXXX")
+      printf '%s\n' "$fingerprint" > "$ledger_tmp"
+      mv -f "$ledger_tmp" "$ledger_marker"
+    fi
+  else
+    # 台帳エントリが渡されていない場合、承認は出すが黙って成功させない。
+    # 恒久痕跡を残し、後から「承認は在るのに台帳が無い」を実測できるようにする。
+    unrecorded_marker="$ROOT/queue/gates/$cmd_id/review_log_unrecorded"
+    if ! grep -q "cmd_id: *$cmd_id\$" "$ROOT/logs/gunshi_review_log.yaml" 2>/dev/null; then
+      printf 'timestamp: %s\nreport: %s\nreason: REVIEW_LOG_ENTRY_FILE unset at approval time\n' \
+        "$(date -Iseconds)" "$report_rel" > "$unrecorded_marker" 2>/dev/null || true
+      echo "WARN: review ledger entry not supplied — approval issued WITHOUT logs/gunshi_review_log.yaml entry (cmd=$cmd_id)." >&2
+      echo "  → 台帳へ記録するには REVIEW_LOG_ENTRY_FILE=<entry.yaml> を付けて本コマンドを実行せよ(承認と同一トランザクションで追記される)。" >&2
+      echo "  → 痕跡: ${unrecorded_marker#"$ROOT"/}" >&2
+    fi
+  fi
+fi
 tmp=$(mktemp "$dir/.${role}.XXXXXX")
 trap 'rm -f "$tmp" "${REVIEW_FP_CACHE_DIR:?}"/*; rmdir "${REVIEW_FP_CACHE_DIR:?}" 2>/dev/null || true' EXIT
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" "$correction_scope" > "$tmp"
