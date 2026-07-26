@@ -10,6 +10,8 @@ import re
 import tempfile
 import shutil
 import sqlite3
+import subprocess
+import time
 import fcntl
 
 
@@ -394,6 +396,74 @@ def require_cache_backup_healthy(db_path: str) -> None:
             conn.execute("INSERT INTO events_fts(events_fts) VALUES ('integrity-check')")
 
 
+def _memory_db_source_max_rowid(db_path: str) -> str:
+    """Read the source DB write watermark, or "na" when it cannot be measured.
+
+    Never raises: this is observation only and must not affect cache creation.
+    """
+    try:
+        with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as conn:
+            conn.execute(f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT_MS}")
+            row = conn.execute("SELECT MAX(rowid) FROM events").fetchone()
+    except Exception:
+        return "na"
+    if not row or row[0] is None:
+        return "na"
+    return str(int(row[0]))
+
+
+def _record_refresh_window_point(
+    phase: str, rowid: str, group: str, wall_ms: int = 0, extra: str = ""
+) -> None:
+    """Append one refresh-window observation to the shared defense ledger.
+
+    Event-driven counterpart of gate_three_layer_health.sh's cache_rowid_gap
+    row: that one only exists when a startup gate happens to run (measured
+    interval median 97s, max 44 days), so "no record" and "no event" are
+    indistinguishable.  Recording at the refresh itself makes the window
+    length a measured value instead of a derived one, and makes the number of
+    writes that arrived during the window (end rowid - begin rowid) fall out
+    directly, so no threshold is needed to interpret it.
+
+    The existing five-field ledger contract is reused unchanged (no new
+    ledger): the window length in milliseconds goes into wall_ms and the
+    remaining values are packed into event_id, so the current grep + json
+    parse aggregation keeps working.  check_id is refresh_window, distinct
+    from cache_rowid_gap, so both coexist.
+
+    fail-open: any failure here is swallowed.  Cache creation is a data path
+    and must never be broken, delayed into failure, or aborted by its own
+    instrumentation.
+    """
+    try:
+        writer = os.path.join(REPO_ROOT, "scripts", "lib", "defense_overhead_writer.sh")
+        if not os.path.exists(writer):
+            return
+        event_id = (
+            f"refresh_window:{phase}:rowid-{rowid}:grp-{group}{extra}"
+        )
+        subprocess.run(
+            [
+                "bash",
+                "-c",
+                'source "$1"; defense_overhead_write "$2" "$3" "$4" "$5" "$6"',
+                "_",
+                writer,
+                "three_layer_health",
+                "refresh_window",
+                str(int(wall_ms)),
+                "PASS" if rowid != "na" else "WARN",
+                event_id,
+            ],
+            check=False,
+            timeout=10,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        return
+
+
 def create_memory_db_ext4_cache(db_path: str) -> str:
     if os.environ.get("SHOGUN_DISABLE_MEMORY_DB_CACHE", "0") == "1":
         return db_path
@@ -433,6 +503,18 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
         # swap sees the fully-new one. Never a partial file either way, and a
         # SIGKILL mid-backup only leaves an orphaned temp file (swept above),
         # never a corrupted cache_path.
+        # Refresh window, point 1 of 2: the source watermark as it stands the
+        # instant before the snapshot starts.  Everything committed to the
+        # source after this point is, by construction, absent from the cache
+        # this refresh publishes.
+        _window_group = f"{os.getpid()}-{time.monotonic_ns()}"
+        _window_begin_rowid = "na"
+        _window_begin_ns = time.monotonic_ns()
+        try:
+            _window_begin_rowid = _memory_db_source_max_rowid(db_path)
+            _record_refresh_window_point("begin", _window_begin_rowid, _window_group)
+        except Exception:
+            pass
         fd, temp_name = tempfile.mkstemp(
             prefix=f".{_cache_base}.", suffix=".tmp", dir=cache_dir
         )
@@ -442,6 +524,27 @@ def create_memory_db_ext4_cache(db_path: str) -> str:
             create_sqlite_backup(db_path, output_path=temp_path, suffix="ext4_cache")
             require_cache_backup_healthy(temp_path)
             os.replace(temp_path, cache_path)
+            # Refresh window, point 2 of 2: the watermark at publication.  The
+            # difference against point 1 is the number of writes that arrived
+            # while the window was open; whether they are merely delayed or
+            # actually lost is answered by the next refresh's begin record,
+            # not by a threshold.
+            try:
+                _window_end_rowid = _memory_db_source_max_rowid(db_path)
+                _window_ms = (time.monotonic_ns() - _window_begin_ns) // 1_000_000
+                if _window_begin_rowid != "na" and _window_end_rowid != "na":
+                    _arrived = str(int(_window_end_rowid) - int(_window_begin_rowid))
+                else:
+                    _arrived = "na"
+                _record_refresh_window_point(
+                    "end",
+                    _window_end_rowid,
+                    _window_group,
+                    wall_ms=_window_ms,
+                    extra=f":arrived-{_arrived}:beginrowid-{_window_begin_rowid}",
+                )
+            except Exception:
+                pass
             remove_memory_db_cache_sidecars(cache_path)
         finally:
             # os.replace() only renames temp_path itself; a WAL-mode backup
