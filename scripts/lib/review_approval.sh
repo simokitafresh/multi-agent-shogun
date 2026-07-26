@@ -130,6 +130,20 @@ no_code_files = files_modified == [] or (
 # affirm that no commit is required.  Any source/config/docs path falls back to
 # the normal 40-hex implementation identity.
 operational_runtime_files = permits_no_code_identity(d, root)
+# cmd_karo_hotfix_no_code_identity_20260727: binary_checks.commit の第1要素は報告テンプレートが
+# 『git commitが完了したか(untracked/modified=0)』result=yes で固定し、忍者側から書き換えられない
+# (report_field_set が保護する)。この定型文が commit_claimed を立てるため、tree_unchanged の
+# 積で no-code を証明済みの報告まで no-code経路へ到達できず、報告側の是正では解けない
+# deadlock になっていた(才蔵/疾風の2件で実証)。permits_no_code_identity は
+# tree_unchanged+before==after(40hex)+[commit不要]宣言+operational_files_only の積であり、
+# 定型文より強い証拠なので、40hex identity が無い場合はこちらを優先する。
+_valid_hex_identity = (
+    isinstance(commit_hash, str)
+    and len(commit_hash) == 40
+    and all(c in "0123456789abcdef" for c in commit_hash)
+)
+if operational_runtime_files and not _valid_hex_identity:
+    commit_claimed = False
 if (no_code_files or operational_runtime_files) and not commit_claimed and (
     task_type in no_code_task_types or no_commit_asserted
 ):
