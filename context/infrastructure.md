@@ -888,7 +888,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1380 -->
+<!-- last_synced_lesson: L1381 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1982,6 +1982,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1378: 運用台帳の代表値表記が中央値でなく平均(外れ値driven)である場合、典型コストを過大/過小評価する（cmd_karo_cycle2_bugverify_perf_20260727）
 - L1379: 検出gateの稼働有無と接続有無は別軸で確認せよ（cmd_reflux_promotion_202607270511_hayate）
 - L1380: sync_lessons.sh経路外の書込みでlessons.yaml indexがformat逸脱(header/flow-style消失)しうる。id集合比較で検証すべき（cmd_karo_cycle3_lessons_yaml_anomaly_probe_20260727）
+- L1381: gate_report_format_main.pyとcmd_complete_gate.shのlesson_candidate必須条件がOR/AND不一致（cmd_karo_cycle4_mtime_and_contract_survey_20260727）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
