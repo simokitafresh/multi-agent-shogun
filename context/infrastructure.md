@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-26 境界538dfa251から0c9d3bcc4まで138commitを git log --oneline で自己算出(家老実測138と一致)し一次差分照合。infra.mdの主要主題(記憶DB/commit_contract/single-flight/fingerprint/D001-D009/CI RED/tmux/gws/ntfy/Android/Render/WSL2/context_freshness)を横断grepで照合し構造section(L1-2273)に矛盾なし。教訓索引last_synced_lesson=L1347(commit a9245d71b)まで自動同期済み確認。0c9d3bcc4はgate_context_freshness.shがdashboard-warningsモードで使うtip_ref=origin/main(a9245d71b)の直前commitであり、a9245d71b自体はinfra.md自己言及commit(rel_path in normalized)のため除外され残る最新関連commitと一致(commit_is_reflected_or_lesson_only判定を実装で確認) -->
+<!-- last_updated: 2026-07-26 cmd_karo_impl_ctx_infrastructure_freshness_20260726 -->
 <!-- source_commit:0c9d3bcc4 reason:境界538dfa251から0c9d3bcc4まで138commitを git log --oneline で自己算出(家老実測138と一致)し一次差分照合。infra.mdの主要主題(記憶DB/commit_contract/single-flight/fingerprint/D001-D009/CI RED/tmux/gws/ntfy/Android/Render/WSL2/context_freshness)を横断grepで照合し構造section(L1-2273)に矛盾なし。教訓索引last_synced_lesson=L1347(commit a9245d71b)まで自動同期済み確認。0c9d3bcc4はgate_context_freshness.shがdashboard-warningsモードで使うtip_ref=origin/main(a9245d71b)の直前commitであり、a9245d71b自体はinfra.md自己言及commit(rel_path in normalized)のため除外され残る最新関連commitと一致(commit_is_reflected_or_lesson_only判定を実装で確認) evidence:git log --oneline 538dfa251..0c9d3bcc4|wc -l=138(自算出) + git rev-parse origin/main=a9245d71b + git log -3 origin/main(a9245d71b/0c9d3bcc4/a6902adca) + a9245d71b stat=context/infrastructure.md自己変更 + context/infrastructure.md:L1946-1948 last_synced_lesson=L1347確認 + scripts/context_freshness_check.sh commit_is_reflected_or_lesson_only/_root_fallback_commit_count_since/source_tip_ref実装読了 + gate_context_freshness.sh source_commit_action実装読了 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
@@ -886,7 +886,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1348 -->
+<!-- last_synced_lesson: L1349 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1948,6 +1948,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1346: hookのtestは『実行者のtmux identity』に依存しうる。判定が読む環境変数を実装で確かめ、testで固定せよ（cmd_karo_impl_d00x_coverage_on_live_impl_20260726）
 - L1347: git logのpathspec検索はbounded(-n N)でも高負荷下で重い。graph walk+選択的diff-treeへ分解せよ（cmd_karo_impl_b46_commit_ownership_all_history_20260726）
 - L1348: 理論窓長からの導出は実測窓長の半分だった — 窓は導出せず両端で測れ（cmd_karo_impl_b48_refresh_window_2point_telemetry_20260726）
+- L1349: 境界hashはgate出力の転記だけでなく実装ロジックから素性を確認せよ（cmd_karo_impl_ctx_infrastructure_freshness_20260726）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
