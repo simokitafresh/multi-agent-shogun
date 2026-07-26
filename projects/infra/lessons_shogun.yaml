@@ -360,7 +360,7 @@ lessons:
   source_cmd: 'cmd_shogun_ci_red_push_deadlock_20260721'
   created_at: '2026-07-21'
   automated: true
-  enforcement: '起動時lessons_shogun.yaml自動ロード。CI RED未解決時の第一手= origin失敗SHA vs HEAD確認→未pushにci_fixあればfast-forward push。deploy全失敗時はdeploy path回帰を疑う'
+  enforcement: "L1のまま(2026-07-26 飛猿が一次確認。★昇格していない=実装が無いことを確認した結果である)。★現状の実装: (a)gate_karo_startup.sh:1591-1630 は最新完了runの conclusion/databaseId/headSha を取得しfailure時にci_fix配備証跡の有無をALERTするが、★headSha を origin/main や HEAD と突合する行は無い(grep実測0件)。(b)gate_shogun_startup.sh:981,4337 は git rev-list origin/main..HEAD --count を測るが WARN 閾値が30件であり、★本教訓の事象(未push12件)では発火しない。∴『失敗SHA=origin/mainのまま動いていない』という本教訓の核心を機械的に検出する箇所はどこにも無い。★実証: 2026-07-26 本日 同型が再発した — 失敗run 30190382837 の headSha=e297b8ca0 が origin/main と一致し未push12件で自己永続、軍師が手作業で特定するまで誰も気づかなかった(誰が何を直してもCIは赤のまま)。★昇格案(既存CI REDブロック内に origin/main と失敗SHA の一致判定を1行足す。新gateではない)は decision_candidate へ整理(cmd_reflux_promotion_202607261757_tobisaru)"
 - id: 'LS104'
   title: 'デザイン/モック依頼は最小から作れ — 既存を厳密踏襲し、頼まれた最小差分だけ足す(過剰デザイン禁止)'
   origin: '[[殿ワイヤーフレーム依頼]] -> [[V1過剰デザインごちゃごちゃ却下]] -> [[V2列追加誤解]] -> [[V3既存踏襲+最小追加で正解]] -> [[最小から作る設計規律]]'
