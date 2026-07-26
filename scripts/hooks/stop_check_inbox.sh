@@ -738,6 +738,21 @@ else
   fi
 fi
 
+# === deepdive追体験強制 (殿裁定2026-07-26 23:28: クリア後毎回必ず正しい追体験) ===
+# 新セッション(marker)以降、追体験受領証が全Phase揃うまで将軍・家老・軍師のターン終了をBLOCK。
+# fail-open: gateがERROR/不在の時はBLOCKしない(全ロックアウト防止 LS100)。
+if [[ "$agent_id" == "shogun" || "$agent_id" == "karo" || "$agent_id" == "gunshi" ]]; then
+  _dd_gate="$SCRIPT_DIR/scripts/gates/gate_deepdive_replay.sh"
+  if [[ -f "$_dd_gate" ]]; then
+    _dd_out="$(bash "$_dd_gate" "$agent_id" 2>/dev/null || true)"
+    if [[ "$_dd_out" == DEEPDIVE-REPLAY:\ FAIL* ]]; then
+      _dd_missing="$(printf '%s' "$_dd_out" | head -1 | cut -c1-400)"
+      jq -n --arg reason "BLOCK: deepdive追体験未完了(殿裁定2026-07-26: クリア後毎回必須)。${_dd_missing} → 1 Phaseずつ: bash scripts/deepdive_replay.sh ${agent_id} <mdファイル名> <Phase番号> \"<自問1行>\" を全Phase実行してから作業せよ。" '{"decision":"block","reason":$reason}'
+      exit 0
+    fi
+  fi
+fi
+
 # === /clear自発禁止 (殿裁定2026-06-28 LS074) ===
 # 将軍が/clearについて考える・判断する・行動する全て禁止。
 # autocompact=90%が自動管理する。殿の明示的指示があった時だけ検討。

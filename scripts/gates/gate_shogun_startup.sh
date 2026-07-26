@@ -4351,6 +4351,14 @@ if [ "${_lessons_bytes:-0}" -gt "${LESSONS_SHOGUN_READ_CAP_BYTES:-55000}" ]; the
 fi
 echo "■ 必読: memory/deepdive_why_chain_20260321.md（知性の外部化原則 全過程）"
 
+# --- deepdive追体験受領証検証(殿裁定2026-07-26 23:28: クリア後毎回強制。stop hookがBLOCK層) ---
+echo "■ deepdive追体験受領証"
+_dd_replay_out="$(bash "$SCRIPT_DIR/scripts/gates/gate_deepdive_replay.sh" shogun 2>/dev/null || true)"
+echo "  ${_dd_replay_out:-ERROR: gate_deepdive_replay.sh実行失敗}" | head -3
+if [[ "$_dd_replay_out" == DEEPDIVE-REPLAY:\ FAIL* ]]; then
+    alerts+=("deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh shogun <md> <Phase> \"<自問>\"")
+fi
+
 mkdir -p "$(dirname "$STARTUP_ALERT_HISTORY")"
 _startup_run_id="$(date '+%Y-%m-%dT%H:%M:%S%z')"
 # flock排他: check(重複判定)→append を同一クリティカルセクション化。

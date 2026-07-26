@@ -318,6 +318,13 @@ else
     alerts+=("必読ファイル不在: memory/deepdive_why_chain_20260321.md")
     echo "  ALERT: $REQUIRED_READ が存在しない"
 fi
+# --- deepdive追体験受領証検証(殿裁定2026-07-26 23:28: クリア後毎回強制。stop hookがBLOCK層) ---
+_dd_replay_out="$(bash "$SCRIPT_DIR/scripts/gates/gate_deepdive_replay.sh" gunshi 2>/dev/null || true)"
+echo "  ${_dd_replay_out:-ERROR: gate_deepdive_replay.sh実行失敗}" | head -3
+if [[ "$_dd_replay_out" == DEEPDIVE-REPLAY:\ FAIL* ]]; then
+    overall="ALERT"
+    alerts+=("deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh gunshi <md> <Phase> \"<自問>\"")
+fi
 echo ""
 
 # Phase逐次読込ガイド（全文一括禁止 — 2026-04-15殿指示）

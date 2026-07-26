@@ -175,6 +175,15 @@ if [[ -z "$agent_id" ]]; then
   agent_id="unknown"
 fi
 
+# --- deepdive追体験セッションマーカー(殿裁定2026-07-26 23:28: クリア後毎回追体験を強制) ---
+# 新セッション開始時刻を記録。gate_deepdive_replay.shがこれ以降の受領証のみを有効とする
+case "$agent_id" in
+  shogun|karo|gunshi)
+    mkdir -p "$SCRIPT_DIR/logs/deepdive_replay" 2>/dev/null || true
+    printf '%(%Y-%m-%dT%H:%M:%S%z)T' -1 > "$SCRIPT_DIR/logs/deepdive_replay/${agent_id}.session" 2>/dev/null || true
+    ;;
+esac
+
 # --- Timestamp (ISO 8601) ---
 printf -v timestamp '%(%Y-%m-%dT%H:%M:%S%z)T' -1
 if [[ "$timestamp" =~ ^(.+)([+-][0-9]{2})([0-9]{2})$ ]]; then
