@@ -216,21 +216,6 @@ task_publication_fingerprint() {
     printf 'task-%s\n' "$(printf '%s' "$identity" | sha256sum | awk '{print $1}')"
 }
 
-# Log series identifier. [SEND-RESULT] attempted prints the unread-set fingerprint
-# computed before the send lock, while [SEND-LEASE] prints the fingerprint after the
-# in-lock re-snapshot, which switches to task_publication_fingerprint when a
-# task_assigned message is present. The two adjacent lines therefore carry different
-# fingerprints in the same call and read as one causal story ("attempted → skipped")
-# although they name different fingerprint domains. task_publication_fingerprint() is
-# the only producer of the "task-" prefix, so the prefix is the structural marker of
-# which computation path produced the value — not a cosmetic classification.
-fp_log_kind() {
-    case "${1:-}" in
-        task-*) printf 'task' ;;
-        ''|-) printf 'none' ;;
-        *) printf 'inbox' ;;
-    esac
-}
 
 get_unread_info() {
     # Fast path: skip Python3 startup (~40ms) when no unread messages exist
@@ -770,6 +755,16 @@ send_wakeup() {
     local unread_count="$1"
     local has_task_assigned="${2:-false}"
     local current_fp="${3:-}"
+    # Log series identifier. The series is not a separate code path: it is which
+    # assignment last wrote current_fp. The caller (process_unread) always passes the
+    # unread-set fingerprint from get_unread_info(), so the entry value is the inbox
+    # series by construction; the in-lock re-snapshot below may overwrite it with
+    # task_publication_fingerprint(), and only that assignment sets fp_kind=task.
+    # Never infer the series from the fingerprint text.
+    local fp_kind="inbox"
+    if [ -z "$current_fp" ] || [ "$current_fp" = "-" ]; then
+        fp_kind="none"
+    fi
     local priority="${4:-normal}"
     local resnapshot_before_send="${5:-false}"
     local batchable="${6:-false}"
@@ -1006,9 +1001,9 @@ send_wakeup() {
     # and Enter risked submitting partial input in race conditions.
     local lock
     lock="${STATE_DIR}/tmux_sendkeys_$(echo "$PANE_TARGET" | tr ':.' '_').lock"
-    local send_rc=0 send_result_file send_result send_outcome sent_count sent_fp
+    local send_rc=0 send_result_file send_result send_outcome sent_count sent_fp sent_kind
     send_result_file="${STATE_DIR}/inbox_watcher_send_result_${AGENT_ID}_${BASHPID}"
-    echo "[$(date)] [SEND-RESULT] attempted agent=$AGENT_ID observed_count=$unread_count fingerprint=$current_fp kind=$(fp_log_kind "$current_fp")" >&2
+    echo "[$(date)] [SEND-RESULT] attempted agent=$AGENT_ID observed_count=$unread_count fingerprint=$current_fp kind=$fp_kind" >&2
     (
         flock -w 5 200 || { echo "[$(date)] LOCK TIMEOUT: send_wakeup $PANE_TARGET" >&2; exit 1; }
         if [ "$resnapshot_before_send" = "true" ]; then
@@ -1019,13 +1014,15 @@ send_wakeup() {
             live_fp="${live_fp:--}"
             live_has_task="${live_has_task:-false}"
             if [ "$live_count" -eq 0 ] 2>/dev/null; then
-                printf 'coalesced-empty\t0\t-\n' > "$send_result_file"
+                printf 'coalesced-empty\t0\t-\tnone\n' > "$send_result_file"
                 exit 0
             fi
             unread_count="$live_count"
             current_fp="$live_fp"
+            fp_kind="inbox"
             if [ "$live_has_task" = "true" ]; then
                 current_fp=$(task_publication_fingerprint 2>/dev/null || printf '%s' "$live_fp")
+                [ "$current_fp" = "$live_fp" ] || fp_kind="task"
             fi
             nudge="inbox${unread_count}"
             if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$live_has_task" == "true" ]]; then
@@ -1039,8 +1036,8 @@ send_wakeup() {
             safe_fp="${current_fp//[^A-Za-z0-9_.-]/_}"
             sent_token="${STATE_DIR}/inbox_watcher_sent_${AGENT_ID}_${safe_fp}"
             if ! ( set -C; : > "$sent_token" ) 2>/dev/null; then
-                echo "[$(date)] [SEND-LEASE] Skipping delivered fingerprint for $AGENT_ID until ACK/set change: $current_fp kind=$(fp_log_kind "$current_fp")" >&2
-                printf 'dedup\t%s\t%s\n' "$unread_count" "$current_fp" > "$send_result_file"
+                echo "[$(date)] [SEND-LEASE] Skipping delivered fingerprint for $AGENT_ID until ACK/set change: $current_fp kind=$fp_kind" >&2
+                printf 'dedup\t%s\t%s\t%s\n' "$unread_count" "$current_fp" "$fp_kind" > "$send_result_file"
                 exit 0
             fi
         fi
@@ -1071,7 +1068,7 @@ send_wakeup() {
             echo "[$(date)] WARNING: send-keys Enter timed out ($SEND_KEYS_TIMEOUT s)" >&2
             exit 1
         fi
-        printf 'pasted\t%s\t%s\n' "$unread_count" "$current_fp" > "$send_result_file"
+        printf 'pasted\t%s\t%s\t%s\n' "$unread_count" "$current_fp" "$fp_kind" > "$send_result_file"
     ) 200>"$lock" || send_rc=$?
     if [ "$send_rc" -eq 2 ]; then
         return 2
@@ -1082,10 +1079,10 @@ send_wakeup() {
 
     send_result=$(cat "$send_result_file" 2>/dev/null || true)
     rm -f "$send_result_file"
-    IFS=$'\t' read -r send_outcome sent_count sent_fp <<< "$send_result"
+    IFS=$'\t' read -r send_outcome sent_count sent_fp sent_kind <<< "$send_result"
     case "$send_outcome" in
         dedup)
-            echo "[$(date)] [SEND-RESULT] dedup agent=$AGENT_ID current_count=$sent_count fingerprint=$sent_fp kind=$(fp_log_kind "$sent_fp")" >&2
+            echo "[$(date)] [SEND-RESULT] dedup agent=$AGENT_ID current_count=$sent_count fingerprint=$sent_fp kind=${sent_kind:-none}" >&2
             return 0
             ;;
         coalesced-empty)
@@ -1095,7 +1092,8 @@ send_wakeup() {
         pasted)
             unread_count="$sent_count"
             current_fp="$sent_fp"
-            echo "[$(date)] [SEND-RESULT] pasted agent=$AGENT_ID current_count=$sent_count fingerprint=$sent_fp kind=$(fp_log_kind "$sent_fp")" >&2
+            fp_kind="${sent_kind:-none}"
+            echo "[$(date)] [SEND-RESULT] pasted agent=$AGENT_ID current_count=$sent_count fingerprint=$sent_fp kind=${sent_kind:-none}" >&2
             ;;
         *)
             echo "[$(date)] WARNING: missing send result for $AGENT_ID" >&2

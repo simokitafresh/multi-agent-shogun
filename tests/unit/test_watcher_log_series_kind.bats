@@ -28,7 +28,13 @@ messages:
   read: false
   content: fixture
 YAML
-if [ "$with_task" = "yes" ]; then
+if [ "$with_task" = "broken" ]; then
+# task_assignedはあるが task_publication_fingerprint が identity を作れない形(deployed_atなし)
+cat > "$tmp/root/queue/tasks/$agent.yaml" <<YAML
+task:
+  task_id: cmd_kind_fixture_normal
+YAML
+elif [ "$with_task" = "yes" ]; then
 cat > "$tmp/root/queue/tasks/$agent.yaml" <<YAML
 task:
   task_id: cmd_kind_fixture_normal
@@ -85,6 +91,34 @@ i=0; while [ "$i" -lt "$rounds" ]; do process_unread; i=$((i+1)); done
     [ "$attempted_kind" = "kind=inbox" ]
     [ "$lease_kind" = "kind=task" ]
     [ "$attempted_kind" != "$lease_kind" ]
+}
+
+@test "AC2: kindはfingerprintの文字列ではなく代入位置で決まる(task fp生成に失敗すればkind=inbox)" {
+    # task_assignedがあってもtask_publication_fingerprintがidentityを作れなければ
+    # current_fpはunread集合fpのまま。kindはその代入に追従しなければならない。
+    run _run_watcher task_assigned broken 1
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"[SEND-RESULT] pasted"*"kind=inbox"* ]]
+    [[ "$output" != *"fingerprint=task-"* ]]
+}
+
+@test "AC2: 実装はfingerprintの接頭辞から系列を推定しない" {
+    # 系列名はcurrent_fpへの代入位置(entry / live_fp / task_publication_fingerprint)で立て、
+    # 出力へ持ち回る。fingerprint文字列を見て系列を判定するコードがあってはならない。
+    run grep -nE 'task-\*\)|= *"task-|=~ *\^task-|\$\{[a-z_]+#task-\}' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+    [ "$status" -ne 0 ]
+}
+
+@test "AC3: attempted行の系列は分岐前でも未確定ではない — 唯一の呼び出し元がunread集合fpを渡す" {
+    # attempted(:1004)は再取得分岐(:1019-1024)より前にあるが、send_wakeupの呼び出しは1箇所のみで、
+    # そこで渡されるのはget_unread_infoのunread集合fpである。∴entry時点でinbox系列が確定している。
+    run grep -cE '^[[:space:]]*send_wakeup "' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+    [ "$output" = "1" ]
+    run grep -nE '^[[:space:]]*send_wakeup "\$normal_count" "\$has_task_assigned" "\$_current_fp"' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+    [ "$status" -eq 0 ]
+    # _current_fp は get_unread_info の出力から読まれた値であり、task fpではない
+    run grep -nE 'read -r normal_count has_specials _current_fp' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+    [ "$status" -eq 0 ]
 }
 
 @test "AC4: kind=は行末に追加され既存フィールドの順序を変えない" {
