@@ -1036,28 +1036,39 @@ prior_attempts = [p for p in prior_attempts if isinstance(p, dict)]
 prior_attempts.append(new_attempt)
 prior_attempts = prior_attempts[-3:]
 
-def _sq(s):
-    return "'" + str(s).replace("'", "''") + "'"
-
-frag_lines = ['session_state:',
-              f'  attempt: {attempt}',
-              f'  last_block_reason: {_sq(block_reason)}',
-              '  tried_approaches:']
-for t in tried:
-    frag_lines.append(f'  - {_sq(t)}')
+# 手組みの単一引用(_sq)は禁止。報告本文(diagnose_reason / result.summary)は改行を含みうるが、
+# 手組みだと継続行のインデントが常に2になり、(a)値の折り畳みで情報が歪み、(b)次回の
+# ブロック置換(_i > 2 のみ skip)で旧継続行が消えずに残り、2度目の書き込みで
+# ScannerError を起こす。実測: queue/tasks/saizo.yaml が本日2度破損した。
+# ∴ dumper に任せる。改行は正しくエスケープされ、継続行は _i > 2 になるため次回も正しく消える。
+ss_node = {
+    'attempt': attempt,
+    'last_block_reason': block_reason,
+    'tried_approaches': list(tried),
+}
 if diagnose_reason:
-    frag_lines.append(f'  diagnose_reason: {_sq(diagnose_reason)}')
+    ss_node['diagnose_reason'] = diagnose_reason
 if approach_summary:
-    frag_lines.append(f'  approach_summary: {_sq(approach_summary)}')
-frag_lines.append('  prior_attempts:')
+    ss_node['approach_summary'] = approach_summary
+ss_prior = []
 for item in prior_attempts:
-    frag_lines.append(f"  - attempt: {int(item.get('attempt', 0) or 0)}")
-    frag_lines.append(f"    block_reason: {_sq(item.get('block_reason', ''))}")
+    entry = {
+        'attempt': int(item.get('attempt', 0) or 0),
+        'block_reason': str(item.get('block_reason', '') or ''),
+    }
     if item.get('diagnose_reason'):
-        frag_lines.append(f"    diagnose_reason: {_sq(item.get('diagnose_reason', ''))}")
+        entry['diagnose_reason'] = str(item.get('diagnose_reason'))
     if item.get('approach_summary'):
-        frag_lines.append(f"    approach_summary: {_sq(item.get('approach_summary', ''))}")
-frag = '\n'.join(frag_lines)
+        entry['approach_summary'] = str(item.get('approach_summary'))
+    ss_prior.append(entry)
+ss_node['prior_attempts'] = ss_prior
+frag = yaml.safe_dump(
+    {'session_state': ss_node},
+    allow_unicode=True,
+    sort_keys=False,
+    default_flow_style=False,
+    width=10 ** 9,
+).rstrip('\n')
 indented = '\n'.join('  ' + l for l in frag.split('\n'))
 
 # 行ベースのブロック置換（正規表現はマルチライン値で誤マッチする）

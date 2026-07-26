@@ -869,10 +869,35 @@ try:
         raise ValueError('test_paths')
     if d['version'] == 3:
         m=d['run_manifest']
-        _rm_req={'cache','commit_sha','selector_input_fingerprint','selected_paths_fingerprint','estimated_cost'}
+        _rm_req={'cache','commit_sha','selector_input_fingerprint','selected_paths_fingerprint',
+                 'estimated_cost','scope_identity'}
         _rm_opt=_rm_req|{'changed_files'}
         if not isinstance(m,dict) or not _rm_req<=set(m)<=_rm_opt:
             raise ValueError('run_manifest')
+        # Scope identity is part of the terminal contract: a receipt must carry
+        # how many files it ran and how many the mode discovers, so "full suite"
+        # is machine-refutable after RUN_TESTS_SELECTED_PATHS_FILE is removed.
+        s=m['scope_identity']
+        if not isinstance(s,dict) or set(s) != {'mode','selected_file_count','discovered_file_count',
+                                                'started_file_count','executed_file_count',
+                                                'cached_file_count','failed_files','failed_file_count',
+                                                'complete','full_scope','full_scope_claimable'}:
+            raise ValueError('scope_identity')
+        if s['selected_file_count'] != len(d['test_paths']): raise ValueError('scope_identity count')
+        if s['complete'] is not bool(d['complete']): raise ValueError('scope_identity complete')
+        # A count claim must be backed by its own enumeration, never by a
+        # truncated listing the reader has to re-derive.
+        if not isinstance(s['failed_files'], list) or s['failed_file_count'] != len(s['failed_files']):
+            raise ValueError('scope_identity failed_files')
+        # "Full scope" is the four-condition claim: unit full-scope mode, every
+        # discovered file selected, every selected file actually executed, and the
+        # run finished. A complete=false receipt can never prove a full suite.
+        if s['full_scope'] is not (bool(s['full_scope_claimable'])
+                                   and s['discovered_file_count'] is not None
+                                   and s['selected_file_count'] == s['discovered_file_count']
+                                   and s['executed_file_count'] == s['discovered_file_count']
+                                   and bool(s['complete'])):
+            raise ValueError('scope_identity full_scope')
     actual=hashlib.sha256(open(d['artifact'],'rb').read()).hexdigest()
     counts_valid=(
         (d['declared_test_count'] > 0 and d['observed_test_count'] == d['declared_test_count'])
@@ -1076,9 +1101,9 @@ PY
 }
 
 publish_run_tests_metadata() {
-    python3 - "$1" "$2" "$3" "$4" <<'PY'
-import hashlib, json, os, re, sys, tempfile
-path, head, paths_file, selector_input_fp=sys.argv[1:]
+    python3 - "$1" "$2" "$3" "$4" "${5:-}" "${6:-${REPO_ROOT:-.}}" <<'PY'
+import glob, hashlib, json, os, re, sys, tempfile
+path, head, paths_file, selector_input_fp, run_mode, repo_root=sys.argv[1:7]
 d=json.load(open(path, encoding='utf-8'))
 paths=[]
 if os.path.isfile(paths_file):
@@ -1086,10 +1111,41 @@ if os.path.isfile(paths_file):
 selected_blob=('\n'.join(paths)+'\n').encode()
 cache={'enabled': os.environ.get('BATS_CACHE','1') != '0',
        'directory': os.environ.get('BATS_CACHE_DIR','')}
+# Scope identity (cmd_karo_impl_receipt_scope_identity_20260726): selected_files
+# alone cannot refute a "full suite" claim, because nothing in the receipt says
+# how many files a full suite has. RUN_TESTS_SELECTED_PATHS_FILE is removed right
+# after this call, so the comparison must be frozen here. discovered_file_count
+# mirrors selection_manifest_for_singleflight()'s own find for the same mode;
+# full_scope is only true when the run actually covered every discovered file.
+discovered={'unit': ('tests/unit',), 'all': ('tests/unit', 'tests')}.get(run_mode)
+discovered_count=None
+if discovered:
+    found=set()
+    for rel in discovered:
+        found.update(p for p in glob.glob(os.path.join(repo_root, rel, '*.bats')) if os.path.isfile(p))
+    discovered_count=len(found)
+# selected==discovered is NOT enough (gunshi self-correction 2026-07-26 18:47): the
+# 18:03 run had selected=171/discovered=171 yet only 94 files ever started and the
+# receipt was complete=false. Executed (started AND finished, plus cache hits whose
+# result is reused) is the third value, and "full scope" additionally requires the
+# run to have completed. Only the unit full-scope mode may claim it, so a legitimate
+# partial run (affected/file/task) is never mislabelled as an incomplete full run.
+scope_identity={'mode': run_mode or 'unknown',
+                'selected_file_count': len(paths),
+                'discovered_file_count': discovered_count,
+                'started_file_count': None,
+                'executed_file_count': None,
+                'cached_file_count': None,
+                'failed_files': [],
+                'failed_file_count': 0,
+                'complete': bool(d.get('complete')),
+                'full_scope': False,
+                'full_scope_claimable': run_mode == 'unit'}
 d.update(version=3, source_head=head, test_paths=paths,
          run_manifest={'cache': cache, 'commit_sha': head,
                        'selector_input_fingerprint': selector_input_fp,
                        'selected_paths_fingerprint': hashlib.sha256(selected_blob).hexdigest(),
+                       'scope_identity': scope_identity,
                        'estimated_cost': {
                            'selected_files': len(paths),
                            'suite_timeout_sec': int(os.environ.get('RUN_TESTS_SUITE_TIMEOUT_SEC', '1200')),
@@ -1122,6 +1178,32 @@ try:
             direct_files=int(direct),
             transitive_files=int(transitive),
         )
+    started={m.group(1) for m in re.finditer(r'^START: (\S+) pid=', clean, re.MULTILINE)}
+    done_lines=list(re.finditer(r'^DONE: (\S+) rc=(\d+)', clean, re.MULTILINE))
+    finished={m.group(1) for m in done_lines}
+    # Enumerate every failing file rather than leaving callers to count a
+    # truncated view (karo/shogun 2026-07-26 19:00: three claims that day were
+    # made from head/tail-cut output). A count must never be derived from a
+    # clipped listing, so the receipt carries the full list next to its length.
+    failed_files=sorted({m.group(1) for m in done_lines if m.group(2) != '0'})
+    summaries=list(re.finditer(r'^PASS: (\d+) bats file\(s\) \((\d+) run, (\d+) cached\)\s*$', clean, re.MULTILINE))
+    cached=int(summaries[-1].group(3)) if summaries else 0
+    scope_identity.update(
+        started_file_count=len(started),
+        cached_file_count=cached,
+        failed_files=failed_files,
+        failed_file_count=len(failed_files),
+        # A cache hit contributes its file's result without starting a process,
+        # so it counts as executed for coverage purposes; a started-but-unfinished
+        # file does not.
+        executed_file_count=len(started & finished) + cached,
+    )
+    scope_identity['full_scope']=bool(
+        scope_identity['full_scope_claimable']
+        and discovered_count is not None
+        and scope_identity['selected_file_count'] == discovered_count
+        and scope_identity['executed_file_count'] == discovered_count
+        and scope_identity['complete'])
     changed_lines=list(re.finditer(r'^TEST_SELECTION_CHANGED_FILES (.+)\s*$', clean, re.MULTILINE))
     if changed_lines:
         raw=changed_lines[-1].group(1).strip()
@@ -1774,7 +1856,7 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         fi
         _rc=$?
         set -e
-        publish_run_tests_metadata "$_receipt" "$_source_head" "$_selected_paths" "$_selector_input_fp"
+        publish_run_tests_metadata "$_receipt" "$_source_head" "$_selected_paths" "$_selector_input_fp" "$_mode" "$REPO_ROOT"
         rm -f "$_selected_paths"
         # This branch runs under nounset.  A truncated/missing receipt must
         # therefore have a value before any parser or validator can fail.
@@ -1812,9 +1894,14 @@ PY
         python3 - "$_receipt" <<'PY'
 import json, sys
 with open(sys.argv[1]) as fh: d=json.load(fh)
-print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={}".format(
+scope=(d.get("run_manifest") or {}).get("scope_identity") or {}
+print("TEST_RECEIPT_PASS path={} rc={} tests={}/{} skip={} sha256={} duration_ms={} "
+      "files_selected={} files_discovered={} files_executed={} complete={} full_scope={}".format(
     sys.argv[1], d["rc"], d["observed_test_count"], d["declared_test_count"],
-    d["skip_count"], d["output_sha256"], d["duration_ms"]))
+    d["skip_count"], d["output_sha256"], d["duration_ms"],
+    scope.get("selected_file_count"), scope.get("discovered_file_count"),
+    scope.get("executed_file_count"), "1" if scope.get("complete") else "0",
+    "1" if scope.get("full_scope") else "0"))
 PY
         [ "$_singleflight" != 1 ] || [ -z "$_snapshot" ] || rm -f "$_snapshot"
         exit "$_rc"
