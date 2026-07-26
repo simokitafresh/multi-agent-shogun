@@ -6916,6 +6916,20 @@ write_karo_snapshot() {
                     fi
                 done
 
+                # 指揮官2名(karo/gunshi)の状態行 — B16「集約ビューの欠落」対処(将軍裁可 2026-07-27 03:04)
+                # 家老が常用するこのビューに指揮官が載っておらず、状態確認にcapture-paneを手で引く
+                # しかなかった。機械問合せ手段(tmux @agent_state)は既に在るのでビューへ繋ぐだけにする。
+                # 軍師がpane_lookup.shで直した同型欠落(将軍paneが別windowで解決不能)のsnapshot版。
+                for _cmdr in karo gunshi; do
+                    local _cmdr_pane="" _cmdr_state="unknown" _cmdr_unread="0"
+                    _cmdr_pane=$(pane_lookup "$_cmdr" 2>/dev/null || true)
+                    if [ -n "$_cmdr_pane" ]; then
+                        _cmdr_state=$(tmux display-message -t "$_cmdr_pane" -p '#{@agent_state}' 2>/dev/null || echo unknown)
+                    fi
+                    _cmdr_unread=$(grep -c 'read: false' "$SCRIPT_DIR/queue/inbox/${_cmdr}.yaml" 2>/dev/null || echo 0)
+                    echo "commander|${_cmdr}|state:${_cmdr_state:-unknown}|UNREAD:${_cmdr_unread}|PANE:${_cmdr_pane:-unresolved}"
+                done
+
                 # 報告状態
                 for name in "${NINJA_NAMES[@]}"; do
                     local report_file=""
