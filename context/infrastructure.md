@@ -888,7 +888,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1378 -->
+<!-- last_synced_lesson: L1379 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1980,6 +1980,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1376: gate_report_format.sh修正後もB7破損データは自動修復されない。修復経路が存在しないままの旧破損が残存する（cmd_karo_cycle2_bugverify_b7_b19_20260727）
 - L1377: B16は手段が無いではなく単純な機械的問合せだけでは不正確が実態。ninja_monitor.shの複合補正ロジックが証拠（cmd_karo_cycle2_bugverify_b16_b18_20260727）
 - L1378: 運用台帳の代表値表記が中央値でなく平均(外れ値driven)である場合、典型コストを過大/過小評価する（cmd_karo_cycle2_bugverify_perf_20260727）
+- L1379: 検出gateの稼働有無と接続有無は別軸で確認せよ（cmd_reflux_promotion_202607270511_hayate）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
