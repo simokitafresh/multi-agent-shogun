@@ -282,6 +282,13 @@ PY
   make_deployer pass
   run env SHARD_ITEM_JSON="$(base_item_json)" CAMPAIGN_LANE_FIXED_SHA="$FIXED_SHA" CAMPAIGN_LANE_SOURCE_REPO="$SOURCE" CAMPAIGN_LANE_DEPLOY_CMD="$TMPROOT/bin/deploy" SHOGUN_ROOT="$ROOT" CAMPAIGN_LANE_WAIT_SEC=1 CAMPAIGN_LANE_POLL_SEC=0.1 \
     "$ROOT/scripts/campaign_lane_shard_item.sh" item skills/campaign-lane/adapters/new.py worker "$TMPROOT/work" "$TMPROOT/out"
+  # 失敗時にどの段階で落ちたかを残す。判定は変えない(status 0 のみ合格)。
+  # CI run 30190382837 でここが status!=0 で落ちたが、bats の run は出力を飲むため
+  # reason_code が分からず機序を特定できなかった。次の失敗を診断可能にする。
+  if [ "$status" -ne 0 ]; then
+    printf 'shard rc=%s\n%s\n' "$status" "$output" >&2
+    cat "$TMPROOT/out/result.json" >&2 2>/dev/null || printf 'result.json missing\n' >&2
+  fi
   [ "$status" -eq 0 ]
   [ "$(python3 -c 'import yaml; print(yaml.safe_load(open("'"$TMPROOT"'/out/task.yaml"))["task"]["canonical_root"])')" = "$ROOT" ]
 }
