@@ -40,6 +40,16 @@ def _snapshot_command(report, cmd_id):
         raise ValueError("immutable task contract snapshot is incomplete")
     return {"acceptance_criteria": criteria, "command": purpose, "project": project}
 
+# Commands the system generates for itself never pass through cmd_save, so they
+# have no Shogun spec by construction.  Their deploy-time immutable
+# task_contract_snapshot is the contract instead.  This is an allowlist, not a
+# relaxation: any other spec-less cmd_id (notably a hand-written one that
+# bypassed cmd_save) still fails closed below.
+#   cmd_karo_*            karo-direct deployment
+#   cmd_reflux_promotion_ ninja_monitor's promotion reflux auto-deployment
+SPEC_LESS_AUTOGEN_PREFIXES = ("cmd_karo_", "cmd_reflux_promotion_")
+
+
 def find_command(root, cmd_id, report=None, report_path=None):
     paths = [root / "queue/shogun_to_karo.yaml", root / f"queue/reopened_cmds/{cmd_id}.yaml"]
     paths += [Path(p) for p in sorted(glob.glob(str(root / f"queue/archive/cmds/{cmd_id}_*.yaml")), reverse=True)]
@@ -47,12 +57,12 @@ def find_command(root, cmd_id, report=None, report_path=None):
         if path.is_file():
             item = command_from(load(path), cmd_id)
             if item is not None: return item, path
-    # Karo-direct commands intentionally have no Shogun command record.  Their
-    # immutable deploy-generation snapshot is the contract; the live worker
-    # task may already belong to a later assignment.
-    if cmd_id.startswith("cmd_karo_") and isinstance(report, dict) and report_path is not None:
+    # Auto-generated commands intentionally have no Shogun command record.
+    # Their immutable deploy-generation snapshot is the contract; the live
+    # worker task may already belong to a later assignment.
+    if cmd_id.startswith(SPEC_LESS_AUTOGEN_PREFIXES) and isinstance(report, dict) and report_path is not None:
         if str(report.get("status") or "") != "completed" or str(report.get("verdict") or "").upper() != "PASS":
-            raise ValueError("karo-direct fallback requires completed/PASS report")
+            raise ValueError("autogen spec fallback requires completed/PASS report")
         return _snapshot_command(report, cmd_id), report_path
     raise ValueError(f"cmd spec not found: {cmd_id}")
 
