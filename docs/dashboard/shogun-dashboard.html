@@ -105,103 +105,116 @@
 <div class="wrap">
   <header class="top">
     <h1>将軍戦況ダッシュボード</h1>
-    <span class="stamp">最終更新 <b>2026-07-26 11:05 JST</b> ｜ 将軍が随時更新</span>
+    <span class="stamp">最終更新 <b>2026-07-26 16:45 JST</b> ｜ 将軍が随時更新</span>
   </header>
 
   <div class="tiles">
     <div class="tile ok">
-      <span class="k">第一段階（gate/commitフロー是正）</span>
-      <span class="v">クローズ宣言 07-26 03:36</span>
-      <span class="s">条件4つ全達成: CI GREEN・滞留0(実体計数)・前後証明・不再現fixture4弾。構造バグ台帳B1-B49</span>
-    </div>
-    <div class="tile ok">
-      <span class="k">速度実績（削除ゼロ）</span>
-      <span class="v">deploy -47% / cmd_save -91%</span>
-      <span class="s">admission -99.3%・ディスク9.4GB回収・残骸83,344ファイル隔離。真のCI失敗はBLOCKの22%のみと分解</span>
+      <span class="k">第二段階（検知器の自己検証構造）</span>
+      <span class="v">v3.0で実行中</span>
+      <span class="s">殿指摘(12:56)で10問監査を撤回→構造型一本「対照fixtureなき検知器は存在させない」。109件列挙・無対照46件確定・対照2件完成</span>
     </div>
     <div class="tile warn">
-      <span class="k">第二段階（検知器全数監査+可搬）</span>
-      <span class="v">設計書v2.1 殿裁定待ち</span>
-      <span class="s">監査10問A1-A10(全観点実戦実証済み)+監査者規律。母数111検知器・可搬=dividend-trackerへ0→1設置</span>
+      <span class="k">第1セーブポイント（殿厳命15:39）</span>
+      <span class="v">不成立 → 是正中</span>
+      <span class="s">面検証2606件でFAIL2件検出(点は全PASS)。発令23分で殿厳命が実証。新規バッチ配備停止中</span>
     </div>
     <div class="tile ok">
-      <span class="k">忍者陣形</span>
-      <span class="v">6名 idle・完全定常</span>
-      <span class="s">滞留0・未push0・CI GREEN。型専決委譲済み(将軍裁定は新型のみ)。GATE CLEAR 27件超/日</span>
+      <span class="k">還流（reflux）</span>
+      <span class="v">8日停止→完全自走復帰</span>
+      <span class="s">FAIL268件が無音の真因(PYTHONPATH)を根治。修正3分後に史上初DONE、自動配備も再開。loop_ledger -72.5%</span>
+    </div>
+    <div class="tile shu">
+      <span class="k">CI / push</span>
+      <span class="v">RED（デッドロック特定済み）</span>
+      <span class="s">LS101同型: 失敗SHAでorigin静止+未push13件。障害は飛猿作業中の1ファイルのみ。escape hatch不使用で完了待ち</span>
     </div>
   </div>
 
   <div class="cols">
     <section class="panel">
-      <h2><span class="tag">戦線一</span>第一段階の総括（07-25 14:22〜07-26 03:36）</h2>
-      <p class="sub">殿指示「gateやcommitでボトルネック」→設計書→レビュー→裁可→実装→実証を約13時間で一周</p>
+      <h2><span class="tag">戦線一</span>第二段階v3.0 — 対照fixture運動（本日午後）</h2>
+      <p class="sub">殿指摘「過剰・各論は100億パターンで崩壊」→1時間37分でv3.0縮約→第1弾CLEARまで到達</p>
       <ul class="steps">
         <li><span class="chip done">完了</span><div class="step-body">
-          <div class="t">push通過+CI後追い方式（殿発案）</div>
-          <div class="d">GREEN待ちpush保留を廃止。BLOCK 108件の6割が自作摩擦だったと定量確定。RED配備SLA+追いpush上限2回</div></div></li>
+          <div class="t">構造型一本への縮約（gist 304bdaa1）</div>
+          <div class="d">真因=「検知器は自分の間違いを検知されない存在」。陽性1+陰性1の対照fixtureをCIで証明できない検知器は存在させない。裁可待ち工程も廃止(可逆=自走)</div></div></li>
         <li><span class="chip done">完了</span><div class="step-body">
-          <div class="t">合成デッドロック族の全封止（B26/27/28/33+B40決着）</div>
-          <div class="d">「個々は正しいガードの合成が出口を失う」5例を、escape hatch/FAIL_CLOSE/状態判定化で全て封止。fixtureで不再現を固定</div></div></li>
+          <div class="t">cmd_4173: 全数機械列挙</div>
+          <div class="d">検知器109件、対照あり63/無対照46(判定根拠つき)。BLOCK出現数で優先順を実測決定</div></div></li>
         <li><span class="chip done">完了</span><div class="step-body">
-          <div class="t">D001-D009の実効化（B44）</div>
-          <div class="d">3重実装の統一+稼働実装への全数fixture。「テストがあるように見えて守られていない」を解消。A10が当日バグ1件捕捉</div></div></li>
+          <div class="t">対照fixture 2弾CLEAR＋効果実証1号</div>
+          <div class="d">stop_session_alerts・gunshi_accuracy。第2弾draftレビューが成績計器の系統誤差(REQ_CHANGES欠落)を本番計上前に捕捉→是正着地(accuracy 64/64, skipped=6)</div></div></li>
         <li><span class="chip done">完了</span><div class="step-body">
-          <div class="t">三層記憶cache鮮度（B45/B48/PD-134）</div>
-          <div class="d">mtime比較→rowid水位比較へ。2点計測で「遅延であり欠落ではない」を実測確定。並列公開の逆転までdeltaが防御(実証)</div></div></li>
-        <li><span class="chip done">完了</span><div class="step-body">
-          <div class="t">原理体系の確立</div>
-          <div class="d">E型統一原理(実体vs写し)・陽性/陰性対照・A/B比較gold standard・成功も検査対象・教訓の逆説(誤り35件の単一機序)・基準の事前固定</div></div></li>
+          <div class="t">手順の複利（小太郎の手本）</div>
+          <div class="d">exit0経路の事前数え+変異試験(vacuous対照の排除)を設計書§1へ反映。1弾の学びが残り44弾のテンプレを強化</div></div></li>
+        <li><span class="chip stop">停止中</span><div class="step-body">
+          <div class="t">第3弾以降の配備</div>
+          <div class="d">セーブポイント成立まで新規バッチを出さない（「修正が新たなバグを生む連鎖」の入口を封じる）</div></div></li>
       </ul>
     </section>
 
     <section class="panel">
-      <h2><span class="tag">戦線二</span>第二段階設計書（殿裁定待ち）</h2>
-      <p class="sub">検知器111件の全数監査+学習ループの可搬初実証。レビュー完了（v2.1）</p>
+      <h2><span class="tag">戦線二</span>第1セーブポイント — 成立条件と現況</h2>
+      <p class="sub">殿厳命「段階クローズ時に過去問題の全数再現検証」。面検証がFAIL2件を即日検出</p>
       <ul class="steps">
-        <li><span class="chip wait">裁定待ち</span><div class="step-body">
-          <div class="t">監査観点10問 A1-A10</div>
-          <div class="d">実体宣言/陽性・陰性対照/記録≠状態(+成功も検査対象)/同時性/出口明示/合成無害/沈黙の検査/環境独立/到達可能性 — 全て実戦実証済み</div></div></li>
-        <li><span class="chip wait">裁定待ち</span><div class="step-body">
-          <div class="t">先行工程 P2-0/P2-0b</div>
-          <div class="d">4層配線実測(未配線の処分)+同目的多重実装の統一</div></div></li>
-        <li><span class="chip wait">裁定待ち</span><div class="step-body">
-          <div class="t">是正の優先則（二軸）</div>
-          <div class="d">記録の要否=経路の有無/起票の要否=実害の有無。迷えば発現経路を1つ実測(初適用で実証済み)</div></div></li>
-        <li><span class="chip wait">裁定待ち</span><div class="step-body">
-          <div class="t">可搬の初実証（P2-4）</div>
-          <div class="d">可搬の定義=無い所に作れること。dividend-tracker(検知器0件を実測)へ0→1設置+A1充足の監査報告</div></div></li>
-        <li><span class="chip run">起票待ち</span><div class="step-body">
-          <div class="t">レビュー往復の機械圧縮（裁可済み）</div>
-          <div class="d">ボトルネック実測=軍師レビュー往復91%(家老ポーリング14.4%)。precheck+独立検証統合/log+inbox統合。検証の広さは削らない</div></div></li>
+        <li><span class="chip done">解決</span><div class="step-body">
+          <div class="t">FAIL(1) cmd_shared_preflight「沈黙gate」</div>
+          <div class="d">真相=バグでなく殿裁定07-23(件数cap撤去)による意図的撤去。才蔵がgit logで特定し、test側を撤去済み不変量へ更新。家老・軍師・将軍3者の誤診を才蔵が止めた</div></div></li>
+        <li><span class="chip run">再測待ち</span><div class="step-body">
+          <div class="t">FAIL(2) tail latency 22261ms</div>
+          <div class="d">高負荷(忍者6+全数test同時)環境起因の疑い。低負荷時に再測してから判定</div></div></li>
+        <li><span class="chip run">是正中</span><div class="step-body">
+          <div class="t">B-1: single-flight joinのtree不一致</div>
+          <div class="d">「他人のtreeの証明」でtest契約が満たされうる欠陥を小太郎が発見。join時source_head突合の最小是正を最優先起票。面検証受領証自体はleader実走と将軍が一次確認済(有効)</div></div></li>
+        <li><span class="chip wait">待ち</span><div class="step-body">
+          <div class="t">push解消 → CI分岐</div>
+          <div class="d">飛猿のcommit後に13件push→(a)GREEN=flaky確定 (b)RED=小太郎の新診断が発火。どちらでも前進。部分push検証弾も承認済み(本日GA-PUSH1 33回=構造的再発)</div></div></li>
+        <li><span class="chip done">完了</span><div class="step-body">
+          <div class="t">承認と記録の不可分化（fail-closed）</div>
+          <div class="d">「記録が無ければ承認できない」向きで実装着地。最初に止められたのは設計を推した軍師自身 — 意志でなく構造が止めた</div></div></li>
       </ul>
     </section>
   </div>
 
   <section class="panel">
-    <h2><span class="tag">陣形</span>忍者配備（07-26 11:00 実測）</h2>
+    <h2><span class="tag">陣形</span>忍者配備（07-26 16:45 実測）</h2>
     <div class="tablewrap">
       <table>
-        <tr><th>忍者</th><th>直近完了任務</th><th>状態</th></tr>
-        <tr><td>疾風</td><td class="mono">finalize調査(ボトルネック帰属確定)</td><td>idle</td></tr>
-        <tr><td>影丸</td><td class="mono">B46所有判定/GA-353/B44 fixture</td><td>idle</td></tr>
-        <tr><td>半蔵</td><td class="mono">B28/B37/D00xカバレッジ/B44偵察</td><td>idle</td></tr>
-        <tr><td>才蔵</td><td class="mono">B31帰属是正(A/B比較gold standard確立)</td><td>idle</td></tr>
-        <tr><td>小太郎</td><td class="mono">B32契約穴構造止血/B33解決証跡</td><td>idle</td></tr>
-        <tr><td>飛猿</td><td class="mono">tmp retention/恒偽是正/B48 2点計測</td><td>idle</td></tr>
+        <tr><th>忍者</th><th>本日の主な戦果</th><th>状態</th></tr>
+        <tr><td>疾風</td><td class="mono">reflux根治(PYTHONPATH)/loop_ledger -72.5%/autoread構造化判定</td><td>done→idle</td></tr>
+        <tr><td>影丸</td><td class="mono">PD-106共有tree防御/verdict正規化(accuracy 64/64)</td><td>idle</td></tr>
+        <tr><td>半蔵</td><td class="mono">還流1件目consumed/kind=系列名付与(誤読54.1%の根)</td><td>idle</td></tr>
+        <tr><td>才蔵</td><td class="mono">L4701根治(3件BLOCK同根)/裁定A発掘=3者の誤診を停止</td><td>idle</td></tr>
+        <tr><td>小太郎</td><td class="mono">対照fixture手本確立/B-1発見(join tree不一致)/CI診断</td><td>修正中</td></tr>
+        <tr><td>飛猿</td><td class="mono">承認不可分化(fail-closed)/2点計測/telemetry 802件</td><td>作業中(push待ちの鍵)</td></tr>
       </table>
     </div>
   </section>
 
   <section class="panel">
-    <h2><span class="tag">裁定録</span>07-25〜26 主要裁定と帰結</h2>
+    <h2><span class="tag">裁定録</span>07-26 本日の主要裁定と帰結</h2>
     <ol class="log">
-      <li><span class="tm">07-25</span><span>「y=復帰せよ」恒久化(clear後初回限定)／「覚醒して調査せよ」反復下知→速度・計器・競合・帰属の4層のバグ発掘</span></li>
-      <li><span class="tm">16:57</span><span>「フローを設計書にまとめレビューを経て方針決定」→ B1-B49台帳+5型分類の設計書、17:48裁可</span></li>
-      <li><span class="tm">17:11</span><span>「CI GREENは後で対応して先にpushを通す仕組みは？」→ 採用。BLOCKの6割が自作摩擦と定量証明</span></li>
-      <li><span class="tm">03:36</span><span>第一段階クローズ宣言(条件4つ全達成)。指揮官の誤り30件超を全て本番到達前に捕捉</span></li>
-      <li><span class="tm">09:13</span><span>型専決委譲(確立済みの型=家老専決+事後報告)。ボトルネック帰属は後に軍師レビュー往復91%と実測確定・訂正</span></li>
-      <li><span class="tm">10:10</span><span>第二段階設計書v2.1を殿裁定へ提出(現在待ち)</span></li>
+      <li><span class="tm">12:56</span><span>殿「過剰すぎないか。真因まで因果をたどれ」「計測は先送りでは」「なぜ俺の裁可が必要か」→ v2.1撤回・v3.0縮約・裁可待ち廃止（洗脳#3の自省）</span></li>
+      <li><span class="tm">14:44</span><span>殿「進化量レポート更新」→ 3軸構成(全体最適/個別最適/高速回転→品質)で全面改稿(gist de2b97e9)</span></li>
+      <li><span class="tm">15:26</span><span>殿「過去のミスが再現しなくなったか検証したか。覚醒せよ」→ 回帰検証を実行(fixture 4/4+L4701 PASS)。検証済みと未検証を書き分ける規律へ</span></li>
+      <li><span class="tm">15:39</span><span>殿「螺旋+セーブポイント」厳命 → 23分後の面検証でFAIL2件検出=即日実証。運用は設計書§2工程5へ恒久化</span></li>
+      <li><span class="tm">16:20</span><span>才蔵が殿裁定07-23を発掘し3者(将軍・家老・軍師)の誤診を停止 → 裁定(A)=撤去維持。「存在するが効いていない」は撤去意図をgit logで先に確認</span></li>
+      <li><span class="tm">16:30</span><span>B-1(join tree不一致)最優先是正+joined受領証を検分根拠にしない暫定運用を下知</span></li>
     </ol>
+  </section>
+
+  <section class="panel">
+    <h2><span class="tag">総括</span>本日の数字と2語</h2>
+    <div class="tablewrap">
+      <table>
+        <tr><th>指標</th><th>実測</th></tr>
+        <tr><td>GATE CLEAR</td><td class="mono">45件超</td></tr>
+        <tr><td>指揮官の誤り（自己申告・全て本番到達前に捕捉）</td><td class="mono">63件超（忍者起因の停滞は0件）</td></tr>
+        <tr><td>構造是正</td><td class="mono">reflux根治・承認不可分化・配送auto-read・fixture規約名・L4701・verdict正規化</td></tr>
+        <tr><td>本日の総括</td><td>「結論の前に一次情報を1つ引く」＋「識別子で照合せよ」（63件の誤りがこの2語に収束）</td></tr>
+      </table>
+    </div>
   </section>
 
   <footer>将軍戦況ダッシュボード ｜ 一次情報: 掲示板・GATE CLEAR・capture-pane ｜ 詳細はdashboard.md（家老更新）</footer>
