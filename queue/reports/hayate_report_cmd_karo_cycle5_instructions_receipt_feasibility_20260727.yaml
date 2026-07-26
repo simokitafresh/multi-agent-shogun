@@ -36,32 +36,32 @@ task_contract_snapshot:
     Phase分の受領証を出した。★∴同じ必読でもdeepdiveは強制されinstructionsは文言のみ。'
   task_id: cmd_karo_cycle5_instructions_receipt_feasibility_20260727_normal
 result:
-  summary: 'AC1-AC4を実測完了。家老の前提(a)(b)は広範囲grepでも正しいと確認(0件)。AC2実測: deepdive_replay.sh
-    1Phase中央値0.06秒、karo.jsonl本日18件・全36件、Phase総数18(10+8)は想定通り。AC3: 3ファイル計2173行・52節、機械コストは無視できる(最大1.32秒)が真のコスト=読解+自問生成時間は本スクリプトでは計測不能=見積り不能。副作用3点(受領証混在/session
-    marker競合/gate拡張要)を具体的に特定。実装なし・調査のみ。'
-  details: "【AC1: 家老前提の検算】\n(a) grep範囲拡大: grep -rn \"instructions.*読|instructions_read\"\
-    \ scripts/ .claude/hooks/ → 1件(scripts/build_instructions.sh:343、Copilot CLIのcopilot-instructions.md自動読込に関する注釈コメントであり「読了検証機構」ではない)。\n\
-    \    さらに広域: grep -rln \"instructions/\" scripts/ .claude/hooks/ で26ファイルがinstructions/への参照を持つが、grep\
-    \ -rn \"instructions_read|instructions_ack|read_instructions|instructions.*受領|instructions.*verif\"\
-    \ scripts/ .claude/hooks/ は0件。\n    ∴家老の前提(a)「instructions読了を検証する機構は0件」は広範囲grepでも成立。誤りなし。\n\
-    (b) deepdive受領証機構の実在確認: scripts/deepdive_replay.sh(51行、Phase本文をpane全文表示+15字以上の自問要求+logs/deepdive_replay/<agent>.jsonlへsha256束縛の受領証追記)、scripts/gates/gate_deepdive_replay.sh(59行、session\
-    \ marker(logs/deepdive_replay/<agent>.session)以降のtsを持つ受領証があるか検査)が現物確認できた。\n  \
-    \  家老のlogs/deepdive_replay/karo.jsonlは全36行、日付別内訳=2026-07-26:18件/2026-07-27:18件。1日18件=why_chain(10Phase)+karo_verification(8Phase)と一致。\n\
-    \    ∴家老の前提(b)は正確。誤りなし。\n【AC2: deepdive_replay.sh実コスト実測】\n(1) 1Phase実行時間: bash\
-    \ scripts/deepdive_replay.sh hayate deepdive_why_chain_20260321.md <phase> \"\
-    <15字以上の自問>\" を計8回実行(/usr/bin/time -f '%e sec')。\n    1回目実行列(コールド含む): 3.64, 0.05,\
-    \ 0.06 sec。2回目実行列(ウォーム): 0.07, 0.06, 0.06, 0.05, 0.06 sec。\n    ウォーム5回の中央値=0.06秒/Phase。初回コールド1回のみ外れ値(3.64秒、初回bashプロセス起動コスト)。\n\
-    (2) 家老の本日受領証実件数: wc -l logs/deepdive_replay/karo.jsonl → 36行(全期間)。tsフィールド先頭10文字(日付)集計→2026-07-26:18件、2026-07-27:18件。本日分=18件。\n\
-    (3) 総Phase数の現物確認: grep -c \"^## Phase\" memory/deepdive_why_chain_20260321.md\
-    \ → 10。grep -c \"^## Phase\" memory/deepdive_karo_verification_20260405.md → 8。合計18。想定(10+8=18)は現物確認と完全一致。\n\
-    【AC3: instructions適用時の見積り】\n(1) 行数・節数: instructions/karo.md 565行/##見出し18/全見出し39。instructions/gunshi.md\
-    \ 1223行/##見出し22/全見出し108。instructions/shogun.md 385行/##見出し12/全見出し22。##見出し=1Phaseと仮定すると3役職合計52Phase。\n\
-    (2) 起動時間増加見込み(AC2中央値0.06秒×Phase数): karo 18×0.06=1.08秒、gunshi 22×0.06=1.32秒、shogun\
-    \ 12×0.06=0.72秒。\n    ★これはスクリプト実行(pane表示+jsonl追記)の機械コストのみ。deepdive_replay.shは自問(question)を引数で受け取る設計のため、Phase本文を読んで15字以上の自問を考えて入力する読解・思考時間は計測に含まれない。この読解・思考コストが実運用上の支配的コストだが、読解速度はagentの個体差・Phase内容の複雑さに依存し機械的計測の対象外=見積り不能。\n\
-    (3) 副作用列挙:\n    - 受領証混在: logs/deepdive_replay/<agent>.jsonlをinstructions用に流用すると既存deepdive受領証と混在し、md名フィルタなしでは判別コストが生じる。\n\
-    \    - session marker競合: gate_deepdive_replay.shはlogs/deepdive_replay/<agent>.sessionという単一markerのtsで「今セッション分」を判定する。deepdive用とinstructions用でmarkerを分離しないと片方の完了が他方の完了とみなされる誤判定リスクがある。\n\
-    \    - gate拡張要: 既存gate_deepdive_replay.shは対象mdパスがmemory/配下決め打ち(file=\"$SCRIPT_DIR/memory/$md\"\
-    )のため、instructions/配下ファイルは現状パス解決できず改修必須。\n【AC4: 実装停止条件の遵守】\n本タスクは調査のみ実施。コード変更・commitは一切行っていない。deepdive_replay.shの実行は計測目的のみ(受領証がlogs/deepdive_replay/hayate.jsonlへ8件追記されたのは想定内の副作用)。projects/dm-signal/lessons.yaml・scripts/lib/review_approval.shへの書込みは無し(読み取りもしていない)。gate/hook未解消条件は本タスク範囲で検出せず、BLOCK対象なし。"
+  summary: "AC1-AC4実測完了(訂正版)。AC1: 軍師の指摘通り家老前提(a)は軍師分について誤りと判明・再現検算で訂正(karo:0/gunshi:3/shogun:0)。軍師の(B)READ_REQUIRED方式は実在するがBLOCK未接続(表示専用)と追加確認。AC2: 1Phase中央値0.06秒/karo受領証本日18件・Phase総数18(想定通り)。AC3: (A)deepdive replay(既存BLOCK済み)と(B)READ_REQUIRED(BLOCK未接続)を比較し、(A)拡張の方が殿裁定07-21に適合すると結論。実装なし・調査のみ。"
+  details: "【AC1: 家老前提の検算(訂正版)】\n(a) 当初調査(scripts/ .claude/hooks/への広域grep)では0件だったが、★軍師の指摘+家老の検算により家老の前提は誤りと判明。汝も再現検算した。\n\
+    \    再現コマンド: grep -cE 'READ_REQUIRED|recovery-cache-mark' scripts/gates/gate_karo_startup.sh\
+    \ scripts/gates/gate_gunshi_startup.sh scripts/gates/gate_shogun_startup.sh\n\
+    \    出力(生): gate_karo_startup.sh:0 / gate_gunshi_startup.sh:3 / gate_shogun_startup.sh:0\n\
+    \    1件の定義: 各ファイル内のREAD_REQUIRED/recovery-cache-mark正規表現マッチ行数の合計。網羅範囲: 3ロールのstartup\
+    \ gateのみ(他ファイルは本訂正で未走査)。\n    ∴家老・軍師の検算と完全一致。家老について「0件」は正しく、軍師について「0件」は誤りだった。訂正する。\n\
+    \    軍師の機構実体(scripts/gates/gate_gunshi_startup.sh:10-70): TMUX_PANE由来のセッションキー+対象ファイルのsha256でcontent-addressedなキャッシュmarkerを作り(gunshi_recovery_cache_file)、--recovery-cache-check\
+    \ で CACHED/READ_REQUIRED を判定、--recovery-cache-mark で読了マーク(sha256記録)を行う。対象は instructions/generated/codex-gunshi.md、projects/infra/lessons_gunshi.yaml、memory/deepdive_why_chain_20260321.md\
+    \ の3ファイル。\n    ★重要な追加検証(汝が独自確認): この機構は「表示専用」であり強制ではない。gate_gunshi_startup.sh本体(60-70行目)はREAD_REQUIRED/CACHEDをechoで表示するのみで、overall=\"\
+    ALERT\"等の判定変数に接続していない(overall変数への代入箇所を全grepしたが本ブロックとの結線なし)。さらに `grep -rn \"recovery-cache-check|gunshi_recovery_content_status|READ_REQUIRED\"\
+    \ scripts/ .claude/hooks/` は gate_gunshi_startup.sh自身以外で0件=他のhook/gateから一切呼ばれていない。∴(B)は「read検証」の土台(content-hash比較)は実在するが、★deepdive_replay方式のような停止強制(BLOCK)には接続されていない。誤解を避けるため明記する:\
+    \ 家老の指摘「軍師には読了検証機構が実在する」は正しいが、「機械強制されている」は未確認(現状は非強制)。\n【AC2: deepdive_replay.sh実コスト実測】(変更なし、以下は前回記載の再掲)\n\
+    (1) 1Phase実行時間: ウォーム5回の中央値=0.06秒/Phase(0.07,0.06,0.06,0.05,0.06秒)。初回コールド1回のみ外れ値(3.64秒)。\n\
+    (2) karo.jsonl: 全36行、本日(2026-07-27)分=18件。\n(3) 総Phase数: why_chain=10、karo_verification=8、合計18=想定と完全一致。\n\
+    【AC3: instructionsへの適用見積り+(A)(B)方式比較】\n(1) 行数・節数: karo.md 565行/##18/全39。gunshi.md\
+    \ 1223行/##22/全108。shogun.md 385行/##12/全22。合計52 Phase相当(##見出し単位)。\n(2) 起動時間増加見込み(機械コストのみ、AC2中央値0.06秒×Phase数):\
+    \ karo 1.08秒、gunshi 1.32秒、shogun 0.72秒。読解・自問生成の思考時間は個体差に依存し計測不能=見積り不能(前回同様)。\n\
+    (3) 副作用: 受領証混在/session marker競合/gate拡張要(前回記載の3点、変更なし)。\n(A) vs (B) 方式比較(追加指示分):\n\
+    \    - (A) deepdive replay方式: 実装済み・稼働実績あり(karo本日18件)。stop_check_inbox.sh:745-752で\
+    \ shogun/karo/gunshi の3ロールのターン終了をBLOCKする形で機械強制済み(fail-open設計・gate不在時はBLOCKしない)。対象md名を都度引数で指定する設計のためinstructions/への適用には(前述の通り)対象パスの決め打ち(memory/固定)の改修が必要。コスト=1Phase\
+    \ 0.06秒×Phase数(既存インフラ流用、新規BLOCK配線は不要=stop_check_inbox.sh側の対象agent/gate切替のみ)。\n\
+    \    - (B) 軍師のREAD_REQUIRED方式: 実装済みだが★現状BLOCKに未接続(上記確認)。導入コスト=(i)対象ファイルリストへinstructions/*.mdを追加する改修(gate_gunshi_startup.sh\
+    \ 61-70行目相当のブロックをkaro/shogun両gateへ複製)、(ii)★真に「強制」にするには新たにstop hook等へBLOCK配線を追加する必要がある(現状の(B)には強制配線が存在しないため、これは新規実装に相当し殿裁定07-21「守るためだけの新gateも追加しない」に抵触するリスクがある)。\n\
+    \    - ∴殿裁定07-21に最も適合するのは「(A)の既存BLOCK配線をinstructions/にも対象拡大する」であり、「(B)を家老・将軍へ展開する」だけでは強制にならず追加のBLOCK実装が別途必要になる(=実質的に新規gate相当のコストが発生し、家老の想定「(B)展開だけで済む可能性」は誤りである可能性が高い)。\n\
+    【AC4: 実装停止条件の遵守】\n本追加調査でもコード変更・commitは行っていない(report YAMLへの追記・commitのみ)。gate/hook未解消条件の検出なし。"
 purpose_validation:
   cmd_purpose: IB-AJ是正案(instructions読了の受領証化)のコスト・副作用の実測。家老の見積り漏れの検算。
   fit: true
@@ -107,7 +107,7 @@ lesson_candidate:
   found: true
   no_lesson_reason: このタスクでは新規教訓候補なし
   title: deepdive_replay.shのinstructions/への転用は対象パス決め打ち・jsonl/marker共有という3つの構造的制約を持つ
-  detail: deepdive_replay.shはmemory/配下決め打ちのパス解決・agentごと単一jsonl・単一session markerという設計で、deepdive専用に最適化されている。instructions/読了検証への横展開を検討する際は、(1)対象パス切替、(2)受領証ファイル分離(混在防止)、(3)marker分離(誤判定防止)の3点を先に設計しないと、既存deepdive検証との判別不能・誤PASSが生じる。
+  detail: "deepdive_replay.shはmemory/配下決め打ちのパス解決・agentごと単一jsonl・単一session markerという設計で、deepdive専用に最適化されている。instructions/読了検証への横展開を検討する際は、(1)対象パス切替、(2)受領証ファイル分離(混在防止)、(3)marker分離(誤判定防止)の3点を先に設計しないと、既存deepdive検証との判別不能・誤PASSが生じる。追加知見: 軍師のREAD_REQUIRED/--recovery-cache-mark機構(gate_gunshi_startup.sh)はcontent-hashベースの読了検証土台を持つが、stop hook等のBLOCKに未接続であり「実在する」ことと「機械強制されている」ことは別問題。機構の実在確認だけでBLOCK強度を判定してはならない。"
   project: infra
   origin: '[[IB-AJ]] -> [[instructions読了検証機構の不在]] -> [[cmd_karo_cycle5_instructions_receipt_feasibility_20260727の実測調査]]'
 lessons_useful:
