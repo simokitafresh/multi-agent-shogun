@@ -6480,7 +6480,7 @@ INJECT_GLD_PY
 inject_experiment_first_principle() {
     local task_file="$1"
     [ -f "$task_file" ] || return 0
-    TASK_FILE_ENV="$task_file" python3 - <<'INJECT_EFP_PY'
+    PYTHONPATH="$SCRIPT_DIR" TASK_FILE_ENV="$task_file" python3 - <<'INJECT_EFP_PY'
 import os
 import tempfile
 import yaml
@@ -8846,7 +8846,7 @@ deploy_task_guard_target_path_collision() {
     local ninja_name="$2"
     [ -f "$task_file" ] || return 0
 
-    python3 - "$SCRIPT_DIR" "$task_file" "$ninja_name" <<'TARGET_COLLISION_PY'
+    PYTHONPATH="$SCRIPT_DIR" python3 - "$SCRIPT_DIR" "$task_file" "$ninja_name" <<'TARGET_COLLISION_PY'
 import json
 import os
 import re
