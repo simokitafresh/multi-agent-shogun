@@ -19,11 +19,29 @@ import subprocess
 import sys
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+def _git_hooks_dir():
+    """linked worktreeでは .git はファイルであり hooks は common dir 側にある。
+    相対パス .git/hooks を決め打ちすると worktree 実行時に検知器を静かに
+    取りこぼす(=黙る検知器)。common dir から解決する。"""
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--git-common-dir"],
+            cwd=REPO, capture_output=True, text=True, timeout=30,
+        )
+        common = out.stdout.strip()
+    except (OSError, subprocess.TimeoutExpired):
+        return ".git/hooks"
+    if not common:
+        return ".git/hooks"
+    if not os.path.isabs(common):
+        common = os.path.join(REPO, common)
+    return os.path.relpath(os.path.join(common, "hooks"), REPO)
+
+
 DETECTOR_DIRS = [
     "scripts/gates",
     ".claude/hooks",
     "scripts/hooks",
-    ".git/hooks",
 ]
 SKIP_NAMES = {"__pycache__", "test_hooks.sh"}
 DETECTOR_EXT = (".sh", ".py")
@@ -48,17 +66,17 @@ NEGATIVE_PAT = re.compile(
 
 def list_detectors():
     out = []
-    for d in DETECTOR_DIRS:
+    for d in DETECTOR_DIRS + [_git_hooks_dir()]:
         full = os.path.join(REPO, d)
         if not os.path.isdir(full):
-            continue
+            raise SystemExit(f"FAIL-CLOSED: detector dir missing: {d}")
         for name in sorted(os.listdir(full)):
             if name in SKIP_NAMES or name.endswith(".sample") or name.endswith(".old"):
                 continue
             path = os.path.join(full, name)
             if not os.path.isfile(path):
                 continue
-            if d == ".git/hooks":
+            if "hooks" in d and d.endswith("hooks") and not d.startswith("scripts") and not d.startswith(".claude"):
                 pass  # git hooks は拡張子なし
             elif not name.endswith(DETECTOR_EXT):
                 continue
@@ -69,8 +87,13 @@ def list_detectors():
 def load_tests():
     """tests/ 配下を一度だけ読み込む。detector毎にgrepを起動すると
     WSL2の/mnt/cでは1回あたり数秒かかり全体で10分を超える。"""
+    tests_root = os.path.join(REPO, "tests")
+    if not os.path.isdir(tests_root):
+        # tests/ が無いまま走ると全検知器が「無対照」に見え、偽の全滅レポートを
+        # 静かに出力する。測れないことを結果にするな。
+        raise SystemExit("FAIL-CLOSED: tests/ directory not found")
     corpus = {}
-    for root, _dirs, files in os.walk(os.path.join(REPO, "tests")):
+    for root, _dirs, files in os.walk(tests_root):
         if "__pycache__" in root:
             continue
         for fn in files:
