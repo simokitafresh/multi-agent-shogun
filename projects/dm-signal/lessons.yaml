@@ -1213,6 +1213,9 @@ lessons:
   origin: '[[cmd_3808]]'
   enforcement: 未自動化
   automated: false
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-27'
 - id: L850
   title: 本番への非同期長時間処理(fullrecalculate等)をトリガー後に設計変更指示が届いた場合、走行中処理は中断せず完了を待ち、変更は次回反復から適用する
   summary: cmd_3804でPOST /admin/recalculate-sync(fullrecalculate)をトリガー直後、家老から'部分再計算(_run_pa
@@ -5853,7 +5856,7 @@ lessons:
   origin: '[[cmd_training_L4_R38_kagemaru]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-07-24'
+  last_referenced: '2026-07-27'
 - id: L539
   title: FoF悪化の主因は尖り削減ではなくネスト深度増幅 — r=-0.199で仮説棄却
   summary: 65PFのEMA前後シグナル相関行列+尖り削減量とFoF Δcagr相関分析。r=-0.199(弱い負の相関)。尖り削減量はFoF悪化の主因ではない。cmd_1
@@ -6255,7 +6258,7 @@ lessons:
   origin: '[[cmd_1483]]'
   helpful_count: 0
   harmful_count: 0
-  last_referenced: '2026-07-26'
+  last_referenced: '2026-07-27'
 - id: L507
   title: lazy-loaded cache forward-fillは危険
   summary: signal_cache forward-fillがlazy-loadedキャッシュで古いシグナル(Cash含む)を全後続月に伝播。exact-match+qu
@@ -6899,6 +6902,9 @@ lessons:
   - scripts/analysis/grid_search/cmd_1200_kasoku_diff_runner.py
   - scripts/analysis/grid_search/run_077_kasoku.py
   origin: '[[cmd_1200]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-27'
 - id: L457
   title: oikaze serial/batch md5不一致(PE移行時fill_value差異)
   summary: simulate_patternのみPE化後simulate_batchとのfill_value=0.0差異でmd5不一致→CSV中止。全7本PE移行完了後にs
@@ -8148,6 +8154,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: '2026-03-17'
   origin: '[[cmd_1030]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-27'
 - id: L365
   title: チャンクプロトタイプの計測値を全量見積りに使うな
   summary: プロトタイプは少数サブセット(7)×単一サイズ(2)のためキャッシュヒット率が本番(41416サブセット×size混在)と異なる。実測0.490ms/pat
@@ -9263,6 +9272,9 @@ lessons:
   when: frontend/UIの表示・状態管理を変更する時
   how: '2026-03-12'
   origin: '[[cmd_859]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-27'
 - id: L279
   title: P(det) recent窓(n=6)のHAC SE推定は統計的に不安定。P6単独をトリガーにするな
   summary: newey_west_var_of_mean()のlag=max(1,floor(4*(n/100)^(2/9)))でn=6ではlag=1。6サンプルでの自己相
@@ -10149,6 +10161,9 @@ lessons:
   when: 同種の作業・判断・検証を行う時
   how: 個別に実装すると2回のSW更新(CACHE_NAME 2回インクリメント)が必要で非効率
   origin: '[[cmd_646]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-27'
 - id: L204
   title: API永続キャッシュはUI state用localStorageと分離し、auth-scope付き IndexedDB を主格にすべき
   summary: selected PF や folder filter のような小さなUI stateは localStorage で十分だが、 multi-year
@@ -10847,6 +10862,9 @@ lessons:
   when: Phase 3.7の_sample_indexは営業日のみだがPhase 4は土日スキップのみ時
   how: Phase 3.7の_sample_indexは営業日のみだがPhase 4は土日スキップのみ
   origin: '[[本番ログ "OPT-E date miss fallback" ~3600件 (2018-02-19)]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-27'
 - id: L147
   title: signal_cacheの値はstrとは限らない — build_signal_cache_value()はweights付きdictを返す
   summary: IF build_signal_cache_value()はmomentum_data.weightsが存在する全パイプラインFoFで{"holding_sig
@@ -10928,6 +10946,9 @@ lessons:
   when: block_registryのshared.py一元化(2026-01-05)後、troubleshooting.mdの時
   how: block_registryのshared.py一元化(2026-01-05)後、troubleshooting.mdの
   origin: '[[cmd_492]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-27'
 - id: L139
   title: 依存マップ作成時はgrepのみでなくAST循環解析を先に走らせると、遅延importを含む実サイクルを短時間で特定できる。
   summary: recon,dependency,python,static-analysis
@@ -11187,6 +11208,9 @@ lessons:
   when: Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換時
   how: Ridge/Lasso/ElasticNet/SVRで月次超過リターンを回帰予測し閾値判定で分類に変換
   origin: '[[legacy_lesson_L115]]'
+  helpful_count: 0
+  harmful_count: 0
+  last_referenced: '2026-07-27'
 - id: L114
   title: 高相関な弱予測器のスタッキングはDM3で精度改善しない
   summary: IF C1-3由来8モデルでメタ学習(LogReg/Ridge)を実施したが、best base(c2_logreg22, 59.7%)を超えられず(meta最
