@@ -334,7 +334,7 @@ lessons:
   source_ids_absorbed: [LS098]
   created_at: '2026-07-20'
   automated: true
-  enforcement: 'E4実装(retro配送復旧+日次計測)+殿原文retroのpane直貼り機構(idle時配送工事)。異常検知時の一次確認は将軍の即実行を既定とする'
+  enforcement: '(A)=Level5実装済(2026-07-26一次確認): retro配送4終端(cmd_complete_gate.sh:8950 / cmd_complete.sh:343 / inbox_write.sh:2812,2820)+idle時配送(ninja_monitor.sh:8901-8923 verbatim_pending/awaiting_answer走査・deploy lock排他・TERMINAL-RECONCILED)+台帳(logs/retro_pane_prompt.tsv 1162行, logs/self_retro.jsonl 最終追記2026-07-26T09:59)。「idle時配送工事中」は解消済。(B)=Level1(事後検出)のまま: 異常検知時の一次確認(capture-pane)は将軍の規範依存であり、gate_shogun_startup.shにruntime超過→一次確認督促のALERTは不在(2026-07-26 grep確認: STALL/RUNTIME/capture-pane いずれもヒットなし)。Level4昇格案はdecision_candidate(cmd_reflux_promotion_202607261200_hanzo)へ整理'
 - id: 'LS098'
   title: 'CDP確認は環境依存でlaunch経路が異なる — 「不可能」と諦めるな(#1早期終了)'
   origin: '[[殿指摘_CDPで確認は可能だ_20260721]] -> [[将軍のpowershell失敗=CDP不可能と誤結論]] -> [[chrome.exe直接起動で成功]]'
