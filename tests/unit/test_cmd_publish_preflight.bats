@@ -1,12 +1,25 @@
 #!/usr/bin/env bats
-# test_necessity: cmd_save --preflight and cmd_publish must keep the same shared preflight gate set and lesson-cap boundary.
+# test_necessity: 殿裁定2026-07-23(提案A)で撤去された教訓件数capが、cmd_save と cmd_publish の
+# どちらの実行経路にも復活していないこと(片側だけ復活する非対称が過去の実害である)。
+#
+# 経緯(cmd_karo_cifix_cmd_publish_preflight_invariant_20260726):
+#   本ファイルは元々『cmd_save と cmd_publish が同一の共有preflight(lesson_cap)を呼ぶ』を
+#   守っていたが、commit 4f4aae961(2026-07-23)が殿裁定 提案A により cmd_shared_preflight の
+#   呼出しを両方から撤去した。∴capそのものは契約として消滅しており、旧assertionは
+#   撤去済み契約を守り続けてCIをFAILさせていた(実装は正しくテストが古い側)。
+#   撤去は startup gate / cmd_save / cmd_publish の3箇所に適用される裁定であり、
+#   将軍が当初 startup gate のみを直して cmd_save 側を残したため cmd_4125 の保存が
+#   BLOCKされる空転が実際に再発した。∴守るべき不変量は『対称に撤去されたままであること』。
+#   参照: LS106(閾値は当時の実数からの逆算=根拠なき数値ゆえ従うのでなく撤去せよ)。
 
 setup() {
     PROJECT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
-    SHARED="$PROJECT_ROOT/scripts/lib/cmd_shared_preflight.sh"
     SAVE="$PROJECT_ROOT/scripts/cmd_save.sh"
     PUBLISH="$PROJECT_ROOT/scripts/cmd_publish.sh"
+    STARTUP_GATE="$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh"
     TEST_TMPDIR="$(mktemp -d)"
+    # 旧cap境界(33件でBLOCK/上限35)を大きく超える件数。capが生きていれば必ず発火する。
+    write_lessons 60
 }
 
 teardown() {
@@ -21,42 +34,45 @@ write_lessons() {
     done
 }
 
-run_shared_as_save() {
-    run bash -c 'source "$1"; cmd_shared_preflight "$2" 35' _ "$SHARED" "$TEST_TMPDIR/lessons.yaml"
+# capが発火したときにのみ現れる文言。実装の内部構造ではなく利用者に見える出力で判定する。
+assert_no_lesson_cap_block() {
+    [[ "$output" != *"lessons_shogun.yaml が"* ]]
+    [[ "$output" != *"active件数を"* ]]
+    [[ "$output" != *"件以上でBLOCK"* ]]
 }
 
-run_shared_as_publish() {
-    run bash -c 'source "$1"; cmd_shared_preflight "$2" 35' _ "$SHARED" "$TEST_TMPDIR/lessons.yaml"
+@test "AC1: cmd_save --preflight の実行経路で教訓件数capが発火しない" {
+    # 存在しないcmd_idを渡すことで、cmd_save側はブロック未検出WARNで止まる。
+    # capが生きていれば、その前段のlesson-cap BLOCKが出力に現れる。
+    run env \
+        CMD_SAVE_SHOGUN_LESSONS_FILE="$TEST_TMPDIR/lessons.yaml" \
+        CMD_SAVE_LAST_CMD_FILE="$TEST_TMPDIR/last.txt" \
+        CMD_SAVE_BLOCK_DIR="$TEST_TMPDIR" \
+        CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_TMPDIR/autolearn.txt" \
+        bash "$SAVE" --preflight cmd_absent_probe_for_cap_invariant
+    assert_no_lesson_cap_block
 }
 
-@test "AC1/AC3: cmd_save and cmd_publish source and call the same shared preflight" {
-    run grep -F 'source "$SCRIPT_DIR/lib/cmd_shared_preflight.sh"' "$SAVE"
-    [ "$status" -eq 0 ]
-    run grep -F 'source "$PROJECT_DIR/scripts/lib/cmd_shared_preflight.sh"' "$PUBLISH"
-    [ "$status" -eq 0 ]
-    [ "$(grep -c 'cmd_shared_preflight ' "$SAVE")" -eq 1 ]
-    [ "$(grep -c 'cmd_shared_preflight ' "$PUBLISH")" -eq 1 ]
-    run bash -c 'source "$1"; printf "%s\n" "${CMD_SHARED_PREFLIGHT_GATES[@]}"' _ "$SHARED"
-    [ "$status" -eq 0 ]
-    [ "$output" = "lesson_cap" ]
+@test "AC2: cmd_publish の実行経路で教訓件数capが発火しない" {
+    # LAST_CMD_FILE を不在にすることで run_publish_preflight は自動ack経路へ入らず即returnする
+    # (書込み副作用なし)。cmd_id不在のため昇格・委任へ進む前に exit する。
+    run env \
+        CMD_PUBLISH_SHOGUN_LESSONS_FILE="$TEST_TMPDIR/lessons.yaml" \
+        CMD_PUBLISH_LAST_CMD_FILE="$TEST_TMPDIR/absent_last.txt" \
+        bash "$PUBLISH" cmd_absent_probe_for_cap_invariant "probe"
+    [[ "$output" == *"cmd_publish pre-flight"* ]]
+    assert_no_lesson_cap_block
 }
 
-@test "AC2: active lessons 32 PASS on both paths" {
-    write_lessons 32
-    run_shared_as_save
+@test "AC3: 撤去は3箇所すべてで対称である(片側復活の検出)" {
+    # 呼出し0件を3箇所で確認する。1箇所だけ復活する非対称が過去の実害であった。
+    [ "$(grep -c 'cmd_shared_preflight ' "$SAVE")" -eq 0 ]
+    [ "$(grep -c 'cmd_shared_preflight ' "$PUBLISH")" -eq 0 ]
+    run grep -nE '(lessons_shogun\.yaml が|active件数を)' "$STARTUP_GATE"
+    [ "$status" -ne 0 ]
+    # 撤去の根拠(殿裁定)がコード上に残っていること。理由なき再追加を防ぐ。
+    run grep -F '殿裁定2026-07-23 提案A' "$SAVE"
     [ "$status" -eq 0 ]
-    run_shared_as_publish
+    run grep -F '殿裁定2026-07-23 提案A' "$PUBLISH"
     [ "$status" -eq 0 ]
-}
-
-@test "AC2: active lessons 33 BLOCK on both paths with truthful boundary" {
-    write_lessons 33
-    run_shared_as_save
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"32件以下"* ]]
-    [[ "$output" == *"33件以上でBLOCK"* ]]
-    run_shared_as_publish
-    [ "$status" -eq 1 ]
-    [[ "$output" == *"32件以下"* ]]
-    [[ "$output" == *"33件以上でBLOCK"* ]]
 }
