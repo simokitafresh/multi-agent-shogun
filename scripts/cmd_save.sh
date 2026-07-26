@@ -3653,7 +3653,7 @@ check_environment_change_after_prior_block() {
     _ENV_FILE=""
     _ENV_PATTERN=""
     _ENV_FILE_RESOLVED=""
-    _ENV_CHANGE="$(awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}' <<< "$CMD_BLOCK_NC")"
+    _ENV_CHANGE="$(awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*["\x27]?/,""); sub(/["\x27]?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}' <<< "$CMD_BLOCK_NC")"
     if [[ -z "$_ENV_CHANGE" ]]; then
         record_block_reason "environment_change未記入。BLOCKから何を環境に埋め込んだかを記載せよ(gate/lesson/hook/PI等)"
         echo '  例: environment_change: "gate_X追加(scripts/cmd_save.sh L576)+lesson_Y追加(lessons_karo.yaml)"' >&2
@@ -7264,7 +7264,7 @@ check_new_file_structure_warning() {
 # 全チェック完了後に配置(WARNは後段のCheckで蓄積されるため)
 if (( WARN_COUNT > 0 )) && (( PRIOR_ATTEMPT_COUNT == 0 )); then
     if load_cmd_block; then
-        _ENV_CHANGE_WARN="$(awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*"?/,""); sub(/"?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}' <<< "$CMD_BLOCK_NC")"
+        _ENV_CHANGE_WARN="$(awk '/environment_change:/{found=1; sub(/.*environment_change:[[:space:]]*["\x27]?/,""); sub(/["\x27]?[[:space:]]*$/,""); print; exit} END{if(!found) print ""}' <<< "$CMD_BLOCK_NC")"
         if [[ -z "$_ENV_CHANGE_WARN" ]]; then
             record_block_reason "WARNが${WARN_COUNT}件検出。environment_changeを記載せよ。次のcmdで同じWARNが出ないように環境に何を埋め込むか書け"
             echo '  形式: environment_change: "type=gate|lesson|hook; file=対象パス; pattern=grep検証文字列"' >&2
