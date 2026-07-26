@@ -695,22 +695,25 @@ inbox_deliver_report_review_generation() {
         report_review karo notify_gunshi >/dev/null 2>&1
 }
 
-inbox_extract_cmd_id_for_completion_guard() {
-    local content="$1"
-    local cmd_id="" report_path=""
-
-    cmd_id=$(printf '%s' "$content" | grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 || true)
-    if [ -n "$cmd_id" ]; then
-        printf '%s\n' "$cmd_id"
-        return 0
-    fi
-
-    report_path=$(inbox_extract_report_path_from_content "$content")
-    if [ -n "$report_path" ]; then
-        cmd_id=$(inbox_extract_parent_cmd_from_report "$report_path")
-        [ -n "$cmd_id" ] && printf '%s\n' "$cmd_id"
-    fi
+inbox_cmd_id_from_report_filename() {
+    # <ninja>_report_<cmd_id>.yaml -> <cmd_id>.  The path is a reference the
+    # sender supplied explicitly, so the cmd_id it encodes is structural; a
+    # cmd_id merely written in prose is not and must never reach here.
+    local path="$1" base=""
+    [ -n "$path" ] || return 0
+    base="${path##*/}"
+    base="${base%.yaml}"
+    case "$base" in
+        *_report_cmd_*) printf '%s\n' "${base#*_report_}" ;;
+    esac
 }
+
+# inbox_extract_cmd_id_for_completion_guard() was removed on 2026-07-26
+# (cmd_karo_impl_autoread_structural_field_20260726).  It took the FIRST
+# cmd_[A-Za-z0-9_]+ appearing anywhere in the message body, so a report that
+# merely mentioned an earlier cmd was auto-read as that cmd's completion
+# notification.  The auto-read decision now uses the report YAML's parent_cmd
+# only; prose must never decide delivery.
 
 inbox_review_log_has_lgtm() {
     local cmd_id="$1"
@@ -773,13 +776,16 @@ inbox_type_is_report_lifecycle() {
 inbox_should_auto_read_completed_notification() {
     local target="$1"
     local type="$2"
-    local content="$3"
+    local cmd_id="$3"
     local from_agent="$4"
-    local cmd_id=""
 
     [ "$target" = "karo" ] || return 1
 
-    cmd_id=$(inbox_extract_cmd_id_for_completion_guard "$content")
+    # cmd_id is the report YAML's own parent_cmd, resolved structurally by the
+    # caller.  It is NOT grepped out of the message body: a report that merely
+    # *mentions* an earlier cmd used to be read as that cmd's completion
+    # notification and silently delivered read:true (2026-07-26, kotaro's
+    # report mentioning cmd_4173).  Structure decides; prose never does.
     [ -n "$cmd_id" ] || return 1
 
     if [ "$type" = "report_review_result" ]; then
@@ -2426,11 +2432,10 @@ max_attempts=3
 MESSAGE_READ_STATE="false"
 INBOX_COMPLETED_DUPLICATE=0
 INBOX_AUTO_READ_COMPLETED_CMD=""
-if inbox_should_auto_read_completed_notification "$TARGET" "$TYPE" "$CONTENT" "$FROM"; then
-    MESSAGE_READ_STATE="true"
-    INBOX_COMPLETED_DUPLICATE=1
-    echo "[inbox_write] auto-read completed notification: target=${TARGET} type=${TYPE} cmd=${INBOX_AUTO_READ_COMPLETED_CMD}" >&2
-fi
+# The auto-read decision is deliberately deferred until after the structured
+# identity block below: it must key off the report's own parent_cmd, which is
+# only known once the report YAML has been resolved.
+STRUCTURED_PARENT_CMD_FROM_YAML=""
 
 _identity_fields=()
 STRUCTURED_REPORT_FINGERPRINT=""
@@ -2445,13 +2450,19 @@ case "$TYPE" in
                 IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
                 STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$_structured_candidate" "task_id" "")
                 STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$_structured_candidate" "parent_cmd" "")
+                STRUCTURED_PARENT_CMD_FROM_YAML="$STRUCTURED_PARENT_CMD"
             fi
             [ -n "$_structured_candidate" ] || { echo "BLOCK: report notification missing structured report identity" >&2; exit 1; }
             if [ -z "${STRUCTURED_REPORT_ID:-}" ]; then
                 _REPORT_IDENTITY=$(python3 "$SCRIPT_DIR/scripts/lib/report_unique_identity.py" fallback --path "$_structured_candidate" --root "$SCRIPT_DIR") || exit 1
                 IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
-                STRUCTURED_TASK_ID=$(printf '%s' "$CONTENT" | grep -oE 'cmd_[A-Za-z0-9_]+' | head -1 || true)
-                STRUCTURED_PARENT_CMD="$STRUCTURED_TASK_ID"
+                # The report file is in hand here, so its own task_id/parent_cmd
+                # are the identity.  This used to grep the first cmd_id out of
+                # the message body, which stamped a *mentioned* cmd onto the
+                # delivered message and onto the review child spawned from it.
+                STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$_structured_candidate" "task_id" "")
+                STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$_structured_candidate" "parent_cmd" "")
+                STRUCTURED_PARENT_CMD_FROM_YAML="$STRUCTURED_PARENT_CMD"
             fi
         fi
         if [ -z "${_structured_candidate:-}" ]; then
@@ -2472,12 +2483,32 @@ case "$TYPE" in
             IFS=$'\t' read -r STRUCTURED_REPORT_ID STRUCTURED_REPORT_VERSION STRUCTURED_REPORT_PATH <<< "$_REPORT_IDENTITY"
             STRUCTURED_TASK_ID=$(inbox_yaml_field_get "$_structured_candidate" "task_id" "")
             STRUCTURED_PARENT_CMD=$(inbox_yaml_field_get "$_structured_candidate" "parent_cmd" "")
+            STRUCTURED_PARENT_CMD_FROM_YAML="$STRUCTURED_PARENT_CMD"
             STRUCTURED_REPORT_FINGERPRINT=$(inbox_report_fingerprint "$_structured_candidate" "$STRUCTURED_REPORT_ID:$STRUCTURED_REPORT_VERSION") || exit 1
             STRUCTURED_REVISION_FINGERPRINT=$(inbox_report_revision_fingerprint "$TYPE" "$ACTION" "$CONTENT")
             _identity_fields=(report_id "$STRUCTURED_REPORT_ID" report_identity_version "$STRUCTURED_REPORT_VERSION" report_fingerprint "$STRUCTURED_REPORT_FINGERPRINT" revision_request_fingerprint "$STRUCTURED_REVISION_FINGERPRINT" report_path "$STRUCTURED_REPORT_PATH" task_id "$STRUCTURED_TASK_ID" parent_cmd "$STRUCTURED_PARENT_CMD")
         fi
         ;;
 esac
+
+# Duplicate-notification suppression, decided on structure alone.
+# Order of structural sources, strongest first:
+#   1. parent_cmd read out of the referenced report YAML
+#   2. the cmd_id encoded in the explicitly supplied report *path*
+#      (<ninja>_report_<cmd_id>.yaml) when that file is not readable
+# Neither is a prose match: both come from the report reference the sender
+# supplied, never from a cmd_id merely mentioned in the message text.  If
+# neither yields a cmd_id the message fails closed and is delivered unread.
+_autoread_cmd="$STRUCTURED_PARENT_CMD_FROM_YAML"
+if [ -z "$_autoread_cmd" ] && [ -n "${STRUCTURED_REPORT_PATH:-}" ]; then
+    _autoread_cmd=$(inbox_cmd_id_from_report_filename "$STRUCTURED_REPORT_PATH")
+fi
+if inbox_should_auto_read_completed_notification \
+        "$TARGET" "$TYPE" "$_autoread_cmd" "$FROM"; then
+    MESSAGE_READ_STATE="true"
+    INBOX_COMPLETED_DUPLICATE=1
+    echo "[inbox_write] auto-read completed notification: target=${TARGET} type=${TYPE} cmd=${INBOX_AUTO_READ_COMPLETED_CMD}" >&2
+fi
 
 # Infrastructure-bug findings are answers to an exact retrospective prompt.
 # Persist the identity structurally; ambiguous/no-hold cases fail closed.

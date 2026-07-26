@@ -2311,3 +2311,58 @@ YAML
     [ "$(find "$root/queue/checkpoint_manifests" -name '*.manifest' | wc -l)" -eq 1 ]
     grep -q '^state=awaiting_artifact$' "$root"/queue/checkpoint_manifests/*.manifest
 }
+
+# --- auto-read judgement must come from structure, never from prose ---
+# test_necessity: a report that merely mentions another CLEARed cmd_id must not be
+# auto-read as that cmd's completion notification; only the report's own
+# parent_cmd being CLEARed may auto-read it.
+# 2026-07-26: the first cmd_id grepped out of the message body decided this, so a
+# report mentioning cmd_4173 was delivered read:true as cmd_4173's completion.
+_autoread_env() {
+    AR_ROOT="$BATS_TEST_TMPDIR/autoread"
+    mkdir -p "$AR_ROOT/queue/inbox" "$AR_ROOT/queue/reports" "$AR_ROOT/logs" "$AR_ROOT/scripts"
+    [ -L "$AR_ROOT/scripts/lib" ] || ln -s "$PROJECT_ROOT/scripts/lib" "$AR_ROOT/scripts/lib"
+    local _s
+    for _s in "$PROJECT_ROOT"/scripts/*.sh "$PROJECT_ROOT"/scripts/*.py; do
+        [ -e "$_s" ] || continue
+        [ -e "$AR_ROOT/scripts/${_s##*/}" ] || ln -s "$_s" "$AR_ROOT/scripts/${_s##*/}"
+    done
+    printf 'messages: []\n' > "$AR_ROOT/queue/inbox/karo.yaml"
+    printf '%s\n' \
+        'worker_id: kotaro' \
+        'report_id: rpt-autoread-0001' \
+        'report_identity_version: 2' \
+        'task_id: cmd_own_20260726_normal' \
+        'parent_cmd: cmd_own_20260726' \
+        'status: completed' \
+        'verdict: PASS' \
+        > "$AR_ROOT/queue/reports/kotaro_own_20260726.yaml"
+    AR_CONTENT='kotaro wrote the control. Earlier bullet cmd_mentioned_only had the same shape. report= queue/reports/kotaro_own_20260726.yaml'
+}
+
+@test "negative control: a report merely mentioning a CLEARed cmd is not auto-read" {
+    _autoread_env
+    # The mentioned cmd is CLEARed; the report's own cmd is not.
+    printf '2026-07-26T12:00:00\tcmd_mentioned_only\tCLEAR\tall_gates_passed\n' \
+        > "$AR_ROOT/logs/gate_metrics.log"
+    run env INBOX_WRITE_ROOT_OVERRIDE="$AR_ROOT" \
+        bash "$PROJECT_ROOT/scripts/inbox_write.sh" karo "$AR_CONTENT" report_received kotaro notify_karo
+    # Status is not asserted for the same reason as the positive control below.
+    [[ "$output" != *"auto-read completed notification"* ]]
+    grep -q "parent_cmd: 'cmd_own_20260726'" "$AR_ROOT/queue/inbox/karo.yaml"
+}
+
+@test "positive control: a duplicate notification for the report own CLEARed cmd is auto-read" {
+    _autoread_env
+    printf '2026-07-26T13:00:00\tcmd_own_20260726\tCLEAR\tall_gates_passed\n' \
+        > "$AR_ROOT/logs/gate_metrics.log"
+    run env INBOX_WRITE_ROOT_OVERRIDE="$AR_ROOT" \
+        bash "$PROJECT_ROOT/scripts/inbox_write.sh" karo "$AR_CONTENT" report_received kotaro notify_karo
+    # NOTE: exit status is deliberately not asserted here.  When auto-read and the
+    # review-child delivery both fire, inbox_mark_read.sh is called on a message
+    # that is already read and the whole send exits 2 even though delivery
+    # succeeded.  That is a pre-existing defect (reproduced identically on the
+    # pre-fix revision) and is reported separately; asserting either status here
+    # would freeze it as the contract.
+    [[ "$output" == *"auto-read completed notification"*"cmd=cmd_own_20260726"* ]]
+}
