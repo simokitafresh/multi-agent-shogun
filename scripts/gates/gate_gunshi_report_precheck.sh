@@ -229,15 +229,30 @@ _PRE_RECENT_DATA=""
 _PRE_PROJECT_NUMSTAT=""  # PROJECT_DIR(dm-signalならDM_SIGNAL_PATH)のnumstat。PRE3のfile一覧+PRE19のDM-Signal合計が共用
 _PRE_REPO_NUMSTAT=""     # REPO_ROOTのnumstat。PRE13+PRE19のshogun側合計が共用
 _REPORT_HASHES=$(grep -oiP '(?:commit|commit_hash:)\s*\K[0-9a-f]{7,40}' "$REPORT_PATH" 2>/dev/null | sort -u || true)
+# 注: 報告が同一commitを短縮形+完全形の2表記で併記するケースがあり、以下のgit呼出ループが
+# 該当commitについて2回走る。この重複はSG-PRE19のchanged_lines集計を通じて判定結果
+# (adversarial_review要否)に影響するため(実測で確認)、本cmdのAC2(判定結果を一切変えない)
+# の対象外としスコープから除外した。cat-file呼出回数のみ次のブロックで削減する。
 if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
     if [ -n "$_REPORT_HASHES" ]; then
         # PRE3/PRE14: report記載hashがあれば広域git logを避ける(WSL2 NTFS対策)
         while IFS= read -r _hash; do
             [ -z "$_hash" ] && continue
             # 注: hashが別repo(clinic等)のものだとgit fatal(128)→代入の終了コード=128→set -e全死亡するため || true 必須(2026-06-11 cmd_3277で発火した既存バグ)
+            # cmd_karo_speed_review_notify_precheck_20260725: 旧実装はcat-file -eを`||`判定用と
+            # `if`判定用で無条件に2回呼んでいた(1回目が成功しても2回目を必ず実行)。
+            # 1回目の成否を変数に保持して再利用し、同一判定を1呼出へ削減する(結果は不変)。
             _hash_repo="${PROJECT_DIR:-$REPO_ROOT}"
-            git -C "$_hash_repo" cat-file -e "${_hash}^{commit}" 2>/dev/null || _hash_repo="$REPO_ROOT"
+            _hash_ok=0
             if git -C "$_hash_repo" cat-file -e "${_hash}^{commit}" 2>/dev/null; then
+                _hash_ok=1
+            elif [ "$_hash_repo" != "$REPO_ROOT" ]; then
+                _hash_repo="$REPO_ROOT"
+                if git -C "$_hash_repo" cat-file -e "${_hash}^{commit}" 2>/dev/null; then
+                    _hash_ok=1
+                fi
+            fi
+            if [ "$_hash_ok" -eq 1 ]; then
                 _hash_files=$(git -C "$_hash_repo" diff-tree --no-commit-id --name-only -r "$_hash" 2>/dev/null || true)
                 _hash_numstat=$(git -C "$_hash_repo" diff-tree --no-commit-id --numstat -r "$_hash" 2>/dev/null || true)
                 _PRE_CMD_FILES+="${_hash_files}"$'\n'

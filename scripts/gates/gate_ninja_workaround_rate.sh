@@ -79,19 +79,25 @@ if [ -d "$REPORTS_DIR" ]; then
     # 旧実装は1 reportにつきgrep/sed各3回+stat 1回を起動していた。
     # ここでは1 Python processで各fileを一度だけ読み、同じ3 top-level fieldと
     # mtimeを抽出する。YAML全体の意味解釈は行わず旧grep契約を維持する。
+    # cmd_karo_speed_review_notify_precheck_20260725: WSL2 NTFS open()レイテンシが
+    # ファイル数(400件超)に比例して支配的だったため、I/O待ちをThreadPoolExecutorで
+    # 重複させる(判定ロジック・抽出フィールド・フィルタ条件は無変更。出力はdownstreamで
+    # 常にsort -t"\t" -k2,2 -k1,1nされるため実行順序非依存であることを確認済み)。
     python3 - "$REPORTS_DIR" > "$_REPORT_INDEX_RAW" <<'PY'
 import glob
 import os
 import re
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 root = sys.argv[1]
 paths = glob.glob(os.path.join(root, "*.yaml"))
 paths += glob.glob(os.path.join(root, "archive", "*.yaml"))
 field_re = re.compile(r"^(worker_id|parent_cmd|status):\s*(.*?)\s*$")
-for path in paths:
+
+def read_one(path):
     if path.endswith((".bak", ".lock")) or not os.path.isfile(path):
-        continue
+        return None
     values = {}
     try:
         with open(path, encoding="utf-8", errors="replace") as handle:
@@ -105,9 +111,15 @@ for path in paths:
         worker = values.get("worker_id", "")
         cmd = values.get("parent_cmd", "")
         if worker and cmd and values.get("status") != "pending":
-            print(f"{int(os.path.getmtime(path))}\t{cmd}\t{worker}")
+            return f"{int(os.path.getmtime(path))}\t{cmd}\t{worker}"
     except OSError:
-        continue
+        return None
+    return None
+
+with ThreadPoolExecutor(max_workers=32) as executor:
+    for line in executor.map(read_one, paths):
+        if line:
+            print(line)
 PY
 fi
 if [ -s "$_REPORT_INDEX_RAW" ]; then
