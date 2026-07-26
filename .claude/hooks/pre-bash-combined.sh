@@ -1283,6 +1283,152 @@ def check_rm(tokens):
     return ""
 
 
+def _git_guard_known_agents():
+    # SSOT = config/settings.yaml via scripts/lib/agent_config.sh (no hardcoded roster).
+    try:
+        result = subprocess.run(
+            ["bash", "-c", f'source "{project_root}/scripts/lib/agent_config.sh" && get_all_agents'],
+            capture_output=True, text=True, timeout=5,
+        )
+    except Exception:
+        return set()
+    if result.returncode != 0:
+        return set()
+    return {name for name in result.stdout.split() if name}
+
+
+def _git_guard_agent_identities():
+    # PD-106: shared-worktree ownership signal. Test seam first (avoids
+    # touching real queue/tasks/*.yaml or requiring a live tmux server);
+    # production falls back to the same TMUX_PANE->agent_id lookup G2 uses.
+    override = os.environ.get("PRE_BASH_GIT_GUARD_IDENTITY")
+    if override is not None:
+        return {token for token in override.split(",") if token}
+    agent_id = ""
+    tmux_pane = os.environ.get("TMUX_PANE", "")
+    if tmux_pane:
+        try:
+            agent_id = subprocess.run(
+                ["tmux", "display-message", "-t", tmux_pane, "-p", "#{@agent_id}"],
+                capture_output=True, text=True, timeout=3,
+            ).stdout.strip()
+        except Exception:
+            agent_id = ""
+    identities = set()
+    if agent_id:
+        identities.add(agent_id)
+        task_yaml = os.path.join(project_root, "queue", "tasks", f"{agent_id}.yaml")
+        if os.path.isfile(task_yaml):
+            try:
+                import yaml
+                with open(task_yaml, encoding="utf-8") as fh:
+                    data = yaml.safe_load(fh) or {}
+                task = data.get("task", data) if isinstance(data, dict) else {}
+                for key in ("task_id", "subtask_id", "parent_cmd"):
+                    value = str(task.get(key) or "").strip()
+                    if value:
+                        identities.add(value)
+            except Exception:
+                pass
+    return identities
+
+
+def _git_guard_classify_subject(subject, identities):
+    # Same convention as ninja_scope_commit.sh's test_necessity same-task
+    # check and gate_report_format_main.py's commit identity check: a
+    # cmd_id-shaped token in the subject is the SSOT for "whose task".
+    cmd_tokens = re.findall(r"cmd_[A-Za-z0-9_]+", subject)
+    if cmd_tokens:
+        if identities and any(identity and identity in subject for identity in identities):
+            return "mine"
+        return "other"
+    known_agents = _git_guard_known_agents()
+    found_agents = {
+        agent for agent in known_agents
+        if re.search(r"(?<![A-Za-z0-9_])" + re.escape(agent) + r"(?![A-Za-z0-9_])", subject)
+    }
+    if not found_agents:
+        return "ambiguous"
+    my_agent = next((identity for identity in identities if identity in known_agents), None)
+    if my_agent and found_agents == {my_agent}:
+        return "mine"
+    if my_agent and my_agent in found_agents:
+        return "ambiguous"
+    return "other"
+
+
+def _git_guard_effective_cwd(full_cmd):
+    # Mirrors check_main_branch_protection's own `cd <path>` resolution
+    # below: this guard's tokens come from segment_tokens(command), which
+    # only sees the current segment, not any leading `cd <dir> &&` that
+    # redirects where the real git process would run.
+    effective = cwd
+    cd_match = re.search(r"\bcd\s+(\S+)", full_cmd)
+    if cd_match:
+        cd_target = cd_match.group(1)
+        expanded = os.path.expanduser(cd_target)
+        candidate = expanded if os.path.isabs(expanded) else os.path.join(cwd, expanded)
+        effective = os.path.realpath(candidate)
+    return effective
+
+
+def _git_guard_reset_head_move_target(args, effective_cwd):
+    # git reset only moves HEAD when there is exactly one commit-ish
+    # positional and no `-- <path>` pathspec form (which never touches HEAD).
+    if "--" in args:
+        return None
+    non_flags = [tok for tok in args if not tok.startswith("-")]
+    if len(non_flags) != 1:
+        return None
+    candidate = non_flags[0]
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", candidate + "^{commit}"],
+            cwd=effective_cwd, capture_output=True, text=True, timeout=5,
+        )
+    except Exception:
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
+
+
+def check_shared_worktree_reset(args, full_cmd):
+    effective_cwd = _git_guard_effective_cwd(full_cmd)
+    target_sha = _git_guard_reset_head_move_target(args, effective_cwd)
+    if not target_sha:
+        return ""
+    try:
+        head_result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=effective_cwd, capture_output=True, text=True, timeout=5,
+        )
+        if head_result.returncode != 0:
+            return ""
+        old_head = head_result.stdout.strip()
+        if old_head == target_sha:
+            return ""
+        log_result = subprocess.run(
+            ["git", "log", "--format=%s", f"{target_sha}..{old_head}"],
+            cwd=effective_cwd, capture_output=True, text=True, timeout=5,
+        )
+        if log_result.returncode != 0:
+            return ""
+        subjects = [line for line in log_result.stdout.splitlines() if line]
+    except Exception:
+        return ""
+    if not subjects:
+        return ""
+    identities = _git_guard_agent_identities()
+    for subject in subjects:
+        if _git_guard_classify_subject(subject, identities) == "other":
+            return (
+                "D011: git reset would drop a commit that belongs to another agent/task "
+                f"({subject[:80]!r}); shared worktree — verify ownership before resetting past it, "
+                "or use 'bash scripts/ninja_scope_commit.sh' to only touch your own scope"
+            )
+    return ""
+
+
 def check_git(tokens):
     if len(tokens) < 2:
         return ""
@@ -1294,6 +1440,10 @@ def check_git(tokens):
         return ""
     if sub == "reset" and "--hard" in args:
         return "D004: git reset --hard is forbidden"
+    if sub == "reset" and "--hard" not in args:
+        reason = check_shared_worktree_reset(args, command)
+        if reason:
+            return reason
     if sub == "checkout" and "--" in args:
         idx = args.index("--")
         if idx + 1 < len(args) and args[idx + 1] == ".":

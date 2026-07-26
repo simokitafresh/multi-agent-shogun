@@ -204,3 +204,124 @@ _run_hook_as_non_commander() {
     [ "$status" -eq 0 ]
     [ -z "$output" ]
 }
+
+# ─── cmd_karo_impl_pd106_shared_tree_git_guard_20260726 ───
+# PD-106: a non---hard `git reset <commit>` silently drops commits from the
+# shared worktree's reachable history without touching --hard (D004 already
+# blocks that). If the dropped commit belongs to a different agent/task, its
+# attribution is destroyed (real incident: PD INS-20260708-102926013-4788,
+# a shogun commit absorbed by someone else's reset). `git commit --amend` was
+# also considered but GA-231/GA-231c (this same file, fires before this new
+# check) already blocks ALL direct `git commit` invocations for every
+# identified ninja/commander unconditionally, so no amend-specific gap exists.
+
+_git_guard_fixture_repo() {
+    local repo="$BATS_TEST_TMPDIR/pd106_repo"
+    rm -rf "$repo"
+    mkdir -p "$repo" && git -C "$repo" init -q
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    printf 'base\n' > "$repo/f.txt"
+    git -C "$repo" add f.txt
+    git -C "$repo" commit -q -m 'base commit'
+    printf '%s\n' "$repo"
+}
+
+_run_hook_in_repo() {
+    local repo="$1" cmd="$2" identity="${3-}"
+    local payload
+    payload="$(printf '{"tool_name":"Bash","tool_input":{"command":"cd %s && %s"}}' "$repo" "$cmd")"
+    run bash -c 'printf "%s" "$1" | TMUX_PANE="" PRE_BASH_LORD_CONVERSATION_FILE="$2" PRE_BASH_GIT_GUARD_IDENTITY="$3" bash "$4"' \
+        _ "$payload" "$PRE_BASH_LORD_CONVERSATION_FILE" "$identity" "$HOOK_SCRIPT"
+}
+
+@test "D011: non-hard reset dropping another task's commit is blocked" {
+    local repo
+    repo="$(_git_guard_fixture_repo)"
+    git -C "$repo" commit -q --allow-empty -m 'cmd_hanzo_other_task: unrelated work'
+    _run_hook_in_repo "$repo" "git reset HEAD~1" "cmd_kagemaru_my_task"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"D011"* ]]
+}
+
+@test "D011 negative: reset --soft to your own immediately-preceding commit is allowed" {
+    local repo
+    repo="$(_git_guard_fixture_repo)"
+    git -C "$repo" commit -q --allow-empty -m 'cmd_kagemaru_my_task: my own work'
+    _run_hook_in_repo "$repo" "git reset --soft HEAD~1" "cmd_kagemaru_my_task"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "D011 negative: reset dropping a commit with no identity marker at all is allowed (ambiguous)" {
+    local repo
+    repo="$(_git_guard_fixture_repo)"
+    git -C "$repo" commit -q --allow-empty -m 'chore: generic housekeeping, no owner marker'
+    _run_hook_in_repo "$repo" "git reset HEAD~1" "cmd_kagemaru_my_task"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "D011 negative: bare git reset (index-only, HEAD unchanged) is always allowed" {
+    local repo
+    repo="$(_git_guard_fixture_repo)"
+    git -C "$repo" commit -q --allow-empty -m 'cmd_hanzo_other_task: unrelated work'
+    _run_hook_in_repo "$repo" "git reset" "cmd_kagemaru_my_task"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "D011 negative: reset with an explicit pathspec (HEAD unchanged) is always allowed" {
+    local repo
+    repo="$(_git_guard_fixture_repo)"
+    git -C "$repo" commit -q --allow-empty -m 'cmd_hanzo_other_task: unrelated work'
+    _run_hook_in_repo "$repo" "git reset HEAD~1 -- f.txt" "cmd_kagemaru_my_task"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "D011 negative: read-only git log is always allowed" {
+    local repo
+    repo="$(_git_guard_fixture_repo)"
+    git -C "$repo" commit -q --allow-empty -m 'cmd_hanzo_other_task: unrelated work'
+    _run_hook_in_repo "$repo" "git log -1" "cmd_kagemaru_my_task"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "D011: git reset --hard still hits the pre-existing D004 ban (regression)" {
+    local repo
+    repo="$(_git_guard_fixture_repo)"
+    git -C "$repo" commit -q --allow-empty -m 'cmd_hanzo_other_task: unrelated work'
+    # D010 (approval-required) fires first and exits before D004 unless
+    # inbound Lord approval is on record already — same precondition as the
+    # pre-existing "absolute ban remains blocked" test above.
+    printf '%s\n' '{"direction":"inbound","detail":"git reset --hard を承認。実行してよい。"}' > "$PRE_BASH_LORD_CONVERSATION_FILE"
+    _run_hook_in_repo "$repo" "git reset --hard HEAD~1" "cmd_kagemaru_my_task"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"D004"* ]]
+}
+
+@test "AC4: recovery inspection of a would-be-dropped commit remains executable while D011 blocks the reset" {
+    local repo
+    repo="$(_git_guard_fixture_repo)"
+    git -C "$repo" commit -q --allow-empty -m 'cmd_hanzo_other_task: unrelated work'
+    _run_hook_in_repo "$repo" "git reset HEAD~1" "cmd_kagemaru_my_task"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"D011"* ]]
+    _run_hook_in_repo "$repo" "git log -1 --format=%H" "cmd_kagemaru_my_task"
+    [ "$status" -eq 0 ]
+    _run_hook_in_repo "$repo" "git show -s HEAD" "cmd_kagemaru_my_task"
+    [ "$status" -eq 0 ]
+}
+
+@test "AC1(c)/AC3: git commit --amend is already blocked unconditionally by the pre-existing GA-231 guard (confirms no new amend logic is needed)" {
+    local repo
+    repo="$(_git_guard_fixture_repo)"
+    local payload
+    payload="$(printf '{"tool_name":"Bash","tool_input":{"command":"cd %s && %s"}}' "$repo" "git commit --amend -m x")"
+    run bash -c 'printf "%s" "$1" | TMUX_AGENT_ID=kagemaru PRE_BASH_LORD_CONVERSATION_FILE="$2" bash "$3"' \
+        _ "$payload" "$PRE_BASH_LORD_CONVERSATION_FILE" "$HOOK_SCRIPT"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"GA-231"* ]]
+}
