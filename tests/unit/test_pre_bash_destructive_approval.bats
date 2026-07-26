@@ -325,3 +325,57 @@ _run_hook_in_repo() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"GA-231"* ]]
 }
+
+# ─── AC3 contract addition (karo/gunshi, 2026-07-26 13:23/13:28): `kill -0`
+# is a POSIX null signal -- existence/permission check only, sends nothing,
+# never destructive. D006 previously banned kill/killall/pkill unconditionally
+# regardless of args. Narrowed to allow ONLY the null-signal form; any other
+# or default (no explicit signal = SIGTERM) form remains blocked.
+
+@test "D006 negative: kill -0 (null signal, non-destructive existence check) is allowed" {
+    _run_hook "kill -0 1"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "D006 negative: kill -s 0 (long form null signal) is allowed" {
+    _run_hook "kill -s 0 1"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "D006 negative: killall -0 is allowed" {
+    _run_hook "killall -0 sshd"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "D006 negative: pkill -0 is allowed" {
+    _run_hook "pkill -0 sshd"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "D006: plain kill with no signal flag (default SIGTERM) is still blocked" {
+    _run_hook "kill 1"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"D006"* ]]
+}
+
+@test "D006: kill -9 is still blocked" {
+    _run_hook "kill -9 1"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"D006"* ]]
+}
+
+@test "D006: kill -0 combined with another signal flag is still blocked (ambiguous, fail-closed)" {
+    _run_hook "kill -0 -9 1"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"D006"* ]]
+}
+
+@test "D006: killall -9 is still blocked" {
+    _run_hook "killall -9 sshd"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"D006"* ]]
+}

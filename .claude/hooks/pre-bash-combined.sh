@@ -1523,6 +1523,29 @@ def check_main_branch_protection(tokens, full_cmd):
     return f"G2: Direct push to main/master in external repo is forbidden ({effective})"
 
 
+def _is_kill_null_signal_only(args):
+    # kill -0 / killall -0 / pkill -0 (and -s 0 / --signal 0) send no signal
+    # at all (POSIX null signal) -- existence/permission check only, never
+    # destructive. Any other or additional signal spec (numeric, name, or
+    # none at all = default SIGTERM) must still be blocked.
+    signal_specs = []
+    i = 0
+    while i < len(args):
+        tok = args[i]
+        if tok in ("-s", "--signal"):
+            if i + 1 >= len(args):
+                return False
+            signal_specs.append(args[i + 1])
+            i += 2
+            continue
+        if tok.startswith("-") and tok != "-":
+            signal_specs.append(tok[1:])
+        i += 1
+    if not signal_specs:
+        return False
+    return all(spec == "0" for spec in signal_specs)
+
+
 reason = check_pipe_to_shell(command)
 if reason:
     print(reason)
@@ -1535,7 +1558,8 @@ for tokens in segment_tokens(command) or []:
     if cmd0 in {"sudo", "su"}:
         print("D005: sudo/su is forbidden"); raise SystemExit(0)
     if cmd0 in {"kill", "killall", "pkill"}:
-        print("D006: kill/killall/pkill is forbidden"); raise SystemExit(0)
+        if not _is_kill_null_signal_only(tokens[1:]):
+            print("D006: kill/killall/pkill is forbidden"); raise SystemExit(0)
     if cmd0 == "tmux" and len(tokens) >= 2 and tokens[1] in {"kill-server", "kill-session"}:
         print("D006: tmux kill-server/kill-session is forbidden"); raise SystemExit(0)
     if cmd0 == "rm":
