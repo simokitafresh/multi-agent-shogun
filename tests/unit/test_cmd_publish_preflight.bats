@@ -50,6 +50,12 @@ assert_no_lesson_cap_block() {
         CMD_SAVE_BLOCK_DIR="$TEST_TMPDIR" \
         CMD_SAVE_PREFLIGHT_AUTOLEARN_FILE="$TEST_TMPDIR/autolearn.txt" \
         bash "$SAVE" --preflight cmd_absent_probe_for_cap_invariant
+    # 陽性marker: cmd_save が実際に走ったことを示す。これが無いと、対象が不在で何も
+    # 実行されなかった場合に『cap文言が無い』が空PASSする(異常系variation実測で判明)。
+    # 文言は環境で変わる(主worktree=「のブロックが…見つかりません」/ linked worktree=
+    # queue不在で「…が存在しません」)ため、shogun_to_karo.yaml への言及で判定する。
+    [ -r "$SAVE" ]
+    [[ "$output" == *"shogun_to_karo.yaml"* ]]
     assert_no_lesson_cap_block
 }
 
@@ -65,6 +71,11 @@ assert_no_lesson_cap_block() {
 }
 
 @test "AC3: 撤去は3箇所すべてで対称である(片側復活の検出)" {
+    # 対象が不在なら grep -c は 0 を返し『呼出し0件』が空PASSする。先に実在を要求する
+    # (異常系variation実測で判明した本テスト自身の穴)。
+    [ -r "$SAVE" ]
+    [ -r "$PUBLISH" ]
+    [ -r "$STARTUP_GATE" ]
     # 呼出し0件を3箇所で確認する。1箇所だけ復活する非対称が過去の実害であった。
     [ "$(grep -c 'cmd_shared_preflight ' "$SAVE")" -eq 0 ]
     [ "$(grep -c 'cmd_shared_preflight ' "$PUBLISH")" -eq 0 ]
