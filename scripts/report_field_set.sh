@@ -345,6 +345,50 @@ REPORT_PATH="$1"
 DOT_KEY="$2"
 VALUE="$3"
 
+# cmd_karo_impl_report_field_set_telemetry_20260726: 単一キー経路の計装。
+# 記録するのは2つだけ — 所要時間(wall_ms)と結果(PASS=書込み成功 / BLOCK=非0終了)。
+# 記録しないもの: 値の中身・報告本文・BLOCKメッセージ本文(報告内容を台帳へ漏らさない)。
+# 出力は既存台帳 logs/defense_overhead.jsonl (source=report_field_set)。新台帳は作らない。
+if [ "${RFS_SINGLE_KEY_TELEMETRY:-1}" = "1" ] \
+    && [ "${DEFENSE_OVERHEAD_ENABLED:-1}" = "1" ]; then
+    _rfs_sk_mono_ms() {
+        local _up _whole _frac
+        read -r _up _ </proc/uptime
+        _whole="${_up%%.*}"
+        _frac="${_up#*.}000"
+        _frac="${_frac:0:3}"
+        printf '%s\n' "$((10#${_whole} * 1000 + 10#${_frac}))"
+    }
+    _rfs_sk_started="$(_rfs_sk_mono_ms)"
+    _rfs_sk_emit() {
+        local _rc="$?" _ms _key _verdict _ledger _ts
+        # check_id は writer の許容文字集合へ丸める(値は含めない)。
+        _key="${DOT_KEY//[^A-Za-z0-9_.:-]/_}"
+        [ -n "$_key" ] || _key=unknown
+        _ms=$(( $(_rfs_sk_mono_ms) - _rfs_sk_started ))
+        if [ "$_rc" -eq 0 ]; then _verdict=PASS; else _verdict=BLOCK; fi
+        # 追記は既存台帳 logs/defense_overhead.jsonl へ同一schemaで行う(新台帳は作らない)。
+        # writer関数(defense_overhead_write)はイベント毎に python3 起動 + 台帳全走査の
+        # 重複grepを伴い、この経路の実測で +50〜90ms/回だった。単一キー計装は event_id が
+        # pid+開始時刻+key で構造的に一意なので重複検査は不要。ただし排他は既存writerと
+        # 同じ ${ledger}.lock を取る(独自ロックだと共存中の writer と行が混ざる)。
+        # 親は fork 1回(実測 ~1ms)だけ払い、flock待ちと書込みは子側で行う。
+        _ledger="${DEFENSE_OVERHEAD_LEDGER:-$SCRIPT_DIR/logs/defense_overhead.jsonl}"
+        [ -d "${_ledger%/*}" ] || return "$_rc"
+        (
+            export TZ=UTC
+            printf -v _ts '%(%Y-%m-%dT%H:%M:%S)T' -1
+            exec 8>>"${_ledger}.lock" || exit 0
+            flock -w "${DEFENSE_OVERHEAD_LOCK_TIMEOUT:-2}" 8 || exit 0
+            printf '{"timestamp":"%s+00:00","source":"report_field_set","check_id":"%s","wall_ms":%s,"verdict":"%s","event_id":"report_field_set:%s:%s:%s"}\n' \
+                "$_ts" "$_key" "$_ms" "$_verdict" "$$" "$_rfs_sk_started" "$_key" >&9
+        ) 9>>"$_ledger" </dev/null >/dev/null 2>&1 &
+        disown 2>/dev/null || true
+        return "$_rc"
+    }
+    trap '_rfs_sk_emit' EXIT
+fi
+
 # Historical skill guidance accidentally used:
 #   report_field_set.sh <report> assumption_invalidation found false
 # Keep the compatibility shim scoped to this field so the extra positional
