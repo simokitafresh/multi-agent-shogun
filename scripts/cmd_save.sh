@@ -698,7 +698,6 @@ show_q11_semantic_search_matches() {
     if command -v timeout >/dev/null 2>&1; then
         if output="$(
             SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
-                SEMANTIC_DISABLE_MEMORY_DB_CACHE=1 \
                 timeout 5 bash "$semantic_script" "$query" 2>&1
         )"; then
             rc=0
@@ -708,7 +707,6 @@ show_q11_semantic_search_matches() {
     else
         if output="$(
             SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
-                SEMANTIC_DISABLE_MEMORY_DB_CACHE=1 \
                 bash "$semantic_script" "$query" 2>&1
         )"; then
             rc=0
@@ -761,29 +759,45 @@ show_q11_causal_backlinks() {
 
     echo "INFO: q11 causal_backlinks 因果辺候補:" >&2
 
-    # 並列化: 全causal_backlinksをバックグラウンド起動→wait→順序通り出力（N×T→max(T)）
-    # semantic_search.sh append_causal_expansion(2026-06-07 hanzo修行)と同一パターンをここにも適用
-    local _q11_has_timeout=0
-    command -v timeout >/dev/null 2>&1 && _q11_has_timeout=1
-
     mapfile -t _q11_link_ids <<< "$links"
     local _q11_tmpdir
     _q11_tmpdir="$(mktemp -d)"
-    local _q11_idx=0
-    for _q11_link_id in "${_q11_link_ids[@]}"; do
-        [[ -n "$_q11_link_id" ]] || { ((_q11_idx++)) || true; continue; }
+    local _q11_idx=0 _q11_root="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}"
+    local _q11_rg
+    _q11_rg="$(command -v rg 2>/dev/null || true)"
+    [[ -z "$_q11_rg" && -x "$HOME/.local/bin/rg" ]] && _q11_rg="$HOME/.local/bin/rg"
+
+    # causal_backlinks.shをlinkごとに最大12回起動すると、同じ8 treeを12回走査する。
+    # fixed-string multi-patternの1走査へ畳み、hit行をlink別pathへ再分配する。
+    # 各linkの最終出力（sort -uされた先頭8 path）は従来契約と同一。
+    if [[ -n "$_q11_rg" && -d "$_q11_root" ]]; then
+        : > "$_q11_tmpdir/patterns"
+        for _q11_link_id in "${_q11_link_ids[@]}"; do
+            printf '[[%s]]\n' "$_q11_link_id" >> "$_q11_tmpdir/patterns"
+        done
         (
-            if cd "${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" 2>/dev/null; then
-                if [[ "$_q11_has_timeout" == "1" ]]; then
-                    timeout 2 bash "$causal_script" "$_q11_link_id" 2>/dev/null | head -8 || true
-                else
-                    bash "$causal_script" "$_q11_link_id" 2>/dev/null | head -8 || true
+            cd "$_q11_root" 2>/dev/null || exit 0
+            _q11_paths=()
+            for _q11_path in AGENTS.md instructions context projects skills scripts docs tasks; do
+                [[ -e "$_q11_path" ]] && _q11_paths+=("$_q11_path")
+            done
+            [[ "${#_q11_paths[@]}" -gt 0 ]] || exit 0
+            "$_q11_rg" -n --fixed-strings --hidden \
+                --glob '!.git/**' --glob '!node_modules/**' --glob '!__pycache__/**' \
+                --glob '!docs/obsidian-promoted/**' --glob '!*.cache.json' \
+                --glob '!*.pyc' --glob '!*.lock' \
+                -f "$_q11_tmpdir/patterns" "${_q11_paths[@]}" 2>/dev/null || true
+        ) | while IFS= read -r _q11_hit; do
+            _q11_hit_path="${_q11_hit%%:*}"
+            _q11_idx=0
+            for _q11_link_id in "${_q11_link_ids[@]}"; do
+                if [[ "$_q11_hit" == *"[[$_q11_link_id]]"* ]]; then
+                    printf '%s\n' "$_q11_hit_path" >> "$_q11_tmpdir/$_q11_idx"
                 fi
-            fi
-        ) > "$_q11_tmpdir/$_q11_idx" 2>/dev/null &
-        ((_q11_idx++)) || true
-    done
-    wait
+                ((_q11_idx++)) || true
+            done
+        done
+    fi
 
     _q11_idx=0
     for _q11_link_id in "${_q11_link_ids[@]}"; do
@@ -793,7 +807,7 @@ show_q11_causal_backlinks() {
             while IFS= read -r _q11_resource; do
                 [[ -n "$_q11_resource" ]] || continue
                 echo "    - resource: ${_q11_resource}" >&2
-            done < "$_q11_tmpdir/$_q11_idx"
+            done < <(sort -u "$_q11_tmpdir/$_q11_idx" | head -8)
         else
             echo "    - resource: none" >&2
         fi
