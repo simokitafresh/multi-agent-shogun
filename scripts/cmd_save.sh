@@ -5347,10 +5347,14 @@ show_three_layer_memory_ruling_info() {
             if (NF > 0) print
         }
     ' <<< "$block_text" | head -10 | tr '\n' ' ' | sed -E 's/^[[:space:]]+|[[:space:]]+$//g' || true)"
+    # 表示上だけ異なる空白を同じ検索意図として扱う。検索へ渡す文字列自体も
+    # 正規化することで、cache keyと実行結果の対応を一意に保つ。
+    query="$(tr '[:space:]' ' ' <<< "$query" | sed -E 's/[[:space:]]+/ /g; s/^ //; s/ $//')"
     [[ -n "${query//[[:space:]]/}" ]] || return 0
 
-    # セッション内キャッシュ確認（PPIDベース tmpファイル）
-    local cache_key cache_file output rc
+    # セッション内キャッシュ確認。pane単位なのでcmd保存間でも共有される。
+    # 同一queryの並行cold missはmkdirによる非待機single-flightで1 leaderに絞る。
+    local cache_key cache_file claim_dir output rc
     if [[ "${CMD_SAVE_SEMANTIC_CACHE_READY:-0}" != "1" ]]; then
         mkdir -p "$_SEMANTIC_SESSION_CACHE_DIR" 2>/dev/null || true
         CMD_SAVE_SEMANTIC_CACHE_READY=1
@@ -5365,6 +5369,23 @@ show_three_layer_memory_ruling_info() {
             head -50 <<< "$output" | sed 's/^/  /' >&2
         }
         return 0
+    fi
+    claim_dir="${cache_file}.claim"
+    if ! mkdir "$claim_dir" 2>/dev/null; then
+        # 外側timeoutの上限を越えたclaimは、leader異常終了の残骸として回収する。
+        local claim_mtime now_epoch
+        claim_mtime="$(stat -c %Y "$claim_dir" 2>/dev/null || printf '0')"
+        now_epoch="$(date +%s)"
+        if [[ "$claim_mtime" =~ ^[0-9]+$ ]] && (( now_epoch - claim_mtime > 10 )); then
+            rmdir "$claim_dir" 2>/dev/null || true
+            mkdir "$claim_dir" 2>/dev/null || {
+                echo "INFO: [MEMORY_RULING] 三層記憶検索: 同一queryを別jobが検索中(key=${cache_key:0:8}...)。重複起動をスキップ" >&2
+                return 0
+            }
+        else
+            echo "INFO: [MEMORY_RULING] 三層記憶検索: 同一queryを別jobが検索中(key=${cache_key:0:8}...)。重複起動をスキップ" >&2
+            return 0
+        fi
     fi
 
     # cmd_karo_impl_cmd_save_three_layer_speed_20260725 (AC2): n=5直接計測で
@@ -5405,6 +5426,7 @@ show_three_layer_memory_ruling_info() {
     if [[ "$rc" -eq 0 || "$rc" -eq 124 ]]; then
         printf '%s\n' "${output}" > "$cache_file" 2>/dev/null || true
     fi
+    rmdir "$claim_dir" 2>/dev/null || true
 
     [[ "$rc" -eq 0 && -n "${output//[[:space:]]/}" ]] || return 0
 

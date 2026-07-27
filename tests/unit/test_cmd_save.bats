@@ -90,3 +90,39 @@ YAML
   run python3 -c 'import sys,yaml; data=yaml.safe_load(sys.stdin.read()); assert "#9" in data["purpose"]; assert "# block scalar data" in data["command"]' <<< "$output"
   [ "$status" -eq 0 ]
 }
+
+# test_necessity: three-layer INFO検索の同義空白正規化と並行cold missの
+# query単位single-flightを守り、cmd保存間で重い検索が重複しない不変量を固定する。
+@test "three-layer ruling search normalizes whitespace and coalesces concurrent cold misses" {
+  awk '
+    /^show_three_layer_memory_ruling_info\(\)/ { emit=1 }
+    emit && /^# WSL2最適化: 非同期化/ { exit }
+    emit { print }
+  ' "$REPO_ROOT/scripts/cmd_save.sh" > "$BATS_TEST_TMPDIR/ruling.sh"
+  cat > "$BATS_TEST_TMPDIR/search.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'call\n' >> "$CALL_LOG"
+sleep 0.2
+printf 'matched:%s\n' "$1"
+SH
+  chmod +x "$BATS_TEST_TMPDIR/search.sh"
+
+  run env CALL_LOG="$BATS_TEST_TMPDIR/calls" \
+    CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$BATS_TEST_TMPDIR/search.sh" \
+    SEM_CACHE="$BATS_TEST_TMPDIR/cache" \
+    bash -c '
+      source "$1"
+      PROJECT_DIR="$2"
+      _SEMANTIC_SESSION_CACHE_DIR="$SEM_CACHE"
+      CMD_SAVE_SEMANTIC_CACHE_READY=0
+      CMD_BLOCK_NC=$'"'"'title: alpha   beta\npurpose: gamma'"'"'
+      show_three_layer_memory_ruling_info &
+      CMD_BLOCK_NC=$'"'"'title: alpha beta\npurpose: gamma'"'"'
+      show_three_layer_memory_ruling_info &
+      wait
+    ' _ "$BATS_TEST_TMPDIR/ruling.sh" "$REPO_ROOT"
+
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$BATS_TEST_TMPDIR/calls")" -eq 1 ]
+  [[ "$output" == *"重複起動をスキップ"* ]]
+}
