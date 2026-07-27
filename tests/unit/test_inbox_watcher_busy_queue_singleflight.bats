@@ -59,7 +59,7 @@ printf "unread=%s\n" "$(grep -c "read: false" "$INBOX")"
     [ "$(printf '%s\n' "$output" | grep -c '\[SEND-RESULT\] pasted')" -eq 1 ]
     [[ "$output" == *"[BUSY-QUEUE-COALESCE]"* ]]
     [[ "$output" == *"second_rc=2"* ]]
-    [[ "$output" == *$'claim=generation-1\tfp-one'* ]]
+    [[ "$output" == *$'claim=generation-1\tfp-one\t'* ]]
     [[ "$output" == *"fingerprint=fp-two"* ]]
     [[ "$output" == *"unread=2"* ]]
 }
@@ -68,6 +68,13 @@ printf "unread=%s\n" "$(grep -c "read: false" "$INBOX")"
     run grep -n 'stored_generation.*claim_generation' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
     [ "$status" -eq 0 ]
     [[ "$output" == *"BUSY-QUEUE-STALE"* ]]
+}
+
+@test "同一generationでもBACKOFF経過claimは回収する" {
+    run grep -n 'claim_age.*BACKOFF_SEC' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"claim_age"* ]]
+    [[ "$output" == *"BACKOFF_SEC"* ]]
 }
 
 @test "idleまたはunreadゼロ境界はclaimを解放する" {

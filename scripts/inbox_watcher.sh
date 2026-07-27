@@ -1038,19 +1038,20 @@ send_wakeup() {
 
         local sent_token=""
         if [ "$allow_nonempty_input_line" = "1" ]; then
-            local claim_generation claim_fp=""
+            local claim_generation claim_fp="" claim_epoch="" claim_age=0
             claim_generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
             if [ -f "$BUSY_QUEUE_CLAIM_FILE" ]; then
                 local stored_generation=""
-                IFS=$'\t' read -r stored_generation claim_fp < "$BUSY_QUEUE_CLAIM_FILE" 2>/dev/null || true
-                if [ -n "$stored_generation" ] && [ "$stored_generation" = "$claim_generation" ]; then
+                IFS=$'\t' read -r stored_generation claim_fp claim_epoch < "$BUSY_QUEUE_CLAIM_FILE" 2>/dev/null || true
+                [[ "$claim_epoch" =~ ^[0-9]+$ ]] && claim_age=$((EPOCHSECONDS - claim_epoch))
+                if [ -n "$stored_generation" ] && [ "$stored_generation" = "$claim_generation" ] && [ "$claim_age" -lt "$BACKOFF_SEC" ]; then
                     record_deferred_nudge "$current_fp" "busy_queue_singleflight"
                     printf 'busy-coalesced\t%s\t%s\t%s\n' "$unread_count" "$current_fp" "$fp_kind" > "$send_result_file"
                     exit 0
                 fi
-                echo "[$(date)] [BUSY-QUEUE-STALE] Reclaiming stale queued nudge for $AGENT_ID generation=${stored_generation:-unknown}->${claim_generation:-unknown}" >&2
+                echo "[$(date)] [BUSY-QUEUE-STALE] Reclaiming stale queued nudge for $AGENT_ID generation=${stored_generation:-unknown}->${claim_generation:-unknown} age=${claim_age}s" >&2
             fi
-            printf '%s\t%s\n' "$claim_generation" "$current_fp" > "$BUSY_QUEUE_CLAIM_FILE"
+            printf '%s\t%s\t%s\n' "$claim_generation" "$current_fp" "$EPOCHSECONDS" > "$BUSY_QUEUE_CLAIM_FILE"
             echo "[$(date)] [BUSY-QUEUE-CLAIM] Claimed single queued nudge for $AGENT_ID fingerprint=$current_fp generation=${claim_generation:-unknown}" >&2
         fi
         if [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
