@@ -505,7 +505,10 @@ fi
 if [ "$force_llm" = false ] && [ "${SEMANTIC_ENABLE_LLM_FALLBACK:-0}" != "1" ]; then
     no_match_output="$(mktemp)"
     trap 'rm -f "$no_match_output"' EXIT
-    echo "NO_MATCH: $query" > "$no_match_output"
+    {
+        echo "NO_MATCH: $query"
+        echo "alias_absorb_route: bash scripts/semantic_alias_absorb_pending.sh (該当queryをqueue/insights.yamlのcandidate_aliasesへ登録後に反映)"
+    } > "$no_match_output"
     emit_search_output "$no_match_output" 1
     echo "WARN: LLM fallback disabled by default. Use --llm or SEMANTIC_ENABLE_LLM_FALLBACK=1 to enable semantic LLM matching." >&2
     exit 1

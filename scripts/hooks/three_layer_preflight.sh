@@ -449,7 +449,13 @@ issue() {
     local memory_rc=0 semantic_rc=0 obsidian_rc=0 memory_count=0 semantic_count=0 obsidian_count=0
     local memory_query="" semantic_query="" obsidian_used_query="" memory_ts="" semantic_ts="" obsidian_ts="" obsidian_source=""
     local memory_wall_ms=0 semantic_wall_ms=0 obsidian_wall_ms=0 obsidian_started_ms=0
-    local memory_pid="" semantic_pid="" obsidian_pid="" batch_pid="" batch_result="" obsidian_result=""
+    local memory_pid="" semantic_pid="" obsidian_pid="" batch_pid="" batch_result="" obsidian_result="" semantic_raw_output=""
+    # AC4(cmd_karo_impl_a2_semantic_fallback_visible_20260727): semanticのrc=0は
+    # alias/source-map hitとmemory DB fallback hitを区別しない。semantic_layerで
+    # 実際に応答した層を記録し、証跡の過大申告(黙ってmemory DBが答えたのに"semantic"
+    # 層が応答したと記録される)を防ぐ。batch_index_searchはmemory DBを一切呼ばず
+    # 素のindexファイルgrepのみなので常にindex。
+    local semantic_layer="index"
     # T1(結果注入): 各層の上位N件テキスト(base64退避、TSVのタブ/改行混入回避)と総ヒット件数。
     # timed_out flagはfallback到達前のrc==124を記録し、count<=0時にNO_RESULT(timeout)を明示するために使う(A6/AC3)。
     local memory_top_b64="" semantic_top_b64="" obsidian_top_b64=""
@@ -467,7 +473,8 @@ issue() {
     else
         ( timeout "${primary_timeout}s" bash "$ROOT/scripts/memory_db_query.sh" --search "$prompt" >/dev/null 2>&1 ) &
         memory_pid=$!
-        ( timeout "${primary_timeout}s" bash "$ROOT/scripts/semantic_search.sh" "$prompt" >/dev/null 2>&1 ) &
+        semantic_raw_output="$EVIDENCE_DIR/.semantic-raw.$$"
+        ( timeout "${primary_timeout}s" bash "$ROOT/scripts/semantic_search.sh" "$prompt" >"$semantic_raw_output" 2>/dev/null ) &
         semantic_pid=$!
     fi
     # Root cause fix: rg fs-walk on 9P (/mnt/c) times out under IO saturation
@@ -502,7 +509,13 @@ issue() {
         # Portable isolated roots expose only command completion, not the
         # indexed hit metadata available in the production batch reader.
         [[ "$memory_rc" == 0 ]] && { memory_count=1; memory_query="$prompt"; memory_ts="$issued_at"; memory_total_hits=1; }
-        [[ "$semantic_rc" == 0 ]] && { semantic_count=1; semantic_query="$prompt"; semantic_ts="$issued_at"; semantic_total_hits=1; }
+        if [[ "$semantic_rc" == 0 ]]; then
+            semantic_count=1; semantic_query="$prompt"; semantic_ts="$issued_at"; semantic_total_hits=1
+            if [[ -n "$semantic_raw_output" ]] && grep -q '^MEMORY_DB_MATCH:' "$semantic_raw_output" 2>/dev/null; then
+                semantic_layer="memory_db"
+            fi
+        fi
+        [[ -n "$semantic_raw_output" ]] && rm -f "$semantic_raw_output"
     fi
     [[ "$memory_rc" == 124 ]] && memory_timed_out=1
     [[ "$semantic_rc" == 124 ]] && semantic_timed_out=1
@@ -614,7 +627,7 @@ issue() {
 
     tmp_file="$(mktemp "$EVIDENCE_DIR/.evidence.XXXXXX")"
     {
-        printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","memory_count":"%s","semantic_count":"%s","obsidian_count":"%s","memory_wall_ms":"%s","semantic_wall_ms":"%s","obsidian_wall_ms":"%s","total_wall_ms":"%s","memory_source":"%s","semantic_source":"%s","obsidian_source":"%s","memory_timestamp":"%s","semantic_timestamp":"%s","obsidian_timestamp":"%s","memory_query":"%s","semantic_query":"%s","obsidian_query":"%s","status":"%s","memory_top":"%s","semantic_top":"%s","obsidian_top":"%s","memory_total_hits":"%s","semantic_total_hits":"%s","obsidian_total_hits":"%s","evidence_path":"%s"}\n' \
+        printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","memory_count":"%s","semantic_count":"%s","obsidian_count":"%s","memory_wall_ms":"%s","semantic_wall_ms":"%s","obsidian_wall_ms":"%s","total_wall_ms":"%s","memory_source":"%s","semantic_source":"%s","obsidian_source":"%s","memory_timestamp":"%s","semantic_timestamp":"%s","obsidian_timestamp":"%s","memory_query":"%s","semantic_query":"%s","obsidian_query":"%s","status":"%s","memory_top":"%s","semantic_top":"%s","obsidian_top":"%s","memory_total_hits":"%s","semantic_total_hits":"%s","obsidian_total_hits":"%s","semantic_layer":"%s","evidence_path":"%s"}\n' \
             "$(json_escape "$agent_id")" "$(json_escape "$pane_id")" "$prompt_hash" "$nonce" "$issued_at" \
             "$memory_rc" "$semantic_rc" "$obsidian_rc" "$memory_count" "$semantic_count" "$obsidian_count" \
             "$memory_wall_ms" "$semantic_wall_ms" "$obsidian_wall_ms" "$(( $(date +%s%3N) - started_ms ))" \
@@ -622,7 +635,7 @@ issue() {
             "$(json_escape "$memory_ts")" "$(json_escape "$semantic_ts")" "$(json_escape "$obsidian_ts")" \
             "$(json_escape "$memory_query")" "$(json_escape "$semantic_query")" "$(json_escape "$obsidian_used_query")" "$status" \
             "$(json_escape "$memory_top_text")" "$(json_escape "$semantic_top_text")" "$(json_escape "$obsidian_top_text")" \
-            "${memory_total_hits:-0}" "${semantic_total_hits:-0}" "${obsidian_total_hits:-0}" "$(json_escape "$evidence_file")"
+            "${memory_total_hits:-0}" "${semantic_total_hits:-0}" "${obsidian_total_hits:-0}" "$(json_escape "$semantic_layer")" "$(json_escape "$evidence_file")"
     } >"$tmp_file"
     # Publish only if no newer issue superseded this generation.  The shared
     # lock also makes the evidence/current pair atomic to verify readers.

@@ -625,6 +625,84 @@ EOF
     [ -z "$output" ]
 }
 
+@test "AC4(cmd_karo_impl_a2_semantic_fallback_visible_20260727): memory DB由来のsemantic応答はsemantic_layer=memory_dbとして記録される" {
+    local tmp_root="$TMP_EVIDENCE/semantic_layer_memory_db"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/context" "$tmp_root/docs"
+    : > "$tmp_root/context/semantic-map.md"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/memory_db_query.sh"
+    cat > "$tmp_root/scripts/semantic_search.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "MEMORY_DB_MATCH: $*"
+exit 0
+EOF
+    chmod +x "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
+
+    local evidence_dir="$TMP_EVIDENCE/semantic_layer_memory_db_evidence"
+    mkdir -p "$evidence_dir"
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="layertest" TMUX_PANE="%layertest" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "layer marker test"
+    [ "$status" -eq 0 ]
+    local evidence_json
+    evidence_json="$(find "$evidence_dir" -maxdepth 1 -name 'evidence_layertest*.json' -print -quit)"
+    [ -n "$evidence_json" ]
+    run python3 - "$evidence_json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["semantic_layer"] == "memory_db", f"expected memory_db, got {data['semantic_layer']!r}"
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "AC4(cmd_karo_impl_a2_semantic_fallback_visible_20260727): alias層由来のsemantic応答はsemantic_layer=indexのままである" {
+    local tmp_root="$TMP_EVIDENCE/semantic_layer_index"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/context" "$tmp_root/docs"
+    : > "$tmp_root/context/semantic-map.md"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/memory_db_query.sh"
+    cat > "$tmp_root/scripts/semantic_search.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "## some_concept — alias hit"
+exit 0
+EOF
+    chmod +x "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
+
+    local evidence_dir="$TMP_EVIDENCE/semantic_layer_index_evidence"
+    mkdir -p "$evidence_dir"
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="layertest2" TMUX_PANE="%layertest2" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "layer marker test alias"
+    [ "$status" -eq 0 ]
+    local evidence_json
+    evidence_json="$(find "$evidence_dir" -maxdepth 1 -name 'evidence_layertest2*.json' -print -quit)"
+    [ -n "$evidence_json" ]
+    run python3 - "$evidence_json" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+assert data["semantic_layer"] == "index", f"expected index, got {data['semantic_layer']!r}"
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "AC6-4(cmd_karo_impl_a2_semantic_fallback_visible_20260727): index.md不在時はsemantic_rc=1がexit1のNO_MATCH正規化を受けずfail-closedのまま" {
+    local tmp_root="$TMP_EVIDENCE/semantic_index_missing"
+    mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/context" "$tmp_root/docs"
+    : > "$tmp_root/context/semantic-map.md"
+    cp "$ROOT/scripts/hooks/three_layer_preflight.sh" "$tmp_root/scripts/hooks/three_layer_preflight.sh"
+    printf '#!/usr/bin/env bash\nexit 0\n' > "$tmp_root/scripts/memory_db_query.sh"
+    printf '#!/usr/bin/env bash\necho "NO_MATCH: fixture"\nexit 1\n' > "$tmp_root/scripts/semantic_search.sh"
+    chmod +x "$tmp_root/scripts/memory_db_query.sh" "$tmp_root/scripts/semantic_search.sh"
+    # docs/semantic-index/index.md をあえて作らない(index不在をシミュレート)
+
+    local evidence_dir="$TMP_EVIDENCE/semantic_index_missing_evidence"
+    mkdir -p "$evidence_dir"
+    run env THREE_LAYER_PREACTION_EVIDENCE_DIR="$evidence_dir" THREE_LAYER_AGENT_ID="idxmiss" TMUX_PANE="%idxmiss" \
+        bash "$tmp_root/scripts/hooks/three_layer_preflight.sh" issue "index missing test"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"evidence failed"* ]]
+    run find "$evidence_dir" -maxdepth 1 -name 'evidence_idxmiss*.json' -print
+    [ -z "$output" ]
+}
+
 @test "cold TTL refresh timeoutはparse可能なstale causal cacheからmetadataを復元" {
     local tmp_root="$TMP_EVIDENCE/stale_causal"
     mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/scripts" "$tmp_root/context" "$tmp_root/docs/semantic-index" "$tmp_root/.git"
