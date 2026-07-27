@@ -6336,19 +6336,39 @@ check_inbox_renudge() {
                         _kreport_filename="${_kworker}_report_${_kpcmd}.yaml"
                     fi
                     _kreport_path="$SCRIPT_DIR/queue/reports/${_kreport_filename}"
-                    # canonical terminal FAILは軍師reviewの有無にかかわらず未処理workではない。
-                    # report不在・未完成・非FAILは終端証拠がないため従来どおりpendingに保つ。
-                    if [ "$_kts" = "failed" ] && [ -f "$_kreport_path" ]; then
-                        local _kreport_status _kreport_verdict
-                        read -r _kreport_status _kreport_verdict < <(awk '
-                            /^status:/ && status=="" { status=$0; sub(/^[^:]*:[[:space:]]*/, "", status); gsub(/["'\''[:space:]]/, "", status) }
-                            /^verdict:/ && verdict=="" { verdict=$0; sub(/^[^:]*:[[:space:]]*/, "", verdict); gsub(/["'\''[:space:]]/, "", verdict) }
-                            END { print status, verdict }
+                    # archive済みterminal FAILだけを処理済みとする。active側に残るFAILは
+                    # 家老のレビュー/完了処理が未完なのでpendingを維持する。RC/reopenで
+                    # task YAMLがarchive markerより新しくなった場合も新世代として再通知する。
+                    if [ "$_kts" = "failed" ] && [ ! -f "$_kreport_path" ]; then
+                        local _karchive_report="" _karchive_marker _ktask_path
+                        local _karchive_stem="${_kreport_filename%.yaml}"
+                        local _kcandidate_report
+                        for _kcandidate_report in "$SCRIPT_DIR"/queue/archive/reports/"${_karchive_stem}"*.yaml; do
+                            [ -f "$_kcandidate_report" ] || continue
+                            _karchive_report="$_kcandidate_report"
+                            break
+                        done
+                        _karchive_marker="$SCRIPT_DIR/queue/gates/${_kpcmd}/archive.done"
+                        _ktask_path="$SCRIPT_DIR/queue/tasks/${_kworker}.yaml"
+                        if [ -n "$_karchive_report" ] &&
+                           [ -f "$_karchive_marker" ] &&
+                           [ ! "$_ktask_path" -nt "$_karchive_marker" ] &&
+                           [ "$(report_terminal_state "$_karchive_report")" = "CLOSED_BLOCKED" ]; then
+                            log "KARO-PENDING-SKIP-ARCHIVED-FAIL: $_kpcmd task=failed report=$(basename "$_karchive_report") archive_marker=present generation=closed"
+                            continue
+                        fi
+                    fi
+                    # legacy status_detail=BLOCKED + PASS is a closed control-plane
+                    # report, not an implementation FAIL awaiting archive. Preserve
+                    # that contract while active verdict=FAIL remains pending.
+                    if [ "$_kts" = "failed" ] && [ -f "$_kreport_path" ] &&
+                       [ "$(report_terminal_state "$_kreport_path")" = "CLOSED_BLOCKED" ]; then
+                        local _kactive_verdict
+                        _kactive_verdict=$(awk '
+                            /^verdict:/ { v=$0; sub(/^[^:]*:[[:space:]]*/, "", v); gsub(/["'\''[:space:]]/, "", v); print v; exit }
                         ' "$_kreport_path" 2>/dev/null)
-                        local _kreport_terminal_state
-                        _kreport_terminal_state=$(report_terminal_state "$_kreport_path")
-                        if [ "$_kreport_terminal_state" = "CLOSED_BLOCKED" ]; then
-                            log "KARO-PENDING-SKIP-CLOSED-BLOCKED: $_kpcmd task=failed report=completed verdict=${_kreport_verdict:-unknown}"
+                        if [ "$_kactive_verdict" != "FAIL" ]; then
+                            log "KARO-PENDING-SKIP-CLOSED-BLOCKED: $_kpcmd task=failed report=completed verdict=${_kactive_verdict:-unknown}"
                             continue
                         fi
                     fi

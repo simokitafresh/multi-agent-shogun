@@ -2193,7 +2193,7 @@ echo "MSG_COUNT=$MSG_COUNT"
     [[ "$output" == *"MSG_COUNT=1"* ]]
 }
 
-@test "check_inbox_renudge: canonical terminal FAIL is closed without gunshi review" {
+@test "check_inbox_renudge: active terminal FAIL remains pending until archived" {
     run bash -lc '
 set -euo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -2213,11 +2213,63 @@ NINJA_NAMES=(); KARO_PANE="karo"; declare -A RENUDGE_FINGERPRINT RENUDGE_COUNT R
 log() { echo "$1" >> "$LOG"; }; check_idle() { return 0; }; safe_send_keys_atomic() { return 0; }
 check_inbox_renudge
 cat "$LOG"
-test ! -e "$TMP_ROOT/inbox_calls.log"
+test -e "$TMP_ROOT/inbox_calls.log"
 '
     [ "$status" -eq 0 ]
-    [[ "$output" == *"KARO-PENDING-SKIP-CLOSED-BLOCKED: cmd_terminal_fail"* ]]
-    [[ "$output" != *"KARO-PENDING-INBOX"* ]]
+    [[ "$output" == *"KARO-PENDING-INBOX"* ]]
+}
+
+# test_necessity: pending_workはarchive済みFAILだけを閉じ、active・未archive・RC/reopen新世代を通知する。
+@test "check_inbox_renudge: archived FAIL generation matrix has zero false positives and negatives" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+run_case() {
+    local case_name="$1" status="$2" placement="$3" generation="$4" expected="$5"
+    local root="$NINJA_MONITOR_TEST_ROOT/$case_name"
+    SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"
+    mkdir -p "$root/queue/tasks" "$root/queue/inbox" "$root/queue/archive/cmds" \
+        "$root/queue/archive/reports" "$root/queue/reports" "$root/queue/gates/cmd_matrix" \
+        "$root/scripts" "$STATE_DIR"
+    printf "messages: []\n" > "$root/queue/inbox/karo.yaml"
+    printf "messages: []\n" > "$root/queue/inbox/gunshi.yaml"
+    printf "task:\n  status: %s\n  parent_cmd: cmd_matrix\n  report_filename: kotaro_report_cmd_matrix.yaml\n" "$status" > "$root/queue/tasks/kotaro.yaml"
+    printf "status: failed\nverdict: FAIL\n" > "$root/$placement/kotaro_report_cmd_matrix.yaml"
+    : > "$root/queue/gates/cmd_matrix/archive.done"
+    if [ "$generation" = newer ]; then
+        touch -d "2 seconds ago" "$root/queue/gates/cmd_matrix/archive.done"
+        touch "$root/queue/tasks/kotaro.yaml"
+    else
+        touch -d "2 seconds ago" "$root/queue/tasks/kotaro.yaml"
+        touch "$root/queue/gates/cmd_matrix/archive.done"
+    fi
+    printf "#!/bin/bash\necho CALLED\n" > "$root/scripts/inbox_write.sh"
+    chmod +x "$root/scripts/inbox_write.sh"
+    NINJA_NAMES=(); KARO_PANE=karo
+    declare -gA RENUDGE_FINGERPRINT=() RENUDGE_COUNT=() RENUDGE_LAST_SEND=()
+    check_idle() { return 0; }
+    log() { echo "$1" >> "$LOG"; }
+    check_inbox_renudge
+    local actual=0
+    grep -q "KARO-PENDING-INBOX" "$LOG" && actual=1
+    printf "CASE=%s expected=%s actual=%s\n" "$case_name" "$expected" "$actual"
+    [ "$actual" -eq "$expected" ]
+}
+
+run_case archived_failed failed queue/archive/reports old 0
+run_case active_failed failed queue/reports old 1
+run_case active_done done queue/reports old 1
+run_case reopened_failed failed queue/archive/reports newer 1
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"CASE=archived_failed expected=0 actual=0"* ]]
+    [[ "$output" == *"CASE=active_failed expected=1 actual=1"* ]]
+    [[ "$output" == *"CASE=active_done expected=1 actual=1"* ]]
+    [[ "$output" == *"CASE=reopened_failed expected=1 actual=1"* ]]
 }
 
 @test "check_inbox_renudge: completed PASS BLOCKED report is closed" {
