@@ -1,4 +1,27 @@
-# ホットスクリプト集中高速化 — AsIs/ToBe 5W1H設計書 v2.3 (2026-07-27 — 殿裁定23:25で第一弾スコープ決め打ち。v2.2=cmd_4185外れ値条件特定)
+# ホットスクリプト集中高速化 — AsIs/ToBe 5W1H設計書 v2.4 (2026-07-28 — 第一弾9/12消化・全弾Δ実測反映。v2.3=殿裁定23:25スコープ決め打ち)
+
+## §-2 第一弾 実施台帳(2026-07-28 08:18時点 — 9/12 GATE CLEAR)
+
+集計コマンド: `grep -E "hot_script|cmd_4189" logs/gate_metrics.log | grep CLEAR`(9行) + 各報告YAMLのΔ生貼付。1件=1check(1弾)。
+
+| # | check | 状態 | 是正内容 | Δ実測(既存台帳同条件before/after) |
+|---|---|---|---|---|
+| 1 | checks_main | ✅ CLEAR | 不変cmd本文のAC/command抽出を親shellで1回化(重複awk 15回排除) | median 905→688ms(-24.0%)、累積-1,066ms(n=5) |
+| 2 | yaml_ast | ✅ CLEAR | affected=0時の全tree走査を除去 | 累積6,908→4ms(-99.9%)、median 2,364→1ms(n=3) |
+| 3 | q11_semantic_search | ✅ CLEAR | 同一query並行missの非待機single-flight化+子孫pipe残留除去 | 外れ値3件321,181ms→97,207ms(Δ-223,974ms)、median 107,019→68ms |
+| 4 | commit_hash | ✅ CLEAR | 無条件全量再parse2箇所へgrep事前フィルタ | 累積6,450→2,230ms(-65.4%)、median 210→70ms(-66.7%) |
+| 5 | files_modified | ✅ CLEAR | 正規化+path検証を1回のYAML parseへ融合 | 累積6,900→3,960ms(-42.6%)、median 690→385ms(-44.2%)(n=10) |
+| 6 | status | ✅ CLEAR | 非terminal書込みをatomic fast pathへ分離 | 累積410→320ms(-22.0%)、median 40→30ms(-25.0%)(n=10) |
+| 7 | verdict | ✅ CLEAR | bc:no自動FAIL判定統合で重複全量parse1回削減 | 累積10,080→9,664ms(-4.1%)、median 409→381ms(-6.8%)(25走) |
+| 8 | self_sync | ✅ CLEAR | 観測5項目追加→枝別実測→skip分岐化(reverify弾で独立再検証済み) | sync分岐median 1,378ms→skip分岐88ms(-93.6%) |
+| 9 | three_layer_memory_ruling | ✅ CLEAR | cache miss条件限定の最適化(query正規化key+cmd間cache+negative cache+single-flight) | 外れ値92件累積1,009,352ms→同一入力2並列で2ms、median 4,126→1ms |
+| 10 | checks_pre_session | ⏳ 残 | — | — |
+| 11 | memory_db_token_search | ⏳ 残 | — | — |
+| 12 | instruction_sync | ⏳ 残 | — | — |
+
+- 全弾が品質2原則(正本突合+境界fixture)+選択テストFAIL0・SKIP0+既存台帳のみのΔ証明(新台帳0件)を遵守
+- 付随して掘れたインフラバグ2件も即修正済み: deploy_sec誤計上(issued/deployed混在→attempt_id対集計、q11誤3,321秒→真53秒、commit 0932543cc)・commit_hash弾のcontext_freshness BLOCK解消
+- 並列構造の確定: 同一fileの別check同時配備はreserved-path collisionでfail-close(正当)。**最大並列=スクリプト単位3レーン**、file内は先行完了待ち直列(将軍裁定02:34)
 
 ## §-1 第一弾スコープ決め打ち(殿裁定2026-07-27 23:25 — 本設計書の憲法)
 
