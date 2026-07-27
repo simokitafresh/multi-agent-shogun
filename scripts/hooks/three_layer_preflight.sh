@@ -173,6 +173,39 @@ resolve_memory_cache_path() {
     printf '%s/%s_%s\n' "${SHOGUN_MEMORY_DB_CACHE_DIR:-/tmp/shogun_memory_db_cache}" "$repo_key" "${source_db##*/}"
 }
 
+# A6: semantic-index/index.md (~1.3MB) lives on the 9P mount ($ROOT). Unlike
+# memory_db (already mirrored to /tmp), every semantic read previously paid
+# full 9P read latency, and under concurrent multi-agent load (same "6
+# ninjas" IO saturation already documented for obsidian's rg->git-grep fix
+# above) that latency is the real timeout driver, not the query logic itself
+# (real wall_ms for successful runs is single/low-double-digit ms). Mirroring
+# a same-mtime copy onto local disk removes the 9P dependency from the hot
+# path without changing what is searched or how; cp -p preserves the source
+# mtime so semantic_ts (the evidence contract's freshness field) still
+# reflects the true source, and resync only happens when the source changes.
+resolve_semantic_cache_path() {
+    local source_path="$1" repo_key
+    if [[ -n "${SHOGUN_SEMANTIC_CACHE_PATH:-}" ]]; then
+        printf '%s\n' "$SHOGUN_SEMANTIC_CACHE_PATH"
+        return 0
+    fi
+    repo_key="${ROOT//\//_}"
+    printf '%s/%s_%s\n' "${SHOGUN_SEMANTIC_CACHE_DIR:-/tmp/shogun_semantic_index_cache}" "$repo_key" "${source_path##*/}"
+}
+
+sync_semantic_cache() {
+    local source_path="$1" cache_path="$2"
+    [[ -f "$source_path" ]] || return 1
+    mkdir -p "${cache_path%/*}" 2>/dev/null || return 1
+    if [[ ! -s "$cache_path" || "$source_path" -nt "$cache_path" ]]; then
+        local tmp
+        tmp="$(mktemp "${cache_path}.XXXXXX")" || return 1
+        cp -p -f "$source_path" "$tmp" 2>/dev/null || { rm -f "$tmp"; return 1; }
+        mv -f "$tmp" "$cache_path" 2>/dev/null || { rm -f "$tmp"; return 1; }
+    fi
+    [[ -s "$cache_path" ]]
+}
+
 batch_index_search() {
     local query="$1" timeout_seconds="$2" result_file="$3"
     local source_db="${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}"
@@ -189,8 +222,11 @@ batch_index_search() {
     local use_immutable=0
     [[ "$read_db" == "$cache_path" ]] && use_immutable=1
     local semantic_index="${THREE_LAYER_SEMANTIC_INDEX:-$ROOT/docs/semantic-index/index.md}"
+    local semantic_cache_path semantic_read_path="$semantic_index"
+    semantic_cache_path="$(resolve_semantic_cache_path "$semantic_index")"
+    sync_semantic_cache "$semantic_index" "$semantic_cache_path" 2>/dev/null && semantic_read_path="$semantic_cache_path"
     local memory_lines="${THREE_LAYER_INJECT_MEMORY_LINES:-5}" semantic_lines="${THREE_LAYER_INJECT_SEMANTIC_LINES:-1}"
-    timeout "${timeout_seconds}s" python3 - "$read_db" "$semantic_index" "$query" "$use_immutable" "$memory_lines" "$semantic_lines" <<'PY' >"$result_file"
+    timeout "${timeout_seconds}s" python3 - "$read_db" "$semantic_read_path" "$query" "$use_immutable" "$memory_lines" "$semantic_lines" <<'PY' >"$result_file"
 import base64, datetime, pathlib, re, sqlite3, sys, time
 
 db_path, semantic_path, query, use_immutable, memory_lines, semantic_lines = sys.argv[1:]

@@ -814,3 +814,19 @@ EOF
     sleep 1.2
     [ "$(wc -l < "$counter")" -eq 1 ]
 }
+
+# test_necessity: A6 semantic cache must mirror the 9P source's bytes and
+# mtime onto local disk and must not change issue()'s success/failure
+# contract; a regression here would silently reintroduce the 9P read latency
+# this fix removes, or serve stale/mismatched content.
+@test "A6: semantic searchはローカルcacheから読まれ内容/mtimeが一致し既存挙動を壊さない" {
+    local cache_path="$TMP_EVIDENCE/semantic_cache.md"
+    export SHOGUN_SEMANTIC_CACHE_PATH="$cache_path"
+    run issue_with_fixtures "fixture preflight line wal_live_event"
+    [ "$status" -eq 0 ]
+    [ -s "$cache_path" ]
+    diff "$cache_path" "$THREE_LAYER_SEMANTIC_FIXTURE"
+    [ "$(stat -c %Y "$cache_path")" -eq "$(stat -c %Y "$THREE_LAYER_SEMANTIC_FIXTURE")" ]
+    run verify --tool Read --target "$ROOT/README.md"
+    [ "$status" -eq 0 ]
+}
