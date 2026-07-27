@@ -1,4 +1,5 @@
-<!-- last_updated: 2026-07-27 cmd_4180 -->
+<!-- last_updated: 2026-07-27 cmd_4184 -->
+<!-- source_commit:464e84e665d8bc750481fcbbe6a2d18de8ecd35c reason:cmd_4184_main_integration evidence:cmd_4184_content_present -->
 <!-- Vercel圧縮: 2026-04-13 267行→索引化 -->
 # fullrecalculate速度向上 分析 (索引)
 
@@ -6,6 +7,7 @@
 
 ## 結論
 
+- 2026-07-27 cmd_4184: 運用壁時計の正はstandard cron起動→FoF完了。直近実測 `01:10:13→01:52:38 UTC=42分25秒`。FoF起点は12分24秒だが上流+cron時差を隠すため補助値のみ。旧91.3s+716.6s=807.9sは累積計算時間で壁時計ではない。06-26値はrun IDなしのため時点間比較から除外。詳細 → `/mnt/c/Python_app/DM-signal/docs/research/cmd_4184_fullrecalc_wallclock.md`
 - 2026-07-27 cmd_4180: 同runの本番DBにL3内部内訳が保存済み。`monthly_returns_gen=275.20s`、`unmeasured=122.41s`、`dw_signals_flush=115.26s`、`daily_loop=80.61s`。PF別performance logは0件。FoFはトポロジカル逐次、子MR commit/cache reload後に親へ進み、cronもstandard成功待ちで直列。trade_perfの共有cache/N+1除去はFoFにも適用済み。詳細 → `docs/research/cmd_4180_fullrecalc_l3_recon.md`
 - 2026-07-27 cmd_4179: id214総時間671.18秒と別runのL5=66.64秒を差し引いた「L5=9.9%」はrun lineage混算のため棄却。直近FoF run `20260727014042HSIHNE` はL3=503s(70.3%)、L2=154s(21.6%; trade_perf=117s)、L5=42.3s(5.9%)。詳細 → `docs/research/cmd_4179_fullrecalc_timing_recon.md`
 
