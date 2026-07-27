@@ -352,7 +352,8 @@ lessons:
   source_cmd: 'cmd_shogun_harness_essential_20260721'
   created_at: '2026-07-21'
   automated: true
-  enforcement: '起動時lessons_shogun.yaml自動ロード。gate/hook削減判断時に『不可逆害を防ぐ構造型か、作文強要の表示型か』を必ず二値判定。構造型は速度・脱感染で消すな'
+  enforcement: "Level1（部分防御のみLevel4・2026-07-27一次確認）: scripts/gates/gate_gunshi_report_precheck.sh SG-PRE13(L611-645)が .claude/hooks・scripts/hooks・scripts/gates の削減率50%超をBLOCKし、大規模な必須ハーネス撤去はレビューCLEAR前に停止する。scripts/hooks/block_destructive.sh+D001-D009契約tests/test_block_destructive.bats(17/17 PASS)、scripts/hooks/three_layer_preflight.sh+tests/unit/test_three_layer_preflight.bats(51/51 PASS)で個別の必須構造も強制済み。ただしSG-PRE13は量の近似であり、50%以下または1行の必須構造削除と『構造型/表示型』の意味判定は覆わない。単一Level4へ昇格すると未防御範囲を隠すため候補維持。"
+  enforcement_level: 1
 - id: 'LS101'
   title: 'CI RED診断は origin失敗SHA vs 現HEAD を見よ — push保留と修正未pushの自己永続デッドロック'
   origin: '[[殿裁定_gitで健全時点rollback_20260721]] -> [[rollback尾部多重回帰]] -> [[push保留デッドロック]] -> [[fast-forward pushで解消]]'
