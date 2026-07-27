@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-24 cmd_4148 reviewed source boundary -->
-<!-- dm_signal_research_reflux: fingerprint=e9948e69c477bf7f9e719133e3e62f751fdac25daf7b09338a596bc815635668; mode=synced; evidence_b64=Y29udGV4dC9ndW5zaGktZnVsbHJlY2FsYy1zcGVlZC1hbmFseXNpcy5tZCDntZDoq5bnr4DjgbhjbWRfNDE3OeOBrnJ1biBsaW5lYWdl5re3566X5qOE5Y2044Go55u06L+RRm9G5YaF6Kiz44KS6YKE5rWB5riI44G/ -->
-<!-- source_commit:00c20c54 reason:cmd_4148 reviewed source boundary evidence:cmd_complete_gate project=dm-signal -->
+<!-- last_updated: 2026-07-27 cmd_4184_reviewed_source_boundary -->
+<!-- dm_signal_research_reflux: fingerprint=94a55c14335599503664905301410e497067d76576699dc14f4483bc92939af4; mode=synced; evidence_b64=Y29udGV4dC9ndW5zaGktZnVsbHJlY2FsYy1zcGVlZC1hbmFseXNpcy5tZOOBuGNtZF80MTg057WQ6KuW44O7NDLliIYyNeenkuODu3J1biBJROavlOi8g+Wlkee0hOOCkumChOa1gea4iOOBvw== -->
+<!-- source_commit:464e84e6 reason:cmd_4184_reviewed_source_boundary evidence:cmd_complete_gate_project_dm-signal_commit_464e84e6 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
