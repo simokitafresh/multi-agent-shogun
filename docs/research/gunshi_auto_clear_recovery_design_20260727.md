@@ -173,7 +173,7 @@ T1(状態) ──> T2(発生時に家老へ届く) ──> 家老が対処
 
 **T1-T3は「止まったことが伝わる」を達成した。しかし止まる原因そのものが自家製と判明した。**
 
-### D4: batch context auto-commitの失敗経路がstage残置を作る(自傷ループ・コード現物で確定)
+### D4: auto-commitの失敗経路がstage残置を作る(自傷ループ — ★家老レビューblt_155443反映で「確定」から「最有力仮説」へ降格・対象を全2枝へ拡張)
 
 `ninja_monitor.sh:853-856`(現物):
 ```bash
@@ -184,16 +184,18 @@ fi
 # ← commit失敗時: git addしたstageを戻さない。失敗理由も2>/dev/nullで捨てる
 ```
 
-- **機序**: `git add`成功→`git commit`失敗(pre-commit hook・lock競合等。理由は現行実装では観測不能)→**staged残置**→以後、全agentの`auto_commit_before_clear`が「pre-existing staged files」でskip→**全6忍者のauto clearが封鎖**
-- **実証(15:24-15:45生ログ)**: 13:58の案A unstage後もstagedが再発生(context/infrastructure.md, lord-conversation-index.md, memory-db-schema.md, semantic-map.md の自動生成4件)し、6忍者全員が反復CLEAR-BLOCKED。T2通知のoverlap_path=context/infrastructure.mdが本経路のstage対象と一致
-- **§6「stage発生原因は未特定」を本調査で解消**: stage主体=ninja_monitor自身のbatch context auto-commit失敗経路。「stage主体=自動プロセス」仮説を確定
+- **★対象は2枝(家老実測)**: `auto_commit_before_clear`内のadd→commit枝は**regular枝(add :836/:840, commit :843)とcontext枝(add :853, commit :854)の2本**あり、**両方**がstderr破棄・rollback 0(家老rg実測)。§10初版のcontext枝1本だけの是正では半分しか塞がらない — **是正は全枝共通helperへの統合**とする
+- **機序(最有力仮説)**: `git add`成功→`git commit`失敗(pre-commit hook・lock競合等)→**staged残置**→以後、全agentの`auto_commit_before_clear`が「pre-existing staged files」でskip→**全6忍者のauto clearが封鎖**
+- **★確度の訂正(家老指摘3)**: 現行実装はstderrを捨てており、15:45 stageの生成瞬間・失敗rcは観測されていない。∴「コード現物で確定」は論理飛躍で、正しくは**残置4path=context枝のstage対象と一致+残置を作りうるコードの実在による最有力仮説**。確定はT4のFAILログ実装後の再発観測で行う
+- **状況証拠(15:24-15:45生ログ)**: 13:58の案A unstage後もstagedが再発生(自動生成4件)し6忍者全員が反復CLEAR-BLOCKED。T2通知のoverlap_path=context/infrastructure.mdがcontext枝のstage対象と一致
 - **暫定処置(15:49将軍実行・可逆)**: 該当4pathを`git restore --staged`(案A先例)。実測: `git diff --cached --stat`=0行(index空)・worktree ` M`4件保持=非破壊
 
-### T4: 失敗経路のstage自己回収+失敗理由の観測可能化(実装弾へ)
+### T4: 失敗経路のstage自己回収+失敗理由の観測可能化(★家老レビューblt_155443反映 v2)
 
-- **設計**: (1)`git add`前に`git diff --cached --name-only`で既存stagedを記録し、commit失敗時は**自分が新規にstageしたpathのみ**`git restore --staged`で回収(他者stageは触らない=GA-231c思想維持) (2)commit失敗時のstderrを`2>/dev/null`で捨てず1行ログへ記録(`CONTEXT-BATCH-COMMIT-FAIL: reason=...`) (3)T1カウンタとは独立(T1は検知網として残す=多層防御)
-- **不変更契約への追加**: 他者の既存stagedには一切触れない。回収対象は同一関数実行内で自分がaddしたpathに限定
-- **境界fixture(最低4件)**: (f)commit成功→stage回収発動なし (g)commit失敗→自分がaddしたpathのみunstage・既存stagedは不変 (h)失敗理由がログへ1行記録される (i)pre-existing stagedありでadd自体をskipする既存挙動の非破壊
+- **設計**: (1)regular/context**全2枝**のadd→commitを**共通helper関数へ統合**し、そこで失敗処理を一元実装(枝別パッチ禁止=原理1行>各論パッチ) (2)commit失敗時のstderrを捨てず1行ログへ記録(`AUTO-COMMIT-FAIL: branch=<regular|context> rc=<n> reason=...`) — **D4仮説の確定/棄却はこのログで行う** (3)stage自己回収は**自己所有をOIDで証明できたpathのみ**: add前に`git diff --cached --name-only`のsnapshotに加え、add直後に`git ls-files --cached -s <path>`でstage済みblob OIDを記録し、commit失敗時のcleanup直前に**同一pathの現在stage OIDが自分の記録と一致する場合のみ**`git restore --staged`(★TOCTOU対策: snapshot後に他者が同一pathをstageし直した場合はOID不一致となり触らない=GA-231c維持)。OID照合が実装できない場合はcleanup自体を断念しログのみとする(fail-safe側へ倒す) (4)T1カウンタとは独立(T1は検知網として残す=多層防御)
+- **不変更契約への追加**: 他者の既存stagedには一切触れない。回収対象は「同一関数実行内で自分がaddし、かつcleanup時点でOIDが自分のadd結果と一致する」pathに限定
+- **境界fixture(最低7件)**: (f)commit成功→stage回収発動なし (g)context枝commit失敗→自分がaddしたpathのみunstage・既存stagedは不変 (h)失敗理由(branch/rc)がログへ1行記録される (i)pre-existing stagedありでadd自体をskipする既存挙動の非破壊 (j)**regular枝commit失敗→同様に回収**(家老指摘1) (k)**snapshot後に他者が同一pathを再stage→OID不一致で他者stage不変**(家老指摘2 TOCTOU) (l)**add部分失敗・commit hookが追加stageを作った場合の帰属**(自分のOID記録に無いstageは触らない)(家老指摘2)
+- **実装配備の前提**: 本v2を家老が再レビューしてから配備(blt_155443「反映まで実装配備停止」に従う)
 
 ## §8 因果リンク
 
