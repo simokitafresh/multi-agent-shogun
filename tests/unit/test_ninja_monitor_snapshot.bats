@@ -62,6 +62,61 @@ printf "parity=5/5 mismatch=0 preserved_ctx_model=2/2\n"
   [[ "$output" == *"parity=5/5 mismatch=0 preserved_ctx_model=2/2"* ]]
 }
 
+# test_necessity: commander line in karo_snapshot.txt must stay exactly one line per
+# commander regardless of unread count (0/1+/unreadable-file), because a doubled line
+# corrupts every downstream parser (dashboard/gate) that assumes one record per key.
+@test "commander UNREAD line stays single-scalar across 0/1/read-error inbox states" {
+  run bash -c '
+set -euo pipefail
+ROOT="'"$ROOT"'"
+TMP="'"$BATS_TEST_TMPDIR"'/commander-unread"
+mkdir -p "$TMP/queue/tasks" "$TMP/queue/inbox" "$TMP/queue/reports"
+export KARO_SNAPSHOT_LOCK_FILE="$TMP/karo_snapshot.lock"
+
+snapshot_karo_line() {
+  NINJA_MONITOR_LIB_ONLY=1 SHOGUN_TEST_ROOT="$TMP" bash -c '\''
+    source "'"$ROOT"'/scripts/ninja_monitor.sh"
+    SCRIPT_DIR="$SHOGUN_TEST_ROOT"
+    write_karo_snapshot
+  '\'' >/dev/null 2>&1
+  grep "^commander|karo|" "$TMP/queue/karo_snapshot.txt"
+}
+
+printf "messages:\n- id: g1\n  read: false\n" > "$TMP/queue/inbox/gunshi.yaml"
+
+# case 1: 0 unread
+printf "messages:\n" > "$TMP/queue/inbox/karo.yaml"
+lines1=$(snapshot_karo_line)
+count1=$(printf "%s\n" "$lines1" | grep -c "^commander|karo|")
+unread1=$(printf "%s\n" "$lines1" | grep -o "UNREAD:[0-9]*" | head -1)
+[ "$count1" -eq 1 ]
+[ "$unread1" = "UNREAD:0" ]
+
+# case 2: 1 unread
+printf "messages:\n- id: k1\n  read: false\n" > "$TMP/queue/inbox/karo.yaml"
+lines2=$(snapshot_karo_line)
+count2=$(printf "%s\n" "$lines2" | grep -c "^commander|karo|")
+unread2=$(printf "%s\n" "$lines2" | grep -o "UNREAD:[0-9]*" | head -1)
+[ "$count2" -eq 1 ]
+[ "$unread2" = "UNREAD:1" ]
+
+# case 3: read-error (inbox file missing)
+rm -f "$TMP/queue/inbox/karo.yaml"
+lines3=$(snapshot_karo_line)
+count3=$(printf "%s\n" "$lines3" | grep -c "^commander|karo|")
+unread3=$(printf "%s\n" "$lines3" | grep -o "UNREAD:[0-9]*" | head -1)
+[ "$count3" -eq 1 ]
+[ "$unread3" = "UNREAD:0" ]
+
+printf "commander_lines=1/1/1 false_positive=0 false_negative=0\n"
+'
+  if [ "$status" -ne 0 ]; then
+    printf '%s\n' "$output"
+    false
+  fi
+  [[ "$output" == *"commander_lines=1/1/1 false_positive=0 false_negative=0"* ]]
+}
+
 @test "snapshot assignment refresh is independent of the blocked main loop" {
   run python3 - "$ROOT/scripts/ninja_monitor.sh" <<'PY'
 import sys

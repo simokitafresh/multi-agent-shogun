@@ -7023,7 +7023,8 @@ write_karo_snapshot() {
                     if [ -n "$_cmdr_pane" ]; then
                         _cmdr_state=$(tmux display-message -t "$_cmdr_pane" -p '#{@agent_state}' 2>/dev/null || echo unknown)
                     fi
-                    _cmdr_unread=$(grep -c 'read: false' "$SCRIPT_DIR/queue/inbox/${_cmdr}.yaml" 2>/dev/null || echo 0)
+                    _cmdr_unread=$(grep -c 'read: false' "$SCRIPT_DIR/queue/inbox/${_cmdr}.yaml" 2>/dev/null)
+                    _cmdr_unread="${_cmdr_unread:-0}"
                     echo "commander|${_cmdr}|state:${_cmdr_state:-unknown}|UNREAD:${_cmdr_unread}|PANE:${_cmdr_pane:-unresolved}"
                 done
 
