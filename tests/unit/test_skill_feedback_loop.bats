@@ -507,7 +507,9 @@ import os
 from pathlib import Path
 
 text = (Path(os.environ["PROJECT_ROOT"]) / "scripts/cmd_complete_gate.sh").read_text(encoding="utf-8")
-start = text.index('case "$block_reason" in')
+feedback_marker = "# BLOCK理由から還流先スキルを特定"
+feedback_start = text.index(feedback_marker)
+start = text.index('case "$block_reason" in', feedback_start)
 end = text.index('        esac', start)
 case_block = text[start:end]
 case_lines = case_block.splitlines()
