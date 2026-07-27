@@ -9053,6 +9053,79 @@ record('PASS', false_positive=0)
 TARGET_COLLISION_PY
 }
 
+deploy_task_guard_preserved_path() {
+    local task_file="$1"
+    [ -f "$task_file" ] || return 0
+    local preserved_file="$SCRIPT_DIR/queue/preserved_paths.yaml"
+    [ -f "$preserved_file" ] || return 0
+
+    PYTHONPATH="$SCRIPT_DIR" python3 - "$SCRIPT_DIR" "$task_file" "$preserved_file" <<'PRESERVED_PATH_PY'
+import os
+import sys
+import yaml
+
+script_dir, task_file, preserved_file = sys.argv[1:4]
+
+def load_yaml(path):
+    try:
+        with open(path, encoding='utf-8') as f:
+            return yaml.safe_load(f) or {}
+    except Exception:
+        return {}
+
+def paths_from(value):
+    if isinstance(value, str):
+        return [value.strip()] if value.strip() else []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    return []
+
+def normalize(path):
+    path = path.replace('\\', '/').strip()
+    if not path:
+        return ''
+    if not os.path.isabs(path):
+        path = os.path.join(script_dir, path)
+    return os.path.normpath(path)
+
+doc = load_yaml(task_file)
+task = doc.get('task') if isinstance(doc.get('task'), dict) else doc
+task = task if isinstance(task, dict) else {}
+
+# Both target_path (primary scope) and planned_paths (full touch set) are
+# checked: the incident this guard closes (2026-07-27) was a task whose
+# target_path itself was the preserved file.
+target_paths = {normalize(p) for p in paths_from(task.get('target_path')) + paths_from(task.get('planned_paths'))}
+if not target_paths:
+    sys.exit(0)
+
+preserved_doc = load_yaml(preserved_file)
+entries = preserved_doc.get('preserved_paths') or []
+if not isinstance(entries, list):
+    sys.exit(0)
+
+hit = None
+for entry in entries:
+    if not isinstance(entry, dict):
+        continue
+    p = normalize(str(entry.get('path', '')))
+    if p and p in target_paths:
+        hit = entry
+        break
+
+if hit:
+    print(
+        f"BLOCK: preserved path collision: {hit.get('path')} "
+        f"(reason={hit.get('reason', '')}, declared_by={hit.get('declared_by', '')}, "
+        f"declared_at={hit.get('declared_at', '')}). "
+        "解除の証跡を一次確認せよ。解除が殿の裁定事項なら裁定を待て。",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+sys.exit(0)
+PRESERVED_PATH_PY
+}
+
 deploy_task_guard_direct_yaml_prewrite_collision() {
     local yaml_file="$1"
     local ninja_name="$2"
@@ -12356,6 +12429,11 @@ except Exception:
     fi
 
     if ! deploy_task_guard_target_path_collision "$task_yaml" "$NINJA_NAME"; then
+        deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
+        return 1
+    fi
+
+    if ! deploy_task_guard_preserved_path "$task_yaml"; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi

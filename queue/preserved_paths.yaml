@@ -1,0 +1,5 @@
+preserved_paths:
+- path: projects/dm-signal/lessons.yaml
+  reason: "書込み主体特定不能。commitもrevertも禁止。解除判断は殿の裁定事項"
+  declared_by: karo
+  declared_at: "2026-07-27T04:37:00"
