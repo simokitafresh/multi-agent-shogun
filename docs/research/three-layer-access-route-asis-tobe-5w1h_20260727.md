@@ -160,7 +160,7 @@ A6を先に潰さないとT1が空注入を量産する。
 5. 見落としている欠陥・副作用はないか(特にstop_check_inbox.shの[MEM:]タグ検査との整合)
    → **見落とし1件確定(軍師回答 blt_20260727_091056)**: stop_check_inbox.sh:25-45 has_successful_three_layer_preflight()がevidence JSONを直接パースする外部消費者であり、§4安全境界にもT1にも未記載。**T1実装制約(A8)**: evidenceのスキーマ変更(結果注入・append化)時はstop_check_inbox.sh側の消費関数との互換を同一commitで維持すること。才蔵のT1弾レビュー時に将軍が検分する。
 
-## §6 実装進捗台帳(2026-07-27 10:45時点・一次情報=logs/gate_metrics.logの終局行)
+## §6 実装進捗台帳(2026-07-27 13:35時点・一次情報=logs/gate_metrics.logの終局行)
 
 | 弾 | 対象欠陥 | 担当 | 状態 | 証跡 |
 |---|---|---|---|---|
@@ -181,19 +181,22 @@ A6を先に潰さないとT1が空注入を量産する。
 | A1 検索結果の破棄(最重要) | ✅ 是正済み | T1弾commit 850a0429d。直近evidence 8/8にmemory_top/semantic_top/obsidian_top実結果を実測 |
 | A7 クエリの破棄 | ✅ 是正済み(T1に同梱) | evidenceにmemory_query等が保存されている実測 |
 | A6 検索42.8%タイムアウト | ✅ 是正済み | A6弾CLEAR 10:18。効果実測: 失敗率 before 44.1%(134/304) → after 0%(0/8)・total_wall_ms中央値622ms。after母集団8件のため観測継続 |
-| A5 偽引用の構造的生産 | ⚠️ 部分 | evidence側に原文が入った。エージェントへの[MEM:]注入雛形はまだquery/tsのみ=「読める化」最終段が残 |
+| A5 偽引用の構造的生産 | ✅ 是正済み | R3弾CLEAR 12:08:03(cmd_karo_impl_a5_mem_evidence_raw_field)。[MEM:]雛形へevidence実結果原文欄を追加=「読める化」完成。12:36将軍実測: 注入雛形に原文=付きで実データ表示 |
 | A4 cache起動時不在 | ✅ 概ね是正済み | commit aba450d32(rowid水位比較+自動再生成+追随検知器)。本日朝WARN実在のため観測継続下 |
-| A2 semantic→memoryすり替わり | ❌ 未着手 | semantic_search.sh:499のmemory_dbフォールバック現存・LLM第二層デフォルト無効のまま |
-| A3 手順書未記載 | ⚠️ 部分 | preflight言及はinstructions 4ロール中2(ashigaru/gunshi)のみ。正式弾未起票 |
+| A2 semantic→memoryすり替わり | ✅ 是正済み | R2弾CLEAR 13:09:55(cmd_karo_impl_a2_semantic_fallback_visible・疾風)。memory_dbフォールバックをMEMORY_DB_MATCHラベル明示+miss可視化へ(殿裁定02:37準拠)。途中で家老誤RC→台帳退避(queue/archive/rc_erroneous/)→軍師LGTM再実行の脱出路を実証 |
+| A3 手順書未記載 | ✅ 是正済み | R4完了。instructions 4ロール全て(shogun/karo/gunshi/ashigaru)に実効ルート(hook4本+evidence消費者)記載を実測各6件(grep -c "three_layer_preflight\|実効ルート" → 6/6/6/6) |
 
 ### 残工程と完了見込み(11:25起点・本日実績ベース: 1弾=配備→GATE CLEARまで実測40〜80分)
 | # | 工程 | 内容 | 依存 | 見込み |
 |---|---|---|---|---|
-| R1 | 弾1(指揮官投稿契約)クローズ | 実装・実戦是正は完了済み。残=影丸の報告YAMLフィールド不備(verdict空等)の是正→GATE再判定 | なし | +30分(〜12:00) |
-| R2 | A2弾 | semantic第二層のmemoryフォールバックを「MEMORY_DB_MATCH」ラベル明示+miss可視化へ(殿裁定02:37: フォールバック自動切替不可・missは可視で返す)。LLM第二層の既定復活はしない(§5論点2) | R1(忍者枠) | 起票→CLEAR +60〜90分(〜13:30) |
-| R3 | A5最終段 | prompt_state_injectの[MEM:]雛形へevidenceの実結果原文欄を追加=「読める化」完成 | T1(済) | +60分(R2と並列可・〜13:30) |
-| R4 | A3弾 | instructions 4ロールへ実効ルート(hook4本+evidence消費者)を追記 | R2/R3の最終形確定後 | +30分(〜14:00) |
-| R5 | 検収 | preflight失敗率・実結果注入率の全数再計測(after母集団50件以上)+§6最終更新 | R1-R4 | +30分 |
-- **完了見込み: 本日14:00〜14:30頃(JST)**。R2/R3を並列配備すれば〜13:30台も可。前提=忍者枠の空き(現在6名中4名idle)と新規URGENT割込みなし
+| R1 | 弾1(指揮官投稿契約)クローズ | ✅ **GATE CLEAR 12:04:33**。実戦欠陥2件是正+検出パターン標準書式整合+related_lessons snapshot根治を経て完了 | — | 完了 |
+| R2 | A2弾 | ✅ **GATE CLEAR 13:09:55**(疾風・cmd_karo_impl_a2_semantic_fallback_visible)。MEMORY_DB_MATCHラベル明示+miss可視化(殿裁定02:37準拠)。LLM第二層の既定復活はしない(§5論点2)。途中の家老誤RC(12:47、grep -A4抽出範囲不足で空欄誤判定)は台帳退避で正規解消—「通し方を見つけたことと通してよいことは別」(将軍裁定12:56を家老が実践) | R1(忍者枠) | 完了 |
+| R3 | A5最終段 | ✅ **GATE CLEAR 12:08:03**(飛猿)。[MEM:]雛形へ実結果原文欄追加=「読める化」完成 | — | 完了 |
+| R4 | A3弾 | ✅ **完了(13:33将軍実測)**。instructions 4ロール全てへ実効ルート(hook4本+evidence消費者)記載。grep -c実測=shogun 6/karo 6/gunshi 6/ashigaru 6 | R2/R3の最終形確定後 | 完了 |
+| R5 | 検収 | preflight失敗率・実結果注入率の全数再計測(after母集団50件以上)+§6最終更新。軍師の独立検算付き | R1-R4(全て済) | **唯一の残工程。13:35配備指示** |
+| R6 | 貫通の道具内蔵化(12:32将軍下知・追加) | ✅ **GATE CLEAR 13:04:08**(cmd_karo_impl_r6_knowledge_write_penetration_visible)。memory_db_knowledge_write.shへL1/L2/L3貫通可視化を内蔵(commit 99f7abbb6)+軍師D0でL2 pending案内パス誤記も是正(3853f071f)。スキル意志依存の排除 | R3(済) | 完了 |
+- **状況(13:35更新): R1/R2/R3/R4/R6/T1/A6/弾2=完了。残=R5検収のみ。**欠陥A1-A7は全て是正済み(上記スコアボード)。R5は数値検収(after母集団50件以上の失敗率・注入率再計測+軍師独立検算)で本作戦をクローズする
+- 派生教訓(13:18将軍): loop_ledger promotion.stock=265を「滞留」と誤読→軍師検証で棄却(promotion.stockはLevel4未満教訓数。定義はloop_ledger_update.sh:986-996)。指標の定義を確定させてから対処方針を立てよ(LG076型)
+- 副産物: /three-layer-penetrateスキル新設(15c521a62)+検証3回で欠陥3件検出修正(2bbec5797/ae26044c9)+家老の初実使用成功(blt_123435・3層証跡付き)
 - A4は追加実装なし(検知器の観測継続のみ)。観測で再発すれば別弾
 - 未push57commit=GA-PUSH1正当BLOCK(忍者WIP+lessons.yaml経路外書込みと同一path)。lessons.yaml根治(別作戦: 真犯人候補lesson_auto_tag.sh・計装承認済み)の後に一括push
