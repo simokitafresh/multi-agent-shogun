@@ -18,7 +18,7 @@ teardown() { rm -rf "$TMPDIR_CASE"; }
 
 transition() {
   SHOGUN_ESCALATION_DECISION_LEDGER="$LEDGER" \
-    python3 "$PY" "$STATE" "$ALERTS" "${1:-}"
+    python3 "$PY" "$STATE" "$ALERTS" "${1:-}" 0
 }
 
 @test "判定台帳にdismissがある同一keyは再送しない" {
