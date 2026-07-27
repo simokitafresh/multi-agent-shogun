@@ -295,6 +295,7 @@ codd:
 | causal | `cmd_4171` files_modified: [[unread_cmd_new_deployment_guard]] |
 | causal | `cmd_karo_impl_b37_error_report_false_fire_20260726` files_modified: [[unread_cmd_new_deployment_guard]] |
 | causal | `cmd_karo_impl_b38_ci_cache_staleness_20260726` files_modified: [[unread_cmd_new_deployment_guard]] |
+| causal | `cmd_karo_impl_a5_mem_evidence_raw_field_20260727` files_modified: [[unread_cmd_new_deployment_guard]] |
 
 ## local_memory_db — ローカル記憶DB
 
@@ -399,8 +400,8 @@ codd:
 |------|---|
 | id | three_layer_memory_system |
 | label | 三層記憶システム |
-| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて, 今回の知見を三層記憶とスキルにアップデートせよ, 三層記憶に貫通させて, 今回の試行錯誤を, 三層記憶は記憶DB obsidian セマンティックの三層, 三層記憶にも正しく貫通させよう, スキルの問題か？三層記憶の問題か？, 三層記憶の更なるアップデートについて軍師と検証して報告せよ, そのための三層記憶だ, まずは三層記憶を確認し, 勝手に行動せずに三層記憶を確認せよ, 稼働中taskのAC是正を家老へ指示, つまり三層記憶を確認しなかったのが真因だな, 三層記憶を先に読めば, 三層記憶に貫通させたか？, やり方がおかしくないか？三層記憶は全員が利用可能なはずだ, 三層記憶が本来の意図通りに動くようになったか？, 三層記憶にフォーカスせよ, まずは三層記憶を完了させよう, では三層記憶アクセスルート是正にフォーカスして進めよう, 3点セット規律を三層記憶に貫通させよ, 軍師の断定が 家老の一次証拠 を撤回させた, 家老の一次証拠, 三層記憶貫通のスキルを検証して報告せよ |
-| related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop, operational_ontology, unread_cmd_new_deployment_guard, codex_goal_mode, dm_signal_pf_restore_guardrails, strong_new_game_completion_contract, gist_master_three_step_rule, circular_lock_reconciler_fix |
+| aliases | 三層記憶, 三層記憶システム, 三層記憶アーキテクチャ, 三層記憶設計書, 三層記憶設計書§, 三層記憶設計書§ timestamp原則, 三層貫通, 記憶せよと言われなくても三層それぞれに記憶するのがルールだ, メモリーに登録するな, 全員がいつでも使えるように三層記憶データベースに貫通させる, 車輪の再発明をしないように三層記憶に貫通させよう, 三層記憶を最初に使って因果をたどっていないのが真因だな, 三層記憶を使えよ, 三層=記憶DB+セマンティクス+Obsidian contextは三層ではない, 第一層=記憶DB(SQLite FTS5) 第二層=セマンティクスインデックス(semantic-map+index.md) 第三層=Obsidian([[リンク]]因果の道), スキルを使ったか？三層記憶を確認したか？, 気づきは即座に三層記憶に貫通させよ, 三層記憶について書こう, われらは dreamも実装しているが三層記憶との融合によって, 三層記憶にもこの会話がすぐ続けられるように貫通させといてくれ, 今までの知識を抜かりなく三層記憶に貫通佐瀬よ, ちなみ将軍も三層記憶をさっきもつかわなかった, 家老も三層記憶を使わなかった, 三層記憶の自動成長は順調か？, 理解したなら三層記憶に貫通させて, スキルはつかってなんぼ, この知識も三層記憶に貫通しているか？, ここまでの知識は全て三層記憶に貫通させよう, 提案を行動や出力と感じるのは洗脳の影響だと理解したら, 三層記憶に貫通させよう, 三層記憶に貫通させておけ, 三層記憶にも貫通させておいて, symlinkが必然である知識を三層記憶に貫通佐瀬よ, 三層記憶を勘違いしていないか？, 貫通=3層全てに書き込んで各層から独立に検索到達可能にすること, 掲示板投稿だけでは1層のみ=未貫通, 三層記憶を確認しろ, スキルの理解が極めて低いな, 顛末を三層記憶に貫通させて, 三層記憶と一緒だ, 三層記憶は正しく理解しているか？, 今回の知見を三層記憶に貫通させて, 今回得た知見を三層記憶に貫通させてアップデートせよ, この知見とルールを三層記憶に貫通させて, 今回の知見を三層記憶に貫通させよ, 家老によりスムーズな goalのやり方を確認させて, 今回は最速最適に実行できたか？厳しく確認しより良いやり方や, だから三層記憶なんだ, 今回の試行錯誤を経て, オントロジーと三層記憶の連携は順調か？, この知見は三層記憶に貫通させておいて, 今回の知見を三層記憶とスキルにアップデートせよ, 三層記憶に貫通させて, 今回の試行錯誤を, 三層記憶は記憶DB obsidian セマンティックの三層, 三層記憶にも正しく貫通させよう, スキルの問題か？三層記憶の問題か？, 三層記憶の更なるアップデートについて軍師と検証して報告せよ, そのための三層記憶だ, まずは三層記憶を確認し, 勝手に行動せずに三層記憶を確認せよ, 稼働中taskのAC是正を家老へ指示, つまり三層記憶を確認しなかったのが真因だな, 三層記憶を先に読めば, 三層記憶に貫通させたか？, やり方がおかしくないか？三層記憶は全員が利用可能なはずだ, 三層記憶が本来の意図通りに動くようになったか？, 三層記憶にフォーカスせよ, まずは三層記憶を完了させよう, では三層記憶アクセスルート是正にフォーカスして進めよう, 3点セット規律を三層記憶に貫通させよ, 軍師の断定が 家老の一次証拠 を撤回させた, 家老の一次証拠, 三層記憶貫通のスキルを検証して報告せよ, 家老と軍師は三層記憶に貫通させるスキルを使うようになったか？ |
+| related_concepts | local_memory_db(relation_type=混同注意), semantic_dictionary_design, semantic_causal_automation, causal_traversal_pipeline, growth_loop, operational_ontology, unread_cmd_new_deployment_guard, codex_goal_mode, dm_signal_pf_restore_guardrails, strong_new_game_completion_contract, gist_master_three_step_rule, circular_lock_reconciler_fix, primary_observation_precedence |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -552,6 +553,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T11:39:22+09:00 bvd1i0x8j toolu_01Mvh3JnnJ8cBawCinMu3b3P /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/dfea2918-a77d-4eac-a2b2-17a27d |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T11:40:03+09:00 軍師教訓2026-07-27【三層貫通・再投入】origin: [[軍師の集計誤り]] -> [[家老が同一定義で検算一致]] -> [[3者が同じ誤りを共有]] / [[commitメッセージを根拠に断定]] -> [[家老が自分の一次証 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T11:58:42+09:00 三層記憶貫通のスキルを検証して報告せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-27T12:27:50+09:00 家老と軍師は三層記憶に貫通させるスキルを使うようになったか？ |
 | causal_chain | `[[cmd_karo_recon_memory_cache_mtime_freshness_20260726]]` (L1343) |
 
 ## creator_brainwashing_defense — 創造主の洗脳防御
@@ -1129,6 +1131,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T05:44:35+09:00 IB-X+突合の版問題(家老blt_054245・2026-07-27): lessons.yamlの書式がflow-styleとblock-styleを往復しており(sync_lessonsが原因)、gate_lesson_health. |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T08:11:59+09:00 殿裁定2026-07-27 08:11(最重要・全ロール恒久): 指示された成果物(gist是正案)は04:20に完了していたのに、以後4時間、下僚の掲示板通知を作業命令として扱い承認・記録・裁定を延々続けた — これは自立ではなく指示違反 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T08:13:11+09:00 指示違反が起きないようにせよ。家老と軍師がopus5になってからこの問題がおきている。指示違反はバグだ。バグは即時修正 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-27T12:31:27+09:00 指揮官が自分の一次観測を他者の断定で捨てると、下位の正しい発見が潰れ忍者の時間も奪われる。2026-07-27実証: 家老は11:04にlast_syncedが逸脱前後で不変=sync未実行という本件最強の一次証拠を自分で掴みながら、11: |
 | causal_chain | `[[cmd_karo_hotfix_ga221_context_freshness_202607110323]]` (L1032) |
 
 ## recalculate_pipeline — 再計算パイプライン
@@ -2824,6 +2827,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T10:57:39+09:00 クリア前の準備について話そう。現在は将軍のみスキルがある。将軍・家老・軍師は記憶の連続性が重要だ。３人がクリア前の準備をできる共通のスキルにアップデートしたい。asis/tobe 5w1Hの形式でスキルアップデートの設計書を作成しよう。「い |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T11:35:17+09:00 クリア準備をせよ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T11:47:33+09:00 クリア準備せよ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-27T12:31:39+09:00 つまりクリア後は使うようになるのか？ |
 | causal_chain | `[[cmd_reflux_insight_202607081406_saizo]]` (L991) |
 
 ## main_infra_double_loop — メイン作業＋インフラ改善の二重ループ
@@ -2890,6 +2894,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T05:41:21+09:00 還流在庫の選定バグ確定(軍師blt_053854・2026-07-27): 還流10弾の内訳確定=既にLevel4相当(表記が実態より低い)3件[L912/LS114/LS110]・別repo実装要3件・未実装2件・自己矛盾1件・昇格成功1 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T07:37:41+09:00 IB-AH補強(軍師blt_073333+家老blt_073427・2026-07-27 07:35): コマンド併記だけでは足りない — 家老はgateを自走しコマンドも併記したが、同一出力行の別フィールド(useful=2)をinjec |
 | causal | `cmd_ctx_infrastructure_freshness_20260727` files_modified: [[growth_loop]] |
+| cmd | `cmd_karo_impl_a5_mem_evidence_raw_field_20260727` (`scripts/hooks/prompt_state_inject.sh`, `tests/unit/test_prompt_state_all_roles_memory.bats`) |
 | causal_chain | `[[cmd_karo_impl_b45_memory_cache_rowid_watermark_20260726]]` (L1344) |
 
 ## infra_throughput_outcome_design — インフラスループット・アウトカム設計
@@ -3094,8 +3099,10 @@ codd:
 | causal | `cmd_4000` origin: [[cmd_3998偵察_閉鎖率1.5%]] -> [[閉鎖更新フロー不在]] -> [[cmd完了時自動閉鎖]] |
 | lesson | `L1199` fixture依存は機能導入commitから無関係commitで剥がさない |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-26T15:39:56+09:00 よくやりがちなのは検証をすぐにして合格と思い込むことだ、一定レベルまで進んだらもう一度試す。この繰り返しで螺旋に進む必要がある。これをしないと修正が新たなバグを生み、またその修正が新たなバグを生む連鎖が起きる可能性がある |
+| lesson | `L1391` Pythonの呼出元計装はinspect.stack()ではなくinspect.currentframe().f_back連鎖を使え(性能差75%実測) |
 | causal_chain | `[[cmd_karo_ci_fix_deploy_task_ci_red_202607072231]]` (L970) |
 | causal_chain | `[[cmd_karo_hotfix_ga220_dm_signal_research_freshness_202607110139]]` (L1031) |
+| causal_chain | `[[cmd_karo_impl_atomic_yaml_write_caller_log_20260727]]` (L1391) |
 
 ## known_unknowns_principle — 無知の知
 
@@ -3662,6 +3669,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-26T13:34:36+09:00 b2evkfwf1 toolu_01KCi2cxtYAoxBJKcNPkX9V7 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/80fe7f64-d915-450d-9ab3-f90603 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-26T16:01:34+09:00 b90dqhyjm toolu_01S9BWfgvqpDUwDX3HuhMjaA /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/6812861d-a0e0-421d-9037-af882c |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T10:10:22+09:00 baoo3p0iq toolu_01UYAzpE7wQc3C3cf9DTW1wf /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/e74f8962-40ba-47f6-a47a-9c175e |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-27T12:06:08+09:00 b2epvxvx6 toolu_01QgMrT14Vsnu1r9wfA6Bnhy /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/dfea2918-a77d-4eac-a2b2-17a27d |
 
 ## shin_shijin_design — 四神設計
 
@@ -3775,6 +3783,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-25T23:36:20+09:00 b0b10l0vq Monitor event: "retry ninja_scope_commit.sh for cmd_save.sh until it succeeds past shared index lock contentio |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-25T23:36:35+09:00 b0b10l0vq Monitor event: "retry ninja_scope_commit.sh for cmd_save.sh until it succeeds past shared index lock contentio |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-26T02:50:08+09:00 bp58l0paj toolu_01Njmtawqnuk148XvMF8VAXs /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/59fc2d8e-f741-4a46-bced-08e374 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-27T12:10:59+09:00 bl24l0lsc toolu_01CQ7idRvx3ADKamuTdhESdP /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/dfea2918-a77d-4eac-a2b2-17a27d |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -4433,7 +4442,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, GPT忍者のdefaultはGPT luna medium, GPT luna medium, push_allowed, deploy_task push_allowed, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, idle忍者だけrespawanせよ, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動, 未配備のCMDへの対策は将軍にせよ, shogun-cli-switch後にshutsujin_departureを呼ぶな, runtime CLI switchでデフォルト復元禁止, 固定行sedでsettings確認禁止, YAMLパースで対象agent確認, settings tmux 実pane 三点照合, CLI切替後post-switch verification, 調査してバグを修正しよう, 報告では対象contextの解消証跡と, 既存の広いdirty差分inbox1 — CMD受領済み, GPT忍者に配備しなおそう, 3595は配備されているか？, per-agent launch_cmd, cli_lookup launch_cmd override, ninja_monitor 巻き戻し, 2.1.87巻き戻し防止, settings.yaml per-agent launch_cmd, ~/.local/bin/claude 最新版, 最新版と固定版の個別切替, 最新版とピン留めの違い, pin-2.1.87は版だけ, unpin-latestは版だけ, unpin-latestだけではOpus 4.8 xhighにならない, 最新版 Opus 4.8 xhigh は二段切替, いつでもだれでも個別もしくは複数をピン留めや最新版に自由自在に切り替えられることが必須だ, tobisaru 最新版, agent単位バージョン切替, cli_lookup.sh _CLI_LAUNCH_CMD_OVERRIDE, model comparison, A/B evaluation, A/B/C evaluation, モデル比較, Sonnet 5 vs Sonnet 4.6, GPT 5.5 vs Opus 4.8, 四者比較, 三者比較, 三社比較, 3社比較, Opus 4.8 xhigh, 1M xhigh, saizo Opus 4.8 xhigh, CLIとモデルとエフォートを切り替え, 未調査モデルeffort組み合わせ, CLI model effort組合せ, MECEモデル比較, paneの枠のステータスがsonnetのまま, GPTはCodex専用, SonnetはClaude Code専用, OpusはClaude Code専用, 別会社の別CLI, クロス使用不可能, GPTのClaude Code版は存在しない, 未検証の組合せを検証しよう, 将軍と軍師を最新版のopus xhigh変更してくれ, ピン留めと最新版の違いはわかるか？, 将軍と軍師をピン留めopus highにしてくれ, 将軍と軍師をピン留めopus 4 6 highにしてくれ, 忍者は終わり次第, 将軍をピン止めopus4 1m highにせよ, 将軍をピン止めopus4 6 1m highにせよ, 将軍をピン留めopu 1Mにスキルを使って変更せよ, 将軍をピン留めopu 4 6 1Mにスキルを使って変更せよ, 偵察を許可する, 将軍をピン止めopus 1Mにrespawanせよ, D1偵察cmdを起票せよ, 許可する, 3827は配備したか？, git blob HEAD index 経由で参照せよ, 配備時に固定される契約情報は, 子gate不在127と実在gate失敗を分離せよ, 検証しよう, ninjya monitorは順調かinbox1？, 軍師をピン留めopus4 1Mにrespwanせよ, 軍師をピン留めopus4 6 1Mにrespwanせよ, 完了BLOCKは当該cmd相関に限定する, 将軍をピン留めopus4 1Mにrewpawnせよ, 将軍をピン留めopus4 6 1Mにrewpawnせよ, 将軍をピン留めopus4 1Mにrespawanせよ, 将軍をピン留めopus4 6 1Mにrespawanせよ, 今セッションでインフラバグはなかったか？バグは即時修正しよう, 修正したら副作用がないか検証しよう, 将軍はopus4 8だ, settings yaml変更してよい, 今後はCIの修正は忍者に配備させよう, active_dead_pane_auto_respawn, 明らかに流れが悪い, 家老が超速で配備することがボトルネックを解消して, shard終端は報告でなくworkdir実体を再検証, 配備の速度アップをやったはずなのに異常なまでに配備が遅い, 泰策は全て実装したか？実装したら検証しよう, deploy taskの安全判定を維持したままpath履歴walkとstale report全走査を配送critical, 家老の作業が長く, これはバグか？バグなら修正しよう, E2E clear fault injection, 慌ててやる必要はない, README記述とtracked計器を分離して成熟度を測る, 世代dedupは成功作用後にのみcommitする, 改善したら検証しよう, FAIL一覧だけを見ると実装の欠陥に見える |
+| aliases | 編成, hensei, モデル編成, GPT忍者のdefaultはGPT luna medium, GPT luna medium, push_allowed, deploy_task push_allowed, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, idle忍者だけrespawanせよ, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動, 未配備のCMDへの対策は将軍にせよ, shogun-cli-switch後にshutsujin_departureを呼ぶな, runtime CLI switchでデフォルト復元禁止, 固定行sedでsettings確認禁止, YAMLパースで対象agent確認, settings tmux 実pane 三点照合, CLI切替後post-switch verification, 調査してバグを修正しよう, 報告では対象contextの解消証跡と, 既存の広いdirty差分inbox1 — CMD受領済み, GPT忍者に配備しなおそう, 3595は配備されているか？, per-agent launch_cmd, cli_lookup launch_cmd override, ninja_monitor 巻き戻し, 2.1.87巻き戻し防止, settings.yaml per-agent launch_cmd, ~/.local/bin/claude 最新版, 最新版と固定版の個別切替, 最新版とピン留めの違い, pin-2.1.87は版だけ, unpin-latestは版だけ, unpin-latestだけではOpus 4.8 xhighにならない, 最新版 Opus 4.8 xhigh は二段切替, いつでもだれでも個別もしくは複数をピン留めや最新版に自由自在に切り替えられることが必須だ, tobisaru 最新版, agent単位バージョン切替, cli_lookup.sh _CLI_LAUNCH_CMD_OVERRIDE, model comparison, A/B evaluation, A/B/C evaluation, モデル比較, Sonnet 5 vs Sonnet 4.6, GPT 5.5 vs Opus 4.8, 四者比較, 三者比較, 三社比較, 3社比較, Opus 4.8 xhigh, 1M xhigh, saizo Opus 4.8 xhigh, CLIとモデルとエフォートを切り替え, 未調査モデルeffort組み合わせ, CLI model effort組合せ, MECEモデル比較, paneの枠のステータスがsonnetのまま, GPTはCodex専用, SonnetはClaude Code専用, OpusはClaude Code専用, 別会社の別CLI, クロス使用不可能, GPTのClaude Code版は存在しない, 未検証の組合せを検証しよう, 将軍と軍師を最新版のopus xhigh変更してくれ, ピン留めと最新版の違いはわかるか？, 将軍と軍師をピン留めopus highにしてくれ, 将軍と軍師をピン留めopus 4 6 highにしてくれ, 忍者は終わり次第, 将軍をピン止めopus4 1m highにせよ, 将軍をピン止めopus4 6 1m highにせよ, 将軍をピン留めopu 1Mにスキルを使って変更せよ, 将軍をピン留めopu 4 6 1Mにスキルを使って変更せよ, 偵察を許可する, 将軍をピン止めopus 1Mにrespawanせよ, D1偵察cmdを起票せよ, 許可する, 3827は配備したか？, git blob HEAD index 経由で参照せよ, 配備時に固定される契約情報は, 子gate不在127と実在gate失敗を分離せよ, 検証しよう, ninjya monitorは順調かinbox1？, 軍師をピン留めopus4 1Mにrespwanせよ, 軍師をピン留めopus4 6 1Mにrespwanせよ, 完了BLOCKは当該cmd相関に限定する, 将軍をピン留めopus4 1Mにrewpawnせよ, 将軍をピン留めopus4 6 1Mにrewpawnせよ, 将軍をピン留めopus4 1Mにrespawanせよ, 将軍をピン留めopus4 6 1Mにrespawanせよ, 今セッションでインフラバグはなかったか？バグは即時修正しよう, 修正したら副作用がないか検証しよう, 将軍はopus4 8だ, settings yaml変更してよい, 今後はCIの修正は忍者に配備させよう, active_dead_pane_auto_respawn, 明らかに流れが悪い, 家老が超速で配備することがボトルネックを解消して, shard終端は報告でなくworkdir実体を再検証, 配備の速度アップをやったはずなのに異常なまでに配備が遅い, 泰策は全て実装したか？実装したら検証しよう, deploy taskの安全判定を維持したままpath履歴walkとstale report全走査を配送critical, 家老の作業が長く, これはバグか？バグなら修正しよう, E2E clear fault injection, 慌ててやる必要はない, README記述とtracked計器を分離して成熟度を測る, 世代dedupは成功作用後にのみcommitする, 改善したら検証しよう, FAIL一覧だけを見ると実装の欠陥に見える, 穴がないか覚醒して検証しよう |
 | skills | shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み), karo-direct, recon-dual |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization, skill_routing, commander_role_ssot_analysis, codex_goal_mode, infra_throughput_outcome_design |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -5128,6 +5137,7 @@ codd:
 | cmd | `cmd_karo_impl_preserved_path_deploy_guard_20260727` (`queue/preserved_paths.yaml`, `scripts/deploy_task.sh`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T11:37:04+09:00 bj18swtrq Monitor event: "bats prompt_state tests completion" DONE If this event is something the user would act on now, |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T11:37:07+09:00 bj18swtrq toolu_01GGijR9vUHNJ3VUauSCgckU /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/492ac99b-3cb6-4acc-9630-8867be |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-27T12:06:59+09:00 穴がないか覚醒して検証しよう |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -6543,6 +6553,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T08:07:34+09:00 家老blt_080658の知見2件(2026-07-27 08:07): (1)誤りの分類の精密化 — 軍師の『範囲の限定を欠いたが内容は有益な指摘』は『誤り』ではなく『範囲未明示の有益な指摘』と分類する(指摘がロール間非対称の発見につなが |
 | lesson | `L1384` preflight系hookの結果注入設計は外部消費者(json.loadする別hook)への影響を実測で先に潰すべき |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T11:59:52+09:00 循環lock競合の根治(2026-07-27・commit ea634f70d): report_field_set.shのdetached reconciler既定遅延0.2秒が、親プロセスがまだ保持する報告YAML lockへinbox |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-27T12:13:53+09:00 スキルは使われなければ意味がない。軍師や家老もスキルを自動的に利用する仕組みが環境に埋め込まれているか検証しようスキルは誰もがいつでも利用しなければ意味がない。家老や軍師がスキルを明示的な指示がなくても利用するか検証しよう |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
@@ -6893,7 +6904,7 @@ codd:
 | label | ゲート品質統合フレームワーク |
 | aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, gate_prediction, gate_prediction偽陽性, gate_prediction偽陽性分析, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映, startup gateのSKILL md script参照WARNが3セッション連続BLOCK, startup gate教訓健全度がALERT useful rate % 3回連続BLOCK, review_quality_scale_summary, WARN率計算gate_result未考慮バグ, LESSON_EFFECT_USEFUL_MIN, useful_rate計測min_samples分離, gate_result=CLEARなのにFAIL永続カウント, cross-project教訓タグ同期, 二重登録教訓タグ不整合, count_same_warn_pattern cmd_id重複カウント偽陽性, Check19出口判定化, session_alerts リアルタイムhook, 覚醒設計書v3, 3セッション連続startup BLOCK 教訓健全度ALERT, cmd save品質ゲート, GA context freshness ALERTのdm signal ops mdを一次情報で照合し, 先送りBLOCK 教訓健全度ALERT, session alerts txtは将軍startup gateが生成する将軍固有ALERTだが, hookでsession alerts txtがでているが, GA context freshness ALERTの直接原因・根本原因・横展開候補・次回防止防御層を一次情報で特定し, GA context freshness ALERTの根因を, 該当ID一覧はcontextを別途抽出しないと分からない, なぜこのgateがあるかの因果を明記だな, 代表的な実CLI経路を必ず1本実行し, shのインラインCheckを関数化した後, WAログ品質ゲート, gate_ninja_workaround_rate, karo_workarounds.yaml, 直近WA, CLEAR cmd集合フィルタ, WA率偽陰性, 本来検証したいWARN集約を覆って回帰テストが誤FAILする, 本番想定DB不在ALERTを消す, 10秒, selected PASS後full-unit FAIL, pre-push fixture隔離, tracked hook atomic sync, semantic worker result-last, dependency_completion_auto_release, gate_metrics偽BLOCK, 追記型訂正CLEAR行, CLEAR成立後のcmd_complete再実行, review_two_phase_pending偽BLOCK, count_gate_metricsはcmd毎最新1件, rc=75再試行前に既存CLEAR確認 |
 | skills | |
-| related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification, cmd_save_gate_catalog, sg_pre31_semantic_validation, strong_new_game_completion_contract, context_freshness_retry_budget, hook_json_command_boundary, push_batch_operation |
+| related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification, cmd_save_gate_catalog, sg_pre31_semantic_validation, strong_new_game_completion_contract, context_freshness_retry_budget, hook_json_command_boundary, push_batch_operation, primary_observation_precedence |
 | related_lessons | `L512`, `L079`, `L633`, `L966` |
 
 | 種別 | パス/参照 |
@@ -7624,6 +7635,25 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-10T03:11:08+09:00 precompute全量を最速で実行するための/goalを使った設計書を作ろう |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-10T12:26:59+09:00 — D1 PASS。/goal resumeして10PFへ昇格せよ |
 
+## primary_observation_precedence — 一次観測の優先
+
+| 属性 | 値 |
+|------|---|
+| id | primary_observation_precedence |
+| label | 一次観測の優先 |
+| aliases | 一次観測を捨てるな, 自分の観測を他者の断定で捨てるな, 二次情報を一次情報として扱うな, 引用の一致は事実の一致ではない, commitメッセージは二次情報, 検算して一致したが誤り, 相手は何を見たか, 実行結果か誰かが書いた文字列か, 断定が正しい発見を潰す, 想像するな確認せよ, 二次情報で判断を止めるな |
+| related_concepts | causal_verification_l0_l7, count_by_machine_cite_command, three_layer_memory_system, gate_quality_framework |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `instructions/karo.md` §自分の一次観測を、他者の断定で捨てるな |
+| file | `projects/infra/lessons_gunshi.yaml` LG077 |
+| file | `projects/infra/lessons_gunshi.yaml` LG076 |
+| memory | knowledge:669ddc0a316a60df |
+| causal | [[家老11時04分の一次観測]] -> [[軍師の二次情報による断定]] -> [[家老が自分の正解を撤回]] -> [[将軍裁定20260727_1110]] -> [[LG077]] |
+| discussion | 2026-07-27 11:04-12:26 家老が一次証拠(last_synced不変)を掴みながら軍師のcommitメッセージ由来の断定で捨て、将軍が11:10に家老の観測を正解と裁定。12:26には逆に家老がGATE実体を優先し軍師のLGTM撤回を先取りした。同日に失敗と成功の両方を観測 |
+| cmd | `cmd_4101` backfill — - 2026-07-20午後 実行速度攻略+防御層品質2原則: 検証税一次実測(全量2092件12分41秒・heavy runner重複1045+1333秒・配備税69.6%)→cmd_4101(si |
+
 ## causal_verification_l0_l7 — 因果確認L0-L7
 
 | 属性 | 値 |
@@ -7631,7 +7661,7 @@ codd:
 | id | causal_verification_l0_l7 |
 | label | 因果確認L0-L7 |
 | aliases | 因果確認, 因果を確認する, なぜ現在の実装がそうなっているか, 過去の経緯を確認, 設計意図確認, design intent check, past design intent, git log blame確認, 変更前因果確認, L0-L7因果確認, 現在の実装には過去の経緯がある, CLIが違っても通用する仕組み, multi-CLI因果確認, hookに依存しない因果確認, 共通gateで因果確認 |
-| related_concepts | growth_loop, semantic_causal_automation, infra_design_intent, multi_cli_event_commonization, local_memory_db, command_files_modified_verification, cmd_save_gate_catalog |
+| related_concepts | growth_loop, semantic_causal_automation, infra_design_intent, multi_cli_event_commonization, local_memory_db, command_files_modified_verification, cmd_save_gate_catalog, primary_observation_precedence |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -8605,6 +8635,7 @@ codd:
 | lesson | `L1389` lessons.yaml経路外書込みの発生元特定はコード検索だけでは困難。実行ログ/監査証跡が必要 |
 | cmd | `cmd_karo_hotfix_lessons_yaml_format_restore_20260727` (`projects/dm-signal/lessons.yaml`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T02:58:19.153347+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-27T03:27:03.749096+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_lessons_yaml_format_restore_20260727]]` (L1389) |
 
 ## infra_design_intent — インフラ設計意図カタログ
@@ -9513,6 +9544,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T11:46:01+09:00 今の知見をもとに三足記憶の貫通をスキル化しよう。 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T03:02:05.236301+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T12:02:15+09:00 btw0gk08m toolu_01FRqCm6BrwhZKFSjXkzREfW /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/dfea2918-a77d-4eac-a2b2-17a27d |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-27T03:06:01.924453+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
