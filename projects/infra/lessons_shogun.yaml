@@ -344,7 +344,7 @@ lessons:
   source_cmd: 'cmd_shogun_cdp_launch_20260721'
   created_at: '2026-07-21'
   automated: true
-  enforcement: "Level5実装済(2026-07-26 飛猿が一次確認): 正典経路 scripts/cdp/cdp_measure.sh:134 → auto-ops cdp/cdp_helper.py:718 preflight_cdp_flow が (1)稼働中CDPポート自動探索 _find_available_cdp_port (2)Chrome⇔Edge交互試行 (3)launch_browser (auto-ops cdp/cdp_helper.py:245-284) 内の _has_powershell() 分岐で powershell 不在時は subprocess.Popen による exe 直接起動へ自動fallback、かつ --user-data-dir=C:\\Windows\\Temp\\cdp-{browser}-{port} を常に付与(D009の隔離プロファイル要件を構造的に充足)。∴powershell失敗=CDP不可能という誤結論に至る余地が正典経路には無い。★残存ギャップ(L1のまま): 本repo同梱の scripts/cdp/cdp_helper.py:127-166 launch_browser は powershell 単経路で fallback も --user-data-dir も無く、scripts/note_draft.sh:238 が独自の cmd.exe fallback を再実装している。両者の正典経路への統合は decision_candidate へ整理(cmd_reflux_promotion_202607261446_tobisaru)"
+  enforcement: 'Level5実装済(2026-07-26飛猿一次確認: cdp_measure.sh正典経路がfallback+隔離プロファイルを構造充足)。残存ギャップ=repo同梱cdp_helper.py単経路(decision_candidate: cmd_reflux_promotion_202607261446_tobisaru)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS098-enforcement全文'
 - id: 'LS099'
   title: '必須ハーネスと過剰制限は別物 — 必須を消したLLMに必須の選別はできない'
   origin: '[[殿裁定_過剰対策こそ真因_20260720]] -> [[誤読=ハーネス全撤去で必須強制まで削除]] -> [[殿裁定_必須の強制は必要_gitで時点rollback_20260721]]'
@@ -361,7 +361,7 @@ lessons:
   source_cmd: 'cmd_shogun_ci_red_push_deadlock_20260721'
   created_at: '2026-07-21'
   automated: true
-  enforcement: "L1のまま(2026-07-26 飛猿が一次確認。★昇格していない=実装が無いことを確認した結果である)。★現状の実装: (a)gate_karo_startup.sh:1591-1630 は最新完了runの conclusion/databaseId/headSha を取得しfailure時にci_fix配備証跡の有無をALERTするが、★headSha を origin/main や HEAD と突合する行は無い(grep実測0件)。(b)gate_shogun_startup.sh:981,4337 は git rev-list origin/main..HEAD --count を測るが WARN 閾値が30件であり、★本教訓の事象(未push12件)では発火しない。∴『失敗SHA=origin/mainのまま動いていない』という本教訓の核心を機械的に検出する箇所はどこにも無い。★実証: 2026-07-26 本日 同型が再発した — 失敗run 30190382837 の headSha=e297b8ca0 が origin/main と一致し未push12件で自己永続、軍師が手作業で特定するまで誰も気づかなかった(誰が何を直してもCIは赤のまま)。★昇格案(既存CI REDブロック内に origin/main と失敗SHA の一致判定を1行足す。新gateではない)は decision_candidate へ整理(cmd_reflux_promotion_202607261757_tobisaru)"
+  enforcement: 'L1のまま(2026-07-26飛猿一次確認=検出実装ゼロ。2026-07-26同型再発を軍師が手作業特定)。昇格案=decision_candidate(cmd_reflux_promotion_202607261757_tobisaru)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS101-enforcement全文'
 - id: 'LS104'
   title: 'デザイン/モック依頼は最小から作れ — 既存を厳密踏襲し、頼まれた最小差分だけ足す(過剰デザイン禁止)'
   origin: '[[殿ワイヤーフレーム依頼]] -> [[V1過剰デザインごちゃごちゃ却下]] -> [[V2列追加誤解]] -> [[V3既存踏襲+最小追加で正解]] -> [[最小から作る設計規律]]'
@@ -404,7 +404,7 @@ lessons:
   source_cmd: 'cmd_4176'
   created_at: '2026-07-27'
   automated: true
-  enforcement: 'Level1のまま(2026-07-27 疾風が一次確認): cmd_save.shには target_path が絶対パス+directoryである場合に検知・WARNする箇所が無い(grep実測0件)。既存の detect_target_scope()(scripts/cmd_save.sh:1672-1697)は target_path_raw="$raw_path"(絶対パス)を "-d "$raw_path"" で受理し正規化して返すのみで、絶対directoryそのものを警告する分岐は無い。deploy_task.sh側にも absolute+directory 専用WARNは無く(grep一致8667-8771は「target_pathがgit HEADに存在するか」のexistence検査であり、絶対パス形式そのものへの警告ではない)。∴昇格実装(cmd_save.shのtarget_path抽出直後、detect_target_scope呼出し箇所(1699-1712付近)にabsolute+directory検知WARNを1行追加)はdecision_candidateへ整理(cmd_reflux_promotion_202607270408_hayate)'
+  enforcement: 'Level1のまま(2026-07-27疾風一次確認=検知箇所なし)。昇格案=decision_candidate(cmd_reflux_promotion_202607270408_hayate)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS113-enforcement全文'
 - id: 'LS114'
   title: 'セーブcommitでもWIP内容の既存guard違反を持ち込む'
   origin: '[[cmd_4176]]'
@@ -412,4 +412,4 @@ lessons:
   source_cmd: 'cmd_4176'
   created_at: '2026-07-27'
   automated: true
-  enforcement: "Level1→部分的にLevel4検出済み(2026-07-27 疾風が一次確認・実行済): scripts/gates/gate_no_direct_yaml_dump.sh が実在しBLOCKも動作する(実測: bash scripts/gates/gate_no_direct_yaml_dump.sh → exit 1、scripts/gates/gate_report_format.sh:1065のyaml.safe_dump(を検出)。tests/unit/test_gate_single_check_consolidated.batsがrun_tests.sh経由でこのgateを呼ぶため既にtest実行時にBLOCK(FAIL)する。∴「Level1のまま」は誤り=実際は検出gateがLevel4相当で機能中。★2つの未対処の穴が残る: (1)commit時点(git-pre-commit.sh/ninja_scope_commit.sh guard phase)には未接続=grep実測0件。既存guard違反はcommit時に止まらず、後続のtask実行時テストでのみ発覚する。(2)違反そのもの(gate_report_format.sh:1065自身)が未修正のまま放置され、scripts/へ触れる全忍者に恒常FAILを撒いている。昇格実装案(a: pre-commit guard phaseへgate_no_direct_yaml_dump.sh接続 b: gate_report_format.sh:1065をyaml_atomic.atomic_yaml_write/yaml_textへ置換)はdecision_candidateへ整理(cmd_reflux_promotion_202607270511_hayate)。target_path scope外(scripts/)につき本タスクでは実装しない"
+  enforcement: '部分Level4(gate_no_direct_yaml_dump.sh実在・test実行時BLOCK動作確認済み2026-07-27疾風)。残穴2件(pre-commit未接続/違反現物gate_report_format.sh:1065未修正)。昇格案=decision_candidate(cmd_reflux_promotion_202607270511_hayate)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS114-enforcement全文'
