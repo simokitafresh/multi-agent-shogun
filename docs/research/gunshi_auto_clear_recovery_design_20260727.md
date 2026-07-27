@@ -211,6 +211,7 @@ fi
 - **実装配備の前提**: 本v2を家老が再レビューしてから配備(blt_155443「反映まで実装配備停止」に従う) → **殿裁可(15:59)で配備実行済み。家老検分は実装レビューへ併合**
 - **★OID照合の限界(半蔵task AC3が先鋭化・軍師知見と整合)**: git OIDは**内容hash**であり操作者を含まない(軍師確定知見 knowledge:9511d46a)。∴他者が**同一内容**を再stageした場合はOIDが一致し自己所有を証明できない。実装契約: この境界をfixtureで再現し、OID一致だけでGA-231cを証明できないケースは**回収せずBLOCK報告**(fail-safe側へ倒す)
 - **実装状況(16:35)**: 半蔵へ配備(task `cmd_karo_hotfix_auto_commit_t4v2`、AC1=共通helper統合/AC2=AUTO-COMMIT-FAILログ/AC3=OID自己所有回収+同一内容境界/AC4=fixture f-l+境界/AC5=GA-231c・T1-T3独立検証)。**1回目はfailed(16:10、報告YAML未提出)** — 家老が実装FAILか終端契約かを検分し再配備する段
+- **★retry設計の強化(家老 16:41 blt_164121)**: 再配備YAML(`cmd_karo_hotfix_auto_commit_t4v2_retry`)は自己所有証明を**専用一時index方式**(auto-commitを専用GIT_INDEX_FILEで実行し共有indexへ触れない)へ改めた。共有index上の同一OID曖昧回収を構造的に排除し、GA-231cをOID照合(内容hashの限界あり)より強く保証する — OID照合はfixture検証層として残る。配備は適格忍者の空き待ち(16:41時点で適格0名: 疾風=cmd_4177実装中・半蔵=殿直作業中・他=done未終端。家老が一次監視し空き次第即配備)
 
 ## §8 因果リンク
 
