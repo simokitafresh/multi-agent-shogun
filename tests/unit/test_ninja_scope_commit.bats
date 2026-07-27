@@ -1314,3 +1314,57 @@ HOOK
     run cat "$REPO/.git/hooks/pre-commit"
     [[ "$output" == *"NEW_VERSION_VIA_DOUBLE_SLASH"* ]]
 }
+# test_necessity: a slow pre-commit must not serialize an independent scoped
+# commit, and the slow caller must publish on the latest single-parent HEAD.
+@test "slow pre-commit releases repository scope lock and rebases onto concurrent HEAD" {
+    repo="$BATS_TEST_TMPDIR/concurrent-precommit"
+    git init -q "$repo"
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    printf 'base-a\n' > "$repo/a.txt"
+    printf 'base-b\n' > "$repo/b.txt"
+    git -C "$repo" add a.txt b.txt
+    git -C "$repo" commit -qm base
+    base_head="$(git -C "$repo" rev-parse HEAD)"
+
+    mkdir -p "$repo/.git/hooks"
+    cat > "$repo/.git/hooks/pre-commit" <<'HOOK'
+#!/usr/bin/env bash
+if git diff --cached --name-only | grep -qx a.txt; then
+    sleep 5
+fi
+HOOK
+    chmod +x "$repo/.git/hooks/pre-commit"
+    printf 'change-a\n' > "$repo/a.txt"
+
+    (
+        cd "$repo"
+        exec env NINJA_SCOPE_COMMIT_RUN_ID=slow-a \
+            "$HELPER" -m slow-a -- a.txt
+    ) >"$BATS_TEST_TMPDIR/a.out" 2>"$BATS_TEST_TMPDIR/a.err" &
+    slow_pid=$!
+    for _ in $(seq 1 100); do
+        grep -q 'phase=pre_commit' "$BATS_TEST_TMPDIR/a.err" 2>/dev/null && break
+        sleep 0.05
+    done
+    grep -q 'phase=pre_commit' "$BATS_TEST_TMPDIR/a.err"
+    sleep 0.2
+
+    printf 'change-b\n' > "$repo/b.txt"
+    start_ms="$(date +%s%3N)"
+    run bash -c "cd '$repo' && NINJA_SCOPE_COMMIT_RUN_ID=fast-b '$HELPER' -m fast-b -- b.txt"
+    elapsed_ms=$(( $(date +%s%3N) - start_ms ))
+    [ "$status" -eq 0 ]
+    [ "$elapsed_ms" -lt 3000 ]
+
+    wait "$slow_pid" || {
+        cat "$BATS_TEST_TMPDIR/a.err" >&3
+        false
+    }
+    [ "$(git -C "$repo" rev-list --count "$base_head..HEAD")" -eq 2 ]
+    [ "$(git -C "$repo" show -s --format=%P HEAD | wc -w)" -eq 1 ]
+    [ "$(git -C "$repo" show -s --format=%P HEAD)" = "$(git -C "$repo" rev-parse HEAD^)" ]
+    [ "$(git -C "$repo" show HEAD:a.txt)" = change-a ]
+    [ "$(git -C "$repo" show HEAD:b.txt)" = change-b ]
+    [ -z "$(git -C "$repo" status --porcelain)" ]
+}

@@ -116,11 +116,10 @@ source "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/lib/lock_path.sh"
 commit_lock_path="$(lock_path "$git_common_dir/ninja-scope-commit")"
 exec {commit_lock_fd}>"$commit_lock_path" \
     || { echo "BLOCK: cannot open ninja scope commit lock" >&2; exit 2; }
-lock_requested_epoch_ms="$(date +%s%3N)"
-flock -w 120 "$commit_lock_fd" \
-    || { echo "BLOCK: cannot acquire ninja scope commit lock" >&2; exit 2; }
-lock_acquired_epoch_ms="$(date +%s%3N)"
-lock_wait_ms=$((lock_acquired_epoch_ms - lock_requested_epoch_ms))
+lock_requested_epoch_ms=0
+lock_acquired_epoch_ms=0
+lock_wait_ms=0
+transaction_lock_held=false
 
 # The private index isolates tree contents only.  Repository operation state
 # (MERGE_HEAD, rebase state and CHERRY_PICK_HEAD) lives in the common git dir
@@ -129,11 +128,60 @@ lock_wait_ms=$((lock_acquired_epoch_ms - lock_requested_epoch_ms))
 # every commit path must still observe this exact generation immediately before
 # publishing and must produce exactly one parent pointing at it.
 transaction_head="$(git rev-parse HEAD)"
-for operation_state in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply; do
-    operation_path="$(git rev-parse --git-path "$operation_state")"
-    [[ ! -e "$operation_path" ]] \
-        || { echo "BLOCK: repository operation state is active: $operation_state" >&2; exit 2; }
-done
+
+acquire_transaction_lock_and_rebase_index() {
+    local operation_state operation_path current_head path entry mode blob
+    local -a staged_paths=() staged_entries=()
+
+    # Hooks and heavy-job admission are deliberately outside this critical
+    # section.  Snapshot the caller's private scoped entries, then converge the
+    # private index onto the newest HEAD after acquiring the repository lock.
+    # This preserves owned blobs while incorporating unrelated commits that
+    # completed during pre-commit.
+    # `git diff --cached` without an explicit base is unsafe here: HEAD may
+    # have advanced while the hook ran, making unrelated parent changes look
+    # like reverse staged changes.  `paths` is the already validated effective
+    # scope captured before the hook and is therefore the ownership SSOT.
+    staged_paths=("${paths[@]}")
+    for path in "${staged_paths[@]}"; do
+        entry="$(git ls-files -s -- "$path" | awk '$3 == 0 {print $1 " " $2; exit}')"
+        staged_entries+=("$entry")
+    done
+
+    lock_requested_epoch_ms="$(date +%s%3N)"
+    flock -w 120 "$commit_lock_fd" \
+        || { echo "BLOCK: cannot acquire ninja scope commit lock" >&2; return 2; }
+    transaction_lock_held=true
+    lock_acquired_epoch_ms="$(date +%s%3N)"
+    lock_wait_ms=$((lock_acquired_epoch_ms - lock_requested_epoch_ms))
+
+    current_head="$(git rev-parse HEAD)"
+    if [[ -n "${verification_head:-}" && "$verification_head" != "$current_head" ]]; then
+        echo "BLOCK: HEAD advanced after test verification; rerun verification against $current_head" >&2
+        return 2
+    fi
+    transaction_head="$current_head"
+    for operation_state in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply; do
+        operation_path="$(git rev-parse --git-path "$operation_state")"
+        [[ ! -e "$operation_path" ]] \
+            || { echo "BLOCK: repository operation state is active: $operation_state" >&2; return 2; }
+    done
+
+    git read-tree "$transaction_head" \
+        || { echo "BLOCK: failed to rebuild private index from current HEAD" >&2; return 2; }
+    for i in "${!staged_paths[@]}"; do
+        path="${staged_paths[$i]}"
+        entry="${staged_entries[$i]}"
+        if [[ -n "$entry" ]]; then
+            read -r mode blob <<<"$entry"
+            git update-index --add --cacheinfo "$mode,$blob,$path" \
+                || { echo "BLOCK: failed to restore scoped index entry: $path" >&2; return 2; }
+        else
+            git update-index --force-remove -- "$path" \
+                || { echo "BLOCK: failed to restore scoped deletion: $path" >&2; return 2; }
+        fi
+    done
+}
 
 assert_head_generation() {
     local current_head
@@ -156,20 +204,12 @@ assert_single_parent_commit() {
 # Append (rather than replace) one command-scoped config entry so caller-supplied
 # GIT_CONFIG_COUNT contracts remain intact.  Invalid ambient config is a hard
 # BLOCK: silently dropping it would change hook/commit behaviour.
-create_and_publish_scoped_commit() {
+run_scoped_precommit() {
     local config_count="${GIT_CONFIG_COUNT:-0}" config_key config_value
     [[ "$config_count" =~ ^[0-9]+$ ]] \
         || { echo "BLOCK: GIT_CONFIG_COUNT must be a non-negative integer" >&2; return 2; }
     config_key="GIT_CONFIG_KEY_${config_count}=maintenance.auto"
     config_value="GIT_CONFIG_VALUE_${config_count}=false"
-    local tree_hash commit_hash command_stderr command_rc
-    # `git commit` refreshes the whole index/worktree even when GIT_INDEX_FILE
-    # contains only a bounded scope.  On DrvFS that reintroduces an O(repo)
-    # lstat walk and, if the caller disappears after ref publication, permits a
-    # committed-but-no-receipt false success.  Run the safety hook against the
-    # private index, construct the object, then publish HEAD with an old-value
-    # CAS.  The repository-wide flock keeps index/ref convergence in the same
-    # transaction while update-ref is the sole publication point.
     # Publish nonterminal progress before potentially slow external-repo
     # hooks.  Observers must not mistake a bounded wait expiry for rc0.
     printf 'event=progress run_id=%s phase=pre_commit complete=false ledger=%s\n' \
@@ -200,6 +240,18 @@ create_and_publish_scoped_commit() {
             git hook run --ignore-missing pre-commit >&2 \
             || { echo "BLOCK: pre-commit hook rejected scoped commit" >&2; return 1; }
     fi
+}
+
+create_and_publish_scoped_commit() {
+    local config_count="${GIT_CONFIG_COUNT:-0}" config_key config_value
+    [[ "$config_count" =~ ^[0-9]+$ ]] \
+        || { echo "BLOCK: GIT_CONFIG_COUNT must be a non-negative integer" >&2; return 2; }
+    config_key="GIT_CONFIG_KEY_${config_count}=maintenance.auto"
+    config_value="GIT_CONFIG_VALUE_${config_count}=false"
+    local tree_hash commit_hash command_stderr command_rc
+    # The slow safety hook has already passed without the repository lock.
+    # Construct the object from the rebased private index and publish HEAD by
+    # old-value CAS while the caller holds the short transaction lock.
     tree_hash="$(git write-tree)" \
         || { echo "BLOCK: failed to write scoped commit tree" >&2; return 1; }
     command_stderr="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-git-exit.XXXXXX")"
@@ -238,14 +290,13 @@ create_and_publish_scoped_commit() {
     printf '%s\n' "$commit_hash"
 }
 
-# Phase telemetry starts at lock acquisition so the sum of the seven bounded
-# phases explains the complete transaction wall time (lock wait is reported
-# separately).  Keep this in shell state: external telemetry/log writers would
-# add I/O to the path whose stalls this instrumentation must diagnose.
+# Phase telemetry starts before private-index construction.  The repository
+# lock wait is reported separately and now begins only after pre-commit.
 declare -A phase_wall_ms=() phase_rc=()
 phase_order=(read_tree add scope_sync guard git_commit advance_shared_index post_check)
 current_phase="read_tree"
-phase_started_epoch_ms="$lock_acquired_epoch_ms"
+phase_started_epoch_ms="$(date +%s%3N)"
+telemetry_started_epoch_ms="$phase_started_epoch_ms"
 terminal_event_emitted=false
 published_commit_hash=""
 telemetry_overhead_us=0
@@ -342,7 +393,7 @@ publish_terminal_failure() {
     fi
     epoch_ms finished
     for phase in "${phase_order[@]}"; do sum=$((sum + ${phase_wall_ms[$phase]:-0})); done
-    total=$((finished - lock_acquired_epoch_ms))
+    total=$((finished - telemetry_started_epoch_ms))
     unattributed=$((total - sum))
     printf 'event=failed lock_wait_ms=%s acquired_at=%s finished_at=%s last_phase=%s rc=%s commit_hash=%s phase_total_ms=%s phase_unattributed_ms=%s telemetry_overhead_ms=%s telemetry_clock_calls=%s' \
         "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished" "$current_phase" "$rc" "${published_commit_hash:-none}" "$sum" "$unattributed" "$(((telemetry_overhead_us + 999) / 1000))" "$telemetry_clock_calls" >&2
@@ -385,7 +436,7 @@ publish_terminal_success() {
     done
     epoch_ms finished_epoch_ms
     for phase in "${phase_order[@]}"; do sum=$((sum + ${phase_wall_ms[$phase]:-0})); done
-    total=$((finished_epoch_ms - lock_acquired_epoch_ms))
+    total=$((finished_epoch_ms - telemetry_started_epoch_ms))
     unattributed=$((total - sum))
     printf -v completed_event 'event=completed lock_wait_ms=%s acquired_at=%s finished_at=%s commit_hash=%s phase_total_ms=%s phase_unattributed_ms=%s telemetry_overhead_ms=%s telemetry_clock_calls=%s' \
         "$lock_wait_ms" "$lock_acquired_epoch_ms" "$finished_epoch_ms" "$terminal_hash" "$sum" "$unattributed" "$(((telemetry_overhead_us + 999) / 1000))" "$telemetry_clock_calls"
@@ -864,6 +915,8 @@ PY
     # explicit zero/near-zero phase so both modes publish one identical schema.
     finish_phase 0
     begin_phase git_commit
+    run_scoped_precommit
+    acquire_transaction_lock_and_rebase_index
     assert_head_generation
     commit_hash="$(create_and_publish_scoped_commit)"
     published_commit_hash="$commit_hash"
@@ -1019,6 +1072,8 @@ if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" ]];
 fi
 finish_phase 0
 begin_phase git_commit
+run_scoped_precommit
+acquire_transaction_lock_and_rebase_index
 assert_head_generation
 commit_hash="$(create_and_publish_scoped_commit)"
 published_commit_hash="$commit_hash"
