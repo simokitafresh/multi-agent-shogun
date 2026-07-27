@@ -1,4 +1,4 @@
-# 主題1: 全期間再計算(fullrecalculate)速度 — AsIs/ToBe 5W1H設計書 v3.0 (2026-07-27 — cmd_4180偵察でL3内訳・全仮説・cron関係を現物確定)
+# 主題1: 全期間再計算(fullrecalculate)速度 — AsIs/ToBe 5W1H設計書 v3.1 (2026-07-27 — cmd_4180でL3内訳・全仮説・cron関係を現物確定+家老再レビュー4点反映)
 
 作成: 将軍 | 殿指示(2026-07-22 08:28 主題1起点 / 2026-07-27 19:17「偵察が終わったら設計書の再構築をせよ」/ 19:19「実装には進まず設計書の徹底的なブラッシュアップ完了が目的」)
 対象: DM-Signal `fullrecalculate`(全PF全期間の再計算パイプライン、engine=`recalculate_fast.py`)
@@ -9,7 +9,7 @@
 
 ## §0 確定実測(2026-07-27 本番run原文、run ID付き)
 
-**運用の実体はstandard/FoFの2分離runで、cmd_4180現物照合により論理直列と確定(FoF側はetl_layer_sync_wait.shがstandard当日成功まで待つ)。∴2 runのduration単純和(約805秒)は運用壁時計の下限として意味を持つ(v2.1の未確定は解消)。**
+**運用の実体はstandard/FoFの2分離runで、cmd_4180現物照合により論理直列と確定(FoF側はetl_layer_sync_wait.shがstandard当日成功まで待つ)。ただしcron起動は時差起動(01:10/01:40)のため、2 runのduration単純和(約805秒)は「累積計算時間」であり運用壁時計の下限ではない(家老指摘③)。壁時計は起点(どのcron起動を0とするか)と待機境界を定義した上で再算出する(§4-6)。**
 
 ### §0.1 L3 FoF 503秒の内部内訳(cmd_4180が本番DB `recalculation_timings.layer_data.L3_fof.metadata.profiling` から回収・原文生貼付済み)
 
@@ -23,6 +23,7 @@
 | cache_init / db_write / dw_component_weights | 14.25s / 7.72s / 7.43s | |
 
 - PF別内訳は`calculation_performance_log`当該run 0行で回収不能。最小計測配線案(既存CalculationPerformanceLog再利用・出力完全一致契約)はcmd_4180成果物に設計済み — **実装は殿裁可後**
+- **profiler境界注記(家老指摘②)**: 各区間は排他ではない — daily_loopはdl_*系を包含し、dw_signals_flushは内側db_write appendと外側deferred flush加算の**混合値**。∴単純合計をtotalと比較せず、**dw_signals_flush 115.26sは外側deferred分離の計測が済むまで全量を標的として扱わない**。unmeasured 122.41sはtop-level算出ゆえ妥当。攻め順の各弾はparent/child/exclusive/mixedの境界を弾内で先に確定してから最適化する
 
 | run | PF数 | TOTAL | 内訳(同一run内) |
 |---|---|---:|---|
@@ -49,7 +50,7 @@
 
 ### §2.1 L3 FoF 503秒(主犯・70.3%)
 - FoF(Fund of Funds)78PFの再計算。FoF of FoFのトポロジカルソート依存=真の逐次依存を含む
-- **TIMING SUMMARYはL3_fofを一括表示しており、503秒の内部内訳(PF別・処理別)は未計測** — これが現在の最大の未調査事項(§4)
+- TIMING SUMMARYはL3_fofを一括表示だが、**処理別内訳は本番DBのprofiling保存値から回収済み(§0.1)。未計測なのはPF別のみ**(calculation_performance_log 0行、§4-2)
 - 07-10 id206時点ではL3=234s(9.4%)だったが、当時はL5 cold再生成1659.78秒が支配していたため相対比が別物。L5解消後にL3が主犯として露出した構造
 
 ### §2.2 L2 trade_perf 117秒(二次・FoF run内)
@@ -104,6 +105,8 @@
 3. 06-26分析(357.28秒)のrun lineage未回収 — 比較基準はrun ID付き実測(07-10/07-27)に限定で確定
 4. ~~cron実行関係~~ → **解消**(論理直列と確定)
 5. id214のTIMING原文は未回収のまま総時間のみ保持(変更なし)
+6. **運用壁時計の定義**(家老指摘③): 起点(どのcron起動を0とするか)と待機境界(schedule gap・sync-wait)を定義した上での再算出。それまで805秒は「累積計算時間」とのみ呼ぶ
+7. **dw_signals_flushの内外分離**(家老指摘②): 外側deferred flush分の独立計測。分離までは115.26s全量を標的化しない
 
 ---
 
