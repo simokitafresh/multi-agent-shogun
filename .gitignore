@@ -281,3 +281,23 @@ tests/unit/_tmp_*.bats
 !codd/
 !codd/**
 .*_worktrees/
+
+# 速度: untracked走査からworktree/一時領域を除外(2026-07-25 karo実測 git status 57.07s→untracked走査が44.3s=77.6%)
+.worktrees/
+.cache/
+# 速度: 忍者/家老の作業残骸スクラッチ(2026-07-25計測 計41,576ファイル)。untracked走査から除外
+.ci-repro-*/
+.debug-campaign.*/
+.karo-gist-throughput-*/
+.karo-gist-update.*/
+.karo-inbox-integration.*/
+.kotaro-retro-worktree-exp-*/
+.saizo*/
+.speed-ab/
+.tobisaru-publication.*/
+.tobisaru-retro-publication.*/
+
+# 三層記憶SSOT: rgはwhitelist .gitignoreの`*`をtrackedファイルにも適用するため、
+# !許可が無いとcausal_index等のrg走査からindex.md(SSOT)が沈黙脱落する(2026-07-27将軍実測)
+!docs/semantic-index/
+!docs/semantic-index/index.md
