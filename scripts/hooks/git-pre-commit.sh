@@ -26,6 +26,12 @@ _PRECOMMIT_STEP_ORDER=(self_sync staged_snapshot test_granularity task_scope yam
 _PRECOMMIT_COMMAND_ID="${NINJA_COMMIT_COMMAND_ID:-${COMMAND_ID:-precommit-$$}}"
 _PRECOMMIT_STARTED_US="${EPOCHREALTIME/./}"
 _PRECOMMIT_TERMINAL_EMITTED=false
+_PRECOMMIT_SELF_SYNC_RUNNING_IS_LIVE_HOOK="${PRECOMMIT_SELF_SYNC_RUNNING_IS_LIVE_HOOK:-false}"
+_PRECOMMIT_SELF_SYNC_STAGED_HOOK_RELATED="${PRECOMMIT_SELF_SYNC_STAGED_HOOK_RELATED:-false}"
+_PRECOMMIT_SELF_SYNC_CMP_EQUAL="${PRECOMMIT_SELF_SYNC_CMP_EQUAL:-false}"
+_PRECOMMIT_SELF_SYNC_SYNC_CALLED="${PRECOMMIT_SELF_SYNC_SYNC_CALLED:-false}"
+_PRECOMMIT_SELF_SYNC_REEXEC="${PRECOMMIT_SELF_SYNC_REEXEC:-false}"
+_PRECOMMIT_SELF_SYNC_STARTED_US="${PRECOMMIT_SELF_SYNC_STARTED_US:-}"
 
 precommit_epoch_us() {
     local value="${EPOCHREALTIME/./}"
@@ -44,6 +50,50 @@ precommit_step_end() {
     _PRECOMMIT_STEP_RC["$_PRECOMMIT_CURRENT_STEP"]="$rc"
 }
 
+precommit_self_sync_write_async() {
+    local wall_ms="$1" verdict="$2" event_id="$3"
+    local ledger="${DEFENSE_OVERHEAD_LEDGER:-$REPO_ROOT/logs/defense_overhead.jsonl}"
+    (
+        python3 - "$ledger" "$wall_ms" "$verdict" "$event_id" \
+            "$_PRECOMMIT_SELF_SYNC_RUNNING_IS_LIVE_HOOK" \
+            "$_PRECOMMIT_SELF_SYNC_STAGED_HOOK_RELATED" \
+            "$_PRECOMMIT_SELF_SYNC_CMP_EQUAL" \
+            "$_PRECOMMIT_SELF_SYNC_SYNC_CALLED" \
+            "$_PRECOMMIT_SELF_SYNC_REEXEC" <<'PY'
+import datetime
+import fcntl
+import json
+import os
+import sys
+
+ledger, wall_ms, verdict, event_id, *flags = sys.argv[1:]
+keys = (
+    "running_is_live_hook", "staged_hook_related", "cmp_equal",
+    "sync_called", "reexec",
+)
+row = {
+    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "source": "git_pre_commit",
+    "check_id": "self_sync",
+    "wall_ms": int(wall_ms),
+    "verdict": verdict,
+    "event_id": event_id,
+    **dict(zip(keys, (flag == "true" for flag in flags))),
+}
+lock_path = ledger + ".lock"
+os.makedirs(os.path.dirname(ledger), exist_ok=True)
+with open(lock_path, "a", encoding="utf-8") as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    if os.path.exists(ledger):
+        with open(ledger, encoding="utf-8") as current:
+            if any(json.loads(line).get("event_id") == event_id for line in current if line.strip()):
+                raise SystemExit(0)
+    with open(ledger, "a", encoding="utf-8") as output:
+        output.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
+PY
+    ) >/dev/null 2>&1 &
+}
+
 precommit_terminal_receipt() {
     local rc="${1:-0}" finished_us total_ms step step_rc step_verdict
     local -a timing_events=()
@@ -58,8 +108,13 @@ precommit_terminal_receipt() {
         if [[ -v "_PRECOMMIT_STEP_RC[$step]" ]]; then
             step_rc="${_PRECOMMIT_STEP_RC[$step]}"
             step_verdict="$([[ "$step_rc" -eq 0 ]] && echo PASS || echo BLOCK)"
-            timing_events+=(git_pre_commit "$step" "${_PRECOMMIT_STEP_MS[$step]}" \
-                "$step_verdict" "${_PRECOMMIT_COMMAND_ID}-${step}")
+            if [[ "$step" == self_sync ]]; then
+                precommit_self_sync_write_async "${_PRECOMMIT_STEP_MS[$step]}" \
+                    "$step_verdict" "${_PRECOMMIT_COMMAND_ID}-${step}"
+            else
+                timing_events+=(git_pre_commit "$step" "${_PRECOMMIT_STEP_MS[$step]}" \
+                    "$step_verdict" "${_PRECOMMIT_COMMAND_ID}-${step}")
+            fi
         fi
     done
     defense_overhead_write_batch_async "${timing_events[@]}" || true
@@ -125,16 +180,50 @@ staged_hook_related_exists() {
     return 1
 }
 
+# Return 1 only when the sole hook-related staged path is the pre-commit SSOT
+# and its index blob already equals the installed hook.  Any other hook path,
+# unreadable identity, or byte difference remains a full-sync decision.
+staged_hook_sync_required() {
+    local installed_hook="$1" staged_file saw_precommit=false
+    load_staged_file_cache
+    for staged_file in "${_STAGED_FILES[@]}"; do
+        case "$staged_file" in
+            scripts/hooks/git-pre-commit.sh)
+                saw_precommit=true
+                ;;
+            scripts/hooks/*|.githooks/*)
+                return 0
+                ;;
+        esac
+    done
+    [[ "$saw_precommit" == true && -r "$installed_hook" ]] || return 0
+    cmp -s <(git -C "$REPO_ROOT" show :scripts/hooks/git-pre-commit.sh 2>/dev/null) \
+        "$installed_hook" || return 0
+    return 1
+}
+
 # Return 0 when the full synchronizer must run, 1 only for the proven-clean
 # fast path. Content-read failure deliberately falls back to synchronization;
 # PRECOMMIT_RECEIPT self_sync_ms measures this decision independently.
 precommit_self_sync_required() {
     local installed_hook="$1" source_hook
-    staged_hook_related_exists && return 0
+    _PRECOMMIT_SELF_SYNC_STAGED_HOOK_RELATED=false
+    _PRECOMMIT_SELF_SYNC_CMP_EQUAL=false
+    if staged_hook_related_exists; then
+        _PRECOMMIT_SELF_SYNC_STAGED_HOOK_RELATED=true
+        if staged_hook_sync_required "$installed_hook"; then
+            return 0
+        fi
+        _PRECOMMIT_SELF_SYNC_CMP_EQUAL=true
+        return 1
+    fi
     source_hook="$REPO_ROOT/scripts/hooks/git-pre-commit.sh"
     [[ -r "$source_hook" && -r "$installed_hook" ]] || return 0
-    cmp -s "$source_hook" "$installed_hook" || return 0
-    return 1
+    if cmp -s "$source_hook" "$installed_hook"; then
+        _PRECOMMIT_SELF_SYNC_CMP_EQUAL=true
+        return 1
+    fi
+    return 0
 }
 
 # Self-sync runs before failure-log plumbing is initialized, but it is still a
@@ -149,13 +238,20 @@ trap '_ec=$?; precommit_terminal_receipt "$_ec"; exit "$_ec"' EXIT
 # Populate the parent-shell snapshot even when this tracked source is invoked
 # directly (tests and diagnostics); live-hook self-sync reuses the same data.
 load_staged_file_cache
-precommit_step_begin self_sync
+if [[ -n "$_PRECOMMIT_SELF_SYNC_STARTED_US" ]]; then
+    _PRECOMMIT_CURRENT_STEP=self_sync
+    _PRECOMMIT_STEP_STARTED_US="$_PRECOMMIT_SELF_SYNC_STARTED_US"
+else
+    precommit_step_begin self_sync
+    _PRECOMMIT_SELF_SYNC_STARTED_US="$_PRECOMMIT_STEP_STARTED_US"
+fi
 if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_git_hooks.sh" ]]; then
     _installed_hook="$(git -C "$REPO_ROOT" rev-parse --git-path hooks/pre-commit 2>/dev/null || true)"
     [[ "$_installed_hook" = /* ]] || _installed_hook="$REPO_ROOT/$_installed_hook"
     _running_hook="${BASH_SOURCE[0]:-$0}"
     [[ "$_running_hook" = /* ]] || _running_hook="$PWD/$_running_hook"
     if [[ -e "$_installed_hook" && "$_running_hook" -ef "$_installed_hook" ]]; then
+        _PRECOMMIT_SELF_SYNC_RUNNING_IS_LIVE_HOOK=true
         _sync_args=()
         # Do not put the cache loader on the left side of a pipeline: Bash
         # would populate the array in a subshell and main() would rescan the
@@ -170,6 +266,7 @@ if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_g
             # including the common case where precommit_self_sync_required
             # already decided (via cmp) that no sync is required at all.
             _hook_hash_before="$(sha256sum "$_installed_hook" | awk '{print $1}')"
+            _PRECOMMIT_SELF_SYNC_SYNC_CALLED=true
             bash "$REPO_ROOT/scripts/sync_git_hooks.sh" "${_sync_args[@]}" || {
                 precommit_step_end 1
                 echo "BLOCK(GA-222): live pre-commit hook self-sync failed" >&2
@@ -177,7 +274,15 @@ if [[ "${GIT_PRE_COMMIT_SELF_SYNCED:-0}" != "1" && -f "$REPO_ROOT/scripts/sync_g
             }
             _hook_hash_after="$(sha256sum "$_installed_hook" | awk '{print $1}')"
             if [[ "$_hook_hash_before" != "$_hook_hash_after" ]]; then
-                exec env GIT_PRE_COMMIT_SELF_SYNCED=1 "$_installed_hook" "$@"
+                _PRECOMMIT_SELF_SYNC_REEXEC=true
+                exec env GIT_PRE_COMMIT_SELF_SYNCED=1 \
+                    PRECOMMIT_SELF_SYNC_RUNNING_IS_LIVE_HOOK="$_PRECOMMIT_SELF_SYNC_RUNNING_IS_LIVE_HOOK" \
+                    PRECOMMIT_SELF_SYNC_STAGED_HOOK_RELATED="$_PRECOMMIT_SELF_SYNC_STAGED_HOOK_RELATED" \
+                    PRECOMMIT_SELF_SYNC_CMP_EQUAL="$_PRECOMMIT_SELF_SYNC_CMP_EQUAL" \
+                    PRECOMMIT_SELF_SYNC_SYNC_CALLED="$_PRECOMMIT_SELF_SYNC_SYNC_CALLED" \
+                    PRECOMMIT_SELF_SYNC_REEXEC="$_PRECOMMIT_SELF_SYNC_REEXEC" \
+                    PRECOMMIT_SELF_SYNC_STARTED_US="$_PRECOMMIT_SELF_SYNC_STARTED_US" \
+                    "$_installed_hook" "$@"
             fi
         fi
         unset _installed_hook _running_hook _hook_hash_before _hook_hash_after _sync_args
