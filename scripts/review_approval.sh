@@ -1,15 +1,31 @@
 #!/usr/bin/env bash
 # Usage: review_approval.sh <cmd_id> <gunshi|karo> <LGTM|ACCEPT|RC> <report_path> [auto|implementation|report]
+#    or: review_approval.sh <cmd_id> karo RC_REVOKE <report_path> <reason>
 set -euo pipefail
 ROOT=${REVIEW_APPROVAL_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
 source "$ROOT/scripts/lib/review_approval.sh"
 if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
   echo "Usage: $0 <cmd_id> <gunshi|karo> <LGTM|ACCEPT|RC> <report_path> [auto|implementation|report]" >&2
+  echo "   or: $0 <cmd_id> karo RC_REVOKE <report_path> <reason>" >&2
   exit 2
 fi
-cmd_id=$1; role=$2; result=$3; report=$4; requested_scope=${5:-auto}
-case "$role:$result" in gunshi:LGTM|karo:ACCEPT|karo:RC) ;; *) echo "BLOCK: invalid role/result" >&2; exit 2;; esac
-case "$requested_scope" in auto|implementation|report) ;; *) echo "BLOCK: invalid correction scope: $requested_scope" >&2; exit 2;; esac
+cmd_id=$1; role=$2; result=$3; report=$4
+# "-" (not ":-") so an explicitly empty 5th arg is distinguishable from an
+# omitted one; RC_REVOKE's reason validation depends on seeing the real "".
+requested_scope=${5-auto}
+case "$role:$result" in gunshi:LGTM|karo:ACCEPT|karo:RC|karo:RC_REVOKE) ;; *) echo "BLOCK: invalid role/result" >&2; exit 2;; esac
+if [ "$role:$result" = "karo:RC_REVOKE" ]; then
+  # RC_REVOKE の第5引数は scope 語ではなく撤回理由(必須・自由文でよい。表示型の
+  # 作文強要はしない=殿裁定07-20。空文字のみ機械的に拒否する)。
+  revoke_reason=$requested_scope
+  [ -n "$(printf '%s' "$revoke_reason" | tr -d '[:space:]')" ] || {
+    echo "BLOCK: RC_REVOKE requires a non-empty reason as the 5th argument" >&2
+    exit 2
+  }
+  requested_scope=auto
+else
+  case "$requested_scope" in auto|implementation|report) ;; *) echo "BLOCK: invalid correction scope: $requested_scope" >&2; exit 2;; esac
+fi
 [ "$result" = RC ] || [ "$requested_scope" != implementation ] || {
   echo "BLOCK: implementation scope is only valid when recording Karo RC" >&2
   exit 2
@@ -44,7 +60,7 @@ fail_close=0
 if [ "$report_status" = "failed" ] && [ "$role:$result" = "karo:ACCEPT" ] && [ "$report_verdict" = "FAIL" ]; then
   fail_close=1
 fi
-[ "$report_status" = "completed" ] || [ "$fail_close" = 1 ] || {
+[ "$report_status" = "completed" ] || [ "$fail_close" = 1 ] || [ "$role:$result" = "karo:RC_REVOKE" ] || {
   echo "BLOCK: formal review requires status=completed (actual=${report_status:-missing}): $report" >&2
   exit 1
 }
@@ -129,6 +145,76 @@ PY
   }
 fi
 
+# cmd_karo_impl_rc_revoke_command_20260727: revoke a mistaken Karo RC by
+# restoring the pre-RC snapshot and retreating (not deleting) the erroneous
+# formal record. Must run before the implementation/report "unchanged since RC"
+# guards below, which would otherwise fire on the very commit/payload the RC
+# rejected and re-block the revoke itself.
+if [ "$role:$result" = "karo:RC_REVOKE" ]; then
+  worker_id=$(python3 - "$report" <<'PY'
+import re, sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+worker = str(data.get("worker_id") or "")
+if not re.fullmatch(r"[a-z][a-z0-9_-]*", worker):
+    raise SystemExit(1)
+print(worker)
+PY
+  ) || { echo "BLOCK: RC_REVOKE report worker_id missing or invalid: $report_rel" >&2; exit 1; }
+  task_file="$ROOT/queue/tasks/$worker_id.yaml"
+  [ -f "$task_file" ] || { echo "BLOCK: RC_REVOKE worker task not found: $worker_id" >&2; exit 1; }
+  snapshot_pointer="$dir/last_rc_snapshot_dir"
+  [ -f "$snapshot_pointer" ] || { echo "BLOCK: no recorded Karo RC to revoke for report: $report_rel" >&2; exit 1; }
+  snapshot_dir=$(head -n 1 "$snapshot_pointer")
+  [ -d "$snapshot_dir" ] || { echo "BLOCK: RC snapshot directory missing: $snapshot_dir" >&2; exit 1; }
+
+  pre_report_status=$(cat "$snapshot_dir/report_status" 2>/dev/null || true)
+  [ -n "$pre_report_status" ] || { echo "BLOCK: RC snapshot missing report_status: $snapshot_dir" >&2; exit 1; }
+  bash "$ROOT/scripts/report_field_set.sh" "$report" status "$pre_report_status"
+
+  while IFS='=' read -r field value; do
+    [ -n "$field" ] || continue
+    bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task "$field" "$value"
+  done < "$snapshot_dir/task_fields"
+
+  for marker in gunshi.yaml gunshi_notice.sent; do
+    if [ -f "$snapshot_dir/$marker" ]; then
+      cp -f "$snapshot_dir/$marker" "$dir/$marker"
+    else
+      rm -f "$dir/$marker"
+    fi
+  done
+  if [ -f "$snapshot_dir/review_gate.done" ]; then
+    mkdir -p "$ROOT/queue/gates/$cmd_id"
+    cp -f "$snapshot_dir/review_gate.done" "$ROOT/queue/gates/$cmd_id/review_gate.done"
+  else
+    rm -f "$ROOT/queue/gates/$cmd_id/review_gate.done"
+  fi
+  notify_marker="$ROOT/queue/gates/$cmd_id/gunshi_report_review_notify_${worker_id}.done"
+  if [ -f "$snapshot_dir/gunshi_notify.done" ]; then
+    cp -f "$snapshot_dir/gunshi_notify.done" "$notify_marker"
+  else
+    rm -f "$notify_marker"
+  fi
+
+  if [ -f "$snapshot_dir/last_rc_scope" ]; then cp -f "$snapshot_dir/last_rc_scope" "$rc_scope_file"; else rm -f "$rc_scope_file"; fi
+  if [ -f "$snapshot_dir/last_rc_commit" ]; then cp -f "$snapshot_dir/last_rc_commit" "$rejected_commit_file"; else rm -f "$rejected_commit_file"; fi
+  if [ -f "$snapshot_dir/last_rc_report_payload" ]; then cp -f "$snapshot_dir/last_rc_report_payload" "$rejected_payload_file"; else rm -f "$rejected_payload_file"; fi
+  if [ -f "$snapshot_dir/karo_rework.seen" ]; then cp -f "$snapshot_dir/karo_rework.seen" "$base/karo_rework.seen"; else rm -f "$base/karo_rework.seen"; fi
+
+  # Retreat (not delete) the erroneous RC's own formal record and its snapshot
+  # into an audit trail, with the mandatory reason (AC2/AC3: 撤回は退避+理由記録).
+  archive_dir="$ROOT/queue/archive/rc_erroneous/${cmd_id}_$(date +%Y%m%d%H%M%S)_${worker_id}"
+  mkdir -p "$archive_dir"
+  [ -f "$dir/karo.yaml" ] && mv -f "$dir/karo.yaml" "$archive_dir/karo.yaml"
+  printf 'reason: %s\ncmd_id: %s\nreport: %s\nworker_id: %s\nrevoked_at: %s\n' \
+    "$revoke_reason" "$cmd_id" "$report_rel" "$worker_id" "$(date -Iseconds)" > "$archive_dir/reason.yaml"
+  mv -f "$snapshot_dir" "$archive_dir/pre_rc_snapshot"
+  rm -f "$snapshot_pointer"
+
+  echo "review approval revoked: $cmd_id $role $result report=$report_rel archive=${archive_dir#"$ROOT"/}"
+  exit 0
+fi
+
 if [ ! "$role:$result" = "karo:RC" ] && [ "$correction_scope" = implementation ] \
   && [ -f "$rejected_commit_file" ] && [ "$current_commit" != "no-code-change" ]; then
   rejected_commit=$(head -n 1 "$rejected_commit_file" 2>/dev/null || true)
@@ -208,6 +294,40 @@ if [ "$role" = karo ] && [ "$result" = RC ]; then
   mkdir -p "${rc_deploy_lock%/*}"
   exec 201>"$rc_deploy_lock"
   flock -w 10 201 || { echo "BLOCK: RC deploy lock timeout: worker=$worker_id" >&2; exit 1; }
+  # cmd_karo_impl_rc_revoke_command_20260727: snapshot pre-RC state under the
+  # same deploy lock so a mistaken RC can be revoked later (incident
+  # 2026-07-27 12:47: a correct report was RC'd by mistake with no formal
+  # undo path; karo had to hand-retreat the ledger). Captured before any of
+  # this block's mutations below.
+  snapshot_dir="$dir/.pre_rc_snapshot.$(date +%Y%m%d%H%M%S)_$$"
+  mkdir -p "$snapshot_dir"
+  printf '%s\n' "$report_status" > "$snapshot_dir/report_status"
+  : > "$snapshot_dir/task_fields"
+  for field in deployed_at retry_deployed_at status reviewed review_result acknowledged_at completed_at done_at; do
+    field_value=$(python3 - "$task_file" "$field" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+task = data.get("task") or {}
+value = task.get(sys.argv[2])
+if value is None:
+    print("")
+elif isinstance(value, bool):
+    print("true" if value else "false")
+else:
+    print(value)
+PY
+)
+    printf '%s=%s\n' "$field" "$field_value" >> "$snapshot_dir/task_fields"
+  done
+  [ -f "$dir/gunshi.yaml" ] && cp -f "$dir/gunshi.yaml" "$snapshot_dir/gunshi.yaml"
+  [ -f "$dir/gunshi_notice.sent" ] && cp -f "$dir/gunshi_notice.sent" "$snapshot_dir/gunshi_notice.sent"
+  [ -f "$ROOT/queue/gates/$cmd_id/review_gate.done" ] && cp -f "$ROOT/queue/gates/$cmd_id/review_gate.done" "$snapshot_dir/review_gate.done"
+  [ -f "$ROOT/queue/gates/$cmd_id/gunshi_report_review_notify_${worker_id}.done" ] && cp -f "$ROOT/queue/gates/$cmd_id/gunshi_report_review_notify_${worker_id}.done" "$snapshot_dir/gunshi_notify.done"
+  [ -f "$rc_scope_file" ] && cp -f "$rc_scope_file" "$snapshot_dir/last_rc_scope"
+  [ -f "$rejected_commit_file" ] && cp -f "$rejected_commit_file" "$snapshot_dir/last_rc_commit"
+  [ -f "$rejected_payload_file" ] && cp -f "$rejected_payload_file" "$snapshot_dir/last_rc_report_payload"
+  [ -f "$base/karo_rework.seen" ] && cp -f "$base/karo_rework.seen" "$snapshot_dir/karo_rework.seen"
+  printf '%s\n' "$snapshot_dir" > "$dir/last_rc_snapshot_dir"
   # Preserve RC as monotonic command history.  The per-report karo.yaml is
   # intentionally overwritten by the later ACCEPT, so it cannot tell the
   # completion-quality logger that rework occurred.
