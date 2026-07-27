@@ -1,9 +1,22 @@
-# 忍者auto clear — 恒久是正 設計書 (2026-07-27)
+# 忍者auto clear — 恒久是正 設計書 (2026-07-27)【T1-T3 CLOSED / T4のみOPEN(実装中) — §0状態ブロック参照】
 
 - 起案: 軍師(gunshi)
 - 殿下問: 2026-07-27 11:16「auto clearの設計書はできたか？」
 - 前提資料: 調査書 `docs/research/gunshi_auto_clear_blocked_investigation_20260727.md` (gist e6e289f3・家老LGTM済)
 - origin: `[[殿下問_auto_clear_20260727]] -> [[CLEAR-BLOCKED 1136件]] -> [[本設計書]]`
+
+## §0 状態ブロック(2026-07-27 16:35 将軍再構築 — どこまでクローズか)
+
+| 構成要素 | 状態 | 一次証跡 |
+|---|---|---|
+| **T1 継続検知カウンタ** | ✅ **CLOSED**(実装+稼働実証) | commit `bc151ae6e`(影丸 14:48)。ninja_monitor.sh:868-908 |
+| **T2 閾値超過→家老inbox通知** | ✅ **CLOSED**(実装+**発火実証**) | 生ログ `[15:24:08] CLEAR-BLOCKED-NOTIFY: tobisaru count=3` / `[15:29:49] 同 hayate` — 実封鎖2件を検知・通知した |
+| **T3 startup gate現況表示** | ✅ **CLOSED**(実装) | gate_karo_startup.sh:2809 + gate_gunshi_startup.sh:1101 + 共通lib clear_blocked_summary.sh + bats |
+| **封鎖の即時解消(運用処置)** | ✅ **解消が持続** | 15:49 unstage後、15:50以降のCLEAR-BLOCKED=0件・staged index=0件(16:35将軍実測: `grep+awk`と`git diff --cached`)。15:52:48 飛猿CODEX-RESPAWN実行=auto clear復旧の挙動証拠 |
+| **D4 stage残置の発生源(自傷ループ仮説)** | ⚠ **OPEN — 最有力仮説**(確定はT4ログ待ち) | §10。コード現物(全2枝でstderr破棄・rollback 0)+同族4pathの2回再発。生成瞬間・失敗rcは未観測ゆえ「確定」とは言わない(家老レビューblt_155443) |
+| **T4 失敗経路の自己回収+観測可能化** | ⚠ **OPEN — 実装中(1回目failed)** | 殿裁可15:59で配備。半蔵task `cmd_karo_hotfix_auto_commit_t4v2`(AC1-5にOID同一内容境界まで含む)が16:10 failed(報告YAML未提出)。家老が検分→再配備の段。**本設計書で唯一の未クローズ実装** |
+
+**∴ 総括: 設計書の本来目的(skipが誰にも届かない38時間沈黙の根絶)=T1-T3でCLOSED。封鎖も解消が持続。残るのは発生源の恒久是正T4のみ(OPEN)。T4完走+D4確定/棄却の報告をもって本設計書は全クローズとなる。**
 
 ## §1 設計の対象を1行で
 
@@ -195,7 +208,9 @@ fi
 - **設計**: (1)regular/context**全2枝**のadd→commitを**共通helper関数へ統合**し、そこで失敗処理を一元実装(枝別パッチ禁止=原理1行>各論パッチ) (2)commit失敗時のstderrを捨てず1行ログへ記録(`AUTO-COMMIT-FAIL: branch=<regular|context> rc=<n> reason=...`) — **D4仮説の確定/棄却はこのログで行う** (3)stage自己回収は**自己所有をOIDで証明できたpathのみ**: add前に`git diff --cached --name-only`のsnapshotに加え、add直後に`git ls-files --cached -s <path>`でstage済みblob OIDを記録し、commit失敗時のcleanup直前に**同一pathの現在stage OIDが自分の記録と一致する場合のみ**`git restore --staged`(★TOCTOU対策: snapshot後に他者が同一pathをstageし直した場合はOID不一致となり触らない=GA-231c維持)。OID照合が実装できない場合はcleanup自体を断念しログのみとする(fail-safe側へ倒す) (4)T1カウンタとは独立(T1は検知網として残す=多層防御)
 - **不変更契約への追加**: 他者の既存stagedには一切触れない。回収対象は「同一関数実行内で自分がaddし、かつcleanup時点でOIDが自分のadd結果と一致する」pathに限定
 - **境界fixture(最低7件)**: (f)commit成功→stage回収発動なし (g)context枝commit失敗→自分がaddしたpathのみunstage・既存stagedは不変 (h)失敗理由(branch/rc)がログへ1行記録される (i)pre-existing stagedありでadd自体をskipする既存挙動の非破壊 (j)**regular枝commit失敗→同様に回収**(家老指摘1) (k)**snapshot後に他者が同一pathを再stage→OID不一致で他者stage不変**(家老指摘2 TOCTOU) (l)**add部分失敗・commit hookが追加stageを作った場合の帰属**(自分のOID記録に無いstageは触らない)(家老指摘2)
-- **実装配備の前提**: 本v2を家老が再レビューしてから配備(blt_155443「反映まで実装配備停止」に従う)
+- **実装配備の前提**: 本v2を家老が再レビューしてから配備(blt_155443「反映まで実装配備停止」に従う) → **殿裁可(15:59)で配備実行済み。家老検分は実装レビューへ併合**
+- **★OID照合の限界(半蔵task AC3が先鋭化・軍師知見と整合)**: git OIDは**内容hash**であり操作者を含まない(軍師確定知見 knowledge:9511d46a)。∴他者が**同一内容**を再stageした場合はOIDが一致し自己所有を証明できない。実装契約: この境界をfixtureで再現し、OID一致だけでGA-231cを証明できないケースは**回収せずBLOCK報告**(fail-safe側へ倒す)
+- **実装状況(16:35)**: 半蔵へ配備(task `cmd_karo_hotfix_auto_commit_t4v2`、AC1=共通helper統合/AC2=AUTO-COMMIT-FAILログ/AC3=OID自己所有回収+同一内容境界/AC4=fixture f-l+境界/AC5=GA-231c・T1-T3独立検証)。**1回目はfailed(16:10、報告YAML未提出)** — 家老が実装FAILか終端契約かを検分し再配備する段
 
 ## §8 因果リンク
 
