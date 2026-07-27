@@ -55,8 +55,8 @@ Step 1の本文originに`[[リンク]]`を含めていればknowledge書込み�
 ### Step 4: 3層それぞれを実測検証（宣言前必須・省略厳禁）
 
 ```bash
-# L1: event_idで到達するか
-bash scripts/memory_db_query.sh --search "<知見のキーワード>" | grep <event_id先頭8桁>
+# L1: event_idで到達するか（★検索語は特徴的な単語1語で。複合語クエリはFTS不一致で偽陰性になる=2026-07-27スキル検証で実測）
+bash scripts/memory_db_query.sh --search "<本文中の特徴的な単語1語>" | grep <event_id先頭8桁>
 # L2: alias層で直接ヒットするか（MEMORY_DB_MATCHはフォールバック=Layer2未到達の証拠）
 bash scripts/semantic_search.sh "<殿の言い回し>"   # 出力先頭が「## <概念id>」であること
 # L3: 候補が生成されたか
