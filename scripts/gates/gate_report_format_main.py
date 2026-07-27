@@ -118,7 +118,36 @@ def _subject_identifies_cmd(subject, cmd_id):
     return re.search(rf"\b{re.escape(cmd_id)}\b", str(subject or "")) is not None
 
 
-def _resolve_commit_repo(report, task, root):
+def _canonical_commit_repo(repo_root):
+    """Validate an explicit commit repository as an exact git toplevel."""
+    text = str(repo_root or "").strip()
+    if not text:
+        return None, "explicit commit repository is empty"
+    candidate = pathlib.Path(text).expanduser()
+    if not candidate.is_absolute():
+        return None, "explicit commit repository must be an absolute path"
+    repo = candidate.resolve()
+    try:
+        probe = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "--show-toplevel"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return None, "explicit commit repository is unreadable or not a git repository"
+    canonical = pathlib.Path(probe.stdout.strip()).resolve()
+    if canonical != repo:
+        return None, "explicit commit repository root mismatch"
+    return canonical, None
+
+
+def _resolve_commit_repo(report, task, root, contract=None):
+    explicit_repo = contract.get("repo_root") if isinstance(contract, dict) else None
+    if str(explicit_repo or "").strip():
+        return _canonical_commit_repo(explicit_repo)
+
     project_id = str(report.get("project") or task.get("project") or "").strip()
     if not project_id or project_id == "infra":
         return pathlib.Path(root), None
@@ -165,6 +194,18 @@ def _resolved_commit_contract(report, task):
             and report_contract.get("required") is not task_contract.get("required")
         ):
             return None, "task/report commit_contract required mismatch"
+        if isinstance(report_contract, dict):
+            task_repo = str(task_contract.get("repo_root") or "").strip()
+            report_repo = str(report_contract.get("repo_root") or "").strip()
+            if task_repo and report_repo:
+                task_repo_path = pathlib.Path(task_repo).expanduser()
+                report_repo_path = pathlib.Path(report_repo).expanduser()
+                if (
+                    not task_repo_path.is_absolute()
+                    or not report_repo_path.is_absolute()
+                    or task_repo_path.resolve() != report_repo_path.resolve()
+                ):
+                    return None, "task/report commit_contract repo_root mismatch"
         return task_contract, None
 
     if not isinstance(report_contract, dict):
@@ -222,7 +263,7 @@ def commit_contract_errors(report, task, root):
             errors.append(f"commit identity run_id mismatch: expected {expected_run_id!r}")
         if str(evidence.get("commit_hash") or "") != identity:
             errors.append("commit identity evidence hash differs from report commit_hash")
-    commit_repo, repo_error = _resolve_commit_repo(report, task, root)
+    commit_repo, repo_error = _resolve_commit_repo(report, task, root, contract)
     if repo_error:
         return errors + [repo_error]
     try:

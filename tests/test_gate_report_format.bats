@@ -1462,3 +1462,108 @@ YAML
     [ "$(git -C "$repo" rev-parse --show-toplevel)" = "$(cd "$repo" && pwd -P)" ]
     [ "$(git -C "$repo" config user.name)" = "test" ]
 }
+
+# test_necessity: project repository and commit repository may intentionally differ;
+# an explicit, exact git root must win without weakening project semantics.
+@test "commit repo_root: explicit canonical git root overrides project lookup" {
+    local repo="$TMPDIR_BATS/commit_repo"
+    _init_fixture_repo "$repo"
+    run python3 - "$repo" <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+spec = importlib.util.spec_from_file_location("gate_main", "scripts/gates/gate_report_format_main.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+repo, error = module._resolve_commit_repo(
+    {"project": "dm-signal"},
+    {"project": "dm-signal"},
+    pathlib.Path("/definitely/not/the/project"),
+    {"repo_root": sys.argv[1]},
+)
+print(repo)
+print(error)
+raise SystemExit(0 if repo == pathlib.Path(sys.argv[1]).resolve() and error is None else 1)
+PY
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: an explicit path that is not a git repository must fail closed.
+@test "commit repo_root: non-git explicit path is blocked" {
+    local repo="$TMPDIR_BATS/not_git"
+    mkdir -p "$repo"
+    run python3 - "$repo" <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+spec = importlib.util.spec_from_file_location("gate_main", "scripts/gates/gate_report_format_main.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+repo, error = module._resolve_commit_repo({}, {}, pathlib.Path("."), {"repo_root": sys.argv[1]})
+print(error)
+raise SystemExit(0 if repo is None and "not a git repository" in error else 1)
+PY
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: a subdirectory or tampered path must not silently resolve upward
+# to a different git root.
+@test "commit repo_root: non-canonical nested path is blocked" {
+    local repo="$TMPDIR_BATS/commit_repo"
+    _init_fixture_repo "$repo"
+    mkdir -p "$repo/nested"
+    run python3 - "$repo/nested" <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+spec = importlib.util.spec_from_file_location("gate_main", "scripts/gates/gate_report_format_main.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+repo, error = module._resolve_commit_repo({}, {}, pathlib.Path("."), {"repo_root": sys.argv[1]})
+print(error)
+raise SystemExit(0 if repo is None and error == "explicit commit repository root mismatch" else 1)
+PY
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: report-side repo_root cannot contradict the task contract,
+# while an omitted report copy preserves the task SSOT.
+@test "commit repo_root: task report contradiction is blocked" {
+    run python3 - <<'PY'
+import importlib.util
+
+spec = importlib.util.spec_from_file_location("gate_main", "scripts/gates/gate_report_format_main.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+contract, error = module._resolved_commit_contract(
+    {"commit_contract": {"required": True, "repo_root": "/tmp/repo-b"}},
+    {"commit_contract": {"required": True, "repo_root": "/tmp/repo-a"}},
+)
+print(error)
+raise SystemExit(0 if contract is None and error == "task/report commit_contract repo_root mismatch" else 1)
+PY
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: tasks that predate repo_root keep the existing project-based
+# repository resolution unchanged.
+@test "commit repo_root: omitted field preserves infra project fallback" {
+    run python3 - "$PWD" <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+spec = importlib.util.spec_from_file_location("gate_main", "scripts/gates/gate_report_format_main.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+root = pathlib.Path(sys.argv[1]).resolve()
+repo, error = module._resolve_commit_repo({}, {"project": "infra"}, root, {})
+print(repo)
+print(error)
+raise SystemExit(0 if repo == root and error is None else 1)
+PY
+    [ "$status" -eq 0 ]
+}
