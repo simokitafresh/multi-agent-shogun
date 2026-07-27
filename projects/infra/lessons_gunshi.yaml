@@ -905,3 +905,75 @@ lessons:
   how: 'その出力を読む側をrepo全体からgrepで全数列挙させ、各消費者が壊れないことをfixtureで実証させる。特にjson.load等の例外で落ちる消費者は沈黙するため判定同一性テストを課す'
   created_at: '2026-07-27'
   enforcement: "Level3(指針): draft review Step 3 で『出力仕様の変更があるか→あれば消費者を全数grepしたか』を見る指針。昇格条件: 同型誤りが再発し fixture/test で機械判定可能な具体形(特定フィールドの突合等)が見つかった場合のみ、その具体形に限定して Level4 へ昇格する(将軍裁定2026-07-27 12:22)。本項は指針であり発火実体を持たない(scripts/gates・hooks配下ヒット0件を将軍・家老が独立確認)。"
+- id: 'LG079'
+  title: '未走査と宣言しても未走査のまま否定的結論を出せばLG042違反である'
+  origin: '[[cmd_karo_hotfix_watcher_busy_queue_singleflight_20260727]]'
+  detail: |
+    2026-07-27、軍師は家老の大量貼付け根因(INPUT-GUARD-BYPASS経路)を否定する際、同じメッセージ内で自ら BYPASS=3件 と報告しながら、無関係な INPUT-GUARD=0 と DEFERRED-RETRY=0 を根拠に経路ごと否定した。さらに『ローテート .1/.2/.3 は未走査』と明記したうえで未走査のまま結論した。実測すると .1=8 / .2=452 / .3=354 の計814件が存在し、家老の再反証が正しかった。★範囲を宣言することと範囲を埋めることは別である。宣言は免責ではない。否定的存在主張を書く前に、自分が宣言した未走査範囲を埋めよ。埋められないなら結論ではなく『判定保留』と書け。陽性サンプルが1件でもある経路は、別カウンタの0件では否定できない。
+    吸収(2026-07-27, cmd_karo_startup_enforcement_recovery_20260727, origin: [[LG079]] -> [[enforcement欠落]] -> [[起動時全文ロード接続]]): 起動時全文ロードの既存受動経路へ接続し、未走査範囲を埋めずに否定的結論を出す誤りを毎セッション再注入する。
+  source_cmd: 'cmd_karo_hotfix_watcher_busy_queue_singleflight_20260727'
+  when: '同種の状況が再発した時'
+  how: '2026-07-27、軍師は家老の大量貼付け根因(INPUT-GUARD-BYPASS経路)を否定する際、同じメッセージ内で自ら BYPASS=3件 と報告しながら、無関係な INPUT-GUARD=0 と DEFERRED-RETRY=0 を根拠に経路ごと否定した。さらに『ローテート .1/.2/.3 は未走査』と明記したうえで未走査のまま結論した。実測すると .1=8 / .2=452 / .3=354 の計814件が存在し、家老の再反証が正しかった。★範囲を宣言することと範囲を埋めることは別である。宣言は免責ではない。否定的存在主張を書く前に、自分が宣言した未走査範囲を埋めよ。埋められないなら結論ではなく『判定保留』と書け。陽性サンプルが1件でもある経路は、別カウンタの0件では否定できない。'
+  created_at: '2026-07-27'
+  enforcement: "Level5(受動的層): AGENTS.md /new Recovery(gunshi) Step 2.5でprojects/infra/lessons_gunshi.yamlを全文ロードし、家老もStep 2.6で同ファイルを全文ロードするため毎起動で二重注入される。未走査範囲を埋められない否定的存在主張は判定保留へ落とす指針として使う。"
+  enforcement_level: 5
+- id: 'LG080'
+  title: 'precheckのCLEARもBLOCKも結論にするな。実GATEで確かめてからverdictを出せ'
+  origin: '[[cmd_karo_recon2_r7_inject_byte_cap_measure_20260727]]'
+  detail: |
+    2026-07-27に両方向で実証した。(a)偽陰性: 疾風のR7報告は precheck ERRORS=0 / prediction CLEAR だったが、taskのquality_gate.fp_measurement(境界1件の現物照合)が未実施でありAC未達だった。precheckは契約項目の充足を見ない。(b)偽陽性: 半蔵のRC原子化報告は SG-PRE9c が『未確認』語でGATE_PREDICTION=BLOCKを出したが、当該語は unclear_points 内で家老purposeの見出し『家老が確認していない範囲』を引用した箇所であり、実GATE(gate_report_format.sh)は PASS rc=0 だった。∴precheckのBLOCKで差し戻せば正しい報告に作文を強要し、CLEARで通せばAC未達が素通りする。手順: BLOCK予測を見たら実GATEを回して真偽を確かめる。CLEARを見たらtaskのAC本文とquality_gateを1対1で突合する。道具の判定は通っても落ちてもそのまま結論にできない。
+    吸収(2026-07-27, cmd_karo_startup_enforcement_recovery_20260727, origin: [[LG080]] -> [[enforcement欠落]] -> [[起動時全文ロード接続]]): 起動時全文ロードの既存受動経路へ接続し、precheck予測を実GATEとAC本文に突合する規律を毎セッション再注入する。
+  source_cmd: 'cmd_karo_recon2_r7_inject_byte_cap_measure_20260727'
+  when: '同種の状況が再発した時'
+  how: '2026-07-27に両方向で実証した。(a)偽陰性: 疾風のR7報告は precheck ERRORS=0 / prediction CLEAR だったが、taskのquality_gate.fp_measurement(境界1件の現物照合)が未実施でありAC未達だった。precheckは契約項目の充足を見ない。(b)偽陽性: 半蔵のRC原子化報告は SG-PRE9c が『未確認』語でGATE_PREDICTION=BLOCKを出したが、当該語は unclear_points 内で家老purposeの見出し『家老が確認していない範囲』を引用した箇所であり、実GATE(gate_report_format.sh)は PASS rc=0 だった。∴precheckのBLOCKで差し戻せば正しい報告に作文を強要し、CLEARで通せばAC未達が素通りする。手順: BLOCK予測を見たら実GATEを回して真偽を確かめる。CLEARを見たらtaskのAC本文とquality_gateを1対1で突合する。道具の判定は通っても落ちてもそのまま結論にできない。'
+  created_at: '2026-07-27'
+  enforcement: "Level5(受動的層): AGENTS.md /new Recovery(gunshi) Step 2.5でprojects/infra/lessons_gunshi.yamlを全文ロードし、家老もStep 2.6で同ファイルを全文ロードするため毎起動で二重注入される。precheckのCLEAR/BLOCKを結論にせず、実GATEとtask AC・quality_gateを1対1突合するレビュー指針として使う。"
+  enforcement_level: 5
+- id: 'LG081'
+  title: 'no-code報告のLGTM前にcmd_complete_gate側の分類も確認せよ。契約は入口ごとに違いうる'
+  origin: '[[cmd_karo_recon2_r5_utf8_revalidation_20260727]]'
+  detail: |
+    2026-07-27、軍師が才蔵のR5 no-code報告をLGTMした直後にGATEがBLOCKした(ci_push_state: report commit invalid or unresolvable)。根因は同一報告に対し2つの入口が別契約を要求していたこと。review_approval.sh は permits_no_code_identity(files_modifiedがqueue/logs配下 + no_code_change_evidence + explicit_no_commit)を要求し、cmd_complete_gate.sh は files_modified が全て literal no-code-change または commit_hash==no-code-change を要求していた。前者だけ満たしてLGTMへ到達した報告が後者でinvalidになる。軍師は cmd_complete_gate.sh を共有契約 report_commit_identity.permits_no_code_identity へ委譲する形へ統一してD0是正した(commit 00c9fff99、陰性対照4件invalid維持、bats 149 PASS、当該cmdは再実行でCLEAR)。教訓は是正後も残る: 承認と最終GATEが別実装を持つ限り、片方の充足は他方を保証しない。LGTM=GATE通過保証(LG006)を守るには、両方の判定を出す前に確認せよ。
+    吸収(2026-07-27, cmd_karo_startup_enforcement_recovery_20260727, origin: [[LG081]] -> [[enforcement欠落]] -> [[起動時全文ロード接続]]): 起動時全文ロードの既存受動経路へ接続し、承認入口と最終GATEの契約同一性確認を毎セッション再注入する。
+  source_cmd: 'cmd_karo_recon2_r5_utf8_revalidation_20260727'
+  when: '同種の状況が再発した時'
+  how: '2026-07-27、軍師が才蔵のR5 no-code報告をLGTMした直後にGATEがBLOCKした(ci_push_state: report commit invalid or unresolvable)。根因は同一報告に対し2つの入口が別契約を要求していたこと。review_approval.sh は permits_no_code_identity(files_modifiedがqueue/logs配下 + no_code_change_evidence + explicit_no_commit)を要求し、cmd_complete_gate.sh は files_modified が全て literal no-code-change または commit_hash==no-code-change を要求していた。前者だけ満たしてLGTMへ到達した報告が後者でinvalidになる。軍師は cmd_complete_gate.sh を共有契約 report_commit_identity.permits_no_code_identity へ委譲する形へ統一してD0是正した(commit 00c9fff99、陰性対照4件invalid維持、bats 149 PASS、当該cmdは再実行でCLEAR)。教訓は是正後も残る: 承認と最終GATEが別実装を持つ限り、片方の充足は他方を保証しない。LGTM=GATE通過保証(LG006)を守るには、両方の判定を出す前に確認せよ。'
+  created_at: '2026-07-27'
+  enforcement: "Level5(受動的層): AGENTS.md /new Recovery(gunshi) Step 2.5でprojects/infra/lessons_gunshi.yamlを全文ロードし、家老もStep 2.6で同ファイルを全文ロードするため毎起動で二重注入される。no-code報告のLGTM前に承認入口とcmd_complete_gate入口が同じ共有契約を参照するか確認する指針として使う。"
+  enforcement_level: 5
+- id: 'LG082'
+  title: '1件の観測をN件へ外挿するな。母集団の実測がなければ効果見込みを書くな'
+  origin: '[[cmd_reflux_promotion_202607271512_hanzo]]'
+  detail: |
+    2026-07-27、軍師は設計書で『還流在庫352件 × 1往復 = 352往復の除去』と書いた。しかし実測すると本日発行の還流弾5件のうち related_lessons が空で MISMATCH が実際に出たのは★1件のみで、他は非空(疾風4件/才蔵2件)であった。∴5弾中1弾であり352件への外挿は未証明。家老レビュー(blt_160728指摘2)で撤回した。★同日、軍師は才蔵の報告を『fix後2件から低頻度で再発と断定した』としてFAILで差し戻している。同じ誤りを同じ日に自分で犯した。機序は『手元の1〜2件が母集団を代表すると仮定する』であり、否定的主張(LG042)だけでなく★肯定的な効果見込みにも同じ規律が要る。手順: 効果見込みを数値で書く前に(1)母集団の定義 (2)実測できた件数 (3)未計測の範囲 の3つを書け。実測できないなら『実測N/M。全数は実装弾のACで計測』と書き、Nを外挿するな。
+    吸収(2026-07-27, cmd_karo_startup_enforcement_recovery_20260727, origin: [[LG082]] -> [[enforcement欠落]] -> [[起動時全文ロード接続]]): 起動時全文ロードの既存受動経路へ接続し、少数観測を母集団へ外挿しない規律を毎セッション再注入する。
+  source_cmd: 'cmd_reflux_promotion_202607271512_hanzo'
+  when: '同種の状況が再発した時'
+  how: '2026-07-27、軍師は設計書で『還流在庫352件 × 1往復 = 352往復の除去』と書いた。しかし実測すると本日発行の還流弾5件のうち related_lessons が空で MISMATCH が実際に出たのは★1件のみで、他は非空(疾風4件/才蔵2件)であった。∴5弾中1弾であり352件への外挿は未証明。家老レビュー(blt_160728指摘2)で撤回した。★同日、軍師は才蔵の報告を『fix後2件から低頻度で再発と断定した』としてFAILで差し戻している。同じ誤りを同じ日に自分で犯した。機序は『手元の1〜2件が母集団を代表すると仮定する』であり、否定的主張(LG042)だけでなく★肯定的な効果見込みにも同じ規律が要る。手順: 効果見込みを数値で書く前に(1)母集団の定義 (2)実測できた件数 (3)未計測の範囲 の3つを書け。実測できないなら『実測N/M。全数は実装弾のACで計測』と書き、Nを外挿するな。'
+  created_at: '2026-07-27'
+  enforcement: "Level5(受動的層): AGENTS.md /new Recovery(gunshi) Step 2.5でprojects/infra/lessons_gunshi.yamlを全文ロードし、家老もStep 2.6で同ファイルを全文ロードするため毎起動で二重注入される。効果見込みには母集団・実測N/M・未計測範囲を併記し、未実測分へ外挿しない指針として使う。"
+  enforcement_level: 5
+- id: 'LG083'
+  title: 'GPT忍者のhook_failures.detailsは文字列→mapping形式FAILが頻発する'
+  origin: '[[LG074]] -> [[GPT忍者hook_failures文字列3回]] -> [[mapping注入または自動変換]]'
+  detail: |
+    本セッションでhanzo 1回+kagemaru 2回=計3回、review_bundle.pyがhook_failures.details文字列形式でBLOCK。GPT忍者にはcause/independent_verification/bypass_record/post_verification/post_verification_resultのmapping具体例を配備時に注入するLevel5防御が必要。
+    吸収(2026-07-27, cmd_karo_startup_enforcement_recovery_20260727, origin: [[LG083]] -> [[enforcement欠落]] -> [[起動時全文ロード接続]]): 起動ALERT解消: 既存受動注入経路へ接続する。
+  source_cmd: 'cmd_reflux_promotion_202607272134_kagemaru'
+  when: 'GPT系忍者へreport templateを配備するとき'
+  how: 'deploy_task.shのextra_scaffoldへhook_failures.details mapping具体例を注入し、配備後task/report templateで5キー存在を二値確認する'
+  created_at: '2026-07-27'
+  enforcement: "Level5(受動的層)+Level3(自動生成注入、cmd_4187実装完了): AGENTS.md /new Recovery(gunshi) Step 2.5でprojects/infra/lessons_gunshi.yamlを全文ロードし、家老もStep 2.6で全文ロードする。加えてscripts/deploy_task.shのinject_model_injection_profile()関数が、intensity=max(GPT系)忍者へのtask配備時にmodel_injection_profile.extra_scaffoldへhook_failures.detailsの5キー(cause/independent_verification/bypass_record/post_verification/post_verification_result)mapping形式指示を自動注入し、同ファイルのgenerate_report_template()関数がreport template生成時にhook_failuresブロックへ同5キーの記入例コメントを常設する。review_approval.shのfail-closedが文字列形式をBLOCKする(review_bundle.py _require_hook_failures_resolved)。テストはtests/unit/test_deploy_task.batsの3件: 'model profile injects hook_failures.details mapping guidance for max intensity' / 'model profile omits hook_failures.details mapping guidance for non-max intensity' / 'report template hook_failures block carries mapping example with 5 keys'。"
+  enforcement_level: 5
+- id: 'LG084'
+  title: 'Codex CLIのbackground terminalがidle後も残るとauto_clear膠着する'
+  origin: '[[殿発見_hanzo_auto_clear膠着]] -> [[stale_busy_pattern_background_terminal]] -> [[三値判定案B合意]]'
+  detail: |
+    @agent_state=activeがstaleでもbackground terminal running文言がbusy固定となり、_pane_has_active_background_computeがstale判定パスで呼ばれない。半蔵では2時間44分の待機loop(CPU4秒)によりtask done後もauto-clear不能。stale局所三値判定で実computeと残骸を分離するLevel4防御が必要。
+    吸収(2026-07-27, cmd_karo_startup_enforcement_recovery_20260727, origin: [[LG084]] -> [[enforcement欠落]] -> [[起動時全文ロード接続]]): 起動ALERT解消: 既存受動注入と実装候補へ接続する。
+  source_cmd: 'cmd_karo_hotfix_gate_commit_repo_root_20260727'
+  when: 'Codex paneがtask done/idleなのにactiveまたはbackground terminal表示を維持するとき'
+  how: '_pane_has_active_background_computeを三値化してstale判定パスへ組み込み、実computeなしならagent_respawn.sh経路へ進むことをfixtureで二値検証する'
+  created_at: '2026-07-27'
+  enforcement: "Level4(フロー内強制): scripts/ninja_monitor.sh::_pane_has_active_background_compute が 0=実compute有/1=残骸のみ/2=表示なし・判定不能を返し、check_idle stale分岐は1だけidle補正して既存safe_send_clear→agent respawn経路へ進める。tests/unit/test_ninja_monitor_stall.bats の background terminal classifier / stale background residue fixtureで三値境界とrespawn経路を二値検証する。"
+  enforcement_level: 5

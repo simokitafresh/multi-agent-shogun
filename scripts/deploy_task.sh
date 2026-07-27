@@ -4355,6 +4355,8 @@ assumption_invalidation:
 hook_failures:
   count: 0
   details: ""
+  # count>0の場合はdetailsを文字列のままにせず、以下5キーのmapping形式で記入せよ(LG083):
+  # {cause: "原因", independent_verification: "独立検証内容", bypass_record: "回避記録", post_verification: "事後検証内容", post_verification_result: "all_pass/no_new_failure/regression_detected"}
 post_deploy_evidence:
   # deploy後のcron/外部job完走確認がACに含まれる場合だけ required: true にして記入せよ。
   # cmd_complete_gate が evidence_run_start_at > deploy_live_at と run_completed=true を検証する。
@@ -5873,6 +5875,7 @@ inject_model_injection_profile() {
         inject_block="${inject_block}"$'\n'"${indent}  extra_scaffold:"
         inject_block="${inject_block}"$'\n'"${indent}  - \"ACごとに実テスト証跡をresult.detailsへ記録\""
         inject_block="${inject_block}"$'\n'"${indent}  - \"報告前にplaceholder残存確認とgate_report_formatを実行\""
+        inject_block="${inject_block}"$'\n'"${indent}  - \"hook_failures.detailsはcount>0なら文字列でなくmapping形式で記入: cause/independent_verification/bypass_record/post_verification/post_verification_resultの5キー必須(LG083)\""
     fi
 
     tmp_file=$(mktemp "${task_file}.XXXXXX")
