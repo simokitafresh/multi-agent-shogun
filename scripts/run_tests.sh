@@ -605,17 +605,14 @@ run_bats_files_parallel() {
     }
 
     wait_for_one() {
-        local finished_pid="" rc=0 pid next=()
-        # A very short child may exit before wait -n is entered.  In that
-        # case wait -n can report 127 while bookkeeping still contains an
-        # unwaited PID.  Fall back to waiting for the first tracked child so
-        # the scheduler always makes progress without probing or signalling.
-        wait -n -p finished_pid "${pids[@]}" || rc=$?
-        if [ "$rc" -eq 127 ] || [ -z "$finished_pid" ]; then
-            finished_pid="${pids[0]}"
-            rc=0
-            wait "$finished_pid" || rc=$?
-        fi
+        local finished_pid="${pids[0]}" rc=0 pid next=()
+        # Bind completion to one PID that is still present in our bookkeeping.
+        # `wait -n -p ... "${pids[@]}"` can reap a different short-lived child
+        # while another becomes non-waitable; the fallback then observes
+        # "no such job" and loses that child's execution/timing record.
+        # Waiting for the selected tracked PID remains event-driven and keeps
+        # every completion exactly once.
+        wait "$finished_pid" || rc=$?
         [ "$rc" -eq 0 ] || failed=1
         pid_rc["$finished_pid"]="$rc"
         printf 'DONE: %s rc=%s\n' "${pid_file[$finished_pid]##*/}" "$rc" >&2
