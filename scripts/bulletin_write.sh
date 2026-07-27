@@ -143,29 +143,49 @@ is_commander_poster() {
 }
 
 post_has_numeric_claim() {
-    # half-width [0-9] or full-width [０-９]。cmd_id/msg_id等の識別子内の
-    # 数字は「数値主張」ではないため、識別子トークンを除去してから判定する。
-    local stripped
-    stripped="$(printf '%s' "$1" | sed -E 's/\b(cmd|msg|blt|task|rpt|LK|LG|LS|GP|PD|IB)[A-Za-z0-9_-]*//g')"
+    # half-width [0-9] or full-width [０-９]。
+    # 主張としての件数・率・母集団のみを対象とし、識別子(cmd_id/msg_id/日付/
+    # 時刻/SHA/行番号/バージョン番号)内の数字は「数値主張」ではないため除去する。
+    # cmd_karo_impl_commander_post_contract_20260727 是正2点目(軍師draft REQUEST_CHANGES)。
+    local stripped="$1"
+    # 識別子トークン(cmd_/msg_/blt_等のprefix付きID)
+    stripped="$(printf '%s' "$stripped" | sed -E 's/\b(cmd|msg|blt|task|rpt|LK|LG|LS|GP|PD|IB)[A-Za-z0-9_-]*//g')"
+    # ISO日付 (2026-07-27等)
+    stripped="$(printf '%s' "$stripped" | sed -E 's/[0-9]{4}-[0-9]{2}-[0-9]{2}//g')"
+    # 時刻 (09:06:35 / 09:06等)
+    stripped="$(printf '%s' "$stripped" | sed -E 's/[0-9]{1,2}:[0-9]{2}(:[0-9]{2})?//g')"
+    # 行番号参照 (:229 / L229 / 行229)
+    stripped="$(printf '%s' "$stripped" | sed -E 's/([:Ll行])[0-9]+/\1/g')"
+    # git SHA (7-40桁hex)
+    stripped="$(printf '%s' "$stripped" | sed -E 's/\b[0-9a-f]{7,40}\b//g')"
+    # バージョン番号 (v1.2.3 / 2.16.0)
+    stripped="$(printf '%s' "$stripped" | sed -E 's/\bv?[0-9]+(\.[0-9]+){1,2}\b//g')"
     printf '%s' "$stripped" | grep -qP '[0-9０-９]'
 }
 
 # 3点セット(4規律サブセット): 集計コマンド/出力行の生貼付/1件の定義
+# 検出語彙は07:55以降に家老/軍師/将軍が実際に掲示板で使用した表記を
+# grepで洗い出して確定した(観測1文言だけから作らない — cmd_karo_impl_commander_post_contract_20260727 是正3点目)。
+# 実測: bash bulletin_write.sh (中略) 実行時に『出力行(生):』表記がBLOCKされる偽陽性を家老/軍師/将軍が確認。
 # 欠落要素名を配列で返す(stdout, 改行区切り)。空出力=全て充足。
 commander_three_point_missing() {
     local content="$1"
     printf '%s' "$content" | grep -qP '集計コマンド' \
         || echo "集計コマンド"
-    printf '%s' "$content" | grep -qP '(出力行の生貼付|生貼付|貼付.*出力|出力.*貼付)' \
+    printf '%s' "$content" | grep -qP '(出力行\s*[\(（]生[\)）]|出力行の生貼付|出力行:|生貼付|貼付.*出力|出力.*貼付)' \
         || echo "出力行の生貼付"
     printf '%s' "$content" | grep -qP '(1件の定義|1件は|1件とは|1件=)' \
         || echo "1件の定義"
 }
 
-# 現在指示との関連宣言(cmd_id/下知)の有無。実害進行中の緊急阻止マーカーは例外。
+# 現在指示との関連宣言(cmd_id/下知)の有無。
+# 実害進行中の緊急阻止は固定マーカー [URGENT-HARM] を本文先頭行に含む場合のみ例外とする。
+# cmd_karo_impl_commander_post_contract_20260727 是正2点目: 曖昧なキーワード一致(実害進行中/緊急阻止等)は
+# 忍者裁量で言い回しが増減し検査の再現性・被ガード性が保てないため固定マーカーへ一本化した。
 commander_post_has_related_declaration() {
     local content="$1"
-    printf '%s' "$content" | grep -qP '(実害進行中|緊急阻止|即時停止対応)' && return 0
+    local first_line="${content%%$'\n'*}"
+    [[ "$first_line" == *'[URGENT-HARM]'* ]] && return 0
     printf '%s' "$content" | grep -qP 'cmd_[A-Za-z0-9_]+' && return 0
     printf '%s' "$content" | grep -qP '下知' && return 0
     return 1
