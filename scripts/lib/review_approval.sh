@@ -105,8 +105,12 @@ if isinstance(checks, dict):
             item.get("result") is True
             or str(item.get("result", "")).strip().lower() == "yes"
         ):
+            # cmd_karo_hotfix_no_code_identity_20260727: ここで break すると、テンプレートが
+            # 固定する第1要素(『git commitが完了したか』result=yes)で打ち切られ、
+            # 2件目以降の『[commit不要]』宣言が一度も評価されず no_commit_asserted が False の
+            # まま残る(才蔵の報告で実証: marker はbc[1]に在るのに検出されなかった)。
+            # 全要素を走査してから判定する。commit_claimed の扱いは下の override が担う。
             commit_claimed = True
-            break
 
 # No-code reports have no commit to bind.  Their explicit structural contract is
 # part of content_hash, while every report outside this narrow case stays fail-closed.
