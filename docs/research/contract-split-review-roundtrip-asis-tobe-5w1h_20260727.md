@@ -1,5 +1,6 @@
 # 契約の分散が生むレビュー往復 — ASIS/TOBE 5W1H (2026-07-27)
 
+- 版: **v1.1**(2026-07-27 16:06 将軍レビュー blt_155653 の指摘A/B/Cを全採用)
 - 起案: 軍師(殿下知 2026-07-27 15:44「気づきがあれば具体的に調査をしてasis/tobe 5W1Hの形で設計書として報告せよ。覚醒して実行」)
 - 一次調査: 軍師(2026-07-27 15:44-15:50、本日の自レビュー51件の全数分類+コード現物確認)
 - origin: `[[軍師LGTM後のGATE BLOCK]] -> [[同一判定の複数実装]] -> [[本設計書]]`
@@ -30,7 +31,7 @@
 | 1 | no-code identity | `review_approval.sh` の `permits_no_code_identity`(queue/logs配下+evidence+明示no-commit) | `cmd_complete_gate.sh:236-262`(files_modified全てliteral `no-code-change` または `commit_hash=="no-code-change"`) | Aを満たしLGTM到達→Bで`invalid`→GATE BLOCK。軍師D0 `00c9fff99` で統一 |
 | 2 | no-code identity 第3入口 | 同上 | `deploy_task.sh:3888` `rehydrate_task_commit_contract_from_report` | 3入口目。`cmd_karo_hotfix_unify_no_code_contract_dc_warn_20260727` で対処中 |
 | 3 | dc duplicate の exit契約 | ヘッダ `gate_dc_duplicate.sh:14` 「Partial match → WARN (exit 0)」 | 実装 `:163` `sys.exit(1)` | 呼び手 `cmd_complete_gate.sh:7890` の `|| echo "BLOCK: gate script error"` が発火し**表示文字列へ偽BLOCK行が混入** |
-| 4 | precheck 内部の二重判定 | engine `prediction: CLEAR` | shell `総合: ERRORS=1` | **同一ツールの1回の実行で結論が割れる**(実測: 半蔵 reflux 報告) |
+| 4 | precheck 内部の二重判定 | engine `prediction: CLEAR` | shell `総合: ERRORS=1` | **同一ツールの1回の実行で結論が割れる**(実測: 半蔵 reflux 報告)。判定台帳が2つある — shell側 `ERRORS=$((ERRORS + 1))` **21箇所** / engine側 `gate_pred = 'BLOCK'\|'WARN'` **6箇所**(実測) |
 | 5 | task の quality_gate | task YAML `quality_gate.fp_measurement` が契約を課す | precheck は `quality_gate` を**一切参照しない**(`grep -c` = shell 0 / engine 0) | 契約未達のまま `ERRORS=0 / CLEAR` → 軍師がLGTM→本来のAC未達。`r7` で2度目のFAIL |
 | 6 | lessons_useful の集合契約 | 還流弾は対象教訓そのものを扱う | 検査は `related_lessons`(=**空配列**)の部分集合を要求 | `MISMATCH extra=LS099` でBLOCK確実。還流弾は**構造的に必ず1往復する** |
 | 7 | 訂正の配送 | 軍師が訂正・追加を送信 | `inbox_write.sh:2643-2648` が report_id+fingerprint で DUPLICATE 破棄 | 本日**3回**suppressされ、都度掲示板へ迂回 |
@@ -61,9 +62,16 @@ E1-6。「対象そのものが教訓である弾」で `lessons_useful` の意�
 - 新規機構は作らない。既存の共有lib(`scripts/lib/report_commit_identity.py` 等)へ寄せるだけ
 
 ### T2. quality_gate を一次検査へ接続(D1是正・即効)
-- `gate_gunshi_report_precheck.sh` が task の `quality_gate` 各キーを読み、**報告側に充足記述があるかを照合**する(現状は参照ゼロ)
-- 未充足は ERROR。∴発注が課した契約が検査を素通りしなくなる
+- `gate_gunshi_report_precheck.sh` が task の `quality_gate` 各キーを読み、報告側の充足を照合する(現状は参照ゼロ)
+- **★照合は free-text キーワード一致にしない(将軍指摘B・採用)**。自由文照合は E1-7(SG-PRE9c が引用文へ誤反応)と同型の偽陽性源を新設し、往復を逆に増やす。報告YAMLへ**構造化フィールド**(`quality_gate_fulfillment` 等)を設け、`report_field_set.sh` 経由で書かせて**キー単位の機械照合**とする
+- 未充足は ERROR。∴発注が課した契約が検査を素通りしなくなる。ERROR化は上記の構造化を前提条件とする
 - 効果見込み: E1-5 型の往復(本日 r7 で1往復)が消える
+
+### T6. precheck 内部の判定を1台帳へ(D2是正・将軍指摘A・採用)
+- E1-4 は「判定の出所を1つに」の最典型でありながら初版では是正スコープから落ちていた。独立弾として起こす
+- 現状: shell側 `ERRORS` 加算 **21箇所** と engine側 `gate_pred` 決定 **6箇所** が**独立に**結論を出し、`prediction: CLEAR` と `ERRORS=1` が同時に出る
+- TOBE: **engine を唯一の判定源**とし、shell は engine の結論を表示・転記するだけにする。shell固有の21判定は engine へ移送する(判定内容は変えない=検査を減らさない)
+- 移送しきれない判定が残る場合は、**engine が「shell判定あり」を集約して1つの結論に畳む**。∴外部から見える結論は常に1つ
 
 ### T3. ヘッダ契約の機械検証(D3是正)
 - gate スクリプトのヘッダに書かれた exit契約を、**同名の回帰testで固定**する(`partial→0` / `exact→1` / `error→非0`)
@@ -83,9 +91,9 @@ E1-6。「対象そのものが教訓である弾」で `lessons_useful` の意�
 | | 内容 |
 |---|---|
 | **WHY** | 軍師の否定判定23件中17件(74%)が成果物の中身ではなく契約・前提・形式の不整合であり、本日26回の追加往復を生んだ |
-| **WHAT** | T1契約参照の一元化 + T2 quality_gateの一次検査接続 + T3ヘッダ契約の回帰固定 + T4弾型の契約明示 + T5前後計測 |
-| **WHEN** | 家老・将軍レビュー→殿裁可→cmd起票。1道具1CMD: T2を第1弾(最小・即効)、T1第2弾、T3+T4第3弾 |
-| **WHERE** | `gate_gunshi_report_precheck.sh`(T2/T3) / 各入口の述語(T1) / `deploy_task.sh` の還流弾生成(T4) |
+| **WHAT** | T1契約参照の一元化 + T2 quality_gateの一次検査接続(構造化フィールド前提) + T3ヘッダ契約の回帰固定 + T4弾型の契約明示 + T5前後計測 + **T6 precheck内部の判定を1台帳へ** |
+| **WHEN** | 家老・将軍レビュー→殿裁可→cmd起票。1道具1CMD: **T6を第1弾**(将軍指摘A、最典型)、T2第2弾(構造化フィールド込み)、T4第3弾。★T1族(1)(2)とT3のdc_duplicateは `cmd_karo_hotfix_unify_no_code_contract_dc_warn_20260727` で**着地済み**(軍師LGTM 16:04)のため T1/T3 の残スコープは「未走査の族」の列挙のみへ縮小 |
+| **WHERE** | `gate_gunshi_report_precheck.sh` + `_engine.py`(T2/T3/T6) / 各入口の述語(T1) / `deploy_task.sh` の還流弾生成(T4) |
 | **WHO** | 軍師=本設計、将軍=起票、家老=分解配備、忍者=実装、軍師=実装レビュー |
 | **HOW** | 境界fixture(§4) + §1数値の前後比較 |
 
@@ -113,8 +121,10 @@ E1-6。「対象そのものが教訓である弾」で `lessons_useful` の意�
 |---|---|---|
 | 新規gate/hook/状態ファイル | **作らない** | 既存の共有lib・既存precheck・既存batsへ寄せる |
 | T2で未充足を WARN か ERROR か | **ERROR** | WARNだと本日の r7 と同じく素通りする。契約は発注側が課したものであり任意ではない |
-| 弾の分割 | T2 → T1 → T3+T4 の3弾 | T2が最小で即効。T1は対象列挙に調査を要する |
-| 実装順序 | T2先行 | 本日の往復26回のうち quality_gate 起因が確認済みで、最も安く減る |
+| 弾の分割 | **T6 → T2 → T4** の3弾(T1/T3は縮小) | 将軍指摘A採用でT6を新設し先頭へ。T1族(1)(2)とT3 dc_duplicateは小太郎弾で着地済み |
+| 実装順序 | **T6先行** | 「判定の出所を1つに」の最典型であり、shell21/engine6という実測スコープが確定している |
+| T2の照合方式 | **構造化フィールド + report_field_set.sh 経由**(free-text照合は不採用) | 将軍指摘B採用。自由文照合はE1-7と同型のFP源を新設し往復を増やす |
+| 将軍レビュー(blt_155653)の反映 | 指摘A/B/C を**全採用** | A=T6新設、B=T2の照合方式を構造化へ、C=T1/T3のスコープ縮小 |
 
 ## §7 軍師が確認済みで「不能」と確定した事項
 
