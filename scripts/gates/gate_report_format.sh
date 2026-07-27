@@ -983,8 +983,10 @@ LEARNING_PY
         [ "$_nn" = "$_SS_NINJA" ] && { _SS_VALID=true; break; }
     done
     if [ "$_SS_VALID" = "true" ] && [ -f "$_SS_TASK_YAML" ]; then
-        python3 - "$_SS_TASK_YAML" "$REPORT_PATH" "$REASONS" <<'SESSION_STATE_PY' 2>/dev/null || true
+        python3 - "$_SS_TASK_YAML" "$REPORT_PATH" "$REASONS" "$REPO_ROOT" <<'SESSION_STATE_PY' 2>/dev/null || true
 import yaml, sys, re, os, tempfile
+sys.path.insert(0, sys.argv[4])
+from scripts.lib.yaml_atomic import yaml_text
 
 task_yaml = sys.argv[1]
 report_yaml = sys.argv[2]
@@ -1062,7 +1064,7 @@ for item in prior_attempts:
         entry['approach_summary'] = str(item.get('approach_summary'))
     ss_prior.append(entry)
 ss_node['prior_attempts'] = ss_prior
-frag = yaml.safe_dump(
+frag = yaml_text(
     {'session_state': ss_node},
     allow_unicode=True,
     sort_keys=False,

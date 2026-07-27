@@ -140,6 +140,7 @@ fi
 
 if [ "${#shell_files[@]}" -gt 0 ]; then
     bash "$ROOT_DIR/scripts/gates/gate_set_e_short_circuit.sh" "${shell_files[@]}"
+    bash "$ROOT_DIR/scripts/gates/gate_no_direct_yaml_dump.sh"
     if printf '%s\n' "${shell_files[@]}" | grep -qxF 'scripts/lib/yaml_field_set.sh'; then
         bash "$ROOT_DIR/scripts/gates/gate_yaml_field_set_block_sync.sh"
     fi

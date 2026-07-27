@@ -840,6 +840,10 @@ main() {
         echo "$_yaml_dump_violations" >&2
         exit 1
     fi
+    if ! bash "$REPO_ROOT/scripts/gates/gate_no_direct_yaml_dump.sh" >&2; then
+        precommit_step_end 1
+        exit 1
+    fi
     precommit_step_end 0
 
     # shell_syntax: staged .sh must parse (bash -n on STAGED content).
