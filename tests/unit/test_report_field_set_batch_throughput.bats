@@ -236,6 +236,52 @@ PY
   [ "$elapsed_ms" -lt 5000 ]
 }
 
+# test_necessity: a detached 30-second reconciler must not retain the report or
+# gate single-flight descriptors; a same-report revision and gate must finish
+# below five seconds while exactly one delayed notification remains deliverable.
+@test "delayed reconciler closes inherited single-flight descriptors before its thirty-second wait" {
+  export RFS_DISABLE_FAST_RECONCILER=0
+  run env RFS_RECONCILE_DELAY=30 RFS_INBOX_WRITE_PATH="$FAKE_INBOX" RFS_EVENT_LOG="$RFS_EVENT_LOG" \
+    bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
+  [ "$status" -eq 0 ]
+  [ "$(wc -l <"$RFS_EVENT_LOG")" -eq 1 ]
+
+  gate_lock="$(realpath "$REPORT.gate.lock")"
+  holder_count="$(
+    for fd in /proc/[0-9]*/fd/*; do
+      [ "$(readlink "$fd" 2>/dev/null || true)" = "$gate_lock" ] && printf '%s\n' "$fd"
+    done | wc -l
+  )"
+  [ "$holder_count" -eq 0 ]
+
+  sed -i 's/status: completed/status: revision_requested/' "$REPORT"
+  : >"$RFS_EVENT_LOG"
+  start_ns="$(date +%s%N)"
+  run env RFS_DISABLE_FAST_RECONCILER=1 RFS_SINGLEFLIGHT_TIMEOUT=4 \
+    bash -c 'printf "result.details: same-report revision\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
+  [ "$status" -eq 0 ]
+  update_success=1
+
+  fp="$(sha256sum "$REPORT" | awk '{print $1}')"
+  printf '%s\n' "$fp" >"$TMPDIR_CASE/fingerprints"
+  run env GATE_SINGLEFLIGHT_TIMEOUT=4 GATE_FINGERPRINT_CACHE_FILE="$TMPDIR_CASE/fingerprints" \
+    GATE_VALIDATED_FINGERPRINT="$fp" GATE_NO_LOG=1 \
+    bash "$ROOT/scripts/gates/gate_report_format.sh" "$REPORT"
+  [ "$status" -eq 0 ]
+  gate_success=1
+  wait_ms="$(( ($(date +%s%N) - start_ns) / 1000000 ))"
+  [ "$wait_ms" -lt 5000 ]
+  [ ! -s "$RFS_EVENT_LOG" ]
+
+  for _ in $(seq 1 310); do
+    [ -s "$RFS_EVENT_LOG" ] && break
+    sleep 0.1
+  done
+  delayed_notifications="$(wc -l <"$RFS_EVENT_LOG")"
+  [ "$delayed_notifications" -eq 1 ]
+  echo "FD_LEAK_METRIC holders=$holder_count waiting_callers=1 wait_ms=$wait_ms timeout=0 update_success=$update_success gate_success=$gate_success delayed_notifications=$delayed_notifications fp=0 fn=0 fail=0 skip=0" >&3
+}
+
 @test "twenty isolated terminal publishes persist review-ready events under five seconds with no live inbox writes" {
   : >"$RFS_EVENT_LOG"
   durations="$TMPDIR_CASE/durations"

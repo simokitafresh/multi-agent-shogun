@@ -272,7 +272,7 @@ PY
                         bash "$RFS_RECONCILE_INBOX" karo \
                           "$RFS_RECONCILE_WORKER${RFS_RECONCILE_LABEL}。report=${RFS_RECONCILE_REPORT##*/} parent_cmd=$RFS_RECONCILE_PARENT" \
                           "$RFS_RECONCILE_EVENT" "$RFS_RECONCILE_WORKER" notify_karo
-                    ' </dev/null >/dev/null 2>&1 &
+                    ' 199>&- 200>&- </dev/null >/dev/null 2>&1 &
             fi
             if [ "${RFS_FAIL_AFTER_ATOMIC_REPLACE:-0}" = "1" ]; then
                 echo "FAILPOINT: terminal bytes persisted before lifecycle publish" >&2
