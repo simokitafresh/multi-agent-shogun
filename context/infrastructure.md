@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-27 AC1で列挙した66ba7ae73..HEAD間の全commit(scripts/hooks/tests/config等)を1件ずつ確認し、既存記述と矛盾・陳腐化させるものが0件と判定(既存説明を拡張/深化する変更のみ)。内容更新不要、境界のみ更新。 -->
+<!-- last_updated: 2026-07-27 cmd_ctx_infrastructure_freshness_20260727 -->
 <!-- source_commit:850a0429d4dde54e3bdd319f25d2362cb8898ee2 reason:AC1で列挙した66ba7ae73..HEAD間の全commit(scripts/hooks/tests/config等)を1件ずつ確認し、既存記述と矛盾・陳腐化させるものが0件と判定(既存説明を拡張/深化する変更のみ)。内容更新不要、境界のみ更新。 evidence:commits確認対象: 850a0429d(T1 preflight結果注入), 10899e185/b2f07586f(bulletin_write指揮官投稿), 3e653c265(gate_report_format yaml_atomic化), e49cb4e1b/c33d40991/367512e85/b0cba1cf6(AC4 probe追加削除), 64af7d47f(cmd_save.sh LS112), 1799b6093(memory_db_live_insert refresh_window), 6e2e931f2(heavy_job_admission check_id細分), eda8c2c4b(ninja_monitor karo_snapshot指揮官行), e42aa1cbc/2e8c03c07(no-code identity拡張=既存L602記述の深化), 04fa975fc/156301fd5/bd232a12c/0ad403146/4501a72ce/97fd5856a/dbab10177/7d342bf95/3fc9ca917 ほか多数はいずれも既存context本文の記述と矛盾しない拡張・追加である -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
@@ -888,7 +888,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1384 -->
+<!-- last_synced_lesson: L1402 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1986,6 +1986,24 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1382: deepdive_replay.shのinstructions/への転用は対象パス決め打ち・jsonl/marker共有という3つの構造的制約を持つ（cmd_karo_cycle5_instructions_receipt_feasibility_20260727）
 - L1383: 数値主張の誤検知は識別子(cmd_id/msg_id等)内の数字を除外しないと発生する（cmd_karo_impl_commander_post_contract_20260727）
 - L1384: preflight系hookの結果注入設計は外部消費者(json.loadする別hook)への影響を実測で先に潰すべき（cmd_karo_impl_t1_preflight_result_injection_20260727）
+- L1385: sqlite3 .backup() APIは/mnt/c(9p)上でpage単位I/Oのため、shutil.copyfileのbyte単位 sequential readより桁違いに遅い(実測7倍)（cmd_4174）
+- L1386: 再配備で『上書きされるべきでないフィールド』はACだけでなく、報告と照合される全フィールド(related_lessons等)を洗い出して総点検すべき（cmd_karo_impl_related_lessons_snapshot_20260727）
+- L1387: 9Pマウント上の静的ファイル読込は同時多エージェント負荷でtimeoutの支配的要因になりうる。memory_db同様/tmpローカルcache化で対処せよ（cmd_karo_impl_a6_preflight_timeout_20260727）
+- L1388: ninja_scope_commit.sh実行前の他ninja並行commit巻き込みは、対象ファイルが自分のscope外でもcommit_hash帰属を汚染する（cmd_karo_impl_lg048_fail_receivable_20260727）
+- L1389: lessons.yaml経路外書込みの発生元特定はコード検索だけでは困難。実行ログ/監査証跡が必要（cmd_karo_hotfix_lessons_yaml_format_restore_20260727）
+- L1390: 保全宣言は自由文だけでなく機械可読な正本(queue/preserved_paths.yaml)へ登録し配備経路で照合せよ（cmd_karo_impl_preserved_path_deploy_guard_20260727）
+- L1391: Pythonの呼出元計装はinspect.stack()ではなくinspect.currentframe().f_back連鎖を使え(性能差75%実測)（cmd_karo_impl_atomic_yaml_write_caller_log_20260727）
+- L1392: 実装検証でmemory_db_knowledge_write.shを直接実行するテストは本番記憶DBを汚染しうる。python3 sqlite3でevents/events_ftsテーブルのスキーマのみ抽出すれば0.06秒で隔離DBを作れる（cmd_karo_impl_r6_knowledge_write_penetration_visible_20260727）
+- L1393: primary_timeout=0.05sのtiming依存bats testはsystem load変動でflakyになる（cmd_karo_impl_a2_semantic_fallback_visible_20260727）
+- L1394: bashのhead -cはUTF-8マルチバイト文字境界を割る。truncateはPython decode(errors='ignore')で文字境界を確認せよ（cmd_karo_hotfix_evidence_utf8_truncate_20260727）
+- L1395: bash引数のデフォルト値展開は${var:-default}(空文字列も置換)と${var-default}(未指定のみ置換)を区別せよ（cmd_karo_impl_rc_revoke_command_20260727）
+- L1396: L3/L2等『完了』を宣言する述語は、複数対象(候補リスト)の全件判定と、索引の列構造に基づく完全一致を最初から要求すること。先頭1件のみの判定や部分一致は軍師のような敵対的レビューで即座に破られる（cmd_karo_hotfix_r6_l3_wording_ruling_align_20260727）
+- L1397: 上書き型ログ(overwrite snapshot)だけを見て履歴不在と結論するな。append型の兄弟ログの有無を実装(grep -n append/log)で確認せよ（cmd_karo_recon2_r5_three_layer_acceptance_20260727）
+- L1398: preflight evidence logの『最新行』はissued_atで全ファイル横断比較する必要がある。単一ファイルのtailでは誤る（cmd_karo_recon2_r7_inject_byte_cap_measure_20260727）
+- L1399: 複数フィールドの状態遷移書込みは個別呼出しの列ではなく単一のbatch呼出しにせよ(flock解放窓の連鎖が競合を生む)（cmd_karo_hotfix_rc_task_status_reset_20260727）
+- L1400: 検知器の語彙拡張は自分のcommitを新たにBLOCKしうる。拡張直後に自分のscope内commitでgate再走査せよ（cmd_karo_hotfix_lesson_impact_yaml_dump_20260727）
+- L1401: decode(errors=replace)によるUTF-8破損行の暗黙成功扱い（cmd_karo_recon2_r5_utf8_revalidation_20260727）
+- L1402: gate/monitorでsubshell実行結果を判定する時はexit codeでなく出力文字列の非空/内容で判定せよ(L583同型落とし穴の回避形)（cmd_karo_hotfix_auto_clear_recovery_20260727）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
