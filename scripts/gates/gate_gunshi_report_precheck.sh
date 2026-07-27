@@ -1417,9 +1417,14 @@ if [ "${_output_errors:-0}" -gt 0 ] && [ "$ERRORS" -eq 0 ]; then
 fi
 
 # ─── 総合判定 ───
+# ERRORS is an observation count, not a verdict. Select the conclusion that
+# the engine precomputed for shell findings. This adds no Python startup or I/O.
+if [ "$ERRORS" -gt 0 ]; then
+    GATE_PREDICTION="${GATE_PREDICTION_WITH_SHELL_FINDINGS:?engine conclusion missing}"
+fi
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="
-if [ "$ERRORS" -gt 0 ]; then
+if [ "$GATE_PREDICTION" = "BLOCK" ]; then
     echo "★ FAIL項目あり。レビュー前に確認せよ"
     exit 1
 else

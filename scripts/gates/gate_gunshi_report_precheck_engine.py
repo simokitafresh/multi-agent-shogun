@@ -653,6 +653,7 @@ def main():
         gate_pred_reasons.append('変形検査契約の未記入')
     result['GATE_PREDICTION'] = gate_pred
     result['GATE_PREDICTION_REASON'] = '; '.join(gate_pred_reasons) if gate_pred_reasons else 'all checks passed'
+    result['GATE_PREDICTION_WITH_SHELL_FINDINGS'] = 'BLOCK'
 
     _output(result)
 

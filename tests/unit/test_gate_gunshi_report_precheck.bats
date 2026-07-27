@@ -60,6 +60,7 @@ YAML
   [ "$status" -eq 0 ]
   [[ "$output" == *"BC_YES_CLARITY_CONTRADICTION=0"* ]]
   [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+  [[ "$output" == *"GATE_PREDICTION_WITH_SHELL_FINDINGS=BLOCK"* ]]
 }
 
 @test "LG043 ignores bare zero-count completion before whitespace and punctuation" {
