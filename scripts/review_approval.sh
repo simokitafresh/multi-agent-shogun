@@ -288,7 +288,9 @@ if [ "$role" = gunshi ] && [ "$result" = LGTM ] && [ "${REVIEW_APPROVAL_NO_NOTIF
   notice_marker="$dir/gunshi_notice.sent"
   if [ ! -f "$notice_marker" ]; then
     review_notice="$cmd_id 完了レビュー LGTM — report=$report_rel。家老ACCEPT/GATE判定待ち。"
-    BULLETIN_NOTIFY=karo bash "$ROOT/scripts/bulletin_write.sh" gunshi "$review_notice" false info || {
+    # BULLETIN_AUTOGEN=1: 本文はスクリプトが自動生成する定型文であり人が3点セットを
+    # 書き込めない。指揮官発信本文検査を免除しないと構造的に必ずBLOCKする(家老D0止血 2026-07-27)。
+    BULLETIN_AUTOGEN=1 BULLETIN_NOTIFY=karo bash "$ROOT/scripts/bulletin_write.sh" gunshi "$review_notice" false info || {
       echo "BLOCK: LGTM recorded but Karo notification persistence failed: cmd=$cmd_id report=$report_rel" >&2
       exit 1
     }
