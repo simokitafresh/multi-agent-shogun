@@ -72,7 +72,7 @@
 1. ~~外れ値型のmax発生条件~~ → **cmd_4185で3点表(topN寄与率・閾値超過率・発生条件)を全数確定**(成果物=`docs/research/cmd_4185_outlier_conditions.md`、閾値=wall_ms>1000):
    | check | 判定 | 発生条件(writer現物照合済み) | 是正の方向性 |
    |---|---|---|---|
-   | q11_semantic_search_overhead (N=173/累積672.9s※) | **特定** | command非空+FAST無効+session cache未命中でbackground検索起動 | キャッシュ+発火抑止(`cmd_save.sh:4095-4115`)。top5=503.4s(74.8%)がcache hit化で削減見込み |
+   | q11_semantic_search_overhead (N=173/累積672.9s※) | **特定** | command非空+FAST無効+session cache未命中でbackground検索起動 | キャッシュ+発火抑止(`cmd_save.sh:4095-4115`)。top5=503.4s(74.8%)が上限。**削減見込み額は撤回(家老レビュー③): cache hit化の効果はquery key反復率に依存し未計測。是正弾の第一ACでkey反復率を実測してから削減可能量を確定する**(条件特定→削減額のLG082型外挿を禁止) |
    | three_layer_memory_ruling_overhead (N=217/472.9s) | **特定** | FAST無効+query単位cache未命中。同一cmd反復で別query keyが生成される条件が残る | query正規化+negative cacheのcmd保存間共有。>1s群56件(25.8%) |
    | instruction_sync (N=374/160.1s) | **特定** | instructions正本がstagedの時のみbuild実行。top2=125.1s(78.1%)が支配 | buildを入力hash差分生成へ(`git-pre-commit.sh:942-957`) |
    | test_granularity (N=416/159.7s) | **部分特定** | 追加test時のみ全tree候補探索(script参照ごとgrep -RIlF走査)。台帳にstaged pathsなく完全照合不能 | script_ref→test候補の逆引き索引を一度生成(top5=80.7s/50.5%) |
@@ -83,7 +83,7 @@
 4. B1復帰税の悪化真因(家老レーン進行中)
 5. **(v2.2新規)外れ値台帳の枝選択コンテキスト欠落**(cmd_4185 lesson_candidate): wall_ms+event_idだけでは重い枝を特定できない。計測writerは枝選択・staged paths・cache hit/sync/reexecを同eventへ記録すべし — 今後の新規check_id追加時の必須要件(§1の境界分類と併せて計測の憲法へ)
 
-**実装凍結解除後の外れ値弾の型(v2.2確定)**: 常時最適化は的外れ。q11/three-layer=**cache missのみ**、instruction_sync/test_granularity=**稀な重い枝のみ**を対象にする。self_syncは観測5項目追加→枝別寄与の実測→対象決定の順
+**実装凍結解除後の外れ値弾の型(v2.2確定・家老レビュー④で明文化)**: 常時最適化は的外れ。標的の絞りは q11=cache missのみ、three-layer=cache missのみ、instruction_sync=稀な重い枝のみ、test_granularity=稀な重い枝のみ、self_sync=観測5項目追加→枝別寄与の実測→対象決定の順。**5check=5個の独立弾として各別に起票する(1標的1弾=§2原則)。複合弾は禁止**
 
 ## §4 5W1H
 - **WHY**: 純オーバーヘッド上位が全commit・起票・報告に毎回課税され、自動成長速度を律速する
