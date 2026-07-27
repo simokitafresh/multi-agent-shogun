@@ -134,6 +134,43 @@ gunshi_action_required_content() {
     return 0
 }
 
+# ── cmd_karo_impl_commander_post_contract_20260727: 指揮官発信投稿の構造強制 ──
+is_commander_poster() {
+    case "$1" in
+        karo|gunshi|shogun) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+post_has_numeric_claim() {
+    # half-width [0-9] or full-width [０-９]。cmd_id/msg_id等の識別子内の
+    # 数字は「数値主張」ではないため、識別子トークンを除去してから判定する。
+    local stripped
+    stripped="$(printf '%s' "$1" | sed -E 's/\b(cmd|msg|blt|task|rpt|LK|LG|LS|GP|PD|IB)[A-Za-z0-9_-]*//g')"
+    printf '%s' "$stripped" | grep -qP '[0-9０-９]'
+}
+
+# 3点セット(4規律サブセット): 集計コマンド/出力行の生貼付/1件の定義
+# 欠落要素名を配列で返す(stdout, 改行区切り)。空出力=全て充足。
+commander_three_point_missing() {
+    local content="$1"
+    printf '%s' "$content" | grep -qP '集計コマンド' \
+        || echo "集計コマンド"
+    printf '%s' "$content" | grep -qP '(出力行の生貼付|生貼付|貼付.*出力|出力.*貼付)' \
+        || echo "出力行の生貼付"
+    printf '%s' "$content" | grep -qP '(1件の定義|1件は|1件とは|1件=)' \
+        || echo "1件の定義"
+}
+
+# 現在指示との関連宣言(cmd_id/下知)の有無。実害進行中の緊急阻止マーカーは例外。
+commander_post_has_related_declaration() {
+    local content="$1"
+    printf '%s' "$content" | grep -qP '(実害進行中|緊急阻止|即時停止対応)' && return 0
+    printf '%s' "$content" | grep -qP 'cmd_[A-Za-z0-9_]+' && return 0
+    printf '%s' "$content" | grep -qP '下知' && return 0
+    return 1
+}
+
 compute_notify_targets() {
     local posted_by="$1"
     local raw_targets=""
@@ -236,6 +273,28 @@ REQUIRES_CONFIRMATION="$(normalize_confirmation_arg "$REQUIRES_CONFIRMATION")"
 ACTION_TYPE="$(normalize_action_type "$ACTION_TYPE")"
 if [[ "$ACTION_TYPE" == "info" ]] && gunshi_action_required_content "$POSTED_BY" "$CONTENT"; then
     ACTION_TYPE="action_required"
+fi
+
+# 【家老D0止血 2026-07-27 09:05・実害進行中の緊急阻止・影丸へ引継ぎ前提】
+# スクリプトが自動生成する定型通知(review_approval.sh:291 等)は人が本文を書けないため、
+# AC2/AC3の検査対象から除外する。除外しないと構造的に必ずBLOCKし、
+# レビュー承認→家老通知の経路が全面停止する(軍師実測 2026-07-27 09:03)。
+# 呼び出し元が BULLETIN_AUTOGEN=1 を明示した場合のみ免除。既定(未設定)は検査ありのまま。
+if [[ "${BULLETIN_AUTOGEN:-0}" != "1" ]]; then
+    # AC2: 指揮官発信+数値主張 → 3点セット必須
+    if is_commander_poster "$POSTED_BY" && post_has_numeric_claim "$CONTENT"; then
+        _cmd_missing_elements="$(commander_three_point_missing "$CONTENT")"
+        if [[ -n "$_cmd_missing_elements" ]]; then
+            echo "BLOCK: 指揮官(${POSTED_BY})発信の数値含み投稿に3点セットの欠落要素あり: $(printf '%s' "$_cmd_missing_elements" | tr '\n' ',' | sed 's/,$//')" >&2
+            exit 1
+        fi
+    fi
+
+    # AC3: 指揮官発信投稿は現在指示との関連宣言(cmd_id/下知)を必須化
+    if is_commander_poster "$POSTED_BY" && ! commander_post_has_related_declaration "$CONTENT"; then
+        echo "BLOCK: 指揮官(${POSTED_BY})発信投稿に現在指示との関連宣言(cmd_id/下知)がありません。insight_write.sh で在庫化せよ。実害進行中なら本文先頭行に [URGENT-HARM] を付けて再送せよ。" >&2
+        exit 1
+    fi
 fi
 
 if [[ -n "${BULLETIN_NOTIFY:-}" ]]; then
