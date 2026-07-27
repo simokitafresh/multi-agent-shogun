@@ -1355,6 +1355,24 @@ check_idle() {
                     return 0
                     ;;
                 1)
+                    local _stale_bg_rc
+                    if _pane_has_active_background_compute "$pane_target"; then
+                        _stale_bg_rc=0
+                    else
+                        _stale_bg_rc=$?
+                    fi
+                    case "$_stale_bg_rc" in
+                        0)
+                            log "HOOK-STALE-BUT-BUSY: ${agent_name} @agent_state=${agent_state} stale, background compute is progressing"
+                            return 1
+                            ;;
+                        1)
+                            log "HOOK-STALE-BACKGROUND-RESIDUE: ${agent_name} @agent_state=${agent_state} stale, background terminal has no progressing compute -> idle for agent_respawn path"
+                            tmux set-option -p -t "$pane_target" @agent_state idle 2>/dev/null || true
+                            [ ! -f "${STATE_DIR}/shogun_idle_${agent_name}" ] && touch "${STATE_DIR}/shogun_idle_${agent_name}"
+                            return 0
+                            ;;
+                    esac
                     log "HOOK-STALE-BUT-BUSY: ${agent_name} @agent_state=${agent_state} stale, but pane still busy"
                     return 1
                     ;;
@@ -5363,17 +5381,19 @@ _cleanup_stale_keys() {
     done
 }
 
-# Codex background terminalの実子孫processが進行中かをfail-closedで判定。
+# Codex background terminalを三値分類する。
+# return 0=実compute有、1=background terminal残骸のみ、2=表示なし/判定不能。
+# 呼出側は2を安全側(BUSY)として扱い、stale状態で1の時だけrespawn経路を開く。
 _pane_has_active_background_compute() {
     local target="$1" pane_pid pane_tty capture snapshot_a snapshot_b
-    pane_pid=$(tmux display-message -t "$target" -p '#{pane_pid}' 2>/dev/null) || return 1
-    pane_tty=$(tmux display-message -t "$target" -p '#{pane_tty}' 2>/dev/null) || return 1
-    [[ "$pane_pid" =~ ^[0-9]+$ ]] && [ -n "$pane_tty" ] || return 1
-    capture=$(tmux capture-pane -p -t "$target" -S -80 2>/dev/null) || return 1
-    printf '%s\n' "$capture" | grep -Eqi 'Wait(ed|ing) for background terminal' || return 1
-    snapshot_a=$(ps -eo pid=,ppid=,tty=,stat=,time= 2>/dev/null) || return 1
+    pane_pid=$(tmux display-message -t "$target" -p '#{pane_pid}' 2>/dev/null) || return 2
+    pane_tty=$(tmux display-message -t "$target" -p '#{pane_tty}' 2>/dev/null) || return 2
+    [[ "$pane_pid" =~ ^[0-9]+$ ]] && [ -n "$pane_tty" ] || return 2
+    capture=$(tmux capture-pane -p -t "$target" -S -80 2>/dev/null) || return 2
+    printf '%s\n' "$capture" | grep -Eqi 'Wait(ed|ing) for background terminal' || return 2
+    snapshot_a=$(ps -eo pid=,ppid=,tty=,stat=,time= 2>/dev/null) || return 2
     sleep "${STALL_CPU_SAMPLE_SEC:-1}"
-    snapshot_b=$(ps -eo pid=,ppid=,tty=,stat=,time= 2>/dev/null) || return 1
+    snapshot_b=$(ps -eo pid=,ppid=,tty=,stat=,time= 2>/dev/null) || return 2
     PANE_BG_ROOT_PID="$pane_pid" PANE_BG_TTY="${pane_tty#/dev/}" python3 - "$snapshot_a" "$snapshot_b" <<'PY'
 import os, sys
 root = int(os.environ["PANE_BG_ROOT_PID"])

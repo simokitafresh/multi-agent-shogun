@@ -167,14 +167,14 @@ grep -q "TASK:\${status:-idle}|RUNTIME:\${runtime_state}" "$src"
     [ "$status" -eq 0 ]
 }
 
-@test "active background compute is fail-closed to the pane process tree" {
+@test "background terminal classifier distinguishes active compute, residue, and no marker" {
     run bash -lc '
 set -euo pipefail
 export NINJA_MONITOR_LIB_ONLY=1
 source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 STALL_CPU_SAMPLE_SEC=0
-tmux() { case "$*" in *"#{pane_pid}"*) echo 100;; *"#{pane_tty}"*) echo /dev/pts/9;; *capture-pane*) echo "Waited for background terminal";; esac; }
+tmux() { case "$*" in *"#{pane_pid}"*) echo 100;; *"#{pane_tty}"*) echo /dev/pts/9;; *capture-pane*) echo "${PANE_CAPTURE:-Waited for background terminal}";; esac; }
 sleep() { :; }
 PS_CALL_FILE=$(mktemp)
 ps() {
@@ -185,7 +185,9 @@ ps() {
 check_case() {
   : > "$PS_CALL_FILE"
   PS_FIXTURE="$1" PS_FIXTURE_NEXT="$2"
-  if _pane_has_active_background_compute pane; then echo active; else echo stall; fi
+  local rc
+  if _pane_has_active_background_compute pane; then rc=0; else rc=$?; fi
+  case "$rc" in 0) echo active;; 1) echo residue;; 2) echo none;; esac
 }
 check_case $'"'"'100 1 pts/9 S 00:00:00\n200 100 ? R 00:00:01'"'"' $'"'"'100 1 pts/9 S 00:00:00\n200 100 ? R 00:00:02'"'"'
 check_case $'"'"'100 1 pts/9 S 00:00:00\n201 100 ? D 00:00:01'"'"' $'"'"'100 1 pts/9 S 00:00:00\n201 100 ? D 00:00:01'"'"'
@@ -193,9 +195,43 @@ check_case $'"'"'100 1 pts/9 S 00:00:00\n202 100 ? S 00:00:01'"'"' $'"'"'100 1 p
 check_case $'"'"'100 1 pts/9 S 00:00:00\n203 100 ? Z 00:00:01'"'"' $'"'"'100 1 pts/9 S 00:00:00\n203 100 ? Z 00:00:02'"'"'
 check_case $'"'"'100 1 pts/9 S 00:00:00\n204 100 ? R 00:00:01'"'"' $'"'"'100 1 pts/9 S 00:00:00'"'"'
 check_case $'"'"'100 1 pts/9 S 00:00:00\n300 1 pts/8 R 00:00:01'"'"' $'"'"'100 1 pts/9 S 00:00:00\n300 1 pts/8 R 00:00:02'"'"'
+PANE_CAPTURE="idle prompt only"
+check_case $'"'"'100 1 pts/9 S 00:00:00'"'"' $'"'"'100 1 pts/9 S 00:00:00'"'"'
 '
     [ "$status" -eq 0 ]
-    [ "$output" = $'active\nactive\nstall\nstall\nstall\nstall' ]
+    [ "$output" = $'active\nactive\nresidue\nresidue\nresidue\nresidue\nnone' ]
+}
+
+@test "stale background residue is corrected to idle for agent respawn path" {
+    run bash -lc '
+set -euo pipefail
+export NINJA_MONITOR_LIB_ONLY=1
+source "'"$PROJECT_ROOT"'/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+TMP_ROOT="'"$BATS_TEST_TMPDIR"'/stale-residue"
+mkdir -p "$TMP_ROOT"
+STATE_DIR="$TMP_ROOT"
+LOG="$TMP_ROOT/monitor.log"
+EPOCHSECONDS=1000
+tmux() {
+  case "$*" in
+    *"#{@agent_state}"*) echo active;;
+    *"#{@last_active}"*) echo 1;;
+    *"set-option"*) echo "SET_OPTION $*" >> "$LOG";;
+  esac
+}
+check_agent_busy() { return 1; }
+_pane_has_active_background_compute() { return 1; }
+log() { echo "$1" >> "$LOG"; }
+if check_idle pane hanzo; then echo idle; else echo busy; fi
+cat "$LOG"
+test -f "$STATE_DIR/shogun_idle_hanzo"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"idle"* ]]
+    [[ "$output" == *"HOOK-STALE-BACKGROUND-RESIDUE:"* ]]
+    [[ "$output" == *"agent_respawn path"* ]]
+    [[ "$output" == *"SET_OPTION set-option -p -t pane @agent_state idle"* ]]
 }
 
 @test "check_undeployed_cmds: pending+delegated_at 10分超でntfy送信し重複通知しない" {
