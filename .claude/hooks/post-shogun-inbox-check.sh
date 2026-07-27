@@ -269,6 +269,26 @@ if [ -f "$_snapshot" ]; then
     fi
 fi
 
+# ─── 委任初回検分の自動注入(殿裁定2026-07-28 02:28「意思依存は洗脳だ」) ───
+# inbox_write.sh(将軍→家老 task_assigned)が立てたmarkerを検知し、猶予経過後の
+# 最初のPostToolUseで家老paneを自動captureして注入する。将軍の意志に依存しない。
+DELEGATION_VERIFY=""
+_DELEG_MARKER="${SHOGUN_DELEGATION_MARKER:-/tmp/shogun_delegation_pending}"
+if [ -f "$_DELEG_MARKER" ]; then
+    _deleg_ts=$(cat "$_DELEG_MARKER" 2>/dev/null || echo 0)
+    _deleg_now="${SHOGUN_DELEG_NOW:-$(date +%s 2>/dev/null)}"
+    _deleg_grace="${SHOGUN_DELEG_GRACE_SEC:-120}"
+    case "$_deleg_ts" in ''|*[!0-9]*) _deleg_ts=0 ;; esac
+    if [ "$_deleg_ts" -gt 0 ] && [ $((_deleg_now - _deleg_ts)) -ge "$_deleg_grace" ]; then
+        _karo_pane=$(tmux list-panes -a -F '#{@agent_id}|#{pane_id}' 2>/dev/null | awk -F'|' '$1=="karo"{print $2; exit}')
+        if [ -n "$_karo_pane" ]; then
+            _karo_tail=$(tmux capture-pane -t "$_karo_pane" -p 2>/dev/null | grep -v '^[[:space:]]*$' | tail -5 | tr '\n' ' ' | cut -c1-400)
+            DELEGATION_VERIFY="★委任初回検分(自動capture): 家老pane実態=[${_karo_tail:-取得失敗}] — 委任内容と実態が一致するか判定せよ。並列度・配備方式の乖離は即是正指示"
+            rm -f "$_DELEG_MARKER" 2>/dev/null
+        fi
+    fi
+fi
+
 # 出力組立て
 MSG=""
 if [ "${RECOVERY_STALE:-}" = "1" ]; then
@@ -315,6 +335,10 @@ if [ -n "$SELF_DRIVE" ]; then
 fi
 if [ -n "$NINJA_ALERT" ]; then
     MSG="${MSG:+${MSG}\\n}${NINJA_ALERT}"
+fi
+if [ -n "$DELEGATION_VERIFY" ]; then
+    _dv_escaped=$(printf '%s' "$DELEGATION_VERIFY" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    MSG="${MSG:+${MSG}\\n}${_dv_escaped}"
 fi
 
 [ -n "$MSG" ] && printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$MSG"

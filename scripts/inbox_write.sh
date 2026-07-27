@@ -1766,6 +1766,13 @@ CONTENT="$2"
 TYPE="${3:-wake_up}"
 FROM="${4:-unknown}"
 
+# 委任初回検分marker(殿裁定2026-07-28 02:28「意思依存は洗脳だ」):
+# 将軍→家老の委任系送信を記録し、post-shogun-inbox-check.shが家老paneを
+# 自動captureして将軍ターンへ注入する(将軍の意志に依存しない初回検分)
+if [ "$FROM" = "shogun" ] && [ "$TARGET" = "karo" ] && [ "$TYPE" = "task_assigned" ]; then
+    date +%s > /tmp/shogun_delegation_pending 2>/dev/null || true
+fi
+
 # A final report review cannot simultaneously approve the report and predict
 # that its gate will block.  Reject the structured contradiction before any
 # approval lookup or mailbox persistence.  Free-form mentions of "BLOCK" do
