@@ -182,12 +182,16 @@ commander_three_point_missing() {
 # 実害進行中の緊急阻止は固定マーカー [URGENT-HARM] を本文先頭行に含む場合のみ例外とする。
 # cmd_karo_impl_commander_post_contract_20260727 是正2点目: 曖昧なキーワード一致(実害進行中/緊急阻止等)は
 # 忍者裁量で言い回しが増減し検査の再現性・被ガード性が保てないため固定マーカーへ一本化した。
+# 是正4点目: 検出語彙は queue/bulletin_board.yaml + inbox archive を実測grepし、
+# 実際に使用実績のある表記のみを採用した(候補1語からの決め打ち禁止 — 3点目と同じ原則)。
+# 実測(2026-07-27): 下知13/下問4/裁定34/指示25(bulletin_board.yaml)、
+#                    下命3/御下知1/御下問3/仰せ2/沙汰2/指図2(inbox archive)。10語すべて実使用ありのため全採用。
 commander_post_has_related_declaration() {
     local content="$1"
     local first_line="${content%%$'\n'*}"
     [[ "$first_line" == *'[URGENT-HARM]'* ]] && return 0
     printf '%s' "$content" | grep -qP 'cmd_[A-Za-z0-9_]+' && return 0
-    printf '%s' "$content" | grep -qP '下知' && return 0
+    printf '%s' "$content" | grep -qP '(下知|下問|下命|御下知|御下問|仰せ|沙汰|指図|裁定|指示)' && return 0
     return 1
 }
 
