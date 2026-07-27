@@ -66,6 +66,7 @@ wait_for_lines() {
   dispatch_status=$?
   [ "$dispatch_status" -eq 0 ]
   read -r worker_pid worker_sid worker_pgid < "$NTFY_ASYNC_EVIDENCE_FILE"
+  WORKER_PID="$worker_pid"
   [ "$worker_sid" = "$worker_pgid" ]
   [ "$worker_pgid" != "$caller_pgid" ]
   [ "$(ps -p "$worker_pid" -o pgid= | tr -d ' ')" = "$worker_pgid" ]
