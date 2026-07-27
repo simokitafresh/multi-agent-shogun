@@ -115,6 +115,10 @@ _SEMANTIC_SESSION_CACHE_DIR="${TMPDIR:-/tmp}/cmd_save_semantic_${_SEMANTIC_SESSI
 _CMD_SAVE_METADATA_CACHE_DIR="${TMPDIR:-/tmp}/cmd_save_metadata_${_SEMANTIC_SESSION_CACHE_KEY}"
 CMD_SAVE_SEMANTIC_CACHE_READY=0
 CMD_SAVE_ACCUMULATE_BLOCKS="${CMD_SAVE_ACCUMULATE_BLOCKS:-1}"
+CMD_SAVE_AC_BLOCK_CACHE_READY=0
+CMD_SAVE_AC_BLOCK_CACHE=""
+CMD_SAVE_COMMAND_BLOCK_CACHE_READY=0
+CMD_SAVE_COMMAND_BLOCK_CACHE=""
 BLOCK_DURATION_MINUTES=0
 BLOCK_RETRY_NUDGE="止まるな、修正して再実行せよ"
 BLOCK_RETRY_NUDGE_EMITTED=0
@@ -1005,6 +1009,10 @@ check_comparison_pipeline_parity_warn() {
 
 extract_acceptance_criteria_block() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+    if [[ "${CMD_SAVE_AC_BLOCK_CACHE_READY:-0}" == "1" ]]; then
+        printf '%s\n' "${CMD_SAVE_AC_BLOCK_CACHE:-}"
+        return 0
+    fi
 
     awk '
         /^[[:space:]]*acceptance_criteria:/ {
@@ -1030,6 +1038,10 @@ extract_acceptance_criteria_block() {
 # caller makes a clean shell exit 127 in CI.
 extract_command_text_block() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
+    if [[ "${CMD_SAVE_COMMAND_BLOCK_CACHE_READY:-0}" == "1" ]]; then
+        printf '%s\n' "${CMD_SAVE_COMMAND_BLOCK_CACHE:-}"
+        return 0
+    fi
 
     awk '
         /^[[:space:]]*command:[[:space:]]*\|?[[:space:]]*$/ { in_command=1; next }
@@ -3187,20 +3199,33 @@ check_ac_structure_quality() {
     _CHECK19_ISSUES=()
 
     if [[ -n "${AC_TEXT:-}" ]]; then
-        if grep -q 'FILL_THIS' <<< "$AC_TEXT"; then
-            _FILL_COUNT=$(grep -c 'FILL_THIS' <<< "$AC_TEXT" || true)
+        # 同じAC_TEXTへのgrep多段起動を単一awk走査へ統合する。
+        # 5カウンタは後段Check17/20も再利用し、恒常PASS経路のforkを削る。
+        IFS=$'\t' read -r _FILL_COUNT _DESC_EMPTY_COUNT _AC_ENTRY_COUNT _BC_TOTAL _BC_EMPTY < <(
+            awk '
+                /FILL_THIS/ { fill++ }
+                /^[[:space:]]*description:[[:space:]]*(""|'\'''\''|)[[:space:]]*$/ { desc_empty++ }
+                /^[[:space:]]+AC[0-9]+:[[:space:]]*$/ { ac_entry++ }
+                /^[[:space:]]*binary_check:/ {
+                    bc_total++
+                    if ($0 ~ /^[[:space:]]*binary_check:[[:space:]]*(""|'\'''\''|)[[:space:]]*$/) bc_empty++
+                }
+                END {
+                    printf "%d\t%d\t%d\t%d\t%d\n",
+                        fill + 0, desc_empty + 0, ac_entry + 0, bc_total + 0, bc_empty + 0
+                }
+            ' <<< "$AC_TEXT"
+        )
+
+        if [[ "${_FILL_COUNT:-0}" -gt 0 ]]; then
             _CHECK19_ISSUES+=("FILL_THISマーカー残存: ${_FILL_COUNT}件")
             awk '/FILL_THIS/{print NR ":" $0; if (++hits == 3) exit}' <<< "$AC_TEXT" >&2
         fi
 
-        _DESC_EMPTY_COUNT=$(grep -cE "^[[:space:]]*description:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
         if [[ "${_DESC_EMPTY_COUNT:-0}" -gt 0 ]]; then
             _CHECK19_ISSUES+=("description空値: ${_DESC_EMPTY_COUNT}件")
         fi
 
-        _AC_ENTRY_COUNT=$(grep -cE '^[[:space:]]+AC[0-9]+:[[:space:]]*$' <<< "$AC_TEXT" || true)
-        _BC_TOTAL=$(grep -cE '^[[:space:]]*binary_check:' <<< "$AC_TEXT" || true)
-        _BC_EMPTY=$(grep -cE "^[[:space:]]*binary_check:[[:space:]]*(\"\"|''|)[[:space:]]*$" <<< "$AC_TEXT" || true)
         if [[ "${_AC_ENTRY_COUNT:-0}" -gt 0 && "${_BC_TOTAL:-0}" -eq 0 ]]; then
             _CHECK19_ISSUES+=("binary_checkフィールド不在(AC${_AC_ENTRY_COUNT}件全て)")
         elif [[ "${_BC_EMPTY:-0}" -gt 0 ]]; then
@@ -3896,6 +3921,14 @@ if load_cmd_block; then
     load_cmd_block_cache || true
     CMD_BLOCK_PROJECT="${CMD_BLOCK_CACHE[project]-}"
 fi
+
+# cmd本文は1 invocation中不変。後段check群はcommand substitution経由で同じ
+# acceptance_criteria/command抽出を繰り返すため、親shellで各1回だけprimeする。
+# 関数内lazy cacheではsubshell終了時に代入が失われるので、ここで明示的に保持する。
+CMD_SAVE_AC_BLOCK_CACHE="$(extract_acceptance_criteria_block)"
+CMD_SAVE_AC_BLOCK_CACHE_READY=1
+CMD_SAVE_COMMAND_BLOCK_CACHE="$(extract_command_text_block)"
+CMD_SAVE_COMMAND_BLOCK_CACHE_READY=1
 
 # --- Check 1.05: 雛形FILL_THIS残存BLOCK ---
 # 起源: cmd_skeleton.sh導入(2026-06-10殿指示「劣化LLMでもスムーズ起票」)。
