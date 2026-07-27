@@ -878,7 +878,38 @@ if [ -f "${TASK_FILE:-}" ]; then
         echo "  WARN: related_lessons ${_rl_count}件注入済みだがlessons_useful空リスト → BLOCK確実"
         ERRORS=$((ERRORS + 1))
     else
-        echo "  PASS: related_lessons=${_rl_count} lessons_useful=${_lu_count}"
+        # 件数一致だけではGATEのlesson_feedback_set_mismatchを予測できない(2026-07-27実証:
+        # 'PASS: related_lessons=1 lessons_useful=3' を出しながらGATEがextra=L070,L230,L312でBLOCK)。
+        # 判定契約の正本は cmd_complete_gate.sh:2844 validate_lesson_feedback_set。同一規則(strict=
+        # assigned_lesson_ids有ならmissingも見る / 無ければsubset)でID集合を突合する。
+        _set_status=$(python3 - "$TASK_FILE" "$REPORT_PATH" <<'PY' 2>/dev/null || true
+import sys, yaml
+td = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+rp = yaml.safe_load(open(sys.argv[2], encoding="utf-8")) or {}
+tk = td.get("task", td) if isinstance(td, dict) else {}
+if not isinstance(tk, dict) or not isinstance(rp, dict):
+    print("MISMATCH parse_error"); raise SystemExit(0)
+av = tk.get("assigned_lesson_ids"); strict = isinstance(av, list) and bool(av)
+def ids(raw):
+    out = []
+    for it in raw if isinstance(raw, list) else []:
+        v = str((it.get("id") if isinstance(it, dict) else it) or "").strip()
+        if v and v not in out: out.append(v)
+    return out
+allowed = ids(av if strict else (tk.get("related_lessons") or []))
+raw = rp.get("lessons_useful");  raw = rp.get("lesson_referenced") if raw is None else raw
+reported = ids(raw)
+extra = sorted(set(reported) - set(allowed))
+missing = sorted(set(allowed) - set(reported)) if strict else []
+print(f"MISMATCH mode={'strict' if strict else 'subset'} missing={','.join(missing) or 'none'} extra={','.join(extra) or 'none'}" if (extra or missing) else "OK")
+PY
+)
+        if [ "${_set_status:-}" != "OK" ] && [ -n "${_set_status:-}" ]; then
+            echo "  ERROR: lessons_useful集合がtask契約と不一致 → GATE BLOCK確実: ${_set_status}"
+            ERRORS=$((ERRORS + 1))
+        else
+            echo "  PASS: related_lessons=${_rl_count} lessons_useful=${_lu_count} set=${_set_status:-unchecked}"
+        fi
     fi
 else
     echo "  SKIP: task YAML未取得"
