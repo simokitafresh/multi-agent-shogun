@@ -1,4 +1,4 @@
-# 主題1: 全期間再計算(fullrecalculate)速度 — AsIs/ToBe 5W1H設計書 v2.1 (2026-07-27 全面再構築+家老BLOCK 3点反映)
+# 主題1: 全期間再計算(fullrecalculate)速度 — AsIs/ToBe 5W1H設計書 v3.0 (2026-07-27 — cmd_4180偵察でL3内訳・全仮説・cron関係を現物確定)
 
 作成: 将軍 | 殿指示(2026-07-22 08:28 主題1起点 / 2026-07-27 19:17「偵察が終わったら設計書の再構築をせよ」/ 19:19「実装には進まず設計書の徹底的なブラッシュアップ完了が目的」)
 対象: DM-Signal `fullrecalculate`(全PF全期間の再計算パイプライン、engine=`recalculate_fast.py`)
@@ -9,7 +9,20 @@
 
 ## §0 確定実測(2026-07-27 本番run原文、run ID付き)
 
-**運用の実体はstandard/FoFの2分離run(cron分離実行)。2 runのduration単純和は805.0秒(90.0+715.0)だが、並列/直列の実行関係が未確認のため運用壁時計としては扱わない(§4-4。家老BLOCK①反映: 確認までは「2 run durationの単純和」とのみ呼ぶ)。**
+**運用の実体はstandard/FoFの2分離runで、cmd_4180現物照合により論理直列と確定(FoF側はetl_layer_sync_wait.shがstandard当日成功まで待つ)。∴2 runのduration単純和(約805秒)は運用壁時計の下限として意味を持つ(v2.1の未確定は解消)。**
+
+### §0.1 L3 FoF 503秒の内部内訳(cmd_4180が本番DB `recalculation_timings.layer_data.L3_fof.metadata.profiling` から回収・原文生貼付済み)
+
+| 区間 | 実測 | 備考 |
+|---|---:|---|
+| **monthly_returns_gen** | **275.20s** | L3内最大(54.7%)。新・最優先標的 |
+| unmeasured | 122.41s (24.4%) | 未区分塊。区分計測が次の偵察標的 |
+| dw_signals_flush | 115.26s | deferred flush(db_write外側加算のため単純合計不可) |
+| daily_loop | 80.61s | |
+| dl_pipeline_exec / dl_rebalance_check / dl_signal_gen | 30.14s / 23.45s / 22.98s | |
+| cache_init / db_write / dw_component_weights | 14.25s / 7.72s / 7.43s | |
+
+- PF別内訳は`calculation_performance_log`当該run 0行で回収不能。最小計測配線案(既存CalculationPerformanceLog再利用・出力完全一致契約)はcmd_4180成果物に設計済み — **実装は殿裁可後**
 
 | run | PF数 | TOTAL | 内訳(同一run内) |
 |---|---|---:|---|
@@ -48,20 +61,31 @@
 - id206時点はL5=1659.78秒(66.5%)が支配していたが、当時は103PF cold一括であり直近run(FoF 78PF)とは条件が異なる。**「96.7%短縮」という倍率主張は§1の同条件原則に反するため棄却する(家老BLOCK②反映)** — 言えるのは「直近runではL5が同一run内5.9%であり支配的でない」ことのみ
 - **既存L5資産(並列化v1.3.1=7.8x、fingerprint skip v1.1)の優先度は低** — 完成設計として保存し、L3/L2解消後に残余が有意なら掘り起こす
 
-### §2.4 制約(次回偵察でコード行番号を付すまで「引継ぎ仮説」扱い — 家老BLOCK③反映)
-- 以下はv1.0からの引継ぎ主張であり、cmd_4179一次データには含まれない。次回偵察のACに現物確認(該当コード行番号・契約定義)を含めて確定させる: (a)cron競合→pg_advisory_lock排他 (b)FoFトポロジカルソート=逐次依存(層内並列の可否含む) (c)signal_cache・deferred flush・holding_signal_rawの順序制約
-- 品質不変量(byte/ID完全一致・境界fixture)は品質2原則(knowledge:7c810a99)由来の全PJ共通契約であり本設計固有の主張ではない
+### §2.4 制約(cmd_4180で全項目を行番号付き現物確定 — 引継ぎ仮説は解消)
+| 項目 | 判定 | 根拠(cmd_4180 AC2表) |
+|---|---|---|
+| advisory lock排他(fail-closed) | **確定** | recalc_status.pyのpg_try_advisory_lock |
+| FoF依存順の逐次実行 | **確定** | Kahnソート+単一for-loop |
+| 層内並列の実装 | **なし(棄却)** | ready集合はsortのみ。並列化はSession・共有cache・commit境界の再設計が必要=大工事と判明 |
+| MR生成→commit→cache reload→後続親FoFの順序制約 | **確定** | recalculate_fof.pyの逐次連鎖 |
+| trade_perf N+1除去がFoF未適用 | **棄却** | preload/cacheは全target_portfolios共通ループへ渡る。FoF 117秒は共通経路上の実測コストであり経路差別ではない |
+| standard/FoF cron並列 | **棄却(論理直列)** | etl_layer_sync_wait.shが上流当日成功まで待機 |
+- 品質不変量(byte/ID完全一致・境界fixture)は品質2原則由来の全PJ共通契約
 
 ---
 
 ## §3 To-Be(設計の骨子 — 実装は殿下知まで凍結)
 
-### §3.1 攻め順(確定序列に従う)
-| 優先 | 標的 | 現状 | 設計課題 |
-|---|---|---|---|
-| 1 | **L3 FoF 503s** | 内部内訳未計測 | まずL3内部のPF別・処理別timer可視化(計測のみ・軽量)。その数値でFoF計算の重複排除/共有キャッシュ/依存グラフ内並列(トポロジカル層内は並列可能)を設計 |
-| 2 | **L2 trade_perf(FoF) 117s** | standard 1.5s vs FoF 117s | FoF経路のtrade_perfコスト機構の特定(標準側で効いたN+1除去がFoF側に未適用の可能性)。cmd_3831偵察の知見を土台に |
-| 3 | L5 42.3s | 既存資産で対応可 | 並列化v1.3.1+fingerprint skip v1.1は完成設計のまま保存。優先度低 |
+### §3.1 攻め順(cmd_4180確定内訳に基づくv3序列)
+| 優先 | 標的 | 実測 | 設計課題 |
+|---|---|---:|---|
+| 1 | **L3内 monthly_returns_gen** | 275.20s | MR生成→commit→cache reloadの逐次連鎖(順序制約確定)の中でのMR計算自体の高速化。過去のOPT-6(mr_gen最適化)知見の再適用可否から |
+| 2 | **L3内 unmeasured** | 122.41s | まず区分計測(PF間GC・cache reload・ログ等への分解)。cmd_4180の最小配線案が設計済み |
+| 3 | **L3内 dw_signals_flush** | 115.26s | deferred flush一括UPSERTの書込み最適化(Singapore latency制約下) |
+| 4 | L3内 daily_loop | 80.61s | 過去のベクトル化設計(NEW-2b)の掘り起こし判断 |
+| 5 | L2 trade_perf(FoF run) | 117.35s | 共通経路上の実測コスト(経路差別は棄却済み)。cProfileでの機構特定から |
+| 6 | L5 42.3s | — | 既存資産(並列化v1.3.1+fingerprint skip)保存のまま。優先度低 |
+- **層内並列は「実装なし+再設計大」と確定**したため、攻め順は並列化でなく区間別の計算量削減を主軸とする(品質2原則維持が容易な側)
 
 ### §3.2 目標値の考え方
 - 数値決め打ちしない。L3内訳計測後に「削減可能量の実測根拠」から設定
@@ -73,12 +97,13 @@
 
 ---
 
-## §4 未解決事項(次の偵察候補 — 実装ではなく調査)
+## §4 未解決事項(v3残余 — 実装ではなく調査)
 
-1. **L3 FoF 503秒の内部内訳が未計測**(最大)。TIMING SUMMARYのL3一括表示を細分化する計測配線の設計(コード変更を伴うため殿裁可事項)、または既存log/cProfileでの代替回収可否
-2. 06-26分析(357.28秒)のrun ID・PF集合・cold/warm・原文が索引に残っていない。回収不能なら比較基準を07-10/07-27のrun ID付き実測に限定する(cmd_4179 §4)
-3. id214(07-22)のTIMING原文はlog保持期間内で未回収。総時間のみ保持し内訳には使わない
-4. standard/FoF cron分離の実行関係(並列か直列か)の現物確認 — 総運用壁時計の正確な定義に必要
+1. ~~L3内部内訳未計測~~ → **解消**(cmd_4180が本番DB保存値から回収)。残余=**unmeasured 122.41秒の区分**(最小配線案は設計済み・実装は殿裁可後)
+2. **PF別内訳が0行**(calculation_performance_log未接続)。既存schema再利用の配線案あり — 実装は殿裁可後
+3. 06-26分析(357.28秒)のrun lineage未回収 — 比較基準はrun ID付き実測(07-10/07-27)に限定で確定
+4. ~~cron実行関係~~ → **解消**(論理直列と確定)
+5. id214のTIMING原文は未回収のまま総時間のみ保持(変更なし)
 
 ---
 
