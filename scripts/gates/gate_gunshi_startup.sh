@@ -321,8 +321,10 @@ fi
 # --- deepdive追体験受領証検証(殿裁定2026-07-26 23:28: クリア後毎回強制。stop hookがBLOCK層) ---
 _dd_replay_out="$(bash "$SCRIPT_DIR/scripts/gates/gate_deepdive_replay.sh" gunshi 2>/dev/null || true)"
 echo "  ${_dd_replay_out:-ERROR: gate_deepdive_replay.sh実行失敗}" | head -3
+_dd_replay_block=0
 if [[ "$_dd_replay_out" == DEEPDIVE-REPLAY:\ FAIL* ]]; then
-    overall="ALERT"
+    overall="BLOCK"
+    _dd_replay_block=1
     alerts+=("deepdive追体験未完了: 全Phase実行まで作業禁止(stop hookがBLOCKする)。bash scripts/deepdive_replay.sh gunshi <md> <Phase> \"<自問>\"")
 fi
 echo ""
@@ -1091,8 +1093,8 @@ PY
             echo "  先送り判断検出: ${STARTUP_WARN_STREAK_THRESHOLD}セッション連続で未解消。低優先/後で扱いにした穴の証拠として今ふさげ。"
             alerts+=("先送りCRITICAL: ${_streak_key} が${STARTUP_WARN_STREAK_THRESHOLD}セッション連続")
         done <<< "$_streak_result"
-        # 軍師BLOCKはレビュー全停止を招くため、BLOCK昇格せず起動は許可する
-        # 代わりにntfyで殿に通知し、CRITICAL表示で注意喚起
+        # deepdive未完了は通常レビューへ漏出させない。その他の連続ALERTは
+        # 従来どおり通知し、個別gateの契約に従う。
         if [ "$overall" != "ALERT" ] && [ "$overall" != "BLOCK" ]; then overall="ALERT"; fi
         bash "$SCRIPT_DIR/scripts/ntfy.sh" "【軍師CRITICAL】先送り${STARTUP_WARN_STREAK_THRESHOLD}セッション連続検出。起動は許可するが即対処必須" 2>/dev/null || true
     fi
@@ -1399,6 +1401,9 @@ fi
 # files. A child CS gate non-zero is different: it is an explicit L4 stop and
 # must survive the startup aggregation boundary.
 if [ "${cs_exit:-0}" -ne 0 ] && [ "${cs_exit:-0}" -ne 127 ]; then
+    exit 2
+fi
+if [ "${_dd_replay_block:-0}" -eq 1 ]; then
     exit 2
 fi
 exit 0

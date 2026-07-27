@@ -175,14 +175,17 @@ if [[ -z "$agent_id" ]]; then
   agent_id="unknown"
 fi
 
-# --- deepdive追体験セッションマーカー(殿裁定2026-07-26 23:28: クリア後毎回追体験を強制) ---
-# 新セッション開始時刻を記録。gate_deepdive_replay.shがこれ以降の受領証のみを有効とする
-case "$agent_id" in
-  shogun|karo|gunshi)
-    mkdir -p "$SCRIPT_DIR/logs/deepdive_replay" 2>/dev/null || true
-    printf '%(%Y-%m-%dT%H:%M:%S%z)T' -1 > "$SCRIPT_DIR/logs/deepdive_replay/${agent_id}.session" 2>/dev/null || true
-    ;;
-esac
+# --- deepdive追体験セッションマーカー(殿裁定2026-07-26 23:28: /new後毎回追体験を強制) ---
+# startup/clearだけが新しい論理セッションである。resume/compactは同一セッションを
+# 継続するため、ここでmarkerを更新すると完了済みreceiptを誤失効させる。
+if [[ "$source_type" == "startup" || "$source_type" == "clear" ]]; then
+  case "$agent_id" in
+    shogun|karo|gunshi)
+      mkdir -p "$SCRIPT_DIR/logs/deepdive_replay" 2>/dev/null || true
+      printf '%(%Y-%m-%dT%H:%M:%S%z)T' -1 > "$SCRIPT_DIR/logs/deepdive_replay/${agent_id}.session" 2>/dev/null || true
+      ;;
+  esac
+fi
 
 # --- Timestamp (ISO 8601) ---
 printf -v timestamp '%(%Y-%m-%dT%H:%M:%S%z)T' -1
