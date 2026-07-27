@@ -233,7 +233,7 @@ if [[ "${THREE_LAYER_CHAIN_SYNC:-0}" == "1" && -f "$result_path" ]]; then
         l2_status="未貫通(chain失敗: ${chain_state:-unknown})"
     fi
 else
-    l2_status="pending(chain実行中。確定判定は bash scripts/gate_three_layer_health.sh または bash scripts/semantic_search.sh '<alias>' で後日確認せよ)"
+    l2_status="pending(chain実行中。確定判定は bash scripts/gates/gate_three_layer_health.sh または bash scripts/semantic_search.sh '<alias>' で後日確認せよ)"
 fi
 
 printf 'L1: 記憶DB書込み完了 event=%s\n' "$event_id"
