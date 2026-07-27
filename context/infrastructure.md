@@ -1,5 +1,5 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-27 two reviewed infra hotfixes reflected -->
+<!-- last_updated: 2026-07-27 cmd_4181 -->
 <!-- source_commit:b8ef206e7 reason:two reviewed infra hotfixes reflected evidence:b8ef206e7 includes snapshot fix and descends from f0e493f10 auto-clear fix; git merge-base ancestry verified -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
