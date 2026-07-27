@@ -888,7 +888,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1403 -->
+<!-- last_synced_lesson: L1405 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2005,6 +2005,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1401: decode(errors=replace)によるUTF-8破損行の暗黙成功扱い（cmd_karo_recon2_r5_utf8_revalidation_20260727）
 - L1402: gate/monitorでsubshell実行結果を判定する時はexit codeでなく出力文字列の非空/内容で判定せよ(L583同型落とし穴の回避形)（cmd_karo_hotfix_auto_clear_recovery_20260727）
 - L1403: 同一契約の複数入口は共有述語へ一本化する（cmd_karo_hotfix_unify_no_code_contract_dc_warn_20260727）
+- L1404: 判定件数は全代入と結論変更を分離定義する（cmd_4177）
+- L1405: 埋込みPythonの引数追加時は全抽出callerを列挙せよ（cmd_4178）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
