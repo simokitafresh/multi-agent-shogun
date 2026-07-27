@@ -1,6 +1,6 @@
 # 契約の分散が生むレビュー往復 — ASIS/TOBE 5W1H (2026-07-27)
 
-- 版: **v1.1**(2026-07-27 16:06 将軍レビュー blt_155653 の指摘A/B/Cを全採用)
+- 版: **v1.2**(2026-07-27 16:12 家老レビュー blt_160728 の指摘(1)(2)を採用。(3)(4)(5)はv1.1で反映済) / v1.1(16:06 将軍レビュー blt_155653 の指摘A/B/Cを全採用)
 - 起案: 軍師(殿下知 2026-07-27 15:44「気づきがあれば具体的に調査をしてasis/tobe 5W1Hの形で設計書として報告せよ。覚醒して実行」)
 - 一次調査: 軍師(2026-07-27 15:44-15:50、本日の自レビュー51件の全数分類+コード現物確認)
 - origin: `[[軍師LGTM後のGATE BLOCK]] -> [[同一判定の複数実装]] -> [[本設計書]]`
@@ -21,6 +21,40 @@
 - 最多往復: `cmd_reflux_promotion_202607271152_saizo` 5回、`cmd_karo_recon2_r7_inject_byte_cap_measure_20260727` 4回
 
 **∴レビュー工数の大半は、忍者の実装品質ではなく「発注側と検査側の齟齬」の検出に費やされている。**
+
+
+#### E0-a. 契約起因17件の内訳(家老指摘(1)採用・第三者再集計可能にする)
+
+分類キーワード = 契約/形式/ac_evidence_mapping/mapping/MISMATCH/lessons_useful/前提/停止条件/未コミット/planned_paths/二択/列挙が欠け/候補列挙/quality_gate/生貼付/bc=yes。
+判定対象 = 各エントリの findings_summary + fail_reasons + ambiguity_points の連結文字列。**1つでも該当すれば契約起因**、0個なら「中身」。
+
+| cmd_id(先頭46字) | verdict | 該当ラベル |
+|---|---|---|
+| cmd_karo_impl_a5_mem_evidence_raw_field_202607 | FAIL | 契約,planned_paths,生貼付 |
+| cmd_karo_impl_atomic_yaml_write_caller_log_202 | FAIL | 契約,ac_evidence_mapping,mapping |
+| cmd_reflux_promotion_202607271152_saizo | FAIL | bc=yes |
+| cmd_reflux_promotion_202607271152_saizo | FAIL | **—(中身)** |
+| cmd_reflux_promotion_202607271152_saizo | FAIL | lessons_useful |
+| cmd_karo_impl_r6_knowledge_write_penetration_v | REQUEST_CHANGES | **—(中身)** |
+| cmd_karo_hotfix_evidence_utf8_truncate_2026072 | REQUEST_CHANGES | **—(中身)** |
+| cmd_karo_impl_rc_revoke_command_20260727 | REQUEST_CHANGES | planned_paths |
+| cmd_karo_hotfix_r6_l3_wording_ruling_align_202 | REQUEST_CHANGES | 前提,quality_gate |
+| cmd_karo_recon2_lessons_yaml_deviation_recurre | REQUEST_CHANGES | 形式,前提,停止条件 |
+| cmd_karo_hotfix_r6_l3_wording_ruling_align_202 | FAIL | 契約,前提 |
+| cmd_karo_recon2_r5_three_layer_acceptance_2026 | REQUEST_CHANGES | 前提,候補列挙 |
+| cmd_karo_recon2_r7_inject_byte_cap_measure_202 | FAIL | 形式,ac_evidence_mapping,mapping |
+| cmd_karo_recon2_r7_inject_byte_cap_measure_202 | FAIL | 契約,ac_evidence_mapping,mapping |
+| cmd_karo_hotfix_rc_task_status_reset_20260727 | REQUEST_CHANGES | 前提 |
+| cmd_karo_recon2_r5_utf8_revalidation_20260727 | FAIL | **—(中身)** |
+| cmd_karo_hotfix_android_input_idempotency_2026 | REQUEST_CHANGES | **—(中身)** |
+| cmd_karo_hotfix_android_input_idempotency_2026 | FAIL | **—(中身)** |
+| cmd_reflux_promotion_202607271512_hanzo | REQUEST_CHANGES | 前提,二択 |
+| cmd_reflux_promotion_202607271512_saizo | REQUEST_CHANGES | 前提,未コミット,二択 |
+| cmd_reflux_promotion_202607271512_kagemaru | REQUEST_CHANGES | 前提,二択 |
+| cmd_reflux_promotion_202607271512_hayate | REQUEST_CHANGES | 前提,未コミット,二択 |
+| cmd_reflux_promotion_202607271512_hanzo | FAIL | 契約,MISMATCH,lessons_useful |
+
+**契約起因 17 / 中身 6。** ★分類は語彙一致による機械分類であり、意味判定ではない。∴上表は再集計の出発点であって確定分類ではない。異論は行単位で提起されたい。
 
 ### E1. 齟齬の実体は「同一の判定が複数箇所に別実装で存在する」
 
@@ -48,7 +82,7 @@ E1-1/2 の no-code identity は同一概念に3実装。共有関数 `report_com
 E1-3。ヘッダは仕様書として読まれるが機械検査されないため、乖離しても誰も気づかない。呼び手が `||` で拾う設計と噛み合い、**正常系が異常文字列を生む**。
 
 **D4. 弾の型ごとの契約差が表現できない**
-E1-6。「対象そのものが教訓である弾」で `lessons_useful` の意味が二重化(参考として注入されたものか、作業対象か)。型を区別する語彙がないため、還流弾は毎回同じ場所で止まる。**在庫は352件あり、このまま出せば352回の往復になる。**
+E1-6。「対象そのものが教訓である弾」で `lessons_useful` の意味が二重化(参考として注入されたものか、作業対象か)。型を区別する語彙がないため、`related_lessons` が空で配備された弾は同じ場所で止まる。★本日の実測は**5弾中1弾**(半蔵)であり、在庫352件への外挿は未証明。全数はT4のAC1で計測する。
 
 ## §2 TOBE — 原理1行
 
@@ -79,7 +113,8 @@ E1-6。「対象そのものが教訓である弾」で `lessons_useful` の意�
 
 ### T4. 弾の型を契約へ明示(D4是正)
 - 還流弾では task 側 `related_lessons` へ**対象教訓を注入**する。これで `lessons_useful` の集合照合が通り、かつ使用記録も残る
-- 効果見込み: 在庫352件 × 1往復 = **352往復の除去**
+- 効果見込み: **未証明のため断定しない(家老指摘(2)採用)**。本日発行の還流弾5件のうち `related_lessons` が空で MISMATCH が実際に出たのは **1件(半蔵)**。他は非空(疾風4件/才蔵2件・軍師実測)であった。∴「352件×1往復」は成立しない
+- 正しい記述: **実測 1/5**。在庫352件のうち何件が同条件に落ちるかは未計測であり、**T4実装弾のAC1で全数計測する**
 
 ### T5. 効果計測(既存計装のみ)
 - before(本設計書§1に固定): 判定51件/distinct 25件・追加往復26回・否定判定に占める契約起因74%(17/23)
