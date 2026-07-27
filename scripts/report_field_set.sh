@@ -1152,10 +1152,12 @@ PY
             # GP-072c2+c3+c4: verdict書込み時に前提条件チェック
             if [[ "$dot_key" == "verdict" ]] && [[ "$val" == "PASS" || "$val" == "FAIL" || "$val" == "PASS_NO_IMPROVEMENT" ]]; then
                 _validate_variation_completion_contract || return 1
-                REPORT_PATH="$REPORT_PATH" FIELD_VAL="$val" python3 -c "
+                local _normalized_verdict
+                if ! _normalized_verdict=$(REPORT_PATH="$REPORT_PATH" FIELD_VAL="$val" python3 -c "
 import yaml, sys, os
 rp = os.environ.get('REPORT_PATH', '')
 if not rp or not os.path.exists(rp):
+    print(os.environ.get('FIELD_VAL', ''), end='')
     sys.exit(0)
 with open(rp) as f:
     data = yaml.safe_load(f) or {}
@@ -1208,8 +1210,8 @@ if isinstance(lu, list):
 # 原理: 間違える余地がない構造。gateで止めるのではなく書込み時に矛盾を不可能にする
 bc = data.get('binary_checks', {})
 verdict_val = os.environ.get('FIELD_VAL', '')
-if isinstance(bc, dict) and bc and verdict_val == 'PASS':
-    has_no = False
+has_no = False
+if isinstance(bc, dict) and bc and verdict_val in ('PASS', 'PASS_NO_IMPROVEMENT'):
     for ac_key, ac_val in bc.items():
         if isinstance(ac_val, list):
             for item in ac_val:
@@ -1218,8 +1220,6 @@ if isinstance(bc, dict) and bc and verdict_val == 'PASS':
                     break
         if has_no:
             break
-    if has_no:
-        issues.append('binary_checks に result:no があるのに verdict=PASS は矛盾。verdict=FAIL に変更せよ')
 # GP-072c4: binary_checks results must not be all empty
 # P4 fix: assigned_acs がある場合、担当外ACの空resultは除外
 import glob
@@ -1259,7 +1259,16 @@ if issues:
     for iss in issues:
         print(f'BLOCK: {iss}', file=sys.stderr)
     sys.exit(1)
-" || return 1
+print('FAIL' if has_no else verdict_val, end='')
+"); then
+                    return 1
+                fi
+                if [[ "$_normalized_verdict" != "$val" ]]; then
+                    echo "★ verdict自動修正: PASS→FAIL(bc:noあり。矛盾状態を作れない構造)" >&2
+                    _val_input="$_normalized_verdict"
+                    VALUE="$_normalized_verdict"
+                    if [ -n "$STDIN_VALUE" ]; then STDIN_VALUE="$_normalized_verdict"; fi
+                fi
             fi
             ;;
     esac
@@ -1575,31 +1584,6 @@ if [ "$_fixed_input" != "$_val_input" ]; then
             USE_PYTHON=1
             STDIN_VALUE="$VALUE"
         fi
-    fi
-fi
-# ★構造的矛盾排除: verdict書込み時にbc:noがあればFAIL強制(間違える余地を潰す)
-if [[ "$DOT_KEY" == "verdict" ]] && [[ "$_val_input" == "PASS" || "$_val_input" == "PASS_NO_IMPROVEMENT" ]]; then
-    _bc_has_no=$(REPORT_PATH="$REPORT_PATH" python3 -c "
-import yaml, sys, os
-rp = os.environ.get('REPORT_PATH', '')
-if not rp or not os.path.exists(rp):
-    sys.exit(0)
-with open(rp) as f:
-    data = yaml.safe_load(f) or {}
-bc = data.get('binary_checks', {})
-if isinstance(bc, dict):
-    for ac_val in bc.values():
-        if isinstance(ac_val, list):
-            for item in ac_val:
-                if isinstance(item, dict) and str(item.get('result', '')).strip().lower() == 'no':
-                    print('yes', end='')
-                    sys.exit(0)
-" 2>/dev/null) || true
-    if [[ "$_bc_has_no" == "yes" ]]; then
-        echo "★ verdict自動修正: PASS→FAIL(bc:noあり。矛盾状態を作れない構造)" >&2
-        _val_input="FAIL"
-        VALUE="FAIL"
-        if [ -n "$STDIN_VALUE" ]; then STDIN_VALUE="FAIL"; fi
     fi
 fi
 # Completed report immutability guard: status completed/done後の内容変更をfail-closed BLOCK
