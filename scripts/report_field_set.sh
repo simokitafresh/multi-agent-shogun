@@ -2507,6 +2507,28 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
             rm -f "$tmp_file"
         fi
 
+        # Non-terminal status writes are root-scalar atomic replacements.  The
+        # generic lane below prepares a full-file backup solely for fallback
+        # restoration, then performs this same fast-scalar write.  No fallback
+        # or normalize path can consume that backup for non-terminal values, so
+        # keep them on the same backup-free atomic lane as the indexed fast
+        # paths above. completed/done deliberately remain below: their terminal
+        # normalization and completion checks are part of the quality contract.
+        if [ "$DOT_KEY" = "status" ] && [[ "$VALUE" != "completed" && "$VALUE" != "done" ]]; then
+            tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
+            rm -f "$tmp_file"
+            if _report_field_set_fast_scalar "$REPORT_PATH" "$tmp_file" "status" "$VALUE" 1 "status"; then
+                if ! mv "$tmp_file" "$REPORT_PATH"; then
+                    rm -f "$tmp_file"
+                    echo "FATAL: report_field_set: atomic replace failed" >&2
+                    exit 1
+                fi
+                echo "[report_field_set] status = ${VALUE:0:80}"
+                exit 0
+            fi
+            rm -f "$tmp_file"
+        fi
+
         # None of the fast paths above applied (or none matched this write) —
         # from here on, paths can fall back to Python or hit the backslash
         # validate-or-restore check, both of which read .bak. Create it now.
