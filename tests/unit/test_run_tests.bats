@@ -4,7 +4,15 @@
 setup() {
   # This file deliberately launches isolated aggregate runner fixtures.  They
   # are new checkpoint roots, not accidental children of the outer CI runner.
+  # A full-suite parent exports its own runner/receipt/cache transport.  Those
+  # values describe the parent repository and must not override the isolated
+  # TMPROOT fixtures below (for example, RUN_TESTS_BATS_BIN bypasses TMPROOT/bin
+  # and an inherited BATS_CACHE can silently turn an expected execution into a
+  # cache hit).  Reset the complete parent-owned boundary once for every test.
   unset RUN_TESTS_ACTIVE
+  unset RUN_TESTS_BATS_BIN BATS_TAP_OUTPUT RUN_TESTS_SELECTED_PATHS_FILE
+  unset BATS_CACHE BATS_CACHE_DIR BATS_SOURCE_FINGERPRINT
+  unset TEST_TIMING_LEDGER TEST_SUITE_TIMING_LEDGER
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   TMPROOT="$(mktemp -d)"
   mkdir -p "$TMPROOT/scripts" "$TMPROOT/tests/unit" "$TMPROOT/bin" "$TMPROOT/logs"
