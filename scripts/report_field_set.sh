@@ -260,6 +260,13 @@ PY
                 # the reconciler's inbox_write→gate_report_format grabbed the
                 # report lock while this process still held it (circular
                 # lock contention, 3 ninjas stalled 2026-07-27).
+                # Close both locks in the parent before spawning. Closing only
+                # on the final bash redirection leaves a race where nohup or
+                # setsid -f can transiently inherit them before its exec.
+                flock -u 200
+                exec 200>&-
+                flock -u 199
+                exec 199>&-
                 RFS_RECONCILE_INBOX="$_rfs_inbox_write" \
                 RFS_RECONCILE_REPORT="$_rfs_batch_report" \
                 RFS_RECONCILE_WORKER="$_rfs_batch_worker" \
