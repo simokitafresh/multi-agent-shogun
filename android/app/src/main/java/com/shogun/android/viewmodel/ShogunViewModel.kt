@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class ShogunViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -99,8 +100,16 @@ class ShogunViewModel(application: Application) : AndroidViewModel(application) 
                 return@launch
             }
             val target = tmuxTarget()
-            // Keep text injection and Enter in one SSH exec to avoid the old two-step send-keys race.
-            val sendResult = sshManager.execCommand(TmuxCommandBuilder.pasteBufferSendCommand(target, text))
+            // One logical input keeps this id across every ambiguous SSH transport retry.
+            val messageId = UUID.randomUUID().toString()
+            val sendResult = sshManager.execIdempotentInput(messageId) { retryCount ->
+                TmuxCommandBuilder.pasteBufferSendCommand(
+                    target = target,
+                    text = text,
+                    messageId = messageId,
+                    retryCount = retryCount
+                )
+            }
             if (sendResult.isFailure) {
                 _errorMessage.value = "送信失敗: ${sendResult.exceptionOrNull()?.message}"
                 return@launch
