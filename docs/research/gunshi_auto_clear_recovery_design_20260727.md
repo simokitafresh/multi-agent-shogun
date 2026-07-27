@@ -148,8 +148,8 @@ T1(状態) ──> T2(発生時に家老へ届く) ──> 家老が対処
 
 ## §6 本設計が扱わないもの(スコープ外) — ★13:58 現況更新
 
-- **staged残置の解消**: ✅ **解消済み(将軍裁定・案A実行 2026-07-27 13:58)**。13:56時点でstagedは4件→3件へ自然減(context/semantic-map.mdは他経路で解消済み)、残る3件(lord-conversation-index.md / memory-db-schema.md / defense_overhead.jsonl)を`git restore --staged <3path明示>`でunstage。実測: 実行後`git diff --cached --stat`=0行(index空)・worktree変更3件は` M`のまま保持=非破壊・可逆(いつでも再stage可)。案Aの根拠=軍師調査書§5推奨+可逆行動の裁可待ち禁止(殿裁定07-10)。**軍師が未検証とした「unstage後にauto-commitが拾うか」は次のidle自動サイクルで観測する**(13:54:42-47にkagemaru/saizo/kotaroがBLOCKされ続けていた=解消効果は即日観測可能)
-- **stageが発生する原因の除去**: 未特定のまま(本設計のスコープ外は維持)。ただし対象3件が全て自動生成物(会話index/スキーマdoc/telemetry台帳)である事実は「stage主体=自動プロセス」仮説を支持する。才蔵のlessons.yaml経路外書込み偵察と同族の可能性があり、才蔵報告を待って合流判断
+- **staged残置の解消**: ✅ 13:58案A実行で一旦解消 → **★15:45再発を確認**(同族の自動生成4件が再stage)→ 15:49に再度unstage実行(§10参照)。**単発処置では再演することが2回目の実測で確定** — 恒久是正はT4(§10)
+- **stageが発生する原因の除去**: ✅ **特定完了(§10 D4)**。stage主体=ninja_monitor.sh自身のbatch context auto-commit失敗経路(:853-856)。「才蔵報告待ち」は不要となった(コード現物+再発実測で確定)
 - **部分stage問題**: unstage実行により消滅(indexが空になった時点で--patch対話は不要になった)
 
 ## §7 軍師が確認していないこと — ★13:56 将軍実測で全項目解消
@@ -159,15 +159,41 @@ T1(状態) ──> T2(発生時に家老へ届く) ──> 家老が対処
 - ~~T3起動時間影響~~ → ✅ 見積り: T3=logへのgrep 1回(現行195行・ローテート除く)であり、gate_karo_startupの既存59check計16.2s(本日TIMING実測)に対しms単位の加算。実装後にTIMING行で実測確認
 - ~~他5名の隣接間隔・ローテート内訳~~ → ✅ §2.5で全数計測済み(99.6%がauto-commit起因)
 
-## §9 実装状況と残工程(将軍検分 2026-07-27 13:58)
+## §9 実装状況(将軍再検分 2026-07-27 15:50 — 全項目を実装済み+稼働実証へ更新)
 
 | 項目 | 状態 | 証跡 |
 |---|---|---|
-| T1(継続検知カウンタ) | ❌ 未実装 | ninja_monitor.shにカウンタ/リセット実装なし(grep実測: CLEAR-BLOCKED処理はlog出力のみ:1410-1450) |
-| T2(閾値超過→家老inbox通知) | ❌ 未実装 | 同上。inbox_write呼出しなし |
-| T3(startup gate現況1行) | ❌ 未実装 | gate_karo_startup.sh/gate_gunshi_startup.shにCLEAR-BLOCKED文字列0件(grep実測) |
-| 事象の継続 | ⚠ 実装まで継続リスク | 13:54:42-47にkagemaru/saizo/kotaroの3名が5秒内にBLOCK実測(staged解消前)。unstageにより一旦解消見込みだが、**次にstageが発生すれば同じ38時間沈黙が再演する** — T1-T3実装が恒久是正 |
-| 実装弾 | **将軍が家老へ配備指示(13:59)** | §5のAC骨子どおり。M/N/Kは§2.5実測を根拠に実装ACで確定 |
+| T1(継続検知カウンタ) | ✅ 実装済み+稼働 | commit `bc151ae6e`(影丸 cmd_karo_hotfix_auto_clear_recovery_20260727、14:48)。ninja_monitor.sh:868-869(M=1800s/N=3、§2.5実測を根拠に確定)+`_record_clear_blocked_and_maybe_notify`:872 |
+| T2(閾値超過→家老inbox通知) | ✅ 実装済み+**発火実証** | ninja_monitor.sh:885-896(4規律+復旧手順+偽陽性弁別を本文内蔵、再送抑止`CLEAR_BLOCKED_NOTIFIED`)。**稼働実証(生ログ)**: `[15:24:08] CLEAR-BLOCKED-NOTIFY: tobisaru count=3 window_sec=1800 overlap_path=context/infrastructure.md` / `[15:29:49] 同 hayate count=3` — 実封鎖を2件検知し家老へ通知した |
+| T3(startup gate現況1行) | ✅ 実装済み | gate_karo_startup.sh:2809-2814 + gate_gunshi_startup.sh:1101-1106 + 共通lib `scripts/gates/lib/clear_blocked_summary.sh`(48行)。0件時無表示 |
+| 境界fixture | ✅ | tests/unit/test_ninja_monitor_clear_blocked_notify.bats(50行、§5(a)-(e)対応) |
+| 本番到達 | ✅ 挙動証跡で確認 | 15:24/15:29のNOTIFY発火=新コードが稼働中プロセスで実行されている一次証拠(コード存在ではなく挙動で確認。LS-A09(34)) |
+
+## §10 稼働後に発見された残欠陥D4と是正T4(将軍一次調査 2026-07-27 15:50)
+
+**T1-T3は「止まったことが伝わる」を達成した。しかし止まる原因そのものが自家製と判明した。**
+
+### D4: batch context auto-commitの失敗経路がstage残置を作る(自傷ループ・コード現物で確定)
+
+`ninja_monitor.sh:853-856`(現物):
+```bash
+printf '%s\n' "$context_paths" | xargs -d '\n' git add -- 2>/dev/null || true
+if printf '%s\n' "$context_paths" | xargs -d '\n' git commit -m "chore: batch context auto-commit before /clear ($agent_name)" -- 2>/dev/null; then
+    write_auto_commit_timestamp "$context_last_file"
+fi
+# ← commit失敗時: git addしたstageを戻さない。失敗理由も2>/dev/nullで捨てる
+```
+
+- **機序**: `git add`成功→`git commit`失敗(pre-commit hook・lock競合等。理由は現行実装では観測不能)→**staged残置**→以後、全agentの`auto_commit_before_clear`が「pre-existing staged files」でskip→**全6忍者のauto clearが封鎖**
+- **実証(15:24-15:45生ログ)**: 13:58の案A unstage後もstagedが再発生(context/infrastructure.md, lord-conversation-index.md, memory-db-schema.md, semantic-map.md の自動生成4件)し、6忍者全員が反復CLEAR-BLOCKED。T2通知のoverlap_path=context/infrastructure.mdが本経路のstage対象と一致
+- **§6「stage発生原因は未特定」を本調査で解消**: stage主体=ninja_monitor自身のbatch context auto-commit失敗経路。「stage主体=自動プロセス」仮説を確定
+- **暫定処置(15:49将軍実行・可逆)**: 該当4pathを`git restore --staged`(案A先例)。実測: `git diff --cached --stat`=0行(index空)・worktree ` M`4件保持=非破壊
+
+### T4: 失敗経路のstage自己回収+失敗理由の観測可能化(実装弾へ)
+
+- **設計**: (1)`git add`前に`git diff --cached --name-only`で既存stagedを記録し、commit失敗時は**自分が新規にstageしたpathのみ**`git restore --staged`で回収(他者stageは触らない=GA-231c思想維持) (2)commit失敗時のstderrを`2>/dev/null`で捨てず1行ログへ記録(`CONTEXT-BATCH-COMMIT-FAIL: reason=...`) (3)T1カウンタとは独立(T1は検知網として残す=多層防御)
+- **不変更契約への追加**: 他者の既存stagedには一切触れない。回収対象は同一関数実行内で自分がaddしたpathに限定
+- **境界fixture(最低4件)**: (f)commit成功→stage回収発動なし (g)commit失敗→自分がaddしたpathのみunstage・既存stagedは不変 (h)失敗理由がログへ1行記録される (i)pre-existing stagedありでadd自体をskipする既存挙動の非破壊
 
 ## §8 因果リンク
 
