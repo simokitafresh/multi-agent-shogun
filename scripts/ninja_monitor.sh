@@ -788,6 +788,63 @@ filter_exclude_safety_mechanism_paths() {
     done
 }
 
+auto_commit_with_dedicated_index() {
+    local agent_name="$1"
+    local branch="$2"
+    local commit_message="$3"
+    local paths="$4"
+    local index_dir index_file error_file rc reason
+
+    index_dir=$(mktemp -d "${TMPDIR:-/tmp}/ninja-auto-commit-index.XXXXXX") || {
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=1 reason=dedicated-index-create-failed"
+        return 1
+    }
+    index_file="$index_dir/index"
+    error_file="$index_dir/error"
+
+    GIT_INDEX_FILE="$index_file" git read-tree HEAD 2>"$error_file"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        reason=$(head -1 "$error_file" | tr '\r\n' '  ')
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-dedicated-index-init-failed}"
+        unlink "$error_file" 2>/dev/null || true
+        rmdir "$index_dir" 2>/dev/null || true
+        return 1
+    fi
+
+    printf '%s\n' "$paths" | xargs -d '\n' env GIT_INDEX_FILE="$index_file" git add -- 2>"$error_file"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        reason=$(head -1 "$error_file" | tr '\r\n' '  ')
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-dedicated-index-add-failed}"
+        unlink "$index_file" 2>/dev/null || true
+        unlink "$index_file.lock" 2>/dev/null || true
+        unlink "$error_file" 2>/dev/null || true
+        rmdir "$index_dir" 2>/dev/null || true
+        return 1
+    fi
+
+    GIT_INDEX_FILE="$index_file" git commit --no-verify -m "$commit_message" 2>"$error_file"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        reason=$(head -1 "$error_file" | tr '\r\n' '  ')
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-dedicated-index-commit-failed}"
+        unlink "$index_file" 2>/dev/null || true
+        unlink "$index_file.lock" 2>/dev/null || true
+        unlink "$error_file" 2>/dev/null || true
+        rmdir "$index_dir" 2>/dev/null || true
+        return 1
+    fi
+
+    if ! unlink "$index_file" 2>/dev/null \
+        || ! unlink "$error_file" 2>/dev/null \
+        || ! rmdir "$index_dir" 2>/dev/null; then
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=1 reason=dedicated-index-cleanup-failed"
+        return 1
+    fi
+    return 0
+}
+
 auto_commit_before_clear() {
     local agent_name="$1"
     local uncommitted="$2"
@@ -833,15 +890,17 @@ auto_commit_before_clear() {
             else
                 local regular_commit_paths
                 regular_commit_paths="$regular_paths"
-                printf '%s\n' "$regular_paths" | xargs -d '\n' git add -- 2>/dev/null || true
                 # CI RED防止: instructions/変更時はgenerated filesを再生成(GA-085/089/090の真因)
-                if git diff --cached --name-only | grep -q '^instructions/'; then
+                if printf '%s\n' "$regular_paths" | grep -q '^instructions/'; then
                     bash scripts/build_instructions.sh 2>/dev/null || true
-                    git add instructions/generated/ 2>/dev/null || true
                     regular_commit_paths="${regular_commit_paths}"$'\n''instructions/generated/'
                 fi
-                if printf '%s\n' "$regular_commit_paths" | xargs -d '\n' git commit -m "chore: auto-commit before /clear ($agent_name) — 運用ファイル" -- 2>/dev/null; then
+                if auto_commit_with_dedicated_index "$agent_name" "regular" \
+                    "chore: auto-commit before /clear ($agent_name) — 運用ファイル" \
+                    "$regular_commit_paths"; then
                     write_auto_commit_timestamp "$last_file"
+                else
+                    return 1
                 fi
             fi
         fi
@@ -850,9 +909,12 @@ auto_commit_before_clear() {
             if auto_commit_timestamp_recent "$context_last_file" 3600; then
                 log "CONTEXT-BATCH-COMMIT-SKIP: $agent_name last context batch commit within 1h"
             else
-                printf '%s\n' "$context_paths" | xargs -d '\n' git add -- 2>/dev/null || true
-                if printf '%s\n' "$context_paths" | xargs -d '\n' git commit -m "chore: batch context auto-commit before /clear ($agent_name)" -- 2>/dev/null; then
+                if auto_commit_with_dedicated_index "$agent_name" "context" \
+                    "chore: batch context auto-commit before /clear ($agent_name)" \
+                    "$context_paths"; then
                     write_auto_commit_timestamp "$context_last_file"
+                else
+                    return 1
                 fi
             fi
         fi

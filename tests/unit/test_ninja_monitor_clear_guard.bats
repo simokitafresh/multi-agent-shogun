@@ -270,7 +270,9 @@ _uncommitted=$(git status --porcelain -uno -- scripts/ config/ queue/)
 auto_commit_before_clear saizo "$_uncommitted"
 
 committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
-worktree_files=$(git diff --name-only | sort | tr "\n" " ")
+# test_necessity: exclusion is measured against committed HEAD because the
+# dedicated auto-commit index intentionally leaves the shared index tree intact.
+worktree_files=$(git diff HEAD --name-only | sort | tr "\n" " ")
 echo "committed=$committed_files"
 echo "worktree=$worktree_files"
 cat "$LOG"
@@ -323,7 +325,9 @@ _uncommitted=$(git status --porcelain -uno -- scripts/ queue/)
 auto_commit_before_clear hayate "$_uncommitted"
 
 committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
-worktree_files=$(git diff --name-only | sort | tr "\n" " ")
+# test_necessity: safety exclusions remain dirty relative to committed HEAD even
+# when the shared index intentionally remains based on the pre-commit HEAD.
+worktree_files=$(git diff HEAD --name-only | sort | tr "\n" " ")
 echo "committed=$committed_files"
 echo "worktree=$worktree_files"
 cat "$LOG"
@@ -408,6 +412,7 @@ INNEREOF
 
 printf "staged\n" >> config/other.yaml
 git add config/other.yaml
+before_index_tree=$(git write-tree)
 printf "change\n" >> scripts/a.sh
 NINJA_MONITOR_NOW=10000
 export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
@@ -419,7 +424,10 @@ set -e
 
 count=$(git rev-list --count HEAD)
 staged_files=$(git diff --cached --name-only | sort | tr "\n" " ")
-worktree_files=$(git diff --name-only | sort | tr "\n" " ")
+after_index_tree=$(git write-tree)
+# test_necessity: GA-231c protects the exact shared index tree.  Cached names
+# are relative to the newly advanced HEAD and therefore include scripts/a.sh.
+worktree_files=$(git diff HEAD --name-only | sort | tr "\n" " ")
 echo "rc=$rc"
 echo "count=$count"
 echo "staged=$staged_files"
@@ -427,8 +435,9 @@ echo "worktree=$worktree_files"
 cat "$LOG"
 test "$rc" = "0"
 test "$count" = "2"
-test "$staged_files" = "config/other.yaml "
-test -z "$worktree_files"
+test "$staged_files" = "config/other.yaml scripts/a.sh "
+test "$after_index_tree" = "$before_index_tree"
+test "$worktree_files" = "config/other.yaml "
 grep -q "AUTO-COMMIT-STAGED-PRESERVE: hayate preserving scope-out staged file: config/other.yaml" "$LOG"
 '
     [ "$status" -eq 0 ]
@@ -2517,7 +2526,9 @@ _uncommitted=$(git status --porcelain -uno -- scripts/)
 auto_commit_before_clear saizo "$_uncommitted"
 
 committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
-worktree_files=$(git diff --name-only | sort | tr "\n" " ")
+# test_necessity: in-progress exclusions are measured against committed HEAD;
+# the dedicated auto-commit index deliberately leaves the shared index intact.
+worktree_files=$(git diff HEAD --name-only | sort | tr "\n" " ")
 echo "committed=$committed_files"
 echo "worktree=$worktree_files"
 test "$committed_files" = "scripts/a.sh "
@@ -2670,7 +2681,9 @@ _uncommitted=$(git status --porcelain -uno -- scripts/)
 auto_commit_before_clear kotaro "$_uncommitted"
 
 committed_files=$(git show --name-only --format= HEAD | sed "/^$/d" | sort | tr "\n" " ")
-worktree_files=$(git diff --name-only | sort | tr "\n" " ")
+# test_necessity: safety exclusions are measured against committed HEAD;
+# the dedicated auto-commit index deliberately leaves the shared index intact.
+worktree_files=$(git diff HEAD --name-only | sort | tr "\n" " ")
 echo "committed=$committed_files"
 echo "worktree=$worktree_files"
 cat "$LOG"
