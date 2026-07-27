@@ -6590,7 +6590,17 @@ check_ac_structure_quality
 check_long_runtime_execution_env_contract() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
-    local result rc=0
+    local estimated result rc=0
+    estimated="$(cmd_block_get_field "estimated_minutes")"
+    # 恒常経路は15分以下。既にBash側へ展開済みのfield cacheで境界判定し、
+    # cmd本文のPython YAML全量再parseとプロセス起動を省く。
+    # 非数値・境界超過だけを従来Pythonへ渡し、型/finite/実行環境の厳密判定を維持する。
+    if [[ -z "$estimated" ]]; then
+        return 0
+    fi
+    if [[ "$estimated" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk -v n="$estimated" 'BEGIN { exit !(n <= 15) }'; then
+        return 0
+    fi
     result="$(CMD_SAVE_CMD_BLOCK="$CMD_BLOCK_NC" python3 - <<'PY'
 import math
 import os
