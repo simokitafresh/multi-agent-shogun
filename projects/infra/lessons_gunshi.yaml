@@ -794,3 +794,108 @@ lessons:
   created_at: '2026-07-25'
   enforcement: 'Level5(受動的層): startup gateのlessons_gunshi.yaml全文ロードで毎起動注入'
   enforcement_level: 5
+- id: 'LG069'
+  title: '仮説が探索範囲を汚染する — 一致を見た時点で確認を終えるな'
+  origin: '[[gunshi_thirteen_errors_20260726]] -> [[hypothesis_contaminated_search]] -> [[confirmed_scope第2形]]'
+  detail: '2026-07-26、軍師は13件誤ったが共通構造は単一である: 仮説を先に持ち、仮説に合う断片を見つけた時点で確認を終える。実例: (1)stem部分一致で家老の判定を14件偽陽性と誤断(厳密なgate:フィールドでは0件) (2)自己参照除外フィルタが原因と誤推定(真因は走査範囲=~/.claude/settings.jsonが対象外) (3)才蔵が対象範囲差を見落としたと誤断(報告本文に明記済みだった) (4)疾風の機序2は既是正と誤断(当該commitは報告の57秒後) (5)変数名の対比表で起動スクリプトの違いを見落とし (6)LG048のINFOだけを見てBLOCKを見落とし (7)planned_pathsをトップレベル2キーだけ探しNoneを得て契約不整合と誤断(実際はcommit_contract配下に9件実在)。★特に(7)は直前に立てた教訓「何を直すかを変えたらどこを触ってよいかも変えねばならない」とFAIL文言が一致したため仮説を結論として扱った。MEMORY.md無知の知原則「原理は仮説生成に使え、結論に使うな」の違反である。★教訓の逆説: 教訓が増えるほど一致が起きやすくなり、教訓が多いほど確認が薄くなる。本日立てた教訓群自体が同じ罠になりうる'
+  source_cmd: 'cmd_karo_impl_b46_commit_ownership_all_history_20260726'
+  when: '過去の教訓・原理・既知パターンと目の前の事象が一致したと感じた時。何かを発見したと感じた時(本日13件中5件は他者を責める方向、2件は危機を訴える方向であり、いずれも発見の感覚を伴っていた)'
+  how: 'その教訓が当てはまらない可能性を1つ挙げてから報告せよ。一致は仮説の生成であって検証ではない。一致したときこそ確認を厚くせよ。発見の感覚そのものが確認を薄くする合図であり、手順を発火させる条件として使える'
+  created_at: '2026-07-26'
+  automated: false
+  enforcement: 'Level5(受動的層): startup gateのlessons_gunshi.yaml全文ロードで毎起動注入'
+  enforcement_level: 5
+- id: 'LG070'
+  title: 'ACで選択肢を閉じるな — draft段階でしか捕まらない唯一の型'
+  origin: '[[cmd_karo_recon_finalize_polling_to_event_20260726]] -> [[AC設計の仮説汚染]] -> [[実測が効かない]]'
+  detail: '2026-07-26、家老はfinalize調査のAC1(b)を「家老のポーリング待機時間か、gate処理自体の時間か」の2択で設計した。第3の可能性(軍師のレビュー待ち時間)が抜けており、実測すると軍師のレビュー往復が585.5秒=91%で支配的であった。2択のままなら第3が支配的でも「家老かgateか」のどちらかに誤帰属していた。★AC設計の仮説汚染は他と性質が違う: 軍師の13件・家老の36件は自分の推論であり実測すれば自分で潰せたが、AC設計の汚染は忍者が実測しても潰れない。忍者は与えられたACに従うためである。∴本日扱った全ての型の中で唯一「実測が効かない」ものであり、レビュー(draft段階)でしか捕まらない。★軍師自身もB44のAC2「(1)(2)に稼働実装にない判定が含まれていないか」の2択を受け入れ、「実装しているが到達しない」という第3の状態を見落とした(後にA10=到達可能性として新設)。★また枠の不足は情報の欠落ではなく情報の移動として現れる: 才蔵はAC3の2択に主文で「別々」を選びつつ括弧内に混在を正確に記した。主文と詳細の粒度差は枠不足のサインである'
+  source_cmd: 'cmd_karo_recon_finalize_polling_to_event_20260726'
+  when: 'draftレビューでACが選択肢を列挙している時(2択・4択・分類軸の指定)。reportレビューで主文の分類と詳細の記述を読む時'
+  how: 'ACが2択なら第3が無いかを問え。「AかBか判定せよ」なら「どちらでもない」が報告可能かを問え。脱出路を1箇所に置いても別のACで選択肢を閉じていれば足りない。reportでは主文の分類と詳細の記述が一致しているかを見よ。粒度差があれば枠が不足している'
+  created_at: '2026-07-26'
+  automated: false
+  enforcement: 'Level5(受動的層): startup gateのlessons_gunshi.yaml全文ロードで毎起動注入'
+  enforcement_level: 5
+- id: 'LG071'
+  title: '判定基準は測定前に固定せよ — before/after実証あり'
+  origin: '[[PD-134]] -> [[基準の後付け3改訂]] -> [[B49で1回確定]]'
+  detail: '2026-07-26のPD-134では基準を後から3度改訂し、そのたびに判定不能が判明した: 閾値gap>100(恣意的)→将軍が機序から導けへ格上げ→gap=0が62件中0件で判定不能→gapの減少イベント有無へ改訂→分解能97秒>理論窓長75秒で判定不能→2点計測へ転換。★対してB49(refresh並列公開の逆転)では将軍が測定前に(A)(B)(C)を定義し、実測値が出た瞬間に(B)と確定した。解釈の議論がゼロであった。∴基準を後から決めると出た数値に合わせて基準が動き、判定不能の発見が遅れる。★併せて: 「これ以上確認できない」が確定したら判定を保留するな。B49ではsearch_logsに結果内容の列が無く追加確認が原理的に不可能と判明した時点で(iii)確定とした。確認手段が存在しないのに保留すると永久に閉じない。★また「待てば貯まる欠測」と「永久に貯まらない計装の不在」を区別せよ。前者なら観測を続ける価値があり後者なら待っても解決しない'
+  source_cmd: 'cmd_karo_impl_b48_refresh_window_2point_telemetry_20260726'
+  when: '観測を根拠に将来判断する設計をレビューする時。閾値・観測窓・判定条件が登場する時'
+  how: '判定基準が測定前に固定されているかを問え。固定されていなければ「観測後に基準を決めると出た数値に合わせて基準が動く」と指摘せよ。閾値より実測値で直接判定できる方式を優先せよ(理論値が実態を represent していない場合でも影響を受けない)'
+  created_at: '2026-07-26'
+  automated: false
+  enforcement: 'Level5(受動的層): startup gateのlessons_gunshi.yaml全文ロードで毎起動注入'
+  enforcement_level: 5
+- id: 'LG072'
+  title: 'トークンの不在を機能の不在と読むな — grepが0件でも同じファイルを読め'
+  origin: "[[cmd_shared_preflight呼出し0件]] -> [[沈黙gate=A10実例と誤診]] -> [[将軍が教訓35→32統合=殿が空転と名指しした行為]]"
+  detail: '2026-07-26。軍師は grep -c "cmd_shared_preflight " cmd_save.sh = 0 を見て「呼んでいない=gateが死んでいる(A10実例)」と結論した。★答えは軍師がgrepしたまさにそのファイルの同じ関数内に6行のコメントで書かれていた(cmd_publish.sh:223-228 / cmd_save.sh:3824-3826「教訓件数capを撤去(殿裁定2026-07-23 提案A採用)…件数は品質の代理変数として不正」)。しかもそのコメントは「教訓統合を強要される空転が再発した」と今回起きたことを事前に警告していた。撤去は意図的であり誤診である。★同型が同日3回反復した: LG046が要求する grep -oE 形式に軍師の渡したコマンドが一致せず才蔵・半蔵が各1回差し戻された(内容は正しいのに形式で落ちた)。★共通形=「探索の結果0件」を「対象が存在しない」と等値した。'
+  when: 'grep/検索で0件を得て「無い」と結論しようとする時。特に「実装されているのに効いていない」と判断しようとする時'
+  how: '(1)0件を見たら同じファイルを開いて周辺を読め。撤去・変更には理由がコメントで残っていることが多い。(2)三層記憶を検索せよ(CLAUDE.md最上位原則)。(3)git log -S で導入・撤去の意図を追え(LS-A09(39)/LS106と同一)。(4)検索式の形が対象の表記と一致しているかを疑え(-oE/末尾スペース等)。★軍師は本件で(1)(2)(3)を全て飛ばした。既存ルールは全て存在していた。問題は使わなかったことである'
+  source_cmd: 'cmd_karo_cifix_cmd_publish_preflight_invariant_20260726'
+  created_at: '2026-07-26'
+  automated: false
+  enforcement: 'Level5(受動的層): startup gateのlessons_gunshi.yaml全文ロードで毎起動注入。★提案(未実装): gunshi_log_append.sh の operational_simulation で actual が「0件/不在」を主張する場合に、同一ファイルの通読またはgit log -S の証跡を必須化すれば Level4 になる'
+  enforcement_level: 5
+- id: 'LG073'
+  title: '自分が当事者である対象のレビューでは自分に不利な側を推し、その旨を明記せよ'
+  origin: "[[gate_gunshi_accuracyは軍師の成績装置]] -> [[軍師が甘くする誘因が実在]] -> [[自己開示と不利側の選択で規律を保つ]]"
+  detail: '2026-07-26。軍師は同日2件の当事者レビューを行った。(1)gate_gunshi_accuracy対照fixture=軍師の成績を計算する装置。発見した欠陥(REQ_CHANGES表記が誤答計上される)は★軍師に不利な方向であり、是正で成績が良くなる誘因が実在した。(2)approval_log_atomic=軍師自身の手順を縛る弾。緩い実装で通せば軍師が楽になる。★軍師は両件で自分に不利な側(欠陥の自己申告/より厳しいfail-closed/台帳履歴を書き換えない(a)方式)を推し、利害の衝突を判定文に明記した。★将軍は「監査者規律の完成形」と評価し、是正弾の検分を第三者(家老)へ移した。'
+  when: 'レビュー対象が軍師の成績・手順・記録に関わる時。gate_gunshi_*/review_approval/gunshi_review_log を触る弾は全て該当'
+  how: '(1)判定文へ利害の衝突を明記せよ。(2)自分に有利な選択肢と不利な選択肢を両方挙げ、なぜ不利な側を推すかを書け。(3)最終検分を第三者へ委ねよと自ら申し出よ。(4)★数値が自分に有利へ動く場合は変化量を明示せよ(本件: accuracy 56/56→64/64 skipped=6を報告に明記させた)'
+  source_cmd: 'cmd_karo_impl_control_fixture_gunshi_accuracy_20260726'
+  created_at: '2026-07-26'
+  automated: false
+  enforcement: 'Level5(受動的層): 毎起動注入。★提案(未実装): gunshi_log_append.sh の adversarial_review で、対象pathが gate_gunshi_*/review_approval.sh/gunshi_review_log.yaml を含む場合に利害の衝突の記載を必須化すれば Level4 になる'
+  enforcement_level: 5
+- id: 'LG074'
+  title: '実装の正しさで承認へ進むな — 報告契約の充足は別に確認せよ'
+  origin: "[[実装がfail-closedで正しいと確認]] -> [[LGTMへ進もうとした]] -> [[hook_failures.details形式違反でgateがBLOCK]]"
+  detail: '2026-07-26 16:49。軍師は飛猿のapproval_log_atomicについて実装(review_approval.sh:188-196のfail-closed)が要求どおりであることを行番号で確認し、LGTM発行へ進んだ。★gateが2重に止めた: lgtm_bundle_guard と「APPROVE forbidden while hook failures remain: hook_failures.details must be a mapping with cause/independent_verification/bypass_record/post_verification plus post_verification_result」。報告のhook_failures.detailsは文字列であった。★実装は正しく報告は不完全という状態が実在する。★しかも本弾は軍師自身を縛るもので、軍師には早く通したい誘因があった。gateが止めなければ誤承認していた。'
+  when: '実装をコードで確認して「正しい」と判断した直後。特に自分に利する弾で早く通したい時'
+  how: '(1)実装の検証と報告契約の検証を分けて両方行え。(2)precheck ERRORS=0 は報告形式の一部しか見ない — hook_failures/commit_contract/semantic_validation は別経路で落ちうる。(3)★承認を発行して初めて「通った」と言え。発行前の判断は予測にすぎない'
+  source_cmd: 'cmd_karo_impl_approval_log_atomic_20260726'
+  created_at: '2026-07-26'
+  automated: false
+  enforcement: 'Level5(受動的層): 毎起動注入。★既存の構造防御あり: review_approval.sh のfail-closedと review_bundle の hook_failures 検査が実際に軍師を止めた(2026-07-26実証)。∴本教訓は「なぜ止められたか」を理解して繰り返さないための記録である'
+  enforcement_level: 5
+- id: 'LG075'
+  title: '見た範囲を全体として語るな — 範囲の機械証明だけが塞ぐ'
+  origin: '[[cmd_karo_impl_receipt_scope_identity_20260726]]'
+  detail: |
+    2026-07-26、軍師は同一機序の誤りを1日で4回犯した: (1)『面の全数検証 完了』と将軍へ報告したが全数ではなかった(171本中94本・complete=false)。(2)範囲identityの具申が selected のみで executed を欠いた(selected==discovered=171で一致していたため『全数で走った』が偽であることを検出できなかった)。(3)grep '^not ok' | head -2 で切った値を『not ok 2件』として実測のように報告し、家老の起票を誤らせ忍者の作業を1往復増やした(実際は3件・しかも別ファイル)。(4)才蔵1名のBLOCKを実測しただけで『半蔵・影丸・疾風・飛猿・小太郎の承認も通らない』と報告した(★反証は既に存在した — 小太郎の弾は19:18にGATE CLEARしており、軍師自身が19:14にLGTMを出していた)。★共通機序=『見た範囲を全体として語った』。★★同じ機序を家老も複数回・将軍も1回(push部分確認)踏んでおり、全指揮官が踏んだ。★★∴個人の注意力では塞がらない。★塞ぐのは2つだけである: (a)範囲の機械証明=identity契約(tree identity=誰のtreeか/範囲identity=selected==discovered==executed/完了identity=complete。★ただしcompleteは補助であり主判定はselected==executed — complete=True かつ declared==observed=2634 でも171本中97本しか走っていない実測がある。declared_test_countは『そこまでに観測したケース数』ゆえobservedと必ず一致する自己整合であり何の証明にもならない) (b)対照を1件取る習慣(★家老が交絡を切った実例: rc=1が3件出た時に kotaro rc=0 の対照1件を取り、残り2件が未commitゆえ正当な失敗だと1分で判明した)。★件数を報告する時は head/tail で切らず wc -l を併記せよ。★測定前に git status --porcelain で対象が固定されているか確認せよ(★他者が編集中のファイルを3回測り別々の結果を同一対象の観測として扱った実例が本日ある)。
+    吸収(2026-07-27, cmd_karo_cycle2_bugverify_perf_20260727, origin: [[cmd_karo_cycle2_bugverify_perf_20260727]]): enforcement注入(家老 2026-07-27): LG075のenforcement欄が空でALERT。実在する注入経路を実測で確認して記入する。
+  source_cmd: 'cmd_karo_impl_receipt_scope_identity_20260726'
+  when: '件数・範囲・全数・全員・全部を報告に書こうとした時。および他者の報告値を転記する時'
+  how: 'head/tailで切らずwc -l併記。対照を1件取って交絡を切る。範囲はidentity契約で機械証明する(主判定はselected==executed、completeは補助)'
+  created_at: '2026-07-26'
+  enforcement: "Level5(起動時全文ロード)+Level1(事後検出): (a)gate_gunshi_startup.sh が lessons_gunshi.yaml を軍師起動時に全文注入する(CLAUDE.md /clear Recovery(gunshi) Step 2.5で必読指定・家老側もStep 2.6で同ファイルをロード=二重注入)。(b)軍師の追体験Q1-Q5とSGバンドルで範囲主張(selected==executed/wc -l併記/対照1件)を自己申告として検査する。★未自動化の残り=範囲identityの機械検査(selected==discovered==executedの突合)はサイクル2 B13(半蔵担当)で実在確認中であり、Level4化はその判定後。∴現状はLevel5止まりであることを明示する"
+  enforcement_level: 5
+- id: 'LG076'
+  title: '検算で一致しても正しいとは限らない — 定義が共有されていれば誤りも共有される'
+  origin: '[[軍師の集計定義誤り]] -> [[家老が同一定義で検算し一致]] -> [[3者が誤りを共有]]'
+  detail: '2026-07-27に2例発生。(1)CLEAR-BLOCKED件数: 軍師が88件と集計し家老が同一定義で検算して一致、将軍も踏襲した。実際は12件であり3者が同じ誤りを共有した。(2)lessons.yaml生成元: 軍師がcommitメッセージ『sync_lessons.sh再生成による』を根拠に断定し、家老が『引用と完全一致』として検算合格とした。しかしそれは引用の一致であって事実の一致ではなく、commitメッセージ自体が誤りだった(last_syncedが不変=syncは走っていなかった)。∴検算とは同じ手続きを再実行することであり、手続き自体が誤っていれば一致は誤りの再生産である。検算時は結果の一致だけでなく『何を1件と数えるかの定義は妥当か』『引用元は機械記録か人為記述か』を併せて検証せよ。'
+  source_cmd: 'cmd_karo_recon_lessons_yaml_deviation_origin_20260727'
+  when: '他者の集計や結論を検算して一致したとき'
+  how: '一致で満足せず(a)定義の妥当性(b)引用元が機械記録由来か人為記述由来かを確認する。人為記述(commitメッセージ/報告summary/掲示板の結論)なら一次情報まで遡る'
+  created_at: '2026-07-27'
+  enforcement: 'Level3: review_logのoperational_simulationへ『検算時は定義の妥当性も検証したか』の記入を求める(軍師enforcement候補)'
+- id: 'LG077'
+  title: '二次情報を一次情報として扱うな — 断定が他者の正しい発見を潰す'
+  origin: '[[家老11時04分の一次観測]] -> [[軍師の二次情報による断定]] -> [[家老が自分の正解を撤回]] -> [[小太郎が7分の無駄な反証作業]]'
+  detail: '2026-07-27、家老は11:04に自分で last_synced が逸脱前後で不変であることを確認し『sync_lessons.shは走っていない=経路外書込み』という本件最強の一次証拠を掴んでいた。しかし11:06に軍師の『生成元はsync_lessons.sh自身』という断定を受け入れ自分の一次証拠を捨てた。軍師の根拠はcommitメッセージ(忍者が書いた文言=二次情報)であった。11:07に軍師が自説を撤回し11:10に将軍が『正解は家老の11:04観測』と裁定した。この間に小太郎は誤った前提で7分の反証作業を強いられた。∴指揮官が二次情報で断定すると、下位の正しい観測を潰し、忍者の時間も奪う。相手の主張を受け入れる前に『相手は何を見たか。実行結果か、誰かが書いた文字列か』を問え。'
+  source_cmd: 'cmd_karo_recon_lessons_yaml_deviation_origin_20260727'
+  when: '自分の一次観測と他者の結論が食い違ったとき'
+  how: '相手の根拠が(a)コマンド実行結果か(b)人が書いた文字列(commitメッセージ/報告summary/掲示板の結論)かを確認する。(b)なら自分の一次観測を優先し、相手へ根拠の種別を問い返す'
+  created_at: '2026-07-27'
+  enforcement: 'Level3: verified_filesへ『機械記録由来か人為記述由来か』の別を記す(軍師enforcement候補)'
+- id: 'LG078'
+  title: '出力仕様を変える実装では、その出力を読む側を先に全数列挙せよ'
+  origin: '[[才蔵T1のevidence消費者発見]] -> [[疾風A6への引継ぎ]] -> [[疾風R2のexit code契約]]'
+  detail: '2026-07-27に3度発見された型。(1)才蔵のT1 draft: evidence書式をappend型へ変えると stop_check_inbox.sh:33 の json.load が例外で落ち :453 の[MEM:]検査が沈黙する(全ロックアウトではなく逆方向の沈黙)。(2)疾風のA6: 同じevidence消費者との互換が観点として引き継がれた。(3)疾風のR2: semantic_search.sh の exit code を変えると three_layer_preflight.sh の fail-closed 正規化(index実在時のみrc=0)が壊れ、壊れたcheckoutが成功扱いになる。∴出力を変える変更は、変更箇所ではなく消費箇所で壊れる。しかも例外で落ちる消費者は静かに機能停止するため気づけない。'
+  source_cmd: 'cmd_karo_impl_a2_semantic_fallback_visible_20260727'
+  when: 'スクリプトの出力仕様(書式/exit code/ファイル構造)を変更する実装をレビューするとき'
+  how: 'その出力を読む側をrepo全体からgrepで全数列挙させ、各消費者が壊れないことをfixtureで実証させる。特にjson.load等の例外で落ちる消費者は沈黙するため判定同一性テストを課す'
+  created_at: '2026-07-27'
+  enforcement: 'Level3: draft review Step 3 へ『出力仕様の変更があるか→あれば消費者を全数grepしたか』を追加(軍師enforcement候補)'
