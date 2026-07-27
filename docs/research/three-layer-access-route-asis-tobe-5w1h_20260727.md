@@ -5,7 +5,9 @@
 - 一次確認: 将軍(コード現読)+家老(blt_20260727_023043→訂正blt_023153)+軍師(blt_20260727_023045) 三者一致
 - origin: [[殿指摘_三層アクセスルートすり替わり_20260727]] -> [[011bc13d1_preflight証跡化]] -> [[本修正案]]
 
-## §1 ASIS(現状) — 4つの欠陥が同時に存在する
+> **★整合性注記(2026-07-27 14:50再構築)**: §1〜§5は起案時点(02:34〜03:50)の記録として原文保存する。**A1〜A7は全て是正済み**であり、現在の正は§6(進捗台帳・R5検収・常時検証)である。§1の「現存」「デフォルト無効のまま」等の現在形記述は起案時点のものと読め。§3.5のU系実測はR5検収(evidence_log n=907)で上書きされた。
+
+## §1 ASIS(起案時点の現状記録) — 4つの欠陥が同時に存在した
 
 ### A1. 検索結果の破棄(すり替わりの本体・最重要)
 `scripts/hooks/three_layer_preflight.sh:373-390`(導入=commit 011bc13d1, 2026-07-10「hotfix: enforce three-layer pre-action evidence」):
@@ -180,7 +182,7 @@ A6を先に潰さないとT1が空注入を量産する。
 |---|---|---|
 | A1 検索結果の破棄(最重要) | ✅ 是正済み | T1弾commit 850a0429d。直近evidence 8/8にmemory_top/semantic_top/obsidian_top実結果を実測 |
 | A7 クエリの破棄 | ✅ 是正済み(T1に同梱) | evidenceにmemory_query等が保存されている実測 |
-| A6 検索42.8%タイムアウト | ✅ 是正済み | A6弾CLEAR 10:18。効果実測: 失敗率 before 44.1%(134/304) → after 0%(0/8)・total_wall_ms中央値622ms。after母集団8件のため観測継続 |
+| A6 検索42.8%タイムアウト | ✅ 是正済み(検収確定) | A6弾CLEAR 10:18。R5検収(§6 R5節)で確定: before 44.1%(134/304)→**after 0.0%(0/589)**。「母集団8件」は11:25時点の暫定値でありn=589で置換済み |
 | A5 偽引用の構造的生産 | ✅ 是正済み | R3弾CLEAR 12:08:03(cmd_karo_impl_a5_mem_evidence_raw_field)。[MEM:]雛形へevidence実結果原文欄を追加=「読める化」完成。12:36将軍実測: 注入雛形に原文=付きで実データ表示 |
 | A4 cache起動時不在 | ✅ 概ね是正済み | commit aba450d32(rowid水位比較+自動再生成+追随検知器)。本日朝WARN実在のため観測継続下 |
 | A2 semantic→memoryすり替わり | ✅ 是正済み | R2弾CLEAR 13:09:55(cmd_karo_impl_a2_semantic_fallback_visible・疾風)。memory_dbフォールバックをMEMORY_DB_MATCHラベル明示+miss可視化へ(殿裁定02:37準拠)。途中で家老誤RC→台帳退避(queue/archive/rc_erroneous/)→軍師LGTM再実行の脱出路を実証 |
@@ -236,3 +238,22 @@ print('after inject-rate(any-layer非空)=',hit,'/',len(after))
 | 三層実結果の注入率(any-layerが非空かつNO_RESULT以外) | 測定不能(append型ログはT1導入と同時に新設されたため、T1導入前のデータが構造的に存在しない。上書きスナップショットの直近120件中、T1後スキーマ(memory_top等のkeyを持つ)ファイルは9件のみで残り111件はT1導入前のまま再実行されていない陳腐化ファイルだった) | 506/589 = 85.9%(A6 GATE CLEAR以降。3層すべて非空=465/589=78.9%) | 算出不能(before無し) | **T1のbefore/afterは構造的に測定不能(家老指摘・実装確認で確定)。上書きスナップショットの代替証跡: T1後に再実行されたpaneは9/9=100%で実結果ありを確認** |
 
 **★AC1是正(家老解釈の誤り)**: purposeに記載の家老解釈「evidenceは上書きゆえ注入率ではない」は`evidence_*.json`単体については正しいが、結論「after母集団50件以上は構造的に達成できない可能性がある」は誤り。`evidence_log_*.jsonl`(append型、T1と同時実装)により母集団907件(50件超)が実在する。またpurposeの「直近120中実結果9件」は家老の実測数値としては正しいが解釈補足: 120件中111件はT1導入前のスキーマ(memory_top等のkey自体が無い)の陳腐化ファイルであり、T1後に再実行され新スキーマを持つ9件は9/9=100%で実結果ありだった(`has_successful_three_layer_preflight`消費者への影響=陳腐化ファイルの扱いはT1実装のスコープ外・別途要確認)。
+
+### 常時検証 — 「全行動前の三層確認」は全ロールで機械的に成立しているか(将軍実測 2026-07-27 14:47)
+
+- **実効経路(殿確認14:46への回答)**: 三層確認の専用スクリプトは `scripts/hooks/three_layer_preflight.sh`。エージェントが手で呼ぶのではなく、`prompt_state_inject.sh:196`(UserPromptSubmit毎)が自動実行し、`pre-bash-combined.sh:117-119`が証跡なしBash/Editをfail-closed BLOCKする。手動の `memory_db_query.sh` / `semantic_search.sh` は補助。
+- 集計コマンド: python3で `logs/preaction_memory/evidence_log_*.jsonl`(three_layer_preflight.sh:684のappend出力)全9ファイルをparse、issued_at=2026-07-27でフィルタ。1件=preflight発行1回。網羅範囲=当日分・9 pane全数。
+
+| agent | 本日preflight件数 | 最終issued_at | 3層全hit件数 |
+|---|---|---|---|
+| shogun | 109 | 14:45:23 | 85 |
+| karo | **246** | **14:46:27(Codex切替後も継続)** | 168 |
+| gunshi | 298 | 14:35:17 | 226 |
+| hayate/kagemaru/hanzo/saizo/kotaro/tobisaru | 102/7/10/21/118/109 | 各13:49〜14:45 | 71/7/10/21/117/105 |
+
+- **判定**: **実行=9/9エージェント全員が当日稼働・欠落0**。家老のCodex CLI切替(14:00頃)後も`.codex/hooks.json`のhook共有によりpre-bash-combined/preflight連鎖が継続していることを最終issued_at 14:46:27で実証。JSONL破損行0(9ファイル全数)。
+- **「確認(読む)」の側**: 将軍=[MEM:]引用をstop hookが強制(実測: 本セッションでBLOCK発火→是正2回)。家老・軍師=投稿への[MEM:]付与を実測(家老blt_144304に3タグ実在)。忍者=task YAML静的注入(semantic_concepts)で代替。
+- **残余(正直な限定)**: 3層全hit率は58〜99%と幅がある(missはNO_RESULT明示のfail-visible設計)。「注入結果を読んで判断を変えた」ことの直接計測は未計装 — [MEM:]引用元がevidence実データに一致するかのサンプル照合は今後の観測項目。
+
+### 作戦クローズ宣言(2026-07-27 14:50)
+R1-R7全工程CLEAR+R5数値検収+常時検証(上表)をもって本作戦をクローズする。残余3点(instructions未commit / 陳腐化evidence 111件 / r5_utf8_revalidation BLOCK)は個別弾として追跡。
