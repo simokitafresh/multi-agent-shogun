@@ -59,11 +59,14 @@ Step 1の本文originに`[[リンク]]`を含めていればknowledge書込み�
 bash scripts/memory_db_query.sh --search "<本文中の特徴的な単語1語>" | grep <event_id先頭8桁>
 # L2: alias層で直接ヒットするか（MEMORY_DB_MATCHはフォールバック=Layer2未到達の証拠）
 bash scripts/semantic_search.sh "<殿の言い回し>"   # 出力先頭が「## <概念id>」であること
-# L3: 候補が生成されたか
-grep "<[[リンク]]名>" .cache/causal_index.tsv || echo "candidate待ち(memory_candidate_pendingで確認)"
+# L3: 候補が生成されたか — 二値判定(★「candidate待ちだろう」で通すな。2026-07-27覚醒検証で判定曖昧の穴を検出)
+# 判定=次のいずれかが1件以上: (a)causal_index.tsvに[[リンク]]名ヒット (b)--search出力にinsight:INS-*行(未登録ターゲット検知=候補生成の証拠)
+grep -c "<リンク名>" .cache/causal_index.tsv
+bash scripts/memory_db_query.sh --search "<リンク名の断片>" | grep -c "insight:INS-"
+# (a)(b)とも0なら本文の[[リンク]]欠落を疑いStep 1からやり直せ。候補→本登録はninja_monitorのTHREE-LAYER-MAINTENANCE(閾値自動昇格cmd_3240)が回す(自動・意志非依存を2026-07-27実動確認: candidates=16昇格実測)
 ```
 
-**検証NGパターン**: `semantic_search`の出力が`MEMORY_DB_MATCH:`で始まる=alias層miss（Layer2未貫通）。SSOT追加とmap再生成をやり直せ。
+**検証NGパターン**: `semantic_search`の出力が`MEMORY_DB_MATCH:`で始まる=alias層miss（Layer2未貫通）。SSOT追加とmap再生成をやり直せ。SSOT編集はpython/sedなら**書込み成功を必ず確認**（assert失敗で未書込みのままNO_MATCHになった実例=2026-07-27検証2回目）。アンカーは対象セクション内の一意文字列を使え。
 
 ### Step 5: commit固定
 
