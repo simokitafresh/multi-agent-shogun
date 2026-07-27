@@ -4216,12 +4216,13 @@ PY
     local _semantic_validation_block
     _semantic_validation_block=$(cat <<'EOF'
 semantic_validation:
-  # ★N×M一致が無い場合も記入必須。空欄はBLOCKされる(precheck LG048はresult=PASS以外を無条件でBLOCKする)
+  # ★N×M一致が無い場合も記入必須。空欄・散文はBLOCKされる(precheck LG048はPASS/FAILのリテラルのみ受理する)
   # ★該当なしなら「分類軸は存在しない/偶然の一致である」を再計数で示し result: PASS を記入せよ
+  # ★意味検算の結果、分類漏れ等の問題が実在するなら result: FAIL とし、recount/actualの再計数根拠を添えて差し戻しフローで扱う
   classification_axis: ""  # 分類軸。無ければ「分類軸なし(偶然の一致)」+各数値の由来
   recount: ""  # 分類軸ごとの再計算式・件数。偶然なら各数値がどこ由来かを1つずつ特定する
   actual: ""  # 分類別内訳の実測。積の関係で生成された数値が実在しないなら、その旨を実測で示す
-  result: ""  # PASS or FAIL(★空欄不可)
+  result: ""  # PASS or FAIL(リテラルのみ受理。★空欄・散文不可)
 EOF
 )
     local _level5_report_contract_json
@@ -11525,7 +11526,17 @@ deploy_task_apply_task_mutations() {
 
         # related_lessons+description注入はinject_task_modifiers(yaml.dump使用)の後に実行する。
         # yaml.dumpが_sv(シングルクォート)書式を破壊するため。inject_ac_versionと同じ理由。
-        deploy_task_mutation_phase related_lessons inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons" "$task_file" "$ninja_name"
+        # cmd_karo_impl_related_lessons_snapshot_20260727: 同一cmdの再配備で
+        # related_lessonsが再抽選され、先に生成済みの報告のlessons_useful評価集合と
+        # 食い違ってGATEが無過失の忍者をBLOCKする事象を根治する。resolve前(pre-resolve)に
+        # 既にこのCMD_ID向けのrelated_lessonsが存在していた場合は再注入せず、
+        # 配備時点の集合を維持する(acceptance_criteriaが同一cmd再配備で上書きされないのと
+        # 同じ思想。新規gate/hook/状態ファイルは作らず既存機構を拡張)。
+        if [ -n "${CMD_ID:-}" ] && [ "${_DEPLOY_PRE_RESOLVE_PARENT_CMD:-}" = "$CMD_ID" ] && [ "${_DEPLOY_PRE_RESOLVE_RELATED_LESSONS_PRESENT:-0}" = "1" ]; then
+            log "related_lessons: same-cmd redeploy detected (parent_cmd=${CMD_ID}) — preserving existing related_lessons, skip re-injection"
+        else
+            deploy_task_mutation_phase related_lessons inject_related_lessons "$task_file" || handle_yaml_injection_failure "inject_related_lessons" "$task_file" "$ninja_name"
+        fi
         inject_workaround_pattern_lessons "$task_file" "$ninja_name" || handle_yaml_injection_failure "inject_workaround_pattern_lessons" "$task_file" "$ninja_name"
         inject_standard_skills "$task_file" || true  # Level5: 全taskに常時使用スキルを明示(cmd_2737)
         inject_model_injection_profile "$task_file" "$ninja_name" || true  # cmd_3727: モデル階層別注入強度
@@ -12153,6 +12164,22 @@ deploy_task_main() {
     eval "$(FIELD_GET_NO_LOG=1 field_get_multi "$task_yaml" status parent_cmd 2>/dev/null)" || true
     pre_resolve_status="${status:-unknown}"
     pre_resolve_cmd="${parent_cmd:-}"
+    # cmd_karo_impl_related_lessons_snapshot_20260727 (related_lessons再配備drift是正):
+    # resolve_cmd_to_task/reset_stale_fieldsが走る前のparent_cmd/related_lessons在否を
+    # 記録する。同一cmdの再配備でinject_related_lessonsが既存集合を上書きするのを防ぐため、
+    # 「再解決前からこのCMD_ID向けにrelated_lessonsが既に存在していたか」をここで確定する。
+    _DEPLOY_PRE_RESOLVE_PARENT_CMD="$pre_resolve_cmd"
+    _DEPLOY_PRE_RESOLVE_RELATED_LESSONS_PRESENT=$(python3 -c "
+import sys, yaml
+try:
+    with open(sys.argv[1], encoding='utf-8') as f:
+        d = (yaml.safe_load(f) or {}).get('task', {})
+    rl = d.get('related_lessons')
+    print('1' if isinstance(rl, list) and len(rl) > 0 else '0')
+except Exception:
+    print('0')
+" "$task_yaml" 2>/dev/null || echo 0)
+    export _DEPLOY_PRE_RESOLVE_PARENT_CMD _DEPLOY_PRE_RESOLVE_RELATED_LESSONS_PRESENT
     # B26 escape hatch入力: 配備しようとしているtaskのtask_typeをガードへ渡す。
     # source YAMLがあるときのみ読む(なければ空=従来通り拒否側に倒れるfail-closed)。
     DEPLOY_INCOMING_TASK_TYPE=""

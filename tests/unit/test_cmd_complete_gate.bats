@@ -2790,6 +2790,77 @@ EOF
     [[ "$output" == *"mode=subset"* ]]
 }
 
+# cmd_karo_impl_related_lessons_snapshot_20260727 AC4: deploy_task.shの再配備related_lessons
+# preserve機構(実発生: kagemaru 08:21→09:03 related_lessons入替でGATE無過失BLOCK)を、
+# GATE側(validate_lesson_feedback_set、本cmdでは無変更)から見て再現する。
+# (1)配備時点の集合で報告した忍者はPASSする(検査を殺していないことをAC(3)と合わせて実証)。
+@test "cmd_karo_impl_related_lessons_snapshot AC4(1): deploy-time related_lessons set matches report → PASS" {
+    cat > "$TEST_TMPDIR/task.yaml" <<'EOF'
+task:
+  related_lessons:
+    - id: L163
+    - id: L161
+    - id: L114
+EOF
+    cat > "$TEST_TMPDIR/report.yaml" <<'EOF'
+lessons_useful:
+  - id: L163
+    useful: false
+  - id: L161
+    useful: false
+EOF
+    run validate_lesson_feedback_set "$TEST_TMPDIR/task.yaml" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"mode=subset"* ]]
+}
+
+# (2)再配備でrelated_lessonsが preserve される(deploy_task.shの是正が効いた)前提のtask.yamlは、
+# 配備時点(08:21相当)の報告と★BLOCKしない。preserveせず入替わっていた場合(旧挙動)は
+# extra=L161,L163でMISMATCHしていた実測(GATE出力[CRITICAL] ... MISMATCH mode=subset missing=none extra=L161,L163)。
+@test "cmd_karo_impl_related_lessons_snapshot AC4(2): preserved related_lessons after redeploy does not false-positive BLOCK" {
+    cat > "$TEST_TMPDIR/task.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_karo_impl_commander_post_contract_20260727
+  related_lessons:
+    - id: L163
+    - id: L161
+    - id: L114
+EOF
+    cat > "$TEST_TMPDIR/report.yaml" <<'EOF'
+worker_id: kagemaru
+parent_cmd: cmd_karo_impl_commander_post_contract_20260727
+lessons_useful:
+  - id: L163
+    useful: false
+  - id: L161
+    useful: false
+EOF
+    run validate_lesson_feedback_set "$TEST_TMPDIR/task.yaml" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *MISMATCH* ]]
+}
+
+# (3)注入集合に本当に無いidを報告した場合は従来どおりBLOCKする(検査を殺していないこと)。
+@test "cmd_karo_impl_related_lessons_snapshot AC4(3): id outside the deployed set still triggers MISMATCH (検査は生きている)" {
+    cat > "$TEST_TMPDIR/task.yaml" <<'EOF'
+task:
+  related_lessons:
+    - id: L163
+    - id: L161
+    - id: L114
+EOF
+    cat > "$TEST_TMPDIR/report.yaml" <<'EOF'
+lessons_useful:
+  - id: L163
+    useful: false
+  - id: L296
+    useful: false
+EOF
+    run validate_lesson_feedback_set "$TEST_TMPDIR/task.yaml" "$TEST_TMPDIR/report.yaml"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"extra=L296"* ]]
+}
+
 @test "CDP production check skips branch-only dm-signal frontend changes without deploy evidence" {
     export CMD_PROJECT="dm-signal"
     export CMD_CHANGED_FILES=$'backend/app.py\nfrontend/app/dashboard/page.tsx'

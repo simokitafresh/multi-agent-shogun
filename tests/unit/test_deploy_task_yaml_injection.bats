@@ -1546,6 +1546,93 @@ YAML
     done
 }
 
+# test_necessity: cmd_karo_impl_related_lessons_snapshot_20260727。
+# 同一cmd再配備でrelated_lessonsが再抽選され、先に生成済みの報告のlessons_useful評価集合と
+# 食い違いGATEが無過失の忍者をBLOCKする実発生(kagemaru 08:21→09:03)の根治。
+# pre-resolve捕捉値がCMD_IDと一致し、かつ既存related_lessonsが非空なら再注入をskipする。
+@test "cmd_karo_impl_related_lessons_snapshot: same-cmd redeploy preserves existing related_lessons (no re-injection)" {
+    tmpdir="$(mktemp -d)"; task_file="$tmpdir/task.yaml"
+    marker="$tmpdir/inject_called.marker"
+    cat >"$task_file" <<'YAML'
+task:
+  status: assigned
+  task_id: cmd_fixture_related_lessons_normal
+  parent_cmd: cmd_fixture_related_lessons
+  project: infra
+  related_lessons:
+    - id: L001
+      summary: fixture lesson
+      detail: fixture lesson detail
+YAML
+    run bash -lc "
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        log() { :; }
+        for _f in inject_task_modifiers inject_session_state_hints inject_codd_failure_history \
+            inject_engineering_preferences inject_skill_hint inject_workaround_pattern_lessons \
+            inject_standard_skills inject_model_injection_profile inject_semantic_concepts \
+            inject_memory_db_context inject_causal_links inject_causal_verification_template \
+            inject_dm_signal_pf_operation_guardrails inject_dm_signal_golden_baseline_contract \
+            inject_context_hints inject_production_invariants; do
+            eval \"\$_f() { return 0; }\"
+        done
+        inject_related_lessons() { echo CALLED > '$marker'; return 0; }
+        CMD_ID='cmd_fixture_related_lessons'
+        _DEPLOY_PRE_RESOLVE_PARENT_CMD='cmd_fixture_related_lessons'
+        _DEPLOY_PRE_RESOLVE_RELATED_LESSONS_PRESENT='1'
+        deploy_task_apply_task_mutations hayate '$task_file'
+    "
+    [ "$status" -eq 0 ]
+    [ ! -e "$marker" ]
+    run python3 -c "
+import yaml
+d = yaml.safe_load(open('$task_file'))['task']
+ids = [r.get('id') for r in (d.get('related_lessons') or [])]
+assert ids == ['L001'], ids
+"
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: 新規cmd(pre-resolve時のparent_cmdがCMD_IDと不一致)では検査を殺さず
+# related_lessonsを通常どおり再注入することを実証する(cmd_karo_impl_related_lessons_snapshot_20260727 AC4(3)相当)。
+@test "cmd_karo_impl_related_lessons_snapshot: different cmd (fresh deploy) still re-injects related_lessons" {
+    tmpdir="$(mktemp -d)"; task_file="$tmpdir/task.yaml"
+    marker="$tmpdir/inject_called.marker"
+    cat >"$task_file" <<'YAML'
+task:
+  status: assigned
+  task_id: cmd_fixture_related_lessons_normal
+  parent_cmd: cmd_fixture_related_lessons_old
+  project: infra
+  related_lessons:
+    - id: L001
+      summary: fixture lesson
+      detail: fixture lesson detail
+YAML
+    run bash -lc "
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source '$PROJECT_ROOT/scripts/deploy_task.sh'
+        log() { :; }
+        for _f in inject_task_modifiers inject_session_state_hints inject_codd_failure_history \
+            inject_engineering_preferences inject_skill_hint inject_workaround_pattern_lessons \
+            inject_standard_skills inject_model_injection_profile inject_semantic_concepts \
+            inject_memory_db_context inject_causal_links inject_causal_verification_template \
+            inject_dm_signal_pf_operation_guardrails inject_dm_signal_golden_baseline_contract \
+            inject_context_hints inject_production_invariants; do
+            eval \"\$_f() { return 0; }\"
+        done
+        inject_related_lessons() { echo CALLED > '$marker'; return 0; }
+        CMD_ID='cmd_fixture_related_lessons_new'
+        _DEPLOY_PRE_RESOLVE_PARENT_CMD='cmd_fixture_related_lessons_old'
+        _DEPLOY_PRE_RESOLVE_RELATED_LESSONS_PRESENT='1'
+        deploy_task_apply_task_mutations hayate '$task_file'
+    "
+    [ "$status" -eq 0 ]
+    [ -e "$marker" ]
+}
+
 # test_necessity: mutation途中の後段FAILでは作業copyだけを破棄し、公開済taskのSHA/bytesを不変に保つ不変量を守る。
 @test "task mutation failure leaves original task SHA unchanged" {
     tmpdir="$(mktemp -d)"; task_file="$tmpdir/task.yaml"
@@ -1989,4 +2076,91 @@ assert 'L_BOOST_MISMATCH' not in injected, \
 assert 'L_BOOST_MATCH' in injected, \
     f"boosted lesson with matching target_files must still be injected. got: {injected}"
 PY
+}
+
+# test_necessity: session_state writer が複数行の報告本文を書いても、繰り返し書き込み後の
+# task YAML が yaml.safe_load を通り続けること(本日 queue/tasks/saizo.yaml が2度破損した不変量)。
+@test "session_state writer keeps task yaml loadable after repeated multiline writes while the hand-quoted mutant breaks" {
+    tmpdir="$(mktemp -d)"
+    writer="$tmpdir/writer.py"
+    awk '/^import yaml, sys, re, os, tempfile$/,/^SESSION_STATE_PY$/' \
+        "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" | sed '$d' > "$writer"
+    [ -s "$writer" ]
+    grep -q 'safe_dump' "$writer"
+
+    cat > "$tmpdir/report.yaml" <<'YAML'
+worker_id: kotaro
+diagnose_reason: "一行目: 原因は順序である\n二行目 'quoted' を含む\n三行目: コロン: あり"
+result:
+  summary: "要約: 3環境で実測\n- 通常repo\n- linked worktree\n\n空行も含む"
+YAML
+
+    mk_task() {
+        cat > "$1" <<'YAML'
+task:
+  task_id: fixture_task
+  parent_cmd: fixture_cmd
+  status: assigned
+YAML
+    }
+
+    # 陽性: 現行writerで4回書いても壊れず、改行も切り捨てられない
+    mk_task "$tmpdir/task.yaml"
+    for i in 1 2 3 4; do
+        run python3 "$writer" "$tmpdir/task.yaml" "$tmpdir/report.yaml" "block reason $i: 複数行"
+        [ "$status" -eq 0 ]
+    done
+    python3 - "$tmpdir/task.yaml" <<'PY'
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+ss = task['session_state']
+assert task['task_id'] == 'fixture_task', 'unrelated keys must survive the block replacement'
+assert '\n' in ss['diagnose_reason'], 'multiline body must be preserved, not folded away'
+assert "'quoted'" in ss['diagnose_reason'], 'single quotes must round-trip'
+assert ss['prior_attempts'], 'prior_attempts structure must stay readable'
+PY
+
+    # 陰性(変異注入): 手組みの単一引用に戻すと2回目の書き込みで壊れる
+    mutant="$tmpdir/mutant.py"
+    cat > "$mutant" <<'PY'
+import sys, yaml
+task_yaml, report_yaml, block_reason = sys.argv[1], sys.argv[2], sys.argv[3]
+raw = open(task_yaml, encoding='utf-8').read()
+report = yaml.safe_load(open(report_yaml, encoding='utf-8')) or {}
+def _sq(s):
+    return "'" + str(s).replace("'", "''") + "'"
+frag = '\n'.join([
+    'session_state:',
+    '  attempt: 1',
+    '  last_block_reason: ' + _sq(block_reason),
+    '  diagnose_reason: ' + _sq(report.get('diagnose_reason', '')),
+])
+indented = '\n'.join('  ' + l for l in frag.split('\n'))
+out, skip, inserted = [], False, False
+for line in raw.split('\n'):
+    s = line.lstrip(' ')
+    i = len(line) - len(s)
+    if skip:
+        if s == '' or i > 2 or (i == 2 and s.startswith('- ')):
+            continue
+        skip = False
+    if i == 2 and s.startswith('session_state:'):
+        skip = True
+        out.append(indented)
+        inserted = True
+        continue
+    out.append(line)
+if not inserted:
+    out.append(indented)
+open(task_yaml, 'w', encoding='utf-8').write('\n'.join(out))
+PY
+    mk_task "$tmpdir/task_mutant.yaml"
+    for i in 1 2; do
+        run python3 "$mutant" "$tmpdir/task_mutant.yaml" "$tmpdir/report.yaml" "block reason $i: 複数行"
+        [ "$status" -eq 0 ]
+    done
+    run python3 -c "import sys,yaml; yaml.safe_load(open(sys.argv[1],encoding='utf-8'))" "$tmpdir/task_mutant.yaml"
+    [ "$status" -ne 0 ]
+
+    rm -rf "$tmpdir"
 }
