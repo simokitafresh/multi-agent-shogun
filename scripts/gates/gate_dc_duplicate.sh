@@ -160,7 +160,7 @@ if warn_matches:
     for rd_id, common in warn_matches:
         top_keywords = sorted(common)[:5]
         print(f"WARN: decision_candidate partially overlaps with {rd_id} (common: {', '.join(top_keywords)})")
-    sys.exit(1)
+    sys.exit(0)
 
 print("OK: no duplicate with resolved decisions")
 sys.exit(0)

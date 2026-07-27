@@ -82,6 +82,51 @@ teardown() { rm -rf "$TMPDIR_CASE"; }
   [ "$(sha256sum "$REPORT" | awk '{print $1}')" = "$before" ]
 }
 
+@test "terminal readiness delegates operational no-code identity to shared contract" {
+  tree="$(git -C "$ROOT" rev-parse HEAD^{tree})"
+  cat >>"$REPORT" <<YAML
+commit_contract: {required: true, reason: deploy default}
+no_code_change_evidence: {tree_unchanged: true, before_tree: '$tree', after_tree: '$tree'}
+YAML
+  payload="$(cat <<'YAML'
+status: completed
+commit_hash: ''
+binary_checks.AC1[0].result: yes
+binary_checks.commit:
+  - {check: no-commit operational report, result: "yes"}
+YAML
+)"
+  run bash -c 'printf "%s\n" "$3" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT" "$payload"
+  [ "$status" -eq 0 ]
+  [[ "$output" == BATCH_OK* ]]
+}
+
+@test "terminal readiness keeps incomplete evidence and source paths fail closed" {
+  tree="$(git -C "$ROOT" rev-parse HEAD^{tree})"
+  for mutation in missing_evidence source_path missing_assertion; do
+    cp "$REPORT" "$TMPDIR_CASE/$mutation.yaml"
+    case "$mutation" in
+      missing_evidence)
+        extra="files_modified: [{path: queue/reports/test.yaml, change: fixture}]"
+        ;;
+      source_path)
+        extra="files_modified: [{path: scripts/report_field_set.sh, change: forbidden}]
+no_code_change_evidence: {tree_unchanged: true, before_tree: '$tree', after_tree: '$tree'}"
+        ;;
+      missing_assertion)
+        extra="files_modified: [{path: queue/reports/test.yaml, change: fixture}]
+no_code_change_evidence: {tree_unchanged: true, before_tree: '$tree', after_tree: '$tree'}"
+        ;;
+    esac
+    printf '%s\n' "$extra" >>"$TMPDIR_CASE/$mutation.yaml"
+    check="no-commit operational report"
+    [ "$mutation" != missing_assertion ] || check="git commit completed"
+    run bash -c 'printf "status: completed\ncommit_hash: \"\"\nbinary_checks.AC1[0].result: yes\nbinary_checks.commit:\n  - {check: \"%s\", result: \"yes\"}\n" "$3" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$TMPDIR_CASE/$mutation.yaml" "$check"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"shared no-code identity contract"* ]]
+  done
+}
+
 @test "completed revision batch unlocks and republishes terminal once" {
   sed -i "s/status: pending/status: completed/; s/result: ''/result: yes/; \$a verdict: PASS" "$REPORT"
   before_inode="$(stat -c %i "$REPORT")"

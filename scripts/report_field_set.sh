@@ -68,6 +68,7 @@ if [ "${1:-}" = "--batch" ]; then
 import hashlib, os, pathlib, re, sys, tempfile, yaml
 sys.path.insert(0, sys.argv[2])
 from scripts.lib.yaml_atomic import yaml_text
+from scripts.lib.report_commit_identity import permits_no_code_identity
 
 path = pathlib.Path(sys.argv[1])
 updates = yaml.safe_load(os.environ.get("RFS_BATCH_PAYLOAD", ""))
@@ -153,16 +154,13 @@ if terminal:
     if missing:
         raise SystemExit("BLOCK: terminal readiness missing: " + ",".join(missing))
     commit = str(data.get("commit_hash", "")).strip()
-    contract = data.get("commit_contract") or {}
-    commit_required = not (isinstance(contract, dict) and contract.get("required") is False)
-    if commit_required and not re.fullmatch(r"[0-9a-f]{40}|no-code-change", commit):
-        raise SystemExit("BLOCK: terminal readiness requires valid commit_hash when commit_contract.required=true")
-    if commit == "no-code-change":
-        evidence = data.get("no_code_change_evidence") or {}
-        before = str(evidence.get("before_tree") or "").strip() if isinstance(evidence, dict) else ""
-        after = str(evidence.get("after_tree") or "").strip() if isinstance(evidence, dict) else ""
-        if evidence.get("tree_unchanged") is not True or not re.fullmatch(r"[0-9a-f]{40}", before) or before != after:
-            raise SystemExit("BLOCK: no-code-change requires matching 40-hex before_tree/after_tree and tree_unchanged=true")
+    root = pathlib.Path(sys.argv[2]).resolve()
+    # Third and final terminal-readiness entrance uses the same structural
+    # no-code identity contract as review_approval and cmd_complete_gate.
+    # This does not trust commit_contract.required alone: evidence, an explicit
+    # no-commit assertion, and operational-only paths must all be true.
+    if not re.fullmatch(r"[0-9a-f]{40}", commit) and not permits_no_code_identity(data, root):
+        raise SystemExit("BLOCK: terminal readiness requires a 40-hex commit or shared no-code identity contract")
 
 text = yaml_text(data, allow_unicode=True, sort_keys=False)
 fd, tmp = tempfile.mkstemp(prefix=path.name + ".batch.", dir=path.parent)
