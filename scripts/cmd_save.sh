@@ -224,6 +224,10 @@ cmd_save_metadata_cache_file() {
     local cmd_id_part="${CMD_ID:-unknown}"
     local hash
     hash="$(cmd_save_hash_text "$payload")"
+    # q11の出力はcmd IDではなく抽出済みqueryだけで決まる。同一sessionで
+    # 同じqueryを別cmd IDから検索した場合も再利用し、外部semantic検索を重ねない。
+    # 他labelはcmd本文・時系列へ依存し得るため、従来どおりcmd IDで分離する。
+    [[ "$label" == "q11_semantic" ]] && cmd_id_part="query"
     mkdir -p "$_CMD_SAVE_METADATA_CACHE_DIR" 2>/dev/null || true
     printf '%s/%s_%s_%s.cache' "$_CMD_SAVE_METADATA_CACHE_DIR" "$cmd_id_part" "$label" "$hash"
 }
