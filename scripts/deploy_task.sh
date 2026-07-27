@@ -9108,6 +9108,12 @@ hit = None
 for entry in entries:
     if not isinstance(entry, dict):
         continue
+    # Guard checks current state, not "was a declaration ever made": a
+    # released=true entry stays in the registry as an audit trail but must
+    # not re-BLOCK (2026-07-27 shogun ruling released lessons.yaml; a
+    # declaration-only/append-only log can't express "no longer preserved").
+    if entry.get('released') is True:
+        continue
     p = normalize(str(entry.get('path', '')))
     if p and p in target_paths:
         hit = entry
