@@ -2086,7 +2086,9 @@ PY
     awk '/^import yaml, sys, re, os, tempfile$/,/^SESSION_STATE_PY$/' \
         "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" | sed '$d' > "$writer"
     [ -s "$writer" ]
-    grep -q 'safe_dump' "$writer"
+    # dumper委譲の不変量: 手書きクォートでなくYAML dumper経由で断片を生成していること
+    # (実装はyaml_atomic.yaml_textへ移行済み(IB-O是正)。safe_dump直呼びはguardでBLOCK対象)
+    grep -qE 'yaml_text|safe_dump' "$writer"
 
     cat > "$tmpdir/report.yaml" <<'YAML'
 worker_id: kotaro
@@ -2107,7 +2109,7 @@ YAML
     # 陽性: 現行writerで4回書いても壊れず、改行も切り捨てられない
     mk_task "$tmpdir/task.yaml"
     for i in 1 2 3 4; do
-        run python3 "$writer" "$tmpdir/task.yaml" "$tmpdir/report.yaml" "block reason $i: 複数行"
+        run python3 "$writer" "$tmpdir/task.yaml" "$tmpdir/report.yaml" "block reason $i: 複数行" "$PROJECT_ROOT"
         [ "$status" -eq 0 ]
     done
     python3 - "$tmpdir/task.yaml" <<'PY'

@@ -258,13 +258,17 @@ PY
                 # window without waiting for ninja_monitor's 20s cycle. The
                 # synchronous publisher below remains the success boundary;
                 # both converge through inbox_write's fingerprint transaction.
+                # DELAY must exceed the synchronous publisher+gate path: at 0.2s
+                # the reconciler's inbox_write→gate_report_format grabbed the
+                # report lock while this process still held it (circular
+                # lock contention, 3 ninjas stalled 2026-07-27).
                 RFS_RECONCILE_INBOX="$_rfs_inbox_write" \
                 RFS_RECONCILE_REPORT="$_rfs_batch_report" \
                 RFS_RECONCILE_WORKER="$_rfs_batch_worker" \
                 RFS_RECONCILE_PARENT="$_rfs_batch_parent" \
                 RFS_RECONCILE_EVENT="$_rfs_event_type" \
                 RFS_RECONCILE_LABEL="$_rfs_event_label" \
-                RFS_RECONCILE_DELAY="${RFS_RECONCILE_DELAY:-0.2}" \
+                RFS_RECONCILE_DELAY="${RFS_RECONCILE_DELAY:-30}" \
                     nohup setsid -f bash -c '
                         sleep "$RFS_RECONCILE_DELAY"
                         bash "$RFS_RECONCILE_INBOX" karo \
