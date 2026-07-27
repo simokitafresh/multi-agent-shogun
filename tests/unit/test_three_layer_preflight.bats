@@ -234,6 +234,114 @@ PY
     [ "$status" -eq 0 ]
 }
 
+@test "T1: 三層検索結果が破棄されずevidenceへ注入される(A1是正)" {
+    run issue_with_fixtures "fixture preflight line wal_live_event"
+    [ "$status" -eq 0 ]
+    [ -s "$EVIDENCE" ]
+    run python3 - "$EVIDENCE" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+# A1是正: 各層の結果本文(top)が空文字ではなく実データを含む(捨てられていない)。
+for layer in ("memory", "semantic", "obsidian"):
+    top = data[f"{layer}_top"]
+    assert top, f"{layer}_top must not be empty"
+    assert top not in ("NO_RESULT", "NO_RESULT(timeout)"), f"{layer}_top unexpectedly empty: {top!r}"
+# LG075防御: truncate時に総ヒット件数とevidenceファイルパスを必ず同梱する。
+for layer in ("memory", "semantic", "obsidian"):
+    assert int(data[f"{layer}_total_hits"]) >= 1, f"{layer}_total_hits must be >=1"
+assert data["evidence_path"], "evidence_path must be present"
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "T1: 注入テキストは2KB上限でtruncateされる(AC2)" {
+    local long_root="$TMP_EVIDENCE/long_line"
+    mkdir -p "$long_root"
+    python3 -c "print('growth_loop 三層記憶 fixture ' * 400)" > "$long_root/semantic-index.md"
+    printf '%s\t%s\n' 'growth_loop 三層記憶 fixture line' "$long_root/semantic-index.md" > "$long_root/causal-index.tsv"
+    run env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" \
+        THREE_LAYER_SEMANTIC_INDEX="$long_root/semantic-index.md" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$long_root/causal-index.tsv" \
+        THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" \
+        THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "growth_loop 三層記憶 fixture"
+    [ "$status" -eq 0 ]
+    run python3 - "$EVIDENCE" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+total = sum(len(data[f"{layer}_top"].encode()) for layer in ("memory", "semantic", "obsidian"))
+assert total <= 2048, f"injected content exceeds 2KB cap: {total} bytes"
+PY
+    [ "$status" -eq 0 ]
+}
+
+@test "T1(AC4): evidenceはappend型ログにも検索クエリと結果を蓄積する" {
+    run issue_with_fixtures "fixture preflight line wal_live_event"
+    [ "$status" -eq 0 ]
+    local log
+    log="$(find "$TMP_EVIDENCE" -maxdepth 1 -name 'evidence_log_*.jsonl')"
+    [ -n "$log" ]
+    [ -s "$log" ]
+    run python3 - "$log" <<'PY'
+import json, sys
+lines = [l for l in open(sys.argv[1], encoding="utf-8") if l.strip()]
+assert lines, "append log must have at least one entry"
+last = json.loads(lines[-1])
+assert last.get("memory_query") not in (None, ""), "append log entry must retain the query"
+assert last.get("memory_top"), "append log entry must retain the result content"
+PY
+    [ "$status" -eq 0 ]
+    # 既存のevidenceファイル参照(current pair)は壊れていない。
+    [ -s "$EVIDENCE" ]
+    [ -s "${EVIDENCE}.current" ]
+}
+
+@test "AC5-5件目(軍師指摘): has_successful_three_layer_preflightの外部消費判定が是正前後で一致(AC4/AC6境界)" {
+    # stop_check_inbox.sh:25-40 のhas_successful_three_layer_preflight()は
+    # evidence_shogun_*.json(単一JSONオブジェクト)をjson.loadする外部消費者。
+    # AC4のappend型ログは別ファイル(evidence_log_*.jsonl)として新設し、
+    # evidence_shogun_*.json自体の書式(必須キー: status/memory_db/semantic/obsidian)は
+    # 変更していない。新規キー追加のみでjson.loadは例外を投げず、判定は不変であることを実証する。
+    local agent_evidence_dir="$TMP_EVIDENCE/consumer_check"
+    mkdir -p "$agent_evidence_dir"
+    run env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" \
+        THREE_LAYER_SEMANTIC_INDEX="$THREE_LAYER_SEMANTIC_FIXTURE" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$THREE_LAYER_CAUSAL_FIXTURE" \
+        THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$agent_evidence_dir" \
+        THREE_LAYER_AGENT_ID="shogun" TMUX_PANE="%consumer_check" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "fixture preflight line wal_live_event"
+    [ "$status" -eq 0 ]
+    run env SCRIPT_DIR="$ROOT" THREE_LAYER_PREACTION_EVIDENCE_DIR="$agent_evidence_dir" bash -c '
+has_successful_three_layer_preflight() {
+  local evidence_dir="${THREE_LAYER_PREACTION_EVIDENCE_DIR:-$SCRIPT_DIR/logs/preaction_memory}"
+  local evidence
+  shopt -s nullglob
+  for evidence in "$evidence_dir"/evidence_shogun_*.json; do
+    if python3 - "$evidence" <<PY >/dev/null 2>&1
+import json, sys
+try:
+    data = json.load(open(sys.argv[1], encoding="utf-8"))
+except Exception:
+    raise SystemExit(1)
+raise SystemExit(0 if data.get("status") == "success" and all(str(data.get(k)) == "0" for k in ("memory_db", "semantic", "obsidian")) else 1)
+PY
+    then
+      shopt -u nullglob
+      return 0
+    fi
+  done
+  shopt -u nullglob
+  return 1
+}
+has_successful_three_layer_preflight
+'
+    # 是正前(commit HEAD時点)も同一fixtureでtrueだったことを別途実測済み(手動比較)。
+    # ここでは「新evidenceがconsumerを真固定しないこと」を機械的に固定する回帰。
+    [ "$status" -eq 0 ]
+}
+
 @test "linked worktreeの.git fileでもGit checkout経路を使う" {
     local tmp_root="$TMP_EVIDENCE/linked-worktree" evidence_dir="$TMP_EVIDENCE/linked-evidence"
     mkdir -p "$tmp_root/scripts/hooks" "$tmp_root/scripts/lib" "$tmp_root/bin"

@@ -51,23 +51,33 @@ is_git_checkout() {
 memory_timeout_fallback() {
     local query="$1" timeout_seconds="${2:-${THREE_LAYER_FALLBACK_TIMEOUT_SECONDS:-10}}" result_file="${3:-/dev/null}"
     local db_path="${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}"
-    timeout "${timeout_seconds}s" python3 - "$db_path" "$query" <<'PY' >"$result_file" 2>/dev/null
-import datetime, pathlib, re, sqlite3, sys
+    local memory_lines="${THREE_LAYER_INJECT_MEMORY_LINES:-5}"
+    timeout "${timeout_seconds}s" python3 - "$db_path" "$query" "$memory_lines" <<'PY' >"$result_file" 2>/dev/null
+import base64, datetime, pathlib, re, sqlite3, sys
 
-db_path, query = sys.argv[1:]
+db_path, query, memory_lines = sys.argv[1:]
+memory_lines = max(1, int(memory_lines))
 aliases = {"quality_throughput": ["品質合格スループット", "growth_loop"], "growth_loop": ["品質合格スループット", "quality_throughput"], "品質合格スループット": ["quality_throughput", "growth_loop"]}
 candidates = [query.strip()]
 for key, values in aliases.items():
     if key.lower() in query.lower(): candidates.extend(values)
 candidates.extend(re.findall(r"[A-Za-z_]{4,}|[一-龥ぁ-んァ-ヶ]{4,}", query))
-count, used, ts = 0, "-", ""
+count, used, ts, top_b64, total = 0, "-", "", "", 0
 with sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=0.5) as conn:
     conn.execute("PRAGMA busy_timeout=500")
     for needle in dict.fromkeys(c[:200] for c in candidates if c.strip()):
         phrase = '"' + needle.replace('"', '""') + '"'
-        row = conn.execute("SELECT e.ts FROM events_fts JOIN events e ON e.rowid=events_fts.rowid WHERE events_fts MATCH ? LIMIT 1", (phrase,)).fetchone()
-        if row: count, ts, used = 1, str(row[0]), needle; break
-print(f"{count}\t{used}\t{db_path}\t{ts or datetime.datetime.fromtimestamp(pathlib.Path(db_path).stat().st_mtime, datetime.timezone.utc).isoformat()}")
+        rows = conn.execute(
+            "SELECT e.ts, e.summary FROM events_fts JOIN events e ON e.rowid=events_fts.rowid "
+            "WHERE events_fts MATCH ? ORDER BY e.ts DESC LIMIT ?", (phrase, memory_lines)).fetchall()
+        if rows:
+            count, ts, used = 1, str(rows[0][0]), needle
+            total_row = conn.execute("SELECT COUNT(*) FROM events_fts WHERE events_fts MATCH ?", (phrase,)).fetchone()
+            total = int(total_row[0]) if total_row else len(rows)
+            lines = [f"{r[0]} | {(r[1] or '').strip()[:200]}" for r in rows]
+            top_b64 = base64.b64encode("\n".join(lines).encode()).decode()
+            break
+print(f"{count}\t{used}\t{db_path}\t{ts or datetime.datetime.fromtimestamp(pathlib.Path(db_path).stat().st_mtime, datetime.timezone.utc).isoformat()}\t{top_b64}\t{total}")
 PY
 }
 
@@ -81,21 +91,27 @@ text_index_timeout_fallback() {
         for raw_path in "$@"; do
             relative_paths+=("${raw_path#"$ROOT/"}")
         done
+        local top_lines="${THREE_LAYER_INJECT_OBSIDIAN_LINES:-3}"
         local git_rc=0
-        local match
-        match="$(timeout "${fallback_timeout}s" git -C "$ROOT" grep -F -n -- "$query" -- "${relative_paths[@]}" 2>/dev/null | head -1)" || git_rc=$?
+        local matches
+        matches="$(timeout "${fallback_timeout}s" git -C "$ROOT" grep -F -n -- "$query" -- "${relative_paths[@]}" 2>/dev/null | head -n "$top_lines")" || git_rc=$?
         [[ "$git_rc" == 1 ]] && git_rc=0
-        if [[ "$git_rc" == 0 && -n "$match" ]]; then
-            local source="${match%%:*}" ts
+        if [[ "$git_rc" == 0 && -n "$matches" ]]; then
+            local match="${matches%%$'\n'*}"
+            local source="${match%%:*}" ts total top_b64
             ts="$(date -r "$ROOT/$source" -Iseconds 2>/dev/null || date -Iseconds)"
-            printf '1\t%s\t%s\t%s\n' "$query" "$ROOT/$source" "$ts" >"$result_file"
+            total="$(printf '%s\n' "$matches" | wc -l)"
+            top_b64="$(printf '%s' "$matches" | base64 -w0)"
+            printf '1\t%s\t%s\t%s\t%s\t%s\n' "$query" "$ROOT/$source" "$ts" "$top_b64" "$total" >"$result_file"
         fi
         return "$git_rc"
     fi
-    timeout "${fallback_timeout}s" python3 - "$query" "$@" <<'PY' >"$result_file" 2>/dev/null
-import datetime, os, pathlib, sys
+    local top_lines="${THREE_LAYER_INJECT_OBSIDIAN_LINES:-3}"
+    timeout "${fallback_timeout}s" python3 - "$query" "$top_lines" "$@" <<'PY' >"$result_file" 2>/dev/null
+import base64, datetime, os, pathlib, sys
 
-query, *paths = sys.argv[1:]
+query, top_lines, *paths = sys.argv[1:]
+top_lines = max(1, int(top_lines))
 needle = next((part for part in query.split() if part), query[:80]).encode()
 files = []
 for raw_path in paths:
@@ -109,16 +125,23 @@ for raw_path in paths:
         raise SystemExit(2)
 if not files:
     raise SystemExit(2)
-count, source, newest = 0, "", 0.0
+count, source, newest, matched_lines = 0, "", 0.0, []
 for path in files:
     with path.open("rb") as handle:
-        while chunk := handle.read(1024 * 1024):
-            if needle in chunk: count = 1; source = str(path); newest = path.stat().st_mtime; break
-        if count: break
+        for raw_line in handle:
+            if needle in raw_line:
+                matched_lines.append(raw_line.decode(errors="replace").rstrip("\n")[:300])
+                if not count:
+                    count, source, newest = 1, str(path), path.stat().st_mtime
+                if len(matched_lines) >= top_lines:
+                    break
+    if len(matched_lines) >= top_lines:
+        break
 if not source:
     source = str(files[0])
     newest = max(path.stat().st_mtime for path in files)
-print(f"{count}\t{needle.decode(errors='replace') if count else '-'}\t{source}\t{datetime.datetime.fromtimestamp(newest, datetime.timezone.utc).isoformat()}")
+top_b64 = base64.b64encode("\n".join(matched_lines).encode()).decode()
+print(f"{count}\t{needle.decode(errors='replace') if count else '-'}\t{source}\t{datetime.datetime.fromtimestamp(newest, datetime.timezone.utc).isoformat()}\t{top_b64}\t{len(matched_lines)}")
 PY
 }
 
@@ -166,10 +189,13 @@ batch_index_search() {
     local use_immutable=0
     [[ "$read_db" == "$cache_path" ]] && use_immutable=1
     local semantic_index="${THREE_LAYER_SEMANTIC_INDEX:-$ROOT/docs/semantic-index/index.md}"
-    timeout "${timeout_seconds}s" python3 - "$read_db" "$semantic_index" "$query" "$use_immutable" <<'PY' >"$result_file"
-import datetime, pathlib, re, sqlite3, sys, time
+    local memory_lines="${THREE_LAYER_INJECT_MEMORY_LINES:-5}" semantic_lines="${THREE_LAYER_INJECT_SEMANTIC_LINES:-1}"
+    timeout "${timeout_seconds}s" python3 - "$read_db" "$semantic_index" "$query" "$use_immutable" "$memory_lines" "$semantic_lines" <<'PY' >"$result_file"
+import base64, datetime, pathlib, re, sqlite3, sys, time
 
-db_path, semantic_path, query, use_immutable = sys.argv[1:]
+db_path, semantic_path, query, use_immutable, memory_lines, semantic_lines = sys.argv[1:]
+memory_lines = max(1, int(memory_lines))
+semantic_lines = max(1, int(semantic_lines))
 aliases = {
     "quality_throughput": ["品質合格スループット", "growth_loop"],
     "growth_loop": ["品質合格スループット", "quality_throughput"],
@@ -186,6 +212,8 @@ memory_count = semantic_count = 0
 memory_query = semantic_query = "-"
 memory_ts = datetime.datetime.fromtimestamp(pathlib.Path(db_path).stat().st_mtime, datetime.timezone.utc).isoformat()
 semantic_ts = ""
+memory_top_b64 = semantic_top_b64 = ""
+memory_total = semantic_total = 0
 memory_started = time.monotonic()
 try:
     immutable = "&immutable=1" if use_immutable == "1" else ""
@@ -193,9 +221,17 @@ try:
         conn.execute("PRAGMA busy_timeout=500")
         for needle in candidates:
             phrase = '"' + needle.replace('"', '""') + '"'
-            row = conn.execute("SELECT e.ts FROM events_fts JOIN events e ON e.rowid=events_fts.rowid WHERE events_fts MATCH ? LIMIT 1", (phrase,)).fetchone()
-            if row:
-                memory_count, memory_ts, memory_query = 1, str(row[0]), needle
+            rows = conn.execute(
+                "SELECT e.ts, e.summary FROM events_fts JOIN events e ON e.rowid=events_fts.rowid "
+                "WHERE events_fts MATCH ? ORDER BY e.ts DESC LIMIT ?",
+                (phrase, memory_lines),
+            ).fetchall()
+            if rows:
+                memory_count, memory_ts, memory_query = 1, str(rows[0][0]), needle
+                total_row = conn.execute("SELECT COUNT(*) FROM events_fts WHERE events_fts MATCH ?", (phrase,)).fetchone()
+                memory_total = int(total_row[0]) if total_row else len(rows)
+                lines = [f"{ts} | {(summary or '').strip()[:200]}" for ts, summary in rows]
+                memory_top_b64 = base64.b64encode("\n".join(lines).encode()).decode()
                 break
 except Exception:
     memory_rc = 2
@@ -207,19 +243,26 @@ try:
         raise FileNotFoundError(path)
     for needle in candidates:
         encoded = needle.encode()
+        matches = []
         with path.open("rb") as handle:
-            while chunk := handle.read(1024 * 1024):
-                if encoded in chunk:
-                    semantic_count, semantic_query = 1, needle
-                    break
-        if semantic_count: break
+            for raw_line in handle:
+                if encoded in raw_line:
+                    matches.append(raw_line.decode(errors="replace").rstrip("\n")[:300])
+                    if len(matches) >= semantic_lines:
+                        break
+        if matches:
+            semantic_count, semantic_query = 1, needle
+            semantic_total = len(matches)
+            semantic_top_b64 = base64.b64encode("\n".join(matches).encode()).decode()
+            break
     semantic_ts = datetime.datetime.fromtimestamp(path.stat().st_mtime, datetime.timezone.utc).isoformat()
 except Exception:
     semantic_rc = 2
 semantic_wall_ms = round((time.monotonic() - semantic_started) * 1000)
 print("\t".join(map(str, (memory_rc, semantic_rc, memory_count, semantic_count,
                               memory_query, semantic_query, memory_ts, semantic_ts,
-                              memory_wall_ms, semantic_wall_ms))))
+                              memory_wall_ms, semantic_wall_ms, memory_top_b64, semantic_top_b64,
+                              memory_total, semantic_total))))
 raise SystemExit(0 if memory_rc == semantic_rc == 0 else 1)
 PY
 }
@@ -244,24 +287,34 @@ obsidian_cached_search() {
             return 1
         fi
     fi
-    QUERY="$query" CACHE="$built_cache" python3 - <<'PY' >"$result_file"
-import datetime, os, pathlib, re
+    local obsidian_lines="${THREE_LAYER_INJECT_OBSIDIAN_LINES:-3}"
+    QUERY="$query" CACHE="$built_cache" OBSIDIAN_LINES="$obsidian_lines" python3 - <<'PY' >"$result_file"
+import base64, datetime, os, pathlib, re
 query = os.environ["QUERY"]
 path = pathlib.Path(os.environ["CACHE"])
+obsidian_lines = max(1, int(os.environ.get("OBSIDIAN_LINES", "3")))
 aliases = {"quality_throughput": ["品質合格スループット", "growth_loop"], "growth_loop": ["品質合格スループット", "quality_throughput"], "品質合格スループット": ["quality_throughput", "growth_loop"]}
 candidates = [query.strip()]
 for key, values in aliases.items():
     if key.lower() in query.lower(): candidates.extend(values)
 candidates.extend(re.findall(r"[A-Za-z_]{4,}|[一-龥ぁ-んァ-ヶ]{4,}", query))
-count, used = 0, "-"
+count, used, total = 0, "-", 0
+top_b64 = ""
 for candidate in dict.fromkeys(c[:200] for c in candidates if c.strip()):
     encoded = candidate.encode()
+    matches = []
     with path.open("rb") as handle:
-        while chunk := handle.read(1024 * 1024):
-            if encoded in chunk: count, used = 1, candidate; break
-    if count: break
+        for raw_line in handle:
+            if encoded in raw_line:
+                matches.append(raw_line.decode(errors="replace").rstrip("\n")[:300])
+                if len(matches) >= obsidian_lines:
+                    break
+    if matches:
+        count, used, total = 1, candidate, len(matches)
+        top_b64 = base64.b64encode("\n".join(matches).encode()).decode()
+        break
 ts = datetime.datetime.fromtimestamp(path.stat().st_mtime, datetime.timezone.utc).isoformat()
-print(f"{count}\t{used}\t{path}\t{ts}")
+print(f"{count}\t{used}\t{path}\t{ts}\t{top_b64}\t{total}")
 PY
 }
 
@@ -361,6 +414,11 @@ issue() {
     local memory_query="" semantic_query="" obsidian_used_query="" memory_ts="" semantic_ts="" obsidian_ts="" obsidian_source=""
     local memory_wall_ms=0 semantic_wall_ms=0 obsidian_wall_ms=0 obsidian_started_ms=0
     local memory_pid="" semantic_pid="" obsidian_pid="" batch_pid="" batch_result="" obsidian_result=""
+    # T1(結果注入): 各層の上位N件テキスト(base64退避、TSVのタブ/改行混入回避)と総ヒット件数。
+    # timed_out flagはfallback到達前のrc==124を記録し、count<=0時にNO_RESULT(timeout)を明示するために使う(A6/AC3)。
+    local memory_top_b64="" semantic_top_b64="" obsidian_top_b64=""
+    local memory_total_hits=0 semantic_total_hits=0 obsidian_total_hits=0
+    local memory_timed_out=0 semantic_timed_out=0 obsidian_timed_out=0
 
     local primary_timeout="${THREE_LAYER_PRIMARY_TIMEOUT_SECONDS:-2.2}" obsidian_timeout
     [[ "$memory_cache_cold" == 1 && -z "${THREE_LAYER_PRIMARY_TIMEOUT_SECONDS+x}" ]] && primary_timeout="${THREE_LAYER_COLD_CACHE_TIMEOUT_SECONDS:-3.5}"
@@ -396,7 +454,7 @@ issue() {
         local batch_rc=0
         wait "$batch_pid" || batch_rc=$?
         if [[ -s "$batch_result" ]]; then
-            IFS=$'\t' read -r memory_rc semantic_rc memory_count semantic_count memory_query semantic_query memory_ts semantic_ts memory_wall_ms semantic_wall_ms <"$batch_result"
+            IFS=$'\t' read -r memory_rc semantic_rc memory_count semantic_count memory_query semantic_query memory_ts semantic_ts memory_wall_ms semantic_wall_ms memory_top_b64 semantic_top_b64 memory_total_hits semantic_total_hits <"$batch_result"
         else
             memory_rc="$batch_rc"
             semantic_rc="$batch_rc"
@@ -407,9 +465,11 @@ issue() {
         wait "$semantic_pid" || semantic_rc=$?
         # Portable isolated roots expose only command completion, not the
         # indexed hit metadata available in the production batch reader.
-        [[ "$memory_rc" == 0 ]] && { memory_count=1; memory_query="$prompt"; memory_ts="$issued_at"; }
-        [[ "$semantic_rc" == 0 ]] && { semantic_count=1; semantic_query="$prompt"; semantic_ts="$issued_at"; }
+        [[ "$memory_rc" == 0 ]] && { memory_count=1; memory_query="$prompt"; memory_ts="$issued_at"; memory_total_hits=1; }
+        [[ "$semantic_rc" == 0 ]] && { semantic_count=1; semantic_query="$prompt"; semantic_ts="$issued_at"; semantic_total_hits=1; }
     fi
+    [[ "$memory_rc" == 124 ]] && memory_timed_out=1
+    [[ "$semantic_rc" == 124 ]] && semantic_timed_out=1
     # memory_db_query.sh returns 0 for a completed search, including NO_MATCH.
     # Preserve every non-zero result so missing/corrupt DBs and query failures
     # remain fail-closed instead of being mistaken for a successful lookup.
@@ -427,18 +487,20 @@ issue() {
         wait "$obsidian_pid" || obsidian_rc=$?
         [[ "$obsidian_started_ms" -gt 0 ]] && obsidian_wall_ms=$(( $(date +%s%3N) - obsidian_started_ms ))
         if [[ -s "$obsidian_result" ]]; then
-            IFS=$'\t' read -r obsidian_count obsidian_used_query obsidian_source obsidian_ts <"$obsidian_result"
+            IFS=$'\t' read -r obsidian_count obsidian_used_query obsidian_source obsidian_ts obsidian_top_b64 obsidian_total_hits <"$obsidian_result"
         fi
         rm -f "$obsidian_result"
     else
         obsidian_rc=127
     fi
+    [[ "$obsidian_rc" == 124 ]] && obsidian_timed_out=1
     [[ "$obsidian_rc" == 1 ]] && obsidian_rc=0
     if [[ "$obsidian_rc" == 0 && "$obsidian_count" -eq 0 ]] && ! is_git_checkout; then
         obsidian_count=1
         obsidian_used_query="$obsidian_query"
         obsidian_source="$ROOT/context/semantic-map.md"
         obsidian_ts="$issued_at"
+        obsidian_total_hits=1
     fi
     # A primary timeout is not proof that a search completed. Fall back to
     # bounded, read-only access to each layer's real canonical data. Only a
@@ -457,9 +519,9 @@ issue() {
         [[ "$memory_rc" == 124 ]] && { fallback_memory_result="$(mktemp "$EVIDENCE_DIR/.memory-fallback.XXXXXX")"; memory_timeout_fallback "$prompt" "$fallback_seconds" "$fallback_memory_result" & fallback_memory_pid=$!; }
         [[ "$semantic_rc" == 124 ]] && { fallback_semantic_result="$(mktemp "$EVIDENCE_DIR/.semantic-fallback.XXXXXX")"; text_index_timeout_fallback "$prompt" "$fallback_seconds" "$fallback_semantic_result" "$semantic_index" & fallback_semantic_pid=$!; }
         [[ "$obsidian_rc" == 124 ]] && { fallback_obsidian_result="$(mktemp "$EVIDENCE_DIR/.obsidian-fallback.XXXXXX")"; text_index_timeout_fallback "$obsidian_query" "$fallback_seconds" "$fallback_obsidian_result" "$ROOT/context/semantic-map.md" "$ROOT/docs" & fallback_obsidian_pid=$!; }
-        if [[ -n "$fallback_memory_pid" ]]; then wait "$fallback_memory_pid" && memory_rc=0 || memory_rc=$?; [[ -s "$fallback_memory_result" ]] && IFS=$'\t' read -r memory_count memory_query _memory_source memory_ts <"$fallback_memory_result"; rm -f "$fallback_memory_result"; fi
-        if [[ -n "$fallback_semantic_pid" ]]; then wait "$fallback_semantic_pid" && semantic_rc=0 || semantic_rc=$?; [[ -s "$fallback_semantic_result" ]] && IFS=$'\t' read -r semantic_count semantic_query _semantic_source semantic_ts <"$fallback_semantic_result"; rm -f "$fallback_semantic_result"; fi
-        if [[ -n "$fallback_obsidian_pid" ]]; then wait "$fallback_obsidian_pid" && obsidian_rc=0 || obsidian_rc=$?; [[ -s "$fallback_obsidian_result" ]] && IFS=$'\t' read -r obsidian_count obsidian_used_query obsidian_source obsidian_ts <"$fallback_obsidian_result"; rm -f "$fallback_obsidian_result"; fi
+        if [[ -n "$fallback_memory_pid" ]]; then wait "$fallback_memory_pid" && memory_rc=0 || memory_rc=$?; [[ -s "$fallback_memory_result" ]] && IFS=$'\t' read -r memory_count memory_query _memory_source memory_ts memory_top_b64 memory_total_hits <"$fallback_memory_result"; rm -f "$fallback_memory_result"; fi
+        if [[ -n "$fallback_semantic_pid" ]]; then wait "$fallback_semantic_pid" && semantic_rc=0 || semantic_rc=$?; [[ -s "$fallback_semantic_result" ]] && IFS=$'\t' read -r semantic_count semantic_query _semantic_source semantic_ts semantic_top_b64 semantic_total_hits <"$fallback_semantic_result"; rm -f "$fallback_semantic_result"; fi
+        if [[ -n "$fallback_obsidian_pid" ]]; then wait "$fallback_obsidian_pid" && obsidian_rc=0 || obsidian_rc=$?; [[ -s "$fallback_obsidian_result" ]] && IFS=$'\t' read -r obsidian_count obsidian_used_query obsidian_source obsidian_ts obsidian_top_b64 obsidian_total_hits <"$fallback_obsidian_result"; rm -f "$fallback_obsidian_result"; fi
     fi
 
     local status=success
@@ -480,15 +542,51 @@ issue() {
         printf 'three_layer_preflight: %s evidence failed (memory=%s/%s semantic=%s/%s obsidian=%s/%s)\n' "$agent_id" "$memory_rc" "$memory_count" "$semantic_rc" "$semantic_count" "$obsidian_rc" "$obsidian_count" >&2
         return 1
     fi
+    # T1(結果注入・A1是正): 三層検索結果を捨てず注入する。ここから下は表示用データの整形のみで、
+    # 上のstatus判定(fail-closed契約・AC5不変更対象)には一切触れない。
+    # AC3: timeout(rc==124発生)かつ0件のまま終わった層は黙って空にせず NO_RESULT(timeout) を明示する。
+    # 完全に0件(timeoutなし)の層はNO_RESULT。中身が取れた層はbase64→復号したテキストを使う。
+    local memory_top_text semantic_top_text obsidian_top_text
+    if [[ -n "$memory_top_b64" ]]; then
+        memory_top_text="$(printf '%s' "$memory_top_b64" | base64 -d 2>/dev/null || true)"
+    elif [[ "$memory_timed_out" == 1 ]]; then
+        memory_top_text="NO_RESULT(timeout)"
+    else
+        memory_top_text="NO_RESULT"
+    fi
+    if [[ -n "$semantic_top_b64" ]]; then
+        semantic_top_text="$(printf '%s' "$semantic_top_b64" | base64 -d 2>/dev/null || true)"
+    elif [[ "$semantic_timed_out" == 1 ]]; then
+        semantic_top_text="NO_RESULT(timeout)"
+    else
+        semantic_top_text="NO_RESULT"
+    fi
+    if [[ -n "$obsidian_top_b64" ]]; then
+        obsidian_top_text="$(printf '%s' "$obsidian_top_b64" | base64 -d 2>/dev/null || true)"
+    elif [[ "$obsidian_timed_out" == 1 ]]; then
+        obsidian_top_text="NO_RESULT(timeout)"
+    else
+        obsidian_top_text="NO_RESULT"
+    fi
+    # 2KB上限でtruncate。総ヒット件数とevidenceファイルパスは常に同梱する(LG075防御:
+    # 上位N件だけ見せて総数を伏せると「見た範囲を全体として語る」誤認を配る)。
+    local inject_byte_cap="${THREE_LAYER_INJECT_BYTE_CAP:-2048}"
+    local per_layer_cap=$((inject_byte_cap / 3))
+    memory_top_text="$(printf '%s' "$memory_top_text" | head -c "$per_layer_cap")"
+    semantic_top_text="$(printf '%s' "$semantic_top_text" | head -c "$per_layer_cap")"
+    obsidian_top_text="$(printf '%s' "$obsidian_top_text" | head -c "$per_layer_cap")"
+
     tmp_file="$(mktemp "$EVIDENCE_DIR/.evidence.XXXXXX")"
     {
-        printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","memory_count":"%s","semantic_count":"%s","obsidian_count":"%s","memory_wall_ms":"%s","semantic_wall_ms":"%s","obsidian_wall_ms":"%s","total_wall_ms":"%s","memory_source":"%s","semantic_source":"%s","obsidian_source":"%s","memory_timestamp":"%s","semantic_timestamp":"%s","obsidian_timestamp":"%s","memory_query":"%s","semantic_query":"%s","obsidian_query":"%s","status":"%s"}\n' \
+        printf '{"agent_id":"%s","pane_id":"%s","prompt_hash":"%s","nonce":"%s","issued_at":"%s","memory_db":"%s","semantic":"%s","obsidian":"%s","memory_count":"%s","semantic_count":"%s","obsidian_count":"%s","memory_wall_ms":"%s","semantic_wall_ms":"%s","obsidian_wall_ms":"%s","total_wall_ms":"%s","memory_source":"%s","semantic_source":"%s","obsidian_source":"%s","memory_timestamp":"%s","semantic_timestamp":"%s","obsidian_timestamp":"%s","memory_query":"%s","semantic_query":"%s","obsidian_query":"%s","status":"%s","memory_top":"%s","semantic_top":"%s","obsidian_top":"%s","memory_total_hits":"%s","semantic_total_hits":"%s","obsidian_total_hits":"%s","evidence_path":"%s"}\n' \
             "$(json_escape "$agent_id")" "$(json_escape "$pane_id")" "$prompt_hash" "$nonce" "$issued_at" \
             "$memory_rc" "$semantic_rc" "$obsidian_rc" "$memory_count" "$semantic_count" "$obsidian_count" \
             "$memory_wall_ms" "$semantic_wall_ms" "$obsidian_wall_ms" "$(( $(date +%s%3N) - started_ms ))" \
             "$(json_escape "${MEMORY_DB_QUERY_DB:-$ROOT/data/multi_agent_shogun_memory.db}")" "$(json_escape "$semantic_index")" "$(json_escape "$obsidian_source")" \
             "$(json_escape "$memory_ts")" "$(json_escape "$semantic_ts")" "$(json_escape "$obsidian_ts")" \
-            "$(json_escape "$memory_query")" "$(json_escape "$semantic_query")" "$(json_escape "$obsidian_used_query")" "$status"
+            "$(json_escape "$memory_query")" "$(json_escape "$semantic_query")" "$(json_escape "$obsidian_used_query")" "$status" \
+            "$(json_escape "$memory_top_text")" "$(json_escape "$semantic_top_text")" "$(json_escape "$obsidian_top_text")" \
+            "${memory_total_hits:-0}" "${semantic_total_hits:-0}" "${obsidian_total_hits:-0}" "$(json_escape "$evidence_file")"
     } >"$tmp_file"
     # Publish only if no newer issue superseded this generation.  The shared
     # lock also makes the evidence/current pair atomic to verify readers.
@@ -507,6 +605,14 @@ issue() {
         return 75
     fi
     [[ "$publish_rc" -eq 0 ]] || return "$publish_rc"
+    # AC4(A7/A8是正): 上書き型evidenceに加え、検索クエリ自体と結果の両方をappend型ログへ蓄積する。
+    # 既存のevidenceファイル参照(evidence_file/current)は変更しない。追記のみで壊さない。
+    local append_log="${THREE_LAYER_PREACTION_APPEND_LOG:-$EVIDENCE_DIR/evidence_log_${safe_key}.jsonl}"
+    mkdir -p "${append_log%/*}" 2>/dev/null || true
+    {
+        flock -x 10
+        cat "$evidence_file" >&10 2>/dev/null || true
+    } 10>>"$append_log" 2>/dev/null || true
     printf '%s\n' "$evidence_file"
 }
 
