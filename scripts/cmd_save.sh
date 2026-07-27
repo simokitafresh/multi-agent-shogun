@@ -686,34 +686,60 @@ show_q11_semantic_search_matches() {
     local semantic_script="${CMD_SAVE_SEMANTIC_SEARCH_SCRIPT:-$PROJECT_DIR/scripts/semantic_search.sh}"
     [[ -f "$semantic_script" ]] || return 0
 
-    local query output rc _cache_payload _cache_tmp
+    local query output rc _cache_payload _cache_tmp _semantic_tmp _cache_file _cache_lock _cache_lock_fd
     query="$(extract_q11_semantic_query "$block_text" || true)"
     [[ -n "${query//[[:space:]]/}" ]] || return 0
     _cache_payload="q11:${query}"
     if declare -F cmd_save_metadata_cache_replay >/dev/null && cmd_save_metadata_cache_replay "q11_semantic" "$_cache_payload"; then
         return 0
     fi
+
+    # Cache publication alone does not suppress concurrent misses: several
+    # cmd_save processes can all start the same semantic/backlink tree scan
+    # before the first cache file exists.  Elect one non-blocking leader per
+    # query.  This INFO-only path must never make followers wait behind a slow
+    # scan; the leader publishes the normal output for subsequent invocations.
+    if command -v flock >/dev/null 2>&1; then
+        _cache_file="$(cmd_save_metadata_cache_file "q11_semantic" "$_cache_payload")"
+        _cache_lock="${_cache_file}.lock"
+        exec {_cache_lock_fd}> "$_cache_lock"
+        if ! flock -n "$_cache_lock_fd"; then
+            echo "INFO: [CMD_SAVE_SINGLE_FLIGHT] q11_semantic: 同一queryの検索実行中につき重複起動を省略" >&2
+            exec {_cache_lock_fd}>&-
+            return 0
+        fi
+        # A leader may have published between the optimistic replay above and
+        # lock acquisition.  Recheck under the lock before starting any scan.
+        if cmd_save_metadata_cache_replay "q11_semantic" "$_cache_payload"; then
+            exec {_cache_lock_fd}>&-
+            return 0
+        fi
+    fi
     _cache_tmp="$(mktemp)"
+    _semantic_tmp="$(mktemp)"
 
     if command -v timeout >/dev/null 2>&1; then
-        if output="$(
+        if
             SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
-                timeout 5 bash "$semantic_script" "$query" 2>&1
-        )"; then
+                timeout --kill-after=1s 5s bash "$semantic_script" "$query" \
+                > "$_semantic_tmp" 2>&1
+        then
             rc=0
         else
             rc=$?
         fi
     else
-        if output="$(
+        if
             SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
-                bash "$semantic_script" "$query" 2>&1
-        )"; then
+                bash "$semantic_script" "$query" > "$_semantic_tmp" 2>&1
+        then
             rc=0
         else
             rc=$?
         fi
     fi
+    output="$(<"$_semantic_tmp")"
+    rm -f "$_semantic_tmp"
 
     if [[ "$rc" -eq 0 ]]; then
         [[ -n "${output//[[:space:]]/}" ]] || { rm -f "$_cache_tmp"; return 0; }
@@ -726,6 +752,7 @@ ${output}" 2>&1
         cat "$_cache_tmp" >&2
         declare -F cmd_save_metadata_cache_store >/dev/null && cmd_save_metadata_cache_store "q11_semantic" "$_cache_payload" "$_cache_tmp"
         rm -f "$_cache_tmp"
+        [[ -z "${_cache_lock_fd:-}" ]] || exec {_cache_lock_fd}>&-
         return 0
     fi
 
@@ -737,6 +764,7 @@ ${output}" 2>&1
     cat "$_cache_tmp" >&2
     declare -F cmd_save_metadata_cache_store >/dev/null && cmd_save_metadata_cache_store "q11_semantic" "$_cache_payload" "$_cache_tmp"
     rm -f "$_cache_tmp"
+    [[ -z "${_cache_lock_fd:-}" ]] || exec {_cache_lock_fd}>&-
     return 0
 }
 
@@ -782,21 +810,31 @@ show_q11_causal_backlinks() {
                 [[ -e "$_q11_path" ]] && _q11_paths+=("$_q11_path")
             done
             [[ "${#_q11_paths[@]}" -gt 0 ]] || exit 0
-            "$_q11_rg" -n --fixed-strings --hidden \
+            "$_q11_rg" -l --fixed-strings --hidden \
                 --glob '!.git/**' --glob '!node_modules/**' --glob '!__pycache__/**' \
                 --glob '!docs/obsidian-promoted/**' --glob '!*.cache.json' \
                 --glob '!*.pyc' --glob '!*.lock' \
                 -f "$_q11_tmpdir/patterns" "${_q11_paths[@]}" 2>/dev/null || true
-        ) | while IFS= read -r _q11_hit; do
-            _q11_hit_path="${_q11_hit%%:*}"
+        ) > "$_q11_tmpdir/candidates"
+
+        # The first scan keeps the complete original tree/path space but emits
+        # only matching filenames.  Attribute links inside that narrowed file
+        # set so large matching lines never cross the shell pipeline.
+        if [[ -s "$_q11_tmpdir/candidates" ]]; then
+            mapfile -t _q11_candidate_paths < "$_q11_tmpdir/candidates"
             _q11_idx=0
             for _q11_link_id in "${_q11_link_ids[@]}"; do
-                if [[ "$_q11_hit" == *"[[$_q11_link_id]]"* ]]; then
-                    printf '%s\n' "$_q11_hit_path" >> "$_q11_tmpdir/$_q11_idx"
-                fi
+                (
+                    cd "$_q11_root" 2>/dev/null || exit 0
+                    "$_q11_rg" -l --fixed-strings --hidden \
+                        --glob '!.git/**' --glob '!node_modules/**' --glob '!__pycache__/**' \
+                        --glob '!docs/obsidian-promoted/**' --glob '!*.cache.json' \
+                        --glob '!*.pyc' --glob '!*.lock' \
+                        "[[$_q11_link_id]]" "${_q11_candidate_paths[@]}" 2>/dev/null || true
+                ) > "$_q11_tmpdir/$_q11_idx"
                 ((_q11_idx++)) || true
             done
-        done
+        fi
     fi
 
     _q11_idx=0
@@ -4164,7 +4202,12 @@ QG_TEMPLATE
         ' <<< "${CMD_BLOCK_NC:-$CMD_BLOCK}")
         if [[ -n "${_Q11_COMMAND_SECTION:-}" ]]; then
             if [[ "${CMD_QUALITY_FAST_METADATA:-0}" != "1" ]]; then
-                cmd_save_timed_bg q11_semantic_search_overhead show_q11_semantic_search_matches "$CMD_BLOCK_NC" &
+                # q11 cold-cache leader must finish publishing before the
+                # output filter exits; otherwise the orphaned INFO worker is
+                # terminated and every later invocation misses again.
+                # Query-level non-blocking single-flight keeps concurrent
+                # followers fast while this one bounded leader completes.
+                cmd_save_timed_bg q11_semantic_search_overhead show_q11_semantic_search_matches "$CMD_BLOCK_NC"
                 cmd_save_timed_bg memory_db_token_search_overhead show_memory_db_command_token_matches &
             fi
 
