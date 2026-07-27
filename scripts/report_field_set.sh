@@ -764,51 +764,11 @@ _validate_field_value() {
             ;;
         files_modified)
             if [[ "$dot_key" == "files_modified" ]]; then
-                python3 -c "
-import yaml, sys
-
-raw = sys.stdin.read()
-try:
-    data = yaml.safe_load(raw)
-except yaml.YAMLError as e:
-    print(f'BLOCK: files_modified YAML parse error: {e}', file=sys.stderr)
-    sys.exit(1)
-
-def path_from(item):
-    if isinstance(item, dict):
-        return str(item.get('path', '') or '').strip()
-    return str(item or '').strip()
-
-def reference_only(item):
-    if isinstance(item, dict):
-        if item.get('reference_only') is True:
-            return True
-        change = str(item.get('change', '') or '').strip().lower()
-        return change in ('reference_only', 'reference-only')
-    text = str(item or '').strip().lower()
-    return text in ('reference_only', 'reference-only')
-
-items = data if isinstance(data, list) else [data]
-bad = []
-for idx, item in enumerate(items):
-    path = path_from(item)
-    if not path or path == 'FILL_THIS':
-        bad.append(f'{idx}: empty/path placeholder')
-        continue
-    if reference_only(item):
-        continue
-    if path.startswith('偵察'):
-        continue
-    if '/' not in path:
-        bad.append(f'{idx}: {path}')
-
-if bad:
-    print('BLOCK: files_modified はファイルパス形式のみ記入可。説明文・非パス値は禁止。', file=sys.stderr)
-    print('  正: scripts/report_field_set.sh / context/foo.md', file=sys.stderr)
-    print('  偵察のみの場合は \"偵察のみ\"、参照のみの場合は reference_only を使え', file=sys.stderr)
-    print('  不正値: ' + '; '.join(bad), file=sys.stderr)
-    sys.exit(1)
-" <<< "$val" || return 1
+                # files_modified is normalized and path-validated together in
+                # _autofix_field_value.  Keeping a second yaml.safe_load here
+                # charged every write another Python process without adding a
+                # distinct check.
+                return 0
             fi
             ;;
         lessons_useful)
@@ -1436,31 +1396,48 @@ from scripts.lib.yaml_atomic import yaml_text
 raw = sys.stdin.read()
 def sanitize_path(p):
     return re.sub(r'^[^\x00-\x7f]+[:：]\s*', '', p).strip()
+def reference_only(item):
+    if isinstance(item, dict):
+        if item.get('reference_only') is True:
+            return True
+        return str(item.get('change', '') or '').strip().lower() in ('reference_only', 'reference-only')
+    return str(item or '').strip().lower() in ('reference_only', 'reference-only')
+def validate(items):
+    bad = []
+    for idx, item in enumerate(items):
+        path = str(item.get('path', '') or '').strip() if isinstance(item, dict) else str(item or '').strip()
+        if not path or path == 'FILL_THIS':
+            bad.append(f'{idx}: empty/path placeholder')
+        elif not reference_only(item) and not path.startswith('偵察') and '/' not in path:
+            bad.append(f'{idx}: {path}')
+    if bad:
+        print('BLOCK: files_modified はファイルパス形式のみ記入可。説明文・非パス値は禁止。', file=sys.stderr)
+        print('  正: scripts/report_field_set.sh / context/foo.md', file=sys.stderr)
+        print('  偵察のみの場合は \"偵察のみ\"、参照のみの場合は reference_only を使え', file=sys.stderr)
+        print('  不正値: ' + '; '.join(bad), file=sys.stderr)
+        sys.exit(1)
 try:
     data = yaml.safe_load(raw)
-except yaml.YAMLError:
-    print(raw, end='')
-    sys.exit(0)
+except yaml.YAMLError as e:
+    print(f'BLOCK: files_modified YAML parse error: {e}', file=sys.stderr)
+    sys.exit(1)
 if isinstance(data, str) and data.strip():
     # スペース区切り複数パス検出(拡張子付き2+トークン)
     tokens = [t for t in data.strip().split() if '.' in t or '/' in t]
     if len(tokens) > 1:
         print('[autofix] files_modified string→dict変換(複数ファイル スペース区切り)', file=sys.stderr)
         items = [{'path': sanitize_path(t.rstrip(',')), 'change': 'modified'} for t in tokens]
-        print(yaml_text(items), end='')
     else:
         print('[autofix] files_modified string→dict変換(単一ファイル)', file=sys.stderr)
-        print(yaml_text([{'path': sanitize_path(data.strip()), 'change': 'modified'}]), end='')
+        items = [{'path': sanitize_path(data.strip()), 'change': 'modified'}]
 elif isinstance(data, list) and all(isinstance(x, str) for x in data):
     items = [{'path': sanitize_path(x.strip()), 'change': 'modified'} for x in data if x.strip()]
     if items:
         print('[autofix] files_modified string list→dict list変換', file=sys.stderr)
-        print(yaml_text(items), end='')
-    else:
-        print(raw, end='')
 elif isinstance(data, list) and all(isinstance(x, dict) for x in data):
+    items = data
     changed = False
-    for item in data:
+    for item in items:
         if 'path' in item:
             clean = sanitize_path(item['path'])
             if clean != item['path']:
@@ -1468,10 +1445,11 @@ elif isinstance(data, list) and all(isinstance(x, dict) for x in data):
                 changed = True
     if changed:
         print('[autofix] files_modified path日本語プレフィックス除去', file=sys.stderr)
-    print(yaml_text(data), end='')
 else:
-    print(raw, end='')
-" <<< "$val")
+    items = data if isinstance(data, list) else [data]
+validate(items)
+print(yaml_text(items), end='')
+" <<< "$val") || return 1
                 echo "$fixed"
                 return 0
             fi
