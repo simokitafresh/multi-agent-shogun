@@ -82,7 +82,7 @@
 |---|---|---:|---|
 | 1 | **L3内 monthly_returns_gen** | 275.20s | MR生成→commit→cache reloadの逐次連鎖(順序制約確定)の中でのMR計算自体の高速化。過去のOPT-6(mr_gen最適化)知見の再適用可否から |
 | 2 | **L3内 unmeasured** | 122.41s | まず区分計測(PF間GC・cache reload・ログ等への分解)。cmd_4180の最小配線案が設計済み |
-| 3 | **L3内 dw_signals_flush** | 115.26s | deferred flush一括UPSERTの書込み最適化(Singapore latency制約下) |
+| — | L3内 dw_signals_flush | (115.26s=混合値) | **確定順位から除外**(§2.4注記)。外側deferred flushの分離計測を先行し、exclusive値が出た時点で順位を再判定する |
 | 4 | L3内 daily_loop | 80.61s | 過去のベクトル化設計(NEW-2b)の掘り起こし判断 |
 | 5 | L2 trade_perf(FoF run) | 117.35s | 共通経路上の実測コスト(経路差別は棄却済み)。cProfileでの機構特定から |
 | 6 | L5 42.3s | — | 既存資産(並列化v1.3.1+fingerprint skip)保存のまま。優先度低 |
