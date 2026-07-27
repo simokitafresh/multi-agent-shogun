@@ -200,3 +200,39 @@ A6を先に潰さないとT1が空注入を量産する。
 - 副産物: /three-layer-penetrateスキル新設(15c521a62)+検証3回で欠陥3件検出修正(2bbec5797/ae26044c9)+家老の初実使用成功(blt_123435・3層証跡付き)
 - A4は追加実装なし(検知器の観測継続のみ)。観測で再発すれば別弾
 - 未push57commit=GA-PUSH1正当BLOCK(忍者WIP+lessons.yaml経路外書込みと同一path)。lessons.yaml根治(別作戦: 真犯人候補lesson_auto_tag.sh・計装承認済み)の後に一括push
+
+### R5検収(2026-07-27 13:40・影丸実測。計測源=logs/preaction_memory/evidence_log_*.jsonl、軍師独立検算前提で手順を明記)
+
+**計測源選定**: `grep -n append scripts/hooks/three_layer_preflight.sh` → L684 `evidence_log_${safe_key}.jsonl` がT1導入(commit 850a0429d, 09:28:44)と同時に新設されたappend型ログ。既存の`evidence_*.json`(313件)は上書き型スナップショットで履歴を持たない。`wc -l logs/preaction_memory/evidence_log_*.jsonl`(全9ファイル)→ 907行(2026-07-27T09:11:33〜13:34:52、9名分)。他候補(`logs/three_layer_preflight_warn.tsv`=最終行07-21で対象期間外/`logs/three_layer_chain_async.log`=layer2/3書込みイベントで検索失敗率と無関係/記憶DB`search_logs`=`caller='semantic_search'`のみでpreflight自身の呼出しは含まない/`logs/defense_overhead.jsonl`=three_layer_preflight関連check_idなし)は不採用。母集団907件は50件を十分満たす。
+
+**再現手順(軍師独立検算用)**:
+```
+python3 -c "
+import json,glob
+files = glob.glob('logs/preaction_memory/evidence_log_*.jsonl')
+recs=[]
+for f in files:
+    for raw in open(f,'rb'):
+        line=raw.decode('utf-8',errors='replace').strip()
+        if line:
+            try: recs.append(json.loads(line))
+            except: pass
+recs.sort(key=lambda d: d.get('issued_at',''))
+split='2026-07-27T10:18:47'  # A6弾 GATE CLEAR時刻
+after=[r for r in recs if r.get('issued_at','') >= split]
+before=[r for r in recs if r.get('issued_at','') < split]
+to=sum(1 for r in after if any(r.get(f)=='NO_RESULT(timeout)' for f in ['memory_top','semantic_top','obsidian_top']))
+hit=sum(1 for r in after if any(r.get(f) not in (None,'','NO_RESULT(timeout)') for f in ['memory_top','semantic_top','obsidian_top']))
+print('before n=',len(before),'after n=',len(after))
+print('after timeout(any-layer)=',to,'/',len(after))
+print('after inject-rate(any-layer非空)=',hit,'/',len(after))
+"
+```
+
+**結果**:
+| 指標 | before(n=) | after(n=) | 差分 | 判定 |
+|---|---|---|---|---|
+| preflight失敗率(timeoutでNO_RESULTになった率・any-layer) | §3.5基準44.1%(134/304、evidence_*.json全313件集計の再現値=134/313=42.8%・n=313) | 0/589 = 0.0%(A6 GATE CLEAR 10:18:47以降、n=589) | -42.8pt〜-44.1pt | **A6は有効。after母集団589件(50件を大幅に超過)で判定可能。timeout再発0件** |
+| 三層実結果の注入率(any-layerが非空かつNO_RESULT以外) | 測定不能(append型ログはT1導入と同時に新設されたため、T1導入前のデータが構造的に存在しない。上書きスナップショットの直近120件中、T1後スキーマ(memory_top等のkeyを持つ)ファイルは9件のみで残り111件はT1導入前のまま再実行されていない陳腐化ファイルだった) | 506/589 = 85.9%(A6 GATE CLEAR以降。3層すべて非空=465/589=78.9%) | 算出不能(before無し) | **T1のbefore/afterは構造的に測定不能(家老指摘・実装確認で確定)。上書きスナップショットの代替証跡: T1後に再実行されたpaneは9/9=100%で実結果ありを確認** |
+
+**★AC1是正(家老解釈の誤り)**: purposeに記載の家老解釈「evidenceは上書きゆえ注入率ではない」は`evidence_*.json`単体については正しいが、結論「after母集団50件以上は構造的に達成できない可能性がある」は誤り。`evidence_log_*.jsonl`(append型、T1と同時実装)により母集団907件(50件超)が実在する。またpurposeの「直近120中実結果9件」は家老の実測数値としては正しいが解釈補足: 120件中111件はT1導入前のスキーマ(memory_top等のkey自体が無い)の陳腐化ファイルであり、T1後に再実行され新スキーマを持つ9件は9/9=100%で実結果ありだった(`has_successful_three_layer_preflight`消費者への影響=陳腐化ファイルの扱いはT1実装のスコープ外・別途要確認)。
