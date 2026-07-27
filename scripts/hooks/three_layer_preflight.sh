@@ -384,6 +384,27 @@ prompt_from_payload() {
     fi
 }
 
+# cmd_karo_hotfix_evidence_utf8_truncate: head -c byte-truncates and can split a
+# multi-byte UTF-8 codepoint in half, producing invalid UTF-8 in the evidence
+# JSON (json.load then fails for every downstream consumer). Truncate at the
+# largest prefix that both fits byte_cap and is valid UTF-8 (Python's errors=
+# "ignore" on decode drops only the trailing partial codepoint, never an
+# interior byte, because we always decode from byte 0).
+_truncate_utf8_safe() {
+    local text="$1"
+    local byte_cap="$2"
+    PYTHONIOENCODING=utf-8 python3 -c '
+import sys
+text = sys.argv[1]
+byte_cap = int(sys.argv[2])
+data = text.encode("utf-8")
+if len(data) <= byte_cap:
+    sys.stdout.buffer.write(data)
+else:
+    sys.stdout.buffer.write(data[:byte_cap].decode("utf-8", errors="ignore").encode("utf-8"))
+' "$text" "$byte_cap" 2>/dev/null || printf '%s' "$text" | head -c "$byte_cap"
+}
+
 issue() {
     local prompt_arg="${1:-}"
     local payload prompt prompt_hash issued_at tmp_file rg_cmd
@@ -619,11 +640,15 @@ issue() {
     fi
     # 2KB上限でtruncate。総ヒット件数とevidenceファイルパスは常に同梱する(LG075防御:
     # 上位N件だけ見せて総数を伏せると「見た範囲を全体として語る」誤認を配る)。
+    # cmd_karo_hotfix_evidence_utf8_truncate: head -c はバイト単位でtruncateするため
+    # マルチバイト文字(日本語等)の境界を割り、書き出すJSONがUTF-8として不正になる実害が
+    # あった(evidence_*.jsonのjson.load失敗 → 消費者has_successful_three_layer_preflightが
+    # 沈黙)。バイト上限は維持しつつ文字境界(UTF-8)を割らない位置まで丸める。
     local inject_byte_cap="${THREE_LAYER_INJECT_BYTE_CAP:-2048}"
     local per_layer_cap=$((inject_byte_cap / 3))
-    memory_top_text="$(printf '%s' "$memory_top_text" | head -c "$per_layer_cap")"
-    semantic_top_text="$(printf '%s' "$semantic_top_text" | head -c "$per_layer_cap")"
-    obsidian_top_text="$(printf '%s' "$obsidian_top_text" | head -c "$per_layer_cap")"
+    memory_top_text="$(_truncate_utf8_safe "$memory_top_text" "$per_layer_cap")"
+    semantic_top_text="$(_truncate_utf8_safe "$semantic_top_text" "$per_layer_cap")"
+    obsidian_top_text="$(_truncate_utf8_safe "$obsidian_top_text" "$per_layer_cap")"
 
     tmp_file="$(mktemp "$EVIDENCE_DIR/.evidence.XXXXXX")"
     {

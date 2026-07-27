@@ -276,6 +276,33 @@ PY
     [ "$status" -eq 0 ]
 }
 
+@test "cmd_karo_hotfix_evidence_utf8_truncate: 日本語がcap境界に掛かってもUTF-8として不正にならない" {
+    local long_root="$TMP_EVIDENCE/utf8_boundary"
+    mkdir -p "$long_root"
+    python3 -c "print('growth_loop 三層記憶あいうえおかきくけこさしすせそたちつてと fixture ' * 400)" > "$long_root/semantic-index.md"
+    printf '%s\t%s\n' 'growth_loop 三層記憶あいうえおかきくけこさしすせそたちつてと fixture line' "$long_root/semantic-index.md" > "$long_root/causal-index.tsv"
+    run env MEMORY_DB_QUERY_DB="$MEMORY_DB_QUERY_DB" \
+        THREE_LAYER_SEMANTIC_INDEX="$long_root/semantic-index.md" \
+        THREE_LAYER_CAUSAL_INDEX_CACHE="$long_root/causal-index.tsv" \
+        THREE_LAYER_CAUSAL_REFRESH_DISABLED=1 \
+        THREE_LAYER_PREACTION_EVIDENCE_DIR="$TMP_EVIDENCE" \
+        THREE_LAYER_INJECT_BYTE_CAP=15 \
+        THREE_LAYER_AGENT_ID="$AGENT" TMUX_PANE="$PANE" \
+        bash "$ROOT/scripts/hooks/three_layer_preflight.sh" issue "growth_loop 三層記憶 fixture"
+    [ "$status" -eq 0 ]
+    # json.loadが成功する = 出力バイト列が有効なUTF-8である(head -cが3バイト文字の
+    # 途中で切ると不正バイト列になりここで例外が飛ぶ)。
+    run python3 - "$EVIDENCE" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+for layer in ("memory", "semantic", "obsidian"):
+    top = data[f"{layer}_top"]
+    # 丸めた文字列を再エンコード/デコードしても往復できる(壊れた文字を含まない)。
+    top.encode("utf-8").decode("utf-8")
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "T1(AC4): evidenceはappend型ログにも検索クエリと結果を蓄積する" {
     run issue_with_fixtures "fixture preflight line wal_live_event"
     [ "$status" -eq 0 ]
