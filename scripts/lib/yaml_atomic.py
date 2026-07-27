@@ -34,6 +34,12 @@ def _log_caller(path: str) -> None:
         caller = f"{frame.f_code.co_filename}:{frame.f_lineno}"
     except Exception:
         caller = "unknown"
+    ppid = os.getppid()
+    try:
+        with open(f"/proc/{ppid}/cmdline", "rb") as f:
+            parent_cmdline = f.read(2048).replace(b"\x00", b" ").strip().decode("utf-8", "replace")
+    except OSError:
+        parent_cmdline = ""
     try:
         record = {
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -41,7 +47,8 @@ def _log_caller(path: str) -> None:
             "caller": caller,
             "argv0": sys.argv[0] if sys.argv else "",
             "pid": os.getpid(),
-            "ppid": os.getppid(),
+            "ppid": ppid,
+            "parent_cmdline": parent_cmdline,
         }
         with open(_CALLER_LOG_PATH, "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")

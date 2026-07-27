@@ -73,3 +73,16 @@ def test_disable_switch_suppresses_logging(tmp_path, monkeypatch):
     atomic_yaml_write(str(tmp_path / "d.yaml"), {"z": 1})
     rows = _read_log_tail(before)
     assert rows == []
+
+
+def test_parent_cmdline_is_recorded_for_heredoc_callers(tmp_path):
+    """Bare pid/ppid cannot identify a python3 -c/heredoc invoker; parent
+    cmdline is the only field that can (LG051-style tracing gap raised by
+    gunshi review 2026-07-27)."""
+    before = _log_size()
+    atomic_yaml_write(str(tmp_path / "e.yaml"), {"w": 1})
+    rows = _read_log_tail(before)
+    assert len(rows) == 1
+    assert "parent_cmdline" in rows[0]
+    assert isinstance(rows[0]["parent_cmdline"], str)
+    assert rows[0]["parent_cmdline"] != ""
