@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-27 -->
+<!-- last_updated: 2026-07-28 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,15 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3560 | 殿指示(2026-06-27): 穴2=context変更やprojects変更が三層記憶に自動伝播しない。lesson_write.shにはsemantic連携あり(L1118)だがcontext変更時は手動貫通に依存=意志依存=Phase4 | infra | 06-27 | git pre-commit hookにcontext/pr |
-| cmd_3561 | 殿指示(2026-06-27): 穴3=教訓186件中useful3件=活用率1.6%。忍者がlessons_usefulに活用結果を記入していない。記入を構造的に強制し計測精度を上げる | infra | 06-27 | AC1: gate_report_format_combin |
-| cmd_3563 | 殿指示(2026-06-27): FTS5フォールバックの速度改善。計測でPython単体0.27秒だがbash全体42-83秒。WSL2上のflock/subshell/source等のbashオーバーヘッドが真因。alias HITケースでも42秒かかっておりセマンティック検索が実質機能不全 | infra | 06-27 | semantic_search.shのmemory DB c |
-| cmd_3564 | 殿指示(2026-06-27): NO_MATCH率98.9%の根因はaliases品質。semantic_stress_testがcandidate_aliasesを生成しinsights.yamlに蓄積するがindex.mdへの自動反映がない。計測→改善サイクルを自動接続する | infra | 06-27 | candidate_aliases蓄積分を既存概念alias |
-| cmd_3565 | 殿指示(2026-06-27): compare-chart-yaxis-label-clipping-fix.md設計書に基づきCompare ChartのY軸2欠陥を修正。D1=LIN高リターンで先頭桁クリップ、D2=LOG目盛が固定配列500で頭打ち。レンジ非依存+コンパクト表記で構造的に解消 | dm-signal | 06-27 | comparison-chart.tsxにbuildLogT |
-| cmd_3566 | 軍師idle自走分析(blt_20260627_142919, 2026-06-27): マルチフェーズcmd(L0→final_summary)でfinal_summary報告のfiles_modifiedにL0フェーズの変更ファイルが統合されない。grep files_modified.*merge cmd_complete_gate.sh → 0件。マージロジックを追加しcommit_missing WAを構造的に排除 | infra | 06-27 | cmd_complete_gate.shのself-grad |
-| cmd_3567 | 軍師idle分析(blt_20260627_142919, 2026-06-27)+cmd_3558 cancel後残課題: GP-286(files_modifiedパス形式検証L213)+GP-287(commit_hash 40文字検証L224)がgate_report_format_main.pyに実装済み(commit 1a6e89252)だが回帰テストが不在(grep GP-286/GP-287 tests/ → 0件)。batsテスト追加でCI回帰防護を確立 | infra | 06-27 | GP-286/GP-287の回帰batsを4独立ケースへ分割 |
-| cmd_3569 | 殿指示(2026-06-27): docs/spec/compare-returns-page.md設計書に基づき/compare-returnsページを実装。全PF+standaloneベンチマーク×8期間(MTD/1M/3M/6M/1Y/3Y/5Y/ALL)のトレーリングリターンをソート可能テーブルで提示。レビュー3回完了・sign-off済み | dm-signal | 06-27 | cmd_3569 /compare-returns ページを |
-| cmd_3570 | 殿指摘(2026-06-27): Compare Returnsのloading時間がストレスフル。本番実測cold 4.96秒/warm 5.46秒(connect 0.16秒)。102PF×MTD日次ライブ計算(calculate_daily_cumulative_returns_segmented 102回呼び出し)がボトルネック。設計書§12に5000ms超過時の最適化を別タスクで設計と明記済み | dm-signal | 06-27 | Compare ReturnsのMTDをバッチ化し、/api |
 | cmd_3572 | 殿指示(2026-06-27): 初回表示を限界まで早くすることはできるか。/api/compare-returnsの初回応答5秒→0.3秒以下に短縮する。設計書R11 PASS(docs/spec/compare-returns-mtd-precompute.md)に基づき実装 | dm-signal | 06-28 | Compare Returns MTD事前計算テーブル/バッ |
 | cmd_3573 | 殿指示(2026-06-28): ペアの成長=忖度をしないことが大事。軍師APPROVE率62%/RC率5.2%に対し家老は91%BLOCK。軍師がAPPROVE判定時にコード現物を照合した証拠を強制し、テキストレビューだけのAPPROVEを構造的に不可能にする(家老→軍師方向の穴) | infra | 06-28 | cmd_3573: 軍師APPROVE/LGTM時のveri |
 | cmd_3577 | 殿指示(2026-06-28): 軍師→家老方向の穴。軍師が構造的穴を発見し掲示板で提案しても家老が行動しない(22時間放置実証済み)。軍師穴発見投稿の自動化+家老startup gateでの強制検出で助言が無視される構造を封じる | infra | 06-28 | 軍師の穴発見掲示板投稿をaction_requiredへ自動 |
@@ -297,3 +288,5 @@
 | cmd_4178 | 2026-07-27将軍復帰後、家老startup gateの先送りCRITICALエスカレーションが同一keyで世代連番のまま将軍inboxへ反復送信され続けた(集計は将軍が実測済み)。dedup機構(notifiedフラグ)は実在するが、同一セッション内でgateが複数回走る際にあるrunでalertが不在だと即resolvedへ落とし、次runのopen復帰で世代が増えて再送する遷移機の欠陥が真因。この構造をヒステリシス(再送抑止条件)で是正し、将軍ターンの浪費を根絶する | infra | 07-27 | startup escalationのopen→一時消失→o |
 | cmd_4181 | 殿下知2026-07-27 19:54『未調査や未確定部分の偵察にフォーカスして設計書を覚醒アップデート』。ホットスクリプト高速化設計書v1.0(docs/research/hot-script-speedup-asis-tobe-5w1h_20260727.md)は家老レビューBLOCK 6点(blt_195501)で計測境界の混在(begin/end混在・実行本体込み・親子二重計上・lock保持と待ちの混同)が確定した。家老の修正指示に従い、純オーバーヘッドのみの正しい母集団で標的序列を作り直す。調査のみで高速化実装は行わない | infra | 07-27 | 固定39,070行/cutoff 2026-07-27T11 |
 | cmd_4185 | 殿下知2026-07-27 22:00『未解決事項を解決しよう』。ホットスクリプト設計書v2.1(家老CLEAR済み)の未解決§3-1/§3-2を解決する。外れ値型check(medianほぼゼロ・maxが累積支配)は常時最適化が的外れになるため、高速化の前に発生条件の特定が必須と設計書が定めた。その偵察を実施する。調査のみで高速化実装なし | infra | 07-27 | current cohortを全数再集計し、5 checkの |
+| cmd_4188 | 家老escalation(2026-07-27 22:49)の教訓enforcement欠落是正の第2弾。LG084(Codex CLIのbackground terminal残骸がbusy固定となりauto_clear膠着、半蔵で長時間待機loopの実例)のhow欄記載の防御を実装する: ninja_monitorのbackground compute判定を三値化し、実computeなしのstale残骸をrespawn経路へ進める | infra | 07-27 | background terminalを0=実compute |
+| cmd_4189 | 殿裁定2026-07-27 23:25(第一弾=設計書v2.3 §-1の3スクリプト12check固定)の先頭弾。hot-script設計書v2.3 §0序列1位のcmd_save:checks_main(恒常課税型・毎回発生)を、内部プロファイル→ボトルネック特定→実装最適化で削減する。真因4型(全量再parse・affected=0全処理・プロセス多段起動・lock持ち過ぎ)の照合から入る | infra | 07-28 | cmd_saveの不変cmd本文からacceptance_c |
