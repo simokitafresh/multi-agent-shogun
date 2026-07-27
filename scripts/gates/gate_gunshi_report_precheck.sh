@@ -1216,9 +1216,13 @@ _sg_pre31_check() {
     fi
     local _semantic_result
     _semantic_result=$(printf '%s\n' "$_semantic_block" | sed -n 's/^  result:[[:space:]]*//p' | head -1 | sed 's/[[:space:]]*#.*$//; s/^[[:space:]"]*//; s/[[:space:]"]*$//')
-    if [ "$_semantic_result" != "PASS" ]; then
-        echo "  BLOCK(LG048): semantic_validation.resultがPASSではない"
+    if [ "$_semantic_result" != "PASS" ] && [ "$_semantic_result" != "FAIL" ]; then
+        echo "  BLOCK(LG048): semantic_validation.resultがPASS/FAILのいずれでもない(空欄・散文は不可)"
         return 2
+    fi
+    if [ "$_semantic_result" = "FAIL" ]; then
+        echo "  PASS(LG048): N×M一致+分類軸別内訳の再計算証跡あり(result=FAIL。recount/actualの非空済み→差し戻しフローで扱う)"
+        return 0
     fi
     echo "  PASS(LG048): N×M一致+分類軸別内訳の再計算証跡あり"
 }
