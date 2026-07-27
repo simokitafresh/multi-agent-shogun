@@ -75,3 +75,35 @@ EOF
     run bash "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
     [[ "$output" != *"WARN(L4b-洗脳#4)"* ]]
 }
+
+@test "L6 review entry解析は中間field挿入に依存せず既レビュー2件を除外し未レビュー1件だけ検知する" {
+    mkdir -p "$TEST_TMPDIR/queue/inbox"
+    cat > "$LOG_UNDER_TEST" <<'EOF'
+- cmd_id: cmd_4177
+  d0_applied: no
+  review_type: report
+  verdict: LGTM
+- review_type: report
+  reviewer_note: field order is intentionally different
+  cmd_id: cmd_4178
+  verdict: LGTM
+EOF
+    cat > "$TEST_TMPDIR/queue/inbox/gunshi.yaml" <<'EOF'
+messages:
+- id: reviewed-4177
+  type: report_review
+  content: "cmd_4177 の報告レビュー"
+- id: reviewed-4178
+  type: report_review
+  content: "cmd_4178 の報告レビュー"
+- id: missing-4199
+  type: report_review
+  content: "cmd_4199 の報告レビュー"
+EOF
+
+    run bash "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
+    [[ "$output" == *"WARN(L6-洗脳#1)"* ]]
+    [[ "$output" == *"cmd_4199"* ]]
+    [[ "$output" != *"レビュー未実施: cmd_4177"* ]]
+    [[ "$output" != *"レビュー未実施: cmd_4178"* ]]
+}

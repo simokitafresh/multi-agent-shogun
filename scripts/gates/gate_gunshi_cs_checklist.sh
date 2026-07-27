@@ -1092,8 +1092,33 @@ if [ -f "$_inbox_file" ] && [ -f "$LOG_FILE" ]; then
     ' "$_inbox_file" 2>/dev/null | grep -oP 'cmd_\d+' | sort -u || true)
     # report + self_study(報告YAML不在の家老直接実施cmd代替)をreview_done扱い
     # ただしself_studyは対応報告YAMLが不在の場合のみ(家老RC 2026-06-12: 通常report_review隠蔽防止)
-    _review_done_report=$(grep -B1 'review_type: report' "$LOG_FILE" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
-    _review_done_self=$(grep -B1 'review_type: self_study' "$LOG_FILE" 2>/dev/null | grep 'cmd_id:' | grep -oP 'cmd_\d+' | sort -u)
+    # Parse each review entry as a unit. Field insertion/reordering between cmd_id
+    # and review_type must not turn a completed review into a false missing WARN.
+    _review_done_rows=$(awk '
+        function flush() {
+            if (cmd_id != "" && (review_type == "report" || review_type == "self_study"))
+                print review_type "|" cmd_id
+        }
+        /^- / {
+            flush()
+            cmd_id=""
+            review_type=""
+        }
+        /^[[:space:]-]*cmd_id:[[:space:]]*/ {
+            value=$0
+            sub(/^[[:space:]-]*cmd_id:[[:space:]]*/, "", value)
+            if (match(value, /^cmd_[0-9]+/))
+                cmd_id=substr(value, RSTART, RLENGTH)
+        }
+        /^[[:space:]-]*review_type:[[:space:]]*/ {
+            value=$0
+            sub(/^[[:space:]-]*review_type:[[:space:]]*/, "", value)
+            review_type=value
+        }
+        END { flush() }
+    ' "$LOG_FILE" 2>/dev/null)
+    _review_done_report=$(printf '%s\n' "$_review_done_rows" | awk -F'|' '$1 == "report" { print $2 }' | sort -u)
+    _review_done_self=$(printf '%s\n' "$_review_done_rows" | awk -F'|' '$1 == "self_study" { print $2 }' | sort -u)
     _review_done="$_review_done_report"
     for _ss_cmd in $_review_done_self; do
         # self_studyのcmd_idに対応するreport_review完了(review_type: report)がなく、
