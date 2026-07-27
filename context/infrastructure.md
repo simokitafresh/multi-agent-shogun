@@ -888,7 +888,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1381 -->
+<!-- last_synced_lesson: L1384 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -1983,6 +1983,9 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1379: 検出gateの稼働有無と接続有無は別軸で確認せよ（cmd_reflux_promotion_202607270511_hayate）
 - L1380: sync_lessons.sh経路外の書込みでlessons.yaml indexがformat逸脱(header/flow-style消失)しうる。id集合比較で検証すべき（cmd_karo_cycle3_lessons_yaml_anomaly_probe_20260727）
 - L1381: gate_report_format_main.pyとcmd_complete_gate.shのlesson_candidate必須条件がOR/AND不一致（cmd_karo_cycle4_mtime_and_contract_survey_20260727）
+- L1382: deepdive_replay.shのinstructions/への転用は対象パス決め打ち・jsonl/marker共有という3つの構造的制約を持つ（cmd_karo_cycle5_instructions_receipt_feasibility_20260727）
+- L1383: 数値主張の誤検知は識別子(cmd_id/msg_id等)内の数字を除外しないと発生する（cmd_karo_impl_commander_post_contract_20260727）
+- L1384: preflight系hookの結果注入設計は外部消費者(json.loadする別hook)への影響を実測で先に潰すべき（cmd_karo_impl_t1_preflight_result_injection_20260727）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
