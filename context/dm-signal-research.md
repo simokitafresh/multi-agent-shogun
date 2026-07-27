@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-24 cmd_4148 reviewed source boundary -->
-<!-- dm_signal_research_reflux: fingerprint=f1f8d64f32f849b77f98eee7f317a85ed6a912f0e64f4fe8162be7aeacd9ad55; mode=non-target; evidence_b64=Y21kXzM4NzE6IGFydGlmYWN0IGludmVudG9yeSAoZGlzayByZWNsYWltIHRhc2spLiBOb3QgRE0tc2lnbmFsIHJlc2VhcmNoLiBSZWZsdXhlZCB0byBjb250ZXh0L2luZnJhc3RydWN0dXJlLm1kIGluIHNob2d1biByZXBvIChjb21taXQgNmM5ZjRlMmQ1OTJhYzAyNmZkMWY0YzVjZjU3ZTQxMjZlNGM0YjM5NSk= -->
+<!-- dm_signal_research_reflux: fingerprint=e9948e69c477bf7f9e719133e3e62f751fdac25daf7b09338a596bc815635668; mode=synced; evidence_b64=Y29udGV4dC9ndW5zaGktZnVsbHJlY2FsYy1zcGVlZC1hbmFseXNpcy5tZCDntZDoq5bnr4DjgbhjbWRfNDE3OeOBrnJ1biBsaW5lYWdl5re3566X5qOE5Y2044Go55u06L+RRm9G5YaF6Kiz44KS6YKE5rWB5riI44G/ -->
 <!-- source_commit:00c20c54 reason:cmd_4148 reviewed source boundary evidence:cmd_complete_gate project=dm-signal -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。

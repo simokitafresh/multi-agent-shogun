@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-27 cmd_karo_hotfix_cs_review_log_field_distance_20260727 reviewed source boundary -->
-<!-- source_commit:6165ba3f1 reason:cmd_karo_hotfix_cs_review_log_field_distance_20260727 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=6165ba3f1 -->
+<!-- last_updated: 2026-07-27 two reviewed infra hotfixes reflected -->
+<!-- source_commit:b8ef206e7 reason:two reviewed infra hotfixes reflected evidence:b8ef206e7 includes snapshot fix and descends from f0e493f10 auto-clear fix; git merge-base ancestry verified -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -77,6 +77,8 @@ GATE CLEAR後の因果監査は`semantic_index_update → semantic_map_generate 
 三層preflightのmemory/semantic読取は、stale検知中も最後にatomic publishされた完全snapshotを返し、refresh childをcommand substitutionの待機対象にしない。`semantic_search.sh`は共有cache helperへ収束する一方、非default DB cacheのsidecar清掃とhelper未同梱時のstandalone alias検索という既存二契約を維持する。修正前は並行writer下10/10 timeout（memory124・semantic124）だったが、修正後は10/10成功、関連Bats 64/64 PASS・SKIP0、実運用のcmd_complete_gate併走中preflightも2.33秒・exit 0。→ `scripts/lib/memory_db_cache.sh` / `scripts/semantic_search.sh` / `tests/unit/test_memory_db_cache_warmup.bats`（cmd_karo_hotfix_preflight_concurrent_writes_202607150705、commits `1c9db0f38`, `b05faaaa5`）
 
 cache refreshは**並列に実行され、公開順序が逆転する**（`os.replace`で先に始まった窓が後に終わる）。B48の2点計測（mkstemp直前+os.replace直後にrowid+時刻を記録）22-23窓の実測: 窓長 median 124.3秒（min 16.5/max 244.6=**定数でなく分布**。理論値75秒は実測の6割）、取りこぼし median 9.5件、**公開順序の逆転2件**（1422610→1422600、1422663→1422652）。ただし逆転は2分46秒/1分47秒で回復し前の高さを超える。**逆転中の検索3件は全件hit>0・no_match=0・exit=0で、各検索の3〜12秒前の書込みが存在した状態で成立** = B45の`rowid水位比較+delta`が並列公開の逆転まで覆っている。∴`memory_db_cache.sh:55-57`/`:153-155`の残存mtime3条件は**是正不要・記録のみ**（PD-134クローズ）。**未確認**: `search_logs`に結果内容の列が無く（id/ts/caller/agent_id/query/hit_count/no_match/elapsed_ms/exit_code/created_at）、返された内容そのものの正しさは**原理的に事後検証できない**。→ `scripts/memory_db_live_insert.py` / `scripts/lib/memory_db_cache.sh` / `logs/defense_overhead.jsonl`（source=three_layer_health, check_id=refresh_window）（cmd_karo_impl_b48_refresh_window_2point_telemetry_20260726、PD-134）
+
+速度台帳の設計書v1.0入力（cmd_4181）: 39,070行/cutoff `2026-07-27T11:03:55.717413+00:00`を境界再分類し、親total・実行本体・queue wait・lock holdを非加算で分離。純オーバーヘッド累積上位は `git_pre_commit:self_sync` 1,699,622ms、`cmd_save:checks_main` 1,544,448ms、`git_pre_commit:test_granularity` 1,045,936ms。`affected_tests`は実テスト込み、`refresh_window`はbegin/end混在のため標的順位から除外。→ `docs/research/cmd_4181_overhead_boundary_recon.md`
 
 配備の排他はcmd別lockに加え、同じ忍者のtask/report mutationからdurable task_start通知までを忍者別flockで直列化する。待機後は`assigned|acknowledged|in_progress`の別cmdを再読して上書きBLOCKするため、異なるcmdの同時配備でもtask YAMLを混線させない。破損taskはsame-cmd再利用を禁止してstale reset+atomic `--yaml` publishへ必ず戻す。→ `scripts/deploy_task.sh` / `tests/unit/test_deploy_task_lifecycle.bats`（GA-257/258、commits `e6847f0ab`, `448eba94b`、全量76/76 PASS・SKIP0）
 
@@ -888,7 +890,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1407 -->
+<!-- last_synced_lesson: L1410 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2009,6 +2011,9 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1405: 埋込みPythonの引数追加時は全抽出callerを列挙せよ（cmd_4178）
 - L1406: 構造contract testは同名構文のfirst occurrenceへ依存させない（cmd_karo_hotfix_unit_skill_feedback_routing_20260727）
 - L1407: wait -nの回収対象と独自PID台帳を二重管理しない（cmd_karo_hotfix_unit_run_tests_contract_20260727）
+- L1408: ライフサイクルeventと論理sessionを同一視しない（cmd_karo_hotfix_gunshi_deepdive_recurrence_20260727）
+- L1409: 専用index commitでも共有indexはHEAD前進後に残骸化する（cmd_karo_hotfix_auto_clear_interrupted_batch_recovery_20260727）
+- L1410: grep -c は0件一致でもstdoutへ'0'を出力しつつ非0終了するため、`|| echo N`型フォールバックは二重出力を生む（cmd_karo_hotfix_snapshot_unread_zero_doubleline_20260727）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
