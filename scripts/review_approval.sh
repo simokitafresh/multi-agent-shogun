@@ -4,6 +4,7 @@
 set -euo pipefail
 ROOT=${REVIEW_APPROVAL_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
 source "$ROOT/scripts/lib/review_approval.sh"
+source "$ROOT/scripts/lib/yaml_field_set.sh"
 if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
   echo "Usage: $0 <cmd_id> <gunshi|karo> <LGTM|ACCEPT|RC> <report_path> [auto|implementation|report]" >&2
   echo "   or: $0 <cmd_id> karo RC_REVOKE <report_path> <reason>" >&2
@@ -171,10 +172,17 @@ PY
   [ -n "$pre_report_status" ] || { echo "BLOCK: RC snapshot missing report_status: $snapshot_dir" >&2; exit 1; }
   bash "$ROOT/scripts/report_field_set.sh" "$report" status "$pre_report_status"
 
+  # cmd_karo_hotfix_rc_task_status_reset_20260727: one atomic batch write
+  # instead of N separate yaml_field_set.sh invocations (N separate
+  # flock-acquire/release cycles). Between two individual calls the lock is
+  # released, leaving a window where an independent writer (e.g. ninja_monitor
+  # AUTO-DONE) can interleave and observe/leave a half-restored task state.
+  restore_pairs=()
   while IFS='=' read -r field value; do
     [ -n "$field" ] || continue
-    bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task "$field" "$value"
+    restore_pairs+=("${field}=${value}")
   done < "$snapshot_dir/task_fields"
+  [ "${#restore_pairs[@]}" -eq 0 ] || yaml_field_set_batch "$task_file" task "${restore_pairs[@]}"
 
   for marker in gunshi.yaml gunshi_notice.sent; do
     if [ -f "$snapshot_dir/$marker" ]; then
@@ -371,14 +379,24 @@ PY
   # otherwise ninja_monitor's Stage-1 timeout measures from the original
   # deployment and can immediately reset the revived task to idle.
   rc_deployed_at=$(date -Iseconds)
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task deployed_at "$rc_deployed_at"
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task retry_deployed_at "$rc_deployed_at"
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task status assigned
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task reviewed false
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task review_result ""
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task acknowledged_at ""
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task completed_at ""
-  bash "$ROOT/scripts/lib/yaml_field_set.sh" "$task_file" task done_at ""
+  # cmd_karo_hotfix_rc_task_status_reset_20260727: single atomic batch write
+  # (1 flock, 1 read-modify-write) instead of 8 separate yaml_field_set.sh
+  # invocations. Each individual call previously released and reacquired the
+  # lock, leaving 7 windows where an independent writer sharing no lock with
+  # this sequence (e.g. a worker session reacting to the just-sent task_start
+  # notification, or a monitor process reading a half-updated task file)
+  # could observe or leave a state where "status" and the other reset fields
+  # disagree — reproducing the 2026-07-27 13:39 incident where kotaro's task
+  # kept status=done after a formal RC (bulletin 13:48 manual fix).
+  yaml_field_set_batch "$task_file" task \
+    "deployed_at=$rc_deployed_at" \
+    "retry_deployed_at=$rc_deployed_at" \
+    "status=assigned" \
+    "reviewed=false" \
+    "review_result=" \
+    "acknowledged_at=" \
+    "completed_at=" \
+    "done_at="
   bash "$ROOT/scripts/inbox_write.sh" "$worker_id" \
     "前taskの情報は無効。タスクYAMLを最初から読み直して作業開始せよ。 — タスクYAML: $task_file を読んで作業開始せよ" \
     task_assigned karo task_start || {
