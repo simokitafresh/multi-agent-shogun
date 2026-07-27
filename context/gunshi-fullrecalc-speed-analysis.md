@@ -1,4 +1,4 @@
-<!-- last_updated: 2026-06-26 cmd_3547 -->
+<!-- last_updated: 2026-07-27 cmd_4180 -->
 <!-- Vercel圧縮: 2026-04-13 267行→索引化 -->
 # fullrecalculate速度向上 分析 (索引)
 
@@ -6,6 +6,7 @@
 
 ## 結論
 
+- 2026-07-27 cmd_4180: 同runの本番DBにL3内部内訳が保存済み。`monthly_returns_gen=275.20s`、`unmeasured=122.41s`、`dw_signals_flush=115.26s`、`daily_loop=80.61s`。PF別performance logは0件。FoFはトポロジカル逐次、子MR commit/cache reload後に親へ進み、cronもstandard成功待ちで直列。trade_perfの共有cache/N+1除去はFoFにも適用済み。詳細 → `docs/research/cmd_4180_fullrecalc_l3_recon.md`
 - 2026-07-27 cmd_4179: id214総時間671.18秒と別runのL5=66.64秒を差し引いた「L5=9.9%」はrun lineage混算のため棄却。直近FoF run `20260727014042HSIHNE` はL3=503s(70.3%)、L2=154s(21.6%; trade_perf=117s)、L5=42.3s(5.9%)。詳細 → `docs/research/cmd_4179_fullrecalc_timing_recon.md`
 
 | 指標 | 値 |
