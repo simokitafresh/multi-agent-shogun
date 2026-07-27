@@ -193,3 +193,49 @@ else
     nohup setsid env SHOGUN_HEAVY_JOB_LOCK_HELD=0 \
         bash "$worker" "$pending_path" >/dev/null 2>&1 </dev/null &
 fi
+
+# --- L1/L2/L3 貫通可視化(将軍R6指示・軍師是正済みAC3反映) ---
+# 制約: 新規gate/hook/状態ファイル追加禁止・BLOCKしない(fail-open)。
+# 既存の pending/result ファイル(three_layer_knowledge_chain.sh が書く)に相乗りする。
+# 出力1行目の "OK: <event_id>" は既存パーサー(自スクリプト内)互換のためそのまま維持する。
+link_targets="$(grep -oP '(?<=\[\[)[^][]+(?=\]\])' <<< "$knowledge_text" 2>/dev/null | sort -u || true)"
+if [[ -z "$link_targets" ]]; then
+    # AC2: [[リンク]]欠落は可視WARNのみ(fail-open)。L3候補生成の唯一の入力は本文中の[[リンク]]である
+    # (three_layer_knowledge_chain.sh の layer3_obsidian_link_candidate 抽出ロジックと同一パターン)。
+    echo "WARN: 本文に[[リンク]]が無い。Layer3候補が0件になる見込み" >&2
+    l3_status="WARN_NO_LINK(候補0件見込み)"
+else
+    l3_status="candidate見込み: $(tr '\n' ',' <<< "$link_targets" | sed 's/,$//')"
+fi
+
+# AC3是正(軍師指摘): L2は3状態表示。書込み直後は detached worker 委譲のため原理的に
+# pending が正であり、これを「未貫通」と誤表示すると殿厳命2026-06-14の狼少年になる。
+# THREE_LAYER_CHAIN_SYNC=1(tests only)の時だけ worker 完了を待っているため確定判定できる。
+result_path="${pending_path%.pending.json}.result"
+if [[ "${THREE_LAYER_CHAIN_SYNC:-0}" == "1" && -f "$result_path" ]]; then
+    chain_state="$(awk -F= '/^state=/{print $2; exit}' "$result_path")"
+    if [[ "$chain_state" == "PASS" ]]; then
+        # alias層への実到達は semantic_search.sh の判定基準と同一にする
+        # (/three-layer-penetrate: 出力先頭が MEMORY_DB_MATCH/NO_MATCH = alias層miss)。
+        search_target="$(head -n1 <<< "$link_targets")"
+        search_target="${search_target:-$event_id}"
+        semantic_search_cmd="${THREE_LAYER_SEMANTIC_SEARCH_CMD:-$SCRIPT_DIR/scripts/semantic_search.sh}"
+        if search_out="$(bash "$semantic_search_cmd" "$search_target" 2>/dev/null)"; then
+            if [[ "$search_out" == MEMORY_DB_MATCH* || "$search_out" == NO_MATCH* ]]; then
+                l2_status="semantic未貫通(alias層miss): $search_target"
+            else
+                l2_status="貫通(alias層ヒット): $search_target"
+            fi
+        else
+            l2_status="判定不能(semantic_search実行失敗)"
+        fi
+    else
+        l2_status="未貫通(chain失敗: ${chain_state:-unknown})"
+    fi
+else
+    l2_status="pending(chain実行中。確定判定は bash scripts/gate_three_layer_health.sh または bash scripts/semantic_search.sh '<alias>' で後日確認せよ)"
+fi
+
+printf 'L1: 記憶DB書込み完了 event=%s\n' "$event_id"
+printf 'L2: %s\n' "$l2_status"
+printf 'L3: %s\n' "$l3_status"

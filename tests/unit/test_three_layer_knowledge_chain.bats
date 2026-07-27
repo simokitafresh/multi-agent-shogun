@@ -1,5 +1,10 @@
 #!/usr/bin/env bats
 # test_necessity: Worker persists semantic failure instead of silently dropping it and detached worker survives launcher exit; violation is BLOCK.
+# test_necessity: memory_db_knowledge_write.sh L1/L2/L3 penetration visibility contract (cmd_karo_impl_r6_knowledge_write_penetration_visible_20260727) —
+#   (1) missing [[link]] emits a visible WARN without blocking, (2) the async (default) path always reports L2 as pending
+#   (never a false "未貫通" before the detached worker runs — the 2026-06-14 fail-open/no-decaying-WARN mandate), and
+#   (3) THREE_LAYER_CHAIN_SYNC=1 resolves L2 to a definitive 貫通/未貫通 verdict using the same MEMORY_DB_MATCH/NO_MATCH
+#   alias-miss criteria as /three-layer-penetrate. Regression on any of these three states is BLOCK.
 
 setup() {
     exec 8>"$BATS_FILE_TMPDIR/three-layer-chain-fixture.lock"
@@ -74,6 +79,96 @@ SH
 
     grep -q '^state=PASS$' "${REQUEST%.pending.json}.result"
     [ ! -e "$REQUEST" ]
+}
+
+setup_knowledge_write_fixture() {
+    export KW_ROOT="$(mktemp -d)"
+    mkdir -p "$KW_ROOT/logs" "$KW_ROOT/state"
+    KW_DB="$KW_ROOT/memory.db"
+    python3 - "$BATS_TEST_DIRNAME/../../data/multi_agent_shogun_memory.db" "$KW_DB" <<'PY'
+import sqlite3, sys
+src_path, dst_path = sys.argv[1:3]
+src = sqlite3.connect(src_path)
+rows = [r[0] for r in src.execute(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name IN ('events','events_fts') AND sql IS NOT NULL"
+)]
+assert len(rows) == 2, rows
+dst = sqlite3.connect(dst_path)
+for r in rows:
+    dst.execute(r)
+dst.commit()
+PY
+    cat > "$KW_ROOT/mock_semantic_update.sh" <<'SH'
+#!/usr/bin/env bash
+exit "${SEMANTIC_EXIT:-0}"
+SH
+    chmod +x "$KW_ROOT/mock_semantic_update.sh"
+}
+
+teardown_knowledge_write_fixture() {
+    find "$KW_ROOT" -depth -delete 2>/dev/null || true
+}
+
+@test "knowledge writer emits visible WARN when body has no [[link]] (fail-open, no BLOCK)" {
+    setup_knowledge_write_fixture
+    run env SHOGUN_MEMORY_DB="$KW_DB" THREE_LAYER_CHAIN_LOG="$KW_ROOT/logs/chain.log" \
+        THREE_LAYER_CHAIN_STATE_DIR="$KW_ROOT/state" \
+        bash "$BATS_TEST_DIRNAME/../../scripts/memory_db_knowledge_write.sh" \
+        "fixture body without a link" "kw-fixture-nolink"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"WARN: 本文に[[リンク]]が無い"* ]]
+    [[ "$output" == *"L3: WARN_NO_LINK"* ]]
+    teardown_knowledge_write_fixture
+}
+
+@test "knowledge writer reports L2 as pending on the default async path (never a premature 未貫通)" {
+    setup_knowledge_write_fixture
+    run env SHOGUN_MEMORY_DB="$KW_DB" THREE_LAYER_CHAIN_LOG="$KW_ROOT/logs/chain.log" \
+        THREE_LAYER_CHAIN_STATE_DIR="$KW_ROOT/state" \
+        THREE_LAYER_SEMANTIC_UPDATE_CMD="$KW_ROOT/mock_semantic_update.sh" \
+        bash "$BATS_TEST_DIRNAME/../../scripts/memory_db_knowledge_write.sh" \
+        "fixture body with [[mock_concept]]" "kw-fixture-pending"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L2: pending"* ]]
+    [[ "$output" != *"未貫通"* ]]
+    [[ "$output" == *"L3: candidate見込み: mock_concept"* ]]
+    teardown_knowledge_write_fixture
+}
+
+@test "knowledge writer resolves L2 to 貫通 when SYNC=1 and alias layer hits" {
+    setup_knowledge_write_fixture
+    cat > "$KW_ROOT/mock_search_hit.sh" <<'SH'
+#!/usr/bin/env bash
+echo "## mock_concept — fixture concept"
+SH
+    chmod +x "$KW_ROOT/mock_search_hit.sh"
+    run env SHOGUN_MEMORY_DB="$KW_DB" THREE_LAYER_CHAIN_LOG="$KW_ROOT/logs/chain.log" \
+        THREE_LAYER_CHAIN_STATE_DIR="$KW_ROOT/state" THREE_LAYER_CHAIN_SYNC=1 \
+        THREE_LAYER_SEMANTIC_UPDATE_CMD="$KW_ROOT/mock_semantic_update.sh" \
+        THREE_LAYER_SEMANTIC_SEARCH_CMD="$KW_ROOT/mock_search_hit.sh" \
+        bash "$BATS_TEST_DIRNAME/../../scripts/memory_db_knowledge_write.sh" \
+        "fixture body with [[mock_concept]]" "kw-fixture-hit"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L2: 貫通(alias層ヒット): mock_concept"* ]]
+    teardown_knowledge_write_fixture
+}
+
+@test "knowledge writer resolves L2 to semantic未貫通 when SYNC=1 and alias layer misses" {
+    setup_knowledge_write_fixture
+    cat > "$KW_ROOT/mock_search_miss.sh" <<'SH'
+#!/usr/bin/env bash
+echo "NO_MATCH: $1"
+SH
+    chmod +x "$KW_ROOT/mock_search_miss.sh"
+    run env SHOGUN_MEMORY_DB="$KW_DB" THREE_LAYER_CHAIN_LOG="$KW_ROOT/logs/chain.log" \
+        THREE_LAYER_CHAIN_STATE_DIR="$KW_ROOT/state" THREE_LAYER_CHAIN_SYNC=1 \
+        THREE_LAYER_SEMANTIC_UPDATE_CMD="$KW_ROOT/mock_semantic_update.sh" \
+        THREE_LAYER_SEMANTIC_SEARCH_CMD="$KW_ROOT/mock_search_miss.sh" \
+        bash "$BATS_TEST_DIRNAME/../../scripts/memory_db_knowledge_write.sh" \
+        "fixture body with [[mock_concept_miss]]" "kw-fixture-miss"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L2: semantic未貫通(alias層miss): mock_concept_miss"* ]]
+    teardown_knowledge_write_fixture
 }
 
 @test "knowledge writer creates durable pending request before setsid launch" {
