@@ -38,6 +38,7 @@ fi
 STARTUP_STDERR_LOG="$SCRIPT_DIR/logs/gate_karo_startup_stderr.log"
 STARTUP_ALERT_HISTORY="$SCRIPT_DIR/logs/karo_startup_alert_history.tsv"
 STARTUP_ESCALATION_STATE="${KARO_STARTUP_ESCALATION_STATE:-$SCRIPT_DIR/logs/karo_startup_escalation_state.tsv}"
+KARO_STARTUP_ESCALATION_RESOLVE_GRACE_SEC="${KARO_STARTUP_ESCALATION_RESOLVE_GRACE_SEC:-3600}"
 STARTUP_WARN_STREAK_THRESHOLD="${STARTUP_WARN_STREAK_THRESHOLD:-1}"
 # cmd_3658: 到着直後の未読が先送りCRITICAL streakに混入する誤検知の根治。
 # 最古未読メッセージがこの分数以上滞留していない限り、streak判定対象のalertを積まない。
@@ -2866,12 +2867,13 @@ mkdir -p "$SCRIPT_DIR/queue/locks" "$(dirname "$STARTUP_ESCALATION_STATE")"
 _deferred_lock="$SCRIPT_DIR/queue/locks/karo_startup_escalation.lock"
 (
 flock -x 9
-_transition_output="$(python3 - "$STARTUP_ESCALATION_STATE" "$_deferred_alerts_file" "${KARO_STARTUP_ESCALATION_SUPPRESS_PATTERN:-}" <<'PY'
+_transition_output="$(python3 - "$STARTUP_ESCALATION_STATE" "$_deferred_alerts_file" "${KARO_STARTUP_ESCALATION_SUPPRESS_PATTERN:-}" "$KARO_STARTUP_ESCALATION_RESOLVE_GRACE_SEC" <<'PY'
 import os, re, sys, tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
 
 state_path, alerts_path, suppress = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
+resolve_grace_sec = max(0, int(sys.argv[4]))
 
 def key_for(alert):
     key = re.sub(r'^先送りCRITICAL:\s*', '', alert.strip())
@@ -2916,10 +2918,18 @@ if state_path.exists():
         if len(parts) == 5:
             rows[parts[0]] = [int(parts[1]), parts[2], parts[3], parts[4]]
 
-now = datetime.now().astimezone().isoformat(timespec='seconds')
+now_dt = datetime.now().astimezone()
+now = now_dt.isoformat(timespec='seconds')
 for key, row in list(rows.items()):
     if key not in active and row[1] == 'open':
-        row[1], row[3] = 'resolved', now
+        try:
+            absent_long_enough = (
+                now_dt - datetime.fromisoformat(row[3])
+            ).total_seconds() >= resolve_grace_sec
+        except ValueError:
+            absent_long_enough = False
+        if absent_long_enough:
+            row[1], row[3] = 'resolved', now
 
 for key, alert in active.items():
     suppressed = bool(suppress and re.search(suppress, key))

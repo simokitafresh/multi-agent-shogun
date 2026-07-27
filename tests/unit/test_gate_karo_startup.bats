@@ -13,7 +13,7 @@ setup() {
 
 teardown() { rm -rf "$TMPDIR_CASE"; }
 
-transition() { python3 "$PY" "$STATE" "$ALERTS" "${1:-}"; }
+transition() { python3 "$PY" "$STATE" "$ALERTS" "${1:-}" "${2:-3600}"; }
 
 @test "同一keyは最初の一件だけ送信し可変率・件数・順序差を正規化する" {
   printf '%s\n' \
@@ -31,11 +31,33 @@ transition() { python3 "$PY" "$STATE" "$ALERTS" "${1:-}"; }
 @test "解決後の実再発は新generationとして一件だけ送信する" {
   echo '先送りCRITICAL: 未処理 3件 が3セッション連続' > "$ALERTS"
   run transition; [[ "$output" == *$'SEND\t未処理 #\t1\t'* ]]
+  python3 - "$STATE" <<'PY'
+from datetime import datetime, timedelta
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+parts = path.read_text().rstrip('\n').split('\t')
+parts[4] = (datetime.now().astimezone() - timedelta(hours=2)).isoformat(timespec='seconds')
+path.write_text('\t'.join(parts) + '\n')
+PY
   : > "$ALERTS"
   run transition; [ -z "$output" ]
   grep -q $'\t1\tresolved\t1\t' "$STATE"
   echo '先送りCRITICAL: 未処理 9件 が8セッション連続' > "$ALERTS"
   run transition; [[ "$output" == *$'SEND\t未処理 #\t2\t'* ]]
+}
+
+@test "同一keyの一時消失と復帰はgrace内で再送しない" {
+  echo '先送りCRITICAL: 未処理 3件 が3セッション連続' > "$ALERTS"
+  run transition; [[ "$output" == *$'SEND\t未処理 #\t1\t'* ]]
+  : > "$ALERTS"
+  run transition; [ -z "$output" ]
+  grep -q $'\t1\topen\t1\t' "$STATE"
+  echo '先送りCRITICAL: 未処理 9件 が8セッション連続' > "$ALERTS"
+  run transition
+  [ -z "$output" ]
+  grep -q $'\t1\topen\t1\t' "$STATE"
 }
 
 @test "正当抑制はterminal suppressedを記録し通知しない" {
@@ -49,9 +71,9 @@ transition() { python3 "$PY" "$STATE" "$ALERTS" "${1:-}"; }
 @test "同時startupはflock下で一件だけ送信する" {
   echo '先送りCRITICAL: 並行案件 7件 が3セッション連続' > "$ALERTS"
   LOCK="$TMPDIR_CASE/lock"
-  (flock -x 9; python3 "$PY" "$STATE" "$ALERTS" '') 9>"$LOCK" > "$TMPDIR_CASE/out1" &
+  (flock -x 9; python3 "$PY" "$STATE" "$ALERTS" '' 3600) 9>"$LOCK" > "$TMPDIR_CASE/out1" &
   p1=$!
-  (flock -x 9; python3 "$PY" "$STATE" "$ALERTS" '') 9>"$LOCK" > "$TMPDIR_CASE/out2" &
+  (flock -x 9; python3 "$PY" "$STATE" "$ALERTS" '' 3600) 9>"$LOCK" > "$TMPDIR_CASE/out2" &
   p2=$!
   wait "$p1"; wait "$p2"
   [ "$(cat "$TMPDIR_CASE/out1" "$TMPDIR_CASE/out2" | grep -c '^SEND')" -eq 1 ]
