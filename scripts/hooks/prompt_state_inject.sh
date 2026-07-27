@@ -216,25 +216,40 @@ _prompt_state_memory_citation_scaffold() {
   safe_pane="${safe_pane//[^A-Za-z0-9_.-]/_}"
   evidence="$evidence_dir/evidence_${agent_id:-unknown}_${safe_pane}.json"
   [[ -s "$evidence" && -s "$evidence.current" ]] || return 0
-  python3 - "$evidence" <<'PY' 2>/dev/null || return 0
-import json, pathlib, sys
+  PROMPT_STATE_MEM_QUOTE_BYTE_CAP="${PROMPT_STATE_MEM_QUOTE_BYTE_CAP:-400}" python3 - "$evidence" <<'PY' 2>/dev/null || return 0
+import json, os, pathlib, sys
 p = pathlib.Path(sys.argv[1])
 d = json.loads(p.read_text(encoding="utf-8"))
 if p.with_name(p.name + ".current").read_text(encoding="utf-8").strip() != str(d.get("nonce", "")):
     raise SystemExit(1)
 if d.get("status") != "success" or any(str(d.get(k)) != "0" for k in ("memory_db", "semantic", "obsidian")):
     raise SystemExit(1)
+# cmd_karo_impl_a5_mem_evidence_raw_field: T1(three_layer_preflight.sh)が注入したevidence
+# JSONには memory_top/semantic_top/obsidian_top(原文テキスト)・*_total_hits・evidence_path が
+# 既に存在する。雛形はこれまでsource/query/tsのみで原文欄が無く「読んでいないものの引用を
+# 強制」する空札だった。T1と同じ契約(LG075: 上位N件だけ見せて総数を伏せない)で原文・総ヒット
+# 件数・evidenceファイルパスを同梱する。
+quote_cap = int(os.environ.get("PROMPT_STATE_MEM_QUOTE_BYTE_CAP", "400"))
+evidence_path = str(d.get("evidence_path", "")).strip()
 layers = (("memory_db", "memory"), ("semantic", "semantic"), ("obsidian", "obsidian"))
 values = []
 for label, prefix in layers:
     source, query, ts = (str(d.get(f"{prefix}_{x}", "")).strip() for x in ("source", "query", "timestamp"))
     if int(d.get(f"{prefix}_count", 0)) <= 0 or not source or not query or query == "-" or not ts:
         raise SystemExit(1)
-    values.append((label, source, query, ts))
-print("=== MEM引用タグ雛形（応答冒頭に保持。実在preflight値） ===")
-for label, source, query, ts in values:
-    print(f'[MEM: {label} source="{source}" query="{query}" ts="{ts}"]')
-print("=== /MEM引用タグ雛形 ===")
+    raw = str(d.get(f"{prefix}_top", "")).strip()
+    if not raw:
+        raw = "NO_RESULT"
+    total_hits = str(d.get(f"{prefix}_total_hits", "0")).strip()
+    raw_bytes = raw.encode("utf-8")
+    if len(raw_bytes) > quote_cap:
+        raw = raw_bytes[:quote_cap].decode("utf-8", errors="ignore") + "...(truncated)"
+    raw = raw.replace('"', "'").replace("\n", " / ")
+    values.append((label, source, query, ts, raw, total_hits))
+print("=== MEM引用タグ雛形（応答冒頭に保持。実在preflight原文から引用せよ） ===")
+for label, source, query, ts, raw, total_hits in values:
+    print(f'[MEM: {label} source="{source}" query="{query}" ts="{ts}" total_hits={total_hits} 原文="{raw}"]')
+print(f"=== /MEM引用タグ雛形（evidence_path={evidence_path}） ===")
 PY
 }
 
