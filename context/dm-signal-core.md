@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-24 cmd_4148 reviewed source boundary -->
-<!-- source_commit:00c20c54 reason:cmd_4148 reviewed source boundary evidence:cmd_complete_gate project=dm-signal -->
+<!-- last_updated: 2026-07-27 cmd_4186 reviewed source boundary -->
+<!-- source_commit:0ba70491 reason:cmd_4186 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=0ba70491 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 

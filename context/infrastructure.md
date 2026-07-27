@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-27 cmd_4185 -->
-<!-- source_commit:e2b1552921155da50f25fe111ef0412d1b2d0f03 reason:two pending hotfix contracts reflected evidence:ee1173787 repo_root contract and e2b155292 archived terminal FAIL closure indexed; ancestry and gate_metrics BLOCK entries verified -->
+<!-- last_updated: 2026-07-27 reviewed_infra_hotfix_boundary -->
+<!-- source_commit:7d4dca39a reason:reviewed_infra_hotfix_boundary evidence:covers_e2b155292_and_7d4dca39a -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -894,7 +894,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1414 -->
+<!-- last_synced_lesson: L1415 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2022,6 +2022,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1412: 成果物commit repoとproject repoを全consumerで分離せよ（cmd_karo_hotfix_gate_commit_repo_root_20260727）
 - L1413: enforcement text内のL/Level数字言及がgate_lesson_enforcement_level.shのEXPLICIT_REを誤検知させ、昇格を見送る否定文脈でも明示Level4等に誤分類されうる（cmd_reflux_promotion_202607272134_kagemaru）
 - L1414: 外れ値台帳には枝選択コンテキストが必要（cmd_4185）
+- L1415: lock取得後の基準差分はcurrent HEADで再列挙しない（cmd_karo_hotfix_scope_lock_precommit_order_20260727）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
