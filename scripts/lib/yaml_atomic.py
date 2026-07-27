@@ -8,11 +8,45 @@ full-file rewrites spread through control-plane scripts.
 
 from __future__ import annotations
 
+import datetime
+import inspect
+import json
 import os
+import sys
 import tempfile
 from typing import Any
 
 import yaml
+
+_CALLER_LOG_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "logs",
+    "atomic_yaml_write_callers.jsonl",
+)
+
+
+def _log_caller(path: str) -> None:
+    """Append who invoked atomic_yaml_write to logs/ (dynamic capture; static grep misses embedded heredoc callers)."""
+    if os.environ.get("ATOMIC_YAML_WRITE_LOG_DISABLE") == "1":
+        return
+    try:
+        frame = inspect.currentframe().f_back.f_back
+        caller = f"{frame.f_code.co_filename}:{frame.f_lineno}"
+    except Exception:
+        caller = "unknown"
+    try:
+        record = {
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "write_path": path,
+            "caller": caller,
+            "argv0": sys.argv[0] if sys.argv else "",
+            "pid": os.getpid(),
+            "ppid": os.getppid(),
+        }
+        with open(_CALLER_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
 
 
 def _normalize(value: Any) -> Any:
@@ -34,6 +68,7 @@ def atomic_yaml_write(
     sort_keys: bool = False,
     width: int | None = None,
 ) -> None:
+    _log_caller(path)
     directory = os.path.dirname(path) or "."
     os.makedirs(directory, exist_ok=True)
     fd, tmp_path = tempfile.mkstemp(dir=directory, suffix=".tmp")
