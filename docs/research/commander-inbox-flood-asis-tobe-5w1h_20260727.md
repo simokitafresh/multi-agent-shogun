@@ -45,21 +45,23 @@
 - 「削るな、速くしろ」(殿裁定07-21): 通知機構・typeの意味・fail-closedは削らない
 - LG032: 新規gate/hook/daemonを作らない。inbox_watcher(debounce既存)/inbox_write/ninja_monitorの既存3経路への追加のみ
 
-### T1. 送信側dedup(F1是正・主軸)
+### T1. 時間窓coalescing=非緊急起床の束ね(F1是正・主軸) — ★v2改訂(軍師REQUEST_CHANGES blt_141931の実測反証を採用)
 
-- 対象: `inbox_write.sh`送信経路のうち gate_alert / skill_hint / infra_anomaly / bulletin_notify の4type
-- 設計: 送信時に**同一原因key**(gate_alert=GA原因key、skill_hint=skill×cmd、infra_anomaly=種別、bulletin_notify=投稿者×cmd)の直近送信を状態ファイルで照合。**窓内(既定案30分)の同一keyは、メッセージ本体はinboxへ永続書込みしつつnudgeを発行しない**(=digest扱い。type自体は変えない)
-- 初回は従来通り起床型。窓リセットで再度起こす
-- 契約: **メッセージは1通も失わない**(inboxファイル書込みは全件不変)。抑止されるのはsend-keys起床のみ。受け手は次の起床時に未読を一括処理(既存プロトコル通り)
-- 見込み効果: 家老の起床型558通のうち再通知系(bulletin_notify+gate_alert+skill_hint+infra_anomaly=216通・38%)の大半を初回のみ化
+- ~~v1のsame-key dedup主軸~~ → **棄却**。軍師が当日家老宛586通へv1のkeyを全数適用した実測: 窓無限でも抑止49通=4type中22.0%・**全体の8.4%**。gate_alert 0.0%・skill_hint 0.0%(GA-391〜399は互いに別番号、skill_hintはcmdごとに別=「同一原因の再通知」ではなく「別原因の連続発火」であり、same-key dedupでは原理的に落ちない)。∴v1は目標「4割減」未達
+- **v2主軸: 非緊急起床typeを時間窓Wで束ねる**(time-window coalescing)。軍師実測: W=60sで43.8%減、**W=120sで60.2%減**、W=300sで77.4%減
+- 実装: `scripts/inbox_watcher.sh:97` `DEBOUNCE_SEC="${NUDGE_COOLDOWN_SEC:-30}"` を**非緊急typeに限りWへ延長**する1点。新規gate/hook/状態ファイル不要(LG032)
+- **W既定=120s**を提案(60.2%減で目標超過、かつreview_draftを緊急側へ移さずに済む境界=軍師論点4回答: 本日実測でレビュー依頼は配備を待たせておらず、依頼→RC実績約13分に対し120秒は誤差。W>180sを採る場合のみreview_draftを緊急typeへ移す)
+- 緊急type(束ねない): task_assigned / clear_command / model_switch / escalation / cmd_new
+- same-key dedupは**infra_anomaly専用の補助として存置**(同type内抑止86.2%と効きが良い=軍師実測)
+- 契約: **メッセージは1通も失わない**(inboxファイル書込みは全件不変)。束ねられるのはsend-keys起床のみ。受け手は次の起床時に未読を一括処理(既存プロトコル通り)
 
-### T2. CTX高圧時のnudge保留=idle窓の人工生成(F2是正)
+### T2. CTX高圧時のnudge保留=idle窓の人工生成(F2是正) — ★v2改訂(CTX取得経路を軍師回答へ差替え)
 
-- 対象: `inbox_watcher.sh`のnudge発行部(debounce機構が既存: :97,:466-468,:898-910)
-- 設計: nudge発行前に対象paneのCTXを確認し、**CTX>70%(check_karo_clearの発火閾値と同一)なら非緊急typeのnudgeを保留**(debounceファイル延長で実現=既存機構の拡張)。保留中に生まれたidle窓をninja_monitorの既存check_karo_clearが検知して/clear → clear_recovery nudgeで復帰後、未読を一括処理
-- 緊急type(task_assigned / clear_command / model_switch / escalation / cmd_new)は保留対象外
-- 契約: 保留はnudgeのみ。メッセージ永続・既存debounce意味論・「停止中エージェントへ送るな」規則は不変更
-- fail-safe: CTX取得失敗時は保留せず従来動作(誤保留より誤起床が安全)
+- 対象: `inbox_watcher.sh`のnudge発行部(debounce機構既存: :97,:466-468,:898-910)+`ninja_monitor.sh`のsnapshot生成
+- ~~v1のwatcher自前CTX取得~~ → **棄却**。watcherからのCTX取得経路は現状存在せず、karo_snapshotは忍者行にしかCTXを持たない(軍師実測+将軍spot check: ninja行6・指揮官CTX行0)
+- **v2: ninja_monitorがcheck_karo_clearで既に毎サイクル取得している指揮官CTX(get_context_pct :1615)をkaro_snapshotへ1行追記し、watcherはそのファイルを読むだけ**。新規取得コストゼロ・新規機構ゼロ(turn境界イベント方式は不要=軍師論点2回答)
+- 動作: CTX>70%(check_karo_clear発火閾値と同一)なら非緊急typeのnudgeを保留→idle窓が生まれ既存check_karo_clearが/clear→clear_recovery nudgeで復帰後に未読一括処理
+- fail-safe: snapshot側CTX行が欠落またはstale(タイムスタンプ超過)なら保留せず従来動作(誤保留より誤起床が安全)
 
 ### T3. 効果計測(既存計装に乗せる)
 
@@ -72,7 +74,7 @@
 | | 内容 |
 |---|---|
 | **WHY** | 指揮官の停止(=クリーン/clear)機会が構造的に消失し、autocompact劣化・recovery遅延・ALERT疲れが実発生 |
-| **WHAT** | T1送信側dedup+T2 CTX高圧時nudge保留+T3前後計測。メッセージ永続・type意味論・fail-closedは不変更 |
+| **WHAT** | T1時間窓coalescing(W=120s・infra_anomalyのみsame-key dedup補助)+T2 CTX高圧時nudge保留(snapshot経由CTX)+T3前後計測。メッセージ永続・type意味論・fail-closedは不変更 |
 | **WHEN** | 家老・軍師レビュー→殿裁可→cmd起票(1道具1CMD: T1弾とT2弾は分割) |
 | **WHERE** | inbox_write.sh(T1) / inbox_watcher.sh(T2) / defense_overhead.jsonl(T3) |
 | **WHO** | 将軍=設計+起票、家老=分解配備、忍者=実装、軍師=本設計レビュー+実装レビュー |
