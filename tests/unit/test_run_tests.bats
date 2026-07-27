@@ -1144,3 +1144,182 @@ SH
   cmp "$TMPROOT/out.tap" "$TMPROOT/combined.tap"
   awk -F '\t' 'NR==1 {exit !($1==7 && $3==2 && $4==1 && $5==1)}' "$TMPROOT/stats"
 }
+
+
+# test_necessity: 受領証は「選択・発見・実行・完了」の4値を持ち、全数を完走していない実行が全数を名乗れない
+@test "scope identity requires selected equals discovered equals executed and complete" {
+  printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
+  printf '@test "b" { true; }\n' >"$TMPROOT/tests/unit/b.bats"
+  head="$(git -C "$TMPROOT" rev-parse HEAD)"
+  artifact="$TMPROOT/scope.out"
+  receipt="$TMPROOT/scope.json"
+  paths="$TMPROOT/scope.paths"
+  ls "$TMPROOT"/tests/unit/*.bats | sed "s|^$TMPROOT/||" >"$paths"
+
+  # $1=complete, $2=実行ログに載せるファイル数(START+DONE)
+  _mk_receipt() {
+    : >"$artifact"
+    local n="$2" i=0
+    while read -r rel; do
+      i=$((i + 1)); [ "$i" -le "$n" ] || break
+      printf 'START: %s pid=1 weight=8 timeout=900s\nDONE: %s rc=0\n' "${rel##*/}" "${rel##*/}" >>"$artifact"
+    done <"$paths"
+    printf 'PASS: %s bats file(s) (%s run, 0 cached)\n1..1\nok 1 sample\n' "$n" "$n" >>"$artifact"
+    python3 - "$receipt" "$artifact" "$1" <<'PY'
+import hashlib, json, sys
+path, artifact, complete = sys.argv[1:]
+raw = open(artifact, 'rb').read()
+json.dump({
+    "version": 2, "complete": complete == "true", "result": "PASS", "rc": 0,
+    "duration_ms": 1, "output_sha256": hashlib.sha256(raw).hexdigest(),
+    "declared_test_count": 1, "observed_test_count": 1, "skip_count": 0,
+    "artifact": artifact, "signal": None, "command": ["bats"],
+}, open(path, "w"))
+PY
+  }
+  _publish() {
+    env REPO_ROOT="$TMPROOT" bash -c '
+      source "$1/scripts/run_tests.sh"
+      publish_run_tests_metadata "$2" "$3" "$4" selector "$5" "$1"
+    ' _ "$TMPROOT" "$receipt" "$head" "$paths" "$1"
+  }
+  _scope() {
+    python3 -c 'import json,sys; s=json.load(open(sys.argv[1]))["run_manifest"]["scope_identity"]; print(s["selected_file_count"], s["discovered_file_count"], s["executed_file_count"], s["complete"], s["full_scope"])' "$receipt"
+  }
+
+  # 陽性: 3本発見・3本選択・3本実行・complete=true → 全数
+  _mk_receipt true 3
+  _publish unit
+  run _scope
+  [ "$output" = "3 3 3 True True" ]
+  run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; verify_run_tests_receipt "$2"' _ "$TMPROOT" "$receipt"
+  [ "$status" -eq 0 ]
+
+  # 陰性1: 選択も発見も3だが実行は2(=今回の18:03と同型) → 全数ではない
+  _mk_receipt true 2
+  _publish unit
+  run _scope
+  [ "$output" = "3 3 2 True False" ]
+
+  # 陰性2: 3本実行したが complete=false(打ち切り) → 全数ではない
+  _mk_receipt false 3
+  _publish unit
+  run _scope
+  [ "$output" = "3 3 3 False False" ]
+
+  # 退化防止: affected/file等の正当な部分実行は full_scope_claimable=false であり誤BLOCKしない
+  _mk_receipt true 3
+  _publish affected
+  run python3 -c 'import json,sys; s=json.load(open(sys.argv[1]))["run_manifest"]["scope_identity"]; print(s["mode"], s["full_scope_claimable"], s["full_scope"])' "$receipt"
+  [ "$output" = "affected False False" ]
+  run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; verify_run_tests_receipt "$2"' _ "$TMPROOT" "$receipt"
+  [ "$status" -eq 0 ]
+
+  # 変異注入1: full_scope を手で立てても検証器が否認する
+  _mk_receipt true 2
+  _publish unit
+  python3 - "$receipt" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1])); d["run_manifest"]["scope_identity"]["full_scope"] = True
+json.dump(d, open(sys.argv[1], "w"))
+PY
+  run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; verify_run_tests_receipt "$2"' _ "$TMPROOT" "$receipt"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"scope_identity full_scope"* ]]
+
+  # 変異注入2: executed を水増ししても complete と件数の突合で否認される
+  _mk_receipt false 3
+  _publish unit
+  python3 - "$receipt" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+d["run_manifest"]["scope_identity"].update(executed_file_count=3, complete=True, full_scope=True)
+json.dump(d, open(sys.argv[1], "w"))
+PY
+  run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; verify_run_tests_receipt "$2"' _ "$TMPROOT" "$receipt"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"scope_identity complete"* ]]
+}
+
+# test_necessity: joinした受領証でも範囲identityが誰の実行のものか判別できる(B-1のtree identityと対をなす)
+@test "joined receipt keeps the leader scope identity and marks the join" {
+  head="$(git -C "$TMPROOT" rev-parse HEAD)"
+  artifact="$TMPROOT/join.out"
+  receipt="$TMPROOT/join.json"
+  paths="$TMPROOT/join.paths"
+  ls "$TMPROOT"/tests/unit/*.bats | sed "s|^$TMPROOT/||" >"$paths"
+  : >"$artifact"
+  while read -r rel; do
+    printf 'START: %s pid=1 weight=8 timeout=900s\nDONE: %s rc=0\n' "${rel##*/}" "${rel##*/}" >>"$artifact"
+  done <"$paths"
+  printf 'PASS: 1 bats file(s) (1 run, 0 cached)\n1..1\nok 1 sample\n' >>"$artifact"
+  python3 - "$receipt" "$artifact" <<'PY'
+import hashlib, json, sys
+path, artifact = sys.argv[1:]
+raw = open(artifact, 'rb').read()
+json.dump({
+    "version": 2, "complete": True, "result": "PASS", "rc": 0,
+    "duration_ms": 1, "output_sha256": hashlib.sha256(raw).hexdigest(),
+    "declared_test_count": 1, "observed_test_count": 1, "skip_count": 0,
+    "artifact": artifact, "signal": None, "command": ["bats"],
+}, open(path, "w"))
+PY
+  run env REPO_ROOT="$TMPROOT" bash -c '
+    source "$1/scripts/run_tests.sh"
+    publish_run_tests_metadata "$2" "$3" "$4" selector unit "$1"
+  ' _ "$TMPROOT" "$receipt" "$head" "$paths"
+  [ "$status" -eq 0 ]
+
+  run env REPO_ROOT="$TMPROOT" bash -c '
+    source "$1/scripts/run_tests.sh"
+    emit_run_tests_terminal_receipt "$2" joined=1
+  ' _ "$TMPROOT" "$receipt"
+  [ "$status" -eq 0 ]
+  [ -f "$receipt.join_status.json" ]
+  run python3 -c 'import json,sys; j=json.load(open(sys.argv[1]+".join_status.json")); s=json.load(open(sys.argv[1]))["run_manifest"]["scope_identity"]; print(j["joined"], j["leader_receipt"]==sys.argv[1], s["mode"], s["selected_file_count"], s["executed_file_count"], s["full_scope"])' "$receipt"
+  [ "$output" = "True True unit 1 1 True" ]
+}
+
+# test_necessity: 件数の主張はそれ自身の列挙を伴い、切り捨てた出力から数え直させない
+@test "scope identity enumerates every failing file next to its count" {
+  head="$(git -C "$TMPROOT" rev-parse HEAD)"
+  artifact="$TMPROOT/fail.out"
+  receipt="$TMPROOT/fail.json"
+  paths="$TMPROOT/fail.paths"
+  ls "$TMPROOT"/tests/unit/*.bats | sed "s|^$TMPROOT/||" >"$paths"
+  {
+    printf 'START: a.bats pid=1 weight=8 timeout=900s\nDONE: a.bats rc=1\n'
+    printf 'START: b.bats pid=2 weight=8 timeout=900s\nDONE: b.bats rc=0\n'
+    printf 'START: sample.bats pid=3 weight=8 timeout=900s\nDONE: sample.bats rc=2\n'
+    printf 'PASS: 3 bats file(s) (3 run, 0 cached)\n1..1\nok 1 sample\n'
+  } >"$artifact"
+  python3 - "$receipt" "$artifact" <<'PYEOF'
+import hashlib, json, sys
+path, artifact = sys.argv[1:]
+raw = open(artifact, 'rb').read()
+json.dump({
+    "version": 2, "complete": True, "result": "PASS", "rc": 0,
+    "duration_ms": 1, "output_sha256": hashlib.sha256(raw).hexdigest(),
+    "declared_test_count": 1, "observed_test_count": 1, "skip_count": 0,
+    "artifact": artifact, "signal": None, "command": ["bats"],
+}, open(path, "w"))
+PYEOF
+  run env REPO_ROOT="$TMPROOT" bash -c '
+    source "$1/scripts/run_tests.sh"
+    publish_run_tests_metadata "$2" "$3" "$4" selector unit "$1"
+    verify_run_tests_receipt "$2"
+  ' _ "$TMPROOT" "$receipt" "$head" "$paths"
+  [ "$status" -eq 0 ]
+  run python3 -c 'import json,sys; s=json.load(open(sys.argv[1]))["run_manifest"]["scope_identity"]; print(s["failed_file_count"], ",".join(s["failed_files"]))' "$receipt"
+  [ "$output" = "2 a.bats,sample.bats" ]
+
+  # 変異注入: 件数だけ切り下げても列挙との突合で否認される(head/tail由来の申告を通さない)
+  python3 - "$receipt" <<'PYEOF'
+import json, sys
+d = json.load(open(sys.argv[1])); d["run_manifest"]["scope_identity"]["failed_file_count"] = 1
+json.dump(d, open(sys.argv[1], "w"))
+PYEOF
+  run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; verify_run_tests_receipt "$2"' _ "$TMPROOT" "$receipt"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"scope_identity failed_files"* ]]
+}
