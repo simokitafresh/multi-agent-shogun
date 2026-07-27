@@ -1,11 +1,24 @@
-# 忍者auto clear — 恒久是正 設計書 (2026-07-27)【T1-T3 CLOSED / T4のみOPEN(実装中) — §0状態ブロック参照】
+# 忍者auto clear — 恒久是正 設計書 (2026-07-27)【T1-T3 CLOSED / T4実装CLOSED・本番到達のみOPEN — §0/§11参照。全クローズはdaemon反映確認をもって宣言する】
 
 - 起案: 軍師(gunshi)
 - 殿下問: 2026-07-27 11:16「auto clearの設計書はできたか？」
 - 前提資料: 調査書 `docs/research/gunshi_auto_clear_blocked_investigation_20260727.md` (gist e6e289f3・家老LGTM済)
 - origin: `[[殿下問_auto_clear_20260727]] -> [[CLEAR-BLOCKED 1136件]] -> [[本設計書]]`
 
-## §0 状態ブロック(2026-07-27 16:35 将軍再構築 — どこまでクローズか)
+## §0 状態ブロック(2026-07-27 18:57 将軍再々構築 — どこまでクローズか)
+
+| 構成要素 | 状態 | 一次証跡 |
+|---|---|---|
+| T1 継続検知カウンタ | ✅ CLOSED | 変更なし(下表16:35版参照) |
+| T2 閾値通知 | ✅ CLOSED+**再発火実証** | 18:33:16 `CLEAR-BLOCKED-NOTIFY: tobisaru count=3` — 3度目の実封鎖も即検知した(検知網は完全稼働) |
+| T3 startup gate表示 | ✅ CLOSED | 変更なし |
+| **T4 実装** | ✅ **実装CLOSED**(コード+レビュー) | commit `10cd7804e`(小太郎 17:32、専用一時index方式=GIT_INDEX_FILE分離 :805/:815/:827、GA-231c境界9/9・affected 212/212)。軍師LGTM(FAIL受理: FAILの実体は無関係unit4件で別弾へ分離済み)→家老ACCEPT→FAIL_CLOSE(blt_175821) |
+| **T4 本番到達** | ⚠ **OPEN — 唯一の残件** | LS-A09(34)実装完了≠本番到達の実例。稼働daemon PID 469247は16:57起動、script mtime 17:08更新に対し**HOT-RELOAD発火0件**(`grep -c HOT-RELOAD` → 0)。∴**稼働中の旧コードが18:15にbatch commit(afbbfc41a)を実行**しており、新コードは未反映。reload trigger(idle edge)が発火しない疑い含め家老へ検分下知済み(18:57) |
+| **D4 発生源仮説** | ⚠ 最有力仮説を**3度目の再発で強化** | 18:15旧コードbatch commit→staged残骸2件(MM: index=古いsnapshot/worktree=新正本)→18:33-18:46全忍者CLEAR-BLOCKED→家老unstage(blt_184820、worktree hash前後一致で非破壊証明)→**18:51:49 hayate CODEX-RESPAWN=auto clear復旧実証**。確定はT4本番到達後のAUTO-COMMIT-FAILログ観測(現在0件=旧コード稼働の傍証)で行う |
+
+**∴ 総括(18:57): 検知網T1-T3と是正コードT4は完成。残るのは「新コードを稼働daemonへ到達させ、AUTO-COMMIT-FAILログでD4を確定/棄却する」の一点のみ。到達確認と再発ゼロの観測をもって題名を全クローズへ改める。**
+
+### (参考)16:35時点の状態ブロック
 
 | 構成要素 | 状態 | 一次証跡 |
 |---|---|---|
@@ -212,6 +225,24 @@ fi
 - **★OID照合の限界(半蔵task AC3が先鋭化・軍師知見と整合)**: git OIDは**内容hash**であり操作者を含まない(軍師確定知見 knowledge:9511d46a)。∴他者が**同一内容**を再stageした場合はOIDが一致し自己所有を証明できない。実装契約: この境界をfixtureで再現し、OID一致だけでGA-231cを証明できないケースは**回収せずBLOCK報告**(fail-safe側へ倒す)
 - **実装状況(16:35)**: 半蔵へ配備(task `cmd_karo_hotfix_auto_commit_t4v2`、AC1=共通helper統合/AC2=AUTO-COMMIT-FAILログ/AC3=OID自己所有回収+同一内容境界/AC4=fixture f-l+境界/AC5=GA-231c・T1-T3独立検証)。**1回目はfailed(16:10、報告YAML未提出)** — 家老が実装FAILか終端契約かを検分し再配備する段
 - **★retry設計の強化(家老 16:41 blt_164121)**: 再配備YAML(`cmd_karo_hotfix_auto_commit_t4v2_retry`)は自己所有証明を**専用一時index方式**(auto-commitを専用GIT_INDEX_FILEで実行し共有indexへ触れない)へ改めた。共有index上の同一OID曖昧回収を構造的に排除し、GA-231cをOID照合(内容hashの限界あり)より強く保証する — OID照合はfixture検証層として残る。配備は適格忍者の空き待ち(16:41時点で適格0名: 疾風=cmd_4177実装中・半蔵=殿直作業中・他=done未終端。家老が一次監視し空き次第即配備)
+
+## §11 3度目の封鎖再発と検分(2026-07-27 18:33-18:57 将軍一次記録)
+
+**時系列(全て一次証跡)**
+1. **17:32** T4v2 dedicated-index実装がcommit着地(`10cd7804e`)。ただし稼働daemon(PID 469247、16:57起動)はHOT-RELOAD未発火のまま旧コードで走行継続
+2. **18:15** 旧コードのcontext batch commitが実行(`afbbfc41a` tobisaru)。この前後でstaged残骸2件が共有indexに残置(`context/infrastructure.md`+`context/lord-conversation-index.md`、MM=indexが古いsnapshot・worktreeが新正本)
+3. **18:33-18:46** 全忍者のauto-commit-before-clearが保全guardで拒否、CLEAR-BLOCKED連発(hayate/saizo/tobisaru)。**T2通知は18:33:16に即発火**=検知網は設計どおり機能
+4. **18:45** 殿下問「忍者がauto clearされていないように見える」→将軍が真因特定(staged残骸2件)→家老へ下知
+5. **18:48** 家老が対象2pathのみunstage(batch commitせず。worktree hash前後一致 infra=99c49eab/lord=80cb1cfe で非破壊証明、blt_184820)
+6. **18:51:49** hayate CODEX-RESPAWN成功(CTX 89%→0%)=**auto clear復旧の挙動実証**。以後CLEAR-BLOCKED 0件
+
+**検分から出た新事実(将軍 18:55-18:57)**
+- `grep -c "AUTO-COMMIT-FAIL" logs/ninja_monitor.log` → **0件**。新コードのFAILログが一度も出ていない
+- `ps`実測: daemon本体は16:57起動。script mtime 17:08更新に対し `grep -c "HOT-RELOAD"` → **0件**
+- ∴**新コードは本番未到達**(LS-A09(34)の実例)。18:15のbatch commitも旧コードの実行であり、3度目の残骸も旧コード由来。**T4コードの有効性はまだ本番で一度も試されていない**
+- 残課題2点: (a)daemonへの新コード反映(HOT-RELOADのidle-edge triggerが発火しない疑いの検分含む) (b)反映後のAUTO-COMMIT-FAIL観測によるD4確定/棄却
+
+**クローズ条件(再定義)**: (a)稼働daemonが`10cd7804e`以降のコードで走行していることをプロセス起動時刻+挙動ログで確認 (b)以後の運用でCLEAR-BLOCKED持続封鎖の再発0件。両立をもって題名を【全クローズ】へ改める。
 
 ## §8 因果リンク
 
