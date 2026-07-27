@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-27 cmd_karo_hotfix_unify_no_code_contract_dc_warn_20260727 reviewed source boundary -->
-<!-- source_commit:1853d698f reason:cmd_karo_hotfix_unify_no_code_contract_dc_warn_20260727 reviewed source boundary evidence:cmd_complete_gate -->
+<!-- last_updated: 2026-07-27 cmd_karo_hotfix_cs_review_log_field_distance_20260727 reviewed source boundary -->
+<!-- source_commit:6165ba3f1 reason:cmd_karo_hotfix_cs_review_log_field_distance_20260727 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=6165ba3f1 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -888,7 +888,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1405 -->
+<!-- last_synced_lesson: L1407 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2007,6 +2007,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1403: 同一契約の複数入口は共有述語へ一本化する（cmd_karo_hotfix_unify_no_code_contract_dc_warn_20260727）
 - L1404: 判定件数は全代入と結論変更を分離定義する（cmd_4177）
 - L1405: 埋込みPythonの引数追加時は全抽出callerを列挙せよ（cmd_4178）
+- L1406: 構造contract testは同名構文のfirst occurrenceへ依存させない（cmd_karo_hotfix_unit_skill_feedback_routing_20260727）
+- L1407: wait -nの回収対象と独自PID台帳を二重管理しない（cmd_karo_hotfix_unit_run_tests_contract_20260727）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
