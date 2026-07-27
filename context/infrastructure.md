@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-27 cmd_4181 -->
-<!-- source_commit:b8ef206e7 reason:two reviewed infra hotfixes reflected evidence:b8ef206e7 includes snapshot fix and descends from f0e493f10 auto-clear fix; git merge-base ancestry verified -->
+<!-- last_updated: 2026-07-27 two pending hotfix contracts reflected -->
+<!-- source_commit:e2b1552921155da50f25fe111ef0412d1b2d0f03 reason:two pending hotfix contracts reflected evidence:ee1173787 repo_root contract and e2b155292 archived terminal FAIL closure indexed; ancestry and gate_metrics BLOCK entries verified -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -33,6 +33,10 @@ GA-300再分類: `ff52b26b3` は`codd-refactor`の参照鮮度注記のみでinf
 cmd完了時のown-commit freshness判定は、未反映commitをBLOCKする前に`CONTEXT_UPDATE_CANDIDATE project=<id> context=<path> source_commit=<hash> reason=own_reviewed_commit`を機械可読出力し、更新対象を自動供給する。承認済み変更がtest-onlyの場合だけ`CONTEXT_NON_REFLECTION_BOUNDARY ... reason=test_only`を出して正当な非反映境界を保持する。→ `scripts/cmd_complete_gate.sh` / `tests/unit/test_cmd_complete_gate_context_freshness_block.bats`（GA-285）
 
 完了フローのcontext境界更新は候補だけでなく、検証済みcontext/hash/reason/evidenceを埋めた`CONTEXT_UPDATE_COMMAND bash scripts/context_source_commit_set.sh ...`を同時出力する。更新者は本文反映をレビューしてこの入力を使い、境界metadataを再発明しない。GA-313では`42e6ea0..fb95d70`の263 commitをroot-fallback契約で全走査し、除外117（auto subject 32、本文参照31、context自己反映7、source pathなし47）・未反映146/146（scripts 105、tests 20、claude 6、instructions 5、CLAUDE.md 4、skills 3、memory 2、github 1）と分類した。直接原因は本文反映とsource境界更新の分離、根本原因は完了時入力が候補止まりでreason/evidence再構成を人へ残したこと。実装証拠はcontext反映`e23c6b36f`・Level5防御`7a93897e5`。→ `scripts/cmd_complete_gate.sh` / `tests/unit/test_cmd_complete_gate_context_freshness_block.bats`（cmd_karo_hotfix_ga313_context_freshness_202607220112）
+
+完了gateのcommit照合repositoryは、報告の明示`commit_contract.repo_root`を最優先してgit実体・canonical path・task/report一致を厳格検証し、未指定時だけproject解決へfallbackする。→ `scripts/cmd_complete_gate.sh` / `tests/unit/test_cmd_complete_gate.bats`（cmd_karo_hotfix_gate_commit_repo_root_20260727、commit `ee1173787`）
+
+`ninja_monitor`のpending_workは、現役報告だけでなくarchive report・`archive.done`・task世代を突合してarchive済みterminal FAIL世代を閉鎖し、active/reopen世代の通知は維持する。→ `scripts/ninja_monitor.sh` / `tests/unit/test_ninja_monitor_stall.bats`（cmd_karo_hotfix_pending_work_archived_fail_20260727、commit `e2b155292`）
 
 8スキル（dashboard-update / idle-persist / review-bundle / verdict-check / karo-direct / ninja-commit / recon-dual / shogun-cli-switch）の対応script参照契約を再同期し、skill-ref gate WARN 8→0、validator 8/8 PASS・SKIP0を確認。→ commits `c4a654742`, `0fd87ed81`（cmd_karo_hotfix_skill_refs_batch_a/b_20260718140219）
 
