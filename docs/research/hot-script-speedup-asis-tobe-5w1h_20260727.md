@@ -68,7 +68,7 @@
 ---
 
 ## §3 未解決事項
-1. 外れ値型(#3,6,8,9)のmax発生条件(717秒のtest_granularity等) — 高速化前の必須偵察
+1. 外れ値型(q11_semantic_search_overhead・three_layer_memory_ruling_overhead・instruction_sync・圏外のtest_granularity — §0型列SSOT)のmax発生条件 — 高速化前の必須偵察
 2. self_syncのpost cohort残余外れ値(p95 2.9s/max 16.3s)の発生条件 — cmd_4168効果は確認済み(§0)ゆえ、残余の外れ値のみが偵察対象
 3. B5 inbox_write・B2/B3 startup gateの台帳計装
 4. B1復帰税の悪化真因(家老レーン進行中)
