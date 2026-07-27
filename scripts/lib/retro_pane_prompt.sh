@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 # Deliver retrospective prompts verbatim to an explicitly idle agent pane.
 
+# AC2(cmd_karo_hotfix_retro_prompt_legacy_busy_singleflight_20260727): idle判定は
+# @agent_state単独ではなく、疾風のwatcher busy_queue弾(test_inbox_watcher_busy_queue_singleflight.bats)
+# と同じ共有source lib/agent_state.shのcheck_agent_busyを再利用する。
+_retro_pane_prompt_ensure_agent_state() {
+    declare -F check_agent_busy >/dev/null 2>&1 && return 0
+    local root_dir
+    root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    [ -f "$root_dir/lib/agent_state.sh" ] || return 1
+    # shellcheck source=/dev/null
+    source "$root_dir/lib/agent_state.sh"
+    declare -F check_agent_busy >/dev/null 2>&1
+}
+
 RETRO_PANE_PROMPT='この作業で時間がかかった原因を分析し、利他の精神で調査を行いインフラバグの疑いとして家老に報告せよ'
 RETRO_PANE_PROMPT_SHA256='b605951bd574d99027a6a1e496aabd5d4e1e67d6d8a4be1b88f4e6472595f84f'
 
@@ -27,10 +40,13 @@ retro_pane_prompt_idle() {
         "$RETRO_PANE_IDLE_CHECK" "$pane" "$target"
         return
     fi
-    local state dead
-    state=$(tmux display-message -t "$pane" -p '#{@agent_state}' 2>/dev/null) || return 1
+    local dead
     dead=$(tmux display-message -t "$pane" -p '#{pane_dead}' 2>/dev/null) || return 1
-    [ "$dead" = 0 ] && [ "$state" = idle ]
+    [ "$dead" = 0 ] || return 1
+    # AC2: @agent_state単独判定を廃し、共有check_agent_busy(0=idle,1=busy,2=unknown)を
+    # そのまま使う。busy/unknownはfail-closedで直接pasteしない(戻り値の非0がidle判定の失敗になる)。
+    _retro_pane_prompt_ensure_agent_state || return 1
+    check_agent_busy "$pane" "$target"
 }
 
 retro_pane_prompt_seen() {
