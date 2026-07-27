@@ -222,9 +222,11 @@ report_ci_push_state() {
         return 0
     fi
 
-    IFS=$'\t' read -r report_kind report_commit < <(REPORT_FILE="$report_file" python3 - <<'PY'
+    IFS=$'\t' read -r report_kind report_commit < <(REPORT_FILE="$report_file" REPO_ROOT="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}" python3 - <<'PY'
+import pathlib
 import re
 import os
+import sys
 import yaml
 
 try:
@@ -256,6 +258,24 @@ if commit == "no-code-change":
     else:
         print("invalid-no-code-evidence\t\t")
     raise SystemExit
+if not commit:
+    # 軍師D0(2026-07-27): 同一のno-code報告に対し、review_approval.sh側の
+    # permits_no_code_identity(files_modifiedがqueue/logs配下 + no_code_change_evidence
+    # + explicit_no_commit)と本gate(files_modifiedが全てliteral "no-code-change"、
+    # または commit_hash=="no-code-change")が別契約を要求していた。
+    # 前者を満たしてLGTMまで到達した報告が後者で"invalid"となりBLOCKする
+    # (才蔵 cmd_karo_recon2_r5_utf8_revalidation_20260727 で実証)。
+    # 共有契約 report_commit_identity へ統一する。緩和ではない: 同関数は
+    # evidence(tree_unchanged/before==after/40hex)と明示no-commit宣言と
+    # 運用パス限定の3条件すべてを要求し、1つでも欠ければ従来どおりinvalidへ落ちる。
+    root = pathlib.Path(os.environ.get("REPO_ROOT", ".")).resolve()
+    sys.path.insert(0, str(root / "scripts" / "lib"))
+    from report_commit_identity import permits_no_code_identity
+
+    if permits_no_code_identity(report, root):
+        evidence = report.get("no_code_change_evidence") or {}
+        print("tree-sentinel\t" + str(evidence.get("before_tree") or "").strip().lower())
+        raise SystemExit
 if not re.fullmatch(r"[0-9a-fA-F]{40}", commit):
     print("invalid\t" + commit)
 else:
