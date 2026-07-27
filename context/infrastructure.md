@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-27 cmd_4187 reviewed source boundary -->
-<!-- source_commit:70f6f70e8 reason:cmd_4187 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=70f6f70e8 -->
+<!-- last_updated: 2026-07-28 cmd_karo_hotfix_hot_script_report_commit_hash_20260728 reviewed source boundary -->
+<!-- source_commit:e2c74c0b7 reason:cmd_karo_hotfix_hot_script_report_commit_hash_20260728 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=e2c74c0b7 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -894,7 +894,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1417 -->
+<!-- last_synced_lesson: L1418 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2025,6 +2025,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1415: lock取得後の基準差分はcurrent HEADで再列挙しない（cmd_karo_hotfix_scope_lock_precommit_order_20260727）
 - L1416: AC文言・タスク設計に記載された仕様(5キー)を鵜呑みにせず、実装対象の一次コード(review_bundle.pyのfail-closed契約)を自分で読んで齟齬を検出すべきだった（cmd_4187）
 - L1417: command substitution内lazy cacheは親へ残らない（cmd_4189）
+- L1418: 非同期cache生成は公開前重複missと子孫pipe寿命を同時に防ぐ（cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
