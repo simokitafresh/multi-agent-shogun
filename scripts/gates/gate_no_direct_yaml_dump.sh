@@ -11,6 +11,19 @@ python3 - "$ROOT_DIR" <<'PY'
 from pathlib import Path
 import sys
 
+import re
+
+# cmd_karo_hotfix_lesson_impact_yaml_dump: widen vocabulary to aliased imports
+# (`import yaml as yaml_module` -> `yaml_module.dump(...)`, `import yaml as
+# _yaml_nm` -> `_yaml_nm.dump(...)`). The old literal-substring check
+# ("yaml.dump(" / "yaml.safe_dump(") let these through and the family regex
+# below is the same pattern 家老/軍師 confirmed matches exactly these two
+# real call sites plus the canonical form, without catching unrelated
+# json.dump(/pickle.dump( calls (the "yaml" token is required in the
+# identifier). fail-open/fail-closed behavior is unchanged: still BLOCK-only,
+# still skipped for comments/detector-self-references.
+YAML_DUMP_RE = re.compile(r"(yaml[a-zA-Z_]*|[a-zA-Z_]*yaml[a-zA-Z_]*)\.(safe_)?dump\(")
+
 root = Path(sys.argv[1])
 violations = []
 
@@ -23,7 +36,7 @@ for path in sorted((root / "scripts").rglob("*.sh")):
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue
-        if "yaml.dump(" not in stripped and "yaml.safe_dump(" not in stripped:
+        if not YAML_DUMP_RE.search(stripped):
             continue
         if "grep" in stripped or "rg " in stripped or "BLOCK" in stripped or "detected" in stripped:
             continue

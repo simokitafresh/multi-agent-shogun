@@ -65,6 +65,123 @@ PY
     [[ "$output" == *"Total injections: 2000"* ]]
 }
 
+@test "cmd_karo_hotfix_lesson_impact_yaml_dump: --sync-counters on a flow-style lessons.yaml does not change line count or style" {
+    mkdir -p "$TEST_PROJECT/projects/fixtureproj"
+    cat > "$TEST_PROJECT/projects/fixtureproj/lessons.yaml" <<'EOF'
+lesson_count: 2
+lessons:
+- {id: L9001, title: fixture flow-style entry 1, tags: [a, b]}
+- {id: L9002, title: fixture flow-style entry 2, tags: [c, d]}
+EOF
+    local before_lines
+    before_lines="$(wc -l < "$TEST_PROJECT/projects/fixtureproj/lessons.yaml")"
+
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	agent	lesson_id	action	result	referenced
+2026-07-27T10:00:00	tobisaru	L9001	injected	CLEAR	yes
+2026-07-27T10:05:00	tobisaru	L9001	injected	BLOCK	yes
+2026-07-27T10:10:00	tobisaru	L9002	injected	CLEAR	yes
+EOF
+
+    run bash "$TEST_PROJECT/scripts/lesson_impact_analysis.sh" --sync-counters
+    [ "$status" -eq 0 ]
+
+    local after_lines
+    after_lines="$(wc -l < "$TEST_PROJECT/projects/fixtureproj/lessons.yaml")"
+    # LINE-COUNT INVARIANT: a full yaml_module.dump() rewrite would expand this
+    # 4-line flow-style file to 1 line per scalar field (regression this test
+    # guards against).
+    [ "$before_lines" -eq "$after_lines" ]
+
+    run grep -c '^- {' "$TEST_PROJECT/projects/fixtureproj/lessons.yaml"
+    [ "$output" = "2" ]
+    run grep -c '^- id:' "$TEST_PROJECT/projects/fixtureproj/lessons.yaml"
+    [ "$output" = "0" ]
+
+    run python3 -c "
+import yaml
+d = yaml.safe_load(open('$TEST_PROJECT/projects/fixtureproj/lessons.yaml'))
+assert d['lessons'][0]['helpful_count'] == 1
+assert d['lessons'][0]['harmful_count'] == 1
+assert isinstance(d['lessons'][0]['last_referenced'], str)
+assert d['lessons'][1]['helpful_count'] == 1
+assert d['lessons'][1]['harmful_count'] == 0
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "OK" ]]
+}
+
+@test "cmd_karo_hotfix_lesson_impact_yaml_dump: --sync-counters updates counters on a block-style lessons.yaml in place" {
+    mkdir -p "$TEST_PROJECT/projects/fixtureproj2"
+    cat > "$TEST_PROJECT/projects/fixtureproj2/lessons.yaml" <<'EOF'
+lesson_count: 2
+lessons:
+- id: L9003
+  title: fixture block-style entry 1
+  tags:
+  - a
+  - b
+- id: L9004
+  title: fixture block-style entry 2
+  tags:
+  - c
+EOF
+
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	agent	lesson_id	action	result	referenced
+2026-07-27T10:00:00	tobisaru	L9003	injected	CLEAR	yes
+2026-07-27T10:10:00	tobisaru	L9004	injected	BLOCK	yes
+EOF
+
+    run bash "$TEST_PROJECT/scripts/lesson_impact_analysis.sh" --sync-counters
+    [ "$status" -eq 0 ]
+
+    run python3 -c "
+import yaml
+d = yaml.safe_load(open('$TEST_PROJECT/projects/fixtureproj2/lessons.yaml'))
+assert d['lessons'][0]['helpful_count'] == 1
+assert d['lessons'][0]['harmful_count'] == 0
+assert d['lessons'][1]['helpful_count'] == 0
+assert d['lessons'][1]['harmful_count'] == 1
+print('OK')
+"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "OK" ]]
+
+    # No stray blank line is introduced before the appended fields of the last
+    # entry (regression guard for the trailing-newline split() artifact).
+    run grep -c '^$' "$TEST_PROJECT/projects/fixtureproj2/lessons.yaml"
+    [ "$output" = "0" ]
+}
+
+@test "cmd_karo_hotfix_lesson_impact_yaml_dump: --sync-counters is idempotent (line count stable across repeated runs)" {
+    mkdir -p "$TEST_PROJECT/projects/fixtureproj3"
+    cat > "$TEST_PROJECT/projects/fixtureproj3/lessons.yaml" <<'EOF'
+lesson_count: 1
+lessons:
+- {id: L9005, title: fixture idempotency entry}
+EOF
+    cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
+timestamp	agent	lesson_id	action	result	referenced
+2026-07-27T10:00:00	tobisaru	L9005	injected	CLEAR	yes
+EOF
+
+    run bash "$TEST_PROJECT/scripts/lesson_impact_analysis.sh" --sync-counters
+    [ "$status" -eq 0 ]
+    local first_lines
+    first_lines="$(wc -l < "$TEST_PROJECT/projects/fixtureproj3/lessons.yaml")"
+
+    run bash "$TEST_PROJECT/scripts/lesson_impact_analysis.sh" --sync-counters
+    [ "$status" -eq 0 ]
+    local second_lines
+    second_lines="$(wc -l < "$TEST_PROJECT/projects/fixtureproj3/lessons.yaml")"
+
+    [ "$first_lines" -eq "$second_lines" ]
+    run grep -o 'helpful_count: [0-9]*' "$TEST_PROJECT/projects/fixtureproj3/lessons.yaml"
+    [ "$(printf '%s\n' "$output" | wc -l)" -eq 1 ]
+}
+
 @test "lesson_impact_analysis filters candidate sections to actual low-ref and block cases" {
     cat > "$TEST_PROJECT/logs/lesson_impact.tsv" <<'EOF'
 timestamp	cmd_id	ninja	lesson_id	action	result	referenced	project	task_type	bloom_level

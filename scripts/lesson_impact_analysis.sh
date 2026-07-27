@@ -579,7 +579,6 @@ def sync_counters(rows, root, dry_run=False):
         print("ERROR: PyYAML required for --sync-counters", file=sys.stderr)
         sys.exit(1)
 
-    import fcntl
     import glob
 
     counts = {}
@@ -629,52 +628,110 @@ def sync_counters(rows, root, dry_run=False):
         print(f"\n[DRY RUN] Would update: {summary_line}")
         return
 
+    # cmd_karo_hotfix_lesson_impact_yaml_dump: yaml_module.dump() full-file rewrite
+    # previously used here re-serializes every lessons.yaml with PyYAML's
+    # default_flow_style=False, silently converting any flow-style (inline
+    # `- {id: ..., ...}`) entries in the file to block-style and losing the
+    # formatting of every lesson, not just the ones being counter-synced (real
+    # incident: projects/dm-signal/lessons.yaml 901 lines -> 12240 lines after one
+    # sync run). scripts/lib/yaml_field_set.sh (the project's existing per-field
+    # writer) was evaluated as a drop-in replacement but its inline_id_re only
+    # matches block-style "- id: <id>" openers, not flow-style "- {id: ..., ...}"
+    # single-line entries (gunshi review, 2026-07-27), so it cannot be reused
+    # unmodified. Route the mutation through an in-place text patch instead:
+    # only the target line(s) for a referenced lesson id are rewritten, every
+    # other byte in the file — including untouched entries' flow/block style —
+    # is left exactly as-is.
+    import fcntl
+
+    flow_line_re = re.compile(r"^(\s*-\s*\{)(.*)\bid:\s*([^\s,}]+)")
+    block_id_re = re.compile(r"^(\s*)-\s+id:\s*([^\s]+)\s*$")
+
+    def flow_field_set(line, field, value):
+        pattern = re.compile(r"(?<=[{,])(\s*)" + re.escape(field) + r":\s*[^,}]*")
+        if pattern.search(line):
+            return pattern.sub(lambda m: f"{m.group(1)}{field}: {value}", line, count=1)
+        idx = line.rfind("}")
+        if idx == -1:
+            return line
+        return line[:idx].rstrip() + f", {field}: {value}" + line[idx:]
+
+    def block_field_set(lines, start_idx, indent, field, value):
+        # start_idx is the "- id: <lid>" line; the block spans until the next
+        # top-level "- " entry (same or shallower indent) or EOF.
+        field_re = re.compile(r"^" + re.escape(indent) + re.escape(field) + r":\s*.*$")
+        end_idx = start_idx + 1
+        while end_idx < len(lines):
+            stripped_line = lines[end_idx]
+            if re.match(r"^\s*-\s", stripped_line) and (
+                len(stripped_line) - len(stripped_line.lstrip(" ")) <= len(indent) - 2
+            ):
+                break
+            if field_re.match(stripped_line):
+                lines[end_idx] = f"{indent}{field}: {value}"
+                return
+            end_idx = end_idx + 1
+        lines.insert(end_idx, f"{indent}{field}: {value}")
+
     for lesson_file in sorted(glob.glob(os.path.join(root, "projects", "*", "lessons.yaml"))):
         project = os.path.basename(os.path.dirname(lesson_file))
 
-        if dry_run:
-            with open(lesson_file, "r", encoding="utf-8") as f:
-                data = yaml_module.safe_load(f) or {}
-        else:
+        try:
             f = open(lesson_file, "r+", encoding="utf-8")
+        except OSError:
+            continue
+        with f:
             fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-            data = yaml_module.safe_load(f) or {}
+            text = f.read()
+            had_trailing_newline = text.endswith("\n")
+            lines = text.split("\n")
+            if had_trailing_newline and lines and lines[-1] == "":
+                lines.pop()
+            changed = False
+            updated = 0
+            i = 0
+            while i < len(lines):
+                line = lines[i]
+                fm = flow_line_re.match(line)
+                bm = block_id_re.match(line) if fm is None else None
+                lid = fm.group(3).rstrip(",") if fm else (bm.group(2) if bm else None)
+                if lid is not None and lid in counts:
+                    c = counts[lid]
+                    if fm:
+                        new_line = flow_field_set(line, "helpful_count", str(c["helpful"]))
+                        new_line = flow_field_set(new_line, "harmful_count", str(c["harmful"]))
+                        if c["last_ts"]:
+                            new_line = flow_field_set(new_line, "last_referenced", f"'{c['last_ts']}'")
+                        if new_line != line:
+                            lines[i] = new_line
+                            changed = True
+                    else:
+                        indent = bm.group(1) + "  "
+                        block_field_set(lines, i, indent, "helpful_count", str(c["helpful"]))
+                        block_field_set(lines, i, indent, "harmful_count", str(c["harmful"]))
+                        if c["last_ts"]:
+                            block_field_set(lines, i, indent, "last_referenced", f"'{c['last_ts']}'")
+                        changed = True
+                    updated = updated + 1
+                    print(
+                        f"SYNC: {project} {lid} helpful={c['helpful']} "
+                        f"harmful={c['harmful']} last_referenced={c['last_ts']}"
+                    )
+                i = i + 1
 
-        updated = 0
-        for lesson in data.get("lessons", []):
-            lid = str(lesson.get("id", "")).strip()
-            if lid in counts:
-                c = counts[lid]
-                lesson["helpful_count"] = c["helpful"]
-                lesson["harmful_count"] = c["harmful"]
-                if c["last_ts"]:
-                    lesson["last_referenced"] = c["last_ts"]
-                updated = updated + 1
-                print(
-                    f"SYNC: {project} {lid} helpful={c['helpful']} "
-                    f"harmful={c['harmful']} last_referenced={c['last_ts']}"
-                )
+            if changed:
+                new_text = "\n".join(lines)
+                if had_trailing_newline:
+                    new_text = new_text + "\n"
+                f.seek(0)
+                f.truncate()
+                f.write(new_text)
 
         if updated > 0:
             project_updates.append(f"{project} {updated} lessons")
-            if not dry_run:
-                f.seek(0)
-                f.truncate()
-                yaml_module.dump(
-                    data, f,
-                    allow_unicode=True,
-                    default_flow_style=False,
-                    sort_keys=False,
-                )
-
-        if not dry_run:
-            f.close()
 
     summary_line = ", ".join(project_updates) if project_updates else "0 lessons"
-    if dry_run:
-        print(f"\n[DRY RUN] Would update: {summary_line}")
-    else:
-        print(f"Updated: {summary_line}")
+    print(f"Updated: {summary_line}")
 
 
 def main():

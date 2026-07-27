@@ -136,6 +136,7 @@ source_type, payload_raw, index_arg, insight_arg = sys.argv[1:5]
 index_path = Path(index_arg)
 insight_write = Path(insight_arg)
 semantic_root = index_path.parent.parent.parent
+sys.path.insert(0, str(semantic_root))
 insights_path = Path(os.environ.get("SEMANTIC_INSIGHTS_PATH", str(semantic_root / "queue" / "insights.yaml")))
 deploy_log_path = Path(os.environ.get("SEMANTIC_DEPLOY_LOG", str(semantic_root / "logs" / "deploy_task.log")))
 semantic_search_path = Path(os.environ.get("SEMANTIC_SEARCH_CMD", str(semantic_root / "scripts" / "semantic_search.sh")))
@@ -1052,12 +1053,15 @@ def load_no_match_filepaths():
 def save_no_match_filepaths(data):
     """logs/no_match_filepaths.yaml に書き込む。"""
     try:
-        import yaml as _yaml_nm
+        # cmd_karo_hotfix_lesson_impact_yaml_dump (AC4 横展開是正): 別名import
+        # (import yaml as _yaml_nm) 経由の直接 dump()+write_text() は
+        # gate_no_direct_yaml_dump.sh の語彙拡張で検知対象になった。この
+        # ファイルは運用YAML(queue/tasks/inbox等)ではないが、既存の安全な
+        # atomic writerへ揃えて族ごと塞ぐ。
+        from scripts.lib.yaml_atomic import atomic_yaml_write
+
         no_match_filepath_log.parent.mkdir(parents=True, exist_ok=True)
-        no_match_filepath_log.write_text(
-            _yaml_nm.dump(data, allow_unicode=True, default_flow_style=False),
-            encoding="utf-8",
-        )
+        atomic_yaml_write(str(no_match_filepath_log), data)
     except Exception as exc:
         print(f"WARN: failed to save no_match_filepaths: {exc}", file=sys.stderr)
 
