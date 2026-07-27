@@ -6598,8 +6598,13 @@ check_long_runtime_execution_env_contract() {
     if [[ -z "$estimated" ]]; then
         return 0
     fi
-    if [[ "$estimated" =~ ^[0-9]+([.][0-9]+)?$ ]] && awk -v n="$estimated" 'BEGIN { exit !(n <= 15) }'; then
-        return 0
+    if [[ "$estimated" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+        local estimated_whole="${estimated%%.*}" estimated_fraction=""
+        [[ "$estimated" == *.* ]] && estimated_fraction="${estimated#*.}"
+        if (( 10#$estimated_whole < 15 )) || \
+           { (( 10#$estimated_whole == 15 )) && [[ "${estimated_fraction//0/}" == "" ]]; }; then
+            return 0
+        fi
     fi
     result="$(CMD_SAVE_CMD_BLOCK="$CMD_BLOCK_NC" python3 - <<'PY'
 import math
