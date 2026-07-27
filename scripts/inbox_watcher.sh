@@ -104,6 +104,7 @@ MAX_RENUDGE="${MAX_RENUDGE:-$INBOX_RENUDGE_MAX_ATTEMPTS}"
 STATE_LOCK_FILE="${STATE_DIR}/inbox_watcher_state_${AGENT_ID}.lock"
 SINGLETON_LOCK_FILE="${STATE_DIR}/inbox_watcher_singleton_${AGENT_ID}.lock"
 DEFERRED_NUDGE_FILE="${STATE_DIR}/inbox_watcher_deferred_nudge_${AGENT_ID}"
+BUSY_QUEUE_CLAIM_FILE="${STATE_DIR}/inbox_watcher_busy_queue_claim_${AGENT_ID}"
 FIRST_UNREAD_SEEN="${FIRST_UNREAD_SEEN:-${STATE_DIR}/first_unread_seen_${AGENT_ID}}"
 FORCE_IDLE_AFTER_SEC="${FORCE_IDLE_AFTER_SEC:-60}"
 BUSY_TIMEOUT_SEC="${BUSY_TIMEOUT_SEC:-30}"  # @last_active based timeout (AC1: idle_flag force-creation)
@@ -841,6 +842,11 @@ send_wakeup() {
             if [ "$codex_busy_rc" -eq 1 ]; then
                 allow_nonempty_input_line=1
                 echo "[$(date)] [BUSY-CODEX-QUEUE] Agent $AGENT_ID is actually busy in Codex; sending nudge immediately as queued message" >&2
+            else
+                # Idle/unknown is a delivery boundary: a previously queued
+                # Codex nudge has either become consumable or its CLI
+                # generation is no longer trustworthy.
+                rm -f "$BUSY_QUEUE_CLAIM_FILE"
             fi
         fi
         if [ "$agent_state" = "active" ] && [ "$allow_nonempty_input_line" != "1" ]; then
@@ -1031,6 +1037,22 @@ send_wakeup() {
         fi
 
         local sent_token=""
+        if [ "$allow_nonempty_input_line" = "1" ]; then
+            local claim_generation claim_fp=""
+            claim_generation=$(respawn_recovery_generation "$PANE_TARGET" 2>/dev/null || true)
+            if [ -f "$BUSY_QUEUE_CLAIM_FILE" ]; then
+                local stored_generation=""
+                IFS=$'\t' read -r stored_generation claim_fp < "$BUSY_QUEUE_CLAIM_FILE" 2>/dev/null || true
+                if [ -n "$stored_generation" ] && [ "$stored_generation" = "$claim_generation" ]; then
+                    record_deferred_nudge "$current_fp" "busy_queue_singleflight"
+                    printf 'busy-coalesced\t%s\t%s\t%s\n' "$unread_count" "$current_fp" "$fp_kind" > "$send_result_file"
+                    exit 0
+                fi
+                echo "[$(date)] [BUSY-QUEUE-STALE] Reclaiming stale queued nudge for $AGENT_ID generation=${stored_generation:-unknown}->${claim_generation:-unknown}" >&2
+            fi
+            printf '%s\t%s\n' "$claim_generation" "$current_fp" > "$BUSY_QUEUE_CLAIM_FILE"
+            echo "[$(date)] [BUSY-QUEUE-CLAIM] Claimed single queued nudge for $AGENT_ID fingerprint=$current_fp generation=${claim_generation:-unknown}" >&2
+        fi
         if [ -n "$current_fp" ] && [ "$current_fp" != "-" ]; then
             local safe_fp sent_token sent_mtime sent_elapsed
             safe_fp="${current_fp//[^A-Za-z0-9_.-]/_}"
@@ -1084,6 +1106,10 @@ send_wakeup() {
         dedup)
             echo "[$(date)] [SEND-RESULT] dedup agent=$AGENT_ID current_count=$sent_count fingerprint=$sent_fp kind=${sent_kind:-none}" >&2
             return 0
+            ;;
+        busy-coalesced)
+            echo "[$(date)] [BUSY-QUEUE-COALESCE] Deferred changed unread set for $AGENT_ID fingerprint=$sent_fp; queued nudge already exists" >&2
+            return 2
             ;;
         coalesced-empty)
             echo "[$(date)] [SEND-RESULT] dedup agent=$AGENT_ID current_count=0 fingerprint=- reason=no-unread kind=none" >&2
@@ -1281,6 +1307,7 @@ process_unread() {
             clear_deferred_nudge
             echo "[$(date)] [FP-RESET] No unread, cleared fingerprint for $AGENT_ID" >&2
         fi
+        rm -f "$BUSY_QUEUE_CLAIM_FILE"
         clear_first_unread_seen
     fi
 }
