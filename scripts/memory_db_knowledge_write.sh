@@ -211,12 +211,30 @@ else
     # ★AC1(3)実測: 書込み直後はcausal_index.tsvへの昇格(THREE-LAYER-MAINTENANCEサイクル)が
     # 未実行のため原理的に未到達である。到達確認は都度grepで試み、未到達なら裁定の規律文言
     # 「L1/L2完了・L3昇格待ち」をそのまま用いる(pending扱い。L2と同じ設計思想)。
-    l3_check_target="$(head -n1 <<< "$link_targets")"
+    # ★軍師是正(msg_20260727_133945・fingerprint=8a287fc4): 旧実装は(a)候補の先頭1件しか判定せず
+    # 複数[[リンク]]で未到達分を見落とす (b)grep -qFが行内部分一致のため一般語が無関係な行にヒットする
+    # という2欠陥があり、未到達候補を抱えたまま「貫通完了」と誤表示しうる(殿裁定12:38違反の再生産)。
+    # 是正: 全candidateをループし、causal_index.tsv第1列の完全一致(awk -F'\t' '$1==target')で判定する。
+    # 全件到達で初めて「L3貫通完了」、1件でも未到達なら未到達分を列挙して「L1/L2完了・L3昇格待ち」とし、
+    # 到達n/m件を運用者に見せる。
     causal_index_path="${THREE_LAYER_CAUSAL_INDEX_PATH:-$SCRIPT_DIR/.cache/causal_index.tsv}"
-    if [[ -f "$causal_index_path" ]] && grep -qF "$l3_check_target" "$causal_index_path" 2>/dev/null; then
-        l3_status="L3貫通完了: $l3_check_target"
+    reached_count=0
+    reached_list=""
+    unreached_list=""
+    while IFS= read -r l3_check_target; do
+        [[ -n "$l3_check_target" ]] || continue
+        if [[ -f "$causal_index_path" ]] && awk -F'\t' -v t="$l3_check_target" '$1==t{found=1; exit} END{exit !found}' "$causal_index_path" 2>/dev/null; then
+            reached_count=$((reached_count + 1))
+            reached_list="${reached_list}${reached_list:+,}${l3_check_target}"
+        else
+            unreached_list="${unreached_list}${unreached_list:+,}${l3_check_target}"
+        fi
+    done <<< "$link_targets"
+    link_total="$(wc -l <<< "$link_targets" | tr -d '[:space:]')"
+    if [[ "$reached_count" -eq "$link_total" ]]; then
+        l3_status="L3貫通完了(${reached_count}/${link_total}件): ${reached_list}"
     else
-        l3_status="L1/L2完了・L3昇格待ち(candidate: $(tr '\n' ',' <<< "$link_targets" | sed 's/,$//')。確定判定は bash -c 'grep -c \"$l3_check_target\" $causal_index_path' # 1件以上=L3貫通完了(SKILL.md:63))"
+        l3_status="L1/L2完了・L3昇格待ち(到達${reached_count}/${link_total}件。未到達: ${unreached_list}。確定判定は bash -c 'awk -F\"\\t\" -v t=\"<リンク名>\" \"\\\$1==t\" $causal_index_path' # 1件でもヒット=そのリンクはL3貫通完了(SKILL.md:63))"
     fi
 fi
 
