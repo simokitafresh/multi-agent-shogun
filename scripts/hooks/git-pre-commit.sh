@@ -285,6 +285,43 @@ staged_file_could_have_tests() {
     esac
 }
 
+# AC1 (cmd_4182): "文書系パス" definition — non-executable, non-test asset
+# directories where a change cannot regress runtime behavior. This is a
+# stricter, override-taking-priority set than staged_file_could_have_tests():
+# context/*.md, docs/rule/*.md and docs/research/*.md are deliberately
+# "could have tests" above (they route to focused freshness/index gate
+# tests), but those gate tests are large fixture suites (test_context_
+# freshness_check.bats=57 cases, test_semantic_index_update.bats=43 cases),
+# not tests of the edited doc's content. A single-line docs/research/*.md
+# annotation commit (将軍, 2026-07-27) measured 41.2s here and, worse, still
+# had to queue for the host-wide heavy_job_admission.sh semaphore behind it
+# — 11m12s total holding the shared ninja-scope-commit lock and failing
+# hayate's cmd_4181 commit twice on its 120s timeout (blt_20260727_201344,
+# PID 3923473). *.sh/*.py are excluded even under these directories as a
+# defense-in-depth guard against a future executable file landing there.
+is_doc_only_fastpath_path() {
+    local file="${1:-}"
+    case "$file" in
+        *.sh|*.py) return 1 ;;
+        docs/*|context/*|memory/*|archive/*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# AC1: true only when every staged file matches the doc-only fast-path set
+# above. A single non-matching file (script, test, or any other path) falls
+# through to the normal affected_tests resolution below — this is what keeps
+# AC2's mixed-diff and code-only negative controls on the unchanged path.
+all_staged_files_are_doc_only_fastpath() {
+    local staged saw_any=false
+    while IFS= read -r staged; do
+        [[ -n "$staged" ]] || continue
+        saw_any=true
+        is_doc_only_fastpath_path "$staged" || return 1
+    done < <(list_staged_files)
+    [[ "$saw_any" == "true" ]]
+}
+
 # AC1: resolve staged paths (plus AC2's reverse-dependency expansion) to
 # affected tests and run them, reusing scripts/run_tests.sh's existing
 # `affected` mode (which itself delegates to scripts/test_select.sh) instead
@@ -296,6 +333,18 @@ check_precommit_affected_tests() {
     local staged reverse scope_count has_relevant=false
     local run_tests="$REPO_ROOT/scripts/run_tests.sh"
     [[ -f "$run_tests" ]] || return 0
+
+    # AC1 doc-only fast-path: skip affected_tests AND heavy_job_admission
+    # (the latter fires only from inside run_tests.sh below, so simply never
+    # invoking run_tests.sh here structurally skips both stages at once).
+    # All other guard steps in main() (yaml_ast, shell_syntax, sourced_dep,
+    # context_metadata, codd_context_freshness, semantic, etc.) still run
+    # unconditionally around this function and are unaffected.
+    if all_staged_files_are_doc_only_fastpath; then
+        echo "[pre-commit] AC1(cmd_4182) doc-only fast-path: staged diff is entirely docs/context/memory/archive — affected_tests and heavy_job_admission skipped" >&2
+        defense_overhead_write_async git_pre_commit affected_tests_docs_fastpath 0 PASS "${_PRECOMMIT_COMMAND_ID}-affected_tests_docs_fastpath" || true
+        return 0
+    fi
 
     while IFS= read -r staged; do
         [[ -n "$staged" ]] || continue

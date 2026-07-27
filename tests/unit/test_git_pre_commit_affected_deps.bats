@@ -52,13 +52,15 @@ extract_funcs() {
 
 run_affected() {
   local env_prefix="$1"
-  FUNCS="$(extract_funcs staged_file_could_have_tests resolve_reverse_lib_deps reverse_lib_dep_scan_scope check_precommit_affected_tests)"
+  FUNCS="$(extract_funcs staged_file_could_have_tests resolve_reverse_lib_deps reverse_lib_dep_scan_scope is_doc_only_fastpath_path all_staged_files_are_doc_only_fastpath check_precommit_affected_tests)"
   bash -c "
     REPO_ROOT='$REPO'
+    _PRECOMMIT_COMMAND_ID='test-precommit'
     $env_prefix
     $FUNCS
     list_staged_files() { git -C '$REPO' diff --cached --name-only; }
     staged_file_exists() { git -C '$REPO' diff --cached --name-only | grep -qxF \"\$1\"; }
+    defense_overhead_write_async() { printf 'DOH_CALL:%s\n' \"\$*\" >> '$REPO/logs/doh_calls.txt'; }
     check_precommit_affected_tests
   "
 }
@@ -157,4 +159,107 @@ run_affected() {
   [ -f "$REPO/logs/precommit_affected_bypass.jsonl" ]
   grep -q '"reason": "emergency CI RED fix"' "$REPO/logs/precommit_affected_bypass.jsonl"
   grep -q '"agent": "kagemaru"' "$REPO/logs/precommit_affected_bypass.jsonl"
+}
+
+# cmd_4182 AC1: doc-only fast-path.
+# test_necessity: a docs/research/*.md single-line annotation commit measured
+# 41.2-83.9s here (real repo, 61/43 real bats cases via the context/*.md and
+# docs/research/*.md mappings in test_select.sh) and, worse, still had to
+# queue for the host-wide heavy_job_admission.sh semaphore behind it — 11m12s
+# holding the shared ninja-scope-commit lock and failing another ninja's
+# commit twice on its 120s timeout (blt_20260727_201344, PID 3923473). This
+# invariant — an all-docs/context/memory/archive staged diff never enters
+# affected_tests (and therefore never enters heavy_job_admission, which only
+# fires from inside scripts/run_tests.sh below this function) — must hold
+# permanently or the incident reproduces on the next design-doc commit.
+
+@test "is_doc_only_fastpath_path: classifies docs/context/memory/archive paths as fast-path-eligible" {
+  FUNCS="$(extract_funcs is_doc_only_fastpath_path)"
+  run bash -c "
+    $FUNCS
+    for f in docs/research/foo.md context/bar.md memory/baz.md archive/frozen/qux.yaml docs/dashboard/x.html; do
+      is_doc_only_fastpath_path \"\$f\" && echo \"YES:\$f\" || echo \"NO:\$f\"
+    done
+  "
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"YES:docs/research/foo.md"* ]]
+  [[ "$output" == *"YES:context/bar.md"* ]]
+  [[ "$output" == *"YES:memory/baz.md"* ]]
+  [[ "$output" == *"YES:archive/frozen/qux.yaml"* ]]
+  [[ "$output" == *"YES:docs/dashboard/x.html"* ]]
+}
+
+@test "is_doc_only_fastpath_path: rejects executable files even nested under a doc directory (defense-in-depth)" {
+  FUNCS="$(extract_funcs is_doc_only_fastpath_path)"
+  run bash -c "
+    $FUNCS
+    for f in docs/research/tool.sh context/scripts/helper.py scripts/lib/mylib.sh queue/tasks/x.yaml; do
+      is_doc_only_fastpath_path \"\$f\" && echo \"YES:\$f\" || echo \"NO:\$f\"
+    done
+  "
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"NO:docs/research/tool.sh"* ]]
+  [[ "$output" == *"NO:context/scripts/helper.py"* ]]
+  [[ "$output" == *"NO:scripts/lib/mylib.sh"* ]]
+  [[ "$output" == *"NO:queue/tasks/x.yaml"* ]]
+}
+
+@test "AC1: a doc-only staged diff (context/*.md) skips affected_tests entirely via the fast-path" {
+  mkdir -p "$REPO/context"
+  printf '# note\n' > "$REPO/context/growth-loop.md"
+  git -C "$REPO" add context/growth-loop.md
+
+  run run_affected ""
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"AC1(cmd_4182) doc-only fast-path"* ]]
+  [ ! -f "$REPO/logs/run_tests_call.txt" ]
+}
+
+@test "AC1: a doc-only staged diff spanning docs+context+memory+archive together still takes the fast-path" {
+  mkdir -p "$REPO/docs/research" "$REPO/context" "$REPO/memory" "$REPO/archive"
+  printf 'design note\n' > "$REPO/docs/research/design.md"
+  printf '# ctx\n' > "$REPO/context/growth-loop.md"
+  printf 'memo\n' > "$REPO/memory/deepdive.md"
+  printf 'old\n' > "$REPO/archive/log.md"
+  git -C "$REPO" add docs/research/design.md context/growth-loop.md memory/deepdive.md archive/log.md
+
+  run run_affected ""
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"AC1(cmd_4182) doc-only fast-path"* ]]
+  [ ! -f "$REPO/logs/run_tests_call.txt" ]
+}
+
+@test "AC2 negative control: a mixed doc+script diff does NOT take the fast-path and still runs affected tests" {
+  mkdir -p "$REPO/context"
+  printf '# note\n' > "$REPO/context/growth-loop.md"
+  printf '#!/bin/bash\necho unrelated\n' > "$REPO/scripts/unrelated.sh"
+  git -C "$REPO" add context/growth-loop.md scripts/unrelated.sh
+
+  run run_affected ""
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"AC1(cmd_4182) doc-only fast-path"* ]]
+  call_args="$(cat "$REPO/logs/run_tests_call.txt")"
+  [[ "$call_args" == *"scripts/unrelated.sh"* ]]
+}
+
+@test "AC2 negative control: a script-only diff does NOT take the fast-path (unchanged from before AC1)" {
+  printf '#!/bin/bash\necho unrelated\n' > "$REPO/scripts/unrelated.sh"
+  git -C "$REPO" add scripts/unrelated.sh
+
+  run run_affected ""
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"AC1(cmd_4182) doc-only fast-path"* ]]
+  [ -f "$REPO/logs/run_tests_call.txt" ]
+}
+
+@test "AC3: the doc-only fast-path emits one defense_overhead instrumentation call with a distinguishable check_id" {
+  mkdir -p "$REPO/context"
+  printf '# note\n' > "$REPO/context/growth-loop.md"
+  git -C "$REPO" add context/growth-loop.md
+
+  run run_affected ""
+  [ "$status" -eq 0 ]
+  [ -f "$REPO/logs/doh_calls.txt" ]
+  grep -q 'affected_tests_docs_fastpath' "$REPO/logs/doh_calls.txt"
+  grep -q 'git_pre_commit affected_tests_docs_fastpath 0 PASS' "$REPO/logs/doh_calls.txt"
 }
