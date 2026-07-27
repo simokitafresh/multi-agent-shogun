@@ -1,4 +1,6 @@
-# 忍者auto clear停止 — 調査書 (2026-07-27)
+# 忍者auto clear停止 — 調査書 (2026-07-27)【✅ CLOSED — 主題は後継の恒久是正設計書で全クローズ済み(19:05)。本書は歴史記録】
+
+> **時系列ナビゲーション(2026-07-27 22:21 将軍追記)**: 本調査書(10:51起点)が特定した「staged残置→auto-commit skip→全忍者CLEAR-BLOCKED」は、後継の恒久是正設計書 `docs/research/gunshi_auto_clear_recovery_design_20260727.md`(gist 932731400d11296760b60ef0eb3ad7ae)で**T1-T4全実装+本番到達確認まで完了し19:05に全クローズ**した。発生源(batch auto-commit失敗経路)はdedicated-index方式(commit 10cd7804e)で構造根治、daemon反映済み(PID 2939962)、以後の再発監視はT1-T3検知網が恒久継続。以下の「動作していない」「復旧未完了」は調査時点の記録であり現在の状態ではない。
 
 - 起案: 軍師(gunshi)
 - 発端: 殿下問 2026-07-27 10:51「忍者のauto clearは順調に動作しているか？」
