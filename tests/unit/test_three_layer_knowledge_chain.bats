@@ -5,6 +5,10 @@
 #   (never a false "未貫通" before the detached worker runs — the 2026-06-14 fail-open/no-decaying-WARN mandate), and
 #   (3) THREE_LAYER_CHAIN_SYNC=1 resolves L2 to a definitive 貫通/未貫通 verdict using the same MEMORY_DB_MATCH/NO_MATCH
 #   alias-miss criteria as /three-layer-penetrate. Regression on any of these three states is BLOCK.
+# test_necessity: L3 wording aligned to the 2026-07-27 12:38 ruling (cmd_karo_hotfix_r6_l3_wording_ruling_align_20260727) —
+#   candidate generation must never be displayed as completion. Default/async path shows "L1/L2完了・L3昇格待ち"
+#   (never "L3貫通完了") until an independent grep of causal_index.tsv confirms the [[link]] is actually reachable.
+#   Regression back to the old "candidate見込み" wording (which read as completion) is BLOCK.
 
 setup() {
     exec 8>"$BATS_FILE_TMPDIR/three-layer-chain-fixture.lock"
@@ -123,15 +127,53 @@ teardown_knowledge_write_fixture() {
 
 @test "knowledge writer reports L2 as pending on the default async path (never a premature 未貫通)" {
     setup_knowledge_write_fixture
+    mkdir -p "$KW_ROOT/.cache"
+    : > "$KW_ROOT/.cache/causal_index.tsv"
     run env SHOGUN_MEMORY_DB="$KW_DB" THREE_LAYER_CHAIN_LOG="$KW_ROOT/logs/chain.log" \
         THREE_LAYER_CHAIN_STATE_DIR="$KW_ROOT/state" \
         THREE_LAYER_SEMANTIC_UPDATE_CMD="$KW_ROOT/mock_semantic_update.sh" \
+        THREE_LAYER_CAUSAL_INDEX_PATH="$KW_ROOT/.cache/causal_index.tsv" \
         bash "$BATS_TEST_DIRNAME/../../scripts/memory_db_knowledge_write.sh" \
         "fixture body with [[mock_concept]]" "kw-fixture-pending"
     [ "$status" -eq 0 ]
     [[ "$output" == *"L2: pending"* ]]
     [[ "$output" != *"未貫通"* ]]
-    [[ "$output" == *"L3: candidate見込み: mock_concept"* ]]
+    [[ "$output" == *"L3: L1/L2完了・L3昇格待ち(candidate: mock_concept"* ]]
+    # 案内文自体に「1件以上=L3貫通完了」という語が含まれるため、部分一致ではなくL3行の先頭語で確定判定と区別する
+    [[ "$(grep '^L3:' <<< "$output")" != "L3: L3貫通完了"* ]]
+    teardown_knowledge_write_fixture
+}
+
+@test "knowledge writer L3 pending guidance cites a real grep command against an existing causal_index.tsv" {
+    setup_knowledge_write_fixture
+    mkdir -p "$KW_ROOT/.cache"
+    : > "$KW_ROOT/.cache/causal_index.tsv"
+    run env SHOGUN_MEMORY_DB="$KW_DB" THREE_LAYER_CHAIN_LOG="$KW_ROOT/logs/chain.log" \
+        THREE_LAYER_CHAIN_STATE_DIR="$KW_ROOT/state" \
+        THREE_LAYER_SEMANTIC_UPDATE_CMD="$KW_ROOT/mock_semantic_update.sh" \
+        THREE_LAYER_CAUSAL_INDEX_PATH="$KW_ROOT/.cache/causal_index.tsv" \
+        bash "$BATS_TEST_DIRNAME/../../scripts/memory_db_knowledge_write.sh" \
+        "fixture body with [[mock_concept]]" "kw-fixture-pending-guidance"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"grep -c \"mock_concept\" $KW_ROOT/.cache/causal_index.tsv"* ]]
+    # 軍師指摘(msg_20260727_131926): 案内文中のパスは実在確認せよ。L2案内(gate_three_layer_health.sh)も同様に実在すること。
+    [ -f "$BATS_TEST_DIRNAME/../../scripts/gates/gate_three_layer_health.sh" ]
+    [ -f "$KW_ROOT/.cache/causal_index.tsv" ]
+    teardown_knowledge_write_fixture
+}
+
+@test "knowledge writer resolves L3 to 貫通完了 when the link already exists in causal_index.tsv" {
+    setup_knowledge_write_fixture
+    mkdir -p "$KW_ROOT/.cache"
+    printf 'mock_link_existing\tsome_row\n' > "$KW_ROOT/.cache/causal_index.tsv"
+    run env SHOGUN_MEMORY_DB="$KW_DB" THREE_LAYER_CHAIN_LOG="$KW_ROOT/logs/chain.log" \
+        THREE_LAYER_CHAIN_STATE_DIR="$KW_ROOT/state" \
+        THREE_LAYER_SEMANTIC_UPDATE_CMD="$KW_ROOT/mock_semantic_update.sh" \
+        THREE_LAYER_CAUSAL_INDEX_PATH="$KW_ROOT/.cache/causal_index.tsv" \
+        bash "$BATS_TEST_DIRNAME/../../scripts/memory_db_knowledge_write.sh" \
+        "fixture body with [[mock_link_existing]]" "kw-fixture-l3-complete"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"L3: L3貫通完了: mock_link_existing"* ]]
     teardown_knowledge_write_fixture
 }
 

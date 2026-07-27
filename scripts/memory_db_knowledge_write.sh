@@ -205,7 +205,19 @@ if [[ -z "$link_targets" ]]; then
     echo "WARN: 本文に[[リンク]]が無い。Layer3候補が0件になる見込み" >&2
     l3_status="WARN_NO_LINK(候補0件見込み)"
 else
-    l3_status="candidate見込み: $(tr '\n' ',' <<< "$link_targets" | sed 's/,$//')"
+    # 殿裁定2026-07-27 12:38(SKILL.md:62-68是正済み)反映: L3貫通完了の唯一の条件は
+    # causal_index.tsvへの[[リンク]]名到達である。candidate生成(chainが非同期でログするだけの状態)を
+    # 貫通完了として読ませてはならない(将軍が候補止まりを「完了」宣言した誤りの再発防止)。
+    # ★AC1(3)実測: 書込み直後はcausal_index.tsvへの昇格(THREE-LAYER-MAINTENANCEサイクル)が
+    # 未実行のため原理的に未到達である。到達確認は都度grepで試み、未到達なら裁定の規律文言
+    # 「L1/L2完了・L3昇格待ち」をそのまま用いる(pending扱い。L2と同じ設計思想)。
+    l3_check_target="$(head -n1 <<< "$link_targets")"
+    causal_index_path="${THREE_LAYER_CAUSAL_INDEX_PATH:-$SCRIPT_DIR/.cache/causal_index.tsv}"
+    if [[ -f "$causal_index_path" ]] && grep -qF "$l3_check_target" "$causal_index_path" 2>/dev/null; then
+        l3_status="L3貫通完了: $l3_check_target"
+    else
+        l3_status="L1/L2完了・L3昇格待ち(candidate: $(tr '\n' ',' <<< "$link_targets" | sed 's/,$//')。確定判定は bash -c 'grep -c \"$l3_check_target\" $causal_index_path' # 1件以上=L3貫通完了(SKILL.md:63))"
+    fi
 fi
 
 # AC3是正(軍師指摘): L2は3状態表示。書込み直後は detached worker 委譲のため原理的に
