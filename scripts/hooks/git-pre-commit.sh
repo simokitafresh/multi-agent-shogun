@@ -880,18 +880,23 @@ main() {
     precommit_step_begin yaml_ast
     if [[ "$_has_yaml_dump_scan_target" == "true" ]]; then
         _yaml_dump_violations="$(collect_yaml_dump_violations)"
-    fi
 
-    if [[ -n "$_yaml_dump_violations" ]]; then
-        precommit_step_end 1
-        echo "BLOCKED: yaml.dump/yaml.safe_dump detected in staged files (GP-136)" >&2
-        echo "Data loss risk on operational YAML. Use yaml_field_set.sh instead." >&2
-        echo "$_yaml_dump_violations" >&2
-        exit 1
-    fi
-    if ! bash "$REPO_ROOT/scripts/gates/gate_no_direct_yaml_dump.sh" >&2; then
-        precommit_step_end 1
-        exit 1
+        if [[ -n "$_yaml_dump_violations" ]]; then
+            precommit_step_end 1
+            echo "BLOCKED: yaml.dump/yaml.safe_dump detected in staged files (GP-136)" >&2
+            echo "Data loss risk on operational YAML. Use yaml_field_set.sh instead." >&2
+            echo "$_yaml_dump_violations" >&2
+            exit 1
+        fi
+        # The global closure gate scans every scripts/*.sh file.  Running it
+        # when this commit has no eligible .sh/.py target added ~1.2-3.0s to
+        # every commit while it could not change the verdict.  Preserve the
+        # full-tree backstop for relevant staged code, but make the proven
+        # affected=0 branch an immediate no-op.
+        if ! bash "$REPO_ROOT/scripts/gates/gate_no_direct_yaml_dump.sh" >&2; then
+            precommit_step_end 1
+            exit 1
+        fi
     fi
     precommit_step_end 0
 
