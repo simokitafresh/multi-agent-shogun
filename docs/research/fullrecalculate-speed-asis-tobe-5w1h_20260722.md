@@ -1,4 +1,19 @@
-# 主題1: 全期間再計算(fullrecalculate)速度 — AsIs/ToBe 5W1H設計書 v3.1 (2026-07-27 — cmd_4180でL3内訳・全仮説・cron関係を現物確定+家老再レビュー4点反映)
+# 主題1: 全期間再計算(fullrecalculate)速度 — AsIs/ToBe 5W1H設計書 v3.2 (2026-07-27 — cmd_4184で運用壁時計確定+cmd_4186で計測3配線実装。v3.1=cmd_4180現物確定+家老再レビュー4点反映)
+
+## §0.0 運用壁時計(cmd_4184で一次ログ確定 — v3.2新設)
+
+**運用壁時計(殿のデータ反映待ち時間)= 42分25秒(2,545s)** — standard cron起動01:10:13→FoF完了01:52:38(2026-07-27定期実行、standard run=20260727011449IYJS2V / FoF run=20260727014042HSIHNE)。
+
+| 区間 | 時間 | 性質 |
+|---|---:|---|
+| standard側L1待機(sync-wait) | 4分01秒 | 上流ETL成功待ち |
+| standard完了→FoF cron起動 | 23分54秒 | **cron時差(schedule gap)— 計算ではなく待機** |
+| FoF側L2待機 | 0秒 | 待機なし |
+| FoF起点壁時計(補助KPI) | 12分24秒(744s) | FoF cron起動→FoF完了 |
+
+- **正KPI=standard起点**(殿の運用目的=データ反映の待ち時間に合致)。FoF起点は補助値
+- **旧807.9秒(91.3+716.6)は「累積計算時間」であり壁時計ではない**(cmd_4179 §4の総運用時間記述は本値で訂正済み=assumption_invalidation)
+- 含意: 壁時計42分25秒のうち**cron時差23分54秒(56%)は計算高速化と独立に削れる候補**(FoF cron起動時刻の前倒し/イベント駆動化)。計算削減(L3標的)と待機削減(schedule)の二正面が可能になった
 
 作成: 将軍 | 殿指示(2026-07-22 08:28 主題1起点 / 2026-07-27 19:17「偵察が終わったら設計書の再構築をせよ」/ 19:19「実装には進まず設計書の徹底的なブラッシュアップ完了が目的」)
 対象: DM-Signal `fullrecalculate`(全PF全期間の再計算パイプライン、engine=`recalculate_fast.py`)
@@ -98,15 +113,16 @@
 
 ---
 
-## §4 未解決事項(v3残余 — 実装ではなく調査)
+## §4 未解決事項(v3.2更新 — 3弾で4項解消)
 
-1. ~~L3内部内訳未計測~~ → **解消**(cmd_4180が本番DB保存値から回収)。残余=**unmeasured 122.41秒の区分**(最小配線案は設計済み・実装は殿裁可後)
-2. **PF別内訳が0行**(calculation_performance_log未接続)。既存schema再利用の配線案あり — 実装は殿裁可後
+1. ~~L3内部内訳未計測~~ → **解消**(cmd_4180回収)。~~unmeasured 122.41秒の区分~~ → **配線実装済み**(cmd_4186: legacy unmeasuredを維持したままpre_loop/pf_overhead/post_loop/deferred_flush/residualへ排他区分。隔離fixtureで区分合計=legacy完全一致を確認)。**本番区分値は次回定期実行で回収**
+2. ~~PF別内訳が0行~~ → **配線実装済み**(cmd_4186: PF別fof_totalをbuffer化しrun終端でCalculationPerformanceLogへrun_id付き一括INSERT。既存schema再利用・新table/migration 0件)。**本番PF別値は次回定期実行で回収**
 3. 06-26分析(357.28秒)のrun lineage未回収 — 比較基準はrun ID付き実測(07-10/07-27)に限定で確定
 4. ~~cron実行関係~~ → **解消**(論理直列と確定)
 5. id214のTIMING原文は未回収のまま総時間のみ保持(変更なし)
-6. **運用壁時計の定義**(家老指摘③): 起点(どのcron起動を0とするか)と待機境界(schedule gap・sync-wait)を定義した上での再算出。それまで805秒は「累積計算時間」とのみ呼ぶ
-7. **dw_signals_flushの内外分離**(家老指摘②): 外側deferred flush分の独立計測。分離までは115.26s全量を標的化しない
+6. ~~運用壁時計の定義~~ → **解消**(cmd_4184: §0.0新設。正KPI=standard起点42分25秒、FoF起点744sは補助。805/807.9秒は累積計算時間と確定)
+7. ~~dw_signals_flushの内外分離~~ → **配線実装済み**(cmd_4186: legacy dw_signals_flush_sec維持+dw_signals_append_sec/dw_signals_deferred_flush_secを追加。隔離実測: inner append 0.03s vs outer deferred flush 6.50s=**混合値のほぼ全量が外側**の示唆。本番値で§3.1順位を再判定)
+8. **(v3.2新規)cron時差23分54秒の削減可否**: 壁時計の56%が計算外の待機。FoF cron起動前倒し/上流完了イベント駆動化の設計判断 — 実装弾の起票時に計算削減と並ぶ第二正面として扱う
 
 ---
 
@@ -123,6 +139,8 @@
 
 ## §6 因果リンク
 
+- → [[cmd_4184_fullrecalc_wallclock]] 運用壁時計の一次確定(§0.0。DM-Signal repo docs/research/cmd_4184_fullrecalc_wallclock.md, commit 464e84e66)
+- → [[cmd_4186]] 計測3配線の実装(unmeasured区分・dw内外分離・PF別一括INSERT。DM-Signal backend)
 - → [[cmd_4179_fullrecalc_timing_recon]] 本v2の一次データ(run原文+時点間突合+混算棄却)
 - → [[recalculate_pipeline]] engine構造・排他・順序制約
 - → [[precompute_L5_parallel_design_v1.3]] / [[precompute_fingerprint_skip_design]] L5資産(完成・保存・優先度低)

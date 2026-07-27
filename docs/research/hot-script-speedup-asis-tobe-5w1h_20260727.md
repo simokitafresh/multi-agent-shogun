@@ -1,4 +1,4 @@
-# ホットスクリプト集中高速化 — AsIs/ToBe 5W1H設計書 v2.1 (2026-07-27 — cmd_4181再集計+家老指摘④のcurrent cohort再序列反映)
+# ホットスクリプト集中高速化 — AsIs/ToBe 5W1H設計書 v2.2 (2026-07-27 — cmd_4185で外れ値型5checkの発生条件を特定/部分特定。v2.1=cmd_4181再集計+家老指摘④反映)
 
 作成: 将軍 | 殿裁定(19:44「個別スクリプト覚醒高速化がベスト」/ 19:46「リストアップして集中的に高速化」/ 20:20「即時対処を選択」)
 方針: 構造(型)は変えない。遅いスクリプト=バグとして個別に覚醒高速化。品質2原則(正本突合+境界fixture)維持=「削るな速くしろ」。
@@ -67,11 +67,23 @@
 
 ---
 
-## §3 未解決事項
-1. 外れ値型(q11_semantic_search_overhead・three_layer_memory_ruling_overhead・instruction_sync・圏外のtest_granularity — §0型列SSOT)のmax発生条件 — 高速化前の必須偵察
-2. self_syncのpost cohort残余外れ値(p95 2.9s/max 16.3s)の発生条件 — cmd_4168効果は確認済み(§0)ゆえ、残余の外れ値のみが偵察対象
+## §3 未解決事項(v2.2更新 — cmd_4185で1-2を特定/部分特定へ)
+
+1. ~~外れ値型のmax発生条件~~ → **cmd_4185で3点表(topN寄与率・閾値超過率・発生条件)を全数確定**(成果物=`docs/research/cmd_4185_outlier_conditions.md`、閾値=wall_ms>1000):
+   | check | 判定 | 発生条件(writer現物照合済み) | 是正の方向性 |
+   |---|---|---|---|
+   | q11_semantic_search_overhead (N=173/累積672.9s※) | **特定** | command非空+FAST無効+session cache未命中でbackground検索起動 | キャッシュ+発火抑止(`cmd_save.sh:4095-4115`)。top5=503.4s(74.8%)がcache hit化で削減見込み |
+   | three_layer_memory_ruling_overhead (N=217/472.9s) | **特定** | FAST無効+query単位cache未命中。同一cmd反復で別query keyが生成される条件が残る | query正規化+negative cacheのcmd保存間共有。>1s群56件(25.8%) |
+   | instruction_sync (N=374/160.1s) | **特定** | instructions正本がstagedの時のみbuild実行。top2=125.1s(78.1%)が支配 | buildを入力hash差分生成へ(`git-pre-commit.sh:942-957`) |
+   | test_granularity (N=416/159.7s) | **部分特定** | 追加test時のみ全tree候補探索(script参照ごとgrep -RIlF走査)。台帳にstaged pathsなく完全照合不能 | script_ref→test候補の逆引き索引を一度生成(top5=80.7s/50.5%) |
+   | self_sync (N=416/222.0s) | **部分特定** | live hook実行時のsync枝。枝選択が台帳に記録されずDrvFS競合と分離不能 | **追加観測が先**: running_is_live_hook/staged_hook_related/cmp_equal/sync_called/reexecの5項目を台帳へ付与してから最適化対象を決める |
+   ※累積は追記型ログのため時点依存(設計書確認時573.3s→調査時点672.9s。母集団境界は不変)
+2. ~~self_sync残余外れ値の発生条件~~ → 上表の通り**部分特定**。5項目の台帳追加が是正弾の第一AC
 3. B5 inbox_write・B2/B3 startup gateの台帳計装
 4. B1復帰税の悪化真因(家老レーン進行中)
+5. **(v2.2新規)外れ値台帳の枝選択コンテキスト欠落**(cmd_4185 lesson_candidate): wall_ms+event_idだけでは重い枝を特定できない。計測writerは枝選択・staged paths・cache hit/sync/reexecを同eventへ記録すべし — 今後の新規check_id追加時の必須要件(§1の境界分類と併せて計測の憲法へ)
+
+**実装凍結解除後の外れ値弾の型(v2.2確定)**: 常時最適化は的外れ。q11/three-layer=**cache missのみ**、instruction_sync/test_granularity=**稀な重い枝のみ**を対象にする。self_syncは観測5項目追加→枝別寄与の実測→対象決定の順
 
 ## §4 5W1H
 - **WHY**: 純オーバーヘッド上位が全commit・起票・報告に毎回課税され、自動成長速度を律速する
@@ -82,6 +94,7 @@
 - **HOW**: 発生条件/真因4型(全量再parse・affected=0全処理・プロセス多段起動・lock持ち過ぎ)→最小差分実装→Δ累積で証明→還流
 
 ## §5 因果リンク
+- → [[cmd_4185_outlier_conditions]] 外れ値型5checkの3点表+是正弾入力(§3の一次データ)
 - → [[cmd_4181_overhead_boundary_recon]] 本v2の一次データ(境界表+再集計序列)
 - → [[deploy control-plane速度改善]] 恒常課税型への手法の型元(cache SSOT/即return)
 - → [[cmd_4182]] doc-only fast-path(着地済みの姉妹弾)
