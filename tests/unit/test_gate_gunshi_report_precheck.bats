@@ -193,3 +193,66 @@ YAML
   [ "$status" -ne 0 ]
   [[ "$output" == *"omits transient deletion evidence"* ]]
 }
+
+# test_necessity: LG048(SG-PRE31)はresult=PASSのみを受理していたため、意味検算の結果を
+# 「FAILである」と自己申告する経路自体が存在せず、忍者は根拠があっても受理不能で往復が発生していた
+# (cmd_karo_impl_lg048_fail_receivable_20260727)。この不変量は、result=PASS/FAILのリテラルのみを
+# 受理し、FAILは根拠(recount/actual非空)がある場合に限りERRORS非加算・GATE_PREDICTION=WARNで通し、
+# 空欄/散文/根拠なしFAILは引き続きBLOCKすることを保証する。
+@test "SG-PRE31 accepts literal PASS/FAIL with evidence, routes FAIL to WARN, still blocks empty or unevidenced claims" {
+  gate="$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh"
+
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+result:
+  summary: "3件×82件=246件を確認"
+semantic_validation:
+  classification_axis: "PF種別×trigger種別"
+  recount: "3種別×82件=246件を再計算式で確認"
+  actual: "内訳: PF-A 100件, PF-B 146件"
+  result: PASS
+YAML
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE31 bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PASS(LG048)"* ]]
+  [[ "$output" == *"GATE_PREDICTION=CLEAR"* ]]
+
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+result:
+  summary: "3件×82件=246件を確認"
+semantic_validation:
+  classification_axis: "PF種別×trigger種別"
+  recount: "3種別×82件=246件だが実際は240件で6件の分類漏れを検出"
+  actual: "内訳: PF-A 94件, PF-B 146件(6件不足)"
+  result: FAIL
+YAML
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE31 bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"FAIL_DECLARED(LG048)"* ]]
+  [[ "$output" == *"GATE_PREDICTION=WARN"* ]]
+
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+result:
+  summary: "3件×82件=246件を確認"
+semantic_validation:
+  classification_axis: "PF種別×trigger種別"
+  recount:
+  actual:
+  result: FAIL
+YAML
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE31 bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"BLOCK(LG048): semantic_validation.recountがない"* ]]
+
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+result:
+  summary: "3件×82件=246件を確認"
+semantic_validation:
+  classification_axis: "PF種別×trigger種別"
+  recount: "3種別×82件=246件を再計算式で確認"
+  actual: "内訳: PF-A 100件, PF-B 146件"
+  result: "特に問題なさそうです"
+YAML
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE31 bash "$gate" "$TMP_DIR/report.yaml"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"BLOCK(LG048): semantic_validation.resultがPASS/FAILのいずれでもない"* ]]
+}

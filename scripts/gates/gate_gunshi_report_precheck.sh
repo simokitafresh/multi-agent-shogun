@@ -94,6 +94,99 @@ if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE33" ]; then
     exit $?
 fi
 
+# ─── SG-PRE31: N×M一致パターン意味検算BLOCK(LG048: きれいな数値一致は意味検算のサイン) ───
+# focused-mode(GUNSHI_PRECHECK_ONLY=SG-PRE31)から他チェックのERRORSに引きずられず単独判定できるよう、
+# SG-PRE1(gate_report_format.sh呼出し)より前に定義・早期exitする。
+_sg_pre31_check() {
+    local report_path="$1"
+    # resultブロックから数値を抽出（整数のみ、10以上の値）
+    local _result_block
+    _result_block=$(awk '/^result:/{found=1; next} found && /^[^ ]/{exit} found{print}' "$report_path" 2>/dev/null || true)
+    if [ -z "$_result_block" ]; then
+        echo "  SKIP: resultブロックなし"
+        return
+    fi
+    # 3以上の整数を抽出（重複排除・ソート。1,2は偽陽性が多すぎるため除外）
+    # 先頭0の数字列を除外(bashが8進数として解釈しエラーになるため。commitハッシュ断片等)
+    # テスト結果行(passed/failed/skipped/suites/tests)を除外(FP防止: 33 passed×3=99等)
+    local _nums
+    _nums=$(echo "$_result_block" | grep -viE 'passed|failed|skipped|suites|tests|PASS|FAIL' | grep -oE '[0-9]+' | grep -v '^0[0-9]' | awk '$1 >= 3' | sort -un || true)
+    local _num_count
+    _num_count=$(echo "$_nums" | grep -c '[0-9]' || true)
+    if [ "${_num_count:-0}" -lt 3 ]; then
+        echo "  PASS: 数値3個未満(N×M照合対象外)"
+        return
+    fi
+    # N×M=Cの関係を探索
+    local _found=0
+    local _a _b _c
+    while IFS= read -r _a; do
+        [ -z "$_a" ] && continue
+        while IFS= read -r _b; do
+            [ -z "$_b" ] && continue
+            [ "$_b" -le "$_a" ] && continue
+            _c=$(( _a * _b )) || true
+            if echo "$_nums" | grep -qx "$_c" 2>/dev/null; then
+                echo "  INFO(LG048): N×M一致検出: ${_a}×${_b}=${_c}"
+                echo "  ★ 意味検算せよ: この整数関係は仕様上の分類(PF種別/trigger別/月別等)と整合するか？"
+                echo "    全件一律の数値は過剰集約や分類漏れの兆候。内訳を再計算して確認せよ"
+                _found=1
+            fi
+        done <<< "$_nums"
+    done <<< "$_nums"
+    if [ "$_found" -eq 0 ]; then
+        echo "  PASS: N×M一致パターンなし"
+        return 0
+    fi
+
+    # 数値一致の検知だけでは意味検算にならない。分類軸・内訳再計算・結果を
+    # semantic_validationとして構造化し、レビューフロー内でfail-closedに強制する。
+    local _semantic_block
+    _semantic_block=$(awk '/^semantic_validation:/{found=1; next} found && /^[^[:space:]#]/{exit} found{print}' "$report_path" 2>/dev/null || true)
+    if [ -z "$_semantic_block" ]; then
+        echo "  BLOCK(LG048): N×M一致を検出したがsemantic_validation証跡がない"
+        echo "  → classification_axis / recount / actual / result: PASSを記録せよ"
+        return 2
+    fi
+    if ! printf '%s\n' "$_semantic_block" | grep -Eq '^  classification_axis:[[:space:]]*[^[:space:]#]'; then
+        echo "  BLOCK(LG048): semantic_validation.classification_axisがない"
+        return 2
+    fi
+    if ! printf '%s\n' "$_semantic_block" | grep -Eq '^  recount:[[:space:]]*[^[:space:]#]'; then
+        echo "  BLOCK(LG048): semantic_validation.recountがない"
+        return 2
+    fi
+    if ! printf '%s\n' "$_semantic_block" | grep -Eq '^  actual:[[:space:]]*[^[:space:]#]'; then
+        echo "  BLOCK(LG048): semantic_validation.actualに分類別内訳の実測がない"
+        return 2
+    fi
+    local _semantic_result
+    _semantic_result=$(printf '%s\n' "$_semantic_block" | sed -n 's/^  result:[[:space:]]*//p' | head -1 | sed 's/[[:space:]]*#.*$//; s/^[[:space:]"]*//; s/[[:space:]"]*$//')
+    if [ "$_semantic_result" != "PASS" ] && [ "$_semantic_result" != "FAIL" ]; then
+        echo "  BLOCK(LG048): semantic_validation.resultがPASS/FAILのいずれでもない(空欄・散文は不可)"
+        return 2
+    fi
+    if [ "$_semantic_result" = "FAIL" ]; then
+        echo "  FAIL_DECLARED(LG048): N×M一致+分類軸別内訳の再計算証跡あり。result=FAILとして受理(ERRORSには加算しない)"
+        echo "  → 意味検算の結果、分類漏れ等の問題ありと自己申告された。gate_predictionをWARNとし、軍師の判断(受理/差し戻し)をreview_logへ記録すること"
+        if [ "${GATE_PREDICTION:-CLEAR}" = "CLEAR" ]; then
+            GATE_PREDICTION="WARN"
+        fi
+        GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG048:FAIL_DECLARED_needs_gunshi_judgement"
+        return 0
+    fi
+    echo "  PASS(LG048): N×M一致+分類軸別内訳の再計算証跡あり"
+}
+if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE31" ]; then
+    echo ""
+    echo "■ SG-PRE31: N×M意味検算(LG048)"
+    _sg_pre31_check "$REPORT_PATH"
+    _sg_pre31_rc=$?
+    echo "GATE_PREDICTION=${GATE_PREDICTION:-CLEAR}"
+    [ "$_sg_pre31_rc" -ne 2 ]
+    exit $?
+fi
+
 # Project directory (commit検証用)
 PROJECT_DIR=""
 if [ "${IS_DM_SIGNAL:-0}" = "1" ]; then
@@ -1150,87 +1243,7 @@ if ! _sg_pre30_check "$REPORT_PATH"; then
     GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG046:global_enumeration_evidence_missing"
 fi
 
-# ─── SG-PRE31: N×M一致パターン意味検算BLOCK(LG048: きれいな数値一致は意味検算のサイン) ───
-_sg_pre31_check() {
-    local report_path="$1"
-    # resultブロックから数値を抽出（整数のみ、10以上の値）
-    local _result_block
-    _result_block=$(awk '/^result:/{found=1; next} found && /^[^ ]/{exit} found{print}' "$report_path" 2>/dev/null || true)
-    if [ -z "$_result_block" ]; then
-        echo "  SKIP: resultブロックなし"
-        return
-    fi
-    # 3以上の整数を抽出（重複排除・ソート。1,2は偽陽性が多すぎるため除外）
-    # 先頭0の数字列を除外(bashが8進数として解釈しエラーになるため。commitハッシュ断片等)
-    # テスト結果行(passed/failed/skipped/suites/tests)を除外(FP防止: 33 passed×3=99等)
-    local _nums
-    _nums=$(echo "$_result_block" | grep -viE 'passed|failed|skipped|suites|tests|PASS|FAIL' | grep -oE '[0-9]+' | grep -v '^0[0-9]' | awk '$1 >= 3' | sort -un || true)
-    local _num_count
-    _num_count=$(echo "$_nums" | grep -c '[0-9]' || true)
-    if [ "${_num_count:-0}" -lt 3 ]; then
-        echo "  PASS: 数値3個未満(N×M照合対象外)"
-        return
-    fi
-    # N×M=Cの関係を探索
-    local _found=0
-    local _a _b _c
-    while IFS= read -r _a; do
-        [ -z "$_a" ] && continue
-        while IFS= read -r _b; do
-            [ -z "$_b" ] && continue
-            [ "$_b" -le "$_a" ] && continue
-            _c=$(( _a * _b )) || true
-            if echo "$_nums" | grep -qx "$_c" 2>/dev/null; then
-                echo "  INFO(LG048): N×M一致検出: ${_a}×${_b}=${_c}"
-                echo "  ★ 意味検算せよ: この整数関係は仕様上の分類(PF種別/trigger別/月別等)と整合するか？"
-                echo "    全件一律の数値は過剰集約や分類漏れの兆候。内訳を再計算して確認せよ"
-                _found=1
-            fi
-        done <<< "$_nums"
-    done <<< "$_nums"
-    if [ "$_found" -eq 0 ]; then
-        echo "  PASS: N×M一致パターンなし"
-        return 0
-    fi
-
-    # 数値一致の検知だけでは意味検算にならない。分類軸・内訳再計算・結果を
-    # semantic_validationとして構造化し、レビューフロー内でfail-closedに強制する。
-    local _semantic_block
-    _semantic_block=$(awk '/^semantic_validation:/{found=1; next} found && /^[^[:space:]#]/{exit} found{print}' "$report_path" 2>/dev/null || true)
-    if [ -z "$_semantic_block" ]; then
-        echo "  BLOCK(LG048): N×M一致を検出したがsemantic_validation証跡がない"
-        echo "  → classification_axis / recount / actual / result: PASSを記録せよ"
-        return 2
-    fi
-    if ! printf '%s\n' "$_semantic_block" | grep -Eq '^  classification_axis:[[:space:]]*[^[:space:]#]'; then
-        echo "  BLOCK(LG048): semantic_validation.classification_axisがない"
-        return 2
-    fi
-    if ! printf '%s\n' "$_semantic_block" | grep -Eq '^  recount:[[:space:]]*[^[:space:]#]'; then
-        echo "  BLOCK(LG048): semantic_validation.recountがない"
-        return 2
-    fi
-    if ! printf '%s\n' "$_semantic_block" | grep -Eq '^  actual:[[:space:]]*[^[:space:]#]'; then
-        echo "  BLOCK(LG048): semantic_validation.actualに分類別内訳の実測がない"
-        return 2
-    fi
-    local _semantic_result
-    _semantic_result=$(printf '%s\n' "$_semantic_block" | sed -n 's/^  result:[[:space:]]*//p' | head -1 | sed 's/[[:space:]]*#.*$//; s/^[[:space:]"]*//; s/[[:space:]"]*$//')
-    if [ "$_semantic_result" != "PASS" ] && [ "$_semantic_result" != "FAIL" ]; then
-        echo "  BLOCK(LG048): semantic_validation.resultがPASS/FAILのいずれでもない(空欄・散文は不可)"
-        return 2
-    fi
-    if [ "$_semantic_result" = "FAIL" ]; then
-        echo "  FAIL_DECLARED(LG048): N×M一致+分類軸別内訳の再計算証跡あり。result=FAILとして受理(ERRORSには加算しない)"
-        echo "  → 意味検算の結果、分類漏れ等の問題ありと自己申告された。gate_predictionをWARNとし、軍師の判断(受理/差し戻し)をreview_logへ記録すること"
-        if [ "${GATE_PREDICTION:-CLEAR}" = "CLEAR" ]; then
-            GATE_PREDICTION="WARN"
-        fi
-        GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG048:FAIL_DECLARED_needs_gunshi_judgement"
-        return 0
-    fi
-    echo "  PASS(LG048): N×M一致+分類軸別内訳の再計算証跡あり"
-}
+# ─── SG-PRE31: N×M一致パターン意味検算BLOCK(LG048) ─── 関数定義・focused-exitは冒頭(SG-PRE33直後)へ移動済み
 echo ""
 echo "■ SG-PRE31: N×M意味検算(LG048)"
 if ! _sg_pre31_check "$REPORT_PATH"; then
