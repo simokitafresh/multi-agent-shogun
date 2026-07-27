@@ -1333,6 +1333,18 @@ _report_field_set_completed_guard() {
         *) return 0 ;;
     esac
 
+    # commit_hash速度最適化(cmd_karo_hotfix_hot_script_report_commit_hash_20260728):
+    # このguardはstatusがcompleted/doneでない限りsys.exit(0)で即抜けるだけ(下のPython参照)。
+    # そのためだけに毎回yaml.safe_loadで全量再parseするのは恒常課税(commit_hash 1回=最低1回の
+    # 全量再parse)。statusは常にroot直下のscalarなので `^status:` grepで同じ早期終了を安価に
+    # 判定できる。completed/doneの時だけ本来のPython経路(fingerprint不変性チェック)へ進む。
+    local _guard_status
+    _guard_status="$(grep -m1 '^status:' "$REPORT_PATH" 2>/dev/null | sed 's/^status:[[:space:]]*//' | tr -d '\r"'"'"'')"
+    case "$_guard_status" in
+        completed|done) ;;
+        *) return 0 ;;
+    esac
+
     REPORT_PATH="$REPORT_PATH" DOT_KEY="$dot_key" NEW_VALUE="$val" python3 -c "
 import os, re, sys, yaml
 
@@ -1693,8 +1705,18 @@ PY
         AUTO_COMPLETE_STATUS=0
     fi
 elif [[ "$DOT_KEY" == "commit_hash" ]] && { [[ "$VALUE" =~ ^[0-9a-f]{40}$ ]] || [[ "$VALUE" == "no-code-change" ]]; } && [ -f "$REPORT_PATH" ]; then
-    # Complete atomically when commit_hash is the final missing prerequisite.
-    if REPORT_PATH="$REPORT_PATH" python3 - <<'PY'
+    # commit_hash速度最適化(cmd_karo_hotfix_hot_script_report_commit_hash_20260728):
+    # 下のPythonは最終条件で `verdict in ('PASS','FAIL','PASS_NO_IMPROVEMENT')` を要求する
+    # ため、verdictがまだ未設定/他値ならall_yes/terminal_readyの判定結果に関わらず必ずexit 1
+    # (AUTO_COMPLETE_STATUS=0のまま)になる。commit_hashは通常verdict確定より前に書かれるため、
+    # 恒常的にこの全量再parseだけが空振りする。^verdict: grepで先に判定できる場合はpython3を
+    # 起動せず同じ結果(スキップ=exit 1相当)に到達する。
+    _rfs_ch_verdict="$(grep -m1 '^verdict:' "$REPORT_PATH" 2>/dev/null | sed 's/^verdict:[[:space:]]*//' | tr -d '\r"'"'"'')"
+    case "$_rfs_ch_verdict" in
+        PASS|FAIL|PASS_NO_IMPROVEMENT) ;;
+        *) _rfs_ch_verdict="" ;;
+    esac
+    if [ -n "$_rfs_ch_verdict" ] && REPORT_PATH="$REPORT_PATH" python3 - <<'PY'
 import os, sys, yaml
 data = yaml.safe_load(open(os.environ['REPORT_PATH'], encoding='utf-8')) or {}
 checks = (data.get('binary_checks') or {}).get('commit')
