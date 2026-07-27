@@ -698,6 +698,7 @@ show_q11_semantic_search_matches() {
     if command -v timeout >/dev/null 2>&1; then
         if output="$(
             SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
+                SEMANTIC_DISABLE_MEMORY_DB_CACHE=1 \
                 timeout 5 bash "$semantic_script" "$query" 2>&1
         )"; then
             rc=0
@@ -707,6 +708,7 @@ show_q11_semantic_search_matches() {
     else
         if output="$(
             SEMANTIC_CAUSAL_ROOT="${SEMANTIC_CAUSAL_ROOT:-$PROJECT_DIR}" \
+                SEMANTIC_DISABLE_MEMORY_DB_CACHE=1 \
                 bash "$semantic_script" "$query" 2>&1
         )"; then
             rc=0
