@@ -1221,7 +1221,12 @@ _sg_pre31_check() {
         return 2
     fi
     if [ "$_semantic_result" = "FAIL" ]; then
-        echo "  PASS(LG048): N×M一致+分類軸別内訳の再計算証跡あり(result=FAIL。recount/actualの非空済み→差し戻しフローで扱う)"
+        echo "  FAIL_DECLARED(LG048): N×M一致+分類軸別内訳の再計算証跡あり。result=FAILとして受理(ERRORSには加算しない)"
+        echo "  → 意味検算の結果、分類漏れ等の問題ありと自己申告された。gate_predictionをWARNとし、軍師の判断(受理/差し戻し)をreview_logへ記録すること"
+        if [ "${GATE_PREDICTION:-CLEAR}" = "CLEAR" ]; then
+            GATE_PREDICTION="WARN"
+        fi
+        GATE_PREDICTION_REASON="${GATE_PREDICTION_REASON:+${GATE_PREDICTION_REASON}; }LG048:FAIL_DECLARED_needs_gunshi_judgement"
         return 0
     fi
     echo "  PASS(LG048): N×M一致+分類軸別内訳の再計算証跡あり"
