@@ -14,7 +14,7 @@
 | 6 | status | ✅ CLEAR | 非terminal書込みをatomic fast pathへ分離 | 累積410→320ms(-22.0%)、median 40→30ms(-25.0%)(n=10) |
 | 7 | verdict | ✅ CLEAR | bc:no自動FAIL判定統合で重複全量parse1回削減 | 累積10,080→9,664ms(-4.1%)、median 409→381ms(-6.8%)(25走) |
 | 8 | self_sync | ✅ CLEAR | 観測5項目追加→枝別実測→skip分岐化(reverify弾で独立再検証済み) | sync分岐median 1,378ms→skip分岐88ms(-93.6%) |
-| 9 | three_layer_memory_ruling | ✅ CLEAR | cache miss条件限定の最適化(query正規化key+cmd間cache+negative cache+single-flight) | 外れ値92件累積1,009,352ms→同一入力2並列で2ms、median 4,126→1ms |
+| 9 | three_layer_memory_ruling | ✅ CLEAR | cache miss条件限定の最適化(query正規化key+cmd間cache+negative cache+single-flight) | before=外れ値92件分布(累積1,009,352ms/median 4,126ms)。after=同一query 2並列fixtureで累積2ms/median 1ms(**全92件同条件afterは未計測** — cohort全体の恒常削減値ではない) |
 | 10 | checks_pre_session | ⏳ 残 | — | — |
 | 11 | memory_db_token_search | ⏳ 残 | — | — |
 | 12 | instruction_sync | ⏳ 残 | — | — |
