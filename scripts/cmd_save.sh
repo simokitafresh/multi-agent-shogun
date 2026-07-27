@@ -3894,6 +3894,34 @@ check_lock_contention_warn() {
     fi
 }
 
+validate_queue_yaml_syntax() {
+    [[ -f "$QUEUE_FILE" ]] || return 0
+
+    # checks_pre_session is paid on every cmd_save invocation, while the queue
+    # commonly remains byte-identical across repeated preflight/save attempts.
+    # yaml_field_set replaces the queue atomically, so device/inode/size plus
+    # nanosecond mtime/ctime is a fail-closed content-generation key: any write
+    # forces a real parse, but an unchanged generation can reuse the prior PASS.
+    local _syntax_cache_dir _syntax_cache_file _queue_generation _cached_generation=""
+    _syntax_cache_dir="${_CMD_SAVE_METADATA_CACHE_DIR}/queue_yaml"
+    _syntax_cache_file="${_syntax_cache_dir}/validated_generation"
+    _queue_generation="$(stat -c '%d:%i:%s:%y:%z' "$QUEUE_FILE" 2>/dev/null || true)"
+
+    if [[ -n "$_queue_generation" && -f "$_syntax_cache_file" ]]; then
+        IFS= read -r _cached_generation < "$_syntax_cache_file" || true
+        [[ "$_cached_generation" == "$_queue_generation" ]] && return 0
+    fi
+
+    python3 -c "import yaml,sys; yaml.load(open(sys.argv[1]), Loader=getattr(yaml, 'CSafeLoader', yaml.SafeLoader))" "$QUEUE_FILE" 2>/dev/null || return 1
+
+    if [[ -n "$_queue_generation" ]]; then
+        mkdir -p "$_syntax_cache_dir" 2>/dev/null || true
+        printf '%s\n' "$_queue_generation" > "${_syntax_cache_file}.$$" 2>/dev/null &&
+            mv -f "${_syntax_cache_file}.$$" "$_syntax_cache_file" 2>/dev/null || true
+    fi
+    return 0
+}
+
 trap 'handle_cmd_save_exit' EXIT
 
 # --- cmd_id正規化（cmd_プレフィックスを付与） ---
@@ -3964,7 +3992,7 @@ CMD_SAVE_RUN_ID="${CMD_ID}-$$-${CMD_SAVE_PHASE_LAST_US}"
 # --- Check 0.9: YAML構文検証 ---
 # perf: CSafeLoader(libyaml)がPure Python SafeLoader比で約8倍速い(実測0.28s→0.03s級)。
 # 構文検証のみで結果は使わないため、Loaderの違いによる出力差は発生しない。
-if [[ -f "$QUEUE_FILE" ]] && ! python3 -c "import yaml,sys; yaml.load(open(sys.argv[1]), Loader=getattr(yaml, 'CSafeLoader', yaml.SafeLoader))" "$QUEUE_FILE" 2>/dev/null; then
+if ! validate_queue_yaml_syntax; then
     echo "BLOCK: $QUEUE_FILE にYAML構文エラーがあります。ダブルクォート内の特殊文字(|等)をエスケープするか、ブロックスカラー(|)を使用してください" >&2
     BLOCK_REASONS+=("yaml_syntax_error")
 fi
