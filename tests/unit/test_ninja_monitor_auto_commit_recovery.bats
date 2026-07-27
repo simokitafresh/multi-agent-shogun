@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
-# test_necessity: auto_commit_before_clear must never mutate the caller's shared Git index tree.
+# test_necessity: auto_commit_before_clear must preserve unrelated intentional
+# stages while making committed target entries clean against the advanced HEAD.
 
 setup() {
   REPO="$BATS_TEST_TMPDIR/repo"
@@ -40,18 +41,24 @@ run_helper() {
   printf 'staged\n' > "$REPO/shared.txt"
   git -C "$REPO" add shared.txt
   printf 'regular\n' > "$REPO/scripts/regular.sh"
-  before=$(index_tree)
+  before_shared=$(git -C "$REPO" ls-files -s shared.txt)
+  before_work=$(git -C "$REPO" hash-object shared.txt)
   run run_helper regular "scripts/regular.sh"
   [ "$status" -eq 0 ]
-  [ "$(index_tree)" = "$before" ]
+  [ "$(git -C "$REPO" ls-files -s shared.txt)" = "$before_shared" ]
+  [ "$(git -C "$REPO" hash-object shared.txt)" = "$before_work" ]
+  [ -z "$(git -C "$REPO" status --short scripts/regular.sh)" ]
+  [ "$(git -C "$REPO" diff --cached --name-only)" = "shared.txt" ]
 }
 
-@test "context success preserves shared index" {
+@test "context success advances shared target entry with HEAD without residue" {
   printf 'context\n' > "$REPO/context/current.md"
-  before=$(index_tree)
+  before_work=$(git -C "$REPO" hash-object context/current.md)
   run run_helper context "context/current.md"
   [ "$status" -eq 0 ]
-  [ "$(index_tree)" = "$before" ]
+  [ "$(git -C "$REPO" hash-object context/current.md)" = "$before_work" ]
+  [ "$(index_tree)" = "$(git -C "$REPO" rev-parse HEAD^{tree})" ]
+  [ -z "$(git -C "$REPO" status --short context/current.md)" ]
 }
 
 @test "regular commit failure logs branch rc reason and preserves shared index" {
@@ -92,37 +99,38 @@ run_helper() {
   [ "$(index_tree)" = "$before" ]
 }
 
-@test "hook cannot add paths because dedicated commit skips hooks" {
+@test "hook cannot add paths because path-limited commit skips hooks" {
   mkdir -p "$REPO/.git/hooks"
   printf '#!/bin/sh\ngit add shared.txt\n' > "$REPO/.git/hooks/pre-commit"
   chmod +x "$REPO/.git/hooks/pre-commit"
   printf 'hook-stage\n' > "$REPO/shared.txt"
   printf 'regular\n' > "$REPO/scripts/regular.sh"
-  before=$(index_tree)
+  before_shared=$(git -C "$REPO" ls-files -s shared.txt)
   run run_helper regular "scripts/regular.sh"
   [ "$status" -eq 0 ]
-  [ "$(index_tree)" = "$before" ]
+  [ "$(git -C "$REPO" ls-files -s shared.txt)" = "$before_shared" ]
+  [ -z "$(git -C "$REPO" diff --cached --name-only)" ]
   run git -C "$REPO" show --format= --name-only HEAD
   [[ "$output" = "scripts/regular.sh" ]]
 }
 
-@test "quoted path commits through dedicated index and preserves shared tree" {
+@test "quoted path commits cleanly through path-limited transaction" {
   printf 'base\n' > "$REPO/scripts/quoted file.sh"
   git -C "$REPO" add "scripts/quoted file.sh"
   git -C "$REPO" commit -qm quoted-base
   printf 'changed\n' > "$REPO/scripts/quoted file.sh"
-  before=$(index_tree)
   run run_helper regular "scripts/quoted file.sh"
   [ "$status" -eq 0 ]
-  [ "$(index_tree)" = "$before" ]
+  [ "$(index_tree)" = "$(git -C "$REPO" rev-parse HEAD^{tree})" ]
+  [ -z "$(git -C "$REPO" status --short "scripts/quoted file.sh")" ]
 }
 
-@test "dedicated index initialization failure preserves shared tree" {
+@test "path-limited commit failure preserves shared tree" {
   mkdir -p "$REPO/fail-bin"
   cat > "$REPO/fail-bin/git" <<'EOF'
 #!/bin/sh
-if [ "$1" = "read-tree" ]; then
-  echo "injected read-tree failure" >&2
+if [ "$1" = "commit" ]; then
+  echo "injected commit failure" >&2
   exit 73
 fi
 exec /usr/bin/git "$@"
@@ -133,5 +141,5 @@ EOF
   PATH="$REPO/fail-bin:$PATH" run run_helper regular "scripts/regular.sh"
   [ "$status" -ne 0 ]
   [ "$(index_tree)" = "$before" ]
-  grep -Eq 'AUTO-COMMIT-FAIL: agent=kotaro branch=regular rc=73 reason=injected read-tree failure' "$REPO/events.log"
+  grep -Eq 'AUTO-COMMIT-FAIL: agent=kotaro branch=regular rc=73 reason=injected commit failure' "$REPO/events.log"
 }

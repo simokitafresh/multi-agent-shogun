@@ -793,53 +793,36 @@ auto_commit_with_dedicated_index() {
     local branch="$2"
     local commit_message="$3"
     local paths="$4"
-    local index_dir index_file error_file rc reason
+    local error_file rc reason
+    local -a commit_paths=()
 
-    index_dir=$(mktemp -d "${TMPDIR:-/tmp}/ninja-auto-commit-index.XXXXXX") || {
-        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=1 reason=dedicated-index-create-failed"
+    mapfile -t commit_paths < <(printf '%s\n' "$paths" | sed '/^[[:space:]]*$/d')
+    if [ "${#commit_paths[@]}" -eq 0 ]; then
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=1 reason=empty-auto-commit-scope"
+        return 1
+    fi
+
+    error_file=$(mktemp "${TMPDIR:-/tmp}/ninja-auto-commit-error.XXXXXX") || {
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=1 reason=error-file-create-failed"
         return 1
     }
-    index_file="$index_dir/index"
-    error_file="$index_dir/error"
 
-    GIT_INDEX_FILE="$index_file" git read-tree HEAD 2>"$error_file"
+    # `git commit --only -- <paths>` is Git's atomic path-limited transaction:
+    # it commits the worktree blobs for only these paths, keeps unrelated
+    # intentional stages intact, and advances the shared index entries for the
+    # committed paths with HEAD. A detached index advanced HEAD while leaving
+    # those shared entries at the old HEAD, manufacturing staged residue.
+    git commit --only --no-verify -m "$commit_message" -- "${commit_paths[@]}" 2>"$error_file"
     rc=$?
     if [ "$rc" -ne 0 ]; then
         reason=$(head -1 "$error_file" | tr '\r\n' '  ')
-        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-dedicated-index-init-failed}"
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-path-limited-commit-failed}"
         unlink "$error_file" 2>/dev/null || true
-        rmdir "$index_dir" 2>/dev/null || true
         return 1
     fi
 
-    printf '%s\n' "$paths" | xargs -d '\n' env GIT_INDEX_FILE="$index_file" git add -- 2>"$error_file"
-    rc=$?
-    if [ "$rc" -ne 0 ]; then
-        reason=$(head -1 "$error_file" | tr '\r\n' '  ')
-        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-dedicated-index-add-failed}"
-        unlink "$index_file" 2>/dev/null || true
-        unlink "$index_file.lock" 2>/dev/null || true
-        unlink "$error_file" 2>/dev/null || true
-        rmdir "$index_dir" 2>/dev/null || true
-        return 1
-    fi
-
-    GIT_INDEX_FILE="$index_file" git commit --no-verify -m "$commit_message" 2>"$error_file"
-    rc=$?
-    if [ "$rc" -ne 0 ]; then
-        reason=$(head -1 "$error_file" | tr '\r\n' '  ')
-        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=${rc:-1} reason=${reason:-dedicated-index-commit-failed}"
-        unlink "$index_file" 2>/dev/null || true
-        unlink "$index_file.lock" 2>/dev/null || true
-        unlink "$error_file" 2>/dev/null || true
-        rmdir "$index_dir" 2>/dev/null || true
-        return 1
-    fi
-
-    if ! unlink "$index_file" 2>/dev/null \
-        || ! unlink "$error_file" 2>/dev/null \
-        || ! rmdir "$index_dir" 2>/dev/null; then
-        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=1 reason=dedicated-index-cleanup-failed"
+    if ! unlink "$error_file" 2>/dev/null; then
+        log "AUTO-COMMIT-FAIL: agent=$agent_name branch=$branch rc=1 reason=error-file-cleanup-failed"
         return 1
     fi
     return 0

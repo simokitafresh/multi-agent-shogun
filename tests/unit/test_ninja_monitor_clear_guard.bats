@@ -412,8 +412,10 @@ INNEREOF
 
 printf "staged\n" >> config/other.yaml
 git add config/other.yaml
-before_index_tree=$(git write-tree)
+before_other_entry=$(git ls-files -s config/other.yaml)
+before_other_work=$(git hash-object config/other.yaml)
 printf "change\n" >> scripts/a.sh
+before_target_work=$(git hash-object scripts/a.sh)
 NINJA_MONITOR_NOW=10000
 export SCRIPT_DIR STATE_DIR LOG NINJA_MONITOR_NOW
 _uncommitted=$(git status --porcelain -uno -- scripts/)
@@ -424,10 +426,12 @@ set -e
 
 count=$(git rev-list --count HEAD)
 staged_files=$(git diff --cached --name-only | sort | tr "\n" " ")
-after_index_tree=$(git write-tree)
-# test_necessity: GA-231c protects the exact shared index tree.  Cached names
-# are relative to the newly advanced HEAD and therefore include scripts/a.sh.
+# test_necessity: GA-231c protects the unrelated staged entry and both worktree
+# blobs while the committed target entry advances with HEAD and stays clean.
 worktree_files=$(git diff HEAD --name-only | sort | tr "\n" " ")
+after_other_entry=$(git ls-files -s config/other.yaml)
+after_other_work=$(git hash-object config/other.yaml)
+after_target_work=$(git hash-object scripts/a.sh)
 echo "rc=$rc"
 echo "count=$count"
 echo "staged=$staged_files"
@@ -435,9 +439,12 @@ echo "worktree=$worktree_files"
 cat "$LOG"
 test "$rc" = "0"
 test "$count" = "2"
-test "$staged_files" = "config/other.yaml scripts/a.sh "
-test "$after_index_tree" = "$before_index_tree"
+test "$staged_files" = "config/other.yaml "
 test "$worktree_files" = "config/other.yaml "
+test "$after_other_entry" = "$before_other_entry"
+test "$after_other_work" = "$before_other_work"
+test "$after_target_work" = "$before_target_work"
+test -z "$(git status --short scripts/a.sh)"
 grep -q "AUTO-COMMIT-STAGED-PRESERVE: hayate preserving scope-out staged file: config/other.yaml" "$LOG"
 '
     [ "$status" -eq 0 ]
