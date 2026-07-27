@@ -208,6 +208,55 @@ resolve_ci_expected_head() {
         || true
 }
 
+# Resolve the repository that owns report.commit_hash from the same typed
+# commit_contract used by gate_report_format.  project remains the fallback
+# only when repo_root is omitted.
+resolve_report_commit_repo() {
+    local report_file="$1"
+    local task_file="${2:-}"
+    local fallback_repo="${3:-$SCRIPT_DIR}"
+
+    if [ -z "$task_file" ] || [ ! -f "$task_file" ]; then
+        printf '%s\n' "$fallback_repo"
+        return 0
+    fi
+
+    PROJECT_ROOT="$SCRIPT_DIR" python3 - \
+        "$report_file" "$task_file" "$SCRIPT_DIR" "$fallback_repo" \
+        "${COMMIT_REPO_RESOLVER_MAIN:-$SCRIPT_DIR/scripts/gates/gate_report_format_main.py}" <<'PY'
+import importlib.util
+import pathlib
+import sys
+import yaml
+
+report_path, task_path, root, fallback_repo, module_file = sys.argv[1:]
+try:
+    report = yaml.safe_load(pathlib.Path(report_path).read_text(encoding="utf-8")) or {}
+    task_raw = yaml.safe_load(pathlib.Path(task_path).read_text(encoding="utf-8")) or {}
+except (OSError, yaml.YAMLError):
+    print("BLOCK: commit repository contract input is unreadable")
+    raise SystemExit
+task = task_raw.get("task", task_raw)
+
+module_path = pathlib.Path(module_file)
+spec = importlib.util.spec_from_file_location("gate_report_format_main", module_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+contract, error = module._resolved_commit_contract(report, task)
+if error:
+    print("BLOCK: " + error)
+    raise SystemExit
+if not str((contract or {}).get("repo_root") or "").strip():
+    print(pathlib.Path(fallback_repo).resolve())
+    raise SystemExit
+repo, error = module._resolve_commit_repo(report, task, pathlib.Path(root), contract)
+if error:
+    print("BLOCK: " + error)
+else:
+    print(repo)
+PY
+}
+
 # Decide whether a report crossed the shared remote completion boundary.
 # Free text and files_modified describe work, not publication.  The only
 # publication proof is a valid report commit contained by origin/main|master.
@@ -354,6 +403,13 @@ if [ "${CMD_COMPLETE_GATE_BLOCK_MESSAGE_ONLY:-0}" = "1" ]; then
 fi
 if [ "${CMD_COMPLETE_GATE_CI_EXPECTED_HEAD_ONLY:-0}" = "1" ]; then
     resolve_ci_expected_head "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$PWD}"
+    exit $?
+fi
+if [ "${CMD_COMPLETE_GATE_COMMIT_REPO_ONLY:-0}" = "1" ]; then
+    resolve_report_commit_repo \
+        "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
+        "${CMD_COMPLETE_GATE_TASK_FILE:-}" \
+        "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$PWD}"
     exit $?
 fi
 if [ "${CMD_COMPLETE_GATE_CI_PUSH_STATE_ONLY:-0}" = "1" ]; then
@@ -8649,6 +8705,11 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
     report_file=$(resolve_report_file "$ninja_name")
     if [ -f "$report_file" ]; then
         task_repo_dir=$(resolve_task_repo_dir "$task_file")
+        commit_repo_result=$(resolve_report_commit_repo "$report_file" "$task_file" "$task_repo_dir")
+        case "$commit_repo_result" in
+            BLOCK:*) CI_PUSH_STATE_BLOCK="$commit_repo_result"; break ;;
+            *) task_repo_dir="$commit_repo_result" ;;
+        esac
         ci_push_state=$(report_ci_push_state "$report_file" "$task_repo_dir")
         case "$ci_push_state" in
             PUSHED:*) CI_PUSH_DETECTED=true; _CI_PUSH_REPO_DIRS["$task_repo_dir"]=1 ;;

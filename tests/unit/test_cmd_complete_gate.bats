@@ -3921,6 +3921,67 @@ run_ci_push_state() {
         CMD_COMPLETE_GATE_CI_REPORT="$report" bash "$SRC_GATE_SCRIPT"
 }
 
+run_commit_repo_resolution() {
+    local fallback_repo="$1" report="$2" task="$3"
+    run env CMD_COMPLETE_GATE_COMMIT_REPO_ONLY=1 \
+        COMMIT_REPO_RESOLVER_MAIN="$PROJECT_ROOT/scripts/gates/gate_report_format_main.py" \
+        CMD_COMPLETE_GATE_CI_REPO_DIR="$fallback_repo" \
+        CMD_COMPLETE_GATE_CI_REPORT="$report" \
+        CMD_COMPLETE_GATE_TASK_FILE="$task" bash "$SRC_GATE_SCRIPT"
+}
+
+# test_necessity: report CI publication must use an explicit commit repo even
+# when task.project belongs to a different repository.
+@test "CI commit repo contract accepts canonical cross-project repo_root" {
+    local project_repo="$BATS_TEST_TMPDIR/project-repo"
+    local commit_repo="$BATS_TEST_TMPDIR/commit-repo"
+    local report="$BATS_TEST_TMPDIR/report.yaml"
+    local task="$BATS_TEST_TMPDIR/task.yaml"
+    make_ci_push_repo "$project_repo"
+    make_ci_push_repo "$commit_repo"
+    printf 'project: dm-signal\ncommit_contract: {required: true, repo_root: %s}\n' "$commit_repo" > "$report"
+    printf 'task:\n  project: dm-signal\n  commit_contract: {required: true, repo_root: %s}\n' "$commit_repo" > "$task"
+    run_commit_repo_resolution "$project_repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$commit_repo" ]
+}
+
+# test_necessity: report-side repo tampering must not redirect CI validation.
+@test "CI commit repo contract blocks task report repo_root mismatch" {
+    local repo_a="$BATS_TEST_TMPDIR/repo-a" repo_b="$BATS_TEST_TMPDIR/repo-b"
+    local report="$BATS_TEST_TMPDIR/report.yaml" task="$BATS_TEST_TMPDIR/task.yaml"
+    make_ci_push_repo "$repo_a"; make_ci_push_repo "$repo_b"
+    printf 'commit_contract: {required: true, repo_root: %s}\n' "$repo_b" > "$report"
+    printf 'task:\n  commit_contract: {required: true, repo_root: %s}\n' "$repo_a" > "$task"
+    run_commit_repo_resolution "$repo_a" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "BLOCK: task/report commit_contract repo_root mismatch" ]
+}
+
+# test_necessity: unknown/non-git explicit repo roots fail closed.
+@test "CI commit repo contract blocks non-git repo_root" {
+    local project_repo="$BATS_TEST_TMPDIR/project-repo" bad_repo="$BATS_TEST_TMPDIR/not-git"
+    local report="$BATS_TEST_TMPDIR/report.yaml" task="$BATS_TEST_TMPDIR/task.yaml"
+    make_ci_push_repo "$project_repo"; mkdir -p "$bad_repo"
+    printf '{}\n' > "$report"
+    printf 'task:\n  commit_contract: {required: true, repo_root: %s}\n' "$bad_repo" > "$task"
+    run_commit_repo_resolution "$project_repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: explicit commit repository is unreadable or not a git repository" ]]
+}
+
+# test_necessity: omitting repo_root retains the existing project/fallback repo.
+@test "CI commit repo contract preserves fallback when repo_root omitted" {
+    local project_repo="$BATS_TEST_TMPDIR/project-repo"
+    local report="$BATS_TEST_TMPDIR/report.yaml" task="$BATS_TEST_TMPDIR/task.yaml"
+    make_ci_push_repo "$project_repo"
+    printf '{}\n' > "$report"
+    printf 'task:\n  project: infra\n  commit_contract: {required: true}\n' > "$task"
+    run_commit_repo_resolution "$project_repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "$project_repo" ]
+}
+
 @test "CI push detection ignores files_modified for an unpushed report commit" {
     local repo="$BATS_TEST_TMPDIR/unpushed-files" report="$BATS_TEST_TMPDIR/unpushed-files.yaml"
     make_ci_push_repo "$repo"
