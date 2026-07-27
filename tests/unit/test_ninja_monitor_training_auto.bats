@@ -832,6 +832,8 @@ excluded = {
     "_INBOX_FP_CACHE": "one-cycle cache guarded by _INBOX_COUNT_CACHE_CYCLE",
     "CLI_DEAD_RESTART_TIMES": "bounded agent-name keys with rolling timestamp list",
     "CLI_DEAD_LOOP_LAST_NTFY": "bounded agent-name keys; alert debounce state",
+    "CLEAR_BLOCKED_TS": "bounded agent-name keys; window-pruned in _record_clear_blocked_and_maybe_notify, unset on success via _reset_clear_blocked_counter",
+    "CLEAR_BLOCKED_NOTIFIED": "bounded agent-name keys; unset on success via _reset_clear_blocked_counter",
 }
 
 covered = pruned | set(excluded)

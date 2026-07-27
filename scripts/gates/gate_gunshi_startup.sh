@@ -1098,6 +1098,15 @@ PY
     fi
 fi
 
+# --- T3(cmd_karo_hotfix_auto_clear_recovery_20260727 AC4): 直近CLEAR-BLOCKED現況表示 ---
+# 設計書§3.2 T3: /clear後に着任した指揮官へ現況を伝える。0件時は無表示。
+_clear_blocked_line="$(bash "$SCRIPT_DIR/scripts/gates/lib/clear_blocked_summary.sh" 2>/dev/null || true)"
+if [ -n "$_clear_blocked_line" ]; then
+    echo ""
+    echo "■ CLEAR-BLOCKED現況(直近30分)"
+    echo "  $_clear_blocked_line"
+fi
+
 # --- 三層記憶使用義務リマインダー(殿厳命2026-06-10: 使用しないのはバグ) ---
 echo ""
 echo "■ 三層記憶使用義務(L0-L7貫通)"

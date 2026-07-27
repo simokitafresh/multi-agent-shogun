@@ -861,6 +861,53 @@ auto_commit_before_clear() {
     )
 }
 
+# T1(cmd_karo_hotfix_auto_clear_recovery_20260727 AC2): auto_commit_before_clearが
+# 既存staged fileとのoverlapでskip(return 2)した回数を、agent別に直近M秒の窓で数える。
+# 契約: 状態はプロセス内メモリ(連想配列)。プロセス再起動で消えてよい(fail-safe設計。
+# 設計書§7参照: 消えても0から再カウント=通知遅延のみで損失・誤BLOCKは生じない)。
+CLEAR_BLOCKED_WINDOW_SEC=1800   # M=30分(設計書§2.5実測: 隣接間隔中央値191.5〜409秒に対し30分窓でN=3が持続封鎖と一時競合を弁別)
+CLEAR_BLOCKED_THRESHOLD=3       # N=3
+
+# T1+T2: skip 1回を記録し、窓内でしきい値に達した時点だけ家老へ1回通知する(再送抑止)。
+_record_clear_blocked_and_maybe_notify() {
+    local agent_name="$1"
+    local now t kept="" count
+    now=$(date +%s)
+    for t in ${CLEAR_BLOCKED_TS[$agent_name]:-}; do
+        if [ $((now - t)) -le "$CLEAR_BLOCKED_WINDOW_SEC" ]; then
+            kept="${kept}${kept:+ }$t"
+        fi
+    done
+    kept="${kept}${kept:+ }$now"
+    CLEAR_BLOCKED_TS["$agent_name"]="$kept"
+    count=$(wc -w <<< "$kept")
+
+    if [ "$count" -ge "$CLEAR_BLOCKED_THRESHOLD" ]; then
+        if [ "${CLEAR_BLOCKED_NOTIFIED[$agent_name]:-0}" != "1" ]; then
+            CLEAR_BLOCKED_NOTIFIED["$agent_name"]=1
+            # 家老の実測指摘(msg_20260727_141423): 通知は「同一原因が解決しないこと」を示すべきだが
+            # 頻度のみでは意図的な他作業staged(GA-231c保護対象)と真の持続封鎖を区別できない。
+            # AUTO-COMMIT-WARN-SKIPログから直近の原因stagedパスを抽出し分類材料として本文へ含める。
+            local overlap_path
+            overlap_path=$(grep -F "AUTO-COMMIT-WARN-SKIP: $agent_name" "$LOG" 2>/dev/null | tail -1 | sed -n 's/.*overlaps auto-commit scope: //p')
+            local msg
+            msg="infra_anomaly: ${agent_name}のCLEAR-BLOCKEDが直近${CLEAR_BLOCKED_WINDOW_SEC}秒(30分)でしきい値${CLEAR_BLOCKED_THRESHOLD}件に到達。集計コマンド: ninja_monitor.sh内カウンタCLEAR_BLOCKED_TS[${agent_name}]。出力行(生): count=${count} window_sec=${CLEAR_BLOCKED_WINDOW_SEC}。1件の定義: auto_commit_before_clearが既存staged fileとのoverlapでskip(return 2)した1回。網羅範囲: ${agent_name}のCLEAR-BLOCKED skip系列のみ、他agent非対象。原因stagedファイル(直近1件): ${overlap_path:-不明(ログから抽出できず)}。分類の目安: 上記が他agent/将軍の進行中作業と一致するなら意図した保全(偽陽性候補)、一致しないか同一pathが解消しないまま続くなら真の持続封鎖。復旧手順: git status --porcelain --cached で${agent_name}管轄外のstaged原因ファイルを特定し、意図しないstageなら git restore --staged <path> でunstage。意図した作業中stageなら該当作業のcommit完了を待て(次サイクルで自動解消)。"
+            if bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$msg" infra_anomaly ninja_monitor >> "$LOG" 2>&1; then
+                log "CLEAR-BLOCKED-NOTIFY: $agent_name count=$count window_sec=$CLEAR_BLOCKED_WINDOW_SEC overlap_path=${overlap_path:-unknown}"
+            else
+                log "ERROR: Failed to send CLEAR-BLOCKED-NOTIFY for $agent_name"
+            fi
+        fi
+    fi
+}
+
+# T1: auto_commit_before_clearが成功した時点でカウンタと通知フラグをリセットする。
+_reset_clear_blocked_counter() {
+    local agent_name="$1"
+    unset "CLEAR_BLOCKED_TS[$agent_name]"
+    unset "CLEAR_BLOCKED_NOTIFIED[$agent_name]"
+}
+
 if [ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]; then
     log "ninja_monitor started. Monitoring ${#NINJA_NAMES[@]} ninja."
     log "Poll interval: ${POLL_INTERVAL}s, Confirm wait: ${CONFIRM_WAIT}s"
@@ -887,6 +934,8 @@ declare -A RENUDGE_LAST_SEND      # 最終renudge送信時刻 — key: agent_nam
 declare -A AUTO_DEPLOY_DONE       # auto_deploy_next.sh呼出済みフラグ — key: "ninja:task_id", value: "1"
 declare -A REPORT_GATE_SENT      # 報告フォーマットgate FAIL送信済みフラグ — key: "ninja:cmd_id", value: "1"
 declare -A UNCOMMITTED_BLOCK_SENT # commit未完了BLOCK送信済みフラグ — key: "ninja:cmd_id", value: "1"
+declare -A CLEAR_BLOCKED_TS        # T1: agent別CLEAR-BLOCKED epoch秒リスト(窓内のみ保持) — key: agent_name, value: "epoch1 epoch2 ..."
+declare -A CLEAR_BLOCKED_NOTIFIED  # T2: 窓内しきい値到達→通知済みフラグ(再送抑止) — key: agent_name, value: "1"
 declare -A ACTIVE_IDLE_RECOVERY_SENT # active task+idle時の忍者再通知済みフラグ — key: "ninja:task_id:reason", value: "1"
 
 # cmd_karo_hotfix_completion_event_dedupe_20260723: durable report-gate cache.
@@ -1448,7 +1497,10 @@ safe_send_clear() {
         log "AUTO-COMMIT-BEFORE-CLEAR: $agent_name uncommitted files: $_file_list"
         if ! auto_commit_before_clear "$agent_name" "$_uncommitted"; then
             log "CLEAR-BLOCKED: $agent_name auto-commit skipped because pre-existing staged files require preservation, reason=$reason"
+            _record_clear_blocked_and_maybe_notify "$agent_name"
             return 1
+        else
+            _reset_clear_blocked_counter "$agent_name"
         fi
     fi
 
