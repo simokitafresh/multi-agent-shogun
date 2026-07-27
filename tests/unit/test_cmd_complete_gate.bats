@@ -322,6 +322,61 @@ EOF
     [[ "$output" == *"deploy_sec=240 work_sec=180 finalize_sec=120 e2e_sec=600 missing=none"* ]]
 }
 
+@test "build_clear_throughput_metric uses first successful deploy attempt instead of latest RC deployed_at" {
+    source "$GATE_HELPERS_FILE"
+    export CMD_ID="$TEST_CMD_ID"
+    export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
+    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    mkdir -p "$TEST_PROJECT/queue/tasks" "$TEST_PROJECT/queue/reports" "$TEST_PROJECT/logs"
+    printf 'commands: {}\n' > "$YAML_FILE"
+    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  issued_at: '2026-07-08T09:00:00'
+  deployed_at: '2026-07-08T09:56:00'
+  acknowledged_at: '2026-07-08T09:03:00'
+EOF
+    cat > "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<EOF
+parent_cmd: $TEST_CMD_ID
+status: completed
+timestamp: '2026-07-08T09:58:00'
+EOF
+    cat > "$TEST_PROJECT/logs/deploy_issue_log.yaml" <<EOF
+- attempt_id: "$TEST_CMD_ID:sasuke:first"
+  cmd_id: "$TEST_CMD_ID"
+  ninja: "sasuke"
+  result: "issued"
+  reason: "entry"
+  timestamp: "2026-07-08T09:00:00"
+- attempt_id: "$TEST_CMD_ID:sasuke:first"
+  cmd_id: "$TEST_CMD_ID"
+  ninja: "sasuke"
+  result: "deployed"
+  reason: "exit_0"
+  timestamp: "2026-07-08T09:02:00"
+- attempt_id: "$TEST_CMD_ID:sasuke:retry"
+  cmd_id: "$TEST_CMD_ID"
+  ninja: "sasuke"
+  result: "issued"
+  reason: "entry"
+  timestamp: "2026-07-08T09:55:00"
+- attempt_id: "$TEST_CMD_ID:sasuke:retry"
+  cmd_id: "$TEST_CMD_ID"
+  ninja: "sasuke"
+  result: "deployed"
+  reason: "exit_0"
+  timestamp: "2026-07-08T09:56:00"
+EOF
+
+    run build_clear_throughput_metric "2026-07-08T10:00:00"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"deploy_sec=120"* ]]
+    [[ "$output" == *"work_sec=3300"* ]]
+    [[ "$output" == *"finalize_sec=120"* ]]
+    [[ "$output" == *"e2e_sec=3600"* ]]
+    [[ "$output" == *"missing=none"* ]]
+}
+
 @test "build_clear_throughput_metric preserves reversed timestamp reasons without clamping" {
     source "$GATE_HELPERS_FILE"
     export CMD_ID="$TEST_CMD_ID"
