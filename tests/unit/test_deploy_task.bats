@@ -57,7 +57,7 @@ PY
 }
 
 # test_necessity: LG083(GPT忍者のhook_failures.details文字列形式FAIL頻発)の防御として、
-# GPT系(intensity=max)忍者taskへhook_failures.detailsのmapping5キーの明示指示がextra_scaffold経由で注入される不変量を守る。
+# GPT系(intensity=max)忍者taskへhook_failures.detailsのmapping6キー(review_bundle.pyの実fail-closed契約)の明示指示がextra_scaffold経由で注入される不変量を守る。
 @test "model profile injects hook_failures.details mapping guidance for max intensity" {
     local task="$BATS_TEST_TMPDIR/hook-failures-mapping-task.yaml"
     printf 'task:\n  parent_cmd: cmd_test\n  status: assigned\n' > "$task"
@@ -65,10 +65,12 @@ PY
     [ "$status" -eq 0 ]
     run grep -F 'extra_scaffold:' "$task"
     [ "$status" -eq 0 ]
-    for key in cause independent_verification bypass_record post_verification post_verification_result; do
+    for key in cause independent_verification bypass_record post_verification post_verification_result post_verification_head; do
         run grep -F "$key" "$task"
         [ "$status" -eq 0 ]
     done
+    run grep -F '7-40' "$task"
+    [ "$status" -eq 0 ]
     run grep -F 'LG083' "$task"
     [ "$status" -eq 0 ]
 }
@@ -86,9 +88,10 @@ PY
     [ "$status" -eq 1 ]
 }
 
-# test_necessity: report template(hook_failures block)にmapping5キーの記入例が
-# コメントとして常設され、count>0発生時にGPT忍者以外(非max注入対象)も正しい形式を確認できる不変量を守る。
-@test "report template hook_failures block carries mapping example with 5 keys" {
+# test_necessity: report template(hook_failures block)にmapping6キー(review_bundle.pyの実fail-closed契約。
+# post_verification_head込み)の記入例がコメントとして常設され、count>0発生時にGPT忍者以外(非max注入対象)も
+# 正しい形式を確認できる不変量を守る。
+@test "report template hook_failures block carries mapping example with 6 keys" {
     local task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
     cat > "$task" <<'YAML'
 task:
@@ -106,10 +109,12 @@ YAML
     local report="$TEST_PROJECT/queue/reports/sasuke_report_cmd_hook_failures_template.yaml"
     run grep -F 'hook_failures:' "$report"
     [ "$status" -eq 0 ]
-    for key in cause independent_verification bypass_record post_verification post_verification_result; do
+    for key in cause independent_verification bypass_record post_verification post_verification_result post_verification_head; do
         run grep -F "$key" "$report"
         [ "$status" -eq 0 ]
     done
+    run grep -F '7-40' "$report"
+    [ "$status" -eq 0 ]
     run grep -F 'LG083' "$report"
     [ "$status" -eq 0 ]
 }
