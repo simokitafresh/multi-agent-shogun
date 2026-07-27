@@ -441,7 +441,9 @@ lessons:
   origin: "[[LK075]] -> [[inbox_writeのみ]] -> [[掲示板=永続記録]]"
 - id: LK-A18
   title: revert前に変更元エージェントに通知 + revert後は再計測強制
-  detail: revert前に理由通知(代替案が出る可能性)。revert後はbefore/after再計測必須(SG-PRE14)。
+  detail: |
+    revert前に理由通知(代替案が出る可能性)。revert後はbefore/after再計測必須(SG-PRE14)。
+    吸収(2026-07-27, cmd_reflux_promotion_202607271512_saizo, origin: [[LK-A18]] -> [[Level4実装0件]] -> [[PD-110継続]]): 2026-07-27再検証: gate総候補354件、家老候補2件、LK-A18はL1残存。scripts配下のgit revert実行経路0件、SG-PRE14はWARNのみ、PD-110はpending。既存設計判断を覆す新実装なしのためLevel4昇格せず、PD-110で一元管理を継続する。
   source_ids: [LK062, LK087]
   created_at: '2026-04-24'
   automated: true
