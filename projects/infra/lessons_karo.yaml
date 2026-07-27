@@ -102,10 +102,11 @@ lessons:
     - AC抽出失敗時は手動ナッジで補足(LK008b: AC_VERIFY SKIP検出→grep description task YAML→空なら即ナッジ)
     v3統合吸収(2026-06-09, cmd_3253):
     - deploy_task.sh exit 1でもnudge送信済みの場合あり(LK010: deploy出力に'codex nudge retry'/'delivery verified'があれば手動nudge不要。殿に指摘されるまで毎回重複送信)
+    吸収(2026-07-27, cmd_reflux_promotion_202607272304_kotaro, origin: [[LK-A02]] -> [[旧taskフィールド残存]] -> [[deploy_taskフロー内BLOCKと再注入]]): 一次情報再検証: reset_stale_fields()のSTALE_FIELDSがscope/context/acceptance_criteria等を構造的に除去し、deploy_task_main()は同一task_idかつactive statusの二重配備をtask idleへロールバックしてreturn 1でBLOCKする。related_lessons/ninja_weak_points/role_reminderも毎配備で再注入されるため、LK-A02の主要不変量は人手依存でなくフロー内強制(Level4)へ到達済み。
   source_ids: [LK002, LK008, LK011, LK021, LK023, LK028, LK029, LK045, LK053, LK060, LK061, LK063, LK092, LK005b, LK008b, LK010i]
   created_at: '2026-04-24'
   automated: true
-  enforcement: 'deploy_task.sh STALE_FIELDS全フィールドクリア+重複ガード(GP-042)+Codex config.toml instruction設定'
+  enforcement: "Level4(フロー内BLOCK): scripts/deploy_task.sh reset_stale_fields()がcmd固有フィールド・scope/context・acceptance_criteria・related_lessons等を原子的に除去し、deploy_task_main()が同一task_idのactive二重配備をtask idleへロールバックしてreturn 1で停止。配備後はrelated_lessons/ninja_weak_points/role_reminderを自動再注入する。一次確認2026-07-27。"
 
   v7吸収(2026-05-19):
     - deploy_task.shのSTALE_FIELDSにscope/contextが含まれず、前taskのscope/contextが残存→忍者が前taskのscopeで作業し新cmdのACを未実施(cmd_2875疾風+cmd_2880半蔵で2件連続FAIL)。根因=STALE_FIELDSリストにscope/context未含。偵察cmd要請済み(掲示板blt_20260519_175410)
@@ -116,6 +117,7 @@ lessons:
   when: deploy_task.shで忍者に配備する時。再配備時。修行連続ラウンド配備時
   how: cmd_id引数渡し+全フィールドリセット。★前ラウンドGATE CLEAR確認後に次配備(v9)。Codex忍者にはnudgeにtask YAMLパス付き具体指示。deployment complete確認。scope/context stale注意
   origin: "[[LK061]] -> [[cmd_id引数省略]] -> [[旧タスク実行]]"
+  enforcement_level: 4
 - id: LK-A03
   title: STALL再配備は検証→クリア→再配備の3段階
   detail: |
