@@ -1,4 +1,4 @@
-# 【⚙ 稼働中 — 8/9 CLEAR・#9はAC再設計プラン確定】ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.5 (2026-07-28 18:30 閉幕プラン確定。版履歴は§-3)
+# 【✅ CLOSED — 第二弾完了 9/9】ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v2.0 (2026-07-28 19:30クローズ。版履歴は§-3。P4=第三弾後続解禁のみ殿認可待ち)
 
 ## §-2.5 閉幕プラン(**殿確定裁定** 2026-07-28 18:30・blt_183129 — 提案ではなく確定プラン。実行順序の正本。経緯: 17:34家老推奨4点→将軍全採用→殿が正式確定)
 
@@ -9,7 +9,11 @@
 | P3(P1後) | 第二弾完了宣言 | 9/9クローズ→fixed-SHA全量unitをwave共有で1回だけ実行(殿裁定13:26)→台帳再snapshot→次弾序列(v2.0) | 全量unit FAIL0かつ再snapshotの窓上下限・row_countが固定明記されたか(yes/no) |
 | P4(P3後・殿認可のみ) | 第三弾後続解禁判断 | 閉幕結果とv2.0序列を将軍が殿へ提示し、認可後のみ第三弾#2(cmd_complete_gate=T2帰属)を解禁 | 殿の認可発話があるか(yes/no) |
 
-**実行状況(2026-07-28 18:42時点)**: P1(#9 AC再設計弾)・P2(reflux SSOT修正弾)は**家老の起票・配備待ち**(全忍者task一次確認で両弾未配備、gate台帳17:30以降の新CLEAR行なし)。P3/P4未着手。周辺: reflux消費路は回転中(backlink弾hanzo in_progress・insight還流弾kagemaru assigned)。saizo/kotaro/tobisaruのfailed 3件は根治前の旧backlink弾残骸(pane生存確認済み・整理は家老フロー)
+**実行結果(2026-07-28 19:30クローズ)**:
+- **P1 ✅** boundary弾GATE CLEAR(19:05): 3子区分恒久計装→最大子区分12.8%<40%で支配相なし→no-change CLOSE(二値基準充足: 計測行実記録+最大寄与区分特定=yes)
+- **P2 ✅** reflux backlink SSOT修正弾GATE CLEAR(19:01・才蔵): 自動配備をSSOT編集起点へ修正。backlink 3/3・insight/promotion 2/2・任務帰属305/305 PASS(二値基準充足: 生成物とSSOT両方が契約に含まれる=yes)
+- **P3 ✅** 第二弾閉幕(家老blt_192942): fixed SHA=60a88c241、全量unit共有1回=**2712/2712 PASS・skip0**(receipt=logs/test_receipts/run_tests_20260728T100806_3869311.json)、固定窓再snapshot(02:46:57Z-10:08:06Z、targets 2,536行)=`docs/research/hot-script-speedup-round2-v2-snapshot-20260728.md`(commit 0a681c239)(二値基準充足: FAIL0+窓・row_count固定明記=yes)
+- **P4 ❄** 第三弾後続解禁は**殿認可発話まで凍結維持**(唯一の残件)
 
 ## §-2 第二弾 弾台帳(2026-07-28 16:10時点 — 第一弾§-2完了台帳と同型)
 
@@ -25,7 +29,7 @@
 | 6 | parent_contract_fingerprint | ✅ CLEAR(14:53) | 影丸実装。空fingerprint(direct hotfix)も既存出力同値確認済み | 同一fixture交互実測: 累積-14.9%、median-20.0%。task選択899/899 PASS・SKIP0 |
 | 7 | task.commit_contract | ✅ CLEAR(15:38・no-gain revert) | 初弾の追加12行(49ad9cc0d)に利得なし→revert弾で採用済みbaselineへ完全復元(正直なno-changeクローズ) | Δなし(復元)。所有scope 662/662 PASS・SKIP0 |
 | 8 | commit_hash(再) | ✅ CLEAR(16:00・PASS_NO_IMPROVEMENT) | stop-gate判定: event_idがpid/monotonic/check_idのみでreport/task識別子を持たず、同一報告flow内重複を一次証明できない→契約どおりbatch化せず終了(§3-3「識別子計装が先」の実証) | cohort再現のみ: n=160・累積34.6s・median 190ms(第一弾-66%後の水準維持) |
-| 9 | atomic_replace | ⚠ FAIL確定・処置未決(17:30時点) | 疾風AC1停止のFAIL報告がverdict:FAILのままarchive済み(契約どおりコード変更・commitなし)。乖離内容: 現行atomic_replace event境界はPython parse/validation/serializeを含む一方directory fsyncは実装0件で、AC1「crash durability境界の再現」が現物と乖離し再現不能。次の分岐=家老がAC再設計(実測境界ベース)かno-change CLOSEを判断(GATE CLEAR行は未発生) | (before再現のみ: n=118・累積27.2s・median 180ms。30回FS probe: replace 4.2ms/dir_fsync 0.8ms) |
+| 9 | atomic_replace | ✅ CLEAR(19:05・boundary弾でno-change CLOSE) | 初弾は前提乖離(AC1のcrash durability境界が現物に不在)で正直FAIL→P1どおりAC再設計(boundary弾): atomic publishを3子区分へ恒久計装し実測。30回同一fixtureで最大子区分12.8%<40%(支配相なし)のため最適化なしno-change CLOSE | 選択test 899/899 PASS・affected 662/662 PASS・SKIP0。計装は恒久残置 |
 
 - **殿直命14:50(blt_20260728_145050採択確定)**: 第二弾を主線として最優先継続。#6家老判定後、report_field_set所有弾(#7-9)は**設計書記載順に厳密直列**。throughput計測基盤は別ファイルのみファイル単位分割で並列(複数ファイル一括task禁止)、第三弾は先頭弾のみ空き戦力+別ファイル条件で並列先行可。第二弾focusを崩す独自再解釈禁止
 - **残3弾(#7-9)の直列理由**: 全て同じ`scripts/report_field_set.sh`を所有するためscope lock規則で直列接続(#6 GATE CLEAR後に1弾ずつ配備)。別ファイル弾は即並列、同一ファイル弾は直列。忍者6名の現task一次確認(queue/tasks/*.yaml 14:45)で残3弾の配備なしを確認済み
@@ -33,7 +37,8 @@
 
 ## §-3 版履歴
 
-- v1.5(18:30): 閉幕プラン確定を§-2.5へ追加 — 家老推奨4点(P1 #9 AC再設計/P2 reflux SSOT漏れ修正/P3 fixed-SHA全量→再snapshot→完了宣言/P4 殿認可後のみ第三弾後続解禁)を将軍全採用、各工程に二値基準を付与
+- v2.0(19:30): **第二弾クローズ 9/9** — P1 #9 boundary弾no-change CLOSE(19:05)/P2 SSOT修正CLEAR(19:01)/P3全量unit 2712/2712+固定窓再snapshot(artifact=round2-v2-snapshot, commit 0a681c239)。残件=P4殿認可のみ
+- v1.5.1(18:41)/v1.5(18:30): 閉幕プラン確定を§-2.5へ追加 — 家老推奨4点(P1 #9 AC再設計/P2 reflux SSOT漏れ修正/P3 fixed-SHA全量→再snapshot→完了宣言/P4 殿認可後のみ第三弾後続解禁)を将軍全採用、各工程に二値基準を付与
 - v1.4.1(17:33): #9 FAIL確定(verdict:FAIL報告archive済み・コード変更なし)を反映。処置(AC再設計 or no-change CLOSE)は家老判断待ち。他8弾・throughput・第三弾は16:10版から実態変化なし
 - v1.4(16:10): 覚醒更新 — #6 CLEAR(14:53)/#7 no-gain revertでCLEAR(15:38)/#8 PASS_NO_IMPROVEMENTでCLEAR(16:00)/#9 FAIL停止(durability境界の前提乖離・家老処理中)。8/9 CLEAR
 - v1.3(14:50): 第一弾様式へ再構築(§-2を弾台帳表化・版履歴を本節へ分離)。v1.2.7(14:45)/v1.2.6(14:26)=実施状況同期。v1.2.5=殿裁定13:26テスト原則反映。v1.2.4=殿裁定12:45第二弾優先で即時実行。B2/B3計装は殿裁定12:43(startup聖域)で恒久除外。v1.1=家老レビュー2全採用。v1.0=初版序列(refresh誤分類を含み§-0で訂正)
