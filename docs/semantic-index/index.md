@@ -6325,6 +6325,7 @@ codd:
 | cmd | `cmd_karo_hotfix_rebalancer_market_phase_refresh_20260729` |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T19:11:34.298456+00:00 git pre-commit semantic propagation for context/projects changes |
 | cmd | `cmd_karo_ci_fix_rebalancer_30389459014_frontend_audit` |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-28T20:19:37.731019+00:00 git pre-commit semantic propagation for context/projects changes |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -8458,6 +8459,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607290115_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607290337_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607290411_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607290511_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
