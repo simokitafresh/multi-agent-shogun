@@ -27,7 +27,7 @@
 
 **母集団の定義**: 第一弾の是正が全て入った後の発火のみ(全期間・是正前混入は序列を歪めるため無効 — 第一弾v2.1家老指摘④と同じ規律)。参考としてcohortB(本日全量)も併記するが、**序列はcohortAのみで引く**。
 
-集計コマンド(v1.2.1で具体値固定): python3でdefense_overhead.jsonlをtimestamp下限**2026-07-27T23:36:00Z**・上限**2026-07-28T01:51:00Z**(将軍D0実測10:51 JSTの実行時刻)に限定し、§1境界表準拠pairのwall_msをn/sum/median/p95/max算出。本表のrow_countは表中のn列合計+除外3行分が対象全量(次回再snapshotでは新しい下限=第一弾最終CLEAR 11:46:57Z相当・上限・row_countを同様に固定して引き直す)。
+集計コマンド(v1.2.2でrow_count具体整数化): python3でdefense_overhead.jsonlをtimestamp下限**2026-07-27T23:36:00Z**・上限**2026-07-28T01:51:00Z**(将軍D0実測10:51 JSTの実行時刻)に限定し、§1境界表準拠pairのwall_msをn/sum/median/p95/max算出。**固定上下限内の対象event row_count=2,835行**(内訳: 序列対象2,586+除外 refresh_copy=123 / refresh_verify=122 / deploy_total=4。将軍D0再集計2026-07-28 12:15)。次回再snapshotでは新しい下限=第一弾最終CLEAR 11:46:57相当・上限・row_countを同様に固定して引き直す。
 
 | # | source:check_id | 累積(cohortA) | n | median | p95 | max | 型 |
 |---|---|---:|---:|---:|---:|---:|---|
