@@ -8399,6 +8399,7 @@ codd:
 | file | `docs/research/ci-test-elimination-design-20260719.md` |
 | causal | `docs/research/cmd_4106_cache_flock_experiment_kotaro.md` — [[wave_cache_flock_contention]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/cmd_4106_yaml_mutation_experiment_saizo.md` — [[yaml_safe_write]] -> [[semantic_causal_automation]] |
+| causal | `docs/research/cmd_karo_recon_axis_b_color_20260722.md` — [[semantic_causal_automation]] -> [[cmd_karo_recon_axis_b_color_20260722]] |
 | cmd | `cmd_2885` cmd因果辺をsemantic-mapへ自動還流 |
 | cmd | `cmd_2860` origin因果辺→辞書自動注入 |
 | cmd | `cmd_2818` 因果NW導入 |
