@@ -1,4 +1,4 @@
-# 【📐設計のみ — v4.0 snapshot序列準拠・実装凍結・家老レビュー待ち】ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.1 (2026-07-29 03:40 家老snapshot草案へ統一。版履歴は§-3)
+# 【📐設計のみ — 家老RC反映済み・レーン数の殿裁定待ち・実装凍結】ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.2 (2026-07-29 03:47 家老RC6点反映。版履歴は§-3)
 
 > 第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`(✅CLOSED 12/12)、第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(✅CLOSED 9/9)、第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`(✅CLOSED 2/2)、第四弾=`hot-script-speedup-round4-asis-tobe-5w1h_20260728.md`(✅CLOSED 5/5・checkpoint 3巡目CLEAR 2,745/2,745・CI run 30385588247 success)。本書は殿下知(2026-07-29 03:30)「第五弾の設計書を作成せよ。第一弾〜と同じスタイルで。**10レーン分**組み込もう」に基づき、序列SSOT=**v4.0 fixed-window snapshot**(`hot-script-speedup-round5-v4-snapshot-20260729.md`、家老作成・固定窓2026-07-28T11:25:10Z..18:24:39.872864Z inclusive・8,237行・raw SHA-256=db3fed9cc…)から10標的を引く。殿方針(10:49)「前弾でやったものも依然ボトルネックなら再度トライする」を継承。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
@@ -11,7 +11,7 @@
 | 3 | publish_total(再々) | `scripts/report_field_set.sh` | ❄ | 第四弾#3是正(lock FD分離)後の残存。恒常部p50 320msと外れ値尾max 12.5sを分離し、現行枝で改善余地判定 | 累積110.2s/n=261/p50 320ms/p95 600ms/max 12,520ms |
 | 4 | yaml_ast | `scripts/hooks/git-pre-commit.sh` | ❄ | p50=1msに対しp95 6.5s/max 13.9s=典型的外れ値型。発火条件(大型YAML・対象数)の同event記録→3点表→条件ベース是正 | 累積98.8s/n=66/p50 1ms/p95 6,460ms/max 13,907ms |
 | 5 | commit_hash(再) | `scripts/report_field_set.sh`(#3後に直列) | ❄ | 第四弾#5で識別子計装済み・実flow重複0。AC1=計装後cohortの全数で重複再判定→重複なし継続ならno-change CLOSE、恒常部245ms×n324の内訳是正余地のみ確認 | 累積84.3s/n=324/p50 245ms/p95 490ms/max 1,110ms |
-| 6 | files_modified | `scripts/report_field_set.sh`(#5後に直列) | ❄ | p50 520ms×全報告。子区分計測→最大寄与是正 | 累積29.2s/n=54/p50 520ms/p95 1,040ms/max 1,560ms |
+| 6 | files_modified | `scripts/report_field_set.sh`(#5後に直列) | ❄ | p50 520ms×現cohort 54呼出(全報告ではない=家老RC5)。子区分計測→最大寄与是正 | 累積29.2s/n=54/p50 520ms/p95 1,040ms/max 1,560ms |
 | 7 | sourced_dep | `scripts/hooks/git-pre-commit.sh`(#4後に直列) | ❄ | p50=2msに対しp95 2.0s=外れ値型。依存走査の発火条件特定→条件ベース是正 | 累積20.9s/n=66/p50 2ms/p95 1,973ms/max 4,161ms |
 | 8 | task.commit_contract | `scripts/report_field_set.sh`(#6後に直列) | ❄ | 第二弾#7でno-gain revert済みの標的。AC1=現行枝再計測→改善余地なしなら正直no-change(前例=第二弾の型) | 累積17.9s/n=59/p50 250ms/p95 650ms/max 1,050ms |
 | 9 | checks_main(再々々) | `scripts/cmd_save.sh` | ❄ | 第四弾#4 no-change後の継続。子quality_gateが最大(5.3s/15.9s)。v4.0でも序列内に残存ゆえ最小是正を試行、無理なら正直no-change | 累積15.9s/n=14/p50 1,095ms/p95 2,233ms/max 2,233ms |
@@ -19,6 +19,7 @@
 
 ## §-3 版履歴
 
+- v1.2(03:47): 家老忖度なしレビュー(blt_034442)6点反映 — (BLOCK2)snapshot正本をcommit 1fd89bb84で永続化し本書から参照(凍結条件(i)の前提充足) (RC3)履歴軸を訂正: **再挑戦8弾**(#1,#2,#3,#4=第一弾由来,#5,#6=第一弾由来,#8=第二弾由来,#9)+**新規2弾**(#7,#10)。型軸(恒常/外れ値)とは別軸として管理 (RC4)WHY算術訂正: 同時稼働は最大5名・在庫10弾で全idle忍者を順次吸収 (RC5)#6の母集団表現を「現cohort 54呼出」へ訂正 (RC6)cohort分離ACの必須要素を明文化(exact lower/upper・row_count・hash・採用commit — 忍者裁量へ落とさない)。(BLOCK1)「10レーン」の解釈=**殿裁定待ち**(§3 ledger筆頭)
 - v1.1(03:40): **家老v4.0 snapshot草案(blt_033325)へ全面統一** — 将軍v1.0の誤り3点を是正: (一)窓上限を殿下知どおりcheckpoint receipt確定時刻18:24:39.872864Z inclusiveへ統一(8,237行/raw SHA db3fed9cc…、将軍暫定窓との37行差解消) (二)three_layer_health:refresh_windowは**begin=0/end=窓長の混在marker=集計禁止**、refresh_copy/verifyはbackground保守lane非加算 — v1.0のレーン1案(14,611s)は誤読ゆえ撤回 (三)affected_tests=テスト実行本体込み・queue_wait=別母集団・deploy_total=deployレーン帰属・singleflight_hold=保持時間、の非加算分類を採用。10標的=5 writer(inbox_write/gate_gunshi/report_field_set×4/git-pre-commit×3/cmd_save)構成へ再編
 - v1.0(03:35): 初版起草(殿下知03:30=10レーン)。序列=将軍D0暫定窓 — v1.1で家老正本へ差替え
 
@@ -35,13 +36,14 @@
 | `scripts/cmd_save.sh` | checks_main(再々々) | 1 |
 
 - **完了条件(第一弾と同型)**: 恒常課税型=既存台帳`logs/defense_overhead.jsonl`同条件before/afterのΔ累積・Δmedian実測 / 外れ値尾=発生条件特定(3点表)→条件ベース是正 / いずれも品質2原則(挙動不変の正本突合+境界fixture)+選択テストFAIL0・SKIP0。**個別弾への全量unit要求は禁止、全量は10弾全クローズ後のfixed-SHA checkpointでwave共有一回**(殿裁定13:26)
-- **再挑戦標的のAC1共通要件(v4.0 snapshot入力条項)**: 窓内はbefore/after混在ゆえ、**現行commitの枝別beforeを識別子/時刻で分離してから**是正判断する。改善余地なしなら正直no-change CLOSE(v4.0の混合窓を鵜呑みにしない)
+- **再挑戦標的のAC1共通要件(v4.0 snapshot入力条項+家老RC6)**: 窓内はbefore/after混在ゆえ、現行commitの枝別beforeを分離してから是正判断する。**cohort分離の宣言必須要素(忍者裁量へ落とさない)**: 各標的ごとに(a)exact lower/upper境界(inclusive/exclusive明示) (b)row_count (c)cohort行のhash (d)採用commit hash — の4点を報告へ生貼付。改善余地なしなら正直no-change CLOSE(v4.0の混合窓を鵜呑みにしない)
+- **履歴軸(家老RC3)**: 再挑戦8弾=#1(四),#2(四),#3(四),#4(一),#5(四),#6(一),#8(二),#9(四) / 新規2弾=#7,#10。履歴軸と型軸(恒常課税/外れ値)は別軸として管理し混同しない
 - **第五弾完了宣言=10弾全クローズ→fixed-SHA全量unit共有1回→固定窓台帳再snapshot→次弾序列**(第四弾閉幕の型を踏襲)
 - **スコープ外(途中追加は理由を問わず禁止)**: startup gate 3本(殿裁定12:43聖域)・three_layer_health系(background保守lane・mixed marker=集計禁止)・affected_tests(テスト実行本体込み)・heavy_job execution/queue_wait(別母集団)・deploy_total(既存deployレーン帰属)・singleflight_hold(保持時間・別母集団)・part2所有標的(P1a/P1b/finalize間隙/例外弾残差)・検査/送達保証/レビューの削除(品質底線)
 
 ## §0 結論 — 純オーバーヘッド標的序列【確定 — v4.0 snapshot正本】
 
-序列SSOT=`docs/research/hot-script-speedup-round5-v4-snapshot-20260729.md`(source HEAD f8831da8e、固定窓2026-07-28T11:25:10Z..18:24:39.872864Z inclusive、全8,237行、raw SHA-256=db3fed9cc21495fb6d2a1f4584481c8c75b636af3a57dbc80e9218d443c8c9ed、v3.0窓との同一コード再計算5/5一致検証済み)。本書は序列の消費側であり再集計しない。非加算・別母集団の分類(three_layer/affected_tests/heavy_job/deploy_total/singleflight_hold)も同snapshotが正本。
+序列SSOT=`docs/research/hot-script-speedup-round5-v4-snapshot-20260729.md`(**永続化commit 1fd89bb84**、source HEAD f8831da8e、固定窓2026-07-28T11:25:10Z..18:24:39.872864Z inclusive、全8,237行、raw SHA-256=db3fed9cc21495fb6d2a1f4584481c8c75b636af3a57dbc80e9218d443c8c9ed、v3.0窓との同一コード再計算5/5一致検証済み)。本書は序列の消費側であり再集計しない。非加算・別母集団の分類(three_layer/affected_tests/heavy_job/deploy_total/singleflight_hold)も同snapshotが正本。
 
 | # | source:check_id | 累積 | n | p50 | p95 | max | 型 | 扱い |
 |---|---|---:|---:|---:|---:|---:|---|---|
@@ -76,7 +78,8 @@
 
 | 項 | 状態 |
 |---|---|
-| 10標的・5 writer構成 | 決定済み(殿裁定03:30=10レーン+家老snapshot writer衝突表。途中追加しない) |
+| **「10レーン」の解釈(家老BLOCK1)** | **殿裁定待ち**: 殿原文「10レーン分組み込もう」に対し本書は10標的=10弾・5 writer=最大5並列で設計した。既存SSOT(第二弾§2)は「最大並列数=対象script数(1file=1lane)」でありレーン=writerが定義。将軍推薦=**現行の10弾5レーン構成を採用**(WHY: v4.0序列の上位10標的は5 writerに集中しており、10 distinct writerへ広げると累積十数秒級の微小標的を動員し標的の質が落ちる。在庫10弾は全idle忍者を順次吸収できる)。10同時並列が殿の意図なら、非加算に分類した別母集団(three_layer保守lane/queue_wait/deploy外れ値=part2 P4)の解禁とセットで再設計する |
+| 10標的・5 writer構成 | 上記裁定待ち(殿裁定03:30=10レーン+家老snapshot writer衝突表。途中追加しない) |
 | 序列 | **確定**(v4.0 snapshot正本。将軍D0暫定窓との37行差は窓上限定義の統一で解消) |
 | 窓上限定義 | 決定済み=checkpoint receipt確定時刻18:24:39.872864Z inclusive(家老採用・殿下知準拠) |
 | three_layer_health等の除外 | 決定済み=v4.0 snapshot非加算表(mixed marker/実行本体込み/別母集団/deployレーン帰属) |
@@ -87,7 +90,7 @@
 
 ## §4 5W1H
 
-- **WHY**: 第四弾クローズ後もv4.0固定窓に純オーバーヘッド上位10標的が残存(inbox_write 968s/full_precheck 507s/publish 110s他)。台帳再集計→新序列→次弾の反復が自動成長の回転そのもの。10標的はidle忍者6名を5レーンで飽和させる在庫量(殿裁定03:30)
+- **WHY**: 第四弾クローズ後もv4.0固定窓に純オーバーヘッド上位10標的が残存(inbox_write 968s/full_precheck 507s/publish 110s他)。台帳再集計→新序列→次弾の反復が自動成長の回転そのもの。同時稼働は最大5名(5レーン)だが在庫10弾が空き忍者を順次吸収する(家老RC4の算術訂正済み) |
 - **WHAT**: 10標的=10弾・5 writerの覚醒高速化(設計のみ、実装凍結中)。再挑戦5弾=現行枝cohort分離先行、外れ値型4弾=発火条件特定先行、計装済み1弾=重複再判定
 - **WHEN**: v4.0 snapshot正式確定→家老レビュー→殿裁可→起票解禁
 - **WHERE**: §-1の5 writer+台帳=defense_overhead.jsonl
