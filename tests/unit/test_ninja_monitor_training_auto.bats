@@ -566,7 +566,7 @@ trap "rm -r \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/context" "$STATE_DIR"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/context" "$SCRIPT_DIR/docs/semantic-index" "$STATE_DIR"
 
 cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
 task:
@@ -579,9 +579,9 @@ insights:
   status: resolved
 YAML
 
-# 外部索引source(通常候補)を実在させる: target_pathはこちらへ変更され、
-# ゼロ対象自身(docs/research/orphan.md)は変更対象にしない(自己参照除外の回避)
+# SSOTと正規生成物を実在させる。編集起点はSSOT、commit scopeは両方とする。
 : > "$SCRIPT_DIR/context/semantic-map.md"
+: > "$SCRIPT_DIR/docs/semantic-index/index.md"
 
 cat > "$SCRIPT_DIR/scripts/causal_backlink_counts.sh" <<SH
 #!/usr/bin/env bash
@@ -613,7 +613,17 @@ REFLUX_BACKLINK_TIMEOUT=5
 _handle_reflux_auto_deploy hayate 100
 
 grep -q "DEPLOY_CALLED:--direct --yaml" "$TMP_ROOT/deploy.log"
-grep -q "target_path: context/semantic-map.md" "$TMP_ROOT/deployed.yaml"
+grep -q "target_path: docs/semantic-index/index.md" "$TMP_ROOT/deployed.yaml"
+python3 - "$TMP_ROOT/deployed.yaml" <<PY
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1]))["task"]
+assert task["planned_paths"] == [
+    "docs/semantic-index/index.md",
+    "context/semantic-map.md",
+]
+assert "SSOT docs/semantic-index/index.md" in task["purpose"]
+assert "semantic_map_generate.sh" in task["acceptance_criteria"][0]["checks"][0]["check"]
+PY
 grep -q "inspection_path: .\[\"docs/research/orphan.md\"\]." "$TMP_ROOT/deployed.yaml"
 ! grep -q "target_path: docs/research/orphan.md" "$TMP_ROOT/deployed.yaml"
 grep -q "REFLUX-AUTO-INVENTORY-BEFORE: hayate insights_pending=0 zero_backlinks=1 promotions=0 total=1" "$TMP_ROOT/test.log"
@@ -683,7 +693,7 @@ REFLUX_BACKLINK_TIMEOUT=5
 _handle_reflux_auto_deploy hayate 100 && exit 1
 
 [ ! -f "$TMP_ROOT/deploy.log" ]
-grep -q "REFLUX-AUTO-BLOCK: hayate backlink external source undetermined for docs/research/orphan.md" "$TMP_ROOT/test.log"
+grep -q "REFLUX-AUTO-BLOCK: hayate backlink SSOT/regenerated output pair unavailable for docs/research/orphan.md" "$TMP_ROOT/test.log"
 echo "REFLUX_BACKLINK_BLOCK_OK"
 '
     [ "$status" -eq 0 ]
@@ -754,6 +764,14 @@ _handle_reflux_auto_deploy hayate 100
 
 grep -q "DEPLOY_CALLED:--direct --yaml" "$TMP_ROOT/deploy.log"
 grep -q "target_path: docs/semantic-index/index.md" "$TMP_ROOT/deployed.yaml"
+python3 - "$TMP_ROOT/deployed.yaml" <<PY
+import sys, yaml
+task = yaml.safe_load(open(sys.argv[1]))["task"]
+assert task["planned_paths"] == [
+    "docs/semantic-index/index.md",
+    "context/semantic-map.md",
+]
+PY
 grep -q "inspection_path: .\[\"context/semantic-map.md\"\]." "$TMP_ROOT/deployed.yaml"
 ! grep -q "target_path: context/semantic-map.md" "$TMP_ROOT/deployed.yaml"
 echo "REFLUX_BACKLINK_SELFREF_FALLBACK_OK"
@@ -861,10 +879,11 @@ REFLUX_IDLE_FIRST_SEEN[hayate]=0
 _handle_reflux_auto_deploy hayate 300
 grep -q "target_path: queue/insights.yaml" "$TMP_ROOT/deployed.yaml"
 
-# Backlink reflux also remains eligible. target_path is the external index
-# source (not the zero target itself); zero target flows through inspection_path.
-mkdir -p "$SCRIPT_DIR/context"
+# Backlink reflux also remains eligible. target_path is the semantic SSOT and
+# the regenerated map shares commit scope; zero target flows through inspection_path.
+mkdir -p "$SCRIPT_DIR/context" "$SCRIPT_DIR/docs/semantic-index"
 : > "$SCRIPT_DIR/context/semantic-map.md"
+: > "$SCRIPT_DIR/docs/semantic-index/index.md"
 _reflux_inventory_snapshot() { printf "0\t1\t9\t10\t-\tdocs/research/orphan.md\t[infra] L999 (L2)\tok\tok\n"; }
 _reflux_select_kind() {
     [ "$1" -eq 0 ] && [ "$3" -eq 1 ] && [ "$5" -eq 0 ]
@@ -872,7 +891,8 @@ _reflux_select_kind() {
 }
 REFLUX_IDLE_FIRST_SEEN[hayate]=0
 _handle_reflux_auto_deploy hayate 400
-grep -q "target_path: context/semantic-map.md" "$TMP_ROOT/deployed.yaml"
+grep -q "target_path: docs/semantic-index/index.md" "$TMP_ROOT/deployed.yaml"
+grep -q "planned_paths:" "$TMP_ROOT/deployed.yaml"
 grep -q "inspection_path: .\[\"docs/research/orphan.md\"\]." "$TMP_ROOT/deployed.yaml"
 echo "REFLUX_PROMOTION_DEPLOY_OK"
 '

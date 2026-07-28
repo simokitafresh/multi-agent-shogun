@@ -4791,7 +4791,7 @@ _handle_reflux_auto_deploy() {
     local insight_before backlink_before promotion_before total_before first_insight first_backlink first_promotion backlink_status promotion_status
     local insight_after backlink_after promotion_after total_after _after_insight _after_backlink _after_promotion _after_backlink_status _after_promotion_status
     local kind target_path cmd_id deploy_script tmp_task purpose ac1 ac2 ac1_yaml ac2_yaml
-    local external_source inspection_path_line=""
+    local external_source inspection_path_line="" planned_paths_line=""
     local promotion_reserved=false active_owner
 
     [ -n "$name" ] || return 1
@@ -4884,15 +4884,17 @@ _handle_reflux_auto_deploy() {
         ac1="対象insight ${first_insight} を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する"
         ;;
       backlink)
-        if ! external_source=$(_reflux_backlink_external_source "$first_backlink"); then
+        if [ ! -f "$SCRIPT_DIR/docs/semantic-index/index.md" ] ||
+           [ ! -f "$SCRIPT_DIR/context/semantic-map.md" ]; then
             unset "REFLUX_IDLE_FIRST_SEEN[$name]"
-            log "REFLUX-AUTO-BLOCK: $name backlink external source undetermined for ${first_backlink} — no deploy"
+            log "REFLUX-AUTO-BLOCK: $name backlink SSOT/regenerated output pair unavailable for ${first_backlink} — no deploy"
             return 1
         fi
-        target_path="$external_source"
+        target_path="docs/semantic-index/index.md"
+        planned_paths_line=$'  planned_paths:\n    - docs/semantic-index/index.md\n    - context/semantic-map.md'
         inspection_path_line="  inspection_path: '[\"${first_backlink}\"]'"
-        purpose="還流在庫自動消化: backlinksゼロ文書 ${first_backlink} への因果リンクを外部索引 ${external_source} へ追加し、incoming参照0の孤立を解消する(${first_backlink} 自身の編集はcausal_backlink_counts.shがself-referenceとして除外しincomingへ計上されないため対象外)"
-        ac1="外部索引 ${external_source} に対象文書 ${first_backlink} への因果リンク([[リンク]]またはpath参照)を追加し、causal_backlink_counts.shで ${first_backlink} のincomingが0から1以上に増加することを確認する(${first_backlink} 自身は変更しない)"
+        purpose="還流在庫自動消化: backlinksゼロ文書 ${first_backlink} への因果リンクをSSOT docs/semantic-index/index.mdへ追加し、semantic_map_generate.shでcontext/semantic-map.mdを正規再生成してincoming参照0の孤立を解消する(${first_backlink} 自身は変更しない)"
+        ac1="SSOT docs/semantic-index/index.mdに対象文書 ${first_backlink} への因果リンク([[リンク]]またはpath参照)を追加し、semantic_map_generate.shでcontext/semantic-map.mdを正規再生成後、causal_backlink_counts.shで ${first_backlink} のincomingが0から1以上に増加することを確認する(${first_backlink} 自身は変更しない)"
         ;;
       promotion)
         # The inventory head can become reserved after the snapshot. Walk the
@@ -4950,6 +4952,7 @@ task:
   task_type: exact
   project: infra
   target_path: ${target_path}
+${planned_paths_line}
 ${inspection_path_line}
   scout_exempt: true
   estimated_minutes: 5
