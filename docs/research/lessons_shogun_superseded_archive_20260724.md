@@ -474,3 +474,6 @@ Level1→部分的にLevel4検出済み(2026-07-27 疾風が一次確認・実�
 
 ## §LS098-enforcement全文 (2026-07-27移設)
 Level5実装済(2026-07-26 飛猿が一次確認): 正典経路 scripts/cdp/cdp_measure.sh:134 → auto-ops cdp/cdp_helper.py:718 preflight_cdp_flow が (1)稼働中CDPポート自動探索 _find_available_cdp_port (2)Chrome⇔Edge交互試行 (3)launch_browser (auto-ops cdp/cdp_helper.py:245-284) 内の _has_powershell() 分岐で powershell 不在時は subprocess.Popen による exe 直接起動へ自動fallback、かつ --user-data-dir=C:\Windows\Temp\cdp-{browser}-{port} を常に付与(D009の隔離プロファイル要件を構造的に充足)。∴powershell失敗=CDP不可能という誤結論に至る余地が正典経路には無い。残存ギャップ(L1のまま): 本repo同梱の scripts/cdp/cdp_helper.py:127-166 launch_browser は powershell 単経路で fallback も --user-data-dir も無く、scripts/note_draft.sh:238 が独自の cmd.exe fallback を再実装している。両者の正典経路への統合は decision_candidate へ整理(cmd_reflux_promotion_202607261446_tobisaru)
+
+## §LS112 detail全文 (2026-07-28移設)
+cmd_4175/4176で3回BLOCK。原因=environment_change値をシングルクォートで書くとcmd_save.sh:3656のawk抽出がダブルクォートしか剥がさず値頭に'が残りparse失敗で『非構造化』誤判定。修正=ダブルクォートまたは無引用符で書く。加えてestimated_minutes>15はexecution_env(long_runtime_reason+measured_runtime_sec)必須、連続起票は前cmdをdelegateしてから次をsaveする直列制約あり。※Level4昇格済(2026-07-27): awk抽出を["\x27]?に拡張し3形式全て同一にparse(kagemaru検証)のため、本則は歴史的経緯として保存。

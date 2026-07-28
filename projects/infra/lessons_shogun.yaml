@@ -392,7 +392,7 @@ lessons:
 - id: 'LS112'
   title: 'environment_changeはシングルクォート禁止'
   origin: '[[cmd_4175]]'
-  detail: 'cmd_4175/4176で3回BLOCK。原因=environment_change値をシングルクォートで書くとcmd_save.sh:3656のawk抽出がダブルクォートしか剥がさず値頭に''が残りparse失敗で『非構造化』誤判定。修正=ダブルクォートまたは無引用符で書く。加えてestimated_minutes>15はexecution_env(long_runtime_reason+measured_runtime_sec)必須、連続起票は前cmdをdelegateしてから次をsaveする直列制約あり'
+  detail: 'environment_changeはダブルクォートか無引用符で書く(Level4根治済につき歴史則)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS112'
   source_cmd: 'cmd_4175'
   created_at: '2026-07-27'
   automated: true
