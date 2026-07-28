@@ -9,8 +9,13 @@ setup() {
   # TMPROOT fixtures below (for example, RUN_TESTS_BATS_BIN bypasses TMPROOT/bin
   # and an inherited BATS_CACHE can silently turn an expected execution into a
   # cache hit).  Reset the complete parent-owned boundary once for every test.
-  unset RUN_TESTS_ACTIVE
-  unset RUN_TESTS_BATS_BIN BATS_TAP_OUTPUT RUN_TESTS_SELECTED_PATHS_FILE
+  # RUN_TESTS_* is the parent runner's transport namespace.  Clear the prefix
+  # instead of maintaining a partial list that goes stale whenever the runner
+  # gains another exported manifest, receipt, or single-flight variable.
+  while IFS= read -r run_tests_parent_var; do
+    unset "$run_tests_parent_var"
+  done < <(compgen -A variable RUN_TESTS_)
+  unset BATS_TAP_OUTPUT
   unset BATS_CACHE BATS_CACHE_DIR BATS_SOURCE_FINGERPRINT
   unset TEST_TIMING_LEDGER TEST_SUITE_TIMING_LEDGER
   ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
