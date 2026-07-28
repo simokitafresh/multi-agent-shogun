@@ -894,7 +894,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1423 -->
+<!-- last_synced_lesson: L1424 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2031,6 +2031,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1421: fixtureの親transport境界はprefix単位で初期化する（cmd_karo_hotfix_run_tests_parent_env_isolation_20260728）
 - L1422: 『staged path一致=生成物が変わる』と混同するな。生成の実入力サブ範囲を確認せよ（cmd_karo_hotfix_hot_script_instruction_sync_20260728）
 - L1423: GATE CLEAR通知dedupはlive inbox限定だと恒久flagへ移行してもrollback漏れ・migration競合の2段の穴が残る（cmd_karo_hotfix_gate_clear_notify_dedup_20260728）
+- L1424: 速度計測は運用競合窓と同一fixture交互A/Bを分離する（cmd_karo_hotfix_round2_parent_ac_coverage_20260728）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
