@@ -1399,6 +1399,7 @@ HOOK
     mkdir -p "$repo/.git/hooks"
     cat > "$repo/.git/hooks/pre-commit" <<'HOOK'
 #!/usr/bin/env bash
+printf 'run\n' >> .git/pre-commit-runs
 sleep 1
 HOOK
     cat > "$repo/.git/hooks/post-commit" <<'HOOK'
@@ -1432,6 +1433,7 @@ HOOK
 
     [ "$status_a" -eq 0 ]
     [ "$status_b" -eq 0 ]
+    [ "$(wc -l < "$repo/.git/pre-commit-runs")" -eq 1 ]
     [ "$(git -C "$repo" rev-list --count "$base_head..HEAD")" -eq 1 ]
     [ -n "$(git -C "$repo" diff-tree --no-commit-id --name-only -r HEAD)" ]
     [ "$(git -C "$repo" log --format= --name-only "$base_head..HEAD" | sed '/^$/d' | sort -u)" = owned.txt ]

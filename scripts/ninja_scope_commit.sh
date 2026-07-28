@@ -186,6 +186,14 @@ acquire_transaction_lock_and_rebase_index() {
     done
 }
 
+release_transaction_lock() {
+    if [[ "$transaction_lock_held" == true ]]; then
+        flock -u "$commit_lock_fd" \
+            || { echo "BLOCK: cannot release ninja scope commit lock" >&2; return 2; }
+        transaction_lock_held=false
+    fi
+}
+
 assert_head_generation() {
     local current_head
     current_head="$(git rev-parse HEAD)"
@@ -778,7 +786,25 @@ if [[ -f "$singleflight_receipt" ]]; then
     exit 2
 fi
 
+# Serialize only callers that own the exact same normalized path set.  The
+# repository transaction lock remains short, so different scopes can still run
+# expensive pre-commit checks concurrently.  A follower that had to wait may
+# find that the owner already published the identical worktree bytes; that is
+# an idempotent success, not a fresh no-change invocation.
+scope_lock_material="$(printf '%s\n' "${paths[@]}")"
+scope_lock_key="$(printf '%s' "$scope_lock_material" | sha256sum | awk '{print $1}')"
+scope_lock_path="$(lock_path "$git_common_dir/ninja-scope-owned-$scope_lock_key")"
+exec {scope_lock_fd}>"$scope_lock_path" \
+    || { echo "BLOCK: cannot open ninja owned-scope lock" >&2; exit 2; }
+scope_lock_waited=false
+if ! flock -n "$scope_lock_fd"; then
+    scope_lock_waited=true
+    flock -w 120 "$scope_lock_fd" \
+        || { echo "BLOCK: cannot acquire ninja owned-scope lock" >&2; exit 2; }
+fi
+
 if [[ -z "$patch_file" && "$repair_index" == false ]]; then
+    scope_has_changes=false
     for scope_path in "${paths[@]}"; do
         scope_is_tracked_deletion=false
         if [[ ! -e "$scope_path" && ! -L "$scope_path" ]] &&
@@ -788,9 +814,20 @@ if [[ -z "$patch_file" && "$repair_index" == false ]]; then
         fi
         [[ -e "$scope_path" || -L "$scope_path" || "$scope_is_tracked_deletion" == true ]] \
             || { echo "BLOCK: scope path does not exist: $scope_path" >&2; exit 2; }
-        [[ -n "$(git status --porcelain --ignored -- "$scope_path")" ]] \
-            || { echo "BLOCK: scope path has no changes: $scope_path" >&2; exit 2; }
+        if [[ -n "$(git status --porcelain --ignored -- "$scope_path")" ]]; then
+            scope_has_changes=true
+        fi
     done
+    if [[ "$scope_has_changes" == false ]]; then
+        if [[ "$scope_lock_waited" == true ]]; then
+            published_commit_hash="$(git rev-parse HEAD)"
+            publish_terminal_success "$published_commit_hash"
+            trap - EXIT
+            exit 0
+        fi
+        echo "BLOCK: scope paths have no changes" >&2
+        exit 2
+    fi
 fi
 
 # Repair the proven residual state where worktree bytes already equal HEAD but
@@ -924,6 +961,21 @@ PY
     # explicit zero/near-zero phase so both modes publish one identical schema.
     finish_phase 0
     begin_phase git_commit
+    acquire_transaction_lock_and_rebase_index
+    assert_head_generation
+    if git diff --cached --quiet "$transaction_head" -- "${paths[@]}"; then
+        finish_phase 0
+        begin_phase advance_shared_index
+        unset GIT_INDEX_FILE
+        finish_phase 0
+        begin_phase post_check
+        cleanup_patch_index
+        trap - EXIT
+        publish_terminal_success "$transaction_head"
+        trap - EXIT
+        exit 0
+    fi
+    release_transaction_lock
     run_scoped_precommit
     acquire_transaction_lock_and_rebase_index
     assert_head_generation
@@ -1109,6 +1161,21 @@ if [[ -f "$NINJA_SCOPE_COMMIT_SCRIPT_DIR/dm_signal_research_reflux_guard.sh" ]];
 fi
 finish_phase 0
 begin_phase git_commit
+acquire_transaction_lock_and_rebase_index
+assert_head_generation
+if git diff --cached --quiet "$transaction_head" -- "${paths[@]}"; then
+    finish_phase 0
+    begin_phase advance_shared_index
+    unset GIT_INDEX_FILE
+    finish_phase 0
+    begin_phase post_check
+    cleanup_normal_index
+    trap - EXIT
+    publish_terminal_success "$transaction_head"
+    trap - EXIT
+    exit 0
+fi
+release_transaction_lock
 run_scoped_precommit
 acquire_transaction_lock_and_rebase_index
 assert_head_generation
