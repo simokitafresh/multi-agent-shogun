@@ -1,13 +1,28 @@
-# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.2.7 (2026-07-28 — 14:45実施状況同期。v1.2.6=14:26同期。v1.2.5=殿裁定13:26テスト原則反映。v1.2.4=殿裁定12:45第二弾優先で即時実行。B2/B3計装は殿裁定12:43(startup聖域)で恒久除外)
+# 【⚙ 稼働中 — 5/9 CLEAR+1判定待ち】ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.3 (2026-07-28 14:50 第一弾様式へ再構築。版履歴は§-3)
 
-## §-2 実施状況(2026-07-28 14:45時点 — 稼働中)
+## §-2 第二弾 弾台帳(2026-07-28 14:50時点 — 第一弾§-2完了台帳と同型)
 
-- 殿裁定12:45「超速で第二弾を実行せよ」→家老が12:51-13:01に4レーン一斉配備(1ファイル=1レーン上限)
-- **CLEAR 5/9**: full_precheck / checks_main再 / parent_ac_coverage / publish_total / inbox B5計装。別ファイル3系統は並列完了済み
-- **判定待ち 1/9(6個目目前)**: parent_contract_fingerprint(影丸)。同一fixture交互実測で累積-14.9%、median-20.0%、task選択899/899 PASS・SKIP0。空fingerprint(direct hotfix)も既存出力と同値確認済み。**報告完了(verdict PASS 14:28)+軍師LGTM(blt_20260728_143000)。家老ACCEPT/GATE判定のみ残**
-- **残り 3/9(未配備・直列待機)**: task.commit_contract → commit_hash再 → atomic_replace。全て同じ`scripts/report_field_set.sh`を所有するためscope lock規則で直列接続(fingerprint GATE CLEAR後に1弾ずつ配備)。別ファイル弾は即並列、同一ファイル弾は直列。忍者6名の現task一次確認(queue/tasks/*.yaml 14:45)で残3弾の配備なしを確認済み
-- publish_totalは通常40hex経路の不要なno-code identity validator読込を遅延化。交互実測median 222.9→181.5ms(-18.6%)、p95 380.4→350.8ms(-7.8%)、所有scope 662/662 PASS・SKIP0、GATE CLEAR
+殿裁定12:45「超速で第二弾を実行せよ」→家老が12:51-13:01に4レーン一斉配備(1ファイル=1レーン上限)。
+
+| # | check | 状態 | 是正内容 | Δ実測(同条件before/after) |
+|---|---|---|---|---|
+| 1 | full_precheck | ✅ CLEAR(13:54) | 恒久フェーズ計装(子check_id 7種)+最大寄与SG-PRE21(causal_backlinks)並列化(stdout完全一致)。家老RC D002指摘(rm -rf)是正+contract test 3件 | 58/58 PASS・SKIP0(Δは計装後の次snapshot判定) |
+| 2 | checks_main(再) | ✅ CLEAR(13:43) | 非加算子区間8種を恒久計装+最大寄与quality_gateの残存subshell除去 | 同一fixture5反復: 親median 1,050→726ms(-30.9%)、累積4,813→3,714ms(-22.8%)、p95 -15.2% |
+| 3 | parent_ac_coverage | ✅ CLEAR(13:34) | root scalarをbackup-free atomic fast laneへ | commit後A/B: median 66.5→56.5ms(-15.0%)、p95 100→76ms。affected 662/662+共有unit 2705/2705 PASS・SKIP0 |
+| 4 | publish_total | ✅ CLEAR(14:11) | 通常40hex経路の不要なno-code identity validator読込を遅延化 | 交互実測: median 222.9→181.5ms(-18.6%)、p95 380.4→350.8ms(-7.8%)。所有scope 662/662 PASS・SKIP0 |
+| 5 | (計装弾)B5 inbox_write | ✅ CLEAR(13:43) | persist/nudge/delivery_verifyの3計測点+total(加算対象はtotalのみ=親子非加算遵守)を追加 | 計装前=台帳0件→隔離fixtureで4区間各1件・FP0・加算行=total1件。所有100/100+affected 239/239+共有unit 2705/2705 PASS・SKIP0 |
+| 6 | parent_contract_fingerprint | 🕐 家老判定待ち | 影丸実装完了。空fingerprint(direct hotfix)も既存出力同値確認済み。報告verdict PASS(14:28)+軍師LGTM(blt_20260728_143000)、家老ACCEPT/GATE判定のみ残 | 同一fixture交互実測: 累積-14.9%、median-20.0%。task選択899/899 PASS・SKIP0 |
+| 7 | task.commit_contract | ⏸ 未配備(直列待機) | — | — |
+| 8 | commit_hash(再) | ⏸ 未配備(直列待機) | — | — |
+| 9 | atomic_replace | ⏸ 未配備(直列待機) | — | — |
+
+- **殿直命14:50(blt_20260728_145050採択確定)**: 第二弾を主線として最優先継続。#6家老判定後、report_field_set所有弾(#7-9)は**設計書記載順に厳密直列**。throughput計測基盤は別ファイルのみファイル単位分割で並列(複数ファイル一括task禁止)、第三弾は先頭弾のみ空き戦力+別ファイル条件で並列先行可。第二弾focusを崩す独自再解釈禁止
+- **残3弾(#7-9)の直列理由**: 全て同じ`scripts/report_field_set.sh`を所有するためscope lock規則で直列接続(#6 GATE CLEAR後に1弾ずつ配備)。別ファイル弾は即並列、同一ファイル弾は直列。忍者6名の現task一次確認(queue/tasks/*.yaml 14:45)で残3弾の配備なしを確認済み
 - **テスト原則(殿裁定13:26 — 全弾の完了条件へ適用)**: 殿原文『全量テストをするようにした行為がバグだな』。**個別弾のテストは所有scopeのtask/対象testのみ(選択実行)。全量unitはwave最終fixed-SHA checkpointで共有一回に集約** — deploy_taskの個別全量強制は生成源hotfixで是正済み。個別弾ACへ全量テストを要求する変更は禁止(将軍が全力で止める恒久責務、knowledge:eb93156c)
+
+## §-3 版履歴
+
+- v1.3(14:50): 第一弾様式へ再構築(§-2を弾台帳表化・版履歴を本節へ分離)。v1.2.7(14:45)/v1.2.6(14:26)=実施状況同期。v1.2.5=殿裁定13:26テスト原則反映。v1.2.4=殿裁定12:45第二弾優先で即時実行。B2/B3計装は殿裁定12:43(startup聖域)で恒久除外。v1.1=家老レビュー2全採用。v1.0=初版序列(refresh誤分類を含み§-0で訂正)
 
 ## §-0 v1.1改訂(家老レビュー2・blt_105708の全採用)
 
