@@ -1,4 +1,4 @@
-# 【🟢P1a解禁(殿裁可23:34)— P3/P4 AC1稼働・P1a配備へ】弾スループット全体のボトルネック改善 part2 — AsIs/ToBe 5W1H設計書 v1.5 (2026-07-28 23:35 殿裁可反映。版履歴は§-3)
+# 【⚙P1a実装済み・P2充足確認=遷移欠損でno-change BLOCK】弾スループット全体のボトルネック改善 part2 — AsIs/ToBe 5W1H設計書 v1.6 (2026-07-29 00:11 P2結果反映。版履歴は§-3)
 
 > part1=`throughput-bottleneck-asis-tobe-5w1h_20260728.md` v1.6(gist 2179df85)=**計測基盤**の6弾で5/6クローズ(T1a/T3a/T3b/T2/T4✅、残T1b=T1a蓄積待ち)。本書は殿下知2026-07-28 21:17「part2の設計書を作成しよう。今やっているスクリプト改善の主軸作業のボトルネックを解消して更に高速回転を行い、品質向上を高めるためだ」に基づく。part1が作った計器(T1a境界イベント・T3a writer整合・T3b fingerprint計装)の**蓄積データを消費して、弾ライフサイクルの非work時間を是正する実装編**である。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | P1a | review_approval/report_publishイベントへのcmd_id+generation識別子計装 | 🟢 解禁(殿裁可23:34)・配備下知済み | 非破壊識別子追加(第四弾#5と同型・既存台帳schema互換)。**P1aクローズ前のP1b起票は不能**(pairingの前提データが生成されないため) | schema実測: check_id/event_id/source/timestamp/verdict/wall_msのみ=cmd_id/generation不在 |
 | P1b | finalize非実行時間の区分と是正 | ❄ P1a計装データ蓄積後にread-only集計から | T1a計装(review_approval:gunshi_lgtm/karo_accept)の蓄積でfinalizeを「軍師レビュー実時間/家老ACCEPT実時間/ターン待ち間隙」へ区分→最大間隙の是正(通知経路・レビュー着手遅延)。**前提=P1aクローズ済みであること(v1.3契約分離)**: 本弾のpairingはP1a計装データにのみ実行可能。P1a前の起票は不能。**AC1必須要件(家老RC①)**: cmd_id+generation単位でgunshi_lgtm/karo_acceptをpairingし、report完了起点/terminal終点で区間化。paired N/N・欠損・右打切り件数・finalize母集団53弾へのcoverage率を全て報告。イベント総数だけで待ち相を断定しない(現物は既に不対称=LGTM31/ACCEPT30)。**検査は1つも削らない**(二相レビューの品質寄与は本日実証済み=part1§0) | finalize累積27,985s(全区間中の非work最大)。cmd_complete_gate純実行は0ms(第三弾#2実証)ゆえ支配相は待ち時間の疑い(AC1で確定) |
-| P2 | 例外弾unattributed残差の是正(=part1 T1b吸収) | ❄ T1a蓄積待ち(part1から帰属移管) | 例外弾(instruction_sync型stale report+複数再配備)の遷移別delivery/ack遅延を実測し、欠落遷移のみ補完。一律re-wake禁止(part1家老RC②継承)。**例外弾の判定基準(v1.2明記)**: part1と同じ観測ギャップ導出方式(unattributed分布の断絶を境界とし、恣意閾値を置かない)をAC1で本弾の母集団に対し再導出する | unattr累積20,813s、p50=31sだがmax=9,530s=例外集中型 |
+| P2 | 例外弾unattributed残差の是正(=part1 T1b吸収) | ⏸ no-change BLOCK(00:04疾風・充足確認FAIL: 必須8遷移中6遷移が台帳欠損。例外弾は2/40弾・max724秒へ縮小=期待削減量が当初想定より大幅減。遷移計装拡張の投資判定はP1b+再snapshot後) | 例外弾(instruction_sync型stale report+複数再配備)の遷移別delivery/ack遅延を実測し、欠落遷移のみ補完。一律re-wake禁止(part1家老RC②継承)。**例外弾の判定基準(v1.2明記)**: part1と同じ観測ギャップ導出方式(unattributed分布の断絶を境界とし、恣意閾値を置かない)をAC1で本弾の母集団に対し再導出する | unattr累積20,813s、p50=31sだがmax=9,530s=例外集中型 |
 | P3 | 再attempt税(FAIL往復)の削減 | ⚙ AC1稼働中(23:25配備・才蔵 cmd_karo_part2_p3_rework_tax_ac1_20260728) | FAIL率(part1 T4実測: 全体0.434)の**FAIL原因別・往復回数別の時間税**を全数集計→上位原因の予防を配備時context注入・報告テンプレ強化で削減(gate緩和は禁止=品質底線)。**AC1必須要件(家老RC②)**: 856-505=351行は税の**上限**にすぎない。世代(generation)単位でWAIT/INFO/同一世代BLOCK→CLEAR/RC新世代を分類し、**真の再work往復Nとその時間だけ**を税として計上する。**時間帰属規則(v1.2穴是正)**: T3a整合の終端行採用は最新attempt境界のため旧attemptの時間が終端行に現れない — 税の時間はgate_metricsの**履歴行(同一cmd_id全行)**から世代別に取り、終端行と混同しない。修正1回で通る率の向上=品質向上と同義 | 再attempt行の上限=351行(未分類。真の税はAC1で確定) |
 | P4 | deploy外れ値尾の条件特定 | ⚙ AC1稼働中(23:25配備・飛猿 cmd_karo_part2_p4_deploy_outlier_ac1_20260728) | deploy p50=40sは是正済み(deployレーン-47%)。外れ値(max 3,321s)の発生条件を3点表で特定し条件ベース是正。**AC1二値条件(家老RC)**: 既存deploy高速化レーンとのowner重複0件を確認してから着手(重複ありなら当該項をdeployレーンへ帰属しP4から除外) | deploy累積6,600sのうち外れ値少数が支配 |
 
@@ -17,6 +17,7 @@
 
 ## §-3 版履歴
 
+- v1.6(00:11): **P2充足確認の結果反映(疾風・正直FAIL報告)** — T1a後固定窓40/40弾全数(欠損0・証跡SHA付き): unattributed値域4-724秒で**旧9,530秒級の例外は窓内に出現せず**(本日のstale report再配備根治・lost-wakeup修正群が効いた可能性)。観測ギャップ353→692秒から例外2弾のみ導出。ただし必須8遷移中、台帳実在はdeploy_task系+review_approval(gunshi_lgtm/karo_accept)のみで、issued/deployed/ack/report_terminal/gate_start/clear境界が欠損→**P2はno-change BLOCK=遷移計装拡張(コード変更)が前提**。例外弾が2/40へ縮小した今、計装拡張の投資判定はP1b集計+CI GREEN後の再snapshotを見てから。併記: P1a実装commit(07f9b40e9)はpush済みでCI検証中
 - v1.5(23:35): **殿裁可23:34『裁可する』=P1a(識別子計装)の実装解禁**。将軍推薦(P1aが最大標的P1bの蓄積時計を回す鍵・第四弾#5同型の非破壊計装・idle戦力あり)を殿が承認。P1a配備+P2蓄積充足確認(read-only)を家老へ下知。P1bはP1aクローズ+蓄積後、P2はT1a計装後の窓に例外弾が現れたことの充足確認後に自動的に開始条件が満ちる
 - v1.4(23:28): 覚醒更新 — **AC1配備開始**: P3=cmd_karo_part2_p3_rework_tax_ac1_20260728(才蔵・in_progress)、P4=cmd_karo_part2_p4_deploy_outlier_ac1_20260728(飛猿・in_progress)。軍師draft review APPROVE(23:25・confidence HIGH)。両方read-onlyでci_fix(疾風)・第四弾成果と衝突なし。前提事実の更新: 第四弾は5/5全クローズ(#2 inbox_write delivery verify非同期化・#3 publish_total lock FD分離が本弾P1仮説群の隣接領域を既に是正)→P1b/P2のAC1時はこれら是正後のデータで再判定すること。P1a/P1b/P2は凍結・蓄積待ち維持
 - v1.3(21:32): 家老RC(blt_213134)の契約矛盾1件を是正 — P1を**P1a(識別子計装・コード変更・凍結)とP1b(蓄積後read-only pairing集計)へ台帳分離**し、P1aクローズ前のP1b起票不能を弾台帳とAC前提へ明記。P2-P4 read-only APPROVE維持
