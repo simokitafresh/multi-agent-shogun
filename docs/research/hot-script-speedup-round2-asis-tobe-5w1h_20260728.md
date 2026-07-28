@@ -1,11 +1,11 @@
-# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.2.6 (2026-07-28 — 14:26実施状況同期。v1.2.5=殿裁定13:26テスト原則反映。v1.2.4=殿裁定12:45第二弾優先で即時実行。B2/B3計装は殿裁定12:43(startup聖域)で恒久除外)
+# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.2.7 (2026-07-28 — 14:45実施状況同期。v1.2.6=14:26同期。v1.2.5=殿裁定13:26テスト原則反映。v1.2.4=殿裁定12:45第二弾優先で即時実行。B2/B3計装は殿裁定12:43(startup聖域)で恒久除外)
 
-## §-2 実施状況(2026-07-28 14:26時点 — 稼働中)
+## §-2 実施状況(2026-07-28 14:45時点 — 稼働中)
 
 - 殿裁定12:45「超速で第二弾を実行せよ」→家老が12:51-13:01に4レーン一斉配備(1ファイル=1レーン上限)
 - **CLEAR 5/9**: full_precheck / checks_main再 / parent_ac_coverage / publish_total / inbox B5計装。別ファイル3系統は並列完了済み
-- **稼働中 1/9**: parent_contract_fingerprint(影丸)。同一fixture交互実測で累積-14.9%、median-20.0%、task選択899/899 PASS・SKIP0。空fingerprint(direct hotfix)も既存出力と同値確認済み。commit/report処理中
-- **残り 3/9**: task.commit_contract → commit_hash再 → atomic_replace。全て同じ`scripts/report_field_set.sh`を所有するためscope lock規則で直列接続。別ファイル弾は即並列、同一ファイル弾は直列
+- **判定待ち 1/9(6個目目前)**: parent_contract_fingerprint(影丸)。同一fixture交互実測で累積-14.9%、median-20.0%、task選択899/899 PASS・SKIP0。空fingerprint(direct hotfix)も既存出力と同値確認済み。**報告完了(verdict PASS 14:28)+軍師LGTM(blt_20260728_143000)。家老ACCEPT/GATE判定のみ残**
+- **残り 3/9(未配備・直列待機)**: task.commit_contract → commit_hash再 → atomic_replace。全て同じ`scripts/report_field_set.sh`を所有するためscope lock規則で直列接続(fingerprint GATE CLEAR後に1弾ずつ配備)。別ファイル弾は即並列、同一ファイル弾は直列。忍者6名の現task一次確認(queue/tasks/*.yaml 14:45)で残3弾の配備なしを確認済み
 - publish_totalは通常40hex経路の不要なno-code identity validator読込を遅延化。交互実測median 222.9→181.5ms(-18.6%)、p95 380.4→350.8ms(-7.8%)、所有scope 662/662 PASS・SKIP0、GATE CLEAR
 - **テスト原則(殿裁定13:26 — 全弾の完了条件へ適用)**: 殿原文『全量テストをするようにした行為がバグだな』。**個別弾のテストは所有scopeのtask/対象testのみ(選択実行)。全量unitはwave最終fixed-SHA checkpointで共有一回に集約** — deploy_taskの個別全量強制は生成源hotfixで是正済み。個別弾ACへ全量テストを要求する変更は禁止(将軍が全力で止める恒久責務、knowledge:eb93156c)
 
