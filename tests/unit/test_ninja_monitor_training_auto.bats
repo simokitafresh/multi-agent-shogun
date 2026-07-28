@@ -613,7 +613,8 @@ echo "REFLUX_BACKLINK_DEPLOY_OK"
     [[ "$output" == *"REFLUX_BACKLINK_DEPLOY_OK"* ]]
 }
 
-@test "reflux auto deploy fires for lesson promotion inventory when insights and backlinks are empty" {
+# test_necessity: pause中promotionだけを止め、他refluxを維持する不変量を、marker不在時のpromotion互換性も含めて守る。
+@test "reflux promotion pause suppresses promotion only and marker absence preserves promotion" {
     run bash -c '
 set -euo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -626,7 +627,7 @@ trap "rm -r \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/logs" "$STATE_DIR"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/gates" "$SCRIPT_DIR/scripts/gates" "$SCRIPT_DIR/logs" "$STATE_DIR"
 
 cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
 task:
@@ -673,6 +674,7 @@ REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=1
 REFLUX_AUTO_DEPLOY_COOLDOWN=1
 REFLUX_AUTO_DEPLOY_STATE_PREFIX="$TMP_ROOT/state/reflux_auto"
 
+# No marker: existing promotion behavior remains.
 _handle_reflux_auto_deploy hayate 100
 
 grep -q "DEPLOY_CALLED:--direct --yaml" "$TMP_ROOT/deploy.log"
@@ -689,6 +691,36 @@ check = data["task"]["acceptance_criteria"][0]["checks"][0]["check"]
 assert "): doc-only lesson" in check, check
 PY
 grep -q "REFLUX-AUTO-INVENTORY-BEFORE: hayate insights_pending=0 zero_backlinks=0 promotions=1 total=1" "$TMP_ROOT/test.log"
+
+# Marker present: promotion-only inventory neither claims nor deploys.
+: > "$SCRIPT_DIR/queue/gates/reflux_promotion.paused"
+: > "$TMP_ROOT/deploy.log"
+REFLUX_IDLE_FIRST_SEEN[hayate]=0
+_reflux_promotion_claim_next() { echo CLAIM_CALLED >> "$TMP_ROOT/claim.log"; return 1; }
+! _handle_reflux_auto_deploy hayate 200
+[ ! -s "$TMP_ROOT/deploy.log" ]
+[ ! -e "$TMP_ROOT/claim.log" ]
+grep -q "REFLUX-PROMOTION-PAUSED: hayate .* suppressed=1; insight/backlink remain eligible" "$TMP_ROOT/test.log"
+
+# The same marker does not stop insight reflux.
+_reflux_inventory_snapshot() { printf "1\t0\t9\t10\tINS-1\t-\t[infra] L999 (L2)\tok\tok\n"; }
+_reflux_select_kind() {
+    [ "$1" -eq 1 ] && [ "$3" -eq 0 ] && [ "$5" -eq 0 ]
+    printf "insight\n"
+}
+REFLUX_IDLE_FIRST_SEEN[hayate]=0
+_handle_reflux_auto_deploy hayate 300
+grep -q "target_path: queue/insights.yaml" "$TMP_ROOT/deployed.yaml"
+
+# Backlink reflux also remains eligible.
+_reflux_inventory_snapshot() { printf "0\t1\t9\t10\t-\tdocs/research/orphan.md\t[infra] L999 (L2)\tok\tok\n"; }
+_reflux_select_kind() {
+    [ "$1" -eq 0 ] && [ "$3" -eq 1 ] && [ "$5" -eq 0 ]
+    printf "backlink\n"
+}
+REFLUX_IDLE_FIRST_SEEN[hayate]=0
+_handle_reflux_auto_deploy hayate 400
+grep -q "target_path: docs/research/orphan.md" "$TMP_ROOT/deployed.yaml"
 echo "REFLUX_PROMOTION_DEPLOY_OK"
 '
     [ "$status" -eq 0 ]

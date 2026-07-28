@@ -4825,6 +4825,14 @@ _handle_reflux_auto_deploy() {
     [ "$first_insight" = "-" ] && first_insight=""
     [ "$first_backlink" = "-" ] && first_backlink=""
     [ "$first_promotion" = "-" ] && first_promotion=""
+    # A Lord-ordered promotion freeze only removes promotion from the
+    # dispatchable inventory. Insight/backlink reflux must keep flowing.
+    if [ -e "${REFLUX_PROMOTION_PAUSE_MARKER:-$SCRIPT_DIR/queue/gates/reflux_promotion.paused}" ]; then
+        log "REFLUX-PROMOTION-PAUSED: $name marker=${REFLUX_PROMOTION_PAUSE_MARKER:-$SCRIPT_DIR/queue/gates/reflux_promotion.paused} suppressed=${promotion_before:-0}; insight/backlink remain eligible"
+        promotion_before=0
+        first_promotion=""
+        total_before=$(( ${insight_before:-0} + ${backlink_before:-0} ))
+    fi
     if [ "${backlink_status:-ok}" != "ok" ]; then
         log "REFLUX-AUTO-COUNT-WARN: $name zero_backlinks_status=${backlink_status}"
     fi
