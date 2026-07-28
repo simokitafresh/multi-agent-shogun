@@ -4231,7 +4231,7 @@ codd:
 | label | DM-Fusionアプリ |
 | aliases | DM-Fusion, Fusionアプリ, 本番稼働中の全PFを表示, Fusionはis_active全PF返却, hide_portfolioはFusion表示に関与しない, Fusion側adminでon/off, 裁定逆行, CI修正がテストに合わせコードを曲げる, PF配合シミュレーター, Fusion MVP, スマホファーストFusion, `/mnt/c/Python_app/DM-Fusion`, DM-Fusionローカル保存先, GitHub DM-Fusion, Next.js App Router Fusion, TypeScript Tailwind Fusion, Node.js runtime Fusion, static export不可, Render Node service, app/api/portfolios/route.ts, DMSIGNAL_API_URL, DMSIGNAL_ADMIN_USER, DMSIGNAL_ADMIN_PASS, 上部2/3表示, 下部1/3操作, CAGR超大文字, fast.comスタイル, PFドロップダウン二つ, 配分スライダー, スライダーでCAGR即時更新, Page 1数値, Page 2チャート, SPYとTQQQはDM-Signal monthly_returns, 設計書最新確認, Fusion設計書, フュージョン設計書, フュージョン側仕様, Fusion実装レビュー, fusion-app.md, Fusion保存ログイン, Supabase保存復元, saved_fusions, 保存済み配合, ログインは配合保存だけ, Fusion速度品質, 滑らかさと追随速度, リアルタイム数値更新, Float64Array事前確保, requestAnimationFrameチャート, requestIdleCallbackサブ数値, フローティングバルーン, detached thumb, スマホタッチ対策, folder変更対応, Render cold start本番フォーカス, Playwrightスマホ確認, 殿指示_admin設定+Xシェア_20260628, cmd_3586スコープ分離, admin+Xシェア別cmd, DM Fusionのバグを直そう, 操作部分を下部1/3, folderは同じPFでも変わる可能性がある, DM signalのドロップダウンは上にフォルダー選択が出て, PC版チャート常時表示, PC版ではどうやってチャートを見る, チャート横軸6分割, チャート横軸分割, admin画面, admin画面PF表示, admin画面バグ, admin画面オンオフ, フォルダ一括オンオフ, フォルダ一括トグル, admin速度改善, optimistic update, location.reload廃止, 保存できませんでした, 保存ポップアップ, リニアのグラフ, リニアグラフ2x3x, LOGグラフマイルストーン, LIN/LOGトグル, 縦軸基準線, 比較基準線, SPY比較破線, TQQQ比較破線, comparisonSeries, PF選択モーダル, フォルダフィルタタブ, Total Return倍率表示, あとからmigration, DM fusionでフォルダーが読み込まれていない |
 | skills |  |
-| related_concepts | fusion_api_endpoint, modern_web_guidance, dmsignal_operations |
+| related_concepts | fusion_api_endpoint, modern_web_guidance, dmsignal_operations, admin_ui_redesign_asis_tobe |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -4294,7 +4294,7 @@ codd:
 | label | DM-Signal運用 |
 | aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告, Standard PFの過去シグナルNone化とは何だ？, 理論上過去のシグナルはinbox1, データが日々変わる, データが毎日変わる, 当月シグナルは日々変わる, 過去シグナルは毎日変動, つまりデータが毎日変わっているのか, つまりデータが毎日変わっているのか？, 保有ポジションやパフォーマンスも日々変わる, 保有ポジションやパフォーマンスも日々変わってしまう, そうすると保有ポジションやパフォーマンスも日々変わってしまうということか？, 価格データソース多重化Phase 0, 殿のAPIキー発行待ちでこちら側の起票対象なし, 価格データソース多重化は実装済み, バンドを採用, バンド採用, 閾値バンド, threshold_band, 三状態判定, A/A+B/B, バンド内半々, モメンタムバンド, デッドバンド, 僅差判定の反転, absolute_assetはgatekeeper sensorで保有対象外, TMFを保有するパターンは存在しない, relative_assetsが保有候補でabsolute_assetは判定指標, モメンタムバンドも導入したから, ワイヤーフレームV3を許可する, ワイヤーフレームv3裁可, ワイヤーフレームv3許可, ワイヤーフレームv3, Monthly Trade状態バッジ, 確定台帳表示, まだ本番にはモメンタムバンドで計算されたPFがないのでは？, cashを持つ可能性は無いはずだ, DM signalにフォーカスしよう, DM Signalの実precommit経路からruff自動fixを除去し, 7保有とはどういう意味だ？保有シグナルは月初に固定される |
 | skills | db-check, pf-registration |
-| related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts, fusion_api_endpoint, dm_fusion_app, dmsignal_fe_experience_deploy, gs_recalibration_plan, dm_signal_pf_restore_guardrails |
+| related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts, fusion_api_endpoint, dm_fusion_app, dmsignal_fe_experience_deploy, gs_recalibration_plan, dm_signal_pf_restore_guardrails, admin_ui_redesign_asis_tobe |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -4388,6 +4388,22 @@ codd:
 | causal | `cmd_reflux_promotion_202607262035_hanzo` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_reflux_promotion_202607270516_tobisaru` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_karo_hotfix_lessons_yaml_format_restore_20260727` files_modified: [[dmsignal_operations]] |
+| causal | `cmd_reflux_promotion_202607272134_kagemaru` files_modified: [[dmsignal_operations]] |
+| causal | `cmd_4190` files_modified: [[dmsignal_operations]] |
+
+## admin_ui_redesign_asis_tobe — DM-Signal Admin画面一覧性改修設計書
+
+| 属性 | 値 |
+|------|---|
+| id | admin_ui_redesign_asis_tobe |
+| label | DM-Signal Admin画面一覧性改修設計書 |
+| aliases | admin画面一覧性改修, admin UI redesign, PF一覧テーブル化, カードから表へ, admin ToBe未裁定4項 |
+| related_concepts | dmsignal_operations, dm_fusion_app |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/admin-ui-redesign-asis-tobe-5w1h_20260724.md` — DM-Signal Admin画面(/admin, /admin/fof, /admin/folders, /admin/visibility)の一覧性改修AsIs/ToBe 5W1H設計書。実装は殿裁定待ち(未着手) |
+| causal | [[殿指示_admin画面一覧性低_20260724]] -> [[cmd_4153_admin_ui_recon]] -> [[admin-ui-redesign-asis-tobe-5w1h_20260724]] |
 
 ## google_classroom — Google Classroom Dashboard
 
