@@ -1,4 +1,23 @@
-# 主題1: 全期間再計算(fullrecalculate)速度 — AsIs/ToBe 5W1H設計書 v3.2 (2026-07-27 — cmd_4184で運用壁時計確定+cmd_4186で計測3配線実装。v3.1=cmd_4180現物確定+家老再レビュー4点反映)
+# 主題1: 全期間再計算(fullrecalculate)速度 — AsIs/ToBe 5W1H設計書 v3.3 (2026-07-28 — cmd_4186計測配線の本番初収穫を反映。v3.2=壁時計確定+3配線実装)
+
+## §0.-1 本番初収穫(2026-07-28定期実行 FoF run=20260728014047YD63KJ — cmd_4186新telemetryの初回本番値。将軍D0回収11:20)
+
+**L3 FoF total 565.92s(78PF)の排他的内訳(profiling原文生貼付)**:
+| 区間 | 秒 | 備考 |
+|---|---:|---|
+| monthly_returns_gen | **318.99** | 最大(前回run 275.20→今回増。run間変動あり) |
+| **dw_signals_deferred_flush** | **117.61** | ★下記「二重計上解消」参照 |
+| daily_loop | 92.38 | |
+| dl_pipeline_exec | 35.03 | |
+| dl_signal_gen / dl_rebalance_check | 26.34 / 26.32 | |
+| cache_init | 16.73 | |
+| db_write / dw_component_weights | 9.09 / 8.76 | |
+| unmeasured残余(deferred除く: pf_overhead 6.76+post_loop 1.33+pre_loop 0.05+residual 0.0) | 8.14 | 区分計測でほぼ消滅 |
+| dw_signals_append(inner) | 0.01 | |
+
+**★覚醒の核心 — 二重計上の解消**: 旧v3.1で別標的だった「unmeasured 122.41s」(攻め順2位)と「dw_signals_flush 115.26s」(順位除外の混合値)は、**実体がほぼ同一のdeferred DB flush 117.61s**であった。unmeasured_breakdownのdeferred_flush=dw_signals_deferred_flushが完全一致(117.61s)し、inner appendは0.01s。∴L3の真の標的は**mr_gen 319s > deferred flush 117.6s > daily_loop 92.4s**の3本に単純化される(旧「未計測の霧」は本番値で消えた)。
+
+**PF別初収穫(calculation_performance_log substep=fof_total、78行/計430.19s)**: 上位=GSシン四つ目-常勝10.50s、同-激攻7.61s、Ave-X 7.23s、裏Ave-X 7.19s…と**分布は平坦(top8が7-10.5s帯)**。特定PF支配ではなく全PF均等課税 — PF単位の個別最適化よりループ共通コスト(mr_gen・deferred flush)の削減が有効という配分証拠。fof_total計430s vs L3 total 566s の差≈136s=PFループ外(cache_init・mr_gen終端一括etc.)。
 
 ## §0.0 運用壁時計(cmd_4184で一次ログ確定 — v3.2新設)
 
@@ -98,12 +117,12 @@
 ### §3.1 攻め順(cmd_4180確定内訳に基づくv3序列)
 | 優先 | 標的 | 実測 | 設計課題 |
 |---|---|---:|---|
-| 1 | **L3内 monthly_returns_gen** | 275.20s | MR生成→commit→cache reloadの逐次連鎖(順序制約確定)の中でのMR計算自体の高速化。過去のOPT-6(mr_gen最適化)知見の再適用可否から |
-| 2 | **L3内 unmeasured** | 122.41s | まず区分計測(PF間GC・cache reload・ログ等への分解)。cmd_4180の最小配線案が設計済み |
-| — | L3内 dw_signals_flush | (115.26s=混合値) | **確定順位から除外**(§2.4注記)。外側deferred flushの分離計測を先行し、exclusive値が出た時点で順位を再判定する |
-| 4 | L3内 daily_loop | 80.61s | 過去のベクトル化設計(NEW-2b)の掘り起こし判断 |
-| 5 | L2 trade_perf(FoF run) | 117.35s | 共通経路上の実測コスト(経路差別は棄却済み)。cProfileでの機構特定から |
-| 6 | L5 42.3s | — | 既存資産(並列化v1.3.1+fingerprint skip)保存のまま。優先度低 |
+| 1 | **L3内 monthly_returns_gen** | 318.99s(07-28本番) | MR生成→commit→cache reloadの逐次連鎖の中でのMR計算自体の高速化。過去のOPT-6知見の再適用可否から |
+| 2 | **L3内 deferred flush(単一標的へ統合)** | 117.61s(07-28本番exclusive) | **v3.3更新: 旧2位unmeasured 122.41sと旧除外dw_signals_flush 115.26sは実体同一(§0.-1二重計上解消)**。run終端deferred DB flushのバルク化・書込み量削減が標的 |
+| 3 | L3内 daily_loop | 92.38s(07-28本番) | 過去のベクトル化設計(NEW-2b)の掘り起こし判断 |
+| 4 | L2 trade_perf(FoF run) | 117.35s | 共通経路上の実測コスト(経路差別は棄却済み)。cProfileでの機構特定から |
+| 5 | L5 42.3s | — | 既存資産(並列化v1.3.1+fingerprint skip)保存のまま。優先度低 |
+- **PF別配分証拠(§0.-1)**: fof_total 78PFは平坦分布(top 10.5s)。PF個別最適化ではなく上記共通コスト3本(mr_gen・deferred flush・daily_loop)への集中が正 — 3本で計529s=L3の93%
 - **層内並列は「実装なし+再設計大」と確定**したため、攻め順は並列化でなく区間別の計算量削減を主軸とする(品質2原則維持が容易な側)
 
 ### §3.2 目標値の考え方
@@ -116,15 +135,15 @@
 
 ---
 
-## §4 未解決事項(v3.2更新 — 3弾で4項解消)
+## §4 未解決事項(v3.3更新 — 本番初収穫で1・2・7も解消)
 
-1. ~~L3内部内訳未計測~~ → **解消**(cmd_4180回収)。~~unmeasured 122.41秒の区分~~ → **配線実装済み**(cmd_4186: legacy unmeasuredを維持したままpre_loop/pf_overhead/post_loop/deferred_flush/residualへ排他区分。隔離fixtureで区分合計=legacy完全一致を確認)。**本番区分値は次回定期実行で回収**
-2. ~~PF別内訳が0行~~ → **配線実装済み**(cmd_4186: PF別fof_totalをbuffer化しrun終端でCalculationPerformanceLogへrun_id付き一括INSERT。既存schema再利用・新table/migration 0件)。**本番PF別値は次回定期実行で回収**
+1. ~~unmeasured区分~~ → **全解消**(v3.3: 本番初収穫§0.-1。unmeasuredの実体=deferred flush 117.61s+残余8.14sで霧は消えた)
+2. ~~PF別内訳~~ → **全解消**(v3.3: 78PF/計430.19s回収済み。平坦分布=共通コスト型の配分証拠確定)
 3. 06-26分析(357.28秒)のrun lineage未回収 — 比較基準はrun ID付き実測(07-10/07-27)に限定で確定
 4. ~~cron実行関係~~ → **解消**(論理直列と確定)
 5. id214のTIMING原文は未回収のまま総時間のみ保持(変更なし)
 6. ~~運用壁時計の定義~~ → **解消**(cmd_4184: §0.0新設。正KPI=standard起点42分25秒、FoF起点744sは補助。805/807.9秒は累積計算時間と確定)
-7. ~~dw_signals_flushの内外分離~~ → **配線実装済み**(cmd_4186: legacy dw_signals_flush_sec維持+dw_signals_append_sec/dw_signals_deferred_flush_secを追加。隔離実測: inner append 0.03s vs outer deferred flush 6.50s=**混合値のほぼ全量が外側**の示唆。本番値で§3.1順位を再判定)
+7. ~~dw_signals_flushの内外分離~~ → **全解消**(v3.3本番値: inner append 0.01s vs outer deferred flush 117.61s。§3.1順位再判定済み — 旧unmeasuredと統合し単一標的2位へ)
 8. **(v3.2新規・家老レビュー②で降格)cron時差23分54秒の削減可否 — 別設計候補**: 壁時計の56%が計算外の待機。FoF cron起動前倒し/上流完了イベント駆動化はschedule設計であり、個別スクリプト覚醒高速化路線(殿裁定19:44)のscope外。**別設計候補として記録するのみ。殿裁可まで起票しない**
 
 ---
