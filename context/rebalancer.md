@@ -1,6 +1,6 @@
 # Rebalancer Context
-<!-- last_updated: 2026-07-29 cmd_karo_hotfix_rebalancer_market_phase_refresh_20260729 reviewed source boundary -->
-<!-- source_commit:d799d9d reason:cmd_karo_hotfix_rebalancer_market_phase_refresh_20260729 reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=d799d9d tests=17/17 -->
+<!-- last_updated: 2026-07-29 cmd_karo_ci_fix_rebalancer_30389459014_frontend_audit reviewed source boundary -->
+<!-- source_commit:c351beb reason:cmd_karo_ci_fix_rebalancer_30389459014_frontend_audit reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=c351beb -->
 
 ## §1 概要
 
