@@ -667,6 +667,70 @@ inbox_resolve_report_identity() {
     fi
 }
 
+inbox_resolve_archived_report_for_task() {
+    local active_report="$1" task_path="$2"
+    local archive_dir="$SCRIPT_DIR/queue/archive/reports"
+    local report_base="${active_report##*/}"
+    report_base="${report_base%.yaml}"
+    [ -d "$archive_dir" ] || return 1
+
+    python3 - "$task_path" "$archive_dir" "$report_base" <<'PY'
+import glob
+import os
+import sys
+
+import yaml
+
+task_path, archive_dir, report_base = sys.argv[1:]
+with open(task_path, encoding="utf-8") as stream:
+    task_doc = yaml.safe_load(stream) or {}
+task = task_doc.get("task") or task_doc
+candidates = sorted(glob.glob(os.path.join(archive_dir, report_base + "*.yaml")))
+
+def text(mapping, key):
+    return str(mapping.get(key) or "").strip()
+
+task_version = int(task.get("report_identity_version") or 1)
+matches = []
+for path in candidates:
+    try:
+        with open(path, encoding="utf-8") as stream:
+            report = yaml.safe_load(stream) or {}
+        if not isinstance(report, dict):
+            continue
+        report_version = int(report.get("report_identity_version") or 1)
+    except (OSError, ValueError, yaml.YAMLError):
+        continue
+
+    if task_version >= 2 or report_version >= 2:
+        fields = (
+            "report_id",
+            "task_id",
+            "parent_cmd",
+            "parent_contract_fingerprint",
+        )
+        if task_version != 2 or report_version != 2:
+            continue
+        if not text(task, "report_id"):
+            continue
+        if all(text(task, field) == text(report, field) for field in fields):
+            matches.append(path)
+    else:
+        # Legacy reports have no immutable identity. Preserve the historical
+        # fallback only when the basename identifies exactly one generation.
+        matches.append(path)
+
+if len(matches) != 1:
+    print(
+        f"[report_format_gate] BLOCKED: archive identity candidates="
+        f"{len(matches)} scanned={len(candidates)} base={report_base}",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)
+print(matches[0])
+PY
+}
+
 inbox_report_fingerprint() {
     local report_path="$1" fallback_identity="${2:-}"
     if [ -f "$report_path" ]; then
@@ -2131,6 +2195,10 @@ if inbox_type_triggers_report_completion "$TYPE"; then
             FULL_REPORT=""
             if [ -n "$REPORT_PATH" ]; then
                 FULL_REPORT="$SCRIPT_DIR/$REPORT_PATH"
+                if [ ! -f "$FULL_REPORT" ]; then
+                    FULL_REPORT=$(inbox_resolve_archived_report_for_task "$FULL_REPORT" "$TASK_YAML") || exit 1
+                    echo "[report_format_gate] archive fallback: identity一致 $(basename "$FULL_REPORT") を検出" >&2
+                fi
             else
                 # Fallback: report_path未設定 → queue/reports/{from}_report_{cmd_id}*.yaml を検索
                 CMD_ID=$(inbox_yaml_field_get "$TASK_YAML" "parent_cmd" "")
@@ -2193,16 +2261,6 @@ if inbox_type_triggers_report_completion "$TYPE"; then
             fi
 
             if [ -n "$FULL_REPORT" ]; then
-                # archive fallback: FULL_REPORTが見つからない場合→queue/archive/reports/を検索
-                # (archive_completed.shがreportを移動した後にsymlink作成失敗した場合に発生)
-                if [ ! -f "$FULL_REPORT" ]; then
-                    _RPT_BASE="$(basename "$FULL_REPORT" .yaml)"
-                    _ARCHIVE_MATCH=$(find "$SCRIPT_DIR/queue/archive/reports" -maxdepth 1 -name "${_RPT_BASE}*.yaml" -printf '%T@\t%p\n' 2>/dev/null | sort -rn | head -1 | cut -f2- || true)
-                    if [ -n "$_ARCHIVE_MATCH" ] && [ -f "$_ARCHIVE_MATCH" ]; then
-                        echo "[report_format_gate] archive fallback: $(basename "$_ARCHIVE_MATCH") を検出" >&2
-                        FULL_REPORT="$_ARCHIVE_MATCH"
-                    fi
-                fi
                 if [ -f "$FULL_REPORT" ]; then
                     # Phase 1: 機械的フォーマット自動修正（忍者ペインで局所免疫）
                     AUTOFIX_RESULT=$("$SCRIPT_DIR/scripts/gates/gate_report_autofix.sh" "$FULL_REPORT" 2>&1 || true)

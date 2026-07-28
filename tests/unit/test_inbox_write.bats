@@ -2379,6 +2379,86 @@ YAML
     [[ "$output" == *"archive fallback"* ]]
 }
 
+# test_necessity: archive後の遅延report_receivedはtask/reportの不変identityが完全一致する唯一の世代だけを受理し、異世代・曖昧候補をfail-closedする。
+@test "report_received: archived v2 report requires one exact task identity" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  task_id: cmd_test_001_normal
+  report_id: rpt-archive-exact
+  report_identity_version: 2
+  parent_contract_fingerprint: abcdef0123456789
+YAML
+    cat >> "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" <<'YAML'
+task_id: cmd_test_001_normal
+parent_cmd: cmd_test_001
+report_id: rpt-archive-exact
+report_identity_version: 2
+parent_contract_fingerprint: abcdef0123456789
+YAML
+    git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
+    git -C "$TEST_TMPDIR" commit -q -m archive-identity
+    mkdir -p "$TEST_TMPDIR/queue/archive/reports"
+    mv "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" \
+       "$TEST_TMPDIR/queue/archive/reports/testninja_report_cmd_test_001_20260728.yaml"
+
+    run _run_inbox_write karo "delayed exact report" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"archive fallback: identity一致"* ]]
+    grep -q "report_id: 'rpt-archive-exact'" "$TEST_TMPDIR/queue/inbox/karo.yaml"
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+    grep -q "^  status: done" "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+
+    # Exact retry remains one durable completion and one review.
+    run _run_inbox_write karo "delayed exact report" report_received testninja
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DUPLICATE_MSG_ID="* ]]
+    [ "$(grep -c "report_id: 'rpt-archive-exact'" "$TEST_TMPDIR/queue/inbox/karo.yaml")" -eq 1 ]
+    [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
+}
+
+# test_necessity: archive fallbackはbasenameやmtimeで異identity・別task・複数一致世代を選ばない。
+@test "report_received: archived v2 report blocks mismatched and ambiguous generations" {
+    setup_git_test_env
+    cat >> "$TEST_TMPDIR/queue/tasks/testninja.yaml" <<'YAML'
+  task_id: cmd_test_001_normal
+  report_id: rpt-archive-exact
+  report_identity_version: 2
+  parent_contract_fingerprint: abcdef0123456789
+YAML
+    mkdir -p "$TEST_TMPDIR/queue/archive/reports"
+    cp "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml" \
+       "$TEST_TMPDIR/report-candidate-template.yaml"
+
+    make_candidate() {
+        local suffix="$1" report_id="$2" task_id="$3" fingerprint="$4"
+        cp "$TEST_TMPDIR/report-candidate-template.yaml" \
+           "$TEST_TMPDIR/queue/archive/reports/testninja_report_cmd_test_001_${suffix}.yaml"
+        cat >> "$TEST_TMPDIR/queue/archive/reports/testninja_report_cmd_test_001_${suffix}.yaml" <<YAML
+task_id: $task_id
+parent_cmd: cmd_test_001
+report_id: $report_id
+report_identity_version: 2
+parent_contract_fingerprint: $fingerprint
+YAML
+    }
+    rm "$TEST_TMPDIR/queue/reports/testninja_report_cmd_test_001.yaml"
+
+    make_candidate wrong-id rpt-other cmd_test_001_normal abcdef0123456789
+    make_candidate wrong-task rpt-archive-exact cmd_other_normal abcdef0123456789
+    make_candidate wrong-fingerprint rpt-archive-exact cmd_test_001_normal 0000000000000000
+    run _run_inbox_write karo "mismatched archive" report_received testninja
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"archive identity candidates=0 scanned=3"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+
+    make_candidate exact-a rpt-archive-exact cmd_test_001_normal abcdef0123456789
+    make_candidate exact-b rpt-archive-exact cmd_test_001_normal abcdef0123456789
+    run _run_inbox_write karo "ambiguous archive" report_received testninja
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"archive identity candidates=2 scanned=5"* ]]
+    [ ! -e "$TEST_TMPDIR/queue/inbox/karo.yaml" ]
+}
+
 @test "filesystem fast-path: known ninja target succeeds without sourcing agent_config" {
     rm -rf "$TEST_TMPDIR/scripts" "$TEST_TMPDIR/queue"
     mkdir -p "$TEST_TMPDIR/scripts/lib" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/queue/inbox"
