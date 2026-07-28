@@ -1,14 +1,19 @@
-# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.0 (2026-07-28 — ドキュメントのみ。実装は殿裁可まで凍結)
+# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.1 (2026-07-28 — 家老REQUEST_CHANGES 3点反映。§0序列は暫定、第一弾12/12完了後の再snapshotで最終確定してから殿裁可。実装凍結継続)
+
+## §-0 v1.1改訂(家老レビュー2・blt_105708の全採用)
+
+1. **refresh_copy/refresh_verifyを序列から除外**: 家老一次確認(memory_db_cache.sh・memory_db_live_insert_async.py・ninja_monitor.sh現物)により、refreshは`setsid -f` double-forkのbackground実行・呼出し側は旧cache即返却・live insertはSKIP_CACHE_SYNC=1 — **純ターンoverheadではなくbackground保守lane**と確定。v1.0の新1-2位は誤分類だった(「新規check_idは分類を明記してから台帳へ」違反の実例として記録。background laneの長時間化はターン外の別課題であり、必要なら第三弾以降で別母集団として扱う)
+2. **集計の再現性必須化**: 集計コマンドへ上限timestampと対象row_countの固定を追加(下記§0)。下限08:36とdeploy_total既存lane除外は家老妥当判定
+3. **序列は暫定**: 第一弾12/12完了後に再snapshot・再序列・scope最終確定を行い、その版(v2.0)で殿裁可を仰ぐ。§-1/§0は暫定草案
 
 > 第一弾=`docs/research/hot-script-speedup-asis-tobe-5w1h_20260727.md`(v2.5、10/12消化・残2弾作業中)。本書は第一弾と同じ様式・同じ計測の憲法(§1境界表)・同じ完了条件の型で、**第一弾是正後のcohortから新序列を引いた第二弾**である。殿方針(2026-07-28 10:49): 第一弾でやったものも依然ボトルネックなら再度トライする。
 
 ## §-1 第二弾スコープ決め打ち(第一弾§-1憲法の踏襲 — 数を先に固定)
 
-**決め打ち: 4スクリプト・10check+計装2弾=12弾以内**(§0表がSSOT):
+**決め打ち(暫定草案・v1.1でrefresh系2枠を除外): 3スクリプト・8check+計装2弾=10弾以内**(§0表がSSOT。最終scopeは第一弾12/12後の再序列で確定):
 
 | 実体スクリプト | 担当check_id | 件数 |
 |---|---|---:|
-| `scripts/memory_db_live_insert.py` | three_layer_health:refresh_copy・refresh_verify | 2 |
 | `scripts/gates/gate_gunshi_report_precheck.sh` | full_precheck | 1 |
 | `scripts/cmd_save.sh` | checks_main(**再トライ**) | 1 |
 | `scripts/report_field_set.sh` | parent_ac_coverage・parent_contract_fingerprint・task.commit_contract・publish_total・atomic_replace・commit_hash(**再トライ**) | 6 |
@@ -22,21 +27,21 @@
 
 **母集団の定義**: 第一弾の是正が全て入った後の発火のみ(全期間・是正前混入は序列を歪めるため無効 — 第一弾v2.1家老指摘④と同じ規律)。参考としてcohortB(本日全量)も併記するが、**序列はcohortAのみで引く**。
 
-集計コマンド: python3でdefense_overhead.jsonlをtimestamp>=2026-07-27T23:36Z(=08:36 JST)に限定し、§1境界表準拠pairのwall_msをn/sum/median/p95/max算出(将軍D0実測2026-07-28 10:51)。
+集計コマンド(v1.1で再現性必須化): python3でdefense_overhead.jsonlをtimestamp下限2026-07-27T23:36Z(=08:36 JST)**かつ上限=集計実行時刻(次回再集計時は同一上限で固定)・対象row_countを出力に併記**して、§1境界表準拠pairのwall_msをn/sum/median/p95/max算出(将軍D0実測2026-07-28 10:51。上限未固定はv1.0の欠陥として是正)。
 
 | # | source:check_id | 累積(cohortA) | n | median | p95 | max | 型 |
 |---|---|---:|---:|---:|---:|---:|---|
-| 1 | **three_layer_health:refresh_copy** | **872.5s** | 121 | 2ms | 20,534ms | 40,865ms | 外れ値(median 2ms/max 41s) |
-| 2 | **three_layer_health:refresh_verify** | **772.1s** | 120 | 2ms | 15,301ms | 24,105ms | 外れ値(同上・copyと対) |
+| — | ~~three_layer_health:refresh_copy 872.5s~~ | — | — | — | — | — | **v1.1除外**(background保守lane=純ターンoverheadに非ず。§-0参照) |
+| — | ~~three_layer_health:refresh_verify 772.1s~~ | — | — | — | — | — | **v1.1除外**(同上) |
 | — | deploy_task:deploy_total | (186.7s) | 4 | 40,320ms | — | 72,050ms | **スコープ外**(既存deployレーン帰属) |
-| 3 | gate_gunshi_report_precheck:full_precheck | 102.1s | 102 | 494ms | 3,771ms | 11,279ms | 恒常課税+外れ値尾 |
-| 4 | cmd_save:checks_main(再) | 84.4s | 82 | 930ms | 1,789ms | 2,628ms | 恒常課税(第一弾-24%後も残存1位級) |
-| 5 | report_field_set:parent_ac_coverage | 44.2s | 41 | 540ms | 2,370ms | 2,420ms | 恒常課税 |
-| 6 | report_publish:publish_total | 40.6s | 121 | 230ms | 690ms | 1,740ms | 恒常課税(回数多) |
-| 7 | report_field_set:parent_contract_fingerprint | 39.7s | 41 | 400ms | 2,250ms | 2,320ms | 恒常課税 |
-| 8 | report_field_set:task.commit_contract | 37.2s | 62 | 355ms | 1,370ms | 1,760ms | 恒常課税 |
-| 9 | report_field_set:commit_hash(再) | 34.6s | 160 | 190ms | 410ms | 620ms | 恒常課税(第一弾-66%後も回数最多で残存) |
-| 10 | report_publish:atomic_replace | 27.2s | 118 | 180ms | 410ms | 540ms | 恒常課税 |
+| 1 | gate_gunshi_report_precheck:full_precheck | 102.1s | 102 | 494ms | 3,771ms | 11,279ms | 恒常課税+外れ値尾 |
+| 2 | cmd_save:checks_main(再) | 84.4s | 82 | 930ms | 1,789ms | 2,628ms | 恒常課税(第一弾-24%後も残存1位級) |
+| 3 | report_field_set:parent_ac_coverage | 44.2s | 41 | 540ms | 2,370ms | 2,420ms | 恒常課税 |
+| 4 | report_publish:publish_total | 40.6s | 121 | 230ms | 690ms | 1,740ms | 恒常課税(回数多) |
+| 5 | report_field_set:parent_contract_fingerprint | 39.7s | 41 | 400ms | 2,250ms | 2,320ms | 恒常課税 |
+| 6 | report_field_set:task.commit_contract | 37.2s | 62 | 355ms | 1,370ms | 1,760ms | 恒常課税 |
+| 7 | report_field_set:commit_hash(再) | 34.6s | 160 | 190ms | 410ms | 620ms | 恒常課税(第一弾-66%後も回数最多で残存) |
+| 8 | report_publish:atomic_replace | 27.2s | 118 | 180ms | 410ms | 540ms | 恒常課税 |
 | 11 | (計装弾)B5 inbox_write | 未計測 | — | — | — | — | 計装のみ |
 | 12 | (計装弾)B2/B3 startup gate | 未計測(参考16.4s/回) | — | — | — | — | 計装のみ |
 
