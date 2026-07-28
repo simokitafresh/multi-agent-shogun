@@ -1,4 +1,4 @@
-# 【⚙4/5クローズ — 実装4レーン全CLEAR・残#5識別子計装のみ】ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v2.2 (2026-07-28 22:48 覚醒更新。版履歴は§-3)
+# 【✅5/5全クローズ — 完了宣言は全量checkpoint(CI GREEN復帰後)待ち】ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v2.3 (2026-07-28 23:18 覚醒更新。版履歴は§-3)
 
 > 第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`(✅CLOSED 12/12)、第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(✅CLOSED 9/9・閉幕プランP1-P4全充足)、第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`(✅CLOSED 2/2)。本書は殿下知(2026-07-28 20:02)「第四弾の準備も始めよう」に基づき、**第二弾閉幕snapshot v2.0**(`hot-script-speedup-round2-v2-snapshot-20260728.md`、fixed SHA=60a88c241、固定窓2026-07-28T02:46:57Z..10:08:06Z)の序列から標的を引いた第四弾である。殿方針(10:49)「前弾でやったものも依然ボトルネックなら再度トライする」を継承。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
@@ -12,10 +12,11 @@
 | 2 | inbox_write_total | ✅実装CLEAR(21:41・半蔵 cmd_karo_round4_impl_inbox_write_20260728) | 実測真因=第一仮説どおり`delivery_verify`。active watcher時のdelivery verifyを**送達保証を維持した非同期経路**へ移設(自動既読type群・flock persist・nudge契約は不変) | median 354.5ms→**182ms**、p95 4,653→348ms、max 5,304→348ms(after N=3)。選択246/246 PASS・FAIL0・SKIP0 |
 | 3 | publish_total(再) | ✅実装CLEAR(22:14・才蔵 cmd_karo_round4_impl_publish_total_20260728) | 外れ値真因=**singleflight待ち+async telemetryへのlock FD継承**。非terminal batchをterminal gate lockから分離 | 2秒競合下6,370ms相当→**248ms**。既存contract 14/14 PASS・FAIL0・SKIP0 |
 | 4 | checks_main(再々) | ✅no-change CLOSE(21:46・小太郎 cmd_karo_round4_impl_checks_main_20260728) | v3.0序列は既存最適化(8b5ea59d)後のsnapshotであり追加重複なし→正直no-change | 変更0。選択361/361 PASS・SKIP0 |
-| 5 | commit_hash識別子計装 | 🟢 解禁(#3クローズ22:14で直列前提条件充足。report_field_setレーンで配備可) | event_idへreport/task識別子を非破壊追加(既存台帳schema互換)→固定窓で同一報告flow内の重複呼出しを一次証明→重複ありならbatch化を仮説検証、なければno-change CLOSE | (v3.0固定窓before: 累積6.9s/n=36/median 170ms/p95 360ms/max 510ms) |
+| 5 | commit_hash識別子計装 | ✅CLEAR(23:10・才蔵 cmd_karo_round4_impl_commit_hash_20260728) | commit_hash telemetryへreport_id/task_idを非破壊追加(計装恒久残置)。新schema実flowで重複0を確認→設計どおり**batch化なし(no-change)**。重複判定は今後の蓄積でいつでも機械照合可能 | v3.0固定窓before再確認(n=36/median 170ms)。新schema実flow N=1・重複0。対象test 20/20 PASS・FAIL0・SKIP0 |
 
 ## §-3 版履歴
 
+- v2.3(23:18): 覚醒更新 — **#5 commit_hash識別子計装CLEAR(23:10)で5/5全クローズ**。report_id/task_id非破壊追加・実flow重複0→batch化なし。**完了宣言の残条件=fixed-SHA全量unit共有1回→固定窓再snapshot**だが、CI RED(run 30366688273: ninja_scope_commit race系test67/68 FAIL)未解消のため全量checkpointはCI GREEN復帰後に実施。ci_fix再配備は将軍下知済み(msg_231057)
 - v2.2(22:48): 覚醒更新 — **実装4レーン全クローズ(4/5)**: #1 full_precheck=重複tree走査除去(name-only 2,438.6ms→0呼出・stdout SHA一致)/#2 inbox_write=delivery verify非同期化で median354.5→182ms(送達保証不変)/#3 publish_total=singleflight・lock FD継承分離で競合下6,370→248ms/#4 checks_main=no-change CLOSE(v3.0は既存最適化後snapshot)。**残=#5 commit_hash識別子計装のみ**(#3クローズで直列前提充足=解禁)。完了宣言は#5クローズ→fixed-SHA全量unit共有1回→固定窓再snapshotで。CI RED(run 30357551416)はci_fix実装済み・push保留中ゆえGREEN復帰は次回push後
 - v2.1(21:15): **殿裁可『では第四弾を開始しよう』=凍結解除条件(iv)充足、実装起票解禁**。§2の順序どおり独立4ファイル4レーン並列(#1 full_precheck/#2 inbox_write_total/#3 publish_total/#4 checks_main)、#5 commit_hash識別子計装は#3クローズ後にreport_field_setレーンで直列。配備=家老自立(karo_direct)。CI RED(run 30357551416)修正はci_fix担当1名が別対処中、CI RED中も新規配備は続行・pushのみGREEN復帰まで保留(殿裁定2026-05-03)
 - v2.0(21:05): **v3.0再snapshot反映** — AC1 read-only集計4レーン全GATE CLEAR(家老blt_205801)。序列をv3.0固定窓(2026-07-28T10:08:06Z..11:25:10Z、全1,234行、hash=ce8fa311…)で再集計: 上位3不変、checks_mainがcommit_hashを抜き第4位へ繰上げ。4 distinct script・5弾スコープ増減なし。§0のSSOTを`hot-script-speedup-round4-v3-snapshot-20260728.md`へ差替え。凍結解除条件(i)(ii)(iii)充足、残=殿裁可のみ
