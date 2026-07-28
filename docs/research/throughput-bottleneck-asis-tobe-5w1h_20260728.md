@@ -1,22 +1,23 @@
-# 【⚙ 一部解禁 — 計測基盤弾のみ並列開始可(殿直命14:50)・他は凍結】弾スループット全体のボトルネック改善 — AsIs/ToBe 5W1H設計書 v1.3 (2026-07-28 14:58 第一弾様式へ再構築。版履歴は§-3)
+# 【⚙ 計測基盤3弾 全CLEAR — T1b/T4待機・T2第三弾帰属】弾スループット全体のボトルネック改善 — AsIs/ToBe 5W1H設計書 v1.4 (2026-07-28 16:10 覚醒更新。版履歴は§-3)
 
-## §-2 弾台帳(2026-07-28 14:58時点 — hot-script第一弾§-2完了台帳と同型)
+## §-2 弾台帳(2026-07-28 16:10時点 — hot-script第一弾§-2完了台帳と同型)
 
 **殿直命14:50(blt_20260728_145050採択確定)**: throughputは「第二弾と別ファイルの計測基盤項目」をファイル単位に分割して並列開始可。複数ファイル一括task禁止。才蔵所有中のninja_monitorとは競合させない。第二弾主線は不変。
 
 | # | 弾 | 状態 | 内容 | Δ実測 |
 |---|---|---|---|---|
-| T1a | 境界イベント計装 | 🟢 開始可(計測基盤・第二弾と別ファイル条件) | 8遷移時刻(issued/deployed/ack/report_terminal/gunshi_lgtm/karo_accept/gate_start/clear)を既存台帳へ計装 | — (計装弾。効果=unattributed残差の原因別分類可能化) |
+| T1a | 境界イベント計装(review_approval側) | ✅ CLEAR(15:24・小太郎) | review_approval境界を既存defense_overhead台帳へ計装+failed+FAIL報告の正式Karo RC経路も復旧 | task選択404/404 PASS・SKIP0(計装弾。残差の原因別分類は蓄積後) |
 | T1b | 例外遷移の差分実測→欠落補完 | ⏸ T1a実測待ち(事前断定禁止) | 既存復帰イベントのdelivery/ack遅延と未カバー遷移を実測し欠落だけ補完。一律re-wake禁止(家老RC②) | — |
 | T2 | finalize区分計測 | ❄ 第三弾#2へ帰属(第三弾解禁時) | 家老ACCEPT実処理を含む区分計測。本書から起票しない | — (現状は混合値142-776sのみ) |
-| T3a | gate_metrics writer修正 | 🟢 開始可(計測基盤・才蔵所有ninja_monitorと非競合の範囲) | 残差負値・retry時workリセットの是正(attempt_id対手法拡大) | — (現状バグ実測: commit_hash弾で負残差、full_precheck弾でworkリセット) |
-| T3b | fingerprintキャッシュhit率計装 | 🟢 開始可(T3aと別ファイル・並列可) | gate_report_format側の計測行追加 | — (hit率未計測) |
+| T3a | gate_metrics writer修正 | ✅ CLEAR(15:31・才蔵) | writerを最新successful attempt境界へ統一。実データ376行で負残差5件(最小-32,371s)を特定・是正、retry fixtureを残差0へ | commit後570/570 PASS・SKIP0。負残差5件→0 |
+| T3b | fingerprintキャッシュhit率計装 | ✅ CLEAR(15:43・影丸) | gate_report_format.shのhit/miss分岐へ非加算計装18行(check_id=fingerprint_hit/miss)。判定・stdout/exit・契約は完全不変 | 隔離fixtureでhit=1/miss=1のledger書込み確認。所有scope 711/711 PASS・SKIP0 |
 | T4 | 見積×FAIL率の計測 | ⏸ 起票順序は家老判断(推薦=次弾wave前) | task_type別estimated/work/RC率の全弾相関計測。相関確認後のみ見積型分離実装(因果未証明での実装禁止) | — |
 
 - **実装弾の起票・配備=家老自立(karo_direct)**。ファイル単位1task厳守。効果報告=遷移別n/p50/p95/max+resume SLA達成率(SLA値はT1a実測分布から定義)
 
 ## §-3 版履歴
 
+- v1.4(16:10): 覚醒更新 — 計測基盤3弾全CLEAR: T1a(15:24 review_approval計装+failed正式RC経路復旧)/T3a(15:31 負残差5件→0)/T3b(15:43 hit/miss計装18行)。残=T1b(実測待ち)/T4(順序は家老判断)/T2(第三弾帰属)
 - v1.3(14:58): 第一弾様式へ再構築(§-2弾台帳表新設・版履歴を本節へ分離)+殿直命14:50(計測基盤弾のファイル単位並列開始解禁)を反映
 - v1.2(14:26): 家老再レビューの数値4点修正(母集団26件・例外3件・正常5-340s・閾値600s=観測ギャップ導出)。commit 4281f72c1
 - v1.1: 家老RC7点全採用(骨格APPROVE済)
