@@ -1348,7 +1348,7 @@ HOOK
     (
         cd "$repo"
         exec env NINJA_SCOPE_COMMIT_RUN_ID=slow-a \
-            "$HELPER" -m slow-a -- a.txt
+            bash "$HELPER" -m slow-a -- a.txt
     ) >"$BATS_TEST_TMPDIR/a.out" 2>"$BATS_TEST_TMPDIR/a.err" &
     slow_pid=$!
     # The full CI lane can spend several seconds scheduling the helper before
@@ -1375,7 +1375,7 @@ HOOK
 
     printf 'change-b\n' > "$repo/b.txt"
     start_ms="$(date +%s%3N)"
-    run bash -c "cd '$repo' && NINJA_SCOPE_COMMIT_RUN_ID=fast-b '$HELPER' -m fast-b -- b.txt"
+    run bash -c "cd '$repo' && NINJA_SCOPE_COMMIT_RUN_ID=fast-b bash '$HELPER' -m fast-b -- b.txt"
     elapsed_ms=$(( $(date +%s%3N) - start_ms ))
     [ "$status" -eq 0 ]
     [ "$elapsed_ms" -lt 3000 ]
@@ -1428,12 +1428,12 @@ HOOK
 
     (
         cd "$repo"
-        NINJA_SCOPE_COMMIT_RUN_ID=same-change-a "$HELPER" -m same-change-a -- owned.txt
+        NINJA_SCOPE_COMMIT_RUN_ID=same-change-a bash "$HELPER" -m same-change-a -- owned.txt
     ) >"$BATS_TEST_TMPDIR/same-a.out" 2>"$BATS_TEST_TMPDIR/same-a.err" &
     pid_a=$!
     (
         cd "$repo"
-        NINJA_SCOPE_COMMIT_RUN_ID=same-change-b "$HELPER" -m same-change-b -- owned.txt
+        NINJA_SCOPE_COMMIT_RUN_ID=same-change-b bash "$HELPER" -m same-change-b -- owned.txt
     ) >"$BATS_TEST_TMPDIR/same-b.out" 2>"$BATS_TEST_TMPDIR/same-b.err" &
     pid_b=$!
     status_a=0
