@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-28 cmd_karo_hotfix_ninja_scope_empty_commit_guard_20260728 reviewed source boundary -->
-<!-- source_commit:6dd238509 reason:cmd_karo_hotfix_ninja_scope_empty_commit_guard_20260728 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=6dd238509 -->
+<!-- last_updated: 2026-07-29 cmd_karo_hotfix_no_code_commit_reminder_20260728 reviewed source boundary -->
+<!-- source_commit:b40e11a3c reason:cmd_karo_hotfix_no_code_commit_reminder_20260728 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=b40e11a3c -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -896,7 +896,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1442 -->
+<!-- last_synced_lesson: L1445 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2052,6 +2052,9 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1440: AC文言grepを所有権へ使うとfocused taskが全量化する（cmd_karo_hotfix_deploy_b32_scope_reason_retry_20260728）
 - L1441: 親task selectorをmanual negative-control fixtureへ継承させない（cmd_karo_hotfix_precommit_task_selector_20260728）
 - L1442: task selectorとpre-commit selectorの同一正本化（cmd_karo_round4_impl_commit_hash_20260728）
+- L1443: 非同期子プロセスは親のlock FDを明示的に閉じる（cmd_karo_hotfix_heavy_admission_lock_release_20260729）
+- L1444: identity検証追加時はfallback解決順序を先に保つ（cmd_karo_hotfix_archive_report_identity_race_20260728）
+- L1445: batsテストfixtureは本番の.gitignore済みDBファイルへ絶対に依存させない(ローカルPASS・CI FAILの発生源)（cmd_karo_ci_fix_30374243969_three_layer_knowledge_chain）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
