@@ -1,4 +1,4 @@
-# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.2.3 (2026-07-28 — B2/B3計装を第三弾へ移管(9弾化)+v2.0標本十分条件を新設(n≥30かつ窓≥24h、充足まで暫定scope維持・第三弾先行)。v1.2.2=row_count整数化。殿裁可12:19により開始、起票は標本条件と第三弾裁可の後)
+# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.2.4 (2026-07-28 — 殿裁定12:45『第二弾が優先』により暫定scope 9弾で即時実行中。標本条件は最終再序列の条件であり開始BLOCKではない。v1.2.3の「第三弾先行」は将軍・家老の越権判断として撤回。B2/B3計装は殿裁定12:43(startup聖域)で恒久除外)
 
 ## §-0 v1.1改訂(家老レビュー2・blt_105708の全採用)
 
@@ -10,7 +10,7 @@
 
 ## §-1 第二弾スコープ決め打ち(第一弾§-1憲法の踏襲 — 数を先に固定)
 
-**決め打ち(暫定草案・v1.1でrefresh系2枠を除外): 3スクリプト・8check+計装2弾=10弾以内**(§0表がSSOT。最終scopeは第一弾12/12後の再序列で確定):
+**決め打ち(v1.2.3確定: 4ファイル・8check+B5計装1弾=9弾)**(§0表がSSOT。序列の最終確定は標本十分条件充足後のv2.0):
 
 | 実体スクリプト | 担当check_id | 件数 |
 |---|---|---:|
@@ -21,7 +21,7 @@
 
 - **完了条件(第一弾と同型)**: 恒常課税型=既存台帳`logs/defense_overhead.jsonl`同条件before/afterのΔ累積・Δmedian実測で是正済み / 外れ値型=発生条件特定(3点表: topN寄与率・閾値超過率・発生条件)→条件ベース是正済み / 計装弾=計測行が台帳へ実記録されることの二値確認のみ
 - **第二弾完了宣言=9弾全クローズ→台帳再集計→次弾序列**(v1.2.3同期: refresh 2枠除外+B2/B3の第三弾移管後の弾数=8check+B5計装)
-- **v2.0序列確定の標本十分条件(v1.2.3新設 — 家老BLOCK 12:35採用)**: 第一弾完了後cohort(下限2026-07-28T02:46:57Z)の再snapshotはrow_count=268で8標的中3標的n=0・4標的n≤2となり序列判定不能だった。∴**v2.0固定は各標的n≥30かつ固定窓≥24hを満たしてから**行う(充足前の序列変更提案を禁止)。それまで暫定scope(本§-1)を維持し、**起票開始は第三弾を先行**させてcohortを自然蓄積する(殿の第三弾先行方針12:26と整合)
+- **v2.0序列確定の標本十分条件(v1.2.4訂正 — 殿裁定12:45)**: 第一弾完了後cohortの初回再snapshotはrow_count=268で標本不足だったが、**標本条件(各標的n≥30かつ固定窓≥24h)は最終再序列の条件であって開始BLOCKではない**(殿原文『第二弾が優先、第三弾は第二弾が順調ならやるかもしれない準備に過ぎない』『超速で第二弾を実行せよ』)。∴**暫定scope(本§-1の9弾)で即時起票・実行し**、序列の再判定は蓄積後に行う。v1.2.3の「第三弾先行でcohort蓄積」は将軍・家老の越権判断として撤回
 - **スコープ外(途中追加は理由を問わず禁止)**: `deploy_task:deploy_total`(cohortA 3位186.7s/n=4だが**既存deploy control-plane速度改善レーンへ帰属** — 残候補③report_publication/④ninja_scope_commitが整理済みであり、二重管理=車輪の再発明を避ける)・cron時差別設計(fullrecalc側)・上記以外の新規標的
 
 ## §0 結論 — 純オーバーヘッド標的序列(cohortA=第一弾10弾の最終CLEAR 2026-07-28T08:36 JST以降のみ)
@@ -44,7 +44,7 @@
 | 7 | report_field_set:commit_hash(再) | 34.6s | 160 | 190ms | 410ms | 620ms | 恒常課税(第一弾-66%後も回数最多で残存) |
 | 8 | report_publish:atomic_replace | 27.2s | 118 | 180ms | 410ms | 540ms | 恒常課税 |
 | 11 | (計装弾)B5 inbox_write | 未計測 | — | — | — | — | 計装のみ |
-| 12 | (計装弾)B2/B3 startup gate | 未計測(参考16.4s/回) | — | — | — | — | 計装のみ |
+| — | ~~(計装弾)B2/B3 startup gate~~ | — | — | — | — | — | **殿裁定12:43で恒久除外**(startup.shは触らない — 計装含む) |
 
 **cohortB(本日全量・参考、序列には不使用)**: refresh_copy 3,723.6s/refresh_verify 3,377.7s/checks_main 2,266.6s(是正前混入)/q11 869.7s(是正前混入)。第一弾対象のq11・three_layer(cmd_save側)・yaml_ast・files_modified・status・verdict・checks_pre_sessionはcohortAで全て12位圏外へ後退=**第一弾の効果が新cohortで確認された**。
 
@@ -71,7 +71,7 @@
 2. ~~checks_main残余の内訳~~ → **恒久計装が必要と確定**: cmd_save系の台帳check_idは6種(checks_main/checks_pre_session/q11/three_layer/memory_db_token/session_state)のみでchecks_main内サブ区分は**台帳に存在しない**(cmd_4189のフェーズ分解は報告内の一時実測で恒久化されていない)。∴checks_main再トライ弾の第一AC=サブ区間計測行の恒久追加(外れ値台帳の枝選択コンテキスト要件に従う)→ボトルネック上位特定→是正
 3. ~~commit_hash呼出し回数の妥当性~~ → **時間クラスタ集中を実測、batch化は仮説へ降格(家老RC採用)**: cohortA(上限02:30Z固定)でn=243が2分gapクラスタ9個に集中=平均27.0回/クラスタ。ただし台帳event_idにreport/task識別子がなく**「1クラスタ=1報告フロー」は証明不能**(時間クラスタの回数であり同一報告flowの回数ではない)。∴是正弾の第一AC=report/task識別子の同event計装→重複判定→batch化はその後の仮説検証
 4. ~~full_precheck 3点表~~ → **作成済み(混合型と判定・家老RC採用)**: n=158/累積180.1s(上限02:30Z固定)、top1寄与6.3%/top5寄与21.5%、>1s率22.2%、median 494ms/p95 3,771ms。**恒常単一型ではなく恒常+混合尾** — 「条件特定偵察不要」の断定は撤回し、弾の型=フェーズ分解と枝条件の**同時計装**→上位特定→是正
-5. ~~B5/B2/B3計装の計測点設計~~ → **設計確定**: B5 inbox_write=persist(flock+YAML書込み)/nudge(tmux send-keys)/delivery verify(codex capture)の3計測点+total(加算対象はtotalのみ=親子非加算遵守)。B2/B3 startup gate=既存TIMING行(gate_shogun_startupはTIMING_COVERAGE measured=59が既に出力)をdefense_overhead.jsonlへ転記する薄いwriterブリッジのみ(新規計測実装は不要)
+5. ~~B5計装の計測点設計~~ → **設計確定**: B5 inbox_write=persist(flock+YAML書込み)/nudge(tmux send-keys)/delivery verify(codex capture)の3計測点+total(加算対象はtotalのみ=親子非加算遵守)。~~B2/B3 startup gate計装~~は**殿裁定12:43(startup.shは触らない — 計装含む)で恒久除外**
 
 **残る未決定(調査では解消できない工程判断)**: 序列・scopeの最終確定は第一弾12/12完了後の再snapshot(v2.0)で行い殿裁可を仰ぐ — §-0(3)の通り
 
