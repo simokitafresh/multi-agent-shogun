@@ -1381,3 +1381,62 @@ HOOK
     [ "$(git -C "$repo" show HEAD:b.txt)" = change-b ]
     [ -z "$(git -C "$repo" status --porcelain)" ]
 }
+
+# test_necessity: two helpers that snapshot the same owned change may publish
+# exactly one material commit; the follower must return success without an
+# empty commit while preserving unrelated dirty worktree bytes.
+@test "same owned change raced by two helpers produces one material commit and zero empty commits" {
+    repo="$BATS_TEST_TMPDIR/same-change-race"
+    git init -q "$repo"
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    printf 'base-owned\n' > "$repo/owned.txt"
+    printf 'base-foreign\n' > "$repo/foreign.txt"
+    git -C "$repo" add owned.txt foreign.txt
+    git -C "$repo" commit -qm base
+    base_head="$(git -C "$repo" rev-parse HEAD)"
+
+    mkdir -p "$repo/.git/hooks"
+    cat > "$repo/.git/hooks/pre-commit" <<'HOOK'
+#!/usr/bin/env bash
+sleep 1
+HOOK
+    cat > "$repo/.git/hooks/post-commit" <<'HOOK'
+#!/usr/bin/env bash
+sentinel=.git/scoped-publish-active
+if ! mkdir "$sentinel" 2>/dev/null; then
+    printf 'overlap\n' >> .git/scoped-publish-overlap
+    exit 1
+fi
+sleep 0.2
+rmdir "$sentinel"
+HOOK
+    chmod +x "$repo/.git/hooks/pre-commit" "$repo/.git/hooks/post-commit"
+    printf 'changed-owned\n' > "$repo/owned.txt"
+    printf 'changed-foreign\n' > "$repo/foreign.txt"
+
+    (
+        cd "$repo"
+        NINJA_SCOPE_COMMIT_RUN_ID=same-change-a "$HELPER" -m same-change-a -- owned.txt
+    ) >"$BATS_TEST_TMPDIR/same-a.out" 2>"$BATS_TEST_TMPDIR/same-a.err" &
+    pid_a=$!
+    (
+        cd "$repo"
+        NINJA_SCOPE_COMMIT_RUN_ID=same-change-b "$HELPER" -m same-change-b -- owned.txt
+    ) >"$BATS_TEST_TMPDIR/same-b.out" 2>"$BATS_TEST_TMPDIR/same-b.err" &
+    pid_b=$!
+    wait "$pid_a"
+    status_a=$?
+    wait "$pid_b"
+    status_b=$?
+
+    [ "$status_a" -eq 0 ]
+    [ "$status_b" -eq 0 ]
+    [ "$(git -C "$repo" rev-list --count "$base_head..HEAD")" -eq 1 ]
+    [ -n "$(git -C "$repo" diff-tree --no-commit-id --name-only -r HEAD)" ]
+    [ "$(git -C "$repo" log --format= --name-only "$base_head..HEAD" | sed '/^$/d' | sort -u)" = owned.txt ]
+    [ "$(git -C "$repo" show HEAD:owned.txt)" = changed-owned ]
+    [ "$(cat "$repo/foreign.txt")" = changed-foreign ]
+    [ -n "$(git -C "$repo" status --porcelain -- foreign.txt)" ]
+    [ ! -e "$repo/.git/scoped-publish-overlap" ]
+}

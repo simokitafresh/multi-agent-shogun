@@ -927,6 +927,22 @@ PY
     run_scoped_precommit
     acquire_transaction_lock_and_rebase_index
     assert_head_generation
+    # Another helper for the same task may have published these exact owned
+    # blobs while this caller was running pre-commit.  Rebuilding the private
+    # index on the latest HEAD then yields no owned diff.  Treat that as an
+    # idempotent success instead of manufacturing an empty commit.
+    if git diff --cached --quiet "$transaction_head" -- "${paths[@]}"; then
+        finish_phase 0
+        begin_phase advance_shared_index
+        unset GIT_INDEX_FILE
+        finish_phase 0
+        begin_phase post_check
+        cleanup_patch_index
+        trap - EXIT
+        publish_terminal_success "$transaction_head"
+        trap - EXIT
+        exit 0
+    fi
     commit_hash="$(create_and_publish_scoped_commit)"
     published_commit_hash="$commit_hash"
     assert_single_parent_commit "$commit_hash"
@@ -1096,6 +1112,18 @@ begin_phase git_commit
 run_scoped_precommit
 acquire_transaction_lock_and_rebase_index
 assert_head_generation
+if git diff --cached --quiet "$transaction_head" -- "${paths[@]}"; then
+    finish_phase 0
+    begin_phase advance_shared_index
+    unset GIT_INDEX_FILE
+    finish_phase 0
+    begin_phase post_check
+    cleanup_normal_index
+    trap - EXIT
+    publish_terminal_success "$transaction_head"
+    trap - EXIT
+    exit 0
+fi
 commit_hash="$(create_and_publish_scoped_commit)"
 published_commit_hash="$commit_hash"
 assert_single_parent_commit "$commit_hash"
