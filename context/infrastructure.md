@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-28 cmd_karo_hotfix_ga411_context_freshness_20260728 -->
-<!-- source_commit:003f3c411 reason:cmd_karo_hotfix_ga411_context_freshness_20260728 evidence:git-show-003f3c411-one-commit-semantic-key-dedupe-reflected-in-body -->
+<!-- last_updated: 2026-07-28 cmd_karo_hotfix_ninja_scope_empty_commit_guard_20260728 reviewed source boundary -->
+<!-- source_commit:6dd238509 reason:cmd_karo_hotfix_ninja_scope_empty_commit_guard_20260728 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=6dd238509 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -896,7 +896,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1437 -->
+<!-- last_synced_lesson: L1442 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2047,6 +2047,11 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1435: reflux_inventory_beforeのtimeout/失敗値が0として記録されAC2証跡を汚染する（cmd_reflux_insight_202607281837_kagemaru）
 - L1436: active watcher時はdelivery verifyをwriter critical pathから分離する（cmd_karo_round4_impl_inbox_write_20260728）
 - L1437: 時刻推測ではなくevent-ready証跡で並行testを同期する（cmd_karo_ci_fix_30357551416_ninja_scope_precommit_race）
+- L1438: 非terminal batchをterminal singleflightへ混入させない（cmd_karo_round4_impl_publish_total_20260728）
+- L1439: 空commit判定はlock後の明示HEAD対private-index tree差分で行う（cmd_karo_hotfix_ninja_scope_empty_commit_guard_20260728）
+- L1440: AC文言grepを所有権へ使うとfocused taskが全量化する（cmd_karo_hotfix_deploy_b32_scope_reason_retry_20260728）
+- L1441: 親task selectorをmanual negative-control fixtureへ継承させない（cmd_karo_hotfix_precommit_task_selector_20260728）
+- L1442: task selectorとpre-commit selectorの同一正本化（cmd_karo_round4_impl_commit_hash_20260728）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
