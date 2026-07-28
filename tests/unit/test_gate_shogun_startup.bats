@@ -21,6 +21,60 @@ setup() {
         inside && /^PY$/ {exit}
         inside {print}
     ' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh" > "$TEST_ROOT/q6_proof.py"
+    awk '
+        /_deferred_dup_status=\$\(python3 - / {inside=1; next}
+        inside && /^PY$/ {exit}
+        inside {print}
+    ' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh" > "$TEST_ROOT/escalation_dedupe.py"
+}
+
+run_escalation_dedupe() {
+    run python3 "$TEST_ROOT/escalation_dedupe.py" "$TEST_ROOT/queue/karo.yaml" "$1"
+}
+
+# test_necessity: 未読escalationは先送り判断の意味キーで重複抑制し、新規キーと既読後の再通知を失わない不変量を守る。
+@test "startup escalation dedupes same unresolved key despite companion warning changes" {
+    cat > "$TEST_ROOT/queue/karo.yaml" <<'EOF'
+messages:
+- from: shogun
+  type: escalation
+  read: false
+  content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: 学習ループ台帳: 空転/在庫超過あり (3217019218:60) が1セッション連続; 先送り判断: scripts/未コミット変更: 4件 が1セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'
+EOF
+    run_escalation_dedupe '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: 学習ループ台帳: 空転/在庫超過あり (3217019218:60) が2セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'
+    [ "$status" -eq 0 ]
+    [ "$output" = "duplicate_unread" ]
+}
+
+@test "startup escalation dedupes keys spread across unread messages" {
+    cat > "$TEST_ROOT/queue/karo.yaml" <<'EOF'
+messages:
+- {from: shogun, type: escalation, read: false, content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が1セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'}
+- {from: shogun, type: escalation, read: false, content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-B が1セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'}
+EOF
+    run_escalation_dedupe '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が2セッション連続; 先送り判断: key-B が2セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'
+    [ "$status" -eq 0 ]
+    [ "$output" = "duplicate_unread" ]
+}
+
+@test "startup escalation preserves message when any warning key is new" {
+    cat > "$TEST_ROOT/queue/karo.yaml" <<'EOF'
+messages:
+- {from: shogun, type: escalation, read: false, content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が1セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'}
+EOF
+    run_escalation_dedupe '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が2セッション連続; 先送り判断: key-NEW が1セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "startup escalation allows notification after matching message is read" {
+    cat > "$TEST_ROOT/queue/karo.yaml" <<'EOF'
+messages:
+- {from: shogun, type: escalation, read: true, content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が1セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'}
+EOF
+    run_escalation_dedupe '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が2セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 }
 
 run_detector() {

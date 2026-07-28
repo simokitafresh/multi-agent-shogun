@@ -4458,6 +4458,7 @@ if [ ${#alerts[@]} -gt 0 ]; then
         flock -x 9
         _deferred_dup_status=$(python3 - "$SCRIPT_DIR/queue/inbox/karo.yaml" "$_deferred_message" <<'PY' 2>/dev/null || true
 import sys
+import re
 from pathlib import Path
 
 try:
@@ -4475,14 +4476,36 @@ try:
 except Exception:
     raise SystemExit(0)
 
+prefix = "将軍startup先送りBLOCK自動エスカレーション: "
+suffix = "。一次情報を再検証し、未解消なら家老karo_directで対処せよ"
+
+def deferred_keys(content):
+    if not isinstance(content, str) or not content.startswith(prefix):
+        return set()
+    body = content[len(prefix):]
+    if body.endswith(suffix):
+        body = body[:-len(suffix)]
+    keys = set()
+    for alert in body.split("; "):
+        alert = alert.strip().rstrip("。")
+        if not alert.startswith("先送り判断:"):
+            continue
+        # セッション連続数は通知時点の観測値であり、未解消判断の意味キーではない。
+        keys.add(re.sub(r"\s+が\d+セッション連続$", "", alert))
+    return keys
+
+target_keys = deferred_keys(target)
+unread_keys = set()
 for msg in data.get("messages") or []:
     if not isinstance(msg, dict):
         continue
     if msg.get("read"):
         continue
-    if msg.get("from") == "shogun" and msg.get("type") == "escalation" and msg.get("content") == target:
-        print("duplicate_unread")
-        break
+    if msg.get("from") == "shogun" and msg.get("type") == "escalation":
+        unread_keys.update(deferred_keys(msg.get("content")))
+
+if target_keys and target_keys.issubset(unread_keys):
+    print("duplicate_unread")
 PY
 )
         if [ "$_deferred_dup_status" = "duplicate_unread" ]; then
