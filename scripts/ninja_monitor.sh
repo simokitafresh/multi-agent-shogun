@@ -2404,6 +2404,13 @@ PY
     return 0
 }
 
+_pending_task_has_terminal_archive() {
+    local parent_cmd="$1"
+    [ -n "$parent_cmd" ] &&
+        [ "$parent_cmd" != "none" ] &&
+        [ -f "$SCRIPT_DIR/queue/gates/${parent_cmd}/archive.done" ]
+}
+
 # ─── failed respawn通知のdurable dedupe (karo実運転RC 2026-07-12 09:04) ───
 # 同一failed世代(=task_id+parent_cmd+deployed_atが不変の間)がidle+failedのまま繰り返し
 # respawnされ続けると、修正直後は同一通知が毎サイクル複数回karoへ届いていた(exactly-once不変量違反)。
@@ -6448,6 +6455,12 @@ check_inbox_renudge() {
                     [[ "$_kts" = "done" || "$_kts" = "failed" ]] || continue
                     if [ -z "$_kpcmd" ] || [ "$_kpcmd" = "none" ]; then
                         log "KARO-PENDING-SKIP-NO-PARENT-CMD: done task has no parent_cmd"
+                        continue
+                    fi
+                    # CLEAR/FAIL_CLOSE共通のdurable terminal evidenceをactive
+                    # report解決より先に判定する。明示reopenはmarkerを除去する。
+                    if _pending_task_has_terminal_archive "$_kpcmd"; then
+                        log "KARO-PENDING-SKIP-TERMINAL-ARCHIVE: $_kpcmd archive_marker=present"
                         continue
                     fi
                     # GATE CLEAR済みならpending workではない

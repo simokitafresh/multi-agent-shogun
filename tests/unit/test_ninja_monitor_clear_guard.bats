@@ -1092,6 +1092,34 @@ echo "COUNTS fail_close=$fail_close_count clear=$clear_count unreviewed=$unrevie
     [[ "$output" == *"COUNTS fail_close=0 clear=0 unreviewed=1 reopen=1"* ]]
 }
 
+# test_necessity: pending_work must ignore a regenerated active FAIL report while
+# archive.done exists, and must become eligible again after explicit reopen.
+@test "pending work terminal archive precedes active report and reopens after marker removal" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$BATS_TEST_TMPDIR"
+mkdir -p "$SCRIPT_DIR/queue/gates/cmd_fail_close" "$SCRIPT_DIR/queue/reports"
+cat > "$SCRIPT_DIR/queue/reports/kotaro_report_cmd_fail_close.yaml" <<YAML
+status: completed
+verdict: FAIL
+report_id: regenerated-active-copy
+YAML
+touch "$SCRIPT_DIR/queue/gates/cmd_fail_close/archive.done"
+pending=1
+_pending_task_has_terminal_archive cmd_fail_close && pending=0
+test "$pending" -eq 0
+rm "$SCRIPT_DIR/queue/gates/cmd_fail_close/archive.done"
+pending=1
+_pending_task_has_terminal_archive cmd_fail_close && pending=0
+test "$pending" -eq 1
+echo "COUNTS archived_pending=0 reopened_pending=1"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COUNTS archived_pending=0 reopened_pending=1"* ]]
+}
+
 @test "report_gate: near-match identity remains a true missing notification" {
     run bash -lc '
 set -eo pipefail
