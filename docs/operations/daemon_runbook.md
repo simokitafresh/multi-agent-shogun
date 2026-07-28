@@ -549,7 +549,7 @@ jobs:
       - name: Benchmark source chain completion (<500ms)
         run: |
           START=$(date +%s%N)
-          bash -c 'source scripts/ninja_monitor.sh --dry-run 2>/dev/null || true'
+          bash -c 'NINJA_MONITOR_LIB_ONLY=1 source scripts/ninja_monitor.sh'
           END=$(date +%s%N)
           ELAPSED_MS=$(( (END - START) / 1000000 ))
           echo "Source chain time: ${ELAPSED_MS}ms"

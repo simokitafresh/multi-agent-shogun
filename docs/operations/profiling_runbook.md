@@ -89,7 +89,7 @@ for i in $(seq 1 "$ITERATIONS"); do
   (
     # サブシェルで隔離実行: source chainのみ計測（主ループ起動なし）
     export DRY_RUN=1
-    source scripts/ninja_monitor.sh 2>/dev/null
+    NINJA_MONITOR_LIB_ONLY=1 source scripts/ninja_monitor.sh 2>/dev/null
   )
   END_NS=$(date +%s%N)
   ELAPSED_MS=$(( (END_NS - START_NS) / 1000000 ))
@@ -156,7 +156,7 @@ for func in $FUNCTIONS; do
       source tests/e2e/helpers/mock_externals.bash 2>/dev/null
       init_mock_globals 2>/dev/null
       init_mock_externals 2>/dev/null
-      source scripts/ninja_monitor.sh 2>/dev/null
+      NINJA_MONITOR_LIB_ONLY=1 source scripts/ninja_monitor.sh 2>/dev/null
       "$func" 2>/dev/null
     )
     END_NS=$(date +%s%N)

@@ -3,7 +3,9 @@
 # doc-links: [[infrastructure.md]], [[infra-details]], [[training-cycle]], [[training-cycle.md]], [[ninja_monitor_requirements.md]], [[ninja_monitor_design.md]], [[three-layer-memory-l0-l7-penetration-design_20260604]], [[multi-cli-hook-event-commonization-design_20260602]]
 # shellcheck disable=SC1091,SC2034,SC2129
 # ninja_monitor.sh — 忍者idle検知デーモン
-# Usage: bash scripts/ninja_monitor.sh
+# Usage:
+#   bash scripts/ninja_monitor.sh
+#   NINJA_MONITOR_LIB_ONLY=1 source scripts/ninja_monitor.sh
 #
 # 忍者がタスク完了してidle状態になったことを自動検知し、
 # 家老(karo)のinboxに通知するバックグラウンドデーモン。
@@ -28,6 +30,24 @@
 # IDLEパターン (フォールバック時):
 #   - ❯ プロンプト表示（Claude Code）+ BUSYパターンなし
 #   - › プロンプト表示（Codex CLI）+ BUSYパターンなし
+
+_ninja_monitor_usage() {
+    printf '%s\n' \
+        'Usage: bash scripts/ninja_monitor.sh' \
+        '       NINJA_MONITOR_LIB_ONLY=1 source scripts/ninja_monitor.sh' >&2
+}
+
+# Sourcing without the explicit library contract used to continue into the
+# daemon loop. Fail closed before loading dependencies or acquiring ownership.
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+    if [[ "${NINJA_MONITOR_LIB_ONLY:-0}" != "1" ]]; then
+        _ninja_monitor_usage
+        return 64
+    fi
+elif (( $# != 0 )); then
+    _ninja_monitor_usage
+    exit 64
+fi
 
 # cmd_training_speed_ninja_monitor_20260607140828: サブシェル不要の純bash文字列演算でSCRIPT_DIR解決
 _NM_SELF="${BASH_SOURCE[0]}"

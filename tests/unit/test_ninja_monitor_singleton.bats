@@ -16,6 +16,31 @@ monitor_lib() {
   LOG="$ROOT/logs/monitor.log"
 }
 
+# test_necessity: accidental sourcing or unknown CLI arguments must fail closed
+# before daemon initialization, while the explicit library contract stays usable.
+@test "entrypoint rejects accidental source and unknown args without orphan monitor" {
+  script="$BATS_TEST_DIRNAME/../../scripts/ninja_monitor.sh"
+
+  run timeout 2 bash -c 'source "$1"' _ "$script"
+  [ "$status" -eq 64 ]
+  [[ "$output" == *"Usage: bash scripts/ninja_monitor.sh"* ]]
+
+  run timeout 2 bash -c 'source "$1" --source-only' _ "$script"
+  [ "$status" -eq 64 ]
+  [[ "$output" == *"Usage: bash scripts/ninja_monitor.sh"* ]]
+
+  run timeout 2 bash "$script" --unknown
+  [ "$status" -eq 64 ]
+  [[ "$output" == *"Usage: bash scripts/ninja_monitor.sh"* ]]
+
+  run timeout 2 env NINJA_MONITOR_LIB_ONLY=1 bash -c \
+    'source "$1"; declare -F acquire_singleton_lock >/dev/null' _ "$script"
+  [ "$status" -eq 0 ]
+
+  run pgrep -af '[s]cripts/ninja_monitor.sh'
+  [[ "$output" != *"$BATS_TEST_TMPDIR"* ]]
+}
+
 @test "live but stalled owner is atomically replaced without termination" {
   monitor_lib
   printf '%s old-generation %s\n' "$$" "$((EPOCHSECONDS - 30))" > "$NINJA_MONITOR_OWNER_FILE"
