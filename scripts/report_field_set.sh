@@ -2553,6 +2553,18 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
             rm -f "$tmp_file"
         fi
 
+        # task.commit_contract is deployment-time structured metadata.  Its
+        # Python writer already performs a full YAML load, typed value parse,
+        # fsync and atomic replace; the generic lane's preceding .bak copy can
+        # only be consumed by the separate post-write parse checker, which is
+        # unreachable because the Python writer exits directly.  Skip that
+        # redundant full-file copy while retaining the same flock, Python
+        # parser and atomic publication contract.
+        if [ "$DOT_KEY" = "task.commit_contract" ] && [ "$USE_PYTHON" -eq 1 ]; then
+            _report_field_set_python "$REPORT_PATH" "$DOT_KEY" "-" "$STDIN_VALUE"
+            exit $?
+        fi
+
         # None of the fast paths above applied (or none matched this write) —
         # from here on, paths can fall back to Python or hit the backslash
         # validate-or-restore check, both of which read .bak. Create it now.
