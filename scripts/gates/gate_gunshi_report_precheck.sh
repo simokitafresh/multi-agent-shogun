@@ -1013,7 +1013,14 @@ if [ -n "${FILES_MODIFIED:-}" ]; then
                     ;;
             esac
         done
-        rm -rf "$_causal_tmpdir"
+        # D002遵守: project外(/tmp)パスへのrm -rf(再帰削除)は絶対禁則。
+        # このディレクトリ配下は本ループ自身が作った"${i}.rc"/"${i}.out"の
+        # 既知単一ファイルのみのため、個別rm -f(非再帰)で後始末しrmdir(非再帰・
+        # 空でなければ失敗するfail-safe)でディレクトリを閉じる。
+        for _causal_cleanup_i in $(seq 1 "${_causal_i:-0}" 2>/dev/null || true); do
+            rm -f "$_causal_tmpdir/${_causal_cleanup_i}.rc" "$_causal_tmpdir/${_causal_cleanup_i}.out"
+        done
+        rmdir "$_causal_tmpdir" 2>/dev/null || true
         if [ -n "$_causal_out" ]; then
             if [ "$_causal_timeout" -eq 1 ]; then
                 echo "  因果辺照合WARN(タイムアウトあり。PASS扱い禁止):"
