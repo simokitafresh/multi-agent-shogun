@@ -30,7 +30,7 @@
 | 第四弾AC1 inbox | hanzo | GATE CLEAR + cmd-complete済み | `scripts/inbox_write.sh` | delivery_verify BLOCK 393/443 |
 | 第四弾AC1 publish | kotaro | GATE CLEAR + cmd-complete済み | `scripts/report_field_set.sh` のpublish_totalのみ | N=2,420、欠損0、母集団hash固定 |
 | 第四弾AC1 cmd_save | tobisaru | GATE CLEAR + cmd-complete済み | `scripts/cmd_save.sh` | quality_gateが最大子区分 |
-| startup escalation重複hotfix | saizo | assigned/in_progress | `scripts/gates/gate_shogun_startup.sh` + contract test | 本文完全一致ではなく未解消警告キー単位で重複抑止 |
+| startup escalation重複hotfix | saizo | GATE CLEAR + cmd-complete済み | commit `003f3c411`、選択test 7/7、SKIP0 | 本文完全一致ではなく未解消警告キー単位で重複抑止 |
 
 4つのAC1は別ファイルのまま全て閉幕した。途中のunit全量実行は0、コード変更0、commit_hash識別子計装0、母集団縮小0。v3.0でも上位3標的は不変、`checks_main`だけ4位へ上昇し、4 scripts / 5 bulletsのscope増減はない。
 
@@ -46,7 +46,7 @@
 ## 復帰直後の順序保証
 
 1. `queue/inbox/karo.yaml` の `read:false` を読み、各IDを個別に処理する。
-2. 才蔵のstartup escalation重複hotfixをreport→軍師LGTM→家老ACCEPT→GATE→`/cmd-complete`で閉じる。
+2. startup escalation重複hotfix commit `003f3c411` とGATE CLEAR証跡を確認する。再配備しない。
 3. `tmux capture-pane -S -30` 以上で実態を確認し、確認プロンプト中なら送信しない。
 4. 将軍が第四弾設計書v2.0とgistへv3.0を反映したか掲示板・git・gist hashで確認する。
 5. 殿裁可までは第四弾のコード実装とcommit_hash識別子計装を開始しない。
@@ -56,7 +56,7 @@
 ## 復帰直後の二値チェック
 
 - [ ] inbox未読をID単位で処理した
-- [ ] 才蔵hotfixのtask/report/paneを一次確認した
+- [ ] startup escalation重複hotfix commit `003f3c411` とGATE CLEARを確認した
 - [ ] startup escalationの同一キー重複が2→1、新規キー送信が1→1か確認した
 - [ ] 第四弾v3.0 snapshotの窓1,234行/hashを再現した
 - [ ] 第四弾実装・commit_hash計装が未開始か確認した
