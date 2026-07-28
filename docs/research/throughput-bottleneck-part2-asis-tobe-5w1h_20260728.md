@@ -1,4 +1,4 @@
-# 【⚙P1a実装済み・P2充足確認=遷移欠損でno-change BLOCK】弾スループット全体のボトルネック改善 part2 — AsIs/ToBe 5W1H設計書 v1.6 (2026-07-29 00:11 P2結果反映。版履歴は§-3)
+# 【⏸P2/P3/P4全て前提乖離でBLOCK着地 — 再開条件=識別子計装+母集団統一】弾スループット全体のボトルネック改善 part2 — AsIs/ToBe 5W1H設計書 v1.7 (2026-07-29 02:07 P3/P4結果反映。版履歴は§-3)
 
 > part1=`throughput-bottleneck-asis-tobe-5w1h_20260728.md` v1.6(gist 2179df85)=**計測基盤**の6弾で5/6クローズ(T1a/T3a/T3b/T2/T4✅、残T1b=T1a蓄積待ち)。本書は殿下知2026-07-28 21:17「part2の設計書を作成しよう。今やっているスクリプト改善の主軸作業のボトルネックを解消して更に高速回転を行い、品質向上を高めるためだ」に基づく。part1が作った計器(T1a境界イベント・T3a writer整合・T3b fingerprint計装)の**蓄積データを消費して、弾ライフサイクルの非work時間を是正する実装編**である。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
@@ -9,14 +9,15 @@
 | P1a | review_approval/report_publishイベントへのcmd_id+generation識別子計装 | 🟢 解禁(殿裁可23:34)・配備下知済み | 非破壊識別子追加(第四弾#5と同型・既存台帳schema互換)。**P1aクローズ前のP1b起票は不能**(pairingの前提データが生成されないため) | schema実測: check_id/event_id/source/timestamp/verdict/wall_msのみ=cmd_id/generation不在 |
 | P1b | finalize非実行時間の区分と是正 | ❄ P1a計装データ蓄積後にread-only集計から | T1a計装(review_approval:gunshi_lgtm/karo_accept)の蓄積でfinalizeを「軍師レビュー実時間/家老ACCEPT実時間/ターン待ち間隙」へ区分→最大間隙の是正(通知経路・レビュー着手遅延)。**前提=P1aクローズ済みであること(v1.3契約分離)**: 本弾のpairingはP1a計装データにのみ実行可能。P1a前の起票は不能。**AC1必須要件(家老RC①)**: cmd_id+generation単位でgunshi_lgtm/karo_acceptをpairingし、report完了起点/terminal終点で区間化。paired N/N・欠損・右打切り件数・finalize母集団53弾へのcoverage率を全て報告。イベント総数だけで待ち相を断定しない(現物は既に不対称=LGTM31/ACCEPT30)。**検査は1つも削らない**(二相レビューの品質寄与は本日実証済み=part1§0) | finalize累積27,985s(全区間中の非work最大)。cmd_complete_gate純実行は0ms(第三弾#2実証)ゆえ支配相は待ち時間の疑い(AC1で確定) |
 | P2 | 例外弾unattributed残差の是正(=part1 T1b吸収) | ⏸ no-change BLOCK(00:04疾風・充足確認FAIL: 必須8遷移中6遷移が台帳欠損。例外弾は2/40弾・max724秒へ縮小=期待削減量が当初想定より大幅減。遷移計装拡張の投資判定はP1b+再snapshot後) | 例外弾(instruction_sync型stale report+複数再配備)の遷移別delivery/ack遅延を実測し、欠落遷移のみ補完。一律re-wake禁止(part1家老RC②継承)。**例外弾の判定基準(v1.2明記)**: part1と同じ観測ギャップ導出方式(unattributed分布の断絶を境界とし、恣意閾値を置かない)をAC1で本弾の母集団に対し再導出する | unattr累積20,813s、p50=31sだがmax=9,530s=例外集中型 |
-| P3 | 再attempt税(FAIL往復)の削減 | ⚙ AC1稼働中(23:25配備・才蔵 cmd_karo_part2_p3_rework_tax_ac1_20260728) | FAIL率(part1 T4実測: 全体0.434)の**FAIL原因別・往復回数別の時間税**を全数集計→上位原因の予防を配備時context注入・報告テンプレ強化で削減(gate緩和は禁止=品質底線)。**AC1必須要件(家老RC②)**: 856-505=351行は税の**上限**にすぎない。世代(generation)単位でWAIT/INFO/同一世代BLOCK→CLEAR/RC新世代を分類し、**真の再work往復Nとその時間だけ**を税として計上する。**時間帰属規則(v1.2穴是正)**: T3a整合の終端行採用は最新attempt境界のため旧attemptの時間が終端行に現れない — 税の時間はgate_metricsの**履歴行(同一cmd_id全行)**から世代別に取り、終端行と混同しない。修正1回で通る率の向上=品質向上と同義 | 再attempt行の上限=351行(未分類。真の税はAC1で確定) |
-| P4 | deploy外れ値尾の条件特定 | ⚙ AC1稼働中(23:25配備・飛猿 cmd_karo_part2_p4_deploy_outlier_ac1_20260728) | deploy p50=40sは是正済み(deployレーン-47%)。外れ値(max 3,321s)の発生条件を3点表で特定し条件ベース是正。**AC1二値条件(家老RC)**: 既存deploy高速化レーンとのowner重複0件を確認してから着手(重複ありなら当該項をdeployレーンへ帰属しP4から除外) | deploy累積6,600sのうち外れ値少数が支配 |
+| P3 | 再attempt税(FAIL往復)の削減 | ⏸ FAIL BLOCK(00時台・才蔵。CLEAR未終端49cmd時間欠損+generation列不存在=世代分類実行不能。再開=gate_metrics generation計装後) | FAIL率(part1 T4実測: 全体0.434)の**FAIL原因別・往復回数別の時間税**を全数集計→上位原因の予防を配備時context注入・報告テンプレ強化で削減(gate緩和は禁止=品質底線)。**AC1必須要件(家老RC②)**: 856-505=351行は税の**上限**にすぎない。世代(generation)単位でWAIT/INFO/同一世代BLOCK→CLEAR/RC新世代を分類し、**真の再work往復Nとその時間だけ**を税として計上する。**時間帰属規則(v1.2穴是正)**: T3a整合の終端行採用は最新attempt境界のため旧attemptの時間が終端行に現れない — 税の時間はgate_metricsの**履歴行(同一cmd_id全行)**から世代別に取り、終端行と混同しない。修正1回で通る率の向上=品質向上と同義 | 再attempt行の上限=351行(未分類。真の税はAC1で確定) |
+| P4 | deploy外れ値尾の条件特定 | ⏸ FAIL BLOCK(00時台・飛猿。deploy_total全数23,654秒/max314,443秒が§0基準値と桁違い=母集団定義乖離+旧event_id 3件分類不能。再開=固定窓+同一台帳の母集団定義統一後) | deploy p50=40sは是正済み(deployレーン-47%)。外れ値(max 3,321s)の発生条件を3点表で特定し条件ベース是正。**AC1二値条件(家老RC)**: 既存deploy高速化レーンとのowner重複0件を確認してから着手(重複ありなら当該項をdeployレーンへ帰属しP4から除外) | deploy累積6,600sのうち外れ値少数が支配 |
 
 - **順序案(v1.3)**: 殿裁可後P1a先行(最大標的P1bの前提)→P3/P4のread-only AC1は即並列可(APPROVE済み)→P1bはP1a蓄積後→P2はT1a蓄積量が判定可能になり次第
 - **配備=家老自立(karo_direct)**。各弾ともAC1=read-only全数集計(固定cutoff/hash付き)→序列・支配相確定→AC2実装の計測先行型(第四弾と同型)
 
 ## §-3 版履歴
 
+- v1.7(02:07): **P3/P4 AC1結果反映 — 両方とも前提乖離の正直FAIL BLOCK(模範停止)**。P3(才蔵): 全数再計数884行/529cmd(基準値から+28/+24の自然増)だが、49cmd・100 BLOCK行がCLEAR未終端で時間欠損+**generation列がgate_metricsに不存在**=家老RC②の世代分類が現行台帳で実行不能(P1aと同根の識別子欠落)。P4(飛猿): deploy_total全1,645件=累積23,654秒/max 314,443秒で§0基準値(6,600秒/max 3,321秒)と桁違い=**母集団定義の乖離**(§0=gate_metricsの本日CLEAR 53弾/P4実査=defense_overhead全期間全数)+旧event_id 3件が識別子欠落で分類不能。**再開条件をledgerへ確定**: P3=gate_metricsへのgeneration計装後(P1a拡張)、P4=母集団定義の統一(固定窓+同一台帳)を起票ACへ明記後。part2の全弾が「識別子計装が先」へ収束=P1aが全レーンの前提であることが3弾の実測で確定
 - v1.6(00:11): **P2充足確認の結果反映(疾風・正直FAIL報告)** — T1a後固定窓40/40弾全数(欠損0・証跡SHA付き): unattributed値域4-724秒で**旧9,530秒級の例外は窓内に出現せず**(本日のstale report再配備根治・lost-wakeup修正群が効いた可能性)。観測ギャップ353→692秒から例外2弾のみ導出。ただし必須8遷移中、台帳実在はdeploy_task系+review_approval(gunshi_lgtm/karo_accept)のみで、issued/deployed/ack/report_terminal/gate_start/clear境界が欠損→**P2はno-change BLOCK=遷移計装拡張(コード変更)が前提**。例外弾が2/40へ縮小した今、計装拡張の投資判定はP1b集計+CI GREEN後の再snapshotを見てから。併記: P1a実装commit(07f9b40e9)はpush済みでCI検証中
 - v1.5(23:35): **殿裁可23:34『裁可する』=P1a(識別子計装)の実装解禁**。将軍推薦(P1aが最大標的P1bの蓄積時計を回す鍵・第四弾#5同型の非破壊計装・idle戦力あり)を殿が承認。P1a配備+P2蓄積充足確認(read-only)を家老へ下知。P1bはP1aクローズ+蓄積後、P2はT1a計装後の窓に例外弾が現れたことの充足確認後に自動的に開始条件が満ちる
 - v1.4(23:28): 覚醒更新 — **AC1配備開始**: P3=cmd_karo_part2_p3_rework_tax_ac1_20260728(才蔵・in_progress)、P4=cmd_karo_part2_p4_deploy_outlier_ac1_20260728(飛猿・in_progress)。軍師draft review APPROVE(23:25・confidence HIGH)。両方read-onlyでci_fix(疾風)・第四弾成果と衝突なし。前提事実の更新: 第四弾は5/5全クローズ(#2 inbox_write delivery verify非同期化・#3 publish_total lock FD分離が本弾P1仮説群の隣接領域を既に是正)→P1b/P2のAC1時はこれら是正後のデータで再判定すること。P1a/P1b/P2は凍結・蓄積待ち維持
@@ -71,8 +72,9 @@
 | 序列(P1>P2>P3>P4) | 暫定(将軍D0の§0全数集計。AC1で区分内訳を確定してから最終化) |
 | P1bの支配相 | P1a計装→蓄積→P1b AC1実測待ち |
 | P2の補完対象遷移 | T1a蓄積待ち(part1 T1bの帰属移管) |
-| P3のFAIL原因上位 | AC1実測待ち(原因別・往復回数別の全数集計) |
-| P4のdeployレーン残候補との帰属 | AC1で確認(二重起票禁止) |
+| P3のFAIL原因上位 | **BLOCK確定(02:07)**: generation列不存在で世代分類不能。再開条件=gate_metricsへのgeneration計装(P1a拡張として起票) |
+| P4のdeployレーン残候補との帰属 | **BLOCK確定(02:07)**: 母集団定義乖離(§0=本日CLEAR 53弾 vs 実査=全期間1,645件)。再開条件=固定窓+同一台帳で母集団を再定義した起票 |
+| **収束事実(3弾実測)** | P2=6遷移欠損/P3=generation欠落/P4=旧event_id欠落 — **part2全弾が識別子計装(P1a系)を前提とする構造が確定**。P1a蓄積→P1b→P3/P4再開の直列が本レーンの正順 |
 | P1是正実装の所有権(v1.2新規) | **未決**: 通知経路是正が`inbox_write.sh`に及ぶ場合、第四弾#2(inbox_write_total)の所有ファイルと衝突する。AC1で是正対象ファイルが確定した時点で、第四弾#2クローズ待ち直列か、別ファイル(watcher側)限定かを家老が判定し将軍へ報告 |
 | P1起点イベントの実在(v1.2新規) | **調査済み・確定(21:28将軍D0)**: defense_overheadイベントにcmd_id/generation不在(schema実測: check_id/event_id/source/timestamp/verdict/wall_msのみ)→**P1=P1a識別子計装→P1b区分集計の2段構成が確定**。P1aはコード変更を伴うため実装凍結対象(殿裁可後) |
 | 家老レビュー | v1.0→RC2点→v1.1反映済み(AC1 read-only起票APPROVE)。v1.2の穴6件是正は追認レビュー対象 |
