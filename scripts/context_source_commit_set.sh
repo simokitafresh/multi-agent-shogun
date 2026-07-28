@@ -13,13 +13,62 @@ evidence="${4:-}"
 [[ "$context_path" == context/*.md ]] || { echo 'BLOCK: context path must be context/*.md' >&2; exit 1; }
 [[ "$commit" =~ ^[0-9a-f]{7,40}$ ]] || { echo 'BLOCK: commit must be 7-40 lowercase hex' >&2; exit 1; }
 [[ -n "$reason" && -n "$evidence" ]] || { echo 'BLOCK: reason and evidence are required' >&2; exit 1; }
-project="$(awk -F '\t' -v p="$context_path" '$1==p {if (++n==1) v=$2} END {if (n==1) print v; else exit 1}' "$REGISTRY")" || {
-  echo 'BLOCK: context registry entry missing or duplicate' >&2; exit 1;
-}
+registry_projects="$(awk -F '\t' -v p="$context_path" '$1==p && $2!="" {print $2}' "$REGISTRY")"
+registry_count="$(printf '%s\n' "$registry_projects" | awk 'NF {n++} END {print n+0}')"
+if [[ "$registry_count" -gt 1 ]]; then
+  echo 'BLOCK: duplicate context registry entry' >&2
+  exit 1
+elif [[ "$registry_count" -eq 1 ]]; then
+  project="$(printf '%s\n' "$registry_projects" | awk 'NF {print; exit}')"
+else
+  # Non-registered project root contexts may still be selected by the
+  # completion gate. Resolve only an exact, active config/projects.yaml
+  # context_file mapping; ambiguous/missing mappings remain fail-closed.
+  project="$(awk -v target="$context_path" '
+    function flush() {
+      if (id != "" && context_file == target && status == "active") {
+        print id
+        matches++
+      }
+    }
+    /^[[:space:]]*-[[:space:]]+id:[[:space:]]+/ {
+      flush()
+      id=$0
+      sub(/.*id:[[:space:]]+/, "", id)
+      gsub(/[[:space:]"\047]+$/, "", id)
+      context_file=""
+      status="active"
+      next
+    }
+    /^[[:space:]]+context_file:[[:space:]]+/ {
+      context_file=$0
+      sub(/.*context_file:[[:space:]]+/, "", context_file)
+      gsub(/^[[:space:]"\047]+|[[:space:]"\047]+$/, "", context_file)
+      next
+    }
+    /^[[:space:]]+status:[[:space:]]+/ {
+      status=$0
+      sub(/.*status:[[:space:]]+/, "", status)
+      gsub(/^[[:space:]"\047]+|[[:space:]"\047]+$/, "", status)
+      next
+    }
+    END {
+      flush()
+      if (matches != 1) exit 1
+    }
+  ' "$ROOT/config/projects.yaml")" || {
+    echo 'BLOCK: context project mapping missing, inactive, or ambiguous' >&2
+    exit 1
+  }
+fi
 case "$project" in
   infra) repo="$ROOT" ;;
-  dm-signal) repo="$(cd "$ROOT" && get_project_path "$project")" ;;
-  *) echo "BLOCK: unknown registry project: $project" >&2; exit 1 ;;
+  *)
+    repo="$(cd "$ROOT" && get_project_path "$project")" || {
+      echo "BLOCK: unknown registry project: $project" >&2
+      exit 1
+    }
+    ;;
 esac
 [[ -d "$repo/.git" ]] || { echo "BLOCK: source repo missing: $repo" >&2; exit 1; }
 git -C "$repo" cat-file -e "${commit}^{commit}" 2>/dev/null || { echo "BLOCK: commit does not exist in $project repo" >&2; exit 1; }

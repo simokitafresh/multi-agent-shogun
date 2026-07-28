@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# test_necessity: Source commit marker rejects invalid/non-ancestor commits and prevents duplicate markers; violation is BLOCK.
+# test_necessity: Source commit marker resolves registered or exact active project contexts, rejects invalid/non-ancestor commits, and prevents duplicate markers; violation is BLOCK.
 
 setup_file() {
   ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
@@ -34,6 +34,22 @@ setup() {
   run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "$dm_sha" audit exact-pathspec
   [ "$status" -eq 0 ]
   grep -q "source_commit:$dm_sha" "$TMP/context/test.md"
+}
+
+@test "resolves an unregistered exact active project context from projects config" {
+  mkdir -p "$TMP/rebalancer"
+  git -C "$TMP/rebalancer" init -q
+  git -C "$TMP/rebalancer" config user.email test@example.invalid
+  git -C "$TMP/rebalancer" config user.name Test
+  echo source > "$TMP/rebalancer/source"
+  git -C "$TMP/rebalancer" add .
+  git -C "$TMP/rebalancer" commit -qm source
+  source_sha="$(git -C "$TMP/rebalancer" rev-parse HEAD)"
+  printf 'projects:\n  - id: rebalancer\n    path: "%s"\n    context_file: context/test.md\n    status: active\n' "$TMP/rebalancer" > "$TMP/config/projects.yaml"
+  printf '# no explicit registry row\n' > "$TMP/scripts/config/context_source_commits.tsv"
+  run bash "$TMP/scripts/context_source_commit_set.sh" context/test.md "$source_sha" audit exact-active-context
+  [ "$status" -eq 0 ]
+  grep -q "source_commit:$source_sha" "$TMP/context/test.md"
 }
 
 @test "fails closed for duplicate and unknown registry projects" {
