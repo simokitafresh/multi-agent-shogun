@@ -894,7 +894,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1433 -->
+<!-- last_synced_lesson: L1435 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2041,6 +2041,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1431: 既存計装パターン(defense_overhead_write_async)への追加はsource+関数呼出しの2行構成で既存ヘルパーを再利用するのが低リスク（cmd_karo_hotfix_throughput_t3b_fingerprint_hit_corrected_20260728）
 - L1432: 自動配備taskのtarget_pathがゼロ対象自身だと自己参照除外で不変量が0のまま再配備ループになる（cmd_karo_hotfix_reflux_backlink_external_source_20260728）
 - L1433: outgoing semantic-linksはincoming backlinkを増やさない（cmd_reflux_backlink_202607281529_hanzo）
+- L1434: 生成物だけを編集せずSSOTから再生成する（cmd_reflux_backlink_202607281828_hanzo）
+- L1435: reflux_inventory_beforeのtimeout/失敗値が0として記録されAC2証跡を汚染する（cmd_reflux_insight_202607281837_kagemaru）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
