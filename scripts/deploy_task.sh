@@ -12304,6 +12304,7 @@ except Exception:
         export _DEPLOY_PREV_PARENT_CMD
         if should_skip_same_cmd_resolve "$task_yaml" "$CMD_ID" "$NINJA_NAME"; then
             _DEPLOY_PREV_PARENT_CMD="$CMD_ID"
+            _DEPLOY_SAME_CMD_REDEPLOY=1
             # The reused task already passed reset_stale_fields during the first
             # publication. Mark that contract satisfied so retry preflight does
             # not contradict the intentional same-command reuse path.
@@ -12624,7 +12625,12 @@ except Exception:
     fi
 
     DEPLOY_TASK_PHASE=delivery
-    if [ "$ctx_pct" -le 0 ] 2>/dev/null; then
+    if [ "${_DEPLOY_SAME_CMD_REDEPLOY:-0}" = "1" ]; then
+        # The original task_assigned message is already durable.  Reusing the
+        # same task must not append an identical persistent message; the
+        # watcher/post-verify path can re-nudge the existing unread set.
+        log "${NINJA_NAME}: same-cmd redeploy; persistent task_assigned write skipped"
+    elif [ "$ctx_pct" -le 0 ] 2>/dev/null; then
         log "${NINJA_NAME}: CTX=0% detected (clear済み). Sending inbox_write (watcher handles timing)"
         safe_inbox_write "$NINJA_NAME" "$MESSAGE" "$TYPE" "$FROM" "task_start"
     elif [ "$is_idle" = "true" ]; then

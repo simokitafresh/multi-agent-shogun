@@ -1349,6 +1349,30 @@ PY
     [ "$status" -eq 0 ]
 }
 
+@test "same-command retry does not append a duplicate task_assigned message" {
+    # test_necessity: one task generation owns exactly one durable
+    # task_assigned message; retries may re-nudge but must not append another.
+    run python3 - "$TEST_PROJECT/scripts/deploy_task.sh" <<'PY'
+import pathlib, re, sys
+text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+sets_generation_flag = re.search(
+    r"if should_skip_same_cmd_resolve .*?; then"
+    r".*?_DEPLOY_SAME_CMD_REDEPLOY=1",
+    text,
+    re.S,
+)
+guards_persistent_write = re.search(
+    r'if \[ "\$\{_DEPLOY_SAME_CMD_REDEPLOY:-0\}" = "1" \]; then'
+    r'.*?persistent task_assigned write skipped'
+    r'.*?elif \[ "\$ctx_pct"',
+    text,
+    re.S,
+)
+raise SystemExit(0 if sets_generation_flag and guards_persistent_write else 1)
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "cmd_3701: draft cmd is blocked before deployment" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
