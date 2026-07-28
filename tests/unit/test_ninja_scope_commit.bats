@@ -1360,7 +1360,17 @@ HOOK
         ps -p "$slow_pid" >/dev/null 2>&1 || break
         sleep 0.05
     done
-    grep -q 'phase=pre_commit' "$BATS_TEST_TMPDIR/a.err"
+    grep -q 'phase=pre_commit' "$BATS_TEST_TMPDIR/a.err" || {
+        printf 'reason_code=pre_commit_phase_not_observed helper_rc=' >&3
+        if ps -p "$slow_pid" >/dev/null 2>&1; then
+            printf 'running\n' >&3
+        else
+            wait "$slow_pid"
+            printf '%s\n' "$?" >&3
+        fi
+        cat "$BATS_TEST_TMPDIR/a.err" >&3
+        false
+    }
     sleep 0.2
 
     printf 'change-b\n' > "$repo/b.txt"
@@ -1426,10 +1436,16 @@ HOOK
         NINJA_SCOPE_COMMIT_RUN_ID=same-change-b "$HELPER" -m same-change-b -- owned.txt
     ) >"$BATS_TEST_TMPDIR/same-b.out" 2>"$BATS_TEST_TMPDIR/same-b.err" &
     pid_b=$!
-    wait "$pid_a"
-    status_a=$?
-    wait "$pid_b"
-    status_b=$?
+    status_a=0
+    status_b=0
+    wait "$pid_a" || status_a=$?
+    wait "$pid_b" || status_b=$?
+    if [ "$status_a" -ne 0 ] || [ "$status_b" -ne 0 ]; then
+        printf 'reason_code=same_owned_helper_failed rc_a=%s rc_b=%s\n' \
+            "$status_a" "$status_b" >&3
+        sed 's/^/helper_a: /' "$BATS_TEST_TMPDIR/same-a.err" >&3
+        sed 's/^/helper_b: /' "$BATS_TEST_TMPDIR/same-b.err" >&3
+    fi
 
     [ "$status_a" -eq 0 ]
     [ "$status_b" -eq 0 ]
