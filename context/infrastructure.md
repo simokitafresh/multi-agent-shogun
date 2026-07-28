@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-28 cmd_karo_hotfix_round2_task_commit_contract_no_gain_revert_20260728 reviewed source boundary -->
-<!-- source_commit:a9634af0f reason:cmd_karo_hotfix_round2_task_commit_contract_no_gain_revert_20260728 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=a9634af0f -->
+<!-- last_updated: 2026-07-28 cmd_karo_hotfix_reflux_backlink_external_source_20260728 reviewed source boundary -->
+<!-- source_commit:327f28eda reason:cmd_karo_hotfix_reflux_backlink_external_source_20260728 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=327f28eda -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -894,7 +894,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1431 -->
+<!-- last_synced_lesson: L1433 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2039,6 +2039,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1429: 同一indexのpath別再走査は順序付き単一snapshotへ集約する（cmd_karo_hotfix_round3_ninja_scope_commit_20260728）
 - L1430: 区間telemetryは各列を個別補正せず同一attemptの境界集合で選ぶ（cmd_karo_hotfix_throughput_t3a_gate_metrics_writer_20260728）
 - L1431: 既存計装パターン(defense_overhead_write_async)への追加はsource+関数呼出しの2行構成で既存ヘルパーを再利用するのが低リスク（cmd_karo_hotfix_throughput_t3b_fingerprint_hit_corrected_20260728）
+- L1432: 自動配備taskのtarget_pathがゼロ対象自身だと自己参照除外で不変量が0のまま再配備ループになる（cmd_karo_hotfix_reflux_backlink_external_source_20260728）
+- L1433: outgoing semantic-linksはincoming backlinkを増やさない（cmd_reflux_backlink_202607281529_hanzo）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
