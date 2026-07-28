@@ -2322,6 +2322,13 @@ _failed_task_needs_karo_notice() {
         return 1
     fi
 
+    # archive.done is the shared durable terminal evidence for both CLEAR and
+    # FAIL_CLOSE.  Explicit reopen removes this marker before a new generation
+    # is actionable, so its presence must suppress respawn and its notification.
+    if [ -f "$SCRIPT_DIR/queue/gates/${parent_cmd}/archive.done" ]; then
+        return 1
+    fi
+
     # GATE CLEAR済み(archived)なら通知不要
     if compgen -G "$SCRIPT_DIR/queue/archive/cmds/${parent_cmd}_completed_"* > /dev/null 2>&1; then
         return 1

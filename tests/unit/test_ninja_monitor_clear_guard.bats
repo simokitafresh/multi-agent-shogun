@@ -1044,6 +1044,54 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: archive.done is terminal evidence for both CLEAR and FAIL_CLOSE;
+# removing it on explicit reopen must restore failed-task respawn eligibility.
+@test "failed respawn notice respects archive terminal marker and explicit reopen" {
+    run bash -lc '
+set -eo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"; unset NINJA_MONITOR_LIB_ONLY
+SCRIPT_DIR="$BATS_TEST_TMPDIR"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/inbox" "$SCRIPT_DIR/archive/inbox" \
+         "$SCRIPT_DIR/logs" "$SCRIPT_DIR/queue/gates/cmd_fail_close" \
+         "$SCRIPT_DIR/queue/gates/cmd_clear"
+: > "$SCRIPT_DIR/queue/inbox/karo.yaml"
+: > "$SCRIPT_DIR/logs/gate_metrics.log"
+write_failed() {
+  cat > "$SCRIPT_DIR/queue/tasks/kotaro.yaml" <<YAML
+task:
+  status: failed
+  task_id: ${1}_normal
+  parent_cmd: ${1}
+  deployed_at: "2026-07-29T00:00:00+09:00"
+YAML
+}
+
+write_failed cmd_fail_close
+touch "$SCRIPT_DIR/queue/gates/cmd_fail_close/archive.done"
+! _failed_task_needs_karo_notice kotaro
+fail_close_count=0
+
+write_failed cmd_clear
+touch "$SCRIPT_DIR/queue/gates/cmd_clear/archive.done"
+! _failed_task_needs_karo_notice kotaro
+clear_count=0
+
+write_failed cmd_unreviewed
+_failed_task_needs_karo_notice kotaro
+unreviewed_count=1
+
+write_failed cmd_fail_close
+rm "$SCRIPT_DIR/queue/gates/cmd_fail_close/archive.done"
+_failed_task_needs_karo_notice kotaro
+reopen_count=1
+
+echo "COUNTS fail_close=$fail_close_count clear=$clear_count unreviewed=$unreviewed_count reopen=$reopen_count"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"COUNTS fail_close=0 clear=0 unreviewed=1 reopen=1"* ]]
+}
+
 @test "report_gate: near-match identity remains a true missing notification" {
     run bash -lc '
 set -eo pipefail
