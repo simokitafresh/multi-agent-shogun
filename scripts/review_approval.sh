@@ -414,13 +414,19 @@ PY
     "deployed_at=$rc_deployed_at" \
     "retry_deployed_at=$rc_deployed_at" \
     "status=assigned" \
+    "review_correction_scope=$correction_scope" \
     "reviewed=false" \
     "review_result=" \
     "acknowledged_at=" \
     "completed_at=" \
     "done_at="
+  if [ "$correction_scope" = report ]; then
+    rc_task_message="前報告の実測・成果物は有効。現task YAMLを正本として再読し、RCで指摘された報告項目だけを是正せよ。再計算・再実装は禁止。"
+  else
+    rc_task_message="現task YAMLを正本として再読し、RCで否認された実装範囲と依存する検証だけを是正せよ。独立な既存成果は再利用し、全作業をやり直すな。"
+  fi
   bash "$ROOT/scripts/inbox_write.sh" "$worker_id" \
-    "前taskの情報は無効。タスクYAMLを最初から読み直して作業開始せよ。 — タスクYAML: $task_file を読んで作業開始せよ" \
+    "$rc_task_message — タスクYAML: $task_file を読んで作業開始せよ" \
     task_assigned karo task_start || {
       echo "BLOCK: RC task reopened but task_start notification persistence failed: worker=$worker_id" >&2
       exit 1

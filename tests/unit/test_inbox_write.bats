@@ -1777,6 +1777,46 @@ EOF
     grep -q "  status: acknowledged" "$TEST_TMPDIR/queue/tasks/testninja.yaml"
 }
 
+# test_necessity: an active event-driven watcher is the sole pane sender; the
+# async verifier must observe delivery without racing it with a direct retry.
+@test "task_assigned: active watcher suppresses direct codex nudge retries" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
+
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+    printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+
+    cat > "$TEST_TMPDIR/bin/pgrep" <<'EOF'
+#!/bin/bash
+echo "123 bash /repo/scripts/inbox_watcher.sh testninja shogun:agents.3 codex"
+EOF
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes) echo "shogun:agents.3 testninja" ;;
+  capture-pane) echo "›" ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/pgrep" "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 \
+        INBOX_CODEX_NUDGE_RETRIES=1 run bash "$TEST_INBOX_WRITE" \
+        testninja "タスクを読め" task_assigned karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"delegated to active watcher"* ]]
+    [ "$(grep -c 'send-keys' "$TMUX_LOG" || true)" -eq 0 ]
+}
+
 # test_necessity: inbox_write B5 telemetry must persist one parent total and
 # diagnostic persist/nudge/delivery slices without changing retry delivery.
 @test "task_assigned: B5 telemetry records persist nudge delivery verify and additive total" {
@@ -1858,6 +1898,13 @@ YAML
     export TMUX_LOG="$TEST_TMPDIR/tmux.log"
     export TEST_INBOX_FILE="$TEST_TMPDIR/queue/inbox/gunshi.yaml"
 
+    # This case exercises the bounded direct-fallback path.  The real host may
+    # have gunshi's watcher running, so make watcher absence explicit instead
+    # of letting host process state leak into the isolated fixture.
+    cat > "$TEST_TMPDIR/bin/pgrep" <<'EOF'
+#!/bin/bash
+exit 1
+EOF
     cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
 #!/bin/bash
 echo "$*" >> "$TMUX_LOG"
@@ -1873,7 +1920,7 @@ case "$1" in
 esac
 exit 0
 EOF
-    chmod +x "$TEST_TMPDIR/bin/tmux"
+    chmod +x "$TEST_TMPDIR/bin/pgrep" "$TEST_TMPDIR/bin/tmux"
 
     PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 run bash "$TEST_INBOX_WRITE" "gunshi" "レビュー開始" "task_assigned" "karo"
     [ "$status" -eq 0 ]

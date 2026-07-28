@@ -100,6 +100,25 @@ _review() {
     [ "${output:-0}" -eq 0 ]
 }
 
+# test_necessity: report-only RC must preserve already-valid measurements and
+# prohibit whole-task replay while still forcing the current task YAML reload.
+@test "report-only RC records its scope and tells the worker to reuse valid results" {
+    local cmd_id=cmd_rc_report_scope worker=atomicworker3
+    _make_task "$worker" "$cmd_id"
+    local report
+    report="$(_make_report "${worker}_rpt_${cmd_id}" "$cmd_id" "$worker")"
+
+    run _review "$cmd_id" karo RC "$report" report
+    echo "$output" >&3
+    [ "$status" -eq 0 ]
+
+    local tf="$FAKE_ROOT/queue/tasks/${worker}.yaml"
+    grep -q '^  review_correction_scope: report' "$tf"
+    grep -q '前報告の実測・成果物は有効' "$FAKE_ROOT/queue/inbox/${worker}.yaml"
+    grep -q '再計算・再実装は禁止' "$FAKE_ROOT/queue/inbox/${worker}.yaml"
+    ! grep -q '前taskの情報は無効' "$FAKE_ROOT/queue/inbox/${worker}.yaml"
+}
+
 # ---------------------------------------------------------------------------
 # Negative control: normal ACCEPT completion (no RC anywhere in this report's
 # history) must not have its status reset or otherwise disturbed.

@@ -127,3 +127,10 @@ i=0; while [ "$i" -lt "$rounds" ]; do process_unread; i=$((i+1)); done
     # 既存解析が依拠する前置フィールド順(agent= → observed_count= → fingerprint=)が不変
     [[ "$output" =~ \[SEND-RESULT\]\ attempted\ agent=[a-z_]+\ observed_count=[0-9]+\ fingerprint=[a-z0-9-]+\ kind=[a-z]+ ]]
 }
+
+# test_necessity: generic watcher nudges must refresh the task SSOT without
+# declaring every result from the prior attempt invalid; RC scope owns reuse.
+@test "task nudge preserves RC-scoped reuse instead of invalidating all prior work" {
+    ! grep -q '前taskの情報は無効' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+    grep -q '既存成果の再利用可否はinbox本文とRC指示に従え' "$PROJECT_ROOT/scripts/inbox_watcher.sh"
+}

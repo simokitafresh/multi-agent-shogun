@@ -786,7 +786,7 @@ send_wakeup() {
     # task_info等の補足メッセージでは付与しない（CTX浪費防止）
     # 家老/軍師にはtask YAMLが存在しないため付与しない（2026-04-22 Codex家老バグ修正）
     if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$has_task_assigned" == "true" ]]; then
-        nudge="${nudge} — 前taskの情報は無効。queue/tasks/${AGENT_ID}.yaml を最初から読み直して作業開始せよ"
+        nudge="${nudge} — 現task YAMLを正本として読み直せ。既存成果の再利用可否はinbox本文とRC指示に従え"
     fi
 
     # gate_sync手動廃止(2026-05-03): startup gate自動syncに委ねる。nudgeへのgate-sync指示は不要。
@@ -1032,7 +1032,7 @@ send_wakeup() {
             fi
             nudge="inbox${unread_count}"
             if [[ "$effective_cli" != "claude" ]] && [[ -f "${SCRIPT_DIR}/queue/tasks/${AGENT_ID}.yaml" ]] && [[ "$live_has_task" == "true" ]]; then
-                nudge="${nudge} — 前taskの情報は無効。queue/tasks/${AGENT_ID}.yaml を最初から読み直して作業開始せよ"
+                nudge="${nudge} — 現task YAMLを正本として読み直せ。既存成果の再利用可否はinbox本文とRC指示に従え"
             fi
         fi
 
