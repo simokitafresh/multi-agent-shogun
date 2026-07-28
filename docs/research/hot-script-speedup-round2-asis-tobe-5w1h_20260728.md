@@ -1,4 +1,4 @@
-# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.2.2 (2026-07-28 — row_count具体整数化(2,835行+除外内訳)。v1.2.1=家老RC全文同期+cluster仮説降格+full_precheck混合型+1file=1レーン原理。序列暫定=第一弾12/12(11:46完了)後の再snapshotでv2.0確定。殿裁可12:19により開始)
+# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.2.3 (2026-07-28 — B2/B3計装を第三弾へ移管(9弾化)+v2.0標本十分条件を新設(n≥30かつ窓≥24h、充足まで暫定scope維持・第三弾先行)。v1.2.2=row_count整数化。殿裁可12:19により開始、起票は標本条件と第三弾裁可の後)
 
 ## §-0 v1.1改訂(家老レビュー2・blt_105708の全採用)
 
@@ -17,10 +17,11 @@
 | `scripts/gates/gate_gunshi_report_precheck.sh` | full_precheck | 1 |
 | `scripts/cmd_save.sh` | checks_main(**再トライ**) | 1 |
 | `scripts/report_field_set.sh` | parent_ac_coverage・parent_contract_fingerprint・task.commit_contract・publish_total・atomic_replace・commit_hash(**再トライ**) | 6 |
-| (計装のみ・最適化なし) | B5 inbox_write計測行追加・B2/B3 startup gate台帳計装 | 2弾 |
+| (計装のみ・最適化なし) | B5 inbox_write計測行追加のみ(**B2/B3 startup gate計装は第三弾へ移管** — 家老RC 12:34採用: gate本体を所有する第三弾が計装も持ち境界重複を解消。所有ファイル表の正本=第三弾設計書§-1) | 1弾 |
 
 - **完了条件(第一弾と同型)**: 恒常課税型=既存台帳`logs/defense_overhead.jsonl`同条件before/afterのΔ累積・Δmedian実測で是正済み / 外れ値型=発生条件特定(3点表: topN寄与率・閾値超過率・発生条件)→条件ベース是正済み / 計装弾=計測行が台帳へ実記録されることの二値確認のみ
-- **第二弾完了宣言=10弾全クローズ→台帳再集計→第三弾序列**(v1.2.1同期: §-1のrefresh 2枠除外後の弾数へ統一)
+- **第二弾完了宣言=9弾全クローズ→台帳再集計→次弾序列**(v1.2.3同期: refresh 2枠除外+B2/B3の第三弾移管後の弾数=8check+B5計装)
+- **v2.0序列確定の標本十分条件(v1.2.3新設 — 家老BLOCK 12:35採用)**: 第一弾完了後cohort(下限2026-07-28T02:46:57Z)の再snapshotはrow_count=268で8標的中3標的n=0・4標的n≤2となり序列判定不能だった。∴**v2.0固定は各標的n≥30かつ固定窓≥24hを満たしてから**行う(充足前の序列変更提案を禁止)。それまで暫定scope(本§-1)を維持し、**起票開始は第三弾を先行**させてcohortを自然蓄積する(殿の第三弾先行方針12:26と整合)
 - **スコープ外(途中追加は理由を問わず禁止)**: `deploy_task:deploy_total`(cohortA 3位186.7s/n=4だが**既存deploy control-plane速度改善レーンへ帰属** — 残候補③report_publication/④ninja_scope_commitが整理済みであり、二重管理=車輪の再発明を避ける)・cron時差別設計(fullrecalc側)・上記以外の新規標的
 
 ## §0 結論 — 純オーバーヘッド標的序列(cohortA=第一弾10弾の最終CLEAR 2026-07-28T08:36 JST以降のみ)

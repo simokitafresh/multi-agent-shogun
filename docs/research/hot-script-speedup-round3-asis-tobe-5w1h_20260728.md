@@ -1,4 +1,4 @@
-# ホットスクリプト集中高速化 第三弾 — AsIs/ToBe 5W1H設計書 v1.0 (2026-07-28 — ドキュメントのみ。実装は殿裁可まで凍結。第二弾と並行実行可能な素集合設計)
+# ホットスクリプト集中高速化 第三弾 — AsIs/ToBe 5W1H設計書 v1.1 (2026-07-28 — 家老RC2点反映: B2/B3計装を第二弾から本弾へ移管し所有ファイル表を確定+karo/gunshi startup gateはTIMING機構なし(rg一次確認)ゆえ計装先行へ訂正。v1.0=初版。実装は殿裁可まで凍結)
 
 > 第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`(✅CLOSED 12/12)、第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(v1.2.2・進行中)。本書は殿方針(2026-07-28 12:26)「**第二弾で触るスクリプト以外から選別**」に基づく第三弾 — 第二弾とファイル素集合が交わらないため、**1ファイル=1レーン原理の下で第二弾と完全並行でき、idle忍者を埋める**。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
@@ -6,15 +6,16 @@
 
 **決め打ち: 5スクリプト・5標的=5弾以内**(§0表がSSOT):
 
-| 実体スクリプト | 標的 | 既存計器(=計測の正本。新台帳禁止) |
+| 実体スクリプト | 標的 | 既存計器の現状(家老rg一次確認2026-07-28 12:34を反映) |
 |---|---|---|
-| `scripts/ninja_scope_commit.sh` | commit全体27.5s/回の削減 | terminal_ledgerのphase内訳(read_tree/add/scope_sync/guard/git_commit/advance_shared_index/post_check) |
-| `scripts/cmd_complete_gate.sh` | 完了処理の純実行時間削減 | gate_metrics.logのfinalize_sec(※混合値。§1参照) |
-| `scripts/gates/gate_shogun_startup.sh` | 起動17.7s/回の削減 | 内蔵TIMING行(59check計測済み) |
-| `scripts/gates/gate_karo_startup.sh` | 起動16.1s/回の削減 | 同TIMING機構 |
-| `scripts/gates/gate_gunshi_startup.sh` | 未実測→計測→削減 | 第一AC=TIMING計装(shogun/karo同型の既存機構移植) |
+| `scripts/ninja_scope_commit.sh` | commit全体27.5s/回の削減 | terminal_ledgerのphase内訳あり(read_tree/add/scope_sync/guard/git_commit/advance_shared_index/post_check) |
+| `scripts/cmd_complete_gate.sh` | 完了処理の純実行時間削減 | gate_metrics.logのfinalize_secあり(※混合値。§1参照)。純実行時間の区分計測が第一AC |
+| `scripts/gates/gate_shogun_startup.sh` | 起動17.7s/回の削減 | **内蔵TIMING機構あり**(rg 'TIMING'=77件、59check計測済み)。加えてdefense_overhead台帳への転記(旧第二弾B3)を本弾で実施 |
+| `scripts/gates/gate_karo_startup.sh` | 計装→実測→削減 | **TIMING機構なし**(家老rg一次確認=0件。16.1s/回は外部記録由来)。第一AC=shogun同型TIMING計装+台帳転記(旧第二弾B2) |
+| `scripts/gates/gate_gunshi_startup.sh` | 計装→実測→削減 | **TIMING機構なし**(同=0件)。第一AC=同計装 |
 
-- **第二弾との衝突ゼロ検証**: 第二弾スコープ=cmd_save.sh/report_field_set.sh/git-pre-commit.sh(+レビュー対象gate_gunshi_report_precheck.sh、計装対象inbox_write.sh)。本弾5スクリプトとの共通ファイル0件。∴**第二弾3レーン+第三弾5レーン=最大8レーンが同時に立ち、忍者6名を常時充填できる**
+- **所有ファイル表の確定(家老RC(1)反映)**: **旧第二弾B2/B3(startup gate計装)は本弾へ移管**する — startup gate本体を所有する弾が計装も第一ACとして持つ(計装と最適化の分離が生む境界重複を解消)。∴確定後の所有: **第二弾=cmd_save.sh/report_field_set.sh/git-pre-commit.sh+inbox_write.sh(B5計装のみ)=4ファイル**、**第三弾=本表5ファイル**、共通ファイル0件(この表がplanned_paths設計の正本)
+- **レーン数再計算**: 第二弾4レーン+第三弾5レーン=**最大9レーン>忍者6名** — 常時idle 0名を構造で保証
 - **完了条件(同型)**: 各弾=既存計器の同条件before/after Δ実測+品質2原則(正本突合+境界fixture)+選択テストFAIL0・SKIP0。**第三弾完了宣言=5弾全クローズ→全計器再集計→第四弾序列**
 - **スコープ外(途中追加禁止)**: 第二弾対象ファイル・three_layer_health系(background保守lane)・deploy_task.sh本体
 - **既存deployレーンとの整理(殿裁可事項)**: deployレーン残候補④「ninja_scope_commit 46秒」は本弾#1と同一標的のため**本弾へ吸収し、deployレーンの当該候補をクローズ**する(二重管理=車輪の再発明の解消)。残候補③report_publicationはdeployレーンに残す
@@ -48,7 +49,7 @@
 
 ## §3 未解決事項
 
-1. gate_gunshi_startup.shの実測ゼロ — #5弾の第一AC(TIMING計装移植)で解消する設計
+1. gate_karo_startup.sh/gate_gunshi_startup.shの内蔵計器ゼロ(家老rg一次確認: TIMING該当0件) — #4・#5弾の第一AC(shogun同型TIMING計装移植+台帳転記)で解消する設計。karoの16.1s/回は外部記録由来の参考値であり、計装後の実測で置換する
 2. cmd_complete_gate.sh純実行時間の区分値 — #2弾の第一AC(区分計測)で解消する設計
 3. ninja_scope_commitのphase別ボトルネックの機構(git_commit 10sはpre-commit hook込みか、scope_sync/post_checkの読み書き量) — #1弾の現読+phase実測で特定
 4. startup gate高速化と「復帰の質」の両立基準 — check削除禁止の底線は§1で固定済み。遅延評価(起動時は要約のみ・詳細は参照時)の採否は弾内で家老+軍師検分
