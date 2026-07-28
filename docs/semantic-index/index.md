@@ -2010,6 +2010,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T19:33:12+09:00 [[hot-script高速化設計書]]第二弾クローズ2026-07-28 19:30(v2.0): 9/9完了。P1=#9 boundary弾no-change CLOSE(3子区分恒久計装・最大12.8%<40%)。P2=reflux  |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T20:50:54+09:00 セッション完全状態2026-07-28 20:50(強くてニューゲーム復帰点): (1)[[hot-script高速化設計書]]全4弾の状態 — 第一弾✅12/12・第二弾✅9/9(v2.0、閉幕プランP1-P4全充足、snapshot=r |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T21:05:43+09:00 2026-07-28 RC車輪再発明の根因と修正: 2026-04-22 cmd_2231の古いtask文脈継承事故を防ぐため『前taskの情報は無効』とした本来意図は正しいが、2026-07-11以降の自動RCへ blanket適用してt |
+| lesson | `L1445` batsテストfixtureは本番の.gitignore済みDBファイルへ絶対に依存させない(ローカルPASS・CI FAILの発生源) |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -2028,6 +2029,7 @@ codd:
 | causal_chain | `[[cmd_karo_impl_a2_semantic_fallback_visible_20260727]]` (L1393) |
 | causal_chain | `[[cmd_karo_hotfix_unify_no_code_contract_dc_warn_20260727]]` (L1403) |
 | causal_chain | `[[cmd_karo_hotfix_throughput_t3b_fingerprint_hit_corrected_20260728]]` (L1431) |
+| causal_chain | `[[cmd_karo_ci_fix_30374243969_three_layer_knowledge_chain]]` (L1445) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -8434,6 +8436,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607282226_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607282254_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607290027_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607290058_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -8717,6 +8720,7 @@ codd:
 | discussion | 2026-07-28 殿指摘「hook文言で計算結果を破棄していないか」。cmd_2231の stale task instruction 防止という因果は維持しつつ、RCをreport/implementation scopeへ分離。有効な計測・artifactは再利用し、必要な補正だけを再実行する契約へcommit `1be8bee8f`で修正。 |
 | causal | `cmd_karo_part2_p1a_review_publish_identity_20260728` files_modified: [[provisional_review_approval]] |
 | cmd | `cmd_karo_part2_p1a_review_publish_identity_20260728` (`scripts/lib/defense_overhead_writer.sh`, `scripts/report_field_set.sh`, `scripts/review_approval.sh`) |
+| cmd | `cmd_karo_hotfix_review_approval_no_code_contract_20260729` (`scripts/lib/review_approval.sh`, `tests/unit/test_report_commit_identity.bats`) |
 | causal_chain | `[[cmd_karo_impl_partial_push_safety_20260726]]` (L1370) |
 
 ## provisional_bash_speed_training — 仮: Bash Speed Training
@@ -9091,6 +9095,7 @@ codd:
 | cmd | `cmd_reflux_promotion_202607262050_kotaro` (`projects/dm-signal/lessons.yaml`) |
 | cmd | `cmd_reflux_promotion_202607272304_kotaro` (`projects/infra/lessons_karo.yaml`) |
 | cmd | `cmd_reflux_backlink_202607282226_kotaro` (`docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202607290058_kotaro` (`docs/semantic-index/index.md`, `context/semantic-map.md`) |
 
 ## provisional_kagemaru — 仮: Kagemaru
 
