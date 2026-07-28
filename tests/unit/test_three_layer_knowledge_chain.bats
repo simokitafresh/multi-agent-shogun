@@ -93,17 +93,47 @@ setup_knowledge_write_fixture() {
     export KW_ROOT="$(mktemp -d)"
     mkdir -p "$KW_ROOT/logs" "$KW_ROOT/state"
     KW_DB="$KW_ROOT/memory.db"
-    python3 - "$BATS_TEST_DIRNAME/../../data/multi_agent_shogun_memory.db" "$KW_DB" <<'PY'
+    # 隔離fixture: data/multi_agent_shogun_memory.db(gitignore済み本番データ、CI checkoutには
+    # 存在しない)へ依存せず、正本スキーマ(scripts/memory_db_import.py CREATE TABLE events /
+    # events_fts)をここへ直接複製する。他fixture(test_semantic_index_update.bats等)と同一方針。
+    python3 - "$KW_DB" <<'PY'
 import sqlite3, sys
-src_path, dst_path = sys.argv[1:3]
-src = sqlite3.connect(src_path)
-rows = [r[0] for r in src.execute(
-    "SELECT sql FROM sqlite_master WHERE type='table' AND name IN ('events','events_fts') AND sql IS NOT NULL"
-)]
-assert len(rows) == 2, rows
+dst_path = sys.argv[1]
 dst = sqlite3.connect(dst_path)
-for r in rows:
-    dst.execute(r)
+dst.executescript(
+    """
+    CREATE TABLE events (
+        id TEXT PRIMARY KEY,
+        ts TEXT,
+        event_type TEXT,
+        agent TEXT,
+        target TEXT,
+        direction TEXT,
+        summary TEXT,
+        detail TEXT,
+        session_id TEXT,
+        cmd_id TEXT,
+        concepts TEXT,
+        source_file TEXT,
+        parent_event_id INTEGER,
+        importance TEXT,
+        confidence TEXT DEFAULT 'medium',
+        freshness TEXT DEFAULT 'current',
+        source_type TEXT DEFAULT 'fact',
+        state TEXT DEFAULT 'raw',
+        occurred_at TEXT,
+        recorded_at TEXT,
+        updated_at TEXT
+    );
+    CREATE VIRTUAL TABLE events_fts USING fts5(
+        summary,
+        detail,
+        content='events',
+        content_rowid='rowid',
+        tokenize='trigram'
+    );
+    """
+)
 dst.commit()
 PY
     cat > "$KW_ROOT/mock_semantic_update.sh" <<'SH'
