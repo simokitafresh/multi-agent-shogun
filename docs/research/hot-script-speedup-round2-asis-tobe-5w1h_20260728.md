@@ -13,7 +13,7 @@
 - **P1 ✅** boundary弾GATE CLEAR(19:05): 3子区分恒久計装→最大子区分12.8%<40%で支配相なし→no-change CLOSE(二値基準充足: 計測行実記録+最大寄与区分特定=yes)
 - **P2 ✅** reflux backlink SSOT修正弾GATE CLEAR(19:01・才蔵): 自動配備をSSOT編集起点へ修正。backlink 3/3・insight/promotion 2/2・任務帰属305/305 PASS(二値基準充足: 生成物とSSOT両方が契約に含まれる=yes)
 - **P3 ✅** 第二弾閉幕(家老blt_192942): fixed SHA=60a88c241、全量unit共有1回=**2712/2712 PASS・skip0**(receipt=logs/test_receipts/run_tests_20260728T100806_3869311.json)、固定窓再snapshot(02:46:57Z-10:08:06Z、targets 2,536行)=`docs/research/hot-script-speedup-round2-v2-snapshot-20260728.md`(commit 0a681c239)(二値基準充足: FAIL0+窓・row_count固定明記=yes)
-- **P4 ❄** 第三弾後続解禁は**殿認可発話まで凍結維持**(唯一の残件)
+- **P4 ✅** 殿認可発話19:56『第三弾を続けよう』で充足 — 第三弾#2(cmd_complete_gate=T2 finalize区分計測)解禁、将軍が家老へ配備下知(19:56)。**閉幕プランP1-P4全充足=本設計書の残件ゼロ**
 
 ## §-2 第二弾 弾台帳(2026-07-28 16:10時点 — 第一弾§-2完了台帳と同型)
 
