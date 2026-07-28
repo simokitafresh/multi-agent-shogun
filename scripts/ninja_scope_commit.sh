@@ -956,6 +956,7 @@ fi
 declare -A shared_index_before=()
 declare -A shared_scope_entries_before=()
 declare -A shared_scope_staged_before=()
+shared_index_paths=()
 temp_index="$(mktemp "${TMPDIR:-/tmp}/ninja-scope-index.XXXXXX")"
 rm -f "$temp_index"
 cleanup_normal_index() { local rc=$?; rm -f "$temp_index" "$temp_index.lock"; publish_terminal_failure "$rc"; }
@@ -1018,25 +1019,36 @@ mapfile -t paths < <(git diff --cached --name-only --diff-filter=ACMRD)
 ((${#paths[@]} > 0)) \
     || { echo "BLOCK: scope produced an empty private index after task-YAML separation" >&2; exit 2; }
 
+# Snapshot the shared index once for the full effective scope.  The previous
+# per-scope `git ls-files` plus full-scope `git ls-files` repeated the same
+# DrvFS index read N+1 times on every commit.  Keep one ordered snapshot and
+# derive each pathspec aggregate in bash so directory scopes and exact-file
+# scopes retain identical comparison semantics.
+while IFS= read -r -d '' index_record; do
+    index_meta="${index_record%%$'\t'*}"
+    index_path="${index_record#*$'\t'}"
+    shared_index_before["$index_path"]="${index_meta% 0}"
+    shared_index_paths+=("$index_path")
+done < <(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -z -- "${paths[@]}")
+
 # Snapshot only the effective commit paths.  A separated task YAML may remain
 # staged by another worker in the shared index; excluding it here is what keeps
 # that foreign stage byte-for-byte intact instead of treating it as our scope.
 for scope_path in "${paths[@]}"; do
-    shared_scope_entries_before["$scope_path"]="$(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -- "$scope_path")"
+    shared_entries=""
+    for index_path in "${shared_index_paths[@]}"; do
+        if scope_path_is_in_scope "$index_path" "$scope_path"; then
+            index_entry="${shared_index_before[$index_path]}"
+            shared_entries+="${index_entry} 0"$'\t'"${index_path}"$'\n'
+        fi
+    done
+    shared_scope_entries_before["$scope_path"]="${shared_entries%$'\n'}"
     if GIT_INDEX_FILE="$shared_index_file" git diff --cached --quiet -- "$scope_path"; then
         shared_scope_staged_before["$scope_path"]=0
     else
         shared_scope_staged_before["$scope_path"]=1
     fi
 done
-# Per-file snapshot is separate from the scope snapshot because a scope may be
-# a directory.  The post-commit CAS-style check must compare each committed
-# file with its own prior shared-index entry, not a tree/pathspec aggregate.
-while IFS= read -r -d '' index_record; do
-    index_meta="${index_record%%$'\t'*}"
-    index_path="${index_record#*$'\t'}"
-    shared_index_before["$index_path"]="${index_meta% 0}"
-done < <(GIT_INDEX_FILE="$shared_index_file" git ls-files -s -z -- "${paths[@]}")
 
 for scope_path in "${paths[@]}"; do
     private_entries="$(git ls-files -s -- "$scope_path")"
