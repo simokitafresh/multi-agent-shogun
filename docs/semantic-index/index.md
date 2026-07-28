@@ -9845,6 +9845,7 @@ codd:
 | lesson | `L772` causal_backlink_counts.shの検索スコープ盲点(操作的波及不在の実例) |
 | causal | [[殿指示_オントロジー記事_20260618]] -> [[因果辺は記録だが駆動装置ではない]] -> [[操作的トリガー設計]] |
 | causal | [[cmd_3413_教訓タグ修正CLEAR]] -> [[useful_rate再計測未トリガー]] -> [[3セッション先送り=操作的波及不在の実証]] |
+| causal | [[cmd_4095_test_promotion]] -> [[default_delete_test_policy]] -> `docs/research/cmd_4095_test_promotion.md` |
 | cmd | `cmd_3397` backfill — | cmd_3397 | hide_portfolio DBデフォルトTrue化(PI-027コード強制) | CLEAR | 殿裁定直結。models.py+migrations.py 2行変更。テ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T03:06:46+09:00 今後は他のものでもオントロジー操作が自動で効くようになったか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-06-20T03:17:51+09:00 オントロジーが有効に動くか検証もしてみろ |
