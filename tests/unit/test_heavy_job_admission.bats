@@ -756,7 +756,7 @@ print('ok')
     workflow="$ROOT/.github/workflows/test.yml"
     grep -q 'BATS_INNER_JOBS=1' "$workflow"
     grep -q 'BATS_FILE_TIMEOUT_SECONDS=300' "$workflow"
-    grep -q 'timeout-minutes: 5' "$workflow"
+    grep -q 'timeout-minutes: 12' "$workflow"
     grep -Fq 'group: test-${{ github.workflow }}-${{ github.ref }}' "$workflow"
     grep -q 'cancel-in-progress: true' "$workflow"
     ! grep -q 'BATS_INNER_JOBS=8' "$workflow"
