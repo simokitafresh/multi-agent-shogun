@@ -137,6 +137,7 @@ declare -A CMD_BLOCK_CACHE=()
 declare -a CMD_SAVE_PHASE_EVENTS=()
 CMD_SAVE_PHASE_LAST_US=""
 CMD_SAVE_RUN_ID=""
+CMD_SAVE_CHECKS_MAIN_LAST_US=""
 
 cmd_save_phase_mark() {
     local name="$1" now_us wall_ms
@@ -147,6 +148,19 @@ cmd_save_phase_mark() {
         CMD_SAVE_PHASE_EVENTS+=("$name" "$wall_ms")
     fi
     CMD_SAVE_PHASE_LAST_US="$now_us"
+}
+
+# checks_mainの親totalを維持したまま、残余ボトルネックを恒久観測する非加算子区間。
+# 子区間は命名規約 checks_main.* で台帳へ出すため、集計時に親へ加算してはならない。
+cmd_save_checks_main_mark() {
+    local name="$1" now_us wall_ms
+    now_us="${EPOCHREALTIME/./}"
+    now_us="${now_us:0:16}"
+    if [[ -n "${CMD_SAVE_CHECKS_MAIN_LAST_US:-}" ]]; then
+        wall_ms=$(( (now_us - CMD_SAVE_CHECKS_MAIN_LAST_US + 999) / 1000 ))
+        CMD_SAVE_PHASE_EVENTS+=("checks_main.${name}" "$wall_ms")
+    fi
+    CMD_SAVE_CHECKS_MAIN_LAST_US="$now_us"
 }
 
 # 非同期INFO表示(semantic_search/memory_db照会)は`&`で親フローをブロックしないため、
@@ -4053,6 +4067,7 @@ if load_cmd_block; then
 fi
 
 cmd_save_phase_mark "session_state"
+cmd_save_checks_main_mark "start"
 
 # --- Check 3.5: diagnosis質検査（cmd_2159） ---
 # 目的: diagnosisが記入されている場合、「BLOCK理由:」「対策:」の2部構成を強制
@@ -4170,7 +4185,8 @@ QG_TEMPLATE
         check_q8_when_how_warn
         # 5W1H: WHERE(どこで)とWHO(誰が/誰に)も明示させる（殿指摘2026-05-10）
         check_q8_where_who_warn
-        check_lord_instruction_ac_alignment_info "$_Q8_WW_VAL" "$(extract_acceptance_criteria_block)"
+        # 親shellでprime済みの不変AC本文を直接渡し、command substitution用subshellを省く。
+        check_lord_instruction_ac_alignment_info "$_Q8_WW_VAL" "$CMD_SAVE_AC_BLOCK_CACHE"
         # q8 WHY引用検査はcmd_2248で廃止。
         # 理由: WHYが明示されていても引用記号や特定語彙を持たないだけでWARNになる偽陽性が多かった。
     fi
@@ -4381,6 +4397,7 @@ QG_TEMPLATE
     fi
 fi
 
+cmd_save_checks_main_mark "quality_gate"
 # --- Check 4: flock競合検出 ---
 # flock -n: ノンブロッキング。取得成功=競合なし、取得失敗=家老が書き込み中
 check_lock_contention_warn
@@ -4618,6 +4635,7 @@ show_pending_insights() {
 }
 
 show_pending_insights
+cmd_save_checks_main_mark "workspace_state"
 
 # --- Check 9.9: explicit reference existence guard ---
 # Only structurally declared references in target_path / assumptions /
@@ -4907,6 +4925,7 @@ check_impl_push_ac() {
 
 check_impl_push_ac
 
+cmd_save_checks_main_mark "reference_guards"
 # --- Check 11.0: 三層記憶L0-L7 coverage map要求（WARN） ---
 # 目的: 記憶DB関連cmdで、部品だけ作られて導線なしで放置されることを起票時に検出する
 check_three_layer_penetration
@@ -5548,6 +5567,7 @@ PY
 
 check_projects_yaml_forbidden_topics
 
+cmd_save_checks_main_mark "memory_context"
 # --- Check 12: 内容重複チェック（informational — WARN_COUNTに加算しない） ---
 # 起源: 重複cmd起票の構造的防止
 # 目的: 新cmdのtitle+purposeと直近20件(キュー+archive)の類似度を比較しWARN（50%以上）
@@ -5962,6 +5982,7 @@ check_ac_param_sufficiency() {
 
 check_ac_param_sufficiency
 
+cmd_save_checks_main_mark "content_and_ac"
 # --- Check 14: 前段results.yamlとのパラメータ空間縮小検出（BLOCK） ---
 # 起源: 2026-04-04 将軍4回連続で範囲縮小(top_n=5/lookback=6/PBO=5/MaxDD=1)
 # 目的: 後段cmdが前段cmdを参照している場合、前段results.yamlのconfig空間を削っていないか構造的に検査
@@ -6513,6 +6534,7 @@ ${FULL_CMD}"
 
 check_research_tool_explicit
 
+cmd_save_checks_main_mark "parameter_space"
 # --- Check 18.5: LK-A10 研究cmd成果物・context還流AC (BLOCK) ---
 # 起源: LK-A10 — 研究cmdはcommit checkが効きにくく、成果物現物確認とcontext還流が後追いになっていた。
 # 目的: 研究/分析cmd保存時に、成果物ファイル名プレフィックス・ls/head等の現物確認・context還流をACへ明示させる。
@@ -7275,6 +7297,7 @@ check_db_backup_ac_warn
 # --- Check 21.3: テスト/CI実行・本番DB復元契約（BLOCK） ---
 # BLOCKはhandle_cmd_save_exit→log_cmd_save_fire_eventを通り、detector_fp_rate計測へ接続される。
 check_execution_contract_requirements_block
+cmd_save_checks_main_mark "contracts"
 
 # --- Check 21.5: ACフェーズ混在検出（WARN） ---
 # 起源: cmd_2300事故 — 実装ACとCDP計測ACが1cmdに同居し、実装完了後に計測不能でFAIL
@@ -7517,6 +7540,7 @@ if [[ ${#BLOCK_CHECKS[@]} -gt 0 ]]; then
     done
 fi
 
+cmd_save_checks_main_mark "final_guards"
 cmd_save_phase_mark "checks_main"
 
 # --- 結果出力 ---

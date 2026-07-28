@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # test_necessity: cmd_save.sh実行時、主要内部フェーズ(checks_pre_session/session_state/checks_main)の
-# wall_msがdefense_overhead_writer.sh経由でsource:cmd_saveとして台帳へ出力される不変量と、
+# wall_msと非加算子区間checks_main.*がdefense_overhead_writer.sh経由で台帳へ出力される不変量と、
 # その計装がPASS/BLOCKの判定結果(exit code)を変化させない不変量を守るcontract test(cmd_4169)。
 
 setup_file() {
@@ -124,10 +124,23 @@ rows = [json.loads(x) for x in open(sys.argv[1]) if x.strip()]
 cmd_save_rows = [r for r in rows if r["source"] == "cmd_save"]
 phases = {r["check_id"] for r in cmd_save_rows}
 assert {"checks_pre_session", "session_state", "checks_main"} <= phases, phases
+children = [r for r in cmd_save_rows if r["check_id"].startswith("checks_main.")]
+expected_children = {
+    "checks_main.quality_gate", "checks_main.workspace_state",
+    "checks_main.reference_guards", "checks_main.memory_context",
+    "checks_main.content_and_ac", "checks_main.parameter_space",
+    "checks_main.contracts", "checks_main.final_guards",
+}
+assert expected_children <= {r["check_id"] for r in children}, children
+parent = next(r for r in cmd_save_rows if r["check_id"] == "checks_main")
+assert sum(r["wall_ms"] for r in children) <= parent["wall_ms"] + len(children), (parent, children)
+print("checks_main_profile", parent["wall_ms"],
+      " ".join(f'{r["check_id"]}={r["wall_ms"]}' for r in children))
 assert all(r["verdict"] == "PASS" for r in cmd_save_rows), cmd_save_rows
 assert all(isinstance(r["wall_ms"], int) and r["wall_ms"] >= 0 for r in cmd_save_rows), cmd_save_rows
 assert len({r["event_id"] for r in cmd_save_rows}) == len(cmd_save_rows), cmd_save_rows
 PY
+    echo "$output" >&2
     [ "$status" -eq 0 ]
 }
 
