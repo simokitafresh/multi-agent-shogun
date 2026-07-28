@@ -2518,14 +2518,24 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
             rm -f "$tmp_file"
         fi
 
-        # parent_ac_coverage is a deployment-time root scalar written to every
-        # report template.  The generic scalar lane below performs the same awk
-        # replacement, but first copies a full backup and afterwards re-reads
-        # status for terminal normalization.  Neither operation can be consumed
-        # by this non-terminal metadata write.  Keep structure, multiline and
-        # backslash values on the existing Python/fallback lane; only the exact
-        # scalar shape takes this backup-free atomic path.
-        if [ "$DOT_KEY" = "parent_ac_coverage" ] \
+        # parent_ac_coverage / parent_contract_fingerprint are deployment-time
+        # root scalars written together (same inject_parent_contract call site,
+        # scripts/deploy_task.sh) to every report template.  The generic scalar
+        # lane below performs the same awk replacement, but first copies a full
+        # backup and afterwards re-reads status for terminal normalization.
+        # Neither operation can be consumed by this non-terminal metadata write.
+        # parent_contract_fingerprint is either a 16-char sha256 hex digest, or
+        # '' (empty) when inject_parent_contract's parent-cmd lookup exits early
+        # — e.g. a direct/karo_direct hotfix task with no parent_cmd contract to
+        # bind (scripts/deploy_task.sh inject_parent_contract).  $VALUE=="" is
+        # normalized to the literal two-char "''" before this block runs (see
+        # the empty-value handling above), which is itself a single-line scalar
+        # with no backslash/bracket/newline — same shape class as the hex case,
+        # confirmed byte-identical against the pre-existing generic-lane output.
+        # Keep structure, multiline and backslash values on the existing
+        # Python/fallback lane; only the exact scalar shape takes this
+        # backup-free atomic path.
+        if [[ "$DOT_KEY" == "parent_ac_coverage" || "$DOT_KEY" == "parent_contract_fingerprint" ]] \
             && [ "$USE_PYTHON" -eq 0 ] \
             && [[ "$VALUE" != *'\'* ]]; then
             tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
