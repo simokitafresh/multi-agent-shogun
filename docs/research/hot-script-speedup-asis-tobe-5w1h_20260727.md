@@ -1,8 +1,12 @@
-# ホットスクリプト集中高速化 — AsIs/ToBe 5W1H設計書 v2.5 (2026-07-28 — 第一弾10/12消化。v2.4.1=three_layer行cohort訂正(家老APPROVE済)、v2.3=殿裁定23:25スコープ決め打ち)
+# 【✅ CLOSED — 第一弾完了 12/12】ホットスクリプト集中高速化 — AsIs/ToBe 5W1H設計書 v3.0 (2026-07-28 11:56クローズ)
 
-## §-2 第一弾 実施台帳(2026-07-28 10:47時点 — 10/12 GATE CLEAR、残2弾は作業中)
+> **本設計書はクローズ済み(第一弾12/12全GATE CLEAR、最終CLEAR=memory_db_token_search 2026-07-28 11:46:57)。**
+> **後継**: 第二弾設計書=`docs/research/hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(gist e13277d8)。第二弾の最終序列(v2.0)は本弾完了後の台帳再snapshotで確定し殿裁可を仰ぐ。
+> 版歴: v2.5=10/12時点 / v2.4.1=three_layer行cohort訂正(家老APPROVE) / v2.3=殿裁定23:25スコープ決め打ち(§-1憲法) / v2.2=cmd_4185外れ値条件 / v2.1=cmd_4181境界再集計。以下の§-2が最終完了台帳、§0以降はクローズ時点の歴史記録である。
 
-集計コマンド: `grep -E "hot_script|cmd_4189" logs/gate_metrics.log | grep CLEAR`(10行) + 各報告YAMLのΔ生貼付。1件=1check(1弾)。
+## §-2 第一弾 完了台帳(2026-07-28 11:56確定 — 12/12 GATE CLEAR)
+
+集計コマンド: `grep -E "hot_script|cmd_4189" logs/gate_metrics.log | grep CLEAR`(12行、1件=cmd_id一意のCLEAR行=1check) + 各報告YAMLのΔ生貼付。
 
 | # | check | 状態 | 是正内容 | Δ実測(既存台帳同条件before/after) |
 |---|---|---|---|---|
@@ -16,8 +20,8 @@
 | 8 | self_sync | ✅ CLEAR | 観測5項目追加→枝別実測→skip分岐化(reverify弾で独立再検証済み) | sync分岐median 1,378ms→skip分岐88ms(-93.6%) |
 | 9 | three_layer_memory_ruling | ✅ CLEAR | cache miss条件限定の最適化(query正規化key+cmd間cache+negative cache+single-flight) | before=外れ値92件分布(累積1,009,352ms/median 4,126ms)。after=同一query 2並列fixtureで累積2ms/median 1ms(**全92件同条件afterは未計測** — cohort全体の恒常削減値ではない) |
 | 10 | checks_pre_session | ✅ CLEAR | 全量YAML再parseをqueue世代一致時のみ再利用 | 同一入力20回でmedian 61.6→18.1ms(-70.7%)、累積1,827→377ms(-79.4%) |
-| 11 | memory_db_token_search | 🔄 作業中(才蔵) | 混合課税を品質契約不変で削減(実装・実測中) | — |
-| 12 | instruction_sync | 🔄 作業中(影丸) | — | — |
+| 11 | memory_db_token_search | ✅ CLEAR(11:46) | tokenなし枝(cohort 164件中56件)のworker起動・DB接触をpredicateで0化+prime済みcache再利用。tokenあり枝のINFO出力契約は不変 | baseline 164件=累積201,675ms/median 86ms。tokenなし枝の計装0件化を分枝実験で証明、full unit 2695/2695 PASS・SKIP0 |
+| 12 | instruction_sync | ✅ CLEAR(11:20) | 正本staged時のみの重い枝(top1 56.9%/top5 93.8%)を差分生成化 | 重い枝-99.4%/-97.2%(報告生値)。cohort再集計N=427で母集団前提の一致も再確認 |
 
 - 全弾が品質2原則(正本突合+境界fixture)+選択テストFAIL0・SKIP0+既存台帳のみのΔ証明(新台帳0件)を遵守
 - 付随して掘れたインフラバグ2件も即修正済み: deploy_sec誤計上(issued/deployed混在→attempt_id対集計、q11誤3,321秒→真53秒、commit 0932543cc)・commit_hash弾のcontext_freshness BLOCK解消
@@ -45,7 +49,7 @@
 
 ---
 
-## §0 結論 — 純オーバーヘッド標的序列(current cohort=self_sync是正commit 2026-07-25T02:56:17Z以降のみ。家老指摘④で全期間序列を無効化し再序列)
+## §0 結論 — 純オーバーヘッド標的序列【歴史記録: 着手前の序列。全12check是正済み=§-2完了台帳が最終状態】(current cohort=self_sync是正commit 2026-07-25T02:56:17Z以降のみ。家老指摘④で全期間序列を無効化し再序列)
 
 **「純オーバーヘッド」= 防御機構自体の消費時間。テスト実行本体・子job・lock保持・queue待ちは別母集団へ分離済み(§2)。母集団は是正済み現行コードの発火のみ(全期間集計は過去の既修正分を現在の標的に混ぜるため無効 — self_syncで実証: pre累積1,503.8s/median 1.9s → post累積221.6s/median 73ms=cmd_4168が既に-85%達成済みで現行1位ではなかった)。**
 
@@ -92,7 +96,7 @@
 
 ---
 
-## §2 To-Be — 進め方(v1.0から維持+補強)
+## §2 To-Be — 進め方【歴史記録: 全工程実施済み。凍結解除(殿裁定23:25)→家老自立配備(殿裁定00:08)→12/12完了】(v1.0から維持+補強)
 
 1. **1標的=1弾**。ACは同一条件before/after実測差分+品質2原則(挙動不変の正本突合+境界fixture)
 2. **順序**: 恒常課税型はcurrent cohort累積順(#1 checks_mainから)。外れ値型は「発生条件特定の偵察」(topN寄与率・閾値超過率・発生条件の3点表必須)を先行させ、最適化はその後。self_syncは残余外れ値の偵察のみ
@@ -105,7 +109,7 @@
 
 ---
 
-## §3 未解決事項(v2.2更新 — cmd_4185で1-2を特定/部分特定へ)
+## §3 未解決事項【クローズ時最終状態: 1-2=特定→是正済み(§-2の#3・#8・#9・#12)、3=B5/B2B3計装は第二弾へ移管(第二弾設計書§-1)、4=B1復帰税は家老レーン継続(本設計書スコープ外で存続)】(v2.2更新 — cmd_4185で1-2を特定/部分特定へ)
 
 1. ~~外れ値型のmax発生条件~~ → **cmd_4185で3点表(topN寄与率・閾値超過率・発生条件)を全数確定**(成果物=`docs/research/cmd_4185_outlier_conditions.md`、閾値=wall_ms>1000):
    | check | 判定 | 発生条件(writer現物照合済み) | 是正の方向性 |
