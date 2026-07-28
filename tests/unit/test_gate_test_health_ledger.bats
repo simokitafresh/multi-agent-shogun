@@ -98,6 +98,15 @@ EOF
 # shifted representative runtime still blocks.
 @test "ratchet uses per-file median and MAD instead of cohort p95" {
   export TEST_TIMING_RATCHET_SUITE_ABS_SEC=1000
+  # config/test_timing_budget_exceptions.tsv is a live operational file: any
+  # unexpired entry turns the expected BLOCK into "WARN: ... active measured
+  # exception suppresses BLOCK" (exit 1).  Measured 2026-07-26: an entry
+  # expiring 2026-07-31 made this case fail while the median+MAD logic itself
+  # was intact.  Isolate it here only -- the other cases must keep the exact
+  # conditions they had, so the shared helper is left untouched.  A path that
+  # does not exist means no active exception; an empty file would instead trip
+  # the schema BLOCK.
+  export TEST_TIMING_RATCHET_EXCEPTIONS="$TMP_DIR/absent_exceptions.tsv"
   local i value
   for i in 1 2 3 4 5 6 7 8 9; do
     value=10
