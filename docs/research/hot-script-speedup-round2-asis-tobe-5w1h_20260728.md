@@ -1,4 +1,4 @@
-# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.1 (2026-07-28 — 家老REQUEST_CHANGES 3点反映。§0序列は暫定、第一弾12/12完了後の再snapshotで最終確定してから殿裁可。実装凍結継続)
+# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.2 (2026-07-28 — §3未解決5項を将軍D0全調査で解消(利他)。v1.1=家老RC3点反映。序列暫定=第一弾12/12後の再snapshotでv2.0確定→殿裁可。実装凍結継続)
 
 ## §-0 v1.1改訂(家老レビュー2・blt_105708の全採用)
 
@@ -64,13 +64,15 @@
 5. **凍結解除条件**: 本v1.0の家老忖度なしレビュー完了後、殿裁可で順次起票。**それまで実装ゼロ**
 6. 配備は家老自立配備(karo_direct、第一弾の殿裁定00:08と同型)を既定とする
 
-## §3 未解決事項
+## §3 未解決事項 → v1.2で全5項を将軍D0調査済み(2026-07-28 11:30、read-only+台帳集計のみ・実装なし)
 
-1. **refresh_copy/refresh_verifyの境界分類**(§1★) — backgroundならターン影響の実証(どのwait経路に乗るか)まで含めて分類確定が先
-2. checks_main残余930msの内訳 — 第一弾cmd_4189のフェーズ分解装置を再利用して残余ボトルネック上位を再実測
-3. commit_hashの呼出し回数側(n=160/cohortA)の妥当性 — 単価は是正済みのため、呼出し元の重複呼出し有無の確認が先
-4. full_precheckのp95 3.8s/max 11.3sの外れ値条件 — 3点表未作成
-5. B5/B2/B3計装の計測点設計(親子非加算の遵守)
+1. ~~refresh_copy/verifyの境界分類~~ → **解消(ターン接触なしを現物確定)**: `scripts/lib/memory_db_cache.sh` L60-90現読 — refreshは`setsid -f` double-forkで完全非同期化済み(旧実装の「command substitutionがbackupを待つ」バグはコメントに記録された既修正事項)、cold-cache生成も非同期でreaderはcanonical DBを即使用、preflight外側budget 5sは検索自体の予算でrefresh待ちではない。∴家老判定(background保守lane)を現物で補強。間接影響はcold cache期のcanonical 9p直読でクエリが遅くなる分のみ — これはq11/three_layer(第一弾是正済み)側の計測に現れるため独立標的にしない
+2. ~~checks_main残余の内訳~~ → **恒久計装が必要と確定**: cmd_save系の台帳check_idは6種(checks_main/checks_pre_session/q11/three_layer/memory_db_token/session_state)のみでchecks_main内サブ区分は**台帳に存在しない**(cmd_4189のフェーズ分解は報告内の一時実測で恒久化されていない)。∴checks_main再トライ弾の第一AC=サブ区間計測行の恒久追加(外れ値台帳の枝選択コンテキスト要件に従う)→ボトルネック上位特定→是正
+3. ~~commit_hash呼出し回数の妥当性~~ → **重複呼出しを実測確定**: cohortA(上限02:30Z固定)でn=243が2分gapクラスタ9個に集中=**平均27.0回/クラスタ(≒1報告フローあたり27回呼出し)**。単価190msは是正済みのため、**batch化(report_field_set複数フィールド一括書込みへの呼出し集約)が是正の軸**と確定
+4. ~~full_precheck 3点表~~ → **作成済み(恒常課税優勢と判定)**: n=158/累積180.1s(上限02:30Z固定)、top1寄与6.3%/top5寄与21.5%、>1s率22.2%。集中でなく広く分散=**外れ値型ではなく恒常課税型が主**。外れ値上位3件(11.3s/7.7s/7.1s、event_id記録済み)はいずれもverdict PASS・軍師precheck実行時。∴弾の型=フェーズ分解→実装最適化(3点表による条件特定偵察は不要と再分類)
+5. ~~B5/B2/B3計装の計測点設計~~ → **設計確定**: B5 inbox_write=persist(flock+YAML書込み)/nudge(tmux send-keys)/delivery verify(codex capture)の3計測点+total(加算対象はtotalのみ=親子非加算遵守)。B2/B3 startup gate=既存TIMING行(gate_shogun_startupはTIMING_COVERAGE measured=59が既に出力)をdefense_overhead.jsonlへ転記する薄いwriterブリッジのみ(新規計測実装は不要)
+
+**残る未決定(調査では解消できない工程判断)**: 序列・scopeの最終確定は第一弾12/12完了後の再snapshot(v2.0)で行い殿裁可を仰ぐ — §-0(3)の通り
 
 ## §4 5W1H
 
