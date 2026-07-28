@@ -896,7 +896,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1435 -->
+<!-- last_synced_lesson: L1437 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2045,6 +2045,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1433: outgoing semantic-linksはincoming backlinkを増やさない（cmd_reflux_backlink_202607281529_hanzo）
 - L1434: 生成物だけを編集せずSSOTから再生成する（cmd_reflux_backlink_202607281828_hanzo）
 - L1435: reflux_inventory_beforeのtimeout/失敗値が0として記録されAC2証跡を汚染する（cmd_reflux_insight_202607281837_kagemaru）
+- L1436: active watcher時はdelivery verifyをwriter critical pathから分離する（cmd_karo_round4_impl_inbox_write_20260728）
+- L1437: 時刻推測ではなくevent-ready証跡で並行testを同期する（cmd_karo_ci_fix_30357551416_ninja_scope_precommit_race）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
