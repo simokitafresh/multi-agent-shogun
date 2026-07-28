@@ -1,8 +1,8 @@
-# ホットスクリプト集中高速化 — AsIs/ToBe 5W1H設計書 v2.4 (2026-07-28 — 第一弾9/12消化・全弾Δ実測反映。v2.3=殿裁定23:25スコープ決め打ち)
+# ホットスクリプト集中高速化 — AsIs/ToBe 5W1H設計書 v2.5 (2026-07-28 — 第一弾10/12消化。v2.4.1=three_layer行cohort訂正(家老APPROVE済)、v2.3=殿裁定23:25スコープ決め打ち)
 
-## §-2 第一弾 実施台帳(2026-07-28 08:18時点 — 9/12 GATE CLEAR)
+## §-2 第一弾 実施台帳(2026-07-28 10:47時点 — 10/12 GATE CLEAR、残2弾は作業中)
 
-集計コマンド: `grep -E "hot_script|cmd_4189" logs/gate_metrics.log | grep CLEAR`(9行) + 各報告YAMLのΔ生貼付。1件=1check(1弾)。
+集計コマンド: `grep -E "hot_script|cmd_4189" logs/gate_metrics.log | grep CLEAR`(10行) + 各報告YAMLのΔ生貼付。1件=1check(1弾)。
 
 | # | check | 状態 | 是正内容 | Δ実測(既存台帳同条件before/after) |
 |---|---|---|---|---|
@@ -15,9 +15,9 @@
 | 7 | verdict | ✅ CLEAR | bc:no自動FAIL判定統合で重複全量parse1回削減 | 累積10,080→9,664ms(-4.1%)、median 409→381ms(-6.8%)(25走) |
 | 8 | self_sync | ✅ CLEAR | 観測5項目追加→枝別実測→skip分岐化(reverify弾で独立再検証済み) | sync分岐median 1,378ms→skip分岐88ms(-93.6%) |
 | 9 | three_layer_memory_ruling | ✅ CLEAR | cache miss条件限定の最適化(query正規化key+cmd間cache+negative cache+single-flight) | before=外れ値92件分布(累積1,009,352ms/median 4,126ms)。after=同一query 2並列fixtureで累積2ms/median 1ms(**全92件同条件afterは未計測** — cohort全体の恒常削減値ではない) |
-| 10 | checks_pre_session | ⏳ 残 | — | — |
-| 11 | memory_db_token_search | ⏳ 残 | — | — |
-| 12 | instruction_sync | ⏳ 残 | — | — |
+| 10 | checks_pre_session | ✅ CLEAR | 全量YAML再parseをqueue世代一致時のみ再利用 | 同一入力20回でmedian 61.6→18.1ms(-70.7%)、累積1,827→377ms(-79.4%) |
+| 11 | memory_db_token_search | 🔄 作業中(才蔵) | 混合課税を品質契約不変で削減(実装・実測中) | — |
+| 12 | instruction_sync | 🔄 作業中(影丸) | — | — |
 
 - 全弾が品質2原則(正本突合+境界fixture)+選択テストFAIL0・SKIP0+既存台帳のみのΔ証明(新台帳0件)を遵守
 - 付随して掘れたインフラバグ2件も即修正済み: deploy_sec誤計上(issued/deployed混在→attempt_id対集計、q11誤3,321秒→真53秒、commit 0932543cc)・commit_hash弾のcontext_freshness BLOCK解消
