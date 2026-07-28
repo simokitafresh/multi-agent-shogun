@@ -17,7 +17,7 @@ def command_from(data, cmd_id):
     if isinstance(commands, list):
         return next((x for x in commands if isinstance(x, dict) and str(x.get("id")) == cmd_id), None)
 
-def _snapshot_command(report, cmd_id):
+def _snapshot_command(root, report, cmd_id):
     snapshot = report.get("task_contract_snapshot") if isinstance(report, dict) else None
     if not isinstance(snapshot, dict):
         raise ValueError("immutable task contract snapshot is missing")
@@ -38,7 +38,23 @@ def _snapshot_command(report, cmd_id):
     project = str(snapshot.get("project") or "").strip()
     if not purpose or not isinstance(criteria, (list, dict)) or not criteria or not project:
         raise ValueError("immutable task contract snapshot is incomplete")
-    return {"acceptance_criteria": criteria, "command": purpose, "project": project}
+    worker = str(report.get("worker_id") or "").strip()
+    if not worker or "/" in worker or worker in {".", ".."}:
+        raise ValueError("immutable task contract identity mismatch: worker_id")
+    task_path = root / f"queue/tasks/{worker}.yaml"
+    task = load(task_path).get("task") if task_path.is_file() else None
+    if not isinstance(task, dict):
+        raise ValueError("immutable task contract task snapshot is missing")
+    identities = {
+        "task_id": (report_task, task.get("task_id")),
+        "parent_cmd": (cmd_id, task.get("parent_cmd")),
+        "ac_version": (str(report.get("ac_version_read") or ""), task.get("ac_version")),
+        "report_id": (str(report.get("report_id") or ""), task.get("report_id")),
+    }
+    for key, (expected_value, actual_value) in identities.items():
+        if not expected_value or str(actual_value or "") != expected_value:
+            raise ValueError(f"immutable task/report identity mismatch: {key}")
+    return {"acceptance_criteria": criteria, "command": purpose, "project": project}, task_path
 
 # Commands the system generates for itself never pass through cmd_save, so they
 # have no Shogun spec by construction.  Their deploy-time immutable
@@ -47,7 +63,7 @@ def _snapshot_command(report, cmd_id):
 # bypassed cmd_save) still fails closed below.
 #   cmd_karo_*            karo-direct deployment
 #   cmd_reflux_promotion_ ninja_monitor's promotion reflux auto-deployment
-SPEC_LESS_AUTOGEN_PREFIXES = ("cmd_karo_", "cmd_reflux_promotion_")
+SPEC_LESS_AUTOGEN_PREFIXES = ("cmd_karo_", "cmd_reflux_")
 
 
 def find_command(root, cmd_id, report=None, report_path=None):
@@ -63,7 +79,7 @@ def find_command(root, cmd_id, report=None, report_path=None):
     if cmd_id.startswith(SPEC_LESS_AUTOGEN_PREFIXES) and isinstance(report, dict) and report_path is not None:
         if str(report.get("status") or "") != "completed" or str(report.get("verdict") or "").upper() != "PASS":
             raise ValueError("autogen spec fallback requires completed/PASS report")
-        return _snapshot_command(report, cmd_id), report_path
+        return _snapshot_command(root, report, cmd_id)
     raise ValueError(f"cmd spec not found: {cmd_id}")
 
 def summary(command):
