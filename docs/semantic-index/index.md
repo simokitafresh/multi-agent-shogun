@@ -10376,6 +10376,7 @@ codd:
 | cmd | `cmd_karo_hotfix_commit_async_semantic_propagation_20260729` (`docs/semantic-index/index.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T19:14:22.320157+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T23:15:33.781316+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-28T23:29:11.418901+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
