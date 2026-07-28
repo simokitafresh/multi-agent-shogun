@@ -21,6 +21,45 @@ DEFAULT_CLI="claude"
 
 mkdir -p "$OUTPUT_DIR"
 
+# Input-hash-diff generation (cmd_karo_hotfix_hot_script_instruction_sync_20260728):
+# git-pre-commit's instruction_sync step only invokes this script when a source
+# instructions/*.md file is staged, but every invocation used to rewrite all
+# ~20 generated files regardless of which specific role/CLI combo the change
+# actually affects. Under concurrent commits the flock above serializes those
+# rewrites, so wasted NTFS writes on unaffected outputs directly inflate the
+# critical section other waiters block on (cmd_4185 outlier measurement:
+# top2 events = 125.1s of 160.1s cumulative). Cache each output's input hash
+# and skip the rewrite when neither the recipe nor the on-disk output changed.
+_BUILD_CACHE_DIR="$OUTPUT_DIR/.build_cache"
+mkdir -p "$_BUILD_CACHE_DIR"
+
+# Skip regenerating $2 (repo-relative output path) when $1 (recipe hash of its
+# inputs) matches the cached recipe hash AND the on-disk file's own hash still
+# matches what was recorded — the second check is what keeps hand-edited /
+# drifted generated files from silently escaping resync.
+_build_cache_should_skip() {
+    local input_hash="$1"
+    local output_path="$2"
+    local cache_file="$3"
+    local cached_input="" cached_output="" current_output=""
+
+    [[ -f "$cache_file" && -f "$output_path" ]] || return 1
+    IFS=: read -r cached_input cached_output < "$cache_file" || return 1
+    [[ -n "$cached_input" && "$cached_input" == "$input_hash" ]] || return 1
+    current_output="$(sha256sum "$output_path" | awk '{print $1}')"
+    [[ -n "$cached_output" && "$cached_output" == "$current_output" ]] || return 1
+    return 0
+}
+
+_build_cache_record() {
+    local input_hash="$1"
+    local output_path="$2"
+    local cache_file="$3"
+    local output_hash
+    output_hash="$(sha256sum "$output_path" | awk '{print $1}')"
+    printf '%s:%s\n' "$input_hash" "$output_hash" > "$cache_file"
+}
+
 # Multiple unit roots and hooks may rebuild the shared generated directory at
 # once.  Per-file atomic writes do not make a multi-file generation coherent:
 # an idempotence reader can otherwise observe a mixture of empty/old/new role
@@ -130,12 +169,28 @@ build_instruction_file() {
     local original_file="$SCRIPT_DIR/instructions/${role}.md"
     local tools_file="$PARTS_DIR/cli_specific/${cli_type}_tools.md"
 
-    echo "Building: $output_filename (CLI: $cli_type, Role: $role)"
-
     if [[ "${_BUILD_ROLE_VALID[$role]:-1}" != "1" ]]; then
         echo "  ❌ Missing role parts for: $role" >&2
         return 1
     fi
+
+    local _cache_file="$_BUILD_CACHE_DIR/${output_filename}.cache"
+    local _input_hash
+    _input_hash="$(
+        {
+            if [[ -n "${_BUILD_ROLE_TMPS[$role]+x}" ]]; then cat "${_BUILD_ROLE_TMPS[$role]}"; fi
+            cat "$_BUILD_COMMON_TMP"
+            if [[ -n "${_BUILD_TOOLS_TMPS[$cli_type]+x}" ]]; then cat "${_BUILD_TOOLS_TMPS[$cli_type]}"; fi
+            printf '%s' "$cli_type"
+        } | sha256sum | awk '{print $1}'
+    )"
+
+    if _build_cache_should_skip "$_input_hash" "$output_path" "$_cache_file"; then
+        echo "  ⏭️  Unchanged (input hash match): $output_filename"
+        return 0
+    fi
+
+    echo "Building: $output_filename (CLI: $cli_type, Role: $role)"
 
     # Write entire file in a single pass to reduce WSL2 filesystem overhead.
     # Multiple >> appends each open/close the output file; a single {} > file
@@ -172,6 +227,8 @@ build_instruction_file() {
     if [[ "$cli_type" == "codex" ]]; then
         normalize_codex_reset_references "$output_path"
     fi
+
+    _build_cache_record "$_input_hash" "$output_path" "$_cache_file"
 
     echo "  ✅ Created: $output_filename"
 }
@@ -320,12 +377,21 @@ generate_agents_md() {
     cli_display=$(cli_profile_get_for_type "$cli_type" "display_name")
     [[ -z "$cli_display" ]] && cli_display="${cli_type^} CLI"
 
-    echo "Generating: AGENTS.md (${cli_type} auto-load)"
-
     if [ ! -f "$claude_md" ]; then
         echo "  ⚠️  CLAUDE.md not found. Skipping AGENTS.md generation."
         return 1
     fi
+
+    local _cache_file="$_BUILD_CACHE_DIR/AGENTS.md.cache"
+    local _input_hash
+    _input_hash="$(sha256sum "$claude_md" | awk '{print $1}')-${cli_type}-${cli_display}"
+
+    if _build_cache_should_skip "$_input_hash" "$output_path" "$_cache_file"; then
+        echo "  ⏭️  Unchanged (input hash match): AGENTS.md"
+        return 0
+    fi
+
+    echo "Generating: AGENTS.md (${cli_type} auto-load)"
 
     transform_claude_md "$cli_type" \
         "AGENTS.md" "AGENTS.override.md" \
@@ -333,6 +399,8 @@ generate_agents_md() {
         "$cli_display" "$claude_md" "$output_path"
 
     normalize_codex_reset_references "$output_path"
+
+    _build_cache_record "$_input_hash" "$output_path" "$_cache_file"
 
     echo "  ✅ Created: AGENTS.md"
 }
@@ -347,12 +415,21 @@ generate_copilot_instructions() {
     local output_path="$github_dir/copilot-instructions.md"
     local claude_md="$SCRIPT_DIR/CLAUDE.md"
 
-    echo "Generating: .github/copilot-instructions.md (Copilot auto-load)"
-
     if [ ! -f "$claude_md" ]; then
         echo "  ⚠️  CLAUDE.md not found. Skipping copilot-instructions.md generation."
         return 1
     fi
+
+    local _cache_file="$_BUILD_CACHE_DIR/copilot-instructions.md.cache"
+    local _input_hash
+    _input_hash="$(sha256sum "$claude_md" | awk '{print $1}')-copilot"
+
+    if _build_cache_should_skip "$_input_hash" "$output_path" "$_cache_file"; then
+        echo "  ⏭️  Unchanged (input hash match): .github/copilot-instructions.md"
+        return 0
+    fi
+
+    echo "Generating: .github/copilot-instructions.md (Copilot auto-load)"
 
     mkdir -p "$github_dir"
 
@@ -360,6 +437,8 @@ generate_copilot_instructions() {
         "copilot-instructions.md" "copilot-instructions.local.md" \
         ".copilot/config.json" ".copilot/mcp-config.json" \
         "GitHub Copilot CLI" "$claude_md" "$output_path"
+
+    _build_cache_record "$_input_hash" "$output_path" "$_cache_file"
 
     echo "  ✅ Created: .github/copilot-instructions.md"
 }
@@ -375,8 +454,6 @@ generate_kimi_instructions() {
     local agent_yaml_path="$agents_dir/agent.yaml"
     local claude_md="$SCRIPT_DIR/CLAUDE.md"
 
-    echo "Generating: agents/default/system.md + agent.yaml (Kimi auto-load)"
-
     if [ ! -f "$claude_md" ]; then
         echo "  ⚠️  CLAUDE.md not found. Skipping Kimi auto-load generation."
         return 1
@@ -384,12 +461,24 @@ generate_kimi_instructions() {
 
     mkdir -p "$agents_dir"
 
-    transform_claude_md "kimi" \
-        "agents/default/system.md" "agents/default/system.local.md" \
-        ".kimi/config.json" ".kimi/mcp.json" \
-        "Kimi K2 CLI" "$claude_md" "$system_md_path"
+    local _cache_file="$_BUILD_CACHE_DIR/kimi-system.md.cache"
+    local _input_hash
+    _input_hash="$(sha256sum "$claude_md" | awk '{print $1}')-kimi"
 
-    echo "  ✅ Created: agents/default/system.md"
+    if _build_cache_should_skip "$_input_hash" "$system_md_path" "$_cache_file"; then
+        echo "  ⏭️  Unchanged (input hash match): agents/default/system.md"
+    else
+        echo "Generating: agents/default/system.md (Kimi auto-load)"
+
+        transform_claude_md "kimi" \
+            "agents/default/system.md" "agents/default/system.local.md" \
+            ".kimi/config.json" ".kimi/mcp.json" \
+            "Kimi K2 CLI" "$claude_md" "$system_md_path"
+
+        _build_cache_record "$_input_hash" "$system_md_path" "$_cache_file"
+
+        echo "  ✅ Created: agents/default/system.md"
+    fi
 
     # Generate agent.yaml (Kimi agent definition)
     cat > "$agent_yaml_path" <<'EOFYAML'
