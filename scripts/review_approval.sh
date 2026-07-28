@@ -5,6 +5,10 @@ set -euo pipefail
 ROOT=${REVIEW_APPROVAL_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}
 source "$ROOT/scripts/lib/review_approval.sh"
 source "$ROOT/scripts/lib/yaml_field_set.sh"
+defense_writer="$ROOT/scripts/lib/defense_overhead_writer.sh"
+[ -f "$defense_writer" ] || defense_writer="$(cd "$(dirname "$0")" && pwd)/lib/defense_overhead_writer.sh"
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$ROOT}"
+source "$defense_writer"
 if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
   echo "Usage: $0 <cmd_id> <gunshi|karo> <LGTM|ACCEPT|RC> <report_path> [auto|implementation|report]" >&2
   echo "   or: $0 <cmd_id> karo RC_REVOKE <report_path> <reason>" >&2
@@ -61,7 +65,11 @@ fail_close=0
 if [ "$report_status" = "failed" ] && [ "$role:$result" = "karo:ACCEPT" ] && [ "$report_verdict" = "FAIL" ]; then
   fail_close=1
 fi
-[ "$report_status" = "completed" ] || [ "$fail_close" = 1 ] || [ "$role:$result" = "karo:RC_REVOKE" ] || {
+failed_rc=0
+if [ "$report_status" = "failed" ] && [ "$role:$result" = "karo:RC" ] && [ "$report_verdict" = "FAIL" ]; then
+  failed_rc=1
+fi
+[ "$report_status" = "completed" ] || [ "$fail_close" = 1 ] || [ "$failed_rc" = 1 ] || [ "$role:$result" = "karo:RC_REVOKE" ] || {
   echo "BLOCK: formal review requires status=completed (actual=${report_status:-missing}): $report" >&2
   exit 1
 }
@@ -292,6 +300,20 @@ tmp=$(mktemp "$dir/.${role}.XXXXXX")
 trap 'rm -f "$tmp" "${REVIEW_FP_CACHE_DIR:?}"/*; rmdir "${REVIEW_FP_CACHE_DIR:?}" 2>/dev/null || true' EXIT
 printf 'timestamp: %s\nrole: %s\nresult: %s\nfingerprint: %s\nreport: %s\ncorrection_scope: %s\n' "$(date -Iseconds)" "$role" "$result" "$fingerprint" "$report_rel" "$correction_scope" > "$tmp"
 mv -f "$tmp" "$dir/$role.yaml"
+# T1a throughput instrumentation: the approval file above is the existing
+# durable decision boundary.  Reuse the shared append-only timing ledger and
+# bind the id to the report attempt (fingerprint) plus report identity (key).
+# Duplicate invocations intentionally keep the original boundary timestamp.
+case "$role:$result" in
+  gunshi:LGTM)
+    defense_overhead_write review_approval gunshi_lgtm 0 PASS \
+      "review-approval-gunshi-lgtm-${cmd_id}-${report_key}-${fingerprint}" || true
+    ;;
+  karo:ACCEPT)
+    defense_overhead_write review_approval karo_accept 0 PASS \
+      "review-approval-karo-accept-${cmd_id}-${report_key}-${fingerprint}" || true
+    ;;
+esac
 if [ "$role" = karo ] && [ "$result" = RC ]; then
   # RC reopening is one lifecycle transaction and the canonical formal entry.
   # ninja_monitor uses this same
