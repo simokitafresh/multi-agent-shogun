@@ -104,3 +104,5 @@ Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は�
 <!-- 検証(shogun 2026-07-11): yaml_field_set.sh(1fba56549 atomic公開+parse検証=内部変更)/deploy_task.sh(8be3eaf72 assumptions保全=内部変更)/cmd_complete_gate.sh(0a41c0110 perf=内部変更)。呼出しインターフェース不変、手順書換え不要 -->
 
 <!-- script参照互換確認 2026-07-12: 参照先(yaml_field_set.sh/deploy_task.sh/ninja_monitor.sh)の直近変更はatomic mv/validate/fail-closed等の内部堅牢化のみでCLI引数・呼出手順の変更なし。本書の手順は現行スクリプトと互換(将軍git log現物確認) -->
+<!-- script_refs_checked_at: 2026-07-29T03:59:00+09:00 -->
+<!-- 検分: bulletin_write.sh b2f07586f/10899e185/3965e2c28/0a3f97a18。位置引数・BULLETIN_NOTIFY・action_type契約は維持。指揮官投稿には、数値主張時の「集計コマンド/出力行の生貼付/1件の定義」と現在指示との関連宣言が追加された。本スキル例は数値プレースホルダを含むため実値投稿時に3点セットを添える。BULLETIN_AUTOGEN=1と起動時Q6/洗脳チェック投稿のみ免除。 -->

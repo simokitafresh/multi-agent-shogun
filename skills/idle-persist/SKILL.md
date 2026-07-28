@@ -138,3 +138,5 @@ Script refs verified: 2026-07-02 a2e4e93cc. `bulletin_write.sh` 直近変更は�
 
 <!-- cmd_karo_hotfix_skill_script_refs_six_202607170058検分: inbox_write.sh fff17f591はtask_assigned時のCodex配達確認にopt-in非同期dispatcherを追加。idle-persistのgunshi_lesson_candidate経路は同期検証対象外で、位置引数、永続化、exit、保存→掲示板→review_log→通知順序は不変。本文変更不要。 -->
 <!-- script_refs_checked_at: 2026-07-17T01:02:18+09:00 -->
+<!-- script_refs_checked_at: 2026-07-29T03:59:00+09:00 -->
+<!-- 検分: bulletin_write.sh b2f07586f/10899e185/3965e2c28/0a3f97a18。位置引数・BULLETIN_NOTIFY・action_type契約は維持。指揮官投稿には、数値主張時の「集計コマンド/出力行の生貼付/1件の定義」と現在指示との関連宣言が追加された。idle分析の数値要約は3点セットとcmd_id/下知等を本文へ含める。BULLETIN_AUTOGEN=1と起動時Q6/洗脳チェック投稿のみ免除。 -->
