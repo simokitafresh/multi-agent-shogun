@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-28 cmd_karo_hotfix_reflux_backlink_external_source_20260728 reviewed source boundary -->
-<!-- source_commit:327f28eda reason:cmd_karo_hotfix_reflux_backlink_external_source_20260728 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=327f28eda -->
+<!-- last_updated: 2026-07-28 cmd_karo_hotfix_ga411_context_freshness_20260728 -->
+<!-- source_commit:003f3c411 reason:cmd_karo_hotfix_ga411_context_freshness_20260728 evidence:git-show-003f3c411-one-commit-semantic-key-dedupe-reflected-in-body -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -18,6 +18,8 @@ related_lessonsのmemory boostは独自SQLite snapshotを作らず、`memory_db_
 daemon watchdogは個別health checkに加え、`inbox_watcher.sh>=9`・`ninja_monitor.sh`・`ntfy_listener.sh`・`usage_statusbar_loop.sh`・`gist_sync.sh`のprocess inventoryを1 snapshotで監査し、不足classごとにWARNする。消滅PIDの`/proc/<pid>/cmdline` raceは無音で扱い、inbox unread countは読取異常時も単一整数へ正規化する。P0は本番実走error 0で完了。次段は副作用のある`restart_watchers --status`修正(P1a-1)と全daemon共通maintenance lock(P1a-2)を分離し、既存watchdogの600秒/3回throttleと重複するbackoffは追加しない。→ `scripts/daemon_watchdog.sh` / `tests/unit/test_daemon_watchdog.bats` / `docs/research/daemon-inventory-asis-tobe-5w1h_20260715.md`（cmd_3951、commit `4bf8858c0`、R2最終inventory v1.3 `2afc5d9a1`）
 
 context freshnessの`source_commit`境界はinfra root fallbackにも適用する。境界後commitは、context自身を変更した・lesson-only・本文がhash/cmd IDを明示した場合だけ反映済みと分類し、それ以外は日付をbumpしてもALERTへ残す。ALERTには直近3件のhash・subjectを同梱する。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124、GA-264、GA-295）
+
+将軍startup先送りBLOCKのescalation重複判定は通知本文の完全一致ではなく、連続セッション数を除いた未解決判断のsemantic key集合を同一性境界とする。連続数は観測時点ごとに変わるためdomain identityではなく、既存の未読escalationが新規key集合を包含する間は再送しない。直接原因は可変カウンタを含む本文比較で同一未解決判断が別通知扱いになったこと、根本原因は通知文字列とdomain event identityを分離していなかったこと。同カテゴリのretry/dedupeもcontentではなく安定semantic keyをflock内で比較する。防御はstartup送信経路内のLevel4重複抑止であり、未読key集合を消費してから送信を決める。→ `scripts/gates/gate_shogun_startup.sh` / `tests/unit/test_gate_shogun_startup.bats`（cmd_karo_hotfix_startup_escalation_semantic_dedupe_20260728、commit `003f3c411`）
 
 `--cmd-commit-list`の出力cache identityはmode/cmdだけでなく`CFC_PROJECT_OVERRIDE`を含める。同一cmdを複数projectで照合しても先行projectの結果を再利用せず、project固有の未反映source/context対を完了時BLOCKへ渡す。GA-320では修正前に同一cmdのdm-signal結果5件がinfra照合へ誤再利用され、修正後はdm-signal 5件・infra 3件を分離。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`
 
