@@ -535,6 +535,7 @@ print('ok')
     awk -v a="$a_end" -v b="$b_start" 'BEGIN{exit !(b>=a)}'
 }
 
+# test_necessity: metrics非同期writerが遅延しても異常exit後にhost-wide admission FDを継承せず、後続ownerが有限時間内に取得できる不変量。
 @test "wrapper: 異常終了(非0 exit)後にlockが自動解放され後続がblockされず即進む" {
     run bash "$WRAPPER" -- bash -c 'exit 17'
     [ "$status" -eq 17 ]
@@ -687,6 +688,7 @@ print('ok')
     [ "$(cat "$result")" = "inner-ok" ]
 }
 
+# test_necessity: metrics非同期writerを含む通常exit後にadmission lock holderが残らず、外部holderを操作せず後続ownerへhandoffする不変量。
 @test "wrapper: stale lock残存0(実行後にlockファイルへの排他保持プロセスが残らない)" {
     bash "$WRAPPER" -- echo done
     # lsof/fuserで排他保持プロセスが残っていないことを確認(flockはfd close=解放)

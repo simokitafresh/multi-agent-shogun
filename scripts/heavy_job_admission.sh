@@ -281,8 +281,16 @@ trap 'cleanup_waiter; cleanup_owner_metadata' EXIT
 _hja_queue_age_sec=$((owner_started - queue_started))
 printf 'HEAVY_ADMISSION_ACQUIRED owner_pid=%s queue_age_sec=%s\n' "$$" "$_hja_queue_age_sec" >&2
 if [[ "$_hja_metrics_enabled" == "1" ]]; then
-    defense_overhead_write_async heavy_job_admission queue_wait "$((_hja_queue_age_sec * 1000))" \
-        PASS "hja-${owner_generation}-queue"
+    # The generic async writer inherits every open descriptor in its caller.
+    # Close admission-owned lock descriptors in the writer process before it
+    # can outlive this wrapper; otherwise a slow ledger write keeps the host
+    # semaphore locked after the admitted process group has already drained.
+    (
+        eval "exec ${admission_fd}>&-"
+        [[ -z "${run_fd:-}" ]] || eval "exec ${run_fd}>&-"
+        defense_overhead_write heavy_job_admission queue_wait "$((_hja_queue_age_sec * 1000))" \
+            PASS "hja-${owner_generation}-queue"
+    ) >/dev/null 2>&1 &
 fi
 
 p9_pids=""
@@ -316,9 +324,13 @@ leader_pid=$!
 rc=0
 wait "$leader_pid" || rc=$?
 if [[ "$_hja_metrics_enabled" == "1" ]]; then
-    defense_overhead_write_async heavy_job_admission execution \
-        "$(( ($(date +%s) - owner_started) * 1000 ))" \
-        "$([[ "$rc" -eq 0 ]] && echo PASS || echo FAIL)" "hja-${owner_generation}-exec"
+    (
+        eval "exec ${admission_fd}>&-"
+        [[ -z "${run_fd:-}" ]] || eval "exec ${run_fd}>&-"
+        defense_overhead_write heavy_job_admission execution \
+            "$(( ($(date +%s) - owner_started) * 1000 ))" \
+            "$([[ "$rc" -eq 0 ]] && echo PASS || echo FAIL)" "hja-${owner_generation}-exec"
+    ) >/dev/null 2>&1 &
 fi
 drain_started=$SECONDS
 while process_group_has_live_member "$leader_pid"; do
