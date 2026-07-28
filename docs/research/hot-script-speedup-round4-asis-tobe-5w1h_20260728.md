@@ -1,4 +1,4 @@
-# 【✅5/5全クローズ・CI GREEN復帰 — 全量checkpoint実行中】ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v2.4 (2026-07-29 02:02 覚醒更新。版履歴は§-3)
+# 【⚙checkpoint 3巡目実行中 — 2巡で残存不整合2件を検出・是正済み】ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v2.5 (2026-07-29 03:15 覚醒更新。版履歴は§-3)
 
 > 第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`(✅CLOSED 12/12)、第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(✅CLOSED 9/9・閉幕プランP1-P4全充足)、第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`(✅CLOSED 2/2)。本書は殿下知(2026-07-28 20:02)「第四弾の準備も始めよう」に基づき、**第二弾閉幕snapshot v2.0**(`hot-script-speedup-round2-v2-snapshot-20260728.md`、fixed SHA=60a88c241、固定窓2026-07-28T02:46:57Z..10:08:06Z)の序列から標的を引いた第四弾である。殿方針(10:49)「前弾でやったものも依然ボトルネックなら再度トライする」を継承。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
@@ -16,6 +16,7 @@
 
 ## §-3 版履歴
 
+- v2.5(03:15): **全量checkpoint 2巡の経過反映** — 1巡目(fixed-SHA 0c505e3f2): 全量PASS 2,822/FAIL 1(test_ninja_monitor_stall case48)→影丸修正GATE CLEAR。2巡目(2e1ca8d5d): case48はPASSしたが別の1件=test_gate_test_health_ledger case4がFAIL。真因=**共有worktreeに所有task 0の未commit 9行隔離修正が滞留**(LS-A14(2)「未commitの共有ツリー編集は存在しないのと同じ」の実例。全量checkpointが合成不整合の最終検出器として設計どおり機能)→半蔵のtiming_exception_fixture修正GATE CLEAR(03:01)。**3巡目checkpoint実行中**。PASSで完了宣言→v4.0 snapshot→第五弾序列
 - v2.4(02:02): **CI GREEN復帰(run 30377787485 success 8分59秒・origin 0c505e3f2)** — RED真因は二重: (a)unit job timeout-minutes 5に対しテスト増加で実行5分15秒超=恒常タイムアウトcancel(将軍がconcurrency干渉と誤診→静止期間中の同時刻cancelで特定、5→12分是正+契約テスト2件同期、教訓LS101統合) (b)test_three_layer_knowledge_chain.bats 7件FAIL=fixtureがgitignore済みdata/DBをcopyしCI checkoutに不在(影丸ci_fixが正本スキーマ直接生成へ書換え、clean worktree再現証跡付き)。完了宣言の残条件=fixed-SHA全量unit checkpoint(家老へ下知)→固定窓再snapshot(v4.0)→第五弾序列
 - v2.3(23:18): 覚醒更新 — **#5 commit_hash識別子計装CLEAR(23:10)で5/5全クローズ**。report_id/task_id非破壊追加・実flow重複0→batch化なし。**完了宣言の残条件=fixed-SHA全量unit共有1回→固定窓再snapshot**だが、CI RED(run 30366688273: ninja_scope_commit race系test67/68 FAIL)未解消のため全量checkpointはCI GREEN復帰後に実施。ci_fix再配備は将軍下知済み(msg_231057)
 - v2.2(22:48): 覚醒更新 — **実装4レーン全クローズ(4/5)**: #1 full_precheck=重複tree走査除去(name-only 2,438.6ms→0呼出・stdout SHA一致)/#2 inbox_write=delivery verify非同期化で median354.5→182ms(送達保証不変)/#3 publish_total=singleflight・lock FD継承分離で競合下6,370→248ms/#4 checks_main=no-change CLOSE(v3.0は既存最適化後snapshot)。**残=#5 commit_hash識別子計装のみ**(#3クローズで直列前提充足=解禁)。完了宣言は#5クローズ→fixed-SHA全量unit共有1回→固定窓再snapshotで。CI RED(run 30357551416)はci_fix実装済み・push保留中ゆえGREEN復帰は次回push後
