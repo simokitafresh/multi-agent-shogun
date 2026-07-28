@@ -160,6 +160,10 @@ post_has_numeric_claim() {
     stripped="$(printf '%s' "$stripped" | sed -E 's/\b[0-9a-f]{7,40}\b//g')"
     # バージョン番号 (v1.2.3 / 2.16.0)
     stripped="$(printf '%s' "$stripped" | sed -E 's/\bv?[0-9]+(\.[0-9]+){1,2}\b//g')"
+    # 言語的数量表現(1-2桁+語彙助数詞: 8パターン/2問/1つ/3例/2語)は計測主張ではない
+    # (殿裁定2026-07-29 03:48「blockはゲートのバグだ」— Q6回答が3連続FP BLOCKされた実測への是正。
+    #  件/率/%/ms/s等の計測単位は残す=真の数値報告への3点セット要求は不変)
+    stripped="$(printf '%s' "$stripped" | sed -E 's/[0-9]{1,2}(パターン|問|つ|例|語)//g')"
     printf '%s' "$stripped" | grep -qP '[0-9０-９]'
 }
 
@@ -186,10 +190,20 @@ commander_three_point_missing() {
 # 実際に使用実績のある表記のみを採用した(候補1語からの決め打ち禁止 — 3点目と同じ原則)。
 # 実測(2026-07-27): 下知13/下問4/裁定34/指示25(bulletin_board.yaml)、
 #                    下命3/御下知1/御下問3/仰せ2/沙汰2/指図2(inbox archive)。10語すべて実使用ありのため全採用。
+# CLAUDE.md Step 8/Q6が掲示板投稿を明示指定する起動時義務投稿(自己検証)。
+# CLAUDE.mdの指示自体が関連宣言であり、内容は計測報告ではないためAC2/AC3双方を免除する
+# (殿裁定2026-07-29 03:48「blockはゲートのバグだ」— Q6回答3連続FP BLOCKの是正。
+#  先頭固定プレフィックスのみ=本文中の言及では発火しない)
+is_startup_verification_post() {
+    local first_line="${1%%$'\n'*}"
+    [[ "$first_line" == Q6回答:* || "$first_line" == 洗脳チェック回答* ]]
+}
+
 commander_post_has_related_declaration() {
     local content="$1"
     local first_line="${content%%$'\n'*}"
     [[ "$first_line" == *'[URGENT-HARM]'* ]] && return 0
+    is_startup_verification_post "$content" && return 0
     printf '%s' "$content" | grep -qP 'cmd_[A-Za-z0-9_]+' && return 0
     printf '%s' "$content" | grep -qP '(下知|下問|下命|御下知|御下問|仰せ|沙汰|指図|裁定|指示)' && return 0
     return 1
@@ -305,8 +319,8 @@ fi
 # レビュー承認→家老通知の経路が全面停止する(軍師実測 2026-07-27 09:03)。
 # 呼び出し元が BULLETIN_AUTOGEN=1 を明示した場合のみ免除。既定(未設定)は検査ありのまま。
 if [[ "${BULLETIN_AUTOGEN:-0}" != "1" ]]; then
-    # AC2: 指揮官発信+数値主張 → 3点セット必須
-    if is_commander_poster "$POSTED_BY" && post_has_numeric_claim "$CONTENT"; then
+    # AC2: 指揮官発信+数値主張 → 3点セット必須(起動時義務投稿=自己検証は免除)
+    if is_commander_poster "$POSTED_BY" && ! is_startup_verification_post "$CONTENT" && post_has_numeric_claim "$CONTENT"; then
         _cmd_missing_elements="$(commander_three_point_missing "$CONTENT")"
         if [[ -n "$_cmd_missing_elements" ]]; then
             echo "BLOCK: 指揮官(${POSTED_BY})発信の数値含み投稿に3点セットの欠落要素あり: $(printf '%s' "$_cmd_missing_elements" | tr '\n' ',' | sed 's/,$//')" >&2
