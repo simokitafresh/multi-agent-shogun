@@ -33,6 +33,24 @@ mkdir -p "$OUTPUT_DIR"
 _BUILD_CACHE_DIR="$OUTPUT_DIR/.build_cache"
 mkdir -p "$_BUILD_CACHE_DIR"
 
+# Per-invocation skip/rebuild tallies so git-pre-commit.sh can record the
+# branch actually taken (cmd_karo_hotfix_hot_script_instruction_sync_20260728
+# AC3: future re-measurement should read this from the ledger instead of
+# reconstructing it from git log). start_build_job runs each build in a
+# background subshell, so counters are process-safe append-only files rather
+# than a shell variable; a short single `printf >>` write stays under
+# PIPE_BUF and is therefore atomic across concurrent appenders.
+_BUILD_SKIP_COUNT_FILE="$_BUILD_CACHE_DIR/.skip_count.$$"
+_BUILD_REBUILD_COUNT_FILE="$_BUILD_CACHE_DIR/.rebuild_count.$$"
+: > "$_BUILD_SKIP_COUNT_FILE"
+: > "$_BUILD_REBUILD_COUNT_FILE"
+# Not registered via `trap ... EXIT`: this script's existing tmp-file traps
+# already overwrite each other (bash EXIT traps replace, not accumulate), so
+# only the last-registered one would ever fire. These two counter files live
+# under the tracked instructions/generated/ tree (not /tmp), so an inherited
+# leak-on-overwrite would litter the repo; they are removed explicitly after
+# being read at the end of a normal run instead.
+
 # Skip regenerating $2 (repo-relative output path) when $1 (recipe hash of its
 # inputs) matches the cached recipe hash AND the on-disk file's own hash still
 # matches what was recorded — the second check is what keeps hand-edited /
@@ -48,6 +66,7 @@ _build_cache_should_skip() {
     [[ -n "$cached_input" && "$cached_input" == "$input_hash" ]] || return 1
     current_output="$(sha256sum "$output_path" | awk '{print $1}')"
     [[ -n "$cached_output" && "$cached_output" == "$current_output" ]] || return 1
+    printf 'skip\n' >> "$_BUILD_SKIP_COUNT_FILE"
     return 0
 }
 
@@ -58,6 +77,7 @@ _build_cache_record() {
     local output_hash
     output_hash="$(sha256sum "$output_path" | awk '{print $1}')"
     printf '%s:%s\n' "$input_hash" "$output_hash" > "$cache_file"
+    printf 'rebuild\n' >> "$_BUILD_REBUILD_COUNT_FILE"
 }
 
 # Multiple unit roots and hooks may rebuild the shared generated directory at
@@ -503,6 +523,11 @@ start_build_job "AGENTS.md" generate_agents_md
 start_build_job ".github/copilot-instructions.md" generate_copilot_instructions
 start_build_job "agents/default/system.md + agent.yaml" generate_kimi_instructions
 wait_build_jobs
+
+_build_skip_n=$(wc -l < "$_BUILD_SKIP_COUNT_FILE" 2>/dev/null || echo 0)
+_build_rebuild_n=$(wc -l < "$_BUILD_REBUILD_COUNT_FILE" 2>/dev/null || echo 0)
+rm -f "$_BUILD_SKIP_COUNT_FILE" "$_BUILD_REBUILD_COUNT_FILE"
+echo "BUILD_INSTRUCTIONS_SUMMARY rebuilt=${_build_rebuild_n} skipped=${_build_skip_n}"
 
 echo ""
 echo "=== Build Complete ==="

@@ -32,6 +32,12 @@ _PRECOMMIT_SELF_SYNC_CMP_EQUAL="${PRECOMMIT_SELF_SYNC_CMP_EQUAL:-false}"
 _PRECOMMIT_SELF_SYNC_SYNC_CALLED="${PRECOMMIT_SELF_SYNC_SYNC_CALLED:-false}"
 _PRECOMMIT_SELF_SYNC_REEXEC="${PRECOMMIT_SELF_SYNC_REEXEC:-false}"
 _PRECOMMIT_SELF_SYNC_STARTED_US="${PRECOMMIT_SELF_SYNC_STARTED_US:-}"
+# cmd_karo_hotfix_hot_script_instruction_sync_20260728 AC3: record which
+# branch build_instructions.sh actually took so future re-measurement reads
+# skip/rebuild counts straight from the ledger instead of reconstructing them
+# from git log (as this task's own AC1/AC3 analysis had to).
+_PRECOMMIT_INSTRUCTION_SYNC_REBUILT=0
+_PRECOMMIT_INSTRUCTION_SYNC_SKIPPED=0
 
 precommit_epoch_us() {
     local value="${EPOCHREALTIME/./}"
@@ -94,6 +100,44 @@ PY
     ) >/dev/null 2>&1 &
 }
 
+precommit_instruction_sync_write_async() {
+    local wall_ms="$1" verdict="$2" event_id="$3"
+    local ledger="${DEFENSE_OVERHEAD_LEDGER:-$REPO_ROOT/logs/defense_overhead.jsonl}"
+    (
+        python3 - "$ledger" "$wall_ms" "$verdict" "$event_id" \
+            "$_PRECOMMIT_INSTRUCTION_SYNC_REBUILT" \
+            "$_PRECOMMIT_INSTRUCTION_SYNC_SKIPPED" <<'PY'
+import datetime
+import fcntl
+import json
+import os
+import sys
+
+ledger, wall_ms, verdict, event_id, rebuilt, skipped = sys.argv[1:]
+row = {
+    "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "source": "git_pre_commit",
+    "check_id": "instruction_sync",
+    "wall_ms": int(wall_ms),
+    "verdict": verdict,
+    "event_id": event_id,
+    "rebuilt": int(rebuilt),
+    "skipped": int(skipped),
+}
+lock_path = ledger + ".lock"
+os.makedirs(os.path.dirname(ledger), exist_ok=True)
+with open(lock_path, "a", encoding="utf-8") as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    if os.path.exists(ledger):
+        with open(ledger, encoding="utf-8") as current:
+            if any(json.loads(line).get("event_id") == event_id for line in current if line.strip()):
+                raise SystemExit(0)
+    with open(ledger, "a", encoding="utf-8") as output:
+        output.write(json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n")
+PY
+    ) >/dev/null 2>&1 &
+}
+
 precommit_terminal_receipt() {
     local rc="${1:-0}" finished_us total_ms step step_rc step_verdict
     local -a timing_events=()
@@ -110,6 +154,9 @@ precommit_terminal_receipt() {
             step_verdict="$([[ "$step_rc" -eq 0 ]] && echo PASS || echo BLOCK)"
             if [[ "$step" == self_sync ]]; then
                 precommit_self_sync_write_async "${_PRECOMMIT_STEP_MS[$step]}" \
+                    "$step_verdict" "${_PRECOMMIT_COMMAND_ID}-${step}"
+            elif [[ "$step" == instruction_sync ]]; then
+                precommit_instruction_sync_write_async "${_PRECOMMIT_STEP_MS[$step]}" \
                     "$step_verdict" "${_PRECOMMIT_COMMAND_ID}-${step}"
             else
                 timing_events+=(git_pre_commit "$step" "${_PRECOMMIT_STEP_MS[$step]}" \
@@ -1052,11 +1099,17 @@ main() {
     precommit_step_begin instruction_sync
     if [[ "$_instructions_changed" == "true" ]]; then
         echo "instructions/*.md staged — checking generated/ sync..."
-        if ! bash "$REPO_ROOT/scripts/build_instructions.sh" > /dev/null 2>&1; then
+        _build_instructions_output=""
+        if ! _build_instructions_output="$(bash "$REPO_ROOT/scripts/build_instructions.sh" 2>&1)"; then
             precommit_step_end 1
             echo "BLOCKED: build_instructions.sh failed" >&2
             exit 1
         fi
+        if [[ "$_build_instructions_output" =~ BUILD_INSTRUCTIONS_SUMMARY\ rebuilt=([0-9]+)\ skipped=([0-9]+) ]]; then
+            _PRECOMMIT_INSTRUCTION_SYNC_REBUILT="${BASH_REMATCH[1]}"
+            _PRECOMMIT_INSTRUCTION_SYNC_SKIPPED="${BASH_REMATCH[2]}"
+        fi
+        unset _build_instructions_output
         if ! git diff --exit-code instructions/generated/ > /dev/null 2>&1; then
             echo "AUTO-FIX: generated instructions were out of sync — re-synced and staged automatically (GA-190)." >&2
             git add instructions/generated/
