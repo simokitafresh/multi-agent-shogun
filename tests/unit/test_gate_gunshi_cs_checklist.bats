@@ -107,3 +107,60 @@ EOF
     [[ "$output" != *"レビュー未実施: cmd_4177"* ]]
     [[ "$output" != *"レビュー未実施: cmd_4178"* ]]
 }
+
+# test_necessity: D0 detector must fail closed for an actionable unresolved
+# defect even when d0_applied:no is present, while excluding negative counts
+# and knowledge-only descriptions; only yes or structured remediation resolves.
+@test "AC1-D0はnoで自己消火せず文脈FPを除外しyesと構造化remediationだけで解消する" {
+    cat > "$LOG_UNDER_TEST" <<'EOF'
+- cmd_id: cmd_true_positive
+  review_type: report
+  verdict: FAIL
+  findings_summary: "post_verification_headフィールド欠落で再提出"
+  d0_applied: no
+  timestamp: "2026-07-28T00:00:00+09:00"
+- cmd_id: cmd_negative_count
+  review_type: report
+  verdict: LGTM
+  observations:
+    - "self_sync観測5項目欠落0"
+  d0_applied: no
+  timestamp: "2026-07-28T00:01:00+09:00"
+- cmd_id: cmd_knowledge_only
+  review_type: draft
+  verdict: APPROVE
+  observations:
+    - "枝選択コンテキスト欠落の具体知見"
+  d0_applied: no
+  timestamp: "2026-07-28T00:02:00+09:00"
+- cmd_id: cmd_yes_resolved
+  review_type: report
+  verdict: FAIL
+  findings_summary: "required field missing"
+  d0_applied: yes
+  timestamp: "2026-07-28T00:03:00+09:00"
+- remediation:
+    target_cmd_id: cmd_structured_resolved
+    fields:
+      d0_applied: yes
+    evidence:
+      - "queue/reports/worker_report.yaml:42"
+  review_type: self_study
+  timestamp: "2026-07-28T00:05:00+09:00"
+- cmd_id: cmd_structured_resolved
+  review_type: report
+  verdict: FAIL
+  findings_summary: "required field missing"
+  d0_applied: no
+  timestamp: "2026-07-28T00:04:00+09:00"
+EOF
+
+    run bash "$TEST_TMPDIR/scripts/gates/gate_gunshi_cs_checklist.sh"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(AC1-D0未実施): 1件"* ]]
+    [[ "$output" == *"cmd_true_positive"* ]]
+    [[ "$output" != *"cmd_negative_count: 軽微修正"* ]]
+    [[ "$output" != *"cmd_knowledge_only: 軽微修正"* ]]
+    [[ "$output" != *"cmd_yes_resolved: 軽微修正"* ]]
+    [[ "$output" != *"cmd_structured_resolved: 軽微修正"* ]]
+}

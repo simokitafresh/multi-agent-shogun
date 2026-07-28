@@ -1305,46 +1305,43 @@ if [ -n "$_lgtm_block" ]; then
     warn=1
 fi
 
-# --- AC1 cmd_3374: D0未実施検出 — 軽微修正パターンありd0_applied未設定はWARN ---
-_d0_missing=$(awk '
-    function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
-    function check_flush() {
-        if (!current_id) return
-        if (rt !~ /draft|report/) return
-        if (!has_minor) return
-        if (has_resolved && !has_unresolved_minor) return
-        if (has_d0) return
-        print current_id
-    }
-    /^- (cmd_id|id):/ {
-        check_flush()
-        line = $0; sub(/^- (cmd_id|id):[[:space:]]*/, "", line); gsub(/"/, "", line)
-        current_id = trim(line); rt = ""; has_minor = 0; has_resolved = 0; has_unresolved_minor = 0; has_d0 = 0; in_obs = 0
-        next
-    }
-    /^[[:space:]]*review_type:/ {
-        v = $0; sub(/^[[:space:]]*review_type:[[:space:]]*/, "", v); gsub(/"/, "", v); rt = trim(v)
-    }
-    /^[[:space:]]*findings_summary:/ {
-        if ($0 ~ /typo|フォーマット|format|missing.field|フィールド不備|記入漏れ|欠落|誤字|脱字|field.*missing|フィールド.*不備/) {
-            has_minor = 1
-            if ($0 ~ /(修正済み|訂正済み|解消済み|対応済み|再配備済み|再配備完了)[。．.!！）)」"[:space:]]*$/ || $0 ~ /→再配備[。．.!！]?"?[[:space:]]*$/) { if ($0 !~ /(修正済み|訂正済み|解消済み|対応済み)[にをが]/) has_resolved = 1; else has_unresolved_minor = 1 }
-            else has_unresolved_minor = 1
-        }
-    }
-    /^[[:space:]]*d0_applied:/ { has_d0 = 1 }
-    /^[[:space:]]*observations:[[:space:]]*$/ { in_obs = 1; next }
-    in_obs && /^[[:space:]]{4,}-/ {
-        if ($0 ~ /typo|フォーマット|format|missing.field|フィールド不備|記入漏れ|欠落|誤字|脱字|field.*missing|フィールド.*不備/) {
-            has_minor = 1
-            if ($0 ~ /(修正済み|訂正済み|解消済み|対応済み|再配備済み|再配備完了)[。．.!！）)」"[:space:]]*$/ || $0 ~ /→再配備[。．.!！]?"?[[:space:]]*$/) { if ($0 !~ /(修正済み|訂正済み|解消済み|対応済み)[にをが]/) has_resolved = 1; else has_unresolved_minor = 1 }
-            else has_unresolved_minor = 1
-        }
-        next
-    }
-    in_obs && !/^[[:space:]]{4,}/ { in_obs = 0 }
-    END { check_flush() }
-' "$LOG_FILE" 2>/dev/null | tail -5 || true)
+# --- AC1 cmd_3374: D0未実施検出 ---
+# d0_applied is a result, not a presence marker: only an affirmative value
+# resolves an actionable minor defect.  Negative measurements ("欠落0") and
+# lesson/knowledge descriptions are evidence, not defects to repair.
+_d0_missing=$(python3 - "$LOG_FILE" <<'PY' 2>/dev/null | tail -5 || true
+import re
+import sys
+import yaml
+
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or []
+minor = re.compile(r"typo|フォーマット|format|missing.field|フィールド不備|記入漏れ|欠落|誤字|脱字|field.*missing|フィールド.*不備", re.I)
+resolved = re.compile(r"(修正済み|訂正済み|解消済み|対応済み|再配備済み|再配備完了)\s*[。．.!！）)」\"]*$|→再配備\s*[。．.!！\"]*$")
+negated = re.compile(r"(欠落|不備|記入漏れ)\s*(0|ゼロ|なし|無し|ない|無い)")
+knowledge = re.compile(r"(教訓|知見|lesson).*(欠落|不備)|(欠落|不備).*(教訓|知見|lesson)", re.I)
+truthy = {"yes", "true", "1", "applied", "done"}
+
+for item in data:
+    if not isinstance(item, dict) or str(item.get("review_type", "")) not in {"draft", "report"}:
+        continue
+    if str(item.get("d0_applied", "")).strip().lower() in truthy:
+        continue
+    texts = [str(item.get("findings_summary") or "")]
+    obs = item.get("observations") or []
+    texts.extend(str(value) for value in obs if isinstance(obs, list))
+    actionable = [
+        text for text in texts
+        if minor.search(text)
+        and not negated.search(text)
+        and not knowledge.search(text)
+        and not resolved.search(text)
+    ]
+    if actionable:
+        ident = str(item.get("cmd_id") or item.get("id") or "").strip()
+        if ident:
+            print(ident)
+PY
+)
 _d0_missing=$(_filter_remediated_lines d0_applied "$_d0_missing")
 
 # --- AC2 cmd_3374: 利他還流not_needed理由なし検出 → BLOCK ---
@@ -1369,10 +1366,11 @@ _altruism_no_reason=$(awk '
 
 if [ -n "$_d0_missing" ]; then
     _d0_count=$(printf '%s\n' "$_d0_missing" | awk 'NF{c++} END{print c+0}')
-    echo "WARN(AC1-D0未実施): ${_d0_count}件のdraft/reportで軽微修正パターン検出だがd0_applied未設定:"
+    echo "BLOCK(AC1-D0未実施): ${_d0_count}件のdraft/reportで未解消の軽微修正を検出:"
     printf '%s\n' "$_d0_missing" | while IFS= read -r _id; do
         [ -n "$_id" ] && echo "  - $_id: 軽微修正(typo/format/フィールド不備等)はD0で即修正しd0_applied: yesを記録せよ"
     done
+    d0_missing_block=1
     warn=1
 fi
 if [ -n "$_altruism_no_reason" ]; then
@@ -1387,7 +1385,7 @@ fi
 
 rm -f "$_remediation_tmp"
 _gate_result=PASS; _gate_rc=$warn
-if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$bw_no_pattern_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ] || [ -n "$cs_empty_block" ] || [ -n "$bw_quality_block" ] || [ -n "$altruism_no_reason_block" ] || [ -n "$remediation_block" ] || [ -n "$lg034_block" ]; then
+if [ -n "$adversarial_streak_error" ] || [ -n "$bw_no_number_block" ] || [ -n "$bw_no_pattern_block" ] || [ -n "$infra_no_verify_block" ] || [ -n "$step35_block" ] || [ -n "$cs_empty_block" ] || [ -n "$bw_quality_block" ] || [ -n "$altruism_no_reason_block" ] || [ -n "$remediation_block" ] || [ -n "$lg034_block" ] || [ -n "$d0_missing_block" ]; then
     _gate_result=FAIL; _gate_rc=2
 elif [ "$warn" -ne 0 ]; then
     _gate_result=WARN
