@@ -4674,6 +4674,7 @@ codd:
 | causal | `cmd_karo_hotfix_lessons_yaml_format_restore_20260727` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_reflux_promotion_202607272134_kagemaru` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_4190` files_modified: [[dmsignal_operations]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[dmsignal_operations]] |
 
 ## admin_ui_redesign_asis_tobe — DM-Signal Admin画面一覧性改修設計書
 
@@ -5513,6 +5514,8 @@ codd:
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_clear_guard.bats`) |
 | cmd | `cmd_karo_hotfix_round4_checkpoint_archived_fail_generation_20260729` (`tests/unit/test_ninja_monitor_stall.bats`) |
+| causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` (`docs/operations/daemon_runbook.md`, `docs/operations/profiling_runbook.md`, `scripts/ninja_monitor.sh`) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_latency_yaml_bug_20260702010845]]` (L918) |
 | causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
@@ -6707,6 +6710,7 @@ codd:
 | causal | `cmd_karo_hotfix_reflux_promotion_freeze_guard_20260728` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_reflux_backlink_external_source_20260728` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -7184,6 +7188,7 @@ codd:
 | causal | `cmd_karo_hotfix_reflux_promotion_freeze_guard_20260728` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_reflux_backlink_external_source_20260728` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -7397,6 +7402,7 @@ codd:
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[infrastructure_ops]] |
 | lesson | `L1443` 非同期子プロセスは親のlock FDを明示的に閉じる |
 | causal | `cmd_karo_hotfix_round4_checkpoint_archived_fail_generation_20260729` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
 | causal_chain | `[[cmd_karo_hotfix_heavy_admission_lock_release_20260729]]` (L1443) |
@@ -8461,6 +8467,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607290337_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607290411_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607290511_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607290522_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -9198,6 +9205,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T12:25:05+09:00 いまは何をやっているんだ？kagemaruにとらわれていないか |
 | cmd | `cmd_reflux_backlink_202607281656_kagemaru` (`docs/semantic-index/index.md`, `context/semantic-map.md`) |
 | cmd | `cmd_reflux_insight_202607281837_kagemaru` |
+| cmd | `cmd_reflux_backlink_202607290522_kagemaru` (`docs/semantic-index/index.md`) |
 
 ## provisional_lessons — 仮: Lessons
 
@@ -9417,6 +9425,7 @@ codd:
 | causal | `cmd_karo_round4_impl_inbox_write_20260728` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_archive_report_identity_race_20260728` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[infra_design_intent]] |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
 
@@ -10568,6 +10577,7 @@ codd:
 | causal | `cmd_karo_hotfix_reflux_promotion_freeze_guard_20260728` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_reflux_backlink_external_source_20260728` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
