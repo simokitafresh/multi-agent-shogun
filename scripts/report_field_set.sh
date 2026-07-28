@@ -2513,6 +2513,31 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
             rm -f "$tmp_file"
         fi
 
+        # parent_ac_coverage is a deployment-time root scalar written to every
+        # report template.  The generic scalar lane below performs the same awk
+        # replacement, but first copies a full backup and afterwards re-reads
+        # status for terminal normalization.  Neither operation can be consumed
+        # by this non-terminal metadata write.  Keep structure, multiline and
+        # backslash values on the existing Python/fallback lane; only the exact
+        # scalar shape takes this backup-free atomic path.
+        if [ "$DOT_KEY" = "parent_ac_coverage" ] \
+            && [ "$USE_PYTHON" -eq 0 ] \
+            && [[ "$VALUE" != *'\'* ]]; then
+            tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
+            rm -f "$tmp_file"
+            if _report_field_set_fast_scalar \
+                "$REPORT_PATH" "$tmp_file" "$DOT_KEY" "$VALUE" "$NUM_KEYS" "${KEYS[@]}"; then
+                if ! mv "$tmp_file" "$REPORT_PATH"; then
+                    rm -f "$tmp_file"
+                    echo "FATAL: report_field_set: atomic replace failed" >&2
+                    exit 1
+                fi
+                echo "[report_field_set] $DOT_KEY = ${VALUE:0:80}"
+                exit 0
+            fi
+            rm -f "$tmp_file"
+        fi
+
         # None of the fast paths above applied (or none matched this write) —
         # from here on, paths can fall back to Python or hit the backslash
         # validate-or-restore check, both of which read .bak. Create it now.
