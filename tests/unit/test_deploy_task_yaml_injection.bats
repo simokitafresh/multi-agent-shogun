@@ -1612,6 +1612,7 @@ YAML
 # 同一cmd再配備でrelated_lessonsが再抽選され、先に生成済みの報告のlessons_useful評価集合と
 # 食い違いGATEが無過失の忍者をBLOCKする実発生(kagemaru 08:21→09:03)の根治。
 # pre-resolve捕捉値がCMD_IDと一致し、かつ既存related_lessonsが非空なら再注入をskipする。
+# fixture契約: related_lessons以外のqueue/report共有副作用はstub化し、並列実行へ漏らさない。
 @test "cmd_karo_impl_related_lessons_snapshot: same-cmd redeploy preserves existing related_lessons (no re-injection)" {
     tmpdir="$(mktemp -d)"; task_file="$tmpdir/task.yaml"
     marker="$tmpdir/inject_called.marker"
