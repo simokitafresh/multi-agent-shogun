@@ -21,6 +21,7 @@ fi
 HOOK_PAYLOAD="$payload" SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)" python3 - <<'PY'
 import json
 import os
+import pathlib
 import subprocess
 import sys
 
@@ -179,9 +180,29 @@ else:
         if filtered:
             issues.append("owned_paths_uncommitted")
 
+        # cmd_karo_hotfix_no_code_commit_reminder_20260728: 独自の40hex限定判定は
+        # gate_report_format.sh(report_commit_identity.py)が正式に許可している
+        # commit_hash="no-code-change"(queue/logs配下のみ・no_code_change_evidence
+        # tree_unchanged済・explicit_no_commit済のno-code報告)を認識できず、正規
+        # no-code報告全件にCOMMIT MISSING誤警告を出していた。正本の
+        # valid_commit_identity()を再利用して単一の契約に統一する。
+        # 孤立hookコピー(scripts/lib同梱なし。test_scope_resolvers_contract.bats等)は
+        # importできないため、旧40hex限定判定へ安全にfallbackする(Guard1と同じ方針)。
+        sys.path.insert(0, os.path.join(script_dir, "scripts", "lib"))
+        try:
+            from report_commit_identity import NO_CODE_IDENTITY, valid_commit_identity
+        except ImportError:
+            NO_CODE_IDENTITY = "no-code-change"
+
+            def valid_commit_identity(value, _report, _root):
+                v = str(value or "").strip()
+                return len(v) == 40 and all(c in "0123456789abcdefABCDEF" for c in v)
+
         commit_hash = str(report.get("commit_hash") or "").strip()
-        if len(commit_hash) != 40 or any(c not in "0123456789abcdefABCDEF" for c in commit_hash):
+        if not valid_commit_identity(commit_hash, report, pathlib.Path(project_path)):
             issues.append("report_commit_hash_missing_or_invalid")
+        elif commit_hash == NO_CODE_IDENTITY:
+            pass  # no-code identity contract済み(tree_unchanged+explicit_no_commit+operational_files_only)。commitが存在しないため以降のblob突合は対象外
         else:
             commit = git("rev-parse", "--verify", f"{commit_hash}^{{commit}}")
             if commit.returncode != 0:
