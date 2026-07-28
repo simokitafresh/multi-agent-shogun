@@ -43,6 +43,7 @@ codd:
 | causal | [[ledger-driven-campaign-lane-pattern_20260714]] -> [[campaign-lane]] -> [[shard-work]]との反復/単発境界 |
 | causal | [[campaign_lane]] -> [[campaign-lane-b0-b3-20260721]] |
 | causal | [[campaign_lane]] -> [[campaign-lane-f1-item-contracts-20260721]] |
+| causal | `cmd_reflux_backlink_202607282058_hanzo` files_modified: [[campaign_lane]] |
 | note | shard-workは既知集合の単発分割、campaign-laneは一次台帳から反復選定し飽和まで回す |
 | cmd | `cmd_3244` backfill — | cmd_3244 | startup gate「スキル推薦精度」が3セッション連続BLOCK。precision 0%(0/18)、偽陽性100%。軍師分析で根因3つ特定(設計書: docs/re |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-16T19:10:26+09:00 https://gist.github.com/simokitafresh/f777582a41c66e95a53d1cc993bc5a1c#file-ledger-driven-campaign-lane-pattern_20260714 |
