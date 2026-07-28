@@ -1,4 +1,4 @@
-# 【⚙ 稼働中 — 8/9 CLEAR・残1 FAIL処理中】ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.4 (2026-07-28 16:10 覚醒更新。版履歴は§-3)
+# 【⚙ 稼働中 — 8/9 CLEAR・残1 FAIL確定/処置未決】ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.4.1 (2026-07-28 17:33 覚醒更新。版履歴は§-3)
 
 ## §-2 第二弾 弾台帳(2026-07-28 16:10時点 — 第一弾§-2完了台帳と同型)
 
@@ -14,7 +14,7 @@
 | 6 | parent_contract_fingerprint | ✅ CLEAR(14:53) | 影丸実装。空fingerprint(direct hotfix)も既存出力同値確認済み | 同一fixture交互実測: 累積-14.9%、median-20.0%。task選択899/899 PASS・SKIP0 |
 | 7 | task.commit_contract | ✅ CLEAR(15:38・no-gain revert) | 初弾の追加12行(49ad9cc0d)に利得なし→revert弾で採用済みbaselineへ完全復元(正直なno-changeクローズ) | Δなし(復元)。所有scope 662/662 PASS・SKIP0 |
 | 8 | commit_hash(再) | ✅ CLEAR(16:00・PASS_NO_IMPROVEMENT) | stop-gate判定: event_idがpid/monotonic/check_idのみでreport/task識別子を持たず、同一報告flow内重複を一次証明できない→契約どおりbatch化せず終了(§3-3「識別子計装が先」の実証) | cohort再現のみ: n=160・累積34.6s・median 190ms(第一弾-66%後の水準維持) |
-| 9 | atomic_replace | ⚠ FAIL停止(前提乖離・家老処理中) | 疾風AC1停止: 現行atomic_replace event境界はPython parse/validation/serializeを含む一方directory fsyncは実装0件で、AC1「crash durability境界の再現」が現物と乖離し再現不能。scope drift=0の正直停止 | (before再現のみ: n=118・累積27.2s・median 180ms。30回FS probe: replace 4.2ms/dir_fsync 0.8ms) |
+| 9 | atomic_replace | ⚠ FAIL確定・処置未決(17:30時点) | 疾風AC1停止のFAIL報告がverdict:FAILのままarchive済み(契約どおりコード変更・commitなし)。乖離内容: 現行atomic_replace event境界はPython parse/validation/serializeを含む一方directory fsyncは実装0件で、AC1「crash durability境界の再現」が現物と乖離し再現不能。次の分岐=家老がAC再設計(実測境界ベース)かno-change CLOSEを判断(GATE CLEAR行は未発生) | (before再現のみ: n=118・累積27.2s・median 180ms。30回FS probe: replace 4.2ms/dir_fsync 0.8ms) |
 
 - **殿直命14:50(blt_20260728_145050採択確定)**: 第二弾を主線として最優先継続。#6家老判定後、report_field_set所有弾(#7-9)は**設計書記載順に厳密直列**。throughput計測基盤は別ファイルのみファイル単位分割で並列(複数ファイル一括task禁止)、第三弾は先頭弾のみ空き戦力+別ファイル条件で並列先行可。第二弾focusを崩す独自再解釈禁止
 - **残3弾(#7-9)の直列理由**: 全て同じ`scripts/report_field_set.sh`を所有するためscope lock規則で直列接続(#6 GATE CLEAR後に1弾ずつ配備)。別ファイル弾は即並列、同一ファイル弾は直列。忍者6名の現task一次確認(queue/tasks/*.yaml 14:45)で残3弾の配備なしを確認済み
@@ -22,6 +22,7 @@
 
 ## §-3 版履歴
 
+- v1.4.1(17:33): #9 FAIL確定(verdict:FAIL報告archive済み・コード変更なし)を反映。処置(AC再設計 or no-change CLOSE)は家老判断待ち。他8弾・throughput・第三弾は16:10版から実態変化なし
 - v1.4(16:10): 覚醒更新 — #6 CLEAR(14:53)/#7 no-gain revertでCLEAR(15:38)/#8 PASS_NO_IMPROVEMENTでCLEAR(16:00)/#9 FAIL停止(durability境界の前提乖離・家老処理中)。8/9 CLEAR
 - v1.3(14:50): 第一弾様式へ再構築(§-2を弾台帳表化・版履歴を本節へ分離)。v1.2.7(14:45)/v1.2.6(14:26)=実施状況同期。v1.2.5=殿裁定13:26テスト原則反映。v1.2.4=殿裁定12:45第二弾優先で即時実行。B2/B3計装は殿裁定12:43(startup聖域)で恒久除外。v1.1=家老レビュー2全採用。v1.0=初版序列(refresh誤分類を含み§-0で訂正)
 
