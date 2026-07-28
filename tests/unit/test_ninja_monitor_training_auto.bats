@@ -695,6 +695,57 @@ echo "REFLUX_PROMOTION_DEPLOY_OK"
     [[ "$output" == *"REFLUX_PROMOTION_DEPLOY_OK"* ]]
 }
 
+# test_necessity: promotion claim後の全pre-deploy失敗出口でleaseを解放し、後続cycleの在庫を永久BLOCKしない不変量を守る。
+@test "reflux promotion releases claim on every pre-deploy failure exit" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        set -euo pipefail
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        root="$BATS_TEST_TMPDIR/root"
+        mkdir -p "$root/queue/tasks" "$root/scripts" "$root/logs"
+        printf "task:\n  status: idle\n" >"$root/queue/tasks/hayate.yaml"
+
+        for mode in deploy_missing state_dir mktemp task_write parse; do
+            (
+                SCRIPT_DIR="$root"; STATE_DIR="$root/state-$mode"; LOG="$root/$mode.log"
+                REFLUX_AUTO_DEPLOY_STATE_PREFIX="$root/reflux_auto"
+                REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=1; REFLUX_AUTO_DEPLOY_COOLDOWN=1
+                declare -gA REFLUX_IDLE_FIRST_SEEN=([hayate]=0)
+                : >"$LOG"; : >"$root/releases-$mode"
+                _training_pipeline_has_work() { return 1; }
+                yaml_field_get() { printf "idle\n"; }
+                _reflux_inventory_snapshot() { printf "0\t0\t1\t1\t-\t-\t[infra] L999 (L1)\tok\tok\n"; }
+                _reflux_select_kind() { printf "promotion\n"; }
+                _reflux_promotion_claim_next() { printf "[infra] L999 (L1)\tprojects/infra/lessons.yaml\n"; }
+                _reflux_active_target_owner() { return 1; }
+                _reflux_promotion_release_reservation() { printf "%s\t%s\n" "$1" "$2" >>"$root/releases-$mode"; }
+                log() { printf "%s\n" "$1" >>"$LOG"; }
+
+                if [ "$mode" != deploy_missing ]; then
+                    printf "#!/usr/bin/env bash\nexit 0\n" >"$root/scripts/deploy_task.sh"
+                    chmod +x "$root/scripts/deploy_task.sh"
+                else
+                    command rm -f "$root/scripts/deploy_task.sh"
+                fi
+                if [ "$mode" = state_dir ]; then
+                    mkdir() { [ "${*: -1}" = "$STATE_DIR" ] && return 1; command mkdir "$@"; }
+                elif [ "$mode" = mktemp ]; then
+                    mktemp() { return 1; }
+                elif [ "$mode" = task_write ]; then
+                    cat() { return 1; }
+                elif [ "$mode" = parse ]; then
+                    python3() { return 1; }
+                fi
+
+                ! _handle_reflux_auto_deploy hayate 100
+                [ "$(wc -l <"$root/releases-$mode")" -eq 1 ]
+                grep -Fq "[infra] L999 (L1)" "$root/releases-$mode"
+            )
+        done
+    '
+    [ "$status" -eq 0 ]
+}
+
 @test "reflux auto deploy does not fire when inventory is empty" {
     run bash -c '
 set -euo pipefail

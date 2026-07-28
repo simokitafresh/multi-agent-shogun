@@ -4547,6 +4547,12 @@ _reflux_promotion_claim_next() {
     return 1
 }
 
+_reflux_promotion_release_if_claimed() {
+    local claimed="$1" candidate="$2" owner="$3"
+    [ "$claimed" = true ] || return 0
+    _reflux_promotion_release_reservation "$candidate" "$owner"
+}
+
 # Atomically claim a promotion lesson at the dispatch boundary.  Inventory is
 # intentionally read-only and can race with the event-driven completion writer;
 # this lease closes that gap without coupling unrelated lesson IDs.
@@ -4874,21 +4880,24 @@ _handle_reflux_auto_deploy() {
 
     active_owner=$(_reflux_active_target_owner "$target_path" "$name" 2>/dev/null || true)
     if [ -n "$active_owner" ]; then
-        [ "$kind" != "promotion" ] || _reflux_promotion_release_reservation "$first_promotion" "$name" || true
+        _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
         log "REFLUX-AUTO-SKIP: $name target_path already active (${active_owner}): ${target_path}"
         return 1
     fi
 
     deploy_script="$SCRIPT_DIR/scripts/deploy_task.sh"
     if [ ! -r "$deploy_script" ]; then
+        _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
         log "REFLUX-AUTO-SKIP: deploy_task.sh not readable"
         return 1
     fi
     if ! mkdir -p "$STATE_DIR"; then
+        _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
         log "REFLUX-AUTO-SKIP: failed to prepare state dir for ${name}: ${STATE_DIR}"
         return 1
     fi
     if ! tmp_task=$(mktemp "${STATE_DIR}/reflux_auto_${name}.XXXXXX.yaml"); then
+        _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
         log "REFLUX-AUTO-SKIP: failed to create temporary task YAML for ${name}"
         return 1
     fi
@@ -4921,12 +4930,14 @@ task:
 EOF
     then
         rm -f "$tmp_task"
+        _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
         log "REFLUX-AUTO-SKIP: failed to write temporary task YAML for ${name}"
         return 1
     fi
     if ! python3 -c 'import sys,yaml; yaml.safe_load(open(sys.argv[1], encoding="utf-8"))' "$tmp_task" >/dev/null 2>&1; then
         log "REFLUX-AUTO-SKIP: generated task YAML parse failed for ${name}: ${tmp_task}"
         rm -f "$tmp_task"
+        _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
         return 1
     fi
 
@@ -4954,7 +4965,7 @@ EOF
             log "REFLUX-AUTO-ROLLBACK: $name partial task reset after deploy failure cmd=${cmd_id}"
         fi
     fi
-    [ "$kind" != "promotion" ] || _reflux_promotion_release_reservation "$first_promotion" "$name" || true
+    _reflux_promotion_release_if_claimed "$promotion_reserved" "$first_promotion" "$name" || true
     log "REFLUX-AUTO-DEPLOY-FAIL: $name cmd=${cmd_id} kind=${kind} (non-blocking)"
     return 1
 }
