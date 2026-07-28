@@ -49,8 +49,19 @@ if [ "${1:-}" = "--batch" ]; then
             "$_phase" "$((_now - _started))" "${RFS_CALLER:-report_field_set}" "$$" "${_fp:-missing}" >>"$_rfs_phase_receipt"
     }
     _rfs_wait_started="$(_rfs_mono_ms)"
-    exec 199>"${_rfs_batch_report}.gate.lock"
-    flock -w "${RFS_SINGLEFLIGHT_TIMEOUT:-30}" 199 || { echo "BLOCK: terminal gate single-flight timeout" >&2; exit 1; }
+    # Only terminal transitions participate in the gate single-flight.  A
+    # successful nonterminal batch still has its own report lock below; making
+    # it wait behind a terminal gate produced multi-second publish_total tails
+    # without protecting any terminal lifecycle edge.
+    _rfs_terminal_transition=0
+    if grep -Eq '^[[:space:]]*status:[[:space:]]*["'\'']?(completed|done|failed|revision_requested)(["'\'']?[[:space:]]*(#.*)?$)' \
+        <<<"$_rfs_batch_payload"; then
+        _rfs_terminal_transition=1
+        exec 199>"${_rfs_batch_report}.gate.lock"
+        flock -w "${RFS_SINGLEFLIGHT_TIMEOUT:-30}" 199 || { echo "BLOCK: terminal gate single-flight timeout" >&2; exit 1; }
+    else
+        exec 199>/dev/null
+    fi
     _rfs_phase singleflight_wait "$_rfs_wait_started"
     mkdir -p "${_rfs_batch_report%/*}"
     exec 200>"$_rfs_batch_lock"
@@ -289,7 +300,7 @@ PY
                 # setsid -f can transiently inherit them before its exec.
                 flock -u 200
                 exec 200>&-
-                flock -u 199
+                [ "$_rfs_terminal_transition" -eq 0 ] || flock -u 199
                 exec 199>&-
                 RFS_RECONCILE_INBOX="$_rfs_inbox_write" \
                 RFS_RECONCILE_REPORT="$_rfs_batch_report" \
@@ -326,6 +337,15 @@ PY
         fi
     fi
     [ -n "$_rfs_batch_meta_file" ] && rm -f "$_rfs_batch_meta_file"
+    # Async telemetry must not inherit either report lock.  The lifecycle edge
+    # above is complete; retaining these fds in its child can make the next
+    # batch wait until timeout even after this publisher returns.
+    flock -u 200 2>/dev/null || true
+    exec 200>&-
+    if [ "$_rfs_terminal_transition" -eq 1 ]; then
+        flock -u 199 2>/dev/null || true
+    fi
+    exec 199>&-
     # cmd_karo_impl_report_publish_latency_20260725: publish経路の相別所要時間を
     # 既存台帳 logs/defense_overhead.jsonl へ流す(新台帳を作らない)。
     # /dev/shmのTSV receiptはプロセス毎に消えるため前後比較の母数にできなかった。
@@ -334,16 +354,18 @@ PY
         # shellcheck source=/dev/null
         source "$_rfs_batch_root/scripts/lib/defense_overhead_writer.sh"
         _rfs_publish_total_ms=$(( $(_rfs_mono_ms) - _rfs_wait_started ))
+        _rfs_publish_verdict=PASS
+        [ "$_rfs_batch_rc" -eq 0 ] || _rfs_publish_verdict=BLOCK
         _rfs_telemetry_args=()
         while IFS=$'\t' read -r _rfs_tp _rfs_tw _; do
             case "$_rfs_tp" in
                 singleflight_wait|atomic_replace|atomic_parse_validate_serialize|atomic_flush_file_fsync|atomic_replace_syscall|terminal_meta|inbox_write|publish) ;;
                 *) continue ;;
             esac
-            _rfs_telemetry_args+=(report_publish "$_rfs_tp" "${_rfs_tw#wall_ms=}" PASS \
+            _rfs_telemetry_args+=(report_publish "$_rfs_tp" "${_rfs_tw#wall_ms=}" "$_rfs_publish_verdict" \
                 "report_publish:${_rfs_tp}:$$:${_rfs_wait_started}")
         done < "$_rfs_phase_receipt"
-        _rfs_telemetry_args+=(report_publish publish_total "$_rfs_publish_total_ms" PASS \
+        _rfs_telemetry_args+=(report_publish publish_total "$_rfs_publish_total_ms" "$_rfs_publish_verdict" \
             "report_publish:total:$$:${_rfs_wait_started}")
         defense_overhead_write_batch_async "${_rfs_telemetry_args[@]}"
     fi
