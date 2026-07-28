@@ -4037,6 +4037,8 @@ task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {
 print(" ".join(commit_owned_paths(task)))
 PY
 )
+    local _commit_original_planned_paths="$_commit_planned_paths"
+    local _commit_scope_expansion_reason=""
     # B32 asymmetric expansion: an AC that orders the worker to extend tests
     # makes the test file part of the delivery, but issuers only declare the
     # implementation path, so every such task hit "files_modified path is
@@ -4090,7 +4092,10 @@ def run(cmd, stdin_text=None):
 # This runs on the hot deploy path, so the scan stays in C: the git index lane
 # (~0.9s on DrvFs) is tried first and find+grep (~1.8s) is the fallback for
 # non-repo trees such as the bats scaffold.  A Python walk+read was 4.9s.
-suffixes = (".bats", ".py", ".sh")
+# The task test runner executes inferred contract files through Bats.  Inferring
+# Python or plain shell helpers here turns valid source files into invalid Bats
+# inputs (a detector false positive); explicitly declared paths remain intact.
+suffixes = (".bats",)
 # "^[^#]*" keeps a comment-only mention from widening the ceiling:
 # tests/unit/test_inbox_write.bats names scripts/archive_completed.sh in a
 # comment and must stay outside scope.
@@ -4104,8 +4109,7 @@ if test_files is not None:
     hits = run(["git", "grep", "-lE", "-f", "-", "--", "tests"], patterns) or []
 else:
     test_files = run(
-        ["find", tests_root, "-type", "f",
-         "(", "-name", "*.bats", "-o", "-name", "*.py", "-o", "-name", "*.sh", ")"],
+        ["find", tests_root, "-type", "f", "-name", "*.bats"],
     ) or []
     hits = []
     if test_files:
@@ -4125,6 +4129,9 @@ PY
 ) || _commit_paths_with_tests=""
         if [ -n "$_commit_paths_with_tests" ]; then
             _commit_planned_paths="$_commit_paths_with_tests"
+            if [ "$_commit_planned_paths" != "$_commit_original_planned_paths" ]; then
+                _commit_scope_expansion_reason="B32: acceptance criteria require extending existing tests tied to the declared implementation path"
+            fi
         fi
     fi
     local _commit_has_code_path=false
@@ -4160,16 +4167,19 @@ PY
     [ -n "$_commit_repo_root" ] || _commit_repo_root="$SCRIPT_DIR"
     _commit_repo_root=$(git -C "$_commit_repo_root" rev-parse --show-toplevel 2>/dev/null || printf '%s\n' "$_commit_repo_root")
     local _commit_contract_json
-    _commit_contract_json=$(python3 - "$_commit_required" "$_commit_reason" "$_commit_task_type" "$_commit_planned_paths" "$_commit_repo_root" <<'PY'
+    _commit_contract_json=$(python3 - "$_commit_required" "$_commit_reason" "$_commit_task_type" "$_commit_planned_paths" "$_commit_repo_root" "$_commit_scope_expansion_reason" <<'PY'
 import json, sys
-required, reason, task_type, paths, repo_root = sys.argv[1:]
-print(json.dumps({
+required, reason, task_type, paths, repo_root, expansion_reason = sys.argv[1:]
+contract = {
     "required": required == "true",
     "reason": reason,
     "task_type": task_type,
     "planned_paths": [path for path in paths.split() if path],
     "repo_root": repo_root,
-}, ensure_ascii=False, separators=(",", ":")))
+}
+if expansion_reason:
+    contract["scope_expansion_reason"] = expansion_reason
+print(json.dumps(contract, ensure_ascii=False, separators=(",", ":")))
 PY
 )
     local _commit_paths_json

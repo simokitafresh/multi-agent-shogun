@@ -347,6 +347,7 @@ task = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]
 paths = task["commit_contract"]["planned_paths"]
 assert sys.argv[2] in paths, (sys.argv[2], paths)
 assert sys.argv[3] in paths, (sys.argv[3], paths)
+assert task["commit_contract"]["scope_expansion_reason"], task["commit_contract"]
 PY
     then
       expanded=$((expanded + 1))
@@ -380,8 +381,10 @@ PY
     "queue flagの保持を実装する"
   run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
 import sys, yaml
-paths = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]["commit_contract"]["planned_paths"]
+contract = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]["commit_contract"]
+paths = contract["planned_paths"]
 assert paths == ["scripts/archive_completed.sh"], paths
+assert "scope_expansion_reason" not in contract, contract
 PY
   if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
   [ "$status" -eq 0 ]
