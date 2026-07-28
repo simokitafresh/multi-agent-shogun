@@ -41,14 +41,32 @@ _GATE_FP_CACHE="${GATE_FINGERPRINT_CACHE_FILE:-${REPORT_PATH}.validated_fingerpr
 # diagnostics may rely on the per-report lock artifact existing.
 _GATE_SINGLEFLIGHT_LOCK="${REPORT_PATH}.gate.lock"
 : >>"$_GATE_SINGLEFLIGHT_LOCK"
+# cmd_karo_hotfix_throughput_t3b_fingerprint_hit_corrected_20260728:
+# fingerprintキャッシュのhit/miss計装。既存台帳(logs/defense_overhead.jsonl)へ1回限りの
+# 非加算行を追加するのみで、判定結果・stdout/stderr・exit code・fingerprint契約は変更しない。
+# GATE_VALIDATED_FINGERPRINT未設定(呼出元がreuseを試みていない)の場合は分母に含めない
+# (重複検査の実効抑止率はreuse試行時のhit/missでのみ意味を持つ)。
+_gate_fp_instrument() {
+    local _check_id="$1" _started="$2" _lib _ms
+    _lib="$(dirname "${BASH_SOURCE[0]}")/../lib/defense_overhead_writer.sh"
+    [ -f "$_lib" ] || return 0
+    # shellcheck source=/dev/null
+    . "$_lib" 2>/dev/null || return 0
+    _ms=$(( $(_gate_mono_ms) - _started ))
+    defense_overhead_write_async gate_report_format "$_check_id" "$_ms" PASS \
+        "gate_report_format:${_check_id}:$$:${_started}" || true
+}
+
 if [ -n "${GATE_VALIDATED_FINGERPRINT:-}" ]; then
     _gate_current_fingerprint="$(sha256sum "$REPORT_PATH" | awk '{print $1}')"
     if [ "$_gate_current_fingerprint" = "$GATE_VALIDATED_FINGERPRINT" ] &&
        [ -f "$_GATE_FP_CACHE" ] && grep -qxF "$GATE_VALIDATED_FINGERPRINT" "$_GATE_FP_CACHE"; then
         _gate_receipt_phase fingerprint_reuse "$_GATE_MONO_START_MS"
+        _gate_fp_instrument fingerprint_hit "$_GATE_MONO_START_MS"
         echo "PASS (fingerprint reuse)"
         exit 0
     fi
+    _gate_fp_instrument fingerprint_miss "$_GATE_MONO_START_MS"
 fi
 
 # One report has one validation leader. Concurrent callers join before cache
