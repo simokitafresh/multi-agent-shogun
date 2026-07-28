@@ -555,9 +555,17 @@ PY
     cp "$(dirname "$HELPER")/lib/scope_path.sh" "$REPO/helper/scripts/lib/"
     cp "$(dirname "$HELPER")/lib/report_commit_nonoverlap_filter.sh" "$REPO/helper/scripts/lib/"
 
-    ( sleep 0.2; printf '\nexit 2 # injected after immutable snapshot\n' >> "$helper_copy" ) &
+    snapshot_ready="$REPO/snapshot.ready"
+    (
+        for _ in $(seq 1 100); do
+            [ -f "$snapshot_ready" ] && break
+            sleep 0.05
+        done
+        [ -f "$snapshot_ready" ]
+        printf '\nexit 2 # injected after immutable snapshot\n' >> "$helper_copy"
+    ) &
     mutator_pid=$!
-    run bash -c "cd '$REPO' && NINJA_SCOPE_COMMIT_TEST_AFTER_SNAPSHOT_DELAY=0.5 bash '$helper_copy' -m self-snapshot -- self-mutation.txt"
+    run bash -c "cd '$REPO' && NINJA_SCOPE_COMMIT_TEST_SNAPSHOT_READY_FILE='$snapshot_ready' NINJA_SCOPE_COMMIT_TEST_AFTER_SNAPSHOT_DELAY=0.5 bash '$helper_copy' -m self-snapshot -- self-mutation.txt"
     run_status="$status"
     wait "$mutator_pid" || true
 
@@ -1343,8 +1351,13 @@ HOOK
             "$HELPER" -m slow-a -- a.txt
     ) >"$BATS_TEST_TMPDIR/a.out" 2>"$BATS_TEST_TMPDIR/a.err" &
     slow_pid=$!
-    for _ in $(seq 1 100); do
+    # The full CI lane can spend several seconds scheduling the helper before
+    # it reaches pre-commit.  Keep this observation deadline distinct from the
+    # hook's intentional five-second sleep; otherwise scheduler delay alone
+    # makes the evidence check race the hook duration.
+    for _ in $(seq 1 300); do
         grep -q 'phase=pre_commit' "$BATS_TEST_TMPDIR/a.err" 2>/dev/null && break
+        ps -p "$slow_pid" >/dev/null 2>&1 || break
         sleep 0.05
     done
     grep -q 'phase=pre_commit' "$BATS_TEST_TMPDIR/a.err"

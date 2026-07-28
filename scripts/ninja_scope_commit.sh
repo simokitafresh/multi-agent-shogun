@@ -26,6 +26,9 @@ NINJA_SCOPE_COMMIT_SCRIPT_DIR="${NINJA_SCOPE_COMMIT_ORIGINAL_DIR:?snapshot origi
 # every exit path, including signals and fail-closed guards, leaves no temp
 # artifact while the current process continues reading the same inode.
 rm -f -- "${NINJA_SCOPE_COMMIT_SNAPSHOT_PATH:?snapshot path missing}"
+if [[ -n "${NINJA_SCOPE_COMMIT_TEST_SNAPSHOT_READY_FILE:-}" ]]; then
+    printf 'ready\n' > "$NINJA_SCOPE_COMMIT_TEST_SNAPSHOT_READY_FILE"
+fi
 if [[ -n "${NINJA_SCOPE_COMMIT_TEST_AFTER_SNAPSHOT_DELAY:-}" ]]; then
     sleep "$NINJA_SCOPE_COMMIT_TEST_AFTER_SNAPSHOT_DELAY"
 fi
@@ -231,12 +234,18 @@ run_scoped_precommit() {
                 && python3 "$repo_root/scripts/check_mixed_format_commit.py" --repo "$repo_root" >&2 \
                 || { echo "BLOCK: patch pre-commit checks rejected scoped commit" >&2; return 1; }
         else
-            env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
+            env -u NINJA_SCOPE_COMMIT_SNAPSHOT_ACTIVE \
+                -u NINJA_SCOPE_COMMIT_ORIGINAL_DIR \
+                -u NINJA_SCOPE_COMMIT_SNAPSHOT_PATH \
+                "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
                 bash "$repo_root/scripts/run_precommit_checks.sh" >&2 \
                 || { echo "BLOCK: pre-commit hook command rejected scoped commit" >&2; return 1; }
         fi
     else
-        env "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
+        env -u NINJA_SCOPE_COMMIT_SNAPSHOT_ACTIVE \
+            -u NINJA_SCOPE_COMMIT_ORIGINAL_DIR \
+            -u NINJA_SCOPE_COMMIT_SNAPSHOT_PATH \
+            "GIT_CONFIG_COUNT=$((config_count + 1))" "$config_key" "$config_value" \
             git hook run --ignore-missing pre-commit >&2 \
             || { echo "BLOCK: pre-commit hook rejected scoped commit" >&2; return 1; }
     fi
