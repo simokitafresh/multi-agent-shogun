@@ -894,7 +894,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1420 -->
+<!-- last_synced_lesson: L1421 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2028,6 +2028,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1418: 非同期cache生成は公開前重複missと子孫pipe寿命を同時に防ぐ（cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728）
 - L1419: self_sync分岐の独立再検証は共有git indexへの実stagingを避け、関数抽出モック+実sync_git_hooks.sh直接実行で安全に再現できる（cmd_karo_hotfix_hot_script_git_self_sync_reverify_20260728）
 - L1420: 非同期testはevidence読取だけでなくteardown所有変数へworker PIDを移譲する（cmd_karo_hotfix_ntfy_async_teardown_race_20260728）
+- L1421: fixtureの親transport境界はprefix単位で初期化する（cmd_karo_hotfix_run_tests_parent_env_isolation_20260728）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
