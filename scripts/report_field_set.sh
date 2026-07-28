@@ -68,7 +68,6 @@ if [ "${1:-}" = "--batch" ]; then
 import hashlib, os, pathlib, re, sys, tempfile, yaml
 sys.path.insert(0, sys.argv[2])
 from scripts.lib.yaml_atomic import yaml_text
-from scripts.lib.report_commit_identity import permits_no_code_identity
 
 path = pathlib.Path(sys.argv[1])
 updates = yaml.safe_load(os.environ.get("RFS_BATCH_PAYLOAD", ""))
@@ -159,8 +158,14 @@ if terminal:
     # no-code identity contract as review_approval and cmd_complete_gate.
     # This does not trust commit_contract.required alone: evidence, an explicit
     # no-commit assertion, and operational-only paths must all be true.
-    if not re.fullmatch(r"[0-9a-f]{40}", commit) and not permits_no_code_identity(data, root):
-        raise SystemExit("BLOCK: terminal readiness requires a 40-hex commit or shared no-code identity contract")
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        # The normal implementation lane always carries a full commit hash.
+        # Loading report_commit_identity also imports pathlib/subprocess and
+        # taxed every terminal publish despite being needed only by the
+        # explicit no-code fallback.
+        from scripts.lib.report_commit_identity import permits_no_code_identity
+        if not permits_no_code_identity(data, root):
+            raise SystemExit("BLOCK: terminal readiness requires a 40-hex commit or shared no-code identity contract")
 
 text = yaml_text(data, allow_unicode=True, sort_keys=False)
 fd, tmp = tempfile.mkstemp(prefix=path.name + ".batch.", dir=path.parent)
