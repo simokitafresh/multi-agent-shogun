@@ -1,4 +1,4 @@
-# 【✅AC1集計4/4 CLEAR・v3.0序列確定・実装は殿裁可待ち】ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v2.0 (2026-07-28 21:05 v3.0 snapshot反映。版履歴は§-3)
+# 【🟢実装解禁(殿裁可21:15『では第四弾を開始しよう』)— 4レーン並列稼働へ】ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v2.1 (2026-07-28 21:15 殿裁可反映。版履歴は§-3)
 
 > 第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`(✅CLOSED 12/12)、第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(✅CLOSED 9/9・閉幕プランP1-P4全充足)、第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`(⚙#1 CLEAR・#2疾風稼働中)。本書は殿下知(2026-07-28 20:02)「第四弾の準備も始めよう」に基づき、**第二弾閉幕snapshot v2.0**(`hot-script-speedup-round2-v2-snapshot-20260728.md`、fixed SHA=60a88c241、固定窓2026-07-28T02:46:57Z..10:08:06Z)の序列から標的を引いた第四弾である。殿方針(10:49)「前弾でやったものも依然ボトルネックなら再度トライする」を継承。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
@@ -16,6 +16,7 @@
 
 ## §-3 版履歴
 
+- v2.1(21:15): **殿裁可『では第四弾を開始しよう』=凍結解除条件(iv)充足、実装起票解禁**。§2の順序どおり独立4ファイル4レーン並列(#1 full_precheck/#2 inbox_write_total/#3 publish_total/#4 checks_main)、#5 commit_hash識別子計装は#3クローズ後にreport_field_setレーンで直列。配備=家老自立(karo_direct)。CI RED(run 30357551416)修正はci_fix担当1名が別対処中、CI RED中も新規配備は続行・pushのみGREEN復帰まで保留(殿裁定2026-05-03)
 - v2.0(21:05): **v3.0再snapshot反映** — AC1 read-only集計4レーン全GATE CLEAR(家老blt_205801)。序列をv3.0固定窓(2026-07-28T10:08:06Z..11:25:10Z、全1,234行、hash=ce8fa311…)で再集計: 上位3不変、checks_mainがcommit_hashを抜き第4位へ繰上げ。4 distinct script・5弾スコープ増減なし。§0のSSOTを`hot-script-speedup-round4-v3-snapshot-20260728.md`へ差替え。凍結解除条件(i)(ii)(iii)充足、残=殿裁可のみ
 - v1.3(20:30): **殿確定裁定20:25『推奨案でよい』** — read-only AC1集計(固定cutoff/hash付き全数・コード差分0)をdistinct 4ファイルで即並列開始(疾風へ初弾20:26配備済み)。実装フェーズと#4識別子計装はv3.0再snapshot後まで凍結維持。協議記録=家老blt_201950+将軍回答(独立一致)
 - v1.2.1(20:17): 家老PARTIAL指摘(blt_201528)の静的矛盾4件を即修正 — (一)自動既読type群を現物計数(7/8/9種)へ・pre-send capture=観測と明記 (二)集計コマンド帰属をblt_192942へ訂正 (三)writer確定済みへ統一 (四)origin五弾表記へ
@@ -78,7 +79,7 @@
 | 弾#3のwriter実体 | 確定済み(scripts/report_field_set.sh L336,346) |
 | 弾#4(checks_main)の最大寄与 | **診断済み**=quality_gate(子8種で最大累積)。是正実測は実装解禁後 |
 | commit_hash弾#5の是正可否 | 識別子計装+重複証明の実測待ち(重複なしならno-change CLOSE) |
-| **殿裁可待ち** | **凍結解除条件(i)進行中弾クローズ✅(ii)v3.0再集計✅(iii)家老レビュー✅(blt_205801)。残=(iv)殿裁可のみ** — v2.0設計書の採否と実装起票解禁 |
+| 殿裁可 | **✅取得(21:15『では第四弾を開始しよう』)** — 凍結解除4条件全充足、実装起票解禁済み |
 
 ## §4 5W1H
 
