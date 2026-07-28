@@ -549,6 +549,10 @@ echo "REFLUX_DEPLOY_FAILURE_ROLLBACK_OK"
     [[ "$output" == *"REFLUX_DEPLOY_FAILURE_ROLLBACK_OK"* ]]
 }
 
+# test_necessity: backlink還流taskはゼロ対象自身ではなく外部索引文書をtarget_pathにする不変量を守る。
+# ゼロ対象自身を編集対象にすると、causal_backlink_counts.shのsources.discard(rel)が
+# 自己参照を除外しincomingが0→0のまま同一対象へ再配備し続ける負のループへ戻る
+# (実証: hanzo/saizo/kotaro 3件、対象context/shogun-awakening-check.md)。
 @test "reflux auto deploy fires for zero backlink inventory when no pending insights" {
     run bash -c '
 set -euo pipefail
@@ -562,7 +566,7 @@ trap "rm -r \"$TMP_ROOT\"" EXIT
 SCRIPT_DIR="$TMP_ROOT"
 STATE_DIR="$TMP_ROOT/state"
 LOG="$TMP_ROOT/test.log"
-mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/context" "$STATE_DIR"
 
 cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
 task:
@@ -574,6 +578,10 @@ insights:
 - id: INS-001
   status: resolved
 YAML
+
+# 外部索引source(通常候補)を実在させる: target_pathはこちらへ変更され、
+# ゼロ対象自身(docs/research/orphan.md)は変更対象にしない(自己参照除外の回避)
+: > "$SCRIPT_DIR/context/semantic-map.md"
 
 cat > "$SCRIPT_DIR/scripts/causal_backlink_counts.sh" <<SH
 #!/usr/bin/env bash
@@ -605,12 +613,153 @@ REFLUX_BACKLINK_TIMEOUT=5
 _handle_reflux_auto_deploy hayate 100
 
 grep -q "DEPLOY_CALLED:--direct --yaml" "$TMP_ROOT/deploy.log"
-grep -q "target_path: docs/research/orphan.md" "$TMP_ROOT/deployed.yaml"
+grep -q "target_path: context/semantic-map.md" "$TMP_ROOT/deployed.yaml"
+grep -q "inspection_path: .\[\"docs/research/orphan.md\"\]." "$TMP_ROOT/deployed.yaml"
+! grep -q "target_path: docs/research/orphan.md" "$TMP_ROOT/deployed.yaml"
 grep -q "REFLUX-AUTO-INVENTORY-BEFORE: hayate insights_pending=0 zero_backlinks=1 promotions=0 total=1" "$TMP_ROOT/test.log"
 echo "REFLUX_BACKLINK_DEPLOY_OK"
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"REFLUX_BACKLINK_DEPLOY_OK"* ]]
+}
+
+# test_necessity: 適切な外部索引sourceを決定できない場合は配備0件を維持する不変量を守る。
+# 決定不能なまま配備すると自己参照または誤った対象への配備が発生しうるため、
+# 未決定はBLOCKログを残し配備しないことを二値証明する(家老中間レビュー2026-07-28 16:24)。
+@test "reflux auto deploy BLOCKs (no deploy) when no external backlink source candidate exists" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -r \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$STATE_DIR"
+# 意図的にcontext/semantic-map.md, docs/semantic-index/index.md, context/infrastructure.md
+# のいずれも作成しない → 外部source決定不能
+
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: idle
+YAML
+
+cat > "$SCRIPT_DIR/queue/insights.yaml" <<YAML
+insights:
+- id: INS-001
+  status: resolved
+YAML
+
+cat > "$SCRIPT_DIR/scripts/causal_backlink_counts.sh" <<SH
+#!/usr/bin/env bash
+printf "0\tdocs/research/orphan.md\torphan\n"
+SH
+chmod +x "$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+
+cat > "$SCRIPT_DIR/scripts/deploy_task.sh" <<SH
+#!/usr/bin/env bash
+echo "DEPLOY_CALLED:\$*" >> "$TMP_ROOT/deploy.log"
+SH
+chmod +x "$SCRIPT_DIR/scripts/deploy_task.sh"
+
+log() { echo "$1" >> "$TMP_ROOT/test.log"; }
+yaml_field_get() {
+    grep -m1 -E "^[[:space:]]*$2:" "$1" | sed "s/.*:[[:space:]]*//; s/[\"'"'"' ]//g" || true
+}
+_training_pipeline_has_work() { return 1; }
+
+declare -gA REFLUX_IDLE_FIRST_SEEN
+REFLUX_IDLE_FIRST_SEEN[hayate]=0
+REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=1
+REFLUX_AUTO_DEPLOY_COOLDOWN=1
+REFLUX_AUTO_DEPLOY_STATE_PREFIX="$TMP_ROOT/state/reflux_auto"
+REFLUX_BACKLINK_SCAN_LIMIT=5
+REFLUX_BACKLINK_TIMEOUT=5
+
+_handle_reflux_auto_deploy hayate 100 && exit 1
+
+[ ! -f "$TMP_ROOT/deploy.log" ]
+grep -q "REFLUX-AUTO-BLOCK: hayate backlink external source undetermined for docs/research/orphan.md" "$TMP_ROOT/test.log"
+echo "REFLUX_BACKLINK_BLOCK_OK"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REFLUX_BACKLINK_BLOCK_OK"* ]]
+}
+
+# test_necessity: ゼロ対象自身が通常候補(context/semantic-map.md)と一致する場合でも、
+# 自己参照を配備先へ選ばず既存の別索引sourceへフォールバックする不変量を守る。
+@test "reflux auto deploy backlink kind falls back to alternate external source when zero target is semantic-map itself" {
+    run bash -c '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$(mktemp -d)"
+trap "rm -r \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/test.log"
+mkdir -p "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue" "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/context" "$SCRIPT_DIR/docs/semantic-index" "$STATE_DIR"
+
+cat > "$SCRIPT_DIR/queue/tasks/hayate.yaml" <<YAML
+task:
+  status: idle
+YAML
+
+cat > "$SCRIPT_DIR/queue/insights.yaml" <<YAML
+insights:
+- id: INS-001
+  status: resolved
+YAML
+
+# 通常候補context/semantic-map.mdは実在するが、それ自身がゼロ対象なので自己参照禁止。
+# 次点候補docs/semantic-index/index.mdのみ実在させ、そちらへフォールバックすることを検証する。
+: > "$SCRIPT_DIR/context/semantic-map.md"
+: > "$SCRIPT_DIR/docs/semantic-index/index.md"
+
+cat > "$SCRIPT_DIR/scripts/causal_backlink_counts.sh" <<SH
+#!/usr/bin/env bash
+printf "0\tcontext/semantic-map.md\tsemantic-map\n"
+SH
+chmod +x "$SCRIPT_DIR/scripts/causal_backlink_counts.sh"
+
+cat > "$SCRIPT_DIR/scripts/deploy_task.sh" <<SH
+#!/usr/bin/env bash
+echo "DEPLOY_CALLED:\$*" >> "$TMP_ROOT/deploy.log"
+cp "\$3" "$TMP_ROOT/deployed.yaml"
+SH
+chmod +x "$SCRIPT_DIR/scripts/deploy_task.sh"
+
+log() { echo "$1" >> "$TMP_ROOT/test.log"; }
+yaml_field_get() {
+    grep -m1 -E "^[[:space:]]*$2:" "$1" | sed "s/.*:[[:space:]]*//; s/[\"'"'"' ]//g" || true
+}
+_training_pipeline_has_work() { return 1; }
+
+declare -gA REFLUX_IDLE_FIRST_SEEN
+REFLUX_IDLE_FIRST_SEEN[hayate]=0
+REFLUX_AUTO_DEPLOY_IDLE_THRESHOLD=1
+REFLUX_AUTO_DEPLOY_COOLDOWN=1
+REFLUX_AUTO_DEPLOY_STATE_PREFIX="$TMP_ROOT/state/reflux_auto"
+REFLUX_BACKLINK_SCAN_LIMIT=5
+REFLUX_BACKLINK_TIMEOUT=5
+
+_handle_reflux_auto_deploy hayate 100
+
+grep -q "DEPLOY_CALLED:--direct --yaml" "$TMP_ROOT/deploy.log"
+grep -q "target_path: docs/semantic-index/index.md" "$TMP_ROOT/deployed.yaml"
+grep -q "inspection_path: .\[\"context/semantic-map.md\"\]." "$TMP_ROOT/deployed.yaml"
+! grep -q "target_path: context/semantic-map.md" "$TMP_ROOT/deployed.yaml"
+echo "REFLUX_BACKLINK_SELFREF_FALLBACK_OK"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"REFLUX_BACKLINK_SELFREF_FALLBACK_OK"* ]]
 }
 
 # test_necessity: pause中promotionだけを止め、他refluxを維持する不変量を、marker不在時のpromotion互換性も含めて守る。
@@ -712,7 +861,10 @@ REFLUX_IDLE_FIRST_SEEN[hayate]=0
 _handle_reflux_auto_deploy hayate 300
 grep -q "target_path: queue/insights.yaml" "$TMP_ROOT/deployed.yaml"
 
-# Backlink reflux also remains eligible.
+# Backlink reflux also remains eligible. target_path is the external index
+# source (not the zero target itself); zero target flows through inspection_path.
+mkdir -p "$SCRIPT_DIR/context"
+: > "$SCRIPT_DIR/context/semantic-map.md"
 _reflux_inventory_snapshot() { printf "0\t1\t9\t10\t-\tdocs/research/orphan.md\t[infra] L999 (L2)\tok\tok\n"; }
 _reflux_select_kind() {
     [ "$1" -eq 0 ] && [ "$3" -eq 1 ] && [ "$5" -eq 0 ]
@@ -720,7 +872,8 @@ _reflux_select_kind() {
 }
 REFLUX_IDLE_FIRST_SEEN[hayate]=0
 _handle_reflux_auto_deploy hayate 400
-grep -q "target_path: docs/research/orphan.md" "$TMP_ROOT/deployed.yaml"
+grep -q "target_path: context/semantic-map.md" "$TMP_ROOT/deployed.yaml"
+grep -q "inspection_path: .\[\"docs/research/orphan.md\"\]." "$TMP_ROOT/deployed.yaml"
 echo "REFLUX_PROMOTION_DEPLOY_OK"
 '
     [ "$status" -eq 0 ]

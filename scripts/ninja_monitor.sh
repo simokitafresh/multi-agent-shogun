@@ -4138,6 +4138,31 @@ _reflux_zero_backlink_inventory() {
     printf '%s\t%s\tok\n' "${count:-0}" "$first_path"
 }
 
+# backlinksゼロ文書へ自動配備するreflux taskの変更先を決定する。
+# 従来はtarget_path=ゼロ対象自身だったため、ゼロ対象内へ追加したリンクは
+# causal_backlink_counts.shのsources.discard(rel)で自己参照として除外され、
+# incomingが0→0のまま同一対象へ再配備し続ける負のループが実証された
+# (hanzo/saizo/kotaro 3件、対象context/shogun-awakening-check.md)。
+# ゼロ対象は変更せず、既存の外部索引文書へ因果リンクを追加させることで
+# 別ファイルからのincomingを発生させる。ゼロ対象自身が候補と一致する場合は
+# 次の既存候補へフォールバックし、決定できなければ非0で返す(呼び出し側でBLOCK)。
+_reflux_backlink_external_source() {
+    local target="$1"
+    local candidate
+    local candidates=(
+        "context/semantic-map.md"
+        "docs/semantic-index/index.md"
+        "context/infrastructure.md"
+    )
+    for candidate in "${candidates[@]}"; do
+        if [ "$candidate" != "$target" ] && [ -f "$SCRIPT_DIR/$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
 # PD登録済み(status: pending)のdecision summaryから教訓IDを抽出する。
 # reflux promotionの重複dispatch根因(saizo cmd_reflux_promotion_202607080715実証):
 # 家老がdecision_candidateをpending_decisions.yamlへ登録しても、below4候補一覧
@@ -4766,6 +4791,7 @@ _handle_reflux_auto_deploy() {
     local insight_before backlink_before promotion_before total_before first_insight first_backlink first_promotion backlink_status promotion_status
     local insight_after backlink_after promotion_after total_after _after_insight _after_backlink _after_promotion _after_backlink_status _after_promotion_status
     local kind target_path cmd_id deploy_script tmp_task purpose ac1 ac2 ac1_yaml ac2_yaml
+    local external_source inspection_path_line=""
     local promotion_reserved=false active_owner
 
     [ -n "$name" ] || return 1
@@ -4858,9 +4884,15 @@ _handle_reflux_auto_deploy() {
         ac1="対象insight ${first_insight} を一次情報で確認し、resolveまたは必要な実修正/decision_candidateへ整理する"
         ;;
       backlink)
-        target_path="$first_backlink"
-        purpose="還流在庫自動消化: backlinksゼロ文書 ${first_backlink} を確認し、適切なsemantic-links/origin/因果リンクを追加して孤立を減らす"
-        ac1="対象文書 ${first_backlink} のincoming backlinkゼロ状態を確認し、適切な因果リンクを追加する"
+        if ! external_source=$(_reflux_backlink_external_source "$first_backlink"); then
+            unset "REFLUX_IDLE_FIRST_SEEN[$name]"
+            log "REFLUX-AUTO-BLOCK: $name backlink external source undetermined for ${first_backlink} — no deploy"
+            return 1
+        fi
+        target_path="$external_source"
+        inspection_path_line="  inspection_path: '[\"${first_backlink}\"]'"
+        purpose="還流在庫自動消化: backlinksゼロ文書 ${first_backlink} への因果リンクを外部索引 ${external_source} へ追加し、incoming参照0の孤立を解消する(${first_backlink} 自身の編集はcausal_backlink_counts.shがself-referenceとして除外しincomingへ計上されないため対象外)"
+        ac1="外部索引 ${external_source} に対象文書 ${first_backlink} への因果リンク([[リンク]]またはpath参照)を追加し、causal_backlink_counts.shで ${first_backlink} のincomingが0から1以上に増加することを確認する(${first_backlink} 自身は変更しない)"
         ;;
       promotion)
         # The inventory head can become reserved after the snapshot. Walk the
@@ -4918,6 +4950,7 @@ task:
   task_type: exact
   project: infra
   target_path: ${target_path}
+${inspection_path_line}
   scout_exempt: true
   estimated_minutes: 5
   status: assigned
@@ -7926,8 +7959,9 @@ check_three_layer_maintenance() {
 # 閾値超過時にobsidian_promote_finalize.shでstate=obsidian_promotedへ自動遷移する。
 # 将軍の/dream(手動)依存を排除し、意志に依存しない自動昇格を実現する。
 check_obsidian_candidate_promotion() {
-    local now last elapsed candidate_count finalize_script db_path
+    local now last elapsed candidate_count finalize_script db_path lock_file lock_fd promote_timeout
     now=$EPOCHSECONDS
+    promote_timeout="${OBSIDIAN_PROMOTE_TIMEOUT:-120}"
     last=0
     if [ -f "$OBSIDIAN_PROMOTE_STATE_FILE" ]; then
         read -r last < "$OBSIDIAN_PROMOTE_STATE_FILE" || last=0
@@ -7973,14 +8007,30 @@ except Exception as exc:
     fi
 
     mkdir -p "$(dirname "$OBSIDIAN_PROMOTE_LOG")"
-    log "OBSIDIAN-PROMOTE: candidates=$candidate_count >= threshold=$OBSIDIAN_PROMOTE_THRESHOLD, auto-promoting"
-    if timeout 120 bash "$finalize_script" --force >> "$OBSIDIAN_PROMOTE_LOG" 2>&1; then
-        log "OBSIDIAN-PROMOTE: auto-promote done (candidates=$candidate_count)"
-    else
-        log "OBSIDIAN-PROMOTE: auto-promote failed (non-blocking)"
+    lock_file="${OBSIDIAN_PROMOTE_LOCK_FILE:-$STATE_DIR/shogun_obsidian_promote.lock}"
+    exec {lock_fd}>"$lock_file"
+    if ! flock -n "$lock_fd"; then
+        exec {lock_fd}>&-
+        log "OBSIDIAN-PROMOTE: already running, skip"
+        return
     fi
-
+    # Claim the interval before detaching so the monitor loop never blocks on
+    # finalize_script (up to ${promote_timeout}s). A synchronous call here
+    # previously stalled dead-pane detection for the following cycles
+    # (cmd_karo_hotfix_reflux_backlink_external_source_20260728: 6忍者dead検知が124秒遅延).
     printf '%s\n' "$now" > "$OBSIDIAN_PROMOTE_STATE_FILE" 2>/dev/null || true
+    log "OBSIDIAN-PROMOTE: candidates=$candidate_count >= threshold=$OBSIDIAN_PROMOTE_THRESHOLD, auto-promoting (background)"
+    (
+        if timeout "$promote_timeout" bash "$finalize_script" --force >> "$OBSIDIAN_PROMOTE_LOG" 2>&1; then
+            log "OBSIDIAN-PROMOTE: auto-promote done (candidates=$candidate_count)"
+        else
+            log "OBSIDIAN-PROMOTE: auto-promote failed (non-blocking)"
+        fi
+    ) &
+    # Only the detached child keeps the lock; closing the monitor's copy here
+    # avoids holding it across hot reload/respawn (same idiom as
+    # check_three_layer_maintenance's single-flight lock above).
+    exec {lock_fd}>&-
 }
 
 check_script_size_thresholds() {

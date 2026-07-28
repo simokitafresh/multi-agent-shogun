@@ -3847,8 +3847,9 @@ INSERT INTO events VALUES ('"'"'e4'"'"', '"'"'obsidian_candidate'"'"');
 INSERT INTO events VALUES ('"'"'e5'"'"', '"'"'obsidian_candidate'"'"');
 "
 
-# 2回目: 閾値超過→auto-promote
+# 2回目: 閾値超過→auto-promote(バックグラウンド実行のため完了をwaitで待つ)
 check_obsidian_candidate_promotion
+wait
 echo "--- after second call (above threshold) ---"
 cat "$LOG"
 grep -q "OBSIDIAN-PROMOTE: candidates=5 >= threshold=5, auto-promoting" "$LOG"
@@ -3892,15 +3893,68 @@ export OBSIDIAN_PROMOTE_LOG
 
 log() { echo "$1" >> "$LOG"; }
 
-# 1回目: 実行される
+# 1回目: 実行される(バックグラウンド実行のため完了をwaitで待つ)
 check_obsidian_candidate_promotion
+wait
 count1=$(grep -c "finalize_called" "$OBSIDIAN_PROMOTE_LOG" 2>/dev/null || echo 0)
 [ "$count1" -eq 1 ]
 
 # 2回目: interval内→skip（finalize呼ばれない）
 check_obsidian_candidate_promotion
+wait
 count2=$(grep -c "finalize_called" "$OBSIDIAN_PROMOTE_LOG" 2>/dev/null || echo 0)
 [ "$count2" -eq 1 ]
 '
     [ "$status" -eq 0 ]
+}
+
+# test_necessity: obsidian昇格の同期実行が監視ループを最大promote_timeout秒ブロックし、
+# dead-pane検知等の後続監視サイクルを遅延させない不変量を守る。同期timeout 120により
+# 2026-07-28 16:12:22の忍者6名dead検知が16:15まで(124秒)遅延した実障害の再発防止。
+@test "check_obsidian_candidate_promotion returns immediately and enforces single-flight while finalize stalls" {
+    run bash -lc '
+set -euo pipefail
+PROJECT_ROOT="'"$PROJECT_ROOT"'"
+export NINJA_MONITOR_LIB_ONLY=1
+source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+unset NINJA_MONITOR_LIB_ONLY
+
+TMP_ROOT="$NINJA_MONITOR_TEST_ROOT"; mkdir -p "$TMP_ROOT"
+trap "rm -rf \"$TMP_ROOT\"" EXIT
+SCRIPT_DIR="$TMP_ROOT"
+STATE_DIR="$TMP_ROOT/state"
+LOG="$TMP_ROOT/monitor.log"
+OBSIDIAN_PROMOTE_INTERVAL=0
+OBSIDIAN_PROMOTE_THRESHOLD=1
+OBSIDIAN_PROMOTE_TIMEOUT=1
+OBSIDIAN_PROMOTE_STATE_FILE="$STATE_DIR/last"
+OBSIDIAN_PROMOTE_LOG="$TMP_ROOT/logs/obsidian_promote.log"
+mkdir -p "$SCRIPT_DIR/scripts" "$SCRIPT_DIR/logs" "$SCRIPT_DIR/data" "$STATE_DIR"
+
+sqlite3 "$SCRIPT_DIR/data/multi_agent_shogun_memory.db" "
+CREATE TABLE events (id TEXT PRIMARY KEY, state TEXT);
+INSERT INTO events VALUES ('"'"'e1'"'"', '"'"'obsidian_candidate'"'"');
+"
+
+# finalizeが120秒スリープしても、check_obsidian_candidate_promotion自体は
+# 即座に戻り、後続のdead-pane検知等の監視サイクルをブロックしないことを検証する
+# (cmd_karo_hotfix_reflux_backlink_external_source_20260728 追加指示: 16:12:22の
+# 忍者6名dead検知が124秒遅延した根因の再現・恒久防止)。
+printf %s\\n "#!/usr/bin/env bash" "sleep 120" > "$SCRIPT_DIR/scripts/obsidian_promote_finalize.sh"
+chmod +x "$SCRIPT_DIR/scripts/obsidian_promote_finalize.sh"
+export OBSIDIAN_PROMOTE_LOG
+
+log() { printf "%s\n" "$1" >> "$LOG"; }
+
+start=$EPOCHREALTIME
+check_obsidian_candidate_promotion
+check_obsidian_candidate_promotion
+elapsed=$(awk -v a="$start" -v b="$EPOCHREALTIME" "BEGIN {print b-a}")
+awk -v e="$elapsed" "BEGIN {exit !(e < 0.5)}"
+grep -q "already running, skip" "$LOG"
+wait
+printf "elapsed_under_0.5s=true single_flight_skip=confirmed\n"
+'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"elapsed_under_0.5s=true single_flight_skip=confirmed"* ]]
 }
