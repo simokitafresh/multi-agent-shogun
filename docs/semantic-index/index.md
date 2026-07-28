@@ -6930,6 +6930,7 @@ codd:
 | cmd | `cmd_4093` 実施 — テスト在庫振り分け第1弾: 宣言なし資格層の小batch整理と昇格候補の分離 (`docs/research/cmd_4093_test_triage_batch1.md`, `scripts/lib/report_contract_test_selector.sh`, `tests/unit/test_gate_report_format_cmd_3558.bats`) |
 | causal | `cmd_4093` は前段sweep `docs/research/cmd_4092_test_sweep_batch1.md` の削除候補0件を受け、二条件・小batchの振り分けへ移行した |
 | causal | `cmd_4093` origin: [[cmd_4092削除候補0誠実FAIL]] -> [[殿裁定_二条件小batch+振り分け型_20260720]] -> [[三層振り分けcmd_4093]] |
+| causal | `cmd_4093` の削除資格層再検分から、軍師必須確認checkpoint `docs/research/cmd_4094_test_sweep_batch2.md` へ継承した |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-20T14:19:03+09:00 将軍・家老・軍師の遅延報告は共有して協議で対応策を決定し、改善しないか？家老の負担が大きくて家老ボトルネックになっている。そのせいで全体のスループットが悪化している |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-20T15:03:29+09:00 インボックスは全て処理したか 軍師からの指示について行動したか |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-20T17:35:37+09:00 家老や軍師、忍者、システム、コンテキスト、gateやhookが過去の誤った過剰対策にのっとっている可能性がある。覚醒して徹底的に新しい仕組みに変えよう |
@@ -8437,6 +8438,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607282254_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607290027_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607290058_kotaro` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_karo_hotfix_commit_async_semantic_propagation_20260729` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -10322,6 +10324,7 @@ codd:
 | cmd | `cmd_karo_ci_fix_30368687892_ninja_scope_exec_mode` (`tests/unit/test_ninja_scope_commit.bats`) |
 | cmd | `cmd_karo_hotfix_no_code_commit_reminder_20260728` (`.claude/hooks/post-bash-commit-reminder.sh`, `tests/unit/test_post_bash_commit_reminder.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T16:02:34.103051+00:00 git pre-commit semantic propagation for context/projects changes |
+| cmd | `cmd_karo_hotfix_commit_async_semantic_propagation_20260729` (`docs/semantic-index/index.md`) |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
