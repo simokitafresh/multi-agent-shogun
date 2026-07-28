@@ -894,7 +894,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1430 -->
+<!-- last_synced_lesson: L1431 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2038,6 +2038,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1428: 部分凍結markerは共通入口returnでなく対象kindをdispatchable inventoryから除外する（cmd_karo_hotfix_reflux_promotion_freeze_guard_20260728）
 - L1429: 同一indexのpath別再走査は順序付き単一snapshotへ集約する（cmd_karo_hotfix_round3_ninja_scope_commit_20260728）
 - L1430: 区間telemetryは各列を個別補正せず同一attemptの境界集合で選ぶ（cmd_karo_hotfix_throughput_t3a_gate_metrics_writer_20260728）
+- L1431: 既存計装パターン(defense_overhead_write_async)への追加はsource+関数呼出しの2行構成で既存ヘルパーを再利用するのが低リスク（cmd_karo_hotfix_throughput_t3b_fingerprint_hit_corrected_20260728）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
