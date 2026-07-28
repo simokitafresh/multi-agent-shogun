@@ -8397,6 +8397,7 @@ codd:
 | file | `scripts/causal_backlinks.sh` |
 | file | `docs/semantic-index/index.md` |
 | file | `docs/research/ci-test-elimination-design-20260719.md` |
+| causal | `docs/research/codd_refactor_deploy_control_plane_20260723.md` — [[codd_methodology]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/cmd_4106_cache_flock_experiment_kotaro.md` — [[wave_cache_flock_contention]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/cmd_4106_yaml_mutation_experiment_saizo.md` — [[yaml_safe_write]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/cmd_karo_recon_axis_b_color_20260722.md` — [[semantic_causal_automation]] -> [[cmd_karo_recon_axis_b_color_20260722]] |
