@@ -11,6 +11,21 @@ codd:
 <!-- scope: multi-agent-shogun conceptual reverse index -->
 <!-- related_concepts format: concept_id or concept_id(relation_type=同義|上位|混同注意|関連). Parsers must keep legacy concept_id entries backward-compatible. -->
 
+## b1_e2e_same_cohort_final — B1同一cohort最終計測
+
+| 属性 | 値 |
+|------|---|
+| id | b1_e2e_same_cohort_final |
+| label | B1同一cohort最終計測 |
+| aliases | B1 E2E same cohort, canonical cohort, local_pass_e2e_unproven, fixed-SHA CI, throughput outcome |
+| related_concepts | throughput-mece-design-20260718, infra-throughput-outcome-design-20260718 |
+
+| 種別 | パス/参照 |
+|------|-----------|
+| file | `docs/research/b1-e2e-same-cohort-final-20260719.md` — canonical cohort before/after各N=0のためBLOCKした最終計測 |
+| causal | [[throughput-mece-design-20260718]] -> [[infra-throughput-outcome-design-20260718]] -> [[b1-e2e-same-cohort-final-20260719]] |
+| cmd | `cmd_3872` backfill — | cmd_3872 | cmd_3870 verdict FAIL(2026-07-13 11:46家老最終クローズ: expected input_snapshot_id=75886e9fとact |
+
 ## campaign_lane — 台帳駆動攻略 / 応用候補カタログ
 
 | 属性 | 値 |
