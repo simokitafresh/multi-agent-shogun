@@ -334,6 +334,47 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: promotion在庫の先頭が予約済みでも同一snapshot内の次候補を探索し、並列忍者が候補を二重予約しない不変量を守る。
+@test "reflux promotion claim scans past reserved head and atomically splits parallel claims" {
+    run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '
+        export NINJA_MONITOR_LIB_ONLY=1
+        source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
+        SCRIPT_DIR="$BATS_TEST_TMPDIR/root"; STATE_DIR="$BATS_TEST_TMPDIR/state"; LOG="$BATS_TEST_TMPDIR/log"
+        mkdir -p "$SCRIPT_DIR/logs" "$SCRIPT_DIR/queue/tasks" "$SCRIPT_DIR/queue/reports" "$STATE_DIR"; : >"$LOG"
+        log() { printf "%s\n" "$1" >>"$LOG"; }
+        _reflux_active_target_owner() { return 1; }
+
+        # Reserved head is skipped and the second candidate is returned.
+        _reflux_promotion_candidates() { printf "%s\n" "[dm-signal] L911 (L1)" "[infra] L912 (L2)"; }
+        _reflux_promotion_try_reserve() { [ "$1" = "[infra] L912 (L2)" ]; }
+        [ "$(_reflux_promotion_claim_next alpha)" = $'\''[infra] L912 (L2)\tprojects/infra/lessons.yaml'\'' ]
+
+        # Real flock-backed reservation: two concurrent workers claim different IDs exactly once.
+        unset -f _reflux_promotion_try_reserve
+        export REFLUX_PROMOTION_RESERVATION_LEDGER="$SCRIPT_DIR/logs/reservations.tsv"
+        export REFLUX_PROMOTION_LEDGER="$SCRIPT_DIR/logs/completed.tsv"
+        export REFLUX_PROMOTION_DEFERRED_LEDGER="$SCRIPT_DIR/logs/deferred.tsv"
+        : >"$REFLUX_PROMOTION_LEDGER"; : >"$REFLUX_PROMOTION_DEFERRED_LEDGER"
+        _reflux_promotion_candidates() { printf "%s\n" "[infra] L920 (L1)" "[infra] L921 (L1)"; }
+        export -f _reflux_promotion_candidates _reflux_active_target_owner log
+        (_reflux_promotion_claim_next alpha >"$STATE_DIR/alpha") &
+        p1=$!
+        (_reflux_promotion_claim_next beta >"$STATE_DIR/beta") &
+        p2=$!
+        wait "$p1"; wait "$p2"
+        [ "$(cut -f2 "$REFLUX_PROMOTION_RESERVATION_LEDGER" | sort -u | wc -l)" -eq 2 ]
+        [ "$(cut -f2 "$REFLUX_PROMOTION_RESERVATION_LEDGER" | wc -l)" -eq 2 ]
+        [ "$(cat "$STATE_DIR/alpha" "$STATE_DIR/beta" | cut -f1 | sort -u | wc -l)" -eq 2 ]
+
+        # Only an all-ineligible inventory returns no claim.
+        _reflux_promotion_candidates() { printf "%s\n" "[infra] L930 (L1)" "[infra] L931 (L1)"; }
+        _reflux_promotion_try_reserve() { return 1; }
+        ! _reflux_promotion_claim_next gamma >"$STATE_DIR/gamma"
+        [ ! -s "$STATE_DIR/gamma" ]
+    '
+    [ "$status" -eq 0 ]
+}
+
 # test_necessity: AUTO-DONEとdeployが同一agent lockで直列化され、旧parent/archive reportでtaskを書換えない不変量を守る。
 @test "AUTO-DONE deploy lock boundary is retryable and archive symlinks are inactive" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '

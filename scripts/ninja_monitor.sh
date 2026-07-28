@@ -4502,6 +4502,51 @@ _reflux_promotion_target_path() {
     esac
 }
 
+# Return every promotion candidate from the same cached inventory snapshot.
+# Eligibility that can change concurrently (reservation/task/report state) is
+# deliberately checked by _reflux_promotion_try_reserve at the dispatch edge.
+_reflux_promotion_candidates() {
+    local cache_file="${STATE_DIR:-$SCRIPT_DIR/.cache}/reflux_promotion_inventory.raw"
+    local output status
+
+    if [ -r "$cache_file" ]; then
+        output=$(cat "$cache_file")
+    else
+        local helper="$SCRIPT_DIR/scripts/gates/gate_lesson_enforcement_level.sh"
+        [ -r "$helper" ] || return 0
+        if command -v timeout >/dev/null 2>&1; then
+            output=$(LESSON_ENFORCEMENT_ROOT="$SCRIPT_DIR" timeout "${REFLUX_PROMOTION_TIMEOUT:-20}" bash "$helper" 2>/dev/null)
+            status=$?
+        else
+            output=$(LESSON_ENFORCEMENT_ROOT="$SCRIPT_DIR" bash "$helper" 2>/dev/null)
+            status=$?
+        fi
+        [ "${status:-0}" -eq 0 ] || return 0
+    fi
+
+    printf '%s\n' "$output" |
+        awk '/^=== 昇格候補一覧/{p=1; next} p && /^  - / { sub(/^  - /, ""); print }'
+}
+
+_reflux_promotion_claim_next() {
+    local owner="$1" candidate target active_owner
+    while IFS= read -r candidate; do
+        [ -n "$candidate" ] || continue
+        target=$(_reflux_promotion_target_path "$candidate")
+        active_owner=$(_reflux_active_target_owner "$target" "$owner" 2>/dev/null || true)
+        if [ -n "$active_owner" ]; then
+            log "REFLUX-AUTO-CANDIDATE-SKIP: $owner target_path active (${active_owner}): ${candidate}"
+            continue
+        fi
+        if _reflux_promotion_try_reserve "$candidate" "$owner"; then
+            printf '%s\t%s\n' "$candidate" "$target"
+            return 0
+        fi
+        log "REFLUX-AUTO-CANDIDATE-SKIP: $owner lesson reserved/active/terminal: ${candidate}"
+    done < <(_reflux_promotion_candidates)
+    return 1
+}
+
 # Atomically claim a promotion lesson at the dispatch boundary.  Inventory is
 # intentionally read-only and can race with the event-driven completion writer;
 # this lease closes that gap without coupling unrelated lesson IDs.
@@ -4715,6 +4760,7 @@ _handle_reflux_auto_deploy() {
     local insight_before backlink_before promotion_before total_before first_insight first_backlink first_promotion backlink_status promotion_status
     local insight_after backlink_after promotion_after total_after _after_insight _after_backlink _after_promotion _after_backlink_status _after_promotion_status
     local kind target_path cmd_id deploy_script tmp_task purpose ac1 ac2 ac1_yaml ac2_yaml
+    local promotion_reserved=false active_owner
 
     [ -n "$name" ] || return 1
 
@@ -4803,7 +4849,16 @@ _handle_reflux_auto_deploy() {
         ac1="対象文書 ${first_backlink} のincoming backlinkゼロ状態を確認し、適切な因果リンクを追加する"
         ;;
       promotion)
-        target_path=$(_reflux_promotion_target_path "$first_promotion")
+        # The inventory head can become reserved after the snapshot. Walk the
+        # complete snapshot and atomically claim the first still-eligible item.
+        # No candidate cap is allowed: available work must not be hidden by a
+        # busy head or by several concurrently claiming ninjas.
+        if IFS=$'\t' read -r first_promotion target_path < <(_reflux_promotion_claim_next "$name"); then
+            promotion_reserved=true
+        else
+            log "REFLUX-AUTO-SKIP: $name all promotion candidates reserved/active/terminal"
+            return 1
+        fi
         purpose="還流在庫自動消化: 恒久防御未到達の昇格候補 ${first_promotion} を確認し、Level4以上の防御層・配備注入などへ昇格する"
         ac1="昇格候補 ${first_promotion} を一次情報で確認し、恒久防御(Level4以上)へ引き上げるか、decision_candidateへ整理する"
         ;;
@@ -4817,9 +4872,9 @@ _handle_reflux_auto_deploy() {
     ac1_yaml=$(_yaml_single_quote_scalar "$ac1")
     ac2_yaml=$(_yaml_single_quote_scalar "$ac2")
 
-    local active_owner
     active_owner=$(_reflux_active_target_owner "$target_path" "$name" 2>/dev/null || true)
     if [ -n "$active_owner" ]; then
+        [ "$kind" != "promotion" ] || _reflux_promotion_release_reservation "$first_promotion" "$name" || true
         log "REFLUX-AUTO-SKIP: $name target_path already active (${active_owner}): ${target_path}"
         return 1
     fi
@@ -4872,12 +4927,6 @@ EOF
     if ! python3 -c 'import sys,yaml; yaml.safe_load(open(sys.argv[1], encoding="utf-8"))' "$tmp_task" >/dev/null 2>&1; then
         log "REFLUX-AUTO-SKIP: generated task YAML parse failed for ${name}: ${tmp_task}"
         rm -f "$tmp_task"
-        return 1
-    fi
-
-    if [ "$kind" = "promotion" ] && ! _reflux_promotion_try_reserve "$first_promotion" "$name"; then
-        rm -f "$tmp_task"
-        log "REFLUX-AUTO-SKIP: $name lesson already reserved/active/terminal: ${first_promotion}"
         return 1
     fi
 
