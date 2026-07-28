@@ -40,6 +40,47 @@ YAML
   [ "$status" -eq 0 ]
 }
 
+@test "review fingerprint uses the no-code SSOT and keeps invalid variants fail-closed" {
+  sed -i 's/運用データのみのためcommit不要/運用データ処理を確認/' "$REPORT"
+  printf '\ncommit_contract:\n  required: false\n  reason: operational_tree_unchanged\n' >> "$REPORT"
+  source "$ROOT/scripts/lib/review_approval.sh"
+
+  fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT")
+  [[ "$fp" =~ ^[0-9a-f]{64}$ ]]
+  [ "$(PROJECT_ROOT="$ROOT" review_report_commit_identity "$REPORT")" = "no-code-change" ]
+
+  base_report
+  sed -i 's/運用データのみのためcommit不要/運用データ処理を確認/' "$REPORT"
+  printf '\ncommit_contract:\n  required: false\n  reason: missing_evidence\n' >> "$REPORT"
+  sed -i '/^no_code_change_evidence:/,$d' "$REPORT"
+  run env PROJECT_ROOT="$ROOT" bash -c 'source "$1"; review_report_fingerprint "$2"' _ \
+    "$ROOT/scripts/lib/review_approval.sh" "$REPORT"
+  [ "$status" -ne 0 ]
+
+  base_report
+  sed -i 's/運用データのみのためcommit不要/運用データ処理を確認/' "$REPORT"
+  printf '\ncommit_contract:\n  required: false\n  reason: source_mixed\n' >> "$REPORT"
+  sed -i 's#logs/loop_ledger.yaml#scripts/report_field_set.sh#' "$REPORT"
+  run env PROJECT_ROOT="$ROOT" bash -c 'source "$1"; review_report_fingerprint "$2"' _ \
+    "$ROOT/scripts/lib/review_approval.sh" "$REPORT"
+  [ "$status" -ne 0 ]
+
+  base_report
+  sed -i 's/運用データのみのためcommit不要/運用データ処理を確認/' "$REPORT"
+  printf '\ncommit_contract:\n  required: false\n  reason: tree_changed\n' >> "$REPORT"
+  sed -i 's/after_tree: 1111111111111111111111111111111111111111/after_tree: 2222222222222222222222222222222222222222/' "$REPORT"
+  run env PROJECT_ROOT="$ROOT" bash -c 'source "$1"; review_report_fingerprint "$2"' _ \
+    "$ROOT/scripts/lib/review_approval.sh" "$REPORT"
+  [ "$status" -ne 0 ]
+
+  base_report
+  sed -i 's/運用データのみのためcommit不要/運用データ処理を確認/' "$REPORT"
+  printf '\ncommit_contract:\n  required: false\n  reason: valid_hash_wins\ncommit_hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n' >> "$REPORT"
+  fp=$(PROJECT_ROOT="$ROOT" review_report_fingerprint "$REPORT")
+  [[ "$fp" =~ ^[0-9a-f]{64}$ ]]
+  [ "$(PROJECT_ROOT="$ROOT" review_report_commit_identity "$REPORT")" = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ]
+}
+
 @test "commit contract false remains fail-closed for mixed source" {
   sed -i 's#logs/loop_ledger.yaml#scripts/report_field_set.sh#' "$REPORT"
   printf '\ncommit_contract:\n  required: false\n  reason: forged\n' >> "$REPORT"

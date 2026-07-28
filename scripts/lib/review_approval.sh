@@ -147,8 +147,13 @@ _valid_hex_identity = (
     and all(c in "0123456789abcdef" for c in commit_hash)
 )
 if operational_runtime_files and not _valid_hex_identity:
-    commit_claimed = False
-if (no_code_files or operational_runtime_files) and not commit_claimed and (
+    print("no-code-change")
+    raise SystemExit(0)
+
+# Legacy scout/recon reports may identify no-code work through their task type
+# or explicit commit check.  Operational reports do not use this second
+# contract: permits_no_code_identity above is their single structural SSOT.
+if no_code_files and not commit_claimed and (
     task_type in no_code_task_types or no_commit_asserted
 ):
     print("no-code-change")
