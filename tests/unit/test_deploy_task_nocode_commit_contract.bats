@@ -389,3 +389,36 @@ PY
   if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
   [ "$status" -eq 0 ]
 }
+
+# test_necessity: 明示済みtest所有権があるtaskを参照grepで再拡張すると、
+# focused contractがdeploy_task参照test全体へ膨張する。明示2-pathをSSOTとして保つ。
+@test "B32 negative control: explicit test ownership suppresses inferred widening" {
+  stage_real_test_fixtures \
+    tests/unit/test_deploy_task_nocode_commit_contract.bats \
+    tests/unit/test_deploy_task.bats
+
+  build_test_requiring_task cmd_b32_explicit scripts/deploy_task.sh \
+    "既存テストを拡張して両方向fixtureを固定する"
+  bash "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" \
+    "$TEST_PROJECT/queue/tasks/sasuke.yaml" task planned_paths \
+    '["scripts/deploy_task.sh","tests/unit/test_deploy_task_nocode_commit_contract.bats"]'
+  bash "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" \
+    "$TEST_PROJECT/queue/tasks/sasuke.yaml" task commit_contract \
+    '{"required":true,"reason":"implementation_path_present","task_type":"hotfix","planned_paths":["scripts/deploy_task.sh","tests/unit/test_deploy_task_nocode_commit_contract.bats"],"repo_root":"'"$TEST_PROJECT"'"}'
+  bash "$TEST_PROJECT/scripts/report_field_set.sh" \
+    "$TEST_PROJECT/queue/reports/sasuke_report_cmd_b32_explicit.yaml" commit_contract \
+    '{"required":true,"reason":"implementation_path_present","task_type":"hotfix","planned_paths":["scripts/deploy_task.sh","tests/unit/test_deploy_task_nocode_commit_contract.bats"],"repo_root":"'"$TEST_PROJECT"'"}'
+  generate_report_template sasuke cmd_b32_explicit cmd_b32_explicit infra >/dev/null
+
+  run python3 - "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'PY'
+import sys, yaml
+contract = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))["task"]["commit_contract"]
+assert contract["planned_paths"] == [
+    "scripts/deploy_task.sh",
+    "tests/unit/test_deploy_task_nocode_commit_contract.bats",
+], contract
+assert "scope_expansion_reason" not in contract, contract
+PY
+  if [ "$status" -ne 0 ]; then printf '%s\n' "$output" >&3; fi
+  [ "$status" -eq 0 ]
+}

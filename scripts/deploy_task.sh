@@ -4067,7 +4067,12 @@ def ac_text(value):
 text = ac_text(task.get("acceptance_criteria"))
 requires_test = bool(re.search(r"(テスト|bats|fixture|regression|tests?/|\btests?\b)", text, re.IGNORECASE))
 code_paths = [p for p in planned if not p.startswith("tests/")]
-if not requires_test or not code_paths:
+# Explicit test ownership is authoritative.  B32 only repairs legacy/direct
+# tasks whose issuer supplied implementation ownership but omitted every test
+# path; widening an already-declared contract turns one focused test into every
+# test that happens to mention the hot dispatcher.
+explicit_test_paths = [p for p in planned if p.startswith("tests/")]
+if not requires_test or not code_paths or explicit_test_paths:
     print(" ".join(planned))
     raise SystemExit(0)
 
