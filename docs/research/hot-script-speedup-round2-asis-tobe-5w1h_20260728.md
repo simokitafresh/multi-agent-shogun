@@ -9,6 +9,8 @@
 | P3(P1後) | 第二弾完了宣言 | 9/9クローズ→fixed-SHA全量unitをwave共有で1回だけ実行(殿裁定13:26)→台帳再snapshot→次弾序列(v2.0) | 全量unit FAIL0かつ再snapshotの窓上下限・row_countが固定明記されたか(yes/no) |
 | P4(P3後・殿認可のみ) | 第三弾後続解禁判断 | 閉幕結果とv2.0序列を将軍が殿へ提示し、認可後のみ第三弾#2(cmd_complete_gate=T2帰属)を解禁 | 殿の認可発話があるか(yes/no) |
 
+**実行状況(2026-07-28 18:42時点)**: P1(#9 AC再設計弾)・P2(reflux SSOT修正弾)は**家老の起票・配備待ち**(全忍者task一次確認で両弾未配備、gate台帳17:30以降の新CLEAR行なし)。P3/P4未着手。周辺: reflux消費路は回転中(backlink弾hanzo in_progress・insight還流弾kagemaru assigned)。saizo/kotaro/tobisaruのfailed 3件は根治前の旧backlink弾残骸(pane生存確認済み・整理は家老フロー)
+
 ## §-2 第二弾 弾台帳(2026-07-28 16:10時点 — 第一弾§-2完了台帳と同型)
 
 殿裁定12:45「超速で第二弾を実行せよ」→家老が12:51-13:01に4レーン一斉配備(1ファイル=1レーン上限)。
