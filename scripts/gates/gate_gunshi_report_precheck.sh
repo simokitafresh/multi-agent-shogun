@@ -377,8 +377,11 @@ if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
                 fi
             fi
             if [ "$_hash_ok" -eq 1 ]; then
-                _hash_files=$(git -C "$_hash_repo" diff-tree --no-commit-id --name-only -r "$_hash" 2>/dev/null || true)
                 _hash_numstat=$(git -C "$_hash_repo" diff-tree --no-commit-id --numstat -r "$_hash" 2>/dev/null || true)
+                # numstatの3列目はname-onlyと等価。PRE19のchanged_lines集計に必要な
+                # numstat 1回からPRE3/PRE14のpath一覧も導出し、NTFS上の同一tree走査を
+                # もう1回行わない。短縮hash/full hashの重複は集計意味を保つため維持する。
+                _hash_files=$(printf '%s\n' "$_hash_numstat" | awk -F'\t' 'NF>=3{print $3}')
                 _PRE_CMD_FILES+="${_hash_files}"$'\n'
                 _PRE_RECENT_DATA+="${_hash_files}"$'\n'
                 if [ "$_hash_repo" = "$REPO_ROOT" ]; then _PRE_REPO_NUMSTAT+="${_hash_numstat}"$'\n'; else _PRE_PROJECT_NUMSTAT+="${_hash_numstat}"$'\n'; fi

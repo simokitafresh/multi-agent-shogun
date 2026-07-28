@@ -12,12 +12,13 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
-@test "fixed-hash branch uses direct object and tree operations" {
+@test "fixed-hash branch uses one numstat tree walk and derives paths" {
   run awk '/# PRE3\/PRE14: report/{on=1} on{print} /done <<< "\$_REPORT_HASHES"/{exit}' "$TARGET"
   [ "$status" -eq 0 ]
   [[ "$output" == *'cat-file -e'* ]]
-  [[ "$output" == *'diff-tree --no-commit-id --name-only'* ]]
   [[ "$output" == *'diff-tree --no-commit-id --numstat'* ]]
+  [[ "$output" == *"_hash_files=\$(printf '%s\\n' \"\$_hash_numstat\" | awk -F'\\t' 'NF>=3{print \$3}')"* ]]
+  ! printf '%s\n' "$output" | grep -E '^[[:space:]]*[^#].*diff-tree --no-commit-id --name-only'
   ! printf '%s\n' "$output" | grep -E '^[[:space:]]*[^#].*git log'
   ! printf '%s\n' "$output" | grep -E '^[[:space:]]*[^#].*rev-list'
 }
