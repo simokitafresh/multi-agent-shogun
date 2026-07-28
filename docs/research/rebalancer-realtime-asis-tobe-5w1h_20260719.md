@@ -1,4 +1,6 @@
-# リバランサー改良 — 価格経路リアルタイム化 AsIs/ToBe 5W1H（2026-07-19）
+# 【⏸未クローズ — P0-P2完了・残=P3本番検証のみ(開場窓待ち)】リバランサー改良 — 価格経路リアルタイム化 AsIs/ToBe 5W1H（2026-07-19起草・2026-07-29 03:28覚醒更新）
+
+**現在地(2026-07-29 03:28)**: P0偵察・P1a/P1b/P1c実装・P2 FE配信の5工程は全てGATE CLEAR済み(commit群=2023dbf/31d071c/f31c5a0/df4ccf9/e011379)。**本書はクローズしていない** — 残=P3(米国市場開場中のE2E実測+recovery検証)のみ。P3の待ち分類=a(外部入力: 開場時間帯JST22:30-05:00の到来)であり、**開場窓が到来するたび起票可能**。P3クローズ=本レーン完了宣言の条件。
 
 殿発案(2026-07-19 18:03-18:56)→裁可(18:56)。制約: **EODHDプランは現行固定(アップグレードしない)**。
 偵察: cmd_4087(Alpaca実叩き+設計、**完了LGTM 2026-07-19 19:11**)。本書は設計の正本。
@@ -89,7 +91,7 @@
 | P1b ストリーム | Alpaca stream/latest store+calendar正本+health分離 | cmd_4089 | 完了(GATE CLEAR、commit f31c5a0) |
 | P1c 耐障害 | resilience+fallback可視化(degraded/stale明示) | cmd_4090 | 完了(GATE CLEAR、commit df4ccf9) |
 | P2 FE配信 | SSE契約(bounded queue/heartbeat/再開/snapshot)+FE受信化 | cmd_4091 | 完了(GATE CLEAR、commit e011379。SSE契約11/11・全量70/70 PASS) |
-| P3 本番検証(最終checkpoint) | 米国市場開場中の全銘柄subscription ACK+event→backend→SSE→browserの段階別p50/p95/max実測+WS強制切断・Render restart・SSE再接続のrecovery検証(duplicate0/out-of-order0)+終値EODHD突合+Alpaca計算混入0+秘密値ログ0の二値化 | 保留: P2完了済み。米国市場開場時間帯(最短=月曜JST22:30以降)の到来待ちで起票(待ち分類a=外部入力。厳密さは最終checkpointへ集中) | — |
+| P3 本番検証(最終checkpoint) | 米国市場開場中の全銘柄subscription ACK+event→backend→SSE→browserの段階別p50/p95/max実測+WS強制切断・Render restart・SSE再接続のrecovery検証(duplicate0/out-of-order0)+終値EODHD突合+Alpaca計算混入0+秘密値ログ0の二値化 | **起票可(覚醒更新03:28)**: 開場窓は毎営業日JST22:30-05:00に到来。07-19起票以降、全軍がhot-scriptレーン集中のため未実行のまま7営業日経過(不作為の在庫)。次の開場窓で家老karo_direct配備を推奨。P3クローズで本レーン完了宣言 | — |
 
 ## 因果リンク
 
