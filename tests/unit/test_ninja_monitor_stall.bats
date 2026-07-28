@@ -2257,6 +2257,10 @@ test -e "$TMP_ROOT/inbox_calls.log"
 
 # test_necessity: pending_workはarchive済みFAILだけを閉じ、active・未archive・RC/reopen新世代を通知する。
 @test "check_inbox_renudge: archived FAIL generation matrix has zero false positives and negatives" {
+    # cmd_karo_hotfix_fail_close_respawn_notice_20260729(_pending_task_has_terminal_archive)以降、
+    # 世代判定の一次証跡はtask YAML mtimeの前後関係ではなくarchive.doneマーカーの有無そのものになった。
+    # cmd_reopen.shの実装(明示reopenは4マーカーをinvalidatedへmvしてarchive.doneを除去する)に合わせ、
+    # 「reopen」はmtime touchではなくマーカー除去でシミュレートする(fixture契約修正。コード変更なし)。
     run bash -lc '
 set -euo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"
@@ -2265,7 +2269,7 @@ source "$PROJECT_ROOT/scripts/ninja_monitor.sh"
 unset NINJA_MONITOR_LIB_ONLY
 
 run_case() {
-    local case_name="$1" status="$2" placement="$3" generation="$4" expected="$5"
+    local case_name="$1" status="$2" placement="$3" marker_state="$4" expected="$5"
     local root="$NINJA_MONITOR_TEST_ROOT/$case_name"
     SCRIPT_DIR="$root"; STATE_DIR="$root/state"; LOG="$root/monitor.log"
     mkdir -p "$root/queue/tasks" "$root/queue/inbox" "$root/queue/archive/cmds" \
@@ -2276,12 +2280,9 @@ run_case() {
     printf "task:\n  status: %s\n  parent_cmd: cmd_matrix\n  report_filename: kotaro_report_cmd_matrix.yaml\n" "$status" > "$root/queue/tasks/kotaro.yaml"
     printf "status: failed\nverdict: FAIL\n" > "$root/$placement/kotaro_report_cmd_matrix.yaml"
     : > "$root/queue/gates/cmd_matrix/archive.done"
-    if [ "$generation" = newer ]; then
-        touch -d "2 seconds ago" "$root/queue/gates/cmd_matrix/archive.done"
-        touch "$root/queue/tasks/kotaro.yaml"
-    else
-        touch -d "2 seconds ago" "$root/queue/tasks/kotaro.yaml"
-        touch "$root/queue/gates/cmd_matrix/archive.done"
+    if [ "$marker_state" = reopened ]; then
+        # cmd_reopen.shはarchive.doneをstate/へmvして除去する(marker removal = 明示reopenの合図)
+        rm -f "$root/queue/gates/cmd_matrix/archive.done"
     fi
     printf "#!/bin/bash\necho CALLED\n" > "$root/scripts/inbox_write.sh"
     chmod +x "$root/scripts/inbox_write.sh"
@@ -2296,15 +2297,15 @@ run_case() {
     [ "$actual" -eq "$expected" ]
 }
 
-run_case archived_failed failed queue/archive/reports old 0
-run_case active_failed failed queue/reports old 1
-run_case active_done done queue/reports old 1
-run_case reopened_failed failed queue/archive/reports newer 1
+run_case archived_failed failed queue/archive/reports present 0
+run_case regenerated_active_failed failed queue/reports present 0
+run_case regenerated_active_done done queue/reports present 0
+run_case reopened_failed failed queue/archive/reports reopened 1
 '
     [ "$status" -eq 0 ]
     [[ "$output" == *"CASE=archived_failed expected=0 actual=0"* ]]
-    [[ "$output" == *"CASE=active_failed expected=1 actual=1"* ]]
-    [[ "$output" == *"CASE=active_done expected=1 actual=1"* ]]
+    [[ "$output" == *"CASE=regenerated_active_failed expected=0 actual=0"* ]]
+    [[ "$output" == *"CASE=regenerated_active_done expected=0 actual=0"* ]]
     [[ "$output" == *"CASE=reopened_failed expected=1 actual=1"* ]]
 }
 
