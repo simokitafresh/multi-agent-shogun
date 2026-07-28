@@ -1,4 +1,4 @@
-# 【📐設計のみ — 実装凍結・家老レビュー待ち】弾スループット全体のボトルネック改善 part2 — AsIs/ToBe 5W1H設計書 v1.0 (2026-07-28 21:20 起草。版履歴は§-3)
+# 【📐AC1 read-only起票可(家老APPROVE条件充足)— 実装は凍結維持】弾スループット全体のボトルネック改善 part2 — AsIs/ToBe 5W1H設計書 v1.1 (2026-07-28 21:24 家老RC2点反映。版履歴は§-3)
 
 > part1=`throughput-bottleneck-asis-tobe-5w1h_20260728.md` v1.6(gist 2179df85)=**計測基盤**の6弾で5/6クローズ(T1a/T3a/T3b/T2/T4✅、残T1b=T1a蓄積待ち)。本書は殿下知2026-07-28 21:17「part2の設計書を作成しよう。今やっているスクリプト改善の主軸作業のボトルネックを解消して更に高速回転を行い、品質向上を高めるためだ」に基づく。part1が作った計器(T1a境界イベント・T3a writer整合・T3b fingerprint計装)の**蓄積データを消費して、弾ライフサイクルの非work時間を是正する実装編**である。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
@@ -6,16 +6,17 @@
 
 | # | 弾 | 状態 | 内容 | 起点実測(§0) |
 |---|---|---|---|---|
-| P1 | finalize非実行時間の区分と是正 | ❄ AC1 read-only集計から | T1a計装(review_approval:gunshi_lgtm/karo_accept)の蓄積でfinalizeを「軍師レビュー実時間/家老ACCEPT実時間/ターン待ち間隙」へ区分→最大間隙の是正(通知経路・レビュー着手遅延)。**検査は1つも削らない**(二相レビューの品質寄与は本日実証済み=part1§0) | finalize累積27,985s(全区間中の非work最大)。cmd_complete_gate純実行は0ms(第三弾#2実証)ゆえ支配相は待ち時間 |
+| P1 | finalize非実行時間の区分と是正 | ❄ AC1 read-only集計から | T1a計装(review_approval:gunshi_lgtm/karo_accept)の蓄積でfinalizeを「軍師レビュー実時間/家老ACCEPT実時間/ターン待ち間隙」へ区分→最大間隙の是正(通知経路・レビュー着手遅延)。**AC1必須要件(家老RC①)**: cmd_id+generation単位でgunshi_lgtm/karo_acceptをpairingし、report完了起点/terminal終点で区間化。paired N/N・欠損・右打切り件数・finalize母集団53弾へのcoverage率を全て報告。イベント総数だけで待ち相を断定しない(現物は既に不対称=LGTM31/ACCEPT30)。**検査は1つも削らない**(二相レビューの品質寄与は本日実証済み=part1§0) | finalize累積27,985s(全区間中の非work最大)。cmd_complete_gate純実行は0ms(第三弾#2実証)ゆえ支配相は待ち時間の疑い(AC1で確定) |
 | P2 | 例外弾unattributed残差の是正(=part1 T1b吸収) | ❄ T1a蓄積待ち(part1から帰属移管) | 例外弾(instruction_sync型stale report+複数再配備)の遷移別delivery/ack遅延を実測し、欠落遷移のみ補完。一律re-wake禁止(part1家老RC②継承) | unattr累積20,813s、p50=31sだがmax=9,530s=例外集中型 |
-| P3 | 再attempt税(FAIL往復)の削減 | ❄ AC1 read-only集計から | FAIL率(part1 T4実測: 全体0.434)の**FAIL原因別・往復回数別の時間税**を全数集計→上位原因の予防を配備時context注入・報告テンプレ強化で削減(gate緩和は禁止=品質底線)。修正1回で通る率の向上=品質向上と同義 | task_type=hotfix FAIL率0.428(part1 T4)。再attempt行=gate_metrics 856行中351行 |
-| P4 | deploy外れ値尾の条件特定 | ❄ AC1 read-only集計から | deploy p50=40sは是正済み(deployレーン-47%)。外れ値(max 3,321s)の発生条件を3点表で特定し条件ベース是正 | deploy累積6,600sのうち外れ値少数が支配 |
+| P3 | 再attempt税(FAIL往復)の削減 | ❄ AC1 read-only集計から | FAIL率(part1 T4実測: 全体0.434)の**FAIL原因別・往復回数別の時間税**を全数集計→上位原因の予防を配備時context注入・報告テンプレ強化で削減(gate緩和は禁止=品質底線)。**AC1必須要件(家老RC②)**: 856-505=351行は税の**上限**にすぎない。世代(generation)単位でWAIT/INFO/同一世代BLOCK→CLEAR/RC新世代を分類し、**真の再work往復Nとその時間だけ**を税として計上する。修正1回で通る率の向上=品質向上と同義 | 再attempt行の上限=351行(未分類。真の税はAC1で確定) |
+| P4 | deploy外れ値尾の条件特定 | ❄ AC1 read-only集計から | deploy p50=40sは是正済み(deployレーン-47%)。外れ値(max 3,321s)の発生条件を3点表で特定し条件ベース是正。**AC1二値条件(家老RC)**: 既存deploy高速化レーンとのowner重複0件を確認してから着手(重複ありなら当該項をdeployレーンへ帰属しP4から除外) | deploy累積6,600sのうち外れ値少数が支配 |
 
 - **順序案**: P1先行(最大標的+T1a計装61件が既に蓄積開始)→P3並列可(read-only集計・ファイル所有衝突なし)→P2はT1a蓄積量が判定可能になり次第→P4は最後(累積最小)
 - **配備=家老自立(karo_direct)**。各弾ともAC1=read-only全数集計(固定cutoff/hash付き)→序列・支配相確定→AC2実装の計測先行型(第四弾と同型)
 
 ## §-3 版履歴
 
+- v1.1(21:24): 家老忖度なしレビュー(blt_212311)の必須修正2点を反映 — (1)P1 AC1にcmd_id+generation pairing・report完了起点/terminal終点・paired N/N/欠損/右打切り/coverage率を必須化(イベント総数だけでの待ち相断定を禁止) (2)P3の351行=上限と明記し、世代単位分類で真の再work往復のみを税に計上。P4にowner重複0件の二値条件。**家老判定: 反映後はAC1 read-only起票APPROVE・実装凍結維持**
 - v1.0(21:20): 初版起草。殿下知21:17。序列は将軍D0全数集計(§0)から。実装凍結・家老忖度なしレビュー待ち
 
 ## §-1 スコープ決め打ち(数を先に固定)
