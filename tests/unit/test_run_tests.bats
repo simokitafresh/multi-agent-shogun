@@ -124,6 +124,48 @@ PY
   [ "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["rc"])' "$receipt")" -eq 2 ]
 }
 
+# test_necessity: External pytest's decoration-delimited terminal summary must
+# preserve selected PASS/FAIL/SKIP counts, and FAIL/SKIP output must never be
+# converted into a clean receipt.
+@test "external pytest receipt adopts standard summary without false PASS" {
+  receipt="$TMPROOT/logs/external-pytest.json"
+  artifact="$TMPROOT/logs/external-pytest.output"
+  paths="$TMPROOT/logs/external-pytest.paths"
+  head="$(git -C "$TMPROOT" rev-parse HEAD)"
+  printf 'external-project:%s\n' "$TMPROOT" >"$paths"
+
+  _write_pytest_receipt() {
+    printf '%s\n' "$1" >"$artifact"
+    python3 - "$receipt" "$artifact" "$2" <<'PY'
+import hashlib, json, sys
+path, artifact, rc = sys.argv[1:]
+raw = open(artifact, 'rb').read()
+json.dump({
+    "version": 2, "complete": True,
+    "result": "PASS" if rc == "0" else "FAIL", "rc": int(rc),
+    "duration_ms": 1, "output_sha256": hashlib.sha256(raw).hexdigest(),
+    "declared_test_count": 0, "observed_test_count": 0, "skip_count": 0,
+    "artifact": artifact, "signal": None, "command": ["pytest"],
+}, open(path, "w"))
+PY
+    run env REPO_ROOT="$TMPROOT" bash -c '
+      source "$1/scripts/run_tests.sh"
+      publish_run_tests_metadata "$2" "$3" "$4" selector
+      verify_run_tests_receipt "$2"
+    ' _ "$TMPROOT" "$receipt" "$head" "$paths"
+  }
+
+  _write_pytest_receipt \
+    '============================== 17 passed in 0.21s ==============================' 0
+  [ "$status" -eq 0 ]
+  [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["observed_test_count"], d["declared_test_count"], d["skip_count"], d["rc"])' "$receipt")" = "17 17 0 0" ]
+
+  _write_pytest_receipt \
+    '================== 1 failed, 15 passed, 1 skipped in 0.32s ==================' 1
+  [ "$status" -ne 0 ]
+  [ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["observed_test_count"], d["declared_test_count"], d["skip_count"], d["rc"])' "$receipt")" = "17 17 1 1" ]
+}
+
 # test_necessity: explicit all mode must include both unit and root-level bats files; omission silently weakens the full checkpoint.
 @test "explicit all mode includes both unit and root-level bats files" {
   export BATS_ARGS_LOG="$TMPROOT/bats.args"

@@ -1215,6 +1215,26 @@ try:
         d['declared_test_count']=total
         d['observed_test_count']=failed + skipped + passed
         d['skip_count']=skipped
+    # Pytest's terminal summary is decoration-delimited rather than TAP/Jest.
+    # Count only the three receipt-contract outcomes; warnings, deselected,
+    # xfail/xpass, and duration are not selected test results.
+    pytest_summaries=[
+        line for line in clean.splitlines()
+        if re.match(r'^\s*=+\s+.*\s+=+\s*$', line)
+        and re.search(r'\b\d+\s+(?:passed|failed|skipped)\b', line)
+    ]
+    if pytest_summaries:
+        counts={'passed': 0, 'failed': 0, 'skipped': 0}
+        for count, outcome in re.findall(
+            r'\b(\d+)\s+(passed|failed|skipped)\b',
+            pytest_summaries[-1],
+        ):
+            counts[outcome]=int(count)
+        total=sum(counts.values())
+        if total:
+            d['declared_test_count']=total
+            d['observed_test_count']=total
+            d['skip_count']=counts['skipped']
 except (OSError, ValueError):
     pass
 d['drvfs_p9_client_rpc']=p9
