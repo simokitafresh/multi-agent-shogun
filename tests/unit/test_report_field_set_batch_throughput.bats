@@ -339,6 +339,7 @@ publish_terminal() {
   [ "$(grep -c 'parent_cmd=cmd_test' "$RFS_EVENT_LOG")" -eq 1 ]
 }
 
+# test_necessity: atomic publishの親時間を維持したまま、parse/validation/serialize・file fsync・replace syscallの子区分が既存台帳へ各1行以上記録される不変量を守る。
 @test "publish経路の相別時間が既存台帳defense_overhead.jsonlへ記録される" {
   export DEFENSE_OVERHEAD_LEDGER="$TMPDIR_CASE/defense_overhead.jsonl"
   : >"$DEFENSE_OVERHEAD_LEDGER"
@@ -354,6 +355,9 @@ publish_terminal() {
   grep -q '"check_id":"publish_total"' "$DEFENSE_OVERHEAD_LEDGER"
   grep -q '"check_id":"terminal_meta"' "$DEFENSE_OVERHEAD_LEDGER"
   grep -q '"check_id":"atomic_replace"' "$DEFENSE_OVERHEAD_LEDGER"
+  grep -q '"check_id":"atomic_parse_validate_serialize"' "$DEFENSE_OVERHEAD_LEDGER"
+  grep -q '"check_id":"atomic_flush_file_fsync"' "$DEFENSE_OVERHEAD_LEDGER"
+  grep -q '"check_id":"atomic_replace_syscall"' "$DEFENSE_OVERHEAD_LEDGER"
   # 新台帳を作らない: 書込み先は既存ledgerのみ
   [ "$(find "$TMPDIR_CASE" -name '*.jsonl' | wc -l)" -eq 1 ]
 }

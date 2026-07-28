@@ -64,12 +64,26 @@ if [ "${1:-}" = "--batch" ]; then
     else
         _rfs_batch_meta_file="$(mktemp "${_rfs_batch_report}.meta.XXXXXX")" || _rfs_batch_meta_file=""
     fi
-    _rfs_batch_output=$(RFS_BATCH_META_FILE="$_rfs_batch_meta_file" RFS_BATCH_PAYLOAD="$_rfs_batch_payload" python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
-import hashlib, os, pathlib, re, sys, tempfile, yaml
+    _rfs_batch_output=$(RFS_BATCH_META_FILE="$_rfs_batch_meta_file" \
+        RFS_PHASE_RECEIPT="$_rfs_phase_receipt" \
+        RFS_BATCH_PAYLOAD="$_rfs_batch_payload" \
+        python3 - "$_rfs_batch_report" "$_rfs_batch_root" <<'PY'
+import hashlib, os, pathlib, re, sys, tempfile, time, yaml
 sys.path.insert(0, sys.argv[2])
 from scripts.lib.yaml_atomic import yaml_text
 
 path = pathlib.Path(sys.argv[1])
+phase_receipt = os.environ.get("RFS_PHASE_RECEIPT")
+
+def record_phase(name, started_ns):
+    if not phase_receipt:
+        return
+    wall_ms = max(0, (time.monotonic_ns() - started_ns) // 1_000_000)
+    with open(phase_receipt, "a", encoding="utf-8") as receipt:
+        receipt.write(f"{name}\twall_ms={wall_ms}\tcaller=report_field_set"
+                      f"\towner_pid={os.getppid()}\tfingerprint=missing\n")
+
+parse_validate_serialize_started = time.monotonic_ns()
 updates = yaml.safe_load(os.environ.get("RFS_BATCH_PAYLOAD", ""))
 if not isinstance(updates, dict) or not updates:
     raise SystemExit("BLOCK: batch input must be a non-empty YAML mapping")
@@ -168,11 +182,16 @@ if terminal:
             raise SystemExit("BLOCK: terminal readiness requires a 40-hex commit or shared no-code identity contract")
 
 text = yaml_text(data, allow_unicode=True, sort_keys=False)
+record_phase("atomic_parse_validate_serialize", parse_validate_serialize_started)
 fd, tmp = tempfile.mkstemp(prefix=path.name + ".batch.", dir=path.parent)
 try:
+    flush_fsync_started = time.monotonic_ns()
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         handle.write(text); handle.flush(); os.fsync(handle.fileno())
+    record_phase("atomic_flush_file_fsync", flush_fsync_started)
+    replace_started = time.monotonic_ns()
     os.replace(tmp, path)
+    record_phase("atomic_replace_syscall", replace_started)
 finally:
     if os.path.exists(tmp): os.unlink(tmp)
 
@@ -318,7 +337,7 @@ PY
         _rfs_telemetry_args=()
         while IFS=$'\t' read -r _rfs_tp _rfs_tw _; do
             case "$_rfs_tp" in
-                singleflight_wait|atomic_replace|terminal_meta|inbox_write|publish) ;;
+                singleflight_wait|atomic_replace|atomic_parse_validate_serialize|atomic_flush_file_fsync|atomic_replace_syscall|terminal_meta|inbox_write|publish) ;;
                 *) continue ;;
             esac
             _rfs_telemetry_args+=(report_publish "$_rfs_tp" "${_rfs_tw#wall_ms=}" PASS \
