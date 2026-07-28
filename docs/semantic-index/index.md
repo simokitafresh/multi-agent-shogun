@@ -5063,6 +5063,7 @@ codd:
 | cmd | `cmd_karo_hotfix_ga155_context_freshness_dm_signal_frontend_202607010312` per-agent launch_cmd 2層SSOT修正 — cli_lookup.sh _CLI_LAUNCH_CMD_OVERRIDE追加+settings.yaml tobisaru launch_cmd設定 (`scripts/lib/cli_lookup.sh`, `config/settings.yaml`) |
 | causal | `[[tobisaru最新版切替_20260701]]` -> `[[cli_lookup_launch_cmd_override]]` -> `[[2層SSOT確立_per_agent]]` |
 | causal | `cmd_karo_hotfix_ga155` origin: [[ninja_monitor巻き戻し_2.1.87]] -> [[cli_lookup.sh settings.yaml未参照]] -> [[_CLI_LAUNCH_CMD_OVERRIDE実装]] |
+| causal | `docs/research/cmd_4109_model_drift_fix.md` — [[codex_config_restore汚染]] -> [[cli_lookup.sh_ninja_monitor_restore撤去]] -> [[SSOT貫通_忍者モデルドリフト根治]] |
 | lesson | `L889` 再配備時のtask YAML assigned_scope残留が誤作業を誘発(cmd_3620) |
 | cmd | `cmd_3620` Sonnet 5 vs Sonnet 4.6 多角的A/B評価 — 同一cmdを並列配備し定量比較 (`docs/research/cmd_3620_sonnet5_vs_46_ab_20260701.md`) |
 | causal | `cmd_3620` origin: [[軍師提案_Sonnet5_AB評価_20260701]] -> [[殿承認_起票指示]] -> [[cmd_3620_AB評価]] |
