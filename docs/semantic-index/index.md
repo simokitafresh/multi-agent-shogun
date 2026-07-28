@@ -10316,6 +10316,7 @@ codd:
 | cmd | `cmd_karo_hotfix_precommit_task_selector_20260728` (`tests/unit/test_git_pre_commit_affected_deps.bats`, `scripts/hooks/git-pre-commit.sh`) |
 | cmd | `cmd_karo_ci_fix_30368687892_ninja_scope_exec_mode` (`tests/unit/test_ninja_scope_commit.bats`) |
 | cmd | `cmd_karo_hotfix_no_code_commit_reminder_20260728` (`.claude/hooks/post-bash-commit-reminder.sh`, `tests/unit/test_post_bash_commit_reminder.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-28T16:02:34.103051+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
