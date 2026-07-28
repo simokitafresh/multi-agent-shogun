@@ -547,6 +547,68 @@ assert 'postcondition_lesson_inject "$task_file" || true\n    fi\n\n    if [ "${
 PY
 }
 
+# test_necessity: target_pathの複数directory契約を守り、各directoryの認証候補を欠落なく重複排除する。
+# regression_justification: scalar前提のos.path.isdir呼出しがlistでTypeErrorを出した配備時回帰を固定する。
+@test "credential_files normalizes scalar and list target paths without missing candidates" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/queue/tasks" "$tmpdir/cred-a" "$tmpdir/cred-b"
+    touch "$tmpdir/cred-a/.env.alpha" "$tmpdir/cred-b/.env.beta"
+
+    for shape in scalar list; do
+        task_file="$tmpdir/queue/tasks/$shape.yaml"
+        if [ "$shape" = scalar ]; then
+            target_yaml="target_path: $tmpdir/cred-a"
+        else
+            target_yaml="$(printf 'target_path:\n  - %s/cred-a\n  - %s/cred-b' "$tmpdir" "$tmpdir")"
+        fi
+        printf 'task:\n  command: receipt download\n  %s\n' "$target_yaml" > "$task_file"
+
+        run env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$tmpdir" \
+            INJECT_TASK_MODIFIERS_ONLY="credential_files" \
+            python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+        [ "$status" -eq 0 ]
+
+        run python3 - "$task_file" "$shape" <<'PY'
+import sys
+import yaml
+
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+paths = task.get('context_files', [])
+expected = 1 if sys.argv[2] == 'scalar' else 2
+assert len(paths) == expected, (paths, expected)
+assert len(paths) == len(set(paths)), paths
+assert all(path.endswith(('.env.alpha', '.env.beta')) for path in paths), paths
+assert 'credential_warning' not in task, task
+PY
+        [ "$status" -eq 0 ]
+    done
+
+    for shape in missing non_directory; do
+        task_file="$tmpdir/queue/tasks/$shape.yaml"
+        if [ "$shape" = missing ]; then
+            target_yaml=""
+        else
+            target_yaml="$(printf 'target_path:\n  - %s/not-a-directory\n  - %s/also-missing' "$tmpdir" "$tmpdir")"
+        fi
+        printf 'task:\n  command: receipt download\n  %s\n' "$target_yaml" > "$task_file"
+
+        run env TASK_FILE_ENV="$task_file" SCRIPT_DIR_ENV="$tmpdir" \
+            INJECT_TASK_MODIFIERS_ONLY="credential_files" \
+            python3 "$PROJECT_ROOT/scripts/lib/inject_task_modifiers.py"
+        [ "$status" -eq 0 ]
+
+        run python3 - "$task_file" <<'PY'
+import sys
+import yaml
+
+task = yaml.safe_load(open(sys.argv[1], encoding='utf-8'))['task']
+assert 'credential_warning' in task, task
+assert not task.get('context_files'), task
+PY
+        [ "$status" -eq 0 ]
+    done
+}
+
 @test "direct --yaml caller role_reminder survives post-publication field clear" {
     python3 - "$PROJECT_ROOT/scripts/deploy_task.sh" <<'PY'
 import re
@@ -1574,7 +1636,16 @@ YAML
             inject_standard_skills inject_model_injection_profile inject_semantic_concepts \
             inject_memory_db_context inject_causal_links inject_causal_verification_template \
             inject_dm_signal_pf_operation_guardrails inject_dm_signal_golden_baseline_contract \
-            inject_context_hints inject_production_invariants; do
+            inject_context_hints inject_production_invariants postcondition_lesson_inject \
+            inject_reports_to_read register_blocked_parent_continuation inject_context_files \
+            inject_credential_files inject_target_path_check inject_context_update \
+            inject_push_allowed inject_independent_recon_contract inject_role_reminder \
+            inject_report_template deploy_task_normalize_report_metadata inject_bloom_level \
+            inject_execution_controls inject_ninja_weak_points check_context_freshness \
+            inject_ci_fix_clean_repro_contract inject_code_location_contract \
+            inject_scope_contract_fields deploy_task_guard_task_yaml_syntax \
+            deploy_task_test_necessity_precheck generate_report_template \
+            inject_parent_contract inject_done_redeploy_hints; do
             eval \"\$_f() { return 0; }\"
         done
         inject_related_lessons() { echo CALLED > '$marker'; return 0; }
@@ -1620,7 +1691,16 @@ YAML
             inject_standard_skills inject_model_injection_profile inject_semantic_concepts \
             inject_memory_db_context inject_causal_links inject_causal_verification_template \
             inject_dm_signal_pf_operation_guardrails inject_dm_signal_golden_baseline_contract \
-            inject_context_hints inject_production_invariants; do
+            inject_context_hints inject_production_invariants postcondition_lesson_inject \
+            inject_reports_to_read register_blocked_parent_continuation inject_context_files \
+            inject_credential_files inject_target_path_check inject_context_update \
+            inject_push_allowed inject_independent_recon_contract inject_role_reminder \
+            inject_report_template deploy_task_normalize_report_metadata inject_bloom_level \
+            inject_execution_controls inject_ninja_weak_points check_context_freshness \
+            inject_ci_fix_clean_repro_contract inject_code_location_contract \
+            inject_scope_contract_fields deploy_task_guard_task_yaml_syntax \
+            deploy_task_test_necessity_precheck generate_report_template \
+            inject_parent_contract inject_done_redeploy_hints; do
             eval \"\$_f() { return 0; }\"
         done
         inject_related_lessons() { echo CALLED > '$marker'; return 0; }

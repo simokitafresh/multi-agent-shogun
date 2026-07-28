@@ -442,8 +442,22 @@ def inject_credential_files(task, script_dir):
     if not any(kw.lower() in task_text for kw in auth_keywords):
         return False
 
-    target_path = task.get('target_path', '')
-    if not target_path or not os.path.isdir(target_path):
+    raw_target_paths = task.get('target_path', '')
+    if isinstance(raw_target_paths, str):
+        target_paths = [raw_target_paths]
+    elif isinstance(raw_target_paths, list):
+        target_paths = [
+            str(path) for path in raw_target_paths
+            if isinstance(path, (str, os.PathLike)) and str(path)
+        ]
+    else:
+        target_paths = []
+
+    target_paths = list(dict.fromkeys(target_paths))
+    target_directories = [
+        path for path in target_paths if os.path.isdir(path)
+    ]
+    if not target_directories:
         warn = task.get('credential_warning', '')
         if not warn:
             task['credential_warning'] = (
@@ -454,21 +468,27 @@ def inject_credential_files(task, script_dir):
             return True
         return False
 
-    env_files = glob.glob(os.path.join(target_path, '.env.*'))
-    env_base = os.path.join(target_path, '.env')
-    if os.path.exists(env_base):
-        env_files.append(env_base)
+    env_files = []
+    for target_directory in target_directories:
+        env_files.extend(
+            glob.glob(os.path.join(target_directory, '.env.*')))
+        env_base = os.path.join(target_directory, '.env')
+        if os.path.exists(env_base):
+            env_files.append(env_base)
 
-    all_env = [f for f in env_files if not f.endswith('.example')]
+    all_env = sorted({
+        path for path in env_files if not path.endswith('.example')
+    })
 
     if not all_env:
         warn = task.get('credential_warning', '')
         if not warn:
+            target_display = ', '.join(target_directories)
             task['credential_warning'] = (
-                f'⚠ 認証が必要なタスクだが{target_path}に.envファイルが見つからない。'
+                f'⚠ 認証が必要なタスクだが{target_display}に.envファイルが見つからない。'
                 '認証情報の準備が必要。家老に即報告せよ。')
             print(f'[INJECT_CRED] WARN: auth task but no .env in '
-                  f'{target_path}', file=sys.stderr)
+                  f'{target_display}', file=sys.stderr)
             return True
         return False
 
