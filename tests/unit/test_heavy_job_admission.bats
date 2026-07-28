@@ -10,6 +10,8 @@ setup() {
     HOOK="$ROOT/.claude/hooks/pre-bash-combined.sh"
     TMP="$(mktemp -d "$BATS_TMPDIR/heavy_job_admission.XXXXXX")"
     export SHOGUN_HEAVY_JOB_LOCK_FILE="$TMP/admission.lock"
+    export SHOGUN_HEAVY_JOB_WAITER_DIR="$TMP/waiters"
+    export SHOGUN_HEAVY_JOB_WAITER_MUTEX="$TMP/waiters.lock"
     # The suite itself may be launched through heavy_job_admission.sh. Its
     # re-entrancy marker must not leak into wrapper unit tests, which exercise
     # independent top-level contenders rather than a nested child job.
@@ -20,6 +22,79 @@ setup() {
     OUT="$TMP/timeline.log"
     export TEST_TIMING_LEDGER="$TMP/timing.tsv"
     printf 'run_id\trepo\tcommit_sha\tsuite_root\trunner\ttest_file\ttest_id_count\twall_sec\tstatus\tskip_count\tcache_hit\tsource_fingerprint\tmeasured_at\tresource_tags\n' >"$TEST_TIMING_LEDGER"
+}
+
+_install_empty_ps() {
+    mkdir -p "$TMP/no-p9"
+    printf '#!/usr/bin/env bash\nexit 0\n' >"$TMP/no-p9/ps"
+    chmod +x "$TMP/no-p9/ps"
+    export PATH="$TMP/no-p9:$PATH"
+}
+
+@test "CI waiterは先に待つnormal waiterを明示priorityで追い越す" {
+    _install_empty_ps
+    export SHOGUN_HEAVY_JOB_ADMISSION_HEARTBEAT_SECONDS=1
+    bash "$WRAPPER" -- bash -c 'sleep 2' &
+    owner=$!
+    sleep 0.2
+    SHOGUN_HEAVY_JOB_PRIORITY=normal bash "$WRAPPER" -- bash -c 'echo normal >>"$1"' _ "$OUT" &
+    normal=$!
+    sleep 0.2
+    SHOGUN_HEAVY_JOB_PRIORITY=ci bash "$WRAPPER" -- bash -c 'echo ci >>"$1"' _ "$OUT" &
+    ci=$!
+    wait "$owner" "$normal" "$ci"
+    [ "$(sed -n '1p' "$OUT")" = "ci" ]
+    [ "$(sed -n '2p' "$OUT")" = "normal" ]
+}
+
+@test "同priority waiterはenqueue順でhandoffし同時owner最大1" {
+    _install_empty_ps
+    export SHOGUN_HEAVY_JOB_ADMISSION_HEARTBEAT_SECONDS=1
+    bash "$WRAPPER" -- bash -c 'sleep 2' &
+    owner=$!
+    sleep 0.2
+    for n in 1 2 3; do
+        SHOGUN_HEAVY_JOB_PRIORITY=normal bash "$WRAPPER" -- bash -c \
+            'v=$(cat "$1" 2>/dev/null || echo 0); v=$((v+1)); echo "$v" >"$1"; echo "$2:$v" >>"$3"; sleep 0.1; echo 0 >"$1"' \
+            _ "$TMP/count" "$n" "$OUT" &
+        pids[$n]=$!
+        sleep 0.1
+    done
+    wait "$owner" "${pids[1]}" "${pids[2]}" "${pids[3]}"
+    [ "$(cut -d: -f1 "$OUT" | paste -sd, -)" = "1,2,3" ]
+    [ "$(cut -d: -f2 "$OUT" | sort -nr | head -1)" -eq 1 ]
+}
+
+@test "stale waiter票は回収され後続ownerを恒久BLOCKしない" {
+    _install_empty_ps
+    mkdir -p "$SHOGUN_HEAVY_JOB_WAITER_DIR"
+    printf '999999 1 0 1\n' >"$SHOGUN_HEAVY_JOB_WAITER_DIR/000-00000000000000000001-0000999999"
+    run env SHOGUN_HEAVY_JOB_ADMISSION_HEARTBEAT_SECONDS=1 bash "$WRAPPER" -- true
+    [ "$status" -eq 0 ]
+    [ ! -e "$SHOGUN_HEAVY_JOB_WAITER_DIR/000-00000000000000000001-0000999999" ]
+}
+
+@test "不正priorityはfail-closedでownerを開始しない" {
+    run env SHOGUN_HEAVY_JOB_PRIORITY=urgent bash "$WRAPPER" -- sh -c 'echo bad >"$1"' _ "$OUT"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"invalid heavy admission priority"* ]]
+    [ ! -e "$OUT" ]
+}
+
+@test "ci_fix task metadataは明示envなしでもCI priorityへ解決される" {
+    _install_empty_ps
+    mkdir -p "$TMP/tasks" "$TMP/fake-tmux"
+    printf 'task:\n  task_type: ci_fix\n' >"$TMP/tasks/hayate.yaml"
+    cat >"$TMP/fake-tmux/tmux" <<'SH'
+#!/usr/bin/env bash
+printf 'hayate\n'
+SH
+    chmod +x "$TMP/fake-tmux/tmux"
+    PATH="$TMP/fake-tmux:$PATH" TMUX_PANE=%fixture \
+        SHOGUN_HEAVY_JOB_TASK_DIR="$TMP/tasks" \
+        bash "$WRAPPER" -- sh -c 'echo admitted >"$1"' _ "$OUT"
+    [ "$(cat "$OUT")" = admitted ]
+    [ ! -e "$SHOGUN_HEAVY_JOB_WAITER_DIR/010-"* ]
 }
 
 _timing_row() {

@@ -54,6 +54,10 @@ LOCK_FILE="${SHOGUN_HEAVY_JOB_LOCK_FILE:-/tmp/shogun_heavy_job_admission_v2.lock
 TIMEOUT="${SHOGUN_HEAVY_JOB_ADMISSION_TIMEOUT:-3600}"
 HEARTBEAT_SECONDS="${SHOGUN_HEAVY_JOB_ADMISSION_HEARTBEAT_SECONDS:-5}"
 OWNER_FILE="${SHOGUN_HEAVY_JOB_OWNER_FILE:-${LOCK_FILE}.owner}"
+WAITER_DIR="${SHOGUN_HEAVY_JOB_WAITER_DIR:-${LOCK_FILE}.waiters}"
+WAITER_MUTEX="${SHOGUN_HEAVY_JOB_WAITER_MUTEX:-${LOCK_FILE}.waiters.lock}"
+PRIORITY="${SHOGUN_HEAVY_JOB_PRIORITY:-}"
+TASK_DIR="${SHOGUN_HEAVY_JOB_TASK_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/.." && pwd)/queue/tasks}"
 CAPABILITY_DIR="${SHOGUN_HEAVY_JOB_CAPABILITY_DIR:-/tmp/shogun-heavy-capabilities}"
 P9_PROBE_TIMEOUT="${SHOGUN_DRVFS_P9_PROBE_TIMEOUT:-2}"
 # A leader may exit after detaching a descendant.  Admission must not wait on
@@ -69,6 +73,22 @@ DRAIN_MEMBER_LIMIT="${SHOGUN_HEAVY_JOB_DRAIN_MEMBER_LIMIT:-20}"
 [[ "$TIMEOUT" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid heavy admission timeout" >&2; exit 2; }
 [[ "$HEARTBEAT_SECONDS" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid heavy admission heartbeat interval" >&2; exit 2; }
 [[ "$P9_PROBE_TIMEOUT" =~ ^[1-9][0-9]*$ ]] || { echo "BLOCK: invalid p9 probe timeout" >&2; exit 2; }
+
+if [[ -z "$PRIORITY" && -n "${TMUX_PANE:-}" ]] && command -v tmux >/dev/null 2>&1; then
+    admission_agent="$(tmux display-message -t "$TMUX_PANE" -p '#{@agent_id}' 2>/dev/null || true)"
+    admission_task="$TASK_DIR/${admission_agent}.yaml"
+    if [[ -r "$admission_task" ]] \
+        && awk '$1 == "task_type:" {gsub(/[[:space:]'\''"]/, "", $2); exit !($2 == "ci_fix")}' "$admission_task"; then
+        PRIORITY="ci"
+    fi
+fi
+PRIORITY="${PRIORITY:-normal}"
+case "${PRIORITY,,}" in
+    ci|ci_fix|critical) priority_rank=0 ;;
+    normal) priority_rank=10 ;;
+    [0-9]|[0-9][0-9]) priority_rank=$((10#$PRIORITY)) ;;
+    *) echo "BLOCK: invalid heavy admission priority" >&2; exit 2 ;;
+esac
 
 detect_persistent_p9_rpc() {
     local first second resolved_ps
@@ -195,7 +215,42 @@ fi
 
 exec {admission_fd}>"$LOCK_FILE"
 queue_started="$(date +%s)"
-while ! flock -w "$HEARTBEAT_SECONDS" "$admission_fd"; do
+queue_started_ns="$(date -u +%s%N)"
+mkdir -p "$WAITER_DIR"
+chmod 700 "$WAITER_DIR"
+exec {waiter_mutex_fd}>"$WAITER_MUTEX"
+waiter_file="$WAITER_DIR/$(printf '%03d-%020d-%010d' "$priority_rank" "$queue_started_ns" "$$")"
+process_start_ticks="$(awk '{print $22}' "/proc/$$/stat")"
+printf '%s %s %s %s\n' "$$" "$process_start_ticks" "$priority_rank" "$queue_started_ns" >"$waiter_file"
+cleanup_waiter() {
+    [[ -n "${waiter_file:-}" ]] && rm -f -- "$waiter_file"
+    return 0
+}
+trap cleanup_waiter EXIT
+
+while true; do
+    acquired=0
+    flock "$waiter_mutex_fd"
+    for candidate in "$WAITER_DIR"/*; do
+        [[ -f "$candidate" ]] || continue
+        read -r candidate_pid candidate_start _ <"$candidate" || candidate_pid=""
+        live_start=""
+        [[ "$candidate_pid" =~ ^[1-9][0-9]*$ && -r "/proc/$candidate_pid/stat" ]] \
+            && live_start="$(awk '{print $22}' "/proc/$candidate_pid/stat" 2>/dev/null || true)"
+        if [[ -z "$live_start" || "$live_start" != "$candidate_start" ]]; then
+            rm -f -- "$candidate"
+        fi
+    done
+    winner="$(LC_ALL=C find "$WAITER_DIR" -maxdepth 1 -type f -printf '%f\n' | LC_ALL=C sort | head -n1)"
+    if [[ -n "$winner" && "$WAITER_DIR/$winner" == "$waiter_file" ]] \
+        && flock -n "$admission_fd"; then
+        acquired=1
+        rm -f -- "$waiter_file"
+        waiter_file=""
+    fi
+    flock -u "$waiter_mutex_fd"
+    (( acquired == 0 )) || break
+
     now="$(date +%s)"
     read_owner_metadata
     owner_age=0
@@ -206,6 +261,7 @@ while ! flock -w "$HEARTBEAT_SECONDS" "$admission_fd"; do
         echo "BLOCK: heavy job admission timeout after ${TIMEOUT}s" >&2
         exit 2
     fi
+    sleep "$HEARTBEAT_SECONDS"
 done
 owner_started="$(date +%s)"
 owner_generation="$(date -u +%s%N)-$$"
@@ -221,7 +277,7 @@ cleanup_owner_metadata() {
     [[ -r "$OWNER_FILE" ]] && read -r recorded_pid _ <"$OWNER_FILE" || true
     [[ "$recorded_pid" == "$$" ]] && rm -f "$OWNER_FILE"
 }
-trap cleanup_owner_metadata EXIT
+trap 'cleanup_waiter; cleanup_owner_metadata' EXIT
 _hja_queue_age_sec=$((owner_started - queue_started))
 printf 'HEAVY_ADMISSION_ACQUIRED owner_pid=%s queue_age_sec=%s\n' "$$" "$_hja_queue_age_sec" >&2
 if [[ "$_hja_metrics_enabled" == "1" ]]; then
