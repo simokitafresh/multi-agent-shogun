@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-27 cmd_4184_reviewed_source_boundary -->
-<!-- dm_signal_research_reflux: fingerprint=94a55c14335599503664905301410e497067d76576699dc14f4483bc92939af4; mode=synced; evidence_b64=Y29udGV4dC9ndW5zaGktZnVsbHJlY2FsYy1zcGVlZC1hbmFseXNpcy5tZOOBuGNtZF80MTg057WQ6KuW44O7NDLliIYyNeenkuODu3J1biBJROavlOi8g+Wlkee0hOOCkumChOa1gea4iOOBvw== -->
+<!-- dm_signal_research_reflux: fingerprint=80501cf2af6ce8d33e3db0d4e9ecfc1d2164c8c71d1618a271ae19a42a3b9ac5; mode=synced; evidence_b64=Y29udGV4dC9kbS1zaWduYWwtcmVzZWFyY2gubWQgY21kXzQxOTBfc2lnbmFsX2NoYW5nZV92ZXJkaWN057WQ6KuW5ZCM5pyf5riI44G/ -->
 <!-- source_commit:464e84e6 reason:cmd_4184_reviewed_source_boundary evidence:cmd_complete_gate_project_dm-signal_commit_464e84e6 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
@@ -730,6 +730,7 @@ cmd_3783(本番PFバックアップ)/cmd_3784(削除・登録計画)/cmd_3785(�
 
 ## 因果リンク
 
+- → [[cmd_4190_signal_change_verdict]] 2026-07-28のFoF 3件ALERTはpending marker 0/3で仕様上confirmed変更。ただし新値=signal_decision_ledger=現signalsが3/3、復元0件。誤検知ではなく台帳ガードによる安全側補正。正本=`/mnt/c/Python_app/DM-signal/docs/research/cmd_4190_signal_change_verdict.md`
 - ← [[dm-signal]] 研究層
 - ← [[dialogue_preprocessing_research_20260331]] 前処理研究日誌
 - ← [[dialogue_alm_finite_time_20260404]] ALM有限時間4指標
