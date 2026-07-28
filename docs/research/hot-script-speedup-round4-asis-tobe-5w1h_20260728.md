@@ -1,4 +1,4 @@
-# 【❄ 準備中 — 設計のみ・実装0/5・序列は暫定】ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v1.2 (2026-07-28 20:12 家老RC採用=4 distinct script+殿指摘採用=序列の再集計前提。版履歴は§-3)
+# 【⚙ read-only計測 4レーン稼働(殿確定20:25)・実装はv3.0後】ホットスクリプト集中高速化 第四弾 — AsIs/ToBe 5W1H設計書 v1.3 (2026-07-28 20:30 殿確定裁定反映。版履歴は§-3)
 
 > 第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`(✅CLOSED 12/12)、第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(✅CLOSED 9/9・閉幕プランP1-P4全充足)、第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`(⚙#1 CLEAR・#2疾風稼働中)。本書は殿下知(2026-07-28 20:02)「第四弾の準備も始めよう」に基づき、**第二弾閉幕snapshot v2.0**(`hot-script-speedup-round2-v2-snapshot-20260728.md`、fixed SHA=60a88c241、固定窓2026-07-28T02:46:57Z..10:08:06Z)の序列から標的を引いた第四弾である。殿方針(10:49)「前弾でやったものも依然ボトルネックなら再度トライする」を継承。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
@@ -6,14 +6,15 @@
 
 | # | check | 状態 | 予定内容 | Δ実測 |
 |---|---|---|---|---|
-| 1 | full_precheck(再々) | ❄ 準備のみ | 第二弾#1で恒久化した子check_id 7種のサブ区分実測を固定窓で集計→最大寄与フェーズを特定→挙動不変の最小差分是正(stdout完全一致)。外れ値尾(p95 10.3s/max 18.9s)は枝条件を同event記録で特定 | (before: 累積793.1s/n=302/median 731ms/p95 10,291ms/max 18,932ms) |
-| 2 | inbox_write_total | ❄ 準備のみ | 第二弾B5計装(persist/nudge/delivery_verify/total)の区分値を固定窓で集計→最大区分を特定→是正。nudge/delivery verify系はwatcher送達契約(自動既読対象type群=現物基準: completion alias 7種/report_notification_missing込み8種/report_review_result込み入力族9種)を不変条件とする。pre-send captureは観測であり自動BLOCKではない(家老計数blt_201528) | (before: 累積790.1s/n=479/median 462ms/p95 5,703ms/max 12,139ms) |
-| 3 | publish_total(再) | ❄ 準備のみ(report_field_setレーン直列1発目) | writer現物確定済み(将軍rg実測: scripts/report_field_set.sh:336,346)。恒常部(median 300ms×n453)と外れ値尾(max 13.4s)を分けて是正/条件特定 | (before: 累積228.9s/n=453/median 300ms/p95 890ms/max 13,370ms) |
-| 4 | commit_hash識別子計装 | ❄ 準備のみ(同レーン直列2発目・第二弾#8 stop-gate帰結の実行) | event_idへreport/task識別子を非破壊追加(既存台帳schema互換)→固定窓で同一報告flow内の重複呼出しを一次証明→重複ありならbatch化を仮説検証、なければno-change CLOSE | (before: 累積164.3s/n=584=回数最多/median 260ms。「1クラスタ=1報告フロー」は現状証明不能) |
-| 5 | checks_main(再々) | ❄ 準備のみ(4本目のdistinct script=cmd_save.sh・家老RC採用) | 第二弾#2で恒久化した非加算子区間8種の固定窓集計→残存最大寄与の是正(第二弾-30.9%後のmedian 811msが対象) | (before: 累積46.4s/n=55/median 811ms/p95 1,697ms/max 1,892ms) |
+| 1 | full_precheck(再々) | 🟢 AC1 read-only集計 稼働(疾風20:26配備) | 第二弾#1で恒久化した子check_id 7種のサブ区分実測を固定窓で集計→最大寄与フェーズを特定→挙動不変の最小差分是正(stdout完全一致)。外れ値尾(p95 10.3s/max 18.9s)は枝条件を同event記録で特定 | (before: 累積793.1s/n=302/median 731ms/p95 10,291ms/max 18,932ms) |
+| 2 | inbox_write_total | 🟢 AC1 read-only集計 開始対象 | 第二弾B5計装(persist/nudge/delivery_verify/total)の区分値を固定窓で集計→最大区分を特定→是正。nudge/delivery verify系はwatcher送達契約(自動既読対象type群=現物基準: completion alias 7種/report_notification_missing込み8種/report_review_result込み入力族9種)を不変条件とする。pre-send captureは観測であり自動BLOCKではない(家老計数blt_201528) | (before: 累積790.1s/n=479/median 462ms/p95 5,703ms/max 12,139ms) |
+| 3 | publish_total(再) | 🟢 AC1 read-only集計 開始対象(publish集計のみ) | writer現物確定済み(将軍rg実測: scripts/report_field_set.sh:336,346)。恒常部(median 300ms×n453)と外れ値尾(max 13.4s)を分けて是正/条件特定 | (before: 累積228.9s/n=453/median 300ms/p95 890ms/max 13,370ms) |
+| 4 | commit_hash識別子計装 | ❄ 凍結継続(コード変更を伴うためv3.0後。家老判断を殿確定に内包) | event_idへreport/task識別子を非破壊追加(既存台帳schema互換)→固定窓で同一報告flow内の重複呼出しを一次証明→重複ありならbatch化を仮説検証、なければno-change CLOSE | (before: 累積164.3s/n=584=回数最多/median 260ms。「1クラスタ=1報告フロー」は現状証明不能) |
+| 5 | checks_main(再々) | 🟢 AC1 read-only集計 開始対象 | 第二弾#2で恒久化した非加算子区間8種の固定窓集計→残存最大寄与の是正(第二弾-30.9%後のmedian 811msが対象) | (before: 累積46.4s/n=55/median 811ms/p95 1,697ms/max 1,892ms) |
 
 ## §-3 版履歴
 
+- v1.3(20:30): **殿確定裁定20:25『推奨案でよい』** — read-only AC1集計(固定cutoff/hash付き全数・コード差分0)をdistinct 4ファイルで即並列開始(疾風へ初弾20:26配備済み)。実装フェーズと#4識別子計装はv3.0再snapshot後まで凍結維持。協議記録=家老blt_201950+将軍回答(独立一致)
 - v1.2.1(20:17): 家老PARTIAL指摘(blt_201528)の静的矛盾4件を即修正 — (一)自動既読type群を現物計数(7/8/9種)へ・pre-send capture=観測と明記 (二)集計コマンド帰属をblt_192942へ訂正 (三)writer確定済みへ統一 (四)origin五弾表記へ
 - v1.2(20:12): 家老RC(blt_200953)採用 — publish_totalのwriterはreport_field_set.shで#3/#4は同一ファイル(将軍rg一次確認済み)。distinct 4script=gate_gunshi/inbox_write/report_field_set/cmd_saveへ再構成し#5 checks_main再々を追加(4レーン5弾)。+殿指摘20:11採用 — **序列の再集計が起票解禁の前提**(殿20:13訂正: 「最終系」は「再集計」のタイポ): 現§0はsnapshot v2.0の暫定草案であり、進行中弾(第三弾#2・T4)クローズ後の固定窓再snapshot(v3.0)で序列を再集計してから殿裁可を仰ぐ(第二弾§-0(3)と同じ型)
 - v1.1(20:08): 殿裁定20:07「スクリプトは4つ以上でやろう。忍者が余っていつも非効率だ」→4弾化(のちv1.2でwriter帰属を訂正)
