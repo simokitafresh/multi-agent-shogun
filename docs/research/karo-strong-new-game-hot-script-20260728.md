@@ -1,54 +1,70 @@
-# 家老 強くてニューゲーム復帰点 — hot-script第一弾 (2026-07-28 10:42 JST)
+# 家老 強くてニューゲーム復帰点 — hot-script継続 (2026-07-28 21:01 JST)
 
 ## 結論
 
-復帰後は推測せず、`queue/tasks/{ninja}.yaml` → `queue/reports/` → `tmux capture-pane -S -30` の順で一次実態を再確認する。`queue/karo_snapshot.txt` は補助キャッシュであり、生成時刻が10分超なら判断根拠にしない。
+復帰後は `三層記憶 → queue/inbox/karo.yaml → queue/tasks + queue/reports → tmux capture-pane -S -30` の順で一次実態を再確認する。`queue/karo_snapshot.txt` は時刻付き補助キャッシュであり、それだけで完了・停止・再配備を判断しない。
 
-## 現在地（10:42一次確認）
+第一弾12/12、第二弾9/9、第三弾#1/#2、throughput T4は完了。第四弾read-only AC1も4/4 GATE CLEARし、固定窓v3.0 snapshotまで作成済み。実装は殿裁可まで凍結する。並行して、inbox多重送信とRC時の成果破棄を生むインフラバグを3系統修正し、startup escalationの部分重複だけは才蔵がhotfix中である。
 
-| lane | ninja | 正本status | 一次実態 | 次の出口 |
+## 固定済み成果
+
+| wave | 結果 | 一次証拠・固定値 | 再開時の扱い |
+|---|---|---|---|
+| 第一弾 | 12/12完了 | 全check終端、個別全量unitの重複実行を廃止 | 再実行しない |
+| 第二弾 | 9/9完了 | commit `60a88c241`、unit `2712/2712`、snapshot v2.0 | 第二弾を主成果として保持 |
+| 第三弾#1 | 完了 | GATE CLEAR済み | 再実行しない |
+| 第三弾#2 | no-change完了 | CLEAR cohort N=456、min=77s、p50=591.5s、p95=6338.2s、max=56219s。`karo_accept`/`gunshi_lgtm`各N=20はwall_ms=0で実処理時間を観測不能 | 意味を読み替えずno-changeを維持 |
+| throughput T4 | no-change完了 | gate_metrics 856行・505 cmd。estimated_minutes欠損856/856、archive欠損8145/8159、RC欠損480/505。相関計算不能 | 見積型分離を実装しない |
+| 第四弾設計 | v1.3 + v3.0 snapshot | 設計commit `a1bbc3c11`、gist revision `9700daa0`。v3.0=`docs/research/hot-script-speedup-round4-v3-snapshot-20260728.md`、固定窓1,234行/hash `ce8fa311...4237` | 将軍が設計書v2.0+gistへ反映後も、殿裁可まで実装凍結 |
+| inbox durable重複 | 修正完了 | same-cmd redeployのtask_assigned重複をcommit `a7c27dd41`で抑止 | 同一cmd retryで永続messageを増やさない |
+| watcher/direct多重nudge + RC成果破棄 | 修正完了 | commit `1be8bee8f`。active watcher時はdirect retryを停止し、RC scope別に有効な既存計測を再利用。affected選択test 944/944、SKIP0、full_scope=0 | 「task指示の失効」と「成果全破棄」を混同しない |
+| no-code COMMIT MISSING誤警告 | 修正完了 | commit `b40e11a3c`。`valid_commit_identity()`正本を再利用、選択test 10/10、SKIP0 | no-code文字列だけの無条件許可は禁止維持 |
+
+第三弾#2の `cmd-complete` は20:23完了。throughput T4は20:25 GATE CLEAR、20:26 `cmd-complete` 完了。
+
+## 現在地（21:01一次確認）
+
+| lane | ninja | task正本 | scope | 出口 |
 |---|---|---|---|---|
-| checks_pre_session | 完了 | completed | GATE CLEAR、`cmd-complete`完了 | 追加作業なし |
-| run_tests親環境隔離 | 完了（hayate） | completed | commit `bfa114227`。旧並列FAIL #3/#4/#6を解消し、GATE CLEAR、`cmd-complete`完了 | 追加作業なし |
-| deploy fixture case51 | hayate | in_progress / report pending | full unit全2753件中case51のみFAIL、単独は現行63/63 PASS。共有queue/report副作用のfixture隔離漏れを特定。修正後pair 2/2・parallel 20/20 PASS | 対象/affected→commit→report→LGTM→ACCEPT→GATE→cmd-complete |
-| memory_db_token_search | saizo | in_progress / report pending | tokenなし枝worker/DB接触ゼロ化、tokenあり枝親cache継承を採用。旧3件は解消。case51修正待ちのためAC3未達を保持 | hayate完了通知→最新HEAD full unit→report→LGTM→ACCEPT→GATE→cmd-complete |
-| instruction_sync | kagemaru | assigned / report revision_requested | commit `d4b9fe5e4`の報告はafterが推定7.5秒だったため、軍師LGTM後も家老RC。実測計装を追加しaffected/unit待ち | 新commit+同条件after実測→再報告→再LGTM→ACCEPT→GATE→cmd-complete |
-| 軍師D0自己消火 | kotaro | in_progress / report pending | commit `4338bb315`。`d0_applied:no`で真陽性が消える述語を修正。contract 4/4 PASS、unit共有lane待ち | unit→report→LGTM→ACCEPT→GATE→cmd-complete |
-| credential target_path:list | tobisaru | in_progress / report pending | 修正前list例外1/candidate0、修正後4 fixture例外0・list候補2/2。対象63/63+49/49 PASS、affected/unit待ち | affected/unit→commit→report→LGTM→ACCEPT→GATE→cmd-complete |
+| 第四弾AC1 precheck | hayate | GATE CLEAR + cmd-complete済み | `scripts/gates/gate_gunshi_report_precheck.sh` | body_restが子累積58.1% |
+| 第四弾AC1 inbox | hanzo | GATE CLEAR + cmd-complete済み | `scripts/inbox_write.sh` | delivery_verify BLOCK 393/443 |
+| 第四弾AC1 publish | kotaro | GATE CLEAR + cmd-complete済み | `scripts/report_field_set.sh` のpublish_totalのみ | N=2,420、欠損0、母集団hash固定 |
+| 第四弾AC1 cmd_save | tobisaru | GATE CLEAR + cmd-complete済み | `scripts/cmd_save.sh` | quality_gateが最大子区分 |
+| startup escalation重複hotfix | saizo | assigned/in_progress | `scripts/gates/gate_shogun_startup.sh` + contract test | 本文完全一致ではなく未解消警告キー単位で重複抑止 |
 
-第一弾の完了条件は12check全クローズ。その時点で `logs/defense_overhead.jsonl` を再集計し、設計書台帳を12/12へ更新して掲示板へ完了宣言する。
+4つのAC1は別ファイルのまま全て閉幕した。途中のunit全量実行は0、コード変更0、commit_hash識別子計装0、母集団縮小0。v3.0でも上位3標的は不変、`checks_main`だけ4位へ上昇し、4 scripts / 5 bulletsのscope増減はない。
 
-## 09:19以後に環境へ残した強化
+## 第四弾の判断境界
 
-1. `test_run_tests.bats` は親runnerの個別変数列挙を廃し、`RUN_TESTS_*` prefix全体をfixture境界で初期化した。修正前3/3 FAIL→修正後3/3 PASS、44/44、affected 44/44、unit 2690/2690。
-2. full unit再実行で旧3件の解消後にcase51だけが顕在化した。局所PASSを完了根拠にせず、次の隠れFAILを即hotfixへ変換する連鎖を維持した。
-3. `instruction_sync` は軍師LGTMでも、ACが要求するafter実測が推定値だったため家老RCとした。「レビュー出力」より「測定済み結果」を優先する。
-4. 軍師startupのD0警告は、`d0_applied:no`の遡及挿入だけで消える自己消火を検出。`no`は未実施を抑止せず、`yes`または構造化remediationだけを解消条件にするcommit `4338bb315`へ進化した。
-5. 配備中に `target_path:list` がcredential injectorでTypeErrorとなる別バグを発見し、同一ターンで飛猿へ配備。配備失敗1回目は疾風の予約path衝突で安全BLOCKし、テストpathを分離して再配備した。
-6. 復帰時の判断順序を「三層記憶→task/report正本→capture-pane一次実態→依存順で行動」に固定した。
+1. AC1は観測だけ。対象file SHA256、line count、git HEAD、cutoffを最初に固定する。
+2. 設計前提が一次コードと不一致なら、そのlaneは変更0で即報告する。
+3. 全母集団のN・欠損N・p50/p95/max・原因分類を出す。代表点抽出は禁止。
+4. 4報告を統合したv3.0 snapshotは作成済み。
+5. v3.0結果は掲示板 `blt_20260728_205801_1a1b32` で将軍へ報告済み。将軍による設計書v2.0/gist反映を待つ。
+6. code diffが1件でもあればAC1違反としてRCする。
 
-## 復帰後の実行順（順序保証）
+## 復帰直後の順序保証
 
-1. `queue/inbox/karo.yaml` の未読を個別IDで処理する。
-2. 6忍者のtask/report正本を読み、`capture-pane -S -30` で実態を再確認する。snapshot単独で判断しない。
-3. hayate case51を最優先でレビュー・GATE・`cmd-complete`まで閉じる。
-4. captureでsaizoに確認プロンプトがないことを確認後、case51解消を通知し、最新HEAD full unitを再実行させる。
-5. saizo `memory_db_token_search` を閉じる。
-6. kagemaruは新commitと実測afterを必須とし、旧commit `d4b9fe5e4`・旧LGTMを再利用しない。
-7. kotaro/tobisaruを各々review→ACCEPT→GATE→`cmd-complete`で閉じる。
-8. 第一弾12/12を全数再集計し、設計書台帳更新と掲示板完了宣言を行う。
+1. `queue/inbox/karo.yaml` の `read:false` を読み、各IDを個別に処理する。
+2. 才蔵のstartup escalation重複hotfixをreport→軍師LGTM→家老ACCEPT→GATE→`/cmd-complete`で閉じる。
+3. `tmux capture-pane -S -30` 以上で実態を確認し、確認プロンプト中なら送信しない。
+4. 将軍が第四弾設計書v2.0とgistへv3.0を反映したか掲示板・git・gist hashで確認する。
+5. 殿裁可までは第四弾のコード実装とcommit_hash識別子計装を開始しない。
+6. RC修正commit `1be8bee8f` とsame-cmd dedupe `a7c27dd41` がHEAD履歴にあることを確認する。
+7. このファイルの時刻・task status・次の出口を更新し、三層記憶へ貫通させる。
 
-依存鎖: `[[run_tests親環境隔離]] -> [[deploy_fixture_case51]] -> [[memory_db_token_search_full_unit]] -> [[hot_script第一弾_12_of_12]]`
+## 復帰直後の二値チェック
 
-## 復帰直後の二値確認
+- [ ] inbox未読をID単位で処理した
+- [ ] 才蔵hotfixのtask/report/paneを一次確認した
+- [ ] startup escalationの同一キー重複が2→1、新規キー送信が1→1か確認した
+- [ ] 第四弾v3.0 snapshotの窓1,234行/hashを再現した
+- [ ] 第四弾実装・commit_hash計装が未開始か確認した
+- [ ] 設計書v2.0とgist反映を確認した
+- [ ] RC成果再利用commit `1be8bee8f`、same-cmd dedupe `a7c27dd41`、no-code修正 `b40e11a3c` の存在を確認した
+- [ ] CLEAR後の完了処理を`/cmd-complete`で実行した
+- [ ] 更新知見を三層記憶へ書き戻した
 
-- [ ] `queue/inbox/karo.yaml` の未読を個別IDで処理した
-- [ ] hayate/kagemaru/saizo/kotaro/tobisaruのtask/reportを読んだ
-- [ ] `shogun:2.3/2.4/2.6/2.7/2.8` を `capture-pane -S -30` で確認した
-- [ ] report completedなら形式検査・commit実体・軍師LGTMを突合した
-- [ ] case51完了前にsaizo full unitを再実行させていない
-- [ ] kagemaruのafterが推定ではなく同条件実測である
-- [ ] 各hotfixのGATE CLEAR後、`cmd-complete` を実行した
-- [ ] 12/12の台帳再集計と掲示板完了宣言を行った
+依存鎖: `[[hot_script第一弾_12_of_12]] -> [[hot_script第二弾_9_of_9]] -> [[第三弾_no_change計測]] -> [[第四弾_readonly_AC1_4lane]] -> [[第四弾_v3_snapshot]]`
 
-origin: `[[殿指示_20260728_強くてニューゲーム]] -> [[full_unit隠れFAIL連鎖]] -> [[karo_clear_recovery_checkpoint]]`
+origin: `[[殿指示_20260728_強くてニューゲーム]] -> [[全量テスト重複の再発防止]] -> [[karo_clear_recovery_checkpoint]]`
