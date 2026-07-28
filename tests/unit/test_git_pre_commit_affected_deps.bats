@@ -56,6 +56,7 @@ run_affected() {
   bash -c "
     REPO_ROOT='$REPO'
     _PRECOMMIT_COMMAND_ID='test-precommit'
+    unset NINJA_SCOPE_TASK_FILE
     $env_prefix
     $FUNCS
     list_staged_files() { git -C '$REPO' diff --cached --name-only; }
@@ -105,6 +106,21 @@ YAML
   [ "$status" -ne 0 ]
   [[ "$output" == *"must resolve inside"* ]]
   [ ! -e "$REPO/logs/run_tests_call.txt" ]
+}
+
+# test_necessity: linked worktrees have a separate worktree root while sharing
+# git metadata; task containment must follow the active root, not the main one.
+@test "ninja scope task resolves against the active linked worktree root" {
+  linked="$BATS_TEST_TMPDIR/linked"
+  git -C "$REPO" worktree add -q -b linked-fixture "$linked"
+  mkdir -p "$linked/queue/tasks"
+  printf 'task: {}\n' >"$linked/queue/tasks/kotaro.yaml"
+
+  FUNCS="$(extract_funcs resolve_precommit_task_file)"
+  run env REPO_ROOT="$linked" NINJA_SCOPE_TASK_FILE="$linked/queue/tasks/kotaro.yaml" \
+    bash -c "$FUNCS; resolve_precommit_task_file"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$linked/queue/tasks/kotaro.yaml" ]
 }
 
 @test "resolve_reverse_lib_deps finds a caller that invokes the lib as a subprocess (bash x.sh), not just source" {
