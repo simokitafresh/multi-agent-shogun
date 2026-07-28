@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-28 -->
+<!-- last_updated: 2026-07-29 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,16 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3572 | 殿指示(2026-06-27): 初回表示を限界まで早くすることはできるか。/api/compare-returnsの初回応答5秒→0.3秒以下に短縮する。設計書R11 PASS(docs/spec/compare-returns-mtd-precompute.md)に基づき実装 | dm-signal | 06-28 | Compare Returns MTD事前計算テーブル/バッ |
-| cmd_3573 | 殿指示(2026-06-28): ペアの成長=忖度をしないことが大事。軍師APPROVE率62%/RC率5.2%に対し家老は91%BLOCK。軍師がAPPROVE判定時にコード現物を照合した証拠を強制し、テキストレビューだけのAPPROVEを構造的に不可能にする(家老→軍師方向の穴) | infra | 06-28 | cmd_3573: 軍師APPROVE/LGTM時のveri |
-| cmd_3577 | 殿指示(2026-06-28): 軍師→家老方向の穴。軍師が構造的穴を発見し掲示板で提案しても家老が行動しない(22時間放置実証済み)。軍師穴発見投稿の自動化+家老startup gateでの強制検出で助言が無視される構造を封じる | infra | 06-28 | 軍師の穴発見掲示板投稿をaction_requiredへ自動 |
-| cmd_3579 | 殿指示(2026-06-28): 三層学習ループは順調か？weekly_metrics_trendが1スナップショットしかなく成長速度を計測不能。cron蓄積+前週比差分+startup gate表示で成長を数値化する | infra | 06-28 | weekly_metrics_trendに前週比deltaと |
-| cmd_3582 | 殿指示(2026-06-28): 第一層(個)で忍者commit_missing WA 5件/2週が再発。deploy_task.shの事前コンテキスト注入でWA頻発パターンを忍者に自動提示し検出→予防に転換 | infra | 06-28 | deploy_task.shにWA頻発カテゴリTOP3からr |
-| cmd_3583 | 殿指示(2026-06-28): 外部アプリFusion向けに、DM-Signal APIからPF名+monthly_returnsを取得する軽量エンドポイントを追加。設計書: docs/spec/fusion-api-endpoint.md。家老条件付きAPPROVE済み(blt_20260628_173441) | dm-signal | 06-28 | Fusion向けGET /api/fusion/portfo |
-| cmd_3585 | 殿指示(2026-06-28): DM-Fusionアプリ実装開始。設計書 docs/spec/fusion-app.md に基づき、空リポジトリ(/mnt/c/Python_app/DM-Fusion/)にNext.jsプロジェクトを構築し、メイン画面を実装する | dm-signal | 06-28 | DM-FusionのNext.js App Router + |
-| cmd_3586 | 殿指示(2026-06-28): DM-Fusion MVPのCDP検証で発見した問題点を全て修正する。(1)PFリストをfolder別グルーピング (2)PF1選択済みPFをPF2から除外 (3)初期状態で未選択→数値非表示 (4)詳細ボタンSPY/TQQQ比較表動作確認 (5)Shareボタン動作実装 (6)スライダー追随速度検証 (7)Page2チャートスワイプ動作確認 (8)デザインルール準拠(tighter tracking/dark gray/タッチターゲット) (9)スマホタッチ対策(フローティングバルーン) (10)共通期間ゼロ時のUI表示 (11)CAGR値の本番突合 | dm-signal | 06-28 | DM-Fusionの初期未選択、PF重複防止、詳細/Shar |
-| cmd_3587 | 殿指示(2026-06-28): DM-Fusionに(1)/admin設定画面(Basic Auth+PF表示トグル)と(2)XシェアボタンをX intent URLで実装。設計書 docs/spec/fusion-app.md §Admin設定画面を参照 | dm-signal | 06-28 | DM-Fusionに/adminのPF表示トグル設定とX i |
-| cmd_3588 | 殿指示(2026-06-28): cmd_3586でCDPスワイプ検証に躓いた。ReactアプリのCDPスワイプ方法を調査・実証し、cdp-browseスキルに知見を追記し、三層記憶に貫通させる | infra | 06-28 | CDP touch streamでDM-FusionのPag |
 | cmd_3590 | 殿指示(2026-06-28): DM-FusionでPCチャートが表示されない、Googleログインボタンがわかりづらい、シェアの#DM-signalハッシュタグ不成立、ヘッダーがFusionのまま、詳細のSPY/TQQQが表示されない。スマホファーストはPC無視ではない | dm-signal | 06-29 | DM-FusionのPCチャート再描画、Googleログイン |
 | cmd_3592 | 殿指示(2026-06-29): DM-Fusionでスワイプが片方にしか効かない、チャート画面を表示しているとエラーになる。機能バグ2件の修正 | dm-signal | 06-29 | DM-Fusionのスワイプ双方向入力とPage1チャート表 |
 | cmd_3593 | 殿指示(2026-06-29): ドロップダウンにバグ4件。(1)フォルダー名が固定されPF名だけスクロール (2)常に下方向に開き画面下部で選択困難 (3)PF2が選択不能 (4)PFリストのフォントが大きすぎる | dm-signal | 06-29 | DM-Fusion PortfolioSelectのフォルダ |
