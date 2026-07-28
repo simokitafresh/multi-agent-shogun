@@ -27,6 +27,61 @@ assert set(rows[0])=={'timestamp','source','check_id','wall_ms','verdict','event
 PY
 }
 
+# test_necessity: optional identity metadata must extend, never replace, the stable six-column event schema while five-argument callers remain byte-contract compatible.
+@test "optional metadata adds identity columns without breaking five-argument callers" {
+  run defense_overhead_write legacy check 1 PASS legacy-1
+  [ "$status" -eq 0 ]
+  run defense_overhead_write review_approval gunshi_lgtm 0 PASS review-1 \
+    '{"cmd_id":"cmd_unit","generation":"rpt-unit"}'
+  [ "$status" -eq 0 ]
+  python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
+import json, sys
+rows=[json.loads(x) for x in open(sys.argv[1])]
+base={'timestamp','source','check_id','wall_ms','verdict','event_id'}
+assert set(rows[0]) == base
+assert base <= set(rows[1])
+assert rows[1]['cmd_id'] == 'cmd_unit'
+assert rows[1]['generation'] == 'rpt-unit'
+PY
+}
+
+# test_necessity: metadata cannot overwrite stable schema fields or inject nested values that make JSONL consumers ambiguous.
+@test "optional metadata rejects reserved and non-scalar fields" {
+  run defense_overhead_write x y 1 PASS e1 '{"source":"other"}'
+  [ "$status" -eq 3 ]
+  run defense_overhead_write x y 1 PASS e2 '{"cmd_id":{"nested":true}}'
+  [ "$status" -eq 3 ]
+  [ ! -e "$DEFENSE_OVERHEAD_LEDGER" ]
+}
+
+# test_necessity: both formal review boundaries must pass the same cmd/report-generation identity columns into the common writer.
+@test "review approval gunshi and karo callers emit cmd and fingerprint generation metadata" {
+  python3 - <<'PY'
+from pathlib import Path
+text = Path("scripts/review_approval.sh").read_text(encoding="utf-8")
+for check in ("gunshi_lgtm", "karo_accept"):
+    start = text.index(f"defense_overhead_write review_approval {check}")
+    call = text[start:start + 320]
+    assert '\\"cmd_id\\"' in call
+    assert '\\"generation\\"' in call
+    assert '${fingerprint}' in call
+PY
+}
+
+# test_necessity: generation identity must remain stable on retry and separate a changed report submission without using PID or time.
+@test "report generation is stable on retry and distinct after resubmission" {
+  defense_overhead_write review_approval gunshi_lgtm 0 PASS e1 '{"cmd_id":"cmd_unit","generation":"fp-a"}'
+  defense_overhead_write review_approval karo_accept 0 PASS e2 '{"cmd_id":"cmd_unit","generation":"fp-a"}'
+  defense_overhead_write review_approval gunshi_lgtm 0 PASS e3 '{"cmd_id":"cmd_unit","generation":"fp-b"}'
+  python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
+import json, sys
+rows=[json.loads(x) for x in open(sys.argv[1])]
+assert [r["generation"] for r in rows[:2]] == ["fp-a", "fp-a"]
+assert rows[2]["generation"] == "fp-b"
+assert len({r["generation"] for r in rows}) == 2
+PY
+}
+
 @test "twenty concurrent events are complete unique parseable and classify exactly" {
   for i in $(seq 1 20); do
     defense_overhead_write test check "$i" "$([ $((i%2)) -eq 0 ] && echo PASS || echo FAIL)" "evt-$i" &

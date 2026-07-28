@@ -307,11 +307,13 @@ mv -f "$tmp" "$dir/$role.yaml"
 case "$role:$result" in
   gunshi:LGTM)
     defense_overhead_write review_approval gunshi_lgtm 0 PASS \
-      "review-approval-gunshi-lgtm-${cmd_id}-${report_key}-${fingerprint}" || true
+      "review-approval-gunshi-lgtm-${cmd_id}-${report_key}-${fingerprint}" \
+      "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${fingerprint}\"}" || true
     ;;
   karo:ACCEPT)
     defense_overhead_write review_approval karo_accept 0 PASS \
-      "review-approval-karo-accept-${cmd_id}-${report_key}-${fingerprint}" || true
+      "review-approval-karo-accept-${cmd_id}-${report_key}-${fingerprint}" \
+      "{\"cmd_id\":\"${cmd_id}\",\"generation\":\"${fingerprint}\"}" || true
     ;;
 esac
 if [ "$role" = karo ] && [ "$result" = RC ]; then

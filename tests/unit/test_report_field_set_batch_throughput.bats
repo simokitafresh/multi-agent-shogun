@@ -22,6 +22,8 @@ SH
   cat >"$REPORT" <<'YAML'
 worker_id: hanzo
 parent_cmd: cmd_test
+report_id: rpt-test
+task_id: task-test
 ac_version_read: abc
 status: pending
 commit_hash: '0000000000000000000000000000000000000000'
@@ -358,6 +360,14 @@ publish_terminal() {
   grep -q '"check_id":"atomic_parse_validate_serialize"' "$DEFENSE_OVERHEAD_LEDGER"
   grep -q '"check_id":"atomic_flush_file_fsync"' "$DEFENSE_OVERHEAD_LEDGER"
   grep -q '"check_id":"atomic_replace_syscall"' "$DEFENSE_OVERHEAD_LEDGER"
+  python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
+import json, sys
+rows=[json.loads(line) for line in open(sys.argv[1], encoding="utf-8")]
+publish=[row for row in rows if row["source"] == "report_publish"]
+assert publish
+assert all(row["cmd_id"] == "cmd_test" for row in publish)
+assert all(row["generation"] == "rpt-test" for row in publish)
+PY
   # 新台帳を作らない: 書込み先は既存ledgerのみ
   [ "$(find "$TMPDIR_CASE" -name '*.jsonl' | wc -l)" -eq 1 ]
 }
@@ -370,8 +380,8 @@ publish_terminal() {
   second="$TMPDIR_CASE/flow_b.yaml"
   cp "$REPORT" "$first"
   cp "$REPORT" "$second"
-  printf 'report_id: rpt-flow-a\ntask_id: task-flow-a\n' >>"$first"
-  printf 'report_id: rpt-flow-b\ntask_id: task-flow-b\n' >>"$second"
+  sed -i 's/^report_id: .*/report_id: rpt-flow-a/; s/^task_id: .*/task_id: task-flow-a/' "$first"
+  sed -i 's/^report_id: .*/report_id: rpt-flow-b/; s/^task_id: .*/task_id: task-flow-b/' "$second"
 
   run bash "$ROOT/scripts/report_field_set.sh" "$first" commit_hash 0000000000000000000000000000000000000000
   [ "$status" -eq 0 ]

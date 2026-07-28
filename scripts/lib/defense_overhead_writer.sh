@@ -6,7 +6,7 @@ SELF_RETRO_ASYNC_PIDS=()
 
 defense_overhead_write() {
     local source_name="${1:-}" check_id="${2:-}" wall_ms="${3:-}"
-    local verdict="${4:-}" event_id="${5:-}"
+    local verdict="${4:-}" event_id="${5:-}" metadata_json="${6-}"
     local ledger="${DEFENSE_OVERHEAD_LEDGER:-${DEFENSE_OVERHEAD_REPO_ROOT}/logs/defense_overhead.jsonl}"
     local lock_file="${ledger}.lock" line
 
@@ -17,15 +17,30 @@ defense_overhead_write() {
     [[ "$verdict" =~ ^(PASS|FAIL|BLOCK|WARN)$ ]] || return 2
     [[ "$event_id" =~ ^[A-Za-z0-9_.:-]+$ ]] || return 2
     [ -d "$(dirname "$ledger")" ] || return 3
+    [ -n "$metadata_json" ] || metadata_json='{}'
 
-    line="$(python3 - "$source_name" "$check_id" "$wall_ms" "$verdict" "$event_id" <<'PY'
+    line="$(python3 - "$source_name" "$check_id" "$wall_ms" "$verdict" "$event_id" "$metadata_json" <<'PY'
 import datetime, json, sys
-source, check_id, wall_ms, verdict, event_id = sys.argv[1:]
-print(json.dumps({
+source, check_id, wall_ms, verdict, event_id, metadata_raw = sys.argv[1:]
+try:
+    metadata = json.loads(metadata_raw)
+except (TypeError, ValueError):
+    raise SystemExit(2)
+if not isinstance(metadata, dict):
+    raise SystemExit(2)
+reserved = {"timestamp", "source", "check_id", "wall_ms", "verdict", "event_id"}
+if reserved.intersection(metadata) or any(
+    not isinstance(key, str) or not isinstance(value, (str, int, float, bool)) or value is None
+    for key, value in metadata.items()
+):
+    raise SystemExit(2)
+row = {
     "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     "source": source, "check_id": check_id, "wall_ms": int(wall_ms),
     "verdict": verdict, "event_id": event_id,
-}, ensure_ascii=False, separators=(",", ":")))
+}
+row.update(metadata)
+print(json.dumps(row, ensure_ascii=False, separators=(",", ":")))
 PY
     )" || return 3
 

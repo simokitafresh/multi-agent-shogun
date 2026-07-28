@@ -219,6 +219,7 @@ if meta_path:
             str(data.get("status", "")),
             str(data.get("worker_id", "")),
             str(data.get("parent_cmd", "")),
+            str(data.get("report_id", "")),
         ]) + "\n")
 print("BATCH_OK fields={} fingerprint={}".format(len(updates), hashlib.sha256(text.encode()).hexdigest()))
 PY
@@ -238,8 +239,9 @@ PY
         _rfs_batch_status=""
         _rfs_batch_worker=""
         _rfs_batch_parent=""
+        _rfs_batch_report_id=""
         if [ -s "$_rfs_batch_meta_file" ]; then
-            IFS=$'\t' read -r _rfs_batch_status _rfs_batch_worker _rfs_batch_parent \
+            IFS=$'\t' read -r _rfs_batch_status _rfs_batch_worker _rfs_batch_parent _rfs_batch_report_id \
                 < "$_rfs_batch_meta_file" || true
         fi
         if [ -z "$_rfs_batch_status" ]; then
@@ -356,6 +358,17 @@ PY
         _rfs_publish_total_ms=$(( $(_rfs_mono_ms) - _rfs_wait_started ))
         _rfs_publish_verdict=PASS
         [ "$_rfs_batch_rc" -eq 0 ] || _rfs_publish_verdict=BLOCK
+        if [ -z "$_rfs_batch_report_id" ]; then
+            _rfs_batch_report_id=$(python3 - "$_rfs_batch_report" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(str(data.get("report_id", "")))
+PY
+)
+        fi
+        _rfs_publish_cmd_id="${_rfs_batch_parent:-unknown}"
+        _rfs_publish_generation="${_rfs_batch_report_id:-unknown}"
+        _rfs_publish_metadata="{\"cmd_id\":\"${_rfs_publish_cmd_id}\",\"generation\":\"${_rfs_publish_generation}\"}"
         _rfs_telemetry_args=()
         while IFS=$'\t' read -r _rfs_tp _rfs_tw _; do
             case "$_rfs_tp" in
@@ -363,11 +376,16 @@ PY
                 *) continue ;;
             esac
             _rfs_telemetry_args+=(report_publish "$_rfs_tp" "${_rfs_tw#wall_ms=}" "$_rfs_publish_verdict" \
-                "report_publish:${_rfs_tp}:$$:${_rfs_wait_started}")
+                "report_publish:${_rfs_tp}:$$:${_rfs_wait_started}" "$_rfs_publish_metadata")
         done < "$_rfs_phase_receipt"
         _rfs_telemetry_args+=(report_publish publish_total "$_rfs_publish_total_ms" "$_rfs_publish_verdict" \
-            "report_publish:total:$$:${_rfs_wait_started}")
-        defense_overhead_write_batch_async "${_rfs_telemetry_args[@]}"
+            "report_publish:total:$$:${_rfs_wait_started}" "$_rfs_publish_metadata")
+        (
+            while [ "${#_rfs_telemetry_args[@]}" -ge 6 ]; do
+                defense_overhead_write "${_rfs_telemetry_args[@]:0:6}" || true
+                _rfs_telemetry_args=("${_rfs_telemetry_args[@]:6}")
+            done
+        ) >/dev/null 2>&1 &
     fi
     exit "$_rfs_batch_rc"
 fi
