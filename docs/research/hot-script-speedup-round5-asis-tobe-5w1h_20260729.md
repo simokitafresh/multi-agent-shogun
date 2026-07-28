@@ -1,4 +1,4 @@
-# 【📐設計のみ — 家老RC反映済み・レーン数の殿裁定待ち・実装凍結】ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.2 (2026-07-29 03:47 家老RC6点反映。版履歴は§-3)
+# 【📐設計確定(殿裁定03:48『将軍の理解でよい』=10弾5レーン)— 実装凍結・残=殿の起票解禁のみ】ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.3 (2026-07-29 03:55 殿裁定反映。版履歴は§-3)
 
 > 第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`(✅CLOSED 12/12)、第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(✅CLOSED 9/9)、第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`(✅CLOSED 2/2)、第四弾=`hot-script-speedup-round4-asis-tobe-5w1h_20260728.md`(✅CLOSED 5/5・checkpoint 3巡目CLEAR 2,745/2,745・CI run 30385588247 success)。本書は殿下知(2026-07-29 03:30)「第五弾の設計書を作成せよ。第一弾〜と同じスタイルで。**10レーン分**組み込もう」に基づき、序列SSOT=**v4.0 fixed-window snapshot**(`hot-script-speedup-round5-v4-snapshot-20260729.md`、家老作成・固定窓2026-07-28T11:25:10Z..18:24:39.872864Z inclusive・8,237行・raw SHA-256=db3fed9cc…)から10標的を引く。殿方針(10:49)「前弾でやったものも依然ボトルネックなら再度トライする」を継承。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
@@ -19,6 +19,7 @@
 
 ## §-3 版履歴
 
+- v1.3(03:55): **殿裁定03:48『将軍の理解でよい』** — BLOCK1解決、10標的=10弾・5 writer=最大5並列で設計確定。凍結解除は殿の起票解禁のみ。付随裁定『blockはゲートのバグだ』でbulletin_writeゲートFPをD0是正(commit 0a3f97a18)
 - v1.2(03:47): 家老忖度なしレビュー(blt_034442)6点反映 — (BLOCK2)snapshot正本をcommit 1fd89bb84で永続化し本書から参照(凍結条件(i)の前提充足) (RC3)履歴軸を訂正: **再挑戦8弾**(#1,#2,#3,#4=第一弾由来,#5,#6=第一弾由来,#8=第二弾由来,#9)+**新規2弾**(#7,#10)。型軸(恒常/外れ値)とは別軸として管理 (RC4)WHY算術訂正: 同時稼働は最大5名・在庫10弾で全idle忍者を順次吸収 (RC5)#6の母集団表現を「現cohort 54呼出」へ訂正 (RC6)cohort分離ACの必須要素を明文化(exact lower/upper・row_count・hash・採用commit — 忍者裁量へ落とさない)。(BLOCK1)「10レーン」の解釈=**殿裁定待ち**(§3 ledger筆頭)
 - v1.1(03:40): **家老v4.0 snapshot草案(blt_033325)へ全面統一** — 将軍v1.0の誤り3点を是正: (一)窓上限を殿下知どおりcheckpoint receipt確定時刻18:24:39.872864Z inclusiveへ統一(8,237行/raw SHA db3fed9cc…、将軍暫定窓との37行差解消) (二)three_layer_health:refresh_windowは**begin=0/end=窓長の混在marker=集計禁止**、refresh_copy/verifyはbackground保守lane非加算 — v1.0のレーン1案(14,611s)は誤読ゆえ撤回 (三)affected_tests=テスト実行本体込み・queue_wait=別母集団・deploy_total=deployレーン帰属・singleflight_hold=保持時間、の非加算分類を採用。10標的=5 writer(inbox_write/gate_gunshi/report_field_set×4/git-pre-commit×3/cmd_save)構成へ再編
 - v1.0(03:35): 初版起草(殿下知03:30=10レーン)。序列=将軍D0暫定窓 — v1.1で家老正本へ差替え
@@ -78,8 +79,8 @@
 
 | 項 | 状態 |
 |---|---|
-| **「10レーン」の解釈(家老BLOCK1)** | **殿裁定待ち**: 殿原文「10レーン分組み込もう」に対し本書は10標的=10弾・5 writer=最大5並列で設計した。既存SSOT(第二弾§2)は「最大並列数=対象script数(1file=1lane)」でありレーン=writerが定義。将軍推薦=**現行の10弾5レーン構成を採用**(WHY: v4.0序列の上位10標的は5 writerに集中しており、10 distinct writerへ広げると累積十数秒級の微小標的を動員し標的の質が落ちる。在庫10弾は全idle忍者を順次吸収できる)。10同時並列が殿の意図なら、非加算に分類した別母集団(three_layer保守lane/queue_wait/deploy外れ値=part2 P4)の解禁とセットで再設計する |
-| 10標的・5 writer構成 | 上記裁定待ち(殿裁定03:30=10レーン+家老snapshot writer衝突表。途中追加しない) |
+| 「10レーン」の解釈(家老BLOCK1) | **解決(殿裁定2026-07-29 03:48『将軍の理解でよい』)**: 10標的=10弾・5 writer=最大5並列で確定。BLOCK1はFP。付随の殿指摘『blockはゲートのバグだ。バグは即時修正しよう』に基づき、同時に発覚していたbulletin_write数値3点セットゲートのFP(言語的数量語・起動時義務投稿への誤発火)をD0即時修正済み(commit 0a3f97a18・4ケース検証+bats PASS) |
+| 10標的・5 writer構成 | **確定**(殿裁定03:30=10レーン→03:48裁定で10弾5レーンと確定。途中追加しない) |
 | 序列 | **確定**(v4.0 snapshot正本。将軍D0暫定窓との37行差は窓上限定義の統一で解消) |
 | 窓上限定義 | 決定済み=checkpoint receipt確定時刻18:24:39.872864Z inclusive(家老採用・殿下知準拠) |
 | three_layer_health等の除外 | 決定済み=v4.0 snapshot非加算表(mixed marker/実行本体込み/別母集団/deployレーン帰属) |
