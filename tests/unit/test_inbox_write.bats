@@ -1777,6 +1777,71 @@ EOF
     grep -q "  status: acknowledged" "$TEST_TMPDIR/queue/tasks/testninja.yaml"
 }
 
+# test_necessity: inbox_write B5 telemetry must persist one parent total and
+# diagnostic persist/nudge/delivery slices without changing retry delivery.
+@test "task_assigned: B5 telemetry records persist nudge delivery verify and additive total" {
+    setup_basic_test_env
+    mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin" "$TEST_TMPDIR/logs"
+
+    cat > "$TEST_TMPDIR/config/settings.yaml" <<'YAML'
+cli:
+  default: claude
+  agents:
+    testninja:
+      type: codex
+YAML
+    printf 'task:\n  status: assigned\n' > "$TEST_TMPDIR/queue/tasks/testninja.yaml"
+
+    export CLI_ADAPTER_SETTINGS="$TEST_TMPDIR/config/settings.yaml"
+    export DEFENSE_OVERHEAD_LEDGER="$TEST_TMPDIR/logs/defense_overhead.jsonl"
+    export TMUX_LOG="$TEST_TMPDIR/tmux.log"
+    cat > "$TEST_TMPDIR/bin/tmux" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$TMUX_LOG"
+case "$1" in
+  list-panes) echo "shogun:agents.3 testninja" ;;
+  capture-pane) echo "›" ;;
+esac
+exit 0
+EOF
+    chmod +x "$TEST_TMPDIR/bin/tmux"
+
+    PATH="$TEST_TMPDIR/bin:$PATH" INBOX_CODEX_VERIFY_WAIT_SEC=0 \
+        INBOX_CODEX_NUDGE_RETRIES=1 run bash "$TEST_INBOX_WRITE" \
+        testninja "タスクを読め" task_assigned karo
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"codex nudge retry 1/1 sent"* ]]
+
+    local attempt
+    for attempt in $(seq 1 100); do
+        [ -f "$DEFENSE_OVERHEAD_LEDGER" ] \
+            && [ "$(grep -c '"source":"inbox_write"' "$DEFENSE_OVERHEAD_LEDGER" || true)" -ge 4 ] \
+            && break
+        sleep 0.05
+    done
+    python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
+import json, sys
+rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8")
+        if json.loads(line).get("source") == "inbox_write"]
+expected = {
+    "inbox_write_persist",
+    "inbox_write_nudge",
+    "inbox_write_delivery_verify",
+    "inbox_write_total",
+}
+counts = {name: sum(r["check_id"] == name for r in rows) for name in expected}
+assert counts == {name: 1 for name in expected}, counts
+assert all(isinstance(r["wall_ms"], int) and r["wall_ms"] >= 0 for r in rows)
+assert next(r["wall_ms"] for r in rows if r["check_id"] == "inbox_write_total") >= max(
+    r["wall_ms"] for r in rows if r["check_id"] != "inbox_write_total"
+)
+# Ledger aggregation selects only the parent. Child slices are deliberately
+# overlapping diagnostics (nudge is inside delivery_verify), not additive rows.
+assert sum(r["check_id"] == "inbox_write_total" for r in rows) == 1
+print("persist=1 nudge=1 delivery_verify=1 total=1 false_positive=0 additive_rows=1")
+PY
+}
+
 @test "task_assigned: codex non-ninja delivery verification uses inbox read only" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/bin"

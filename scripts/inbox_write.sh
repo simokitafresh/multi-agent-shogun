@@ -42,6 +42,38 @@ SELF_SCRIPT_PATH="$_iw_self"
 NINJA_NAMES=""
 AGENT_CONFIG_LOADED=0
 
+# B5 timing contract: only inbox_write_total is additive.  The three child
+# intervals are diagnostic slices of that same wall clock and must never be
+# summed with the parent by ledger consumers.
+DEFENSE_OVERHEAD_REPO_ROOT="${DEFENSE_OVERHEAD_REPO_ROOT:-$SCRIPT_DIR}"
+# shellcheck source=scripts/lib/defense_overhead_writer.sh
+if [ -f "$INBOX_WRITE_INSTALL_ROOT/scripts/lib/defense_overhead_writer.sh" ]; then
+    source "$INBOX_WRITE_INSTALL_ROOT/scripts/lib/defense_overhead_writer.sh"
+else
+    # Some isolated contract fixtures intentionally copy only inbox_write.sh.
+    # Telemetry must never turn a valid durable delivery into a failure.
+    defense_overhead_write_async() { return 0; }
+fi
+IW_TOTAL_STARTED_US="${EPOCHREALTIME/./}"
+IW_ROOT_BASHPID="${BASHPID:-$$}"
+
+iw_record_timing() {
+    local check_id="$1" started_us="$2" verdict="${3:-PASS}"
+    local finished_us="${EPOCHREALTIME/./}" wall_ms
+    wall_ms=$(( (finished_us - started_us + 999) / 1000 ))
+    defense_overhead_write_async inbox_write "$check_id" "$wall_ms" "$verdict" \
+        "inbox_write-${check_id}-${IW_ROOT_BASHPID}-${finished_us}" || true
+}
+
+iw_record_total_on_exit() {
+    local rc=$?
+    [ "${BASHPID:-$$}" = "$IW_ROOT_BASHPID" ] || return "$rc"
+    iw_record_timing inbox_write_total "$IW_TOTAL_STARTED_US" \
+        "$([ "$rc" -eq 0 ] && printf PASS || printf BLOCK)"
+    return "$rc"
+}
+trap iw_record_total_on_exit EXIT
+
 FIELD_GET_LOADED=0
 CLI_LOOKUP_LOADED=0
 
@@ -857,11 +889,19 @@ send_codex_task_nudge() {
     local pane_target="$2"
     local unread_count="$3"
     local nudge="inbox${unread_count} — タスクYAML: ${SCRIPT_DIR}/queue/tasks/${target}.yaml を読んで作業開始せよ"
+    local started_us="${EPOCHREALTIME/./}" rc=0
 
-    tmux set-buffer -b "nudge_${target}" "$nudge" 2>/dev/null || return 1
-    run_tmux_with_timeout paste-buffer -t "$pane_target" -b "nudge_${target}" -d >/dev/null 2>&1 || return 1
-    sleep 0.02
-    run_tmux_with_timeout send-keys -t "$pane_target" Enter >/dev/null 2>&1 || return 1
+    tmux set-buffer -b "nudge_${target}" "$nudge" 2>/dev/null || rc=1
+    if [ "$rc" -eq 0 ]; then
+        run_tmux_with_timeout paste-buffer -t "$pane_target" -b "nudge_${target}" -d >/dev/null 2>&1 || rc=1
+    fi
+    if [ "$rc" -eq 0 ]; then
+        sleep 0.02
+        run_tmux_with_timeout send-keys -t "$pane_target" Enter >/dev/null 2>&1 || rc=1
+    fi
+    iw_record_timing inbox_write_nudge "$started_us" \
+        "$([ "$rc" -eq 0 ] && printf PASS || printf BLOCK)"
+    return "$rc"
 }
 
 capture_codex_delivery_snapshot() {
@@ -1034,6 +1074,7 @@ dispatch_codex_delivery_verification() {
 
         (
             close_async_verifier_inherited_fds
+            local verify_started_us="${EPOCHREALTIME/./}"
             printf '[%s] ASYNC_VERIFY START target=%s msg_id=%s type=%s\n' \
                 "$(date '+%Y-%m-%dT%H:%M:%S')" "$target" "$msg_id" "$type"
             if maybe_verify_codex_delivery "$target" "$msg_id" "$type"; then
@@ -1041,6 +1082,8 @@ dispatch_codex_delivery_verification() {
             else
                 verify_status=$?
             fi
+            iw_record_timing inbox_write_delivery_verify "$verify_started_us" \
+                "$([ "$verify_status" -eq 0 ] && printf PASS || printf BLOCK)"
             case "$verify_status" in
                 0) printf '[%s] ASYNC_VERIFY SUCCESS target=%s msg_id=%s\n' \
                        "$(date '+%Y-%m-%dT%H:%M:%S')" "$target" "$msg_id" ;;
@@ -1056,10 +1099,14 @@ dispatch_codex_delivery_verification() {
     fi
 
     # Preserve synchronous behavior for every non-opted-in caller/message.
+    local verify_started_us="${EPOCHREALTIME/./}"
     if maybe_verify_codex_delivery "$target" "$msg_id" "$type"; then
+        iw_record_timing inbox_write_delivery_verify "$verify_started_us" PASS
         return 0
     fi
     verify_status=$?
+    iw_record_timing inbox_write_delivery_verify "$verify_started_us" \
+        "$([ "$verify_status" -eq 2 ] && printf PASS || printf BLOCK)"
     [ "$verify_status" -eq 2 ] && return 0
     # Delivery verification remains non-fatal after durable inbox persistence.
     return 0
@@ -2589,6 +2636,7 @@ fi
 
 while [ $attempt -lt $max_attempts ]; do
     _persist_rc=0
+    _persist_started_us="${EPOCHREALTIME/./}"
     (
         flock -w 5 200 || exit 1
 
@@ -2659,6 +2707,8 @@ while [ $attempt -lt $max_attempts ]; do
         inbox_append_message_locked "$INBOX" "$_msg_block" || exit 1
 
     ) 200>"$LOCKFILE" || _persist_rc=$?
+    iw_record_timing inbox_write_persist "$_persist_started_us" \
+        "$([ "$_persist_rc" -eq 0 ] || [ "$_persist_rc" -eq 20 ] && printf PASS || printf BLOCK)"
     if [ "$_persist_rc" -eq 20 ]; then
         echo "[inbox_write] pending duplicate suppressed: target=${TARGET} from=${FROM}" >&2
         exit 0
