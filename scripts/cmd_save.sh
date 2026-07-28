@@ -872,8 +872,8 @@ show_memory_db_command_token_matches() {
     [[ -f "$query_script" ]] || return 0
 
     local ac_text cmd_text combined tokens
-    ac_text="$(extract_acceptance_criteria_block 2>/dev/null || true)"
-    cmd_text="$(extract_command_text_block 2>/dev/null || true)"
+    ac_text="${CMD_SAVE_AC_BLOCK_CACHE:-}"
+    cmd_text="${CMD_SAVE_COMMAND_BLOCK_CACHE:-}"
     combined="${ac_text}"$'\n'"${cmd_text}"
     tokens="$(extract_memory_db_search_tokens "$combined" || true)"
     [[ -n "${tokens//[[:space:]]/}" ]] || return 0
@@ -4236,7 +4236,16 @@ QG_TEMPLATE
                 # Query-level non-blocking single-flight keeps concurrent
                 # followers fast while this one bounded leader completes.
                 cmd_save_timed_bg q11_semantic_search_overhead show_q11_semantic_search_matches "$CMD_BLOCK_NC"
-                cmd_save_timed_bg memory_db_token_search_overhead show_memory_db_command_token_matches &
+                # Avoid launching a background shell, reparsing AC/command, and
+                # touching the DB cache for the common token-absent branch.
+                # The worker remains the normalization/dedup SSOT; this cheap
+                # predicate uses already-primed sections, so the absent branch
+                # pays no process launch. Exact extraction stays in the worker.
+                _MEMORY_DB_TOKEN_TEXT="${CMD_SAVE_AC_BLOCK_CACHE:-}"$'\n'"${CMD_SAVE_COMMAND_BLOCK_CACHE:-}"
+                if [[ "$_MEMORY_DB_TOKEN_TEXT" =~ scripts/[A-Za-z0-9_./-]+\.(sh|py) \
+                    || "$_MEMORY_DB_TOKEN_TEXT" =~ (^|[^A-Za-z0-9_])run_[A-Za-z0-9_]+ ]]; then
+                    cmd_save_timed_bg memory_db_token_search_overhead show_memory_db_command_token_matches &
+                fi
             fi
 
             # WSL2最適化: docs/research/全件grep(50+NTFSファイル)はunitテストで10-20秒かかる。
