@@ -1778,8 +1778,9 @@ EOF
 }
 
 # test_necessity: an active event-driven watcher is the sole pane sender; the
-# async verifier must observe delivery without racing it with a direct retry.
-@test "task_assigned: active watcher suppresses direct codex nudge retries" {
+# writer must return without the verifier's retry wait while the detached
+# verifier observes delivery without racing the watcher with a direct retry.
+@test "task_assigned: active watcher detaches verification and suppresses direct codex nudge retries" {
     setup_basic_test_env
     mkdir -p "$TEST_TMPDIR/config" "$TEST_TMPDIR/queue/tasks" "$TEST_TMPDIR/bin"
 
@@ -1813,8 +1814,19 @@ EOF
         INBOX_CODEX_NUDGE_RETRIES=1 run bash "$TEST_INBOX_WRITE" \
         testninja "タスクを読め" task_assigned karo
     [ "$status" -eq 0 ]
-    [[ "$output" == *"delegated to active watcher"* ]]
-    [ "$(grep -c 'send-keys' "$TMUX_LOG" || true)" -eq 0 ]
+    [[ "$output" == *"delivery verification queued asynchronously"* ]]
+    [ ! -f "$TMUX_LOG" ] || ! grep -q 'send-keys' "$TMUX_LOG"
+
+    local verify_log
+    verify_log="$(find "$TEST_TMPDIR/logs/inbox_codex_delivery_verify" -type f -name '*.log' -print -quit)"
+    [ -n "$verify_log" ]
+    local attempt
+    for attempt in $(seq 1 100); do
+        grep -q "delegated to active watcher" "$verify_log" 2>/dev/null && break
+        sleep 0.05
+    done
+    grep -q "delegated to active watcher" "$verify_log"
+    [ ! -f "$TMUX_LOG" ] || ! grep -q 'send-keys' "$TMUX_LOG"
 }
 
 # test_necessity: inbox_write B5 telemetry must persist one parent total and

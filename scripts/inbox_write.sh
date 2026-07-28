@@ -1075,10 +1075,14 @@ dispatch_codex_delivery_verification() {
     local type="$3"
     local verify_status=0
 
-    # Only deploy_task opts task_assigned into this path.  Persistence above is
-    # still synchronous and flock-protected; only pane delivery verification is
-    # detached from the caller's command-substitution critical path.
-    if [ "$type" = "task_assigned" ] && [ "${INBOX_CODEX_DELIVERY_VERIFY_ASYNC:-0}" = "1" ]; then
+    # Persistence above remains synchronous and flock-protected.  When the
+    # event-driven watcher is active it owns pane wake-up, so keep delivery
+    # verification but detach its bounded observation/retry wait from the
+    # writer's command-substitution critical path.  Explicit opt-in preserves
+    # the same fast path for deploy fixtures where no real watcher exists.
+    if [ "$type" = "task_assigned" ] \
+        && { [ "${INBOX_CODEX_DELIVERY_VERIFY_ASYNC:-0}" = "1" ] \
+             || inbox_watcher_active_for_target "$target"; }; then
         local verify_log_dir="${INBOX_CODEX_VERIFY_LOG_DIR:-$SCRIPT_DIR/logs/inbox_codex_delivery_verify}"
         local verify_log="$verify_log_dir/${msg_id}.log"
         mkdir -p "$verify_log_dir"
