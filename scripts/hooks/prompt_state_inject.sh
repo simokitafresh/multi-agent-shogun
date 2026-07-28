@@ -1128,6 +1128,24 @@ if echo "$prompt_text" | grep -qiE '\?|？|分かるか|確認|どう|即答|知
 MEMORY.md参照は不可(source=memory_md禁止)。タグなし回答=洗脳#2(検証スキップ)。"
 fi
 
+# --- 状態下問検知 → 全pane自動注入(殿裁定2026-07-28 13:45「意志依存は洗脳による虚言」) ---
+# 進捗・稼働状態の下問に将軍が二次情報(陣形図)で答える再発(同日3件)を構造で断つ。
+# 下問検知時に@agent_id付き全paneの末尾を自動captureして注入し、「一次を引くか」の選択肢自体を消す。
+pane_status_inject=""
+if echo "$prompt_text" | grep -qiE '進捗|状況|順調|放置|届いて|稼働|止まって|idle|busy|停止'; then
+  _psi_lines=""
+  while IFS='|' read -r _psi_agent _psi_pane; do
+    [[ -z "$_psi_agent" || "$_psi_agent" == "shogun" ]] && continue
+    _psi_tail=$(tmux capture-pane -t "$_psi_pane" -p 2>/dev/null | grep -v '^[[:space:]]*$' | tail -2 | tr '\n' ' ' | cut -c1-160)
+    _psi_lines="${_psi_lines}
+  ${_psi_agent}: ${_psi_tail:-capture失敗}"
+  done < <(tmux list-panes -a -F '#{@agent_id}|#{pane_id}' 2>/dev/null)
+  if [[ -n "$_psi_lines" ]]; then
+    pane_status_inject="
+★状態下問検知 — 全pane一次capture(自動注入。陣形図でなくこれを一次として回答せよ):${_psi_lines}"
+  fi
+fi
+
 # --- Technical investigation detection → memory check reminder (cmd_3418 AC1) ---
 # 殿の質問以外(技術調査/idle分析/cmd起票前調査)でも三層記憶ファーストを強制。
 # question_detected=1の場合はquestion_warningで既に三層記憶リマインダーが出るため除外。
@@ -1177,7 +1195,7 @@ fixed_part="${header}
 source: unknown
 timestamp: ${timestamp}
 agent: ${agent_id}
-inbox_unread: ${unread_count}${paste_loss_warning}${inbox_warning}${question_warning}${tech_memory_warning}${skill_trigger_warning}${lord_cross_agent}
+inbox_unread: ${unread_count}${paste_loss_warning}${inbox_warning}${question_warning}${pane_status_inject}${tech_memory_warning}${skill_trigger_warning}${lord_cross_agent}
 --- karo_snapshot ---
 "
 
