@@ -4753,6 +4753,7 @@ codd:
 | file | `config/settings.yaml` |
 | file | `context/infrastructure.md` CLIモデル指定とコンテキスト |
 | file | `scripts/deploy_task.sh` |
+| causal | `[[deploy_task配備遅延]] -> [[publication_delivery独立実験]] -> [[cmd_4106_publication_delivery_experiment_tobisaru]]` (`docs/research/cmd_4106_publication_delivery_experiment_tobisaru.md`) |
 | file | `tests/unit/test_deploy_training.bats` |
 | file | `scripts/ninja_monitor.sh` |
 | file | `scripts/clear_prep_check.sh` |
@@ -6323,6 +6324,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-25T09:10:33+09:00 台帳システムでの高速化はわかるか？家老と忍者たちに次にやらせる高速化のアイデアは？ |
 | cmd | `cmd_karo_hotfix_rebalancer_market_phase_refresh_20260729` |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T19:11:34.298456+00:00 git pre-commit semantic propagation for context/projects changes |
+| cmd | `cmd_karo_ci_fix_rebalancer_30389459014_frontend_audit` |
 
 ## simple_ocr — Simple OCR（画像OCR Webアプリ）
 
@@ -8455,6 +8457,7 @@ codd:
 | causal | `cmd_karo_hotfix_commit_async_semantic_propagation_20260729` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607290115_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607290337_kotaro` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607290411_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -8671,6 +8674,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T10:19:05+09:00 b4s0aui3h toolu_01NHqZY3jNiA4KEN7519HuY2 /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/d30ceffe-24ab-4ec1-bf68-84c7b4 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T10:37:23+09:00 b7bus17lt toolu_01MtizNMXYRBHgxXEt2zWBvu /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/d30ceffe-24ab-4ec1-bf68-84c7b4 |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T12:13:18+09:00 b0butmbw3 toolu_01Mwxtzke23zZik83Knt8pic /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b032cf40-1baa-47e9-a3ea-edf70c |
+| causal | `cmd_karo_hotfix_run_tests_external_pytest_receipt_20260729` files_modified: [[provisional_run_tests]] |
+| cmd | `cmd_karo_hotfix_run_tests_external_pytest_receipt_20260729` (`scripts/run_tests.sh`, `tests/unit/test_run_tests.bats`) |
 
 ## provisional_.gitignore — 仮: .Gitignore
 
@@ -10344,6 +10349,7 @@ codd:
 | cmd | `cmd_karo_hotfix_no_code_commit_reminder_20260728` (`.claude/hooks/post-bash-commit-reminder.sh`, `tests/unit/test_post_bash_commit_reminder.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T16:02:34.103051+00:00 git pre-commit semantic propagation for context/projects changes |
 | cmd | `cmd_karo_hotfix_commit_async_semantic_propagation_20260729` (`docs/semantic-index/index.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-28T19:14:22.320157+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
