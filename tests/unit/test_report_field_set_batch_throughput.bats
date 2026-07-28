@@ -361,3 +361,38 @@ publish_terminal() {
   # 新台帳を作らない: 書込み先は既存ledgerのみ
   [ "$(find "$TMPDIR_CASE" -name '*.jsonl' | wc -l)" -eq 1 ]
 }
+
+# test_necessity: commit_hash telemetryが旧schema fieldを維持しつつreport/task flow識別子を持ち、同一flow重複だけを検知できる不変量を守る。
+@test "commit_hash telemetryはreport/task flow識別子で重複を分離する" {
+  export DEFENSE_OVERHEAD_LEDGER="$TMPDIR_CASE/commit_hash_telemetry.jsonl"
+  : >"$DEFENSE_OVERHEAD_LEDGER"
+  first="$TMPDIR_CASE/flow_a.yaml"
+  second="$TMPDIR_CASE/flow_b.yaml"
+  cp "$REPORT" "$first"
+  cp "$REPORT" "$second"
+  printf 'report_id: rpt-flow-a\ntask_id: task-flow-a\n' >>"$first"
+  printf 'report_id: rpt-flow-b\ntask_id: task-flow-b\n' >>"$second"
+
+  run bash "$ROOT/scripts/report_field_set.sh" "$first" commit_hash 0000000000000000000000000000000000000000
+  [ "$status" -eq 0 ]
+  run bash "$ROOT/scripts/report_field_set.sh" "$first" commit_hash 0000000000000000000000000000000000000000
+  [ "$status" -eq 0 ]
+  run bash "$ROOT/scripts/report_field_set.sh" "$second" commit_hash 0000000000000000000000000000000000000000
+  [ "$status" -eq 0 ]
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    [ "$(grep -c '"check_id":"commit_hash"' "$DEFENSE_OVERHEAD_LEDGER")" -eq 3 ] && break
+    sleep 0.3
+  done
+
+  python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
+import collections, json, sys
+rows = [json.loads(line) for line in open(sys.argv[1], encoding="utf-8")]
+assert len(rows) == 3
+assert all({"timestamp", "source", "check_id", "wall_ms", "verdict", "event_id"} <= row.keys() for row in rows)
+counts = collections.Counter((row["report_id"], row["task_id"]) for row in rows)
+assert counts[("rpt-flow-a", "task-flow-a")] == 2
+assert counts[("rpt-flow-b", "task-flow-b")] == 1
+assert sum(count - 1 for count in counts.values()) == 1
+assert len({row["event_id"] for row in rows}) == 3
+PY
+}

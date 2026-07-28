@@ -431,12 +431,32 @@ if [ "${RFS_SINGLE_KEY_TELEMETRY:-1}" = "1" ] \
         _ledger="${DEFENSE_OVERHEAD_LEDGER:-$SCRIPT_DIR/logs/defense_overhead.jsonl}"
         [ -d "${_ledger%/*}" ] || return "$_rc"
         (
+            # report/task identifiers make repeated commit_hash writes from one
+            # report flow distinguishable without changing existing fields.
+            # Read root scalars with shell builtins so telemetry remains off the
+            # caller's measured critical path and does not add a YAML parse.
+            _report_id=""
+            _task_id=""
+            while IFS= read -r _line; do
+                case "$_line" in
+                    report_id:*) _report_id="${_line#report_id:}" ;;
+                    task_id:*) _task_id="${_line#task_id:}" ;;
+                esac
+                [ -n "$_report_id" ] && [ -n "$_task_id" ] && break
+            done < "$REPORT_PATH"
+            _report_id="${_report_id#"${_report_id%%[![:space:]]*}"}"
+            _task_id="${_task_id#"${_task_id%%[![:space:]]*}"}"
+            _report_id="${_report_id//[^A-Za-z0-9_.:-]/_}"
+            _task_id="${_task_id//[^A-Za-z0-9_.:-]/_}"
+            [ -n "$_report_id" ] || _report_id=unknown
+            [ -n "$_task_id" ] || _task_id=unknown
             export TZ=UTC
             printf -v _ts '%(%Y-%m-%dT%H:%M:%S)T' -1
             exec 8>>"${_ledger}.lock" || exit 0
             flock -w "${DEFENSE_OVERHEAD_LOCK_TIMEOUT:-2}" 8 || exit 0
-            printf '{"timestamp":"%s+00:00","source":"report_field_set","check_id":"%s","wall_ms":%s,"verdict":"%s","event_id":"report_field_set:%s:%s:%s"}\n' \
-                "$_ts" "$_key" "$_ms" "$_verdict" "$$" "$_rfs_sk_started" "$_key" >&9
+            printf '{"timestamp":"%s+00:00","source":"report_field_set","check_id":"%s","wall_ms":%s,"verdict":"%s","event_id":"report_field_set:%s:%s:%s:%s:%s","report_id":"%s","task_id":"%s"}\n' \
+                "$_ts" "$_key" "$_ms" "$_verdict" "$$" "$_rfs_sk_started" "$_key" \
+                "$_report_id" "$_task_id" "$_report_id" "$_task_id" >&9
         ) 9>>"$_ledger" </dev/null >/dev/null 2>&1 &
         disown 2>/dev/null || true
         return "$_rc"
