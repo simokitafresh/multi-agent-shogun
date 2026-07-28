@@ -52,7 +52,7 @@ extract_funcs() {
 
 run_affected() {
   local env_prefix="$1"
-  FUNCS="$(extract_funcs staged_file_could_have_tests resolve_reverse_lib_deps reverse_lib_dep_scan_scope is_doc_only_fastpath_path all_staged_files_are_doc_only_fastpath check_precommit_affected_tests)"
+  FUNCS="$(extract_funcs staged_file_could_have_tests resolve_reverse_lib_deps reverse_lib_dep_scan_scope is_doc_only_fastpath_path all_staged_files_are_doc_only_fastpath resolve_precommit_task_file check_precommit_affected_tests)"
   bash -c "
     REPO_ROOT='$REPO'
     _PRECOMMIT_COMMAND_ID='test-precommit'
@@ -63,6 +63,48 @@ run_affected() {
     defense_overhead_write_async() { printf 'DOH_CALL:%s\n' \"\$*\" >> '$REPO/logs/doh_calls.txt'; }
     check_precommit_affected_tests
   "
+}
+
+# test_necessity: ninja_scope_commit's reviewed two-path task contract must
+# remain the pre-commit selection boundary rather than expanding transitively.
+@test "ninja scope task uses task mode while manual commit keeps affected mode" {
+  mkdir -p "$REPO/queue/tasks"
+  cat >"$REPO/queue/tasks/kotaro.yaml" <<'YAML'
+task:
+  planned_paths: [scripts/lib/mylib.sh, tests/unit/owned.bats]
+YAML
+  printf '#!/bin/bash\necho changed\n' >"$REPO/scripts/lib/mylib.sh"
+  git -C "$REPO" add scripts/lib/mylib.sh
+
+  run run_affected "NINJA_SCOPE_TASK_FILE='$REPO/queue/tasks/kotaro.yaml'; export NINJA_SCOPE_TASK_FILE"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"affected-test mode=task"* ]]
+  [ "$(cat "$REPO/logs/run_tests_call.txt")" = $'task\n'"$REPO"$'/queue/tasks/kotaro.yaml' ]
+
+  rm -f "$REPO/logs/run_tests_call.txt"
+  run run_affected ""
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"affected-test mode=affected"* ]]
+  [[ "$(cat "$REPO/logs/run_tests_call.txt")" == affected$'\n'* ]]
+}
+
+# test_necessity: a supplied selector is an asserted scope contract; missing
+# and outside-repository paths must not silently degrade to affected mode.
+@test "ninja scope task path fails closed when missing or outside repo" {
+  printf '#!/bin/bash\necho changed\n' >"$REPO/scripts/lib/mylib.sh"
+  git -C "$REPO" add scripts/lib/mylib.sh
+
+  run run_affected "NINJA_SCOPE_TASK_FILE='$REPO/queue/tasks/missing.yaml'; export NINJA_SCOPE_TASK_FILE"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"does not exist"* ]]
+  [ ! -e "$REPO/logs/run_tests_call.txt" ]
+
+  outside="$BATS_TEST_TMPDIR/outside.yaml"
+  printf 'task: {}\n' >"$outside"
+  run run_affected "NINJA_SCOPE_TASK_FILE='$outside'; export NINJA_SCOPE_TASK_FILE"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"must resolve inside"* ]]
+  [ ! -e "$REPO/logs/run_tests_call.txt" ]
 }
 
 @test "resolve_reverse_lib_deps finds a caller that invokes the lib as a subprocess (bash x.sh), not just source" {

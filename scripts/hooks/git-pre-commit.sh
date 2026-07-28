@@ -474,6 +474,25 @@ all_staged_files_are_doc_only_fastpath() {
     [[ "$saw_any" == "true" ]]
 }
 
+# ninja_scope_commit carries the reviewed task contract in this variable.
+# Unset means an ordinary manual commit; set-but-invalid must fail closed.
+resolve_precommit_task_file() {
+    local configured="${NINJA_SCOPE_TASK_FILE:-}" resolved
+    [[ -n "$configured" ]] || return 1
+    resolved="$(realpath -e -- "$configured" 2>/dev/null)" || {
+        echo "[pre-commit] BLOCK(GA-PRECOMMIT1): NINJA_SCOPE_TASK_FILE does not exist: $configured" >&2
+        return 2
+    }
+    case "$resolved" in
+        "$REPO_ROOT"/queue/tasks/*.yaml) ;;
+        *)
+            echo "[pre-commit] BLOCK(GA-PRECOMMIT1): NINJA_SCOPE_TASK_FILE must resolve inside $REPO_ROOT/queue/tasks: $configured" >&2
+            return 2
+            ;;
+    esac
+    printf '%s\n' "$resolved"
+}
+
 # AC1: resolve staged paths (plus AC2's reverse-dependency expansion) to
 # affected tests and run them, reusing scripts/run_tests.sh's existing
 # `affected` mode (which itself delegates to scripts/test_select.sh) instead
@@ -482,9 +501,23 @@ all_staged_files_are_doc_only_fastpath() {
 # (cmd_karo_impl_commander_scope_commit_20260725) — logged, not silent.
 check_precommit_affected_tests() {
     local -a target_files=() reverse_deps=()
-    local staged reverse scope_count has_relevant=false
+    local staged reverse scope_count has_relevant=false task_file task_rc
     local run_tests="$REPO_ROOT/scripts/run_tests.sh"
     [[ -f "$run_tests" ]] || return 0
+
+    task_file="$(resolve_precommit_task_file)"
+    task_rc=$?
+    if [[ "$task_rc" -eq 0 ]]; then
+        echo "[pre-commit] affected-test mode=task task_file=${task_file#"$REPO_ROOT"/}" >&2
+        if ! env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE -u GIT_OBJECT_DIRECTORY -u GIT_COMMON_DIR \
+                bash "$run_tests" task "$task_file" >&2; then
+            echo "[pre-commit] BLOCK(GA-PRECOMMIT1): task-contract tests failed." >&2
+            return 1
+        fi
+        return 0
+    elif [[ "$task_rc" -ne 1 ]]; then
+        return 1
+    fi
 
     # AC1 doc-only fast-path: skip affected_tests AND heavy_job_admission
     # (the latter fires only from inside run_tests.sh below, so simply never
@@ -545,6 +578,7 @@ PY
     # this exact commit's own affected-test run broke on it). Strip the git
     # plumbing env for the child process so nested test repos resolve purely
     # from their own `-C <path>`, not from this commit's private index.
+    echo "[pre-commit] affected-test mode=affected files_selected=${#target_files[@]}" >&2
     if ! env -u GIT_INDEX_FILE -u GIT_DIR -u GIT_WORK_TREE -u GIT_OBJECT_DIRECTORY -u GIT_COMMON_DIR \
             bash "$run_tests" affected "${target_files[@]}" >&2; then
         echo "BLOCK(GA-PRECOMMIT1): staged changes broke an affected test (directly, or via a scripts/lib/ reverse dependency)." >&2
