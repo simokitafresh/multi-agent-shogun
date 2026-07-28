@@ -6631,6 +6631,7 @@ codd:
 | causal | `cmd_karo_hotfix_credential_target_path_list_20260728` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_per_task_unit_full_ban_20260728` files_modified: [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_deploy_b32_scope_reason_retry_20260728` files_modified: [[task_modifier_injection]] |
+| causal | `docs/research/cmd_4106_semantic_lesson_experiment_hanzo.md` — [[deploy_task_injector_benchmark]] -> [[task_modifier_injection]] |
 
 ## training_cycle_quality — 忍者修行サイクル品質
 
