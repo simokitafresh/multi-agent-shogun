@@ -928,21 +928,56 @@ gate_clear_notify_dedup_key() {
     printf '%s\n' "$cmd_id"
 }
 
-shogun_gate_clear_already_notified() {
-    local cmd_id="$1"
-    local key
-    local inbox_file="$SCRIPT_DIR/queue/inbox/shogun.yaml"
+# cmd_karo_hotfix_gate_clear_notify_dedup_20260728: 旧dedupはqueue/inbox/{shogun,karo}.yaml
+# (live inboxのみ)をgrep/re-parseする方式だった。karoは完了時手順でinbox_archive.shを高頻度
+# 実行するため、1度目の通知が既読化→archiveへ退避された直後に同一cmd(family)が再GATE実行
+# (BLOCK→修正→CLEAR)されると、live inboxに見つからず「未送信」と誤判定し重複配送していた
+# (実測: cmd_3513/cmd_3869/cmd_4122でkaro skill_hintが2通ずつ配送。archive.doneと同じ
+# queue/gates/{key}/配下に永続flagを置き、archiveの影響を受けない冪等境界にする。
+# 別プロセスの同時実行に対しては (set -C) のO_EXCL相当でatomicにclaimし、
+# check-then-actのレース窓を閉じる。
+gate_clear_notify_flag_path() {
+    local recipient="$1" cmd_id="$2" key
     key="$(gate_clear_notify_dedup_key "$cmd_id")"
-    [ -f "$inbox_file" ] || return 1
+    printf '%s/queue/gates/%s/notify_%s.done\n' "$SCRIPT_DIR" "$key" "$recipient"
+}
 
-    python3 - "$inbox_file" "$key" <<'PY'
+# 移行backfill (家老差分レビュー2回目でグローバルmarker/lock方式を撤回): 本修正より前に
+# queue/inbox(live)またはarchive/inboxへ配送済みのcmdはflagが存在しないため、無対応だと
+# 次回の再GATEで1通だけ余計に送られてしまう。グローバルmarkerで「移行済み」を1回だけ判定
+# する設計は、(a) marker未確定の間に他プロセスがclaimへ素通りできる競合、(b) 1ファイルの
+# parse失敗を握り潰したままmarkerを確定させ欠落を永続化する、という2つの穴を持っていた。
+# 対象key(recipient+cmd family)のflagをatomicにclaimできたプロセスだけがそのkeyの
+# live+archive履歴を1回走査する設計にすると、claim自体が排他制御を兼ねるため上記2つの
+# 穴が構造的に消える: 敗者はflag存在で即SKIP(履歴走査自体を行わない)、勝者はkeyごとに
+# 高々1回だけ走査し、parse失敗はそのkeyについてだけ「証跡なし」扱いになる(他keyへ波及しない)。
+gate_clear_notify_historical_evidence() {
+    local recipient="$1" cmd_id="$2" key type_match f
+    key="$(gate_clear_notify_dedup_key "$cmd_id")"
+    case "$recipient" in
+        shogun) type_match='gate_clear' ;;
+        karo) type_match='skill_hint' ;;
+        *) return 1 ;;
+    esac
+
+    for f in "$SCRIPT_DIR/queue/inbox/${recipient}.yaml" "$SCRIPT_DIR/archive/inbox/${recipient}_"*.yaml; do
+        [ -f "$f" ] || continue
+        # 高速前置フィルタ: keyが出現しないファイルはpython3起動を払わずに除外する。
+        # 該当メッセージのcontentは常にkey(または家族名の元となった長いcmd_id)を
+        # 部分文字列として含むため、この前置grepは偽陰性を生まない。
+        grep -qF -- "$key" "$f" 2>/dev/null || continue
+        if GCN_KEY="$key" GCN_TYPE="$type_match" python3 - "$f" <<'PY' 2>/dev/null
+import os
 import re
 import sys
 import yaml
 
-path, key = sys.argv[1], sys.argv[2]
+path = sys.argv[1]
+key = os.environ["GCN_KEY"]
+type_match = os.environ["GCN_TYPE"]
 
-def dedup_key(cmd_id: str) -> str:
+
+def dedup_key(cmd_id):
     m = re.match(r"^(cmd_karo_hotfix_ga[0-9]+)(_.+)?$", cmd_id)
     if m:
         return m.group(1)
@@ -951,31 +986,53 @@ def dedup_key(cmd_id: str) -> str:
         return m.group(1)
     return cmd_id
 
+
 try:
     data = yaml.safe_load(open(path, encoding="utf-8")) or {}
 except Exception:
     sys.exit(1)
 
 for msg in data.get("messages") or []:
-    if not isinstance(msg, dict):
-        continue
-    if msg.get("type") != "gate_clear":
+    if not isinstance(msg, dict) or msg.get("type") != type_match:
         continue
     content = str(msg.get("content") or "")
-    match = re.search(r"GATE CLEAR\s+—\s+(\S+)\s+完了", content)
-    if match and dedup_key(match.group(1)) == key:
+    m = re.search(r"GATE CLEAR\s+—\s+(\S+)\s+完了", content)
+    if m and dedup_key(m.group(1)) == key:
         sys.exit(0)
 sys.exit(1)
 PY
+        then
+            return 0
+        fi
+    done
+    return 1
+}
+
+gate_clear_notify_claim() {
+    local recipient="$1" cmd_id="$2" flag_file
+    flag_file="$(gate_clear_notify_flag_path "$recipient" "$cmd_id")"
+    mkdir -p "$(dirname "$flag_file")" 2>/dev/null
+
+    if ! ( set -C; printf '%s\n' "$cmd_id" > "$flag_file" ) 2>/dev/null; then
+        return 1
+    fi
+
+    if gate_clear_notify_historical_evidence "$recipient" "$cmd_id"; then
+        printf '%s\tbackfill\n' "$cmd_id" > "$flag_file"
+        return 1
+    fi
+
+    return 0
 }
 
 notify_shogun_gate_clear() {
     local cmd_id="$1"
     local message="${2:-GATE CLEAR — ${cmd_id} 完了}"
-    local stderr_tmp
+    local stderr_tmp flag_file
     stderr_tmp="$(mktemp)"
+    flag_file="$(gate_clear_notify_flag_path shogun "$cmd_id")"
 
-    if shogun_gate_clear_already_notified "$cmd_id"; then
+    if ! gate_clear_notify_claim shogun "$cmd_id"; then
         echo "  shogun inbox: SKIP (gate clear notify dedup)"
         rm -f "$stderr_tmp"
         return 0
@@ -986,6 +1043,10 @@ notify_shogun_gate_clear() {
     else
         log_gate_stderr_file "notify_shogun_gate_clear inbox_write" "$stderr_tmp"
         echo "  [INFO] shogun inbox: WARN (gate clear notify failed, non-blocking)"
+        # 直前のgate_clear_notify_claimが成功した(=このプロセスが排他的に作成した)flagのみを
+        # 対象とするため、他プロセスのclaimを誤って消す競合はない。送信失敗時にflagを残すと
+        # 通知が永久に欠落するため、次回の再試行を許可するためロールバックする。
+        rm -f "$flag_file"
     fi
     rm -f "$stderr_tmp"
 }
@@ -993,13 +1054,16 @@ notify_shogun_gate_clear() {
 notify_karo_cmd_complete_skill_hint() {
     local cmd_id="$1"
     local message="GATE CLEAR — ${cmd_id} 完了。/cmd-complete スキルで完了処理を実行せよ。"
+    local flag_file
+    flag_file="$(gate_clear_notify_flag_path karo "$cmd_id")"
 
-    if grep -q "${cmd_id} 完了。/cmd-complete スキル" "$SCRIPT_DIR/queue/inbox/karo.yaml" 2>/dev/null; then
+    if ! gate_clear_notify_claim karo "$cmd_id"; then
         echo "  karo /cmd-complete hint: SKIP (dedup — already in inbox)"
     elif timeout 10 bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo "$message" skill_hint cmd_complete_gate 2>/dev/null; then
         echo "  karo /cmd-complete hint: OK"
     else
         echo "  [INFO] karo /cmd-complete hint: WARN (non-blocking)"
+        rm -f "$flag_file"
     fi
 }
 

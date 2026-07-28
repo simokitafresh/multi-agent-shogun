@@ -16,7 +16,9 @@ setup_file() {
         sed -n '/^dispatch_gate_notification_async()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^gate_clear_notify_dedup_key()/,/^}/p' "$SRC_GATE_SCRIPT"
-        sed -n '/^shogun_gate_clear_already_notified()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^gate_clear_notify_flag_path()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^gate_clear_notify_historical_evidence()/,/^}/p' "$SRC_GATE_SCRIPT"
+        sed -n '/^gate_clear_notify_claim()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_shogun_gate_clear()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^notify_karo_cmd_complete_skill_hint()/,/^}/p' "$SRC_GATE_SCRIPT"
         sed -n '/^send_clear_notifications_once()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -77,7 +79,7 @@ if [ "$1" = "shogun" ]; then
     printf -- "- content: '%s'\n  from: '%s'\n  id: 'msg_test'\n  read: false\n  timestamp: '2099-01-01T00:00:00'\n  type: '%s'\n" "$content" "$from" "$type"
   } >> "${SCRIPT_DIR}/queue/inbox/shogun.yaml"
 fi
-if [ "$1" = "karo" ] && [ "$3" = "gate_block" ]; then
+if [ "$1" = "karo" ] && { [ "$3" = "gate_block" ] || [ "$3" = "skill_hint" ]; }; then
   {
     [ -s "${SCRIPT_DIR}/queue/inbox/karo.yaml" ] || printf 'messages:\n'
     content=${2//\'/\'\'}
@@ -837,4 +839,151 @@ EOF
     run bash -lc "grep -c 'source: deploy_preflight' '$PROJECT_ROOT/scripts/inbox_write.sh'"
     [ "$status" -eq 0 ] || [ "$status" -eq 1 ]  # 0件(完全撤廃)が正解
     [ "$output" -eq 0 ]
+}
+
+# ─── cmd_karo_hotfix_gate_clear_notify_dedup_20260728: 永続flag冪等境界のtest群 ───
+# 旧dedup(live inboxのみgrep)はarchive後に失効し重複配送した(cmd_3513/3869/4122で実測)。
+# queue/gates/{key}/notify_{recipient}.doneへ移行後の性質を隔離fixtureで検証する。
+
+@test "notify_shogun_gate_clear suppresses resend after the live inbox message is archived away" {
+    run notify_shogun_gate_clear "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun inbox: OK (gate clear notify)"* ]]
+
+    # inbox_archive.shが既読メッセージをlive inboxから退避する状況を模す
+    rm -f "$TEST_PROJECT/queue/inbox/shogun.yaml"
+
+    run notify_shogun_gate_clear "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun inbox: SKIP (gate clear notify dedup)"* ]]
+    [ "$(grep -c '^shogun|GATE CLEAR' "$INBOX_WRITE_LOG")" -eq 1 ]
+}
+
+@test "notify_karo_cmd_complete_skill_hint suppresses resend after the live inbox message is archived away" {
+    run notify_karo_cmd_complete_skill_hint "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo /cmd-complete hint: OK"* ]]
+
+    rm -f "$TEST_PROJECT/queue/inbox/karo.yaml"
+
+    run notify_karo_cmd_complete_skill_hint "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo /cmd-complete hint: SKIP (dedup — already in inbox)"* ]]
+    [ "$(grep -c '^karo|GATE CLEAR' "$INBOX_WRITE_LOG")" -eq 1 ]
+}
+
+@test "notify_shogun_gate_clear delivers once per distinct cmd_id without cross-suppression" {
+    run notify_shogun_gate_clear "cmd_dedup_test_1001" "GATE CLEAR — cmd_dedup_test_1001 完了"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun inbox: OK (gate clear notify)"* ]]
+
+    run notify_shogun_gate_clear "cmd_dedup_test_1002" "GATE CLEAR — cmd_dedup_test_1002 完了"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun inbox: OK (gate clear notify)"* ]]
+
+    [ "$(grep -c '^shogun|GATE CLEAR — cmd_dedup_test_1001' "$INBOX_WRITE_LOG")" -eq 1 ]
+    [ "$(grep -c '^shogun|GATE CLEAR — cmd_dedup_test_1002' "$INBOX_WRITE_LOG")" -eq 1 ]
+}
+
+@test "notify_shogun_gate_clear retries successfully after a prior send failure rolls back its own claim" {
+    cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+    chmod +x "$TEST_PROJECT/scripts/inbox_write.sh"
+
+    run notify_shogun_gate_clear "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun inbox: WARN (gate clear notify failed, non-blocking)"* ]]
+    [ ! -f "$(gate_clear_notify_flag_path shogun "$TEST_CMD_ID")" ]
+    [ ! -s "$INBOX_WRITE_LOG" ]
+
+    cat > "$TEST_PROJECT/scripts/inbox_write.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s|%s|%s|%s\n' "$1" "$2" "$3" "$4" >> "${INBOX_WRITE_LOG}"
+mkdir -p "${SCRIPT_DIR}/queue/inbox"
+if [ "$1" = "shogun" ]; then
+  {
+    [ -s "${SCRIPT_DIR}/queue/inbox/shogun.yaml" ] || printf 'messages:\n'
+    printf -- "- content: '%s'\n  from: '%s'\n  id: 'msg_test'\n  read: false\n  timestamp: '2099-01-01T00:00:00'\n  type: '%s'\n" "$2" "$4" "$3"
+  } >> "${SCRIPT_DIR}/queue/inbox/shogun.yaml"
+fi
+EOF
+    chmod +x "$TEST_PROJECT/scripts/inbox_write.sh"
+
+    run notify_shogun_gate_clear "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun inbox: OK (gate clear notify)"* ]]
+    [ -f "$(gate_clear_notify_flag_path shogun "$TEST_CMD_ID")" ]
+    [ "$(grep -c '^shogun|GATE CLEAR' "$INBOX_WRITE_LOG")" -eq 1 ]
+}
+
+@test "notify_shogun_gate_clear delivers exactly once for the same cmd_id under concurrent invocations" {
+    local pids=()
+    local i
+    for i in 1 2 3 4 5 6 7 8; do
+        ( notify_shogun_gate_clear "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了" >/dev/null 2>&1 ) &
+        pids+=("$!")
+    done
+    for i in "${pids[@]}"; do
+        wait "$i"
+    done
+
+    [ "$(grep -c '^shogun|GATE CLEAR' "$INBOX_WRITE_LOG")" -eq 1 ]
+    [ -f "$(gate_clear_notify_flag_path shogun "$TEST_CMD_ID")" ]
+}
+
+@test "notify_karo_cmd_complete_skill_hint delivers exactly once for the same cmd_id under concurrent invocations" {
+    local pids=()
+    local i
+    for i in 1 2 3 4 5 6 7 8; do
+        ( notify_karo_cmd_complete_skill_hint "$TEST_CMD_ID" >/dev/null 2>&1 ) &
+        pids+=("$!")
+    done
+    for i in "${pids[@]}"; do
+        wait "$i"
+    done
+
+    [ "$(grep -c '^karo|GATE CLEAR' "$INBOX_WRITE_LOG")" -eq 1 ]
+    [ -f "$(gate_clear_notify_flag_path karo "$TEST_CMD_ID")" ]
+}
+
+@test "gate_clear_notify_migration_backfill retroactively flags a cmd already delivered via the live inbox before this fix" {
+    mkdir -p "$TEST_PROJECT/queue/inbox"
+    cat > "$TEST_PROJECT/queue/inbox/shogun.yaml" <<EOF
+messages:
+- content: 'GATE CLEAR — $TEST_CMD_ID 完了'
+  from: 'cmd_complete_gate'
+  id: 'msg_pre_migration'
+  read: true
+  timestamp: '2026-07-01T00:00:00'
+  type: 'gate_clear'
+EOF
+    [ ! -f "$(gate_clear_notify_flag_path shogun "$TEST_CMD_ID")" ]
+
+    run notify_shogun_gate_clear "$TEST_CMD_ID" "GATE CLEAR — $TEST_CMD_ID 完了"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shogun inbox: SKIP (gate clear notify dedup)"* ]]
+    [ ! -s "$INBOX_WRITE_LOG" ]
+    [ -f "$(gate_clear_notify_flag_path shogun "$TEST_CMD_ID")" ]
+}
+
+@test "gate_clear_notify_migration_backfill retroactively flags a cmd already delivered via an archived inbox before this fix" {
+    mkdir -p "$TEST_PROJECT/archive/inbox"
+    cat > "$TEST_PROJECT/archive/inbox/karo_20260601.yaml" <<EOF
+messages:
+- content: 'GATE CLEAR — $TEST_CMD_ID 完了。/cmd-complete スキルで完了処理を実行せよ。'
+  from: 'cmd_complete_gate'
+  id: 'msg_pre_migration_archived'
+  read: true
+  timestamp: '2026-06-01T00:00:00'
+  type: 'skill_hint'
+EOF
+    [ ! -f "$(gate_clear_notify_flag_path karo "$TEST_CMD_ID")" ]
+
+    run notify_karo_cmd_complete_skill_hint "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"karo /cmd-complete hint: SKIP (dedup — already in inbox)"* ]]
+    [ ! -s "$INBOX_WRITE_LOG" ]
+    [ -f "$(gate_clear_notify_flag_path karo "$TEST_CMD_ID")" ]
 }
