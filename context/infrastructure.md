@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-28 cmd_karo_hotfix_hot_script_report_commit_hash_20260728 reviewed source boundary -->
-<!-- source_commit:e2c74c0b7 reason:cmd_karo_hotfix_hot_script_report_commit_hash_20260728 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=e2c74c0b7 -->
+<!-- last_updated: 2026-07-28 cmd_karo_hotfix_reflux_reserved_head_skip_20260728 -->
+<!-- source_commit:a33072d81 reason:cmd_karo_hotfix_reflux_reserved_head_skip_20260728 evidence:reviewed_source_boundary=cmd_complete_gate;project=infra;lease_release_failures=5/5 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -894,7 +894,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1424 -->
+<!-- last_synced_lesson: L1427 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2032,6 +2032,9 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1422: 『staged path一致=生成物が変わる』と混同するな。生成の実入力サブ範囲を確認せよ（cmd_karo_hotfix_hot_script_instruction_sync_20260728）
 - L1423: GATE CLEAR通知dedupはlive inbox限定だと恒久flagへ移行してもrollback漏れ・migration競合の2段の穴が残る（cmd_karo_hotfix_gate_clear_notify_dedup_20260728）
 - L1424: 速度計測は運用競合窓と同一fixture交互A/Bを分離する（cmd_karo_hotfix_round2_parent_ac_coverage_20260728）
+- L1425: 資源claim後は実行開始前の全return出口にもcompensationを置く（cmd_karo_hotfix_reflux_reserved_head_skip_20260728）
+- L1426: 外部プロセス呼出し結果を一時ディレクトリ経由で並列合流する実装で、後始末にrm -rfを使うとD002(project外への再帰削除絶対禁則)へ抵触しうる（cmd_karo_hotfix_round2_full_precheck_20260728）
+- L1427: 速度fixtureは同一時間帯で交互比較する（cmd_karo_hotfix_round2_publish_total_20260728）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
