@@ -322,7 +322,8 @@ EOF
     [[ "$output" == *"deploy_sec=240 work_sec=180 finalize_sec=120 e2e_sec=600 missing=none"* ]]
 }
 
-@test "build_clear_throughput_metric uses first successful deploy attempt instead of latest RC deployed_at" {
+# test_necessity: retry時のdeploy/work/e2eを同一attempt境界へ揃え、負残差とworkリセット誤差を防ぐ。
+@test "build_clear_throughput_metric resets all intervals to latest successful retry attempt" {
     source "$GATE_HELPERS_FILE"
     export CMD_ID="$TEST_CMD_ID"
     export YAML_FILE="$TEST_PROJECT/queue/shogun_to_karo.yaml"
@@ -370,10 +371,10 @@ EOF
 
     run build_clear_throughput_metric "2026-07-08T10:00:00"
     [ "$status" -eq 0 ]
-    [[ "$output" == *"deploy_sec=120"* ]]
-    [[ "$output" == *"work_sec=3300"* ]]
+    [[ "$output" == *"deploy_sec=60"* ]]
+    [[ "$output" == *"work_sec=120"* ]]
     [[ "$output" == *"finalize_sec=120"* ]]
-    [[ "$output" == *"e2e_sec=3600"* ]]
+    [[ "$output" == *"e2e_sec=300"* ]]
     [[ "$output" == *"missing=none"* ]]
 }
 

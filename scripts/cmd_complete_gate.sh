@@ -1439,8 +1439,9 @@ for path in task_files:
 # redeployment, while issued_at is preserved for the cmd generation; combining
 # those two values misclassified all rework time as deployment wait.  The
 # append-only issue log has an immutable attempt id and explicit issued/deployed
-# terminal events, so use the first successful attempt pair.  Keep task fields
-# only as a backward-compatible fallback for pre-log commands.
+# terminal events, so use the latest successful attempt pair together with the
+# current task/report timestamps. Keep task fields only as a backward-compatible
+# fallback for pre-log commands.
 attempt_events = {}
 issue_log_path = os.path.join(root_dir, "logs", "deploy_issue_log.yaml")
 try:
@@ -1472,14 +1473,14 @@ except (OSError, UnicodeError):
     attempt_events = {}
 
 successful_attempts = []
-for events in attempt_events.values():
+for attempt_id, events in attempt_events.items():
     start = events.get("issued")
     end = events.get("deployed")
     if sec(start, end) is not None:
-        successful_attempts.append((end, start))
+        successful_attempts.append((end, start, attempt_id))
 successful_attempts.sort()
-first_attempt_deploy_ts = successful_attempts[0][0] if successful_attempts else None
-first_attempt_issue_ts = successful_attempts[0][1] if successful_attempts else None
+current_attempt_deploy_ts = successful_attempts[-1][0] if successful_attempts else None
+current_attempt_issue_ts = successful_attempts[-1][1] if successful_attempts else None
 
 # Report timestamps are the durable done event. Include archives and choose the
 # latest valid completion/revision for duplicate reports of the same cmd.
@@ -1511,18 +1512,29 @@ ack_ts = min((v for v in ack_values if v is not None), default=None)
 done_ts = max((v for v in done_values + report_done_values if v is not None), default=None)
 clear_ts = parse_iso(clear_ts_raw)
 
-deploy_sec = sec(
-    first_attempt_issue_ts if first_attempt_issue_ts is not None else issue_ts,
-    first_attempt_deploy_ts if first_attempt_deploy_ts is not None else deploy_ts,
+effective_issue_ts = (
+    current_attempt_issue_ts if current_attempt_issue_ts is not None else issue_ts
 )
-work_sec = sec(ack_ts, done_ts)
+effective_deploy_ts = (
+    current_attempt_deploy_ts if current_attempt_deploy_ts is not None else deploy_ts
+)
+deploy_sec = sec(effective_issue_ts, effective_deploy_ts)
+# Retry overwrites the task timestamps. Keep work and e2e on that same latest
+# successful attempt: a stale pre-retry ack must not restart work before the
+# current deployment boundary.
+work_start_ts = ack_ts
+if current_attempt_deploy_ts is not None and (
+    work_start_ts is None or work_start_ts < current_attempt_deploy_ts
+):
+    work_start_ts = current_attempt_deploy_ts
+work_sec = sec(work_start_ts, done_ts)
 finalize_sec = sec(done_ts, clear_ts)
-e2e_sec = sec(issue_ts, clear_ts)
+e2e_sec = sec(effective_issue_ts, clear_ts)
 
 missing = []
-if issue_ts is None:
+if effective_issue_ts is None:
     missing.append("missing_issue_ts")
-if deploy_ts is None:
+if effective_deploy_ts is None:
     missing.append("missing_deploy_ts")
 if ack_ts is None:
     missing.append("missing_ack_ts")
