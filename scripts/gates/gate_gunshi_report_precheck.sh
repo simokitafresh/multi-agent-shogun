@@ -23,6 +23,24 @@ gunshi_precheck_overhead_exit() {
         "gunshi-precheck:$$:${GUNSHI_PRECHECK_STARTED_US}" || true
 }
 trap gunshi_precheck_overhead_exit EXIT
+
+# cmd_karo_hotfix_round2_full_precheck_20260728: full_precheckは恒常課税+外れ値尾の
+# 混合型(§3-4 docs/research/hot-script-speedup-round2-asis-tobe-5w1h_20260728.md)と
+# 判明したが、内部フェーズ別の時間・枝条件は台帳に存在しなかった(親totalのみ)。
+# 最大寄与フェーズを特定するため、子check_id(full_precheck_*、親と非加算・診断専用)を
+# 恒久計装する。各呼出し点は独立にasync書込みするため、_gunshi_precheck_bodyの
+# command substitution(subshell)境界をまたいでも変数の受け渡しは不要。
+_gunshi_phase_report() {
+    local phase="$1" start_us="$2" branch="${3:-none}" now_us wall_ms
+    now_us="${EPOCHREALTIME/./}"; now_us="${now_us:0:16}"
+    wall_ms=$(( (now_us - start_us + 999) / 1000 ))
+    defense_overhead_write_async gate_gunshi_report_precheck "full_precheck_${phase}" "$wall_ms" PASS \
+        "gunshi-precheck-${phase}-${branch}:$$:${start_us}" || true
+    # _gunshi_precheck_body内から呼ばれた場合はbodyのlocal _GUNSHI_MEASURED_MSへ加算する
+    # (bash動的スコープ: bodyがlocal宣言済みならここでの代入はbody側の変数を更新する)。
+    # body外(engine/cache)からの呼出し時は未定義のままで無害(算術コンテキストで0扱い)。
+    _GUNSHI_MEASURED_MS=$(( ${_GUNSHI_MEASURED_MS:-0} + wall_ms ))
+}
 # shellcheck source=scripts/lib/project_path.sh
 source "${REPO_ROOT}/scripts/lib/project_path.sh"
 DM_SIGNAL_PATH="$(get_project_path 'dm-signal')"
@@ -40,9 +58,11 @@ ERRORS=0
 # ─── Engine: 1回のファイル読込で全Pythonチェックを実行 ───────────────────
 # 出力: WORKER_ID / PARENT_CMD / IS_DM_SIGNAL / FILES_MODIFIED /
 #       BINARY_CHECKS_MSG / SAME_CMD_NINJAS / TASK_FILE
+_GUNSHI_PH_ENGINE_START_US="${EPOCHREALTIME/./}"; _GUNSHI_PH_ENGINE_START_US="${_GUNSHI_PH_ENGINE_START_US:0:16}"
 eval "$(python3 "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py" \
     --report "$REPORT_PATH" \
     --tasks-dir "${GUNSHI_PRECHECK_TASKS_DIR:-$REPO_ROOT/queue/tasks}" 2>/dev/null)"
+_gunshi_phase_report engine "$_GUNSHI_PH_ENGINE_START_US" "$([ "${IS_DM_SIGNAL:-0}" = "1" ] && echo dm_signal || echo shogun)"
 
 # ─── 結果cache: report内容hash単位 (cmd_4167: full_precheck 555回×平均5.17秒の削減) ───
 # 同一reportの再precheckをcache返答にし、report(+関連task)の内容が変わった時のみ全量再検査する。
@@ -52,6 +72,7 @@ eval "$(python3 "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck_engine.py"
 # engineの内容hashも含める(GA-232と同型: 検出コード変更はledger不変でも過去判定を無効化する)。
 GUNSHI_PRECHECK_CACHE_WRITE=0
 GUNSHI_PRECHECK_CACHE_FILE=""
+_GUNSHI_PH_CACHE_START_US="${EPOCHREALTIME/./}"; _GUNSHI_PH_CACHE_START_US="${_GUNSHI_PH_CACHE_START_US:0:16}"
 if [ -z "${GUNSHI_PRECHECK_ONLY:-}" ]; then
     GUNSHI_PRECHECK_CACHE_DIR="${GUNSHI_PRECHECK_CACHE_DIR:-${TMPDIR:-/tmp}/gate_gunshi_report_precheck_cache}"
     _cache_report_hash="$(sha256sum "$REPORT_PATH" 2>/dev/null | awk '{print $1}')"
@@ -70,10 +91,14 @@ if [ -z "${GUNSHI_PRECHECK_ONLY:-}" ]; then
             # cache返答で全検査と同一結果になる契約)。cache応答である旨はstderrにのみ出す。
             echo "★ cache応答(full_precheck結果cache): report/task/検出ロジック内容hash一致のため全検査を省略" >&2
             tail -n +2 "$GUNSHI_PRECHECK_CACHE_FILE"
+            _gunshi_phase_report cache "$_GUNSHI_PH_CACHE_START_US" hit
             exit "$_cache_exit"
         fi
     fi
     GUNSHI_PRECHECK_CACHE_WRITE=1
+    _gunshi_phase_report cache "$_GUNSHI_PH_CACHE_START_US" miss
+else
+    _gunshi_phase_report cache "$_GUNSHI_PH_CACHE_START_US" disabled
 fi
 
 if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE35" ]; then
@@ -277,6 +302,8 @@ fi
 # 内部のexitはこのfunction(=subshell)だけを終了し、末尾のEXIT trap(defense_overhead計測)は
 # 呼出元プロセスの終了時に1回だけ発火する(subshell exitでは発火しない。動作確認済み)。
 _gunshi_precheck_body() {
+_GUNSHI_BODY_START_US="${EPOCHREALTIME/./}"; _GUNSHI_BODY_START_US="${_GUNSHI_BODY_START_US:0:16}"
+_GUNSHI_MEASURED_MS=0
 
 # ─── L5: GATE CLEAR≠レビュー免除リマインド (殿厳命2026-06-08) ───
 echo ""
@@ -293,14 +320,17 @@ if [ -n "$_PRE1_REPORT_FP" ] &&
    grep -qxF "$_PRE1_REPORT_FP" "${REPORT_PATH}.validated_fingerprints"; then
     _PRE1_VALIDATED_FP="$_PRE1_REPORT_FP"
 fi
+_GUNSHI_PH_SGPRE1_START_US="${EPOCHREALTIME/./}"; _GUNSHI_PH_SGPRE1_START_US="${_GUNSHI_PH_SGPRE1_START_US:0:16}"
 if GATE_NO_LOG=1 \
    GATE_VALIDATED_FINGERPRINT="$_PRE1_VALIDATED_FP" \
    SHOGUN_DISABLE_MEMORY_DB_CACHE=1 \
    bash "$REPO_ROOT/scripts/gates/gate_report_format.sh" "$REPORT_PATH" 2>/dev/null; then
     echo "  PASS"
+    _gunshi_phase_report sg_pre1 "$_GUNSHI_PH_SGPRE1_START_US" pass
 else
     echo "  FAIL — フォーマット不備あり。詳細は上記出力参照"
     ERRORS=$((ERRORS + 1))
+    _gunshi_phase_report sg_pre1 "$_GUNSHI_PH_SGPRE1_START_US" fail
 fi
 
 # ─── SG-PRE2: ninja workaround rate ───
@@ -317,6 +347,7 @@ fi
 # `git log --grep=$PARENT_CMD --numstat`系走査がPRE3(name-only)/PRE13(numstat)/PRE19(numstat)で
 # 最大3回重複実行され、1回あたり約1.2s(WSL2 NTFS)。numstat 1回の出力から3列目(path)を抽出すれば
 # name-onlyと等価(実データでdiff行数0を確認済み)なため、numstatへ統一し結果を共有する。
+_GUNSHI_PH_BATCHGIT_START_US="${EPOCHREALTIME/./}"; _GUNSHI_PH_BATCHGIT_START_US="${_GUNSHI_PH_BATCHGIT_START_US:0:16}"
 _PRE_CMD_FILES=""
 _PRE_RECENT_DATA=""
 _PRE_PROJECT_NUMSTAT=""  # PROJECT_DIR(dm-signalならDM_SIGNAL_PATH)のnumstat。PRE3のfile一覧+PRE19のDM-Signal合計が共用
@@ -371,6 +402,13 @@ if [ -n "${FILES_MODIFIED:-}" ] && [ -z "$_REPORT_HASHES" ]; then
     else
         _PRE_REPO_NUMSTAT=$( { timeout 3 git -C "$REPO_ROOT" log -20 --no-merges --fixed-strings --grep="${PARENT_CMD:-}" --format="" --numstat 2>/dev/null || true; } )
     fi
+fi
+if [ -z "${FILES_MODIFIED:-}" ]; then
+    _gunshi_phase_report batch_git "$_GUNSHI_PH_BATCHGIT_START_US" no_files_modified
+elif [ -n "$_REPORT_HASHES" ]; then
+    _gunshi_phase_report batch_git "$_GUNSHI_PH_BATCHGIT_START_US" has_hash
+else
+    _gunshi_phase_report batch_git "$_GUNSHI_PH_BATCHGIT_START_US" no_hash_full_scan
 fi
 
 # ─── SG-PRE3: commit検証 ───
@@ -918,29 +956,64 @@ fi
 # ─── SG-PRE21: 因果辺照合(L7穴1対策: レビュー時の因果消費) ───
 echo ""
 echo "■ SG-PRE21: 因果辺照合(causal_backlinks)"
+_GUNSHI_PH_SGPRE21_START_US="${EPOCHREALTIME/./}"; _GUNSHI_PH_SGPRE21_START_US="${_GUNSHI_PH_SGPRE21_START_US:0:16}"
 if [ -n "${FILES_MODIFIED:-}" ]; then
     _causal_script="$REPO_ROOT/scripts/causal_backlinks.sh"
     if [ -f "$_causal_script" ]; then
         _causal_out=""
         _causal_timeout=0
+        # cmd_karo_hotfix_round2_full_precheck_20260728: files_modified 1件ごとに
+        # causal_backlinks.sh(rg全木走査)を逐次起動していた(恒常課税、実測本fixtureで
+        # 2件=926ms)。causal_backlinks.sh自体はscope外(planned_paths外)で変更しないため、
+        # 同一コマンド・同一引数を各stemごとにbackground並列実行し、waitで合流する
+        # (SG-PRE26の三層記憶検索で既に採用済みの並列パターンと同型)。判定結果
+        # (ERRORS/GATE_PREDICTION)には影響しない情報echoのみのため、並列化してもAC2の
+        # 「判定結果を一切変えない」制約に抵触しない。元の逐次ループと出力順序を一致させる
+        # ため、SKIP行と結果行を元のfpath順のまま構築する二段構え(1: 各stem結果を並列取得
+        # →一時ファイル 2: 元の順序でSKIP/結果を組み立て)にする。
+        _causal_tmpdir=$(mktemp -d /tmp/gunshi_pre21_XXXXXX)
+        _causal_order=()
+        _causal_pids=()
+        _causal_i=0
         for fpath in $FILES_MODIFIED; do
             if is_generated_large_artifact "$fpath"; then
-                _causal_out="${_causal_out}  ${fpath}→ SKIP: generated large artifact"$'\n'
+                _causal_order+=("SKIP:${fpath}")
                 continue
             fi
             _stem=$(basename "$fpath" | sed 's/\.[^.]*$//')
-            set +e
-            _links=$(timeout 3 bash "$_causal_script" "$_stem" 2>/dev/null)
-            _rc=$?
-            set -e
-            _links=$(printf '%s\n' "$_links" | head -3)
-            if [ "$_rc" -eq 124 ]; then
-                _causal_timeout=1
-                _causal_out="${_causal_out}  ${_stem}→ WARN: causal_backlinks timeout(3s). 手動照合せよ"$'\n'
-                continue
-            fi
-            [ -n "$_links" ] && _causal_out="${_causal_out}  ${_stem}→ ${_links}"$'\n'
+            _causal_i=$((_causal_i + 1))
+            _causal_order+=("STEM:${_causal_i}:${_stem}")
+            (
+                _cb_links=$(timeout 3 bash "$_causal_script" "$_stem" 2>/dev/null)
+                _cb_rc=$?
+                printf '%s\n' "$_cb_rc" > "$_causal_tmpdir/${_causal_i}.rc"
+                printf '%s\n' "$_cb_links" > "$_causal_tmpdir/${_causal_i}.out"
+            ) &
+            _causal_pids+=("$!")
         done
+        for _cb_pid in "${_causal_pids[@]}"; do
+            wait "$_cb_pid" || true
+        done
+        for _causal_entry in "${_causal_order[@]}"; do
+            case "$_causal_entry" in
+                SKIP:*)
+                    _causal_out="${_causal_out}  ${_causal_entry#SKIP:}→ SKIP: generated large artifact"$'\n'
+                    ;;
+                STEM:*)
+                    _stem_idx="${_causal_entry#STEM:}"; _stem_idx="${_stem_idx%%:*}"
+                    _stem="${_causal_entry#STEM:*:}"
+                    _rc="$(cat "$_causal_tmpdir/${_stem_idx}.rc" 2>/dev/null || echo 1)"
+                    _links="$(head -3 "$_causal_tmpdir/${_stem_idx}.out" 2>/dev/null || true)"
+                    if [ "$_rc" -eq 124 ]; then
+                        _causal_timeout=1
+                        _causal_out="${_causal_out}  ${_stem}→ WARN: causal_backlinks timeout(3s). 手動照合せよ"$'\n'
+                        continue
+                    fi
+                    [ -n "$_links" ] && _causal_out="${_causal_out}  ${_stem}→ ${_links}"$'\n'
+                    ;;
+            esac
+        done
+        rm -rf "$_causal_tmpdir"
         if [ -n "$_causal_out" ]; then
             if [ "$_causal_timeout" -eq 1 ]; then
                 echo "  因果辺照合WARN(タイムアウトあり。PASS扱い禁止):"
@@ -957,6 +1030,7 @@ if [ -n "${FILES_MODIFIED:-}" ]; then
 else
     echo "  SKIP: files_modified empty"
 fi
+_gunshi_phase_report sg_pre21 "$_GUNSHI_PH_SGPRE21_START_US" "n${_causal_i:-0}"
 
 # ─── SG-PRE22: semantic概念表示(L7浸透: レビュー時に関連概念を強制表示) ───
 echo ""
@@ -1098,6 +1172,8 @@ fi
 # ─── SG-PRE26: 三層記憶検索(殿厳命2026-06-10: 使用しないのはバグ) ───
 echo ""
 echo "■ SG-PRE26: 三層記憶検索(L0-L7貫通)"
+_GUNSHI_PH_SGPRE26_START_US="${EPOCHREALTIME/./}"; _GUNSHI_PH_SGPRE26_START_US="${_GUNSHI_PH_SGPRE26_START_US:0:16}"
+_mem_branch="query_empty"
 _mem_query="${_purpose:-${PARENT_CMD:-}}"
 if [ -n "$_mem_query" ]; then
     _mem_db_script="$REPO_ROOT/scripts/memory_db_query.sh"
@@ -1126,15 +1202,19 @@ if [ -n "$_mem_query" ]; then
             # 注: ループ本体最後の[ -n ]がfalseだとset -e+pipefailで全体死亡するためelse分岐必須(2026-06-11発見の既存バグ)
             printf '%s\n' "$_mem_result" | head -6 | while IFS= read -r _line; do if [ -n "$_line" ]; then echo "    $_line"; fi; done
             echo "  ★ 上記を[MEM: memory_db ts=YYYY-MM-DD]で引用してレビューに反映せよ"
+            _mem_branch="hit_n${#_mem_pids[@]}"
         else
             echo "  記憶DB: 関連エントリなし(検索キーワード: $_mem_keywords)"
+            _mem_branch="nohit_n${#_mem_pids[@]}"
         fi
     else
         echo "  SKIP: memory_db_query.sh not found"
+        _mem_branch="script_missing"
     fi
 else
     echo "  SKIP: cmd purpose/id empty"
 fi
+_gunshi_phase_report memory_search "$_GUNSHI_PH_SGPRE26_START_US" "$_mem_branch"
 
 # ─── SG-PRE27: verify系関数evidence検出(LG040: 検証関数は単体実行で検証せよ) ───
 # cmd_3275: verify_sheets()がranges配列バグで常時Falseなのにevidence「一致確認」記載。
@@ -1422,6 +1502,18 @@ fi
 if [ "$ERRORS" -gt 0 ]; then
     GATE_PREDICTION="${GATE_PREDICTION_WITH_SHELL_FINDINGS:?engine conclusion missing}"
 fi
+# full_precheck_body_rest: 個別計装した子(sg_pre1/batch_git/memory_search)を除く
+# body内の残り約30チェック合計(SG-PRE2/SG-PRE19等の未計装区間)。子と非加算・診断専用。
+# _gunshi_phase_reportは開始時刻からの単純経過時間しか出せない(子の減算不可)ため、
+# ここだけ body_total - _GUNSHI_MEASURED_MS を直接計算して書き込む。
+_gunshi_body_now_us="${EPOCHREALTIME/./}"; _gunshi_body_now_us="${_gunshi_body_now_us:0:16}"
+_gunshi_body_total_ms=$(( (_gunshi_body_now_us - _GUNSHI_BODY_START_US + 999) / 1000 ))
+_gunshi_body_rest_ms=$(( _gunshi_body_total_ms - _GUNSHI_MEASURED_MS ))
+if [ "$_gunshi_body_rest_ms" -lt 0 ]; then
+    _gunshi_body_rest_ms=0
+fi
+defense_overhead_write_async gate_gunshi_report_precheck full_precheck_body_rest "$_gunshi_body_rest_ms" PASS \
+    "gunshi-precheck-body_rest-measured${_GUNSHI_MEASURED_MS}ms:$$:${_GUNSHI_BODY_START_US}" || true
 echo ""
 echo "=== 総合: ERRORS=$ERRORS ==="
 if [ "$GATE_PREDICTION" = "BLOCK" ]; then
