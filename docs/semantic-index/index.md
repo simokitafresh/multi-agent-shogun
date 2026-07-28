@@ -8344,6 +8344,7 @@ codd:
 | file | `scripts/semantic_map_generate.sh` |
 | file | `scripts/causal_backlinks.sh` |
 | file | `docs/semantic-index/index.md` |
+| file | `docs/research/ci-test-elimination-design-20260719.md` |
 | cmd | `cmd_2885` cmd因果辺をsemantic-mapへ自動還流 |
 | cmd | `cmd_2860` origin因果辺→辞書自動注入 |
 | cmd | `cmd_2818` 因果NW導入 |
