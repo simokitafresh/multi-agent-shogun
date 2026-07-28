@@ -1,4 +1,4 @@
-# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.2 (2026-07-28 — §3未解決5項を将軍D0全調査で解消(利他)。v1.1=家老RC3点反映。序列暫定=第一弾12/12後の再snapshotでv2.0確定→殿裁可。実装凍結継続)
+# ホットスクリプト集中高速化 第二弾 — AsIs/ToBe 5W1H設計書 v1.2.1 (2026-07-28 — 家老RC全文同期: 本文の12弾/4script/refresh先行の残存矛盾を一掃+cluster≒報告flow撤回+full_precheck混合型再分類。v1.2=§3全調査。序列暫定=第一弾12/12(11:46完了)後の再snapshotでv2.0確定→殿裁可。実装凍結継続)
 
 ## §-0 v1.1改訂(家老レビュー2・blt_105708の全採用)
 
@@ -20,14 +20,14 @@
 | (計装のみ・最適化なし) | B5 inbox_write計測行追加・B2/B3 startup gate台帳計装 | 2弾 |
 
 - **完了条件(第一弾と同型)**: 恒常課税型=既存台帳`logs/defense_overhead.jsonl`同条件before/afterのΔ累積・Δmedian実測で是正済み / 外れ値型=発生条件特定(3点表: topN寄与率・閾値超過率・発生条件)→条件ベース是正済み / 計装弾=計測行が台帳へ実記録されることの二値確認のみ
-- **第二弾完了宣言=12弾全クローズ→台帳再集計→第三弾序列**
+- **第二弾完了宣言=10弾全クローズ→台帳再集計→第三弾序列**(v1.2.1同期: §-1のrefresh 2枠除外後の弾数へ統一)
 - **スコープ外(途中追加は理由を問わず禁止)**: `deploy_task:deploy_total`(cohortA 3位186.7s/n=4だが**既存deploy control-plane速度改善レーンへ帰属** — 残候補③report_publication/④ninja_scope_commitが整理済みであり、二重管理=車輪の再発明を避ける)・cron時差別設計(fullrecalc側)・上記以外の新規標的
 
 ## §0 結論 — 純オーバーヘッド標的序列(cohortA=第一弾10弾の最終CLEAR 2026-07-28T08:36 JST以降のみ)
 
 **母集団の定義**: 第一弾の是正が全て入った後の発火のみ(全期間・是正前混入は序列を歪めるため無効 — 第一弾v2.1家老指摘④と同じ規律)。参考としてcohortB(本日全量)も併記するが、**序列はcohortAのみで引く**。
 
-集計コマンド(v1.1で再現性必須化): python3でdefense_overhead.jsonlをtimestamp下限2026-07-27T23:36Z(=08:36 JST)**かつ上限=集計実行時刻(次回再集計時は同一上限で固定)・対象row_countを出力に併記**して、§1境界表準拠pairのwall_msをn/sum/median/p95/max算出(将軍D0実測2026-07-28 10:51。上限未固定はv1.0の欠陥として是正)。
+集計コマンド(v1.2.1で具体値固定): python3でdefense_overhead.jsonlをtimestamp下限**2026-07-27T23:36:00Z**・上限**2026-07-28T01:51:00Z**(将軍D0実測10:51 JSTの実行時刻)に限定し、§1境界表準拠pairのwall_msをn/sum/median/p95/max算出。本表のrow_countは表中のn列合計+除外3行分が対象全量(次回再snapshotでは新しい下限=第一弾最終CLEAR 11:46:57Z相当・上限・row_countを同様に固定して引き直す)。
 
 | # | source:check_id | 累積(cohortA) | n | median | p95 | max | 型 |
 |---|---|---:|---:|---:|---:|---:|---|
@@ -52,36 +52,36 @@
 ## §1 計測境界表(第一弾から継承 — 集計の憲法)
 
 - 全表=`docs/research/cmd_4181_overhead_boundary_recon.md`。集計禁止・参考母集団(非加算)・親子非加算の原則は第一弾§1と同一
-- **★新規check_idの境界分類が未確定**: three_layer_health:refresh_copy/refresh_verify(writer=`scripts/memory_db_live_insert.py:608`付近)は境界表制定後に台帳へ入った新顔。refresh_window(集計禁止)と同族のbackground処理である可能性があり、**「純オーバーヘッド(ターンを止める)か、background(ターンを止めない)か」の分類確定が#1・#2弾の第一AC**(誤分類のまま最適化すると的外れ — 第一弾q11の教訓)
+- **新規check_idの境界分類 → 確定済み(v1.2)**: three_layer_health:refresh_copy/refresh_verify(writer=`scripts/memory_db_live_insert.py:608`付近)は**background保守laneと確定**(家老一次確認+将軍のmemory_db_cache.sh L60-90現読=§3-1)。純オーバーヘッド母集団から除外済み。教訓: 新規check_idは分類を明記してから台帳へ(v1.0はこの違反で誤序列を引いた)
 - 外れ値台帳の枝選択コンテキスト(第一弾v2.2 §3-5): 本弾の計装2弾および外れ値弾の観測追加は、枝選択・staged paths・cache hit等を同eventへ記録する要件に従う
 
 ## §2 To-Be — 進め方(第一弾§2の型を継承)
 
 1. **1標的=1弾・複合弾禁止**。ACは同一条件before/after実測差分+品質2原則(挙動不変の正本突合+境界fixture)
-2. **順序**: #1・#2(refresh_copy/verify)は**境界分類確定→3点表offence条件特定→是正**の外れ値型手順を先行。恒常課税型(#3-#10)は累積順
+2. **順序(v1.2.1同期: refresh 2弾は除外済み)**: 恒常課税型は累積順(#1 full_precheckから)。full_precheckは分散+混合尾のためフェーズ分解と枝条件の**同時計装**から入る(§3-4)。checks_main再トライは恒久サブ区間計装が第一AC(§3-2)
 3. 計測は既存台帳`defense_overhead.jsonl`のみ(新台帳禁止)。効果報告=Δ(累積)+Δ(median)。削減見込み額の事前外挿禁止(LG082型 — 実測のみ)
-4. **並列構造(第一弾で確定)**: 同一fileの別checkはreserved-path collisionでfail-close=正当。最大並列=スクリプト単位4レーン、file内は先行完了待ち直列
-5. **凍結解除条件**: 本v1.0の家老忖度なしレビュー完了後、殿裁可で順次起票。**それまで実装ゼロ**
+4. **並列構造(第一弾で確定した原理)**: 同一fileの別checkはreserved-path collisionでfail-close=正当。∴**最大並列数=スコープ内の対象スクリプト数(1ファイル=1レーン)**、file内は先行完了待ち直列。本弾の現行スコープ(§-1=3スクリプト)なら3レーン、v2.0再序列でスクリプト数が変われば同数だけレーンが立つ
+5. **凍結解除条件**: 第一弾12/12後の再snapshot版(v2.0)への家老忖度なしレビュー完了→殿裁可で順次起票。**それまで実装ゼロ**
 6. 配備は家老自立配備(karo_direct、第一弾の殿裁定00:08と同型)を既定とする
 
 ## §3 未解決事項 → v1.2で全5項を将軍D0調査済み(2026-07-28 11:30、read-only+台帳集計のみ・実装なし)
 
 1. ~~refresh_copy/verifyの境界分類~~ → **解消(ターン接触なしを現物確定)**: `scripts/lib/memory_db_cache.sh` L60-90現読 — refreshは`setsid -f` double-forkで完全非同期化済み(旧実装の「command substitutionがbackupを待つ」バグはコメントに記録された既修正事項)、cold-cache生成も非同期でreaderはcanonical DBを即使用、preflight外側budget 5sは検索自体の予算でrefresh待ちではない。∴家老判定(background保守lane)を現物で補強。間接影響はcold cache期のcanonical 9p直読でクエリが遅くなる分のみ — これはq11/three_layer(第一弾是正済み)側の計測に現れるため独立標的にしない
 2. ~~checks_main残余の内訳~~ → **恒久計装が必要と確定**: cmd_save系の台帳check_idは6種(checks_main/checks_pre_session/q11/three_layer/memory_db_token/session_state)のみでchecks_main内サブ区分は**台帳に存在しない**(cmd_4189のフェーズ分解は報告内の一時実測で恒久化されていない)。∴checks_main再トライ弾の第一AC=サブ区間計測行の恒久追加(外れ値台帳の枝選択コンテキスト要件に従う)→ボトルネック上位特定→是正
-3. ~~commit_hash呼出し回数の妥当性~~ → **重複呼出しを実測確定**: cohortA(上限02:30Z固定)でn=243が2分gapクラスタ9個に集中=**平均27.0回/クラスタ(≒1報告フローあたり27回呼出し)**。単価190msは是正済みのため、**batch化(report_field_set複数フィールド一括書込みへの呼出し集約)が是正の軸**と確定
-4. ~~full_precheck 3点表~~ → **作成済み(恒常課税優勢と判定)**: n=158/累積180.1s(上限02:30Z固定)、top1寄与6.3%/top5寄与21.5%、>1s率22.2%。集中でなく広く分散=**外れ値型ではなく恒常課税型が主**。外れ値上位3件(11.3s/7.7s/7.1s、event_id記録済み)はいずれもverdict PASS・軍師precheck実行時。∴弾の型=フェーズ分解→実装最適化(3点表による条件特定偵察は不要と再分類)
+3. ~~commit_hash呼出し回数の妥当性~~ → **時間クラスタ集中を実測、batch化は仮説へ降格(家老RC採用)**: cohortA(上限02:30Z固定)でn=243が2分gapクラスタ9個に集中=平均27.0回/クラスタ。ただし台帳event_idにreport/task識別子がなく**「1クラスタ=1報告フロー」は証明不能**(時間クラスタの回数であり同一報告flowの回数ではない)。∴是正弾の第一AC=report/task識別子の同event計装→重複判定→batch化はその後の仮説検証
+4. ~~full_precheck 3点表~~ → **作成済み(混合型と判定・家老RC採用)**: n=158/累積180.1s(上限02:30Z固定)、top1寄与6.3%/top5寄与21.5%、>1s率22.2%、median 494ms/p95 3,771ms。**恒常単一型ではなく恒常+混合尾** — 「条件特定偵察不要」の断定は撤回し、弾の型=フェーズ分解と枝条件の**同時計装**→上位特定→是正
 5. ~~B5/B2/B3計装の計測点設計~~ → **設計確定**: B5 inbox_write=persist(flock+YAML書込み)/nudge(tmux send-keys)/delivery verify(codex capture)の3計測点+total(加算対象はtotalのみ=親子非加算遵守)。B2/B3 startup gate=既存TIMING行(gate_shogun_startupはTIMING_COVERAGE measured=59が既に出力)をdefense_overhead.jsonlへ転記する薄いwriterブリッジのみ(新規計測実装は不要)
 
 **残る未決定(調査では解消できない工程判断)**: 序列・scopeの最終確定は第一弾12/12完了後の再snapshot(v2.0)で行い殿裁可を仰ぐ — §-0(3)の通り
 
 ## §4 5W1H
 
-- **WHY**: 第一弾で旧上位が圏外へ後退した結果、隠れていた新上位(three_layer_health系1,644s)が露出した。台帳再集計→新序列→次弾の反復が自動成長の回転そのもの
-- **WHAT**: cohortA序列に基づく4スクリプト10check+計装2弾の覚醒高速化(設計のみ、実装凍結中)
-- **WHEN**: 本v1.0家老レビュー→殿裁可→起票解禁。第一弾残2弾(memory_db_token_search/instruction_sync)の完了とは独立に準備
-- **WHERE**: §-1の4スクリプト+台帳=defense_overhead.jsonl
-- **WHO**: 偵察・実装=忍者(スクリプト単位4レーン並列)、配備=家老自立、検分=家老+軍師、裁可=殿
-- **HOW**: 外れ値型=境界分類→3点表→条件是正、恒常課税型=フェーズ分解→最小差分実装→Δ実測証明、計装弾=計測行追加のみ
+- **WHY**: 第一弾で旧上位が圏外へ後退し、次の恒常課税上位(full_precheck・report_field_set群・checks_main残余)が標的として確定した。台帳再集計→新序列→次弾の反復が自動成長の回転そのもの
+- **WHAT**: cohortA暫定序列に基づく**3スクリプト8check+計装2弾**の覚醒高速化(設計のみ、実装凍結中。最終序列は12/12後の再snapshot=v2.0)
+- **WHEN**: 第一弾12/12完了(2026-07-28 11:46確定)→再snapshotでv2.0序列→家老レビュー→殿裁可→起票解禁
+- **WHERE**: §-1の**3スクリプト**+台帳=defense_overhead.jsonl
+- **WHO**: 偵察・実装=忍者(並列数=対象スクリプト数。1ファイル=1レーンの原理、現行スコープでは3)、配備=家老自立、検分=家老+軍師、裁可=殿
+- **HOW**: 恒常課税型=フェーズ分解+枝条件の同時計装→最小差分実装→Δ実測証明、識別子欠落check=計装→重複判定→是正、計装弾=計測行追加のみ
 
 ## §5 因果リンク
 

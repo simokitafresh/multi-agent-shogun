@@ -20,10 +20,10 @@
 | 8 | self_sync | ✅ CLEAR | 観測5項目追加→枝別実測→skip分岐化(reverify弾で独立再検証済み) | sync分岐median 1,378ms→skip分岐88ms(-93.6%) |
 | 9 | three_layer_memory_ruling | ✅ CLEAR | cache miss条件限定の最適化(query正規化key+cmd間cache+negative cache+single-flight) | before=外れ値92件分布(累積1,009,352ms/median 4,126ms)。after=同一query 2並列fixtureで累積2ms/median 1ms(**全92件同条件afterは未計測** — cohort全体の恒常削減値ではない) |
 | 10 | checks_pre_session | ✅ CLEAR | 全量YAML再parseをqueue世代一致時のみ再利用 | 同一入力20回でmedian 61.6→18.1ms(-70.7%)、累積1,827→377ms(-79.4%) |
-| 11 | memory_db_token_search | ✅ CLEAR(11:46) | tokenなし枝(cohort 164件中56件)のworker起動・DB接触をpredicateで0化+prime済みcache再利用。tokenあり枝のINFO出力契約は不変 | baseline 164件=累積201,675ms/median 86ms。tokenなし枝の計装0件化を分枝実験で証明、full unit 2695/2695 PASS・SKIP0 |
-| 12 | instruction_sync | ✅ CLEAR(11:20) | 正本staged時のみの重い枝(top1 56.9%/top5 93.8%)を差分生成化 | 重い枝-99.4%/-97.2%(報告生値)。cohort再集計N=427で母集団前提の一致も再確認 |
+| 11 | memory_db_token_search | ✅ CLEAR(11:46) | tokenなし枝(cohort 164件中56件)のworker起動・DB接触をpredicateで0化+prime済みcache再利用。tokenあり枝のINFO出力契約は不変 | baseline 164件=累積201,675ms/median 86ms。tokenなし枝の計装0件化を分枝実験で証明、full unit 2695/2695 PASS・SKIP0。**after同条件のwall_ms累積・medianは未計測**(次snapshot待ち) |
+| 12 | instruction_sync | ✅ CLEAR(11:20) | 正本staged時のみの重い枝(top1 56.9%/top5 93.8%)を差分生成化 | 重い枝実測: 旧265.202s→新1.49s(**-99.4%**)。cohort再集計N=427で母集団前提の一致も再確認。~~-97.2%~~は非同一cohort混在の乗算外挿として**報告内で撤回済み — 引用禁止(第二弾序列材料にも使用禁止)** |
 
-- 全弾が品質2原則(正本突合+境界fixture)+選択テストFAIL0・SKIP0+既存台帳のみのΔ証明(新台帳0件)を遵守
+- 全弾が品質2原則(正本突合+境界fixture)+選択テストFAIL0・SKIP0を遵守。既存台帳のみのΔ証明(新台帳0件)は#1-#10で成立、**例外2件**: #11=after同条件台帳値未計測(構造証明のみ)、#12=重い枝の直接実測(台帳cohort外の同条件対)による証明
 - 付随して掘れたインフラバグ2件も即修正済み: deploy_sec誤計上(issued/deployed混在→attempt_id対集計、q11誤3,321秒→真53秒、commit 0932543cc)・commit_hash弾のcontext_freshness BLOCK解消
 - 並列構造の確定: 同一fileの別check同時配備はreserved-path collisionでfail-close(正当)。**最大並列=スクリプト単位3レーン**、file内は先行完了待ち直列(将軍裁定02:34)
 
