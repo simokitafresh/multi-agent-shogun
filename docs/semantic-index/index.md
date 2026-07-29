@@ -10514,6 +10514,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T03:27:27.895174+00:00 git pre-commit semantic propagation for context/projects changes |
 | cmd | `cmd_karo_hotfix_cmd_complete_context_metadata_postcommit_20260729` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T04:00:17.288295+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T11:30:20.817913+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
