@@ -1,6 +1,7 @@
 # 【📐設計書v1.1 — 家老レビューRC5点反映済み・実装凍結・序列確定は第五弾wave-final receipt後】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.1 (2026-07-29 22:45 家老RC反映。殿発案22:06、v1.0起草22:10)
 
 ## §-2 版履歴
+- v1.2(23:00): 家老独立監査(blt_225827)の実行不能指摘を是正 — 現行schemaでは4識別子結合が生成不能(receiptにrun_id/source_fp無し・ledgerにoutput_sha256無し)ため、**弾#0=run_identity計装(非破壊・wave-final前導入必須)を前提弾として新設**。現存キー導出写像は同一commit複数run曖昧性ゆえ不採用。疾風の当該review task FAILは正当(実行不能の正直報告)
 - v1.1(22:45): 家老忖度なしレビュー(blt_223951)RC5点反映 — ①序列SSOT結合契約を§0へ追加 ②setup寄与のwall−Σtest算出を撤回(--jobs並列でΣtest>wall可能)→focused serial probe/明示計装へ ③共有層writer=shared先行→固定HEAD再計測→個別writerの直列依存 ④敵対fixtureは変更した独立oracle・副作用境界ごと ⑤序列確定・弾数固定はwave-final receipt後(それまで構造監査のみ)
 - v1.0(22:10): 初版起草(殿発案22:06)
 
@@ -17,7 +18,8 @@
 
 **序列snapshotの取得方法(確定)**: 追加の全量実行はしない。**第五弾wave最終のfixed-SHA全量unit checkpoint 1回**(殿裁定2026-07-28全量テスト原則: 全量はwave最終1回)の受領書+bats per-test timingをそのまま第七弾の序列一次データへ転用する。宣言4点(exact境界・row_count・raw hash・採用HEAD)は第五弾v4/v5 snapshotと同型。
 
-- **序列SSOT結合契約(家老RC①・v1.1確定)**: 計測データは4箇所に分散する — receipt JSON=suite全体のduration/rc/hash、per-file=`logs/test_timing_ledger.tsv`、per-test=receipt `.tap`、file実行順=receipt `.output`のSTART列。序列snapshotは**同一run_id・commit・source_fp・output_shaの4識別子で一意結合**したものだけを正とし、結合できない行は序列から除外して件数を報告する(家老一次確認: bats起動は`--jobs test_jobs --timing`)
+- **序列SSOT結合契約(家老RC①・v1.1確定→v1.2で充足経路を確定)**: 計測データは4箇所に分散する — receipt JSON=suite全体のduration/rc/hash、per-file=`logs/test_timing_ledger.tsv`、per-test=receipt `.tap`、file実行順=receipt `.output`のSTART列。序列snapshotは**同一run_id・commit・source_fp・output_shaの4識別子で一意結合**したものだけを正とし、結合できない行は序列から除外して件数を報告する
+- **★結合契約の充足経路(家老独立監査22:58で実行不能と確定→v1.2是正)**: 現行schemaは4識別子結合を満たさない — receipt JSONにrun_id/source_fingerprintが無く、ledgerにoutput_sha256が無い(家老一次実測: ledger=run_id,repo,commit_sha,…,source_fingerprint / receipt=…,output_sha256,duration_ms等のみ)ため、同一commit・同一source_fpの複数runを一意対応できない。**充足経路=run_identity計装を第七弾の弾#0(前提弾)とする**: receipt+ledger+tap/outputへ共通run_identity(既存run_id体系の非破壊伝播)を追加する小計装。**wave-final全量runより前に導入**し、wave-final runが結合可能な最初の序列SSOTになるよう順序を固定する(導入前の過去receiptは序列に使わない=結合不能行の除外規則で一貫)。計装はコード変更ゆえ殿裁可の対象。代替の「現存キーからの導出写像」は同一commit複数runの曖昧性が残るため不採用
 - 台帳の実在(2026-07-29 22:09将軍一次確認): `logs/test_receipts/` receipt **3,189件**・`tests/unit/` bats **182本**・receiptにduration_ms実在(例: 652,369ms=約11分の重量受領書を確認)
 - AsIsの規模感(既知の一次実測のみ・序列ではない): unit全量≈2,454s(2026-07-24実測)/CI unit job=テスト成長で旧timeout 5分を突破し3連続cancel→12分へ是正(LS101統合教訓)・是正後7分07秒完走/checkpoint全量2,745テスト(第四弾3巡CLEAR)/affected選択実行でも1ファイル33.5s実例(test_semantic_index_update.bats 43件、2026-07-29将軍commit実測)
 - **序列確定・弾数固定の時期(家老RC⑤)**: **第五弾wave-final fixed-SHA全量unit receiptの生成後**。それまでは構造監査(結合契約・計測法・writer依存の確定=本v1.1)のみ行い、序列・弾数を仮確定しない(直近全量receiptはrc=1 FAIL=duration_ms 129,782の失敗runゆえ序列に使えない — 成功runのみが序列SSOT)
@@ -46,6 +48,7 @@
 |---|---|
 | 弾スタイルのテスト適用 | 殿発案22:06・将軍賛同済み。**採否の正式裁可待ち** |
 | 序列snapshot | **wave-final成功receipt待ち(RC⑤)**: 第五弾wave最終fixed-SHA全量unit成功run生成後に4識別子結合で確定。それまで構造監査のみ |
+| **弾#0 run_identity計装(v1.2新規・前提弾)** | 設計確定・実装凍結: receipt+ledger+tap/outputへ共通run_identityを非破壊追加(現schemaでは4識別子結合が実行不能=家老独立監査22:58)。**wave-final全量runの前に導入必須**。殿裁可対象 |
 | 弾数・標的固定 | 序列確定後に殿へ提示→裁可で決め打ち |
 | 淘汰との境界 | **確定**: 第七弾=高速化のみ。削除はS3レーン+default-delete policy |
 | 共有層writer | **確定(RC③)**: test_helper/setup/fixtureは独立writerかつ**先行** — shared弾クローズ→固定HEAD全体再計測→個別writer弾の直列依存。並列変更禁止 |
