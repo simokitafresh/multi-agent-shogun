@@ -928,9 +928,61 @@ deploy_task_cmd_complete_processed() {
     return 1
 }
 
+deploy_task_has_formal_karo_rc_for_report() {
+    local parent_cmd="$1"
+    local ninja_name="$2"
+    local report_file="$3"
+    local task_file="${4:-}"
+    local report_abs task_report_abs approval_file
+
+    [ -n "$parent_cmd" ] || return 1
+    [ -n "$ninja_name" ] || return 1
+    [ -f "$report_file" ] || return 1
+    [ -f "$task_file" ] || return 1
+
+    report_abs=$(realpath "$report_file" 2>/dev/null) || return 1
+    task_report_abs=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "report_path" "" 2>/dev/null || true)
+    [ -n "$task_report_abs" ] || return 1
+    [[ "$task_report_abs" = /* ]] || task_report_abs="$SCRIPT_DIR/$task_report_abs"
+    task_report_abs=$(realpath "$task_report_abs" 2>/dev/null) || return 1
+    [ "$task_report_abs" = "$report_abs" ] || return 1
+
+    for approval_file in "$SCRIPT_DIR/queue/gates/$parent_cmd/review_approvals/reports/"*/karo.yaml; do
+        [ -f "$approval_file" ] || continue
+        if python3 - "$approval_file" "$report_abs" "$parent_cmd" "$ninja_name" "$SCRIPT_DIR" <<'PY'
+import os
+import sys
+import yaml
+
+approval_path, report_path, parent_cmd, ninja_name, root = sys.argv[1:]
+approval = yaml.safe_load(open(approval_path, encoding="utf-8")) or {}
+report = yaml.safe_load(open(report_path, encoding="utf-8")) or {}
+approved_report = str(approval.get("report") or "").strip()
+if approved_report and not os.path.isabs(approved_report):
+    approved_report = os.path.join(root, approved_report)
+valid = (
+    str(approval.get("role") or "").strip() == "karo"
+    and str(approval.get("result") or "").strip() == "RC"
+    and os.path.realpath(approved_report) == os.path.realpath(report_path)
+    and str(report.get("status") or "").strip() == "revision_requested"
+    and str(report.get("verdict") or "").strip() == "FAIL"
+    and str(report.get("parent_cmd") or "").strip() == parent_cmd
+    and str(report.get("worker_id") or "").strip() == ninja_name
+)
+raise SystemExit(0 if valid else 1)
+PY
+        then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 deploy_task_has_pending_own_report() {
     local parent_cmd="$1"
     local ninja_name="$2"
+    local task_file="${3:-}"
     local report_file report_base report_status report_verdict
 
     [ -n "$parent_cmd" ] || return 1
@@ -946,6 +998,11 @@ deploy_task_has_pending_own_report() {
         report_status=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "status" "" 2>/dev/null || true)
         report_verdict=$(FIELD_GET_NO_LOG=1 field_get "$report_file" "verdict" "" 2>/dev/null || true)
         if [[ "$report_verdict" =~ ^(PASS|FAIL|PASS_NO_IMPROVEMENT)$ ]]; then
+            if [ "$report_status" = "revision_requested" ] \
+                && deploy_task_has_formal_karo_rc_for_report "$parent_cmd" "$ninja_name" "$report_file" "$task_file"; then
+                log "formal_karo_rc_redeploy: ${parent_cmd} report=${report_base} — allowing"
+                continue
+            fi
             log "BLOCK: ${parent_cmd} has pending own report ${report_base} (status=${report_status:-empty}, verdict=${report_verdict}, cmd_complete=missing)"
             echo "BLOCK: ${ninja_name} has pending report for ${parent_cmd}: ${report_base}. Run/finish cmd_complete_gate before redeploying this ninja, or select another ninja." >&2
             return 0
@@ -12326,7 +12383,7 @@ except Exception:
         record_issued_at_once "$task_yaml" "$CMD_ID" "$(date '+%Y-%m-%dT%H:%M:%S')" || return 1
     fi
 
-    if [ -n "$CMD_ID" ] && deploy_task_has_pending_own_report "$CMD_ID" "$NINJA_NAME"; then
+    if [ -n "$CMD_ID" ] && deploy_task_has_pending_own_report "$CMD_ID" "$NINJA_NAME" "$task_yaml"; then
         deploy_task_release_lock "$deploy_lock_fd" "$deploy_lock_file"
         return 1
     fi

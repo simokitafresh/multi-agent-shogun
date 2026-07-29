@@ -1568,6 +1568,71 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: revision_requested reports may bypass the pending-own-report
+# guard only when an exact same-worker/same-command report has formal Karo RC.
+@test "formal Karo RC permits only the exact revision_requested FAIL report" {
+    local report="$TEST_PROJECT/queue/reports/sasuke_report_cmd_rc_retry.yaml"
+    local task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    local approvals="$TEST_PROJECT/queue/gates/cmd_rc_retry/review_approvals/reports/case"
+    mkdir -p "$approvals"
+    cat > "$task" <<'EOF'
+task:
+  parent_cmd: cmd_rc_retry
+  report_path: queue/reports/sasuke_report_cmd_rc_retry.yaml
+EOF
+    cat > "$report" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_rc_retry
+status: revision_requested
+verdict: FAIL
+EOF
+    cat > "$approvals/karo.yaml" <<'EOF'
+role: karo
+result: RC
+report: queue/reports/sasuke_report_cmd_rc_retry.yaml
+EOF
+
+    run bash -c '
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        log() { echo "$*"; }
+        deploy_task_has_pending_own_report cmd_rc_retry sasuke "$1/queue/tasks/sasuke.yaml"
+    ' _ "$TEST_PROJECT"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"formal_karo_rc_redeploy:"* ]]
+
+    local case_name
+    for case_name in unreviewed accept gunshi other_report completed failed; do
+        cat > "$report" <<'EOF'
+worker_id: sasuke
+parent_cmd: cmd_rc_retry
+status: revision_requested
+verdict: FAIL
+EOF
+        cat > "$approvals/karo.yaml" <<'EOF'
+role: karo
+result: RC
+report: queue/reports/sasuke_report_cmd_rc_retry.yaml
+EOF
+        case "$case_name" in
+            unreviewed) rm -f "$approvals/karo.yaml" ;;
+            accept) sed -i 's/result: RC/result: ACCEPT/' "$approvals/karo.yaml" ;;
+            gunshi) sed -i 's/role: karo/role: gunshi/' "$approvals/karo.yaml" ;;
+            other_report) sed -i 's/sasuke_report_cmd_rc_retry/other_report_cmd_rc_retry/' "$approvals/karo.yaml" ;;
+            completed) sed -i 's/status: revision_requested/status: completed/' "$report" ;;
+            failed) sed -i 's/status: revision_requested/status: failed/' "$report" ;;
+        esac
+        run bash -c '
+            export DEPLOY_TASK_LIB_ONLY=1
+            source "$1/scripts/deploy_task.sh"
+            log() { :; }
+            deploy_task_has_pending_own_report cmd_rc_retry sasuke "$1/queue/tasks/sasuke.yaml"
+        ' _ "$TEST_PROJECT"
+        [ "$status" -eq 0 ]
+        [[ "$output" == *"BLOCK: sasuke has pending report for cmd_rc_retry"* ]]
+    done
+}
+
 @test "cmd_2951: cmd_complete archive.done allows redeploy after pending report is processed" {
     cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
 task:
