@@ -243,10 +243,27 @@ PY
 # below five seconds while exactly one delayed notification remains deliverable.
 @test "delayed reconciler closes inherited single-flight descriptors before its thirty-second wait" {
   export RFS_DISABLE_FAST_RECONCILER=0
-  run env RFS_RECONCILE_DELAY=30 RFS_INBOX_WRITE_PATH="$FAKE_INBOX" RFS_EVENT_LOG="$RFS_EVENT_LOG" \
+  fake_bin="$TMPDIR_CASE/fake-bin"
+  delay_log="$TMPDIR_CASE/reconcile-delay"
+  release_file="$TMPDIR_CASE/reconcile-release"
+  mkdir "$fake_bin"
+  cat >"$fake_bin/sleep" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$1" >"$RFS_DELAY_LOG"
+while [ ! -e "$RFS_RELEASE_FILE" ]; do /bin/sleep 0.01; done
+SH
+  chmod +x "$fake_bin/sleep"
+  run env PATH="$fake_bin:$PATH" RFS_DELAY_LOG="$delay_log" RFS_RELEASE_FILE="$release_file" \
+    RFS_RECONCILE_DELAY=30 \
+    RFS_INBOX_WRITE_PATH="$FAKE_INBOX" RFS_EVENT_LOG="$RFS_EVENT_LOG" \
     bash -c 'printf "status: completed\nbinary_checks.AC1[0].result: yes\n" | bash "$1/scripts/report_field_set.sh" --batch "$2"' _ "$ROOT" "$REPORT"
   [ "$status" -eq 0 ]
   [ "$(wc -l <"$RFS_EVENT_LOG")" -eq 1 ]
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    [ -s "$delay_log" ] && break
+    /bin/sleep 0.05
+  done
+  [ "$(cat "$delay_log")" = 30 ]
 
   gate_lock="$(realpath "$REPORT.gate.lock")"
   holder_count="$(
@@ -275,7 +292,8 @@ PY
   [ "$wait_ms" -lt 5000 ]
   [ ! -s "$RFS_EVENT_LOG" ]
 
-  for _ in $(seq 1 310); do
+  touch "$release_file"
+  for _ in $(seq 1 20); do
     [ -s "$RFS_EVENT_LOG" ] && break
     sleep 0.1
   done
