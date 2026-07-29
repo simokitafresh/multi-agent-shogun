@@ -45,20 +45,20 @@
 | 項 | 状態 |
 |---|---|
 | 弾スタイルのテスト適用 | 殿発案22:06・将軍賛同済み。**採否の正式裁可待ち** |
-| 序列snapshot | 実測待ち(家老がreceipt+bats timingからread-only抽出中、22:07下知) |
+| 序列snapshot | **wave-final成功receipt待ち(RC⑤)**: 第五弾wave最終fixed-SHA全量unit成功run生成後に4識別子結合で確定。それまで構造監査のみ |
 | 弾数・標的固定 | 序列確定後に殿へ提示→裁可で決め打ち |
 | 淘汰との境界 | **確定**: 第七弾=高速化のみ。削除はS3レーン+default-delete policy |
-| 共有層writer | **確定**: test_helper/setup/fixtureは独立writer(個別ファイル弾と直列/並列は序列後判断) |
+| 共有層writer | **確定(RC③)**: test_helper/setup/fixtureは独立writerかつ**先行** — shared弾クローズ→固定HEAD全体再計測→個別writer弾の直列依存。並列変更禁止 |
 | 起票解禁 | 殿裁可待ち。優先順位=第五弾実装>第六弾計測>第七弾(idle充填順、2026-07-29将軍下知) |
 
 ## §4 5W1H
 
 - **WHY**: テスト実行時間は開発の全周回に課税する(pre-commit affected 33.5s実例・CI unit 7分・全量2,454s)。テスト成長でCI timeoutを突破した実害歴(3連続cancel)あり。速いテスト=試行回数最大化=ラルフループの回転数そのもの
 - **WHAT**: 弾スタイル(台帳→序列→1標的1弾→同条件Δ→品質底線)のテスト写像。検証力不変で実行時間のみ削る
-- **WHEN**: 序列抽出(進行中)→殿裁可→起票解禁。優先順位は第五弾>第六弾>第七弾
+- **WHEN**: 第五弾wave-final成功receipt生成→序列確定(4識別子結合)→殿裁可→起票解禁。それまで構造監査のみ。優先順位は第五弾>第六弾>第七弾
 - **WHERE**: `tests/unit/*.bats` 182本+`tests/test_helper/`共有層。台帳=`logs/test_receipts/`(3,189件)+bats timing
 - **WHO**: 序列抽出=忍者(read-only冗長2名)、是正実装=忍者(1ファイル単独所有)、検分=家老+軍師、裁可=殿
-- **HOW**: 恒常課税=setup寄与分離→最大寄与是正、外れ値=発火条件→条件ベース是正。全弾で敵対fixture1点による検証力確認
+- **HOW**: 恒常課税=setup寄与分離(serial probe/明示計装)→最大寄与是正、外れ値=発火条件→条件ベース是正。敵対fixtureは変更した独立oracle・副作用境界ごとに設置して検証力確認(RC④)
 
 ## §5 因果リンク
 
