@@ -10643,6 +10643,7 @@ codd:
 | cmd | `cmd_karo_round5_lane_git_precommit_yaml_ast_20260729` (`scripts/hooks/git-pre-commit.sh`) |
 | lesson | `L1464` fixed-window弾の世代ラベルと数値を4点契約で照合する |
 | cmd | `cmd_karo_round5_lane_git_precommit_shell_syntax_20260730` (`scripts/hooks/git-pre-commit.sh`, `tests/unit/test_git_pre_commit_affected_deps.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T16:24:53.301064+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
