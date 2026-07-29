@@ -361,6 +361,18 @@ _gunshi_precheck_body() {
 _GUNSHI_BODY_START_US="${EPOCHREALTIME/./}"; _GUNSHI_BODY_START_US="${_GUNSHI_BODY_START_US:0:16}"
 _GUNSHI_MEASURED_MS=0
 
+# SG-PRE2はSG-PRE1と独立だが、従来は2.5s級のworkaround台帳走査を直列実行していた。
+# stdoutの節順を変えずに待ち時間だけ重ねるため、結果を既知の単一tmpfileへ先行取得し、
+# SG-PRE2位置でwait→catする。失敗は従来どおり表示のみでprecheck判定へ加算しない。
+_gunshi_pre2_tmpfile=""
+_gunshi_pre2_pid=""
+if [ -n "${WORKER_ID:-}" ]; then
+    _gunshi_pre2_tmpfile=$(mktemp /tmp/gunshi_pre2_XXXXXX)
+    bash "$REPO_ROOT/scripts/gates/gate_ninja_workaround_rate.sh" \
+        --ninja "$WORKER_ID" > "$_gunshi_pre2_tmpfile" 2>/dev/null &
+    _gunshi_pre2_pid=$!
+fi
+
 # ─── L5: GATE CLEAR≠レビュー免除リマインド (殿厳命2026-06-08) ───
 echo ""
 echo "★★★ レビューの目的は実装の正しさ確認。GATE CLEARはレビュー免除の理由にならない(洗脳#1防止) ★★★"
@@ -393,10 +405,12 @@ fi
 echo ""
 echo "■ SG-PRE2: ninja workaround rate"
 if [ -n "${WORKER_ID:-}" ]; then
-    bash "$REPO_ROOT/scripts/gates/gate_ninja_workaround_rate.sh" --ninja "$WORKER_ID" 2>/dev/null || true
+    wait "$_gunshi_pre2_pid" || true
+    cat "$_gunshi_pre2_tmpfile"
 else
     echo "  SKIP: worker_id not found"
 fi
+[ -z "$_gunshi_pre2_tmpfile" ] || rm -f "$_gunshi_pre2_tmpfile"
 
 # ─── Batch git data (cmd_3807: PRE3/PRE13/PRE19が独立に行っていた最大4回の全履歴--grep走査を統合) ───
 # 実測(docs/research/cmd_3807_gunshi_precheck_speedup.md): 統合前は同一REPO_ROOTへの
@@ -1277,7 +1291,12 @@ if [ -n "$_mem_query" ]; then
             _hit=$(head -4 "$_f")
             [ -n "$_hit" ] && _mem_result="${_mem_result}${_hit}"$'\n'
         done
-        rm -rf "$_mem_tmpdir"
+        # D002: /tmp配下への再帰削除は禁止。作成した既知の単一ファイルだけを
+        # 非再帰で除去し、空ディレクトリだけrmdirする。
+        for _mem_cleanup_i in $(seq 1 "${_mem_i:-0}" 2>/dev/null || true); do
+            rm -f "$_mem_tmpdir/${_mem_cleanup_i}"
+        done
+        rmdir "$_mem_tmpdir" 2>/dev/null || true
         if [ -n "$_mem_result" ]; then
             echo "  記憶DB関連エントリ:"
             # 注: ループ本体最後の[ -n ]がfalseだとset -e+pipefailで全体死亡するためelse分岐必須(2026-06-11発見の既存バグ)

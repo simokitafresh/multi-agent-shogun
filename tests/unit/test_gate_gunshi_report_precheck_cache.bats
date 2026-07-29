@@ -33,7 +33,14 @@ YAML
 }
 
 teardown() {
-  rm -rf "$TMP_DIR"
+  # D002: /tmp配下への再帰削除は禁止。fixtureが作る既知階層だけを
+  # 非再帰で空にしてからrmdirする。
+  rm -f "$TMP_DIR"/tasks/kagemaru.yaml \
+        "$TMP_DIR"/report.yaml \
+        "$TMP_DIR"/out*.txt \
+        "$TMP_DIR"/err*.txt \
+        "$TMP_DIR"/cache/*
+  rmdir "$TMP_DIR"/cache "$TMP_DIR"/tasks "$TMP_DIR" 2>/dev/null || true
 }
 
 @test "re-precheck of an unchanged report returns the cached full-check result" {

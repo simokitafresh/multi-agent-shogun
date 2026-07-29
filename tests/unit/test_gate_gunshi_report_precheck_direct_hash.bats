@@ -44,11 +44,11 @@ setup() {
 # 後始末は再帰削除を使わず、既知の個別ファイルのみrm -fしてからrmdir(非再帰)で
 # 閉じる。この不変量を静的に固定し、将来の再発を防ぐ。
 
-@test "SG-PRE21 causal_backlinks tmpdir cleanup never uses rm -rf (D002)" {
-  run awk '/_causal_tmpdir=\$\(mktemp -d/{on=1} on{print} /^        if \[ -n "\$_causal_out" \]; then/{exit}' "$TARGET"
+@test "precheck tmpdir cleanup never uses executable rm -rf (D002)" {
+  run cat "$TARGET"
   [ "$status" -eq 0 ]
   # コメント行(# ...)自身がrm -rfという文字列を教訓として引用しているため、
-  # コード行(先頭が#でない行)だけを対象に不在を確認する。
+  # コード行(先頭が#でない行)だけを対象にtarget全体で不在を確認する。
   ! printf '%s\n' "$output" | grep -E '^[[:space:]]*[^#[:space:]].*rm[[:space:]]+-rf'
 }
 
