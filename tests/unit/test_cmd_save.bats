@@ -126,3 +126,35 @@ SH
   [ "$(wc -l < "$BATS_TEST_TMPDIR/calls")" -eq 1 ]
   [[ "$output" == *"重複起動をスキップ"* ]]
 }
+
+# test_necessity: q11 semantic検索結果に含まれる関連IDが因果tree再走査の
+# 入力へ増幅されず、cmd本文に明示されたIDだけを診断する不変量を固定する。
+@test "q11 causal backlinks receive explicit query but not semantic result ids" {
+  awk '
+    /^show_q11_semantic_search_matches\(\)/ { emit=1 }
+    emit && /^show_q11_causal_backlinks\(\)/ { exit }
+    emit { print }
+  ' "$REPO_ROOT/scripts/cmd_save.sh" > "$BATS_TEST_TMPDIR/q11.sh"
+  cat > "$BATS_TEST_TMPDIR/semantic.sh" <<'SH'
+#!/usr/bin/env bash
+printf 'related [[cmd_RESULT_ONLY]]\n'
+SH
+  chmod +x "$BATS_TEST_TMPDIR/semantic.sh"
+
+  run env CMD_SAVE_SEMANTIC_SEARCH_SCRIPT="$BATS_TEST_TMPDIR/semantic.sh" \
+    CACHE_ROOT="$BATS_TEST_TMPDIR" \
+    bash -c '
+      source "$1"
+      PROJECT_DIR="$2"
+      extract_q11_semantic_query() { printf "explicit [[cmd_INPUT_ONLY]]\n"; }
+      cmd_save_metadata_cache_replay() { return 1; }
+      cmd_save_metadata_cache_file() { printf "%s/cache\n" "$CACHE_ROOT"; }
+      cmd_save_metadata_cache_store() { :; }
+      show_q11_causal_backlinks() { printf "causal-arg:%s\n" "$1"; }
+      show_q11_semantic_search_matches "ignored"
+    ' _ "$BATS_TEST_TMPDIR/q11.sh" "$REPO_ROOT" "$BATS_TEST_TMPDIR"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"causal-arg:explicit [[cmd_INPUT_ONLY]]"* ]]
+  [[ "$output" != *"causal-arg:"*"cmd_RESULT_ONLY"* ]]
+}

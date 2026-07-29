@@ -760,8 +760,11 @@ show_q11_semantic_search_matches() {
         {
             echo "INFO: q11 semantic_search 関連概念/既存cmd候補:"
             head -50 <<< "$output" | sed 's/^/  /'
-            show_q11_causal_backlinks "${query}
-${output}" 2>&1
+            # semantic_searchの出力は関連概念を広く含むため、そこから抽出したIDを
+            # causal_backlinksへ再投入すると「検索結果で検索空間を増幅」してしまう。
+            # 因果診断はcmd入力に明示されたIDだけへ限定し、semantic結果は表示に留める。
+            # これにより因果検査そのものは維持しつつ、無関係なtree再走査を防ぐ。
+            show_q11_causal_backlinks "$query" 2>&1
         } > "$_cache_tmp"
         cat "$_cache_tmp" >&2
         declare -F cmd_save_metadata_cache_store >/dev/null && cmd_save_metadata_cache_store "q11_semantic" "$_cache_payload" "$_cache_tmp"
