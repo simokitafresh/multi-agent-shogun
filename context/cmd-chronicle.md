@@ -277,3 +277,4 @@
 | cmd_round7_lane2_deploy_task_ac_20260730 | 殿裁可2026-07-30 03:09+将軍下知03:11。正本v1.6 §-2.4序列2位テストファイルの高速化(検査不変)。家老--yaml直接配備の正規登録 | infra | 07-30 | test_deploy_task_ac_handling.b |
 | cmd_round7_lane4_deploy_task_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列4位テストファイルの高速化(検査不変)。同一subject系のためlane2(CLEAR 04:27)後の直列起票=計画どおりの次波 | infra | 07-30 | test_deploy_task.batsの独立report |
 | cmd_round7_lane8_deploy_task_lifecycle_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列8位テストファイルの高速化(検査不変)。同一subject系のためlane4(CLEAR 04:42)後の直列起票=計画どおりの次波 | infra | 07-30 | fixture setupをprebuilt templat |
+| cmd_round7_lane9_campaign_shard_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列9位テストファイルの高速化(検査不変)。#8 CLEAR(05:00)を受けた最終波の起票(別ファイル並列) | infra | 07-30 | setupの各test git cloneをCOWコピーへ置 |
