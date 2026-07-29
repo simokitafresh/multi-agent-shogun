@@ -1346,6 +1346,23 @@ EOF
     [ "$output" = "true false" ]
 }
 
+# test_necessity: cmd_complete_gate must classify every deployed recon2 task as
+# recon-only so investigation commands never acquire implementation-only gates.
+@test "task type detection classifies recon2 as recon-only" {
+    _write_command_coverage_fixture \
+        "SIGNAL変更を二名で調査" \
+        "  - path: docs/research/cmd_999_signal_change_recon.md
+    change: added"
+    cat >> "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+  task_type: recon2
+EOF
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+
+    run detect_task_types "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [ "$output" = "true false" ]
+}
+
 @test "task type detection classifies full as implementation" {
     _write_command_coverage_fixture \
         "backend/app/api/signals.py を修正" \
@@ -1388,6 +1405,29 @@ EOF
     [ "$status" -eq 0 ]
     [[ "$output" == *"Missing task_type; fail-closed as implementation"* ]]
     [[ "$output" == *"false true"* ]]
+}
+
+# test_necessity: a command containing both investigation and implementation
+# tasks must retain both conditional gate families.
+@test "task type detection classifies mixed recon2 and implementation as both" {
+    _write_command_coverage_fixture \
+        "SIGNAL変更を調査して修正" \
+        "  - path: scripts/cmd_complete_gate.sh
+    change: modified"
+    cat >> "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<'EOF'
+  task_type: recon2
+EOF
+    cat > "$TEST_PROJECT/queue/tasks/hanzo.yaml" <<EOF
+task:
+  parent_cmd: $TEST_CMD_ID
+  task_type: hotfix
+EOF
+    export TASKS_DIR="$TEST_PROJECT/queue/tasks"
+    unset MATCHING_TASK_FILES
+
+    run detect_task_types "$TEST_CMD_ID"
+    [ "$status" -eq 0 ]
+    [ "$output" = "true true" ]
 }
 
 @test "command/files_modified coverage remains strict for mixed recon and implementation cmd" {

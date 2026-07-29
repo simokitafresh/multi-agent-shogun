@@ -3042,7 +3042,7 @@ detect_task_types() {
         local ttype
         ttype=$(FIELD_GET_NO_LOG=1 field_get "$task_file" "task_type" "")
         case "$ttype" in
-            recon|scout) has_recon=true ;;
+            recon|recon2|scout) has_recon=true ;;
             implement|impl|full|normal|exact|hotfix|ci_fix|speed_training|skill_training|training|gp|improvement)
                 has_implement=true
                 ;;
