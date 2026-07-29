@@ -24,6 +24,11 @@ LOG_FILE="${KARO_WORKAROUND_LOG_FILE:-$REPO_ROOT/logs/karo_workarounds.yaml}"
 LOCK_FILE="${KARO_WORKAROUND_LOCK_FILE:-/tmp/karo_workarounds.lock}"
 DISABLE_ALERTS="${KARO_WORKAROUND_DISABLE_ALERTS:-false}"
 BRAINWASH_CHECK="${KARO_WA_BRAINWASH_CHECK:-}"
+# A workaround is the point where a reusable lesson is born.  Record that
+# decision in the same locked append as the WA itself so startup-time counting
+# cannot be the first place where the missing reflux is noticed.
+LESSON_REQUIRED="${KARO_WA_LESSON_REQUIRED:-true}"
+LESSON_REFERENCE="${KARO_WA_LESSON_REFERENCE:-}"
 
 # shellcheck source=scripts/lib/known_ninjas.sh
 source "$REPO_ROOT/scripts/lib/known_ninjas.sh"
@@ -117,6 +122,102 @@ finally:
         os.unlink(candidate)
 
 print(f"[resolve] updated=1 cmd_id={target_cmd} resolved_by_cmd={resolution}")
+PY
+    ) 200>"$LOCK_FILE"
+    exit $?
+fi
+
+# --- Reflux backfill mode: classify every unresolved ledger entry atomically ---
+# Usage: --backfill-reflux <resolution_cmd> <root_signature=lesson_id> [...]
+# Automatic completion observations are dispositioned as not_applicable and
+# resolved by their own cmd.  Every unresolved manual WA must match one of the
+# explicit signature mappings; an incomplete inventory fails closed.
+if [[ "${1:-}" == "--backfill-reflux" ]]; then
+    shift
+    [[ $# -ge 2 ]] || {
+        echo "Usage: bash scripts/karo_workaround_log.sh --backfill-reflux <resolution_cmd> <root_signature=lesson_id> [...]" >&2
+        exit 1
+    }
+    REFLUX_RESOLUTION_CMD="$1"
+    shift
+    (
+        flock -w 10 200 || { echo "[backfill-reflux] ERROR: lock timeout" >&2; exit 1; }
+        python3 - "$LOG_FILE" "$REFLUX_RESOLUTION_CMD" "$@" <<'PY'
+import os, re, sys, tempfile, yaml
+
+path, resolution, *mapping_args = sys.argv[1:]
+mappings = {}
+for item in mapping_args:
+    signature, sep, lesson = item.partition("=")
+    if not sep or not signature or not lesson:
+        raise SystemExit(f"[backfill-reflux] ERROR: invalid mapping {item!r}")
+    mappings[signature] = lesson
+
+with open(path, encoding="utf-8") as fh:
+    lines = fh.read().splitlines(keepends=True)
+
+entry_re = re.compile(r"^-\s+[A-Za-z_][A-Za-z0-9_]*:")
+field_re = re.compile(r"^\s*(?:-\s*)?([A-Za-z_][A-Za-z0-9_]*):\s*(.*?)\r?\n?$")
+starts = [i for i, line in enumerate(lines) if entry_re.match(line)] + [len(lines)]
+edits = []
+counts = {"not_applicable": 0, "integrated_existing": 0}
+
+def scalar(value):
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+        value = value[1:-1]
+    return value.strip()
+
+def sq(value):
+    return "'" + value.replace("'", "''") + "'"
+
+for pos in range(len(starts) - 1):
+    start, end = starts[pos], starts[pos + 1]
+    fields, indexes = {}, {}
+    for index in range(start, end):
+        match = field_re.match(lines[index])
+        if match:
+            fields[match.group(1)] = scalar(match.group(2))
+            indexes[match.group(1)] = index
+    if fields.get("resolved_by_cmd"):
+        continue
+    if "resolved_by_cmd" not in indexes:
+        raise SystemExit(f"[backfill-reflux] ERROR: entry at line {start + 1} lacks resolved_by_cmd")
+    is_wa = fields.get("workaround") == "true"
+    if is_wa:
+        signature = fields.get("root_signature") or f"legacy::{fields.get('category', 'uncategorized')}"
+        if signature not in mappings:
+            raise SystemExit(f"[backfill-reflux] ERROR: no lesson mapping for {signature}")
+        disposition, reference, resolved = "integrated_existing", mappings[signature], resolution
+    else:
+        disposition, reference = "not_applicable", "not_applicable"
+        resolved = fields.get("cmd_id") or fields.get("cmd") or resolution
+    idx = indexes["resolved_by_cmd"]
+    inserts = []
+    if "lesson_required" not in fields:
+        inserts.append("  lesson_required: false\n")
+    if "lesson_disposition" not in fields:
+        inserts.append(f"  lesson_disposition: {disposition}\n")
+    if "lesson_reference" not in fields:
+        inserts.append(f"  lesson_reference: {sq(reference)}\n")
+    edits.append((idx, inserts, f"  resolved_by_cmd: {sq(resolved)}\n"))
+    counts[disposition] += 1
+
+new_lines = list(lines)
+for idx, inserts, replacement in reversed(edits):
+    new_lines[idx:idx + 1] = inserts + [replacement]
+
+fd, candidate = tempfile.mkstemp(prefix=".karo_workarounds.reflux.", dir=os.path.dirname(path) or ".")
+try:
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.writelines(new_lines)
+    with open(candidate, encoding="utf-8") as fh:
+        yaml.safe_load(fh)
+    os.replace(candidate, path)
+finally:
+    if os.path.exists(candidate):
+        os.unlink(candidate)
+print(f"[backfill-reflux] updated={len(edits)} not_applicable={counts['not_applicable']} integrated_existing={counts['integrated_existing']}")
 PY
     ) 200>"$LOCK_FILE"
     exit $?
@@ -659,6 +760,9 @@ count_root_signature_entries() {
   category: clean
   detail: ''
   root_cause: ''
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
   resolved_by_cmd: ''
 EOF
         echo "[karo_workaround_log] Clean: $CMD_ID/$NINJA_NAME [clean]"
@@ -687,6 +791,9 @@ EOF
   root_signature: '$SAFE_ROOT_SIGNATURE'
   detail: '$SAFE_ISSUE'
   root_cause: '$SAFE_FIX'
+  lesson_required: $LESSON_REQUIRED
+  lesson_disposition: '$([[ -n "$LESSON_REFERENCE" ]] && echo integrated_existing || echo new_lesson_required)'
+  lesson_reference: '$(yaml_escape_sq "$LESSON_REFERENCE")'
 EOF
             if [[ -n "$MISSED_SG" ]]; then
                 echo "  missed_sg: '$SAFE_MISSED_SG'"

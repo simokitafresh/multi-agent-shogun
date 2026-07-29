@@ -570,6 +570,73 @@ YAML
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: every manual WA must publish its lesson-reflux decision in
+# the same canonical append; otherwise a clear/new can erase the learning
+# before the startup gate notices the daily count mismatch.
+@test "manual WA atomically records lesson reflux decision" {
+    export KARO_WA_LESSON_REQUIRED=true
+    export KARO_WA_LESSON_REFERENCE=LK-A11
+
+    run bash "$TEST_SCRIPT" cmd_lesson_reflux hanzo \
+        "task contract contradicted the required output" \
+        "integrated the contract rule into the existing lesson" \
+        task_design_precondition none
+    [ "$status" -eq 0 ]
+    run python3 - "$TEST_DIR/logs/karo_workarounds.yaml" <<'PY'
+import sys, yaml
+rows = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+row = next(item for item in rows if item.get("cmd_id") == "cmd_lesson_reflux")
+assert row["lesson_required"] is True
+assert row["lesson_reference"] == "LK-A11"
+PY
+    [ "$status" -eq 0 ]
+}
+
+# test_necessity: a legacy ledger backfill must fail closed on an unmapped
+# manual signature and publish a complete, machine-countable disposition for
+# both manual WAs and automatic observations.
+@test "reflux backfill closes every mapped cluster and rejects unmapped clusters" {
+    cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_auto
+  ninja: system
+  workaround: false
+  category: rework_auto_capture
+  resolved_by_cmd: ''
+- cmd_id: cmd_manual
+  ninja: hanzo
+  workaround: true
+  category: task_design_precondition
+  root_signature: 'task_design_precondition::general'
+  resolved_by_cmd: ''
+YAML
+
+    run env KARO_WORKAROUND_LOG_FILE="$TEST_DIR/logs/karo_workarounds.yaml" \
+        KARO_WORKAROUND_LOCK_FILE="$TEST_DIR/logs/karo_workarounds.lock" \
+        bash "$TEST_SCRIPT" --backfill-reflux cmd_reflux \
+        'report_yaml_format::general=L311'
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"no lesson mapping for task_design_precondition::general"* ]]
+    [ "$(grep -c "^  resolved_by_cmd: ''$" "$TEST_DIR/logs/karo_workarounds.yaml")" -eq 2 ]
+
+    run env KARO_WORKAROUND_LOG_FILE="$TEST_DIR/logs/karo_workarounds.yaml" \
+        KARO_WORKAROUND_LOCK_FILE="$TEST_DIR/logs/karo_workarounds.lock" \
+        bash "$TEST_SCRIPT" --backfill-reflux cmd_reflux \
+        'task_design_precondition::general=LK-A11'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"updated=2 not_applicable=1 integrated_existing=1"* ]]
+    run python3 - "$TEST_DIR/logs/karo_workarounds.yaml" <<'PY'
+import sys, yaml
+rows = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+assert sum(not row.get("resolved_by_cmd") for row in rows) == 0
+assert rows[0]["lesson_disposition"] == "not_applicable"
+assert rows[0]["resolved_by_cmd"] == "cmd_auto"
+assert rows[1]["lesson_disposition"] == "integrated_existing"
+assert rows[1]["lesson_reference"] == "LK-A11"
+assert rows[1]["resolved_by_cmd"] == "cmd_reflux"
+PY
+    [ "$status" -eq 0 ]
+}
+
 @test "AC3: 同一categoryでも異なるroot_signature 3件ではALERT/PDを発火しない" {
     run bash "$TEST_SCRIPT" cmd_1 hayate "report_path/ac_version欠落でYAML構文が壊れた" "task template修復" report_yaml_format
     [ "$status" -eq 0 ]
