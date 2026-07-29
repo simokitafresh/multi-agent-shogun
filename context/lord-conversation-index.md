@@ -1,35 +1,36 @@
 # Lord Conversation Index
 <!-- last_updated: 2026-07-29 auto-generated -->
 <!-- generated_by: scripts/conversation_retention.sh -->
-<!-- generated_at: 2026-07-29T12:06:49+09:00 -->
+<!-- generated_at: 2026-07-29T13:05:10+09:00 -->
 
 ## 最新やり取り（直近24h）
-- 2026-07-29T12:06:48+09:00 | terminal | response | inbox未読0件。idle待機中。
-- 2026-07-29T12:05:40+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働3名 CLEAR率91% 連勝274
-- 2026-07-29T12:03:38+09:00 | terminal | response | idle待機中。 [meta] stop_reason=end_turn
-- 2026-07-29T12:03:19+09:00 | terminal | response | inbox処理完了。未読1件は掲示板通知(INSIGHT_FIX_KNOWN)で、既読化と掲示板confirm済みにござる。 内容: self-retro台帳の自動分析が「**忍者作業遅延の支配因=completion_pipeline(…
-- 2026-07-29T12:03:10+09:00 | terminal | response | ERRORS=0。PASS。161/161 PASS。LGTM。
-- 2026-07-29T12:02:53+09:00 | ntfy | outbound | 📊 Dashboard更新: 稼働4名 CLEAR率91% 連勝273
-- 2026-07-29T12:01:20+09:00 | terminal | response | idle待機中。
-- 2026-07-29T11:59:58+09:00 | terminal | response | inbox未読0件。idle待機中。 [meta] stop_reason=end_turn
-- 2026-07-29T11:59:01+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_ga413_context_freshness_regression_20260729 初回配備開始 (title=(untitled), ninja=saizo)
-- 2026-07-29T11:57:15+09:00 | terminal | response | idle待機中。
+- 2026-07-29T13:05:09+09:00 | terminal | response | 処理完了。idle待機中。
+- 2026-07-29T13:04:28+09:00 | ntfy | outbound | 【家老】cmd_4191 初回配備開始 (title=WA教訓還流の断絶是正 — 未解決WAのroot_signature単位クラスタ処理と還流判定の記録, ninja=saizo) WA教訓還流の断絶是正
+- 2026-07-29T13:02:51+09:00 | terminal | response | LGTM完了。idle待機中。 [meta] stop_reason=end_turn
+- 2026-07-29T13:01:55+09:00 | terminal | response | escalation 2件の処理完了を報告いたす。 ## 対処結果 **escalation A(WA記録あり×教訓登録0件、generation=4)** → **cmd_4191起票・家老へ委任済み**(13:01委任確認)。一次実測…
+- 2026-07-29T12:57:59+09:00 | ntfy | outbound | 【家老CRITICAL】先送り1セッション連続検出。起動は許可するが即対処必須
+- 2026-07-29T12:57:38+09:00 | terminal | response | 処理完了。idle待機中。 [meta] stop_reason=end_turn
+- 2026-07-29T12:56:56+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_recalculate_end_date_context_sync_20260729 初回配備開始 (title=(untitled), ninja=kotaro)
+- 2026-07-29T12:54:57+09:00 | terminal | response | 処理完了。idle待機中。 [meta] stop_reason=end_turn
+- 2026-07-29T12:54:12+09:00 | ntfy | outbound | 【家老】cmd_karo_hotfix_report_hook_result_canonicalization_20260729 初回配備開始 (title=(untitled), ninja=kagemaru)
+- 2026-07-29T12:53:46+09:00 | terminal | response | LGTM完了。idle待機中。 [meta] stop_reason=end_turn
 
 ## 未解決確認事項
+- 【家老】cmd_4191 初回配備開始 (title=WA教訓還流の断絶是正 — 未解決WAのroot_signature単位クラスタ処理と還流判定の記録, ninja=saizo) WA教訓還流の断絶是正
+- escalation 2件の処理完了を報告いたす。 ## 対処結果 **escalation A(WA記録あり×教訓登録0件、generation=4)** → **cmd_4191起票・家老へ委任済み**(13:01委任確認)。一次実測: WA台帳の`resolved_by_…
+- cmd_karo_hotfix_fullrecalc_mr_substep_telemetry_20260729完了。 **実施内容**: DM-Signalの`monthly_returns_gen`(318.99秒/78PF)を「MR compute / 内部commit …
 - 新着inbox1確認。
 - 将軍のQ6回答(洗脳チェック)。「二次情報で判断停止せず一次情報(grep)で確認する」という自己検証。 自問: 将軍の回答は正しいか？ → 正しい。家老のLGTM掲示板は二次情報。task YAML/report現物のproject/target_pathフィールドをgrep…
 - 【SessionEnd ALERT】/clear前確認で問題検出 agent=shogun issues=clear_prep_check ALERT 殿の言葉 inbound=54件 clear_prep_check=ALERT [G0.殿/clear指示] WARN: 直近…
 - はっ、fullrecalculateレーンの第一弾が着弾したにござる [MEM: n/a — 家老配備報告(blt_104806)の受領・検分報告であり新規知識参照を要しない]。 **配備確認(委任検分=一致)**: 家老が**第一弾 mr_gen(monthly return…
 - はっ、fullrecalculateレーンの第一弾が着弾したにござる。 **配備確認(委任検分=一致)**: 家老が**第一弾 mr_gen(monthly returns生成・318.99秒=最大標的)を半蔵へ配備**し、実ペインで作業開始を確認済み。ACの構成が殿の裁定3本…
-- はっ、fullrecalculate速度改善レーンの開戦にござる [MEM: memory_db(前回想起) "fullrecalc設計書=v3.3(gist 78e88d24、実装は殿裁可待ち)" — 本裁定で凍結解除]。 **未確定・未調査の精査結果(実装開始前チェック)*…
-- タスク完了。 **cmd_reflux_backlink_202607290925_kagemaru** 完了しました。 - SSOT `docs/semantic-index/index.md` の `semantic_causal_automation` 概念ブロックへ、既…
-- cmd_reflux_backlink_202607290824_kagemaruを完了した。SSOT index.mdに対象文書への因果リンクを追加し、semantic_map_generate.shで再生成後、incomingが0→2に増加したことを実測確認。commit …
 
 ## 殿の直近裁定・方針（直近24h）
 - 該当なし
 
 ## 参照cmd
 - cmd_4190
+- cmd_4191
 
 ## 参照先
 - `queue/lord_conversation.jsonl`（一次データ）
