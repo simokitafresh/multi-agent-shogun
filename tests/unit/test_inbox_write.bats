@@ -1649,11 +1649,16 @@ YAML
     git -C "$TEST_TMPDIR" add queue/tasks/testninja.yaml queue/reports/testninja_report_cmd_test_001.yaml
     git -C "$TEST_TMPDIR" commit -q -m two-route-review
 
-    local i event_type
+    local i event_type pid
+    local -a delivery_pids=()
     for i in $(seq 1 10); do
         if (( i % 2 )); then event_type=report_received; else event_type=report_submitted; fi
-        run _run_inbox_write karo "route-$i" "$event_type" testninja
-        [ "$status" -eq 0 ]
+        _run_inbox_write karo "route-$i" "$event_type" testninja \
+            >"$BATS_TEST_TMPDIR/route-$i.out" 2>&1 &
+        delivery_pids+=("$!")
+    done
+    for pid in "${delivery_pids[@]}"; do
+        wait "$pid"
     done
     [ "$(grep -c "^  type: 'report_review'" "$TEST_TMPDIR/queue/inbox/gunshi.yaml")" -eq 1 ]
 
