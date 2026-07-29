@@ -1,33 +1,38 @@
-# 【🚀稼働中(殿起票解禁2026-07-29 21:25『第五弾をやろう』)】ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.5 (2026-07-29 22:45 進捗刻印。版履歴は§-3)
+# 【🏁全10弾GATE CLEAR(2026-07-30 01:15) — 残=wave-final全量run】ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.6 (2026-07-30 01:20 将軍覚醒更新。版履歴は§-3)
 
-## §-2.5 稼働進捗(2026-07-29 22:45時点 — 掲示板一次確認)
+## §-2.5 稼働進捗(2026-07-30 01:20時点 — gate_metrics.log+報告YAML一次確認)
+
+**★結論: 全10弾GATE CLEAR(10/10)。実装9弾採用+1弾no-change。残る工程=wave-final全量run(第七弾序列SSOT兼務・run_identity新schemaで実行)のみ。**
 
 | 事象 | 時刻 | 状態 |
 |---|---|---|
-| 殿起票解禁 | 21:25 | 凍結解除4段(iv)成立。将軍下知blt_212613(第0手v5→再序列→5レーン) |
-| 弾#2 full_precheckレーン | 22:03〜 | 疾風が稼働(cmd_karo_round5_lane_full_precheck) |
-| 弾#4 yaml_astレーン | 22:29 | 半蔵実装が軍師LGTM(cmd_karo_round5_lane_git_precommit_yaml_ast)。家老GATE判定待ち |
-| v5 fixed-window(第0手) | 21:46/21:57 | ✅**完了(将軍の旧記載は事実誤認、家老訂正22:52)**: Track B GATE CLEAR 21:46:49・Track A CLEAR 21:57:56(冗長2Track両CLEAR、report raw=1595行 hash=982fa2e6)。実装レーン開始22:03は両Track CLEAR後=**順序違反なし** |
-| 併走 | 22:29 | 第六弾計測track_a GATE CLEAR(飛猿)・第七弾v1.0家老レビューRC5点返却(22:39) |
+| 殿起票解禁 | 07-29 21:25 | 凍結解除4段(iv)成立。将軍下知blt_212613(第0手v5→再序列→5レーン) |
+| v5 fixed-window(第0手) | 21:46/21:57 | ✅完了: Track B CLEAR 21:46:49・Track A CLEAR 21:57:56(冗長2Track、report raw=1595行 hash=982fa2e6) |
+| 実装レーン10本 | 22:03〜01:15 | ✅**全10弾GATE CLEAR**(各弾の帰結は§-2台帳の状態列)。集計コマンド: `grep CLEAR logs/gate_metrics.log \| grep round5_lane` → 10件 |
+| 殿優先裁定 | 07-30 00:37 | 『第五〜第七弾が優先だ』— 全リソース集中。promotion v1.2は待機(殿裁定00:36) |
+| 弾#0(第七弾前提) | 07-30 00:49 | run_identity計装live着地(e80b5884)+schema移行事故(旧ledger喪失確定・受理)+再発防止hotfix CLEAR(ledger_schema_snapshot_guard)。**wave-final発射条件=充足済み** |
 
 > 第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`(✅CLOSED 12/12)、第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(✅CLOSED 9/9)、第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`(✅CLOSED 2/2)、第四弾=`hot-script-speedup-round4-asis-tobe-5w1h_20260728.md`(✅CLOSED 5/5・checkpoint 3巡目CLEAR 2,745/2,745・CI run 30385588247 success)。本書は殿下知(2026-07-29 03:30)「第五弾の設計書を作成せよ。第一弾〜と同じスタイルで。**10レーン分**組み込もう」に基づき、序列SSOT=**v4.0 fixed-window snapshot**(`hot-script-speedup-round5-v4-snapshot-20260729.md`、家老作成・固定窓2026-07-28T11:25:10Z..18:24:39.872864Z inclusive・8,237行・raw SHA-256=db3fed9cc…)から10標的を引く。殿方針(10:49)「前弾でやったものも依然ボトルネックなら再度トライする」を継承。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
-## §-2 第五弾 弾台帳(2026-07-29 03:40時点 — 起票前。全弾❄設計のみ)
+## §-2 第五弾 弾台帳(2026-07-30 01:20時点 — 全10弾GATE CLEAR。帰結は各報告YAMLのresult.summaryから転記)
 
-| # | 標的 | writer(所有script) | 状態 | 予定内容 | v4.0固定窓実測 |
+| # | 標的 | writer(所有script) | 状態 | 帰結(報告YAML一次) | v4.0固定窓実測 |
 |---|---|---|---|---|---|
-| 1 | inbox_write_total(再) | `scripts/inbox_write.sh` | ❄ | 第四弾#2是正(delivery verify非同期化)後も累積1位。**AC1=現行枝cohortを識別子/時刻で分離**(窓内はbefore/after混在)→残存最大子区分の是正。改善余地なしなら正直no-change CLOSE。送達保証・自動既読type群は不変条件 | 累積967.8s/n=560/p50 298ms/p95 6,264ms/max 12,357ms |
-| 2 | full_precheck(再々々) | `scripts/gates/gate_gunshi_report_precheck.sh` | ❄ | 第四弾#1是正(重複tree走査除去)後も累積2位。AC1=現行枝cohort分離→body_rest系残存の最大寄与是正(stdout完全一致) | 累積507.2s/n=131/p50 1,077ms/p95 13,402ms/max 21,531ms |
-| 3 | publish_total(再々) | `scripts/report_field_set.sh` | ❄ | 第四弾#3是正(lock FD分離)後の残存。恒常部p50 320msと外れ値尾max 12.5sを分離し、現行枝で改善余地判定 | 累積110.2s/n=261/p50 320ms/p95 600ms/max 12,520ms |
-| 4 | yaml_ast | `scripts/hooks/git-pre-commit.sh` | ❄ | p50=1msに対しp95 6.5s/max 13.9s=典型的外れ値型。発火条件(大型YAML・対象数)の同event記録→3点表→条件ベース是正 | 累積98.8s/n=66/p50 1ms/p95 6,460ms/max 13,907ms |
-| 5 | commit_hash(再) | `scripts/report_field_set.sh`(#3後に直列) | ❄ | 第四弾#5で識別子計装済み・実flow重複0。AC1=計装後cohortの全数で重複再判定→重複なし継続ならno-change CLOSE、恒常部245ms×n324の内訳是正余地のみ確認 | 累積84.3s/n=324/p50 245ms/p95 490ms/max 1,110ms |
-| 6 | files_modified | `scripts/report_field_set.sh`(#5後に直列) | ❄ | p50 520ms×現cohort 54呼出(全報告ではない=家老RC5)。子区分計測→最大寄与是正 | 累積29.2s/n=54/p50 520ms/p95 1,040ms/max 1,560ms |
-| 7 | sourced_dep | `scripts/hooks/git-pre-commit.sh`(#4後に直列) | ❄ | p50=2msに対しp95 2.0s=外れ値型。依存走査の発火条件特定→条件ベース是正 | 累積20.9s/n=66/p50 2ms/p95 1,973ms/max 4,161ms |
-| 8 | task.commit_contract | `scripts/report_field_set.sh`(#6後に直列) | ❄ | 第二弾#7でno-gain revert済みの標的。AC1=現行枝再計測→改善余地なしなら正直no-change(前例=第二弾の型) | 累積17.9s/n=59/p50 250ms/p95 650ms/max 1,050ms |
-| 9 | checks_main(再々々) | `scripts/cmd_save.sh` | ❄ | 第四弾#4 no-change後の継続。子quality_gateが最大(5.3s/15.9s)。v4.0でも序列内に残存ゆえ最小是正を試行、無理なら正直no-change | 累積15.9s/n=14/p50 1,095ms/p95 2,233ms/max 2,233ms |
-| 10 | shell_syntax | `scripts/hooks/git-pre-commit.sh`(#7後に直列) | ❄ | p50=2msに対しp95 859ms=外れ値型。構文検査対象の条件特定→条件ベース是正(検査は削らない) | 累積11.5s/n=66/p50 2ms/p95 859ms/max 2,415ms |
+| 1 | inbox_write_total(再) | `scripts/inbox_write.sh` | ✅CLEAR 22:09 | 採用: review contextのsemantic_search重複DB fallback除去。p50 2,555→1,382ms(-45.9%)、選択253/253 PASS(飛猿) | 累積967.8s/n=560/p50 298ms/p95 6,264ms/max 12,357ms |
+| 2 | full_precheck(再々々) | `scripts/gates/gate_gunshi_report_precheck.sh` | ✅CLEAR 22:46 | 採用: SG-PRE2 workaround走査のSG-PRE1重複実行除去。制御境界中央値3,817→1,877ms(-50.8%)、stdout順維持、27/27 PASS。Δ307ms<ノイズ幅7,080msで2サイクル停止(裁定13:26準拠)(疾風) | 累積507.2s/n=131/p50 1,077ms/p95 13,402ms/max 21,531ms |
+| 3 | publish_total(再々) | `scripts/report_field_set.sh` | ✅CLEAR 22:47 | 採用: telemetry準備を非同期子へ移動。live相当p95 1,110→305ms/max 4,150→319ms(飛猿) | 累積110.2s/n=261/p50 320ms/p95 600ms/max 12,520ms |
+| 4 | yaml_ast | `scripts/hooks/git-pre-commit.sh` | ✅CLEAR 23:00 | 採用: 全量closure走査をrglob逐次→rg一括候補抽出へ。sum 13,321→6,639ms/p95 5,391→517ms、敵対fixture旧新ともrc=1(半蔵) | 累積98.8s/n=66/p50 1ms/p95 6,460ms/max 13,907ms |
+| 5 | commit_hash(再) | `scripts/report_field_set.sh`(#3後に直列) | ✅CLEAR 07-30 01:15 | 採用: 非終端40hex writeをbackup-free root-scalar atomic laneへ(terminal readinessは従来lane維持)。p50 160→80ms(負荷中)/40ms(負荷後)、674/674+45/45 PASS(小太郎) | 累積84.3s/n=324/p50 245ms/p95 490ms/max 1,110ms |
+| 6 | files_modified | `scripts/report_field_set.sh`(#5後に直列) | ✅CLEAR 07-30 00:34 | 採用: 単純相対パスを意味不変の原子的fast pathへ。p50 310→29ms(-90.6%)、674/674 PASS(疾風) | 累積29.2s/n=54/p50 520ms/p95 1,040ms/max 1,560ms |
+| 7 | sourced_dep | `scripts/hooks/git-pre-commit.sh`(#4後に直列) | ✅CLEAR 23:27 | 採用: 依存ごとgit ls-files起動をindex一括cacheへ。中央値440→40ms(11倍)、秒級再発0/5、37/37 PASS(半蔵) | 累積20.9s/n=66/p50 2ms/p95 1,973ms/max 4,161ms |
+| 8 | task.commit_contract | `scripts/report_field_set.sh`(#6後に直列) | ✅CLEAR 07-30 00:50 | **no-change**: 現行枝で改善余地なし。第二弾no-gain案を再実装せず変更0件で正直終端(疾風) | 累積17.9s/n=59/p50 250ms/p95 650ms/max 1,050ms |
+| 9 | checks_main(再々々) | `scripts/cmd_save.sh` | ✅CLEAR 22:16 | 採用: 124,723ms外れ値=q11 semantic結果→causal再走査の入力増幅と特定し明示query限定へ。28/28 PASS(半蔵) | 累積15.9s/n=14/p50 1,095ms/p95 2,233ms/max 2,233ms |
+| 10 | shell_syntax | `scripts/hooks/git-pre-commit.sh`(#7後に直列) | ✅CLEAR 07-30 01:06 | 採用: 複数対象をindex/worktree一致条件で高速化。15反復sum 415.7→373.7ms、38/38 PASS(才蔵) | 累積11.5s/n=66/p50 2ms/p95 859ms/max 2,415ms |
+
+**残工程**: wave-final全量run(run_identity新schemaで実行=第七弾序列SSOTを兼務)→各弾のlive採用値確定→第五弾CLOSE。時刻無指定の時刻表記はいずれも2026-07-29 JST。
 
 ## §-3 版履歴
+- v1.6(07-30 01:20): **全10弾GATE CLEAR刻印(将軍覚醒更新)** — §-2台帳を❄→✅CLEAR+帰結転記(9採用+#8 no-change)。弾#0事故(schema移行で旧ledger 20,731/1,637行喪失→才蔵全数走査8,518候補で復元不能確定→将軍喪失受理00:10、再発防止hotfix ledger_schema_snapshot_guard CLEAR 00:49)と第六弾非依存確認(旧ledger参照0件)を反映。殿裁定00:37『第五〜第七弾が優先』。残=wave-final全量run
 
 - v1.4(21:00): **家老再レビュー(blt_205800、REQUEST_CHANGES)RC4点反映** — (RC1)v4.0 snapshotは歴史固定窓SSOTであり現行序列SSOTではない(source HEAD f8831da8以降、5writer中2本が変更済み: full_precheck b86c2c3a +72/-1、report_field_set 67aa9697e+2f81dca03 計+48行)。**解禁時の第0手=v5 fixed-window再取得**を§0冒頭へ固定 (RC2)本文のv1.1残骸(§2凍結解除4段・§3家老レビュー行・§3/§4の「再挑戦5」表記)をv1.3正本(再挑戦8+新規2)へ統一 (RC3)本日裁定3点の弾運用を§-1へ明記(反復停止条件・read-only冗長2名は現象特定のみ・報告整形は最終checkpoint集約) (RC4)promotion v1.2併走の忍者枠計画を§3 ledgerへ追加(第五弾5レーン+T0第6枠、T1は2枠空きでpair投入、単独T1は13:28違反ゆえ行わない)
 - v1.3(03:55): **殿裁定03:48『将軍の理解でよい』** — BLOCK1解決、10標的=10弾・5 writer=最大5並列で設計確定。凍結解除は殿の起票解禁のみ。付随裁定『blockはゲートのバグだ』でbulletin_writeゲートFPをD0是正(commit 0a3f97a18)

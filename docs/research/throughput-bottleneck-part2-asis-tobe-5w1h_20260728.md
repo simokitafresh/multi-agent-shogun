@@ -1,12 +1,24 @@
-# 【★第六弾=本レーンの再起動(殿下知2026-07-29 21:59)。P2/P3/P4は識別子計装が前提の直列構造確定済み】弾スループット全体のボトルネック改善 part2(=第六弾) — AsIs/ToBe 5W1H設計書 v1.8 (2026-07-29 22:20 覚醒更新。版履歴は§-3)
+# 【★第六弾=本レーンの再起動(殿下知2026-07-29 21:59)。P2/P3/P4は識別子計装が前提の直列構造確定済み】弾スループット全体のボトルネック改善 part2(=第六弾) — AsIs/ToBe 5W1H設計書 v1.9 (2026-07-30 01:30 独立監査是正。版履歴は§-3)
+
+## §0.-2 稼働進捗(2026-07-30 01:20時点 — gate_metrics.log+掲示板一次確認)
+
+| 事象 | 時刻 | 状態 |
+|---|---|---|
+| 準備計測track A(read-only冗長) | 07-29 22:29 | ✅GATE CLEAR(cmd_karo_round6_bottleneck_measure_track_a、飛猿) |
+| v1.8独立レビュー | 07-30 01:05 | ✅軍師LGTM→GATE CLEAR(cmd_karo_round6_part2_v18_independent_review、影丸) |
+| 旧test ledger非依存確認 | 07-30 00:13 | ✅弾#0 schema移行事故(旧ledger喪失)の影響照合: 本書v1.8+独立レビュー報告に旧test timing ledger参照**0件**。準備計測3点はgate_metrics.log・defense_overhead.jsonl・loop_ledger・review_approval識別子が正本=**代替蓄積期間0日**(blt_20260730_001355) |
+| 殿優先裁定 | 07-30 00:37 | 『第五〜第七弾が優先だ』— 第六弾は第五弾wave-final・第七弾と並走で全リソース集中対象 |
+
+**現況**: Track A成果は本書へ未接続。Track Bは部分計測のみ完了し、P1b再開条件は未充足。P1a系識別子を必要phaseへ接続してからP1bへ進む直列契約は不変。
 
 ## §0.-1 第六弾指定と独立実測の合流(2026-07-29 21:59-22:00)
 
 **殿下知21:59『第六弾も準備しよう。実務においてボトルネックはなんだろう？』→将軍分析で本レーンの標的層と一致確定 — 第六弾=part2の再起動として統合(新設計書の別立てなし=車輪の再発明禁止)。**
 
-- **独立実測の合流(loop_ledger throughput、母集団=completed 514 cmd全数、2026-07-29将軍startup gate一次実測)**: e2e中央値**1,879s**のうちwork 582s(**31%**)・finalize **524s(28%)**・deploy 42s(2%)・残=待ち間隙約39%。overhead率中央値51.2%。§0の53弾窓実測(非work 41.3%)と**別母集団・別期間で同じ結論** — finalize+待ち間隙が実務の支配税であることが二重に確定
+- **loop_ledger throughput(14日rolling、completed 514 cmd、snapshot=2026-07-29T02:09:47Z)と§0単日53弾は独立標本ではない**: §0単日窓は14日rolling窓に包含されるうえ、前者はdeploy/work/finalize/e2eの4値必須、loop_ledgerはe2e+work必須でdeploy/finalize欠損を許容するため採用完全性も異なる。相互検証ではなく、異なる定義の観測として扱う。
+- **3指標は別物**: ratio-of-mediansはwork/e2e=582/1,879=31.0%から非work **69.0%**を含意する。median-of-ratiosは各cmdの`(e2e-work)/e2e`中央値 **51.2%**。cumulative-sum-ratioは§0の`(finalize+unattributed+deploy)/e2e`累積比 **41.3%**。算式・母集団・期間が異なるため、51.2%と41.3%の近接を「二重確認」とみなさない。P1優先は§0の固定窓内訳と識別子付き区間計測で再確定する。
 - **self-retro自動分析の合流**: 「支配因=completion_pipeline、候補=checkpointを弱めず完了フェーズ削減」が2026-07-29に2回独立検出(INS-120250/INS-132005、verification=passed) — P1(finalize間隙)の優先を第三の証拠が支持
-- **準備計測3点を家老へ下知済み(22:00、read-only冗長2名可)**: (1)finalize 524s内訳分解(既存telemetryから識別子付き) (2)待ち間隙分解(報告完成→レビュー着手/LGTM→ACCEPT/GATE→次配備+lost-wakeup・revision往復の件数と時間) (3)P1a蓄積現在高+識別子計装の充足状況更新。結果を§0序列の最終化材料とする
+- **準備計測3点の接続状況(固定cutoff=2026-07-29T13:05:28Z)**: Track Aは成果未接続。Track Bは部分計測のみ完了。(1)finalize後半のcmd_complete/dashboard系はcmd_id+generation **0/5**で、archive/dashboard/ntfy/lessonを含む内訳分解は不能 (2)LGTM→ACCEPTだけは完全pair **73/84**、中央値73.692秒・累積12,761.914秒、欠損11、右打切り1。他区間はイベント欠損のため0ではなく未測定 (3)review_approval識別子充足はcutoff時点 **157/251=62.5%**。P1aはreview側へ部分接続済みだがfinalize後半phaseは未接続。
 - **本日の定性証拠(2026-07-29実例)**: 半蔵mr_gen報告の形式往復で約1時間停滞(→殿裁定13:31で家老D0修正可へ)・才蔵cmd_4191報告のlost-wakeup放置・escalation 3件の共通構造=検知→解消の接続不在。いずれもP1/P3の標的像と一致
 
 > part1=`throughput-bottleneck-asis-tobe-5w1h_20260728.md` v1.6(gist 2179df85)=**計測基盤**の6弾で5/6クローズ(T1a/T3a/T3b/T2/T4✅、残T1b=T1a蓄積待ち)。本書は殿下知2026-07-28 21:17「part2の設計書を作成しよう。今やっているスクリプト改善の主軸作業のボトルネックを解消して更に高速回転を行い、品質向上を高めるためだ」に基づく。part1が作った計器(T1a境界イベント・T3a writer整合・T3b fingerprint計装)の**蓄積データを消費して、弾ライフサイクルの非work時間を是正する実装編**である。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
@@ -16,16 +28,18 @@
 | # | 弾 | 状態 | 内容 | 起点実測(§0) |
 |---|---|---|---|---|
 | P1a | review_approval/report_publishイベントへのcmd_id+generation識別子計装 | 🟢 解禁(殿裁可23:34)・配備下知済み | 非破壊識別子追加(第四弾#5と同型・既存台帳schema互換)。**P1aクローズ前のP1b起票は不能**(pairingの前提データが生成されないため) | schema実測: check_id/event_id/source/timestamp/verdict/wall_msのみ=cmd_id/generation不在 |
-| P1b | finalize非実行時間の区分と是正 | ❄ P1a計装データ蓄積後にread-only集計から | T1a計装(review_approval:gunshi_lgtm/karo_accept)の蓄積でfinalizeを「軍師レビュー実時間/家老ACCEPT実時間/ターン待ち間隙」へ区分→最大間隙の是正(通知経路・レビュー着手遅延)。**前提=P1aクローズ済みであること(v1.3契約分離)**: 本弾のpairingはP1a計装データにのみ実行可能。P1a前の起票は不能。**AC1必須要件(家老RC①)**: cmd_id+generation単位でgunshi_lgtm/karo_acceptをpairingし、report完了起点/terminal終点で区間化。paired N/N・欠損・右打切り件数・finalize母集団53弾へのcoverage率を全て報告。イベント総数だけで待ち相を断定しない(現物は既に不対称=LGTM31/ACCEPT30)。**検査は1つも削らない**(二相レビューの品質寄与は本日実証済み=part1§0) | finalize累積27,985s(全区間中の非work最大)。cmd_complete_gate純実行は0ms(第三弾#2実証)ゆえ支配相は待ち時間の疑い(AC1で確定) |
+| P1b | finalize非実行時間の区分と是正 | ❄ 必要phaseの識別子充足後にread-only集計から | **再開条件**: report完了起点、gunshi_lgtm、karo_accept、gate/terminal、finalize後半phaseをcmd_id+generationで機械結合でき、各必要phaseの充足率、paired N/N、欠損、右打切り、固定53弾窓coverageを同一cutoffで出力できること。現状はLGTM→ACCEPTだけ73/84 pair、後半0/5で未充足。イベント総数や部分区間から全finalizeを断定しない。条件充足後、最大間隙だけを是正し、検査は1つも削らない | finalize累積27,985s(固定53弾窓)。支配相は再開条件充足後に確定 |
 | P2 | 例外弾unattributed残差の是正(=part1 T1b吸収) | ⏸ no-change BLOCK(00:04疾風・充足確認FAIL: 必須8遷移中6遷移が台帳欠損。例外弾は2/40弾・max724秒へ縮小=期待削減量が当初想定より大幅減。遷移計装拡張の投資判定はP1b+再snapshot後) | 例外弾(instruction_sync型stale report+複数再配備)の遷移別delivery/ack遅延を実測し、欠落遷移のみ補完。一律re-wake禁止(part1家老RC②継承)。**例外弾の判定基準(v1.2明記)**: part1と同じ観測ギャップ導出方式(unattributed分布の断絶を境界とし、恣意閾値を置かない)をAC1で本弾の母集団に対し再導出する | unattr累積20,813s、p50=31sだがmax=9,530s=例外集中型 |
 | P3 | 再attempt税(FAIL往復)の削減 | ⏸ FAIL BLOCK(00時台・才蔵。CLEAR未終端49cmd時間欠損+generation列不存在=世代分類実行不能。再開=gate_metrics generation計装後) | FAIL率(part1 T4実測: 全体0.434)の**FAIL原因別・往復回数別の時間税**を全数集計→上位原因の予防を配備時context注入・報告テンプレ強化で削減(gate緩和は禁止=品質底線)。**AC1必須要件(家老RC②)**: 856-505=351行は税の**上限**にすぎない。世代(generation)単位でWAIT/INFO/同一世代BLOCK→CLEAR/RC新世代を分類し、**真の再work往復Nとその時間だけ**を税として計上する。**時間帰属規則(v1.2穴是正)**: T3a整合の終端行採用は最新attempt境界のため旧attemptの時間が終端行に現れない — 税の時間はgate_metricsの**履歴行(同一cmd_id全行)**から世代別に取り、終端行と混同しない。修正1回で通る率の向上=品質向上と同義 | 再attempt行の上限=351行(未分類。真の税はAC1で確定) |
 | P4 | deploy外れ値尾の条件特定 | ⏸ FAIL BLOCK(00時台・飛猿。deploy_total全数23,654秒/max314,443秒が§0基準値と桁違い=母集団定義乖離+旧event_id 3件分類不能。再開=固定窓+同一台帳の母集団定義統一後) | deploy p50=40sは是正済み(deployレーン-47%)。外れ値(max 3,321s)の発生条件を3点表で特定し条件ベース是正。**AC1二値条件(家老RC)**: 既存deploy高速化レーンとのowner重複0件を確認してから着手(重複ありなら当該項をdeployレーンへ帰属しP4から除外) | deploy累積6,600sのうち外れ値少数が支配 |
 
-- **順序案(v1.3)**: 殿裁可後P1a先行(最大標的P1bの前提)→P3/P4のread-only AC1は即並列可(APPROVE済み)→P1bはP1a蓄積後→P2はT1a蓄積量が判定可能になり次第
+- **順序案(v1.9)**: P1a系識別子を必要phaseへ接続→P1b再開条件を機械判定→P1b集計。P2/P3/P4は各ledger記載の識別子・母集団条件を満たすまでBLOCKを維持する。第五弾=script内部、第六弾=弾プロセス、第七弾=テスト実行の所有境界を保ち、同じ変更を二重起票しない。
 - **配備=家老自立(karo_direct)**。各弾ともAC1=read-only全数集計(固定cutoff/hash付き)→序列・支配相確定→AC2実装の計測先行型(第四弾と同型)
 
 ## §-3 版履歴
 
+- v1.9(2026-07-30 01:20): **進捗刻印(将軍覚醒更新)** — §0.-2新設: 準備計測track A CLEAR(22:29)+v1.8独立レビューLGTM→CLEAR(01:05)+弾#0事故の旧test ledger非依存確認(参照0件・代替蓄積0日)+殿優先裁定00:37『第五〜第七弾が優先』。序列最終化=P1a蓄積+準備計測3点消化待ちのまま
+- v1.9(2026-07-30 01:30): **独立監査RC是正** — 14日rollingによる単日窓包含と採用完全性差を反映し「独立二重確認」を撤回。ratio-of-medians=69.0%/median-of-ratios=51.2%/cumulative-sum-ratio=41.3%を別指標化。Track A未接続、Track B部分計測(73/84、欠損11、右打切り1)、review識別子157/251=62.5%、finalize後半0/5を固定cutoff付きで反映。P1b再開条件を必要phase充足率+pair+欠損+右打切り+coverageの機械出力へ変更。P2/P3/P4と第五〜第七弾の順序境界は維持。
 - v1.8(2026-07-29 22:20): **第六弾指定の覚醒更新** — (1)§0.-1新設: 殿下知21:59で本レーン=第六弾と確定、loop_ledger 514cmd独立実測(work 31%/finalize 28%/待ち39%)とself_retro支配因(completion_pipeline×2回)が§0の53弾窓結論と合流 (2)準備計測3点の家老下知(22:00)をledgerへ (3)運用3裁定(反復サイクル停止条件13:26/read-only段のみ冗長2名13:28/報告整形最終集約13:31)を§2へ適用 (4)第五弾(稼働中・writer 5script所有)/第七弾(テスト速度・準備中)との枠境界をledgerへ。優先順位=第五弾実装>第六弾計測>第七弾準備(idle充填順)
 - v1.7(02:07): **P3/P4 AC1結果反映 — 両方とも前提乖離の正直FAIL BLOCK(模範停止)**。P3(才蔵): 全数再計数884行/529cmd(基準値から+28/+24の自然増)だが、49cmd・100 BLOCK行がCLEAR未終端で時間欠損+**generation列がgate_metricsに不存在**=家老RC②の世代分類が現行台帳で実行不能(P1aと同根の識別子欠落)。P4(飛猿): deploy_total全1,645件=累積23,654秒/max 314,443秒で§0基準値(6,600秒/max 3,321秒)と桁違い=**母集団定義の乖離**(§0=gate_metricsの本日CLEAR 53弾/P4実査=defense_overhead全期間全数)+旧event_id 3件が識別子欠落で分類不能。**再開条件をledgerへ確定**: P3=gate_metricsへのgeneration計装後(P1a拡張)、P4=母集団定義の統一(固定窓+同一台帳)を起票ACへ明記後。part2の全弾が「識別子計装が先」へ収束=P1aが全レーンの前提であることが3弾の実測で確定
 - v1.6(00:11): **P2充足確認の結果反映(疾風・正直FAIL報告)** — T1a後固定窓40/40弾全数(欠損0・証跡SHA付き): unattributed値域4-724秒で**旧9,530秒級の例外は窓内に出現せず**(本日のstale report再配備根治・lost-wakeup修正群が効いた可能性)。観測ギャップ353→692秒から例外2弾のみ導出。ただし必須8遷移中、台帳実在はdeploy_task系+review_approval(gunshi_lgtm/karo_accept)のみで、issued/deployed/ack/report_terminal/gate_start/clear境界が欠損→**P2はno-change BLOCK=遷移計装拡張(コード変更)が前提**。例外弾が2/40へ縮小した今、計装拡張の投資判定はP1b集計+CI GREEN後の再snapshotを見てから。併記: P1a実装commit(07f9b40e9)はpush済みでCI検証中

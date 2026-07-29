@@ -1,6 +1,22 @@
-# 【📐設計書v1.4 — 二段階解禁: 弾#0(run_identity計装・実装可能性監査PASS)=独立裁可でwave-final前実装/本体=wave-final後に序列確定→裁可】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.4 (2026-07-29 23:25 弾#0実装像確定。殿発案22:06)
+# 【✅弾#0=live着地済み(schema移行事故は喪失受理+再発防止hotfix稼働でクローズ)。wave-final発射条件充足 — 本体はwave-final後に序列確定→裁可】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.5 (2026-07-30 01:20 将軍覚醒更新。殿発案22:06)
+
+## §-2.5 弾#0実行結果(2026-07-30 01:20時点 — 掲示板+才蔵全数走査+gate_metrics一次確認)
+
+| 事象 | 時刻 | 状態 |
+|---|---|---|
+| 弾#0発射+殿裁可 | 07-29 23:28/23:29 | ✅第一段解禁正式成立(可逆自走発射と裁定整合) |
+| 実装着地 | 07-29 23:57報 | ✅新4識別子契約=task選択223/223 PASS・SKIP0、commit e80b5884。**tap/output本文不変・原子publishの契約どおり** |
+| ★schema移行事故 | 07-29 23:57検知 | 初回移行が旧ledger履歴を置換: per-file 20,731行/per-suite 1,637行→数行。live treeはbefore/after一致(本番非汚染) |
+| 復元調査確定 | 07-30 00:09 | 才蔵全数走査(候補8,518ファイル: test_receipts json/output・tmp/cache/log埋込)で旧schema完全復元行**0**=復元不能確定。教訓L1461登録 |
+| 将軍裁定 | 07-30 00:10 | **喪失受理**。wave-final停止事由を『復元待ち』から解除 |
+| 再発防止hotfix | 07-30 00:49 | ✅GATE CLEAR(cmd_karo_hotfix_ledger_schema_snapshot_guard: snapshot hash+行数一致+復元dry-runをpublish前強制、飛猿) |
+| 第六弾影響照合 | 07-30 00:13 | ✅旧test ledger依存**0件**(第六弾v1.8+独立レビュー報告)=第六弾の代替蓄積期間0日 |
+| 殿優先裁定 | 07-30 00:37 | 『第五〜第七弾が優先だ』 |
+
+**現況**: 新schema ledgerは蓄積進行中(01:17時点 per-file 109行+)。**wave-final発射条件=充足済み**(弾#0 liveクローズ+hotfix稼働)。第五弾は全10弾GATE CLEAR済みゆえ、次手=wave-final全量run(本run receiptが第七弾の序列SSOTを兼務)→4識別子結合で序列確定→本体裁可。
 
 ## §-2 版履歴
+- v1.5(07-30 01:20): §-2.5新設(弾#0実行結果・事故と受理・wave-final発射条件充足の刻印)。旧ledger喪失により§0の序列SSOTは「wave-final以降の新schema計測のみ」で構成することを明確化(過去比較は不能=正直記載)
 - v1.4(23:25): 家老実装可能性監査(blt_232122・PASS+最終RC1件)反映 — 弾#0の計装対象を「receipt+per-file/per-suite ledgerへ4識別子値追加、**tap/output本文は不変**(receipt artifact path+basename由来tap pathで所有run関連付け)」へ確定。最小実装像(run_tests.sh+2 ledger writer、outer run_id生成→inner pending→hash確定→原子publish)と敵対3件PASS・現状実測(receipt 3,201件run_id 0/ledger計22,344行output_sha256列0)を§0へ記録。旧v1.1参照表記も整理
 - v1.3(23:07): 家老再検分(blt_230515)の時系列自己矛盾を是正 — **二段階解禁へ統一**: 【第一段】弾#0(run_identity計装)のみ独立裁可の対象とし、裁可あれば**第五弾wave-finalより前に**実装+選択検証(これがなければwave-finalが結合不能のままになるため)。【第二段】第七弾本体(序列確定・弾数固定・是正弾)はwave-final成功receipt→4識別子結合で序列確定→本体裁可→起票解禁。§0/§3/§4のWHENを全て本契約へ揃え、表題版もv1.3へ統一
 - v1.2(23:00): 家老独立監査(blt_225827)の実行不能指摘を是正 — 現行schemaでは4識別子結合が生成不能(receiptにrun_id/source_fp無し・ledgerにoutput_sha256無し)ため、**弾#0=run_identity計装(非破壊・wave-final前導入必須)を前提弾として新設**。現存キー導出写像は同一commit複数run曖昧性ゆえ不採用。疾風の当該review task FAILは正当(実行不能の正直報告)
