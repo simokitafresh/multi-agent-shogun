@@ -8563,6 +8563,8 @@ codd:
 | causal | `cmd_reflux_backlink_202607291222_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607291330_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607291645_hayate` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-kagemaru_20260722.md` |
+| causal | `cmd_reflux_backlink_202607291645_hayate` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607291653_saizo` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-kotaro_20260722.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -9166,6 +9168,7 @@ codd:
 | cmd | `cmd_karo_hotfix_round2_commit_hash_20260728` (`queue/reports/hayate_report_cmd_karo_hotfix_round2_commit_hash_20260728.yaml`) |
 | cmd | `cmd_reflux_backlink_202607291131_hayate` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607291330_hayate` (`docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202607291645_hayate` (`docs/semantic-index/index.md`) |
 
 ## provisional_kotaro — 仮: Kotaro
 
