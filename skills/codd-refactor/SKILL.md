@@ -1,28 +1,11 @@
 ---
-<!-- script_refs_checked_at: 2026-07-19T02:13:00+09:00 -->
-<!-- 2026-07-19 GA-298修正後再検分: 直前検分2026-07-19T01:26:00+09:00以降のrun_tests.sh commitは0件（最新b3a8be4a4、2026-07-19T00:17:38+09:00）。現HEAD同期でmtimeのみ進んだため、公開mode/receipt/all cache/aggregate再入/失敗exit/14列台帳の契約変更なし。 -->
-<!-- script_refs_checked_at: 2026-07-19T01:26:00+09:00 -->
-<!-- 2026-07-19 cmd_karo_hotfix_skill_refs_codd_refactor_202607190121検分: run_tests.sh 108451a3f..b3a8be4a4の全7差分をgit log/showで確認。公開実行は耐久receiptを生成・検証し、allは明示指定なしならcacheを無効化、集約runnerの再入はexit 2でBLOCKして子実行をfile modeへ限定する。公開mode引数(all/unit/affected/file)、test選択、失敗exit、14列台帳契約は維持され、Phase 1/5の通常runner再利用・専用計測run禁止方針に本文変更は不要。 -->
-<!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
-<!-- 2026-07-18検分: run_tests.sh ad583f31はparallel cooperative fail-fast化。mode/選択は不変、失敗後の未投入queueを閉じ、投入済みlightのみ完走する。 -->
-<!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
-<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: run_tests.sh f24b0747bはcached queue枯渇時処理、test_select.sh 68bda0869/fa403eb51はreport contract selector共通化。mode引数・test選択・終了status契約は不変。 -->
 name: codd-refactor
-<!-- script_refs_checked_at: 2026-07-16T19:17:45+0900 -->
-<!-- 2026-07-16再検分: run_tests.sh 71ce264b0。file別timingに加えsuite wall/sum_file_secをtest_suite_timing_ledger.tsvへ記録する副作用を追加。mode引数・test選択・終了status契約は不変。 -->
-<!-- cmd_karo_hotfix_shogun_startup_four_blocks検分: run_tests.shの現行差分はstateful Bats 5本のfile-isolated scheduling追加、test_select.shは.githooks明示mapping追加。mode/exit/計測契約は不変。 -->
-<!-- script_refs_checked_at: 2026-07-16T19:17:45+0900 -->
-<!-- GA-263後検分: run_tests.sh 8a80ad7fc/4850af9a9をgit showと83回帰で確認。source時のrepo rootはBASH_SOURCE基準、affected/fullはfile単位aggregate budget=8・file内部jobs=1へ統一。mode引数・exit契約・14列台帳契約は不変。 -->
-<!-- cmd_karo_hotfix_skill_refs_202607151824検分: run_tests.sh 275d22bafをgit showで確認。LPT cohort空時にも対象fileをscheduleするCI内部配分修正で、run_tests.shの引数・exit・実行対象副作用契約は不変。 -->
-<!-- 2026-07-15将軍検分: run_tests.sh b0c6112a9(INNER_JOBS 4→1+HEAVY_INNER_JOBS fallback=CI concurrency fix)。内部並列度調整のみ、呼び出し契約不変。 -->
 description: |
   CoDDパイプラインでbashスクリプトの設計書を生成し、リファクタリング+速度改善を実行するスキル。
   プロファイリング→ボトルネック特定→CoDD spec作成→設計書生成→実装→before/after計測の全工程。
   TRIGGER: /codd-refactor、リファクタリング設計、速度改善、テスト高速化、batch化設計、CoDD設計書からリファクタ
   DO NOT TRIGGER: テスト実行のみ(bats直接実行)、
   新規スクリプト作成(CoDDは既存コードのリファクタ向き)、DM-Signal Python(別ワークフロー)
-quality_metric: "当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにCoDDリファクタ手順起因のworkaroundが記録されない割合）"
-argument-hint: "[target_script or spec_path]"
 allowed-tools:
   - Bash
   - Read
@@ -31,6 +14,26 @@ allowed-tools:
   - Glob
   - Grep
 ---
+
+<!-- script_refs_checked_at: 2026-07-29T20:15:22+09:00 -->
+<!-- 2026-07-29検分: run_tests.sh b3a8be4a4..f762b84c1の全45 commitをgit log/showで一次確認。task mode、durable receipt/identity、失敗exitのfail-closed化を追加。task modeは明示test_path/report files_modifiedのtestだけを直接実行し、推論planned_paths/files_to_modifyは所有境界としてproduction pathの依存選択にのみ使う。 -->
+<!-- script_refs_checked_at: 2026-07-19T02:13:00+09:00 -->
+<!-- 2026-07-19 GA-298修正後再検分: 直前検分2026-07-19T01:26:00+09:00以降のrun_tests.sh commitは0件（最新b3a8be4a4、2026-07-19T00:17:38+09:00）。現HEAD同期でmtimeのみ進んだため、公開mode/receipt/all cache/aggregate再入/失敗exit/14列台帳の契約変更なし。 -->
+<!-- script_refs_checked_at: 2026-07-19T01:26:00+09:00 -->
+<!-- 2026-07-19 cmd_karo_hotfix_skill_refs_codd_refactor_202607190121検分: run_tests.sh 108451a3f..b3a8be4a4の全7差分をgit log/showで確認。公開実行は耐久receiptを生成・検証し、allは明示指定なしならcacheを無効化、集約runnerの再入はexit 2でBLOCKして子実行をfile modeへ限定する。公開mode引数(all/unit/affected/file)、test選択、失敗exit、14列台帳契約は維持され、Phase 1/5の通常runner再利用・専用計測run禁止方針に本文変更は不要。 -->
+<!-- script_refs_checked_at: 2026-07-18T01:02:00+09:00 -->
+<!-- 2026-07-18検分: run_tests.sh ad583f31はparallel cooperative fail-fast化。mode/選択は不変、失敗後の未投入queueを閉じ、投入済みlightのみ完走する。 -->
+<!-- script_refs_checked_at: 2026-07-17T09:45:00+09:00 -->
+<!-- 2026-07-17 cmd_karo_hotfix_skill_refs_all検分: run_tests.sh f24b0747bはcached queue枯渇時処理、test_select.sh 68bda0869/fa403eb51はreport contract selector共通化。mode引数・test選択・終了status契約は不変。 -->
+<!-- script_refs_checked_at: 2026-07-16T19:17:45+0900 -->
+<!-- 2026-07-16再検分: run_tests.sh 71ce264b0。file別timingに加えsuite wall/sum_file_secをtest_suite_timing_ledger.tsvへ記録する副作用を追加。mode引数・test選択・終了status契約は不変。 -->
+<!-- cmd_karo_hotfix_shogun_startup_four_blocks検分: run_tests.shの現行差分はstateful Bats 5本のfile-isolated scheduling追加、test_select.shは.githooks明示mapping追加。mode/exit/計測契約は不変。 -->
+<!-- script_refs_checked_at: 2026-07-16T19:17:45+0900 -->
+<!-- GA-263後検分: run_tests.sh 8a80ad7fc/4850af9a9をgit showと83回帰で確認。source時のrepo rootはBASH_SOURCE基準、affected/fullはfile単位aggregate budget=8・file内部jobs=1へ統一。mode引数・exit契約・14列台帳契約は不変。 -->
+<!-- cmd_karo_hotfix_skill_refs_202607151824検分: run_tests.sh 275d22bafをgit showで確認。LPT cohort空時にも対象fileをscheduleするCI内部配分修正で、run_tests.shの引数・exit・実行対象副作用契約は不変。 -->
+<!-- 2026-07-15将軍検分: run_tests.sh b0c6112a9(INNER_JOBS 4→1+HEAVY_INNER_JOBS fallback=CI concurrency fix)。内部並列度調整のみ、呼び出し契約不変。 -->
+<!-- quality_metric: 当該スキル使用タスクのWA不発生率（logs/karo_workarounds.yamlにCoDDリファクタ手順起因のworkaroundが記録されない割合） -->
+<!-- argument-hint: [target_script or spec_path] -->
 
 # CoDD Refactor Skill
 
@@ -179,6 +182,12 @@ v2.18.0+で`codd implement run --language`オプションをローカル確認�
 <!-- script_refs_checked_at: 2026-07-16T19:17:45+0900 -->
 
 **鉄則: R1実装→テスト全PASS確認→R2実装→テスト全PASS確認。一気にやるな。**
+
+各反復と報告直前は `bash scripts/run_tests.sh task <task_yaml>` を使う。直接実行する
+contract testは明示 `test_path`（または確定済みreportのtest `files_modified`）に限る。
+自動注入された `commit_contract.planned_paths` / `files_to_modify` は所有境界であり、
+production pathから `test_select.sh` で依存testを選ぶ入力としてのみ扱う。完走receiptの
+FAIL 0・SKIP 0を確認し、失敗時はreceiptのexit statusをそのまま採用する。
 
 ## Phase 5: 検証（14列台帳のbefore/after比較表を出力して初めて完了）
 
