@@ -228,6 +228,59 @@ log_scope_expansion_fire() {
     ) 204>"$log_dir/gate_fire_log.yaml.lock"
 }
 
+# A source-owned external backend task must never silently widen to the entire
+# pytest suite.  Full-unit execution is a wave checkpoint, not a per-task
+# fallback.  Authorization is deliberately machine-readable and bound to the
+# external repository HEAD so prose mentioning "checkpoint" cannot enable it.
+task_allows_full_unit_checkpoint() {
+    local task_yaml="$1"
+    local project_root="$2"
+    python3 - "$task_yaml" "$project_root" <<'PY'
+import re
+import subprocess
+import sys
+
+import yaml
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    document = yaml.safe_load(handle) or {}
+task = document.get("task", document)
+if not isinstance(task, dict):
+    raise SystemExit(2)
+
+execution = task.get("test_execution")
+checkpoint = execution.get("full_unit_checkpoint") if isinstance(execution, dict) else None
+if not isinstance(checkpoint, dict):
+    raise SystemExit(1)
+
+fixed_sha = str(checkpoint.get("fixed_sha") or "")
+allowed = checkpoint.get("allowed") is True
+wave_final = checkpoint.get("wave_final") is True
+if not (allowed and wave_final and re.fullmatch(r"[0-9a-f]{40}", fixed_sha)):
+    raise SystemExit(1)
+
+head = subprocess.run(
+    ["git", "-C", sys.argv[2], "rev-parse", "HEAD"],
+    check=True, capture_output=True, text=True,
+).stdout.strip()
+raise SystemExit(0 if head == fixed_sha else 1)
+PY
+}
+
+log_full_unit_scope_guard() {
+    local task_yaml="$1"
+    local result="$2"
+    local detail="$3"
+    local log_dir="${LOG_DIR:-$REPO_ROOT/logs}"
+    mkdir -p "$log_dir" 2>/dev/null || true
+    (
+        flock -w 5 206 || true
+        printf -- '- ts: "%s", file: "%s", gate: "full_unit_scope_guard", result: %s, checks: "%s"\n' \
+            "$(date '+%Y-%m-%dT%H:%M:%S')" "$task_yaml" "$result" "$detail" \
+            >> "$log_dir/gate_fire_log.yaml"
+    ) 206>"$log_dir/gate_fire_log.yaml.lock"
+}
+
 # Canonical, audited way to expand a task's commit_contract.planned_paths
 # beyond its originally declared scope. Writing planned_paths directly, or
 # via yaml_field_set on a raw dotted nested field name, either desyncs the
@@ -1535,10 +1588,20 @@ _run_tests_main() {
                         fi
                     done
                     if [ "$_external_backend" -eq 1 ] && [ -d "$_task_root/backend/tests" ]; then
-                        printf 'TEST_SELECTION result=external runner=pytest scope=backend project_root=%s\n' "$_task_root"
                         if [ "${#_external_backend_tests[@]}" -gt 0 ]; then
+                            printf 'TEST_SELECTION result=external runner=pytest scope=backend_contract project_root=%s files=%s\n' \
+                                "$_task_root" "${#_external_backend_tests[@]}"
                             (cd "$_task_root/backend" && python3 -m pytest -q "${_external_backend_tests[@]}") || exit $?
                         else
+                            if ! task_allows_full_unit_checkpoint "$1" "$_task_root"; then
+                                log_full_unit_scope_guard "$1" BLOCK \
+                                    "reason=implicit_external_backend_full_unit selected=0"
+                                echo "BLOCK: external backend task has no explicit contract tests; full-unit fallback requires test_execution.full_unit_checkpoint allowed=true, wave_final=true, fixed_sha=current_HEAD" >&2
+                                exit 2
+                            fi
+                            log_full_unit_scope_guard "$1" PASS \
+                                "reason=explicit_fixed_sha_wave_final_checkpoint"
+                            printf 'TEST_SELECTION result=external runner=pytest scope=backend_full_unit_checkpoint project_root=%s\n' "$_task_root"
                             (cd "$_task_root/backend" && python3 -m pytest -q) || exit $?
                         fi
                     fi

@@ -620,6 +620,73 @@ YAML
   [ ! -e "$SELECT_ARGS_LOG" ]
 }
 
+# test_necessity: 個別external backend taskが暗黙に全pytestへ拡大せず、
+# 明示contractだけを選び、fixed-SHA wave最終checkpointだけが全量を許可される
+# 三分岐の実行境界を守る。
+@test "external backend task blocks implicit full unit and preserves explicit contract and checkpoint" {
+  external="$TMPROOT/external"
+  mkdir -p "$external/backend/tests" "$external/backend/app" \
+    "$TMPROOT/projects" "$TMPROOT/queue/tasks" "$TMPROOT/logs"
+  printf 'VALUE = 1\n' >"$external/backend/app/source.py"
+  printf 'def test_scope():\n    assert True\n' >"$external/backend/tests/test_scope.py"
+  git -C "$external" init -q
+  git -C "$external" config user.email test@example.invalid
+  git -C "$external" config user.name test
+  git -C "$external" add backend
+  git -C "$external" commit -qm init
+  external_head="$(git -C "$external" rev-parse HEAD)"
+  cat >"$TMPROOT/projects/external.yaml" <<YAML
+project:
+  path: $external
+YAML
+
+  cat >"$TMPROOT/queue/tasks/forbidden.yaml" <<'YAML'
+task:
+  task_id: forbidden
+  project: external
+  planned_paths: [backend/app/source.py]
+YAML
+  run env REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/forbidden.yaml"
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"BLOCK: external backend task has no explicit contract tests"* ]]
+  [ "$(grep -c 'gate: \"full_unit_scope_guard\", result: BLOCK' "$TMPROOT/logs/gate_fire_log.yaml")" -eq 1 ]
+
+  cat >"$TMPROOT/queue/tasks/contract.yaml" <<'YAML'
+task:
+  task_id: contract
+  project: external
+  planned_paths:
+    - backend/app/source.py
+    - backend/tests/test_scope.py
+YAML
+  run env REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/contract.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"scope=backend_contract"* ]]
+  [[ "$output" == *"1 passed"* ]]
+  [[ "$output" != *"backend_full_unit_checkpoint"* ]]
+
+  cat >"$TMPROOT/queue/tasks/checkpoint.yaml" <<YAML
+task:
+  task_id: checkpoint
+  project: external
+  planned_paths: [backend/app/source.py]
+  test_execution:
+    full_unit_checkpoint:
+      allowed: true
+      wave_final: true
+      fixed_sha: $external_head
+YAML
+  run env REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/checkpoint.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"scope=backend_full_unit_checkpoint"* ]]
+  [[ "$output" == *"1 passed"* ]]
+  [ "$(grep -c 'gate: \"full_unit_scope_guard\", result: PASS' "$TMPROOT/logs/gate_fire_log.yaml")" -eq 1 ]
+  echo "FIXTURE_METRICS forbidden_executed=0 forbidden_block=1 contract_scope_outside=0 checkpoint_selection_preserved=1 false_positive=0 detector_fp_rate=0/3"
+}
+
 # test_necessity: deployed planned_paths are the task ownership SSOT; both
 # supported schema locations must select the declared contract test directly,
 # while contradictory dual declarations fail closed before any selector runs.
