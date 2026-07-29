@@ -4,6 +4,40 @@ set -euo pipefail
 LEDGER="${TEST_SUITE_TIMING_LEDGER:-$(cd "$(dirname "$0")/.." && pwd)/logs/test_suite_timing_ledger.tsv}"
 BATCH="${1:?usage: test_suite_timing_ledger_write.sh BATCH_TSV}"
 HEADER=$'run_id\trepo\tcommit_sha\tmode\tsuite_wall_sec\tsum_file_sec\tfile_count\tstatus\tsource_fingerprint\tmeasured_at\toutput_sha256'
+LEGACY_HEADER="${HEADER%$'\toutput_sha256'}"
+
+snapshot_legacy_ledger() {
+  local ledger="$1" old_hash snapshot snapshot_tmp restore_tmp
+  local old_rows snapshot_rows snapshot_hash
+  old_hash="$(sha256sum "$ledger" | awk '{print $1}')"
+  snapshot="${ledger}.pre-schema-${old_hash}.snapshot"
+  snapshot_tmp="$(mktemp "${ledger}.snapshot.tmp.XXXXXX")"
+  restore_tmp="$(mktemp "${ledger}.restore-dry-run.tmp.XXXXXX")"
+  if [ "${TIMING_LEDGER_SNAPSHOT_FAULT:-}" = snapshot_create ]; then
+    rm -f "$snapshot_tmp" "$restore_tmp"
+    echo "BLOCK: timing ledger snapshot creation failed" >&2
+    return 2
+  fi
+  cp -- "$ledger" "$snapshot_tmp"
+  [ "${TIMING_LEDGER_SNAPSHOT_FAULT:-}" != hash_mismatch ] || printf x >>"$snapshot_tmp"
+  old_rows="$(tail -n +2 "$ledger" | wc -l)"
+  snapshot_rows="$(tail -n +2 "$snapshot_tmp" | wc -l)"
+  [ "${TIMING_LEDGER_SNAPSHOT_FAULT:-}" != row_count_mismatch ] || snapshot_rows=$((snapshot_rows + 1))
+  snapshot_hash="$(sha256sum "$snapshot_tmp" | awk '{print $1}')"
+  if [ "$old_rows" -ne "$snapshot_rows" ] || [ "$old_hash" != "$snapshot_hash" ]; then
+    rm -f "$snapshot_tmp" "$restore_tmp"
+    echo "BLOCK: timing ledger snapshot verification failed" >&2
+    return 2
+  fi
+  cp -- "$snapshot_tmp" "$restore_tmp"
+  cmp -s "$ledger" "$restore_tmp" || {
+    rm -f "$snapshot_tmp" "$restore_tmp"
+    echo "BLOCK: timing ledger restore dry-run failed" >&2
+    return 2
+  }
+  mv -f "$snapshot_tmp" "$snapshot"
+  rm -f "$restore_tmp"
+}
 if [ "${1:-}" = "--pair" ]; then
   FILE_BATCH="${2:?file batch}"; SUITE_BATCH="${3:?suite batch}"; OUTPUT_SHA="${4:?output sha}"
   FILE_LEDGER="${TEST_TIMING_LEDGER:-$(cd "$(dirname "$0")/.." && pwd)/logs/test_timing_ledger.tsv}"
@@ -21,6 +55,7 @@ if [ "${1:-}" = "--pair" ]; then
     if [ "$current" = "$FILE_HEADER" ]; then
       tail -n +2 "$FILE_LEDGER" >>"$file_tmp"
     elif [ "$current" = "${FILE_HEADER%$'\toutput_sha256'}" ]; then
+      snapshot_legacy_ledger "$FILE_LEDGER"
       tail -n +2 "$FILE_LEDGER" | awk 'BEGIN{OFS="\t"} {$15=""; print}' >>"$file_tmp"
     else
       echo "BLOCK: unknown per-file timing ledger schema" >&2; exit 2
@@ -32,6 +67,7 @@ if [ "${1:-}" = "--pair" ]; then
     if [ "$current" = "$HEADER" ]; then
       tail -n +2 "$LEDGER" >>"$suite_tmp"
     elif [ "$current" = "${HEADER%$'\toutput_sha256'}" ]; then
+      snapshot_legacy_ledger "$LEDGER"
       tail -n +2 "$LEDGER" | awk 'BEGIN{OFS="\t"} {$11=""; print}' >>"$suite_tmp"
     else
       echo "BLOCK: unknown suite timing ledger schema" >&2; exit 2
@@ -51,5 +87,15 @@ mkdir -p "$(dirname "$LEDGER")"
 exec 9>"${LEDGER}.lock"; flock 9
 tmp="$(mktemp "${LEDGER}.tmp.XXXXXX")"; trap 'rm -f "$tmp"' EXIT
 printf '%s\n' "$HEADER" >"$tmp"
-if [ -f "$LEDGER" ] && IFS= read -r current <"$LEDGER" && [ "$current" = "$HEADER" ]; then tail -n +2 "$LEDGER" >>"$tmp"; fi
+if [ -f "$LEDGER" ] && IFS= read -r current <"$LEDGER"; then
+  if [ "$current" = "$HEADER" ]; then
+    tail -n +2 "$LEDGER" >>"$tmp"
+  elif [ "$current" = "$LEGACY_HEADER" ]; then
+    snapshot_legacy_ledger "$LEDGER"
+    tail -n +2 "$LEDGER" | awk 'BEGIN{OFS="\t"} {$11=""; print}' >>"$tmp"
+  else
+    echo "BLOCK: unknown suite timing ledger schema" >&2
+    exit 2
+  fi
+fi
 cat "$BATCH" >>"$tmp"; mv -f "$tmp" "$LEDGER"; trap - EXIT

@@ -278,8 +278,45 @@ _write_lpt_ledger() {
   [ "$status" -eq 0 ]
   [ "$(wc -l <"$file_ledger")" -eq 3 ]
   [ "$(wc -l <"$suite_ledger")" -eq 3 ]
+  file_snapshot="$(find "$TMPROOT/logs" -name 'legacy-file.tsv.pre-schema-*.snapshot')"
+  suite_snapshot="$(find "$TMPROOT/logs" -name 'legacy-suite.tsv.pre-schema-*.snapshot')"
+  [ "$(wc -l <"$file_snapshot")" -eq 2 ]
+  [ "$(wc -l <"$suite_snapshot")" -eq 2 ]
+  [[ "$file_snapshot" == "$TMPROOT/logs/"* ]]
+  [[ "$suite_snapshot" == "$TMPROOT/logs/"* ]]
+  [ "$(sha256sum "$file_snapshot" | awk '{print $1}')" = "$(basename "${file_snapshot%.snapshot}" | sed 's/^legacy-file.tsv.pre-schema-//')" ]
+  [ "$(sha256sum "$suite_snapshot" | awk '{print $1}')" = "$(basename "${suite_snapshot%.snapshot}" | sed 's/^legacy-suite.tsv.pre-schema-//')" ]
   awk -F'\t' 'NR==2 {exit !($1=="old" && NF==15 && $15=="")} NR==3 {exit !($1=="new" && $15!="")}' "$file_ledger"
   awk -F'\t' 'NR==2 {exit !($1=="old" && NF==11 && $11=="")} NR==3 {exit !($1=="new" && $11!="")}' "$suite_ledger"
+}
+
+# test_necessity: schema migration must preserve the old ledger byte-for-byte
+# when snapshot creation, hash verification, row verification, or schema recognition fails.
+@test "timing ledger migration snapshot guard fails closed in four adversarial cells" {
+  file_batch="$TMPROOT/file.batch"
+  head="$(git -C "$TMPROOT" rev-parse HEAD)"
+  sha="$(printf output | sha256sum | cut -d' ' -f1)"
+  printf 'new\trepo\t%s\tunit\tbats\tnew.bats\t1\t.1\tpass\t0\t0\tfp\tnow\ttag\n' "$head" >"$file_batch"
+
+  for fault in snapshot_create hash_mismatch row_count_mismatch; do
+    ledger="$TMPROOT/logs/${fault}.tsv"
+    printf 'run_id\trepo\tcommit_sha\tsuite_root\trunner\ttest_file\ttest_id_count\twall_sec\tstatus\tskip_count\tcache_hit\tsource_fingerprint\tmeasured_at\tresource_tags\nold\trepo\t%s\tunit\tbats\told.bats\t1\t.1\tpass\t0\t0\tfp\tnow\ttag\n' "$head" >"$ledger"
+    before="$(sha256sum "$ledger")"
+    run env TEST_TIMING_LEDGER="$ledger" TIMING_LEDGER_SNAPSHOT_FAULT="$fault" \
+      bash "$TMPROOT/scripts/test_timing_ledger_write.sh" "$file_batch"
+    [ "$status" -eq 2 ]
+    [ "$(sha256sum "$ledger")" = "$before" ]
+  done
+
+  ledger="$TMPROOT/logs/unknown.tsv"
+  printf 'unknown\theader\nold\trow\n' >"$ledger"
+  before="$(sha256sum "$ledger")"
+  run env TEST_TIMING_LEDGER="$ledger" \
+    bash "$TMPROOT/scripts/test_timing_ledger_write.sh" "$file_batch"
+  [ "$status" -eq 2 ]
+  [ "$(sha256sum "$ledger")" = "$before" ]
+  [ "$(find "$TMPROOT/logs" -name '*.snapshot' | wc -l)" -eq 0 ]
+  [ -n "$sha" ]
 }
 
 # test_necessity: 同一commit/source fingerprintの並行runでもrun_id+output hashを
