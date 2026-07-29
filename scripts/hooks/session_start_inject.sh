@@ -154,7 +154,12 @@ if [[ -z "$payload" ]]; then
   exit 0
 fi
 
-if [[ "$payload" =~ \"type\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
+# Claude CodeのSessionStartペイロードは"source"キー、旧形式は"type"キー。
+# "type"のみだと常にunknownになり、/clear時のdeepdive markerが更新されず
+# 前セッションの受領証が「今セッション」PASSと誤判定される(2026-07-29実測)。
+if [[ "$payload" =~ \"source\"[[:space:]]*:[[:space:]]*\"(startup|resume|clear|compact)\" ]]; then
+  source_type="${BASH_REMATCH[1]}"
+elif [[ "$payload" =~ \"type\"[[:space:]]*:[[:space:]]*\"([^\"]*)\" ]]; then
   source_type="${BASH_REMATCH[1]:-unknown}"
 else
   source_type="$(_session_start_json_get ".type" "unknown")" || {
