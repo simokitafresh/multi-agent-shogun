@@ -13,113 +13,22 @@ setup_file() {
 
     # Extract function bodies once to $BATS_FILE_TMPDIR (avoids per-test sed overhead)
     export GATE_HELPERS_FILE="$BATS_FILE_TMPDIR/gate_helpers.sh"
-    {
-        sed -n '/^record_block_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^append_line_locked()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^dispatch_gate_notification_async()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^send_high_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^send_info_cmd_notification()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^log_gate_stderr_file()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^lesson_done_satisfies_lesson_candidate_registration()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^cmd_status_is_canceled()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^level_heading()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^check_context_update()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^resolve_report_file()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^update_lesson_impact_tsv()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^append_lesson_tracking()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^build_clear_duration_metric()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^build_clear_throughput_metric()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^binary_checks_warn_reason()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^report_has_commit_binary_check_yes()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^collect_report_files_modified()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^discover_reports_for_cmd()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^collect_parent_cmd_report_files_modified()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^has_parent_cmd_report()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^collect_git_show_w_files()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^collect_report_commit_hash()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^collect_cmd_phase_git_files()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^check_self_grade_commit_file_coverage()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^is_lessons_useful_empty_warn_task_type()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^handle_empty_lessons_useful_check()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^validate_lesson_feedback_set()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^detect_task_types()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^_check_lc_found()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^preflight_gate_flags()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^collect_report_modified_files()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^load_validated_sg7_context()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^collect_cmd_command_file_refs()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^collect_report_verified_existing_deps()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^collect_task_readonly_refs()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^check_command_files_modified_coverage()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^check_scope_drift()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^check_wtf_likelihood()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^check_script_wiring()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^cmd_requires_cdp_production_check()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^run_cdp_production_check()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^append_codd_registry_entry()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^run_codd_propagate_update()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^normalize_block_reason_to_workaround_categories()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^update_karo_workaround_resolutions()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^classify_completed_rework_event_kind()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        sed -n '/^capture_completed_rework_event()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
-        SRC_GATE_SCRIPT="$SRC_GATE_SCRIPT" python3 - <<'PY'
-import os
+    python3 - "$SRC_GATE_SCRIPT" > "$GATE_HELPERS_FILE" <<'PY'
+import re
+import sys
 from pathlib import Path
 
-text = Path(os.environ["SRC_GATE_SCRIPT"]).read_text(encoding="utf-8")
-start = text.index("write_l6_horizontal_level5_insights()")
-end = text.index("\n# ─── changelog自動記録関数", start)
-print(text[start:end])
+source = Path(sys.argv[1]).read_text(encoding="utf-8")
+names = """record_block_reason append_line_locked dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv append_lesson_tracking build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring cmd_requires_cdp_production_check run_cdp_production_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event""".split()
+for name in names:
+    match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
+    if match is None:
+        raise SystemExit(f"missing helper: {name}")
+    print(match.group(0), end="\n\n")
+start = source.index("write_l6_horizontal_level5_insights()")
+end = source.index("\n# ─── changelog自動記録関数", start)
+print(source[start:end])
 PY
-    } > "$GATE_HELPERS_FILE"
 
     # Build the invariant scaffold once on ext4. Each test still receives an
     # isolated copy, but avoids repeating mkdir/symlink/stub process setup.
@@ -2079,7 +1988,6 @@ PY
 
 @test "resolve_report_file warns when auto unwrap returns empty status after flock timeout" {
     local report_file="$TEST_PROJECT/queue/reports/hayate_report_${TEST_CMD_ID}.yaml"
-    local lock_file="${report_file}.lock"
     export SCRIPT_DIR="$TEST_PROJECT"
     export TASKS_DIR="$TEST_PROJECT/queue/tasks"
     export CMD_ID="$TEST_CMD_ID"
@@ -2095,17 +2003,13 @@ report:
   status: completed
 EOF
 
-    (
-        exec 200>"$lock_file"
-        flock 200
-        sleep 7
-    ) &
-    local lock_holder=$!
-    sleep 0.2
+    # The boundary under test is flock failure handling, not flock's real
+    # five-second clock.  Return the same failure deterministically.
+    flock() {
+        return 1
+    }
 
     run resolve_report_file hayate "$TEST_CMD_ID"
-    kill "$lock_holder" 2>/dev/null || true
-    wait "$lock_holder" 2>/dev/null || true
 
     [ "$status" -eq 0 ]
     [[ "$output" == *"[auto_unwrap] WARN: flock timeout on report YAML, skipping unwrap"* ]]
