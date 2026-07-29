@@ -5,7 +5,7 @@
 **第一弾(mr_gen)クローズ確定(本番run 215=20260729042344AC252C, source=3b9327f8, logical_date=2026-07-28)**:
 | 項目 | 旧run(07-28) | 今回run 215 | 差 |
 |---|---:|---:|---|
-| L3 total | 877.25s | **488.32s** | -44.3% |
+| **run全体total**(※L3 totalではない。旧L3=565.92s=§0.-1) | 877.25s | **488.32s** | -44.3% |
 | monthly_returns_gen | 318.99s | **21.12s** | **-93.4%(15.1x)** |
 | PF集合 | 78 | 78(old_only=0/new_only=0) | 完全一致 |
 
@@ -13,11 +13,11 @@
 - **値の完全一致**: 隔離local PostgreSQL clone上のgolden回帰(fixed source 3b9327f8)で**78/78PF・243,293/243,293行 exact一致**(signal・holding_signal・display_ticker_weightsを(portfolio_id,date)主キー比較。missing=0/extra=0/mismatch=0/SKIP=0/本番write=0)。read-only冗長並列(Track A/B)の**先着Track Bが達成**=殿裁定13:28の実証第一号
 - **PF母数確定(殿指摘13:44→将軍DB一次確認)**: 本番102PF=**FoF 78+Standard 24**(SELECT type,COUNT(*) GROUP BY type)。manifest 102 vs L3処理78の差はStandard別レイヤー処理の正当仕様であり処理漏れではない
 
-**2周目(mr_computeローカル極限化)= 半蔵実装完了・軍師LGTM(14:57)・家老GATE判定待ち**:
+**2周目(mr_computeローカル極限化)= 二層状態(家老レビュー15:27で確定): task=FAIL(全unit1858件×2実行の選択実行原則違反) / 実装9b837afd=独立検証PASSで採用・Render Live化済み・本番run 216(20260729062420BFF45E)計測中**:
 - cProfile(25,912,611 calls/28.905s)で支配特定: in_market再帰7.95s・SQL execute 4.36s・月末DataFrame抽出2.28s・ledger 2.22s・expand 1.70s
 - 独立try総当たり→**採用2案のみ実装**: 月末判定O(1)辞書化(19.94→16.42s exact)+Core table INSERT化(16.42→15.45s exact)
 - ローカル実測: cold中央値24.03→17.99s(**1.335x**)、warm 23.24→19.41s(1.197x)、全78FoF・全期間exact mismatch=0。負け案は本実装へ残さず(反復サイクル型13:26の型どおり)
-- 次: GATE→**本番run対で再計測**(mr_compute 19.73sの本番Δ確定)→差分再検証→§3.1 #2 deferred flush(117.61s)のローカル極限化へ
+- 次: **本番run 216の計測結果回収**(mr_compute 19.73sの本番Δ確定)→差分再検証(§4-9含む)→§3.1 #2 deferred flush(117.61s)のローカル極限化へ。task FAILは実装採用と独立(報告契約の問題であり成果物品質の問題ではない — 二層を混同しない)
 
 ## §0.-1 本番初収穫(2026-07-28定期実行 FoF run=20260728014047YD63KJ — cmd_4186新telemetryの初回本番値。将軍D0回収11:20)
 
@@ -136,7 +136,7 @@
 ### §3.1 攻め順(cmd_4180確定内訳に基づくv3序列)
 | 優先 | 標的 | 実測 | 状態(v3.4) |
 |---|---|---:|---|
-| 1 | **L3内 monthly_returns_gen** | ~~318.99s~~→**21.12s(07-29 run 215)** | ✅**第一弾クローズ**(§0.-2。exact完全一致済み)。残余はmr_compute 19.73s=2周目進行中(GATE判定待ち→本番再計測) |
+| 1 | **L3内 monthly_returns_gen** | ~~318.99s~~→**21.12s(07-29 run 215)** | ✅**第一弾クローズ**(§0.-2。exact完全一致済み)。残余mr_compute 19.73s=2周目実装9b837afd採用・Live・run 216計測中(task報告はFAIL=二層状態、§0.-2) |
 | 2 | **L3内 deferred flush(単一標的へ統合)** | 117.61s(07-28本番exclusive) | 次のローカル極限化標的。run 215での再実測値の回収も要(total 877→488の内訳再判定) |
 | 3 | L3内 daily_loop | 92.38s(07-28本番) | 過去のベクトル化設計(NEW-2b)の掘り起こし判断 |
 | 4 | L2 trade_perf(FoF run) | 117.35s | 共通経路上の実測コスト(経路差別は棄却済み)。cProfileでの機構特定から |
