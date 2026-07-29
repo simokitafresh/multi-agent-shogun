@@ -377,34 +377,39 @@ PY
     # /dev/shmのTSV receiptはプロセス毎に消えるため前後比較の母数にできなかった。
     if [ "${RFS_PUBLISH_TELEMETRY:-1}" = "1" ] \
         && [ -f "$_rfs_batch_root/scripts/lib/defense_overhead_writer.sh" ]; then
-        # shellcheck source=/dev/null
-        source "$_rfs_batch_root/scripts/lib/defense_overhead_writer.sh"
-        _rfs_publish_total_ms=$(( $(_rfs_mono_ms) - _rfs_wait_started ))
-        _rfs_publish_verdict=PASS
-        [ "$_rfs_batch_rc" -eq 0 ] || _rfs_publish_verdict=BLOCK
-        if [ -z "$_rfs_batch_report_id" ]; then
-            _rfs_batch_report_id=$(python3 - "$_rfs_batch_report" <<'PY'
+        # Telemetry is observational and already writes asynchronously.  Keep
+        # its setup on that same child lane too: sourcing the writer, scanning
+        # the phase receipt and building the argument array on the publisher
+        # used to tax every successful terminal call after both durable locks
+        # had already been released.
+        (
+            # shellcheck source=/dev/null
+            source "$_rfs_batch_root/scripts/lib/defense_overhead_writer.sh"
+            _rfs_publish_total_ms=$(( $(_rfs_mono_ms) - _rfs_wait_started ))
+            _rfs_publish_verdict=PASS
+            [ "$_rfs_batch_rc" -eq 0 ] || _rfs_publish_verdict=BLOCK
+            if [ -z "$_rfs_batch_report_id" ]; then
+                _rfs_batch_report_id=$(python3 - "$_rfs_batch_report" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
 print(str(data.get("report_id", "")))
 PY
 )
-        fi
-        _rfs_publish_cmd_id="${_rfs_batch_parent:-unknown}"
-        _rfs_publish_generation="${_rfs_batch_report_id:-unknown}"
-        _rfs_publish_metadata="{\"cmd_id\":\"${_rfs_publish_cmd_id}\",\"generation\":\"${_rfs_publish_generation}\"}"
-        _rfs_telemetry_args=()
-        while IFS=$'\t' read -r _rfs_tp _rfs_tw _; do
-            case "$_rfs_tp" in
-                singleflight_wait|atomic_replace|atomic_parse_validate_serialize|atomic_flush_file_fsync|atomic_replace_syscall|terminal_meta|inbox_write|publish) ;;
-                *) continue ;;
-            esac
-            _rfs_telemetry_args+=(report_publish "$_rfs_tp" "${_rfs_tw#wall_ms=}" "$_rfs_publish_verdict" \
-                "report_publish:${_rfs_tp}:$$:${_rfs_wait_started}" "$_rfs_publish_metadata")
-        done < "$_rfs_phase_receipt"
-        _rfs_telemetry_args+=(report_publish publish_total "$_rfs_publish_total_ms" "$_rfs_publish_verdict" \
-            "report_publish:total:$$:${_rfs_wait_started}" "$_rfs_publish_metadata")
-        (
+            fi
+            _rfs_publish_cmd_id="${_rfs_batch_parent:-unknown}"
+            _rfs_publish_generation="${_rfs_batch_report_id:-unknown}"
+            _rfs_publish_metadata="{\"cmd_id\":\"${_rfs_publish_cmd_id}\",\"generation\":\"${_rfs_publish_generation}\"}"
+            _rfs_telemetry_args=()
+            while IFS=$'\t' read -r _rfs_tp _rfs_tw _; do
+                case "$_rfs_tp" in
+                    singleflight_wait|atomic_replace|atomic_parse_validate_serialize|atomic_flush_file_fsync|atomic_replace_syscall|terminal_meta|inbox_write|publish) ;;
+                    *) continue ;;
+                esac
+                _rfs_telemetry_args+=(report_publish "$_rfs_tp" "${_rfs_tw#wall_ms=}" "$_rfs_publish_verdict" \
+                    "report_publish:${_rfs_tp}:$$:${_rfs_wait_started}" "$_rfs_publish_metadata")
+            done < "$_rfs_phase_receipt"
+            _rfs_telemetry_args+=(report_publish publish_total "$_rfs_publish_total_ms" "$_rfs_publish_verdict" \
+                "report_publish:total:$$:${_rfs_wait_started}" "$_rfs_publish_metadata")
             while [ "${#_rfs_telemetry_args[@]}" -ge 6 ]; do
                 defense_overhead_write "${_rfs_telemetry_args[@]:0:6}" || true
                 _rfs_telemetry_args=("${_rfs_telemetry_args[@]:6}")
