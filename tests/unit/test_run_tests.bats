@@ -233,8 +233,94 @@ _write_lpt_ledger() {
     bash "$TMPROOT/scripts/run_tests.sh" unit
   [ "$status" -eq 0 ]
   [ "$(wc -l <"$TMPROOT/logs/ledger.tsv")" -eq 2 ]
-  awk -F'\t' 'NR==2 {exit !($4=="unit" && $9=="pass" && $11==0 && NF==14)}' "$TMPROOT/logs/ledger.tsv"
-  awk -F'\t' 'NR==1 {exit !($5=="suite_wall_sec" && $6=="sum_file_sec" && NF==10)} NR==2 {exit !(NF==10 && $5>=0 && $6>=0)}' "$TMPROOT/logs/test_suite_timing_ledger.tsv"
+  awk -F'\t' 'NR==2 {exit !($4=="unit" && $9=="pass" && $11==0 && NF==15 && length($15)==64)}' "$TMPROOT/logs/ledger.tsv"
+  awk -F'\t' 'NR==1 {exit !($5=="suite_wall_sec" && $6=="sum_file_sec" && NF==11)} NR==2 {exit !(NF==11 && $5>=0 && $6>=0 && length($11)==64)}' "$TMPROOT/logs/test_suite_timing_ledger.tsv"
+  receipt="$(find "$TMPROOT/logs/test_receipts" -name '*.json' -type f | head -1)"
+  receipt_id="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["run_id"],d["commit_sha"],d["source_fingerprint"],d["output_sha256"])' "$receipt")"
+  file_id="$(awk -F'\t' 'NR==2 {print $1,$3,$12,$15}' "$TMPROOT/logs/ledger.tsv")"
+  suite_id="$(awk -F'\t' 'NR==2 {print $1,$3,$9,$11}' "$TMPROOT/logs/test_suite_timing_ledger.tsv")"
+  [ "$receipt_id" = "$file_id" ]
+  [ "$receipt_id" = "$suite_id" ]
+}
+
+# test_necessity: receipt/per-file/per-suiteは同じ4識別子を持つ3点結合だけを
+# success序列候補とし、片側batch欠損は既存ledgerを1byteも公開変更しない。
+@test "run identity paired publisher fails closed before one-sided publication" {
+  file_batch="$TMPROOT/file.batch"; suite_batch="$TMPROOT/suite.batch"
+  printf 'r1\trepo\t%s\tunit\tbats\ttests/unit/sample.bats\t1\t0.1\tpass\t0\t0\tfp\t2026-01-01T00:00:00Z\tmode=unit\n' "$(git -C "$TMPROOT" rev-parse HEAD)" >"$file_batch"
+  before_file="$(sha256sum "$TMPROOT/logs/ledger.tsv" 2>/dev/null || printf absent)"
+  before_suite="$(sha256sum "$TMPROOT/logs/test_suite_timing_ledger.tsv" 2>/dev/null || printf absent)"
+
+  run env TEST_TIMING_LEDGER="$TMPROOT/logs/ledger.tsv" \
+    TEST_SUITE_TIMING_LEDGER="$TMPROOT/logs/test_suite_timing_ledger.tsv" \
+    bash "$TMPROOT/scripts/test_suite_timing_ledger_write.sh" --pair \
+      "$file_batch" "$suite_batch" "$(printf output | sha256sum | cut -d' ' -f1)"
+
+  [ "$status" -eq 2 ]
+  [ "$(sha256sum "$TMPROOT/logs/ledger.tsv" 2>/dev/null || printf absent)" = "$before_file" ]
+  [ "$(sha256sum "$TMPROOT/logs/test_suite_timing_ledger.tsv" 2>/dev/null || printf absent)" = "$before_suite" ]
+}
+
+# test_necessity: 4識別子列のschema追加は既存14/10列の全履歴を保持して移行し、
+# header不一致を空ledgerへの初期化として扱わない。
+@test "paired publisher migrates legacy timing schemas without dropping history" {
+  file_batch="$TMPROOT/file.batch"; suite_batch="$TMPROOT/suite.batch"
+  file_ledger="$TMPROOT/logs/legacy-file.tsv"; suite_ledger="$TMPROOT/logs/legacy-suite.tsv"
+  head="$(git -C "$TMPROOT" rev-parse HEAD)"; sha="$(printf output | sha256sum | cut -d' ' -f1)"
+  printf 'run_id\trepo\tcommit_sha\tsuite_root\trunner\ttest_file\ttest_id_count\twall_sec\tstatus\tskip_count\tcache_hit\tsource_fingerprint\tmeasured_at\tresource_tags\nold\trepo\t%s\tunit\tbats\told.bats\t1\t.1\tpass\t0\t0\tfp\tnow\ttag\n' "$head" >"$file_ledger"
+  printf 'run_id\trepo\tcommit_sha\tmode\tsuite_wall_sec\tsum_file_sec\tfile_count\tstatus\tsource_fingerprint\tmeasured_at\nold\trepo\t%s\tunit\t.1\t.1\t1\tpass\tfp\tnow\n' "$head" >"$suite_ledger"
+  printf 'new\trepo\t%s\tunit\tbats\tnew.bats\t1\t.1\tpass\t0\t0\tfp\tnow\ttag\n' "$head" >"$file_batch"
+  printf 'new\trepo\t%s\tunit\t.1\t.1\t1\tpass\tfp\tnow\n' "$head" >"$suite_batch"
+
+  run env TEST_TIMING_LEDGER="$file_ledger" TEST_SUITE_TIMING_LEDGER="$suite_ledger" \
+    bash "$TMPROOT/scripts/test_suite_timing_ledger_write.sh" --pair "$file_batch" "$suite_batch" "$sha"
+
+  [ "$status" -eq 0 ]
+  [ "$(wc -l <"$file_ledger")" -eq 3 ]
+  [ "$(wc -l <"$suite_ledger")" -eq 3 ]
+  awk -F'\t' 'NR==2 {exit !($1=="old" && NF==15 && $15=="")} NR==3 {exit !($1=="new" && $15!="")}' "$file_ledger"
+  awk -F'\t' 'NR==2 {exit !($1=="old" && NF==11 && $11=="")} NR==3 {exit !($1=="new" && $11!="")}' "$suite_ledger"
+}
+
+# test_necessity: 同一commit/source fingerprintの並行runでもrun_id+output hashを
+# 含む4点完全一致だけを結合し、途中失敗・欠損・suite重複をsuccess序列から除外する。
+@test "four-identity join prevents cross-run joins and excludes failed or partial runs" {
+  head="$(git -C "$TMPROOT" rev-parse HEAD)"
+  fp="$(printf source | sha256sum | cut -d' ' -f1)"
+  out1="$(printf output-1 | sha256sum | cut -d' ' -f1)"
+  out2="$(printf output-2 | sha256sum | cut -d' ' -f1)"
+  file_ledger="$TMPROOT/logs/file.tsv"; suite_ledger="$TMPROOT/logs/suite.tsv"
+  printf 'run_id\trepo\tcommit_sha\tsuite_root\trunner\ttest_file\ttest_id_count\twall_sec\tstatus\tskip_count\tcache_hit\tsource_fingerprint\tmeasured_at\tresource_tags\toutput_sha256\n' >"$file_ledger"
+  printf 'run_id\trepo\tcommit_sha\tmode\tsuite_wall_sec\tsum_file_sec\tfile_count\tstatus\tsource_fingerprint\tmeasured_at\toutput_sha256\n' >"$suite_ledger"
+  printf 'run-1\trepo\t%s\tunit\tbats\ta.bats\t1\t.1\tpass\t0\t0\t%s\tnow\ttag\t%s\n' "$head" "$fp" "$out1" >>"$file_ledger"
+  printf 'run-2\trepo\t%s\tunit\tbats\ta.bats\t1\t.1\tpass\t0\t1\t%s\tnow\ttag\t%s\n' "$head" "$fp" "$out2" >>"$file_ledger"
+  printf 'run-1\trepo\t%s\tunit\t.1\t.1\t1\tpass\t%s\tnow\t%s\n' "$head" "$fp" "$out1" >>"$suite_ledger"
+  printf 'run-2\trepo\t%s\tunit\t.1\t.1\t1\tpass\t%s\tnow\t%s\n' "$head" "$fp" "$out2" >>"$suite_ledger"
+  for n in 1 2; do
+    out_var="out$n"; out="${!out_var}"
+    python3 - "$TMPROOT/logs/r$n.json" "run-$n" "$head" "$fp" "$out" <<'PY'
+import json,sys
+p,r,h,f,o=sys.argv[1:]
+json.dump({"run_id":r,"commit_sha":h,
+ "source_fingerprint":f,"output_sha256":o,"result":"PASS","rc":0,"complete":True},open(p,"w"))
+PY
+    run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; validate_run_identity_join "$2" "$3" "$4"' _ \
+      "$TMPROOT" "$TMPROOT/logs/r$n.json" "$file_ledger" "$suite_ledger"
+    [ "$status" -eq 0 ]
+  done
+
+  python3 - "$TMPROOT/logs/r1.json" <<'PY'
+import json,sys
+p=sys.argv[1]; d=json.load(open(p)); d["result"]="FAIL"; d["rc"]=1; json.dump(d,open(p,"w"))
+PY
+  run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; validate_run_identity_join "$2" "$3" "$4"' _ \
+    "$TMPROOT" "$TMPROOT/logs/r1.json" "$file_ledger" "$suite_ledger"
+  [ "$status" -ne 0 ]
+
+  sed -i '/^run-2\t/d' "$suite_ledger"
+  run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; validate_run_identity_join "$2" "$3" "$4"' _ \
+    "$TMPROOT" "$TMPROOT/logs/r2.json" "$file_ledger" "$suite_ledger"
+  [ "$status" -ne 0 ]
 }
 
 @test "file partial path does not update suite ledger" {

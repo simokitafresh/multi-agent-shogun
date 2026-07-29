@@ -923,8 +923,9 @@ run_bats_files_parallel() {
     # evidence. Preserve the historical contract: only aggregate modes may
     # update timing ledgers.
     if [[ "$mode" != file ]]; then
-        run_id="$(date -u +%Y%m%dT%H%M%S).$$"
-        commit_sha="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || printf unknown)"
+        run_id="${RUN_TESTS_RUN_ID:-$(date -u +%Y%m%dT%H%M%S).$$}"
+        commit_sha="${RUN_TESTS_COMMIT_SHA:-$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || printf unknown)}"
+        source_fp="${RUN_TESTS_SOURCE_FINGERPRINT:-$source_fp}"
         measured_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
         batch="$(mktemp "${TMPDIR:-/tmp}/shogun-timing.XXXXXX")"
         for file in "${files[@]}"; do
@@ -947,8 +948,6 @@ run_bats_files_parallel() {
               "$file" "$test_count" "$wall_sec" "$status" "$skip_count" "$cache_hit" \
               "$source_fp" "$measured_at" "mode=$mode;jobs=$MAX_TEST_JOBS" >>"$batch"
         done
-        TEST_TIMING_LEDGER="${TEST_TIMING_LEDGER:-$REPO_ROOT/logs/test_timing_ledger.tsv}" \
-          bash "$REPO_ROOT/scripts/test_timing_ledger_write.sh" "$batch"
         local suite_ended_ns suite_wall_sec sum_file_sec suite_batch
         suite_ended_ns="$(date +%s%N)"
         suite_wall_sec="$(awk -v a="$suite_started_ns" -v b="$suite_ended_ns" 'BEGIN {printf "%.3f", (b-a)/1000000000}')"
@@ -957,9 +956,13 @@ run_bats_files_parallel() {
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\tpass\t%s\t%s\n' \
           "$run_id" "${REPO_ROOT##*/}" "$commit_sha" "$mode" "$suite_wall_sec" \
           "$sum_file_sec" "$total" "$source_fp" "$measured_at" >"$suite_batch"
-        TEST_SUITE_TIMING_LEDGER="${TEST_SUITE_TIMING_LEDGER:-$REPO_ROOT/logs/test_suite_timing_ledger.tsv}" \
-          bash "$REPO_ROOT/scripts/test_suite_timing_ledger_write.sh" "$suite_batch"
-        rm -f "$suite_batch" "$batch"
+        if [ -n "${RUN_TESTS_PENDING_FILE_BATCH:-}" ] \
+          && [ -n "${RUN_TESTS_PENDING_SUITE_BATCH:-}" ]; then
+            mv -f "$batch" "$RUN_TESTS_PENDING_FILE_BATCH"
+            mv -f "$suite_batch" "$RUN_TESTS_PENDING_SUITE_BATCH"
+        else
+            rm -f "$batch" "$suite_batch"
+        fi
     fi
     rm -f "$manifest" "$stats"
 
@@ -982,10 +985,15 @@ try:
     required={'version','complete','result','rc','duration_ms','output_sha256',
               'declared_test_count','observed_test_count','skip_count','artifact',
               'signal','command','source_head','test_paths'}
-    if d.get('version') == 3: required.update({'drvfs_p9_client_rpc','run_manifest'})
+    if d.get('version') == 3:
+        required.update({'drvfs_p9_client_rpc','run_manifest','run_id','commit_sha','source_fingerprint'})
     elif 'drvfs_p9_client_rpc' in d: required.add('drvfs_p9_client_rpc')
     if set(d) != required or d.get('version') not in (2,3): raise ValueError('schema')
     if not re.fullmatch(r'[0-9a-f]{40}', d['source_head']): raise ValueError('source_head')
+    if d['version'] == 3 and (
+        not d['run_id'] or not re.fullmatch(r'[0-9a-f]{40}', d['commit_sha'])
+        or not re.fullmatch(r'[0-9a-f]{64}', d['source_fingerprint'])
+    ): raise ValueError('run identity')
     if not isinstance(d['test_paths'], list) or not all(isinstance(x,str) and x for x in d['test_paths']):
         raise ValueError('test_paths')
     if d['version'] == 3:
@@ -1042,10 +1050,15 @@ try:
     required={'version','complete','result','rc','duration_ms','output_sha256',
               'declared_test_count','observed_test_count','skip_count','artifact',
               'signal','command','source_head','test_paths'}
-    if d.get('version') == 3: required.update({'drvfs_p9_client_rpc','run_manifest'})
+    if d.get('version') == 3:
+        required.update({'drvfs_p9_client_rpc','run_manifest','run_id','commit_sha','source_fingerprint'})
     elif 'drvfs_p9_client_rpc' in d: required.add('drvfs_p9_client_rpc')
     if set(d) != required or d.get('version') not in (2,3): raise ValueError('schema')
     if not re.fullmatch(r'[0-9a-f]{40}', d['source_head']): raise ValueError('source_head')
+    if d['version'] == 3 and (
+        not d['run_id'] or not re.fullmatch(r'[0-9a-f]{40}', d['commit_sha'])
+        or not re.fullmatch(r'[0-9a-f]{64}', d['source_fingerprint'])
+    ): raise ValueError('run identity')
     if not isinstance(d['test_paths'], list) or not all(isinstance(x,str) and x for x in d['test_paths']):
         raise ValueError('test_paths')
     actual=hashlib.sha256(open(d['artifact'],'rb').read()).hexdigest()
@@ -1054,6 +1067,36 @@ try:
 except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
     print(f'RECEIPT_FAIL {exc}', file=sys.stderr); raise SystemExit(1)
 print('RECEIPT_TERMINAL')
+PY
+}
+
+# A timing cohort is rankable only when one successful receipt joins to exactly
+# one suite row and at least one per-file row on all four immutable identities.
+validate_run_identity_join() {
+    python3 - "$1" "$2" "$3" <<'PY'
+import csv, json, re, sys
+receipt_path, file_ledger, suite_ledger = sys.argv[1:]
+try:
+    r=json.load(open(receipt_path, encoding='utf-8'))
+    keys=('run_id','commit_sha','source_fingerprint','output_sha256')
+    identity=tuple(r[k] for k in keys)
+    if r.get('result') != 'PASS' or r.get('rc') != 0 or r.get('complete') is not True:
+        raise ValueError('non-success receipt')
+    if not identity[0] or not re.fullmatch(r'[0-9a-f]{40}', identity[1]) \
+       or not re.fullmatch(r'[0-9a-f]{64}', identity[2]) \
+       or not re.fullmatch(r'[0-9a-f]{64}', identity[3]):
+        raise ValueError('identity')
+    def matches(path):
+        with open(path, newline='', encoding='utf-8') as fh:
+            return [row for row in csv.DictReader(fh, delimiter='\t')
+                    if tuple(row.get(k,'') for k in keys) == identity]
+    files, suites = matches(file_ledger), matches(suite_ledger)
+    if len(files) < 1 or len(suites) != 1:
+        raise ValueError(f'join cardinality files={len(files)} suites={len(suites)}')
+except (OSError, KeyError, ValueError, TypeError, json.JSONDecodeError) as exc:
+    print(f'RUN_IDENTITY_EXCLUDED {exc}', file=sys.stderr)
+    raise SystemExit(1)
+print(f'RUN_IDENTITY_RANKABLE files={len(files)} suites=1')
 PY
 }
 
@@ -1222,14 +1265,18 @@ PY
 }
 
 publish_run_tests_metadata() {
-    python3 - "$1" "$2" "$3" "$4" "${5:-}" "${6:-${REPO_ROOT:-.}}" <<'PY'
+    python3 - "$1" "$2" "$3" "$4" "${5:-}" "${6:-${REPO_ROOT:-.}}" \
+        "${7:-}" "${8:-}" "${9:-}" <<'PY'
 import glob, hashlib, json, os, re, sys, tempfile
-path, head, paths_file, selector_input_fp, run_mode, repo_root=sys.argv[1:7]
+path, head, paths_file, selector_input_fp, run_mode, repo_root, run_id, commit_sha, source_fp=sys.argv[1:10]
 d=json.load(open(path, encoding='utf-8'))
 paths=[]
 if os.path.isfile(paths_file):
     paths=[line.strip() for line in open(paths_file, encoding='utf-8') if line.strip()]
 selected_blob=('\n'.join(paths)+'\n').encode()
+run_id=run_id or f"metadata-{os.getpid()}"
+commit_sha=commit_sha or head
+source_fp=source_fp or hashlib.sha256(selected_blob).hexdigest()
 cache={'enabled': os.environ.get('BATS_CACHE','1') != '0',
        'directory': os.environ.get('BATS_CACHE_DIR','')}
 # Scope identity (cmd_karo_impl_receipt_scope_identity_20260726): selected_files
@@ -1262,7 +1309,8 @@ scope_identity={'mode': run_mode or 'unknown',
                 'complete': bool(d.get('complete')),
                 'full_scope': False,
                 'full_scope_claimable': run_mode == 'unit'}
-d.update(version=3, source_head=head, test_paths=paths,
+d.update(version=3, source_head=head, test_paths=paths, run_id=run_id,
+         commit_sha=commit_sha, source_fingerprint=source_fp,
          run_manifest={'cache': cache, 'commit_sha': head,
                        'selector_input_fingerprint': selector_input_fp,
                        'selected_paths_fingerprint': hashlib.sha256(selected_blob).hexdigest(),
@@ -1986,6 +2034,10 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                 || { echo "BLOCK: task source root could not be resolved" >&2; exit 2; }
         fi
         _source_head="$(git -C "$_source_root" rev-parse HEAD)"
+        _run_id="$(date -u +%Y%m%dT%H%M%S).$$.$RANDOM"
+        _source_fp="$(bats_source_fingerprint)"
+        _pending_file_batch="${_receipt%.json}.timing.pending"
+        _pending_suite_batch="${_receipt%.json}.suite-timing.pending"
         # Freeze the selector result before any test process starts. Nested
         # fixture runners must not overwrite the public run's selected set.
         printf '%s\n' "${_sf_selection:-}" \
@@ -2008,17 +2060,26 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
                 BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                     --summary-only --live-progress --receipt "$_receipt" -- \
                     timeout --signal=TERM --kill-after=5 "$_suite_timeout" \
-                    env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                    env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" RUN_TESTS_RUN_ID="$_run_id" RUN_TESTS_COMMIT_SHA="$_source_head" RUN_TESTS_SOURCE_FINGERPRINT="$_source_fp" RUN_TESTS_PENDING_FILE_BATCH="$_pending_file_batch" RUN_TESTS_PENDING_SUITE_BATCH="$_pending_suite_batch" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
             )
         else
             BATS_TAP_OUTPUT="$_tap" bash "$REPO_ROOT/scripts/run_with_receipt.sh" \
                 --summary-only --live-progress --receipt "$_receipt" -- \
                 timeout --signal=TERM --kill-after=5 "$_suite_timeout" \
-                env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
+                env PATH="${PATH:-/usr/bin:/bin}:/usr/local/bin:/usr/bin:/bin" RUN_TESTS_BATS_BIN="$_bats_bin" BATS_TAP_OUTPUT="$_tap" RUN_TESTS_SELECTED_PATHS_FILE="$_selected_paths" RUN_TESTS_RUN_ID="$_run_id" RUN_TESTS_COMMIT_SHA="$_source_head" RUN_TESTS_SOURCE_FINGERPRINT="$_source_fp" RUN_TESTS_PENDING_FILE_BATCH="$_pending_file_batch" RUN_TESTS_PENDING_SUITE_BATCH="$_pending_suite_batch" bash "${BASH_SOURCE[0]}" --receipt-inner "$@"
         fi
         _rc=$?
         set -e
-        publish_run_tests_metadata "$_receipt" "$_source_head" "$_selected_paths" "$_selector_input_fp" "$_mode" "$REPO_ROOT"
+        _output_sha256="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["output_sha256"])' "$_receipt")"
+        if [ -s "$_pending_file_batch" ] || [ -s "$_pending_suite_batch" ]; then
+            TEST_TIMING_LEDGER="${TEST_TIMING_LEDGER:-$REPO_ROOT/logs/test_timing_ledger.tsv}" \
+            TEST_SUITE_TIMING_LEDGER="${TEST_SUITE_TIMING_LEDGER:-$REPO_ROOT/logs/test_suite_timing_ledger.tsv}" \
+              bash "$REPO_ROOT/scripts/test_suite_timing_ledger_write.sh" --pair \
+                "$_pending_file_batch" "$_pending_suite_batch" "$_output_sha256"
+        fi
+        publish_run_tests_metadata "$_receipt" "$_source_head" "$_selected_paths" \
+          "$_selector_input_fp" "$_mode" "$REPO_ROOT" "$_run_id" "$_source_head" "$_source_fp"
+        rm -f "$_pending_file_batch" "$_pending_suite_batch"
         rm -f "$_selected_paths"
         # This branch runs under nounset.  A truncated/missing receipt must
         # therefore have a value before any parser or validator can fail.
