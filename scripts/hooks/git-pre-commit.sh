@@ -227,6 +227,39 @@ staged_hook_related_exists() {
     return 1
 }
 
+check_staged_shell_syntax() {
+    local staged_sh
+    local -a staged_shells=()
+    local -A worktree_differs=()
+
+    while IFS= read -r staged_sh; do
+        [[ "$staged_sh" == *.sh ]] || continue
+        staged_file_exists "$staged_sh" || continue
+        staged_shells+=("$staged_sh")
+    done < <(list_staged_files)
+
+    # A single target is cheaper through the original index-blob pipeline.
+    # For multiple targets, pay for one bounded diff and parse unchanged
+    # worktree files directly. Files with unstaged changes still parse the
+    # staged blob, so the allow/BLOCK decision remains index-based.
+    if ((${#staged_shells[@]} > 1)); then
+        while IFS= read -r staged_sh; do
+            [[ -n "$staged_sh" ]] && worktree_differs["$staged_sh"]=1
+        done < <(git diff --name-only -- "${staged_shells[@]}" 2>/dev/null)
+    fi
+
+    for staged_sh in "${staged_shells[@]}"; do
+        if ((${#staged_shells[@]} > 1)) &&
+            [[ -f "$REPO_ROOT/$staged_sh" ]] &&
+            [[ ! -v "worktree_differs[$staged_sh]" ]]; then
+            bash -n "$REPO_ROOT/$staged_sh" 2>/dev/null || printf '%s\n' "$staged_sh"
+        else
+            git show ":$staged_sh" 2>/dev/null | bash -n 2>/dev/null ||
+                printf '%s\n' "$staged_sh"
+        fi
+    done
+}
+
 # Return 1 only when the sole hook-related staged path is the pre-commit SSOT
 # and its index blob already equals the installed hook.  Any other hook path,
 # unreadable identity, or byte difference remains a full-sync decision.
@@ -1162,12 +1195,8 @@ main() {
     precommit_step_begin shell_syntax
     _shell_syntax_fail=""
     while IFS= read -r _staged_sh; do
-        [[ "$_staged_sh" == *.sh ]] || continue
-        staged_file_exists "$_staged_sh" || continue
-        if ! git show ":$_staged_sh" 2>/dev/null | bash -n 2>/dev/null; then
-            _shell_syntax_fail+="    $_staged_sh"$'\n'
-        fi
-    done < <(list_staged_files)
+        [[ -n "$_staged_sh" ]] && _shell_syntax_fail+="    $_staged_sh"$'\n'
+    done < <(check_staged_shell_syntax)
     if [[ -n "$_shell_syntax_fail" ]]; then
         precommit_step_end 1
         echo "BLOCKED: bash -n failed on staged shell script(s):" >&2

@@ -50,6 +50,43 @@ extract_funcs() {
   done
 }
 
+# test_necessity: shell syntax validation must keep inspecting staged index
+# content while the multi-file fast path avoids one git-show process per
+# unchanged worktree file.
+@test "shell syntax fast path preserves staged-content fail-close" {
+  printf '#!/bin/bash\n:\n' >"$REPO/scripts/valid.sh"
+  printf '#!/bin/bash\n:\n' >"$REPO/scripts/dirty.sh"
+  git -C "$REPO" add scripts/valid.sh scripts/dirty.sh
+  printf '#!/bin/bash\nif true; then\n' >"$REPO/scripts/dirty.sh"
+
+  FUNCS="$(extract_funcs check_staged_shell_syntax)"
+  run bash -c "
+    REPO_ROOT='$REPO'
+    $FUNCS
+    list_staged_files() { git -C '$REPO' diff --cached --name-only; }
+    staged_file_exists() { git -C '$REPO' diff --cached --name-only | grep -qxF \"\$1\"; }
+    git() { command git -C '$REPO' \"\$@\"; }
+    check_staged_shell_syntax
+  "
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+
+  printf '#!/bin/bash\nif true; then\n' >"$REPO/scripts/valid.sh"
+  git -C "$REPO" add scripts/valid.sh
+  printf '#!/bin/bash\n:\n' >"$REPO/scripts/valid.sh"
+
+  run bash -c "
+    REPO_ROOT='$REPO'
+    $FUNCS
+    list_staged_files() { git -C '$REPO' diff --cached --name-only; }
+    staged_file_exists() { git -C '$REPO' diff --cached --name-only | grep -qxF \"\$1\"; }
+    git() { command git -C '$REPO' \"\$@\"; }
+    check_staged_shell_syntax
+  "
+  [ "$status" -eq 0 ]
+  [ "$output" = "scripts/valid.sh" ]
+}
+
 run_affected() {
   local env_prefix="$1"
   FUNCS="$(extract_funcs staged_file_could_have_tests resolve_reverse_lib_deps reverse_lib_dep_scan_scope is_doc_only_fastpath_path all_staged_files_are_doc_only_fastpath resolve_precommit_task_file check_precommit_affected_tests)"
