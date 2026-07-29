@@ -477,3 +477,9 @@ Level5実装済(2026-07-26 飛猿が一次確認): 正典経路 scripts/cdp/cdp_
 
 ## §LS112 detail全文 (2026-07-28移設)
 cmd_4175/4176で3回BLOCK。原因=environment_change値をシングルクォートで書くとcmd_save.sh:3656のawk抽出がダブルクォートしか剥がさず値頭に'が残りparse失敗で『非構造化』誤判定。修正=ダブルクォートまたは無引用符で書く。加えてestimated_minutes>15はexecution_env(long_runtime_reason+measured_runtime_sec)必須、連続起票は前cmdをdelegateしてから次をsaveする直列制約あり。※Level4昇格済(2026-07-27): awk抽出を["\x27]?に拡張し3形式全て同一にparse(kagemaru検証)のため、本則は歴史的経緯として保存。
+
+## §LS101-timeout誤診パターン全文 (2026-07-29移設)
+(2)timeout誤診パターン(2026-07-29追加): CI runが3回連続で5分台にcancelされ、将軍はconcurrency cancel-in-progressのエージェント間rerun干渉と誤診し交通整理・静止期間まで発令したが、真因はunit jobのtimeout-minutes: 5(テスト増加で実行5分15秒超に成長、GitHubのjob強制killはcancelled表示になる)。決め手=静止期間中も同時刻帯cancel。是正=timeout 5→12+契約テスト2件同期(7d7502c70/fd4612ebe)で7分7秒完走。教訓: 同一経過時間で繰り返しcancelされるrunは外部干渉を疑う前にworkflowのtimeout-minutesとjob実行時間比較を最初の1手にせよ。cancelled表示=人為的中断とは限らない。
+
+## §LS-A16-enforcement全文 (2026-07-29移設)
+Level5: deploy_task.sh経由のscripts/lib/inject_task_modifiers.py lsa16_production_parity_controlsで、DM-Signal本番DB/recalculate系taskへstop_for「本番パリティ未確認」+LS-A16説明+DB/API/FE 3レイヤー貫通・即fullrecalculate/差分確認・savepoint(begin_nested)確認ACを配備時に自動注入する(cmd_karo_hotfix_reflux_promotion_202607090438_hayate)。tests/unit/test_deploy_task_yaml_injection.batsでDM-Signal recalculate発火/非DM-Signal非発火を検証。既存: post-bash-combined.sh Guard5(admin/recalculate-sync実行検知→parity_check.sh実行を即時リマインドするLevel3層)、checklist-shin-v2-registration.md+checklist-alm-registration.md(Level2手順書)、PI-007+PI-025(begin_nested知識)、health_check.py+gate_recalculate_completeness.sh+parity_check.sh、pf-registration skill。残課題: fullrecalculate実行後parity未確認のままcommit/次操作へ進むruntime BLOCKはpending parity flag/DM-Signal PJ検知/FP設計が必要で別cmd判断

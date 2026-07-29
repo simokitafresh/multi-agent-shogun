@@ -192,7 +192,7 @@ lessons:
   created_at: '2026-04-25'
   automated: true
   enforcement_level: 5
-  enforcement: "Level5: deploy_task.sh経由のscripts/lib/inject_task_modifiers.py lsa16_production_parity_controlsで、DM-Signal本番DB/recalculate系taskへstop_for「本番パリティ未確認」+LS-A16説明+DB/API/FE 3レイヤー貫通・即fullrecalculate/差分確認・savepoint(begin_nested)確認ACを配備時に自動注入する(cmd_karo_hotfix_reflux_promotion_202607090438_hayate)。tests/unit/test_deploy_task_yaml_injection.batsでDM-Signal recalculate発火/非DM-Signal非発火を検証。既存: post-bash-combined.sh Guard5(admin/recalculate-sync実行検知→parity_check.sh実行を即時リマインドするLevel3層)、checklist-shin-v2-registration.md+checklist-alm-registration.md(Level2手順書)、PI-007+PI-025(begin_nested知識)、health_check.py+gate_recalculate_completeness.sh+parity_check.sh、pf-registration skill。残課題: fullrecalculate実行後parity未確認のままcommit/次操作へ進むruntime BLOCKはpending parity flag/DM-Signal PJ検知/FP設計が必要で別cmd判断"
+  enforcement: "Level5: inject_task_modifiers.py lsa16_production_parity_controlsがDM-Signal本番DB/recalculate系taskへパリティ確認ACを配備時自動注入(bats検証済)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS-A16-enforcement全文"
 - id: LS-A17
   title: 成長ループ実装 — CoDD L3→Session State、忍者=矛盾を書けない構造
   origin: '[[cmd_2181]] + dialogue_shogun_operator_trap_20260402 + dialogue_preprocessing_research_20260331'
@@ -362,6 +362,7 @@ lessons:
   created_at: '2026-07-21'
   automated: true
   enforcement: 'L1のまま(2026-07-26飛猿一次確認=検出実装ゼロ。2026-07-26同型再発を軍師が手作業特定)。昇格案=decision_candidate(cmd_reflux_promotion_202607261757_tobisaru)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS101-enforcement全文'
+  superseded_by: 'CI RED診断の2手順 — (1)origin失敗SHA vs 現HEAD (2)連続cancelはtimeout-minutes確認。(1)LS101本体: まず失敗runのSHA(origin/main)とローカルHEADを比較。push保留デッドロック(修正21h未pushでCI赤自己永続)はfast-forward pushで解消。(2)同一経過時間で繰り返しcancelされるrunは外部干渉を疑う前にworkflowのtimeout-minutesとjob実行時間を比較せよ(cancelled表示=人為的中断とは限らない)。全文→docs/research/lessons_shogun_superseded_archive_20260724.md §LS101-timeout誤診パターン全文'
 - id: 'LS104'
   title: 'デザイン/モック依頼は最小から作れ — 既存を厳密踏襲し、頼まれた最小差分だけ足す(過剰デザイン禁止)'
   origin: '[[殿ワイヤーフレーム依頼]] -> [[V1過剰デザインごちゃごちゃ却下]] -> [[V2列追加誤解]] -> [[V3既存踏襲+最小追加で正解]] -> [[最小から作る設計規律]]'

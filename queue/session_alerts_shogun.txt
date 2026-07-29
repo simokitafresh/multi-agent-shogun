@@ -1,0 +1,6 @@
+# session_alerts — generated: 2026-07-29T11:11:53+0900
+[DONE] 学習ループ台帳: 空転/在庫超過あり (2781914702:60)
+[DONE] startup連続出現BLOCK: 学習ループ台帳: 空転/在庫超過あり (2781914702:60)
+[DONE] 先送り判断: 学習ループ台帳: 空転/在庫超過あり (2781914702:60) が1セッション連続
+[DONE] backlinks=0: 修行候補あり
+[DONE] 必読lessons肥大: 55975bytes>55KB(/lesson-sortで統合圧縮)
