@@ -1518,6 +1518,43 @@ YAML
   [ "$status" -eq 0 ]
   [[ "$output" == *"enqueued=40 skipped=40 backlog=0 lost=0"* ]]
 }
+
+# test_necessity: active-report pointer publicationは同一ninjaへの並列配備でもwriter固有tmpを使い、
+# stale tmpと再入に干渉されず、完了した最後のwriterを指す不変量を守る。
+@test "active report pointer publication is atomic across parallel reentry and stale tmp" {
+  local pointer="$TEST_PROJECT/queue/reports/.deploy_active_hanzo"
+  mkdir -p "$(dirname "$pointer")"
+  printf 'stale\n' > "${pointer}.tmp.999999"
+
+  run bash -c '
+    export DEPLOY_TASK_LIB_ONLY=1
+    source "$1/scripts/deploy_task.sh"
+    pointer="$2"
+    deploy_task_publish_active_report_pointer "$pointer" "queue/reports/reentry.yaml"
+    deploy_task_publish_active_report_pointer "$pointer" "queue/reports/reentry.yaml"
+    for report in parallel_a parallel_b parallel_c; do
+      (
+        deploy_task_publish_active_report_pointer \
+          "$pointer" "queue/reports/${report}.yaml"
+      ) &
+    done
+    wait
+    deploy_task_publish_active_report_pointer "$pointer" "queue/reports/last_writer.yaml"
+    printf "pointer=%s stale=%s live_tmp=%s\n" \
+      "$(cat "$pointer")" \
+      "$(cat "${pointer}.tmp.999999")" \
+      "$(find "$(dirname "$pointer")" -maxdepth 1 -name "$(basename "$pointer").tmp.*" ! -name "$(basename "$pointer").tmp.999999" -type f | wc -l)"
+  ' _ "$TEST_PROJECT" "$pointer"
+  [ "$status" -eq 0 ]
+  [ "$output" = "pointer=queue/reports/last_writer.yaml stale=stale live_tmp=0" ]
+
+  run grep -Fc 'deploy_task_publish_active_report_pointer "$_active_report_index" "$report_rel_path" || return 1' "$PROJECT_ROOT/scripts/deploy_task.sh"
+  [ "$status" -eq 0 ]
+  [ "$output" -eq 2 ]
+  run grep -F '${_active_report_index}.tmp' "$PROJECT_ROOT/scripts/deploy_task.sh"
+  [ "$status" -eq 1 ]
+}
+
 # test_necessity: per-ninja lock取得後のcheckpoint hold再検証により、review前の同時次task配備を防ぐ不変量を守る。
 @test "checkpoint review hold blocks deploy under ninja lock and reviewed releases it" {
     run env PROJECT_ROOT="$PROJECT_ROOT" bash -c '

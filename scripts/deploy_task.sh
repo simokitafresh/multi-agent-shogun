@@ -3947,8 +3947,7 @@ generate_report_template() {
         ensure_report_template_completeness "$report_file" "$task_file"
         rehydrate_task_commit_contract_from_report "$task_file" "$report_file" || return 1
         deploy_task_publish_report_metadata "$task_file" "$report_id" "$report_identity_version" "$report_rel_path" "$_variation_checks_required" || return 1
-        printf '%s\n' "$report_rel_path" > "${_active_report_index}.tmp"
-        mv "${_active_report_index}.tmp" "$_active_report_index"
+        deploy_task_publish_active_report_pointer "$_active_report_index" "$report_rel_path" || return 1
         log "report_path: set (${report_rel_path})"
         return 0
     fi
@@ -5298,10 +5297,19 @@ RECON_EOF
     report_file="$_report_final_file"
 
     deploy_task_publish_report_metadata "$task_file" "$report_id" "$report_identity_version" "$report_rel_path" "$_variation_checks_required" || return 1
-    printf '%s\n' "$report_rel_path" > "${_active_report_index}.tmp"
-    mv "${_active_report_index}.tmp" "$_active_report_index"
+    deploy_task_publish_active_report_pointer "$_active_report_index" "$report_rel_path" || return 1
     log "report_path: set (${report_rel_path})"
     log "report_template: generated (${report_file})"
+}
+
+# Publish through a per-process temporary path so concurrent deployments for
+# the same ninja cannot move or truncate another writer's temporary file.
+deploy_task_publish_active_report_pointer() {
+    local active_report_index="$1"
+    local report_rel_path="$2"
+    local active_report_tmp="${active_report_index}.tmp.${BASHPID}"
+    printf '%s\n' "$report_rel_path" > "$active_report_tmp" || return 1
+    mv "$active_report_tmp" "$active_report_index"
 }
 
 # Keep read/inspection scope distinct from the paths a worker owns and commits.
