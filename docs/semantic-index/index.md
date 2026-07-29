@@ -8397,6 +8397,7 @@ codd:
 | file | `scripts/causal_backlinks.sh` |
 | file | `docs/semantic-index/index.md` |
 | file | `docs/research/ci-test-elimination-design-20260719.md` |
+| causal | `docs/research/defense-enforcement-classification_20260720.md` — [[defense_hierarchy]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/codd_refactor_deploy_control_plane_20260723.md` — [[codd_methodology]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/codd_refactor_deploy_task_mutation_20260721.md` — [[codd_methodology]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/cmd_4106_cache_flock_experiment_kotaro.md` — [[wave_cache_flock_contention]] -> [[semantic_causal_automation]] |
@@ -10660,4 +10661,3 @@ codd:
 | file | `docs/research/control-plane-fork-gitwalk-countermeasure-asis-tobe_20260721.md` |
 | causal | `[[cmd_4112]] -> [[WSL2_mntc_subprocess反復fork_大履歴gitwalk]] -> [[制御面レイテンシ恒久対策]]` |
 | cmd | `cmd_1668` backfill — | cmd_1668 | gate_shogun_startup.shにAC注入検証Gate16追加 + lesson_write.sh cat3重→read統合 | 完了(GATE未実行)。半蔵+飛 |
-
