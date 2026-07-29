@@ -8403,6 +8403,7 @@ codd:
 | causal | `docs/research/cmd_4106_yaml_mutation_experiment_saizo.md` — [[yaml_safe_write]] -> [[semantic_causal_automation]] |
 | causal | `docs/research/cmd_karo_recon_axis_b_color_20260722.md` — [[semantic_causal_automation]] -> [[cmd_karo_recon_axis_b_color_20260722]] |
 | causal | `docs/research/cmd_karo_recon_axis_d_card_20260722.md` — [[semantic_causal_automation]] -> [[cmd_karo_recon_axis_d_card_20260722]] |
+| causal | `docs/research/cycle_log_20260726.md` — [[semantic_causal_automation]] -> [[cycle_log_20260726]] |
 | cmd | `cmd_2885` cmd因果辺をsemantic-mapへ自動還流 |
 | cmd | `cmd_2860` origin因果辺→辞書自動注入 |
 | cmd | `cmd_2818` 因果NW導入 |
