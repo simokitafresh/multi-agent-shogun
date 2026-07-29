@@ -203,6 +203,77 @@ for raw in values:
 PY
 }
 
+# Resolve only tests explicitly named by the task author or final report.
+# commit_contract.planned_paths/files_to_modify are ownership boundaries and
+# may be inferred by deployment (for example B32); they are not execution
+# requests and must never be promoted to direct contract tests.
+task_explicit_test_paths() {
+    local task_file="$1"
+    local scope_root
+    scope_root="$(task_scope_root "$task_file")" || return 1
+    python3 - "$scope_root" "$task_file" "$REPO_ROOT" <<'PY'
+import os
+import sys
+
+import yaml
+
+root = os.path.realpath(sys.argv[1])
+task_path = os.path.realpath(sys.argv[2])
+control_root = os.path.realpath(sys.argv[3])
+
+def load(path):
+    with open(path, encoding="utf-8") as handle:
+        value = yaml.safe_load(handle) or {}
+    if not isinstance(value, dict):
+        raise ValueError(f"mapping required: {path}")
+    return value
+
+def collect(value, output):
+    if isinstance(value, str):
+        if value.strip():
+            output.append(value.strip())
+    elif isinstance(value, dict):
+        collect(value.get("path"), output)
+    elif isinstance(value, list):
+        for item in value:
+            collect(item, output)
+
+def is_test(path):
+    name = os.path.basename(path)
+    return (
+        path.startswith("tests/")
+        or "/tests/" in path
+        or path.endswith((".bats", ".spec.js", ".test.js"))
+        or name.startswith("test_")
+    )
+
+document = load(task_path)
+task = document.get("task", document)
+if not isinstance(task, dict):
+    raise ValueError("task mapping missing")
+
+values = []
+collect(task.get("test_path"), values)
+collect(task.get("files_modified"), values)
+report_path = task.get("report_path")
+if isinstance(report_path, str) and report_path.strip():
+    candidate = report_path if os.path.isabs(report_path) else os.path.join(control_root, report_path)
+    if os.path.isfile(candidate):
+        collect(load(candidate).get("files_modified"), values)
+
+seen = set()
+for raw in values:
+    path = raw if os.path.isabs(raw) else os.path.join(root, raw)
+    resolved = os.path.realpath(path)
+    if resolved != root and not resolved.startswith(root + os.sep):
+        raise ValueError(f"explicit test path outside repository: {raw}")
+    relative = os.path.relpath(resolved, root)
+    if is_test(relative) and relative not in seen:
+        seen.add(relative)
+        sys.stdout.buffer.write(relative.encode() + b"\0")
+PY
+}
+
 # Record a task_scope_paths() SCOPE_EXPANSION stderr line into gate_fire_log
 # for detector_fp_rate visibility (AC1: 検査発火はgate_fire_logへ記録し
 # detector_fp_rateで計測可能に接続する). No-op when task_scope_paths did not
@@ -1653,29 +1724,39 @@ _run_tests_main() {
                 fi
                 exit $?
             fi
-            local _selector_log _selector_rc _selector_output
+            local _selector_log _selector_rc _selector_output _explicit_tests_tmp
             local -a _declared_contract_tests=()
+            local -a _production_scope=()
             local _scoped_path
+            _explicit_tests_tmp="$(mktemp)"
+            task_explicit_test_paths "$1" >"$_explicit_tests_tmp" \
+                || { rm -f "$_explicit_tests_tmp"; echo "BLOCK: explicit task tests could not be resolved" >&2; exit 2; }
+            mapfile -d '' -t _declared_contract_tests <"$_explicit_tests_tmp"
+            rm -f "$_explicit_tests_tmp"
             for _scoped_path in "${scoped_paths[@]}"; do
-                if [[ "$_scoped_path" == tests/* || "$_scoped_path" == */tests/* \
-                    || "$_scoped_path" == *.bats || "$_scoped_path" == *.spec.js \
-                    || "$_scoped_path" == *.test.js || "${_scoped_path##*/}" == test_* ]]; then
-                    _declared_contract_tests+=("$_scoped_path")
+                if [[ "$_scoped_path" != tests/* && "$_scoped_path" != */tests/* \
+                    && "$_scoped_path" != *.bats && "$_scoped_path" != *.spec.js \
+                    && "$_scoped_path" != *.test.js && "${_scoped_path##*/}" != test_* ]]; then
+                    _production_scope+=("$_scoped_path")
                 fi
             done
             if [ "${#_declared_contract_tests[@]}" -gt 0 ]; then
                 _selector_output="$(printf '%s\n' "${_declared_contract_tests[@]}")"
                 _selector_rc=0
-                echo "TEST_SELECTION_REASON direct=${#_declared_contract_tests[@]} transitive=0 source=task_declared_contract"
-            else
+                echo "TEST_SELECTION_REASON direct=${#_declared_contract_tests[@]} transitive=0 source=task_explicit_contract"
+            elif [ "${#_production_scope[@]}" -gt 0 ]; then
                 _selector_log="$(mktemp)"
                 set +e
-                _selector_output="$(bash "$REPO_ROOT/scripts/test_select.sh" "${scoped_paths[@]}" 2>"$_selector_log")"
+                _selector_output="$(bash "$REPO_ROOT/scripts/test_select.sh" "${_production_scope[@]}" 2>"$_selector_log")"
                 _selector_rc=$?
                 set -e
                 cat "$_selector_log" >&2
                 rm -f "$_selector_log"
                 echo "TEST_SELECTION_REASON direct=0 transitive=$(printf '%s\n' "$_selector_output" | sed '/^$/d' | wc -l) source=dependency_map"
+            else
+                _selector_output=""
+                _selector_rc=0
+                echo "TEST_SELECTION_REASON direct=0 transitive=0 source=no_explicit_or_production_scope"
             fi
             [ "$_selector_rc" -eq 0 ] || { echo "BLOCK: task-scoped selector failed rc=$_selector_rc" >&2; exit 2; }
             mapfile -t selected <<<"$_selector_output"

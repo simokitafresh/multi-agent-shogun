@@ -600,7 +600,7 @@ SH
   cat >"$TMPROOT/queue/tasks/kagemaru.yaml" <<'YAML'
 task:
   target_path: scripts/lib/owned.sh
-  files_to_modify: [tests/unit/owned.bats]
+  test_path: tests/unit/owned.bats
   report_path: queue/reports/kagemaru.yaml
 YAML
   cat >"$TMPROOT/queue/reports/kagemaru.yaml" <<'YAML'
@@ -616,8 +616,39 @@ YAML
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"TEST_SCOPE result=task files=3"* ]]
-  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_declared_contract"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_explicit_contract"* ]]
   [ ! -e "$SELECT_ARGS_LOG" ]
+}
+
+# test_necessity: inferred commit_contract tests are ownership metadata, not
+# direct execution requests; one explicit test_path must remain one selected
+# file even when deployment inferred a 947-file test scope.
+@test "task mode does not promote inferred planned tests to explicit execution" {
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
+  mkdir -p "$TMPROOT/queue/tasks"
+  {
+    printf '%s\n' 'task:' '  target_path: scripts/run_tests.sh' \
+      '  test_path: tests/unit/owned.bats' '  commit_contract:' \
+      '    planned_paths:' '      - scripts/run_tests.sh'
+    for i in $(seq 1 947); do
+      printf '      - tests/unit/inferred_%04d.bats\n' "$i"
+    done
+  } >"$TMPROOT/queue/tasks/inferred.yaml"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '1..1\nok 1 explicit-only\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/inferred.yaml"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SCOPE result=task files=949"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_explicit_contract"* ]]
+  [[ "$output" == *"PASS: 1 bats file(s)"* ]]
+  [[ "$output" != *"inferred_0001.bats"* ]]
 }
 
 # test_necessity: 個別external backend taskが暗黙に全pytestへ拡大せず、
@@ -702,6 +733,7 @@ SH
 
   cat >"$TMPROOT/queue/tasks/top.yaml" <<'YAML'
 task:
+  test_path: tests/unit/owned.bats
   planned_paths: [scripts/run_tests.sh, tests/unit/owned.bats]
 YAML
   run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
@@ -709,7 +741,7 @@ YAML
     bash -c 'cd "$1" && bash scripts/run_tests.sh --receipt-inner task queue/tasks/top.yaml' _ "$TMPROOT"
   [ "$status" -eq 0 ]
   [[ "$output" == *"TEST_SCOPE result=task files=2"* ]]
-  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_declared_contract"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_explicit_contract"* ]]
 
   mkdir -p "$TMPROOT/receipts" "$TMPROOT/sf"
   run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" \
@@ -722,6 +754,7 @@ YAML
 
   cat >"$TMPROOT/queue/tasks/nested.yaml" <<'YAML'
 task:
+  test_path: tests/unit/owned.bats
   commit_contract:
     required: true
     planned_paths: [scripts/run_tests.sh, tests/unit/owned.bats]
@@ -731,7 +764,7 @@ YAML
     bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/nested.yaml"
   [ "$status" -eq 0 ]
   [[ "$output" == *"TEST_SCOPE result=task files=2"* ]]
-  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_declared_contract"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_explicit_contract"* ]]
 
   cat >"$TMPROOT/queue/tasks/mismatch.yaml" <<'YAML'
 task:
@@ -782,6 +815,7 @@ YAML
   mkdir -p "$TMPROOT/queue/tasks"
   cat >"$TMPROOT/queue/tasks/declared.yaml" <<'YAML'
 task:
+  test_path: [tests/unit/owned.bats, tests/unit/extra.bats]
   planned_paths: [scripts/run_tests.sh, tests/unit/owned.bats]
   commit_contract:
     required: true
@@ -794,7 +828,7 @@ YAML
   [ "$status" -eq 0 ]
   [[ "$output" == *"SCOPE_EXPANSION status=declared"* ]]
   [[ "$output" == *"TEST_SCOPE result=task files=3"* ]]
-  [[ "$output" == *"TEST_SELECTION_REASON direct=2 transitive=0 source=task_declared_contract"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=2 transitive=0 source=task_explicit_contract"* ]]
   [ -f "$TMPROOT/logs/gate_fire_log.yaml" ]
   grep -q 'gate: "scope_expansion", result: PASS' "$TMPROOT/logs/gate_fire_log.yaml"
   grep -q 'status=declared' "$TMPROOT/logs/gate_fire_log.yaml"
@@ -951,7 +985,7 @@ YAML
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"TEST_SCOPE result=task files=2"* ]]
-  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_declared_contract"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_explicit_contract"* ]]
   [[ "$output" != *"readonly_probe"* ]]
 }
 
