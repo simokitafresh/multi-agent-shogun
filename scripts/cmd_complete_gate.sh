@@ -5291,6 +5291,62 @@ _check_lc_found() {
     fi
 }
 
+# Parse lesson_candidate with the same YAML boolean spellings accepted by
+# gate_report_format: bare, single-quoted, or double-quoted true/false.
+lesson_candidate_status() {
+    local report_file="$1"
+    awk '
+        /^lesson_candidate:/ {
+            # inline list check (legacy_list: "lesson_candidate: [...]" or next line is "- ")
+            val = $0; sub(/.*lesson_candidate:[[:space:]]*/, "", val)
+            if (val == "null" || val == "~" || val == "") { in_lc = 1 }
+            else if (val ~ /^\[/) { result = "legacy_list" }
+            else { result = "malformed" }
+            next
+        }
+        in_lc && /^[a-zA-Z]/ { in_lc = 0 }
+        # list形式の検出 (legacy_list)
+        in_lc && /^[[:space:]]*- / && !has_found_key { result = "legacy_list"; in_lc = 0 }
+        in_lc && /^[[:space:]]+found:/ {
+            has_found_key = 1
+            v = $0; sub(/.*found:[[:space:]]*/, "", v)
+            gsub(/^[[:space:]"'"'"']+|[[:space:]"'"'"']+$/, "", v)
+            found_val = v
+        }
+        in_lc && /^[[:space:]]+no_lesson_reason:/ {
+            v = $0; sub(/.*no_lesson_reason:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+            nlr = v
+        }
+        in_lc && /^[[:space:]]+title:/ {
+            v = $0; sub(/.*title:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+            lc_title = v
+        }
+        in_lc && /^[[:space:]]+detail:/ {
+            v = $0; sub(/.*detail:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v)
+            lc_detail = v
+        }
+        END {
+            if (result != "") { print result; exit }
+            if (!in_lc && !has_found_key) { print "missing"; exit }
+            if (!has_found_key) { print "found_missing"; exit }
+            if (found_val == "false") {
+                if (nlr == "") print "ok_false_no_reason"
+                else print "ok_false"
+                exit
+            }
+            if (found_val == "true") {
+                miss = ""
+                if (lc_title == "") { miss = "title" }
+                if (lc_detail == "") { if (miss != "") miss = miss ","; miss = miss "detail" }
+                if (miss != "") print "found_true_empty:" miss
+                else print "found_true"
+                exit
+            }
+            print "malformed"
+        }
+    ' "$report_file" 2>/dev/null
+}
+
 check_how_it_works_status() {
     local report_file="$1"
 
@@ -7658,55 +7714,7 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
     LC_CHECKED=true
 
     # lesson_candidateフィールドの検証 (awk: cmd_536+cmd_776+cmd_1180)
-    lc_status=$(awk '
-        /^lesson_candidate:/ {
-            # inline list check (legacy_list: "lesson_candidate: [...]" or next line is "- ")
-            val = $0; sub(/.*lesson_candidate:[[:space:]]*/, "", val)
-            if (val == "null" || val == "~" || val == "") { in_lc = 1 }
-            else if (val ~ /^\[/) { result = "legacy_list" }
-            else { result = "malformed" }
-            next
-        }
-        in_lc && /^[a-zA-Z]/ { in_lc = 0 }
-        # list形式の検出 (legacy_list)
-        in_lc && /^[[:space:]]*- / && !has_found_key { result = "legacy_list"; in_lc = 0 }
-        in_lc && /^[[:space:]]+found:/ {
-            has_found_key = 1
-            v = $0; sub(/.*found:[[:space:]]*/, "", v); gsub(/[" \t]/, "", v)
-            found_val = v
-        }
-        in_lc && /^[[:space:]]+no_lesson_reason:/ {
-            v = $0; sub(/.*no_lesson_reason:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v)
-            nlr = v
-        }
-        in_lc && /^[[:space:]]+title:/ {
-            v = $0; sub(/.*title:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v)
-            lc_title = v
-        }
-        in_lc && /^[[:space:]]+detail:/ {
-            v = $0; sub(/.*detail:[[:space:]]*/, "", v); gsub(/^["'"'"']+|["'"'"']+$/, "", v)
-            lc_detail = v
-        }
-        END {
-            if (result != "") { print result; exit }
-            if (!in_lc && !has_found_key) { print "missing"; exit }
-            if (!has_found_key) { print "found_missing"; exit }
-            if (found_val == "false") {
-                if (nlr == "") print "ok_false_no_reason"
-                else print "ok_false"
-                exit
-            }
-            if (found_val == "true") {
-                miss = ""
-                if (lc_title == "") { miss = "title" }
-                if (lc_detail == "") { if (miss != "") miss = miss ","; miss = miss "detail" }
-                if (miss != "") print "found_true_empty:" miss
-                else print "found_true"
-                exit
-            }
-            print "malformed"
-        }
-    ' "$report_file" 2>/dev/null)
+    lc_status=$(lesson_candidate_status "$report_file")
 
     case "$lc_status" in
         ok_false)

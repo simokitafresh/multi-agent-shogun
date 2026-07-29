@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 source = Path(sys.argv[1]).read_text(encoding="utf-8")
-names = """record_block_reason append_line_locked dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv append_lesson_tracking build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring cmd_requires_cdp_production_check run_cdp_production_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event""".split()
+names = """record_block_reason append_line_locked dispatch_gate_notification_async send_high_notification send_info_cmd_notification log_gate_stderr_file lesson_done_satisfies_lesson_candidate_registration cmd_status_is_canceled level_heading check_context_update resolve_report_file update_lesson_impact_tsv append_lesson_tracking build_clear_duration_metric build_clear_throughput_metric binary_checks_warn_reason report_has_commit_binary_check_yes collect_report_files_modified discover_reports_for_cmd collect_parent_cmd_report_files_modified has_parent_cmd_report collect_git_show_w_files collect_report_commit_hash collect_cmd_phase_git_files check_self_grade_commit_file_coverage is_lessons_useful_empty_warn_task_type handle_empty_lessons_useful_check validate_lesson_feedback_set detect_task_types _check_lc_found lesson_candidate_status preflight_gate_flags collect_report_modified_files load_validated_sg7_context collect_cmd_command_file_refs collect_report_verified_existing_deps collect_task_readonly_refs check_command_files_modified_coverage check_scope_drift check_wtf_likelihood check_script_wiring cmd_requires_cdp_production_check run_cdp_production_check append_codd_registry_entry run_codd_propagate_update normalize_block_reason_to_workaround_categories update_karo_workaround_resolutions classify_completed_rework_event_kind capture_completed_rework_event""".split()
 for name in names:
     match = re.search(rf"(?m)^{re.escape(name)}\(\) \{{.*?^\}}", source, re.DOTALL)
     if match is None:
@@ -50,6 +50,41 @@ EOF
     write_task_fixture "sasuke_report_${TEST_CMD_ID}.yaml"
     export CMD_GATE_MASTER_PROJECT="$TEST_PROJECT"
     export CMD_GATE_MASTER_TMPDIR="$TEST_TMPDIR"
+}
+
+# test_necessity: completion must accept every YAML spelling that
+# gate_report_format normalizes to boolean and reject non-booleans.
+# regression_justification: the old awk parser stripped double quotes but not
+# single quotes, so found: 'true' passed report validation and then BLOCKed here.
+@test "lesson_candidate parser normalizes six YAML booleans and blocks two invalid values" {
+    source "$GATE_HELPERS_FILE"
+    local fixture="$BATS_TEST_TMPDIR/lesson-candidate.yaml"
+    local value expected
+    local -a cases=(
+        "true|found_true"
+        "'true'|found_true"
+        '"true"|found_true'
+        "false|ok_false"
+        "'false'|ok_false"
+        '"false"|ok_false'
+        "truthy|malformed"
+        "1|malformed"
+    )
+
+    for case_entry in "${cases[@]}"; do
+        value="${case_entry%%|*}"
+        expected="${case_entry#*|}"
+        cat > "$fixture" <<EOF
+lesson_candidate:
+  found: $value
+  title: contract title
+  detail: contract detail
+  no_lesson_reason: contract reason
+EOF
+        run lesson_candidate_status "$fixture"
+        [ "$status" -eq 0 ]
+        [ "$output" = "$expected" ]
+    done
 }
 
 @test "build_clear_throughput_metric records stage durations for nested and flat task YAML" {
