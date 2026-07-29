@@ -179,11 +179,20 @@ if review_type in {"draft", "report", "self_study", "consultation"}:
         print("BLOCK: 既実装判定にはoperational_simulation.commandのgit show証跡が必須(LG001)", file=sys.stderr); raise SystemExit(2)
 verdict = str(item.get("verdict") or "").strip().upper()
 if verdict in {"APPROVE", "LGTM"}:
+    _ops_actual = str((item.get("operational_simulation") or {}).get("actual") or "")
+    if re.search(r"\bERRORS\s*=\s*[1-9][0-9]*\b", _ops_actual, re.IGNORECASE):
+        print("BLOCK: precheck ERRORS>0の報告はAPPROVE/LGTM不可。理由に関わらずFAIL/RCへ送れ(LG085)", file=sys.stderr); raise SystemExit(2)
     files = item.get("verified_files")
     if isinstance(files, str): files = [files]
     valid = isinstance(files, list) and any(isinstance(v, str) and re.search(r"^[^:\s]+:(?:[1-9][0-9]*|[A-Za-z_][A-Za-z0-9_.-]*)$", v.strip()) for v in files)
     if not valid:
         print("BLOCK: APPROVE/LGTM requires verified_files file:line or file:symbol evidence", file=sys.stderr); raise SystemExit(2)
+    # LG073: 軍師の利害に関わる対象のAPPROVE/LGTMにはconflict_of_interest必須
+    _conflict_paths = {"gate_gunshi", "review_approval", "gunshi_review_log"}
+    if isinstance(files, list) and any(any(cp in str(v) for cp in _conflict_paths) for v in files if isinstance(v, str)):
+        _coi = str(item.get("conflict_of_interest") or "").strip()
+        if not _coi or _coi.lower() in {"none", "null", "n/a", ""}:
+            print("BLOCK: 軍師の利害に関わる対象(gate_gunshi/review_approval/gunshi_review_log)のAPPROVE/LGTMにはconflict_of_interestフィールドが必須(LG073)", file=sys.stderr); raise SystemExit(2)
 if review_type in {"self_study", "consultation"}:
     checklist = item.get("cs_checklist")
     required_cs = {f"CS{i}" for i in range(1, 7)}

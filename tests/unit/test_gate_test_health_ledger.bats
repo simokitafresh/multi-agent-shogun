@@ -64,6 +64,16 @@ run_gate() {
   [[ "$output" == *"OK: timing ledger fresh"* ]]
 }
 
+@test "fresh affected run proves writer alive without pretending all-unit baseline is fresh" {
+  append_row affected affected pass 0 '2099-01-01T00:00:00Z'
+
+  run_gate
+
+  [[ "$output" == *"OK: timing ledger writer fresh"* ]]
+  [[ "$output" == *"INFO: all/unit comparison baseline stale"* ]]
+  [[ "$output" != *"WARN: timing ledger stale"* ]]
+}
+
 @test "8195 matching rows finish within one second without invoking external date" {
   for ((i = 1; i <= 8195; i++)); do
     append_row "run-$i" all pass 0 '2026-07-21T10:00:00Z'

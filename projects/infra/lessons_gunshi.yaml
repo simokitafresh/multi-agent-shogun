@@ -846,9 +846,9 @@ lessons:
   how: '(1)判定文へ利害の衝突を明記せよ。(2)自分に有利な選択肢と不利な選択肢を両方挙げ、なぜ不利な側を推すかを書け。(3)最終検分を第三者へ委ねよと自ら申し出よ。(4)★数値が自分に有利へ動く場合は変化量を明示せよ(本件: accuracy 56/56→64/64 skipped=6を報告に明記させた)'
   source_cmd: 'cmd_karo_impl_control_fixture_gunshi_accuracy_20260726'
   created_at: '2026-07-26'
-  automated: false
-  enforcement: 'Level5(受動的層): 毎起動注入。★提案(未実装): gunshi_log_append.sh の adversarial_review で、対象pathが gate_gunshi_*/review_approval.sh/gunshi_review_log.yaml を含む場合に利害の衝突の記載を必須化すれば Level4 になる'
-  enforcement_level: 5
+  automated: true
+  enforcement: "Level4(フロー内BLOCK): scripts/gunshi_log_append.shのPython検証ブロックで、verified_filesにgate_gunshi/review_approval/gunshi_review_logパスを含むAPPROVE/LGTMエントリのconflict_of_interestフィールド非空を強制。欠落時exit 2 BLOCK"
+  enforcement_level: 4
 - id: 'LG074'
   title: '実装の正しさで承認へ進むな — 報告契約の充足は別に確認せよ'
   origin: "[[実装がfail-closedで正しいと確認]] -> [[LGTMへ進もうとした]] -> [[hook_failures.details形式違反でgateがBLOCK]]"
@@ -977,3 +977,15 @@ lessons:
   created_at: '2026-07-27'
   enforcement: "Level4(フロー内強制): scripts/ninja_monitor.sh::_pane_has_active_background_compute が 0=実compute有/1=残骸のみ/2=表示なし・判定不能を返し、check_idle stale分岐は1だけidle補正して既存safe_send_clear→agent respawn経路へ進める。tests/unit/test_ninja_monitor_stall.bats の background terminal classifier / stale background residue fixtureで三値境界とrespawn経路を二値検証する。"
   enforcement_level: 5
+- id: 'LG085'
+  title: 'ERRORS>0の報告は理由に関わらずFAIL'
+  origin: '[[cmd_4191]] -> [[precheck_ERRORS=1をscope外扱い]] -> [[LGTM後GATE_BLOCK]]'
+  detail: |
+    cmd_4191でprechecker ERRORS=1を後続のscope外変更と解釈してLGTMした結果、GATE BLOCKとなりLG006に違反した。scope外か否かの裁量判断でERRORSを免除してはならず、ERRORS>0は常にFAIL/RCへ送る。
+    吸収(2026-07-29, cmd_4191, origin: [[cmd_4191]] -> [[precheck_ERRORS=1をscope外扱い]] -> [[LGTM後GATE_BLOCK]]): cmd_4191でprechecker ERRORS=1を後続のscope外変更と解釈してLGTMした結果、GATE BLOCKとなりLG006に違反した。scope外か否かの裁量判断でERRORSを免除してはならず、ERRORS>0は常にFAIL/RCへ送る。
+  source_cmd: 'cmd_4191'
+  when: 'precheckがERRORS>0を報告したとき'
+  how: '理由を問わずFAIL/RCとし、scope外判定はgateへ委ねる。gunshi_log_append.shまたはreview_approval.shでLGTMをBLOCKする。'
+  created_at: '2026-07-29'
+  enforcement: "Level4(フロー内BLOCK): gunshi_log_append.shがAPPROVE/LGTM記録を受理する前にprecheck ERRORS=0を機械確認し、1件以上ならFAIL/RCのみ許可する。"
+  enforcement_level: 4

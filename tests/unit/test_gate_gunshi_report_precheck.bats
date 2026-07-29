@@ -56,6 +56,33 @@ run_cross_repo_precheck() {
     bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
 }
 
+@test "SG-PRE3 no-code exemption requires matching structured task and report contracts" {
+  cat > "$TMP_DIR/tasks/kagemaru.yaml" <<'YAML'
+task:
+  task_type: recon
+  commit_contract:
+    required: false
+    task_type: recon
+YAML
+  cat > "$TMP_DIR/report.yaml" <<'YAML'
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+task_type: recon
+files_modified: [{path: docs/nonexistent-recon-output.md}]
+commit_contract:
+  required: false
+  task_type: recon
+YAML
+  run python3 "$ENGINE" --report "$TMP_DIR/report.yaml" --tasks-dir "$TMP_DIR/tasks"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"NO_CODE_COMMIT_EXEMPT=1"* ]]
+
+  sed -i 's/task_type: recon/task_type: impl/' "$TMP_DIR/report.yaml"
+  run python3 "$ENGINE" --report "$TMP_DIR/report.yaml" --tasks-dir "$TMP_DIR/tasks"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"NO_CODE_COMMIT_EXEMPT=0"* ]]
+}
+
 @test "SG-PRE3X resolves valid external and primary reports and blocks invalid ownership contracts" {
   external="$TMP_DIR/external"
   hash="$(make_git_repo "$external" backend/app.py)"

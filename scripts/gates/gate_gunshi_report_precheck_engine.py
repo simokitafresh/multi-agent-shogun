@@ -40,6 +40,7 @@ def main():
         'AC_EVIDENCE_MAPPING_MISSING_KEYS': '',
         'TEST_TRIAGE': '',
         'HAS_LESSON_CANDIDATE': '0',
+        'NO_CODE_COMMIT_EXEMPT': '0',
         'VARIATION_CHECKS_REQUIRED': '0',
         'VARIATION_CHECKS_MSG': '  SKIP: 変形検査契約の対象外',
     }
@@ -92,6 +93,33 @@ def main():
             task = (
                 task_data.get('task', task_data)
                 if isinstance(task_data, dict) else {}
+            )
+            # no-code免除はcommit_hash不在だけでは成立しない。task/report双方が
+            # 構造化commit_contractでrequired:falseを宣言し、許可task_typeも
+            # 一致する場合だけSG-PRE3の成果物不在ERRORを免除する。
+            no_code_task_types = {
+                'no_code', 'no-code', 'nocode', 'decision',
+                'decision_candidate', 'data_readonly', 'data-readonly',
+                'readonly', 'read_only', 'recon', 'recon2', 'scout',
+            }
+            report_contract = report.get('commit_contract') or {}
+            task_contract = task.get('commit_contract') or {}
+            report_task_type = str(
+                report_contract.get('task_type') or report.get('task_type') or ''
+            ).strip()
+            task_task_type = str(
+                task_contract.get('task_type') or task.get('task_type') or ''
+            ).strip()
+            no_code_contract_match = (
+                isinstance(report_contract, dict)
+                and isinstance(task_contract, dict)
+                and report_contract.get('required') is False
+                and task_contract.get('required') is False
+                and report_task_type in no_code_task_types
+                and task_task_type == report_task_type
+            )
+            result['NO_CODE_COMMIT_EXEMPT'] = (
+                '1' if no_code_contract_match else '0'
             )
             # project判定: task YAMLのprojectフィールドで補完(files_modified判定の穴を塞ぐ)
             task_project = task.get('project', '')

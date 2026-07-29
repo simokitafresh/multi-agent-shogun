@@ -510,7 +510,13 @@ if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ]; then
             else
                 echo "  WARN: $fpath → commit not found"
                 echo "    → FILE NOT FOUND — 成果物不在の可能性"
-                ERRORS=$((ERRORS + 1))
+                # no-code免除はhash不在だけでは認めない。engineがtask/report双方の
+                # required:false + 許可task_type一致を検証した場合だけ適用する。
+                if [ "${NO_CODE_COMMIT_EXEMPT:-0}" = "1" ] && [ -z "${_primary_hash:-}" ]; then
+                    echo "    → (構造化no-code commit契約一致のためERRORS非加算)"
+                else
+                    ERRORS=$((ERRORS + 1))
+                fi
             fi
         done <<< "${FILES_MODIFIED:-}"
 

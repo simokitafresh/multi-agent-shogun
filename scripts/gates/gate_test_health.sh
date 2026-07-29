@@ -101,35 +101,44 @@ elif [ -f "$LEDGER" ] && head -1 "$LEDGER" | grep -q '^run_id'; then
   # Parse every timestamp in one Python process.  The former awk implementation
   # forked GNU date once per matching row, making startup proportional to ledger
   # size with a very large process-creation constant.
-  read -r latest_fresh_epoch now_epoch < <(python3 - "$LEDGER" <<'PY'
+  read -r latest_full_epoch latest_writer_epoch now_epoch < <(python3 - "$LEDGER" <<'PY'
 import csv
 import datetime as dt
 import sys
 
-latest = 0
+latest_full = 0
+latest_writer = 0
 with open(sys.argv[1], encoding="utf-8", newline="") as handle:
     for row in csv.DictReader(handle, delimiter="\t"):
-        if (row.get("status") != "pass" or row.get("cache_hit") != "0"
-                or row.get("suite_root") not in ("all", "unit")):
+        if row.get("status") != "pass" or row.get("cache_hit") != "0":
             continue
         value = row.get("measured_at", "").strip()
         try:
             stamp = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
             if stamp.tzinfo is None:
                 stamp = stamp.replace(tzinfo=dt.timezone.utc)
-            latest = max(latest, int(stamp.timestamp()))
+            epoch = int(stamp.timestamp())
+            latest_writer = max(latest_writer, epoch)
+            if row.get("suite_root") in ("all", "unit"):
+                latest_full = max(latest_full, epoch)
         except (OverflowError, ValueError):
             continue
-print(latest, int(dt.datetime.now(dt.timezone.utc).timestamp()))
+print(latest_full, latest_writer, int(dt.datetime.now(dt.timezone.utc).timestamp()))
 PY
 )
-  age_hours=$(( (now_epoch - latest_fresh_epoch) / 3600 ))
-  if (( latest_fresh_epoch == 0 || age_hours > LEDGER_STALE_HOURS )); then
-    echo "WARN: timing ledger stale (age=${age_hours}h threshold=${LEDGER_STALE_HOURS}h); writer停止を確認してください"
+  writer_age_hours=$(( (now_epoch - latest_writer_epoch) / 3600 ))
+  full_age_hours=$(( (now_epoch - latest_full_epoch) / 3600 ))
+  if (( latest_writer_epoch == 0 || writer_age_hours > LEDGER_STALE_HOURS )); then
+    echo "WARN: timing ledger stale (age=${writer_age_hours}h threshold=${LEDGER_STALE_HOURS}h); writer停止を確認してください"
     alert=1
   else
-    echo "OK: timing ledger fresh (age=${age_hours}h threshold=${LEDGER_STALE_HOURS}h)"
-    ledger_fresh=1
+    echo "OK: timing ledger writer fresh (age=${writer_age_hours}h threshold=${LEDGER_STALE_HOURS}h)"
+    if (( latest_full_epoch == 0 || full_age_hours > LEDGER_STALE_HOURS )); then
+      echo "INFO: all/unit comparison baseline stale (age=${full_age_hours}h); writer生存とは分離"
+    else
+      echo "OK: timing ledger fresh (age=${full_age_hours}h threshold=${LEDGER_STALE_HOURS}h)"
+      ledger_fresh=1
+    fi
   fi
   mapfile -t completed_runs < <(awk -F'\t' '$9=="pass" && $11==0 && ($4=="all" || $4=="unit") {seen[$1]=$13} END{for(r in seen) print seen[r] "\t" r}' "$LEDGER" | sort -r | cut -f2 | head -2)
   if (( ${#completed_runs[@]} >= 2 )); then

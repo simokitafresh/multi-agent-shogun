@@ -140,3 +140,44 @@ YAML
         ! grep -q "lgtm_bundle_guard" "$TEST_TMPDIR/logs/gate_fire_log.yaml"
     fi
 }
+
+@test "軍師自身のgateをLGTMする場合はconflict_of_interest欠落をBLOCKする" {
+    local cmd_id="cmd_conflict_missing_$(date +%s)"
+    mkdir -p "$TEST_TMPDIR/queue/gates/$cmd_id"
+    echo '{"review":{"cmd_id":"'"$cmd_id"'","verdict":"APPROVE"}}' \
+        > "$TEST_TMPDIR/queue/gates/$cmd_id/sg7_bundle.json"
+    local entry
+    entry="$(_lgtm_entry_pass_fixture "$cmd_id" | sed 's|scripts/gunshi_log_append.sh:1|scripts/gates/gate_gunshi_report_precheck.sh:1|')"
+
+    run env GUNSHI_SCRIPT_DIR="$TEST_TMPDIR" bash "$LOG_APPEND_SCRIPT" <<< "$entry"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"conflict_of_interestフィールドが必須"* ]]
+}
+
+@test "軍師自身のgateでもconflict_of_interest明記時はLGTMを受理する" {
+    local cmd_id="cmd_conflict_present_$(date +%s)"
+    mkdir -p "$TEST_TMPDIR/queue/gates/$cmd_id"
+    echo '{"review":{"cmd_id":"'"$cmd_id"'","verdict":"APPROVE"}}' \
+        > "$TEST_TMPDIR/queue/gates/$cmd_id/sg7_bundle.json"
+    local entry
+    entry="$(_lgtm_entry_pass_fixture "$cmd_id" | sed 's|scripts/gunshi_log_append.sh:1|scripts/gates/gate_gunshi_report_precheck.sh:1|')"
+    entry+=$'\n  conflict_of_interest: "自作gateの評価であるため第三者最終検分が必要"'
+
+    run env GUNSHI_SCRIPT_DIR="$TEST_TMPDIR" bash "$LOG_APPEND_SCRIPT" <<< "$entry"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"OK: appended"* ]]
+}
+
+@test "precheck ERRORSが1以上ならscope外説明があってもLGTMをBLOCKする" {
+    local cmd_id="cmd_precheck_errors_$(date +%s)"
+    mkdir -p "$TEST_TMPDIR/queue/gates/$cmd_id"
+    echo '{"review":{"cmd_id":"'"$cmd_id"'","verdict":"APPROVE"}}' \
+        > "$TEST_TMPDIR/queue/gates/$cmd_id/sg7_bundle.json"
+    local entry
+    entry="$(_lgtm_entry_pass_fixture "$cmd_id")"
+    entry="${entry/actual: \"OK: appended\"/actual: \"ERRORS=1(scope外変更)\"}"
+
+    run env GUNSHI_SCRIPT_DIR="$TEST_TMPDIR" bash "$LOG_APPEND_SCRIPT" <<< "$entry"
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"precheck ERRORS>0"* ]]
+}
