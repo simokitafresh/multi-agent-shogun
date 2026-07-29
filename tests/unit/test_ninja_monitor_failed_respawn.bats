@@ -31,13 +31,26 @@ PY
     local p="$SCRIPT_DIR/queue/reports/$1.yaml"
     [ -f "$p" ] && printf '%s\n' "$p"
   }
-  report_notification_completed() { return "${REPORT_ACCEPTED_RC:-1}"; }
+  review_report_key() { printf 'report-key\n'; }
+  review_report_fingerprint() { sha256sum "$1" | awk '{print $1}'; }
 }
 
 write_task() {
   local id="${1:-generation-a}"
   printf 'task_id: %s\nparent_cmd: cmd_x\nstatus: failed\ntarget_path: [owned.sh]\n' "$id" \
     >"$SCRIPT_DIR/queue/tasks/saizo.yaml"
+}
+
+write_fail_report() {
+  printf 'status: completed\nverdict: FAIL\n' >"$SCRIPT_DIR/queue/reports/saizo.yaml"
+}
+
+write_karo_approval() {
+  local fp="${1:-$(sha256sum "$SCRIPT_DIR/queue/reports/saizo.yaml" | awk '{print $1}')}"
+  local report="${2:-queue/reports/saizo.yaml}"
+  mkdir -p "$SCRIPT_DIR/queue/gates/cmd_x/review_approvals/reports/report-key"
+  printf 'role: karo\nresult: ACCEPT\nreport: %s\nfingerprint: %s\n' "$report" "$fp" \
+    >"$SCRIPT_DIR/queue/gates/cmd_x/review_approvals/reports/report-key/karo.yaml"
 }
 
 @test "failed+dirty+pending blocks respawn and notifies once" {
@@ -62,6 +75,30 @@ write_task() {
   touch "$SCRIPT_DIR/queue/gates/cmd_x/archive.done"
   run _failed_task_preserve_before_respawn saizo
   [ "$status" -eq 1 ]
+}
+
+@test "report_received alone does not formally close failed generation" {
+  write_task
+  write_fail_report
+  REPORT_ACCEPTED_RC=0
+  run _failed_task_preserve_before_respawn saizo
+  [ "$status" -eq 0 ]
+}
+
+@test "matching Karo ACCEPT formally closes failed generation" {
+  write_task
+  write_fail_report
+  write_karo_approval
+  run _failed_task_preserve_before_respawn saizo
+  [ "$status" -eq 1 ]
+}
+
+@test "stale Karo ACCEPT fingerprint does not close current report generation" {
+  write_task
+  write_fail_report
+  write_karo_approval "$(printf stale | sha256sum | awk '{print $1}')"
+  run _failed_task_preserve_before_respawn saizo
+  [ "$status" -eq 0 ]
 }
 
 @test "redeploy generation gets a distinct exactly-once notification marker" {

@@ -61,6 +61,7 @@ source "$SCRIPT_DIR/scripts/lib/model_detect.sh"
 source "$SCRIPT_DIR/scripts/lib/model_resolve.sh"
 source "$SCRIPT_DIR/scripts/lib/field_get.sh"
 source "$SCRIPT_DIR/scripts/lib/yaml_field_set.sh"
+source "$SCRIPT_DIR/scripts/lib/review_approval.sh"
 source "$SCRIPT_DIR/scripts/lib/tmux_utils.sh"
 source "$SCRIPT_DIR/lib/agent_state.sh"
 source "$SCRIPT_DIR/lib/rotate_log.sh"
@@ -1961,11 +1962,12 @@ can_send_clear_with_report_gate() {
 # A failed task is not disposable merely because the worker marked it failed.
 # Preserve its pane/worktree until karo has durably closed that exact generation:
 # archive.done is the canonical terminal marker; alternatively a completed FAIL
-# report plus its accepted completion event is the formal fail-close handshake.
+# report plus Karo's fingerprint-bound ACCEPT is the formal fail-close handshake.
 _failed_task_is_formally_closed() {
     local name="$1"
     local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
-    local parent_cmd report_file report_status report_verdict
+    local parent_cmd report_file report_status report_verdict report_rel report_key
+    local approval_file approval_role approval_result approval_report approval_fp current_fp
 
     [ -f "$task_file" ] || return 1
     parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
@@ -1979,7 +1981,20 @@ _failed_task_is_formally_closed() {
     report_verdict=$(yaml_field_get "$report_file" "verdict" "" 2>/dev/null || true)
     [[ "$report_status" =~ ^(completed|done)$ ]] || return 1
     [ "$report_verdict" = "FAIL" ] || return 1
-    report_notification_completed "$name" "$report_file" "FAILED-RESPAWN"
+
+    report_rel="${report_file#"$SCRIPT_DIR"/}"
+    report_key=$(review_report_key "$report_rel" 2>/dev/null) || return 1
+    approval_file="$SCRIPT_DIR/queue/gates/${parent_cmd}/review_approvals/reports/${report_key}/karo.yaml"
+    [ -f "$approval_file" ] || return 1
+    approval_role=$(yaml_field_get "$approval_file" "role" "" 2>/dev/null || true)
+    approval_result=$(yaml_field_get "$approval_file" "result" "" 2>/dev/null || true)
+    approval_report=$(yaml_field_get "$approval_file" "report" "" 2>/dev/null || true)
+    approval_fp=$(yaml_field_get "$approval_file" "fingerprint" "" 2>/dev/null || true)
+    [ "$approval_role" = "karo" ] || return 1
+    [ "$approval_result" = "ACCEPT" ] || return 1
+    [ "$approval_report" = "$report_rel" ] || return 1
+    current_fp=$(PROJECT_ROOT="$SCRIPT_DIR" review_report_fingerprint "$report_file" 2>/dev/null) || return 1
+    [ "$approval_fp" = "$current_fp" ]
 }
 
 _failed_task_preserve_marker_file() {
