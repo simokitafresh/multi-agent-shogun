@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-29 recalculate-sync end_date API contract -->
-<!-- source_commit:3b9327f823a7dc4372b435e38105e7ca129a336e reason:recalculate-sync end_date contract reflected -->
+<!-- last_updated: 2026-07-29 deferred_flush_optimization_reviewed -->
+<!-- source_commit:eb1267c3 reason:deferred_flush_optimization_reviewed evidence:244229_rows_exact_173.08_to_56.42_seconds_execute_295_to_27 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
