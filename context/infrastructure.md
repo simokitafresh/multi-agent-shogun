@@ -896,7 +896,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1449 -->
+<!-- last_synced_lesson: L1453 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2059,6 +2059,10 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1447: 外部pytest runnerはPASS件数をreceiptへ取り込めずfalse FAILになり得る（cmd_karo_hotfix_recalculate_sync_end_date_20260729）
 - L1448: yaml_field_set.shは'-'をstdin規約として扱わない。literal値としてYAML parseされ[None]で静かに破損する（cmd_karo_hotfix_report_hook_result_canonicalization_20260729）
 - L1449: 外部source taskの暗黙full-suite fallback禁止（cmd_karo_hotfix_fullunit_scope_guard_20260729）
+- L1450: task test_necessity構造値はstdin dashでなくJSON値を渡す（cmd_4192）
+- L1451: 所有scopeとtest実行意思を同じpath集合で表現しない（cmd_karo_hotfix_task_selection_inferred_scope_20260729）
+- L1452: CoDD SKILL同期taskはcontext/codd.mdを初期scopeへ含める（cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729）
+- L1453: Level5 context注入はcommit所有scopeまで接続する（cmd_karo_hotfix_ga293_codd_scope_contract_20260729）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
