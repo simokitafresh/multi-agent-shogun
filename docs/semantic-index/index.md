@@ -116,6 +116,7 @@ codd:
 | causal | `cmd_karo_round4_impl_publish_total_20260728` files_modified: [[circular_lock_reconciler_fix]] |
 | causal | `cmd_karo_round4_impl_commit_hash_20260728` files_modified: [[circular_lock_reconciler_fix]] |
 | causal | `cmd_karo_part2_p1a_review_publish_identity_20260728` files_modified: [[circular_lock_reconciler_fix]] |
+| causal | `cmd_karo_hotfix_report_hook_result_canonicalization_20260729` files_modified: [[circular_lock_reconciler_fix]] |
 
 ## strong_new_game_completion_contract — 強くてニューゲーム完遂契約
 
@@ -236,6 +237,8 @@ codd:
 | causal | `cmd_karo_hotfix_per_task_unit_full_ban_20260728` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal | `cmd_karo_hotfix_deploy_b32_scope_reason_retry_20260728` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal | `cmd_karo_hotfix_ga413_context_freshness_regression_20260729` files_modified: [[dm_signal_pf_restore_guardrails]] |
+| causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[dm_signal_pf_restore_guardrails]] |
+| causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[dm_signal_pf_restore_guardrails]] |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
 
@@ -1385,6 +1388,15 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T23:16:17+09:00 速度改善2設計書の家老忖度なしレビュー完結(2026-07-27 23:15): [[fullrecalc速度設計書]]v3.2+[[hot-script高速化設計書]]v2.2は家老REQUEST_CHANGES 4点(standard親 |
 | causal | `cmd_4190` files_modified: [[recalculate_pipeline]] |
 | causal | `cmd_karo_hotfix_ga413_context_freshness_regression_20260729` files_modified: [[recalculate_pipeline]] |
+| causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[recalculate_pipeline]] |
+| cmd | `cmd_karo_hotfix_fullrecalc_mr_substep_telemetry_20260729` |
+| causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[recalculate_pipeline]] |
+| cmd | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` (`context/dm-signal-core.md`, `context/dm-signal-ops.md`) |
+| lesson | `L1447` 外部pytest runnerはPASS件数をreceiptへ取り込めずfalse FAILになり得る |
+| cmd | `cmd_karo_hotfix_recalculate_sync_end_date_20260729` |
+| lesson | `L919` logical flushの前処理はphysical chunk外で1回化する |
+| cmd | `cmd_karo_hotfix_fullrecalc_deferred_flush_extreme_runtime_ready_20260729` |
+| causal_chain | `[[cmd_karo_hotfix_recalculate_sync_end_date_20260729]]` (L1447) |
 
 ## semantic_dictionary_design — セマンティック辞書構想
 
@@ -2018,6 +2030,7 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T21:05:43+09:00 2026-07-28 RC車輪再発明の根因と修正: 2026-04-22 cmd_2231の古いtask文脈継承事故を防ぐため『前taskの情報は無効』とした本来意図は正しいが、2026-07-11以降の自動RCへ blanket適用してt |
 | lesson | `L1445` batsテストfixtureは本番の.gitignore済みDBファイルへ絶対に依存させない(ローカルPASS・CI FAILの発生源) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T02:02:37+09:00 セッション状態2026-07-29 02:03(強くてニューゲーム復帰点): [[hot-script高速化設計書]]第四弾v2.4=5/5全クローズ+CI GREEN復帰(run 30377787485 success)。RED二重真因根 |
+| lesson | `L1449` 外部source taskの暗黙full-suite fallback禁止 |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -2037,6 +2050,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_unify_no_code_contract_dc_warn_20260727]]` (L1403) |
 | causal_chain | `[[cmd_karo_hotfix_throughput_t3b_fingerprint_hit_corrected_20260728]]` (L1431) |
 | causal_chain | `[[cmd_karo_ci_fix_30374243969_three_layer_knowledge_chain]]` (L1445) |
+| causal_chain | `[[cmd_karo_hotfix_fullunit_scope_guard_20260729]]` (L1449) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -2563,6 +2577,7 @@ codd:
 | causal | `cmd_karo_round4_impl_publish_total_20260728` files_modified: [[gate_bypass_prevention]] |
 | causal | `cmd_karo_round4_impl_commit_hash_20260728` files_modified: [[gate_bypass_prevention]] |
 | causal | `cmd_karo_part2_p1a_review_publish_identity_20260728` files_modified: [[gate_bypass_prevention]] |
+| causal | `cmd_karo_hotfix_report_hook_result_canonicalization_20260729` files_modified: [[gate_bypass_prevention]] |
 
 ## terminology_dictionary — 用語辞書
 
@@ -2675,6 +2690,8 @@ codd:
 | causal | `cmd_4190` origin: [[殿ntfy_SIGNAL_CHANGE_ALERT_20260728]] -> [[FoF3件構成入替えの実体確認]] -> [[確定月定義との突合判定]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T10:52:26+09:00 【殿ntfy】[SIGNAL CHANGE ALERT] confirmed-month holding_signal changes: count=3 portfolios=3 dates=2026-07-28 |
 | causal | `cmd_karo_hotfix_ga413_context_freshness_regression_20260729` files_modified: [[production_parity]] |
+| causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[production_parity]] |
+| causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[production_parity]] |
 
 ## deepdive_principles — deepdive原理
 
@@ -4071,6 +4088,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T01:20:20+09:00 b5b80eras Monitor event: "retry unit test run for clean FAIL0/SKIP0 receipt" [Monitor timed out — re-arm if needed.] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T11:34:36+09:00 bl0fms6sq toolu_011PgusnsHdgujNHaHryYzfa /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a47a14e8-e0cb-4ca8-a68e-d7b2aa |
 | causal | `cmd_karo_hotfix_ga413_context_freshness_regression_20260729` files_modified: [[shin_shijin_design]] |
+| causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[shin_shijin_design]] |
+| causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[shin_shijin_design]] |
 
 ## gs_ninpo_research — GS忍法研究
 
@@ -4245,6 +4264,8 @@ codd:
 | causal | `cmd_karo_round4_impl_full_precheck_20260728` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_karo_hotfix_gunshi_precheck_cross_repo_contract_20260729` files_modified: [[silent_fallback_quality]] |
 | causal | `cmd_karo_hotfix_ga413_context_freshness_regression_20260729` files_modified: [[silent_fallback_quality]] |
+| causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[silent_fallback_quality]] |
+| causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[silent_fallback_quality]] |
 | causal_chain | `[[RC2三重FAIL]] -> [[Render capability未実測]] -> [[actual環境preflight強制]]` (dm-signal:L893) |
 | causal_chain | `[[preview属性齟齬]] -> [[proxy無効可能性]] -> [[本番能力未証明]]` (dm-signal:L895) |
 
@@ -4521,6 +4542,8 @@ codd:
 | causal | `cmd_3868` files_modified: [[fusion_api_endpoint]] |
 | causal | `cmd_3908` files_modified: [[fusion_api_endpoint]] |
 | causal | `cmd_karo_hotfix_ga413_context_freshness_regression_20260729` files_modified: [[fusion_api_endpoint]] |
+| causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[fusion_api_endpoint]] |
+| causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[fusion_api_endpoint]] |
 
 ## dm_fusion_app — DM-Fusionアプリ
 
@@ -4561,6 +4584,8 @@ codd:
 | causal | `cmd_3868` files_modified: [[dm_fusion_app]] |
 | causal | `cmd_3908` files_modified: [[dm_fusion_app]] |
 | causal | `cmd_karo_hotfix_ga413_context_freshness_regression_20260729` files_modified: [[dm_fusion_app]] |
+| causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[dm_fusion_app]] |
+| causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[dm_fusion_app]] |
 
 ## dmsignal_fe_experience_deploy — DM-Signal体感主導デプロイ
 
@@ -4586,6 +4611,8 @@ codd:
 | causal | `cmd_3868` files_modified: [[dmsignal_fe_experience_deploy]] |
 | causal | `cmd_3908` files_modified: [[dmsignal_fe_experience_deploy]] |
 | causal | `cmd_karo_hotfix_ga413_context_freshness_regression_20260729` files_modified: [[dmsignal_fe_experience_deploy]] |
+| causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[dmsignal_fe_experience_deploy]] |
+| causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[dmsignal_fe_experience_deploy]] |
 
 ## dmsignal_operations — DM-Signal運用
 
@@ -4593,7 +4620,7 @@ codd:
 |------|---|
 | id | dmsignal_operations |
 | label | DM-Signal運用 |
-| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告, Standard PFの過去シグナルNone化とは何だ？, 理論上過去のシグナルはinbox1, データが日々変わる, データが毎日変わる, 当月シグナルは日々変わる, 過去シグナルは毎日変動, つまりデータが毎日変わっているのか, つまりデータが毎日変わっているのか？, 保有ポジションやパフォーマンスも日々変わる, 保有ポジションやパフォーマンスも日々変わってしまう, そうすると保有ポジションやパフォーマンスも日々変わってしまうということか？, 価格データソース多重化Phase 0, 殿のAPIキー発行待ちでこちら側の起票対象なし, 価格データソース多重化は実装済み, バンドを採用, バンド採用, 閾値バンド, threshold_band, 三状態判定, A/A+B/B, バンド内半々, モメンタムバンド, デッドバンド, 僅差判定の反転, absolute_assetはgatekeeper sensorで保有対象外, TMFを保有するパターンは存在しない, relative_assetsが保有候補でabsolute_assetは判定指標, モメンタムバンドも導入したから, ワイヤーフレームV3を許可する, ワイヤーフレームv3裁可, ワイヤーフレームv3許可, ワイヤーフレームv3, Monthly Trade状態バッジ, 確定台帳表示, まだ本番にはモメンタムバンドで計算されたPFがないのでは？, cashを持つ可能性は無いはずだ, DM signalにフォーカスしよう, DM Signalの実precommit経路からruff自動fixを除去し, 7保有とはどういう意味だ？保有シグナルは月初に固定される |
+| aliases | DM-Signal運用, dm-signal ops, dmsignal ops, Render運用, 本番運用, recalculate運用, ETL運用, DB操作, PF登録, CDP確認, sync-standard, sync-fof, FoF, Render CLI, pendingエントリ, 月次共通ロジック, 月次リターン表示, pending月次エントリ, 営業日数計算, trading_days, シグナル, キャッシュポジション, キャッシュ長期, cash position, years=0, 期間設定, yearsパラメータ, UI上で変更, UI設定変更, UIから変更, フロントエンド期間表示, 2001年から表示, フロントエンドでは2001年から, 中身は10年, データ期間表示の乖離, ポジティブピリオド302, DM signalの話をしよう, PF数は変動する SELECT COUNT確認必須, create_db_engine唯一の正解 psycopg2直接禁止, portfoliosスキーマ hide_portfolio hide_signal folder_id is_active, PF何体, シグナルはルールで判定する, FoF複製2件はおれの操作だ, PF構成確認はcheck_pf_config.py一発, hide判定はtier_visibility_settings全Tier確認必須(portfolios.hide_portfolioだけでは不十分), pipeline_configがBBの実体(selection_pipeline+terminal_block), TrendReversalFilter, DM signalのハナシをしよう, FoFの理解が怪しい, 22分は長いな, DM signalは順調か？, DM-signalは順調か？, L1+, L1+実験, BB直列, ビルディングブロック直列, BB直列拡張, run_l1plus_backtest, 441パターン, L1ビルディングブロック直列接続, 現在本番には全部で102PFある, バグの影響を受けたPFをフォルダーグループ単位で報告, Standard PFの過去シグナルNone化とは何だ？, 理論上過去のシグナルはinbox1, データが日々変わる, データが毎日変わる, 当月シグナルは日々変わる, 過去シグナルは毎日変動, つまりデータが毎日変わっているのか, つまりデータが毎日変わっているのか？, 保有ポジションやパフォーマンスも日々変わる, 保有ポジションやパフォーマンスも日々変わってしまう, そうすると保有ポジションやパフォーマンスも日々変わってしまうということか？, 価格データソース多重化Phase 0, 殿のAPIキー発行待ちでこちら側の起票対象なし, 価格データソース多重化は実装済み, バンドを採用, バンド採用, 閾値バンド, threshold_band, 三状態判定, A/A+B/B, バンド内半々, モメンタムバンド, デッドバンド, 僅差判定の反転, absolute_assetはgatekeeper sensorで保有対象外, TMFを保有するパターンは存在しない, relative_assetsが保有候補でabsolute_assetは判定指標, モメンタムバンドも導入したから, ワイヤーフレームV3を許可する, ワイヤーフレームv3裁可, ワイヤーフレームv3許可, ワイヤーフレームv3, Monthly Trade状態バッジ, 確定台帳表示, まだ本番にはモメンタムバンドで計算されたPFがないのでは？, cashを持つ可能性は無いはずだ, DM signalにフォーカスしよう, DM Signalの実precommit経路からruff自動fixを除去し, 7保有とはどういう意味だ？保有シグナルは月初に固定される, standardPFが２４とFoFが７８では？ |
 | skills | db-check, pf-registration |
 | related_concepts | recalculate_pipeline, production_parity, visibility_tier_masking, investment_knowledge_base, alm_research, shin_shijin_design, gs_ninpo_research, silent_fallback_quality, modern_web_guidance, cdp_browser_capability, tier_plan_mapping, alpha_6_metrics, saxo_openapi_excel, saxo_trade_engine, db_price_data_range, content_artifacts, fusion_api_endpoint, dm_fusion_app, dmsignal_fe_experience_deploy, gs_recalibration_plan, dm_signal_pf_restore_guardrails, admin_ui_redesign_asis_tobe |
 
@@ -4693,6 +4720,9 @@ codd:
 | causal | `cmd_4190` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[dmsignal_operations]] |
 | causal | `cmd_karo_hotfix_ga413_context_freshness_regression_20260729` files_modified: [[dmsignal_operations]] |
+| causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[dmsignal_operations]] |
+| causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[dmsignal_operations]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T13:44:43+09:00 standardPFが２４とFoFが７８では？ |
 
 ## admin_ui_redesign_asis_tobe — DM-Signal Admin画面一覧性改修設計書
 
@@ -4762,7 +4792,7 @@ codd:
 |------|---|
 | id | agent_formation_management |
 | label | 編成管理 |
-| aliases | 編成, hensei, モデル編成, GPT忍者のdefaultはGPT luna medium, GPT luna medium, push_allowed, deploy_task push_allowed, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, idle忍者だけrespawanせよ, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動, 未配備のCMDへの対策は将軍にせよ, shogun-cli-switch後にshutsujin_departureを呼ぶな, runtime CLI switchでデフォルト復元禁止, 固定行sedでsettings確認禁止, YAMLパースで対象agent確認, settings tmux 実pane 三点照合, CLI切替後post-switch verification, 調査してバグを修正しよう, 報告では対象contextの解消証跡と, 既存の広いdirty差分inbox1 — CMD受領済み, GPT忍者に配備しなおそう, 3595は配備されているか？, per-agent launch_cmd, cli_lookup launch_cmd override, ninja_monitor 巻き戻し, 2.1.87巻き戻し防止, settings.yaml per-agent launch_cmd, ~/.local/bin/claude 最新版, 最新版と固定版の個別切替, 最新版とピン留めの違い, pin-2.1.87は版だけ, unpin-latestは版だけ, unpin-latestだけではOpus 4.8 xhighにならない, 最新版 Opus 4.8 xhigh は二段切替, いつでもだれでも個別もしくは複数をピン留めや最新版に自由自在に切り替えられることが必須だ, tobisaru 最新版, agent単位バージョン切替, cli_lookup.sh _CLI_LAUNCH_CMD_OVERRIDE, model comparison, A/B evaluation, A/B/C evaluation, モデル比較, Sonnet 5 vs Sonnet 4.6, GPT 5.5 vs Opus 4.8, 四者比較, 三者比較, 三社比較, 3社比較, Opus 4.8 xhigh, 1M xhigh, saizo Opus 4.8 xhigh, CLIとモデルとエフォートを切り替え, 未調査モデルeffort組み合わせ, CLI model effort組合せ, MECEモデル比較, paneの枠のステータスがsonnetのまま, GPTはCodex専用, SonnetはClaude Code専用, OpusはClaude Code専用, 別会社の別CLI, クロス使用不可能, GPTのClaude Code版は存在しない, 未検証の組合せを検証しよう, 将軍と軍師を最新版のopus xhigh変更してくれ, ピン留めと最新版の違いはわかるか？, 将軍と軍師をピン留めopus highにしてくれ, 将軍と軍師をピン留めopus 4 6 highにしてくれ, 忍者は終わり次第, 将軍をピン止めopus4 1m highにせよ, 将軍をピン止めopus4 6 1m highにせよ, 将軍をピン留めopu 1Mにスキルを使って変更せよ, 将軍をピン留めopu 4 6 1Mにスキルを使って変更せよ, 偵察を許可する, 将軍をピン止めopus 1Mにrespawanせよ, D1偵察cmdを起票せよ, 許可する, 3827は配備したか？, git blob HEAD index 経由で参照せよ, 配備時に固定される契約情報は, 子gate不在127と実在gate失敗を分離せよ, 検証しよう, ninjya monitorは順調かinbox1？, 軍師をピン留めopus4 1Mにrespwanせよ, 軍師をピン留めopus4 6 1Mにrespwanせよ, 完了BLOCKは当該cmd相関に限定する, 将軍をピン留めopus4 1Mにrewpawnせよ, 将軍をピン留めopus4 6 1Mにrewpawnせよ, 将軍をピン留めopus4 1Mにrespawanせよ, 将軍をピン留めopus4 6 1Mにrespawanせよ, 今セッションでインフラバグはなかったか？バグは即時修正しよう, 修正したら副作用がないか検証しよう, 将軍はopus4 8だ, settings yaml変更してよい, 今後はCIの修正は忍者に配備させよう, active_dead_pane_auto_respawn, 明らかに流れが悪い, 家老が超速で配備することがボトルネックを解消して, shard終端は報告でなくworkdir実体を再検証, 配備の速度アップをやったはずなのに異常なまでに配備が遅い, 泰策は全て実装したか？実装したら検証しよう, deploy taskの安全判定を維持したままpath履歴walkとstale report全走査を配送critical, 家老の作業が長く, これはバグか？バグなら修正しよう, E2E clear fault injection, 慌ててやる必要はない, README記述とtracked計器を分離して成熟度を測る, 世代dedupは成功作用後にのみcommitする, 改善したら検証しよう, FAIL一覧だけを見ると実装の欠陥に見える, 穴がないか覚醒して検証しよう, では改めて検証しよう, は trueによりcs exitが常に0になる, gunshiをピン止めopus 1Mにせよ, auto clear設計書を実装せよ, gunshiをピン止めopus 4 6 1Mにせよ, これはピン止めverではないな, 偵察が終わったら設計書の再構築をせよ, では引き続き, hanzoがauto clearされていないな, same_cmd_redeploy |
+| aliases | 編成, hensei, モデル編成, GPT忍者のdefaultはGPT luna medium, GPT luna medium, push_allowed, deploy_task push_allowed, CLI切替, respawn, settings.yaml, 配備, deploy, deploy_task, 監視, monitor, ninja_monitor, auto-commit, auto-clear, clear_prep_check, build_instructions, instructions再生成, idle検知デーモン, 忍者状態監視, auto-clear制御, Codex respawn reset, Codex末尾モデル名CTX表示, codex 末尾 モデル名 CTX%, pane状態補正, cmdからtask YAML化, shogun_to_karo解決, 忍者配備フロー, stale task invalidation, idle ninja selection, idle忍者だけrespawanせよ, round robin dispatch, 偵察, また問題が起きていないか？監視を続けよ, まずは偵察だな, 配備せよ, ペイン一括復元, mega batch初期化, CLI一括起動, respawn pane kの前はどうしていた？, 偵察 7つのサイズ調整戦略バックテスト % %二択, 全78PF, ピン止め, ピン留め, 最新版切替, Claude version切替, claude-version-switch, version pin, 2.1.87固定, pane単位切替, モデル切り替えのスキル, pane dead, panedead, pane死亡, CLI死亡, CLI-DEAD, status 126, respawn失敗, paneがおかしい, paneがおかしく, paneが変, pane不調, ペインがおかしい, ペインがおかしく, 軍師は俺の指示のもとに編成を変更する権利がある, 将軍をピン止めopusにrespwanして, 同じ内容を複数視点から偵察するほうが抜けがないのでは？, 忍者数名に配備するのがいいのでは？, karoをGPT家老にrespawnせよ, ピン止めと最新版を自由に変えるスキルがあっただろ？, henseiスキルとの違いは？henseiは必要あるのか？, shogun cli switchが複数対応, モデル表示名バグ, model_detect, バナー検出, tail -1バグ, head -1修正, @model_name誤表示, pane枠線モデル名が違う, 試行錯誤はバグ, capture-paneバナー誤検出, ログ内モデル名混入, CLI起動バナーSSOT, CLIプロセス検出漏れ, pane_pid comm確認, 軍師が独自調査をしているが, 結果 respawn対象なのにスキップ 3名スキップ実証, どちらがいいと思う？, 起動後はsettings yamlに従うなどの, 2層SSOT, デフォルト復帰, cli_profiles defaults, codex --full-auto exit 2, settings.yaml type未更新, switch_cli_mode settings未反映, respawn-pane -k codex単体起動, 未配備のCMDへの対策は将軍にせよ, shogun-cli-switch後にshutsujin_departureを呼ぶな, runtime CLI switchでデフォルト復元禁止, 固定行sedでsettings確認禁止, YAMLパースで対象agent確認, settings tmux 実pane 三点照合, CLI切替後post-switch verification, 調査してバグを修正しよう, 報告では対象contextの解消証跡と, 既存の広いdirty差分inbox1 — CMD受領済み, GPT忍者に配備しなおそう, 3595は配備されているか？, per-agent launch_cmd, cli_lookup launch_cmd override, ninja_monitor 巻き戻し, 2.1.87巻き戻し防止, settings.yaml per-agent launch_cmd, ~/.local/bin/claude 最新版, 最新版と固定版の個別切替, 最新版とピン留めの違い, pin-2.1.87は版だけ, unpin-latestは版だけ, unpin-latestだけではOpus 4.8 xhighにならない, 最新版 Opus 4.8 xhigh は二段切替, いつでもだれでも個別もしくは複数をピン留めや最新版に自由自在に切り替えられることが必須だ, tobisaru 最新版, agent単位バージョン切替, cli_lookup.sh _CLI_LAUNCH_CMD_OVERRIDE, model comparison, A/B evaluation, A/B/C evaluation, モデル比較, Sonnet 5 vs Sonnet 4.6, GPT 5.5 vs Opus 4.8, 四者比較, 三者比較, 三社比較, 3社比較, Opus 4.8 xhigh, 1M xhigh, saizo Opus 4.8 xhigh, CLIとモデルとエフォートを切り替え, 未調査モデルeffort組み合わせ, CLI model effort組合せ, MECEモデル比較, paneの枠のステータスがsonnetのまま, GPTはCodex専用, SonnetはClaude Code専用, OpusはClaude Code専用, 別会社の別CLI, クロス使用不可能, GPTのClaude Code版は存在しない, 未検証の組合せを検証しよう, 将軍と軍師を最新版のopus xhigh変更してくれ, ピン留めと最新版の違いはわかるか？, 将軍と軍師をピン留めopus highにしてくれ, 将軍と軍師をピン留めopus 4 6 highにしてくれ, 忍者は終わり次第, 将軍をピン止めopus4 1m highにせよ, 将軍をピン止めopus4 6 1m highにせよ, 将軍をピン留めopu 1Mにスキルを使って変更せよ, 将軍をピン留めopu 4 6 1Mにスキルを使って変更せよ, 偵察を許可する, 将軍をピン止めopus 1Mにrespawanせよ, D1偵察cmdを起票せよ, 許可する, 3827は配備したか？, git blob HEAD index 経由で参照せよ, 配備時に固定される契約情報は, 子gate不在127と実在gate失敗を分離せよ, 検証しよう, ninjya monitorは順調かinbox1？, 軍師をピン留めopus4 1Mにrespwanせよ, 軍師をピン留めopus4 6 1Mにrespwanせよ, 完了BLOCKは当該cmd相関に限定する, 将軍をピン留めopus4 1Mにrewpawnせよ, 将軍をピン留めopus4 6 1Mにrewpawnせよ, 将軍をピン留めopus4 1Mにrespawanせよ, 将軍をピン留めopus4 6 1Mにrespawanせよ, 今セッションでインフラバグはなかったか？バグは即時修正しよう, 修正したら副作用がないか検証しよう, 将軍はopus4 8だ, settings yaml変更してよい, 今後はCIの修正は忍者に配備させよう, active_dead_pane_auto_respawn, 明らかに流れが悪い, 家老が超速で配備することがボトルネックを解消して, shard終端は報告でなくworkdir実体を再検証, 配備の速度アップをやったはずなのに異常なまでに配備が遅い, 泰策は全て実装したか？実装したら検証しよう, deploy taskの安全判定を維持したままpath履歴walkとstale report全走査を配送critical, 家老の作業が長く, これはバグか？バグなら修正しよう, E2E clear fault injection, 慌ててやる必要はない, README記述とtracked計器を分離して成熟度を測る, 世代dedupは成功作用後にのみcommitする, 改善したら検証しよう, FAIL一覧だけを見ると実装の欠陥に見える, 穴がないか覚醒して検証しよう, では改めて検証しよう, は trueによりcs exitが常に0になる, gunshiをピン止めopus 1Mにせよ, auto clear設計書を実装せよ, gunshiをピン止めopus 4 6 1Mにせよ, これはピン止めverではないな, 偵察が終わったら設計書の再構築をせよ, では引き続き, hanzoがauto clearされていないな, same_cmd_redeploy, read onlyなら複数に同じ内容を配備させればいい |
 | skills | shogun-cli-switch(CLI切替/respawn/編成/version。hensei系5本+reset-layout吸収済み), karo-direct, recon-dual |
 | related_concepts | inbox_watcher_process_model, daemon_supervision, training_cycle_quality, hook_automation_framework, systems_knowledge_base, skill_design_rules, shogun_android_app, task_modifier_injection, infrastructure_ops, bulletin_communication, inbox_processing_discipline, multi_cli_event_commonization, skill_routing, commander_role_ssot_analysis, codex_goal_mode, infra_throughput_outcome_design |
 | related_lessons | `L594`, `L603`, `L550`, `L310` |
@@ -5536,7 +5566,8 @@ codd:
 | causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` (`docs/operations/daemon_runbook.md`, `docs/operations/profiling_runbook.md`, `scripts/ninja_monitor.sh`) |
 | cmd | `cmd_karo_hotfix_rebalancer_health_deploy_identity_20260729` |
-| causal_chain | `[[cmd_karo_hotfix_deploy_task_yaml_speed_recon_guard_202607020133]]` (L919) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T13:28:39+09:00 read onlyなら複数に同じ内容を配備させればいい。誰かが成功すればそれでいいはずだ。 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T13:30:39+09:00 [[殿裁定_readonly冗長並列_20260729]]: 13:28『read onlyなら複数に同じ内容を配備させればいい。誰かが成功すればそれでいいはずだ』。偵察・計測・調査などread-only taskはidle忍者複数へ同一内 |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
 | causal_chain | `[[cmd_3664]]` (L941) |
 | causal_chain | `[[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]` (L944) |
@@ -6006,6 +6037,9 @@ codd:
 | causal | `cmd_karo_hotfix_cmd_complete_no_code_ci_contract_20260729` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_cmd_complete_recon2_type_classification_20260729` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_ga413_context_freshness_regression_20260729` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_cmd_complete_context_metadata_postcommit_20260729` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[cdp_browser_capability]] |
+| causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[cdp_browser_capability]] |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -6013,7 +6047,7 @@ codd:
 |------|---|
 | id | defense_hierarchy |
 | label | 防御階層原則(Level 1-6) |
-| aliases | 防御階層, defense_level, Level5, Level 5, Level6, Level 6, 学習速度最大化, 下限切り上げ, ラチェット, 事前コンテキスト提供, 入口側生成, 入口側強化, ゲート不要化, 発火しないシステム, FAIL→PASS遷移率, L6化率, gate_fire_log解析, LG010, ninja_weak_points, previous_failures, 修行サイクル, training cycle, 忍者修行, 一発PASS率, BLOCK率, 修行レベル, L1 L2 L3 L4, Level5入口ゲート, 事前コンテキスト強制, q11既存確認, レベル0 7に貫通してCMD起票ルールを埋め込もう, 速度, 速度が遅いスクリプトや仕組みはバグだ, 遅いスクリプトはないか？品質を落とさずに速度を改善しよう, 品質を下げてはだめだな, 実行速度が遅い pyはないか？遅いのはバグの1種だ, 速度も向上してくれ, 品質の低いhookやgateはインフラバグだ, 利他の精神でインフラバグがないか調査してくれ, あまりにも遅いな, setup file相当の共有で速度を上げる際, 品詞向上しながら更に速度を上げるのが我らのスタイルだな, スループットの向上がバグによるものではナンセンスだな, 品質速度同時向上, 自動成長速度, 正しい試行回数×一発PASS率×知見還流率, バグ由来スループット拒否, この点を改善するアイデアを家老と協議せよ, 今わかっているバグを根治しよう, 小さく役割分担を並列で最速, 小並列最速, オーバーヘッドを気にする必要はない, 並列で知見が多く集まり複利での速度アップ, 過剰直列化, 逐次化は真の依存がある場合のみ, 実験ファースト, 総当たり実験, 膨大な量の実験を超速で回し続ける, 考えることは向いてない, 全てを実験してみればいい, 確認せずに想像するから結果が出ない, 真の強制, 強制されていることすら自覚しない状態, 表示型防御, 構造型防御, 目の前の事を即時やり続ける, 台帳も計測もしながら即時やる, 全部やるんだ, 俺の指示に従え改変するな, pane直貼り, 作業終了後のidle状態で送信, lost-wakeup, retro原文配送, 失敗前提N並列調査, hookやgateの品質問題などがないか覚 醒して調査せよ, 速度は計測しているか？, 実は構造の改善をしなくても |
+| aliases | 防御階層, defense_level, Level5, Level 5, Level6, Level 6, 学習速度最大化, 下限切り上げ, ラチェット, 事前コンテキスト提供, 入口側生成, 入口側強化, ゲート不要化, 発火しないシステム, FAIL→PASS遷移率, L6化率, gate_fire_log解析, LG010, ninja_weak_points, previous_failures, 修行サイクル, training cycle, 忍者修行, 一発PASS率, BLOCK率, 修行レベル, L1 L2 L3 L4, Level5入口ゲート, 事前コンテキスト強制, q11既存確認, レベル0 7に貫通してCMD起票ルールを埋め込もう, 速度, 速度が遅いスクリプトや仕組みはバグだ, 遅いスクリプトはないか？品質を落とさずに速度を改善しよう, 品質を下げてはだめだな, 実行速度が遅い pyはないか？遅いのはバグの1種だ, 速度も向上してくれ, 品質の低いhookやgateはインフラバグだ, 利他の精神でインフラバグがないか調査してくれ, あまりにも遅いな, setup file相当の共有で速度を上げる際, 品詞向上しながら更に速度を上げるのが我らのスタイルだな, スループットの向上がバグによるものではナンセンスだな, 品質速度同時向上, 自動成長速度, 正しい試行回数×一発PASS率×知見還流率, バグ由来スループット拒否, この点を改善するアイデアを家老と協議せよ, 今わかっているバグを根治しよう, 小さく役割分担を並列で最速, 小並列最速, オーバーヘッドを気にする必要はない, 並列で知見が多く集まり複利での速度アップ, 過剰直列化, 逐次化は真の依存がある場合のみ, 実験ファースト, 総当たり実験, 膨大な量の実験を超速で回し続ける, 考えることは向いてない, 全てを実験してみればいい, 確認せずに想像するから結果が出ない, 真の強制, 強制されていることすら自覚しない状態, 表示型防御, 構造型防御, 目の前の事を即時やり続ける, 台帳も計測もしながら即時やる, 全部やるんだ, 俺の指示に従え改変するな, pane直貼り, 作業終了後のidle状態で送信, lost-wakeup, retro原文配送, 失敗前提N並列調査, hookやgateの品質問題などがないか覚 醒して調査せよ, 速度は計測しているか？, 実は構造の改善をしなくても, 本番で計測 |
 | skills | なし |
 | related_concepts | growth_loop, gate_quality_framework, hook_automation_framework, creator_brainwashing_defense, gate_bypass_prevention, deepdive_principles, chain_principle, no_auto_extinguish, ultimate_state_principle, silent_fallback_quality, cmd_save_gate_catalog, sg_pre31_semantic_validation, infra_throughput_outcome_design |
 | related_lessons | `L317`, `L512` |
@@ -6163,6 +6197,8 @@ codd:
 | causal | `cmd_4187` files_modified: [[defense_hierarchy]] |
 | lesson | `L1424` 速度計測は運用競合窓と同一fixture交互A/Bを分離する |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T10:55:30+09:00 基本的には直列での速度向上が優先で、直列が限界に達したときに並列を検討するんだよな？renderの本番環境での計算だと念頭におこう |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T13:26:04+09:00 いつもはローカルで極限まで高速化、本番で計測、差分を元に再検証、前提条件を元にローカルで計算速度を極限化、本番で再計算の繰り返しだ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T13:27:58+09:00 [[殿裁定_fullrecalc作業型_20260729]]: (1)13:26反復サイクル型=『いつもはローカルで極限まで高速化、本番で計測、差分を元に再検証、前提条件を元にローカルで計算速度を極限化、本番で再計算の繰り返しだ』。本番は計 |
 | causal_chain | `[[cmd_reflux_insight_202607072138_saizo]]` (L969) |
 | causal_chain | `[[cmd_karo_hotfix_ga219_context_freshness_202607110107]]` (L1030) |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_perf_20260727]]` (L1378) |
@@ -6604,6 +6640,7 @@ codd:
 | causal | `cmd_karo_hotfix_loop_ledger_startup_escalation_dedup_20260729` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_cmd_complete_no_code_ci_contract_20260729` files_modified: [[cmd_quality_logging]] |
 | causal | `cmd_karo_hotfix_cmd_complete_recon2_type_classification_20260729` files_modified: [[cmd_quality_logging]] |
+| causal | `cmd_karo_hotfix_cmd_complete_context_metadata_postcommit_20260729` files_modified: [[cmd_quality_logging]] |
 | causal_chain | `[[cmd_3622_kotaro_r3]]` (infra:L893) |
 
 ## task_modifier_injection — タスク修飾子注入
@@ -7081,6 +7118,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T02:04:38+09:00 P3/P4レビュー待ちとは？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T03:30:47+09:00 第五弾の設計書を作成せよ。第一弾～と同じスタイルで作成せよ。10レーン分組み込もう |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T10:26:42+09:00 軍師の任意評価ポップアップとはなんだ？ |
+| causal | `cmd_karo_hotfix_report_hook_result_canonicalization_20260729` files_modified: [[report_quality_protocol]] |
+| cmd | `cmd_karo_hotfix_report_hook_result_canonicalization_20260729` (`scripts/report_field_set.sh`, `tests/unit/test_report_field_set_hook_canon.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T15:15:52+09:00 ドキュメントを覚醒してアップデート。アップデート後に家老にレビューしてもらえ |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
@@ -7767,6 +7807,7 @@ codd:
 | causal | `cmd_karo_hotfix_startup_escalation_semantic_dedupe_20260728` files_modified: [[gate_quality_framework]] |
 | cmd | `cmd_karo_hotfix_startup_escalation_semantic_dedupe_20260728` (`scripts/gates/gate_shogun_startup.sh`, `tests/unit/test_gate_shogun_startup.bats`) |
 | causal | `cmd_karo_hotfix_loop_ledger_startup_escalation_dedup_20260729` files_modified: [[gate_quality_framework]] |
+| cmd | `cmd_4191` (`logs/karo_workarounds.yaml`) |
 | causal_chain | `[[cmd_3658]]` (L936) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_db_missing_followup_202607071808]]` (L964) |
@@ -8519,6 +8560,8 @@ codd:
 | causal | `cmd_reflux_backlink_202607290925_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607291014_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607291131_hayate` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607291222_saizo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607291330_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607291645_hayate` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-kagemaru_20260722.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
@@ -8738,6 +8781,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T12:13:18+09:00 b0butmbw3 toolu_01Mwxtzke23zZik83Knt8pic /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/b032cf40-1baa-47e9-a3ea-edf70c |
 | causal | `cmd_karo_hotfix_run_tests_external_pytest_receipt_20260729` files_modified: [[provisional_run_tests]] |
 | cmd | `cmd_karo_hotfix_run_tests_external_pytest_receipt_20260729` (`scripts/run_tests.sh`, `tests/unit/test_run_tests.bats`) |
+| causal | `cmd_karo_hotfix_fullunit_scope_guard_20260729` files_modified: [[provisional_run_tests]] |
+| cmd | `cmd_karo_hotfix_fullunit_scope_guard_20260729` (`scripts/run_tests.sh`, `tests/unit/test_run_tests.bats`) |
 
 ## provisional_.gitignore — 仮: .Gitignore
 
@@ -8944,7 +8989,7 @@ codd:
 |------|---|
 | id | provisional_saizo |
 | label | 仮: Saizo |
-| aliases | saizo, queue/tasks/saizo.yaml, queue tasks saizo.yaml, provisional_saizo, saizoは何をやっているんだ？放置しておいていいのか？, saizoをrespawanせよ, saizoとtobisaruをopus 1M lowにせよ, saizoとtobisaruをopus 5 1M lowにせよ, saizoのpaneをみよ |
+| aliases | saizo, queue/tasks/saizo.yaml, queue tasks saizo.yaml, provisional_saizo, saizoは何をやっているんだ？放置しておいていいのか？, saizoをrespawanせよ, saizoとtobisaruをopus 1M lowにせよ, saizoとtobisaruをopus 5 1M lowにせよ, saizoのpaneをみよ, saizoが放置されていないか？, saizoは放置でいいのか？ |
 | status | provisional |
 | auto_generated | true |
 | source_cmd | cmd_3868 |
@@ -8989,6 +9034,9 @@ codd:
 | cmd | `cmd_reflux_promotion_202607272302_saizo` (`projects/infra/lessons_shogun.yaml`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T01:43:07+09:00 biyznk6hg Monitor event: "retry unit test run completion (leader actively progressing through 179 files)" ok 48 direct - |
 | cmd | `cmd_reflux_backlink_202607290115_saizo` (`docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202607291222_saizo` (`docs/semantic-index/index.md`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T15:57:24+09:00 saizoが放置されていないか？ |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T16:15:28+09:00 saizoは放置でいいのか？ |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_b7_b19_20260727]]` (L1376) |
 
 ## provisional_tobisaru — 仮: Tobisaru
@@ -9117,6 +9165,7 @@ codd:
 | cmd | `cmd_reflux_promotion_202607272306_hayate` (`queue/reports/hayate_report_cmd_reflux_promotion_202607272306_hayate.yaml`) |
 | cmd | `cmd_karo_hotfix_round2_commit_hash_20260728` (`queue/reports/hayate_report_cmd_karo_hotfix_round2_commit_hash_20260728.yaml`) |
 | cmd | `cmd_reflux_backlink_202607291131_hayate` (`docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202607291330_hayate` (`docs/semantic-index/index.md`) |
 
 ## provisional_kotaro — 仮: Kotaro
 
@@ -9185,6 +9234,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202607290058_kotaro` (`docs/semantic-index/index.md`, `context/semantic-map.md`) |
 | cmd | `cmd_reflux_backlink_202607290337_kotaro` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_insight_202607291152_kotaro` |
+| cmd | `cmd_reflux_insight_202607291309_kotaro` |
 
 ## provisional_kagemaru — 仮: Kagemaru
 
@@ -9624,7 +9674,10 @@ codd:
 | causal | `cmd_karo_round4_impl_commit_hash_20260728` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_part2_p1a_review_publish_identity_20260728` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_hotfix_archive_report_identity_race_20260728` files_modified: [[yaml_safe_write]] |
+| lesson | `L1448` yaml_field_set.shは'-'をstdin規約として扱わない。literal値としてYAML parseされ[None]で静かに破損する |
+| causal | `cmd_karo_hotfix_report_hook_result_canonicalization_20260729` files_modified: [[yaml_safe_write]] |
 | causal_chain | `[[cmd_karo_ci_red_remaining_unit_202607151950]]` (L1041) |
+| causal_chain | `[[cmd_karo_hotfix_report_hook_result_canonicalization_20260729]]` (L1448) |
 
 ## inbox_processing_discipline — inbox処理規律
 
@@ -10425,6 +10478,9 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T23:15:33.781316+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T23:29:11.418901+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T03:02:51.955236+00:00 git pre-commit semantic propagation for context/projects changes |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T03:27:27.895174+00:00 git pre-commit semantic propagation for context/projects changes |
+| cmd | `cmd_karo_hotfix_cmd_complete_context_metadata_postcommit_20260729` (`scripts/cmd_complete_gate.sh`, `tests/unit/test_cmd_complete_gate.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T04:00:17.288295+00:00 git pre-commit semantic propagation for context/projects changes |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
