@@ -29,6 +29,8 @@ record_karo_review() {
 
 run_archive() {
     ARCHIVE_COMPLETED_PROJECT_DIR="$FIX" \
+        SHOGUN_COMPLETION_GENERATION="$(printf 'a%.0s' {1..64})" \
+        DEFENSE_OVERHEAD_LEDGER="$FIX/logs/defense_overhead.jsonl" \
         timeout 200 bash "$REPO_ROOT/scripts/archive_completed.sh" 3 "$CMD" 2>&1
 }
 

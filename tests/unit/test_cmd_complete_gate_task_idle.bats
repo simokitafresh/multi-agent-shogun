@@ -222,7 +222,8 @@ stub_cmd_complete_side_effects() {
     rm -f "$TEST_PROJECT/queue/gates/$TEST_CMD_ID/"*.done
     : > "$TEST_PROJECT/queue/shogun_to_karo.yaml"
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run env SHOGUN_COMPLETION_GENERATION="$(printf 'a%.0s' {1..64})" \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 0 ]
     [[ "$output" == *"No-task benchmark fast path"* ]]
     [[ "$output" == *"GATE CLEAR: cmd完了許可"* ]]
@@ -244,7 +245,8 @@ binary_checks:
     result: no
 EOF
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run env SHOGUN_COMPLETION_GENERATION="$(printf 'a%.0s' {1..64})" \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [ "$status" -eq 1 ]
     [[ "$output" != *"No-task benchmark fast path"* ]]
     [[ "$output" == *"No-task parent report validation"* ]]
@@ -282,7 +284,8 @@ os.utime(sys.argv[1], ns=(100, 100))
 os.utime(sys.argv[2], ns=(200, 200))
 PY
 
-    run bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
+    run env SHOGUN_COMPLETION_GENERATION="$(printf 'a%.0s' {1..64})" \
+        bash "$TEST_PROJECT/scripts/cmd_complete_gate.sh" "$TEST_CMD_ID"
     [[ "$output" == *"$(basename "$submitted"): OK"* ]]
     [[ "$output" != *"$(basename "$stale"): verdict=MISSING"* ]]
     [[ "$output" != *"no_task_parent_report:$(basename "$stale")"* ]]

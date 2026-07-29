@@ -1810,6 +1810,18 @@ set_matching_tasks_idle() {
     echo "  summary: updated=${updated_count} skipped=${skipped_count} warn=${warn_count}"
 }
 
+record_finalize_phase_event() {
+    local phase="${1:-}" generation="${SHOGUN_COMPLETION_GENERATION:-}"
+    [[ "$phase" =~ ^(archive|task_idle)$ ]] || return 2
+    [[ "$generation" =~ ^[0-9a-f]{64}$ ]] || return 2
+    defense_overhead_write completion_finalize "$phase" 0 PASS \
+        "completion-finalize-${phase}-${CMD_ID}-${generation}" \
+        "{\"cmd_id\":\"${CMD_ID}\",\"generation\":\"${generation}\"}" || {
+        [ "$?" -eq 4 ] && return 0
+        return 3
+    }
+}
+
 # ─── CoDD registry自動追記（cmd_2510） ───
 # 共有台帳の並行手編集を避けるため、CoDD改善cmdのCLEAR時にgate側で一元追記する。
 append_codd_registry_entry() {
@@ -9114,6 +9126,11 @@ fi
 # ─── 判定結果 ───
 echo ""
 if [ "$ALL_CLEAR" = true ]; then
+    if [[ ! "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}$ ]]; then
+        echo "GATE BLOCK: ${CMD_ID}:completion_generation_missing_or_invalid"
+        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\tcompletion_generation_missing_or_invalid' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID")"
+        exit 1
+    fi
     GATE_CLEAR_TS="$(date +%Y-%m-%dT%H:%M:%S)"
     GATE_DURATION_METRIC=$(build_clear_duration_metric)
     GATE_THROUGHPUT_METRIC=$(build_clear_throughput_metric "$GATE_CLEAR_TS")
@@ -9868,13 +9885,17 @@ PYEOF
     echo ""
     echo "Archive (post-GATE CLEAR):"
     if [ ! -f "$GATES_DIR/archive.done" ]; then
-        (bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || echo "  [INFO] archive: WARN (failed, non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
+        (SHOGUN_COMPLETION_GENERATION="$SHOGUN_COMPLETION_GENERATION" \
+            bash "$SCRIPT_DIR/scripts/archive_completed.sh" "$CMD_ID" >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 \
+            || echo "  [INFO] archive: WARN (failed, non-blocking)" >> "$LOG_DIR/cmd_complete_gate_async.log") &
         echo "  archive: queued (async)"
     else
         echo "  archive: already exists (skip)"
     fi
 
-    (set_matching_tasks_idle >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 || true) &
+    (set_matching_tasks_idle >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 \
+        && record_finalize_phase_event task_idle >> "$LOG_DIR/cmd_complete_gate_async.log" 2>&1 \
+        || true) &
     echo "Task idle transition: queued (async)"
 
     # ─── git push（GATE CLEAR後、殿裁定2026-03-24: GATE CLEARしたcommitは家老がpush） ───

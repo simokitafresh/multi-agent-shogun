@@ -24,6 +24,8 @@ PROJECT_DIR="${ARCHIVE_COMPLETED_PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
 source "$SCRIPT_DIR/lib/field_get.sh"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/lock_path.sh"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/lib/defense_overhead_writer.sh"
 
 QUEUE_FILE="$PROJECT_DIR/queue/shogun_to_karo.yaml"
 CHANGELOG_FILE="$PROJECT_DIR/queue/completed_changelog.yaml"
@@ -63,6 +65,10 @@ fi
 if [ -n "$CMD_ID" ] && [[ "$CMD_ID" != cmd_* ]]; then
     echo "ERROR: cmd_id は cmd_XXX 形式で指定せよ。" >&2
     usage_error "$@"
+    exit 1
+fi
+if [ -n "$CMD_ID" ] && [[ ! "${SHOGUN_COMPLETION_GENERATION:-}" =~ ^[0-9a-f]{64}$ ]]; then
+    echo "ERROR: SHOGUN_COMPLETION_GENERATION missing or invalid for ${CMD_ID}" >&2
     exit 1
 fi
 
@@ -2017,7 +2023,18 @@ archive_dashboard
 # archive.doneフラグ出力（CMD_ID指定時のみ）
 if [ -n "$CMD_ID" ]; then
     mkdir -p "$PROJECT_DIR/queue/gates/${CMD_ID}"
-    touch "$PROJECT_DIR/queue/gates/${CMD_ID}/archive.done"
+    _archive_event_id="completion-finalize-archive-${CMD_ID}-${SHOGUN_COMPLETION_GENERATION}"
+    defense_overhead_write completion_finalize archive 0 PASS "$_archive_event_id" \
+        "{\"cmd_id\":\"${CMD_ID}\",\"generation\":\"${SHOGUN_COMPLETION_GENERATION}\"}" \
+        || _archive_writer_rc=$?
+    if [ "${_archive_writer_rc:-0}" -ne 0 ]; then
+        if [ "$_archive_writer_rc" -ne 4 ]; then
+            echo "ERROR: archive completion event write failed (rc=${_archive_writer_rc})" >&2
+            exit 1
+        fi
+    fi
+    touch "$TMP/archive.done"
+    mv "$TMP/archive.done" "$PROJECT_DIR/queue/gates/${CMD_ID}/archive.done"
     echo "[archive_completed] gate flag: queue/gates/${CMD_ID}/archive.done"
 fi
 
