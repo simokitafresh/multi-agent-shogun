@@ -8609,6 +8609,7 @@ codd:
 | causal | `docs/research/detector-audit-portability-phase2-asis-tobe-5w1h_20260726.md` — [[semantic_causal_automation]] -> [[detector-audit-portability-phase2-asis-tobe-5w1h_20260726]] |
 | causal | `docs/research/dm-signal-page-style-diff-mece-part-hanzo_20260722.md` — [[semantic_causal_automation]] -> [[dm-signal-page-style-diff-mece-part-hanzo_20260722]] |
 | causal | `docs/research/dm-signal-page-style-diff-mece-part-hayate_20260722.md` — [[semantic_causal_automation]] -> [[dm-signal-page-style-diff-mece-part-hayate_20260722]] |
+| causal | `cmd_reflux_backlink_202607300357_hayate` — [[semantic_causal_automation]] -> `docs/research/fragments/mece_v2_saizo_20260722.md` |
 | causal | `cmd_reflux_backlink_202607300224_hayate` — [[semantic_causal_automation]] -> `docs/research/fragments/mece_v2_kotaro_20260722.md` |
 | causal | `cmd_reflux_backlink_202607291658_hanzo` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-saizo_20260722.md` |
 | causal | `cmd_reflux_backlink_202607291847_hanzo` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-tobisaru_20260722.md` |
