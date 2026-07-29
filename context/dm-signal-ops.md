@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
 <!-- last_updated: 2026-07-29 monthly_returns_gen telemetry checkpoint -->
-<!-- source_commit:f7489c3bd6ad15a5349f1302eaaf96cd9ccad1b2 reason:post-deploy monthly_returns_gen bottleneck checkpoint reflected -->
+<!-- source_commit:3b9327f823a7dc4372b435e38105e7ca129a336e reason:recalculate-sync end_date measurement runbook reflected -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -1313,3 +1313,11 @@ GA-144原因: `dm-signal-ops.md`のlast_updatedは2026-06-26で、2026-06-26以�
 - `bounded_signal_ledger_baseline_20260715` capabilityは、実行時点で「確定域かつledger event不在」の行を述語から全件導出し、現行`holding_signal`をbaseline eventとしてappend-only INSERTする。事前件数を固定せず、transaction内で未被覆0・既存ledger canonical SHA不変・他表write 0をfail-closed検証する。
 - 2026-07-15本番実績はscope 341,799、実行前未被覆52行/52PF、INSERT 52、実行後被覆341,799/341,799 (100%)、ledger 15,160→15,212、既存SHA前後一致。backup=`/mnt/c/Python_app/DM-signal/outputs/analysis/cmd_3947_baseline_freeze_backup.json`。
 - 再実行は同じ述語で対象を再導出するため、現時点で未被覆0ならINSERT 0となる。新たな未被覆が発生した場合のみ新規baselineを追加する。凍結値が誤っていた場合も既存行をUPDATE/DELETEせず、`POST /admin/signal-decision-ledger/corrections`でcorrection eventを追記する。
+
+## §84 recalculate-sync同一logical_date再計測 (commit 3b9327f8, 2026-07-29)
+
+- Render backendのlive commitが`3b9327f823a7dc4372b435e38105e7ca129a336e`であることを一次情報で確認してから実行する。未一致ならPOSTせず停止する。
+- 全PFを同一logical dateで直列再計測する入力は`POST /admin/recalculate-sync?start_date=2000-01-01&end_date=2026-07-28&mode=portfolio`。`portfolio_id`は指定しない（2026-06-08時点78PF。実行時は本番DBで総数を再確認）。
+- accepted responseの`run_id`と`end_date`を証跡へ記録し、`end_date=2026-07-28`を照合する。完了判定はresponse受付ではなくDB `recalculation_status`の同一`run_id` completedを使う。
+- `end_date`はISO `YYYY-MM-DD`。未指定は`date.today()`、形式不正・`start_date`以前・未来日はrun予約/lock/business write前に`ValidationError`となる。有効値は`recalculate_history_fast(end_date=...)`へ透過伝播する。
+- 因果リンク: [[同日再計測の終端日が実行日へ揺れる]] -> [[recalculate-sync_end_date契約]] -> [[同一logical_date全PF直列計測]]

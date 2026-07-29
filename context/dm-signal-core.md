@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-29 monthly_returns_gen sub-metrics telemetry contract -->
-<!-- source_commit:f7489c3bd6ad15a5349f1302eaaf96cd9ccad1b2 reason:monthly_returns_gen breakdown telemetry reflected -->
+<!-- last_updated: 2026-07-29 recalculate-sync end_date API contract -->
+<!-- source_commit:3b9327f823a7dc4372b435e38105e7ca129a336e reason:recalculate-sync end_date contract reflected -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -50,6 +50,7 @@
 
 再計算排他制御: `recalc_status.py`の`threading.Lock`。同時実行不可。409=正常排他(FAILではない)。30秒待って再実行。status timestampはUTC/JST cutoverを明示して書き込む（commit 546565d6）。→ `projects/dm-signal.yaml` (c) recalculate_concurrency
 2026-07-09 cmd_3788: Render複数worker下の再計算running判定はDB `recalculation_status`がSSOT。`/admin/recalculate-status`は最新running DB行を見て`source=db`で返し、`/admin/recalculate-sync`はbackground投入前にDB/advisory lock排他を取れない場合409で止める。詳細 → `context/dm-signal-ops.md` §59 / `/mnt/c/Python_app/DM-signal/docs/research/cmd_3788_recalc_status_db_ssot.md`
+2026-07-29 commit `3b9327f8`: `POST /admin/recalculate-sync`の任意`end_date`はISO `YYYY-MM-DD`。未指定時は`date.today()`、形式不正・`start_date`以前・未来日はrun予約/lock/business write前に`ValidationError`で停止する。有効値はbackground taskから`recalculate_history_fast(..., end_date=effective_end_date)`へ透過伝播し、accepted responseにも確定`end_date`を返す。運用手順 → `context/dm-signal-ops.md` §84。
 p̄バッチ: `p_average_results`テーブルに事前計算結果を格納。バッチ未実行 or cold sleepで空(L319)。p̄ゲート: `gate_p_average_freshness.sh`で鮮度監視。
 - L232: recalculate_fast.pyのholding_signal更新は「月変わりANDリバランス月」の2条件で制御される（cmd_764）
 
