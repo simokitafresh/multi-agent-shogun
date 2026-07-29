@@ -626,12 +626,50 @@ if state_dirty:
     os.replace(tmp, hash_state_path)
     fcntl.flock(state_lock.fileno(), fcntl.LOCK_UN)
 
+followup_queued = False
+followup_error = ""
+if stale:
+    # Connect detection to the existing insight -> reflux auto-deploy lane.
+    # Only newly observed contract hashes enter ``stale``; repeated startup
+    # scans are suppressed by last_action_contract_sha256 until the referenced
+    # script changes again.
+    followup_writer = Path(os.environ.get(
+        "SKILL_REF_FOLLOWUP_WRITER", repo_root / "scripts" / "insight_write.sh"
+    ))
+    if followup_writer.is_file() and os.access(followup_writer, os.X_OK):
+        pairs = [f"{skill} <- {resolved}" for skill, _ref, resolved, *_ in stale]
+        digest = hashlib.sha256("\n".join(sorted(pairs)).encode("utf-8")).hexdigest()[:16]
+        message = (
+            "SKILL.md追従task: gate_skill_script_refs.sh rc=2。"
+            "以下のSKILL.md×変更script対を検分し、必要な追従更新と実測を行え: "
+            + "; ".join(pairs)
+        )
+        result = subprocess.run(
+            [str(followup_writer), message, "medium", f"skill_script_refs:{digest}"],
+            cwd=repo_root,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        followup_queued = result.returncode == 0
+        if not followup_queued:
+            followup_error = (result.stderr or result.stdout).strip()[:300]
+    else:
+        followup_error = f"writer unavailable: {followup_writer}"
+
 print("=== SKILL.md script reference check ===")
 print(
     f"走査: {len(skill_files)} SKILL.md / script参照 {total_refs}件 / "
     f"参照あり {skills_with_refs}件 / roots={','.join(str(p.relative_to(repo_root)) if p.is_relative_to(repo_root) else str(p) for p in scan_roots)}"
 )
 print(f"契約hash action: required={actions_required}, deduped={deduped_stale}")
+if stale:
+    if followup_queued:
+        print(f"FOLLOWUP_QUEUED: pairs={len(stale)} route=insight->reflux")
+    else:
+        print(f"FOLLOWUP_QUEUE_WARN: pairs={len(stale)} {followup_error}")
+elif deduped_stale:
+    print(f"FOLLOWUP_SUPPRESSED: pending_pairs={deduped_stale}")
 
 if state_corrupt:
     print(f"BLOCK: contract hash state is corrupt: {hash_state_path}")
