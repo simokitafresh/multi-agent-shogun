@@ -31,17 +31,29 @@ _install_empty_ps() {
     export PATH="$TMP/no-p9:$PATH"
 }
 
+_wait_for_waiter_count() {
+    local expected="$1" attempts=0 actual
+    while :; do
+        actual="$(find "$SHOGUN_HEAVY_JOB_WAITER_DIR" -maxdepth 1 -type f 2>/dev/null | wc -l)"
+        [ "$actual" -ge "$expected" ] && return 0
+        attempts=$((attempts + 1))
+        [ "$attempts" -lt 200 ] || return 1
+        sleep 0.01
+    done
+}
+
 @test "CI waiterは先に待つnormal waiterを明示priorityで追い越す" {
     _install_empty_ps
     export SHOGUN_HEAVY_JOB_ADMISSION_HEARTBEAT_SECONDS=1
-    bash "$WRAPPER" -- bash -c 'sleep 2' &
+    release="$TMP/release-owner"
+    bash "$WRAPPER" -- bash -c 'while [ ! -e "$1" ]; do sleep 0.01; done' _ "$release" &
     owner=$!
-    sleep 0.2
     SHOGUN_HEAVY_JOB_PRIORITY=normal bash "$WRAPPER" -- bash -c 'echo normal >>"$1"' _ "$OUT" &
     normal=$!
-    sleep 0.2
     SHOGUN_HEAVY_JOB_PRIORITY=ci bash "$WRAPPER" -- bash -c 'echo ci >>"$1"' _ "$OUT" &
     ci=$!
+    _wait_for_waiter_count 2
+    touch "$release"
     wait "$owner" "$normal" "$ci"
     [ "$(sed -n '1p' "$OUT")" = "ci" ]
     [ "$(sed -n '2p' "$OUT")" = "normal" ]
@@ -50,16 +62,17 @@ _install_empty_ps() {
 @test "同priority waiterはenqueue順でhandoffし同時owner最大1" {
     _install_empty_ps
     export SHOGUN_HEAVY_JOB_ADMISSION_HEARTBEAT_SECONDS=1
-    bash "$WRAPPER" -- bash -c 'sleep 2' &
+    release="$TMP/release-owner"
+    bash "$WRAPPER" -- bash -c 'while [ ! -e "$1" ]; do sleep 0.01; done' _ "$release" &
     owner=$!
-    sleep 0.2
     for n in 1 2 3; do
         SHOGUN_HEAVY_JOB_PRIORITY=normal bash "$WRAPPER" -- bash -c \
             'v=$(cat "$1" 2>/dev/null || echo 0); v=$((v+1)); echo "$v" >"$1"; echo "$2:$v" >>"$3"; sleep 0.1; echo 0 >"$1"' \
             _ "$TMP/count" "$n" "$OUT" &
         pids[$n]=$!
-        sleep 0.1
+        _wait_for_waiter_count "$n"
     done
+    touch "$release"
     wait "$owner" "${pids[1]}" "${pids[2]}" "${pids[3]}"
     [ "$(cut -d: -f1 "$OUT" | paste -sd, -)" = "1,2,3" ]
     [ "$(cut -d: -f2 "$OUT" | sort -nr | head -1)" -eq 1 ]
@@ -168,14 +181,14 @@ CMD
     local started="$TMP/detached.started" child_pid begin end
     begin="$(date +%s)"
     run env SHOGUN_HEAVY_JOB_DRAIN_TIMEOUT=1 \
-        bash "$WRAPPER" -- bash -c 'sleep 2 & echo $! > "$1"' _ "$started"
+        bash "$WRAPPER" -- bash -c 'sleep 1.1 & echo $! > "$1"' _ "$started"
     end="$(date +%s)"
     [ "$status" -eq 124 ]
     [[ "$output" == *"did not drain within 1s"* ]]
     [ $((end - begin)) -lt 10 ]
     [ -e "$started" ]
     child_pid="$(cat "$started")"
-    sleep 1.2
+    sleep 0.3
     [ ! -e "/proc/$child_pid" ]
 }
 
@@ -577,7 +590,7 @@ print('ok')
     local fixture="$TMP/singleflight"
     mkdir -p "$fixture/tests/unit" "$fixture/scripts" "$fixture/receipts" "$fixture/sf"
     cp "$ROOT/scripts/run_tests.sh" "$ROOT/scripts/run_with_receipt.sh" "$ROOT/scripts/heavy_job_admission.sh" "$ROOT/scripts/test_timing_ledger_write.sh" "$ROOT/scripts/test_suite_timing_ledger_write.sh" "$fixture/scripts/"
-    printf '@test "slow" { sleep 2; [ -f "$BATS_TEST_FILENAME" ]; }\n' > "$fixture/tests/unit/slow.bats"
+    printf '@test "slow" { sleep 1.1; [ -f "$BATS_TEST_FILENAME" ]; }\n' > "$fixture/tests/unit/slow.bats"
     git -C "$fixture" init -q
     git -C "$fixture" config user.email test@example.com
     git -C "$fixture" config user.name test
@@ -647,7 +660,7 @@ print('ok')
     )"
     printf '%s\n99999999\norphan-generation\n%s\n%s\n%s\n' "$receipt" "$holder_pgid" "$_seed_head" "$_seed_dirty" > "$fixture/sf/unit.state"
     local started=$SECONDS
-    run timeout 12 env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED RUN_TESTS_RECEIPT_DIR="$fixture/receipts-follow" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 RUN_TESTS_SINGLEFLIGHT_STALE_SECONDS=2 BATS_MAX_TEST_JOBS=1 \
+    run timeout 12 env -u RUN_TESTS_ACTIVE -u SHOGUN_HEAVY_JOB_LOCK_HELD -u SHOGUN_HEAVY_JOB_ADMITTED RUN_TESTS_RECEIPT_DIR="$fixture/receipts-follow" RUN_TESTS_SINGLEFLIGHT_DIR="$fixture/sf" RUN_TESTS_SINGLEFLIGHT_HEARTBEAT_SECONDS=1 RUN_TESTS_SINGLEFLIGHT_STALE_SECONDS=1 BATS_MAX_TEST_JOBS=1 \
         REPO_ROOT="$linked" bash "$linked/scripts/run_tests.sh" unit
     local elapsed=$((SECONDS - started))
     kill "$holder" 2>/dev/null || true
