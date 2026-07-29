@@ -43,14 +43,18 @@ EOF
     # log stub
     log() { echo "[DEPLOY] $1" >&2; }
     export -f log
-
-    # Extract verify_ac_consistency function for ac_verify tests
-    eval "$(sed -n '/^verify_ac_consistency()/,/^}/p' "$SRC_DEPLOY_SCRIPT")"
 }
 
 teardown() {
     deploy_task_teardown
 }
+
+# cmd_round7_lane2_deploy_task_ac_20260730 AC2: 旧`eval "$(sed -n ...
+# verify_ac_consistency... "$SRC_DEPLOY_SCRIPT")"`は全49testのsetup()で毎回
+# $SRC_DEPLOY_SCRIPT(/mnt/c実体、12,816行)をsedしWSL2 9p I/O待ちで1回210-260ms課税
+# していたが、verify_ac_consistency()はdeploy_task_scaffold内のsource "$TEST_PROJECT/
+# scripts/deploy_task.sh"で既に通常関数として定義済みであり、抽出は死んだ二重定義
+# だった(敵対検証: 8test全てから抽出行を除去してもFAIL0・SKIP0で49/49 PASSを実測)。
 
 # ─── Helper functions for ac_version tests ───
 
