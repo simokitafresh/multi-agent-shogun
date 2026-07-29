@@ -8696,6 +8696,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607292152_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607292304_tobisaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607300053_hayate` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607300128_kotaro` — [[semantic_causal_automation]] -> `docs/research/fragments/mece_reverify_kotaro_20260722.md` |
 | causal | `cmd_reflux_backlink_202607300120_saizo` — [[semantic_causal_automation]] -> `docs/research/fragments/mece_reverify_hanzo_20260722.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
