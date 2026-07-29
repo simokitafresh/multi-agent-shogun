@@ -23,7 +23,8 @@ setup() {
   TMPROOT="$BATS_TEST_TMPDIR/case"
   mkdir -p "$TMPROOT/bin" "$TMPROOT/out"
   SOURCE="$TMPROOT/source"
-  git clone -q --shared "$BATS_FILE_TMPDIR/source-fixture" "$SOURCE"
+  mkdir -p "$SOURCE"
+  cp -a --reflink=auto "$BATS_FILE_TMPDIR/source-fixture/." "$SOURCE/"
   git -C "$SOURCE" config user.email test@example.invalid
   git -C "$SOURCE" config user.name test
   FIXED_SHA="$(git -C "$SOURCE" rev-parse HEAD)"
@@ -111,6 +112,8 @@ PY
   run_bridge
 
   [ "$status" -eq 0 ]
+  [ "$(git -C "$BATS_FILE_TMPDIR/source-fixture" config --local user.name)" = test ]
+  [ "$(git -C "$BATS_FILE_TMPDIR/source-fixture" config --local user.email)" = test@example.invalid ]
   [ "$(git -C "$TMPROOT/work" config --local user.name)" = "Campaign Source" ]
   [ "$(git -C "$TMPROOT/work" config --local user.email)" = campaign@example.invalid ]
 }
