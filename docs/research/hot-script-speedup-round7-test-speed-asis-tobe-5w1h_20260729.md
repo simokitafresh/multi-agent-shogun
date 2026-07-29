@@ -1,4 +1,4 @@
-# 【✅弾#0=live着地済み(schema移行事故は喪失受理+再発防止hotfix稼働でクローズ)。wave-final発射条件充足 — 本体はwave-final後に序列確定→裁可】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.5 (2026-07-30 01:20 将軍覚醒更新。殿発案22:06)
+# 【🚀本体解禁(殿裁可2026-07-30 03:09)— 弾台帳TOP10確定・起票開始】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.6 (2026-07-30 03:10 本体弾台帳確定。殿発案07-29 22:06)
 
 ## §-2.5 弾#0実行結果(2026-07-30 01:20時点 — 掲示板+才蔵全数走査+gate_metrics一次確認)
 
@@ -13,7 +13,25 @@
 | 第六弾影響照合 | 07-30 00:13 | ✅旧test ledger依存**0件**(第六弾v1.8+独立レビュー報告)=第六弾の代替蓄積期間0日 |
 | 殿優先裁定 | 07-30 00:37 | 『第五〜第七弾が優先だ』 |
 
-**現況(02:50更新)**: **wave-final完了(02:45)=序列SSOT成立**。4識別子exact結合実証(receipt=1/per-file=183集合差0/per-suite=1、run_id=20260729T172800.4154957.21942、2,800/2,800 PASS)。序列TOP5=test_inbox_write 68.2s/test_deploy_task_ac_handling 67.6s/test_heavy_job_admission 67.0s/test_deploy_task 58.7s/test_cmd_complete_gate 56.8s。全TOP20=`hot-script-speedup-round5-wave-final-snapshot-20260730.md`(commit b70cb5179)。**残=第二段=本体裁可(殿)→弾数固定→起票解禁**。
+**現況(03:10更新)**: **wave-final完了(02:45)=序列SSOT成立**。4識別子exact結合実証(receipt=1/per-file=183集合差0/per-suite=1、run_id=20260729T172800.4154957.21942、2,800/2,800 PASS)。**★殿裁可03:09『裁可』=本体(第二段)起票解禁の正式成立**。
+
+## §-2.4 本体弾台帳(2026-07-30 03:10確定 — 序列SSOT=wave-final snapshot、弾数=TOP10で固定・第五弾憲法踏襲)
+
+| # | 標的testファイル | wall(s) | tests | 状態 | 方針(共通: 検査は1つも削らない・敵対fixtureは変更した独立oracle/副作用境界ごと・stdout/判定境界維持) |
+|---|---|---|---|---|---|
+| 1 | `test_inbox_write.bats` | 68.219 | 102 | ❄ | AC1=per-test/setup寄与のfocused serial probe→最大寄与是正 |
+| 2 | `test_deploy_task_ac_handling.bats` | 67.552 | 49 | ❄ | 同上(tests49でwall67.5s=1test平均1.4s。fixture/setup税の疑い) |
+| 3 | `test_heavy_job_admission.bats` | 66.977 | 86 | ❄ | 同上 |
+| 4 | `test_deploy_task.bats` | 58.697 | 53 | ❄ | 同上(#2と同一subject。所有分離に注意=1ファイル1レーン) |
+| 5 | `test_cmd_complete_gate.bats` | 56.815 | 161 | ❄ | 同上 |
+| 6 | `test_report_field_set_batch_throughput.bats` | 55.023 | 20 | ❄ | tests20でwall55s=1test平均2.8s(最重)。throughput fixtureの構造是正候補 |
+| 7 | `test_run_tests.bats` | 53.436 | 53 | ❄ | runner自己テスト。弾#0直後ゆえ回帰に最注意 |
+| 8 | `test_deploy_task_lifecycle.bats` | 47.256 | 92 | ❄ | #2/#4と所有調整の上直列 |
+| 9 | `test_campaign_lane_shard_item.bats` | 43.909 | 36 | ❄ | focused probe→是正 |
+| 10 | `test_ninja_monitor_stall.bats` | 41.067 | 78 | ❄ | focused probe→是正 |
+
+- TOP10累積=559.7s/run(全量747.5sの74.9%)。母集団と数値の正本=`hot-script-speedup-round5-wave-final-snapshot-20260730.md`(commit b70cb5179)
+- 停止条件=反復サイクル型(殿裁定13:26)・read-only段のみ冗長2名可(13:28)・報告整形は最終集約(13:31)。before/after計測は同一4識別子契約のfixed-window比較で行う
 
 ## §-2 版履歴
 - v1.5(07-30 01:20): §-2.5新設(弾#0実行結果・事故と受理・wave-final発射条件充足の刻印)。旧ledger喪失により§0の序列SSOTは「wave-final以降の新schema計測のみ」で構成することを明確化(過去比較は不能=正直記載)
