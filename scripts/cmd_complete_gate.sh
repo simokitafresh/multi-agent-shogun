@@ -263,6 +263,7 @@ PY
 report_ci_push_state() {
     local report_file="$1"
     local repo_dir="${2:-$SCRIPT_DIR}"
+    local task_file="${3:-}"
     local expected_head report_commit report_kind
 
     expected_head=$(resolve_ci_expected_head "$repo_dir")
@@ -271,7 +272,7 @@ report_ci_push_state() {
         return 0
     fi
 
-    IFS=$'\t' read -r report_kind report_commit < <(REPORT_FILE="$report_file" REPO_ROOT="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}" python3 - <<'PY'
+    IFS=$'\t' read -r report_kind report_commit < <(REPORT_FILE="$report_file" TASK_FILE="$task_file" REPO_ROOT="${SCRIPT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}" python3 - <<'PY'
 import pathlib
 import re
 import os
@@ -284,6 +285,44 @@ try:
 except Exception:
     print("invalid\t")
     raise SystemExit
+
+task_file = os.environ.get("TASK_FILE", "")
+if task_file:
+    try:
+        with open(task_file, encoding="utf-8") as f:
+            task_raw = yaml.safe_load(f) or {}
+        task = task_raw.get("task", task_raw)
+    except Exception:
+        print("invalid\t")
+        raise SystemExit
+    report_contract = report.get("commit_contract")
+    task_contract = task.get("commit_contract") if isinstance(task, dict) else None
+    report_type = str(
+        (report_contract or {}).get("task_type") or report.get("task_type") or ""
+    ).strip()
+    task_type = str(
+        (task_contract or {}).get("task_type") or task.get("task_type") or ""
+    ).strip()
+    files = report.get("files_modified")
+    commit = str(report.get("commit_hash") or "").strip()
+    no_code_types = {
+        "no-code", "no_code", "decision", "decision_candidate",
+        "data-readonly", "data_readonly", "readonly", "read_only",
+        "recon", "recon2", "scout",
+    }
+    if (
+        isinstance(report_contract, dict)
+        and isinstance(task_contract, dict)
+        and report_contract.get("required") is False
+        and task_contract.get("required") is False
+        and report_type in no_code_types
+        and task_type in no_code_types
+        and report_type == task_type
+        and files == []
+        and not commit
+    ):
+        print("contract-no-code\t")
+        raise SystemExit
 
 files = report.get("files_modified") or []
 if isinstance(files, str):
@@ -332,7 +371,9 @@ else:
 PY
 )
 
-    if [ "$report_kind" = "sentinel" ]; then
+    if [ "$report_kind" = "contract-no-code" ]; then
+        echo "UNPUSHED: commit_contract no-code task"
+    elif [ "$report_kind" = "sentinel" ]; then
         echo "UNPUSHED: no-code-change sentinel"
     elif [ "$report_kind" = "tree-sentinel" ]; then
         if git -C "$repo_dir" cat-file -e "${report_commit}^{tree}" 2>/dev/null; then
@@ -414,7 +455,8 @@ if [ "${CMD_COMPLETE_GATE_COMMIT_REPO_ONLY:-0}" = "1" ]; then
 fi
 if [ "${CMD_COMPLETE_GATE_CI_PUSH_STATE_ONLY:-0}" = "1" ]; then
     report_ci_push_state "${CMD_COMPLETE_GATE_CI_REPORT:?report required}" \
-        "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$PWD}"
+        "${CMD_COMPLETE_GATE_CI_REPO_DIR:-$PWD}" \
+        "${CMD_COMPLETE_GATE_TASK_FILE:-}"
     exit $?
 fi
 # cmd_complete_gate.sh — cmd完了時の全ゲートフラグ確認スクリプト（ディレクトリ方式）
@@ -8836,7 +8878,7 @@ for task_file in "${MATCHING_TASK_FILES[@]}"; do
             BLOCK:*) CI_PUSH_STATE_BLOCK="$commit_repo_result"; break ;;
             *) task_repo_dir="$commit_repo_result" ;;
         esac
-        ci_push_state=$(report_ci_push_state "$report_file" "$task_repo_dir")
+        ci_push_state=$(report_ci_push_state "$report_file" "$task_repo_dir" "$task_file")
         case "$ci_push_state" in
             PUSHED:*) CI_PUSH_DETECTED=true; _CI_PUSH_REPO_DIRS["$task_repo_dir"]=1 ;;
             BLOCK:*) CI_PUSH_STATE_BLOCK="$ci_push_state"; break ;;

@@ -3971,10 +3971,77 @@ make_ci_push_repo() {
 }
 
 run_ci_push_state() {
-    local repo="$1" report="$2"
+    local repo="$1" report="$2" task="${3:-}"
     run env CMD_COMPLETE_GATE_CI_PUSH_STATE_ONLY=1 \
         CMD_COMPLETE_GATE_CI_REPO_DIR="$repo" \
-        CMD_COMPLETE_GATE_CI_REPORT="$report" bash "$SRC_GATE_SCRIPT"
+        CMD_COMPLETE_GATE_CI_REPORT="$report" \
+        CMD_COMPLETE_GATE_TASK_FILE="$task" bash "$SRC_GATE_SCRIPT"
+}
+
+# test_necessity: readonly recon/scout reports with a symmetric optional
+# commit contract must not be mistaken for unpublished implementation.
+@test "CI push detection skips symmetric empty no-code recon contract" {
+    local repo="$BATS_TEST_TMPDIR/no-code-contract"
+    local report="$BATS_TEST_TMPDIR/no-code-contract-report.yaml"
+    local task="$BATS_TEST_TMPDIR/no-code-contract-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: recon2\ncommit_hash: ""\nfiles_modified: []\ncommit_contract: {required: false, task_type: recon2}\n' > "$report"
+    printf 'task:\n  task_type: recon2\n  commit_contract: {required: false, task_type: recon2}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [ "$output" = "UNPUSHED: commit_contract no-code task" ]
+}
+
+# test_necessity: report-only optional-contract claims must remain fail-closed.
+@test "CI push detection blocks report-only no-code contract spoof" {
+    local repo="$BATS_TEST_TMPDIR/no-code-report-spoof"
+    local report="$BATS_TEST_TMPDIR/no-code-report-spoof-report.yaml"
+    local task="$BATS_TEST_TMPDIR/no-code-report-spoof-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: recon\ncommit_hash: ""\nfiles_modified: []\ncommit_contract: {required: false, task_type: recon}\n' > "$report"
+    printf 'task:\n  task_type: recon\n  commit_contract: {required: true, task_type: recon}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: report commit"* ]]
+}
+
+# test_necessity: task/report optional-contract disagreement must not bypass CI.
+@test "CI push detection blocks no-code contract type mismatch" {
+    local repo="$BATS_TEST_TMPDIR/no-code-type-mismatch"
+    local report="$BATS_TEST_TMPDIR/no-code-type-mismatch-report.yaml"
+    local task="$BATS_TEST_TMPDIR/no-code-type-mismatch-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: recon\ncommit_hash: ""\nfiles_modified: []\ncommit_contract: {required: false, task_type: recon}\n' > "$report"
+    printf 'task:\n  task_type: scout\n  commit_contract: {required: false, task_type: scout}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: report commit"* ]]
+}
+
+# test_necessity: an implementation path cannot hide behind an optional recon contract.
+@test "CI push detection blocks nonempty files under no-code contract" {
+    local repo="$BATS_TEST_TMPDIR/no-code-files"
+    local report="$BATS_TEST_TMPDIR/no-code-files-report.yaml"
+    local task="$BATS_TEST_TMPDIR/no-code-files-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: recon\ncommit_hash: ""\nfiles_modified: [{path: scripts/x.sh}]\ncommit_contract: {required: false, task_type: recon}\n' > "$report"
+    printf 'task:\n  task_type: recon\n  commit_contract: {required: false, task_type: recon}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "BLOCK: report commit"* ]]
+}
+
+# test_necessity: an actual commit still uses the remote containment boundary.
+@test "CI push detection preserves remote boundary for committed no-code contract" {
+    local repo="$BATS_TEST_TMPDIR/no-code-committed"
+    local report="$BATS_TEST_TMPDIR/no-code-committed-report.yaml"
+    local task="$BATS_TEST_TMPDIR/no-code-committed-task.yaml"
+    make_ci_push_repo "$repo"
+    printf 'task_type: recon2\ncommit_hash: %s\nfiles_modified: []\ncommit_contract: {required: false, task_type: recon2}\n' "$(git -C "$repo" rev-parse HEAD)" > "$report"
+    printf 'task:\n  task_type: recon2\n  commit_contract: {required: false, task_type: recon2}\n' > "$task"
+    run_ci_push_state "$repo" "$report" "$task"
+    [ "$status" -eq 0 ]
+    [[ "$output" == PUSHED:* ]]
 }
 
 run_commit_repo_resolution() {
