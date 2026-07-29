@@ -480,7 +480,10 @@ deploy_task_guard_done_report_unarchived() {
     [ -n "$ninja_name" ] || return 1
     [ -n "$parent_cmd" ] || return 1
     for report_file in "$SCRIPT_DIR/queue/reports/${ninja_name}_report_${parent_cmd}"*.yaml; do
-        [ -f "$report_file" ] && return 0
+        # archive_completed.sh keeps a temporary compatibility symlink at the
+        # former active path.  The report body is already archived, so treating
+        # that symlink as unarchived permanently blocks the worker's next task.
+        [ -f "$report_file" ] && [ ! -L "$report_file" ] && return 0
     done
     return 1
 }

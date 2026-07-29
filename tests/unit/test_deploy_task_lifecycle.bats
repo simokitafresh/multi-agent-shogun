@@ -1060,6 +1060,32 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: archive_completed.shの互換symlinkはarchive済み報告であり、
+# 次task配備を未archiveとして遮断してはならない。
+@test "cmd_4170: archived report compatibility symlink does not block next command" {
+    cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
+task:
+  parent_cmd: cmd_old
+  status: done
+EOF
+    mkdir -p "$TEST_PROJECT/queue/archive/reports"
+    cat > "$TEST_PROJECT/queue/archive/reports/hayate_report_cmd_old.yaml" <<'EOF'
+worker_id: hayate
+verdict: PASS
+EOF
+    ln -s "$TEST_PROJECT/queue/archive/reports/hayate_report_cmd_old.yaml" \
+        "$TEST_PROJECT/queue/reports/hayate_report_cmd_old.yaml"
+
+    run bash -lc '
+        set -euo pipefail
+        export DEPLOY_TASK_LIB_ONLY=1
+        source "$1/scripts/deploy_task.sh"
+        NINJA_NAME=hayate
+        deploy_task_guard_worker_assignment "$1/queue/tasks/hayate.yaml" cmd_new
+    ' -- "$TEST_PROJECT"
+    [ "$status" -eq 0 ]
+}
+
 @test "cmd_4170: done task with unarchived report does not block a same-cmd redeploy" {
     cat > "$TEST_PROJECT/queue/tasks/hayate.yaml" <<'EOF'
 task:
