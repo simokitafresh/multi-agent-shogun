@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-30 cmd_karo_hotfix_task_selector_test_classification_20260730 reviewed source boundary -->
-<!-- source_commit:5f75e5703 reason:cmd_karo_hotfix_task_selector_test_classification_20260730 reviewed source boundary evidence:cmd_complete_gate -->
+<!-- last_updated: 2026-07-30 cmd_karo_round5_lane_git_precommit_shell_syntax_20260730 reviewed source boundary -->
+<!-- source_commit:aeef4a640 reason:cmd_karo_round5_lane_git_precommit_shell_syntax_20260730 reviewed source boundary evidence:cmd_complete_gate -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -898,7 +898,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1463 -->
+<!-- last_synced_lesson: L1464 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2075,6 +2075,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1461: 台帳schema移行前にhash付きsnapshotと復元検証を必須化する（cmd_karo_round7_bullet0_run_identity_20260729）
 - L1462: 分類語は問題説明本文ではなく目的宣言位置で判定する（cmd_4194）
 - L1463: task selector 0件は直接filter PASSで代替完了にしない（cmd_karo_hotfix_ledger_schema_snapshot_guard_20260730）
+- L1464: fixed-window弾の世代ラベルと数値を4点契約で照合する（cmd_karo_round5_lane_git_precommit_shell_syntax_20260730）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

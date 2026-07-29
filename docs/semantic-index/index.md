@@ -119,6 +119,7 @@ codd:
 | causal | `cmd_karo_hotfix_report_hook_result_canonicalization_20260729` files_modified: [[circular_lock_reconciler_fix]] |
 | causal | `cmd_karo_round5_lane_report_publish_20260729` files_modified: [[circular_lock_reconciler_fix]] |
 | causal | `cmd_karo_round5_lane_report_field_set_files_modified_20260730` files_modified: [[circular_lock_reconciler_fix]] |
+| causal | `cmd_karo_round5_lane_report_field_set_commit_hash_20260729` files_modified: [[circular_lock_reconciler_fix]] |
 
 ## strong_new_game_completion_contract — 強くてニューゲーム完遂契約
 
@@ -243,6 +244,7 @@ codd:
 | causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[dm_signal_pf_restore_guardrails]] |
 | causal | `cmd_karo_hotfix_ga293_codd_scope_contract_20260729` files_modified: [[dm_signal_pf_restore_guardrails]] |
+| causal | `cmd_karo_hotfix_rc_revision_requested_redeploy_20260730` files_modified: [[dm_signal_pf_restore_guardrails]] |
 
 ## gs_recalibration_plan — GS再キャリブレーション計画
 
@@ -2620,6 +2622,7 @@ codd:
 | causal | `cmd_karo_hotfix_gate_revert_commit_identity_20260729` files_modified: [[gate_bypass_prevention]] |
 | causal | `cmd_karo_round5_lane_report_publish_20260729` files_modified: [[gate_bypass_prevention]] |
 | causal | `cmd_karo_round5_lane_report_field_set_files_modified_20260730` files_modified: [[gate_bypass_prevention]] |
+| causal | `cmd_karo_round5_lane_report_field_set_commit_hash_20260729` files_modified: [[gate_bypass_prevention]] |
 
 ## terminology_dictionary — 用語辞書
 
@@ -3810,6 +3813,7 @@ codd:
 | lesson | `L1456` 統合済みtest pathは実行前に実在確認する |
 | lesson | `L1462` 分類語は問題説明本文ではなく目的宣言位置で判定する |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-30T00:36:51+09:00 [[殿裁定_promotion_v12待機_20260730]]: 殿裁定2026-07-30 00:36『promotion v1.2は指示があるまで待機せよ』。将軍が00:27にLS085(可逆自走)を適用して自走開始を下知したが、殿裁 |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-30T01:17:45+09:00 進捗を確認して、ドキュメントを覚醒アップデートせよ |
 | causal_chain | `[[cmd_3646]]` (L929) |
 | causal_chain | `[[cmd_3649]]` (L932) |
 | causal_chain | `[[cmd_karo_hotfix_ga170_context_freshness_202607030012]]` (L943) |
@@ -5633,6 +5637,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T13:30:39+09:00 [[殿裁定_readonly冗長並列_20260729]]: 13:28『read onlyなら複数に同じ内容を配備させればいい。誰かが成功すればそれでいいはずだ』。偵察・計測・調査などread-only taskはidle忍者複数へ同一内 |
 | causal | `cmd_karo_hotfix_ga293_codd_scope_contract_20260729` files_modified: [[agent_formation_management]] |
 | causal | `cmd_karo_hotfix_ga414_context_freshness_20260729` files_modified: [[agent_formation_management]] |
+| causal | `cmd_karo_hotfix_rc_revision_requested_redeploy_20260730` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_rc_revision_requested_redeploy_20260730` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lifecycle.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
 | causal_chain | `[[cmd_3664]]` (L941) |
 | causal_chain | `[[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]` (L944) |
@@ -6107,6 +6113,7 @@ codd:
 | causal | `cmd_karo_hotfix_mr_telemetry_context_sync_20260729` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_recalculate_end_date_context_sync_20260729` files_modified: [[cdp_browser_capability]] |
 | causal | `cmd_karo_hotfix_orphan_cmd_complete_20260729` files_modified: [[cdp_browser_capability]] |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-30T01:17:05+09:00 覚醒して続けて |
 
 ## defense_hierarchy — 防御階層原則
 
@@ -6774,6 +6781,7 @@ codd:
 | causal | `cmd_karo_hotfix_deploy_b32_scope_reason_retry_20260728` files_modified: [[task_modifier_injection]] |
 | causal | `docs/research/cmd_4106_semantic_lesson_experiment_hanzo.md` — [[deploy_task_injector_benchmark]] -> [[task_modifier_injection]] |
 | causal | `cmd_karo_hotfix_ga293_codd_scope_contract_20260729` files_modified: [[task_modifier_injection]] |
+| causal | `cmd_karo_hotfix_rc_revision_requested_redeploy_20260730` files_modified: [[task_modifier_injection]] |
 
 ## training_cycle_quality — 忍者修行サイクル品質
 
@@ -7209,6 +7217,8 @@ codd:
 | causal | `cmd_karo_round5_lane_report_field_set_files_modified_20260730` files_modified: [[report_quality_protocol]] |
 | cmd | `cmd_karo_round5_lane_report_field_set_files_modified_20260730` (`scripts/report_field_set.sh`) |
 | cmd | `cmd_karo_round5_lane_report_field_set_task_commit_contract_20260730` |
+| causal | `cmd_karo_round5_lane_report_field_set_commit_hash_20260729` files_modified: [[report_quality_protocol]] |
+| cmd | `cmd_karo_round5_lane_report_field_set_commit_hash_20260729` (`scripts/report_field_set.sh`) |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
@@ -8277,6 +8287,7 @@ codd:
 | causal | `cmd_karo_hotfix_no_code_commit_reminder_20260728` files_modified: [[hook_automation_framework]] |
 | causal | `cmd_karo_round5_lane_git_precommit_yaml_ast_20260729` files_modified: [[hook_automation_framework]] |
 | causal | `cmd_karo_round5_lane_git_precommit_sourced_dep_20260729` files_modified: [[hook_automation_framework]] |
+| causal | `cmd_karo_round5_lane_git_precommit_shell_syntax_20260730` files_modified: [[hook_automation_framework]] |
 | causal_chain | `[[cmd_3728]]` (L965) |
 | causal_chain | `[[cmd_karo_ci_fix_ga218_hook_suite_202607101912]]` (L1029) |
 
@@ -8528,6 +8539,7 @@ codd:
 | causal | `cmd_karo_hotfix_ga414_context_freshness_20260729` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_round5_lane_cmd_save_checks_main_20260729` files_modified: [[causal_verification_l0_l7]] |
 | causal | `cmd_karo_round5_lane_full_precheck_20260729` files_modified: [[causal_verification_l0_l7]] |
+| causal | `cmd_karo_hotfix_rc_revision_requested_redeploy_20260730` files_modified: [[causal_verification_l0_l7]] |
 
 ## test_quality_framework — テスト品質統合フレームワーク
 
@@ -8683,6 +8695,7 @@ codd:
 | causal | `cmd_karo_hotfix_semantic_generated_dirty_20260729` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607292152_saizo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607292304_tobisaru` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607300053_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607300120_saizo` — [[semantic_causal_automation]] -> `docs/research/fragments/mece_reverify_hanzo_20260722.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
@@ -9297,6 +9310,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202607291330_hayate` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607291645_hayate` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607291926_hayate` (`docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202607300053_hayate` (`docs/semantic-index/index.md`) |
 
 ## provisional_kotaro — 仮: Kotaro
 
@@ -9725,6 +9739,7 @@ codd:
 | causal | `cmd_karo_hotfix_per_task_unit_full_ban_20260728` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_deploy_b32_scope_reason_retry_20260728` files_modified: [[scope_integrity_lifecycle]] |
 | causal | `cmd_karo_hotfix_ga293_codd_scope_contract_20260729` files_modified: [[scope_integrity_lifecycle]] |
+| causal | `cmd_karo_hotfix_rc_revision_requested_redeploy_20260730` files_modified: [[scope_integrity_lifecycle]] |
 
 ## yaml_safe_write — YAML安全書込み
 
@@ -9814,6 +9829,7 @@ codd:
 | causal | `cmd_karo_round5_lane_inbox_write_total_20260729` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_round5_lane_report_publish_20260729` files_modified: [[yaml_safe_write]] |
 | causal | `cmd_karo_round5_lane_report_field_set_files_modified_20260730` files_modified: [[yaml_safe_write]] |
+| causal | `cmd_karo_round5_lane_report_field_set_commit_hash_20260729` files_modified: [[yaml_safe_write]] |
 | causal_chain | `[[cmd_karo_ci_red_remaining_unit_202607151950]]` (L1041) |
 | causal_chain | `[[cmd_karo_hotfix_report_hook_result_canonicalization_20260729]]` (L1448) |
 | causal_chain | `[[cmd_4192]]` (L1450) |
@@ -10625,6 +10641,8 @@ codd:
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T12:28:15.271425+00:00 git pre-commit semantic propagation for context/projects changes |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T12:31:54.830917+00:00 git pre-commit semantic propagation for context/projects changes |
 | cmd | `cmd_karo_round5_lane_git_precommit_yaml_ast_20260729` (`scripts/hooks/git-pre-commit.sh`) |
+| lesson | `L1464` fixed-window弾の世代ラベルと数値を4点契約で照合する |
+| cmd | `cmd_karo_round5_lane_git_precommit_shell_syntax_20260730` (`scripts/hooks/git-pre-commit.sh`, `tests/unit/test_git_pre_commit_affected_deps.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_ga161_obsidian_link_context_freshness_202607021348]]` (L926) |
 | causal_chain | `[[cmd_3648]]` (L933) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_followup_202607071752]]` (L963) |
@@ -10637,6 +10655,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_round3_ninja_scope_commit_20260728]]` (L1429) |
 | causal_chain | `[[cmd_karo_hotfix_ninja_scope_empty_commit_guard_20260728]]` (L1439) |
 | causal_chain | `[[cmd_karo_hotfix_precommit_task_selector_20260728]]` (L1441) |
+| causal_chain | `[[cmd_karo_round5_lane_git_precommit_shell_syntax_20260730]]` (L1464) |
 
 ## commander_role_ssot_analysis — Commanderロール SSOT分析
 

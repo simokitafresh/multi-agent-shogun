@@ -178,6 +178,7 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 | result.summary | string | 空文字禁止 |
 
 ## 注意ポイント
+- 2026-07-29: gate=gate_report_format result=FAIL executor=tobisaru reason=lessons_useful[0]: id=\"report-write\" is invalid (must be a lesson ID like L074/LS086/LK-A10/LG017); lessons_useful[1]: id=\"verdict-check\" is invalid (must be a lesson ID lik...
 - 2026-07-29: gate=gate_report_format result=FAIL executor=saizo reason=cross_repo_commits: cross_repo_commits[0].repo is not an absolute Git repository; cross_repo_commits: cross_repo_commits[1].repo is not an absolute Git repository; cross_repo_co...
 - 2026-07-29: gate=gate_report_format result=FAIL executor=hanzo reason=commit_contract: files_modified path is outside planned scope: skills/report-write/SKILL.md
 - 2026-07-29: gate=gate_report_format result=FAIL executor=saizo reason=commit_contract: commit subject does not identify task_id/parent_cmd; cross_repo_commits: cross_repo_commits[0].commit_hash is not a resolvable 40-hex commit; cross_repo_commits...
@@ -197,7 +198,6 @@ FAIL → FAIL理由を修正してからStep 3を再実行。
 - 2026-07-28: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: files_modified path is outside planned scope: tests/unit/test_git_pre_commit_instruction_sync.bats; LG051: gate/hook/dispatcher変更には非test caller数の一次証跡が必須
 - 2026-07-28: gate=gate_report_format result=FAIL executor=unknown reason=worker_id: MISSING; parent_cmd: MISSING; ac_version_read: MISSING; binary_checks: MISSING; files_modified: MISSING; lesson_candidate: MISSING; commit_hash: 'dd2a615' は40文字フルhash...
 - 2026-07-28: gate=gate_report_format result=FAIL executor=hayate reason=variation_checks: required cells unfilled: normal_pass, quoted_or_heredoc, linked_worktree, parallel_or_respawn, abnormal_exit
-- 2026-07-28: gate=gate_report_format result=FAIL executor=kagemaru reason=commit_contract: files_modified path is outside planned scope: 偵察のみ; commit_contract: commit/task history does not contain owned/planned path: 偵察のみ
 
 過去のgate FAIL頻出パターン要約(生ログはlogs/gate_fire_log.yaml等の台帳が正本。ここには要約のみ保持):
 
