@@ -692,6 +692,18 @@ FILENAME == ARGV[1] {
         status_cmd = trim(s)
         next
     }
+    if (status_cmd != "" && $0 ~ /^[[:space:]]+title:/) {
+        s = $0
+        sub(/^[[:space:]]+title:[[:space:]]*/, "", s)
+        cmd_title[status_cmd] = trim(s)
+        next
+    }
+    if (status_cmd != "" && $0 ~ /^[[:space:]]+purpose:/) {
+        s = $0
+        sub(/^[[:space:]]+purpose:[[:space:]]*/, "", s)
+        cmd_purpose[status_cmd] = trim(s)
+        next
+    }
     if (status_cmd != "" && $0 ~ /^[[:space:]]+status:/) {
         s = $0
         sub(/^[[:space:]]+status:[[:space:]]*/, "", s)
@@ -762,13 +774,28 @@ END {
         last_idx[key] = i
     }
     new_total = 0; new_warn = 0
+    review_only_total = 0; review_only_warn = 0; review_only_cmds = ""
     for (key in last_idx) {
         i = last_idx[key]
-        new_total++
         ok = (v[i] ~ /^(APPROVE|LGTM|PASS|CLEAR|VERIFIED|VERIFIED_FACTS|CONDITIONAL_PASS)$/)
         if (!ok && gr[i] ~ /^(CLEAR|PASS)$/) ok = 1
         if (!ok && cid[i] != "" && cmd_status[cid[i]] ~ /^(done|completed|cancelled)$/) ok = 1
         if (!ok && cid[i] != "" && gate_clear[cid[i]]) ok = 1
+        # 実装品質の母集団は実装cmdのみ。レビュー専用cmdは、cmd台帳の
+        # title/purpose（一次データ）を主根拠とし、旧cmdの欠損時だけcmd_idを
+        # fallbackにする。一般的な "review" 単語ではなく専用語へ限定し、
+        # 実装cmdに付随する通常のdraft/reportレビューを誤除外しない。
+        review_basis = tolower(cmd_title[cid[i]] " " cid[i])
+        review_purpose = tolower(cmd_purpose[cid[i]])
+        review_only = (review_basis ~ /(delta[_ -]?review|independent[_ -]?review|design[_ -]?review|設計書.*検分|独立レビュー|敵対レビュー)/ \
+            || review_purpose ~ /^(設計書(の|を)?.*(検分|独立レビュー)|独立レビュー|敵対レビュー|delta[_ -]?review|independent[_ -]?review|design[_ -]?review)/)
+        if (review_only) {
+            review_only_total++
+            if (!ok) review_only_warn++
+            review_only_cmds = review_only_cmds ((review_only_cmds == "") ? "" : ",") cid[i] ":" v[i]
+            continue
+        }
+        new_total++
         if (!ok) new_warn++
     }
     if (new_total == 0) {
@@ -777,7 +804,8 @@ END {
     }
     new_rate = int(new_warn * 100 / new_total)
     old_rate = (old_total > 0) ? int(old_warn * 100 / old_total) : 0
-    printf "RATE %d %d %d %d\n", new_rate, new_warn, new_total, old_rate
+    if (review_only_cmds == "") review_only_cmds = "-"
+    printf "RATE %d %d %d %d %d %d %s\n", new_rate, new_warn, new_total, old_rate, review_only_warn, review_only_total, review_only_cmds
 }
 ' "$status_file" "$gate_metrics_file" "$review_log"
 }
@@ -1952,12 +1980,13 @@ fi
 echo "■ レビュー品質スケール"
 _review_quality_line="$(review_quality_scale_summary "$SCRIPT_DIR/logs/gunshi_review_log.yaml" 20 "$SCRIPT_DIR/queue/shogun_to_karo.yaml" "$SCRIPT_DIR/logs/gate_metrics.log" 2>/dev/null || echo "DATA_MISSING")"
 if [[ "$_review_quality_line" == RATE* ]]; then
-    read -r _rq_tag _rq_rate _rq_warn _rq_total _rq_old_rate <<< "$_review_quality_line"
+    read -r _rq_tag _rq_rate _rq_warn _rq_total _rq_old_rate _rq_review_warn _rq_review_total _rq_review_cmds <<< "$_review_quality_line"
     if [ -n "${_rq_old_rate:-}" ] && [ "${_rq_old_rate}" != "${_rq_rate}" ] 2>/dev/null; then
-        echo "  WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, cmd_id単位最終verdict集計, 旧方式=${_rq_old_rate}%)"
+        echo "  実装品質WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, 実装cmdのみ・cmd_id単位最終verdict集計, 旧方式=${_rq_old_rate}%)"
     else
-        echo "  WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, cmd_id単位最終verdict集計)"
+        echo "  実装品質WARN率 ${_rq_rate}% (${_rq_warn}/${_rq_total}, 実装cmdのみ・cmd_id単位最終verdict集計)"
     fi
+    echo "  レビュー専用cmd分離 ${_rq_review_total:-0}件 (WARN ${_rq_review_warn:-0}件): ${_rq_review_cmds:--}"
     if [ "${_rq_rate:-0}" -gt 30 ] 2>/dev/null; then
         echo "  WARN: レビュー品質WARN率が30%超"
         if [ "$overall" != "ALERT" ]; then
