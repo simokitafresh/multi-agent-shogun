@@ -1,4 +1,23 @@
-# 主題1: 全期間再計算(fullrecalculate)速度 — AsIs/ToBe 5W1H設計書 v3.3 (2026-07-28 — cmd_4186計測配線の本番初収穫を反映。v3.2=壁時計確定+3配線実装)
+# 主題1: 全期間再計算(fullrecalculate)速度 — AsIs/ToBe 5W1H設計書 v3.4 (2026-07-29 — 第一弾mr_genクローズ(318.99→21.12s・exact完全一致)+反復サイクル2周目状態を反映。v3.3=本番初収穫)
+
+## §0.-2 第一弾クローズ+2周目状態(2026-07-29 — 実装解禁10:41後の初サイクル完走)
+
+**第一弾(mr_gen)クローズ確定(本番run 215=20260729042344AC252C, source=3b9327f8, logical_date=2026-07-28)**:
+| 項目 | 旧run(07-28) | 今回run 215 | 差 |
+|---|---:|---:|---|
+| L3 total | 877.25s | **488.32s** | -44.3% |
+| monthly_returns_gen | 318.99s | **21.12s** | **-93.4%(15.1x)** |
+| PF集合 | 78 | 78(old_only=0/new_only=0) | 完全一致 |
+
+- mr内訳breakdown(78PF): **mr_compute sum19.73s(93.42%)**・internal_commit 0.42s・caller_commit 0s・cache_reload 0.91s・residual 0.05s → 新支配項=mr_compute
+- **値の完全一致**: 隔離local PostgreSQL clone上のgolden回帰(fixed source 3b9327f8)で**78/78PF・243,293/243,293行 exact一致**(signal・holding_signal・display_ticker_weightsを(portfolio_id,date)主キー比較。missing=0/extra=0/mismatch=0/SKIP=0/本番write=0)。read-only冗長並列(Track A/B)の**先着Track Bが達成**=殿裁定13:28の実証第一号
+- **PF母数確定(殿指摘13:44→将軍DB一次確認)**: 本番102PF=**FoF 78+Standard 24**(SELECT type,COUNT(*) GROUP BY type)。manifest 102 vs L3処理78の差はStandard別レイヤー処理の正当仕様であり処理漏れではない
+
+**2周目(mr_computeローカル極限化)= 半蔵実装完了・軍師LGTM(14:57)・家老GATE判定待ち**:
+- cProfile(25,912,611 calls/28.905s)で支配特定: in_market再帰7.95s・SQL execute 4.36s・月末DataFrame抽出2.28s・ledger 2.22s・expand 1.70s
+- 独立try総当たり→**採用2案のみ実装**: 月末判定O(1)辞書化(19.94→16.42s exact)+Core table INSERT化(16.42→15.45s exact)
+- ローカル実測: cold中央値24.03→17.99s(**1.335x**)、warm 23.24→19.41s(1.197x)、全78FoF・全期間exact mismatch=0。負け案は本実装へ残さず(反復サイクル型13:26の型どおり)
+- 次: GATE→**本番run対で再計測**(mr_compute 19.73sの本番Δ確定)→差分再検証→§3.1 #2 deferred flush(117.61s)のローカル極限化へ
 
 ## §0.-1 本番初収穫(2026-07-28定期実行 FoF run=20260728014047YD63KJ — cmd_4186新telemetryの初回本番値。将軍D0回収11:20)
 
@@ -115,10 +134,10 @@
 ## §3 To-Be(設計の骨子 — **実装解禁: 殿裁定2026-07-29 10:41『実行しよう。本番環境での計測が必須。計算結果の完全一致が必須だ』**。全弾AC1偵察先行型・本番run ID対計測・正本突合byte/ID一致を絶対条件として家老へ配備下知済み=blt_104157)
 
 ### §3.1 攻め順(cmd_4180確定内訳に基づくv3序列)
-| 優先 | 標的 | 実測 | 設計課題 |
+| 優先 | 標的 | 実測 | 状態(v3.4) |
 |---|---|---:|---|
-| 1 | **L3内 monthly_returns_gen** | 318.99s(07-28本番) | MR生成→commit→cache reloadの逐次連鎖の中でのMR計算自体の高速化。過去のOPT-6知見の再適用可否から |
-| 2 | **L3内 deferred flush(単一標的へ統合)** | 117.61s(07-28本番exclusive) | **v3.3更新: 旧2位unmeasured 122.41sと旧除外dw_signals_flush 115.26sは実体同一(§0.-1二重計上解消)**。run終端deferred DB flushのバルク化・書込み量削減が標的 |
+| 1 | **L3内 monthly_returns_gen** | ~~318.99s~~→**21.12s(07-29 run 215)** | ✅**第一弾クローズ**(§0.-2。exact完全一致済み)。残余はmr_compute 19.73s=2周目進行中(GATE判定待ち→本番再計測) |
+| 2 | **L3内 deferred flush(単一標的へ統合)** | 117.61s(07-28本番exclusive) | 次のローカル極限化標的。run 215での再実測値の回収も要(total 877→488の内訳再判定) |
 | 3 | L3内 daily_loop | 92.38s(07-28本番) | 過去のベクトル化設計(NEW-2b)の掘り起こし判断 |
 | 4 | L2 trade_perf(FoF run) | 117.35s | 共通経路上の実測コスト(経路差別は棄却済み)。cProfileでの機構特定から |
 | 5 | L5 42.3s | — | 既存資産(並列化v1.3.1+fingerprint skip)保存のまま。優先度低 |
@@ -140,7 +159,9 @@
 
 ---
 
-## §4 未解決事項(v3.3更新 — 本番初収穫で1・2・7も解消)
+## §4 未解決事項(v3.4更新 — 第一弾クローズで9を追加)
+
+9. **(v3.4新規)run 215の全区間内訳再判定**: total 877.25→488.32sの-389sがmr_gen -297.87sを上回る。差分-91sの帰属(deferred flush/daily_loop等の変動か、end_date是正の波及か)をrun 215のprofiling原文で確定し、#2以降の序列を再判定する — 反復サイクル「差分を元に再検証」段階の宿題
 
 1. ~~unmeasured区分~~ → **全解消**(v3.3: 本番初収穫§0.-1。unmeasuredの実体=deferred flush 117.61s+残余8.14sで霧は消えた)
 2. ~~PF別内訳~~ → **全解消**(v3.3: 78PF/計430.19s回収済み。平坦分布=共通コスト型の配分証拠確定)
