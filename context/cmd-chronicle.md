@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-29 -->
+<!-- last_updated: 2026-07-30 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -61,21 +61,6 @@
 
 <!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
 - → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3590 | 殿指示(2026-06-28): DM-FusionでPCチャートが表示されない、Googleログインボタンがわかりづらい、シェアの#DM-signalハッシュタグ不成立、ヘッダーがFusionのまま、詳細のSPY/TQQQが表示されない。スマホファーストはPC無視ではない | dm-signal | 06-29 | DM-FusionのPCチャート再描画、Googleログイン |
-| cmd_3592 | 殿指示(2026-06-29): DM-Fusionでスワイプが片方にしか効かない、チャート画面を表示しているとエラーになる。機能バグ2件の修正 | dm-signal | 06-29 | DM-Fusionのスワイプ双方向入力とPage1チャート表 |
-| cmd_3593 | 殿指示(2026-06-29): ドロップダウンにバグ4件。(1)フォルダー名が固定されPF名だけスクロール (2)常に下方向に開き画面下部で選択困難 (3)PF2が選択不能 (4)PFリストのフォントが大きすぎる | dm-signal | 06-29 | DM-Fusion PortfolioSelectのフォルダ |
-| cmd_3594 | 殿指示(2026-06-29): Googleでログインボタンが大きすぎる→DM-Fusionタイトルと同じ高さに縮小。CAGRと数字を入替→CAGRラベルが上、パーセント数値が下 | dm-signal | 06-29 | GoogleログインボタンをDM-Fusionタイトル高に近 |
-| cmd_3596 | 殿指示(2026-06-29): 詳細ボタン廃止→Fusion/SPY/TQQQ常時表示。Total Return右にPeriod配置。MaxDD横にシェアアイコン配置。保存済み配合→保存済みFusionにテキスト変更。保存済みFusionドロップダウンが機能していないバグ修正 | dm-signal | 06-29 | DM-Fusion Page0を詳細ボタンなしの常時5列比較 |
-| cmd_3597 | 殿指示(2026-06-29): シェアボタンの位置が悪く比較表のPF2列にボタンが被っている。シェアボタンを比較表と重ならない位置に移動 | dm-signal | 06-29 | DM-FusionのShareボタンを比較表直下の独立した罫 |
-| cmd_3598 | 殿指示(2026-06-29): Save機能を1件上書きシステムに変更し保存済みFusionドロップダウンを廃止。シェアボタンをSaveボタンの横に配置。PF1ドロップダウンを上方向に開く | dm-signal | 06-29 | DM-Fusionの保存をuser_id単位の1件上書きup |
-| cmd_3601 | 殿指示(2026-06-29): DM-Signalのadmin画面でPFを非表示にしてもFusion APIレスポンスに反映されない | dm-signal | 06-29 | fusion.pyにhide_portfolio==Fals |
-| cmd_3600 | 殿指示(2026-06-29): チャートに縦軸(Total Return)と横軸(年)がなく直感的でない。LIN/LOGグラフをトグルで切替可能に。すべての機能は高速に反応しリアルタイムの追従性が重要 | dm-signal | 06-29 | DM-FusionチャートへTotal Return倍率の縦 |
-| cmd_3602 | 殿指示(2026-06-29): cmd_3598で保存済みFusionドロップダウンを誤廃止。殿の意図は上限1件上書き。ドロップダウン復元+upsert+保存エラー修正 | dm-signal | 06-29 | DM-Fusionの保存済みFusionドロップダウンを復元 |
-| cmd_3603 | 殿指示(2026-06-29 12:09): PC版ではチャートをどう見るのか。現状md:以上でもスワイプ/ドット切替でpage 0(指標)とpage 1(チャート)を切り替えるモバイル設計のまま。PC画面幅があるのにチャートが隠れている。md:以上ではpage切替をやめ、指標とチャートを左カラムに縦並びで常時表示する | dm-signal | 06-29 | DM-Fusion PC版で左カラムに指標とチャートを縦並び |
-| cmd_3604 | 殿指示(2026-06-29 12:25): SPYとTQQQを比較として薄い破線でチャートに表示する。色を変えて区別しやすくする。FusionChartコンポーネントにSPY/TQQQの累積リターン系列を追加propsとして渡し、破線で描画する | dm-signal | 06-29 | DM-FusionチャートへSPY/TQQQ比較系列を渡し、 |
-| cmd_3605 | 殿指示(2026-06-29 13:12): DM-Signalのドロップダウンにはフォルダ選択タブ(All/メンバーシップ/オリジナル等)があり絞り込みできる。DM-Fusionも同様にフォルダフィルタタブを追加し、表示数を増やす | dm-signal | 06-29 | DM-FusionのPortfolioSelectにAll/ |
-| cmd_3606 | 殿指示(2026-06-29 14:01): ドロップダウンが上下どちらに開いても画面外にはみ出す。画面中央にモーダル/ポップアップで表示すれば根本解決。フォルダタブ+PF一覧を画面中央オーバーレイに配置 | dm-signal | 06-29 | PF選択をabsolute dropdownから画面中央fi |
-| cmd_3607 | 殿指示(2026-06-29 14:29): admin画面のオンオフ追随が遅い。フォルダ単位の一括オンオフも必要。現状はトグルの度にlocation.reload()で全ページ再読込+Fusion API再取得。クライアントサイドで即時反映し、フォルダヘッダーに一括トグルボタンを追加する | dm-signal | 06-29 | DM-Fusion admin visibility tog |
 | cmd_3609 | 殿指摘(2026-06-30 12:27): check_/gate名称含む関数だけでは品質チェック機能の全量を捕捉できない。Phase 1a(cmd_3608)で37件カタログ済みだが、家老精査(blt_122938)でinline checks 33件+名称乖離6件+学習補助3件=42件が漏れと判明。record_reason呼出し箇所ベース(機能フィルタ)で追加カタログを作成する | infra | 06-30 | cmd_save.sh record_reason呼出し箇所 |
 | cmd_3612 | 殿指示(2026-06-30): Phase 1完了後Phase 2へ。カタログの各項目に処置(統合・抽象化・関数化・名称修正・保護)を割り当てる。自明層(B層→関数化、C-1→名称修正)は構造から確定。判断層(A層+C-2)はペアごと判定 | infra | 06-30 | cmd_save_gate_catalog.mdにPhase |
 | cmd_3614 | 殿承認(2026-06-30): Phase 2完了、Phase 3実装へ。殿指示「抜け漏れがない仕組みが必要」。カタログの処置列(抽象化・関数化・名称修正・保護)に基づきリファクタを実施する。各commitでカタログの実施状態列を更新し、未実施が残らないことをgrep確認で担保する | infra | 06-30 | cmd_save Phase3としてカタログ全pending |
@@ -283,3 +268,4 @@
 | cmd_4190 | 殿ntfy 2026-07-28 10:55のSIGNAL CHANGE ALERT(confirmed-month holding_signal changes count=3 dates=2026-07-27)の実体判定。将軍の一次確認でsignal_change_logの3件はFoF系PF(GSシン加速R-激攻・GSシン追い風-常勝・GSシン変わり身-激攻)のコンポーネント構成入替えで、changed_atは定期FoF再計算の実行時間帯と整合する。これが設計上正常な確定更新か、確定後の異常書換えかを現物で判定する。調査のみでコード・DB変更なし | dm-signal | 07-28 | FoF 3件はpending marker 0/3で正常な暫 |
 | cmd_4192 | gate_loop_health反復insight(INS-20260729-174159182ほか、operational_simulation MISSING発火が反復)の入口側是正。忍者がgate到達後に初めて欠落を知る構造を、テンプレート生成時点で必須4フィールドの記入枠が存在する構造へ変える。有効値の自動補完は禁止(insight条件) | infra | 07-29 | operational_simulation欠落報告をbat |
 | cmd_4193 | 家老escalation 2026-07-29 20:24(generation=14)『スキル静的品質WARN: gate_skill_script_refs.sh』の構造是正。gateの契約変更検知は正しく発火しているが、解消(SKILL.md追従検分)に所有者がなく家老startupで14世代滞留した。検知から追従taskの自動起票への接続を実装し、人手滞留の構造を断つ | infra | 07-29 | WARN検知から既存insight→reflux自動配備経路 |
+| cmd_4194 | 家老escalation 2026-07-29 23:37『レビュー品質スケール: WARN率が閾値超で1セッション連続、家老で対処不能』への根本対応。将軍一次確認で、母集団に設計書レビュー専用cmd(delta review/independent review等、RC/FAILが正常機能の出力)と報告テンプレート不備由来FAILが混入しており、実装品質の劣化と区別されずWARN率を押し上げていることを確認した。検知器が健全な敵対レビューを品質劣化として数える粒度バグ(LS096同型)を是正する | infra | 07-30 | レビュー専用cmdを実装品質WARN率の母集団から分離。分離 |
