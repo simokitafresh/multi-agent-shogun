@@ -5,7 +5,7 @@ setup_file() {
     export PROJECT_ROOT
     PROJECT_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     export LOG_APPEND_SCRIPT="$PROJECT_ROOT/scripts/gunshi_log_append.sh"
-    [ -x "$LOG_APPEND_SCRIPT" ] || return 1
+    [ -f "$LOG_APPEND_SCRIPT" ] || return 1
 }
 
 setup() {
