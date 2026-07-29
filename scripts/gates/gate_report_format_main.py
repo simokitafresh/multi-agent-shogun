@@ -230,6 +230,29 @@ def _resolved_commit_contract(report, task):
     return report_contract, None
 
 
+def _verified_revert_identity(commit_repo, identity, contract):
+    """Allow only an explicitly contracted, standard Git revert identity."""
+    if not isinstance(contract, dict):
+        return False
+    reverted = str(contract.get("reverts_commit") or "").strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", reverted):
+        return False
+    try:
+        subprocess.run(
+            ["git", "-C", str(commit_repo), "cat-file", "-e", f"{reverted}^{{commit}}"],
+            check=True, capture_output=True, text=True, timeout=5,
+        )
+        body = subprocess.run(
+            ["git", "-C", str(commit_repo), "show", "-s", "--format=%b", identity],
+            check=True, capture_output=True, text=True, timeout=5,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return False
+    return re.search(
+        rf"(?m)^This reverts commit {re.escape(reverted)}\.$", body
+    ) is not None
+
+
 def commit_contract_errors(report, task, root):
     contract, contract_error = _resolved_commit_contract(report, task)
     if contract_error:
@@ -271,8 +294,11 @@ def commit_contract_errors(report, task, root):
         changed = set(subprocess.run(["git", "-C", str(commit_repo), "diff-tree", "--no-commit-id", "--name-only", "-r", identity], check=True, capture_output=True, text=True, timeout=5).stdout.splitlines())
     except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return errors + ["commit_hash does not resolve to a readable commit"]
-    if not _subject_identifies_cmd(subject, expected_run_id) and not _subject_identifies_cmd(
-        subject, report.get("parent_cmd")
+    subject_identifies_task = _subject_identifies_cmd(
+        subject, expected_run_id
+    ) or _subject_identifies_cmd(subject, report.get("parent_cmd"))
+    if not subject_identifies_task and not _verified_revert_identity(
+        commit_repo, identity, contract
     ):
         errors.append("commit subject does not identify task_id/parent_cmd")
     legacy_target_scope = not _has_explicit_commit_scope(task) and not task.get("inspection_path")

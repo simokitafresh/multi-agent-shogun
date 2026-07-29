@@ -485,6 +485,74 @@ YAML
     [[ "$output" == *"PASS"* ]]
 }
 
+# test_necessity: 標準git revertのidentity例外は、明示40hex・本文完全一致・対象解決可能の積だけを許可する。
+@test "T-REVERT-IDENTITY: explicit verified revert passes and five invalid boundaries fail closed" {
+    local repo="$TMPDIR_BATS/revert_identity_repo"
+    mkdir -p "$repo"
+    git -C "$repo" init -q
+    git -C "$repo" config user.email test@example.com
+    git -C "$repo" config user.name test
+    printf 'base\n' > "$repo/owned.txt"
+    git -C "$repo" add owned.txt
+    git -C "$repo" commit -qm "base"
+    printf 'changed\n' > "$repo/owned.txt"
+    git -C "$repo" commit -qam "unrelated original subject"
+    local reverted
+    reverted="$(git -C "$repo" rev-parse HEAD)"
+    git -C "$repo" revert --no-edit "$reverted" >/dev/null
+    local identity
+    identity="$(git -C "$repo" rev-parse HEAD)"
+    printf 'other\n' > "$repo/other.txt"
+    git -C "$repo" add other.txt
+    git -C "$repo" commit -qm "other resolvable commit"
+    local other
+    other="$(git -C "$repo" rev-parse HEAD)"
+
+    run python3 - "$PROJECT_ROOT" "$repo" "$identity" "$reverted" "$other" <<'PY'
+import importlib.util
+import pathlib
+import sys
+
+project_root, repo, identity, reverted, other = sys.argv[1:]
+module_path = pathlib.Path(project_root) / "scripts/gates/gate_report_format_main.py"
+spec = importlib.util.spec_from_file_location("gate_report_format_main", module_path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+report = {
+    "commit_hash": identity,
+    "task_id": "cmd_not_in_revert_subject",
+    "parent_cmd": "cmd_also_absent",
+    "files_modified": [{"path": "owned.txt"}],
+}
+
+def errors(reverts_commit_marker=...):
+    contract = {
+        "required": True,
+        "repo_root": repo,
+        "planned_paths": ["owned.txt"],
+    }
+    if reverts_commit_marker is not ...:
+        contract["reverts_commit"] = reverts_commit_marker
+    task = {"task_id": report["task_id"], "commit_contract": contract}
+    return module.commit_contract_errors(report, task, pathlib.Path(repo))
+
+assert errors(reverted) == [], errors(reverted)
+invalid = [
+    errors(),
+    errors(reverted[:8]),
+    errors(other),
+    errors("f" * 40),
+    errors("0" * 40),
+]
+assert len(invalid) == 5
+assert all("commit subject does not identify task_id/parent_cmd" in case for case in invalid)
+print("false_positive=0/5 false_negative=0/1")
+PY
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"false_positive=0/5 false_negative=0/1"* ]]
+}
+
 @test "T-GP286-1: non-path files_modified fails" {
     local non_path_report="$TMPDIR_BATS/non_path_files_modified_report.yaml"
     create_valid_report "$non_path_report" >/dev/null
