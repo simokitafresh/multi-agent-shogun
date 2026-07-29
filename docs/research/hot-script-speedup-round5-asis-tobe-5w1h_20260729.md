@@ -1,4 +1,11 @@
-# 【🏁全10弾GATE CLEAR(2026-07-30 01:15) — 残=wave-final全量run】ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.6 (2026-07-30 01:20 将軍覚醒更新。版履歴は§-3)
+# 【✅CLOSED(2026-07-30 02:45 wave-final完了)】ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.7 (2026-07-30 02:50 将軍CLOSE刻印。版履歴は§-3)
+
+## §-2.6 CLOSE(wave-final全量run結果 — blt_20260730_024513一次)
+
+- 固定SHA=4717f7d12・clean detached worktree・全量1回のみ。**2,800/2,800 PASS・SKIP0**(183 bats file、duration 747.5s)
+- **4識別子exact結合成立=第七弾序列SSOT兼務が実証**: receipt=1/per-file=183(集合差0)/per-suite=1。run_id=20260729T172800.4154957.21942
+- 第七弾序列TOP5: test_inbox_write 68.2s / test_deploy_task_ac_handling 67.6s / test_heavy_job_admission 67.0s / test_deploy_task 58.7s / test_cmd_complete_gate 56.8s。全TOP20+10弾live採用値=`hot-script-speedup-round5-wave-final-snapshot-20260730.md`(commit b70cb5179)
+- 既知計器バグ1件(別hotfix対象): nested scheduler fixtureのSTART 3行混入でexecuted uniqueが183→185過大計上→full_scope=falseのfalse negative(実行漏れなし・序列結合有効)
 
 ## §-2.5 稼働進捗(2026-07-30 01:20時点 — gate_metrics.log+報告YAML一次確認)
 

@@ -13,7 +13,7 @@
 | 第六弾影響照合 | 07-30 00:13 | ✅旧test ledger依存**0件**(第六弾v1.8+独立レビュー報告)=第六弾の代替蓄積期間0日 |
 | 殿優先裁定 | 07-30 00:37 | 『第五〜第七弾が優先だ』 |
 
-**現況**: 新schema ledgerは蓄積進行中(01:17時点 per-file 109行+)。**wave-final発射条件=充足済み**(弾#0 liveクローズ+hotfix稼働)。第五弾は全10弾GATE CLEAR済みゆえ、次手=wave-final全量run(本run receiptが第七弾の序列SSOTを兼務)→4識別子結合で序列確定→本体裁可。
+**現況(02:50更新)**: **wave-final完了(02:45)=序列SSOT成立**。4識別子exact結合実証(receipt=1/per-file=183集合差0/per-suite=1、run_id=20260729T172800.4154957.21942、2,800/2,800 PASS)。序列TOP5=test_inbox_write 68.2s/test_deploy_task_ac_handling 67.6s/test_heavy_job_admission 67.0s/test_deploy_task 58.7s/test_cmd_complete_gate 56.8s。全TOP20=`hot-script-speedup-round5-wave-final-snapshot-20260730.md`(commit b70cb5179)。**残=第二段=本体裁可(殿)→弾数固定→起票解禁**。
 
 ## §-2 版履歴
 - v1.5(07-30 01:20): §-2.5新設(弾#0実行結果・事故と受理・wave-final発射条件充足の刻印)。旧ledger喪失により§0の序列SSOTは「wave-final以降の新schema計測のみ」で構成することを明確化(過去比較は不能=正直記載)
