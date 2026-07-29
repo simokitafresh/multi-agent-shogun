@@ -1,6 +1,6 @@
 # Rebalancer Context
-<!-- last_updated: 2026-07-29 cmd_karo_ci_fix_rebalancer_30389459014_frontend_audit reviewed source boundary -->
-<!-- source_commit:c351beb reason:cmd_karo_ci_fix_rebalancer_30389459014_frontend_audit reviewed source boundary evidence:cmd_complete_gate project=rebalancer context=context/rebalancer.md commit=c351beb -->
+<!-- last_updated: 2026-07-29 cmd_karo_hotfix_rebalancer_health_deploy_identity_20260729 -->
+<!-- source_commit:f541642 reason:cmd_karo_hotfix_rebalancer_health_deploy_identity_20260729 evidence:reviewed -->
 
 ## §1 概要
 
