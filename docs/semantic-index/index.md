@@ -8635,6 +8635,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607291658_hanzo` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-saizo_20260722.md` |
 | causal | `cmd_reflux_backlink_202607291847_hanzo` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-tobisaru_20260722.md` |
 | causal | `cmd_reflux_backlink_202607300508_kagemaru` — [[semantic_causal_automation]] -> `docs/research/fragments/viewport_color_hayate_20260722.md` |
+| causal | `cmd_reflux_backlink_202607300516_kotaro` — [[semantic_causal_automation]] -> `docs/research/fragments/viewport_color_kotaro_20260722.md` |
 | cmd | `cmd_2885` cmd因果辺をsemantic-mapへ自動還流 |
 | cmd | `cmd_2860` origin因果辺→辞書自動注入 |
 | cmd | `cmd_2818` 因果NW導入 |
@@ -8738,6 +8739,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607300128_kotaro` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607300224_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607300357_hayate` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607300508_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -9510,6 +9512,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202607290723_kagemaru` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607290824_kagemaru` (`docs/semantic-index/index.md`, `context/semantic-map.md`) |
 | cmd | `cmd_reflux_backlink_202607290925_kagemaru` (`docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202607300508_kagemaru` (`docs/semantic-index/index.md`) |
 
 ## provisional_lessons — 仮: Lessons
 
