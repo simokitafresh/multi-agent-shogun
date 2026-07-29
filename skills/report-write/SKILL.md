@@ -141,6 +141,10 @@ batchは全更新を検証してからatomic replaceする。必須値不足、�
 不正commit hashではbyte不変のままBLOCKする。単一フィールドCLIは非terminal報告の
 診断的な局所補正に限り使用できるが、通常の完成フローでは使用しない。
 
+`--batch` は旧版・別経路の報告に `operational_simulation` が欠落している場合、
+`command`・`expected`・`actual`・`result` の空4枠だけを構造注入する。有効値は
+自動補完しないため、実測値を記入しなければ `gate_report_format.sh` はFAILする。
+
 completed報告を修正する場合も、`status: revision_requested`、修正値、全binary
 checksを同じpayloadへ含めて`--batch`を1回だけ実行する。中間の
 `revision_requested`は公開されず、検証成功時だけcompletedへ原子的に再公開される。
