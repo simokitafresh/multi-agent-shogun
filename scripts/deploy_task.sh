@@ -10981,7 +10981,7 @@ deploy_task_ten_min_contract_precheck() {
 
     local cmd_args=()
     [[ -n "$cmd_id" ]] && cmd_args=(--cmd-id "$cmd_id")
-    result="$(python3 "$PROJECT_DIR/scripts/lib/time_contract_validator.py" \
+    result="$(python3 "$SCRIPT_DIR/scripts/lib/time_contract_validator.py" \
         "${cmd_args[@]}" "$task_file")" || rc=$?
     rc="${rc:-0}"
     if [ "$rc" -ne 0 ]; then

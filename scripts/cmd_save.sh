@@ -6772,7 +6772,8 @@ check_long_runtime_execution_env_contract() {
 
     local result rc=0
     result="$(printf '%s\n' "$CMD_BLOCK_NC" |
-        python3 "$PROJECT_DIR/scripts/lib/time_contract_validator.py" -)" || rc=$?
+        python3 "$PROJECT_DIR/scripts/lib/time_contract_validator.py" \
+            --allow-missing-estimated -)" || rc=$?
     if [[ "$rc" -ne 0 ]]; then
         record_block_reason "$result"
         return 1

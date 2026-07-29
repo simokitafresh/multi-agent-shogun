@@ -64,3 +64,31 @@ valid_split() {
     [ "$status" -eq 0 ]
     [[ "$output" == "PASS natural-boundary exception"* ]]
 }
+
+@test "direct deploy入口: PROJECT_DIR初期化前でも欠落をBLOCKする" {
+    write_entry "task:" ""
+
+    run bash -c '
+        set -euo pipefail
+        DEPLOY_TASK_LIB_ONLY=1 source "$1/scripts/deploy_task.sh"
+        deploy_task_ten_min_contract_precheck "$2"
+    ' _ "$BATS_TEST_DIRNAME/../.." "$TMP_YAML"
+
+    [ "$status" -eq 2 ]
+    [[ "$output" == *"BLOCK(TEN_MIN_CONTRACT)"* ]]
+    [[ "$output" != *"PROJECT_DIR"* ]]
+}
+
+@test "direct deploy入口: PROJECT_DIR初期化前でも正規mappingをPASSする" {
+    write_entry "task:" "$(valid_split)"
+
+    run bash -c '
+        set -euo pipefail
+        DEPLOY_TASK_LIB_ONLY=1 source "$1/scripts/deploy_task.sh"
+        deploy_task_ten_min_contract_precheck "$2"
+    ' _ "$BATS_TEST_DIRNAME/../.." "$TMP_YAML"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"ten_min_contract: PASS natural-boundary exception"* ]]
+    [[ "$output" != *"PROJECT_DIR"* ]]
+}

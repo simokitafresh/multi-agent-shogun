@@ -62,8 +62,10 @@ def _nonnegative_int(value: object) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) and value >= 0 else None
 
 
-def validate(entry: dict) -> str:
+def validate(entry: dict, *, allow_missing_estimated: bool = False) -> str:
     estimated = entry.get("estimated_minutes")
+    if allow_missing_estimated and estimated in (None, ""):
+        return "PASS estimated_minutes=not_declared"
     if isinstance(estimated, bool):
         estimated = None
     try:
@@ -124,8 +126,8 @@ def validate(entry: dict) -> str:
         or runtime <= 0
     ):
         raise ValueError(
-            "estimated_minutes exceeds the 15-minute hard boundary; concrete "
-            "execution_env.long_runtime_reason and positive measured_runtime_sec are required"
+            "estimated_minutes>15 requires execution_env mapping with concrete "
+            "long_runtime_reason and positive measured_runtime_sec"
         )
     return f"PASS long-runtime exception estimated_minutes={estimated:g} measured_runtime_sec={runtime:g}"
 
@@ -134,6 +136,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("path", nargs="?", default="-")
     parser.add_argument("--cmd-id", default="")
+    parser.add_argument("--allow-missing-estimated", action="store_true")
     args = parser.parse_args()
     try:
         if args.path == "-":
@@ -141,7 +144,12 @@ def main() -> int:
         else:
             with open(args.path, encoding="utf-8") as handle:
                 data = yaml.safe_load(handle) or {}
-        print(validate(_entry(data, args.cmd_id)))
+        print(
+            validate(
+                _entry(data, args.cmd_id),
+                allow_missing_estimated=args.allow_missing_estimated,
+            )
+        )
         return 0
     except (OSError, yaml.YAMLError, ValueError) as exc:
         print(str(exc))
