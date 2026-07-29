@@ -291,15 +291,13 @@ if len(reason_one) > 180:
     reason_one = reason_one[:177] + "..."
 bullet = f"- {today}: gate={gate} result=FAIL executor={executor} reason={reason_one}"
 
-if has_duplicate_caution(text, gate, reason_one):
-    print(f"UNCHANGED: {skill_file}")
-    raise SystemExit(0)
+duplicate_caution = has_duplicate_caution(text, gate, reason_one)
 
 if heading not in text:
     if text and not text.endswith("\n"):
         text += "\n"
     text += f"\n{heading}\n\n{bullet}\n"
-else:
+elif not duplicate_caution:
     lines = text.splitlines()
     out = []
     inserted = False
@@ -314,22 +312,35 @@ else:
 
 # rotate: 注意ポイント配下のFAILログbulletは最新20件のみ保持(dedupは完全一致のみで
 # reason可変部(ファイル名等)が毎回別エントリ化し無限肥大した実績: report-write 218件/4111語
-# →gate_skill_quality WARN。2026-07-25殿エスカレーション対応)
+# →gate_skill_quality WARN。生成bullet領域は空行1件へ正規化し、rotateでbulletだけ消えて
+# 空行churnが残る経路も閉じる。2026-07-25殿エスカレーション対応)
 MAX_CAUTION_BULLETS = 20
 lines2 = text.splitlines()
-out2, in_notes, kept = [], False, 0
-for line in lines2:
-    if line.strip() == heading:
-        in_notes = True
-        out2.append(line)
-        continue
-    if in_notes and line.startswith("#"):
-        in_notes = False
-    if in_notes and line.lstrip().startswith("- 20"):
-        kept += 1
-        if kept > MAX_CAUTION_BULLETS:
+heading_idx = next((idx for idx, line in enumerate(lines2) if line.strip() == heading), None)
+if heading_idx is None:
+    out2 = lines2
+else:
+    region_end = heading_idx + 1
+    caution_bullets = []
+    seen_bullets = set()
+    while region_end < len(lines2):
+        line = lines2[region_end]
+        if not line.strip():
+            region_end += 1
             continue
-    out2.append(line)
+        if line.lstrip().startswith("- 20"):
+            normalized = line.strip()
+            if normalized not in seen_bullets:
+                seen_bullets.add(normalized)
+                caution_bullets.append(line)
+            region_end += 1
+            continue
+        break
+    caution_bullets = caution_bullets[:MAX_CAUTION_BULLETS]
+    out2 = lines2[:heading_idx + 1] + caution_bullets
+    if region_end < len(lines2):
+        out2.append("")
+        out2.extend(lines2[region_end:])
 text = "\n".join(out2) + "\n"
 
 fd, tmp = tempfile.mkstemp(dir=str(skill_file.parent), prefix=".SKILL.", suffix=".tmp")
