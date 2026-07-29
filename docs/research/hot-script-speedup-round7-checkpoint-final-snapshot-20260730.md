@@ -2,62 +2,64 @@
 
 ## 結論
 
-第二世代final checkpointも **FAIL**。根因修正後の固定SHA
-`b480b5b03e618c5fcd2794cb7ecdd7219f968acd` をclean detached worktreeで
-unit全量1回だけ計測したが、第一世代と同じ `test_deploy_task.bats` test 7が失敗した。
+第三世代final checkpointも **FAIL**。race根治後の固定SHA
+`aed5dfb9b76cdd01c7fae2184bfb8063f32a9422` をclean detached worktreeで
+unit全量1回だけ計測した。第一・第二世代を止めた `test_deploy_task.bats`
+test 7はPASSしたが、別の `test_lgtm_bundle_guard.bats` がsetup_fileで失敗した。
 成功runだけを序列SSOTにする契約によりper-file/per-suite ledgerはpublishされず、
 wave-finalとのTOP10比較および第七弾の総短縮効果は確定不能である。
 
-## 第二世代の実行境界とreceipt
+## 第三世代の実行境界とreceipt
 
 | 項目 | 実測 |
 |---|---|
-| 実行境界 | `/tmp/tobisaru-round7-gen2-4OqPhh`、clean detached worktree、実行前dirty 0 |
-| 採用HEAD | `b480b5b03e618c5fcd2794cb7ecdd7219f968acd` |
+| 実行境界 | `/tmp/saizo-round7-gen3-nAL7kI`、clean detached worktree、実行前dirty 0 |
+| 採用HEAD | `aed5dfb9b76cdd01c7fae2184bfb8063f32a9422` |
 | command | `BATS_CACHE=0 bash scripts/run_tests.sh unit` |
 | 実行回数 | 1 |
-| receipt | `logs/test_receipts/run_tests_20260729T215550_2995102.json` |
-| receipt SHA-256 | `5739c8fc0819d3c577013a2261d87cbe7ebb11bcfb17b86a419b4489e4d2f229` |
-| artifact | `logs/test_receipts/run_tests_20260729T215550_2995102.output` |
-| artifact SHA-256 | `75f0d83aa62941d4a57f9ee80209dc971cdd6cfdac24122363d9f241b981cd38` |
-| TAP SHA-256 | `b570688a4e7f75f376b2ecce505d55c0d2d6506806fe6d70e920f285a22249b6` |
-| run_id | `20260729T215550.2995102.29712` |
-| source_fingerprint | `4ecb79b2441d95978261484121439f2b7720b2f3a75607db74c4dec3c28718d9` |
+| receipt | `logs/test_receipts/run_tests_20260729T230432_3742785.json` |
+| receipt SHA-256 | `bec58524f05a283848148e7129bb011361798b4f811535c6a4ff31d2ef8fb480` |
+| artifact | `logs/test_receipts/run_tests_20260729T230432_3742785.output` |
+| artifact SHA-256 | `711412735a612222434dd6b05986ad9a68ad93dde82b0eda0a6f8a6d5000ac84` |
+| TAP SHA-256 | `44b57093c11daebe806c0ed56ae6d1f0f7dcab82331e6cba2a9e2a52a8fb6fd5` |
+| run_id | `20260729T230432.3742785.18086` |
+| source_fingerprint | `3d21b6f581faf829e4e9ed2585756d1f1199ac29e946bac52ba03e5b452c95f3` |
 | 結果 | rc=1、FAIL file 1、SKIP 0、cache 0 |
-| duration | 590,775ms |
+| duration | 425,541ms |
 
-receiptのscope identityは selected 184 / discovered 184 / started 147 /
-executed 147 / failed 1。observed/declared test countは2,865/2,865、skip_countは0。
+receiptのscope identityは selected 184 / discovered 184 / started 113 /
+executed 113 / failed 1。observed/declared test countは2,807/2,819、skip_countは0。
 
 ## 失敗の一次結果
 
-失敗対象は `tests/unit/test_deploy_task.bats` のtest 7で、53 tests中52 PASS・1 FAIL:
+失敗対象は `tests/unit/test_lgtm_bundle_guard.bats` のsetup_file:
 
 ```text
-not ok 7 report commit contract inherits explicit task value and falls back only when absent
-# (in test file tests/unit/test_deploy_task.bats, line 161)
-#   `wait "$pid"' failed
+not ok 1 setup_file failed
+# (from function `setup_file' in test file
+# /tmp/saizo-round7-gen3-nAL7kI/tests/unit/test_lgtm_bundle_guard.bats, line 8)
+#   `[ -x "$LOG_APPEND_SCRIPT" ] || return 1' failed
+# bats warning: Executed 1 instead of expected 7 tests
 ```
 
-固定SHAは「direct validator root」修正commitだが、5ケースを並列起動して全PIDを
-`wait`する当該contractは全量環境でなお非0終了した。checkpoint任務は診断・修正を
-scopeに含まないため、追加runを行わず第二世代FAILとして終端する。
+race根治の直接対象 `tests/unit/test_deploy_task.bats` はfile全体rc=0。
+checkpoint任務は診断・修正をscopeに含まず、追加runを行わず第三世代FAILとして終端した。
 
 ## 4識別子結合と比較判定
 
 | 識別子 | 値 |
 |---|---|
-| run_id | `20260729T215550.2995102.29712` |
-| commit_sha | `b480b5b03e618c5fcd2794cb7ecdd7219f968acd` |
-| source_fingerprint | `4ecb79b2441d95978261484121439f2b7720b2f3a75607db74c4dec3c28718d9` |
-| output_sha256 | `75f0d83aa62941d4a57f9ee80209dc971cdd6cfdac24122363d9f241b981cd38` |
+| run_id | `20260729T230432.3742785.18086` |
+| commit_sha | `aed5dfb9b76cdd01c7fae2184bfb8063f32a9422` |
+| source_fingerprint | `3d21b6f581faf829e4e9ed2585756d1f1199ac29e946bac52ba03e5b452c95f3` |
+| output_sha256 | `711412735a612222434dd6b05986ad9a68ad93dde82b0eda0a6f8a6d5000ac84` |
 
-同一4識別子の結合件数は receipt 1 / per-file 0 / per-suite 0。要求値
-receipt 1 / per-file 184 / per-suite 1を満たさず、選択集合とのexact joinも成立しない。
+同一4識別子の結合件数は receipt 1 / per-file 0 / per-suite 0。失敗runの
+pending batchはpublishされず、選択184 fileとのexact joinは成立しない。
 
-| 比較対象 | before: wave-final | after: 第二世代checkpoint | 判定 |
+| 比較対象 | before: wave-final | after: 第三世代checkpoint | 判定 |
 |---|---:|---:|---|
-| 全量suite wall | 747.541s | 590.775s（失敗run） | 比較不可 |
+| 全量suite wall | 747.541s | 425.541s（失敗run） | 比較不可 |
 | TOP10各file wall | 10件あり | success ledgerなし | 比較不可 |
 
 afterは184 files完走の成功値ではないため、短縮率を算出・採用してはならない。
@@ -66,7 +68,8 @@ afterは184 files完走の成功値ではないため、短縮率を算出・採
 
 | 世代 | fixed SHA | duration | 結果 |
 |---|---|---:|---|
-| 第一世代 | `966b4fbe84d4ad9f244a2408ab2adfadac9e6d3a` | 353.669s | 同test 7 FAIL |
+| 第一世代 | `966b4fbe84d4ad9f244a2408ab2adfadac9e6d3a` | 353.669s | `test_deploy_task.bats` test 7 FAIL |
 | 第二世代 | `b480b5b03e618c5fcd2794cb7ecdd7219f968acd` | 590.775s | 同test 7 FAIL |
+| 第三世代 | `aed5dfb9b76cdd01c7fae2184bfb8063f32a9422` | 425.541s | deploy test 7 PASS、`test_lgtm_bundle_guard.bats` setup FAIL |
 
-origin: `[[第一世代checkpoint合成回帰FAIL]] -> [[根因修正b480b5b]] -> [[第二世代同一test7_FAIL]] -> [[第七弾総短縮効果未確定]]`
+origin: `[[第二世代checkpoint同一test7_FAIL]] -> [[deploy_task固定tmp共有race根治]] -> [[第三世代別setup_FAIL]] -> [[第七弾総短縮効果未確定]]`
