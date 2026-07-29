@@ -1396,6 +1396,7 @@ codd:
 | cmd | `cmd_karo_hotfix_recalculate_sync_end_date_20260729` |
 | lesson | `L919` logical flushの前処理はphysical chunk外で1回化する |
 | cmd | `cmd_karo_hotfix_fullrecalc_deferred_flush_extreme_runtime_ready_20260729` |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T19:03:16+09:00 [[fullrecalc第1回チャレンジ終了_20260729]]: 殿下知19:01で終了。確定状態=本番live eb1267c3(3周目採用まで。4周目b134e06aは不成立revert eddc507bでクリーン復帰)。純成果=r |
 | causal_chain | `[[cmd_karo_hotfix_recalculate_sync_end_date_20260729]]` (L1447) |
 
 ## semantic_dictionary_design — セマンティック辞書構想
@@ -1404,7 +1405,7 @@ codd:
 |------|---|
 | id | semantic_dictionary_design |
 | label | セマンティック辞書構想 |
-| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな, 同一の偽陽性insightで登場した, source, gate checkがconfig単一値のみを見て, 強化をACCEPTせず削除または正本経路へ統合する, pipeline signalではない, 辞書の正当な削除・改名が無関係な回帰FAILになる, Guard14 DB直接接続BLOCK は当初, source shogun d0, 要件 ①実行と承認の分離 実行者の自己承認禁止, cmd完了品質へ単調保持する履歴である, semantic_index_update_158秒, source lord conversation, 報告するのは正しい結果が出た時と, 完了gateのown commit検査だけでは, 回帰13 PASS, 復元184 exact完了, 個別Unit上位test semantic index update 072秒の支配項を除去し, 原因はlive PIDだけをhealthy扱いしたことと, 各wrapperはexact test名のok行を検証する, source gunshi session, 三層health未貫通0件となること, 教訓 fixture≠live, source commit ab302df7b inbox, startup gate検出を一体化する, これは指摘した2失敗と別修正のため赤残存の可能性, source shogun recovery, tmp等の隔離コピーへ複製してから旧版パッチを当てて検証する, 今回は3 3修正し355 356から356 356へ改善, 背景再入回帰を追加した結果, fixture広義同型16件（家老11 軍師5）, source dummy, 家老自身のD0修正・実装commitは禁止, 接続cmdがactive時だけWAIT, cmd完了監視はHEADを使用, commit f4d94ab4, 新規cmd 0件, source shogun d0 fix, source commit 64fcd42c9, WARN_hook+test, startup BLOCK→WARN, 時間がかかるものはすべてバグとして扱い, source session shogun ls091, source lessons shogun, 軍師は2回目で注記, P1 全チェックTIMING追加, PASS, daemon fixtureは本番永続daemonを起動せず, 即時diffで検知し復元, 選定とreservation記録が非原子的で, 隔離source fixtureは必須依存追加へ追随させる, daemonのsource依存追加とログ契約強化を行った際, producerのみgit履歴生成, 全て二値条件で実装する, obsidianは有効活用されているか？, 比較境界は両辺を同一fixtureで型正規化する, Git tree解決可能を型検証する, fix R1, 家老hotfix ab8d6a9f5で境界3 PASS済み, GA 304は残存5行でCI実行前FAIL, 外部repo identity fixture隔離, GA_304_CI_FAIL, cmd complete本体へsource依存を追加した際, 確認せずに想像するから結果が出ない』, wrapperへsource追加時, 復元testは後発依存と実git状態をfixture化する, source session shogun, source lord ruling typo fix, source lord confirm, source n series all closed, 誤爆扱い問い返し禁止, 結果 未反映15→1件 残1は正常進行中, 当該6件はgateコードに到達する前に落ちるため因果なし, 同値確認だけでは自分のcommitが壊した回帰を見逃す, gate commit flow設計書キャンペーンの完了, 実装の多重化を発見したら, 26に軍師はこの型で3回誤った, 判定が読む環境変数を実装で確かめ, 軍師は同じデータで『該当0件』とした, 方式選択が個別の誤りを吸収することがある, ∴★新しい教訓が新しい誤読を生んだ, 前者の教訓を後者に当ててはならない, source shogun gist publish, ★『教訓は3度守られなかった, 本日の組織的到達点 家老の最終行を原文のまま記録・将軍指示, bats側で $status eq を見る書き方は, source karo latency analysis, source karo scope claim family, 既存欠陥FAILは掘り当てた在庫であり人質にしない, 宣言後の指摘で初めて定義を修正した, source lord haste remedy, フォールバックという発想自体がバグの真因である, 殿が明示した方針 例 『今は調査の時間, 受け手は指示・訂正・懸念の形で来たものを検証せず実行するため, 運用経路0件 testからしか実行されない, n 1でなくなった, 本日の還流弾が是正済みの問題』, 全軍恒久教訓 家老blt 軍師blt ・ 『自分で数えると, 実証 軍師が自分の『同型11回』を検証したところ, source 家老blt 軍師blt, 家老・将軍のgateには0件, 軍師自身が自分に不利な事実として提出, source 殿裁定 lord conversation, gistは殿閲覧用ミラー, 訂正の正道 過去行の手書き換え禁止 捏造, source kotaro r6 timing probe, source kotaro r6 fixture1, source kotaro r6 fixture2, リンクを含めない場合の挙動を家老が実測する, fixture body without a link, 次回このtestに遭遇したら, R6のL3表示文言を検証する家老のテスト, L3表示文言, source kotaro ac1 check, fixture no link, source gunshi multilink probe, source gunshi multilink probe2, source gunshi reverify3, source gunshi reverify5, source karo gate probe, karo_probe_reached_20260727, 同一報告が入口ごとにPASS BLOCKへ分岐する, insight在庫だけでは再発したため, source lord ruling, mapping注入またはautofix検討, 完了宣言 12check全クローズ→台帳再集計→第二弾序列, 家老の自立配備 karo direct, v3 CLOSED, commit a4ababd16, 殿裁定2026 最上位訂正 『誰の判断だ？第二弾が優先, 誰の判断だ？第二弾が優先, 将軍はその後, scopeは2スクリプト2弾のまま, 本弾で正しいファイルへの実装を素早く進める土台になった, P2 reflux SSOT修正 才蔵, source shogun session save, commit 1be8bee8f |
+| aliases | セマンティック辞書, セマンティクスインデックス, 意味検索, 概念索引, 概念検索, aliases層, LLMフォールバック, 辞書育成, semantic index growth, ノイズalias除去, 自然言語alias拡充, 未カバー概念追加, obsidian, concept_auto_growth, 概念自動成長, L7, insight_write, insightsキュー, 気づき保存, stress_test, ストレステスト, ヒット率計測, hit_rate, NO_MATCH率, semantic_stress_test, aliases自動成長, 自動発火トリガー, auto_promote, score閾値, L7加速, concept間リンク, related_concepts, 修行aliases鍛錬, test_absorb, semantic_concepts注入, recommended_skills注入, semantic lesson boost, L7 aliases訓練, query source sampling, alias layer measurement, pending insight queue, insight resolve mode, source repeat escalation, test fixture suppression, raw YAML append, 手動direct alias昇格, manual direct alias promotion, insights記録, 学習気づき保存, pending_insight追加, insight蓄積スクリプト, ブラックホール, セマンティクスインデックスPhase 3bを進めよ, やはりな, だからobsidianがあるんだよ, semantic index, ストレステスト5回はもう実行しただろ？, obsidianの穴は？, 約15分を要した, obsidianは順調に成長しているか？, exit statusを保存し, 次回は新しい正本文書パスを追加した時点で, EventRowに列を追加する際, lesson write sh L1004でsemantic index update sh 10秒 semantic, git mode 100644を再現するテストを追加する, obsidian candidate 18件は昇格させよう, 修正 インデックス検索を引用符なし形式にも対応 追加, テンプレートYAMLから動的抽出する改良が望ましい 軍師指摘, obsidianに閾値が必要な意味は？, obsidianを挟む特徴が弱いかな, 三層それぞれに意味がある, id reパターンがblock styleのみ対応, entries と明示書き込みが必要, 修正は別cmd候補へ分離する, 削除cmdのtodo更新先は実在パスを配備時に検証する, cmd 3294は探索前skipが原因, 同一10 failedが差分と比較基準の両方で再現し, source pathsが広いcontextでは, cacheあり なしの差分を報告に残す, 意味検索改善, セマンティック辞書の未カバー概念を追加して検索品質を改善する, セマンティック辞書の新しい穴をテストセットに入れる, NO MATCH候補は生成時点の失敗であり, source count未知としてWARN以上にするべき, 低頻度スキルFAIL率はGateと同じ切り出し窓で再現する, 奥義PFの命名BBはL1コンポーネントBBと対応していない, 奥義命名BBとL1コンポーネントBB非対応は正常挙動, 自動生成 有効教訓の記録を怠った, UUID完備ならDB系列を使うチェックを追加すべき, μ 2σ閾値が最大値に近接しシグナルが1件以下, lesson write sh retagがdm signal旧フォーマット教訓 L118の26件 でFAIL, L7まで貫通させてバグを修正せよ, 意思依存でスキルを使わないのはバグだ, WF速度ACはcache生成後の反復も記録し, フックがimport only混在をBLOCKする場合は, import追加を不要にする実装へ寄せる, バグ1は将軍の操作ミスならば, 更新漏れをgate後追いから配備時点の防御へ上げられる, ちがう, 必要ならページ本体の段階取得だけをSSOTにする, バックグラウンド連鎖を追加する既存スクリプトのテストは, pendingのみが表示されているのはバグだな, 同一の偽陽性insightで登場した, source, gate checkがconfig単一値のみを見て, 強化をACCEPTせず削除または正本経路へ統合する, pipeline signalではない, 辞書の正当な削除・改名が無関係な回帰FAILになる, Guard14 DB直接接続BLOCK は当初, source shogun d0, 要件 ①実行と承認の分離 実行者の自己承認禁止, cmd完了品質へ単調保持する履歴である, semantic_index_update_158秒, source lord conversation, 報告するのは正しい結果が出た時と, 完了gateのown commit検査だけでは, 回帰13 PASS, 復元184 exact完了, 個別Unit上位test semantic index update 072秒の支配項を除去し, 原因はlive PIDだけをhealthy扱いしたことと, 各wrapperはexact test名のok行を検証する, source gunshi session, 三層health未貫通0件となること, 教訓 fixture≠live, source commit ab302df7b inbox, startup gate検出を一体化する, これは指摘した2失敗と別修正のため赤残存の可能性, source shogun recovery, tmp等の隔離コピーへ複製してから旧版パッチを当てて検証する, 今回は3 3修正し355 356から356 356へ改善, 背景再入回帰を追加した結果, fixture広義同型16件（家老11 軍師5）, source dummy, 家老自身のD0修正・実装commitは禁止, 接続cmdがactive時だけWAIT, cmd完了監視はHEADを使用, commit f4d94ab4, 新規cmd 0件, source shogun d0 fix, source commit 64fcd42c9, WARN_hook+test, startup BLOCK→WARN, 時間がかかるものはすべてバグとして扱い, source session shogun ls091, source lessons shogun, 軍師は2回目で注記, P1 全チェックTIMING追加, PASS, daemon fixtureは本番永続daemonを起動せず, 即時diffで検知し復元, 選定とreservation記録が非原子的で, 隔離source fixtureは必須依存追加へ追随させる, daemonのsource依存追加とログ契約強化を行った際, producerのみgit履歴生成, 全て二値条件で実装する, obsidianは有効活用されているか？, 比較境界は両辺を同一fixtureで型正規化する, Git tree解決可能を型検証する, fix R1, 家老hotfix ab8d6a9f5で境界3 PASS済み, GA 304は残存5行でCI実行前FAIL, 外部repo identity fixture隔離, GA_304_CI_FAIL, cmd complete本体へsource依存を追加した際, 確認せずに想像するから結果が出ない』, wrapperへsource追加時, 復元testは後発依存と実git状態をfixture化する, source session shogun, source lord ruling typo fix, source lord confirm, source n series all closed, 誤爆扱い問い返し禁止, 結果 未反映15→1件 残1は正常進行中, 当該6件はgateコードに到達する前に落ちるため因果なし, 同値確認だけでは自分のcommitが壊した回帰を見逃す, gate commit flow設計書キャンペーンの完了, 実装の多重化を発見したら, 26に軍師はこの型で3回誤った, 判定が読む環境変数を実装で確かめ, 軍師は同じデータで『該当0件』とした, 方式選択が個別の誤りを吸収することがある, ∴★新しい教訓が新しい誤読を生んだ, 前者の教訓を後者に当ててはならない, source shogun gist publish, ★『教訓は3度守られなかった, 本日の組織的到達点 家老の最終行を原文のまま記録・将軍指示, bats側で $status eq を見る書き方は, source karo latency analysis, source karo scope claim family, 既存欠陥FAILは掘り当てた在庫であり人質にしない, 宣言後の指摘で初めて定義を修正した, source lord haste remedy, フォールバックという発想自体がバグの真因である, 殿が明示した方針 例 『今は調査の時間, 受け手は指示・訂正・懸念の形で来たものを検証せず実行するため, 運用経路0件 testからしか実行されない, n 1でなくなった, 本日の還流弾が是正済みの問題』, 全軍恒久教訓 家老blt 軍師blt ・ 『自分で数えると, 実証 軍師が自分の『同型11回』を検証したところ, source 家老blt 軍師blt, 家老・将軍のgateには0件, 軍師自身が自分に不利な事実として提出, source 殿裁定 lord conversation, gistは殿閲覧用ミラー, 訂正の正道 過去行の手書き換え禁止 捏造, source kotaro r6 timing probe, source kotaro r6 fixture1, source kotaro r6 fixture2, リンクを含めない場合の挙動を家老が実測する, fixture body without a link, 次回このtestに遭遇したら, R6のL3表示文言を検証する家老のテスト, L3表示文言, source kotaro ac1 check, fixture no link, source gunshi multilink probe, source gunshi multilink probe2, source gunshi reverify3, source gunshi reverify5, source karo gate probe, karo_probe_reached_20260727, 同一報告が入口ごとにPASS BLOCKへ分岐する, insight在庫だけでは再発したため, source lord ruling, mapping注入またはautofix検討, 完了宣言 12check全クローズ→台帳再集計→第二弾序列, 家老の自立配備 karo direct, v3 CLOSED, commit a4ababd16, 殿裁定2026 最上位訂正 『誰の判断だ？第二弾が優先, 誰の判断だ？第二弾が優先, 将軍はその後, scopeは2スクリプト2弾のまま, 本弾で正しいファイルへの実装を素早く進める土台になった, P2 reflux SSOT修正 才蔵, source shogun session save, commit 1be8bee8f, scope拡張が全量test要求へ化ける |
 | skills | なし |
 | related_concepts | semantic_causal_automation, causal_traversal_pipeline, growth_loop, local_memory_db, investment_knowledge_base, systems_knowledge_base, codd_methodology, terminology_dictionary, file_rename, cmd_quality_logging, task_modifier_injection, semantic_goodhart_overfitting, three_layer_memory_system, unread_cmd_new_deployment_guard, pf_remote_restore |
 | related_lessons | `L317`, `L088`, `L079` |
@@ -2031,6 +2032,8 @@ codd:
 | lesson | `L1445` batsテストfixtureは本番の.gitignore済みDBファイルへ絶対に依存させない(ローカルPASS・CI FAILの発生源) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T02:02:37+09:00 セッション状態2026-07-29 02:03(強くてニューゲーム復帰点): [[hot-script高速化設計書]]第四弾v2.4=5/5全クローズ+CI GREEN復帰(run 30377787485 success)。RED二重真因根 |
 | lesson | `L1449` 外部source taskの暗黙full-suite fallback禁止 |
+| lesson | `L1451` 所有scopeとtest実行意思を同じpath集合で表現しない |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-29T20:29:58+09:00 b6ll7b155 toolu_01StGA3VWKZjkv5piZi6PMge /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a026848f-6656-44c9-9ef0-e3886a |
 | causal_chain | `[[cmd_3749]]` (L974) |
 | causal_chain | `[[cmd_training_L1_report-write_20260708020332]]` (L977) |
 | causal_chain | `[[cmd_reflux_insight_202607071717_tobisaru]]` (L961) |
@@ -2051,6 +2054,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_throughput_t3b_fingerprint_hit_corrected_20260728]]` (L1431) |
 | causal_chain | `[[cmd_karo_ci_fix_30374243969_three_layer_knowledge_chain]]` (L1445) |
 | causal_chain | `[[cmd_karo_hotfix_fullunit_scope_guard_20260729]]` (L1449) |
+| causal_chain | `[[cmd_karo_hotfix_task_selection_inferred_scope_20260729]]` (L1451) |
 
 ## investment_knowledge_base — 投資知識辞書
 
@@ -2325,6 +2329,8 @@ codd:
 | cmd | `cmd_karo_ci_fix_30357551416_ninja_scope_precommit_race` (`scripts/ninja_scope_commit.sh`, `tests/unit/test_ninja_scope_commit.bats`) |
 | lesson | `L1444` identity検証追加時はfallback解決順序を先に保つ |
 | cmd | `cmd_karo_hotfix_archive_report_identity_race_20260728` (`scripts/inbox_write.sh`, `tests/unit/test_inbox_write.bats`) |
+| lesson | `L1452` CoDD SKILL同期taskはcontext/codd.mdを初期scopeへ含める |
+| cmd | `cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729` (`context/codd.md`, `skills/codd-refactor/SKILL.md`) |
 | causal_chain | `[[cmd_karo_ci_fix_shogun_retry_20260703]]` (L946) |
 | causal_chain | `[[cmd_3720]]` (L958) |
 | causal_chain | `[[cmd_3724]] -> [[忍者教訓のenforcement field欠落初可視化]] -> [[lesson_lock_path_divergence]]` (L967) |
@@ -2335,6 +2341,7 @@ codd:
 | causal_chain | `[[cmd_karo_hotfix_ntfy_async_teardown_race_20260728]]` (L1420) |
 | causal_chain | `[[cmd_karo_ci_fix_30357551416_ninja_scope_precommit_race]]` (L1437) |
 | causal_chain | `[[cmd_karo_hotfix_archive_report_identity_race_20260728]]` (L1444) |
+| causal_chain | `[[cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729]]` (L1452) |
 
 ## codd_methodology — CoDD整合性駆動開発
 
@@ -2520,6 +2527,7 @@ codd:
 | causal | `cmd_karo_hotfix_shogun_startup_four_blocks_202607161329` files_modified: [[codd_methodology]] |
 | causal | `cmd_karo_hotfix_skill_refs_202607161918` files_modified: [[codd_methodology]] |
 | causal | `cmd_karo_hotfix_context_freshness_ga281_202607170612` files_modified: [[codd_methodology]] |
+| causal | `cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729` files_modified: [[codd_methodology]] |
 
 ## gate_bypass_prevention — gate迂回防止
 
@@ -2578,6 +2586,7 @@ codd:
 | causal | `cmd_karo_round4_impl_commit_hash_20260728` files_modified: [[gate_bypass_prevention]] |
 | causal | `cmd_karo_part2_p1a_review_publish_identity_20260728` files_modified: [[gate_bypass_prevention]] |
 | causal | `cmd_karo_hotfix_report_hook_result_canonicalization_20260729` files_modified: [[gate_bypass_prevention]] |
+| causal | `cmd_karo_hotfix_gate_revert_commit_identity_20260729` files_modified: [[gate_bypass_prevention]] |
 
 ## terminology_dictionary — 用語辞書
 
@@ -3887,6 +3896,7 @@ codd:
 | causal | `cmd_3895` files_modified: [[ultimate_state_principle]] |
 | causal | `cmd_3897` files_modified: [[ultimate_state_principle]] |
 | causal | `cmd_karo_hotfix_context_freshness_ga281_202607170612` files_modified: [[ultimate_state_principle]] |
+| causal | `cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729` files_modified: [[ultimate_state_principle]] |
 
 ## parameter_space_integrity — パラメータ空間縮小禁止
 
@@ -4425,6 +4435,10 @@ codd:
 | causal | `cmd_karo_impl_b28_failed_report_close_20260726` files_modified: [[skill_design_rules]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-27T11:49:20+09:00 bp3ukyyh7 toolu_014Ukr6SSpVedRfwEJdchPux /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/dfea2918-a77d-4eac-a2b2-17a27d |
 | cmd | `cmd_karo_hotfix_skill_refs_bulletin_three_20260729` (`skills/gate-sync/SKILL.md`, `skills/idle-persist/SKILL.md`, `skills/review-bundle/SKILL.md`) |
+| causal | `cmd_4192` files_modified: [[skill_design_rules]] |
+| cmd | `cmd_4192` 報告テンプレートのoperational_simulation入力導線強化 — MISSING反復発火の入口側是正 (`skills/report-write/SKILL.md`) |
+| causal | `cmd_4192` origin: [[INS-20260729-174159182]] -> [[gate到達後に欠落を知る構造]] -> [[cmd_4192]] |
+| causal | `cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729` files_modified: [[skill_design_rules]] |
 | causal_chain | `[[cmd_karo_hotfix_skill_script_refs_202607022043]]` (L940) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
 
@@ -7121,6 +7135,8 @@ codd:
 | causal | `cmd_karo_hotfix_report_hook_result_canonicalization_20260729` files_modified: [[report_quality_protocol]] |
 | cmd | `cmd_karo_hotfix_report_hook_result_canonicalization_20260729` (`scripts/report_field_set.sh`, `tests/unit/test_report_field_set_hook_canon.bats`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T15:15:52+09:00 ドキュメントを覚醒してアップデート。アップデート後に家老にレビューしてもらえ |
+| causal | `cmd_karo_hotfix_gate_revert_commit_identity_20260729` files_modified: [[report_quality_protocol]] |
+| cmd | `cmd_karo_hotfix_gate_revert_commit_identity_20260729` (`scripts/gates/gate_report_format_main.py`, `tests/test_gate_report_format.bats`) |
 | causal_chain | `[[cmd_karo_hotfix_bc_result_empty_high_freq_insight_202607020526]]` (L923) |
 | causal_chain | `[[cmd_3683]]` (L947) |
 | causal_chain | `[[cmd_karo_ci_fix_ga191_bats_count_202607071728]]` (L962) |
@@ -8567,7 +8583,12 @@ codd:
 | causal | `cmd_reflux_backlink_202607291645_hayate` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-kagemaru_20260722.md` |
 | causal | `cmd_reflux_backlink_202607291645_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607291653_saizo` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-kotaro_20260722.md` |
+| causal | `cmd_reflux_backlink_202607291653_saizo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607291658_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607291847_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607291926_hayate` — [[semantic_causal_automation]] -> `docs/research/double-loop-cache-flock-hold-kotaro.md` |
+| causal | `cmd_reflux_backlink_202607291926_hayate` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607292025_hanzo` — [[semantic_causal_automation]] -> `docs/research/double-loop-memory-zero-hit-hanzo.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -8788,6 +8809,8 @@ codd:
 | cmd | `cmd_karo_hotfix_run_tests_external_pytest_receipt_20260729` (`scripts/run_tests.sh`, `tests/unit/test_run_tests.bats`) |
 | causal | `cmd_karo_hotfix_fullunit_scope_guard_20260729` files_modified: [[provisional_run_tests]] |
 | cmd | `cmd_karo_hotfix_fullunit_scope_guard_20260729` (`scripts/run_tests.sh`, `tests/unit/test_run_tests.bats`) |
+| causal | `cmd_karo_hotfix_task_selection_inferred_scope_20260729` files_modified: [[provisional_run_tests]] |
+| cmd | `cmd_karo_hotfix_task_selection_inferred_scope_20260729` (`scripts/run_tests.sh`, `tests/unit/test_run_tests.bats`) |
 
 ## provisional_.gitignore — 仮: .Gitignore
 
@@ -9042,6 +9065,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202607291222_saizo` (`docs/semantic-index/index.md`) |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T15:57:24+09:00 saizoが放置されていないか？ |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-29T16:15:28+09:00 saizoは放置でいいのか？ |
+| cmd | `cmd_reflux_backlink_202607291653_saizo` (`docs/semantic-index/index.md`) |
 | causal_chain | `[[cmd_karo_cycle2_bugverify_b7_b19_20260727]]` (L1376) |
 
 ## provisional_tobisaru — 仮: Tobisaru
@@ -9172,6 +9196,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202607291131_hayate` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607291330_hayate` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607291645_hayate` (`docs/semantic-index/index.md`) |
+| cmd | `cmd_reflux_backlink_202607291926_hayate` (`docs/semantic-index/index.md`) |
 
 ## provisional_kotaro — 仮: Kotaro
 
@@ -9682,8 +9707,10 @@ codd:
 | causal | `cmd_karo_hotfix_archive_report_identity_race_20260728` files_modified: [[yaml_safe_write]] |
 | lesson | `L1448` yaml_field_set.shは'-'をstdin規約として扱わない。literal値としてYAML parseされ[None]で静かに破損する |
 | causal | `cmd_karo_hotfix_report_hook_result_canonicalization_20260729` files_modified: [[yaml_safe_write]] |
+| lesson | `L1450` task test_necessity構造値はstdin dashでなくJSON値を渡す |
 | causal_chain | `[[cmd_karo_ci_red_remaining_unit_202607151950]]` (L1041) |
 | causal_chain | `[[cmd_karo_hotfix_report_hook_result_canonicalization_20260729]]` (L1448) |
+| causal_chain | `[[cmd_4192]]` (L1450) |
 
 ## inbox_processing_discipline — inbox処理規律
 
