@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-29 GA-413 metadata-only net-zero source pair reviewed -->
-<!-- source_commit:4f95bd72a0e76950329f321acad84353065b8a68 reason:GA-413 metadata-only net-zero source pair reviewed evidence:3fee9e87 introduced FoF business-day calendar reuse; 4f95bd72 fully reverted it; git diff 0ba70491..4f95bd72 has zero ops-path changes -->
+<!-- last_updated: 2026-07-29 monthly_returns_gen telemetry checkpoint -->
+<!-- source_commit:f7489c3bd6ad15a5349f1302eaaf96cd9ccad1b2 reason:post-deploy monthly_returns_gen bottleneck checkpoint reflected -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -32,6 +32,10 @@ Phase4.1(cmd_1680): 月初signal行自動作成。Phase4完了後に最新signal
 | **排他制御** | pg_advisory_lock。409=排他中(30秒待って再実行) | 同時実行不可 |
 
 ローカルでやること: DB接続(psycopg2)でPFレコード作成/読取 + GS CSV 1列読取 + 数値比較。メモリ数MB。
+
+### monthly_returns_gen分解計測の次checkpoint（`f7489c3b`）
+
+commitをpushしRender deployを確認後、同一`target_date`・全78PF・直列の本番`fullrecalculate`を1回実行する。既存timing JSONの`monthly_returns_gen_breakdown`から`mr_compute` / `mr_internal_commit` / `mr_caller_commit` / `mr_cache_reload`の各`sum_sec`・`count`と`residual_sec`（第5区間）を抽出し、最大`sum_sec`を支配項として一意判定する（同値なら支配項未確定として再計測）。最適化は並列化より先に、支配項に応じて計算量・cache reload・重複commit・writeの削減を優先する。
 
 - L690: recalculate-sync完了判定はAPI statusだけでなくDB recalculation_status行で確認する（cmd_2424）
 - L701: fullrecalculate後は非対象PFのmonthly_returns件数diffを確認し復元判断まで行う（cmd_2450）

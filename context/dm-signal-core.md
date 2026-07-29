@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-29 GA-413 metadata-only net-zero source pair reviewed -->
-<!-- source_commit:4f95bd72a0e76950329f321acad84353065b8a68 reason:GA-413 metadata-only net-zero source pair reviewed evidence:3fee9e87 introduced FoF business-day calendar reuse; 4f95bd72 fully reverted it; git diff 0ba70491..4f95bd72 has zero core-path changes -->
+<!-- last_updated: 2026-07-29 monthly_returns_gen sub-metrics telemetry contract -->
+<!-- source_commit:f7489c3bd6ad15a5349f1302eaaf96cd9ccad1b2 reason:monthly_returns_gen breakdown telemetry reflected -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -57,6 +57,8 @@ p̄バッチ: `p_average_results`テーブルに事前計算結果を格納。�
 <!-- added: 2026-03-29 cmd_1474/1479のデータフロー依存バグから抽出。検証元: docs/research/fullrecalculate-architecture-2026-03-28.md §2/§6/§7 -->
 
 Phase構成全量 → `docs/research/fullrecalculate-architecture-2026-03-28.md` §2。ここには**OPT変更時に壊れやすい依存**のみ記載。
+
+- 2026-07-29 `f7489c3b`: 既存の`monthly_returns_gen`総時間と返り値を維持したまま、既存JSON timing正本へ`monthly_returns_gen_breakdown`を後方互換追加する。`mr_compute` / `mr_internal_commit` / `mr_caller_commit` / `mr_cache_reload`は各`count`・`sum_sec`・`avg_sec`・`max_sec`を持ち、未計測差分は`residual_sec=max(0, monthly_returns_gen-sum(4区間))`として保存する。
 
 | 上流Phase | 下流Phase | 共有データ | 危険パターン | 事故実績 |
 |-----------|-----------|------------|-------------|---------|
