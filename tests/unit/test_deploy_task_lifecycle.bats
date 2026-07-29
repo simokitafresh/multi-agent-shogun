@@ -584,6 +584,43 @@ PY
     resolve_fixture_task "$NESTED_RESOLVED_FIXTURE_ROOT" "cmd_9999" "tobisaru"
 }
 
+run_direct_task_id_projection() {
+  (
+    local cmd_id="$1"
+    export DEPLOY_TASK_LIB_ONLY=1
+    # shellcheck disable=SC1090
+    source "$TEST_PROJECT/scripts/deploy_task.sh"
+    SCRIPT_DIR="$TEST_PROJECT"
+    log() { :; }
+    resolve_pane() { echo "test-pane"; }
+    get_ctx_pct() { echo 0; }
+    cli_type() { echo codex; }
+    sleep() { :; }
+    check_idle() { return 0; }
+    deploy_task_validate_cli_target() { return 0; }
+    normalize_task_yaml() { :; }
+    capture_done_redeploy_context() { :; }
+    reset_stale_fields() { _STALE_RESET_DONE=1; }
+    check_firefighting_title() { :; }
+    warn_task_clarity() { :; }
+    warn_recent_noncmd_commit_targets() { :; }
+    deploy_task_apply_task_mutations() { :; }
+    notify_initial_deploy_ntfy_once() { :; }
+    record_deployed_at() { :; }
+    preflight_gate_artifacts() { :; }
+    maybe_notify_draft_review() { :; }
+    deploy_task_send_direct_renudge() { :; }
+    tmux() { return 0; }
+    bash() {
+        if [[ "${1:-}" == */inbox_write.sh ]]; then
+            return 0
+        fi
+        command bash "$@"
+    }
+    deploy_task_main --direct sasuke "$cmd_id"
+  )
+}
+
 @test "LK-A22 Level5: depends_on deploy displays current ACs and dependency context" {
     local root
     root="$(mktemp -d "$BATS_TMPDIR/depends_context.XXXXXX")"
@@ -630,22 +667,13 @@ teardown_file() {
 setup() {
     export TEST_TMPDIR="$BATS_TEST_TMPDIR"
     export TEST_PROJECT="$TEST_TMPDIR/project"
+    cp -rP "$DEPLOY_TASK_PROJECT_TEMPLATE" "$TEST_PROJECT"
     mkdir -p \
-        "$TEST_PROJECT/queue/tasks" \
-        "$TEST_PROJECT/queue/reports" \
-        "$TEST_PROJECT/queue/inbox" \
-        "$TEST_PROJECT/logs" \
-        "$TEST_PROJECT/projects" \
-        "$TEST_PROJECT/archive" \
         "$TEST_TMPDIR/queue/tasks" \
         "$TEST_TMPDIR/queue/reports" \
         "$TEST_TMPDIR/archive/reports" \
         "$TEST_TMPDIR/archive/reports/stale" \
         "$TEST_TMPDIR/logs"
-    ln -sf "$DEPLOY_TASK_TEMPLATE_DIR/scripts" "$TEST_PROJECT/scripts"
-    ln -sf "$DEPLOY_TASK_TEMPLATE_DIR/lib" "$TEST_PROJECT/lib"
-    ln -sf "$DEPLOY_TASK_TEMPLATE_DIR/config" "$TEST_PROJECT/config"
-    printf '<!-- DASHBOARD_AUTO_START -->\n<!-- DASHBOARD_AUTO_END -->\n' > "$TEST_PROJECT/dashboard.md"
     source "$SRC_FIELD_GET_SCRIPT"
     export FIELD_GET_NO_LOG=1
 }
@@ -2071,40 +2099,7 @@ task:
   status: done
 EOF
 
-    run bash -c '
-        set -euo pipefail
-        project="$1"
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "$project/scripts/deploy_task.sh"
-        log() { :; }
-        resolve_pane() { echo "test-pane"; }
-        get_ctx_pct() { echo 0; }
-        cli_type() { echo codex; }
-        sleep() { :; }
-        check_idle() { return 0; }
-        deploy_task_validate_cli_target() { return 0; }
-        normalize_task_yaml() { :; }
-        capture_done_redeploy_context() { :; }
-        reset_stale_fields() { _STALE_RESET_DONE=1; }
-        check_firefighting_title() { :; }
-        warn_task_clarity() { :; }
-        warn_recent_noncmd_commit_targets() { :; }
-        deploy_task_apply_task_mutations() { :; }
-        notify_initial_deploy_ntfy_once() { :; }
-        record_deployed_at() { :; }
-        preflight_gate_artifacts() { :; }
-        maybe_notify_draft_review() { :; }
-        deploy_task_send_direct_renudge() { :; }
-        tmux() { return 0; }
-        bash() {
-            if [[ "${1:-}" == */inbox_write.sh ]]; then
-                return 0
-            fi
-            command bash "$@"
-        }
-        deploy_task_main --direct sasuke cmd_2538
-    ' _ "$TEST_PROJECT"
-    [ "$status" -eq 0 ]
+    run_direct_task_id_projection cmd_2538
 
     run field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "parent_cmd" ""
     [ "$status" -eq 0 ]
@@ -2124,40 +2119,7 @@ EOF
     bash "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" "$TEST_PROJECT/queue/tasks/sasuke.yaml" task task_type impl
     bash "$TEST_PROJECT/scripts/lib/yaml_field_set.sh" "$TEST_PROJECT/queue/tasks/sasuke.yaml" task task_id cmd_OLD_impl
 
-    run bash -c '
-        set -euo pipefail
-        project="$1"
-        export DEPLOY_TASK_LIB_ONLY=1
-        source "$project/scripts/deploy_task.sh"
-        log() { :; }
-        resolve_pane() { echo "test-pane"; }
-        get_ctx_pct() { echo 0; }
-        cli_type() { echo codex; }
-        sleep() { :; }
-        check_idle() { return 0; }
-        deploy_task_validate_cli_target() { return 0; }
-        normalize_task_yaml() { :; }
-        capture_done_redeploy_context() { :; }
-        reset_stale_fields() { _STALE_RESET_DONE=1; }
-        check_firefighting_title() { :; }
-        warn_task_clarity() { :; }
-        warn_recent_noncmd_commit_targets() { :; }
-        deploy_task_apply_task_mutations() { :; }
-        notify_initial_deploy_ntfy_once() { :; }
-        record_deployed_at() { :; }
-        preflight_gate_artifacts() { :; }
-        maybe_notify_draft_review() { :; }
-        deploy_task_send_direct_renudge() { :; }
-        tmux() { return 0; }
-        bash() {
-            if [[ "${1:-}" == */inbox_write.sh ]]; then
-                return 0
-            fi
-            command bash "$@"
-        }
-        deploy_task_main --direct sasuke cmd_2539
-    ' _ "$TEST_PROJECT"
-    [ "$status" -eq 0 ]
+    run_direct_task_id_projection cmd_2539
 
     run field_get "$TEST_PROJECT/queue/tasks/sasuke.yaml" "task_id" ""
     [ "$status" -eq 0 ]
