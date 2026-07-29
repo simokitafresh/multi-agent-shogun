@@ -50,7 +50,7 @@
 |---|---|
 | 弾スタイルのテスト適用 | 殿発案22:06・将軍賛同済み。**採否の正式裁可待ち** |
 | 序列snapshot | **wave-final成功receipt待ち(RC⑤)**: 第五弾wave最終fixed-SHA全量unit成功run生成後に4識別子結合で確定。それまで構造監査のみ |
-| **弾#0 run_identity計装(前提弾・第一段解禁対象)** | 設計確定・実装凍結・**実装可能性監査PASS(家老23:21・敵対3件込み)**: receipt+per-file/per-suite ledgerへ4識別子値を追加、**tap/output本文は不変**(receipt pathで関連付け)。**独立裁可の対象 — 裁可あれば第五弾wave-finalより前に実装+選択検証**(第七弾本体の解禁を待たない。待つとwave-finalが結合不能のままになる時系列矛盾=v1.3是正) |
+| **弾#0 run_identity計装(前提弾)** | 🚀**発射済み+殿裁可確定(2026-07-29 23:28将軍自走下知→23:29殿『裁可する』で第一段解禁正式成立)**: 実装可能性監査PASS(家老23:21・敵対3件込み)の実装像で配備 — receipt+per-file/per-suite ledgerへ4識別子値追加、**tap/output本文不変**。AC=敵対3件+選択実行FAIL0/SKIP0+revert手順明記。**第五弾wave-final前のliveクローズが絶対条件** |
 | 弾数・標的固定 | 序列確定後に殿へ提示→裁可で決め打ち |
 | 淘汰との境界 | **確定**: 第七弾=高速化のみ。削除はS3レーン+default-delete policy |
 | 共有層writer | **確定(RC③)**: test_helper/setup/fixtureは独立writerかつ**先行** — shared弾クローズ→固定HEAD全体再計測→個別writer弾の直列依存。並列変更禁止 |
