@@ -244,7 +244,7 @@ def is_test(path):
         path.startswith("tests/")
         or "/tests/" in path
         or path.endswith((".bats", ".spec.js", ".test.js"))
-        or name.startswith("test_")
+        or (name.startswith("test_") and name.endswith(".py"))
     )
 
 document = load(task_path)
@@ -272,6 +272,13 @@ for raw in values:
         seen.add(relative)
         sys.stdout.buffer.write(relative.encode() + b"\0")
 PY
+}
+
+is_test_contract_path() {
+    local path="$1" name="${1##*/}"
+    [[ "$path" == tests/* || "$path" == */tests/* \
+        || "$path" == *.bats || "$path" == *.spec.js \
+        || "$path" == *.test.js || ( "$name" == test_*.py ) ]]
 }
 
 # Record a task_scope_paths() SCOPE_EXPANSION stderr line into gate_fire_log
@@ -1244,9 +1251,7 @@ PY
             local -a _sf_declared_tests=()
             local _sf_path
             for _sf_path in "${_sf_scoped[@]}"; do
-                if [[ "$_sf_path" == tests/* || "$_sf_path" == */tests/* \
-                    || "$_sf_path" == *.bats || "$_sf_path" == *.spec.js \
-                    || "$_sf_path" == *.test.js || "${_sf_path##*/}" == test_* ]]; then
+                if is_test_contract_path "$_sf_path"; then
                     _sf_declared_tests+=("$_sf_path")
                 fi
             done
@@ -1782,9 +1787,7 @@ _run_tests_main() {
             mapfile -d '' -t _declared_contract_tests <"$_explicit_tests_tmp"
             rm -f "$_explicit_tests_tmp"
             for _scoped_path in "${scoped_paths[@]}"; do
-                if [[ "$_scoped_path" != tests/* && "$_scoped_path" != */tests/* \
-                    && "$_scoped_path" != *.bats && "$_scoped_path" != *.spec.js \
-                    && "$_scoped_path" != *.test.js && "${_scoped_path##*/}" != test_* ]]; then
+                if ! is_test_contract_path "$_scoped_path"; then
                     _production_scope+=("$_scoped_path")
                 fi
             done

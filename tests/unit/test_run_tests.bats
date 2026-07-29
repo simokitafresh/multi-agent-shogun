@@ -743,6 +743,44 @@ YAML
   [ ! -e "$SELECT_ARGS_LOG" ]
 }
 
+# test_necessity: Task selector must classify tests by path/extension contract;
+# production scripts named test_*.sh are sources, never direct Bats targets.
+@test "task mode excludes test-prefixed production shell scripts from direct tests" {
+  mkdir -p "$TMPROOT/queue/tasks"
+  export BATS_ARGS_LOG="$TMPROOT/bats.args"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$BATS_ARGS_LOG"
+printf '1..1\nok 1 selector-contract\n'
+SH
+  chmod +x "$TMPROOT/bin/bats"
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$REPO_ROOT/tests/unit/test_run_tests.bats"
+SH
+  chmod +x "$TMPROOT/scripts/test_select.sh"
+  cat >"$TMPROOT/queue/tasks/tobisaru.yaml" <<'YAML'
+task:
+  files_modified:
+    - scripts/test_timing_ledger_write.sh
+    - scripts/test_suite_timing_ledger_write.sh
+    - tests/unit/test_run_tests.bats
+YAML
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$BATS_ARGS_LOG" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/tobisaru.yaml"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SCOPE result=task files=3"* ]]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=1 transitive=0 source=task_explicit_contract"* ]]
+  [ "$(wc -l <"$BATS_ARGS_LOG")" -eq 1 ]
+  grep -Fq "test_run_tests.bats" "$BATS_ARGS_LOG"
+  ! grep -Fq "test_timing_ledger_write.sh" "$BATS_ARGS_LOG"
+  ! grep -Fq "test_suite_timing_ledger_write.sh" "$BATS_ARGS_LOG"
+  echo "FIXTURE_METRICS selected=1 expected=1 false_positive=0 excluded_production=2"
+}
+
 # test_necessity: inferred commit_contract tests are ownership metadata, not
 # direct execution requests; one explicit test_path must remain one selected
 # file even when deployment inferred a 947-file test scope.
