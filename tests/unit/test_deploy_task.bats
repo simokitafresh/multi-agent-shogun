@@ -123,28 +123,31 @@ setup() {
     deploy_task_scaffold "deploy_yaml_freshness"
 }
 
+# Reuse the library parsed by deploy_task_scaffold in Bats' isolated `run`
+# subshell. Re-sourcing the ~10k-line script for every table row dominated
+# these contract tests without adding an independent oracle.
+generate_report_template_fast() {
+    SCRIPT_DIR="$TEST_PROJECT"
+    generate_report_template "$@"
+}
+
 # test_necessity: reportのcommit要否はtask明示契約をSSOTとし、欠落時だけ既存type/path推論へfallbackする不変量を守る。
 @test "report commit contract inherits explicit task value and falls back only when absent" {
     use_private_scripts_fixture
-    local task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    local -a pids=() cases=()
 
     check_case() {
         local name="$1" required_line="$2" task_type="$3" target_path="$4" expected="$5"
-        rm -f "$TEST_PROJECT/queue/reports/sasuke_report_${name}.yaml"
+        local task="$TEST_PROJECT/queue/tasks/sasuke_${name}.yaml"
         {
             printf 'task:\n  parent_cmd: %s\n  task_id: %s_normal\n  task_type: %s\n  project: infra\n  report_filename: sasuke_report_%s.yaml\n' "$name" "$name" "$task_type" "$name"
             [ -z "$required_line" ] || printf '  commit_contract:\n    required: %s\n    push_allowed: false\n' "$required_line"
             printf '  target_path: %s\n  acceptance_criteria:\n  - id: AC1\n    description: check\n' "$target_path"
         } > "$task"
-        run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; generate_report_template sasuke "$2_normal" "$2" infra "$3"' _ "$TEST_PROJECT" "$name" "$task"
-        [ "$status" -eq 0 ]
-        run env TASK="$task" ROOT="$TEST_PROJECT" EXPECTED="$expected" python3 - <<'PY'
-import os, yaml
-task = yaml.safe_load(open(os.environ["TASK"], encoding="utf-8"))["task"]
-report = yaml.safe_load(open(os.path.join(os.environ["ROOT"], task["report_path"]), encoding="utf-8"))
-assert report["commit_contract"]["required"] is (os.environ["EXPECTED"] == "true"), report
-PY
-        [ "$status" -eq 0 ]
+        generate_report_template_fast sasuke "${name}_normal" "$name" infra "$task" \
+            >"$TEST_TMPDIR/${name}.out" 2>&1 &
+        pids+=("$!")
+        cases+=("$task:$expected")
     }
 
     check_case explicit_false false recon2 scripts/tool.sh false
@@ -152,15 +155,31 @@ PY
     check_case missing_code "" normal scripts/tool.sh true
     check_case missing_readonly "" recon2 docs/evidence.md false
     check_case quoted_false "'false'" recon2 scripts/tool.sh false
+
+    local pid case_entry task expected
+    for pid in "${pids[@]}"; do
+        wait "$pid"
+    done
+    for case_entry in "${cases[@]}"; do
+        task="${case_entry%:*}"
+        expected="${case_entry##*:}"
+        env TASK="$task" ROOT="$TEST_PROJECT" EXPECTED="$expected" python3 - <<'PY'
+import os, yaml
+task = yaml.safe_load(open(os.environ["TASK"], encoding="utf-8"))["task"]
+report = yaml.safe_load(open(os.path.join(os.environ["ROOT"], task["report_path"]), encoding="utf-8"))
+assert report["commit_contract"]["required"] is (os.environ["EXPECTED"] == "true"), report
+PY
+    done
 }
 
 # test_necessity: variation_checks_requiredはinfra enforcement変更だけに付与し、非infra本文のgate/hook言及を偽陽性にしない不変量を守る。
 @test "variation contract requires infra project and enforcement code change" {
     use_private_scripts_fixture
-    local task="$TEST_PROJECT/queue/tasks/sasuke.yaml"
+    local -a pids=() cases=()
 
     check_variation_case() {
         local name="$1" project="$2" purpose="$3" expected="$4"
+        local task="$TEST_PROJECT/queue/tasks/sasuke_${name}.yaml"
         cat > "$task" <<YAML
 task:
   parent_cmd: cmd_${name}
@@ -173,16 +192,10 @@ task:
   - id: AC1
     description: boundary contract
 YAML
-        run bash -c 'export DEPLOY_TASK_LIB_ONLY=1; source "$1/scripts/deploy_task.sh"; generate_report_template sasuke "$2_normal" "$2" "$3" "$4"' _ "$TEST_PROJECT" "cmd_${name}" "$project" "$task"
-        [ "$status" -eq 0 ]
-        run env TASK="$task" EXPECTED="$expected" python3 - <<'PY'
-import os
-import yaml
-
-task = yaml.safe_load(open(os.environ["TASK"], encoding="utf-8"))["task"]
-assert task["variation_checks_required"] is (os.environ["EXPECTED"] == "true"), task
-PY
-        [ "$status" -eq 0 ]
+        generate_report_template_fast sasuke "cmd_${name}_normal" "cmd_${name}" "$project" "$task" \
+            >"$TEST_TMPDIR/${name}.out" 2>&1 &
+        pids+=("$!")
+        cases+=("$task:$expected")
     }
 
     check_variation_case product_gate dm-signal \
@@ -191,6 +204,22 @@ PY
         "scripts/gates/example.shのenforcement hookを修正する" true
     check_variation_case infra_normal infra \
         "通常のREADME説明文を更新する" false
+
+    local pid case_entry task expected
+    for pid in "${pids[@]}"; do
+        wait "$pid"
+    done
+    for case_entry in "${cases[@]}"; do
+        task="${case_entry%:*}"
+        expected="${case_entry##*:}"
+        env TASK="$task" EXPECTED="$expected" python3 - <<'PY'
+import os
+import yaml
+
+task = yaml.safe_load(open(os.environ["TASK"], encoding="utf-8"))["task"]
+assert task["variation_checks_required"] is (os.environ["EXPECTED"] == "true"), task
+PY
+    done
 }
 
 teardown() {
