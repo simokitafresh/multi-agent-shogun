@@ -8480,6 +8480,7 @@ codd:
 | causal | `docs/research/dm-signal-page-style-diff-mece-part-hanzo_20260722.md` — [[semantic_causal_automation]] -> [[dm-signal-page-style-diff-mece-part-hanzo_20260722]] |
 | causal | `docs/research/dm-signal-page-style-diff-mece-part-hayate_20260722.md` — [[semantic_causal_automation]] -> [[dm-signal-page-style-diff-mece-part-hayate_20260722]] |
 | causal | `cmd_reflux_backlink_202607291658_hanzo` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-saizo_20260722.md` |
+| causal | `cmd_reflux_backlink_202607291847_hanzo` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-tobisaru_20260722.md` |
 | cmd | `cmd_2885` cmd因果辺をsemantic-mapへ自動還流 |
 | cmd | `cmd_2860` origin因果辺→辞書自動注入 |
 | cmd | `cmd_2818` 因果NW導入 |
