@@ -455,6 +455,8 @@ setup() {
     grep -q "^  from: 'custom_sender'" "$TEST_INBOX_DIR/test_agent.yaml"
 }
 
+# test_necessity: review context must preserve both distinct knowledge layers
+# without making semantic_search repeat the separately collected Memory query.
 @test "review_draft attaches memory and semantic context before delivery" {
     setup_basic_test_env
     cat > "$TEST_TMPDIR/scripts/memory_db_query.sh" <<'SCRIPT'
@@ -464,6 +466,7 @@ SCRIPT
     chmod +x "$TEST_TMPDIR/scripts/memory_db_query.sh"
     cat > "$TEST_TMPDIR/scripts/semantic_search.sh" <<'SCRIPT'
 #!/usr/bin/env bash
+[ "${SEMANTIC_DISABLE_MEMORY_DB:-0}" = "1" ] || exit 44
 echo "matched: [[レビュー想起がpull型依存]]"
 SCRIPT
     chmod +x "$TEST_TMPDIR/scripts/semantic_search.sh"

@@ -1795,8 +1795,13 @@ inbox_collect_review_memory_context() {
 
     if [ -x "$SCRIPT_DIR/scripts/semantic_search.sh" ]; then
         (
+            # memory_db_query.sh above already owns the complete Memory layer.
+            # Let semantic_search inspect only the semantic index here; its
+            # fallback would otherwise repeat the same large SQLite FTS/cache
+            # freshness work in parallel without adding a distinct result.
             SEMANTIC_DISABLE_LLM=1 \
             SEMANTIC_DISABLE_CAUSAL=1 \
+            SEMANTIC_DISABLE_MEMORY_DB=1 \
                 timeout "$timeout_sec" bash "$SCRIPT_DIR/scripts/semantic_search.sh" "$query" 2>/dev/null \
                 | inbox_truncate_lines 5 1200
         ) > "$semantic_tmp" || true &
