@@ -34,8 +34,6 @@ setup_file() {
         printf '\n'
         sed -n '/^check_context_update()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
-        sed -n '/^auto_update_context_last_updated_for_changes()/,/^}/p' "$SRC_GATE_SCRIPT"
-        printf '\n'
         sed -n '/^resolve_report_file()/,/^}/p' "$SRC_GATE_SCRIPT"
         printf '\n'
         sed -n '/^update_lesson_impact_tsv()/,/^}/p' "$SRC_GATE_SCRIPT"
@@ -3468,24 +3466,27 @@ run_report_format_validation() {
     [[ "$output" == *"context_update:context/infrastructure.md:causal_links_section_missing"* ]]
 }
 
-@test "context md changes auto-update last_updated before context_update check" {
+@test "committed context remains byte-identical during context_update check" {
     write_cmd_yaml "with_context"
-    write_context_file "2025-01-01"
+    write_context_file "2026-03-05"
     write_report
     git -C "$TEST_PROJECT" init -q
     git -C "$TEST_PROJECT" config user.email "test@example.invalid"
     git -C "$TEST_PROJECT" config user.name "Test User"
     git -C "$TEST_PROJECT" add context/infrastructure.md
     git -C "$TEST_PROJECT" commit -q -m "baseline"
-    printf '\nnew context detail\n' >> "$TEST_PROJECT/context/infrastructure.md"
     CMD_CHANGED_FILES="context/infrastructure.md"
+    local before after
+    before="$(git -C "$TEST_PROJECT" hash-object context/infrastructure.md)"
 
-    run auto_update_context_last_updated_for_changes "$TEST_CMD_ID"
+    run run_context_update_check
     [ "$status" -eq 0 ]
-    grep -q "last_updated: .* ${TEST_CMD_ID}" "$TEST_PROJECT/context/infrastructure.md"
+    after="$(git -C "$TEST_PROJECT" hash-object context/infrastructure.md)"
+    [ "$before" = "$after" ]
+    [ -z "$(git -C "$TEST_PROJECT" status --short -- context/infrastructure.md)" ]
 }
 
-@test "context md dirty worktree alone is not auto-updated" {
+@test "uncommitted context remains byte-identical and stale metadata blocks" {
     write_cmd_yaml "with_context"
     write_context_file "2025-01-01"
     write_report
@@ -3495,33 +3496,30 @@ run_report_format_validation() {
     git -C "$TEST_PROJECT" add context/infrastructure.md
     git -C "$TEST_PROJECT" commit -q -m "baseline"
     printf '\nother cmd context detail\n' >> "$TEST_PROJECT/context/infrastructure.md"
-    CMD_CHANGED_FILES=""
+    CMD_CHANGED_FILES="context/infrastructure.md"
+    local before after
+    before="$(git -C "$TEST_PROJECT" hash-object context/infrastructure.md)"
 
-    run auto_update_context_last_updated_for_changes "$TEST_CMD_ID"
-    [ "$status" -eq 0 ]
-    ! grep -q "last_updated: .* ${TEST_CMD_ID}" "$TEST_PROJECT/context/infrastructure.md"
+    run run_context_update_check
+    [ "$status" -eq 1 ]
+    after="$(git -C "$TEST_PROJECT" hash-object context/infrastructure.md)"
+    [ "$before" = "$after" ]
     grep -q "last_updated: 2025-01-01 cmd_000 test" "$TEST_PROJECT/context/infrastructure.md"
 }
 
-@test "context md auto-update honors report files_modified" {
+@test "context missing last_updated marker blocks without inserting marker" {
     write_cmd_yaml "with_context"
-    write_context_file "2025-01-01"
+    printf '# Infra\n' > "$TEST_PROJECT/context/infrastructure.md"
     write_report
-    cat > "$TEST_PROJECT/queue/tasks/sasuke.yaml" <<EOF
-task:
-  parent_cmd: $TEST_CMD_ID
-  report_filename: sasuke_report_${TEST_CMD_ID}.yaml
-EOF
-    cat >> "$TEST_PROJECT/queue/reports/sasuke_report_${TEST_CMD_ID}.yaml" <<'EOF'
-files_modified:
-  - file: context/infrastructure.md
-EOF
-    CMD_CHANGED_FILES=""
-    export MATCHING_TASK_FILES=("$TEST_PROJECT/queue/tasks/sasuke.yaml")
+    local before after
+    before="$(sha256sum "$TEST_PROJECT/context/infrastructure.md" | awk '{print $1}')"
 
-    run auto_update_context_last_updated_for_changes "$TEST_CMD_ID"
-    [ "$status" -eq 0 ]
-    grep -q "last_updated: .* ${TEST_CMD_ID}" "$TEST_PROJECT/context/infrastructure.md"
+    run run_context_update_check
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"context_update:context/infrastructure.md:last_updated_missing"* ]]
+    after="$(sha256sum "$TEST_PROJECT/context/infrastructure.md" | awk '{print $1}')"
+    [ "$before" = "$after" ]
+    ! grep -q "last_updated:" "$TEST_PROJECT/context/infrastructure.md"
 }
 
 @test "context_update missing: gate skips and keeps existing behavior" {

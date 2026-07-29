@@ -5582,7 +5582,7 @@ for rel in targets:
 
     m2 = re.search(r"<!--\s*last_updated:\s*(\d{4}-\d{2}-\d{2})\b", text)
     if not m2:
-        print(f"WARN\t{rel}: last_updated comment not found (skip)")
+        print(f"BLOCK\tcontext_update:{rel}:last_updated_missing")
         continue
 
     last_updated = m2.group(1)
@@ -5598,64 +5598,6 @@ for rel in targets:
             print(f"WARN\tcontext_update:{rel}:causal_links_section_missing")
 PY
     )
-}
-
-auto_update_context_last_updated_for_changes() {
-    local cmd_id="$1"
-    local changed_contexts
-
-    changed_contexts=$(
-        {
-            printf '%s\n' "${CMD_CHANGED_FILES:-}"
-            collect_report_modified_files 2>/dev/null || true
-        } | awk '/^context\/.*\.md$/ && !seen[$0]++'
-    )
-
-    [ -n "$changed_contexts" ] || return 0
-
-    CHANGED_CONTEXTS="$changed_contexts" python3 - "$SCRIPT_DIR" "$cmd_id" <<'PY'
-from __future__ import annotations
-
-from datetime import date
-import os
-import re
-import sys
-
-root = sys.argv[1]
-cmd_id = sys.argv[2]
-today = date.today().isoformat()
-marker = f"<!-- last_updated: {today} {cmd_id} -->"
-changed = [line.strip() for line in os.environ.get("CHANGED_CONTEXTS", "").splitlines() if line.strip()]
-pattern = re.compile(r"<!--\s*last_updated:\s*[^>]*-->")
-
-for rel_path in changed:
-    abs_path = os.path.join(root, rel_path)
-    if not os.path.isfile(abs_path):
-        continue
-    try:
-        with open(abs_path, encoding="utf-8") as f:
-            lines = f.read().splitlines()
-    except Exception:
-        continue
-
-    replaced = False
-    for idx, line in enumerate(lines[:10]):
-        if pattern.search(line):
-            lines[idx] = pattern.sub(marker, line)
-            replaced = True
-            break
-
-    if not replaced:
-        insert_at = 1 if lines and lines[0].startswith("#") else 0
-        lines.insert(insert_at, marker)
-
-    text = "\n".join(lines)
-    if text:
-        text += "\n"
-    with open(abs_path, "w", encoding="utf-8") as f:
-        f.write(text)
-    print(rel_path)
-PY
 }
 
 # ─── preflight: ゲートフラグ未存在時の自動生成（冪等） ───
@@ -7255,8 +7197,7 @@ for gate in "${ALL_GATES[@]}"; do
     fi
 done
 
-# ─── context_update freshness check（context変更時はlast_updatedを自動更新してからBLOCK判定） ───
-auto_update_context_last_updated_for_changes "$CMD_ID" >/dev/null 2>&1 || true
+# ─── context_update freshness check（検証対象は書換えず、欠落・staleをBLOCK） ───
 check_context_update "$CMD_ID"
 
 # ─── 報告YAML存在チェック（cmd_1192: タスクあり報告なしをBLOCK, GP-026: 活動中忍者はWAIT） ───
