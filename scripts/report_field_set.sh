@@ -101,6 +101,16 @@ if not isinstance(updates, dict) or not updates:
 data = yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}
 if not isinstance(data, dict):
     raise SystemExit("BLOCK: report must be a YAML mapping")
+# Level 5 report scaffold: legacy/alternate publication paths may hand the
+# authoring lane a report created before operational_simulation became
+# mandatory.  Repair structure only; empty values deliberately remain invalid
+# so gate_report_format.sh still requires the ninja's measured evidence.
+opsim = data.get("operational_simulation")
+if not isinstance(opsim, dict):
+    opsim = {}
+    data["operational_simulation"] = opsim
+for field in ("command", "expected", "actual", "result"):
+    opsim.setdefault(field, "")
 old_status = str(data.get("status", "")).strip()
 if old_status in {"completed", "done"} and updates.get("status") != "revision_requested":
     raise SystemExit("BLOCK: completed report is immutable; batch must first transition to revision_requested")

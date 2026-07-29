@@ -33,6 +33,40 @@ teardown() {
     grep -Fq "bats 3/3 PASS" "$TEST_REPORT"
 }
 
+@test "batchは欠落したoperational_simulationの空4枠だけを生成し有効値を補完しない" {
+    cat >> "$TEST_REPORT" <<'YAML'
+files_modified:
+  - path: scripts/report_field_set.sh
+    change: test
+lessons_useful:
+  - id: L625
+    useful: true
+    reason: test
+lesson_candidate:
+  found: false
+  no_lesson_reason: test
+binary_checks:
+  AC1:
+    - check: scaffold
+      result: "yes"
+YAML
+
+    run bash -c "printf '%s\n' 'result.summary: scaffold test' | bash '$SCRIPT' --batch '$TEST_REPORT'"
+    [ "$status" -eq 0 ]
+
+    run python3 - "$TEST_REPORT" <<'PY'
+import sys, yaml
+data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+opsim = data.get("operational_simulation")
+assert opsim == {"command": "", "expected": "", "actual": "", "result": ""}, opsim
+PY
+    [ "$status" -eq 0 ]
+
+    run bash "$PROJECT_ROOT/scripts/gates/gate_report_format.sh" "$TEST_REPORT"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"operational_simulation"* ]]
+}
+
 @test "result.summary: 空文字は入口でexit 1" {
     run bash "$SCRIPT" "$TEST_REPORT" result.summary ""
     [ "$status" -eq 1 ]
