@@ -243,6 +243,34 @@ _write_lpt_ledger() {
   [ "$receipt_id" = "$suite_id" ]
 }
 
+# test_necessity: A non-terminal-success run may publish its failure receipt,
+# but must leave both timing ledgers absent so no exact identity join exists.
+@test "failed run publishes no per-file or per-suite timing cohort" {
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '1..1\nnot ok 1 sample\n'
+exit 7
+SH
+  chmod +x "$TMPROOT/bin/bats"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+    BATS_CACHE=0 BATS_SPLIT_FILES=1 TEST_TIMING_LEDGER="$TMPROOT/logs/failed-file.tsv" \
+    TEST_SUITE_TIMING_LEDGER="$TMPROOT/logs/failed-suite.tsv" \
+    bash "$TMPROOT/scripts/run_tests.sh" unit
+
+  [ "$status" -eq 7 ]
+  [ ! -e "$TMPROOT/logs/failed-file.tsv" ]
+  [ ! -e "$TMPROOT/logs/failed-suite.tsv" ]
+  receipt="$(find "$TMPROOT/logs/test_receipts" -name '*.json' -type f | head -1)"
+  python3 - "$receipt" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+assert d["complete"] is True
+assert d["result"] == "FAIL"
+assert d["rc"] == 7
+PY
+}
+
 # test_necessity: receipt/per-file/per-suiteは同じ4識別子を持つ3点結合だけを
 # success序列候補とし、片側batch欠損は既存ledgerを1byteも公開変更しない。
 @test "run identity paired publisher fails closed before one-sided publication" {
@@ -819,6 +847,15 @@ SH
   external="$TMPROOT/external"
   mkdir -p "$external/backend/tests" "$external/backend/app" \
     "$TMPROOT/projects" "$TMPROOT/queue/tasks" "$TMPROOT/logs"
+  cat >"$TMPROOT/bin/python3" <<'SH'
+#!/usr/bin/env bash
+if [[ "${1:-}" == -m && "${2:-}" == pytest ]]; then
+  printf '1 passed in 0.01s\n'
+  exit 0
+fi
+exec /usr/bin/python3 "$@"
+SH
+  chmod +x "$TMPROOT/bin/python3"
   printf 'VALUE = 1\n' >"$external/backend/app/source.py"
   printf 'def test_scope():\n    assert True\n' >"$external/backend/tests/test_scope.py"
   git -C "$external" init -q
@@ -838,7 +875,7 @@ task:
   project: external
   planned_paths: [backend/app/source.py]
 YAML
-  run env REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
     bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/forbidden.yaml"
   [ "$status" -eq 2 ]
   [[ "$output" == *"BLOCK: external backend task has no explicit contract tests"* ]]
@@ -852,7 +889,7 @@ task:
     - backend/app/source.py
     - backend/tests/test_scope.py
 YAML
-  run env REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
     bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/contract.yaml"
   [ "$status" -eq 0 ]
   [[ "$output" == *"scope=backend_contract"* ]]
@@ -870,7 +907,7 @@ task:
       wave_final: true
       fixed_sha: $external_head
 YAML
-  run env REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" LOG_DIR="$TMPROOT/logs" SHOGUN_HEAVY_JOB_LOCK_HELD=1 \
     bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/checkpoint.yaml"
   [ "$status" -eq 0 ]
   [[ "$output" == *"scope=backend_full_unit_checkpoint"* ]]

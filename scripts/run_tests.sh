@@ -2074,7 +2074,10 @@ if [[ "${BASH_SOURCE[0]:-$0}" == "${0}" ]]; then
         _rc=$?
         set -e
         _output_sha256="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["output_sha256"])' "$_receipt")"
-        if [ -s "$_pending_file_batch" ] || [ -s "$_pending_suite_batch" ]; then
+        # Timing rows are a terminal-success cohort.  A failed test run still
+        # publishes its receipt, but must never make either timing ledger
+        # eligible for an exact four-identity join.
+        if [ "$_rc" -eq 0 ] && { [ -s "$_pending_file_batch" ] || [ -s "$_pending_suite_batch" ]; }; then
             TEST_TIMING_LEDGER="${TEST_TIMING_LEDGER:-$REPO_ROOT/logs/test_timing_ledger.tsv}" \
             TEST_SUITE_TIMING_LEDGER="${TEST_SUITE_TIMING_LEDGER:-$REPO_ROOT/logs/test_suite_timing_ledger.tsv}" \
               bash "$REPO_ROOT/scripts/test_suite_timing_ledger_write.sh" --pair \
