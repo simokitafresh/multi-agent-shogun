@@ -129,12 +129,26 @@ def set_dot(root, dotted, value):
             raise ValueError(f"invalid mapping path: {dotted}")
         cur[last] = value
 
+# review_bundle.py's _HOOK_POST_RESULTS enforces exactly these three
+# lowercase snake_case tokens; ninjas keep writing the PASS/UPPER_SNAKE form
+# tool output shows them, which round-trips through gunshi APPROVE rejection.
+# Canonicalize only the exact path (not the direct-sibling
+# hook_failures.post_verification_result) so an unknown value still falls
+# through to review_bundle.py's existing BLOCK unchanged.
+_HOOK_POST_RESULT_CANON = {
+    "PASS": "all_pass", "all_pass": "all_pass",
+    "NO_NEW_FAILURE": "no_new_failure", "no_new_failure": "no_new_failure",
+    "REGRESSION_DETECTED": "regression_detected", "regression_detected": "regression_detected",
+}
+
 try:
     for key, value in updates.items():
         if not isinstance(key, str) or not key.strip():
             raise ValueError("batch field names must be non-empty strings")
         if key.startswith("binary_checks.") and key.endswith(".result") and isinstance(value, bool):
             value = "yes" if value else "no"
+        if key == "hook_failures.details.post_verification_result" and isinstance(value, str):
+            value = _HOOK_POST_RESULT_CANON.get(value, value)
         set_dot(data, key, value)
 except ValueError as exc:
     raise SystemExit(f"BLOCK: {exc}")
@@ -1640,6 +1654,30 @@ print(yaml_text(data, sort_keys=False), end='')
 " <<< "$val")
                 echo "$fixed"
                 return 0
+            fi
+            ;;
+        hook_failures)
+            # exact path only: hook_failures.details.post_verification_result.
+            # review_bundle.py enforces {all_pass,no_new_failure,regression_detected}
+            # (lowercase snake_case); ninjas keep writing the uppercase/PASS form
+            # they see in tool output, which round-trips through gunshi APPROVE
+            # rejection. Canonicalize known spellings here; leave anything else
+            # untouched so the existing downstream BLOCK still catches real
+            # unknown values (no silent-fix of genuine mistakes).
+            if [[ "$dot_key" == "hook_failures.details.post_verification_result" ]]; then
+                local canonical=""
+                case "$val" in
+                    PASS|all_pass) canonical="all_pass" ;;
+                    NO_NEW_FAILURE|no_new_failure) canonical="no_new_failure" ;;
+                    REGRESSION_DETECTED|regression_detected) canonical="regression_detected" ;;
+                esac
+                if [[ -n "$canonical" ]]; then
+                    if [[ "$canonical" != "$val" ]]; then
+                        echo "[autofix] hook_failures.details.post_verification_result ${val}→${canonical} canonical化" >&2
+                    fi
+                    echo "$canonical"
+                    return 0
+                fi
             fi
             ;;
     esac
