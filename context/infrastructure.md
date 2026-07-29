@@ -898,7 +898,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1476 -->
+<!-- last_synced_lesson: L1478 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2088,6 +2088,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1474: 小型git fixtureもclone反復をCOWコピーへ置換して境界を敵対確認する（cmd_round7_lane9_campaign_shard_20260730）
 - L1475: テスト内で本番関数のrepo/quarantineパスをオーバーライドし忘れると実repoへのgit走査で重量化する（cmd_round7_lane10_ninja_monitor_stall_20260730）
 - L1476: early precheckは初期化済みroot SSOTだけを参照する（cmd_karo_hotfix_cmd_save_deploy_time_contract_parity_20260730）
+- L1477: bashの$$はbackgroundサブシェル間で不変。ninja_name等の共有識別子だけをkeyにしたtmpファイル名は&並列化で即座に衝突する（cmd_karo_recon_test7_parallel_race_20260730_recon2）
+- L1478: 共有pointerのatomic mvはwriter固有tmpを必要とする（cmd_karo_hotfix_deploy_active_pointer_tmp_race_20260730）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
