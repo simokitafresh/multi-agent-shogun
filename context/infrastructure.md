@@ -898,7 +898,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1459 -->
+<!-- last_synced_lesson: L1460 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2071,6 +2071,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1457: 並列検索のfallback重複は異なる層を取得しているように見えて同一I/Oを二重化する（cmd_karo_round5_lane_inbox_write_total_20260729）
 - L1458: 診断検索の出力を次の検索入力へ再投入しない（cmd_karo_round5_lane_cmd_save_checks_main_20260729）
 - L1459: tmpdir cleanupの局所contractでは同一target内の別区間再発を防げない（cmd_karo_round5_lane_full_precheck_20260729）
+- L1460: 不変indexへの辺ごとgit照会を一括集合へ変換する（cmd_karo_round5_lane_git_precommit_sourced_dep_20260729）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
