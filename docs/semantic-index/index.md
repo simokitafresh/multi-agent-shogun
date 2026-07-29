@@ -8482,6 +8482,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607290813_hanzo` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607290824_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607290913_hanzo` files_modified: [[semantic_causal_automation]] |
+| causal | `cmd_reflux_backlink_202607290925_kagemaru` files_modified: [[semantic_causal_automation]] |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
@@ -9223,6 +9224,7 @@ codd:
 | cmd | `cmd_reflux_backlink_202607290623_kagemaru` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607290723_kagemaru` (`docs/semantic-index/index.md`) |
 | cmd | `cmd_reflux_backlink_202607290824_kagemaru` (`docs/semantic-index/index.md`, `context/semantic-map.md`) |
+| cmd | `cmd_reflux_backlink_202607290925_kagemaru` (`docs/semantic-index/index.md`) |
 
 ## provisional_lessons — 仮: Lessons
 
