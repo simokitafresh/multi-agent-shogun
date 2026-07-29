@@ -1,31 +1,3 @@
-- cmd_id: cmd_karo_impl_b40_failed_status_close_deadlock_20260726
-  timestamp: '2026-07-25T18:47:54Z'
-  ninja: hayate
-  workaround: true
-  event_kind: manual_wa
-  auto_captured: false
-  category: uncategorized
-  root_signature: 'uncategorized::general'
-  detail: 'commit_contract.required=true が実体と合わず報告が終端できなかった(是正対象が存在しない弾のため40文字hashを作れない)'
-  root_cause: '家老がcommit_contract.required=false と reason=no_implementation_target_premise_falsified_by_AC1 へ是正。契約を直すのは発行した側の責任であり忍者の自己改変を避けた'
-  brainwash_check: '洗脳#6(出力=仕事)防止: 承認を伝えるだけで止めず契約を実際に書換えた。commit_contract.required true→false を sed -n 151,153p で実測確認、滞留報告 1→0件(archived=1 kept=0)'
-  lesson_required: false
-  lesson_disposition: integrated_existing
-  lesson_reference: 'LK-A11'
-  resolved_by_cmd: 'cmd_4191'
-- cmd_id: cmd_karo_hotfix_deploy_task_pythonpath_20260726
-  timestamp: '2026-07-26T03:49:11Z'
-  ninja: system
-  workaround: false
-  event_kind: hotfix
-  auto_captured: true
-  category: rework_auto_capture
-  detail: 'cmd_complete_gate completed rework event'
-  root_cause: 'automatic completion observation'
-  lesson_required: false
-  lesson_disposition: not_applicable
-  lesson_reference: 'not_applicable'
-  resolved_by_cmd: 'cmd_karo_hotfix_deploy_task_pythonpath_20260726'
 - cmd_id: cmd_karo_cycle2_bugverify_b7_b19_20260727
   timestamp: '2026-07-26T17:36:07Z'
   ninja: hayate
@@ -1308,4 +1280,33 @@
   category: rework_auto_capture
   detail: 'cmd_complete_gate completed rework event'
   root_cause: 'automatic completion observation'
-  resolved_by_cmd: ''
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_recalculate_sync_end_date_20260729'
+- cmd_id: cmd_karo_hotfix_report_hook_result_canonicalization_20260729
+  timestamp: '2026-07-29T04:18:52Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_report_hook_result_canonicalization_20260729'
+- cmd_id: cmd_karo_hotfix_fullunit_scope_guard_20260729
+  timestamp: '2026-07-29T06:29:42Z'
+  ninja: system
+  workaround: false
+  event_kind: hotfix
+  auto_captured: true
+  category: rework_auto_capture
+  detail: 'cmd_complete_gate completed rework event'
+  root_cause: 'automatic completion observation'
+  lesson_required: false
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: 'cmd_karo_hotfix_fullunit_scope_guard_20260729'
