@@ -6068,6 +6068,7 @@ ${command_text}
 ${planned_paths}"
 
     local -a hints=()
+    local codd_scope=false
     local is_dm_signal=false
     [ "$project" = "dm-signal" ] && is_dm_signal=true
 
@@ -6087,7 +6088,8 @@ ${planned_paths}"
     # its freshness index in one commit.  Supply that contract at deployment
     # time whenever the task scope names a CoDD source path, so the first
     # commit does not have to discover it through a Level4 BLOCK.
-    if printf '%s\n' "$planned_paths" | grep -Eqi 'scripts/codd|skills/codd/|skills/codd-refactor/'; then
+    if printf '%s\n' "$planned_paths" | grep -Eqi '(^|/)(scripts/codd|skills/codd/|skills/codd-refactor/)'; then
+        codd_scope=true
         hints+=("context/codd.md")
     fi
 
@@ -6114,6 +6116,39 @@ ${planned_paths}"
     done
 
     insert_task_block_before_description "$tmp_file" "$inject_block"
+
+    if [ "$codd_scope" = true ]; then
+        local codd_scope_json
+        codd_scope_json=$(python3 - "$tmp_file" <<'PY'
+import json
+import sys
+import yaml
+
+task = (yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}).get("task", {})
+paths = task.get("planned_paths") or []
+if isinstance(paths, str):
+    paths = [paths]
+paths = list(dict.fromkeys([*[str(path) for path in paths], "context/codd.md"]))
+contract = task.get("commit_contract")
+if isinstance(contract, dict):
+    contract = dict(contract)
+    contract_paths = contract.get("planned_paths") or []
+    if isinstance(contract_paths, str):
+        contract_paths = [contract_paths]
+    contract["planned_paths"] = list(
+        dict.fromkeys([*[str(path) for path in contract_paths], "context/codd.md"])
+    )
+print(json.dumps({"planned_paths": paths, "commit_contract": contract}, ensure_ascii=False))
+PY
+) || return 1
+        local codd_planned_json codd_contract_json
+        codd_planned_json=$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["planned_paths"], ensure_ascii=False))' "$codd_scope_json") || return 1
+        yaml_field_set "$tmp_file" "task" "planned_paths" "$codd_planned_json" || return 1
+        codd_contract_json=$(python3 -c 'import json,sys; value=json.loads(sys.argv[1])["commit_contract"]; print(json.dumps(value, ensure_ascii=False) if isinstance(value, dict) else "")' "$codd_scope_json") || return 1
+        if [ -n "$codd_contract_json" ]; then
+            yaml_field_set "$tmp_file" "task" "commit_contract" "$codd_contract_json" || return 1
+        fi
+    fi
 
     _yaml_field_set_publish_atomic "$tmp_file" "$task_file" || return 1
     log "inject_context_hints: ${#hints[@]} hints injected"

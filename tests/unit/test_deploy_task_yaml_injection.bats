@@ -491,40 +491,65 @@ PY
     [ "$status" -ne 0 ]
 }
 
-@test "GA-293 injects codd freshness context only for CoDD planned paths" {
+@test "GA-293 injects codd freshness context and commit scope only for CoDD planned paths" {
     tmpdir="$(mktemp -d)"
-    codd_task="$tmpdir/codd.yaml"
     plain_task="$tmpdir/plain.yaml"
-    cat > "$codd_task" <<'YAML'
-task:
-  project: infra
-  task_type: ci_fix
-  planned_paths:
-  - skills/codd-refactor/SKILL.md
-YAML
     cat > "$plain_task" <<'YAML'
 task:
   project: other
   task_type: ci_fix
   planned_paths:
   - scripts/unrelated.sh
+  commit_contract:
+    required: true
+    reason: implementation_path_present
+    planned_paths:
+    - scripts/unrelated.sh
 YAML
+
+    for shape in scripts/codd skills/codd/SKILL.md skills/codd-refactor/SKILL.md; do
+        name="${shape//\//_}"
+        task_file="$tmpdir/$name.yaml"
+        cat > "$task_file" <<YAML
+task:
+  project: infra
+  task_type: ci_fix
+  planned_paths:
+  - $shape
+  commit_contract:
+    required: true
+    reason: implementation_path_present
+    planned_paths:
+    - $shape
+    scope_expansion_reason: existing canonical reason
+YAML
+    done
 
     run bash -lc "
         set -e
         export DEPLOY_TASK_LIB_ONLY=1
         source '$PROJECT_ROOT/scripts/deploy_task.sh'
-        inject_context_hints '$codd_task'
+        for task_file in '$tmpdir'/scripts_codd.yaml '$tmpdir'/skills_codd_SKILL.md.yaml '$tmpdir'/skills_codd-refactor_SKILL.md.yaml; do
+            inject_context_hints \"\$task_file\"
+        done
         inject_context_hints '$plain_task'
     "
     [ "$status" -eq 0 ]
 
-    run python3 - "$codd_task" "$plain_task" <<'PY'
+    run python3 - "$tmpdir" "$plain_task" <<'PY'
 import sys, yaml
-codd = yaml.safe_load(open(sys.argv[1]))['task']
-plain = yaml.safe_load(open(sys.argv[2]))['task']
-assert 'context/codd.md' in codd['context_hints'], codd
+from pathlib import Path
+
+for path in sorted(Path(sys.argv[1]).glob("*codd*.yaml")):
+    codd = yaml.safe_load(path.read_text())["task"]
+    assert codd["context_hints"].count("context/codd.md") == 1, codd
+    assert codd["planned_paths"].count("context/codd.md") == 1, codd
+    assert codd["commit_contract"]["planned_paths"].count("context/codd.md") == 1, codd
+    assert codd["commit_contract"]["scope_expansion_reason"] == "existing canonical reason", codd
+plain = yaml.safe_load(open(sys.argv[2]))["task"]
 assert 'context/codd.md' not in plain.get('context_hints', []), plain
+assert 'context/codd.md' not in plain['planned_paths'], plain
+assert 'context/codd.md' not in plain['commit_contract']['planned_paths'], plain
 PY
     [ "$status" -eq 0 ]
 }
