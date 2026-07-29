@@ -1,6 +1,6 @@
-# 【⏸未クローズ — P0-P2完了・残=P3本番検証のみ(開場窓待ち)】リバランサー改良 — 価格経路リアルタイム化 AsIs/ToBe 5W1H（2026-07-19起草・2026-07-29 03:28覚醒更新）
+# 【⏸未クローズ — P3実測4巡で本番バグ2件検出・是正済み。残欠=health commit露出+ID対応証明の最終1巡】リバランサー改良 — 価格経路リアルタイム化 AsIs/ToBe 5W1H（2026-07-19起草・2026-07-29 10:35覚醒更新）
 
-**現在地(2026-07-29 03:28)**: P0偵察・P1a/P1b/P1c実装・P2 FE配信の5工程は全てGATE CLEAR済み(commit群=2023dbf/31d071c/f31c5a0/df4ccf9/e011379)。**本書はクローズしていない** — 残=P3(米国市場開場中のE2E実測+recovery検証)のみ。P3の待ち分類=a(外部入力: 開場時間帯JST22:30-05:00の到来)であり、**開場窓が到来するたび起票可能**。P3クローズ=本レーン完了宣言の条件。
+**現在地(2026-07-29 10:35)**: P0偵察・P1a/P1b/P1c実装・P2 FE配信の5工程は全てGATE CLEAR済み(commit群=2023dbf/31d071c/f31c5a0/df4ccf9/e011379)。**P3(本番E2E最終checkpoint)は殿裁定(07-29 03:29「いま市場が開いているから検証しよう」)で開場中に4巡実測し、本番の実バグ2件を検出・是正した**(§5-P3経過表)。E2Eの主要証跡はほぼ回収済み: production d799d9d・market open・subscription 18/18・SSE 63件coverage 18/18・browser 91/backend 60/同一event ID 60対応・snapshot 18/18・**Alpaca表示値の計算混入0(is_final=false 91/91)**・秘密値ログ0。**残欠2点のみ**: (1)production /healthがdeploy commitを非露出でd799d9d包含を一次確認不能(小改修=healthへcommit hash露出) (2)recovery検証(WS強制切断/Render restart/SSE再接続 duplicate0・out-of-order0)の完走。次窓(開場JST22:30-05:00)で最終1巡→P3クローズ=本レーン完了宣言。
 
 殿発案(2026-07-19 18:03-18:56)→裁可(18:56)。制約: **EODHDプランは現行固定(アップグレードしない)**。
 偵察: cmd_4087(Alpaca実叩き+設計、**完了LGTM 2026-07-19 19:11**)。本書は設計の正本。
@@ -91,7 +91,19 @@
 | P1b ストリーム | Alpaca stream/latest store+calendar正本+health分離 | cmd_4089 | 完了(GATE CLEAR、commit f31c5a0) |
 | P1c 耐障害 | resilience+fallback可視化(degraded/stale明示) | cmd_4090 | 完了(GATE CLEAR、commit df4ccf9) |
 | P2 FE配信 | SSE契約(bounded queue/heartbeat/再開/snapshot)+FE受信化 | cmd_4091 | 完了(GATE CLEAR、commit e011379。SSE契約11/11・全量70/70 PASS) |
-| P3 本番検証(最終checkpoint) | 米国市場開場中の全銘柄subscription ACK+event→backend→SSE→browserの段階別p50/p95/max実測+WS強制切断・Render restart・SSE再接続のrecovery検証(duplicate0/out-of-order0)+終値EODHD突合+Alpaca計算混入0+秘密値ログ0の二値化 | **起票可(覚醒更新03:28)**: 開場窓は毎営業日JST22:30-05:00に到来。07-19起票以降、全軍がhot-scriptレーン集中のため未実行のまま7営業日経過(不作為の在庫)。次の開場窓で家老karo_direct配備を推奨。P3クローズで本レーン完了宣言 | — |
+| P3 本番検証(最終checkpoint) | 米国市場開場中の全銘柄subscription ACK+event→backend→SSE→browserの段階別p50/p95/max実測+WS強制切断・Render restart・SSE再接続のrecovery検証(duplicate0/out-of-order0)+終値EODHD突合+Alpaca計算混入0+秘密値ログ0の二値化 | **⚙4巡実測済み(07-29開場中・殿裁定03:29)**。残欠2点(health commit露出+recovery完走)を次窓の最終1巡でクローズ | 下の経過表 |
+
+### §5-P3 実測経過(2026-07-29開場窓・4巡全て正直FAIL=前提乖離/証明不能での契約どおり停止)
+
+| 巡 | 担当 | 結果 | 検出・確定した事実 |
+|---|---|---|---|
+| 1 | 影丸(timed_window) | FAIL | 当時世代のcredentials未反映(ACK 0/18・EODHD 500)。**後の再deployで世代解消**(家老現物照合07:22: authenticated=true・subscribed 18/18・EODHD正常応答) |
+| 2 | 才蔵(live_market) | FAIL | **本番構造バグ#1検出**: market clockを接続時1回のみ評価しpre-open接続がopen後もphase stale(alpaca_stream.py)。→影丸修正GATE CLEAR(04:01)+FE CI修正CLEAR(04:43) |
+| 3 | 才蔵(retry1) | FAIL(前進) | production d799d9d・market open・subscription 18/18・config 18/18確認。SSE 20秒窓63件・coverage 18/18。**browser受信の同一event ID対応が未証明**のため契約どおり停止 |
+| 4 | 小太郎(browser_retry2) | FAIL(ほぼ完走) | browser 91イベント/backend SSE 60/**同一ID対応60**・snapshot 18/18・**Alpaca is_final=false 91/91(表示値の計算混入0を型で実証)**・秘密値ログ0。残欠=production /healthがdeploy commit非露出でd799d9d包含を一次確認不能 |
+
+- **P3が本番で掴んだ実欠陥**: #1 market_phase stale(是正済み)、#2 creds世代問題(再deployで解消・家老が現世代健全を現物照合)。最終checkpointの投資対効果は既に実証済み
+- **次窓の最終1巡の内容**: (a)healthへdeploy commit hash露出の小改修(検証手段の欠落解消)→(b)recovery検証完走(WS強制切断/Render restart/SSE再接続でduplicate0・out-of-order0)→(c)段階別latency p50/p95/max表+終値EODHD突合→P3クローズ=完了宣言 |
 
 ## 因果リンク
 
