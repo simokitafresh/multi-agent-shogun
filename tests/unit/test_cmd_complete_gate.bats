@@ -2534,6 +2534,12 @@ CASES
     run grep -c '^  auto_captured: true$' "$KARO_WORKAROUNDS_FILE"
     [ "$status" -eq 0 ]
     [ "$output" -eq 3 ]
+    run grep -c '^  lesson_disposition: not_applicable$' "$KARO_WORKAROUNDS_FILE"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 3 ]
+    run grep -c "^  resolved_by_cmd: 'cmd_karo_" "$KARO_WORKAROUNDS_FILE"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 3 ]
 }
 
 @test "rework capture fails closed when its ledger lock cannot be opened" {

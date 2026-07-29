@@ -2519,7 +2519,10 @@ entry = (
     "  category: rework_auto_capture\n"
     "  detail: 'cmd_complete_gate completed rework event'\n"
     "  root_cause: 'automatic completion observation'\n"
-    "  resolved_by_cmd: ''\n"
+    "  lesson_required: false\n"
+    "  lesson_disposition: not_applicable\n"
+    "  lesson_reference: 'not_applicable'\n"
+    f"  resolved_by_cmd: '{cmd_id}'\n"
 )
 fd, temporary = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp")
 os.close(fd)
