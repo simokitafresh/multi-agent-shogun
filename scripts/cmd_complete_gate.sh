@@ -5978,6 +5978,30 @@ PY
     esac
 }
 
+resolve_sg7_completion_identity() {
+    local bundle_path="$1"
+    local bundle_cmd_id bundle_generation
+    read -r bundle_cmd_id bundle_generation < <(
+        BUNDLE_PATH="$bundle_path" python3 - <<'PY'
+import json
+import os
+
+review = (json.load(open(os.environ["BUNDLE_PATH"], encoding="utf-8")) or {}).get("review") or {}
+print(str(review.get("cmd_id") or "").strip(), str(review.get("report_fingerprint") or "").strip())
+PY
+    )
+    if [ "$bundle_cmd_id" != "$CMD_ID" ] || [[ ! "$bundle_generation" =~ ^[0-9a-f]{64}$ ]]; then
+        echo "GATE BLOCK: ${CMD_ID}:completion_bundle_identity_missing_or_invalid" >&2
+        return 1
+    fi
+    if [ -n "${SHOGUN_COMPLETION_GENERATION:-}" ] \
+        && [ "$SHOGUN_COMPLETION_GENERATION" != "$bundle_generation" ]; then
+        echo "GATE BLOCK: ${CMD_ID}:completion_generation_bundle_mismatch" >&2
+        return 1
+    fi
+    export SHOGUN_COMPLETION_GENERATION="$bundle_generation"
+}
+
 collect_cmd_command_file_refs() {
     local cmd_id="$1"
     local verified_deps="${2:-}"
@@ -6626,6 +6650,11 @@ if [ -f "$SCRIPT_DIR/scripts/cmd_complete.sh" ]; then
         exit 1
     fi
     load_validated_sg7_context "$_sg7_bundle" "$_SG7_SPEC_JSON"
+    if ! resolve_sg7_completion_identity "$_sg7_bundle"; then
+        echo "GATE BLOCK: sg7_completion_identity_invalid"
+        append_line_locked "$GATE_METRICS_LOG" "$(printf '%s\t%s\tBLOCK\t%s' "$(date +%Y-%m-%dT%H:%M:%S)" "$CMD_ID" "sg7_completion_identity_invalid")"
+        exit 1
+    fi
 fi
 
 # task_type検出

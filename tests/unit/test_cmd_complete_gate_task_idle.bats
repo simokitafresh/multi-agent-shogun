@@ -21,6 +21,39 @@ teardown() {
     cmd_gate_teardown
 }
 
+# test_necessity: review_approval.shの通常起動はgeneration環境変数を渡さないため、
+# 検証済みSG7 bundleからcanonical generationを解決でき、明示envはbundleと一致する
+# 場合だけ許可する不変量を守る。欠損・不一致の黙認は別generation混同を起こす。
+@test "SG7 completion identity resolves normal review trigger and rejects mismatches" {
+    eval "$(sed -n '/^resolve_sg7_completion_identity()/,/^}/p' "$SRC_GATE_SCRIPT")"
+    local bundle="$TEST_PROJECT/queue/gates/$TEST_CMD_ID/sg7_bundle.json"
+    local generation
+    generation="$(printf 'a%.0s' {1..64})"
+    mkdir -p "$(dirname "$bundle")"
+    printf '{"review":{"cmd_id":"%s","report_fingerprint":"%s","cmd_spec_source":"queue/reports/x.yaml","reviewed_at":"now"}}\n' \
+        "$TEST_CMD_ID" "$generation" > "$bundle"
+    local spec='{"project":"infra","scope":[]}'
+
+    unset SHOGUN_COMPLETION_GENERATION
+    resolve_sg7_completion_identity "$bundle"
+    [ "$SHOGUN_COMPLETION_GENERATION" = "$generation" ]
+
+    SHOGUN_COMPLETION_GENERATION="$generation"
+    run resolve_sg7_completion_identity "$bundle"
+    [ "$status" -eq 0 ]
+
+    SHOGUN_COMPLETION_GENERATION="$(printf 'b%.0s' {1..64})"
+    run resolve_sg7_completion_identity "$bundle"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"completion_generation_bundle_mismatch"* ]]
+
+    printf '{"review":{"cmd_id":"cmd_wrong","report_fingerprint":"%s"}}\n' "$generation" > "$bundle"
+    unset SHOGUN_COMPLETION_GENERATION
+    run resolve_sg7_completion_identity "$bundle"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"completion_bundle_identity_missing_or_invalid"* ]]
+}
+
 write_nested_task() {
     local ninja_name="$1"
     local status="${2:-done}"
