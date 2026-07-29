@@ -1,4 +1,16 @@
-# 【🚀本体解禁(殿裁可2026-07-30 03:09)— 弾台帳TOP10確定・起票開始】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.6 (2026-07-30 03:10 本体弾台帳確定。殿発案07-29 22:06)
+# 【🏁全10レーンCLEAR — 総括checkpoint gen3稼働中(gen1/gen2はdeploy race捕捉の正直FAIL→根治済み)】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.7 (2026-07-30 08:02 将軍覚醒更新。殿発案07-29 22:06)
+
+## §-2.3 総括checkpointの経緯(2026-07-30 08:02時点 — 掲示板+receipt一次)
+
+| 世代 | 固定SHA | 結果 | 詳細 |
+|---|---|---|---|
+| gen1 | 966b4fbe8 | ❌正直FAIL(fail-close) | test_deploy_task.bats test7が全量合成でFAIL(executed 147/183で停止・SKIP0)。focused単独ではPASS=合成でのみ発現 |
+| gen2 | b480b5b03 | ❌正直FAIL(fail-close) | test7契約修正後も同一test7 FAIL(executed 147/184)→**並行負荷raceと確定** |
+| 偵察 | b480b5b03固定 | ✅真因確定 | 独立2系統(Track A=子process動的同定/Track B=総当たり)。真因=`deploy_task.sh`両writer(L3949-3951/L5300-5302)が同一ninja名固定.tmpを共有しmv競合。生値: baseline 23/50 FAIL(46%)→**BASHPID一意化 0/50 FAIL(0%)**。lane4前0/18・後4/18=lane4変更が引き金、runner側(弾#0/lane7)は非因果 |
+| 根治 | aed5dfb9b | ✅CLEAR | BASHPID一意化(半蔵)。旧test7 exact 50反復FAIL0・新atomic contract全PASS・edge 5/5 PASS |
+| **gen3** | aed5dfb9b | 🚀稼働中(08:01発射) | isolated全量一度だけ+wave-final基準比較で総括確定へ |
+
+**上位知見**: 全量checkpoint契約(個別PASSの総和を信じない)が、テスト速度改善の副産物として**deploy本体の実runtime race 1件を捕捉・根治**した。2世代のFAILはいずれも偽装なきfail-close終端。
 
 ## §-2.5 弾#0実行結果(2026-07-30 01:20時点 — 掲示板+才蔵全数走査+gate_metrics一次確認)
 
@@ -15,25 +27,27 @@
 
 **現況(03:10更新)**: **wave-final完了(02:45)=序列SSOT成立**。4識別子exact結合実証(receipt=1/per-file=183集合差0/per-suite=1、run_id=20260729T172800.4154957.21942、2,800/2,800 PASS)。**★殿裁可03:09『裁可』=本体(第二段)起票解禁の正式成立**。
 
-## §-2.4 本体弾台帳(2026-07-30 03:10確定 — 序列SSOT=wave-final snapshot、弾数=TOP10で固定・第五弾憲法踏襲)
+## §-2.4 本体弾台帳(2026-07-30 08:02更新 — 全10レーンGATE CLEAR。帰結は各報告YAML result.summaryから転記)
 
-| # | 標的testファイル | wall(s) | tests | 状態 | 方針(共通: 検査は1つも削らない・敵対fixtureは変更した独立oracle/副作用境界ごと・stdout/判定境界維持) |
+| # | 標的testファイル | wall(s) | tests | 状態 | 帰結(報告YAML一次。数値はfocused計測、総括確定はgen3 checkpoint) |
 |---|---|---|---|---|---|
-| 1 | `test_inbox_write.bats` | 68.219 | 102 | ❄ | AC1=per-test/setup寄与のfocused serial probe→最大寄与是正 |
-| 2 | `test_deploy_task_ac_handling.bats` | 67.552 | 49 | ❄ | 同上(tests49でwall67.5s=1test平均1.4s。fixture/setup税の疑い) |
-| 3 | `test_heavy_job_admission.bats` | 66.977 | 86 | ❄ | 同上 |
-| 4 | `test_deploy_task.bats` | 58.697 | 53 | ❄ | 同上(#2と同一subject。所有分離に注意=1ファイル1レーン) |
-| 5 | `test_cmd_complete_gate.bats` | 56.815 | 161 | ❄ | 同上 |
-| 6 | `test_report_field_set_batch_throughput.bats` | 55.023 | 20 | ❄ | tests20でwall55s=1test平均2.8s(最重)。throughput fixtureの構造是正候補 |
-| 7 | `test_run_tests.bats` | 53.436 | 53 | ❄ | runner自己テスト。弾#0直後ゆえ回帰に最注意 |
-| 8 | `test_deploy_task_lifecycle.bats` | 47.256 | 92 | ❄ | #2/#4と所有調整の上直列 |
-| 9 | `test_campaign_lane_shard_item.bats` | 43.909 | 36 | ❄ | focused probe→是正 |
-| 10 | `test_ninja_monitor_stall.bats` | 41.067 | 78 | ❄ | focused probe→是正 |
+| 1 | `test_inbox_write.bats` | 68.219 | 102 | ✅CLEAR | 採用: 最大寄与fixtureを10件逐次配送→同時配送へ。局所9.694→4.902s、102/102 PASS(疾風) |
+| 2 | `test_deploy_task_ac_handling.bats` | 67.552 | 49 | ✅CLEAR | 採用: median wall 76.6→64.1s(-16.25%)、49/49 PASS(影丸、commit 98655bd70) |
+| 3 | `test_heavy_job_admission.bats` | 66.977 | 86 | ✅CLEAR | 採用: 固定時間待機→event条件置換。wall median 74.9→59.3s(-20.8%)、86/86 PASS(半蔵) |
+| 4 | `test_deploy_task.bats` | 58.697 | 53 | ✅CLEAR | 採用: 53/53 PASS(commit a4b3e156b)。※この変更が全量合成でのdeploy_task.sh固定tmp raceの引き金(§-2.3で根治済み) |
+| 5 | `test_cmd_complete_gate.bats` | 56.815 | 161 | ✅CLEAR | 採用: focused固定待ち除去。73.4→中央値51.2s、161/161 PASS(才蔵、commit 24e7140a) |
+| 6 | `test_report_field_set_batch_throughput.bats` | 55.023 | 20 | ✅CLEAR | 採用: 30秒reconciler実待機→契約値30の敵対oracle付きrelease barrierへ。after中央値51.1s、20/20 PASS(小太郎) |
+| 7 | `test_run_tests.bats` | 53.436 | 53 | ✅CLEAR | 採用: 固定sleep→count barrier。最大test平均12.2→8.9s、54/54 PASS(飛猿) |
+| 8 | `test_deploy_task_lifecycle.bats` | 47.256 | 92 | ✅CLEAR | 採用: duration 39.2→35.7s(-9.06%)、93/93 PASS(commit 1160f6907) |
+| 9 | `test_campaign_lane_shard_item.bats` | 43.909 | 36 | ✅CLEAR | 採用(効果僅少・正直計上): setup各test git clone→COWコピー。wall 41.56→41.02s、36/36 PASS(疾風、commit 780d5f93) |
+| 10 | `test_ninja_monitor_stall.bats` | 41.067 | 78 | ✅CLEAR | 採用: duration 36.4→30.4s(-16.53%)、78/78 PASS(影丸、commit b9483676f) |
 
 - TOP10累積=559.7s/run(全量747.5sの74.9%)。母集団と数値の正本=`hot-script-speedup-round5-wave-final-snapshot-20260730.md`(commit b70cb5179)
 - 停止条件=反復サイクル型(殿裁定13:26)・read-only段のみ冗長2名可(13:28)・報告整形は最終集約(13:31)。before/after計測は同一4識別子契約のfixed-window比較で行う
 
 ## §-2 版履歴
+- v1.7(07-30 08:02): **全10レーンCLEAR+checkpoint saga刻印(将軍覚醒更新)** — §-2.3新設(gen1/gen2正直FAIL→偵察2系統でdeploy_task.sh固定tmp共有race真因確定→BASHPID一意化根治CLEAR→gen3発射08:01)。§-2.4台帳を❄→✅CLEAR+帰結転記(採用10/10、#9は効果僅少を正直計上)。総短縮の確定値はgen3 checkpoint(isolated全量一度だけ+wave-final基準比較)で確定する
+- v1.6(07-30 03:10): 殿裁可03:09で本体解禁+弾台帳TOP10確定(累積559.7s=74.9%)
 - v1.5(07-30 01:20): §-2.5新設(弾#0実行結果・事故と受理・wave-final発射条件充足の刻印)。旧ledger喪失により§0の序列SSOTは「wave-final以降の新schema計測のみ」で構成することを明確化(過去比較は不能=正直記載)
 - v1.4(23:25): 家老実装可能性監査(blt_232122・PASS+最終RC1件)反映 — 弾#0の計装対象を「receipt+per-file/per-suite ledgerへ4識別子値追加、**tap/output本文は不変**(receipt artifact path+basename由来tap pathで所有run関連付け)」へ確定。最小実装像(run_tests.sh+2 ledger writer、outer run_id生成→inner pending→hash確定→原子publish)と敵対3件PASS・現状実測(receipt 3,201件run_id 0/ledger計22,344行output_sha256列0)を§0へ記録。旧v1.1参照表記も整理
 - v1.3(23:07): 家老再検分(blt_230515)の時系列自己矛盾を是正 — **二段階解禁へ統一**: 【第一段】弾#0(run_identity計装)のみ独立裁可の対象とし、裁可あれば**第五弾wave-finalより前に**実装+選択検証(これがなければwave-finalが結合不能のままになるため)。【第二段】第七弾本体(序列確定・弾数固定・是正弾)はwave-final成功receipt→4識別子結合で序列確定→本体裁可→起票解禁。§0/§3/§4のWHENを全て本契約へ揃え、表題版もv1.3へ統一
