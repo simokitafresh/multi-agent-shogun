@@ -1025,6 +1025,65 @@ for path in git("diff", "--cached", "--name-only", "--diff-filter=ACMR").splitli
 PY
 }
 
+run_yaml_dump_closure_gate() {
+    # Preserve gate_no_direct_yaml_dump.sh's full scripts/**/*.sh closure, but
+    # avoid opening every shell file through pathlib on WSL's /mnt/c mount.
+    # ripgrep walks the same working-tree population (tracked and untracked)
+    # in one process; Python only applies the gate's exact line exclusions to
+    # the small candidate set.  Scanner errors remain fail-closed.
+    python3 - "$REPO_ROOT" <<'PY'
+import re
+import subprocess
+import sys
+
+root = sys.argv[1]
+pattern = r"(yaml[a-zA-Z_]*|[a-zA-Z_]*yaml[a-zA-Z_]*)\.(safe_)?dump\("
+scan = subprocess.run(
+    [
+        "rg", "-n", "--no-heading", "--color=never", "--glob", "*.sh",
+        pattern, f"{root}/scripts",
+    ],
+    text=True,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+)
+if scan.returncode not in (0, 1):
+    print(
+        f"BLOCK: YAML dump closure scanner failed (rc={scan.returncode}): "
+        f"{scan.stderr.strip()}",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+
+violations = []
+for hit in scan.stdout.splitlines():
+    path, lineno, line = hit.split(":", 2)
+    rel = path.removeprefix(root + "/")
+    if rel == "scripts/gates/gate_no_direct_yaml_dump.sh":
+        continue
+    stripped = line.strip()
+    if not stripped or stripped.startswith("#"):
+        continue
+    if any(token in stripped for token in ("grep", "rg ", "BLOCK", "detected")):
+        continue
+    violations.append(f"{rel}:{lineno}: {stripped}")
+
+if violations:
+    print(
+        "BLOCK: direct yaml.dump/yaml.safe_dump in shell-controlled scripts",
+        file=sys.stderr,
+    )
+    print(
+        "Use scripts.lib.yaml_atomic.atomic_yaml_write or yaml_text.",
+        file=sys.stderr,
+    )
+    print(*violations, sep="\n", file=sys.stderr)
+    raise SystemExit(1)
+
+print("OK: direct yaml.dump/yaml.safe_dump active hits = 0")
+PY
+}
+
 main() {
     local _yaml_dump_violations="" _task_yaml_mixed_violations="" _instructions_changed=false _has_yaml_dump_scan_target=false
     local _staged_file
@@ -1079,7 +1138,7 @@ main() {
         # every commit while it could not change the verdict.  Preserve the
         # full-tree backstop for relevant staged code, but make the proven
         # affected=0 branch an immediate no-op.
-        if ! bash "$REPO_ROOT/scripts/gates/gate_no_direct_yaml_dump.sh" >&2; then
+        if ! run_yaml_dump_closure_gate >&2; then
             precommit_step_end 1
             exit 1
         fi
