@@ -1549,6 +1549,29 @@ PY
   run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; verify_run_tests_receipt "$2"' _ "$TMPROOT" "$receipt"
   [ "$status" -eq 0 ]
 
+  # 敵対fixture: selected childが出した3組（selected名の重複1組+
+  # scope外2組）は外側runのidentity/失敗へ混入しない。
+  _mk_receipt true 3
+  {
+    printf 'START: a.bats pid=2 weight=1 timeout=900s\nDONE: a.bats rc=0\n'
+    printf 'START: nested_slow.bats pid=3 weight=1 timeout=900s\nDONE: nested_slow.bats rc=0\n'
+    printf 'START: nested_fail.bats pid=4 weight=1 timeout=900s\nDONE: nested_fail.bats rc=1\n'
+  } >>"$artifact"
+  python3 - "$receipt" "$artifact" <<'PY'
+import hashlib, json, sys
+receipt, artifact = sys.argv[1:]
+d = json.load(open(receipt))
+d["output_sha256"] = hashlib.sha256(open(artifact, "rb").read()).hexdigest()
+json.dump(d, open(receipt, "w"))
+PY
+  _publish unit
+  run _scope
+  [ "$output" = "3 3 3 True True" ]
+  run python3 -c 'import json,sys; s=json.load(open(sys.argv[1]))["run_manifest"]["scope_identity"]; print(s["started_file_count"], s["failed_file_count"], len(s["failed_files"]))' "$receipt"
+  [ "$output" = "3 0 0" ]
+  run env REPO_ROOT="$TMPROOT" bash -c 'source "$1/scripts/run_tests.sh"; verify_run_tests_receipt "$2"' _ "$TMPROOT" "$receipt"
+  [ "$status" -eq 0 ]
+
   # 陰性1: 選択も発見も3だが実行は2(=今回の18:03と同型) → 全数ではない
   _mk_receipt true 2
   _publish unit
@@ -1636,6 +1659,8 @@ PY
 
 # test_necessity: 件数の主張はそれ自身の列挙を伴い、切り捨てた出力から数え直させない
 @test "scope identity enumerates every failing file next to its count" {
+  printf '@test "a" { true; }\n' >"$TMPROOT/tests/unit/a.bats"
+  printf '@test "b" { true; }\n' >"$TMPROOT/tests/unit/b.bats"
   head="$(git -C "$TMPROOT" rev-parse HEAD)"
   artifact="$TMPROOT/fail.out"
   receipt="$TMPROOT/fail.json"

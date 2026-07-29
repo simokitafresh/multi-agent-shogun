@@ -1352,8 +1352,14 @@ try:
             direct_files=int(direct),
             transitive_files=int(transitive),
         )
-    started={m.group(1) for m in re.finditer(r'^START: (\S+) pid=', clean, re.MULTILINE)}
-    done_lines=list(re.finditer(r'^DONE: (\S+) rc=(\d+)', clean, re.MULTILINE))
+    # The artifact may contain START/DONE emitted by a selected test's nested
+    # child runner.  Scope identity belongs to this run's frozen selection,
+    # so child events must not inflate or fail the outer receipt.
+    selected_names={os.path.basename(path) for path in paths}
+    started={m.group(1) for m in re.finditer(r'^START: (\S+) pid=', clean, re.MULTILINE)
+             if m.group(1) in selected_names}
+    done_lines=[m for m in re.finditer(r'^DONE: (\S+) rc=(\d+)', clean, re.MULTILINE)
+                if m.group(1) in selected_names]
     finished={m.group(1) for m in done_lines}
     # Enumerate every failing file rather than leaving callers to count a
     # truncated view (karo/shogun 2026-07-26 19:00: three claims that day were
