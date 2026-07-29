@@ -8637,6 +8637,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607300508_kagemaru` — [[semantic_causal_automation]] -> `docs/research/fragments/viewport_color_hayate_20260722.md` |
 | causal | `cmd_reflux_backlink_202607300516_kotaro` — [[semantic_causal_automation]] -> `docs/research/fragments/viewport_color_kotaro_20260722.md` |
 | causal | `cmd_reflux_backlink_202607300523_hanzo` — [[semantic_causal_automation]] -> `docs/research/fragments/viewport_color_saizo_20260722.md` |
+| causal | `cmd_reflux_backlink_202607300530_saizo` — [[semantic_causal_automation]] -> `docs/research/fragments/viewport_color_tobisaru_20260722.md` |
 | cmd | `cmd_2885` cmd因果辺をsemantic-mapへ自動還流 |
 | cmd | `cmd_2860` origin因果辺→辞書自動注入 |
 | cmd | `cmd_2818` 因果NW導入 |
