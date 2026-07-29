@@ -2650,6 +2650,30 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
             rm -f "$tmp_file"
         fi
 
+        # A valid commit_hash is also a root scalar.  In the common ordering it
+        # is recorded before verdict/terminal readiness, so AUTO_COMPLETE_STATUS
+        # remains 0 and neither the generic full-file backup nor the later
+        # terminal status normalization can be consumed.  Keep the exceptional
+        # ready-to-complete case on the existing lane below; only the proven
+        # non-terminal 40-hex shape takes this backup-free atomic replacement.
+        if [ "$DOT_KEY" = "commit_hash" ] \
+            && [[ "$VALUE" =~ ^[0-9a-f]{40}$ ]] \
+            && [ "$AUTO_COMPLETE_STATUS" -eq 0 ]; then
+            tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
+            rm -f "$tmp_file"
+            if _report_field_set_fast_scalar "$REPORT_PATH" "$tmp_file" \
+                "commit_hash" "$VALUE" 1 "commit_hash"; then
+                if ! mv "$tmp_file" "$REPORT_PATH"; then
+                    rm -f "$tmp_file"
+                    echo "FATAL: report_field_set: atomic replace failed" >&2
+                    exit 1
+                fi
+                echo "[report_field_set] commit_hash = ${VALUE:0:80}"
+                exit 0
+            fi
+            rm -f "$tmp_file"
+        fi
+
         # parent_ac_coverage / parent_contract_fingerprint are deployment-time
         # root scalars written together (same inject_parent_contract call site,
         # scripts/deploy_task.sh) to every report template.  The generic scalar
