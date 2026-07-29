@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-27 cmd_4186 reviewed source boundary -->
-<!-- source_commit:0ba70491 reason:cmd_4186 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=0ba70491 -->
+<!-- last_updated: 2026-07-29 GA-413 metadata-only net-zero source pair reviewed -->
+<!-- source_commit:4f95bd72a0e76950329f321acad84353065b8a68 reason:GA-413 metadata-only net-zero source pair reviewed evidence:3fee9e87 introduced FoF business-day calendar reuse; 4f95bd72 fully reverted it; git diff 0ba70491..4f95bd72 has zero ops-path changes -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
