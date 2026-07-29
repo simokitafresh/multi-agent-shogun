@@ -32,7 +32,7 @@ run_escalation_dedupe() {
     run python3 "$TEST_ROOT/escalation_dedupe.py" "$TEST_ROOT/queue/karo.yaml" "$1"
 }
 
-# test_necessity: 未読escalationは先送り判断の意味キーで重複抑制し、新規キーと既読後の再通知を失わない不変量を守る。
+# test_necessity: escalationはread状態に依存せず意味キーをbounded cooldown中だけ重複抑制し、新規キーと期限後の再通知を失わない不変量を守る。
 @test "startup escalation dedupes same unresolved key despite companion warning changes" {
     cat > "$TEST_ROOT/queue/karo.yaml" <<'EOF'
 messages:
@@ -43,7 +43,7 @@ messages:
 EOF
     run_escalation_dedupe '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: 学習ループ台帳: 空転/在庫超過あり (3217019218:60) が2セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'
     [ "$status" -eq 0 ]
-    [ "$output" = "duplicate_unread" ]
+    [ "$output" = "duplicate_recent" ]
 }
 
 @test "startup escalation dedupes keys spread across unread messages" {
@@ -54,7 +54,7 @@ messages:
 EOF
     run_escalation_dedupe '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が2セッション連続; 先送り判断: key-B が2セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'
     [ "$status" -eq 0 ]
-    [ "$output" = "duplicate_unread" ]
+    [ "$output" = "duplicate_recent" ]
 }
 
 @test "startup escalation preserves message when any warning key is new" {
@@ -67,11 +67,25 @@ EOF
     [ -z "$output" ]
 }
 
-@test "startup escalation allows notification after matching message is read" {
+@test "startup escalation dedupes matching message read within cooldown" {
     cat > "$TEST_ROOT/queue/karo.yaml" <<'EOF'
 messages:
-- {from: shogun, type: escalation, read: true, content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が1セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'}
+- {from: shogun, type: escalation, read: true, timestamp: '2026-07-29T11:10:11', content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が1セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'}
 EOF
+    export SHOGUN_STARTUP_ESCALATION_NOW_EPOCH
+    SHOGUN_STARTUP_ESCALATION_NOW_EPOCH="$(date -d '2026-07-29T11:11:53' +%s)"
+    run_escalation_dedupe '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が2セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'
+    [ "$status" -eq 0 ]
+    [ "$output" = "duplicate_recent" ]
+}
+
+@test "startup escalation allows unresolved key after cooldown" {
+    cat > "$TEST_ROOT/queue/karo.yaml" <<'EOF'
+messages:
+- {from: shogun, type: escalation, read: true, timestamp: '2026-07-29T11:00:00', content: '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が1セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'}
+EOF
+    export SHOGUN_STARTUP_ESCALATION_NOW_EPOCH
+    SHOGUN_STARTUP_ESCALATION_NOW_EPOCH="$(date -d '2026-07-29T11:11:53' +%s)"
     run_escalation_dedupe '将軍startup先送りBLOCK自動エスカレーション: 先送り判断: key-A が2セッション連続。一次情報を再検証し、未解消なら家老karo_directで対処せよ'
     [ "$status" -eq 0 ]
     [ -z "$output" ]

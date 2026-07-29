@@ -4459,6 +4459,8 @@ if [ ${#alerts[@]} -gt 0 ]; then
         _deferred_dup_status=$(python3 - "$SCRIPT_DIR/queue/inbox/karo.yaml" "$_deferred_message" <<'PY' 2>/dev/null || true
 import sys
 import re
+import os
+import datetime
 from pathlib import Path
 
 try:
@@ -4495,21 +4497,42 @@ def deferred_keys(content):
     return keys
 
 target_keys = deferred_keys(target)
-unread_keys = set()
+active_keys = set()
+try:
+    cooldown_sec = int(os.environ.get(
+        "SHOGUN_STARTUP_ESCALATION_COOLDOWN_SEC",
+        os.environ.get("STARTUP_WARN_STREAK_MIN_GAP_SEC", "600"),
+    ))
+except ValueError:
+    cooldown_sec = 600
+try:
+    now = datetime.datetime.fromtimestamp(
+        int(os.environ.get("SHOGUN_STARTUP_ESCALATION_NOW_EPOCH", ""))
+    )
+except (ValueError, OSError):
+    now = datetime.datetime.now()
+
 for msg in data.get("messages") or []:
     if not isinstance(msg, dict):
         continue
-    if msg.get("read"):
-        continue
     if msg.get("from") == "shogun" and msg.get("type") == "escalation":
-        unread_keys.update(deferred_keys(msg.get("content")))
+        # Unread messages retain the original indefinite suppression. Once read,
+        # the persisted inbox timestamp is the bounded delivery ledger.
+        if msg.get("read"):
+            try:
+                sent_at = datetime.datetime.fromisoformat(str(msg.get("timestamp") or ""))
+            except ValueError:
+                continue
+            if cooldown_sec <= 0 or not (0 <= (now - sent_at).total_seconds() < cooldown_sec):
+                continue
+        active_keys.update(deferred_keys(msg.get("content")))
 
-if target_keys and target_keys.issubset(unread_keys):
-    print("duplicate_unread")
+if target_keys and target_keys.issubset(active_keys):
+    print("duplicate_recent")
 PY
 )
-        if [ "$_deferred_dup_status" = "duplicate_unread" ]; then
-            echo "  SKIP: 同一未読escalationが家老inboxに存在 — 重複送信を抑制"
+        if [ "$_deferred_dup_status" = "duplicate_recent" ]; then
+            echo "  SKIP: 同一escalationがcooldown内に送達済み — 重複送信を抑制"
         else
             bash "$SCRIPT_DIR/scripts/inbox_write.sh" karo \
                 "$_deferred_message" \
