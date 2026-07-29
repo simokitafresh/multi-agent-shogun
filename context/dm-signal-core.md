@@ -1,6 +1,6 @@
 # DM-signal コアコンテキスト
-<!-- last_updated: 2026-07-29 deferred_flush_optimization_reviewed -->
-<!-- source_commit:eb1267c3 reason:deferred_flush_optimization_reviewed evidence:244229_rows_exact_173.08_to_56.42_seconds_execute_295_to_27 -->
+<!-- last_updated: 2026-07-29 cmd_karo_hotfix_revert_rejected_cycle4_b134_20260729 reviewed source boundary -->
+<!-- source_commit:eddc507b reason:cmd_karo_hotfix_revert_rejected_cycle4_b134_20260729 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-core.md commit=eddc507b -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
