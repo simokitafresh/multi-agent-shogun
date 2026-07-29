@@ -1,4 +1,8 @@
-# 【📐設計書v1.0(起草) — 実装凍結・序列は実測待ち(§0)。殿発案2026-07-29 22:06『テストの速度改善をスクリプトと同じスタイルで』】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.0 (2026-07-29 22:10 将軍起草)
+# 【📐設計書v1.1 — 家老レビューRC5点反映済み・実装凍結・序列確定は第五弾wave-final receipt後】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.1 (2026-07-29 22:45 家老RC反映。殿発案22:06、v1.0起草22:10)
+
+## §-2 版履歴
+- v1.1(22:45): 家老忖度なしレビュー(blt_223951)RC5点反映 — ①序列SSOT結合契約を§0へ追加 ②setup寄与のwall−Σtest算出を撤回(--jobs並列でΣtest>wall可能)→focused serial probe/明示計装へ ③共有層writer=shared先行→固定HEAD再計測→個別writerの直列依存 ④敵対fixtureは変更した独立oracle・副作用境界ごと ⑤序列確定・弾数固定はwave-final receipt後(それまで構造監査のみ)
+- v1.0(22:10): 初版起草(殿発案22:06)
 
 > 型元: 第一〜五弾(`hot-script-speedup-*-5w1h_*.md`)。第五弾はv1.4.1確定・稼働中(gist 5259aa640)。本書は**同じ弾スタイルをテスト実行時間へ写像**する。第六弾(実務の間=finalize+待ち間隙、part2統合)とは標的層が異なり独立(§4)。
 
@@ -6,29 +10,30 @@
 
 - **標的=テスト実行時間の高速化のみ。検証力は1点も削らない**(品質底線§2)。**淘汰(テスト削除)はスコープ外** — 既存S3レーン+default-delete test policyの領分(境界固定。削除と高速化を同弾に混ぜない)
 - **弾数=序列確定後に決め打ち**(第五弾§-1憲法の踏襲: 数を先に固定し途中追加しない。序列snapshotを見て上位N+共有層弾を殿へ提示→裁可で固定)
-- **writer構造(スクリプト弾との写像)**: 1テストファイル(bats)=1弾=1レーン。ただし**共有層(tests/test_helper/・setup/teardown・共有fixture)は独立writer** — 支配コストがsetup側にある場合、個別ファイル弾では削れないため(第一弾のsetup file共有知見)
+- **writer構造(スクリプト弾との写像、家老RC③で直列依存確定)**: 1テストファイル(bats)=1弾=1レーン。**共有層(tests/test_helper/・setup/teardown・共有fixture)は独立writerかつ先行** — 順序=shared弾クローズ→**固定HEADで全体再計測(shared是正が全fileのbaselineを変えるため)**→個別writer弾。sharedと個別の並列変更はbaseline・序列を無効化するため禁止
 - **スコープ外**: テストの削除・SKIP化・assertion削減(検証力低下)/CI workflow構成の変更(timeout等は済み)/DM-Signal側pytest(別repo・別弾判断)
 
 ## §0 序列SSOT(実測待ち — 解禁時の第0手)
 
 **序列snapshotの取得方法(確定)**: 追加の全量実行はしない。**第五弾wave最終のfixed-SHA全量unit checkpoint 1回**(殿裁定2026-07-28全量テスト原則: 全量はwave最終1回)の受領書+bats per-test timingをそのまま第七弾の序列一次データへ転用する。宣言4点(exact境界・row_count・raw hash・採用HEAD)は第五弾v4/v5 snapshotと同型。
 
+- **序列SSOT結合契約(家老RC①・v1.1確定)**: 計測データは4箇所に分散する — receipt JSON=suite全体のduration/rc/hash、per-file=`logs/test_timing_ledger.tsv`、per-test=receipt `.tap`、file実行順=receipt `.output`のSTART列。序列snapshotは**同一run_id・commit・source_fp・output_shaの4識別子で一意結合**したものだけを正とし、結合できない行は序列から除外して件数を報告する(家老一次確認: bats起動は`--jobs test_jobs --timing`)
 - 台帳の実在(2026-07-29 22:09将軍一次確認): `logs/test_receipts/` receipt **3,189件**・`tests/unit/` bats **182本**・receiptにduration_ms実在(例: 652,369ms=約11分の重量受領書を確認)
 - AsIsの規模感(既知の一次実測のみ・序列ではない): unit全量≈2,454s(2026-07-24実測)/CI unit job=テスト成長で旧timeout 5分を突破し3連続cancel→12分へ是正(LS101統合教訓)・是正後7分07秒完走/checkpoint全量2,745テスト(第四弾3巡CLEAR)/affected選択実行でも1ファイル33.5s実例(test_semantic_index_update.bats 43件、2026-07-29将軍commit実測)
-- **序列表(上位20+共有setup寄与推定)=家老がread-only抽出中**(将軍下知2026-07-29 22:07、冗長配備可)。抽出後に本§へ確定序列を記載しv1.1へ改版
+- **序列確定・弾数固定の時期(家老RC⑤)**: **第五弾wave-final fixed-SHA全量unit receiptの生成後**。それまでは構造監査(結合契約・計測法・writer依存の確定=本v1.1)のみ行い、序列・弾数を仮確定しない(直近全量receiptはrc=1 FAIL=duration_ms 129,782の失敗runゆえ序列に使えない — 成功runのみが序列SSOT)
 
 ## §1 計測境界(憲法)
 
 - 計測=既存台帳のみ(test receipts+bats timing)。**新台帳禁止**
 - per-test時間とper-file時間を区別(1件=bats 1 test caseの実行時間。file合計=setup×回数+test本体群)
-- **setup寄与の分離が本弾最重要**: file合計−Σtest本体=setup/teardown課税。per-fileでしか見ないとsetup支配を「テストが遅い」と誤帰属する
+- **setup寄与の分離が本弾最重要(家老RC②で測定法確定)**: ~~file wall−Σtest本体~~は**不可** — run_tests.shはfile内`--jobs`並列実行のためΣtest durationがwallを超え得る(引き算が負や無意味になる)。shared setup寄与は**focused serial probe**(対象fileを直列1本で実測し差分を取る)または**明示計装**(setup/teardown区間の直接記録)でのみ測る。per-fileだけで見るとsetup支配を「テストが遅い」と誤帰属する
 - before/afterは**同一SHA・同一テスト集合・同一環境**(ローカルは同一マシン、CIはrunner世代明記)の対でのみ倍率を語る(§1誤りの型=異run混算禁止を継承)
 - run間ノイズ: 受領書の同一ファイル複数実測から変動幅を先に把握し、Δ有意判定はノイズ帯超のみ(fullrecalc第1回の教訓2026-07-29)
 
 ## §2 To-Be — 進め方(型を継承)+品質底線
 
 1. **1標的=1弾・複合弾禁止**。恒常課税型(毎回遅いsetup/fixture)=子区分計測→最大寄与是正/外れ値型(特定testのみ秒級)=発火条件特定→条件ベース是正
-2. **品質底線(テスト版・品質2原則の写像)**: (a)**検証力不変**=assertion数・検証対象・境界ケースを1つも削らない。mock化・fixture縮小で検証を弱める是正は禁止(簡略版コード禁止の テスト版) (b)**PASS/FAIL挙動不変**=is正前後で同一SHAの判定結果完全一致・SKIP=FAIL維持 (c)是正後に対象テストが「壊れたコードを検出できる」ことを敵対fixture(意図的バグ注入)1点で確認
+2. **品質底線(テスト版・品質2原則の写像、家老RC④で強化)**: (a)**検証力不変**=assertion数だけでなく**検証対象・negative oracle・副作用検証・exit code/stdout同値**を全て固定。mock化・fixture縮小で検証を弱める是正は禁止(簡略版コード禁止のテスト版) (b)**PASS/FAIL挙動不変**=是正前後で同一SHAの判定結果完全一致・SKIP=FAIL維持 (c)敵対fixture(意図的バグ注入)は一律1点でなく、**是正で変更した独立oracle・副作用境界ごとに1点**設置し「壊れたコードを検出できる」ことを確認
 3. 典型手筋(序列確定前の仮説在庫。序列で裏取りしてから使う): setup共有化(per-test→per-file 1回)/固定sleep・ポーリングのイベント駆動化/重量fixtureの生成→静的資産化/プロセス起動回数削減(bats runの外部コマンド)/tmpfs活用。**事前外挿禁止・実測のみ**
 4. **反復サイクル型(殿裁定2026-07-29 13:26)**: ローカル極限化→CI/checkpoint実測→差分再検証→再極限化。停止条件=Δがノイズ帯以内でクローズ(採用またはno-change)
 5. **read-only冗長並列(殿裁定13:28)**: 序列抽出・発火条件記録などread-only段のみ冗長2名先着採用。テストファイル是正の実装段は単独所有

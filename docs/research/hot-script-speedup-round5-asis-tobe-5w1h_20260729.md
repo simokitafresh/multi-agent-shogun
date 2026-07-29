@@ -1,4 +1,14 @@
-# 【📐設計確定(殿裁定03:48『将軍の理解でよい』=10弾5レーン)— 実装凍結・残=殿の起票解禁のみ。★解禁時の第0手=v5 fixed-window再取得(§0冒頭)】ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.4 (2026-07-29 21:00 家老再レビューRC4点反映。版履歴は§-3)
+# 【🚀稼働中(殿起票解禁2026-07-29 21:25『第五弾をやろう』)】ホットスクリプト集中高速化 第五弾 — AsIs/ToBe 5W1H設計書 v1.5 (2026-07-29 22:45 進捗刻印。版履歴は§-3)
+
+## §-2.5 稼働進捗(2026-07-29 22:45時点 — 掲示板一次確認)
+
+| 事象 | 時刻 | 状態 |
+|---|---|---|
+| 殿起票解禁 | 21:25 | 凍結解除4段(iv)成立。将軍下知blt_212613(第0手v5→再序列→5レーン) |
+| 弾#2 full_precheckレーン | 22:03〜 | 疾風が稼働(cmd_karo_round5_lane_full_precheck) |
+| 弾#4 yaml_astレーン | 22:29 | 半蔵実装が軍師LGTM(cmd_karo_round5_lane_git_precommit_yaml_ast)。家老GATE判定待ち |
+| v5 fixed-window(第0手) | — | 家老実行中(完了報告は掲示板未着。レーン発射との順序整合は家老レビュー観点へ) |
+| 併走 | 22:29 | 第六弾計測track_a GATE CLEAR(飛猿)・第七弾v1.0家老レビューRC5点返却(22:39) |
 
 > 第一弾=`hot-script-speedup-asis-tobe-5w1h_20260727.md`(✅CLOSED 12/12)、第二弾=`hot-script-speedup-round2-asis-tobe-5w1h_20260728.md`(✅CLOSED 9/9)、第三弾=`hot-script-speedup-round3-asis-tobe-5w1h_20260728.md`(✅CLOSED 2/2)、第四弾=`hot-script-speedup-round4-asis-tobe-5w1h_20260728.md`(✅CLOSED 5/5・checkpoint 3巡目CLEAR 2,745/2,745・CI run 30385588247 success)。本書は殿下知(2026-07-29 03:30)「第五弾の設計書を作成せよ。第一弾〜と同じスタイルで。**10レーン分**組み込もう」に基づき、序列SSOT=**v4.0 fixed-window snapshot**(`hot-script-speedup-round5-v4-snapshot-20260729.md`、家老作成・固定窓2026-07-28T11:25:10Z..18:24:39.872864Z inclusive・8,237行・raw SHA-256=db3fed9cc…)から10標的を引く。殿方針(10:49)「前弾でやったものも依然ボトルネックなら再度トライする」を継承。様式・計測の憲法・完了条件の型は第一弾を踏襲する。
 
