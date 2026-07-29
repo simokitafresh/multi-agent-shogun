@@ -1811,9 +1811,14 @@ _run_tests_main() {
                 rm -f "$_selector_log"
                 echo "TEST_SELECTION_REASON direct=0 transitive=$(printf '%s\n' "$_selector_output" | sed '/^$/d' | wc -l) source=dependency_map"
             else
-                _selector_output=""
+                # A test-only task has no production dependency edge to map.
+                # Its resolved ownership scope is already the complete,
+                # fail-closed execution contract: every scoped path passed
+                # is_test_contract_path() above.  Promote only this all-test
+                # set; mixed production scopes continue through test_select.
+                _selector_output="$(printf '%s\n' "${scoped_paths[@]}")"
                 _selector_rc=0
-                echo "TEST_SELECTION_REASON direct=0 transitive=0 source=no_explicit_or_production_scope"
+                echo "TEST_SELECTION_REASON direct=${#scoped_paths[@]} transitive=0 source=task_test_only_scope"
             fi
             [ "$_selector_rc" -eq 0 ] || { echo "BLOCK: task-scoped selector failed rc=$_selector_rc" >&2; exit 2; }
             mapfile -t selected <<<"$_selector_output"

@@ -840,6 +840,63 @@ SH
   [[ "$output" != *"inferred_0001.bats"* ]]
 }
 
+# test_necessity: A task whose complete resolved scope consists only of tests
+# must execute those tests directly, while any production path keeps inferred
+# planned tests behind the dependency-map boundary.
+# regression_justification: overlaps_existing=true; existing explicit-contract
+# coverage did not exercise the zero-explicit, zero-production test-only branch.
+@test "test-only task selects its complete scope without promoting mixed planned tests" {
+  printf '@test "owned" { true; }\n' >"$TMPROOT/tests/unit/owned.bats"
+  printf '@test "inferred" { true; }\n' >"$TMPROOT/tests/unit/inferred.bats"
+  mkdir -p "$TMPROOT/queue/tasks"
+  cat >"$TMPROOT/bin/bats" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >>"$BATS_ARGS_LOG"
+printf '1..1\nok 1 selected\n'
+SH
+  cat >"$TMPROOT/scripts/test_select.sh" <<'SH'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >"$SELECT_ARGS_LOG"
+printf '%s\n' "$REPO_ROOT/tests/unit/owned.bats"
+SH
+  chmod +x "$TMPROOT/bin/bats" "$TMPROOT/scripts/test_select.sh"
+  cat >"$TMPROOT/queue/tasks/test-only.yaml" <<'YAML'
+task:
+  target_path:
+    - tests/unit/owned.bats
+    - tests/unit/inferred.bats
+YAML
+  cat >"$TMPROOT/queue/tasks/mixed.yaml" <<'YAML'
+task:
+  target_path: scripts/run_tests.sh
+  commit_contract:
+    planned_paths:
+      - scripts/run_tests.sh
+      - tests/unit/inferred.bats
+YAML
+  export BATS_ARGS_LOG="$TMPROOT/bats.args"
+  export SELECT_ARGS_LOG="$TMPROOT/selector.args"
+
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$BATS_ARGS_LOG" \
+    SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/test-only.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=2 transitive=0 source=task_test_only_scope"* ]]
+  [ "$(wc -l <"$BATS_ARGS_LOG")" -eq 2 ]
+  [ ! -e "$SELECT_ARGS_LOG" ]
+
+  : >"$BATS_ARGS_LOG"
+  run env PATH="$TMPROOT/bin:$PATH" REPO_ROOT="$TMPROOT" BATS_ARGS_LOG="$BATS_ARGS_LOG" \
+    SELECT_ARGS_LOG="$SELECT_ARGS_LOG" SHOGUN_HEAVY_JOB_LOCK_HELD=1 BATS_CACHE=0 BATS_INNER_JOBS=1 \
+    bash "$TMPROOT/scripts/run_tests.sh" --receipt-inner task "$TMPROOT/queue/tasks/mixed.yaml"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"TEST_SELECTION_REASON direct=0 transitive=1 source=dependency_map"* ]]
+  grep -Fxq "scripts/run_tests.sh" "$SELECT_ARGS_LOG"
+  [ "$(wc -l <"$BATS_ARGS_LOG")" -eq 1 ]
+  grep -Fq "owned.bats" "$BATS_ARGS_LOG"
+  ! grep -Fq "inferred.bats" "$BATS_ARGS_LOG"
+}
+
 # test_necessity: 個別external backend taskが暗黙に全pytestへ拡大せず、
 # 明示contractだけを選び、fixed-SHA wave最終checkpointだけが全量を許可される
 # 三分岐の実行境界を守る。
@@ -1201,7 +1258,14 @@ flock 9
 count=$(cat "$HEAVY_COUNT" 2>/dev/null || printf 0)
 printf '%s\n' "$((count + 1))" >"$HEAVY_COUNT"
 flock -u 9
-sleep 1
+# Both public callers must overlap before either publishes its terminal
+# receipt.  A count barrier proves that overlap directly without paying a
+# fixed one-second delay in every adversarial trial.
+for _barrier_try in {1..100}; do
+  [ "$(cat "$HEAVY_COUNT" 2>/dev/null || printf 0)" -eq 2 ] && break
+  sleep 0.01
+done
+[ "$(cat "$HEAVY_COUNT" 2>/dev/null || printf 0)" -eq 2 ] || exit 98
 printf '1..1\nnot ok 1 sample\n'
 exit 7
 SH
