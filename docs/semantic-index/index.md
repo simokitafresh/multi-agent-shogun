@@ -7867,6 +7867,8 @@ codd:
 | file | `scripts/lesson_deprecate.sh` |
 | file | `scripts/lesson_deprecation_scan.sh` |
 | file | `scripts/causal_backlinks.sh` |
+| file | `docs/research/double-loop-related-lessons-batch-saizo.md` — related_lessons注入の逐次/batch/ext4比較と同値性検証 |
+| causal | `cmd_reflux_backlink_202607292152_saizo` — [[lesson_lifecycle]] -> `docs/research/double-loop-related-lessons-batch-saizo.md` |
 | file | `projects/infra/lessons_gunshi.yaml` |
 | file | `projects/infra/lessons_karo.yaml` |
 | file | `projects/infra/lessons_shogun.yaml` |
