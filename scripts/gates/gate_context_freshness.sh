@@ -95,6 +95,30 @@ source_commit_action() {
     fi
 }
 
+context_commit_closes_source_alert() {
+    local rel_path="$1"
+    local alert_line="$2"
+    local file="$ROOT_DIR/$rel_path"
+    local latest_hash="" source_hash="" context_hash=""
+
+    [[ "$alert_line" =~ latest:[[:space:]]*([0-9a-f]{7,40}) ]] || return 1
+    latest_hash="${BASH_REMATCH[1]}"
+    source_hash="$(
+        head -n 5 "$file" 2>/dev/null \
+            | sed -nE 's/.*source_commit:([0-9a-f]{7,40}).*/\1/p' \
+            | head -n 1
+    )"
+    [[ -n "$source_hash" ]] || return 1
+    git -C "$ROOT_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
+    context_hash="$(git -C "$ROOT_DIR" log -1 --format=%H -- "$rel_path" 2>/dev/null || true)"
+    [[ "$context_hash" =~ ^[0-9a-f]{40}$ ]] || return 1
+
+    # A context-writing commit is machine-checkable reflection evidence. Close
+    # only candidates in its ancestry; newer/rewritten history remains stale.
+    git -C "$ROOT_DIR" merge-base --is-ancestor "$source_hash" "$context_hash" 2>/dev/null \
+        && git -C "$ROOT_DIR" merge-base --is-ancestor "$latest_hash" "$context_hash" 2>/dev/null
+}
+
 # GA-314: source更新を解消する際、索引本文が参照するrepo相対リンクの欠落を
 # source_commit更新だけで隠してはならない。鮮度ALERT対象に限って参照を検査し、
 # 欠落が1件でもあれば後段でBLOCKへ倒す。
@@ -378,6 +402,11 @@ for rel_path in "${target_rel_paths[@]}"; do
     record_stale_template_candidate "$rel_path" "$days_ago" "$last_updated"
 
     if [[ -n "${source_alerts[$rel_path]:-}" ]]; then
+        if context_commit_closes_source_alert "$rel_path" "${source_alerts[$rel_path]}"; then
+            context_hash="$(git -C "$ROOT_DIR" log -1 --format=%h -- "$rel_path" 2>/dev/null || true)"
+            echo "OK: ${basename_file} (${days_ago}日前更新、context commit ${context_hash} が検出済みsource候補を包含)"
+            continue
+        fi
         missing_links="$(missing_context_links "$file" "$rel_path")"
         if [[ -n "$missing_links" ]]; then
             emit_actionable \
