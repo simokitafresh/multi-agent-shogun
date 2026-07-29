@@ -274,3 +274,6 @@
 | cmd_round7_lane5_cmd_complete_gate_20260730 | 殿裁可2026-07-30 03:09+将軍下知03:11。正本v1.6 §-2.4序列5位テストファイルの高速化(検査不変)。家老--yaml直接配備の正規登録(才蔵は実装完了済み・全PASS・軍師内容レビューOK、本blockで終端契約を成立させる) | infra | 07-30 | — |
 | cmd_round7_lane6_report_batch_20260730 | 殿裁可2026-07-30 03:09+将軍下知03:11。正本v1.6 §-2.4序列6位テストファイルの高速化(検査不変)。家老--yaml直接配備の正規登録 | infra | 07-30 | — |
 | cmd_round7_lane7_run_tests_20260730 | 殿裁可2026-07-30 03:09+将軍下知03:11。正本v1.6 §-2.4序列7位テストファイル(runner自己テスト)の高速化(検査不変)。家老--yaml直接配備の正規登録 | infra | 07-30 | test_run_tests.bats 53-test ba |
+| cmd_round7_lane2_deploy_task_ac_20260730 | 殿裁可2026-07-30 03:09+将軍下知03:11。正本v1.6 §-2.4序列2位テストファイルの高速化(検査不変)。家老--yaml直接配備の正規登録 | infra | 07-30 | test_deploy_task_ac_handling.b |
+| cmd_round7_lane4_deploy_task_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列4位テストファイルの高速化(検査不変)。同一subject系のためlane2(CLEAR 04:27)後の直列起票=計画どおりの次波 | infra | 07-30 | test_deploy_task.batsの独立report |
+| cmd_round7_lane8_deploy_task_lifecycle_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列8位テストファイルの高速化(検査不変)。同一subject系のためlane4(CLEAR 04:42)後の直列起票=計画どおりの次波 | infra | 07-30 | fixture setupをprebuilt templat |
