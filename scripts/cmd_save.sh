@@ -6765,72 +6765,14 @@ AC_TEXT=$(awk '
 # --- Check 19: AC YAML構造判定（description非空+binary_check非空+未記入マーカー不在） ---
 check_ac_structure_quality
 
-# --- Check 19.5: 15分超cmdのexecution_env契約（BLOCK） ---
-# 配備時に初めてTEN_MIN_CONTRACTで失敗する往復をなくすため、同じhard boundaryを保存時へ左シフトする。
+# --- Check 19.5: 共通実行時間契約（BLOCK） ---
+# 10分超の自然境界と15分超のexecution_envを配備入口と同じvalidatorで左シフト検証する。
 check_long_runtime_execution_env_contract() {
     [[ -n "${CMD_BLOCK_NC:-}" ]] || return 0
 
-    local estimated result rc=0
-    estimated="$(cmd_block_get_field "estimated_minutes")"
-    # 恒常経路は15分以下。既にBash側へ展開済みのfield cacheで境界判定し、
-    # cmd本文のPython YAML全量再parseとプロセス起動を省く。
-    # 非数値・境界超過だけを従来Pythonへ渡し、型/finite/実行環境の厳密判定を維持する。
-    if [[ -z "$estimated" ]]; then
-        return 0
-    fi
-    if [[ "$estimated" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
-        local estimated_whole="${estimated%%.*}" estimated_fraction=""
-        [[ "$estimated" == *.* ]] && estimated_fraction="${estimated#*.}"
-        if (( 10#$estimated_whole < 15 )) || \
-           { (( 10#$estimated_whole == 15 )) && [[ "${estimated_fraction//0/}" == "" ]]; }; then
-            return 0
-        fi
-    fi
-    result="$(CMD_SAVE_CMD_BLOCK="$CMD_BLOCK_NC" python3 - <<'PY'
-import math
-import os
-import yaml
-
-data = yaml.safe_load(os.environ.get("CMD_SAVE_CMD_BLOCK", "")) or {}
-if isinstance(data, dict) and len(data) == 1:
-    only = next(iter(data.values()))
-    if isinstance(only, dict):
-        data = only
-if not isinstance(data, dict):
-    raise SystemExit(0)
-
-estimated = data.get("estimated_minutes")
-if isinstance(estimated, bool):
-    raise SystemExit(0)
-try:
-    estimated = float(estimated)
-except (TypeError, ValueError):
-    raise SystemExit(0)
-if not math.isfinite(estimated) or estimated <= 15:
-    raise SystemExit(0)
-
-env = data.get("execution_env")
-reason = env.get("long_runtime_reason") if isinstance(env, dict) else None
-runtime = env.get("measured_runtime_sec") if isinstance(env, dict) else None
-reason = str(reason or "").strip()
-if isinstance(runtime, bool):
-    runtime = None
-try:
-    runtime = float(runtime)
-except (TypeError, ValueError):
-    runtime = None
-nullish = {"none", "n/a", "na", "null", "unknown", "tbd", "fill_this"}
-if (not reason or reason.lower() in nullish or runtime is None
-        or not math.isfinite(runtime) or runtime <= 0):
-    print(
-        "estimated_minutes>15 requires execution_env mapping with concrete "
-        "long_runtime_reason and positive measured_runtime_sec. 修正例: "
-        "execution_env: {long_runtime_reason: '全量処理の実測に基づく理由', "
-        "measured_runtime_sec: 1200}"
-    )
-    raise SystemExit(2)
-PY
-)" || rc=$?
+    local result rc=0
+    result="$(printf '%s\n' "$CMD_BLOCK_NC" |
+        python3 "$PROJECT_DIR/scripts/lib/time_contract_validator.py" -)" || rc=$?
     if [[ "$rc" -ne 0 ]]; then
         record_block_reason "$result"
         return 1
