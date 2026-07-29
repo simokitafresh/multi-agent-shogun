@@ -1240,6 +1240,15 @@ LOG="$TMP_ROOT/monitor.log"
 LOCK_CLEANUP_DIR="$TMP_ROOT/locks"
 LOCK_CLEANUP_INTERVAL=3600
 LAST_LOCK_CLEANUP=0
+# run_lock_cleanupが呼ぶrun_scratch_retentionは未指定だとSCRATCH_RETENTION_REPO=$SCRIPT_DIR
+# (実リポジトリ)へフォールバックし、実repoに対するgit worktree list --porcelaneが
+# drvfs上で約2.1秒かかる(実測)。このテストはlock file 4件のみを検査対象とするため
+# scratch retentionの走査範囲を隔離tmpへ限定し、実repoに触れないようにする。
+# git worktree listはgit repo以外だとpipefail+errexitでnon-zero終了するため
+# TMP_ROOT自体を空repo化し、run_scratch_retention内部の想定(有効なgit repo)を満たす。
+SCRATCH_RETENTION_REPO="$TMP_ROOT"
+SCRATCH_QUARANTINE_DIR="$TMP_ROOT/scratch_quarantine"
+git init -q "$TMP_ROOT"
 mkdir -p "$LOCK_CLEANUP_DIR"
 
 touch "$LOCK_CLEANUP_DIR/shogun_lock_old.lock"
