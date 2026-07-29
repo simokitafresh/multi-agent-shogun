@@ -1958,6 +1958,61 @@ can_send_clear_with_report_gate() {
     return 1
 }
 
+# A failed task is not disposable merely because the worker marked it failed.
+# Preserve its pane/worktree until karo has durably closed that exact generation:
+# archive.done is the canonical terminal marker; alternatively a completed FAIL
+# report plus its accepted completion event is the formal fail-close handshake.
+_failed_task_is_formally_closed() {
+    local name="$1"
+    local task_file="$SCRIPT_DIR/queue/tasks/${name}.yaml"
+    local parent_cmd report_file report_status report_verdict
+
+    [ -f "$task_file" ] || return 1
+    parent_cmd=$(yaml_field_get "$task_file" "parent_cmd" "" 2>/dev/null || true)
+    if [ -n "$parent_cmd" ] && [ "$parent_cmd" != "none" ] &&
+       [ -f "$SCRIPT_DIR/queue/gates/${parent_cmd}/archive.done" ]; then
+        return 0
+    fi
+
+    report_file=$(find_matching_report_file "$name" 2>/dev/null) || return 1
+    report_status=$(yaml_field_get "$report_file" "status" "" 2>/dev/null || true)
+    report_verdict=$(yaml_field_get "$report_file" "verdict" "" 2>/dev/null || true)
+    [[ "$report_status" =~ ^(completed|done)$ ]] || return 1
+    [ "$report_verdict" = "FAIL" ] || return 1
+    report_notification_completed "$name" "$report_file" "FAILED-RESPAWN"
+}
+
+_failed_task_preserve_marker_file() {
+    local name="$1"
+    printf '%s/failed_task_preserve_%s.fp\n' "$STATE_DIR" "$name"
+}
+
+# BLOCK is fail-closed.  Notification is generation-exactly-once and is marked
+# only after direct delivery or durable outbox persistence succeeds.
+_failed_task_preserve_before_respawn() {
+    local name="$1" fingerprint marker_file stored_fp message
+    _failed_task_is_formally_closed "$name" && return 1
+
+    fingerprint=$(_failed_respawn_generation_fingerprint "$name")
+    marker_file=$(_failed_task_preserve_marker_file "$name")
+    stored_fp=""
+    [ -f "$marker_file" ] && read -r stored_fp < "$marker_file" || true
+    if [ "$stored_fp" != "$fingerprint" ]; then
+        message="【作業保全BLOCK】${name}のfailed task世代は未close。pane/worktreeを維持中。queue/tasks/${name}.yamlと対応reportをレビューし、archive.doneまたは正式fail-closeを確定せよ。"
+        if notify_karo_durable failed_task_preserve_block "$name" "$message"; then
+            mkdir -p "$STATE_DIR" 2>/dev/null || true
+            printf '%s\n' "$fingerprint" > "$marker_file"
+            log "FAILED-PRESERVE-NOTIFY: $name generation=$fingerprint"
+        else
+            log "FAILED-PRESERVE-NOTIFY-RETRY: $name generation=$fingerprint"
+        fi
+    else
+        log "FAILED-PRESERVE-NOTIFY-DEDUPE: $name generation=$fingerprint"
+    fi
+    log "FAILED-RESPAWN-BLOCK: $name failed generation not formally closed; pane/worktree preserved"
+    return 0
+}
+
 report_notification_completed() {
     local name="$1"
     local report_file="$2"
@@ -3797,6 +3852,9 @@ _handle_auto_clear() {
     # no-task for recovery latency. The active-status preflight below still
     # closes the race with a concurrently published revision/redeployment.
     if [ "$_ac_task_status" = "failed" ]; then
+        if _failed_task_preserve_before_respawn "$name"; then
+            return
+        fi
         if _failed_task_respawn_completed "$name"; then
             log "FAILED-RESPAWN-DEDUPE: $name failed task generation already recovered, skipping repeated respawn"
             return

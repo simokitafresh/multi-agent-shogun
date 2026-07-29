@@ -1,0 +1,85 @@
+#!/usr/bin/env bats
+# test_necessity: A failed task generation with unreviewed work must never be
+# respawned before archive.done or a formally accepted FAIL report closes it.
+
+setup() {
+  ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  TEST_ROOT="$BATS_TEST_TMPDIR/root"
+  mkdir -p "$TEST_ROOT/queue/tasks" "$TEST_ROOT/queue/reports" \
+    "$TEST_ROOT/queue/gates" "$TEST_ROOT/state"
+  SCRIPT_DIR="$TEST_ROOT"
+  STATE_DIR="$TEST_ROOT/state"
+  LOG="$TEST_ROOT/monitor.log"
+  EPOCHSECONDS=100
+  source <(sed -n '/^_failed_task_is_formally_closed()/,/^report_notification_completed()/p' \
+    "$ROOT/scripts/ninja_monitor.sh" | sed '$d')
+  yaml_field_get() {
+    python3 - "$1" "$2" <<'PY'
+import sys,yaml
+d=yaml.safe_load(open(sys.argv[1])) or {}
+for p in sys.argv[2].split('.'): d=d.get(p, {}) if isinstance(d,dict) else {}
+print(d if not isinstance(d,(dict,list)) else "")
+PY
+  }
+  log() { printf '%s\n' "$*" >>"$LOG"; }
+  notify_count=0
+  notify_karo_durable() { notify_count=$((notify_count+1)); return "${NOTIFY_RC:-0}"; }
+  _failed_respawn_generation_fingerprint() {
+    yaml_field_get "$SCRIPT_DIR/queue/tasks/$1.yaml" task_id
+  }
+  find_matching_report_file() {
+    local p="$SCRIPT_DIR/queue/reports/$1.yaml"
+    [ -f "$p" ] && printf '%s\n' "$p"
+  }
+  report_notification_completed() { return "${REPORT_ACCEPTED_RC:-1}"; }
+}
+
+write_task() {
+  local id="${1:-generation-a}"
+  printf 'task_id: %s\nparent_cmd: cmd_x\nstatus: failed\ntarget_path: [owned.sh]\n' "$id" \
+    >"$SCRIPT_DIR/queue/tasks/saizo.yaml"
+}
+
+@test "failed+dirty+pending blocks respawn and notifies once" {
+  write_task
+  printf dirty >"$TEST_ROOT/owned.sh"
+  run _failed_task_preserve_before_respawn saizo
+  [ "$status" -eq 0 ]
+  run _failed_task_preserve_before_respawn saizo
+  [ "$status" -eq 0 ]
+  [ "$(grep -c '^generation-a$' "$STATE_DIR/failed_task_preserve_saizo.fp")" -eq 1 ]
+}
+
+@test "failed+clean+pending also blocks respawn" {
+  write_task
+  run _failed_task_preserve_before_respawn saizo
+  [ "$status" -eq 0 ]
+}
+
+@test "archive.done formally closes failed generation and permits respawn" {
+  write_task
+  mkdir -p "$SCRIPT_DIR/queue/gates/cmd_x"
+  touch "$SCRIPT_DIR/queue/gates/cmd_x/archive.done"
+  run _failed_task_preserve_before_respawn saizo
+  [ "$status" -eq 1 ]
+}
+
+@test "redeploy generation gets a distinct exactly-once notification marker" {
+  write_task generation-a
+  _failed_task_preserve_before_respawn saizo
+  write_task generation-b
+  _failed_task_preserve_before_respawn saizo
+  [ "$(cat "$STATE_DIR/failed_task_preserve_saizo.fp")" = generation-b ]
+}
+
+@test "notification persistence failure leaves generation retryable" {
+  write_task
+  NOTIFY_RC=1
+  run _failed_task_preserve_before_respawn saizo
+  [ "$status" -eq 0 ]
+  [ ! -e "$STATE_DIR/failed_task_preserve_saizo.fp" ]
+  NOTIFY_RC=0
+  run _failed_task_preserve_before_respawn saizo
+  [ "$status" -eq 0 ]
+  [ -e "$STATE_DIR/failed_task_preserve_saizo.fp" ]
+}

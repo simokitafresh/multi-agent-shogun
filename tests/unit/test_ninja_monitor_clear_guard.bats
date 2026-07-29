@@ -703,7 +703,7 @@ fi
     [[ "$output" == *"PASS: no task YAML → passes Stage 1"* ]]
 }
 
-@test "failed task bypasses 600 second clear debounce" {
+@test "failed task without formal close preserves pane and never reaches clear debounce" {
     run bash -lc '
 set -eo pipefail
 PROJECT_ROOT="'"$PROJECT_ROOT"'"; export NINJA_MONITOR_LIB_ONLY=1
@@ -715,8 +715,9 @@ PANE_TARGETS[saizo]="pane"; LAST_CLEARED[saizo]="$EPOCHSECONDS"
 log(){ echo "$1" >> "$LOG"; }; tmux(){ :; }; get_context_pct(){ echo 50; }
 cli_type(){ echo codex; }; cli_profile_get(){ echo 600; }
 can_send_clear_with_report_gate(){ return 0; }; safe_send_clear(){ echo CLEAR >> "$LOG"; }
+_failed_task_preserve_before_respawn(){ echo PRESERVED >> "$LOG"; return 0; }
 _handle_auto_clear saizo "$EPOCHSECONDS"
-grep -q FAILED-RESPAWN-IMMEDIATE "$LOG"; grep -q CLEAR "$LOG"; ! grep -q CLEAR-DEBOUNCE "$LOG"
+grep -q PRESERVED "$LOG"; ! grep -q CLEAR "$LOG"; ! grep -q FAILED-RESPAWN-IMMEDIATE "$LOG"
 '
     [ "$status" -eq 0 ]
 }
