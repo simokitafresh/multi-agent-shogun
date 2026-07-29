@@ -8567,6 +8567,7 @@ codd:
 | causal | `cmd_reflux_backlink_202607291645_hayate` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-kagemaru_20260722.md` |
 | causal | `cmd_reflux_backlink_202607291645_hayate` files_modified: [[semantic_causal_automation]] |
 | causal | `cmd_reflux_backlink_202607291653_saizo` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-kotaro_20260722.md` |
+| causal | `cmd_reflux_backlink_202607291926_hayate` — [[semantic_causal_automation]] -> `docs/research/double-loop-cache-flock-hold-kotaro.md` |
 | causal_chain | `[[cmd_karo_hotfix_hot_script_q11_semantic_search_retry_20260728]]` (L1418) |
 
 ## provisional_heavy_job_admission — 仮: Heavy Job Admission
