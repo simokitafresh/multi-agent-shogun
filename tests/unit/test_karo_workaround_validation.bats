@@ -637,6 +637,59 @@ PY
     [ "$status" -eq 0 ]
 }
 
+# test_necessity: reflux completion must replace legacy placeholder values in
+# the same atomic publication as resolved_by_cmd, while preserving explicit
+# not_applicable rows and remaining idempotent after the first publication.
+@test "reflux backfill replaces placeholders, inserts missing fields, preserves not_applicable, and is idempotent" {
+    cat > "$TEST_DIR/logs/karo_workarounds.yaml" <<'YAML'
+- cmd_id: cmd_placeholder
+  workaround: true
+  category: deploy_task_ac
+  root_signature: 'deploy_task_ac::general'
+  lesson_disposition: new_lesson_required
+  lesson_reference: ''
+  resolved_by_cmd: 'cmd_placeholder'
+- cmd_id: cmd_missing
+  workaround: true
+  category: deploy_task_ac
+  root_signature: 'deploy_task_ac::general'
+  resolved_by_cmd: ''
+- cmd_id: cmd_not_applicable
+  workaround: false
+  category: rework_auto_capture
+  lesson_disposition: not_applicable
+  lesson_reference: 'not_applicable'
+  resolved_by_cmd: ''
+YAML
+
+    run env KARO_WORKAROUND_LOG_FILE="$TEST_DIR/logs/karo_workarounds.yaml" \
+        KARO_WORKAROUND_LOCK_FILE="$TEST_DIR/logs/karo_workarounds.lock" \
+        bash "$TEST_SCRIPT" --backfill-reflux cmd_reflux \
+        'deploy_task_ac::general=LK-A13'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"updated=3 not_applicable=1 integrated_existing=2"* ]]
+
+    run python3 - "$TEST_DIR/logs/karo_workarounds.yaml" <<'PY'
+import sys, yaml
+rows = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+assert [(row["lesson_disposition"], row["lesson_reference"], row["resolved_by_cmd"]) for row in rows] == [
+    ("integrated_existing", "LK-A13", "cmd_reflux"),
+    ("integrated_existing", "LK-A13", "cmd_reflux"),
+    ("not_applicable", "not_applicable", "cmd_not_applicable"),
+]
+PY
+    [ "$status" -eq 0 ]
+
+    first_hash="$(sha256sum "$TEST_DIR/logs/karo_workarounds.yaml" | awk '{print $1}')"
+    run env KARO_WORKAROUND_LOG_FILE="$TEST_DIR/logs/karo_workarounds.yaml" \
+        KARO_WORKAROUND_LOCK_FILE="$TEST_DIR/logs/karo_workarounds.lock" \
+        bash "$TEST_SCRIPT" --backfill-reflux cmd_reflux \
+        'deploy_task_ac::general=LK-A13'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"updated=0 not_applicable=0 integrated_existing=0"* ]]
+    [ "$(sha256sum "$TEST_DIR/logs/karo_workarounds.yaml" | awk '{print $1}')" = "$first_hash" ]
+}
+
 @test "AC3: 同一categoryでも異なるroot_signature 3件ではALERT/PDを発火しない" {
     run bash "$TEST_SCRIPT" cmd_1 hayate "report_path/ac_version欠落でYAML構文が壊れた" "task template修復" report_yaml_format
     [ "$status" -eq 0 ]

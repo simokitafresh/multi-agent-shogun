@@ -179,11 +179,16 @@ for pos in range(len(starts) - 1):
         if match:
             fields[match.group(1)] = scalar(match.group(2))
             indexes[match.group(1)] = index
-    if fields.get("resolved_by_cmd"):
+    is_wa = fields.get("workaround") == "true"
+    is_placeholder = (
+        is_wa
+        and fields.get("lesson_disposition") == "new_lesson_required"
+        and not fields.get("lesson_reference")
+    )
+    if fields.get("resolved_by_cmd") and not is_placeholder:
         continue
     if "resolved_by_cmd" not in indexes:
         raise SystemExit(f"[backfill-reflux] ERROR: entry at line {start + 1} lacks resolved_by_cmd")
-    is_wa = fields.get("workaround") == "true"
     if is_wa:
         signature = fields.get("root_signature") or f"legacy::{fields.get('category', 'uncategorized')}"
         if signature not in mappings:
@@ -194,18 +199,27 @@ for pos in range(len(starts) - 1):
         resolved = fields.get("cmd_id") or fields.get("cmd") or resolution
     idx = indexes["resolved_by_cmd"]
     inserts = []
+    replacements = {}
     if "lesson_required" not in fields:
         inserts.append("  lesson_required: false\n")
-    if "lesson_disposition" not in fields:
+    if "lesson_disposition" in indexes:
+        replacements[indexes["lesson_disposition"]] = f"  lesson_disposition: {disposition}\n"
+    else:
         inserts.append(f"  lesson_disposition: {disposition}\n")
-    if "lesson_reference" not in fields:
+    if "lesson_reference" in indexes:
+        replacements[indexes["lesson_reference"]] = f"  lesson_reference: {sq(reference)}\n"
+    else:
         inserts.append(f"  lesson_reference: {sq(reference)}\n")
-    edits.append((idx, inserts, f"  resolved_by_cmd: {sq(resolved)}\n"))
+    replacements[idx] = f"  resolved_by_cmd: {sq(resolved)}\n"
+    edits.append((replacements, idx, inserts))
     counts[disposition] += 1
 
 new_lines = list(lines)
-for idx, inserts, replacement in reversed(edits):
-    new_lines[idx:idx + 1] = inserts + [replacement]
+for replacements, idx, inserts in reversed(edits):
+    for replace_idx, replacement in replacements.items():
+        new_lines[replace_idx] = replacement
+    if inserts:
+        new_lines[idx:idx] = inserts
 
 fd, candidate = tempfile.mkstemp(prefix=".karo_workarounds.reflux.", dir=os.path.dirname(path) or ".")
 try:
