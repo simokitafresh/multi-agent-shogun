@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-29 cmd_karo_hotfix_ga414_context_freshness_20260729 -->
-<!-- source_commit:66cb48be07ac778d0825a889584a28af94a659d2 reason:cmd_karo_hotfix_ga414_context_freshness_20260729 evidence:GA-414 full sweep 116=83 excluded+10 body-reflected+23 context-commit-contained; c36df4056 contains 23/23 -->
+<!-- last_updated: 2026-07-29 cmd_karo_hotfix_report_write_feedback_dirty_20260729 reviewed source boundary -->
+<!-- source_commit:cea88a66f reason:cmd_karo_hotfix_report_write_feedback_dirty_20260729 reviewed source boundary evidence:cmd_complete_gate -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -898,7 +898,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1454 -->
+<!-- last_synced_lesson: L1459 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2066,6 +2066,11 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1452: CoDD SKILL同期taskはcontext/codd.mdを初期scopeへ含める（cmd_karo_hotfix_codd_refactor_skill_ref_sync_20260729）
 - L1453: Level5 context注入はcommit所有scopeまで接続する（cmd_karo_hotfix_ga293_codd_scope_contract_20260729）
 - L1454: context自己更新証拠は単体除外でなくeffective boundaryへ昇格せよ（cmd_karo_hotfix_ga414_context_freshness_20260729）
+- L1455: 空lessons_usefulのbatch terminal readiness契約矛盾（cmd_karo_round5_v5_fixed_window_track_a_20260729_recon2）
+- L1456: 統合済みtest pathは実行前に実在確認する（cmd_karo_hotfix_report_write_feedback_dirty_20260729）
+- L1457: 並列検索のfallback重複は異なる層を取得しているように見えて同一I/Oを二重化する（cmd_karo_round5_lane_inbox_write_total_20260729）
+- L1458: 診断検索の出力を次の検索入力へ再投入しない（cmd_karo_round5_lane_cmd_save_checks_main_20260729）
+- L1459: tmpdir cleanupの局所contractでは同一target内の別区間再発を防げない（cmd_karo_round5_lane_full_precheck_20260729）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
