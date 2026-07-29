@@ -1511,6 +1511,17 @@ _autofix_field_value() {
         files_modified)
             # string/string-list → dict-list (忍者がパス文字列だけを書く頻出パターン)
             if [[ "$dot_key" == "files_modified" ]]; then
+                # The dominant caller supplies one plain repo-relative path.
+                # Its normalized value is fixed and needs neither PyYAML parsing
+                # nor serialization.  Keep punctuation, whitespace, non-ASCII,
+                # reference_only, and list/dict inputs on the general parser.
+                if [[ "$val" == */* ]] \
+                    && [[ "$val" =~ ^[A-Za-z0-9_./@+-]+$ ]]; then
+                    printf '%s\n' \
+                        "- path: $val" \
+                        '  change: modified'
+                    return 0
+                fi
                 local fixed
                 fixed=$(PYTHONPATH="$SCRIPT_DIR" python3 -c "
 import yaml, sys, re
@@ -2027,6 +2038,45 @@ END {
     if (!block_found) exit 2
     if (in_block && !replaced) print make_indent(field_indent) field ": " yaml_safe(new_value)
 }
+' "$report_path" > "$tmp_file"
+}
+
+# Replace a top-level block sequence with an already-canonical YAML block.
+# This is intentionally narrower than the Python fallback: callers must prove
+# the complete replacement text and the existing top-level key shape.
+_report_field_set_fast_root_block() {
+    local report_path="$1"
+    local tmp_file="$2"
+    local root_key="$3"
+    local replacement="$4"
+
+    awk -v root_key="$root_key" -v replacement="$replacement" '
+function leading_spaces(line,    i,cnt,c) {
+    cnt = 0
+    for (i = 1; i <= length(line); i++) {
+        c = substr(line, i, 1)
+        if (c == " ") cnt++
+        else break
+    }
+    return cnt
+}
+BEGIN { found = 0; skipping = 0 }
+{
+    if (!found && $0 ~ ("^" root_key ":[[:space:]]*")) {
+        print root_key ":"
+        print replacement
+        found = 1
+        skipping = 1
+        next
+    }
+    if (skipping) {
+        if ($0 ~ /^[[:space:]]*$/ || $0 ~ /^[[:space:]]*#/) next
+        if (leading_spaces($0) > 0 || $0 ~ /^-[[:space:]]/) next
+        skipping = 0
+    }
+    print
+}
+END { if (!found) exit 2 }
 ' "$report_path" > "$tmp_file"
 }
 
@@ -2669,6 +2719,28 @@ for ((attempt = 1; attempt <= MAX_RETRIES; attempt++)); do
                     exit 1
                 fi
                 echo "[report_field_set] commit_hash = ${VALUE:0:80}"
+                exit 0
+            fi
+            rm -f "$tmp_file"
+        fi
+
+        # A single plain repo-relative files_modified path was canonicalized by
+        # _autofix_field_value to exactly this three-line block.  The completed
+        # report guard has already compared the semantic value above.  Replace
+        # the top-level sequence atomically without a second full YAML load/dump.
+        if [ "$DOT_KEY" = "files_modified" ] \
+            && [[ "$VALUE" == -\ path:\ *$'\n'\ \ change:\ modified ]] \
+            && [ "$AUTO_COMPLETE_STATUS" -eq 0 ]; then
+            tmp_file="${REPORT_PATH}.tmp.$$.$attempt"
+            rm -f "$tmp_file"
+            if _report_field_set_fast_root_block \
+                "$REPORT_PATH" "$tmp_file" "files_modified" "$VALUE"; then
+                if ! mv "$tmp_file" "$REPORT_PATH"; then
+                    rm -f "$tmp_file"
+                    echo "FATAL: report_field_set: atomic replace failed" >&2
+                    exit 1
+                fi
+                echo "[report_field_set] files_modified = ${VALUE:0:80}"
                 exit 0
             fi
             rm -f "$tmp_file"
