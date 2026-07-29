@@ -7437,7 +7437,7 @@ codd:
 | label | ゲート品質統合フレームワーク |
 | aliases | ゲート統合, startup gate, 起動チェック, gate_shogun_startup, gate_karo_startup, gate_gunshi_startup, gate_cmd_state, gate_lesson_health, gate_enforcement_audit, ゲート偽陽性, gate_prediction, gate_prediction偽陽性, gate_prediction偽陽性分析, WARN集計, BLOCK集計, gate_fire_log, cmd_save, quality_gate, クオリティゲート, BLOCK理由一覧, トリガーマップ, sh origin空 noneをBLOCK化 因果NW強制, context_freshness_check, コンテキスト鮮度, cmd完了ゲート, 完了時統合gate, missing_gate検出, 報告値事前検証, FILL_THIS検出, archive done flag, cmd保存前安全チェック, cmd_save保存前ゲート, quality_gate事前検査, q8_why_what検査, last_updated threshold check, context freshness warnings, recent project context scan, context exclude list, archive-backed freshness scan, startup_BLOCK_3session, cmd 2936でDIRECT経路を実装, gate_context_freshness, context鮮度ゲート, コンテキスト鮮度チェック, context-stale-detector, last_updated監視, autofix提案, BLOCK改善提案, gate_autofix, BLOCK頻出パターン解析, 自動修正提案スクリプト, pending cmd委任状態チェック, delegated_at確認, cmd未委任検出, cmd 2947でYAML存在チェックを追加したが, cmd委任原子化, 将軍cmd配備依頼, archive済みcmd再通知防止, 委任済みcmd再送ガード, 空白委任メッセージ拒否, delegate message validation, 意志依存スクリプト検出, 強制度監査, CLAUDE.md hook突合, hook登録漏れ検出, allowlist除外判定, ゲート偽陽性ALERTはバグだな, startup BLOCK 3セッション連続, cmd_skeleton, cmd起票雛形, 起票雛形ジェネレータ, FILL_THIS残存BLOCK, cmd起票フロー3ステップ, skeleton→save→delegate, cmd_delegate数字ID正規化, Check17日付リテラル除外, 性能の劣るLLMでもスムーズにCMD起票, GA context freshness ALERTを一次情報で調査し, GA context freshness ALERTの根因を調査し, GA dm signal frontend md context freshness ALERTの原因特定・横展開・防御, GA dm signal core md context freshness ALERTの原因特定・横展開・防御層反映, startup gateのSKILL md script参照WARNが3セッション連続BLOCK, startup gate教訓健全度がALERT useful rate % 3回連続BLOCK, review_quality_scale_summary, WARN率計算gate_result未考慮バグ, LESSON_EFFECT_USEFUL_MIN, useful_rate計測min_samples分離, gate_result=CLEARなのにFAIL永続カウント, cross-project教訓タグ同期, 二重登録教訓タグ不整合, count_same_warn_pattern cmd_id重複カウント偽陽性, Check19出口判定化, session_alerts リアルタイムhook, 覚醒設計書v3, 3セッション連続startup BLOCK 教訓健全度ALERT, cmd save品質ゲート, GA context freshness ALERTのdm signal ops mdを一次情報で照合し, 先送りBLOCK 教訓健全度ALERT, session alerts txtは将軍startup gateが生成する将軍固有ALERTだが, hookでsession alerts txtがでているが, GA context freshness ALERTの直接原因・根本原因・横展開候補・次回防止防御層を一次情報で特定し, GA context freshness ALERTの根因を, 該当ID一覧はcontextを別途抽出しないと分からない, なぜこのgateがあるかの因果を明記だな, 代表的な実CLI経路を必ず1本実行し, shのインラインCheckを関数化した後, WAログ品質ゲート, gate_ninja_workaround_rate, karo_workarounds.yaml, 直近WA, CLEAR cmd集合フィルタ, WA率偽陰性, 本来検証したいWARN集約を覆って回帰テストが誤FAILする, 本番想定DB不在ALERTを消す, 10秒, selected PASS後full-unit FAIL, pre-push fixture隔離, tracked hook atomic sync, semantic worker result-last, dependency_completion_auto_release, gate_metrics偽BLOCK, 追記型訂正CLEAR行, CLEAR成立後のcmd_complete再実行, review_two_phase_pending偽BLOCK, count_gate_metricsはcmd毎最新1件, rc=75再試行前に既存CLEAR確認 |
 | skills | |
-| related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification, cmd_save_gate_catalog, sg_pre31_semantic_validation, strong_new_game_completion_contract, context_freshness_retry_budget, hook_json_command_boundary, push_batch_operation, primary_observation_precedence |
+| related_concepts | defense_hierarchy, cmd_quality_logging, hook_automation_framework, creator_brainwashing_defense, chain_principle, no_auto_extinguish, multi_cli_event_commonization, command_files_modified_verification, cmd_save_gate_catalog, sg_pre31_semantic_validation, strong_new_game_completion_contract, context_freshness_retry_budget, hook_json_command_boundary, push_batch_operation, primary_observation_precedence, control_plane_fork_gitwalk_countermeasure |
 | related_lessons | `L512`, `L079`, `L633`, `L966` |
 
 | 種別 | パス/参照 |
@@ -8389,7 +8389,7 @@ codd:
 | label | セマンティック因果自動化 |
 | aliases | セマンティック因果自動化, 因果辺自動還流, obsidian自動リンク, semantic persistence, リンク滞留解消, 因果ネットワーク自動成長, obsidian_link_stagnation, semantic_map_generate, codd_refactor_registry_stale, semantic searchのヒット率を定量計測し, node id design semantic map, 教訓セマンティック還流, 教訓還流検査, operational noise filter, セマンティック検索, 概念検索スクリプト, alias_layer_search, llm_fallback_search, semantic_search, concept_lookup, alias_search, index_search, causal_expand, クエリ照合, 二層検索, 掲示板action required の semantic map generate new file INSIGHT, semantic_repair |
 | skills | |
-| related_concepts | semantic_dictionary_design, causal_traversal_pipeline, lesson_lifecycle, local_memory_db, deepdive_principles, known_unknowns_principle, multi_cli_event_commonization, causal_verification_l0_l7, three_layer_memory_system |
+| related_concepts | semantic_dictionary_design, causal_traversal_pipeline, lesson_lifecycle, local_memory_db, deepdive_principles, known_unknowns_principle, multi_cli_event_commonization, causal_verification_l0_l7, three_layer_memory_system, control_plane_fork_gitwalk_countermeasure |
 
 | 種別 | パス/参照 |
 |------|----------|
@@ -10641,3 +10641,19 @@ codd:
 | causal | `cmd_karo_hotfix_loop_ledger_cache_alert_202607192339` files_modified: [[push_batch_operation]] |
 | causal | `cmd_karo_hotfix_startup_escalation_semantic_dedupe_20260728` files_modified: [[push_batch_operation]] |
 | discussion | `queue/lord_conversation.jsonl` 2026-07-28T22:48:53+09:00 セッション状態2026-07-28 22:50(強くてニューゲーム復帰点): [[hot-script高速化設計書]]第四弾v2.2=実装4/5クローズ(#1 full_precheck重複tree走査除去 name-only 2438.6 |
+
+## control_plane_fork_gitwalk_countermeasure — 制御面fork・gitwalk恒久対策
+
+| 属性 | 値 |
+|------|---|
+| id | control_plane_fork_gitwalk_countermeasure |
+| label | 制御面fork・gitwalk恒久対策 |
+| aliases | WSL2 mntc subprocess反復fork, 大履歴gitwalk, 制御面レイテンシ恒久対策 |
+| related_concepts | semantic_causal_automation, gate_quality_framework |
+
+| 種別 | パス/参照 |
+|------|----------|
+| file | `docs/research/control-plane-fork-gitwalk-countermeasure-asis-tobe_20260721.md` |
+| causal | `[[cmd_4112]] -> [[WSL2_mntc_subprocess反復fork_大履歴gitwalk]] -> [[制御面レイテンシ恒久対策]]` |
+| cmd | `cmd_1668` backfill — | cmd_1668 | gate_shogun_startup.shにAC注入検証Gate16追加 + lesson_write.sh cat3重→read統合 | 完了(GATE未実行)。半蔵+飛 |
+
