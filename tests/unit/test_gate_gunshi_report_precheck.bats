@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 # test_necessity: 軍師precheckは報告のbinary contract欠落と不正な完了判定をレビュー前にBLOCKする。
+# test_necessity: SG-PRE3Xは共有cross-repo契約で所有repoを解決し、有効な外部repo成果の偽BLOCKを防ぎつつ不正repo/commit/path/primary矛盾をfail-closedに保つ。
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -16,7 +17,7 @@ YAML
 }
 
 teardown() {
-  rm -rf "$TMP_DIR"
+  find "$TMP_DIR" -depth -delete
 }
 
 run_engine() {
@@ -35,6 +36,79 @@ binary_checks:
       result: yes
 YAML
   run python3 "$ENGINE" --report "$TMP_DIR/report.yaml" --tasks-dir "$TMP_DIR/tasks"
+}
+
+make_git_repo() {
+  local repo="$1" path="$2"
+  mkdir -p "$repo/$(dirname "$path")"
+  git -C "$repo" init -q
+  git -C "$repo" config user.email fixture@example.invalid
+  git -C "$repo" config user.name fixture
+  printf 'fixture\n' > "$repo/$path"
+  git -C "$repo" add "$path"
+  git -C "$repo" commit -qm fixture
+  git -C "$repo" rev-parse HEAD
+}
+
+run_cross_repo_precheck() {
+  run env GUNSHI_PRECHECK_ONLY=SG-PRE3X \
+    GUNSHI_PRECHECK_TASKS_DIR="$TMP_DIR/tasks" \
+    bash "$REPO_ROOT/scripts/gates/gate_gunshi_report_precheck.sh" "$TMP_DIR/report.yaml"
+}
+
+@test "SG-PRE3X resolves valid external and primary reports and blocks invalid ownership contracts" {
+  external="$TMP_DIR/external"
+  hash="$(make_git_repo "$external" backend/app.py)"
+
+  cat > "$TMP_DIR/report.yaml" <<YAML
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+commit_hash: $hash
+files_modified: [{path: backend/app.py}]
+cross_repo_commits:
+  - repo: $external
+    commit_hash: $hash
+    paths: [backend/app.py]
+YAML
+  run_cross_repo_precheck
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"backend/app.py → $external@$hash"* ]]
+
+  primary_hash="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+  cat > "$TMP_DIR/report.yaml" <<YAML
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+commit_hash: $primary_hash
+YAML
+  run_cross_repo_precheck
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"primary repo commit resolved: $primary_hash"* ]]
+
+  for mutation in unknown_repo missing_commit path_mismatch primary_conflict; do
+    bad_repo="$external"
+    bad_hash="$hash"
+    bad_path="backend/app.py"
+    primary="$hash"
+    case "$mutation" in
+      unknown_repo) bad_repo="$TMP_DIR/not-a-repo" ;;
+      missing_commit) bad_hash="0000000000000000000000000000000000000000"; primary="$bad_hash" ;;
+      path_mismatch) bad_path="backend/missing.py" ;;
+      primary_conflict) primary="1111111111111111111111111111111111111111" ;;
+    esac
+    cat > "$TMP_DIR/report.yaml" <<YAML
+worker_id: kagemaru
+parent_cmd: cmd_fixture
+commit_hash: $primary
+files_modified: [{path: $bad_path}]
+cross_repo_commits:
+  - repo: $bad_repo
+    commit_hash: $bad_hash
+    paths: [$bad_path]
+YAML
+    run_cross_repo_precheck
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK:"* ]]
+  done
 }
 
 @test "LG043 ignores completed negative expression for unverified assumptions" {

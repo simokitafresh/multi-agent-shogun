@@ -220,6 +220,62 @@ else
     PROJECT_DIR="$REPO_ROOT"
 fi
 
+# cross_repo_commitsの妥当性はgate_report_formatと同じ共有正本で判定する。
+# shell側は正本が検証済みとしたrepo/commit/pathの所有対応だけを消費し、
+# PROJECT_DIR/REPO_ROOTの二択へ外部repo成果を誤って押し込まない。
+_CROSS_REPO_RECORDS=""
+_CROSS_REPO_ERRORS=""
+eval "$(python3 - "$REPO_ROOT" "$REPORT_PATH" <<'PY'
+import pathlib
+import shlex
+import sys
+import yaml
+
+root = pathlib.Path(sys.argv[1])
+sys.path.insert(0, str(root / "scripts" / "lib"))
+from cross_repo_commit_contract import validate_cross_repo_commits
+
+report = yaml.safe_load(pathlib.Path(sys.argv[2]).read_text(encoding="utf-8")) or {}
+errors = validate_cross_repo_commits(report)
+records = []
+if not errors:
+    for entry in report.get("cross_repo_commits") or []:
+        repo = str(pathlib.Path(str(entry["repo"])).expanduser())
+        commit = str(entry["commit_hash"])
+        for path in entry["paths"]:
+            records.append(f"{repo}\t{commit}\t{str(path).replace(chr(9), '')}")
+print("_CROSS_REPO_RECORDS=" + shlex.quote("\n".join(records)))
+print("_CROSS_REPO_ERRORS=" + shlex.quote("; ".join(errors)))
+PY
+)"
+
+if [ "${GUNSHI_PRECHECK_ONLY:-}" = "SG-PRE3X" ]; then
+    echo ""
+    echo "■ SG-PRE3X: cross-repo commit/path所有契約"
+    if [ -n "$_CROSS_REPO_ERRORS" ]; then
+        echo "  BLOCK: $_CROSS_REPO_ERRORS"
+        exit 1
+    fi
+    if [ -z "$_CROSS_REPO_RECORDS" ]; then
+        _primary_hash=$(grep -m1 -E '^[[:space:]]*commit_hash:' "$REPORT_PATH" |
+            sed -E 's/^[[:space:]]*commit_hash:[[:space:]]*["'\'']?([0-9a-f]{40}).*/\1/' || true)
+        if [ -n "$_primary_hash" ] &&
+            { git -C "$PROJECT_DIR" cat-file -e "${_primary_hash}^{commit}" 2>/dev/null ||
+              git -C "$REPO_ROOT" cat-file -e "${_primary_hash}^{commit}" 2>/dev/null; }; then
+            echo "  PASS: primary repo commit resolved: $_primary_hash"
+        elif [ -n "$_primary_hash" ]; then
+            echo "  BLOCK: primary commit is not resolvable: $_primary_hash"
+            exit 1
+        else
+            echo "  PASS: primary repo report (commit_hash検査対象なし)"
+        fi
+    else
+        printf '%s\n' "$_CROSS_REPO_RECORDS" |
+            awk -F '\t' '{print "  PASS: " $3 " → " $1 "@" $2}'
+    fi
+    exit 0
+fi
+
 print_sg_pre9() {
     echo ""
     echo "■ SG-PRE9: T1違反予防(binary_checks no検出)"
@@ -387,6 +443,14 @@ if [ -n "${FILES_MODIFIED:-}" ] && [ -n "${PARENT_CMD:-}" ]; then
                 if [ "$_hash_repo" = "$REPO_ROOT" ]; then _PRE_REPO_NUMSTAT+="${_hash_numstat}"$'\n'; else _PRE_PROJECT_NUMSTAT+="${_hash_numstat}"$'\n'; fi
             fi
         done <<< "$_REPORT_HASHES"
+        # 外部repo成果は共有契約がrepo/commit/pathを全て検証済み。
+        # PRE3の所有判定へ追加し、platform repoに存在しないことを理由に偽BLOCKしない。
+        if [ -n "$_CROSS_REPO_RECORDS" ]; then
+            while IFS=$'\t' read -r _cross_repo _cross_hash _cross_path; do
+                [ -z "$_cross_path" ] && continue
+                _PRE_CMD_FILES+="${_cross_path}"$'\n'
+            done <<< "$_CROSS_REPO_RECORDS"
+        fi
         _PRE_CMD_FILES=$(printf '%s\n' "$_PRE_CMD_FILES" | sed '/^$/d' | sort -u)
     else
         # PRE3/PRE19-DM用: cmd固有commitのnumstat (1 call)。name-only相当は3列目(path)から導出しPRE3と共用
@@ -450,7 +514,14 @@ if [ -n "${PROJECT_DIR:-}" ] && [ -d "$PROJECT_DIR" ]; then
     if [ -n "$REPORT_HASHES" ]; then
         while IFS= read -r hash; do
             [ -z "$hash" ] && continue
-            if git -C "$PROJECT_DIR" show --quiet "$hash" >/dev/null 2>&1; then
+            _owned_repo=""
+            if [ -n "$_CROSS_REPO_RECORDS" ]; then
+                _owned_repo=$(printf '%s\n' "$_CROSS_REPO_RECORDS" |
+                    awk -F '\t' -v hash="$hash" '$2 == hash {print $1; exit}')
+            fi
+            if [ -n "$_owned_repo" ] && git -C "$_owned_repo" show --quiet "$hash" >/dev/null 2>&1; then
+                echo "  PASS: $hash 実在確認(${_owned_repo})"
+            elif git -C "$PROJECT_DIR" show --quiet "$hash" >/dev/null 2>&1; then
                 echo "  PASS: $hash 実在確認(${PROJECT_DIR})"
             elif git -C "$REPO_ROOT" show --quiet "$hash" >/dev/null 2>&1; then
                 echo "  PASS: $hash 実在確認(${REPO_ROOT})"
