@@ -5642,6 +5642,9 @@ codd:
 | causal | `cmd_karo_hotfix_ga414_context_freshness_20260729` files_modified: [[agent_formation_management]] |
 | causal | `cmd_karo_hotfix_rc_revision_requested_redeploy_20260730` files_modified: [[agent_formation_management]] |
 | cmd | `cmd_karo_hotfix_rc_revision_requested_redeploy_20260730` (`scripts/deploy_task.sh`, `tests/unit/test_deploy_task_lifecycle.bats`) |
+| causal | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` files_modified: [[agent_formation_management]] |
+| cmd | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` (`scripts/ninja_monitor.sh`, `tests/unit/test_ninja_monitor_failed_respawn.bats`, `tests/unit/test_ninja_monitor_clear_guard.bats`) |
+| discussion | `queue/lord_conversation.jsonl` 2026-07-30T02:23:39+09:00 bagkhq0xh toolu_01TCt5brn9PHMnPnNWWcaUUK /tmp/claude-1000/-mnt-c-tools-multi-agent-shogun/a026848f-6656-44c9-9ef0-e3886a |
 | causal_chain | `[[cmd_karo_hotfix_ga162_hook_failure_pre_push_202607021402]]` (L930) |
 | causal_chain | `[[cmd_3664]]` (L941) |
 | causal_chain | `[[cmd_karo_hotfix_ga172_prepush_hook_failure_202607030051]]` (L944) |
@@ -6864,6 +6867,7 @@ codd:
 | causal | `cmd_karo_hotfix_reflux_backlink_external_source_20260728` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[training_cycle_quality]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[training_cycle_quality]] |
+| causal | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` files_modified: [[training_cycle_quality]] |
 
 ## report_quality_protocol — 忍者報告品質プロトコル
 
@@ -7363,6 +7367,7 @@ codd:
 | causal | `cmd_karo_hotfix_reflux_backlink_external_source_20260728` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[daemon_supervision]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[daemon_supervision]] |
+| causal | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` files_modified: [[daemon_supervision]] |
 
 ## openpbx_reference — OpenPBX(コリ先生PBX MVP)
 
@@ -7578,6 +7583,7 @@ codd:
 | causal | `cmd_karo_hotfix_round4_checkpoint_archived_fail_generation_20260729` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[infrastructure_ops]] |
 | causal | `cmd_karo_hotfix_ga414_context_freshness_20260729` files_modified: [[infrastructure_ops]] |
+| causal | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` files_modified: [[infrastructure_ops]] |
 | causal_chain | `[[cmd_karo_hotfix_auto_update_pane_spawn_202607031806]]` (L949) |
 | causal_chain | `[[cmd_3969]]` (L1043) |
 | causal_chain | `[[cmd_karo_hotfix_heavy_admission_lock_release_20260729]]` (L1443) |
@@ -8603,6 +8609,7 @@ codd:
 | causal | `docs/research/detector-audit-portability-phase2-asis-tobe-5w1h_20260726.md` — [[semantic_causal_automation]] -> [[detector-audit-portability-phase2-asis-tobe-5w1h_20260726]] |
 | causal | `docs/research/dm-signal-page-style-diff-mece-part-hanzo_20260722.md` — [[semantic_causal_automation]] -> [[dm-signal-page-style-diff-mece-part-hanzo_20260722]] |
 | causal | `docs/research/dm-signal-page-style-diff-mece-part-hayate_20260722.md` — [[semantic_causal_automation]] -> [[dm-signal-page-style-diff-mece-part-hayate_20260722]] |
+| causal | `cmd_reflux_backlink_202607300224_hayate` — [[semantic_causal_automation]] -> `docs/research/fragments/mece_v2_kotaro_20260722.md` |
 | causal | `cmd_reflux_backlink_202607291658_hanzo` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-saizo_20260722.md` |
 | causal | `cmd_reflux_backlink_202607291847_hanzo` — [[semantic_causal_automation]] -> `docs/research/dm-signal-page-style-diff-mece-part-tobisaru_20260722.md` |
 | cmd | `cmd_2885` cmd因果辺をsemantic-mapへ自動還流 |
@@ -9695,6 +9702,7 @@ codd:
 | causal | `cmd_karo_hotfix_archive_report_identity_race_20260728` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[infra_design_intent]] |
 | causal | `cmd_karo_round5_lane_inbox_write_total_20260729` files_modified: [[infra_design_intent]] |
+| causal | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` files_modified: [[infra_design_intent]] |
 
 ## scope_integrity_lifecycle — スコープ鮮度ライフサイクル
 
@@ -10875,6 +10883,7 @@ codd:
 | causal | `cmd_karo_hotfix_reflux_backlink_external_source_20260728` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_fail_close_respawn_notice_20260729` files_modified: [[inbox_evidence_durability]] |
 | causal | `cmd_karo_hotfix_ninja_monitor_accidental_source_guard_20260729` files_modified: [[inbox_evidence_durability]] |
+| causal | `cmd_karo_hotfix_failed_respawn_preserve_work_20260730` files_modified: [[inbox_evidence_durability]] |
 
 ## hook_json_command_boundary — hook JSONコマンド境界
 
