@@ -346,14 +346,25 @@ _STDERR_FILE="/tmp/_hook_stderr_precommit_$$"
 # aborted at source time.  Only paths that exist in the working tree are
 # inspected, so dynamic or genuinely external sources cannot false-positive.
 check_staged_sourced_deps() {
-    local staged_sh dep missing=""
+    local staged_sh dep tracked_path missing="" tracked_loaded=false
+    local -A tracked_paths=()
     while IFS= read -r staged_sh; do
         [[ "$staged_sh" == *.sh ]] || continue
         staged_file_exists "$staged_sh" || continue
         while IFS= read -r dep; do
             [[ -n "$dep" ]] || continue
             [[ -f "$REPO_ROOT/$dep" ]] || continue
-            git ls-files --error-unmatch -- "$dep" >/dev/null 2>&1 && continue
+            # `git ls-files --error-unmatch` once per dependency made this
+            # guard scale with source-edge count and produced second-level
+            # outliers.  The index is invariant during this check, so load it
+            # once on the first real repo dependency and use exact-key lookups.
+            if [[ "$tracked_loaded" == false ]]; then
+                while IFS= read -r tracked_path; do
+                    [[ -n "$tracked_path" ]] && tracked_paths["$tracked_path"]=1
+                done < <(git ls-files)
+                tracked_loaded=true
+            fi
+            [[ -v "tracked_paths[$dep]" ]] && continue
             missing+="    $staged_sh -> $dep"$'\n'
         done < <(
             git show ":$staged_sh" 2>/dev/null \

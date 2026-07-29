@@ -18,6 +18,12 @@ setup() {
 run_check() {
   REPO_ROOT="$REPO" STAGED_FILE="$1" HOOK="$HOOK" bash -c '
     eval "$(sed -n "/^check_staged_sourced_deps()/,/^}/p" "$HOOK")"
+    git() {
+      if [ "${1:-}" = "ls-files" ] && [ -n "${GIT_LS_FILES_TRACE:-}" ]; then
+        printf "scan\n" >> "$GIT_LS_FILES_TRACE"
+      fi
+      command git "$@"
+    }
     staged_file_exists() { [ "$1" = "$STAGED_FILE" ]; }
     list_staged_files() { printf "%s\n" "$STAGED_FILE"; }
     cd "$REPO_ROOT"
@@ -58,4 +64,20 @@ run_check() {
   git -C "$REPO" add scripts/caller.sh
   run run_check scripts/caller.sh
   [ "$status" -eq 0 ]
+}
+
+@test "scans the tracked index once for multiple sourced dependencies" {
+  printf '#!/bin/bash\n:\n' > "$REPO/scripts/lib/one.sh"
+  printf '#!/bin/bash\n:\n' > "$REPO/scripts/lib/two.sh"
+  git -C "$REPO" add scripts/lib/one.sh scripts/lib/two.sh
+  git -C "$REPO" commit -qm deps
+  printf '#!/bin/bash\nsource "$DIR/scripts/lib/one.sh"\nsource "$DIR/scripts/lib/two.sh"\n' \
+    > "$REPO/scripts/caller.sh"
+  git -C "$REPO" add scripts/caller.sh
+  export GIT_LS_FILES_TRACE="$BATS_TEST_TMPDIR/git-ls-files.trace"
+
+  run run_check scripts/caller.sh
+
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$GIT_LS_FILES_TRACE")" -eq 1 ]
 }
