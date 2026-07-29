@@ -9,7 +9,7 @@ setup() {
         "$FIXTURE/scripts/lib/defense_overhead_writer.sh"
     cp "$BATS_TEST_DIRNAME/../../scripts/lib/retro_pane_prompt.sh" \
         "$FIXTURE/scripts/lib/retro_pane_prompt.sh"
-    printf '{}\n' > "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json"
+    printf '%s\n' '{"review":{"cmd_id":"cmd_fixture","report_fingerprint":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}' > "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json"
 
     cat > "$FIXTURE/scripts/review_bundle.py" <<'PY'
 import json
@@ -53,7 +53,7 @@ SH
     for variant in sleep5 huge_archive endpoint_failure notification_throttle dashboard_contention; do
         cmd="cmd_${variant}"
         mkdir -p "$FIXTURE/queue/gates/$cmd"
-        cp "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
+        sed "s/cmd_fixture/$cmd/" "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" > "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
         start_ns="$(date +%s%N)"
         run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
             CMD_COMPLETE_TEST_VARIANT="$variant" bash "$FIXTURE/scripts/cmd_complete.sh" "$cmd"
@@ -172,7 +172,7 @@ PY
     local cmd
     for cmd in cmd_parallel_a cmd_parallel_b cmd_parallel_c; do
         mkdir -p "$FIXTURE/queue/gates/$cmd"
-        cp "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
+        sed "s/cmd_fixture/$cmd/" "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" > "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
     done
     cat > "$FIXTURE/scripts/dashboard_update.sh" <<'SH'
 #!/usr/bin/env bash
@@ -199,6 +199,22 @@ SH
     ! grep -q 'RETRY dashboard' "$BATS_TEST_TMPDIR"/cmd_parallel_*.out
     ! grep -q 'RETRY ntfy' "$BATS_TEST_TMPDIR"/cmd_parallel_*.out
     grep -q 'DASHBOARD_CALLER_SINGLEFLIGHT=1' "$BATS_TEST_DIRNAME/../../scripts/cmd_complete.sh"
+}
+
+# test_necessity: completion identity must fail closed before any child step and
+# the canonical report fingerprint must be propagated to the dashboard child.
+@test "bundle identity is fail closed and canonical generation reaches dashboard" {
+    export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/identity.log"
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_other "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"review.cmd_id mismatch"* ]]
+    [ ! -e "$CMD_COMPLETE_TEST_LOG" ]
+
+    run env CMD_COMPLETE_ROOT_DIR="$FIXTURE" CMD_COMPLETE_SCRIPT_DIR="$FIXTURE/scripts" \
+        bash "$FIXTURE/scripts/cmd_complete.sh" cmd_fixture
+    [ "$status" -eq 0 ]
+    grep -q 'dashboard_update.sh|cmd_fixture --bundle' "$CMD_COMPLETE_TEST_LOG"
 }
 
 # test_necessity: every completion step and dashboard retry attempt must expose wall time and exit reason for RCA.
@@ -405,7 +421,7 @@ SH
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/direct.log"
     local cmd=cmd_reflux_promotion_fixture
     mkdir -p "$FIXTURE/queue/gates/$cmd" "$FIXTURE/logs"
-    cp "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
+    sed "s/cmd_fixture/$cmd/" "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" > "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
     printf '%s CLEAR\n' "$cmd" > "$FIXTURE/logs/gate_metrics.log"
     cat > "$FIXTURE/scripts/gates/gate_yaml_status.sh" <<'SH'
 #!/usr/bin/env bash
@@ -442,7 +458,7 @@ SH
     export CMD_COMPLETE_TEST_LOG="$BATS_TEST_TMPDIR/direct-missing.log"
     local cmd=cmd_karo_fixture
     mkdir -p "$FIXTURE/queue/gates/$cmd" "$FIXTURE/logs"
-    cp "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
+    sed "s/cmd_fixture/$cmd/" "$FIXTURE/queue/gates/cmd_fixture/sg7_bundle.json" > "$FIXTURE/queue/gates/$cmd/sg7_bundle.json"
     : > "$FIXTURE/logs/gate_metrics.log"
     cat > "$FIXTURE/scripts/gates/gate_yaml_status.sh" <<'SH'
 #!/usr/bin/env bash

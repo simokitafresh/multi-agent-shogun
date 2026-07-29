@@ -107,12 +107,15 @@ if [[ -n "$BUNDLE_PATH" ]]; then
     [[ "$BUNDLE_PATH" = /* ]] || BUNDLE_PATH="$PROJECT_DIR/$BUNDLE_PATH"
     python3 "$PROJECT_DIR/scripts/review_bundle.py" consume --cmd "$CMD_ID" \
         --bundle "$BUNDLE_PATH" --expect-verdict APPROVE >/dev/null
-    DASHBOARD_LINE=$(python3 - "$BUNDLE_PATH" "$CMD_ID" <<'PY'
+    DASHBOARD_LINE=$(python3 - "$BUNDLE_PATH" "$CMD_ID" "${SHOGUN_COMPLETION_GENERATION:-}" <<'PY'
 import json, sys
 review = json.load(open(sys.argv[1], encoding='utf-8'))['review']
 line = str(review.get('dashboard_line') or '').strip()
 if not line.startswith(f'- **{sys.argv[2]}**:'):
     raise SystemExit('ERROR: bundle dashboard_line contradicts cmd_id')
+generation = str(review.get('report_fingerprint') or '')
+if not generation or generation != sys.argv[3]:
+    raise SystemExit('ERROR: bundle generation missing or contradicts completion generation')
 print(line)
 PY
     )
@@ -1129,3 +1132,15 @@ if [[ "$DRY_RUN" != true ]]; then
 fi
 
 _du_profile_phase total "$_du_total_started"
+
+if [[ "$DRY_RUN" != true && -n "$BUNDLE_PATH" ]]; then
+    # The existing writer is idempotent by event_id.  Emit only after the
+    # dashboard has been published and validated.
+    # shellcheck source=scripts/lib/defense_overhead_writer.sh
+    source "$PROJECT_DIR/scripts/lib/defense_overhead_writer.sh"
+    defense_overhead_write dashboard_update completion_publish 0 PASS \
+        "completion-${CMD_ID}-${SHOGUN_COMPLETION_GENERATION}" \
+        "{\"cmd_id\":\"${CMD_ID}\",\"generation\":\"${SHOGUN_COMPLETION_GENERATION}\"}" || {
+        [[ "$?" -eq 4 ]] || exit 1
+    }
+fi

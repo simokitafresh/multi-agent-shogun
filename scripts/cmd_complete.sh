@@ -28,6 +28,19 @@ exec 9>"$CHECKPOINT_LOCK"
 flock 9
 
 [[ -f "$BUNDLE_PATH" ]] || { printf '[cmd_complete] FAILED bundle missing: %s\n' "$BUNDLE_PATH" >&2; exit 1; }
+BUNDLE_IDENTITY="$(python3 - "$BUNDLE_PATH" "$CMD_ID" <<'PY'
+import json, re, sys
+review = (json.load(open(sys.argv[1], encoding="utf-8")) or {}).get("review") or {}
+cmd_id = str(review.get("cmd_id") or "")
+generation = str(review.get("report_fingerprint") or "")
+if cmd_id != sys.argv[2]:
+    raise SystemExit("[cmd_complete] FAILED bundle review.cmd_id mismatch")
+if not re.fullmatch(r"[0-9a-f]{64}", generation):
+    raise SystemExit("[cmd_complete] FAILED bundle review.report_fingerprint missing/invalid")
+print(generation)
+PY
+)" || exit 1
+export SHOGUN_COMPLETION_GENERATION="$BUNDLE_IDENTITY"
 BUNDLE_FINGERPRINT="$(sha256sum "$BUNDLE_PATH" | awk '{print $1}')"
 STEP_ORDER=(sg7_consume lesson_review cmd_complete_gate quality_log status_completed dashboard ntfy inbox_archive)
 

@@ -700,7 +700,7 @@ result:
 EOF
     complete_dashboard_report_fixture "$TEST_REPO/queue/reports/hayate_report_cmd_2473.yaml"
     cat > "$TEST_REPO/queue/gates/cmd_2473/sg7_bundle.json" <<'EOF'
-{"review":{"cmd_id":"cmd_2473","verdict":"APPROVE","cmd_spec_summary":{"acceptance_criteria_count":1,"scope":["fixture"],"project":"infra"},"dashboard_line":"- **cmd_2473**: 完了。bundle line is authoritative"}}
+{"review":{"cmd_id":"cmd_2473","report_fingerprint":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","verdict":"APPROVE","cmd_spec_summary":{"acceptance_criteria_count":1,"scope":["fixture"],"project":"infra"},"dashboard_line":"- **cmd_2473**: 完了。bundle line is authoritative"}}
 EOF
     # The reviewed bundle must remain authoritative even when a later task
     # makes legacy report revalidation fail.  This reproduces cmd_3932 where
@@ -717,7 +717,7 @@ PY
 # dashboard-update
 EOF
 
-    run env SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_2473 --bundle queue/gates/cmd_2473/sg7_bundle.json --dry-run
+    run env SHOGUN_COMPLETION_GENERATION=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb SKILL_EXECUTION_LOG_FILE="$TEST_SKILL_LOG" bash "$TEST_REPO/scripts/dashboard_update.sh" cmd_2473 --bundle queue/gates/cmd_2473/sg7_bundle.json --dry-run
     [ "$status" -eq 0 ]
     [[ "$output" == *"bundle line is authoritative"* ]]
     [[ "$output" != *"test purpose"* ]]
