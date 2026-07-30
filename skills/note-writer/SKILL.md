@@ -1,6 +1,6 @@
 ---
 
-<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
+<!-- script_refs_checked_at: 2026-07-30T18:48:52+0900
 <!-- cmd_karo_hotfix_skill_refs_eight_202607162132検分: note_draft.sh現HEAD+作業差分を確認。CDP未応答は隔離profile自動起動、起動不能/reCAPTCHA未解決はexit 1(FAIL)。末尾skill-auto-improve追記はexit後でI/F不変。`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`を維持。 -->
 name: note-writer
 argument-hint: "[topic|draft_path]"
@@ -21,10 +21,10 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
+<!-- script_refs_checked_at: 2026-07-30T18:48:52+0900
 <!-- 2026-07-16再検分: note_draft.sh 31cfcb906/7127ab894/1421d3c92/5a7543ad9。Chrome未起動時のexit 0(SKIP)を廃止し、隔離profileを自動起動、起動不能時はexit 1(FAIL)。■行は個別bulletとして解釈後、<br>で1行改行する。`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`の引数契約は不変。 -->
 <!-- 検分: note_draft.sh 8e4872513 reCAPTCHA guard内部強化。呼び出し契約 `CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`、Markdown→note下書き保存契約は不変 -->
-<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
+<!-- script_refs_checked_at: 2026-07-30T18:48:52+0900
 
 Script refs verified: 2026-06-30 a519e6365+dad84ea2c. `note_draft.sh` 直近変更はinvisible reCAPTCHA対応(dispatch_click+quick_url待ち)とコメント形式修正。`CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"`、Markdown→note下書き保存、PASS/FAIL/SKIP記録の契約は変更なし。
 
@@ -316,4 +316,4 @@ editor.dispatchEvent(new Event('input', {bubbles: true}));
 - Chromeプロセスが残っているとnote_draft.shがPowerShellタイムアウトで失敗する。`/mnt/c/Windows/System32/taskkill.exe /F /IM chrome.exe` で完全終了してから再実行
 - WebSocket接続がタイムアウトする場合はChromeを完全終了→再起動
 
-<!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
+<!-- script_refs_checked_at: 2026-07-30T18:48:52+0900
