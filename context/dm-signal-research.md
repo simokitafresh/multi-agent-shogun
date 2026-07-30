@@ -1,6 +1,6 @@
 # DM-signal 研究コンテキスト
 <!-- last_updated: 2026-07-30 cmd_karo_hotfix_ga417 reviewed research boundary -->
-<!-- dm_signal_research_reflux: fingerprint=f88ee9aab2850c603cbb7332ea0ca3d0e7c3ff2090bdbca32bd77d1eaa5d9a79; mode=synced; evidence_b64=5q6/5oyH56S6MjAyNi0wNy0zMOOBruaKleeov+WPlui+vOOAguWOn+irluaWh1BERuebtOaOpeWPluW+lyh0LmNv44Oq44Oz44Kv5bGV6ZaL57WM55SxKSvlhajmlofmir3lh7rjgILkuInlsaToqJjmhrbjgbjlkIzmnJ/mm7jovrzjgb/kuojlrpo= -->
+<!-- dm_signal_research_reflux: fingerprint=33857e79c074a624b9d5ba235193b209653621a9bf967a88453c7a85bac6ffd4; mode=non-target; evidence_b64=5oqV6LOH6L6e5pu4TTg35paw6KaP44Ko44Oz44OI44Oq6L+95Yqg44CC5pei5a2YY29udGV4dOevgOOBqOOBruWQjOacn+S4jeimgSjmlrDopo/jg5XjgqHjgqTjg6sraW5kZXjooYzov73liqDjga7jgb8p -->
 <!-- source_commit:b2771f29 reason:cmd_karo_hotfix_ga417 reviewed research boundary evidence:4/4 classified: M85/M86/S07 indexed; cmd_4196 backend-only non-target; reflux guard check rc=0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
