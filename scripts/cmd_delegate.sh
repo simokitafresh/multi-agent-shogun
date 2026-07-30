@@ -280,6 +280,42 @@ END {
 ' "$inbox_file"
 }
 
+message_has_cmd_id() {
+    local message="$1"
+    local cmd_id="$2"
+
+    awk -v cmd_id="$cmd_id" '
+{
+    remaining = $0
+    offset = 0
+    while ((pos = index(remaining, cmd_id)) > 0) {
+        abs_pos = offset + pos
+        before_char = (abs_pos > 1) ? substr($0, abs_pos - 1, 1) : ""
+        after_char = substr($0, abs_pos + length(cmd_id), 1)
+        if ((before_char == "" || before_char !~ /[A-Za-z0-9_]/) &&
+            (after_char == "" || after_char !~ /[A-Za-z0-9_]/)) {
+            found = 1
+            exit
+        }
+        offset += pos
+        remaining = substr(remaining, pos + 1)
+    }
+}
+END {
+    exit(found ? 0 : 1)
+}
+' <<< "$message"
+}
+
+build_notify_message() {
+    local msg="$1" cmd_id="$2"
+    if message_has_cmd_id "$msg" "$cmd_id"; then
+        printf '%s' "$msg"
+    else
+        printf '%s: %s' "$cmd_id" "$msg"
+    fi
+}
+
 cmd_is_archived() {
     local cmd_id="$1"
 
@@ -416,20 +452,12 @@ if cmd_is_archived "$CMD_ID"; then
     exit 1
 fi
 
-# cmd_new gate(inbox_write.sh L1967-1999)はcontentに cmd_\d+ が含まれることを要求し、
+# cmd_new gate(inbox_write.sh L1967-1999)はcontentに正規cmd IDが含まれることを要求し、
 # 不在なら exit 1 でBLOCKする。cmd_delegate.shは検証済みのCMD_IDを保持しているため、
 # 利用者メッセージにcmd_idが書かれていない場合は構造的に補う。
 # これを補わないと status=delegated だけが立ち、家老inboxへ配送されない乖離が起きる
 # (2026-07-23 cmd_4123実測: 1回目のdelegateでstatus=delegated かつ karo inbox 0件)。
 # 二次情報(status)と一次情報(inbox実体)の乖離を作らないための構造型強制。
-build_notify_message() {
-    local msg="$1" cmd_id="$2"
-    if printf '%s' "$msg" | grep -qE 'cmd_[0-9]+'; then
-        printf '%s' "$msg"
-    else
-        printf '%s: %s' "$cmd_id" "$msg"
-    fi
-}
 
 # Step 4: status=delegated + delegated_at を先に設定（inbox_writeのcmd_new guardがstatus確認するため）
 printf -v TIMESTAMP '%(%Y-%m-%dT%H:%M:%S)T' -1
