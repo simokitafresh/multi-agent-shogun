@@ -279,3 +279,4 @@
 | cmd_round7_lane8_deploy_task_lifecycle_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列8位テストファイルの高速化(検査不変)。同一subject系のためlane4(CLEAR 04:42)後の直列起票=計画どおりの次波 | infra | 07-30 | fixture setupをprebuilt templat |
 | cmd_round7_lane9_campaign_shard_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列9位テストファイルの高速化(検査不変)。#8 CLEAR(05:00)を受けた最終波の起票(別ファイル並列) | infra | 07-30 | setupの各test git cloneをCOWコピーへ置 |
 | cmd_round7_lane10_ninja_monitor_stall_20260730 | 殿裁可2026-07-30 03:09(第七弾本体解禁)。正本v1.6 §-2.4序列10位テストファイルの高速化(検査不変)。#8 CLEAR(05:00)を受けた最終波の起票(#9と別ファイル並列) | infra | 07-30 | test_ninja_monitor_stall.bats( |
+| cmd_round7_checkpoint_final_gen4_20260730 | 第三世代checkpointはtest7根治を確認(rc:0)しつつlgtm_bundle_guardの実行bit契約不一致で正直FAIL_CLOSE。小太郎hotfixがGATE CLEAR(blt_20260730_091531、mode 100644のまま50反復pass50/fail0生貼付)し起票条件達成。新固定SHAで第四世代success checkpointを実行し第七弾の総短縮効果を確定する | infra | 07-30 | 第四世代fixed-SHA checkpointは184/1 |
