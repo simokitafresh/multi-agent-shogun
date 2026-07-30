@@ -5,8 +5,11 @@ description: |
   syndication API(認証不要・全文正確)+xAI Grok x_search(スレッド全post ID列挙)を組合せ、
   WebFetch要約(haiku経由で原文が失われる)を使わず全文をローカルへ記録する。
   TRIGGER: /x-thread-fetch、Xのスレッド取得、Xツリー全文取得、Xの投稿を知識化、x.com/.../status/リンクの内容を教えて(ツリー込み)
-  DO NOT TRIGGER: 単発Xポスト1件だけでよい場合（→syndication APIを直接叩けば足りる）、
+  DO NOT TRIGGER: 単発Xポスト1件だけでよい場合（→scripts/x_thread_fetch.pyを--no-grokで直接実行すれば足りる）、
   Xトレンド調査・話題横断検索（→x-research）、鍵アカ/非公開ポストの取得（不可）
+allowed-tools:
+  - Bash
+  - Read
 ---
 
 ## 何をするか
