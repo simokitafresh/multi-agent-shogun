@@ -14,5 +14,11 @@
 # (2026-07-26時点でパス以外の機械可読な自動生成マーカーは対象ファイル間で
 # 不統一なため。将来ファイルが増えると個別追記が漏れる設計だが、殿の過剰対策
 # 禁止原則によりこの粒度で維持する)。
+#
+# docs/semantic-index/index.md(cmd_karo_hotfix_prepush_semantic_index_autogen_20260730):
+# ninja_monitor.shのreflux backlink自動配備がSSOTへ因果リンクを追加する非同期commitを
+# 生成する。これがpush対象commitの変更pathと重なると、他の自動生成pathと同じ理由
+# (再生成のたびに差分が出る)でGA-PUSH1が反復BLOCKする。exact pathのみ除外し、
+# 通常source pathとの混在は従来どおりBLOCKを維持する。
 
-export AUTOGEN_PATH_EXCLUDE_REGEX='^queue/|^logs/|^dashboard\.md$|^context/lord-conversation-index\.md$|^context/senkyoku-log\.md$|^context/cmd-chronicle\.md$|^context/dm-signal-research\.md$|\.log$'
+export AUTOGEN_PATH_EXCLUDE_REGEX='^queue/|^logs/|^dashboard\.md$|^context/lord-conversation-index\.md$|^context/senkyoku-log\.md$|^context/cmd-chronicle\.md$|^context/dm-signal-research\.md$|^docs/semantic-index/index\.md$|\.log$'

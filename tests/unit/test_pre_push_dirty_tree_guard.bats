@@ -170,3 +170,76 @@ latest_artifact_text() {
     [[ "$artifact" == *$'\n  shared.txt'* ]]
     [[ "$artifact" != *$'\n  context/lord-conversation-index.md'* ]]
 }
+
+# cmd_karo_hotfix_prepush_semantic_index_autogen_20260730
+# test_necessity: real incident — ninja_monitor.shのreflux backlink自動配備が
+# docs/semantic-index/index.mdへ因果リンクを追加する非同期commitを生成する。
+# このpathがpush対象commitの変更pathと重なると、GA-PUSH1が反復BLOCKし
+# SHOGUN_PUSH_DIRTY_TREE_BYPASSの反復使用を強いていた。この正の境界fixtureは
+# semantic-index SSOT単独の重複overlapがBLOCKされないことを保証する
+# regressionである。
+@test "AUTOGEN-EXCLUDE: overlap limited to docs/semantic-index/index.md (SSOT reflux path) is not blocked" {
+    mkdir -p "$FAKE_REPO/scripts/lib" "$FAKE_REPO/docs/semantic-index"
+    cp "$PROJECT_ROOT/scripts/lib/autogen_paths.sh" "$FAKE_REPO/scripts/lib/autogen_paths.sh"
+    printf 'index v1\n' > "$FAKE_REPO/docs/semantic-index/index.md"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "add semantic index"
+    printf 'index v2 (regenerated)\n' > "$FAKE_REPO/docs/semantic-index/index.md"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "publish semantic index update"
+    LOCAL_SHA="$(git -C "$FAKE_REPO" rev-parse HEAD)"
+
+    printf 'index v3 (regenerated again, uncommitted)\n' > "$FAKE_REPO/docs/semantic-index/index.md"
+
+    run run_prepush
+    [ "$status" -eq 0 ]
+    [ -z "$(latest_artifact_text)" ]
+}
+
+# test_necessity: the semantic-index exclusion must be an exact-path match,
+# not a prefix/directory match — a sibling file under the same directory
+# (e.g. a source file someone happens to add next to the SSOT) must still
+# BLOCK on overlap. Guards against a regex that accidentally matches
+# `^docs/semantic-index/` as a prefix instead of the single index.md path.
+@test "AUTOGEN-EXCLUDE陰性(b): a different file under docs/semantic-index/ (not index.md itself) still BLOCKs on overlap" {
+    mkdir -p "$FAKE_REPO/scripts/lib" "$FAKE_REPO/docs/semantic-index"
+    cp "$PROJECT_ROOT/scripts/lib/autogen_paths.sh" "$FAKE_REPO/scripts/lib/autogen_paths.sh"
+    printf 'sibling v1\n' > "$FAKE_REPO/docs/semantic-index/other.md"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "add sibling file"
+    printf 'sibling v2\n' > "$FAKE_REPO/docs/semantic-index/other.md"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "publish sibling update"
+    LOCAL_SHA="$(git -C "$FAKE_REPO" rev-parse HEAD)"
+
+    printf 'sibling v3 (uncommitted)\n' > "$FAKE_REPO/docs/semantic-index/other.md"
+
+    run run_prepush
+    [ "$status" -eq 1 ]
+    artifact="$(latest_artifact_text)"
+    [[ "$artifact" == *"BLOCK(GA-PUSH1)"* ]]
+    [[ "$artifact" == *"docs/semantic-index/other.md"* ]]
+}
+
+# test_necessity: AC2's "混在は従来どおりBLOCKを維持する" requirement —
+# a mixed overlap of the semantic-index SSOT path and an ordinary source
+# path must still BLOCK, citing only the ordinary file, matching the
+# existing lord-conversation-index.md mixed-overlap contract above.
+@test "AUTOGEN-EXCLUDE陰性(d): overlap mixing docs/semantic-index/index.md and a normal file BLOCKs, citing only the normal file" {
+    mkdir -p "$FAKE_REPO/scripts/lib" "$FAKE_REPO/docs/semantic-index"
+    cp "$PROJECT_ROOT/scripts/lib/autogen_paths.sh" "$FAKE_REPO/scripts/lib/autogen_paths.sh"
+    printf 'index v1\n' > "$FAKE_REPO/docs/semantic-index/index.md"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "add semantic index on top of shared.txt publish"
+    LOCAL_SHA="$(git -C "$FAKE_REPO" rev-parse HEAD)"
+
+    printf 'not yet committed\n' >> "$FAKE_REPO/shared.txt"
+    printf 'index v2 (regenerated, uncommitted)\n' > "$FAKE_REPO/docs/semantic-index/index.md"
+
+    run run_prepush
+    [ "$status" -eq 1 ]
+    artifact="$(latest_artifact_text)"
+    [[ "$artifact" == *"BLOCK(GA-PUSH1)"* ]]
+    [[ "$artifact" == *$'\n  shared.txt'* ]]
+    [[ "$artifact" != *$'\n  docs/semantic-index/index.md'* ]]
+}
