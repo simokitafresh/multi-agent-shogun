@@ -1428,10 +1428,15 @@ automation_action_negation_re = re.compile(
     r"スクリプト変更|教訓追記|教訓登録|lesson追記|D0修正|実装修正|テスト追加|検知追加|"
     r"ブロック追加|BLOCK追加)\s*(なし|無し|不要|しない|せず|未実施|未対応)"
 )
-# Q6回答と、回答内容の実装証拠を更新する明示的なQ6追補は同じ回答SSOT。
-# 「Q6追補とは」のような説明文を拾わないよう、追補は実装証拠ラベルまで要求する。
+# Q6回答と、回答内容の実装証拠を更新する明示的なQ6追記/追補/補足は同じ回答SSOT。
+# 「Q6追補とは」のような説明文を拾わないよう、ラベル直後に「とは」が続く場合は説明文として除外する。
+# 2026-07-19修正は「追補（自動化ターゲット実装証拠）」の完全一致のみを許容したため、
+# 「Q6追記(将軍): 自動化ターゲット: ...」のような同義の実回答が再度検出漏れした
+# (cmd_karo_hotfix_shogun_startup_defer_two_alerts_20260730で実測: 2026-07-29 23:45:51
+#  掲示板投稿がFOUND_MISSING_AUTOMATIONに埋没)。固定フレーズの列挙は語彙が揺れるたびに
+# 再発するため、ラベル語を同義語集合へ広げて再発を止める。
 q6_answer_re = re.compile(
-    r"((?<![A-Za-z0-9_一-龯ぁ-んァ-ヶ])Q6\s*(?:回答|追補\s*[（(]\s*自動化ターゲット実装証拠\s*[）)])|創造主の洗脳チェック)"
+    r"((?<![A-Za-z0-9_一-龯ぁ-んァ-ヶ])Q6\s*(?:回答|追記|追補|補足)(?!\s*とは)|創造主の洗脳チェック)"
 )
 found_answer = False
 found_automation_target = False
@@ -2601,6 +2606,20 @@ if [ -n "${_PID_LOOP_LEDGER:-}" ]; then
                 else
                     echo "  ★ promotion消費路: reflux配備ログなし(消費路が未稼働の可能性)"
                 fi
+            fi
+            # promotion在庫超過は殿裁定による意図的凍結(queue/gates/reflux_promotion.paused)でも起きる。
+            # マーカー未提示のまま繰り返しWARNだけ出すと「先送り判断」に見え続け毎回の再調査コストが発生する
+            # (cmd_karo_hotfix_shogun_startup_defer_two_alerts_20260730で実測: 2026-07-28 13:21付
+            #  authority=lordの凍結中に438件まで積み上がった状態は検出バグではなく既知の一次証跡がある)。
+            _reflux_pause_marker="$SCRIPT_DIR/queue/gates/reflux_promotion.paused"
+            if [ -f "$_reflux_pause_marker" ]; then
+                _reflux_pause_since=$(grep -m1 '^paused_at:' "$_reflux_pause_marker" | sed -e 's/^paused_at:[[:space:]]*//' -e 's/^"\(.*\)"$/\1/')
+                _reflux_pause_authority=$(grep -m1 '^authority:' "$_reflux_pause_marker" | sed -e 's/^authority:[[:space:]]*//' -e 's/^"\(.*\)"$/\1/')
+                _reflux_pause_reason=$(grep -m1 '^reason:' "$_reflux_pause_marker" | sed -e 's/^reason:[[:space:]]*//' -e 's/^"\(.*\)"$/\1/')
+                _reflux_pause_resume=$(grep -m1 '^resume_condition:' "$_reflux_pause_marker" | sed -e 's/^resume_condition:[[:space:]]*//' -e 's/^"\(.*\)"$/\1/')
+                echo "  ★ promotion在庫超過は意図的凍結中(検出バグではない): authority=${_reflux_pause_authority:-unknown} since=${_reflux_pause_since:-unknown}"
+                echo "    reason=${_reflux_pause_reason:-unknown} / resume_condition=${_reflux_pause_resume:-unknown}"
+                echo "    ★ 解消手順: 殿へ凍結継続要否を確認し、明示裁可を得てから ${_reflux_pause_marker} を削除せよ(将軍D0削除禁止)"
             fi
         fi
     elif [ "$_loop_ledger_rc" -ne 0 ]; then

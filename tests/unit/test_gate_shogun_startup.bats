@@ -127,6 +127,31 @@ EOF
     [[ "$output" == *$'OK\tprojects/infra/lessons_shogun.yaml: q6_followup_proof_token'* ]]
 }
 
+# test_necessity: 「Q6追記」等のQ6追補と同義の実回答ラベルが実装証拠付きで検出される不変量を守る
+# (cmd_karo_hotfix_shogun_startup_defer_two_alerts_20260730実測: 2026-07-19修正の完全一致要求
+#  「追補（自動化ターゲット実装証拠）」がこの語彙違いを再度取りこぼしFOUND_MISSING_AUTOMATIONに埋没した)。
+@test "Q6 followup using a synonymous label (追記) is still recognized as an answer" {
+    local older newer
+    older="$(date -d '2 minutes ago' '+%Y-%m-%dT%H:%M:%S')"
+    newer="$(date -d '1 minute ago' '+%Y-%m-%dT%H:%M:%S')"
+    cat > "$TEST_ROOT/queue/bulletin.yaml" <<EOF
+entries:
+- id: old
+  content: 'Q6回答: 洗脳#2を確認。検証スキップの具体例を述べた。'
+  posted_by: shogun
+  posted_at: '$older'
+- id: latest
+  content: 'Q6追記(将軍): 自動化ターゲット: scripts/hooks/session_start_inject.sh 実装済み(commit deadbeef01)。'
+  posted_by: shogun
+  posted_at: '$newer'
+EOF
+
+    run_detector
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"FOUND_WITH_AUTOMATION"* ]]
+    [[ "$output" == *$'TARGET\tscripts/hooks/session_start_inject.sh 実装済み(commit deadbeef01)。'* ]]
+}
+
 @test "prompt-only Q6 followup explanation is not an answer" {
     local now
     now="$(date -d '1 minute ago' '+%Y-%m-%dT%H:%M:%S')"
@@ -181,4 +206,54 @@ EOF
     [ "$(printf '%s\n' "$output" | grep -c '^ALERT: promotion inventory exceeded$')" -eq 1 ]
     [ "$(wc -l < "$marker")" -eq 1 ]
     [ "$(printf '%s\n' "$output" | awk '/^ALERT:/' | cksum | awk '{print $1 ":" $2}')" != "4294967295:0" ]
+}
+
+setup_promotion_block_harness() {
+    awk '
+        /^        if printf .%s.n. "\$_loop_ledger_output" \| grep -q "promotion/ {inside=1}
+        inside {print}
+        inside && /^        fi$/ {exit}
+    ' "$PROJECT_ROOT/scripts/gates/gate_shogun_startup.sh" > "$TEST_ROOT/promotion-block.sh"
+    cat > "$TEST_ROOT/promotion-harness.sh" <<'EOF'
+#!/bin/bash
+SCRIPT_DIR="$FAKE_ROOT"
+_loop_ledger_output='ALERT: promotion: 在庫超過(24h以上前400→今回438)'
+source "$TEST_ROOT/promotion-block.sh"
+EOF
+    chmod +x "$TEST_ROOT/promotion-harness.sh"
+}
+
+# test_necessity: promotion在庫超過が殿裁定authority=lordの意図的凍結マーカーによる時、
+# 検出バグではなく一次証跡(reason/resume_condition)と解消手順を必ず表示する不変量を守る
+# (cmd_karo_hotfix_shogun_startup_defer_two_alerts_20260730: マーカー未提示のまま繰り返しWARNのみ
+#  だと「先送り判断」に見え続け、438件の在庫増が2026-07-28 13:21付殿裁定による意図的凍結だと
+#  毎回grepし直さねば分からなかった実測に基づく)。
+@test "promotion inventory alert surfaces lord-authorized pause marker as primary evidence" {
+    setup_promotion_block_harness
+    export FAKE_ROOT="$TEST_ROOT/fake-root"
+    mkdir -p "$FAKE_ROOT/logs" "$FAKE_ROOT/queue/gates"
+    cat > "$FAKE_ROOT/queue/gates/reflux_promotion.paused" <<'EOF'
+paused_at: "2026-07-28T13:21:00+09:00"
+reason: "殿裁定によりpromotion在庫消化を凍結。第二弾最優先。"
+authority: "lord"
+resume_condition: "殿の明示裁可"
+EOF
+
+    run env TEST_ROOT="$TEST_ROOT" FAKE_ROOT="$FAKE_ROOT" bash "$TEST_ROOT/promotion-harness.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"意図的凍結中(検出バグではない): authority=lord since=2026-07-28T13:21:00+09:00"* ]]
+    [[ "$output" == *'reason=殿裁定によりpromotion在庫消化を凍結。第二弾最優先。 / resume_condition=殿の明示裁可'* ]]
+    [[ "$output" == *"解消手順: 殿へ凍結継続要否を確認し"* ]]
+}
+
+@test "promotion inventory alert stays silent on pause context when no marker exists" {
+    setup_promotion_block_harness
+    export FAKE_ROOT="$TEST_ROOT/fake-root-no-marker"
+    mkdir -p "$FAKE_ROOT/logs" "$FAKE_ROOT/queue/gates"
+    : > "$FAKE_ROOT/logs/ninja_monitor.log"
+
+    run env TEST_ROOT="$TEST_ROOT" FAKE_ROOT="$FAKE_ROOT" bash "$TEST_ROOT/promotion-harness.sh"
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"意図的凍結中"* ]]
+    [[ "$output" == *"reflux配備ログなし"* ]]
 }
