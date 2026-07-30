@@ -176,7 +176,7 @@ noteはCommonMark仕様に従うため、太字の配置に制約がある。
 執筆後、殿に提示する前にnatural-japaneseでAI臭を検出・修正する。
 
 ```bash
-cd /tmp/natural-japanese && /tmp/uv-env/bin/uv run --no-project skills/natural-japanese/scripts/lint.py "$OUT_FILE"
+cd /tmp/natural-japanese && /tmp/uv-env/bin/uv run --no-project /tmp/natural-japanese/skills/natural-japanese/scripts/lint.py "$OUT_FILE"
 ```
 
 初回セットアップ（セッション内1回）:
