@@ -1,4 +1,11 @@
-# 【🏁全10レーンCLEAR — 総括checkpoint gen3稼働中(gen1/gen2はdeploy race捕捉の正直FAIL→根治済み)】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.7 (2026-07-30 08:02 将軍覚醒更新。殿発案07-29 22:06)
+# 【✅CLOSED(2026-07-30 09:45 gen4 checkpoint成功)】ホットスクリプト集中高速化 第七弾(テスト速度) — AsIs/ToBe 5W1H設計書 v1.8 (2026-07-30 09:47 将軍CLOSE刻印。殿発案07-29 22:06)
+
+## §-2.2 CLOSE(gen4全量checkpoint結果 — blt_20260730_094558一次)
+
+- 固定SHA bee4d7ef4・isolated一度だけ: **184/184ファイル・2,812/2,812 tests・FAIL0・SKIP0・cache0**。4識別子結合=receipt1/per-file184/per-suite1・集合差0
+- **全量suite wall 742.250→717.390秒(-24.860秒、-3.35%)**。総括snapshot=commit 986bcf10c
+- focused大幅短縮(#3 -20.8%等)に対し全量Δが小さいのは、--jobs並列実行下でper-file短縮の多くがCPU空き枠に吸収されるため(wallはクリティカルパス支配)。個別Δの総和を効果と宣言しない規律どおり、**全量-3.35%が第七弾の正式な確定値**
+- 副産物(効果はΔ外): deploy_task.sh固定tmp共有raceの根治・テスト実行bit契約不一致の是正・run_identity 4識別子結合の実運用実証×3世代
 
 ## §-2.3 総括checkpointの経緯(2026-07-30 08:02時点 — 掲示板+receipt一次)
 
@@ -46,6 +53,7 @@
 - 停止条件=反復サイクル型(殿裁定13:26)・read-only段のみ冗長2名可(13:28)・報告整形は最終集約(13:31)。before/after計測は同一4識別子契約のfixed-window比較で行う
 
 ## §-2 版履歴
+- v1.8(07-30 09:47): **CLOSE刻印** — gen4成功(2,812/2,812 FAIL0 SKIP0、全量wall -3.35%=正式確定値、snapshot 986bcf10c)。§-2.2新設。focused Δと全量Δの乖離理由(並列吸収)を正直記載
 - v1.7(07-30 08:02): **全10レーンCLEAR+checkpoint saga刻印(将軍覚醒更新)** — §-2.3新設(gen1/gen2正直FAIL→偵察2系統でdeploy_task.sh固定tmp共有race真因確定→BASHPID一意化根治CLEAR→gen3発射08:01)。§-2.4台帳を❄→✅CLEAR+帰結転記(採用10/10、#9は効果僅少を正直計上)。総短縮の確定値はgen3 checkpoint(isolated全量一度だけ+wave-final基準比較)で確定する
 - v1.6(07-30 03:10): 殿裁可03:09で本体解禁+弾台帳TOP10確定(累積559.7s=74.9%)
 - v1.5(07-30 01:20): §-2.5新設(弾#0実行結果・事故と受理・wave-final発射条件充足の刻印)。旧ledger喪失により§0の序列SSOTは「wave-final以降の新schema計測のみ」で構成することを明確化(過去比較は不能=正直記載)
