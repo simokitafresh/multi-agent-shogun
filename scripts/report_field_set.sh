@@ -385,19 +385,32 @@ PY
         (
             # shellcheck source=/dev/null
             source "$_rfs_batch_root/scripts/lib/defense_overhead_writer.sh"
+            # report_publish belongs to the same formal generation consumed by
+            # review_approval/cmd_complete.  report_id is a delivery identity,
+            # not a review generation; use the shared canonical fingerprint
+            # implementation so every downstream phase joins on one 64hex key.
+            # Non-terminal or identity-incomplete reports remain explicitly
+            # unobservable instead of fabricating a generation.
+            # shellcheck source=/dev/null
+            source "$_rfs_batch_root/scripts/lib/review_approval.sh"
             _rfs_publish_total_ms=$(( $(_rfs_mono_ms) - _rfs_wait_started ))
             _rfs_publish_verdict=PASS
             [ "$_rfs_batch_rc" -eq 0 ] || _rfs_publish_verdict=BLOCK
-            if [ -z "$_rfs_batch_report_id" ]; then
-                _rfs_batch_report_id=$(python3 - "$_rfs_batch_report" <<'PY'
-import sys, yaml
-data = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
-print(str(data.get("report_id", "")))
-PY
-)
+            _rfs_publish_generation=unknown
+            case "$_rfs_batch_status" in
+                completed|done)
+                    _rfs_publish_generation="$(review_report_fingerprint "$_rfs_batch_report" 2>/dev/null || true)"
+                    case "$_rfs_publish_generation" in
+                        (*[!0-9a-f]*|'') _rfs_publish_generation=unknown ;;
+                        (????????????????????????????????????????????????????????????????) ;;
+                        (*) _rfs_publish_generation=unknown ;;
+                    esac
+                    ;;
+            esac
+            if [ "$_rfs_publish_generation" = unknown ]; then
+                _rfs_publish_verdict=BLOCK
             fi
             _rfs_publish_cmd_id="${_rfs_batch_parent:-unknown}"
-            _rfs_publish_generation="${_rfs_batch_report_id:-unknown}"
             _rfs_publish_metadata="{\"cmd_id\":\"${_rfs_publish_cmd_id}\",\"generation\":\"${_rfs_publish_generation}\"}"
             _rfs_telemetry_args=()
             while IFS=$'\t' read -r _rfs_tp _rfs_tw _; do

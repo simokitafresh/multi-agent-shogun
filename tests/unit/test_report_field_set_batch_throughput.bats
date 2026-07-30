@@ -367,6 +367,12 @@ publish_terminal() {
   cp "$REPORT" "$case_report"
   publish_terminal "$case_report"
   [ "$status" -eq 0 ]
+  expected_generation="$(
+    PROJECT_ROOT="$ROOT" bash -c \
+      'source "$1"; review_report_fingerprint "$2"' _ \
+      "$ROOT/scripts/lib/review_approval.sh" "$case_report"
+  )"
+  [[ "$expected_generation" =~ ^[0-9a-f]{64}$ ]]
   for _ in 1 2 3 4 5 6 7 8 9 10; do
     [ "$(grep -c '"check_id":"publish_total"' "$DEFENSE_OVERHEAD_LEDGER")" -ge 1 ] && break
     sleep 0.3
@@ -378,13 +384,13 @@ publish_terminal() {
   grep -q '"check_id":"atomic_parse_validate_serialize"' "$DEFENSE_OVERHEAD_LEDGER"
   grep -q '"check_id":"atomic_flush_file_fsync"' "$DEFENSE_OVERHEAD_LEDGER"
   grep -q '"check_id":"atomic_replace_syscall"' "$DEFENSE_OVERHEAD_LEDGER"
-  python3 - "$DEFENSE_OVERHEAD_LEDGER" <<'PY'
+  python3 - "$DEFENSE_OVERHEAD_LEDGER" "$expected_generation" <<'PY'
 import json, sys
 rows=[json.loads(line) for line in open(sys.argv[1], encoding="utf-8")]
 publish=[row for row in rows if row["source"] == "report_publish"]
 assert publish
 assert all(row["cmd_id"] == "cmd_test" for row in publish)
-assert all(row["generation"] == "rpt-test" for row in publish)
+assert all(row["generation"] == sys.argv[2] for row in publish)
 PY
   # 新台帳を作らない: 書込み先は既存ledgerのみ
   [ "$(find "$TMPDIR_CASE" -name '*.jsonl' | wc -l)" -eq 1 ]
