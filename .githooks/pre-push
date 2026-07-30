@@ -43,6 +43,8 @@ _PREPUSH_PASS_CACHE="$REPO_ROOT/logs/prepush_test_pass.sha"
 _PREPUSH_LOCK_META="$REPO_ROOT/logs/prepush_test.lock.holder"
 _PREPUSH_LOCK_WAIT_SECONDS="${PREPUSH_LOCK_WAIT_SECONDS:-1200}"
 _PREPUSH_CROSS_GENERATION_WAIT_SECONDS="${PREPUSH_CROSS_GENERATION_WAIT_SECONDS:-1200}"
+_PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS="${PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS:-60}"
+_PREPUSH_SELECTED_TEST_KILL_AFTER_SECONDS="${PREPUSH_SELECTED_TEST_KILL_AFTER_SECONDS:-5}"
 _PREPUSH_LOCK_OWNED=0
 _PREPUSH_EXEC_ROOT=""
 
@@ -294,15 +296,25 @@ PY
     if [ -n "$_selected_tests" ]; then
         echo "[pre-push] Running selected tests (timeout 60s)..." >&2
         set +e
-        timeout 60 env BATS_CACHE=0 BATS_INNER_JOBS=1 RUN_TESTS_RECEIPT_DIR="$REPO_ROOT/logs/test_receipts" \
+        # timeout first sends TERM to the complete test process group.  A test
+        # descendant may ignore TERM and keep writing into the snapshot, so
+        # wait for timeout's KILL escalation before removing the worktree.
+        # Removing first races the writer: Git registration disappears while
+        # an untracked artifact recreates the directory (2026-07-30 incident).
+        timeout --kill-after="${_PREPUSH_SELECTED_TEST_KILL_AFTER_SECONDS}s" \
+            "${_PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS}s" \
+            env BATS_CACHE=0 BATS_INNER_JOBS=1 RUN_TESTS_RECEIPT_DIR="$REPO_ROOT/logs/test_receipts" \
             bash -c 'cd "$1" && shift && bash scripts/run_tests.sh affected "$@"' _ \
             "$_PREPUSH_EXEC_ROOT" "${_changed_files[@]}" \
             > "$_BATS_OUTPUT_FILE" 2>&1
         _rc=$?
         set -e
         cat "$_BATS_OUTPUT_FILE" >&2
-        if [ "$_rc" -eq 124 ]; then
-            echo "[pre-push] WARN: test_select timeout (60s) — push allowed" >&2
+        # 124: TERMで停止したtimeout。137: TERMを無視した子孫を
+        # --kill-afterがKILLし、process groupの静止完了まで待ったtimeout。
+        # どちらもselected-test timeout契約上はWARNであり、次のcleanupを行う。
+        if [ "$_rc" -eq 124 ] || [ "$_rc" -eq 137 ]; then
+            echo "[pre-push] WARN: test_select timeout (${_PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS}s) — push allowed" >&2
         elif [ "$_rc" -ne 0 ]; then
             exit "$_rc"
         fi

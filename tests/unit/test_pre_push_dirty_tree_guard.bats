@@ -48,9 +48,99 @@ run_prepush() {
     (cd "$FAKE_REPO" && printf 'refs/heads/main %s refs/heads/main %s\n' "$LOCAL_SHA" "$BASE_SHA" | bash "$PREPUSH_HOOK" origin "$FAKE_REPO")
 }
 
+install_selected_test_fixture() {
+    local mode="$1"
+    mkdir -p "$FAKE_REPO/tests/unit"
+    printf '# changed\n' > "$FAKE_REPO/trigger.sh"
+    cat > "$FAKE_REPO/scripts/test_select.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s/tests/unit/selected.bats\n' "$PWD"
+EOF
+    chmod +x "$FAKE_REPO/scripts/test_select.sh"
+    cat > "$FAKE_REPO/scripts/run_tests.sh" <<EOF
+#!/usr/bin/env bash
+case "$mode" in
+  timeout)
+    trap '' TERM
+    while :; do
+      printf artifact > generated-by-timeout.txt
+      sleep 0.05
+    done
+    ;;
+  failure)
+    exit 7
+    ;;
+esac
+EOF
+    chmod +x "$FAKE_REPO/scripts/run_tests.sh"
+    printf '# fixture\n' > "$FAKE_REPO/tests/unit/selected.bats"
+    git -C "$FAKE_REPO" add -A
+    git -C "$FAKE_REPO" commit -q -m "add selected-test fixture"
+    LOCAL_SHA="$(git -C "$FAKE_REPO" rev-parse HEAD)"
+}
+
 latest_artifact_text() {
     find "$FAKE_REPO/logs/hook_artifacts" -name "*.log" -newer "$FAKE_REPO" -print0 2>/dev/null \
         | xargs -0 cat 2>/dev/null
+}
+
+# cmd_karo_hotfix_prepush_snapshot_cleanup_timeout_20260730
+# test_necessity: a selected test that ignores TERM and writes an untracked
+# artifact inside the clean snapshot must be fully stopped before worktree
+# removal. The real incident removed Git registration but left one directory,
+# falsely converting an allowed timeout WARN into a cleanup BLOCK.
+@test "snapshot timeout waits for test descendants, WARNs, and leaves zero residue" {
+    install_selected_test_fixture timeout
+
+    run env PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS=1 \
+        PREPUSH_SELECTED_TEST_KILL_AFTER_SECONDS=1 bash -c \
+        'cd "$1" && printf "refs/heads/main %s refs/heads/main %s\n" "$2" "$3" | bash "$4" origin "$1"' \
+        _ "$FAKE_REPO" "$LOCAL_SHA" "$BASE_SHA" "$PREPUSH_HOOK"
+
+    [ "$status" -eq 0 ]
+    artifact="$(latest_artifact_text)"
+    [ -z "$artifact" ]
+    residue_count="$(find "${TMPDIR:-/tmp}" -maxdepth 1 -type d -name 'shogun-prepush.*' -newer "$FAKE_REPO" | wc -l)"
+    [ "$residue_count" -eq 0 ]
+}
+
+# test_necessity: an actual selected-test failure is not a timeout and must
+# remain a BLOCK with its original non-zero status.
+@test "snapshot selected-test real failure remains BLOCK" {
+    install_selected_test_fixture failure
+
+    run run_prepush
+
+    [ "$status" -eq 7 ]
+    [[ "$(latest_artifact_text)" == *"exit_code: 7"* ]]
+}
+
+# test_necessity: cleanup errors must never be swallowed merely to allow a
+# push. A deterministic Git wrapper makes only worktree removal fail.
+@test "snapshot cleanup failure remains BLOCK" {
+    install_selected_test_fixture timeout
+    real_git="$(command -v git)"
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    cleanup_fail_marker="$BATS_TEST_TMPDIR/cleanup-failed-once"
+    cat > "$BATS_TEST_TMPDIR/bin/git" <<EOF
+#!/usr/bin/env bash
+if [ "\$1" = "-C" ] && [ "\$3" = "worktree" ] && [ "\$4" = "remove" ] \
+        && [ ! -e "$cleanup_fail_marker" ]; then
+  : > "$cleanup_fail_marker"
+  exit 1
+fi
+exec "$real_git" "\$@"
+EOF
+    chmod +x "$BATS_TEST_TMPDIR/bin/git"
+
+    run env PATH="$BATS_TEST_TMPDIR/bin:$PATH" \
+        PREPUSH_SELECTED_TEST_TIMEOUT_SECONDS=1 \
+        PREPUSH_SELECTED_TEST_KILL_AFTER_SECONDS=1 bash -c \
+        'cd "$1" && printf "refs/heads/main %s refs/heads/main %s\n" "$2" "$3" | bash "$4" origin "$1"' \
+        _ "$FAKE_REPO" "$LOCAL_SHA" "$BASE_SHA" "$PREPUSH_HOOK"
+
+    [ "$status" -eq 1 ]
+    [[ "$(latest_artifact_text)" == *"clean snapshot cleanup failed"* ]]
 }
 
 @test "push is BLOCKED when the pushed commit's path overlaps an uncommitted working-tree change" {
