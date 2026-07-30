@@ -1,6 +1,6 @@
 # DM-signal 運用コンテキスト
-<!-- last_updated: 2026-07-29 cmd_karo_hotfix_revert_rejected_cycle4_b134_20260729 reviewed source boundary -->
-<!-- source_commit:eddc507b reason:cmd_karo_hotfix_revert_rejected_cycle4_b134_20260729 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=eddc507b -->
+<!-- last_updated: 2026-07-30 cmd_4196 reviewed source boundary -->
+<!-- source_commit:fb945019 reason:cmd_4196 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-ops.md commit=fb945019 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
