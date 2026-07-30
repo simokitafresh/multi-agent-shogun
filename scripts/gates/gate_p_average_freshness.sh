@@ -184,42 +184,75 @@ print(f"OK\t{calculated_at.isoformat()}\t{days_ago}\tportfolio_count={portfolio_
 PY
 }
 
-classify_db_fallback_on_dns_failure() {
+classify_db_fallback_on_reachability_failure() {
     local db_status="$1"
     local db_calculated_at="$2"
     local db_days_ago="$3"
     local db_counts="$4"
 
     if [ "$db_status" != "OK" ] || [ -z "${db_calculated_at:-}" ] || [ -z "${db_days_ago:-}" ]; then
+        echo "ALERT: p̄鮮度判定不能(通信障害) — API到達性問題に加えDB fallbackも参照不能"
         echo "  db_fallback: unavailable_or_empty"
+        echo "  classification: 通信障害(判定不能)。p̄バッチ未実行/staleとは独立の事象であり断定できない"
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度判定不能 — API到達不能かつDB fallbackも参照不能(通信障害)"
         return 1
     fi
 
     case "$db_days_ago" in
         ''|*[!0-9]*)
+            echo "ALERT: p̄鮮度判定不能(通信障害) — DB fallback鮮度を数値判定できない"
             echo "  db_fallback: p̄ DB freshness unknown (${db_days_ago:-empty}d ago, ${db_calculated_at}; ${db_counts})"
-            echo "  classification: API_BASE/DNS到達性問題に加え、DB fallback鮮度を数値判定できない"
-            bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄ API_BASE DNS解決失敗。DB鮮度判定不能"
+            echo "  classification: 通信障害(判定不能)。API_BASE到達性問題に加え、DB fallback鮮度を数値判定できない"
+            bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度判定不能 — API到達性問題+DB鮮度数値判定不能(通信障害)"
             return 1
             ;;
     esac
 
     if [ "$db_days_ago" -gt 35 ]; then
+        echo "ALERT: p̄バッチ未実行(stale) — API到達性問題を伴うがDB鮮度自体がstale"
         echo "  db_fallback: p̄ DB stale (${db_days_ago}d ago, ${db_calculated_at}; ${db_counts})"
-        echo "  classification: API_BASE/DNS到達性問題に加え、p̄ DB calculated_at が stale"
-        bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄ API_BASE DNS解決失敗。DB鮮度stale ${db_days_ago}日前"
+        echo "  classification: p̄バッチ未実行(stale)。API_BASE到達性問題とは独立にDB calculated_atがstale"
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄バッチ未実行(stale) — DB鮮度stale ${db_days_ago}日前(API到達性問題を伴う)"
         return 1
     elif [ "$db_days_ago" -gt 30 ]; then
         echo "  db_fallback: p̄ DB freshness WARN (${db_days_ago}d ago, ${db_calculated_at}; ${db_counts})"
-        echo "  classification: API_BASE/DNS到達性問題。p̄ DB calculated_at はWARN域"
-        bash "$SCRIPT_DIR/scripts/ntfy.sh" "WARN: p̄ API_BASE DNS解決失敗。DB鮮度WARN ${db_days_ago}日前"
+        echo "  classification: 通信障害(API_BASE到達性問題)。p̄ DB calculated_atはWARN域でありstaleではない"
+        bash "$SCRIPT_DIR/scripts/ntfy.sh" "WARN: p̄ API_BASE到達性問題。DB鮮度WARN ${db_days_ago}日前"
         return 2
     fi
 
     echo "  db_fallback: p̄ DB freshness OK (${db_days_ago}d ago, ${db_calculated_at}; ${db_counts})"
-    echo "  classification: API_BASE/DNS到達性の問題。p̄バッチ未実行/staleではない"
-    bash "$SCRIPT_DIR/scripts/ntfy.sh" "WARN: p̄ API_BASE DNS解決失敗。ただしDB鮮度OK ${db_days_ago}日前"
+    echo "  classification: 通信障害(API_BASE到達性問題)。p̄バッチ未実行/staleではない"
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "WARN: p̄ API_BASE到達性問題。ただしDB鮮度OK ${db_days_ago}日前"
     return 2
+}
+
+# 先出しのDIAG行に"ALERT:"を含めるとfresh(WARN)判定時もgate_improvement_trigger.shのテキスト一致検出が誤ってALERT扱いする(GA-416)
+reachability_failure_with_db_fallback() {
+    local failure_label="$1"
+    local diagnosis_line="$2"
+    local action_line="$3"
+    local ntfy_label="$4"
+
+    echo "DIAG: p̄鮮度到達性チェック: ${failure_label} (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
+    echo "  diagnosis: ${diagnosis_line}"
+    echo "  api_base_source: ${API_BASE_SOURCE}"
+    echo "  resolved_host: ${api_host}"
+    echo "  action: ${action_line}"
+    if [ -n "$curl_err" ]; then
+        echo "  curl_error: ${curl_err}"
+    fi
+
+    local db_fallback_result db_status db_calculated_at db_days_ago db_counts fallback_exit
+    db_fallback_result="$(db_freshness_fallback || true)"
+    IFS=$'\t' read -r db_status db_calculated_at db_days_ago db_counts <<< "$db_fallback_result"
+    fallback_exit=0
+    classify_db_fallback_on_reachability_failure "$db_status" "$db_calculated_at" "$db_days_ago" "$db_counts" || fallback_exit=$?
+    if [ "$fallback_exit" -eq 2 ]; then
+        exit 2
+    fi
+    bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — ${ntfy_label} HTTP ${http_code} curl ${curl_exit}"
+    exit 1
 }
 
 # API呼出し
@@ -247,22 +280,11 @@ _api_tmp="${API_BASE#*://}"; api_host="${_api_tmp%%/*}"
 if [ "$curl_exit" -ne 0 ]; then
     case "$curl_exit:$http_code" in
         6:*)
-            echo "ALERT: p̄鮮度: API_BASE DNS解決失敗 (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
-            echo "  diagnosis: curl_exit=6 はホスト名を解決できない状態。DNS/API_BASEを先に確認し、サーバ到達性・cold sleep・バッチ鮮度はAPI到達後に確認せよ"
-            echo "  api_base_source: ${API_BASE_SOURCE}"
-            echo "  resolved_host: ${api_host}"
-            echo "  action: getent hosts ${api_host} と P_AVERAGE_API_BASE/backend/.env の参照先を確認せよ"
-            if [ -n "$curl_err" ]; then
-                echo "  curl_error: ${curl_err}"
-            fi
-            db_fallback_result="$(db_freshness_fallback || true)"
-            IFS=$'\t' read -r db_status db_calculated_at db_days_ago db_counts <<< "$db_fallback_result"
-            fallback_exit=0
-            classify_db_fallback_on_dns_failure "$db_status" "$db_calculated_at" "$db_days_ago" "$db_counts" || fallback_exit=$?
-            if [ "$fallback_exit" -eq 2 ]; then
-                exit 2
-            fi
-            bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API_BASE DNS解決失敗 HTTP ${http_code} curl ${curl_exit}"
+            reachability_failure_with_db_fallback \
+                "API_BASE DNS解決失敗" \
+                "curl_exit=6 はホスト名を解決できない状態。DNS/API_BASEを先に確認し、サーバ到達性・cold sleep・バッチ鮮度はAPI到達後に確認せよ" \
+                "getent hosts ${api_host} と P_AVERAGE_API_BASE/backend/.env の参照先を確認せよ" \
+                "API_BASE DNS解決失敗"
             ;;
         22:401|22:403)
             echo "ALERT: p̄鮮度: API認証失敗 (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
@@ -270,14 +292,18 @@ if [ "$curl_exit" -ne 0 ]; then
             bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API認証失敗 HTTP ${http_code}"
             ;;
         22:5*)
-            echo "ALERT: p̄鮮度: APIサーバーエラー (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
-            echo "  action: Render バックエンド (${API_BASE}) の稼働状態とログを確認せよ"
-            bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — API 5xx HTTP ${http_code}"
+            reachability_failure_with_db_fallback \
+                "APIサーバーエラー" \
+                "curl_exit=22 HTTP 5xx はRenderバックエンドが応答不能な状態。サーバ稼働状態確認とバッチ鮮度判定は独立に扱え" \
+                "Render バックエンド (${API_BASE}) の稼働状態とログを確認せよ" \
+                "API 5xx HTTP ${http_code}"
             ;;
         28:*)
-            echo "ALERT: p̄鮮度: APIタイムアウト (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
-            echo "  action: Render バックエンド (${API_BASE}) のcold start/timeoutを確認せよ"
-            bash "$SCRIPT_DIR/scripts/ntfy.sh" "ALERT: p̄鮮度チェック失敗 — APIタイムアウト"
+            reachability_failure_with_db_fallback \
+                "APIタイムアウト" \
+                "curl_exit=28 はAPI応答がmax-time内に得られない状態。cold start/timeoutとバッチ鮮度判定は独立に扱え" \
+                "Render バックエンド (${API_BASE}) のcold start/timeoutを確認せよ" \
+                "APIタイムアウト"
             ;;
         *)
             echo "ALERT: p̄鮮度: API呼出し失敗 (HTTP ${http_code}, curl_exit=${curl_exit}, elapsed=${elapsed}s)"
