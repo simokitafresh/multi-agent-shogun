@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-31 promotion_pause_classifier_reviewed -->
-<!-- source_commit:5a22c4d90 reason:promotion_pause_classifier_reviewed evidence:commit_5a22c4d90_tests_12_of_12_pass_skip0 -->
+<!-- last_updated: 2026-07-31 cmd_karo_skill_ref_report_write_20260731 reviewed source boundary -->
+<!-- source_commit:a3d5858e1 reason:cmd_karo_skill_ref_report_write_20260731 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=a3d5858e1 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
