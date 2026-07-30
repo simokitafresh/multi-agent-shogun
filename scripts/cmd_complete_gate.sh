@@ -559,6 +559,45 @@ PY
     printf '%s\n' "$SCRIPT_DIR"
 }
 
+# cmd_karo_hotfix_cmd_complete_autopush_overlap_precheck_20260730:
+# GA-PUSH1(.githooks/pre-push のdirty working tree guard)と同一の重複判定を
+# git push呼出前に行う。判定は正しい(公開commitと未確定worktreeの不整合を防ぐ)が、
+# cmd_complete_gateの自動pushはこれを予見できず、正当BLOCKを毎回git push失敗として
+# 再通知していた(2026-07-30実測: hook失敗45件中32件=71%)。
+# fail-close方針: 重複を確信を持って検出できた場合のみSKIPし、それ以外(base_sha
+# 不明・dirtyなし・重複なし・除外後に重複が消える等)は必ず従来通りgit pushを試みる。
+# manual git pushとpre-push GA-PUSH1本体は無改変のため、ここで見逃しても実push側で
+# 変わらず守られる。通常source overlapを除外へ追加しない(AUTOGEN_PATH_EXCLUDE_REGEX
+# はscripts/lib/autogen_paths.shの既存正本をそのまま使う)。
+push_overlap_blocking_paths() {
+    local repo="$1" head_sha="$3" upstream_sha="$4"
+    local base_sha changed_files dirty_paths overlap overlap_blocking
+
+    if [ -n "$upstream_sha" ]; then
+        base_sha="$upstream_sha"
+    else
+        base_sha=$(git -C "$repo" merge-base "$head_sha" origin/main 2>/dev/null || true)
+    fi
+    [ -n "$base_sha" ] && [ -n "$head_sha" ] || return 0
+
+    changed_files=$(git -C "$repo" diff --name-only "$base_sha" "$head_sha" 2>/dev/null | sort -u)
+    [ -n "$changed_files" ] || return 0
+
+    dirty_paths=$(git -C "$repo" status --porcelain --untracked-files=no 2>/dev/null | cut -c4- | sort -u)
+    [ -n "$dirty_paths" ] || return 0
+
+    overlap=$(comm -12 <(printf '%s\n' "$changed_files") <(printf '%s\n' "$dirty_paths"))
+    [ -n "$overlap" ] || return 0
+
+    overlap_blocking="$overlap"
+    if [ -n "${AUTOGEN_PATH_EXCLUDE_REGEX:-}" ]; then
+        overlap_blocking=$(printf '%s\n' "$overlap" | grep -v -E "$AUTOGEN_PATH_EXCLUDE_REGEX" || true)
+    fi
+    [ -n "$overlap_blocking" ] || return 0
+
+    printf '%s\n' "$overlap_blocking"
+}
+
 push_task_repositories() {
     local task_file repo upstream_ref head_sha upstream_sha
     local -a repos=()
@@ -588,8 +627,14 @@ push_task_repositories() {
         upstream_ref=$(git -C "$repo" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)
         head_sha=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
         upstream_sha=$(git -C "$repo" rev-parse '@{upstream}' 2>/dev/null || true)
+        local overlap_blocking=""
+        overlap_blocking=$(push_overlap_blocking_paths "$repo" "$upstream_ref" "$head_sha" "$upstream_sha")
+
         if [ -n "$upstream_ref" ] && [ -n "$head_sha" ] && [ "$head_sha" = "$upstream_sha" ]; then
             echo "  git push: SKIP ($repo already up-to-date with ${upstream_ref})"
+        elif [ -n "$overlap_blocking" ]; then
+            echo "  git push: SKIP ($repo GA-PUSH1 overlap precheck: dirty path overlaps pushed commit range, push not attempted)"
+            printf '%s\n' "$overlap_blocking" | sed 's/^/    /'
         elif git -C "$repo" push 2>&1; then
             echo "  git push: OK ($repo)"
         else
@@ -604,6 +649,18 @@ if [ "${CMD_COMPLETE_GATE_TASK_REPO_ONLY:-0}" = "1" ]; then
 fi
 if [ "${CMD_COMPLETE_GATE_PUSH_REPOS_ONLY:-0}" = "1" ]; then
     CMD_COMPLETE_GATE_PUSH_DRY_RUN=1 push_task_repositories "${CMD_COMPLETE_GATE_TASK_FILE:?task file required}"
+    exit 0
+fi
+if [ "${CMD_COMPLETE_GATE_PUSH_OVERLAP_ONLY:-0}" = "1" ]; then
+    push_overlap_blocking_paths \
+        "${CMD_COMPLETE_GATE_PUSH_OVERLAP_REPO:?repo required}" \
+        "" \
+        "${CMD_COMPLETE_GATE_PUSH_OVERLAP_HEAD:-}" \
+        "${CMD_COMPLETE_GATE_PUSH_OVERLAP_UPSTREAM:-}"
+    exit 0
+fi
+if [ "${CMD_COMPLETE_GATE_PUSH_REPOS_REAL:-0}" = "1" ]; then
+    push_task_repositories "${CMD_COMPLETE_GATE_TASK_FILE:?task file required}"
     exit 0
 fi
 if [ -f "$SCRIPT_DIR/scripts/lib/model_injection_profile.sh" ]; then

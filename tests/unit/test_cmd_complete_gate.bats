@@ -3942,6 +3942,270 @@ YAML
     [ "$output" -eq 2 ]
 }
 
+# cmd_karo_hotfix_cmd_complete_autopush_overlap_precheck_20260730
+# test_necessity: reproduces the real incident (logs/hook_artifacts/20260730T115149_pre-push_1478023.log —
+# cmd_complete_gate's auto-push hit a legitimate GA-PUSH1 BLOCK because the pushed
+# commit range and the still-dirty worktree touched the same non-autogen path) as an
+# isolated fixture, and proves the overlap precheck removes both the wasted git push
+# call and the resulting hook-failure artifact without weakening GA-PUSH1 itself.
+_push_overlap_repo_init() {
+    local base="$1"
+    mkdir -p "$base"
+    git init -q --bare "$base/origin.git"
+    git init -q -b main "$base/repo"
+    git -C "$base/repo" config user.email test@example.com
+    git -C "$base/repo" config user.name test
+    printf 'base\n' > "$base/repo/shared.txt"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m base
+    git -C "$base/repo" remote add origin "$base/origin.git"
+    git -C "$base/repo" push -q -u origin main
+}
+
+_push_overlap_repo_make_source_overlap() {
+    local base="$1"
+    printf 'local change\n' >> "$base/repo/shared.txt"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "local change"
+    printf 'dirty uncommitted\n' >> "$base/repo/shared.txt"
+}
+
+_push_overlap_task_yaml() {
+    local base="$1"
+    cat > "$base/task.yaml" <<YAML
+task:
+  project: external
+  target_path: $base/repo
+YAML
+}
+
+_push_overlap_install_git_call_counter() {
+    local base="$1"
+    local real_git
+    real_git="$(command -v git)"
+    mkdir -p "$base/bin"
+    cat > "$base/bin/git" <<EOF
+#!/usr/bin/env bash
+if [ "\$1" = "-C" ] && [ "\$3" = "push" ]; then
+    echo push >> "$base/git_push_calls.log"
+fi
+exec "$real_git" "\$@"
+EOF
+    chmod +x "$base/bin/git"
+    : > "$base/git_push_calls.log"
+}
+
+@test "AC1 baseline: direct git push on a source-overlap dirty tree hits real GA-PUSH1 BLOCK and writes exactly 1 hook-failure artifact" {
+    local base="$BATS_TEST_TMPDIR/ac1-baseline"
+    _push_overlap_repo_init "$base"
+    mkdir -p "$base/repo/scripts/lib"
+    cp "$PROJECT_ROOT/scripts/lib/autogen_paths.sh" "$base/repo/scripts/lib/autogen_paths.sh"
+    _push_overlap_repo_make_source_overlap "$base"
+    git -C "$base/repo" config core.hooksPath "$PROJECT_ROOT/.githooks"
+
+    run bash -c 'cd "$1" && git push 2>&1' _ "$base/repo"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"BLOCK"* ]]
+
+    run find "$base/repo/logs/hook_artifacts" -name '*.log'
+    [ "$status" -eq 0 ]
+    [ "$(printf '%s\n' "$output" | grep -c .)" -eq 1 ]
+}
+
+@test "AC1 fixed: push_task_repositories SKIPs the source-overlap repo, calling git push 0 times and writing 0 hook-failure artifacts" {
+    local base="$BATS_TEST_TMPDIR/ac1-fixed"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac1_fixed_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"git push: SKIP ($base/repo GA-PUSH1 overlap precheck"* ]]
+    [[ "$output" == *$'\n    shared.txt'* ]]
+
+    [ ! -s "$base/git_push_calls.log" ]
+    if [ -d "$base/repo/logs/hook_artifacts" ]; then
+        run find "$base/repo/logs/hook_artifacts" -name '*.log'
+        [ "$status" -eq 0 ]
+        [ -z "$output" ]
+    fi
+}
+
+@test "AC2: clean tree still pushes via the already-up-to-date SKIP path (unaffected by the new precheck)" {
+    local base="$BATS_TEST_TMPDIR/ac2-clean"
+    _push_overlap_repo_init "$base"
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_clean_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"git push: SKIP ($base/repo already up-to-date with origin/main)"* ]]
+    [ ! -s "$base/git_push_calls.log" ]
+}
+
+@test "AC2: a non-overlapping dirty file does not block the push (git push is still called and succeeds)" {
+    local base="$BATS_TEST_TMPDIR/ac2-nonoverlap"
+    _push_overlap_repo_init "$base"
+    printf 'local change\n' >> "$base/repo/shared.txt"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "local change"
+    printf 'unrelated wip\n' > "$base/repo/unrelated.txt"
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_nonoverlap_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"git push: OK ($base/repo)"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+@test "AC2: an overlap limited to an auto-generated path does not block the push (git push is still called and succeeds)" {
+    local base="$BATS_TEST_TMPDIR/ac2-autogen"
+    _push_overlap_repo_init "$base"
+    mkdir -p "$base/repo/scripts/lib" "$base/repo/context"
+    cp "$PROJECT_ROOT/scripts/lib/autogen_paths.sh" "$base/repo/scripts/lib/autogen_paths.sh"
+    printf 'idx v1\n' > "$base/repo/context/lord-conversation-index.md"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "add index"
+    printf 'idx v2\n' > "$base/repo/context/lord-conversation-index.md"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "publish idx update"
+    printf 'idx v3 uncommitted\n' > "$base/repo/context/lord-conversation-index.md"
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_autogen_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"git push: OK ($base/repo)"* ]]
+    [ "$(grep -c . "$base/git_push_calls.log")" -eq 1 ]
+}
+
+# cmd_karo_hotfix_cmd_complete_autopush_overlap_precheck_20260730 AC2
+# test_necessity: the precheck must not silently widen the exclusion. A normal
+# source path overlap must still be reported as a blocking path, matching
+# GA-PUSH1's own contract (no new exclusion added for ordinary source files).
+@test "AC2: overlap precheck does not add ordinary source paths to the autogen exclusion" {
+    local base="$BATS_TEST_TMPDIR/ac2-source-not-excluded"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    _push_overlap_task_yaml "$base"
+    _push_overlap_install_git_call_counter "$base"
+
+    run env PATH="$base/bin:$PATH" CMD_COMPLETE_GATE_PUSH_REPOS_REAL=1 \
+        CMD_COMPLETE_GATE_TASK_FILE="$base/task.yaml" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac2_source_not_excluded_probe
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"shared.txt"* ]]
+    [ ! -s "$base/git_push_calls.log" ]
+}
+
+# cmd_karo_hotfix_cmd_complete_autopush_overlap_precheck_20260730 AC3
+# test_necessity: the normal CLEAR path and the emergency-override CLEAR path must
+# not grow two divergent overlap implementations. Both call sites route through the
+# single push_task_repositories function, and push_overlap_blocking_paths must be
+# defined exactly once and invoked only from inside it.
+@test "AC3: both CLEAR entry points call push_task_repositories, and the overlap helper is defined exactly once" {
+    run grep -Fc 'push_task_repositories "${MATCHING_TASK_FILES[@]}"' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 2 ]
+
+    run grep -Fc 'push_overlap_blocking_paths()' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+
+    run grep -Fc 'overlap_blocking=$(push_overlap_blocking_paths' "$SRC_GATE_SCRIPT"
+    [ "$status" -eq 0 ]
+    [ "$output" -eq 1 ]
+}
+
+# AC3: positive/negative fixtures for push_overlap_blocking_paths itself, isolated
+# from the surrounding push loop via CMD_COMPLETE_GATE_PUSH_OVERLAP_ONLY.
+@test "AC3 fixture: push_overlap_blocking_paths reports the overlapping path for a real source overlap" {
+    local base="$BATS_TEST_TMPDIR/ac3-overlap"
+    _push_overlap_repo_init "$base"
+    _push_overlap_repo_make_source_overlap "$base"
+    local head_sha upstream_sha
+    head_sha="$(git -C "$base/repo" rev-parse HEAD)"
+    upstream_sha="$(git -C "$base/repo" rev-parse '@{upstream}')"
+
+    run env CMD_COMPLETE_GATE_PUSH_OVERLAP_ONLY=1 \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_REPO="$base/repo" \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_HEAD="$head_sha" \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_UPSTREAM="$upstream_sha" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac3_overlap_probe
+    [ "$status" -eq 0 ]
+    [ "$output" = "shared.txt" ]
+}
+
+@test "AC3 fixture: push_overlap_blocking_paths reports nothing for a non-overlapping dirty file" {
+    local base="$BATS_TEST_TMPDIR/ac3-nonoverlap"
+    _push_overlap_repo_init "$base"
+    printf 'local change\n' >> "$base/repo/shared.txt"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "local change"
+    printf 'unrelated wip\n' > "$base/repo/unrelated.txt"
+    local head_sha upstream_sha
+    head_sha="$(git -C "$base/repo" rev-parse HEAD)"
+    upstream_sha="$(git -C "$base/repo" rev-parse '@{upstream}')"
+
+    run env CMD_COMPLETE_GATE_PUSH_OVERLAP_ONLY=1 \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_REPO="$base/repo" \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_HEAD="$head_sha" \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_UPSTREAM="$upstream_sha" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac3_nonoverlap_probe
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "AC3 fixture: push_overlap_blocking_paths reports nothing when the overlap is limited to an autogen path" {
+    local base="$BATS_TEST_TMPDIR/ac3-autogen"
+    _push_overlap_repo_init "$base"
+    mkdir -p "$base/repo/context"
+    printf 'idx v1\n' > "$base/repo/context/lord-conversation-index.md"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "add index"
+    printf 'idx v2\n' > "$base/repo/context/lord-conversation-index.md"
+    git -C "$base/repo" add -A
+    git -C "$base/repo" commit -q -m "publish idx update"
+    printf 'idx v3 uncommitted\n' > "$base/repo/context/lord-conversation-index.md"
+    local head_sha upstream_sha
+    head_sha="$(git -C "$base/repo" rev-parse HEAD)"
+    upstream_sha="$(git -C "$base/repo" rev-parse '@{upstream}')"
+
+    run env CMD_COMPLETE_GATE_PUSH_OVERLAP_ONLY=1 \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_REPO="$base/repo" \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_HEAD="$head_sha" \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_UPSTREAM="$upstream_sha" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac3_autogen_probe
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "AC3 fixture: push_overlap_blocking_paths reports nothing when the worktree is already up-to-date" {
+    local base="$BATS_TEST_TMPDIR/ac3-uptodate"
+    _push_overlap_repo_init "$base"
+    local head_sha upstream_sha
+    head_sha="$(git -C "$base/repo" rev-parse HEAD)"
+    upstream_sha="$(git -C "$base/repo" rev-parse '@{upstream}')"
+
+    run env CMD_COMPLETE_GATE_PUSH_OVERLAP_ONLY=1 \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_REPO="$base/repo" \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_HEAD="$head_sha" \
+        CMD_COMPLETE_GATE_PUSH_OVERLAP_UPSTREAM="$upstream_sha" \
+        bash "$SRC_GATE_SCRIPT" cmd_ac3_uptodate_probe
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
 make_ci_push_repo() {
     local repo="$1"
     git init -q "$repo"
