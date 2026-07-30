@@ -171,6 +171,39 @@ noteはCommonMark仕様に従うため、太字の配置に制約がある。
 - コラム: 2,000〜3,500文字
 - 解説記事: 3,500〜5,500文字
 
+### Step 3.5: natural-japanese lint（AI臭除去）
+
+執筆後、殿に提示する前にnatural-japaneseでAI臭を検出・修正する。
+
+```bash
+cd /tmp/natural-japanese && /tmp/uv-env/bin/uv run --no-project skills/natural-japanese/scripts/lint.py "$OUT_FILE"
+```
+
+初回セットアップ（セッション内1回）:
+```bash
+python3 -m venv /tmp/uv-env && /tmp/uv-env/bin/pip install uv -q
+cd /tmp && git clone --depth 1 https://github.com/coji/natural-japanese.git
+```
+
+**収束ループ**: lint→修正→再lint→…を検出0件（critical/warn 0件）まで繰り返す。1回で終わるな。
+
+**核心指標（--json出力）**:
+- `burstiness`: 負=文長が均質すぎ（AI傾向）。-0.2以上を目指す
+- `nominal_ending_ratio`: 0.1以上（体言止めゼロはAI典型パターン）
+- `paragraph_sentence_count_cv`: 高いほど人間的（段落長のばらつき）
+- `bold_per_1000_chars`: 太字の乱用を数値で検出
+
+**主要検出カテゴリ**:
+- `forbidden_phrase`: LLM常套句（「大切なのは」等）
+- `antithesis_repetition`: 「〜ではなく」の反復（3回以上で発火）
+- `low_burstiness`: 文長リズムの均質性
+- `translationese`: 翻訳調（「〜を持つこと」等）
+- `repeated_sentence_lead`: 文頭パターンの反復（info。マークダウン記法なら無視可）
+
+**補助コマンド**:
+- `terms.py`: 未説明用語の検出
+- `outline.py`: 構造分析+テンプレ見出し検出
+
 ### Step 4: 殿に提示
 
 下書きを殿に見せ、フィードバックを受ける。「他に入れたい話は？」と聞く。
@@ -191,14 +224,42 @@ CDP_PORT=9234 bash scripts/note_draft.sh "$OUT_FILE"
 
 内部では `auto-ops/cdp/cdp_helper.py` の `launch_browser` / `get_tab` / `js_eval` / `navigate` / `cdp_send` / `screenshot` / `_is_cdp_alive` を使う。CDP_PORTに応答がなければ `launch_browser`(PowerShell)→`cmd.exe` fallbackで隔離プロファイル付きChromeを自動起動する。起動不能はFAIL(exit 1)。未ログイン時は `.env.note` の `NOTE_EMAIL` / `NOTE_PASSWORD` で自動ログインする。reCAPTCHAが出た場合はチェックボックスをCDP座標クリックし、画像チャレンジでは `/tmp/note_recaptcha_challenge.png` を撮影して最大120秒待機する。未解決ならFAIL(exit 1)として記録する。
 
-Markdown→note.com変換ルール:
+Markdown→note.com変換ルール（2026-07-30更新 commit ee255047）:
 - `# タイトル` → titleのtextareaに設定（本文に含めない）。`#` が無い場合は最初の `##` をfallback titleに使う
-- `## 見出し` → `<h3>` として本文HTMLに入れる
+- `## 見出し` → `<h2>` 大見出しとして本文HTMLに入れる
+- `### 見出し` → `<h3>` 小見出しとして本文HTMLに入れる
+- `https://` で始まる行 → `<a>` リンクとして本文HTMLに入れる（note.comが自動でOGPカード化する場合あり）
 - `---` → `<hr>` として本文HTMLに入れる
 - 通常テキストと `- リスト項目` → 連続分を1つの `<p>` にまとめ、行間は `<br>` でつなぐ
 - 空行とコードフェンス行 → スキップ
 - 本文は `.ProseMirror.note-common-styles__textnote-body` → `div.ProseMirror` → `div[contenteditable]` の3段fallbackでエディタを検出し、`innerHTML` で挿入して `input` / `change` eventを発火する
 - ProseMirrorエディタがスピナーで停止している場合、`Page.reload` で最大2回リトライする（`wait_for_prosemirror`）
 - 下書き保存ボタン押下後、最終URLを `[note_draft] Done: ...` に出力し、`skill_execution_log.yaml` にPASS/FAIL/SKIPを記録する
+
+### Step 7: CDP画像挿入（論文紹介記事等で図表が必要な場合）
+
+note.comはMarkdown画像記法(`![](url)`)非対応。CDPで直接エディタに画像をアップロードする。
+
+**画像ファイル準備**: `marketing-director/content/images/note-{テーマ}/` に保存。arxiv論文は`https://arxiv.org/html/{id}/`からfigure URLを取得しcurlでダウンロード。
+
+**挿入手順**（2026-07-30実証。1画像ずつ順次実行）:
+
+1. **カーソル配置**: 画像説明文（「上図は〜」等）の段落先頭にカーソルを配置
+2. **空行作成**: Enter→ArrowUpで画像挿入用の空行を作る
+3. **+メニュー表示**: `aria-label="メニューを開く"` ボタンをクリック（空行の左に出る「+」）
+4. **「画像」クリック**: +メニュー内の「画像」ボタンをクリック → `input[type=file]`が出現
+5. **ファイル設定**: `DOM.setFileInputFiles` でWindows側パス(`C:\...`)を設定 → 画像が自動挿入される
+
+```python
+# カーソル配置（JSでテキスト検索→rangeで配置）
+# Enter + ArrowUp で空行作成
+# "画像"ボタンクリック → input[type=file]出現
+# DOM.setFileInputFiles({nodeId: nid, files: [win_path]})
+```
+
+**注意点**:
+- Windowsパス形式（`C:\\...`）で指定。WSL2パス(`/mnt/c/...`)は不可
+- 画像挿入後にテキストが消えるバグあり: マーカーテキストを選択→削除すると前後段落が巻き込まれる。空行を**作る**（Enter+ArrowUp）方式が安全
+- 全画像挿入後に`下書き保存`ボタンをCDPでクリック
 
 <!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
