@@ -1,7 +1,7 @@
 # DM-signal 研究コンテキスト
-<!-- last_updated: 2026-07-30 cmd_4195 reviewed source boundary -->
-<!-- dm_signal_research_reflux: fingerprint=12f4cd1e5343f3b630682479e687dd559db3db3c3a145cc8284205dd53c6ffaf; mode=synced; evidence_b64=5q6/5oyH56S6MjAyNi0wNy0zMCAxMjo1NOOBruaKleizh+i+nuabuOeZu+mMsuOAgnNob2d1buWBtOS4ieWxpOiomOaGtuOBuG1lbW9yeV9kYl9rbm93bGVkZ2Vfd3JpdGXjgaflkIzmnJ/mm7jovrzjgb8oY29tbWl055u05b6M5a6f6KGMKQ== -->
-<!-- source_commit:e8d19957 reason:cmd_4195 reviewed source boundary evidence:cmd_complete_gate project=dm-signal context=context/dm-signal-research.md commit=e8d19957 -->
+<!-- last_updated: 2026-07-30 cmd_karo_hotfix_ga417 reviewed research boundary -->
+<!-- dm_signal_research_reflux: fingerprint=f88ee9aab2850c603cbb7332ea0ca3d0e7c3ff2090bdbca32bd77d1eaa5d9a79; mode=synced; evidence_b64=5q6/5oyH56S6MjAyNi0wNy0zMOOBruaKleeov+WPlui+vOOAguWOn+irluaWh1BERuebtOaOpeWPluW+lyh0LmNv44Oq44Oz44Kv5bGV6ZaL57WM55SxKSvlhajmlofmir3lh7rjgILkuInlsaToqJjmhrbjgbjlkIzmnJ/mm7jovrzjgb/kuojlrpo= -->
+<!-- source_commit:b2771f29 reason:cmd_karo_hotfix_ga417 reviewed research boundary evidence:4/4 classified: M85/M86/S07 indexed; cmd_4196 backend-only non-target; reflux guard check rc=0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 
@@ -399,6 +399,11 @@ Vintage 2020 OOS検証(cmd_2228): ss/as全objectiveでα6 positive。
 | M83 | ADTS / CADTS Bandit Portfolio | discount+sliding-window Thompson Samplingで非定常stock pickingを行い、離散weight superarmへ拡張する。 | `docs/research/knowledge-base/methods/bandit-portfolio-adts.md` |
 | M84 | Expert Aggregation WASA | awake expertだけを指数重みで集約し、specialized CRP poolから距離閾値で助言を選ぶonline portfolio手法。 | `docs/research/knowledge-base/methods/expert-aggregation-wasa.md` |
 | S06 | Tail Risk Hedging: Put vs Trend | OTM Putは長期負リターンの保険コスト、Multi-Asset Trendは長期正リターン+テールヘッジ。急速下落はPut有利、緩やかな下落はTrend有利。 | `docs/research/knowledge-base/sources/aqr-ilmanen-2021-tail-risk-hedging-put-vs-trend.md` |
+| M85 | Breaking the Trend | 70先物ARPでは単一EMA（112±10営業日）が理論SharpeをR²=0.98で説明し、MACD等の多時間スケール化・非線形補正は改善せずcherry-pickingリスクを増やす。 | `docs/research/knowledge-base/methods/breaking-the-trend.md` |
+| M86 | Carry-Filtered TSMOM | 12か月TSMOMと先物basisの符号が一致する時だけ発動するANDフィルタで、特に景気後退初期のSharpeを改善する。原論文一次確認前の候補として扱う。 | `docs/research/knowledge-base/methods/carry-tsmom-filter.md` |
+| S07 | Chasing Your Own Tail Risk Revisited | Put保護は長期コストと最悪下落時の保護不足が残り、リスクパリティ・マネージドフューチャーズ・ディフェンシブ株式の分散代替を支持する。 | `docs/research/knowledge-base/sources/aqr-nielsen-2019-chasing-your-own-tail-risk-revisited.md` |
+
+境界分類: `fb945019`（cmd_4196）は`backend/app/jobs/flush/signal_flush.py`だけの通知抑制実装であり、研究知識の変更ではないため本索引への転記対象外。
 
 ## §DMS-TVP レイヤー別動的選出 研究進捗 (2026-04-30)
 
