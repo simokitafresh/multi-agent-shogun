@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-30 cmd_karo_hotfix_p1b_report_publish_generation_20260730 reviewed source boundary -->
-<!-- source_commit:6e33bdbb2 reason:cmd_karo_hotfix_p1b_report_publish_generation_20260730 reviewed source boundary evidence:cmd_complete_gate project=infra context=context/infrastructure.md commit=6e33bdbb2 -->
+<!-- last_updated: 2026-07-30 cmd_karo_hotfix_ga417_infrastructure_trigger_20260730 reviewed 14 commits and reflected 5 root-fallback sources -->
+<!-- source_commit:2eec66892 reason:cmd_karo_hotfix_ga417_infrastructure_trigger_20260730 reviewed 14 commits and reflected 5 root-fallback sources evidence:range=6e33bdbb2..2eec66892 total=14 root_fallback=5 reflected=5 registry=10/10 infra=1/1 gate_registry_change=0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -18,6 +18,8 @@ related_lessonsのmemory boostは独自SQLite snapshotを作らず、`memory_db_
 daemon watchdogは個別health checkに加え、`inbox_watcher.sh>=9`・`ninja_monitor.sh`・`ntfy_listener.sh`・`usage_statusbar_loop.sh`・`gist_sync.sh`のprocess inventoryを1 snapshotで監査し、不足classごとにWARNする。消滅PIDの`/proc/<pid>/cmdline` raceは無音で扱い、inbox unread countは読取異常時も単一整数へ正規化する。P0は本番実走error 0で完了。次段は副作用のある`restart_watchers --status`修正(P1a-1)と全daemon共通maintenance lock(P1a-2)を分離し、既存watchdogの600秒/3回throttleと重複するbackoffは追加しない。→ `scripts/daemon_watchdog.sh` / `tests/unit/test_daemon_watchdog.bats` / `docs/research/daemon-inventory-asis-tobe-5w1h_20260715.md`（cmd_3951、commit `4bf8858c0`、R2最終inventory v1.3 `2afc5d9a1`）
 
 context freshnessの`source_commit`境界はinfra root fallbackにも適用する。境界後commitは、context自身を変更した・lesson-only・本文がhash/cmd IDを明示した場合だけ反映済みと分類し、それ以外は日付をbumpしてもALERTへ残す。ALERTには直近3件のhash・subjectを同梱する。→ `scripts/context_freshness_check.sh` / `tests/unit/test_context_freshness_check.bats`（cmd_karo_hotfix_ga225_context_freshness_infra_202607120124、GA-264、GA-295）
+
+GA-417一次差分: `6e33bdbb2..2eec66892`全14件のうちroot fallback候補は5件。`2eec66892`はX threadを本文+画像の単一知識へ統合する取得skill、`9c90c23ca`は外部repo成果物のscope path正規化、`897c7370d`は自動push前のdirty-overlap fail-closed、`947ce5451`は自動生成semantic indexの正当なdirty除外、`d878d5096`はhook result parent mapping正規化を導入した。`2ce5e9e6f`は既存本文参照済みのため反映済み除外。直接原因は同日`last_updated`がexact source境界を進めないこと、根本判定はregistry 10/10一致・infra登録1/1・未反映5/5検出で既存防御が十分なためgate/registry変更0。→ `skills/x-thread-fetch/SKILL.md` / `scripts/gates/gate_report_format_main.py` / `scripts/cmd_complete_gate.sh` / `scripts/lib/autogen_paths.sh` / `scripts/report_field_set.sh`（cmd_karo_hotfix_ga417_infrastructure_trigger_20260730）
 
 context自己更新commitは、それ自身の除外だけでなく、その祖先にある検出済みsource候補のeffective boundaryとして扱う。GA-414では`b40e11a3c..66cb48be0`の116件を全走査し、除外83・本文反映10・未反映23を検出した後、`c36df4056`のcontext自己更新が23/23を包含していたのに旧gateが候補を残した。直接原因は自己更新commitの単体除外、根本原因は反映証拠を境界へ昇格しない非対称性。新しいsource commitがcontext commitより後なら従来通りALERTする。→ `scripts/gates/gate_context_freshness.sh` / `tests/unit/test_gate_context_freshness.bats`（cmd_karo_hotfix_ga414_context_freshness_20260729）
 
