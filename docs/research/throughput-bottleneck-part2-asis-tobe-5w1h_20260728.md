@@ -1,15 +1,18 @@
-# 【★第六弾=本レーンの再起動(殿下知2026-07-29 21:59)。P2/P3/P4は識別子計装が前提の直列構造確定済み】弾スループット全体のボトルネック改善 part2(=第六弾) — AsIs/ToBe 5W1H設計書 v1.9 (2026-07-30 01:30 独立監査是正。版履歴は§-3)
+# 【★第六弾稼働中 — finalize identity接続4連鎖着地(canonical generation=report_fingerprint統一)。P1b再開条件の充足計測が次手】弾スループット全体のボトルネック改善 part2(=第六弾) — AsIs/ToBe 5W1H設計書 v2.0 (2026-07-30 09:08 将軍覚醒更新。版履歴は§-3)
 
-## §0.-2 稼働進捗(2026-07-30 01:20時点 — gate_metrics.log+掲示板一次確認)
+## §0.-2 稼働進捗(2026-07-30 09:08時点 — gate_metrics.log+報告YAML一次確認)
 
 | 事象 | 時刻 | 状態 |
 |---|---|---|
 | 準備計測track A(read-only冗長) | 07-29 22:29 | ✅GATE CLEAR(cmd_karo_round6_bottleneck_measure_track_a、飛猿) |
-| v1.8独立レビュー | 07-30 01:05 | ✅軍師LGTM→GATE CLEAR(cmd_karo_round6_part2_v18_independent_review、影丸) |
-| 旧test ledger非依存確認 | 07-30 00:13 | ✅弾#0 schema移行事故(旧ledger喪失)の影響照合: 本書v1.8+独立レビュー報告に旧test timing ledger参照**0件**。準備計測3点はgate_metrics.log・defense_overhead.jsonl・loop_ledger・review_approval識別子が正本=**代替蓄積期間0日**(blt_20260730_001355) |
-| 殿優先裁定 | 07-30 00:37 | 『第五〜第七弾が優先だ』— 第六弾は第五弾wave-final・第七弾と並走で全リソース集中対象 |
+| v1.8独立レビュー | 07-30 01:05 | ✅軍師LGTM→GATE CLEAR(影丸) |
+| 旧test ledger非依存確認 | 07-30 00:13 | ✅旧test timing ledger参照0件=代替蓄積期間0日(blt_20260730_001355) |
+| 殿優先裁定 | 07-30 00:37 | 『第五〜第七弾が優先だ』 |
+| v1.9独立監査是正 | 07-30 01:29 | ✅CLEAR(cmd_karo_round6_part2_v19_design_correction: 3指標分離・P1b機械再開条件確定。test 43/43 PASS) |
+| finalize identity gap偵察 | 07-30 01:30頃 | ❌正直FAIL BLOCK(飛猿): finalize後半5 phaseはdefense_overhead専用行0件・self_retro 418件もcmd_id+generation 0/418(0.0%)・**phase coverage 0/5**。さらにgeneration意味がreport_publish=report_id/review_approval=fingerprintで不一致。所有callsite全数表+最小実装順序+敵対5分類を確定した価値ある停止 |
+| identity hotfix連鎖(3本) | 07-30 02:09-02:54 | ✅全CLEAR: (1)async_identity=review_approval通常起動でSG7 bundleのreview.cmd_id+report_fingerprint 64hexからcanonical generationを解決(affected 315/315 PASS) (2)resume_identity_fixture=旧bundle fixture復旧(FAIL6→PASS6) (3)outer_identity=**canonical generation=review.report_fingerprintへ統一しcmd_complete→dashboardへ伝播**(75/75 PASS、commit cb39476c) |
 
-**現況**: Track A成果は本書へ未接続。Track Bは部分計測のみ完了し、P1b再開条件は未充足。P1a系識別子を必要phaseへ接続してからP1bへ進む直列契約は不変。
+**現況**: 偵察が確定した「generation意味不一致」と「finalize後半identity欠落」の是正が3 hotfix連鎖で着地し、**canonical generation=report_fingerprintの単一定義**でreview_approval→cmd_complete→dashboardのidentity伝播が実装済み。次手=(1)計装後の蓄積でfinalize後半5 phaseのcoverage実測を再取得(0/5→N/5) (2)P1b機械再開条件(必要phase充足率+pair+欠損+右打切り+coverage同一cutoff出力)の充足判定 (3)充足でP1b read-only集計起票。偵察の未解消callsite残がある場合は先に消化する。P2/P3/P4のBLOCK維持条件は不変。
 
 ## §0.-1 第六弾指定と独立実測の合流(2026-07-29 21:59-22:00)
 
@@ -38,6 +41,7 @@
 
 ## §-3 版履歴
 
+- v2.0(2026-07-30 09:08): **finalize identity接続4連鎖の刻印(将軍覚醒更新)** — 飛猿偵察の正直FAIL(finalize後半phase coverage 0/5・self_retro 418件identity 0%・generation意味不一致・callsite全数表確定)→3 hotfix連鎖CLEAR(canonical generation=review.report_fingerprint統一・SG7 bundle由来解決 affected 315/315 PASS・fixture復旧FAIL6→PASS6・cmd_complete→dashboard伝播 commit cb39476c)。§0.-2へ反映し、次手=計装後coverage再実測(0/5→N/5)→P1b機械再開条件の充足判定→P1b read-only集計起票の順を確定
 - v1.9(2026-07-30 01:20-01:30): **進捗刻印+独立監査RC是正** — §0.-2新設: 準備計測track A CLEAR(22:29)+v1.8独立レビューLGTM→CLEAR(01:05)+弾#0事故の旧test ledger非依存確認(参照0件・代替蓄積0日)+殿優先裁定00:37『第五〜第七弾が優先』。14日rollingによる単日窓包含と採用完全性差を反映し「独立二重確認」を撤回。ratio-of-medians=69.0%/median-of-ratios=51.2%/cumulative-sum-ratio=41.3%を別指標化。Track A未接続、Track B部分計測(73/84、欠損11、右打切り1)、review識別子157/251=62.5%、finalize後半0/5を固定cutoff付きで反映。P1b再開条件を必要phase充足率+pair+欠損+右打切り+coverageの機械出力へ変更。P2/P3/P4と第五〜第七弾の順序境界は維持。
 - v1.8(2026-07-29 22:20): **第六弾指定の覚醒更新** — (1)§0.-1新設: 殿下知21:59で本レーン=第六弾と確定、loop_ledger 514cmd独立実測(work 31%/finalize 28%/待ち39%)とself_retro支配因(completion_pipeline×2回)が§0の53弾窓結論と合流 (2)準備計測3点の家老下知(22:00)をledgerへ (3)運用3裁定(反復サイクル停止条件13:26/read-only段のみ冗長2名13:28/報告整形最終集約13:31)を§2へ適用 (4)第五弾(稼働中・writer 5script所有)/第七弾(テスト速度・準備中)との枠境界をledgerへ。優先順位=第五弾実装>第六弾計測>第七弾準備(idle充填順)
 - v1.7(02:07): **P3/P4 AC1結果反映 — 両方とも前提乖離の正直FAIL BLOCK(模範停止)**。P3(才蔵): 全数再計数884行/529cmd(基準値から+28/+24の自然増)だが、49cmd・100 BLOCK行がCLEAR未終端で時間欠損+**generation列がgate_metricsに不存在**=家老RC②の世代分類が現行台帳で実行不能(P1aと同根の識別子欠落)。P4(飛猿): deploy_total全1,645件=累積23,654秒/max 314,443秒で§0基準値(6,600秒/max 3,321秒)と桁違い=**母集団定義の乖離**(§0=gate_metricsの本日CLEAR 53弾/P4実査=defense_overhead全期間全数)+旧event_id 3件が識別子欠落で分類不能。**再開条件をledgerへ確定**: P3=gate_metricsへのgeneration計装後(P1a拡張)、P4=母集団定義の統一(固定窓+同一台帳)を起票ACへ明記後。part2の全弾が「識別子計装が先」へ収束=P1aが全レーンの前提であることが3弾の実測で確定
