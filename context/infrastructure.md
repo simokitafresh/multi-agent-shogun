@@ -1,6 +1,6 @@
 # インフラコンテキスト
-<!-- last_updated: 2026-07-30 cmd_karo_hotfix_ga417_infrastructure_trigger_20260730 reviewed 14 commits and reflected 5 root-fallback sources -->
-<!-- source_commit:2eec66892 reason:cmd_karo_hotfix_ga417_infrastructure_trigger_20260730 reviewed 14 commits and reflected 5 root-fallback sources evidence:range=6e33bdbb2..2eec66892 total=14 root_fallback=5 reflected=5 registry=10/10 infra=1/1 gate_registry_change=0 -->
+<!-- last_updated: 2026-07-31 promotion_pause_classifier_reviewed -->
+<!-- source_commit:5a22c4d90 reason:promotion_pause_classifier_reviewed evidence:commit_5a22c4d90_tests_12_of_12_pass_skip0 -->
 
 > 読者: エージェント。推測するな。ここに書いてあることだけを使え。
 > 詳細: `docs/research/infra-details.md`
@@ -900,7 +900,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1485 -->
+<!-- last_synced_lesson: L1487 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2099,6 +2099,8 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1483: 自己参照checkpointのHEAD/aheadは基準時点値として扱い復帰時に再計測する（cmd_karo_persist_strong_new_game_checkpoint_20260730）
 - L1484: hook fixtureはtracked正本の実行modeを暗黙継承せず自己完結させる（cmd_karo_ci_fix_30514131026_cmd_complete_gate_baseline）
 - L1485: 永続contract宣言とCI実行集合を同一SSOTから生成せよ（cmd_karo_recon_hidden_infra_test_ci_quality_20260730）
+- L1486: 外側flock内で同一lock取得helperを子process起動すると自己timeoutし、OR-list文脈はerrexitも無効化する（cmd_karo_recon_hidden_infra_deploy_lifecycle_20260730）
+- L1487: 解決状態と棄却状態を混同しない（cmd_karo_recon_hidden_infra_learning_observability_20260730）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 

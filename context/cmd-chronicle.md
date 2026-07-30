@@ -1,5 +1,5 @@
 # CMD年代記
-<!-- last_updated: 2026-07-30 -->
+<!-- last_updated: 2026-07-31 -->
 
 > 完了cmdの1行索引。詳細は queue/archive/cmds/{cmd_id}.yaml 参照。
 
@@ -53,20 +53,6 @@
 |-----|-------|---------|------|------------|
 | cmd_1696 | 影丸(Sonnet 4.6)の@model_nameが「Opus」と誤表示。根因: model_detect.shのバナー検出パターンが (Opus|Haiku)のみでSonnetが欠落。Sonnetバナーがマッチせずキャッシュの古い値が返される。 加えて、陣形図(karo_snapshot.txt)にモデル情報列がなく、編成状態が不可視。 | infra | 04-03 | model_detect.shにSonnet検出パターン追加 |
 | cmd_1697 | cmd_save.sh L152-153のgrep "scope_mode:"/"scout_exempt:"がcmdブロック内にマッチしない場合、 set -eで即exit 1。|| trueがないのが原因。cmd_1696でscout_exemptなし初回BLOCK発生の根因。 | infra | 04-03 | cmd_save.sh L152-153のgrep scop |
-
-## 2026-06
-
-| cmd | title | project | date | key_result |
-|-----|-------|---------|------|------------|
-
-<!-- clinic-expense-tracker研究リンク(cmd_3278自動追記) -->
-- → [[expense-receipt-audit]] 経費レシート監査詳細(cmd_3275/3276: 佐瀬会計メール+21カテゴリ表監査)
-| cmd_3609 | 殿指摘(2026-06-30 12:27): check_/gate名称含む関数だけでは品質チェック機能の全量を捕捉できない。Phase 1a(cmd_3608)で37件カタログ済みだが、家老精査(blt_122938)でinline checks 33件+名称乖離6件+学習補助3件=42件が漏れと判明。record_reason呼出し箇所ベース(機能フィルタ)で追加カタログを作成する | infra | 06-30 | cmd_save.sh record_reason呼出し箇所 |
-| cmd_3612 | 殿指示(2026-06-30): Phase 1完了後Phase 2へ。カタログの各項目に処置(統合・抽象化・関数化・名称修正・保護)を割り当てる。自明層(B層→関数化、C-1→名称修正)は構造から確定。判断層(A層+C-2)はペアごと判定 | infra | 06-30 | cmd_save_gate_catalog.mdにPhase |
-| cmd_3614 | 殿承認(2026-06-30): Phase 2完了、Phase 3実装へ。殿指示「抜け漏れがない仕組みが必要」。カタログの処置列(抽象化・関数化・名称修正・保護)に基づきリファクタを実施する。各commitでカタログの実施状態列を更新し、未実施が残らないことをgrep確認で担保する | infra | 06-30 | cmd_save Phase3としてカタログ全pending |
-| cmd_3615 | 殿指示(2026-06-30): Phase 3リファクタ完了(pending=0)。Phase 4はcmd_skeleton・semantic-map・context・infrastructureへ設計思想カタログの中間レイヤーを貫通させ、全エージェントからアクセス可能にする | infra | 06-30 | cmd_3615 Phase4完了: 設計思想カタログを中間 |
-| cmd_3616 | 殿指示(2026-06-30): Phase 4完了。Phase 5はカタログの運用基盤を構築する。(A)record_warn_reasonにcheck名カラムを追加しcheck関数別FP率を直接算出可能にする。(B)cmd_save.shにcheck関数を追加した時にカタログへの同時追記を強制するhookを追加し、カタログの陳腐化を構造的に防止する | infra | 06-30 | cmd_save WARN/BLOCKにcheck名を記録し |
-| cmd_3618 | 殿指示(2026-06-30): DM-Fusionに3ページ目を追加し、配合比較に必要なメトリクスを表示する。現在はCAGRとMaxDDのみ。設計書(docs/metrics-page-design.md)で家老APPROVE済み | dm-fusion | 06-30 | DM-Fusionに追加メトリクス計算とモバイル3ページ目/ |
 
 ## 2026-07
 
