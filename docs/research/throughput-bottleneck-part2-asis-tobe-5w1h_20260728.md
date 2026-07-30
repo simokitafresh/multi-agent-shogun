@@ -14,6 +14,26 @@
 
 **現況**: 偵察が確定した「generation意味不一致」と「finalize後半identity欠落」の是正が3 hotfix連鎖で着地し、**canonical generation=report_fingerprintの単一定義**でreview_approval→cmd_complete→dashboardのidentity伝播が実装済み。次手=(1)計装後の蓄積でfinalize後半5 phaseのcoverage実測を再取得(0/5→N/5) (2)P1b機械再開条件(必要phase充足率+pair+欠損+右打切り+coverage同一cutoff出力)の充足判定 (3)充足でP1b read-only集計起票。偵察の未解消callsite残がある場合は先に消化する。P2/P3/P4のBLOCK維持条件は不変。
 
+### §0.-2a P1b機械再開条件 snapshot（2026-07-30 09:18:56 JST）
+
+- **cutoff**: `logs/defense_overhead.jsonl` の `timestamp <= 2026-07-30T00:18:56.404986+00:00`（104,076行）。全phaseを同一cutoffで集計。
+- **固定母集団**: §0の定義どおり、`logs/gate_metrics.log` の2026-07-28 00:00-21:18 JST、cmd_id最終行がCLEAR、かつdeploy/work/finalize/e2eの4数値が全てある53/53弾。計装後に完了した別cmdをこの分母へ混入させない。
+- **finalize後半5 phaseのidentity充足**（cmd_id + 64hex canonical generation）:
+
+| phase | identity付きevent / 全event | unique cmd | 固定53弾coverage |
+|---|---:|---:|---:|
+| gunshi_lgtm | 141/187 | 128 | 0/53 |
+| karo_accept | 138/186 | 136 | 0/53 |
+| task_idle | 29/29 | 29 | 0/53 |
+| archive | 35/35 | 34 | 0/53 |
+| completion_publish | 30/30 | 30 | 0/53 |
+
+- **同一generation pair**: gunshi_lgtm→karo_accept=128/141（欠損13、右打切り13）、karo_accept→task_idle=0/138（欠損138、右打切り138）、task_idle→archive=28/29（欠損1、右打切り1）、archive→completion_publish=29/35（欠損6、右打切り6）。5 phase完全pair=0件。
+- **report完了起点**: `report_publish/publish_total` 3,095件中cmd_id+generation付き484件、64hex generationは0件、うち451件は`rpt-...`。現行callsite `scripts/report_field_set.sh:399-412` がgenerationへ`report_id`を設定し、review/finalize側のreport fingerprintと機械結合不能。
+- **P1b再開条件**: `必要phase identity充足=no / paired N/N=no / 欠損0=no / 右打切り0=no / 固定53弾coverage全数=no / report完了起点とのcanonical結合=no`。したがってP1b read-only集計は**未解禁**。
+- **未充足callsite**: 起点=`scripts/report_field_set.sh:399-412`（必要identity=cmd_id + persisted report bytesの64hex fingerprint）。後半writersは `scripts/review_approval.sh:307-316`、`scripts/cmd_complete_gate.sh:1813-1822`、`scripts/archive_completed.sh:2023-2029`、`scripts/dashboard_update.sh:1136-1144` で64hex generationを出力済み。固定53弾は計装前の歴史窓なので自然蓄積では0/53から増えず、同じ母集団を要求するならidentity backfillまたは固定窓の前向き再定義が必要。
+- **再現コマンド**: Pythonでgate_metricsをcmd_id最終行へreduceし上記固定53弾を抽出後、defense_overhead JSONLを同cutoff以下へ限定し、5つの`(source, check_id)`ごとに`cmd_id`と`generation =~ ^[0-9a-f]{64}$`を数え、集合積でpair/欠損/右打切りを算出。母集団53件の実在は同条件で `56 cmd中53 cmd`。
+
 ## §0.-1 第六弾指定と独立実測の合流(2026-07-29 21:59-22:00)
 
 **殿下知21:59『第六弾も準備しよう。実務においてボトルネックはなんだろう？』→将軍分析で本レーンの標的層と一致確定 — 第六弾=part2の再起動として統合(新設計書の別立てなし=車輪の再発明禁止)。**
