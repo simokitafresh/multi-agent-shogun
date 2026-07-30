@@ -246,6 +246,9 @@ EOF
     [[ "$output" == *"解消手順: 殿へ凍結継続要否を確認し"* ]]
 }
 
+# test_necessity: pause markerなし時は凍結文脈を表示しない不変量を守る
+# (queue/gates/reflux_promotion.pausedが存在しない通常のpromotion在庫超過では、
+#  意図的凍結の一次証跡を捏造・混入させず既存のreflux配備ログ表示のみに留める)。
 @test "promotion inventory alert stays silent on pause context when no marker exists" {
     setup_promotion_block_harness
     export FAKE_ROOT="$TEST_ROOT/fake-root-no-marker"
