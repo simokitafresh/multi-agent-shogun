@@ -10,16 +10,18 @@
 | [[prepush_snapshot_cleanup_timeout]] | timeout後writer残存によるclean snapshot cleanup偽BLOCKを根治 | `2ce5e9e6f` | 偽BLOCK 1/1→0/1、residue 1→0、contract/task selector 13/13、SKIP0、GATE CLEAR |
 | [[cmd_complete_autopush_overlap_precheck]] | 正当GA-PUSH1成立済みauto-pushをhook実行前にSKIP | `897c7370d` | task selector 173/173、SKIP0、GATE CLEAR、cmd-complete COMPLETE |
 
-## 現在地
+## 基準時点（2026-07-30 12:25 JST）
 
-- HEAD: `897c7370dcd052d3d512a35d15cd051a70070ebe`
-- `origin/main..HEAD`: 56 commits
+- 基準HEAD: `897c7370dcd052d3d512a35d15cd051a70070ebe`
+- 基準`origin/main..HEAD`: 56 commits
+- 上記2値はcheckpoint作成直前の固定スナップショットであり、復帰時の現在値として使わない。
+- 復帰時は必ず `git rev-parse HEAD` と `git rev-list --count origin/main..HEAD` を実走し、その時点のHEADとaheadを再計測する。
 - 最新auto-push: `context/infrastructure.md`の正当dirty overlapを検出し、hook failure artifactを生成せず事前SKIP
 - escape hatch: 未使用。今後も使わない
 
 ## /new直後の実行順
 
-1. `queue/inbox/karo.yaml`の未読をID指定で処理する。
+1. `git rev-parse HEAD`と`git rev-list --count origin/main..HEAD`で現在値を再計測してから、`queue/inbox/karo.yaml`の未読をID指定で処理する。
 2. `git diff -- context/infrastructure.md`でL1482等の帰属を一次確認する。
 3. 全忍者のpane/taskを確認し、確定対象が進行中scopeと非重複であることを確認する。
 4. 正当な自動生成・教訓差分を確定commitする。
