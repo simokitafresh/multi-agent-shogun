@@ -3998,10 +3998,11 @@ EOF
 @test "AC1 baseline: direct git push on a source-overlap dirty tree hits real GA-PUSH1 BLOCK and writes exactly 1 hook-failure artifact" {
     local base="$BATS_TEST_TMPDIR/ac1-baseline"
     _push_overlap_repo_init "$base"
-    mkdir -p "$base/repo/scripts/lib"
+    mkdir -p "$base/repo/scripts/lib" "$base/hooks"
     cp "$PROJECT_ROOT/scripts/lib/autogen_paths.sh" "$base/repo/scripts/lib/autogen_paths.sh"
+    install -m 0755 "$PROJECT_ROOT/.githooks/pre-push" "$base/hooks/pre-push"
     _push_overlap_repo_make_source_overlap "$base"
-    git -C "$base/repo" config core.hooksPath "$PROJECT_ROOT/.githooks"
+    git -C "$base/repo" config core.hooksPath "$base/hooks"
 
     run bash -c 'cd "$1" && git push 2>&1' _ "$base/repo"
     [ "$status" -ne 0 ]
