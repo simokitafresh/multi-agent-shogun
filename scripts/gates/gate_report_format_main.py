@@ -80,17 +80,31 @@ def _report_modified_paths(report):
     return paths
 
 
-def _literal_path_within(path, scope):
+def _literal_path_within(path, scope, repo_root=None):
     """Match repository paths literally; brackets in dynamic routes are not globs.
 
-    Handles absolute vs relative path mismatch: if one is an absolute path
-    and the other is relative, check if the absolute path ends with the
-    relative path (e.g. '/mnt/c/.../scripts/x.sh' contains 'scripts/x.sh').
+    When repo_root is explicit, normalize relative paths beneath that root so
+    report paths and absolute planned scopes share one canonical namespace.
     """
     candidate = str(path or "").strip().rstrip("/")
     boundary = str(scope or "").strip().rstrip("/")
     if not candidate or not boundary:
         return False
+    root = str(repo_root or "").strip().rstrip("/")
+    if root:
+        root_path = pathlib.PurePosixPath(root)
+
+        def canonical(value):
+            value_path = pathlib.PurePosixPath(value)
+            if ".." in value_path.parts:
+                return None
+            return value_path if value_path.is_absolute() else root_path / value_path
+
+        candidate_path = canonical(candidate)
+        boundary_path = canonical(boundary)
+        if candidate_path is None or boundary_path is None:
+            return False
+        return candidate_path == boundary_path or boundary_path in candidate_path.parents
     if candidate == boundary or candidate.startswith(boundary + "/"):
         return True
     # Reverse containment: absolute scope ends with relative candidate
@@ -308,7 +322,8 @@ def commit_contract_errors(report, task, root):
     modified_targets = _report_modified_paths(report)
     for modified in modified_targets:
         if allowed_targets and not any(
-            _literal_path_within(modified, allowed) for allowed in allowed_targets
+            _literal_path_within(modified, allowed, commit_repo)
+            for allowed in allowed_targets
         ):
             errors.append(f"files_modified path is outside planned scope: {modified}")
     # planned_paths is the permission ceiling, not a promise that every allowed
