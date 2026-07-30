@@ -900,7 +900,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - push層CI=487件+契約テスト、wall目標120-170秒。恒常掃除=test-hygiene lane(計測値駆動) → 家老正本ci-test-elimination
 
 ## Infra教訓索引
-<!-- last_synced_lesson: L1483 -->
+<!-- last_synced_lesson: L1484 -->
 
 <!-- lesson-sort 2026-07-18: L795-L902の7件をカテゴリ分類。deploy(L795), bash(L829), git(L865/L868), テスト(L867/L890/L902)。詳細本文は下記カテゴリ別索引の各行末尾に併記 -->
 - （L795→deploy, L829→bash, L865/L868→git, L867/L890/L902→テストに振り分け済 2026-07-18。本文:）
@@ -2097,6 +2097,7 @@ Autoresearchエコシステム対比(Karpathy派生70+プロジェクト): 将�
 - L1481: gate改修時はALERT/WARN確定を分類ロジック内に一元化せよ。診断echoの先出しに'ALERT:'接頭辞を使うと消費側テキスト一致検出が誤発火する（cmd_karo_hotfix_ga416_p_average_dns_fallback_20260730）
 - L1482: timeoutの137はkill-after完了を示す正常timeout境界（cmd_karo_hotfix_prepush_snapshot_cleanup_timeout_20260730）
 - L1483: 自己参照checkpointのHEAD/aheadは基準時点値として扱い復帰時に再計測する（cmd_karo_persist_strong_new_game_checkpoint_20260730）
+- L1484: hook fixtureはtracked正本の実行modeを暗黙継承せず自己完結させる（cmd_karo_ci_fix_30514131026_cmd_complete_gate_baseline）
 
 ## 軍師レビュー効果計測（cmd_1144導入）
 
