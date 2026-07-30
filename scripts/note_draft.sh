@@ -319,12 +319,18 @@ for line in lines:
         if not title:
             title = line[2:].strip()
         continue
-    if line.startswith("## "):
+    if line.startswith("### "):
+        flush_text()
+        sections.append({"type": "subheading", "text": line[4:]})
+    elif line.startswith("## "):
         flush_text()
         heading = line[3:]
         if not fallback_title:
             fallback_title = heading
         sections.append({"type": "heading", "text": heading})
+    elif line.strip().startswith("https://"):
+        flush_text()
+        sections.append({"type": "link", "text": line.strip()})
     elif line == "---":
         flush_text()
         sections.append({"type": "hr"})
@@ -373,7 +379,13 @@ def flush_acc():
 for s in sections:
     if s["type"] == "heading":
         flush_acc()
+        html_parts.append(f"<h2>{s['text']}</h2>")
+    elif s["type"] == "subheading":
+        flush_acc()
         html_parts.append(f"<h3>{s['text']}</h3>")
+    elif s["type"] == "link":
+        flush_acc()
+        html_parts.append(f'<p><a href="{s["text"]}">{s["text"]}</a></p>')
     elif s["type"] in ("text", "bullet"):
         text_acc.append(s["text"])
     elif s["type"] == "hr":
