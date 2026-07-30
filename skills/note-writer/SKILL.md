@@ -240,26 +240,80 @@ Markdown→note.com変換ルール（2026-07-30更新 commit ee255047）:
 
 note.comはMarkdown画像記法(`![](url)`)非対応。CDPで直接エディタに画像をアップロードする。
 
-**画像ファイル準備**: `marketing-director/content/images/note-{テーマ}/` に保存。arxiv論文は`https://arxiv.org/html/{id}/`からfigure URLを取得しcurlでダウンロード。
+**画像ファイル準備**: `marketing-director/content/images/note-{テーマ}/` に保存。
+- arxiv論文: `https://arxiv.org/html/{id}/` のHTMLからfigure URLをWebFetchで取得 → `curl -sL -o` でダウンロード
+- X/Xスレッド画像: `data/x-research/thread_{id}/images/` に既取得
+- PDF論文: PDFを開いてスクショ、または論文サイトの画像を取得
 
-**挿入手順**（2026-07-30実証。1画像ずつ順次実行）:
+**挿入手順**（2026-07-30実証・4枚連続成功の確定版）:
 
-1. **カーソル配置**: 画像説明文（「上図は〜」等）の段落先頭にカーソルを配置
-2. **空行作成**: Enter→ArrowUpで画像挿入用の空行を作る
-3. **+メニュー表示**: `aria-label="メニューを開く"` ボタンをクリック（空行の左に出る「+」）
-4. **「画像」クリック**: +メニュー内の「画像」ボタンをクリック → `input[type=file]`が出現
-5. **ファイル設定**: `DOM.setFileInputFiles` でWindows側パス(`C:\...`)を設定 → 画像が自動挿入される
+Markdownに`■画像:`マーカーは書かない（note_draft.shが変換時にマーカーごと壊す）。
+代わに記事本文に画像説明文（「上図は〜」）を書き、Step 6のテキスト挿入後にCDPで画像を挿入する。
+
+1画像ずつ以下を順次実行:
 
 ```python
-# カーソル配置（JSでテキスト検索→rangeで配置）
-# Enter + ArrowUp で空行作成
-# "画像"ボタンクリック → input[type=file]出現
-# DOM.setFileInputFiles({nodeId: nid, files: [win_path]})
+# Step 7-1: カーソル配置（JSでテキスト検索→paragraph先頭にrange配置）
+# 「上図は〜」段落のtextContentをindexOf検索し、
+# その段落のparentNode(P要素)をscrollIntoView+range.setStartで配置
+js = """
+var walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+while (node = walker.nextNode()) {
+    if (node.textContent.indexOf('上図はEMA') >= 0) {
+        // p要素まで遡り、先頭にcursor配置
+    }
+}
+"""
+
+# Step 7-2: 空行作成
+# Input.dispatchKeyEvent: Enter → ArrowUp
+# ★Backspaceでマーカー行を削除する方式は禁止
+#   （ProseMirrorが前後段落をマージし本文が消える）
+
+# Step 7-3: 「画像」ボタン検索＆クリック
+# ★正しいボタン: textContent === '画像' && rect.x > 100 && rect.y > 50
+# ★間違い: aria-label="メニューを開く" → これはトップバーの「...」設定メニュー
+# 空行フォーカス時にProseMirrorが左側に「+」メニューを自動表示する。
+# 自動表示されない場合: rect.x < 200 の SVG付きbuttonを探してclick
+js = """
+var all = document.querySelectorAll('button');
+for (var i = 0; i < all.length; i++) {
+    var rect = all[i].getBoundingClientRect();
+    if (all[i].textContent.trim() === '画像'
+        && rect.x > 100 && rect.y > 50 && rect.width > 0) {
+        all[i].click(); // → input[type=file]が出現
+    }
+}
+"""
+
+# Step 7-4: ファイル設定
+# DOM.enable → DOM.getDocument → DOM.querySelectorAll("input[type=file]")
+# → DOM.setFileInputFiles({nodeId: nids[-1], files: [win_path]})
+# ★パスはWindows形式: "C:\\Python_app\\DM-signal\\...\\image.png"
+# ★WSL2パス /mnt/c/... は不可
+# → 画像が自動挿入される（「保存」ボタン不要）
+# → 4秒待機してから次の画像へ
 ```
 
-**注意点**:
-- Windowsパス形式（`C:\\...`）で指定。WSL2パス(`/mnt/c/...`)は不可
-- 画像挿入後にテキストが消えるバグあり: マーカーテキストを選択→削除すると前後段落が巻き込まれる。空行を**作る**（Enter+ArrowUp）方式が安全
-- 全画像挿入後に`下書き保存`ボタンをCDPでクリック
+**リンク挿入の補足**:
+note_draft.shが`https://`行を`<a>`タグに変換するが、ProseMirrorが無視する場合がある。
+欠落したリンクはDOM操作で手動挿入:
+```javascript
+var newP = document.createElement('p');
+var link = document.createElement('a');
+link.href = 'https://example.com/paper';
+link.textContent = 'https://example.com/paper';
+newP.appendChild(link);
+targetP.parentNode.insertBefore(newP, targetP.nextSibling);
+editor.dispatchEvent(new Event('input', {bubbles: true}));
+```
+
+**全画像挿入後**: `下書き保存`ボタンをCDPでクリック。
+
+**罠の一覧（2026-07-30で踏んだもの）**:
+- `aria-label="メニューを開く"` はトップバーの「...」メニュー（共有リンク/プレビュー/変更破棄）であり画像挿入の「+」とは別物
+- マーカーテキスト（`■画像:xxx■`）をBackspaceで削除するとProseMirrorが前後段落をマージして本文が消える。Enter+ArrowUpで空行を**追加する**方式が安全
+- Chromeプロセスが残っているとnote_draft.shがPowerShellタイムアウトで失敗する。`/mnt/c/Windows/System32/taskkill.exe /F /IM chrome.exe` で完全終了してから再実行
+- WebSocket接続がタイムアウトする場合はChromeを完全終了→再起動
 
 <!-- script_refs_checked_at: 2026-07-16T23:40:33+0900
